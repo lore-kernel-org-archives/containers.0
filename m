@@ -1,116 +1,169 @@
-From: Balbir Singh <balbir@linux.vnet.ibm.com>
-Subject: Re: Containers: css_put() dilemma
-Date: Tue, 17 Jul 2007 12:30:31 +0530
-Message-ID: <20070717070031.GA22410@linux.vnet.ibm.com>
-References: <469BBE00.8000709@linux.vnet.ibm.com> <6599ad830707161203o7f148c75p52e77d4be3ace487@mail.gmail.com> <469C2792.6050009@linux.vnet.ibm.com> <6599ad830707161935n69776f1t98292fc9990f4766@mail.gmail.com>
-Reply-To: balbir@linux.vnet.ibm.com
+From: Weston Z Tia <HealyEdna-vrz4vYsCHS9Wk0Htik3J/w@public.gmane.org>
+Subject: Spam : alternative medicine clinics mailing list
+Date: Mon, 09 Jul 2007 23:02:24 +0200
+Message-ID: <34260.1822726012$1184655953@news.gmane.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=utf-8
-Content-Transfer-Encoding: QUOTED-PRINTABLE
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1759016AbXGQHBM@vger.kernel.org>
-Content-Disposition: inline
-In-Reply-To: <6599ad830707161935n69776f1t98292fc9990f4766@mail.gmail.com>
-Sender: linux-kernel-owner@vger.kernel.org
-To: Paul =?utf-8?B?KOWuneeRoCk=?= Menage <menage@google.com>
-Cc: Pavel Emelianov <xemul@sw.ru>, linux kernel mailing list <linux-kernel@vger.kernel.org>, Paul Jackson <pj@sgi.com>, Linux Containers <containers@lists.osdl.org>, Andrew Morton <akpm@linux-foundation.org>, dhaval@linux.vnet.ibm.com
+Content-Type: multipart/mixed;
+	boundary="------------Boundary-00=_6PHXTISVPV1TZT1IIA11"
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: info-yMqJMeSTmtX/8HP/6BInHUEOCMrvLtNR@public.gmane.org, sunray9-xwVYE8SWAR3R7s880joybQ@public.gmane.org, containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Mon, Jul 16, 2007 at 07:35:01PM -0700, Paul (=E5=AE=9D=E7=91=A0) Men=
-age wrote:
-> On 7/16/07, Balbir Singh <balbir@linux.vnet.ibm.com> wrote:
-> >
-> >-       if (notify_on_release(cont)) {
-> >+       if (atomic_dec_and_test(&css->refcnt) && notify_on_release(c=
-ont)) {
->=20
-> This seems like a good idea, as long as atomic_dec_and_test() isn't
-> noticeably more expensive than atomic_dec(). I assume it shouldn't
-> need to be, since the bus locking operations are presumably the same
-> in each case.
->=20
-> >                mutex_lock(&container_mutex);
-> >                set_bit(CONT_RELEASABLE, &cont->flags);
-> >-               if (atomic_dec_and_test(&css->refcnt)) {
-> >-                       check_for_release(cont);
-> >-               }
-> >+               check_for_release(cont);
-> >                mutex_unlock(&container_mutex);
-> >
-> >That way we set the CONT_RELEASABLE bit only when the ref count drop=
-s
-> >to zero.
-> >
->=20
-> That's probably a good idea, in conjunction with another part of my
-> patch for this that frees container objects under RCU - as soon as yo=
-u
-> do the atomic_dec_and_test(), then in theory some other thread could
-> delete the container (since we're no longer going to be taking
-> container_mutex in this function). But as long as the container objec=
-t
-> remains valid until synchronize_rcu() completes, then we can safely
-> set the CONT_RELEASABLE bit on it.
->=20
-> >
-> >Yes, that is correct, the advantage is that with can_destroy() we
-> >don't need to go through release synchronization each time we do
-> >a css_put().
->=20
-> I think the amount of release synchronization *needed* is going to be
-> the same whether you have the refcounting done in the subsystem or in
-> the framework. But I agree that right now we're doing one more atomic
-> op than we strictly need to, and can remove it.
->=20
-> Paul
+--------------Boundary-00=_6PHXTISVPV1TZT1IIA11
+Content-Type: message/rfc822; name="eTrust SCM_OriginalMessage.eml"
+Content-Disposition: attachment; filename="eTrust SCM_OriginalMessage.eml"
 
-Hi, Paul/Andrew
-
-Would you accept this fix, while we wait for the complete solution.
-It worked for me quite well.
+X-eSCM-MailFrom: <HealyEdna-vrz4vYsCHS9Wk0Htik3J/w@public.gmane.org>
+X-eSCM-FileID: smtp_469297D9_3730_0000.inb
+Received: from 218.81.183.129 (218.81.183.129)
+	by ddcex02.ddcnet.ch (172.30.31.22); Mon, 09 Jul 2007 22:17:29 +0200
+Received: from somehow-confocal.chinoice.com(bernie-any.chinoice.com
+	[chinoice.com])
+	by standpoint-buzzy.chinoice.com (8.11.1/8.11.1) with ESMTP id
+	eA5KcNf0096D
+	for <HealyEdna-vrz4vYsCHS9Wk0Htik3J/w@public.gmane.org>; Mon, 09 Jul 2007 19:02:24 -0200
+Date: Mon, 09 Jul 2007 23:02:24 +0200
+From: "Weston Z Tia" <HealyEdna-vrz4vYsCHS9Wk0Htik3J/w@public.gmane.org>
+To: info-yMqJMeSTmtX/8HP/6BInHUEOCMrvLtNR@public.gmane.org, sunray9-xwVYE8SWAR3R7s880joybQ@public.gmane.org, containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
+Subject: alternative medicine clinics mailing list
+Message-ID: <CA327EE3.7684.AB15C2D5@localhost>
+MIME-Version: 1.0
+Content-type: text/plain; charset=US-ASCII
+Priority: normal
+Content-Transfer-Encoding: quoted-printable
+X-MIME-Autoconverted: from 8bit to quoted-printable by smtp2.linux-foundation.org id l6H748jf006926
 
 
-Description
 
-Stop checking if the container can be released every time we do css_put=
-().
-A better solution that avoids container_mutex has been suggested by
-Paul, but meanwhile, to get containers working correctly, this fix
-would be very useful.
 
-Signed-off-by: <balbir@linux.vnet.ibm.com>
----
+For this week we have the following package deal in effect:
 
- kernel/container.c |    8 ++------
- 1 file changed, 2 insertions(+), 6 deletions(-)
+promo code: 64FADCF
 
-diff -puN kernel/container.c~container-css-put-on-refcount-zero kernel/=
-container.c
---- linux-2.6.22-rc6/kernel/container.c~container-css-put-on-refcount-z=
-ero	2007-07-17 12:18:52.000000000 +0530
-+++ linux-2.6.22-rc6-balbir/kernel/container.c	2007-07-17 12:23:29.0000=
-00000 +0530
-@@ -2515,15 +2515,11 @@ static void check_for_release(struct con
- void css_put(struct container_subsys_state *css)
- {
- 	struct container *cont =3D css->container;
--	if (notify_on_release(cont)) {
-+	if (atomic_dec_and_test(&css->refcnt) && notify_on_release(cont)) {
- 		mutex_lock(&container_mutex);
- 		set_bit(CONT_RELEASABLE, &cont->flags);
--		if (atomic_dec_and_test(&css->refcnt)) {
--			check_for_release(cont);
--		}
-+		check_for_release(cont);
- 		mutex_unlock(&container_mutex);
--	} else {
--		atomic_dec(&css->refcnt);
- 	}
- }
-=20
-_
+Physicians in the USA=20
+788k in total =96 17k emails
+34 specialties =96 many sortable fields
 
---=20
-	Warm Regards,
-	Balbir Singh
-	Linux Technology Center
-	IBM, ISTL
+American Hospitals=20
+23k Admins in more than 7k hospitals
+
+Dentists in the USA
+597k dentists and dental services
+
+American Chiropractor Directory
+100K chiropractor=92s offices in the USA
+
+All 4 above complete directories: $379
+
+This offer is good until July 13th. =20
+
+Please email: medpack-PkbjNfxxIARBDgjK7y7TUQ@public.gmane.org or call 206-339-6160 for more details
+
+
+
+
+Note: To quit getting emails like these please reply with "quit" in the s=
+ubject heading.
+
+
+--------------Boundary-00=_6PHXTISVPV1TZT1IIA11
+Content-Type: multipart/alternative;
+	boundary="------------Boundary-00=_6PHXOTWWK55TZT1IIA11"
+
+--------------Boundary-00=_6PHXOTWWK55TZT1IIA11
+Content-Type: text/plain; charset=utf-8
+Content-Transfer-Encoding: quoted-printable
+
+Haftungsausschluss :
+
+eTrust SCM for SMTPhat die anh=C3=A4ngende E-Mail analysiert und anhand =
+ihres Ursprungs festgelegt, dass sie ungeeigneten Inhalt enth=C3=A4lt oder =
+von einem Server gesendet wurde, der nicht allgemein akzeptierten =
+Internetstandards entspricht, die u.a. das Weiterleiten von =
+Spam-Nachrichten erlauben.
+
+Im Rahmen der Firmenrichtlinie wird die Nachricht als Spam identifiziert =
+und an diese E-Mail angeh=C3=A4ngt. K=C3=BCnftig k=C3=B6nnen diese =
+Nachrichtentypen blockiert werden. Wenden Sie sich an Ihren =
+Systemadministrator, wenn Sie der Ansicht sind, dass diese Nachricht =
+f=C3=A4lschlicherweise als Spam identifiziert wurde.
+
+Ihr Systemadministrator kann folgende Nachricht zum Auswerten der =
+Nachricht verwenden:
+Von: healyedna=40aalaquis.com
+RBL-Provider: njabl.org;no-more-funn.moensted.dk
+RBL-Informationen: IP-Adresse: 218.81.183.129 -> This site is =
+misconfigured and too dumb to accept email
+IP-Adresse: 218.81.183.129 -> This site is misconfigured and too dumb to =
+accept email
+CN does not seem to care about spam see =
+http://moensted.dk/spam/no-more-funn/?addr=3D218.81.183.129  1159977095 =
+=23 dul.dnsbl.sorbs.net
+
+Spam-Server-IP: 218.81.183.129
+Spam-Servername: 218.81.183.129 =5BHELO DM=5D
+Hostname: DDCEX02
+
+Vielen Dank,
+eTrust SCM for SMTP
+
+--------------Boundary-00=_6PHXOTWWK55TZT1IIA11
+Content-Type: text/html; charset=utf-8
+Content-Transfer-Encoding: quoted-printable
+
+<HEAD><META HTTP-EQUIV=3D=22Content-Type=22 CONTENT=3D=22text/html; =
+charset=3Dutf-8=22></HEAD><table><tr><td bgcolor=3D=22=23FFFFFF=22><font =
+face=3D=22Times New Roman=22>Haftungsausschluss :<br><br>
+
+eTrust SCM for SMTP hat die anh=C3=A4ngende E-Mail analysiert und anhand =
+ihres Ursprungs festgelegt, dass sie ungeeigneten Inhalt enth=C3=A4lt oder =
+von einem Server gesendet wurde, der nicht allgemein akzeptierten =
+Internetstandards entspricht, die u.a. das Weiterleiten von =
+Spam-Nachrichten erlauben.<br>
+Im Rahmen der Firmenrichtlinie wird die Nachricht als Spam identifiziert =
+und an diese E-Mail angeh=C3=A4ngt. K=C3=BCnftig k=C3=B6nnen diese =
+Nachrichtentypen blockiert werden. Wenden Sie sich an Ihren =
+Systemadministrator, wenn Sie der Ansicht sind, dass diese Nachricht =
+f=C3=A4lschlicherweise als Spam identifiziert wurde.<br><br>
+
+Ihr Systemadministrator kann folgende Nachricht zum Auswerten der =
+Nachricht verwenden:<br>
+Von: healyedna=40aalaquis.com<br>
+RBL-Provider : njabl.org;no-more-funn.moensted.dk<br>
+RBL-Informationen : IP-Adresse: 218.81.183.129 -> This site is =
+misconfigured and too dumb to accept email
+IP-Adresse: 218.81.183.129 -> This site is misconfigured and too dumb to =
+accept email
+CN does not seem to care about spam see =
+http://moensted.dk/spam/no-more-funn/?addr=3D218.81.183.129  1159977095 =
+=23 dul.dnsbl.sorbs.net
+<br>
+Spam-Server-IP : 218.81.183.129<br>
+Spam-Servername : 218.81.183.129 =5BHELO DM=5D<br>
+Hostname : DDCEX02<br><br>
+
+Vielen Dank,<br>
+eTrust SCM for SMTP.<br><br></font></td></tr></table><br>=
+
+--------------Boundary-00=_6PHXOTWWK55TZT1IIA11--
+
+--------------Boundary-00=_6PHXTISVPV1TZT1IIA11
+Content-Type: text/plain; charset="us-ascii"
+MIME-Version: 1.0
+Content-Disposition: inline
+Content-Transfer-Encoding: 7bit
+
+_______________________________________________
+Containers mailing list
+Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+https://lists.linux-foundation.org/mailman/listinfo/containers
+--------------Boundary-00=_6PHXTISVPV1TZT1IIA11--
