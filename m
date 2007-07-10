@@ -1,14 +1,13 @@
-From: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
-Subject: Re: [PATCH 1/6] user namespace : add the framework
-Date: Sun, 15 Jul 2007 18:31:32 -0700
-Message-ID: <20070715183132.e31a2064.akpm@linux-foundation.org>
-References: <20070604193957.GA19331@sergelap.austin.ibm.com>
-	<20070604194024.GA21703@sergelap.austin.ibm.com>
+From: Fleming <lzdq-RpavVkC5M0PR7s880joybQ@public.gmane.org>
+Subject: Consumers and retailers both desire safe,
+	simple and comprehensive online shopping that will truly realize
+	the range of power of the Internet.
+Date: Tue, 10 Jul 2007 14:31:58 -0700
+Message-ID: <4693FACE.4010307@pc-link.net>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20070604194024.GA21703-6s5zFf/epYLPQpwDFJZrxKsjOiXwFzmk@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,27 +17,70 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, David Howells <dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, xemul-3ImXcnM4P+0@public.gmane.org
+To: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Mon, 4 Jun 2007 14:40:24 -0500 "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org> wrote:
+OTC-Advisors.com and bullishalrets.com Issue Watch Alert On SZSN
 
-> Add the user namespace struct and framework
-> 
-> Basically, it will allow a process to unshare its user_struct table, resetting
-> at the same time its own user_struct and all the associated accounting.
-> 
-> A new root user (uid == 0) is added to the user namespace upon creation.  Such
-> root users have full privileges and it seems that theses privileges should be
-> controlled through some means (process capabilities ?)
+Shandong Zhouyuan Seed and Nursery Co., Ltd (SZSN)
+$0.33 UP 37.5%
 
-The whole magical-uid-0-user thing in this patch seem just wrong to
-me.  
+Market watchers are already alerting investors that SZSN in on the rise
+and moving fast. Read the news and get on SZSN first thing Monday
+morning!
 
-I'll merge it anyway, mainly because I want to merge _something_ (why oh
-why do the git-tree guys leave everything to the last minute?) but it strikes
-me that there's something fundamentally wrong whenever the kernel starts
-"knowing" about the significance of UIDs in this fashion.
+We also break down changes in payment behavior by customer segments.
 
-It worries me.
+Hardening of interest rates has started hitting the bottom lines of the
+industry.
+
+Performance management tools offer a means of monitoring and tracking
+daily operations across a line of business or an enterprise. In the case
+of short-term advances granted to small and marginal farmers, Reserve
+Bank has also advised banks to ensure that interest applied does not
+exceed principal amount.
+Notwithstanding the use of statistical models, stress tests are a
+relevant and integral part of banks' risk management frameworks. Rao,
+General Manager, SEBI and Shri Ananta Barua, Joint Legal Adviser, SEBI.
+
+Also, more competitions for attracting buy-side order flow. Accordingly,
+utilisation of ECB proceeds is not permissible in real estate, without
+any exemption.
+
+TowerGroup believes this exchange activity will have varying impacts on
+the trading strategies employed by key capital markets players. It
+includes up-to-date statistical information on market growth and
+potential.
+
+The report reflects the changing face of business trends in India.
+
+Demutualization is another critical factor, particularly in the U.
+kolkata scored in online music sales. The highlight of the Citi-SKS
+agreement is in the fact that each individual loan originated by SKS is
+purchased by Citibank which shares credit risk in the transaction.
+
+Grant of such facilities is to be based on proper appraisal and
+commercial viability of the project and the countries  where the
+step-down subsidiary is located.
+
+The Minister informed the members that he has given directions for the
+appointment of General Managers to oversee the work of RRBs.
+
+The reply to the show cause notice was examined.
+
+sensitivity tests and scenario tests. Hardening of interest rates has
+started hitting the bottom lines of the industry.
+However, this is subject to the condition that the project to be
+financed is in the area of operation of the RRB concerned and guidance
+and appraisal of the project is provided by their sponsor bank.
+
+The appellate authority for the Banking Ombudsman Scheme is the Deputy
+Governor of Reserve Bank of India.
+
+Shri Jeevan Sonparote, Deputy General Manager, SEBI shall be the Member
+Secretary of the Group.
+
+sensitivity tests and scenario tests.
+
+"It is critical for a financial institution moving into a new region to
+successfully 'act locally' without losing its own global advantage.
