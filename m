@@ -1,39 +1,38 @@
-From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 1/6] user namespace : add the framework
-Date: Mon, 16 Jul 2007 10:27:49 -0500
-Message-ID: <20070716152749.GA15300@sergelap.austin.ibm.com>
-References: <20070716143443.GA7393@sergelap.austin.ibm.com>
-	<20070604193957.GA19331@sergelap.austin.ibm.com>
-	<20070604194024.GA21703@sergelap.austin.ibm.com>
-	<20070715183132.e31a2064.akpm@linux-foundation.org>
-	<28037.1184597651@redhat.com>
+From: Balbir Singh <balbir@linux.vnet.ibm.com>
+Subject: Containers: css_put() dilemma
+Date: Tue, 17 Jul 2007 00:20:40 +0530
+Message-ID: <469BBE00.8000709@linux.vnet.ibm.com>
+Reply-To: balbir@linux.vnet.ibm.com
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <28037.1184597651-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: David Howells <dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, xemul-3ImXcnM4P+0@public.gmane.org
+Content-Type: text/plain; charset=ISO-8859-1
+Content-Transfer-Encoding: 7bit
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1759265AbXGPSvN@vger.kernel.org>
+Sender: linux-kernel-owner@vger.kernel.org
+To: Paul Menage <menage@google.com>, Andrew Morton <akpm@linux-foundation.org>
+Cc: Srivatsa Vaddagiri <vatsa@in.ibm.com>, Pavel Emelianov <xemul@sw.ru>, Vaidyanathan Srinivasan <svaidy@linux.vnet.ibm.com>, "Serge E. Hallyn" <serue@us.ibm.com>, linux kernel mailing list <linux-kernel@vger.kernel.org>, Linux Containers <containers@lists.osdl.org>, Paul Jackson <pj@sgi.com>
 List-Id: containers.vger.kernel.org
 
-Quoting David Howells (dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org):
-> Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org> wrote:
-> 
-> > There is the root_user_keyring stuff - David, is that only special cased
-> > so that root's keys can be statically allocated?
-> 
-> It's because the boot processes start up with UID 0, and the user_struct for
-> UID 0 is statically allocated (root_user).
+Hi, Paul,
 
-Right - thanks David.
+I've run into a strange problem with css_put(). After the changes for notify_on_release(), the css_put() routine can now block and it blocks on
+the container_mutex. This implies that css_put() cannot be called if
 
--serge
+1. We cannot block
+2. We already hold the container_mutex
+
+The problem I have is that of preventing the destruction of my container
+(when the user does rmdir). If the user migrates away all tasks and does
+an rmdir, the only way to prevent the container from going away is through
+css_get() references. In my case, some pages have been allocated from the
+container and hence I do not want it to go away, until all the pages
+charged to it are freed. When I use css_get/put() to prevent destruction
+I am blocked by the limitations of css_put() listed above.
+
+Do you have any recommendations for a cleaner solution? I suspect we'll
+need can_destroy() callbacks (similar to can_attach()).
+
+-- 
+	Warm Regards,
+	Balbir Singh
+	Linux Technology Center
+	IBM, ISTL
