@@ -1,188 +1,199 @@
 From: sukadev@us.ibm.com
-Subject: Re: [PATCH 5/5] Move alloc_pid call to copy_process
-Date: Mon, 16 Jul 2007 15:54:11 -0700
-Message-ID: <20070716225411.GH25053@us.ibm.com>
-References: <20070715123600.GA210@tv-sign.ru>
+Subject: Re: [PATCH 1/5] Define and use task_active_pid_ns() wrapper
+Date: Mon, 16 Jul 2007 16:02:37 -0700
+Message-ID: <20070716230237.GA18486@us.ibm.com>
+References: <20070715045510.GB25053@us.ibm.com> <20070716203842.GA20629@sergelap.austin.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1760491AbXGPWy0@vger.kernel.org>
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1753001AbXGPXC4@vger.kernel.org>
 Content-Disposition: inline
-In-Reply-To: <20070715123600.GA210@tv-sign.ru>
+In-Reply-To: <20070716203842.GA20629@sergelap.austin.ibm.com>
 Sender: linux-kernel-owner@vger.kernel.org
-To: Oleg Nesterov <oleg@tv-sign.ru>, Andrew Morton <akpm@osdl.org>
-Cc: "Eric W. Biederman" <ebiederm@xmission.com>, Cedric Le Goater <clg@fr.ibm.com>, Dave Hansen <haveblue@us.ibm.com>, Serge Hallyn <serue@us.ibm.com>, Herbert Poetzel <herbert@13thfloor.at>, Pavel Emelianov <xemul@openvz.org>, Linux Containers <containers@lists.osdl.org>, linux-kernel@vger.kernel.org
+To: "Serge E. Hallyn" <serue@us.ibm.com>
+Cc: Andrew Morton <akpm@osdl.org>, linux-kernel@vger.kernel.org, Pavel Emelianov <xemul@openvz.org>, clg@fr.ibm.com, haveblue@us.ibm.com, Containers <containers@lists.osdl.org>
 List-Id: containers.vger.kernel.org
 
-Oleg Nesterov [oleg@tv-sign.ru] wrote:
-| Sukadev Bhattiprolu wrote:
-| >
-| > --- lx26-22-rc6-mm1.orig/kernel/pid.c	2007-07-13 18:23:55.000000000 -0700
-| > +++ lx26-22-rc6-mm1/kernel/pid.c	2007-07-13 18:23:55.000000000 -0700
-| > @@ -206,6 +206,10 @@ fastcall void free_pid(struct pid *pid)
-| >  	/* We can be called with write_lock_irq(&tasklist_lock) held */
-| >  	unsigned long flags;
-| >  
-| > +	/* check this here to keep copy_process() cleaner */
-| > +	if (unlikely(pid == &init_struct_pid))
-| > +		return;
-| > +
-| >  	spin_lock_irqsave(&pidmap_lock, flags);
-| >  	hlist_del_rcu(&pid->pid_chain);
-| >  	spin_unlock_irqrestore(&pidmap_lock, flags);
-| > @@ -214,13 +218,17 @@ fastcall void free_pid(struct pid *pid)
-| >  	call_rcu(&pid->rcu, delayed_put_pid);
+Serge E. Hallyn [serue@us.ibm.com] wrote:
+| Quoting sukadev@us.ibm.com (sukadev@us.ibm.com):
+| > 
+| > Subject: [PATCH 1/5] Define and use task_active_pid_ns() wrapper
+| > 
+| > From: Sukadev Bhattiprolu <sukadev@us.ibm.com>
+| > 
+| > With multiple pid namespaces, a process is known by some pid_t in
+| > every ancestor pid namespace.  Every time the process forks, the
+| > child process also gets a pid_t in every ancestor pid namespace.
+| > 
+| > While a process is visible in >=1 pid namespaces, it can see pid_t's
+| > in only one pid namespace.  We call this pid namespace it's "active
+| > pid namespace", and it is always the youngest pid namespace in which
+| > the process is known.
+| > 
+| > This patch defines and uses a wrapper to find the active pid namespace
+| > of a process. The implementation of the wrapper will be changed in 
+| > when support for multiple pid namespaces are added.
+| > 
+| > Changelog:
+| > 	2.6.22-rc4-mm2-pidns1:
+| > 	- [Pavel Emelianov, Alexey Dobriyan] Back out the change to use
+| > 	  task_active_pid_ns() in child_reaper() since task->nsproxy
+| > 	  can be NULL during task exit (so child_reaper() continues to
+| > 	  use init_pid_ns).
+| > 
+| > 	  to implement child_reaper() since init_pid_ns.child_reaper to
+| > 	  implement child_reaper() since tsk->nsproxy can be NULL during exit.
+| > 
+| > 	2.6.21-rc6-mm1:
+| > 	- Rename task_pid_ns() to task_active_pid_ns() to reflect that a
+| > 	  process can have multiple pid namespaces.
+| > 
+| > Signed-off-by: Sukadev Bhattiprolu <sukadev@us.ibm.com>
+| > Acked-by: Pavel Emelianov <xemul@openvz.org>
+| > 
+| > Cc: Eric W. Biederman <ebiederm@xmission.com>
+| > Cc: Cedric Le Goater <clg@fr.ibm.com>
+| > Cc: Dave Hansen <haveblue@us.ibm.com>
+| > Cc: Serge Hallyn <serue@us.ibm.com>
+| > Cc: Herbert Poetzel <herbert@13thfloor.at>
+| > ---
+| >  fs/exec.c                     |    2 +-
+| >  fs/proc/proc_misc.c           |    3 ++-
+| >  include/linux/pid_namespace.h |    7 ++++++-
+| >  kernel/exit.c                 |    5 +++--
+| >  kernel/nsproxy.c              |    2 +-
+| >  kernel/pid.c                  |    4 ++--
+| >  6 files changed, 15 insertions(+), 8 deletions(-)
+| > 
+| > Index: lx26-22-rc6-mm1/include/linux/pid_namespace.h
+| > ===================================================================
+| > --- lx26-22-rc6-mm1.orig/include/linux/pid_namespace.h	2007-07-13 13:07:01.000000000 -0700
+| > +++ lx26-22-rc6-mm1/include/linux/pid_namespace.h	2007-07-13 18:22:49.000000000 -0700
+| > @@ -20,7 +20,7 @@ struct pid_namespace {
+| >  	struct pidmap pidmap[PIDMAP_ENTRIES];
+| >  	int last_pid;
+| >  	struct task_struct *child_reaper;
+| > -	struct kmem_cache_t *pid_cachep;
+| > +	struct kmem_cache *pid_cachep;
+| 
+| This change is, of course, unrelated to the description.
+
+Yes. It fixes a warning.
+
+I had sent a mail earlier to this list about the warning, but I guess
+that mail did not make it due to our mail server being down on Fri/Sat.
+
+| 
+| >  };
+| > 
+| >  extern struct pid_namespace init_pid_ns;
+| > @@ -39,6 +39,11 @@ static inline void put_pid_ns(struct pid
+| >  	kref_put(&ns->kref, free_pid_ns);
 | >  }
-| >  
-| > -struct pid *alloc_pid(void)
-| > +struct pid *alloc_pid(enum copy_process_type copy_src)
+| > 
+| > +static inline struct pid_namespace *task_active_pid_ns(struct task_struct *tsk)
+| > +{
+| > +	return tsk->nsproxy->pid_ns;
+| > +}
+| > +
+| 
+| I trust you've tested this for the NFS oops?
+
+The NFS problem we got was when exit_task_namespaces() and
+exit_notify() were swapped in do_exit(). That change was in
+a separate patch and Pavel's has a fix for it. 
+
+And that patch is not in -mm yet I think.
+
+This patch is a simple short-cut to what the mainline code is
+already doing.
+
+| 
+| Taking the pid_ns out of the nsproxy was the trigger for the original
+| bug, right, to which the solutions were to either take it from struct
+| pid, or, so long as pid namespaces couldn't yet be unshared, use
+| init_pid_ns?
+| 
+| thanks,
+| -serge
+| 
+| >  static inline struct task_struct *child_reaper(struct task_struct *tsk)
 | >  {
-| >  	struct pid *pid;
-| >  	enum pid_type type;
+| >  	return init_pid_ns.child_reaper;
+| > Index: lx26-22-rc6-mm1/fs/exec.c
+| > ===================================================================
+| > --- lx26-22-rc6-mm1.orig/fs/exec.c	2007-07-13 13:05:38.000000000 -0700
+| > +++ lx26-22-rc6-mm1/fs/exec.c	2007-07-13 18:13:39.000000000 -0700
+| > @@ -827,7 +827,7 @@ static int de_thread(struct task_struct 
+| >  	 * so it is safe to do it under read_lock.
+| >  	 */
+| >  	if (unlikely(tsk->group_leader == child_reaper(tsk)))
+| > -		tsk->nsproxy->pid_ns->child_reaper = tsk;
+| > +		task_active_pid_ns(tsk)->child_reaper = tsk;
+| > 
+| >  	zap_other_threads(tsk);
+| >  	read_unlock(&tasklist_lock);
+| > Index: lx26-22-rc6-mm1/fs/proc/proc_misc.c
+| > ===================================================================
+| > --- lx26-22-rc6-mm1.orig/fs/proc/proc_misc.c	2007-07-13 13:05:38.000000000 -0700
+| > +++ lx26-22-rc6-mm1/fs/proc/proc_misc.c	2007-07-13 13:07:48.000000000 -0700
+| > @@ -94,7 +94,8 @@ static int loadavg_read_proc(char *page,
+| >  		LOAD_INT(a), LOAD_FRAC(a),
+| >  		LOAD_INT(b), LOAD_FRAC(b),
+| >  		LOAD_INT(c), LOAD_FRAC(c),
+| > -		nr_running(), nr_threads, current->nsproxy->pid_ns->last_pid);
+| > +		nr_running(), nr_threads,
+| > +		task_active_pid_ns(current)->last_pid);
+| >  	return proc_calc_metrics(page, start, off, count, eof, len);
+| >  }
+| > 
+| > Index: lx26-22-rc6-mm1/kernel/exit.c
+| > ===================================================================
+| > --- lx26-22-rc6-mm1.orig/kernel/exit.c	2007-07-13 13:06:52.000000000 -0700
+| > +++ lx26-22-rc6-mm1/kernel/exit.c	2007-07-13 18:13:39.000000000 -0700
+| > @@ -909,8 +909,9 @@ fastcall NORET_TYPE void do_exit(long co
+| >  	if (unlikely(!tsk->pid))
+| >  		panic("Attempted to kill the idle task!");
+| >  	if (unlikely(tsk == child_reaper(tsk))) {
+| > -		if (tsk->nsproxy->pid_ns != &init_pid_ns)
+| > -			tsk->nsproxy->pid_ns->child_reaper = init_pid_ns.child_reaper;
+| > +		if (task_active_pid_ns(tsk) != &init_pid_ns)
+| > +			task_active_pid_ns(tsk)->child_reaper =
+| > +					init_pid_ns.child_reaper;
+| >  		else
+| >  			panic("Attempted to kill init!");
+| >  	}
+| > Index: lx26-22-rc6-mm1/kernel/pid.c
+| > ===================================================================
+| > --- lx26-22-rc6-mm1.orig/kernel/pid.c	2007-07-13 13:07:01.000000000 -0700
+| > +++ lx26-22-rc6-mm1/kernel/pid.c	2007-07-13 18:13:38.000000000 -0700
+| > @@ -214,7 +214,7 @@ struct pid *alloc_pid(void)
 | >  	int nr = -1;
 | >  	struct pid_namespace *ns;
-| >  
-| > +	/* check this here to keep copy_process() cleaner */
-| > +	if (unlikely(copy_src == COPY_IDLE_PROCESS))
-| > +		return &init_struct_pid;
-| > +
-| >  	ns = task_active_pid_ns(current);
+| > 
+| > -	ns = current->nsproxy->pid_ns;
+| > +	ns = task_active_pid_ns(current);
 | >  	pid = kmem_cache_alloc(ns->pid_cachep, GFP_KERNEL);
 | >  	if (!pid)
-| 
-| Ugh. I am sorry! but imho this is so ugly :(
-
-Ok :-)
-
-| 
-| Could you please give more details why we need this change?
-
-Well, with multiple pid namespaces, we may need to allocate a new
-'struct pid_namespace' if the CLONE_NEWPID flag is specified. And
-as a part of initializing this pid_namespace, we need the 'task_struct'
-that will be the reaper of the new pid namespace.
-
-And this task_struct is allocated in copy_process(). So we could
-still alloc_pid() in do_fork(), as we are doing currently and set
-the reaper of the new pid_namespace later in copy_process(). But
-that seemed to complicate error handling and add checks again in
-copy_process() for the CLONE_NEWPID.
-
-| Even if we really need this, can't we do these checks in copy_process() ?
-
-We could and I did have a check in copy_process() in one of my earlier
-versions to Containers@ list.  We thought it cluttered copy_process() a
-bit. I can't seem to find that patch now, but will use Pavel Emelianov's
-more recent idea and even remove 'copy_src'
-
-Pavel pls Sign-off (or at least ack) this patch.
-
-| free_pid(&init_struct_pid) can only happen when fork fails, this is a slow
-| path, and copy_process() knows copy_src.
-
-Yep.
-
-| 
-| Oleg.
-
-Subject: [PATCH 5/5] Move alloc_pid call to copy_process
-
-From: Sukadev Bhattiprolu <sukadev@us.ibm.com>
-
-Move alloc_pid() into copy_process(). This will keep all pid and pid
-namespace code together and simplify error handling when we support
-multiple pid namespaces.
-
-Signed-off-by: Sukadev Bhattiprolu <sukadev@us.ibm.com>
-
-Cc: Pavel Emelianov <xemul@openvz.org>
-Cc: Eric W. Biederman <ebiederm@xmission.com>
-Cc: Cedric Le Goater <clg@fr.ibm.com>
-Cc: Dave Hansen <haveblue@us.ibm.com>
-Cc: Serge Hallyn <serue@us.ibm.com>
-Cc: Herbert Poetzel <herbert@13thfloor.at>
-Cc: Oleg Nesterov <oleg@tv-sign.ru>
----
- kernel/fork.c |   18 ++++++++++++------
- kernel/pid.c  |    4 ++++
- 2 files changed, 16 insertions(+), 6 deletions(-)
-
-Index: lx26-22-rc6-mm1a/kernel/fork.c
-===================================================================
---- lx26-22-rc6-mm1a.orig/kernel/fork.c	2007-07-16 12:55:13.000000000 -0700
-+++ lx26-22-rc6-mm1a/kernel/fork.c	2007-07-16 14:36:48.000000000 -0700
-@@ -1029,6 +1029,12 @@ static struct task_struct *copy_process(
- 	if (p->binfmt && !try_module_get(p->binfmt->module))
- 		goto bad_fork_cleanup_put_domain;
- 
-+	if (!pid) {
-+		pid = alloc_pid();
-+		if (!pid)
-+			goto bad_fork_put_binfmt_module;
-+	}
-+
- 	p->did_exec = 0;
- 	delayacct_tsk_init(p);	/* Must remain after dup_task_struct() */
- 	copy_flags(clone_flags, p);
-@@ -1316,6 +1322,8 @@ bad_fork_cleanup_container:
- #endif
- 	container_exit(p, container_callbacks_done);
- 	delayacct_tsk_free(p);
-+	free_pid(pid);
-+bad_fork_put_binfmt_module:
- 	if (p->binfmt)
- 		module_put(p->binfmt->module);
- bad_fork_cleanup_put_domain:
-@@ -1380,19 +1388,16 @@ long do_fork(unsigned long clone_flags,
- {
- 	struct task_struct *p;
- 	int trace = 0;
--	struct pid *pid = alloc_pid();
- 	long nr;
- 
--	if (!pid)
--		return -EAGAIN;
--	nr = pid->nr;
- 	if (unlikely(current->ptrace)) {
- 		trace = fork_traceflag (clone_flags);
- 		if (trace)
- 			clone_flags |= CLONE_PTRACE;
- 	}
- 
--	p = copy_process(clone_flags, stack_start, regs, stack_size, parent_tidptr, child_tidptr, pid);
-+	p = copy_process(clone_flags, stack_start, regs, stack_size,
-+			parent_tidptr, child_tidptr, NULL);
- 	/*
- 	 * Do this prior waking up the new thread - the thread pointer
- 	 * might get invalid after that point, if the thread exits quickly.
-@@ -1400,6 +1405,8 @@ long do_fork(unsigned long clone_flags,
- 	if (!IS_ERR(p)) {
- 		struct completion vfork;
- 
-+		nr = pid_nr(task_pid(p));
-+
- 		if (clone_flags & CLONE_VFORK) {
- 			p->vfork_done = &vfork;
- 			init_completion(&vfork);
-@@ -1433,7 +1440,6 @@ long do_fork(unsigned long clone_flags,
- 			}
- 		}
- 	} else {
--		free_pid(pid);
- 		nr = PTR_ERR(p);
- 	}
- 	return nr;
-Index: lx26-22-rc6-mm1a/kernel/pid.c
-===================================================================
---- lx26-22-rc6-mm1a.orig/kernel/pid.c	2007-07-16 13:10:48.000000000 -0700
-+++ lx26-22-rc6-mm1a/kernel/pid.c	2007-07-16 14:36:00.000000000 -0700
-@@ -206,6 +206,10 @@ fastcall void free_pid(struct pid *pid)
- 	/* We can be called with write_lock_irq(&tasklist_lock) held */
- 	unsigned long flags;
- 
-+	/* check this here to keep copy_process() cleaner */
-+	if (unlikely(pid == &init_struct_pid))
-+		return;
-+
- 	spin_lock_irqsave(&pidmap_lock, flags);
- 	hlist_del_rcu(&pid->pid_chain);
- 	spin_unlock_irqrestore(&pidmap_lock, flags);
+| >  		goto out;
+| > @@ -364,7 +364,7 @@ struct pid *find_ge_pid(int nr)
+| >  		pid = find_pid(nr);
+| >  		if (pid)
+| >  			break;
+| > -		nr = next_pidmap(current->nsproxy->pid_ns, nr);
+| > +		nr = next_pidmap(task_active_pid_ns(current), nr);
+| >  	} while (nr > 0);
+| > 
+| >  	return pid;
+| > Index: lx26-22-rc6-mm1/kernel/nsproxy.c
+| > ===================================================================
+| > --- lx26-22-rc6-mm1.orig/kernel/nsproxy.c	2007-07-13 13:05:38.000000000 -0700
+| > +++ lx26-22-rc6-mm1/kernel/nsproxy.c	2007-07-13 13:07:48.000000000 -0700
+| > @@ -86,7 +86,7 @@ static struct nsproxy *create_new_namesp
+| >  		goto out_ipc;
+| >  	}
+| > 
+| > -	new_nsp->pid_ns = copy_pid_ns(flags, tsk->nsproxy->pid_ns);
+| > +	new_nsp->pid_ns = copy_pid_ns(flags, task_active_pid_ns(tsk));
+| >  	if (IS_ERR(new_nsp->pid_ns)) {
+| >  		err = PTR_ERR(new_nsp->pid_ns);
+| >  		goto out_pid;
