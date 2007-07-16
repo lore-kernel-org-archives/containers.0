@@ -1,56 +1,44 @@
-From: Oleg Nesterov <oleg@tv-sign.ru>
-Subject: Re: [PATCH 5/5] Move alloc_pid call to copy_process
-Date: Sun, 15 Jul 2007 16:36:00 +0400
-Message-ID: <20070715123600.GA210@tv-sign.ru>
+From: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
+Subject: Re: [PATCH 1/6] user namespace : add the framework
+Date: Sun, 15 Jul 2007 18:31:32 -0700
+Message-ID: <20070715183132.e31a2064.akpm@linux-foundation.org>
+References: <20070604193957.GA19331@sergelap.austin.ibm.com>
+	<20070604194024.GA21703@sergelap.austin.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1759789AbXGOMf5@vger.kernel.org>
-Content-Disposition: inline
-Sender: linux-kernel-owner@vger.kernel.org
-To: Sukadev Bhattiprolu <sukadev@us.ibm.com>
-Cc: Andrew Morton <akpm@linux-foundation.org>, "Eric W. Biederman" <ebiederm@xmission.com>, Cedric Le Goater <clg@fr.ibm.com>, Dave Hansen <haveblue@us.ibm.com>, Serge Hallyn <serue@us.ibm.com>, Herbert Poetzel <herbert@13thfloor.at>, Pavel Emelianov <xemul@openvz.org>, Linux Containers <containers@lists.osdl.org>, linux-kernel@vger.kernel.org
+Content-Type: text/plain; charset=US-ASCII
+Content-Transfer-Encoding: 7bit
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <20070604194024.GA21703-6s5zFf/epYLPQpwDFJZrxKsjOiXwFzmk@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, David Howells <dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, xemul-3ImXcnM4P+0@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Sukadev Bhattiprolu wrote:
->
-> --- lx26-22-rc6-mm1.orig/kernel/pid.c	2007-07-13 18:23:55.000000000 -0700
-> +++ lx26-22-rc6-mm1/kernel/pid.c	2007-07-13 18:23:55.000000000 -0700
-> @@ -206,6 +206,10 @@ fastcall void free_pid(struct pid *pid)
->  	/* We can be called with write_lock_irq(&tasklist_lock) held */
->  	unsigned long flags;
->  
-> +	/* check this here to keep copy_process() cleaner */
-> +	if (unlikely(pid == &init_struct_pid))
-> +		return;
-> +
->  	spin_lock_irqsave(&pidmap_lock, flags);
->  	hlist_del_rcu(&pid->pid_chain);
->  	spin_unlock_irqrestore(&pidmap_lock, flags);
-> @@ -214,13 +218,17 @@ fastcall void free_pid(struct pid *pid)
->  	call_rcu(&pid->rcu, delayed_put_pid);
->  }
->  
-> -struct pid *alloc_pid(void)
-> +struct pid *alloc_pid(enum copy_process_type copy_src)
->  {
->  	struct pid *pid;
->  	enum pid_type type;
->  	int nr = -1;
->  	struct pid_namespace *ns;
->  
-> +	/* check this here to keep copy_process() cleaner */
-> +	if (unlikely(copy_src == COPY_IDLE_PROCESS))
-> +		return &init_struct_pid;
-> +
->  	ns = task_active_pid_ns(current);
->  	pid = kmem_cache_alloc(ns->pid_cachep, GFP_KERNEL);
->  	if (!pid)
+On Mon, 4 Jun 2007 14:40:24 -0500 "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org> wrote:
 
-Ugh. I am sorry! but imho this is so ugly :(
+> Add the user namespace struct and framework
+> 
+> Basically, it will allow a process to unshare its user_struct table, resetting
+> at the same time its own user_struct and all the associated accounting.
+> 
+> A new root user (uid == 0) is added to the user namespace upon creation.  Such
+> root users have full privileges and it seems that theses privileges should be
+> controlled through some means (process capabilities ?)
 
-Could you please give more details why we need this change? Even if we really
-need this, can't we do these checks in copy_process() ? free_pid(&init_struct_pid)
-can only happen when fork fails, this is a slow path, and copy_process() knows
-copy_src.
+The whole magical-uid-0-user thing in this patch seem just wrong to
+me.  
 
-Oleg.
+I'll merge it anyway, mainly because I want to merge _something_ (why oh
+why do the git-tree guys leave everything to the last minute?) but it strikes
+me that there's something fundamentally wrong whenever the kernel starts
+"knowing" about the significance of UIDs in this fashion.
+
+It worries me.
