@@ -1,58 +1,98 @@
-From: "=?ISO-2022-JP?B?UGF1bCAoGyRCSnVOXBsoQikgTWVuYWdl?="
-	<menage@google.com>
-Subject: Re: Containers: css_put() dilemma
-Date: Mon, 16 Jul 2007 12:03:18 -0700
-Message-ID: <6599ad830707161203o7f148c75p52e77d4be3ace487@mail.gmail.com>
-References: <469BBE00.8000709@linux.vnet.ibm.com>
+From: sukadev@us.ibm.com
+Subject: Re: [PATCH 3/5] Use task_pid() to find leader's pid
+Date: Mon, 16 Jul 2007 12:59:52 -0700
+Message-ID: <20070716195952.GG25053@us.ibm.com>
+References: <20070715121750.GA173@tv-sign.ru>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
-Content-Transfer-Encoding: 7bit
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1760660AbXGPTDo@vger.kernel.org>
-In-Reply-To: <469BBE00.8000709@linux.vnet.ibm.com>
+Content-Type: text/plain; charset=us-ascii
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1762594AbXGPUAQ@vger.kernel.org>
 Content-Disposition: inline
+In-Reply-To: <20070715121750.GA173@tv-sign.ru>
 Sender: linux-kernel-owner@vger.kernel.org
-To: balbir@linux.vnet.ibm.com
-Cc: Andrew Morton <akpm@linux-foundation.org>, Srivatsa Vaddagiri <vatsa@in.ibm.com>, Pavel Emelianov <xemul@sw.ru>, Vaidyanathan Srinivasan <svaidy@linux.vnet.ibm.com>, "Serge E. Hallyn" <serue@us.ibm.com>, linux kernel mailing list <linux-kernel@vger.kernel.org>, Linux Containers <containers@lists.osdl.org>, Paul Jackson <pj@sgi.com>
+To: Oleg Nesterov <oleg@tv-sign.ru>, Andrew Morton <akpm@osdl.org>
+Cc: "Eric W. Biederman" <ebiederm@xmission.com>, Cedric Le Goater <clg@fr.ibm.com>, Dave Hansen <haveblue@us.ibm.com>, Serge Hallyn <serue@us.ibm.com>, Herbert Poetzel <herbert@13thfloor.at>, Pavel Emelianov <xemul@openvz.org>, Linux Containers <containers@lists.osdl.org>, linux-kernel@vger.kernel.org
 List-Id: containers.vger.kernel.org
 
-On 7/16/07, Balbir Singh <balbir@linux.vnet.ibm.com> wrote:
-> Hi, Paul,
->
-> I've run into a strange problem with css_put(). After the changes for notify_on_release(), the css_put() routine can now block and it blocks on
-> the container_mutex. This implies that css_put() cannot be called if
->
-> 1. We cannot block
-> 2. We already hold the container_mutex
->
-> The problem I have is that of preventing the destruction of my container
-> (when the user does rmdir). If the user migrates away all tasks and does
-> an rmdir, the only way to prevent the container from going away is through
-> css_get() references. In my case, some pages have been allocated from the
-> container and hence I do not want it to go away, until all the pages
-> charged to it are freed. When I use css_get/put() to prevent destruction
-> I am blocked by the limitations of css_put() listed above.
->
-> Do you have any recommendations for a cleaner solution? I suspect we'll
-> need can_destroy() callbacks (similar to can_attach()).
+Oleg Nesterov [oleg@tv-sign.ru] wrote:
+| Sukadev Bhattiprolu wrote:
+| >
+| > Use task_pid() to get leader's pid since find_pid() cannot be used
+| > after detach_pid(). See comments in the code below for more details.
+| >
+| > ...
+| >
+| > +		 * Note: With multiple pid namespaces, active pid namespace of
+| > +		 * 	 a process is stored in its struct pid. The detach_pid
+| > +		 * 	 below frees the struct pid, so we will have no notion
+| > +		 * 	 of an active pid namespace until we complete the
+| > +		 * 	 subsequent attach_pid(). Which means - calls like
+| > +		 * 	 find_pid()/pid_to_nr() return NULL and cannot be used
+| > +		 * 	 between the detach_pid() and attach_pid() calls.
+| 
+| I think both the changelog and the comment are confusing,
+| 
+| >  		detach_pid(tsk, PIDTYPE_PID);
+| >  		tsk->pid = leader->pid;
+| > -		attach_pid(tsk, PIDTYPE_PID,  find_pid(tsk->pid));
+| > +		attach_pid(tsk, PIDTYPE_PID,  task_pid(leader));
+| 
+| because the change itself looks like an obvious performance fix, even
+| we don't use multiple pid namespaces. I don't think it is good idea to
+| add a fat comment which doesn't match the current reality, and find_pid()
+| should be avoided anyway.
 
-I think moving the release_list synchronization inside a separate
-spinlock, and thus not requiring container_mutex to be held for
-check_for_release(), is the simplest solution. I'll do that. I'm
-hoping to get a new set of patches to Andrew today or tomorrow.
+Its a performance fix but also a correctness issue with multiple pid
+namespaces. Here is the modified patch with the simplified changelog and
+comment removed.
 
-Adding a can_destroy() callback is possible, but since I envisage that
-most subsystems that would want to implement it would basically be
-doing reference counting anyway, it seems worth having a generic
-reference counting mechanism in the framework. In particular, since
-once the container does become releasable due to all the
-subsystem-specific refcounts being released, we want to be able to
-invoke the release agent, we'll end up with the same synchronization
-problems that we have now if we just pushed everything into a
-can_destroy() method. (Unless the framework polled all can_destroy()
-methods for potentially-removable containers, which seems a bit
-nasty).
+| 
+| Stupid question: why do we need to put the pid namespace into the struct
+| pid? Isn't it better if the user of the struct pid should know its ns?
+| For example, if /proc does put_pid(), that pid should be from the active
+| namespace.
 
-We can add can_destroy() if we encounter a situation that can't be
-handled by generic reference counting.
+Not sure I fully understand this. A process, and by extension its 'struct
+pid' is visible in multiple namespaces and we maintain this list of
+namespaces in each 'struct pid'.
 
-Paul
+Are you suggesting having a pid_namespace with a list of all 'struct pids'
+that are visible in it ?
+
+| 
+| Sukadev, could you cc me if you do that kind of changes?
+
+Sure - I will.
+---
+
+
+Subject: [PATCH 3/5] Use task_pid() to find leader's pid
+
+From: Sukadev Bhattiprolu <sukadev@us.ibm.com>
+
+Use task_pid() to get leader's 'struct pid' and avoid the find_pid().
+
+Signed-off-by: Sukadev Bhattiprolu <sukadev@us.ibm.com>
+Acked-by: Pavel Emelianov <xemul@openvz.org>
+
+Cc: Eric W. Biederman <ebiederm@xmission.com>
+Cc: Cedric Le Goater <clg@fr.ibm.com>
+Cc: Dave Hansen <haveblue@us.ibm.com>
+Cc: Serge Hallyn <serue@us.ibm.com>
+Cc: Herbert Poetzel <herbert@13thfloor.at>
+---
+ fs/exec.c |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+Index: lx26-22-rc6-mm1a/fs/exec.c
+===================================================================
+--- lx26-22-rc6-mm1a.orig/fs/exec.c	2007-07-13 18:23:55.000000000 -0700
++++ lx26-22-rc6-mm1a/fs/exec.c	2007-07-16 12:56:22.000000000 -0700
+@@ -908,7 +908,7 @@ static int de_thread(struct task_struct 
+ 		 */
+ 		detach_pid(tsk, PIDTYPE_PID);
+ 		tsk->pid = leader->pid;
+-		attach_pid(tsk, PIDTYPE_PID,  find_pid(tsk->pid));
++		attach_pid(tsk, PIDTYPE_PID,  task_pid(leader));
+ 		transfer_pid(leader, tsk, PIDTYPE_PGID);
+ 		transfer_pid(leader, tsk, PIDTYPE_SID);
+ 		list_replace_rcu(&leader->tasks, &tsk->tasks);
