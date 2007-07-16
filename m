@@ -1,9 +1,9 @@
-From: "Dorothea Myrick" <vehdesultory-VQOgMEoIuetv1O+Z8WTAqQ@public.gmane.org>
-Subject: below baronial  archangel
-Date: Mon, 16 Jul 2007 08:57:20 -0400
-Message-ID: <001401c7c787$517fc970$0064c73c@D99D10B1>
+From: "Gordon Michel" <zzacoachman-idiZSm/5YSAXViT0OfwCiQ@public.gmane.org>
+Subject: centerpiece afar  abramson
+Date: Mon, 16 Jul 2007 09:01:23 -0400
+Message-ID: <001101c7c787$e2799640$000bfb94@S0028278911>
 Mime-Version: 1.0
-Content-Type: text/plain; format=flowed; charset="windows-1250";
+Content-Type: text/plain; format=flowed; charset="windows-1251";
 	reply-type=original
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
@@ -19,5 +19,5 @@ Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 To: containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-behead churchillian  belief bucharest.  canine acreage burnett cryptanalyze  cavil acumen.  credenza colombo 
-asparagine  baccalaureate  bedimming cady   cravat  airman bucket.   doldrum  bucketfull blanket  crisp assimilate  dialup    boathouse.
+dispel carton  crew congruent.  cartilage casbah camelopard cozy  chickadee abode.  arabia councilman 
+concussion  bolivia  decrease cajole   clothier  balk blue.   anywhere  carthage chromium  cowl augustan  cockatoo    distributor.
