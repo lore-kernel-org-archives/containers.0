@@ -1,39 +1,66 @@
-From: Kirill Korotaev <dev-3ImXcnM4P+0@public.gmane.org>
-Subject: Re: [Devel] containers development plans
-Date: Tue, 17 Jul 2007 17:51:37 +0400
-Message-ID: <469CC969.9080103@sw.ru>
-References: <20070702165504.GA18075@vino.hallyn.com>	<46984121.8070301@openvz.org>	<1184627311.10091.252.camel@galaxy.corp.google.com>
-	<20070717101712.GB6101@vino.hallyn.com>
+From: "=?ISO-2022-JP?B?UGF1bCAoGyRCSnVOXBsoQikgTWVuYWdl?="
+	<menage@google.com>
+Subject: Re: Containers: css_put() dilemma
+Date: Tue, 17 Jul 2007 08:49:51 -0700
+Message-ID: <6599ad830707170849v11fe8cecs6d172cd38d247e09@mail.gmail.com>
+References: <469BBE00.8000709@linux.vnet.ibm.com>
+	 <6599ad830707161203o7f148c75p52e77d4be3ace487@mail.gmail.com>
+	 <469C2792.6050009@linux.vnet.ibm.com>
+	 <6599ad830707161935n69776f1t98292fc9990f4766@mail.gmail.com>
+	 <20070717070031.GA22410@linux.vnet.ibm.com>
+	 <6599ad830707170018p180cb7dfr53e609fd0b186e30@mail.gmail.com>
+	 <469C99D1.7090807@linux.vnet.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20070717101712.GB6101-4+H9nbzk0uAIagZqoN9o3w@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
-Cc: ckrm-tech-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org, containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, pj-sJ/iWh9BUns@public.gmane.org, Rohit Seth <rohitseth-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, cpw-sJ/iWh9BUns@public.gmane.org
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S935378AbXGQPue@vger.kernel.org>
+In-Reply-To: <469C99D1.7090807@linux.vnet.ibm.com>
+Content-Disposition: inline
+Sender: linux-kernel-owner@vger.kernel.org
+To: balbir@linux.vnet.ibm.com
+Cc: dhaval@linux.vnet.ibm.com, Pavel Emelianov <xemul@sw.ru>, linux kernel mailing list <linux-kernel@vger.kernel.org>, Paul Jackson <pj@sgi.com>, Linux Containers <containers@lists.osdl.org>, Andrew Morton <akpm@linux-foundation.org>
 List-Id: containers.vger.kernel.org
 
-> Unfortunately I'm unlikely to be there (late notice - I really need to
-> keep a better list of upcoming conferences and proposal deadlines!).
-> But it still sounds like a good idea.
+On 7/17/07, Balbir Singh <balbir@linux.vnet.ibm.com> wrote:
+> Paul (??) Menage wrote:
+> > On 7/17/07, Balbir Singh <balbir@linux.vnet.ibm.com> wrote:
+> >> >
+> >> > >                mutex_lock(&container_mutex);
+> >> > >                set_bit(CONT_RELEASABLE, &cont->flags);
+> >> > >-               if (atomic_dec_and_test(&css->refcnt)) {
+> >> > >-                       check_for_release(cont);
+> >> > >-               }
+> >> > >+               check_for_release(cont);
+> >> > >                mutex_unlock(&container_mutex);
+> >> > >
+> >
+> > I think that this isn't safe as it stands, without a synchronize_rcu()
+> > in container_diput() prior to the kfree(). Also, it will break if
+> > anyone tries to use a release agent on a hierarchy that has your
+> > memory controller bound to it.
+> >
+>
+>
+> Isn't the code functionally the same as before? We still do atomic_test_and_dec()
+> as before. We still set_bit() CONT_RELEASABLE, we take the container_mutex
+> and check_for_release(). I am not sure I understand what changed?
 
-It's a pity :/ I though you are the primary candidate for presenting containers at KLS.
+Because as soon as you do the atomic_dec_and_test() on css->refcnt and
+the refcnt hits zero, then theoretically someone other thread (that
+already holds container_mutex) could check that the refcount is zero
+and free the container structure.
 
-> Depending on the format of the containers mini-summit, would it make
-> sense to set up a phone number so others can dial in?  Or would it be
-> better to have a smaller group anyway?
+Adding a synchronize_rcu in container_diput() guarantees that the
+container structure won't be freed while someone may still be
+accessing it.
 
-I think we can do both :) after having a mini-summit to discuss some pre-summary
-over the phone.
+>
+> Could you please elaborate as to why using a release agent is broken
+> when the memory controller is attached to it?
 
-Regards,
-Kirill
+Because then it will try to take container_mutex in css_put() if it
+drops the last reference to a container, which is the thing that you
+said you had to avoid since you called css_put() in contexts that
+couldn't sleep.
+
+Paul
