@@ -1,85 +1,37 @@
-From: "=?ISO-2022-JP?B?UGF1bCAoGyRCSnVOXBsoQikgTWVuYWdl?="
-	<menage@google.com>
-Subject: Re: Containers: css_put() dilemma
-Date: Tue, 17 Jul 2007 09:15:58 -0700
-Message-ID: <6599ad830707170915p46794c61g3baba1ab0af5db7@mail.gmail.com>
-References: <469BBE00.8000709@linux.vnet.ibm.com>
-	 <6599ad830707161203o7f148c75p52e77d4be3ace487@mail.gmail.com>
-	 <469C2792.6050009@linux.vnet.ibm.com>
-	 <6599ad830707161935n69776f1t98292fc9990f4766@mail.gmail.com>
-	 <20070717070031.GA22410@linux.vnet.ibm.com>
-	 <6599ad830707170018p180cb7dfr53e609fd0b186e30@mail.gmail.com>
-	 <469C99D1.7090807@linux.vnet.ibm.com>
-	 <6599ad830707170849v11fe8cecs6d172cd38d247e09@mail.gmail.com>
-	 <1184688131.6454.109.camel@localhost>
+From: "=?ISO-2022-JP?B?UGF1bCAoGyRCSnVOXBsoQikgTWVuYWdl?=" <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [ckrm-tech] [Devel] containers development plans
+Date: Tue, 17 Jul 2007 09:19:22 -0700
+Message-ID: <6599ad830707170919s33974d76o5bb553e680de9010@mail.gmail.com>
+References: <20070702165504.GA18075@vino.hallyn.com>
+	<46984121.8070301@openvz.org>
+	<1184627311.10091.252.camel@galaxy.corp.google.com>
+	<20070717101712.GB6101@vino.hallyn.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-2022-JP; format=flowed
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 Content-Transfer-Encoding: 7bit
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S934649AbXGQQQo@vger.kernel.org>
-In-Reply-To: <1184688131.6454.109.camel@localhost>
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <20070717101712.GB6101-4+H9nbzk0uAIagZqoN9o3w@public.gmane.org>
 Content-Disposition: inline
-Sender: linux-kernel-owner@vger.kernel.org
-To: Dave Hansen <haveblue@us.ibm.com>
-Cc: balbir@linux.vnet.ibm.com, dhaval@linux.vnet.ibm.com, linux kernel mailing list <linux-kernel@vger.kernel.org>, Pavel Emelianov <xemul@sw.ru>, Paul Jackson <pj@sgi.com>, Linux Containers <containers@lists.osdl.org>, Andrew Morton <akpm@linux-foundation.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
+Cc: Kir Kolyshkin <kir-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>, ckrm-tech-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org, containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, pj-sJ/iWh9BUns@public.gmane.org, Rohit Seth <rohitseth-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, cpw-sJ/iWh9BUns@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On 7/17/07, Dave Hansen <haveblue@us.ibm.com> wrote:
-> On Tue, 2007-07-17 at 08:49 -0700, Paul (宝瑠) Menage wrote:
-> > Because as soon as you do the atomic_dec_and_test() on css->refcnt and
-> > the refcnt hits zero, then theoretically someone other thread (that
-> > already holds container_mutex) could check that the refcount is zero
-> > and free the container structure.
+On 7/17/07, Serge E. Hallyn <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org> wrote:
 >
-> Then that other task had a reference and itself should have bumped the
-> count, and the other user would never have seen it hit zero.
-
-Nope. The container could have been empty (of tasks) and hence had a zero count.
-
-The liveness model used by containers is that when the refcount hits
-zero, the container isn't immediately destroyed (since it can contain
-useful historical usage data, etc) but simply becomes eligible for
-destruction by userspace via an rmdir().
-
+> Depending on the format of the containers mini-summit, would it make
+> sense to set up a phone number so others can dial in?  Or would it be
+> better to have a smaller group anyway?
 >
-> Even if there are still pages attached to the container, why not just
-> have those take a reference, and don't bother actually freeing the
-> container until the last true reference is dropped?
 
-Yes, we could potentially just use the main count variable rather than
-having separate per-subsystem extra refcounts. The main reasons to do
-it this way are:
-
-- the root subsystem state for a subsystem can shift between different
-"struct container" objects if it was previously inactive and gets
-mounted as part of a hierarchy (or similarly, gets unmounted and goes
-inactive). Possibly we could get around this by simply saying not
-doing refcounting on the subsys states attached to root containers
-since they can never be freed anyway.
-
-- At some point I'd like to be able to support shifting subsystems
-between active hierarchies, at least in limited cases such as where
-the hierarchies are isomorphic, or binding/unbinding subsystems
-to/from active hierarchies. At that point we definitely need to be
-able to split out the different subsystem state refcounts from one
-another in the same hierarchy.
-
-- we'd still have the issue that Balbir wants to be able to drop a
-reference in a non-sleeping context, and we want to avoid doing
-excessive synchronization in the normal case when the css_put()
-doesn't put the reference count to zero.
-
->
-> Does it matter if the destruction callbacks don't happen until well
-> after an attempt to destroy the container is made?
-
-Well that's sort of the point of putting a synchronize_rcu() in
-container_diput() - it ensures that the actual destruction of the
-object doesn't occur until sufficiently after the destruction attempt
-is initiated that no one is still using the reference.
-
-The alternative would be something that polls to spot whether
-refcounts have reached zero and if so runs the userspace helper. That
-doesn't seem particularly palatable when you have large numbers of
-containers, if we can avoid it easily.
+I'd be interested in calling in if I can't make it myself.
 
 Paul
