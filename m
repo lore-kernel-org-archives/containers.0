@@ -1,57 +1,66 @@
-From: Balbir Singh <balbir@linux.vnet.ibm.com>
-Subject: Re: Containers: css_put() dilemma
-Date: Tue, 17 Jul 2007 15:58:33 +0530
-Message-ID: <469C99D1.7090807@linux.vnet.ibm.com>
-References: <469BBE00.8000709@linux.vnet.ibm.com> <6599ad830707161203o7f148c75p52e77d4be3ace487@mail.gmail.com> <469C2792.6050009@linux.vnet.ibm.com> <6599ad830707161935n69776f1t98292fc9990f4766@mail.gmail.com> <20070717070031.GA22410@linux.vnet.ibm.com> <6599ad830707170018p180cb7dfr53e609fd0b186e30@mail.gmail.com>
-Reply-To: balbir@linux.vnet.ibm.com
+From: Oleg Nesterov <oleg@tv-sign.ru>
+Subject: Re: [PATCH 5/5] Move alloc_pid call to copy_process
+Date: Tue, 17 Jul 2007 17:34:30 +0400
+Message-ID: <20070717133430.GA214@tv-sign.ru>
+References: <20070715123600.GA210@tv-sign.ru> <20070716225411.GH25053@us.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=windows-1252
-Content-Transfer-Encoding: 8bit
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1762054AbXGQK3U@vger.kernel.org>
-In-Reply-To: <6599ad830707170018p180cb7dfr53e609fd0b186e30@mail.gmail.com>
+Content-Type: text/plain; charset=us-ascii
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1756664AbXGQNeD@vger.kernel.org>
+Content-Disposition: inline
+In-Reply-To: <20070716225411.GH25053@us.ibm.com>
 Sender: linux-kernel-owner@vger.kernel.org
-To: =?windows-1252?Q?=22Paul_=28=3F=3F=29_Menage=22?= <menage@google.com>
-Cc: dhaval@linux.vnet.ibm.com, Pavel Emelianov <xemul@sw.ru>, linux kernel mailing list <linux-kernel@vger.kernel.org>, Paul Jackson <pj@sgi.com>, Linux Containers <containers@lists.osdl.org>, Andrew Morton <akpm@linux-foundation.org>
+To: sukadev@us.ibm.com
+Cc: Andrew Morton <akpm@osdl.org>, "Eric W. Biederman" <ebiederm@xmission.com>, Cedric Le Goater <clg@fr.ibm.com>, Dave Hansen <haveblue@us.ibm.com>, Serge Hallyn <serue@us.ibm.com>, Herbert Poetzel <herbert@13thfloor.at>, Pavel Emelianov <xemul@openvz.org>, Linux Containers <containers@lists.osdl.org>, linux-kernel@vger.kernel.org
 List-Id: containers.vger.kernel.org
 
-Paul (??) Menage wrote:
-> On 7/17/07, Balbir Singh <balbir@linux.vnet.ibm.com> wrote:
->> >
->> > >                mutex_lock(&container_mutex);
->> > >                set_bit(CONT_RELEASABLE, &cont->flags);
->> > >-               if (atomic_dec_and_test(&css->refcnt)) {
->> > >-                       check_for_release(cont);
->> > >-               }
->> > >+               check_for_release(cont);
->> > >                mutex_unlock(&container_mutex);
->> > >
+On 07/16, sukadev@us.ibm.com wrote:
+>
+> Oleg Nesterov [oleg@tv-sign.ru] wrote:
+> | 
+> | Could you please give more details why we need this change?
 > 
-> I think that this isn't safe as it stands, without a synchronize_rcu()
-> in container_diput() prior to the kfree(). Also, it will break if
-> anyone tries to use a release agent on a hierarchy that has your
-> memory controller bound to it.
+> Well, with multiple pid namespaces, we may need to allocate a new
+> 'struct pid_namespace' if the CLONE_NEWPID flag is specified. And
+> as a part of initializing this pid_namespace, we need the 'task_struct'
+> that will be the reaper of the new pid namespace.
 > 
+> And this task_struct is allocated in copy_process(). So we could
+> still alloc_pid() in do_fork(), as we are doing currently and set
+> the reaper of the new pid_namespace later in copy_process(). But
+> that seemed to complicate error handling and add checks again in
+> copy_process() for the CLONE_NEWPID.
 
+OK, thanks.
 
-Isn't the code functionally the same as before? We still do atomic_test_and_dec()
-as before. We still set_bit() CONT_RELEASABLE, we take the container_mutex
-and check_for_release(). I am not sure I understand what changed?
+> 
+> | Even if we really need this, can't we do these checks in copy_process() ?
+> 
+> We could and I did have a check in copy_process() in one of my earlier
+> versions to Containers@ list.  We thought it cluttered copy_process() a
+> bit.
 
-Could you please elaborate as to why using a release agent is broken
-when the memory controller is attached to it? I am not quite sure why we
-need the synchronize_rcu() either in container_diput().
+Yes, but having the "pid == &init_struct_pid" in free_pid() is imho worse,
 
+>  	container_exit(p, container_callbacks_done);
+>  	delayacct_tsk_free(p);
+> +	free_pid(pid);
+> +bad_fork_put_binfmt_module:
+> [...snip...]
+> @@ -206,6 +206,10 @@ fastcall void free_pid(struct pid *pid)
+>  	/* We can be called with write_lock_irq(&tasklist_lock) held */
+>  	unsigned long flags;
+>  
+> +	/* check this here to keep copy_process() cleaner */
+> +	if (unlikely(pid == &init_struct_pid))
+> +		return;
+> +
 
+Wouldn't it better if copy_process()'s error path does
 
-> Paul
-> _______________________________________________
-> Containers mailing list
-> Containers@lists.linux-foundation.org
-> https://lists.linux-foundation.org/mailman/listinfo/containers
+	if (pid != &init_struct_pid)
+		free_pid(pid);
 
+instead? OK, "cleaner" is a matter of taste, but from the perfomance POV
+this would be better, even if not noticable.
 
--- 
-	Warm Regards,
-	Balbir Singh
-	Linux Technology Center
-	IBM, ISTL
+Oleg.
