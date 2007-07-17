@@ -1,41 +1,38 @@
-From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [ckrm-tech] [Devel] containers development plans
-Date: Tue, 17 Jul 2007 13:11:49 -0500
-Message-ID: <20070717181149.GC9383@sergelap.austin.ibm.com>
-References: <20070702165504.GA18075@vino.hallyn.com>
-	<46984121.8070301@openvz.org>
-	<1184627311.10091.252.camel@galaxy.corp.google.com>
-	<20070717101712.GB6101@vino.hallyn.com>
-	<6599ad830707170919s33974d76o5bb553e680de9010@mail.gmail.com>
+From: Balbir Singh <balbir@linux.vnet.ibm.com>
+Subject: Re: Containers: css_put() dilemma
+Date: Tue, 17 Jul 2007 23:41:55 +0530
+Message-ID: <469D066B.6050606@linux.vnet.ibm.com>
+References: <469BBE00.8000709@linux.vnet.ibm.com> <6599ad830707161203o7f148c75p52e77d4be3ace487@mail.gmail.com> <469C2792.6050009@linux.vnet.ibm.com> <6599ad830707161935n69776f1t98292fc9990f4766@mail.gmail.com> <20070717070031.GA22410@linux.vnet.ibm.com> <6599ad830707170018p180cb7dfr53e609fd0b186e30@mail.gmail.com> <469C99D1.7090807@linux.vnet.ibm.com> <6599ad830707170849v11fe8cecs6d172cd38d247e09@mail.gmail.com> <469CFF2B.1080702@linux.vnet.ibm.com> <6599ad830707171044u38c0a940r12d2bc80b475ead4@mail.gmail.com>
+Reply-To: balbir@linux.vnet.ibm.com
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <6599ad830707170919s33974d76o5bb553e680de9010-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Paul (?$BJuN) Menage" <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
-Cc: Kir Kolyshkin <kir-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>, ckrm-tech-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org, Rohit Seth <rohitseth-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, pj-sJ/iWh9BUns@public.gmane.org, containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, cpw-sJ/iWh9BUns@public.gmane.org, "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
+Content-Type: text/plain; charset=windows-1252
+Content-Transfer-Encoding: 8bit
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S935693AbXGQSM2@vger.kernel.org>
+In-Reply-To: <6599ad830707171044u38c0a940r12d2bc80b475ead4@mail.gmail.com>
+Sender: linux-kernel-owner@vger.kernel.org
+To: =?windows-1252?Q?=22Paul_=28=3F=3F=29_Menage=22?= <menage@google.com>
+Cc: dhaval@linux.vnet.ibm.com, Pavel Emelianov <xemul@sw.ru>, linux kernel mailing list <linux-kernel@vger.kernel.org>, Paul Jackson <pj@sgi.com>, Linux Containers <containers@lists.osdl.org>, Andrew Morton <akpm@linux-foundation.org>
 List-Id: containers.vger.kernel.org
 
-Quoting Paul (?$BJuN\) Menage (menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org):
-> On 7/17/07, Serge E. Hallyn <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org> wrote:
-> >
-> >Depending on the format of the containers mini-summit, would it make
-> >sense to set up a phone number so others can dial in?  Or would it be
-> >better to have a smaller group anyway?
-> >
+Paul (??) Menage wrote:
+> On 7/17/07, Balbir Singh <balbir@linux.vnet.ibm.com> wrote:
+>>
+>> That sounds correct. I wonder now if the solution should be some form
+>> of delegation for deletion of unreferenced containers (HINT: work queue
+>> or kernel threads).
 > 
-> I'd be interested in calling in if I can't make it myself.
+> What a great idea. In fact, that's exactly what the release agent
+> patch already does.
 
-Great - if someone brings an IP phone with which they can dial toll free
-US numbers, I have a conference # we can use.
+:-) I should have seen that. I am a little lost thinking that
+container_rmdir() and the release agent check_for_release() work
+without too much knowledge of each other. BTW, what are the semantics
+of css_put() is it expected to free the container/run the release agent
+when the reference count of the container_subsys_state drops to zero?
+ 
 
--serge
+-- 
+	Warm Regards,
+	Balbir Singh
+	Linux Technology Center
+	IBM, ISTL
