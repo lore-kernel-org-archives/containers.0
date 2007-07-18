@@ -1,41 +1,78 @@
-From: "=?ISO-2022-JP?B?UGF1bCAoGyRCSnVOXBsoQikgTWVuYWdl?="
-	<menage@google.com>
-Subject: Re: Containers: css_put() dilemma
-Date: Tue, 17 Jul 2007 23:07:09 -0700
-Message-ID: <6599ad830707172307t7a9f9555n3ebe8c20c8b854fa@mail.gmail.com>
-References: <469BBE00.8000709@linux.vnet.ibm.com>
-	 <20070717070031.GA22410@linux.vnet.ibm.com>
-	 <6599ad830707170018p180cb7dfr53e609fd0b186e30@mail.gmail.com>
-	 <469C99D1.7090807@linux.vnet.ibm.com>
-	 <6599ad830707170849v11fe8cecs6d172cd38d247e09@mail.gmail.com>
-	 <469CFF2B.1080702@linux.vnet.ibm.com>
-	 <6599ad830707171044u38c0a940r12d2bc80b475ead4@mail.gmail.com>
-	 <469D066B.6050606@linux.vnet.ibm.com>
-	 <6599ad830707171126o7c431277p84f532d0122a8a98@mail.gmail.com>
-	 <469D9728.2080701@linux.vnet.ibm.com>
+From: "Jesus Cardenas" <wtemple-SkD7TNRuQzAAvxtiuMwx3w@public.gmane.org>
+Subject: Increased sexual desire
+Date: Wed, 18 Jul 2007 06:33:31 -0900
+Message-ID: <01c7c905$8f3e4230$02d45ad2@wtemple>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
-Content-Transfer-Encoding: 7bit
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1761262AbXGRGHe@vger.kernel.org>
-In-Reply-To: <469D9728.2080701@linux.vnet.ibm.com>
-Content-Disposition: inline
-Sender: linux-kernel-owner@vger.kernel.org
-To: balbir@linux.vnet.ibm.com
-Cc: dhaval@linux.vnet.ibm.com, linux kernel mailing list <linux-kernel@vger.kernel.org>, Pavel Emelianov <xemul@sw.ru>, Paul Jackson <pj@sgi.com>, Linux Containers <containers@lists.osdl.org>, Andrew Morton <akpm@linux-foundation.org>
+Content-Type: multipart/mixed; boundary="===============5075700968054349743=="
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Mime-version: 1.0
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On 7/17/07, Balbir Singh <balbir@linux.vnet.ibm.com> wrote:
->
-> Ok.. so my problem still remains, how do I get a non-blocking atomic
-> reference increment/decrement routine, that would prevent my
-> container from being deleted?
+This is a multi-part message in MIME format.
 
-css_put() in my new patchset will be non-blocking.
+--===============5075700968054349743==
+Content-Type: multipart/alternative;
+	boundary="----=_NextPart_000_0007_01C7C950.FF25EA30"
 
->
-> I don't find cpusets using css_put().
+This is a multi-part message in MIME format.
 
-Cpusets never needs to keep a non-process reference on a cpuset
-object, so the framework handles everything.
+------=_NextPart_000_0007_01C7C950.FF25EA30
+Content-Type: text/plain;
+	charset="windows-1250"
+Content-Transfer-Encoding: quoted-printable
 
-Paul
+The herbal formula is designed to give you fast, effective results includin=
+g, above all, a greater volume of ejaculate. A larger load of cum means mor=
+e intense orgasms and also the probability of becoming multi-orgasmic. As e=
+videnced by our thousands of customers, all of these are possible with Wond=
+ercum.http://kalianna.comAchieve the feeling of complete ecstasy while havi=
+ng ball blowing orgasms. This is an experience like no other! 
+------=_NextPart_000_0007_01C7C950.FF25EA30
+Content-Type: text/html;
+	charset="windows-1250"
+Content-Transfer-Encoding: quoted-printable
+
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<HTML><HEAD>
+<META http-equiv=3DContent-Type content=3D"text/html; charset=3Dwindows-1250">
+<META content=3D"MSHTML 6.00.2800.1506" name=3DGENERATOR>
+<STYLE></STYLE>
+</HEAD>
+<BODY>
+<DIV><FONT face=3DArial size=3D2>The herbal formula is designed to give you=
+ fast, effective results including, above all, a greater volume of ejaculat=
+e. A larger load of cum means more intense orgasms and also the probability=
+ of becoming multi-orgasmic. As evidenced by our thousands of customers, al=
+l of these are possible with Wondercum.</FONT></DIV>
+<DIV><FONT face=3DArial size=3D2><A 
+href=3D"http://kalianna.com">http://kalianna.com</A></FONT></DIV>
+<DIV><FONT face=3DArial size=3D2>Achieve the feeling of complete ecstasy wh=
+ile having ball blowing orgasms. This is an experience like no other!</FONT=
+></DIV>
+<DIV><FONT face=3DArial size=3D2></FONT>&nbsp;</DIV>
+</BODY></HTML>
+
+------=_NextPart_000_0007_01C7C950.FF25EA30--
+
+
+--===============5075700968054349743==
+Content-Type: text/plain; charset="us-ascii"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+Content-Disposition: inline
+
+_______________________________________________
+Containers mailing list
+Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+https://lists.linux-foundation.org/mailman/listinfo/containers
+--===============5075700968054349743==--
