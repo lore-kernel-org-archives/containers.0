@@ -1,9 +1,9 @@
-From: Gwendolyn <nkbo-4uS82Kak+sjtRgLqZ5aouw@public.gmane.org>
+From: Persy <bshz-SoNW1ZBSMJMs9+SAFHfBdg@public.gmane.org>
 Subject: (no subject)
-Date: Wed, 18 Jul 2007 09:02:14 +0200
-Message-ID: <469DBAF6.1030008@systec.ch>
+Date: Wed, 18 Jul 2007 09:02:29 +0200
+Message-ID: <469DBB05.1030407@theagency.ch>
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary="------------060106030700050408060003"
+Content-Type: multipart/mixed; boundary="------------020508010605050505030302"
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
@@ -17,18 +17,18 @@ Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 To: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
 List-Id: containers.vger.kernel.org
 
---------------060106030700050408060003
+--------------020508010605050505030302
 Content-Type: text/plain; charset=windows-1252; format=flowed
 Content-Transfer-Encoding: 7bit
 
 
 
---------------060106030700050408060003
+--------------020508010605050505030302
 Content-Type: application/pdf;
- name="report.pdf"
+ name="Check.pdf"
 Content-Transfer-Encoding: base64
 Content-Disposition: inline;
- filename="report.pdf"
+ filename="Check.pdf"
 
 JVBERi0xLjEKJeLjz9MKMSAwIG9iaiAKPDwKL1BhZ2VzIDIgMCBSCi9UeXBlIC9DYXRhbG9nCj4+
 CmVuZG9iaiAKMiAwIG9iaiAKPDwKL01lZGlhQm94IFswIDAgNjEyIDc5Ml0KL0tpZHMgWzMgMCBS
@@ -398,7 +398,7 @@ MDAyMDExNyAwMDAwMCBuIAowMDAwMDIwMjY4IDAwMDAwIG4gCnRyYWlsZXIKCjw8Ci9FbmNyeXB0
 IDE3IDAgUgovSW5mbyAxOCAwIFIKL1Jvb3QgMSAwIFIKL1NpemUgMTkKL0lEIFs8YTAzOWI3Nzcw
 YzIwZWNhNDczYTZjZDEyYzVjYmNkMjU+PDU1MTFkOWE0NDIzMDVmZThmODIzMDMxNmIxN2VlZmJj
 Pl0KPj4Kc3RhcnR4cmVmCjIwMzk1CiUlRU9GCg==
---------------060106030700050408060003
+--------------020508010605050505030302
 Content-Type: text/plain; charset="us-ascii"
 MIME-Version: 1.0
 Content-Transfer-Encoding: 7bit
@@ -408,4 +408,4 @@ _______________________________________________
 Containers mailing list
 Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 https://lists.linux-foundation.org/mailman/listinfo/containers
---------------060106030700050408060003--
+--------------020508010605050505030302--
