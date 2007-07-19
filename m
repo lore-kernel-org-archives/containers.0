@@ -1,93 +1,54 @@
-From: "Carter Romo" <fannuli-VTO4SACzcdDk1uMJSBkQmQ@public.gmane.org>
-Subject: Thank you, we accepted your appication
-Date: Wed, 18 Jul 2007 23:56:49 -0300
-Message-ID: <000f01c7c997$f9727120$00a4f574@paulows>
+From: "Balbir Singh" <balbir@linux.vnet.ibm.com>
+Subject: Re: Containers: css_put() dilemma
+Date: Thu, 19 Jul 2007 09:14:28 +0530
+Message-ID: <661de9470707182044h16623776ma70bf3a078cead8d@mail.gmail.com>
+References: <469BBE00.8000709@linux.vnet.ibm.com>
+	 <469C99D1.7090807@linux.vnet.ibm.com>
+	 <6599ad830707170849v11fe8cecs6d172cd38d247e09@mail.gmail.com>
+	 <469CFF2B.1080702@linux.vnet.ibm.com>
+	 <6599ad830707171044u38c0a940r12d2bc80b475ead4@mail.gmail.com>
+	 <469D066B.6050606@linux.vnet.ibm.com>
+	 <6599ad830707171126o7c431277p84f532d0122a8a98@mail.gmail.com>
+	 <469D9728.2080701@linux.vnet.ibm.com>
+	 <469DA57F.9050302@linux.vnet.ibm.com>
+	 <6599ad830707181615w4f2e4078j58473090691e36eb@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary="===============6822317237117085649=="
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Mime-version: 1.0
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+Content-Transfer-Encoding: 7bit
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S935712AbXGSDol@vger.kernel.org>
+In-Reply-To: <6599ad830707181615w4f2e4078j58473090691e36eb@mail.gmail.com>
+Content-Disposition: inline
+Sender: linux-kernel-owner@vger.kernel.org
+To: Paul Menage <menage@google.com>
+Cc: dhaval@linux.vnet.ibm.com, Pavel Emelianov <xemul@sw.ru>, linux kernel mailing list <linux-kernel@vger.kernel.org>, Paul Jackson <pj@sgi.com>, Linux Containers <containers@lists.osdl.org>, Andrew Morton <akpm@linux-foundation.org>
 List-Id: containers.vger.kernel.org
 
---===============6822317237117085649==
-Content-Type: multipart/alternative;
-	boundary="----=_NextPart_000_000C_01C7C997.F9727120"
+On 7/19/07, Paul Menage <menage@google.com> wrote:
+> On 7/17/07, Balbir Singh <balbir@linux.vnet.ibm.com> wrote:
+> >
+> > Thinking out loud again, can we add can_destroy() callbacks?
+> >
+>
+> What would the exact semantics of such a callback be?
+>
+> Since for proper interaction with release agents we need the subsystem
+> to notify the framework when a subsystem object becomes releasable
+> (currently as part of css_put()), what would a can_destroy() callback
+> let you do that you couldn't do just by taking an extra css refcount
+> to prevent destruction and releasing that refcount to allow
+> destruction?
 
-------=_NextPart_000_000C_01C7C997.F9727120
-Content-Type: text/plain;
-        charset="windows-1252"
-Content-Transfer-Encoding: quoted-printable
+I was thinking along those lines before you mentioned that the next
+version of css_put() will not block. The advantage I see of
+can_destory() is that it allows subsystems to do their own reference
+counting and decide whether they are ready to be deleted or not. The
+other advantage I see is that it can act like a prepare to be deleted
+phase for the controller, the controller might decide to take some
+action in the can_destroy() phase, like the memory controller could
+decide to start reclaiming all  the remaining page cache pages.
 
+BTW, do you know upfront as to when the next set of container
+enhancement patches will be ready? The css_put() issue is blocking us
+currently.
 
-Your your credit report does not matter to us!
- 
-If you have your own business and wish IMMEDIATE money to spend ANY way =
-you like or want Extra money to give your business a boost or  want A =
-low interest loan - NO STRINGS ATTACHED, here is our best deal we can =
-offer you TODAY (hurry, this offer will expire THIS NIGHT):
- 
-$37,000+ loan
- 
-Hurry, when best deal is gone, it is gone. Simply Call Us... 
- 
-Do not worry about approval, your your credit report will not disqualify =
-you!
- 
-Call Us Free on 877-542-1880
-------=_NextPart_000_000C_01C7C997.F9727120
-Content-Type: text/html;
-        charset="windows-1252"
-Content-Transfer-Encoding: quoted-printable
-
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
-<HTML><HEAD>
-<META http-equiv=3DContent-Type content=3D"text/html; charset=3D=
-windows-1252">
-<META content=3D"MSHTML 6.00.2600.2969" name=3DGENERATOR>
-<STYLE></STYLE>
-</HEAD>
-<BODY bgColor=3D#ffffff>
-<DIV align=3Dleft><FONT face=3DArial size=3D2><B>Your credit does not =
-matter to us!</B></FONT></DIV>
-<DIV align=3Dcenter> &nbsp;</DIV>
-<DIV align=3Dleft><FONT face=3DArial size=3D2>If you have your own =
-business and need IMMEDIATE money to spend ANY way you like or need =
-Extra money to give the business a boost or  require A low interest loan =
-- NO STRINGS ATTACHED, here is the deal we can offer you THIS NIGHT =
-(hurry, this offer will expire THIS EVENING):</FONT></DIV>
-<DIV align=3Dcenter> &nbsp;</DIV>
-<DIV align=3Dleft><FONT face=3DArial size=3D2><B>$35,000+ =
-loan</B></FONT></DIV>
-<DIV align=3Dcenter> &nbsp;</DIV>
-<DIV align=3Dleft><FONT face=3DArial size=3D2><B>Hurry, when the deal is =
-gone, it is gone. Simply Call Us... </B></FONT></DIV>
-<DIV align=3Dcenter> &nbsp;</DIV>
-<DIV align=3Dleft><FONT face=3DArial size=3D2>Don't worry about =
-approval, your credit will not disqualify you!</FONT></DIV>
-<DIV align=3Dcenter> &nbsp;</DIV>
-<DIV align=3Dleft><FONT face=3DArial size=3D2><B>Call Us Free on =
-877-542-1880</B></FONT></DIV>
-</BODY></HTML>
-
-------=_NextPart_000_000C_01C7C997.F9727120--
-
---===============6822317237117085649==
-Content-Type: text/plain; charset="us-ascii"
-MIME-Version: 1.0
-Content-Transfer-Encoding: 7bit
-Content-Disposition: inline
-
-_______________________________________________
-Containers mailing list
-Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-https://lists.linux-foundation.org/mailman/listinfo/containers
---===============6822317237117085649==--
+Balbir
