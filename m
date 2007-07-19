@@ -1,7 +1,8 @@
 From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
-Subject: [PATCH 3/4] sysfs: Implement sysfs_delete_link and sysfs_rename_link
-Date: Wed, 18 Jul 2007 22:46:39 -0600
-Message-ID: <m1vech2e6o.fsf_-_@ebiederm.dsl.xmission.com>
+Subject: [PATCH 4/4] driver core: Implement shadow directory support for
+	device classes.
+Date: Wed, 18 Jul 2007 22:47:27 -0600
+Message-ID: <m1r6n52e5c.fsf_-_@ebiederm.dsl.xmission.com>
 References: <4676C798.2090404@bull.net> <1182446577.8138.29.camel@localhost>
 	<m1odj9dofp.fsf@ebiederm.dsl.xmission.com>
 	<20070621211637.GB10583@suse.de>
@@ -11,11 +12,12 @@ References: <4676C798.2090404@bull.net> <1182446577.8138.29.camel@localhost>
 	<20070625212339.GA13398@kroah.com>
 	<m14pk13svx.fsf@ebiederm.dsl.xmission.com>
 	<m1zm1t2e92.fsf_-_@ebiederm.dsl.xmission.com>
+	<m1vech2e6o.fsf_-_@ebiederm.dsl.xmission.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <m1zm1t2e92.fsf_-_-T1Yj925okcoyDheHMi7gv2pdwda3JcWeAL8bYrjMMd8@public.gmane.org> (Eric
-	W. Biederman's message of "Wed, 18 Jul 2007 22:45:13 -0600")
+In-Reply-To: <m1vech2e6o.fsf_-_-T1Yj925okcoyDheHMi7gv2pdwda3JcWeAL8bYrjMMd8@public.gmane.org> (Eric
+	W. Biederman's message of "Wed, 18 Jul 2007 22:46:39 -0600")
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -30,112 +32,163 @@ Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Tejun
 List-Id: containers.vger.kernel.org
 
 
-When removing a symlink sysfs_remove_link does not provide enough
-information to figure out which shadow directory the symlink falls in.
-So I need sysfs_delete_link which is passed the target of the symlink
-to delete.
+This patch enables shadowing on every class directory if struct class
+has shadow_ops.
 
-Further half the time when we are removing a symlink the code is
-actually renaming the symlink but not doing so explicitly because we
-don't have a symlink rename method.  So I have added sysfs_rename_link
-as well.
-
-Both of these functions now have enough information to find a symlink
-in a shadow directory.  The only restriction is that they must be
-called before the target kobject is renamed or deleted.  If they are
-called later I loose track of which tag the target kobject was marked
-with and can no longer find the old symlink to remove it.
+In addition device_del and device_rename were modified to use
+sysfs_delete_link and sysfs_rename_link respectively to ensure
+when these operations happen on devices whos classes have
+shadow operations that they work properly.
 
 Signed-off-by: Eric W. Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 ---
- fs/sysfs/symlink.c    |   31 +++++++++++++++++++++++++++++++
- include/linux/sysfs.h |   18 ++++++++++++++++++
- 2 files changed, 49 insertions(+), 0 deletions(-)
+ drivers/base/class.c   |   30 ++++++++++++++++++++++++++----
+ drivers/base/core.c    |   45 ++++++++++++++++++++++++---------------------
+ include/linux/device.h |    2 ++
+ 3 files changed, 52 insertions(+), 25 deletions(-)
 
-diff --git a/fs/sysfs/symlink.c b/fs/sysfs/symlink.c
-index e52d3ef..62b0aeb 100644
---- a/fs/sysfs/symlink.c
-+++ b/fs/sysfs/symlink.c
-@@ -126,6 +126,21 @@ addrm_finish:
- 
- 
- /**
-+ *	sysfs_delete_link - remove symlink in object's directory.
-+ *	@kobj:	object we're acting for.
-+ *	@targ:	object we're pointing to.
-+ *	@name:	name of the symlink to remove.
-+ *
-+ *	Unlike sysfs_remove_link sysfs_delete_link has enough information
-+ *	to successfully delete symlinks in shadow directories.
-+ */
-+void sysfs_delete_link(struct kobject *kobj, struct kobject *targ,
-+			const char *name)
-+{
-+	sysfs_hash_and_remove(targ, kobj->sd, name);
-+}
-+
-+/**
-  *	sysfs_remove_link - remove symlink in object's directory.
-  *	@kobj:	object we're acting for.
-  *	@name:	name of the symlink to remove.
-@@ -136,6 +151,22 @@ void sysfs_remove_link(struct kobject * kobj, const char * name)
- 	sysfs_hash_and_remove(kobj, kobj->sd, name);
+diff --git a/drivers/base/class.c b/drivers/base/class.c
+index 4d22226..c981f75 100644
+--- a/drivers/base/class.c
++++ b/drivers/base/class.c
+@@ -134,6 +134,17 @@ static void remove_class_attrs(struct class * cls)
+ 	}
  }
  
-+/**
-+ *	sysfs_rename_link - rename symlink in object's directory.
-+ *	@kobj:	object we're acting for.
-+ *	@targ:	object we're pointing to.
-+ *	@old:	previous name of the symlink.
-+ *	@new:	new name of the symlink.
-+ *
-+ *	A helper function for the common rename symlink idiom.
-+ */
-+int sysfs_rename_link(struct kobject *kobj, struct kobject *targ,
-+			const char *old, const char *new)
++static int class_setup_shadowing(struct class *cls)
 +{
-+	sysfs_delete_link(kobj, targ, old);
-+	return sysfs_create_link(kobj, targ, new);
++	const struct shadow_dir_operations *shadow_ops;
++
++	shadow_ops = cls->shadow_ops;
++	if (!shadow_ops)
++		return 0;
++
++	return sysfs_enable_shadowing(&cls->subsys.kobj, shadow_ops);
 +}
 +
- static int sysfs_get_target_path(struct sysfs_dirent * parent_sd,
- 				 struct sysfs_dirent * target_sd, char *path)
+ int class_register(struct class * cls)
  {
-diff --git a/include/linux/sysfs.h b/include/linux/sysfs.h
-index 7cda047..e195cb5 100644
---- a/include/linux/sysfs.h
-+++ b/include/linux/sysfs.h
-@@ -127,6 +127,13 @@ sysfs_create_link(struct kobject * kobj, struct kobject * target, const char * n
- extern void
- sysfs_remove_link(struct kobject *, const char * name);
+ 	int error;
+@@ -152,11 +163,22 @@ int class_register(struct class * cls)
+ 	subsys_set_kset(cls, class_subsys);
  
-+extern int
-+sysfs_rename_link(struct kobject *kobj, struct kobject *target,
-+			const char *old_name, const char *new_name);
+ 	error = subsystem_register(&cls->subsys);
+-	if (!error) {
+-		error = add_class_attrs(class_get(cls));
+-		class_put(cls);
+-	}
++	if (error)
++		goto out;
 +
-+extern void
-+sysfs_delete_link(struct kobject *dir, struct kobject *targ, const char *name);
++	error = class_setup_shadowing(cls);
++	if (error)
++		goto out_unregister;
 +
- int __must_check sysfs_create_bin_file(struct kobject *kobj,
- 					struct bin_attribute *attr);
- void sysfs_remove_bin_file(struct kobject *kobj, struct bin_attribute *attr);
-@@ -202,6 +209,17 @@ static inline void sysfs_remove_link(struct kobject * k, const char * name)
- 	;
++	error = add_class_attrs(cls);
++	if (error)
++		goto out_unregister;
++
++out:
+ 	return error;
++out_unregister:
++	subsystem_unregister(&cls->subsys);
++	goto out;
  }
  
-+static inline int
-+sysfs_rename_link(struct kobject * k, struct kobject *t,
-+			const char *old_name, const char * new_name)
-+{
-+	return 0;
-+}
-+
-+static inline void
-+sysfs_delete_link(struct kobject *k, struct kobject *t, const char *name)
-+{
-+}
+ void class_unregister(struct class * cls)
+diff --git a/drivers/base/core.c b/drivers/base/core.c
+index 3599ab2..5b03842 100644
+--- a/drivers/base/core.c
++++ b/drivers/base/core.c
+@@ -639,8 +639,14 @@ static struct kobject * get_device_parent(struct device *dev,
+ 			return kobj;
  
- static inline int sysfs_create_bin_file(struct kobject * k, struct bin_attribute * a)
- {
+ 		/* or create a new class-directory at the parent device */
+-		return kobject_kset_add_dir(&dev->class->class_dirs,
++		kobj = kobject_kset_add_dir(&dev->class->class_dirs,
+ 					    parent_kobj, dev->class->name);
++
++		/* If we created a new class-directory setup shadowing */
++		if (kobj && dev->class->shadow_ops)
++			sysfs_enable_shadowing(kobj, dev->class->shadow_ops);
++
++		return kobj;
+ 	}
+ 
+ 	if (parent)
+@@ -937,8 +943,8 @@ void device_del(struct device * dev)
+ 		/* If this is not a "fake" compatible device, remove the
+ 		 * symlink from the class to the device. */
+ 		if (dev->kobj.parent != &dev->class->subsys.kobj)
+-			sysfs_remove_link(&dev->class->subsys.kobj,
+-					  dev->bus_id);
++			sysfs_delete_link(&dev->class->subsys.kobj,
++					  &dev->kobj, dev->bus_id);
+ 		if (parent) {
+ #ifdef CONFIG_SYSFS_DEPRECATED
+ 			char *class_name = make_class_name(dev->class->name,
+@@ -1236,6 +1242,13 @@ int device_rename(struct device *dev, char *new_name)
+ 	strlcpy(old_device_name, dev->bus_id, BUS_ID_SIZE);
+ 	strlcpy(dev->bus_id, new_name, BUS_ID_SIZE);
+ 
++	if (dev->class && (dev->kobj.parent != &dev->class->subsys.kobj)) {
++		error = sysfs_rename_link(&dev->class->subsys.kobj,
++			&dev->kobj, old_device_name, new_name);
++		if (error)
++			goto out;
++	}
++
+ 	error = kobject_rename(&dev->kobj, new_name);
+ 	if (error) {
+ 		strlcpy(dev->bus_id, old_device_name, BUS_ID_SIZE);
+@@ -1244,27 +1257,17 @@ int device_rename(struct device *dev, char *new_name)
+ 
+ #ifdef CONFIG_SYSFS_DEPRECATED
+ 	if (old_class_name) {
++		error = -ENOMEM;
+ 		new_class_name = make_class_name(dev->class->name, &dev->kobj);
+-		if (new_class_name) {
+-			error = sysfs_create_link(&dev->parent->kobj,
+-						  &dev->kobj, new_class_name);
+-			if (error)
+-				goto out;
+-			sysfs_remove_link(&dev->parent->kobj, old_class_name);
+-		}
+-	}
+-#endif
++		if (!new_class_name)
++			goto out;
+ 
+-	if (dev->class) {
+-		sysfs_remove_link(&dev->class->subsys.kobj, old_device_name);
+-		error = sysfs_create_link(&dev->class->subsys.kobj, &dev->kobj,
+-					  dev->bus_id);
+-		if (error) {
+-			/* Uh... how to unravel this if restoring can fail? */
+-			dev_err(dev, "%s: sysfs_create_symlink failed (%d)\n",
+-				__FUNCTION__, error);
+-		}
++		error = sysfs_rename_link(&dev->parent->kobj, &dev->kobj,
++					  old_class_name, new_class_name);
++		if (error)
++			goto out;
+ 	}
++#endif
+ out:
+ 	put_device(dev);
+ 
+diff --git a/include/linux/device.h b/include/linux/device.h
+index d9f0a57..ed31e43 100644
+--- a/include/linux/device.h
++++ b/include/linux/device.h
+@@ -200,6 +200,8 @@ struct class {
+ 
+ 	int	(*suspend)(struct device *, pm_message_t state);
+ 	int	(*resume)(struct device *);
++
++	const struct shadow_dir_operations *shadow_ops;
+ };
+ 
+ extern int __must_check class_register(struct class *);
 -- 
 1.5.1.1.181.g2de0
