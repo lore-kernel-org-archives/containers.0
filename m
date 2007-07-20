@@ -1,160 +1,445 @@
 From: menage@google.com
-Subject: [PATCH 00/10] Task Containers(V11):  Introduction
-Date: Fri, 20 Jul 2007 11:31:52 -0700
-Message-ID: <20070720183152.637820000@menage.corp.google.com>
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1764945AbXGTTQT@vger.kernel.org>
+Subject: [PATCH 02/10] Task Containers(V11):  Add tasks file interface
+Date: Fri, 20 Jul 2007 11:31:54 -0700
+Message-ID: <20070720191247.556709000@menage.corp.google.com>
+References: <20070720183152.637820000@menage.corp.google.com>
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S935850AbXGTTQw@vger.kernel.org>
+Content-Disposition: inline; filename=containersv10-add-tasks-file-interface.patch
 Sender: linux-kernel-owner@vger.kernel.org
 To: akpm@linux-foundation.org, dev@sw.ru, xemul@sw.ru, serue@us.ibm.com, vatsa@in.ibm.com, ebiederm@xmission.com, haveblue@us.ibm.com, svaidy@linux.vnet.ibm.com, balbir@in.ibm.com, pj@sgi.com
 Cc: ckrm-tech@lists.sourceforge.net, linux-kernel@vger.kernel.org, rohitseth@google.com, mbligh@google.com, containers@lists.osdl.org, devel@openvz.org
 List-Id: containers.vger.kernel.org
 
-This is an update to the task containers patchset.
-
-Changes since V10 (May 30th) include:
-
-- Based on 2.6.22-rc6-mm1 (minus existing container patches, see below)
-
-- Rolled in various fix/tidy patches contributed by akpm and others
-
-- Reorganisation of the mount/unmount code to use sget(); the new
-  approach is modelled on the NFS superblock code. This fixes some
-  potential lock inversions pointed out by lockdep. 
-
-- Fix various lockdep warnings
-
-- Changed the create() subsystem callback to return a pointer to the
-  new state object rather than updating the subsystem pointer in the
-  container directly.
-
-- Changed container_add_file() to automatically prefix the subsystem
-  name (and a period) on to all container files unless the filesystem
-  is mounted with the "noprefix" option (intended for use by the
-  legacy cpuset filesystem emulation).  
-
-- Added a release_agent= mount option to allow the release agent path
-  to be specified at mount time.
-
-- css_put() is now completely non-blocking
-
-- css_get()/css_put() avoid taking/dropping reference counts on the
-  root state since this can't be freed anyway; this saves some atomic ops
-
-API changes (for subsystem writers):
-1) return your new css object from create() callback
-2) remove the subsystem name prefix from your cftype structures
-3) pass your subsystem pointer as an additional new parameter to
-   container_add_file() and container_add_files()
-
-Still TODO:
-
-- finalize the naming
-
-- add a hash-table based lookup for css_group objects.
-
-- use seq_file properly in container tasks files to avoid having to
- allocate a big array for all the container's task pointers.
-
-- add virtualization support to allow delegation to virtual servers
-
-- fix a lockdep false-positive - container_mutex nests inside
-  inode->i_mutex, but there's a point in the mount code where we need to
-  lock a newly-created (and hence guaranteed unlocked) directory from
-  within container_mutex.
-
-- more subsystems
-
-Generic Process Containers
---------------------------
-
-There have recently been various proposals floating around for
-resource management/accounting and other task grouping subsystems in
-the kernel, including ResGroups, User BeanCounters, NSProxy
-containers, and others.  These all need the basic abstraction of being
-able to group together multiple processes in an aggregate, in order to
-track/limit the resources permitted to those processes, or control
-other behaviour of the processes, and all implement this grouping in
-different ways.
-
-This patchset provides a framework for tracking and grouping processes
-into arbitrary "containers" and assigning arbitrary state to those
-groupings, in order to control the behaviour of the container as an
-aggregate.
-
-The intention is that the various resource management and
-virtualization/container efforts can also become task container
-clients, with the result that:
-
-- the userspace APIs are (somewhat) normalised
-
-- it's easier to test e.g. the ResGroups CPU controller in
- conjunction with the BeanCounters memory controller, or use either of
-them as the resource-control portion of a virtual server system.
-
-- the additional kernel footprint of any of the competing resource
- management systems is substantially reduced, since it doesn't need
- to provide process grouping/containment, hence improving their
- chances of getting into the kernel
-
-
-The patch set is structured as follows:
-
-1) Basic container framework - filesystem and tracking structures
-
-2) Support for the "tasks" control file
-
-3) Hooks for fork() and exit()
-
-4) Support for the container_clone() operation
-
-5) Add /proc reporting interface
-
-6) Share container subsystem pointer arrays between tasks with the
-  same assignments
-
-7) Support for a userspace "release agent", similar to the cpusets
-   release agent functionality
-
-8) Make cpusets a container subsystem
-
-9) Simple CPU Accounting example subsystem
-
-10) Simple container debugging subsystem
-
-It applies to 2.6.22-rc6-mm1, *minus* the following patches (available
-from http://www.kernel.org/pub/linux/kernel/people/akpm/mm/broken-out-2007-06-27-03-28.tar.gz)
-
-containersv10-basic-container-framework.patch
-containersv10-basic-container-framework-fix.patch
-containersv10-basic-container-framework-fix-2.patch
-containersv10-basic-container-framework-fix-3.patch
-containersv10-example-cpu-accounting-subsystem.patch
-containersv10-example-cpu-accounting-subsystem-fix.patch
-containersv10-add-tasks-file-interface.patch
-containersv10-add-tasks-file-interface-fix.patch
-containersv10-add-tasks-file-interface-fix-2.patch
-containersv10-add-fork-exit-hooks.patch
-containersv10-add-fork-exit-hooks-fix.patch
-containersv10-add-container_clone-interface.patch
-containersv10-add-container_clone-interface-fix.patch
-containersv10-add-procfs-interface.patch
-containersv10-add-procfs-interface-fix.patch
-containersv10-make-cpusets-a-client-of-containers.patch
-containersv10-make-cpusets-a-client-of-containers-whitespace.patch
-containersv10-share-css_group-arrays-between-tasks-with-same-container-memberships.patch
-containersv10-share-css_group-arrays-between-tasks-with-same-container-memberships-fix.patch
-containersv10-share-css_group-arrays-between-tasks-with-same-container-memberships-cpuset-zero-malloc-fix-for-new-containers.patch
-containersv10-simple-debug-info-subsystem.patch
-containersv10-simple-debug-info-subsystem-fix.patch
-containersv10-simple-debug-info-subsystem-fix-2.patch
-containersv10-support-for-automatic-userspace-release-agents.patch
-containersv10-support-for-automatic-userspace-release-agents-whitespace.patch
-add-containerstats-v3.patch
-add-containerstats-v3-fix.patch
-update-getdelays-to-become-containerstats-aware.patch
-containers-implement-subsys-post_clone.patch
-containers-implement-namespace-tracking-subsystem-v3.patch
-
+This patch adds the per-directory "tasks" file for containerfs mounts; this
+allows the user to determine which tasks are members of a container by reading
+a container's "tasks", and to move a task into a container by writing its pid
+to its "tasks".
 
 Signed-off-by: Paul Menage <menage@google.com>
+---
+
+ include/linux/container.h |   10 +
+ kernel/container.c        |  359 +++++++++++++++++++++++++++++++++++++++++++++-
+ 2 files changed, 368 insertions(+), 1 deletion(-)
+
+Index: container-2.6.22-rc6-mm1/include/linux/container.h
+===================================================================
+--- container-2.6.22-rc6-mm1.orig/include/linux/container.h
++++ container-2.6.22-rc6-mm1/include/linux/container.h
+@@ -144,6 +144,16 @@ int container_is_removed(const struct co
+ 
+ int container_path(const struct container *cont, char *buf, int buflen);
+ 
++int __container_task_count(const struct container *cont);
++static inline int container_task_count(const struct container *cont)
++{
++	int task_count;
++	rcu_read_lock();
++	task_count = __container_task_count(cont);
++	rcu_read_unlock();
++	return task_count;
++}
++
+ /* Return true if the container is a descendant of the current container */
+ int container_is_descendant(const struct container *cont);
+ 
+Index: container-2.6.22-rc6-mm1/kernel/container.c
+===================================================================
+--- container-2.6.22-rc6-mm1.orig/kernel/container.c
++++ container-2.6.22-rc6-mm1/kernel/container.c
+@@ -40,7 +40,7 @@
+ #include <linux/magic.h>
+ #include <linux/spinlock.h>
+ #include <linux/string.h>
+-
++#include <linux/sort.h>
+ #include <asm/atomic.h>
+ 
+ /* Generate an array of container subsystem pointers */
+@@ -704,6 +704,127 @@ int container_path(const struct containe
+ 	return 0;
+ }
+ 
++/*
++ * Return the first subsystem attached to a container's hierarchy, and
++ * its subsystem id.
++ */
++
++static void get_first_subsys(const struct container *cont,
++			struct container_subsys_state **css, int *subsys_id)
++{
++	const struct containerfs_root *root = cont->root;
++	const struct container_subsys *test_ss;
++	BUG_ON(list_empty(&root->subsys_list));
++	test_ss = list_entry(root->subsys_list.next,
++			     struct container_subsys, sibling);
++	if (css) {
++		*css = cont->subsys[test_ss->subsys_id];
++		BUG_ON(!*css);
++	}
++	if (subsys_id)
++		*subsys_id = test_ss->subsys_id;
++}
++
++/*
++ * Attach task 'tsk' to container 'cont'
++ *
++ * Call holding container_mutex.  May take task_lock of
++ * the task 'pid' during call.
++ */
++static int attach_task(struct container *cont, struct task_struct *tsk)
++{
++	int retval = 0;
++	struct container_subsys *ss;
++	struct container *oldcont;
++	struct css_group *cg = &tsk->containers;
++	struct containerfs_root *root = cont->root;
++	int i;
++	int subsys_id;
++
++	get_first_subsys(cont, NULL, &subsys_id);
++
++	/* Nothing to do if the task is already in that container */
++	oldcont = task_container(tsk, subsys_id);
++	if (cont == oldcont)
++		return 0;
++
++	for_each_subsys(root, ss) {
++		if (ss->can_attach) {
++			retval = ss->can_attach(ss, cont, tsk);
++			if (retval) {
++				return retval;
++			}
++		}
++	}
++
++	task_lock(tsk);
++	if (tsk->flags & PF_EXITING) {
++		task_unlock(tsk);
++		return -ESRCH;
++	}
++	/* Update the css_group pointers for the subsystems in this
++	 * hierarchy */
++	for (i = 0; i < CONTAINER_SUBSYS_COUNT; i++) {
++		if (root->subsys_bits & (1ull << i)) {
++			/* Subsystem is in this hierarchy. So we want
++			 * the subsystem state from the new
++			 * container. Transfer the refcount from the
++			 * old to the new */
++			atomic_inc(&cont->count);
++			atomic_dec(&cg->subsys[i]->container->count);
++			rcu_assign_pointer(cg->subsys[i], cont->subsys[i]);
++		}
++	}
++	task_unlock(tsk);
++
++	for_each_subsys(root, ss) {
++		if (ss->attach) {
++			ss->attach(ss, cont, oldcont, tsk);
++		}
++	}
++
++	synchronize_rcu();
++	return 0;
++}
++
++/*
++ * Attach task with pid 'pid' to container 'cont'. Call with
++ * container_mutex, may take task_lock of task
++ */
++static int attach_task_by_pid(struct container *cont, char *pidbuf)
++{
++	pid_t pid;
++	struct task_struct *tsk;
++	int ret;
++
++	if (sscanf(pidbuf, "%d", &pid) != 1)
++		return -EIO;
++
++	if (pid) {
++		rcu_read_lock();
++		tsk = find_task_by_pid(pid);
++		if (!tsk || tsk->flags & PF_EXITING) {
++			rcu_read_unlock();
++			return -ESRCH;
++		}
++		get_task_struct(tsk);
++		rcu_read_unlock();
++
++		if ((current->euid) && (current->euid != tsk->uid)
++		    && (current->euid != tsk->suid)) {
++			put_task_struct(tsk);
++			return -EACCES;
++		}
++	} else {
++		tsk = current;
++		get_task_struct(tsk);
++	}
++
++	ret = attach_task(cont, tsk);
++	put_task_struct(tsk);
++	return ret;
++}
++
+ /* The various types of files and directories in a container file system */
+ 
+ enum container_filetype {
+@@ -712,6 +833,55 @@ enum container_filetype {
+ 	FILE_TASKLIST,
+ };
+ 
++static ssize_t container_common_file_write(struct container *cont,
++					   struct cftype *cft,
++					   struct file *file,
++					   const char __user *userbuf,
++					   size_t nbytes, loff_t *unused_ppos)
++{
++	enum container_filetype type = cft->private;
++	char *buffer;
++	int retval = 0;
++
++	if (nbytes >= PATH_MAX)
++		return -E2BIG;
++
++	/* +1 for nul-terminator */
++	buffer = kmalloc(nbytes + 1, GFP_KERNEL);
++	if (buffer == NULL)
++		return -ENOMEM;
++
++	if (copy_from_user(buffer, userbuf, nbytes)) {
++		retval = -EFAULT;
++		goto out1;
++	}
++	buffer[nbytes] = 0;	/* nul-terminate */
++
++	mutex_lock(&container_mutex);
++
++	if (container_is_removed(cont)) {
++		retval = -ENODEV;
++		goto out2;
++	}
++
++	switch (type) {
++	case FILE_TASKLIST:
++		retval = attach_task_by_pid(cont, buffer);
++		break;
++	default:
++		retval = -EINVAL;
++		goto out2;
++	}
++
++	if (retval == 0)
++		retval = nbytes;
++out2:
++	mutex_unlock(&container_mutex);
++out1:
++	kfree(buffer);
++	return retval;
++}
++
+ static ssize_t container_file_write(struct file *file, const char __user *buf,
+ 						size_t nbytes, loff_t *ppos)
+ {
+@@ -915,6 +1085,189 @@ int container_add_files(struct container
+ 	return 0;
+ }
+ 
++/* Count the number of tasks in a container. Could be made more
++ * time-efficient but less space-efficient with more linked lists
++ * running through each container and the css_group structures that
++ * referenced it. Must be called with tasklist_lock held for read or
++ * write or in an rcu critical section.
++ */
++int __container_task_count(const struct container *cont)
++{
++	int count = 0;
++	struct task_struct *g, *p;
++	struct container_subsys_state *css;
++	int subsys_id;
++
++	get_first_subsys(cont, &css, &subsys_id);
++	do_each_thread(g, p) {
++		if (task_subsys_state(p, subsys_id) == css)
++			count ++;
++	} while_each_thread(g, p);
++	return count;
++}
++
++/*
++ * Stuff for reading the 'tasks' file.
++ *
++ * Reading this file can return large amounts of data if a container has
++ * *lots* of attached tasks. So it may need several calls to read(),
++ * but we cannot guarantee that the information we produce is correct
++ * unless we produce it entirely atomically.
++ *
++ * Upon tasks file open(), a struct ctr_struct is allocated, that
++ * will have a pointer to an array (also allocated here).  The struct
++ * ctr_struct * is stored in file->private_data.  Its resources will
++ * be freed by release() when the file is closed.  The array is used
++ * to sprintf the PIDs and then used by read().
++ */
++struct ctr_struct {
++	char *buf;
++	int bufsz;
++};
++
++/*
++ * Load into 'pidarray' up to 'npids' of the tasks using container
++ * 'cont'.  Return actual number of pids loaded.  No need to
++ * task_lock(p) when reading out p->container, since we're in an RCU
++ * read section, so the css_group can't go away, and is
++ * immutable after creation.
++ */
++static int pid_array_load(pid_t *pidarray, int npids, struct container *cont)
++{
++	int n = 0;
++	struct task_struct *g, *p;
++	struct container_subsys_state *css;
++	int subsys_id;
++
++	get_first_subsys(cont, &css, &subsys_id);
++	rcu_read_lock();
++	do_each_thread(g, p) {
++		if (task_subsys_state(p, subsys_id) == css) {
++			pidarray[n++] = pid_nr(task_pid(p));
++			if (unlikely(n == npids))
++				goto array_full;
++		}
++	} while_each_thread(g, p);
++
++array_full:
++	rcu_read_unlock();
++	return n;
++}
++
++static int cmppid(const void *a, const void *b)
++{
++	return *(pid_t *)a - *(pid_t *)b;
++}
++
++/*
++ * Convert array 'a' of 'npids' pid_t's to a string of newline separated
++ * decimal pids in 'buf'.  Don't write more than 'sz' chars, but return
++ * count 'cnt' of how many chars would be written if buf were large enough.
++ */
++static int pid_array_to_buf(char *buf, int sz, pid_t *a, int npids)
++{
++	int cnt = 0;
++	int i;
++
++	for (i = 0; i < npids; i++)
++		cnt += snprintf(buf + cnt, max(sz - cnt, 0), "%d\n", a[i]);
++	return cnt;
++}
++
++/*
++ * Handle an open on 'tasks' file.  Prepare a buffer listing the
++ * process id's of tasks currently attached to the container being opened.
++ *
++ * Does not require any specific container mutexes, and does not take any.
++ */
++static int container_tasks_open(struct inode *unused, struct file *file)
++{
++	struct container *cont = __d_cont(file->f_dentry->d_parent);
++	struct ctr_struct *ctr;
++	pid_t *pidarray;
++	int npids;
++	char c;
++
++	if (!(file->f_mode & FMODE_READ))
++		return 0;
++
++	ctr = kmalloc(sizeof(*ctr), GFP_KERNEL);
++	if (!ctr)
++		goto err0;
++
++	/*
++	 * If container gets more users after we read count, we won't have
++	 * enough space - tough.  This race is indistinguishable to the
++	 * caller from the case that the additional container users didn't
++	 * show up until sometime later on.
++	 */
++	npids = container_task_count(cont);
++	if (npids) {
++		pidarray = kmalloc(npids * sizeof(pid_t), GFP_KERNEL);
++		if (!pidarray)
++			goto err1;
++
++		npids = pid_array_load(pidarray, npids, cont);
++		sort(pidarray, npids, sizeof(pid_t), cmppid, NULL);
++
++		/* Call pid_array_to_buf() twice, first just to get bufsz */
++		ctr->bufsz = pid_array_to_buf(&c, sizeof(c), pidarray, npids) + 1;
++		ctr->buf = kmalloc(ctr->bufsz, GFP_KERNEL);
++		if (!ctr->buf)
++			goto err2;
++		ctr->bufsz = pid_array_to_buf(ctr->buf, ctr->bufsz, pidarray, npids);
++
++		kfree(pidarray);
++	} else {
++		ctr->buf = 0;
++		ctr->bufsz = 0;
++	}
++	file->private_data = ctr;
++	return 0;
++
++err2:
++	kfree(pidarray);
++err1:
++	kfree(ctr);
++err0:
++	return -ENOMEM;
++}
++
++static ssize_t container_tasks_read(struct container *cont,
++				    struct cftype *cft,
++				    struct file *file, char __user *buf,
++				    size_t nbytes, loff_t *ppos)
++{
++	struct ctr_struct *ctr = file->private_data;
++
++	return simple_read_from_buffer(buf, nbytes, ppos, ctr->buf, ctr->bufsz);
++}
++
++static int container_tasks_release(struct inode *unused_inode,
++					struct file *file)
++{
++	struct ctr_struct *ctr;
++
++	if (file->f_mode & FMODE_READ) {
++		ctr = file->private_data;
++		kfree(ctr->buf);
++		kfree(ctr);
++	}
++	return 0;
++}
++
++/*
++ * for the common functions, 'private' gives the type of file
++ */
++static struct cftype cft_tasks = {
++	.name = "tasks",
++	.open = container_tasks_open,
++	.read = container_tasks_read,
++	.write = container_common_file_write,
++	.release = container_tasks_release,
++	.private = FILE_TASKLIST,
++};
++
+ static int container_populate_dir(struct container *cont)
+ {
+ 	int err;
+@@ -923,6 +1276,10 @@ static int container_populate_dir(struct
+ 	/* First clear out any existing files */
+ 	container_clear_directory(cont->dentry);
+ 
++	err = container_add_file(cont, NULL, &cft_tasks);
++	if (err < 0)
++		return err;
++
+ 	for_each_subsys(cont->root, ss) {
+ 		if (ss->populate && (err = ss->populate(ss, cont)) < 0)
+ 			return err;
 
 --
