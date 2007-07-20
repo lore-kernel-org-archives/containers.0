@@ -1,209 +1,174 @@
 From: menage@google.com
-Subject: [PATCH 04/10] Task Containers(V11):  Add container_clone() interface.
-Date: Fri, 20 Jul 2007 11:31:56 -0700
-Message-ID: <20070720191247.888500000@menage.corp.google.com>
+Subject: [PATCH 10/10] Task Containers(V11):  Simple task container debug info subsystem
+Date: Fri, 20 Jul 2007 11:32:02 -0700
+Message-ID: <20070720191248.889393000@menage.corp.google.com>
 References: <20070720183152.637820000@menage.corp.google.com>
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S934901AbXGTTSk@vger.kernel.org>
-Content-Disposition: inline; filename=containersv10-add-container_clone-interface.patch
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S936319AbXGTTTn@vger.kernel.org>
+Content-Disposition: inline; filename=containersv10-simple-debug-info-subsystem.patch
 Sender: linux-kernel-owner@vger.kernel.org
 To: akpm@linux-foundation.org, dev@sw.ru, xemul@sw.ru, serue@us.ibm.com, vatsa@in.ibm.com, ebiederm@xmission.com, haveblue@us.ibm.com, svaidy@linux.vnet.ibm.com, balbir@in.ibm.com, pj@sgi.com
 Cc: ckrm-tech@lists.sourceforge.net, linux-kernel@vger.kernel.org, rohitseth@google.com, mbligh@google.com, containers@lists.osdl.org, devel@openvz.org
 List-Id: containers.vger.kernel.org
 
-This patch adds support for container_clone(), a way to create new
-containers intended to be used for systems such as namespace
-unsharing. A new subsystem callback, post_clone(), is added to allow
-subsystems to automatically configure cloned containers.
+This example subsystem exports debugging information as an aid to diagnosing
+refcount leaks, etc, in the container framework.
 
 Signed-off-by: Paul Menage <menage@google.com>
 ---
 
- Documentation/containers.txt |    7 ++
- include/linux/container.h    |    3 
- kernel/container.c           |  135 +++++++++++++++++++++++++++++++++++++++++++
- 3 files changed, 145 insertions(+)
+ include/linux/container_subsys.h |    4 +
+ init/Kconfig                     |   10 ++++
+ kernel/Makefile                  |    1 
+ kernel/container_debug.c         |   97 +++++++++++++++++++++++++++++++++++++++
+ 4 files changed, 112 insertions(+)
 
-Index: container-2.6.22-rc6-mm1/include/linux/container.h
+Index: container-2.6.22-rc6-mm1/include/linux/container_subsys.h
 ===================================================================
---- container-2.6.22-rc6-mm1.orig/include/linux/container.h
-+++ container-2.6.22-rc6-mm1/include/linux/container.h
-@@ -174,6 +174,7 @@ struct container_subsys {
- 	void (*exit)(struct container_subsys *ss, struct task_struct *task);
- 	int (*populate)(struct container_subsys *ss,
- 			struct container *cont);
-+	void (*post_clone)(struct container_subsys *ss, struct container *cont);
- 	void (*bind)(struct container_subsys *ss, struct container *root);
- 	int subsys_id;
- 	int active;
-@@ -213,6 +214,8 @@ static inline struct container* task_con
+--- container-2.6.22-rc6-mm1.orig/include/linux/container_subsys.h
++++ container-2.6.22-rc6-mm1/include/linux/container_subsys.h
+@@ -19,4 +19,8 @@ SUBSYS(cpuacct)
  
- int container_path(const struct container *cont, char *buf, int buflen);
+ /* */
  
-+int container_clone(struct task_struct *tsk, struct container_subsys *ss);
++#ifdef CONFIG_CONTAINER_DEBUG
++SUBSYS(debug)
++#endif
 +
- #else /* !CONFIG_CONTAINERS */
- 
- static inline int container_init_early(void) { return 0; }
-Index: container-2.6.22-rc6-mm1/kernel/container.c
+ /* */
+Index: container-2.6.22-rc6-mm1/init/Kconfig
 ===================================================================
---- container-2.6.22-rc6-mm1.orig/kernel/container.c
-+++ container-2.6.22-rc6-mm1/kernel/container.c
-@@ -1675,3 +1675,138 @@ void container_exit(struct task_struct *
- 	tsk->containers = init_task.containers;
- 	task_unlock(tsk);
- }
+--- container-2.6.22-rc6-mm1.orig/init/Kconfig
++++ container-2.6.22-rc6-mm1/init/Kconfig
+@@ -303,6 +303,16 @@ config CONTAINERS
+ 
+ 	  Say N if unsure.
+ 
++config CONTAINER_DEBUG
++	bool "Example debug container subsystem"
++	depends on CONTAINERS
++	help
++	  This option enables a simple container subsystem that
++	  exports useful debugging information about the containers
++	  framework
 +
-+/**
-+ * container_clone - duplicate the current container in the hierarchy
-+ * that the given subsystem is attached to, and move this task into
-+ * the new child
-+ */
-+int container_clone(struct task_struct *tsk, struct container_subsys *subsys)
-+{
-+	struct dentry *dentry;
-+	int ret = 0;
-+	char nodename[MAX_CONTAINER_TYPE_NAMELEN];
-+	struct container *parent, *child;
-+	struct inode *inode;
-+	struct css_group *cg;
-+	struct containerfs_root *root;
-+	struct container_subsys *ss;
++	  Say N if unsure
 +
-+	/* We shouldn't be called by an unregistered subsystem */
-+	BUG_ON(!subsys->active);
-+
-+	/* First figure out what hierarchy and container we're dealing
-+	 * with, and pin them so we can drop container_mutex */
-+	mutex_lock(&container_mutex);
-+ again:
-+	root = subsys->root;
-+	if (root == &rootnode) {
-+		printk(KERN_INFO
-+		       "Not cloning container for unused subsystem %s\n",
-+		       subsys->name);
-+		mutex_unlock(&container_mutex);
-+		return 0;
-+	}
-+	cg = &tsk->containers;
-+	parent = task_container(tsk, subsys->subsys_id);
-+
-+	snprintf(nodename, MAX_CONTAINER_TYPE_NAMELEN, "node_%d", tsk->pid);
-+
-+	/* Pin the hierarchy */
-+	atomic_inc(&parent->root->sb->s_active);
-+
-+	mutex_unlock(&container_mutex);
-+
-+	/* Now do the VFS work to create a container */
-+	inode = parent->dentry->d_inode;
-+
-+	/* Hold the parent directory mutex across this operation to
-+	 * stop anyone else deleting the new container */
-+	mutex_lock(&inode->i_mutex);
-+	dentry = container_get_dentry(parent->dentry, nodename);
-+	if (IS_ERR(dentry)) {
-+		printk(KERN_INFO
-+		       "Couldn't allocate dentry for %s: %ld\n", nodename,
-+		       PTR_ERR(dentry));
-+		ret = PTR_ERR(dentry);
-+		goto out_release;
-+	}
-+
-+	/* Create the container directory, which also creates the container */
-+	ret = vfs_mkdir(inode, dentry, S_IFDIR | 0755);
-+	child = __d_cont(dentry);
-+	dput(dentry);
-+	if (ret) {
-+		printk(KERN_INFO
-+		       "Failed to create container %s: %d\n", nodename,
-+		       ret);
-+		goto out_release;
-+	}
-+
-+	if (!child) {
-+		printk(KERN_INFO
-+		       "Couldn't find new container %s\n", nodename);
-+		ret = -ENOMEM;
-+		goto out_release;
-+	}
-+
-+	/* The container now exists. Retake container_mutex and check
-+	 * that we're still in the same state that we thought we
-+	 * were. */
-+	mutex_lock(&container_mutex);
-+	if ((root != subsys->root) ||
-+	    (parent != task_container(tsk, subsys->subsys_id))) {
-+		/* Aargh, we raced ... */
-+		mutex_unlock(&inode->i_mutex);
-+
-+		deactivate_super(parent->root->sb);
-+		/* The container is still accessible in the VFS, but
-+		 * we're not going to try to rmdir() it at this
-+		 * point. */
-+		printk(KERN_INFO
-+		       "Race in container_clone() - leaking container %s\n",
-+		       nodename);
-+		goto again;
-+	}
-+
-+	/* do any required auto-setup */
-+	for_each_subsys(root, ss) {
-+		if (ss->post_clone)
-+			ss->post_clone(ss, child);
-+	}
-+
-+	/* All seems fine. Finish by moving the task into the new container */
-+	ret = attach_task(child, tsk);
-+	mutex_unlock(&container_mutex);
-+
-+ out_release:
-+	mutex_unlock(&inode->i_mutex);
-+	deactivate_super(parent->root->sb);
-+	return ret;
-+}
-+
+ config CPUSETS
+ 	bool "Cpuset support"
+ 	depends on SMP && CONTAINERS
+Index: container-2.6.22-rc6-mm1/kernel/Makefile
+===================================================================
+--- container-2.6.22-rc6-mm1.orig/kernel/Makefile
++++ container-2.6.22-rc6-mm1/kernel/Makefile
+@@ -38,6 +38,7 @@ obj-$(CONFIG_BSD_PROCESS_ACCT) += acct.o
+ obj-$(CONFIG_KEXEC) += kexec.o
+ obj-$(CONFIG_COMPAT) += compat.o
+ obj-$(CONFIG_CONTAINERS) += container.o
++obj-$(CONFIG_CONTAINER_DEBUG) += container_debug.o
+ obj-$(CONFIG_CPUSETS) += cpuset.o
+ obj-$(CONFIG_CONTAINER_CPUACCT) += cpu_acct.o
+ obj-$(CONFIG_IKCONFIG) += configs.o
+Index: container-2.6.22-rc6-mm1/kernel/container_debug.c
+===================================================================
+--- /dev/null
++++ container-2.6.22-rc6-mm1/kernel/container_debug.c
+@@ -0,0 +1,97 @@
 +/*
-+ * See if "cont" is a descendant of the current task's container in
-+ * the appropriate hierarchy
++ * kernel/ccontainer_debug.c - Example container subsystem that
++ * exposes debug info
 + *
-+ * If we are sending in dummytop, then presumably we are creating
-+ * the top container in the subsystem.
++ * Copyright (C) Google Inc, 2007
 + *
-+ * Called only by the ns (nsproxy) container.
++ * Developed by Paul Menage (menage@google.com)
++ *
 + */
-+int container_is_descendant(const struct container *cont)
++
++#include <linux/container.h>
++#include <linux/fs.h>
++#include <linux/slab.h>
++#include <linux/rcupdate.h>
++
++#include <asm/atomic.h>
++
++static struct container_subsys_state *debug_create(struct container_subsys *ss,
++						   struct container *cont)
 +{
-+	int ret;
-+	struct container *target;
-+	int subsys_id;
++	struct container_subsys_state *css = kzalloc(sizeof(*css), GFP_KERNEL);
 +
-+	if (cont == dummytop)
-+		return 1;
++	if (!css)
++		return ERR_PTR(-ENOMEM);
 +
-+	get_first_subsys(cont, NULL, &subsys_id);
-+	target = task_container(current, subsys_id);
-+	while (cont != target && cont!= cont->top_container)
-+		cont = cont->parent;
-+	ret = (cont == target);
-+	return ret;
++	return css;
 +}
-Index: container-2.6.22-rc6-mm1/Documentation/containers.txt
-===================================================================
---- container-2.6.22-rc6-mm1.orig/Documentation/containers.txt
-+++ container-2.6.22-rc6-mm1/Documentation/containers.txt
-@@ -504,6 +504,13 @@ include/linux/container.h for details). 
- method can return an error code, the error code is currently not
- always handled well.
- 
-+void post_clone(struct container_subsys *ss, struct container *cont)
 +
-+Called at the end of container_clone() to do any paramater
-+initialization which might be required before a task could attach.  For
-+example in cpusets, no task may attach before 'cpus' and 'mems' are set
-+up.
++static void debug_destroy(struct container_subsys *ss, struct container *cont)
++{
++	kfree(cont->subsys[debug_subsys_id]);
++}
 +
- void bind(struct container_subsys *ss, struct container *root)
- LL=callback_mutex
- 
++static u64 container_refcount_read(struct container *cont, struct cftype *cft)
++{
++	return atomic_read(&cont->count);
++}
++
++static u64 taskcount_read(struct container *cont, struct cftype *cft)
++{
++	u64 count;
++
++	container_lock();
++	count = container_task_count(cont);
++	container_unlock();
++	return count;
++}
++
++static u64 current_css_group_read(struct container *cont, struct cftype *cft)
++{
++	return (u64)(long)current->containers;
++}
++
++static u64 current_css_group_refcount_read(struct container *cont,
++					   struct cftype *cft)
++{
++	u64 count;
++
++	rcu_read_lock();
++	count = atomic_read(&current->containers->ref.refcount);
++	rcu_read_unlock();
++	return count;
++}
++
++static struct cftype files[] =  {
++	{
++		.name = "container_refcount",
++		.read_uint = container_refcount_read,
++	},
++	{
++		.name = "taskcount",
++		.read_uint = taskcount_read,
++	},
++
++	{
++		.name = "current_css_group",
++		.read_uint = current_css_group_read,
++	},
++
++	{
++		.name = "current_css_group_refcount",
++		.read_uint = current_css_group_refcount_read,
++	},
++};
++
++static int debug_populate(struct container_subsys *ss, struct container *cont)
++{
++	return container_add_files(cont, ss, files, ARRAY_SIZE(files));
++}
++
++struct container_subsys debug_subsys = {
++	.name = "debug",
++	.create = debug_create,
++	.destroy = debug_destroy,
++	.populate = debug_populate,
++	.subsys_id = debug_subsys_id,
++};
 
 --
