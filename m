@@ -1,8 +1,7 @@
-From: Srivatsa Vaddagiri <vatsa-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: Resource Management development plans
-Date: Fri, 20 Jul 2007 21:49:39 +0530
-Message-ID: <20070720161939.GQ2216@linux.vnet.ibm.com>
-Reply-To: vatsa-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
+From: "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
+Subject: containers development plans (July 20 version)
+Date: Fri, 20 Jul 2007 12:36:15 -0500
+Message-ID: <20070720173615.GA25167@vino.hallyn.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
@@ -16,56 +15,202 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, ckrm-tech-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org
+To: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
+Cc: ckrm-tech-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org, xemul-3ImXcnM4P+0@public.gmane.org, rohitseth-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, pj-sJ/iWh9BUns@public.gmane.org, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org, cpw-sJ/iWh9BUns@public.gmane.org, menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Here's a tentative development plan on resource management from our side.
-Would request others to comment/add their plans as part of this discussion.
 
-This plan, alongwith appropriate usage scenarios, is being requested for 
-kernel-summit discussion. Most likely, the resource management plans
-will be presented as part of container discussion.
+(If you missed earlier parts of this thread, you can catch earlier parts of
+this thread starting at
+https://lists.linux-foundation.org/pipermail/containers/2007-July/005860.html)
 
-1. Infrastructure
-	Userland interface for task-grouping, specifying group usage limits etc
+======================  Section 0  ======================
+=Status of this document
+======================  Section 0  ======================
 
-	Paul Menage's container patches will be the basis for this
-	infrastructure.
+I've added a 'use cases' section.  That is where we attempt to
+explain to people not familiar with containers work why it is
+worth integrating upstream.
 
-2. cpu controller
+Srivatsa Vaddagiri is independently gathering additional information
+on specific task container subsystems.  That will eventually be
+incorporated into the final version of this roadmap.
 
-- Atleast 1-level deep hierarchical proportional fair-share scheduling
-- Soft and Hard limit cpu usage of group
-- Fine grained cpu control (ex: parts per 1000?)
-- SCHED_FIFO policy for groups
-        Groups having this policy will recv all cpu cycles as long
-        as they have any task runnable. This is at the cost of 
-	starving other non-SCHED_FIFO groups.
-- Sleeper fairness - Will help bursty workloads
-- Accounting - group cpu usage
+======================  Section 1  ======================
+=Introduction
+======================  Section 1  ======================
 
-3. memory controller
+We are trying to create a roadmap for the next year of
+'container' development, to be reported to the upcoming kernel
+summit.  Containers here is a bit of an ambiguous term, so we are
+taking it to mean all of:
 
-- Basic rss controller
-- user space oom handler
-- Improve shared page accounting
-- Handling of soft limits
-- Provide support for accounting kernel/user memory, slabs, page tables,
-  dcache entries, vma's, etc
-- Improved statistics (folding)
-- Add support for better tuning of containers
-        i.  Low and high water marks per container
-        ii. Per container swappiness support
-- Per container swap file(s)
+	1. namespaces
+                kernel resource namespaces to support resource isolation
+                and virtualization for virtual servers and application
+                checkpoint/restart.
+	2. task containers framework
+                the task containers (or, as Paul Jackson suggests, resource
+                containers) framework by Paul Menage which especially
+                provides a framework for subsystems which perform resource
+                accounting and limits.
+	3. checkpoint/restart
 
-4. Disk io controller
+======================  Section 2  ======================
+=Detailed development plans
+======================  Section 2  ======================
 
-[I don't have sufficient details at the moment on disk io controller
-requirements. Will add after I talk to relevant groups here]
+A (still under construction) list of features we expect to be worked on
+next year looks like this:
 
-	
+        1. completion of ongoing namespaces
+                pid namespace
+                        push merged patchset upstream
+                        kthread cleanup
+                                especially nfs
+                                autofs
+                        af_unix credentials (stores pid_t?)
+                net namespace
+                ro bind mounts
+        2. continuation with new namespaces
+                devpts, console, and ttydrivers
+                user
+                time
+                namespace management tools
+                namespace entering  (using one of:)
+                        bind_ns()
+                        ns container subsystem
+                        (vs refuse this functionality)
+                multiple /sys mounts
+                        break /sys into smaller chunks?
+                        shadow dirs vs namespaces
+                multiple proc mounts
+                        likely need to extend on the work done for pid namespaces
+                        i.e. other /proc files will need some care
+				virtualization of statistics for 'top', etc
+        3. any additional work needed for virtual servers?
+                i.e. in-kernel keyring usage for cross-usernamespace permissions, etc
+                        nfs and rpc updates needed?
+                        general security fixes
+                                per-container capabilities?
+                        device access controls
+                                e.g. root in container should not have access to /dev/sda by default)
+                        filesystems access controls
 
-	
--- 
-Regards,
-vatsa
+        4. task containers functionality
+                base features
+                        virtualized continerfs mounts
+                                to support vserver mgmnt of sub-containers
+                        locking cleanup
+                        control file API simplification
+                        control file prefixing with subsystem name
+		userpace RBCE to provide controls for
+			users
+			groups
+			pgrp
+			executable
+                specific containers
+                        split cpusets into
+                                cpuset
+                                memset
+                        network
+                                connect/bind/accept controller using iptables
+                        network flow id control
+                        userspace per-container OOM handler
+			per-container swap
+			per-container disk I/O scheduling
+
+        5. checkpoint/restart
+                memory c/r
+                        (there are a few designs and prototypes)
+                        (though this may be ironed out by then)
+                        per-container swapfile?
+                overall checkpoint strategy  (one of:)
+                        in-kernel
+                        userspace-driven
+                        hybrid
+                overall restart strategy
+                use freezer API
+                use suspend-to-disk?
+                sysvipc
+                        "set identifier" syscall
+		pid namespace
+                        clone_with_pid()
+
+
+======================  Section 3  ======================
+=Use cases
+======================  Section 3  ======================
+
+	1, Namespaces:
+
+	The most commonly listed uses for namespaces are virtual
+	servers and checkpoint restart.  Other uses are debugging
+	(running tests in not-quite-virtual-servers) and resource
+	isolation, such as the use of mounts namespaces to simulate
+	multi-level directories for LSPP.
+
+	2. Task Containers:
+
+	(Vatsa to fill in)
+
+	3. Checkpoint/restart
+
+	load balancing:
+	applications can be migrated from high-load systems to ones
+	with a lower load.  Long-running applications can be checkpointed
+	(or migrated) to start a short-running high-load job, then
+	restarted.
+
+	kernel upgrades:
+	A long-running application - or whole virtual server - can
+	be migrated or checkpointed so that the system can be
+	rebooted, and the application can continue to run
+
+
+======================  Section 4  ======================
+=Involved parties
+======================  Section 4  ======================
+
+In the list of stakeholders, I try to guess based on past comments and
+contributions what *general* area they are most likely to contribute in.
+I may try to narrow those down later, but am just trying to get something
+out the door right now before my next computer breaks.
+
+Stakeholders:
+        Eric Biederman
+                everything
+        google
+                task containers
+        ibm (serge, dave, cedric, daniel)
+                namespaces
+		checkpoint/restart
+	bull (benjamin, pierre)
+                namespaces
+		checkpoint/restart
+        ibm (balbir, vatsa)
+		task containers
+        kerlabs
+                checkpoint/restart
+        openvz
+                everything
+        NEC Japan (Masahiko Takahashi)
+                checkpoint/restart
+        Linux-VServer
+                namespaces+containers
+        zap project
+                checkpoint/restart
+        planetlab
+                everything
+        hp
+                (i must have lost an email - what are they
+		interested in working on?)
+        XtreemOS
+                checkpoint/restart
+	Fujitsu/VA Linux Japan
+		resource control
+
+Is anyone else still missing from the list?
+
+thanks,
+-serge
