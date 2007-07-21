@@ -1,38 +1,47 @@
-From: Andrew Morton <akpm@linux-foundation.org>
-Subject: Re: [PATCH 4/5] [V2] Define is_global_init() and
- is_container_init()
-Date: Fri, 20 Jul 2007 15:41:13 -0700
-Message-ID: <20070720154113.db9fb8a4.akpm@linux-foundation.org>
-References: <20070719071206.GE10195@us.ibm.com>
-	<20070719072158.GD28216@us.ibm.com>
+From: "Paul Menage" <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+Subject: Re: containers development plans (July 20 version)
+Date: Fri, 20 Jul 2007 17:02:32 -0700
+Message-ID: <6599ad830707201702g1acae7ddt16a502984baa64cc@mail.gmail.com>
+References: <20070720173615.GA25167@vino.hallyn.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 Content-Transfer-Encoding: 7bit
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S937664AbXGTWmN@vger.kernel.org>
-In-Reply-To: <20070719072158.GD28216@us.ibm.com>
-Sender: linux-kernel-owner@vger.kernel.org
-To: sukadev@us.ibm.com
-Cc: linux-kernel@vger.kernel.org, Containers <containers@lists.osdl.org>, Oleg Nesterov <oleg@tv-sign.ru>, Pavel Emelianov <xemul@openvz.org>
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <20070720173615.GA25167-4+H9nbzk0uAIagZqoN9o3w@public.gmane.org>
+Content-Disposition: inline
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
+Cc: ckrm-tech-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org, xemul-3ImXcnM4P+0@public.gmane.org, rohitseth-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, pj-sJ/iWh9BUns@public.gmane.org, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org, containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, cpw-sJ/iWh9BUns@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Thu, 19 Jul 2007 00:21:58 -0700
-sukadev@us.ibm.com wrote:
+On 7/20/07, Serge E. Hallyn <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org> wrote:
+>         4. task containers functionality
+>                 base features
+>                         virtualized continerfs mounts
+>                                 to support vserver mgmnt of sub-containers
+>                         locking cleanup
+>                         control file API simplification
+>                         control file prefixing with subsystem name
 
-> --- lx26-22-rc6-mm1a.orig/kernel/pid.c	2007-07-16 12:55:15.000000000 -0700
-> +++ lx26-22-rc6-mm1a/kernel/pid.c	2007-07-16 13:10:48.000000000 -0700
-> @@ -69,6 +69,13 @@ struct pid_namespace init_pid_ns = {
->  	.last_pid = 0,
->  	.child_reaper = &init_task
->  };
-> +EXPORT_SYMBOL(init_pid_ns);
-> +
-> +int is_global_init(struct task_struct *tsk)
-> +{
-> +	return tsk == init_pid_ns.child_reaper;
-> +}
-> +EXPORT_SYMBOL(is_global_init);
+This last point was actually in the set of patches that I sent to akpm
+today - probably it was too small an item to be worth including in
+this list.
 
-I don't immediately see why init_pid_ns was exported to modules.
+> Stakeholders:
+>         Eric Biederman
+>                 everything
+>         google
+>                 task containers
 
-It would need to be exported if is_global_init() was made static inline in a
-header (which seems like a sensible thing to do), but it wasn't.
+If the checkpoint/restart code is expected to evolve into a workable
+live migration system, we'd be interested in that too.
+
+Paul
