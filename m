@@ -1,117 +1,97 @@
-From: Balbir Singh <balbir@linux.vnet.ibm.com>
-Subject: Re: [RFC][-mm PATCH 4/8] Memory controller memory accounting (v3)
-Date: Sat, 21 Jul 2007 22:41:37 +0530
-Message-ID: <46A23E49.3050304@linux.vnet.ibm.com>
-References: <20070720082352.20752.37209.sendpatchset@balbir-laptop> <20070720082440.20752.67223.sendpatchset@balbir-laptop> <6599ad830707201403n6a364514y601996145fa3714c@mail.gmail.com>
-Reply-To: balbir@linux.vnet.ibm.com
+From: "Manufacturing News" <wf-GvRzlJ8R/WPsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
+Subject: Small Business and Entrepreneurship
+Date: Sat, 21 Jul 2007 18:37:17 +0200
+Message-ID: <MDAEMON-F200707211842.AA421109md50005812435@company.mail>
+Reply-To: wf-GvRzlJ8R/WPsfHDXvbKv3WD2FQJk+8+b@public.gmane.org
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Content-Transfer-Encoding: 7bit
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1758751AbXGURMI@vger.kernel.org>
-In-Reply-To: <6599ad830707201403n6a364514y601996145fa3714c@mail.gmail.com>
-Sender: linux-kernel-owner@vger.kernel.org
-To: Paul Menage <menage@google.com>
-Cc: Andrew Morton <akpm@linux-foundation.org>, Peter Zijlstra <a.p.zijlstra@chello.nl>, Linux Containers <containers@lists.osdl.org>, YAMAMOTO Takashi <yamamoto@valinux.co.jp>, Eric W Biederman <ebiederm@xmission.com>, Linux MM Mailing List <linux-mm@kvack.org>, Vaidyanathan Srinivasan <svaidy@linux.vnet.ibm.com>, Pavel Emelianov <xemul@openvz.org>, Dave Hansen <haveblue@us.ibm.com>, Linux Kernel Mailing List <linux-kernel@vger.kernel.org>
+Content-Type: multipart/mixed; boundary="===============9081207857000232886=="
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Mime-version: 1.0
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: containers-3NddpPZAyC0@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Paul Menage wrote:
-> On 7/20/07, Balbir Singh <balbir@linux.vnet.ibm.com> wrote:
-> 
->> +void __always_inline unlock_meta_page(struct page *page)
->> +{
->> +       bit_spin_unlock(PG_metapage, &page->flags);
->> +}
-> 
-> Maybe add a BUG_ON(!test_bit(PG_metapage, &page->flags)) at least for
-> development?
-> 
+--===============9081207857000232886==
+Content-Type: text/html
+Content-Transfer-Encoding: quoted-printable
 
-I'd rather make that a VM_BUG_ON, but that's a good suggestion
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http:/=
+/www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns=3D"http://www.w3.org/1999/xhtml" xml:lang=3D"en" lang=3D"en">
+<head>
+<title>Manufacturing News</title>
+<meta http-equiv=3D"Content-Type" content=3D"text/html; charset=3Diso-=
+8859-1" />
+<style type=3D"text/css">
+body { font-family: arial,tahoma,verdana,sans-serif; font-size: 10pt; }
+</style>
+</head>
+<body>
 
->> +       mem = rcu_dereference(mm->mem_container);
->> +       /*
->> +        * For every charge from the container, increment reference
->> +        * count
->> +        */
->> +       css_get(&mem->css);
->> +       rcu_read_unlock();
-> 
-> It's not clear to me that this is safe.
-> 
-> If
-> 
->> +
->> +       /*
->> +        * If we created the meta_page, we should free it on exceeding
->> +        * the container limit.
->> +        */
->> +       if (res_counter_charge(&mem->res, 1)) {
->> +               css_put(&mem->css);
->> +               goto free_mp;
->> +       }
->> +
->> +       lock_meta_page(page);
->> +       /*
->> +        * Check if somebody else beat us to allocating the meta_page
->> +        */
->> +       if (page_get_meta_page(page)) {
-> 
-> I think you need to add something like
-> 
->  kfree(mp);
->  mp = page_get_meta_page(page);
-> 
-> otherwise you're going to leak the new but unneeded metapage.
-> 
+<span style=3D"font-weight: bold;">Small and Mobile Production (SMP) t=
+o resolve giant problem in developing regions</span>
 
-Yes, good catch! I am surprised I did not check for that.
+<br /><br />
 
->> +               atomic_inc(&mp->ref_cnt);
->> +               res_counter_uncharge(&mem->res, 1);
->> +               goto done;
->> +       }
->> +
->> +       atomic_set(&mp->ref_cnt, 1);
->> +       mp->mem_container = mem;
->> +       mp->page = page;
->> +       page_assign_meta_page(page, mp);
-> 
-> Would it make sense to have the "mp->page = page" be part of
-> page_assign_meta_page() for consistency?
-> 
+SMP developed a revolutionary production method that is self-contained=
+, immediate, portable, competitive, accessible because it is so cost-e=
+ffective and=20
+transportable by any means whatsoever: by land, sea, railroad or air w=
+ith more than hundreds Small and Mobile Production systems. From a tec=
+hnological=20
+standpoint, it is an incontrovertible fact that this system is aimed a=
+t solving very serious problems, starting with that which is most basi=
+c: the survival of millions=20
+of human beings.
 
-Yes, that could be done easily.
+<br /><br />
 
->> +err:
->> +       unlock_meta_page(page);
->> +       return -ENOMEM;
-> 
-> The only jump to err: is from a location where the metapage is already
-> unlocked. Maybe scrap err: and just do a return -ENOMEM when the
-> allocation fails?
-> 
+The SMP is the only  system in the world that can provide up to six of=
+ the most essential products for basic sustenance for just one dollar =
+per day. SMP will=20
+supply to countries and developing regions the technology and necessar=
+y support for these Small and Mobile Units.
 
-Sounds good, let me revisit the code.
+<br /><br />
 
->> +out_uncharge:
->> +       mem_container_uncharge(page_get_meta_page(page));
-> 
-> Wanting to call mem_container_uncharge() on a page and hence having to
-> call page_get_meta_page() seems to be more common than wanting to call
-> it on a meta page that you already have available. Maybe make
-> mem_container_uncharge() be a wrapper that take a struct page and does
-> something like mem_container_uncharge_mp(page_get_meta_page(page))
-> where mem_container_uncharge_mp() is the raw meta-page version?
-> 
+If you are interested in being a partner in your country or region, yo=
+u can send your CV to <a href=3D"mailto:worldprogram-y7mWNqJcIDoAvxtiuMwx3w@public.gmane.org?Subject=
+=3DInterested in=20
+being a partner">SMP Partners Program</a> Marcia Anderson, Project Man=
+ager.
+
+<br /><br />
+
+----------------------------------------------------------------------=
+---<br />
+If you received this in error or would like to be removed from our lis=
+t, please return us indicating: remove or un-subscribe in subject fiel=
+d, Thanks. <a=20
+href=3D"mailto:worldprogram-y7mWNqJcIDoAvxtiuMwx3w@public.gmane.org?Subject=3DRemove">The Developmen=
+t News, Editor</a><br />
+&copy; 2007 THE DEVELOPMENT NEWS. All rights reserved.
+
+</body>
+</html>
 
 
-Yes.. right! Will do, I'll write a wrapper.
 
-> Paul
+--===============9081207857000232886==
+Content-Type: text/plain; charset="us-ascii"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+Content-Disposition: inline
 
-
--- 
-	Warm Regards,
-	Balbir Singh
-	Linux Technology Center
-	IBM, ISTL
+_______________________________________________
+Containers mailing list
+Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+https://lists.linux-foundation.org/mailman/listinfo/containers
+--===============9081207857000232886==--
