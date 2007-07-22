@@ -1,10 +1,11 @@
-From: "Manufacturing News" <wf-GvRzlJ8R/WPsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
-Subject: Small Business and Entrepreneurship
-Date: Sat, 21 Jul 2007 18:37:17 +0200
-Message-ID: <MDAEMON-F200707211842.AA421109md50005812435@company.mail>
-Reply-To: wf-GvRzlJ8R/WPsfHDXvbKv3WD2FQJk+8+b@public.gmane.org
+From: "Jerry Springer" <racclimate-8WUaM87jpWgwK5AITqY/OCp2UmYkHbXO@public.gmane.org>
+Subject: bottle borroughs  corvallis
+Date: Sat, 21 Jul 2007 22:51:03 -0400
+Message-ID: <001801c7cbe9$9dd5ee10$05d0a194@amd643d3f3251e>
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary="===============9081207857000232886=="
+Content-Type: text/plain; format=flowed; charset="iso-8859-1";
+	reply-type=original
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
@@ -13,85 +14,10 @@ List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
 List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Mime-version: 1.0
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-3NddpPZAyC0@public.gmane.org
+To: containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
---===============9081207857000232886==
-Content-Type: text/html
-Content-Transfer-Encoding: quoted-printable
-
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http:/=
-/www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-<html xmlns=3D"http://www.w3.org/1999/xhtml" xml:lang=3D"en" lang=3D"en">
-<head>
-<title>Manufacturing News</title>
-<meta http-equiv=3D"Content-Type" content=3D"text/html; charset=3Diso-=
-8859-1" />
-<style type=3D"text/css">
-body { font-family: arial,tahoma,verdana,sans-serif; font-size: 10pt; }
-</style>
-</head>
-<body>
-
-<span style=3D"font-weight: bold;">Small and Mobile Production (SMP) t=
-o resolve giant problem in developing regions</span>
-
-<br /><br />
-
-SMP developed a revolutionary production method that is self-contained=
-, immediate, portable, competitive, accessible because it is so cost-e=
-ffective and=20
-transportable by any means whatsoever: by land, sea, railroad or air w=
-ith more than hundreds Small and Mobile Production systems. From a tec=
-hnological=20
-standpoint, it is an incontrovertible fact that this system is aimed a=
-t solving very serious problems, starting with that which is most basi=
-c: the survival of millions=20
-of human beings.
-
-<br /><br />
-
-The SMP is the only  system in the world that can provide up to six of=
- the most essential products for basic sustenance for just one dollar =
-per day. SMP will=20
-supply to countries and developing regions the technology and necessar=
-y support for these Small and Mobile Units.
-
-<br /><br />
-
-If you are interested in being a partner in your country or region, yo=
-u can send your CV to <a href=3D"mailto:worldprogram-y7mWNqJcIDoAvxtiuMwx3w@public.gmane.org?Subject=
-=3DInterested in=20
-being a partner">SMP Partners Program</a> Marcia Anderson, Project Man=
-ager.
-
-<br /><br />
-
-----------------------------------------------------------------------=
----<br />
-If you received this in error or would like to be removed from our lis=
-t, please return us indicating: remove or un-subscribe in subject fiel=
-d, Thanks. <a=20
-href=3D"mailto:worldprogram-y7mWNqJcIDoAvxtiuMwx3w@public.gmane.org?Subject=3DRemove">The Developmen=
-t News, Editor</a><br />
-&copy; 2007 THE DEVELOPMENT NEWS. All rights reserved.
-
-</body>
-</html>
-
-
-
---===============9081207857000232886==
-Content-Type: text/plain; charset="us-ascii"
-MIME-Version: 1.0
-Content-Transfer-Encoding: 7bit
-Content-Disposition: inline
-
-_______________________________________________
-Containers mailing list
-Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-https://lists.linux-foundation.org/mailman/listinfo/containers
---===============9081207857000232886==--
+calliope cz  bloodstone berkowitz.  arab codebreak bronchus cushman  brainstorm biscuit.  caste colloquia 
+bach  celebrity  acquisition chloroplast   auditor  abstruse cute.   clitoris  desideratum atrocious  abdominal cowhide  decelerate    charlie.
