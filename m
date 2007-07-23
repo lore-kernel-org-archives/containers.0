@@ -1,15 +1,14 @@
 From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 Subject: Re: containers development plans (July 20 version)
-Date: Mon, 23 Jul 2007 09:24:18 -0500
-Message-ID: <20070723142418.GD22936@sergelap.austin.ibm.com>
+Date: Mon, 23 Jul 2007 09:27:45 -0500
+Message-ID: <20070723142745.GE22936@sergelap.austin.ibm.com>
 References: <20070720173615.GA25167@vino.hallyn.com>
-	<6599ad830707201702g1acae7ddt16a502984baa64cc@mail.gmail.com>
-	<m1y7ha1sg2.fsf@ebiederm.dsl.xmission.com>
+	<1184966978.10091.448.camel@galaxy.corp.google.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <m1y7ha1sg2.fsf-T1Yj925okcoyDheHMi7gv2pdwda3JcWeAL8bYrjMMd8@public.gmane.org>
+In-Reply-To: <1184966978.10091.448.camel-7OsMPKyG+FJSzHKm+aFRNNkmqwFzkYv6@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,39 +18,39 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Cc: ckrm-tech-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org, xemul-3ImXcnM4P+0@public.gmane.org, cpw-sJ/iWh9BUns@public.gmane.org, containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, pj-sJ/iWh9BUns@public.gmane.org, rohitseth-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
+To: Rohit Seth <rohitseth-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+Cc: akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, ckrm-tech-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org, xemul-3ImXcnM4P+0@public.gmane.org, pj-sJ/iWh9BUns@public.gmane.org, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org, containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, cpw-sJ/iWh9BUns@public.gmane.org, "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Quoting Eric W. Biederman (ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org):
-> "Paul Menage" <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org> writes:
-> 
-> > On 7/20/07, Serge E. Hallyn <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org> wrote:
-> >>         4. task containers functionality
-> >>                 base features
-> >>                         virtualized continerfs mounts
-> >>                                 to support vserver mgmnt of sub-containers
-> >>                         locking cleanup
-> >>                         control file API simplification
-> >>                         control file prefixing with subsystem name
-> >
-> > This last point was actually in the set of patches that I sent to akpm
-> > today - probably it was too small an item to be worth including in
-> > this list.
-> >
-> >> Stakeholders:
-> >>         Eric Biederman
-> >>                 everything
-> >>         google
-> >>                 task containers
-> >
-> > If the checkpoint/restart code is expected to evolve into a workable
-> > live migration system, we'd be interested in that too.
-> 
-> At least the support for live migration should be there.
+Quoting Rohit Seth (rohitseth-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org):
+> Thanks Serge for collecting these requirements.  Have we decided on
+> container mini summit?
 
-Yeah, sorry, I kind of take it for granted that when i say 'c/r' i would
-want live migration, but i shouldn't.  Will spell that out.
+I think we've decided to have one, but someone needs to implement the
+details.  Someone (Kirill?) mentioned having a "private" mini-summit for
+conference attendees, followed by a call-in conference.  So we would
+need a meeting room and time at LCE, followed by a meeting room with a
+phone.  I suppose someone's hotel room would work as well...
 
-thanks,
+Personally I'd prefer to have just one mini-summit, with a live call-in
+phone number, so noone feels like there's shady back-room goings on.
+But on the other hand productivity of the mini-summit could be squashed
+by poor phone line quality or phone etiquette...
+
+> Couple of points that I want to add in task
+> container functionality section (not sure if these are already covered
+> by items below):
+> 
+> 1- Per container dirty page (write throttling) limit.
+> 2- Per container memory reclaim
+> 3- network rate limiting (outbound) based on container
+> 4- User level APIS to identify the resource limits that is allowed to a
+> job, for example, how much physical memory a process can use.  This
+> should seamlessly integrated with non-container environment as well (may
+> be with ulimit).
+> 5- Similary, per container stats, like pages on active list, cpus usage
+> etc. could also be very helpful.
+
+Thanks, will add these.
+
 -serge
