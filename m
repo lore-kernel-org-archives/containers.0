@@ -1,9 +1,9 @@
-From: Santiago <tjfgt-jF4u9eMo2pH1P9xLtpHBDw@public.gmane.org>
+From: Riley <pff-CpS1evwYUEI@public.gmane.org>
 Subject: (no subject)
-Date: Mon, 23 Jul 2007 11:08:18 -0400
-Message-ID: <46A4C462.5030704@oca-sl.es>
+Date: Mon, 23 Jul 2007 11:08:40 -0400
+Message-ID: <46A4C478.2000000@once.es>
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary="------------000702080807020308070201"
+Content-Type: multipart/mixed; boundary="------------020400020302020807000007"
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
@@ -17,13 +17,13 @@ Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 To: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
 List-Id: containers.vger.kernel.org
 
---------------000702080807020308070201
+--------------020400020302020807000007
 Content-Type: text/plain; charset=iso-8859-1; format=flowed
 Content-Transfer-Encoding: 7bit
 
 
 
---------------000702080807020308070201
+--------------020400020302020807000007
 Content-Type: application/pdf;
  name="Suggestion.pdf"
 Content-Transfer-Encoding: base64
@@ -221,7 +221,7 @@ MDAwMDAxMDIzMyAwMDAwMCBuIAp0cmFpbGVyCgo8PAovRW5jcnlwdCAxMyAwIFIKL0luZm8gMTQg
 MCBSCi9Sb290IDEgMCBSCi9TaXplIDE1Ci9JRCBbPDQwMWZmNWNlNGYyMWYwNTM0NzAyNzRjMTY2
 NjE1ZmM4PjxiYjUzMzdmMDY0OWE2OWQ4YjNkODBjNjg5NjI4NTQ5OT5dCj4+CnN0YXJ0eHJlZgox
 MDM2OQolJUVPRgo=
---------------000702080807020308070201
+--------------020400020302020807000007
 Content-Type: text/plain; charset="us-ascii"
 MIME-Version: 1.0
 Content-Transfer-Encoding: 7bit
@@ -231,4 +231,4 @@ _______________________________________________
 Containers mailing list
 Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 https://lists.linux-foundation.org/mailman/listinfo/containers
---------------000702080807020308070201--
+--------------020400020302020807000007--
