@@ -1,22 +1,10 @@
-From: Greg KH <gregkh-l3A5Bk7waGM@public.gmane.org>
-Subject: Re: [PATCH 2/4] sysfs: Implement sysfs manged shadow directory
-	support.
-Date: Tue, 24 Jul 2007 00:26:19 -0700
-Message-ID: <20070724072619.GB835@suse.de>
-References: <m1fy4ldldm.fsf@ebiederm.dsl.xmission.com>
-	<20070622001328.GA14113@suse.de>
-	<m1tzt0cujt.fsf_-_@ebiederm.dsl.xmission.com>
-	<20070625212339.GA13398@kroah.com>
-	<m14pk13svx.fsf@ebiederm.dsl.xmission.com>
-	<m1zm1t2e92.fsf_-_@ebiederm.dsl.xmission.com>
-	<46A3B449.3090409@gmail.com> <20070722202508.GA18018@suse.de>
-	<m17iosw075.fsf@ebiederm.dsl.xmission.com>
-	<46A425F9.1030008@gmail.com>
+From: "Janelle Ziegler" <FernurgingZiegler-6YTKKZsDumPZ+VzJOa5vwg@public.gmane.org>
+Subject: Thank you, we are accepting your loan request
+Date: Tue, 24 Jul 2007 05:19:08 +0600
+Message-ID: <71b101c7cddc$c39fafb0$d5384c45@hp>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+Content-Type: multipart/mixed; boundary="===============1289660164483156094=="
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <46A425F9.1030008-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -24,48 +12,97 @@ List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
 List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Mime-version: 1.0
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Tejun Heo <htejun-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Greg KH <greg-U8xfFu+wG4EAvxtiuMwx3w@public.gmane.org>, Dave Hansen <hansendc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+To: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Mon, Jul 23, 2007 at 12:52:25PM +0900, Tejun Heo wrote:
-> Eric W. Biederman wrote:
-> > Further while there are a few little nits I think mostly Tejun is 
-> > mostly objecting to the fundamental complexity of the problem rather
-> > then to things that can be fixed by a cleaner implementation.
-> 
-> Oh well, I don't think so but I might be wrong.
-> 
-> > If it didn't take me a week every time I had to update this code
-> > after Tejun changes the locking rules in fs/sysfs/dir.c or if there
-> > was someone I could delegate the work of maintaining this code to
-> > I probably would not mind dropping the patches for a little bit.  As
-> > it stands I am having horrible nightmares about how the internals
-> > of sysfs will be completely different if you drop the last 3 patches
-> > by the time I come back and I will need to spend several more weeks
-> > just catching up.
-> 
-> Yeah, sysfs has gone through a lot of changes but I think most of
-> internal restructuring is complete now.  What's left is removing kobj
-> completely from sysfs internals and interface.
-> 
-> We kind of share the pain here although yours seems much worse than
-> mine.  Shadow directories have been major pain in the ass while
-> restructuring sysfs and I basically had to shoot in the dark because
-> there was no in-kernel user.  I guess the blame falls on the timing.
-> 
-> I'll give a shot at the no intermediate shadowed directory
-> implementation.  I think things will fit a lot easier that way but I
-> really dunno till I try.  I'll try to post prototype early.
-> 
-> As long as the current shadow implementation doesn't get into mainline.
->  I'm okay with it staying in Greg's tree until this is resolved.
+This is a multi-part message in MIME format.
 
-Don't worry, I will not be sending it on to Linus unless you give the ok
-to do so :)
+--===============1289660164483156094==
+Content-Type: multipart/alternative;
+	boundary="----=_NextPart_000_71AD_01C7CDDC.C39FAFB0"
 
-thanks,
+This is a multi-part message in MIME format.
 
-greg k-h
+------=_NextPart_000_71AD_01C7CDDC.C39FAFB0
+Content-Type: text/plain;
+	charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
+
+Your your credit report does not matter to us!
+
+If you OWN property and want IMMEDIATE pocket money to spend ANY way you =
+like, or simply need to LOWER your current payments by a third or more, =
+here is the deal we can offer you THIS EVENING (hurry, this deal will =
+expire NOW):
+
+$256,000+ debt
+
+AND EVEN MORE: After further review, our lenders have established the =
+lowest payments!
+
+Hurry, when best deal is gone, it is gone. Simply fill in this =
+one-minute form...
+
+Do not worry about approval, your credit history will not disqualify you!
+
+http://dawgealthz.com/
+------=_NextPart_000_71AD_01C7CDDC.C39FAFB0
+Content-Type: text/html;
+	charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
+
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<HTML><HEAD>
+<META http-equiv=3DContent-Type content=3D"text/html; =
+charset=3Diso-8859-1">
+<META content=3D"MSHTML 6.00.3790.2759" name=3DGENERATOR>
+<STYLE></STYLE>
+</HEAD>=20
+<BODY bgColor=3D#ffffff>
+<DIV><FONT face=3DGeorgia size=3D3><B>Your your credit report does not =
+matter to=20
+us!</B></FONT></DIV>  =20
+<DIV><FONT face=3DGeorgia size=3D3>&nbsp;</FONT></DIV>
+<DIV><FONT face=3DGeorgia size=3D3>If you OWN property and want =
+IMMEDIATE pocket=20
+money to spend ANY way you like, or simply need to LOWER your current =
+payments=20
+by a third or more, here is the deal we can offer you THIS EVENING =
+(hurry, this=20
+deal will expire NOW):</FONT></DIV> =20
+<DIV><FONT face=3DGeorgia size=3D3>&nbsp;</FONT></DIV>
+<DIV><FONT face=3DGeorgia size=3D3><B>$256,000+ debt</B></FONT></DIV>
+<DIV><FONT face=3DGeorgia size=3D3>&nbsp;</FONT></DIV>
+<DIV><FONT face=3DGeorgia size=3D3>AND EVEN MORE: After further review, =
+our lenders=20
+have established the lowest payments!</FONT></DIV> =20
+<DIV><FONT face=3DGeorgia size=3D3>&nbsp;</FONT></DIV>
+<DIV><FONT face=3DGeorgia size=3D3><B>Hurry, when best deal is gone, it =
+is gone.=20
+Simply fill in this one-minute form...</B></FONT></DIV>    =20
+<DIV><FONT face=3DGeorgia size=3D3>&nbsp;</FONT></DIV>
+<DIV><FONT face=3DGeorgia size=3D3>Do not worry about approval, your =
+credit history=20
+will not disqualify you!</FONT></DIV> =20
+<DIV><FONT face=3DGeorgia size=3D3>&nbsp;</FONT></DIV>
+<DIV><FONT face=3DGeorgia size=3D3><A=20
+HREF=3D"http://dawgealthz.com/">http://dawgealthz.com/</A></FONT></DIV>
+</BODY></HTML>
+
+
+------=_NextPart_000_71AD_01C7CDDC.C39FAFB0--
+
+--===============1289660164483156094==
+Content-Type: text/plain; charset="us-ascii"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+Content-Disposition: inline
+
+_______________________________________________
+Containers mailing list
+Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+https://lists.linux-foundation.org/mailman/listinfo/containers
+--===============1289660164483156094==--
