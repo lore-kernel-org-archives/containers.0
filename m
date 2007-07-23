@@ -1,14 +1,19 @@
-From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: containers development plans (July 20 version)
-Date: Mon, 23 Jul 2007 09:27:45 -0500
-Message-ID: <20070723142745.GE22936@sergelap.austin.ibm.com>
-References: <20070720173615.GA25167@vino.hallyn.com>
-	<1184966978.10091.448.camel@galaxy.corp.google.com>
+From: "Paul Menage" <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [ckrm-tech] [Devel] containers development plans
+Date: Mon, 23 Jul 2007 07:54:28 -0700
+Message-ID: <6599ad830707230754k450659e9s913da3f13986af47@mail.gmail.com>
+References: <20070702165504.GA18075@vino.hallyn.com>
+	<46984121.8070301@openvz.org>
+	<1184627311.10091.252.camel@galaxy.corp.google.com>
+	<20070717101712.GB6101@vino.hallyn.com> <469CC969.9080103@sw.ru>
+	<20070717181002.GB9383@sergelap.austin.ibm.com>
+	<46A4AFB6.9070302@fr.ibm.com> <20070723141000.GA30590@vino.hallyn.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <20070723141000.GA30590-4+H9nbzk0uAIagZqoN9o3w@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <1184966978.10091.448.camel-7OsMPKyG+FJSzHKm+aFRNNkmqwFzkYv6@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,39 +23,27 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Rohit Seth <rohitseth-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
-Cc: akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, ckrm-tech-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org, xemul-3ImXcnM4P+0@public.gmane.org, pj-sJ/iWh9BUns@public.gmane.org, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org, containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, cpw-sJ/iWh9BUns@public.gmane.org, "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
+To: "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
+Cc: ckrm-tech-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org, Rohit Seth <rohitseth-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, pj-sJ/iWh9BUns@public.gmane.org, containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, cpw-sJ/iWh9BUns@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Quoting Rohit Seth (rohitseth-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org):
-> Thanks Serge for collecting these requirements.  Have we decided on
-> container mini summit?
+On 7/23/07, Serge E. Hallyn <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org> wrote:
+> > > So if I happen to go to KS, I can attend the miniconf.  If not, then:
+> >
+> > when is the mini conf planned ? the 3rd of September, just before KS ?
+>
+> That would definately be my hope if i were going to ks
+>
 
-I think we've decided to have one, but someone needs to implement the
-details.  Someone (Kirill?) mentioned having a "private" mini-summit for
-conference attendees, followed by a call-in conference.  So we would
-need a meeting room and time at LCE, followed by a meeting room with a
-phone.  I suppose someone's hotel room would work as well...
+How about the 4th? If I'm there I'd probably not be able to get there
+until Tuesday morning anyway.
 
-Personally I'd prefer to have just one mini-summit, with a live call-in
-phone number, so noone feels like there's shady back-room goings on.
-But on the other hand productivity of the mini-summit could be squashed
-by poor phone line quality or phone etiquette...
+The schedules are a bit unclear to me from the website - both LCE and
+KS are listed as three days, but I'm thinking that LCE is
+Monday/Tuesday with just a reception on Sunday, and KS is
+Wednesday/Thursday with just a reception on Tuesday night. Anyone know
+for sure if that's right?
 
-> Couple of points that I want to add in task
-> container functionality section (not sure if these are already covered
-> by items below):
-> 
-> 1- Per container dirty page (write throttling) limit.
-> 2- Per container memory reclaim
-> 3- network rate limiting (outbound) based on container
-> 4- User level APIS to identify the resource limits that is allowed to a
-> job, for example, how much physical memory a process can use.  This
-> should seamlessly integrated with non-container environment as well (may
-> be with ulimit).
-> 5- Similary, per container stats, like pages on active list, cpus usage
-> etc. could also be very helpful.
+Cheers,
 
-Thanks, will add these.
-
--serge
+Paul
