@@ -1,234 +1,770 @@
-From: Riley <pff-CpS1evwYUEI@public.gmane.org>
-Subject: (no subject)
-Date: Mon, 23 Jul 2007 11:08:40 -0400
-Message-ID: <46A4C478.2000000@once.es>
+From: "Serge E. Hallyn" <serue@us.ibm.com>
+Subject: Re: [PATCH 07/10] Task Containers(V11):  Automatic userspace notification of idle containers
+Date: Mon, 23 Jul 2007 12:41:02 -0500
+Message-ID: <20070723174102.GA22624@sergelap.austin.ibm.com>
+References: <20070720183152.637820000@menage.corp.google.com> <20070720191248.390682000@menage.corp.google.com>
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary="------------020400020302020807000007"
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
+Content-Type: text/plain; charset=us-ascii
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S932142AbXGWRlZ@vger.kernel.org>
+Content-Disposition: inline
+In-Reply-To: <20070720191248.390682000@menage.corp.google.com>
+Sender: linux-kernel-owner@vger.kernel.org
+To: menage@google.com
+Cc: akpm@linux-foundation.org, dev@sw.ru, xemul@sw.ru, serue@us.ibm.com, vatsa@in.ibm.com, ebiederm@xmission.com, haveblue@us.ibm.com, svaidy@linux.vnet.ibm.com, balbir@in.ibm.com, pj@sgi.com, ckrm-tech@lists.sourceforge.net, linux-kernel@vger.kernel.org, rohitseth@google.com, mbligh@google.com, containers@lists.osdl.org, devel@openvz.org
 List-Id: containers.vger.kernel.org
 
---------------020400020302020807000007
-Content-Type: text/plain; charset=iso-8859-1; format=flowed
-Content-Transfer-Encoding: 7bit
+Quoting menage@google.com (menage@google.com):
+> This patch adds the following files to the container filesystem:
+> 
+> notify_on_release - configures/reports whether the container subsystem should
+> attempt to run a release script when this container becomes unused
+> 
+> release_agent - configures/reports the release agent to be used for
+> this hierarchy (top level in each hierarchy only)
+> 
+> releasable - reports whether this container would have been auto-released if
+> notify_on_release was true and a release agent was configured (mainly useful
+> for debugging)
+> 
+> To avoid locking issues, invoking the userspace release agent is done via a
+> workqueue task; containers that need to have their release agents invoked by
+> the workqueue task are linked on to a list.
 
 
+Hi Paul,
 
---------------020400020302020807000007
-Content-Type: application/pdf;
- name="Suggestion.pdf"
-Content-Transfer-Encoding: base64
-Content-Disposition: inline;
- filename="Suggestion.pdf"
+my tree may be a bit crufty, but I had to #include <linux/kmod.h> in
+order for this to compile on s390.
 
-JVBERi0xLjEKJeLjz9MKMSAwIG9iaiAKPDwKL1BhZ2VzIDIgMCBSCi9UeXBlIC9DYXRhbG9nCj4+
-CmVuZG9iaiAKMiAwIG9iaiAKPDwKL01lZGlhQm94IFswIDAgNjEyIDc5Ml0KL0tpZHMgWzMgMCBS
-IDQgMCBSIDUgMCBSIDYgMCBSXQovQ291bnQgNAovVHlwZSAvUGFnZXMKPj4KZW5kb2JqIAo3IDAg
-b2JqIAo8PAovQmFzZUZvbnQgL0NvdXJpZXIKL1N1YnR5cGUgL1R5cGUxCi9OYW1lIC9GMQovVHlw
-ZSAvRm9udAo+PgplbmRvYmogCjggMCBvYmogCjw8Ci9Gb250IAo8PAovRjEgNyAwIFIKPj4KL1By
-b2NTZXQgWy9QREYgL1RleHRdCj4+CmVuZG9iaiAKMyAwIG9iaiAKPDwKL1BhcmVudCAyIDAgUgov
-TWVkaWFCb3ggWzAgMCA2MTIgNzkyXQovUmVzb3VyY2VzIDggMCBSCi9Db250ZW50cyA5IDAgUgov
-VHlwZSAvUGFnZQo+PgplbmRvYmogCjkgMCBvYmogCjw8Ci9MZW5ndGggMTQ1Nwo+PgpzdHJlYW0K
-8RqsVGxQfI6kqApCeL1qBrD5cywNwsMj24q9aw3GzpRtlNJo2GYWW1+HrIjI47UHxgTjDXOWiYMk
-eSpatk7GsAoCvJr9OfQkTVJzKfE8hzCmeK0+whANIpwr9dQDBee1ulrxkNERI5p/F66fQJcgoieC
-A9nUn+6/0YipBDmBO5RG0D1Kjo31NISUZFhyd4doG5ZHijo2Os3VBniKV1VTw4LhI4z0dzz/hco2
-qOOknWwttYzAGMqXKTsIQzwhthaWQ1ea+pSq1wjP15q0KHLn7N/MsvE5zunCPEO6kHwGC1iFHw+4
-gb3JpEKS7hbgx3Ad79wmijnVQEA5rH2LdWOwyy/ghmz9KdCK8izzodXK/LnjBEcyDzdxBIPJdru1
-XlBfGjmla38V4htUmfu4FECfGwGHIxVOPgn+Jvy9m2zMZO5qywSZBA+ekkhr0XDxjNZ5rNdev4ZX
-FW06mT9bGHrfFegY76I/38/18yLlbBUMv7CSK3hK2/6FvdoSN/a8IomSSPXFyE1eQ2BCZjLNT/k3
-gaV/CGqaFojju5o/uXmH19HE6NF7Ol3yr+A7HqqH2NJULfZVVBr4YK1OrfGL5KMg8131zhtTEMJP
-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
-DSCwIadqS/mG0RtV9IfHzqDqIogD34WVpTXhQrcjwmuOSajk3yeK75nBl5sMgZtWbeTigJsqj1Ik
-UrrxwympuU03je3lOHn4jIiXDisq6+/oogKm5LMnYp+xOiVjFVrVuTXUN+DWWIbOUfpnOqxb4yfk
-UUAB+dGFWL67nl+dJ6g7b3U7nOFlsX7wstYP8TZBbkgjVnrfXnRGWl82ugFPnqwwnp5VE4chfbhk
-zrmE6clWaEpeuZD1tc25bZ7HEyyNn+2PO0qv9b2/6SSsgM/mg0iBBoro5o5dY/OjOEV4H9pczr44
-CduHliXQ3UO3Jl3NPfbm6SC+3WDOloRpJcz+QDp5vkhu4Kiu/uS2SI7a0e6vU1/uTdKHWDiAHIhV
-3lNCjTOb1Dm/JhD/LUF6295edKedxSvHMzTzzI0s3XgVWAIPe4IB3AsBQd/MHTvyk7rNs5swdOSz
-21eoHfsWY/nP9/Z6Ljgp1Z3ZMW0vnX9CVNz19Vg7QTAnr6RR+FUJKxs0G4AqJ0ZwxCOZhFWx7oQG
-+apx/Iyg6n2FnySwutOg5boz1W7OAbmKuQhrInuZlyRj1RAQTLUfDLVY0RN/N+/01mmyUf8hrbsV
-hu2N0GrgmZATOZALd+YX9n1B2k+F8bTjABtXe1ta8dGzwYVZu14T0ZhUYHJs/a/CCmVuZHN0cmVh
-bSAKZW5kb2JqIAo1IDAgb2JqIAo8PAovUGFyZW50IDIgMCBSCi9NZWRpYUJveCBbMCAwIDYxMiA3
-OTJdCi9SZXNvdXJjZXMgOCAwIFIKL0NvbnRlbnRzIDExIDAgUgovVHlwZSAvUGFnZQo+PgplbmRv
-YmogCjExIDAgb2JqIAo8PAovTGVuZ3RoIDMyODkKPj4Kc3RyZWFtCo3j63RLrRs2mN6UyGpQ1vbY
-8zgT/CD0KItNGwtsLD18eJh1Jv462d4UQv0m6gA6PwdhCzYXYMpgVNOmGN8E8BAZWcSgRO6PxHSD
-Y9DrPv8IM7SUnucNR2W9TPQrq/pH0k+gbe6nMj5kt8K6uduZu3075HVRR7LhcFgH609PFpMaQ1ny
-t4QcQiF1YcJ0laszv8CxlhFGTbRnj28zJuKl9pX2xwfkbuziLKwI9MQnAB/h/0FAdoqYFTFTTTnk
-GsMNY9LBl78WK1bPOU+UCEmRsL6T2jMW1yyULB4h8MRn7XY+apaD0CbQzwdPaeQx+iiI+no1/JQE
-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
-bWHjWeDRhDxwmw+rwdSZeTnTLjkdA3X3qIjazF+lCmVuZHN0cmVhbSAKZW5kb2JqIAoxMyAwIG9i
-aiAKPDwKL1IgMwovUCAtMzkwNAovTyAorMgmc/Fjpshvx9V1GliRXCjZnQRo7DdoK61qBDJcdMkx
-iikKL0ZpbHRlciAvU3RhbmRhcmQKL0xlbmd0aCAxMjgKL1YgMgovVSAoJSLJLOquWMckuHY7xaEn
-dQAAAAAAAAAAAAAAAAAAAAApCj4+CmVuZG9iaiAKMTQgMCBvYmogCjw8Ci9UaXRsZSAo5C1edAP7
-BfEvwvZcKer/mbR1JivA1fwgoXVFRNHAQiZ9GMgl9vmZ7ajMyLvnt8yhiaGrKQovUHJvZHVjZXIg
-KOJ/SHIB6ikKL0NyZWF0aW9uRGF0ZSAo6TcbIV2+FaVsm7J0vu3I7ikKPj4KZW5kb2JqIHhyZWYK
-MCAxNQowMDAwMDAwMDAwIDY1NTM1IGYgCjAwMDAwMDAwMTUgMDAwMDAgbiAKMDAwMDAwMDA2NiAw
-MDAwMCBuIAowMDAwMDAwMzE1IDAwMDAwIG4gCjAwMDAwMDE5MzMgMDAwMDAgbiAKMDAwMDAwMzI2
-MCAwMDAwMCBuIAowMDAwMDA2NzEyIDAwMDAwIG4gCjAwMDAwMDAxNjcgMDAwMDAgbiAKMDAwMDAw
-MDI0NyAwMDAwMCBuIAowMDAwMDAwNDIxIDAwMDAwIG4gCjAwMDAwMDIwNDAgMDAwMDAgbiAKMDAw
-MDAwMzM2NyAwMDAwMCBuIAowMDAwMDA2ODE5IDAwMDAwIG4gCjAwMDAwMTAwODIgMDAwMDAgbiAK
-MDAwMDAxMDIzMyAwMDAwMCBuIAp0cmFpbGVyCgo8PAovRW5jcnlwdCAxMyAwIFIKL0luZm8gMTQg
-MCBSCi9Sb290IDEgMCBSCi9TaXplIDE1Ci9JRCBbPDQwMWZmNWNlNGYyMWYwNTM0NzAyNzRjMTY2
-NjE1ZmM4PjxiYjUzMzdmMDY0OWE2OWQ4YjNkODBjNjg5NjI4NTQ5OT5dCj4+CnN0YXJ0eHJlZgox
-MDM2OQolJUVPRgo=
---------------020400020302020807000007
-Content-Type: text/plain; charset="us-ascii"
-MIME-Version: 1.0
-Content-Transfer-Encoding: 7bit
-Content-Disposition: inline
+thanks,
+-serge
 
-_______________________________________________
-Containers mailing list
-Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-https://lists.linux-foundation.org/mailman/listinfo/containers
---------------020400020302020807000007--
+> Signed-off-by: Paul Menage <menage@google.com>
+> ---
+> 
+>  include/linux/container.h |   11 -
+>  kernel/container.c        |  425 +++++++++++++++++++++++++++++++++++++++++-----
+>  2 files changed, 393 insertions(+), 43 deletions(-)
+> 
+> Index: container-2.6.22-rc6-mm1/include/linux/container.h
+> ===================================================================
+> --- container-2.6.22-rc6-mm1.orig/include/linux/container.h
+> +++ container-2.6.22-rc6-mm1/include/linux/container.h
+> @@ -77,10 +77,11 @@ static inline void css_get(struct contai
+>   * css_get()
+>   */
+> 
+> +extern void __css_put(struct container_subsys_state *css);
+>  static inline void css_put(struct container_subsys_state *css)
+>  {
+>  	if (!test_bit(CSS_ROOT, &css->flags))
+> -		atomic_dec(&css->refcnt);
+> +		__css_put(css);
+>  }
+> 
+>  struct container {
+> @@ -112,6 +113,13 @@ struct container {
+>  	 * tasks in this container. Protected by css_group_lock
+>  	 */
+>  	struct list_head css_groups;
+> +
+> +	/*
+> +	 * Linked list running through all containers that can
+> +	 * potentially be reaped by the release agent. Protected by
+> +	 * release_list_lock
+> +	 */
+> +	struct list_head release_list;
+>  };
+> 
+>  /* A css_group is a structure holding pointers to a set of
+> @@ -285,7 +293,6 @@ struct task_struct *container_iter_next(
+>  					struct container_iter *it);
+>  void container_iter_end(struct container *cont, struct container_iter *it);
+> 
+> -
+>  #else /* !CONFIG_CONTAINERS */
+> 
+>  static inline int container_init_early(void) { return 0; }
+> Index: container-2.6.22-rc6-mm1/kernel/container.c
+> ===================================================================
+> --- container-2.6.22-rc6-mm1.orig/kernel/container.c
+> +++ container-2.6.22-rc6-mm1/kernel/container.c
+> @@ -44,6 +44,8 @@
+>  #include <linux/sort.h>
+>  #include <asm/atomic.h>
+> 
+> +static DEFINE_MUTEX(container_mutex);
+> +
+>  /* Generate an array of container subsystem pointers */
+>  #define SUBSYS(_x) &_x ## _subsys,
+> 
+> @@ -82,6 +84,13 @@ struct containerfs_root {
+> 
+>  	/* Hierarchy-specific flags */
+>  	unsigned long flags;
+> +
+> +	/* The path to use for release notifications. No locking
+> +	 * between setting and use - so if userspace updates this
+> +	 * while subcontainers exist, you could miss a
+> +	 * notification. We ensure that it's always a valid
+> +	 * NUL-terminated string */
+> +	char release_agent_path[PATH_MAX];
+>  };
+> 
+> 
+> @@ -109,7 +118,13 @@ static int need_forkexit_callback;
+> 
+>  /* bits in struct container flags field */
+>  enum {
+> +	/* Container is dead */
+>  	CONT_REMOVED,
+> +	/* Container has previously had a child container or a task,
+> +	 * but no longer (only if CONT_NOTIFY_ON_RELEASE is set) */
+> +	CONT_RELEASABLE,
+> +	/* Container requires release notifications to userspace */
+> +	CONT_NOTIFY_ON_RELEASE,
+>  };
+> 
+>  /* convenient tests for these bits */
+> @@ -123,6 +138,19 @@ enum {
+>  	ROOT_NOPREFIX, /* mounted subsystems have no named prefix */
+>  };
+> 
+> +inline int container_is_releasable(const struct container *cont)
+> +{
+> +	const int bits =
+> +		(1 << CONT_RELEASABLE) |
+> +		(1 << CONT_NOTIFY_ON_RELEASE);
+> +	return (cont->flags & bits) == bits;
+> +}
+> +
+> +inline int notify_on_release(const struct container *cont)
+> +{
+> +	return test_bit(CONT_NOTIFY_ON_RELEASE, &cont->flags);
+> +}
+> +
+>  /*
+>   * for_each_subsys() allows you to iterate on each subsystem attached to
+>   * an active hierarchy
+> @@ -134,6 +162,14 @@ list_for_each_entry(_ss, &_root->subsys_
+>  #define for_each_root(_root) \
+>  list_for_each_entry(_root, &roots, root_list)
+> 
+> +/* the list of containers eligible for automatic release. Protected by
+> + * release_list_lock */
+> +static LIST_HEAD(release_list);
+> +static DEFINE_SPINLOCK(release_list_lock);
+> +static void container_release_agent(struct work_struct *work);
+> +static DECLARE_WORK(release_agent_work, container_release_agent);
+> +static void check_for_release(struct container *cont);
+> +
+>  /* Link structure for associating css_group objects with containers */
+>  struct cg_container_link {
+>  	/*
+> @@ -188,11 +224,8 @@ static int use_task_css_group_links;
+>  /*
+>   * unlink a css_group from the list and free it
+>   */
+> -static void release_css_group(struct kref *k)
+> +static void unlink_css_group(struct css_group *cg)
+>  {
+> -	struct css_group *cg = container_of(k, struct css_group, ref);
+> -	int i;
+> -
+>  	write_lock(&css_group_lock);
+>  	list_del(&cg->list);
+>  	css_group_count--;
+> @@ -205,11 +238,39 @@ static void release_css_group(struct kre
+>  		kfree(link);
+>  	}
+>  	write_unlock(&css_group_lock);
+> -	for (i = 0; i < CONTAINER_SUBSYS_COUNT; i++)
+> -		atomic_dec(&cg->subsys[i]->container->count);
+> +}
+> +
+> +static void __release_css_group(struct kref *k, int taskexit)
+> +{
+> +	int i;
+> +	struct css_group *cg = container_of(k, struct css_group, ref);
+> +
+> +	unlink_css_group(cg);
+> +
+> +	rcu_read_lock();
+> +	for (i = 0; i < CONTAINER_SUBSYS_COUNT; i++) {
+> +		struct container *cont = cg->subsys[i]->container;
+> +		if (atomic_dec_and_test(&cont->count) &&
+> +		    notify_on_release(cont)) {
+> +			if (taskexit)
+> +				set_bit(CONT_RELEASABLE, &cont->flags);
+> +			check_for_release(cont);
+> +		}
+> +	}
+> +	rcu_read_unlock();
+>  	kfree(cg);
+>  }
+> 
+> +static void release_css_group(struct kref *k)
+> +{
+> +	__release_css_group(k, 0);
+> +}
+> +
+> +static void release_css_group_taskexit(struct kref *k)
+> +{
+> +	__release_css_group(k, 1);
+> +}
+> +
+>  /*
+>   * refcounted get/put for css_group objects
+>   */
+> @@ -223,6 +284,11 @@ static inline void put_css_group(struct 
+>  	kref_put(&cg->ref, release_css_group);
+>  }
+> 
+> +static inline void put_css_group_taskexit(struct css_group *cg)
+> +{
+> +	kref_put(&cg->ref, release_css_group_taskexit);
+> +}
+> +
+>  /*
+>   * find_existing_css_group() is a helper for
+>   * find_css_group(), and checks to see whether an existing
+> @@ -464,8 +530,6 @@ static struct css_group *find_css_group(
+>   * update of a tasks container pointer by attach_task()
+>   */
+> 
+> -static DEFINE_MUTEX(container_mutex);
+> -
+>  /**
+>   * container_lock - lock out any changes to container structures
+>   *
+> @@ -524,6 +588,13 @@ static void container_diput(struct dentr
+>  	if (S_ISDIR(inode->i_mode)) {
+>  		struct container *cont = dentry->d_fsdata;
+>  		BUG_ON(!(container_is_removed(cont)));
+> +		/* It's possible for external users to be holding css
+> +		 * reference counts on a container; css_put() needs to
+> +		 * be able to access the container after decrementing
+> +		 * the reference count in order to know if it needs to
+> +		 * queue the container to be handled by the release
+> +		 * agent */
+> +		synchronize_rcu();
+>  		kfree(cont);
+>  	}
+>  	iput(inode);
+> @@ -668,6 +739,8 @@ static int container_show_options(struct
+>  		seq_printf(seq, ",%s", ss->name);
+>  	if (test_bit(ROOT_NOPREFIX, &root->flags))
+>  		seq_puts(seq, ",noprefix");
+> +	if (strlen(root->release_agent_path))
+> +		seq_printf(seq, ",release_agent=%s", root->release_agent_path);
+>  	mutex_unlock(&container_mutex);
+>  	return 0;
+>  }
+> @@ -675,6 +748,7 @@ static int container_show_options(struct
+>  struct container_sb_opts {
+>  	unsigned long subsys_bits;
+>  	unsigned long flags;
+> +	char *release_agent;
+>  };
+> 
+>  /* Convert a hierarchy specifier into a bitmask of subsystems and
+> @@ -686,6 +760,7 @@ static int parse_containerfs_options(cha
+> 
+>  	opts->subsys_bits = 0;
+>  	opts->flags = 0;
+> +	opts->release_agent = NULL;
+> 
+>  	while ((token = strsep(&o, ",")) != NULL) {
+>  		if (!*token)
+> @@ -694,6 +769,15 @@ static int parse_containerfs_options(cha
+>  			opts->subsys_bits = (1 << CONTAINER_SUBSYS_COUNT) - 1;
+>  		} else if (!strcmp(token, "noprefix")) {
+>  			set_bit(ROOT_NOPREFIX, &opts->flags);
+> +		} else if (!strncmp(token, "release_agent=", 14)) {
+> +			/* Specifying two release agents is forbidden */
+> +			if (opts->release_agent)
+> +				return -EINVAL;
+> +			opts->release_agent = kzalloc(PATH_MAX, GFP_KERNEL);
+> +			if (!opts->release_agent)
+> +				return -ENOMEM;
+> +			strncpy(opts->release_agent, token + 14, PATH_MAX - 1);
+> +			opts->release_agent[PATH_MAX - 1] = 0;
+>  		} else {
+>  			struct container_subsys *ss;
+>  			int i;
+> @@ -743,7 +827,11 @@ static int container_remount(struct supe
+>  	if (!ret)
+>  		container_populate_dir(cont);
+> 
+> +	if (opts.release_agent)
+> +		strcpy(root->release_agent_path, opts.release_agent);
+>   out_unlock:
+> +	if (opts.release_agent)
+> +		kfree(opts.release_agent);
+>  	mutex_unlock(&container_mutex);
+>  	mutex_unlock(&cont->dentry->d_inode->i_mutex);
+>  	return ret;
+> @@ -767,6 +855,7 @@ static void init_container_root(struct c
+>  	INIT_LIST_HEAD(&cont->sibling);
+>  	INIT_LIST_HEAD(&cont->children);
+>  	INIT_LIST_HEAD(&cont->css_groups);
+> +	INIT_LIST_HEAD(&cont->release_list);
+>  }
+> 
+>  static int container_test_super(struct super_block *sb, void *data)
+> @@ -841,8 +930,11 @@ static int container_get_sb(struct file_
+> 
+>  	/* First find the desired set of subsystems */
+>  	ret = parse_containerfs_options(data, &opts);
+> -	if (ret)
+> +	if (ret) {
+> +		if (opts.release_agent)
+> +			kfree(opts.release_agent);
+>  		return ret;
+> +	}
+> 
+>  	root = kzalloc(sizeof(*root), GFP_KERNEL);
+>  	if (!root)
+> @@ -851,6 +943,10 @@ static int container_get_sb(struct file_
+>  	init_container_root(root);
+>  	root->subsys_bits = opts.subsys_bits;
+>  	root->flags = opts.flags;
+> +	if (opts.release_agent) {
+> +		strcpy(root->release_agent_path, opts.release_agent);
+> +		kfree(opts.release_agent);
+> +	}
+> 
+>  	sb = sget(fs_type, container_test_super, container_set_super, root);
+> 
+> @@ -1125,7 +1221,7 @@ static int attach_task(struct container 
+>  			ss->attach(ss, cont, oldcont, tsk);
+>  		}
+>  	}
+> -
+> +	set_bit(CONT_RELEASABLE, &oldcont->flags);
+>  	synchronize_rcu();
+>  	put_css_group(cg);
+>  	return 0;
+> @@ -1175,6 +1271,9 @@ enum container_filetype {
+>  	FILE_ROOT,
+>  	FILE_DIR,
+>  	FILE_TASKLIST,
+> +	FILE_NOTIFY_ON_RELEASE,
+> +	FILE_RELEASABLE,
+> +	FILE_RELEASE_AGENT,
+>  };
+> 
+>  static ssize_t container_common_file_write(struct container *cont,
+> @@ -1212,6 +1311,32 @@ static ssize_t container_common_file_wri
+>  	case FILE_TASKLIST:
+>  		retval = attach_task_by_pid(cont, buffer);
+>  		break;
+> +	case FILE_NOTIFY_ON_RELEASE:
+> +		clear_bit(CONT_RELEASABLE, &cont->flags);
+> +		if (simple_strtoul(buffer, NULL, 10) != 0)
+> +			set_bit(CONT_NOTIFY_ON_RELEASE, &cont->flags);
+> +		else
+> +			clear_bit(CONT_NOTIFY_ON_RELEASE, &cont->flags);
+> +		break;
+> +	case FILE_RELEASE_AGENT:
+> +	{
+> +		struct containerfs_root *root = cont->root;
+> +		/* Strip trailing newline */
+> +		if (nbytes && (buffer[nbytes-1] == '\n')) {
+> +			buffer[nbytes-1] = 0;
+> +		}
+> +		if (nbytes < sizeof(root->release_agent_path)) {
+> +			/* We never write anything other than '\0'
+> +			 * into the last char of release_agent_path,
+> +			 * so it always remains a NUL-terminated
+> +			 * string */
+> +			strncpy(root->release_agent_path, buffer, nbytes);
+> +			root->release_agent_path[nbytes] = 0;
+> +		} else {
+> +			retval = -ENOSPC;
+> +		}
+> +		break;
+> +	}
+>  	default:
+>  		retval = -EINVAL;
+>  		goto out2;
+> @@ -1252,6 +1377,49 @@ static ssize_t container_read_uint(struc
+>  	return simple_read_from_buffer(buf, nbytes, ppos, tmp, len);
+>  }
+> 
+> +static ssize_t container_common_file_read(struct container *cont,
+> +					  struct cftype *cft,
+> +					  struct file *file,
+> +					  char __user *buf,
+> +					  size_t nbytes, loff_t *ppos)
+> +{
+> +	enum container_filetype type = cft->private;
+> +	char *page;
+> +	ssize_t retval = 0;
+> +	char *s;
+> +
+> +	if (!(page = (char *)__get_free_page(GFP_KERNEL)))
+> +		return -ENOMEM;
+> +
+> +	s = page;
+> +
+> +	switch (type) {
+> +	case FILE_RELEASE_AGENT:
+> +	{
+> +		struct containerfs_root *root;
+> +		size_t n;
+> +		mutex_lock(&container_mutex);
+> +		root = cont->root;
+> +		n = strnlen(root->release_agent_path,
+> +			    sizeof(root->release_agent_path));
+> +		n = min(n, (size_t) PAGE_SIZE);
+> +		strncpy(s, root->release_agent_path, n);
+> +		mutex_unlock(&container_mutex);
+> +		s += n;
+> +		break;
+> +	}
+> +	default:
+> +		retval = -EINVAL;
+> +		goto out;
+> +	}
+> +	*s++ = '\n';
+> +
+> +	retval = simple_read_from_buffer(buf, nbytes, ppos, page, s - page);
+> +out:
+> +	free_page((unsigned long)page);
+> +	return retval;
+> +}
+> +
+>  static ssize_t container_file_read(struct file *file, char __user *buf,
+>  				   size_t nbytes, loff_t *ppos)
+>  {
+> @@ -1667,16 +1835,49 @@ static int container_tasks_release(struc
+>  	return 0;
+>  }
+> 
+> +static u64 container_read_notify_on_release(struct container *cont,
+> +					    struct cftype *cft)
+> +{
+> +	return notify_on_release(cont);
+> +}
+> +
+> +static u64 container_read_releasable(struct container *cont, struct cftype *cft)
+> +{
+> +	return test_bit(CONT_RELEASABLE, &cont->flags);
+> +}
+> +
+>  /*
+>   * for the common functions, 'private' gives the type of file
+>   */
+> -static struct cftype cft_tasks = {
+> -	.name = "tasks",
+> -	.open = container_tasks_open,
+> -	.read = container_tasks_read,
+> +static struct cftype files[] = {
+> +	{
+> +		.name = "tasks",
+> +		.open = container_tasks_open,
+> +		.read = container_tasks_read,
+> +		.write = container_common_file_write,
+> +		.release = container_tasks_release,
+> +		.private = FILE_TASKLIST,
+> +	},
+> +
+> +	{
+> +		.name = "notify_on_release",
+> +		.read_uint = container_read_notify_on_release,
+> +		.write = container_common_file_write,
+> +		.private = FILE_NOTIFY_ON_RELEASE,
+> +	},
+> +
+> +	{
+> +		.name = "releasable",
+> +		.read_uint = container_read_releasable,
+> +		.private = FILE_RELEASABLE,
+> +	}
+> +};
+> +
+> +static struct cftype cft_release_agent = {
+> +	.name = "release_agent",
+> +	.read = container_common_file_read,
+>  	.write = container_common_file_write,
+> -	.release = container_tasks_release,
+> -	.private = FILE_TASKLIST,
+> +	.private = FILE_RELEASE_AGENT,
+>  };
+> 
+>  static int container_populate_dir(struct container *cont)
+> @@ -1687,10 +1888,15 @@ static int container_populate_dir(struct
+>  	/* First clear out any existing files */
+>  	container_clear_directory(cont->dentry);
+> 
+> -	err = container_add_file(cont, NULL, &cft_tasks);
+> +	err = container_add_files(cont, NULL, files, ARRAY_SIZE(files));
+>  	if (err < 0)
+>  		return err;
+> 
+> +	if (cont == cont->top_container) {
+> +		if ((err = container_add_file(cont, NULL, &cft_release_agent)) < 0)
+> +			return err;
+> +	}
+> +
+>  	for_each_subsys(cont->root, ss) {
+>  		if (ss->populate && (err = ss->populate(ss, cont)) < 0)
+>  			return err;
+> @@ -1747,6 +1953,7 @@ static long container_create(struct cont
+>  	INIT_LIST_HEAD(&cont->sibling);
+>  	INIT_LIST_HEAD(&cont->children);
+>  	INIT_LIST_HEAD(&cont->css_groups);
+> +	INIT_LIST_HEAD(&cont->release_list);
+> 
+>  	cont->parent = parent;
+>  	cont->root = parent->root;
+> @@ -1808,6 +2015,38 @@ static int container_mkdir(struct inode 
+>  	return container_create(c_parent, dentry, mode | S_IFDIR);
+>  }
+> 
+> +static inline int container_has_css_refs(struct container *cont)
+> +{
+> +	/* Check the reference count on each subsystem. Since we
+> +	 * already established that there are no tasks in the
+> +	 * container, if the css refcount is also 0, then there should
+> +	 * be no outstanding references, so the subsystem is safe to
+> +	 * destroy. We scan across all subsystems rather than using
+> +	 * the per-hierarchy linked list of mounted subsystems since
+> +	 * we can be called via check_for_release() with no
+> +	 * synchronization other than RCU, and the subsystem linked
+> +	 * list isn't RCU-safe */
+> +	int i;
+> +	for (i = 0; i < CONTAINER_SUBSYS_COUNT; i++) {
+> +		struct container_subsys *ss = subsys[i];
+> +		struct container_subsys_state *css;
+> +		/* Skip subsystems not in this hierarchy */
+> +		if (ss->root != cont->root)
+> +			continue;
+> +		css = cont->subsys[ss->subsys_id];
+> +		/* When called from check_for_release() it's possible
+> +		 * that by this point the container has been removed
+> +		 * and the css deleted. But a false-positive doesn't
+> +		 * matter, since it can only happen if the container
+> +		 * has been deleted and hence no longer needs the
+> +		 * release agent to be called anyway. */
+> +		if (css && atomic_read(&css->refcnt)) {
+> +			return 1;
+> +		}
+> +	}
+> +	return 0;
+> +}
+> +
+>  static int container_rmdir(struct inode *unused_dir, struct dentry *dentry)
+>  {
+>  	struct container *cont = dentry->d_fsdata;
+> @@ -1816,7 +2055,6 @@ static int container_rmdir(struct inode 
+>  	struct container_subsys *ss;
+>  	struct super_block *sb;
+>  	struct containerfs_root *root;
+> -	int css_busy = 0;
+> 
+>  	/* the vfs holds both inode->i_mutex already */
+> 
+> @@ -1834,20 +2072,7 @@ static int container_rmdir(struct inode 
+>  	root = cont->root;
+>  	sb = root->sb;
+> 
+> -	/* Check the reference count on each subsystem. Since we
+> -	 * already established that there are no tasks in the
+> -	 * container, if the css refcount is also 0, then there should
+> -	 * be no outstanding references, so the subsystem is safe to
+> -	 * destroy */
+> -	for_each_subsys(root, ss) {
+> -		struct container_subsys_state *css;
+> -		css = cont->subsys[ss->subsys_id];
+> -		if (atomic_read(&css->refcnt)) {
+> -			css_busy = 1;
+> -			break;
+> -		}
+> -	}
+> -	if (css_busy) {
+> +	if (container_has_css_refs(cont)) {
+>  		mutex_unlock(&container_mutex);
+>  		return -EBUSY;
+>  	}
+> @@ -1857,7 +2082,11 @@ static int container_rmdir(struct inode 
+>  			ss->destroy(ss, cont);
+>  	}
+> 
+> +	spin_lock(&release_list_lock);
+>  	set_bit(CONT_REMOVED, &cont->flags);
+> +	if (!list_empty(&cont->release_list))
+> +		list_del(&cont->release_list);
+> +	spin_unlock(&release_list_lock);
+>  	/* delete my sibling from parent->children */
+>  	list_del(&cont->sibling);
+>  	spin_lock(&cont->dentry->d_lock);
+> @@ -1869,6 +2098,9 @@ static int container_rmdir(struct inode 
+>  	dput(d);
+>  	root->number_of_containers--;
+> 
+> +	set_bit(CONT_RELEASABLE, &parent->flags);
+> +	check_for_release(parent);
+> +
+>  	mutex_unlock(&container_mutex);
+>  	/* Drop the active superblock reference that we took when we
+>  	 * created the container */
+> @@ -1906,15 +2138,15 @@ static void container_init_subsys(struct
+>   	/* If this subsystem requested that it be notified with fork
+>   	 * events, we should send it one now for every process in the
+>   	 * system */
+> - 	if (ss->fork) {
+> - 		struct task_struct *g, *p;
+> +	if (ss->fork) {
+> +		struct task_struct *g, *p;
+> 
+> - 		read_lock(&tasklist_lock);
+> - 		do_each_thread(g, p) {
+> - 			ss->fork(ss, p);
+> - 		} while_each_thread(g, p);
+> - 		read_unlock(&tasklist_lock);
+> - 	}
+> +		read_lock(&tasklist_lock);
+> +		do_each_thread(g, p) {
+> +			ss->fork(ss, p);
+> +		} while_each_thread(g, p);
+> +		read_unlock(&tasklist_lock);
+> +	}
+> 
+>  	need_forkexit_callback |= ss->fork || ss->exit;
+> 
+> @@ -2241,7 +2473,7 @@ void container_exit(struct task_struct *
+>  	tsk->containers = &init_css_group;
+>  	task_unlock(tsk);
+>  	if (cg)
+> -		put_css_group(cg);
+> +		put_css_group_taskexit(cg);
+>  }
+> 
+>  /**
+> @@ -2352,7 +2584,10 @@ int container_clone(struct task_struct *
+> 
+>   out_release:
+>  	mutex_unlock(&inode->i_mutex);
+> +
+> +	mutex_lock(&container_mutex);
+>  	put_css_group(cg);
+> +	mutex_unlock(&container_mutex);
+>  	deactivate_super(parent->root->sb);
+>  	return ret;
+>  }
+> @@ -2382,3 +2617,111 @@ int container_is_descendant(const struct
+>  	ret = (cont == target);
+>  	return ret;
+>  }
+> +
+> +static void check_for_release(struct container *cont)
+> +{
+> +	/* All of these checks rely on RCU to keep the container
+> +	 * structure alive */
+> +	if (container_is_releasable(cont) && !atomic_read(&cont->count)
+> +	    && list_empty(&cont->children) && !container_has_css_refs(cont)) {
+> +		/* Container is currently removeable. If it's not
+> +		 * already queued for a userspace notification, queue
+> +		 * it now */
+> +		int need_schedule_work = 0;
+> +		spin_lock(&release_list_lock);
+> +		if (!container_is_removed(cont) &&
+> +		    list_empty(&cont->release_list)) {
+> +			list_add(&cont->release_list, &release_list);
+> +			need_schedule_work = 1;
+> +		}
+> +		spin_unlock(&release_list_lock);
+> +		if (need_schedule_work)
+> +			schedule_work(&release_agent_work);
+> +	}
+> +}
+> +
+> +void __css_put(struct container_subsys_state *css)
+> +{
+> +	struct container *cont = css->container;
+> +	rcu_read_lock();
+> +	if (atomic_dec_and_test(&css->refcnt) && notify_on_release(cont)) {
+> +		set_bit(CONT_RELEASABLE, &cont->flags);
+> +		check_for_release(cont);
+> +	}
+> +	rcu_read_unlock();
+> +}
+> +
+> +/*
+> + * Notify userspace when a container is released, by running the
+> + * configured release agent with the name of the container (path
+> + * relative to the root of container file system) as the argument.
+> + *
+> + * Most likely, this user command will try to rmdir this container.
+> + *
+> + * This races with the possibility that some other task will be
+> + * attached to this container before it is removed, or that some other
+> + * user task will 'mkdir' a child container of this container.  That's ok.
+> + * The presumed 'rmdir' will fail quietly if this container is no longer
+> + * unused, and this container will be reprieved from its death sentence,
+> + * to continue to serve a useful existence.  Next time it's released,
+> + * we will get notified again, if it still has 'notify_on_release' set.
+> + *
+> + * The final arg to call_usermodehelper() is UMH_WAIT_EXEC, which
+> + * means only wait until the task is successfully execve()'d.  The
+> + * separate release agent task is forked by call_usermodehelper(),
+> + * then control in this thread returns here, without waiting for the
+> + * release agent task.  We don't bother to wait because the caller of
+> + * this routine has no use for the exit status of the release agent
+> + * task, so no sense holding our caller up for that.
+> + *
+> + */
+> +
+> +static void container_release_agent(struct work_struct *work)
+> +{
+> +	BUG_ON(work != &release_agent_work);
+> +	mutex_lock(&container_mutex);
+> +	spin_lock(&release_list_lock);
+> +	while (!list_empty(&release_list)) {
+> +		char *argv[3], *envp[3];
+> +		int i;
+> +		char *pathbuf;
+> +		struct container *cont = list_entry(release_list.next,
+> +						    struct container,
+> +						    release_list);
+> +		list_del_init(&cont->release_list);
+> +		spin_unlock(&release_list_lock);
+> +		pathbuf = kmalloc(PAGE_SIZE, GFP_KERNEL);
+> +		if (!pathbuf) {
+> +			spin_lock(&release_list_lock);
+> +			continue;
+> +		}
+> +
+> +		if (container_path(cont, pathbuf, PAGE_SIZE) < 0) {
+> +			kfree(pathbuf);
+> +			spin_lock(&release_list_lock);
+> +			continue;
+> +		}
+> +
+> +		i = 0;
+> +		argv[i++] = cont->root->release_agent_path;
+> +		argv[i++] = (char *)pathbuf;
+> +		argv[i] = NULL;
+> +
+> +		i = 0;
+> +		/* minimal command environment */
+> +		envp[i++] = "HOME=/";
+> +		envp[i++] = "PATH=/sbin:/bin:/usr/sbin:/usr/bin";
+> +		envp[i] = NULL;
+> +
+> +		/* Drop the lock while we invoke the usermode helper,
+> +		 * since the exec could involve hitting disk and hence
+> +		 * be a slow process */
+> +		mutex_unlock(&container_mutex);
+> +		call_usermodehelper(argv[0], argv, envp, UMH_WAIT_EXEC);
+> +		kfree(pathbuf);
+> +		mutex_lock(&container_mutex);
+> +		spin_lock(&release_list_lock);
+> +	}
+> +	spin_unlock(&release_list_lock);
+> +	mutex_unlock(&container_mutex);
+> +}
+> 
+> --
