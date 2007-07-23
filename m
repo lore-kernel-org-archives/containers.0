@@ -1,18 +1,15 @@
-From: "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [Devel] containers development plans
-Date: Mon, 23 Jul 2007 09:10:00 -0500
-Message-ID: <20070723141000.GA30590@vino.hallyn.com>
-References: <20070702165504.GA18075@vino.hallyn.com>
-	<46984121.8070301@openvz.org>
-	<1184627311.10091.252.camel@galaxy.corp.google.com>
-	<20070717101712.GB6101@vino.hallyn.com> <469CC969.9080103@sw.ru>
-	<20070717181002.GB9383@sergelap.austin.ibm.com>
-	<46A4AFB6.9070302@fr.ibm.com>
+From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: Re: containers development plans (July 20 version)
+Date: Mon, 23 Jul 2007 09:24:18 -0500
+Message-ID: <20070723142418.GD22936@sergelap.austin.ibm.com>
+References: <20070720173615.GA25167@vino.hallyn.com>
+	<6599ad830707201702g1acae7ddt16a502984baa64cc@mail.gmail.com>
+	<m1y7ha1sg2.fsf@ebiederm.dsl.xmission.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <46A4AFB6.9070302-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <m1y7ha1sg2.fsf-T1Yj925okcoyDheHMi7gv2pdwda3JcWeAL8bYrjMMd8@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -22,26 +19,39 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Cedric Le Goater <clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
-Cc: ckrm-tech-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org, containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, pj-sJ/iWh9BUns@public.gmane.org, Rohit Seth <rohitseth-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, cpw-sJ/iWh9BUns@public.gmane.org, "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
+To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+Cc: ckrm-tech-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org, xemul-3ImXcnM4P+0@public.gmane.org, cpw-sJ/iWh9BUns@public.gmane.org, containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, pj-sJ/iWh9BUns@public.gmane.org, rohitseth-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Quoting Cedric Le Goater (clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org):
-> Serge E. Hallyn wrote:
-> > Quoting Kirill Korotaev (dev-3ImXcnM4P+0@public.gmane.org):
-> >>> Unfortunately I'm unlikely to be there (late notice - I really need to
-> >>> keep a better list of upcoming conferences and proposal deadlines!).
-> >>> But it still sounds like a good idea.
-> >> It's a pity :/ I though you are the primary candidate for presenting containers at KLS.
-> > 
-> > I would be able to get approval to attend KS.  I just wouldn't be able to
-> > get approval to attend the linuxconf europe without presenting a paper,
-> > which it is too late to do.
-> > 
-> > So if I happen to go to KS, I can attend the miniconf.  If not, then:
+Quoting Eric W. Biederman (ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org):
+> "Paul Menage" <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org> writes:
 > 
-> when is the mini conf planned ? the 3rd of September, just before KS ?
+> > On 7/20/07, Serge E. Hallyn <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org> wrote:
+> >>         4. task containers functionality
+> >>                 base features
+> >>                         virtualized continerfs mounts
+> >>                                 to support vserver mgmnt of sub-containers
+> >>                         locking cleanup
+> >>                         control file API simplification
+> >>                         control file prefixing with subsystem name
+> >
+> > This last point was actually in the set of patches that I sent to akpm
+> > today - probably it was too small an item to be worth including in
+> > this list.
+> >
+> >> Stakeholders:
+> >>         Eric Biederman
+> >>                 everything
+> >>         google
+> >>                 task containers
+> >
+> > If the checkpoint/restart code is expected to evolve into a workable
+> > live migration system, we'd be interested in that too.
+> 
+> At least the support for live migration should be there.
 
-That would definately be my hope if i were going to ks  
+Yeah, sorry, I kind of take it for granted that when i say 'c/r' i would
+want live migration, but i shouldn't.  Will spell that out.
 
+thanks,
 -serge
