@@ -1,129 +1,92 @@
-From: sukadev@us.ibm.com
-Subject: Re: [PATCH 13/16] Switch to operating with pid_numbers instead of pids
-Date: Tue, 24 Jul 2007 17:36:19 -0700
-Message-ID: <20070725003619.GF3287@us.ibm.com>
-References: <468DF6F7.1010906@openvz.org> <468DF907.2060809@openvz.org>
+From: "Rosendo Singh" <eacreage-pXmmdB973bdyC0kJ7XVRhuaNRkPX4KCyhC4ANOJQIlc@public.gmane.org>
+Subject: Fw: Thank you, we accepted your refinance appication
+Date: Wed, 25 Jul 2007 10:57:57 +0400
+Message-ID: <001701c7ceaa$e9ee28d0$001a383c@sajulaptop>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S932405AbXGYAgo@vger.kernel.org>
-Content-Disposition: inline
-In-Reply-To: <468DF907.2060809@openvz.org>
-Sender: linux-kernel-owner@vger.kernel.org
-To: Pavel Emelianov <xemul@openvz.org>
-Cc: Andrew Morton <akpm@osdl.org>, Serge Hallyn <serue@us.ibm.com>, "Eric W. Biederman" <ebiederm@xmission.com>, Linux Containers <containers@lists.osdl.org>, Linux Kernel Mailing List <linux-kernel@vger.kernel.org>, Kirill Korotaev <dev@openvz.org>
+Content-Type: multipart/mixed; boundary="===============8958476941455246453=="
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Mime-version: 1.0
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Pavel Emelianov [xemul@openvz.org] wrote:
-| Make alloc_pid() initialize pid_numbers and hash them
-| into the hashtable, not the struct pid itself.
-| 
-| Signed-off-by: Pavel Emelianov <xemul@openvz.org>
-| 
-| ---
-| 
-|  pid.c |   47 +++++++++++++++++++++++++++++++++--------------
-|  1 files changed, 33 insertions(+), 14 deletions(-)
-| 
-| --- ./kernel/pid.c.ve12	2007-07-05 11:06:41.000000000 +0400
-| +++ ./kernel/pid.c	2007-07-05 11:08:23.000000000 +0400
-| @@ -28,8 +28,10 @@
-|  #include <linux/hash.h>
-|  #include <linux/pid_namespace.h>
-|  #include <linux/init_task.h>
-| +#include <linux/proc_fs.h>
-| 
-| -#define pid_hashfn(nr) hash_long((unsigned long)nr, pidhash_shift)
-| +#define pid_hashfn(nr, ns)	\
-| +	hash_long((unsigned long)nr + (unsigned long)ns, pidhash_shift)
-|  static struct hlist_head *pid_hash;
-|  static int pidhash_shift;
-|  struct pid init_struct_pid = INIT_STRUCT_PID;
-| @@ -194,7 +198,7 @@ fastcall void put_pid(struct pid *pid)
-|  	if (!pid)
-|  		return;
-| 
-| -	ns = pid->numbers[0].ns;
-| +	ns = pid->numbers[pid->level].ns;
-|  	if ((atomic_read(&pid->count) == 1) ||
-|  	     atomic_dec_and_test(&pid->count))
-|  		kmem_cache_free(ns->pid_cachep, pid);
-| @@ -210,13 +214,17 @@ static void delayed_put_pid(struct rcu_h
-|  fastcall void free_pid(struct pid *pid)
-|  {
-|  	/* We can be called with write_lock_irq(&tasklist_lock) held */
-| +	int i;
-|  	unsigned long flags;
-| 
-|  	spin_lock_irqsave(&pidmap_lock, flags);
-| -	hlist_del_rcu(&pid->pid_chain);
-| +	for (i = 0; i <= pid->level; i++)
-| +		hlist_del_rcu(&pid->numbers[i].pid_chain);
-|  	spin_unlock_irqrestore(&pidmap_lock, flags);
-| 
-| -	free_pidmap(&init_pid_ns, pid->nr);
-| +	for (i = 0; i <= pid->level; i++)
-| +		free_pidmap(pid->numbers[i].ns, pid->numbers[i].nr);
-| +
-|  	call_rcu(&pid->rcu, delayed_put_pid);
-|  }
-| 
-| @@ -224,30 +232,43 @@ struct pid *alloc_pid(struct pid_namespa
-|  {
-|  	struct pid *pid;
-|  	enum pid_type type;
-| -	int nr = -1;
-| +	struct pid_namespace *ns;
-| +	int i, nr;
-| 
-| -	pid = kmem_cache_alloc(init_pid_ns.pid_cachep, GFP_KERNEL);
-| +	pid = kmem_cache_alloc(pid_ns->pid_cachep, GFP_KERNEL);
-|  	if (!pid)
-|  		goto out;
-| 
-| -	nr = alloc_pidmap(current->nsproxy->pid_ns);
-| -	if (nr < 0)
-| -		goto out_free;
-| +	ns = pid_ns;
-| +	for (i = pid_ns->level; i >= 0; i--) {
-| +		nr = alloc_pidmap(ns);
-| +		if (nr < 0)
-| +			goto out_free;
+--===============8958476941455246453==
+Content-Type: multipart/alternative;
+	boundary="----=_NextPart_000_0014_01C7CEAA.E9EE28D0"
 
-If pid_ns->level is say 3 and alloc_pidmap() succeeds when i=0,1
-and fails when i=2, we would try to free_pidmap() even from 
-pid->pid_number[2].pid_ns. This would incorrectly a)
-drop reference count on that pid namespace, and incorrectly
-increment pidmap->nr_free.
+------=_NextPart_000_0014_01C7CEAA.E9EE28D0
+Content-Type: text/plain;
+        charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
 
-Should we use kmem_cache_zalloc() and check for a non-NULL pid_ns
-before calling free_pidmap() below ?
 
-| 
-| +		pid->numbers[i].nr = nr;
-| +		pid->numbers[i].ns = ns;
-| +		ns = ns->parent;
-| +	}
-| +
-| +	pid->level = pid_ns->level;
-|  	atomic_set(&pid->count, 1);
-| -	pid->nr = nr;
-|  	for (type = 0; type < PIDTYPE_MAX; ++type)
-|  		INIT_HLIST_HEAD(&pid->tasks[type]);
-| 
-|  	spin_lock_irq(&pidmap_lock);
-| -	hlist_add_head_rcu(&pid->pid_chain, &pid_hash[pid_hashfn(pid->nr)]);
-| +	for (i = pid->level; i >= 0; i--)
-| +		hlist_add_head_rcu(&pid->numbers[i].pid_chain,
-| +				&pid_hash[pid_hashfn(pid->numbers[i].nr,
-| +					pid->numbers[i].ns)]);
-|  	spin_unlock_irq(&pidmap_lock);
-| -
-|  out:
-|  	return pid;
-| 
-|  out_free:
-| -	kmem_cache_free(init_pid_ns.pid_cachep, pid);
-| +	for (i++; i <= pid->level; i++)
-| +		free_pidmap(pid->numbers[i].ns, pid->numbers[i].nr);
+Your credit score doesn't matter to us!
+ 
+If you have your own business and require IMMEDIATE cash to spend ANY =
+way you like or wish Extra money to give the company a boost or  require =
+A low interest loan - NO STRINGS ATTACHED, here is our best deal we can =
+offer you THIS NIGHT (hurry, this tender will expire NOW):
+ 
+$39,000+ loan
+ 
+Hurry, when the deal is gone, it is gone. Simply Call Us... 
+ 
+Do not worry about approval, your credit will not disqualify you!
+ 
+Call Us Free on 877-542-1880
+------=_NextPart_000_0014_01C7CEAA.E9EE28D0
+Content-Type: text/html;
+        charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
 
-i.e all pid->numbers[] may not be initialized here right ?
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<HTML><HEAD>
+<META http-equiv=3DContent-Type content=3D"text/html; charset=3D=
+iso-8859-1">
+<META content=3D"MSHTML 6.00.2800.2962" name=3DGENERATOR>
+<STYLE></STYLE>
+</HEAD>
+<BODY bgColor=3D#ffffff>
+<DIV align=3Dleft><FONT face=3DArial size=3D2><B>Your credit score =
+doesn't matter to us!</B></FONT></DIV>
+<DIV align=3Dcenter> &nbsp;</DIV>
+<DIV align=3Dleft><FONT face=3DArial size=3D2>If you have your own =
+business and require IMMEDIATE ready money to spend ANY way you like or =
+want Extra money to give your company a boost or  wish A low interest =
+loan - NO STRINGS ATTACHED, here is our best deal we can offer you TODAY =
+(hurry, this offer will expire THIS NIGHT):</FONT></DIV>
+<DIV align=3Dcenter> &nbsp;</DIV>
+<DIV align=3Dleft><FONT face=3DArial size=3D2><B>$44,000+ =
+loan</B></FONT></DIV>
+<DIV align=3Dcenter> &nbsp;</DIV>
+<DIV align=3Dleft><FONT face=3DArial size=3D2><B>Hurry, when best deal =
+is gone, it is gone. Simply Call Us... </B></FONT></DIV>
+<DIV align=3Dcenter> &nbsp;</DIV>
+<DIV align=3Dleft><FONT face=3DArial size=3D2>Don't worry about =
+approval, your your credit report will not disqualify you!</FONT></DIV>
+<DIV align=3Dcenter> &nbsp;</DIV>
+<DIV align=3Dleft><FONT face=3DArial size=3D2><B>Call Us Free on =
+877-542-1880</B></FONT></DIV>
+</BODY></HTML>
+
+------=_NextPart_000_0014_01C7CEAA.E9EE28D0--
+
+--===============8958476941455246453==
+Content-Type: text/plain; charset="us-ascii"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+Content-Disposition: inline
+
+_______________________________________________
+Containers mailing list
+Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+https://lists.linux-foundation.org/mailman/listinfo/containers
+--===============8958476941455246453==--
