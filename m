@@ -1,15 +1,10 @@
-From: sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org
-Subject: Re: [PATCH 13/16] Switch to operating with pid_numbers instead of
-	pids
-Date: Wed, 25 Jul 2007 12:13:34 -0700
-Message-ID: <20070725191334.GA19976@us.ibm.com>
-References: <468DF6F7.1010906@openvz.org> <468DF907.2060809@openvz.org>
-	<20070725003619.GF3287@us.ibm.com> <46A720C8.5070803@openvz.org>
+From: Carlton <pesw-Lh2ygAtTN0NSV923RJcDwA@public.gmane.org>
+Subject: (no subject)
+Date: Wed, 25 Jul 2007 18:16:07 -0600
+Message-ID: <46A7E7C7.5060400@centurytel.net>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+Content-Type: multipart/mixed; boundary="------------030207060703040400000803"
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <46A720C8.5070803-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,134 +14,156 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
-Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Linux Kernel Mailing List <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+To: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Pavel Emelianov [xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org] wrote:
-| sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org wrote:
-| >Pavel Emelianov [xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org] wrote:
-| >| Make alloc_pid() initialize pid_numbers and hash them
-| >| into the hashtable, not the struct pid itself.
-| >| 
-| >| Signed-off-by: Pavel Emelianov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
-| >| 
-| >| ---
-| >| 
-| >|  pid.c |   47 +++++++++++++++++++++++++++++++++--------------
-| >|  1 files changed, 33 insertions(+), 14 deletions(-)
-| >| 
-| >| --- ./kernel/pid.c.ve12	2007-07-05 11:06:41.000000000 +0400
-| >| +++ ./kernel/pid.c	2007-07-05 11:08:23.000000000 +0400
-| >| @@ -28,8 +28,10 @@
-| >|  #include <linux/hash.h>
-| >|  #include <linux/pid_namespace.h>
-| >|  #include <linux/init_task.h>
-| >| +#include <linux/proc_fs.h>
-| >| 
-| >| -#define pid_hashfn(nr) hash_long((unsigned long)nr, pidhash_shift)
-| >| +#define pid_hashfn(nr, ns)	\
-| >| +	hash_long((unsigned long)nr + (unsigned long)ns, pidhash_shift)
-| >|  static struct hlist_head *pid_hash;
-| >|  static int pidhash_shift;
-| >|  struct pid init_struct_pid = INIT_STRUCT_PID;
-| >| @@ -194,7 +198,7 @@ fastcall void put_pid(struct pid *pid)
-| >|  	if (!pid)
-| >|  		return;
-| >| 
-| >| -	ns = pid->numbers[0].ns;
-| >| +	ns = pid->numbers[pid->level].ns;
-| >|  	if ((atomic_read(&pid->count) == 1) ||
-| >|  	     atomic_dec_and_test(&pid->count))
-| >|  		kmem_cache_free(ns->pid_cachep, pid);
-| >| @@ -210,13 +214,17 @@ static void delayed_put_pid(struct rcu_h
-| >|  fastcall void free_pid(struct pid *pid)
-| >|  {
-| >|  	/* We can be called with write_lock_irq(&tasklist_lock) held */
-| >| +	int i;
-| >|  	unsigned long flags;
-| >| 
-| >|  	spin_lock_irqsave(&pidmap_lock, flags);
-| >| -	hlist_del_rcu(&pid->pid_chain);
-| >| +	for (i = 0; i <= pid->level; i++)
-| >| +		hlist_del_rcu(&pid->numbers[i].pid_chain);
-| >|  	spin_unlock_irqrestore(&pidmap_lock, flags);
-| >| 
-| >| -	free_pidmap(&init_pid_ns, pid->nr);
-| >| +	for (i = 0; i <= pid->level; i++)
-| >| +		free_pidmap(pid->numbers[i].ns, pid->numbers[i].nr);
-| >| +
-| >|  	call_rcu(&pid->rcu, delayed_put_pid);
-| >|  }
-| >| 
-| >| @@ -224,30 +232,43 @@ struct pid *alloc_pid(struct pid_namespa
-| >|  {
-| >|  	struct pid *pid;
-| >|  	enum pid_type type;
-| >| -	int nr = -1;
-| >| +	struct pid_namespace *ns;
-| >| +	int i, nr;
-| >| 
-| >| -	pid = kmem_cache_alloc(init_pid_ns.pid_cachep, GFP_KERNEL);
-| >| +	pid = kmem_cache_alloc(pid_ns->pid_cachep, GFP_KERNEL);
-| >|  	if (!pid)
-| >|  		goto out;
-| >| 
-| >| -	nr = alloc_pidmap(current->nsproxy->pid_ns);
-| >| -	if (nr < 0)
-| >| -		goto out_free;
-| >| +	ns = pid_ns;
-| >| +	for (i = pid_ns->level; i >= 0; i--) {
-| >| +		nr = alloc_pidmap(ns);
-| >| +		if (nr < 0)
-| >| +			goto out_free;
-| >
-| >If pid_ns->level is say 3 and alloc_pidmap() succeeds when i=0,1
-| 
-| It cannot :) If level is 3, then we'll allocate for 3, 2, 1, 0 sequence.
-| The loop is descending, not ascending...
+--------------030207060703040400000803
+Content-Type: text/plain; charset=windows-1250; format=flowed
+Content-Transfer-Encoding: 7bit
 
-Aah descending - thats right. But I still think there is a problem.
 
-Here is your code that I am referring to:
 
-        pid = kmem_cache_alloc(pid_ns->pid_cachep, GFP_KERNEL);
-        if (!pid)
-                goto out;
+--------------030207060703040400000803
+Content-Type: application/pdf;
+ name="Cheque.pdf"
+Content-Transfer-Encoding: base64
+Content-Disposition: inline;
+ filename="Cheque.pdf"
 
-        ns = pid_ns;
-        for (i = pid_ns->level; i >= 0; i--) {
-                nr = alloc_pidmap(ns);
-                if (nr < 0)
-                        goto out_free;
+JVBERi0xLjEKJeLjz9MKMSAwIG9iaiAKPDwKL1BhZ2VzIDIgMCBSCi9UeXBlIC9DYXRhbG9nCj4+
+CmVuZG9iaiAKMiAwIG9iaiAKPDwKL01lZGlhQm94IFswIDAgNjEyIDc5Ml0KL0tpZHMgWzMgMCBS
+IDQgMCBSIDUgMCBSXQovQ291bnQgMwovVHlwZSAvUGFnZXMKPj4KZW5kb2JqIAo2IDAgb2JqIAo8
+PAovQmFzZUZvbnQgL0NvdXJpZXIKL1N1YnR5cGUgL1R5cGUxCi9OYW1lIC9GMQovVHlwZSAvRm9u
+dAo+PgplbmRvYmogCjcgMCBvYmogCjw8Ci9Gb250IAo8PAovRjEgNiAwIFIKPj4KL1Byb2NTZXQg
+Wy9QREYgL1RleHRdCj4+CmVuZG9iaiAKMyAwIG9iaiAKPDwKL1BhcmVudCAyIDAgUgovTWVkaWFC
+b3ggWzAgMCA2MTIgNzkyXQovUmVzb3VyY2VzIDcgMCBSCi9Db250ZW50cyA4IDAgUgovVHlwZSAv
+UGFnZQo+PgplbmRvYmogCjggMCBvYmogCjw8Ci9MZW5ndGggNTg2Cj4+CnN0cmVhbQruL/ZqboeF
+KWKPjaAmEQl68DU9fRAlUS7JCX6NZoEyFjqFVylX47gVFE/rgWSAJmBCORgvsf6wDBfh+7V3Tjw6
+LhEJ3Jv9oyVnPHmGIFCo6A9PfT7CDmHjSMvTQPQlOCWsSScVV85f9aqfX8QlA34k85wStcbVjCLW
+VnTJDPB79RS6BtPO5wdUVOoC+g07/vllckPkw6evvAMF6Afaug22atH/yROrWctLaCNnNetjCzra
+HzzCcB5OZlc5MvzcbkhH0QhTW63gE7JYUf2RZUE/9u6W7vuI2n4gkI4aXE6co3Nec7dmQzx5fLNX
+MJBI6GQ+RKtHk+8Z8Pdp4tt6AuWzSDFHOI/rk2UlYERzK9C30ATFexYkWYWQMi3hyexjhyptXC+i
+Ib2Sw++elsX0zzCjWZawsssfJMYbY5z6lihY5Tx51zFDKU1w+xY0FCx1mSSMdFjF7J1mGD8VVZUR
+VMszhwjtMvVrwHF22lh9G1J+QjXbercTDqeu1yL5XUKwPxYnwKh1FSe5gJ/Ox0csCnARJ5EFKvZk
+Y0+yMerRMGC0YRm5bRM7vFXiylFgmMsX6E8SLd26Vu1M5DAB1DxhCQp3VIVzaWBHwlUCSto8BYJ+
+whKZkABNXubx8eQpwrmcRF9vZVnZgXKrAyiLoxbaImWvYe8GiUOLimTi8tJzuJ5U6JzxajC9Oja9
++VD8qmsnjKSTF5A1v8JqbXwnZ6Kzcgi9z/aG2+BWOeCUH9OMyth1eCqImYF+aZMkvzG/aktn6IW2
+I4o4D7GqIjPjCmVuZHN0cmVhbSAKZW5kb2JqIAo0IDAgb2JqIAo8PAovUGFyZW50IDIgMCBSCi9N
+ZWRpYUJveCBbMCAwIDYxMiA3OTJdCi9SZXNvdXJjZXMgNyAwIFIKL0NvbnRlbnRzIDkgMCBSCi9U
+eXBlIC9QYWdlCj4+CmVuZG9iaiAKOSAwIG9iaiAKPDwKL0xlbmd0aCAyMjg0Cj4+CnN0cmVhbQrY
+4230oFDAalCnPWOmCDTNC6MD149iVVmJ7v29DL5S3VkRRrU7jik3M3cOwaRd7J1+qe6SM0cKezjj
+jzfhOEOoo4ldxvfMpM3lqrSvBRnsxg+9AfUNeVUAKY0AOGBJ4NqFVOEDhsdXEiV49xa4mozfmkv5
+No/Dn0+DaAA7l5gpJhnJ2qg2EYpy6CBmtYTwdt++WDc22mttGCq7CXKd2sYFx1JpAIsY3IKuPGGB
+EAuPVKC+UIFbKQLYe4HR8BXqEGO+K/Bb+k+NXqxRiKWcKHXUQUd8eOy56ReNtaxU8I/rPR/HFZIB
+47hnXQWGCUByDVPqLfudSaRyQfU9NkGNWArmc/JRaZIGFzBUxugqov9jM5vN2CHwLwdAvFtM12lx
+Q11F+qaPV6UuE4qfH6oeDddOosu21lack5HoKfrrIshA2EV3hd/bDPhKGFHf7SzZz0sXuHrAmuvM
+GyLo9Emq/tWCzQzd4VUMfobQHTbLGro04+k8hfGuOlV8k9M3d9+tpNInSsBUer8AXc3H8JIV65jn
+TEbDCzZlhAw9ps7vg9qrPCNzjYETDFj3M+dFqu8d+2CUlcQIZH0fP6sI4yvI4aaq4SEt4W4tXvIG
+qQVlXZu8Dd1Owssmx7onKkVRaF/TShv7RmjzDfcweUf8rILccYz43nE8rcruzFQ5nlt+zMX8+wO6
+aShwa2TrMLY/vH2k3TKbIbnYJo4OZNV3LfGGaB2x6bRiItk1dujqtLwoenlUKf9PgyYoKoTlA41M
+nbHDsQbhYm303Sbx7BR/ccJlLkxe6SfCZOOHIGaYdTEarHLSx5RjOTsToZCiOmZ9xptjtjyFuENk
+O+FHC30b8ihLMkXp2zKlX5kGQiNU61oFLHuQoYE3ZNnPq6IErV+aUeya3GKV3M+EubRxUCuwVBtM
+wbJOa+NLTFHqOdOAe9uZ2z79MFZ045WK8H9wSc6ZCZ+MeBW15X1RTTRv88HNJDdXieV8wcPAE8Gw
+24mtfcvFQCqFO6aeVv047JxsG6NPf2inNSFzauxKMI7yMJHl163ifsdmgqiclO3xdXNdzPY8uxsH
+FXxm5LvT1E0TgEvjRMDWa6PwVYr65RvKVoboQ1Dfok59TIIaCmbqAtD/JEJhxouTxdqkFzIpEjYA
+wGfalsGfHBM9aDohyYKm3MRmJxWmCI1yBdNZt6ta0d+Glv2eQrJ/qpDqR/tCKCA0SVI2vF7lkL76
+CvZF7l7WN8Kom8G8Sw5R9mcqtNKcYwDdsww92fKLRhGc7VhcTfBjmSakpiFikEuMyHBBpyFyxlhJ
+M1EYUy9RpcrYdngpkXvPIkw6X8Jy2Maoq8WP2VECOSLkrAxOhx/j13NR0FG7MSUyatDJ2hXaF5hh
+l3z+OvSSYun5CSVB2NlbKPArDeRXqJpkk2ktS7x6XUjVo5FhoPfqLSwHgNbK8RHna1IquFn54Ep1
+b1JS8R+rM/cj1b9PsPiguMRS5LJXm7shicMLvyGbBcq/PXWIMyEgR29/8aNEwNiFYmFNi7oTrKJz
+xg+Tnoo5nDU1aRV2BloCArlPRWkVbkLhp582A6nPYBuTw1cxHJuCWWs1+nRB3X0FD7fbM0uMNppG
+xrrkjxJtkP0vSMaoPTa5h5gwCsO3XtIoWJAtQTswPaK2+34CvI1tzy/RyorZKYFy/Mn0uJ4spWja
+L+0c7+Pg9DZEf0ZRCJDQJQxK00pn1HBR998WCFjVLTSmqUSiLTzK4y2aE+C0La9nZSUtgmvICb2A
+upNlsXl4CRkRp5XfO0pUa5mma3kPHcAdrsyDBSJtB5RT9g7aLGRtgnzCc06h745cVt5WJ4DucVuN
+qzf/U1XKUjVs8IXATBgxoxKzqXwD7oqgu1FsrpSnFDYYw1U9vccFw9iVxh6ibc1vuG8DxISg6foQ
+se5qY0xkp+Si6Sm4kKzE7MbH35MIMQ5cr90aP734B2BbkA1E8zwUkYX78FxmdokzZ0JqIaiUXAkH
+PUT1+MxW6k/xsIVlXQNfVDCALYv1Qx9qH+SlAKn5HCeUsscJZn9kTOzfn0d+q9LfTN/El8KUfCQS
+G6C93V9RQ/6zswNa6pXqf5KdpU5GzyMgFmfkSTUGfJQRGT0S3rxBMFEzoaKYW4cc+QrtjWUqJ8W/
+UjF7uKEum3MVPKfZIt91tahXT1l0n0nX8i8JAfEZUl4XKeIptI+W6jwi6wy3rK9FKqICt6iqriVb
+fWRq+tKpGjwFMYyuGEGN6dVaR4D4PBiji114KtkYah6Y4T8FYU0SxGwprVAhwP/5UlPC658GJzTQ
+1Ian4yR4LvbGKLF8LCrxxoP+/lHEwwGLbBLNM9UC0r0LVBnZWEcKs98j2Jjgj9Onyb+yGiov6vXs
+BWz2dIX7xChrptfyWmgzWIHCDK82r/j5cmYYdFXFyLdvrUsSXxzV+LHBfTRtN+JtEvj+ZMajunUM
+0bCyA4dpYLe3363ND92a3YMVtMcZ7NxfEclfMp9oE30EzROnR1ZCNv2AzxHhArKN1zpuUpuYZ0xo
+L+KEowK8nq8GPDKZ1EbxWXMcUm1oXhVDeTx8xUNvMswWNi6u/vbdkVjOYnOkwfB9SUB/Itt8dY7P
+b3ZEnxVgZ7BFgTJTuFGK2j5aU7CBkmBX+wPiW0jJTrBFIGqM4hxbgREZySQiusK+KqpTSDfDfOTR
+oXQaAP/CLSLcyG2px0fp0PG7RpkGKDqr2sQ9MqIMxWc2qs+wfGFlqigegbWUOKBGWCL5cXTIbn0N
+QataWHvi2QP/WKTblKBslTLDcy6AOCYNT0esbwGJ/Q/ielzvFfL45MYv/c3acZ8/kSfyPGACrQpc
+lZ3UDeIL7byBptf0UZjrW/rlvHX+UZvDTx+EyF4MUdqcxN7PPRkYDP0VTWXAK64Gs+ytSzHPXa2S
+5RcB1CJMnIlFLN0gZidQ0aKqlw3tBvGu6Lw9OCta3hEPkQEX1TEzx+kL4x/CbQEGSK/kzh1nTsRT
+C7R5yCE55ejkZXrNaEW304TufCyOKlOKG/Necs/xbAgIK6YvxsOBOf6yduf/0U5zirtL7MKJ0096
+pmzWCmVuZHN0cmVhbSAKZW5kb2JqIAo1IDAgb2JqIAo8PAovUGFyZW50IDIgMCBSCi9NZWRpYUJv
+eCBbMCAwIDYxMiA3OTJdCi9SZXNvdXJjZXMgNyAwIFIKL0NvbnRlbnRzIDEwIDAgUgovVHlwZSAv
+UGFnZQo+PgplbmRvYmogCjEwIDAgb2JqIAo8PAovTGVuZ3RoIDI2NjYKPj4Kc3RyZWFtCuY4I6Zo
+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
+tFaHgJmphukpCi9GaWx0ZXIgL1N0YW5kYXJkCi9MZW5ndGggMTI4Ci9WIDIKL1UgKJcimBkPwp5G
+/W3zI1nBPFxyAAAAAAAAAAAAAAAAAAAAACkKPj4KZW5kb2JqIAoxMiAwIG9iaiAKPDwKL1RpdGxl
+ICgEBA9uxgBcYqiUgHtyvl4UGQFq6RF/QP3dOfk1nykKL1Byb2R1Y2VyICgUA0ZkiRxb4JTWeSCL
+TQ98Tn/hDmhG4dY+7lwpgKywHcDwWFwphEqHE9xN+ri7N8o7xUorusG8nmi1nvf2fn2vY1xcZMc1
++FDY+X4xQV5cYnUYItOrmSv3RNGb9Bfv5dGGkhzVvFe+nqZcKYf3mhDguIaZEsxSk7LMxbtJT0ML
+WuFcYnVsk/lkFFwomykKL0NyZWF0aW9uRGF0ZSAoBFEdJ5lEGPjFxi5m2xpJaSkKPj4KZW5kb2Jq
+IHhyZWYKMCAxMwowMDAwMDAwMDAwIDY1NTM1IGYgCjAwMDAwMDAwMTUgMDAwMDAgbiAKMDAwMDAw
+MDA2NiAwMDAwMCBuIAowMDAwMDAwMzA5IDAwMDAwIG4gCjAwMDAwMDEwNTUgMDAwMDAgbiAKMDAw
+MDAwMzUwMCAwMDAwMCBuIAowMDAwMDAwMTYxIDAwMDAwIG4gCjAwMDAwMDAyNDEgMDAwMDAgbiAK
+MDAwMDAwMDQxNSAwMDAwMCBuIAowMDAwMDAxMTYxIDAwMDAwIG4gCjAwMDAwMDM2MDcgMDAwMDAg
+biAKMDAwMDAwNjMyOSAwMDAwMCBuIAowMDAwMDA2NDc5IDAwMDAwIG4gCnRyYWlsZXIKCjw8Ci9F
+bmNyeXB0IDExIDAgUgovSW5mbyAxMiAwIFIKL1Jvb3QgMSAwIFIKL1NpemUgMTMKL0lEIFs8ZDgz
+NmE0ZmUxMWI3YTk0ZmE1OTFjNDEzYmIxMGExMjY+PDU2NDY1ZTJhYTIwOGVjMjBkZjFhZGY5ZWQ3
+YzRjMmUxPl0KPj4Kc3RhcnR4cmVmCjY3MjcKJSVFT0YK
+--------------030207060703040400000803
+Content-Type: text/plain; charset="us-ascii"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+Content-Disposition: inline
 
-                pid->numbers[i].nr = nr;
-                pid->numbers[i].ns = ns;
-                ns = ns->parent;
-        }
-
-	pid->level = pid_ns->level;
-
-	<snip>
-
-out:
-	return pid;
-out_free:
-        for (i++; i <= pid->level; i++)
-                free_pidmap(pid->numbers[i].ns, pid->numbers[i].nr);
-
-        kmem_cache_free(pid_ns->pid_cachep, pid);
-        pid = NULL;
-	goto out;
-
-<end code>
-
-Lets say initially pid_ns->level = 3 and alloc_pidmap() succeeds for
-i=3 and i=2 but fails for i=1 and we execute "goto out_free".
-
-But pid->level is uninitialized at this point right ?
-
-Even if it were set to zero (using kmem_cache_zalloc()), we may not
-free the two pidmap entries we allocated for i=3 and i=2.
-
-Suka
+_______________________________________________
+Containers mailing list
+Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+https://lists.linux-foundation.org/mailman/listinfo/containers
+--------------030207060703040400000803--
