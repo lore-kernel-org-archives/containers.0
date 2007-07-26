@@ -1,8 +1,8 @@
 From: Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
-Subject: [PATCH 4/15] Make proc_flust_task() flush entries from multiple proc
- trees
-Date: Thu, 26 Jul 2007 18:48:59 +0400
-Message-ID: <46A8B45B.70202@openvz.org>
+Subject: [PATCH 6/15] Make alloc_pid(), free_pid() and put_pid() work with
+ struct upid
+Date: Thu, 26 Jul 2007 18:50:22 +0400
+Message-ID: <46A8B4AE.6040903@openvz.org>
 References: <46A8B37B.6050108@openvz.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1; format=flowed
@@ -22,109 +22,133 @@ To: Sukadev Bhattiprolu <sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>, Cedri
 Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Since a task will appear in more than one proc tree we need to shrink many
-trees. For this case we pass the struct pid to proc_flush_task() and shrink
-the mounts of all the namespaces this pid belongs to.
-
-The NULL passed to it means that only global mount is to be flushed.
-This is a preparation for a real flushing patch.
+Each struct upid element of struct pid has to be initialized properly,
+i.e. its nr mst be allocated from appropriate pidmap and it must be
+inserted into the hash.
 
 Signed-off-by: Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 
 ---
 
- fs/proc/base.c          |   18 +++++++++++++++---
- include/linux/proc_fs.h |    6 ++++--
- kernel/exit.c           |    2 +-
- 3 files changed, 20 insertions(+), 6 deletions(-)
+ include/linux/pid.h |    2 +-
+ kernel/pid.c        |   52 +++++++++++++++++++++++++++++++++++++---------------
+ 2 files changed, 38 insertions(+), 16 deletions(-)
 
-diff -upr linux-2.6.23-rc1-mm1.orig/fs/proc/base.c linux-2.6.23-rc1-mm1-7/fs/proc/base.c
---- linux-2.6.23-rc1-mm1.orig/fs/proc/base.c	2007-07-26 16:34:45.000000000 +0400
-+++ linux-2.6.23-rc1-mm1-7/fs/proc/base.c	2007-07-26 16:36:37.000000000 +0400
-@@ -74,6 +74,7 @@
- #include <linux/nsproxy.h>
- #include <linux/oom.h>
- #include <linux/elf.h>
-+#include <linux/pid_namespace.h>
- #include "internal.h"
+diff -upr linux-2.6.23-rc1-mm1.orig/include/linux/pid.h linux-2.6.23-rc1-mm1-7/include/linux/pid.h
+--- linux-2.6.23-rc1-mm1.orig/include/linux/pid.h	2007-07-26 16:34:45.000000000 +0400
++++ linux-2.6.23-rc1-mm1-7/include/linux/pid.h	2007-07-26 16:36:37.000000000 +0400
+@@ -83,7 +92,7 @@ extern void FASTCALL(detach_pid(struct t
+ extern struct pid *find_get_pid(int nr);
+ extern struct pid *find_ge_pid(int nr);
  
- /* NOTE:
-@@ -2115,7 +2116,7 @@ static const struct inode_operations pro
-  *       that no dcache entries will exist at process exit time it
-  *       just makes it very unlikely that any will persist.
-  */
--void proc_flush_task(struct task_struct *task)
-+static void proc_flush_task_mnt(struct task_struct *task, struct vfsmount *mnt)
+-extern struct pid *alloc_pid(void);
++extern struct pid *alloc_pid(struct pid_namespace *ns);
+ extern void FASTCALL(free_pid(struct pid *pid));
+ 
+ static inline pid_t pid_nr(struct pid *pid)
+diff -upr linux-2.6.23-rc1-mm1.orig/kernel/pid.c linux-2.6.23-rc1-mm1-7/kernel/pid.c
+--- linux-2.6.23-rc1-mm1.orig/kernel/pid.c	2007-07-26 16:34:45.000000000 +0400
++++ linux-2.6.23-rc1-mm1-7/kernel/pid.c	2007-07-26 16:36:37.000000000 +0400
+@@ -28,7 +28,8 @@
+ #include <linux/pid_namespace.h>
+ #include <linux/init_task.h>
+ 
+-#define pid_hashfn(nr) hash_long((unsigned long)nr, pidhash_shift)
++#define pid_hashfn(nr, ns)	\
++	hash_long((unsigned long)nr + (unsigned long)ns, pidhash_shift)
+ static struct hlist_head *pid_hash;
+ static int pidhash_shift;
+ struct pid init_struct_pid = INIT_STRUCT_PID;
+@@ -187,11 +202,13 @@ fastcall void put_pid(struct pid *pid)
+ 	if (!pid)
+ 		return;
+ 
+-	/* FIXME - this must be the namespace this pid lives in */
+-	ns = &init_pid_ns;
++	ns = pid->numbers[pid->level].ns;
+ 	if ((atomic_read(&pid->count) == 1) ||
+-	     atomic_dec_and_test(&pid->count))
++	     atomic_dec_and_test(&pid->count)) {
+ 		kmem_cache_free(ns->pid_cachep, pid);
++		if (ns != &init_pid_ns)
++			put_pid_ns(ns);
++	}
+ }
+ EXPORT_SYMBOL_GPL(put_pid);
+ 
+@@ -204,45 +221,64 @@ static void delayed_put_pid(struct rcu_h
+ fastcall void free_pid(struct pid *pid)
  {
- 	struct dentry *dentry, *leader, *dir;
- 	char buf[PROC_NUMBUF];
-@@ -2123,7 +2124,7 @@ void proc_flush_task(struct task_struct 
+ 	/* We can be called with write_lock_irq(&tasklist_lock) held */
++	int i;
+ 	unsigned long flags;
  
- 	name.name = buf;
- 	name.len = snprintf(buf, sizeof(buf), "%d", task->pid);
--	dentry = d_hash_and_lookup(proc_mnt->mnt_root, &name);
-+	dentry = d_hash_and_lookup(mnt->mnt_root, &name);
- 	if (dentry) {
- 		shrink_dcache_parent(dentry);
- 		d_drop(dentry);
-@@ -2135,7 +2136,7 @@ void proc_flush_task(struct task_struct 
+ 	spin_lock_irqsave(&pidmap_lock, flags);
+-	hlist_del_rcu(&pid->pid_chain);
++	for (i = 0; i <= pid->level; i++)
++		hlist_del_rcu(&pid->numbers[i].pid_chain);
+ 	spin_unlock_irqrestore(&pidmap_lock, flags);
  
- 	name.name = buf;
- 	name.len = snprintf(buf, sizeof(buf), "%d", task->tgid);
--	leader = d_hash_and_lookup(proc_mnt->mnt_root, &name);
-+	leader = d_hash_and_lookup(mnt->mnt_root, &name);
- 	if (!leader)
- 		goto out;
- 
-@@ -2161,6 +2162,17 @@ out:
- 	return;
+-	free_pidmap(&init_pid_ns, pid->nr);
++	for (i = 0; i <= pid->level; i++)
++		free_pidmap(pid->numbers[i].ns, pid->numbers[i].nr);
++
+ 	call_rcu(&pid->rcu, delayed_put_pid);
  }
  
-+/*
-+ * when flushing dentries from proc one need to flush them from global
-+ * proc (proc_mnt) and from all the namespaces' procs this task was seen
-+ * in. this call is supposed to make all this job.
-+ */
+-struct pid *alloc_pid(void)
++struct pid *alloc_pid(struct pid_namespace *ns)
+ {
+ 	struct pid *pid;
+ 	enum pid_type type;
+-	int nr = -1;
+-	struct pid_namespace *ns;
++	int i, nr;
++	struct pid_namespace *tmp;
+ 
+-	ns = task_active_pid_ns(current);
+ 	pid = kmem_cache_alloc(ns->pid_cachep, GFP_KERNEL);
+ 	if (!pid)
+ 		goto out;
+ 
+-	nr = alloc_pidmap(ns);
+-	if (nr < 0)
+-		goto out_free;
++	tmp = ns;
++	for (i = ns->level; i >= 0; i--) {
++		nr = alloc_pidmap(tmp);
++		if (nr < 0)
++			goto out_free;
 +
-+void proc_flush_task(struct task_struct *task, struct pid *pid)
-+{
-+	proc_flush_task_mnt(task, proc_mnt);
-+}
++		pid->numbers[i].nr = nr;
++		pid->numbers[i].ns = tmp;
++		tmp = tmp->parent;
++	}
+ 
++	if (ns != &init_pid_ns)
++		get_pid_ns(ns);
 +
- static struct dentry *proc_pid_instantiate(struct inode *dir,
- 					   struct dentry * dentry,
- 					   struct task_struct *task, const void *ptr)
-diff -upr linux-2.6.23-rc1-mm1.orig/include/linux/proc_fs.h linux-2.6.23-rc1-mm1-7/include/linux/proc_fs.h
---- linux-2.6.23-rc1-mm1.orig/include/linux/proc_fs.h	2007-07-26 16:34:45.000000000 +0400
-+++ linux-2.6.23-rc1-mm1-7/include/linux/proc_fs.h	2007-07-26 16:36:36.000000000 +0400
-@@ -111,7 +111,7 @@ extern void proc_misc_init(void);
++	pid->level = ns->level;
+ 	atomic_set(&pid->count, 1);
+-	pid->nr = nr;
+ 	for (type = 0; type < PIDTYPE_MAX; ++type)
+ 		INIT_HLIST_HEAD(&pid->tasks[type]);
  
- struct mm_struct;
+ 	spin_lock_irq(&pidmap_lock);
+-	hlist_add_head_rcu(&pid->pid_chain, &pid_hash[pid_hashfn(pid->nr)]);
++	for (i = pid->level; i >= 0; i--)
++		hlist_add_head_rcu(&pid->numbers[i].pid_chain,
++				&pid_hash[pid_hashfn(pid->numbers[i].nr,
++					pid->numbers[i].ns)]);
+ 	spin_unlock_irq(&pidmap_lock);
  
--void proc_flush_task(struct task_struct *task);
-+void proc_flush_task(struct task_struct *task, struct pid *pid);
- struct dentry *proc_pid_lookup(struct inode *dir, struct dentry * dentry, struct nameidata *);
- int proc_pid_readdir(struct file * filp, void * dirent, filldir_t filldir);
- unsigned long task_vsize(struct mm_struct *);
-@@ -223,7 +227,9 @@ static inline void proc_net_remove(const
- #define proc_net_create(name, mode, info)	({ (void)(mode), NULL; })
- static inline void proc_net_remove(const char *name) {}
+ out:
+ 	return pid;
  
--static inline void proc_flush_task(struct task_struct *task) { }
-+static inline void proc_flush_task(struct task_struct *task, struct pid *pid)
-+{
-+}
- 
- static inline struct proc_dir_entry *create_proc_entry(const char *name,
- 	mode_t mode, struct proc_dir_entry *parent) { return NULL; }
-diff -upr linux-2.6.23-rc1-mm1.orig/kernel/exit.c linux-2.6.23-rc1-mm1-7/kernel/exit.c
---- linux-2.6.23-rc1-mm1.orig/kernel/exit.c	2007-07-26 16:34:45.000000000 +0400
-+++ linux-2.6.23-rc1-mm1-7/kernel/exit.c	2007-07-26 16:36:37.000000000 +0400
-@@ -184,7 +199,7 @@ repeat:
- 	}
- 
- 	write_unlock_irq(&tasklist_lock);
--	proc_flush_task(p);
-+	proc_flush_task(p, NULL);
- 	release_thread(p);
- 	call_rcu(&p->rcu, delayed_put_task_struct);
+ out_free:
++	for (i++; i <= ns->level; i++)
++		free_pidmap(pid->numbers[i].ns, pid->numbers[i].nr);
++
+ 	kmem_cache_free(ns->pid_cachep, pid);
+ 	pid = NULL;
+ 	goto out;
