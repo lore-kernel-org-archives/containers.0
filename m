@@ -1,11 +1,13 @@
 From: Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
-Subject: [RFC][PATCH 0/15] Pid namespaces
-Date: Thu, 26 Jul 2007 18:45:15 +0400
-Message-ID: <46A8B37B.6050108@openvz.org>
+Subject: [PATCH 1/15] Move exit_task_namespaces()
+Date: Thu, 26 Jul 2007 18:46:28 +0400
+Message-ID: <46A8B3C4.5080601@openvz.org>
+References: <46A8B37B.6050108@openvz.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <46A8B37B.6050108-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,34 +21,47 @@ To: Sukadev Bhattiprolu <sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>, Cedri
 Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-(Comment is taken from Sukadev's patchset-v3)
+Make task release its namespaces after it has reparented all his
+children to child_reaper, but before it notifies its parent about
+its death.
 
-A pid namespace is a "view" of a particular set of tasks on the system.
-They work in a similar way to filesystem namespaces.  A file (or a process)
-can be accessed in multiple namespaces, but it may have a different name 
-in each.  In a filesystem, this name might be /etc/passwd in one namespace,
-but /chroot/etc/passwd in another.
+The reason to release namespaces after reparenting is that when task
+exits it may send a signal to its parent (SIGCHLD), but if the parent
+has already exited its namespaces there will be no way to decide what
+pid to dever to him - parent can be from different namespace.
 
-For processes, a process may have pid 1234 in one namespace, but be pid 1
-in another. This allows new pid namespaces to have basically arbitrary
-pids, and not have to worry about what pids exist in other namespaces.
-This is essential for checkpoint/restart where a restarted process's pid
-might collide with an existing process on the system's pid.
-
-In this particular implementation, pid namespaces have a parent-child
-relationship, just like processes.  A process in a pid namespace may see
-all of the processes in the same namespace, as well as all of the processes
-in all of the namespaces which are children of its namespace. Processes may
-not, however, see others which are in their parent's namespace, but not in
-their own.  The same goes for sibling namespaces.
-
-This set is based on my patches, I sent before, but it includes some comments
-and patches that I received from Sukadev. Sukadev, please, add your Acked-by,
-Signed-off-by or From, to patches you want (everybody is also welcome :) ).
-
-The set is based on 2.6.23-rc1-mm1, which already has some preparation patches
-for pid namespaces. After the review and fixing all the comments, this set 
-will be benchmarked and sent to Andrew for inclusion in -mm tree.
+The reason to release namespace before notifying the parent it that
+when task sends a SIGCHLD to parent it can call wait() on this taks
+and release it. But releasing the mnt namespace implies dropping
+of all the mounts in the mnt namespace and NFS expects the task to
+have valid sighand pointer.
 
 Signed-off-by: Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
-Signed-off-by: Sukadev Bhattiprolu <sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+
+---
+
+ exit.c |    5 ++++-
+ 1 files changed, 4 insertions(+), 1 deletion(-)
+
+diff -upr linux-2.6.23-rc1-mm1.orig/kernel/exit.c linux-2.6.23-rc1-mm1-7/kernel/exit.c
+--- linux-2.6.23-rc1-mm1.orig/kernel/exit.c	2007-07-26 16:34:45.000000000 +0400
++++ linux-2.6.23-rc1-mm1-7/kernel/exit.c	2007-07-26 16:36:37.000000000 +0400
+@@ -788,6 +804,10 @@ static void exit_notify(struct task_stru
+ 	BUG_ON(!list_empty(&tsk->children));
+ 	BUG_ON(!list_empty(&tsk->ptrace_children));
+ 
++	write_unlock_irq(&tasklist_lock);
++	exit_task_namespaces(tsk);
++	write_lock_irq(&tasklist_lock);
++
+ 	/*
+ 	 * Check to see if any process groups have become orphaned
+ 	 * as a result of our exiting, and if they have any stopped
+@@ -999,7 +1021,6 @@ fastcall NORET_TYPE void do_exit(long co
+ 
+ 	tsk->exit_code = code;
+ 	proc_exit_connector(tsk);
+-	exit_task_namespaces(tsk);
+ 	exit_notify(tsk);
+ #ifdef CONFIG_NUMA
+ 	mpol_free(tsk->mempolicy);
