@@ -1,16 +1,11 @@
-From: Tejun Heo <htejun-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: Re: [PATCH 2/4] sysfs: Implement sysfs manged shadow directory
-	support.
-Date: Thu, 26 Jul 2007 17:00:05 +0900
-Message-ID: <46A85485.40502@gmail.com>
-References: <1182446577.8138.29.camel@localhost>	<m1odj9dofp.fsf@ebiederm.dsl.xmission.com>	<20070621211637.GB10583@suse.de>	<m1fy4ldldm.fsf@ebiederm.dsl.xmission.com>	<20070622001328.GA14113@suse.de>	<m1tzt0cujt.fsf_-_@ebiederm.dsl.xmission.com>	<20070625212339.GA13398@kroah.com>	<m14pk13svx.fsf@ebiederm.dsl.xmission.com>	<m1zm1t2e92.fsf_-_@ebiederm.dsl.xmission.com>	<46A3B449.3090409@gmail.com>
-	<20070722202508.GA18018@suse.de>
-	<m17iosw075.fsf@ebiederm.dsl.xmission.com>
+From: Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+Subject: [RFC][PATCH 0/15] Pid namespaces
+Date: Thu, 26 Jul 2007 18:45:15 +0400
+Message-ID: <46A8B37B.6050108@openvz.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <m17iosw075.fsf-T1Yj925okcoyDheHMi7gv2pdwda3JcWeAL8bYrjMMd8@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -20,31 +15,38 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Greg KH <greg-U8xfFu+wG4EAvxtiuMwx3w@public.gmane.org>, Dave Hansen <hansendc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+To: Sukadev Bhattiprolu <sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>, Cedric Le Goater <clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>, Oleg Nesterov <oleg-6lXkIZvqkOAvJsYlp49lxw@public.gmane.org>, Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>, Dave Hansen <haveblue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Hello,
+(Comment is taken from Sukadev's patchset-v3)
 
-Okay, some questions.
+A pid namespace is a "view" of a particular set of tasks on the system.
+They work in a similar way to filesystem namespaces.  A file (or a process)
+can be accessed in multiple namespaces, but it may have a different name 
+in each.  In a filesystem, this name might be /etc/passwd in one namespace,
+but /chroot/etc/passwd in another.
 
-* What do you think about not allowing duplicate names across different
-tags?  ie. there's only one ethX anywhere but it's visible only in a
-specific namespace (and maybe in the default global one).  Or does
-everyone need its own eth0.  If this is acceptable, the problem becomes
-_much_ simpler.
+For processes, a process may have pid 1234 in one namespace, but be pid 1
+in another. This allows new pid namespaces to have basically arbitrary
+pids, and not have to worry about what pids exist in other namespaces.
+This is essential for checkpoint/restart where a restarted process's pid
+might collide with an existing process on the system's pid.
 
-* I think we can do away with the magic tag and use a pointer to
-vfsmount instead.  So, a process which wants to be in certain namespace
-can bind-mount /sysfs to its own /sysfs and make needed sysfs nodes
-bound to the mount.  Does this sound okay?  Such process should probably
-be in its own chrooted environment to function properly.
+In this particular implementation, pid namespaces have a parent-child
+relationship, just like processes.  A process in a pid namespace may see
+all of the processes in the same namespace, as well as all of the processes
+in all of the namespaces which are children of its namespace. Processes may
+not, however, see others which are in their parent's namespace, but not in
+their own.  The same goes for sibling namespaces.
 
-* I haven't really followed the containers thread.  Do people generally
-agree on including it in mainline when we have all the fancy
-virtualization stuff?
+This set is based on my patches, I sent before, but it includes some comments
+and patches that I received from Sukadev. Sukadev, please, add your Acked-by,
+Signed-off-by or From, to patches you want (everybody is also welcome :) ).
 
-Thanks.
+The set is based on 2.6.23-rc1-mm1, which already has some preparation patches
+for pid namespaces. After the review and fixing all the comments, this set 
+will be benchmarked and sent to Andrew for inclusion in -mm tree.
 
--- 
-tejun
+Signed-off-by: Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+Signed-off-by: Sukadev Bhattiprolu <sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
