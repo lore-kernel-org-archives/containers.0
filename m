@@ -1,7 +1,7 @@
 From: Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
-Subject: [PATCH 9/15] Move alloc_pid() after the namespace is cloned
-Date: Thu, 26 Jul 2007 18:52:33 +0400
-Message-ID: <46A8B531.3050602@openvz.org>
+Subject: [PATCH 10/15] Make each namespace has its own proc tree
+Date: Thu, 26 Jul 2007 18:54:22 +0400
+Message-ID: <46A8B59E.7050009@openvz.org>
 References: <46A8B37B.6050108@openvz.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1; format=flowed
@@ -21,140 +21,340 @@ To: Sukadev Bhattiprolu <sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>, Cedri
 Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-When we create new namespace we will need to allocate the struct pid,
-that will have one extra struct upid in array, comparing to the parent.
-Thus we need to know the new namespace (if any) in alloc_pid() to init
-this struct upid properly, so move the alloc_pid() call lower in
-copy_process().
+The idea is the following: when a namespace is created the
+new proc superblock, pointing to this namespace, is created.
+When user accesses the proc tree from some pountmoint it oberves
+the tasks that live in the namespace, pointer by the according
+spuperblock.
 
-This is a fix for Sukadev's patch that moved the alloc_pid() call from
-do_fork() into copy_process().
+When task dies, its pids must be flushed from several proc trees,
+i.e. the ones that are owned by the namespaces that can see the
+taks's struct pid.
+
+Having the namespaces live without the proc mount is racy, so
+during the namespace creation we kern_mount the new proc instance. 
+
+We cannot just get the reference on the struct pid_namespace from
+the superblock, otherwise we'll have the ns->proc_mnt->sb->ns
+loop. To break this, when the init task dies, it releases the
+kern_mount-ed instance.
 
 Signed-off-by: Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 
 ---
 
- fork.c |   59 ++++++++++++++++++++++++++++++++++++++---------------------
- 1 files changed, 38 insertions(+), 21 deletions(-)
+ fs/proc/base.c                |   12 ++++++
+ fs/proc/inode.c               |    3 +
+ fs/proc/root.c                |   83 +++++++++++++++++++++++++++++++++++++++---
+ include/linux/pid_namespace.h |    3 +
+ include/linux/proc_fs.h       |   15 +++++++
+ kernel/exit.c                 |   18 ++++++++-
+ kernel/fork.c                 |    5 ++
+ kernel/pid.c                  |    1 
+ 8 files changed, 133 insertions(+), 7 deletions(-)
 
+diff -upr linux-2.6.23-rc1-mm1.orig/fs/proc/base.c linux-2.6.23-rc1-mm1-7/fs/proc/base.c
+--- linux-2.6.23-rc1-mm1.orig/fs/proc/base.c	2007-07-26 16:34:45.000000000 +0400
++++ linux-2.6.23-rc1-mm1-7/fs/proc/base.c	2007-07-26 16:36:37.000000000 +0400
+@@ -2161,7 +2162,19 @@ out:
+ 
+ void proc_flush_task(struct task_struct *task, struct pid *pid)
+ {
++	int i;
++	struct upid *upid;
++
+ 	proc_flush_task_mnt(task, proc_mnt);
++	if (pid == NULL)
++		return;
++
++	for (i = 1; i <= pid->level; i++)
++		proc_flush_task_mnt(task, pid->numbers[i].ns->proc_mnt);
++
++	upid = &pid->numbers[pid->level];
++	if (upid->nr == 1)
++		pid_ns_release_proc(upid->ns);
+ }
+ 
+ static struct dentry *proc_pid_instantiate(struct inode *dir,
+diff -upr linux-2.6.23-rc1-mm1.orig/fs/proc/inode.c linux-2.6.23-rc1-mm1-7/fs/proc/inode.c
+--- linux-2.6.23-rc1-mm1.orig/fs/proc/inode.c	2007-07-26 16:34:45.000000000 +0400
++++ linux-2.6.23-rc1-mm1-7/fs/proc/inode.c	2007-07-26 16:36:36.000000000 +0400
+@@ -16,6 +16,7 @@
+ #include <linux/init.h>
+ #include <linux/module.h>
+ #include <linux/smp_lock.h>
++#include <linux/pid_namespace.h>
+ 
+ #include <asm/system.h>
+ #include <asm/uaccess.h>
+@@ -427,7 +428,7 @@ out_mod:
+ 	return NULL;
+ }			
+ 
+-int proc_fill_super(struct super_block *s, void *data, int silent)
++int proc_fill_super(struct super_block *s)
+ {
+ 	struct inode * root_inode;
+ 
+diff -upr linux-2.6.23-rc1-mm1.orig/fs/proc/root.c linux-2.6.23-rc1-mm1-7/fs/proc/root.c
+--- linux-2.6.23-rc1-mm1.orig/fs/proc/root.c	2007-07-26 16:34:45.000000000 +0400
++++ linux-2.6.23-rc1-mm1-7/fs/proc/root.c	2007-07-26 16:36:37.000000000 +0400
+@@ -18,32 +18,90 @@
+ #include <linux/bitops.h>
+ #include <linux/smp_lock.h>
+ #include <linux/mount.h>
++#include <linux/pid_namespace.h>
+ 
+ #include "internal.h"
+ 
+ struct proc_dir_entry *proc_net, *proc_net_stat, *proc_bus, *proc_root_fs, *proc_root_driver;
+ 
++static int proc_test_super(struct super_block *sb, void *data)
++{
++	return sb->s_fs_info == data;
++}
++
++static int proc_set_super(struct super_block *sb, void *data)
++{
++	struct pid_namespace *ns;
++
++	ns = (struct pid_namespace *)data;
++	sb->s_fs_info = get_pid_ns(ns);
++	return set_anon_super(sb, NULL);
++}
++
+ static int proc_get_sb(struct file_system_type *fs_type,
+ 	int flags, const char *dev_name, void *data, struct vfsmount *mnt)
+ {
++	int err;
++	struct super_block *sb;
++	struct pid_namespace *ns;
++	struct proc_inode *ei;
++
+ 	if (proc_mnt) {
+ 		/* Seed the root directory with a pid so it doesn't need
+ 		 * to be special in base.c.  I would do this earlier but
+ 		 * the only task alive when /proc is mounted the first time
+ 		 * is the init_task and it doesn't have any pids.
+ 		 */
+-		struct proc_inode *ei;
+ 		ei = PROC_I(proc_mnt->mnt_sb->s_root->d_inode);
+ 		if (!ei->pid)
+ 			ei->pid = find_get_pid(1);
+ 	}
+-	return get_sb_single(fs_type, flags, data, proc_fill_super, mnt);
++
++	if (flags & MS_KERNMOUNT)
++		ns = (struct pid_namespace *)data;
++	else
++		ns = current->nsproxy->pid_ns;
++
++	sb = sget(fs_type, proc_test_super, proc_set_super, ns);
++	if (IS_ERR(sb))
++		return PTR_ERR(sb);
++
++	if (!sb->s_root) {
++		sb->s_flags = flags;
++		err = proc_fill_super(sb);
++		if (err) {
++			up_write(&sb->s_umount);
++			deactivate_super(sb);
++			return err;
++		}
++
++		ei = PROC_I(sb->s_root->d_inode);
++		if (!ei->pid) {
++			rcu_read_lock();
++			ei->pid = get_pid(find_pid_ns(1, ns));
++			rcu_read_unlock();
++		}
++
++		sb->s_flags |= MS_ACTIVE;
++		ns->proc_mnt = mnt;
++	}
++
++	return simple_set_mnt(mnt, sb);
++}
++
++static void proc_kill_sb(struct super_block *sb)
++{
++	struct pid_namespace *ns;
++
++	ns = (struct pid_namespace *)sb->s_fs_info;
++	kill_anon_super(sb);
++	put_pid_ns(ns);
+ }
+ 
+ static struct file_system_type proc_fs_type = {
+ 	.name		= "proc",
+ 	.get_sb		= proc_get_sb,
+-	.kill_sb	= kill_anon_super,
++	.kill_sb	= proc_kill_sb,
+ };
+ 
+ void __init proc_root_init(void)
+@@ -54,12 +112,13 @@ void __init proc_root_init(void)
+ 	err = register_filesystem(&proc_fs_type);
+ 	if (err)
+ 		return;
+-	proc_mnt = kern_mount(&proc_fs_type);
++	proc_mnt = kern_mount_data(&proc_fs_type, &init_pid_ns);
+ 	err = PTR_ERR(proc_mnt);
+ 	if (IS_ERR(proc_mnt)) {
+ 		unregister_filesystem(&proc_fs_type);
+ 		return;
+ 	}
++
+ 	proc_misc_init();
+ 	proc_net = proc_mkdir("net", NULL);
+ 	proc_net_stat = proc_mkdir("net/stat", NULL);
+@@ -153,6 +212,22 @@ struct proc_dir_entry proc_root = {
+ 	.parent		= &proc_root,
+ };
+ 
++int pid_ns_prepare_proc(struct pid_namespace *ns)
++{
++	struct vfsmount *mnt;
++
++	mnt = kern_mount_data(&proc_fs_type, ns);
++	if (IS_ERR(mnt))
++		return PTR_ERR(mnt);
++
++	return 0;
++}
++
++void pid_ns_release_proc(struct pid_namespace *ns)
++{
++	mntput(ns->proc_mnt);
++}
++
+ EXPORT_SYMBOL(proc_symlink);
+ EXPORT_SYMBOL(proc_mkdir);
+ EXPORT_SYMBOL(create_proc_entry);
+diff -upr linux-2.6.23-rc1-mm1.orig/include/linux/pid_namespace.h linux-2.6.23-rc1-mm1-7/include/linux/pid_namespace.h
+--- linux-2.6.23-rc1-mm1.orig/include/linux/pid_namespace.h	2007-07-26 16:34:45.000000000 +0400
++++ linux-2.6.23-rc1-mm1-7/include/linux/pid_namespace.h	2007-07-26 16:36:36.000000000 +0400
+@@ -16,6 +15,9 @@ struct pidmap {
+ 	int last_pid;
+ 	struct task_struct *child_reaper;
+ 	struct kmem_cache *pid_cachep;
++#ifdef CONFIG_PROC_FS
++	struct vfsmount *proc_mnt;
++#endif
+ };
+ 
+ extern struct pid_namespace init_pid_ns;
+diff -upr linux-2.6.23-rc1-mm1.orig/include/linux/proc_fs.h linux-2.6.23-rc1-mm1-7/include/linux/proc_fs.h
+--- linux-2.6.23-rc1-mm1.orig/include/linux/proc_fs.h	2007-07-26 16:34:45.000000000 +0400
++++ linux-2.6.23-rc1-mm1-7/include/linux/proc_fs.h	2007-07-26 16:36:36.000000000 +0400
+@@ -126,7 +126,8 @@ extern struct proc_dir_entry *create_pro
+ extern void remove_proc_entry(const char *name, struct proc_dir_entry *parent);
+ 
+ extern struct vfsmount *proc_mnt;
+-extern int proc_fill_super(struct super_block *,void *,int);
++struct pid_namespace;
++extern int proc_fill_super(struct super_block *);
+ extern struct inode *proc_get_inode(struct super_block *, unsigned int, struct proc_dir_entry *);
+ 
+ /*
+@@ -143,6 +144,9 @@ extern const struct file_operations proc
+ extern const struct file_operations proc_kmsg_operations;
+ extern const struct file_operations ppc_htab_operations;
+ 
++extern int pid_ns_prepare_proc(struct pid_namespace *ns);
++extern void pid_ns_release_proc(struct pid_namespace *ns);
++
+ /*
+  * proc_tty.c
+  */
+@@ -248,6 +254,15 @@ static inline void proc_tty_unregister_d
+ 
+ extern struct proc_dir_entry proc_root;
+ 
++static inline int pid_ns_prepare_proc(struct pid_namespace *ns)
++{
++	return 0;
++}
++
++static inline void pid_ns_release_proc(struct pid_namespace *ns)
++{
++}
++
+ #endif /* CONFIG_PROC_FS */
+ 
+ #if !defined(CONFIG_PROC_KCORE)
+diff -upr linux-2.6.23-rc1-mm1.orig/kernel/exit.c linux-2.6.23-rc1-mm1-7/kernel/exit.c
+--- linux-2.6.23-rc1-mm1.orig/kernel/exit.c	2007-07-26 16:34:45.000000000 +0400
++++ linux-2.6.23-rc1-mm1-7/kernel/exit.c	2007-07-26 16:36:37.000000000 +0400
+@@ -153,6 +153,7 @@ static void delayed_put_task_struct(stru
+ 
+ void release_task(struct task_struct * p)
+ {
++	struct pid *pid;
+ 	struct task_struct *leader;
+ 	int zap_leader;
+ repeat:
+@@ -160,6 +161,20 @@ repeat:
+ 	write_lock_irq(&tasklist_lock);
+ 	ptrace_unlink(p);
+ 	BUG_ON(!list_empty(&p->ptrace_list) || !list_empty(&p->ptrace_children));
++	/*
++	 * we have to keep this pid till proc_flush_task() to make
++	 * it possible to flush all dentries holding it. pid will
++	 * be put ibidem
++	 *
++	 * however if the pid belogs to init namespace only, we can
++	 * optimize this out
++	 */
++	pid = task_pid(p);
++	if (pid->level != 0)
++		get_pid(pid);
++	else
++		pid = NULL;
++
+ 	__exit_signal(p);
+ 
+ 	/*
+@@ -184,7 +199,8 @@ repeat:
+ 	}
+ 
+ 	write_unlock_irq(&tasklist_lock);
+-	proc_flush_task(p, NULL);
++	proc_flush_task(p, pid);
++	put_pid(pid);
+ 	release_thread(p);
+ 	call_rcu(&p->rcu, delayed_put_task_struct);
+ 
 diff -upr linux-2.6.23-rc1-mm1.orig/kernel/fork.c linux-2.6.23-rc1-mm1-7/kernel/fork.c
 --- linux-2.6.23-rc1-mm1.orig/kernel/fork.c	2007-07-26 16:34:45.000000000 +0400
 +++ linux-2.6.23-rc1-mm1-7/kernel/fork.c	2007-07-26 16:36:37.000000000 +0400
-@@ -1028,16 +1029,9 @@ static struct task_struct *copy_process(
- 	if (p->binfmt && !try_module_get(p->binfmt->module))
- 		goto bad_fork_cleanup_put_domain;
+@@ -50,6 +50,7 @@
+ #include <linux/taskstats_kern.h>
+ #include <linux/random.h>
+ #include <linux/tty.h>
++#include <linux/proc_fs.h>
  
--	if (pid != &init_struct_pid) {
--		pid = alloc_pid();
--		if (!pid)
--			goto bad_fork_put_binfmt_module;
--	}
--
- 	p->did_exec = 0;
- 	delayacct_tsk_init(p);	/* Must remain after dup_task_struct() */
- 	copy_flags(clone_flags, p);
--	p->pid = pid_nr(pid);
- 	INIT_LIST_HEAD(&p->children);
- 	INIT_LIST_HEAD(&p->sibling);
- 	p->vfork_done = NULL;
-@@ -1112,10 +1106,6 @@ static struct task_struct *copy_process(
- 	p->blocked_on = NULL; /* not blocked yet */
- #endif
- 
--	p->tgid = p->pid;
--	if (clone_flags & CLONE_THREAD)
--		p->tgid = current->tgid;
--
- 	if ((retval = security_task_alloc(p)))
- 		goto bad_fork_cleanup_policy;
- 	if ((retval = audit_alloc(p)))
-@@ -1141,6 +1131,17 @@ static struct task_struct *copy_process(
- 	if (retval)
- 		goto bad_fork_cleanup_namespaces;
- 
-+	if (pid != &init_struct_pid) {
-+		pid = alloc_pid(task_active_pid_ns(p));
-+		if (!pid)
-+			goto bad_fork_cleanup_namespaces;
-+	}
+ #include <asm/pgtable.h>
+ #include <asm/pgalloc.h>
+@@ -1141,6 +1131,10 @@ static struct task_struct *copy_process(
+ 		pid = alloc_pid(task_active_pid_ns(p));
+ 		if (!pid)
+ 			goto bad_fork_cleanup_namespaces;
 +
-+	p->pid = pid_nr(pid);
-+	p->tgid = p->pid;
-+	if (clone_flags & CLONE_THREAD)
-+		p->tgid = current->tgid;
-+
- 	p->set_child_tid = (clone_flags & CLONE_CHILD_SETTID) ? child_tidptr : NULL;
- 	/*
- 	 * Clear TID on mm_release()?
-@@ -1237,7 +1242,7 @@ static struct task_struct *copy_process(
- 		spin_unlock(&current->sighand->siglock);
- 		write_unlock_irq(&tasklist_lock);
- 		retval = -ERESTARTNOINTR;
--		goto bad_fork_cleanup_namespaces;
-+		goto bad_fork_free_pid;
++		if (clone_flags & CLONE_NEWPID)
++			if (pid_ns_prepare_proc(task_active_pid_ns(p)))
++				goto bad_fork_free_pid;
  	}
  
- 	if (clone_flags & CLONE_THREAD) {
-@@ -1266,11 +1271,22 @@ static struct task_struct *copy_process(
- 			__ptrace_link(p, current->parent);
+ 	p->pid = pid_nr(pid);
+diff -upr linux-2.6.23-rc1-mm1.orig/kernel/pid.c linux-2.6.23-rc1-mm1-7/kernel/pid.c
+--- linux-2.6.23-rc1-mm1.orig/kernel/pid.c	2007-07-26 16:34:45.000000000 +0400
++++ linux-2.6.23-rc1-mm1-7/kernel/pid.c	2007-07-26 16:36:37.000000000 +0400
+@@ -28,6 +28,7 @@
+ #include <linux/hash.h>
+ #include <linux/pid_namespace.h>
+ #include <linux/init_task.h>
++#include <linux/proc_fs.h>
  
- 		if (thread_group_leader(p)) {
--			p->signal->tty = current->signal->tty;
--			p->signal->pgrp = task_pgrp_nr(current);
--			set_task_session(p, task_session_nr(current));
--			attach_pid(p, PIDTYPE_PGID, task_pgrp(current));
--			attach_pid(p, PIDTYPE_SID, task_session(current));
-+			if (clone_flags & CLONE_NEWPID) {
-+				p->nsproxy->pid_ns->child_reaper = p;
-+				p->signal->tty = NULL;
-+				p->signal->pgrp = p->pid;
-+				set_task_session(p, p->pid);
-+				attach_pid(p, PIDTYPE_PGID, pid);
-+				attach_pid(p, PIDTYPE_SID, pid);
-+			} else {
-+				p->signal->tty = current->signal->tty;
-+				p->signal->pgrp = task_pgrp_nr(current);
-+				set_task_session(p, task_session_nr(current));
-+				attach_pid(p, PIDTYPE_PGID,
-+						task_pgrp(current));
-+				attach_pid(p, PIDTYPE_SID,
-+						task_session(current));
-+			}
- 
- 			list_add_tail_rcu(&p->tasks, &init_task.tasks);
- 			__get_cpu_var(process_counts)++;
-@@ -1288,6 +1304,9 @@ static struct task_struct *copy_process(
- 	container_post_fork(p);
- 	return p;
- 
-+bad_fork_free_pid:
-+	if (pid != &init_struct_pid)
-+		free_pid(pid);
- bad_fork_cleanup_namespaces:
- 	exit_task_namespaces(p);
- bad_fork_cleanup_keys:
-@@ -1322,9 +1341,6 @@ bad_fork_cleanup_container:
- #endif
- 	container_exit(p, container_callbacks_done);
- 	delayacct_tsk_free(p);
--	if (pid != &init_struct_pid)
--		free_pid(pid);
--bad_fork_put_binfmt_module:
- 	if (p->binfmt)
- 		module_put(p->binfmt->module);
- bad_fork_cleanup_put_domain:
-@@ -1406,7 +1422,13 @@ long do_fork(unsigned long clone_flags,
- 	if (!IS_ERR(p)) {
- 		struct completion vfork;
- 
--		nr = pid_nr(task_pid(p));
-+		/*
-+		 * this is enough to call pid_nr_ns here, but this if
-+		 * improves optimisation of regular fork()
-+		 */
-+		nr = (clone_flags & CLONE_NEWPID) ?
-+			task_pid_nr_ns(p, current->nsproxy->pid_ns) :
-+				task_pid_vnr(p);
- 
- 		if (clone_flags & CLONE_VFORK) {
- 			p->vfork_done = &vfork;
+ #define pid_hashfn(nr, ns)	\
+ 	hash_long((unsigned long)nr + (unsigned long)ns, pidhash_shift)
