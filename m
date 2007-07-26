@@ -1,7 +1,7 @@
 From: Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
-Subject: [PATCH 12/15] Miscelaneous stuff for pid namespaces
-Date: Thu, 26 Jul 2007 18:56:01 +0400
-Message-ID: <46A8B601.4020108@openvz.org>
+Subject: [PATCH 14/15] Destroy pid namespace on init's death
+Date: Thu, 26 Jul 2007 18:57:39 +0400
+Message-ID: <46A8B663.9040206@openvz.org>
 References: <46A8B37B.6050108@openvz.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1; format=flowed
@@ -21,87 +21,130 @@ To: Sukadev Bhattiprolu <sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>, Cedri
 Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-This includes
-  * the headers dependency fix
-  * task_child_reaper() correct declaration
-  * fixes for is_global_init() and is_container_init()
+From: Sukadev Bhattiprolu <sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 
-Maybe this should come before all the other stuff...
+Terminate all processes in a namespace when the reaper of the namespace
+is exiting. We do this by walking the pidmap of the namespace and sending
+SIGKILL to all processes.
 
-Signed-off-by: Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+Signed-off-by: Sukadev Bhattiprolu <sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Acked-by: Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 
 ---
 
- include/linux/pid_namespace.h |    4 ++--
- include/linux/sched.h         |    4 ++--
- kernel/pid.c                  |   16 +++++++++++++---
- 3 files changed, 17 insertions(+), 7 deletions(-)
+ include/linux/pid.h  |    1 +
+ include/linux/wait.h |    4 ++++
+ kernel/exit.c        |   10 ++++++----
+ kernel/pid.c         |   38 ++++++++++++++++++++++++++++++++++++++
+ 4 files changed, 49 insertions(+), 4 deletions(-)
 
-diff -upr linux-2.6.23-rc1-mm1.orig/include/linux/pid_namespace.h linux-2.6.23-rc1-mm1-7/include/linux/pid_namespace.h
---- linux-2.6.23-rc1-mm1.orig/include/linux/pid_namespace.h	2007-07-26 16:34:45.000000000 +0400
-+++ linux-2.6.23-rc1-mm1-7/include/linux/pid_namespace.h	2007-07-26 16:36:36.000000000 +0400
-@@ -4,7 +4,6 @@
- #include <linux/sched.h>
- #include <linux/mm.h>
- #include <linux/threads.h>
--#include <linux/pid.h>
- #include <linux/nsproxy.h>
- #include <linux/kref.h>
+diff -upr linux-2.6.23-rc1-mm1.orig/include/linux/pid.h linux-2.6.23-rc1-mm1-7/include/linux/pid.h
+--- linux-2.6.23-rc1-mm1.orig/include/linux/pid.h	2007-07-26 16:34:45.000000000 +0400
++++ linux-2.6.23-rc1-mm1-7/include/linux/pid.h	2007-07-26 16:36:37.000000000 +0400
+@@ -83,6 +92,7 @@ extern void FASTCALL(detach_pid(struct t
  
-@@ -46,7 +53,8 @@ static inline struct pid_namespace *task
- 
- static inline struct task_struct *task_child_reaper(struct task_struct *tsk)
- {
--	return init_pid_ns.child_reaper;
-+	BUG_ON(tsk != current);
-+	return tsk->nsproxy->pid_ns->child_reaper;
- }
- 
- #endif /* _LINUX_PID_NS_H */
-diff -upr linux-2.6.23-rc1-mm1.orig/include/linux/sched.h linux-2.6.23-rc1-mm1-7/include/linux/sched.h
---- linux-2.6.23-rc1-mm1.orig/include/linux/sched.h	2007-07-26 16:34:45.000000000 +0400
-+++ linux-2.6.23-rc1-mm1-7/include/linux/sched.h	2007-07-26 16:36:37.000000000 +0400
-@@ -1277,13 +1366,13 @@ static inline int pid_alive(struct task_
-  *
-  * TODO: We should inline this function after some cleanups in pid_namespace.h
-  */
--extern int is_global_init(struct task_struct *tsk);
-+extern int is_container_init(struct task_struct *tsk);
+ extern struct pid *alloc_pid(struct pid_namespace *ns);
+ extern void FASTCALL(free_pid(struct pid *pid));
++extern void zap_pid_ns_processes(struct pid_namespace *pid_ns);
  
  /*
-  * is_container_init:
-  * check whether in the task is init in its own pid namespace.
-  */
--static inline int is_container_init(struct task_struct *tsk)
-+static inline int is_global_init(struct task_struct *tsk)
+  * the helpers to get the pid's id seen from different namespaces
+diff -upr linux-2.6.23-rc1-mm1.orig/include/linux/wait.h linux-2.6.23-rc1-mm1-7/include/linux/wait.h
+--- linux-2.6.23-rc1-mm1.orig/include/linux/wait.h	2007-07-26 16:34:45.000000000 +0400
++++ linux-2.6.23-rc1-mm1-7/include/linux/wait.h	2007-07-26 16:36:36.000000000 +0400
+@@ -22,9 +22,13 @@
+ #include <linux/list.h>
+ #include <linux/stddef.h>
+ #include <linux/spinlock.h>
++#include <linux/resource.h>
++#include <asm/siginfo.h>
+ #include <asm/system.h>
+ #include <asm/current.h>
+ 
++long do_wait(pid_t pid, int options, struct siginfo __user *infop,
++		int __user *stat_addr, struct rusage __user *ru);
+ typedef struct __wait_queue wait_queue_t;
+ typedef int (*wait_queue_func_t)(wait_queue_t *wait, unsigned mode, int sync, void *key);
+ int default_wake_function(wait_queue_t *wait, unsigned mode, int sync, void *key);
+diff -upr linux-2.6.23-rc1-mm1.orig/kernel/exit.c linux-2.6.23-rc1-mm1-7/kernel/exit.c
+--- linux-2.6.23-rc1-mm1.orig/kernel/exit.c	2007-07-26 16:34:45.000000000 +0400
++++ linux-2.6.23-rc1-mm1-7/kernel/exit.c	2007-07-26 16:36:37.000000000 +0400
+@@ -895,6 +915,7 @@ fastcall NORET_TYPE void do_exit(long co
  {
- 	return tsk->pid == 1;
+ 	struct task_struct *tsk = current;
+ 	int group_dead;
++	struct pid_namespace *pid_ns = tsk->nsproxy->pid_ns;
+ 
+ 	profile_task_exit(tsk);
+ 
+@@ -905,9 +926,10 @@ fastcall NORET_TYPE void do_exit(long co
+ 	if (unlikely(!tsk->pid))
+ 		panic("Attempted to kill the idle task!");
+ 	if (unlikely(tsk == task_child_reaper(tsk))) {
+-		if (task_active_pid_ns(tsk) != &init_pid_ns)
+-			task_active_pid_ns(tsk)->child_reaper =
+-					init_pid_ns.child_reaper;
++		if (pid_ns != &init_pid_ns) {
++			zap_pid_ns_processes(pid_ns);
++			pid_ns->child_reaper = init_pid_ns.child_reaper;
++		}
+ 		else
+ 			panic("Attempted to kill init!");
+ 	}
+@@ -1518,7 +1548,7 @@ static inline int my_ptrace_child(struct
+ 	return (p->parent != p->real_parent);
  }
+ 
+-static long do_wait(pid_t pid, int options, struct siginfo __user *infop,
++long do_wait(pid_t pid, int options, struct siginfo __user *infop,
+ 		    int __user *stat_addr, struct rusage __user *ru)
+ {
+ 	DECLARE_WAITQUEUE(wait, current);
 diff -upr linux-2.6.23-rc1-mm1.orig/kernel/pid.c linux-2.6.23-rc1-mm1-7/kernel/pid.c
 --- linux-2.6.23-rc1-mm1.orig/kernel/pid.c	2007-07-26 16:34:45.000000000 +0400
 +++ linux-2.6.23-rc1-mm1-7/kernel/pid.c	2007-07-26 16:36:37.000000000 +0400
-@@ -60,11 +62,21 @@ static inline int mk_pid(struct pid_name
- };
- EXPORT_SYMBOL(init_pid_ns);
- 
--int is_global_init(struct task_struct *tsk)
-+int is_container_init(struct task_struct *tsk)
- {
--	return tsk == init_pid_ns.child_reaper;
-+	int ret;
-+	struct pid *pid;
-+
-+	ret = 0;
-+	rcu_read_lock();
-+	pid = task_pid(tsk);
-+	if (pid != NULL && pid->numbers[pid->level].nr == 1)
-+		ret = 1;
-+	rcu_read_unlock();
-+
-+	return ret;
+@@ -428,6 +520,44 @@ err_alloc:
+ 	return new_ns;
  }
--EXPORT_SYMBOL(is_global_init);
-+EXPORT_SYMBOL(is_container_init);
  
- /*
-  * Note: disable interrupts while the pidmap_lock is held as an
++void zap_pid_ns_processes(struct pid_namespace *pid_ns)
++{
++	int i;
++	int nr;
++	int nfree;
++	int options = WNOHANG|WEXITED|__WALL;
++
++repeat:
++	/*
++	 * We know pid == 1 is terminating. Find remaining pid_ts
++	 * in the namespace, signal them and then wait for them
++	 * exit.
++	 */
++	nr = next_pidmap(pid_ns, 1);
++	while (nr > 0) {
++		kill_proc_info(SIGKILL, SEND_SIG_PRIV, nr);
++		nr = next_pidmap(pid_ns, nr);
++	}
++
++	nr = next_pidmap(pid_ns, 1);
++	while (nr > 0) {
++		do_wait(nr, options, NULL, NULL, NULL);
++		nr = next_pidmap(pid_ns, nr);
++	}
++
++	nfree = 0;
++	for (i = 0; i < PIDMAP_ENTRIES; i++)
++		nfree += atomic_read(&pid_ns->pidmap[i].nr_free);
++
++	/*
++	 * If pidmap has entries for processes other than 0 and 1, retry.
++	 */
++	if (nfree < (BITS_PER_PAGE * PIDMAP_ENTRIES - 2))
++		goto repeat;
++
++	return;
++}
++
+ static void do_free_pid_ns(struct work_struct *w)
+ {
+ 	struct pid_namespace *ns, *parent;
