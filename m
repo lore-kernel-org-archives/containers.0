@@ -1,150 +1,50 @@
-From: Pavel Emelyanov <xemul@openvz.org>
-Subject: Re: [PATCH 13/16] Switch to operating with pid_numbers instead of
- pids
-Date: Thu, 26 Jul 2007 10:42:22 +0400
-Message-ID: <46A8424E.1010805@openvz.org>
-References: <468DF6F7.1010906@openvz.org> <468DF907.2060809@openvz.org> <20070725003619.GF3287@us.ibm.com> <46A720C8.5070803@openvz.org> <20070725191334.GA19976@us.ibm.com>
+From: Tejun Heo <htejun-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Subject: Re: [PATCH 2/4] sysfs: Implement sysfs manged shadow directory
+	support.
+Date: Thu, 26 Jul 2007 17:00:05 +0900
+Message-ID: <46A85485.40502@gmail.com>
+References: <1182446577.8138.29.camel@localhost>	<m1odj9dofp.fsf@ebiederm.dsl.xmission.com>	<20070621211637.GB10583@suse.de>	<m1fy4ldldm.fsf@ebiederm.dsl.xmission.com>	<20070622001328.GA14113@suse.de>	<m1tzt0cujt.fsf_-_@ebiederm.dsl.xmission.com>	<20070625212339.GA13398@kroah.com>	<m14pk13svx.fsf@ebiederm.dsl.xmission.com>	<m1zm1t2e92.fsf_-_@ebiederm.dsl.xmission.com>	<46A3B449.3090409@gmail.com>
+	<20070722202508.GA18018@suse.de>
+	<m17iosw075.fsf@ebiederm.dsl.xmission.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+Content-Type: text/plain; charset=ISO-8859-1
 Content-Transfer-Encoding: 7bit
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1763494AbXGZGn1@vger.kernel.org>
-In-Reply-To: <20070725191334.GA19976@us.ibm.com>
-Sender: linux-kernel-owner@vger.kernel.org
-To: sukadev@us.ibm.com
-Cc: Serge Hallyn <serue@us.ibm.com>, Linux Containers <containers@lists.osdl.org>, Linux Kernel Mailing List <linux-kernel@vger.kernel.org>
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <m17iosw075.fsf-T1Yj925okcoyDheHMi7gv2pdwda3JcWeAL8bYrjMMd8@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Greg KH <greg-U8xfFu+wG4EAvxtiuMwx3w@public.gmane.org>, Dave Hansen <hansendc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-sukadev@us.ibm.com wrote:
-> Pavel Emelianov [xemul@openvz.org] wrote:
-> | sukadev@us.ibm.com wrote:
-> | >Pavel Emelianov [xemul@openvz.org] wrote:
-> | >| Make alloc_pid() initialize pid_numbers and hash them
-> | >| into the hashtable, not the struct pid itself.
-> | >| 
-> | >| Signed-off-by: Pavel Emelianov <xemul@openvz.org>
-> | >| 
-> | >| ---
-> | >| 
-> | >|  pid.c |   47 +++++++++++++++++++++++++++++++++--------------
-> | >|  1 files changed, 33 insertions(+), 14 deletions(-)
-> | >| 
-> | >| --- ./kernel/pid.c.ve12	2007-07-05 11:06:41.000000000 +0400
-> | >| +++ ./kernel/pid.c	2007-07-05 11:08:23.000000000 +0400
-> | >| @@ -28,8 +28,10 @@
-> | >|  #include <linux/hash.h>
-> | >|  #include <linux/pid_namespace.h>
-> | >|  #include <linux/init_task.h>
-> | >| +#include <linux/proc_fs.h>
-> | >| 
-> | >| -#define pid_hashfn(nr) hash_long((unsigned long)nr, pidhash_shift)
-> | >| +#define pid_hashfn(nr, ns)	\
-> | >| +	hash_long((unsigned long)nr + (unsigned long)ns, pidhash_shift)
-> | >|  static struct hlist_head *pid_hash;
-> | >|  static int pidhash_shift;
-> | >|  struct pid init_struct_pid = INIT_STRUCT_PID;
-> | >| @@ -194,7 +198,7 @@ fastcall void put_pid(struct pid *pid)
-> | >|  	if (!pid)
-> | >|  		return;
-> | >| 
-> | >| -	ns = pid->numbers[0].ns;
-> | >| +	ns = pid->numbers[pid->level].ns;
-> | >|  	if ((atomic_read(&pid->count) == 1) ||
-> | >|  	     atomic_dec_and_test(&pid->count))
-> | >|  		kmem_cache_free(ns->pid_cachep, pid);
-> | >| @@ -210,13 +214,17 @@ static void delayed_put_pid(struct rcu_h
-> | >|  fastcall void free_pid(struct pid *pid)
-> | >|  {
-> | >|  	/* We can be called with write_lock_irq(&tasklist_lock) held */
-> | >| +	int i;
-> | >|  	unsigned long flags;
-> | >| 
-> | >|  	spin_lock_irqsave(&pidmap_lock, flags);
-> | >| -	hlist_del_rcu(&pid->pid_chain);
-> | >| +	for (i = 0; i <= pid->level; i++)
-> | >| +		hlist_del_rcu(&pid->numbers[i].pid_chain);
-> | >|  	spin_unlock_irqrestore(&pidmap_lock, flags);
-> | >| 
-> | >| -	free_pidmap(&init_pid_ns, pid->nr);
-> | >| +	for (i = 0; i <= pid->level; i++)
-> | >| +		free_pidmap(pid->numbers[i].ns, pid->numbers[i].nr);
-> | >| +
-> | >|  	call_rcu(&pid->rcu, delayed_put_pid);
-> | >|  }
-> | >| 
-> | >| @@ -224,30 +232,43 @@ struct pid *alloc_pid(struct pid_namespa
-> | >|  {
-> | >|  	struct pid *pid;
-> | >|  	enum pid_type type;
-> | >| -	int nr = -1;
-> | >| +	struct pid_namespace *ns;
-> | >| +	int i, nr;
-> | >| 
-> | >| -	pid = kmem_cache_alloc(init_pid_ns.pid_cachep, GFP_KERNEL);
-> | >| +	pid = kmem_cache_alloc(pid_ns->pid_cachep, GFP_KERNEL);
-> | >|  	if (!pid)
-> | >|  		goto out;
-> | >| 
-> | >| -	nr = alloc_pidmap(current->nsproxy->pid_ns);
-> | >| -	if (nr < 0)
-> | >| -		goto out_free;
-> | >| +	ns = pid_ns;
-> | >| +	for (i = pid_ns->level; i >= 0; i--) {
-> | >| +		nr = alloc_pidmap(ns);
-> | >| +		if (nr < 0)
-> | >| +			goto out_free;
-> | >
-> | >If pid_ns->level is say 3 and alloc_pidmap() succeeds when i=0,1
-> | 
-> | It cannot :) If level is 3, then we'll allocate for 3, 2, 1, 0 sequence.
-> | The loop is descending, not ascending...
-> 
-> Aah descending - thats right. But I still think there is a problem.
-> 
-> Here is your code that I am referring to:
-> 
->         pid = kmem_cache_alloc(pid_ns->pid_cachep, GFP_KERNEL);
->         if (!pid)
->                 goto out;
-> 
->         ns = pid_ns;
->         for (i = pid_ns->level; i >= 0; i--) {
->                 nr = alloc_pidmap(ns);
->                 if (nr < 0)
->                         goto out_free;
-> 
->                 pid->numbers[i].nr = nr;
->                 pid->numbers[i].ns = ns;
->                 ns = ns->parent;
->         }
-> 
-> 	pid->level = pid_ns->level;
-> 
-> 	<snip>
-> 
-> out:
-> 	return pid;
-> out_free:
->         for (i++; i <= pid->level; i++)
->                 free_pidmap(pid->numbers[i].ns, pid->numbers[i].nr);
-> 
->         kmem_cache_free(pid_ns->pid_cachep, pid);
->         pid = NULL;
-> 	goto out;
-> 
-> <end code>
-> 
-> Lets say initially pid_ns->level = 3 and alloc_pidmap() succeeds for
-> i=3 and i=2 but fails for i=1 and we execute "goto out_free".
-> 
-> But pid->level is uninitialized at this point right ?
-> 
-> Even if it were set to zero (using kmem_cache_zalloc()), we may not
-> free the two pidmap entries we allocated for i=3 and i=2.
+Hello,
 
-Yes. I found this after detailed look at the code and (hope) fixed.
+Okay, some questions.
 
-> Suka
-> 
+* What do you think about not allowing duplicate names across different
+tags?  ie. there's only one ethX anywhere but it's visible only in a
+specific namespace (and maybe in the default global one).  Or does
+everyone need its own eth0.  If this is acceptable, the problem becomes
+_much_ simpler.
 
-Thanks,
-Pavel
+* I think we can do away with the magic tag and use a pointer to
+vfsmount instead.  So, a process which wants to be in certain namespace
+can bind-mount /sysfs to its own /sysfs and make needed sysfs nodes
+bound to the mount.  Does this sound okay?  Such process should probably
+be in its own chrooted environment to function properly.
+
+* I haven't really followed the containers thread.  Do people generally
+agree on including it in mainline when we have all the fancy
+virtualization stuff?
+
+Thanks.
+
+-- 
+tejun
