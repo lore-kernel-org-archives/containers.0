@@ -1,7 +1,7 @@
 From: Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
-Subject: [PATCH 7/15] Helpers to obtain pid numbers
-Date: Thu, 26 Jul 2007 18:51:02 +0400
-Message-ID: <46A8B4D6.1080301@openvz.org>
+Subject: [PATCH 9/15] Move alloc_pid() after the namespace is cloned
+Date: Thu, 26 Jul 2007 18:52:33 +0400
+Message-ID: <46A8B531.3050602@openvz.org>
 References: <46A8B37B.6050108@openvz.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1; format=flowed
@@ -17,205 +17,144 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Cedric Le Goater <clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>, Oleg Nesterov <oleg-6lXkIZvqkOAvJsYlp49lxw@public.gmane.org>, Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>, Dave Hansen <haveblue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+To: Sukadev Bhattiprolu <sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>, Cedric Le Goater <clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>, Oleg Nesterov <oleg-6lXkIZvqkOAvJsYlp49lxw@public.gmane.org>, Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>, Dave Hansen <haveblue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-When showing pid to user or getting the pid numerical id for in-kernel
-use the value of this id may differ depending on the namespace.
+When we create new namespace we will need to allocate the struct pid,
+that will have one extra struct upid in array, comparing to the parent.
+Thus we need to know the new namespace (if any) in alloc_pid() to init
+this struct upid properly, so move the alloc_pid() call lower in
+copy_process().
 
-This set of helpers is used to get the global pid nr, the virtual (i.e.
-seen by task in its namespace) nr and the nr as it is seen from the
-specified namespace.
+This is a fix for Sukadev's patch that moved the alloc_pid() call from
+do_fork() into copy_process().
 
 Signed-off-by: Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 
 ---
 
- include/linux/pid.h   |   24 ++++++++++-
- include/linux/sched.h |  108 +++++++++++++++++++++++++++++++++++++++++++++-----
- kernel/pid.c          |    8 +++
- 3 files changed, 129 insertions(+), 11 deletions(-)
+ fork.c |   59 ++++++++++++++++++++++++++++++++++++++---------------------
+ 1 files changed, 38 insertions(+), 21 deletions(-)
 
-diff -upr linux-2.6.23-rc1-mm1.orig/include/linux/pid.h linux-2.6.23-rc1-mm1-7/include/linux/pid.h
---- linux-2.6.23-rc1-mm1.orig/include/linux/pid.h	2007-07-26 16:34:45.000000000 +0400
-+++ linux-2.6.23-rc1-mm1-7/include/linux/pid.h	2007-07-26 16:36:37.000000000 +0400
-@@ -83,12 +92,34 @@ extern void FASTCALL(detach_pid(struct t
+diff -upr linux-2.6.23-rc1-mm1.orig/kernel/fork.c linux-2.6.23-rc1-mm1-7/kernel/fork.c
+--- linux-2.6.23-rc1-mm1.orig/kernel/fork.c	2007-07-26 16:34:45.000000000 +0400
++++ linux-2.6.23-rc1-mm1-7/kernel/fork.c	2007-07-26 16:36:37.000000000 +0400
+@@ -1028,16 +1029,9 @@ static struct task_struct *copy_process(
+ 	if (p->binfmt && !try_module_get(p->binfmt->module))
+ 		goto bad_fork_cleanup_put_domain;
  
- extern struct pid *alloc_pid(struct pid_namespace *ns);
- extern void FASTCALL(free_pid(struct pid *pid));
-+
-+/*
-+ * the helpers to get the pid's id seen from different namespaces
-+ *
-+ * pid_nr()    : global id, i.e. the id seen from the init namespace;
-+ * pid_vnr()   : virtual id, i.e. the id seen from the namespace this pid
-+ *               belongs to. this only makes sence when called in the
-+ *               context of the task that belongs to the same namespace;
-+ * pid_nr_ns() : id seen from the ns specified.
-+ *
-+ * see also task_xid_nr() etc in include/linux/sched.h
-+ */
- 
- static inline pid_t pid_nr(struct pid *pid)
- {
- 	pid_t nr = 0;
- 	if (pid)
--		nr = pid->nr;
-+		nr = pid->numbers[0].nr;
-+	return nr;
-+}
-+
-+pid_t pid_nr_ns(struct pid *pid, struct pid_namespace *ns);
-+
-+static inline pid_t pid_vnr(struct pid *pid)
-+{
-+	pid_t nr = 0;
-+	if (pid)
-+		nr = pid->numbers[pid->level].nr;
- 	return nr;
- }
- 
-diff -upr linux-2.6.23-rc1-mm1.orig/include/linux/sched.h linux-2.6.23-rc1-mm1-7/include/linux/sched.h
---- linux-2.6.23-rc1-mm1.orig/include/linux/sched.h	2007-07-26 16:34:45.000000000 +0400
-+++ linux-2.6.23-rc1-mm1-7/include/linux/sched.h	2007-07-26 16:36:37.000000000 +0400
-@@ -1221,16 +1222,6 @@ static inline int rt_task(struct task_st
- 	return rt_prio(p->prio);
- }
- 
--static inline pid_t task_pgrp_nr(struct task_struct *tsk)
--{
--	return tsk->signal->pgrp;
--}
+-	if (pid != &init_struct_pid) {
+-		pid = alloc_pid();
+-		if (!pid)
+-			goto bad_fork_put_binfmt_module;
+-	}
 -
--static inline pid_t task_session_nr(struct task_struct *tsk)
--{
--	return tsk->signal->__session;
--}
+ 	p->did_exec = 0;
+ 	delayacct_tsk_init(p);	/* Must remain after dup_task_struct() */
+ 	copy_flags(clone_flags, p);
+-	p->pid = pid_nr(pid);
+ 	INIT_LIST_HEAD(&p->children);
+ 	INIT_LIST_HEAD(&p->sibling);
+ 	p->vfork_done = NULL;
+@@ -1112,10 +1106,6 @@ static struct task_struct *copy_process(
+ 	p->blocked_on = NULL; /* not blocked yet */
+ #endif
+ 
+-	p->tgid = p->pid;
+-	if (clone_flags & CLONE_THREAD)
+-		p->tgid = current->tgid;
 -
- static inline void set_task_session(struct task_struct *tsk, pid_t session)
- {
- 	tsk->signal->__session = session;
-@@ -1256,6 +1247,104 @@ static inline struct pid *task_session(s
- 	return task->group_leader->pids[PIDTYPE_SID].pid;
- }
+ 	if ((retval = security_task_alloc(p)))
+ 		goto bad_fork_cleanup_policy;
+ 	if ((retval = audit_alloc(p)))
+@@ -1141,6 +1131,17 @@ static struct task_struct *copy_process(
+ 	if (retval)
+ 		goto bad_fork_cleanup_namespaces;
  
-+struct pid_namespace;
++	if (pid != &init_struct_pid) {
++		pid = alloc_pid(task_active_pid_ns(p));
++		if (!pid)
++			goto bad_fork_cleanup_namespaces;
++	}
 +
-+/*
-+ * the helpers to get the task's different pids as they are seen
-+ * from various namespaces
-+ *
-+ * task_xid_nr()     : global id, i.e. the id seen from the init namespace;
-+ * task_xid_vnr()    : virtual id, i.e. the id seen from the namespace the task
-+ *                     belongs to. this only makes sence when called in the
-+ *                     context of the task that belongs to the same namespace;
-+ * task_xid_nr_ns()  : id seen from the ns specified;
-+ *
-+ * set_task_vxid()   : assigns a virtual id to a task;
-+ *
-+ * task_ppid_nr_ns() : the parent's id as seen from the namespace specified.
-+ *                     the result depends on the namespace and whether the
-+ *                     task in question is the namespace's init. e.g. for the
-+ *                     namespace's init this will return 0 when called from
-+ *                     the namespace of this init, or appropriate id otherwise.
-+ *                     
-+ *
-+ * see also pid_nr() etc in include/linux/pid.h
-+ */
++	p->pid = pid_nr(pid);
++	p->tgid = p->pid;
++	if (clone_flags & CLONE_THREAD)
++		p->tgid = current->tgid;
 +
-+static inline pid_t task_pid_nr(struct task_struct *tsk)
-+{
-+	return tsk->pid;
-+}
-+
-+static inline pid_t task_pid_nr_ns(struct task_struct *tsk,
-+		struct pid_namespace *ns)
-+{
-+	return pid_nr_ns(task_pid(tsk), ns);
-+}
-+
-+static inline pid_t task_pid_vnr(struct task_struct *tsk)
-+{
-+	return pid_vnr(task_pid(tsk));
-+}
-+
-+
-+static inline pid_t task_tgid_nr(struct task_struct *tsk)
-+{
-+	return tsk->tgid;
-+}
-+
-+static inline pid_t task_tgid_nr_ns(struct task_struct *tsk,
-+		struct pid_namespace *ns)
-+{
-+	return pid_nr_ns(task_tgid(tsk), ns);
-+}
-+
-+static inline pid_t task_tgid_vnr(struct task_struct *tsk)
-+{
-+	return pid_vnr(task_tgid(tsk));
-+}
-+
-+
-+static inline pid_t task_pgrp_nr(struct task_struct *tsk)
-+{
-+	return tsk->signal->pgrp;
-+}
-+
-+static inline pid_t task_pgrp_nr_ns(struct task_struct *tsk,
-+		struct pid_namespace *ns)
-+{
-+	return pid_nr_ns(task_pgrp(tsk), ns);
-+}
-+
-+static inline pid_t task_pgrp_vnr(struct task_struct *tsk)
-+{
-+	return pid_vnr(task_pgrp(tsk));
-+}
-+
-+
-+static inline pid_t task_session_nr(struct task_struct *tsk)
-+{
-+	return tsk->signal->__session;
-+}
-+
-+static inline pid_t task_session_nr_ns(struct task_struct *tsk,
-+		struct pid_namespace *ns)
-+{
-+	return pid_nr_ns(task_session(tsk), ns);
-+}
-+
-+static inline pid_t task_session_vnr(struct task_struct *tsk)
-+{
-+	return pid_vnr(task_session(tsk));
-+}
-+
-+
-+static inline pid_t task_ppid_nr_ns(struct task_struct *tsk,
-+		struct pid_namespace *ns)
-+{
-+	return pid_nr_ns(task_pid(rcu_dereference(tsk->real_parent)), ns);
-+}
-+
- /**
-  * pid_alive - check that a task structure is not stale
-  * @p: Task structure to be checked.
-diff -upr linux-2.6.23-rc1-mm1.orig/kernel/pid.c linux-2.6.23-rc1-mm1-7/kernel/pid.c
---- linux-2.6.23-rc1-mm1.orig/kernel/pid.c	2007-07-26 16:34:45.000000000 +0400
-+++ linux-2.6.23-rc1-mm1-7/kernel/pid.c	2007-07-26 16:36:37.000000000 +0400
-@@ -352,6 +436,14 @@ struct pid *find_get_pid(pid_t nr)
- 	return pid;
- }
+ 	p->set_child_tid = (clone_flags & CLONE_CHILD_SETTID) ? child_tidptr : NULL;
+ 	/*
+ 	 * Clear TID on mm_release()?
+@@ -1237,7 +1242,7 @@ static struct task_struct *copy_process(
+ 		spin_unlock(&current->sighand->siglock);
+ 		write_unlock_irq(&tasklist_lock);
+ 		retval = -ERESTARTNOINTR;
+-		goto bad_fork_cleanup_namespaces;
++		goto bad_fork_free_pid;
+ 	}
  
-+pid_t pid_nr_ns(struct pid *pid, struct pid_namespace *ns)
-+{
-+	pid_t nr = 0;
-+	if (pid && ns->level <= pid->level)
-+		nr = pid->numbers[ns->level].nr;
-+	return nr;
-+}
-+
- /*
-  * Used by proc to find the first pid that is greater then or equal to nr.
-  *
+ 	if (clone_flags & CLONE_THREAD) {
+@@ -1266,11 +1271,22 @@ static struct task_struct *copy_process(
+ 			__ptrace_link(p, current->parent);
+ 
+ 		if (thread_group_leader(p)) {
+-			p->signal->tty = current->signal->tty;
+-			p->signal->pgrp = task_pgrp_nr(current);
+-			set_task_session(p, task_session_nr(current));
+-			attach_pid(p, PIDTYPE_PGID, task_pgrp(current));
+-			attach_pid(p, PIDTYPE_SID, task_session(current));
++			if (clone_flags & CLONE_NEWPID) {
++				p->nsproxy->pid_ns->child_reaper = p;
++				p->signal->tty = NULL;
++				p->signal->pgrp = p->pid;
++				set_task_session(p, p->pid);
++				attach_pid(p, PIDTYPE_PGID, pid);
++				attach_pid(p, PIDTYPE_SID, pid);
++			} else {
++				p->signal->tty = current->signal->tty;
++				p->signal->pgrp = task_pgrp_nr(current);
++				set_task_session(p, task_session_nr(current));
++				attach_pid(p, PIDTYPE_PGID,
++						task_pgrp(current));
++				attach_pid(p, PIDTYPE_SID,
++						task_session(current));
++			}
+ 
+ 			list_add_tail_rcu(&p->tasks, &init_task.tasks);
+ 			__get_cpu_var(process_counts)++;
+@@ -1288,6 +1304,9 @@ static struct task_struct *copy_process(
+ 	container_post_fork(p);
+ 	return p;
+ 
++bad_fork_free_pid:
++	if (pid != &init_struct_pid)
++		free_pid(pid);
+ bad_fork_cleanup_namespaces:
+ 	exit_task_namespaces(p);
+ bad_fork_cleanup_keys:
+@@ -1322,9 +1341,6 @@ bad_fork_cleanup_container:
+ #endif
+ 	container_exit(p, container_callbacks_done);
+ 	delayacct_tsk_free(p);
+-	if (pid != &init_struct_pid)
+-		free_pid(pid);
+-bad_fork_put_binfmt_module:
+ 	if (p->binfmt)
+ 		module_put(p->binfmt->module);
+ bad_fork_cleanup_put_domain:
+@@ -1406,7 +1422,13 @@ long do_fork(unsigned long clone_flags,
+ 	if (!IS_ERR(p)) {
+ 		struct completion vfork;
+ 
+-		nr = pid_nr(task_pid(p));
++		/*
++		 * this is enough to call pid_nr_ns here, but this if
++		 * improves optimisation of regular fork()
++		 */
++		nr = (clone_flags & CLONE_NEWPID) ?
++			task_pid_nr_ns(p, current->nsproxy->pid_ns) :
++				task_pid_vnr(p);
+ 
+ 		if (clone_flags & CLONE_VFORK) {
+ 			p->vfork_done = &vfork;
