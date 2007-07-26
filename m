@@ -1,8 +1,7 @@
 From: Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
-Subject: [PATCH 6/15] Make alloc_pid(), free_pid() and put_pid() work with
- struct upid
-Date: Thu, 26 Jul 2007 18:50:22 +0400
-Message-ID: <46A8B4AE.6040903@openvz.org>
+Subject: [PATCH 8/15] Helpers to find the task by its numerical ids
+Date: Thu, 26 Jul 2007 18:51:46 +0400
+Message-ID: <46A8B502.8070606@openvz.org>
 References: <46A8B37B.6050108@openvz.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1; format=flowed
@@ -22,133 +21,170 @@ To: Sukadev Bhattiprolu <sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>, Cedri
 Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Each struct upid element of struct pid has to be initialized properly,
-i.e. its nr mst be allocated from appropriate pidmap and it must be
-inserted into the hash.
+When searching the task by numerical id on may need to find
+it using global pid (as it is done now in kernel) or by its
+virtual id, e.g. when sending a signal to a task from one
+namespace the sender will specify the task's virtual id.
 
 Signed-off-by: Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 
 ---
 
- include/linux/pid.h |    2 +-
- kernel/pid.c        |   52 +++++++++++++++++++++++++++++++++++++---------------
- 2 files changed, 38 insertions(+), 16 deletions(-)
+ include/linux/pid.h   |   16 ++++++++++++++--
+ include/linux/sched.h |   31 +++++++++++++++++++++++++++++--
+ kernel/pid.c          |   32 +++++++++++++++++---------------
+ 3 files changed, 60 insertions(+), 19 deletions(-)
 
 diff -upr linux-2.6.23-rc1-mm1.orig/include/linux/pid.h linux-2.6.23-rc1-mm1-7/include/linux/pid.h
 --- linux-2.6.23-rc1-mm1.orig/include/linux/pid.h	2007-07-26 16:34:45.000000000 +0400
 +++ linux-2.6.23-rc1-mm1-7/include/linux/pid.h	2007-07-26 16:36:37.000000000 +0400
-@@ -83,7 +92,7 @@ extern void FASTCALL(detach_pid(struct t
+@@ -83,17 +92,29 @@ extern void FASTCALL(detach_pid(struct t
+ extern void FASTCALL(transfer_pid(struct task_struct *old,
+ 				  struct task_struct *new, enum pid_type));
+ 
++struct pid_namespace;
++extern struct pid_namespace init_pid_ns;
++
+ /*
+  * look up a PID in the hash table. Must be called with the tasklist_lock
+  * or rcu_read_lock() held.
++ *
++ * find_pid_ns() finds the pid in the namespace specified
++ * find_pid() find the pid by its global id, i.e. in the init namespace
++ * find_vpid() finr the pid by its virtual id, i.e. in the current namespace
++ *
++ * see also find_task_by_pid() set in include/linux/sched.h
+  */
+-extern struct pid *FASTCALL(find_pid(int nr));
++extern struct pid *FASTCALL(find_pid_ns(int nr, struct pid_namespace *ns));
++
++#define find_vpid(pid)	find_pid_ns(pid, current->nsproxy->pid_ns)
++#define find_pid(pid)	find_pid_ns(pid, &init_pid_ns)
+ 
+ /*
+  * Lookup a PID in the hash table, and return with it's count elevated.
+  */
  extern struct pid *find_get_pid(int nr);
- extern struct pid *find_ge_pid(int nr);
+-extern struct pid *find_ge_pid(int nr);
++extern struct pid *find_ge_pid(int nr, struct pid_namespace *);
  
--extern struct pid *alloc_pid(void);
-+extern struct pid *alloc_pid(struct pid_namespace *ns);
+ extern struct pid *alloc_pid(struct pid_namespace *ns);
  extern void FASTCALL(free_pid(struct pid *pid));
+diff -upr linux-2.6.23-rc1-mm1.orig/include/linux/sched.h linux-2.6.23-rc1-mm1-7/include/linux/sched.h
+--- linux-2.6.23-rc1-mm1.orig/include/linux/sched.h	2007-07-26 16:34:45.000000000 +0400
++++ linux-2.6.23-rc1-mm1-7/include/linux/sched.h	2007-07-26 16:36:37.000000000 +0400
+@@ -1453,8 +1542,35 @@ extern struct task_struct init_task;
  
- static inline pid_t pid_nr(struct pid *pid)
+ extern struct   mm_struct init_mm;
+ 
+-#define find_task_by_pid(nr)	find_task_by_pid_type(PIDTYPE_PID, nr)
+-extern struct task_struct *find_task_by_pid_type(int type, int pid);
++extern struct pid_namespace init_pid_ns;
++
++/*
++ * find a task by one of its numerical ids
++ *
++ * find_task_by_pid_type_ns():
++ *      it is the most generic call - it finds a task by all id,
++ *      type and namespace specified
++ * find_task_by_pid_ns():
++ *      finds a task by its pid in the specified namespace
++ * find_task_by_pid_type():
++ *      finds a task by its global id with the specified type, e.g.
++ *      by global session id
++ * find_task_by_pid():
++ *      finds a task by its global pid
++ *
++ * see also find_pid() etc in include/linux/pid.h
++ */
++
++extern struct task_struct *find_task_by_pid_type_ns(int type, int pid,
++		struct pid_namespace *ns);
++
++#define find_task_by_pid_ns(nr, ns)	\
++		find_task_by_pid_type_ns(PIDTYPE_PID, nr, ns)
++#define find_task_by_pid_type(type, nr)	\
++		find_task_by_pid_type_ns(type, nr, &init_pid_ns)
++#define find_task_by_pid(nr)		\
++		find_task_by_pid_type(PIDTYPE_PID, nr)
++
+ extern void __set_special_pids(pid_t session, pid_t pgrp);
+ 
+ /* per-UID process charging. */
 diff -upr linux-2.6.23-rc1-mm1.orig/kernel/pid.c linux-2.6.23-rc1-mm1-7/kernel/pid.c
 --- linux-2.6.23-rc1-mm1.orig/kernel/pid.c	2007-07-26 16:34:45.000000000 +0400
 +++ linux-2.6.23-rc1-mm1-7/kernel/pid.c	2007-07-26 16:36:37.000000000 +0400
-@@ -28,7 +28,8 @@
- #include <linux/pid_namespace.h>
- #include <linux/init_task.h>
- 
--#define pid_hashfn(nr) hash_long((unsigned long)nr, pidhash_shift)
-+#define pid_hashfn(nr, ns)	\
-+	hash_long((unsigned long)nr + (unsigned long)ns, pidhash_shift)
- static struct hlist_head *pid_hash;
- static int pidhash_shift;
- struct pid init_struct_pid = INIT_STRUCT_PID;
-@@ -187,11 +202,13 @@ fastcall void put_pid(struct pid *pid)
- 	if (!pid)
- 		return;
- 
--	/* FIXME - this must be the namespace this pid lives in */
--	ns = &init_pid_ns;
-+	ns = pid->numbers[pid->level].ns;
- 	if ((atomic_read(&pid->count) == 1) ||
--	     atomic_dec_and_test(&pid->count))
-+	     atomic_dec_and_test(&pid->count)) {
- 		kmem_cache_free(ns->pid_cachep, pid);
-+		if (ns != &init_pid_ns)
-+			put_pid_ns(ns);
-+	}
+@@ -204,19 +221,20 @@ static void delayed_put_pid(struct rcu_h
+ 	goto out;
  }
- EXPORT_SYMBOL_GPL(put_pid);
  
-@@ -204,45 +221,64 @@ static void delayed_put_pid(struct rcu_h
- fastcall void free_pid(struct pid *pid)
+-struct pid * fastcall find_pid(int nr)
++struct pid * fastcall find_pid_ns(int nr, struct pid_namespace *ns)
  {
- 	/* We can be called with write_lock_irq(&tasklist_lock) held */
-+	int i;
- 	unsigned long flags;
- 
- 	spin_lock_irqsave(&pidmap_lock, flags);
--	hlist_del_rcu(&pid->pid_chain);
-+	for (i = 0; i <= pid->level; i++)
-+		hlist_del_rcu(&pid->numbers[i].pid_chain);
- 	spin_unlock_irqrestore(&pidmap_lock, flags);
- 
--	free_pidmap(&init_pid_ns, pid->nr);
-+	for (i = 0; i <= pid->level; i++)
-+		free_pidmap(pid->numbers[i].ns, pid->numbers[i].nr);
+ 	struct hlist_node *elem;
+-	struct pid *pid;
++	struct upid *pnr;
 +
- 	call_rcu(&pid->rcu, delayed_put_pid);
++	hlist_for_each_entry_rcu(pnr, elem,
++			&pid_hash[pid_hashfn(nr, ns)], pid_chain)
++		if (pnr->nr == nr && pnr->ns == ns)
++			return container_of(pnr, struct pid,
++					numbers[ns->level]);
+ 
+-	hlist_for_each_entry_rcu(pid, elem,
+-			&pid_hash[pid_hashfn(nr)], pid_chain) {
+-		if (pid->nr == nr)
+-			return pid;
+-	}
+ 	return NULL;
+ }
+-EXPORT_SYMBOL_GPL(find_pid);
++EXPORT_SYMBOL_GPL(find_pid_ns);
+ 
+ /*
+  * attach_pid() must be called with the tasklist_lock write-held.
+@@ -318,12 +355,13 @@ struct task_struct * fastcall pid_task(s
+ /*
+  * Must be called under rcu_read_lock() or with tasklist_lock read-held.
+  */
+-struct task_struct *find_task_by_pid_type(int type, int nr)
++struct task_struct *find_task_by_pid_type_ns(int type, int nr,
++		struct pid_namespace *ns)
+ {
+-	return pid_task(find_pid(nr), type);
++	return pid_task(find_pid_ns(nr, ns), type);
  }
  
--struct pid *alloc_pid(void)
-+struct pid *alloc_pid(struct pid_namespace *ns)
+-EXPORT_SYMBOL(find_task_by_pid_type);
++EXPORT_SYMBOL(find_task_by_pid_type_ns);
+ 
+ struct pid *get_task_pid(struct task_struct *task, enum pid_type type)
+ {
+@@ -342,7 +426,7 @@ struct pid *find_get_pid(pid_t nr)
+ 	struct pid *pid;
+ 
+ 	rcu_read_lock();
+-	pid = get_pid(find_pid(nr));
++	pid = get_pid(find_vpid(nr));
+ 	rcu_read_unlock();
+ 
+ 	return pid;
+@@ -352,15 +436,15 @@ struct pid *find_get_pid(pid_t nr)
+  *
+  * If there is a pid at nr this function is exactly the same as find_pid.
+  */
+-struct pid *find_ge_pid(int nr)
++struct pid *find_ge_pid(int nr, struct pid_namespace *ns)
  {
  	struct pid *pid;
- 	enum pid_type type;
--	int nr = -1;
--	struct pid_namespace *ns;
-+	int i, nr;
-+	struct pid_namespace *tmp;
  
--	ns = task_active_pid_ns(current);
- 	pid = kmem_cache_alloc(ns->pid_cachep, GFP_KERNEL);
- 	if (!pid)
- 		goto out;
+ 	do {
+-		pid = find_pid(nr);
++		pid = find_pid_ns(nr, ns);
+ 		if (pid)
+ 			break;
+-		nr = next_pidmap(task_active_pid_ns(current), nr);
++		nr = next_pidmap(ns, nr);
+ 	} while (nr > 0);
  
--	nr = alloc_pidmap(ns);
--	if (nr < 0)
--		goto out_free;
-+	tmp = ns;
-+	for (i = ns->level; i >= 0; i--) {
-+		nr = alloc_pidmap(tmp);
-+		if (nr < 0)
-+			goto out_free;
-+
-+		pid->numbers[i].nr = nr;
-+		pid->numbers[i].ns = tmp;
-+		tmp = tmp->parent;
-+	}
- 
-+	if (ns != &init_pid_ns)
-+		get_pid_ns(ns);
-+
-+	pid->level = ns->level;
- 	atomic_set(&pid->count, 1);
--	pid->nr = nr;
- 	for (type = 0; type < PIDTYPE_MAX; ++type)
- 		INIT_HLIST_HEAD(&pid->tasks[type]);
- 
- 	spin_lock_irq(&pidmap_lock);
--	hlist_add_head_rcu(&pid->pid_chain, &pid_hash[pid_hashfn(pid->nr)]);
-+	for (i = pid->level; i >= 0; i--)
-+		hlist_add_head_rcu(&pid->numbers[i].pid_chain,
-+				&pid_hash[pid_hashfn(pid->numbers[i].nr,
-+					pid->numbers[i].ns)]);
- 	spin_unlock_irq(&pidmap_lock);
- 
- out:
  	return pid;
- 
- out_free:
-+	for (i++; i <= ns->level; i++)
-+		free_pidmap(pid->numbers[i].ns, pid->numbers[i].nr);
-+
- 	kmem_cache_free(ns->pid_cachep, pid);
- 	pid = NULL;
- 	goto out;
