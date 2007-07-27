@@ -1,14 +1,14 @@
-From: Pavel Emelyanov <xemul-3ImXcnM4P+0@public.gmane.org>
-Subject: Re: [PATCH 1/15] Move exit_task_namespaces()
-Date: Fri, 27 Jul 2007 10:38:02 +0400
-Message-ID: <46A992CA.5060906@sw.ru>
-References: <46A8B37B.6050108@openvz.org> <46A8B3C4.5080601@openvz.org>
-	<1185466239.18414.95.camel@localhost>
+From: Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+Subject: Re: [PATCH 7/15] Helpers to obtain pid numbers
+Date: Fri, 27 Jul 2007 10:40:47 +0400
+Message-ID: <46A9936F.6040309@openvz.org>
+References: <46A8B37B.6050108@openvz.org> <46A8B4D6.1080301@openvz.org>
+	<1185476582.18414.114.camel@localhost>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1185466239.18414.95.camel@localhost>
+In-Reply-To: <1185476582.18414.114.camel@localhost>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,24 +18,47 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Dave Hansen <haveblue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>, Sukadev Bhattiprolu <sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>, Oleg Nesterov <oleg-6lXkIZvqkOAvJsYlp49lxw@public.gmane.org>
-Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
+To: Dave Hansen <haveblue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Oleg Nesterov <oleg-6lXkIZvqkOAvJsYlp49lxw@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
 Dave Hansen wrote:
-> On Thu, 2007-07-26 at 18:46 +0400, Pavel Emelyanov wrote:
->> +       write_unlock_irq(&tasklist_lock);
->> +       exit_task_namespaces(tsk);
->> +       write_lock_irq(&tasklist_lock); 
+> On Thu, 2007-07-26 at 18:51 +0400, Pavel Emelyanov wrote:
+>> + * pid_nr()    : global id, i.e. the id seen from the init namespace;
+>> + * pid_vnr()   : virtual id, i.e. the id seen from the namespace this pid
+>> + *               belongs to. this only makes sence when called in the
+>> + *               context of the task that belongs to the same namespace; 
 > 
-> Are there any other side-effects of doing this?  What was the
+> Can we give these some better names?  I think "virtual" is pretty bad,
+> especially if you consider the multiple level of pid namespaces that we
+> might have some day.  Processes can belong to multiple pid namespaces,
+> and thus have multiple "virtual" ids.
 
-Looks like there are :( Oleg pointed out, that if any thread dies
-it can re-parent all its children to this one, who already released
-its namespaces... :(
+We do have them now (multiple levels). The "virtual" stands for "the one
+that task sees by his own".
 
-> tasklist_lock protecting here when it was released?
+> Even though it will make the names longer, I think we need something in
+> the names to say that "pid_nr()" is the top-level, global, init_pid_ns
+> number.  "pid_vnr()" is the pid for the lowest pid namespace in the
+> hierarchy.  
+
+That's it.
+
+> Suka called this an "active pid namespace" because that is
+> where the task actively interacts with its peers.  But, I'm open to
+> other suggestions, too.
+> 
+> When writing code, people are going to need to know which one to use:
+> pid_nr() or pid_vnr().  We can document the functions, but the names
+> will help much more than any documentation.
+
+I do not mind, but what other names can we have? pid_nr() for init namespace,
+pid_nr_ns for arbitrary namespace and pid_<what> for the lower-level namespace?
+
 > 
 > -- Dave
 > 
 > 
+
+Thanks,
+Pavel
