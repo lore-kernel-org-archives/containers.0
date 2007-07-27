@@ -1,13 +1,13 @@
-From: Dave Hansen <haveblue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 8/15] Helpers to find the task by its numerical ids
-Date: Thu, 26 Jul 2007 12:05:41 -0700
-Message-ID: <1185476741.18414.118.camel@localhost>
-References: <46A8B37B.6050108@openvz.org>  <46A8B502.8070606@openvz.org>
+From: sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org
+Subject: Re: [RFC][PATCH 0/15] Pid namespaces
+Date: Thu, 26 Jul 2007 21:22:13 -0700
+Message-ID: <20070727042213.GB23584@us.ibm.com>
+References: <46A8B37B.6050108@openvz.org>
 Mime-Version: 1.0
-Content-Type: text/plain
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset=us-ascii
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <46A8B502.8070606-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <46A8B37B.6050108-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -21,83 +21,62 @@ To: Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Oleg Nesterov <oleg-6lXkIZvqkOAvJsYlp49lxw@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Thu, 2007-07-26 at 18:51 +0400, Pavel Emelyanov wrote:
-> +extern struct task_struct *find_task_by_pid_type_ns(int type, int pid,
-> +		struct pid_namespace *ns);
-> +
-> +#define find_task_by_pid_ns(nr, ns)	\
-> +		find_task_by_pid_type_ns(PIDTYPE_PID, nr, ns)
-> +#define find_task_by_pid_type(type, nr)	\
-> +		find_task_by_pid_type_ns(type, nr, &init_pid_ns)
-> +#define find_task_by_pid(nr)		\
-> +		find_task_by_pid_type(PIDTYPE_PID, nr)
-> +
->  extern void __set_special_pids(pid_t session, pid_t pgrp);
+Pavel,
 
-Do these _have_ to be macros?
+We seem to have a memory leak. Its new in this patchset (i.e the
+following test ran fine on the 2.6.22-rc6-mm1 patchset).
 
->  /* per-UID process charging. */
-> diff -upr linux-2.6.23-rc1-mm1.orig/kernel/pid.c linux-2.6.23-rc1-mm1-7/kernel/pid.c
-> --- linux-2.6.23-rc1-mm1.orig/kernel/pid.c	2007-07-26 16:34:45.000000000 +0400
-> +++ linux-2.6.23-rc1-mm1-7/kernel/pid.c	2007-07-26 16:36:37.000000000 +0400
-> @@ -204,19 +221,20 @@ static void delayed_put_pid(struct rcu_h
->  	goto out;
->  }
-> 
-> -struct pid * fastcall find_pid(int nr)
-> +struct pid * fastcall find_pid_ns(int nr, struct pid_namespace *ns)
->  {
->  	struct hlist_node *elem;
-> -	struct pid *pid;
-> +	struct upid *pnr;
-> +
-> +	hlist_for_each_entry_rcu(pnr, elem,
-> +			&pid_hash[pid_hashfn(nr, ns)], pid_chain)
-> +		if (pnr->nr == nr && pnr->ns == ns)
-> +			return container_of(pnr, struct pid,
-> +					numbers[ns->level]);
+To repro: run "pidns_exec ./mypid" in a tight-loop  - where mypid.c
+is:
 
-Do we do this loop anywhere else?  Should we have a for_each_pid() that
-makes this a little less messy?
+#include <stdio.h>
+#include <unistd.h>
 
-> -	hlist_for_each_entry_rcu(pid, elem,
-> -			&pid_hash[pid_hashfn(nr)], pid_chain) {
-> -		if (pid->nr == nr)
-> -			return pid;
-> -	}
->  	return NULL;
->  }
-> -EXPORT_SYMBOL_GPL(find_pid);
-> +EXPORT_SYMBOL_GPL(find_pid_ns);
-> 
->  /*
->   * attach_pid() must be called with the tasklist_lock write-held.
-> @@ -318,12 +355,13 @@ struct task_struct * fastcall pid_task(s
->  /*
->   * Must be called under rcu_read_lock() or with tasklist_lock read-held.
->   */
-> -struct task_struct *find_task_by_pid_type(int type, int nr)
-> +struct task_struct *find_task_by_pid_type_ns(int type, int nr,
-> +		struct pid_namespace *ns)
->  {
-> -	return pid_task(find_pid(nr), type);
-> +	return pid_task(find_pid_ns(nr, ns), type);
->  }
-> 
-> -EXPORT_SYMBOL(find_task_by_pid_type);
-> +EXPORT_SYMBOL(find_task_by_pid_type_ns);
-> 
->  struct pid *get_task_pid(struct task_struct *task, enum pid_type type)
->  {
-> @@ -342,7 +426,7 @@ struct pid *find_get_pid(pid_t nr)
->  	struct pid *pid;
-> 
->  	rcu_read_lock();
-> -	pid = get_pid(find_pid(nr));
-> +	pid = get_pid(find_vpid(nr));
->  	rcu_read_unlock();
+main()
+{
+        printf("Pid %d, Ppid %d, Pgid %d, Sid %d\n",
+                 getpid(), getppid(), getpgid(0), getsid(0));
+}
 
-OK, I think this is really confusing.  If find_get_pid() finds vpids,
-should we not call it find_get_vpid()?
+I ran into OOM in about 30 mins. I am still investigating.
 
--- Dave
+BTW, can we include a simple test program like the pidns_exec in this
+patch-0 for whoever want to play with pidns ?
+
+Suka
+
+Pavel Emelianov [xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org] wrote:
+| (Comment is taken from Sukadev's patchset-v3)
+| 
+| A pid namespace is a "view" of a particular set of tasks on the system.
+| They work in a similar way to filesystem namespaces.  A file (or a process)
+| can be accessed in multiple namespaces, but it may have a different name 
+| in each.  In a filesystem, this name might be /etc/passwd in one namespace,
+| but /chroot/etc/passwd in another.
+| 
+| For processes, a process may have pid 1234 in one namespace, but be pid 1
+| in another. This allows new pid namespaces to have basically arbitrary
+| pids, and not have to worry about what pids exist in other namespaces.
+| This is essential for checkpoint/restart where a restarted process's pid
+| might collide with an existing process on the system's pid.
+| 
+| In this particular implementation, pid namespaces have a parent-child
+| relationship, just like processes.  A process in a pid namespace may see
+| all of the processes in the same namespace, as well as all of the processes
+| in all of the namespaces which are children of its namespace. Processes may
+| not, however, see others which are in their parent's namespace, but not in
+| their own.  The same goes for sibling namespaces.
+| 
+| This set is based on my patches, I sent before, but it includes some 
+| comments
+| and patches that I received from Sukadev. Sukadev, please, add your 
+| Acked-by,
+| Signed-off-by or From, to patches you want (everybody is also welcome :) ).
+| 
+| The set is based on 2.6.23-rc1-mm1, which already has some preparation 
+| patches
+| for pid namespaces. After the review and fixing all the comments, this set 
+| will be benchmarked and sent to Andrew for inclusion in -mm tree.
+| 
+| Signed-off-by: Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+| Signed-off-by: Sukadev Bhattiprolu <sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
