@@ -1,235 +1,112 @@
-From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 11/15] Signal semantics
-Date: Fri, 27 Jul 2007 14:59:43 -0500
-Message-ID: <20070727195943.GA25878@sergelap.austin.ibm.com>
-References: <46A8B37B.6050108@openvz.org> <46A8B5C7.9040407@openvz.org>
-	<20070727123153.GA92@tv-sign.ru> <46A9F54B.5050000@openvz.org>
-	<20070727184604.GB1072@us.ibm.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <20070727184604.GB1072-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org
-Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Oleg Nesterov <oleg-6lXkIZvqkOAvJsYlp49lxw@public.gmane.org>, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+From: Balbir Singh <balbir@linux.vnet.ibm.com>
+Subject: [-mm PATCH 0/9] Memory controller introduction (v4)
+Date: Sat, 28 Jul 2007 01:39:37 +0530
+Message-ID: <20070727200937.31565.78623.sendpatchset@balbir-laptop>
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S964860AbXG0UKd@vger.kernel.org>
+Sender: linux-kernel-owner@vger.kernel.org
+To: Andrew Morton <akpm@linux-foundation.org>
+Cc: Peter Zijlstra <a.p.zijlstra@chello.nl>, Linux Containers <containers@lists.osdl.org>, YAMAMOTO Takashi <yamamoto@valinux.co.jp>, Paul Menage <menage@google.com>, Dave Hansen <haveblue@us.ibm.com>, Linux MM Mailing List <linux-mm@kvack.org>, Vaidyanathan Srinivasan <svaidy@linux.vnet.ibm.com>, Pavel Emelianov <xemul@openvz.org>, Dhaval Giani <dhaval@linux.vnet.ibm.com>, Balbir Singh <balbir@linux.vnet.ibm.com>, Linux Kernel Mailing List <linux-kernel@vger.kernel.org>, Eric W Biederman <ebiederm@xmission.com>
 List-Id: containers.vger.kernel.org
 
-Quoting sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org (sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org):
-> Pavel Emelianov [xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org] wrote:
-> | Oleg Nesterov wrote:
-> | >Damn. I don't have time to read these patches today (will try tomorrow),
-> | 
-> | Oh, that's OK. I was about to send the set to Andrew only the next week.
-> | 
-> | This patch is the most strange one and is to be discussed a lot.
-> | 
-> | We try to do the following two things:
-> | 1. signals going from the namespace, that the target task doesn't
-> |   see must be seen as SI_KERNEL if siginfo is allocated;
-> | 2. signals to init of any namespace must be allowed to send from
-> |   one of the parent namespaces only. From child namespace, init
-> |   needs only those, that it's ready to handle (SIGCHLD).
-> 
-> Yes.
-> 
-> | 
-> | As far as I understand Suka's approach (it's his patch, so I may 
-> | be not 100% correct - it's better to wait for his comments) he is 
-> | trying to carry the information about the signal up to the
-> | get_signal_to_deliver().
-> | 
-> | As far as the first issue is concerned, the solution is obvious -
-> | all the "calculations" can be done at the beginning of sending the
-> | signal, but the second issue is a bit more complicated and I have
-> | no good ideas of how to solve this :( yet.
-> 
-> Even I am looking for a better approach.
-> 
-> | 
-> | Thanks,
-> | Pavel
-> | 
-> | >but when I glanced at this patch yesterday I had some suspicions...
-> | >
-> | >On 07/26, Pavel Emelyanov wrote:
-> | >>+++ linux-2.6.23-rc1-mm1-7/kernel/signal.c	2007-07-26 
-> | >>16:36:37.000000000 +0400
-> | >>@@ -323,6 +325,9 @@ static int collect_signal(int sig, struc
-> | >>	if (first) {
-> | >>		list_del_init(&first->list);
-> | >>		copy_siginfo(info, &first->info);
-> | >>+		if (first->flags & SIGQUEUE_CINIT)
-> | >>+			kinfo->flags |= KERN_SIGINFO_CINIT;
-> | >>+
-> | >>
-> | >>[...snip...]
-> | >>
-> | >>@@ -1852,7 +1950,7 @@ relock:
-> | >>		 * within that pid space. It can of course get signals from
-> | >>		 * its parent pid space.
-> | >>		 */
-> | >>-		if (current == task_child_reaper(current))
-> | >>+		if (kinfo.flags & KERN_SIGINFO_CINIT)
-> | >>			continue;
-> | >
-> | >I think the whole idea is broken, it assumes the sender put something into
-> | >"struct sigqueue".
-> | 
-> | Yup. That's the problem. It seems to me that the only way to handle init's
-> | signals is to check for permissions in the sending path.
-> 
-> We can check permissions in the sending path - and in fact we do check for
-> SIGKILL case (deny_signal_to_container_init() below).
-> 
-> But the receiver knows/decides whether or not the signal is wanted/not. No ?
-> 
-> Are you saying we should check/special case all fatal signals ?
-> 
-> | 
-> | >Suppose that /sbin/init has no handler for (say) SIGTERM, and we send this
-> | >signal from the same namespace. send_signal() sets SIGQUEUE_CINIT, but it
-> | >is lost because __group_complete_signal() silently "converts" sig_fatal()
-> | >signals to SIGKILL using sigaddset().
-> 
-> Yes, I should have called it out, but this patch currently assumes /sbin/init
-> (or container-init) has a handler for the fatal signals like SIGTERM and has
-> a check for SIGKILL (in deny_signal_to_container_init() - as Oleg noted below).
-> 
-> Still looking for better ways to implement.
-> 
-> | >
-> | >>+static void encode_sender_info(struct task_struct *t, struct sigqueue *q)
-> | >>+{
-> | >>+	/*
-> | >>+	 * If sender (i.e 'current') and receiver have the same active
-> | >>+	 * pid namespace and the receiver is the container-init, set the
-> | >>+	 * SIGQUEUE_CINIT flag. This tells the container-init that the
-> | >>+	 * signal originated in its own namespace and so it can choose
-> | >>+	 * to ignore the signal.
-> | >>+	 *
-> | >>+	 * If the receiver is the container-init of a pid namespace,
-> | >>+	 * but the sender is from an ancestor pid namespace, the
-> | >>+	 * container-init cannot ignore the signal. So clear the
-> | >>+	 * SIGQUEUE_CINIT flag in this case.
-> | >>+	 *
-> | >>+	 * Also, if the sender does not have a pid_t in the receiver's
-> | >>+	 * active pid namespace, set si_pid to 0 and pretend it originated
-> | >>+	 * from the kernel.
-> | >>+	 */
-> | >>+	if (pid_ns_equal(t)) {
-> | >>+		if (is_container_init(t)) {
-> | >>+			q->flags |= SIGQUEUE_CINIT;
-> | >
-> | >Ironically, this change carefully preserves the bug we already have :)
-> | >
-> | >This doesn't protect init from "bad" signal if we send it to sub-thread
-> | >of init. Actually, this make the behaviour a bit worse compared to what
-> | >we currently have. Currently, at least the main init's thread survives
-> | >if we send SIGKILL to sub-thread.
-> 
-> Do you mean "init's main thread" ? But doesn't SIGKILL to any thread kill
-> the entire process ?
-> 
-> | >
-> | >>static int send_signal(int sig, struct siginfo *info, struct task_struct 
-> | >>*t,
-> | >>			struct sigpending *signals)
-> | >>{
-> | >>@@ -710,6 +781,7 @@ static int send_signal(int sig, struct s
-> | >>			copy_siginfo(&q->info, info);
-> | >>			break;
-> | >>		}
-> | >>+		encode_sender_info(t, q);
-> | >
-> | >We still send the signal if __sigqueue_alloc() fails. In that case, the
-> | >dequeued siginfo won't have SIGQUEUE_CINIT/KERN_SIGINFO_CINIT, not good.
-> 
-> Yes.
-> 
-> | >
-> | >>@@ -1158,6 +1232,13 @@ static int kill_something_info(int sig, 
-> | >>
-> | >>		read_lock(&tasklist_lock);
-> | >>		for_each_process(p) {
-> | >>+			/*
-> | >>+			 * System-wide signals apply only to the sender's
-> | >>+			 * pid namespace, unless issued from init_pid_ns.
-> | >>+			 */
-> | >>+			if (!task_visible_in_pid_ns(p, my_ns))
-> | >>+				continue;
-> | >>+
-> | >>			if (p->pid > 1 && p->tgid != current->tgid) {
-> | >
-> | >This "p->pid > 1" check should die.
-> | >
-> 
-> Ok.
-> 
-> | >>+static int deny_signal_to_container_init(struct task_struct *tsk, int 
-> | >>sig)
-> | >>+{
-> | >>+	/*
-> | >>+	 * If receiver is the container-init of sender and signal is SIGKILL
-> | >>+	 * reject it right-away. If signal is any other one, let the 
-> | >>container
-> | >>+	 * init decide (in get_signal_to_deliver()) whether to handle it or
-> | >>+	 * ignore it.
-> | >>+	 */
-> | >>+	if (is_container_init(tsk) && (sig == SIGKILL) && pid_ns_equal(tsk))
-> | >>+		return -EPERM;
-> | >>+
-> | >>+	return 0;
-> | >>+}
-> | >>+
-> | >>/*
-> | >> * Bad permissions for sending the signal
-> | >> */
-> | >>@@ -545,6 +584,10 @@ static int check_kill_permission(int sig
-> | >>	    && !capable(CAP_KILL))
-> | >>		return error;
-> | >>
-> | >>+	error = deny_signal_to_container_init(t, sig);
-> | >>+	if (error)
-> | >>+		return error;
-> | >
-> | >Hm. Could you explain this change? Why do we need a special check for 
-> | >SIGKILL?
-> 
-> As you pointed out above, SIGKILL goes through the __group_complete_signal()/
-> sigaddset() path and bypasses/loses the KERN_SIGINFO_CINIT flag. Other
-> sig_fatal() signals take this path too, but we assume for now, container-init
-> has a handler.
-> 
-> 
-> | >
-> | >
-> | >(What about ptrace_attach() btw? If it is possible to send a signal to init
-> | > from the "parent" namespace, perhaps it makes sense to allow ptracing as
-> | > well).
-> | 
-> | ptracing of tasks fro different namespaces is not possible at all, since
-> | strace utility determines the fork()-ed child pid from the parent's eax
-> | register, which would contain the pid value as this parent sees his child.
-> | But if the strace is in different namespace - it won't be able to find
-> | this child with the pid value from parent's eax.
-> | 
-> | Maybe it's worth disabling cross-namespaces ptracing...
-> 
-> I think so too. Its probably not a serious limitation ?
+Here's version 4 of the memory controller.
 
-Several people think we will implement 'namespace entering' through a
-ptrace hack, where maybe the admin ptraces the init in a child pidns,
-makes it fork, and makes the child execute what it wants (i.e. ps -ef).
+Changelog since version 3
 
-You're talking about killing that functionality?
+1. Ported to v11 of the containers patchset (2.6.23-rc1-mm1). Paul Menage
+   helped immensely with a detailed review of v3
+2. Reclaim is retried to allow reclaim of pages coming in as a result
+   of mapped pages reclaim (swap cache growing as a result of RSS reclaim)
+3. page_referenced() is now container aware. During container reclaim,
+   references from other containers do not prevent a page from being
+   reclaimed from a non-referencing container
+4. Fixed a possible race condition spotted by YAMAMOTO Takashi
 
--serge
+Changelog since version 2
+
+1. Improved error handling in mm/memory.c (spotted by YAMAMOTO Takashi)
+2. Test results included
+3. try_to_free_mem_container_pages() bug fix (sc->may_writepage is now
+   set to !laptop_mode)
+
+Changelog since version 1
+
+1. Fixed some compile time errors (in mm/migrate.c from Vaidyanathan S)
+2. Fixed a panic seen when LIST_DEBUG is enabled
+3. Added a mechanism to control whether we track page cache or both
+   page cache and mapped pages (as requested by Pavel)
+4. Dave Hansen provided detail review comments on the code.
+
+This patchset implements another version of the memory controller. These
+patches have been through a big churn, the first set of patches were posted
+last year and earlier this year at
+	http://lkml.org/lkml/2007/2/19/10
+
+This patchset draws from the patches listed above and from some of the
+contents of the patches posted by Vaidyanathan for page cache control.
+	http://lkml.org/lkml/2007/6/20/92
+
+At OLS, the resource management BOF, it was discussed that we need to manage
+RSS and unmapped page cache together. This patchset is a step towards that
+
+TODO's
+
+1. Add memory controller water mark support. Reclaim on high water mark
+2. Add support for shrinking on limit change
+3. Add per zone per container LRU lists (this is being actively worked
+   on by Pavel Emelianov)
+4. Figure out a better CLUI for the controller
+5. Add better statistics
+6. Explore using read_unit64() as recommended by Paul Menage
+   (NOTE: read_ulong() would also be nice to have)
+
+In case you have been using/testing the RSS controller, you'll find that
+this controller works slower than the RSS controller. The reason being
+that both swap cache and page cache is accounted for, so pages do go
+out to swap upon reclaim (they cannot live in the swap cache).
+
+Any test output, feedback, comments, suggestions are welcome! I am committed
+to fixing any bugs and improving the performance of the memory controller.
+Do not hesitate to send any fixes, request for fixes that is required.
+
+Using the patches
+
+1. Enable Memory controller configuration
+2. Compile and boot the new kernel
+3. mount -t container container -o mem_container /container
+   will mount the memory controller to the /container mount point
+4. mkdir /container/a
+5. echo $$ > /container/a/tasks (add tasks to the new container)
+6. echo -n <num_pages> > /container/a/mem_limit
+   example
+   echo -n 204800 > /container/a/mem_limit, sets the limit to 800 MB
+   on a system with 4K page size
+7. run tasks, see the memory controller work
+8. Report results, provide feedback
+9. Develop/use new patches and go to step 1
+
+Test Results
+
+Results for version 3 of the patch were posted at
+http://lwn.net/Articles/242554/
+
+The code was also tested on a power box with regular machine usage scenarios,
+the config disabled and with a stress suite that touched all the memory
+in the system and was limited in a container.
+
+series
+
+res_counters_infra.patch
+mem-control-setup.patch
+mem-control-accounting-setup.patch
+mem-control-accounting.patch
+mem-control-task-migration.patch
+mem-control-lru-and-reclaim.patch
+mem-control-out-of-memory.patch
+mem-control-choose-rss-vs-rss-and-pagecache.patch
+mem-control-per-container-page-referenced.patch
+
+-- 
+	Warm Regards,
+	Balbir Singh
+	Linux Technology Center
+	IBM, ISTL
