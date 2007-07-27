@@ -1,8 +1,8 @@
 From: Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: [-mm PATCH 8/9] Memory controller add switch to control what type
-	of pages to limit (v4)
-Date: Sat, 28 Jul 2007 01:41:03 +0530
-Message-ID: <20070727201103.31565.3104.sendpatchset@balbir-laptop>
+Subject: [-mm PATCH 9/9] Memory controller make page_referenced() container
+	aware (v4)
+Date: Sat, 28 Jul 2007 01:41:19 +0530
+Message-ID: <20070727201119.31565.8322.sendpatchset@balbir-laptop>
 References: <20070727200937.31565.78623.sendpatchset@balbir-laptop>
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 In-Reply-To: <20070727200937.31565.78623.sendpatchset@balbir-laptop>
@@ -16,238 +16,196 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
-Cc: Peter Zijlstra <a.p.zijlstra-/NLkJaSkS4VmR6Xm/wNWPw@public.gmane.org>, Dhaval Giani <dhaval-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, YAMAMOTO Takashi <yamamoto-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>, Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, Linux Kernel Mailing List <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Linux MM Mailing List <linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org>, Eric W Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Pavel Emelianov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+Cc: Peter Zijlstra <a.p.zijlstra-/NLkJaSkS4VmR6Xm/wNWPw@public.gmane.org>, Dhaval Giani <dhaval-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, YAMAMOTO Takashi <yamamoto-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>, Linux Kernel Mailing List <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Linux MM Mailing List <linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org>, Eric W Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, Pavel Emelianov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
 
-Choose if we want cached pages to be accounted or not. By default both
-are accounted for. A new set of tunables are added.
+Make page_referenced() container aware. Without this patch, page_referenced()
+can cause a page to be skipped while reclaiming pages. This patch
+ensures that other containers do not hold pages in a particular container
+hostage. It is required to ensure that shared pages are freed from a container
+when they are not actively referenced from the container that brought
+them in
 
-echo -n 1 > mem_control_type
-
-switches the accounting to account for only mapped pages
-
-echo -n 2 > mem_control_type
-
-switches the behaviour back
 
 Signed-off-by: <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 ---
 
- include/linux/memcontrol.h |    9 ++++
- mm/filemap.c               |    2 
- mm/memcontrol.c            |   92 ++++++++++++++++++++++++++++++++++++++++++++-
- mm/swap_state.c            |    2 
- 4 files changed, 102 insertions(+), 3 deletions(-)
+ include/linux/memcontrol.h |    6 ++++++
+ include/linux/rmap.h       |    5 +++--
+ mm/memcontrol.c            |    5 +++++
+ mm/rmap.c                  |   30 ++++++++++++++++++++++++------
+ mm/vmscan.c                |    4 ++--
+ 5 files changed, 40 insertions(+), 10 deletions(-)
 
-diff -puN include/linux/memcontrol.h~mem-control-choose-rss-vs-rss-and-pagecache include/linux/memcontrol.h
---- linux-2.6.23-rc1-mm1/include/linux/memcontrol.h~mem-control-choose-rss-vs-rss-and-pagecache	2007-07-28 01:12:50.000000000 +0530
+diff -puN include/linux/rmap.h~mem-control-per-container-page-referenced include/linux/rmap.h
+--- linux-2.6.23-rc1-mm1/include/linux/rmap.h~mem-control-per-container-page-referenced	2007-07-28 01:12:50.000000000 +0530
++++ linux-2.6.23-rc1-mm1-balbir/include/linux/rmap.h	2007-07-28 01:12:50.000000000 +0530
+@@ -8,6 +8,7 @@
+ #include <linux/slab.h>
+ #include <linux/mm.h>
+ #include <linux/spinlock.h>
++#include <linux/memcontrol.h>
+ 
+ /*
+  * The anon_vma heads a list of private "related" vmas, to scan if
+@@ -86,7 +87,7 @@ static inline void page_dup_rmap(struct 
+ /*
+  * Called from mm/vmscan.c to handle paging out
+  */
+-int page_referenced(struct page *, int is_locked);
++int page_referenced(struct page *, int is_locked, struct mem_container *cnt);
+ int try_to_unmap(struct page *, int ignore_refs);
+ 
+ /*
+@@ -114,7 +115,7 @@ int page_mkclean(struct page *);
+ #define anon_vma_prepare(vma)	(0)
+ #define anon_vma_link(vma)	do {} while (0)
+ 
+-#define page_referenced(page,l) TestClearPageReferenced(page)
++#define page_referenced(page,l,cnt) TestClearPageReferenced(page)
+ #define try_to_unmap(page, refs) SWAP_FAIL
+ 
+ static inline int page_mkclean(struct page *page)
+diff -puN mm/rmap.c~mem-control-per-container-page-referenced mm/rmap.c
+--- linux-2.6.23-rc1-mm1/mm/rmap.c~mem-control-per-container-page-referenced	2007-07-28 01:12:50.000000000 +0530
++++ linux-2.6.23-rc1-mm1-balbir/mm/rmap.c	2007-07-28 01:12:50.000000000 +0530
+@@ -298,7 +298,8 @@ out:
+ 	return referenced;
+ }
+ 
+-static int page_referenced_anon(struct page *page)
++static int page_referenced_anon(struct page *page,
++				struct mem_container *mem_cont)
+ {
+ 	unsigned int mapcount;
+ 	struct anon_vma *anon_vma;
+@@ -311,6 +312,13 @@ static int page_referenced_anon(struct p
+ 
+ 	mapcount = page_mapcount(page);
+ 	list_for_each_entry(vma, &anon_vma->head, anon_vma_node) {
++		/*
++		 * If we are reclaiming on behalf of a container, skip
++		 * counting on behalf of references from different
++		 * containers
++		 */
++		if (mem_cont && (mm_container(vma->vm_mm) != mem_cont))
++			continue;
+ 		referenced += page_referenced_one(page, vma, &mapcount);
+ 		if (!mapcount)
+ 			break;
+@@ -331,7 +339,8 @@ static int page_referenced_anon(struct p
+  *
+  * This function is only called from page_referenced for object-based pages.
+  */
+-static int page_referenced_file(struct page *page)
++static int page_referenced_file(struct page *page,
++				struct mem_container *mem_cont)
+ {
+ 	unsigned int mapcount;
+ 	struct address_space *mapping = page->mapping;
+@@ -364,6 +373,13 @@ static int page_referenced_file(struct p
+ 	mapcount = page_mapcount(page);
+ 
+ 	vma_prio_tree_foreach(vma, &iter, &mapping->i_mmap, pgoff, pgoff) {
++		/*
++		 * If we are reclaiming on behalf of a container, skip
++		 * counting on behalf of references from different
++		 * containers
++		 */
++		if (mem_cont && (mm_container(vma->vm_mm) != mem_cont))
++			continue;
+ 		if ((vma->vm_flags & (VM_LOCKED|VM_MAYSHARE))
+ 				  == (VM_LOCKED|VM_MAYSHARE)) {
+ 			referenced++;
+@@ -386,7 +402,8 @@ static int page_referenced_file(struct p
+  * Quick test_and_clear_referenced for all mappings to a page,
+  * returns the number of ptes which referenced the page.
+  */
+-int page_referenced(struct page *page, int is_locked)
++int page_referenced(struct page *page, int is_locked,
++			struct mem_container *mem_cont)
+ {
+ 	int referenced = 0;
+ 
+@@ -398,14 +415,15 @@ int page_referenced(struct page *page, i
+ 
+ 	if (page_mapped(page) && page->mapping) {
+ 		if (PageAnon(page))
+-			referenced += page_referenced_anon(page);
++			referenced += page_referenced_anon(page, mem_cont);
+ 		else if (is_locked)
+-			referenced += page_referenced_file(page);
++			referenced += page_referenced_file(page, mem_cont);
+ 		else if (TestSetPageLocked(page))
+ 			referenced++;
+ 		else {
+ 			if (page->mapping)
+-				referenced += page_referenced_file(page);
++				referenced +=
++					page_referenced_file(page, mem_cont);
+ 			unlock_page(page);
+ 		}
+ 	}
+diff -puN mm/vmscan.c~mem-control-per-container-page-referenced mm/vmscan.c
+--- linux-2.6.23-rc1-mm1/mm/vmscan.c~mem-control-per-container-page-referenced	2007-07-28 01:12:50.000000000 +0530
++++ linux-2.6.23-rc1-mm1-balbir/mm/vmscan.c	2007-07-28 01:12:50.000000000 +0530
+@@ -479,7 +479,7 @@ static unsigned long shrink_page_list(st
+ 		if (PageWriteback(page))
+ 			goto keep_locked;
+ 
+-		referenced = page_referenced(page, 1);
++		referenced = page_referenced(page, 1, sc->mem_container);
+ 		/* In active use or really unfreeable?  Activate it. */
+ 		if (sc->order <= PAGE_ALLOC_COSTLY_ORDER &&
+ 					referenced && page_mapping_inuse(page))
+@@ -971,7 +971,7 @@ force_reclaim_mapped:
+ 		if (page_mapped(page)) {
+ 			if (!reclaim_mapped ||
+ 			    (total_swap_pages == 0 && PageAnon(page)) ||
+-			    page_referenced(page, 0)) {
++			    page_referenced(page, 0, sc->mem_container)) {
+ 				list_add(&page->lru, &l_active);
+ 				continue;
+ 			}
+diff -puN include/linux/memcontrol.h~mem-control-per-container-page-referenced include/linux/memcontrol.h
+--- linux-2.6.23-rc1-mm1/include/linux/memcontrol.h~mem-control-per-container-page-referenced	2007-07-28 01:12:50.000000000 +0530
 +++ linux-2.6.23-rc1-mm1-balbir/include/linux/memcontrol.h	2007-07-28 01:12:50.000000000 +0530
-@@ -20,6 +20,8 @@
- #ifndef _LINUX_MEMCONTROL_H
- #define _LINUX_MEMCONTROL_H
- 
-+#include <linux/mm.h>
-+
- struct mem_container;
- struct meta_page;
- 
-@@ -39,6 +41,7 @@ extern unsigned long mem_container_isola
- 					struct mem_container *mem_cont,
+@@ -42,6 +42,7 @@ extern unsigned long mem_container_isola
  					int active);
  extern void mem_container_out_of_memory(struct mem_container *mem);
-+extern int mem_container_cache_charge(struct page *page, struct mm_struct *mm);
+ extern int mem_container_cache_charge(struct page *page, struct mm_struct *mm);
++extern struct mem_container *mm_container(struct mm_struct *mm);
  
  static inline void mem_container_uncharge_page(struct page *page)
  {
-@@ -82,6 +85,12 @@ static inline void mem_container_move_li
- {
+@@ -91,6 +92,11 @@ static inline int mem_container_cache_ch
+ 	return 0;
  }
  
-+static inline int mem_container_cache_charge(struct page *page,
-+						struct mm_struct *mm)
++static inline struct mem_container *mm_container(struct mm_struct *mm)
 +{
-+	return 0;
++	return NULL;
 +}
 +
  #endif /* CONFIG_CONTAINER_MEM_CONT */
  
  #endif /* _LINUX_MEMCONTROL_H */
-diff -puN mm/filemap.c~mem-control-choose-rss-vs-rss-and-pagecache mm/filemap.c
---- linux-2.6.23-rc1-mm1/mm/filemap.c~mem-control-choose-rss-vs-rss-and-pagecache	2007-07-28 01:12:50.000000000 +0530
-+++ linux-2.6.23-rc1-mm1-balbir/mm/filemap.c	2007-07-28 01:12:50.000000000 +0530
-@@ -445,7 +445,7 @@ int add_to_page_cache(struct page *page,
- 
- 	if (error == 0) {
- 
--		error = mem_container_charge(page, current->mm);
-+		error = mem_container_cache_charge(page, current->mm);
- 		if (error)
- 			goto out;
- 
-diff -puN mm/memcontrol.c~mem-control-choose-rss-vs-rss-and-pagecache mm/memcontrol.c
---- linux-2.6.23-rc1-mm1/mm/memcontrol.c~mem-control-choose-rss-vs-rss-and-pagecache	2007-07-28 01:12:50.000000000 +0530
+diff -puN mm/memcontrol.c~mem-control-per-container-page-referenced mm/memcontrol.c
+--- linux-2.6.23-rc1-mm1/mm/memcontrol.c~mem-control-per-container-page-referenced	2007-07-28 01:12:50.000000000 +0530
 +++ linux-2.6.23-rc1-mm1-balbir/mm/memcontrol.c	2007-07-28 01:12:50.000000000 +0530
-@@ -27,6 +27,8 @@
- #include <linux/swap.h>
- #include <linux/spinlock.h>
- 
-+#include <asm/uaccess.h>
-+
- struct container_subsys mem_container_subsys;
- static const int MEM_CONTAINER_RECLAIM_RETRIES = 5;
- 
-@@ -58,6 +60,7 @@ struct mem_container {
- 	 * spin_lock to protect the per container LRU
- 	 */
- 	spinlock_t lru_lock;
-+	unsigned long control_type;	/* control RSS or RSS+Pagecache */
- };
- 
- /*
-@@ -72,6 +75,15 @@ struct meta_page {
- 					/* mapped and cached states     */
- };
- 
-+enum {
-+	MEM_CONTAINER_TYPE_UNSPEC = 0,
-+	MEM_CONTAINER_TYPE_MAPPED,
-+	MEM_CONTAINER_TYPE_CACHED,
-+	MEM_CONTAINER_TYPE_ALL,
-+	MEM_CONTAINER_TYPE_MAX,
-+} mem_control_type;
-+
-+static struct mem_container init_mem_container;
- 
- static inline
- struct mem_container *mem_container_from_cont(struct container *cont)
-@@ -337,6 +349,22 @@ err:
+@@ -100,6 +100,11 @@ struct mem_container *mem_container_from
+ 				struct mem_container, css);
  }
  
- /*
-+ * See if the cached pages should be charged at all?
-+ */
-+int mem_container_cache_charge(struct page *page, struct mm_struct *mm)
++inline struct mem_container *mm_container(struct mm_struct *mm)
 +{
-+	struct mem_container *mem;
-+	if (!mm)
-+		mm = &init_mm;
-+
-+	mem = rcu_dereference(mm->mem_container);
-+	if (mem->control_type == MEM_CONTAINER_TYPE_ALL)
-+		return mem_container_charge(page, mm);
-+	else
-+		return 0;
++	return rcu_dereference(mm->mem_container);
 +}
 +
-+/*
-  * Uncharging is always a welcome operation, we never complain, simply
-  * uncharge.
-  */
-@@ -347,7 +375,9 @@ void mem_container_uncharge(struct meta_
- 	unsigned long flags;
- 
- 	/*
--	 * This can happen for PAGE_ZERO
-+	 * This can happen for PAGE_ZERO. This can also handle cases when
-+	 * a page is not charged at all and we are switching between
-+	 * handling the control_type.
- 	 */
- 	if (!mp)
- 		return;
-@@ -386,6 +416,60 @@ static ssize_t mem_container_write(struc
- 				cft->private, userbuf, nbytes, ppos);
- }
- 
-+static ssize_t mem_control_type_write(struct container *cont,
-+			struct cftype *cft, struct file *file,
-+			const char __user *userbuf,
-+			size_t nbytes, loff_t *pos)
-+{
-+	int ret;
-+	char *buf, *end;
-+	unsigned long tmp;
-+	struct mem_container *mem;
-+
-+	mem = mem_container_from_cont(cont);
-+	buf = kmalloc(nbytes + 1, GFP_KERNEL);
-+	ret = -ENOMEM;
-+	if (buf == NULL)
-+		goto out;
-+
-+	buf[nbytes] = 0;
-+	ret = -EFAULT;
-+	if (copy_from_user(buf, userbuf, nbytes))
-+		goto out_free;
-+
-+	ret = -EINVAL;
-+	tmp = simple_strtoul(buf, &end, 10);
-+	if (*end != '\0')
-+		goto out_free;
-+
-+	if (tmp <= MEM_CONTAINER_TYPE_UNSPEC || tmp >= MEM_CONTAINER_TYPE_MAX)
-+		goto out_free;
-+
-+	mem->control_type = tmp;
-+	ret = nbytes;
-+out_free:
-+	kfree(buf);
-+out:
-+	return ret;
-+}
-+
-+static ssize_t mem_control_type_read(struct container *cont,
-+				struct cftype *cft,
-+				struct file *file, char __user *userbuf,
-+				size_t nbytes, loff_t *ppos)
-+{
-+	unsigned long val;
-+	char buf[64], *s;
-+	struct mem_container *mem;
-+
-+	mem = mem_container_from_cont(cont);
-+	s = buf;
-+	val = mem->control_type;
-+	s += sprintf(s, "%lu\n", val);
-+	return simple_read_from_buffer((void __user *)userbuf, nbytes,
-+			ppos, buf, s - buf);
-+}
-+
- static struct cftype mem_container_files[] = {
- 	{
- 		.name = "usage",
-@@ -403,6 +487,11 @@ static struct cftype mem_container_files
- 		.private = RES_FAILCNT,
- 		.read = mem_container_read,
- 	},
-+	{
-+		.name = "control_type",
-+		.write = mem_control_type_write,
-+		.read = mem_control_type_read,
-+	},
- };
- 
- static struct mem_container init_mem_container;
-@@ -425,6 +514,7 @@ mem_container_create(struct container_su
- 	INIT_LIST_HEAD(&mem->active_list);
- 	INIT_LIST_HEAD(&mem->inactive_list);
- 	spin_lock_init(&mem->lru_lock);
-+	mem->control_type = MEM_CONTAINER_TYPE_ALL;
- 	return &mem->css;
- }
- 
-diff -puN mm/swap_state.c~mem-control-choose-rss-vs-rss-and-pagecache mm/swap_state.c
---- linux-2.6.23-rc1-mm1/mm/swap_state.c~mem-control-choose-rss-vs-rss-and-pagecache	2007-07-28 01:12:50.000000000 +0530
-+++ linux-2.6.23-rc1-mm1-balbir/mm/swap_state.c	2007-07-28 01:12:50.000000000 +0530
-@@ -81,7 +81,7 @@ static int __add_to_swap_cache(struct pa
- 	error = radix_tree_preload(gfp_mask);
- 	if (!error) {
- 
--		error = mem_container_charge(page, current->mm);
-+		error = mem_container_cache_charge(page, current->mm);
- 		if (error)
- 			goto out;
- 
+ void mm_init_container(struct mm_struct *mm, struct task_struct *p)
+ {
+ 	struct mem_container *mem;
 _
 
 -- 
