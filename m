@@ -1,14 +1,14 @@
 From: Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
-Subject: Re: [RFC][PATCH 0/15] Pid namespaces
-Date: Fri, 27 Jul 2007 10:47:18 +0400
-Message-ID: <46A994F6.5010307@openvz.org>
-References: <46A8B37B.6050108@openvz.org> <20070727042213.GB23584@us.ibm.com>
-	<20070727060856.GD23584@us.ibm.com>
+Subject: Re: [PATCH 12/15] Miscelaneous stuff for pid namespaces
+Date: Fri, 27 Jul 2007 10:53:08 +0400
+Message-ID: <46A99654.4060707@openvz.org>
+References: <46A8B37B.6050108@openvz.org> <46A8B601.4020108@openvz.org>
+	<20070727062213.GE23584@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20070727060856.GD23584-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <20070727062213.GE23584-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -23,108 +23,117 @@ Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Oleg 
 List-Id: containers.vger.kernel.org
 
 sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org wrote:
-> sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org [sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org] wrote:
-> | Pavel,
+> Pavel Emelianov [xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org] wrote:
+> | This includes
+> |  * the headers dependency fix
+> |  * task_child_reaper() correct declaration
+> |  * fixes for is_global_init() and is_container_init()
 > | 
-> | We seem to have a memory leak. Its new in this patchset (i.e the
-> | following test ran fine on the 2.6.22-rc6-mm1 patchset).
+> | Maybe this should come before all the other stuff...
 > | 
-> | To repro: run "pidns_exec ./mypid" in a tight-loop  - where mypid.c
-> | is:
+> | Signed-off-by: Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 > | 
-> | #include <stdio.h>
-> | #include <unistd.h>
+> | ---
 > | 
-> | main()
+> | include/linux/pid_namespace.h |    4 ++--
+> | include/linux/sched.h         |    4 ++--
+> | kernel/pid.c                  |   16 +++++++++++++---
+> | 3 files changed, 17 insertions(+), 7 deletions(-)
+> | 
+> | diff -upr linux-2.6.23-rc1-mm1.orig/include/linux/pid_namespace.h 
+> | linux-2.6.23-rc1-mm1-7/include/linux/pid_namespace.h
+> | --- linux-2.6.23-rc1-mm1.orig/include/linux/pid_namespace.h	2007-07-26 
+> | 16:34:45.000000000 +0400
+> | +++ linux-2.6.23-rc1-mm1-7/include/linux/pid_namespace.h	2007-07-26 
+> | 16:36:36.000000000 +0400
+> | @@ -4,7 +4,6 @@
+> | #include <linux/sched.h>
+> | #include <linux/mm.h>
+> | #include <linux/threads.h>
+> | -#include <linux/pid.h>
+> | #include <linux/nsproxy.h>
+> | #include <linux/kref.h>
+> | 
+> | @@ -46,7 +53,8 @@ static inline struct pid_namespace *task
+> | 
+> | static inline struct task_struct *task_child_reaper(struct task_struct *tsk)
 > | {
-> |         printf("Pid %d, Ppid %d, Pgid %d, Sid %d\n",
-> |                  getpid(), getppid(), getpgid(0), getsid(0));
+> | -	return init_pid_ns.child_reaper;
+> | +	BUG_ON(tsk != current);
+> | +	return tsk->nsproxy->pid_ns->child_reaper;
 > | }
 > | 
-> | I ran into OOM in about 30 mins. I am still investigating.
+> | #endif /* _LINUX_PID_NS_H */
+> | diff -upr linux-2.6.23-rc1-mm1.orig/include/linux/sched.h 
+> | linux-2.6.23-rc1-mm1-7/include/linux/sched.h
+> | --- linux-2.6.23-rc1-mm1.orig/include/linux/sched.h	2007-07-26 
+> | 16:34:45.000000000 +0400
+> | +++ linux-2.6.23-rc1-mm1-7/include/linux/sched.h	2007-07-26 
+> | 16:36:37.000000000 +0400
+> | @@ -1277,13 +1366,13 @@ static inline int pid_alive(struct task_
+> |  *
+> |  * TODO: We should inline this function after some cleanups in 
+> |  pid_namespace.h
+> |  */
+> 
+> We can now remove this TODO.
+
+Ok.
+
+> | -extern int is_global_init(struct task_struct *tsk);
+> | +extern int is_container_init(struct task_struct *tsk);
 > | 
-> | BTW, can we include a simple test program like the pidns_exec in this
-> | patch-0 for whoever want to play with pidns ?
+> | /*
+> |  * is_container_init:
+> |  * check whether in the task is init in its own pid namespace.
+> |  */
+> 
+> The function header describes is_container_init() but the function
+> is actually is_global_init(). The opp is true for the function
+> heaer of is_container_init() above.
+
+:)
+
+> | -static inline int is_container_init(struct task_struct *tsk)
+> | +static inline int is_global_init(struct task_struct *tsk)
+> | {
+> | 	return tsk->pid == 1;
+> | }
+> | diff -upr linux-2.6.23-rc1-mm1.orig/kernel/pid.c 
+> | linux-2.6.23-rc1-mm1-7/kernel/pid.c
+> | --- linux-2.6.23-rc1-mm1.orig/kernel/pid.c	2007-07-26 
+> | 16:34:45.000000000 +0400
+> | +++ linux-2.6.23-rc1-mm1-7/kernel/pid.c	2007-07-26 
+> | 16:36:37.000000000 +0400
+> | @@ -60,11 +62,21 @@ static inline int mk_pid(struct pid_name
+> | };
+> | EXPORT_SYMBOL(init_pid_ns);
 > | 
-> | Suka
+> | -int is_global_init(struct task_struct *tsk)
+> | +int is_container_init(struct task_struct *tsk)
+> | {
+> | -	return tsk == init_pid_ns.child_reaper;
+> | +	int ret;
+> 
+> Initialize ret = 0 here would save a line of code below :-)
+
+Well, I don't actually like initializing variables right when
+they are declared. Even with trivial values :)
+
+> | +	struct pid *pid;
+> | +
+> | +	ret = 0;
+> | +	rcu_read_lock();
+> | +	pid = task_pid(tsk);
+> | +	if (pid != NULL && pid->numbers[pid->level].nr == 1)
+> | +		ret = 1;
+> | +	rcu_read_unlock();
+> | +
+> | +	return ret;
+> | }
+> | -EXPORT_SYMBOL(is_global_init);
+> | +EXPORT_SYMBOL(is_container_init);
 > | 
-> 
-> I think the problem is in create_pid_namespace(). kref_init() sets the
-> refcount to 1 and then we do a get_pid_ns() which sets it to 2.
-> 
-> free_nsproxy() frees one of this references, but the other is never
-> freed.
-
-That's it! I've switched from my old fast (and bad) reference counting
-scheme to new slow (and correct) one, but forgot to remove this "get".
-This is the real problem. Thanks :)
-
-> This patch seems to fix the leak. The patch also creates a slab cache
-> for the pid_namespace
-
-OK, I'll include this patch. Thanks.
-
-> ---
-> 
-> Create a slab-cache for 'struct pid_namespace' and fix a memory leak
-> due to an extra reference in create_pid_namespace().
-> 
-> ---
->  kernel/pid.c |   10 ++++++----
->  1 file changed, 6 insertions(+), 4 deletions(-)
-> 
-> Index: lx26-23-rc1-mm1/kernel/pid.c
-> ===================================================================
-> --- lx26-23-rc1-mm1.orig/kernel/pid.c	2007-07-26 20:08:16.000000000 -0700
-> +++ lx26-23-rc1-mm1/kernel/pid.c	2007-07-26 22:31:42.000000000 -0700
-> @@ -35,6 +35,7 @@
->  static struct hlist_head *pid_hash;
->  static int pidhash_shift;
->  struct pid init_struct_pid = INIT_STRUCT_PID;
-> +static struct kmem_cache *pid_ns_cachep;
->  
->  int pid_max = PID_MAX_DEFAULT;
->  
-> @@ -525,7 +526,7 @@ static struct pid_namespace *create_pid_
->  	struct pid_namespace *ns;
->  	int i;
->  
-> -	ns = kmalloc(sizeof(struct pid_namespace), GFP_KERNEL);
-> +	ns = kmem_cache_alloc(pid_ns_cachep, GFP_KERNEL);
->  	if (ns == NULL)
->  		goto out;
->  
-> @@ -544,7 +545,6 @@ static struct pid_namespace *create_pid_
->  
->  	set_bit(0, ns->pidmap[0].page);
->  	atomic_set(&ns->pidmap[0].nr_free, BITS_PER_PAGE - 1);
-> -	get_pid_ns(ns);
->  
->  	for (i = 1; i < PIDMAP_ENTRIES; i++) {
->  		ns->pidmap[i].page = 0;
-> @@ -556,7 +556,7 @@ static struct pid_namespace *create_pid_
->  out_free_map:
->  	kfree(ns->pidmap[0].page);
->  out_free:
-> -	kfree(ns);
-> +	kmem_cache_free(pid_ns_cachep, ns);
->  out:
->  	return ERR_PTR(-ENOMEM);
->  }
-> @@ -567,7 +567,7 @@ static void destroy_pid_namespace(struct
->  
->  	for (i = 0; i < PIDMAP_ENTRIES; i++)
->  		kfree(ns->pidmap[i].page);
-> -	kfree(ns);
-> +	kmem_cache_free(pid_ns_cachep, ns);
->  }
->  
->    struct pid_namespace *copy_pid_ns(unsigned long flags, struct pid_namespace *old_ns)
-> @@ -687,4 +687,6 @@ void __init pidmap_init(void)
->  	init_pid_ns.pid_cachep = create_pid_cachep(1);
->  	if (init_pid_ns.pid_cachep == NULL)
->  		panic("Can't create pid_1 cachep\n");
-> +
-> +	pid_ns_cachep = KMEM_CACHE(pid_namespace, SLAB_PANIC);
->  }
+> | /*
+> |  * Note: disable interrupts while the pidmap_lock is held as an
 > 
