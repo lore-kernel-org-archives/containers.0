@@ -1,13 +1,13 @@
 From: sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org
-Subject: Re: [PATCH 15/15] Hooks over the code to show correct values to user
-Date: Thu, 26 Jul 2007 22:57:36 -0700
-Message-ID: <20070727055736.GC23584@us.ibm.com>
-References: <46A8B37B.6050108@openvz.org> <46A8B6AD.4000307@openvz.org>
+Subject: Re: [RFC][PATCH 0/15] Pid namespaces
+Date: Thu, 26 Jul 2007 23:08:56 -0700
+Message-ID: <20070727060856.GD23584@us.ibm.com>
+References: <46A8B37B.6050108@openvz.org> <20070727042213.GB23584@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <46A8B6AD.4000307-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+In-Reply-To: <20070727042213.GB23584-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -21,45 +21,101 @@ To: Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Oleg Nesterov <oleg-6lXkIZvqkOAvJsYlp49lxw@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Pavel Emelianov [xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org] wrote:
-| diff -upr linux-2.6.23-rc1-mm1.orig/fs/proc/array.c 
-| linux-2.6.23-rc1-mm1-7/fs/proc/array.c
-| --- linux-2.6.23-rc1-mm1.orig/fs/proc/array.c	2007-07-26 
-| 16:34:45.000000000 +0400
-| +++ linux-2.6.23-rc1-mm1-7/fs/proc/array.c	2007-07-26 
-| 16:36:36.000000000 +0400
-| @@ -77,6 +77,7 @@
-| #include <linux/cpuset.h>
-| #include <linux/rcupdate.h>
-| #include <linux/delayacct.h>
-| +#include <linux/pid_namespace.h>
+sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org [sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org] wrote:
+| Pavel,
 | 
-| #include <asm/pgtable.h>
-| #include <asm/processor.h>
-| @@ -161,7 +162,9 @@ static inline char *task_state(struct ta
-| 	struct group_info *group_info;
-| 	int g;
-| 	struct fdtable *fdt = NULL;
-| +	struct pid_namespace *ns;
+| We seem to have a memory leak. Its new in this patchset (i.e the
+| following test ran fine on the 2.6.22-rc6-mm1 patchset).
 | 
-| +	ns = current->nsproxy->pid_ns;
-| 	rcu_read_lock();
-| 	buffer += sprintf(buffer,
-| 		"State:\t%s\n"
-| @@ -172,9 +175,12 @@ static inline char *task_state(struct ta
-| 		"Uid:\t%d\t%d\t%d\t%d\n"
-| 		"Gid:\t%d\t%d\t%d\t%d\n",
-| 		get_task_state(p),
-| -		p->tgid, p->pid,
-| -		pid_alive(p) ? rcu_dereference(p->real_parent)->tgid : 0,
-| -		pid_alive(p) && p->ptrace ? rcu_dereference(p->parent)->pid 
-| : 0,
-| +	       	task_tgid_nr_ns(p, ns),
-| +		task_pid_nr_ns(p, ns),
-| +	       	pid_alive(p) ?
-| +			task_ppid_nr_ns(p, ns) : 0,
-| +		pid_alive(p) && p->ptrace ?
-| +			task_tgid_nr_ns(rcu_dereference(p->parent), ns) : 0,
+| To repro: run "pidns_exec ./mypid" in a tight-loop  - where mypid.c
+| is:
+| 
+| #include <stdio.h>
+| #include <unistd.h>
+| 
+| main()
+| {
+|         printf("Pid %d, Ppid %d, Pgid %d, Sid %d\n",
+|                  getpid(), getppid(), getpgid(0), getsid(0));
+| }
+| 
+| I ran into OOM in about 30 mins. I am still investigating.
+| 
+| BTW, can we include a simple test program like the pidns_exec in this
+| patch-0 for whoever want to play with pidns ?
+| 
+| Suka
+| 
 
-Hmm. I think we have this reversed here. We should print the 'tgid' of
-task->real_parent and 'pid' of task->parent.
+I think the problem is in create_pid_namespace(). kref_init() sets the
+refcount to 1 and then we do a get_pid_ns() which sets it to 2.
+
+free_nsproxy() frees one of this references, but the other is never
+freed.
+
+This patch seems to fix the leak. The patch also creates a slab cache
+for the pid_namespace
+
+---
+
+Create a slab-cache for 'struct pid_namespace' and fix a memory leak
+due to an extra reference in create_pid_namespace().
+
+---
+ kernel/pid.c |   10 ++++++----
+ 1 file changed, 6 insertions(+), 4 deletions(-)
+
+Index: lx26-23-rc1-mm1/kernel/pid.c
+===================================================================
+--- lx26-23-rc1-mm1.orig/kernel/pid.c	2007-07-26 20:08:16.000000000 -0700
++++ lx26-23-rc1-mm1/kernel/pid.c	2007-07-26 22:31:42.000000000 -0700
+@@ -35,6 +35,7 @@
+ static struct hlist_head *pid_hash;
+ static int pidhash_shift;
+ struct pid init_struct_pid = INIT_STRUCT_PID;
++static struct kmem_cache *pid_ns_cachep;
+ 
+ int pid_max = PID_MAX_DEFAULT;
+ 
+@@ -525,7 +526,7 @@ static struct pid_namespace *create_pid_
+ 	struct pid_namespace *ns;
+ 	int i;
+ 
+-	ns = kmalloc(sizeof(struct pid_namespace), GFP_KERNEL);
++	ns = kmem_cache_alloc(pid_ns_cachep, GFP_KERNEL);
+ 	if (ns == NULL)
+ 		goto out;
+ 
+@@ -544,7 +545,6 @@ static struct pid_namespace *create_pid_
+ 
+ 	set_bit(0, ns->pidmap[0].page);
+ 	atomic_set(&ns->pidmap[0].nr_free, BITS_PER_PAGE - 1);
+-	get_pid_ns(ns);
+ 
+ 	for (i = 1; i < PIDMAP_ENTRIES; i++) {
+ 		ns->pidmap[i].page = 0;
+@@ -556,7 +556,7 @@ static struct pid_namespace *create_pid_
+ out_free_map:
+ 	kfree(ns->pidmap[0].page);
+ out_free:
+-	kfree(ns);
++	kmem_cache_free(pid_ns_cachep, ns);
+ out:
+ 	return ERR_PTR(-ENOMEM);
+ }
+@@ -567,7 +567,7 @@ static void destroy_pid_namespace(struct
+ 
+ 	for (i = 0; i < PIDMAP_ENTRIES; i++)
+ 		kfree(ns->pidmap[i].page);
+-	kfree(ns);
++	kmem_cache_free(pid_ns_cachep, ns);
+ }
+ 
+   struct pid_namespace *copy_pid_ns(unsigned long flags, struct pid_namespace *old_ns)
+@@ -687,4 +687,6 @@ void __init pidmap_init(void)
+ 	init_pid_ns.pid_cachep = create_pid_cachep(1);
+ 	if (init_pid_ns.pid_cachep == NULL)
+ 		panic("Can't create pid_1 cachep\n");
++
++	pid_ns_cachep = KMEM_CACHE(pid_namespace, SLAB_PANIC);
+ }
