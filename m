@@ -1,15 +1,13 @@
-From: Kirill Korotaev <dev-3ImXcnM4P+0@public.gmane.org>
-Subject: Re: [Devel] Re: [PATCH 2/4] sysfs: Implement sysfs manged shadow
- directory support.
-Date: Fri, 27 Jul 2007 14:58:23 +0400
-Message-ID: <46A9CFCF.5000008@sw.ru>
-References: <1182446577.8138.29.camel@localhost>	<m1odj9dofp.fsf@ebiederm.dsl.xmission.com>	<20070621211637.GB10583@suse.de>	<m1fy4ldldm.fsf@ebiederm.dsl.xmission.com>	<20070622001328.GA14113@suse.de>	<m1tzt0cujt.fsf_-_@ebiederm.dsl.xmission.com>	<20070625212339.GA13398@kroah.com>	<m14pk13svx.fsf@ebiederm.dsl.xmission.com>	<m1zm1t2e92.fsf_-_@ebiederm.dsl.xmission.com>	<46A3B449.3090409@gmail.com>	<20070722202508.GA18018@suse.de>	<m17iosw075.fsf@ebiederm.dsl.xmission.com>
-	<46A85485.40502@gmail.com>
+From: Oleg Nesterov <oleg-6lXkIZvqkOAvJsYlp49lxw@public.gmane.org>
+Subject: Re: [PATCH 11/15] Signal semantics
+Date: Fri, 27 Jul 2007 16:31:53 +0400
+Message-ID: <20070727123153.GA92@tv-sign.ru>
+References: <46A8B37B.6050108@openvz.org> <46A8B5C7.9040407@openvz.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <46A85485.40502-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <46A8B5C7.9040407-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,34 +17,129 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Tejun Heo <htejun-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Greg KH <greg-U8xfFu+wG4EAvxtiuMwx3w@public.gmane.org>, Dave Hansen <hansendc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+To: Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Tejun Heo wrote:
-> Hello,
-> 
-> Okay, some questions.
-> 
-> * What do you think about not allowing duplicate names across different
-> tags?  ie. there's only one ethX anywhere but it's visible only in a
-> specific namespace (and maybe in the default global one).  Or does
-> everyone need its own eth0.  If this is acceptable, the problem becomes
-> _much_ simpler.
+Damn. I don't have time to read these patches today (will try tomorrow),
+but when I glanced at this patch yesterday I had some suspicions...
 
-at least on checkpoint/restart names should be restored as is
-and conflicts are unavoidable.
-this includes ifindex as well by the way.
+On 07/26, Pavel Emelyanov wrote:
+>
+> +++ linux-2.6.23-rc1-mm1-7/kernel/signal.c	2007-07-26 
+> 16:36:37.000000000 +0400
+> @@ -323,6 +325,9 @@ static int collect_signal(int sig, struc
+> 	if (first) {
+> 		list_del_init(&first->list);
+> 		copy_siginfo(info, &first->info);
+> +		if (first->flags & SIGQUEUE_CINIT)
+> +			kinfo->flags |= KERN_SIGINFO_CINIT;
+> +
+>
+> [...snip...]
+>
+> @@ -1852,7 +1950,7 @@ relock:
+> 		 * within that pid space. It can of course get signals from
+> 		 * its parent pid space.
+> 		 */
+> -		if (current == task_child_reaper(current))
+> +		if (kinfo.flags & KERN_SIGINFO_CINIT)
+> 			continue;
 
-> * I think we can do away with the magic tag and use a pointer to
-> vfsmount instead.  So, a process which wants to be in certain namespace
-> can bind-mount /sysfs to its own /sysfs and make needed sysfs nodes
-> bound to the mount.  Does this sound okay?  Such process should probably
-> be in its own chrooted environment to function properly.
+I think the whole idea is broken, it assumes the sender put something into
+"struct sigqueue".
+
+Suppose that /sbin/init has no handler for (say) SIGTERM, and we send this
+signal from the same namespace. send_signal() sets SIGQUEUE_CINIT, but it
+is lost because __group_complete_signal() silently "converts" sig_fatal()
+signals to SIGKILL using sigaddset().
+
+> +static void encode_sender_info(struct task_struct *t, struct sigqueue *q)
+> +{
+> +	/*
+> +	 * If sender (i.e 'current') and receiver have the same active
+> +	 * pid namespace and the receiver is the container-init, set the
+> +	 * SIGQUEUE_CINIT flag. This tells the container-init that the
+> +	 * signal originated in its own namespace and so it can choose
+> +	 * to ignore the signal.
+> +	 *
+> +	 * If the receiver is the container-init of a pid namespace,
+> +	 * but the sender is from an ancestor pid namespace, the
+> +	 * container-init cannot ignore the signal. So clear the
+> +	 * SIGQUEUE_CINIT flag in this case.
+> +	 *
+> +	 * Also, if the sender does not have a pid_t in the receiver's
+> +	 * active pid namespace, set si_pid to 0 and pretend it originated
+> +	 * from the kernel.
+> +	 */
+> +	if (pid_ns_equal(t)) {
+> +		if (is_container_init(t)) {
+> +			q->flags |= SIGQUEUE_CINIT;
+
+Ironically, this change carefully preserves the bug we already have :)
+
+This doesn't protect init from "bad" signal if we send it to sub-thread
+of init. Actually, this make the behaviour a bit worse compared to what
+we currently have. Currently, at least the main init's thread survives
+if we send SIGKILL to sub-thread.
+
+> static int send_signal(int sig, struct siginfo *info, struct task_struct *t,
+> 			struct sigpending *signals)
+> {
+> @@ -710,6 +781,7 @@ static int send_signal(int sig, struct s
+> 			copy_siginfo(&q->info, info);
+> 			break;
+> 		}
+> +		encode_sender_info(t, q);
+
+We still send the signal if __sigqueue_alloc() fails. In that case, the
+dequeued siginfo won't have SIGQUEUE_CINIT/KERN_SIGINFO_CINIT, not good.
+
+> @@ -1158,6 +1232,13 @@ static int kill_something_info(int sig, 
 > 
-> * I haven't really followed the containers thread.  Do people generally
-> agree on including it in mainline when we have all the fancy
-> virtualization stuff?
+> 		read_lock(&tasklist_lock);
+> 		for_each_process(p) {
+> +			/*
+> +			 * System-wide signals apply only to the sender's
+> +			 * pid namespace, unless issued from init_pid_ns.
+> +			 */
+> +			if (!task_visible_in_pid_ns(p, my_ns))
+> +				continue;
+> +
+> 			if (p->pid > 1 && p->tgid != current->tgid) {
 
-Thanks,
-Kirill
+This "p->pid > 1" check should die.
+
+> +static int deny_signal_to_container_init(struct task_struct *tsk, int sig)
+> +{
+> +	/*
+> +	 * If receiver is the container-init of sender and signal is SIGKILL
+> +	 * reject it right-away. If signal is any other one, let the container
+> +	 * init decide (in get_signal_to_deliver()) whether to handle it or
+> +	 * ignore it.
+> +	 */
+> +	if (is_container_init(tsk) && (sig == SIGKILL) && pid_ns_equal(tsk))
+> +		return -EPERM;
+> +
+> +	return 0;
+> +}
+> +
+> /*
+>  * Bad permissions for sending the signal
+>  */
+> @@ -545,6 +584,10 @@ static int check_kill_permission(int sig
+> 	    && !capable(CAP_KILL))
+> 		return error;
+> 
+> +	error = deny_signal_to_container_init(t, sig);
+> +	if (error)
+> +		return error;
+
+Hm. Could you explain this change? Why do we need a special check for SIGKILL?
+
+
+(What about ptrace_attach() btw? If it is possible to send a signal to init
+ from the "parent" namespace, perhaps it makes sense to allow ptracing as
+ well).
+
+Oleg.
