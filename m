@@ -1,9 +1,9 @@
-From: "Watkins S. Valentine" <acory-GeaeVC/+ezbQT0dZR+AlfA@public.gmane.org>
+From: "Hendrickson L. Maggie" <owr-MFX/LHnqRyDQT0dZR+AlfA@public.gmane.org>
 Subject: (no subject)
-Date: Sun, 29 Jul 2007 02:39:39 +0300
-Message-ID: <46ABD3BB.7080402@cbbain.com>
+Date: Sun, 29 Jul 2007 02:39:52 +0300
+Message-ID: <46ABD3C8.7070302@mmafin.com>
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary="------------050005010102010203030007"
+Content-Type: multipart/mixed; boundary="------------050104010406080203040507"
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
@@ -17,13 +17,13 @@ Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 To: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
 List-Id: containers.vger.kernel.org
 
---------------050005010102010203030007
+--------------050104010406080203040507
 Content-Type: text/plain; charset=windows-1250; format=flowed
 Content-Transfer-Encoding: 7bit
 
 
 
---------------050005010102010203030007
+--------------050104010406080203040507
 Content-Type: application/pdf;
  name="article.pdf"
 Content-Transfer-Encoding: base64
@@ -219,7 +219,7 @@ CjAwMDAwMDk3MzQgMDAwMDAgbiAKMDAwMDAwOTg4NSAwMDAwMCBuIAp0cmFpbGVyCgo8PAovRW5j
 cnlwdCAxMyAwIFIKL0luZm8gMTQgMCBSCi9Sb290IDEgMCBSCi9TaXplIDE1Ci9JRCBbPGYyMmJj
 ZDA5Y2Y5YWNhOGY0ZDAyYWY4N2UwYzgxODkxPjwwNjQyODhmNGU2NTA4NDk2NmFkZDI2ZWUwNmI5
 OTdmOT5dCj4+CnN0YXJ0eHJlZgoxMDI3NgolJUVPRgo=
---------------050005010102010203030007
+--------------050104010406080203040507
 Content-Type: text/plain; charset="us-ascii"
 MIME-Version: 1.0
 Content-Transfer-Encoding: 7bit
@@ -229,4 +229,4 @@ _______________________________________________
 Containers mailing list
 Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 https://lists.linux-foundation.org/mailman/listinfo/containers
---------------050005010102010203030007--
+--------------050104010406080203040507--
