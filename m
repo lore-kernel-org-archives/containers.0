@@ -1,34 +1,47 @@
-From: Oleg Nesterov <oleg-6lXkIZvqkOAvJsYlp49lxw@public.gmane.org>
-Subject: Re: [PATCH 10/15] Make each namespace has its own proc tree
-Date: Sun, 29 Jul 2007 21:04:36 +0400
-Message-ID: <20070729170436.GA941@tv-sign.ru>
-References: <46A8B37B.6050108@openvz.org> <46A8B59E.7050009@openvz.org>
-	<20070729155841.GI120@tv-sign.ru>
+From: "Paul Menage" <menage@google.com>
+Subject: Re: [PATCH 01/10] Task Containers(V11): Basic task container framework
+Date: Sun, 29 Jul 2007 10:03:49 -0700
+Message-ID: <6599ad830707291003s38ccc07ds79b8d0e94469871d@mail.gmail.com>
+References: <20070720191247.388947000@menage.corp.google.com>
+	 <20070727053120.2EFAC1BF6B8@siro.lan>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Content-Type: text/plain; charset=ISO-8859-1
+Content-Transfer-Encoding: 7bit
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S932330AbXG2RE1@vger.kernel.org>
+In-Reply-To: <20070727053120.2EFAC1BF6B8@siro.lan>
 Content-Disposition: inline
-In-Reply-To: <20070729155841.GI120-6lXkIZvqkOAvJsYlp49lxw@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
-Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
+Sender: linux-kernel-owner@vger.kernel.org
+To: YAMAMOTO Takashi <yamamoto@valinux.co.jp>
+Cc: akpm@linux-foundation.org, dev@sw.ru, xemul@sw.ru, serue@us.ibm.com, vatsa@in.ibm.com, ebiederm@xmission.com, haveblue@us.ibm.com, svaidy@linux.vnet.ibm.com, balbir@in.ibm.com, pj@sgi.com, ckrm-tech@lists.sourceforge.net, linux-kernel@vger.kernel.org, containers@lists.osdl.org, rohitseth@google.com
 List-Id: containers.vger.kernel.org
 
-On 07/29, Oleg Nesterov wrote:
+On 7/26/07, YAMAMOTO Takashi <yamamoto@valinux.co.jp> wrote:
+> > +Other fields in the container_subsys object include:
 >
-> Look, proc_flush_task() doesn't need pid, it can use active pid_ns
+> > +- hierarchy: an index indicating which hierarchy, if any, this
+> > +  subsystem is currently attached to. If this is -1, then the
+> > +  subsystem is not attached to any hierarchy, and all tasks should be
+> > +  considered to be members of the subsystem's top_container. It should
+> > +  be initialized to -1.
+>
+> stale info?
 
-Oops. Yes, proc_flush_task() doesn't use ->numbers[].nr, but it should?
+Yes, I think so. I really need to do a proper pass over
+Documentation/containers.txt one more time following a bunch of recent
+changes.
 
-proc_flush_task_mnt() uses task->pid to flush /proc/$pid, this looks wrong,
-we should use ->number[ns->level].nr, no?
+>
+> > +struct container {
+>
+> > +     struct containerfs_root *root;
+> > +     struct container *top_container;
+> > +};
+>
+> can cont->top_container be different from than &cont->root.top_container?
 
-Oleg.
+No, I guess it can't. And there are only a couple of places using
+cont->top_container now, so I should probably remove it.
+
+Thanks,
+
+Paul
