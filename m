@@ -1,9 +1,9 @@
-From: "Roe H. Douglas" <tbxl-OJIYhvB6IpRKQvTJNsVGEA@public.gmane.org>
-Subject: mailbody
-Date: Sun, 29 Jul 2007 20:40:29 -0500
-Message-ID: <46AD418D.4050000@windsglobal.com>
+From: "Pickett T. Herman" <usduh-WVi6zpk0pz0@public.gmane.org>
+Subject: Notification
+Date: Sun, 29 Jul 2007 20:40:41 -0500
+Message-ID: <46AD4199.4080107@pi.net>
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary="------------080706080504030805050505"
+Content-Type: multipart/mixed; boundary="------------080000030403040400000803"
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
@@ -17,18 +17,18 @@ Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 To: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
 List-Id: containers.vger.kernel.org
 
---------------080706080504030805050505
+--------------080000030403040400000803
 Content-Type: text/plain; charset=iso-8859-1; format=flowed
 Content-Transfer-Encoding: 7bit
 
 
 
---------------080706080504030805050505
+--------------080000030403040400000803
 Content-Type: application/pdf;
- name="mailbody.pdf"
+ name="Notification.pdf"
 Content-Transfer-Encoding: base64
 Content-Disposition: inline;
- filename="mailbody.pdf"
+ filename="Notification.pdf"
 
 JVBERi0xLjEKJeLjz9MKMSAwIG9iaiAKPDwKL1BhZ2VzIDIgMCBSCi9UeXBlIC9DYXRhbG9nCj4+
 CmVuZG9iaiAKMiAwIG9iaiAKPDwKL01lZGlhQm94IFswIDAgNjEyIDc5Ml0KL0tpZHMgWzMgMCBS
@@ -164,7 +164,7 @@ MDAwNjY5NyAwMDAwMCBuIAowMDAwMDA2ODQ5IDAwMDAwIG4gCnRyYWlsZXIKCjw8Ci9FbmNyeXB0
 IDExIDAgUgovSW5mbyAxMiAwIFIKL1Jvb3QgMSAwIFIKL1NpemUgMTMKL0lEIFs8NDNiY2Q0YzJk
 MDczMDBlN2I1MzVjYmU2MjljZTY4ODk+PGJmYzRlN2NlNTRlYTk2MjU3OTUwNmQyZDNjYTg3MDRi
 Pl0KPj4Kc3RhcnR4cmVmCjcxNzcKJSVFT0YK
---------------080706080504030805050505
+--------------080000030403040400000803
 Content-Type: text/plain; charset="us-ascii"
 MIME-Version: 1.0
 Content-Transfer-Encoding: 7bit
@@ -174,4 +174,4 @@ _______________________________________________
 Containers mailing list
 Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 https://lists.linux-foundation.org/mailman/listinfo/containers
---------------080706080504030805050505--
+--------------080000030403040400000803--
