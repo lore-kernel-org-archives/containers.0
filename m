@@ -1,10 +1,16 @@
-From: "Christy Muniz" <IrmadesultorySelf-F7Oa5CSfLBskk94PDnYflw@public.gmane.org>
-Subject: Fwd: Thank you, we are ready to give a loan
-Date: Mon, 30 Jul 2007 09:49:23 +0500
-Message-ID: <2bb8f01c7d2b0$800e0cf0$619fb94b@northgate>
+From: Kirill Korotaev <dev-3ImXcnM4P+0@public.gmane.org>
+Subject: Re: [PATCH 2/4] sysfs: Implement sysfs manged shadow
+	directory	support.
+Date: Mon, 30 Jul 2007 17:57:09 +0400
+Message-ID: <46ADEE35.8000109@sw.ru>
+References: <1182446577.8138.29.camel@localhost>	<m1odj9dofp.fsf@ebiederm.dsl.xmission.com>	<20070621211637.GB10583@suse.de>	<m1fy4ldldm.fsf@ebiederm.dsl.xmission.com>	<20070622001328.GA14113@suse.de>	<m1tzt0cujt.fsf_-_@ebiederm.dsl.xmission.com>	<20070625212339.GA13398@kroah.com>	<m14pk13svx.fsf@ebiederm.dsl.xmission.com>	<m1zm1t2e92.fsf_-_@ebiederm.dsl.xmission.com>	<46A3B449.3090409@gmail.com>	<20070722202508.GA18018@suse.de>	<m17iosw075.fsf@ebiederm.dsl.xmission.com>	<46A425F9.1030008@gmail.com>
+	<46AD8E92.7080002@suse.de> <46ADDC7F.1090306@sw.ru>
+	<46ADE24E.8020502@suse.de>
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary="===============0749947179183686606=="
+Content-Type: text/plain; charset=us-ascii
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <46ADE24E.8020502-l3A5Bk7waGM@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -12,91 +18,33 @@ List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
 List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Mime-version: 1.0
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
+To: Tejun Heo <teheo-l3A5Bk7waGM@public.gmane.org>
+Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Greg KH <greg-U8xfFu+wG4EAvxtiuMwx3w@public.gmane.org>, Greg KH <gregkh-l3A5Bk7waGM@public.gmane.org>, Dave Hansen <hansendc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-This is a multi-part message in MIME format.
+Tejun Heo wrote:
+> Hello, Kirill.
+> 
+> Kirill Korotaev wrote:
+> 
+>>Imho then OpenOVZ approach with multiple sysfs trees is better.
+>>it allows to use cached dentries with moultiple sysfs mounts
+>>each having different view.
+>>It also allows to hide hw-related entries and events from the containers
+>>and has quite little modifications in the code.
+> 
+> 
+> I thought something like supermount plus some twists or fuse based sysfs
+> proxy would fit better.  Dunno whether or how uevent and polling stuff
+> can work that way tho.  Note that sysfs no longer keeps dentries and
+> inodes pinned.  It might make the shared dentry stuff harder.
 
---===============0749947179183686606==
-Content-Type: multipart/alternative;
-	boundary="----=_NextPart_000_2BB8B_01C7D2B0.800E0CF0"
+We simply don't share sysfs dentries/inodes between containers.
+It's not that frequently used time critical fs to be super-optimized... :)
+I don't like the idea with fuse, since sysfs exports kernel-related stuff,
+so doing it via user-space would be pain.
 
-This is a multi-part message in MIME format.
-
-------=_NextPart_000_2BB8B_01C7D2B0.800E0CF0
-Content-Type: text/plain;
-	charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
-
-Your credit doesn't matter to us!
-
-If you have your own business and need IMMEDIATE cash to spend ANY way =
-you like or want Extra money to give the company a boost or wish A low =
-interest loan - NO STRINGS ATTACHED, here is best deal we can offer you =
-NOW (hurry, this offer will expire THIS NIGHT):
-
-$20,000+ loan
-
-Hurry, when best deal is gone, it is gone. Simply Call Us...
-
-Don't worry about approval, your your credit report will not disqualify =
-you!
-
-Call Us Free on 877-542-1884
-------=_NextPart_000_2BB8B_01C7D2B0.800E0CF0
-Content-Type: text/html;
-	charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
-
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
-<HTML><HEAD>
-<META http-equiv=3DContent-Type content=3D"text/html; =
-charset=3Diso-8859-1">
-<META content=3D"MSHTML 6.00.2900.2963" name=3DGENERATOR>
-<STYLE></STYLE>
-</HEAD>=20
-<BODY bgColor=3D#ffffff>
-<DIV><FONT face=3DGaramond size=3D2><B>Your credit doesn't matter to=20
-us!</B></FONT></DIV>  =20
-<DIV><FONT face=3DGaramond size=3D2>&nbsp;</FONT></DIV>
-<DIV><FONT face=3DGaramond size=3D2>If you have your own business and =
-need=20
-IMMEDIATE cash to spend ANY way you like or want Extra money to give the =
-
-company a boost or  wish A low interest loan - NO STRINGS ATTACHED, here =
-is=20
-best deal we can offer you NOW (hurry, this offer will expire THIS=20
-NIGHT):</FONT></DIV> =20
-<DIV><FONT face=3DGaramond size=3D2>&nbsp;</FONT></DIV>
-<DIV><FONT face=3DGaramond size=3D2><B>$20,000+ loan</B></FONT></DIV>
-<DIV><FONT face=3DGaramond size=3D2>&nbsp;</FONT></DIV>
-<DIV><FONT face=3DGaramond size=3D2><B>Hurry, when best deal is gone, it =
-is gone.=20
-Simply Call Us... </B></FONT></DIV>    =20
-<DIV><FONT face=3DGaramond size=3D2>&nbsp;</FONT></DIV>
-<DIV><FONT face=3DGaramond size=3D2>Don't worry about approval, your =
-your credit=20
-report will not disqualify you!</FONT></DIV> =20
-<DIV><FONT face=3DGaramond size=3D2>&nbsp;</FONT></DIV>
-<DIV><FONT face=3DGaramond size=3D2><B>Call Us Free on =
-877-542-1884</B></FONT></DIV>
-</BODY></HTML>
-
-
-------=_NextPart_000_2BB8B_01C7D2B0.800E0CF0--
-
-
---===============0749947179183686606==
-Content-Type: text/plain; charset="us-ascii"
-MIME-Version: 1.0
-Content-Transfer-Encoding: 7bit
-Content-Disposition: inline
-
-_______________________________________________
-Containers mailing list
-Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-https://lists.linux-foundation.org/mailman/listinfo/containers
---===============0749947179183686606==--
+Thanks,
+Kirill
