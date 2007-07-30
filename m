@@ -1,78 +1,64 @@
-From: Gautham R Shenoy <ego@in.ibm.com>
-Subject: Re: [-mm PATCH 6/9] Memory controller add per container LRU and reclaim (v4)
-Date: Mon, 30 Jul 2007 19:58:18 +0530
-Message-ID: <20070730142818.GB22345@in.ibm.com>
-References: <20070727200937.31565.78623.sendpatchset@balbir-laptop> <20070727201041.31565.14803.sendpatchset@balbir-laptop> <20070730133758.GB22952@linux.vnet.ibm.com>
-Reply-To: ego@in.ibm.com
+From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
+Subject: Re: [PATCH 2/4] sysfs: Implement sysfs manged shadow directory
+	support.
+Date: Mon, 30 Jul 2007 09:36:48 -0600
+Message-ID: <m1tzrlvr73.fsf@ebiederm.dsl.xmission.com>
+References: <1182446577.8138.29.camel@localhost>
+	<m1odj9dofp.fsf@ebiederm.dsl.xmission.com>
+	<20070621211637.GB10583@suse.de>
+	<m1fy4ldldm.fsf@ebiederm.dsl.xmission.com>
+	<20070622001328.GA14113@suse.de>
+	<m1tzt0cujt.fsf_-_@ebiederm.dsl.xmission.com>
+	<20070625212339.GA13398@kroah.com>
+	<m14pk13svx.fsf@ebiederm.dsl.xmission.com>
+	<m1zm1t2e92.fsf_-_@ebiederm.dsl.xmission.com>
+	<46A3B449.3090409@gmail.com> <20070722202508.GA18018@suse.de>
+	<m17iosw075.fsf@ebiederm.dsl.xmission.com> <46A85485.40502@gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S935833AbXG3O2c@vger.kernel.org>
-Content-Disposition: inline
-In-Reply-To: <20070730133758.GB22952@linux.vnet.ibm.com>
-Sender: linux-kernel-owner@vger.kernel.org
-To: Dhaval Giani <dhaval@linux.vnet.ibm.com>
-Cc: Balbir Singh <balbir@linux.vnet.ibm.com>, Andrew Morton <akpm@linux-foundation.org>, Peter Zijlstra <a.p.zijlstra@chello.nl>, Linux Containers <containers@lists.osdl.org>, YAMAMOTO Takashi <yamamoto@valinux.co.jp>, Paul Menage <menage@google.com>, Dave Hansen <haveblue@us.ibm.com>, Linux MM Mailing List <linux-mm@kvack.org>, Vaidyanathan Srinivasan <svaidy@linux.vnet.ibm.com>, Pavel Emelianov <xemul@openvz.org>, Linux Kernel Mailing List <linux-kernel@vger.kernel.org>, Eric W Biederman <ebiederm@xmission.com>
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <46A85485.40502-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org> (Tejun Heo's message of "Thu, 26 Jul
+	2007 17:00:05 +0900")
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Tejun Heo <htejun-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Greg KH <greg-U8xfFu+wG4EAvxtiuMwx3w@public.gmane.org>, Dave Hansen <hansendc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Mon, Jul 30, 2007 at 07:07:58PM +0530, Dhaval Giani wrote:
-> Hi Balbir,
-> 
-> > diff -puN mm/memcontrol.c~mem-control-lru-and-reclaim mm/memcontrol.c
-> > --- linux-2.6.23-rc1-mm1/mm/memcontrol.c~mem-control-lru-and-reclaim	2007-07-28 01:12:50.000000000 +0530
-> > +++ linux-2.6.23-rc1-mm1-balbir/mm/memcontrol.c	2007-07-28 01:12:50.000000000 +0530
-> 
-> >  /*
-> >   * The memory controller data structure. The memory controller controls both
-> > @@ -51,6 +54,10 @@ struct mem_container {
-> >  	 */
-> >  	struct list_head active_list;
-> >  	struct list_head inactive_list;
-> > +	/*
-> > +	 * spin_lock to protect the per container LRU
-> > +	 */
-> > +	spinlock_t lru_lock;
-> >  };
-> 
-> The spinlock is not annotated by lockdep. The following patch should do
-> it.
-> 
-> Signed-off-by: Dhaval Giani <dhaval@linux.vnet.ibm.com>
-> Signed-off-by: Gautham Shenoy R <ego@in.ibm.com>
-		 ^^^^^^^^^^^^^^^^
-		 Gautham R Shenoy
-> 
-> 
-> Index: linux-2.6.23-rc1/mm/memcontrol.c
-> ===================================================================
-> --- linux-2.6.23-rc1.orig/mm/memcontrol.c	2007-07-30 17:27:24.000000000 +0530
-> +++ linux-2.6.23-rc1/mm/memcontrol.c	2007-07-30 18:43:40.000000000 +0530
-> @@ -501,6 +501,9 @@
-> 
->  static struct mem_container init_mem_container;
-> 
-> +/* lockdep should know about lru_lock */
-> +static struct lock_class_key lru_lock_key;
-> +
->  static struct container_subsys_state *
->  mem_container_create(struct container_subsys *ss, struct container *cont)
->  {
-> @@ -519,6 +522,7 @@
->  	INIT_LIST_HEAD(&mem->active_list);
->  	INIT_LIST_HEAD(&mem->inactive_list);
->  	spin_lock_init(&mem->lru_lock);
-> +	lockdep_set_class(&mem->lru_lock, &lru_lock_key);
->  	mem->control_type = MEM_CONTAINER_TYPE_ALL;
->  	return &mem->css;
->  }
-> -- 
-> regards,
-> Dhaval
-> 
-> I would like to change the world but they don't give me the source code!
+Tejun Heo <htejun-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org> writes:
 
--- 
-Gautham R Shenoy
-Linux Technology Center
-IBM India.
-"Freedom comes with a price tag of responsibility, which is still a bargain,
-because Freedom is priceless!"
+> Hello,
+>
+> Okay, some questions.
+>
+> * What do you think about not allowing duplicate names across different
+> tags?  ie. there's only one ethX anywhere but it's visible only in a
+> specific namespace (and maybe in the default global one).  Or does
+> everyone need its own eth0.  If this is acceptable, the problem becomes
+> _much_ simpler.
+
+I agree, and unfortunately this is the problem I am really trying to solve.
+Everyone namespace has it's own loopback interface.
+
+> * I think we can do away with the magic tag and use a pointer to
+> vfsmount instead.  So, a process which wants to be in certain namespace
+> can bind-mount /sysfs to its own /sysfs and make needed sysfs nodes
+> bound to the mount.  Does this sound okay?  Such process should probably
+> be in its own chrooted environment to function properly.
+
+That would actually be preferable.
+
+> * I haven't really followed the containers thread.  Do people generally
+> agree on including it in mainline when we have all the fancy
+> virtualization stuff?
+
+Generally.  Assuming all of the i's are dotted and all of the t's crossed.
+
+Eric
