@@ -1,15 +1,14 @@
 From: Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
-Subject: Re: [PATCH 6/15] Make alloc_pid(), free_pid() and put_pid() work
- with struct upid
-Date: Mon, 30 Jul 2007 10:03:05 +0400
-Message-ID: <46AD7F19.7000208@openvz.org>
-References: <46A8B37B.6050108@openvz.org> <46A8B4AE.6040903@openvz.org>
-	<20070729101651.GB120@tv-sign.ru>
+Subject: Re: [PATCH 3/15] kern_siginfo helper
+Date: Mon, 30 Jul 2007 10:07:46 +0400
+Message-ID: <46AD8032.90005@openvz.org>
+References: <46A8B37B.6050108@openvz.org> <46A8B42F.5070605@openvz.org>
+	<20070729114154.GE120@tv-sign.ru>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20070729101651.GB120-6lXkIZvqkOAvJsYlp49lxw@public.gmane.org>
+In-Reply-To: <20070729114154.GE120-6lXkIZvqkOAvJsYlp49lxw@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -25,71 +24,43 @@ List-Id: containers.vger.kernel.org
 
 Oleg Nesterov wrote:
 > On 07/26, Pavel Emelyanov wrote:
->> -struct pid *alloc_pid(void)
->> +struct pid *alloc_pid(struct pid_namespace *ns)
+>> TODO: 	This is more an exploratory patch and modifies only interfaces
+>> 	necessary to implement correct signal semantics in pid namespaces.
+>> 	
+>> 	If the approach is feasible, we could consistently use 'kern_siginfo'
+>> 	in other signal interfaces and possibly in 'struct sigqueue'.
+>>
+>> 	We could modify dequeue_signal() to directly work with 'kern_siginfo'
+>> 	and remove dequeue_signal_kern_info().
 > 
-> Why? We have the only caller, copy_process(), ns == task_active_pid_ns()
-> always.
-
-task_active_pid_ns() by newly created task, not the current! That's why
-we need to pass something to alloc_pid() to find this new namespace.
-Task or namespace itself - is the matter of choice - I selected the
-most obvious argument :)
-
->>  {
->>  	struct pid *pid;
->>  	enum pid_type type;
->> -	int nr = -1;
->> -	struct pid_namespace *ns;
->> +	int i, nr;
->> +	struct pid_namespace *tmp;
->>  
->> -	ns = task_active_pid_ns(current);
->>  	pid = kmem_cache_alloc(ns->pid_cachep, GFP_KERNEL);
->>  	if (!pid)
->>  		goto out;
->>  
->> -	nr = alloc_pidmap(ns);
->> -	if (nr < 0)
->> -		goto out_free;
->> +	tmp = ns;
->> +	for (i = ns->level; i >= 0; i--) {
->> +		nr = alloc_pidmap(tmp);
->> +		if (nr < 0)
->> +			goto out_free;
->> +
->> +		pid->numbers[i].nr = nr;
->> +		pid->numbers[i].ns = tmp;
->> +		tmp = tmp->parent;
+> Well... I know, it is very easy to blame somebody else's patch, and probably
+> my taste is not good...
 > 
-> Hm... There is no ->parent in "struct pid_namespace", and this
-> patch doesn't add it.
-
-Parent is added in another patch - 12/15. I will split it better
-when sending to Andrew - patches will be smaller and bisect-safe.
-
->> +	if (ns != &init_pid_ns)
->> +		get_pid_ns(ns);
+> But honestly, I personally think this approach is a horror, and any alternative
+> is better :)
 > 
-> Q: put_pid() checks "ns != &init_pid_ns" as well, this is just
-> an optimization, yes? Perhaps we can move this check into
+> I'd rather change dequeue_signal() so that it takes "struct sigqueue *"
+> parameter instead of "siginfo_t *", or add a new "int *flags".
+> 
+> OK, this doesn't work anyway, we should do something different. Perhaps
+> just do all checks on sender's side.
 
-It is :)
+Yes. Signal handling in namespaces turned out to be the most complicated
+part of the set. I start thinking to drop this part till we have the "core"
+in -mm tree. Suka, what do you think?
 
-> get_pid_ns/put_pid_ns.
+> It is a bit strange that this patch is 3/15, and the rest bits in 11/15,
+> not very convenient for the review.
 
-I think you're right.
-
-> We are doing get_pid_ns() only for the "top namespace"... I guess
-> this can work if pid_namespace does get_pid_ns() on its ->parent.
-> This patch looks incomplete.
-
-Yes. This set is not well split, sorry. I wanted to get comments about the
-approach, bugs, etc (I have already mentioned this in another letter...)
+Well, I thought that a split like
+1. patches for kernel to prepare it for the set
+2. the set itself
+is the best to review. Maybe I was wrong, but how to make this then?
+E.g. I have a MS_KERNOUNT patch, but its changes are used *much* later.
 
 > Oleg.
 > 
 > 
 
 Thanks,
-Pavel.
+Pavel
