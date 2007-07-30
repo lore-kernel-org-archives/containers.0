@@ -1,69 +1,102 @@
-From: Dhaval Giani <dhaval@linux.vnet.ibm.com>
-Subject: Re: [-mm PATCH 6/9] Memory controller add per container LRU and
-	reclaim (v4)
-Date: Mon, 30 Jul 2007 19:07:58 +0530
-Message-ID: <20070730133758.GB22952@linux.vnet.ibm.com>
-References: <20070727200937.31565.78623.sendpatchset@balbir-laptop> <20070727201041.31565.14803.sendpatchset@balbir-laptop>
-Reply-To: Dhaval Giani <dhaval@linux.vnet.ibm.com>
+From: "Christy Muniz" <IrmadesultorySelf-F7Oa5CSfLBskk94PDnYflw@public.gmane.org>
+Subject: Fwd: Thank you, we are ready to give a loan
+Date: Mon, 30 Jul 2007 09:49:23 +0500
+Message-ID: <2bb8f01c7d2b0$800e0cf0$619fb94b@northgate>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S936844AbXG3Nlw@vger.kernel.org>
-Content-Disposition: inline
-In-Reply-To: <20070727201041.31565.14803.sendpatchset@balbir-laptop>
-Sender: linux-kernel-owner@vger.kernel.org
-To: Balbir Singh <balbir@linux.vnet.ibm.com>
-Cc: Andrew Morton <akpm@linux-foundation.org>, Peter Zijlstra <a.p.zijlstra@chello.nl>, Linux Containers <containers@lists.osdl.org>, YAMAMOTO Takashi <yamamoto@valinux.co.jp>, Paul Menage <menage@google.com>, Dave Hansen <haveblue@us.ibm.com>, Linux MM Mailing List <linux-mm@kvack.org>, Vaidyanathan Srinivasan <svaidy@linux.vnet.ibm.com>, Pavel Emelianov <xemul@openvz.org>, Linux Kernel Mailing List <linux-kernel@vger.kernel.org>, Eric W Biederman <ebiederm@xmission.com>, Gautham Shenoy <ego@in.ibm.com>
+Content-Type: multipart/mixed; boundary="===============0749947179183686606=="
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Mime-version: 1.0
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Hi Balbir,
+This is a multi-part message in MIME format.
 
-> diff -puN mm/memcontrol.c~mem-control-lru-and-reclaim mm/memcontrol.c
-> --- linux-2.6.23-rc1-mm1/mm/memcontrol.c~mem-control-lru-and-reclaim	2007-07-28 01:12:50.000000000 +0530
-> +++ linux-2.6.23-rc1-mm1-balbir/mm/memcontrol.c	2007-07-28 01:12:50.000000000 +0530
- 
->  /*
->   * The memory controller data structure. The memory controller controls both
-> @@ -51,6 +54,10 @@ struct mem_container {
->  	 */
->  	struct list_head active_list;
->  	struct list_head inactive_list;
-> +	/*
-> +	 * spin_lock to protect the per container LRU
-> +	 */
-> +	spinlock_t lru_lock;
->  };
+--===============0749947179183686606==
+Content-Type: multipart/alternative;
+	boundary="----=_NextPart_000_2BB8B_01C7D2B0.800E0CF0"
 
-The spinlock is not annotated by lockdep. The following patch should do
-it.
+This is a multi-part message in MIME format.
 
-Signed-off-by: Dhaval Giani <dhaval@linux.vnet.ibm.com>
-Signed-off-by: Gautham Shenoy R <ego@in.ibm.com>
+------=_NextPart_000_2BB8B_01C7D2B0.800E0CF0
+Content-Type: text/plain;
+	charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
+
+Your credit doesn't matter to us!
+
+If you have your own business and need IMMEDIATE cash to spend ANY way =
+you like or want Extra money to give the company a boost or wish A low =
+interest loan - NO STRINGS ATTACHED, here is best deal we can offer you =
+NOW (hurry, this offer will expire THIS NIGHT):
+
+$20,000+ loan
+
+Hurry, when best deal is gone, it is gone. Simply Call Us...
+
+Don't worry about approval, your your credit report will not disqualify =
+you!
+
+Call Us Free on 877-542-1884
+------=_NextPart_000_2BB8B_01C7D2B0.800E0CF0
+Content-Type: text/html;
+	charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
+
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<HTML><HEAD>
+<META http-equiv=3DContent-Type content=3D"text/html; =
+charset=3Diso-8859-1">
+<META content=3D"MSHTML 6.00.2900.2963" name=3DGENERATOR>
+<STYLE></STYLE>
+</HEAD>=20
+<BODY bgColor=3D#ffffff>
+<DIV><FONT face=3DGaramond size=3D2><B>Your credit doesn't matter to=20
+us!</B></FONT></DIV>  =20
+<DIV><FONT face=3DGaramond size=3D2>&nbsp;</FONT></DIV>
+<DIV><FONT face=3DGaramond size=3D2>If you have your own business and =
+need=20
+IMMEDIATE cash to spend ANY way you like or want Extra money to give the =
+
+company a boost or  wish A low interest loan - NO STRINGS ATTACHED, here =
+is=20
+best deal we can offer you NOW (hurry, this offer will expire THIS=20
+NIGHT):</FONT></DIV> =20
+<DIV><FONT face=3DGaramond size=3D2>&nbsp;</FONT></DIV>
+<DIV><FONT face=3DGaramond size=3D2><B>$20,000+ loan</B></FONT></DIV>
+<DIV><FONT face=3DGaramond size=3D2>&nbsp;</FONT></DIV>
+<DIV><FONT face=3DGaramond size=3D2><B>Hurry, when best deal is gone, it =
+is gone.=20
+Simply Call Us... </B></FONT></DIV>    =20
+<DIV><FONT face=3DGaramond size=3D2>&nbsp;</FONT></DIV>
+<DIV><FONT face=3DGaramond size=3D2>Don't worry about approval, your =
+your credit=20
+report will not disqualify you!</FONT></DIV> =20
+<DIV><FONT face=3DGaramond size=3D2>&nbsp;</FONT></DIV>
+<DIV><FONT face=3DGaramond size=3D2><B>Call Us Free on =
+877-542-1884</B></FONT></DIV>
+</BODY></HTML>
 
 
-Index: linux-2.6.23-rc1/mm/memcontrol.c
-===================================================================
---- linux-2.6.23-rc1.orig/mm/memcontrol.c	2007-07-30 17:27:24.000000000 +0530
-+++ linux-2.6.23-rc1/mm/memcontrol.c	2007-07-30 18:43:40.000000000 +0530
-@@ -501,6 +501,9 @@
- 
- static struct mem_container init_mem_container;
- 
-+/* lockdep should know about lru_lock */
-+static struct lock_class_key lru_lock_key;
-+
- static struct container_subsys_state *
- mem_container_create(struct container_subsys *ss, struct container *cont)
- {
-@@ -519,6 +522,7 @@
- 	INIT_LIST_HEAD(&mem->active_list);
- 	INIT_LIST_HEAD(&mem->inactive_list);
- 	spin_lock_init(&mem->lru_lock);
-+	lockdep_set_class(&mem->lru_lock, &lru_lock_key);
- 	mem->control_type = MEM_CONTAINER_TYPE_ALL;
- 	return &mem->css;
- }
--- 
-regards,
-Dhaval
+------=_NextPart_000_2BB8B_01C7D2B0.800E0CF0--
 
-I would like to change the world but they don't give me the source code!
+
+--===============0749947179183686606==
+Content-Type: text/plain; charset="us-ascii"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+Content-Disposition: inline
+
+_______________________________________________
+Containers mailing list
+Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+https://lists.linux-foundation.org/mailman/listinfo/containers
+--===============0749947179183686606==--
