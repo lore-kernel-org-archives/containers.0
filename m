@@ -1,24 +1,14 @@
-From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
-Subject: Re: [PATCH 2/4] sysfs: Implement sysfs manged shadow directory
-	support.
-Date: Mon, 30 Jul 2007 09:36:48 -0600
-Message-ID: <m1tzrlvr73.fsf@ebiederm.dsl.xmission.com>
-References: <1182446577.8138.29.camel@localhost>
-	<m1odj9dofp.fsf@ebiederm.dsl.xmission.com>
-	<20070621211637.GB10583@suse.de>
-	<m1fy4ldldm.fsf@ebiederm.dsl.xmission.com>
-	<20070622001328.GA14113@suse.de>
-	<m1tzt0cujt.fsf_-_@ebiederm.dsl.xmission.com>
-	<20070625212339.GA13398@kroah.com>
-	<m14pk13svx.fsf@ebiederm.dsl.xmission.com>
-	<m1zm1t2e92.fsf_-_@ebiederm.dsl.xmission.com>
-	<46A3B449.3090409@gmail.com> <20070722202508.GA18018@suse.de>
-	<m17iosw075.fsf@ebiederm.dsl.xmission.com> <46A85485.40502@gmail.com>
+From: Oleg Nesterov <oleg-6lXkIZvqkOAvJsYlp49lxw@public.gmane.org>
+Subject: Re: [PATCH 14/15] Destroy pid namespace on init's death
+Date: Mon, 30 Jul 2007 19:46:39 +0400
+Message-ID: <20070730154639.GA127@tv-sign.ru>
+References: <46A8B37B.6050108@openvz.org> <46A8B663.9040206@openvz.org>
+	<20070729104145.GC120@tv-sign.ru> <46ADD202.9030502@openvz.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <46A85485.40502-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org> (Tejun Heo's message of "Thu, 26 Jul
-	2007 17:00:05 +0900")
+Content-Disposition: inline
+In-Reply-To: <46ADD202.9030502-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -28,37 +18,67 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Tejun Heo <htejun-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Greg KH <greg-U8xfFu+wG4EAvxtiuMwx3w@public.gmane.org>, Dave Hansen <hansendc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+To: Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Tejun Heo <htejun-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org> writes:
-
-> Hello,
+On 07/30, Pavel Emelyanov wrote:
 >
-> Okay, some questions.
->
-> * What do you think about not allowing duplicate names across different
-> tags?  ie. there's only one ethX anywhere but it's visible only in a
-> specific namespace (and maybe in the default global one).  Or does
-> everyone need its own eth0.  If this is acceptable, the problem becomes
-> _much_ simpler.
+> Oleg Nesterov wrote:
+> >>+
+> >>+	nfree = 0;
+> >>+	for (i = 0; i < PIDMAP_ENTRIES; i++)
+> >>+		nfree += atomic_read(&pid_ns->pidmap[i].nr_free);
+> >>+
+> >>+	/*
+> >>+	 * If pidmap has entries for processes other than 0 and 1, retry.
+> >>+	 */
+> >>+	if (nfree < (BITS_PER_PAGE * PIDMAP_ENTRIES - 2))
+> >>+		goto repeat;
+> >
+> >This doesn't look right.
+> >
+> >Suppose that some "struct pid" was pinned from the parent namespace.
+> >In that case zap_pid_ns_processes() will burn CPU until put_pid(), bad.
+> 
+> Nope. struct pid can be pinned, but the pidmap "fingerprint" cannot.
 
-I agree, and unfortunately this is the problem I am really trying to solve.
-Everyone namespace has it's own loopback interface.
+Heh. It was specially designed this way, but I managed to forget.
 
-> * I think we can do away with the magic tag and use a pointer to
-> vfsmount instead.  So, a process which wants to be in certain namespace
-> can bind-mount /sysfs to its own /sysfs and make needed sysfs nodes
-> bound to the mount.  Does this sound okay?  Such process should probably
-> be in its own chrooted environment to function properly.
+You are right, thanks for correcting me.
 
-That would actually be preferable.
+> So as soon as the release_task() is called the pidmap becomes free and
+> we can proceed.
 
-> * I haven't really followed the containers thread.  Do people generally
-> agree on including it in mainline when we have all the fancy
-> virtualization stuff?
+Well, it doesn't matter, but strictly speaking this is not true.
+release_task()->detach_pid(PIDTYPE_PID) doesn't necessary free pidmap,
+it could be "used" by other tasks as PGID/SID.
 
-Generally.  Assuming all of the i's are dotted and all of the t's crossed.
+> However I agree with the "burn CPU" issue - wait must sleep if needed.
+> 
+> >I think we can rely on forget_original_child() and do something like
+> >this:
+> >
+> >	zap_active_ns_processes(void)
+> >	{
+> >		// kill all tasks in our ns and below
+> >		kill(-1, SIGKILL);
+> 
+> That would be too slow to walk through all the tasks in a node searching
+> for a couple of them we need. fing_ge_pid() looks better to me.
 
-Eric
+OK. I personally dislike the "retry" logic (and it is not safe if we want
+wait() to actually sleep waiting for the child), but we can do the "kill"
+loop under tasklist_lock.
+
+In any case, I don't think we should use next_pid() for wait(), or check
+pidmap[].nr_free,
+
+> >		do {
+> >			clear_thread_flag(TIF_SIGPENDING);
+> >		} while (wait(NULL) != -ECHLD);
+> >	}
+
+just wait for any child until -ECHLD. After that we can return safely.
+
+Oleg.
