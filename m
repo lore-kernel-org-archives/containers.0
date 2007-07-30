@@ -1,43 +1,69 @@
-From: Tejun Heo <teheo-l3A5Bk7waGM@public.gmane.org>
-Subject: Re: [PATCH 2/4] sysfs: Implement sysfs manged shadow
-	directory	support.
-Date: Mon, 30 Jul 2007 22:06:22 +0900
-Message-ID: <46ADE24E.8020502@suse.de>
-References: <1182446577.8138.29.camel@localhost>	<m1odj9dofp.fsf@ebiederm.dsl.xmission.com>	<20070621211637.GB10583@suse.de>	<m1fy4ldldm.fsf@ebiederm.dsl.xmission.com>	<20070622001328.GA14113@suse.de>	<m1tzt0cujt.fsf_-_@ebiederm.dsl.xmission.com>	<20070625212339.GA13398@kroah.com>	<m14pk13svx.fsf@ebiederm.dsl.xmission.com>	<m1zm1t2e92.fsf_-_@ebiederm.dsl.xmission.com>	<46A3B449.3090409@gmail.com>	<20070722202508.GA18018@suse.de>	<m17iosw075.fsf@ebiederm.dsl.xmission.com>	<46A425F9.1030008@gmail.com>
-	<46AD8E92.7080002@suse.de> <46ADDC7F.1090306@sw.ru>
+From: Dhaval Giani <dhaval@linux.vnet.ibm.com>
+Subject: Re: [-mm PATCH 6/9] Memory controller add per container LRU and
+	reclaim (v4)
+Date: Mon, 30 Jul 2007 19:07:58 +0530
+Message-ID: <20070730133758.GB22952@linux.vnet.ibm.com>
+References: <20070727200937.31565.78623.sendpatchset@balbir-laptop> <20070727201041.31565.14803.sendpatchset@balbir-laptop>
+Reply-To: Dhaval Giani <dhaval@linux.vnet.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <46ADDC7F.1090306-3ImXcnM4P+0@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Kirill Korotaev <dev-3ImXcnM4P+0@public.gmane.org>
-Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Greg KH <greg-U8xfFu+wG4EAvxtiuMwx3w@public.gmane.org>, Greg KH <gregkh-l3A5Bk7waGM@public.gmane.org>, Dave Hansen <hansendc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+Content-Type: text/plain; charset=us-ascii
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S936844AbXG3Nlw@vger.kernel.org>
+Content-Disposition: inline
+In-Reply-To: <20070727201041.31565.14803.sendpatchset@balbir-laptop>
+Sender: linux-kernel-owner@vger.kernel.org
+To: Balbir Singh <balbir@linux.vnet.ibm.com>
+Cc: Andrew Morton <akpm@linux-foundation.org>, Peter Zijlstra <a.p.zijlstra@chello.nl>, Linux Containers <containers@lists.osdl.org>, YAMAMOTO Takashi <yamamoto@valinux.co.jp>, Paul Menage <menage@google.com>, Dave Hansen <haveblue@us.ibm.com>, Linux MM Mailing List <linux-mm@kvack.org>, Vaidyanathan Srinivasan <svaidy@linux.vnet.ibm.com>, Pavel Emelianov <xemul@openvz.org>, Linux Kernel Mailing List <linux-kernel@vger.kernel.org>, Eric W Biederman <ebiederm@xmission.com>, Gautham Shenoy <ego@in.ibm.com>
 List-Id: containers.vger.kernel.org
 
-Hello, Kirill.
+Hi Balbir,
 
-Kirill Korotaev wrote:
-> Imho then OpenOVZ approach with multiple sysfs trees is better.
-> it allows to use cached dentries with moultiple sysfs mounts
-> each having different view.
-> It also allows to hide hw-related entries and events from the containers
-> and has quite little modifications in the code.
+> diff -puN mm/memcontrol.c~mem-control-lru-and-reclaim mm/memcontrol.c
+> --- linux-2.6.23-rc1-mm1/mm/memcontrol.c~mem-control-lru-and-reclaim	2007-07-28 01:12:50.000000000 +0530
+> +++ linux-2.6.23-rc1-mm1-balbir/mm/memcontrol.c	2007-07-28 01:12:50.000000000 +0530
+ 
+>  /*
+>   * The memory controller data structure. The memory controller controls both
+> @@ -51,6 +54,10 @@ struct mem_container {
+>  	 */
+>  	struct list_head active_list;
+>  	struct list_head inactive_list;
+> +	/*
+> +	 * spin_lock to protect the per container LRU
+> +	 */
+> +	spinlock_t lru_lock;
+>  };
 
-I thought something like supermount plus some twists or fuse based sysfs
-proxy would fit better.  Dunno whether or how uevent and polling stuff
-can work that way tho.  Note that sysfs no longer keeps dentries and
-inodes pinned.  It might make the shared dentry stuff harder.
+The spinlock is not annotated by lockdep. The following patch should do
+it.
 
-Thanks.
+Signed-off-by: Dhaval Giani <dhaval@linux.vnet.ibm.com>
+Signed-off-by: Gautham Shenoy R <ego@in.ibm.com>
 
+
+Index: linux-2.6.23-rc1/mm/memcontrol.c
+===================================================================
+--- linux-2.6.23-rc1.orig/mm/memcontrol.c	2007-07-30 17:27:24.000000000 +0530
++++ linux-2.6.23-rc1/mm/memcontrol.c	2007-07-30 18:43:40.000000000 +0530
+@@ -501,6 +501,9 @@
+ 
+ static struct mem_container init_mem_container;
+ 
++/* lockdep should know about lru_lock */
++static struct lock_class_key lru_lock_key;
++
+ static struct container_subsys_state *
+ mem_container_create(struct container_subsys *ss, struct container *cont)
+ {
+@@ -519,6 +522,7 @@
+ 	INIT_LIST_HEAD(&mem->active_list);
+ 	INIT_LIST_HEAD(&mem->inactive_list);
+ 	spin_lock_init(&mem->lru_lock);
++	lockdep_set_class(&mem->lru_lock, &lru_lock_key);
+ 	mem->control_type = MEM_CONTAINER_TYPE_ALL;
+ 	return &mem->css;
+ }
 -- 
-tejun
+regards,
+Dhaval
+
+I would like to change the world but they don't give me the source code!
