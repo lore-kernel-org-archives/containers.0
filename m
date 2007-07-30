@@ -1,14 +1,15 @@
-From: Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
-Subject: Re: [PATCH 14/15] Destroy pid namespace on init's death
-Date: Mon, 30 Jul 2007 15:56:50 +0400
-Message-ID: <46ADD202.9030502@openvz.org>
-References: <46A8B37B.6050108@openvz.org> <46A8B663.9040206@openvz.org>
-	<20070729104145.GC120@tv-sign.ru>
+From: Kirill Korotaev <dev-3ImXcnM4P+0@public.gmane.org>
+Subject: Re: [PATCH 2/4] sysfs: Implement sysfs manged shadow
+	directory	support.
+Date: Mon, 30 Jul 2007 16:41:35 +0400
+Message-ID: <46ADDC7F.1090306@sw.ru>
+References: <1182446577.8138.29.camel@localhost>	<m1odj9dofp.fsf@ebiederm.dsl.xmission.com>	<20070621211637.GB10583@suse.de>	<m1fy4ldldm.fsf@ebiederm.dsl.xmission.com>	<20070622001328.GA14113@suse.de>	<m1tzt0cujt.fsf_-_@ebiederm.dsl.xmission.com>	<20070625212339.GA13398@kroah.com>	<m14pk13svx.fsf@ebiederm.dsl.xmission.com>	<m1zm1t2e92.fsf_-_@ebiederm.dsl.xmission.com>	<46A3B449.3090409@gmail.com>	<20070722202508.GA18018@suse.de>	<m17iosw075.fsf@ebiederm.dsl.xmission.com>	<46A425F9.1030008@gmail.com>
+	<46AD8E92.7080002@suse.de>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+Content-Type: text/plain; charset=us-ascii
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20070729104145.GC120-6lXkIZvqkOAvJsYlp49lxw@public.gmane.org>
+In-Reply-To: <46AD8E92.7080002-l3A5Bk7waGM@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,110 +19,48 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Oleg Nesterov <oleg-6lXkIZvqkOAvJsYlp49lxw@public.gmane.org>
-Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
+To: Tejun Heo <teheo-l3A5Bk7waGM@public.gmane.org>
+Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Greg KH <greg-U8xfFu+wG4EAvxtiuMwx3w@public.gmane.org>, Greg KH <gregkh-l3A5Bk7waGM@public.gmane.org>, Dave Hansen <hansendc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Oleg Nesterov wrote:
-> On 07/26, Pavel Emelyanov wrote:
->> @@ -895,6 +915,7 @@ fastcall NORET_TYPE void do_exit(long co
->> {
->> 	struct task_struct *tsk = current;
->> 	int group_dead;
->> +	struct pid_namespace *pid_ns = tsk->nsproxy->pid_ns;
+Tejun Heo wrote:
+> Hello, Eric.
+> 
+> Tejun Heo wrote:
+> 
+>>Eric W. Biederman wrote:
 >>
->> 	profile_task_exit(tsk);
+>>>Further while there are a few little nits I think mostly Tejun is 
+>>>mostly objecting to the fundamental complexity of the problem rather
+>>>then to things that can be fixed by a cleaner implementation.
 >>
->> @@ -905,9 +926,10 @@ fastcall NORET_TYPE void do_exit(long co
->> 	if (unlikely(!tsk->pid))
->> 		panic("Attempted to kill the idle task!");
->> 	if (unlikely(tsk == task_child_reaper(tsk))) {
->> -		if (task_active_pid_ns(tsk) != &init_pid_ns)
->> -			task_active_pid_ns(tsk)->child_reaper =
->> -					init_pid_ns.child_reaper;
->> +		if (pid_ns != &init_pid_ns) {
->> +			zap_pid_ns_processes(pid_ns);
->> +			pid_ns->child_reaper = init_pid_ns.child_reaper;
->> +		}
->> 		else
->> 			panic("Attempted to kill init!");
+>>Oh well, I don't think so but I might be wrong.
 > 
-> No, no, this is wrong. Yes, the current code is buggy too, I'll send
-> the fix.
 > 
-> I think this code should be moved below under the "if (group_dead)",
-> and we should use tsk->group_leader.
+> And I'm wrong.  Mine didn't turn out to be much cleaner than yours.
+> What I did was (still broken)...
 > 
->> +void zap_pid_ns_processes(struct pid_namespace *pid_ns)
->> +{
->> +	int i;
->> +	int nr;
->> +	int nfree;
->> +	int options = WNOHANG|WEXITED|__WALL;
->> +
->> +repeat:
->> +	/*
->> +	 * We know pid == 1 is terminating. Find remaining pid_ts
->> +	 * in the namespace, signal them and then wait for them
->> +	 * exit.
->> +	 */
->> +	nr = next_pidmap(pid_ns, 1);
->> +	while (nr > 0) {
->> +		kill_proc_info(SIGKILL, SEND_SIG_PRIV, nr);
->> +		nr = next_pidmap(pid_ns, nr);
->> +	}
->> +
->> +	nr = next_pidmap(pid_ns, 1);
->> +	while (nr > 0) {
->> +		do_wait(nr, options, NULL, NULL, NULL);
+> * No shadower/shadowee.  Each dentry is tagged.
+> * dentries of tagged sd's are taken out of dcache and always go through
+> ->lookup() where the correct sd is looked up considering the current tag.
 > 
-> When the first child of init exits, it sends SIGCHLD. After that,
-> do_wait() will never sleep, so we are doing a busy-wait loop.
-> Not good, especially when we have a niced child, can livelock.
+> Tagging and adding new entries could be done rather cleanly but shooting
+> down existing dentries on rename/move turned out to be a mess.  Things
+> will be much simpler if no sysfs dentry is hashed on dcache and always
+> go through ->lookup() but that will hurt big machines.
 > 
->> +		nr = next_pidmap(pid_ns, nr);
->> +	}
->> +
->> +	nfree = 0;
->> +	for (i = 0; i < PIDMAP_ENTRIES; i++)
->> +		nfree += atomic_read(&pid_ns->pidmap[i].nr_free);
->> +
->> +	/*
->> +	 * If pidmap has entries for processes other than 0 and 1, retry.
->> +	 */
->> +	if (nfree < (BITS_PER_PAGE * PIDMAP_ENTRIES - 2))
->> +		goto repeat;
+> The basic problem here is that dcache layer doesn't allow different
+> views and sysfs shadow is trying to work behind its back.  I don't think
+> this is a viable approach.  Both implementations bend too many rules and
+>  are too fragile.  It will be a genuine pain in the ass to maintain.
 > 
-> This doesn't look right.
-> 
-> Suppose that some "struct pid" was pinned from the parent namespace.
-> In that case zap_pid_ns_processes() will burn CPU until put_pid(), bad.
+> Sorry that I can't come up with an alternative but NACK.
 
-Nope. struct pid can be pinned, but the pidmap "fingerprint" cannot.
-So as soon as the release_task() is called the pidmap becomes free and
-we can proceed.
-
-However I agree with the "burn CPU" issue - wait must sleep if needed.
-
-> I think we can rely on forget_original_child() and do something like
-> this:
-> 
-> 	zap_active_ns_processes(void)
-> 	{
-> 		// kill all tasks in our ns and below
-> 		kill(-1, SIGKILL);
-
-That would be too slow to walk through all the tasks in a node searching
-for a couple of them we need. fing_ge_pid() looks better to me.
-
-> 		do {
-> 			clear_thread_flag(TIF_SIGPENDING);
-> 		} while (wait(NULL) != -ECHLD);
-> 	}
-> 
-> Oleg.
-> 
-> 
+Imho then OpenOVZ approach with multiple sysfs trees is better.
+it allows to use cached dentries with moultiple sysfs mounts
+each having different view.
+It also allows to hide hw-related entries and events from the containers
+and has quite little modifications in the code.
 
 Thanks,
-Pavel
+Kirill
