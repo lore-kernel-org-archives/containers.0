@@ -1,17 +1,14 @@
 From: Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
-Subject: Re: [PATCH 11/15] Signal semantics
-Date: Mon, 30 Jul 2007 13:34:57 +0400
-Message-ID: <46ADB0C1.4000807@openvz.org>
-References: <46A8B37B.6050108@openvz.org> <46A8B5C7.9040407@openvz.org>
-	<20070727123153.GA92@tv-sign.ru> <46A9F54B.5050000@openvz.org>
-	<20070727184604.GB1072@us.ibm.com>
-	<20070727195943.GA25878@sergelap.austin.ibm.com>
-	<20070727202337.GC1072@us.ibm.com>
+Subject: Re: [PATCH 14/15] Destroy pid namespace on init's death
+Date: Mon, 30 Jul 2007 15:56:50 +0400
+Message-ID: <46ADD202.9030502@openvz.org>
+References: <46A8B37B.6050108@openvz.org> <46A8B663.9040206@openvz.org>
+	<20070729104145.GC120@tv-sign.ru>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20070727202337.GC1072-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <20070729104145.GC120-6lXkIZvqkOAvJsYlp49lxw@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -21,54 +18,110 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org
-Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Oleg Nesterov <oleg-6lXkIZvqkOAvJsYlp49lxw@public.gmane.org>
+To: Oleg Nesterov <oleg-6lXkIZvqkOAvJsYlp49lxw@public.gmane.org>
+Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org wrote:
-> Serge E. Hallyn [serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org] wrote:
-> | Quoting sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org (sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org):
-> | > Pavel Emelianov [xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org] wrote:
-> | > | Oleg Nesterov wrote:
-> | > | >(What about ptrace_attach() btw? If it is possible to send a signal to init
-> | > | > from the "parent" namespace, perhaps it makes sense to allow ptracing as
-> | > | > well).
-> | > | 
-> | > | ptracing of tasks fro different namespaces is not possible at all, since
-> | > | strace utility determines the fork()-ed child pid from the parent's eax
-> | > | register, which would contain the pid value as this parent sees his child.
-> | > | But if the strace is in different namespace - it won't be able to find
-> | > | this child with the pid value from parent's eax.
-> | > | 
-> | > | Maybe it's worth disabling cross-namespaces ptracing...
-> | > 
-> | > I think so too. Its probably not a serious limitation ?
-> | 
-> | Several people think we will implement 'namespace entering' through a
-> | ptrace hack, where maybe the admin ptraces the init in a child pidns,
-> | makes it fork, and makes the child execute what it wants (i.e. ps -ef).
-> | 
-> | You're talking about killing that functionality?
+Oleg Nesterov wrote:
+> On 07/26, Pavel Emelyanov wrote:
+>> @@ -895,6 +915,7 @@ fastcall NORET_TYPE void do_exit(long co
+>> {
+>> 	struct task_struct *tsk = current;
+>> 	int group_dead;
+>> +	struct pid_namespace *pid_ns = tsk->nsproxy->pid_ns;
+>>
+>> 	profile_task_exit(tsk);
+>>
+>> @@ -905,9 +926,10 @@ fastcall NORET_TYPE void do_exit(long co
+>> 	if (unlikely(!tsk->pid))
+>> 		panic("Attempted to kill the idle task!");
+>> 	if (unlikely(tsk == task_child_reaper(tsk))) {
+>> -		if (task_active_pid_ns(tsk) != &init_pid_ns)
+>> -			task_active_pid_ns(tsk)->child_reaper =
+>> -					init_pid_ns.child_reaper;
+>> +		if (pid_ns != &init_pid_ns) {
+>> +			zap_pid_ns_processes(pid_ns);
+>> +			pid_ns->child_reaper = init_pid_ns.child_reaper;
+>> +		}
+>> 		else
+>> 			panic("Attempted to kill init!");
 > 
-> No. I was only thinking in terms of debugging container init and missed
-> the namespace entering part.
+> No, no, this is wrong. Yes, the current code is buggy too, I'll send
+> the fix.
 > 
-> Pavel, I am not sure I understand your comment about being unable to
-> ptrace() a child ns. 
-
-Ok. We have a task with pid 100, which tries to clone the new namespace.
-This task fork-s and we have a new task with a couple of pids (101, 1).
-Then this "init" forks again and we have the third task with pids (102, 2).
-The problem is that when the 3rd task appears the return value from fork(),
-that is - the new task's pid as it is seen by it's parent (2nd task), will
-go to eax register (for i386) and it will be 2! But the prtaces from the
-initial namespace cannot address this task with pid 2.
-
-> BTW, I am able to gdb a process (incl container-init) from parent ns now.
-
-Debugging separate processes is possible, but when this task starts forking
-with namespaces creation - this becomes impossible.
-
-> | 
-> | -serge
+> I think this code should be moved below under the "if (group_dead)",
+> and we should use tsk->group_leader.
 > 
+>> +void zap_pid_ns_processes(struct pid_namespace *pid_ns)
+>> +{
+>> +	int i;
+>> +	int nr;
+>> +	int nfree;
+>> +	int options = WNOHANG|WEXITED|__WALL;
+>> +
+>> +repeat:
+>> +	/*
+>> +	 * We know pid == 1 is terminating. Find remaining pid_ts
+>> +	 * in the namespace, signal them and then wait for them
+>> +	 * exit.
+>> +	 */
+>> +	nr = next_pidmap(pid_ns, 1);
+>> +	while (nr > 0) {
+>> +		kill_proc_info(SIGKILL, SEND_SIG_PRIV, nr);
+>> +		nr = next_pidmap(pid_ns, nr);
+>> +	}
+>> +
+>> +	nr = next_pidmap(pid_ns, 1);
+>> +	while (nr > 0) {
+>> +		do_wait(nr, options, NULL, NULL, NULL);
+> 
+> When the first child of init exits, it sends SIGCHLD. After that,
+> do_wait() will never sleep, so we are doing a busy-wait loop.
+> Not good, especially when we have a niced child, can livelock.
+> 
+>> +		nr = next_pidmap(pid_ns, nr);
+>> +	}
+>> +
+>> +	nfree = 0;
+>> +	for (i = 0; i < PIDMAP_ENTRIES; i++)
+>> +		nfree += atomic_read(&pid_ns->pidmap[i].nr_free);
+>> +
+>> +	/*
+>> +	 * If pidmap has entries for processes other than 0 and 1, retry.
+>> +	 */
+>> +	if (nfree < (BITS_PER_PAGE * PIDMAP_ENTRIES - 2))
+>> +		goto repeat;
+> 
+> This doesn't look right.
+> 
+> Suppose that some "struct pid" was pinned from the parent namespace.
+> In that case zap_pid_ns_processes() will burn CPU until put_pid(), bad.
+
+Nope. struct pid can be pinned, but the pidmap "fingerprint" cannot.
+So as soon as the release_task() is called the pidmap becomes free and
+we can proceed.
+
+However I agree with the "burn CPU" issue - wait must sleep if needed.
+
+> I think we can rely on forget_original_child() and do something like
+> this:
+> 
+> 	zap_active_ns_processes(void)
+> 	{
+> 		// kill all tasks in our ns and below
+> 		kill(-1, SIGKILL);
+
+That would be too slow to walk through all the tasks in a node searching
+for a couple of them we need. fing_ge_pid() looks better to me.
+
+> 		do {
+> 			clear_thread_flag(TIF_SIGPENDING);
+> 		} while (wait(NULL) != -ECHLD);
+> 	}
+> 
+> Oleg.
+> 
+> 
+
+Thanks,
+Pavel
