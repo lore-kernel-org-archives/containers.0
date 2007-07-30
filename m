@@ -1,50 +1,102 @@
-From: Kirill Korotaev <dev-3ImXcnM4P+0@public.gmane.org>
-Subject: Re: [PATCH 2/4] sysfs: Implement sysfs manged shadow
-	directory	support.
-Date: Mon, 30 Jul 2007 17:57:09 +0400
-Message-ID: <46ADEE35.8000109@sw.ru>
-References: <1182446577.8138.29.camel@localhost>	<m1odj9dofp.fsf@ebiederm.dsl.xmission.com>	<20070621211637.GB10583@suse.de>	<m1fy4ldldm.fsf@ebiederm.dsl.xmission.com>	<20070622001328.GA14113@suse.de>	<m1tzt0cujt.fsf_-_@ebiederm.dsl.xmission.com>	<20070625212339.GA13398@kroah.com>	<m14pk13svx.fsf@ebiederm.dsl.xmission.com>	<m1zm1t2e92.fsf_-_@ebiederm.dsl.xmission.com>	<46A3B449.3090409@gmail.com>	<20070722202508.GA18018@suse.de>	<m17iosw075.fsf@ebiederm.dsl.xmission.com>	<46A425F9.1030008@gmail.com>
-	<46AD8E92.7080002@suse.de> <46ADDC7F.1090306@sw.ru>
-	<46ADE24E.8020502@suse.de>
+From: Peter Zijlstra <a.p.zijlstra@chello.nl>
+Subject: Re: [-mm PATCH 6/9] Memory controller add per container LRU and
+	reclaim (v4)
+Date: Mon, 30 Jul 2007 15:59:20 +0200
+Message-ID: <1185803960.6904.12.camel@twins>
+References: <20070727200937.31565.78623.sendpatchset@balbir-laptop>
+	 <20070727201041.31565.14803.sendpatchset@balbir-laptop>
+	 <20070730133758.GB22952@linux.vnet.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <46ADE24E.8020502-l3A5Bk7waGM@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Tejun Heo <teheo-l3A5Bk7waGM@public.gmane.org>
-Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Greg KH <greg-U8xfFu+wG4EAvxtiuMwx3w@public.gmane.org>, Greg KH <gregkh-l3A5Bk7waGM@public.gmane.org>, Dave Hansen <hansendc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+Content-Type: multipart/signed; micalg=pgp-sha1; protocol="application/pgp-signature"; boundary="=-2Lklq5LfYYsu8sQNs49t"
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1764191AbXG3N7e@vger.kernel.org>
+In-Reply-To: <20070730133758.GB22952@linux.vnet.ibm.com>
+Sender: linux-kernel-owner@vger.kernel.org
+To: Dhaval Giani <dhaval@linux.vnet.ibm.com>
+Cc: Balbir Singh <balbir@linux.vnet.ibm.com>, Andrew Morton <akpm@linux-foundation.org>, Linux Containers <containers@lists.osdl.org>, YAMAMOTO Takashi <yamamoto@valinux.co.jp>, Paul Menage <menage@google.com>, Dave Hansen <haveblue@us.ibm.com>, Linux MM Mailing List <linux-mm@kvack.org>, Vaidyanathan Srinivasan <svaidy@linux.vnet.ibm.com>, Pavel Emelianov <xemul@openvz.org>, Linux Kernel Mailing List <linux-kernel@vger.kernel.org>, Eric W Biederman <ebiederm@xmission.com>, Gautham Shenoy <ego@in.ibm.com>
 List-Id: containers.vger.kernel.org
 
-Tejun Heo wrote:
-> Hello, Kirill.
-> 
-> Kirill Korotaev wrote:
-> 
->>Imho then OpenOVZ approach with multiple sysfs trees is better.
->>it allows to use cached dentries with moultiple sysfs mounts
->>each having different view.
->>It also allows to hide hw-related entries and events from the containers
->>and has quite little modifications in the code.
-> 
-> 
-> I thought something like supermount plus some twists or fuse based sysfs
-> proxy would fit better.  Dunno whether or how uevent and polling stuff
-> can work that way tho.  Note that sysfs no longer keeps dentries and
-> inodes pinned.  It might make the shared dentry stuff harder.
 
-We simply don't share sysfs dentries/inodes between containers.
-It's not that frequently used time critical fs to be super-optimized... :)
-I don't like the idea with fuse, since sysfs exports kernel-related stuff,
-so doing it via user-space would be pain.
+--=-2Lklq5LfYYsu8sQNs49t
+Content-Type: text/plain
+Content-Transfer-Encoding: quoted-printable
 
-Thanks,
-Kirill
+On Mon, 2007-07-30 at 19:07 +0530, Dhaval Giani wrote:
+> Hi Balbir,
+>=20
+> > diff -puN mm/memcontrol.c~mem-control-lru-and-reclaim mm/memcontrol.c
+> > --- linux-2.6.23-rc1-mm1/mm/memcontrol.c~mem-control-lru-and-reclaim	20=
+07-07-28 01:12:50.000000000 +0530
+> > +++ linux-2.6.23-rc1-mm1-balbir/mm/memcontrol.c	2007-07-28 01:12:50.000=
+000000 +0530
+> =20
+> >  /*
+> >   * The memory controller data structure. The memory controller control=
+s both
+> > @@ -51,6 +54,10 @@ struct mem_container {
+> >  	 */
+> >  	struct list_head active_list;
+> >  	struct list_head inactive_list;
+> > +	/*
+> > +	 * spin_lock to protect the per container LRU
+> > +	 */
+> > +	spinlock_t lru_lock;
+> >  };
+>=20
+> The spinlock is not annotated by lockdep. The following patch should do
+> it.
+
+One does not need explicit lockdep annotations unless there is a non
+obvious use of the locks. A typical example of that would be the inode
+locks, that get placed differently in the various filesystem's locking
+hierarchy and might hence seem to generate contradictory locking rules -
+even though they are consistent within a particular filesystem.
+
+So unless there are 2 or more distinct locking hierarchies this one lock
+partakes in, there is no need for this annotation.
+
+Was this patch driven by a lockdep report?
+
+> Signed-off-by: Dhaval Giani <dhaval@linux.vnet.ibm.com>
+> Signed-off-by: Gautham Shenoy R <ego@in.ibm.com>
+>=20
+>=20
+> Index: linux-2.6.23-rc1/mm/memcontrol.c
+> =3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=
+=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=
+=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D
+> --- linux-2.6.23-rc1.orig/mm/memcontrol.c	2007-07-30 17:27:24.000000000 +=
+0530
+> +++ linux-2.6.23-rc1/mm/memcontrol.c	2007-07-30 18:43:40.000000000 +0530
+> @@ -501,6 +501,9 @@
+> =20
+>  static struct mem_container init_mem_container;
+> =20
+> +/* lockdep should know about lru_lock */
+> +static struct lock_class_key lru_lock_key;
+> +
+>  static struct container_subsys_state *
+>  mem_container_create(struct container_subsys *ss, struct container *cont=
+)
+>  {
+> @@ -519,6 +522,7 @@
+>  	INIT_LIST_HEAD(&mem->active_list);
+>  	INIT_LIST_HEAD(&mem->inactive_list);
+>  	spin_lock_init(&mem->lru_lock);
+> +	lockdep_set_class(&mem->lru_lock, &lru_lock_key);
+>  	mem->control_type =3D MEM_CONTAINER_TYPE_ALL;
+>  	return &mem->css;
+>  }
+
+--=-2Lklq5LfYYsu8sQNs49t
+Content-Type: application/pgp-signature; name=signature.asc
+Content-Description: This is a digitally signed message part
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.6 (GNU/Linux)
+
+iD8DBQBGre64XA2jU0ANEf4RAjOSAKCK8WyNBNLGJgmVOwILsEPLO56nXQCfdunm
+inlGMlx6SW/1tPplB9QPjmU=
+=q9aE
+-----END PGP SIGNATURE-----
+
+--=-2Lklq5LfYYsu8sQNs49t--
