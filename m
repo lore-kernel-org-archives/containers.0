@@ -1,14 +1,17 @@
-From: Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
-Subject: Re: [PATCH 15/15] Hooks over the code to show correct values to user
-Date: Mon, 30 Jul 2007 10:49:10 +0400
-Message-ID: <46AD89E6.1030607@openvz.org>
-References: <46A8B37B.6050108@openvz.org> <46A8B6AD.4000307@openvz.org>
-	<20070729143136.GH120@tv-sign.ru>
+From: Tejun Heo <teheo-l3A5Bk7waGM@public.gmane.org>
+Subject: Re: [PATCH 2/4] sysfs: Implement sysfs manged shadow directory
+	support.
+Date: Mon, 30 Jul 2007 16:09:06 +0900
+Message-ID: <46AD8E92.7080002@suse.de>
+References: <1182446577.8138.29.camel@localhost>	<m1odj9dofp.fsf@ebiederm.dsl.xmission.com>	<20070621211637.GB10583@suse.de>	<m1fy4ldldm.fsf@ebiederm.dsl.xmission.com>	<20070622001328.GA14113@suse.de>	<m1tzt0cujt.fsf_-_@ebiederm.dsl.xmission.com>	<20070625212339.GA13398@kroah.com>	<m14pk13svx.fsf@ebiederm.dsl.xmission.com>	<m1zm1t2e92.fsf_-_@ebiederm.dsl.xmission.com>	<46A3B449.3090409@gmail.com>
+	<20070722202508.GA18018@suse.de>
+	<m17iosw075.fsf@ebiederm.dsl.xmission.com>
+	<46A425F9.1030008@gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+Content-Type: text/plain; charset=ISO-8859-1
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20070729143136.GH120-6lXkIZvqkOAvJsYlp49lxw@public.gmane.org>
+In-Reply-To: <46A425F9.1030008-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,37 +21,38 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Oleg Nesterov <oleg-6lXkIZvqkOAvJsYlp49lxw@public.gmane.org>
-Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
+To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Greg KH <greg-U8xfFu+wG4EAvxtiuMwx3w@public.gmane.org>, Greg KH <gregkh-l3A5Bk7waGM@public.gmane.org>, Dave Hansen <hansendc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Oleg Nesterov wrote:
-> On 07/26, Pavel Emelyanov wrote:
->> int
->> kill_proc(pid_t pid, int sig, int priv)
->> {
->> -	return kill_proc_info(sig, __si_special(priv), pid);
->> +	int ret;
->> +
->> +	rcu_read_lock();
->> +	ret = kill_pid_info(sig, __si_special(priv), find_pid(pid));
->> +	rcu_read_unlock();
->> +	return ret;
->> }
+Hello, Eric.
+
+Tejun Heo wrote:
+> Eric W. Biederman wrote:
+>> Further while there are a few little nits I think mostly Tejun is 
+>> mostly objecting to the fundamental complexity of the problem rather
+>> then to things that can be fixed by a cleaner implementation.
 > 
-> I think this is wrong. kill_proc() should behave the same as kill_proc_info(),
-> so this change is not needed. With this patch they use different namespaces
-> to find the task, this is not consistent.
+> Oh well, I don't think so but I might be wrong.
 
-Actually, callers of this use tsk->pid (global pid) as an argument, so
-find_vpid() might return wrong value.
+And I'm wrong.  Mine didn't turn out to be much cleaner than yours.
+What I did was (still broken)...
 
-> (sadly, this patch is huge, very difficult to review).
+* No shadower/shadowee.  Each dentry is tagged.
+* dentries of tagged sd's are taken out of dcache and always go through
+->lookup() where the correct sd is looked up considering the current tag.
 
-This is *very* huge, but all it does is just replace tsk->pid, find_task_by_pid,
-pd_nr, etc with appropriate task_pid_nr(), pid_nr_ns() and find_task_by_vpid() etc.
+Tagging and adding new entries could be done rather cleanly but shooting
+down existing dentries on rename/move turned out to be a mess.  Things
+will be much simpler if no sysfs dentry is hashed on dcache and always
+go through ->lookup() but that will hurt big machines.
 
-> Oleg.
+The basic problem here is that dcache layer doesn't allow different
+views and sysfs shadow is trying to work behind its back.  I don't think
+this is a viable approach.  Both implementations bend too many rules and
+ are too fragile.  It will be a genuine pain in the ass to maintain.
 
-Thanks,
-Pavel
+Sorry that I can't come up with an alternative but NACK.
+
+-- 
+tejun
