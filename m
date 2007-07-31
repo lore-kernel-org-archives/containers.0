@@ -1,21 +1,21 @@
 From: Tejun Heo <teheo-l3A5Bk7waGM@public.gmane.org>
-Subject: Re: [PATCH 02/14] sysfs: In sysfs_lookup protect s_parent with
-	sysfs_mutex
-Date: Tue, 31 Jul 2007 19:47:56 +0900
-Message-ID: <46AF135C.7030905@suse.de>
-References: <1182446577.8138.29.camel@localhost>	<20070722202508.GA18018@suse.de>	<m17iosw075.fsf@ebiederm.dsl.xmission.com>	<46A425F9.1030008@gmail.com>
-	<46AD8E92.7080002@suse.de>	<46ADDC7F.1090306@sw.ru>
-	<46ADE24E.8020502@suse.de>	<46ADEE35.8000109@sw.ru>
-	<46ADF003.3010100@suse.de>	<m1ps29vqin.fsf@ebiederm.dsl.xmission.com>	<m1k5shuugc.fsf@ebiederm.dsl.xmission.com>
+Subject: Re: [PATCH 06/14] sysfs: Rewrite sysfs_get_dentry
+Date: Tue, 31 Jul 2007 19:59:02 +0900
+Message-ID: <46AF15F6.6010202@suse.de>
+References: <1182446577.8138.29.camel@localhost>
+	<46A425F9.1030008@gmail.com>	<46AD8E92.7080002@suse.de>
+	<46ADDC7F.1090306@sw.ru>	<46ADE24E.8020502@suse.de>
+	<46ADEE35.8000109@sw.ru>	<46ADF003.3010100@suse.de>
+	<m1ps29vqin.fsf@ebiederm.dsl.xmission.com>	<m1k5shuugc.fsf@ebiederm.dsl.xmission.com>
 	<46AEAF79.6080404@suse.de>	<m1fy35uso4.fsf@ebiederm.dsl.xmission.com>
 	<46AEBA87.6000400@suse.de>	<m1bqdtt34l.fsf@ebiederm.dsl.xmission.com>
-	<46AEEF75.2030101@suse.de>	<46AEEFA6.4000901@suse.de>	<m14pjkubd2.fsf_-_@ebiederm.dsl.xmission.com>	<m1zm1cswp0.fsf_-_@ebiederm.dsl.xmission.com>	<m1vec0swmi.fsf_-_@ebiederm.dsl.xmission.com>	<46AF10B7.3070600@suse.de>
-	<m1bqdsrgvy.fsf@ebiederm.dsl.xmission.com>
+	<46AEEF75.2030101@suse.de>	<46AEEFA6.4000901@suse.de>	<m14pjkubd2.fsf_-_@ebiederm.dsl.xmission.com>	<m1zm1cswp0.fsf_-_@ebiederm.dsl.xmission.com>	<m1vec0swmi.fsf_-_@ebiederm.dsl.xmission.com>	<m1r6moswhr.fsf_-_@ebiederm.dsl.xmission.com>	<m1myxcswfr.fsf_-_@ebiederm.dsl.xmission.com>	<m1ir80swdl.fsf_-_@ebiederm.dsl.xmission.com>
+	<m1ejioswai.fsf_-_@ebiederm.dsl.xmission.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <m1bqdsrgvy.fsf-T1Yj925okcoyDheHMi7gv2pdwda3JcWeAL8bYrjMMd8@public.gmane.org>
+In-Reply-To: <m1ejioswai.fsf_-_-T1Yj925okcoyDheHMi7gv2pdwda3JcWeAL8bYrjMMd8@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -30,23 +30,83 @@ Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Greg 
 List-Id: containers.vger.kernel.org
 
 Eric W. Biederman wrote:
-> Tejun Heo <teheo-l3A5Bk7waGM@public.gmane.org> writes:
-> 
->> Eric W. Biederman wrote:
->>> It turns out we have been being silly and have failed to
->>> protect ourselves against races between sysfs_lookup
->>> and operations that modify the sysfs directory like sysfs_readdir
->>> and create_dir.
->>>
->>> So this patch modifies sysfs_lookup to grab sysfs_mutex before
->>> walking the parent->s_children list.
->> Updated portion of #01 and #02 are identical to the cleanup patches I
->> just posted.  :-)
-> 
-> I'm not surprised.  I will have to see what you have done after I have
-> slept.
+> Currently sysfs_get_dentry is very hairy and requires all kinds
+> of locking magic.  This patch rewrites sysfs_get_dentry to
+> not use the cached sd->s_dentry, and instead simply lookup
+> and create dcache entries.
 
-Good night.
+I wanted to kill sd->s_dentry from the beginning.  The obstacle was
+actually the shadow directory support, ironic.
+
+> +	struct qstr name;
+> +	struct inode *inode;
+>  
+> +	parent_dentry = NULL;
+> +	dentry = dget(sysfs_sb->s_root);
+>  
+> +	do {
+> +		/* Find the first ancestor I have not looked up */
+> +		cur = sd;
+> +		while (cur->s_parent != dentry->d_fsdata)
+>  			cur = cur->s_parent;
+>  
+>  		/* look it up */
+>  		dput(parent_dentry);
+
+Shouldn't this be done after looking up the child?
+
+> +		parent_dentry = dentry;
+> +		name.name = cur->s_name;
+> +		name.len = strlen(cur->s_name);
+> +		dentry = d_hash_and_lookup(parent_dentry, &name);
+> +		if (dentry)
+> +			continue;
+> +		if (!create)
+> +			goto out;
+
+Probably missing dentry = NULL?
+
+> +		dentry = d_alloc(parent_dentry, &name);
+> +		if (!dentry) {
+> +			dentry = ERR_PTR(-ENOMEM);
+> +			goto out;
+>  		}
+> +		inode = sysfs_get_inode(cur);
+> +		if (!inode) {
+>  			dput(dentry);
+> +			dentry = ERR_PTR(-ENOMEM);
+> +			goto out;
+>  		}
+> +		d_instantiate(dentry, inode);
+> +		sysfs_attach_dentry(cur, dentry);
+> +	} while (cur != sd);
+>  
+> +out:
+> +	dput(parent_dentry);
+> +	return dentry;
+> +}
+>  
+> @@ -750,6 +725,12 @@ static struct dentry * sysfs_lookup(struct inode *dir, struct dentry *dentry,
+>  	struct inode *inode;
+>  
+>  	mutex_lock(&sysfs_mutex);
+> +
+> +	/* Guard against races with sysfs_get_dentry */
+> +	result = d_hash_and_lookup(dentry->d_parent, &dentry->d_name);
+> +	if (result)
+> +		goto out;
+> +
+
+Hmmm... This is tricky but probably better than the previous hairy
+sysfs_get_dentry().  I think it would be worthwhile to comment about
+creating dentry/inode behind vfs's back in __sysfs_get_dentry().
+
+One thing I'm worried about is that dentry can now be looked up without
+holding i_mutex.  In sysfs proper, there's no synchronization problem
+but I'm not sure whether we're willing to cross that line set by vfs.
+It might come back and bite our asses hard later.
+
+Thanks.
 
 -- 
 tejun
