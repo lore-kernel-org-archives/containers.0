@@ -1,16 +1,14 @@
 From: Oleg Nesterov <oleg-6lXkIZvqkOAvJsYlp49lxw@public.gmane.org>
-Subject: Re: [PATCH 14/15] Destroy pid namespace on init's death
-Date: Tue, 31 Jul 2007 13:07:21 +0400
-Message-ID: <20070731090721.GA110@tv-sign.ru>
-References: <46A8B37B.6050108@openvz.org> <46A8B663.9040206@openvz.org>
-	<20070729104145.GC120@tv-sign.ru> <46ADD202.9030502@openvz.org>
-	<20070730154639.GA127@tv-sign.ru>
-	<20070731061917.GB17013@us.ibm.com>
+Subject: Re: [PATCH 15/15] Hooks over the code to show correct values to user
+Date: Tue, 31 Jul 2007 14:04:20 +0400
+Message-ID: <20070731100420.GA142@tv-sign.ru>
+References: <46A8B37B.6050108@openvz.org> <46A8B6AD.4000307@openvz.org>
+	<20070729143136.GH120@tv-sign.ru> <46AD89E6.1030607@openvz.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <20070731061917.GB17013-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <46AD89E6.1030607-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -20,64 +18,50 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org
-Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+To: Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On 07/30, sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org wrote:
+On 07/30, Pavel Emelyanov wrote:
 >
-> --- lx26-23-rc1-mm1.orig/kernel/exit.c	2007-07-26 20:08:16.000000000 -0700
-> +++ lx26-23-rc1-mm1/kernel/exit.c	2007-07-30 23:10:30.000000000 -0700
-> @@ -915,6 +915,7 @@ fastcall NORET_TYPE void do_exit(long co
->  {
->  	struct task_struct *tsk = current;
->  	int group_dead;
-> +	struct pid_namespace *pid_ns = tsk->nsproxy->pid_ns;
->  
->  	profile_task_exit(tsk);
->  
-> @@ -925,9 +926,10 @@ fastcall NORET_TYPE void do_exit(long co
->  	if (unlikely(!tsk->pid))
->  		panic("Attempted to kill the idle task!");
->  	if (unlikely(tsk == task_child_reaper(tsk))) {
-> -		if (task_active_pid_ns(tsk) != &init_pid_ns)
-> -			task_active_pid_ns(tsk)->child_reaper =
-> -					init_pid_ns.child_reaper;
-> +		if (pid_ns != &init_pid_ns) {
-> +			zap_pid_ns_processes(pid_ns);
-> +			pid_ns->child_reaper = init_pid_ns.child_reaper;
-> +		}
->  		else
->  			panic("Attempted to kill init!");
->  	}
+> Oleg Nesterov wrote:
+> >On 07/26, Pavel Emelyanov wrote:
+> >>int
+> >>kill_proc(pid_t pid, int sig, int priv)
+> >>{
+> >>-	return kill_proc_info(sig, __si_special(priv), pid);
+> >>+	int ret;
+> >>+
+> >>+	rcu_read_lock();
+> >>+	ret = kill_pid_info(sig, __si_special(priv), find_pid(pid));
+> >>+	rcu_read_unlock();
+> >>+	return ret;
+> >>}
+> >
+> >I think this is wrong. kill_proc() should behave the same as 
+> >kill_proc_info(),
+> >so this change is not needed. With this patch they use different namespaces
+> >to find the task, this is not consistent.
+> 
+> Actually, callers of this use tsk->pid (global pid) as an argument, so
+> find_vpid() might return wrong value.
 
-Just to remind you, this is not right when init is multi-threaded,
-we should do this only when the last thread exits.
+Yes I see. But still I don't agree on this issue.
 
-> -static long do_wait(pid_t pid, int options, struct siginfo __user *infop,
-> +long do_wait(pid_t pid, int options, struct siginfo __user *infop,
->  		    int __user *stat_addr, struct rusage __user *ru)
+kill_proc() is a simple wrapper on top of kill_proc_info(), not good
+to break this. And with this patch they use different namespaces to
+search the pid. Imho, not consistent.
 
-Small nit, other in-kernel reapers use sys_wait4(), perhaps we can use
-it too, in that case we don't need to export do_wait().
+Probably we can ignore this for now, but suppose we have some out-of-tree
+driver which does kill_proc(pid_number), and the application from non-init
+namespace does ioctl(SET_PID_NUMBER, getpid()).
 
-> +void zap_pid_ns_processes(struct pid_namespace *pid_ns)
-> +{
-> +	int nr;
-> +	int rc;
-> +	int options = WEXITED|__WALL;
-> +
-> +	/*
-> +	 * We know pid == 1 is terminating. Find remaining pid_ts
-> +	 * in the namespace, signal them and then wait for them
-> +	 * exit.
-> +	 */
-> +	nr = next_pidmap(pid_ns, 1);
-> +	while (nr > 0) {
-> +		kill_proc_info(SIGKILL, SEND_SIG_PRIV, nr);
-> +		nr = next_pidmap(pid_ns, nr);
-> +	}
+And this is why btw I think find_pid/pid_nr should use active namespace, not
+init_pid_ns. That driver can save "struct task_struct*" or "struct pid*".
 
-Without tasklist_lock held this is not reliable.
+OK, I understand it is a pain to "fix" the in-tree callers of kill_proc()
+(say, we can introduce kill_pid_t() or something), so let's forget this.
+In fact, we'd better remove kill_proc(), we should avoid using pid_t, the
+callers should be converted to use struct pid.
 
 Oleg.
