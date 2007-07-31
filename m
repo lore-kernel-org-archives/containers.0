@@ -1,21 +1,10 @@
-From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
-Subject: Re: [PATCH 06/14] sysfs: Rewrite sysfs_get_dentry
-Date: Tue, 31 Jul 2007 13:24:37 -0600
-Message-ID: <m1odhspea2.fsf@ebiederm.dsl.xmission.com>
-References: <m14pjkubd2.fsf_-_@ebiederm.dsl.xmission.com>
-	<m1zm1cswp0.fsf_-_@ebiederm.dsl.xmission.com>
-	<m1vec0swmi.fsf_-_@ebiederm.dsl.xmission.com>
-	<m1r6moswhr.fsf_-_@ebiederm.dsl.xmission.com>
-	<m1myxcswfr.fsf_-_@ebiederm.dsl.xmission.com>
-	<m1ir80swdl.fsf_-_@ebiederm.dsl.xmission.com>
-	<m1ejioswai.fsf_-_@ebiederm.dsl.xmission.com>
-	<46AF15F6.6010202@suse.de> <m11weorf3l.fsf@ebiederm.dsl.xmission.com>
-	<46AF1E57.3030209@suse.de> <20070731141613.GC13674@htj.dyndns.org>
+From: "Eddy A. Latham" <uzong-wEL3sR6CgqBoBvdFSJRtU1aTQe2KTcn/@public.gmane.org>
+Subject: Notification
+Date: Wed, 1 Aug 2007 00:59:29 +0100
+Message-ID: <46AFCCE1.8020505@scott4realestate.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+Content-Type: multipart/mixed; boundary="------------070808020802020406080504"
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20070731141613.GC13674-Gd/HAXX7CRxy/B6EtB590w@public.gmane.org> (Tejun Heo's message of
-	"Tue, 31 Jul 2007 23:16:13 +0900")
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -25,51 +14,195 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Tejun Heo <htejun-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Greg KH <greg-U8xfFu+wG4EAvxtiuMwx3w@public.gmane.org>, Greg KH <gregkh-l3A5Bk7waGM@public.gmane.org>, Dave Hansen <hansendc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+To: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Tejun Heo <htejun-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org> writes:
+--------------070808020802020406080504
+Content-Type: text/plain; charset=windows-1252; format=flowed
+Content-Transfer-Encoding: 7bit
 
-> On Tue, Jul 31, 2007 at 08:34:47PM +0900, Tejun Heo wrote:
->> > If sysfs_mutex nested the other way things would be easier,
->> > and we could grab all of the i_mutexes we wanted.  I wonder if we can
->> > be annoying in sysfs_lookup and treat that as the lock inversion
->> > case using mutex_trylock etc.  And have sysfs_mutex be on the
->> > outside for the rest of the cases?
->> 
->> The problem with treating sysfs_lookup as inversion case is that vfs
->> layer grabs i_mutex outside of sysfs_lookup.  Releasing i_mutex from
->> inside sysfs_lookup would be a hacky layering violation.
->> 
->> Then again, the clean up which can come from the new sysfs_looukp_dentry
->> is very significant.  I'll think about it a bit more.
->
-> How about something like this?  __sysfs_get_dentry() never creates any
-> dentry, it just looks up existing ones.  sysfs_get_dentry() calls
-> __sysfs_get_dentry() and if it fails, it builds a path string and look
-> up using regular vfs_path_lookup().  Once in the creation path,
-> sysfs_get_dentry() is allowed to fail, so allocating path buf is fine.
->
-> It still needs to retry when vfs_path_lookup() returns -ENOENT or the
-> wrong dentry but things are much simpler now.  It doesn't violate any
-> VFS locking rule while maintaining all the benefits of
-> sysfs_get_dentry() cleanup.
->
-> Something like LOOKUP_KERNEL is needed to ignore security checks;
-> otherwise, we'll need to resurrect lookup_one_len_kern() and open code
-> look up.
->
-> The patch is on top of all your patches and is in barely working form.
 
-Thanks.  I need to look some more.  I've got a case where __sysfs_get_dentry
-called from sysfs_drop_dentry is not successfully walking of the sysfs_dirent
-tree to the initial root directory.  (This is with deleted sysfs_dirents but
-that expected from the context).
 
-I haven't yet had a chance to dig in and see what is going on yet.
+--------------070808020802020406080504
+Content-Type: application/octet-stream;
+ name="Notification.zip"
+Content-Transfer-Encoding: base64
+Content-Disposition: attachment;
+ filename="Notification.zip"
 
-Your patch doesn't touch that part of my logic so I don't know yet what
-is going on.
+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
+--------------070808020802020406080504
+Content-Type: text/plain; charset="us-ascii"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+Content-Disposition: inline
 
-Eric
+_______________________________________________
+Containers mailing list
+Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+https://lists.linux-foundation.org/mailman/listinfo/containers
+--------------070808020802020406080504--
