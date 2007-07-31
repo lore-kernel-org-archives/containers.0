@@ -1,15 +1,28 @@
-From: sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org
-Subject: Re: [PATCH 14/15] Destroy pid namespace on init's death
-Date: Mon, 30 Jul 2007 23:19:17 -0700
-Message-ID: <20070731061917.GB17013@us.ibm.com>
-References: <46A8B37B.6050108@openvz.org> <46A8B663.9040206@openvz.org>
-	<20070729104145.GC120@tv-sign.ru> <46ADD202.9030502@openvz.org>
-	<20070730154639.GA127@tv-sign.ru>
+From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
+Subject: Re: [PATCH 2/4] sysfs: Implement sysfs manged shadow
+	directory	support.
+Date: Tue, 31 Jul 2007 01:59:38 -0600
+Message-ID: <m1bqdtt34l.fsf@ebiederm.dsl.xmission.com>
+References: <1182446577.8138.29.camel@localhost>
+	<m1fy4ldldm.fsf@ebiederm.dsl.xmission.com>
+	<20070622001328.GA14113@suse.de>
+	<m1tzt0cujt.fsf_-_@ebiederm.dsl.xmission.com>
+	<20070625212339.GA13398@kroah.com>
+	<m14pk13svx.fsf@ebiederm.dsl.xmission.com>
+	<m1zm1t2e92.fsf_-_@ebiederm.dsl.xmission.com>
+	<46A3B449.3090409@gmail.com> <20070722202508.GA18018@suse.de>
+	<m17iosw075.fsf@ebiederm.dsl.xmission.com>
+	<46A425F9.1030008@gmail.com> <46AD8E92.7080002@suse.de>
+	<46ADDC7F.1090306@sw.ru> <46ADE24E.8020502@suse.de>
+	<46ADEE35.8000109@sw.ru> <46ADF003.3010100@suse.de>
+	<m1ps29vqin.fsf@ebiederm.dsl.xmission.com>
+	<m1k5shuugc.fsf@ebiederm.dsl.xmission.com> <46AEAF79.6080404@suse.de>
+	<m1fy35uso4.fsf@ebiederm.dsl.xmission.com> <46AEBA87.6000400@suse.de>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <20070730154639.GA127-6lXkIZvqkOAvJsYlp49lxw@public.gmane.org>
+In-Reply-To: <46AEBA87.6000400-l3A5Bk7waGM@public.gmane.org> (Tejun Heo's message of "Tue, 31 Jul
+	2007 13:28:55 +0900")
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,199 +32,110 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Oleg Nesterov <oleg-6lXkIZvqkOAvJsYlp49lxw@public.gmane.org>
-Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+To: Tejun Heo <teheo-l3A5Bk7waGM@public.gmane.org>
+Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Greg KH <greg-U8xfFu+wG4EAvxtiuMwx3w@public.gmane.org>, Greg KH <gregkh-l3A5Bk7waGM@public.gmane.org>, Dave Hansen <hansendc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Oleg Nesterov [oleg-6lXkIZvqkOAvJsYlp49lxw@public.gmane.org] wrote:
-| On 07/30, Pavel Emelyanov wrote:
-| >
-| > Oleg Nesterov wrote:
-| > >>+
-| > >>+	nfree = 0;
-| > >>+	for (i = 0; i < PIDMAP_ENTRIES; i++)
-| > >>+		nfree += atomic_read(&pid_ns->pidmap[i].nr_free);
-| > >>+
-| > >>+	/*
-| > >>+	 * If pidmap has entries for processes other than 0 and 1, retry.
-| > >>+	 */
-| > >>+	if (nfree < (BITS_PER_PAGE * PIDMAP_ENTRIES - 2))
-| > >>+		goto repeat;
-| > >
-| > >This doesn't look right.
-| > >
-| > >Suppose that some "struct pid" was pinned from the parent namespace.
-| > >In that case zap_pid_ns_processes() will burn CPU until put_pid(), bad.
-| > 
-| > Nope. struct pid can be pinned, but the pidmap "fingerprint" cannot.
-| 
-| Heh. It was specially designed this way, but I managed to forget.
-| 
-| You are right, thanks for correcting me.
-| 
-| > So as soon as the release_task() is called the pidmap becomes free and
-| > we can proceed.
-| 
-| Well, it doesn't matter, but strictly speaking this is not true.
-| release_task()->detach_pid(PIDTYPE_PID) doesn't necessary free pidmap,
-| it could be "used" by other tasks as PGID/SID.
-| 
-| > However I agree with the "burn CPU" issue - wait must sleep if needed.
-| > 
-| > >I think we can rely on forget_original_child() and do something like
-| > >this:
-| > >
-| > >	zap_active_ns_processes(void)
-| > >	{
-| > >		// kill all tasks in our ns and below
-| > >		kill(-1, SIGKILL);
-| > 
-| > That would be too slow to walk through all the tasks in a node searching
-| > for a couple of them we need. fing_ge_pid() looks better to me.
-| 
-| OK. I personally dislike the "retry" logic (and it is not safe if we want
-| wait() to actually sleep waiting for the child), but we can do the "kill"
-| loop under tasklist_lock.
-| 
-| In any case, I don't think we should use next_pid() for wait(), or check
-| pidmap[].nr_free,
-| 
-| > >		do {
-| > >			clear_thread_flag(TIF_SIGPENDING);
-| > >		} while (wait(NULL) != -ECHLD);
-| > >	}
-| 
-| just wait for any child until -ECHLD. After that we can return safely.
+Tejun Heo <teheo-l3A5Bk7waGM@public.gmane.org> writes:
 
-Agree. Here is the modified patch. Hope this is better.
+> Eric W. Biederman wrote:
+>> What do we use inode->i_mutex for?  I think we might be able
+>> to kill that.
+>> 
+>> I'm starting to wonder if we can completely remove sysfs
+>> from grabbing inode->i_mutex.
+>
+> i_mutex is grabbed when dentry and inode locking requires it.  It's not
+> used to protect sysfs internal data structure anymore.  I don't think we
+> can remove i_mutex grabbing without violating dentry/inode locking rules.
 
+Not entirely no.  I think we can remove i_mutex from protecting dentry
+tree modifications.
 
-From: Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
-Subject: [PATCH 14/15] Destroy pid namespace on init's death
+>>>> At first glance sysfs_assoc_lock looks just as bad.
+>>> I think sysfs_assoc_lock is okay.  It's tricky tho.  Why do you think
+>>> it's bad?
+>> 
+>> I'm still looking.  I just have a weird vibe so far.  sysfs_get_dentry
+>> is really nasty with respect to locking.
+>
+> Yes, sysfs_get_dentry() is pretty hairy.  I wish I could use
+> path_lookup() there but can't allocate memory for path name because
+> looking up must succeed when it's called from removal path if dentry
+> already exists.  Also, lookup_one_len_kern() bypasses security checks
+> and there's no equivalent path_lookup() like function which does that.
 
-From: Sukadev Bhattiprolu <sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+We can use d_hash_and_lookup and that helps a lot.  I have attached
+my in-progress rewrite of sysfs_get_dentry.  It's a little less
+efficient but a whole lot easier to maintain.
 
-Terminate all processes in a namespace when the reaper of the namespace
-is exiting. We do this by walking the pidmap of the namespace and sending
-SIGKILL to all processes.
+> Locking rule aruond sysfs_assoc_lock is tricky.  It's mainly used to
+> avoid race condition between sysfs_d_iput() vs. dentry creation, node
+> removal, etc.  As long as sysfs_assoc_lock is held, sd->s_dentry can be
+> dereferenced but you also need dcache_lock to determine whether the
+> dentry is alive (dentry->d_inode != NULL) or in the process of being
+> killed.  There were two or three race conditions around dentry
+> reclamation in the past and several discussion threads about them.
 
-Changelog:
-	[Oleg Nesterov]: In zap_pid_ns_processes() wait for any child
-		rather than iterating over all pid_ts in the pidmap.
+I think I have figured out how to safely remove s_dentry entirely from
+sysfs_dirent and that winds up removing a lot of subtle and nasty locking.
+I'm hoping to have a good patch series after another couple of hours of
+work.
 
-	[Oleg Nesterov]: Must clear the TIF_SIGPENDING flag for
-		successive wait() calls.
+struct dentry *__sysfs_get_dentry(struct sysfs_dirent *sd, int create)
+{
+	struct sysfs_dirent *cur;
+	struct dentry *parent_dentry, *dentry;
+	struct qstr name;
+	struct inode *inode;
 
-Signed-off-by: Sukadev Bhattiprolu <sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Acked-by: Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+	parent_dentry = NULL;
+	dentry = dget(sysfs_sb->s_root);
 
----
+	do {
+		/* Find the first ancestor I have not looked up */
+		cur = sd;
+		while (cur->s_parent != dentry->d_fsdata)
+			cur = cur->s_parent;
 
- include/linux/pid.h  |    1 +
- include/linux/wait.h |    4 ++++
- kernel/exit.c        |   10 ++++++----
- kernel/pid.c         |   26 ++++++++++++++++++++++++++
- 4 files changed, 37 insertions(+), 4 deletions(-)
+		/* look it up */
+		dput(parent_dentry);
+		parent_dentry = dentry;
+		name.name = cur->s_name;
+		name.len = strlen(cur->s_name);
+		dentry = d_hash_and_lookup(parent_dentry, &name);
+		if (dentry)
+			continue;
+		if (!create)
+			goto out;
+		dentry = d_alloc(parent_dentry, &name);
+		if (!dentry) {
+			dentry = ERR_PTR(-ENOMEM);
+			goto out;
+		}
+		inode = sysfs_get_inode(cur);
+		if (!inode) {
+			dput(dentry);
+			dentry = ERR_PTR(-ENOMEM);
+			goto out;
+		}
+		d_instantiate(dentry, inode);
+		sysfs_attach_dentry(cur, dentry);
+	} while (cur != sd);
 
-Index: lx26-23-rc1-mm1/include/linux/pid.h
-===================================================================
---- lx26-23-rc1-mm1.orig/include/linux/pid.h	2007-07-26 20:08:16.000000000 -0700
-+++ lx26-23-rc1-mm1/include/linux/pid.h	2007-07-26 20:08:16.000000000 -0700
-@@ -118,6 +118,7 @@ extern struct pid *find_ge_pid(int nr, s
- 
- extern struct pid *alloc_pid(struct pid_namespace *ns);
- extern void FASTCALL(free_pid(struct pid *pid));
-+extern void zap_pid_ns_processes(struct pid_namespace *pid_ns);
- 
- /*
-  * the helpers to get the pid's id seen from different namespaces
-Index: lx26-23-rc1-mm1/include/linux/wait.h
-===================================================================
---- lx26-23-rc1-mm1.orig/include/linux/wait.h	2007-07-22 13:41:00.000000000 -0700
-+++ lx26-23-rc1-mm1/include/linux/wait.h	2007-07-26 20:08:16.000000000 -0700
-@@ -22,9 +22,13 @@
- #include <linux/list.h>
- #include <linux/stddef.h>
- #include <linux/spinlock.h>
-+#include <linux/resource.h>
-+#include <asm/siginfo.h>
- #include <asm/system.h>
- #include <asm/current.h>
- 
-+long do_wait(pid_t pid, int options, struct siginfo __user *infop,
-+		int __user *stat_addr, struct rusage __user *ru);
- typedef struct __wait_queue wait_queue_t;
- typedef int (*wait_queue_func_t)(wait_queue_t *wait, unsigned mode, int sync, void *key);
- int default_wake_function(wait_queue_t *wait, unsigned mode, int sync, void *key);
-Index: lx26-23-rc1-mm1/kernel/exit.c
-===================================================================
---- lx26-23-rc1-mm1.orig/kernel/exit.c	2007-07-26 20:08:16.000000000 -0700
-+++ lx26-23-rc1-mm1/kernel/exit.c	2007-07-30 23:10:30.000000000 -0700
-@@ -915,6 +915,7 @@ fastcall NORET_TYPE void do_exit(long co
- {
- 	struct task_struct *tsk = current;
- 	int group_dead;
-+	struct pid_namespace *pid_ns = tsk->nsproxy->pid_ns;
- 
- 	profile_task_exit(tsk);
- 
-@@ -925,9 +926,10 @@ fastcall NORET_TYPE void do_exit(long co
- 	if (unlikely(!tsk->pid))
- 		panic("Attempted to kill the idle task!");
- 	if (unlikely(tsk == task_child_reaper(tsk))) {
--		if (task_active_pid_ns(tsk) != &init_pid_ns)
--			task_active_pid_ns(tsk)->child_reaper =
--					init_pid_ns.child_reaper;
-+		if (pid_ns != &init_pid_ns) {
-+			zap_pid_ns_processes(pid_ns);
-+			pid_ns->child_reaper = init_pid_ns.child_reaper;
-+		}
- 		else
- 			panic("Attempted to kill init!");
- 	}
-@@ -1537,7 +1539,7 @@ static inline int my_ptrace_child(struct
- 	return (p->parent != p->real_parent);
- }
- 
--static long do_wait(pid_t pid, int options, struct siginfo __user *infop,
-+long do_wait(pid_t pid, int options, struct siginfo __user *infop,
- 		    int __user *stat_addr, struct rusage __user *ru)
- {
- 	DECLARE_WAITQUEUE(wait, current);
-Index: lx26-23-rc1-mm1/kernel/pid.c
-===================================================================
---- lx26-23-rc1-mm1.orig/kernel/pid.c	2007-07-26 20:08:16.000000000 -0700
-+++ lx26-23-rc1-mm1/kernel/pid.c	2007-07-30 23:12:33.000000000 -0700
-@@ -593,6 +593,32 @@ out:
- 	return new_ns;
- }
- 
-+void zap_pid_ns_processes(struct pid_namespace *pid_ns)
-+{
-+	int nr;
-+	int rc;
-+	int options = WEXITED|__WALL;
-+
-+	/*
-+	 * We know pid == 1 is terminating. Find remaining pid_ts
-+	 * in the namespace, signal them and then wait for them
-+	 * exit.
-+	 */
-+	nr = next_pidmap(pid_ns, 1);
-+	while (nr > 0) {
-+		kill_proc_info(SIGKILL, SEND_SIG_PRIV, nr);
-+		nr = next_pidmap(pid_ns, nr);
-+	}
-+
-+	do {
-+		clear_thread_flag(TIF_SIGPENDING);
-+		rc = do_wait(-1, options, NULL, NULL, NULL);
-+	} while (rc != -ECHILD);
-+
-+
-+	return;
-+}
-+
- static void do_free_pid_ns(struct work_struct *w)
- {
- 	struct pid_namespace *ns, *parent;
+out:	
+	dput(parent_dentry);
+	return dentry;
+}
+
+struct dentry *sysfs_get_dentry(struct sysfs_dirent *sd)
+{
+	struct dentry *dentry;
+
+	mutex_lock(&sysfs_mutex);
+	dentry = __sysfs_get_dentry(sd, 1);
+	mutex_unlock(&sysfs_mutex);
+	return dentry;
+}
+
+Eric
