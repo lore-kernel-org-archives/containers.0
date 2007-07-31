@@ -1,22 +1,16 @@
-From: Tejun Heo <teheo-l3A5Bk7waGM@public.gmane.org>
-Subject: Re: [PATCH 2/4] sysfs: Implement sysfs manged shadow
-	directory	support.
-Date: Tue, 31 Jul 2007 17:15:34 +0900
-Message-ID: <46AEEFA6.4000901@suse.de>
-References: <1182446577.8138.29.camel@localhost>	<m1fy4ldldm.fsf@ebiederm.dsl.xmission.com>	<20070622001328.GA14113@suse.de>	<m1tzt0cujt.fsf_-_@ebiederm.dsl.xmission.com>	<20070625212339.GA13398@kroah.com>	<m14pk13svx.fsf@ebiederm.dsl.xmission.com>	<m1zm1t2e92.fsf_-_@ebiederm.dsl.xmission.com>	<46A3B449.3090409@gmail.com>
-	<20070722202508.GA18018@suse.de>	<m17iosw075.fsf@ebiederm.dsl.xmission.com>	<46A425F9.1030008@gmail.com>
-	<46AD8E92.7080002@suse.de>	<46ADDC7F.1090306@sw.ru>
-	<46ADE24E.8020502@suse.de>	<46ADEE35.8000109@sw.ru>
-	<46ADF003.3010100@suse.de>	<m1ps29vqin.fsf@ebiederm.dsl.xmission.com>	<m1k5shuugc.fsf@ebiederm.dsl.xmission.com>
-	<46AEAF79.6080404@suse.de>	<m1fy35uso4.fsf@ebiederm.dsl.xmission.com>
-	<46AEBA87.6000400@suse.de>
-	<m1bqdtt34l.fsf@ebiederm.dsl.xmission.com>
-	<46AEEF75.2030101@suse.de>
+From: Oleg Nesterov <oleg-6lXkIZvqkOAvJsYlp49lxw@public.gmane.org>
+Subject: Re: [PATCH 14/15] Destroy pid namespace on init's death
+Date: Tue, 31 Jul 2007 13:07:21 +0400
+Message-ID: <20070731090721.GA110@tv-sign.ru>
+References: <46A8B37B.6050108@openvz.org> <46A8B663.9040206@openvz.org>
+	<20070729104145.GC120@tv-sign.ru> <46ADD202.9030502@openvz.org>
+	<20070730154639.GA127@tv-sign.ru>
+	<20070731061917.GB17013@us.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset=us-ascii
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <46AEEF75.2030101-l3A5Bk7waGM@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <20070731061917.GB17013-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -26,21 +20,64 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Greg KH <greg-U8xfFu+wG4EAvxtiuMwx3w@public.gmane.org>, Greg KH <gregkh-l3A5Bk7waGM@public.gmane.org>, Dave Hansen <hansendc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+To: sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org
+Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Tejun Heo wrote:
-> Eric W. Biederman wrote:
->> I think I have figured out how to safely remove s_dentry entirely from
->> sysfs_dirent and that winds up removing a lot of subtle and nasty locking.
->> I'm hoping to have a good patch series after another couple of hours of
->> work.
-> 
-> Great.  Yeah, open coding lookup seems much better idea than checking
-> whether tree changed while sysfs_mutex was releated.
+On 07/30, sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org wrote:
+>
+> --- lx26-23-rc1-mm1.orig/kernel/exit.c	2007-07-26 20:08:16.000000000 -0700
+> +++ lx26-23-rc1-mm1/kernel/exit.c	2007-07-30 23:10:30.000000000 -0700
+> @@ -915,6 +915,7 @@ fastcall NORET_TYPE void do_exit(long co
+>  {
+>  	struct task_struct *tsk = current;
+>  	int group_dead;
+> +	struct pid_namespace *pid_ns = tsk->nsproxy->pid_ns;
+>  
+>  	profile_task_exit(tsk);
+>  
+> @@ -925,9 +926,10 @@ fastcall NORET_TYPE void do_exit(long co
+>  	if (unlikely(!tsk->pid))
+>  		panic("Attempted to kill the idle task!");
+>  	if (unlikely(tsk == task_child_reaper(tsk))) {
+> -		if (task_active_pid_ns(tsk) != &init_pid_ns)
+> -			task_active_pid_ns(tsk)->child_reaper =
+> -					init_pid_ns.child_reaper;
+> +		if (pid_ns != &init_pid_ns) {
+> +			zap_pid_ns_processes(pid_ns);
+> +			pid_ns->child_reaper = init_pid_ns.child_reaper;
+> +		}
+>  		else
+>  			panic("Attempted to kill init!");
+>  	}
 
-s/related/released/
+Just to remind you, this is not right when init is multi-threaded,
+we should do this only when the last thread exits.
 
--- 
-tejun
+> -static long do_wait(pid_t pid, int options, struct siginfo __user *infop,
+> +long do_wait(pid_t pid, int options, struct siginfo __user *infop,
+>  		    int __user *stat_addr, struct rusage __user *ru)
+
+Small nit, other in-kernel reapers use sys_wait4(), perhaps we can use
+it too, in that case we don't need to export do_wait().
+
+> +void zap_pid_ns_processes(struct pid_namespace *pid_ns)
+> +{
+> +	int nr;
+> +	int rc;
+> +	int options = WEXITED|__WALL;
+> +
+> +	/*
+> +	 * We know pid == 1 is terminating. Find remaining pid_ts
+> +	 * in the namespace, signal them and then wait for them
+> +	 * exit.
+> +	 */
+> +	nr = next_pidmap(pid_ns, 1);
+> +	while (nr > 0) {
+> +		kill_proc_info(SIGKILL, SEND_SIG_PRIV, nr);
+> +		nr = next_pidmap(pid_ns, nr);
+> +	}
+
+Without tasklist_lock held this is not reliable.
+
+Oleg.
