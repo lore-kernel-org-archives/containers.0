@@ -1,14 +1,14 @@
 From: sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org
-Subject: Re: [PATCH 9/15] Move alloc_pid() after the namespace is cloned
-Date: Mon, 30 Jul 2007 16:43:11 -0700
-Message-ID: <20070730234311.GA11099@us.ibm.com>
-References: <46A8B37B.6050108@openvz.org> <46A8B531.3050602@openvz.org>
-	<20070727151238.GA336@tv-sign.ru> <46AD8266.8050802@openvz.org>
+Subject: Re: [PATCH 3/15] kern_siginfo helper
+Date: Mon, 30 Jul 2007 17:21:38 -0700
+Message-ID: <20070731002138.GA12122@us.ibm.com>
+References: <46A8B37B.6050108@openvz.org> <46A8B42F.5070605@openvz.org>
+	<20070729114154.GE120@tv-sign.ru> <46AD8032.90005@openvz.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <46AD8266.8050802-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+In-Reply-To: <46AD8032.90005-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -25,46 +25,61 @@ List-Id: containers.vger.kernel.org
 Pavel Emelianov [xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org] wrote:
 | Oleg Nesterov wrote:
 | >On 07/26, Pavel Emelyanov wrote:
-| >>This is a fix for Sukadev's patch that moved the alloc_pid() call from
-| >>do_fork() into copy_process().
-| >
-| >... and this patch changes almost every line from Sukadev's patch.
-| 
-| It does. My bad :( I have reviewed Suka's patch badly and was sure it
-| puts the alloc_pid() right where we need this.
-
-I should have reviewed Pavel's closely too. Sorry.
-
-| 
-| >Sorry gents, but isn't it better to ask Andrew to drop that patch
-| >(which is quite useless by itself), and send a new one which incorporates
-| >all necessary changes? Imho, it would be much easier to understand.
-| 
-| Hm... Maybe it's better to ask him to fold these patches together?
-
-I think so, but even dropping my patch is fine with me.
-
-| 
-| >>@@ -1406,7 +1422,13 @@ long do_fork(unsigned long clone_flags,
-| >>	if (!IS_ERR(p)) {
-| >>		struct completion vfork;
+| >>TODO: 	This is more an exploratory patch and modifies only 
+| >>interfaces
+| >>	necessary to implement correct signal semantics in pid namespaces.
+| >>	
+| >>	If the approach is feasible, we could consistently use 'kern_siginfo'
+| >>	in other signal interfaces and possibly in 'struct sigqueue'.
 | >>
-| >>-		nr = pid_nr(task_pid(p));
-| >>+		/*
-| >>+		 * this is enough to call pid_nr_ns here, but this if
-| >>+		 * improves optimisation of regular fork()
-| >>+		 */
-| >>+		nr = (clone_flags & CLONE_NEWPID) ?
-| >>+			task_pid_nr_ns(p, current->nsproxy->pid_ns) :
-| >>+				task_pid_vnr(p);
+| >>	We could modify dequeue_signal() to directly work with 'kern_siginfo'
+| >>	and remove dequeue_signal_kern_info().
 | >
-| >Shouldn't we do the same for CLONE_PARENT_SETTID in copy_process() ?
-| >Otherwise *parent_tidptr may have a wrong value which doesn't match
-| >to what fork() returns.
+| >Well... I know, it is very easy to blame somebody else's patch, and 
+| >probably
+| >my taste is not good...
+| >
+| >But honestly, I personally think this approach is a horror, and any 
+| >alternative
+| >is better :)
+
+Hmm. My reasoning was that since siginfo_t was directly "shared" with
+user space, extending it even to add a flag was pain.
+
+| >
+| >I'd rather change dequeue_signal() so that it takes "struct sigqueue *"
+| >parameter instead of "siginfo_t *", or add a new "int *flags".
+
+My earlier version to Containers@ passed in "int *signal_cinit" couple
+of levels down and used that in get_signal_to_deliver() but that
+looked ugly :-) Passing in sigqueue to dequeue_signal() may be better,
+but anyway...
+
+| >
+| >OK, this doesn't work anyway, we should do something different. Perhaps
+| >just do all checks on sender's side.
 | 
-| Oops. We should. Thanks :)
+| Yes. Signal handling in namespaces turned out to be the most complicated
+| part of the set. I start thinking to drop this part till we have the "core"
+| in -mm tree. Suka, what do you think?
+
+Yes. Lets focus on the core for now and allow privileged user in a child-ns
+to terminate the container-init. I will try the signal approach from sender
+side also.
+
+| 
+| >It is a bit strange that this patch is 3/15, and the rest bits in 11/15,
+| >not very convenient for the review.
+| 
+| Well, I thought that a split like
+| 1. patches for kernel to prepare it for the set
+| 2. the set itself
+| is the best to review. Maybe I was wrong, but how to make this then?
+| E.g. I have a MS_KERNOUNT patch, but its changes are used *much* later.
 | 
 | >Oleg.
+| >
+| >
 | 
 | Thanks,
 | Pavel
