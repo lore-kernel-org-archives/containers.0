@@ -1,12 +1,8 @@
 From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
-Subject: [PATCH 03/14] sysfs: Move all of inode initialization into
-	sysfs_init_inode
-Date: Tue, 31 Jul 2007 04:22:56 -0600
-Message-ID: <m1r6moswhr.fsf_-_@ebiederm.dsl.xmission.com>
-References: <1182446577.8138.29.camel@localhost> <46A3B449.3090409@gmail.com>
-	<20070722202508.GA18018@suse.de>
-	<m17iosw075.fsf@ebiederm.dsl.xmission.com>
-	<46A425F9.1030008@gmail.com> <46AD8E92.7080002@suse.de>
+Subject: [PATCH 07/14] vfs: Remove lookup_one_len_kern
+Date: Tue, 31 Jul 2007 04:28:15 -0600
+Message-ID: <m1abtcsw8w.fsf_-_@ebiederm.dsl.xmission.com>
+References: <1182446577.8138.29.camel@localhost> <46AD8E92.7080002@suse.de>
 	<46ADDC7F.1090306@sw.ru> <46ADE24E.8020502@suse.de>
 	<46ADEE35.8000109@sw.ru> <46ADF003.3010100@suse.de>
 	<m1ps29vqin.fsf@ebiederm.dsl.xmission.com>
@@ -17,11 +13,15 @@ References: <1182446577.8138.29.camel@localhost> <46A3B449.3090409@gmail.com>
 	<m14pjkubd2.fsf_-_@ebiederm.dsl.xmission.com>
 	<m1zm1cswp0.fsf_-_@ebiederm.dsl.xmission.com>
 	<m1vec0swmi.fsf_-_@ebiederm.dsl.xmission.com>
+	<m1r6moswhr.fsf_-_@ebiederm.dsl.xmission.com>
+	<m1myxcswfr.fsf_-_@ebiederm.dsl.xmission.com>
+	<m1ir80swdl.fsf_-_@ebiederm.dsl.xmission.com>
+	<m1ejioswai.fsf_-_@ebiederm.dsl.xmission.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <m1vec0swmi.fsf_-_-T1Yj925okcoyDheHMi7gv2pdwda3JcWeAL8bYrjMMd8@public.gmane.org> (Eric
-	W. Biederman's message of "Tue, 31 Jul 2007 04:20:05 -0600")
+In-Reply-To: <m1ejioswai.fsf_-_-T1Yj925okcoyDheHMi7gv2pdwda3JcWeAL8bYrjMMd8@public.gmane.org> (Eric
+	W. Biederman's message of "Tue, 31 Jul 2007 04:27:17 -0600")
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -36,170 +36,104 @@ Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Greg 
 List-Id: containers.vger.kernel.org
 
 
-Besides being a good general cleanup the ultimate effect
-of this patch is that sysfs_get_inode now gives you a
-usable inode that doesn't need any further initialization
-to be useful.
+Now that sysfs no longer uses lookup_one_len_kern the function has
+no users so remove it from the kernel.
 
 Signed-off-by: Eric W. Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-
 ---
- fs/sysfs/dir.c   |   37 -------------------------------------
- fs/sysfs/inode.c |   48 +++++++++++++++++++++++++++++++++++++++++++++---
- fs/sysfs/mount.c |    5 -----
- 3 files changed, 45 insertions(+), 45 deletions(-)
+ fs/namei.c            |   46 +++++++++++-----------------------------------
+ include/linux/namei.h |    1 -
+ 2 files changed, 11 insertions(+), 36 deletions(-)
 
-diff --git a/fs/sysfs/dir.c b/fs/sysfs/dir.c
-index b27a38c..834ed74 100644
---- a/fs/sysfs/dir.c
-+++ b/fs/sysfs/dir.c
-@@ -741,24 +741,12 @@ int sysfs_create_dir(struct kobject * kobj)
- 	return error;
+diff --git a/fs/namei.c b/fs/namei.c
+index a83160a..69d3304 100644
+--- a/fs/namei.c
++++ b/fs/namei.c
+@@ -1273,7 +1273,12 @@ int __user_path_lookup_open(const char __user *name, unsigned int lookup_flags,
+ 	return err;
  }
  
--static int sysfs_count_nlink(struct sysfs_dirent *sd)
+-static inline struct dentry *__lookup_hash_kern(struct qstr *name, struct dentry *base, struct nameidata *nd)
++/*
++ * Restricted form of lookup. Doesn't follow links, single-component only,
++ * needs parent already locked. Doesn't follow mounts.
++ * SMP-safe.
++ */
++static inline struct dentry * __lookup_hash(struct qstr *name, struct dentry *base, struct nameidata *nd)
+ {
+ 	struct dentry *dentry;
+ 	struct inode *inode;
+@@ -1281,6 +1286,11 @@ static inline struct dentry *__lookup_hash_kern(struct qstr *name, struct dentry
+ 
+ 	inode = base->d_inode;
+ 
++	err = permission(inode, MAY_EXEC, nd);
++	dentry = ERR_PTR(err);
++	if (err)
++		goto out;
++
+ 	/*
+ 	 * See if the low-level filesystem might want
+ 	 * to use its own hash..
+@@ -1308,29 +1318,6 @@ out:
+ 	return dentry;
+ }
+ 
+-/*
+- * Restricted form of lookup. Doesn't follow links, single-component only,
+- * needs parent already locked. Doesn't follow mounts.
+- * SMP-safe.
+- */
+-static inline struct dentry * __lookup_hash(struct qstr *name, struct dentry *base, struct nameidata *nd)
 -{
--	struct sysfs_dirent *child;
--	int nr = 0;
+-	struct dentry *dentry;
+-	struct inode *inode;
+-	int err;
 -
--	for (child = sd->s_children; child; child = child->s_sibling)
--		if (sysfs_type(child) == SYSFS_DIR)
--			nr++;
--	return nr + 2;
+-	inode = base->d_inode;
+-
+-	err = permission(inode, MAY_EXEC, nd);
+-	dentry = ERR_PTR(err);
+-	if (err)
+-		goto out;
+-
+-	dentry = __lookup_hash_kern(name, base, nd);
+-out:
+-	return dentry;
 -}
 -
- static struct dentry * sysfs_lookup(struct inode *dir, struct dentry *dentry,
- 				struct nameidata *nd)
+ static struct dentry *lookup_hash(struct nameidata *nd)
  {
- 	struct sysfs_dirent * parent_sd = dentry->d_parent->d_fsdata;
- 	struct dentry *result = NULL;
- 	struct sysfs_dirent * sd;
--	struct bin_attribute *bin_attr;
- 	struct inode *inode;
- 	int found = 0;
- 
-@@ -782,31 +770,6 @@ static struct dentry * sysfs_lookup(struct inode *dir, struct dentry *dentry,
- 		goto out;
- 	}
- 
--	if (inode->i_state & I_NEW) {
--		/* initialize inode according to type */
--		switch (sysfs_type(sd)) {
--		case SYSFS_DIR:
--			inode->i_op = &sysfs_dir_inode_operations;
--			inode->i_fop = &sysfs_dir_operations;
--			inode->i_nlink = sysfs_count_nlink(sd);
--			break;
--		case SYSFS_KOBJ_ATTR:
--			inode->i_size = PAGE_SIZE;
--			inode->i_fop = &sysfs_file_operations;
--			break;
--		case SYSFS_KOBJ_BIN_ATTR:
--			bin_attr = sd->s_elem.bin_attr.bin_attr;
--			inode->i_size = bin_attr->size;
--			inode->i_fop = &bin_fops;
--			break;
--		case SYSFS_KOBJ_LINK:
--			inode->i_op = &sysfs_symlink_inode_operations;
--			break;
--		default:
--			BUG();
--		}
--	}
--
- 	sysfs_instantiate(dentry, inode);
- 	sysfs_attach_dentry(sd, dentry);
- 
-diff --git a/fs/sysfs/inode.c b/fs/sysfs/inode.c
-index 9671164..e832a5d 100644
---- a/fs/sysfs/inode.c
-+++ b/fs/sysfs/inode.c
-@@ -123,8 +123,22 @@ static inline void set_inode_attr(struct inode * inode, struct iattr * iattr)
-  */
- static struct lock_class_key sysfs_inode_imutex_key;
- 
-+static int sysfs_count_nlink(struct sysfs_dirent *sd)
-+{
-+	struct sysfs_dirent *child;
-+	int nr = 0;
-+
-+	for (child = sd->s_children; child; child = child->s_sibling)
-+		if (sysfs_type(child) == SYSFS_DIR)
-+			nr++;
-+
-+	return nr + 2;
-+}
-+
- static void sysfs_init_inode(struct sysfs_dirent *sd, struct inode *inode)
- {
-+	struct bin_attribute *bin_attr;
-+
- 	inode->i_blocks = 0;
- 	inode->i_mapping->a_ops = &sysfs_aops;
- 	inode->i_mapping->backing_dev_info = &sysfs_backing_dev_info;
-@@ -140,6 +154,37 @@ static void sysfs_init_inode(struct sysfs_dirent *sd, struct inode *inode)
- 		set_inode_attr(inode, sd->s_iattr);
- 	} else
- 		set_default_inode_attr(inode, sd->s_mode);
-+
-+
-+	/* initialize inode according to type */
-+	switch (sysfs_type(sd)) {
-+	case SYSFS_ROOT:
-+		inode->i_op = &sysfs_dir_inode_operations;
-+		inode->i_fop = &sysfs_dir_operations;
-+		inc_nlink(inode); /* directory, account for "." */
-+		break;
-+	case SYSFS_DIR:
-+		inode->i_op = &sysfs_dir_inode_operations;
-+		inode->i_fop = &sysfs_dir_operations;
-+		inode->i_nlink = sysfs_count_nlink(sd);
-+		break;
-+	case SYSFS_KOBJ_ATTR:
-+		inode->i_size = PAGE_SIZE;
-+		inode->i_fop = &sysfs_file_operations;
-+		break;
-+	case SYSFS_KOBJ_BIN_ATTR:
-+		bin_attr = sd->s_elem.bin_attr.bin_attr;
-+		inode->i_size = bin_attr->size;
-+		inode->i_fop = &bin_fops;
-+		break;
-+	case SYSFS_KOBJ_LINK:
-+		inode->i_op = &sysfs_symlink_inode_operations;
-+		break;
-+	default:
-+		BUG();
-+	}
-+
-+	unlock_new_inode(inode);
+ 	return __lookup_hash(&nd->last, nd->dentry, nd);
+@@ -1369,17 +1356,6 @@ struct dentry *lookup_one_len(const char *name, struct dentry *base, int len)
+ 	return __lookup_hash(&this, base, NULL);
  }
  
- /**
-@@ -181,9 +226,6 @@ void sysfs_instantiate(struct dentry *dentry, struct inode *inode)
+-struct dentry *lookup_one_len_kern(const char *name, struct dentry *base, int len)
+-{
+-	int err;
+-	struct qstr this;
+-
+-	err = __lookup_one_len(name, &this, base, len);
+-	if (err)
+-		return ERR_PTR(err);
+-	return __lookup_hash_kern(&this, base, NULL);
+-}
+-
+ int fastcall __user_walk_fd(int dfd, const char __user *name, unsigned flags,
+ 			    struct nameidata *nd)
  {
- 	BUG_ON(!dentry || dentry->d_inode);
+diff --git a/include/linux/namei.h b/include/linux/namei.h
+index 6c38efb..36e5690 100644
+--- a/include/linux/namei.h
++++ b/include/linux/namei.h
+@@ -82,7 +82,6 @@ extern struct file *nameidata_to_filp(struct nameidata *nd, int flags);
+ extern void release_open_intent(struct nameidata *);
  
--	if (inode->i_state & I_NEW)
--		unlock_new_inode(inode);
--
- 	d_instantiate(dentry, inode);
- }
+ extern struct dentry * lookup_one_len(const char *, struct dentry *, int);
+-extern struct dentry *lookup_one_len_kern(const char *, struct dentry *, int);
  
-diff --git a/fs/sysfs/mount.c b/fs/sysfs/mount.c
-index 0c016e1..919eaaf 100644
---- a/fs/sysfs/mount.c
-+++ b/fs/sysfs/mount.c
-@@ -50,11 +50,6 @@ static int sysfs_fill_super(struct super_block *sb, void *data, int silent)
- 		return -ENOMEM;
- 	}
- 
--	inode->i_op = &sysfs_dir_inode_operations;
--	inode->i_fop = &sysfs_dir_operations;
--	inc_nlink(inode); /* directory, account for "." */
--	unlock_new_inode(inode);
--
- 	/* instantiate and link root dentry */
- 	root = d_alloc_root(inode);
- 	if (!root) {
+ extern int follow_down(struct vfsmount **, struct dentry **);
+ extern int follow_up(struct vfsmount **, struct dentry **);
 -- 
 1.5.1.1.181.g2de0
