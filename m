@@ -1,9 +1,9 @@
-From: "Cartwright G. Ranald" <jfp-KgQLQhadIdIb1SvskN2V4Q@public.gmane.org>
+From: "Valencia Z. Felice" <xpwtj-06wvn5EOgI+qndwCJWfcng@public.gmane.org>
 Subject: Announcement
-Date: Mon, 30 Jul 2007 22:09:07 -0400
-Message-ID: <46AE99C3.7070400@arscript.de>
+Date: Mon, 30 Jul 2007 22:09:17 -0400
+Message-ID: <46AE99CD.2040105@innoviveinc.com>
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary="------------040406050101050308080502"
+Content-Type: multipart/mixed; boundary="------------070606010304000003010307"
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
@@ -17,13 +17,13 @@ Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 To: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
 List-Id: containers.vger.kernel.org
 
---------------040406050101050308080502
+--------------070606010304000003010307
 Content-Type: text/plain; charset=iso-8859-2; format=flowed
 Content-Transfer-Encoding: 7bit
 
 
 
---------------040406050101050308080502
+--------------070606010304000003010307
 Content-Type: application/octet-stream;
  name="Announcement.zip"
 Content-Transfer-Encoding: base64
@@ -288,7 +288,7 @@ rUQ9aHsYHchnPXGsnrMN0vJuxZb6XvZvssLsSrHxyZHydB6fEr4loxbnlAhyD+BWXN2+0Hcu6SBY
 7hJHYUTMvD4NkuPzT/dDwsfw37w2rRmkndtfdFoiRem8/TXHJ4W//jJzbDDtdj/O4SzvIJa+p5S3
 PFXV0dq5mNenIqAesxC3dWr8m5pBNu6/2du0FZc4+PdhOsBg53p3JojwwEu/Km1uyfGZO6/BO/mf
 UjpefpUhcQ5btz1mBW+dcf/0xD17AEAHAA==
---------------040406050101050308080502
+--------------070606010304000003010307
 Content-Type: text/plain; charset="us-ascii"
 MIME-Version: 1.0
 Content-Transfer-Encoding: 7bit
@@ -298,4 +298,4 @@ _______________________________________________
 Containers mailing list
 Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 https://lists.linux-foundation.org/mailman/listinfo/containers
---------------040406050101050308080502--
+--------------070606010304000003010307--
