@@ -1,16 +1,18 @@
-From: Tejun Heo <htejun-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: Re: [PATCH 06/14] sysfs: Rewrite sysfs_get_dentry
-Date: Thu, 02 Aug 2007 02:51:19 +0900
-Message-ID: <46B0C817.7060106@gmail.com>
-References: <m14pjkubd2.fsf_-_@ebiederm.dsl.xmission.com>	<m1zm1cswp0.fsf_-_@ebiederm.dsl.xmission.com>	<m1vec0swmi.fsf_-_@ebiederm.dsl.xmission.com>	<m1r6moswhr.fsf_-_@ebiederm.dsl.xmission.com>	<m1myxcswfr.fsf_-_@ebiederm.dsl.xmission.com>	<m1ir80swdl.fsf_-_@ebiederm.dsl.xmission.com>	<m1ejioswai.fsf_-_@ebiederm.dsl.xmission.com>	<46AF15F6.6010202@suse.de>
-	<m11weorf3l.fsf@ebiederm.dsl.xmission.com>	<46AF1E57.3030209@suse.de>
-	<20070731141613.GC13674@htj.dyndns.org>	<m1fy33pq1r.fsf@ebiederm.dsl.xmission.com>	<46B05A1D.5000703@gmail.com>	<m1vebznpyc.fsf@ebiederm.dsl.xmission.com>	<46B0C0E6.5030008@gmail.com>
-	<m1ir7znog9.fsf@ebiederm.dsl.xmission.com>
+From: Oleg Nesterov <oleg-6lXkIZvqkOAvJsYlp49lxw@public.gmane.org>
+Subject: Re: [PATCH 14/15] Destroy pid namespace on init's death
+Date: Wed, 1 Aug 2007 23:48:11 +0400
+Message-ID: <20070801194811.GA196@tv-sign.ru>
+References: <46A8B37B.6050108@openvz.org> <46A8B663.9040206@openvz.org>
+	<20070729104145.GC120@tv-sign.ru> <46ADD202.9030502@openvz.org>
+	<20070730154639.GA127@tv-sign.ru>
+	<20070731061917.GB17013@us.ibm.com>
+	<20070731090721.GA110@tv-sign.ru>
+	<20070801061616.GA5405@us.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset=us-ascii
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <m1ir7znog9.fsf-T1Yj925okcoyDheHMi7gv2pdwda3JcWeAL8bYrjMMd8@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <20070801061616.GA5405-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -20,40 +22,94 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Cc: Greg KH <greg-U8xfFu+wG4EAvxtiuMwx3w@public.gmane.org>, Greg KH <gregkh-l3A5Bk7waGM@public.gmane.org>, cornelia.huck-tA70FqPdS9bQT0dZR+AlfA@public.gmane.org, stern-nwvwT67g6+6dFdvTe/nMLpVzexx5G7lz@public.gmane.org, satyam-wEGCiKHe2LqWVfeAwA7xHQ@public.gmane.org, Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Dave Hansen <hansendc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+To: sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org
+Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Eric W. Biederman wrote:
-> Tejun Heo <htejun-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org> writes:
+On 07/31, sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org wrote:
+>
+> Oleg Nesterov [oleg-6lXkIZvqkOAvJsYlp49lxw@public.gmane.org] wrote:
+> | >  
+> | > @@ -925,9 +926,10 @@ fastcall NORET_TYPE void do_exit(long co
+> | >  	if (unlikely(!tsk->pid))
+> | >  		panic("Attempted to kill the idle task!");
+> | >  	if (unlikely(tsk == task_child_reaper(tsk))) {
+> | > -		if (task_active_pid_ns(tsk) != &init_pid_ns)
+> | > -			task_active_pid_ns(tsk)->child_reaper =
+> | > -					init_pid_ns.child_reaper;
+> | > +		if (pid_ns != &init_pid_ns) {
+> | > +			zap_pid_ns_processes(pid_ns);
+> | > +			pid_ns->child_reaper = init_pid_ns.child_reaper;
+> | > +		}
+> | >  		else
+> | >  			panic("Attempted to kill init!");
+> | >  	}
+> | 
+> | Just to remind you, this is not right when init is multi-threaded,
+> | we should do this only when the last thread exits.
 > 
->> Hmmm... I think we can live with a bit of complexity in
->> sysfs_get_dentry().  It's very well localized and not even long.  I have
->> been trying hard to untangle sysfs internals from vfs and have a bit of
->> resistance against going back.  But, then again, if we can achieve
->> something better and simpler, why not?
+> Sorry, I needed to clarify somethings about the multi-threaded init. I
+> got the impresssion that you were sending a patch for the existing bug,
+> and meant to review/clarify in the context of the patch.
+
+Ah, sorry, I forgot to send the patch to fix the bug in mainline.
+Will try to do tomorrow, please feel free to do this if you wish.
+
+> 	Our current definition of is_container_init() and task_child_reaper()
+> 	refer only to the main-thread of the container-init (since they check
+> 	for pid_t == 1)
+
+Yes.
+
+> 	If the main-thread is exiting and is the last thread in the group,
+> 	we want terminate other processes in the pid ns (simple case).
+
+Yes.
+
+> 	If the main thread is exiting, but is not the last thread in the
+> 	group, should we let it exit and let the next thread in the group
+> 	the reaper of the pid ns ?
+
+We can, but why? The main thread's task_struct can't go away until all
+sub-threads exit. Its ->nsproxy will be NULL, but this doesn't matter.
+
+> 	Then we would have the pid ns w/o a container-init (i.e reaper
+> 	does not have a pid_t == 1, but probably does not matter).
 > 
-> Right now my real challenge is untangling sysfs_move_dir.  In the
-> case of multiple mounts of the sysfs tree.
+> 	And, when this last thread is exiting, we want to terminate other
+> 	processes in the ns right ?
 
-OIC.  Yeah, I guess moving a sd with multiple dentries attached could be
-pretty difficult.
+Yes, when this last thread is exiting, the entire process is exiting.
 
-> My practical problem is that I need to hold a lock for the sysfs
-> dirents and while that lock is held I need to call sysfs_get_dentry
-> for the destination directory once for each superblock.
+> | > +void zap_pid_ns_processes(struct pid_namespace *pid_ns)
+> | > +{
+> | > +	int nr;
+> | > +	int rc;
+> | > +	int options = WEXITED|__WALL;
+> | > +
+> | > +	/*
+> | > +	 * We know pid == 1 is terminating. Find remaining pid_ts
+> | > +	 * in the namespace, signal them and then wait for them
+> | > +	 * exit.
+> | > +	 */
+> | > +	nr = next_pidmap(pid_ns, 1);
+> | > +	while (nr > 0) {
+> | > +		kill_proc_info(SIGKILL, SEND_SIG_PRIV, nr);
+> | > +		nr = next_pidmap(pid_ns, nr);
+> | > +	}
+> | 
+> | Without tasklist_lock held this is not reliable.
 > 
-> It might be that some kind of reader-writer lock strategy is what
-> I need to untangle this mess.  Rather then making changing to i_mutex.
-> All I know is at the moment it is taking a lot of code reading and
-> brain storm to come of with something that is easy to maintain.
+> Ok. BTW, find_ge_pid() also walks the pidmap, but does not seem to hold
+> the tasklist_lock. Is that bc its only used in /proc ?
 
-Just in case, sysfs used to have sysfs_rename_rwsem to protect
-move/rename against tree walking, which became unnecessary after i_mutex
--> sysfs_mutex conversion.  Move/rename can use stupid big fat locks if
-that helps.
+Yes, but this is something different. With or without tasklist_lock,
+find_ge_pid()/next_tgid() is not "reliable" (note that alloc_pid() doesn't
+take tasklist), but this doesn't matter for /proc.
 
-Good luck.
+We should take tasklist_lock to prevent the new process creation.
+We can have the "false positives" (copy_process() in progress, PGID/SID
+pids), but this is OK. Note that copy_process() checks signal_pending()
+after write_lock_irq(&tasklist_lock), that is why it helps.
 
--- 
-tejun
+Oleg.
