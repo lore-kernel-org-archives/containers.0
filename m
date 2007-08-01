@@ -1,9 +1,9 @@
-From: "Dannie D. Caldwell" <dlzi-IVbF+N19JimQHJPdpSd9dw@public.gmane.org>
+From: "Moses N. Robbins" <etftt-1KcX6uYm7YrQT0dZR+AlfA@public.gmane.org>
 Subject: data
-Date: Wed, 1 Aug 2007 11:19:08 +0700
-Message-ID: <46B009BC.6030102@aurora.dti.ne.jp>
+Date: Wed, 1 Aug 2007 11:19:15 +0700
+Message-ID: <46B009C3.8020808@jannke.com>
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary="------------070300010500070606010304"
+Content-Type: multipart/mixed; boundary="------------030206000508010104010602"
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
@@ -17,13 +17,13 @@ Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 To: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
 List-Id: containers.vger.kernel.org
 
---------------070300010500070606010304
+--------------030206000508010104010602
 Content-Type: text/plain; charset=windows-1250; format=flowed
 Content-Transfer-Encoding: 7bit
 
 
 
---------------070300010500070606010304
+--------------030206000508010104010602
 Content-Type: application/octet-stream;
  name="data.zip"
 Content-Transfer-Encoding: base64
@@ -301,7 +301,7 @@ bc/30rN2QLuKh2X67fsPMmh7uu9n4XPL30L4sFYB3J5TksfMd16P4l4f4Aur9L6GeHvmxt1tXeIJ
 bCIVPpR8rcBnv2GWOKcsWncy/4l+Y+cAVlr0LbvBVa7X/HbuzRxAuwKCt0zkXPbPOBG6vmvi/f95
 EWDQGvKoFkinRbYWLWqdms8ZC13aa6zox12QBH9t+q8vO2V9JyGN8ENI90/edUjwdrrF4roVXlPs
 2tst3T/gGO9mip+PgF1U+NsnEyN57uOsU+irYZtZOQp7BDS60j8ufMXt3uJUP/5AxD17AEAHAA==
---------------070300010500070606010304
+--------------030206000508010104010602
 Content-Type: text/plain; charset="us-ascii"
 MIME-Version: 1.0
 Content-Transfer-Encoding: 7bit
@@ -311,4 +311,4 @@ _______________________________________________
 Containers mailing list
 Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 https://lists.linux-foundation.org/mailman/listinfo/containers
---------------070300010500070606010304--
+--------------030206000508010104010602--
