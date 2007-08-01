@@ -1,16 +1,17 @@
-From: Dave Hansen <haveblue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 14/15] Destroy pid namespace on init's death
-Date: Wed, 01 Aug 2007 09:00:30 -0700
-Message-ID: <1185984030.18414.234.camel@localhost>
-References: <46A8B37B.6050108@openvz.org> <46A8B663.9040206@openvz.org>
-	<20070729104145.GC120@tv-sign.ru> <46ADD202.9030502@openvz.org>
-	<20070730154639.GA127@tv-sign.ru> <20070731061917.GB17013@us.ibm.com>
-	<20070731090721.GA110@tv-sign.ru>  <20070801061616.GA5405@us.ibm.com>
+From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH 11/15] Signal semantics
+Date: Wed, 1 Aug 2007 11:13:35 -0500
+Message-ID: <20070801161335.GA10747@sergelap.austin.ibm.com>
+References: <46A8B37B.6050108@openvz.org> <46A8B5C7.9040407@openvz.org>
+	<20070727123153.GA92@tv-sign.ru> <46A9F54B.5050000@openvz.org>
+	<20070727184604.GB1072@us.ibm.com>
+	<20070727195943.GA25878@sergelap.austin.ibm.com>
+	<46ADB000.1000705@openvz.org>
 Mime-Version: 1.0
-Content-Type: text/plain
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset=us-ascii
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20070801061616.GA5405-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <46ADB000.1000705-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -20,69 +21,48 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org
-Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Oleg Nesterov <oleg-6lXkIZvqkOAvJsYlp49lxw@public.gmane.org>, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+To: Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Oleg Nesterov <oleg-6lXkIZvqkOAvJsYlp49lxw@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Tue, 2007-07-31 at 23:16 -0700, sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org wrote:
-> Oleg Nesterov [oleg-6lXkIZvqkOAvJsYlp49lxw@public.gmane.org] wrote:
-> | On 07/30, sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org wrote:
-> | >
-> | > --- lx26-23-rc1-mm1.orig/kernel/exit.c	2007-07-26 20:08:16.000000000 -0700
-> | > +++ lx26-23-rc1-mm1/kernel/exit.c	2007-07-30 23:10:30.000000000 -0700
-> | > @@ -915,6 +915,7 @@ fastcall NORET_TYPE void do_exit(long co
-> | >  {
-> | >  	struct task_struct *tsk = current;
-> | >  	int group_dead;
-> | > +	struct pid_namespace *pid_ns = tsk->nsproxy->pid_ns;
-> | >  
-> | >  	profile_task_exit(tsk);
-> | >  
-> | > @@ -925,9 +926,10 @@ fastcall NORET_TYPE void do_exit(long co
-> | >  	if (unlikely(!tsk->pid))
-> | >  		panic("Attempted to kill the idle task!");
-> | >  	if (unlikely(tsk == task_child_reaper(tsk))) {
-> | > -		if (task_active_pid_ns(tsk) != &init_pid_ns)
-> | > -			task_active_pid_ns(tsk)->child_reaper =
-> | > -					init_pid_ns.child_reaper;
-> | > +		if (pid_ns != &init_pid_ns) {
-> | > +			zap_pid_ns_processes(pid_ns);
-> | > +			pid_ns->child_reaper = init_pid_ns.child_reaper;
-> | > +		}
-> | >  		else
-> | >  			panic("Attempted to kill init!");
-> | >  	}
-> | 
-> | Just to remind you, this is not right when init is multi-threaded,
-> | we should do this only when the last thread exits.
+Quoting Pavel Emelyanov (xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org):
+> [snip]
 > 
-> Sorry, I needed to clarify somethings about the multi-threaded init. I
-> got the impresssion that you were sending a patch for the existing bug,
-> and meant to review/clarify in the context of the patch.
+> >>| Maybe it's worth disabling cross-namespaces ptracing...
+> >>
+> >>I think so too. Its probably not a serious limitation ?
+> >
+> >Several people think we will implement 'namespace entering' through a
+> >ptrace hack, where maybe the admin ptraces the init in a child pidns,
 > 
-> Anyways, re: requirements for multi-threaded init:
+> Why not implement namespace entering w/o any hacks? :)
+
+I did, as a patch on top of the nsproxy container subsystem.  The
+response was that that is a hack, and ptrace is cleaner  :)
+
+So the current options for namespace entering would be:
+
+	* using Cedric's bind_ns() functionality, which assigns an
+	  integer global id to a namespace, and allows a process to
+	  enter a namespace by that global id
+	* using my nsproxy container subsystem patch, which lets
+	  a process enter another namespace using
+	  	echo pid > /container/some/cont/directory/tasks
+	  and eventually might allow construction of custom
+	  namespaces, i.e.
+	  	mkdir /container/c1/c2
+		ln -s /container/c1/c1/network /container/c1/c2/network
+		echo $$ > /container/c1/c2/tasks
+	* using ptrace to coerce a process in the target namespace
+	  into forking and executing the desired program.
+
+> >makes it fork, and makes the child execute what it wants (i.e. ps -ef).
+> >
+> >You're talking about killing that functionality?
 > 
-> 	Our current definition of is_container_init() and task_child_reaper()
-> 	refer only to the main-thread of the container-init (since they check
-> 	for pid_t == 1)
+> No. We're talking about disabling the things that are not supposed 
+> to work at all.
 
-Remember, the "pid" is actually a tgid:
-        
-        asmlinkage long sys_getpid(void)
-        {
-                return current->tgid;
-        }
+Uh, well in the abstract that sounds like a sound policy...
 
-So, there are multiple tasks with a "pid" == 1 with a multithreaded
-init. 
-
-> 	If the main-thread is exiting and is the last thread in the group,
-> 	we want terminate other processes in the pid ns (simple case).
-> 
-> 	If the main thread is exiting, but is not the last thread in the
-> 	group, should we let it exit and let the next thread in the group
-> 	the reaper of the pid ns ?
-
-Well, what happens with a multithreaded init today?
-	
--- Dave
+-serge
