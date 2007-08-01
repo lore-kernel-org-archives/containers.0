@@ -1,17 +1,21 @@
-From: sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org
-Subject: Re: [PATCH 14/15] Destroy pid namespace on init's death
-Date: Tue, 31 Jul 2007 23:16:16 -0700
-Message-ID: <20070801061616.GA5405@us.ibm.com>
-References: <46A8B37B.6050108@openvz.org> <46A8B663.9040206@openvz.org>
-	<20070729104145.GC120@tv-sign.ru> <46ADD202.9030502@openvz.org>
-	<20070730154639.GA127@tv-sign.ru>
-	<20070731061917.GB17013@us.ibm.com>
-	<20070731090721.GA110@tv-sign.ru>
+From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
+Subject: Re: [PATCH 06/14] sysfs: Rewrite sysfs_get_dentry
+Date: Wed, 01 Aug 2007 03:22:40 -0600
+Message-ID: <m1fy33pq1r.fsf@ebiederm.dsl.xmission.com>
+References: <m14pjkubd2.fsf_-_@ebiederm.dsl.xmission.com>
+	<m1zm1cswp0.fsf_-_@ebiederm.dsl.xmission.com>
+	<m1vec0swmi.fsf_-_@ebiederm.dsl.xmission.com>
+	<m1r6moswhr.fsf_-_@ebiederm.dsl.xmission.com>
+	<m1myxcswfr.fsf_-_@ebiederm.dsl.xmission.com>
+	<m1ir80swdl.fsf_-_@ebiederm.dsl.xmission.com>
+	<m1ejioswai.fsf_-_@ebiederm.dsl.xmission.com>
+	<46AF15F6.6010202@suse.de> <m11weorf3l.fsf@ebiederm.dsl.xmission.com>
+	<46AF1E57.3030209@suse.de> <20070731141613.GC13674@htj.dyndns.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <20070731090721.GA110-6lXkIZvqkOAvJsYlp49lxw@public.gmane.org>
+In-Reply-To: <20070731141613.GC13674-Gd/HAXX7CRxy/B6EtB590w@public.gmane.org> (Tejun Heo's message of
+	"Tue, 31 Jul 2007 23:16:13 +0900")
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -21,96 +25,56 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Oleg Nesterov <oleg-6lXkIZvqkOAvJsYlp49lxw@public.gmane.org>
-Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+Cc: htejun-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, Greg KH <greg-U8xfFu+wG4EAvxtiuMwx3w@public.gmane.org>, Greg KH <gregkh-l3A5Bk7waGM@public.gmane.org>, cornelia.huck-tA70FqPdS9bQT0dZR+AlfA@public.gmane.org, stern-nwvwT67g6+6dFdvTe/nMLpVzexx5G7lz@public.gmane.org, satyam-wEGCiKHe2LqWVfeAwA7xHQ@public.gmane.org, Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Dave Hansen <hansendc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Oleg Nesterov [oleg-6lXkIZvqkOAvJsYlp49lxw@public.gmane.org] wrote:
-| On 07/30, sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org wrote:
-| >
-| > --- lx26-23-rc1-mm1.orig/kernel/exit.c	2007-07-26 20:08:16.000000000 -0700
-| > +++ lx26-23-rc1-mm1/kernel/exit.c	2007-07-30 23:10:30.000000000 -0700
-| > @@ -915,6 +915,7 @@ fastcall NORET_TYPE void do_exit(long co
-| >  {
-| >  	struct task_struct *tsk = current;
-| >  	int group_dead;
-| > +	struct pid_namespace *pid_ns = tsk->nsproxy->pid_ns;
-| >  
-| >  	profile_task_exit(tsk);
-| >  
-| > @@ -925,9 +926,10 @@ fastcall NORET_TYPE void do_exit(long co
-| >  	if (unlikely(!tsk->pid))
-| >  		panic("Attempted to kill the idle task!");
-| >  	if (unlikely(tsk == task_child_reaper(tsk))) {
-| > -		if (task_active_pid_ns(tsk) != &init_pid_ns)
-| > -			task_active_pid_ns(tsk)->child_reaper =
-| > -					init_pid_ns.child_reaper;
-| > +		if (pid_ns != &init_pid_ns) {
-| > +			zap_pid_ns_processes(pid_ns);
-| > +			pid_ns->child_reaper = init_pid_ns.child_reaper;
-| > +		}
-| >  		else
-| >  			panic("Attempted to kill init!");
-| >  	}
-| 
-| Just to remind you, this is not right when init is multi-threaded,
-| we should do this only when the last thread exits.
+Tejun Heo <htejun-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org> writes:
 
-Sorry, I needed to clarify somethings about the multi-threaded init. I
-got the impresssion that you were sending a patch for the existing bug,
-and meant to review/clarify in the context of the patch.
+> On Tue, Jul 31, 2007 at 08:34:47PM +0900, Tejun Heo wrote:
+>> > If sysfs_mutex nested the other way things would be easier,
+>> > and we could grab all of the i_mutexes we wanted.  I wonder if we can
+>> > be annoying in sysfs_lookup and treat that as the lock inversion
+>> > case using mutex_trylock etc.  And have sysfs_mutex be on the
+>> > outside for the rest of the cases?
+>> 
+>> The problem with treating sysfs_lookup as inversion case is that vfs
+>> layer grabs i_mutex outside of sysfs_lookup.  Releasing i_mutex from
+>> inside sysfs_lookup would be a hacky layering violation.
+>> 
+>> Then again, the clean up which can come from the new sysfs_looukp_dentry
+>> is very significant.  I'll think about it a bit more.
+>
+> How about something like this?  __sysfs_get_dentry() never creates any
+> dentry, it just looks up existing ones.  sysfs_get_dentry() calls
+> __sysfs_get_dentry() and if it fails, it builds a path string and look
+> up using regular vfs_path_lookup().  Once in the creation path,
+> sysfs_get_dentry() is allowed to fail, so allocating path buf is fine.
+>
+> It still needs to retry when vfs_path_lookup() returns -ENOENT or the
+> wrong dentry but things are much simpler now.  It doesn't violate any
+> VFS locking rule while maintaining all the benefits of
+> sysfs_get_dentry() cleanup.
+>
+> Something like LOOKUP_KERNEL is needed to ignore security checks;
+> otherwise, we'll need to resurrect lookup_one_len_kern() and open code
+> look up.
+>
+> The patch is on top of all your patches and is in barely working form.
 
-Anyways, re: requirements for multi-threaded init:
+I will look a little more and see.  But right now it looks like the
+real problem with locking is that we use sysfs_mutex to lock the
+sysfs_dirent s_children list.
 
-	Our current definition of is_container_init() and task_child_reaper()
-	refer only to the main-thread of the container-init (since they check
-	for pid_t == 1)
+Instead it really looks like we should use i_mutex from the appropriate
+inode.  Or is there a real performance problem with forcing the directory
+inodes in core when we modify the directories?
 
-	If the main-thread is exiting and is the last thread in the group,
-	we want terminate other processes in the pid ns (simple case).
+Using i_mutex to lock the s_children list. Allows us to make sysfs_mutex
+come before i_mutex, and it removes the need for an additional lock in
+sysfs_lookup.  So generally it looks like the right thing to do and
+it should noticeably simplify the sysfs locking.
 
-	If the main thread is exiting, but is not the last thread in the
-	group, should we let it exit and let the next thread in the group
-	the reaper of the pid ns ?
-	
-	Then we would have the pid ns w/o a container-init (i.e reaper
-	does not have a pid_t == 1, but probably does not matter).
+Was this an oversight or is there some good reason we aren't using
+i_mutex to lock the s_children list?
 
-	And, when this last thread is exiting, we want to terminate other
-	processes in the ns right ?
-
-| 
-| > -static long do_wait(pid_t pid, int options, struct siginfo __user *infop,
-| > +long do_wait(pid_t pid, int options, struct siginfo __user *infop,
-| >  		    int __user *stat_addr, struct rusage __user *ru)
-| 
-| Small nit, other in-kernel reapers use sys_wait4(), perhaps we can use
-| it too, in that case we don't need to export do_wait().
-
-Ok.
-
-| 
-| > +void zap_pid_ns_processes(struct pid_namespace *pid_ns)
-| > +{
-| > +	int nr;
-| > +	int rc;
-| > +	int options = WEXITED|__WALL;
-| > +
-| > +	/*
-| > +	 * We know pid == 1 is terminating. Find remaining pid_ts
-| > +	 * in the namespace, signal them and then wait for them
-| > +	 * exit.
-| > +	 */
-| > +	nr = next_pidmap(pid_ns, 1);
-| > +	while (nr > 0) {
-| > +		kill_proc_info(SIGKILL, SEND_SIG_PRIV, nr);
-| > +		nr = next_pidmap(pid_ns, nr);
-| > +	}
-| 
-| Without tasklist_lock held this is not reliable.
-
-Ok. BTW, find_ge_pid() also walks the pidmap, but does not seem to hold
-the tasklist_lock. Is that bc its only used in /proc ?
-
-| 
-| Oleg.
+Eric
