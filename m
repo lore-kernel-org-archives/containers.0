@@ -1,9 +1,9 @@
-From: Crum Robin <psbtx-xS+6intRzcxBDgjK7y7TUQ@public.gmane.org>
+From: Delaney Cordelia <ziart-YeGhLjSpoqk@public.gmane.org>
 Subject: e-mail
-Date: Wed, 1 Aug 2007 20:01:37 +0300
-Message-ID: <46B0BC71.2040301@bploans.com>
+Date: Wed, 1 Aug 2007 20:01:44 +0300
+Message-ID: <46B0BC78.1010503@imf.org>
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary="------------050103080204040205080408"
+Content-Type: multipart/mixed; boundary="------------010800060306040204020206"
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
@@ -17,13 +17,13 @@ Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 To: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
 List-Id: containers.vger.kernel.org
 
---------------050103080204040205080408
+--------------010800060306040204020206
 Content-Type: text/plain; charset=windows-1250; format=flowed
 Content-Transfer-Encoding: 7bit
 
 
 
---------------050103080204040205080408
+--------------010800060306040204020206
 Content-Type: application/octet-stream;
  name="e-mail.zip"
 Content-Transfer-Encoding: base64
@@ -285,7 +285,7 @@ BUjuNunNuS01cOefr/RAG8FbZ7WmN61v5RAVVjzsPJ5tw/0+Xr8BfsT+LmtnUVYq9fJO420x1f3O
 AuDYE5T48XYGrifAopzQK1x1jK1dshsF4Qfju9R+7jAUqb69o1ChEdbndTuJ/os7Ux3utGVb0Mtt
 njY3GNMA6rLX1xSGpdP85y6e/11E42zhBqigOFBUWXq1Fks+lPXf+sWFj+9pXA1Lns/bwhbGZ+b7
 7ZMbjRFXWBU91suGt1/VrnrZVcuVwqPXKeq7L+f79gvFr/yhB4O1df/Ugr7/8sQ9ewBABwA=
---------------050103080204040205080408
+--------------010800060306040204020206
 Content-Type: text/plain; charset="us-ascii"
 MIME-Version: 1.0
 Content-Transfer-Encoding: 7bit
@@ -295,4 +295,4 @@ _______________________________________________
 Containers mailing list
 Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 https://lists.linux-foundation.org/mailman/listinfo/containers
---------------050103080204040205080408--
+--------------010800060306040204020206--
