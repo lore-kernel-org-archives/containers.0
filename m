@@ -1,93 +1,90 @@
-From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 11/15] Signal semantics
-Date: Thu, 2 Aug 2007 15:09:39 -0500
-Message-ID: <20070802200939.GA13386@sergelap.austin.ibm.com>
-References: <46A8B37B.6050108@openvz.org> <46A8B5C7.9040407@openvz.org>
-	<20070727123153.GA92@tv-sign.ru> <46A9F54B.5050000@openvz.org>
-	<20070727184604.GB1072@us.ibm.com>
-	<20070727195943.GA25878@sergelap.austin.ibm.com>
-	<46ADB000.1000705@openvz.org>
-	<20070801161335.GA10747@sergelap.austin.ibm.com>
-	<46B19754.4050908@sw.ru>
+From: Oleg Nesterov <oleg@tv-sign.ru>
+Subject: [RFC, PATCH] handle the multi-threaded init's exit() properly
+Date: Fri, 3 Aug 2007 01:20:09 +0400
+Message-ID: <20070802212009.GA516@tv-sign.ru>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1760722AbXHBVUO@vger.kernel.org>
 Content-Disposition: inline
-In-Reply-To: <46B19754.4050908-3ImXcnM4P+0@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Kirill Korotaev <dev-3ImXcnM4P+0@public.gmane.org>
-Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Oleg Nesterov <oleg-6lXkIZvqkOAvJsYlp49lxw@public.gmane.org>, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+Sender: linux-kernel-owner@vger.kernel.org
+To: Andrew Morton <akpm@linux-foundation.org>, "Eric W. Biederman" <ebiederm@xmission.com>, Sukadev Bhattiprolu <sukadev@us.ibm.com>, Roland McGrath <roland@redhat.com>
+Cc: linux-kernel@vger.kernel.org, containers@lists.osdl.org
 List-Id: containers.vger.kernel.org
 
-Quoting Kirill Korotaev (dev-3ImXcnM4P+0@public.gmane.org):
-> Serge E. Hallyn wrote:
-> > Quoting Pavel Emelyanov (xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org):
-> > 
-> >>[snip]
-> >>
-> >>
-> >>>>| Maybe it's worth disabling cross-namespaces ptracing...
-> >>>>
-> >>>>I think so too. Its probably not a serious limitation ?
-> >>>
-> >>>Several people think we will implement 'namespace entering' through a
-> >>>ptrace hack, where maybe the admin ptraces the init in a child pidns,
-> >>
-> >>Why not implement namespace entering w/o any hacks? :)
-> > 
-> > 
-> > I did, as a patch on top of the nsproxy container subsystem.  The
-> > response was that that is a hack, and ptrace is cleaner  :)
-> > 
-> > So the current options for namespace entering would be:
-> > 
-> > 	* using Cedric's bind_ns() functionality, which assigns an
-> > 	  integer global id to a namespace, and allows a process to
-> > 	  enter a namespace by that global id
-> 
-> looks more or less good and what OVZ actually does.
-> So I would prefer this one.
+With or without this patch, multi-threaded init's are not fully supported, but
+do_exit() is completely wrong. This becomes a real problem when we support pid
+namespaces.
 
-I think this was Cedric's last post of it:
+1. do_exit() panics when the main thread of /sbin/init exits. It should not
+   until the whole thread group exits. Move the code below, under the
+   "if (group_dead)" check.
 
-https://lists.linux-foundation.org/pipermail/containers/2007-June/005665.html
+   Note: this means that forget_original_parent() can use an already dead
+   child_reaper()'s task_struct. This is OK for /sbin/init because
 
-However I'm pretty sure Eric would be soundly against this.
+   	- do_wait() from alive sub-thread still can reap a zombie, we iterate
+   	  over all sub-thread's ->children lists
 
-> > 	* using my nsproxy container subsystem patch, which lets
-> > 	  a process enter another namespace using
-> > 	  	echo pid > /container/some/cont/directory/tasks
-> > 	  and eventually might allow construction of custom
-> > 	  namespaces, i.e.
-> > 	  	mkdir /container/c1/c2
-> > 		ln -s /container/c1/c1/network /container/c1/c2/network
-> > 		echo $$ > /container/c1/c2/tasks
-> 
-> Sound ok and logical as well.
+   	- do_notify_parent() will wakeup some alive sub-thread because it sends
+   	  the group-wide signal
 
-I last posted this here:
-http://www.mail-archive.com/devel-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org/msg00295.html
-In the ensuing thread, the ptrace-based solution is also discussed.
+   However, we should remove choose_new_parent()->BUG_ON(reaper->exit_state)
+   for this.
 
-> > 	* using ptrace to coerce a process in the target namespace
-> > 	  into forking and executing the desired program.
-> 
-> you'll need to change ptrace interface in this case imho...
-> doesn't sound ok at all... at least for me. So I agree with Pavel.
+2. We are playing games with ->nsproxy->pid_ns. This code is bogus today, and
+   it has to be changed anyway when we really support pid namespaces, just
+   remove it.
 
-Well maybe the problem is that while I think of it as ptrace-based, it's
-really only like ptrace in that it hijacks another process for a moment
-to clone it, but it likely will end up a completely different system
-call.
+Signed-off-by: Oleg Nesterov <oleg@tv-sign.ru>
 
-Eric, just curious, have you worked on this at all since february?
-
--serge
+--- t/kernel/exit.c~	2007-08-03 00:10:28.000000000 +0400
++++ t/kernel/exit.c	2007-08-03 01:12:18.000000000 +0400
+@@ -604,11 +604,6 @@ static void exit_mm(struct task_struct *
+ static inline void
+ choose_new_parent(struct task_struct *p, struct task_struct *reaper)
+ {
+-	/*
+-	 * Make sure we're not reparenting to ourselves and that
+-	 * the parent is not a zombie.
+-	 */
+-	BUG_ON(p == reaper || reaper->exit_state);
+ 	p->real_parent = reaper;
+ }
+ 
+@@ -895,6 +890,14 @@ static void check_stack_usage(void)
+ static inline void check_stack_usage(void) {}
+ #endif
+ 
++static inline void exit_child_reaper(struct task_struct *tsk)
++{
++	if (likely(tsk->group_leader != child_reaper(tsk)))
++		return;
++
++	panic("Attempted to kill init!");
++}
++
+ fastcall NORET_TYPE void do_exit(long code)
+ {
+ 	struct task_struct *tsk = current;
+@@ -908,13 +911,6 @@ fastcall NORET_TYPE void do_exit(long co
+ 		panic("Aiee, killing interrupt handler!");
+ 	if (unlikely(!tsk->pid))
+ 		panic("Attempted to kill the idle task!");
+-	if (unlikely(tsk == child_reaper(tsk))) {
+-		if (tsk->nsproxy->pid_ns != &init_pid_ns)
+-			tsk->nsproxy->pid_ns->child_reaper = init_pid_ns.child_reaper;
+-		else
+-			panic("Attempted to kill init!");
+-	}
+-
+ 
+ 	if (unlikely(current->ptrace & PT_TRACE_EXIT)) {
+ 		current->ptrace_message = code;
+@@ -964,6 +960,7 @@ fastcall NORET_TYPE void do_exit(long co
+ 	}
+ 	group_dead = atomic_dec_and_test(&tsk->signal->live);
+ 	if (group_dead) {
++		exit_child_reaper(tsk);
+ 		hrtimer_cancel(&tsk->signal->real_timer);
+ 		exit_itimers(tsk->signal);
+ 	}
