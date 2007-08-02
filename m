@@ -1,20 +1,19 @@
 From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 14/15] Destroy pid namespace on init's death
-Date: Thu, 2 Aug 2007 14:13:35 -0500
-Message-ID: <20070802191335.GA22634@sergelap.austin.ibm.com>
-References: <20070731061917.GB17013@us.ibm.com>
-	<20070731090721.GA110@tv-sign.ru>
-	<20070801061616.GA5405@us.ibm.com>
-	<20070801194811.GA196@tv-sign.ru> <20070802072958.GA729@us.ibm.com>
-	<20070802154018.GA93@tv-sign.ru> <20070802172033.GA8011@us.ibm.com>
-	<20070802173128.GA2616@tv-sign.ru>
-	<20070802183608.GB15332@us.ibm.com>
-	<20070802184953.GA316@tv-sign.ru>
+Subject: Re: [PATCH 11/15] Signal semantics
+Date: Thu, 2 Aug 2007 15:09:39 -0500
+Message-ID: <20070802200939.GA13386@sergelap.austin.ibm.com>
+References: <46A8B37B.6050108@openvz.org> <46A8B5C7.9040407@openvz.org>
+	<20070727123153.GA92@tv-sign.ru> <46A9F54B.5050000@openvz.org>
+	<20070727184604.GB1072@us.ibm.com>
+	<20070727195943.GA25878@sergelap.austin.ibm.com>
+	<46ADB000.1000705@openvz.org>
+	<20070801161335.GA10747@sergelap.austin.ibm.com>
+	<46B19754.4050908@sw.ru>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <20070802184953.GA316-6lXkIZvqkOAvJsYlp49lxw@public.gmane.org>
+In-Reply-To: <46B19754.4050908-3ImXcnM4P+0@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -24,40 +23,71 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Oleg Nesterov <oleg-6lXkIZvqkOAvJsYlp49lxw@public.gmane.org>
-Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+To: Kirill Korotaev <dev-3ImXcnM4P+0@public.gmane.org>
+Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Oleg Nesterov <oleg-6lXkIZvqkOAvJsYlp49lxw@public.gmane.org>, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Quoting Oleg Nesterov (oleg-6lXkIZvqkOAvJsYlp49lxw@public.gmane.org):
-> On 08/02, sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org wrote:
-> >
-> > Oleg Nesterov [oleg-6lXkIZvqkOAvJsYlp49lxw@public.gmane.org] wrote:
-> > | 
-> > | This means that we should take care about multi-thread init exit,
-> > | otherwise the non-root user can crash the kernel.
-> > | 
-> > | >From reply to Kirill's message:
-> > | 
-> > | 	> Still. A non-root user does clone(CLONE_PIDNS), then clone(CLONE_THREAD),
+Quoting Kirill Korotaev (dev-3ImXcnM4P+0@public.gmane.org):
+> Serge E. Hallyn wrote:
+> > Quoting Pavel Emelyanov (xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org):
 > > 
-> > Agree we should fix the crash. But we need CAP_SYS_ADMIN to clone
-> > pid or other namespaces - this is enforced in copy_namespaces() and
-> > unshare_nsproxy_namespaces()
+> >>[snip]
+> >>
+> >>
+> >>>>| Maybe it's worth disabling cross-namespaces ptracing...
+> >>>>
+> >>>>I think so too. Its probably not a serious limitation ?
+> >>>
+> >>>Several people think we will implement 'namespace entering' through a
+> >>>ptrace hack, where maybe the admin ptraces the init in a child pidns,
+> >>
+> >>Why not implement namespace entering w/o any hacks? :)
+> > 
+> > 
+> > I did, as a patch on top of the nsproxy container subsystem.  The
+> > response was that that is a hack, and ptrace is cleaner  :)
+> > 
+> > So the current options for namespace entering would be:
+> > 
+> > 	* using Cedric's bind_ns() functionality, which assigns an
+> > 	  integer global id to a namespace, and allows a process to
+> > 	  enter a namespace by that global id
 > 
-> Hmm. sys_unshare(CLONE_PIDNS) doesn't (and shouldn't) work anyway, but
-> I don't see the CAP_SYS_ADMIN check in copy_process()->copy_namespaces()
-> path.
+> looks more or less good and what OVZ actually does.
+> So I would prefer this one.
+
+I think this was Cedric's last post of it:
+
+https://lists.linux-foundation.org/pipermail/containers/2007-June/005665.html
+
+However I'm pretty sure Eric would be soundly against this.
+
+> > 	* using my nsproxy container subsystem patch, which lets
+> > 	  a process enter another namespace using
+> > 	  	echo pid > /container/some/cont/directory/tasks
+> > 	  and eventually might allow construction of custom
+> > 	  namespaces, i.e.
+> > 	  	mkdir /container/c1/c2
+> > 		ln -s /container/c1/c1/network /container/c1/c2/network
+> > 		echo $$ > /container/c1/c2/tasks
 > 
-> Perhaps I just missed it (sorry, I already cleared my mbox, so I can't
-> look at theses patches), but is it a good idea to require CAP_SYS_ADMIN?
-> I think it would be nice if a normal user can create containers, no?
+> Sound ok and logical as well.
 
-For pid namespaces I can't think of any reason why CAP_SYS_ADMIN should
-be needed, since you can't hide processes that way.  Same for uts
-namespaces.
+I last posted this here:
+http://www.mail-archive.com/devel-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org/msg00295.html
+In the ensuing thread, the ptrace-based solution is also discussed.
 
-However for ipc and mount namespaces I'd want to think about it some
-more.  Any case I can think of right now where they'd be unsafe, is
-unsafe anyway, so maybe it's fine...
+> > 	* using ptrace to coerce a process in the target namespace
+> > 	  into forking and executing the desired program.
+> 
+> you'll need to change ptrace interface in this case imho...
+> doesn't sound ok at all... at least for me. So I agree with Pavel.
+
+Well maybe the problem is that while I think of it as ptrace-based, it's
+really only like ptrace in that it hijacks another process for a moment
+to clone it, but it likely will end up a completely different system
+call.
+
+Eric, just curious, have you worked on this at all since february?
 
 -serge
