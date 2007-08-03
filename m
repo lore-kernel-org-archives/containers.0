@@ -1,21 +1,11 @@
-From: sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org
-Subject: Re: [PATCH 14/15] Destroy pid namespace on init's death
-Date: Fri, 3 Aug 2007 14:36:36 -0700
-Message-ID: <20070803213636.GB4195@us.ibm.com>
-References: <20070731061917.GB17013@us.ibm.com>
-	<20070731090721.GA110@tv-sign.ru>
-	<20070801061616.GA5405@us.ibm.com>
-	<1185984030.18414.234.camel@localhost>
-	<20070801195123.GB196@tv-sign.ru> <46B197E3.3040309@sw.ru>
-	<20070802160851.GA137@tv-sign.ru>
-	<20070802170820.GA2566@tv-sign.ru>
-	<20070803062227.GA16833@us.ibm.com>
-	<20070803105557.GA91@tv-sign.ru>
+From: Ontal Trading UK <info-396EmWOJT2TfRDW8S1wbG7VCufUGDwFn@public.gmane.org>
+Subject: POSITION FOR NORTH AMERICA-BASED AGENTS
+Date: Fri, 03 Aug 2007 19:31:52 -0400
+Message-ID: <E1IH6ca-0002PT-3z@prague.dnstraffic.net>
+Reply-To: info-396EmWOJT2TfRDW8S1wbG7VCufUGDwFn@public.gmane.org, ontaltrading-/E1597aS9LT10XsdtD+oqA@public.gmane.org
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+Content-Type: multipart/mixed; boundary="===============5155626462408486859=="
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <20070803105557.GA91-6lXkIZvqkOAvJsYlp49lxw@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -23,154 +13,151 @@ List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
 List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Mime-version: 1.0
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Oleg Nesterov <oleg-6lXkIZvqkOAvJsYlp49lxw@public.gmane.org>
-Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Pavel Emelianov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+To: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Oleg Nesterov [oleg-6lXkIZvqkOAvJsYlp49lxw@public.gmane.org] wrote:
-| This is harmless (and note that it is possible that current was actually killed
-| with SIGKILL from the parent namespace), but the code imho looks confusing.
-| 
-| I'd suggest to make zap_pid_ns_processes(void), and start the loop from nr == 1.
-| Or zap_pid_ns_processes(struct pid_namespace *pid_ns).
-| 
-| Oleg.
+--===============5155626462408486859==
+Content-Type: text/html
+Content-Transfer-Encoding: quoted-printable
+X-MIME-Autoconverted: from 8bit to quoted-printable by smtp2.linux-foundation.org id l73NWqet002007
 
-Agree. Here is the modified patch.
----
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<HTML><HEAD></HEAD>
+<BODY>
+<p class=3D"MsoNormal" align=3D"center"><font color=3D"#000080">
+<font face=3D"Verdana" size=3D"5">ONTAL TRADING LIMITED</font><br>
+<font face=3D"Verdana" style=3D"font-size: 12pt">70 North End Road, West =
+Kensington<br>
+London, W14 9EP United Kingdom<br>
+Email:info-396EmWOJT2TfRDW8S1wbG7VCufUGDwFn@public.gmane.org <br>
+Fax: 44 8712390189</font></font><font color=3D"#0000FF" face=3D"Verdana">=
+<br>
+=A0</font></p>
+<p class=3D"MsoNormal" align=3D"justify"><span style=3D"font-size:11.0pt;=
+font-family:Verdana">August 03</span><span lang=3D"EN-GB"=20
 
-From: Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
-Subject: [PATCH 14/15] Destroy pid namespace on init's death
+style=3D"font-size: 11.0pt; font-family: Verdana">,=20
+2007.</span></p>
+<p class=3D"MsoNormal" style=3D"text-align:justify">
+<span lang=3D"EN-GB" style=3D"font-size: 11.0pt; font-family: Verdana">De=
+ar=20
+Sir/Madam,</span></p>
+<p class=3D"MsoNormal" style=3D"text-align:justify">
+<span lang=3D"EN-GB" style=3D"font-size: 11.0pt; font-family: Verdana">SE=
+ARCH FOR=20
+NORTH AMERICA-BASED AGENTS </span></p>
+<p class=3D"MsoNormal" style=3D"text-align:justify">
+<span lang=3D"EN-GB" style=3D"font-size: 11.0pt; font-family: Verdana">We=
+ are a=20
+small scale organisation involved with antiques, sculptural works, crafts=
+,=20
+batiks, traditional costumes, etc. We supply to clients in different part=
+s of=20
+the world as well as to clients in the United States and Canada. Presentl=
+y, we=20
+need agents in North America who will work for us on part-time basis with=
+out=20
+affecting or necessarily having to quit their present employment. </span>=
+</p>
+<p class=3D"MsoNormal" style=3D"text-align:justify">
+<span lang=3D"EN-GB" style=3D"font-size: 11.0pt; font-family: Verdana">Du=
+e to recent=20
+high increases in demand for our goods in </span>
+<span style=3D"font-size:
+11.0pt;font-family:Verdana">your</span><span lang=3D"EN-GB" style=3D"font=
+-size: 11.0pt; font-family: Verdana">=20
+region, we now need to be supplying </span>
+<span style=3D"font-size:11.0pt;font-family:Verdana">more </span>
+<span lang=3D"EN-GB" style=3D"font-size: 11.0pt; font-family: Verdana">on=
+ a weekly=20
+basis to clients in </span>
+<span style=3D"font-size:11.0pt;
+ font-family:Verdana">North America</span><span lang=3D"EN-GB" style=3D"f=
+ont-size: 11.0pt; font-family: Verdana">.=20
+But a major problem for us is that some of our clients find it more conve=
+nient
+</span><span style=3D"font-size:11.0pt;font-family:Verdana">and prefer </=
+span>
+<span lang=3D"EN-GB" style=3D"font-size: 11.0pt; font-family: Verdana">to=
+ make=20
+payments for our supplies through payment instruments which are not readi=
+ly=20
+cashable outside North America. </span></p>
+<p class=3D"MsoNormal" style=3D"text-align:justify">
+<span lang=3D"EN-GB" style=3D"font-size: 11.0pt; font-family: Verdana">In=
+ order for=20
+us to maximise profit from this recent increase in demand</span><span=20
 
-From: Sukadev Bhattiprolu <sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+style=3D"font-size:11.0pt;font-family:Verdana">,</span><span lang=3D"EN-G=
+B" style=3D"font-size: 11.0pt; font-family: Verdana">=20
+and also not to </span><span style=3D"font-size:11.0pt;font-family:Verdan=
+a">
+discourage or lose</span><span lang=3D"EN-GB" style=3D"font-size: 11.0pt;=
+ font-family: Verdana">=20
+majority of these clients, it has become necessary for us to have people =
+based=20
+in the US and Canada to work as our agent and assist us in processing pay=
+ments=20
+from these clients. And we have found it expedient to recruit agents thro=
+ugh=20
+this means and medium.</span></p>
+<p class=3D"MsoNormal" style=3D"text-align:justify">
+<span lang=3D"EN-GB" style=3D"font-size: 11.0pt; font-family: Verdana">Th=
+e role of=20
+the agent will mainly be to cash the payments issued by </span>
+<span style=3D"font-size:11.0pt;font-family:Verdana">this category of</sp=
+an><span lang=3D"EN-GB" style=3D"font-size: 11.0pt;=20
 
-Terminate all processes in a namespace when the reaper of the namespace
-is exiting. We do this by walking the pidmap of the namespace and sending
-SIGKILL to all processes.
+font-family: Verdana">=20
+clients and remit monies to the UK through means convenient for us. The p=
+ayments=20
+will be issued in the name of the agent with our approval. We will pay a=20
+commission of 7.5% for each payment cleared and a weekly salary can be ag=
+reed=20
+upon after 3 months trial period. Payment transactions to be handled by a=
+n agent=20
+could be=A0more than=A0US$20,000 per week.</span></p>
+<p class=3D"MsoNormal" style=3D"text-align:justify">
+<span lang=3D"EN-GB" style=3D"font-size: 11.0pt; font-family: Verdana">If=
+ you are=20
+ready to work with us</span><span style=3D"font-size:11.0pt;font-family:V=
+erdana">,</span><span lang=3D"EN-GB" style=3D"font-size:=20
 
-Changelog:
-	[Oleg Nesterov]: In zap_pid_ns_processes() wait for any child
-		rather than iterating over all pid_ts in the pidmap. Clear
-		TIF_SIGPENDING flag for successive wait() calls.
+11.0pt; font-family: Verdana">=20
+please do contact us immediately by email to
+<a href=3D"mailto:info-396EmWOJT2TfRDW8S1wbG7VCufUGDwFn@public.gmane.org,ontaltrading-/E1597aS9LT10XsdtD+oqA@public.gmane.org" style=
+=3D"color: #003399; text-decoration: none;=20
 
-	[Oleg Nesterov]: Ensure the logic works even with multi-threaded
-		container-init process.
+text-underline: none; text-line-through: none">
+info-396EmWOJT2TfRDW8S1wbG7VCufUGDwFn@public.gmane.org or ontaltrading-/E1597aS9LT10XsdtD+oqA@public.gmane.org</a> for further detai=
+ls. We=20
+appreciate your quick response.</span></p>
+<p class=3D"MsoNormal" style=3D"text-align:left">
+<span lang=3D"EN-GB" style=3D"font-size: 11.0pt; font-family: Verdana">Yo=
+urs=20
+sincerely,</span></p>
+<p class=3D"MsoNormal" style=3D"text-align: left">
+<font face=3D"Verdana"><span style=3D"font-size: 11pt">Arman Gabi, <br>
+For: ONTAL TRADING LIMITED<br>
+Tel: +44 7031911468<br>
+=A0</span></font></p>
 
-Signed-off-by: Sukadev Bhattiprolu <sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Acked-by: Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+</BODY></HTML>
 
----
 
- include/linux/pid.h |    1 +
- kernel/exit.c       |   27 ++++++++++++++++++++++++++-
- kernel/pid.c        |   38 ++++++++++++++++++++++++++++++++++++++
- 3 files changed, 65 insertions(+), 1 deletion(-)
 
-Index: lx26-23-rc1-mm1/include/linux/pid.h
-===================================================================
---- lx26-23-rc1-mm1.orig/include/linux/pid.h	2007-08-02 11:03:39.000000000 -0700
-+++ lx26-23-rc1-mm1/include/linux/pid.h	2007-08-03 13:29:40.000000000 -0700
-@@ -118,6 +118,7 @@ extern struct pid *find_ge_pid(int nr, s
- 
- extern struct pid *alloc_pid(struct pid_namespace *ns);
- extern void FASTCALL(free_pid(struct pid *pid));
-+extern void zap_pid_ns_processes(struct pid_namespace *pid_ns);
- 
- /*
-  * the helpers to get the pid's id seen from different namespaces
-Index: lx26-23-rc1-mm1/kernel/exit.c
-===================================================================
---- lx26-23-rc1-mm1.orig/kernel/exit.c	2007-08-02 11:06:36.000000000 -0700
-+++ lx26-23-rc1-mm1/kernel/exit.c	2007-08-03 13:56:37.000000000 -0700
-@@ -916,7 +916,32 @@ static inline void exit_child_reaper(str
- 	if (likely(tsk->group_leader != task_child_reaper(tsk)))
- 		return;
- 
--	panic("Attempted to kill init!");
-+	if (tsk->nsproxy->pid_ns == &init_pid_ns)
-+		panic("Attempted to kill init!");
-+
-+	/*
-+	 * @tsk is the last thread in the 'container-init' and is exiting.
-+	 * Terminate all remaining processes in the namespace and reap them
-+	 * before exiting @tsk.
-+	 *
-+	 * Note that @tsk (last thread of container-init) may not necessarily
-+	 * be the child-reaper (i.e main thread of container-init) of the
-+	 * namespace i.e the child_reaper may have already exited.
-+ 	 *
-+	 * Even after a child_reaper exits, we let it inherit orphaned children,
-+	 * because, pid_ns->child_reaper remains valid as long as there is
-+	 * at least one living sub-thread in the container init.
-+
-+	 * This living sub-thread of the container-init will be notified when
-+	 * a child inherited by the 'child-reaper' exits (do_notify_parent()
-+	 * uses __group_send_sig_info()). Further, when reaping child processes,
-+	 * do_wait() iterates over children of all living sub threads.
-+
-+	 * i.e even though 'child_reaper' thread is listed as the parent of the
-+	 * orphaned children, any living sub-thread in the container-init can
-+	 * perform the role of the child_reaper.
-+	 */
-+	zap_pid_ns_processes(tsk->nsproxy->pid_ns);
- }
- 
- fastcall NORET_TYPE void do_exit(long code)
-Index: lx26-23-rc1-mm1/kernel/pid.c
-===================================================================
---- lx26-23-rc1-mm1.orig/kernel/pid.c	2007-08-02 11:03:39.000000000 -0700
-+++ lx26-23-rc1-mm1/kernel/pid.c	2007-08-03 13:56:12.000000000 -0700
-@@ -29,6 +29,7 @@
- #include <linux/pid_namespace.h>
- #include <linux/init_task.h>
- #include <linux/proc_fs.h>
-+#include <linux/syscalls.h>
- 
- #define pid_hashfn(nr, ns)	\
- 	hash_long((unsigned long)nr + (unsigned long)ns, pidhash_shift)
-@@ -593,6 +594,43 @@ out:
- 	return new_ns;
- }
- 
-+void zap_pid_ns_processes(struct pid_namespace *pid_ns)
-+{
-+	int nr;
-+	int rc;
-+
-+	/*
-+	 * The last thread in the container-init thread group is terminating.
-+	 * Find remaining pid_ts in the namespace, signal and wait for them
-+	 * to exit.
-+	 *
-+	 * Note:  This signals each threads in the namespace - even those that
-+	 * 	  belong to the same thread group, To avoid this, we would have
-+	 * 	  to walk the entire tasklist looking a processes in this
-+	 * 	  namespace, but that could be unnecessarily expensive if the
-+	 * 	  pid namespace has just a few processes. Or we need to
-+	 * 	  maintain a tasklist for each pid namespace.
-+	 *
-+	 */
-+	read_lock(&tasklist_lock);
-+	nr = next_pidmap(pid_ns, 1);
-+	while (nr > 0) {
-+		kill_proc_info(SIGKILL, SEND_SIG_PRIV, nr);
-+		nr = next_pidmap(pid_ns, nr);
-+	}
-+	read_unlock(&tasklist_lock);
-+
-+	do {
-+		clear_thread_flag(TIF_SIGPENDING);
-+		rc = sys_wait4(-1, NULL, __WALL, NULL);
-+	} while (rc != -ECHILD);
-+
-+
-+	/* Child reaper for the pid namespace is going away */
-+	pid_ns->child_reaper = NULL;
-+	return;
-+}
-+
- static void do_free_pid_ns(struct work_struct *w)
- {
- 	struct pid_namespace *ns, *parent;
+
+--===============5155626462408486859==
+Content-Type: text/plain; charset="us-ascii"
+MIME-Version: 1.0
+Content-Disposition: inline
+Content-Transfer-Encoding: 7bit
+
+_______________________________________________
+Containers mailing list
+Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+https://lists.linux-foundation.org/mailman/listinfo/containers
+--===============5155626462408486859==--
