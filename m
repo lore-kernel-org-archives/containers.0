@@ -1,128 +1,77 @@
-From: Oleg Nesterov <oleg@tv-sign.ru>
-Subject: Re: [RFC, PATCH] handle the multi-threaded init's exit() properly
-Date: Fri, 3 Aug 2007 22:26:31 +0400
-Message-ID: <20070803182631.GA83@tv-sign.ru>
-References: <20070802212009.GA516@tv-sign.ru> <20070802225127.3EC214D04B5@magilla.localdomain>
+From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
+Subject: Re: [PATCH 06/14] sysfs: Rewrite sysfs_get_dentry
+Date: Fri, 03 Aug 2007 13:29:19 -0600
+Message-ID: <m1tzrgl8mo.fsf@ebiederm.dsl.xmission.com>
+References: <m14pjkubd2.fsf_-_@ebiederm.dsl.xmission.com>
+	<m1zm1cswp0.fsf_-_@ebiederm.dsl.xmission.com>
+	<m1vec0swmi.fsf_-_@ebiederm.dsl.xmission.com>
+	<m1r6moswhr.fsf_-_@ebiederm.dsl.xmission.com>
+	<m1myxcswfr.fsf_-_@ebiederm.dsl.xmission.com>
+	<m1ir80swdl.fsf_-_@ebiederm.dsl.xmission.com>
+	<m1ejioswai.fsf_-_@ebiederm.dsl.xmission.com>
+	<46AF15F6.6010202@suse.de> <m11weorf3l.fsf@ebiederm.dsl.xmission.com>
+	<46AF1E57.3030209@suse.de> <20070731141613.GC13674@htj.dyndns.org>
+	<m1fy33pq1r.fsf@ebiederm.dsl.xmission.com>
+	<46B05A1D.5000703@gmail.com>
+	<m1vebznpyc.fsf@ebiederm.dsl.xmission.com>
+	<46B0C0E6.5030008@gmail.com>
+	<m1ir7znog9.fsf@ebiederm.dsl.xmission.com>
+	<46B0C817.7060106@gmail.com>
+	<20070802102819.183720a4@gondolin.boeblingen.de.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1759803AbXHCS0z@vger.kernel.org>
-Content-Disposition: inline
-In-Reply-To: <20070802225127.3EC214D04B5@magilla.localdomain>
-Sender: linux-kernel-owner@vger.kernel.org
-To: Roland McGrath <roland@redhat.com>
-Cc: Andrew Morton <akpm@linux-foundation.org>, "Eric W. Biederman" <ebiederm@xmission.com>, Sukadev Bhattiprolu <sukadev@us.ibm.com>, linux-kernel@vger.kernel.org, containers@lists.osdl.org
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <20070802102819.183720a4-XQvu0L+U/CiXI4yAdoq52KN5r0PSdgG1zG2AekJRRhI@public.gmane.org>
+	(Cornelia Huck's message of "Thu, 2 Aug 2007 10:28:19 +0200")
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Cornelia Huck <cornelia.huck-tA70FqPdS9bQT0dZR+AlfA@public.gmane.org>
+Cc: Tejun Heo <htejun-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Greg KH <greg-U8xfFu+wG4EAvxtiuMwx3w@public.gmane.org>, Greg KH <gregkh-l3A5Bk7waGM@public.gmane.org>, stern-nwvwT67g6+6dFdvTe/nMLpVzexx5G7lz@public.gmane.org, satyam-wEGCiKHe2LqWVfeAwA7xHQ@public.gmane.org, Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Dave Hansen <hansendc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On 08/02, Roland McGrath wrote:
+Cornelia Huck <cornelia.huck-tA70FqPdS9bQT0dZR+AlfA@public.gmane.org> writes:
+
+> On Thu, 02 Aug 2007 02:51:19 +0900,
+> Tejun Heo <htejun-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org> wrote:
 >
-> This looks fine to me, though I don't know anything about the nsproxy bit.
-> Now that choose_new_parent is one trivial line, you might go on to get rid
-> of it and roll its one line into reparent_thread.
+>> Eric W. Biederman wrote:
+>> > My practical problem is that I need to hold a lock for the sysfs
+>> > dirents and while that lock is held I need to call sysfs_get_dentry
+>> > for the destination directory once for each superblock.
+>> > 
+>> > It might be that some kind of reader-writer lock strategy is what
+>> > I need to untangle this mess.  Rather then making changing to i_mutex.
+>> > All I know is at the moment it is taking a lot of code reading and
+>> > brain storm to come of with something that is easy to maintain.
+>> 
+>> Just in case, sysfs used to have sysfs_rename_rwsem to protect
+>> move/rename against tree walking, which became unnecessary after i_mutex
+>> -> sysfs_mutex conversion.  Move/rename can use stupid big fat locks if
+>> that helps.
+>
+> I second that. Reintroduction of sysfs_rename_rwsem or something
+> similar may be the best way to avoid headaches.
 
-OK, thanks. Please find the same patch + "kill one-liner reparent_thread()"
-below.
+I guess I haven't looked at that because we already have a big fact
+lock we just have an ordering problem in taking that lock.  Introducing
+another lock just because of that doesn't quite feel right.
 
+I currently have two practical solutions on the table.
 
-[PATCH] handle the multi-threaded init's exit() properly
+- Make the s_sibling list walk RCU safe so it does not require us to
+  grab the sysfs_mutex.  This works but is a bit complicated.
 
-With or without this patch, multi-threaded init's are not fully supported, but
-do_exit() is completely wrong. This becomes a real problem when we support pid
-namespaces.
+- Just kill all of the dentries in sysfs_move_dir and sysfs_rename_dir.
+  The semantics are that no one can be using the device at the time
+  of a rename or a move (as I read the callers) so dropping the dentries
+  and making it look like a delete/add pair to the users should be
+  acceptable and a whole lot simpler.
 
-1. do_exit() panics when the main thread of /sbin/init exits. It should not
-   until the whole thread group exits. Move the code below, under the
-   "if (group_dead)" check.
-
-   Note: this means that forget_original_parent() can use an already dead
-   child_reaper()'s task_struct. This is OK for /sbin/init because
-
-   	- do_wait() from alive sub-thread still can reap a zombie, we iterate
-   	  over all sub-thread's ->children lists
-
-   	- do_notify_parent() will wakeup some alive sub-thread because it sends
-   	  the group-wide signal
-
-   However, we should remove choose_new_parent()->BUG_ON(reaper->exit_state)
-   for this.
-
-2. We are playing games with ->nsproxy->pid_ns. This code is bogus today, and
-   it has to be changed anyway when we really support pid namespaces, just
-   remove it.
-
-Signed-off-by: Oleg Nesterov <oleg@tv-sign.ru>
-
---- t/kernel/exit.c~MTINIT	2007-07-28 16:58:17.000000000 +0400
-+++ t/kernel/exit.c	2007-08-03 18:05:52.000000000 +0400
-@@ -601,17 +601,6 @@ static void exit_mm(struct task_struct *
- 	mmput(mm);
- }
- 
--static inline void
--choose_new_parent(struct task_struct *p, struct task_struct *reaper)
--{
--	/*
--	 * Make sure we're not reparenting to ourselves and that
--	 * the parent is not a zombie.
--	 */
--	BUG_ON(p == reaper || reaper->exit_state);
--	p->real_parent = reaper;
--}
--
- static void
- reparent_thread(struct task_struct *p, struct task_struct *father, int traced)
- {
-@@ -719,7 +708,7 @@ forget_original_parent(struct task_struc
- 
- 		if (father == p->real_parent) {
- 			/* reparent with a reaper, real father it's us */
--			choose_new_parent(p, reaper);
-+			p->real_parent = reaper;
- 			reparent_thread(p, father, 0);
- 		} else {
- 			/* reparent ptraced task to its real parent */
-@@ -740,7 +729,7 @@ forget_original_parent(struct task_struc
- 	}
- 	list_for_each_safe(_p, _n, &father->ptrace_children) {
- 		p = list_entry(_p, struct task_struct, ptrace_list);
--		choose_new_parent(p, reaper);
-+		p->real_parent = reaper;
- 		reparent_thread(p, father, 1);
- 	}
- }
-@@ -895,6 +884,14 @@ static void check_stack_usage(void)
- static inline void check_stack_usage(void) {}
- #endif
- 
-+static inline void exit_child_reaper(struct task_struct *tsk)
-+{
-+	if (likely(tsk->group_leader != child_reaper(tsk)))
-+		return;
-+
-+	panic("Attempted to kill init!");
-+}
-+
- fastcall NORET_TYPE void do_exit(long code)
- {
- 	struct task_struct *tsk = current;
-@@ -908,13 +905,6 @@ fastcall NORET_TYPE void do_exit(long co
- 		panic("Aiee, killing interrupt handler!");
- 	if (unlikely(!tsk->pid))
- 		panic("Attempted to kill the idle task!");
--	if (unlikely(tsk == child_reaper(tsk))) {
--		if (tsk->nsproxy->pid_ns != &init_pid_ns)
--			tsk->nsproxy->pid_ns->child_reaper = init_pid_ns.child_reaper;
--		else
--			panic("Attempted to kill init!");
--	}
--
- 
- 	if (unlikely(current->ptrace & PT_TRACE_EXIT)) {
- 		current->ptrace_message = code;
-@@ -964,6 +954,7 @@ fastcall NORET_TYPE void do_exit(long co
- 	}
- 	group_dead = atomic_dec_and_test(&tsk->signal->live);
- 	if (group_dead) {
-+		exit_child_reaper(tsk);
- 		hrtimer_cancel(&tsk->signal->real_timer);
- 		exit_itimers(tsk->signal);
- 	}
+Eric
