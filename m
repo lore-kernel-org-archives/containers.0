@@ -1,17 +1,30 @@
-From: Oleg Nesterov <oleg-6lXkIZvqkOAvJsYlp49lxw@public.gmane.org>
-Subject: Re: [PATCH 1/15] Move exit_task_namespaces()
-Date: Mon, 6 Aug 2007 17:57:54 +0400
-Message-ID: <20070806135754.GA193@tv-sign.ru>
-References: <46A8B37B.6050108@openvz.org> <46A8B3C4.5080601@openvz.org>
-	<20070802162023.GB137@tv-sign.ru> <46B6D52C.3010405@openvz.org>
-	<20070806095421.GA85@tv-sign.ru> <46B6F0DA.4080904@openvz.org>
-	<20070806103838.GA129@tv-sign.ru> <46B7060E.3020609@openvz.org>
-	<20070806125032.GA91@tv-sign.ru> <46B723F3.8020905@openvz.org>
+From: Cornelia Huck <cornelia.huck-tA70FqPdS9bQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH 06/14] sysfs: Rewrite sysfs_get_dentry
+Date: Mon, 6 Aug 2007 17:06:36 +0200
+Message-ID: <20070806170636.6030c8b9@gondolin.boeblingen.de.ibm.com>
+References: <m14pjkubd2.fsf_-_@ebiederm.dsl.xmission.com>
+	<m1zm1cswp0.fsf_-_@ebiederm.dsl.xmission.com>
+	<m1vec0swmi.fsf_-_@ebiederm.dsl.xmission.com>
+	<m1r6moswhr.fsf_-_@ebiederm.dsl.xmission.com>
+	<m1myxcswfr.fsf_-_@ebiederm.dsl.xmission.com>
+	<m1ir80swdl.fsf_-_@ebiederm.dsl.xmission.com>
+	<m1ejioswai.fsf_-_@ebiederm.dsl.xmission.com>
+	<46AF15F6.6010202@suse.de>
+	<m11weorf3l.fsf@ebiederm.dsl.xmission.com>
+	<46AF1E57.3030209@suse.de> <20070731141613.GC13674@htj.dyndns.org>
+	<m1fy33pq1r.fsf@ebiederm.dsl.xmission.com>
+	<46B05A1D.5000703@gmail.com>
+	<m1vebznpyc.fsf@ebiederm.dsl.xmission.com>
+	<46B0C0E6.5030008@gmail.com>
+	<m1ir7znog9.fsf@ebiederm.dsl.xmission.com>
+	<46B0C817.7060106@gmail.com>
+	<20070802102819.183720a4@gondolin.boeblingen.de.ibm.com>
+	<m1tzrgl8mo.fsf@ebiederm.dsl.xmission.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+Content-Type: text/plain; charset=US-ASCII
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <46B723F3.8020905-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+In-Reply-To: <m1tzrgl8mo.fsf-T1Yj925okcoyDheHMi7gv2pdwda3JcWeAL8bYrjMMd8@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -21,59 +34,26 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
-Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
+To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+Cc: satyam-wEGCiKHe2LqWVfeAwA7xHQ@public.gmane.org, Tejun Heo <htejun-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Greg KH <greg-U8xfFu+wG4EAvxtiuMwx3w@public.gmane.org>, Greg KH <gregkh-l3A5Bk7waGM@public.gmane.org>, stern-nwvwT67g6+6dFdvTe/nMLpVzexx5G7lz@public.gmane.org, Linux-YRGon0hq2jhQetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Dave Hansen <hansendc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On 08/06, Pavel Emelyanov wrote:
->
-> Oleg Nesterov wrote:
-> >On 08/06, Pavel Emelyanov wrote:
-> >>Oleg Nesterov wrote:
-> >>>On 08/06, Pavel Emelyanov wrote:
-> >>>>Oleg Nesterov wrote:
-> >>>>>On 08/06, Pavel Emelyanov wrote:
-> >>>>>>Oleg Nesterov wrote:
-> >>>>>>>On 07/26, Pavel Emelyanov wrote:
-> >>>>>>>>The reason to release namespaces after reparenting is that when task
-> >>>>>>>>exits it may send a signal to its parent (SIGCHLD), but if the 
-> >>>>>>>>parent
-> >>>>>>>>has already exited its namespaces there will be no way to decide 
-> >>>>>>>>what
-> >>>>>>>>pid to dever to him - parent can be from different namespace.
-> >>>>>>>I almost forgot about this one...
-> >>>>>>>
-> >>>I guess I missed something stupid and simple...
-> >>In other words. Let task X live in init_pid_ns, task Y is his child and 
-> >>lives
-> >>int another namespace. task X and task Y both die. This will happen:
-> >>
-> >>1. Task X call exit_task_namespaces() 
-> >>  and sets its nsproxy to NULL
-> >
-> >Ah, got it, thanks. So the problem is not namespace itself (parent's or
-> >child's), there are still valid (even if different but related).
-> >
-> >We just can't get ->parent->nsproxy. I was greatly confused by the "parent
-> >can be from different namespace" above. We have exactly same problem if
-> >namespaces are not differ.
-> >
-> >IOW, the problem is: we can't clear ->nsproxy (exit_task_namespaces) until
-> >we get rid of ->children. This have nothing to do with different namespace.
+On Fri, 03 Aug 2007 13:29:19 -0600,
+ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman) wrote:
+
+> I currently have two practical solutions on the table.
 > 
-> No. If the parent is always in the same namespace we do not need to
-> get its nsproxy :) Problem is exactly in that the parent's namespace
-> is to be known.
+> - Make the s_sibling list walk RCU safe so it does not require us to
+>   grab the sysfs_mutex.  This works but is a bit complicated.
 
-Yes yes, I see. I meant: once do_notify_parent() was modified to use
-parent->nsproxy to figure out correct pid_t, that problem has nothing
-to do with namespaces, it is just parent->nsproxy access.
+But it would be nice, I guess :)
 
-But this is not safe, btw? do_notify_parent() can get parent->nsproxy
-which is under destruction (sys_unshare). Then we read its ->pid_ns,
-but at this time "struct nsproxy" could be kmem_cache_free()'ed ?
+> 
+> - Just kill all of the dentries in sysfs_move_dir and sysfs_rename_dir.
+>   The semantics are that no one can be using the device at the time
+>   of a rename or a move (as I read the callers) so dropping the dentries
+>   and making it look like a delete/add pair to the users should be
+>   acceptable and a whole lot simpler.
 
-Of course, this is just theoretical, irqs are disabled, and the window
-is tiny.
-
-Oleg.
+Hm, I'm not sure I understand you here. What do you mean by "using the
+device"? Do you mean dropping the sysfs_dirents? Or am I just confused?
