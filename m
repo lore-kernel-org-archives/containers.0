@@ -1,7 +1,7 @@
 From: Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 Subject: Re: [PATCH 1/15] Move exit_task_namespaces()
-Date: Mon, 06 Aug 2007 15:21:46 +0400
-Message-ID: <46B7044A.4030508@openvz.org>
+Date: Mon, 06 Aug 2007 15:29:18 +0400
+Message-ID: <46B7060E.3020609@openvz.org>
 References: <46A8B37B.6050108@openvz.org> <46A8B3C4.5080601@openvz.org>
 	<20070802162023.GB137@tv-sign.ru> <46B6D52C.3010405@openvz.org>
 	<20070806095421.GA85@tv-sign.ru> <46B6F0DA.4080904@openvz.org>
@@ -78,12 +78,25 @@ Oleg Nesterov wrote:
 > 
 > I guess I missed something stupid and simple...
 
-If task X is exiting and has already exit_task_namespaces()-ed task
-Y will OOPs during its exit in determining parent's namespace. I agree 
-that in that case this is not important what namespace X belongs to, 
-but we need to handle the race with changing the nsproxy from not-NULL
-to NULL. This is OK to make this under task_lock() but what to add 
-extra locking for if we can avoid it?
+In other words. Let task X live in init_pid_ns, task Y is his child and lives
+int another namespace. task X and task Y both die. This will happen:
+
+1. Task X call exit_task_namespaces() 
+   and sets its nsproxy to NULL
+                                        1. Task Y is going to notify the 
+                                           parent (X) and dereferences its
+                                           nsproxy -> OOPS
+2. Task X reparents all its children
+
+If we move the exit_task_namespace this will happen:
+
+1. Task X reparents all its children
+2. Task X call exit_task_namespaces() 
+   and sets its nsproxy to NULL
+
+In such case is tasy Y will dereference the parent's nsproxy it will not
+OOPS because either its parent will be not X already, or X's nsproxy is
+not yet released.
 
 > Oleg.
 > 
