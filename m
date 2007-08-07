@@ -1,9 +1,8 @@
 From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
-Subject: [PATCH 21/25] sysfs: sysfs_chmod_file handle multiple superblocks
-Date: Tue, 07 Aug 2007 15:32:46 -0600
-Message-ID: <m1myx3ghdt.fsf_-_@ebiederm.dsl.xmission.com>
+Subject: [PATCH 22/25] sysfs: sysfs_uptdate_file handle multiple superblocks
+Date: Tue, 07 Aug 2007 15:34:11 -0600
+Message-ID: <m1ir7rghbg.fsf_-_@ebiederm.dsl.xmission.com>
 References: <11860582832964-git-send-email-htejun@gmail.com>
-	<m11wefkq88.fsf_-_@ebiederm.dsl.xmission.com>
 	<m1wsw7jbml.fsf_-_@ebiederm.dsl.xmission.com>
 	<m1sl6vjbjw.fsf_-_@ebiederm.dsl.xmission.com>
 	<m1odhjjbij.fsf_-_@ebiederm.dsl.xmission.com>
@@ -23,11 +22,12 @@ References: <11860582832964-git-send-email-htejun@gmail.com>
 	<m1zm13ghlh.fsf_-_@ebiederm.dsl.xmission.com>
 	<m1vebrghjg.fsf_-_@ebiederm.dsl.xmission.com>
 	<m1r6mfghg9.fsf_-_@ebiederm.dsl.xmission.com>
+	<m1myx3ghdt.fsf_-_@ebiederm.dsl.xmission.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <m1r6mfghg9.fsf_-_-T1Yj925okcoyDheHMi7gv2pdwda3JcWeAL8bYrjMMd8@public.gmane.org> (Eric
-	W. Biederman's message of "Tue, 07 Aug 2007 15:31:18 -0600")
+In-Reply-To: <m1myx3ghdt.fsf_-_-T1Yj925okcoyDheHMi7gv2pdwda3JcWeAL8bYrjMMd8@public.gmane.org> (Eric
+	W. Biederman's message of "Tue, 07 Aug 2007 15:32:46 -0600")
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -42,31 +42,31 @@ Cc: Tejun Heo <htejun-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, gregkh-l3A5Bk7wa
 List-Id: containers.vger.kernel.org
 
 
-Teach sysfs_chmod_file how to handle multiple sysfs
-superblocks.  We need to iterate over each superblock
-so that we give all of the appropriate filesystem modification
-notifications.
+Teach sysfs_update_file how to handle multiple sysfs
+superblocks.  Again we are just iterating over the superblocks
+to so all of the filesystem modification notifications work
+as expected.
 
 Signed-off-by: Eric W. Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 ---
- fs/sysfs/file.c |   41 +++++++++++++++++++++++++----------------
- 1 files changed, 25 insertions(+), 16 deletions(-)
+ fs/sysfs/file.c |   35 +++++++++++++++++++++--------------
+ 1 files changed, 21 insertions(+), 14 deletions(-)
 
 diff --git a/fs/sysfs/file.c b/fs/sysfs/file.c
-index f954b9f..cff054f 100644
+index cff054f..1e6f9df 100644
 --- a/fs/sysfs/file.c
 +++ b/fs/sysfs/file.c
-@@ -501,7 +501,8 @@ int sysfs_update_file(struct kobject * kobj, const struct attribute * attr)
- int sysfs_chmod_file(struct kobject *kobj, struct attribute *attr, mode_t mode)
+@@ -462,7 +462,8 @@ EXPORT_SYMBOL_GPL(sysfs_add_file_to_group);
+ int sysfs_update_file(struct kobject * kobj, const struct attribute * attr)
  {
  	struct sysfs_dirent *victim_sd = NULL;
 -	struct dentry *victim = NULL;
 +	struct super_block *sb;
 +	struct dentry *victim;
- 	struct inode * inode;
- 	struct iattr newattrs;
  	int rc;
-@@ -512,22 +513,30 @@ int sysfs_chmod_file(struct kobject *kobj, struct attribute *attr, mode_t mode)
+ 
+ 	rc = -ENOENT;
+@@ -471,21 +472,27 @@ int sysfs_update_file(struct kobject * kobj, const struct attribute * attr)
  		goto out;
  
  	mutex_lock(&sysfs_rename_mutex);
@@ -86,29 +86,24 @@ index f954b9f..cff054f 100644
 +			victim = NULL;
 +			goto out_unlock;
 +		}
-+
-+		inode = victim->d_inode;
-+		mutex_lock(&inode->i_mutex);
-+		newattrs.ia_mode = (mode & S_IALLUGO) | (inode->i_mode & ~S_IALLUGO);
-+		newattrs.ia_valid = ATTR_MODE | ATTR_CTIME;
-+		rc = notify_change(victim, &newattrs);
-+		mutex_unlock(&inode->i_mutex);
-+
++		mutex_lock(&victim->d_inode->i_mutex);
++		victim->d_inode->i_mtime = CURRENT_TIME;
++		fsnotify_modify(victim);
++		mutex_unlock(&victim->d_inode->i_mutex);
++		rc = 0;
 +		dput(victim);
  	}
 -
--	inode = victim->d_inode;
--	mutex_lock(&inode->i_mutex);
--	newattrs.ia_mode = (mode & S_IALLUGO) | (inode->i_mode & ~S_IALLUGO);
--	newattrs.ia_valid = ATTR_MODE | ATTR_CTIME;
--	rc = notify_change(victim, &newattrs);
--	mutex_unlock(&inode->i_mutex);
-- out:
--	dput(victim);
-+out_unlock:
+-	mutex_lock(&victim->d_inode->i_mutex);
+-	victim->d_inode->i_mtime = CURRENT_TIME;
+-	fsnotify_modify(victim);
+-	mutex_unlock(&victim->d_inode->i_mutex);
+-	rc = 0;
++ out_unlock:
 +	sysfs_release_supers();
 +	mutex_unlock(&sysfs_rename_mutex);
-+out:
+  out:
+-	dput(victim);
  	sysfs_put(victim_sd);
  	return rc;
  }
