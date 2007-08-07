@@ -1,8 +1,7 @@
 From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
-Subject: [PATCH 18/25] sysfs: Rewrite sysfs_move_dir in terms of sysfs
-	dirents
-Date: Tue, 07 Aug 2007 15:28:10 -0600
-Message-ID: <m1zm13ghlh.fsf_-_@ebiederm.dsl.xmission.com>
+Subject: [PATCH 19/25] sysfs: sysfs_get_dentry add a sb parameter
+Date: Tue, 07 Aug 2007 15:29:23 -0600
+Message-ID: <m1vebrghjg.fsf_-_@ebiederm.dsl.xmission.com>
 References: <11860582832964-git-send-email-htejun@gmail.com>
 	<m1643rkqb6.fsf@ebiederm.dsl.xmission.com>
 	<m11wefkq88.fsf_-_@ebiederm.dsl.xmission.com>
@@ -22,11 +21,12 @@ References: <11860582832964-git-send-email-htejun@gmail.com>
 	<m1d4xzhwb2.fsf_-_@ebiederm.dsl.xmission.com>
 	<m18x8nhw8r.fsf_-_@ebiederm.dsl.xmission.com>
 	<m14pjbhw6y.fsf_-_@ebiederm.dsl.xmission.com>
+	<m1zm13ghlh.fsf_-_@ebiederm.dsl.xmission.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <m14pjbhw6y.fsf_-_-T1Yj925okcoyDheHMi7gv2pdwda3JcWeAL8bYrjMMd8@public.gmane.org> (Eric
-	W. Biederman's message of "Tue, 07 Aug 2007 15:27:33 -0600")
+In-Reply-To: <m1zm13ghlh.fsf_-_-T1Yj925okcoyDheHMi7gv2pdwda3JcWeAL8bYrjMMd8@public.gmane.org> (Eric
+	W. Biederman's message of "Tue, 07 Aug 2007 15:28:10 -0600")
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -41,95 +41,108 @@ Cc: Tejun Heo <htejun-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, gregkh-l3A5Bk7wa
 List-Id: containers.vger.kernel.org
 
 
-This patch rewrites sysfs_move_dir to perform it's checks
-as much as possible on the underlying sysfs_dirents instead
-of the contents of the dcache, making sysfs_move_dir
-more like the rest of the sysfs directory modification
-code.
+In preparation for multiple mounts of sysfs add a superblock parameter to
+sysfs_get_dentry.
 
 Signed-off-by: Eric W. Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 ---
- fs/sysfs/dir.c |   34 ++++++++++++++++++----------------
- 1 files changed, 18 insertions(+), 16 deletions(-)
+ fs/sysfs/dir.c   |   12 +++++++-----
+ fs/sysfs/file.c  |    4 ++--
+ fs/sysfs/sysfs.h |    2 +-
+ 3 files changed, 10 insertions(+), 8 deletions(-)
 
 diff --git a/fs/sysfs/dir.c b/fs/sysfs/dir.c
-index 3228f5a..94d705a 100644
+index 94d705a..ac45523 100644
 --- a/fs/sysfs/dir.c
 +++ b/fs/sysfs/dir.c
-@@ -932,56 +932,58 @@ int sysfs_move_dir(struct kobject *kobj, struct kobject *new_parent_kobj)
- 	BUG_ON(!sd->s_parent);
- 	new_parent_sd = new_parent_kobj->sd ? new_parent_kobj->sd : &sysfs_root;
+@@ -805,6 +805,7 @@ out:
  
-+	error = 0;
-+	if (sd->s_parent == new_parent_sd)
-+		goto out;	/* nothing to move */
-+
- 	/* get dentries */
- 	old_dentry = sysfs_get_dentry(sd);
+ /**
+  *	sysfs_get_dentry - get dentry for the given sysfs_dirent
++ *	@sb: superblock of the dentry to return
+  *	@sd: sysfs_dirent of interest
+  *
+  *	Get dentry for @sd.  Dentry is looked up if currently not
+@@ -817,8 +818,9 @@ out:
+  *
+  *	RETURNS:
+  *	Pointer to found dentry on success, ERR_PTR() value on error.
++ *	NULL if the sysfs dentry does not appear in the specified superblock
+  */
+-struct dentry *sysfs_get_dentry(struct sysfs_dirent *sd)
++struct dentry *sysfs_get_dentry(struct super_block *sb, struct sysfs_dirent *sd)
+ {
+ 	struct sysfs_dirent *cur;
+ 	struct dentry *parent_dentry, *dentry;
+@@ -827,7 +829,7 @@ struct dentry *sysfs_get_dentry(struct sysfs_dirent *sd)
+ 	 */
+ 	dentry = NULL;
+ 	cur = sd;
+-	while (!(dentry = __sysfs_get_dentry(sysfs_sb, cur))) {
++	while (!(dentry = __sysfs_get_dentry(sb, cur))) {
+ 		if (cur->s_flags & SYSFS_FLAG_REMOVED) {
+ 			dentry = ERR_PTR(-ENOENT);
+ 			break;
+@@ -868,7 +870,7 @@ int sysfs_rename_dir(struct kobject * kobj, const char *new_name)
+ 		goto out;	/* nothing to rename */
+ 
+ 	/* get the original dentry */
+-	old_dentry = sysfs_get_dentry(sd);
++	old_dentry = sysfs_get_dentry(sysfs_sb, sd);
  	if (IS_ERR(old_dentry)) {
  		error = PTR_ERR(old_dentry);
--		goto out_dput;
-+		goto out;
+ 		goto out;
+@@ -937,14 +939,14 @@ int sysfs_move_dir(struct kobject *kobj, struct kobject *new_parent_kobj)
+ 		goto out;	/* nothing to move */
+ 
+ 	/* get dentries */
+-	old_dentry = sysfs_get_dentry(sd);
++	old_dentry = sysfs_get_dentry(sysfs_sb, sd);
+ 	if (IS_ERR(old_dentry)) {
+ 		error = PTR_ERR(old_dentry);
+ 		goto out;
  	}
  	old_parent = old_dentry->d_parent;
  
- 	new_parent = sysfs_get_dentry(new_parent_sd);
+-	new_parent = sysfs_get_dentry(new_parent_sd);
++	new_parent = sysfs_get_dentry(sysfs_sb, new_parent_sd);
  	if (IS_ERR(new_parent)) {
  		error = PTR_ERR(new_parent);
--		goto out_dput;
-+		goto out;
- 	}
+ 		goto out;
+diff --git a/fs/sysfs/file.c b/fs/sysfs/file.c
+index fe783ea..f954b9f 100644
+--- a/fs/sysfs/file.c
++++ b/fs/sysfs/file.c
+@@ -471,7 +471,7 @@ int sysfs_update_file(struct kobject * kobj, const struct attribute * attr)
+ 		goto out;
  
--	if (old_parent->d_inode == new_parent->d_inode) {
--		error = 0;
--		goto out_dput;	/* nothing to move */
--	}
- again:
- 	mutex_lock(&old_parent->d_inode->i_mutex);
- 	if (!mutex_trylock(&new_parent->d_inode->i_mutex)) {
- 		mutex_unlock(&old_parent->d_inode->i_mutex);
- 		goto again;
- 	}
-+	mutex_lock(&sysfs_mutex);
+ 	mutex_lock(&sysfs_rename_mutex);
+-	victim = sysfs_get_dentry(victim_sd);
++	victim = sysfs_get_dentry(sysfs_sb, victim_sd);
+ 	mutex_unlock(&sysfs_rename_mutex);
+ 	if (IS_ERR(victim)) {
+ 		rc = PTR_ERR(victim);
+@@ -512,7 +512,7 @@ int sysfs_chmod_file(struct kobject *kobj, struct attribute *attr, mode_t mode)
+ 		goto out;
  
--	new_dentry = lookup_one_len(kobj->name, new_parent, strlen(kobj->name));
--	if (IS_ERR(new_dentry)) {
--		error = PTR_ERR(new_dentry);
-+	error = -EEXIST;
-+	if (sysfs_find_dirent(new_parent_sd, sd->s_name))
- 		goto out_unlock;
--	} else
--		error = 0;
-+
-+	error = -ENOMEM;
-+	new_dentry = d_alloc_name(new_parent, sd->s_name);
-+	if (!new_dentry)
-+		goto out_unlock;
-+
-+	error = 0;
- 	d_add(new_dentry, NULL);
- 	d_move(old_dentry, new_dentry);
- 	dput(new_dentry);
+ 	mutex_lock(&sysfs_rename_mutex);
+-	victim = sysfs_get_dentry(victim_sd);
++	victim = sysfs_get_dentry(sysfs_sb, victim_sd);
+ 	mutex_unlock(&sysfs_rename_mutex);
+ 	if (IS_ERR(victim)) {
+ 		rc = PTR_ERR(victim);
+diff --git a/fs/sysfs/sysfs.h b/fs/sysfs/sysfs.h
+index 8156ccb..6de7e2b 100644
+--- a/fs/sysfs/sysfs.h
++++ b/fs/sysfs/sysfs.h
+@@ -63,7 +63,7 @@ extern struct file_system_type sysfs_fs_type;
+ void sysfs_grab_supers(void);
+ void sysfs_release_supers(void);
  
- 	/* Remove from old parent's list and insert into new parent's list. */
--	mutex_lock(&sysfs_mutex);
--
- 	sysfs_unlink_sibling(sd);
- 	sysfs_get(new_parent_sd);
- 	sysfs_put(sd->s_parent);
- 	sd->s_parent = new_parent_sd;
- 	sysfs_link_sibling(sd);
- 
--	mutex_unlock(&sysfs_mutex);
--
-  out_unlock:
-+	mutex_unlock(&sysfs_mutex);
- 	mutex_unlock(&new_parent->d_inode->i_mutex);
- 	mutex_unlock(&old_parent->d_inode->i_mutex);
-- out_dput:
-+ out:
- 	dput(new_parent);
- 	dput(old_dentry);
- 	dput(new_dentry);
+-extern struct dentry *sysfs_get_dentry(struct sysfs_dirent *sd);
++extern struct dentry *sysfs_get_dentry(struct super_block *sb, struct sysfs_dirent *sd);
+ extern struct sysfs_dirent *sysfs_get_active(struct sysfs_dirent *sd);
+ extern void sysfs_put_active(struct sysfs_dirent *sd);
+ extern struct sysfs_dirent *sysfs_get_active_two(struct sysfs_dirent *sd);
 -- 
 1.5.1.1.181.g2de0
