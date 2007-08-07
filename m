@@ -1,7 +1,7 @@
 From: xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org
-Subject: [PATCH 2/20] Move exit_task_namespaces()
-Date: Tue, 07 Aug 2007 13:29:38 +0400
-Message-ID: <46B83B82.mailG341VGY0W@openvz.org>
+Subject: [PATCH 3/20] Move checking for init's death in do_exit()
+Date: Tue, 07 Aug 2007 13:29:40 +0400
+Message-ID: <46B83B84.mailG3A11FH7C@openvz.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Transfer-Encoding: 7bit
@@ -19,45 +19,63 @@ To: sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org, oleg-6lXkIZvqkOAvJsYlp49lxw
 Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Makve task release its namespaces after it has reparented all his children
-to child_reaper, but before it notifies its parent about its death.
+From: Oleg Nesterov <oleg-6lXkIZvqkOAvJsYlp49lxw@public.gmane.org>
 
-The reason to release namespaces after reparenting is that when task exits
-it may send a signal to its parent (SIGCHLD), but if the parent has already
-exited its namespaces there will be no way to decide what pid to dever to
-him - parent can be from different namespace.
+If some system uses multi-threaded init the kernel panics when the main
+thread exits. Perhaps this is just a "quality of implementation" question.
+sys_exit() from the main thread should be OK, why /sbin/init should be
+special? That said, I personally do not think that multi-threaded init is
+terribly useful.
 
-The reason to release namespace before notifying the parent it that when
-task sends a SIGCHLD to parent it can call wait() on this taks and release
-it. But releasing the mnt namespace implies dropping of all the mounts in
-the mnt namespace and NFS expects the task to have valid sighand pointer.
+So I think the patch below makes sense for now. Note that it removes
+the games with pid_ns->child_reaper: this doesn't work currently, and
+this has to be modified when we actually support pid namespaces anyway.
 
-Thanks to Oleg for pointing out some races that can apear and helping with
-patches and fixes.
-
-Signed-off-by: Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
-Cc: Oleg Nesterov <oleg-6lXkIZvqkOAvJsYlp49lxw@public.gmane.org>
+Signed-off-by: Oleg Nesterov <oleg-6lXkIZvqkOAvJsYlp49lxw@public.gmane.org>
+Acked-by: Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 
 ---
 
- exit.c |    2 +-
- 1 files changed, 1 insertion(+), 1 deletion(-)
+ exit.c |   17 +++++++++--------
+ 1 files changed, 9 insertions(+), 8 deletions(-)
 
---- ./kernel/exit.c.ve2	2007-07-27 12:45:46.000000000 +0400
-+++ ./kernel/exit.c	2007-07-27 12:46:08.000000000 +0400
-@@ -796,6 +796,7 @@ static void exit_notify(struct task_stru
- 	 *	jobs, send them a SIGHUP and then a SIGCONT.  (POSIX 3.2.2.2)
- 	 */
- 	forget_original_parent(tsk);
-+	exit_task_namespaces(tsk);
+--- ./kernel/exit.c.ve3	2007-08-06 12:14:53.000000000 +0400
++++ ./kernel/exit.c	2007-08-06 12:15:19.000000000 +0400
+@@ -895,6 +895,14 @@ static void check_stack_usage(void)
+ static inline void check_stack_usage(void) {}
+ #endif
  
- 	write_lock_irq(&tasklist_lock);
- 	/*
-@@ -1003,7 +1004,6 @@ fastcall NORET_TYPE void do_exit(long co
++static inline void exit_child_reaper(struct task_struct *tsk)
++{
++	if (likely(tsk->group_leader != task_child_reaper(tsk)))
++		return;
++
++	panic("Attempted to kill init!");
++}
++
+ fastcall NORET_TYPE void do_exit(long code)
+ {
+ 	struct task_struct *tsk = current;
+@@ -908,14 +916,6 @@ fastcall NORET_TYPE void do_exit(long co
+ 		panic("Aiee, killing interrupt handler!");
+ 	if (unlikely(!tsk->pid))
+ 		panic("Attempted to kill the idle task!");
+-	if (unlikely(tsk == task_child_reaper(tsk))) {
+-		if (task_active_pid_ns(tsk) != &init_pid_ns)
+-			task_active_pid_ns(tsk)->child_reaper =
+-					init_pid_ns.child_reaper;
+-		else
+-			panic("Attempted to kill init!");
+-	}
+-
  
- 	tsk->exit_code = code;
- 	proc_exit_connector(tsk);
--	exit_task_namespaces(tsk);
- 	exit_notify(tsk);
- #ifdef CONFIG_NUMA
- 	mpol_free(tsk->mempolicy);
+ 	if (unlikely(current->ptrace & PT_TRACE_EXIT)) {
+ 		current->ptrace_message = code;
+@@ -965,6 +965,7 @@ fastcall NORET_TYPE void do_exit(long co
+ 	}
+ 	group_dead = atomic_dec_and_test(&tsk->signal->live);
+ 	if (group_dead) {
++		exit_child_reaper(tsk);
+ 		hrtimer_cancel(&tsk->signal->real_timer);
+ 		exit_itimers(tsk->signal);
+ 	}
