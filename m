@@ -1,7 +1,7 @@
 From: xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org
-Subject: [PATCH 16/20] Initialize the namespace's proc_mnt
-Date: Tue, 07 Aug 2007 13:30:06 +0400
-Message-ID: <46B83B9E.mailG5Z118YZE@openvz.org>
+Subject: [PATCH 13/20] Miscelaneous preparations for pid namespaces
+Date: Tue, 07 Aug 2007 13:30:00 +0400
+Message-ID: <46B83B98.mailG4Y114VWM@openvz.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Transfer-Encoding: 7bit
@@ -19,117 +19,131 @@ To: sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org, oleg-6lXkIZvqkOAvJsYlp49lxw
 Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-The namespace's proc_mnt must be kern_mount-ed to make this
-pointer always valid, independently of whether the user space
-mounted the proc or not. This solves raced in proc_flush_task,
-etc. with the proc_mnt switching from NULL to not-NULL.
-
-The initialization is done after the init's pid is created and
-hashed to make proc_get_sb() finr it and get for root inode.
-
-Sice the namespace holds the vfsmnt, vfsmnt holds the superblock
-and the superblock holds the namespace we must explicitly break
-this circle to destroy all the stuff. This is done after the init
-of the namespace dies. Running a few steps forward - when init
-exits it will kill all its children, so no proc_mnt will be
-needed after its death.
+* remove pid.h from pid_namespaces.h;
+* rework is_(container|global)_init;
+* optimize (get|put)_pid_ns for init_pid_ns;
+* declare task_child_reaper to return actual reaper.
 
 Signed-off-by: Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 
 ---
 
- fs/proc/base.c          |    4 ++++
- fs/proc/root.c          |   16 ++++++++++++++++
- include/linux/proc_fs.h |   12 ++++++++++++
- kernel/fork.c           |    7 +++++++
- 4 files changed, 39 insertions(+)
+ include/linux/pid_namespace.h |   10 ++++++----
+ include/linux/sched.h         |   12 +++++-------
+ kernel/pid.c                  |   22 ++++++++++++++--------
+ 3 files changed, 25 insertions(+), 19 deletions(-)
 
---- ./fs/proc/base.c.ve12	2007-08-06 14:58:51.000000000 +0400
-+++ ./fs/proc/base.c	2007-08-06 14:58:51.000000000 +0400
-@@ -2170,6 +2170,10 @@ out:
- 		proc_flush_task_mnt(upid->ns->proc_mnt, upid->nr,
- 				leader ? 0 : tgid->numbers[i].nr);
- 	}
-+
-+	upid = &pid->numbers[pid->level];
-+	if (upid->nr == 1)
-+		pid_ns_release_proc(upid->ns);
+--- ./include/linux/pid_namespace.h.ve17	2007-08-06 12:44:57.000000000 +0400
++++ ./include/linux/pid_namespace.h	2007-08-06 12:44:57.000000000 +0400
+@@ -4,7 +4,6 @@
+ #include <linux/sched.h>
+ #include <linux/mm.h>
+ #include <linux/threads.h>
+-#include <linux/pid.h>
+ #include <linux/nsproxy.h>
+ #include <linux/kref.h>
+ 
+@@ -30,7 +29,8 @@ extern struct pid_namespace init_pid_ns;
+ 
+ static inline struct pid_namespace *get_pid_ns(struct pid_namespace *ns)
+ {
+-	kref_get(&ns->kref);
++	if (ns != &init_pid_ns)
++		kref_get(&ns->kref);
+ 	return ns;
  }
  
- static struct dentry *proc_pid_instantiate(struct inode *dir,
---- ./fs/proc/root.c.ve12	2007-08-06 14:54:42.000000000 +0400
-+++ ./fs/proc/root.c	2007-08-06 14:58:51.000000000 +0400
-@@ -153,6 +212,22 @@ struct proc_dir_entry proc_root = {
- 	.parent		= &proc_root,
- };
+@@ -39,7 +39,8 @@ extern void free_pid_ns(struct kref *kre
  
-+int pid_ns_prepare_proc(struct pid_namespace *ns)
-+{
-+	struct vfsmount *mnt;
-+
-+	mnt = kern_mount_data(&proc_fs_type, ns);
-+	if (IS_ERR(mnt))
-+		return PTR_ERR(mnt);
-+
-+	return 0;
-+}
-+
-+void pid_ns_release_proc(struct pid_namespace *ns)
-+{
-+	mntput(ns->proc_mnt);
-+}
-+
- EXPORT_SYMBOL(proc_symlink);
- EXPORT_SYMBOL(proc_mkdir);
- EXPORT_SYMBOL(create_proc_entry);
---- ./include/linux/proc_fs.h.ve12	2007-08-06 14:58:51.000000000 +0400
-+++ ./include/linux/proc_fs.h	2007-08-06 14:58:51.000000000 +0400
-@@ -143,6 +144,9 @@ extern const struct file_operations proc
- extern const struct file_operations proc_kmsg_operations;
- extern const struct file_operations ppc_htab_operations;
+ static inline void put_pid_ns(struct pid_namespace *ns)
+ {
+-	kref_put(&ns->kref, free_pid_ns);
++	if (ns != &init_pid_ns)
++		kref_put(&ns->kref, free_pid_ns);
+ }
  
-+extern int pid_ns_prepare_proc(struct pid_namespace *ns);
-+extern void pid_ns_release_proc(struct pid_namespace *ns);
-+
- /*
-  * proc_tty.c
+ static inline struct pid_namespace *task_active_pid_ns(struct task_struct *tsk)
+@@ -49,7 +50,8 @@ static inline struct pid_namespace *task
+ 
+ static inline struct task_struct *task_child_reaper(struct task_struct *tsk)
+ {
+-	return init_pid_ns.child_reaper;
++	BUG_ON(tsk != current);
++	return tsk->nsproxy->pid_ns->child_reaper;
+ }
+ 
+ #endif /* _LINUX_PID_NS_H */
+--- ./include/linux/sched.h.ve17	2007-08-06 12:44:57.000000000 +0400
++++ ./include/linux/sched.h	2007-08-06 12:44:57.000000000 +0400
+@@ -1362,19 +1362,17 @@ static inline int pid_alive(struct task_
+  * @tsk: Task structure to be checked.
+  *
+  * Check if a task structure is the first user space task the kernel created.
+- *
+- * TODO: We should inline this function after some cleanups in pid_namespace.h
   */
-@@ -250,6 +254,15 @@ static inline void proc_tty_unregister_d
- 
- extern struct proc_dir_entry proc_root;
- 
-+static inline int pid_ns_prepare_proc(struct pid_namespace *ns)
+-extern int is_global_init(struct task_struct *tsk);
++static inline int is_global_init(struct task_struct *tsk)
 +{
-+	return 0;
++	return tsk->pid == 1;
 +}
-+
-+static inline void pid_ns_release_proc(struct pid_namespace *ns)
-+{
-+}
-+
- #endif /* CONFIG_PROC_FS */
  
- #if !defined(CONFIG_PROC_KCORE)
---- ./kernel/fork.c.ve12	2007-08-06 14:58:51.000000000 +0400
-+++ ./kernel/fork.c	2007-08-06 14:58:51.000000000 +0400
-@@ -50,6 +50,7 @@
- #include <linux/taskstats_kern.h>
- #include <linux/random.h>
- #include <linux/tty.h>
-+#include <linux/proc_fs.h>
+ /*
+  * is_container_init:
+  * check whether in the task is init in its own pid namespace.
+  */
+-static inline int is_container_init(struct task_struct *tsk)
+-{
+-	return tsk->pid == 1;
+-}
++extern int is_container_init(struct task_struct *tsk);
  
- #include <asm/pgtable.h>
- #include <asm/pgalloc.h>
-@@ -1134,6 +1135,12 @@ static struct task_struct *copy_process(
- 		pid = alloc_pid(task_active_pid_ns(p));
- 		if (!pid)
- 			goto bad_fork_cleanup_namespaces;
+ extern struct pid *cad_pid;
+ 
+--- ./kernel/pid.c.ve17	2007-08-06 12:44:57.000000000 +0400
++++ ./kernel/pid.c	2007-08-06 12:44:57.000000000 +0400
+@@ -73,11 +73,20 @@ struct pid_namespace init_pid_ns = {
+ };
+ EXPORT_SYMBOL(init_pid_ns);
+ 
+-int is_global_init(struct task_struct *tsk)
++int is_container_init(struct task_struct *tsk)
+ {
+-	return tsk == init_pid_ns.child_reaper;
++	int ret = 0;
++	struct pid *pid;
 +
-+		if (clone_flags & CLONE_NEWPID) {
-+			retval = pid_ns_prepare_proc(task_active_pid_ns(p));
-+			if (retval < 0)
-+				goto bad_fork_free_pid;
-+		}
++	rcu_read_lock();
++	pid = task_pid(tsk);
++	if (pid != NULL && pid->numbers[pid->level].nr == 1)
++		ret = 1;
++	rcu_read_unlock();
++
++	return ret;
+ }
+-EXPORT_SYMBOL(is_global_init);
++EXPORT_SYMBOL(is_container_init);
+ 
+ /*
+  * Note: disable interrupts while the pidmap_lock is held as an
+@@ -193,8 +202,7 @@ fastcall void put_pid(struct pid *pid)
+ 	if ((atomic_read(&pid->count) == 1) ||
+ 	     atomic_dec_and_test(&pid->count)) {
+ 		kmem_cache_free(ns->pid_cachep, pid);
+-		if (ns != &init_pid_ns)
+-			put_pid_ns(ns);
++		put_pid_ns(ns);
+ 	}
+ }
+ EXPORT_SYMBOL_GPL(put_pid);
+@@ -244,9 +252,7 @@ struct pid *alloc_pid(struct pid_namespa
+ 		tmp = tmp->parent;
  	}
  
- 	p->pid = pid_nr(pid);
+-	if (ns != &init_pid_ns)
+-		get_pid_ns(ns);
+-
++	get_pid_ns(ns);
+ 	pid->level = ns->level;
+ 	pid->nr = pid->numbers[0].nr;
+ 	atomic_set(&pid->count, 1);
