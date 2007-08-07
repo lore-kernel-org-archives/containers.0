@@ -1,86 +1,71 @@
-From: Vaidyanathan Srinivasan <svaidy@linux.vnet.ibm.com>
-Subject: Re: [-mm PATCH 6/9] Memory controller add per container LRU and reclaim
- (v4)
-Date: Wed, 08 Aug 2007 00:00:11 +0530
-Message-ID: <46B8BA33.7020800@linux.vnet.ibm.com>
-References: <20070727201041.31565.14803.sendpatchset@balbir-laptop> <20070731051459.E827E1BF77B@siro.lan> <46AF314C.7030404@linux.vnet.ibm.com>
+From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
+Subject: [PATCH 0/25] Sysfs cleanups & tagged directory support
+Date: Tue, 07 Aug 2007 15:06:21 -0600
+Message-ID: <m1643rkqb6.fsf@ebiederm.dsl.xmission.com>
+References: <11860582832964-git-send-email-htejun@gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Content-Transfer-Encoding: 7bit
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1758907AbXHGSac@vger.kernel.org>
-In-Reply-To: <46AF314C.7030404@linux.vnet.ibm.com>
-Sender: linux-kernel-owner@vger.kernel.org
-To: Vaidyanathan Srinivasan <svaidy@linux.vnet.ibm.com>
-Cc: YAMAMOTO Takashi <yamamoto@valinux.co.jp>, a.p.zijlstra@chello.nl, dhaval@linux.vnet.ibm.com, linux-kernel@vger.kernel.org, linux-mm@kvack.org, ebiederm@xmission.com, containers@lists.osdl.org, akpm@linux-foundation.org, xemul@openvz.org, menage@google.com, balbir@linux.vnet.ibm.com
+Content-Type: text/plain; charset=us-ascii
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <11860582832964-git-send-email-htejun-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org> (Tejun Heo's
+	message of "Thu, 2 Aug 2007 21:38:03 +0900")
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Greg KH <greg-U8xfFu+wG4EAvxtiuMwx3w@public.gmane.org>
+Cc: Tejun Heo <htejun-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, gregkh-l3A5Bk7waGM@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, stern-nwvwT67g6+6dFdvTe/nMLpVzexx5G7lz@public.gmane.org, satyam-wEGCiKHe2LqWVfeAwA7xHQ@public.gmane.org, cornelia.huck-tA70FqPdS9bQT0dZR+AlfA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
 
+The following patchset applies on top of the last round of
+sysfs cleanups that Tejun sent out on the 2nd.
 
-Vaidyanathan Srinivasan wrote:
-> 
-> YAMAMOTO Takashi wrote:
->>> +unsigned long mem_container_isolate_pages(unsigned long nr_to_scan,
->>> +					struct list_head *dst,
->>> +					unsigned long *scanned, int order,
->>> +					int mode, struct zone *z,
->>> +					struct mem_container *mem_cont,
->>> +					int active)
->>> +{
->>> +	unsigned long nr_taken = 0;
->>> +	struct page *page;
->>> +	unsigned long scan;
->>> +	LIST_HEAD(mp_list);
->>> +	struct list_head *src;
->>> +	struct meta_page *mp;
->>> +
->>> +	if (active)
->>> +		src = &mem_cont->active_list;
->>> +	else
->>> +		src = &mem_cont->inactive_list;
->>> +
->>> +	for (scan = 0; scan < nr_to_scan && !list_empty(src); scan++) {
->>> +		mp = list_entry(src->prev, struct meta_page, lru);
->> what prevents another thread from freeing mp here?
-> 
-> mem_cont->lru_lock protects the list and validity of mp.  If we hold
-> mem_cont->lru_lock for this entire loop, then we preserve the validity
-> of mp.  However that will be holding up container charge and uncharge.
-> 
-> This entire routing is called with zone->lru_lock held by the caller.
->  So within a zone, this routine is serialized.
-> 
-> However page uncharge may race with isolate page.  But will that lead
-> to any corruption of the list?  We may be holding the lock for too
-> much time just to be on the safe side.
-> 
-> Please allow us some time to verify whether this is indeed inadequate
-> locking that will lead to corruption of the list.
+My target with this patchset is to support sysfs directories
+with a tag on struct sysfs_dirent making them visible only
+on selected mounts of sysfs.
 
-I did few runs and checked for ref_cnt on meta_page and there seems to
-be a race between isolate pages and uncharge.  We will probably have
-to increase the ref_cnt on meta_page while we are isolating it.  I am
-trying to see if we can solve the problem by manipulating the ref_cnt
-on the meta_page.
+After going around and around the different possibilities I
+believe I have finally found something that works and is
+reasonably maintainable.   I believe I have achieved that
+with only introducing some extra complexity in a few very localized
+places.
 
---Vaidy
+The worst part is the code to support multiple superblocks and thus
+multiple dentry tress for sysfs.  I had allocate a linked list in
+sysfs_move_dir for all of the possible dentries I would need to call
+d_move on. Bleh.  It works, it is correct and it is an atomic
+rename.
 
-> Thanks for pointing out this situation.
-> --Vaidy
-> 
->>> +		spin_lock(&mem_cont->lru_lock);
->>> +		if (mp)
->>> +			page = mp->page;
->>> +		spin_unlock(&mem_cont->lru_lock);
->>> +		if (!mp)
->>> +			continue;
->> YAMAMOTO Takashi
->> _______________________________________________
->> Containers mailing list
->> Containers@lists.linux-foundation.org
->> https://lists.linux-foundation.org/mailman/listinfo/containers
->>
-> _______________________________________________
-> Containers mailing list
-> Containers@lists.linux-foundation.org
-> https://lists.linux-foundation.org/mailman/listinfo/containers
-> 
+Eric
+
+
+sysfs: Move all of inode initialization into sysfs_init_inode
+sysfs: Remove sysfs_instantiate
+sysfs: Use kill_anon_super
+sysfs: Make sysfs_mount static
+sysfs: In sysfs_lookup don't open code sysfs_find_dirent
+sysfs: Simplify readdir.
+sysfs: Rewrite sysfs_drop_dentry.
+sysfs: Implement __sysfs_get_dentry
+sysfs: Move sysfs_get_dentry below __sysfs_get_dentry
+sysfs: Rewrite sysfs_get_dentry in terms of __sysfs_get_dentry
+sysfs: Remove s_dentry
+sysfs: Introduce sysfs_rename_mutex
+sysfs: Simply sysfs_get_dentry
+sysfs: Don't use lookup_one_len_kern
+vfs: Remove lookup_one_len_kern
+sysfs: Support for preventing unmounts.
+sysfs: Rewrite rename in terms of sysfs dirents
+sysfs: Rewrite sysfs_move_dir in terms of sysfs dirents
+sysfs: sysfs_get_dentry add a sb parameter
+sysfs: Rename Support multiple superblocks
+sysfs: sysfs_chmod_file handle multiple superblocks
+sysfs: sysfs_uptdate_file handle multiple superblocks
+sysfs: Implement sysfs tagged directory support.
+sysfs: Implement sysfs_delete_link and sysfs_rename_link
+driver core: Implement tagged directory support for device classes.
