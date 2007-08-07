@@ -1,7 +1,8 @@
 From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
-Subject: [PATCH 11/25] sysfs: Remove s_dentry
-Date: Tue, 07 Aug 2007 15:19:31 -0600
-Message-ID: <m1tzrbhwkc.fsf_-_@ebiederm.dsl.xmission.com>
+Subject: [PATCH 10/25] sysfs: Rewrite sysfs_get_dentry in terms of
+	__sysfs_get_dentry
+Date: Tue, 07 Aug 2007 15:18:27 -0600
+Message-ID: <m1y7gnhwm4.fsf_-_@ebiederm.dsl.xmission.com>
 References: <11860582832964-git-send-email-htejun@gmail.com>
 	<m1643rkqb6.fsf@ebiederm.dsl.xmission.com>
 	<m11wefkq88.fsf_-_@ebiederm.dsl.xmission.com>
@@ -13,12 +14,11 @@ References: <11860582832964-git-send-email-htejun@gmail.com>
 	<m1bqdjjbcf.fsf_-_@ebiederm.dsl.xmission.com>
 	<m17io7jba4.fsf_-_@ebiederm.dsl.xmission.com>
 	<m13ayvjb82.fsf_-_@ebiederm.dsl.xmission.com>
-	<m1y7gnhwm4.fsf_-_@ebiederm.dsl.xmission.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <m1y7gnhwm4.fsf_-_-T1Yj925okcoyDheHMi7gv2pdwda3JcWeAL8bYrjMMd8@public.gmane.org> (Eric
-	W. Biederman's message of "Tue, 07 Aug 2007 15:18:27 -0600")
+In-Reply-To: <m13ayvjb82.fsf_-_-T1Yj925okcoyDheHMi7gv2pdwda3JcWeAL8bYrjMMd8@public.gmane.org> (Eric
+	W. Biederman's message of "Tue, 07 Aug 2007 15:17:33 -0600")
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -33,119 +33,83 @@ Cc: Tejun Heo <htejun-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, gregkh-l3A5Bk7wa
 List-Id: containers.vger.kernel.org
 
 
-The only uses of s_dentry left are the code that maintains
-s_dentry and trivial users that don't actually need it.
-So this patch removes the s_dentry maintenance code and
-restructures the trivial uses to use something else.
+This removes the last major user of s_dentry and makes
+the locking in sysfs_get_dentry much simpler.  Hopefully
+leading to more readable and maintainable code.
 
 Signed-off-by: Eric W. Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 ---
- fs/sysfs/dir.c   |   32 ++++----------------------------
- fs/sysfs/mount.c |    1 -
- fs/sysfs/sysfs.h |    1 -
- 3 files changed, 4 insertions(+), 30 deletions(-)
+ fs/sysfs/dir.c |   23 ++++++-----------------
+ 1 files changed, 6 insertions(+), 17 deletions(-)
 
 diff --git a/fs/sysfs/dir.c b/fs/sysfs/dir.c
-index adb1b01..1078e60 100644
+index 59a9ce8..adb1b01 100644
 --- a/fs/sysfs/dir.c
 +++ b/fs/sysfs/dir.c
-@@ -247,22 +247,7 @@ static void sysfs_d_iput(struct dentry * dentry, struct inode * inode)
- {
- 	struct sysfs_dirent * sd = dentry->d_fsdata;
+@@ -809,19 +809,15 @@ struct dentry *sysfs_get_dentry(struct sysfs_dirent *sd)
+ 	struct dentry *parent_dentry, *dentry;
+ 	int i, depth;
  
--	if (sd) {
--		/* sd->s_dentry is protected with sysfs_assoc_lock.
--		 * This allows sysfs_drop_dentry() to dereference it.
--		 */
--		spin_lock(&sysfs_assoc_lock);
--
--		/* The dentry might have been deleted or another
--		 * lookup could have happened updating sd->s_dentry to
--		 * point the new dentry.  Ignore if it isn't pointing
--		 * to this dentry.
--		 */
--		if (sd->s_dentry == dentry)
--			sd->s_dentry = NULL;
--		spin_unlock(&sysfs_assoc_lock);
--		sysfs_put(sd);
--	}
-+	sysfs_put(sd);
- 	iput(inode);
- }
- 
-@@ -310,9 +295,6 @@ struct sysfs_dirent *sysfs_new_dirent(const char *name, umode_t mode, int type)
-  *	@sd: target sysfs_dirent
-  *	@dentry: dentry to associate
-  *
-- *	Associate @sd with @dentry.  This is protected by
-- *	sysfs_assoc_lock to avoid race with sysfs_d_iput().
-- *
-  *	LOCKING:
-  *	mutex_lock(sysfs_mutex)
-  */
-@@ -320,12 +302,6 @@ static void sysfs_attach_dentry(struct sysfs_dirent *sd, struct dentry *dentry)
- {
- 	dentry->d_op = &sysfs_dentry_ops;
- 	dentry->d_fsdata = sysfs_get(sd);
--
--	/* protect sd->s_dentry against sysfs_d_iput */
+-	/* Find the first parent which has valid s_dentry and get the
+-	 * dentry.
++	/* Find the first parent which has valid dentry.
+ 	 */
+ 	mutex_lock(&sysfs_mutex);
+- restart0:
 -	spin_lock(&sysfs_assoc_lock);
--	sd->s_dentry = dentry;
--	spin_unlock(&sysfs_assoc_lock);
+- restart1:
+-	spin_lock(&dcache_lock);
++ restart:
+ 
+ 	dentry = NULL;
+ 	depth = 0;
+ 	cur = sd;
+-	while (!cur->s_dentry || !cur->s_dentry->d_inode) {
++	while (!(dentry = __sysfs_get_dentry(sysfs_sb, cur))) {
+ 		if (cur->s_flags & SYSFS_FLAG_REMOVED) {
+ 			dentry = ERR_PTR(-ENOENT);
+ 			depth = 0;
+@@ -830,11 +826,6 @@ struct dentry *sysfs_get_dentry(struct sysfs_dirent *sd)
+ 		cur = cur->s_parent;
+ 		depth++;
+ 	}
+-	if (!IS_ERR(dentry))
+-		dentry = dget_locked(cur->s_dentry);
 -
- 	d_rehash(dentry);
- }
+-	spin_unlock(&dcache_lock);
+-	spin_unlock(&sysfs_assoc_lock);
  
-@@ -927,7 +903,7 @@ int sysfs_rename_dir(struct kobject * kobj, const char *new_name)
+ 	/* from the found dentry, look up depth times */
+ 	while (depth--) {
+@@ -847,7 +838,7 @@ struct dentry *sysfs_get_dentry(struct sysfs_dirent *sd)
+ 		 */
+ 		if (i != depth) {
+ 			dput(dentry);
+-			goto restart0;
++			goto restart;
+ 		}
  
- 	/* rename */
- 	d_add(new_dentry, NULL);
--	d_move(sd->s_dentry, new_dentry);
-+	d_move(old_dentry, new_dentry);
+ 		sysfs_get(cur);
+@@ -866,18 +857,16 @@ struct dentry *sysfs_get_dentry(struct sysfs_dirent *sd)
+ 		}
  
- 	error = 0;
- 	goto out_unlock;
-@@ -960,7 +936,7 @@ int sysfs_move_dir(struct kobject *kobj, struct kobject *new_parent_kobj)
- 		error = PTR_ERR(old_dentry);
- 		goto out_dput;
+ 		mutex_lock(&sysfs_mutex);
+-		spin_lock(&sysfs_assoc_lock);
+ 
+ 		/* This, again, can happen if tree structure has
+ 		 * changed and we looked up the wrong thing.  Restart.
+ 		 */
+-		if (cur->s_dentry != dentry) {
++		if (dentry->d_fsdata != cur) {
+ 			dput(dentry);
+ 			sysfs_put(cur);
+-			goto restart1;
++			goto restart;
+ 		}
+ 
+-		spin_unlock(&sysfs_assoc_lock);
+ 
+ 		sysfs_put(cur);
  	}
--	old_parent = sd->s_parent->s_dentry;
-+	old_parent = old_dentry->d_parent;
- 
- 	new_parent = sysfs_get_dentry(new_parent_sd);
- 	if (IS_ERR(new_parent)) {
-@@ -986,7 +962,7 @@ again:
- 	} else
- 		error = 0;
- 	d_add(new_dentry, NULL);
--	d_move(sd->s_dentry, new_dentry);
-+	d_move(old_dentry, new_dentry);
- 	dput(new_dentry);
- 
- 	/* Remove from old parent's list and insert into new parent's list. */
-diff --git a/fs/sysfs/mount.c b/fs/sysfs/mount.c
-index 9fae7d5..4968d31 100644
---- a/fs/sysfs/mount.c
-+++ b/fs/sysfs/mount.c
-@@ -57,7 +57,6 @@ static int sysfs_fill_super(struct super_block *sb, void *data, int silent)
- 		iput(inode);
- 		return -ENOMEM;
- 	}
--	sysfs_root.s_dentry = root;
- 	root->d_fsdata = &sysfs_root;
- 	sb->s_root = root;
- 	return 0;
-diff --git a/fs/sysfs/sysfs.h b/fs/sysfs/sysfs.h
-index 77253aa..8ed13cf 100644
---- a/fs/sysfs/sysfs.h
-+++ b/fs/sysfs/sysfs.h
-@@ -37,7 +37,6 @@ struct sysfs_dirent {
- 	unsigned int		s_flags;
- 	umode_t			s_mode;
- 	ino_t			s_ino;
--	struct dentry		* s_dentry;
- 	struct iattr		* s_iattr;
- 	atomic_t		s_event;
- };
 -- 
 1.5.1.1.181.g2de0
