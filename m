@@ -1,8 +1,7 @@
 From: xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org
-Subject: [PATCH 8/20] Make alloc_pid(),
-	free_pid() and put_pid() work with struct upid
-Date: Tue, 07 Aug 2007 13:29:50 +0400
-Message-ID: <46B83B8E.mailG441DT21C@openvz.org>
+Subject: [PATCH 9/20] Helpers to obtain pid numbers
+Date: Tue, 07 Aug 2007 13:29:52 +0400
+Message-ID: <46B83B90.mailG4A1DABF6@openvz.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Transfer-Encoding: 7bit
@@ -20,155 +19,202 @@ To: sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org, oleg-6lXkIZvqkOAvJsYlp49lxw
 Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Each struct upid element of struct pid has to be initialized properly,
-i.e. its nr mst be allocated from appropriate pidmap and ns set to
-appropriate namespace.
+When showing pid to user or getting the pid numerical id for in-kernel
+use the value of this id may differ depending on the namespace.
 
-When allocating a new pid, we need to know the namespace this pid will
-live in, so the additional argument is added to alloc_pid().
-
-On the other hand, the rest of the kernel still uses the pid->nr and
-pid->pid_chain fields, so these ones are still initialized, but this
-will be removed soon.
+This set of helpers is used to get the global pid nr, the virtual (i.e.
+seen by task in its namespace) nr and the nr as it is seen from the
+specified namespace.
 
 Signed-off-by: Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 
 ---
 
- include/linux/pid.h |    2 +-
- kernel/fork.c       |    2 +-
- kernel/pid.c        |   49 ++++++++++++++++++++++++++++++++++---------------
- 3 files changed, 36 insertions(+), 17 deletions(-)
+ include/linux/pid.h   |   24 ++++++++++-
+ include/linux/sched.h |  108 +++++++++++++++++++++++++++++++++++++++++++++-----
+ kernel/pid.c          |   13 ++++++
+ 3 files changed, 134 insertions(+), 11 deletions(-)
 
---- ./include/linux/pid.h.ve8	2007-08-06 15:39:05.000000000 +0400
-+++ ./include/linux/pid.h	2007-08-06 15:39:05.000000000 +0400
-@@ -111,7 +111,7 @@ extern struct pid *FASTCALL(find_pid(int
- extern struct pid *find_get_pid(int nr);
- extern struct pid *find_ge_pid(int nr);
- 
--extern struct pid *alloc_pid(void);
-+extern struct pid *alloc_pid(struct pid_namespace *ns);
+--- ./include/linux/pid.h.ve9	2007-08-06 12:44:56.000000000 +0400
++++ ./include/linux/pid.h	2007-08-06 12:44:56.000000000 +0400
+@@ -104,11 +104,33 @@ extern struct pid *find_ge_pid(int nr);
+ extern struct pid *alloc_pid(struct pid_namespace *ns);
  extern void FASTCALL(free_pid(struct pid *pid));
  
++/*
++ * the helpers to get the pid's id seen from different namespaces
++ *
++ * pid_nr()    : global id, i.e. the id seen from the init namespace;
++ * pid_vnr()   : virtual id, i.e. the id seen from the namespace this pid
++ *               belongs to. this only makes sence when called in the
++ *               context of the task that belongs to the same namespace;
++ * pid_nr_ns() : id seen from the ns specified.
++ *
++ * see also task_xid_nr() etc in include/linux/sched.h
++ */
++
  static inline pid_t pid_nr(struct pid *pid)
---- ./kernel/fork.c.ve8	2007-08-06 15:39:02.000000000 +0400
-+++ ./kernel/fork.c	2007-08-06 15:39:05.000000000 +0400
-@@ -1029,7 +1029,7 @@ static struct task_struct *copy_process(
- 		goto bad_fork_cleanup_put_domain;
- 
- 	if (pid != &init_struct_pid) {
--		pid = alloc_pid();
-+		pid = alloc_pid(task_active_pid_ns(p));
- 		if (!pid)
- 			goto bad_fork_put_binfmt_module;
- 	}
---- ./kernel/pid.c.ve8	2007-08-06 15:39:05.000000000 +0400
-+++ ./kernel/pid.c	2007-08-06 15:41:34.000000000 +0400
-@@ -29,7 +29,8 @@
- #include <linux/pid_namespace.h>
- #include <linux/init_task.h>
- 
--#define pid_hashfn(nr) hash_long((unsigned long)nr, pidhash_shift)
-+#define pid_hashfn(nr, ns)	\
-+	hash_long((unsigned long)nr + (unsigned long)ns, pidhash_shift)
- static struct hlist_head *pid_hash;
- static int pidhash_shift;
- struct pid init_struct_pid = INIT_STRUCT_PID;
-@@ -188,11 +189,13 @@ fastcall void put_pid(struct pid *pid)
- 	if (!pid)
- 		return;
- 
--	/* FIXME - this must be the namespace this pid lives in */
--	ns = &init_pid_ns;
-+	ns = pid->numbers[pid->level].ns;
- 	if ((atomic_read(&pid->count) == 1) ||
--	     atomic_dec_and_test(&pid->count))
-+	     atomic_dec_and_test(&pid->count)) {
- 		kmem_cache_free(ns->pid_cachep, pid);
-+		if (ns != &init_pid_ns)
-+			put_pid_ns(ns);
-+	}
- }
- EXPORT_SYMBOL_GPL(put_pid);
- 
-@@ -205,45 +208,61 @@ static void delayed_put_pid(struct rcu_h
- fastcall void free_pid(struct pid *pid)
  {
- 	/* We can be called with write_lock_irq(&tasklist_lock) held */
-+	int i;
- 	unsigned long flags;
- 
- 	spin_lock_irqsave(&pidmap_lock, flags);
- 	hlist_del_rcu(&pid->pid_chain);
- 	spin_unlock_irqrestore(&pidmap_lock, flags);
- 
--	free_pidmap(&init_pid_ns, pid->nr);
-+	for (i = 0; i <= pid->level; i++)
-+		free_pidmap(pid->numbers[i].ns, pid->numbers[i].nr);
+ 	pid_t nr = 0;
+ 	if (pid)
+-		nr = pid->nr;
++		nr = pid->numbers[0].nr;
++	return nr;
++}
 +
- 	call_rcu(&pid->rcu, delayed_put_pid);
++pid_t pid_nr_ns(struct pid *pid, struct pid_namespace *ns);
++
++static inline pid_t pid_vnr(struct pid *pid)
++{
++	pid_t nr = 0;
++	if (pid)
++		nr = pid->numbers[pid->level].nr;
+ 	return nr;
  }
  
--struct pid *alloc_pid(void)
-+struct pid *alloc_pid(struct pid_namespace *ns)
+--- ./include/linux/sched.h.ve9	2007-08-06 12:44:54.000000000 +0400
++++ ./include/linux/sched.h	2007-08-06 12:44:56.000000000 +0400
+@@ -1221,16 +1221,6 @@ static inline int rt_task(struct task_st
+ 	return rt_prio(p->prio);
+ }
+ 
+-static inline pid_t task_pgrp_nr(struct task_struct *tsk)
+-{
+-	return tsk->signal->pgrp;
+-}
+-
+-static inline pid_t task_session_nr(struct task_struct *tsk)
+-{
+-	return tsk->signal->__session;
+-}
+-
+ static inline void set_task_session(struct task_struct *tsk, pid_t session)
  {
- 	struct pid *pid;
- 	enum pid_type type;
--	int nr = -1;
--	struct pid_namespace *ns;
-+	int i, nr;
-+	struct pid_namespace *tmp;
+ 	tsk->signal->__session = session;
+@@ -1256,6 +1246,104 @@ static inline struct pid *task_session(s
+ 	return task->group_leader->pids[PIDTYPE_SID].pid;
+ }
  
--	ns = task_active_pid_ns(current);
- 	pid = kmem_cache_alloc(ns->pid_cachep, GFP_KERNEL);
- 	if (!pid)
- 		goto out;
- 
--	nr = alloc_pidmap(ns);
--	if (nr < 0)
--		goto out_free;
-+	tmp = ns;
-+	for (i = ns->level; i >= 0; i--) {
-+		nr = alloc_pidmap(tmp);
-+		if (nr < 0)
-+			goto out_free;
++struct pid_namespace;
 +
-+		pid->numbers[i].nr = nr;
-+		pid->numbers[i].ns = tmp;
-+		tmp = tmp->parent;
-+	}
++/*
++ * the helpers to get the task's different pids as they are seen
++ * from various namespaces
++ *
++ * task_xid_nr()     : global id, i.e. the id seen from the init namespace;
++ * task_xid_vnr()    : virtual id, i.e. the id seen from the namespace the task
++ *                     belongs to. this only makes sence when called in the
++ *                     context of the task that belongs to the same namespace;
++ * task_xid_nr_ns()  : id seen from the ns specified;
++ *
++ * set_task_vxid()   : assigns a virtual id to a task;
++ *
++ * task_ppid_nr_ns() : the parent's id as seen from the namespace specified.
++ *                     the result depends on the namespace and whether the
++ *                     task in question is the namespace's init. e.g. for the
++ *                     namespace's init this will return 0 when called from
++ *                     the namespace of this init, or appropriate id otherwise.
++ *
++ *
++ * see also pid_nr() etc in include/linux/pid.h
++ */
 +
-+	if (ns != &init_pid_ns)
-+		get_pid_ns(ns);
- 
-+	pid->level = ns->level;
-+	pid->nr = pid->numbers[0].nr;
- 	atomic_set(&pid->count, 1);
--	pid->nr = nr;
- 	for (type = 0; type < PIDTYPE_MAX; ++type)
- 		INIT_HLIST_HEAD(&pid->tasks[type]);
- 
- 	spin_lock_irq(&pidmap_lock);
--	hlist_add_head_rcu(&pid->pid_chain, &pid_hash[pid_hashfn(pid->nr)]);
-+	hlist_add_head_rcu(&pid->pid_chain, &pid_hash[pid_hashfn(pid->nr, ns)]);
- 	spin_unlock_irq(&pidmap_lock);
- 
- out:
++static inline pid_t task_pid_nr(struct task_struct *tsk)
++{
++	return tsk->pid;
++}
++
++static inline pid_t task_pid_nr_ns(struct task_struct *tsk,
++		struct pid_namespace *ns)
++{
++	return pid_nr_ns(task_pid(tsk), ns);
++}
++
++static inline pid_t task_pid_vnr(struct task_struct *tsk)
++{
++	return pid_vnr(task_pid(tsk));
++}
++
++
++static inline pid_t task_tgid_nr(struct task_struct *tsk)
++{
++	return tsk->tgid;
++}
++
++static inline pid_t task_tgid_nr_ns(struct task_struct *tsk,
++		struct pid_namespace *ns)
++{
++	return pid_nr_ns(task_tgid(tsk), ns);
++}
++
++static inline pid_t task_tgid_vnr(struct task_struct *tsk)
++{
++	return pid_vnr(task_tgid(tsk));
++}
++
++
++static inline pid_t task_pgrp_nr(struct task_struct *tsk)
++{
++	return tsk->signal->pgrp;
++}
++
++static inline pid_t task_pgrp_nr_ns(struct task_struct *tsk,
++		struct pid_namespace *ns)
++{
++	return pid_nr_ns(task_pgrp(tsk), ns);
++}
++
++static inline pid_t task_pgrp_vnr(struct task_struct *tsk)
++{
++	return pid_vnr(task_pgrp(tsk));
++}
++
++
++static inline pid_t task_session_nr(struct task_struct *tsk)
++{
++	return tsk->signal->__session;
++}
++
++static inline pid_t task_session_nr_ns(struct task_struct *tsk,
++		struct pid_namespace *ns)
++{
++	return pid_nr_ns(task_session(tsk), ns);
++}
++
++static inline pid_t task_session_vnr(struct task_struct *tsk)
++{
++	return pid_vnr(task_session(tsk));
++}
++
++
++static inline pid_t task_ppid_nr_ns(struct task_struct *tsk,
++		struct pid_namespace *ns)
++{
++	return pid_nr_ns(task_pid(rcu_dereference(tsk->real_parent)), ns);
++}
++
+ /**
+  * pid_alive - check that a task structure is not stale
+  * @p: Task structure to be checked.
+--- ./kernel/pid.c.ve9	2007-08-06 12:44:56.000000000 +0400
++++ ./kernel/pid.c	2007-08-06 12:44:56.000000000 +0400
+@@ -380,6 +380,19 @@ struct pid *find_get_pid(pid_t nr)
  	return pid;
+ }
  
- out_free:
-+	for (i++; i <= ns->level; i++)
-+		free_pidmap(pid->numbers[i].ns, pid->numbers[i].nr);
++pid_t pid_nr_ns(struct pid *pid, struct pid_namespace *ns)
++{
++	struct upid *upid;
++	pid_t nr = 0;
 +
- 	kmem_cache_free(ns->pid_cachep, pid);
- 	pid = NULL;
- 	goto out;
-@@ -255,7 +274,7 @@ struct pid * fastcall find_pid(int nr)
- 	struct pid *pid;
- 
- 	hlist_for_each_entry_rcu(pid, elem,
--			&pid_hash[pid_hashfn(nr)], pid_chain) {
-+			&pid_hash[pid_hashfn(nr, &init_pid_ns)], pid_chain) {
- 		if (pid->nr == nr)
- 			return pid;
- 	}
++	if (pid && ns->level <= pid->level) {
++		upid = &pid->numbers[ns->level];
++		if (upid->ns == ns)
++			nr = upid->nr;
++	}
++	return nr;
++}
++
+ /*
+  * Used by proc to find the first pid that is greater then or equal to nr.
+  *
