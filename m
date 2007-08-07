@@ -1,7 +1,7 @@
 From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
-Subject: [PATCH 15/25] vfs: Remove lookup_one_len_kern
-Date: Tue, 07 Aug 2007 15:25:05 -0600
-Message-ID: <m1d4xzhwb2.fsf_-_@ebiederm.dsl.xmission.com>
+Subject: [PATCH 16/25] sysfs: Support for preventing unmounts.
+Date: Tue, 07 Aug 2007 15:26:28 -0600
+Message-ID: <m18x8nhw8r.fsf_-_@ebiederm.dsl.xmission.com>
 References: <11860582832964-git-send-email-htejun@gmail.com>
 	<m1643rkqb6.fsf@ebiederm.dsl.xmission.com>
 	<m11wefkq88.fsf_-_@ebiederm.dsl.xmission.com>
@@ -18,11 +18,12 @@ References: <11860582832964-git-send-email-htejun@gmail.com>
 	<m1ps1zhwhp.fsf_-_@ebiederm.dsl.xmission.com>
 	<m1lkcnhwfu.fsf_-_@ebiederm.dsl.xmission.com>
 	<m1hcnbhwcy.fsf_-_@ebiederm.dsl.xmission.com>
+	<m1d4xzhwb2.fsf_-_@ebiederm.dsl.xmission.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <m1hcnbhwcy.fsf_-_-T1Yj925okcoyDheHMi7gv2pdwda3JcWeAL8bYrjMMd8@public.gmane.org> (Eric
-	W. Biederman's message of "Tue, 07 Aug 2007 15:23:57 -0600")
+In-Reply-To: <m1d4xzhwb2.fsf_-_-T1Yj925okcoyDheHMi7gv2pdwda3JcWeAL8bYrjMMd8@public.gmane.org> (Eric
+	W. Biederman's message of "Tue, 07 Aug 2007 15:25:05 -0600")
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -37,105 +38,165 @@ Cc: Tejun Heo <htejun-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, gregkh-l3A5Bk7wa
 List-Id: containers.vger.kernel.org
 
 
-Now that sysfs no longer uses lookup_one_len_kern the function has
-no users so remove it from the kernel.  Making namei.c just a little
-easier to read.
+To support mounting multiple instances of sysfs occassionally I
+need to walk through all of the currently present sysfs super blocks.
+
+To allow this iteration this patch adds sysfs_grab_supers
+and sysfs_release_supers.  While a piece of code is in
+a section surrounded by these no more sysfs super blocks
+will be either created or destroyed.
 
 Signed-off-by: Eric W. Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 ---
- fs/namei.c            |   46 +++++++++++-----------------------------------
- include/linux/namei.h |    1 -
- 2 files changed, 11 insertions(+), 36 deletions(-)
+ fs/sysfs/mount.c |   79 ++++++++++++++++++++++++++++++++++++++++++++++++-----
+ fs/sysfs/sysfs.h |   10 +++++++
+ 2 files changed, 81 insertions(+), 8 deletions(-)
 
-diff --git a/fs/namei.c b/fs/namei.c
-index a83160a..69d3304 100644
---- a/fs/namei.c
-+++ b/fs/namei.c
-@@ -1273,7 +1273,12 @@ int __user_path_lookup_open(const char __user *name, unsigned int lookup_flags,
- 	return err;
- }
+diff --git a/fs/sysfs/mount.c b/fs/sysfs/mount.c
+index 4968d31..b2bfa45 100644
+--- a/fs/sysfs/mount.c
++++ b/fs/sysfs/mount.c
+@@ -33,47 +33,110 @@ struct sysfs_dirent sysfs_root = {
  
--static inline struct dentry *__lookup_hash_kern(struct qstr *name, struct dentry *base, struct nameidata *nd)
-+/*
-+ * Restricted form of lookup. Doesn't follow links, single-component only,
-+ * needs parent already locked. Doesn't follow mounts.
-+ * SMP-safe.
-+ */
-+static inline struct dentry * __lookup_hash(struct qstr *name, struct dentry *base, struct nameidata *nd)
+ static int sysfs_fill_super(struct super_block *sb, void *data, int silent)
  {
- 	struct dentry *dentry;
- 	struct inode *inode;
-@@ -1281,6 +1286,11 @@ static inline struct dentry *__lookup_hash_kern(struct qstr *name, struct dentry
- 
- 	inode = base->d_inode;
- 
-+	err = permission(inode, MAY_EXEC, nd);
-+	dentry = ERR_PTR(err);
-+	if (err)
-+		goto out;
-+
- 	/*
- 	 * See if the low-level filesystem might want
- 	 * to use its own hash..
-@@ -1308,29 +1318,6 @@ out:
- 	return dentry;
- }
- 
--/*
-- * Restricted form of lookup. Doesn't follow links, single-component only,
-- * needs parent already locked. Doesn't follow mounts.
-- * SMP-safe.
-- */
--static inline struct dentry * __lookup_hash(struct qstr *name, struct dentry *base, struct nameidata *nd)
--{
--	struct dentry *dentry;
 -	struct inode *inode;
--	int err;
--
--	inode = base->d_inode;
--
--	err = permission(inode, MAY_EXEC, nd);
--	dentry = ERR_PTR(err);
--	if (err)
--		goto out;
--
--	dentry = __lookup_hash_kern(name, base, nd);
--out:
--	return dentry;
--}
--
- static struct dentry *lookup_hash(struct nameidata *nd)
- {
- 	return __lookup_hash(&nd->last, nd->dentry, nd);
-@@ -1369,17 +1356,6 @@ struct dentry *lookup_one_len(const char *name, struct dentry *base, int len)
- 	return __lookup_hash(&this, base, NULL);
+-	struct dentry *root;
++	struct sysfs_super_info *info = NULL;
++	struct inode *inode = NULL;
++	struct dentry *root = NULL;
++	int error;
+ 
+ 	sb->s_blocksize = PAGE_CACHE_SIZE;
+ 	sb->s_blocksize_bits = PAGE_CACHE_SHIFT;
+ 	sb->s_magic = SYSFS_MAGIC;
+ 	sb->s_op = &sysfs_ops;
+ 	sb->s_time_gran = 1;
+-	sysfs_sb = sb;
++	if (!sysfs_sb)
++		sysfs_sb = sb;
++
++	error = -ENOMEM;
++	info = kzalloc(sizeof(*info), GFP_KERNEL);
++	if (!info)
++		goto out_err;
+ 
+ 	/* get root inode, initialize and unlock it */
++	error = -ENOMEM;
+ 	inode = sysfs_get_inode(&sysfs_root);
+ 	if (!inode) {
+ 		pr_debug("sysfs: could not get root inode\n");
+-		return -ENOMEM;
++		goto out_err;
+ 	}
+ 
+ 	/* instantiate and link root dentry */
++	error = -ENOMEM;
+ 	root = d_alloc_root(inode);
+ 	if (!root) {
+ 		pr_debug("%s: could not get root dentry!\n",__FUNCTION__);
+-		iput(inode);
+-		return -ENOMEM;
++		goto out_err;
+ 	}
+ 	root->d_fsdata = &sysfs_root;
+ 	sb->s_root = root;
++	sb->s_fs_info = info;
+ 	return 0;
++
++out_err:
++	dput(root);
++	iput(inode);
++	kfree(info);
++	if (sysfs_sb == sb)
++		sysfs_sb = NULL;
++	return error;
  }
  
--struct dentry *lookup_one_len_kern(const char *name, struct dentry *base, int len)
--{
--	int err;
--	struct qstr this;
--
--	err = __lookup_one_len(name, &this, base, len);
--	if (err)
--		return ERR_PTR(err);
--	return __lookup_hash_kern(&this, base, NULL);
--}
--
- int fastcall __user_walk_fd(int dfd, const char __user *name, unsigned flags,
- 			    struct nameidata *nd)
+ static int sysfs_get_sb(struct file_system_type *fs_type,
+ 	int flags, const char *dev_name, void *data, struct vfsmount *mnt)
  {
-diff --git a/include/linux/namei.h b/include/linux/namei.h
-index 6c38efb..36e5690 100644
---- a/include/linux/namei.h
-+++ b/include/linux/namei.h
-@@ -82,7 +82,6 @@ extern struct file *nameidata_to_filp(struct nameidata *nd, int flags);
- extern void release_open_intent(struct nameidata *);
+-	return get_sb_single(fs_type, flags, data, sysfs_fill_super, mnt);
++	int rc;
++	mutex_lock(&sysfs_rename_mutex);
++	rc = get_sb_single(fs_type, flags, data, sysfs_fill_super, mnt);
++	mutex_unlock(&sysfs_rename_mutex);
++	return rc;
+ }
  
- extern struct dentry * lookup_one_len(const char *, struct dentry *, int);
--extern struct dentry *lookup_one_len_kern(const char *, struct dentry *, int);
+-static struct file_system_type sysfs_fs_type = {
++struct file_system_type sysfs_fs_type = {
+ 	.name		= "sysfs",
+ 	.get_sb		= sysfs_get_sb,
+ 	.kill_sb	= kill_anon_super,
+ };
  
- extern int follow_down(struct vfsmount **, struct dentry **);
- extern int follow_up(struct vfsmount **, struct dentry **);
++void sysfs_grab_supers(void)
++{
++	/* must hold sysfs_rename_mutex */
++	struct super_block *sb;
++	/* Loop until I have taken s_umount on all sysfs superblocks */
++restart:
++	spin_lock(&sb_lock);
++	list_for_each_entry(sb, &sysfs_fs_type.fs_supers, s_instances) {
++		if (sysfs_info(sb)->grabbed)
++			continue;
++		/* Wait for unmount activity to complete. */
++		if (sb->s_count < S_BIAS) {
++			sb->s_count += 1;
++			spin_unlock(&sb_lock);
++			down_read(&sb->s_umount);
++			drop_super(sb);
++			goto restart;
++		}
++		atomic_inc(&sb->s_active);
++		sysfs_info(sb)->grabbed = 1;
++	}
++	spin_unlock(&sb_lock);
++}
++
++void sysfs_release_supers(void)
++{
++	/* must hold sysfs_rename_mutex */
++	struct super_block *sb;
++restart:
++	spin_lock(&sb_lock);
++	list_for_each_entry(sb, &sysfs_fs_type.fs_supers, s_instances) {
++		if (!sysfs_info(sb)->grabbed)
++			continue;
++		sysfs_info(sb)->grabbed = 0;
++		spin_unlock(&sb_lock);
++		deactivate_super(sb);
++		goto restart;
++	}
++	spin_unlock(&sb_lock);
++}
++
+ int __init sysfs_init(void)
+ {
+ 	int err = -ENOMEM;
+diff --git a/fs/sysfs/sysfs.h b/fs/sysfs/sysfs.h
+index 791b3ed..8156ccb 100644
+--- a/fs/sysfs/sysfs.h
++++ b/fs/sysfs/sysfs.h
+@@ -50,8 +50,18 @@ struct sysfs_addrm_cxt {
+ 	int			cnt;
+ };
+ 
++struct sysfs_super_info {
++	int	grabbed;
++};
++
++#define sysfs_info(SB) ((struct sysfs_super_info *)(SB)->s_fs_info)
++
+ extern struct sysfs_dirent sysfs_root;
+ extern struct kmem_cache *sysfs_dir_cachep;
++extern struct file_system_type sysfs_fs_type;
++
++void sysfs_grab_supers(void);
++void sysfs_release_supers(void);
+ 
+ extern struct dentry *sysfs_get_dentry(struct sysfs_dirent *sd);
+ extern struct sysfs_dirent *sysfs_get_active(struct sysfs_dirent *sd);
 -- 
 1.5.1.1.181.g2de0
