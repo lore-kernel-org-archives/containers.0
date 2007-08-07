@@ -1,13 +1,15 @@
 From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
-Subject: [PATCH 0/25] Sysfs cleanups & tagged directory support
-Date: Tue, 07 Aug 2007 15:06:21 -0600
-Message-ID: <m1643rkqb6.fsf@ebiederm.dsl.xmission.com>
+Subject: [PATCH 02/25] sysfs: Remove sysfs_instantiate
+Date: Tue, 07 Aug 2007 15:08:50 -0600
+Message-ID: <m1wsw7jbml.fsf_-_@ebiederm.dsl.xmission.com>
 References: <11860582832964-git-send-email-htejun@gmail.com>
+	<m1643rkqb6.fsf@ebiederm.dsl.xmission.com>
+	<m11wefkq88.fsf_-_@ebiederm.dsl.xmission.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <11860582832964-git-send-email-htejun-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org> (Tejun Heo's
-	message of "Thu, 2 Aug 2007 21:38:03 +0900")
+In-Reply-To: <m11wefkq88.fsf_-_-T1Yj925okcoyDheHMi7gv2pdwda3JcWeAL8bYrjMMd8@public.gmane.org> (Eric
+	W. Biederman's message of "Tue, 07 Aug 2007 15:08:07 -0600")
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -22,50 +24,68 @@ Cc: Tejun Heo <htejun-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, gregkh-l3A5Bk7wa
 List-Id: containers.vger.kernel.org
 
 
-The following patchset applies on top of the last round of
-sysfs cleanups that Tejun sent out on the 2nd.
+Now that sysfs_get_inode is dropping the inode lock
+we no longer have a need from sysfs_instantiate.
 
-My target with this patchset is to support sysfs directories
-with a tag on struct sysfs_dirent making them visible only
-on selected mounts of sysfs.
+Signed-off-by: Eric W. Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+---
+ fs/sysfs/dir.c   |    2 +-
+ fs/sysfs/inode.c |   17 -----------------
+ fs/sysfs/sysfs.h |    1 -
+ 3 files changed, 1 insertions(+), 19 deletions(-)
 
-After going around and around the different possibilities I
-believe I have finally found something that works and is
-reasonably maintainable.   I believe I have achieved that
-with only introducing some extra complexity in a few very localized
-places.
-
-The worst part is the code to support multiple superblocks and thus
-multiple dentry tress for sysfs.  I had allocate a linked list in
-sysfs_move_dir for all of the possible dentries I would need to call
-d_move on. Bleh.  It works, it is correct and it is an atomic
-rename.
-
-Eric
-
-
-sysfs: Move all of inode initialization into sysfs_init_inode
-sysfs: Remove sysfs_instantiate
-sysfs: Use kill_anon_super
-sysfs: Make sysfs_mount static
-sysfs: In sysfs_lookup don't open code sysfs_find_dirent
-sysfs: Simplify readdir.
-sysfs: Rewrite sysfs_drop_dentry.
-sysfs: Implement __sysfs_get_dentry
-sysfs: Move sysfs_get_dentry below __sysfs_get_dentry
-sysfs: Rewrite sysfs_get_dentry in terms of __sysfs_get_dentry
-sysfs: Remove s_dentry
-sysfs: Introduce sysfs_rename_mutex
-sysfs: Simply sysfs_get_dentry
-sysfs: Don't use lookup_one_len_kern
-vfs: Remove lookup_one_len_kern
-sysfs: Support for preventing unmounts.
-sysfs: Rewrite rename in terms of sysfs dirents
-sysfs: Rewrite sysfs_move_dir in terms of sysfs dirents
-sysfs: sysfs_get_dentry add a sb parameter
-sysfs: Rename Support multiple superblocks
-sysfs: sysfs_chmod_file handle multiple superblocks
-sysfs: sysfs_uptdate_file handle multiple superblocks
-sysfs: Implement sysfs tagged directory support.
-sysfs: Implement sysfs_delete_link and sysfs_rename_link
-driver core: Implement tagged directory support for device classes.
+diff --git a/fs/sysfs/dir.c b/fs/sysfs/dir.c
+index ae06f4a..55d8299 100644
+--- a/fs/sysfs/dir.c
++++ b/fs/sysfs/dir.c
+@@ -771,7 +771,7 @@ static struct dentry * sysfs_lookup(struct inode *dir, struct dentry *dentry,
+ 		goto out_unlock;
+ 	}
+ 
+-	sysfs_instantiate(dentry, inode);
++	d_instantiate(dentry, inode);
+ 	sysfs_attach_dentry(sd, dentry);
+ 
+  out_unlock:
+diff --git a/fs/sysfs/inode.c b/fs/sysfs/inode.c
+index aefc346..70a2420 100644
+--- a/fs/sysfs/inode.c
++++ b/fs/sysfs/inode.c
+@@ -212,23 +212,6 @@ struct inode * sysfs_get_inode(struct sysfs_dirent *sd)
+ 	return inode;
+ }
+ 
+-/**
+- *	sysfs_instantiate - instantiate dentry
+- *	@dentry: dentry to be instantiated
+- *	@inode: inode associated with @sd
+- *
+- *	Unlock @inode if locked and instantiate @dentry with @inode.
+- *
+- *	LOCKING:
+- *	None.
+- */
+-void sysfs_instantiate(struct dentry *dentry, struct inode *inode)
+-{
+-	BUG_ON(!dentry || dentry->d_inode);
+-
+-	d_instantiate(dentry, inode);
+-}
+-
+ int sysfs_hash_and_remove(struct sysfs_dirent *dir_sd, const char *name)
+ {
+ 	struct sysfs_addrm_cxt acxt;
+diff --git a/fs/sysfs/sysfs.h b/fs/sysfs/sysfs.h
+index 0436754..8a0aea1 100644
+--- a/fs/sysfs/sysfs.h
++++ b/fs/sysfs/sysfs.h
+@@ -69,7 +69,6 @@ extern void sysfs_remove_one(struct sysfs_addrm_cxt *acxt,
+ extern void sysfs_addrm_finish(struct sysfs_addrm_cxt *acxt);
+ 
+ extern struct inode * sysfs_get_inode(struct sysfs_dirent *sd);
+-extern void sysfs_instantiate(struct dentry *dentry, struct inode *inode);
+ 
+ extern void release_sysfs_dirent(struct sysfs_dirent * sd);
+ extern struct sysfs_dirent *sysfs_find_dirent(struct sysfs_dirent *parent_sd,
+-- 
+1.5.1.1.181.g2de0
