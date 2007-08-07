@@ -1,13 +1,13 @@
-From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
-Subject: Re: netns34
-Date: Tue, 07 Aug 2007 16:17:23 -0600
-Message-ID: <m1wsw7f0r0.fsf@ebiederm.dsl.xmission.com>
-References: <m11wefgfl0.fsf@ebiederm.dsl.xmission.com>
+From: sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org
+Subject: Re: [PATCH 14/20] Allow cloning of new namespace
+Date: Tue, 7 Aug 2007 15:48:27 -0700
+Message-ID: <20070807224827.GA2375@us.ibm.com>
+References: <46B83B9A.mailG5N11PRTB@openvz.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <m11wefgfl0.fsf-T1Yj925okcoyDheHMi7gv2pdwda3JcWeAL8bYrjMMd8@public.gmane.org> (Eric W. Biederman's
-	message of "Tue, 07 Aug 2007 16:11:39 -0600")
+Content-Disposition: inline
+In-Reply-To: <46B83B9A.mailG5N11PRTB-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -17,31 +17,54 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
-Cc: "Denis V. Lunev" <den-3ImXcnM4P+0@public.gmane.org>, Daniel Lezcano <dlezcano-juSfH4iHXoxBDgjK7y7TUQ@public.gmane.org>
+To: xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org
+Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, oleg-6lXkIZvqkOAvJsYlp49lxw@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman) writes:
+Pavel Emelianov [xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org] wrote:
+| When clone() is invoked with CLONE_NEWPID, create a new pid namespace
+| and then create a new struct pid for the new process. Allocate pid_t's
+| for the new process in the new pid namespace and all ancestor pid
+| namespaces. Make the newly cloned process the session and process group
+| leader.
+| 
+| Since the active pid namespace is special and expected to be the first
 
-> Ok.  After a bunch of work I have my network namespace patches working
-> again against 2.6.23-rc2 or whatever is linus's latest.
->
-> I need to break out my sysctl work and send that separately.
->
-> I need to get veth in there and I need to get a patch to /sbin/ip
-> to work with Patrick McHardy's form of patches.
->
-> But I think I am quickly approaching the point where I will have
-> patches ready for merging.
->
-> Once I get sysctl sorted out I will start post a minimal patchset
-> for prereview and see where things go.
->
-> Hopefully my sysfs work finally sticks this time.
+active pid ns is the *last entry* in this patchset (not first) right ?
 
-And the important part the code will shortly be available at:
-git://git.kernel.org/pub/scm/linux/kernel/git/ebiederm/linux-2.6-netns.git#netns/v2.6.23-rc2netns34
+| entry in pid->upid_list, preserve the order of pid namespaces.
+| 
+| The size of 'struct pid' is dependent on the the number of pid namespaces
+| the process exists in, so we use multiple pid-caches'. Only one pid cache
+| is created during system startup and this used by processes that exist
+| only in init_pid_ns.
+| 
+| When a process clones its pid namespace, we create additional pid caches
+| as necessary and use the pid cache to allocate 'struct pids' for that depth.
+| 
+| Note, that with this patch the newly created namespace won't work, since
+| the rest of the kernel still uses global pids, but this is to be fixed
+| soon. Init pid namespace still works.
+| 
+| Signed-off-by: Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+| Signed-off-by: Sukadev Bhattiprolu <sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+| 
+| ---
+| 
+|  include/linux/sched.h |    1 
+|  kernel/fork.c         |   48 +++++++++++++++++---------
+|  kernel/nsproxy.c      |    3 +
+|  kernel/pid.c          |   91 +++++++++++++++++++++++++++++++++++++++++++++-----
+|  4 files changed, 118 insertions(+), 25 deletions(-)
+| 
+| --- ./include/linux/sched.h.ve14	2007-08-06 15:00:09.000000000 +0400
+| +++ ./include/linux/sched.h	2007-08-06 15:00:09.000000000 +0400
+| @@ -27,6 +27,7 @@
+|  #define CLONE_NEWUTS		0x04000000	/* New utsname group? */
+|  #define CLONE_NEWIPC		0x08000000	/* New ipcs */
+|  #define CLONE_NEWUSER		0x10000000	/* New user namespace */
+| +#define CLONE_NEWPID		0x20000000	/* New pids */
 
-And also from the default head.
+Nit. I think "New pid namespace" would be a better comment.
 
-Eric
+Suka
