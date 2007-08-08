@@ -1,70 +1,63 @@
-From: ebiederm@xmission.com (Eric W. Biederman)
-Subject: Re: [PATCH 20/25] sysfs: Rename Support multiple superblocks
-Date: Wed, 08 Aug 2007 09:45:57 -0600
-Message-ID: <m1643qdo7e.fsf@ebiederm.dsl.xmission.com>
-References: <m1tzrbhwkc.fsf_-_@ebiederm.dsl.xmission.com>
-	<m1ps1zhwhp.fsf_-_@ebiederm.dsl.xmission.com>
-	<m1lkcnhwfu.fsf_-_@ebiederm.dsl.xmission.com>
-	<m1hcnbhwcy.fsf_-_@ebiederm.dsl.xmission.com>
-	<m1d4xzhwb2.fsf_-_@ebiederm.dsl.xmission.com>
-	<m18x8nhw8r.fsf_-_@ebiederm.dsl.xmission.com>
-	<m14pjbhw6y.fsf_-_@ebiederm.dsl.xmission.com>
-	<m1zm13ghlh.fsf_-_@ebiederm.dsl.xmission.com>
-	<m1vebrghjg.fsf_-_@ebiederm.dsl.xmission.com>
-	<m1r6mfghg9.fsf_-_@ebiederm.dsl.xmission.com>
-	<20070808093505.GL13674@htj.dyndns.org>
+From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
+Subject: Re: [PATCH 0/25] Sysfs cleanups & tagged directory support
+Date: Wed, 08 Aug 2007 09:53:38 -0600
+Message-ID: <m11weednul.fsf@ebiederm.dsl.xmission.com>
+References: <11860582832964-git-send-email-htejun@gmail.com>
+	<m1643rkqb6.fsf@ebiederm.dsl.xmission.com>
+	<20070808093815.0935a18e@gondolin.boeblingen.de.ibm.com>
+	<m1bqdifowo.fsf@ebiederm.dsl.xmission.com>
+	<20070808095432.4a520735@gondolin.boeblingen.de.ibm.com>
+	<m17io6foh8.fsf@ebiederm.dsl.xmission.com>
+	<20070808103759.0850383c@gondolin.boeblingen.de.ibm.com>
+	<20070808161631.1ccf27fd@gondolin.boeblingen.de.ibm.com>
+	<46B9D4B8.4050201@gmail.com>
+	<20070808165027.29af40b5@gondolin.boeblingen.de.ibm.com>
+	<46B9D961.4000902@gmail.com>
+	<m1r6medpxl.fsf@ebiederm.dsl.xmission.com>
+	<46B9DDA1.1080704@gmail.com> <46B9DE5E.7050406@suse.de>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1760624AbXHHPxW@vger.kernel.org>
-In-Reply-To: <20070808093505.GL13674@htj.dyndns.org> (Tejun Heo's message of
-	"Wed, 8 Aug 2007 18:35:05 +0900")
-Sender: linux-kernel-owner@vger.kernel.org
-To: Tejun Heo <htejun@gmail.com>
-Cc: Greg KH <greg@kroah.com>, linux-kernel@vger.kernel.org, satyam@infradead.org, cornelia.huck@de.ibm.com, stern@rowland.harvard.edu, Linux Containers <containers@lists.osdl.org>, gregkh@suse.de
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <46B9DE5E.7050406-l3A5Bk7waGM@public.gmane.org> (Tejun Heo's message of "Thu, 09 Aug
+	2007 00:16:46 +0900")
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Tejun Heo <teheo-l3A5Bk7waGM@public.gmane.org>
+Cc: Greg KH <greg-U8xfFu+wG4EAvxtiuMwx3w@public.gmane.org>, gregkh-l3A5Bk7waGM@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, stern-nwvwT67g6+6dFdvTe/nMLpVzexx5G7lz@public.gmane.org, satyam-wEGCiKHe2LqWVfeAwA7xHQ@public.gmane.org, Cornelia Huck <cornelia.huck-tA70FqPdS9bQT0dZR+AlfA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Tejun Heo <htejun@gmail.com> writes:
+Tejun Heo <teheo-l3A5Bk7waGM@public.gmane.org> writes:
 
->> +{
->> +	struct sysfs_rename_struct *srs;
->> +	struct super_block *sb;
->> +	struct dentry *dentry;
->> +	int error;
->> +
->> +	list_for_each_entry(sb, &sysfs_fs_type.fs_supers, s_instances) {
->> +		dentry = sysfs_get_dentry(sb, sd);
->> +		if (!dentry)
->> +			continue;
+> Tejun Heo wrote:
+>> Eric W. Biederman wrote:
+>>> Tejun Heo <htejun-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org> writes:
+>>>
+>>>> Cornelia Huck wrote:
+>>>>> On Wed, 08 Aug 2007 23:35:36 +0900,
+>>>>> Tejun Heo <htejun-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org> wrote:
+>>>>>
+>>>>>> Does the attached patch happen to fix the problem?
+>>>>> Indeed it does; thanks!
+>>>> Yeah, you seem to have 32bit off_t.  UINT_MAX overflows, so...
+>>> Weird.  And we have it opening the directory O_LARGEFILE.
+>>>
+>>> I have no problems with the fix though.
+>> 
+>> It's probably because of struct dirent definition used by readdir().
 >
-> sysfs_get_dentry() return ERR_PTR() value.  Oops, sysfs_get_dentry()
-> implementation is wrong too.  Also, please move
-> sysfs_grab/release_supers() near this patch and add (a lot of)
-> comments there.
->
-> Other than that, I think this is as clean as this can be.  Great.
+> More specifically, d_off field.  It's a bit twisted.  For the last
+> entry, filp->f_pos gets written into the field and gets wrapped while
+> being copied out to userland or in glibc.
 
-Welcome.  I will see what I can do with respect to cleaning up
-the names.
-
-As for the return value of sysfs_get_dentry that is tricky.  In particular
-I have three specific cases the code needs to deal with.
-
-- We got the dentry.
-- We did not get the dentry because for this super block there never
-  ever will be a dentry.
-- Some kind of error occurred in attempting to get the dentry.
-
-Not getting a dentry because it is impossible I am currently handling
-with a NULL return.  I can equally use a specific error code to mean
-that as well.  It doesn't much matter.  So I guess the hunk in
-question could read:
-
->> +	list_for_each_entry(sb, &sysfs_fs_type.fs_supers, s_instances) {
->> +		dentry = sysfs_get_dentry(sb, sd);
->> +		if (dentry == ERR_PTR(-ENOENT))
->> +			continue;
-
-As long as we handle that class of error differently I really don't
-care.
+That could do it, and glibc is crunching it.  Oh well, it is
+easy enough to avoid as long as our inode numbers are small which
+the idr allocator seems to ensure.
 
 Eric
