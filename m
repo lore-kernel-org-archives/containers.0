@@ -1,14 +1,21 @@
-From: Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
-Subject: Re: [PATCH 14/20] Allow cloning of new namespace
-Date: Wed, 08 Aug 2007 11:29:59 +0400
-Message-ID: <46B970F7.3070200@openvz.org>
-References: <46B83B9A.mailG5N11PRTB@openvz.org>
-	<20070807224827.GA2375@us.ibm.com>
+From: Tejun Heo <htejun-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Subject: Re: [PATCH 07/25] sysfs: Rewrite sysfs_drop_dentry.
+Date: Wed, 8 Aug 2007 16:35:55 +0900
+Message-ID: <20070808073555.GA13674@htj.dyndns.org>
+References: <11860582832964-git-send-email-htejun@gmail.com>
+	<m1643rkqb6.fsf@ebiederm.dsl.xmission.com>
+	<m11wefkq88.fsf_-_@ebiederm.dsl.xmission.com>
+	<m1wsw7jbml.fsf_-_@ebiederm.dsl.xmission.com>
+	<m1sl6vjbjw.fsf_-_@ebiederm.dsl.xmission.com>
+	<m1odhjjbij.fsf_-_@ebiederm.dsl.xmission.com>
+	<m1k5s7jbh9.fsf_-_@ebiederm.dsl.xmission.com>
+	<m1fy2vjbf9.fsf_-_@ebiederm.dsl.xmission.com>
+	<m1bqdjjbcf.fsf_-_@ebiederm.dsl.xmission.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset=us-ascii
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20070807224827.GA2375-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <m1bqdjjbcf.fsf_-_-T1Yj925okcoyDheHMi7gv2pdwda3JcWeAL8bYrjMMd8@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,63 +25,20 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org
-Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, oleg-6lXkIZvqkOAvJsYlp49lxw@public.gmane.org
+To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+Cc: Greg KH <greg-U8xfFu+wG4EAvxtiuMwx3w@public.gmane.org>, gregkh-l3A5Bk7waGM@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, stern-nwvwT67g6+6dFdvTe/nMLpVzexx5G7lz@public.gmane.org, satyam-wEGCiKHe2LqWVfeAwA7xHQ@public.gmane.org, cornelia.huck-tA70FqPdS9bQT0dZR+AlfA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org wrote:
-> Pavel Emelianov [xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org] wrote:
-> | When clone() is invoked with CLONE_NEWPID, create a new pid namespace
-> | and then create a new struct pid for the new process. Allocate pid_t's
-> | for the new process in the new pid namespace and all ancestor pid
-> | namespaces. Make the newly cloned process the session and process group
-> | leader.
-> | 
-> | Since the active pid namespace is special and expected to be the first
+On Tue, Aug 07, 2007 at 03:14:56PM -0600, Eric W. Biederman wrote:
 > 
-> active pid ns is the *last entry* in this patchset (not first) right ?
-
-yes. thanks.
-
-> | entry in pid->upid_list, preserve the order of pid namespaces.
-> | 
-> | The size of 'struct pid' is dependent on the the number of pid namespaces
-> | the process exists in, so we use multiple pid-caches'. Only one pid cache
-> | is created during system startup and this used by processes that exist
-> | only in init_pid_ns.
-> | 
-> | When a process clones its pid namespace, we create additional pid caches
-> | as necessary and use the pid cache to allocate 'struct pids' for that depth.
-> | 
-> | Note, that with this patch the newly created namespace won't work, since
-> | the rest of the kernel still uses global pids, but this is to be fixed
-> | soon. Init pid namespace still works.
-> | 
-> | Signed-off-by: Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
-> | Signed-off-by: Sukadev Bhattiprolu <sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-> | 
-> | ---
-> | 
-> |  include/linux/sched.h |    1 
-> |  kernel/fork.c         |   48 +++++++++++++++++---------
-> |  kernel/nsproxy.c      |    3 +
-> |  kernel/pid.c          |   91 +++++++++++++++++++++++++++++++++++++++++++++-----
-> |  4 files changed, 118 insertions(+), 25 deletions(-)
-> | 
-> | --- ./include/linux/sched.h.ve14	2007-08-06 15:00:09.000000000 +0400
-> | +++ ./include/linux/sched.h	2007-08-06 15:00:09.000000000 +0400
-> | @@ -27,6 +27,7 @@
-> |  #define CLONE_NEWUTS		0x04000000	/* New utsname group? */
-> |  #define CLONE_NEWIPC		0x08000000	/* New ipcs */
-> |  #define CLONE_NEWUSER		0x10000000	/* New user namespace */
-> | +#define CLONE_NEWPID		0x20000000	/* New pids */
+> Currently we find the dentry to drop by looking at sd->s_dentry.
+> We can just as easily accomplish the same task by looking up the
+> sysfs inode and finding all of the dentries from there, with the
+> added bonus that we don't need to play with the sysfs_assoc_lock.
 > 
-> Nit. I think "New pid namespace" would be a better comment.
+> Signed-off-by: Eric W. Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 
-ok.
+Great, Acked-by: Tejun Heo <htejun-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 
-> Suka
-> 
-
-Thanks,
-Pavel
+-- 
+tejun
