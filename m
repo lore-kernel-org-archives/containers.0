@@ -1,32 +1,35 @@
-From: KAMEZAWA Hiroyuki <kamezawa.hiroyu@jp.fujitsu.com>
-Subject: Re: [-mm PATCH 0/9] Memory controller introduction (v4)
-Date: Wed, 8 Aug 2007 16:51:31 +0900
-Message-ID: <20070808165131.b4ab4e92.kamezawa.hiroyu@jp.fujitsu.com>
-References: <20070727200937.31565.78623.sendpatchset@balbir-laptop>
-	<20070808125139.7cfe702c.kamezawa.hiroyu@jp.fujitsu.com>
+From: ebiederm@xmission.com (Eric W. Biederman)
+Subject: Re: [PATCH 0/25] Sysfs cleanups & tagged directory support
+Date: Wed, 08 Aug 2007 01:47:51 -0600
+Message-ID: <m1bqdifowo.fsf@ebiederm.dsl.xmission.com>
+References: <11860582832964-git-send-email-htejun@gmail.com>
+	<m1643rkqb6.fsf@ebiederm.dsl.xmission.com>
+	<20070808093815.0935a18e@gondolin.boeblingen.de.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
-Content-Transfer-Encoding: 7bit
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1763852AbXHHHuP@vger.kernel.org>
-In-Reply-To: <20070808125139.7cfe702c.kamezawa.hiroyu@jp.fujitsu.com>
+Content-Type: text/plain; charset=us-ascii
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1765702AbXHHHwv@vger.kernel.org>
+In-Reply-To: <20070808093815.0935a18e@gondolin.boeblingen.de.ibm.com>
+	(Cornelia Huck's message of "Wed, 8 Aug 2007 09:38:15 +0200")
 Sender: linux-kernel-owner@vger.kernel.org
-To: KAMEZAWA Hiroyuki <kamezawa.hiroyu@jp.fujitsu.com>
-Cc: Balbir Singh <balbir@linux.vnet.ibm.com>, Andrew Morton <akpm@linux-foundation.org>, Peter Zijlstra <a.p.zijlstra@chello.nl>, Dhaval Giani <dhaval@linux.vnet.ibm.com>, YAMAMOTO Takashi <yamamoto@valinux.co.jp>, Linux Kernel Mailing List <linux-kernel@vger.kernel.org>, Linux MM Mailing List <linux-mm@kvack.org>, Eric W Biederman <ebiederm@xmission.com>, Linux Containers <containers@lists.osdl.org>, Paul Menage <menage@google.com>, Pavel Emelianov <xemul@openvz.org>
+To: Cornelia Huck <cornelia.huck@de.ibm.com>
+Cc: Greg KH <greg@kroah.com>, linux-kernel@vger.kernel.org, satyam@infradead.org, stern@rowland.harvard.edu, Tejun Heo <htejun@gmail.com>, Linux Containers <containers@lists.osdl.org>, gregkh@suse.de
 List-Id: containers.vger.kernel.org
 
-On Wed, 8 Aug 2007 12:51:39 +0900
-KAMEZAWA Hiroyuki <kamezawa.hiroyu@jp.fujitsu.com> wrote:
+Cornelia Huck <cornelia.huck@de.ibm.com> writes:
 
-> On Sat, 28 Jul 2007 01:39:37 +0530
-> Balbir Singh <balbir@linux.vnet.ibm.com> wrote:
-> > At OLS, the resource management BOF, it was discussed that we need to manage
-> > RSS and unmapped page cache together. This patchset is a step towards that
-> > 
-> Can I make a question ? Why limiting RSS instead of # of used pages per
-> container ? Maybe bacause of shared pages between container.... 
-Sorry....Ignore above question.
-I didn't understand what mem_container_charge() accounts and limits.
-It controls # of meta_pages.
+> My udev failed to create /dev/dasd* so it cannot mount root :( I'm
+> currently trying to find out what causes this, may take some time...
 
-Sorry,
--Kame
+Oh weird.
+
+No great surprise that something goofed up given how many
+patches were involved.  Still there shouldn't have been
+any user visible differences in the patchset.
+
+If you can narrow down which patch caused the problem that would be
+great.
+
+Otherwise I guess I will have to start looking at the code and
+trying to guess what might have triggered this.
+
+Eric
