@@ -1,29 +1,78 @@
-From: Cornelia Huck <cornelia.huck@de.ibm.com>
-Subject: Re: [PATCH 0/25] Sysfs cleanups & tagged directory support
-Date: Wed, 8 Aug 2007 11:16:00 +0200
-Message-ID: <20070808111600.047edd33@gondolin.boeblingen.de.ibm.com>
-References: <11860582832964-git-send-email-htejun@gmail.com>
-	<m1643rkqb6.fsf@ebiederm.dsl.xmission.com>
-	<20070808093815.0935a18e@gondolin.boeblingen.de.ibm.com>
-	<m1bqdifowo.fsf@ebiederm.dsl.xmission.com>
-	<20070808095432.4a520735@gondolin.boeblingen.de.ibm.com>
-	<m17io6foh8.fsf@ebiederm.dsl.xmission.com>
-	<20070808103759.0850383c@gondolin.boeblingen.de.ibm.com>
-	<46B984D4.9020600@gmail.com>
+From: Tejun Heo <htejun@gmail.com>
+Subject: Re: [PATCH 20/25] sysfs: Rename Support multiple superblocks
+Date: Wed, 8 Aug 2007 18:35:05 +0900
+Message-ID: <20070808093505.GL13674@htj.dyndns.org>
+References: <m1tzrbhwkc.fsf_-_@ebiederm.dsl.xmission.com> <m1ps1zhwhp.fsf_-_@ebiederm.dsl.xmission.com> <m1lkcnhwfu.fsf_-_@ebiederm.dsl.xmission.com> <m1hcnbhwcy.fsf_-_@ebiederm.dsl.xmission.com> <m1d4xzhwb2.fsf_-_@ebiederm.dsl.xmission.com> <m18x8nhw8r.fsf_-_@ebiederm.dsl.xmission.com> <m14pjbhw6y.fsf_-_@ebiederm.dsl.xmission.com> <m1zm13ghlh.fsf_-_@ebiederm.dsl.xmission.com> <m1vebrghjg.fsf_-_@ebiederm.dsl.xmission.com> <m1r6mfghg9.fsf_-_@ebiederm.dsl.xmission.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
-Content-Transfer-Encoding: 7bit
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1761609AbXHHJPS@vger.kernel.org>
-In-Reply-To: <46B984D4.9020600@gmail.com>
+Content-Type: text/plain; charset=us-ascii
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S932925AbXHHJfa@vger.kernel.org>
+Content-Disposition: inline
+In-Reply-To: <m1r6mfghg9.fsf_-_@ebiederm.dsl.xmission.com>
 Sender: linux-kernel-owner@vger.kernel.org
-To: Tejun Heo <htejun@gmail.com>
-Cc: "Eric W. Biederman" <ebiederm@xmission.com>, Greg KH <greg@kroah.com>, linux-kernel@vger.kernel.org, satyam@infradead.org, stern@rowland.harvard.edu, Linux Containers <containers@lists.osdl.org>, gregkh@suse.de
+To: "Eric W. Biederman" <ebiederm@xmission.com>
+Cc: Greg KH <greg@kroah.com>, linux-kernel@vger.kernel.org, satyam@infradead.org, cornelia.huck@de.ibm.com, stern@rowland.harvard.edu, Linux Containers <containers@lists.osdl.org>, gregkh@suse.de
 List-Id: containers.vger.kernel.org
 
-On Wed, 08 Aug 2007 17:54:44 +0900,
-Tejun Heo <htejun@gmail.com> wrote:
+Hello,
 
-> Are you sure it's patch 6?  Patch 17 adds a deadlock in rename path.
+On Tue, Aug 07, 2007 at 03:31:18PM -0600, Eric W. Biederman wrote:
+> This patch modifies the sysfs_rename_dir and sysfs_move_dir
+> to support multiple sysfs dentry trees rooted in different
+> sysfs superblocks.
+> 
+> Signed-off-by: Eric W. Biederman <ebiederm@xmission.com>
 
-Yes. If I apply the series up to patch 5, everything's fine. If I apply
-patch 6, /dev/dasda* is missing.
+> +struct sysfs_rename_struct {
+> +	struct list_head list;
+> +	struct dentry *old_dentry;
+> +	struct dentry *new_dentry;
+> +	struct dentry *old_parent;
+> +	struct dentry *new_parent;
+> +};
+
+Please rename to sysfs_rename_cxt to it consistent with
+sysfs_addrm_cxt.
+
+> +static void post_rename(struct list_head *head)
+
+Please rename to sysfs_post_rename() and add comment.
+
+> +{
+> +	struct sysfs_rename_struct *srs;
+> +	while (!list_empty(head)) {
+> +		srs = list_entry(head->next, struct sysfs_rename_struct, list);
+> +		dput(srs->old_dentry);
+> +		dput(srs->new_dentry);
+> +		dput(srs->old_parent);
+> +		dput(srs->new_parent);
+> +		list_del(&srs->list);
+> +		kfree(srs);
+> +	}
+> +}
+> +
+> +static int prep_rename(struct list_head *head,
+> +	struct sysfs_dirent *sd, struct sysfs_dirent *new_parent_sd,
+> +	const char *name)
+
+Ditto.
+
+> +{
+> +	struct sysfs_rename_struct *srs;
+> +	struct super_block *sb;
+> +	struct dentry *dentry;
+> +	int error;
+> +
+> +	list_for_each_entry(sb, &sysfs_fs_type.fs_supers, s_instances) {
+> +		dentry = sysfs_get_dentry(sb, sd);
+> +		if (!dentry)
+> +			continue;
+
+sysfs_get_dentry() return ERR_PTR() value.  Oops, sysfs_get_dentry()
+implementation is wrong too.  Also, please move
+sysfs_grab/release_supers() near this patch and add (a lot of)
+comments there.
+
+Other than that, I think this is as clean as this can be.  Great.
+
+-- 
+tejun
