@@ -1,68 +1,58 @@
-From: ebiederm@xmission.com (Eric W. Biederman)
-Subject: Re: [PATCH 20/25] sysfs: Rename Support multiple superblocks
-Date: Wed, 08 Aug 2007 10:55:10 -0600
-Message-ID: <m18x8mc6fl.fsf@ebiederm.dsl.xmission.com>
-References: <m1tzrbhwkc.fsf_-_@ebiederm.dsl.xmission.com>
-	<m1ps1zhwhp.fsf_-_@ebiederm.dsl.xmission.com>
-	<m1lkcnhwfu.fsf_-_@ebiederm.dsl.xmission.com>
-	<m1hcnbhwcy.fsf_-_@ebiederm.dsl.xmission.com>
-	<m1d4xzhwb2.fsf_-_@ebiederm.dsl.xmission.com>
-	<m18x8nhw8r.fsf_-_@ebiederm.dsl.xmission.com>
-	<m14pjbhw6y.fsf_-_@ebiederm.dsl.xmission.com>
-	<m1zm13ghlh.fsf_-_@ebiederm.dsl.xmission.com>
-	<m1vebrghjg.fsf_-_@ebiederm.dsl.xmission.com>
-	<m1r6mfghg9.fsf_-_@ebiederm.dsl.xmission.com>
-	<20070808093505.GL13674@htj.dyndns.org>
-	<m1643qdo7e.fsf@ebiederm.dsl.xmission.com>
-	<46B9E660.6030702@gmail.com>
-	<m1lkcmc7c5.fsf@ebiederm.dsl.xmission.com>
-	<46B9F25B.6020804@gmail.com>
+From: Oleg Nesterov <oleg-6lXkIZvqkOAvJsYlp49lxw@public.gmane.org>
+Subject: Re: [RFC][PATCH] Make access to taks's nsproxy liter
+Date: Wed, 8 Aug 2007 20:58:17 +0400
+Message-ID: <20070808165817.GA631@tv-sign.ru>
+References: <46B9E321.6070602@openvz.org>
+	<20070808164854.GB28455@sergelap.austin.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S937164AbXHHQ43@vger.kernel.org>
-In-Reply-To: <46B9F25B.6020804@gmail.com> (Tejun Heo's message of "Thu, 09 Aug
-	2007 01:42:03 +0900")
-Sender: linux-kernel-owner@vger.kernel.org
-To: Tejun Heo <htejun@gmail.com>
-Cc: Greg KH <greg@kroah.com>, linux-kernel@vger.kernel.org, satyam@infradead.org, cornelia.huck@de.ibm.com, stern@rowland.harvard.edu, Linux Containers <containers@lists.osdl.org>, gregkh@suse.de
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <20070808164854.GB28455-6s5zFf/epYLPQpwDFJZrxKsjOiXwFzmk@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Tejun Heo <htejun@gmail.com> writes:
-
-> Eric W. Biederman wrote:
->>> 	/* Find the first parent which has valid dentry.
->>> 	 */
->>> 	dentry = NULL;
->>> 	cur = sd;
->>> 	while (!(dentry = __sysfs_get_dentry(sb, cur))) {
->>> 		if (cur->s_flags & SYSFS_FLAG_REMOVED) {
->>> 			dentry = ERR_PTR(-ENOENT);
->>> 			break;
->>> 		}
->>> 		cur = cur->s_parent;
->>> 	}
->> 
->> Here we depend on the fact that sysfs_root is pointed to
->> by sb->s_root so we know it will always have a dentry.
+On 08/08, Serge E. Hallyn wrote:
 >
-> Hmmm... dentry could be ERR_PTR(-ENOENT) here if the REMOVED flag test
-> succeeded, right?
+> Quoting Pavel Emelyanov (xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org):
+> > +void switch_task_namespaces(struct task_struct *p, struct nsproxy *new)
+> > +{
+> > +	struct nsproxy *ns;
+> > +
+> > +	might_sleep();
+> > +
+> > +	ns = p->nsproxy;
+> > +	if (ns == new)
+> > +		return;
+> > +
+> > +	if (new)
+> > +		get_nsproxy(new);
+> > +	rcu_assign_pointer(p->nsproxy, new);
+> > +
+> > +	if (ns && atomic_dec_and_test(&ns->count)) {
+> > +		/*
+> > +		 * wait for others to get what they want from this
+> > +		 * nsproxy. cannot release this nsproxy via the
+> > +		 * call_rcu() since put_mnt_ns will want to sleep
+> > +		 */
+> > +		synchronize_rcu();
+> > +		free_nsproxy(ns);
+> > +	}
+> > +}
+> 
+> Also a comment above switch_task_namespaces() that it must be called
+> with task_lock held.
 
-Ugh right.  Now that I don't have the locking it probably makes
-sense to have that path just return or branch to the exit.
+Heh, indeed, sys_unshare() does this. might_sleep() won't be happy.
 
->
->>> 	/* from the found dentry, look up depth times */
->>> 	while (dentry->d_fsdata != sd) {
->
-> And then dereferenced.  The REMOVED test should never succeed there, so
-> we're probably in the clear but still the code looks a bit scary.
-
-Agreed.  That is a bug.  Either the removed test needs to
-be removed because it can't happen or that case needs to be handled.
-
-Thanks for spotting this one.
-
-Mental blind spots are the worst.
-
-Eric
+Oleg.
