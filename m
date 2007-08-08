@@ -1,51 +1,51 @@
-From: ebiederm@xmission.com (Eric W. Biederman)
-Subject: Re: [PATCH 0/25] Sysfs cleanups & tagged directory support
-Date: Wed, 08 Aug 2007 01:57:07 -0600
-Message-ID: <m17io6foh8.fsf@ebiederm.dsl.xmission.com>
-References: <11860582832964-git-send-email-htejun@gmail.com>
-	<m1643rkqb6.fsf@ebiederm.dsl.xmission.com>
-	<20070808093815.0935a18e@gondolin.boeblingen.de.ibm.com>
-	<m1bqdifowo.fsf@ebiederm.dsl.xmission.com>
-	<20070808095432.4a520735@gondolin.boeblingen.de.ibm.com>
+From: Tejun Heo <htejun@gmail.com>
+Subject: Re: [PATCH 12/25] sysfs: Introduce sysfs_rename_mutex
+Date: Wed, 08 Aug 2007 17:19:32 +0900
+Message-ID: <46B97C94.8090209@gmail.com>
+References: <11860582832964-git-send-email-htejun@gmail.com>	<m1643rkqb6.fsf@ebiederm.dsl.xmission.com>	<m11wefkq88.fsf_-_@ebiederm.dsl.xmission.com>	<m1wsw7jbml.fsf_-_@ebiederm.dsl.xmission.com>	<m1sl6vjbjw.fsf_-_@ebiederm.dsl.xmission.com>	<m1odhjjbij.fsf_-_@ebiederm.dsl.xmission.com>	<m1k5s7jbh9.fsf_-_@ebiederm.dsl.xmission.com>	<m1fy2vjbf9.fsf_-_@ebiederm.dsl.xmission.com>	<m1bqdjjbcf.fsf_-_@ebiederm.dsl.xmission.com>	<m17io7jba4.fsf_-_@ebiederm.dsl.xmission.com>	<m13ayvjb82.fsf_-_@ebiederm.dsl.xmission.com>	<m1y7gnhwm4.fsf_-_@ebiederm.dsl.xmission.com>	<m1tzrbhwkc.fsf_-_@ebiederm.dsl.xmission.com> <m1ps1zhwhp.fsf_-_@ebiederm.dsl.xmission.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1760750AbXHHIEE@vger.kernel.org>
-In-Reply-To: <20070808095432.4a520735@gondolin.boeblingen.de.ibm.com>
-	(Cornelia Huck's message of "Wed, 8 Aug 2007 09:54:32 +0200")
+Content-Type: text/plain; charset=ISO-8859-1
+Content-Transfer-Encoding: 7bit
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1758863AbXHHIUC@vger.kernel.org>
+In-Reply-To: <m1ps1zhwhp.fsf_-_@ebiederm.dsl.xmission.com>
 Sender: linux-kernel-owner@vger.kernel.org
-To: Cornelia Huck <cornelia.huck@de.ibm.com>
-Cc: Greg KH <greg@kroah.com>, linux-kernel@vger.kernel.org, satyam@infradead.org, stern@rowland.harvard.edu, Tejun Heo <htejun@gmail.com>, Linux Containers <containers@lists.osdl.org>, gregkh@suse.de
+To: "Eric W. Biederman" <ebiederm@xmission.com>
+Cc: Greg KH <greg@kroah.com>, linux-kernel@vger.kernel.org, satyam@infradead.org, cornelia.huck@de.ibm.com, stern@rowland.harvard.edu, Linux Containers <containers@lists.osdl.org>, gregkh@suse.de
 List-Id: containers.vger.kernel.org
 
-Cornelia Huck <cornelia.huck@de.ibm.com> writes:
+Hello, Eric.
 
-> On Wed, 08 Aug 2007 01:47:51 -0600,
-> ebiederm@xmission.com (Eric W. Biederman) wrote:
->
->> Cornelia Huck <cornelia.huck@de.ibm.com> writes:
->> 
->> > My udev failed to create /dev/dasd* so it cannot mount root :( I'm
->> > currently trying to find out what causes this, may take some time...
->> 
->> Oh weird.
->> 
->> No great surprise that something goofed up given how many
->> patches were involved.  Still there shouldn't have been
->> any user visible differences in the patchset.
->> 
->> If you can narrow down which patch caused the problem that would be
->> great.
->
-> Got it: It's patch 6, the readdir simplification.
->
-> (The udev on that guest is ancient (063)...)
+Eric W. Biederman wrote:
+> Looking carefully at the rename code we have a subtle dependency
+> that the structure of sysfs not change while we are performing
+> a rename.  If the parent directory of the object we are renaming
+> changes while the rename is being performed nasty things could
+> happen when we go to release our locks.
+> 
+> So introduce a sysfs_rename_mutex to prevent this highly
+> unlikely theoretical issue.
 
-Ok.  That is weird.
+Yeah, it's a theoretical issue.  Rename/move implementation has always
+depended on the parent structure not changing beneath it, but it's nice
+to tighten up loose ends.
 
-Does it depend on the order in which the dentries are returned from
-readdir?
+> +DEFINE_MUTEX(sysfs_rename_mutex);
 
-Unless I made a really stupid error otherwise the two versions
-of readdir should have the same semantics.
+Probably doesn't really matter but wouldn't a rwsem fit better?
 
-Eric
+> @@ -774,7 +775,7 @@ static struct dentry *__sysfs_get_dentry(struct super_block *sb, struct sysfs_di
+>   *	down from there looking up dentry for each step.
+>   *
+>   *	LOCKING:
+> - *	Kernel thread context (may sleep)
+> + *	mutex_lock(sysfs_rename_mutex)
+
+LOCKING describes what locks should be held when entering the function,
+so proper description would be something like...
+
+	Kernel thread context, grabs sysfs_rename_mutex
+
+Thanks.
+
+-- 
+tejun
