@@ -1,53 +1,30 @@
-From: Tejun Heo <teheo@suse.de>
-Subject: Re: [PATCH 12/25] sysfs: Introduce sysfs_rename_mutex
-Date: Wed, 08 Aug 2007 17:23:11 +0900
-Message-ID: <46B97D6F.8040504@suse.de>
-References: <11860582832964-git-send-email-htejun@gmail.com>	<m1643rkqb6.fsf@ebiederm.dsl.xmission.com>	<m11wefkq88.fsf_-_@ebiederm.dsl.xmission.com>	<m1wsw7jbml.fsf_-_@ebiederm.dsl.xmission.com>	<m1sl6vjbjw.fsf_-_@ebiederm.dsl.xmission.com>	<m1odhjjbij.fsf_-_@ebiederm.dsl.xmission.com>	<m1k5s7jbh9.fsf_-_@ebiederm.dsl.xmission.com>	<m1fy2vjbf9.fsf_-_@ebiederm.dsl.xmission.com>	<m1bqdjjbcf.fsf_-_@ebiederm.dsl.xmission.com>	<m17io7jba4.fsf_-_@ebiederm.dsl.xmission.com>	<m13ayvjb82.fsf_-_@ebiederm.dsl.xmission.com>	<m1y7gnhwm4.fsf_-_@ebiederm.dsl.xmission.com>	<m1tzrbhwkc.fsf_-_@ebiederm.dsl.xmission.com> <m1ps1zhwhp.fsf_-_@ebiederm.dsl.xmission.com> <46B97C94.8090209@gmail.com>
+From: Tejun Heo <htejun@gmail.com>
+Subject: Re: [PATCH 13/25] sysfs: Simply sysfs_get_dentry
+Date: Wed, 8 Aug 2007 17:24:29 +0900
+Message-ID: <20070808082429.GF13674@htj.dyndns.org>
+References: <m1odhjjbij.fsf_-_@ebiederm.dsl.xmission.com> <m1k5s7jbh9.fsf_-_@ebiederm.dsl.xmission.com> <m1fy2vjbf9.fsf_-_@ebiederm.dsl.xmission.com> <m1bqdjjbcf.fsf_-_@ebiederm.dsl.xmission.com> <m17io7jba4.fsf_-_@ebiederm.dsl.xmission.com> <m13ayvjb82.fsf_-_@ebiederm.dsl.xmission.com> <m1y7gnhwm4.fsf_-_@ebiederm.dsl.xmission.com> <m1tzrbhwkc.fsf_-_@ebiederm.dsl.xmission.com> <m1ps1zhwhp.fsf_-_@ebiederm.dsl.xmission.com> <m1lkcnhwfu.fsf_-_@ebiederm.dsl.xmission.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Content-Transfer-Encoding: 7bit
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1762448AbXHHIXp@vger.kernel.org>
-In-Reply-To: <46B97C94.8090209@gmail.com>
+Content-Type: text/plain; charset=us-ascii
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1763344AbXHHIY5@vger.kernel.org>
+Content-Disposition: inline
+In-Reply-To: <m1lkcnhwfu.fsf_-_@ebiederm.dsl.xmission.com>
 Sender: linux-kernel-owner@vger.kernel.org
-To: Tejun Heo <htejun@gmail.com>
-Cc: "Eric W. Biederman" <ebiederm@xmission.com>, Greg KH <greg@kroah.com>, linux-kernel@vger.kernel.org, satyam@infradead.org, cornelia.huck@de.ibm.com, stern@rowland.harvard.edu, Linux Containers <containers@lists.osdl.org>, gregkh@suse.de
+To: "Eric W. Biederman" <ebiederm@xmission.com>
+Cc: Greg KH <greg@kroah.com>, linux-kernel@vger.kernel.org, satyam@infradead.org, cornelia.huck@de.ibm.com, stern@rowland.harvard.edu, Linux Containers <containers@lists.osdl.org>, gregkh@suse.de
 List-Id: containers.vger.kernel.org
 
-Tejun Heo wrote:
-> Hello, Eric.
+On Tue, Aug 07, 2007 at 03:22:13PM -0600, Eric W. Biederman wrote:
 > 
-> Eric W. Biederman wrote:
->> Looking carefully at the rename code we have a subtle dependency
->> that the structure of sysfs not change while we are performing
->> a rename.  If the parent directory of the object we are renaming
->> changes while the rename is being performed nasty things could
->> happen when we go to release our locks.
->>
->> So introduce a sysfs_rename_mutex to prevent this highly
->> unlikely theoretical issue.
+> Now that we know the sysfs tree structure cannot change under us
+> simplfy sysfs_get_dentry.
 > 
-> Yeah, it's a theoretical issue.  Rename/move implementation has always
-> depended on the parent structure not changing beneath it, but it's nice
-> to tighten up loose ends.
-> 
->> +DEFINE_MUTEX(sysfs_rename_mutex);
-> 
-> Probably doesn't really matter but wouldn't a rwsem fit better?
-> 
->> @@ -774,7 +775,7 @@ static struct dentry *__sysfs_get_dentry(struct super_block *sb, struct sysfs_di
->>   *	down from there looking up dentry for each step.
->>   *
->>   *	LOCKING:
->> - *	Kernel thread context (may sleep)
->> + *	mutex_lock(sysfs_rename_mutex)
-> 
-> LOCKING describes what locks should be held when entering the function,
-> so proper description would be something like...
-> 
-> 	Kernel thread context, grabs sysfs_rename_mutex
+> Signed-off-by: Eric W. Biederman <ebiederm@xmission.com>
 
-Oops, forget about the above.  Thought the comment was added to
-sysfs_rename_dir().
+Acked-by: Tejun Heo <htejun@gmail.com>
+
+It might be better to have sysfs_get_dentry_locked() and
+sysfs_get_dentry() so that the latter can be used from
+sysfs_update/chmod_file().
 
 -- 
 tejun
