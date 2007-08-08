@@ -1,13 +1,25 @@
-From: Oleg Nesterov <oleg-6lXkIZvqkOAvJsYlp49lxw@public.gmane.org>
-Subject: Re: [RFC][PATCH] Make access to taks's nsproxy liter
-Date: Wed, 8 Aug 2007 20:41:07 +0400
-Message-ID: <20070808164107.GB578@tv-sign.ru>
-References: <46B9E321.6070602@openvz.org>
+From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
+Subject: Re: [PATCH 20/25] sysfs: Rename Support multiple superblocks
+Date: Wed, 08 Aug 2007 10:35:38 -0600
+Message-ID: <m1lkcmc7c5.fsf@ebiederm.dsl.xmission.com>
+References: <m1tzrbhwkc.fsf_-_@ebiederm.dsl.xmission.com>
+	<m1ps1zhwhp.fsf_-_@ebiederm.dsl.xmission.com>
+	<m1lkcnhwfu.fsf_-_@ebiederm.dsl.xmission.com>
+	<m1hcnbhwcy.fsf_-_@ebiederm.dsl.xmission.com>
+	<m1d4xzhwb2.fsf_-_@ebiederm.dsl.xmission.com>
+	<m18x8nhw8r.fsf_-_@ebiederm.dsl.xmission.com>
+	<m14pjbhw6y.fsf_-_@ebiederm.dsl.xmission.com>
+	<m1zm13ghlh.fsf_-_@ebiederm.dsl.xmission.com>
+	<m1vebrghjg.fsf_-_@ebiederm.dsl.xmission.com>
+	<m1r6mfghg9.fsf_-_@ebiederm.dsl.xmission.com>
+	<20070808093505.GL13674@htj.dyndns.org>
+	<m1643qdo7e.fsf@ebiederm.dsl.xmission.com>
+	<46B9E660.6030702@gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <46B9E321.6070602-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+In-Reply-To: <46B9E660.6030702-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org> (Tejun Heo's message of "Thu, 09 Aug
+	2007 00:50:56 +0900")
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -17,78 +29,76 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
-Cc: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, "Paul E. McKenney" <paulmck-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+To: Tejun Heo <htejun-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Cc: Greg KH <greg-U8xfFu+wG4EAvxtiuMwx3w@public.gmane.org>, gregkh-l3A5Bk7waGM@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, stern-nwvwT67g6+6dFdvTe/nMLpVzexx5G7lz@public.gmane.org, satyam-wEGCiKHe2LqWVfeAwA7xHQ@public.gmane.org, cornelia.huck-tA70FqPdS9bQT0dZR+AlfA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-This time Paul E. McKenney actually cc'ed, sorry for the extra
-noise...
+Tejun Heo <htejun-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org> writes:
 
-On 08/08, Pavel Emelyanov wrote:
->
-> When someone wants to deal with some other taks's namespaces
-> it has to lock the task and then to get the desired namespace
-> if the one exists. This is slow on read-only paths and may be
-> impossible in some cases.
+> Yeah, I think using -ENOENT is better; otherwise, my little head feels
+> like exploding.  :-)  
+
+Ok.  I think I know the feeling.
+
+> More importantly, sysfs_get_dentry() seems like it
+> would deference ERR_PTR() value.  No?
+
+I'm confused where you are referring to but I will try answer
+this.
+
+__sysfs_get_dentry always returns a dentry or NULL if it can't
+find the dentry.
+
+
+I have quoted my final version of sysfs_get_dentry below for discussion.
+
+> struct dentry *sysfs_get_dentry(struct super_block *sb, struct sysfs_dirent *sd)
+> {
+> 	struct sysfs_dirent *cur;
+> 	struct dentry *parent_dentry, *dentry;
 > 
-> E.g. Oleg recently noticed a race between unshare() and the
-> (just sent for review) pid namespaces - when the task notifies
-> the parent it has to know the parent's namespace, but taking
-> the task_lock() is impossible there - the code is under write
-> locked tasklist lock.
+> 	/* Bail if this sd won't show up in this superblock */
+> 	if (sd->s_parent && sd->s_parent->s_flags & SYSFS_FLAG_TAGGED) {
+> 		const void *tag;
+> 		tag = sysfs_lookup_tag(sd->s_parent, sb);
+> 		if (sd->s_tag.tag != tag)
+> 			return NULL;
+> 	}
+
+This is the only location where could return NULL the early check
+if this operation is possible.
+
+> 	/* Find the first parent which has valid dentry.
+> 	 */
+> 	dentry = NULL;
+> 	cur = sd;
+> 	while (!(dentry = __sysfs_get_dentry(sb, cur))) {
+> 		if (cur->s_flags & SYSFS_FLAG_REMOVED) {
+> 			dentry = ERR_PTR(-ENOENT);
+> 			break;
+> 		}
+> 		cur = cur->s_parent;
+> 	}
+
+Here we depend on the fact that sysfs_root is pointed to
+by sb->s_root so we know it will always have a dentry.
+
+> 	/* from the found dentry, look up depth times */
+> 	while (dentry->d_fsdata != sd) {
+> 		/* Find the first ancestor I have not looked up */
+> 		cur = sd;
+> 		while (cur->s_parent != dentry->d_fsdata)
+> 			cur = cur->s_parent;
 > 
-> On the other hand switching the namespace on task (daemonize)
-> and releasing the namespace (after the last task exit) is rather
-> rare operation and we can sacrifice its speed to solve the
-> issues above.
+> 		/* look it up */
+> 		parent_dentry = dentry;
+> 		dentry = sysfs_add_dentry(parent_dentry, cur);
+> 		dput(parent_dentry);
+> 
+> 		if (IS_ERR(dentry))
+> 			break;
+> 	}
+> 	return dentry;
+> }
 
-Still it is a bit sad we slow down process's exit. Perhaps I missed
-some other ->nsproxy access, but can't we make a simpler patch?
-
---- kernel/fork.c	2007-07-28 16:58:17.000000000 +0400
-+++ /proc/self/fd/0	2007-08-08 20:30:33.325216944 +0400
-@@ -1633,7 +1633,9 @@ asmlinkage long sys_unshare(unsigned lon
- 
- 		if (new_nsproxy) {
- 			old_nsproxy = current->nsproxy;
-+			read_lock(&tasklist_lock);
- 			current->nsproxy = new_nsproxy;
-+			read_unlock(&tasklist_lock);
- 			new_nsproxy = old_nsproxy;
- 		}
- 
-
-This way ->nsproxy is stable under task_lock() or write_lock(tasklist).
-
-> +void switch_task_namespaces(struct task_struct *p, struct nsproxy *new)
-> +{
-> +	struct nsproxy *ns;
-> +
-> +	might_sleep();
-> +
-> +	ns = p->nsproxy;
-> +	if (ns == new)
-> +		return;
-> +
-> +	if (new)
-> +		get_nsproxy(new);
-> +	rcu_assign_pointer(p->nsproxy, new);
-> +
-> +	if (ns && atomic_dec_and_test(&ns->count)) {
-> +		/*
-> +		 * wait for others to get what they want from this
-> +		 * nsproxy. cannot release this nsproxy via the
-> +		 * call_rcu() since put_mnt_ns will want to sleep
-> +		 */
-> +		synchronize_rcu();
-> +		free_nsproxy(ns);
-> +	}
-> +}
-
-(I may be wrong, Paul cc'ed)
-
-This is correct with the current implementation of RCU, but strictly speaking,
-we can't use synchronize_rcu() here, because write_lock_irq() doesn't imply
-rcu_read_lock() in theory.
-
-Oleg.
+Eric
