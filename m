@@ -1,7 +1,7 @@
 From: Oleg Nesterov <oleg-6lXkIZvqkOAvJsYlp49lxw@public.gmane.org>
 Subject: Re: [RFC][PATCH] Make access to taks's nsproxy liter
-Date: Wed, 8 Aug 2007 20:37:57 +0400
-Message-ID: <20070808163757.GA578@tv-sign.ru>
+Date: Wed, 8 Aug 2007 20:41:07 +0400
+Message-ID: <20070808164107.GB578@tv-sign.ru>
 References: <46B9E321.6070602@openvz.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
@@ -18,8 +18,11 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
-Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+Cc: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, "Paul E. McKenney" <paulmck-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 List-Id: containers.vger.kernel.org
+
+This time Paul E. McKenney actually cc'ed, sorry for the extra
+noise...
 
 On 08/08, Pavel Emelyanov wrote:
 >
