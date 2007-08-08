@@ -1,113 +1,166 @@
-From: Benjamin Thery <benjamin.thery-6ktuUTfB/bM@public.gmane.org>
-Subject: Re: netns34
-Date: Wed, 08 Aug 2007 13:16:48 +0200
-Message-ID: <46B9A620.4050906@bull.net>
-References: <m11wefgfl0.fsf@ebiederm.dsl.xmission.com>
-	<m1wsw7f0r0.fsf@ebiederm.dsl.xmission.com>
+From: Cornelia Huck <cornelia.huck@de.ibm.com>
+Subject: Re: [PATCH 0/25] Sysfs cleanups & tagged directory support
+Date: Wed, 8 Aug 2007 16:16:31 +0200
+Message-ID: <20070808161631.1ccf27fd@gondolin.boeblingen.de.ibm.com>
+References: <11860582832964-git-send-email-htejun@gmail.com>
+	<m1643rkqb6.fsf@ebiederm.dsl.xmission.com>
+	<20070808093815.0935a18e@gondolin.boeblingen.de.ibm.com>
+	<m1bqdifowo.fsf@ebiederm.dsl.xmission.com>
+	<20070808095432.4a520735@gondolin.boeblingen.de.ibm.com>
+	<m17io6foh8.fsf@ebiederm.dsl.xmission.com>
+	<20070808103759.0850383c@gondolin.boeblingen.de.ibm.com>
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary="------------070604070307010001030809"
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <m1wsw7f0r0.fsf-T1Yj925okcoyDheHMi7gv2pdwda3JcWeAL8bYrjMMd8@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Daniel Lezcano <dlezcano-juSfH4iHXoxBDgjK7y7TUQ@public.gmane.org>, "Denis V. Lunev" <den-3ImXcnM4P+0@public.gmane.org>
+Content-Type: text/plain; charset=US-ASCII
+Content-Transfer-Encoding: 7bit
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S934427AbXHHOQX@vger.kernel.org>
+In-Reply-To: <20070808103759.0850383c@gondolin.boeblingen.de.ibm.com>
+Sender: linux-kernel-owner@vger.kernel.org
+To: "Eric W. Biederman" <ebiederm@xmission.com>
+Cc: Greg KH <greg@kroah.com>, linux-kernel@vger.kernel.org, satyam@infradead.org, stern@rowland.harvard.edu, Tejun Heo <htejun@gmail.com>, Linux Containers <containers@lists.osdl.org>, gregkh@suse.de
 List-Id: containers.vger.kernel.org
 
-This is a multi-part message in MIME format.
---------------070604070307010001030809
-Content-Transfer-Encoding: 7bit
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+On Wed, 8 Aug 2007 10:37:59 +0200,
+Cornelia Huck <cornelia.huck@de.ibm.com> wrote:
 
-Hi Eric,
-
-I've cloned the repository and built the kernel.
-
-Unshare support is broken. It misses a small change in sys_unshare()
-to accept the CLONE_NEWNET flag.
-I guess it should be added in commit "net: Add network namespace
-clone & unshare support." (See attached patch below)
-
-Also, have you removed the "sysfs interface support for moving devices 
-between namespaces" on purpose?
-Is there another way to move interfaces now?
-
-Benjamin
-
-Eric W. Biederman wrote:
-> ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman) writes:
+> On Wed, 08 Aug 2007 01:57:07 -0600,
+> ebiederm@xmission.com (Eric W. Biederman) wrote:
 > 
->> Ok.  After a bunch of work I have my network namespace patches working
->> again against 2.6.23-rc2 or whatever is linus's latest.
->>
->> I need to break out my sysctl work and send that separately.
->>
->> I need to get veth in there and I need to get a patch to /sbin/ip
->> to work with Patrick McHardy's form of patches.
->>
->> But I think I am quickly approaching the point where I will have
->> patches ready for merging.
->>
->> Once I get sysctl sorted out I will start post a minimal patchset
->> for prereview and see where things go.
->>
->> Hopefully my sysfs work finally sticks this time.
+> > > Got it: It's patch 6, the readdir simplification.
+> > >
+> > > (The udev on that guest is ancient (063)...)
+> > 
+> > Ok.  That is weird.
 > 
-> And the important part the code will shortly be available at:
-> git://git.kernel.org/pub/scm/linux/kernel/git/ebiederm/linux-2.6-netns.git#netns/v2.6.23-rc2netns34
+> More weirdness. If I activate another dasd from the repair file
+> system, /dev/dasdb is created...
 > 
-> And also from the default head.
-> 
-> Eric
-> 
-> 
+> Same if I set the card reader online: /dev/vmrdr-0.0.000c is created as
+> expected.
+
+OK, it seems that it is udevstart that has problems. (Normal udev
+operation seems fine; when I trigger uevents manually, the device nodes
+are created.)
+
+I ran strace on udevstart and found that it skipped
+/sys/block/dasd/dasda1 (interestingly, /dev/dasda was created after I
+ran udevstart manually; no idea why this didn't happen on boot. Further
+manual runs don't create /dev/dasda1, however.) ls doesn't produce
+different output on the two kernels.
+
+Here is some excerpt from the strace run with the broken kernel:
+
+open("/sys/block", O_RDONLY|O_NONBLOCK|O_LARGEFILE|O_DIRECTORY) = 3
+fstat64(3, {st_mode=S_IFDIR|0755, st_size=0, ...}) = 0
+fcntl64(3, F_SETFD, FD_CLOEXEC)         = 0
+getdents64(3, /* 28 entries */, 4096)   = 800
+_llseek(3, 3414, [3414], SEEK_SET)      = 0
+stat64("/sys/block/dasda/dev", {st_mode=S_IFREG|0444, st_size=4096, ...}) = 0
+open("/sys/block/dasda", O_RDONLY|O_NONBLOCK|O_LARGEFILE|O_DIRECTORY) = 4
+fstat64(4, {st_mode=S_IFDIR|0755, st_size=0, ...}) = 0
+fcntl64(4, F_SETFD, FD_CLOEXEC)         = 0
+getdents64(4, /* 15 entries */, 4096)   = 440
+_llseek(4, 3079, [3079], SEEK_SET)      = 0
+stat64("/sys/block/dasda/uevent/dev", 0x7fb8c3f8) = -1 ENOTDIR (Not a directory)
+stat64("/sys/block/dasda/dev/dev", 0x7fb8c3f8) = -1 ENOTDIR (Not a directory)
+stat64("/sys/block/dasda/range/dev", 0x7fb8c3f8) = -1 ENOTDIR (Not a directory)
+stat64("/sys/block/dasda/removable/dev", 0x7fb8c3f8) = -1 ENOTDIR (Not a directory)
+stat64("/sys/block/dasda/size/dev", 0x7fb8c3f8) = -1 ENOTDIR (Not a directory)
+stat64("/sys/block/dasda/stat/dev", 0x7fb8c3f8) = -1 ENOTDIR (Not a directory)
+stat64("/sys/block/dasda/capability/dev", 0x7fb8c3f8) = -1 ENOTDIR (Not a directory)
+stat64("/sys/block/dasda/device/dev", 0x7fb8c3f8) = -1 ENOENT (No such file or d irectory)
+stat64("/sys/block/dasda/subsystem/dev", 0x7fb8c3f8) = -1 ENOENT (No such file or directory)
+stat64("/sys/block/dasda/holders/dev", 0x7fb8c3f8) = -1 ENOENT (No such file or directory)
+stat64("/sys/block/dasda/slaves/dev", 0x7fb8c3f8) = -1 ENOENT (No such file or directory)
+stat64("/sys/block/dasda/queue/dev", 0x7fb8c3f8) = -1 ENOENT (No such file or directory)
+getdents64(4, /* 1 entries */, 4096)    = 32
+close(4)                                = 0
+getdents64(3, /* 1 entries */, 4096)    = 32
+close(3)                                = 0
+lstat64("/sys/block/dasda", {st_mode=S_IFDIR|0755, st_size=0, ...}) = 0
+lstat64("/sys/block/dasda/dev", {st_mode=S_IFREG|0444, st_size=4096, ...}) = 0
+stat64("/sys/block/dasda/dev", {st_mode=S_IFREG|0444, st_size=4096, ...}) = 0
+open("/sys/block/dasda/dev", O_RDONLY)  = 3
+read(3, "94:0\n", 4096)                 = 5
+close(3)                                = 0
+lstat64("/sys/block/dasda/device", {st_mode=S_IFLNK|0777, st_size=0, ...}) = 0
+readlink("/sys/block/dasda/device", "../../devices/css0/0.0.0003/0.0.4e30", 256) = 36
+lstat64("/sys/devices/css0/0.0.0003/0.0.4e30", {st_mode=S_IFDIR|0755, st_size=0, ...}) = 0
+lstat64("/sys/devices/css0/0.0.0003/0.0.4e30/bus", {st_mode=S_IFLNK|0777, st_siz e=0, ...}) = 0
+readlink("/sys/devices/css0/0.0.0003/0.0.4e30/bus", "../../../../bus/ccw", 256) = 19
+lstat64("/sys/devices/css0/0.0.0003/0.0.4e30/driver", {st_mode=S_IFLNK|0777, st_ size=0, ...}) = 0
+readlink("/sys/devices/css0/0.0.0003/0.0.4e30/driver", "../../../../bus/ccw/driv ers/dasd-eckd", 256) = 37
+open("/proc/filesystems", O_RDONLY|O_LARGEFILE) = 3
+read(3, "nodev\tsysfs\nnodev\trootfs\nnodev\tb"..., 4095) = 259
+close(3)                                = 0
+stat64("/dev/dasda", 0x7fb8b738)        = -1 ENOENT (No such file or directory)
+mknod("/dev/dasda", S_IFBLK|0640, makedev(94, 0)) = 0
+chmod("/dev/dasda", 060640)             = 0
+chown("/dev/dasda", 0, 6)               = 0
 
 
--- 
-B e n j a m i n   T h e r y  - BULL/DT/Open Software R&D
+And here's with a working kernel:
 
-    http://www.bull.com
+open("/sys/block", O_RDONLY|O_NONBLOCK|O_LARGEFILE|O_DIRECTORY) = 3
+fstat64(3, {st_mode=S_IFDIR|0755, st_size=0, ...}) = 0
+fcntl64(3, F_SETFD, FD_CLOEXEC)         = 0
+getdents64(3, /* 27 entries */, 4096)   = 768
+stat64("/sys/block/dasda/dev", {st_mode=S_IFREG|0444, st_size=4096, ...}) = 0
+open("/sys/block/dasda", O_RDONLY|O_NONBLOCK|O_LARGEFILE|O_DIRECTORY) = 4
+fstat64(4, {st_mode=S_IFDIR|0755, st_size=0, ...}) = 0
+fcntl64(4, F_SETFD, FD_CLOEXEC)         = 0
+getdents64(4, /* 15 entries */, 4096)   = 440
+stat64("/sys/block/dasda/dasda1/dev", {st_mode=S_IFREG|0444, st_size=4096, ...}) = 0
+stat64("/sys/block/dasda/queue/dev", 0x7f9004f8) = -1 ENOENT (No such file or directory)
+stat64("/sys/block/dasda/slaves/dev", 0x7f9004f8) = -1 ENOENT (No such file or directory)
+stat64("/sys/block/dasda/holders/dev", 0x7f9004f8) = -1 ENOENT (No such file or directory)
+stat64("/sys/block/dasda/subsystem/dev", 0x7f9004f8) = -1 ENOENT (No such file or directory)
+stat64("/sys/block/dasda/device/dev", 0x7f9004f8) = -1 ENOENT (No such file or directory)
+stat64("/sys/block/dasda/capability/dev", 0x7f9004f8) = -1 ENOTDIR (Not a directory)
+stat64("/sys/block/dasda/stat/dev", 0x7f9004f8) = -1 ENOTDIR (Not a  directory)
+stat64("/sys/block/dasda/size/dev", 0x7f9004f8) = -1 ENOTDIR (Not a directory)
+stat64("/sys/block/dasda/removable/dev", 0x7f9004f8) = -1 ENOTDIR (Not a directory)
+stat64("/sys/block/dasda/range/dev", 0x7f9004f8) = -1 ENOTDIR (Not a directory)
+stat64("/sys/block/dasda/dev/dev", 0x7f9004f8) = -1 ENOTDIR (Not a directory)
+stat64("/sys/block/dasda/uevent/dev", 0x7f9004f8) = -1 ENOTDIR (Not a directory)
+getdents64(4, /* 0 entries */, 4096)    = 0
+close(4)                                = 0
+...
+lstat64("/sys/block/dasda", {st_mode=S_IFDIR|0755, st_size=0, ...}) = 0
+lstat64("/sys/block/dasda/dev", {st_mode=S_IFREG|0444, st_size=4096, ...}) = 0
+stat64("/sys/block/dasda/dev", {st_mode=S_IFREG|0444, st_size=4096, ...}) = 0
+open("/sys/block/dasda/dev", O_RDONLY)  = 3
+read(3, "94:0\n", 4096)                 = 5
+close(3)                                = 0
+lstat64("/sys/block/dasda/device", {st_mode=S_IFLNK|0777, st_size=0, ...}) = 0
+readlink("/sys/block/dasda/device", "../../devices/css0/0.0.0003/0.0.4e30", 256) = 36
+lstat64("/sys/devices/css0/0.0.0003/0.0.4e30", {st_mode=S_IFDIR|0755, st_size=0, ...}) = 0
+lstat64("/sys/devices/css0/0.0.0003/0.0.4e30/bus", {st_mode=S_IFLNK|0777, st_size=0, ...}) = 0
+readlink("/sys/devices/css0/0.0.0003/0.0.4e30/bus", "../../../../bus/ccw", 256) = 19
+lstat64("/sys/devices/css0/0.0.0003/0.0.4e30/driver", {st_mode=S_IFLNK|0777, st_size=0, ...}) = 0
+readlink("/sys/devices/css0/0.0.0003/0.0.4e30/driver", "../../../../bus/ccw/drivers/dasd-eckd", 256) = 37
+open("/proc/filesystems", O_RDONLY|O_LARGEFILE) = 3
+read(3, "nodev\tsysfs\nnodev\trootfs\nnodev\tb"..., 4095) = 276
+close(3)                                = 0
+stat64("/dev/dasda", {st_mode=S_IFBLK|0640, st_rdev=makedev(94, 0), ...}) = 0
+chmod("/dev/dasda", 060640)             = 0
+chown("/dev/dasda", 0, 6)               = 0
+...
+lstat64("/sys/block/dasda/dasda1", {st_mode=S_IFDIR|0755, st_size=0, ...}) = 0
+lstat64("/sys/block/dasda/dasda1/dev", {st_mode=S_IFREG|0444, st_size=4096, ...} ) = 0
+stat64("/sys/block/dasda/dasda1/dev", {st_mode=S_IFREG|0444, st_size=4096, ...}) = 0
+open("/sys/block/dasda/dasda1/dev", O_RDONLY) = 3
+read(3, "94:1\n", 4096)                 = 5
+close(3)                                = 0
+lstat64("/sys/block/dasda", {st_mode=S_IFDIR|0755, st_size=0, ...}) = 0
+lstat64("/sys/block/dasda/device", {st_mode=S_IFLNK|0777, st_size=0, ...}) = 0
+readlink("/sys/block/dasda/device", "../../devices/css0/0.0.0003/0.0.4e30", 256) = 36
+lstat64("/sys/devices/css0/0.0.0003/0.0.4e30", {st_mode=S_IFDIR|0755, st_size=0, ...}) = 0
+lstat64("/sys/devices/css0/0.0.0003/0.0.4e30/bus", {st_mode=S_IFLNK|0777, st_size=0, ...}) = 0
+readlink("/sys/devices/css0/0.0.0003/0.0.4e30/bus", "../../../../bus/ccw", 256) = 19
+lstat64("/sys/devices/css0/0.0.0003/0.0.4e30/driver", {st_mode=S_IFLNK|0777, st_ size=0, ...}) = 0
+readlink("/sys/devices/css0/0.0.0003/0.0.4e30/driver", "../../../../bus/ccw/drivers/dasd-eckd", 256) = 37
+stat64("/dev/dasda1", {st_mode=S_IFBLK|0640, st_rdev=makedev(94, 1), ...}) = 0
+chmod("/dev/dasda1", 060640)            = 0
+chown("/dev/dasda1", 0, 6)              = 0
 
---------------070604070307010001030809
-Content-Transfer-Encoding: 7bit
-Content-Type: text/x-patch;
- name="Fix-netns-unshare-support.patch"
-Content-Disposition: inline;
- filename="Fix-netns-unshare-support.patch"
-
-Fix network namespace unshare support.
-Add CLONE_NEWNET flag in sys_unshare().
-
-Index: linux-2.6.23-rc2-netns34/kernel/fork.c
-===================================================================
---- linux-2.6.23-rc2-netns34.orig/kernel/fork.c
-+++ linux-2.6.23-rc2-netns34/kernel/fork.c
-@@ -1608,7 +1608,8 @@ asmlinkage long sys_unshare(unsigned lon
- 	err = -EINVAL;
- 	if (unshare_flags & ~(CLONE_THREAD|CLONE_FS|CLONE_NEWNS|CLONE_SIGHAND|
- 				CLONE_VM|CLONE_FILES|CLONE_SYSVSEM|
--				CLONE_NEWUTS|CLONE_NEWIPC|CLONE_NEWUSER))
-+				CLONE_NEWUTS|CLONE_NEWIPC|CLONE_NEWUSER|
-+				CLONE_NEWNET))
- 		goto bad_unshare_out;
- 
- 	if ((err = unshare_thread(unshare_flags)))
-
---------------070604070307010001030809
-Content-Type: text/plain; charset="us-ascii"
-MIME-Version: 1.0
-Content-Transfer-Encoding: 7bit
-Content-Disposition: inline
-
-_______________________________________________
-Containers mailing list
-Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-https://lists.linux-foundation.org/mailman/listinfo/containers
---------------070604070307010001030809--
+Ideas welcome...
