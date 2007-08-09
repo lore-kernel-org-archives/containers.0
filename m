@@ -1,14 +1,14 @@
-From: Daniel Pittman <daniel-zvVxMF7wGoXk1uMJSBkQmQ@public.gmane.org>
-Subject: Re: [Devel] [PATCH] Allow signalling container-init
-Date: Thu, 09 Aug 2007 11:29:06 +1000
-Message-ID: <87myx1h4wt.fsf@rimspace.net>
-References: <20070808234737.GA18334@us.ibm.com> <87vebph6vq.fsf@rimspace.net>
-	<20070809012128.GA16391@sergelap.austin.ibm.com>
+From: Rohit Seth <rohitseth-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+Subject: Re: containers mini-summit?
+Date: Wed, 08 Aug 2007 18:29:26 -0700
+Message-ID: <1186622966.9277.553.camel@galaxy.corp.google.com>
+References: <20070808174757.GB5559@vino.hallyn.com>
+Reply-To: rohitseth-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+Content-Type: text/plain
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20070809012128.GA16391-6s5zFf/epYLPQpwDFJZrxKsjOiXwFzmk@public.gmane.org> (Serge
-	E. Hallyn's message of "Wed, 8 Aug 2007 20:21:28 -0500")
+In-Reply-To: <20070808174757.GB5559-4+H9nbzk0uAIagZqoN9o3w@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,56 +18,53 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Cc: Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Oleg Nesterov <oleg-6lXkIZvqkOAvJsYlp49lxw@public.gmane.org>, Pavel Emelianov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+To: "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
+Cc: ckrm-tech-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org, xemul-3ImXcnM4P+0@public.gmane.org, pj-sJ/iWh9BUns@public.gmane.org, cpw-sJ/iWh9BUns@public.gmane.org, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org, "Paul H. Hargrove" <PHHargrove-/3juihCSby0@public.gmane.org>, containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-"Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org> writes:
-> Quoting Daniel Pittman (daniel-zvVxMF7wGoXk1uMJSBkQmQ@public.gmane.org):
->> sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org writes:
+On Wed, 2007-08-08 at 12:47 -0500, Serge E. Hallyn wrote:
+> I just sent the next (final) version of the containers development
+> roadmap.  Eric Biederman and Paul Menage will be at kernel summit
+> representing this work.
+> 
+> We had planned on having a containers mini-summit the day before the
+> kernel summit.  However interest in that appears as though it may be
+> too low to justify having a real mini-summit.
+> 
+> So we have a few options:
+> 
+> 	1. we could have a mini-summit purely by phone.
+> 	2. there is a possibility of using a part of a
+> 	   conference room from LCE, if attendance will
+> 	   be low.  However, having a phone line to include
+> 	   those who cannot attend would be unlikely.
+> 	3. if there is a large planned attendance, we could
+> 	   continue to seek a separate venue for the
+> 	   mini-summit.
+> 
 
-[...]
+I think given the short time that is left for doing travel etc.
+(considering it is long weekend here in USA) it will be tough to do this
+in person.
 
->> > TODO:	Ideally we should allow killing the container-init only from
->> > 	ancestor containers and prevent it being killed from that or
->> > 	descendant containers.  But that is a more complex change and
->> > 	will be addressed by a follow-on patch. For now allow the
->> > 	container-init to be terminated by any process with sufficient
->> > 	privileges.
->> 
->> This will break, as far as I can see, by allowing the container root to
->> send signals to init that it doesn't expect.
->
-> Yes, in the end what we want is for a container init to receive
->
-> 	1. all signals from a (authorized) process in a parent
-> 	   pid namespace.
-> 	2. for signals sent from inside it's pid namespace, only
-> 	   exactly those signals for which it has installed a
-> 	   custom signal handler, no others.
->
-> In other words to a process in an ancestor pid namespace, the init of a
-> container is like any other process.  To a process inside the namespace
-> for which it is init, it is as /sbin/init is to the system now.
+I will be interested in attending this on phone though (and will have
+couple more folks from Google join in).
 
-That makes sense.
 
-> Actually achieving that without affecting performance for all
-> signalers is nontrivial.  The current patchset is complex enough that
-> I'd like to see us settle on non-optimal semantics for now, and once
-> these patches have settled implement the ideal signaling.
 
-I appreciate that.  I figured to make you aware that this will make it
-impossible to run upstart and, probably, other versions of init in your
-container as expected.
+> Who is interested in (a) attending the mini-summit in person, (b)
+> attending the mini-summit by phone, or (c) not interested?
+> 
+> For those interested in attending, what would you expect to happen at
+> the mini-summit?  a) discuss the roadmap to ensure everyone is
+> properly represented at the summit  b) go over pieces of functionality
+> from the roadmap and discuss implementation options, who is
+> interested in working on what, and possible timelines.  c) something
+> else.
 
-Since this was a somewhat subtle bug to track down it is, I think, work
-documenting so that people trying to use this code are aware of the
-limitation.
+Since Eric/Paul will be attending the KS and giving them an update, it
+will be very useful if we can all agree on some set of features that
+will be useful for containers and for which we need 1- input from folks
+in KS and 2- let them know that this is high on priority list.
 
-Regards,
-        Daniel
--- 
-Digital Infrastructure Solutions -- making IT simple, stable and secure
-Phone: 0401 155 707        email: contact-gyMb1R/nBgM33TBCqt261WVqPpYm49HuKQEueVp/e6I@public.gmane.org
-                 http://digital-infrastructure.com.au/
+-rohit
