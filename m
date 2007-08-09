@@ -1,15 +1,15 @@
 From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [RFC][PATCH] Make access to taks's nsproxy liter
-Date: Thu, 9 Aug 2007 09:10:19 -0500
-Message-ID: <20070809141019.GC23030@sergelap.austin.ibm.com>
-References: <46B9E321.6070602@openvz.org>
-	<20070808164854.GB28455@sergelap.austin.ibm.com>
-	<46BABE53.6050604@openvz.org>
+Subject: Re: [Devel] [PATCH] Allow signalling container-init
+Date: Thu, 9 Aug 2007 09:42:14 -0500
+Message-ID: <20070809144214.GG23030@sergelap.austin.ibm.com>
+References: <20070808234737.GA18334@us.ibm.com> <87vebph6vq.fsf@rimspace.net>
+	<20070809012128.GA16391@sergelap.austin.ibm.com>
+	<87myx1h4wt.fsf@rimspace.net>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <46BABE53.6050604-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+In-Reply-To: <87myx1h4wt.fsf-zvVxMF7wGoXk1uMJSBkQmQ@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,76 +19,57 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
-Cc: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Oleg Nesterov <oleg-6lXkIZvqkOAvJsYlp49lxw@public.gmane.org>
+To: Daniel Pittman <daniel-zvVxMF7wGoXk1uMJSBkQmQ@public.gmane.org>
+Cc: Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Oleg Nesterov <oleg-6lXkIZvqkOAvJsYlp49lxw@public.gmane.org>, Pavel Emelianov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Quoting Pavel Emelyanov (xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org):
-> [snip]
+Quoting Daniel Pittman (daniel-zvVxMF7wGoXk1uMJSBkQmQ@public.gmane.org):
+> "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org> writes:
+> > Quoting Daniel Pittman (daniel-zvVxMF7wGoXk1uMJSBkQmQ@public.gmane.org):
+> >> sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org writes:
 > 
-> >>diff --git a/include/linux/nsproxy.h b/include/linux/nsproxy.h
-> >>index 525d8fc..74f21fe 100644
-> >>--- a/include/linux/nsproxy.h
-> >>+++ b/include/linux/nsproxy.h
-> >>@@ -32,8 +32,14 @@ struct nsproxy {
-> >>};
-> >>extern struct nsproxy init_nsproxy;
-> >>
-> >>+static inline struct nsproxy *task_nsproxy(struct task_struct *tsk)
-> >>+{
-> >>+	return rcu_dereference(tsk->nsproxy);
-> >>+}
+> [...]
+> 
+> >> > TODO:	Ideally we should allow killing the container-init only from
+> >> > 	ancestor containers and prevent it being killed from that or
+> >> > 	descendant containers.  But that is a more complex change and
+> >> > 	will be addressed by a follow-on patch. For now allow the
+> >> > 	container-init to be terminated by any process with sufficient
+> >> > 	privileges.
+> >> 
+> >> This will break, as far as I can see, by allowing the container root to
+> >> send signals to init that it doesn't expect.
 > >
-> >Looks like a very nice cleanup as well.  But please add a comment
-> >above task_nsproxy() that it must be called under rcu_read_lock()
-> >or task_lock(task) (though I'll admit the rcu_dereference may make that
-> >obvious)
-> 
-> I will, but I think that rcu_dereference implies this. Anyway.
-
-Yeah...  as i said...  but I still get people asking "what is rcu
-anyway" so don't think we can assume the implication is clear to
-everyone.
-
-> [snip]
-> 
-> >>+	if (ns == new)
-> >>+		return;
-> >>+
-> >>+	if (new)
-> >>+		get_nsproxy(new);
-> >>+	rcu_assign_pointer(p->nsproxy, new);
-> >>+
-> >>+	if (ns && atomic_dec_and_test(&ns->count)) {
-> >>+		/*
-> >>+		 * wait for others to get what they want from this
-> >>+		 * nsproxy. cannot release this nsproxy via the
-> >>+		 * call_rcu() since put_mnt_ns will want to sleep
-> >>+		 */
-> >>+		synchronize_rcu();
-> >>+		free_nsproxy(ns);
-> >>+	}
-> >>+}
+> > Yes, in the end what we want is for a container init to receive
 > >
-> >Also a comment above switch_task_namespaces() that it must be called
-> >with task_lock held.
+> > 	1. all signals from a (authorized) process in a parent
+> > 	   pid namespace.
+> > 	2. for signals sent from inside it's pid namespace, only
+> > 	   exactly those signals for which it has installed a
+> > 	   custom signal handler, no others.
+> >
+> > In other words to a process in an ancestor pid namespace, the init of a
+> > container is like any other process.  To a process inside the namespace
+> > for which it is init, it is as /sbin/init is to the system now.
 > 
-> no! no locks here! free_nsproxy() may sleep when putting mnt_ns and
-> maybe some other. see - there's a hunk in sys_unshare that move the
-> task_lock() after switch_task_namespaces().
+> That makes sense.
+> 
+> > Actually achieving that without affecting performance for all
+> > signalers is nontrivial.  The current patchset is complex enough that
+> > I'd like to see us settle on non-optimal semantics for now, and once
+> > these patches have settled implement the ideal signaling.
+> 
+> I appreciate that.  I figured to make you aware that this will make it
+> impossible to run upstart and, probably, other versions of init in your
+> container as expected.
+> 
+> Since this was a somewhat subtle bug to track down it is, I think, work
+> documenting so that people trying to use this code are aware of the
+> limitation.
 
-Hmm,
+Agreed.  I do think it is documented in the code and in changelogs.
+Maybe it's worth adding a Documentation/ file describing how to use the
+pid namespaces, ideal semantics, and current shortcomings, for people
+who want to use+test the feature rather than work with the kernel code.
 
-Yes, I see.  And in the current usages it's correct.  I just worry that
-the function takes the task_struct as an arg (which I know it must for
-do_exit()) and so someone else might use it unlocked to switch another
-task's namespace, for instance in an attempt to implement namespace
-entering.
-
-So ok "a comment .. that it must be called with task_lock held" would be
-wrong, but please do add the *correct* comment :)  Namely that apart
-from current usage in do_exit, this should not be used to switch nsproxy
-on any task but current.  (Unless I'm still mistaken of course)
-
-thanks,
 -serge
