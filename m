@@ -1,15 +1,15 @@
-From: Oleg Nesterov <oleg-6lXkIZvqkOAvJsYlp49lxw@public.gmane.org>
-Subject: Re: [PATCH] Allow signalling container-init
-Date: Thu, 9 Aug 2007 11:55:35 +0400
-Message-ID: <20070809075535.GA115@tv-sign.ru>
-References: <20070808234737.GA18334@us.ibm.com>
-	<20070809000234.GA967@tv-sign.ru>
-	<20070809072933.GD23175@us.ibm.com>
+From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
+Subject: Re: [RFC][PATCH] Make access to taks's nsproxy liter
+Date: Thu, 09 Aug 2007 02:00:19 -0600
+Message-ID: <m13aytb0j0.fsf@ebiederm.dsl.xmission.com>
+References: <46B9E321.6070602@openvz.org>
+	<m1ps1yc7mp.fsf@ebiederm.dsl.xmission.com>
+	<46BABDE9.6090508@openvz.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <20070809072933.GD23175-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <46BABDE9.6090508-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org> (Pavel Emelyanov's message of "Thu,
+	09 Aug 2007 11:10:33 +0400")
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,61 +19,37 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org
-Cc: Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Pavel Emelianov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+To: Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Oleg Nesterov <oleg-6lXkIZvqkOAvJsYlp49lxw@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On 08/09, sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org wrote:
+Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org> writes:
+
+> Eric W. Biederman wrote:
+>> Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org> writes:
+>>
+>>> When someone wants to deal with some other taks's namespaces
+>>> it has to lock the task and then to get the desired namespace
+>>> if the one exists. This is slow on read-only paths and may be
+>>> impossible in some cases.
+>>>
+>>> E.g. Oleg recently noticed a race between unshare() and the
+>>> (just sent for review) pid namespaces - when the task notifies
+>>> the parent it has to know the parent's namespace, but taking
+>>> the task_lock() is impossible there - the code is under write
+>>> locked tasklist lock.
+>>>
+>>> On the other hand switching the namespace on task (daemonize)
+>>> and releasing the namespace (after the last task exit) is rather
+>>> rare operation and we can sacrifice its speed to solve the
+>>> issues above.
+>>
+>>
+>> Looks pretty decent but we need to clearly say what lock
+>> you have to have to assign to the nsproxy pointer.
 >
-> Oleg Nesterov [oleg-6lXkIZvqkOAvJsYlp49lxw@public.gmane.org] wrote:
-> | On 08/08, sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org wrote:
-> | > 
-> | > From: Sukadev Bhattiprolu <sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-> | > Subject: [PATCH] Allow signalling container-init
-> | > 
-> | > Only the global-init process must be special - any other container-init
-> | > process must be killable to prevent run-away processes in the system.
-> | 
-> | I think you are right, but....
-> | 
-> | > --- lx26-23-rc1-mm1.orig/kernel/signal.c	2007-08-07 13:52:12.000000000 -0700
-> | > +++ lx26-23-rc1-mm1/kernel/signal.c	2007-08-08 15:09:27.000000000 -0700
-> | > @@ -1861,11 +1861,9 @@ relock:
-> | >  			continue;
-> | >  
-> | >  		/*
-> | > -		 * Init of a pid space gets no signals it doesn't want from
-> | > -		 * within that pid space. It can of course get signals from
-> | > -		 * its parent pid space.
-> | > +		 * Global init gets no signals it doesn't want.
-> | >  		 */
-> | > -		if (current == task_child_reaper(current))
-> | > +		if (is_global_init(current->group_leader))
-> | >  			continue;
-> | 
-> | ...this breaks exec() from /sbin/init. Note that de_thread() kills other
-> | sub-threads with SIGKILL. With this patch de_thread() will hang waiting
-> | for other threads to die.
-> 
-> Again for threaded-init I guess :-(
-> 
-> Well, we discussed last week about allowing non-root users to clone their
-> pid namespace. The user can then create a container-init and this
-> process would become immune to signal even by a root user ?
+> no locks - only current is allowed to change its nsproxy!
 
-please see below,
+Exactly.  Just need a comment or something to make that clear.
 
-> | 
-> | I think it is better to not change the current behaviour which is not
-> | perfect (buggy), until we actually protect /sbin/init from unwanted
-> | signals.
-> 
-> Can we preserve the existing behavior by checking only the main thread
-> of global init (i.e pass in 'current' rather than 'current->group_leader'
-> to is_global_init()) ?
-
-Yes, this is what I meant, this is what we have in Linus's tree.
-This way a container-init could be killed. This all is not correct,
-but we shouldn't replace one bug with another.
-
-Oleg.
+Eric
