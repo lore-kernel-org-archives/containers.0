@@ -1,130 +1,91 @@
-From: xemul@openvz.org
-Subject: [PATCH 18/20] Destroy pid namespace on init's death
-Date: Fri, 10 Aug 2007 15:48:26 +0400
-Message-ID: <46BC508A.mailGLD11F1LE@openvz.org>
+From: xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org
+Subject: [PATCH 3/20] Introduce MS_KERNMOUNT flag
+Date: Fri, 10 Aug 2007 15:47:55 +0400
+Message-ID: <46BC506B.mailGIV1AXDXM@openvz.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Transfer-Encoding: 7bit
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S937622AbXHJL5Z@vger.kernel.org>
-Sender: linux-kernel-owner@vger.kernel.org
-To: akpm@osdl.org
-Cc: xemul@openvz.org, devel@openvz.org, linux-kernel@vger.kernel.org, containers@lists.osdl.org, oleg@tv-sign.ru, sukadev@us.ibm.com
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: akpm-3NddpPZAyC0@public.gmane.org
+Cc: linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, oleg-6lXkIZvqkOAvJsYlp49lxw@public.gmane.org, xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-From: Sukadev Bhattiprolu <sukadev@us.ibm.com>
+This flag tells the .get_sb callback that this is a kern_mount() call
+so that it can trust *data pointer to be valid in-kernel one. If this
+flag is passed from the user process, it is cleared since the *data
+pointer is not a valid kernel object.
 
-Terminate all processes in a namespace when the reaper of the namespace
-is exiting. We do this by walking the pidmap of the namespace and sending
-SIGKILL to all processes.
+Running a few steps forward - this will be needed for proc to create the
+superblock and store a valid pid namespace on it during the namespace
+creation. The reason, why the namespace cannot live without proc mount
+is described in the appropriate patch.
 
-Signed-off-by: Sukadev Bhattiprolu <sukadev@us.ibm.com>
-Acked-by: Pavel Emelyanov <xemul@openvz.org>
-Cc: Oleg Nesterov <oleg@tv-sign.ru>
+Signed-off-by: Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+Cc: Oleg Nesterov <oleg-6lXkIZvqkOAvJsYlp49lxw@public.gmane.org>
 
 ---
 
- include/linux/pid.h |    1 +
- kernel/exit.c       |   27 ++++++++++++++++++++++++++-
- kernel/pid.c        |   38 ++++++++++++++++++++++++++++++++++++++
- 3 files changed, 65 insertions(+), 1 deletion(-)
+ fs/namespace.c     |    3 ++-
+ fs/super.c         |    6 +++---
+ include/linux/fs.h |    4 +++-
+ 3 files changed, 8 insertions(+), 5 deletions(-)
 
---- ./include/linux/pid.h.ve18	2007-08-06 18:27:33.000000000 +0400
-+++ ./include/linux/pid.h	2007-08-06 18:27:33.000000000 +0400
-@@ -125,6 +125,7 @@ extern struct pid *find_ge_pid(int nr, s
+diff -upr linux-2.6.23-rc1-mm1.orig/fs/namespace.c linux-2.6.23-rc1-mm1-7/fs/namespace.c
+--- linux-2.6.23-rc1-mm1.orig/fs/namespace.c	2007-07-26 16:34:45.000000000 +0400
++++ linux-2.6.23-rc1-mm1-7/fs/namespace.c	2007-07-26 16:36:36.000000000 +0400
+@@ -1579,7 +1579,8 @@ long do_mount(char *dev_name, char *dir_
+ 		mnt_flags |= MNT_NOMNT;
  
- extern struct pid *alloc_pid(struct pid_namespace *ns);
- extern void FASTCALL(free_pid(struct pid *pid));
-+extern void zap_pid_ns_processes(struct pid_namespace *pid_ns);
+ 	flags &= ~(MS_NOSUID | MS_NOEXEC | MS_NODEV | MS_ACTIVE |
+-		   MS_NOATIME | MS_NODIRATIME | MS_RELATIME | MS_NOMNT);
++		   MS_NOATIME | MS_NODIRATIME | MS_RELATIME |
++		   MS_NOMNT | MS_KERNMOUNT);
  
- /*
-  * the helpers to get the pid's id seen from different namespaces
---- ./kernel/exit.c.ve18	2007-08-06 18:27:33.000000000 +0400
-+++ ./kernel/exit.c	2007-08-06 18:27:33.000000000 +0400
-@@ -900,7 +900,32 @@ static inline void exit_child_reaper(str
- 	if (likely(tsk->group_leader != task_child_reaper(tsk)))
- 		return;
- 
--	panic("Attempted to kill init!");
-+	if (tsk->nsproxy->pid_ns == &init_pid_ns)
-+		panic("Attempted to kill init!");
-+
-+	/*
-+	 * @tsk is the last thread in the 'container-init' and is exiting.
-+	 * Terminate all remaining processes in the namespace and reap them
-+	 * before exiting @tsk.
-+	 *
-+	 * Note that @tsk (last thread of container-init) may not necessarily
-+	 * be the child-reaper (i.e main thread of container-init) of the
-+	 * namespace i.e the child_reaper may have already exited.
-+	 *
-+	 * Even after a child_reaper exits, we let it inherit orphaned children,
-+	 * because, pid_ns->child_reaper remains valid as long as there is
-+	 * at least one living sub-thread in the container init.
-+
-+	 * This living sub-thread of the container-init will be notified when
-+	 * a child inherited by the 'child-reaper' exits (do_notify_parent()
-+	 * uses __group_send_sig_info()). Further, when reaping child processes,
-+	 * do_wait() iterates over children of all living sub threads.
-+
-+	 * i.e even though 'child_reaper' thread is listed as the parent of the
-+	 * orphaned children, any living sub-thread in the container-init can
-+	 * perform the role of the child_reaper.
-+	 */
-+	zap_pid_ns_processes(tsk->nsproxy->pid_ns);
+ 	/* ... and get the mountpoint */
+ 	retval = path_lookup(dir_name, LOOKUP_FOLLOW, &nd);
+diff -upr linux-2.6.23-rc1-mm1.orig/fs/super.c linux-2.6.23-rc1-mm1-7/fs/super.c
+--- linux-2.6.23-rc1-mm1.orig/fs/super.c	2007-07-26 16:34:45.000000000 +0400
++++ linux-2.6.23-rc1-mm1-7/fs/super.c	2007-07-26 16:36:36.000000000 +0400
+@@ -944,9 +944,9 @@ do_kern_mount(const char *fstype, int fl
+ 	return mnt;
  }
  
- fastcall NORET_TYPE void do_exit(long code)
---- ./kernel/pid.c.ve18	2007-08-06 18:27:33.000000000 +0400
-+++ ./kernel/pid.c	2007-08-06 18:34:08.000000000 +0400
-@@ -28,6 +28,7 @@
- #include <linux/hash.h>
- #include <linux/pid_namespace.h>
- #include <linux/init_task.h>
-+#include <linux/syscalls.h>
- 
- #define pid_hashfn(nr, ns)	\
- 	hash_long((unsigned long)nr + (unsigned long)ns, pidhash_shift)
-@@ -558,6 +559,43 @@ void free_pid_ns(struct kref *kref)
- 		put_pid_ns(parent);
+-struct vfsmount *kern_mount(struct file_system_type *type)
++struct vfsmount *kern_mount_data(struct file_system_type *type, void *data)
+ {
+-	return vfs_kern_mount(type, 0, type->name, NULL);
++	return vfs_kern_mount(type, MS_KERNMOUNT, type->name, data);
  }
  
-+void zap_pid_ns_processes(struct pid_namespace *pid_ns)
-+{
-+	int nr;
-+	int rc;
-+
-+	/*
-+	 * The last thread in the container-init thread group is terminating.
-+	 * Find remaining pid_ts in the namespace, signal and wait for them
-+	 * to exit.
-+	 *
-+	 * Note:  This signals each threads in the namespace - even those that
-+	 * 	  belong to the same thread group, To avoid this, we would have
-+	 * 	  to walk the entire tasklist looking a processes in this
-+	 * 	  namespace, but that could be unnecessarily expensive if the
-+	 * 	  pid namespace has just a few processes. Or we need to
-+	 * 	  maintain a tasklist for each pid namespace.
-+	 *
-+	 */
-+	read_lock(&tasklist_lock);
-+	nr = next_pidmap(pid_ns, 1);
-+	while (nr > 0) {
-+		kill_proc_info(SIGKILL, SEND_SIG_PRIV, nr);
-+		nr = next_pidmap(pid_ns, nr);
-+	}
-+	read_unlock(&tasklist_lock);
-+
-+	do {
-+		clear_thread_flag(TIF_SIGPENDING);
-+		rc = sys_wait4(-1, NULL, __WALL, NULL);
-+	} while (rc != -ECHILD);
-+
-+
-+	/* Child reaper for the pid namespace is going away */
-+	pid_ns->child_reaper = NULL;
-+	return;
-+}
-+
- /*
-  * The pid hash table is scaled according to the amount of memory in the
-  * machine.  From a minimum of 16 slots up to 4096 slots at one gigabyte or
+-EXPORT_SYMBOL(kern_mount);
++EXPORT_SYMBOL_GPL(kern_mount_data);
+diff -upr linux-2.6.23-rc1-mm1.orig/include/linux/fs.h linux-2.6.23-rc1-mm1-7/include/linux/fs.h
+--- linux-2.6.23-rc1-mm1.orig/include/linux/fs.h	2007-07-26 16:34:45.000000000 +0400
++++ linux-2.6.23-rc1-mm1-7/include/linux/fs.h	2007-07-26 16:36:36.000000000 +0400
+@@ -129,6 +129,7 @@ extern int dir_notify_enable;
+ #define MS_RELATIME	(1<<21)	/* Update atime relative to mtime/ctime. */
+ #define MS_SETUSER	(1<<23) /* set mnt_uid to current user */
+ #define MS_NOMNT	(1<<24) /* don't allow unprivileged submounts */
++#define MS_KERNMOUNT	(1<<25) /* this is a kern_mount call */
+ #define MS_ACTIVE	(1<<30)
+ #define MS_NOUSER	(1<<31)
+ 
+@@ -1459,7 +1460,8 @@ void unnamed_dev_init(void);
+ 
+ extern int register_filesystem(struct file_system_type *);
+ extern int unregister_filesystem(struct file_system_type *);
+-extern struct vfsmount *kern_mount(struct file_system_type *);
++extern struct vfsmount *kern_mount_data(struct file_system_type *, void *data);
++#define kern_mount(type) kern_mount_data(type, NULL)
+ extern int may_umount_tree(struct vfsmount *);
+ extern int may_umount(struct vfsmount *);
+ extern void umount_tree(struct vfsmount *, int, struct list_head *);
