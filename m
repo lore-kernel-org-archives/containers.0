@@ -1,81 +1,86 @@
-From: "Serge E. Hallyn" <serue@us.ibm.com>
-Subject: Re: [PATCH] Make access to task's nsproxy liter
-Date: Fri, 10 Aug 2007 09:26:15 -0500
-Message-ID: <20070810142615.GA1490@sergelap.austin.ibm.com>
-References: <46BAE3A3.7030608@openvz.org> <20070810134003.GA22368@sergelap.austin.ibm.com> <20070810140545.GA74@tv-sign.ru> <20070810141501.GB74@tv-sign.ru>
+From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [Devel] containers mini-summit?
+Date: Fri, 10 Aug 2007 09:31:30 -0500
+Message-ID: <20070810143130.GA8048@sergelap.austin.ibm.com>
+References: <20070808174757.GB5559@vino.hallyn.com>
+	<46BBADD4.2040505@openvz.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1764936AbXHJO03@vger.kernel.org>
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <20070810141501.GB74@tv-sign.ru>
-Sender: linux-kernel-owner@vger.kernel.org
-To: Oleg Nesterov <oleg@tv-sign.ru>
-Cc: "Serge E. Hallyn" <serue@us.ibm.com>, Pavel Emelyanov <xemul@openvz.org>, Andrew Morton <akpm@osdl.org>, Linux Kernel Mailing List <linux-kernel@vger.kernel.org>, Linux Containers <containers@lists.osdl.org>, "Eric W. Biederman" <ebiederm@xmission.com>, "Paul E. McKenney" <paulmck@linux.vnet.ibm.com>, devel@openvz.org
+In-Reply-To: <46BBADD4.2040505-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Kir Kolyshkin <kir-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+Cc: akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, ckrm-tech-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org, "Paul H. Hargrove" <PHHargrove-/3juihCSby0@public.gmane.org>, xemul-3ImXcnM4P+0@public.gmane.org, rohitseth-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, pj-sJ/iWh9BUns@public.gmane.org, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org, containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, cpw-sJ/iWh9BUns@public.gmane.org, "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Quoting Oleg Nesterov (oleg@tv-sign.ru):
-> On 08/10, Oleg Nesterov wrote:
+Quoting Kir Kolyshkin (kir-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org):
+> Serge E. Hallyn wrote:
+> > I just sent the next (final) version of the containers development
+> > roadmap.  Eric Biederman and Paul Menage will be at kernel summit
+> > representing this work.
 > >
-> > On 08/10, Serge E. Hallyn wrote:
-> > >
-> > > Quoting Pavel Emelyanov (xemul@openvz.org):
-> > > > +/*
-> > > > + * the namespaces access rules are:
-> > > > + *
-> > > > + *  1. only current task is allowed to change tsk->nsproxy pointer or
-> > > > + *     any pointer on the nsproxy itself
-> > > > + *
-> > > > + *  2. when accessing (i.e. reading) current task's namespaces - no
-> > > > + *     precautions should be taken - just dereference the pointers
-> > > > + *
-> > > > + *  3. the access to other task namespaces is performed like this
-> > > > + *     rcu_read_lock();
-> > > > + *     nsproxy = task_nsproxy(tsk);
-> > > > + *     if (nsproxy != NULL) {
-> > > > + *             / *
-> > > > + *               * work with the namespaces here
-> > > > + *               * e.g. get the reference on one of them
-> > > > + *               * /
-> > > > + *     } / *
-> > > > + *         * NULL task_nsproxy() means that this task is
-> > > > + *         * almost dead (zombie)
-> > > > + *         * /
-> > > > + *     rcu_read_unlock();
-> > > 
-> > > And lastly, I guess that the caller to switch_task_namespaces() has
-> > > to ensure that new_nsproxy either (1) is the init namespace, (2) is a
-> > > brand-new namespace to which noone else has a reference, or (3) the
-> > > caller has to hold a reference to the new_nsproxy across the call to
-> > > switch_task_namespaces().
-> > > 
-> > > As it happens the current calls fit (1) or (2).  Again if we happen to
-> > > jump into the game of switching a task into another task's nsproxy,
-> > > we'll need to be mindful of (3) so that new_nsproxy can't be tossed into
-> > > the bin between
-> > > 
-> > > 	if (new)
-> > > 		get_nsproxy(new);
-> > 
-> > 4) Unless tsk == current, get_task_namespaces(tsk) and get_nsproxy(tsk)
-> >    are racy even if done under rcu_read_lock().
+> > We had planned on having a containers mini-summit the day before the
+> > kernel summit.  However interest in that appears as though it may be
+> > too low to justify having a real mini-summit.
+> >
+> > So we have a few options:
+> >
+> > 	1. we could have a mini-summit purely by phone.
+> > 	2. there is a possibility of using a part of a
+> > 	   conference room from LCE, if attendance will
+> > 	   be low.  However, having a phone line to include
+> > 	   those who cannot attend would be unlikely.
+> > 	3. if there is a large planned attendance, we could
+> > 	   continue to seek a separate venue for the
+> > 	   mini-summit.
+> >
+> > Who is interested in (a) attending the mini-summit in person, (b)
+> > attending the mini-summit by phone, or (c) not interested?
+> >   
 > 
-> (sorry for noise, but I'm afraid I was not clear again...)
-> 
-> This looks OK, we don't do get_nsproxy(not_a_current), but perhaps it is
-> not immediately obvious that we shouldn't.
+> I will be there in person as well (in readonly^Wobserver mode I guess).
 
-Yes, agreed, the code as it stands is fine.
+Ok so far we have Pavel, Kir, Kirill, and hopefully Eric, Paul, and
+Cedric.  Balbir, did I hear a rumer that you might be able to go?
 
-I'm only warning that several people want the ability to enter another
-task's namespace (and other people are squarely against it :), and
-if/when we try to implement that again, then simply using
-switch_task_namespaces() will not suffice.  The caller will have to grab
-an extra reference to the new nsproxy (as you imply, I guess under the
-task_lock(target)), call switch_task_namespaces(), then drop the extra
-reference.  (Or implement a whole new helper.)
+That may be getting too large for a hotel room :)
 
-I don't even know whether this warrants a warning or not.  Hopefully
-anyone who'll try to implement that will be able to deduce that for
-themselves.  But still I usually like to see such things warned against...
+Would one of you folks definately going be willing to pick up where I
+left off in trying to get time in a room at LCE?  Let me know and I'll
+send you the name of the person I'd contacted (once I find it again...)
 
+(Still that only really works if we can get someone to show up with an ip
+speakerphone so the rest of us can dial in.)
+
+thanks,
 -serge
+
+> > For those interested in attending, what would you expect to happen at
+> > the mini-summit?  a) discuss the roadmap to ensure everyone is
+> > properly represented at the summit  b) go over pieces of functionality
+> > from the roadmap and discuss implementation options, who is
+> > interested in working on what, and possible timelines.  c) something
+> > else.
+> >
+> > thanks,
+> > -serge
+> >
+> > _______________________________________________
+> > Devel mailing list
+> > Devel-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org
+> > https://openvz.org/mailman/listinfo/devel
+> >   
+> 
+> _______________________________________________
+> Containers mailing list
+> Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+> https://lists.linux-foundation.org/mailman/listinfo/containers
