@@ -1,19 +1,20 @@
-From: "Serge E. Hallyn" <serge@hallyn.com>
+From: Oleg Nesterov <oleg@tv-sign.ru>
 Subject: Re: [PATCH] Make access to task's nsproxy liter
-Date: Fri, 10 Aug 2007 10:30:23 -0500
-Message-ID: <20070810153023.GB23584@vino.hallyn.com>
+Date: Fri, 10 Aug 2007 20:45:46 +0400
+Message-ID: <20070810164546.GA273@tv-sign.ru>
 References: <46BAE3A3.7030608@openvz.org> <20070810134003.GA22368@sergelap.austin.ibm.com> <20070810140545.GA74@tv-sign.ru> <46BC7FAC.2080208@openvz.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S937969AbXHJPah@vger.kernel.org>
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S965004AbXHJQnm@vger.kernel.org>
 Content-Disposition: inline
 In-Reply-To: <46BC7FAC.2080208@openvz.org>
 Sender: linux-kernel-owner@vger.kernel.org
 To: Pavel Emelyanov <xemul@openvz.org>
-Cc: Oleg Nesterov <oleg@tv-sign.ru>, "Serge E. Hallyn" <serue@us.ibm.com>, Andrew Morton <akpm@osdl.org>, Linux Kernel Mailing List <linux-kernel@vger.kernel.org>, Linux Containers <containers@lists.osdl.org>, "Eric W. Biederman" <ebiederm@xmission.com>, "Paul E. McKenney" <paulmck@linux.vnet.ibm.com>, devel@openvz.org
+Cc: "Serge E. Hallyn" <serue@us.ibm.com>, Andrew Morton <akpm@osdl.org>, Linux Kernel Mailing List <linux-kernel@vger.kernel.org>, Linux Containers <containers@lists.osdl.org>, "Eric W. Biederman" <ebiederm@xmission.com>, "Paul E. McKenney" <paulmck@linux.vnet.ibm.com>, devel@openvz.org
 List-Id: containers.vger.kernel.org
 
-Quoting Pavel Emelyanov (xemul@openvz.org):
+On 08/10, Pavel Emelyanov wrote:
+>
 > Oleg Nesterov wrote:
 > >On 08/10, Serge E. Hallyn wrote:
 > >>Quoting Pavel Emelyanov (xemul@openvz.org):
@@ -62,11 +63,22 @@ Quoting Pavel Emelyanov (xemul@openvz.org):
 > to change its nsproxy. I.e. when switch_task_nsproxy() is called
 > for tsk other than current it's a BUG
 
-I'm not talking about calling it for another task.  I'm talking about
-calling it for current task, with another task's nsproxy as target.
+Yes, but what I meant is that this code
 
-Like I said there is nothing wrong with your patch, it looks good - it's
-just something to keep in mind.
+        rcu_read_lock();
+        nsproxy = task_nsproxy(tsk);
+        if (nsproxy != NULL)
+                get_nsproxy(nsproxy);
+        rcu_read_unlock();
 
-thanks,
--serge
+	if (nsproxy) {
+		use_it(nsproxy);
+		put_nsproxy(nsproxy);
+	}
+
+is not safe despite the fact we are _not_ changing tsk->nsproxy.
+
+The patch itself is correct because we don't do that, and the comment
+is right. Just it is not immediately obvious.
+
+Oleg.
