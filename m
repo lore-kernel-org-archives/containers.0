@@ -1,81 +1,72 @@
-From: Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+From: "Serge E. Hallyn" <serge@hallyn.com>
 Subject: Re: [PATCH] Make access to task's nsproxy liter
-Date: Fri, 10 Aug 2007 19:09:32 +0400
-Message-ID: <46BC7FAC.2080208@openvz.org>
-References: <46BAE3A3.7030608@openvz.org>
-	<20070810134003.GA22368@sergelap.austin.ibm.com>
-	<20070810140545.GA74@tv-sign.ru>
+Date: Fri, 10 Aug 2007 10:30:23 -0500
+Message-ID: <20070810153023.GB23584@vino.hallyn.com>
+References: <46BAE3A3.7030608@openvz.org> <20070810134003.GA22368@sergelap.austin.ibm.com> <20070810140545.GA74@tv-sign.ru> <46BC7FAC.2080208@openvz.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
-Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20070810140545.GA74-6lXkIZvqkOAvJsYlp49lxw@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Oleg Nesterov <oleg-6lXkIZvqkOAvJsYlp49lxw@public.gmane.org>
-Cc: Linux Kernel Mailing List <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, "Paul E. McKenney" <paulmck-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Content-Type: text/plain; charset=us-ascii
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S937969AbXHJPah@vger.kernel.org>
+Content-Disposition: inline
+In-Reply-To: <46BC7FAC.2080208@openvz.org>
+Sender: linux-kernel-owner@vger.kernel.org
+To: Pavel Emelyanov <xemul@openvz.org>
+Cc: Oleg Nesterov <oleg@tv-sign.ru>, "Serge E. Hallyn" <serue@us.ibm.com>, Andrew Morton <akpm@osdl.org>, Linux Kernel Mailing List <linux-kernel@vger.kernel.org>, Linux Containers <containers@lists.osdl.org>, "Eric W. Biederman" <ebiederm@xmission.com>, "Paul E. McKenney" <paulmck@linux.vnet.ibm.com>, devel@openvz.org
 List-Id: containers.vger.kernel.org
 
-Oleg Nesterov wrote:
-> On 08/10, Serge E. Hallyn wrote:
->> Quoting Pavel Emelyanov (xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org):
->>> +/*
->>> + * the namespaces access rules are:
->>> + *
->>> + *  1. only current task is allowed to change tsk->nsproxy pointer or
->>> + *     any pointer on the nsproxy itself
->>> + *
->>> + *  2. when accessing (i.e. reading) current task's namespaces - no
->>> + *     precautions should be taken - just dereference the pointers
->>> + *
->>> + *  3. the access to other task namespaces is performed like this
->>> + *     rcu_read_lock();
->>> + *     nsproxy = task_nsproxy(tsk);
->>> + *     if (nsproxy != NULL) {
->>> + *             / *
->>> + *               * work with the namespaces here
->>> + *               * e.g. get the reference on one of them
->>> + *               * /
->>> + *     } / *
->>> + *         * NULL task_nsproxy() means that this task is
->>> + *         * almost dead (zombie)
->>> + *         * /
->>> + *     rcu_read_unlock();
->> And lastly, I guess that the caller to switch_task_namespaces() has
->> to ensure that new_nsproxy either (1) is the init namespace, (2) is a
->> brand-new namespace to which noone else has a reference, or (3) the
->> caller has to hold a reference to the new_nsproxy across the call to
->> switch_task_namespaces().
->>
->> As it happens the current calls fit (1) or (2).  Again if we happen to
->> jump into the game of switching a task into another task's nsproxy,
->> we'll need to be mindful of (3) so that new_nsproxy can't be tossed into
->> the bin between
->>
->> 	if (new)
->> 		get_nsproxy(new);
+Quoting Pavel Emelyanov (xemul@openvz.org):
+> Oleg Nesterov wrote:
+> >On 08/10, Serge E. Hallyn wrote:
+> >>Quoting Pavel Emelyanov (xemul@openvz.org):
+> >>>+/*
+> >>>+ * the namespaces access rules are:
+> >>>+ *
+> >>>+ *  1. only current task is allowed to change tsk->nsproxy pointer or
+> >>>+ *     any pointer on the nsproxy itself
+> >>>+ *
+> >>>+ *  2. when accessing (i.e. reading) current task's namespaces - no
+> >>>+ *     precautions should be taken - just dereference the pointers
+> >>>+ *
+> >>>+ *  3. the access to other task namespaces is performed like this
+> >>>+ *     rcu_read_lock();
+> >>>+ *     nsproxy = task_nsproxy(tsk);
+> >>>+ *     if (nsproxy != NULL) {
+> >>>+ *             / *
+> >>>+ *               * work with the namespaces here
+> >>>+ *               * e.g. get the reference on one of them
+> >>>+ *               * /
+> >>>+ *     } / *
+> >>>+ *         * NULL task_nsproxy() means that this task is
+> >>>+ *         * almost dead (zombie)
+> >>>+ *         * /
+> >>>+ *     rcu_read_unlock();
+> >>And lastly, I guess that the caller to switch_task_namespaces() has
+> >>to ensure that new_nsproxy either (1) is the init namespace, (2) is a
+> >>brand-new namespace to which noone else has a reference, or (3) the
+> >>caller has to hold a reference to the new_nsproxy across the call to
+> >>switch_task_namespaces().
+> >>
+> >>As it happens the current calls fit (1) or (2).  Again if we happen to
+> >>jump into the game of switching a task into another task's nsproxy,
+> >>we'll need to be mindful of (3) so that new_nsproxy can't be tossed into
+> >>the bin between
+> >>
+> >>	if (new)
+> >>		get_nsproxy(new);
+> >
+> >4) Unless tsk == current, get_task_namespaces(tsk) and get_nsproxy(tsk)
+> >   are racy even if done under rcu_read_lock().
 > 
-> 4) Unless tsk == current, get_task_namespaces(tsk) and get_nsproxy(tsk)
->    are racy even if done under rcu_read_lock().
-
-Yup :)
-
-It is already written in comment that only the current is allowed
-to change its nsproxy. I.e. when switch_task_nsproxy() is called
-for tsk other than current it's a BUG
-
-> Oleg.
+> Yup :)
 > 
-> -
-> To unsubscribe from this list: send the line "unsubscribe linux-kernel" in
-> the body of a message to majordomo-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> Please read the FAQ at  http://www.tux.org/lkml/
-> 
+> It is already written in comment that only the current is allowed
+> to change its nsproxy. I.e. when switch_task_nsproxy() is called
+> for tsk other than current it's a BUG
+
+I'm not talking about calling it for another task.  I'm talking about
+calling it for current task, with another task's nsproxy as target.
+
+Like I said there is nothing wrong with your patch, it looks good - it's
+just something to keep in mind.
+
+thanks,
+-serge
