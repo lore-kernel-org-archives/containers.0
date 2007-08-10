@@ -1,44 +1,94 @@
-From: Vaidyanathan Srinivasan <svaidy@linux.vnet.ibm.com>
-Subject: Re: [-mm PATCH 0/9] Memory controller introduction (v4)
-Date: Fri, 10 Aug 2007 10:19:49 +0530
-Message-ID: <46BBEE6D.1040704@linux.vnet.ibm.com>
-References: <20070727200937.31565.78623.sendpatchset@balbir-laptop> <20070808125139.7cfe702c.kamezawa.hiroyu@jp.fujitsu.com> <20070808165131.b4ab4e92.kamezawa.hiroyu@jp.fujitsu.com>
+From: Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+Subject: Re: containers mini-summit?
+Date: Fri, 10 Aug 2007 12:16:54 +0400
+Message-ID: <46BC1EF6.4010706@openvz.org>
+References: <20070808174757.GB5559@vino.hallyn.com> <46BAD052.6040900@sw.ru>
+	<20070809193109.GA1935@sergelap.austin.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 Content-Transfer-Encoding: 7bit
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1754665AbXHJEuX@vger.kernel.org>
-In-Reply-To: <20070808165131.b4ab4e92.kamezawa.hiroyu@jp.fujitsu.com>
-Sender: linux-kernel-owner@vger.kernel.org
-To: KAMEZAWA Hiroyuki <kamezawa.hiroyu@jp.fujitsu.com>
-Cc: Pavel Emelianov <xemul@openvz.org>, Dhaval Giani <dhaval@linux.vnet.ibm.com>, YAMAMOTO Takashi <yamamoto@valinux.co.jp>, Linux Kernel Mailing List <linux-kernel@vger.kernel.org>, Linux MM Mailing List <linux-mm@kvack.org>, Eric W Biederman <ebiederm@xmission.com>, Linux Containers <containers@lists.osdl.org>, Andrew Morton <akpm@linux-foundation.org>, Balbir Singh <balbir@linux.vnet.ibm.com>, Paul Menage <menage@google.com>, Peter Zijlstra <a.p.zijlstra@chello.nl>
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <20070809193109.GA1935-6s5zFf/epYLPQpwDFJZrxKsjOiXwFzmk@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Cc: akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, ckrm-tech-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org, "Paul H. Hargrove" <PHHargrove-/3juihCSby0@public.gmane.org>, containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, pj-sJ/iWh9BUns@public.gmane.org, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org, rohitseth-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, cpw-sJ/iWh9BUns@public.gmane.org, "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-
-KAMEZAWA Hiroyuki wrote:
-> On Wed, 8 Aug 2007 12:51:39 +0900
-> KAMEZAWA Hiroyuki <kamezawa.hiroyu@jp.fujitsu.com> wrote:
-> 
->> On Sat, 28 Jul 2007 01:39:37 +0530
->> Balbir Singh <balbir@linux.vnet.ibm.com> wrote:
->>> At OLS, the resource management BOF, it was discussed that we need to manage
->>> RSS and unmapped page cache together. This patchset is a step towards that
+Serge E. Hallyn wrote:
+> Quoting Pavel Emelyanov (xemul-3ImXcnM4P+0@public.gmane.org):
+>> Serge E. Hallyn wrote:
+>>> I just sent the next (final) version of the containers development
+>>> roadmap.  Eric Biederman and Paul Menage will be at kernel summit
+>>> representing this work.
 >>>
->> Can I make a question ? Why limiting RSS instead of # of used pages per
->> container ? Maybe bacause of shared pages between container.... 
-> Sorry....Ignore above question.
-> I didn't understand what mem_container_charge() accounts and limits.
-> It controls # of meta_pages.
+>>> We had planned on having a containers mini-summit the day before the
+>>> kernel summit.  However interest in that appears as though it may be
+>>> too low to justify having a real mini-summit.
+>>>
+>>> So we have a few options:
+>>>
+>>> 	1. we could have a mini-summit purely by phone.
+>>> 	2. there is a possibility of using a part of a
+>>> 	   conference room from LCE, if attendance will
+>>> 	   be low.  However, having a phone line to include
+>>> 	   those who cannot attend would be unlikely.
+>>> 	3. if there is a large planned attendance, we could
+>>> 	   continue to seek a separate venue for the
+>>> 	   mini-summit.
+>>>
+>>> Who is interested in (a) attending the mini-summit in person, (b)
+>>> attending the mini-summit by phone, or (c) not interested?
+>> I will be there in person.
+> 
+> Still waiting to hear whether anyone other than yourself, Eric, and Paul
+> would be there...  If not, I assume you could meet in one of your hotel
+> rooms and dial into the phone meeting?  :)
 
-Hi Kame,
+Well, actually, I'd prefer meeting in person even if there will be
+only 4 people. Talking tete-a-tete is always better than phone-a-phone :)
 
-Actually the number of pages resident in memory brought in by a
-container is charged.  However each such page will have a meta_page
-allocated to keep the extra data.
+Except for to meet in some cafe/park in case not many people come.
 
-Yes, the accounting counts the number of meta_page which is same as
-the number of mapped and unmapped (pagecache) pages brought into the
-system memory by this container.  Whether pagecache pages should be
-included or not is configurable per container through the 'type' file
-in containerfs.
+>>> For those interested in attending, what would you expect to happen at
+>>> the mini-summit?  a) discuss the roadmap to ensure everyone is
+>>> properly represented at the summit  b) go over pieces of functionality
+>> >from the roadmap and discuss implementation options, who is
+>>> interested in working on what, and possible timelines.  c) something
+>>> else.
+>> I think it would be good if someone makes a short presentation of
+>> what is already done and what is being developed now so that we all
+>> can have an overall picture in sight.
+> 
+> Hmm, so in front of the current 'roadmap' you'd like to see a list of
+> what's been accomplished so far?
 
---Vaidy
+Not exactly. The entire picture. E.g. I have no idea of what is going on
+with network namespaces and checkpoint/restart. I'd also like to know what
+people think about the kernel memory resource management that was discussed
+long ago and some more questions.
+
+> I suppose that might be a good way of showing the community that this is
+> all work in progress and going along nicely, not brand-new development.
+> Pavel, do you mind writing that up?
+
+I do not :) I do not even mind making a presentation and showing it up in
+the mini-summit, but as I have told I haven't got a complete picture of
+what's happening. Actually I admitted that everyone has some gaps in
+their knowledges about the overall situation and thought that the person,
+responsible for this presentation would spend some time collecting the
+information from other people :)
+
+> Eric, do you mind at the mini-summit (or mini-summit phone call) going
+> over what you were going to present at the kernel summit?
+> 
+> thanks,
+> -serge
+> 
