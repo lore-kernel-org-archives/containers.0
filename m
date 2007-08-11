@@ -1,101 +1,100 @@
-From: ebiederm@xmission.com (Eric W. Biederman)
-Subject: Re: [PATCH] Make access to task's nsproxy liter
-Date: Fri, 10 Aug 2007 12:03:19 -0600
-Message-ID: <m13ayrxo60.fsf@ebiederm.dsl.xmission.com>
-References: <46BAE3A3.7030608@openvz.org>
-	<20070810134003.GA22368@sergelap.austin.ibm.com>
-	<20070810140545.GA74@tv-sign.ru> <46BC7FAC.2080208@openvz.org>
-	<20070810164546.GA273@tv-sign.ru>
+From: Christoph Hellwig <hch@infradead.org>
+Subject: Re: [PATCH 3/20] Introduce MS_KERNMOUNT flag
+Date: Sat, 11 Aug 2007 04:47:21 +0100
+Message-ID: <20070811034721.GB22216@infradead.org>
+References: <46BC506B.mailGIV1AXDXM@openvz.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1763749AbXHJSGx@vger.kernel.org>
-In-Reply-To: <20070810164546.GA273@tv-sign.ru> (Oleg Nesterov's message of
-	"Fri, 10 Aug 2007 20:45:46 +0400")
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1765873AbXHKDrl@vger.kernel.org>
+Content-Disposition: inline
+In-Reply-To: <46BC506B.mailGIV1AXDXM@openvz.org>
 Sender: linux-kernel-owner@vger.kernel.org
-To: Oleg Nesterov <oleg@tv-sign.ru>
-Cc: Pavel Emelyanov <xemul@openvz.org>, "Serge E. Hallyn" <serue@us.ibm.com>, Andrew Morton <akpm@osdl.org>, Linux Kernel Mailing List <linux-kernel@vger.kernel.org>, Linux Containers <containers@lists.osdl.org>, "Paul E. McKenney" <paulmck@linux.vnet.ibm.com>, devel@openvz.org
+To: xemul@openvz.org
+Cc: akpm@osdl.org, devel@openvz.org, linux-kernel@vger.kernel.org, containers@lists.osdl.org, oleg@tv-sign.ru, sukadev@us.ibm.com
 List-Id: containers.vger.kernel.org
 
-Oleg Nesterov <oleg@tv-sign.ru> writes:
+On Fri, Aug 10, 2007 at 03:47:55PM +0400, xemul@openvz.org wrote:
+> This flag tells the .get_sb callback that this is a kern_mount() call
+> so that it can trust *data pointer to be valid in-kernel one. If this
+> flag is passed from the user process, it is cleared since the *data
+> pointer is not a valid kernel object.
+> 
+> Running a few steps forward - this will be needed for proc to create the
+> superblock and store a valid pid namespace on it during the namespace
+> creation. The reason, why the namespace cannot live without proc mount
+> is described in the appropriate patch.
 
-> On 08/10, Pavel Emelyanov wrote:
->>
->> Oleg Nesterov wrote:
->> >On 08/10, Serge E. Hallyn wrote:
->> >>Quoting Pavel Emelyanov (xemul@openvz.org):
->> >>>+/*
->> >>>+ * the namespaces access rules are:
->> >>>+ *
->> >>>+ *  1. only current task is allowed to change tsk->nsproxy pointer or
->> >>>+ *     any pointer on the nsproxy itself
->> >>>+ *
->> >>>+ *  2. when accessing (i.e. reading) current task's namespaces - no
->> >>>+ *     precautions should be taken - just dereference the pointers
->> >>>+ *
->> >>>+ *  3. the access to other task namespaces is performed like this
->> >>>+ *     rcu_read_lock();
->> >>>+ *     nsproxy = task_nsproxy(tsk);
->> >>>+ *     if (nsproxy != NULL) {
->> >>>+ *             / *
->> >>>+ *               * work with the namespaces here
->> >>>+ *               * e.g. get the reference on one of them
->> >>>+ *               * /
->> >>>+ *     } / *
->> >>>+ *         * NULL task_nsproxy() means that this task is
->> >>>+ *         * almost dead (zombie)
->> >>>+ *         * /
->> >>>+ *     rcu_read_unlock();
->> >>And lastly, I guess that the caller to switch_task_namespaces() has
->> >>to ensure that new_nsproxy either (1) is the init namespace, (2) is a
->> >>brand-new namespace to which noone else has a reference, or (3) the
->> >>caller has to hold a reference to the new_nsproxy across the call to
->> >>switch_task_namespaces().
->> >>
->> >>As it happens the current calls fit (1) or (2).  Again if we happen to
->> >>jump into the game of switching a task into another task's nsproxy,
->> >>we'll need to be mindful of (3) so that new_nsproxy can't be tossed into
->> >>the bin between
->> >>
->> >>	if (new)
->> >>		get_nsproxy(new);
->> >
->> >4) Unless tsk == current, get_task_namespaces(tsk) and get_nsproxy(tsk)
->> >   are racy even if done under rcu_read_lock().
->> 
->> Yup :)
->> 
->> It is already written in comment that only the current is allowed
->> to change its nsproxy. I.e. when switch_task_nsproxy() is called
->> for tsk other than current it's a BUG
->
-> Yes, but what I meant is that this code
->
->         rcu_read_lock();
->         nsproxy = task_nsproxy(tsk);
->         if (nsproxy != NULL)
->                 get_nsproxy(nsproxy);
->         rcu_read_unlock();
->
-> 	if (nsproxy) {
-> 		use_it(nsproxy);
-> 		put_nsproxy(nsproxy);
-> 	}
->
-> is not safe despite the fact we are _not_ changing tsk->nsproxy.
->
-> The patch itself is correct because we don't do that, and the comment
-> is right. Just it is not immediately obvious.
+I don't like this at all.  We should never pass kernel and userspace
+addresses through the same pointer.  Maybe add an additional argument
+to the get_sb prototype instead.  But this whole idea of mounting /proc
+from kernelspace sounds like a really bad idea to me.  /proc should
+never be mounted from the kernel but always normally from userspace.
 
-Ugh.  That is nasty, non obvious and almost a problem.  I don't want
-to do get_net(nsproxy->net_ns) from another task so I can migrate
-network between namespaces.
-
-But thinking about it because we don't do the other decrements
-until later we can still increment the counts on the individual
-namespaces.  We just can't share nsproxy.
-
-So if you did want to do an enter thing you could copy the
-nsproxy object of a task under the rcu_read_lock(), and
-you would be fine.
-
-Eric
+> 
+> Signed-off-by: Pavel Emelyanov <xemul@openvz.org>
+> Cc: Oleg Nesterov <oleg@tv-sign.ru>
+> 
+> ---
+> 
+>  fs/namespace.c     |    3 ++-
+>  fs/super.c         |    6 +++---
+>  include/linux/fs.h |    4 +++-
+>  3 files changed, 8 insertions(+), 5 deletions(-)
+> 
+> diff -upr linux-2.6.23-rc1-mm1.orig/fs/namespace.c linux-2.6.23-rc1-mm1-7/fs/namespace.c
+> --- linux-2.6.23-rc1-mm1.orig/fs/namespace.c	2007-07-26 16:34:45.000000000 +0400
+> +++ linux-2.6.23-rc1-mm1-7/fs/namespace.c	2007-07-26 16:36:36.000000000 +0400
+> @@ -1579,7 +1579,8 @@ long do_mount(char *dev_name, char *dir_
+>  		mnt_flags |= MNT_NOMNT;
+>  
+>  	flags &= ~(MS_NOSUID | MS_NOEXEC | MS_NODEV | MS_ACTIVE |
+> -		   MS_NOATIME | MS_NODIRATIME | MS_RELATIME | MS_NOMNT);
+> +		   MS_NOATIME | MS_NODIRATIME | MS_RELATIME |
+> +		   MS_NOMNT | MS_KERNMOUNT);
+>  
+>  	/* ... and get the mountpoint */
+>  	retval = path_lookup(dir_name, LOOKUP_FOLLOW, &nd);
+> diff -upr linux-2.6.23-rc1-mm1.orig/fs/super.c linux-2.6.23-rc1-mm1-7/fs/super.c
+> --- linux-2.6.23-rc1-mm1.orig/fs/super.c	2007-07-26 16:34:45.000000000 +0400
+> +++ linux-2.6.23-rc1-mm1-7/fs/super.c	2007-07-26 16:36:36.000000000 +0400
+> @@ -944,9 +944,9 @@ do_kern_mount(const char *fstype, int fl
+>  	return mnt;
+>  }
+>  
+> -struct vfsmount *kern_mount(struct file_system_type *type)
+> +struct vfsmount *kern_mount_data(struct file_system_type *type, void *data)
+>  {
+> -	return vfs_kern_mount(type, 0, type->name, NULL);
+> +	return vfs_kern_mount(type, MS_KERNMOUNT, type->name, data);
+>  }
+>  
+> -EXPORT_SYMBOL(kern_mount);
+> +EXPORT_SYMBOL_GPL(kern_mount_data);
+> diff -upr linux-2.6.23-rc1-mm1.orig/include/linux/fs.h linux-2.6.23-rc1-mm1-7/include/linux/fs.h
+> --- linux-2.6.23-rc1-mm1.orig/include/linux/fs.h	2007-07-26 16:34:45.000000000 +0400
+> +++ linux-2.6.23-rc1-mm1-7/include/linux/fs.h	2007-07-26 16:36:36.000000000 +0400
+> @@ -129,6 +129,7 @@ extern int dir_notify_enable;
+>  #define MS_RELATIME	(1<<21)	/* Update atime relative to mtime/ctime. */
+>  #define MS_SETUSER	(1<<23) /* set mnt_uid to current user */
+>  #define MS_NOMNT	(1<<24) /* don't allow unprivileged submounts */
+> +#define MS_KERNMOUNT	(1<<25) /* this is a kern_mount call */
+>  #define MS_ACTIVE	(1<<30)
+>  #define MS_NOUSER	(1<<31)
+>  
+> @@ -1459,7 +1460,8 @@ void unnamed_dev_init(void);
+>  
+>  extern int register_filesystem(struct file_system_type *);
+>  extern int unregister_filesystem(struct file_system_type *);
+> -extern struct vfsmount *kern_mount(struct file_system_type *);
+> +extern struct vfsmount *kern_mount_data(struct file_system_type *, void *data);
+> +#define kern_mount(type) kern_mount_data(type, NULL)
+>  extern int may_umount_tree(struct vfsmount *);
+>  extern int may_umount(struct vfsmount *);
+>  extern void umount_tree(struct vfsmount *, int, struct list_head *);
+> 
+> -
+> To unsubscribe from this list: send the line "unsubscribe linux-kernel" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> Please read the FAQ at  http://www.tux.org/lkml/
+---end quoted text---
