@@ -1,8 +1,9 @@
-From: Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: [-mm PATCH 9/9] Memory controller make page_referenced() container
-	aware (v5)
-Date: Mon, 13 Aug 2007 23:16:14 +0530
-Message-ID: <20070813174614.15896.61951.sendpatchset@balbir-laptop>
+From: "Simon" <ttb-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
+Subject: offering mortgages for the usa!
+Date: Mon, 13 Aug 2007 21:46:49 +0100 (EET)
+Message-ID: <611d01c7ddf3$01c7ddf3$1354215a@lists.osdl.org>
+Mime-Version: 1.0
+Content-Type: multipart/mixed; boundary="===============6568935186969374709=="
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
@@ -11,203 +12,83 @@ List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
 List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Mime-version: 1.0
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
-Cc: Nick Piggin <npiggin-l3A5Bk7waGM@public.gmane.org>, Peter Zijlstra <a.p.zijlstra-/NLkJaSkS4VmR6Xm/wNWPw@public.gmane.org>, Dhaval Giani <dhaval-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, YAMAMOTO Takashi <yamamoto-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>, Linux Kernel Mailing List <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Linux MM Mailing List <linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org>, Eric W Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, Pavel Emelianov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+To: Liliana <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
+--===============6568935186969374709==
+Content-Type: multipart/alternative;
+	boundary="----=_NextPart_001_6118_01C7DDE2.B0492700"
 
-Make page_referenced() container aware. Without this patch, page_referenced()
-can cause a page to be skipped while reclaiming pages. This patch
-ensures that other containers do not hold pages in a particular container
-hostage. It is required to ensure that shared pages are freed from a container
-when they are not actively referenced from the container that brought
-them in
+------=_NextPart_001_6118_01C7DDE2.B0492700
+Content-Type: text/plain;
+    charset="us-ascii"
+Content-Transfer-Encoding: quoted-printable
+
+Bachelors, Masters, MBA and/or Doctorate (PhD)
+
+NO ONE is turned down.
+7 days a week.
+Give us a ring..
+
++1 (206) 350-0314
+
+You Need a Better Degree, and we can Help!
+Obtain degrees from prestigious non ac Universities based on you life experience.
+NO ONE is turned down.
+7 days a week, 24 hours a day.
+
+Do it now..
+
++1 (206) 350-0314
+
+Regards,
+Professor. Simon 
+------=_NextPart_001_6118_01C7DDE2.B0492700
+Content-Type: text/html;
+    charset="us-ascii"
+Content-Transfer-Encoding: quoted-printable
+
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<HTML><HEAD>
+<META http-equiv=3DContent-Type content=3D"text/html; charset=3Dus-ascii">
+<META content=3D"MSHTML 6.00.2900.2180" name=3DGENERATOR>
+<STYLE></STYLE>
+</HEAD>
+<BODY bgColor=3D#f3f3f3>
+<DIV><FONT face=3DArial size=3D2>Bachelors, Masters, MBA and/or Doctorate (PhD)</FONT></DIV>
+<DIV><FONT face=3DArial size=3D2><BR></FONT></DIV>
+<DIV><FONT face=3DArial size=3D2>NO ONE is turned down.</FONT></DIV>
+<DIV><FONT face=3DArial size=3D2>7 days a week.</FONT></DIV>
+<DIV><FONT face=3DArial size=3D2>Give us a ring..</FONT></DIV>
+<DIV><FONT face=3DArial size=3D2><BR></FONT></DIV>
+<DIV><FONT face=3DArial size=3D2>+1 (206) 350-0314</FONT></DIV>
+<DIV><FONT face=3DArial size=3D2><BR></FONT></DIV>
+<DIV><FONT face=3DArial size=3D2>You Need a Better Degree, and we can Help!</FONT></DIV>
+<DIV><FONT face=3DArial size=3D2>Obtain degrees from prestigious non ac Universities based on you life experience.</FONT></DIV>
+<DIV><FONT face=3DArial size=3D2>NO ONE is turned down.</FONT></DIV>
+<DIV><FONT face=3DArial size=3D2>7 days a week, 24 hours a day.</FONT></DIV>
+<DIV><FONT face=3DArial size=3D2><BR></FONT></DIV>
+<DIV><FONT face=3DArial size=3D2>Do it now..</FONT></DIV>
+<DIV><FONT face=3DArial size=3D2><BR></FONT></DIV>
+<DIV><FONT face=3DArial size=3D2>+1 (206) 350-0314</FONT></DIV>
+<DIV><FONT face=3DArial size=3D2><BR></FONT></DIV>
+<DIV><FONT face=3DArial size=3D2>Regards,</FONT></DIV>
+<DIV><FONT face=3DArial size=3D2>Professor. Simon</FONT></DIV>
+</BODY></HTML>
+------=_NextPart_001_6118_01C7DDE2.B0492700--
 
 
-Signed-off-by: <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
----
+--===============6568935186969374709==
+Content-Type: text/plain; charset="us-ascii"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+Content-Disposition: inline
 
- include/linux/memcontrol.h |    6 ++++++
- include/linux/rmap.h       |    5 +++--
- mm/memcontrol.c            |    5 +++++
- mm/rmap.c                  |   30 ++++++++++++++++++++++++------
- mm/vmscan.c                |    4 ++--
- 5 files changed, 40 insertions(+), 10 deletions(-)
-
-diff -puN include/linux/rmap.h~mem-control-per-container-page-referenced include/linux/rmap.h
---- linux-2.6.23-rc1-mm1/include/linux/rmap.h~mem-control-per-container-page-referenced	2007-08-13 23:06:13.000000000 +0530
-+++ linux-2.6.23-rc1-mm1-balbir/include/linux/rmap.h	2007-08-13 23:06:13.000000000 +0530
-@@ -8,6 +8,7 @@
- #include <linux/slab.h>
- #include <linux/mm.h>
- #include <linux/spinlock.h>
-+#include <linux/memcontrol.h>
- 
- /*
-  * The anon_vma heads a list of private "related" vmas, to scan if
-@@ -86,7 +87,7 @@ static inline void page_dup_rmap(struct 
- /*
-  * Called from mm/vmscan.c to handle paging out
-  */
--int page_referenced(struct page *, int is_locked);
-+int page_referenced(struct page *, int is_locked, struct mem_container *cnt);
- int try_to_unmap(struct page *, int ignore_refs);
- 
- /*
-@@ -114,7 +115,7 @@ int page_mkclean(struct page *);
- #define anon_vma_prepare(vma)	(0)
- #define anon_vma_link(vma)	do {} while (0)
- 
--#define page_referenced(page,l) TestClearPageReferenced(page)
-+#define page_referenced(page,l,cnt) TestClearPageReferenced(page)
- #define try_to_unmap(page, refs) SWAP_FAIL
- 
- static inline int page_mkclean(struct page *page)
-diff -puN mm/rmap.c~mem-control-per-container-page-referenced mm/rmap.c
---- linux-2.6.23-rc1-mm1/mm/rmap.c~mem-control-per-container-page-referenced	2007-08-13 23:06:13.000000000 +0530
-+++ linux-2.6.23-rc1-mm1-balbir/mm/rmap.c	2007-08-13 23:06:13.000000000 +0530
-@@ -299,7 +299,8 @@ out:
- 	return referenced;
- }
- 
--static int page_referenced_anon(struct page *page)
-+static int page_referenced_anon(struct page *page,
-+				struct mem_container *mem_cont)
- {
- 	unsigned int mapcount;
- 	struct anon_vma *anon_vma;
-@@ -312,6 +313,13 @@ static int page_referenced_anon(struct p
- 
- 	mapcount = page_mapcount(page);
- 	list_for_each_entry(vma, &anon_vma->head, anon_vma_node) {
-+		/*
-+		 * If we are reclaiming on behalf of a container, skip
-+		 * counting on behalf of references from different
-+		 * containers
-+		 */
-+		if (mem_cont && (mm_container(vma->vm_mm) != mem_cont))
-+			continue;
- 		referenced += page_referenced_one(page, vma, &mapcount);
- 		if (!mapcount)
- 			break;
-@@ -332,7 +340,8 @@ static int page_referenced_anon(struct p
-  *
-  * This function is only called from page_referenced for object-based pages.
-  */
--static int page_referenced_file(struct page *page)
-+static int page_referenced_file(struct page *page,
-+				struct mem_container *mem_cont)
- {
- 	unsigned int mapcount;
- 	struct address_space *mapping = page->mapping;
-@@ -365,6 +374,13 @@ static int page_referenced_file(struct p
- 	mapcount = page_mapcount(page);
- 
- 	vma_prio_tree_foreach(vma, &iter, &mapping->i_mmap, pgoff, pgoff) {
-+		/*
-+		 * If we are reclaiming on behalf of a container, skip
-+		 * counting on behalf of references from different
-+		 * containers
-+		 */
-+		if (mem_cont && (mm_container(vma->vm_mm) != mem_cont))
-+			continue;
- 		if ((vma->vm_flags & (VM_LOCKED|VM_MAYSHARE))
- 				  == (VM_LOCKED|VM_MAYSHARE)) {
- 			referenced++;
-@@ -387,7 +403,8 @@ static int page_referenced_file(struct p
-  * Quick test_and_clear_referenced for all mappings to a page,
-  * returns the number of ptes which referenced the page.
-  */
--int page_referenced(struct page *page, int is_locked)
-+int page_referenced(struct page *page, int is_locked,
-+			struct mem_container *mem_cont)
- {
- 	int referenced = 0;
- 
-@@ -399,14 +416,15 @@ int page_referenced(struct page *page, i
- 
- 	if (page_mapped(page) && page->mapping) {
- 		if (PageAnon(page))
--			referenced += page_referenced_anon(page);
-+			referenced += page_referenced_anon(page, mem_cont);
- 		else if (is_locked)
--			referenced += page_referenced_file(page);
-+			referenced += page_referenced_file(page, mem_cont);
- 		else if (TestSetPageLocked(page))
- 			referenced++;
- 		else {
- 			if (page->mapping)
--				referenced += page_referenced_file(page);
-+				referenced +=
-+					page_referenced_file(page, mem_cont);
- 			unlock_page(page);
- 		}
- 	}
-diff -puN mm/vmscan.c~mem-control-per-container-page-referenced mm/vmscan.c
---- linux-2.6.23-rc1-mm1/mm/vmscan.c~mem-control-per-container-page-referenced	2007-08-13 23:06:13.000000000 +0530
-+++ linux-2.6.23-rc1-mm1-balbir/mm/vmscan.c	2007-08-13 23:06:13.000000000 +0530
-@@ -479,7 +479,7 @@ static unsigned long shrink_page_list(st
- 		if (PageWriteback(page))
- 			goto keep_locked;
- 
--		referenced = page_referenced(page, 1);
-+		referenced = page_referenced(page, 1, sc->mem_container);
- 		/* In active use or really unfreeable?  Activate it. */
- 		if (sc->order <= PAGE_ALLOC_COSTLY_ORDER &&
- 					referenced && page_mapping_inuse(page))
-@@ -971,7 +971,7 @@ force_reclaim_mapped:
- 		if (page_mapped(page)) {
- 			if (!reclaim_mapped ||
- 			    (total_swap_pages == 0 && PageAnon(page)) ||
--			    page_referenced(page, 0)) {
-+			    page_referenced(page, 0, sc->mem_container)) {
- 				list_add(&page->lru, &l_active);
- 				continue;
- 			}
-diff -puN include/linux/memcontrol.h~mem-control-per-container-page-referenced include/linux/memcontrol.h
---- linux-2.6.23-rc1-mm1/include/linux/memcontrol.h~mem-control-per-container-page-referenced	2007-08-13 23:06:13.000000000 +0530
-+++ linux-2.6.23-rc1-mm1-balbir/include/linux/memcontrol.h	2007-08-13 23:06:13.000000000 +0530
-@@ -43,6 +43,7 @@ extern unsigned long mem_container_isola
- 					int active);
- extern void mem_container_out_of_memory(struct mem_container *mem);
- extern int mem_container_cache_charge(struct page *page, struct mm_struct *mm);
-+extern struct mem_container *mm_container(struct mm_struct *mm);
- 
- static inline void mem_container_uncharge_page(struct page *page)
- {
-@@ -93,6 +94,11 @@ static inline int mem_container_cache_ch
- 	return 0;
- }
- 
-+static inline struct mem_container *mm_container(struct mm_struct *mm)
-+{
-+	return NULL;
-+}
-+
- #endif /* CONFIG_CONTAINER_MEM_CONT */
- 
- #endif /* _LINUX_MEMCONTROL_H */
-diff -puN mm/memcontrol.c~mem-control-per-container-page-referenced mm/memcontrol.c
---- linux-2.6.23-rc1-mm1/mm/memcontrol.c~mem-control-per-container-page-referenced	2007-08-13 23:06:13.000000000 +0530
-+++ linux-2.6.23-rc1-mm1-balbir/mm/memcontrol.c	2007-08-13 23:06:13.000000000 +0530
-@@ -108,6 +108,11 @@ struct mem_container *mem_container_from
- 				struct mem_container, css);
- }
- 
-+inline struct mem_container *mm_container(struct mm_struct *mm)
-+{
-+	return rcu_dereference(mm->mem_container);
-+}
-+
- void mm_init_container(struct mm_struct *mm, struct task_struct *p)
- {
- 	struct mem_container *mem;
-_
-
--- 
-	Warm Regards,
-	Balbir Singh
-	Linux Technology Center
-	IBM, ISTL
+_______________________________________________
+Containers mailing list
+Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+https://lists.linux-foundation.org/mailman/listinfo/containers
+--===============6568935186969374709==--
