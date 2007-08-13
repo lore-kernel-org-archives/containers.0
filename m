@@ -1,43 +1,46 @@
-From: Oleg Nesterov <oleg@tv-sign.ru>
-Subject: Re: [PATCH 3/20] Introduce MS_KERNMOUNT flag
-Date: Sat, 11 Aug 2007 15:22:00 +0400
-Message-ID: <20070811112200.GA121@tv-sign.ru>
-References: <46BC506B.mailGIV1AXDXM@openvz.org> <20070811034721.GB22216@infradead.org>
+From: yamamoto@valinux.co.jp (YAMAMOTO Takashi)
+Subject: Re: [-mm PATCH 8/9] Memory controller add switch to control what type
+	of pages to limit (v4)
+Date: Mon, 13 Aug 2007 09:33:48 +0900 (JST)
+Message-ID: <20070813003348.91E3E1BF943@siro.lan>
+References: <20070727201103.31565.3104.sendpatchset@balbir-laptop>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1760838AbXHKLTs@vger.kernel.org>
-Content-Disposition: inline
-In-Reply-To: <20070811034721.GB22216@infradead.org>
+Content-Type: Text/Plain; charset=us-ascii
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S938168AbXHMAeD@vger.kernel.org>
+In-Reply-To: Your message of "Sat, 28 Jul 2007 01:41:03 +0530"
+	<20070727201103.31565.3104.sendpatchset@balbir-laptop>
 Sender: linux-kernel-owner@vger.kernel.org
-To: Christoph Hellwig <hch@infradead.org>, xemul@openvz.org, akpm@osdl.org, devel@openvz.org, linux-kernel@vger.kernel.org, containers@lists.osdl.org, sukadev@us.ibm.com
+To: balbir@linux.vnet.ibm.com
+Cc: akpm@linux-foundation.org, a.p.zijlstra@chello.nl, dhaval@linux.vnet.ibm.com, linux-kernel@vger.kernel.org, linux-mm@kvack.org, ebiederm@xmission.com, containers@lists.osdl.org, menage@google.com, xemul@openvz.org
 List-Id: containers.vger.kernel.org
 
-On 08/11, Christoph Hellwig wrote:
->
-> On Fri, Aug 10, 2007 at 03:47:55PM +0400, xemul@openvz.org wrote:
-> > This flag tells the .get_sb callback that this is a kern_mount() call
-> > so that it can trust *data pointer to be valid in-kernel one. If this
-> > flag is passed from the user process, it is cleared since the *data
-> > pointer is not a valid kernel object.
-> > 
-> > Running a few steps forward - this will be needed for proc to create the
-> > superblock and store a valid pid namespace on it during the namespace
-> > creation. The reason, why the namespace cannot live without proc mount
-> > is described in the appropriate patch.
+> Choose if we want cached pages to be accounted or not. By default both
+> are accounted for. A new set of tunables are added.
 > 
-> I don't like this at all.  We should never pass kernel and userspace
-> addresses through the same pointer.  Maybe add an additional argument
-> to the get_sb prototype instead.  But this whole idea of mounting /proc
-> from kernelspace sounds like a really bad idea to me.  /proc should
-> never be mounted from the kernel but always normally from userspace.
+> echo -n 1 > mem_control_type
+> 
+> switches the accounting to account for only mapped pages
+> 
+> echo -n 2 > mem_control_type
+> 
+> switches the behaviour back
 
-Can't comment because I don't understand vfs at all, and perhaps I just
-misunderstood you.
+MEM_CONTAINER_TYPE_ALL is 3, not 2.
 
-But could you clarify? We already create internal proc mount from kernel
-space, proc_root_init() does this. With this series we are doing the same
-when a new namespace is created.
+YAMAMOTO Takashi
 
-Thanks,
+> +enum {
+> +	MEM_CONTAINER_TYPE_UNSPEC = 0,
+> +	MEM_CONTAINER_TYPE_MAPPED,
+> +	MEM_CONTAINER_TYPE_CACHED,
+> +	MEM_CONTAINER_TYPE_ALL,
+> +	MEM_CONTAINER_TYPE_MAX,
+> +} mem_control_type;
+> +
+> +static struct mem_container init_mem_container;
 
-Oleg.
+> +	mem = rcu_dereference(mm->mem_container);
+> +	if (mem->control_type == MEM_CONTAINER_TYPE_ALL)
+> +		return mem_container_charge(page, mm);
+> +	else
+> +		return 0;
