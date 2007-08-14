@@ -1,18 +1,14 @@
-From: Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
-Subject: Re: containers mini-summit?
-Date: Tue, 14 Aug 2007 19:08:53 +0400
-Message-ID: <46C1C585.60105@openvz.org>
-References: <20070808174757.GB5559@vino.hallyn.com> <46BAD052.6040900@sw.ru>
-	<20070809193109.GA1935@sergelap.austin.ibm.com>
-	<46BC1EF6.4010706@openvz.org>
-	<20070810131831.GA22740@vino.hallyn.com>
-	<46C01D80.9020007@openvz.org>
-	<20070814140858.GB5052@sergelap.austin.ibm.com>
+From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
+Subject: Re: netns34
+Date: Tue, 14 Aug 2007 10:45:01 -0600
+Message-ID: <m17inyuktu.fsf@ebiederm.dsl.xmission.com>
+References: <m11wefgfl0.fsf@ebiederm.dsl.xmission.com>
+	<m1wsw7f0r0.fsf@ebiederm.dsl.xmission.com> <46B9A620.4050906@bull.net>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset=us-ascii
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20070814140858.GB5052-6s5zFf/epYLPQpwDFJZrxKsjOiXwFzmk@public.gmane.org>
+In-Reply-To: <46B9A620.4050906-6ktuUTfB/bM@public.gmane.org> (Benjamin Thery's message of "Wed, 08
+	Aug 2007 13:16:48 +0200")
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -22,19 +18,29 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Cc: akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, ckrm-tech-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org, "Paul H. Hargrove" <PHHargrove-/3juihCSby0@public.gmane.org>, containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, pj-sJ/iWh9BUns@public.gmane.org, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org, rohitseth-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, cpw-sJ/iWh9BUns@public.gmane.org, "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
+To: Benjamin Thery <benjamin.thery-6ktuUTfB/bM@public.gmane.org>
+Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Daniel Lezcano <dlezcano-juSfH4iHXoxBDgjK7y7TUQ@public.gmane.org>, "Denis V. Lunev" <den-3ImXcnM4P+0@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-[snip]
+Benjamin Thery <benjamin.thery-6ktuUTfB/bM@public.gmane.org> writes:
 
->> some kind of containers BoF on the conference itself to make other
->> people come and listen. Maybe this will attract more developers to the
->> virtualization? In this case the presentation may be more descriptive.
-> 
-> By 'the conference itself' do you mean LCE?  That might be worth a shot.
+> Hi Eric,
+>
+> I've cloned the repository and built the kernel.
+>
+> Unshare support is broken. It misses a small change in sys_unshare()
+> to accept the CLONE_NEWNET flag.
 
-Exactly. I think that other people may find it interesting.
+Hmm.  I thought I had that but it should be easy enough to fix.
+> I guess it should be added in commit "net: Add network namespace
+> clone & unshare support." (See attached patch below)
+>
+> Also, have you removed the "sysfs interface support for moving devices between
+> namespaces" on purpose?
+> Is there another way to move interfaces now?
 
-Thanks,
-Pavel
+Weird.  I thought I had replaced that patch but when I looked closer
+the replacement doesn't show up in my tree.  It's pretty straightforward
+so I will make a stab at getting that back in there.
+
+Eric
