@@ -1,46 +1,30 @@
-From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
-Subject: Re: netns34
-Date: Tue, 14 Aug 2007 10:45:01 -0600
-Message-ID: <m17inyuktu.fsf@ebiederm.dsl.xmission.com>
-References: <m11wefgfl0.fsf@ebiederm.dsl.xmission.com>
-	<m1wsw7f0r0.fsf@ebiederm.dsl.xmission.com> <46B9A620.4050906@bull.net>
+From: Andrew Morton <akpm@linux-foundation.org>
+Subject: Re: [PATCH 5/20] Introduce struct upid
+Date: Tue, 14 Aug 2007 13:05:58 -0700
+Message-ID: <20070814130558.4b5e5e3f.akpm@linux-foundation.org>
+References: <46BC506F.mailGJ711PNHE@openvz.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <46B9A620.4050906-6ktuUTfB/bM@public.gmane.org> (Benjamin Thery's message of "Wed, 08
-	Aug 2007 13:16:48 +0200")
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Benjamin Thery <benjamin.thery-6ktuUTfB/bM@public.gmane.org>
-Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Daniel Lezcano <dlezcano-juSfH4iHXoxBDgjK7y7TUQ@public.gmane.org>, "Denis V. Lunev" <den-3ImXcnM4P+0@public.gmane.org>
+Content-Type: text/plain; charset=US-ASCII
+Content-Transfer-Encoding: 7bit
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S935427AbXHNULn@vger.kernel.org>
+In-Reply-To: <46BC506F.mailGJ711PNHE@openvz.org>
+Sender: linux-kernel-owner@vger.kernel.org
+To: xemul@openvz.org
+Cc: devel@openvz.org, linux-kernel@vger.kernel.org, containers@lists.osdl.org, oleg@tv-sign.ru, sukadev@us.ibm.com
 List-Id: containers.vger.kernel.org
 
-Benjamin Thery <benjamin.thery-6ktuUTfB/bM@public.gmane.org> writes:
+On Fri, 10 Aug 2007 15:47:59 +0400
+xemul@openvz.org wrote:
 
-> Hi Eric,
->
-> I've cloned the repository and built the kernel.
->
-> Unshare support is broken. It misses a small change in sys_unshare()
-> to accept the CLONE_NEWNET flag.
+>  struct pid
+>  {
+>  	atomic_t count;
+> @@ -50,6 +50,8 @@ struct pid
+>  	/* lists of tasks that use this pid */
+>  	struct hlist_head tasks[PIDTYPE_MAX];
+>  	struct rcu_head rcu;
+> +	int level;
+> +	struct upid numbers[1];
 
-Hmm.  I thought I had that but it should be easy enough to fix.
-> I guess it should be added in commit "net: Add network namespace
-> clone & unshare support." (See attached patch below)
->
-> Also, have you removed the "sysfs interface support for moving devices between
-> namespaces" on purpose?
-> Is there another way to move interfaces now?
-
-Weird.  I thought I had replaced that patch but when I looked closer
-the replacement doesn't show up in my tree.  It's pretty straightforward
-so I will make a stab at getting that back in there.
-
-Eric
+You can make this have size [0] now.  It's a gcc extension and
+is used elsewhere in the kernel.
