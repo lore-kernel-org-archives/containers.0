@@ -1,10 +1,17 @@
-From: "Simon" <ttb-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
-Subject: offering mortgages for the usa!
-Date: Mon, 13 Aug 2007 21:46:49 +0100 (EET)
-Message-ID: <611d01c7ddf3$01c7ddf3$1354215a@lists.osdl.org>
+From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: Re: containers mini-summit?
+Date: Tue, 14 Aug 2007 09:08:58 -0500
+Message-ID: <20070814140858.GB5052@sergelap.austin.ibm.com>
+References: <20070808174757.GB5559@vino.hallyn.com> <46BAD052.6040900@sw.ru>
+	<20070809193109.GA1935@sergelap.austin.ibm.com>
+	<46BC1EF6.4010706@openvz.org>
+	<20070810131831.GA22740@vino.hallyn.com>
+	<46C01D80.9020007@openvz.org>
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary="===============6568935186969374709=="
+Content-Type: text/plain; charset=us-ascii
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <46C01D80.9020007-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -12,83 +19,85 @@ List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
 List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Mime-version: 1.0
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Liliana <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
+To: Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+Cc: akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, ckrm-tech-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org, "Paul H. Hargrove" <PHHargrove-/3juihCSby0@public.gmane.org>, containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, pj-sJ/iWh9BUns@public.gmane.org, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org, rohitseth-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, cpw-sJ/iWh9BUns@public.gmane.org, "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
---===============6568935186969374709==
-Content-Type: multipart/alternative;
-	boundary="----=_NextPart_001_6118_01C7DDE2.B0492700"
+Quoting Pavel Emelyanov (xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org):
+> Serge E. Hallyn wrote:
+>> Quoting Pavel Emelyanov (xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org):
+>>> Serge E. Hallyn wrote:
+>>>> Quoting Pavel Emelyanov (xemul-3ImXcnM4P+0@public.gmane.org):
+>>>>> Serge E. Hallyn wrote:
+>>>>>> I just sent the next (final) version of the containers development
+>>>>>> roadmap.  Eric Biederman and Paul Menage will be at kernel summit
+>>>>>> representing this work.
+>>>>>>
+>>>>>> We had planned on having a containers mini-summit the day before the
+>>>>>> kernel summit.  However interest in that appears as though it may be
+>>>>>> too low to justify having a real mini-summit.
+>>>>>>
+>>>>>> So we have a few options:
+>>>>>>
+>>>>>> 	1. we could have a mini-summit purely by phone.
+>>>>>> 	2. there is a possibility of using a part of a
+>>>>>> 	   conference room from LCE, if attendance will
+>>>>>> 	   be low.  However, having a phone line to include
+>>>>>> 	   those who cannot attend would be unlikely.
+>>>>>> 	3. if there is a large planned attendance, we could
+>>>>>> 	   continue to seek a separate venue for the
+>>>>>> 	   mini-summit.
+>>>>>>
+>>>>>> Who is interested in (a) attending the mini-summit in person, (b)
+>>>>>> attending the mini-summit by phone, or (c) not interested?
+>>>>> I will be there in person.
+>>>> Still waiting to hear whether anyone other than yourself, Eric, and Paul
+>>>> would be there...  If not, I assume you could meet in one of your hotel
+>>>> rooms and dial into the phone meeting?  :)
+>>> Well, actually, I'd prefer meeting in person even if there will be
+>> That's what I meant - if there are <6 people, meet in person in
+>> someone's hotel room, and then you've got a phone right there so
+>> everyone else can dial in.
+>>> only 4 people. Talking tete-a-tete is always better than phone-a-phone :)
+>>>
+>>> Except for to meet in some cafe/park in case not many people come.
+>>>
+>>>>>> For those interested in attending, what would you expect to happen at
+>>>>>> the mini-summit?  a) discuss the roadmap to ensure everyone is
+>>>>>> properly represented at the summit  b) go over pieces of functionality
+>>>>> >from the roadmap and discuss implementation options, who is
+>>>>>> interested in working on what, and possible timelines.  c) something
+>>>>>> else.
+>>>>> I think it would be good if someone makes a short presentation of
+>>>>> what is already done and what is being developed now so that we all
+>>>>> can have an overall picture in sight.
+>>>> Hmm, so in front of the current 'roadmap' you'd like to see a list of
+>>>> what's been accomplished so far?
+>>> Not exactly. The entire picture. E.g. I have no idea of what is going on
+>>> with network namespaces and checkpoint/restart. I'd also like to know 
+>>> what
+>>> people think about the kernel memory resource management that was 
+>>> discussed
+>>> long ago and some more questions.
+>> We could certainly come up with a set of 'status updates' if people
+>> would like that.  I.e.
+>> 	pidns updates - Pavel/suka
+>> 	netns updates - Eric/Daniel/Benjamin
+>> 	task containers - Paul
+>> 	memory container - Balbir
+>> 	memory checkpoint - Dave
+>
+> Thanks. I will prepare some presentation. BTW, maybe we can organize
 
-------=_NextPart_001_6118_01C7DDE2.B0492700
-Content-Type: text/plain;
-    charset="us-ascii"
-Content-Transfer-Encoding: quoted-printable
+Great, thanks.
 
-Bachelors, Masters, MBA and/or Doctorate (PhD)
+> some kind of containers BoF on the conference itself to make other
+> people come and listen. Maybe this will attract more developers to the
+> virtualization? In this case the presentation may be more descriptive.
 
-NO ONE is turned down.
-7 days a week.
-Give us a ring..
+By 'the conference itself' do you mean LCE?  That might be worth a shot.
 
-+1 (206) 350-0314
-
-You Need a Better Degree, and we can Help!
-Obtain degrees from prestigious non ac Universities based on you life experience.
-NO ONE is turned down.
-7 days a week, 24 hours a day.
-
-Do it now..
-
-+1 (206) 350-0314
-
-Regards,
-Professor. Simon 
-------=_NextPart_001_6118_01C7DDE2.B0492700
-Content-Type: text/html;
-    charset="us-ascii"
-Content-Transfer-Encoding: quoted-printable
-
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
-<HTML><HEAD>
-<META http-equiv=3DContent-Type content=3D"text/html; charset=3Dus-ascii">
-<META content=3D"MSHTML 6.00.2900.2180" name=3DGENERATOR>
-<STYLE></STYLE>
-</HEAD>
-<BODY bgColor=3D#f3f3f3>
-<DIV><FONT face=3DArial size=3D2>Bachelors, Masters, MBA and/or Doctorate (PhD)</FONT></DIV>
-<DIV><FONT face=3DArial size=3D2><BR></FONT></DIV>
-<DIV><FONT face=3DArial size=3D2>NO ONE is turned down.</FONT></DIV>
-<DIV><FONT face=3DArial size=3D2>7 days a week.</FONT></DIV>
-<DIV><FONT face=3DArial size=3D2>Give us a ring..</FONT></DIV>
-<DIV><FONT face=3DArial size=3D2><BR></FONT></DIV>
-<DIV><FONT face=3DArial size=3D2>+1 (206) 350-0314</FONT></DIV>
-<DIV><FONT face=3DArial size=3D2><BR></FONT></DIV>
-<DIV><FONT face=3DArial size=3D2>You Need a Better Degree, and we can Help!</FONT></DIV>
-<DIV><FONT face=3DArial size=3D2>Obtain degrees from prestigious non ac Universities based on you life experience.</FONT></DIV>
-<DIV><FONT face=3DArial size=3D2>NO ONE is turned down.</FONT></DIV>
-<DIV><FONT face=3DArial size=3D2>7 days a week, 24 hours a day.</FONT></DIV>
-<DIV><FONT face=3DArial size=3D2><BR></FONT></DIV>
-<DIV><FONT face=3DArial size=3D2>Do it now..</FONT></DIV>
-<DIV><FONT face=3DArial size=3D2><BR></FONT></DIV>
-<DIV><FONT face=3DArial size=3D2>+1 (206) 350-0314</FONT></DIV>
-<DIV><FONT face=3DArial size=3D2><BR></FONT></DIV>
-<DIV><FONT face=3DArial size=3D2>Regards,</FONT></DIV>
-<DIV><FONT face=3DArial size=3D2>Professor. Simon</FONT></DIV>
-</BODY></HTML>
-------=_NextPart_001_6118_01C7DDE2.B0492700--
-
-
---===============6568935186969374709==
-Content-Type: text/plain; charset="us-ascii"
-MIME-Version: 1.0
-Content-Transfer-Encoding: 7bit
-Content-Disposition: inline
-
-_______________________________________________
-Containers mailing list
-Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-https://lists.linux-foundation.org/mailman/listinfo/containers
---===============6568935186969374709==--
+thanks,
+-serge
