@@ -1,15 +1,16 @@
 From: Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: Re: [-mm PATCH 4/9] Memory controller memory accounting (v4)
-Date: Wed, 15 Aug 2007 15:32:30 +0530
-Message-ID: <46C2CF36.7020308@linux.vnet.ibm.com>
-References: <46AF2EAA.2080703@linux.vnet.ibm.com>
-	<20070815084454.09B061BF982@siro.lan>
+Subject: Re: [Devel] containers mini-summit?
+Date: Thu, 16 Aug 2007 13:46:41 +0530
+Message-ID: <46C407E9.6010902@linux.vnet.ibm.com>
+References: <20070808174757.GB5559@vino.hallyn.com>
+	<46BBADD4.2040505@openvz.org>
+	<20070810143130.GA8048@sergelap.austin.ibm.com>
 Reply-To: balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20070815084454.09B061BF982-Pcsii4f/SVk@public.gmane.org>
+In-Reply-To: <20070810143130.GA8048-6s5zFf/epYLPQpwDFJZrxKsjOiXwFzmk@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,39 +20,34 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: YAMAMOTO Takashi <yamamoto-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
-Cc: xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org, a.p.zijlstra-/NLkJaSkS4VmR6Xm/wNWPw@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org, containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, dhaval-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
+To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Cc: Kir Kolyshkin <kir-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, ckrm-tech-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org, "Paul H. Hargrove" <PHHargrove-/3juihCSby0@public.gmane.org>, xemul-3ImXcnM4P+0@public.gmane.org, rohitseth-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, pj-sJ/iWh9BUns@public.gmane.org, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org, containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, cpw-sJ/iWh9BUns@public.gmane.org, "Serge E. Hallyn" <serge-A9i7LUbDfNHQT0dZR+AlfA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-YAMAMOTO Takashi wrote:
->> YAMAMOTO Takashi wrote:
->>>> +	lock_meta_page(page);
->>>> +	/*
->>>> +	 * Check if somebody else beat us to allocating the meta_page
->>>> +	 */
->>>> +	race_mp = page_get_meta_page(page);
->>>> +	if (race_mp) {
->>>> +		kfree(mp);
->>>> +		mp = race_mp;
->>>> +		atomic_inc(&mp->ref_cnt);
->>>> +		res_counter_uncharge(&mem->res, 1);
->>>> +		goto done;
->>>> +	}
->>> i think you need css_put here.
->> Thats correct. We do need css_put in this path.
->>
->> Thanks,
->> Vaidy
+Serge E. Hallyn wrote:
+>> I will be there in person as well (in readonly^Wobserver mode I guess).
 > 
-> v5 still seems to have the problem.
+> Ok so far we have Pavel, Kir, Kirill, and hopefully Eric, Paul, and
+> Cedric.  Balbir, did I hear a rumer that you might be able to go?
 > 
-> YAMAMOTO Takashi
+> That may be getting too large for a hotel room :)
 > 
 
-Hi, 
+Hi, Serge,
 
-I've got the fix in v6 now, thanks for spotting it.
+I am still catching up with email, yes, I am going to attend the kernel
+and vm summit.
 
+> Would one of you folks definately going be willing to pick up where I
+> left off in trying to get time in a room at LCE?  Let me know and I'll
+> send you the name of the person I'd contacted (once I find it again...)
+> 
+> (Still that only really works if we can get someone to show up with an ip
+> speakerphone so the rest of us can dial in.)
+> 
+> thanks,
+> -serge
+> 
 -- 
 	Warm Regards,
 	Balbir Singh
