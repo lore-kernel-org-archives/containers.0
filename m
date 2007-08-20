@@ -1,47 +1,189 @@
-From: Tejun Heo <htejun@gmail.com>
-Subject: [PATCHSET] Sysfs cleanups from Eric W. Biederman
+From: Tejun Heo <htejun-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Subject: [PATCH 02/14] sysfs: Move all of inode initialization into
+	sysfs_init_inode
 Date: Mon, 20 Aug 2007 21:36:29 +0900
-Message-ID: <11876133893720-git-send-email-htejun@gmail.com>
-Reply-To: Tejun Heo <htejun@gmail.com>
+Message-ID: <11876133893141-git-send-email-htejun@gmail.com>
+References: <11876133893720-git-send-email-htejun@gmail.com>
+Reply-To: Tejun Heo <htejun-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
-Content-Transfer-Encoding: 7BIT
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1752045AbXHTMhw@vger.kernel.org>
-In-Reply-To: 
-Sender: linux-kernel-owner@vger.kernel.org
-To: ebiederm@xmission.com, cornelia.huck@de.ibm.com, greg@kroah.com, linux-kernel@vger.kernel.org, satyam@infradead.org, stern@rowland.harvard.edu, containers@lists.osdl.org, htejun@gmail.com
+Content-Type: text/plain; charset="iso-8859-1"
+Content-Transfer-Encoding: 8bit
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <11876133893720-git-send-email-htejun-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: cornelia.huck-tA70FqPdS9bQT0dZR+AlfA@public.gmane.org, greg-U8xfFu+wG4EAvxtiuMwx3w@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, satyam-wEGCiKHe2LqWVfeAwA7xHQ@public.gmane.org, stern-nwvwT67g6+6dFdvTe/nMLpVzexx5G7lz@public.gmane.org, containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
+Cc: Tejun Heo <htejun-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Hello, all.
+From: Eric W. Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 
-This is subset of Eric W. Biederman's "Sysfs cleanups & tagged
-directory support" patchset[1] with the following modifications.
+Signed-off-by: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+Signed-off-by: Tejun Heo <htejun-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+---
+ fs/sysfs/dir.c   |   37 -------------------------------------
+ fs/sysfs/inode.c |   48 +++++++++++++++++++++++++++++++++++++++++++++---
+ fs/sysfs/mount.c |    5 -----
+ 3 files changed, 45 insertions(+), 45 deletions(-)
 
-* fix-i_mutex-locking-in-sysfs_get_dentry patch is added at the top
-  and #14-Don_t-use-lookup_one_len_kern and
-  #15-vfs-Remove-lookup_one_len_kern are dropped.  This is because #14
-  contained had a bug where it might created dentry/inode for an
-  already deleted sysfs_dirent.  I think it's benefitial to keep
-  single lookup path.
-
-* Rewrote simplify-sysfs_get_dentry patch and
-  #08-Implement-__sysfs_get_dentry,
-  #09-Move-sysfs_get_dentry-below-__sysfs_get_dentry and
-  #10-Rewrite-sysfs_get_dentry-in-terms-of-__sysfs_get_dentry are
-  omitted as __sysfs_get_dentry() isn't used by anyone.
-
-* #16, 19-25 are omitted as it isn't clear yet how the tagged entry
-  support will end up.
-
-* readdir simplification fixed.
-
-* sysfs_mutex double locking fixed.
-
-The patchset is on top of the current -gregkh.
-
-Thanks.
-
---
-tejun
-
-[1] http://thread.gmane.org/gmane.linux.kernel/564287/focus=519
+diff --git a/fs/sysfs/dir.c b/fs/sysfs/dir.c
+index b33af5e..7990c99 100644
+--- a/fs/sysfs/dir.c
++++ b/fs/sysfs/dir.c
+@@ -748,24 +748,12 @@ int sysfs_create_dir(struct kobject * kobj)
+ 	return error;
+ }
+ 
+-static int sysfs_count_nlink(struct sysfs_dirent *sd)
+-{
+-	struct sysfs_dirent *child;
+-	int nr = 0;
+-
+-	for (child = sd->s_children; child; child = child->s_sibling)
+-		if (sysfs_type(child) == SYSFS_DIR)
+-			nr++;
+-	return nr + 2;
+-}
+-
+ static struct dentry * sysfs_lookup(struct inode *dir, struct dentry *dentry,
+ 				struct nameidata *nd)
+ {
+ 	struct dentry *ret = NULL;
+ 	struct sysfs_dirent *parent_sd = dentry->d_parent->d_fsdata;
+ 	struct sysfs_dirent *sd;
+-	struct bin_attribute *bin_attr;
+ 	struct inode *inode;
+ 
+ 	mutex_lock(&sysfs_mutex);
+@@ -785,31 +773,6 @@ static struct dentry * sysfs_lookup(struct inode *dir, struct dentry *dentry,
+ 		goto out_unlock;
+ 	}
+ 
+-	if (inode->i_state & I_NEW) {
+-		/* initialize inode according to type */
+-		switch (sysfs_type(sd)) {
+-		case SYSFS_DIR:
+-			inode->i_op = &sysfs_dir_inode_operations;
+-			inode->i_fop = &sysfs_dir_operations;
+-			inode->i_nlink = sysfs_count_nlink(sd);
+-			break;
+-		case SYSFS_KOBJ_ATTR:
+-			inode->i_size = PAGE_SIZE;
+-			inode->i_fop = &sysfs_file_operations;
+-			break;
+-		case SYSFS_KOBJ_BIN_ATTR:
+-			bin_attr = sd->s_elem.bin_attr.bin_attr;
+-			inode->i_size = bin_attr->size;
+-			inode->i_fop = &bin_fops;
+-			break;
+-		case SYSFS_KOBJ_LINK:
+-			inode->i_op = &sysfs_symlink_inode_operations;
+-			break;
+-		default:
+-			BUG();
+-		}
+-	}
+-
+ 	sysfs_instantiate(dentry, inode);
+ 	sysfs_attach_dentry(sd, dentry);
+ 
+diff --git a/fs/sysfs/inode.c b/fs/sysfs/inode.c
+index e22db6c..200e1bf 100644
+--- a/fs/sysfs/inode.c
++++ b/fs/sysfs/inode.c
+@@ -122,8 +122,22 @@ static inline void set_inode_attr(struct inode * inode, struct iattr * iattr)
+  */
+ static struct lock_class_key sysfs_inode_imutex_key;
+ 
++static int sysfs_count_nlink(struct sysfs_dirent *sd)
++{
++	struct sysfs_dirent *child;
++	int nr = 0;
++
++	for (child = sd->s_children; child; child = child->s_sibling)
++		if (sysfs_type(child) == SYSFS_DIR)
++			nr++;
++
++	return nr + 2;
++}
++
+ static void sysfs_init_inode(struct sysfs_dirent *sd, struct inode *inode)
+ {
++	struct bin_attribute *bin_attr;
++
+ 	inode->i_blocks = 0;
+ 	inode->i_mapping->a_ops = &sysfs_aops;
+ 	inode->i_mapping->backing_dev_info = &sysfs_backing_dev_info;
+@@ -139,6 +153,37 @@ static void sysfs_init_inode(struct sysfs_dirent *sd, struct inode *inode)
+ 		set_inode_attr(inode, sd->s_iattr);
+ 	} else
+ 		set_default_inode_attr(inode, sd->s_mode);
++
++
++	/* initialize inode according to type */
++	switch (sysfs_type(sd)) {
++	case SYSFS_ROOT:
++		inode->i_op = &sysfs_dir_inode_operations;
++		inode->i_fop = &sysfs_dir_operations;
++		inc_nlink(inode); /* directory, account for "." */
++		break;
++	case SYSFS_DIR:
++		inode->i_op = &sysfs_dir_inode_operations;
++		inode->i_fop = &sysfs_dir_operations;
++		inode->i_nlink = sysfs_count_nlink(sd);
++		break;
++	case SYSFS_KOBJ_ATTR:
++		inode->i_size = PAGE_SIZE;
++		inode->i_fop = &sysfs_file_operations;
++		break;
++	case SYSFS_KOBJ_BIN_ATTR:
++		bin_attr = sd->s_elem.bin_attr.bin_attr;
++		inode->i_size = bin_attr->size;
++		inode->i_fop = &bin_fops;
++		break;
++	case SYSFS_KOBJ_LINK:
++		inode->i_op = &sysfs_symlink_inode_operations;
++		break;
++	default:
++		BUG();
++	}
++
++	unlock_new_inode(inode);
+ }
+ 
+ /**
+@@ -180,9 +225,6 @@ void sysfs_instantiate(struct dentry *dentry, struct inode *inode)
+ {
+ 	BUG_ON(!dentry || dentry->d_inode);
+ 
+-	if (inode->i_state & I_NEW)
+-		unlock_new_inode(inode);
+-
+ 	d_instantiate(dentry, inode);
+ }
+ 
+diff --git a/fs/sysfs/mount.c b/fs/sysfs/mount.c
+index 119f39d..92f407f 100644
+--- a/fs/sysfs/mount.c
++++ b/fs/sysfs/mount.c
+@@ -49,11 +49,6 @@ static int sysfs_fill_super(struct super_block *sb, void *data, int silent)
+ 		return -ENOMEM;
+ 	}
+ 
+-	inode->i_op = &sysfs_dir_inode_operations;
+-	inode->i_fop = &sysfs_dir_operations;
+-	inc_nlink(inode); /* directory, account for "." */
+-	unlock_new_inode(inode);
+-
+ 	/* instantiate and link root dentry */
+ 	root = d_alloc_root(inode);
+ 	if (!root) {
+-- 
+1.5.0.3
