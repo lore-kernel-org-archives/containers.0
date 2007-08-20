@@ -1,7 +1,7 @@
 From: Tejun Heo <htejun-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: [PATCH 05/14] sysfs: Make sysfs_mount static
+Subject: [PATCH 12/14] sysfs: kill SYSFS_FLAG_REMOVED
 Date: Mon, 20 Aug 2007 21:36:30 +0900
-Message-ID: <1187613390857-git-send-email-htejun@gmail.com>
+Message-ID: <11876133902374-git-send-email-htejun@gmail.com>
 References: <11876133893720-git-send-email-htejun@gmail.com>
 Reply-To: Tejun Heo <htejun-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 Mime-Version: 1.0
@@ -18,86 +18,55 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: cornelia.huck-tA70FqPdS9bQT0dZR+AlfA@public.gmane.org, greg-U8xfFu+wG4EAvxtiuMwx3w@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, satyam-wEGCiKHe2LqWVfeAwA7xHQ@public.gmane.org, stern-nwvwT67g6+6dFdvTe/nMLpVzexx5G7lz@public.gmane.org, containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
-Cc: Tejun Heo <htejun-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+To: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org, cornelia.huck-tA70FqPdS9bQT0dZR+AlfA@public.gmane.org, greg-U8xfFu+wG4EAvxtiuMwx3w@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, satyam-wEGCiKHe2LqWVfeAwA7xHQ@public.gmane.org, stern-nwvwT67g6+6dFdvTe/nMLpVzexx5G7lz@public.gmane.org, containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
+Cc: Tejun Heo <htejun-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-From: Eric W. Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+With sysfs_get_dentry() simplified, there's no user of
+SYSFS_FLAG_REMOVED left.  Kill it.
 
-This patch modifies the users of sysfs_mount to use sysfs_root
-instead (which is what they are looking for).  It then
-makes sysfs_mount static to keep people from using it
-by accident.
-
-The net result is slightly faster and cleaner code.
-
-Signed-off-by: Eric W. Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 Signed-off-by: Tejun Heo <htejun-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 ---
- fs/sysfs/dir.c     |    4 +---
- fs/sysfs/mount.c   |    2 +-
- fs/sysfs/symlink.c |    7 +++----
- fs/sysfs/sysfs.h   |    1 -
- 4 files changed, 5 insertions(+), 9 deletions(-)
+ fs/sysfs/dir.c        |    5 +----
+ include/linux/sysfs.h |    1 -
+ 2 files changed, 1 insertions(+), 5 deletions(-)
 
 diff --git a/fs/sysfs/dir.c b/fs/sysfs/dir.c
-index 2811531..8565d1b 100644
+index c55c811..1752342 100644
 --- a/fs/sysfs/dir.c
 +++ b/fs/sysfs/dir.c
-@@ -737,10 +737,8 @@ int sysfs_create_dir(struct kobject * kobj)
+@@ -222,7 +222,7 @@ static void sysfs_deactivate(struct sysfs_dirent *sd)
+ 	DECLARE_COMPLETION_ONSTACK(wait);
+ 	int v;
  
- 	if (kobj->parent)
- 		parent_sd = kobj->parent->sd;
--	else if (sysfs_mount && sysfs_mount->mnt_sb)
--		parent_sd = sysfs_mount->mnt_sb->s_root->d_fsdata;
- 	else
--		return -EFAULT;
-+		parent_sd = &sysfs_root;
+-	BUG_ON(sd->s_sibling || !(sd->s_flags & SYSFS_FLAG_REMOVED));
++	BUG_ON(sd->s_sibling);
+ 	sd->s_sibling = (void *)&wait;
  
- 	error = create_dir(kobj, parent_sd, kobject_name(kobj), &sd);
- 	if (!error)
-diff --git a/fs/sysfs/mount.c b/fs/sysfs/mount.c
-index ac76256..8989cbb 100644
---- a/fs/sysfs/mount.c
-+++ b/fs/sysfs/mount.c
-@@ -14,7 +14,7 @@
- /* Random magic number */
- #define SYSFS_MAGIC 0x62656572
+ 	/* atomic_add_return() is a mb(), put_active() will always see
+@@ -462,11 +462,8 @@ int sysfs_add_one(struct sysfs_addrm_cxt *acxt, struct sysfs_dirent *sd)
+  */
+ void sysfs_remove_one(struct sysfs_addrm_cxt *acxt, struct sysfs_dirent *sd)
+ {
+-	BUG_ON(sd->s_flags & SYSFS_FLAG_REMOVED);
+-
+ 	sysfs_unlink_sibling(sd);
  
--struct vfsmount *sysfs_mount;
-+static struct vfsmount *sysfs_mount;
- struct super_block * sysfs_sb = NULL;
- struct kmem_cache *sysfs_dir_cachep;
+-	sd->s_flags |= SYSFS_FLAG_REMOVED;
+ 	sd->s_sibling = acxt->removed;
+ 	acxt->removed = sd;
  
-diff --git a/fs/sysfs/symlink.c b/fs/sysfs/symlink.c
-index a6b13f1..8ad38bc 100644
---- a/fs/sysfs/symlink.c
-+++ b/fs/sysfs/symlink.c
-@@ -60,10 +60,9 @@ int sysfs_create_link(struct kobject * kobj, struct kobject * target, const char
+diff --git a/include/linux/sysfs.h b/include/linux/sysfs.h
+index c16e4c5..82c31b2 100644
+--- a/include/linux/sysfs.h
++++ b/include/linux/sysfs.h
+@@ -83,7 +83,6 @@ struct sysfs_ops {
+ #define SYSFS_COPY_NAME		(SYSFS_DIR | SYSFS_KOBJ_LINK)
  
- 	BUG_ON(!name);
+ #define SYSFS_FLAG_MASK		~SYSFS_TYPE_MASK
+-#define SYSFS_FLAG_REMOVED	0x0100
  
--	if (!kobj) {
--		if (sysfs_mount && sysfs_mount->mnt_sb)
--			parent_sd = sysfs_mount->mnt_sb->s_root->d_fsdata;
--	} else
-+	if (!kobj)
-+		parent_sd = &sysfs_root;
-+	else
- 		parent_sd = kobj->sd;
- 
- 	error = -EFAULT;
-diff --git a/fs/sysfs/sysfs.h b/fs/sysfs/sysfs.h
-index 8a0aea1..77253aa 100644
---- a/fs/sysfs/sysfs.h
-+++ b/fs/sysfs/sysfs.h
-@@ -51,7 +51,6 @@ struct sysfs_addrm_cxt {
- 	int			cnt;
- };
- 
--extern struct vfsmount * sysfs_mount;
- extern struct sysfs_dirent sysfs_root;
- extern struct kmem_cache *sysfs_dir_cachep;
+ #ifdef CONFIG_SYSFS
  
 -- 
 1.5.0.3
