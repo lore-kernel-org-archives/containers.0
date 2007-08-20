@@ -1,31 +1,106 @@
-From: "William Crowley" <sjx-DZ35sQF8mDnQT0dZR+AlfA@public.gmane.org>
-Subject: Re:ANTI-GLARE SCREEN
-Date: Mon, 20 Aug 2007 03:50:02 -0900
-Message-ID: <01c7e2dd$2fe31710$b30fa279@sjx>
+From: Alexey Dobriyan <adobriyan@sw.ru>
+Subject: Re: [Devel] [-mm PATCH 1/9] Memory controller resource counters (v6)
+Date: Mon, 20 Aug 2007 12:20:54 +0400
+Message-ID: <20070820082054.GA6926@localhost.sw.ru>
+References: <20070817084228.26003.12568.sendpatchset@balbir-laptop> <20070817084238.26003.7733.sendpatchset@balbir-laptop>
 Mime-Version: 1.0
-Content-Type: text/plain;
-	format=flowed;
-	charset="iso-8859-2"
-Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
+Content-Type: text/plain; charset=us-ascii
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1758899AbXHTIVn@vger.kernel.org>
+Content-Disposition: inline
+In-Reply-To: <20070817084238.26003.7733.sendpatchset@balbir-laptop>
+Sender: linux-kernel-owner@vger.kernel.org
+To: Balbir Singh <balbir@linux.vnet.ibm.com>
+Cc: Andrew Morton <akpm@linux-foundation.org>, Nick Piggin <npiggin@suse.de>, Peter Zijlstra <a.p.zijlstra@chello.nl>, Dhaval Giani <dhaval@linux.vnet.ibm.com>, YAMAMOTO Takashi <yamamoto@valinux.co.jp>, Linux Kernel Mailing List <linux-kernel@vger.kernel.org>, Linux MM Mailing List <linux-mm@kvack.org>, Linux Containers <containers@lists.osdl.org>
 List-Id: containers.vger.kernel.org
 
-Have you ever wished for a expensive Watch?
+On Fri, Aug 17, 2007 at 02:12:38PM +0530, Balbir Singh wrote:
+> --- /dev/null
+> +++ linux-2.6.23-rc2-mm2-balbir/kernel/res_counter.c
+> +void res_counter_init(struct res_counter *counter)
+> +{
+> +	spin_lock_init(&counter->lock);
+> +	counter->limit = (unsigned long)LONG_MAX;
 
+why cast?
 
-We have the soulition for you!
+> +int res_counter_charge_locked(struct res_counter *counter, unsigned long val)
+> +{
+> +	if (counter->usage > (counter->limit - val)) {
 
-We have all the expinsive brands 
-for a very small fraction of the cost.
+() aren't needed.
 
-www.aggshenn.com
+> +		counter->failcnt++;
+> +		return -ENOMEM;
+> +	}
+> +
+> +	counter->usage += val;
+> +	return 0;
+> +}
+> +
+> +int res_counter_charge(struct res_counter *counter, unsigned long val)
+> +{
+> +	int ret;
+> +	unsigned long flags;
+> +
+> +	spin_lock_irqsave(&counter->lock, flags);
+> +	ret = res_counter_charge_locked(counter, val);
+> +	spin_unlock_irqrestore(&counter->lock, flags);
+> +	return ret;
+> +}
+> +
+> +void res_counter_uncharge_locked(struct res_counter *counter, unsigned long val)
+> +{
+> +	if (WARN_ON(counter->usage < val))
+> +		val = counter->usage;
+
+explicit if and WARN_ON(1) is clearer. I should send a patch banning such
+type of usage soon.
+
+> +
+> +	counter->usage -= val;
+> +}
+> +
+> +void res_counter_uncharge(struct res_counter *counter, unsigned long val)
+> +{
+> +	unsigned long flags;
+> +
+> +	spin_lock_irqsave(&counter->lock, flags);
+> +	res_counter_uncharge_locked(counter, val);
+> +	spin_unlock_irqrestore(&counter->lock, flags);
+> +}
+
+> +ssize_t res_counter_write(struct res_counter *counter, int member,
+> +		const char __user *userbuf, size_t nbytes, loff_t *pos)
+> +{
+> +	int ret;
+> +	char *buf, *end;
+> +	unsigned long tmp, *val;
+> +
+> +	buf = kmalloc(nbytes + 1, GFP_KERNEL);
+
+please, switch to fixed buffer, allocating memory depending on size
+told by userspace will beat later. Ditto for other proc writing
+functions.
+
+> +	ret = -ENOMEM;
+> +	if (buf == NULL)
+> +		goto out;
+> +
+> +	buf[nbytes] = '\0';
+> +	ret = -EFAULT;
+> +	if (copy_from_user(buf, userbuf, nbytes))
+> +		goto out_free;
+> +
+> +	ret = -EINVAL;
+> +	tmp = simple_strtoul(buf, &end, 10);
+> +	if (*end != '\0')
+> +		goto out_free;
+> +
+> +	val = res_counter_member(counter, member);
+> +	*val = tmp;
+> +	ret = nbytes;
+> +out_free:
+> +	kfree(buf);
+> +out:
+> +	return ret;
+> +}
