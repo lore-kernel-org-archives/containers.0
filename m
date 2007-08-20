@@ -1,145 +1,47 @@
 From: Tejun Heo <htejun@gmail.com>
-Subject: [PATCH 10/14] sysfs: simply sysfs_get_dentry
-Date: Mon, 20 Aug 2007 21:36:30 +0900
-Message-ID: <11876133903396-git-send-email-htejun@gmail.com>
-References: <11876133893720-git-send-email-htejun@gmail.com>
+Subject: [PATCHSET] Sysfs cleanups from Eric W. Biederman
+Date: Mon, 20 Aug 2007 21:36:29 +0900
+Message-ID: <11876133893720-git-send-email-htejun@gmail.com>
 Reply-To: Tejun Heo <htejun@gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=US-ASCII
 Content-Transfer-Encoding: 7BIT
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1759440AbXHTMic@vger.kernel.org>
-In-Reply-To: <11876133893720-git-send-email-htejun@gmail.com>
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1752045AbXHTMhw@vger.kernel.org>
+In-Reply-To: 
 Sender: linux-kernel-owner@vger.kernel.org
-To: ebiederm@xmission.com, cornelia.huck@de.ibm.com, greg@kroah.com, linux-kernel@vger.kernel.org, satyam@infradead.org, stern@rowland.harvard.edu, containers@lists.osdl.org
-Cc: Tejun Heo <htejun@gmail.com>
+To: ebiederm@xmission.com, cornelia.huck@de.ibm.com, greg@kroah.com, linux-kernel@vger.kernel.org, satyam@infradead.org, stern@rowland.harvard.edu, containers@lists.osdl.org, htejun@gmail.com
 List-Id: containers.vger.kernel.org
 
-Now that we know the sysfs tree structure cannot change under us and
-sysfs shadow support is dropped, sysfs_get_dentry() can be simplified
-greatly.  It can just look up from the root and there's no need to
-retry on failure.
+Hello, all.
 
-Signed-off-by: Tejun Heo <htejun@gmail.com>
----
- fs/sysfs/dir.c |   91 ++++++++++----------------------------------------------
- 1 files changed, 16 insertions(+), 75 deletions(-)
+This is subset of Eric W. Biederman's "Sysfs cleanups & tagged
+directory support" patchset[1] with the following modifications.
 
-diff --git a/fs/sysfs/dir.c b/fs/sysfs/dir.c
-index 740d88e..aee24e9 100644
---- a/fs/sysfs/dir.c
-+++ b/fs/sysfs/dir.c
-@@ -78,9 +78,8 @@ static void sysfs_unlink_sibling(struct sysfs_dirent *sd)
-  *	@sd: sysfs_dirent of interest
-  *
-  *	Get dentry for @sd.  Dentry is looked up if currently not
-- *	present.  This function climbs sysfs_dirent tree till it
-- *	reaches a sysfs_dirent with valid dentry attached and descends
-- *	down from there looking up dentry for each step.
-+ *	present.  This function descends from the root looking up
-+ *	dentry for each step.
-  *
-  *	LOCKING:
-  *	mutex_lock(sysfs_rename_mutex)
-@@ -90,86 +89,28 @@ static void sysfs_unlink_sibling(struct sysfs_dirent *sd)
-  */
- struct dentry *sysfs_get_dentry(struct sysfs_dirent *sd)
- {
--	struct sysfs_dirent *cur;
--	struct dentry *parent_dentry, *dentry;
--	int i, depth;
-+	struct dentry *dentry = dget(sysfs_sb->s_root);
- 
--	/* Find the first parent which has valid s_dentry and get the
--	 * dentry.
--	 */
--	mutex_lock(&sysfs_mutex);
-- restart0:
--	spin_lock(&sysfs_assoc_lock);
-- restart1:
--	spin_lock(&dcache_lock);
--
--	dentry = NULL;
--	depth = 0;
--	cur = sd;
--	while (!cur->s_dentry || !cur->s_dentry->d_inode) {
--		if (cur->s_flags & SYSFS_FLAG_REMOVED) {
--			dentry = ERR_PTR(-ENOENT);
--			depth = 0;
--			break;
--		}
--		cur = cur->s_parent;
--		depth++;
--	}
--	if (!IS_ERR(dentry))
--		dentry = dget_locked(cur->s_dentry);
-+	while (dentry->d_fsdata != sd) {
-+		struct sysfs_dirent *cur;
-+		struct dentry *parent;
- 
--	spin_unlock(&dcache_lock);
--	spin_unlock(&sysfs_assoc_lock);
--
--	/* from the found dentry, look up depth times */
--	while (depth--) {
--		/* find and get depth'th ancestor */
--		for (cur = sd, i = 0; cur && i < depth; i++)
-+		/* find the first ancestor which hasn't been looked up */
-+		cur = sd;
-+		while (cur->s_parent != dentry->d_fsdata)
- 			cur = cur->s_parent;
- 
--		/* This can happen if tree structure was modified due
--		 * to move/rename.  Restart.
--		 */
--		if (i != depth) {
--			dput(dentry);
--			goto restart0;
--		}
--
--		sysfs_get(cur);
--
--		mutex_unlock(&sysfs_mutex);
--
- 		/* look it up */
--		parent_dentry = dentry;
--		mutex_lock(&parent_dentry->d_inode->i_mutex);
--		dentry = lookup_one_len_kern(cur->s_name, parent_dentry,
-+		parent = dentry;
-+		mutex_lock(&parent->d_inode->i_mutex);
-+		dentry = lookup_one_len_kern(cur->s_name, parent,
- 					     strlen(cur->s_name));
--		mutex_unlock(&parent_dentry->d_inode->i_mutex);
--		dput(parent_dentry);
--
--		if (IS_ERR(dentry)) {
--			sysfs_put(cur);
--			return dentry;
--		}
-+		mutex_unlock(&parent->d_inode->i_mutex);
-+		dput(parent);
- 
--		mutex_lock(&sysfs_mutex);
--		spin_lock(&sysfs_assoc_lock);
--
--		/* This, again, can happen if tree structure has
--		 * changed and we looked up the wrong thing.  Restart.
--		 */
--		if (cur->s_dentry != dentry) {
--			dput(dentry);
--			sysfs_put(cur);
--			goto restart1;
--		}
--
--		spin_unlock(&sysfs_assoc_lock);
--
--		sysfs_put(cur);
-+		if (IS_ERR(dentry))
-+			break;
- 	}
--
--	mutex_unlock(&sysfs_mutex);
- 	return dentry;
- }
- 
--- 
-1.5.0.3
+* fix-i_mutex-locking-in-sysfs_get_dentry patch is added at the top
+  and #14-Don_t-use-lookup_one_len_kern and
+  #15-vfs-Remove-lookup_one_len_kern are dropped.  This is because #14
+  contained had a bug where it might created dentry/inode for an
+  already deleted sysfs_dirent.  I think it's benefitial to keep
+  single lookup path.
+
+* Rewrote simplify-sysfs_get_dentry patch and
+  #08-Implement-__sysfs_get_dentry,
+  #09-Move-sysfs_get_dentry-below-__sysfs_get_dentry and
+  #10-Rewrite-sysfs_get_dentry-in-terms-of-__sysfs_get_dentry are
+  omitted as __sysfs_get_dentry() isn't used by anyone.
+
+* #16, 19-25 are omitted as it isn't clear yet how the tagged entry
+  support will end up.
+
+* readdir simplification fixed.
+
+* sysfs_mutex double locking fixed.
+
+The patchset is on top of the current -gregkh.
+
+Thanks.
+
+--
+tejun
+
+[1] http://thread.gmane.org/gmane.linux.kernel/564287/focus=519
