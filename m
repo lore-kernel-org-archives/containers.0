@@ -1,8 +1,7 @@
 From: Tejun Heo <htejun-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: [PATCH 02/14] sysfs: Move all of inode initialization into
-	sysfs_init_inode
+Subject: [PATCH 03/14] sysfs: Remove sysfs_instantiate
 Date: Mon, 20 Aug 2007 21:36:29 +0900
-Message-ID: <11876133893141-git-send-email-htejun@gmail.com>
+Message-ID: <11876133891225-git-send-email-htejun@gmail.com>
 References: <11876133893720-git-send-email-htejun@gmail.com>
 Reply-To: Tejun Heo <htejun-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 Mime-Version: 1.0
@@ -25,165 +24,69 @@ List-Id: containers.vger.kernel.org
 
 From: Eric W. Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 
-Signed-off-by: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+Now that sysfs_get_inode is dropping the inode lock
+we no longer have a need from sysfs_instantiate.
+
+Signed-off-by: Eric W. Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 Signed-off-by: Tejun Heo <htejun-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 ---
- fs/sysfs/dir.c   |   37 -------------------------------------
- fs/sysfs/inode.c |   48 +++++++++++++++++++++++++++++++++++++++++++++---
- fs/sysfs/mount.c |    5 -----
- 3 files changed, 45 insertions(+), 45 deletions(-)
+ fs/sysfs/dir.c   |    2 +-
+ fs/sysfs/inode.c |   17 -----------------
+ fs/sysfs/sysfs.h |    1 -
+ 3 files changed, 1 insertions(+), 19 deletions(-)
 
 diff --git a/fs/sysfs/dir.c b/fs/sysfs/dir.c
-index b33af5e..7990c99 100644
+index 7990c99..2811531 100644
 --- a/fs/sysfs/dir.c
 +++ b/fs/sysfs/dir.c
-@@ -748,24 +748,12 @@ int sysfs_create_dir(struct kobject * kobj)
- 	return error;
- }
- 
--static int sysfs_count_nlink(struct sysfs_dirent *sd)
--{
--	struct sysfs_dirent *child;
--	int nr = 0;
--
--	for (child = sd->s_children; child; child = child->s_sibling)
--		if (sysfs_type(child) == SYSFS_DIR)
--			nr++;
--	return nr + 2;
--}
--
- static struct dentry * sysfs_lookup(struct inode *dir, struct dentry *dentry,
- 				struct nameidata *nd)
- {
- 	struct dentry *ret = NULL;
- 	struct sysfs_dirent *parent_sd = dentry->d_parent->d_fsdata;
- 	struct sysfs_dirent *sd;
--	struct bin_attribute *bin_attr;
- 	struct inode *inode;
- 
- 	mutex_lock(&sysfs_mutex);
-@@ -785,31 +773,6 @@ static struct dentry * sysfs_lookup(struct inode *dir, struct dentry *dentry,
+@@ -773,7 +773,7 @@ static struct dentry * sysfs_lookup(struct inode *dir, struct dentry *dentry,
  		goto out_unlock;
  	}
  
--	if (inode->i_state & I_NEW) {
--		/* initialize inode according to type */
--		switch (sysfs_type(sd)) {
--		case SYSFS_DIR:
--			inode->i_op = &sysfs_dir_inode_operations;
--			inode->i_fop = &sysfs_dir_operations;
--			inode->i_nlink = sysfs_count_nlink(sd);
--			break;
--		case SYSFS_KOBJ_ATTR:
--			inode->i_size = PAGE_SIZE;
--			inode->i_fop = &sysfs_file_operations;
--			break;
--		case SYSFS_KOBJ_BIN_ATTR:
--			bin_attr = sd->s_elem.bin_attr.bin_attr;
--			inode->i_size = bin_attr->size;
--			inode->i_fop = &bin_fops;
--			break;
--		case SYSFS_KOBJ_LINK:
--			inode->i_op = &sysfs_symlink_inode_operations;
--			break;
--		default:
--			BUG();
--		}
--	}
--
- 	sysfs_instantiate(dentry, inode);
+-	sysfs_instantiate(dentry, inode);
++	d_instantiate(dentry, inode);
  	sysfs_attach_dentry(sd, dentry);
  
+  out_unlock:
 diff --git a/fs/sysfs/inode.c b/fs/sysfs/inode.c
-index e22db6c..200e1bf 100644
+index 200e1bf..0d706a8 100644
 --- a/fs/sysfs/inode.c
 +++ b/fs/sysfs/inode.c
-@@ -122,8 +122,22 @@ static inline void set_inode_attr(struct inode * inode, struct iattr * iattr)
-  */
- static struct lock_class_key sysfs_inode_imutex_key;
- 
-+static int sysfs_count_nlink(struct sysfs_dirent *sd)
-+{
-+	struct sysfs_dirent *child;
-+	int nr = 0;
-+
-+	for (child = sd->s_children; child; child = child->s_sibling)
-+		if (sysfs_type(child) == SYSFS_DIR)
-+			nr++;
-+
-+	return nr + 2;
-+}
-+
- static void sysfs_init_inode(struct sysfs_dirent *sd, struct inode *inode)
- {
-+	struct bin_attribute *bin_attr;
-+
- 	inode->i_blocks = 0;
- 	inode->i_mapping->a_ops = &sysfs_aops;
- 	inode->i_mapping->backing_dev_info = &sysfs_backing_dev_info;
-@@ -139,6 +153,37 @@ static void sysfs_init_inode(struct sysfs_dirent *sd, struct inode *inode)
- 		set_inode_attr(inode, sd->s_iattr);
- 	} else
- 		set_default_inode_attr(inode, sd->s_mode);
-+
-+
-+	/* initialize inode according to type */
-+	switch (sysfs_type(sd)) {
-+	case SYSFS_ROOT:
-+		inode->i_op = &sysfs_dir_inode_operations;
-+		inode->i_fop = &sysfs_dir_operations;
-+		inc_nlink(inode); /* directory, account for "." */
-+		break;
-+	case SYSFS_DIR:
-+		inode->i_op = &sysfs_dir_inode_operations;
-+		inode->i_fop = &sysfs_dir_operations;
-+		inode->i_nlink = sysfs_count_nlink(sd);
-+		break;
-+	case SYSFS_KOBJ_ATTR:
-+		inode->i_size = PAGE_SIZE;
-+		inode->i_fop = &sysfs_file_operations;
-+		break;
-+	case SYSFS_KOBJ_BIN_ATTR:
-+		bin_attr = sd->s_elem.bin_attr.bin_attr;
-+		inode->i_size = bin_attr->size;
-+		inode->i_fop = &bin_fops;
-+		break;
-+	case SYSFS_KOBJ_LINK:
-+		inode->i_op = &sysfs_symlink_inode_operations;
-+		break;
-+	default:
-+		BUG();
-+	}
-+
-+	unlock_new_inode(inode);
+@@ -211,23 +211,6 @@ struct inode * sysfs_get_inode(struct sysfs_dirent *sd)
+ 	return inode;
  }
  
- /**
-@@ -180,9 +225,6 @@ void sysfs_instantiate(struct dentry *dentry, struct inode *inode)
+-/**
+- *	sysfs_instantiate - instantiate dentry
+- *	@dentry: dentry to be instantiated
+- *	@inode: inode associated with @sd
+- *
+- *	Unlock @inode if locked and instantiate @dentry with @inode.
+- *
+- *	LOCKING:
+- *	None.
+- */
+-void sysfs_instantiate(struct dentry *dentry, struct inode *inode)
+-{
+-	BUG_ON(!dentry || dentry->d_inode);
+-
+-	d_instantiate(dentry, inode);
+-}
+-
+ int sysfs_hash_and_remove(struct sysfs_dirent *dir_sd, const char *name)
  {
- 	BUG_ON(!dentry || dentry->d_inode);
+ 	struct sysfs_addrm_cxt acxt;
+diff --git a/fs/sysfs/sysfs.h b/fs/sysfs/sysfs.h
+index 0436754..8a0aea1 100644
+--- a/fs/sysfs/sysfs.h
++++ b/fs/sysfs/sysfs.h
+@@ -69,7 +69,6 @@ extern void sysfs_remove_one(struct sysfs_addrm_cxt *acxt,
+ extern void sysfs_addrm_finish(struct sysfs_addrm_cxt *acxt);
  
--	if (inode->i_state & I_NEW)
--		unlock_new_inode(inode);
--
- 	d_instantiate(dentry, inode);
- }
+ extern struct inode * sysfs_get_inode(struct sysfs_dirent *sd);
+-extern void sysfs_instantiate(struct dentry *dentry, struct inode *inode);
  
-diff --git a/fs/sysfs/mount.c b/fs/sysfs/mount.c
-index 119f39d..92f407f 100644
---- a/fs/sysfs/mount.c
-+++ b/fs/sysfs/mount.c
-@@ -49,11 +49,6 @@ static int sysfs_fill_super(struct super_block *sb, void *data, int silent)
- 		return -ENOMEM;
- 	}
- 
--	inode->i_op = &sysfs_dir_inode_operations;
--	inode->i_fop = &sysfs_dir_operations;
--	inc_nlink(inode); /* directory, account for "." */
--	unlock_new_inode(inode);
--
- 	/* instantiate and link root dentry */
- 	root = d_alloc_root(inode);
- 	if (!root) {
+ extern void release_sysfs_dirent(struct sysfs_dirent * sd);
+ extern struct sysfs_dirent *sysfs_find_dirent(struct sysfs_dirent *parent_sd,
 -- 
 1.5.0.3
