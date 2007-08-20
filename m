@@ -1,7 +1,7 @@
 From: Tejun Heo <htejun-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: [PATCH 03/14] sysfs: Remove sysfs_instantiate
+Subject: [PATCH 04/14] sysfs: Use kill_anon_super
 Date: Mon, 20 Aug 2007 21:36:29 +0900
-Message-ID: <11876133891225-git-send-email-htejun@gmail.com>
+Message-ID: <11876133892681-git-send-email-htejun@gmail.com>
 References: <11876133893720-git-send-email-htejun@gmail.com>
 Reply-To: Tejun Heo <htejun-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 Mime-Version: 1.0
@@ -24,69 +24,31 @@ List-Id: containers.vger.kernel.org
 
 From: Eric W. Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 
-Now that sysfs_get_inode is dropping the inode lock
-we no longer have a need from sysfs_instantiate.
+Since sysfs no longer stores fs directory information in the dcache
+on a permanent basis kill_litter_super it is inappropriate and actively
+wrong.  It will decrement the count on all dentries left in the
+dcache before trying to free them.
+
+At the moment this is not biting us only because we never unmount sysfs.
 
 Signed-off-by: Eric W. Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 Signed-off-by: Tejun Heo <htejun-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 ---
- fs/sysfs/dir.c   |    2 +-
- fs/sysfs/inode.c |   17 -----------------
- fs/sysfs/sysfs.h |    1 -
- 3 files changed, 1 insertions(+), 19 deletions(-)
+ fs/sysfs/mount.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
 
-diff --git a/fs/sysfs/dir.c b/fs/sysfs/dir.c
-index 7990c99..2811531 100644
---- a/fs/sysfs/dir.c
-+++ b/fs/sysfs/dir.c
-@@ -773,7 +773,7 @@ static struct dentry * sysfs_lookup(struct inode *dir, struct dentry *dentry,
- 		goto out_unlock;
- 	}
+diff --git a/fs/sysfs/mount.c b/fs/sysfs/mount.c
+index 92f407f..ac76256 100644
+--- a/fs/sysfs/mount.c
++++ b/fs/sysfs/mount.c
+@@ -71,7 +71,7 @@ static int sysfs_get_sb(struct file_system_type *fs_type,
+ static struct file_system_type sysfs_fs_type = {
+ 	.name		= "sysfs",
+ 	.get_sb		= sysfs_get_sb,
+-	.kill_sb	= kill_litter_super,
++	.kill_sb	= kill_anon_super,
+ };
  
--	sysfs_instantiate(dentry, inode);
-+	d_instantiate(dentry, inode);
- 	sysfs_attach_dentry(sd, dentry);
- 
-  out_unlock:
-diff --git a/fs/sysfs/inode.c b/fs/sysfs/inode.c
-index 200e1bf..0d706a8 100644
---- a/fs/sysfs/inode.c
-+++ b/fs/sysfs/inode.c
-@@ -211,23 +211,6 @@ struct inode * sysfs_get_inode(struct sysfs_dirent *sd)
- 	return inode;
- }
- 
--/**
-- *	sysfs_instantiate - instantiate dentry
-- *	@dentry: dentry to be instantiated
-- *	@inode: inode associated with @sd
-- *
-- *	Unlock @inode if locked and instantiate @dentry with @inode.
-- *
-- *	LOCKING:
-- *	None.
-- */
--void sysfs_instantiate(struct dentry *dentry, struct inode *inode)
--{
--	BUG_ON(!dentry || dentry->d_inode);
--
--	d_instantiate(dentry, inode);
--}
--
- int sysfs_hash_and_remove(struct sysfs_dirent *dir_sd, const char *name)
- {
- 	struct sysfs_addrm_cxt acxt;
-diff --git a/fs/sysfs/sysfs.h b/fs/sysfs/sysfs.h
-index 0436754..8a0aea1 100644
---- a/fs/sysfs/sysfs.h
-+++ b/fs/sysfs/sysfs.h
-@@ -69,7 +69,6 @@ extern void sysfs_remove_one(struct sysfs_addrm_cxt *acxt,
- extern void sysfs_addrm_finish(struct sysfs_addrm_cxt *acxt);
- 
- extern struct inode * sysfs_get_inode(struct sysfs_dirent *sd);
--extern void sysfs_instantiate(struct dentry *dentry, struct inode *inode);
- 
- extern void release_sysfs_dirent(struct sysfs_dirent * sd);
- extern struct sysfs_dirent *sysfs_find_dirent(struct sysfs_dirent *parent_sd,
+ int __init sysfs_init(void)
 -- 
 1.5.0.3
