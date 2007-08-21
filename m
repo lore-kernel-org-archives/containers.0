@@ -1,11 +1,13 @@
-From: "Springs" <Assa_Springs-/9WzZR3/APfLiC/qqWbuZQ@public.gmane.org>
-Subject: (no subject)
-Date: Tue, 21 Aug 2007 16:43:51 +0200
-Message-ID: <200708211435.l7LEYmX2014254@smtp2.linux-foundation.org>
+From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [RFC,PATCH] fix /sbin/init signal handling
+Date: Tue, 21 Aug 2007 11:05:06 -0500
+Message-ID: <20070821160506.GA3125@sergelap.austin.ibm.com>
+References: <20070819150822.GA7772@tv-sign.ru>
 Mime-Version: 1.0
-Content-Type: multipart/mixed;
-	boundary="=====================_34183890==_"
+Content-Type: text/plain; charset=us-ascii
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <20070819150822.GA7772-6lXkIZvqkOAvJsYlp49lxw@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -15,176 +17,180 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
+To: Oleg Nesterov <oleg-6lXkIZvqkOAvJsYlp49lxw@public.gmane.org>
+Cc: Daniel Pittman <daniel-zvVxMF7wGoXk1uMJSBkQmQ@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Pavel Emelyanov <xemul-3ImXcnM4P+0@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>, Roland McGrath <roland-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
---=====================_34183890==_
-Content-Type: text/plain; charset="us-ascii"; format=flowed
+Quoting Oleg Nesterov (oleg-6lXkIZvqkOAvJsYlp49lxw@public.gmane.org):
+> (Not for inclusion yet, against 2.6.23-rc2, untested)
+> 
+> Currently, /sbin/init is protected from unhandled signals by the
+> "current == child_reaper(current)" check in get_signal_to_deliver().
+> This is not enough, we have multiple problems:
+> 
+> 	- this doesn't work for multi-threaded inits, and we can't
+> 	  fix this by simply making this check group-wide.
+> 
+> 	- /sbin/init and kernel threads are not protected from
+> 	  handle_stop_signal(). Minor problem, but not good and
+> 	  allows to "steal" SIGCONT or change ->signal->flags.
+> 
+> 	- /sbin/init is not protected from __group_complete_signal(),
+> 	  sig_fatal() can set SIGNAL_GROUP_EXIT and block exec(), kill
+> 	  sub-threads, set ->group_stop_count, etc.
+> 
+> Also, with support for multiple pid namespaces, we need an ability to
+> actually kill the sub-namespace's init from the parent namespace. In
+> this case it is not possible (without painful and intrusive changes)
+> to make the "should we honor this signal" decision on the receiver's
+> side.
+> 
+> Hopefully this patch (adds 43 bytes to kernel/signal.o) can solve
+> these problems.
+> 
+> Notes:
+> 
+> 	- Blocked signals are never ignored, so init still can receive
+> 	  a pending blocked signal after sigprocmask(SIG_UNBLOCK).
+> 	  Easy to fix, but probably we can ignore this issue.
+> 
+> 	- this patch allows us to simplify de_thread() playing games
+> 	  with pid_ns->child_reaper.
+> 
+> (Side note: the current behaviour of things like force_sig_info_fault()
+>  is not very good, init should not ignore these signals and go to the
+>  endless loop. Exit + panic is imho better, easy to chamge)
+> 
+> Oleg.
+> 
+> --- t/kernel/signal.c~INITSIGS	2007-08-19 14:39:35.000000000 +0400
+> +++ t/kernel/signal.c	2007-08-19 19:00:27.000000000 +0400
+> @@ -39,11 +39,35 @@
+> 
+>  static struct kmem_cache *sigqueue_cachep;
+> 
+> +static int sig_init_ignore(struct task_struct *tsk)
+> +{
+> +	// Currently this check is a bit racy with exec(),
+> +	// we can _simplify_ de_thread and close the race.
+> +	if (likely(!is_init(tsk->group_leader)))
+> +		return 0;
+> +
+> +	// ---------------- Multiple pid namespaces ----------------
+> +	// if (current is from tsk's parent pid_ns && !in_interrupt())
+> +	//	return 0;
+> +
+> +	return 1;
+> +}
+> +
+> +static int sig_task_ignore(struct task_struct *tsk, int sig)
+> +{
+> +	void __user * handler = tsk->sighand->action[sig-1].sa.sa_handler;
+> +
+> +	if (handler == SIG_IGN)
+> +		return 1;
+> +
+> +	if (handler != SIG_DFL)
+> +		return 0;
+> +
+> +	return sig_kernel_ignore(sig) || sig_init_ignore(tsk);
+> +}
 
-private-info
---=====================_34183890==_
-Content-Type: application/octet-stream; name="urgent_notific.pdf"
-Content-Transfer-Encoding: base64
-Content-Disposition: attachment; filename="urgent_notific.pdf"
+Looks good.  AFAICS init gets exactly those signals for which it
+installed a signal handler.
 
-JVBERi0xLjUNJeLjz9MNCjEyIDAgb2JqPDwvSFs0MzYgMTM3XS9MaW5lYXJpemVkIDEvRSAxNTU3
-L0wgODUzMS9OIDUvTyAxNi9UIDgyMjk+Pg1lbmRvYmoNICAgICAgICAgICAgICAgICAgICAgICAg
-DQp4cmVmDQoxMiA3DQowMDAwMDAwMDE2IDAwMDAwIG4NCjAwMDAwMDA1NzMgMDAwMDAgbg0KMDAw
-MDAwMDcxMSAwMDAwMCBuDQowMDAwMDAwNDM2IDAwMDAwIG4NCjAwMDAwMDA4MTEgMDAwMDAgbg0K
-MDAwMDAwMDk5MyAwMDAwMCBuDQowMDAwMDAxMTE1IDAwMDAwIG4NCnRyYWlsZXINCjw8L1NpemUg
-MTkvUHJldiA4MjE4L1Jvb3QgMTQgMCBSL0VuY3J5cHQgMTMgMCBSL0luZm8gMTEgMCBSL0lEWzxl
-MzczZWU4YjU3OTljNDRjYThlYjM4YmE0MTdjYTMyZD48ZTM3M2VlOGI1Nzk5YzQ0Y2E4ZWIzOGJh
-NDE3Y2EzMmQ+XT4+DQpzdGFydHhyZWYNCjANCiUlRU9GDQoNCjE1IDAgb2JqPDwvTGVuZ3RoIDY0
-L0ZpbHRlci9GbGF0ZURlY29kZS9TIDU2Pj5zdHJlYW0NCqXuH9ABEt1A/nezTOhtxOo4LZ0jUZmn
-MzJmM7YdaqlJBXYxIiV4BkVpBUViYceMHNJzU3zFYpAZHGK10FDLh4ANCmVuZHN0cmVhbQ1lbmRv
-YmoNMTMgMCBvYmo8PC9SIDMvTGVuZ3RoIDEyOC9GaWx0ZXIvU3RhbmRhcmQvTyhi+Vxy1MpETL/u
-9NjZkkkPfKBUR3CsqKV7oKOYiR5dcfMpL1AgLTM5MDQvVSg5X61/3a1HRndPXCiTw5Vcbs8AAAAA
-AAAAAAAAAAAAAAAAKS9WIDI+Pg1lbmRvYmoNMTQgMCBvYmo8PC9QYWdlcyA5IDAgUi9UeXBlL0Nh
-dGFsb2cvUGFnZU1vZGUvVXNlTm9uZS9QYWdlTGF5b3V0L1NpbmdsZVBhZ2UvTWV0YWRhdGEgMTAg
-MCBSPj4NZW5kb2JqDTE2IDAgb2JqPDwvQ29udGVudHMgMTggMCBSL1R5cGUvUGFnZS9QYXJlbnQg
-OSAwIFIvUm90YXRlIDAvTWVkaWFCb3hbMCAwIDY4MCA4MDBdL0Nyb3BCb3hbMCAwIDY4MCA4MDBd
-L1Jlc291cmNlczw8L0ZvbnQ8PC9GMCAxNyAwIFI+Pi9YT2JqZWN0PDw+Pi9Qcm9jU2V0Wy9QREYv
-VGV4dC9JbWFnZUNdPj4+Pg1lbmRvYmoNMTcgMCBvYmo8PC9UeXBlL0ZvbnQvTmFtZS9GMC9FbmNv
-ZGluZy9XaW5BbnNpRW5jb2RpbmcvQmFzZUZvbnQvSGVsdmV0aWNhL0ZpcnN0Q2hhciAzMi9MYXN0
-Q2hhciAyNTUvU3VidHlwZS9UeXBlMT4+DWVuZG9iag0xOCAwIG9iajw8L0xlbmd0aCAzNzMvRmls
-dGVyL0ZsYXRlRGVjb2RlPj5zdHJlYW0NCpoV3P5BJBK0A3EsqwuqbAaQ2xGuD5MUZFtkuM2oArSv
-Rb2wRnxDVYzPlh78/W+0UbqMRGI8MHezINc329jtFI0QbKZtMeKXwnRGFnJ9wJ2uYwg+0O88NRrz
-S7EQKCtpKRRPuXKHuacrW5xz/b4UQ1/3/Y+cbgyg4PxIn/9Ex+YntbIECqWuEWvkn6JHYw0WRLaG
-U2kQRcT2cUVdab3XOeOdLhy8DkkMddxZ6HnW19/PNlcb94DTZMp88y8sBn2EWTl/BcP1z7/y228h
-MnaoCCYCGDeln//ICSQZeTSuyKoN4nhgxD8LGJhK6R1nXps721h1wpdf59kM9THKxJE1bx2PgYF+
-+tchMvrRV0EBl3iOhmgTj8RF5HwUMz/POI5ndREqjIRDwvd77YMW/dw84XqeuBbmQfgOsSU0P/8H
-ZqOo5TmtEpa1AQ/Tv7uG7QSuW/pHRrMJmv3x206FqkoycdEwebojZU7eUspebpt/hqLwhD1tG/MN
-CmVuZHN0cmVhbQ1lbmRvYmoNMSAwIG9iajw8L0NvbnRlbnRzIDIgMCBSL1R5cGUvUGFnZS9QYXJl
-bnQgOSAwIFIvUm90YXRlIDAvTWVkaWFCb3hbMCAwIDY4MCA4MDBdL0Nyb3BCb3hbMCAwIDY4MCA4
-MDBdL1Jlc291cmNlczw8L0ZvbnQ8PC9GMCAxNyAwIFI+Pi9YT2JqZWN0PDw+Pi9Qcm9jU2V0Wy9Q
-REYvVGV4dC9JbWFnZUNdPj4+Pg1lbmRvYmoNMiAwIG9iajw8L0xlbmd0aCA1Ni9GaWx0ZXIvRmxh
-dGVEZWNvZGU+PnN0cmVhbQ0K6hWDerj5qmHZehWppIjQB/1EtcAnLkKtjtnLUwzXUnwx22tJhJfL
-BxUOkh0v2gP8EuSeXxbgT2ANCmVuZHN0cmVhbQ1lbmRvYmoNMyAwIG9iajw8L0NvbnRlbnRzIDQg
-MCBSL1R5cGUvUGFnZS9QYXJlbnQgOSAwIFIvUm90YXRlIDAvTWVkaWFCb3hbMCAwIDY4MCA4MDBd
-L0Nyb3BCb3hbMCAwIDY4MCA4MDBdL1Jlc291cmNlczw8L0ZvbnQ8PC9GMCAxNyAwIFI+Pi9YT2Jq
-ZWN0PDw+Pi9Qcm9jU2V0Wy9QREYvVGV4dC9JbWFnZUNdPj4+Pg1lbmRvYmoNNCAwIG9iajw8L0xl
-bmd0aCA3MTYvRmlsdGVyL0ZsYXRlRGVjb2RlPj5zdHJlYW0NCpraoY7BAWHywqiObc+l1//s2STw
-t2sG+ZlK+iC45FzUIFLsaTmGfECxNtuY5YZJiOk97+AvorG6bmAKCVTqhQN5iD5y/Qnkmo1dD5Dv
-E9VNe+T2RYZrmiaVnGH8buT1r04Q69etDcnYwJlrnT48yG9KcBmZNcIEF+7irUNcnBq7Gnns/uQY
-WZ2T52nzAiD5FGDtPCpanjjxKI+9jxKu5A0nTbvuA4XPK6izhZjnIJW70a8BExDisz9+SK9A3Qmr
-ek+/YsrSHSlVdHqFNv7N1KqGrAIC+WuPPznjsZvKZ/I3AxL4TaYpInS2A4sul1hnXQWNZaz41Cr/
-IospDwGVli101H4sLmrlx2od62RXuJhXPjNuLSie+Rsj6chlyL9ROAIVtin1lkVjbjGWBjUm+9hK
-4U3XW54MBT+sARDXDvaDlTlBFrIm3Fh+KzeR0MK7EdoPX4f9AA4Rgq21LXwbvDT0jOAmRCnwnk8w
-uV872VQdos+tgqJzErE8fbdOVOzoUy4vpeeHCDP98AIxUlV1GE4XPXuazCET4E/3gKqwBLu5Ky9g
-PHZruUH7cEf5o6TKgTRxgryr75JrFgIoNJwS1JqmuzPOo6D+qTweX1+5Rk/+tvgKZPGekVABHR93
-W7qY7AnBl7koVYgYy4TUhgzGKrt1EAOU00zhg92gTK3zxquKevZ2RPYC1A9+gnnw3eNCbECA+w8a
-QEMn0+is/4jA9dkW6pBztwBtJCkCwLXXRYvYI9WJHE0hm1BpbygvXzs6T4hTePHDj5mgWzLuqSqt
-3HI8sMqS3p1iSGOovTmYWeJZQKOALnenYjPfbNgSqzGsQ+ie8AgikPW15/5rI8aGFFNZZO90mknc
-hVRXWhRzROlxfQciK5yqhkOgu5GEVshE8XFL5dE3XEiCuQmneSiW7A7L2X8f+7O1UnHYDHpTLV9E
-35AQpeJQP0a6WZKADQplbmRzdHJlYW0NZW5kb2JqDTUgMCBvYmo8PC9Db250ZW50cyA2IDAgUi9U
-eXBlL1BhZ2UvUGFyZW50IDkgMCBSL1JvdGF0ZSAwL01lZGlhQm94WzAgMCA2ODAgODAwXS9Dcm9w
-Qm94WzAgMCA2ODAgODAwXS9SZXNvdXJjZXM8PC9Gb250PDwvRjAgMTcgMCBSPj4vWE9iamVjdDw8
-Pj4vUHJvY1NldFsvUERGL1RleHQvSW1hZ2VDXT4+Pj4NZW5kb2JqDTYgMCBvYmo8PC9MZW5ndGgg
-Mzg3L0ZpbHRlci9GbGF0ZURlY29kZT4+c3RyZWFtDQrUBEiC9n4zNa0XcSm51ASdEFG6LgUYeBmh
-omKqFerhHkcph5r21cBxyt9xB58XC3GNrbX02so167G4ratE5h2fcs7wGsnQAychd53i0Xp+SlOB
-lqEhqTT2syujIPeJPM3SxVCHpilvRynBMx56YRFaZMbLIAsWAhZFCvCNGQhN3Wqe9Bh8PrqIHKiv
-pMvcef3SqesfqC3L0ikJjquDcuPa4yMxn8Jj5fLRfEcqblovJn/nx6jRUTL6V6VnwKsUvma/JeO/
-h8z57jMDfZfsbLwgqF/31zWEHGu5mZlE81fBytB2oGBJeeY16nL0qPxPji7bVq1vDfofzLTdMjmI
-BtsWhozEzk5lQfdUc3sqH3+eBr/GD4NTuzo2kT4fqqgUFA2/ndDK8ovtWxVR2t381wDMSeBwnGlv
-GIYhT3mTenUE0n/RM+KE3bnnBwxDH9nolUXsaUpJG3YYETDuQaeBt0rvVHqFD3lAHJFQqQVP8FSw
-63eXsIlYPssZoA+cINx63QnSef4NCmVuZHN0cmVhbQ1lbmRvYmoNNyAwIG9iajw8L0NvbnRlbnRz
-IDggMCBSL1R5cGUvUGFnZS9QYXJlbnQgOSAwIFIvUm90YXRlIDAvTWVkaWFCb3hbMCAwIDY4MCA4
-MDBdL0Nyb3BCb3hbMCAwIDY4MCA4MDBdL1Jlc291cmNlczw8L0ZvbnQ8PC9GMCAxNyAwIFI+Pi9Y
-T2JqZWN0PDw+Pi9Qcm9jU2V0Wy9QREYvVGV4dC9JbWFnZUNdPj4+Pg1lbmRvYmoNOCAwIG9iajw8
-L0xlbmd0aCA3NDYvRmlsdGVyL0ZsYXRlRGVjb2RlPj5zdHJlYW0NCsn/FnKvvvkVIxto3raMw8l3
-oYoY7qNhuAVRgxvwa7THFyh36UaWIiHzxIrYsTKr04BEsKnD3nOVtgPcqn2W2re+DCd2oBHjvMix
-HTlGnKpC+eAGpQ4nwQdg58M18cJPl+h2wudShw675jVRBo+X4SrXYn2VRWw6zPZSIaz49KlFIDI4
-gIiOIDOK9NFEkefsYd6r0ApUCee/ij0fHzMRdlx/HCouyI8fb+7mW5s2LtYbDTfqS+5T2xhdQ4cv
-TCB1cwwcR1PG1vp62npit7NyWGCa7sbU8AoNLhc5WV/jSMA8ZLCFcW5TdJR6P8Z2FHNtIPNy1yQ2
-Mtge1G6xl0M0xVps1gk6yjlT8YaZtn+VLLT8LaYtyXCEDyx+Dwsa6TroPf7QcdCt44YH03SdcQN+
-qqylPEMVKr4dgYKgTPH+2dQiyU1GxcXoBdYzmgbhGaL4qqX+1QAYfNJbTBytKp/eSCYTY+HBTEVh
-XYNOQKCdLQd7vzPg+ZSRPk3ethCNjAkFQ2ieXP6T1OsOnmsZCZxv2GQHzLVF3kIZCXOHMKSY1EXP
-nrihJFUFyiT1kP+Xzr7v2XuRmOlG8+iFIdMSaR6oK0OP5jGQj9RrFMQ0lzLdlpn27IkDy+ykng5F
-OhdaqvqeOL6sWq8e1ntoESjIzQAEt//0xsSePN1BeKsRBPeOlM1PoDJ05SqB4wZgJhdgC4rGnu6n
-/g7T13/w+ZyZTCwqBjusxWg4l9vp4OKu7O2Fdics1v4QhsjSnuHsLc064FeY6xGwoP3IogfqY397
-gbvExOwWxLPNwj0pAGgMSFhyrvvxS4S14E0y5mzyUCI/r0GwLjqGt8ImH7JauUStPEK6Uyqv2fFW
-PmBBsV4M0p+fVsu6CMFva2eDEi+MSuc1Yy2ZYUAxWPb2LqZo89VGLnnrZ1Q4mHo2xOHyJ5BEIFaN
-p6Qb55BSyyqj91FY9n8zRISaYyAx263BNxT3vf6tdukFtqX4Q0+bCQJ+hNbWDQplbmRzdHJlYW0N
-ZW5kb2JqDTkgMCBvYmo8PC9Db3VudCA1L0tpZHNbMTYgMCBSIDEgMCBSIDMgMCBSIDUgMCBSIDcg
-MCBSXS9UeXBlL1BhZ2VzPj4NZW5kb2JqDTEwIDAgb2JqPDwvTGVuZ3RoIDM0MTgvVHlwZS9NZXRh
-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
-jdJZxztPOWoCyyKD1ZYNAq+1FkMPiFtfFKSQ8n3T+PfWBFJ23z8C4Vn0dkH2uSL0T8O62BL4Slyq
-F9TiglVDUrtifqbF+b9ZgAPJrTyBbSOLjJ3P8cv0tUOZDoqExcUwkdoPpNkfEIWwolFyI77q1zHe
-RUa1K2X3K0LO7HiaSTl8Qig/vTM6tJH7c8ZbxIvyvJKa/ZOCWF5q3UTGpwE+GcZtlUhOWhE9fbV0
-/1CMtQntSz9i/f16ia0azRqRtGxNwAv+whlOZzDUEqhDYVaN7XuiIETtUl3SBfJX+kJsskfj2Ph6
-CZ6WQaeYzJXNpHHQ8wMUiEZ8tCJnooc7MX20liaOqhjyLVWKLQA8sT7/lnyJbTgBjCuCGdHwpSDO
-k0JAVI0oa/Nf+uEVGgekLcdpdbVfwogZOyKZnNf4HkpxxCcPSh/wgXiQOVeoRHtSykr6Qqh+NqHM
-9RFTFjNP55YKzE8oF2hFIxclOY+UyPZ9V3OxowLZQfcNG3KBbOgn+piV0tSfCljEdNdYOPdSzMxD
-oYBQp9uMAlSOruMHMs7ndmmSxJ+RdX3dp+MjBmHoFTsDId5RFy8gBAgAfU9d/DqSQahWImtyzjc/
-fTKM2neTjJigQnvZj7LJ07wyvTID0c5yA9D4E7gfBHxb0macytwLXh91gpn7vZiJ7pS2IS+VNTrf
-zc6QMWuxtq5VBEJP5X6BEXfXxW9N6T9stnc99dmtJF8EW7vctoT3P+2/adhOKwJtW34G7dhsK9yw
-Poac7Xuewl2K9PSknfcTiTI8cvqOxa5aAbl1/n2kZF4WcXwJUjh9WFp+r/KuZogREuUNCl35NloL
-1k7ZV0/fSZvKcGn95f50jOtIJLm7x8Ns8VSc27BmwtH5Rn2jGXRy+pSaxUCZT73fj2lqLiHyZb1m
-XVq2C/4MWiTfLcBKGL34RVioOkEz4yHbDQplbmRzdHJlYW0NZW5kb2JqDTExIDAgb2JqPDwvTW9k
-RGF0ZShcKWqe65kvQQwTOosXeHHrppCnU0WQUocpL0NyZWF0aW9uRGF0ZShcKWqe65kvQQwTOosX
-eH3qq+cpL1RpdGxlKCkvQ3JlYXRvcignIMm84HUQU0ROwk4gObP7KS9BdXRob3IoOTHHvtpwGBRq
-atRBIikvS2V5d29yZHMoKS9TdWJqZWN0KCkvUHJvZHVjZXIoPT/bvttIFVIBfd9dPiCw8J2nSlsp
-Pj4NZW5kb2JqDXhyZWYNCjAgMTINCjAwMDAwMDAwMDAgNjU1MzUgZg0KMDAwMDAwMTU1NyAwMDAw
-MCBuDQowMDAwMDAxNzM3IDAwMDAwIG4NCjAwMDAwMDE4NjAgMDAwMDAgbg0KMDAwMDAwMjA0MCAw
-MDAwMCBuDQowMDAwMDAyODI0IDAwMDAwIG4NCjAwMDAwMDMwMDQgMDAwMDAgbg0KMDAwMDAwMzQ1
-OSAwMDAwMCBuDQowMDAwMDAzNjM5IDAwMDAwIG4NCjAwMDAwMDQ0NTMgMDAwMDAgbg0KMDAwMDAw
-NDUyOCAwMDAwMCBuDQowMDAwMDA4MDIzIDAwMDAwIG4NCnRyYWlsZXINCjw8L1NpemUgMTIvRW5j
-cnlwdCAxMyAwIFI+Pg0Kc3RhcnR4cmVmDQoxMTYNCiUlRU9GDQo=
---=====================_34183890==_
-Content-Type: text/plain; charset="us-ascii"
-MIME-Version: 1.0
-Content-Transfer-Encoding: 7bit
-Content-Disposition: inline
+> 
+>  static int sig_ignored(struct task_struct *t, int sig)
+>  {
+> -	void __user * handler;
+> -
+>  	/*
+>  	 * Tracers always want to know about signals..
+>  	 */
+> @@ -58,10 +82,7 @@ static int sig_ignored(struct task_struc
+>  	if (sigismember(&t->blocked, sig))
+>  		return 0;
+> 
+> -	/* Is it explicitly or implicitly ignored? */
+> -	handler = t->sighand->action[sig-1].sa.sa_handler;
+> -	return   handler == SIG_IGN ||
+> -		(handler == SIG_DFL && sig_kernel_ignore(sig));
+> +	return sig_task_ignore(t, sig);
+>  }
 
-_______________________________________________
-Containers mailing list
-Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-https://lists.linux-foundation.org/mailman/listinfo/containers
---=====================_34183890==_--
+Looks good.
+
+> 
+>  /*
+> @@ -569,6 +590,9 @@ static void handle_stop_signal(int sig, 
+>  		 */
+>  		return;
+> 
+> +	if (sig_init_ignore(p))
+> +		return;
+> +
+>  	if (sig_kernel_stop(sig)) {
+>  		/*
+>  		 * This is a stop signal.  Remove SIGCONT from all queues.
+> @@ -1841,14 +1865,6 @@ relock:
+>  		if (sig_kernel_ignore(signr)) /* Default is nothing. */
+>  			continue;
+> 
+> -		/*
+> -		 * Init of a pid space gets no signals it doesn't want from
+> -		 * within that pid space. It can of course get signals from
+> -		 * its parent pid space.
+> -		 */
+> -		if (current == child_reaper(current))
+> -			continue;
+> -
+
+Ok, so the idea is that this will now be caught when the signal is sent,
+using sig_ignored(), (i.e at send_sigqueue, send_group_sigqueue,
+specific_send_sig_info, and __group_send_sig_info) and so doesn't need
+to be checked here?
+
+I was hoping that meant that sig_init_ignore() would always be called
+with current as the sending process, but I guess that's not the case?
+At least in get_signal_to_deliver() we might resend a signal, though
+I guess we assume the signal comes from current->parent, so maybe we
+can pass that as an argument...
+
+>  		if (sig_kernel_stop(signr)) {
+>  			/*
+>  			 * The default action is to stop all threads in
+> @@ -2300,13 +2316,10 @@ int do_sigaction(int sig, struct k_sigac
+>  	k = &current->sighand->action[sig-1];
+> 
+>  	spin_lock_irq(&current->sighand->siglock);
+> -	if (signal_pending(current)) {
+> -		/*
+> -		 * If there might be a fatal signal pending on multiple
+> -		 * threads, make sure we take it before changing the action.
+> -		 */
+> +	if (current->signal->flags & SIGNAL_GROUP_EXIT) {
+>  		spin_unlock_irq(&current->sighand->siglock);
+> -		return -ERESTARTNOINTR;
+> +		/* The return value doesn't matter, SIGKILL is pending */
+> +		return -EINTR;
+>  	}
+
+Looks right, based on the original comment.
+
+> 
+>  	if (oact)
+> @@ -2327,8 +2340,7 @@ int do_sigaction(int sig, struct k_sigac
+>  		 *   (for example, SIGCHLD), shall cause the pending signal to
+>  		 *   be discarded, whether or not it is blocked"
+>  		 */
+> -		if (act->sa.sa_handler == SIG_IGN ||
+> -		   (act->sa.sa_handler == SIG_DFL && sig_kernel_ignore(sig))) {
+> +		if (sig_task_ignore(current, sig)) {
+>  			struct task_struct *t = current;
+>  			sigemptyset(&mask);
+>  			sigaddset(&mask, sig);
+
+Haven't tested, but the patch reads good.
+
+thanks,
+-serge
