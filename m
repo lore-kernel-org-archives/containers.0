@@ -1,48 +1,40 @@
-From: Balbir Singh <balbir@linux.vnet.ibm.com>
-Subject: Re: [PATCH] Memory controller Add Documentation
-Date: Thu, 23 Aug 2007 00:50:10 +0530
-Message-ID: <46CC8C6A.7080904@linux.vnet.ibm.com>
-References: <20070822130612.18981.58696.sendpatchset@balbir-laptop> <6599ad830708221218t3c1eae51o1605f00b8f204b02@mail.gmail.com>
-Reply-To: balbir@linux.vnet.ibm.com
+From: Andrew Morton <akpm@linux-foundation.org>
+Subject: Re: [PATCH] Use helpers to obtain task pid in printks
+Date: Wed, 22 Aug 2007 15:16:10 -0700
+Message-ID: <20070822151610.bcf60574.akpm@linux-foundation.org>
+References: <46CC02E2.4020700@openvz.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
+Content-Type: text/plain; charset=US-ASCII
 Content-Transfer-Encoding: 7bit
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S932206AbXHVTUd@vger.kernel.org>
-In-Reply-To: <6599ad830708221218t3c1eae51o1605f00b8f204b02@mail.gmail.com>
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S933839AbXHVWQk@vger.kernel.org>
+In-Reply-To: <46CC02E2.4020700@openvz.org>
 Sender: linux-kernel-owner@vger.kernel.org
-To: Paul Menage <menage@google.com>
-Cc: Andrew Morton <akpm@linux-foundation.org>, KAMEZAWA Hiroyuki <kamezawa.hiroyu@jp.fujitsu.com>, Peter Zijlstra <a.p.zijlstra@chello.nl>, Linux Containers <containers@lists.osdl.org>, YAMAMOTO Takashi <yamamoto@valinux.co.jp>, Dave Hansen <haveblue@us.ibm.com>, Linux MM Mailing List <linux-mm@kvack.org>, Nick Piggin <npiggin@suse.de>, Vaidyanathan Srinivasan <svaidy@linux.vnet.ibm.com>, Pavel Emelianov <xemul@openvz.org>, Dhaval Giani <dhaval@linux.vnet.ibm.com>, Linux Kernel Mailing List <linux-kernel@vger.kernel.org>, Eric W Biederman <ebiederm@xmission.com>
+To: Pavel Emelyanov <xemul@openvz.org>
+Cc: Sukadev Bhattiprolu <sukadev@us.ibm.com>, Oleg Nesterov <oleg@tv-sign.ru>, Linux Containers <containers@lists.osdl.org>, devel@openvz.org, Linux Kernel Mailing List <linux-kernel@vger.kernel.org>
 List-Id: containers.vger.kernel.org
 
-Paul Menage wrote:
-> On 8/22/07, Balbir Singh <balbir@linux.vnet.ibm.com> wrote:
->>
->> Signed-off-by: Balbir Singh <balbir@linux.vnet.ibm.com>
->> ---
->>
->>  Documentation/memcontrol.txt |  193 +++++++++++++++++++++++++++++++++++++++++++
->>  1 file changed, 193 insertions(+)
->>
->> diff -puN /dev/null Documentation/memcontrol.txt
->> --- /dev/null   2007-06-01 20:42:04.000000000 +0530
->> +++ linux-2.6.23-rc2-mm2-balbir/Documentation/memcontrol.txt    2007-08-22 18:29:29.000000000 +0530
->> @@ -0,0 +1,193 @@
->> +Memory Controller
->> +
->> +0. Salient features
->> +
->> +a. Enable control of both RSS and Page Cache pages
+On Wed, 22 Aug 2007 13:33:22 +0400
+Pavel Emelyanov <xemul@openvz.org> wrote:
+
+> The task_struct->pid member is going to be deprecated, so start
+> using the helpers (task_pid_nr/task_pid_vnr/task_pid_nr_ns) in 
+> the kernel.
 > 
-> s/RSS/anonymous/ (and generally throughout the document)? RSS can
-> include pages that are part of the page cache too.
+> The first thing to start with is the pid, printed to dmesg - in 
+> this case we may safely use task_pid_nr(). Besides, printks produce
+> more (much more) than a half of all the explicit pid usage.
 > 
-> Paul
+> Signed-off-by: Pavel Emelyanov <xemul@openvz.org>
+> 
+> ---
+> 
+> Andrew, this patch changes many code in drivers and file systems,
+> so it may cause many conflicts with other fixes in -mm tree. Is
+> there any way I can help with it, e.g. split it into pieces, wait
+> till another -mm tree or something else?
 
-Yes, thats a good point. I'll clean up the documentation.
-
-
--- 
-	Warm Regards,
-	Balbir Singh
-	Linux Technology Center
-	IBM, ISTL
+I think we just slam it all into the tree as-is.  There will be a few
+places which ended up getting missed, but we can pick those up on a second
+round and then we rename task_struct.pid to
+task_struct.dont_use_me_directly_pid so that any remaining, future or
+out-of-tree usages of ->pid get reliably broken.
