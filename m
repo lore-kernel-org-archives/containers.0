@@ -1,97 +1,290 @@
-From: ebiederm@xmission.com (Eric W. Biederman)
-Subject: Re: [PATCHSET] Sysfs cleanups from Eric W. Biederman
-Date: Wed, 22 Aug 2007 09:51:35 -0600
-Message-ID: <m16437pny0.fsf@ebiederm.dsl.xmission.com>
-References: <11876133893720-git-send-email-htejun@gmail.com>
-	<m1ejhvpsx4.fsf@ebiederm.dsl.xmission.com>
-	<46CC4C08.1020408@gmail.com>
+From: Randy Dunlap <randy.dunlap-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH] Memory controller Add Documentation
+Date: Wed, 22 Aug 2007 09:46:33 -0700
+Message-ID: <20070822094633.733614c5.randy.dunlap@oracle.com>
+References: <20070822130612.18981.58696.sendpatchset@balbir-laptop>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1761197AbXHVPwV@vger.kernel.org>
-In-Reply-To: <46CC4C08.1020408@gmail.com> (Tejun Heo's message of "Wed, 22 Aug
-	2007 23:45:28 +0900")
-Sender: linux-kernel-owner@vger.kernel.org
-To: Tejun Heo <htejun@gmail.com>
-Cc: cornelia.huck@de.ibm.com, greg@kroah.com, linux-kernel@vger.kernel.org, satyam@infradead.org, stern@rowland.harvard.edu, containers@lists.osdl.org
+Content-Type: text/plain; charset=US-ASCII
+Content-Transfer-Encoding: 7bit
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <20070822130612.18981.58696.sendpatchset@balbir-laptop>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Cc: Piggin <npiggin-l3A5Bk7waGM@public.gmane.org>, Peter Zijlstra <a.p.zijlstra-/NLkJaSkS4VmR6Xm/wNWPw@public.gmane.org>, Nick-YRGon0hq2jhQetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Giani <dhaval-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, YAMAMOTO Takashi <yamamoto-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>, Linux Kernel Mailing List <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Linux MM Mailing List <linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org>, Eric W Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Dhaval-YRGon0hq2jhQetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Pavel Emelianov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Tejun Heo <htejun@gmail.com> writes:
+On Wed, 22 Aug 2007 18:36:12 +0530 Balbir Singh wrote:
 
-> Hello,
->
-> Eric W. Biederman wrote:
->>> * fix-i_mutex-locking-in-sysfs_get_dentry patch is added at the top
->>>   and #14-Don_t-use-lookup_one_len_kern and
->>>   #15-vfs-Remove-lookup_one_len_kern are dropped.  This is because #14
->>>   contained had a bug where it might created dentry/inode for an
->>>   already deleted sysfs_dirent.  I think it's benefitial to keep
->>>   single lookup path.
->> 
->> I think I disagree with the bug spotting.
->> 
->> At least in net we the sysfs_rename_mutex which keeps parent
->> directories from disappearing.  Further we have a reference
->> to the leaf sysfs_dirent and are actively manipulating it, so
->> the sysfs_dirent should not disappear on us.
->
-> sysfs_rename_mutex() keeps out renaming and moving not removing.  Also,
-> reference prevents sysfs_dirent from being released not from being
-> removed.  The different in lookup path is that it searches the children
-> list - sd's are unlinked from children list on removal.
+>  Documentation/memcontrol.txt |  193 +++++++++++++++++++++++++++++++++++++++++++
 
-True.   I guess what I was seeing was not a code but a usages
-restriction which may not be enforced.
+Is there some sub-dir that is appropriate for this, such as
+vm/ or accounting/ or containers/ (new) ?
 
-If we are using sysfs_get_dentry the sd is not deleted because
-it is alive and being used, likewise the path to it should also be
-alive.  Once you add in classic unix delete behaviour allowing for
-alive but deleted files this no longer applies.  But I don't think
-that makes sense for sysfs, but I may be confused.
 
->>> * Rewrote simplify-sysfs_get_dentry patch and
->>>   #08-Implement-__sysfs_get_dentry,
->>>   #09-Move-sysfs_get_dentry-below-__sysfs_get_dentry and
->>>   #10-Rewrite-sysfs_get_dentry-in-terms-of-__sysfs_get_dentry are
->>>   omitted as __sysfs_get_dentry() isn't used by anyone.
->> 
->> Right.  __sysfs_get_dentry is an optimization that has makes
->> the best case for sysfs_get_dentry O(1) instead of O(depth).
->> However this doesn't matter because sysfs_get_dentry is not
->> on any fast path and the maximum depth of sysfs directories
->> is fairly shallow and programmer controlled.
->
-> The reason why sysfs_get_dentry() climbed up first then climbed down was
-> not because of performance.  It was to support the original shadow
-> implementation.  Because there was no reliable way to reach a leaf node
-> from the root, dentries of all shadows are pinned such that they can
-> serve as the starting point for dentry lookup and the climing up was to
-> reach that starting point.  Now that the dentry-multiplexing shadow
-> support is gone, there's no need to do the climing up.
+>  1 file changed, 193 insertions(+)
+> 
+> diff -puN /dev/null Documentation/memcontrol.txt
+> --- /dev/null	2007-06-01 20:42:04.000000000 +0530
+> +++ linux-2.6.23-rc2-mm2-balbir/Documentation/memcontrol.txt	2007-08-22 18:29:29.000000000 +0530
+> @@ -0,0 +1,193 @@
+> +Memory Controller
+> +
+> +0. Salient features
+> +
+> +a. Enable control of both RSS and Page Cache pages
+> +b. The infrastructures allows easy addition of other types of memory to control
 
-Reasonable.  The reason I kept the climbing up was the performance
-benefit I saw.
+          infrastructure
 
->> The only user other user of __sysfs_get_dentry is in the tagged
->> directory support, and even that user doesn't strictly need it.
->> Although it is a bit silly to populate the dcache just so you
->> can invalidate it a moment later...
->
-> Yeah, actually the only essential user of that kind of look up is
-> sysfs_drop_dentry() which is in deletion path and can't fail due to
-> allocation failure and has the logic open-coded.  I have nothing against
-> __sysfs_get_dentry().  It was just not needed by the patches I forwarded
-> this time.  Feel free to include it as you see fit.
+> +c. Provides *zero overhead* for non memory controller users
+> +d. Provides a double LRU, global memory pressure causes reclaim from the
+> +   global LRU, a container on hitting a limit, reclaims from the per
+> +   container LRU
 
-Sure.
+Punctuation:
 
-> I'm currently working on kobj/sysfs separation.  As most internal
-> implementation is sd based already, the changes are mostly confined to
-> interface functions but it's still a big change.  I think I'll be able
-> to post the patches in this week or early next week at the latest.
+  Provides a double LRU: global memory pressure causes reclaim from the
+  global LRU; a container, on hitting a limit, reclaims from the per-
+  container LRU
 
-Ok.
+> +
+> +1. History
+> +
+> +The memory controller has a long history. A request for comments for the memory
+> +controller was posted by Balbir Singh [1]. At the time the RFC was posted
+> +there were several implementations for memory control, the goal of the
 
-I'd like to make certain we have a path to tagged support or something
-like it if we can.
+s/, the/. The/
 
-Eric
+> +RFC was to build consensus and agreement for the minimal features required
+> +for memory control. The first RSS controller was posted by Balbir Singh[2]
+> +in Feb 2007. Pavel Emelianov [3][4][5] has since posted three versions of the
+> +RSS controller. At OLS, at the resource management BoF, everyone suggested
+> +that we handle both page cache and RSS together. Another request was raised
+> +to allow user space handling of OOM. The current memory controller is
+> +at version 6, it combines both RSS and Page Cache Control [11].
+
+s/,/;/
+
+> +
+> +2. Memory Control
+> +
+> +Memory is a unique resource in the sense that it is present in a limited
+> +amount. If a task requires a lot of CPU processing, the task can spread
+> +its processing over a period of hours, days, months or years, but with
+> +memory, the same physical memory needs to be reused to accomplish the task.
+> +
+> +The memory controller implementation has been divided into phases, these
+> +are
+
+Punctuation:
+
+The memory controller implementation has been divided into phases. These
+are:
+
+> +
+> +1. Memory controller
+> +2. mlock(2) controller
+> +3. Kernel user memory accounting and slab control
+> +4. user mappings length controller
+> +
+> +The memory controller is the first controller developed.
+> +
+> +2.1. Design
+> +
+> +The core of the design is a counter called the res_counter. The res_counter
+> +tracks the current memory usage and limit of the group of processes associated
+> +with the controller. Each container has a memory controller specific data
+> +structure (mem_container) associated with it.
+> +
+> +2.2. Accounting
+> +
+> +		+--------------------+
+> +		|  mem_container     |
+> +		|  (res_counter)     |
+> +		+--------------------+
+> +		 /            ^      \
+> +		/             |       \
+> +           +---------------+  |        +---------------+
+> +           | mm_struct     |  |....    | mm_struct     |
+> +           |               |  |        |               |
+> +           +---------------+  |        +---------------+
+> +                              |
+> +                              + --------------+
+> +                                              |
+> +           +---------------+           +------+--------+
+> +           | page          +---------->  page_container|
+> +           |               |           |               |
+> +           +---------------+           +---------------+
+> +
+> +             (Figure 1: Hierarchy of Accounting)
+> +
+> +
+> +Figure 1 shows the important aspects of the controller
+> +
+> +1. Accounting happens per container
+> +2. Each mm_struct knows about which container they belong to
+
+                                                 it belongs to
+
+> +3. Each page has a pointer to the page_container, which in turn knows the
+> +   container it belongs to
+> +
+> +The accounting is done as follows, mem_container_charge() is invoked to setup
+
+                          as follows:
+
+> +the necessary data structures and check if the container that is being charged
+> +is over its limit. If it is then reclaim is invoked on the container.
+> +More details can be found in the reclaim section of this document.
+> +If everything goes well, a page meta-data-structure called page_container is
+> +allocated and associated with the page.  This routine also adds the page to
+> +the per container LRU.
+> +
+> +2.3 Shared Page Accounting
+> +
+> +Shared pages are accounted on the basis of the first touch approach. The
+> +container that first touches a page is accounted for the page. The principle
+> +behind this approach is that a container that aggressively uses a shared
+> +page, will eventually get charged for it (once it is uncharged from
+
+  drop comma
+
+> +the container that brought it in -- this will happen on memory pressure).
+> +
+> +2.4 Reclaim
+> +
+> +Each container maintains a per container LRU that consists of an active
+> +and inactive list. When a container goes over its limit, we first try
+> +and reclaim memory from the container so as to make space for the new
+
+   to reclaim memory 
+
+> +pages that the container has touched. If the reclaim is unsuccessful,
+> +an OOM routine is invoked to select and kill the bulkiest task in the
+> +container.
+> +
+> +The reclaim algorithm has not been modified for containers, except that
+> +pages that are selected for reclaiming come from the per container LRU
+> +list.
+> +
+> +2.5
+> +
+> +3. User Interface
+> +
+> +0. Configuration
+> +
+> +a. Enable CONFIG_CONTAINERS
+> +b. Enable CONFIG_RESOURCE_COUNTERS
+> +c. Enable CONFIG_CONTAINER_MEM_CONT
+> +
+> +1. Prepare the containers
+> +# mkdir -p /containers
+> +# mount -t container none /containers -o memory
+> +
+> +2. Make the new group and move bash into it
+> +# mkdir /containers/0
+> +# echo $$ >  /containers/0/tasks
+> +
+> +Since now we're in the 0 container.
+
+                                     s/./,/
+
+> +We can alter the memory limit
+
+   we can alter the memory limit:
+
+> +# echo -n 6000 > /containers/0/memory.limit
+> +
+> +We can check the usage
+
+                         :
+
+> +# cat /containers/0/memory.usage
+> +25
+> +
+> +The memory.failcnt gives the number of times that the container limit was
+
+       memory.failcnt field (?)
+
+> +exceeded.
+> +
+> +4. Testing
+> +
+> +Balbir posted lmbench, AIM9, LTP and vmmstress results [10] and [11].
+> +Apart from that v6 has been tested with several applications and regular
+> +daily use. The controller has also been tested on the PPC64, x86_64 and
+> +UML platforms.
+> +
+> +4.1 Troubleshooting
+> +
+> +Sometimes a user might find that the application under a container is
+> +terminated, there are several causes for this
+
+Punctuation + wording:
+
+  Sometimes a user might find that the application under a container is
+  terminated. There are several possible causes of this:
+
+> +
+> +1. The container limit is too low (just too low to do anything useful)
+> +2. The user is using anonymous memory and swap is turned off or too low
+> +
+> +echo 1 > /proc/sys/vm/drop_pages will help get rid of some of the pages
+> +cached in the container (page cache pages).
+> +
+> +5. TODO
+> +
+> +1. Add support for accounting huge pages (as a separate controller)
+> +2. Improve the user interface to accept/display memory limits in KB or MB
+> +   rather than pages (since page sizes can differ across platforms/machines).
+> +3. Make container lists per-zone
+> +4. Make per-container scanner reclaim not-shared pages first
+> +5. Teach controller to account for shared-pages
+> +6. Start reclamation when the limit is lowered
+> +7. Start reclamation in the background when the limit is
+> +   not yet hit but the usage is getting closer
+> +8. Create per zone LRU lists per container
+> +
+> +Summary
+> +
+> +Overall, the memory controller has been a stable controller and has been
+> +commented and discussed on quite extensively in the community.
+
+                     drop "on"
+
+> +
+> +References
+> +
+> +1. Singh, Balbir. RFC: Memory Controller, http://lwn.net/Articles/206697/
+> +2. Singh, Balbir. Memory Controller (RSS Control),
+> +   http://lwn.net/Articles/222762/
+> +3. Emelianov, Pavel. Resource controllers based on process containers
+> +   http://lkml.org/lkml/2007/3/6/198
+> +4. Emelianov, Pavel. RSS controller based on process containers (v2)
+> +   http://lkml.org/lkml/2007/4/9/74
+> +5. Emelianov, Pavel. RSS controller based on process containers (v3)
+> +   http://lkml.org/lkml/2007/5/30/244
+> +6. Menage, Paul. Containers v10, http://lwn.net/Articles/236032/
+> +7. Vaidyanathan, Srinivasan, Containers: Pagecache accounting and control
+> +   subsystem (v3), http://lwn.net/Articles/235534/
+> +8. Singh, Balbir. RSS controller V2 test results (lmbench),
+> +   http://lkml.org/lkml/2007/5/17/232
+> +9. Singh, Balbir. RSS controller V2 AIM9 results
+> +   http://lkml.org/lkml/2007/5/18/1
+> +10. Singh, Balbir. Memory controller v6 results,
+> +    http://lkml.org/lkml/2007/8/19/36
+> +11. Singh, Balbir. Memory controller v6, http://lkml.org/lkml/2007/8/17/69
+
+
+---
+~Randy
+*** Remember to use Documentation/SubmitChecklist when testing your code ***
