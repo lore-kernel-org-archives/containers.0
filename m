@@ -1,94 +1,73 @@
-From: "Paul Menage" <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
-Subject: Thoughts on virtualizing task containers
-Date: Thu, 23 Aug 2007 17:18:15 -0700
-Message-ID: <6599ad830708231718x7b63f993vdfef5b503668989d@mail.gmail.com>
+From: Pavel Emelyanov <xemul@openvz.org>
+Subject: [PATCH] sys_getsid/sys_getpgid return wrong id for task from another
+ ns
+Date: Fri, 24 Aug 2007 12:41:10 +0400
+Message-ID: <46CE99A6.6060100@openvz.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1763569AbXHXIom@vger.kernel.org>
+Sender: linux-kernel-owner@vger.kernel.org
+To: Andrew Morton <akpm@osdl.org>
+Cc: Alexey Dobriyan <adobriyan@mail.ru>, Linux Containers <containers@lists.osdl.org>, Linux Kernel Mailing List <linux-kernel@vger.kernel.org>, Oleg Nesterov <oleg@tv-sign.ru>, Sukadev Bhattiprolu <sukadev@us.ibm.com>
 List-Id: containers.vger.kernel.org
 
-I'm interested in people's thoughts about the right user API for
-virtualizing task containers and resource controllers.
+When calling the sys_getsid/sys_getpgid for task, that actually
+lives in another namespace (sub-namespace) the return value should
+be not the id as this task sees it, but the id as the caller does.
 
-With namespaces, the model is fairly straightforward - you can split a
-new namespace off from your own, without caring whether you're the
-top-level namespace or some child namespace. So nested namespaces just
-work, but at the expense of not being able to see anything that's at a
-higher level than your current namespace.
+Signed-off-by: Pavel Emelyanov <xemul@openvz.org>
 
-For resource controllers and other task container subsystems, that
-model isn't necessarily desired. For example, tasks running in a
-cpuset don't see their own cpuset as the root; it's possible (with
-appropriate permissions) to modify other cpusets outside of your own
-one.
+---
 
-For doing full virtual server containers, root in the virtual server
-may well want to make use of task container subsystems, e.g. to
-control the amount of CPU cycles or memory that groups of processes
-within the virtual server can use. What kinds of controls do we want
-to give the host to determine what kind of container operations the
-guest virtual server can do? What should the guest see in terms of
-task container support?
+ kernel/sys.c |   18 ++++++++++--------
+ 1 files changed, 10 insertions(+), 8 deletions(-)
 
-Ideally, the guest would have what appears to it to be a full (and
-isolated) task container implementation to play with, complete with a
-full complement of subsystems.
-
-But at the same time, some subsystems might not be easily
-virtualizable, and the host might not want the guest to have access to
-all subsystems anyway.
-
-One way to handle this might be to have a "virtualize" subsystem that
-allows you to set virtualization boundaries; by setting a particular
-container's virtualize control file to "true" you'd enforce the rule
-that tasks in that container (or child containers) would:
-
-- only be able to mount container hierarchies with task subsystems
-mounted in that hierarchy
-
-- see that container as their root container
-
-- not be able to increase the resource limits of their own container.
-(similar to the way that the "mems" and "cpus" files in the root
-cpuset container directory are read-only, certain control files would
-become read-only in the virtualized container directory).
-
-Possibly rather than needing a separate "virtualize" subsystem you
-could infer virtualization boundaries based on container boundaries in
-whichever hierarchy had the nsproxy subsystem mounted (if any). If the
-nsproxy subsystem wasn't mounted anywhere, then no virtualization
-would occur.
-
-On top of the implementation issues, there are conceptual issues to
-deal with such as:
-
-- what do you do with subsystems (e.g. freezer, OOM handler, network
-flow id assigner, etc) that are inherently hard to virtualize in a
-hierarchical way?
-
-- if the host mounts a container filesystem hierarchy in the guest's
-filespace, does the guest see the host's view of containers or the
-guest's view? i.e. is the virtualization associated with the mount
-point or with the process doing the viewing? (I'm inclined to say the
-former)
-
-- how much visibility/control does the host have into any child task
-containers created by the guest?
-
-- can the guest split the subsystems that are visible to it amongst
-multiple hierarchies? Or do we rule that guests can only have access
-to a single hierarchy?
-
-Paul
+diff --git a/kernel/sys.c b/kernel/sys.c
+index c7c4fa4..c827186 100644
+--- a/kernel/sys.c
++++ b/kernel/sys.c
+@@ -993,16 +995,17 @@ asmlinkage long sys_getpgid(pid_t pid)
+ 	else {
+ 		int retval;
+ 		struct task_struct *p;
++		struct pid_namespace *ns;
+ 
+-		read_lock(&tasklist_lock);
+-		p = find_task_by_pid_ns(pid,
+-				current->nsproxy->pid_ns);
++		ns = current->nsproxy->pid_ns;
+ 
++		read_lock(&tasklist_lock);
++		p = find_task_by_pid_ns(pid, ns);
+ 		retval = -ESRCH;
+ 		if (p) {
+ 			retval = security_task_getpgid(p);
+ 			if (!retval)
+-				retval = task_pgrp_vnr(p);
++				retval = task_pgrp_nr_ns(p, ns);
+ 		}
+ 		read_unlock(&tasklist_lock);
+ 		return retval;
+@@ -1026,16 +1029,17 @@ asmlinkage long sys_getsid(pid_t pid)
+ 	else {
+ 		int retval;
+ 		struct task_struct *p;
++		struct pid_namespace *ns;
+ 
+-		read_lock(&tasklist_lock);
+-		p = find_task_by_pid_ns(pid,
+-				current->nsproxy->pid_ns);
++		ns = current->nsproxy->pid_ns;
+ 
++		read_lock(&tasklist_lock);
++		p = find_task_by_pid_ns(pid, ns);
+ 		retval = -ESRCH;
+ 		if (p) {
+ 			retval = security_task_getsid(p);
+ 			if (!retval)
+-				retval = task_session_vnr(p);
++				retval = task_session_nr_ns(p, ns);
+ 		}
+ 		read_unlock(&tasklist_lock);
+ 		return retval;
