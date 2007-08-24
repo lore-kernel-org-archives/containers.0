@@ -1,49 +1,61 @@
-From: Stephen Hemminger <shemminger-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
+From: "Denis V. Lunev" <dlunev@gmail.com>
 Subject: Re: [Devel] [PATCH 1/1] Dynamically allocate the loopback device
-Date: Fri, 24 Aug 2007 10:43:01 -0700
-Message-ID: <20070824104301.2f4ff34e@localhost>
-References: <11879698031215-git-send-email-dlezcano@fr.ibm.com>
-	<46CEFF83.3040003@gmail.com>
+Date: Sat, 25 Aug 2007 01:24:29 +0400
+Message-ID: <46CF4C8D.9010709@gmail.com>
+References: <11879698031215-git-send-email-dlezcano@fr.ibm.com>	<46CEFF83.3040003@gmail.com> <20070824104301.2f4ff34e@localhost>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
+Content-Type: text/plain; charset=ISO-8859-1
 Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <46CEFF83.3040003-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Denis V. Lunev" <dlunev-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, davem-fT/PcQaiUtIeIZ0/mPfg9Q@public.gmane.org
+Return-path: <netdev-owner@vger.kernel.org>
+In-Reply-To: <20070824104301.2f4ff34e@localhost>
+Sender: netdev-owner@vger.kernel.org
+To: Stephen Hemminger <shemminger@linux-foundation.org>
+Cc: "Denis V. Lunev" <dlunev@gmail.com>, containers@lists.osdl.org, netdev@vger.kernel.org, davem@davemloft.net
 List-Id: containers.vger.kernel.org
 
-On Fri, 24 Aug 2007 19:55:47 +0400
-"Denis V. Lunev" <dlunev-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org> wrote:
+no, and this is important. Loopback is initialized in fs_initcall which
+is called sufficiently before module_init.
 
-> dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org wrote:
-> > From: Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
-> > 
-> > Doing this makes loopback.c a better example of how to do a
-> > simple network device, and it removes the special case
-> > single static allocation of a struct net_device, hopefully
-> > making maintenance easier.
-> > 
-> > Applies against net-2.6.24
-> > 
-> > Tested on i386, x86_64
-> > Compiled on ia64, sparc
-> 
-> I think that a small note, that initialization order is changed will be
-> good to record. After this, loopback MUST be allocated before any other
-> networking subsystem initialization. And this is an important change.
-> 
-> Regards,
->     Den
+I have checked the code and do not see initialization order mistakes
+right now. But, from now on, maintainer should pay attention for this
+unfortunate consequence :(
 
-Yes, this code would break when other drivers are directly linked
-in. 
+Regards,
+    Den
+
+Stephen Hemminger wrote:
+> On Fri, 24 Aug 2007 19:55:47 +0400
+> "Denis V. Lunev" <dlunev@gmail.com> wrote:
+> 
+>> dlezcano@fr.ibm.com wrote:
+>>> From: Daniel Lezcano <dlezcano@fr.ibm.com>
+>>>
+>>> Doing this makes loopback.c a better example of how to do a
+>>> simple network device, and it removes the special case
+>>> single static allocation of a struct net_device, hopefully
+>>> making maintenance easier.
+>>>
+>>> Applies against net-2.6.24
+>>>
+>>> Tested on i386, x86_64
+>>> Compiled on ia64, sparc
+>> I think that a small note, that initialization order is changed will be
+>> good to record. After this, loopback MUST be allocated before any other
+>> networking subsystem initialization. And this is an important change.
+>>
+>> Regards,
+>>     Den
+> 
+> Yes, this code would break when other drivers are directly linked
+> in. 
+> _______________________________________________
+> Containers mailing list
+> Containers@lists.linux-foundation.org
+> https://lists.linux-foundation.org/mailman/listinfo/containers
+> 
+> _______________________________________________
+> Devel mailing list
+> Devel@openvz.org
+> https://openvz.org/mailman/listinfo/devel
+> 
+
