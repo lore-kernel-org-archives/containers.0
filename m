@@ -1,9 +1,9 @@
 From: Balbir Singh <balbir@linux.vnet.ibm.com>
-Subject: [-mm PATCH 6/10] Memory controller add per container LRU and reclaim (v7)
-Date: Fri, 24 Aug 2007 20:50:53 +0530
-Message-ID: <20070824152053.16582.54336.sendpatchset@balbir-laptop>
+Subject: [-mm PATCH 10/10] Memory controller add documentation
+Date: Fri, 24 Aug 2007 20:51:37 +0530
+Message-ID: <20070824152137.16582.27261.sendpatchset@balbir-laptop>
 References: <20070824151948.16582.34424.sendpatchset@balbir-laptop>
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1756344AbXHXPW7@vger.kernel.org>
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1758008AbXHXPYl@vger.kernel.org>
 In-Reply-To: <20070824151948.16582.34424.sendpatchset@balbir-laptop>
 Sender: linux-kernel-owner@vger.kernel.org
 To: Andrew Morton <akpm@linux-foundation.org>
@@ -12,576 +12,283 @@ List-Id: containers.vger.kernel.org
 
 
 
-Changelog since v3
-1. Added reclaim retry logic to avoid being OOM'ed due to pages from
-   swap cache (coming in due to reclaim) don't overwhelm the container.
+Changelog since version 1
 
-Changelog
-1. Fix probable NULL pointer dereference based on review comments
-   by YAMAMOTO Takashi
+1. Wording and punctuation comments - Randy Dunlap
+2. Differentiate between RSS and Page Cache - Paul Menage
+3. Add detailed description of features - KAMEZAWA Hiroyuki
+4. Fix a typo (drop_pages should be drop_caches) - YAMAMOTO Takshi
 
-Add the page_container to the per container LRU. The reclaim algorithm has been
-modified to make the isolate_lru_pages() as a pluggable component. The
-scan_control data structure now accepts the container on behalf of which
-reclaims are carried out. try_to_free_pages() has been extended to become
-container aware.
-
-Signed-off-by: Pavel Emelianov <xemul@openvz.org>
 Signed-off-by: Balbir Singh <balbir@linux.vnet.ibm.com>
 ---
 
- include/linux/memcontrol.h  |   12 +++
- include/linux/res_counter.h |   23 +++++++
- include/linux/swap.h        |    3 
- mm/memcontrol.c             |  135 +++++++++++++++++++++++++++++++++++++++++++-
- mm/swap.c                   |    2 
- mm/vmscan.c                 |  126 ++++++++++++++++++++++++++++++++---------
- 6 files changed, 275 insertions(+), 26 deletions(-)
+ Documentation/controllers/memory.txt |  259 +++++++++++++++++++++++++++++++++++
+ 1 file changed, 259 insertions(+)
 
-diff -puN include/linux/memcontrol.h~mem-control-lru-and-reclaim include/linux/memcontrol.h
---- linux-2.6.23-rc2-mm2/include/linux/memcontrol.h~mem-control-lru-and-reclaim	2007-08-24 20:46:07.000000000 +0530
-+++ linux-2.6.23-rc2-mm2-balbir/include/linux/memcontrol.h	2007-08-24 20:46:07.000000000 +0530
-@@ -32,6 +32,13 @@ extern void page_assign_page_container(s
- extern struct page_container *page_get_page_container(struct page *page);
- extern int mem_container_charge(struct page *page, struct mm_struct *mm);
- extern void mem_container_uncharge(struct page_container *pc);
-+extern void mem_container_move_lists(struct page_container *pc, bool active);
-+extern unsigned long mem_container_isolate_pages(unsigned long nr_to_scan,
-+					struct list_head *dst,
-+					unsigned long *scanned, int order,
-+					int mode, struct zone *z,
-+					struct mem_container *mem_cont,
-+					int active);
- 
- static inline void mem_container_uncharge_page(struct page *page)
- {
-@@ -71,6 +78,11 @@ static inline void mem_container_uncharg
- {
- }
- 
-+static inline void mem_container_move_lists(struct page_container *pc,
-+						bool active)
-+{
-+}
+diff -L Documentation/memcontrol.txt -puN /dev/null /dev/null
+diff -puN /dev/null Documentation/controllers/memory.txt
+--- /dev/null	2007-06-01 20:42:04.000000000 +0530
++++ linux-2.6.23-rc2-mm2-balbir/Documentation/controllers/memory.txt	2007-08-24 20:46:08.000000000 +0530
+@@ -0,0 +1,259 @@
++Memory Controller
 +
- #endif /* CONFIG_CONTAINER_MEM_CONT */
- 
- #endif /* _LINUX_MEMCONTROL_H */
-diff -puN include/linux/res_counter.h~mem-control-lru-and-reclaim include/linux/res_counter.h
---- linux-2.6.23-rc2-mm2/include/linux/res_counter.h~mem-control-lru-and-reclaim	2007-08-24 20:46:07.000000000 +0530
-+++ linux-2.6.23-rc2-mm2-balbir/include/linux/res_counter.h	2007-08-24 20:46:07.000000000 +0530
-@@ -99,4 +99,27 @@ int res_counter_charge(struct res_counte
- void res_counter_uncharge_locked(struct res_counter *counter, unsigned long val);
- void res_counter_uncharge(struct res_counter *counter, unsigned long val);
- 
-+static inline bool res_counter_limit_check_locked(struct res_counter *cnt)
-+{
-+	if (cnt->usage < cnt->limit)
-+		return true;
++Salient features
 +
-+	return false;
-+}
++a. Enable control of both RSS (mapped) and Page Cache (unmapped) pages
++b. The infrastructure allows easy addition of other types of memory to control
++c. Provides *zero overhead* for non memory controller users
++d. Provides a double LRU: global memory pressure causes reclaim from the
++   global LRU; a container on hitting a limit, reclaims from the per
++   container LRU
 +
-+/*
-+ * Helper function to detect if the container is within it's limit or
-+ * not. It's currently called from container_rss_prepare()
-+ */
-+static inline bool res_counter_check_under_limit(struct res_counter *cnt)
-+{
-+	bool ret;
-+	unsigned long flags;
++NOTE: Page Cache (unmapped) also includes Swap Cache pages as a subset
++and will not be referred to explicitly in the rest of the documentation.
 +
-+	spin_lock_irqsave(&cnt->lock, flags);
-+	ret = res_counter_limit_check_locked(cnt);
-+	spin_unlock_irqrestore(&cnt->lock, flags);
-+	return ret;
-+}
++Benefits and Purpose of the memory controller
 +
- #endif
-diff -puN include/linux/swap.h~mem-control-lru-and-reclaim include/linux/swap.h
---- linux-2.6.23-rc2-mm2/include/linux/swap.h~mem-control-lru-and-reclaim	2007-08-24 20:46:07.000000000 +0530
-+++ linux-2.6.23-rc2-mm2-balbir/include/linux/swap.h	2007-08-24 20:46:07.000000000 +0530
-@@ -6,6 +6,7 @@
- #include <linux/mmzone.h>
- #include <linux/list.h>
- #include <linux/sched.h>
-+#include <linux/memcontrol.h>
- 
- #include <asm/atomic.h>
- #include <asm/page.h>
-@@ -191,6 +192,8 @@ extern void swap_setup(void);
- /* linux/mm/vmscan.c */
- extern unsigned long try_to_free_pages(struct zone **zones, int order,
- 					gfp_t gfp_mask);
-+extern unsigned long try_to_free_mem_container_pages(struct mem_container *mem);
-+extern int __isolate_lru_page(struct page *page, int mode);
- extern unsigned long shrink_all_memory(unsigned long nr_pages);
- extern int vm_swappiness;
- extern int remove_mapping(struct address_space *mapping, struct page *page);
-diff -puN mm/memcontrol.c~mem-control-lru-and-reclaim mm/memcontrol.c
---- linux-2.6.23-rc2-mm2/mm/memcontrol.c~mem-control-lru-and-reclaim	2007-08-24 20:46:07.000000000 +0530
-+++ linux-2.6.23-rc2-mm2-balbir/mm/memcontrol.c	2007-08-24 20:46:07.000000000 +0530
-@@ -24,8 +24,12 @@
- #include <linux/page-flags.h>
- #include <linux/bit_spinlock.h>
- #include <linux/rcupdate.h>
-+#include <linux/swap.h>
-+#include <linux/spinlock.h>
-+#include <linux/fs.h>
- 
- struct container_subsys mem_container_subsys;
-+static const int MEM_CONTAINER_RECLAIM_RETRIES = 5;
- 
- /*
-  * The memory controller data structure. The memory controller controls both
-@@ -51,6 +55,10 @@ struct mem_container {
- 	 */
- 	struct list_head active_list;
- 	struct list_head inactive_list;
-+	/*
-+	 * spin_lock to protect the per container LRU
-+	 */
-+	spinlock_t lru_lock;
- };
- 
- /*
-@@ -141,6 +149,94 @@ void __always_inline unlock_page_contain
- 	bit_spin_unlock(PAGE_CONTAINER_LOCK_BIT, &page->page_container);
- }
- 
-+void __mem_container_move_lists(struct page_container *pc, bool active)
-+{
-+	if (active)
-+		list_move(&pc->lru, &pc->mem_container->active_list);
-+	else
-+		list_move(&pc->lru, &pc->mem_container->inactive_list);
-+}
++The memory controller isolates the memory behaviour of a group of tasks
++from the rest of the system. The article on LWN [12] mentions some probable
++uses of the memory controller. The memory controller can be used to
 +
-+/*
-+ * This routine assumes that the appropriate zone's lru lock is already held
-+ */
-+void mem_container_move_lists(struct page_container *pc, bool active)
-+{
-+	struct mem_container *mem;
-+	if (!pc)
-+		return;
++a. Isolate an application or a group of applications
++   Memory hungry applications can be isolated and limited to a smaller
++   amount of memory.
++b. Create a container with limited amount of memory, this can be used
++   as a good alternative to booting with mem=XXXX.
++c. Virtualization solutions can control the amount of memory they want
++   to assign to a virtual machine instance.
++d. A CD/DVD burner could control the amount of memory used by the
++   rest of the system to ensure that burning does not fail due to lack
++   of available memory.
++e. There are several other use cases, find one or use the controller just
++   for fun (to learn and hack on the VM subsystem).
 +
-+	mem = pc->mem_container;
++1. History
 +
-+	spin_lock(&mem->lru_lock);
-+	__mem_container_move_lists(pc, active);
-+	spin_unlock(&mem->lru_lock);
-+}
++The memory controller has a long history. A request for comments for the memory
++controller was posted by Balbir Singh [1]. At the time the RFC was posted
++there were several implementations for memory control. The goal of the
++RFC was to build consensus and agreement for the minimal features required
++for memory control. The first RSS controller was posted by Balbir Singh[2]
++in Feb 2007. Pavel Emelianov [3][4][5] has since posted three versions of the
++RSS controller. At OLS, at the resource management BoF, everyone suggested
++that we handle both page cache and RSS together. Another request was raised
++to allow user space handling of OOM. The current memory controller is
++at version 6; it combines both mapped (RSS) and unmapped Page
++Cache Control [11].
 +
-+unsigned long mem_container_isolate_pages(unsigned long nr_to_scan,
-+					struct list_head *dst,
-+					unsigned long *scanned, int order,
-+					int mode, struct zone *z,
-+					struct mem_container *mem_cont,
-+					int active)
-+{
-+	unsigned long nr_taken = 0;
-+	struct page *page;
-+	unsigned long scan;
-+	LIST_HEAD(pc_list);
-+	struct list_head *src;
-+	struct page_container *pc;
++2. Memory Control
 +
-+	if (active)
-+		src = &mem_cont->active_list;
-+	else
-+		src = &mem_cont->inactive_list;
++Memory is a unique resource in the sense that it is present in a limited
++amount. If a task requires a lot of CPU processing, the task can spread
++its processing over a period of hours, days, months or years, but with
++memory, the same physical memory needs to be reused to accomplish the task.
 +
-+	spin_lock(&mem_cont->lru_lock);
-+	for (scan = 0; scan < nr_to_scan && !list_empty(src); scan++) {
-+		pc = list_entry(src->prev, struct page_container, lru);
-+		page = pc->page;
-+		VM_BUG_ON(!pc);
++The memory controller implementation has been divided into phases. These
++are:
 +
-+		if (PageActive(page) && !active) {
-+			__mem_container_move_lists(pc, true);
-+			scan--;
-+			continue;
-+		}
-+		if (!PageActive(page) && active) {
-+			__mem_container_move_lists(pc, false);
-+			scan--;
-+			continue;
-+		}
++1. Memory controller
++2. mlock(2) controller
++3. Kernel user memory accounting and slab control
++4. user mappings length controller
 +
-+		/*
-+		 * Reclaim, per zone
-+		 * TODO: make the active/inactive lists per zone
-+		 */
-+		if (page_zone(page) != z)
-+			continue;
++The memory controller is the first controller developed.
 +
-+		/*
-+		 * Check if the meta page went away from under us
-+		 */
-+		if (!list_empty(&pc->lru))
-+			list_move(&pc->lru, &pc_list);
-+		else
-+			continue;
++2.1. Design
 +
-+		if (__isolate_lru_page(page, mode) == 0) {
-+			list_move(&page->lru, dst);
-+			nr_taken++;
-+		}
-+	}
++The core of the design is a counter called the res_counter. The res_counter
++tracks the current memory usage and limit of the group of processes associated
++with the controller. Each container has a memory controller specific data
++structure (mem_container) associated with it.
 +
-+	list_splice(&pc_list, src);
-+	spin_unlock(&mem_cont->lru_lock);
++2.2. Accounting
 +
-+	*scanned = scan;
-+	return nr_taken;
-+}
++		+--------------------+
++		|  mem_container     |
++		|  (res_counter)     |
++		+--------------------+
++		 /            ^      \
++		/             |       \
++           +---------------+  |        +---------------+
++           | mm_struct     |  |....    | mm_struct     |
++           |               |  |        |               |
++           +---------------+  |        +---------------+
++                              |
++                              + --------------+
++                                              |
++           +---------------+           +------+--------+
++           | page          +---------->  page_container|
++           |               |           |               |
++           +---------------+           +---------------+
 +
- /*
-  * Charge the memory controller for page usage.
-  * Return
-@@ -151,6 +247,8 @@ int mem_container_charge(struct page *pa
- {
- 	struct mem_container *mem;
- 	struct page_container *pc, *race_pc;
-+	unsigned long flags;
-+	unsigned long nr_retries = MEM_CONTAINER_RECLAIM_RETRIES;
- 
- 	/*
- 	 * Should page_container's go to their own slab?
-@@ -197,7 +295,32 @@ int mem_container_charge(struct page *pa
- 	 * If we created the page_container, we should free it on exceeding
- 	 * the container limit.
- 	 */
--	if (res_counter_charge(&mem->res, 1)) {
-+	while (res_counter_charge(&mem->res, 1)) {
-+		if (try_to_free_mem_container_pages(mem))
-+			continue;
++             (Figure 1: Hierarchy of Accounting)
 +
-+		/*
-+ 		 * try_to_free_mem_container_pages() might not give us a full
-+ 		 * picture of reclaim. Some pages are reclaimed and might be
-+ 		 * moved to swap cache or just unmapped from the container.
-+ 		 * Check the limit again to see if the reclaim reduced the
-+ 		 * current usage of the container before giving up
-+ 		 */
-+		if (res_counter_check_under_limit(&mem->res))
-+			continue;
-+			/*
-+			 * Since we control both RSS and cache, we end up with a
-+			 * very interesting scenario where we end up reclaiming
-+			 * memory (essentially RSS), since the memory is pushed
-+			 * to swap cache, we eventually end up adding those
-+			 * pages back to our list. Hence we give ourselves a
-+			 * few chances before we fail
-+			 */
-+		else if (nr_retries--) {
-+			congestion_wait(WRITE, HZ/10);
-+			continue;
-+		}
 +
- 		css_put(&mem->css);
- 		goto free_pc;
- 	}
-@@ -221,6 +344,10 @@ int mem_container_charge(struct page *pa
- 	pc->page = page;
- 	page_assign_page_container(page, pc);
- 
-+	spin_lock_irqsave(&mem->lru_lock, flags);
-+	list_add(&pc->lru, &mem->active_list);
-+	spin_unlock_irqrestore(&mem->lru_lock, flags);
++Figure 1 shows the important aspects of the controller
 +
- done:
- 	unlock_page_container(page);
- 	return 0;
-@@ -240,6 +367,7 @@ void mem_container_uncharge(struct page_
- {
- 	struct mem_container *mem;
- 	struct page *page;
-+	unsigned long flags;
- 
- 	if (!pc)
- 		return;
-@@ -252,6 +380,10 @@ void mem_container_uncharge(struct page_
- 		page_assign_page_container(page, NULL);
- 		unlock_page_container(page);
- 		res_counter_uncharge(&mem->res, 1);
++1. Accounting happens per container
++2. Each mm_struct knows about which container it belongs to
++3. Each page has a pointer to the page_container, which in turn knows the
++   container it belongs to
 +
-+ 		spin_lock_irqsave(&mem->lru_lock, flags);
-+ 		list_del_init(&pc->lru);
-+ 		spin_unlock_irqrestore(&mem->lru_lock, flags);
- 		kfree(pc);
- 	}
- }
-@@ -310,6 +442,7 @@ mem_container_create(struct container_su
- 	res_counter_init(&mem->res);
- 	INIT_LIST_HEAD(&mem->active_list);
- 	INIT_LIST_HEAD(&mem->inactive_list);
-+	spin_lock_init(&mem->lru_lock);
- 	return &mem->css;
- }
- 
-diff -puN mm/swap.c~mem-control-lru-and-reclaim mm/swap.c
---- linux-2.6.23-rc2-mm2/mm/swap.c~mem-control-lru-and-reclaim	2007-08-24 20:46:07.000000000 +0530
-+++ linux-2.6.23-rc2-mm2-balbir/mm/swap.c	2007-08-24 20:46:07.000000000 +0530
-@@ -29,6 +29,7 @@
- #include <linux/percpu.h>
- #include <linux/cpu.h>
- #include <linux/notifier.h>
-+#include <linux/memcontrol.h>
- 
- /* How many pages do we try to swap or page in/out together? */
- int page_cluster;
-@@ -146,6 +147,7 @@ void fastcall activate_page(struct page 
- 		SetPageActive(page);
- 		add_page_to_active_list(zone, page);
- 		__count_vm_event(PGACTIVATE);
-+		mem_container_move_lists(page_get_page_container(page), true);
- 	}
- 	spin_unlock_irq(&zone->lru_lock);
- }
-diff -puN mm/vmscan.c~mem-control-lru-and-reclaim mm/vmscan.c
---- linux-2.6.23-rc2-mm2/mm/vmscan.c~mem-control-lru-and-reclaim	2007-08-24 20:46:07.000000000 +0530
-+++ linux-2.6.23-rc2-mm2-balbir/mm/vmscan.c	2007-08-24 20:46:07.000000000 +0530
-@@ -39,6 +39,7 @@
- #include <linux/delay.h>
- #include <linux/kthread.h>
- #include <linux/freezer.h>
-+#include <linux/memcontrol.h>
- 
- #include <asm/tlbflush.h>
- #include <asm/div64.h>
-@@ -70,6 +71,15 @@ struct scan_control {
- 	int all_unreclaimable;
- 
- 	int order;
++The accounting is done as follows: mem_container_charge() is invoked to setup
++the necessary data structures and check if the container that is being charged
++is over its limit. If it is then reclaim is invoked on the container.
++More details can be found in the reclaim section of this document.
++If everything goes well, a page meta-data-structure called page_container is
++allocated and associated with the page.  This routine also adds the page to
++the per container LRU.
 +
-+	/* Which container do we reclaim from */
-+	struct mem_container *mem_container;
++2.2.1 Accounting details
 +
-+	/* Pluggable isolate pages callback */
-+	unsigned long (*isolate_pages)(unsigned long nr, struct list_head *dst,
-+			unsigned long *scanned, int order, int mode,
-+			struct zone *z, struct mem_container *mem_cont,
-+			int active);
- };
- 
- #define lru_to_page(_head) (list_entry((_head)->prev, struct page, lru))
-@@ -634,7 +644,7 @@ keep:
-  *
-  * returns 0 on success, -ve errno on failure.
-  */
--static int __isolate_lru_page(struct page *page, int mode)
-+int __isolate_lru_page(struct page *page, int mode)
- {
- 	int ret = -EINVAL;
- 
-@@ -768,6 +778,21 @@ static unsigned long isolate_lru_pages(u
- 	return nr_taken;
- }
- 
-+static unsigned long isolate_pages_global(unsigned long nr,
-+					struct list_head *dst,
-+					unsigned long *scanned, int order,
-+					int mode, struct zone *z,
-+					struct mem_container *mem_cont,
-+					int active)
-+{
-+	if (active)
-+		return isolate_lru_pages(nr, &z->active_list, dst,
-+						scanned, order, mode);
-+	else
-+		return isolate_lru_pages(nr, &z->inactive_list, dst,
-+						scanned, order, mode);
-+}
++All mapped pages (RSS) and unmapped user pages (Page Cache) are accounted.
++RSS pages are accounted at the time of page_add_*_rmap() unless they've already
++been accounted for earlier. A file page will be accounted for as Page Cache;
++it's mapped into the page tables of a process, duplicate accounting is carefully
++avoided. Page Cache pages are accounted at the time of add_to_page_cache().
++The corresponding routines that remove a page from the page tables or removes
++a page from Page Cache is used to decrement the accounting counters of the
++container.
 +
- /*
-  * clear_active_flags() is a helper for shrink_active_list(), clearing
-  * any active bits from the pages in the list.
-@@ -809,11 +834,11 @@ static unsigned long shrink_inactive_lis
- 		unsigned long nr_freed;
- 		unsigned long nr_active;
- 
--		nr_taken = isolate_lru_pages(sc->swap_cluster_max,
--			     &zone->inactive_list,
-+		nr_taken = sc->isolate_pages(sc->swap_cluster_max,
- 			     &page_list, &nr_scan, sc->order,
- 			     (sc->order > PAGE_ALLOC_COSTLY_ORDER)?
--					     ISOLATE_BOTH : ISOLATE_INACTIVE);
-+					     ISOLATE_BOTH : ISOLATE_INACTIVE,
-+				zone, sc->mem_container, 0);
- 		nr_active = clear_active_flags(&page_list);
- 		__count_vm_events(PGDEACTIVATE, nr_active);
- 
-@@ -1026,8 +1051,9 @@ force_reclaim_mapped:
- 
- 	lru_add_drain();
- 	spin_lock_irq(&zone->lru_lock);
--	pgmoved = isolate_lru_pages(nr_pages, &zone->active_list,
--			    &l_hold, &pgscanned, sc->order, ISOLATE_ACTIVE);
-+	pgmoved = sc->isolate_pages(nr_pages, &l_hold, &pgscanned, sc->order,
-+					ISOLATE_ACTIVE, zone,
-+					sc->mem_container, 1);
- 	zone->pages_scanned += pgscanned;
- 	__mod_zone_page_state(zone, NR_ACTIVE, -pgmoved);
- 	spin_unlock_irq(&zone->lru_lock);
-@@ -1062,6 +1088,7 @@ force_reclaim_mapped:
- 		ClearPageActive(page);
- 
- 		list_move(&page->lru, &zone->inactive_list);
-+		mem_container_move_lists(page_get_page_container(page), false);
- 		pgmoved++;
- 		if (!pagevec_add(&pvec, page)) {
- 			__mod_zone_page_state(zone, NR_INACTIVE, pgmoved);
-@@ -1090,6 +1117,7 @@ force_reclaim_mapped:
- 		SetPageLRU(page);
- 		VM_BUG_ON(!PageActive(page));
- 		list_move(&page->lru, &zone->active_list);
-+		mem_container_move_lists(page_get_page_container(page), true);
- 		pgmoved++;
- 		if (!pagevec_add(&pvec, page)) {
- 			__mod_zone_page_state(zone, NR_ACTIVE, pgmoved);
-@@ -1221,7 +1249,8 @@ static unsigned long shrink_zones(int pr
-  * holds filesystem locks which prevent writeout this might not work, and the
-  * allocation attempt will fail.
-  */
--unsigned long try_to_free_pages(struct zone **zones, int order, gfp_t gfp_mask)
-+unsigned long do_try_to_free_pages(struct zone **zones, gfp_t gfp_mask,
-+					struct scan_control *sc)
- {
- 	int priority;
- 	int ret = 0;
-@@ -1230,14 +1259,6 @@ unsigned long try_to_free_pages(struct z
- 	struct reclaim_state *reclaim_state = current->reclaim_state;
- 	unsigned long lru_pages = 0;
- 	int i;
--	struct scan_control sc = {
--		.gfp_mask = gfp_mask,
--		.may_writepage = !laptop_mode,
--		.swap_cluster_max = SWAP_CLUSTER_MAX,
--		.may_swap = 1,
--		.swappiness = vm_swappiness,
--		.order = order,
--	};
- 
- 	delay_swap_prefetch();
- 	count_vm_event(ALLOCSTALL);
-@@ -1253,17 +1274,22 @@ unsigned long try_to_free_pages(struct z
- 	}
- 
- 	for (priority = DEF_PRIORITY; priority >= 0; priority--) {
--		sc.nr_scanned = 0;
-+		sc->nr_scanned = 0;
- 		if (!priority)
- 			disable_swap_token();
--		nr_reclaimed += shrink_zones(priority, zones, &sc);
--		shrink_slab(sc.nr_scanned, gfp_mask, lru_pages);
-+		nr_reclaimed += shrink_zones(priority, zones, sc);
-+		/*
-+		 * Don't shrink slabs when reclaiming memory from
-+		 * over limit containers
-+		 */
-+		if (sc->mem_container == NULL)
-+			shrink_slab(sc->nr_scanned, gfp_mask, lru_pages);
- 		if (reclaim_state) {
- 			nr_reclaimed += reclaim_state->reclaimed_slab;
- 			reclaim_state->reclaimed_slab = 0;
- 		}
--		total_scanned += sc.nr_scanned;
--		if (nr_reclaimed >= sc.swap_cluster_max) {
-+		total_scanned += sc->nr_scanned;
-+		if (nr_reclaimed >= sc->swap_cluster_max) {
- 			ret = 1;
- 			goto out;
- 		}
-@@ -1275,18 +1301,18 @@ unsigned long try_to_free_pages(struct z
- 		 * that's undesirable in laptop mode, where we *want* lumpy
- 		 * writeout.  So in laptop mode, write out the whole world.
- 		 */
--		if (total_scanned > sc.swap_cluster_max +
--					sc.swap_cluster_max / 2) {
-+		if (total_scanned > sc->swap_cluster_max +
-+					sc->swap_cluster_max / 2) {
- 			wakeup_pdflush(laptop_mode ? 0 : total_scanned);
--			sc.may_writepage = 1;
-+			sc->may_writepage = 1;
- 		}
- 
- 		/* Take a nap, wait for some writeback to complete */
--		if (sc.nr_scanned && priority < DEF_PRIORITY - 2)
-+		if (sc->nr_scanned && priority < DEF_PRIORITY - 2)
- 			congestion_wait(WRITE, HZ/10);
- 	}
- 	/* top priority shrink_caches still had more to do? don't OOM, then */
--	if (!sc.all_unreclaimable)
-+	if (!sc->all_unreclaimable && sc->mem_container == NULL)
- 		ret = 1;
- out:
- 	/*
-@@ -1309,6 +1335,54 @@ out:
- 	return ret;
- }
- 
-+unsigned long try_to_free_pages(struct zone **zones, int order, gfp_t gfp_mask)
-+{
-+	struct scan_control sc = {
-+		.gfp_mask = gfp_mask,
-+		.may_writepage = !laptop_mode,
-+		.swap_cluster_max = SWAP_CLUSTER_MAX,
-+		.may_swap = 1,
-+		.swappiness = vm_swappiness,
-+		.order = order,
-+		.mem_container = NULL,
-+		.isolate_pages = isolate_pages_global,
-+	};
++2.3 Shared Page Accounting
 +
-+	return do_try_to_free_pages(zones, gfp_mask, &sc);
-+}
++Shared pages are accounted on the basis of the first touch approach. The
++container that first touches a page is accounted for the page. The principle
++behind this approach is that a container that aggressively uses a shared
++page will eventually get charged for it (once it is uncharged from
++the container that brought it in -- this will happen on memory pressure).
 +
-+#ifdef CONFIG_CONTAINER_MEM_CONT
++2.4 Reclaim
 +
-+#ifdef CONFIG_HIGHMEM
-+#define ZONE_USERPAGES ZONE_HIGHMEM
-+#else
-+#define ZONE_USERPAGES ZONE_NORMAL
-+#endif
++Each container maintains a per container LRU that consists of an active
++and inactive list. When a container goes over its limit, we first try
++to reclaim memory from the container so as to make space for the new
++pages that the container has touched. If the reclaim is unsuccessful,
++an OOM routine is invoked to select and kill the bulkiest task in the
++container.
 +
-+unsigned long try_to_free_mem_container_pages(struct mem_container *mem_cont)
-+{
-+	struct scan_control sc = {
-+		.gfp_mask = GFP_KERNEL,
-+		.may_writepage = !laptop_mode,
-+		.may_swap = 1,
-+		.swap_cluster_max = SWAP_CLUSTER_MAX,
-+		.swappiness = vm_swappiness,
-+		.order = 1,
-+		.mem_container = mem_cont,
-+		.isolate_pages = mem_container_isolate_pages,
-+	};
-+	int node;
-+	struct zone **zones;
++The reclaim algorithm has not been modified for containers, except that
++pages that are selected for reclaiming come from the per container LRU
++list.
 +
-+	for_each_online_node(node) {
-+		zones = NODE_DATA(node)->node_zonelists[ZONE_USERPAGES].zones;
-+		if (do_try_to_free_pages(zones, sc.gfp_mask, &sc))
-+			return 1;
-+	}
-+	return 0;
-+}
-+#endif
++2. Locking
 +
- /*
-  * For kswapd, balance_pgdat() will work across all this node's zones until
-  * they are all at pages_high.
-@@ -1344,6 +1418,8 @@ static unsigned long balance_pgdat(pg_da
- 		.swap_cluster_max = SWAP_CLUSTER_MAX,
- 		.swappiness = vm_swappiness,
- 		.order = order,
-+		.mem_container = NULL,
-+		.isolate_pages = isolate_pages_global,
- 	};
- 	/*
- 	 * temp_priority is used to remember the scanning priority at which
++The memory controller uses the following hierarchy
++
++1. zone->lru_lock is used for selecting pages to be isolated
++2. mem->lru_lock protects the per container LRU
++3. lock_page_container() is used to protect page->page_container
++
++3. User Interface
++
++0. Configuration
++
++a. Enable CONFIG_CONTAINERS
++b. Enable CONFIG_RESOURCE_COUNTERS
++c. Enable CONFIG_CONTAINER_MEM_CONT
++
++1. Prepare the containers
++# mkdir -p /containers
++# mount -t container none /containers -o memory
++
++2. Make the new group and move bash into it
++# mkdir /containers/0
++# echo $$ >  /containers/0/tasks
++
++Since now we're in the 0 container,
++We can alter the memory limit:
++# echo -n 6000 > /containers/0/memory.limit
++
++We can check the usage:
++# cat /containers/0/memory.usage
++25
++
++The memory.failcnt field gives the number of times that the container limit was
++exceeded.
++
++4. Testing
++
++Balbir posted lmbench, AIM9, LTP and vmmstress results [10] and [11].
++Apart from that v6 has been tested with several applications and regular
++daily use. The controller has also been tested on the PPC64, x86_64 and
++UML platforms.
++
++4.1 Troubleshooting
++
++Sometimes a user might find that the application under a container is
++terminated. There are several causes for this:
++
++1. The container limit is too low (just too low to do anything useful)
++2. The user is using anonymous memory and swap is turned off or too low
++
++A sync followed by echo 1 > /proc/sys/vm/drop_caches will help get rid of
++some of the pages cached in the container (page cache pages).
++
++4.2 Task migration
++
++When a task migrates from one container to another, it's charge is not
++carried forward. The pages allocated from the original container still
++remain charged to it, the charge is dropped when the page is freed or
++reclaimed.
++
++4.3 Removing a container
++
++A container can be removed by rmdir, but as discussed in sections 4.1 and 4.2, a
++container might have some charge associated with it, even though all
++tasks have migrated away from it. If some pages are still left, after following
++the steps listed in sections 4.1 and 4.2, check the Swap Cache usage in
++/proc/meminfo to see if the Swap Cache usage is showing up in the
++containers memory.usage counter. A simple test of swapoff -a and swapon -a
++should free any pending Swap Cache usage.
++
++4.4 Choosing what to account  -- Page Cache (unmapped) vs RSS (mapped)?
++
++The type of memory accounted by the container can be limited to just
++mapped pages by writing "1" to memory.control_type field
++
++echo -n 1 > memory.control_type
++
++5. TODO
++
++1. Add support for accounting huge pages (as a separate controller)
++2. Improve the user interface to accept/display memory limits in KB or MB
++   rather than pages (since page sizes can differ across platforms/machines).
++3. Make container lists per-zone
++4. Make per-container scanner reclaim not-shared pages first
++5. Teach controller to account for shared-pages
++6. Start reclamation when the limit is lowered
++7. Start reclamation in the background when the limit is
++   not yet hit but the usage is getting closer
++8. Create per zone LRU lists per container
++
++Summary
++
++Overall, the memory controller has been a stable controller and has been
++commented and discussed quite extensively in the community.
++
++References
++
++1. Singh, Balbir. RFC: Memory Controller, http://lwn.net/Articles/206697/
++2. Singh, Balbir. Memory Controller (RSS Control),
++   http://lwn.net/Articles/222762/
++3. Emelianov, Pavel. Resource controllers based on process containers
++   http://lkml.org/lkml/2007/3/6/198
++4. Emelianov, Pavel. RSS controller based on process containers (v2)
++   http://lkml.org/lkml/2007/4/9/74
++5. Emelianov, Pavel. RSS controller based on process containers (v3)
++   http://lkml.org/lkml/2007/5/30/244
++6. Menage, Paul. Containers v10, http://lwn.net/Articles/236032/
++7. Vaidyanathan, Srinivasan, Containers: Pagecache accounting and control
++   subsystem (v3), http://lwn.net/Articles/235534/
++8. Singh, Balbir. RSS controller V2 test results (lmbench),
++   http://lkml.org/lkml/2007/5/17/232
++9. Singh, Balbir. RSS controller V2 AIM9 results
++   http://lkml.org/lkml/2007/5/18/1
++10. Singh, Balbir. Memory controller v6 results,
++    http://lkml.org/lkml/2007/8/19/36
++11. Singh, Balbir. Memory controller v6, http://lkml.org/lkml/2007/8/17/69
++12. Corbet, Jonathan, Controlling memory use in containers,
++    http://lwn.net/Articles/243795/
 _
 
 -- 
