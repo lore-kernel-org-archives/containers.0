@@ -1,61 +1,63 @@
-From: "Denis V. Lunev" <dlunev@gmail.com>
-Subject: Re: [Devel] [PATCH 1/1] Dynamically allocate the loopback device
-Date: Sat, 25 Aug 2007 01:24:29 +0400
-Message-ID: <46CF4C8D.9010709@gmail.com>
-References: <11879698031215-git-send-email-dlezcano@fr.ibm.com>	<46CEFF83.3040003@gmail.com> <20070824104301.2f4ff34e@localhost>
+From: Oleg Nesterov <oleg-6lXkIZvqkOAvJsYlp49lxw@public.gmane.org>
+Subject: Re: [RFC][PATCH] Cleanup the new thread's creation
+Date: Sat, 25 Aug 2007 20:50:31 +0400
+Message-ID: <20070825165031.GA2644@tv-sign.ru>
+References: <46CED326.3030606@openvz.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Content-Transfer-Encoding: 7bit
-Return-path: <netdev-owner@vger.kernel.org>
-In-Reply-To: <20070824104301.2f4ff34e@localhost>
-Sender: netdev-owner@vger.kernel.org
-To: Stephen Hemminger <shemminger@linux-foundation.org>
-Cc: "Denis V. Lunev" <dlunev@gmail.com>, containers@lists.osdl.org, netdev@vger.kernel.org, davem@davemloft.net
+Content-Type: text/plain; charset=us-ascii
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <46CED326.3030606-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-no, and this is important. Loopback is initialized in fs_initcall which
-is called sufficiently before module_init.
+On 08/24, Pavel Emelyanov wrote:
+>
+> The major differences of creating a new thread from creating a
+> new process is that
+>
+> 1. newbie's tgid is set to leader's
+> 2. newbie's leader is set to leader
+> 3. newbie is added to leader's thread_list
 
-I have checked the code and do not see initialization order mistakes
-right now. But, from now on, maintainer should pay attention for this
-unfortunate consequence :(
+(Surely, the are many other major differences, but from the pids virtualization
+ POV - yes ;)
 
-Regards,
-    Den
+> +static void setup_new_thread(struct task_struct *thr, struct task_struct 
+> *leader)
+> +{
+> +	thr->tgid = leader->tgid;
+> +	thr->group_leader = leader;
+> +	list_add_tail_rcu(&thr->thread_group, &leader->thread_group);
+> +}
 
-Stephen Hemminger wrote:
-> On Fri, 24 Aug 2007 19:55:47 +0400
-> "Denis V. Lunev" <dlunev@gmail.com> wrote:
-> 
->> dlezcano@fr.ibm.com wrote:
->>> From: Daniel Lezcano <dlezcano@fr.ibm.com>
->>>
->>> Doing this makes loopback.c a better example of how to do a
->>> simple network device, and it removes the special case
->>> single static allocation of a struct net_device, hopefully
->>> making maintenance easier.
->>>
->>> Applies against net-2.6.24
->>>
->>> Tested on i386, x86_64
->>> Compiled on ia64, sparc
->> I think that a small note, that initialization order is changed will be
->> good to record. After this, loopback MUST be allocated before any other
->> networking subsystem initialization. And this is an important change.
->>
->> Regards,
->>     Den
-> 
-> Yes, this code would break when other drivers are directly linked
-> in. 
-> _______________________________________________
-> Containers mailing list
-> Containers@lists.linux-foundation.org
-> https://lists.linux-foundation.org/mailman/listinfo/containers
-> 
-> _______________________________________________
-> Devel mailing list
-> Devel@openvz.org
-> https://openvz.org/mailman/listinfo/devel
-> 
+Imho, this name is a bit "too generic". Not that I can suggest something
+better... copy_sub_thread/copy_group_leader ?
 
+> @@ -1147,9 +1161,6 @@ static struct task_struct *copy_process(
+> 	}
+> 
+> 	p->pid = pid_nr(pid);
+> -	p->tgid = p->pid;
+> -	if (clone_flags & CLONE_THREAD)
+> -		p->tgid = current->tgid;
+
+I agree, it is absoulutely not clear why should we set ->tgid here, and it
+would be nice to consolidate "if (CLONE_THREAD)" checks, but do we really
+need the helpers above? There are very simple, and have the only one caller.
+Sometimes it is good to see what's going on without pressing C-]
+
+Not that I against this patch, just I'm not sure it really simplifies things.
+Perhaps I missed something else you have in mind.
+
+Oleg.
