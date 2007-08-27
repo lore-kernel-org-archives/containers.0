@@ -1,53 +1,74 @@
-From: Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: Re: [-mm PATCH 5/10] Memory controller task migration (v7)
-Date: Mon, 27 Aug 2007 16:09:15 +0530
-Message-ID: <46D2A9D3.50703@linux.vnet.ibm.com>
-References: <20070824152043.16582.37727.sendpatchset@balbir-laptop>
-	<20070827082635.195471BFA2C@siro.lan>
-Reply-To: balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
+From: ebiederm@xmission.com (Eric W. Biederman)
+Subject: Re: [Devel] [PATCH 1/1] Dynamically allocate the loopback device
+Date: Mon, 27 Aug 2007 06:12:14 -0600
+Message-ID: <m1lkbx5g81.fsf@ebiederm.dsl.xmission.com>
+References: <11879698031215-git-send-email-dlezcano@fr.ibm.com>
+	<46CEFF83.3040003@gmail.com> <20070824104301.2f4ff34e@localhost>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20070827082635.195471BFA2C-Pcsii4f/SVk@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: YAMAMOTO Takashi <yamamoto-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
-Cc: npiggin-l3A5Bk7waGM@public.gmane.org, a.p.zijlstra-/NLkJaSkS4VmR6Xm/wNWPw@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org, containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org, menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, dhaval-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
+Content-Type: text/plain; charset=us-ascii
+Return-path: <netdev-owner@vger.kernel.org>
+In-Reply-To: <20070824104301.2f4ff34e@localhost> (Stephen Hemminger's message
+	of "Fri, 24 Aug 2007 10:43:01 -0700")
+Sender: netdev-owner@vger.kernel.org
+To: Stephen Hemminger <shemminger@linux-foundation.org>
+Cc: "Denis V. Lunev" <dlunev@gmail.com>, dlezcano@fr.ibm.com, davem@davemloft.net, containers@lists.osdl.org, netdev@vger.kernel.org
 List-Id: containers.vger.kernel.org
 
-YAMAMOTO Takashi wrote:
->> Allow tasks to migrate from one container to the other. We migrate
->> mm_struct's mem_container only when the thread group id migrates.
-> 
->> +	/*
->> +	 * Only thread group leaders are allowed to migrate, the mm_struct is
->> +	 * in effect owned by the leader
->> +	 */
->> +	if (p->tgid != p->pid)
->> +		goto out;
-> 
-> does it mean that you can't move a process between containers
-> once its thread group leader exited?
-> 
-> YAMAMOTO Takashi
+Stephen Hemminger <shemminger@linux-foundation.org> writes:
 
+> On Fri, 24 Aug 2007 19:55:47 +0400
+> "Denis V. Lunev" <dlunev@gmail.com> wrote:
+>
+>> dlezcano@fr.ibm.com wrote:
+>> > From: Daniel Lezcano <dlezcano@fr.ibm.com>
+>> > 
+>> > Doing this makes loopback.c a better example of how to do a
+>> > simple network device, and it removes the special case
+>> > single static allocation of a struct net_device, hopefully
+>> > making maintenance easier.
+>> > 
+>> > Applies against net-2.6.24
+>> > 
+>> > Tested on i386, x86_64
+>> > Compiled on ia64, sparc
+>> 
+>> I think that a small note, that initialization order is changed will be
+>> good to record. After this, loopback MUST be allocated before any other
+>> networking subsystem initialization. And this is an important change.
+>> 
+>> Regards,
+>>     Den
+>
+> Yes, this code would break when other drivers are directly linked
+> in. 
 
-Hi,
+No. Other drivers don't care at all about the loopback device,
+and it isn't a requirement that the loopback device be initialized
+before other devices.
 
-Good catch! Currently, we treat the mm as owned by the thread group leader.
-But this policy can be easily adapted to any other desired policy.
-Would you like to see it change to something else?
+The requirement is that the loopback device is allocated before
+we start using it.  Which means networking subsystems like
+ipv4 and ipv6 care not other network drivers.  In practices this means
+before we get very far into the ipv4 subsystem initialization as
+ipv4 is always compiled in and is initialized early.
 
--- 
-	Warm Regards,
-	Balbir Singh
-	Linux Technology Center
-	IBM, ISTL
+To get the initialization order correct I used fs_initcall instead of
+module_init.
+
+When I reflect on it.  I'm not really comfortable with the fact
+that we currently start using the loopback device before we
+finish initializing and register it.  Although it has worked
+for over a decade so I guess early on we don't care about
+much more then the address of the loopback device.
+
+From what I can tell the initialization order dependency seems much
+less subtle and much more robust then separate rules for allocating
+the loopback device.  We have had several patchs recently that
+broke (including one merged upstream).  The only way I can see
+to break an initialization order dependency is to go deliberately
+messing around with initialization order.
+
+Eric
+
+p.s.  My apologies for the late reply some one dropped me off the cc.
+And I have been under the weather all week.
