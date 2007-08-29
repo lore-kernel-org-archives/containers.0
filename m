@@ -1,52 +1,39 @@
 From: sukadev@us.ibm.com
-Subject: Re: [PATCH] Remove write-only variable from pktgen_thread
-Date: Wed, 29 Aug 2007 14:33:56 -0700
-Message-ID: <20070829213356.GC18542@us.ibm.com>
-References: <46D572FA.9090302@openvz.org>
+Subject: Re: [PATCH] Use task_pid_nr() in ip_vs_sync.c
+Date: Wed, 29 Aug 2007 14:50:55 -0700
+Message-ID: <20070829215055.GD18542@us.ibm.com>
+References: <46D57508.9040401@openvz.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Return-path: <netdev-owner@vger.kernel.org>
 Content-Disposition: inline
-In-Reply-To: <46D572FA.9090302@openvz.org>
+In-Reply-To: <46D57508.9040401@openvz.org>
 Sender: netdev-owner@vger.kernel.org
 To: Pavel Emelyanov <xemul@openvz.org>
 Cc: Andrew Morton <akpm@osdl.org>, Oleg Nesterov <oleg@tv-sign.ru>, Linux Containers <containers@lists.osdl.org>, Linux Kernel Mailing List <linux-kernel@vger.kernel.org>, Linux Netdev List <netdev@vger.kernel.org>
 List-Id: containers.vger.kernel.org
 
 Pavel Emelianov [xemul@openvz.org] wrote:
-| The pktgen_thread.pid is set to current->pid and is never used
-| after this. So remove this at all.
-| 
-| Found during isolating the explicit pid/tgid usage.
+| The sync_master_pid and sync_backup_pid are set in set_sync_pid()
+| and are used later for set/not-set checks and in printk. So it
+| is safe to use the global pid value in this case.
 | 
 | Signed-off-by: Pavel Emelyanov <xemul@openvz.org>
-
-Good observation that its not being used :-)
 
 Acked-by: Sukadev Bhattiprolu <sukadev@us.ibm.com>
 | 
 | ---
 | 
-| diff --git a/net/core/pktgen.c b/net/core/pktgen.c
-| index 3a3154e..93695c2 100644
-| --- a/net/core/pktgen.c
-| +++ b/net/core/pktgen.c
-| @@ -380,7 +380,6 @@ struct pktgen_thread {
-| 	/* Field for thread to receive "posted" events terminate, stop ifs 
-| 	etc. */
+| diff --git a/net/ipv4/ipvs/ip_vs_sync.c b/net/ipv4/ipvs/ip_vs_sync.c
+| index 959c08d..d0798a5 100644
+| --- a/net/ipv4/ipvs/ip_vs_sync.c
+| +++ b/net/ipv4/ipvs/ip_vs_sync.c
+| @@ -794,7 +794,7 @@ static int sync_thread(void *startup)
 | 
-| 	u32 control;
-| -	int pid;
-| 	int cpu;
+| 	add_wait_queue(&sync_wait, &wait);
 | 
-| 	wait_queue_head_t queue;
-| @@ -3462,8 +3461,6 @@ static int pktgen_thread_worker(void *ar
+| -	set_sync_pid(state, current->pid);
+| +	set_sync_pid(state, task_pid_nr(current));
+| 	complete(tinfo->startup);
 | 
-| 	init_waitqueue_head(&t->queue);
-| 
-| -	t->pid = current->pid;
-| -
-| 	pr_debug("pktgen: starting pktgen/%d:  pid=%d\n", cpu, 
-| 	task_pid_nr(current));
-| 
-| 	max_before_softirq = t->max_before_softirq;
+| 	/*
