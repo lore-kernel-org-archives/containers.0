@@ -1,13 +1,15 @@
-From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: Thoughts on virtualizing task containers
-Date: Mon, 27 Aug 2007 09:40:26 -0500
-Message-ID: <20070827144025.GE4505@sergelap.austin.ibm.com>
-References: <6599ad830708231718x7b63f993vdfef5b503668989d@mail.gmail.com>
+From: Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Subject: Re: [PATCH] Send quota messages via netlink
+Date: Wed, 29 Aug 2007 12:00:07 +0530
+Message-ID: <46D5126F.9000405@linux.vnet.ibm.com>
+References: <20070828141318.GC5869@duck.suse.cz>
+	<20070828211335.37fce4c9.akpm@linux-foundation.org>
+Reply-To: balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+Content-Type: text/plain; charset=ISO-8859-1
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <6599ad830708231718x7b63f993vdfef5b503668989d-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
+In-Reply-To: <20070828211335.37fce4c9.akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -17,157 +19,134 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
-Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
+To: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
+Cc: Jan Kara <jack-AlSwsSmVLrQ@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Quoting Paul Menage (menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org):
-> I'm interested in people's thoughts about the right user API for
-> virtualizing task containers and resource controllers.
+Andrew Morton wrote:
+> On Tue, 28 Aug 2007 16:13:18 +0200 Jan Kara <jack-AlSwsSmVLrQ@public.gmane.org> wrote:
 > 
-> With namespaces, the model is fairly straightforward - you can split a
-> new namespace off from your own, without caring whether you're the
-> top-level namespace or some child namespace. So nested namespaces just
-> work, but at the expense of not being able to see anything that's at a
-> higher level than your current namespace.
+>>   Hello,
+>>
+>>   I'm sending rediffed patch implementing sending of quota messages via netlink
+>> interface (some rationale in patch description). I've already posted it to
+>> LKML some time ago and there were no objections, so I guess it's fine to put
+>> it to -mm. Andrew, would you be so kind? Thanks.
+>>   Userspace deamon reading the messages from the kernel and sending them to
+>> dbus and/or user console is also written (it's part of quota-tools). The
+>> only remaining problem is there are a few changes needed to libnl needed for
+>> the userspace daemon. They were basically acked by the maintainer but it
+>> seems he has not merged the patches yet. So this will take a bit more time.
+>>
 > 
-> For resource controllers and other task container subsystems, that
-> model isn't necessarily desired. For example, tasks running in a
-> cpuset don't see their own cpuset as the root; it's possible (with
-> appropriate permissions) to modify other cpusets outside of your own
-> one.
+> So it's a new kernel->userspace interface.
 > 
-> For doing full virtual server containers, root in the virtual server
-> may well want to make use of task container subsystems, e.g. to
-> control the amount of CPU cycles or memory that groups of processes
-> within the virtual server can use. What kinds of controls do we want
-> to give the host to determine what kind of container operations the
-> guest virtual server can do? What should the guest see in terms of
-> task container support?
+> But we have no description of the interface :(
 > 
-> Ideally, the guest would have what appears to it to be a full (and
-> isolated) task container implementation to play with, complete with a
-> full complement of subsystems.
 
-Agreed, although at k-s last year it was agreed that it's ok if
-processes in a guest know that they are in a guest.  That was in
-relation specifically to /proc virtualization.
+And could we have some description of the context under which all the message
+exchanges take place. When are these messages sent out -- what event
+is the user space notified of?
 
-So for instance if some vserver is locked to cpus 3 and 4, I think it
-would be nice if that vserver thought it was on a 2-cpu system and had
-full access to cpus 0 and 1, but it's not necessary.
+>> +/* Send warning to userspace about user which exceeded quota */
+>> +static void send_warning(const struct dquot *dquot, const char warntype)
+>> +{
+>> +	static unsigned long seq;
+>> +	struct sk_buff *skb;
+>> +	void *msg_head;
+>> +	int ret;
+>> +
+>> +	skb = genlmsg_new(QUOTA_NL_MSG_SIZE, GFP_NOFS);
+>> +	if (!skb) {
+>> +		printk(KERN_ERR
+>> +		  "VFS: Not enough memory to send quota warning.\n");
+>> +		return;
+>> +	}
+>> +	msg_head = genlmsg_put(skb, 0, seq++, &quota_genl_family, 0, QUOTA_NL_C_WARNING);
+>> +	if (!msg_head) {
+>> +		printk(KERN_ERR
+>> +		  "VFS: Cannot store netlink header in quota warning.\n");
+>> +		goto err_out;
 
-OTOH, the ability for root in that vserver to restrict some of it's
-tasks to cpu 3 (or ideally to half of cpu 3) should definately exist.
+One problem, we've been is losing notifications. It does not happen for us
+due to the cpumask interface (which allows us to have parallel sockets
+for each cpu or a set of cpus). How frequent are your notifications?
 
-> But at the same time, some subsystems might not be easily
-> virtualizable, and the host might not want the guest to have access to
-> all subsystems anyway.
+>> +	}
+>> +	ret = nla_put_u32(skb, QUOTA_NL_A_QTYPE, dquot->dq_type);
+>> +	if (ret)
+>> +		goto attr_err_out;
+>> +	ret = nla_put_u64(skb, QUOTA_NL_A_EXCESS_ID, dquot->dq_id);
+>> +	if (ret)
+>> +		goto attr_err_out;
+>> +	ret = nla_put_u32(skb, QUOTA_NL_A_WARNING, warntype);
+>> +	if (ret)
+>> +		goto attr_err_out;
+>> +	ret = nla_put_u32(skb, QUOTA_NL_A_DEV_MAJOR,
+>> +		MAJOR(dquot->dq_sb->s_dev));
+>> +	if (ret)
+>> +		goto attr_err_out;
+>> +	ret = nla_put_u32(skb, QUOTA_NL_A_DEV_MINOR,
+>> +		MINOR(dquot->dq_sb->s_dev));
+>> +	if (ret)
+>> +		goto attr_err_out;
+>> +	ret = nla_put_u64(skb, QUOTA_NL_A_CAUSED_ID, current->user->uid);
+>> +	if (ret)
+>> +		goto attr_err_out;
+>> +	genlmsg_end(skb, msg_head);
+>> +
+
+Have you looked at ensuring that the data structure works across 32 bit
+and 64 bit systems (in terms of binary compatibility)? That's usually
+a nice to have feature.
+
+>> +	ret = genlmsg_multicast(skb, 0, quota_genl_family.id, GFP_NOFS);
+>> +	if (ret < 0 && ret != -ESRCH)
+>> +		printk(KERN_ERR
+>> +			"VFS: Failed to send notification message: %d\n", ret);
+>> +	return;
+>> +attr_err_out:
+>> +	printk(KERN_ERR "VFS: Failed to compose quota message: %d\n", ret);
+>> +err_out:
+>> +	kfree_skb(skb);
+>> +}
+>> +#endif
 > 
-> One way to handle this might be to have a "virtualize" subsystem that
-> allows you to set virtualization boundaries; by setting a particular
-> container's virtualize control file to "true" you'd enforce the rule
-> that tasks in that container (or child containers) would:
+> This is it.  Normally netlink payloads are represented as a struct.  How
+> come this one is built-by-hand?
 > 
-> - only be able to mount container hierarchies with task subsystems
-> mounted in that hierarchy
-
-So long as the available resources are always a subset of the resources
-assigned to the container, are there situations where it would be
-desirable to not allow the container to sub-partition among it's tasks?
-
-I suppose at some point we might run into performance concerns due to
-too much fine-grained partitioning?
-
-But in general I would say no.
-
-> - see that container as their root container
-
-Yes.
-
-> - not be able to increase the resource limits of their own container.
-> (similar to the way that the "mems" and "cpus" files in the root
-> cpuset container directory are read-only, certain control files would
-> become read-only in the virtualized container directory).
-
-Yes.
-
-At some point we might want to allow some capability
-CAP_SYS_CONTAINER_OVERRIDE to allow a task to create a container with
-more resources than it's parent, but it probably isn't necessary.
-
-> Possibly rather than needing a separate "virtualize" subsystem you
-> could infer virtualization boundaries based on container boundaries in
-> whichever hierarchy had the nsproxy subsystem mounted (if any). If the
-> nsproxy subsystem wasn't mounted anywhere, then no virtualization
-> would occur.
-
-A different approach:
-
-Since the controls are implemented as vfs operations, perhaps a natural
-way to split these up could be by mounts namespaces.
-
-So you clone(CLONE_NEWNS), then when the child does a mount of
-containerfs filesystem, the container hierarchy applies to the child but
-not the parent.
-
-That's probably not quite right, since we probably don't want every
-CLONE_NEWNS to have that effect.  So instead we could introduce
-CLONE_CONTAINER_LEVEL, which always implies CLONE_NEWNS, and which means
-that any containerfs mounts by the child are not applied to the parent.
-
-In either case the 'virtualize' subsystem would still exist to allow
-parents to keep track of containerfs mounts by children.
-
-(perhaps this isn't actually a different approach, but rather detail at
-a different level, since we could still use the nsproxy to cache the
-container virtualization hierarchy level or whatever the heck we call
-it).
-
-> On top of the implementation issues, there are conceptual issues to
-> deal with such as:
+> It doesn't appear to be versioned.  Should it be?
 > 
-> - what do you do with subsystems (e.g. freezer, OOM handler, network
-> flow id assigner, etc) that are inherently hard to virtualize in a
-> hierarchical way?
 
-Guess we need to go through them one by one.  With the freezer
-subsystem, if a process does clone(CLONE_CONTAINER_LEVEL) and then
-does
-	mount -t containerfs,whatever -o freeze /freezer
-then a subsequent echo 1 > /freezer/freezer.freeze should not freeze
-it's parent process.
+Yes, versioning is always nice and genetlink supports it.
 
-> - if the host mounts a container filesystem hierarchy in the guest's
-> filespace, does the guest see the host's view of containers or the
-> guest's view? i.e. is the virtualization associated with the mount
-> point or with the process doing the viewing? (I'm inclined to say the
-> former)
+> Does it have (or need) reserved-set-to-zero space for expansion?  Again,
+> hard to tell..
 > 
-> - how much visibility/control does the host have into any child task
-> containers created by the guest?
+> I guess it's OK to send a major and minor out of the kernel like this. 
+> What's it for?  To represent a filesytem?  I wonder if there's a more
+> modern and useful way of describing the fs.  Path to mountpoint or
+> something?
+> 
+> I suspect the namespace virtualisation guys would be interested in a new
+> interface which is sending current->user->uid up to userspace.  uids are
+> per-namespace now.  What are the implications?  (cc's added)
+> 
 
-I can think of two possibilities:
+The memory controller or VM would also be interested in notifications
+of OOM. At OLS this year interest was shown in getting OOM notifications
+and allow the user space a chance to handle the notification and take
+action (especially for containers). We already have containerstats for
+containers (which I was planning to reuse), but I was told that we would
+be interested in user space OOM notifications in general.
 
-	1. It could depend upon mount propagation.  To make this useful
-	we'd probably need to allow forcing a child to mount any
-	containerfs subsystems under a particular path so we can mark it
-	--rshared.  That probably still isn't enough, since the child
-	can just mark the tree --rslave.
+> Is it worth adding a comment explaining why GFP_NOFS is used here?
+> 
+> 
 
-	2. All containerfs mounts in a child after
-	clone(CLONE_CONTAINER_LEVEL) could appear in the parent's
-	hierarchy mounting the 'virtualization' subsystem.
 
-I think I've argued 1 as unworkable so I'll recommend 2  :)
-
-> - can the guest split the subsystems that are visible to it amongst
-> multiple hierarchies? Or do we rule that guests can only have access
-> to a single hierarchy?
-
-Offhand I can't think of a reason to have such a restriction, unless we
-think the guests could impact system performance with too much container
-work.
-
-thanks,
--serge
+-- 
+	Warm Regards,
+	Balbir Singh
+	Linux Technology Center
+	IBM, ISTL
