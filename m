@@ -1,35 +1,46 @@
-From: Dave Hansen <haveblue@us.ibm.com>
-Subject: Re: [-mm PATCH] Memory controller improve user interface
-Date: Wed, 29 Aug 2007 15:25:52 -0700
-Message-ID: <1188426352.28903.143.camel@localhost>
-References: <20070829111030.9987.8104.sendpatchset@balbir-laptop>
-	 <1188413148.28903.113.camel@localhost>
-	 <46D5ED5C.9030405@linux.vnet.ibm.com>
-	 <1188425894.28903.140.camel@localhost>
-	 <6599ad830708291520t2bc9ea20m2bdcd9e042b3a423@mail.gmail.com>
+From: Balbir Singh <balbir@linux.vnet.ibm.com>
+Subject: Re: [-mm PATCH]  Memory controller improve user interface
+Date: Thu, 30 Aug 2007 03:57:07 +0530
+Message-ID: <46D5F2BB.8010203@linux.vnet.ibm.com>
+References: <20070829111030.9987.8104.sendpatchset@balbir-laptop> <1188413148.28903.113.camel@localhost>  <46D5ED5C.9030405@linux.vnet.ibm.com> <1188425894.28903.140.camel@localhost>
+Reply-To: balbir@linux.vnet.ibm.com
 Mime-Version: 1.0
-Content-Type: text/plain
+Content-Type: text/plain; charset=ISO-8859-1
 Content-Transfer-Encoding: 7bit
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1761044AbXH2W0P@vger.kernel.org>
-In-Reply-To: <6599ad830708291520t2bc9ea20m2bdcd9e042b3a423@mail.gmail.com>
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1760716AbXH2W2b@vger.kernel.org>
+In-Reply-To: <1188425894.28903.140.camel@localhost>
 Sender: linux-kernel-owner@vger.kernel.org
-To: Paul Menage <menage@google.com>
-Cc: balbir@linux.vnet.ibm.com, Andrew Morton <akpm@linux-foundation.org>, Linux Kernel Mailing List <linux-kernel@vger.kernel.org>, Linux MM Mailing List <linux-mm@kvack.org>, David Rientjes <rientjes@google.com>, Linux Containers <containers@lists.osdl.org>
+To: Dave Hansen <haveblue@us.ibm.com>
+Cc: Andrew Morton <akpm@linux-foundation.org>, Linux Kernel Mailing List <linux-kernel@vger.kernel.org>, Linux MM Mailing List <linux-mm@kvack.org>, David Rientjes <rientjes@google.com>, Linux Containers <containers@lists.osdl.org>, Paul Menage <menage@google.com>
 List-Id: containers.vger.kernel.org
 
-On Wed, 2007-08-29 at 15:20 -0700, Paul Menage wrote:
+Dave Hansen wrote:
+> On Thu, 2007-08-30 at 03:34 +0530, Balbir Singh wrote:
+>> I've thought about this before. The problem is that a user could
+>> set his limit to 10000 bytes, but would then see the usage and
+>> limit round to the closest page boundary. This can be confusing
+>> to a user. 
 > 
-> I'd argue that having the user's specified limit be truncated to the
-> page size is less confusing than giving an EINVAL if it's not page
-> aligned.
+> True, but we're lying if we allow a user to set their limit there,
+> because we can't actually enforce a limit at 8,192 bytes vs 10,000.
+> They're the same limit as far as the kernel is concerned.
+> 
+> Why not just -EINVAL if the value isn't page-aligned?  There are plenty
+> of interfaces in the kernel that require userspace to know the page
+> size, so this shouldn't be too difficult.
 
-Do we truncate mmap() values to the nearest page so to not confuse the
-user? ;)
+True, mmap() is a good example of such an interface for developers, I
+am not sure about system admins though.
 
-Imagine a careful application setting and accounting for limits on a
-long-running system.  Might its internal accounting get sufficiently
-misaligned from the kernel's after a while to cause a problem?
-Truncating values like that would appear reserve significantly less
-memory than desired over a long period of time.
+To quote Andrew
+<quote>
+Reporting tools could run getpagesize() and do the arithmetic, but we
+generally try to avoid exposing PAGE_SIZE, HZ, etc to userspace in this
+manner.
+</quote>
 
--- Dave
+-- 
+	Warm Regards,
+	Balbir Singh
+	Linux Technology Center
+	IBM, ISTL
