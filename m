@@ -1,46 +1,52 @@
-From: Valdis.Kletnieks@vt.edu
-Subject: Re: [PATCH] Send quota messages via netlink
-Date: Wed, 29 Aug 2007 17:19:42 -0400
-Message-ID: <21957.1188422382@turing-police.cc.vt.edu>
-References: <20070828141318.GC5869@duck.suse.cz> <20070828211335.37fce4c9.akpm@linux-foundation.org> <20070829122647.GB7814@duck.suse.cz> <m1mywa42g7.fsf@ebiederm.dsl.xmission.com> <20070829192653.GD7814@duck.suse.cz>
-            <m1wsve2gpo.fsf@ebiederm.dsl.xmission.com>
+From: sukadev@us.ibm.com
+Subject: Re: [PATCH] Remove write-only variable from pktgen_thread
+Date: Wed, 29 Aug 2007 14:33:56 -0700
+Message-ID: <20070829213356.GC18542@us.ibm.com>
+References: <46D572FA.9090302@openvz.org>
 Mime-Version: 1.0
-Content-Type: multipart/signed; boundary="==_Exmh_1188422382_2981P";
-	 micalg=pgp-sha1; protocol="application/pgp-signature"
-Content-Transfer-Encoding: 7bit
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1760196AbXH2VUn@vger.kernel.org>
-In-Reply-To: Your message of "Wed, 29 Aug 2007 15:06:43 MDT."
-             <m1wsve2gpo.fsf@ebiederm.dsl.xmission.com>
-Sender: linux-kernel-owner@vger.kernel.org
-To: "Eric W. Biederman" <ebiederm@xmission.com>
-Cc: Jan Kara <jack@suse.cz>, Andrew Morton <akpm@linux-foundation.org>, linux-kernel@vger.kernel.org, Balbir Singh <balbir@in.ibm.com>, "Serge E. Hallyn" <serue@us.ibm.com>, containers@lists.osdl.org
+Content-Type: text/plain; charset=us-ascii
+Return-path: <netdev-owner@vger.kernel.org>
+Content-Disposition: inline
+In-Reply-To: <46D572FA.9090302@openvz.org>
+Sender: netdev-owner@vger.kernel.org
+To: Pavel Emelyanov <xemul@openvz.org>
+Cc: Andrew Morton <akpm@osdl.org>, Oleg Nesterov <oleg@tv-sign.ru>, Linux Containers <containers@lists.osdl.org>, Linux Kernel Mailing List <linux-kernel@vger.kernel.org>, Linux Netdev List <netdev@vger.kernel.org>
 List-Id: containers.vger.kernel.org
 
---==_Exmh_1188422382_2981P
-Content-Type: text/plain; charset=us-ascii
+Pavel Emelianov [xemul@openvz.org] wrote:
+| The pktgen_thread.pid is set to current->pid and is never used
+| after this. So remove this at all.
+| 
+| Found during isolating the explicit pid/tgid usage.
+| 
+| Signed-off-by: Pavel Emelyanov <xemul@openvz.org>
 
-On Wed, 29 Aug 2007 15:06:43 MDT, Eric W. Biederman said:
+Good observation that its not being used :-)
 
-> So we have to figure out how to do the hard thing which is look at
-> who opened our netlink broadcast see if they are in the same user
-> namespace as current->user.  Which is a pain and we don't currently
-> have the infrastructure for.
-
-Provision also needs to be made for things that are listening to the
-netlink broadcasts that don't match the user doing the operation or
-the owner of the file - similar to the way auditd wants events.
-
-
---==_Exmh_1188422382_2981P
-Content-Type: application/pgp-signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.7 (GNU/Linux)
-Comment: Exmh version 2.5 07/13/2001
-
-iD8DBQFG1eLtcC3lWbTT17ARAqa9AJ9Sugsdn3Liim3qnKp9qiaXZrhLlwCgyMwq
-P2A9qGQqdSjrvHU1FzAQd9E=
-=quRd
------END PGP SIGNATURE-----
-
---==_Exmh_1188422382_2981P--
+Acked-by: Sukadev Bhattiprolu <sukadev@us.ibm.com>
+| 
+| ---
+| 
+| diff --git a/net/core/pktgen.c b/net/core/pktgen.c
+| index 3a3154e..93695c2 100644
+| --- a/net/core/pktgen.c
+| +++ b/net/core/pktgen.c
+| @@ -380,7 +380,6 @@ struct pktgen_thread {
+| 	/* Field for thread to receive "posted" events terminate, stop ifs 
+| 	etc. */
+| 
+| 	u32 control;
+| -	int pid;
+| 	int cpu;
+| 
+| 	wait_queue_head_t queue;
+| @@ -3462,8 +3461,6 @@ static int pktgen_thread_worker(void *ar
+| 
+| 	init_waitqueue_head(&t->queue);
+| 
+| -	t->pid = current->pid;
+| -
+| 	pr_debug("pktgen: starting pktgen/%d:  pid=%d\n", cpu, 
+| 	task_pid_nr(current));
+| 
+| 	max_before_softirq = t->max_before_softirq;
