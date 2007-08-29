@@ -1,230 +1,138 @@
-From: Balbir Singh <balbir@linux.vnet.ibm.com>
-Subject: [-mm PATCH]  Memory controller improve user interface
-Date: Wed, 29 Aug 2007 16:40:30 +0530
-Message-ID: <20070829111030.9987.8104.sendpatchset@balbir-laptop>
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1758504AbXH2LMW@vger.kernel.org>
+From: Jan Kara <jack@suse.cz>
+Subject: Re: [PATCH] Send quota messages via netlink
+Date: Wed, 29 Aug 2007 14:26:47 +0200
+Message-ID: <20070829122647.GB7814@duck.suse.cz>
+References: <20070828141318.GC5869@duck.suse.cz> <20070828211335.37fce4c9.akpm@linux-foundation.org>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S932837AbXH2MHy@vger.kernel.org>
+Content-Disposition: inline
+In-Reply-To: <20070828211335.37fce4c9.akpm@linux-foundation.org>
 Sender: linux-kernel-owner@vger.kernel.org
 To: Andrew Morton <akpm@linux-foundation.org>
-Cc: Linux Kernel Mailing List <linux-kernel@vger.kernel.org>, Linux Containers <containers@lists.osdl.org>, Paul Menage <menage@google.com>, Linux MM Mailing List <linux-mm@kvack.org>, David Rientjes <rientjes@google.com>, Balbir Singh <balbir@linux.vnet.ibm.com>
+Cc: linux-kernel@vger.kernel.org, Balbir Singh <balbir@in.ibm.com>, "Serge E. Hallyn" <serue@us.ibm.com>, "Eric W. Biederman" <ebiederm@xmission.com>, containers@lists.osdl.org
 List-Id: containers.vger.kernel.org
 
+On Tue 28-08-07 21:13:35, Andrew Morton wrote:
+> On Tue, 28 Aug 2007 16:13:18 +0200 Jan Kara <jack@suse.cz> wrote:
+> 
+> >   Hello,
+> > 
+> >   I'm sending rediffed patch implementing sending of quota messages via netlink
+> > interface (some rationale in patch description). I've already posted it to
+> > LKML some time ago and there were no objections, so I guess it's fine to put
+> > it to -mm. Andrew, would you be so kind? Thanks.
+> >   Userspace deamon reading the messages from the kernel and sending them to
+> > dbus and/or user console is also written (it's part of quota-tools). The
+> > only remaining problem is there are a few changes needed to libnl needed for
+> > the userspace daemon. They were basically acked by the maintainer but it
+> > seems he has not merged the patches yet. So this will take a bit more time.
+> > 
+> 
+> So it's a new kernel->userspace interface.
+> 
+> But we have no description of the interface :(
+  Oops, forgotten about it. I'll write one. Do we have some standard place
+where to document such interfaces? I could create some file in
+Documentation/filesystems/ but that seems a bit superfluous...
 
+> > +/* Send warning to userspace about user which exceeded quota */
+> > +static void send_warning(const struct dquot *dquot, const char warntype)
+> > +{
+> > +	static unsigned long seq;
+> > +	struct sk_buff *skb;
+> > +	void *msg_head;
+> > +	int ret;
+> > +
+> > +	skb = genlmsg_new(QUOTA_NL_MSG_SIZE, GFP_NOFS);
+> > +	if (!skb) {
+> > +		printk(KERN_ERR
+> > +		  "VFS: Not enough memory to send quota warning.\n");
+> > +		return;
+> > +	}
+> > +	msg_head = genlmsg_put(skb, 0, seq++, &quota_genl_family, 0, QUOTA_NL_C_WARNING);
+> > +	if (!msg_head) {
+> > +		printk(KERN_ERR
+> > +		  "VFS: Cannot store netlink header in quota warning.\n");
+> > +		goto err_out;
+> > +	}
+> > +	ret = nla_put_u32(skb, QUOTA_NL_A_QTYPE, dquot->dq_type);
+> > +	if (ret)
+> > +		goto attr_err_out;
+> > +	ret = nla_put_u64(skb, QUOTA_NL_A_EXCESS_ID, dquot->dq_id);
+> > +	if (ret)
+> > +		goto attr_err_out;
+> > +	ret = nla_put_u32(skb, QUOTA_NL_A_WARNING, warntype);
+> > +	if (ret)
+> > +		goto attr_err_out;
+> > +	ret = nla_put_u32(skb, QUOTA_NL_A_DEV_MAJOR,
+> > +		MAJOR(dquot->dq_sb->s_dev));
+> > +	if (ret)
+> > +		goto attr_err_out;
+> > +	ret = nla_put_u32(skb, QUOTA_NL_A_DEV_MINOR,
+> > +		MINOR(dquot->dq_sb->s_dev));
+> > +	if (ret)
+> > +		goto attr_err_out;
+> > +	ret = nla_put_u64(skb, QUOTA_NL_A_CAUSED_ID, current->user->uid);
+> > +	if (ret)
+> > +		goto attr_err_out;
+> > +	genlmsg_end(skb, msg_head);
+> > +
+> > +	ret = genlmsg_multicast(skb, 0, quota_genl_family.id, GFP_NOFS);
+> > +	if (ret < 0 && ret != -ESRCH)
+> > +		printk(KERN_ERR
+> > +			"VFS: Failed to send notification message: %d\n", ret);
+> > +	return;
+> > +attr_err_out:
+> > +	printk(KERN_ERR "VFS: Failed to compose quota message: %d\n", ret);
+> > +err_out:
+> > +	kfree_skb(skb);
+> > +}
+> > +#endif
+> 
+> This is it.  Normally netlink payloads are represented as a struct.  How
+> come this one is built-by-hand?
+  I use "generic netlink", which is in fact a layer built on top of
+netlink. As far as I've read it's documentation, creating a message
+argument by argument is the preferred way. As David writes, this way
+we can add new arguments without worries about backward compatibility,
+alignment issues or such things.
 
-Change the interface to use kilobytes instead of pages. Page sizes can vary
-across platforms and configurations. A new strategy routine has been added
-to the resource counters infrastructure to format the data as desired.
+> It doesn't appear to be versioned.  Should it be?
+  We don't need a version for future additions. Also each attribute sent
+has its identifier (e.g. QUOTA_NL_A_CAUSED_ID) and userspace checks these
+identifiers and unknown attributes are ignored. But in case we would like
+to remove some attribute, versioning would be probably useful so that
+userspace won't break silently... So I'll add it.
 
-Suggested by David Rientjes, Andrew Morton and Herbert Poetzl
+> Does it have (or need) reserved-set-to-zero space for expansion?  Again,
+> hard to tell..
+  No, we don't need it as I wrote above.
 
-Signed-off-by: Balbir Singh <balbir@linux.vnet.ibm.com>
----
+> I guess it's OK to send a major and minor out of the kernel like this. 
+> What's it for?  To represent a filesytem?  I wonder if there's a more
+> modern and useful way of describing the fs.  Path to mountpoint or
+> something?
+  I also find major/minor pair a bit old-fashioned. But the identifying it
+by a mountpoint is problematic - quota does not care about namespaces and
+such and so it works with superblocks. It's not trivial to get a mountpoint
+from a superblock (and generally it's frown upon, isn't it?). Also if a
+filesystem is mounted on several places, we have to pick one (OK, userspace
+has to do this choice anyway when displaying the message but still...).
 
- Documentation/controllers/memory.txt |    7 +++--
- include/linux/res_counter.h          |    6 ++--
- kernel/res_counter.c                 |   24 +++++++++++++----
- mm/memcontrol.c                      |   47 +++++++++++++++++++++++++++--------
- 4 files changed, 64 insertions(+), 20 deletions(-)
+> I suspect the namespace virtualisation guys would be interested in a new
+> interface which is sending current->user->uid up to userspace.  uids are
+> per-namespace now.  What are the implications?  (cc's added)
+  I know there's something going on in this area but I don't know any
+details. If somebody has some advice what should be passed into userspace
+so that user/group can be idenitified, it is welcome.
+  
+> Is it worth adding a comment explaining why GFP_NOFS is used here?
+  Probably yes. Added.
 
-diff -puN mm/memcontrol.c~mem-control-make-ui-use-kilobytes mm/memcontrol.c
---- linux-2.6.23-rc3/mm/memcontrol.c~mem-control-make-ui-use-kilobytes	2007-08-28 13:20:44.000000000 +0530
-+++ linux-2.6.23-rc3-balbir/mm/memcontrol.c	2007-08-29 14:36:07.000000000 +0530
-@@ -32,6 +32,7 @@
- 
- struct container_subsys mem_container_subsys;
- static const int MEM_CONTAINER_RECLAIM_RETRIES = 5;
-+static const int MEM_CONTAINER_CHARGE_KB = (PAGE_SIZE >> 10);
- 
- /*
-  * The memory controller data structure. The memory controller controls both
-@@ -312,7 +313,7 @@ int mem_container_charge(struct page *pa
- 	 * If we created the page_container, we should free it on exceeding
- 	 * the container limit.
- 	 */
--	while (res_counter_charge(&mem->res, 1)) {
-+	while (res_counter_charge(&mem->res, MEM_CONTAINER_CHARGE_KB)) {
- 		if (try_to_free_mem_container_pages(mem))
- 			continue;
- 
-@@ -352,7 +353,7 @@ int mem_container_charge(struct page *pa
- 		kfree(pc);
- 		pc = race_pc;
- 		atomic_inc(&pc->ref_cnt);
--		res_counter_uncharge(&mem->res, 1);
-+		res_counter_uncharge(&mem->res, MEM_CONTAINER_CHARGE_KB);
- 		css_put(&mem->css);
- 		goto done;
- 	}
-@@ -417,7 +418,7 @@ void mem_container_uncharge(struct page_
- 		css_put(&mem->css);
- 		page_assign_page_container(page, NULL);
- 		unlock_page_container(page);
--		res_counter_uncharge(&mem->res, 1);
-+		res_counter_uncharge(&mem->res, MEM_CONTAINER_CHARGE_KB);
- 
-  		spin_lock_irqsave(&mem->lru_lock, flags);
-  		list_del_init(&pc->lru);
-@@ -426,12 +427,37 @@ void mem_container_uncharge(struct page_
- 	}
- }
- 
--static ssize_t mem_container_read(struct container *cont, struct cftype *cft,
--			struct file *file, char __user *userbuf, size_t nbytes,
--			loff_t *ppos)
-+int mem_container_read_strategy(unsigned long val, char *buf)
-+{
-+	return sprintf(buf, "%lu (kB)\n", val);
-+}
-+
-+int mem_container_write_strategy(char *buf, unsigned long *tmp)
-+{
-+	*tmp = memparse(buf, &buf);
-+	if (*buf != '\0')
-+		return -EINVAL;
-+
-+	*tmp = *tmp >> 10;		/* convert to kilobytes */
-+	return 0;
-+}
-+
-+static ssize_t mem_container_read_usage(struct container *cont,
-+			struct cftype *cft, struct file *file,
-+			char __user *userbuf, size_t nbytes, loff_t *ppos)
-+{
-+	return res_counter_read(&mem_container_from_cont(cont)->res,
-+				cft->private, userbuf, nbytes, ppos,
-+				mem_container_read_strategy);
-+}
-+
-+static ssize_t mem_container_read(struct container *cont,
-+			struct cftype *cft, struct file *file,
-+			char __user *userbuf, size_t nbytes, loff_t *ppos)
- {
- 	return res_counter_read(&mem_container_from_cont(cont)->res,
--				cft->private, userbuf, nbytes, ppos);
-+				cft->private, userbuf, nbytes, ppos,
-+				NULL);
- }
- 
- static ssize_t mem_container_write(struct container *cont, struct cftype *cft,
-@@ -439,7 +465,8 @@ static ssize_t mem_container_write(struc
- 				size_t nbytes, loff_t *ppos)
- {
- 	return res_counter_write(&mem_container_from_cont(cont)->res,
--				cft->private, userbuf, nbytes, ppos);
-+				cft->private, userbuf, nbytes, ppos,
-+				mem_container_write_strategy);
- }
- 
- static ssize_t mem_control_type_write(struct container *cont,
-@@ -500,13 +527,13 @@ static struct cftype mem_container_files
- 	{
- 		.name = "usage",
- 		.private = RES_USAGE,
--		.read = mem_container_read,
-+		.read = mem_container_read_usage,
- 	},
- 	{
- 		.name = "limit",
- 		.private = RES_LIMIT,
- 		.write = mem_container_write,
--		.read = mem_container_read,
-+		.read = mem_container_read_usage,
- 	},
- 	{
- 		.name = "failcnt",
-diff -puN include/linux/memcontrol.h~mem-control-make-ui-use-kilobytes include/linux/memcontrol.h
-diff -puN include/linux/res_counter.h~mem-control-make-ui-use-kilobytes include/linux/res_counter.h
---- linux-2.6.23-rc3/include/linux/res_counter.h~mem-control-make-ui-use-kilobytes	2007-08-28 13:21:36.000000000 +0530
-+++ linux-2.6.23-rc3-balbir/include/linux/res_counter.h	2007-08-29 00:52:45.000000000 +0530
-@@ -52,9 +52,11 @@ struct res_counter {
-  */
- 
- ssize_t res_counter_read(struct res_counter *counter, int member,
--		const char __user *buf, size_t nbytes, loff_t *pos);
-+		const char __user *buf, size_t nbytes, loff_t *pos,
-+		int (*read_strategy)(unsigned long val, char *s));
- ssize_t res_counter_write(struct res_counter *counter, int member,
--		const char __user *buf, size_t nbytes, loff_t *pos);
-+		const char __user *buf, size_t nbytes, loff_t *pos,
-+		int (*write_strategy)(char *buf, unsigned long *val));
- 
- /*
-  * the field descriptors. one for each member of res_counter
-diff -puN kernel/res_counter.c~mem-control-make-ui-use-kilobytes kernel/res_counter.c
---- linux-2.6.23-rc3/kernel/res_counter.c~mem-control-make-ui-use-kilobytes	2007-08-28 13:21:41.000000000 +0530
-+++ linux-2.6.23-rc3-balbir/kernel/res_counter.c	2007-08-29 14:54:04.000000000 +0530
-@@ -76,20 +76,25 @@ static inline unsigned long *res_counter
- }
- 
- ssize_t res_counter_read(struct res_counter *counter, int member,
--		const char __user *userbuf, size_t nbytes, loff_t *pos)
-+		const char __user *userbuf, size_t nbytes, loff_t *pos,
-+		int (*read_strategy)(unsigned long val, char *st_buf))
- {
- 	unsigned long *val;
- 	char buf[64], *s;
- 
- 	s = buf;
- 	val = res_counter_member(counter, member);
--	s += sprintf(s, "%lu\n", *val);
-+	if (read_strategy)
-+		s += read_strategy(*val, s);
-+	else
-+		s += sprintf(s, "%lu\n", *val);
- 	return simple_read_from_buffer((void __user *)userbuf, nbytes,
- 			pos, buf, s - buf);
- }
- 
- ssize_t res_counter_write(struct res_counter *counter, int member,
--		const char __user *userbuf, size_t nbytes, loff_t *pos)
-+		const char __user *userbuf, size_t nbytes, loff_t *pos,
-+		int (*write_strategy)(char *st_buf, unsigned long *val))
- {
- 	int ret;
- 	char *buf, *end;
-@@ -106,9 +111,16 @@ ssize_t res_counter_write(struct res_cou
- 		goto out_free;
- 
- 	ret = -EINVAL;
--	tmp = simple_strtoul(buf, &end, 10);
--	if (*end != '\0')
--		goto out_free;
-+
-+	if (write_strategy) {
-+		if (write_strategy(buf, &tmp)) {
-+			goto out_free;
-+		}
-+	} else {
-+		tmp = simple_strtoul(buf, &end, 10);
-+		if (*end != '\0')
-+			goto out_free;
-+	}
- 
- 	val = res_counter_member(counter, member);
- 	*val = tmp;
-diff -puN Documentation/controllers/memory.txt~mem-control-make-ui-use-kilobytes Documentation/controllers/memory.txt
---- linux-2.6.23-rc3/Documentation/controllers/memory.txt~mem-control-make-ui-use-kilobytes	2007-08-29 14:42:03.000000000 +0530
-+++ linux-2.6.23-rc3-balbir/Documentation/controllers/memory.txt	2007-08-29 14:50:42.000000000 +0530
-@@ -165,11 +165,14 @@ c. Enable CONFIG_CONTAINER_MEM_CONT
- 
- Since now we're in the 0 container,
- We can alter the memory limit:
--# echo -n 6000 > /containers/0/memory.limit
-+# echo -n 4000K > /containers/0/memory.limit
-+
-+NOTE: The interface has now changed to display the usage in kilobytes
-+instead of pages
- 
- We can check the usage:
- # cat /containers/0/memory.usage
--25
-+56 (kB)
- 
- The memory.failcnt field gives the number of times that the container limit was
- exceeded.
-_
+  Thanks for all your comments.
 
+									Honza
 -- 
-	Warm Regards,
-	Balbir Singh
-	Linux Technology Center
-	IBM, ISTL
+Jan Kara <jack@suse.cz>
+SuSE CR Labs
