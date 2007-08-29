@@ -1,47 +1,89 @@
-From: "Paul Menage" <menage@google.com>
-Subject: Re: [-mm PATCH] Memory controller improve user interface
-Date: Wed, 29 Aug 2007 09:17:40 -0700
-Message-ID: <6599ad830708290917w599210fbx31b361a3529bdf3@mail.gmail.com>
-References: <20070829111030.9987.8104.sendpatchset@balbir-laptop>
-	 <6599ad830708290828t5164260eid548757d404e31a5@mail.gmail.com>
-	 <46D599CA.1020504@linux.vnet.ibm.com>
+From: ebiederm@xmission.com (Eric W. Biederman)
+Subject: Re: [PATCH] Send quota messages via netlink
+Date: Wed, 29 Aug 2007 12:31:52 -0600
+Message-ID: <m1mywa42g7.fsf@ebiederm.dsl.xmission.com>
+References: <20070828141318.GC5869@duck.suse.cz>
+	<20070828211335.37fce4c9.akpm@linux-foundation.org>
+	<20070829122647.GB7814@duck.suse.cz>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Content-Transfer-Encoding: 7bit
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S964830AbXH2QSJ@vger.kernel.org>
-In-Reply-To: <46D599CA.1020504@linux.vnet.ibm.com>
-Content-Disposition: inline
+Content-Type: text/plain; charset=us-ascii
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1757639AbXH2Scg@vger.kernel.org>
+In-Reply-To: <20070829122647.GB7814@duck.suse.cz> (Jan Kara's message of "Wed,
+	29 Aug 2007 14:26:47 +0200")
 Sender: linux-kernel-owner@vger.kernel.org
-To: balbir@linux.vnet.ibm.com
-Cc: Linux Containers <containers@lists.osdl.org>, Linux MM Mailing List <linux-mm@kvack.org>, Andrew Morton <akpm@linux-foundation.org>, Linux Kernel Mailing List <linux-kernel@vger.kernel.org>, David Rientjes <rientjes@google.com>
+To: Jan Kara <jack@suse.cz>
+Cc: Andrew Morton <akpm@linux-foundation.org>, linux-kernel@vger.kernel.org, Balbir Singh <balbir@in.ibm.com>, "Serge E. Hallyn" <serue@us.ibm.com>, containers@lists.osdl.org
 List-Id: containers.vger.kernel.org
 
-On 8/29/07, Balbir Singh <balbir@linux.vnet.ibm.com> wrote:
-> >
-> > This seems a bit inconsistent - if you write a value to a limit file,
-> > then the value that you read back is reduced by a factor of 1024?
-> > Having the "(kB)" suffix isn't really a big help to automated
-> > middleware.
-> >
->
-> Why is that? Is it because you could write 4M and see it show up
-> as 4096 kilobytes? We'll that can be fixed with another variant
-> of the memparse() utility.
+Jan Kara <jack@suse.cz> writes:
 
-I was thinking the other way around - you can write 1048576 (i.e. 1MB)
-to the file and read back 1024. It just seems to me that it's clearer
-if you write X to the file to get X back.
+>> I suspect the namespace virtualisation guys would be interested in a new
+>> interface which is sending current->user->uid up to userspace.  uids are
+>> per-namespace now.  What are the implications?  (cc's added)
 
->
-> 64 bit might be an overkill for 32 bit machines. 32 bit machines with
-> PAE cannot use 32 bit values, they need 64 bits.
+>   I know there's something going on in this area but I don't know any
+> details. If somebody has some advice what should be passed into userspace
+> so that user/group can be idenitified, it is welcome.
 
-How is using a 64-bit value for consistency overkill?
+For non networking stuff netlink is a pain to use in this area.
 
-As someone pointed out, 4TB machines probably aren't that far around
-the corner (if they're not here already) so even if you use KB rather
-than bytes, userspace needs to be using an int64 for this value in
-case it ends up running as a 32-bit-compiled app on a 64-bit kernel
-with lots of memory.
+Although if we are very careful we may be ok.  But this requires
+some thinking through.
 
-Paul
+In principle the uid that corresponds to a struct user depends
+on which user namespace you are in.
+
+Now there is a cheap trick we can play.  A traditional filesystem
+belongs to exactly one user namespace. So we can return the uid
+in the filesystems user namespace.
+
+Wait you are returning current->user->uid?  Shouldn't we return
+the user who's quota is exceeded?  I.e. if alice owns a file
+and makes it world writable.  And bob writes to the file wouldn't
+that file still be billed to alice's quota?  So shouldn't we complain
+about alice and not bob?
+
+Anyway if the goal is to return a user who maps to the filesystem we
+can just always return uids in the filesystems uid namespace.
+
+Although if filesystems start supporting multiple user namespaces
+natively we might have a challenge on our hands.
+
+Let me see if I can think of a concrete example here.
+
+We have a nfs server with quotas.
+We have clients who mount the nfs filesystem without synchronizing
+their /etc/password files, so we have separate user namespaces.
+
+What are the ways to make this work?
+- Everyone who has right access to the NFS mount on all
+  machines must have their uid synchronized across all machines
+  (the easiest case).
+
+- Each different kernel has a mapping from it's local uids to
+  the uids of the nfs filesystem. (ick if we do much more the
+  root squash).
+
+- The nfs filesystem knows about the situation and remembers the
+  uid source (the uid namespace) as well as the uid when storing
+  owners of files.  NFSv4 allows for this by treating users
+  as user@domain.
+
+Generally synchronizing uid namespaces (with possibly a root squash
+exception) is the sanest and simplest thing to do in a case like this,
+but it isn't always what is done.
+
+As long as we are returning the filesystems idea of users we
+shouldn't have to worry much about uid namespaces.  However
+for non-traditional filesystems that don't store the user
+as just a uid, say 9p and NFSv4, this implies that we want
+to use the filesystems string identifier.  However I don't think
+the quota system supports these filesystems yet.  So that
+isn't an issue just yet.
+
+However I'm still confused about the use of current->user.  If that
+is what we really want and not the user who's quota will be charged
+it gets to be a really trick business, because potentially the uid
+we want to deliver varies depending on who opened the netlink socket.
+
+Eric
