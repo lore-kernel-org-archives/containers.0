@@ -1,46 +1,42 @@
-From: Balbir Singh <balbir@linux.vnet.ibm.com>
+From: Dave Hansen <haveblue@us.ibm.com>
 Subject: Re: [-mm PATCH]  Memory controller improve user interface
-Date: Thu, 30 Aug 2007 03:57:07 +0530
-Message-ID: <46D5F2BB.8010203@linux.vnet.ibm.com>
-References: <20070829111030.9987.8104.sendpatchset@balbir-laptop> <1188413148.28903.113.camel@localhost>  <46D5ED5C.9030405@linux.vnet.ibm.com> <1188425894.28903.140.camel@localhost>
-Reply-To: balbir@linux.vnet.ibm.com
+Date: Wed, 29 Aug 2007 15:36:40 -0700
+Message-ID: <1188427000.28903.148.camel@localhost>
+References: <20070829111030.9987.8104.sendpatchset@balbir-laptop>
+	 <1188413148.28903.113.camel@localhost>
+	 <46D5ED5C.9030405@linux.vnet.ibm.com>
+	 <1188425894.28903.140.camel@localhost>
+	 <46D5F2BB.8010203@linux.vnet.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
+Content-Type: text/plain
 Content-Transfer-Encoding: 7bit
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1760716AbXH2W2b@vger.kernel.org>
-In-Reply-To: <1188425894.28903.140.camel@localhost>
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1761276AbXH2Wgy@vger.kernel.org>
+In-Reply-To: <46D5F2BB.8010203@linux.vnet.ibm.com>
 Sender: linux-kernel-owner@vger.kernel.org
-To: Dave Hansen <haveblue@us.ibm.com>
+To: balbir@linux.vnet.ibm.com
 Cc: Andrew Morton <akpm@linux-foundation.org>, Linux Kernel Mailing List <linux-kernel@vger.kernel.org>, Linux MM Mailing List <linux-mm@kvack.org>, David Rientjes <rientjes@google.com>, Linux Containers <containers@lists.osdl.org>, Paul Menage <menage@google.com>
 List-Id: containers.vger.kernel.org
 
-Dave Hansen wrote:
-> On Thu, 2007-08-30 at 03:34 +0530, Balbir Singh wrote:
->> I've thought about this before. The problem is that a user could
->> set his limit to 10000 bytes, but would then see the usage and
->> limit round to the closest page boundary. This can be confusing
->> to a user. 
+On Thu, 2007-08-30 at 03:57 +0530, Balbir Singh wrote:
+> True, mmap() is a good example of such an interface for developers, I
+> am not sure about system admins though.
 > 
-> True, but we're lying if we allow a user to set their limit there,
-> because we can't actually enforce a limit at 8,192 bytes vs 10,000.
-> They're the same limit as far as the kernel is concerned.
-> 
-> Why not just -EINVAL if the value isn't page-aligned?  There are plenty
-> of interfaces in the kernel that require userspace to know the page
-> size, so this shouldn't be too difficult.
+> To quote Andrew
+> <quote>
+> Reporting tools could run getpagesize() and do the arithmetic, but we
+> generally try to avoid exposing PAGE_SIZE, HZ, etc to userspace in this
+> manner.
+> </quote>
 
-True, mmap() is a good example of such an interface for developers, I
-am not sure about system admins though.
+Well, rounding to PAGE_SIZE exposes PAGE_SIZE as well, just in a
+non-intuitive fashion. :)
 
-To quote Andrew
-<quote>
-Reporting tools could run getpagesize() and do the arithmetic, but we
-generally try to avoid exposing PAGE_SIZE, HZ, etc to userspace in this
-manner.
-</quote>
+If we're going to modify what the user specifies, we should probably at
+least mandate that writes are only a "suggestion" and users must read
+back the value to ensure what actually got committed.
 
--- 
-	Warm Regards,
-	Balbir Singh
-	Linux Technology Center
-	IBM, ISTL
+If we're going to round in any direction, shouldn't we round up?  If a
+user specifies 4097 bytes and uses two pages, we don't want to complain
+when they hit that second page.  
+
+-- Dave
