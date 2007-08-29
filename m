@@ -1,48 +1,126 @@
-From: Randy Dunlap <randy.dunlap@oracle.com>
-Subject: Re: [PATCH] Send quota messages via netlink
-Date: Wed, 29 Aug 2007 08:57:09 -0700
-Message-ID: <20070829085709.8deaaa4e.randy.dunlap@oracle.com>
-References: <20070828141318.GC5869@duck.suse.cz>
-	<20070828211335.37fce4c9.akpm@linux-foundation.org>
-	<20070829122647.GB7814@duck.suse.cz>
+From: Balbir Singh <balbir@linux.vnet.ibm.com>
+Subject: Re: [-mm PATCH] Memory controller improve user interface
+Date: Wed, 29 Aug 2007 21:37:38 +0530
+Message-ID: <46D599CA.1020504@linux.vnet.ibm.com>
+References: <20070829111030.9987.8104.sendpatchset@balbir-laptop> <6599ad830708290828t5164260eid548757d404e31a5@mail.gmail.com>
+Reply-To: balbir@linux.vnet.ibm.com
 Mime-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
+Content-Type: text/plain; charset=ISO-8859-1
 Content-Transfer-Encoding: 7bit
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1759650AbXH2P7o@vger.kernel.org>
-In-Reply-To: <20070829122647.GB7814@duck.suse.cz>
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S932368AbXH2QIA@vger.kernel.org>
+In-Reply-To: <6599ad830708290828t5164260eid548757d404e31a5@mail.gmail.com>
 Sender: linux-kernel-owner@vger.kernel.org
-To: Jan Kara <jack@suse.cz>
-Cc: Andrew Morton <akpm@linux-foundation.org>, linux-kernel@vger.kernel.org, Balbir Singh <balbir@in.ibm.com>, "Serge E. Hallyn" <serue@us.ibm.com>, "Eric W. Biederman" <ebiederm@xmission.com>, containers@lists.osdl.org
+To: Paul Menage <menage@google.com>
+Cc: Linux Containers <containers@lists.osdl.org>, Linux MM Mailing List <linux-mm@kvack.org>, Andrew Morton <akpm@linux-foundation.org>, Linux Kernel Mailing List <linux-kernel@vger.kernel.org>, David Rientjes <rientjes@google.com>
 List-Id: containers.vger.kernel.org
 
-On Wed, 29 Aug 2007 14:26:47 +0200 Jan Kara wrote:
+Paul Menage wrote:
+> On 8/29/07, Balbir Singh <balbir@linux.vnet.ibm.com> wrote:
+>> Change the interface to use kilobytes instead of pages. Page sizes can vary
+>> across platforms and configurations. A new strategy routine has been added
+>> to the resource counters infrastructure to format the data as desired.
+>>
+>> Suggested by David Rientjes, Andrew Morton and Herbert Poetzl
+>>
+>> Signed-off-by: Balbir Singh <balbir@linux.vnet.ibm.com>
+>> ---
+>>
+>>  Documentation/controllers/memory.txt |    7 +++--
+>>  include/linux/res_counter.h          |    6 ++--
+>>  kernel/res_counter.c                 |   24 +++++++++++++----
+>>  mm/memcontrol.c                      |   47 +++++++++++++++++++++++++++--------
+>>  4 files changed, 64 insertions(+), 20 deletions(-)
+>>
+>> diff -puN mm/memcontrol.c~mem-control-make-ui-use-kilobytes mm/memcontrol.c
+>> --- linux-2.6.23-rc3/mm/memcontrol.c~mem-control-make-ui-use-kilobytes  2007-08-28 13:20:44.000000000 +0530
+>> +++ linux-2.6.23-rc3-balbir/mm/memcontrol.c     2007-08-29 14:36:07.000000000 +0530
+>> @@ -32,6 +32,7 @@
+>>
+>>  struct container_subsys mem_container_subsys;
+>>  static const int MEM_CONTAINER_RECLAIM_RETRIES = 5;
+>> +static const int MEM_CONTAINER_CHARGE_KB = (PAGE_SIZE >> 10);
+>>
+>>  /*
+>>   * The memory controller data structure. The memory controller controls both
+>> @@ -312,7 +313,7 @@ int mem_container_charge(struct page *pa
+>>          * If we created the page_container, we should free it on exceeding
+>>          * the container limit.
+>>          */
+>> -       while (res_counter_charge(&mem->res, 1)) {
+>> +       while (res_counter_charge(&mem->res, MEM_CONTAINER_CHARGE_KB)) {
+>>                 if (try_to_free_mem_container_pages(mem))
+>>                         continue;
+>>
+>> @@ -352,7 +353,7 @@ int mem_container_charge(struct page *pa
+>>                 kfree(pc);
+>>                 pc = race_pc;
+>>                 atomic_inc(&pc->ref_cnt);
+>> -               res_counter_uncharge(&mem->res, 1);
+>> +               res_counter_uncharge(&mem->res, MEM_CONTAINER_CHARGE_KB);
+>>                 css_put(&mem->css);
+>>                 goto done;
+>>         }
+>> @@ -417,7 +418,7 @@ void mem_container_uncharge(struct page_
+>>                 css_put(&mem->css);
+>>                 page_assign_page_container(page, NULL);
+>>                 unlock_page_container(page);
+>> -               res_counter_uncharge(&mem->res, 1);
+>> +               res_counter_uncharge(&mem->res, MEM_CONTAINER_CHARGE_KB);
+>>
+>>                 spin_lock_irqsave(&mem->lru_lock, flags);
+>>                 list_del_init(&pc->lru);
+>> @@ -426,12 +427,37 @@ void mem_container_uncharge(struct page_
+>>         }
+>>  }
+>>
+>> -static ssize_t mem_container_read(struct container *cont, struct cftype *cft,
+>> -                       struct file *file, char __user *userbuf, size_t nbytes,
+>> -                       loff_t *ppos)
+>> +int mem_container_read_strategy(unsigned long val, char *buf)
+>> +{
+>> +       return sprintf(buf, "%lu (kB)\n", val);
+>> +}
+>> +
+>> +int mem_container_write_strategy(char *buf, unsigned long *tmp)
+>> +{
+>> +       *tmp = memparse(buf, &buf);
+>> +       if (*buf != '\0')
+>> +               return -EINVAL;
+>> +
+>> +       *tmp = *tmp >> 10;              /* convert to kilobytes */
+>> +       return 0;
+>> +}
+> 
+> This seems a bit inconsistent - if you write a value to a limit file,
+> then the value that you read back is reduced by a factor of 1024?
+> Having the "(kB)" suffix isn't really a big help to automated
+> middleware.
+> 
 
-> On Tue 28-08-07 21:13:35, Andrew Morton wrote:
-> > On Tue, 28 Aug 2007 16:13:18 +0200 Jan Kara <jack@suse.cz> wrote:
-> > 
-> > >   Hello,
-> > > 
-> > >   I'm sending rediffed patch implementing sending of quota messages via netlink
-> > > interface (some rationale in patch description). I've already posted it to
-> > > LKML some time ago and there were no objections, so I guess it's fine to put
-> > > it to -mm. Andrew, would you be so kind? Thanks.
-> > >   Userspace deamon reading the messages from the kernel and sending them to
-> > > dbus and/or user console is also written (it's part of quota-tools). The
-> > > only remaining problem is there are a few changes needed to libnl needed for
-> > > the userspace daemon. They were basically acked by the maintainer but it
-> > > seems he has not merged the patches yet. So this will take a bit more time.
-> > > 
-> > 
-> > So it's a new kernel->userspace interface.
-> > 
-> > But we have no description of the interface :(
->   Oops, forgotten about it. I'll write one. Do we have some standard place
-> where to document such interfaces? I could create some file in
-> Documentation/filesystems/ but that seems a bit superfluous...
+Why is that? Is it because you could write 4M and see it show up
+as 4096 kilobytes? We'll that can be fixed with another variant
+of the memparse() utility.
 
-It looks like other quota documentation is in Documentation/filesystems/,
-and that seems reasonable to me for the other quota docs & this one.
+> I'd still be in favour of just reading/writing 64-bit values
+> representing bytes - simple, and unambiguous for programmatic use, and
+> not really any less user-friendly than kilobytes  for manual use
+> (since the numbers involved are going to be unwieldly for manual use
+> whether they're in bytes or kB).
+> 
 
----
-~Randy
-*** Remember to use Documentation/SubmitChecklist when testing your code ***
+64 bit might be an overkill for 32 bit machines. 32 bit machines with
+PAE cannot use 32 bit values, they need 64 bits. I think KiloBytes
+is an acceptable metric these days, everybody understands them.
+
+> Paul
+> _______________________________________________
+> Containers mailing list
+> Containers@lists.linux-foundation.org
+> https://lists.linux-foundation.org/mailman/listinfo/containers
+
+
+-- 
+	Warm Regards,
+	Balbir Singh
+	Linux Technology Center
+	IBM, ISTL
