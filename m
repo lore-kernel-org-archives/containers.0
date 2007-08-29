@@ -1,50 +1,105 @@
-From: Christoph Hellwig <hch@infradead.org>
-Subject: Re: [PATCH] Switch nfs/callback.c to using struct pid, not pid_t
-Date: Wed, 29 Aug 2007 15:18:23 +0100
-Message-ID: <20070829141823.GA15255@infradead.org>
-References: <46D57658.2040704@openvz.org> <20070829135205.GA13879@infradead.org> <1188396641.6580.62.camel@heimdal.trondhjem.org>
+From: "Paul Menage" <menage@google.com>
+Subject: Re: [-mm PATCH] Memory controller improve user interface
+Date: Wed, 29 Aug 2007 08:28:56 -0700
+Message-ID: <6599ad830708290828t5164260eid548757d404e31a5@mail.gmail.com>
+References: <20070829111030.9987.8104.sendpatchset@balbir-laptop>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1754684AbXH2OS7@vger.kernel.org>
+Content-Type: text/plain; charset=ISO-8859-1
+Content-Transfer-Encoding: 7bit
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1759578AbXH2Pau@vger.kernel.org>
+In-Reply-To: <20070829111030.9987.8104.sendpatchset@balbir-laptop>
 Content-Disposition: inline
-In-Reply-To: <1188396641.6580.62.camel@heimdal.trondhjem.org>
 Sender: linux-kernel-owner@vger.kernel.org
-To: Trond Myklebust <trond.myklebust@fys.uio.no>
-Cc: Christoph Hellwig <hch@infradead.org>, Pavel Emelyanov <xemul@openvz.org>, Andrew Morton <akpm@osdl.org>, Oleg Nesterov <oleg@tv-sign.ru>, Sukadev Bhattiprolu <sukadev@us.ibm.com>, Linux Containers <containers@lists.osdl.org>, Linux Kernel Mailing List <linux-kernel@vger.kernel.org>
+To: Balbir Singh <balbir@linux.vnet.ibm.com>
+Cc: Andrew Morton <akpm@linux-foundation.org>, Linux Kernel Mailing List <linux-kernel@vger.kernel.org>, Linux Containers <containers@lists.osdl.org>, Linux MM Mailing List <linux-mm@kvack.org>, David Rientjes <rientjes@google.com>
 List-Id: containers.vger.kernel.org
 
-On Wed, Aug 29, 2007 at 10:10:41AM -0400, Trond Myklebust wrote:
-> On Wed, 2007-08-29 at 14:52 +0100, Christoph Hellwig wrote:
-> > On Wed, Aug 29, 2007 at 05:36:24PM +0400, Pavel Emelyanov wrote:
-> > > Pid namespaces make it dangerous to use pid and tgid values
-> > > when run in some namespace. The struct pid itself is going
-> > > to be the only way for working with task pids, so make the
-> > > nfs callback thread use it.
-> > > 
-> > > Since nfs_callback_info.pid is set to current's one and reset
-> > > on the thread exit, it is safe not to get the struct pid. 
-> > > 
-> > > Since this pid is used later under lock_kernel() w/o sleeping 
-> > > operations, checking for i to be not NULL and killing the 
-> > > thread with kill_pid() is safe.
-> > 
-> > NACK.  This just makes the code even more obscure.  Please get rid
-> > of the pid references entirely and convert the code to the kthread
-> > API.
-> 
-> That would require converting the full sunrpc server code to use
-> kthreads, which again means changing nfsd, and lockd too.
-> 
-> I'm not saying that is a bad thing, but it is nontrivial to do. In
-> particular, kthread's abominable shutdown mechanism simply does not work
-> or scale when the thread is listening for new requests in svc_recv().
+On 8/29/07, Balbir Singh <balbir@linux.vnet.ibm.com> wrote:
+>
+> Change the interface to use kilobytes instead of pages. Page sizes can vary
+> across platforms and configurations. A new strategy routine has been added
+> to the resource counters infrastructure to format the data as desired.
+>
+> Suggested by David Rientjes, Andrew Morton and Herbert Poetzl
+>
+> Signed-off-by: Balbir Singh <balbir@linux.vnet.ibm.com>
+> ---
+>
+>  Documentation/controllers/memory.txt |    7 +++--
+>  include/linux/res_counter.h          |    6 ++--
+>  kernel/res_counter.c                 |   24 +++++++++++++----
+>  mm/memcontrol.c                      |   47 +++++++++++++++++++++++++++--------
+>  4 files changed, 64 insertions(+), 20 deletions(-)
+>
+> diff -puN mm/memcontrol.c~mem-control-make-ui-use-kilobytes mm/memcontrol.c
+> --- linux-2.6.23-rc3/mm/memcontrol.c~mem-control-make-ui-use-kilobytes  2007-08-28 13:20:44.000000000 +0530
+> +++ linux-2.6.23-rc3-balbir/mm/memcontrol.c     2007-08-29 14:36:07.000000000 +0530
+> @@ -32,6 +32,7 @@
+>
+>  struct container_subsys mem_container_subsys;
+>  static const int MEM_CONTAINER_RECLAIM_RETRIES = 5;
+> +static const int MEM_CONTAINER_CHARGE_KB = (PAGE_SIZE >> 10);
+>
+>  /*
+>   * The memory controller data structure. The memory controller controls both
+> @@ -312,7 +313,7 @@ int mem_container_charge(struct page *pa
+>          * If we created the page_container, we should free it on exceeding
+>          * the container limit.
+>          */
+> -       while (res_counter_charge(&mem->res, 1)) {
+> +       while (res_counter_charge(&mem->res, MEM_CONTAINER_CHARGE_KB)) {
+>                 if (try_to_free_mem_container_pages(mem))
+>                         continue;
+>
+> @@ -352,7 +353,7 @@ int mem_container_charge(struct page *pa
+>                 kfree(pc);
+>                 pc = race_pc;
+>                 atomic_inc(&pc->ref_cnt);
+> -               res_counter_uncharge(&mem->res, 1);
+> +               res_counter_uncharge(&mem->res, MEM_CONTAINER_CHARGE_KB);
+>                 css_put(&mem->css);
+>                 goto done;
+>         }
+> @@ -417,7 +418,7 @@ void mem_container_uncharge(struct page_
+>                 css_put(&mem->css);
+>                 page_assign_page_container(page, NULL);
+>                 unlock_page_container(page);
+> -               res_counter_uncharge(&mem->res, 1);
+> +               res_counter_uncharge(&mem->res, MEM_CONTAINER_CHARGE_KB);
+>
+>                 spin_lock_irqsave(&mem->lru_lock, flags);
+>                 list_del_init(&pc->lru);
+> @@ -426,12 +427,37 @@ void mem_container_uncharge(struct page_
+>         }
+>  }
+>
+> -static ssize_t mem_container_read(struct container *cont, struct cftype *cft,
+> -                       struct file *file, char __user *userbuf, size_t nbytes,
+> -                       loff_t *ppos)
+> +int mem_container_read_strategy(unsigned long val, char *buf)
+> +{
+> +       return sprintf(buf, "%lu (kB)\n", val);
+> +}
+> +
+> +int mem_container_write_strategy(char *buf, unsigned long *tmp)
+> +{
+> +       *tmp = memparse(buf, &buf);
+> +       if (*buf != '\0')
+> +               return -EINVAL;
+> +
+> +       *tmp = *tmp >> 10;              /* convert to kilobytes */
+> +       return 0;
+> +}
 
-Actually converting callback.c is not that bad, it just means splitting
-up svc_create_thread.  Only problem is whether we want to allow SIGKILL
-from serspace to terminate the thread aswell, in which case we still
-need changes to the core kthread code which I'm waiting for someone
-for the containers crowd to finally implement as it's needed in
-various other places.
+This seems a bit inconsistent - if you write a value to a limit file,
+then the value that you read back is reduced by a factor of 1024?
+Having the "(kB)" suffix isn't really a big help to automated
+middleware.
 
-I'll try to send out my svc_create_thread splitup soon because it's
-actually a nice cleanup all by itself.
+I'd still be in favour of just reading/writing 64-bit values
+representing bytes - simple, and unambiguous for programmatic use, and
+not really any less user-friendly than kilobytes  for manual use
+(since the numbers involved are going to be unwieldly for manual use
+whether they're in bytes or kB).
+
+Paul
