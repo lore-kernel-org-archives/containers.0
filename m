@@ -1,43 +1,42 @@
-From: Pavel Emelyanov <xemul@openvz.org>
-Subject: [PATCH] Remove write-only variable from pktgen_thread
-Date: Wed, 29 Aug 2007 17:22:02 +0400
-Message-ID: <46D572FA.9090302@openvz.org>
+From: Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+Subject: [PATCH] Use task_pid_nr() in ip_vs_sync.c
+Date: Wed, 29 Aug 2007 17:30:48 +0400
+Message-ID: <46D57508.9040401@openvz.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 Content-Transfer-Encoding: 7bit
-Return-path: <netdev-owner@vger.kernel.org>
-Sender: netdev-owner@vger.kernel.org
-To: Andrew Morton <akpm@osdl.org>
-Cc: Oleg Nesterov <oleg@tv-sign.ru>, Sukadev Bhattiprolu <sukadev@us.ibm.com>, Linux Containers <containers@lists.osdl.org>, Linux Kernel Mailing List <linux-kernel@vger.kernel.org>, Linux Netdev List <netdev@vger.kernel.org>
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Andrew Morton <akpm-3NddpPZAyC0@public.gmane.org>
+Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Linux Netdev List <netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Oleg Nesterov <oleg-6lXkIZvqkOAvJsYlp49lxw@public.gmane.org>, Linux Kernel Mailing List <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-The pktgen_thread.pid is set to current->pid and is never used
-after this. So remove this at all.
+The sync_master_pid and sync_backup_pid are set in set_sync_pid()
+and are used later for set/not-set checks and in printk. So it
+is safe to use the global pid value in this case.
 
-Found during isolating the explicit pid/tgid usage.
-
-Signed-off-by: Pavel Emelyanov <xemul@openvz.org>
+Signed-off-by: Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 
 ---
 
-diff --git a/net/core/pktgen.c b/net/core/pktgen.c
-index 3a3154e..93695c2 100644
---- a/net/core/pktgen.c
-+++ b/net/core/pktgen.c
-@@ -380,7 +380,6 @@ struct pktgen_thread {
- 	/* Field for thread to receive "posted" events terminate, stop ifs etc. */
+diff --git a/net/ipv4/ipvs/ip_vs_sync.c b/net/ipv4/ipvs/ip_vs_sync.c
+index 959c08d..d0798a5 100644
+--- a/net/ipv4/ipvs/ip_vs_sync.c
++++ b/net/ipv4/ipvs/ip_vs_sync.c
+@@ -794,7 +794,7 @@ static int sync_thread(void *startup)
  
- 	u32 control;
--	int pid;
- 	int cpu;
+ 	add_wait_queue(&sync_wait, &wait);
  
- 	wait_queue_head_t queue;
-@@ -3462,8 +3461,6 @@ static int pktgen_thread_worker(void *ar
+-	set_sync_pid(state, current->pid);
++	set_sync_pid(state, task_pid_nr(current));
+ 	complete(tinfo->startup);
  
- 	init_waitqueue_head(&t->queue);
- 
--	t->pid = current->pid;
--
- 	pr_debug("pktgen: starting pktgen/%d:  pid=%d\n", cpu, task_pid_nr(current));
- 
- 	max_before_softirq = t->max_before_softirq;
+ 	/*
