@@ -1,60 +1,54 @@
-From: Jan Kara <jack@suse.cz>
-Subject: Re: [PATCH] Send quota messages via netlink
-Date: Thu, 30 Aug 2007 11:25:48 +0200
-Message-ID: <20070830092548.GB16336@duck.suse.cz>
-References: <20070828141318.GC5869@duck.suse.cz> <20070828211335.37fce4c9.akpm@linux-foundation.org> <20070829122647.GB7814@duck.suse.cz> <m1mywa42g7.fsf@ebiederm.dsl.xmission.com> <20070829192653.GD7814@duck.suse.cz> <m1wsve2gpo.fsf@ebiederm.dsl.xmission.com>
+From: Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Subject: Re: [-mm PATCH] Memory controller improve user interface
+Date: Thu, 30 Aug 2007 14:43:15 +0530
+Message-ID: <46D68A2B.7040106@linux.vnet.ibm.com>
+References: <20070829111030.9987.8104.sendpatchset@balbir-laptop>
+	<1188413148.28903.113.camel@localhost>
+	<46D5ED5C.9030405@linux.vnet.ibm.com>
+	<1188425894.28903.140.camel@localhost>
+	<6599ad830708291520t2bc9ea20m2bdcd9e042b3a423@mail.gmail.com>
+	<1188426352.28903.143.camel@localhost>
+	<46D5F517.1080809@linux.vnet.ibm.com>
+	<20070830143859.e9d3511a.kamezawa.hiroyu@jp.fujitsu.com>
+Reply-To: balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1758271AbXH3JGv@vger.kernel.org>
-Content-Disposition: inline
-In-Reply-To: <m1wsve2gpo.fsf@ebiederm.dsl.xmission.com>
-Sender: linux-kernel-owner@vger.kernel.org
-To: "Eric W. Biederman" <ebiederm@xmission.com>
-Cc: Andrew Morton <akpm@linux-foundation.org>, linux-kernel@vger.kernel.org, Balbir Singh <balbir@in.ibm.com>, "Serge E. Hallyn" <serue@us.ibm.com>, containers@lists.osdl.org
+Content-Type: text/plain; charset=ISO-8859-1
+Content-Transfer-Encoding: 7bit
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <20070830143859.e9d3511a.kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+Cc: Linux Kernel Mailing List <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Linux MM Mailing List <linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org>, David Rientjes <rientjes-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Wed 29-08-07 15:06:43, Eric W. Biederman wrote:
-> Jan Kara <jack@suse.cz> writes:
-> >> However I'm still confused about the use of current->user.  If that
-> >> is what we really want and not the user who's quota will be charged
-> >> it gets to be a really trick business, because potentially the uid
-> >> we want to deliver varies depending on who opened the netlink socket.
-> >   I see it's a complicated matter :). What I need to somehow pass to
-> > userspace is something (and I don't really care whether it will be number,
-> > string or whatever) that userspace can read and e.g. find a terminal
-> > window or desktop the affected user has open and also translate the
-> > identity to some user-understandable name (average user Joe has to
-> > understand that he should quickly cleanup his home directory ;).
-> >   Thinking more about it, we could probably pass a string to userspace in
-> > the format:
-> >   <namespace type>:<user identification>
-> >
-> > So for example we can have something like:
-> >   unix:1000 (traditional unix UIDs)
-> >   nfs4:joe@machine
-> >
-> > The problem is: Are we able to find out in which "namespace type" we are
-> > and send enough identifying information from a context of unpriviledged
-> > user?
+KAMEZAWA Hiroyuki wrote:
+> On Thu, 30 Aug 2007 04:07:11 +0530
+> Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org> wrote:
+>> 1. Several people recommended it
+>> 2. Herbert mentioned that they've moved to that interface and it
+>>    was working fine for them.
+>>
 > 
-> Ok.  This provides enough context to understand what you are trying to do.
-> You do want the unix user id, not the filesystem notion.  Because you
-> are looking for the user.
+> I have no strong opinion. But how about Mega bytes ? (too big ?)
+> There will be no rounding up/down problem.
 > 
-> So we have to figure out how to do the hard thing which is look at
-> who opened our netlink broadcast see if they are in the same user
-> namespace as current->user.  Which is a pain and we don't currently
-> have the infrastructure for.
-  There can be arbitrary number of listeners (potentially from different
-namespaces if I understand it correctly) listening to broadcasts. So I
-think we should pass some universal identifier rather than try to find out
-who is listening etc. I think such identifiers would be useful for other
-things too, won't they?
-  BTW: Do you have some idea, when would be the infrastructure clearer?
-Whether it makes sence to currently proceed with UIDs and later change it
-to something generic or whether I should wait before you sort it out :).
 
-								Honza
+Here is what I am thinking, allow the user to input bytes/kilobytes/
+megabytes or gigabytes. Store the data internally in kilobytes or
+PFN. I prefer kilobytes (no rounding issues), but while implementing
+limits we round up to the closest PFN.
+
+
 -- 
-Jan Kara <jack@suse.cz>
-SuSE CR Labs
+	Warm Regards,
+	Balbir Singh
+	Linux Technology Center
+	IBM, ISTL
