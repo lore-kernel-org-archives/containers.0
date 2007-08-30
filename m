@@ -1,31 +1,32 @@
-From: sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org
-Subject: unshare() pid ns
-Date: Wed, 29 Aug 2007 22:29:28 -0700
-Message-ID: <20070830052928.GA27864@us.ibm.com>
+From: KAMEZAWA Hiroyuki <kamezawa.hiroyu@jp.fujitsu.com>
+Subject: Re: [-mm PATCH] Memory controller improve user interface
+Date: Thu, 30 Aug 2007 14:38:59 +0900
+Message-ID: <20070830143859.e9d3511a.kamezawa.hiroyu@jp.fujitsu.com>
+References: <20070829111030.9987.8104.sendpatchset@balbir-laptop>
+	<1188413148.28903.113.camel@localhost>
+	<46D5ED5C.9030405@linux.vnet.ibm.com>
+	<1188425894.28903.140.camel@localhost>
+	<6599ad830708291520t2bc9ea20m2bdcd9e042b3a423@mail.gmail.com>
+	<1188426352.28903.143.camel@localhost>
+	<46D5F517.1080809@linux.vnet.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Pavel Emelianov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
-Cc: Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
+Content-Type: text/plain; charset=US-ASCII
+Content-Transfer-Encoding: 7bit
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1754948AbXH3Fhi@vger.kernel.org>
+In-Reply-To: <46D5F517.1080809@linux.vnet.ibm.com>
+Sender: linux-kernel-owner@vger.kernel.org
+To: balbir@linux.vnet.ibm.com
+Cc: Dave Hansen <haveblue@us.ibm.com>, Linux Kernel Mailing List <linux-kernel@vger.kernel.org>, Linux MM Mailing List <linux-mm@kvack.org>, David Rientjes <rientjes@google.com>, Linux Containers <containers@lists.osdl.org>, Paul Menage <menage@google.com>, Andrew Morton <akpm@linux-foundation.org>
 List-Id: containers.vger.kernel.org
 
-Pavel,
+On Thu, 30 Aug 2007 04:07:11 +0530
+Balbir Singh <balbir@linux.vnet.ibm.com> wrote:
+> 1. Several people recommended it
+> 2. Herbert mentioned that they've moved to that interface and it
+>    was working fine for them.
+> 
 
-unshare() of pid ns seems to fail with -EINVAL in 2.6.23-rc3-mm1.
-I thought we supported it in the earlier patchsets.  I guess
-I missed that in the review of recent patchsets.
+I have no strong opinion. But how about Mega bytes ? (too big ?)
+There will be no rounding up/down problem.
 
-Did we remove/disable it on purpose ? I am not particular that we
-support it though. Just want to make sure.
-
-Suka
+-Kame.
