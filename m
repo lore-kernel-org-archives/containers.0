@@ -1,21 +1,11 @@
-From: Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: Re: [-mm PATCH] Memory controller improve user interface
-Date: Thu, 30 Aug 2007 14:43:15 +0530
-Message-ID: <46D68A2B.7040106@linux.vnet.ibm.com>
-References: <20070829111030.9987.8104.sendpatchset@balbir-laptop>
-	<1188413148.28903.113.camel@localhost>
-	<46D5ED5C.9030405@linux.vnet.ibm.com>
-	<1188425894.28903.140.camel@localhost>
-	<6599ad830708291520t2bc9ea20m2bdcd9e042b3a423@mail.gmail.com>
-	<1188426352.28903.143.camel@localhost>
-	<46D5F517.1080809@linux.vnet.ibm.com>
-	<20070830143859.e9d3511a.kamezawa.hiroyu@jp.fujitsu.com>
-Reply-To: balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
+From: Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+Subject: [RFC][PATCH 0/3] Kernel memory accounting container
+Date: Thu, 30 Aug 2007 13:32:22 +0400
+Message-ID: <46D68EA6.2010707@openvz.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20070830143859.e9d3511a.kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -25,30 +15,70 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
-Cc: Linux Kernel Mailing List <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Linux MM Mailing List <linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org>, David Rientjes <rientjes-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
+To: Balbir Singh <balbir-xthvdsQ13ZrQT0dZR+AlfA@public.gmane.org>, Srivatsa Vaddagiri <vatsa-xthvdsQ13ZrQT0dZR+AlfA@public.gmane.org>, Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>, Cedric Le Goater <clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Christoph Lameter <clameter-sJ/iWh9BUns@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-KAMEZAWA Hiroyuki wrote:
-> On Thu, 30 Aug 2007 04:07:11 +0530
-> Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org> wrote:
->> 1. Several people recommended it
->> 2. Herbert mentioned that they've moved to that interface and it
->>    was working fine for them.
->>
-> 
-> I have no strong opinion. But how about Mega bytes ? (too big ?)
-> There will be no rounding up/down problem.
-> 
+Long time ago we decided to start memory control with the
+user memory container. Now this container in -mm tree and
+I think we can start with (at least discussion of) the
+kmem one.
 
-Here is what I am thinking, allow the user to input bytes/kilobytes/
-megabytes or gigabytes. Store the data internally in kilobytes or
-PFN. I prefer kilobytes (no rounding issues), but while implementing
-limits we round up to the closest PFN.
+First of all - why do we need this kind of control. The major
+"pros" is that kernel memory control protects the system
+from DoS attacks by processes that live in container. As our
+experience shows many exploits simply do not work in the
+container with limited kernel memory.
 
+I can split the kernel memory container into 4 parts:
 
--- 
-	Warm Regards,
-	Balbir Singh
-	Linux Technology Center
-	IBM, ISTL
+1. kmalloc-ed objects control
+2. vmalloc-ed objects control
+3. buddy allocated pages control
+4. kmem_cache_alloc-ed objects control
+
+the control of first tree types of objects has one peculiarity:
+one need to explicitly point out which allocations he wants to
+account and this becomes not-configurable and is to be discussed.
+
+On the other hands such objects as anon_vma-s, file-s, sighangds,
+vfsmounts, etc are created by user request always and should
+always be accounted. Fortunately they are allocated from their
+own caches and thus the whole kmem cache can be accountable.
+
+This is exactly what this patchset does - it adds the ability
+to account for the total size of kmem-cache-allocated objects
+from specified kmem caches.
+
+This is based on the SLUB allocator, Paul's containers and the
+resource counters I made for RSS controller and which are in
+-mm tree already.
+
+To play with it, one need to mount the container file system
+with -o kmem and then mark some caches as accountable via
+/sys/slab/<cache_name>/cache_account.
+
+As I have already told kmalloc caches cannot be accounted easily
+so turning the accounting on for them will fail with -EINVAL.
+Turning the accounting off is possible only if the cache has
+no objects. This is done so because turning accounting off
+implies unaccounting of all the objects in the cache, but due
+to full-pages in slub are not stored in any lists (usually)
+this is impossible to do so, however I'm open for discussion
+of how to make this work.
+
+I know it's maybe too late, since some of you may be preparing
+for the Summit or LinixConf, but I think that we can go on
+discussing these on LinuxConf.
+
+The patches are applicable to the latest Morton's tree (that
+without the RSS controll) with the resource counters patch
+Andrew committed recently.
+
+I've made some minimal testing for that and the similar code
+(without the containers interface but with the kmalloc 
+accounting) is already in our 2.6.22 OpenVZ tree, so testing
+is going on.
+
+Thanks,
+Pavel
