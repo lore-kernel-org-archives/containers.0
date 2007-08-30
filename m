@@ -1,13 +1,14 @@
-From: Rohit Seth <rohitseth-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [RFC] Container mini-summit agenda for Sept 3, 2007
-Date: Thu, 30 Aug 2007 08:35:53 -0700
-Message-ID: <46D6E3D9.3050208@google.com>
-References: <46D69653.1090003@fr.ibm.com>
+From: "Paul Menage" <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [RFC][PATCH 1/3] Setup the kmem container
+Date: Thu, 30 Aug 2007 09:01:30 -0700
+Message-ID: <6599ad830708300901v419f6656p6cfa5303dd9bc182@mail.gmail.com>
+References: <46D68EA6.2010707@openvz.org> <46D68F39.3060100@openvz.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+Content-Type: text/plain; charset=ISO-8859-1
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <46D69653.1090003-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <46D68F39.3060100-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+Content-Disposition: inline
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -17,26 +18,24 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Cedric Le Goater <clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
-Cc: Kir Kolyshkin <kir-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>, Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, office-xGb7/i2pWyrYtjvyW6yDsg@public.gmane.org, Alasdair Kergon <agk-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Pavel Emelianov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+To: Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Christoph Lameter <clameter-sJ/iWh9BUns@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Cedric Le Goater wrote:
-> Hello All,
+On 8/30/07, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org> wrote:
+> --- a/include/linux/container_subsys.h
+> +++ b/include/linux/container_subsys.h
+> @@ -29,4 +29,8 @@ SUBSYS(debug)
+>  SUBSYS(ns)
+>  #endif
 >
-> Some of us will meet next week for the first mini-summit on containers.
-> Many thanks to Alasdair Kergon and LCE for the help they provided in 
-> making this mini-summit happen !
->
-> It will be help on Monday the 3rd of September from 9:00 to 12:45 at LCE
-> in room D. We also might get a phone line for external participants and, 
-> if not, we should be able to set up a skype phone.
->
-> Here's a first try for the Agenda. 
->   
-Thanks Cedric for publishing the agenda.  Could you or some one else 
-also publish the minutes after the summit so as to help the folks not 
-able to attend this because of time zone difference.
+> +#ifdef CONFIG_CONTAINER_KMEM
+> +SUBSYS(kmem)
+> +#endif
+> +
+>  /* */
 
-Thanks,
--rohit
+I've been trying to follow the convention that any new subsystem adds
+/* */ markers before and after, to reduce/remove any patch conflicts.
+
+Paul
