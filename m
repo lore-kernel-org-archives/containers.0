@@ -1,15 +1,13 @@
-From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: unshare() pid ns
-Date: Thu, 30 Aug 2007 09:35:18 -0500
-Message-ID: <20070830143518.GA5878@sergelap.austin.ibm.com>
-References: <20070830052928.GA27864@us.ibm.com> <46D67B8B.2000606@openvz.org>
-	<20070830133422.GA28129@sergelap.austin.ibm.com>
-	<46D6D00F.7090303@openvz.org>
+From: Rohit Seth <rohitseth-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [RFC] Container mini-summit agenda for Sept 3, 2007
+Date: Thu, 30 Aug 2007 08:35:53 -0700
+Message-ID: <46D6E3D9.3050208@google.com>
+References: <46D69653.1090003@fr.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <46D6D00F.7090303-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+In-Reply-To: <46D69653.1090003-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,40 +17,26 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
-Cc: Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
+To: Cedric Le Goater <clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
+Cc: Kir Kolyshkin <kir-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>, Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, office-xGb7/i2pWyrYtjvyW6yDsg@public.gmane.org, Alasdair Kergon <agk-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Pavel Emelianov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Quoting Pavel Emelyanov (xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org):
-> Serge E. Hallyn wrote:
-> > Quoting Pavel Emelyanov (xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org):
-> >> sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org wrote:
-> >>> Pavel,
-> >>> unshare() of pid ns seems to fail with -EINVAL in 2.6.23-rc3-mm1.
-> >>> I thought we supported it in the earlier patchsets.  I guess
-> >>> I missed that in the review of recent patchsets.
-> >> I disabled unsharing of pid namespaces because it's almost
-> >> impossible. Look - you have to reattach all the pids to the
-> >> task with saving its ids as seen in previous namespaces.
-> > 
-> > We agree, but thought you for some perverse reason preferred unshare to
-> > clone for pidns :)
-> 
-> I did that in my first version of patches, but then realized
-> that such problem (the need in reattaching pids) makes the
-> unsharing ugly.
-> 
-> BTW, unsharing of a pid namespace is a valid operation, so I
-> think I will enable it in the nearest future. I have some
-> thought on how to make such a reattach ;)
+Cedric Le Goater wrote:
+> Hello All,
+>
+> Some of us will meet next week for the first mini-summit on containers.
+> Many thanks to Alasdair Kergon and LCE for the help they provided in 
+> making this mini-summit happen !
+>
+> It will be help on Monday the 3rd of September from 9:00 to 12:45 at LCE
+> in room D. We also might get a phone line for external participants and, 
+> if not, we should be able to set up a skype phone.
+>
+> Here's a first try for the Agenda. 
+>   
+Thanks Cedric for publishing the agenda.  Could you or some one else 
+also publish the minutes after the summit so as to help the folks not 
+able to attend this because of time zone difference.
 
-Alrighty  :)
-
-Of course it's not just the kernel ugliness, but also the userspace
-ugliness, for instance the rumored (I haven't looked to confirm) caching
-of pids by glibc.
-
-But in the end if we can achieve symmetry between all the CLONE_NEW*
-flags all the better.
-
--serge
+Thanks,
+-rohit
