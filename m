@@ -1,15 +1,13 @@
 From: Cedric Le Goater <clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
-Subject: Re: unshare() pid ns
-Date: Thu, 30 Aug 2007 18:34:29 +0200
-Message-ID: <46D6F195.7060800@fr.ibm.com>
-References: <20070830052928.GA27864@us.ibm.com> <46D67B8B.2000606@openvz.org>
-	<20070830133422.GA28129@sergelap.austin.ibm.com>
-	<46D6D00F.7090303@openvz.org>
+Subject: Re: user namespaces config option
+Date: Thu, 30 Aug 2007 18:44:18 +0200
+Message-ID: <46D6F3E2.4000307@fr.ibm.com>
+References: <46C437C8.9020200@openvz.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <46D6D00F.7090303-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+In-Reply-To: <46C437C8.9020200-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -20,37 +18,25 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
-Cc: Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
+Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Hello Pavel ! 
-
 Pavel Emelyanov wrote:
-> Serge E. Hallyn wrote:
->> Quoting Pavel Emelyanov (xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org):
->>> sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org wrote:
->>>> Pavel,
->>>> unshare() of pid ns seems to fail with -EINVAL in 2.6.23-rc3-mm1.
->>>> I thought we supported it in the earlier patchsets.  I guess
->>>> I missed that in the review of recent patchsets.
->>> I disabled unsharing of pid namespaces because it's almost
->>> impossible. Look - you have to reattach all the pids to the
->>> task with saving its ids as seen in previous namespaces.
->> We agree, but thought you for some perverse reason preferred unshare to
->> clone for pidns :)
+> Hi, Cedric, Serge.
 > 
-> I did that in my first version of patches, but then realized
-> that such problem (the need in reattaching pids) makes the
-> unsharing ugly.
+> I have noticed, that you have removed config options for
+> uts and ipc namespaces but kept one for user namespace.
 > 
-> BTW, unsharing of a pid namespace is a valid operation, so I
-> think I will enable it in the nearest future. I have some
-> thought on how to make such a reattach ;)
+> What's the policy about what namespaces should have config
+> option? I thought, that the only code that is worth having
+> under option is clone/destroy one to save .text size for
+> people who don't need them (embedded).
 
-that would be also very useful to 'enter' such a namespace.
+yes .text size is important for the embedded people but performance 
+also. so if perf is not impacted and .text increase is reasonable, 
+it's interesting to remove the config option and clarify the code
+at the same time. This was the case of uts and ipc ns.  
 
-BTW, did you take a look at the sys_hijack() serge sent ? 
-
-Thanks,
+user ns is far from complete and should be kept experimental.
 
 C.
