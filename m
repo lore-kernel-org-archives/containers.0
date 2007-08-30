@@ -1,37 +1,93 @@
-From: Jan Engelhardt <jengelh@computergmbh.de>
-Subject: Re: [PATCH] Use helpers to obtain task pid in printks (arch code)
-Date: Thu, 30 Aug 2007 21:11:05 +0200 (CEST)
-Message-ID: <Pine.LNX.4.64.0708302107510.24730@fbirervta.pbzchgretzou.qr>
-References: <46D27D7E.7090806@openvz.org> <1188237708.18004.102.camel@localhost>
+From: "Serge E. Hallyn" <serge@hallyn.com>
+Subject: Re: [PATCH] Send quota messages via netlink
+Date: Thu, 30 Aug 2007 14:18:09 -0500
+Message-ID: <20070830191808.GB23464@vino.hallyn.com>
+References: <20070828141318.GC5869@duck.suse.cz> <20070828211335.37fce4c9.akpm@linux-foundation.org> <20070829122647.GB7814@duck.suse.cz> <m1mywa42g7.fsf@ebiederm.dsl.xmission.com> <20070829192653.GD7814@duck.suse.cz> <m1wsve2gpo.fsf@ebiederm.dsl.xmission.com> <20070830092548.GB16336@duck.suse.cz> <m1tzqh0vxm.fsf@ebiederm.dsl.xmission.com>
 Mime-Version: 1.0
-Content-Type: TEXT/PLAIN; charset=US-ASCII
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1760364AbXH3TL2@vger.kernel.org>
-In-Reply-To: <1188237708.18004.102.camel@localhost>
+Content-Type: text/plain; charset=us-ascii
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S933241AbXH3TSX@vger.kernel.org>
+Content-Disposition: inline
+In-Reply-To: <m1tzqh0vxm.fsf@ebiederm.dsl.xmission.com>
 Sender: linux-kernel-owner@vger.kernel.org
-To: Joe Perches <joe@perches.com>
-Cc: Pavel Emelyanov <xemul@openvz.org>, Andrew Morton <akpm@osdl.org>, Alexey Dobriyan <adobriyan@openvz.org>, Linux Containers <containers@lists.osdl.org>, linux-arch@vger.kernel.org, Linux Kernel Mailing List <linux-kernel@vger.kernel.org>, Sukadev Bhattiprolu <sukadev@us.ibm.com>, Oleg Nesterov <oleg@tv-sign.ru>
+To: "Eric W. Biederman" <ebiederm@xmission.com>
+Cc: Jan Kara <jack@suse.cz>, Andrew Morton <akpm@linux-foundation.org>, linux-kernel@vger.kernel.org, Balbir Singh <balbir@in.ibm.com>, "Serge E. Hallyn" <serue@us.ibm.com>, containers@lists.osdl.org
 List-Id: containers.vger.kernel.org
 
+Quoting Eric W. Biederman (ebiederm@xmission.com):
+> Jan Kara <jack@suse.cz> writes:
+> >   There can be arbitrary number of listeners (potentially from different
+> > namespaces if I understand it correctly) listening to broadcasts. So I
+> > think we should pass some universal identifier rather than try to find out
+> > who is listening etc. I think such identifiers would be useful for other
+> > things too, won't they?
+> 
+> So internal to the kernel we have such a universal identifier.
+> struct user.
+> 
+> There are to practical questions.
+> 1) How do we present that information to user space?
+> 2) How does user space want to process this information?
+> 
+> If we only want user space to be able to look up a user and send
+> him a message.  It probably makes sense to do the struct user to
+> uid conversion in the proper context in the kernel because we have
+> that information.
+> 
+> If this is a general feature that happens to allows us to look up
+> the user given the filesystems view of what is going on would be
+> easier in the kernel, and not require translation.  But it means
+> that we can't support 9p and nfs for now.  But since we don't support
+> quotas on the client end anyway that doesn't sound like a big deal.
+> 
+> The problem with the filesystem view is that there will be occasions
+> where we simply can not map a user into it, because the filesystem
+> won't have a concept of that particular user.
+> 
+> So we could run into the situation where alice owns the file.  Bob
+> writes to the file and pushes it over quota.  But the filesystem
+> has no concept of who bob is.  So we won't be able to report that
+> it was bob that pushed things over the edge.
+> 
+> > BTW: Do you have some idea, when would be the infrastructure clearer?
+> 
+> So the plan is to get to the point where are uid comparisons in the
+> kernel are (user namespace, uid) comparisons.  Or possibly struct
 
-On Aug 27 2007 11:01, Joe Perches wrote:
->On Mon, 2007-08-27 at 11:30 +0400, Pavel Emelyanov wrote:
->> From: Alexey Dobriyan <adobriyan@openvz.org>
->> 
->> One of the easiest things to isolate is the pid printed in kernel
->> log. There was a patch, that made this for arch-independent code,
->> this one makes so for arch/xxx files.
->
->Perhaps it would be worthwhile to standardize the printk
->task information content? Maybe a format knob?
->
->Maybe TASK_FMT/TASK_ARG(task)
->
->#define TASK_FMT "%s"
->#define TASK_ARG(tsk) ({char __buf[MAX_TASK_INFO]; print_task(tsk, buf, sizeof(__buf)); __buf})
+Just fyi Eric,
 
-Except that __buf goes out of scope before printk() is called...
+Note that given the amount of churn going on due to pid and network
+namespaces, I was seeing completion of user namespaces as something to
+be done sometime next year.  In the meantime I was only going to do
+something with capabilities to restrict root in user namespaces (which I
+think will take the form of per-process non-expandable cap_bsets, which
+I plan to start basically right now).
 
+But I'll gladly do the userns enhancements earlier if it's actually
+wanted.  They promise to be great fun  :)
 
+-serge
 
-	Jan
--- 
+> user comparisons (depending on the context.  And struct mount will
+> contain the user namespace of whoever mounted the filesystem.
+> 
+> Adding infrastructure to netlink to allow us to do conversions 
+> as the packets are enqueued for a specific user is something I
+> would rather avoid, but that is a path we can go down if we have
+> to.
+> 
+> > Whether it makes sence to currently proceed with UIDs and later change it
+> > to something generic or whether I should wait before you sort it out :).
+> 
+> A good question.  I think things are clear enough that it at least
+> makes sense to sketch a solution to the problem even if we don't
+> implement it at this point.
+> 
+> I have been hoping Cedric or Serge would jump in because I think those
+> are the guys who have been working on the implementation. 
+> 
+> Eric
+> -
+> To unsubscribe from this list: send the line "unsubscribe linux-kernel" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> Please read the FAQ at  http://www.tux.org/lkml/
