@@ -1,98 +1,129 @@
-From: Balbir Singh <balbir@linux.vnet.ibm.com>
-Subject: Re: [PATCH] Send quota messages via netlink
-Date: Fri, 31 Aug 2007 12:29:53 +0530
-Message-ID: <46D7BC69.8090203@linux.vnet.ibm.com>
-References: <20070828141318.GC5869@duck.suse.cz> <20070828211335.37fce4c9.akpm@linux-foundation.org> <46D5126F.9000405@linux.vnet.ibm.com> <20070829124615.GC7814@duck.suse.cz>
-Reply-To: balbir@linux.vnet.ibm.com
+From: Cedric Le Goater <clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [RFC] Container mini-summit agenda for Sept 3, 2007
+Date: Fri, 31 Aug 2007 16:26:02 +0200
+Message-ID: <46D824FA.2080300@fr.ibm.com>
+References: <46D69653.1090003@fr.ibm.com> <46D78A5E.3030304@cs.columbia.edu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1
 Content-Transfer-Encoding: 7bit
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S932938AbXHaHA0@vger.kernel.org>
-In-Reply-To: <20070829124615.GC7814@duck.suse.cz>
-Sender: linux-kernel-owner@vger.kernel.org
-To: Jan Kara <jack@suse.cz>
-Cc: Andrew Morton <akpm@linux-foundation.org>, linux-kernel@vger.kernel.org, Balbir Singh <balbir@in.ibm.com>, "Serge E. Hallyn" <serue@us.ibm.com>, "Eric W. Biederman" <ebiederm@xmission.com>, containers@lists.osdl.org
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <46D78A5E.3030304-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Cc: Kir Kolyshkin <kir-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>, Rohit Seth <rohitseth-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, office-xGb7/i2pWyrYtjvyW6yDsg@public.gmane.org, Alasdair Kergon <agk-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Pavel Emelianov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Jan Kara wrote:
->>>> +	}
->>>> +	ret = nla_put_u32(skb, QUOTA_NL_A_QTYPE, dquot->dq_type);
->>>> +	if (ret)
->>>> +		goto attr_err_out;
->>>> +	ret = nla_put_u64(skb, QUOTA_NL_A_EXCESS_ID, dquot->dq_id);
->>>> +	if (ret)
->>>> +		goto attr_err_out;
->>>> +	ret = nla_put_u32(skb, QUOTA_NL_A_WARNING, warntype);
->>>> +	if (ret)
->>>> +		goto attr_err_out;
->>>> +	ret = nla_put_u32(skb, QUOTA_NL_A_DEV_MAJOR,
->>>> +		MAJOR(dquot->dq_sb->s_dev));
->>>> +	if (ret)
->>>> +		goto attr_err_out;
->>>> +	ret = nla_put_u32(skb, QUOTA_NL_A_DEV_MINOR,
->>>> +		MINOR(dquot->dq_sb->s_dev));
->>>> +	if (ret)
->>>> +		goto attr_err_out;
->>>> +	ret = nla_put_u64(skb, QUOTA_NL_A_CAUSED_ID, current->user->uid);
->>>> +	if (ret)
->>>> +		goto attr_err_out;
->>>> +	genlmsg_end(skb, msg_head);
->>>> +
->> Have you looked at ensuring that the data structure works across 32 bit
->> and 64 bit systems (in terms of binary compatibility)? That's usually
->> a nice to have feature.
->   Generic netlink should take care of this - arguments are typed so it
-> knows how much bits numbers have. So this should be no issue. Are there any
-> other problems that you have in mind?
-> 
+Hello Oren,
 
-Yes, but apart from that, if I remember Jamal Hadi's initial comments
-on taskstats, he recommended that we align everything to 64 bit so
-that the data is well aligned for 64 bit systems. You could also consider
-creating a data structure, document it's members, align them and use
-that to send out the data.
-
->>>> +	ret = genlmsg_multicast(skb, 0, quota_genl_family.id, GFP_NOFS);
->>>> +	if (ret < 0 && ret != -ESRCH)
->>>> +		printk(KERN_ERR
->>>> +			"VFS: Failed to send notification message: %d\n", ret);
->>>> +	return;
->>>> +attr_err_out:
->>>> +	printk(KERN_ERR "VFS: Failed to compose quota message: %d\n", ret);
->>>> +err_out:
->>>> +	kfree_skb(skb);
->>>> +}
->>>> +#endif
->>> This is it.  Normally netlink payloads are represented as a struct.  How
->>> come this one is built-by-hand?
->>>
->>> It doesn't appear to be versioned.  Should it be?
->>>
->> Yes, versioning is always nice and genetlink supports it.
+Oren Laadan wrote:
+> Cedric Le Goater wrote:
+>> Hello All,
 >>
+>> Some of us will meet next week for the first mini-summit on containers.
+>> Many thanks to Alasdair Kergon and LCE for the help they provided in 
+>> making this mini-summit happen !
+>>
+>> It will be help on Monday the 3rd of September from 9:00 to 12:45 at LCE
+>> in room D. We also might get a phone line for external participants and, 
+>> if not, we should be able to set up a skype phone.
+>>
+>> Here's a first try for the Agenda. 
+>>
+>> Global items 
+>>
+>> 	 [ let's try to defer discussion after presentation ]  
+>>
+>> * Pavel Emelianov status update 
+>> * Serge E. Hallyn Container Roadmap including  
+>> 	. task containers (Paul Menage)
+>> 	. resource management (Srivatsa Vaddagiri) 
+>>
+>> Special items
+>>
+>> 	[ brainstorm sessions which we would like to focus on ]
+>>
+>> * builing the global container object ('a la' openvz or vserver)
+>> * container user space tools
+>> * container checkpoint/restart  
+> 
+>         5. checkpoint/restart
+>                 memory c/r
+>                         (there are a few designs and prototypes)
+>                         (though this may be ironed out by then)
+>                         per-container swapfile?
+>                 overall checkpoint strategy  (one of:)
+>                         in-kernel
+>                         userspace-driven
+>                         hybrid
+>                 overall restart strategy
+>                 use freezer API
+>                 use suspend-to-disk?
+> 
+>                 sysvipc
+>                         "set identifier" syscall
+> 		pid namespace
+>                         clone_with_pid()
+> There are other identifiers - pseudo terminals, message queues (mq)
 
-It would nice for you to use the versioning feature.
+right, we have plans for developing these if needed (cf 2.)
 
->> The memory controller or VM would also be interested in notifications
->> of OOM. At OLS this year interest was shown in getting OOM notifications
->> and allow the user space a chance to handle the notification and take
->> action (especially for containers). We already have containerstats for
->> containers (which I was planning to reuse), but I was told that we would
->> be interested in user space OOM notifications in general.
+> (if you insist on supporting these ...). In general, we need a way
+> to specify the virtual id of a resource that is created. 
 
->  Generic netlink can be used to pass this information (although in OOM
-> situation, it may be a bit hairy to get the network stack working...). But
-> I guess it's not related to my patch.
+right, pierre peiffer has sent such a pachset for the sysvipc namespace.
+I'm looking at a clone_with_pid() for pid namespace.   
 
-We could have a pre-allocated buffer stored at startup and use that for
-OOM notification. In the case of container OOM, we are likely to have
-free global memory. Working towards an infrastructure so that anybody can
-build on top of it and sending notifications on interesting events becomes
-easier would be nice. We can reuse code that way and add fewer bugs :-)
+> I suggest
+> that this should be part of an interface between c/r and containers
+> (see below)
+> 
+> 		live migration
+> aka pre-copy (which can be used for live migration but also to reduce
+> the downtime due to a checkpoint).
 
+yes that's usually what the buzz term "live migration" is used for. 
 
--- 
-	Warm Regards,
-	Balbir Singh
-	Linux Technology Center
-	IBM, ISTL
+> how about adding incremental checkpoint to the list ?
+
+sure. I think it's a bit early to address these topic but we should have 
+them in mind as some implementations already exist. And we need to gather 
+all the needs.
+
+> I think that it is also important to discuss an interface between c/r and
+> containers, each of which stands on it own. For instance, how to request
+> a specific virtual id (during restart), define required notifiers (to
+> set/unset c/r related data on/off a task), control c/r-related setting of
+> container (e.g. frozen, restarting) that may affect behavior, such as
+> signal handling, and so forth. 
+
+This is exactly what we want to talk about. 
+
+We need to identify these C/R needs, talk and agree about possible APIS 
+and then convince the linux subsystem maintainers that they are useful 
+for a large set of C/R solutions based on containers.     
+
+> Also, such an interface can allow existing c/r implementations to work with 
+> different virtualization implementations as they become available.
+
+what you call "virtualization" (private identifier namespaces), is I think 
+being covered by the namespaces. These namespaces are not complete (like 
+we're missing a way to reassign ids) but they are going in the right 
+direction, IMO. However, I don't think there will be different 
+"virtualization" implementations in mainline.
+
+> Many of these were discussed in a recent Zap paper present in USENIX:
+> http://www.ncl.cs.columbia.edu/publications/usenix2007_fordist.pdf
+> The paper describes important design choices in Zap (but I'm biased ...).
+> I think it may serve as an appetizer for the discussion :P
+
+Thanks, I hope we all have time to read it.
+
+C.
