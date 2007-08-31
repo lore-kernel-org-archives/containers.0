@@ -1,11 +1,15 @@
-From: Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
-Subject: containers - bug
-Date: Fri, 31 Aug 2007 18:29:12 +0200
-Message-ID: <46D841D8.6000100@fr.ibm.com>
+From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Subject: Re: [Devel] Re: [RFC] Container mini-summit agenda for Sept 3, 2007
+Date: Fri, 31 Aug 2007 14:10:36 -0400
+Message-ID: <46D8599C.40305@cs.columbia.edu>
+References: <46D69653.1090003@fr.ibm.com>
+	<46D78A5E.3030304@cs.columbia.edu>	<46D824FA.2080300@fr.ibm.com>
+	<46D82CC4.5010809@fr.ibm.com> <46D83AD3.4090404@sw.ru>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+Content-Type: text/plain; charset=us-ascii
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <46D83AD3.4090404-3ImXcnM4P+0@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -15,79 +19,69 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
-Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
+To: Kirill Korotaev <dev-3ImXcnM4P+0@public.gmane.org>
+Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Rohit Seth <rohitseth-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, office-xGb7/i2pWyrYtjvyW6yDsg@public.gmane.org, Alasdair Kergon <agk-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Hi Paul,
 
-I was playing with the container filesystem (very nice) and I fall 
-inside a kbug.
 
-I did the following:
+Kirill Korotaev wrote:
+> Cedric Le Goater wrote:
+>>>> Many of these were discussed in a recent Zap paper present in USENIX:
+>>>> http://www.ncl.cs.columbia.edu/publications/usenix2007_fordist.pdf
+>>>> The paper describes important design choices in Zap (but I'm biased ...).
+>>>> I think it may serve as an appetizer for the discussion :P
+>>> Thanks, I hope we all have time to read it.
+>>
+>> The abstract says : 
+>>
+>> "...
+>> Our results show checkpoint and restart times 3 to 55 times faster than 
+>> OpenVZ and 5 to 1100 times faster than Xen."
+>>
+>> I'm impressed ! :) When can we play it ?
+>>
+>> Thanks for the appetizer !
 
-	mkdir /dev/container
+disclaimer(1): I'm one the other authors.
+disclaimer(2): I hoped to focus on the technical issues in the paper rather
+than start a flame war...
 
-	mount -t container -o cpuset cpuset /dev/container
+> It is totally unfair to compare full virtualization solution such as OpenVZ
+> with sync on VE stop (for quotas consistency) and which doesn't require shared storage for migration
+> with POC which uses shared storage in the paper.
 
-	cd /dev/container/
+Indeed we didn't try to hack OpenVZ to get max performance, or isolate the
+components. For example, I suspect the long(er) restart times are mainly
+due to container setup time as opposed to the restoration of the processes.
+I even expressed this speculation during my talk.
 
-	mkdir Charlie
+Note the distinction between "migration" and "checkpoint-restart", as they
+are not the same. Generally if you have c/r you can migrate. The performance
+evaluation in the paper compared checkpoint and restart, not the migration
+from one machine to another.
 
-	cd Charlie
+BTW, Zap *does* sync selected files (in particular shared mapping of files).
+There are some optimization that move similar overhead out of the critical
+path to reduce the downtime.
 
-	echo $$ > tasks
+> I'm not sure why author didn't pay attention to these HUGE differences in configuration...
+> Maybe because 1100x times is so incredible :@)
 
-	bash
+It's always difficult to compare HW and OS virtualization approaches
+(in our terminology, HW approach - Xen, VMware, KVM etc .. they all work
+under the guest OS, while OS approach - OpenVZ, Vserver, Zap .. work with
+the OS, under the application). Both approaches have pros and cons. It's
+even hard to compare between OS virtualization (aka containers) approaches
+because they require different configs and provide different features.
+For example, Zap is not geared to provide performance isolation.
 
-	cd ..
+The quotes comparison highlights the advantages of working at the application
+(or container) level; For example if you want to run apache in an isolated
+environment an be able to c/r or migrate: you choose a system (linux,
+Zap, OpenVZ, Xen etc), and that implies some sort of configuration. Each
+method has goods and bads, be in in functionality, overhead, ease-of-use
+and so forth. In the specific case of running apache, this comparison
+gives an idea of the gain/loss in terms of checkpoint/restart performance.
 
-	rmdir Charlie
-
-	exit
-
-	ls => bang !
-
-I run a 2.6.23-rc3-mm1 kernel with qemu.
-
-Here is the message:
---------------------
-	
-BUG: unable to handle kernel paging request at virtual address 6b6b6c23
-printing eip: c016719d *pde = 00000000
-Oops: 0000 [#1] SMP
-Modules linked in:
-
-Pid: 960, comm: bash Not tainted (2.6.23-rc3-mm1 #522)
-EIP: 0060:[<c016719d>] EFLAGS: 00000246 CPU: 0
-EIP is at __link_path_walk+0x41/0xb54
-EAX: c1873320 EBX: c141c608 ECX: c167be38 EDX: c15de000
-ESI: c167bef4 EDI: 6b6b6b6b EBP: c167be3c ESP: c167bde8
-  DS: 007b ES: 007b FS: 00d8 GS: 0033 SS: 0068
-Process bash (pid: 960, ti=c167a000 task=c1466b50 task.ti=c167a000)
-Stack: c15de000 00000000 00000400 00000001 000000bf 00008a31 7f1c0300 
-01000415
-        1a131100 170f1200 00000000 00009600 00009600 00000500 00000003 
-c03ab570
-        00000082 c167be38 c141c608 c167bef4 c1873320 c167bea8 c0167cfb 
-c15de000
-Call Trace:
-  [<c010398d>] show_trace_log_lvl+0x1a/0x2f
-  [<c0103a3f>] show_stack_log_lvl+0x9d/0xa5
-  [<c0103aee>] show_registers+0xa7/0x178
-  [<c0103cc6>] die+0x107/0x227
-  [<c011447c>] do_page_fault+0x47f/0x567
-  [<c030800a>] error_code+0x72/0x78
-  [<c0167cfb>] link_path_walk+0x4b/0xc0
-  [<c0167d89>] path_walk+0x19/0x1b
-  [<c0168057>] do_path_lookup+0x179/0x193
-  [<c0168823>] __user_walk_fd+0x32/0x49
-  [<c0162a09>] vfs_stat_fd+0x1b/0x41
-  [<c0162ade>] vfs_stat+0x11/0x13
-  [<c0162af4>] sys_stat64+0x14/0x28
-  [<c0102a5a>] syscall_call+0x7/0xb
-  =======================
-Code: ff 45 ac 8b 55 ac 8a 02 3c 2f 74 f4 84 c0 0f 84 99 0a 00 00 8b 06 
-83 7e 1c 00 8b 78 18 74 08 83 65 b8 04 83 4d b8 01 83 4e 14 04 <8b> 87 
-b8 00 00 00 0f b7 5f 6e 85 c0 74 0a 83 78 34 00 0f 85 b7
-EIP: [<c016719d>] __link_path_walk+0x41/0xb54 SS:ESP 0068:c167bde8
+Oren.
