@@ -1,7 +1,7 @@
 From: sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org
-Subject: [PATCH 2/3] Pid ns helpers for signals
-Date: Fri, 31 Aug 2007 13:36:34 -0700
-Message-ID: <20070831203634.GB3268@us.ibm.com>
+Subject: [PATCH 3/3] Signal semantics for pid namespaces
+Date: Fri, 31 Aug 2007 13:38:34 -0700
+Message-ID: <20070831203834.GC3268@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
@@ -15,187 +15,129 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Oleg Nesterov <oleg-6lXkIZvqkOAvJsYlp49lxw@public.gmane.org>, Pavel Emelianov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+To: Pavel Emelianov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>, Oleg Nesterov <oleg-6lXkIZvqkOAvJsYlp49lxw@public.gmane.org>
 Cc: Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Define some helper functions that will be used to implement signal semantics
-with multiple pid namespaces. 
+From: Sukadev Bhattiprolu <sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: [RFC][PATCH] Masquerade sender if in ancestor ns
 
-	is_current_in_ancestor_pid_ns(task)
+With support for multiple pid namespaces, each pid namespace has a
+separate child reaper and this process needs some special handling
+of signals. 
 
-		TRUE iff active pid namespace of 'current' is an ancestor of
-		active pid namespace of @task.
+	- The child reaper should appear like a normal process to other
+	  processes in its ancestor namespaces and so should be killable
+	  (or not) in the usual way.
 
-	is_current_in_same_or_ancestor_pid_ns(task)
+       	- The child reaper should receive, from processes in it's active
+          and decendent namespaces, only those signals for which it has
+          installed a signal handler.
 
-		TRUE iff active pid namespace of 'current' is either same as 
-		or an ancestor of active pid namespace of @task.
+	- System-wide signals (eg: kill signum -1) from within a child namespace
+	  should only affect processes within that namespace and descendant
+	  namespaces. They should not be posted to processes in ancestor or
+	  sibling namespaces.
 
-	pid_ns_equal(tsk)
-		TRUE if active pid ns of @tsk is same as active pid ns of
-		'current'.
+	- If the sender of a signal does not have a pid_t in the receiver's
+	  namespace (eg: a process in init_pid_ns sends a signal to a process
+	  in a descendant namespace), the sender's pid and uid should appear
+	  as 0 in the signal's 'siginfo' structure.
 
-These interfaces take into account the fact that the tasks they are operating
-on may be exiting and may have already exited their namespaces (i.e their
-pid namespaces may be NULL).
+	- Existing rules for SIGIO delivery still apply and a process can
+	  choose any other process in its namespace and descendant namespaces
+	  to receive the SIGIO signal.
+	  
+	  The following appears to be incorrect in the fcntl() man page for
+	  F_SETOWN.
 
-Changelog: [Oleg Nesterov]: Renamed helpers and grab a reference to 'struct
-	   pid' and 'struct pid_namespace'.
+              Sending a signal to  the  owner  process  (group)  specified  by
+              F_SETOWN  is  subject  to  the  same  permissions  checks as are
+              described for kill(2), where the sending process is the one that
+              employs F_SETOWN (but see BUGS below).
+
+	Current behavior is that the SIGIO signal is delivered on behalf of
+	the process that caused the event (eg: made data available on the
+	file) and not the process that called fcntl().
+
+Changelog:
+	- [Oleg Nesterov]: Used the interfaces, is_current_in_ancestor_pid_ns()
+	  and is_current_in_same_or_ancestor_pid_ns().
+	- [Oleg Nesterov]: Clear info.si_uid also when masquerading sender.
+
+Signed-off-by: Sukadev Bhattiprolu <sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 ---
- include/linux/pid.h           |   15 ++++++
- include/linux/pid_namespace.h |    4 -
- kernel/pid.c                  |   93 ++++++++++++++++++++++++++++++++++++++++++
- 3 files changed, 110 insertions(+), 2 deletions(-)
+ kernel/signal.c |   25 ++++++++++++++++++++++++-
+ 1 file changed, 24 insertions(+), 1 deletion(-)
 
-Index: 2.6.23-rc3-mm1/include/linux/pid.h
+Index: 2.6.23-rc3-mm1/kernel/signal.c
 ===================================================================
---- 2.6.23-rc3-mm1.orig/include/linux/pid.h	2007-08-31 00:45:18.000000000 -0700
-+++ 2.6.23-rc3-mm1/include/linux/pid.h	2007-08-31 12:38:08.000000000 -0700
-@@ -125,6 +125,21 @@ extern void FASTCALL(free_pid(struct pid
- extern void zap_pid_ns_processes(struct pid_namespace *pid_ns);
+--- 2.6.23-rc3-mm1.orig/kernel/signal.c	2007-08-31 12:14:33.000000000 -0700
++++ 2.6.23-rc3-mm1/kernel/signal.c	2007-08-31 12:15:36.000000000 -0700
+@@ -25,6 +25,7 @@
+ #include <linux/capability.h>
+ #include <linux/freezer.h>
+ #include <linux/pid_namespace.h>
++#include <linux/pid.h>
+ #include <linux/nsproxy.h>
+ #include <linux/hardirq.h>
  
- /*
-+ * Caller must hold a reference to @pid.
-+ */
-+static inline struct pid_namespace *pid_active_ns(struct pid *pid)
-+{
-+	if (!pid)
-+		return NULL;
-+
-+	return pid->numbers[pid->level].ns;
-+}
-+
-+extern int pid_ns_equal(struct task_struct *tsk);
-+extern int is_current_in_ancestor_pid_ns(struct task_struct *tsk);
-+extern int is_current_in_same_or_ancestor_pid_ns(struct task_struct *tsk);
-+
-+/*
-  * the helpers to get the pid's id seen from different namespaces
-  *
-  * pid_nr()    : global id, i.e. the id seen from the init namespace;
-Index: 2.6.23-rc3-mm1/kernel/pid.c
-===================================================================
---- 2.6.23-rc3-mm1.orig/kernel/pid.c	2007-08-31 00:45:18.000000000 -0700
-+++ 2.6.23-rc3-mm1/kernel/pid.c	2007-08-31 12:29:10.000000000 -0700
-@@ -199,6 +199,99 @@ static int next_pidmap(struct pid_namesp
- 	return -1;
+@@ -48,7 +49,7 @@ static int sig_init_ignore(struct task_s
+ 	if (likely(!is_container_init(tsk->group_leader)))
+ 		return 0;
+ 
+-	if (!in_interrupt())
++	if (is_current_in_ancestor_pid_ns(tsk) && !in_interrupt())
+ 		return 0;
+ 
+ 	return 1;
+@@ -684,6 +685,20 @@ static void handle_stop_signal(int sig, 
+ 	}
  }
  
-+static struct pid_namespace *get_task_pid_ns(struct task_struct *tsk)
++static void masquerade_sender(struct task_struct *t, struct sigqueue *q)
 +{
-+	struct pid *pid;
-+	struct pid_namespace *ns;
-+
-+	pid = get_task_pid(tsk, PIDTYPE_PID);
-+	ns = get_pid_ns(pid_active_ns(pid));
-+	put_pid(pid);
-+
-+	return ns;
-+}
-+
-+/*
-+ * Return TRUE if the active pid namespace of @tsk is same as active
-+ * pid namespace of 'current'.
-+ */
-+int pid_ns_equal(struct task_struct *tsk)
-+{
-+	int rc;
-+	struct pid_namespace *my_ns = get_task_pid_ns(current);
-+	struct pid_namespace *tsk_ns = get_task_pid_ns(tsk);
-+
-+	rc = (my_ns == tsk_ns);
-+
-+	put_pid_ns(my_ns);
-+	put_pid_ns(tsk_ns);
-+
-+	return rc;
-+}
-+
-+/*
-+ * Return TRUE if pid namespace @ns1 is an ancestor of pid namespace @ns2.
-+ * Return FALSE otherwise.
-+ *
-+ * Note: Callers must ensure @ns1 and @ns2 are stable.
-+ */
-+static int ancestor_pid_ns(struct pid_namespace *ns1, struct pid_namespace *ns2)
-+{
-+	int i;
-+	struct pid_namespace *tmp;
-+
-+	if (ns1 == NULL || ns2 == NULL)
-+		return 0;
-+
-+	if (ns1->level >= ns2->level)
-+		return 0;
-+
-+	tmp = ns2->parent;
-+	for (i = tmp->level; i >= ns1->level; i--) {
-+		if (tmp == ns1)
-+			return 1;
-+		tmp = tmp->parent;
++	/*
++	 * If the sender does not have a pid_t in the receiver's active
++	 * pid namespace, set si_pid to 0 and pretend signal originated
++	 * from the kernel.
++	 */
++	if (!pid_ns_equal(t)) {
++		q->info.si_pid = 0;
++		q->info.si_uid = 0;
++		q->info.si_code = SI_KERNEL;
 +	}
-+
-+	return 0;
 +}
 +
-+/*
-+ * Return TRUE if active pid namespace of 'current' is an ancestor of
-+ * pid namespace of @tsk. Return FALSE otherwise.
-+ */
-+int is_current_in_ancestor_pid_ns(struct task_struct *tsk)
-+{
-+	int rc;
-+	struct pid_namespace *my_ns = get_task_pid_ns(current);
-+	struct pid_namespace *tsk_ns = get_task_pid_ns(tsk);
-+
-+	rc = ancestor_pid_ns(my_ns, tsk_ns);
-+
-+	put_pid_ns(my_ns);
-+	put_pid_ns(tsk_ns);
-+
-+	return rc;
-+}
-+
-+/*
-+ * Return TRUE if active pid namespace of 'current' is either same as
-+ * or an ancestor of active pid namespace of @tsk.
-+ */
-+int is_current_in_same_or_ancestor_pid_ns(struct task_struct *tsk)
-+{
-+	int rc;
-+	struct pid_namespace *my_ns = get_task_pid_ns(current);
-+	struct pid_namespace *tsk_ns = get_task_pid_ns(tsk);
-+
-+	rc = my_ns == tsk_ns || ancestor_pid_ns(my_ns, tsk_ns);
-+
-+	put_pid_ns(my_ns);
-+	put_pid_ns(tsk_ns);
-+
-+	return rc;
-+}
-+
- fastcall void put_pid(struct pid *pid)
+ static int send_signal(int sig, struct siginfo *info, struct task_struct *t,
+ 			struct sigpending *signals)
  {
- 	struct pid_namespace *ns;
-Index: 2.6.23-rc3-mm1/include/linux/pid_namespace.h
-===================================================================
---- 2.6.23-rc3-mm1.orig/include/linux/pid_namespace.h	2007-08-31 00:45:18.000000000 -0700
-+++ 2.6.23-rc3-mm1/include/linux/pid_namespace.h	2007-08-31 12:15:09.000000000 -0700
-@@ -31,7 +31,7 @@ extern struct pid_namespace init_pid_ns;
+@@ -735,6 +750,7 @@ static int send_signal(int sig, struct s
+ 			copy_siginfo(&q->info, info);
+ 			break;
+ 		}
++		masquerade_sender(t, q);
+ 	} else if (!is_si_special(info)) {
+ 		if (sig >= SIGRTMIN && info->si_code != SI_USER)
+ 		/*
+@@ -1168,6 +1184,7 @@ EXPORT_SYMBOL_GPL(kill_pid_info_as_uid);
+ static int kill_something_info(int sig, struct siginfo *info, int pid)
+ {
+ 	int ret;
++
+ 	rcu_read_lock();
+ 	if (!pid) {
+ 		ret = kill_pgrp_info(sig, info, task_pgrp(current));
+@@ -1177,6 +1194,12 @@ static int kill_something_info(int sig, 
  
- static inline struct pid_namespace *get_pid_ns(struct pid_namespace *ns)
- {
--	if (ns != &init_pid_ns)
-+	if (ns && ns != &init_pid_ns)
- 		kref_get(&ns->kref);
- 	return ns;
- }
-@@ -41,7 +41,7 @@ extern void free_pid_ns(struct kref *kre
- 
- static inline void put_pid_ns(struct pid_namespace *ns)
- {
--	if (ns != &init_pid_ns)
-+	if (ns && ns != &init_pid_ns)
- 		kref_put(&ns->kref, free_pid_ns);
- }
+ 		read_lock(&tasklist_lock);
+ 		for_each_process(p) {
++			/*
++			 * System-wide signals only apply to pid namespace
++			 * of sender.
++			 */
++			if (!is_current_in_same_or_ancestor_pid_ns(p))
++				continue;
+ 			if (p->pid > 1 && !same_thread_group(p, current)) {
+ 				int err = group_send_sig_info(sig, info, p);
+ 				++count;
