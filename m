@@ -1,7 +1,7 @@
 From: sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org
-Subject: [PATCH 1/3] Signal semantics for /sbin/init
-Date: Fri, 31 Aug 2007 13:29:49 -0700
-Message-ID: <20070831202949.GA3268@us.ibm.com>
+Subject: [PATCH 2/3] Pid ns helpers for signals
+Date: Fri, 31 Aug 2007 13:36:34 -0700
+Message-ID: <20070831203634.GB3268@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
@@ -16,159 +16,186 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: Oleg Nesterov <oleg-6lXkIZvqkOAvJsYlp49lxw@public.gmane.org>, Pavel Emelianov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
-Cc: havblue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org, Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
+Cc: Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
+Define some helper functions that will be used to implement signal semantics
+with multiple pid namespaces. 
 
+	is_current_in_ancestor_pid_ns(task)
 
-(This is Oleg's patch with my pid ns additions. Compiled and unit tested
-on 2.6.23-rc3-mm1 with other patches in this set. I think Oleg will send
-this to akpm separately - including it here for easier review of other
-patches in this set)
+		TRUE iff active pid namespace of 'current' is an ancestor of
+		active pid namespace of @task.
 
-Currently, /sbin/init is protected from unhandled signals by the
-"current == child_reaper(current)" check in get_signal_to_deliver().
-This is not enough, we have multiple problems:
+	is_current_in_same_or_ancestor_pid_ns(task)
 
-	- this doesn't work for multi-threaded inits, and we can't
-	  fix this by simply making this check group-wide.
+		TRUE iff active pid namespace of 'current' is either same as 
+		or an ancestor of active pid namespace of @task.
 
-	- /sbin/init and kernel threads are not protected from
-	  handle_stop_signal(). Minor problem, but not good and
-	  allows to "steal" SIGCONT or change ->signal->flags.
+	pid_ns_equal(tsk)
+		TRUE if active pid ns of @tsk is same as active pid ns of
+		'current'.
 
-	- /sbin/init is not protected from __group_complete_signal(),
-	  sig_fatal() can set SIGNAL_GROUP_EXIT and block exec(), kill
-	  sub-threads, set ->group_stop_count, etc.
+These interfaces take into account the fact that the tasks they are operating
+on may be exiting and may have already exited their namespaces (i.e their
+pid namespaces may be NULL).
 
-Also, with support for multiple pid namespaces, we need an ability to
-actually kill the sub-namespace's init from the parent namespace. In
-this case it is not possible (without painful and intrusive changes)
-to make the "should we honor this signal" decision on the receiver's
-side.
-
-Hopefully this patch (adds 43 bytes to kernel/signal.o) can solve
-these problems.
-
-Notes:
-
-	- Blocked signals are never ignored, so init still can receive
-	  a pending blocked signal after sigprocmask(SIG_UNBLOCK).
-	  Easy to fix, but probably we can ignore this issue.
-
-	- this patch allows us to simplify de_thread() playing games
-	  with pid_ns->child_reaper.
-
-(Side note: the current behaviour of things like force_sig_info_fault()
- is not very good, init should not ignore these signals and go to the
- endless loop. Exit + panic is imho better, easy to chamge)
-
-Oleg.
-
+Changelog: [Oleg Nesterov]: Renamed helpers and grab a reference to 'struct
+	   pid' and 'struct pid_namespace'.
 ---
- kernel/signal.c |   47 +++++++++++++++++++++++++++++++++--------------
- 1 file changed, 33 insertions(+), 14 deletions(-)
+ include/linux/pid.h           |   15 ++++++
+ include/linux/pid_namespace.h |    4 -
+ kernel/pid.c                  |   93 ++++++++++++++++++++++++++++++++++++++++++
+ 3 files changed, 110 insertions(+), 2 deletions(-)
 
-Index: 2.6.23-rc3-mm1/kernel/signal.c
+Index: 2.6.23-rc3-mm1/include/linux/pid.h
 ===================================================================
---- 2.6.23-rc3-mm1.orig/kernel/signal.c	2007-08-30 13:43:03.000000000 -0700
-+++ 2.6.23-rc3-mm1/kernel/signal.c	2007-08-31 00:02:50.000000000 -0700
-@@ -26,6 +26,7 @@
- #include <linux/freezer.h>
- #include <linux/pid_namespace.h>
- #include <linux/nsproxy.h>
-+#include <linux/hardirq.h>
- 
- #include <asm/param.h>
- #include <asm/uaccess.h>
-@@ -39,11 +40,35 @@
- 
- static struct kmem_cache *sigqueue_cachep;
- 
-+static int sig_init_ignore(struct task_struct *tsk)
-+{
- 
--static int sig_ignored(struct task_struct *t, int sig)
-+	// Currently this check is a bit racy with exec(),
-+	// we can _simplify_ de_thread and close the race.
-+	if (likely(!is_container_init(tsk->group_leader)))
-+		return 0;
-+
-+	if (!in_interrupt())
-+		return 0;
-+
-+	return 1;
-+}
-+
-+static int sig_task_ignore(struct task_struct *tsk, int sig)
- {
--	void __user * handler;
-+	void __user * handler = tsk->sighand->action[sig-1].sa.sa_handler;
-+
-+	if (handler == SIG_IGN)
-+		return 1;
-+
-+	if (handler != SIG_DFL)
-+		return 0;
-+
-+	return sig_kernel_ignore(sig) || sig_init_ignore(tsk);
-+}
- 
-+static int sig_ignored(struct task_struct *t, int sig)
-+{
- 	/*
- 	 * Tracers always want to know about signals..
- 	 */
-@@ -58,10 +83,7 @@ static int sig_ignored(struct task_struc
- 	if (sigismember(&t->blocked, sig))
- 		return 0;
- 
--	/* Is it explicitly or implicitly ignored? */
--	handler = t->sighand->action[sig-1].sa.sa_handler;
--	return   handler == SIG_IGN ||
--		(handler == SIG_DFL && sig_kernel_ignore(sig));
-+	return sig_task_ignore(t, sig);
- }
+--- 2.6.23-rc3-mm1.orig/include/linux/pid.h	2007-08-31 00:45:18.000000000 -0700
++++ 2.6.23-rc3-mm1/include/linux/pid.h	2007-08-31 12:38:08.000000000 -0700
+@@ -125,6 +125,21 @@ extern void FASTCALL(free_pid(struct pid
+ extern void zap_pid_ns_processes(struct pid_namespace *pid_ns);
  
  /*
-@@ -568,6 +590,9 @@ static void handle_stop_signal(int sig, 
- 		 */
- 		return;
- 
-+	if (sig_init_ignore(p))
-+		return;
++ * Caller must hold a reference to @pid.
++ */
++static inline struct pid_namespace *pid_active_ns(struct pid *pid)
++{
++	if (!pid)
++		return NULL;
 +
- 	if (sig_kernel_stop(sig)) {
- 		/*
- 		 * This is a stop signal.  Remove SIGCONT from all queues.
-@@ -1863,12 +1888,6 @@ relock:
- 		if (sig_kernel_ignore(signr)) /* Default is nothing. */
- 			continue;
- 
--		/*
--		 * Global init gets no signals it doesn't want.
--		 */
--		if (is_global_init(current))
--			continue;
--
- 		if (sig_kernel_stop(signr)) {
- 			/*
- 			 * The default action is to stop all threads in
-@@ -2320,6 +2339,7 @@ int do_sigaction(int sig, struct k_sigac
- 	k = &current->sighand->action[sig-1];
- 
- 	spin_lock_irq(&current->sighand->siglock);
++	return pid->numbers[pid->level].ns;
++}
 +
- 	if (oact)
- 		*oact = *k;
++extern int pid_ns_equal(struct task_struct *tsk);
++extern int is_current_in_ancestor_pid_ns(struct task_struct *tsk);
++extern int is_current_in_same_or_ancestor_pid_ns(struct task_struct *tsk);
++
++/*
+  * the helpers to get the pid's id seen from different namespaces
+  *
+  * pid_nr()    : global id, i.e. the id seen from the init namespace;
+Index: 2.6.23-rc3-mm1/kernel/pid.c
+===================================================================
+--- 2.6.23-rc3-mm1.orig/kernel/pid.c	2007-08-31 00:45:18.000000000 -0700
++++ 2.6.23-rc3-mm1/kernel/pid.c	2007-08-31 12:29:10.000000000 -0700
+@@ -199,6 +199,99 @@ static int next_pidmap(struct pid_namesp
+ 	return -1;
+ }
  
-@@ -2338,8 +2358,7 @@ int do_sigaction(int sig, struct k_sigac
- 		 *   (for example, SIGCHLD), shall cause the pending signal to
- 		 *   be discarded, whether or not it is blocked"
- 		 */
--		if (act->sa.sa_handler == SIG_IGN ||
--		   (act->sa.sa_handler == SIG_DFL && sig_kernel_ignore(sig))) {
-+		if (sig_task_ignore(current, sig)) {
- 			struct task_struct *t = current;
- 			sigemptyset(&mask);
- 			sigaddset(&mask, sig);
++static struct pid_namespace *get_task_pid_ns(struct task_struct *tsk)
++{
++	struct pid *pid;
++	struct pid_namespace *ns;
++
++	pid = get_task_pid(tsk, PIDTYPE_PID);
++	ns = get_pid_ns(pid_active_ns(pid));
++	put_pid(pid);
++
++	return ns;
++}
++
++/*
++ * Return TRUE if the active pid namespace of @tsk is same as active
++ * pid namespace of 'current'.
++ */
++int pid_ns_equal(struct task_struct *tsk)
++{
++	int rc;
++	struct pid_namespace *my_ns = get_task_pid_ns(current);
++	struct pid_namespace *tsk_ns = get_task_pid_ns(tsk);
++
++	rc = (my_ns == tsk_ns);
++
++	put_pid_ns(my_ns);
++	put_pid_ns(tsk_ns);
++
++	return rc;
++}
++
++/*
++ * Return TRUE if pid namespace @ns1 is an ancestor of pid namespace @ns2.
++ * Return FALSE otherwise.
++ *
++ * Note: Callers must ensure @ns1 and @ns2 are stable.
++ */
++static int ancestor_pid_ns(struct pid_namespace *ns1, struct pid_namespace *ns2)
++{
++	int i;
++	struct pid_namespace *tmp;
++
++	if (ns1 == NULL || ns2 == NULL)
++		return 0;
++
++	if (ns1->level >= ns2->level)
++		return 0;
++
++	tmp = ns2->parent;
++	for (i = tmp->level; i >= ns1->level; i--) {
++		if (tmp == ns1)
++			return 1;
++		tmp = tmp->parent;
++	}
++
++	return 0;
++}
++
++/*
++ * Return TRUE if active pid namespace of 'current' is an ancestor of
++ * pid namespace of @tsk. Return FALSE otherwise.
++ */
++int is_current_in_ancestor_pid_ns(struct task_struct *tsk)
++{
++	int rc;
++	struct pid_namespace *my_ns = get_task_pid_ns(current);
++	struct pid_namespace *tsk_ns = get_task_pid_ns(tsk);
++
++	rc = ancestor_pid_ns(my_ns, tsk_ns);
++
++	put_pid_ns(my_ns);
++	put_pid_ns(tsk_ns);
++
++	return rc;
++}
++
++/*
++ * Return TRUE if active pid namespace of 'current' is either same as
++ * or an ancestor of active pid namespace of @tsk.
++ */
++int is_current_in_same_or_ancestor_pid_ns(struct task_struct *tsk)
++{
++	int rc;
++	struct pid_namespace *my_ns = get_task_pid_ns(current);
++	struct pid_namespace *tsk_ns = get_task_pid_ns(tsk);
++
++	rc = my_ns == tsk_ns || ancestor_pid_ns(my_ns, tsk_ns);
++
++	put_pid_ns(my_ns);
++	put_pid_ns(tsk_ns);
++
++	return rc;
++}
++
+ fastcall void put_pid(struct pid *pid)
+ {
+ 	struct pid_namespace *ns;
+Index: 2.6.23-rc3-mm1/include/linux/pid_namespace.h
+===================================================================
+--- 2.6.23-rc3-mm1.orig/include/linux/pid_namespace.h	2007-08-31 00:45:18.000000000 -0700
++++ 2.6.23-rc3-mm1/include/linux/pid_namespace.h	2007-08-31 12:15:09.000000000 -0700
+@@ -31,7 +31,7 @@ extern struct pid_namespace init_pid_ns;
+ 
+ static inline struct pid_namespace *get_pid_ns(struct pid_namespace *ns)
+ {
+-	if (ns != &init_pid_ns)
++	if (ns && ns != &init_pid_ns)
+ 		kref_get(&ns->kref);
+ 	return ns;
+ }
+@@ -41,7 +41,7 @@ extern void free_pid_ns(struct kref *kre
+ 
+ static inline void put_pid_ns(struct pid_namespace *ns)
+ {
+-	if (ns != &init_pid_ns)
++	if (ns && ns != &init_pid_ns)
+ 		kref_put(&ns->kref, free_pid_ns);
+ }
