@@ -1,50 +1,174 @@
-From: Andrew Morton <akpm@linux-foundation.org>
-Subject: Re: [-mm PATCH]  Memory controller improve user interface (v2)
-Date: Fri, 31 Aug 2007 13:02:16 -0700
-Message-ID: <20070831130216.226db806.akpm@linux-foundation.org>
-References: <20070830185246.3170.74806.sendpatchset@balbir-laptop>
+From: sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org
+Subject: [PATCH 1/3] Signal semantics for /sbin/init
+Date: Fri, 31 Aug 2007 13:29:49 -0700
+Message-ID: <20070831202949.GA3268@us.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
-Content-Transfer-Encoding: 7bit
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1760914AbXHaUC7@vger.kernel.org>
-In-Reply-To: <20070830185246.3170.74806.sendpatchset@balbir-laptop>
-Sender: linux-kernel-owner@vger.kernel.org
-To: Balbir Singh <balbir@linux.vnet.ibm.com>
-Cc: Linux Kernel Mailing List <linux-kernel@vger.kernel.org>, Linux Containers <containers@lists.osdl.org>, Paul Menage <menage@google.com>, Linux MM Mailing List <linux-mm@kvack.org>, David Rientjes <rientjes@google.com>, Dave Hansen <haveblue@us.ibm.com>
+Content-Type: text/plain; charset=us-ascii
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Content-Disposition: inline
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Oleg Nesterov <oleg-6lXkIZvqkOAvJsYlp49lxw@public.gmane.org>, Pavel Emelianov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+Cc: havblue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org, Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Fri, 31 Aug 2007 00:22:46 +0530
-Balbir Singh <balbir@linux.vnet.ibm.com> wrote:
-
-> +/*
-> + * Strategy routines for formating read/write data
-> + */
-> +int mem_container_read_strategy(unsigned long long val, char *buf)
-> +{
-> +	return sprintf(buf, "%llu Bytes\n", val);
-> +}
-
-It's a bit cheesy to be printing the units like this.  It's better to just
-print the raw number.
-
-If you really want to remind the user what units that number is in (not a
-bad idea) then it can be encoded in the filename, like
-/proc/sys/vm/min_free_kbytes, /proc/sys/vm/dirty_expire_centisecs, etc.
 
 
-> +int mem_container_write_strategy(char *buf, unsigned long long *tmp)
-> +{
-> +	*tmp = memparse(buf, &buf);
-> +	if (*buf != '\0')
-> +		return -EINVAL;
-> +
-> +	printk("tmp is %llu\n", *tmp);
+(This is Oleg's patch with my pid ns additions. Compiled and unit tested
+on 2.6.23-rc3-mm1 with other patches in this set. I think Oleg will send
+this to akpm separately - including it here for easier review of other
+patches in this set)
 
-don't think we want that.
+Currently, /sbin/init is protected from unhandled signals by the
+"current == child_reaper(current)" check in get_signal_to_deliver().
+This is not enough, we have multiple problems:
 
-> +	/*
-> +	 * Round up the value to the closest page size
-> +	 */
-> +	*tmp = ((*tmp + PAGE_SIZE - 1) >> PAGE_SHIFT) << PAGE_SHIFT;
-> +	return 0;
-> +}
+	- this doesn't work for multi-threaded inits, and we can't
+	  fix this by simply making this check group-wide.
+
+	- /sbin/init and kernel threads are not protected from
+	  handle_stop_signal(). Minor problem, but not good and
+	  allows to "steal" SIGCONT or change ->signal->flags.
+
+	- /sbin/init is not protected from __group_complete_signal(),
+	  sig_fatal() can set SIGNAL_GROUP_EXIT and block exec(), kill
+	  sub-threads, set ->group_stop_count, etc.
+
+Also, with support for multiple pid namespaces, we need an ability to
+actually kill the sub-namespace's init from the parent namespace. In
+this case it is not possible (without painful and intrusive changes)
+to make the "should we honor this signal" decision on the receiver's
+side.
+
+Hopefully this patch (adds 43 bytes to kernel/signal.o) can solve
+these problems.
+
+Notes:
+
+	- Blocked signals are never ignored, so init still can receive
+	  a pending blocked signal after sigprocmask(SIG_UNBLOCK).
+	  Easy to fix, but probably we can ignore this issue.
+
+	- this patch allows us to simplify de_thread() playing games
+	  with pid_ns->child_reaper.
+
+(Side note: the current behaviour of things like force_sig_info_fault()
+ is not very good, init should not ignore these signals and go to the
+ endless loop. Exit + panic is imho better, easy to chamge)
+
+Oleg.
+
+---
+ kernel/signal.c |   47 +++++++++++++++++++++++++++++++++--------------
+ 1 file changed, 33 insertions(+), 14 deletions(-)
+
+Index: 2.6.23-rc3-mm1/kernel/signal.c
+===================================================================
+--- 2.6.23-rc3-mm1.orig/kernel/signal.c	2007-08-30 13:43:03.000000000 -0700
++++ 2.6.23-rc3-mm1/kernel/signal.c	2007-08-31 00:02:50.000000000 -0700
+@@ -26,6 +26,7 @@
+ #include <linux/freezer.h>
+ #include <linux/pid_namespace.h>
+ #include <linux/nsproxy.h>
++#include <linux/hardirq.h>
+ 
+ #include <asm/param.h>
+ #include <asm/uaccess.h>
+@@ -39,11 +40,35 @@
+ 
+ static struct kmem_cache *sigqueue_cachep;
+ 
++static int sig_init_ignore(struct task_struct *tsk)
++{
+ 
+-static int sig_ignored(struct task_struct *t, int sig)
++	// Currently this check is a bit racy with exec(),
++	// we can _simplify_ de_thread and close the race.
++	if (likely(!is_container_init(tsk->group_leader)))
++		return 0;
++
++	if (!in_interrupt())
++		return 0;
++
++	return 1;
++}
++
++static int sig_task_ignore(struct task_struct *tsk, int sig)
+ {
+-	void __user * handler;
++	void __user * handler = tsk->sighand->action[sig-1].sa.sa_handler;
++
++	if (handler == SIG_IGN)
++		return 1;
++
++	if (handler != SIG_DFL)
++		return 0;
++
++	return sig_kernel_ignore(sig) || sig_init_ignore(tsk);
++}
+ 
++static int sig_ignored(struct task_struct *t, int sig)
++{
+ 	/*
+ 	 * Tracers always want to know about signals..
+ 	 */
+@@ -58,10 +83,7 @@ static int sig_ignored(struct task_struc
+ 	if (sigismember(&t->blocked, sig))
+ 		return 0;
+ 
+-	/* Is it explicitly or implicitly ignored? */
+-	handler = t->sighand->action[sig-1].sa.sa_handler;
+-	return   handler == SIG_IGN ||
+-		(handler == SIG_DFL && sig_kernel_ignore(sig));
++	return sig_task_ignore(t, sig);
+ }
+ 
+ /*
+@@ -568,6 +590,9 @@ static void handle_stop_signal(int sig, 
+ 		 */
+ 		return;
+ 
++	if (sig_init_ignore(p))
++		return;
++
+ 	if (sig_kernel_stop(sig)) {
+ 		/*
+ 		 * This is a stop signal.  Remove SIGCONT from all queues.
+@@ -1863,12 +1888,6 @@ relock:
+ 		if (sig_kernel_ignore(signr)) /* Default is nothing. */
+ 			continue;
+ 
+-		/*
+-		 * Global init gets no signals it doesn't want.
+-		 */
+-		if (is_global_init(current))
+-			continue;
+-
+ 		if (sig_kernel_stop(signr)) {
+ 			/*
+ 			 * The default action is to stop all threads in
+@@ -2320,6 +2339,7 @@ int do_sigaction(int sig, struct k_sigac
+ 	k = &current->sighand->action[sig-1];
+ 
+ 	spin_lock_irq(&current->sighand->siglock);
++
+ 	if (oact)
+ 		*oact = *k;
+ 
+@@ -2338,8 +2358,7 @@ int do_sigaction(int sig, struct k_sigac
+ 		 *   (for example, SIGCHLD), shall cause the pending signal to
+ 		 *   be discarded, whether or not it is blocked"
+ 		 */
+-		if (act->sa.sa_handler == SIG_IGN ||
+-		   (act->sa.sa_handler == SIG_DFL && sig_kernel_ignore(sig))) {
++		if (sig_task_ignore(current, sig)) {
+ 			struct task_struct *t = current;
+ 			sigemptyset(&mask);
+ 			sigaddset(&mask, sig);
