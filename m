@@ -1,14 +1,15 @@
-From: "Paul Menage" <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [RFC][PATCH 1/3] Setup the kmem container
-Date: Mon, 3 Sep 2007 12:04:58 -0700
-Message-ID: <6599ad830709031204t47727796mb5f2998b372a306a@mail.gmail.com>
-References: <46D68EA6.2010707@openvz.org> <46D68F39.3060100@openvz.org>
+From: Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Subject: Re: [-mm PATCH] Memory controller improve user interface (v3)
+Date: Mon, 03 Sep 2007 20:45:10 +0100
+Message-ID: <46DC6446.1080707@linux.vnet.ibm.com>
+References: <20070902105021.3737.31251.sendpatchset@balbir-laptop>
+	<6599ad830709022153g1720bcedsb61d7cf7a783bd3f@mail.gmail.com>
+Reply-To: balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <46D68F39.3060100-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
-Content-Disposition: inline
+In-Reply-To: <6599ad830709022153g1720bcedsb61d7cf7a783bd3f-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,26 +19,31 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
-Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Christoph Lameter <clameter-sJ/iWh9BUns@public.gmane.org>
+To: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+Cc: Linux Kernel Mailing List <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Linux MM Mailing List <linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org>, David Rientjes <rientjes-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On 8/30/07, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org> wrote:
-> +config CONTAINER_KMEM
-> +       bool "Kernel memory controller for containers"
-> +       depends on CONTAINERS && RESOURCE_COUNTERS && SLUB
-> +       help
-> +         Provedes a kernel memory usage controll for containers
+Paul Menage wrote:
+> On 9/2/07, Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org> wrote:
+>> -       s += sprintf(s, "%lu\n", *val);
+>> +       if (read_strategy)
+>> +               s += read_strategy(*val, s);
+>> +       else
+>> +               s += sprintf(s, "%lu\n", *val);
+> 
+> This would be better as %llu
+> 
+>> +               tmp = simple_strtoul(buf, &end, 10);
+> 
+> and this as simple_strtoull()
+> 
+> Paul
+> 
 
-s/Provedes/Provides/
-s/controll/control/
+Thanks for catching it, I'll fix that.
 
-> +
-> +       if (mem == NULL)
-> +               return NULL;
-
-That ought to be
-
-     return -ENOMEM;
-
-Paul
+-- 
+	Warm Regards,
+	Balbir Singh
+	Linux Technology Center
+	IBM, ISTL
