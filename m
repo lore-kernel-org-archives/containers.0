@@ -1,47 +1,24 @@
-From: Balbir Singh <balbir@linux.vnet.ibm.com>
-Subject: Re: [-mm PATCH] Memory controller improve user interface (v3)
-Date: Mon, 03 Sep 2007 20:49:23 +0100
-Message-ID: <46DC6543.3000607@linux.vnet.ibm.com>
-References: <20070902105021.3737.31251.sendpatchset@balbir-laptop> <6599ad830709022153g1720bcedsb61d7cf7a783bd3f@mail.gmail.com>
-Reply-To: balbir@linux.vnet.ibm.com
+From: "Kelley Nichols" <piker-dTRp/qfZeeZWk0Htik3J/w@public.gmane.org>
+Subject: acrobat v 8.0 You save: $369.05
+Date: Mon, 3 Sep 2007 20:09:49 +0000 (UTC)
+Message-ID: <010bffa4$010bfe78$7904173b@piker>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
+Content-Type: text/plain; format=flowed; charset="Windows-1252";
+	reply-type=original
 Content-Transfer-Encoding: 7bit
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1756550AbXICTvS@vger.kernel.org>
-In-Reply-To: <6599ad830709022153g1720bcedsb61d7cf7a783bd3f@mail.gmail.com>
-Sender: linux-kernel-owner@vger.kernel.org
-To: Paul Menage <menage@google.com>
-Cc: Andrew Morton <akpm@linux-foundation.org>, Linux Kernel Mailing List <linux-kernel@vger.kernel.org>, Linux Containers <containers@lists.osdl.org>, Linux MM Mailing List <linux-mm@kvack.org>, David Rientjes <rientjes@google.com>, Dave Hansen <haveblue@us.ibm.com>
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Date: Mon, 34 Aug 2007 29:08:23 +0900
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Paul Menage wrote:
-> On 9/2/07, Balbir Singh <balbir@linux.vnet.ibm.com> wrote:
->> -       s += sprintf(s, "%lu\n", *val);
->> +       if (read_strategy)
->> +               s += read_strategy(*val, s);
->> +       else
->> +               s += sprintf(s, "%lu\n", *val);
-> 
-> This would be better as %llu
-> 
-
-Hi, Paul,
-
-This does not need fixing, since the other counters like failcnt are
-still unsigned long
-
->> +               tmp = simple_strtoul(buf, &end, 10);
-> 
-> and this as simple_strtoull()
-> 
-
-
-Will do, thanks!
-
-
-
--- 
-	Warm Regards,
-	Balbir Singh
-	Linux Technology Center
-	IBM, ISTL
+Creative 2 Our price US $ 149.95 save -save US $ 1049.05
+http://smeyuvtt.cn
