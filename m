@@ -1,14 +1,14 @@
 From: sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org
-Subject: Re: [PATCH 1/3] Signal semantics for /sbin/init
-Date: Mon, 3 Sep 2007 08:56:09 -0700
-Message-ID: <20070903155609.GA2793@us.ibm.com>
-References: <20070831202949.GA3268@us.ibm.com>
-	<20070901110221.GC191@tv-sign.ru>
+Subject: Re: [PATCH 2/3] Pid ns helpers for signals
+Date: Mon, 3 Sep 2007 09:01:47 -0700
+Message-ID: <20070903160147.GB2793@us.ibm.com>
+References: <20070831203634.GB3268@us.ibm.com>
+	<20070901112903.GD191@tv-sign.ru> <20070901115601.GA258@tv-sign.ru>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <20070901110221.GC191-6lXkIZvqkOAvJsYlp49lxw@public.gmane.org>
+In-Reply-To: <20070901115601.GA258-6lXkIZvqkOAvJsYlp49lxw@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,32 +19,47 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: Oleg Nesterov <oleg-6lXkIZvqkOAvJsYlp49lxw@public.gmane.org>
-Cc: havblue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org, Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Pavel Emelianov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+Cc: Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Pavel Emelianov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
 Oleg Nesterov [oleg-6lXkIZvqkOAvJsYlp49lxw@public.gmane.org] wrote:
-| On 08/31, sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org wrote:
+| On 09/01, Oleg Nesterov wrote:
+| >
+| > On 08/31, sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org wrote:
+| > >
+| > > +static struct pid_namespace *get_task_pid_ns(struct task_struct *tsk)
+| > > +{
+| > > +	struct pid *pid;
+| > > +	struct pid_namespace *ns;
+| > > +
+| > > +	pid = get_task_pid(tsk, PIDTYPE_PID);
+| > > +	ns = get_pid_ns(pid_active_ns(pid));
+| > > +	put_pid(pid);
+| > > +
+| > > +	return ns;
+| > > +}
 | > 
-| > -static int sig_ignored(struct task_struct *t, int sig)
-| > +	// Currently this check is a bit racy with exec(),
-| > +	// we can _simplify_ de_thread and close the race.
-| > +	if (likely(!is_container_init(tsk->group_leader)))
-| > +		return 0;
-| > +
-| > +	if (!in_interrupt())
-| > +		return 0;
+| > Hmm. Firstly, we don't need this for the "current", but all users of this func
+| > also do get_task_pid_ns(current).
+| > 
+| > Also, we don't need get/put_pid. rcu locks are enough,
+| > 
+| > 	rcu_read_lock();
+| > 	ns = get_pid_ns(pid_active_ns(task_pid(tks)));
+| > 	rcu_read_unlock();
+| > 
+| > However, do we really need this complications right now? Currently, we use
+| > this "compare namespaces" helpers only when we know that "struct pid" is
+| > stable. We are sending the signal to that task, it must be pid_alive(), and
+| > we either locked the task itself, or we hold tasklist.
 | 
-| I don't understand why you are trying to mix this patch with pid_ns changes.
+| (forgot to mention)
 | 
-| We don't need in_interrupt() check unless we use current do decide if the
-| signal goes from the parent namespace.
-| 
-| And in fact, I'd personally prefer to use "is_global_init()" for this patch,
-| because it hopefully can fix the problems we have even without namespaces.
-| This also matches the current check in get_signal_to_deliver().
+| Otherwise, it is not safe to use "tsk" in get_task_pid_ns(), so I don't think
+| these get/put pid/pid_ns games make too much sense.
 
-Sorry. I wasn't paying enough attenttion to this patch and including it
-only for reference. Was planning to replace this with your final patch.
-Or do you want me to fix the two bugs and resend ?
+get_pid(), put_pid(), get_pid_ns(), put_pid_ns() all allow pid to be NULL.
+You mean tsk itself can be NULL bc task is exiting ? 
+
 | 
 | Oleg.
