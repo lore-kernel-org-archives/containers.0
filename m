@@ -1,35 +1,30 @@
-From: Srivatsa Vaddagiri <vatsa-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: Re: [RFC] Container mini-summit agenda for Sept 3, 2007
-Date: Mon, 3 Sep 2007 10:14:52 +0530
-Message-ID: <20070903044452.GA6837@linux.vnet.ibm.com>
-References: <46D69653.1090003@fr.ibm.com>
-	<82da1a7b0709021549m554515dewaf36d846420770bc@mail.gmail.com>
-Reply-To: vatsa-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
+From: "Paul Menage" <menage@google.com>
+Subject: Re: [-mm PATCH] Memory controller improve user interface (v3)
+Date: Sun, 2 Sep 2007 21:53:22 -0700
+Message-ID: <6599ad830709022153g1720bcedsb61d7cf7a783bd3f@mail.gmail.com>
+References: <20070902105021.3737.31251.sendpatchset@balbir-laptop>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Content-Type: text/plain; charset=ISO-8859-1
+Content-Transfer-Encoding: 7bit
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1753447AbXICEx4@vger.kernel.org>
+In-Reply-To: <20070902105021.3737.31251.sendpatchset@balbir-laptop>
 Content-Disposition: inline
-In-Reply-To: <82da1a7b0709021549m554515dewaf36d846420770bc-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Kirill Kolyshkin <kolyshkin-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Cc: Rohit Seth <rohitseth-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, office-xGb7/i2pWyrYtjvyW6yDsg@public.gmane.org, Alasdair Kergon <agk-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Pavel Emelianov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+Sender: linux-kernel-owner@vger.kernel.org
+To: Balbir Singh <balbir@linux.vnet.ibm.com>
+Cc: Andrew Morton <akpm@linux-foundation.org>, Linux Kernel Mailing List <linux-kernel@vger.kernel.org>, Linux Containers <containers@lists.osdl.org>, Linux MM Mailing List <linux-mm@kvack.org>, David Rientjes <rientjes@google.com>, Dave Hansen <haveblue@us.ibm.com>
 List-Id: containers.vger.kernel.org
 
-On Sun, Sep 02, 2007 at 11:49:54PM +0100, Kirill Kolyshkin wrote:
-> So, this is just to confirm the final details about container
-> mini-summit which will be held tomorrow.
+On 9/2/07, Balbir Singh <balbir@linux.vnet.ibm.com> wrote:
+> -       s += sprintf(s, "%lu\n", *val);
+> +       if (read_strategy)
+> +               s += read_strategy(*val, s);
+> +       else
+> +               s += sprintf(s, "%lu\n", *val);
 
-I am planning to attend this on phone (along with Dhaval and Vaidya from
-IBM).
+This would be better as %llu
 
--- 
-Regards,
-vatsa
+> +               tmp = simple_strtoul(buf, &end, 10);
+
+and this as simple_strtoull()
+
+Paul
