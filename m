@@ -1,16 +1,15 @@
-From: "Paul Menage" <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [Devel] [RFC] [PATCH 2/2] namespace enter: introduce sys_hijack
-	(v3)
-Date: Mon, 3 Sep 2007 01:02:46 -0700
-Message-ID: <6599ad830709030102w6b5084d4w4a8a9a654e421527@mail.gmail.com>
-References: <20070829200420.GA4870@sergelap.austin.ibm.com>
-	<20070829200515.GC4870@sergelap.austin.ibm.com>
+From: Srivatsa Vaddagiri <vatsa-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Subject: Re: [RFC] Container mini-summit agenda for Sept 3, 2007
+Date: Mon, 3 Sep 2007 13:52:03 +0530
+Message-ID: <20070903082203.GC6837@linux.vnet.ibm.com>
+References: <46D69653.1090003@fr.ibm.com>
+	<82da1a7b0709021549m554515dewaf36d846420770bc@mail.gmail.com>
+Reply-To: vatsa-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset=us-ascii
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20070829200515.GC4870-6s5zFf/epYLPQpwDFJZrxKsjOiXwFzmk@public.gmane.org>
 Content-Disposition: inline
+In-Reply-To: <82da1a7b0709021549m554515dewaf36d846420770bc-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -20,27 +19,19 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
+To: Kirill Kolyshkin <kolyshkin-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Cc: Rohit Seth <rohitseth-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, office-xGb7/i2pWyrYtjvyW6yDsg@public.gmane.org, Alasdair Kergon <agk-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Pavel Emelianov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On 8/29/07, Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org> wrote:
-> >From aec05999084bf3a94add66e98462652ed9408f86 Mon Sep 17 00:00:00 2001
-> From: sergeh-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org <sergeh-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-> Date: Wed, 22 Aug 2007 15:03:57 -0700
-> Subject: [RFC] [PATCH 2/2] namespace enter: introduce sys_hijack (v3)
->
-> Introduce sys_hijack (for x86 only).  It is like clone, but in
-> place of a stack pointer (which is assumed null) it accepts a
-> pid.  The process identified by that pid is the one which is
-> actually cloned.  Some state - include the file table, the signals
-> and sighand (and hence tty), and the ->parent are taken from the
-> calling process.
+On Sun, Sep 02, 2007 at 11:49:54PM +0100, Kirill Kolyshkin wrote:
+> So, this is just to confirm the final details about container
+> mini-summit which will be held tomorrow.
+> 
+> Time: starting at 9am 3th Sept.
+> Place: Cambridge's University Arms Hotel, room Churchill D.
 
-What do you do if there are no processes in a particular container?
+Hi Kirill,
+	What's the callin details for this conference?
 
-I prefer your suggestion of tying this to the nsproxy subsystem - that
-would allow you to spawn a child with a given set of namespaces, even
-if there were no appropriate process to hijack.
-
-Paul
+Regards,
+vatsa
