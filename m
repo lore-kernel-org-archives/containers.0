@@ -1,30 +1,46 @@
-From: "Paul Menage" <menage@google.com>
-Subject: Re: [-mm PATCH] Memory controller improve user interface (v3)
-Date: Sun, 2 Sep 2007 21:53:22 -0700
-Message-ID: <6599ad830709022153g1720bcedsb61d7cf7a783bd3f@mail.gmail.com>
-References: <20070902105021.3737.31251.sendpatchset@balbir-laptop>
+From: "Paul Menage" <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [Devel] [RFC] [PATCH 2/2] namespace enter: introduce sys_hijack
+	(v3)
+Date: Mon, 3 Sep 2007 01:02:46 -0700
+Message-ID: <6599ad830709030102w6b5084d4w4a8a9a654e421527@mail.gmail.com>
+References: <20070829200420.GA4870@sergelap.austin.ibm.com>
+	<20070829200515.GC4870@sergelap.austin.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1
 Content-Transfer-Encoding: 7bit
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1753447AbXICEx4@vger.kernel.org>
-In-Reply-To: <20070902105021.3737.31251.sendpatchset@balbir-laptop>
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <20070829200515.GC4870-6s5zFf/epYLPQpwDFJZrxKsjOiXwFzmk@public.gmane.org>
 Content-Disposition: inline
-Sender: linux-kernel-owner@vger.kernel.org
-To: Balbir Singh <balbir@linux.vnet.ibm.com>
-Cc: Andrew Morton <akpm@linux-foundation.org>, Linux Kernel Mailing List <linux-kernel@vger.kernel.org>, Linux Containers <containers@lists.osdl.org>, Linux MM Mailing List <linux-mm@kvack.org>, David Rientjes <rientjes@google.com>, Dave Hansen <haveblue@us.ibm.com>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On 9/2/07, Balbir Singh <balbir@linux.vnet.ibm.com> wrote:
-> -       s += sprintf(s, "%lu\n", *val);
-> +       if (read_strategy)
-> +               s += read_strategy(*val, s);
-> +       else
-> +               s += sprintf(s, "%lu\n", *val);
+On 8/29/07, Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org> wrote:
+> >From aec05999084bf3a94add66e98462652ed9408f86 Mon Sep 17 00:00:00 2001
+> From: sergeh-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org <sergeh-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+> Date: Wed, 22 Aug 2007 15:03:57 -0700
+> Subject: [RFC] [PATCH 2/2] namespace enter: introduce sys_hijack (v3)
+>
+> Introduce sys_hijack (for x86 only).  It is like clone, but in
+> place of a stack pointer (which is assumed null) it accepts a
+> pid.  The process identified by that pid is the one which is
+> actually cloned.  Some state - include the file table, the signals
+> and sighand (and hence tty), and the ->parent are taken from the
+> calling process.
 
-This would be better as %llu
+What do you do if there are no processes in a particular container?
 
-> +               tmp = simple_strtoul(buf, &end, 10);
-
-and this as simple_strtoull()
+I prefer your suggestion of tying this to the nsproxy subsystem - that
+would allow you to spawn a child with a given set of namespaces, even
+if there were no appropriate process to hijack.
 
 Paul
