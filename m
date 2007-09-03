@@ -1,32 +1,42 @@
 From: Balbir Singh <balbir@linux.vnet.ibm.com>
 Subject: Re: [-mm PATCH] Memory controller improve user interface (v3)
-Date: Wed, 5 Sep 2007 17:05:05 +0100
-Message-ID: <20070905160505.GA15590@linux.vnet.ibm.com>
-References: <20070902105021.3737.31251.sendpatchset@balbir-laptop> <6599ad830709022153g1720bcedsb61d7cf7a783bd3f@mail.gmail.com> <46DC6543.3000607@linux.vnet.ibm.com> <6599ad830709040019r17861771we2a0893c0c160723@mail.gmail.com>
+Date: Mon, 3 Sep 2007 20:55:29 +0100
+Message-ID: <20070903195529.GA14829@linux.vnet.ibm.com>
+References: <20070902105021.3737.31251.sendpatchset@balbir-laptop> <6599ad830709022153g1720bcedsb61d7cf7a783bd3f@mail.gmail.com>
 Reply-To: balbir@linux.vnet.ibm.com
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1758054AbXIEQTB@vger.kernel.org>
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1758191AbXIEQT3@vger.kernel.org>
 Content-Disposition: inline
-In-Reply-To: <6599ad830709040019r17861771we2a0893c0c160723@mail.gmail.com>
+In-Reply-To: <6599ad830709022153g1720bcedsb61d7cf7a783bd3f@mail.gmail.com>
 Sender: linux-kernel-owner@vger.kernel.org
 To: Paul Menage <menage@google.com>
-Cc: Linux Kernel Mailing List <linux-kernel@vger.kernel.org>, Linux MM Mailing List <linux-mm@kvack.org>, David Rientjes <rientjes@google.com>, Linux Containers <containers@lists.osdl.org>, Andrew Morton <akpm@linux-foundation.org>
+Cc: Andrew Morton <akpm@linux-foundation.org>, Linux Kernel Mailing List <linux-kernel@vger.kernel.org>, Linux Containers <containers@lists.osdl.org>, Linux MM Mailing List <linux-mm@kvack.org>, David Rientjes <rientjes@google.com>, Dave Hansen <haveblue@us.ibm.com>
 List-Id: containers.vger.kernel.org
 
+On Sun, Sep 02, 2007 at 09:53:22PM -0700, Paul Menage wrote:
+> On 9/2/07, Balbir Singh <balbir@linux.vnet.ibm.com> wrote:
+> > -       s += sprintf(s, "%lu\n", *val);
+> > +       if (read_strategy)
+> > +               s += read_strategy(*val, s);
+> > +       else
+> > +               s += sprintf(s, "%lu\n", *val);
 > 
-> But val is an unsigned long long*. So printing *val with %lu will
-> break (at least a warning, and maybe corruption if you had other
-> parameters) on 32-bit archs.
+> This would be better as %llu
 > 
+> > +               tmp = simple_strtoul(buf, &end, 10);
+> 
+> and this as simple_strtoull()
+>
 
-How does this look?
+Hi,
 
+Here's the new patch for the UI changes. I hope I've got it right
+(Jetlag can do funny things to the mind and eyes :-) )
 
 Changelog for version 4
 
-1. Make all resource counters members unsigned long long
-2. Use documentation comments from Dave Hansen
+1. Fix parsing of unsigned long long arguments.
 
 Changelog for version 3
 1. Change memory.limit and memory.usage to memory.limit_in_bytes and
@@ -47,20 +57,22 @@ to the resource counters infrastructure to format the data as desired.
 Suggested by David Rientjes, Andrew Morton and Herbert Poetzl
 
 Tested on a UML setup with the config for memory control enabled.
+---
+
 
 Signed-off-by: Balbir Singh <balbir@linux.vnet.ibm.com>
 ---
 
- Documentation/controllers/memory.txt |   29 ++++++++++++++++++++++++-----
- include/linux/res_counter.h          |   12 +++++++-----
- kernel/res_counter.c                 |   34 +++++++++++++++++++++++-----------
- mm/memcontrol.c                      |   35 +++++++++++++++++++++++++----------
- 4 files changed, 79 insertions(+), 31 deletions(-)
+ Documentation/controllers/memory.txt |   28 ++++++++++++++---
+ include/linux/res_counter.h          |   10 +++---
+ kernel/res_counter.c                 |   30 +++++++++++++-----
+ mm/memcontrol.c                      |   56 +++++++++++++++++++++++++++--------
+ 4 files changed, 94 insertions(+), 30 deletions(-)
 
 diff -puN Documentation/controllers/memory.txt~mem-control-make-ui-more-usable Documentation/controllers/memory.txt
 --- linux-2.6.23-rc4/Documentation/controllers/memory.txt~mem-control-make-ui-more-usable	2007-09-02 11:12:03.000000000 +0100
-+++ linux-2.6.23-rc4-balbir/Documentation/controllers/memory.txt	2007-09-05 16:44:41.000000000 +0100
-@@ -165,11 +165,30 @@ c. Enable CONFIG_CONTAINER_MEM_CONT
++++ linux-2.6.23-rc4-balbir/Documentation/controllers/memory.txt	2007-09-02 11:17:12.000000000 +0100
+@@ -165,11 +165,29 @@ c. Enable CONFIG_CONTAINER_MEM_CONT
  
  Since now we're in the 0 container,
  We can alter the memory limit:
@@ -82,11 +94,10 @@ diff -puN Documentation/controllers/memory.txt~mem-control-make-ui-more-usable D
 +# cat /containers/0/memory.usage_in_bytes
 +1216512 Bytes
 +
-+A successful write to this file does not guarantee a successful set of
-+this limit to the value written into the file.  This can be due to a
-+number of factors, such as rounding up to page boundaries or the total
-+availability of memory on the system.  The user is required to re-read
-+this file after a write to guarantee the value committed by the kernel.
++Setting a limit to a number that is not a multiple of page size causes
++rounding up of the value. The user must check back to see (by reading
++memory.limit_in_bytes), to check for differences between desired values and
++committed values. Currently, all accounting is done in multiples of PAGE_SIZE
 +
 +# echo -n 1 > memory.limit_in_bytes
 +# cat memory.limit_in_bytes
@@ -94,7 +105,7 @@ diff -puN Documentation/controllers/memory.txt~mem-control-make-ui-more-usable D
  
  The memory.failcnt field gives the number of times that the container limit was
  exceeded.
-@@ -206,8 +225,8 @@ container might have some charge associa
+@@ -206,8 +224,8 @@ container might have some charge associa
  tasks have migrated away from it. If some pages are still left, after following
  the steps listed in sections 4.1 and 4.2, check the Swap Cache usage in
  /proc/meminfo to see if the Swap Cache usage is showing up in the
@@ -107,8 +118,8 @@ diff -puN Documentation/controllers/memory.txt~mem-control-make-ui-more-usable D
  
 diff -puN include/linux/res_counter.h~mem-control-make-ui-more-usable include/linux/res_counter.h
 --- linux-2.6.23-rc4/include/linux/res_counter.h~mem-control-make-ui-more-usable	2007-09-02 11:12:03.000000000 +0100
-+++ linux-2.6.23-rc4-balbir/include/linux/res_counter.h	2007-09-05 16:12:49.000000000 +0100
-@@ -23,15 +23,15 @@ struct res_counter {
++++ linux-2.6.23-rc4-balbir/include/linux/res_counter.h	2007-09-02 11:12:03.000000000 +0100
+@@ -23,11 +23,11 @@ struct res_counter {
  	/*
  	 * the current resource consumption level
  	 */
@@ -122,11 +133,6 @@ diff -puN include/linux/res_counter.h~mem-control-make-ui-more-usable include/li
  	/*
  	 * the number of unsuccessful attempts to consume the resource
  	 */
--	unsigned long failcnt;
-+	unsigned long long failcnt;
- 	/*
- 	 * the lock to protect all of the above.
- 	 * the routines below consider this to be IRQ-safe
 @@ -52,9 +52,11 @@ struct res_counter {
   */
  
@@ -143,7 +149,7 @@ diff -puN include/linux/res_counter.h~mem-control-make-ui-more-usable include/li
   * the field descriptors. one for each member of res_counter
 diff -puN kernel/res_counter.c~mem-control-make-ui-more-usable kernel/res_counter.c
 --- linux-2.6.23-rc4/kernel/res_counter.c~mem-control-make-ui-more-usable	2007-09-02 11:12:03.000000000 +0100
-+++ linux-2.6.23-rc4-balbir/kernel/res_counter.c	2007-09-05 16:59:41.000000000 +0100
++++ linux-2.6.23-rc4-balbir/kernel/res_counter.c	2007-09-03 20:49:30.000000000 +0100
 @@ -16,7 +16,7 @@
  void res_counter_init(struct res_counter *counter)
  {
@@ -153,17 +159,6 @@ diff -puN kernel/res_counter.c~mem-control-make-ui-more-usable kernel/res_counte
  }
  
  int res_counter_charge_locked(struct res_counter *counter, unsigned long val)
-@@ -59,8 +59,8 @@ void res_counter_uncharge(struct res_cou
- }
- 
- 
--static inline unsigned long *res_counter_member(struct res_counter *counter,
--						int member)
-+static inline unsigned long long *
-+res_counter_member(struct res_counter *counter, int member)
- {
- 	switch (member) {
- 	case RES_USAGE:
 @@ -76,24 +76,29 @@ static inline unsigned long *res_counter
  }
  
@@ -182,7 +177,7 @@ diff -puN kernel/res_counter.c~mem-control-make-ui-more-usable kernel/res_counte
 +	if (read_strategy)
 +		s += read_strategy(*val, s);
 +	else
-+		s += sprintf(s, "%llu\n", *val);
++		s += sprintf(s, "%lu\n", *val);
  	return simple_read_from_buffer((void __user *)userbuf, nbytes,
  			pos, buf, s - buf);
  }
@@ -221,7 +216,7 @@ diff -puN kernel/res_counter.c~mem-control-make-ui-more-usable kernel/res_counte
  	*val = tmp;
 diff -puN mm/memcontrol.c~mem-control-make-ui-more-usable mm/memcontrol.c
 --- linux-2.6.23-rc4/mm/memcontrol.c~mem-control-make-ui-more-usable	2007-09-02 11:12:03.000000000 +0100
-+++ linux-2.6.23-rc4-balbir/mm/memcontrol.c	2007-09-05 16:59:19.000000000 +0100
++++ linux-2.6.23-rc4-balbir/mm/memcontrol.c	2007-09-02 11:15:49.000000000 +0100
 @@ -313,7 +313,7 @@ int mem_container_charge(struct page *pa
  	 * If we created the page_container, we should free it on exceeding
  	 * the container limit.
@@ -249,13 +244,21 @@ diff -puN mm/memcontrol.c~mem-control-make-ui-more-usable mm/memcontrol.c
  
   		spin_lock_irqsave(&mem->lru_lock, flags);
   		list_del_init(&pc->lru);
-@@ -427,12 +427,26 @@ void mem_container_uncharge(struct page_
+@@ -427,12 +427,43 @@ void mem_container_uncharge(struct page_
  	}
  }
  
 -static ssize_t mem_container_read(struct container *cont, struct cftype *cft,
 -			struct file *file, char __user *userbuf, size_t nbytes,
 -			loff_t *ppos)
++/*
++ * Strategy routines for formating read/write data
++ */
++int mem_container_read_strategy(unsigned long long val, char *buf)
++{
++	return sprintf(buf, "%llu\n", val);
++}
++
 +int mem_container_write_strategy(char *buf, unsigned long long *tmp)
 +{
 +	*tmp = memparse(buf, &buf);
@@ -269,6 +272,15 @@ diff -puN mm/memcontrol.c~mem-control-make-ui-more-usable mm/memcontrol.c
 +	return 0;
 +}
 +
++static ssize_t mem_container_read_usage(struct container *cont,
++			struct cftype *cft, struct file *file,
++			char __user *userbuf, size_t nbytes, loff_t *ppos)
++{
++	return res_counter_read(&mem_container_from_cont(cont)->res,
++				cft->private, userbuf, nbytes, ppos,
++				mem_container_read_strategy);
++}
++
 +static ssize_t mem_container_read(struct container *cont,
 +			struct cftype *cft, struct file *file,
 +			char __user *userbuf, size_t nbytes, loff_t *ppos)
@@ -280,7 +292,7 @@ diff -puN mm/memcontrol.c~mem-control-make-ui-more-usable mm/memcontrol.c
  }
  
  static ssize_t mem_container_write(struct container *cont, struct cftype *cft,
-@@ -440,7 +454,8 @@ static ssize_t mem_container_write(struc
+@@ -440,7 +471,8 @@ static ssize_t mem_container_write(struc
  				size_t nbytes, loff_t *ppos)
  {
  	return res_counter_write(&mem_container_from_cont(cont)->res,
@@ -290,23 +302,27 @@ diff -puN mm/memcontrol.c~mem-control-make-ui-more-usable mm/memcontrol.c
  }
  
  static ssize_t mem_control_type_write(struct container *cont,
-@@ -499,12 +514,12 @@ static ssize_t mem_control_type_read(str
+@@ -499,15 +531,15 @@ static ssize_t mem_control_type_read(str
  
  static struct cftype mem_container_files[] = {
  	{
 -		.name = "usage",
 +		.name = "usage_in_bytes",
  		.private = RES_USAGE,
- 		.read = mem_container_read,
+-		.read = mem_container_read,
++		.read = mem_container_read_usage,
  	},
  	{
 -		.name = "limit",
 +		.name = "limit_in_bytes",
  		.private = RES_LIMIT,
  		.write = mem_container_write,
- 		.read = mem_container_read,
+-		.read = mem_container_read,
++		.read = mem_container_read_usage,
+ 	},
+ 	{
+ 		.name = "failcnt",
 _
-
 
 -- 
 	Warm Regards,
