@@ -1,13 +1,13 @@
-From: "Candice Tompkins" <andersond-RDJmgmdeH48+Hrhc9rMQyVaTQe2KTcn/@public.gmane.org>
-Subject: photoshop 9
-Date: Mon, 3 Sep 2007 13:14:29 +0000 (UTC)
-Message-ID: <0107ffa4$0107fe78$7e29897d@andersond>
+From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
+Subject: Re: Containers status update
+Date: Mon, 03 Sep 2007 07:32:54 -0600
+Message-ID: <m1k5r7yiux.fsf@ebiederm.dsl.xmission.com>
+References: <46DBC784.20907@openvz.org>
 Mime-Version: 1.0
-Content-Type: text/plain; format=flowed; charset="us-ascii";
-	reply-type=original
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset=us-ascii
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Date: Mon, 34 Aug 2007 22:13:06 +0900
+In-Reply-To: <46DBC784.20907-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org> (Pavel Emelyanov's message of "Mon,
+	03 Sep 2007 12:36:20 +0400")
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -17,8 +17,15 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
+To: Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-$89 adobe cs3 extended
-http://akeiepppr.cn
+Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org> writes:
+
+Thanks for the slides.  (I only saw 3).
+
+Please note that the user namespace we have right now
+is much more of a place holder then the final thing.
+
+Eric
