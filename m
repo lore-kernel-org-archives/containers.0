@@ -1,11 +1,18 @@
-From: "Vonda Leblanc" <jeff-YOzL5CV4y4Zwkf3nu5pOOFaTQe2KTcn/@public.gmane.org>
-Subject: Submit your nomination for a Degree
-Date: Tue, 4 Sep 2007 19:25:13 +0000 (UTC)
-Message-ID: <0107ffa4$0107fe78$17d3f358@jeff>
+From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [Devel] [RFC] [PATCH 2/2] namespace enter: introduce
+	sys_hijack (v3)
+Date: Tue, 4 Sep 2007 14:32:56 -0500
+Message-ID: <20070904193256.GA494@sergelap.austin.ibm.com>
+References: <20070829200420.GA4870@sergelap.austin.ibm.com>
+	<20070829200515.GC4870@sergelap.austin.ibm.com>
+	<6599ad830709030102w6b5084d4w4a8a9a654e421527@mail.gmail.com>
+	<20070904125019.GA22410@sergelap.austin.ibm.com>
+	<1188932778.28903.361.camel@localhost>
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary="===============5077229921862930441=="
+Content-Type: text/plain; charset=us-ascii
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Date: Tue, 35 Aug 2007 21:24:05 +0200
+Content-Disposition: inline
+In-Reply-To: <1188932778.28903.361.camel@localhost>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -13,104 +20,65 @@ List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
 List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Mime-version: 1.0
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
+To: Dave Hansen <haveblue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-This is a multi-part message in MIME format.
+Quoting Dave Hansen (haveblue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org):
+> On Tue, 2007-09-04 at 07:50 -0500, Serge E. Hallyn wrote:
+> > > What do you do if there are no processes in a particular container?
+> > 
+> > The nsproxy will have been released so you couldn't enter it anyway. 
+> 
+> Yeah, we'd need some kind of other object to keep the nsproxy around and
+> hold a reference to it.
 
---===============5077229921862930441==
-Content-Type: multipart/alternative;
-	boundary="----=_NextPart_000_0007_0107FFA4.0107FE0C"
+We could of course have the ns_container subsystem do that.  The
+ns_container generally stick around until the admin does a manual rm on
+its directory, so this way we could keep the nsproxy around.
 
-This is a multi-part message in MIME format.
+> But, it also begs other questions about how we define the namespace
+> boundaries vs. containers.  What if we have a normal container with
+> chroot'd process inside of it?  Two such processes will not share an
+> nsproxy because the chroot'd one has switched filesystem namespaces.
 
-------=_NextPart_000_0007_0107FFA4.0107FE0C
-Content-Type: text/plain;
-	charset="windows-1250"
-Content-Transfer-Encoding: quoted-printable
+But then a chroot isn't really anything to do with a namespace.  An
+equivalent would be clone(CLONE_NEWNS)+pivot_root(new_root,put_old).
+And that would cause a new namespace for the child.  Which is why I
+think we need to be able to define a container as a set of nsproxies,
+either by introducing CLONE_NEWCONTAINER or using the ns_container
+subsystem.
 
-F A S T    T R A C K   D E 
-G R E E   P R O G R A M  Obtain the degree you deserve, based on your 
-present knowledge and life experience. A prosperous future, money earning p=
-ower, and the 
-Admiration of all. Degrees from an Established, Prestigious, Leading 
-Institution. Your Degree will show exactly what you really can 
-do. Get the Job, Promotion, Business 
-Opportunity and Social Advancement you Desire! Eliminates classrooms and tr=
-aveling. Achieve your Bachelors, Masters, MBA, or PhDin 
-the field of your expertise Professional and affordable Call now - your Gra=
-duation is a phone call 
-away. Please call:1-206-350-2402 
-------=_NextPart_000_0007_0107FFA4.0107FE0C
-Content-Type: text/html;
-	charset="windows-1250"
-Content-Transfer-Encoding: quoted-printable
+Then a namespace enter would always be done into the namespace init
+process' nsproxy.
 
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
-<HTML><HEAD>
-<META http-equiv=3DContent-Type content=3D"text/html; charset=3Dwindows-1250">
-<META content=3D"MSHTML 6.00.2900.2905" name=3DGENERATOR>
-<STYLE></STYLE>
-</HEAD>
-<BODY>
-<DIV><FONT face=3DArial size=3D2>F A S T&nbsp;&nbsp;&nbsp; T R A C K&nbsp;&=
-nbsp; D E 
-G R E E&nbsp;&nbsp; P R O G R A M </FONT></DIV>
-<DIV>&nbsp;</DIV>
-<DIV><FONT face=3DArial size=3D2>Obtain the degree you deserve, based on yo=
-ur 
-present knowledge and life experience.</FONT></DIV>
-<DIV>&nbsp;</DIV>
-<DIV><FONT face=3DArial size=3D2>A prosperous future, money earning power, =
-and the 
-Admiration of all.</FONT></DIV>
-<DIV>&nbsp;</DIV>
-<DIV><FONT face=3DArial size=3D2>Degrees from an Established, Prestigious, =
-Leading 
-Institution.</FONT></DIV>
-<DIV>&nbsp;</DIV>
-<DIV><FONT face=3DArial size=3D2>Your Degree will show exactly what you rea=
-lly can 
-do.</FONT></DIV>
-<DIV>&nbsp;</DIV>
-<DIV><FONT face=3DArial size=3D2>Get the Job, Promotion, Business 
-Opportunity</FONT></DIV>
-<DIV>&nbsp;</DIV>
-<DIV><FONT face=3DArial size=3D2>and Social Advancement you Desire!</FONT><=
-/DIV>
-<DIV>&nbsp;</DIV>
-<DIV><FONT face=3DArial size=3D2>Eliminates classrooms and traveling.</FONT=
-></DIV>
-<DIV>&nbsp;</DIV>
-<DIV><FONT face=3DArial size=3D2>Achieve your Bachelors, Masters, MBA, or P=
-hD<BR>in 
-the field of your expertise</FONT></DIV>
-<DIV>&nbsp;</DIV>
-<DIV><FONT face=3DArial size=3D2>Professional and affordable</FONT></DIV>
-<DIV>&nbsp;</DIV>
-<DIV><FONT face=3DArial size=3D2>Call now - your Graduation is a phone call=
- 
-away.</FONT></DIV>
-<DIV>&nbsp;</DIV>
-<DIV><FONT face=3DArial size=3D2>Please call:<BR>1-206-350-2402</FONT></DIV=
->
-<DIV><FONT face=3DArial size=3D2></FONT>&nbsp;</DIV>
-</BODY></HTML>
+> Who is to say that the "container" is represented by one process's
+> nsproxy more than another?
 
-------=_NextPart_000_0007_0107FFA4.0107FE0C--
+The admin who defined the container I guess :)
 
+One major ugliness is that the definition of namespace boundaries is
+different with each ns.
 
---===============5077229921862930441==
-Content-Type: text/plain; charset="us-ascii"
-MIME-Version: 1.0
-Content-Transfer-Encoding: 7bit
-Content-Disposition: inline
+Uts namespaces are completely distinct and creates as copies of the
+original.
 
-_______________________________________________
-Containers mailing list
-Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-https://lists.linux-foundation.org/mailman/listinfo/containers
---===============5077229921862930441==--
+Mounts namespaces are by default isolated, and created as copies of the
+original.  But sharing can be done using mounts propagation.
+
+Pid namespaces are hierarchical, with processes being visible in all
+ancestor namespaces.
+
+IPC namespaces are isolated and created empty.
+
+Network namespaces will be isolated and created empty, with network
+devices being shared between a parent and child namespace?
+
+In the face of that straight namespace entering is the simplest
+way to administer a 'container'.  Without namespace entering, every
+namespace may need to be administrated somewhat differently, if it is
+even possible.  (i.e. utsname0
+
+-serge
