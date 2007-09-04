@@ -1,46 +1,51 @@
-From: Balbir Singh <balbir@linux.vnet.ibm.com>
-Subject: Re: [-mm PATCH] Memory controller improve user interface (v3)
-Date: Tue, 04 Sep 2007 08:28:57 +0100
-Message-ID: <46DD0939.7030409@linux.vnet.ibm.com>
-References: <20070902105021.3737.31251.sendpatchset@balbir-laptop> <6599ad830709022153g1720bcedsb61d7cf7a783bd3f@mail.gmail.com> <46DC6543.3000607@linux.vnet.ibm.com> <6599ad830709040019r17861771we2a0893c0c160723@mail.gmail.com>
-Reply-To: balbir@linux.vnet.ibm.com
+From: Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+Subject: Re: [RFC][PATCH 1/3] Setup the kmem container
+Date: Tue, 04 Sep 2007 13:24:36 +0400
+Message-ID: <46DD2454.50303@openvz.org>
+References: <46D68EA6.2010707@openvz.org> <46D68F39.3060100@openvz.org>
+	<6599ad830709031204t47727796mb5f2998b372a306a@mail.gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1
 Content-Transfer-Encoding: 7bit
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1753360AbXIDH3m@vger.kernel.org>
-In-Reply-To: <6599ad830709040019r17861771we2a0893c0c160723@mail.gmail.com>
-Sender: linux-kernel-owner@vger.kernel.org
-To: Paul Menage <menage@google.com>
-Cc: Linux Kernel Mailing List <linux-kernel@vger.kernel.org>, Linux MM Mailing List <linux-mm@kvack.org>, David Rientjes <rientjes@google.com>, Linux Containers <containers@lists.osdl.org>, Andrew Morton <akpm@linux-foundation.org>
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <6599ad830709031204t47727796mb5f2998b372a306a-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Christoph Lameter <clameter-sJ/iWh9BUns@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
 Paul Menage wrote:
-> On 9/3/07, Balbir Singh <balbir@linux.vnet.ibm.com> wrote:
->> Paul Menage wrote:
->>> On 9/2/07, Balbir Singh <balbir@linux.vnet.ibm.com> wrote:
->>>> -       s += sprintf(s, "%lu\n", *val);
->>>> +       if (read_strategy)
->>>> +               s += read_strategy(*val, s);
->>>> +       else
->>>> +               s += sprintf(s, "%lu\n", *val);
->>> This would be better as %llu
->>>
->> Hi, Paul,
->>
->> This does not need fixing, since the other counters like failcnt are
->> still unsigned long
->>
+> On 8/30/07, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org> wrote:
+>> +config CONTAINER_KMEM
+>> +       bool "Kernel memory controller for containers"
+>> +       depends on CONTAINERS && RESOURCE_COUNTERS && SLUB
+>> +       help
+>> +         Provedes a kernel memory usage controll for containers
 > 
-> But val is an unsigned long long*. So printing *val with %lu will
-> break (at least a warning, and maybe corruption if you had other
-> parameters) on 32-bit archs.
+> s/Provedes/Provides/
+> s/controll/control/
+
+:) Thanks
+
+>> +
+>> +       if (mem == NULL)
+>> +               return NULL;
 > 
+> That ought to be
+> 
+>      return -ENOMEM;
 
-Yeah... Hmm.. just wonder if all the counters should be unsigned long
-long? failcnt is the only remaining unsigned long counter now.
+Are you sure? This function should return the pointer! Maybe its
+ought to be ERR_PTR(-ENOMEM)?
 
--- 
-	Warm Regards,
-	Balbir Singh
-	Linux Technology Center
-	IBM, ISTL
+> 
+> Paul
+> 
