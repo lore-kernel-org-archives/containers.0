@@ -1,14 +1,14 @@
 From: Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
-Subject: Re: [RFC][PATCH 1/3] Setup the kmem container
-Date: Tue, 04 Sep 2007 13:24:36 +0400
-Message-ID: <46DD2454.50303@openvz.org>
-References: <46D68EA6.2010707@openvz.org> <46D68F39.3060100@openvz.org>
-	<6599ad830709031204t47727796mb5f2998b372a306a@mail.gmail.com>
+Subject: Re: [RFC][PATCH 2/3] The accounting hooks and core
+Date: Tue, 04 Sep 2007 13:26:15 +0400
+Message-ID: <46DD24B7.8020908@openvz.org>
+References: <46D68EA6.2010707@openvz.org> <46D69051.4030707@openvz.org>
+	<6599ad830709031159o5e1ed636y122b8075f1d814be@mail.gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <6599ad830709031204t47727796mb5f2998b372a306a-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
+In-Reply-To: <6599ad830709031159o5e1ed636y122b8075f1d814be-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -24,28 +24,16 @@ List-Id: containers.vger.kernel.org
 
 Paul Menage wrote:
 > On 8/30/07, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org> wrote:
->> +config CONTAINER_KMEM
->> +       bool "Kernel memory controller for containers"
->> +       depends on CONTAINERS && RESOURCE_COUNTERS && SLUB
->> +       help
->> +         Provedes a kernel memory usage controll for containers
-> 
-> s/Provedes/Provides/
-> s/controll/control/
-
-:) Thanks
-
 >> +
->> +       if (mem == NULL)
->> +               return NULL;
+>> +       cnt = task_kmem_container(current);
+>> +       if (res_counter_charge(&cnt->res, s->size))
+>> +               return -ENOMEM;
+>> +
+>> +       css_get(&cnt->css);
 > 
-> That ought to be
-> 
->      return -ENOMEM;
+> These lines should be in an rcu_read_lock() section.
 
-Are you sure? This function should return the pointer! Maybe its
-ought to be ERR_PTR(-ENOMEM)?
+Indeed. Thanks a lot. :)
 
-> 
 > Paul
 > 
