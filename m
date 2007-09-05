@@ -1,14 +1,14 @@
-From: Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: Re: Container mini-summit notes
-Date: Wed, 05 Sep 2007 16:48:00 +0100
-Message-ID: <46DECFB0.7000901@linux.vnet.ibm.com>
-References: <46DEB80B.2040106@fr.ibm.com>
-Reply-To: balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
+From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [RFC][patch 1/3] network container subsystem
+Date: Wed, 5 Sep 2007 10:49:50 -0500
+Message-ID: <20070905154950.GL1403@sergelap.austin.ibm.com>
+References: <20070904170022.964253374@dyn-9-101-17-26.toulouse-stg.fr.ibm.com>
+	<20070904171525.771956554@dyn-9-101-17-26.toulouse-stg.fr.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset=us-ascii
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <46DEB80B.2040106-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <20070904171525.771956554-lUQnSZrVijcklpeYT4thRqpRWpusSO0yQ3R/GR7Q8HurIzol8Bc5pA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,418 +18,396 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Cedric Le Goater <clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org
+Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Cedric Le Goater wrote:
-> Held at De Vere Universty Arms Hotel, Cambridge, UK
+Quoting dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org (dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org):
+> From: Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
 > 
-> * Monday, Sept 3, 9h00 to 16h00 :
+> This patch creates the network container subsystem. 
+> It consists for the moment on a single file "network.ipv4".
 > 
-> 	Kir Kolyshkin <kir-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org> 
-> 	Pavel Emelianov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org> 
-> 	Masahiko Takahashi <masahiko-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
-> 	Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-> 	James Youngman <youngman-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
-> 	??? (NTT)
-> 	Cedric Le Goater <clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org> 
+> The interface is pretty simple:
 > 
-> On the phone (skype with very high noise level)
+> To add an IP address to the container:
 > 
-> 	Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
-> 	Srivatsa Vaddagiri <vatsa-xthvdsQ13ZrQT0dZR+AlfA@public.gmane.org>
-> 	Dhaval Giani <dhaval-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-> 	Vaidyanathan Srinivasan <svaidy-xthvdsQ13ZrQT0dZR+AlfA@public.gmane.org>
+> 	echo add AB12FFFF > network.ipv4
 > 
-> * Tuesday, Sept 4, 15h00 to 18h00 :
+> To remove this IP address:
+> --------------------------
 > 
-> 	Pavel Emelianov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org> 
-> 	Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
-> 	Eric W. Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-> 	Cedric Le Goater <clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org> 
+> 	echo del AB12FFFF > network.ipv4
 > 
-> = Namespace status 
-> ======================================================================
+> To list the addresses:
+> ----------------------
 > 
-> * sysv ipc 
+> 	cat network.ipv4
 > 
->   extend to posix mqueue. 
->   	. check that /dev/mqueue can be mounted multiple times 
->   	. mqueue sysctls will need a fix :
-> 		 fs.mqueue.queues_max
-> 		 fs.mqueue.msg_max
-> 		 fs.mqueue.msgsize_max
+> The parameter is an IPV4 address in the hexa format. The parsing of a dotted-decimal
+> parameter is totally painful. If this format hurts someone, I can change it to a dotted
+> format at the risk of having something buggy.
 > 
+> This patch by itself does nothing more than adding/removing elements from a list.
 > 
-> * uname namespace
+> Signed-off-by: Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
 > 
->   considered complete.
+> ---
+>  include/linux/container_subsys.h |    4 
+>  init/Kconfig                     |    8 +
+>  kernel/Makefile                  |    1 
+>  kernel/container_network.c       |  285 +++++++++++++++++++++++++++++++++++++++
+>  4 files changed, 298 insertions(+)
 > 
->   what about being able to set the kernel version ? 
+> Index: 2.6-mm/include/linux/container_subsys.h
+> ===================================================================
+> --- 2.6-mm.orig/include/linux/container_subsys.h
+> +++ 2.6-mm/include/linux/container_subsys.h
+> @@ -30,3 +30,7 @@
+>  #endif
 > 
-> * user
-> 
->   useful today to current container technologies (openvz, vserver)
-> 
->   uid checks should be replaced by (uid, userns) to complete 
->   integration with filesystems
->   security needs to be looked at 
->   so is signal delivery
-> 
-> * pid namespace
-> 
->   in dev
-> 
->   signal handling completion underway
->   pid_t cleanups 
->   	. the purpose is to remove any explicit reference to
->     	  task->pid
-> 	. keep ->pid in task struct only for performance
-> 	. complex cleanups ones: 
-> 	      af_unix credentials
-> 	      file locks
-> 	      timer stat
-> 
->   kthread cleanup
->   	. replace kernel_thread() by the kthread API
-> 	. change core kthread API to support signals
-> 	. then nfs needs extra love. is someone working on it ?
-> 
->    do we need hierarchical levels ?
-> 
-> 
-> * net
-> 
->   in dev
-> 
->   veth is in dmiller's tree
->   sysfs cleanups underway in greg's tree
->   eric is working on a mininal patchset acceptable for netdev. will 
->   ask dmiller advice on the topic
-> 
->   ip isolation could be done with netfilter or security hooks
-> 
-> * device namespace
-> 
->   to do
-> 
->   we don't want to get rid of mknod() but we also want to limit the
->   view of the devices in a container. one way to do this is through a
->   device namespace which would only expose a 'white list' of devices
->   when unshared. a possible 'white list' is :
-> 
->        /dev/null  
->        /dev/full  
->        /dev/zero  
->        /dev/rtc
->        /dev/random
->        /dev/pts/*
->   
->   do we require a extra namespace for /dev/pts/* to handle its
->   virtualization or can this be done directly in the device namespace ?
-> 
->   check that /dev/pts can be mounted multiple times.
-> 
-> * time
-> 
->   to do
-> 
->   required for C/R 
->   will only make sense in a "closed" environment
->   the purpose is to keep the monotonic timers from expiring when 
->   you restart
-> 
-> * other possible namespace ? 
-> 
->   rtc ? which is an isolation issue and also a sysctl issue
->   
->   comment from eric : 
->   	  a redesign of lsm, a la netfilter, could cover all 
-> 	  isolation needs.
->   
-> * namespace management
-> 
-> 
->   . entering
-> 
->     no consensus on how this should be done. 
-> 
->     probably because the need is related to a container and not just
->     namespaces. it should be solved with a container object and 
->     probably a subsystem.
-> 
->     serge's proposal of sys_hijack() is interesting but will require
->     more study because, in UNIX, it's not natural for a child process
->     to have 2 parents !
-> 
->   . extending clone to support more flags
-> 
->     new syscall proposal for a clone2(struct clone2_arg_struct* args)
-> 
-> * tests
->   
->   . ltp for unit
->   . keep the integration tests in each container framework.
-> 
-> * Filesystems
-> 
->   . unprivilege mounts (not addressed)
-> 
->     merged
-> 
->   . multiple /sys mounts (in dev)
->     
->     missing some bits (eric working on it) to decouple sysfs and
->     kobjects
->   
->   . multiple /proc mounts (to complete)
-> 
->     multiple mount done
->     to limit access to /proc files, use the user namespace checks ?
->     for the contents of each file, use the current context to identify
->     namespace
-> 
-> * Console
-> 
->   . a running getty should be covered by tty namespace
->   . printk will require some support to be isolated. 
-> 
-> = Task Container (from container dev plan)
-> ======================================================================
->   
-> * base features
-> 
->   hierarchical/virtualized containers
->   support vserver mgmnt of sub-containers
->   locking cleanup
->   control file API simplification
->   unified container including namespaces
-> 
->   the "container"/"task container" name is ambiguous and it should change to  
->   "control group"
-> 
-> 
-> * userpace RBCE to provide controls for
-> 
->   users
->   groups
->   pgrp
->   executable
-> 
-> * specific containers targeted:
-> 
->   split cpusets into
->   	cpuset
-> 	memset
->   network
->          connect/bind/accept controller using iptables
-> 
->   controllers : 
->   
->     memory controller (see detail below)
-> 
+>  /* */
+> +
+> +#ifdef CONFIG_CONTAINER_NETWORK
+> +SUBSYS(network)
+> +#endif
 
+I think Paul wants the /* */ after your endif as well to reduce patch
+conflicts.
 
-The status is that the patches for memory control are in -mm. We need to
-stabilize the patches, look at reducing the overhead of double LRU for
-root containers. We need to explore the double LRU approach as a longer
-term solution.
+> Index: 2.6-mm/init/Kconfig
+> ===================================================================
+> --- 2.6-mm.orig/init/Kconfig
+> +++ 2.6-mm/init/Kconfig
+> @@ -326,6 +326,14 @@
+>  	  Provides a simple Resource Controller for monitoring the
+>  	  total CPU consumed by the tasks in a container
+> 
+> +config CONTAINER_NETWORK
+> +       bool "Network container subsystem"
+> +       depends on CONTAINERS && SECURITY_NETWORK
+> +       help
+> +	   Provides a network controller to isolate network traffic
+> +
+> +	   Say N if unsure
+> +
+>  config CPUSETS
+>  	bool "Cpuset support"
+>  	depends on SMP && CONTAINERS
+> Index: 2.6-mm/kernel/Makefile
+> ===================================================================
+> --- 2.6-mm.orig/kernel/Makefile
+> +++ 2.6-mm/kernel/Makefile
+> @@ -43,6 +43,7 @@
+>  obj-$(CONFIG_CPUSETS) += cpuset.o
+>  obj-$(CONFIG_CONTAINER_CPUACCT) += cpu_acct.o
+>  obj-$(CONFIG_CONTAINER_NS) += ns_container.o
+> +obj-$(CONFIG_CONTAINER_NETWORK) += container_network.o
+>  obj-$(CONFIG_IKCONFIG) += configs.o
+>  obj-$(CONFIG_STOP_MACHINE) += stop_machine.o
+>  obj-$(CONFIG_AUDIT) += audit.o auditfilter.o
+> Index: 2.6-mm/kernel/container_network.c
+> ===================================================================
+> --- /dev/null
+> +++ 2.6-mm/kernel/container_network.c
+> @@ -0,0 +1,285 @@
+> +/*
+> + * container_network.c -  container network subsystem
+> + *
+> + * Copyright 2006, 2007 IBM Corp
+> + */
+> +
+> +#include <linux/module.h>
+> +#include <linux/container.h>
+> +#include <linux/fs.h>
+> +#include <linux/uaccess.h>
+> +#include <linux/ctype.h>
+> +#include <linux/list.h>
+> +#include <linux/spinlock.h>
+> +
+> +struct network {
+> +	struct container_subsys_state css;
+> +	struct list_head ipv4_list; /* store the IPV4 addresses */
+> +	rwlock_t ipv4_list_lock;
 
->     cpu controller
->     
->     Status:
-> 		- Extensions required to CFS core for supporting 
-> 		  group-scheduling aspects are mostly there (in
-> 		  mainline)
+Hmm, i assume you'll need to take this read_lock during all of the lsm
+hooks then?  So rcu might be a far better choice so you can just grab
+rcu_read_lock in the lsm hooks.
+ 
+> +};
+> +
+> +struct ipv4_list {
+> +	__be32 address;
+> +	struct list_head list;
+> +};
+> +
+> +static struct network top_network = {
+> +	.ipv4_list = LIST_HEAD_INIT(top_network.ipv4_list),
+> +	.ipv4_list_lock = __RW_LOCK_UNLOCKED(top_network.ipv4_list_lock),
+> +};
+> +
+> +struct container_subsys network_subsys;
+> +
+> +enum container_filetype {
+> +	FILE_IPV4,
+> +};
+> +
+> +static inline struct network *container_network(struct container *container)
+> +{
+> +	return container_of(
+> +		container_subsys_state(container, network_subsys_id),
+> +		struct network, css);
+> +}
+> +
+> +static struct container_subsys_state *network_create(struct container_subsys *ss,
+> +						     struct container *container)
+> +{
+> +	struct network *network;
+> +
+> +	/* Don't let anybody do that */
+> +	if (!capable(CAP_NET_ADMIN))
+> +		return ERR_PTR(-EPERM);
+> +
+> +	/* The current container is the initial container */
+> +	if (!container->parent)
+> +		return &top_network.css;
+> +
+> +	network = kzalloc(sizeof(*network), GFP_KERNEL);
+> +	if (!network)
+> +		return ERR_PTR(-ENOMEM);
+> +
+> +	INIT_LIST_HEAD(&network->ipv4_list);
+> +	network->ipv4_list_lock = __RW_LOCK_UNLOCKED(network->ipv4_list_lock);
+> +
+> +	return &network->css;
+> +}
+> +
+> +static void network_destroy(struct container_subsys *ss,
+> +			    struct container *container)
+> +{
+> +	struct network *network;
+> +	struct ipv4_list *entry, *next;
+> +	struct list_head *l;
+> +	rwlock_t *lock;
+> +
+> +	network = container_network(container);
+> +	l = &network->ipv4_list;
+> +	lock = &network->ipv4_list_lock;
+> +
+> +	/* flush the ipv4 list */
+> +	write_lock(lock);
+> +	list_for_each_entry_safe(entry, next, l, list) {
+> +		list_del(&entry->list);
+> +		kfree(entry);
+> +	}
+> +	write_unlock(lock);
+> +
+> +	kfree(network);
+> +}
+> +
+> +static int network_add_ipv4_address(struct container *container, __be32 address)
+> +{
+> +	struct ipv4_list *entry;
+> +	struct network *network;
+> +
+> +	entry = kmalloc(sizeof(*entry), GFP_KERNEL);
+> +	if (!entry)
+> +		return -ENOMEM;
+> +	entry->address = address;
+> +
+> +	network = container_network(container);
+> +	write_lock(&network->ipv4_list_lock);
+> +	list_add(&entry->list, &network->ipv4_list);
+> +	write_unlock(&network->ipv4_list_lock);
+> +
+> +	return 0;
+> +}
+> +
+> +static int network_del_ipv4_address(struct container *container, __be32 address)
+> +{
+> +	struct ipv4_list *entry;
+> +	struct network *network;
+> +	int ret = 0;
+> +
+> +	network = container_network(container);
+> +	write_lock(&network->ipv4_list_lock);
+> +	list_for_each_entry(entry, &network->ipv4_list, list) {
+> +		if (entry->address != address)
+> +			continue;
+> +
+> +		list_del(&entry->list);
+> +		goto out_free;
+> +	}
+> +	ret = -EINVAL;
+> +out:
+> +	write_unlock(&network->ipv4_list_lock);
+> +	return ret;
+> +
+> +out_free:
+> +	kfree(entry);
+> +	goto out;
+> +}
+> +
+> +static int network_parse_ipv4_address(struct container *container, char *buffer)
+> +{
+> +	int len = strlen(buffer);
+> +	char *addr;
+> +	__be32 address;
+> +
+> +	/* remove trailing left space */
+> +	while(isspace(*buffer))
+> +		buffer++;
+> +
+> +	/* remove trailing right space */
+> +	while(isspace(buffer[len - 1]))
+> +		buffer[(len--) - 1] = 0;
+> +
+> +	len = strlen(buffer);
+> +       	addr = memchr(buffer, ' ', len);
+> +	if (!addr)
+> +		return -EINVAL;
+> +	*addr++ = 0;
+> +
+> +	/* remove trailing left space again */
+> +	while(isspace(*addr))
+> +		addr++;
+> +
+> +	/* Shall I check if the address is setup on the host ? */
+> +	sscanf(addr, "%X", &address);
+> +
+> +	if (!strcmp(buffer, "add"))
+> +		return network_add_ipv4_address(container, address);
+> +	else if (!strcmp(buffer, "del"))
+> +		return network_del_ipv4_address(container, address);
+> +
+> +	return -EINVAL;
+> +}
+> +
+> +static int network_fill_ipv4_address(struct container *container, char *buffer)
+> +{
+> +	struct network *network;
+> +	struct ipv4_list *entry;
+> +	char *s = buffer;
+> +	network = container_network(container);
+> +
+> +	read_lock(&network->ipv4_list_lock);
+> +	list_for_each_entry(entry, &network->ipv4_list, list)
+> +		s += sprintf(s, "%X\n", entry->address);
+> +	read_unlock(&network->ipv4_list_lock);
+> +
+> + 	return strlen(buffer);
+> +}
+> +
+> +static ssize_t network_write(struct container *container,
+> +			     struct cftype *cft,
+> +			     struct file *file,
+> +			     const char __user *userbuf,
+> +			     size_t nbytes, loff_t *unused_ppos)
+> +{
+> +	enum container_filetype type = cft->private;
+> +	char *buffer;
+> +	int retval = 0;
+> +
+> +	if (!capable(CAP_NET_ADMIN))
+> +		return -EPERM;
+> +
+> +	if (nbytes >= PATH_MAX)
+> +		return -E2BIG;
+> +
+> +	buffer = kmalloc(nbytes + 1, GFP_KERNEL);
+> +	if (!buffer)
+> +		return -ENOMEM;
+> +
+> +	if (copy_from_user(buffer, userbuf, nbytes)) {
+> +		retval = -EFAULT;
+> +		goto out_free;
+> +	}
+> +	buffer[nbytes] = 0;
+> +
+> +	container_lock();
+> +	switch(type) {
+> +
+> +	case FILE_IPV4:
+> +		retval = network_parse_ipv4_address(container, buffer);
+> +		break;
+> +
+> +	default:
+> +		retval = -EINVAL;
+> +		break;
+> +	};
+> +	container_unlock();
+> +
+> +out_free:
+> +	if (!retval)
+> +		retval = nbytes;
+> +
+> +	kfree(buffer);
+> +	return retval;
+> +}
+> +
+> +static ssize_t network_read(struct container *container,
+> +			    struct cftype *cft,
+> +			    struct file *file,
+> +			    char __user *userbuf,
+> +			    size_t nbytes, loff_t *ppos)
+> +{
+> +	enum container_filetype type = cft->private;
+> +	char *page;
+> +	int retval;
+> +
+> +	page = (char *)__get_free_page(GFP_TEMPORARY);
+> +	if (!page)
+> +		return -ENOMEM;
+> +
+> +	container_lock();
+> +	switch(type) {
+> +	case FILE_IPV4:
+> +		retval = network_fill_ipv4_address(container, page);
+> +		break;
+> +
+> +	default:
+> +		retval = -EINVAL;
+> +	};
+> +	container_unlock();
+> +
+> +	retval = simple_read_from_buffer(userbuf, nbytes, ppos, page, retval);
+> +
+> +	free_page((unsigned long)page);
+> +	return retval;
+> +}
+> +
+> +static struct cftype files[] = {
+> +	{
+> +		.name = "ipv4",
+> +		.read = network_read,
+> +		.write = network_write,
+> +		.private = FILE_IPV4,
+> +	},
+> +};
+> +
+> +static int network_populate(struct container_subsys *ss, struct container *cont)
+> +{
+> +	return container_add_files(cont, ss, files, ARRAY_SIZE(files));
+> +}
+> +
+> +struct container_subsys network_subsys = {
+> +	.name = "network",
+> +	.create	= network_create,
+> +	.destroy = network_destroy,
+> +	.populate = network_populate,
+> +	.subsys_id = network_subsys_id,
+> +	.can_attach = NULL,
+
+Heh, well you'll definately want to define can_attach() to prevent a
+task simply entering another container, right?
+
+> +	.attach	= NULL,
+> +	.fork = NULL,
+> +	.exit = NULL,
+> +};
 > 
->     Todo:	
-> 		- Better SMP group-fairness
-> 		- Hard-limit cpu usage
-> 		- SCHED_FIFO like policy for groups
-> 		- Group priorities (?)
-> 
->     io controller (see detail below)
-> 
->     network flow id control
-> 
->     per-container OOM handler (userspace)
-> 
->     per-container swap
-> 
->     per-container disk I/O scheduling
-> 
->     per container memory reclaim
-> 
->     per container dirty page (write throttling) limit.
-> 
->     network rate limiting (outbound) based on container
-> 
-> * misc
-> 
->   User level APIS to identify the resource limits that is allowed to a
->   job, for example, how much physical memory a process can use.  This
->   should seamlessly integrated with non-container environment as well
->   (may be with ulimit).
-> 
->    Per container stats, like pages on active list, cpus usage, etc
-> 
-> = Resource Management  (from container dev plan)
-> ======================================================================
->   
-> * memory controller
-> 
->     users and requirements:
-> 
->     1. The containers solution would need resource management
-> 	(including memory control and per container swap files).  Paul
-> 	Menage, YAMOMOTO Takshi, Peter Zijlstra, Pavel Emelianov have
-> 	all shown interest in the memory controller patches.
-> 
->     2. The memory controller can account for page cache as well, all
->        people interested in limiting page cahce control, can
->        theoratically put move all page cache hungry applications under
->        the same container.
-> 
->     Planned enhancements to the memory controller
->     1. Improved shared page accounting
->     2. Improved statistics
->     3. Soft-limit memory usage
-> 
->     generic infrastructure work:
->     1. Enhancing containerstats
-> 	a. Working on per controller statistics
-> 	b. Integrating taskstats with containerstats
->     2. CPU accounting framework
-> 	a. Migrate the accounting to be more precis
-> 
-> * cpu controller
-> 
->     users and requirements:
-> 
->     1. Virtualization solutions like containers and KVM need CPU
->        control. KVM for example would like to have both limits and
->        guarantees supported by a CPU controller, to control CPU
->        allocation to a particular instance.
->     2. Workload management products would like to exploit this for
->        providing guaranteed cpu bandwidth and also (hard/soft)
->        limiting cpu usage.
-> 
->     work items
->     1. Fine-grained proportional-share fair-group scheduling.
->     2. More accurate SMP fairness
->     3. Hard limit
->     4. SCHED_FIFO type policy for groups
->     5. Improved statistics and debug facility for group scheduler
-> 
-> * io controller
-> 
->     users and requirements:
-> 
->     1. At a talk presented to the Linux Foundation (OSDL), the
->        attendees showed interest in an IO controller to control IO
->        bandwidth of various filesystem operations (backup,
->        journalling, etc)
-> 
->     work items:
->     1. Proof of concept IO controller and community discussion/feedback
->     2. Development and Integration of the IO controller with containers
-> 
->     open issues
->     1. Automatic tagging/resource classification engine
-> 
-> = Checkpoint/Restart
-> ======================================================================
-> 
->   * need to unified the freezer to reach a quiescence point
-> 
->   * overall strategy : 
->     	    . checkpoint:  in kernel
-> 	    . restart : first recreate process tree then let each
-> 	      process restart itself
-> 
->   * possible direction for C/R user api
->     	    . checkpoint/restart syscalls
->             . C/R file systems 
-> 	      	  solves the set id issue 
-> 	      	  elegant but exposes too much the ABI
-> 
->     example :
-> 
-> .
-> |-- 0x00003002
-> |   |-- 0x00003002
-> |   |   |-- attr
-> |   |   |-- signal
-> |   |   |-- signal.altstack
-> |   |   |-- signal.pending
-> |   |   |-- thread
-> |   |   |-- thread.frame
-> |   |   |-- timers
-> |   |   |-- tls
-> |   |   `-- wait.zombies
-> |   |-- aio
-> |   |-- attr
-> |   |-- fds
-> |   |-- ldt
-> |   |-- mem.segments
-> |   |-- numa
-> |   |-- process
-> |   |-- signal.action
-> |   |-- signal.pending
-> |   |-- sysv.semadj
-> |   |-- sysv.shmcount
-> |   `-- thread.list
-> |-- af_inet_listening
-> |-- af_inet_orphan_count
-> |-- af_inet_orphan_data
-> |-- af_inet_orphan_info
-> |-- files
-> |   |-- 0
-> |   |-- 1
-> |   |-- 10137663680
-> |   |-- 1014250cdc0
-> |   |-- 2
-> |   `-- stdios
-> |-- sysv.msq
-> |-- sysv.sem
-> `-- sysv.shm
-> 
->    * memory C/R
->       
->      critical for performance
->      per-container swapfile ?
-> 
->    * subsystem C/R API.
-> 
->      keep it on the side for the moment <subsys>_cr.c to identify the
->      needs of each subsystem before asking the maintainer's comments
-> 
->      possible cr_ops in some objects (like for network protocols) but
->      also ops 'a la' virt_ops to prepare for different C/R strategy : 
->      brutal, incremental, live migration
-> 
->    * setting id back to what they where 
-> 
->      possible global syscall to set ids of pid,ipc,pts.
->      else use the C/R fs
-> 
->    * statefile format
-> 
->      no big issues. let's pick one.
-> 
->    * optimization
-> 
->      parallel C/R
-> 
+> -- 
 > _______________________________________________
 > Containers mailing list
 > Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 > https://lists.linux-foundation.org/mailman/listinfo/containers
-
-
--- 
-	Warm Regards,
-	Balbir Singh
-	Linux Technology Center
-	IBM, ISTL
