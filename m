@@ -1,12 +1,12 @@
-From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+From: Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
 Subject: Re: Container mini-summit notes
-Date: Wed, 5 Sep 2007 09:38:49 -0500
-Message-ID: <20070905143849.GH1403@sergelap.austin.ibm.com>
+Date: Wed, 05 Sep 2007 16:40:30 +0200
+Message-ID: <46DEBFDE.3030206@fr.ibm.com>
 References: <46DEB80B.2040106@fr.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
 In-Reply-To: <46DEB80B.2040106-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
@@ -21,47 +21,41 @@ To: Cedric Le Goater <clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
 Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Quoting Cedric Le Goater (clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org):
-...
-
-> Container mini-summit notes v0.01
+Cedric Le Goater wrote:
+> Held at De Vere Universty Arms Hotel, Cambridge, UK
 > 
-> ======================================================================
-> 
-> Held at Universty Arm's, Cambridge, UK
-> 
-> on 3rd of September, 9h00 to 16h00 :
+> * Monday, Sept 3, 9h00 to 16h00 :
 > 
 > 	Kir Kolyshkin <kir-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org> 
 > 	Pavel Emelianov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org> 
 > 	Masahiko Takahashi <masahiko-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
 > 	Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-> 	Cedric Le Goater <clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org> 
-> 	James ??? (Google)
+> 	James Youngman <youngman-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
 > 	??? (NTT)
+> 	Cedric Le Goater <clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org> 
 > 
 > On the phone (skype with very high noise level)
 > 
-> 	Srivatsa Vaddagiri <vatsa-xthvdsQ13ZrQT0dZR+AlfA@public.gmane.org>
 > 	Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+> 	Srivatsa Vaddagiri <vatsa-xthvdsQ13ZrQT0dZR+AlfA@public.gmane.org>
+> 	Dhaval Giani <dhaval-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+> 	Vaidyanathan Srinivasan <svaidy-xthvdsQ13ZrQT0dZR+AlfA@public.gmane.org>
 > 
-> on 4th of September, 15h00 to 18h00 :
+> * Tuesday, Sept 4, 15h00 to 18h00 :
 > 
 > 	Pavel Emelianov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org> 
-> 	Cedric Le Goater <clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org> 
 > 	Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
 > 	Eric W. Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-
-Boy I really missed out didn't I...
-
+> 	Cedric Le Goater <clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org> 
+> 
 > = Namespace status 
 > ======================================================================
 > 
-> * ipc 
+> * sysv ipc 
 > 
 >   extend to posix mqueue. 
->   	 check that /dev/mqueue can be mounted multiple times 
->   	 mqueue sysctls need a fix
+>   	. check that /dev/mqueue can be mounted multiple times 
+>   	. mqueue sysctls will need a fix :
 > 		 fs.mqueue.queues_max
 > 		 fs.mqueue.msg_max
 > 		 fs.mqueue.msgsize_max
@@ -69,44 +63,44 @@ Boy I really missed out didn't I...
 > 
 > * uname namespace
 > 
->   considered complete but what about setting the kernel version ? 
-
-I still say yuck.  The kernel won't properly emulate the other kernel
-version, so lying seems a horrible thing to do.  If you want a vm with
-another kernel, use qemu/kvm/xen.
-
-> * user (to complete)
+>   considered complete.
 > 
->   useful today to current container technologies (userns, vserver)
->   (uid, userns) checks must be completed to be integrate
->     with filesystems
+>   what about being able to set the kernel version ? 
+> 
+> * user
+> 
+>   useful today to current container technologies (openvz, vserver)
+> 
+>   uid checks should be replaced by (uid, userns) to complete 
+>   integration with filesystems
 >   security needs to be looked at 
 >   so is signal delivery
 > 
-> * pid namespace (in dev)
+> * pid namespace
 > 
->   stable. 
+>   in dev
 > 
->   Current tasks are :
->   	  . signal handling	
->   	  . pid_t cleanups 
->     	    remove any reference to task->pid 
-> 	    keep ->pid in task struct only for performance
->             complex ones: 
-> 	    	    af_unix credentials
-> 		    file locks
-> 		    timer stat
->   	  . kthread cleanup
-> 	    replace kernel_thread() by the kthread API
-> 	    change core kthread API to support signals
-> 	    nfs needs extra love. is someone working on it ? 
-
-REALLY would like to hear if anyone is.
-
+>   signal handling completion underway
+>   pid_t cleanups 
+>   	. the purpose is to remove any explicit reference to
+>     	  task->pid
+> 	. keep ->pid in task struct only for performance
+> 	. complex cleanups ones: 
+> 	      af_unix credentials
+> 	      file locks
+> 	      timer stat
+> 
+>   kthread cleanup
+>   	. replace kernel_thread() by the kthread API
+> 	. change core kthread API to support signals
+> 	. then nfs needs extra love. is someone working on it ?
+> 
 >    do we need hierarchical levels ?
 > 
 > 
-> * net (in dev)
+> * net
+> 
+>   in dev
 > 
 >   veth is in dmiller's tree
 >   sysfs cleanups underway in greg's tree
@@ -114,15 +108,15 @@ REALLY would like to hear if anyone is.
 >   ask dmiller advice on the topic
 > 
 >   ip isolation could be done with netfilter or security hooks
-
-And has by several people :)
-
-> * device namespace (to do) 
+> 
+> * device namespace
+> 
+>   to do
 > 
 >   we don't want to get rid of mknod() but we also want to limit the
 >   view of the devices in a container. one way to do this is through a
 >   device namespace which would only expose a 'white list' of devices
->   when unshared. a possible white list is :
+>   when unshared. a possible 'white list' is :
 > 
 >        /dev/null  
 >        /dev/full  
@@ -132,56 +126,33 @@ And has by several people :)
 >        /dev/pts/*
 >   
 >   do we require a extra namespace for /dev/pts/* to handle its
->   virtualization or can this be done directly in a device namespace ?
-
-How the hell does a separate device ns protect you from mknod?  
-
->    check that /dev/pts can be mounted multiple times.
-
-I previously sent a patch to implement CLONE_NEWPTS, which just
-intercepts /dev/pts/ access without multiple mounts.  I think that,
-plus access to child containers' devpts mounts through the nsproxy
-container subsystem, would be a very simple and useful way to
-implement this.
-
-Then there is also the array of console devices to turn into a
-namespace.
-
-And finally there is the issue of actualy virtual devices.  So I want to
-start up a virtual server, and I want it's serial port to be connected
-to a virtual tty which buffers the last page or few pages of data so I
-can connect to the server and see what's going on.  I'm not too savvy
-here - can we do that now, maybe just through a fake serial device?
-
-> * time (to do)
+>   virtualization or can this be done directly in the device namespace ?
 > 
->   keep the monotonic timers from expiring when you restart
->   required for C/R but will only make sense in "close" environment
+>   check that /dev/pts can be mounted multiple times.
+> 
+> * time
+> 
+>   to do
+> 
+>   required for C/R 
+>   will only make sense in a "closed" environment
+>   the purpose is to keep the monotonic timers from expiring when 
+>   you restart
 > 
 > * other possible namespace ? 
 > 
->   rtc ? which an isolation problem and also a sysctl issue
+>   rtc ? which is an isolation issue and also a sysctl issue
 >   
 >   comment from eric : 
->   	  redesign of lsm (a la netfilter) could cover all 
+>   	  a redesign of lsm, a la netfilter, could cover all 
 > 	  isolation needs.
-
-I'd like to talk to Eric and find out more precisely what he is
-thinking.
-
-Note that one issue with using lsm is that it will purely control
-access, not resource ids.  So container 1 may not have access to
-/dev/pts/2, which at least is safe, but it'll see everyone's devices
-under devpts.
-
-But yes, this is why I've been saying that userns is useful at the
-moment.  You should be able to write simple selinux policies to fully
-container a userns.
-
+>   
 > * namespace management
 > 
+> 
 >   . entering
->     no consensus on how this should be should be done. 
+> 
+>     no consensus on how this should be done. 
 > 
 >     probably because the need is related to a container and not just
 >     namespaces. it should be solved with a container object and 
@@ -208,30 +179,19 @@ container a userns.
 > 
 >   . multiple /sys mounts (in dev)
 >     
->     missing some bits (eric working on it)
+>     missing some bits (eric working on it) to decouple sysfs and
+>     kobjects
 >   
 >   . multiple /proc mounts (to complete)
 > 
 >     multiple mount done
 >     to limit access to /proc files, use the user namespace checks ?
->     for the contents of each file, use the current context
-
-Just might work...
-
-It kind of looks like having a 'initial' userns which is special-cased,
-but I assume the idea is that /proc/ files would be created at boot in
-the initial userns, so straightforward checks for userns equivalence
-between the writing process and the file would suffice.
-
+>     for the contents of each file, use the current context to identify
+>     namespace
+> 
 > * Console
 > 
 >   . a running getty should be covered by tty namespace
-
-I'm not understanding this line.
-
-Is there a fully tty namespace design that was discussed, which this is
-summarizing?
-
 >   . printk will require some support to be isolated. 
 > 
 > = Task Container (from container dev plan)
@@ -244,6 +204,10 @@ summarizing?
 >   locking cleanup
 >   control file API simplification
 >   unified container including namespaces
+> 
+>   the "container"/"task container" name is ambiguous and it should change to  
+>   "control group"
+> 
 > 
 > * userpace RBCE to provide controls for
 > 
@@ -259,19 +223,62 @@ summarizing?
 > 	memset
 >   network
 >          connect/bind/accept controller using iptables
+
+Just a comment here. The hooks needed for that are exactly the same as 
+the security hooks, IMHO, iptables is not right subsystem to use to 
+catch socket calls.
 > 
 >   controllers : 
 >   
 >     memory controller (see detail below)
->     cpu controller (see detailbelow)
+> 
+>     cpu controller
+>     
+>     Status:
+> 		- Extensions required to CFS core for supporting 
+> 		  group-scheduling aspects are mostly there (in
+> 		  mainline)
+> 
+>     Todo:	
+> 		- Better SMP group-fairness
+> 		- Hard-limit cpu usage
+> 		- SCHED_FIFO like policy for groups
+> 		- Group priorities (?)
+> 
 >     io controller (see detail below)
+> 
 >     network flow id control
+
+I'm not sure I get that.
+.
+
+> 
 >     per-container OOM handler (userspace)
+> 
 >     per-container swap
+> 
 >     per-container disk I/O scheduling
+> 
 >     per container memory reclaim
+> 
 >     per container dirty page (write throttling) limit.
+> 
 >     network rate limiting (outbound) based on container
+
+I am not sure I get that too.
+
+As far as I understand, if the container has its own network with a 
+network namespace, then the rate limiting already exists with tc for 
+outgoing __and__ incoming traffic. If the container has a simple IP 
+isolation, the rate limiting can be set with tc again but only for 
+outgoing traffic.
+If the container share the network with other container, I understand 
+the reason for a network flow id. But in this case, how to handle 
+incoming traffic ?
+IHMO, rate limiting should be handled in conjunction with a network 
+namespace.
+
+
 > 
 > * misc
 > 
@@ -355,20 +362,7 @@ summarizing?
 >     	    . checkpoint:  in kernel
 > 	    . restart : first recreate process tree then let each
 > 	      process restart itself
-
-The data transfer method is pretty important to sort out, so that people
-can start writing patches to c/r various resources.
-
-I know you've discussed having some sort of 'crfs'.  I gather you would
-then do a checkpoint by doing something like
-	cp /mnt/crfs/vserver1 /opt/checkpoints/vserver1/`date +%F`/`date +%R`
-
-I actually like that, so long as it's that, and not actually having the
-cr subsystem write the data straight to a regular file.
-
-Another option would be to use relayfs for the checkpoint data dump,
-since checkpoint and restart will be assymetrical in nature anyway.
-
+> 
 >   * possible direction for C/R user api
 >     	    . checkpoint/restart syscalls
 >             . C/R file systems 
@@ -420,32 +414,16 @@ since checkpoint and restart will be assymetrical in nature anyway.
 >       
 >      critical for performance
 >      per-container swapfile ?
-
-Absolutely.  per-container swapfile, and memory checkpoint forces write
-to swap and writes the pte data out to relayfs or a crfs file ready for
-copy.
-
-One tricky issue then is that we really want to do a copy-on-write copy
-of the swapfile.  We don't want to wait for the swapfile to be fully
-copied before restarting the process.  Are any of the fancy new
-filesystems implementing that?  Or are we gonna be using zfs over fuse
-for our per-container swapfiles?  :)
-
+> 
 >    * subsystem C/R API.
 > 
 >      keep it on the side for the moment <subsys>_cr.c to identify the
 >      needs of each subsystem before asking the maintainer's comments
-
-It would be great if we could provide a data write/read api so these
-subsystems can all be written without worrying about which method we'll
-use for dumping checkpoint data and pushing restart data.
-
+> 
 >      possible cr_ops in some objects (like for network protocols) but
 >      also ops 'a la' virt_ops to prepare for different C/R strategy : 
 >      brutal, incremental, live migration
-
-Hmm.
-
+> 
 >    * setting id back to what they where 
 > 
 >      possible global syscall to set ids of pid,ipc,pts.
@@ -458,9 +436,3 @@ Hmm.
 >    * optimization
 > 
 >      parallel C/R
-> 
-> 
-> 
-> 
-> 
-> 
