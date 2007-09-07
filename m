@@ -1,16 +1,10 @@
-From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: containers access control 'roadmap'
-Date: Thu, 6 Sep 2007 16:10:45 -0500
-Message-ID: <20070906211045.GA13018@sergelap.austin.ibm.com>
-References: <20070906165534.GA6547@sergelap.austin.ibm.com>
-	<20070906171031.GC23963@MAIL.13thfloor.at>
-	<20070906182611.GA31009@sergelap.austin.ibm.com>
-	<20070906202331.GA21732@MAIL.13thfloor.at>
+From: yamamoto-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org (YAMAMOTO Takashi)
+Subject: [RFC] [PATCH] memory controller statistics
+Date: Fri,  7 Sep 2007 12:39:42 +0900 (JST)
+Message-ID: <20070907033942.4A6541BFA52@siro.lan>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+Content-Type: Text/Plain; charset=us-ascii
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <20070906202331.GA21732-ZD0Mn47LIGX0Pe/G4T7+5F6hYfS7NtTn@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -20,248 +14,304 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Herbert Poetzl <herbert-dBHVzrDq9nF4Lj/PQRBjDg@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Andrew Morgan <morgan-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+To: balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, svaidy-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
+Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, minoura-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Quoting Herbert Poetzl (herbert-dBHVzrDq9nF4Lj/PQRBjDg@public.gmane.org):
-> On Thu, Sep 06, 2007 at 01:26:11PM -0500, Serge E. Hallyn wrote:
-> > Quoting Herbert Poetzl (herbert-dBHVzrDq9nF4Lj/PQRBjDg@public.gmane.org):
-> > > On Thu, Sep 06, 2007 at 11:55:34AM -0500, Serge E. Hallyn wrote:
-> > > > Roadmap is a bit of an exaggeration, but here is a list of the
-> > > > next bit of work i expect to do relating to containers and access
-> > > > control. The list gets more vague toward the end, with the intent
-> > > > of going far enough ahead to show what the final result would
-> > > > hopefully look like.
-> > > >
-> > > > Please review and tell me where I'm unclear, inconsistant,
-> > > > glossing over important details, or completely on drugs.
-> > 
-> > Thanks for looking this over, Herbert.
-> > 
-> > > > 1. introduce CAP_HOST_ADMIN
-> > > > 
-> > > > 	acts like a mask.  If set, all capabilities apply across
-> > > > 	namespaces.
-> > > > 
-> > > > 	is that ok, or do we insist on duplicates for all caps?
-> > > > 
-> > > > 	brings us into 64-bit caps, so associated patches come
-> > > > 	along
-> > > > 
-> > > > 	As an example, CAP_DAC_OVERRIDE by itself will mean within
-> > > > 	the same user namespace, while CAP_DAC_OVERRIDE|CAP_HOST_ADMIN
-> > > > 	will override userns equivalence checks.
-> > > 
-> > > what does that mean? 
-> > > guest spaces need to be limited to a certain (mutable)
-> > > subset of capabilities to work properly, please explain
-> > 
-> > (note that that muable subset of caps for guest spaces is what item
-> > #2, the per-process cap_bset, implements)
-> 
-> how is per-process supposed to handle things like
-> suid-root properly?
+hi,
 
-Simple.  It's inherited at fork, and you can take caps out but not put
-them back in.
+i implemented some statistics for your memory controller.
 
-> > > how this relates?
-> > 
-> > capabilities will give you privileged access within your own
-> > container. Also having CAP_HOST_ADMIN will mean that the capabilities
-> > you have can also be used against objects in other containers.
-> 
-> also, please make sure that you extend the capability
-> set to 64 bit first, as this would be using up the
-> last capability (which is not a good idea IMHO)
+it's tested with 2.6.23-rc2-mm2 + memory controller v7.
+i think it can be applied to 2.6.23-rc4-mm1 as well.
 
-Of course - unless you talk me out of defining the capability :)
+YAMOMOTO Takshi
 
-> > Now maybe you prefer a model where a "container" is owned by some
-> > user in some namespaces. All capabilities apply purely within their
-> > own namespace, and a container owner has full rights to the owned
-> > containers. That makes container vms more like a qemu vm.
-> > 
-> > Or maybe I just punt this for now altogether, and we address
-> > cross-namespace privileged access if/when we really need it.
-> > 
-> > > > 2. introduce per-process cap_bset
-> > > > 	
-> > > > 	Idea is you can start a container with cap-bset not containing
-> > > > 	CAP_HOST_ADMIN, for instance.
-> > > > 
-> > > > 	As namespaces are fleshed out and proper behavior for
-> > > > 	cross-namespace access is figured out (see step 7) I
-> > > > 	expect behavior under !CAP_HOST_ADMIN with certain
-> > > > 	capabilities will change.  I.e. if we get a device
-> > > > 	namespace, CAP_MKNOD will be different from
-> > > > 	CAP_HOST_ADMIN|CAP_MKNOD, and people will want to
-> > > > 	start keeping CAP_MKNOD in their container cap_bsets.
-> > > 
-> > > doesn't sound like a good idea to me, ignoring caps
-> > > or disallowing them seems okay, but changing the meaning
-> > > between caps (depending on host or guest space) seems
-> > > just wrong ...
-> > 
-> > Ok your 'doesn't sound like a good idea' is to my blabbing though,
-> > not the the per-process cap_bset. Right? So you're again objecting
-> > to CAP_HOST_ADMIN, item #1?
-> 
-> no, actually it is to the idea having capabilities which
-> mean different things depending on whether they are 
-> available on the host or inside a guest (because that
-> would mean handling them different in userspace software
-> and for administration)
+todo: something like nr_active/inactive in /proc/vmstat.
 
-Whoa - no i am not saying caps would be handled differently based on
-whether you're in a container or not.  In fact from what I've introduced
-there is no such thing as a 'host' or 'admin' container.
-
-Rather, the single capability, CAP_HOST_ADMIN, just means that your
-capabilities will also apply to actions on objects in namespaces other
-than your own.  If you don't have CAP_HOST_ADMIN, then capabilities will
-only give you privileged status with respect to objects in your own
-namespaces.
-
-So in theory you could have a child container where admin has
-CAP_HOST_ADMIN, while the initial set of namespaces, or what some might
-be tempted to otherwise call the 'host container', have taken
-CAP_HOST_ADMIN out of their cap_bset (after spawning off the child
-container with the CAP_HOST_ADMIN bit in it's cap_bset).
-
-Is that clearer?  Is it less objectionable to you?
-
-> > > > 3. audit driver code etc for any and all uid==0 checks.  Fix those
-> > > >    immediately to take user namespaces into account.
-> > > 
-> > > okay, sounds good ...
-> > 
-> > Ok maybe i should make that '#1' and get going as it's the least
-> > contraversial :)
-> > 
-> > Though I think I still prefer to start with #2.
-> > 
-> > > > 4. introduce inode->user_ns, as per my previous userns patchset from
-> > > >    April (I guess posted in June, according to:
-> > > >    https://lists.linux-foundation.org/pipermail/containers/2007-June/005342.html)
-> > > > 
-> > > > 	For now, enforce roughly the following access checks when
-> > > > 	inode->user_ns is set:
-> > > > 
-> > > > 	if capable(CAP_HOST_ADMIN|CAP_DAC_OVERRIDE)
-> > > > 		allow
-> > > > 	if current->userns==inode->userns {
-> > > > 		if capable(CAP_DAC_OVERRIDE)
-> > > > 			allow
-> > > > 		if current->uid==inode->i_uid
-> > > > 			allow as owner
-> > > > 		inode->i_uid is in current's keychain
-> > > > 			allow as owner
-> > > > 		uid==inode->i_gid in current's groups
-> > > > 			allow as group
-> > > > 	}
-> > > > 	treat as user 'other' (i.e. usually read-only access)
-> > > 
-> > > what about inodes belonging to several contexts?
-> > 
-> > There's no such thing in the way I was envisioning it.
-> > 
-> > An inode belongs to one context.  A user can belong to several.
-> 
-> well, at least in Linux-VServer, inodes are shared
-> on a per inode basis between guests, which drastically
-> reduces the memory and disk overhead if you have more
-> than one guest of similar nature ...
-
-And I believe the same can be done with what I am suggesting.
-
-> > > (which is a major resource conserving feature of OS
-> > > level isolation)
-> > 
-> > Sure. Let's say you want to share /usr among many servers. 
-> > It exists in the host user namespace. 
-> > In guest user namespaces, anyone including  root will have 
-> > access to them as though they were user 'other', i.e.
-> > if a directory has 751 perms, you'll get '1'.
-> 
-> no,
-
-Well, yes: I'm describing my proposal :)
-
-> the inodes are shared in a way that the guest has
-> (almost) full control over them, including copy on
-> write functionality when inode contents or properties
-> change (see unification for details)
-
-In my proposal, the assignment of values to inode->userns, and
-enforcement, is left to the filesystem.  So a filesystem can be written
-that understands and interprets global user ids, or, to mimic what you
-have, a simple stackable cow filesystem could be used.
-
-> i.e. for us, the ability to share inodes between
-> completely different process _and_ user spaces is
-> essential because of resource consumption.
-> 
-> > > > 5. Then comes the piece where users can get credentials 
-> > > > as users in other namespaces to store in their keychain.
-> > > 
-> > > does that make sense? wouldn't it be better to have
-> > > the keychains 'per context'?
-> > 
-> > Either you misunderstood me, or I misunderstand you.
-> > 
-> > What I am saying is that there is a 'uid' keychain, which 
-> > holds things like (usernamespace 3, uid 5), meaning that 
-> > even though I am uid 1000 in usernamespace 1, I am allowed 
-> > access to usernamespace 3 as though I were uid 5.
-> > 
-> > I expect the two common use cases of this to be:
-> > 
-> > 	1. uid 5 on the host system created a virtual server, 
-> >          and gives himself a (usernamespace 2, uid 0) key 
-> >          so he is root in the virtual server without having 
-> >          to enter it.  (Meaning he can signal all processes, 
-> >	   access all files, etc)
-> > 
-> > 	2. uid 3000 on the host system is given (usernamespace 
-> >	   2, uid 1001) in a virtual server so he can access 
-> >	   uid 1001's files in the virtual server which has 
-> >	   usernamespace 2.
-> 
-> do you mean files here or actually inodes or both?
-> why shouldn't the host context be able to access
-> any of them without acquiring any credentials?
-
-Because there is no 'host context', just an initial namespace.
-
-> > > > 6. enforce other userns checks like signaling
-> > > > 
-> > > > 7. investigate proper behavior for other cross-namespace capabilities.
-> > > 
-> > > please elaborate ....
-> > 
-> > Just that we need to go through the list of capabilities 
-> > and consider what they mean with and without CAP_HOST_ADMIN.  
-> 
-> see 'bad idea' above: I think they should _exactly_
-> mean the same, inside and outside a guest ...
-
-See my explanation above: there is no 'inside and outside a guest'.
-
-There is just 'with our without the CAP_HOST_ADMIN' capability', where
-the CAP_HOST_ADMIN can be irrevocably removed from a process tree using
-prctl(PR_SET_CAPBSET, new_set).
-
-> > For instance CAP_IPC_LOCK doesn't really matter for 
-> > CAP_HOST_ADMIN since the namespaces prevent you cross-ns 
-> > access. 
-> 
-> hmm? maybe I am misunderstanding the entire concept
-> of CAP_HOST_ADMIN here ... maybe an example could help?
-
-I've obviously botched this so far...  Let me whip up some examples of
-how it all works together and email those out tomorrow.
-
-thanks,
--serge
+--- ./mm/memcontrol.c.BACKUP	2007-08-29 17:13:09.000000000 +0900
++++ ./mm/memcontrol.c	2007-09-06 16:26:13.000000000 +0900
+@@ -24,6 +24,7 @@
+ #include <linux/page-flags.h>
+ #include <linux/bit_spinlock.h>
+ #include <linux/rcupdate.h>
++#include <linux/seq_file.h>
+ #include <linux/swap.h>
+ #include <linux/spinlock.h>
+ #include <linux/fs.h>
+@@ -33,6 +34,54 @@
+ struct container_subsys mem_container_subsys;
+ static const int MEM_CONTAINER_RECLAIM_RETRIES = 5;
+ 
++enum mem_container_stat_index {
++	/*
++	 * for MEM_CONTAINER_TYPE_ALL, usage == pagecache + rss
++	 */
++	MEMCONT_STAT_PAGECACHE,
++	MEMCONT_STAT_RSS,
++
++	/*
++	 * redundant; usage == charge - uncharge
++	 */
++	MEMCONT_STAT_CHARGE,
++	MEMCONT_STAT_UNCHARGE,
++
++	/*
++	 * mostly for debug
++	 */
++	MEMCONT_STAT_ISOLATE,
++	MEMCONT_STAT_ISOLATE_FAIL,
++	MEMCONT_STAT_NSTATS,
++};
++
++static const char * const mem_container_stat_desc[] = {
++	[MEMCONT_STAT_PAGECACHE] = "page_cache",
++	[MEMCONT_STAT_RSS] = "rss",
++	[MEMCONT_STAT_CHARGE] = "charge",
++	[MEMCONT_STAT_UNCHARGE] = "uncharge",
++	[MEMCONT_STAT_ISOLATE] = "isolate",
++	[MEMCONT_STAT_ISOLATE_FAIL] = "isolate_fail",
++};
++
++struct mem_container_stat {
++	atomic_t count[MEMCONT_STAT_NSTATS];
++};
++
++static void mem_container_stat_inc(struct mem_container_stat * stat,
++   enum mem_container_stat_index idx)
++{
++
++	atomic_inc(&stat->count[idx]);
++}
++
++static void mem_container_stat_dec(struct mem_container_stat * stat,
++   enum mem_container_stat_index idx)
++{
++
++	atomic_dec(&stat->count[idx]);
++}
++
+ /*
+  * The memory controller data structure. The memory controller controls both
+  * page cache and RSS per container. We would eventually like to provide
+@@ -62,6 +111,7 @@ struct mem_container {
+ 	 */
+ 	spinlock_t lru_lock;
+ 	unsigned long control_type;	/* control RSS or RSS+Pagecache */
++	struct mem_container_stat stat;
+ };
+ 
+ /*
+@@ -72,6 +122,12 @@ struct mem_container {
+ #define PAGE_CONTAINER_LOCK_BIT 	0x0
+ #define PAGE_CONTAINER_LOCK 		(1 << PAGE_CONTAINER_LOCK_BIT)
+ 
++/* XXX hack; shouldn't be here.  it really belongs to struct page_container. */
++#define	PAGE_CONTAINER_CACHE_BIT 	0x1
++#define	PAGE_CONTAINER_CACHE 		(1 << PAGE_CONTAINER_CACHE_BIT)
++
++#define	PAGE_CONTAINER_FLAGS	(PAGE_CONTAINER_LOCK | PAGE_CONTAINER_CACHE)
++
+ /*
+  * A page_container page is associated with every page descriptor. The
+  * page_container helps us identify information about the container
+@@ -134,9 +190,9 @@ static inline int page_container_locked(
+ 					&page->page_container);
+ }
+ 
+-void page_assign_page_container(struct page *page, struct page_container *pc)
++static void page_assign_page_container_flags(struct page *page, int flags,
++    struct page_container *pc)
+ {
+-	int locked;
+ 
+ 	/*
+ 	 * While resetting the page_container we might not hold the
+@@ -145,14 +201,20 @@ void page_assign_page_container(struct p
+ 	 */
+ 	if (pc)
+ 		VM_BUG_ON(!page_container_locked(page));
+-	locked = (page->page_container & PAGE_CONTAINER_LOCK);
+-	page->page_container = ((unsigned long)pc | locked);
++	flags |= (page->page_container & PAGE_CONTAINER_LOCK);
++	page->page_container = ((unsigned long)pc | flags);
++}
++
++void page_assign_page_container(struct page *page, struct page_container *pc)
++{
++
++	page_assign_page_container_flags(page, 0, pc);
+ }
+ 
+ struct page_container *page_get_page_container(struct page *page)
+ {
+ 	return (struct page_container *)
+-		(page->page_container & ~PAGE_CONTAINER_LOCK);
++		(page->page_container & ~PAGE_CONTAINER_FLAGS);
+ }
+ 
+ void __always_inline lock_page_container(struct page *page)
+@@ -203,6 +265,7 @@ unsigned long mem_container_isolate_page
+ 	LIST_HEAD(pc_list);
+ 	struct list_head *src;
+ 	struct page_container *pc;
++	struct mem_container_stat *stat = &mem_cont->stat;
+ 
+ 	if (active)
+ 		src = &mem_cont->active_list;
+@@ -244,6 +307,9 @@ unsigned long mem_container_isolate_page
+ 		if (__isolate_lru_page(page, mode) == 0) {
+ 			list_move(&page->lru, dst);
+ 			nr_taken++;
++			mem_container_stat_inc(stat, MEMCONT_STAT_ISOLATE);
++		} else {
++			mem_container_stat_inc(stat, MEMCONT_STAT_ISOLATE_FAIL);
+ 		}
+ 	}
+ 
+@@ -260,9 +326,11 @@ unsigned long mem_container_isolate_page
+  * 0 if the charge was successful
+  * < 0 if the container is over its limit
+  */
+-int mem_container_charge(struct page *page, struct mm_struct *mm)
++static int mem_container_charge_common(struct page *page, struct mm_struct *mm,
++    int is_cache)
+ {
+ 	struct mem_container *mem;
++	struct mem_container_stat *stat;
+ 	struct page_container *pc, *race_pc;
+ 	unsigned long flags;
+ 	unsigned long nr_retries = MEM_CONTAINER_RECLAIM_RETRIES;
+@@ -360,7 +428,16 @@ int mem_container_charge(struct page *pa
+ 	atomic_set(&pc->ref_cnt, 1);
+ 	pc->mem_container = mem;
+ 	pc->page = page;
+-	page_assign_page_container(page, pc);
++	page_assign_page_container_flags(page,
++	    is_cache ? PAGE_CONTAINER_CACHE : 0, pc);
++
++	stat = &mem->stat;
++	if (is_cache) {
++		mem_container_stat_inc(stat, MEMCONT_STAT_PAGECACHE);
++	} else {
++		mem_container_stat_inc(stat, MEMCONT_STAT_RSS);
++	}
++	mem_container_stat_inc(stat, MEMCONT_STAT_CHARGE);
+ 
+ 	spin_lock_irqsave(&mem->lru_lock, flags);
+ 	list_add(&pc->lru, &mem->active_list);
+@@ -377,6 +454,12 @@ err:
+ 	return -ENOMEM;
+ }
+ 
++int mem_container_charge(struct page *page, struct mm_struct *mm)
++{
++
++	return mem_container_charge_common(page, mm, 0);
++}
++
+ /*
+  * See if the cached pages should be charged at all?
+  */
+@@ -388,7 +471,7 @@ int mem_container_cache_charge(struct pa
+ 
+ 	mem = rcu_dereference(mm->mem_container);
+ 	if (mem->control_type == MEM_CONTAINER_TYPE_ALL)
+-		return mem_container_charge(page, mm);
++		return mem_container_charge_common(page, mm, 1);
+ 	else
+ 		return 0;
+ }
+@@ -411,15 +494,29 @@ void mem_container_uncharge(struct page_
+ 		return;
+ 
+ 	if (atomic_dec_and_test(&pc->ref_cnt)) {
++		struct mem_container_stat *stat;
++		int is_cache;
++
+ 		page = pc->page;
+ 		lock_page_container(page);
+ 		mem = pc->mem_container;
+ 		css_put(&mem->css);
++		/* XXX */
++		is_cache = (page->page_container & PAGE_CONTAINER_CACHE) != 0;
+ 		page_assign_page_container(page, NULL);
+ 		unlock_page_container(page);
+ 		res_counter_uncharge(&mem->res, 1);
+ 
++		stat = &mem->stat;
++		if (is_cache) {
++			mem_container_stat_dec(stat, MEMCONT_STAT_PAGECACHE);
++		} else {
++			mem_container_stat_dec(stat, MEMCONT_STAT_RSS);
++		}
++		mem_container_stat_inc(stat, MEMCONT_STAT_UNCHARGE);
++
+  		spin_lock_irqsave(&mem->lru_lock, flags);
++		BUG_ON(list_empty(&pc->lru));
+  		list_del_init(&pc->lru);
+  		spin_unlock_irqrestore(&mem->lru_lock, flags);
+ 		kfree(pc);
+@@ -496,6 +593,44 @@ static ssize_t mem_control_type_read(str
+ 			ppos, buf, s - buf);
+ }
+ 
++static void mem_container_stat_init(struct mem_container_stat *stat)
++{
++	int i;
++
++	for (i = 0; i < ARRAY_SIZE(stat->count); i++) {
++		atomic_set(&stat->count[i], 0);
++	}
++}
++
++static int mem_control_stat_show(struct seq_file *m, void *arg)
++{
++	struct container *cont = m->private;
++	struct mem_container *mem_cont = mem_container_from_cont(cont);
++	struct mem_container_stat *stat = &mem_cont->stat;
++	int i;
++
++	for (i = 0; i < ARRAY_SIZE(stat->count); i++) {
++		seq_printf(m, "%s %u\n", mem_container_stat_desc[i],
++		    (unsigned int)atomic_read(&stat->count[i]));
++	}
++	return 0;
++}
++
++static const struct file_operations mem_control_stat_file_operations = {
++	.read = seq_read,
++	.llseek = seq_lseek,
++	.release = single_release,
++};
++
++static int mem_control_stat_open(struct inode *unused, struct file *file)
++{
++	/* XXX __d_cont */
++	struct container *cont = file->f_dentry->d_parent->d_fsdata;
++
++	file->f_op = &mem_control_stat_file_operations;
++	return single_open(file, mem_control_stat_show, cont);
++}
++
+ static struct cftype mem_container_files[] = {
+ 	{
+ 		.name = "usage",
+@@ -518,6 +653,10 @@ static struct cftype mem_container_files
+ 		.write = mem_control_type_write,
+ 		.read = mem_control_type_read,
+ 	},
++	{
++		.name = "stat",
++		.open = mem_control_stat_open,
++	},
+ };
+ 
+ static struct mem_container init_mem_container;
+@@ -541,6 +680,7 @@ mem_container_create(struct container_su
+ 	INIT_LIST_HEAD(&mem->inactive_list);
+ 	spin_lock_init(&mem->lru_lock);
+ 	mem->control_type = MEM_CONTAINER_TYPE_ALL;
++	mem_container_stat_init(&mem->stat);
+ 	return &mem->css;
+ }
