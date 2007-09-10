@@ -1,95 +1,71 @@
-From: Krishna Kumar2 <krkumar2@in.ibm.com>
+From: ebiederm@xmission.com (Eric W. Biederman)
 Subject: Re: [PATCH 03/16] net: Basic network namespace infrastructure.
-Date: Mon, 10 Sep 2007 11:16:44 +0530
-Message-ID: <OF55551EA4.A3E6920C-ON65257352.001D6A3E-65257352.001FBEA7@in.ibm.com>
-References: <m1ejh8x3ih.fsf_-_@ebiederm.dsl.xmission.com>
+Date: Mon, 10 Sep 2007 00:32:43 -0600
+Message-ID: <m1ejh7rpx0.fsf@ebiederm.dsl.xmission.com>
+References: <m1r6l8x3vq.fsf@ebiederm.dsl.xmission.com>
+	<m1myvwx3sf.fsf@ebiederm.dsl.xmission.com>
+	<m1ir6kx3mn.fsf_-_@ebiederm.dsl.xmission.com>
+	<m1ejh8x3ih.fsf_-_@ebiederm.dsl.xmission.com>
+	<20070909003308.GA10417@linux.vnet.ibm.com>
+	<m1fy1otarm.fsf@ebiederm.dsl.xmission.com>
+	<20070909164547.GD10417@linux.vnet.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
+Content-Type: text/plain; charset=us-ascii
 Return-path: <netdev-owner@vger.kernel.org>
-In-Reply-To: <m1ejh8x3ih.fsf_-_@ebiederm.dsl.xmission.com>
+In-Reply-To: <20070909164547.GD10417@linux.vnet.ibm.com> (Paul E. McKenney's
+	message of "Sun, 9 Sep 2007 09:45:47 -0700")
 Sender: netdev-owner@vger.kernel.org
-To: "Eric W. Biederman" <ebiederm@xmission.com>
-Cc: Linux Containers <containers@lists.osdl.org>, David Miller <davem@davemloft.net>, netdev@vger.kernel.org
+To: paulmck@linux.vnet.ibm.com
+Cc: David Miller <davem@davemloft.net>, netdev@vger.kernel.org, Linux Containers <containers@lists.osdl.org>
 List-Id: containers.vger.kernel.org
 
-Eric W. Biederman wrote on 09/09/2007 02:45:34 AM:
+"Paul E. McKenney" <paulmck@linux.vnet.ibm.com> writes:
 
-Hi Eric,
+>> I know I cannot use get_net for the reference in in /proc because
+>> otherwise I could not release the network namespace unless I was to
+>> unmount the filesystem, which is not a desirable property.
+>> 
+>> I think I can change the idiom to:
+>> 
+>> struct net *maybe_get_net(struct net *net)
+>> {
+>>         if (!atomic_inc_not_zero(&net->count))
+>>         	net = NULL;
+>> 	return net;               
+>> }
+>> 
+>> Which would make dev_seq_open be:
+>> 
+>> static int dev_seq_open(struct inode *inode, struct file *file)
+>> {
+>> 	struct seq_file *seq;
+>> 	int res;
+>> 	res =  seq_open(file, &dev_seq_ops);
+>> 	if (!res) {
+>> 		seq = file->private_data;
+>> 		seq->private = maybe_get_net(PROC_NET(inode));
+>> 		if (!seq->private) {
+>> 			res = -ENOENT;
+>>                         seq_release(inode, file);
+>> 		}
+>> 	}
+>> 	return res;
+>> }
+>> 
+>> I'm still asking myself if I need any kind of locking to ensure
+>> struct net does not go away in the mean time, if so rcu_read_lock()
+>> should be sufficient.
+>
+> Agreed -- and it might be possible to leverage the existing locking
+> in the /proc code.
 
-> +static int register_pernet_operations(struct list_head *list,
-> +                  struct pernet_operations *ops)
-> +{
-> <snip>
-> +out:
-> +   return error;
-> +
-> +out_undo:
-> +   /* If I have an error cleanup all namespaces I initialized */
-> +   list_del(&ops->list);
-> +   for_each_net(undo_net) {
-> +      if (undo_net == net)
-> +         goto undone;
-> +      if (ops->exit)
-> +         ops->exit(undo_net);
-> +   }
-> +undone:
-> +   goto out;
-> +}
+Yes.  The generic /proc code takes care of this.  It appears
+to ensure that any ongoing operations will be waited for and
+no more operations will be started once remove_proc_entry
+is called.  So I just need the maybe_get_net thing to have
+safe ref counting.
 
-You could remove "undone" label (and associated) goto with a "break".
+That is what I thought but I figured I would review that part while
+I was looking at everything.
 
-> +static void unregister_pernet_operations(struct pernet_operations *ops)
-> +{
-> +   struct net *net;
-> +
-> +   list_del(&ops->list);
-> +   for_each_net(net)
-> +      if (ops->exit)
-> +         ops->exit(net);
-> +}
-> +
-> +/**
-> + *      register_pernet_subsys - register a network namespace subsystem
-> + *   @ops:  pernet operations structure for the subsystem
-> + *
-> + *   Register a subsystem which has init and exit functions
-> + *   that are called when network namespaces are created and
-> + *   destroyed respectively.
-> + *
-> + *   When registered all network namespace init functions are
-> + *   called for every existing network namespace.  Allowing kernel
-> + *   modules to have a race free view of the set of network namespaces.
-> + *
-> + *   When a new network namespace is created all of the init
-> + *   methods are called in the order in which they were registered.
-> + *
-> + *   When a network namespace is destroyed all of the exit methods
-> + *   are called in the reverse of the order with which they were
-> + *   registered.
-> + */
-<snip>
-> +/**
-> + *      unregister_pernet_subsys - unregister a network namespace
-subsystem
-> + *   @ops: pernet operations structure to manipulate
-> + *
-> + *   Remove the pernet operations structure from the list to be
-> + *   used when network namespaces are created or destoryed.  In
-> + *   addition run the exit method for all existing network
-> + *   namespaces.
-> + */
-> +void unregister_pernet_subsys(struct pernet_operations *module)
-> +{
-> +   mutex_lock(&net_mutex);
-> +   unregister_pernet_operations(module);
-> +   mutex_unlock(&net_mutex);
-> +}
-
-Don't you require something like for_each_net_backwards to 'exit' in
-reverse order? Same comment for unregister_subnet_subsys(). Should this
-be done for failure in register_pernet_operations too?
-
-thanks,
-
-- KK
-
+Eric
