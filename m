@@ -1,71 +1,77 @@
-From: ebiederm@xmission.com (Eric W. Biederman)
+From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
 Subject: Re: [PATCH 03/16] net: Basic network namespace infrastructure.
-Date: Mon, 10 Sep 2007 00:32:43 -0600
-Message-ID: <m1ejh7rpx0.fsf@ebiederm.dsl.xmission.com>
-References: <m1r6l8x3vq.fsf@ebiederm.dsl.xmission.com>
-	<m1myvwx3sf.fsf@ebiederm.dsl.xmission.com>
-	<m1ir6kx3mn.fsf_-_@ebiederm.dsl.xmission.com>
-	<m1ejh8x3ih.fsf_-_@ebiederm.dsl.xmission.com>
-	<20070909003308.GA10417@linux.vnet.ibm.com>
-	<m1fy1otarm.fsf@ebiederm.dsl.xmission.com>
-	<20070909164547.GD10417@linux.vnet.ibm.com>
+Date: Mon, 10 Sep 2007 00:40:15 -0600
+Message-ID: <m1abrvrpkg.fsf@ebiederm.dsl.xmission.com>
+References: <OF55551EA4.A3E6920C-ON65257352.001D6A3E-65257352.001FBEA7@in.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-Return-path: <netdev-owner@vger.kernel.org>
-In-Reply-To: <20070909164547.GD10417@linux.vnet.ibm.com> (Paul E. McKenney's
-	message of "Sun, 9 Sep 2007 09:45:47 -0700")
-Sender: netdev-owner@vger.kernel.org
-To: paulmck@linux.vnet.ibm.com
-Cc: David Miller <davem@davemloft.net>, netdev@vger.kernel.org, Linux Containers <containers@lists.osdl.org>
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <OF55551EA4.A3E6920C-ON65257352.001D6A3E-65257352.001FBEA7-xthvdsQ13ZrQT0dZR+AlfA@public.gmane.org>
+	(Krishna Kumar's message of "Mon, 10 Sep 2007 11:16:44 +0530")
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Krishna Kumar2 <krkumar2-xthvdsQ13ZrQT0dZR+AlfA@public.gmane.org>
+Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, David Miller <davem-fT/PcQaiUtIeIZ0/mPfg9Q@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-"Paul E. McKenney" <paulmck@linux.vnet.ibm.com> writes:
+Krishna Kumar2 <krkumar2-xthvdsQ13ZrQT0dZR+AlfA@public.gmane.org> writes:
 
->> I know I cannot use get_net for the reference in in /proc because
->> otherwise I could not release the network namespace unless I was to
->> unmount the filesystem, which is not a desirable property.
->> 
->> I think I can change the idiom to:
->> 
->> struct net *maybe_get_net(struct net *net)
->> {
->>         if (!atomic_inc_not_zero(&net->count))
->>         	net = NULL;
->> 	return net;               
->> }
->> 
->> Which would make dev_seq_open be:
->> 
->> static int dev_seq_open(struct inode *inode, struct file *file)
->> {
->> 	struct seq_file *seq;
->> 	int res;
->> 	res =  seq_open(file, &dev_seq_ops);
->> 	if (!res) {
->> 		seq = file->private_data;
->> 		seq->private = maybe_get_net(PROC_NET(inode));
->> 		if (!seq->private) {
->> 			res = -ENOENT;
->>                         seq_release(inode, file);
->> 		}
->> 	}
->> 	return res;
->> }
->> 
->> I'm still asking myself if I need any kind of locking to ensure
->> struct net does not go away in the mean time, if so rcu_read_lock()
->> should be sufficient.
+> Eric W. Biederman wrote on 09/09/2007 02:45:34 AM:
 >
-> Agreed -- and it might be possible to leverage the existing locking
-> in the /proc code.
+> Hi Eric,
+>
+>> +static int register_pernet_operations(struct list_head *list,
+>> +                  struct pernet_operations *ops)
+>> +{
+>> <snip>
+>> +out:
+>> +   return error;
+>> +
+>> +out_undo:
+>> +   /* If I have an error cleanup all namespaces I initialized */
+>> +   list_del(&ops->list);
+>> +   for_each_net(undo_net) {
+>> +      if (undo_net == net)
+>> +         goto undone;
+>> +      if (ops->exit)
+>> +         ops->exit(undo_net);
+>> +   }
+>> +undone:
+>> +   goto out;
+>> +}
+>
+> You could remove "undone" label (and associated) goto with a "break".
 
-Yes.  The generic /proc code takes care of this.  It appears
-to ensure that any ongoing operations will be waited for and
-no more operations will be started once remove_proc_entry
-is called.  So I just need the maybe_get_net thing to have
-safe ref counting.
+I could but there is there is no guarantee that the for_each_net macro is
+implemented with standard C looping construct such that break will work,
+and in one of the earlier versions that wasn't the case.  So my paranoia
+says an explicit label safer and just as clear.
 
-That is what I thought but I figured I would review that part while
-I was looking at everything.
+>> +static void unregister_pernet_operations(struct pernet_operations *ops)
+>> +{
+>> +   struct net *net;
+>> +
+>> +   list_del(&ops->list);
+>> +   for_each_net(net)
+>> +      if (ops->exit)
+>> +         ops->exit(net);
+>> +}
+>
+> Don't you require something like for_each_net_backwards to 'exit' in
+> reverse order? Same comment for unregister_subnet_subsys(). Should this
+> be done for failure in register_pernet_operations too?
+
+There are no ordering guarantees between the initialization and
+cleanup of different network namespaces.   The only real guarantee
+is that the initial network namespace is always present.  Which
+means any order will work so always doing it in a forwards order
+in the list should be fine.
 
 Eric
