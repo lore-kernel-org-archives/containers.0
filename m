@@ -1,24 +1,33 @@
 From: Srivatsa Vaddagiri <vatsa@linux.vnet.ibm.com>
-Subject: Re: [PATCH] Hookup group-scheduler with task container infrastructure
-Date: Mon, 10 Sep 2007 23:16:49 +0530
-Message-ID: <20070910174649.GA16222@linux.vnet.ibm.com>
-References: <20070910171049.GA16048@linux.vnet.ibm.com> <Pine.LNX.4.64.0709101903220.5368@fbirervta.pbzchgretzou.qr> <20070910172334.GB19100@linux.vnet.ibm.com> <20070910102259.dc45a481.akpm@linux-foundation.org>
+Subject: [PATCH] Hookup group-scheduler with task container infrastructure
+Date: Mon, 10 Sep 2007 22:40:49 +0530
+Message-ID: <20070910171049.GA16048@linux.vnet.ibm.com>
 Reply-To: vatsa@linux.vnet.ibm.com
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1758224AbXIJRgc@vger.kernel.org>
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1760829AbXIJRAi@vger.kernel.org>
 Content-Disposition: inline
-In-Reply-To: <20070910102259.dc45a481.akpm@linux-foundation.org>
 Sender: linux-kernel-owner@vger.kernel.org
-To: Andrew Morton <akpm@linux-foundation.org>
-Cc: ckrm-tech@lists.sourceforge.net, linux-kernel@vger.kernel.org, containers@lists.osdl.org, Jan Engelhardt <jengelh@computergmbh.de>, Ingo Molnar <mingo@elte.hu>
+To: Ingo Molnar <mingo@elte.hu>, akpm@linux-foundation.org
+Cc: linux-kernel@vger.kernel.org, containers@lists.osdl.org, ckrm-tech@lists.sourceforge.net, dhaval@linux.vnet.ibm.com
 List-Id: containers.vger.kernel.org
 
-On Mon, Sep 10, 2007 at 10:22:59AM -0700, Andrew Morton wrote:
-> objection ;)  "cpuctlr" isn't memorable.  Kernel code is write-rarely,
-> read-often.  "cpu_controller", please.  The extra typing is worth it ;)
+Ingo and Andrew,
+	The cfs core has been enhanced since quite sometime now to 
+understand task-groups and provide fairness to such task-group. What was
+needed is an interface for the administrator to define task-groups and
+specify group "importance" in terms of its cpu share.
 
-Ok! Here's the modified patch (against 2.6.23-rc4-mm1).
+The patch below adds such an interface. Its based on the task containers
+feature in -mm tree. I request you to review and include the patch in your
+trees for more wider testing from community.
+
+Note that the load balancer needs more work, esp to deal with cases like 
+2-groups on 4-cpus, one group has 3 tasks and other having 4 tasks.
+We are working on some ideas, but nothing to share in the form of a
+patch yet. I felt sending this patch out would help folks start
+testing the feature and also improve it.
+
 
 Signed-off-by : Srivatsa Vaddagiri <vatsa@linux.vnet.ibm.com>
 Signed-off-by : Dhaval Giani <dhaval@linux.vnet.ibm.com>
@@ -39,7 +48,7 @@ Index: current/include/linux/container_subsys.h
  
  /* */
 +#ifdef CONFIG_FAIR_GROUP_SCHED
-+SUBSYS(cpu_controller)
++SUBSYS(cpuctlr)
 +#endif
 +
 +/* */
@@ -106,7 +115,7 @@ Index: current/kernel/sched.c
 +/* return group to which a task belongs */
 +static inline struct task_grp *task_grp(struct task_struct *p)
 +{
-+	return container_of(task_subsys_state(p, cpu_controller_subsys_id),
++	return container_of(task_subsys_state(p, cpuctlr_subsys_id),
 +				struct task_grp, css);
 +}
 +
@@ -190,8 +199,8 @@ Index: current/kernel/sched.c
 +/* return corresponding task_grp object of a container */
 +static inline struct task_grp *container_tg(struct container *cont)
 +{
-+	return container_of(container_subsys_state(cont,
-+			 cpu_controller_subsys_id), struct task_grp, css);
++	return container_of(container_subsys_state(cont, cpuctlr_subsys_id),
++				struct task_grp, css);
 +}
 +
 +/* allocate runqueue etc for a new task group */
@@ -399,13 +408,13 @@ Index: current/kernel/sched.c
 +	return container_add_file(cont, ss, &cpuctl_share);
 +}
 +
-+struct container_subsys cpu_controller_subsys = {
++struct container_subsys cpuctlr_subsys = {
 +	.name = "cpu",
 +	.create = sched_create_group,
 +	.destroy  = sched_destroy_group,
 +	.attach = sched_move_task,
 +	.populate = sched_populate,
-+	.subsys_id = cpu_controller_subsys_id,
++	.subsys_id = cpuctlr_subsys_id,
 +	.early_init = 1,
 +};
 +
@@ -424,8 +433,6 @@ Index: current/kernel/sched_fair.c
  }
  
  /* Iterate thr' all leaf cfs_rq's on a runqueue */
-
-
 -- 
 Regards,
 vatsa
