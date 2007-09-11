@@ -1,49 +1,71 @@
-From: Randy Dunlap <randy.dunlap@oracle.com>
-Subject: Re: [PATCH] Hookup group-scheduler with task container
- infrastructure
-Date: Tue, 11 Sep 2007 08:53:01 -0700
-Message-ID: <20070911085301.ca3a00e4.randy.dunlap@oracle.com>
-References: <20070910171049.GA16048@linux.vnet.ibm.com>
-	<Pine.LNX.4.64.0709101903220.5368@fbirervta.pbzchgretzou.qr>
-	<20070910172334.GB19100@linux.vnet.ibm.com>
-	<20070910102259.dc45a481.akpm@linux-foundation.org>
-	<20070910174649.GA16222@linux.vnet.ibm.com>
-	<b647ffbd0709101537l9af4dc8x743b25c96e0f5235@mail.gmail.com>
-	<6599ad830709101545s66fd338dob6932407db4e1002@mail.gmail.com>
-	<46E641C1.8000808@fr.ibm.com>
-	<20070911082243.9433c528.randy.dunlap@oracle.com>
-	<20070911155119.GE16222@linux.vnet.ibm.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
-Content-Transfer-Encoding: 7bit
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1762072AbXIKPyj@vger.kernel.org>
-In-Reply-To: <20070911155119.GE16222@linux.vnet.ibm.com>
-Sender: linux-kernel-owner@vger.kernel.org
-To: vatsa@linux.vnet.ibm.com
-Cc: Cedric Le Goater <clg@fr.ibm.com>, Paul Menage <menage@google.com>, Dmitry Adamushko <dmitry.adamushko@gmail.com>, Andrew Morton <akpm@linux-foundation.org>, ckrm-tech@lists.sourceforge.net, linux-kernel@vger.kernel.org, containers@lists.osdl.org, Jan Engelhardt <jengelh@computergmbh.de>, Ingo Molnar <mingo@elte.hu>
+From: menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org
+Subject: [PATCH 00/29] Rename Containers to Control Groups
+Date: Tue, 11 Sep 2007 12:52:39 -0700
+Message-ID: <20070911195239.997111000@menage.corp.google.com>
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Tue, 11 Sep 2007 21:21:19 +0530 Srivatsa Vaddagiri wrote:
+[ Sending to containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org for review before sending on to
+linux-kernel and akpm ]
 
-> On Tue, Sep 11, 2007 at 08:22:43AM -0700, Randy Dunlap wrote:
-> > That looks odd, like it's a filesystem.
-> > What does cfs really mean?
-> 
-> cfs = completely fair scheduler :)
-> 
-> In this thread, we are talking of hooking the cfs cpu scheduler with the
-> task-container framework in -mm tree, so that the scheduler can deal
-> with groups of tasks rather than just tasks, while handling fairness of
-> cpu allocation.
-> 
-> I agree "cfs" control subsystem does look odd a bit here. "cpu" control
-> subsystem seems better.
+This patchset renames "Task Containers" to "Control Groups", in line with
+recent discussions.
 
-Thanks.  I agree that using "cpu" is better.  I.e., don't tie it
-to a particular scheduler name.  It would just need to change the
-next time we have a new scheduler.  ;)
+These patches are drop-in replacements for those of the same names in
+the current -mm tree:
 
 
----
-~Randy
-*** Remember to use Documentation/SubmitChecklist when testing your code ***
+task-containersv11-basic-task-container-framework.patch
+task-containersv11-basic-task-container-framework-fix.patch
+task-containersv11-add-tasks-file-interface.patch
+task-containersv11-add-fork-exit-hooks.patch
+task-containersv11-add-container_clone-interface.patch
+task-containersv11-add-procfs-interface.patch
+task-containersv11-shared-container-subsystem-group-arrays.patch
+task-containersv11-shared-container-subsystem-group-arrays-avoid-lockdep-warning.patch
+task-containersv11-shared-container-subsystem-group-arrays-include-fix.patch
+task-containersv11-automatic-userspace-notification-of-idle-containers.patch
+task-containersv11-make-cpusets-a-client-of-containers.patch
+task-containersv11-example-cpu-accounting-subsystem.patch
+task-containersv11-simple-task-container-debug-info-subsystem.patch
+
+add-containerstats-v3.patch
+add-containerstats-v3-fix.patch
+
+containers-implement-namespace-tracking-subsystem.patch
+containers-implement-namespace-tracking-subsystem-fix-order-of-container-subsystems-in-init-kconfig.patch
+
+
+memory-controller-add-documentation.patch
+memory-controller-resource-counters-v7.patch
+memory-controller-resource-counters-v7-fix.patch
+memory-controller-containers-setup-v7.patch
+memory-controller-accounting-setup-v7.patch
+memory-controller-memory-accounting-v7.patch
+memory-controller-task-migration-v7.patch
+memory-controller-add-per-container-lru-and-reclaim-v7.patch
+memory-controller-add-per-container-lru-and-reclaim-v7-fix.patch
+memory-controller-oom-handling-v7.patch
+memory-controller-add-switch-to-control-what-type-of-pages-to-limit-v7.patch
+memory-controller-make-page_referenced-container-aware-v7.patch
+
+They are constructed by running the following perl script over the
+original versions of the patches in 2.6.23-rc4-mm1:
+
+perl -pi -e 's/subcontainer/child cgroup/g; s/(\b|_)container(\b|_(?!of)|fs|s)/$1cgroup$2/g; s/CONTAINER(_|S)/CGROUP$1/g; s/Container/Control Group/g; s/css_group/css_set/g;' patches/*.patch
+
+
+Owners of other control-group related patches may want to run this
+script or some variation of it on their own patches.
+
+--
