@@ -1,79 +1,52 @@
-From: "Dmitry Adamushko" <dmitry.adamushko@gmail.com>
-Subject: Re: [PATCH] Hookup group-scheduler with task container infrastructure
-Date: Tue, 11 Sep 2007 11:53:51 +0200
-Message-ID: <b647ffbd0709110253y7d9564c4j88aa134330e2a292@mail.gmail.com>
-References: <20070910171049.GA16048@linux.vnet.ibm.com>
-	 <Pine.LNX.4.64.0709101903220.5368@fbirervta.pbzchgretzou.qr>
-	 <20070910172334.GB19100@linux.vnet.ibm.com>
-	 <20070910102259.dc45a481.akpm@linux-foundation.org>
-	 <20070910174649.GA16222@linux.vnet.ibm.com>
-	 <b647ffbd0709101528i7440a0f9m9837065a43e4a720@mail.gmail.com>
-	 <20070911044145.GC16222@linux.vnet.ibm.com>
+From: Oleg Nesterov <oleg-6lXkIZvqkOAvJsYlp49lxw@public.gmane.org>
+Subject: Re: [PATCH 1/3] Signal semantics for /sbin/init
+Date: Tue, 11 Sep 2007 15:19:28 +0400
+Message-ID: <20070911111928.GA123@tv-sign.ru>
+References: <20070911041030.GA1264@us.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Content-Transfer-Encoding: 7bit
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1762981AbXIKJyQ@vger.kernel.org>
-In-Reply-To: <20070911044145.GC16222@linux.vnet.ibm.com>
+Content-Type: text/plain; charset=us-ascii
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-Sender: linux-kernel-owner@vger.kernel.org
-To: vatsa@linux.vnet.ibm.com
-Cc: Andrew Morton <akpm@linux-foundation.org>, ckrm-tech@lists.sourceforge.net, linux-kernel@vger.kernel.org, containers@lists.osdl.org, Jan Engelhardt <jengelh@computergmbh.de>, Ingo Molnar <mingo@elte.hu>, dhaval@linux.vnet.ibm.com, menage@google.com
+In-Reply-To: <20070911041030.GA1264-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org
+Cc: Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Pavel Emelianov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On 11/09/2007, Srivatsa Vaddagiri <vatsa@linux.vnet.ibm.com> wrote:
->
-> [ ... ]
+On 09/10, sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org wrote:
+> 
+> (This is Oleg's patch with my pid ns additions. Compiled and unit tested
+> on 2.6.23-rc4-mm1 with other patches in this set. Oleg pls update this
+> patch if necessary and sign-off)
 
-I guess, 'rq->curr == tsk' implies a task was on the 'rq' (before
-dequeueing) in this particular case. What's about a minor optimization
-like below (plus, let's make use of task_running()):
+Sukadev, my apologies. This patch does need some changes,
 
-[ btw., real-time task can be also added to a container, right? I
-guess, it can be used at least for group-aware load-balancing of
-rt_tasks... otherwise, I guess, cpu-resource controlling is not that
-applicable to, say, SCHED_FIFO :-)
-Anyway, to this goal rt_task should become aware of group-related bits
-of the 'struct sched_entity'... and at the moment, the code below is
-effectively just a 'nop' for them.. right? ]
+> Notes:
+> 
+> 	- Blocked signals are never ignored, so init still can receive
+> 	  a pending blocked signal after sigprocmask(SIG_UNBLOCK).
+> 	  Easy to fix, but probably we can ignore this issue.
 
-/* change task's runqueue when it moves between groups */
-static void sched_move_task(struct container_subsys *ss, struct container *cont,
-                      struct container *old_cont, struct task_struct *tsk)
-{
-       int on_rq, running;
-       unsigned long flags;
-       struct rq *rq;
+I was wrong. This should be fixed right now. I _think_ this is easy,
+and I was going to finish this patch yesterday, but - sorry! - I just
+can't switch to "kernel mode" these days, I am fighting with some urgent
+tasks on my paid job.
 
-       rq = task_rq_lock(tsk, &flags);
-       update_rq_clock(rq);
+Please feel free to solve this issue yourself if you wish. As for me, I'm
+forgetting about the kernel until at least the next weekend.
 
-       running = task_running(rq, tsk);
-       on_rq = tsk->se.on_rq;
-       if (on_rq) {
-               dequeue_task(rq, tsk, 0);
+Also, Pavel has some ideas how to do this all on receiver's path, perhaps
+this makes more sense (not that I completely agree, but I didn't see the
+code yet).
 
-               if (unlikely(running) && tsk->sched_class == &fair_sched_class)
-                      tsk->sched_class->put_prev_task(rq, tsk);
-       }
+Sorry for inconvenience,
 
-       set_task_cfs_rq(tsk);
-
-       if (on_rq) {
-                enqueue_task(rq, tsk, 0);
-
-                if (unlikely(running) && tsk->sched_class == &fair_sched_class)
-                       tsk->sched_class->set_curr_task(rq);
-       }
-
-       task_rq_unlock(rq, &flags);
-}
-
-
-> --
-> Regards,
-> vatsa
->
-
--- 
-Best regards,
-Dmitry Adamushko
+Oleg.
