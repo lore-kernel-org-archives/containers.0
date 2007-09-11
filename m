@@ -1,11 +1,10 @@
 From: menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org
-Subject: [PATCH 22/29] memory controller accounting setup v7
-Date: Tue, 11 Sep 2007 12:53:01 -0700
-Message-ID: <20070911200148.230637000@menage.corp.google.com>
+Subject: [PATCH 27/29] memory controller oom handling v7
+Date: Tue, 11 Sep 2007 12:53:06 -0700
+Message-ID: <20070911200149.046861000@menage.corp.google.com>
 References: <20070911195239.997111000@menage.corp.google.com>
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline;
-	filename=memory-controller-accounting-setup-v7.patch
+Content-Disposition: inline; filename=memory-controller-oom-handling-v7.patch
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -21,8 +20,12 @@ List-Id: containers.vger.kernel.org
 
 From: Pavel Emelianov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 
-Basic setup routines, the mm_struct has a pointer to the cgroup that
-it belongs to and the the page has a page_cgroup associated with it.
+Out of memory handling for cgroups over their limit. A task from the
+cgroup over limit is chosen using the existing OOM logic and killed.
+
+TODO:
+1. As discussed in the OLS BOF session, consider implementing a user
+space policy for OOM handling.
 
 Signed-off-by: Pavel Emelianov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 Signed-off-by: Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
@@ -33,268 +36,131 @@ Cc: Nick Piggin <nickpiggin-/E1597aS9LT0CCvOHzKKcA@public.gmane.org>
 Cc: Kirill Korotaev <dev-3ImXcnM4P+0@public.gmane.org>
 Cc: Herbert Poetzl <herbert-dBHVzrDq9nF4Lj/PQRBjDg@public.gmane.org>
 Cc: David Rientjes <rientjes-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+Cc: Vaidyanathan Srinivasan <svaidy-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 Signed-off-by: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
 ---
 
- include/linux/memcontrol.h |   36 ++++++++++++++++++++++
- include/linux/mm_types.h   |    6 +++
- include/linux/sched.h      |    1 
- kernel/fork.c              |   11 ++++--
- mm/memcontrol.c            |   57 ++++++++++++++++++++++++++++++++---
- 5 files changed, 104 insertions(+), 7 deletions(-)
+ include/linux/memcontrol.h |    1 
+ mm/memcontrol.c            |    1 
+ mm/oom_kill.c              |   42 +++++++++++++++++++++++++++++++----
+ 3 files changed, 40 insertions(+), 4 deletions(-)
 
-diff -puN include/linux/memcontrol.h~memory-controller-accounting-setup-v7 include/linux/memcontrol.h
---- a/include/linux/memcontrol.h~memory-controller-accounting-setup-v7
+diff -puN include/linux/memcontrol.h~memory-controller-oom-handling-v7 include/linux/memcontrol.h
+--- a/include/linux/memcontrol.h~memory-controller-oom-handling-v7
 +++ a/include/linux/memcontrol.h
-@@ -3,6 +3,9 @@
-  * Copyright IBM Corporation, 2007
-  * Author Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-  *
-+ * Copyright 2007 OpenVZ SWsoft Inc
-+ * Author: Pavel Emelianov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
-+ *
-  * This program is free software; you can redistribute it and/or modify
-  * it under the terms of the GNU General Public License as published by
-  * the Free Software Foundation; either version 2 of the License, or
-@@ -17,5 +20,38 @@
- #ifndef _LINUX_MEMCONTROL_H
- #define _LINUX_MEMCONTROL_H
+@@ -39,6 +39,7 @@ extern unsigned long mem_cgroup_isola
+ 					int mode, struct zone *z,
+ 					struct mem_cgroup *mem_cont,
+ 					int active);
++extern void mem_cgroup_out_of_memory(struct mem_cgroup *mem);
  
-+struct mem_cgroup;
-+struct page_cgroup;
-+
-+#ifdef CONFIG_CGROUP_MEM_CONT
-+
-+extern void mm_init_cgroup(struct mm_struct *mm, struct task_struct *p);
-+extern void mm_free_cgroup(struct mm_struct *mm);
-+extern void page_assign_page_cgroup(struct page *page,
-+					struct page_cgroup *pc);
-+extern struct page_cgroup *page_get_page_cgroup(struct page *page);
-+
-+#else /* CONFIG_CGROUP_MEM_CONT */
-+static inline void mm_init_cgroup(struct mm_struct *mm,
-+					struct task_struct *p)
-+{
-+}
-+
-+static inline void mm_free_cgroup(struct mm_struct *mm)
-+{
-+}
-+
-+static inline void page_assign_page_cgroup(struct page *page,
-+						struct page_cgroup *pc)
-+{
-+}
-+
-+static inline struct page_cgroup *page_get_page_cgroup(struct page *page)
-+{
-+	return NULL;
-+}
-+
-+#endif /* CONFIG_CGROUP_MEM_CONT */
-+
- #endif /* _LINUX_MEMCONTROL_H */
+ static inline void mem_cgroup_uncharge_page(struct page *page)
+ {
+diff -puN mm/memcontrol.c~memory-controller-oom-handling-v7 mm/memcontrol.c
+--- a/mm/memcontrol.c~memory-controller-oom-handling-v7
++++ a/mm/memcontrol.c
+@@ -322,6 +322,7 @@ int mem_cgroup_charge(struct page *pa
+ 		}
  
-diff -puN include/linux/mm_types.h~memory-controller-accounting-setup-v7 include/linux/mm_types.h
---- a/include/linux/mm_types.h~memory-controller-accounting-setup-v7
-+++ a/include/linux/mm_types.h
-@@ -83,6 +83,9 @@ struct page {
- 	void *virtual;			/* Kernel virtual address (NULL if
- 					   not kmapped, ie. highmem) */
- #endif /* WANT_PAGE_VIRTUAL */
-+#ifdef CONFIG_CGROUP_MEM_CONT
-+	unsigned long page_cgroup;
-+#endif
- };
+ 		css_put(&mem->css);
++		mem_cgroup_out_of_memory(mem);
+ 		goto free_pc;
+ 	}
  
- /*
-@@ -214,6 +217,9 @@ struct mm_struct {
- 	/* aio bits */
- 	rwlock_t		ioctx_list_lock;
- 	struct kioctx		*ioctx_list;
-+#ifdef CONFIG_CGROUP_MEM_CONT
-+	struct mem_cgroup *mem_cgroup;
-+#endif
- };
- 
- #endif /* _LINUX_MM_TYPES_H */
-diff -puN include/linux/sched.h~memory-controller-accounting-setup-v7 include/linux/sched.h
---- a/include/linux/sched.h~memory-controller-accounting-setup-v7
-+++ a/include/linux/sched.h
-@@ -88,6 +88,7 @@ struct sched_param {
- 
- #include <asm/processor.h>
- 
-+struct mem_cgroup;
- struct exec_domain;
- struct futex_pi_state;
- struct bio;
-diff -puN kernel/fork.c~memory-controller-accounting-setup-v7 kernel/fork.c
---- a/kernel/fork.c~memory-controller-accounting-setup-v7
-+++ a/kernel/fork.c
-@@ -51,6 +51,7 @@
- #include <linux/random.h>
- #include <linux/tty.h>
- #include <linux/proc_fs.h>
+diff -puN mm/oom_kill.c~memory-controller-oom-handling-v7 mm/oom_kill.c
+--- a/mm/oom_kill.c~memory-controller-oom-handling-v7
++++ a/mm/oom_kill.c
+@@ -25,6 +25,7 @@
+ #include <linux/cpuset.h>
+ #include <linux/module.h>
+ #include <linux/notifier.h>
 +#include <linux/memcontrol.h>
  
- #include <asm/pgtable.h>
- #include <asm/pgalloc.h>
-@@ -329,7 +330,7 @@ __cacheline_aligned_in_smp DEFINE_SPINLO
+ int sysctl_panic_on_oom;
+ /* #define DEBUG */
+@@ -48,7 +49,8 @@ int sysctl_panic_on_oom;
+  *    of least surprise ... (be careful when you change it)
+  */
  
- #include <linux/init_task.h>
- 
--static struct mm_struct * mm_init(struct mm_struct * mm)
-+static struct mm_struct * mm_init(struct mm_struct * mm, struct task_struct *p)
+-unsigned long badness(struct task_struct *p, unsigned long uptime)
++unsigned long badness(struct task_struct *p, unsigned long uptime,
++			struct mem_cgroup *mem)
  {
- 	atomic_set(&mm->mm_users, 1);
- 	atomic_set(&mm->mm_count, 1);
-@@ -346,11 +347,14 @@ static struct mm_struct * mm_init(struct
- 	mm->ioctx_list = NULL;
- 	mm->free_area_cache = TASK_UNMAPPED_BASE;
- 	mm->cached_hole_size = ~0UL;
-+	mm_init_cgroup(mm, p);
- 
- 	if (likely(!mm_alloc_pgd(mm))) {
- 		mm->def_flags = 0;
- 		return mm;
+ 	unsigned long points, cpu_time, run_time, s;
+ 	struct mm_struct *mm;
+@@ -61,6 +63,13 @@ unsigned long badness(struct task_struct
+ 		return 0;
  	}
+ 
++#ifdef CONFIG_CGROUP_MEM_CONT
++	if (mem != NULL && mm->mem_cgroup != mem) {
++		task_unlock(p);
++		return 0;
++	}
++#endif
 +
-+	mm_free_cgroup(mm);
- 	free_mm(mm);
- 	return NULL;
- }
-@@ -365,7 +369,7 @@ struct mm_struct * mm_alloc(void)
- 	mm = allocate_mm();
- 	if (mm) {
- 		memset(mm, 0, sizeof(*mm));
--		mm = mm_init(mm);
-+		mm = mm_init(mm, current);
- 	}
- 	return mm;
- }
-@@ -379,6 +383,7 @@ void fastcall __mmdrop(struct mm_struct 
- {
- 	BUG_ON(mm == &init_mm);
- 	mm_free_pgd(mm);
-+	mm_free_cgroup(mm);
- 	destroy_context(mm);
- 	free_mm(mm);
- }
-@@ -499,7 +504,7 @@ static struct mm_struct *dup_mm(struct t
- 	mm->token_priority = 0;
- 	mm->last_interval = 0;
- 
--	if (!mm_init(mm))
-+	if (!mm_init(mm, tsk))
- 		goto fail_nomem;
- 
- 	if (init_new_context(tsk, mm))
-diff -puN mm/memcontrol.c~memory-controller-accounting-setup-v7 mm/memcontrol.c
---- a/mm/memcontrol.c~memory-controller-accounting-setup-v7
-+++ a/mm/memcontrol.c
-@@ -3,6 +3,9 @@
-  * Copyright IBM Corporation, 2007
-  * Author Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-  *
-+ * Copyright 2007 OpenVZ SWsoft Inc
-+ * Author: Pavel Emelianov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
-+ *
-  * This program is free software; you can redistribute it and/or modify
-  * it under the terms of the GNU General Public License as published by
-  * the Free Software Foundation; either version 2 of the License, or
-@@ -17,6 +20,7 @@
- #include <linux/res_counter.h>
- #include <linux/memcontrol.h>
- #include <linux/cgroup.h>
-+#include <linux/mm.h>
- 
- struct cgroup_subsys mem_cgroup_subsys;
- 
-@@ -35,6 +39,13 @@ struct mem_cgroup {
- 	 * the counter to account for memory usage
+ 	/*
+ 	 * The memory size of the process is the basis for the badness.
  	 */
- 	struct res_counter res;
-+	/*
-+	 * Per cgroup active and inactive list, similar to the
-+	 * per zone LRU lists.
-+	 * TODO: Consider making these lists per zone
-+	 */
-+	struct list_head active_list;
-+	struct list_head inactive_list;
- };
+@@ -198,7 +207,8 @@ static inline int constrained_alloc(stru
+  *
+  * (not docbooked, we don't want this one cluttering up the manual)
+  */
+-static struct task_struct *select_bad_process(unsigned long *ppoints)
++static struct task_struct *select_bad_process(unsigned long *ppoints,
++						struct mem_cgroup *mem)
+ {
+ 	struct task_struct *g, *p;
+ 	struct task_struct *chosen = NULL;
+@@ -252,7 +262,7 @@ static struct task_struct *select_bad_pr
+ 		if (p->oomkilladj == OOM_DISABLE)
+ 			continue;
  
- /*
-@@ -56,6 +67,37 @@ struct mem_cgroup *mem_cgroup_from
- 				css);
+-		points = badness(p, uptime.tv_sec);
++		points = badness(p, uptime.tv_sec, mem);
+ 		if (points > *ppoints || !chosen) {
+ 			chosen = p;
+ 			*ppoints = points;
+@@ -364,6 +374,30 @@ static int oom_kill_process(struct task_
+ 	return oom_kill_task(p);
  }
  
-+static inline
-+struct mem_cgroup *mem_cgroup_from_task(struct task_struct *p)
++#ifdef CONFIG_CGROUP_MEM_CONT
++void mem_cgroup_out_of_memory(struct mem_cgroup *mem)
 +{
-+	return container_of(task_subsys_state(p, mem_cgroup_subsys_id),
-+				struct mem_cgroup, css);
++	unsigned long points = 0;
++	struct task_struct *p;
++
++	cgroup_lock();
++	rcu_read_lock();
++retry:
++	p = select_bad_process(&points, mem);
++	if (PTR_ERR(p) == -1UL)
++		goto out;
++
++	if (!p)
++		p = current;
++
++	if (oom_kill_process(p, points, "Memory cgroup out of memory"))
++		goto retry;
++out:
++	rcu_read_unlock();
++	cgroup_unlock();
 +}
++#endif
 +
-+void mm_init_cgroup(struct mm_struct *mm, struct task_struct *p)
-+{
-+	struct mem_cgroup *mem;
-+
-+	mem = mem_cgroup_from_task(p);
-+	css_get(&mem->css);
-+	mm->mem_cgroup = mem;
-+}
-+
-+void mm_free_cgroup(struct mm_struct *mm)
-+{
-+	css_put(&mm->mem_cgroup->css);
-+}
-+
-+void page_assign_page_cgroup(struct page *page, struct page_cgroup *pc)
-+{
-+	page->page_cgroup = (unsigned long)pc;
-+}
-+
-+struct page_cgroup *page_get_page_cgroup(struct page *page)
-+{
-+	return page->page_cgroup;
-+}
-+
- static ssize_t mem_cgroup_read(struct cgroup *cont, struct cftype *cft,
- 			struct file *file, char __user *userbuf, size_t nbytes,
- 			loff_t *ppos)
-@@ -91,14 +133,21 @@ static struct cftype mem_cgroup_files
- 	},
- };
+ static BLOCKING_NOTIFIER_HEAD(oom_notify_list);
  
-+static struct mem_cgroup init_mem_cgroup;
-+
- static struct cgroup_subsys_state *
- mem_cgroup_create(struct cgroup_subsys *ss, struct cgroup *cont)
- {
- 	struct mem_cgroup *mem;
+ int register_oom_notifier(struct notifier_block *nb)
+@@ -436,7 +470,7 @@ retry:
+ 		 * Rambo mode: Shoot down a process and hope it solves whatever
+ 		 * issues we may have.
+ 		 */
+-		p = select_bad_process(&points);
++		p = select_bad_process(&points, NULL);
  
--	mem = kzalloc(sizeof(struct mem_cgroup), GFP_KERNEL);
--	if (!mem)
--		return -ENOMEM;
-+	if (unlikely((cont->parent) == NULL)) {
-+		mem = &init_mem_cgroup;
-+		init_mm.mem_cgroup = mem;
-+	} else
-+		mem = kzalloc(sizeof(struct mem_cgroup), GFP_KERNEL);
-+
-+	if (mem == NULL)
-+		return NULL;
- 
- 	res_counter_init(&mem->res);
- 	return &mem->css;
-@@ -123,5 +172,5 @@ struct cgroup_subsys mem_cgroup_su
- 	.create = mem_cgroup_create,
- 	.destroy = mem_cgroup_destroy,
- 	.populate = mem_cgroup_populate,
--	.early_init = 0,
-+	.early_init = 1,
- };
+ 		if (PTR_ERR(p) == -1UL)
+ 			goto out;
 _
 
 --
