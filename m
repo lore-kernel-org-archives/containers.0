@@ -1,12 +1,11 @@
 From: menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org
-Subject: [PATCH 13/29] task containersv11 simple task container debug info
-	subsystem
-Date: Tue, 11 Sep 2007 12:52:52 -0700
-Message-ID: <20070911200146.760923000@menage.corp.google.com>
+Subject: [PATCH 06/29] task containersv11 add procfs interface
+Date: Tue, 11 Sep 2007 12:52:45 -0700
+Message-ID: <20070911200145.600116000@menage.corp.google.com>
 References: <20070911195239.997111000@menage.corp.google.com>
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline;
-	filename=task-containersv11-simple-task-container-debug-info-subsystem.patch
+	filename=task-containersv11-add-procfs-interface.patch
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -22,8 +21,11 @@ List-Id: containers.vger.kernel.org
 
 From: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
 
-This example subsystem exports debugging information as an aid to diagnosing
-refcount leaks, etc, in the cgroup framework.
+Add:
+
+/proc/cgroups - general system info
+
+/proc/*/cgroup - per-task cgroup membership info
 
 Signed-off-by: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
 Cc: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
@@ -38,156 +40,221 @@ Cc: Cedric Le Goater <clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
 Signed-off-by: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
 ---
 
- include/linux/cgroup_subsys.h |    4 +
- init/Kconfig                     |   10 ++
- kernel/Makefile                  |    1 
- kernel/cgroup_debug.c         |   97 +++++++++++++++++++++++++++++
- 4 files changed, 112 insertions(+)
+ fs/proc/base.c            |    7 +
+ include/linux/cgroup.h |    2 
+ kernel/cgroup.c        |  132 ++++++++++++++++++++++++++++++++++++
+ 3 files changed, 141 insertions(+)
 
-diff -puN include/linux/cgroup_subsys.h~task-cgroupsv11-simple-task-cgroup-debug-info-subsystem include/linux/cgroup_subsys.h
---- a/include/linux/cgroup_subsys.h~task-cgroupsv11-simple-task-cgroup-debug-info-subsystem
-+++ a/include/linux/cgroup_subsys.h
-@@ -19,4 +19,8 @@ SUBSYS(cpuacct)
- 
- /* */
- 
-+#ifdef CONFIG_CGROUP_DEBUG
-+SUBSYS(debug)
+diff -puN fs/proc/base.c~task-cgroupsv11-add-procfs-interface fs/proc/base.c
+--- a/fs/proc/base.c~task-cgroupsv11-add-procfs-interface
++++ a/fs/proc/base.c
+@@ -67,6 +67,7 @@
+ #include <linux/mount.h>
+ #include <linux/security.h>
+ #include <linux/ptrace.h>
++#include <linux/cgroup.h>
+ #include <linux/cpuset.h>
+ #include <linux/audit.h>
+ #include <linux/poll.h>
+@@ -2051,6 +2052,9 @@ static const struct pid_entry tgid_base_
+ #ifdef CONFIG_CPUSETS
+ 	REG("cpuset",     S_IRUGO, cpuset),
+ #endif
++#ifdef CONFIG_CGROUPS
++	REG("cgroup",  S_IRUGO, cgroup),
 +#endif
-+
- /* */
-diff -puN init/Kconfig~task-cgroupsv11-simple-task-cgroup-debug-info-subsystem init/Kconfig
---- a/init/Kconfig~task-cgroupsv11-simple-task-cgroup-debug-info-subsystem
-+++ a/init/Kconfig
-@@ -282,6 +282,16 @@ config CGROUPS
+ 	INF("oom_score",  S_IRUGO, oom_score),
+ 	REG("oom_adj",    S_IRUGO|S_IWUSR, oom_adjust),
+ #ifdef CONFIG_AUDITSYSCALL
+@@ -2340,6 +2344,9 @@ static const struct pid_entry tid_base_s
+ #ifdef CONFIG_CPUSETS
+ 	REG("cpuset",    S_IRUGO, cpuset),
+ #endif
++#ifdef CONFIG_CGROUPS
++	REG("cgroup",  S_IRUGO, cgroup),
++#endif
+ 	INF("oom_score", S_IRUGO, oom_score),
+ 	REG("oom_adj",   S_IRUGO|S_IWUSR, oom_adjust),
+ #ifdef CONFIG_AUDITSYSCALL
+diff -puN include/linux/cgroup.h~task-cgroupsv11-add-procfs-interface include/linux/cgroup.h
+--- a/include/linux/cgroup.h~task-cgroupsv11-add-procfs-interface
++++ a/include/linux/cgroup.h
+@@ -29,6 +29,8 @@ extern void cgroup_fork(struct task_s
+ extern void cgroup_fork_callbacks(struct task_struct *p);
+ extern void cgroup_exit(struct task_struct *p, int run_callbacks);
  
- 	  Say N if unsure.
++extern struct file_operations proc_cgroup_operations;
++
+ /* Per-subsystem/per-cgroup state maintained by the system. */
+ struct cgroup_subsys_state {
+ 	/* The cgroup that this subsystem is attached to. Useful
+diff -puN kernel/cgroup.c~task-cgroupsv11-add-procfs-interface kernel/cgroup.c
+--- a/kernel/cgroup.c~task-cgroupsv11-add-procfs-interface
++++ a/kernel/cgroup.c
+@@ -33,6 +33,7 @@
+ #include <linux/mutex.h>
+ #include <linux/mount.h>
+ #include <linux/pagemap.h>
++#include <linux/proc_fs.h>
+ #include <linux/rcupdate.h>
+ #include <linux/sched.h>
+ #include <linux/seq_file.h>
+@@ -247,6 +248,7 @@ static int cgroup_mkdir(struct inode 
+ static int cgroup_rmdir(struct inode *unused_dir, struct dentry *dentry);
+ static int cgroup_populate_dir(struct cgroup *cont);
+ static struct inode_operations cgroup_dir_inode_operations;
++static struct file_operations proc_cgroupstats_operations;
  
-+config CGROUP_DEBUG
-+	bool "Example debug cgroup subsystem"
-+	depends on CGROUPS
-+	help
-+	  This option enables a simple cgroup subsystem that
-+	  exports useful debugging information about the cgroups
-+	  framework
+ static struct inode *cgroup_new_inode(mode_t mode, struct super_block *sb)
+ {
+@@ -1576,6 +1578,7 @@ int __init cgroup_init(void)
+ {
+ 	int err;
+ 	int i;
++	struct proc_dir_entry *entry;
+ 
+ 	for (i = 0; i < CGROUP_SUBSYS_COUNT; i++) {
+ 		struct cgroup_subsys *ss = subsys[i];
+@@ -1587,10 +1590,139 @@ int __init cgroup_init(void)
+ 	if (err < 0)
+ 		goto out;
+ 
++	entry = create_proc_entry("cgroups", 0, NULL);
++	if (entry)
++		entry->proc_fops = &proc_cgroupstats_operations;
 +
-+	  Say N if unsure
-+
- config CPUSETS
- 	bool "Cpuset support"
- 	depends on SMP && CGROUPS
-diff -puN kernel/Makefile~task-cgroupsv11-simple-task-cgroup-debug-info-subsystem kernel/Makefile
---- a/kernel/Makefile~task-cgroupsv11-simple-task-cgroup-debug-info-subsystem
-+++ a/kernel/Makefile
-@@ -39,6 +39,7 @@ obj-$(CONFIG_BSD_PROCESS_ACCT) += acct.o
- obj-$(CONFIG_KEXEC) += kexec.o
- obj-$(CONFIG_COMPAT) += compat.o
- obj-$(CONFIG_CGROUPS) += cgroup.o
-+obj-$(CONFIG_CGROUP_DEBUG) += cgroup_debug.o
- obj-$(CONFIG_CPUSETS) += cpuset.o
- obj-$(CONFIG_CGROUP_CPUACCT) += cpu_acct.o
- obj-$(CONFIG_IKCONFIG) += configs.o
-diff -puN /dev/null kernel/cgroup_debug.c
---- /dev/null
-+++ a/kernel/cgroup_debug.c
-@@ -0,0 +1,97 @@
+ out:
+ 	return err;
+ }
+ 
 +/*
-+ * kernel/ccontainer_debug.c - Example cgroup subsystem that
-+ * exposes debug info
-+ *
-+ * Copyright (C) Google Inc, 2007
-+ *
-+ * Developed by Paul Menage (menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org)
-+ *
++ * proc_cgroup_show()
++ *  - Print task's cgroup paths into seq_file, one line for each hierarchy
++ *  - Used for /proc/<pid>/cgroup.
++ *  - No need to task_lock(tsk) on this tsk->cgroup reference, as it
++ *    doesn't really matter if tsk->cgroup changes after we read it,
++ *    and we take cgroup_mutex, keeping attach_task() from changing it
++ *    anyway.  No need to check that tsk->cgroup != NULL, thanks to
++ *    the_top_cgroup_hack in cgroup_exit(), which sets an exiting tasks
++ *    cgroup to top_cgroup.
 + */
 +
-+#include <linux/cgroup.h>
-+#include <linux/fs.h>
-+#include <linux/slab.h>
-+#include <linux/rcupdate.h>
-+
-+#include <asm/atomic.h>
-+
-+static struct cgroup_subsys_state *debug_create(struct cgroup_subsys *ss,
-+						   struct cgroup *cont)
++/* TODO: Use a proper seq_file iterator */
++static int proc_cgroup_show(struct seq_file *m, void *v)
 +{
-+	struct cgroup_subsys_state *css = kzalloc(sizeof(*css), GFP_KERNEL);
++	struct pid *pid;
++	struct task_struct *tsk;
++	char *buf;
++	int retval;
++	struct cgroupfs_root *root;
 +
-+	if (!css)
-+		return ERR_PTR(-ENOMEM);
++	retval = -ENOMEM;
++	buf = kmalloc(PAGE_SIZE, GFP_KERNEL);
++	if (!buf)
++		goto out;
 +
-+	return css;
++	retval = -ESRCH;
++	pid = m->private;
++	tsk = get_pid_task(pid, PIDTYPE_PID);
++	if (!tsk)
++		goto out_free;
++
++	retval = 0;
++
++	mutex_lock(&cgroup_mutex);
++
++	for_each_root(root) {
++		struct cgroup_subsys *ss;
++		struct cgroup *cont;
++		int subsys_id;
++		int count = 0;
++
++		/* Skip this hierarchy if it has no active subsystems */
++		if (!root->actual_subsys_bits)
++			continue;
++		for_each_subsys(root, ss)
++			seq_printf(m, "%s%s", count++ ? "," : "", ss->name);
++		seq_putc(m, ':');
++		get_first_subsys(&root->top_cgroup, NULL, &subsys_id);
++		cont = task_cgroup(tsk, subsys_id);
++		retval = cgroup_path(cont, buf, PAGE_SIZE);
++		if (retval < 0)
++			goto out_unlock;
++		seq_puts(m, buf);
++		seq_putc(m, '\n');
++	}
++
++out_unlock:
++	mutex_unlock(&cgroup_mutex);
++	put_task_struct(tsk);
++out_free:
++	kfree(buf);
++out:
++	return retval;
 +}
 +
-+static void debug_destroy(struct cgroup_subsys *ss, struct cgroup *cont)
++static int cgroup_open(struct inode *inode, struct file *file)
 +{
-+	kfree(cont->subsys[debug_subsys_id]);
++	struct pid *pid = PROC_I(inode)->pid;
++	return single_open(file, proc_cgroup_show, pid);
 +}
 +
-+static u64 cgroup_refcount_read(struct cgroup *cont, struct cftype *cft)
-+{
-+	return atomic_read(&cont->count);
-+}
-+
-+static u64 taskcount_read(struct cgroup *cont, struct cftype *cft)
-+{
-+	u64 count;
-+
-+	cgroup_lock();
-+	count = cgroup_task_count(cont);
-+	cgroup_unlock();
-+	return count;
-+}
-+
-+static u64 current_css_set_read(struct cgroup *cont, struct cftype *cft)
-+{
-+	return (u64)(long)current->cgroups;
-+}
-+
-+static u64 current_css_set_refcount_read(struct cgroup *cont,
-+					   struct cftype *cft)
-+{
-+	u64 count;
-+
-+	rcu_read_lock();
-+	count = atomic_read(&current->cgroups->ref.refcount);
-+	rcu_read_unlock();
-+	return count;
-+}
-+
-+static struct cftype files[] =  {
-+	{
-+		.name = "cgroup_refcount",
-+		.read_uint = cgroup_refcount_read,
-+	},
-+	{
-+		.name = "taskcount",
-+		.read_uint = taskcount_read,
-+	},
-+
-+	{
-+		.name = "current_css_set",
-+		.read_uint = current_css_set_read,
-+	},
-+
-+	{
-+		.name = "current_css_set_refcount",
-+		.read_uint = current_css_set_refcount_read,
-+	},
++struct file_operations proc_cgroup_operations = {
++	.open		= cgroup_open,
++	.read		= seq_read,
++	.llseek		= seq_lseek,
++	.release	= single_release,
 +};
 +
-+static int debug_populate(struct cgroup_subsys *ss, struct cgroup *cont)
++/* Display information about each subsystem and each hierarchy */
++static int proc_cgroupstats_show(struct seq_file *m, void *v)
 +{
-+	return cgroup_add_files(cont, ss, files, ARRAY_SIZE(files));
++	int i;
++	struct cgroupfs_root *root;
++
++	mutex_lock(&cgroup_mutex);
++	seq_puts(m, "Hierarchies:\n");
++	for_each_root(root) {
++		struct cgroup_subsys *ss;
++		int first = 1;
++		seq_printf(m, "%p: bits=%lx cgroups=%d (", root,
++			   root->subsys_bits, root->number_of_cgroups);
++		for_each_subsys(root, ss) {
++			seq_printf(m, "%s%s", first ? "" : ", ", ss->name);
++			first = false;
++		}
++		seq_putc(m, ')');
++		if (root->sb) {
++			seq_printf(m, " s_active=%d",
++				   atomic_read(&root->sb->s_active));
++		}
++		seq_putc(m, '\n');
++	}
++	seq_puts(m, "Subsystems:\n");
++	for (i = 0; i < CGROUP_SUBSYS_COUNT; i++) {
++		struct cgroup_subsys *ss = subsys[i];
++		seq_printf(m, "%d: name=%s hierarchy=%p\n",
++			   i, ss->name, ss->root);
++	}
++	mutex_unlock(&cgroup_mutex);
++	return 0;
 +}
 +
-+struct cgroup_subsys debug_subsys = {
-+	.name = "debug",
-+	.create = debug_create,
-+	.destroy = debug_destroy,
-+	.populate = debug_populate,
-+	.subsys_id = debug_subsys_id,
++static int cgroupstats_open(struct inode *inode, struct file *file)
++{
++	return single_open(file, proc_cgroupstats_show, 0);
++}
++
++static struct file_operations proc_cgroupstats_operations = {
++	.open = cgroupstats_open,
++	.read = seq_read,
++	.llseek = seq_lseek,
++	.release = single_release,
 +};
++
+ /**
+  * cgroup_fork - attach newly forked task to its parents cgroup.
+  * @tsk: pointer to task_struct of forking parent process.
 _
 
 --
