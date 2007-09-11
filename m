@@ -1,38 +1,35 @@
-From: Dave Hansen <haveblue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: pid namespace .text overhead
-Date: Tue, 11 Sep 2007 08:36:08 -0700
-Message-ID: <1189524968.17236.18.camel@localhost>
-References: <46E59D2B.7030609@fr.ibm.com> <20070911020406.GA31721@us.ibm.com>
+From: Jan Engelhardt <jengelh@computergmbh.de>
+Subject: Re: [PATCH] Hookup group-scheduler with task container infrastructure
+Date: Tue, 11 Sep 2007 17:37:49 +0200 (CEST)
+Message-ID: <Pine.LNX.4.64.0709111737000.9962@fbirervta.pbzchgretzou.qr>
+References: <20070910171049.GA16048@linux.vnet.ibm.com>
+ <Pine.LNX.4.64.0709101903220.5368@fbirervta.pbzchgretzou.qr>
+ <20070910172334.GB19100@linux.vnet.ibm.com> <20070910102259.dc45a481.akpm@linux-foundation.org>
+ <20070910174649.GA16222@linux.vnet.ibm.com> <b647ffbd0709101537l9af4dc8x743b25c96e0f5235@mail.gmail.com>
+ <6599ad830709101545s66fd338dob6932407db4e1002@mail.gmail.com>
+ <46E641C1.8000808@fr.ibm.com> <20070911082243.9433c528.randy.dunlap@oracle.com>
 Mime-Version: 1.0
-Content-Type: text/plain
-Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20070911020406.GA31721-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org
-Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
+Content-Type: TEXT/PLAIN; charset=US-ASCII
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1758977AbXIKPiF@vger.kernel.org>
+In-Reply-To: <20070911082243.9433c528.randy.dunlap@oracle.com>
+Sender: linux-kernel-owner@vger.kernel.org
+To: Randy Dunlap <randy.dunlap@oracle.com>
+Cc: Cedric Le Goater <clg@fr.ibm.com>, Paul Menage <menage@google.com>, Dmitry Adamushko <dmitry.adamushko@gmail.com>, vatsa@linux.vnet.ibm.com, Andrew Morton <akpm@linux-foundation.org>, ckrm-tech@lists.sourceforge.net, linux-kernel@vger.kernel.org, containers@lists.osdl.org, Ingo Molnar <mingo@elte.hu>
 List-Id: containers.vger.kernel.org
 
-On Mon, 2007-09-10 at 19:04 -0700, sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org wrote:
-> 
-> Thats a good point.
-> 
-> We have been a bit liberal with "inline" given that lot of the code
-> was
-> going to affect the "fast-path" clone().
-> 
-> Should we shoot for a time/space trade-off or can we make some inlines
-> conditional (i.e inline when not configured for say embedded linux) ? 
 
-Can we make them switch somehow on -Os?  That's what the embedded guys
-use.
+On Sep 11 2007 08:22, Randy Dunlap wrote:
+>> "cfs" control group subsystem.
+>
+>That looks odd, like it's a filesystem.
+>What does cfs really mean?
 
--- Dave
+http://en.wikipedia.org/wiki/CFS
+(scnr)
+
+It misses the C...something Filesystem tho.
+
+
+
+	Jan
+-- 
