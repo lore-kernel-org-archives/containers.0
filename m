@@ -1,10 +1,12 @@
 From: menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org
-Subject: [PATCH 27/29] memory controller oom handling v7
-Date: Tue, 11 Sep 2007 12:53:06 -0700
-Message-ID: <20070911200149.046861000@menage.corp.google.com>
+Subject: [PATCH 17/29] containers implement namespace tracking subsystem fix
+	order of container subsystems in init kconfig
+Date: Tue, 11 Sep 2007 12:52:56 -0700
+Message-ID: <20070911200147.417900000@menage.corp.google.com>
 References: <20070911195239.997111000@menage.corp.google.com>
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline; filename=memory-controller-oom-handling-v7.patch
+Content-Disposition: inline;
+	filename=containers-implement-namespace-tracking-subsystem-fix-order-of-container-subsystems-in-init-kconfig.patch
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -15,152 +17,79 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
-Cc: Nick Piggin <nickpiggin-/E1597aS9LT0CCvOHzKKcA@public.gmane.org>, Peter Zijlstra <a.p.zijlstra-/NLkJaSkS4VmR6Xm/wNWPw@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, David Rientjes <rientjes-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Pavel Emelianov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Cc: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-From: Pavel Emelianov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+From: Cedric Le Goater <clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
 
-Out of memory handling for cgroups over their limit. A task from the
-cgroup over limit is chosen using the existing OOM logic and killed.
+some cosmetic changes to init/Kconfig to make the subsystem list
+under cgroups look nicer when CONFIG_CGROUPS=y.
 
-TODO:
-1. As discussed in the OLS BOF session, consider implementing a user
-space policy for OOM handling.
+also changed the 'select' to 'depends on' for the namespace
+subsystem.
 
-Signed-off-by: Pavel Emelianov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
-Signed-off-by: Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Cc: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
-Cc: Peter Zijlstra <a.p.zijlstra-/NLkJaSkS4VmR6Xm/wNWPw@public.gmane.org>
-Cc: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Cc: Nick Piggin <nickpiggin-/E1597aS9LT0CCvOHzKKcA@public.gmane.org>
-Cc: Kirill Korotaev <dev-3ImXcnM4P+0@public.gmane.org>
-Cc: Herbert Poetzl <herbert-dBHVzrDq9nF4Lj/PQRBjDg@public.gmane.org>
-Cc: David Rientjes <rientjes-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
-Cc: Vaidyanathan Srinivasan <svaidy-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Signed-off-by: Cedric Le Goater <clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
+Acked-by: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
 Signed-off-by: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
 ---
 
- include/linux/memcontrol.h |    1 
- mm/memcontrol.c            |    1 
- mm/oom_kill.c              |   42 +++++++++++++++++++++++++++++++----
- 3 files changed, 40 insertions(+), 4 deletions(-)
+ init/Kconfig |   32 ++++++++++++++++----------------
+ 1 file changed, 16 insertions(+), 16 deletions(-)
 
-diff -puN include/linux/memcontrol.h~memory-controller-oom-handling-v7 include/linux/memcontrol.h
---- a/include/linux/memcontrol.h~memory-controller-oom-handling-v7
-+++ a/include/linux/memcontrol.h
-@@ -39,6 +39,7 @@ extern unsigned long mem_cgroup_isola
- 					int mode, struct zone *z,
- 					struct mem_cgroup *mem_cont,
- 					int active);
-+extern void mem_cgroup_out_of_memory(struct mem_cgroup *mem);
+diff -puN init/Kconfig~cgroups-implement-namespace-tracking-subsystem-fix-order-of-cgroup-subsystems-in-init-kconfig init/Kconfig
+--- a/init/Kconfig~cgroups-implement-namespace-tracking-subsystem-fix-order-of-cgroup-subsystems-in-init-kconfig
++++ a/init/Kconfig
+@@ -292,6 +292,22 @@ config CGROUP_DEBUG
  
- static inline void mem_cgroup_uncharge_page(struct page *page)
- {
-diff -puN mm/memcontrol.c~memory-controller-oom-handling-v7 mm/memcontrol.c
---- a/mm/memcontrol.c~memory-controller-oom-handling-v7
-+++ a/mm/memcontrol.c
-@@ -322,6 +322,7 @@ int mem_cgroup_charge(struct page *pa
- 		}
+ 	  Say N if unsure
  
- 		css_put(&mem->css);
-+		mem_cgroup_out_of_memory(mem);
- 		goto free_pc;
- 	}
- 
-diff -puN mm/oom_kill.c~memory-controller-oom-handling-v7 mm/oom_kill.c
---- a/mm/oom_kill.c~memory-controller-oom-handling-v7
-+++ a/mm/oom_kill.c
-@@ -25,6 +25,7 @@
- #include <linux/cpuset.h>
- #include <linux/module.h>
- #include <linux/notifier.h>
-+#include <linux/memcontrol.h>
- 
- int sysctl_panic_on_oom;
- /* #define DEBUG */
-@@ -48,7 +49,8 @@ int sysctl_panic_on_oom;
-  *    of least surprise ... (be careful when you change it)
-  */
- 
--unsigned long badness(struct task_struct *p, unsigned long uptime)
-+unsigned long badness(struct task_struct *p, unsigned long uptime,
-+			struct mem_cgroup *mem)
- {
- 	unsigned long points, cpu_time, run_time, s;
- 	struct mm_struct *mm;
-@@ -61,6 +63,13 @@ unsigned long badness(struct task_struct
- 		return 0;
- 	}
- 
-+#ifdef CONFIG_CGROUP_MEM_CONT
-+	if (mem != NULL && mm->mem_cgroup != mem) {
-+		task_unlock(p);
-+		return 0;
-+	}
-+#endif
++config CGROUP_NS
++        bool "Namespace cgroup subsystem"
++        depends on CGROUPS
++        help
++          Provides a simple namespace cgroup subsystem to
++          provide hierarchical naming of sets of namespaces,
++          for instance virtual servers and checkpoint/restart
++          jobs.
 +
- 	/*
- 	 * The memory size of the process is the basis for the badness.
- 	 */
-@@ -198,7 +207,8 @@ static inline int constrained_alloc(stru
-  *
-  * (not docbooked, we don't want this one cluttering up the manual)
-  */
--static struct task_struct *select_bad_process(unsigned long *ppoints)
-+static struct task_struct *select_bad_process(unsigned long *ppoints,
-+						struct mem_cgroup *mem)
- {
- 	struct task_struct *g, *p;
- 	struct task_struct *chosen = NULL;
-@@ -252,7 +262,7 @@ static struct task_struct *select_bad_pr
- 		if (p->oomkilladj == OOM_DISABLE)
- 			continue;
- 
--		points = badness(p, uptime.tv_sec);
-+		points = badness(p, uptime.tv_sec, mem);
- 		if (points > *ppoints || !chosen) {
- 			chosen = p;
- 			*ppoints = points;
-@@ -364,6 +374,30 @@ static int oom_kill_process(struct task_
- 	return oom_kill_task(p);
- }
- 
-+#ifdef CONFIG_CGROUP_MEM_CONT
-+void mem_cgroup_out_of_memory(struct mem_cgroup *mem)
-+{
-+	unsigned long points = 0;
-+	struct task_struct *p;
++config CGROUP_CPUACCT
++	bool "Simple CPU accounting cgroup subsystem"
++	depends on CGROUPS
++	help
++	  Provides a simple Resource Controller for monitoring the
++	  total CPU consumed by the tasks in a cgroup
 +
-+	cgroup_lock();
-+	rcu_read_lock();
-+retry:
-+	p = select_bad_process(&points, mem);
-+	if (PTR_ERR(p) == -1UL)
-+		goto out;
-+
-+	if (!p)
-+		p = current;
-+
-+	if (oom_kill_process(p, points, "Memory cgroup out of memory"))
-+		goto retry;
-+out:
-+	rcu_read_unlock();
-+	cgroup_unlock();
-+}
-+#endif
-+
- static BLOCKING_NOTIFIER_HEAD(oom_notify_list);
+ config CPUSETS
+ 	bool "Cpuset support"
+ 	depends on SMP && CGROUPS
+@@ -323,27 +339,11 @@ config SYSFS_DEPRECATED
+ 	  If you are using a distro that was released in 2006 or later,
+ 	  it should be safe to say N here.
  
- int register_oom_notifier(struct notifier_block *nb)
-@@ -436,7 +470,7 @@ retry:
- 		 * Rambo mode: Shoot down a process and hope it solves whatever
- 		 * issues we may have.
- 		 */
--		p = select_bad_process(&points);
-+		p = select_bad_process(&points, NULL);
+-config CGROUP_NS
+-        bool "Namespace cgroup subsystem"
+-        select CGROUPS
+-        help
+-          Provides a simple namespace cgroup subsystem to
+-          provide hierarchical naming of sets of namespaces,
+-          for instance virtual servers and checkpoint/restart
+-          jobs.
+-
+ config PROC_PID_CPUSET
+ 	bool "Include legacy /proc/<pid>/cpuset file"
+ 	depends on CPUSETS
+ 	default y
  
- 		if (PTR_ERR(p) == -1UL)
- 			goto out;
+-config CGROUP_CPUACCT
+-	bool "Simple CPU accounting cgroup subsystem"
+-	depends on CGROUPS
+-	help
+-	  Provides a simple Resource Controller for monitoring the
+-	  total CPU consumed by the tasks in a cgroup
+-
+ config RELAY
+ 	bool "Kernel->user space relay support (formerly relayfs)"
+ 	help
 _
 
 --
