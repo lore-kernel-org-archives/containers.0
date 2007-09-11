@@ -1,16 +1,11 @@
-From: "Paul Menage" <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 01/29] task containersv11 basic task container framework
-Date: Tue, 11 Sep 2007 13:11:35 -0700
-Message-ID: <6599ad830709111311i21b1d677qa5fb9aa0b0e3452d@mail.gmail.com>
+From: menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org
+Subject: [PATCH 05/29] task containersv11 add container_clone interface
+Date: Tue, 11 Sep 2007 12:52:44 -0700
+Message-ID: <20070911200145.437472000@menage.corp.google.com>
 References: <20070911195239.997111000@menage.corp.google.com>
-	<20070911200144.779221000@menage.corp.google.com>
-	<20070911130731.e9df6e65.akpm@linux-foundation.org>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20070911130731.e9df6e65.akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
-Content-Disposition: inline
+Content-Disposition: inline;
+	filename=task-containersv11-add-container_clone-interface.patch
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -20,77 +15,214 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
-Cc: Kirill Korotaev <dev-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>, Paul Jackson <pj-sJ/iWh9BUns@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
+To: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
+Cc: Kirill Korotaev <dev-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>, Paul Jackson <pj-sJ/iWh9BUns@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Sigh. Quilt managed to send you all the new patches but not the
-[00/29] email that described the construction of the changes (this
-apparently just went to the containers list). See below.
+From: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
 
-Paul
+Add support for cgroup_clone(), a way to create new cgroups intended to
+be used for systems such as namespace unsharing.  A new subsystem callback,
+post_clone(), is added to allow subsystems to automatically configure cloned
+cgroups.
 
+Signed-off-by: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+Cc: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Cc: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+Cc: Dave Hansen <haveblue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Cc: Balbir Singh <balbir-xthvdsQ13ZrQT0dZR+AlfA@public.gmane.org>
+Cc: Paul Jackson <pj-sJ/iWh9BUns@public.gmane.org>
+Cc: Kirill Korotaev <dev-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+Cc: Herbert Poetzl <herbert-dBHVzrDq9nF4Lj/PQRBjDg@public.gmane.org>
+Cc: Srivatsa Vaddagiri <vatsa-xthvdsQ13ZrQT0dZR+AlfA@public.gmane.org>
+Cc: Cedric Le Goater <clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
+Signed-off-by: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
+---
 
-This patchset renames "Task Containers" to "Control Groups", in line with
-recent discussions.
+ Documentation/cgroups.txt |    7 +
+ include/linux/cgroup.h    |    3 
+ kernel/cgroup.c           |  135 +++++++++++++++++++++++++++++++++
+ 3 files changed, 145 insertions(+)
 
-These patches are drop-in replacements for those of the same names in
-the current -mm tree:
+diff -puN Documentation/cgroups.txt~task-cgroupsv11-add-cgroup_clone-interface Documentation/cgroups.txt
+--- a/Documentation/cgroups.txt~task-cgroupsv11-add-cgroup_clone-interface
++++ a/Documentation/cgroups.txt
+@@ -504,6 +504,13 @@ include/linux/cgroup.h for details). 
+ method can return an error code, the error code is currently not
+ always handled well.
+ 
++void post_clone(struct cgroup_subsys *ss, struct cgroup *cont)
++
++Called at the end of cgroup_clone() to do any paramater
++initialization which might be required before a task could attach.  For
++example in cpusets, no task may attach before 'cpus' and 'mems' are set
++up.
++
+ void bind(struct cgroup_subsys *ss, struct cgroup *root)
+ LL=callback_mutex
+ 
+diff -puN include/linux/cgroup.h~task-cgroupsv11-add-cgroup_clone-interface include/linux/cgroup.h
+--- a/include/linux/cgroup.h~task-cgroupsv11-add-cgroup_clone-interface
++++ a/include/linux/cgroup.h
+@@ -174,6 +174,7 @@ struct cgroup_subsys {
+ 	void (*exit)(struct cgroup_subsys *ss, struct task_struct *task);
+ 	int (*populate)(struct cgroup_subsys *ss,
+ 			struct cgroup *cont);
++	void (*post_clone)(struct cgroup_subsys *ss, struct cgroup *cont);
+ 	void (*bind)(struct cgroup_subsys *ss, struct cgroup *root);
+ 	int subsys_id;
+ 	int active;
+@@ -213,6 +214,8 @@ static inline struct cgroup* task_con
+ 
+ int cgroup_path(const struct cgroup *cont, char *buf, int buflen);
+ 
++int cgroup_clone(struct task_struct *tsk, struct cgroup_subsys *ss);
++
+ #else /* !CONFIG_CGROUPS */
+ 
+ static inline int cgroup_init_early(void) { return 0; }
+diff -puN kernel/cgroup.c~task-cgroupsv11-add-cgroup_clone-interface kernel/cgroup.c
+--- a/kernel/cgroup.c~task-cgroupsv11-add-cgroup_clone-interface
++++ a/kernel/cgroup.c
+@@ -1684,3 +1684,138 @@ void cgroup_exit(struct task_struct *
+ 	tsk->cgroups = init_task.cgroups;
+ 	task_unlock(tsk);
+ }
++
++/**
++ * cgroup_clone - duplicate the current cgroup in the hierarchy
++ * that the given subsystem is attached to, and move this task into
++ * the new child
++ */
++int cgroup_clone(struct task_struct *tsk, struct cgroup_subsys *subsys)
++{
++	struct dentry *dentry;
++	int ret = 0;
++	char nodename[MAX_CGROUP_TYPE_NAMELEN];
++	struct cgroup *parent, *child;
++	struct inode *inode;
++	struct css_set *cg;
++	struct cgroupfs_root *root;
++	struct cgroup_subsys *ss;
++
++	/* We shouldn't be called by an unregistered subsystem */
++	BUG_ON(!subsys->active);
++
++	/* First figure out what hierarchy and cgroup we're dealing
++	 * with, and pin them so we can drop cgroup_mutex */
++	mutex_lock(&cgroup_mutex);
++ again:
++	root = subsys->root;
++	if (root == &rootnode) {
++		printk(KERN_INFO
++		       "Not cloning cgroup for unused subsystem %s\n",
++		       subsys->name);
++		mutex_unlock(&cgroup_mutex);
++		return 0;
++	}
++	cg = &tsk->cgroups;
++	parent = task_cgroup(tsk, subsys->subsys_id);
++
++	snprintf(nodename, MAX_CGROUP_TYPE_NAMELEN, "node_%d", tsk->pid);
++
++	/* Pin the hierarchy */
++	atomic_inc(&parent->root->sb->s_active);
++
++	mutex_unlock(&cgroup_mutex);
++
++	/* Now do the VFS work to create a cgroup */
++	inode = parent->dentry->d_inode;
++
++	/* Hold the parent directory mutex across this operation to
++	 * stop anyone else deleting the new cgroup */
++	mutex_lock(&inode->i_mutex);
++	dentry = cgroup_get_dentry(parent->dentry, nodename);
++	if (IS_ERR(dentry)) {
++		printk(KERN_INFO
++		       "Couldn't allocate dentry for %s: %ld\n", nodename,
++		       PTR_ERR(dentry));
++		ret = PTR_ERR(dentry);
++		goto out_release;
++	}
++
++	/* Create the cgroup directory, which also creates the cgroup */
++	ret = vfs_mkdir(inode, dentry, S_IFDIR | 0755);
++	child = __d_cont(dentry);
++	dput(dentry);
++	if (ret) {
++		printk(KERN_INFO
++		       "Failed to create cgroup %s: %d\n", nodename,
++		       ret);
++		goto out_release;
++	}
++
++	if (!child) {
++		printk(KERN_INFO
++		       "Couldn't find new cgroup %s\n", nodename);
++		ret = -ENOMEM;
++		goto out_release;
++	}
++
++	/* The cgroup now exists. Retake cgroup_mutex and check
++	 * that we're still in the same state that we thought we
++	 * were. */
++	mutex_lock(&cgroup_mutex);
++	if ((root != subsys->root) ||
++	    (parent != task_cgroup(tsk, subsys->subsys_id))) {
++		/* Aargh, we raced ... */
++		mutex_unlock(&inode->i_mutex);
++
++		deactivate_super(parent->root->sb);
++		/* The cgroup is still accessible in the VFS, but
++		 * we're not going to try to rmdir() it at this
++		 * point. */
++		printk(KERN_INFO
++		       "Race in cgroup_clone() - leaking cgroup %s\n",
++		       nodename);
++		goto again;
++	}
++
++	/* do any required auto-setup */
++	for_each_subsys(root, ss) {
++		if (ss->post_clone)
++			ss->post_clone(ss, child);
++	}
++
++	/* All seems fine. Finish by moving the task into the new cgroup */
++	ret = attach_task(child, tsk);
++	mutex_unlock(&cgroup_mutex);
++
++ out_release:
++	mutex_unlock(&inode->i_mutex);
++	deactivate_super(parent->root->sb);
++	return ret;
++}
++
++/*
++ * See if "cont" is a descendant of the current task's cgroup in
++ * the appropriate hierarchy
++ *
++ * If we are sending in dummytop, then presumably we are creating
++ * the top cgroup in the subsystem.
++ *
++ * Called only by the ns (nsproxy) cgroup.
++ */
++int cgroup_is_descendant(const struct cgroup *cont)
++{
++	int ret;
++	struct cgroup *target;
++	int subsys_id;
++
++	if (cont == dummytop)
++		return 1;
++
++	get_first_subsys(cont, NULL, &subsys_id);
++	target = task_cgroup(current, subsys_id);
++	while (cont != target && cont!= cont->top_cgroup)
++		cont = cont->parent;
++	ret = (cont == target);
++	return ret;
++}
+_
 
-
-task-containersv11-basic-task-container-framework.patch
-task-containersv11-basic-task-container-framework-fix.patch
-task-containersv11-add-tasks-file-interface.patch
-task-containersv11-add-fork-exit-hooks.patch
-task-containersv11-add-container_clone-interface.patch
-task-containersv11-add-procfs-interface.patch
-task-containersv11-shared-container-subsystem-group-arrays.patch
-task-containersv11-shared-container-subsystem-group-arrays-avoid-lockdep-warning.patch
-task-containersv11-shared-container-subsystem-group-arrays-include-fix.patch
-task-containersv11-automatic-userspace-notification-of-idle-containers.patch
-task-containersv11-make-cpusets-a-client-of-containers.patch
-task-containersv11-example-cpu-accounting-subsystem.patch
-task-containersv11-simple-task-container-debug-info-subsystem.patch
-
-add-containerstats-v3.patch
-add-containerstats-v3-fix.patch
-
-containers-implement-namespace-tracking-subsystem.patch
-containers-implement-namespace-tracking-subsystem-fix-order-of-container-subsystems-in-init-kconfig.patch
-
-
-memory-controller-add-documentation.patch
-memory-controller-resource-counters-v7.patch
-memory-controller-resource-counters-v7-fix.patch
-memory-controller-containers-setup-v7.patch
-memory-controller-accounting-setup-v7.patch
-memory-controller-memory-accounting-v7.patch
-memory-controller-task-migration-v7.patch
-memory-controller-add-per-container-lru-and-reclaim-v7.patch
-memory-controller-add-per-container-lru-and-reclaim-v7-fix.patch
-memory-controller-oom-handling-v7.patch
-memory-controller-add-switch-to-control-what-type-of-pages-to-limit-v7.patch
-memory-controller-make-page_referenced-container-aware-v7.patch
-
-They are constructed by running the following perl script over the
-original versions of the patches in 2.6.23-rc4-mm1:
-
-perl -pi -e 's/subcontainer/child cgroup/g;
-s/(\b|_)container(\b|_(?!of)|fs|s)/$1cgroup$2/g;
-s/CONTAINER(_|S)/CGROUP$1/g; s/Container/Control Group/g;
-s/css_group/css_set/g;' patches/*.patch
-
-
-Owners of other control-group related patches may want to run this
-script or some variation of it on their own patches.
-
-
-
-On 9/11/07, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org> wrote:
-> On Tue, 11 Sep 2007 12:52:40 -0700
-> menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org wrote:
->
-> > Generic Process Control Groups
->
-> How do these patches differ from the ones we already have?
->
+--
