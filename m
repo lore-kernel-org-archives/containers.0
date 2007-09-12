@@ -1,33 +1,38 @@
 From: David Miller <davem@davemloft.net>
-Subject: Re: [PATCH 10/16] net: Make packet reception network namespace safe
-Date: Wed, 12 Sep 2007 04:00:47 -0700 (PDT)
-Message-ID: <20070912.040047.70208873.davem@davemloft.net>
-References: <m1sl5ovolm.fsf_-_@ebiederm.dsl.xmission.com>
-	<m1odgcvoje.fsf_-_@ebiederm.dsl.xmission.com>
+Subject: Re: [PATCH 11/16] net: Make device event notification network
+ namespace safe
+Date: Wed, 12 Sep 2007 04:02:55 -0700 (PDT)
+Message-ID: <20070912.040255.35673679.davem@davemloft.net>
+References: <m1odgcvoje.fsf_-_@ebiederm.dsl.xmission.com>
 	<m1k5r0voh4.fsf_-_@ebiederm.dsl.xmission.com>
+	<m1fy1ovoeo.fsf_-_@ebiederm.dsl.xmission.com>
 Mime-Version: 1.0
 Content-Type: Text/Plain; charset=us-ascii
 Content-Transfer-Encoding: 7bit
 Return-path: <netdev-owner@vger.kernel.org>
-In-Reply-To: <m1k5r0voh4.fsf_-_@ebiederm.dsl.xmission.com>
+In-Reply-To: <m1fy1ovoeo.fsf_-_@ebiederm.dsl.xmission.com>
 Sender: netdev-owner@vger.kernel.org
 To: ebiederm@xmission.com
 Cc: netdev@vger.kernel.org, containers@lists.osdl.org
 List-Id: containers.vger.kernel.org
 
 From: ebiederm@xmission.com (Eric W. Biederman)
-Date: Sat, 08 Sep 2007 15:25:43 -0600
+Date: Sat, 08 Sep 2007 15:27:11 -0600
 
 > 
-> This patch modifies every packet receive function
-> registered with dev_add_pack() to drop packets if they
-> are not from the initial network namespace.
+> Every user of the network device notifiers is either a protocol
+> stack or a pseudo device.  If a protocol stack that does not have
+> support for multiple network namespaces receives an event for a
+> device that is not in the initial network namespace it quite possibly
+> can get confused and do the wrong thing.
 > 
-> This should ensure that the various network stacks do
-> not receive packets in a anything but the initial network
-> namespace until the code has been converted and is ready
-> for them.
+> To avoid problems until all of the protocol stacks are converted
+> this patch modifies all netdev event handlers to ignore events on
+> devices that are not in the initial network namespace.
+> 
+> As the rest of the code is made network namespace aware these
+> checks can be removed.
 > 
 > Signed-off-by: Eric W. Biederman <ebiederm@xmission.com>
 
-Applied to net-2.6.24, thanks.
+Applied, thanks.
