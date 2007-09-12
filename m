@@ -1,38 +1,41 @@
 From: David Miller <davem@davemloft.net>
-Subject: Re: [PATCH 11/16] net: Make device event notification network
- namespace safe
-Date: Wed, 12 Sep 2007 04:02:55 -0700 (PDT)
-Message-ID: <20070912.040255.35673679.davem@davemloft.net>
-References: <m1odgcvoje.fsf_-_@ebiederm.dsl.xmission.com>
-	<m1k5r0voh4.fsf_-_@ebiederm.dsl.xmission.com>
+Subject: Re: [PATCH 12/16] net: Support multiple network namespaces with
+ netlink
+Date: Wed, 12 Sep 2007 04:06:16 -0700 (PDT)
+Message-ID: <20070912.040616.38701475.davem@davemloft.net>
+References: <m1k5r0voh4.fsf_-_@ebiederm.dsl.xmission.com>
 	<m1fy1ovoeo.fsf_-_@ebiederm.dsl.xmission.com>
+	<m1bqccvock.fsf_-_@ebiederm.dsl.xmission.com>
 Mime-Version: 1.0
 Content-Type: Text/Plain; charset=us-ascii
 Content-Transfer-Encoding: 7bit
 Return-path: <netdev-owner@vger.kernel.org>
-In-Reply-To: <m1fy1ovoeo.fsf_-_@ebiederm.dsl.xmission.com>
+In-Reply-To: <m1bqccvock.fsf_-_@ebiederm.dsl.xmission.com>
 Sender: netdev-owner@vger.kernel.org
 To: ebiederm@xmission.com
 Cc: netdev@vger.kernel.org, containers@lists.osdl.org
 List-Id: containers.vger.kernel.org
 
 From: ebiederm@xmission.com (Eric W. Biederman)
-Date: Sat, 08 Sep 2007 15:27:11 -0600
+Date: Sat, 08 Sep 2007 15:28:27 -0600
 
 > 
-> Every user of the network device notifiers is either a protocol
-> stack or a pseudo device.  If a protocol stack that does not have
-> support for multiple network namespaces receives an event for a
-> device that is not in the initial network namespace it quite possibly
-> can get confused and do the wrong thing.
+> Each netlink socket will live in exactly one network namespace,
+> this includes the controlling kernel sockets.
 > 
-> To avoid problems until all of the protocol stacks are converted
-> this patch modifies all netdev event handlers to ignore events on
-> devices that are not in the initial network namespace.
+> This patch updates all of the existing netlink protocols
+> to only support the initial network namespace.  Request
+> by clients in other namespaces will get -ECONREFUSED.
+> As they would if the kernel did not have the support for
+> that netlink protocol compiled in.
 > 
-> As the rest of the code is made network namespace aware these
-> checks can be removed.
+> As each netlink protocol is updated to be multiple network
+> namespace safe it can register multiple kernel sockets
+> to acquire a presence in the rest of the network namespaces.
+> 
+> The implementation in af_netlink is a simple filter implementation
+> at hash table insertion and hash table look up time.
 > 
 > Signed-off-by: Eric W. Biederman <ebiederm@xmission.com>
 
-Applied, thanks.
+Applied to net-2.6.24, thanks.
