@@ -1,110 +1,42 @@
-From: "Dmitry Adamushko" <dmitry.adamushko@gmail.com>
-Subject: Re: [PATCH] Hookup group-scheduler with task container infrastructure
-Date: Wed, 12 Sep 2007 18:25:37 +0200
-Message-ID: <b647ffbd0709120925i690ecb11i975149037fc72979@mail.gmail.com>
-References: <20070910171049.GA16048@linux.vnet.ibm.com>
-	 <Pine.LNX.4.64.0709101903220.5368@fbirervta.pbzchgretzou.qr>
-	 <20070910172334.GB19100@linux.vnet.ibm.com>
-	 <20070910102259.dc45a481.akpm@linux-foundation.org>
-	 <20070910174649.GA16222@linux.vnet.ibm.com>
-	 <b647ffbd0709101528i7440a0f9m9837065a43e4a720@mail.gmail.com>
-	 <20070911044145.GC16222@linux.vnet.ibm.com>
-	 <b647ffbd0709110253y7d9564c4j88aa134330e2a292@mail.gmail.com>
-	 <20070912114202.GA30385@linux.vnet.ibm.com>
+From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
+Subject: netns45
+Date: Wed, 12 Sep 2007 10:47:55 -0600
+Message-ID: <m1wsuv96f8.fsf_-_@ebiederm.dsl.xmission.com>
+References: <m11wefgfl0.fsf@ebiederm.dsl.xmission.com>
+	<m1wsw7f0r0.fsf@ebiederm.dsl.xmission.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Content-Transfer-Encoding: 7bit
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1765727AbXILQZw@vger.kernel.org>
-In-Reply-To: <20070912114202.GA30385@linux.vnet.ibm.com>
-Content-Disposition: inline
-Sender: linux-kernel-owner@vger.kernel.org
-To: vatsa@linux.vnet.ibm.com
-Cc: Andrew Morton <akpm@linux-foundation.org>, ckrm-tech@lists.sourceforge.net, linux-kernel@vger.kernel.org, containers@lists.osdl.org, Jan Engelhardt <jengelh@computergmbh.de>, Ingo Molnar <mingo@elte.hu>, dhaval@linux.vnet.ibm.com, menage@google.com
+Content-Type: text/plain; charset=us-ascii
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <m1wsw7f0r0.fsf-T1Yj925okcoyDheHMi7gv2pdwda3JcWeAL8bYrjMMd8@public.gmane.org> (Eric W. Biederman's
+	message of "Tue, 07 Aug 2007 16:17:23 -0600")
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
+Cc: Benjamin Thery <benjamin.thery-6ktuUTfB/bM@public.gmane.org>, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>, "Denis V. Lunev" <den-3ImXcnM4P+0@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Hi Srivatsa,
 
-please find a few more minor comments below.
+Ok just to keep everyone in sync.
 
-> [ ... ]
-> +
-> +/* destroy runqueue etc associated with a task group */
-> +static void sched_destroy_group(struct container_subsys *ss,
-> +                                       struct container *cont)
-> +{
-> +       struct task_grp *tg = container_tg(cont);
-> +       struct cfs_rq *cfs_rq;
-> +       struct sched_entity *se;
-> +       int i;
-> +
-> +       for_each_possible_cpu(i) {
-> +               cfs_rq = tg->cfs_rq[i];
-> +               list_del_rcu(&cfs_rq->leaf_cfs_rq_list);
-> +       }
-> +
-> +       /* wait for possible concurrent references to cfs_rqs complete */
-> +       synchronize_sched();
-> +
-> +       /* now it should be safe to free those cfs_rqs */
-> +       for_each_possible_cpu(i) {
-> +               cfs_rq = tg->cfs_rq[i];
-> +               kfree(cfs_rq);
-> +
-> +               se = tg->se[i];
-> +               kfree(se);
-> +       }
-> +
-> +       kfree(tg);
-> +}
+I just uploaded a version of my netns tree up to kernel.org rebased
+on top of what David Miller has just merged.
 
-kfree(tg->cfs_rq) && kfree(tg->se) ?
+git://git.kernel.org/pub/scm/linux/kernel/git/ebiederm/linux-2.6-netns.git#netns/v2.6.23-rc5netns45
 
+Once things have settled down a bit I will figure out what needs to be
+sent next.
 
-> +
-> +/* change task's runqueue when it moves between groups */
-> +static void sched_move_task(struct container_subsys *ss, struct container *cont,
-> +                       struct container *old_cont, struct task_struct *tsk)
-> +{
-> +       int on_rq, running;
-> +       unsigned long flags;
-> +       struct rq *rq;
-> +
-> +       rq = task_rq_lock(tsk, &flags);
-> +
-> +       if (tsk->sched_class != &fair_sched_class)
-> +               goto done;
+I will probably concentrate on my miscellaneous bug fixes and the
+sysfs work.
 
-this check should be redundant now with sched_can_attach() in place.
+Daniel if you guys have any bug fixes for me I will be happy to apply
+them, so the don't get forgotten.
 
-
-> +static void set_se_shares(struct sched_entity *se, unsigned long shares)
-> +{
-> +       struct cfs_rq *cfs_rq = se->cfs_rq;
-> +       struct rq *rq = cfs_rq->rq;
-> +       int on_rq;
-> +
-> +       spin_lock_irq(&rq->lock);
-> +
-> +       on_rq = se->on_rq;
-> +       if (on_rq)
-> +               __dequeue_entity(cfs_rq, se);
-> +
-> +       se->load.weight = shares;
-> +       se->load.inv_weight = div64_64((1ULL<<32), shares);
-
-A bit of nit-picking... are you sure, there is no need in non '__'
-versions of dequeue/enqueu() here (at least, for the sake of
-update_curr())? Although, I don't have -mm at hand at this very moment
-and original -rc4 (that I have at hand) doesn't already have
-'se->load' at all... so will look later.
-
->
-> --
-> Regards,
-> vatsa
->
-
-
--- 
-Best regards,
-Dmitry Adamushko
+Eric
