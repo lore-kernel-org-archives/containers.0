@@ -1,25 +1,49 @@
-From: Srivatsa Vaddagiri <vatsa@linux.vnet.ibm.com>
-Subject: Re: [PATCH] Hookup group-scheduler with task container infrastructure
-Date: Wed, 12 Sep 2007 17:40:42 +0530
-Message-ID: <20070912121042.GI16222@linux.vnet.ibm.com>
-References: <20070910171049.GA16048@linux.vnet.ibm.com> <Pine.LNX.4.64.0709101903220.5368@fbirervta.pbzchgretzou.qr> <20070910172334.GB19100@linux.vnet.ibm.com> <20070910102259.dc45a481.akpm@linux-foundation.org> <20070910174649.GA16222@linux.vnet.ibm.com> <b647ffbd0709101528i7440a0f9m9837065a43e4a720@mail.gmail.com> <20070911044145.GC16222@linux.vnet.ibm.com> <b647ffbd0709110253y7d9564c4j88aa134330e2a292@mail.gmail.com> <20070912114202.GA30385@linux.vnet.ibm.com>
-Reply-To: vatsa@linux.vnet.ibm.com
+From: David Miller <davem@davemloft.net>
+Subject: Re: [PATCH 17/16] net: Disable netfilter sockopts when not in the
+ initial network namespace
+Date: Wed, 12 Sep 2007 05:03:11 -0700 (PDT)
+Message-ID: <20070912.050311.78725619.davem@davemloft.net>
+References: <m1tzq4u92n.fsf_-_@ebiederm.dsl.xmission.com>
+	<m1ps0su8wv.fsf_-_@ebiederm.dsl.xmission.com>
+	<20070912.045903.104046208.davem@davemloft.net>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S967292AbXILMAa@vger.kernel.org>
-Content-Disposition: inline
-In-Reply-To: <20070912114202.GA30385@linux.vnet.ibm.com>
-Sender: linux-kernel-owner@vger.kernel.org
-To: Dmitry Adamushko <dmitry.adamushko@gmail.com>
-Cc: menage@google.com, ckrm-tech@lists.sourceforge.net, linux-kernel@vger.kernel.org, Jan Engelhardt <jengelh@computergmbh.de>, containers@lists.osdl.org, Andrew Morton <akpm@linux-foundation.org>, Ingo Molnar <mingo@elte.hu>
+Content-Type: Text/Plain; charset=us-ascii
+Content-Transfer-Encoding: 7bit
+Return-path: <netdev-owner@vger.kernel.org>
+In-Reply-To: <20070912.045903.104046208.davem@davemloft.net>
+Sender: netdev-owner@vger.kernel.org
+To: ebiederm@xmission.com
+Cc: netdev@vger.kernel.org, containers@lists.osdl.org
 List-Id: containers.vger.kernel.org
 
-On Wed, Sep 12, 2007 at 05:12:02PM +0530, Srivatsa Vaddagiri wrote:
-> Yes. To emphasise this code doesn't support real-time tasks in a container, I 
-> am returning -ENOTSUP when trying to move a rt-task into a container.
 
-s/ENOTSUP/EINVAL
+I added the following patch to net-2.6.24 to kill a warning
+since net_alloc() has no users (yet).
 
--- 
-Regards,
-vatsa
+commit f444fa9b5d70b3d431e1554e0975e012514c39f3
+Author: David S. Miller <davem@kimchee.(none)>
+Date:   Wed Sep 12 14:01:08 2007 +0200
+
+    [NET]: #if 0 out net_alloc() for now.
+    
+    We will undo this once it is actually used.
+    
+    Signed-off-by: David S. Miller <davem@davemloft.net>
+
+diff --git a/net/core/net_namespace.c b/net/core/net_namespace.c
+index f259a9b..1fc513c 100644
+--- a/net/core/net_namespace.c
++++ b/net/core/net_namespace.c
+@@ -32,10 +32,12 @@ void net_unlock(void)
+ 	mutex_unlock(&net_list_mutex);
+ }
+ 
++#if 0
+ static struct net *net_alloc(void)
+ {
+ 	return kmem_cache_alloc(net_cachep, GFP_KERNEL);
+ }
++#endif
+ 
+ static void net_free(struct net *net)
+ {
