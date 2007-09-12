@@ -1,174 +1,110 @@
-From: ebiederm@xmission.com (Eric W. Biederman)
-Subject: [PATCH] net: Fix race when opening a proc file while a network namespace is exiting.
-Date: Wed, 12 Sep 2007 10:24:34 -0600
-Message-ID: <m14phzam2l.fsf@ebiederm.dsl.xmission.com>
+From: "Dmitry Adamushko" <dmitry.adamushko@gmail.com>
+Subject: Re: [PATCH] Hookup group-scheduler with task container infrastructure
+Date: Wed, 12 Sep 2007 18:25:37 +0200
+Message-ID: <b647ffbd0709120925i690ecb11i975149037fc72979@mail.gmail.com>
+References: <20070910171049.GA16048@linux.vnet.ibm.com>
+	 <Pine.LNX.4.64.0709101903220.5368@fbirervta.pbzchgretzou.qr>
+	 <20070910172334.GB19100@linux.vnet.ibm.com>
+	 <20070910102259.dc45a481.akpm@linux-foundation.org>
+	 <20070910174649.GA16222@linux.vnet.ibm.com>
+	 <b647ffbd0709101528i7440a0f9m9837065a43e4a720@mail.gmail.com>
+	 <20070911044145.GC16222@linux.vnet.ibm.com>
+	 <b647ffbd0709110253y7d9564c4j88aa134330e2a292@mail.gmail.com>
+	 <20070912114202.GA30385@linux.vnet.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Return-path: <netdev-owner@vger.kernel.org>
-Sender: netdev-owner@vger.kernel.org
-To: David Miller <davem@davemloft.net>
-Cc: "Paul E. McKenney" <paulmck@linux.vnet.ibm.com>, netdev@vger.kernel.org, Linux Containers <containers@lists.osdl.org>
+Content-Type: text/plain; charset=ISO-8859-1
+Content-Transfer-Encoding: 7bit
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1765727AbXILQZw@vger.kernel.org>
+In-Reply-To: <20070912114202.GA30385@linux.vnet.ibm.com>
+Content-Disposition: inline
+Sender: linux-kernel-owner@vger.kernel.org
+To: vatsa@linux.vnet.ibm.com
+Cc: Andrew Morton <akpm@linux-foundation.org>, ckrm-tech@lists.sourceforge.net, linux-kernel@vger.kernel.org, containers@lists.osdl.org, Jan Engelhardt <jengelh@computergmbh.de>, Ingo Molnar <mingo@elte.hu>, dhaval@linux.vnet.ibm.com, menage@google.com
 List-Id: containers.vger.kernel.org
 
+Hi Srivatsa,
 
-The problem:  proc_net files remember which network namespace the are
-against but do not remember hold a reference count (as that would pin
-the network namespace).   So we currently have a small window where
-the reference count on a network namespace may be incremented when opening
-a /proc file when it has already gone to zero.
+please find a few more minor comments below.
 
-To fix this introduce maybe_get_net and get_proc_net.
+> [ ... ]
+> +
+> +/* destroy runqueue etc associated with a task group */
+> +static void sched_destroy_group(struct container_subsys *ss,
+> +                                       struct container *cont)
+> +{
+> +       struct task_grp *tg = container_tg(cont);
+> +       struct cfs_rq *cfs_rq;
+> +       struct sched_entity *se;
+> +       int i;
+> +
+> +       for_each_possible_cpu(i) {
+> +               cfs_rq = tg->cfs_rq[i];
+> +               list_del_rcu(&cfs_rq->leaf_cfs_rq_list);
+> +       }
+> +
+> +       /* wait for possible concurrent references to cfs_rqs complete */
+> +       synchronize_sched();
+> +
+> +       /* now it should be safe to free those cfs_rqs */
+> +       for_each_possible_cpu(i) {
+> +               cfs_rq = tg->cfs_rq[i];
+> +               kfree(cfs_rq);
+> +
+> +               se = tg->se[i];
+> +               kfree(se);
+> +       }
+> +
+> +       kfree(tg);
+> +}
 
-maybe_get_net increments the network namespace reference count only if it is
-greater then zero, ensuring we don't increment a reference count after it
-has gone to zero.
+kfree(tg->cfs_rq) && kfree(tg->se) ?
 
-get_proc_net handles all of the magic to go from a proc inode to the network
-namespace instance and call maybe_get_net on it.
 
-PROC_NET the old accessor is removed so that we don't get confused and use
-the wrong helper function.
+> +
+> +/* change task's runqueue when it moves between groups */
+> +static void sched_move_task(struct container_subsys *ss, struct container *cont,
+> +                       struct container *old_cont, struct task_struct *tsk)
+> +{
+> +       int on_rq, running;
+> +       unsigned long flags;
+> +       struct rq *rq;
+> +
+> +       rq = task_rq_lock(tsk, &flags);
+> +
+> +       if (tsk->sched_class != &fair_sched_class)
+> +               goto done;
 
-Then I fix up the callers to use get_proc_net and handle the case case
-where get_proc_net returns NULL.  In that case I return -ENXIO because
-effectively the network namespace has already gone away so the files
-we are trying to access don't exist anymore.
+this check should be redundant now with sched_can_attach() in place.
 
-Signed-off-by: Eric W. Biederman <ebiederm@xmission.com>
----
- fs/proc/proc_net.c          |    6 ++++++
- include/linux/proc_fs.h     |    5 +----
- include/net/net_namespace.h |   12 ++++++++++++
- net/core/dev.c              |    6 +++++-
- net/core/dev_mcast.c        |    6 +++++-
- net/netlink/af_netlink.c    |    6 +++++-
- net/wireless/wext.c         |    6 +++++-
- 7 files changed, 39 insertions(+), 8 deletions(-)
 
-diff --git a/fs/proc/proc_net.c b/fs/proc/proc_net.c
-index 358930a..85cc8e8 100644
---- a/fs/proc/proc_net.c
-+++ b/fs/proc/proc_net.c
-@@ -51,6 +51,12 @@ void proc_net_remove(struct net *net, const char *name)
- }
- EXPORT_SYMBOL_GPL(proc_net_remove);
- 
-+struct net *get_proc_net(const struct inode *inode)
-+{
-+	return maybe_get_net(PDE_NET(PDE(inode)));
-+}
-+EXPORT_SYMBOL_GPL(get_proc_net);
-+
- static struct proc_dir_entry *proc_net_shadow;
- 
- static struct dentry *proc_net_shadow_dentry(struct dentry *parent,
-diff --git a/include/linux/proc_fs.h b/include/linux/proc_fs.h
-index 5964670..20741f6 100644
---- a/include/linux/proc_fs.h
-+++ b/include/linux/proc_fs.h
-@@ -270,10 +270,7 @@ static inline struct net *PDE_NET(struct proc_dir_entry *pde)
- 	return pde->parent->data;
- }
- 
--static inline struct net *PROC_NET(const struct inode *inode)
--{
--	return PDE_NET(PDE(inode));
--}
-+struct net *get_proc_net(const struct inode *inode);
- 
- struct proc_maps_private {
- 	struct pid *pid;
-diff --git a/include/net/net_namespace.h b/include/net/net_namespace.h
-index fac42db..dda03f3 100644
---- a/include/net/net_namespace.h
-+++ b/include/net/net_namespace.h
-@@ -39,6 +39,18 @@ static inline struct net *get_net(struct net *net)
- 	return net;
- }
- 
-+static inline struct net *maybe_get_net(struct net *net)
-+{
-+	/* Used when we know struct net exists but we
-+	 * aren't guaranteed a previous reference count
-+	 * exists.  If the reference count is zero this
-+	 * function fails and returns NULL.
-+	 */
-+	if (!atomic_inc_not_zero(&net->count))
-+		net = NULL;
-+	return net;
-+}
-+
- static inline void put_net(struct net *net)
- {
- 	if (atomic_dec_and_test(&net->count))
-diff --git a/net/core/dev.c b/net/core/dev.c
-index a22a95d..f119dc0 100644
---- a/net/core/dev.c
-+++ b/net/core/dev.c
-@@ -2446,7 +2446,11 @@ static int dev_seq_open(struct inode *inode, struct file *file)
- 	res =  seq_open(file, &dev_seq_ops);
- 	if (!res) {
- 		seq = file->private_data;
--		seq->private = get_net(PROC_NET(inode));
-+		seq->private = get_proc_net(inode);
-+		if (!seq->private) {
-+			seq_release(inode, file);
-+			res = -ENXIO;
-+		}
- 	}
- 	return res;
- }
-diff --git a/net/core/dev_mcast.c b/net/core/dev_mcast.c
-index 1c4f619..896b0ca 100644
---- a/net/core/dev_mcast.c
-+++ b/net/core/dev_mcast.c
-@@ -246,7 +246,11 @@ static int dev_mc_seq_open(struct inode *inode, struct file *file)
- 	res = seq_open(file, &dev_mc_seq_ops);
- 	if (!res) {
- 		seq = file->private_data;
--		seq->private = get_net(PROC_NET(inode));
-+		seq->private = get_proc_net(inode);
-+		if (!seq->private) {
-+			seq_release(inode, file);
-+			res = -ENXIO;
-+		}
- 	}
- 	return res;
- }
-diff --git a/net/netlink/af_netlink.c b/net/netlink/af_netlink.c
-index 3029f86..dc9f8c2 100644
---- a/net/netlink/af_netlink.c
-+++ b/net/netlink/af_netlink.c
-@@ -1859,7 +1859,11 @@ static int netlink_seq_open(struct inode *inode, struct file *file)
- 
- 	seq = file->private_data;
- 	seq->private = iter;
--	iter->net = get_net(PROC_NET(inode));
-+	iter->net = get_proc_net(inode);
-+	if (!iter->net) {
-+		seq_release_private(inode, file);
-+		return -ENXIO;
-+	}
- 	return 0;
- }
- 
-diff --git a/net/wireless/wext.c b/net/wireless/wext.c
-index e8b3409..85e5f9d 100644
---- a/net/wireless/wext.c
-+++ b/net/wireless/wext.c
-@@ -678,7 +678,11 @@ static int wireless_seq_open(struct inode *inode, struct file *file)
- 	res = seq_open(file, &wireless_seq_ops);
- 	if (!res) {
- 		seq = file->private_data;
--		seq->private = get_net(PROC_NET(inode));
-+		seq->private = get_proc_net(inode);
-+		if (!seq->private) {
-+			seq_release(inode, file);
-+			res = -ENXIO;
-+		}
- 	}
- 	return res;
- }
+> +static void set_se_shares(struct sched_entity *se, unsigned long shares)
+> +{
+> +       struct cfs_rq *cfs_rq = se->cfs_rq;
+> +       struct rq *rq = cfs_rq->rq;
+> +       int on_rq;
+> +
+> +       spin_lock_irq(&rq->lock);
+> +
+> +       on_rq = se->on_rq;
+> +       if (on_rq)
+> +               __dequeue_entity(cfs_rq, se);
+> +
+> +       se->load.weight = shares;
+> +       se->load.inv_weight = div64_64((1ULL<<32), shares);
+
+A bit of nit-picking... are you sure, there is no need in non '__'
+versions of dequeue/enqueu() here (at least, for the sake of
+update_curr())? Although, I don't have -mm at hand at this very moment
+and original -rc4 (that I have at hand) doesn't already have
+'se->load' at all... so will look later.
+
+>
+> --
+> Regards,
+> vatsa
+>
+
+
 -- 
-1.5.3.rc6.17.g1911
-
+Best regards,
+Dmitry Adamushko
