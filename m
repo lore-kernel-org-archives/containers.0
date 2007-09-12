@@ -1,83 +1,53 @@
 From: dlezcano@fr.ibm.com
-Subject: [net-2.6.24][NETNS][patch 3/3] fix bad macro definition
-Date: Wed, 12 Sep 2007 14:38:14 +0200
-Message-ID: <20070912124429.288622995@mai.toulouse-stg.fr.ibm.com>
+Subject: [net-2.6.24][NETNS][patch 1/3] fix export symbols
+Date: Wed, 12 Sep 2007 14:38:12 +0200
+Message-ID: <20070912124414.640551634@mai.toulouse-stg.fr.ibm.com>
 References: <20070912123811.075269132@mai.toulouse-stg.fr.ibm.com>
 Return-path: <netdev-owner@vger.kernel.org>
-Content-Disposition: inline; filename=net-fix-llc-core-init-panic.patch
+Content-Disposition: inline; filename=net-fix-export-symbol.patch
 Sender: netdev-owner@vger.kernel.org
 To: davem@davemloft.net
-Cc: ebiederm@xmission.com, containers@lists.osdl.org, netdev@vger.kernel.org, Benjamin Thery <benjamin.thery@bull.net>
+Cc: ebiederm@xmission.com, containers@lists.osdl.org, netdev@vger.kernel.org, Mark Nelson <markn@au1.ibm.com>, Benjamin Thery <benjamin.thery@bull.net>
 List-Id: containers.vger.kernel.org
 
 From: Daniel Lezcano <dlezcano@fr.ibm.com>
 
-The macro definition is bad. When calling next_net_device with 
-parameter name "dev", the resulting code is:
-	  struct net_device *dev = dev and that leads to an unexpected
-behavior. Especially when llc_core is compiled in, the kernel panics
-at boot time.
-The patchset change macro definition with static inline functions as
-they were defined before.
+Add the appropriate EXPORT_SYMBOLS for proc_net_create,
+proc_net_fops_create and proc_net_remove to fix errors when
+compiling allmodconfig
 
-Signed-off-by: Benjamin Thery <benjamin.thery@bull.net>
-Signed-off-by: Daniel Lezcano <dlezcano@fr.ibm.com>
+Signed-off-by: Mark Nelson <markn@au1.ibm.com>
+Acked-by: Benjamin Thery <benjamin.thery@bull.net>
 ---
- include/linux/netdevice.h |   35 +++++++++++++++++------------------
- 1 file changed, 17 insertions(+), 18 deletions(-)
+ fs/proc/proc_net.c |    4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
 
-Index: net-2.6.24/include/linux/netdevice.h
+Index: net-2.6.24/fs/proc/proc_net.c
 ===================================================================
---- net-2.6.24.orig/include/linux/netdevice.h
-+++ net-2.6.24/include/linux/netdevice.h
-@@ -41,7 +41,8 @@
- #include <linux/dmaengine.h>
- #include <linux/workqueue.h>
+--- net-2.6.24.orig/fs/proc/proc_net.c
++++ net-2.6.24/fs/proc/proc_net.c
+@@ -31,6 +31,7 @@
+ {
+ 	return create_proc_info_entry(name,mode, net->proc_net, get_info);
+ }
++EXPORT_SYMBOL_GPL(proc_net_create);
  
--struct net;
-+#include <net/net_namespace.h>
-+
- struct vlan_group;
- struct ethtool_ops;
- struct netpoll_info;
-@@ -739,23 +740,21 @@
- 		list_for_each_entry_continue(d, &(net)->dev_base_head, dev_list)
- #define net_device_entry(lh)	list_entry(lh, struct net_device, dev_list)
+ struct proc_dir_entry *proc_net_fops_create(struct net *net,
+ 	const char *name, mode_t mode, const struct file_operations *fops)
+@@ -42,12 +43,13 @@
+ 		res->proc_fops = fops;
+ 	return res;
+ }
++EXPORT_SYMBOL_GPL(proc_net_fops_create);
  
--#define next_net_device(d) 						\
--({									\
--	struct net_device *dev = d;					\
--	struct list_head *lh;						\
--	struct net *net;						\
--									\
--	net = dev->nd_net;						\
--	lh = dev->dev_list.next;					\
--	lh == &net->dev_base_head ? NULL : net_device_entry(lh);	\
--})
+ void proc_net_remove(struct net *net, const char *name)
+ {
+ 	remove_proc_entry(name, net->proc_net);
+ }
 -
--#define first_net_device(N)					\
--({								\
--	struct net *NET = (N);					\
--	list_empty(&NET->dev_base_head) ? NULL :		\
--		net_device_entry(NET->dev_base_head.next);	\
--})
-+static inline struct net_device *next_net_device(struct net_device *dev)
-+{
-+	struct list_head *lh;
-+	struct net *net;
-+
-+	net = dev->nd_net;
-+        lh = dev->dev_list.next;
-+	return lh == &net->dev_base_head ? NULL : net_device_entry(lh);
-+}
-+
-+static inline struct net_device *first_net_device(struct net *net)
-+{
-+	return list_empty(&net->dev_base_head) ? NULL :
-+		net_device_entry(net->dev_base_head.next);
-+}
++EXPORT_SYMBOL_GPL(proc_net_remove);
  
- extern int 			netdev_boot_setup_check(struct net_device *dev);
- extern unsigned long		netdev_boot_base(const char *prefix, int unit);
+ static struct proc_dir_entry *proc_net_shadow;
+ 
 
 -- 
