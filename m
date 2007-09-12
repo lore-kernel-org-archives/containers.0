@@ -1,40 +1,36 @@
-From: dlezcano@fr.ibm.com
-Subject: [net-2.6.24][NETNS][patch 2/3] fix loopback network namespace initialization
-Date: Wed, 12 Sep 2007 14:38:13 +0200
-Message-ID: <20070912124419.150545693@mai.toulouse-stg.fr.ibm.com>
+From: David Miller <davem@davemloft.net>
+Subject: Re: [net-2.6.24][NETNS][patch 1/3] fix export symbols
+Date: Wed, 12 Sep 2007 05:53:07 -0700 (PDT)
+Message-ID: <20070912.055307.23027518.davem@davemloft.net>
 References: <20070912123811.075269132@mai.toulouse-stg.fr.ibm.com>
+	<20070912124414.640551634@mai.toulouse-stg.fr.ibm.com>
+Mime-Version: 1.0
+Content-Type: Text/Plain; charset=us-ascii
+Content-Transfer-Encoding: 7bit
 Return-path: <netdev-owner@vger.kernel.org>
-Content-Disposition: inline; filename=net-fix-kernel-bug-dev-nd-net-null.patch
+In-Reply-To: <20070912124414.640551634@mai.toulouse-stg.fr.ibm.com>
 Sender: netdev-owner@vger.kernel.org
-To: davem@davemloft.net
-Cc: ebiederm@xmission.com, containers@lists.osdl.org, netdev@vger.kernel.org
+To: dlezcano@fr.ibm.com
+Cc: ebiederm@xmission.com, containers@lists.osdl.org, netdev@vger.kernel.org, markn@au1.ibm.com, benjamin.thery@bull.net
 List-Id: containers.vger.kernel.org
 
-From: Daniel Lezcano <dlezcano@fr.ibm.com>
+From: dlezcano@fr.ibm.com
+Date: Wed, 12 Sep 2007 14:38:12 +0200
 
-The core patchset of the network namespace sent by 
-Eric Biederman does not do dynamic loopback creation.
-So there is no call to alloc_netdev_mq which fills the
-network namespace field of the netdevice.
+> From: Daniel Lezcano <dlezcano@fr.ibm.com>
+> 
+> Add the appropriate EXPORT_SYMBOLS for proc_net_create,
+> proc_net_fops_create and proc_net_remove to fix errors when
+> compiling allmodconfig
+> 
+> Signed-off-by: Mark Nelson <markn@au1.ibm.com>
+> Acked-by: Benjamin Thery <benjamin.thery@bull.net>
 
-This patch assign the loopback to the init network namespace.
+Applied to net-2.6.24, thanks.
 
-Signed-off-by: Daniel Lezcano <dlezcano@fr.ibm.com>
----
- drivers/net/loopback.c |    1 +
- 1 file changed, 1 insertion(+)
+Why aren't you signing off on these patches?  Please
+do so in the future.
 
-Index: net-2.6.24/drivers/net/loopback.c
-===================================================================
---- net-2.6.24.orig/drivers/net/loopback.c
-+++ net-2.6.24/drivers/net/loopback.c
-@@ -225,6 +225,7 @@
- 				  | NETIF_F_LLTX
- 				  | NETIF_F_NETNS_LOCAL,
- 	.ethtool_ops		= &loopback_ethtool_ops,
-+	.nd_net                 = &init_net,
- };
- 
- /* Setup and register the loopback device. */
-
--- 
+Because "From: " usually means you are the patch author, and I can't
+tell who wrote these patches, you or these other people listed in the
+signoff area.
