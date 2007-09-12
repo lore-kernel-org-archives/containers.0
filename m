@@ -1,49 +1,48 @@
-From: David Miller <davem@davemloft.net>
-Subject: Re: [PATCH 17/16] net: Disable netfilter sockopts when not in the
- initial network namespace
-Date: Wed, 12 Sep 2007 05:03:11 -0700 (PDT)
-Message-ID: <20070912.050311.78725619.davem@davemloft.net>
-References: <m1tzq4u92n.fsf_-_@ebiederm.dsl.xmission.com>
-	<m1ps0su8wv.fsf_-_@ebiederm.dsl.xmission.com>
-	<20070912.045903.104046208.davem@davemloft.net>
+From: Daniel Lezcano <dlezcano@fr.ibm.com>
+Subject: Re: [PATCH 07/16] net: Make /proc/net per network namespace
+Date: Wed, 12 Sep 2007 14:12:04 +0200
+Message-ID: <46E7D794.5090006@fr.ibm.com>
+References: <m1abrwx3g0.fsf_-_@ebiederm.dsl.xmission.com> <m1642kx3e3.fsf_-_@ebiederm.dsl.xmission.com> <m11wd8x3a3.fsf_-_@ebiederm.dsl.xmission.com> <20070912.030211.102564635.davem@davemloft.net>
 Mime-Version: 1.0
-Content-Type: Text/Plain; charset=us-ascii
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 Content-Transfer-Encoding: 7bit
 Return-path: <netdev-owner@vger.kernel.org>
-In-Reply-To: <20070912.045903.104046208.davem@davemloft.net>
+In-Reply-To: <20070912.030211.102564635.davem@davemloft.net>
 Sender: netdev-owner@vger.kernel.org
-To: ebiederm@xmission.com
-Cc: netdev@vger.kernel.org, containers@lists.osdl.org
+To: David Miller <davem@davemloft.net>
+Cc: ebiederm@xmission.com, containers@lists.osdl.org, netdev@vger.kernel.org
 List-Id: containers.vger.kernel.org
 
+David Miller wrote:
+> From: ebiederm@xmission.com (Eric W. Biederman)
+> Date: Sat, 08 Sep 2007 15:20:36 -0600
+> 
+>> This patch makes /proc/net per network namespace.  It modifies the global
+>> variables proc_net and proc_net_stat to be per network namespace.
+>> The proc_net file helpers are modified to take a network namespace argument,
+>> and all of their callers are fixed to pass &init_net for that argument.
+>> This ensures that all of the /proc/net files are only visible and
+>> usable in the initial network namespace until the code behind them
+>> has been updated to be handle multiple network namespaces.
+>>
+>> Making /proc/net per namespace is necessary as at least some files
+>> in /proc/net depend upon the set of network devices which is per
+>> network namespace, and even more files in /proc/net have contents
+>> that are relevant to a single network namespace.
+>>
+>> Signed-off-by: Eric W. Biederman <ebiederm@xmission.com>
+> 
+> Patch applied, thanks.
+> _______________________________________________
+> Containers mailing list
+> Containers@lists.linux-foundation.org
+> https://lists.linux-foundation.org/mailman/listinfo/containers
+> 
 
-I added the following patch to net-2.6.24 to kill a warning
-since net_alloc() has no users (yet).
+Hi Dave,
 
-commit f444fa9b5d70b3d431e1554e0975e012514c39f3
-Author: David S. Miller <davem@kimchee.(none)>
-Date:   Wed Sep 12 14:01:08 2007 +0200
+it seems the fs/proc/proc_net.c was not added to the git repository.
 
-    [NET]: #if 0 out net_alloc() for now.
-    
-    We will undo this once it is actually used.
-    
-    Signed-off-by: David S. Miller <davem@davemloft.net>
+Regards.
 
-diff --git a/net/core/net_namespace.c b/net/core/net_namespace.c
-index f259a9b..1fc513c 100644
---- a/net/core/net_namespace.c
-+++ b/net/core/net_namespace.c
-@@ -32,10 +32,12 @@ void net_unlock(void)
- 	mutex_unlock(&net_list_mutex);
- }
- 
-+#if 0
- static struct net *net_alloc(void)
- {
- 	return kmem_cache_alloc(net_cachep, GFP_KERNEL);
- }
-+#endif
- 
- static void net_free(struct net *net)
- {
+	-- Daniel
