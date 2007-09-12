@@ -1,40 +1,48 @@
-From: David Miller <davem@davemloft.net>
-Subject: Re: [PATCH 08/16] net: Make socket creation namespace safe.
-Date: Wed, 12 Sep 2007 03:04:27 -0700 (PDT)
-Message-ID: <20070912.030427.88485717.davem@davemloft.net>
-References: <m1642kx3e3.fsf_-_@ebiederm.dsl.xmission.com>
-	<m11wd8x3a3.fsf_-_@ebiederm.dsl.xmission.com>
-	<m1sl5ovolm.fsf_-_@ebiederm.dsl.xmission.com>
+From: Balbir Singh <balbir@linux.vnet.ibm.com>
+Subject: Re: [-mm PATCH 1/9] Memory controller resource counters (v6)
+Date: Wed, 12 Sep 2007 15:35:14 +0530
+Message-ID: <46E7B9DA.6070404@linux.vnet.ibm.com>
+References: <20070817084228.26003.12568.sendpatchset@balbir-laptop> <20070817084238.26003.7733.sendpatchset@balbir-laptop> <6599ad830709101742k658234b4of59f14ef27e40d14@mail.gmail.com>
+Reply-To: balbir@linux.vnet.ibm.com
 Mime-Version: 1.0
-Content-Type: Text/Plain; charset=us-ascii
+Content-Type: text/plain; charset=ISO-8859-1
 Content-Transfer-Encoding: 7bit
-Return-path: <netdev-owner@vger.kernel.org>
-In-Reply-To: <m1sl5ovolm.fsf_-_@ebiederm.dsl.xmission.com>
-Sender: netdev-owner@vger.kernel.org
-To: ebiederm@xmission.com
-Cc: netdev@vger.kernel.org, containers@lists.osdl.org
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S933798AbXILKJ7@vger.kernel.org>
+In-Reply-To: <6599ad830709101742k658234b4of59f14ef27e40d14@mail.gmail.com>
+Sender: linux-kernel-owner@vger.kernel.org
+To: Paul Menage <menage@google.com>
+Cc: Nick Piggin <npiggin@suse.de>, Peter Zijlstra <a.p.zijlstra@chello.nl>, YAMAMOTO Takashi <yamamoto@valinux.co.jp>, Linux Kernel Mailing List <linux-kernel@vger.kernel.org>, Linux MM Mailing List <linux-mm@kvack.org>, Eric W Biederman <ebiederm@xmission.com>, Linux Containers <containers@lists.osdl.org>, Andrew Morton <akpm@linux-foundation.org>, Pavel Emelianov <xemul@openvz.org>
 List-Id: containers.vger.kernel.org
 
-From: ebiederm@xmission.com (Eric W. Biederman)
-Date: Sat, 08 Sep 2007 15:23:01 -0600
+Paul Menage wrote:
+> Hi Balbir/Pavel,
+> 
+> As I mentioned to you directly at the kernel summit, I think it might
+> be cleaner to integrate resource counters more closely with control
+> groups. So rather than controllers such as the memory controller
+> having to create their own boilerplate cf_type structures and
+> read/write functions, it should be possible to just call a function
+> something like
+> 
+> control_group_add_rescounter(struct cgroup *cg, struct cgroup_subsys *ss,
+>                                              struct res_counter *res,
+> const char *name)
+> 
+> and have it handle all the userspace API. This would simplify the task
+> of keeping a consistent userspace API between different controllers
+> using the resource counter abstraction.
+> 
+> Paul
+> 
 
-> 
-> This patch passes in the namespace a new socket should be created in
-> and has the socket code do the appropriate reference counting.  By
-> virtue of this all socket create methods are touched.  In addition
-> the socket create methods are modified so that they will fail if
-> you attempt to create a socket in a non-default network namespace.
-> 
-> Failing if we attempt to create a socket outside of the default
-> network namespace ensures that as we incrementally make the network stack
-> network namespace aware we will not export functionality that someone
-> has not audited and made certain is network namespace safe.
-> Allowing us to partially enable network namespaces before all of the
-> exotic protocols are supported.
-> 
-> Any protocol layers I have missed will fail to compile because I now
-> pass an extra parameter into the socket creation code.
-> 
-> Signed-off-by: Eric W. Biederman <ebiederm@xmission.com>
+Yes, I remember discussing it with you. I would expect res_counters
+definition to be dynamic (to be able to add the guarantee, soft limit,
+etc) for expansion in the future. In the future, I would also like
+to do hierarchical resource groups, the hierarchy would represent
+the current filesystem hierarchy.
 
-Patch applied, thanks.
+-- 
+	Warm Regards,
+	Balbir Singh
+	Linux Technology Center
+	IBM, ISTL
