@@ -1,13 +1,18 @@
-From: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
-Subject: Re: [RFC][PATCH 0/3] Kernel memory accounting container (v2)
-Date: Thu, 13 Sep 2007 19:19:50 +0900
-Message-ID: <20070913191950.ea100a62.kamezawa.hiroyu@jp.fujitsu.com>
-References: <46E8FEC7.2010707@openvz.org>
+From: Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Subject: Re: [PATCH 23/29] memory controller memory accounting v7
+Date: Thu, 13 Sep 2007 15:59:08 +0530
+Message-ID: <46E910F4.2000207@linux.vnet.ibm.com>
+References: <20070911195239.997111000@menage.corp.google.com>
+	<20070911200148.396756000@menage.corp.google.com>
+	<1189630610.5597.10.camel@lappy>
+	<46E9078D.5040908@linux.vnet.ibm.com>
+	<1189678681.21778.191.camel@twins>
+Reply-To: balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
 Mime-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
+Content-Type: text/plain; charset=ISO-8859-1
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <46E8FEC7.2010707-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+In-Reply-To: <1189678681.21778.191.camel@twins>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -17,41 +22,31 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
-Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Christoph Lameter <clameter-sJ/iWh9BUns@public.gmane.org>
+To: Peter Zijlstra <a.p.zijlstra-/NLkJaSkS4VmR6Xm/wNWPw@public.gmane.org>
+Cc: Nick Piggin <nickpiggin-/E1597aS9LT0CCvOHzKKcA@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, David Rientjes <rientjes-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Pavel Emelianov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Thu, 13 Sep 2007 13:11:35 +0400
-Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org> wrote:
-
-> First of all - why do we need this kind of control. The major
-> "pros" is that kernel memory control protects the system
-> from DoS attacks by processes that live in container. As our
-> experience shows many exploits simply do not work in the
-> container with limited kernel memory.
+Peter Zijlstra wrote:
+> On Thu, 2007-09-13 at 15:19 +0530, Balbir Singh wrote:
 > 
-> I can split the kernel memory container into 4 parts:
+>> VM_BUG_ON(pc && !locked)
 > 
-> 1. kmalloc-ed objects control
-> 2. vmalloc-ed objects control
-> 3. buddy allocated pages control
-> 4. kmem_cache_alloc-ed objects control
+> Even better :-)
 > 
-<snip>
-> To play with it, one need to mount the container file system
-> with -o kmem and then mark some caches as accountable via
-> /sys/slab/<cache_name>/cache_account.
+
+Good, I'll change it.
+
+>> I am not sure I understand this comment.
 > 
-Hmm, how can we know "How many kmem will we need ?" in precise per-object
-style ? Is this useful ? 
+> Is that inc needed? the pc is already associated with the page and
+> should thus already have a reference, so this inc would do 1->2, but we
+> then set it to 1 again. seems like a superfluous operation.
 
-Following kind of limitation of user friendly params is bad ?
+That is something I need to look into. I'll try and get to it soon.
 
- - # of file handles
- - # of tasks
- - # of sockets/ connections / packets
- - # of posix IPC related things
- - and other sources of DoS.
 
-Thanks,
--Kame
+-- 
+	Warm Regards,
+	Balbir Singh
+	Linux Technology Center
+	IBM, ISTL
