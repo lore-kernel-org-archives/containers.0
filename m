@@ -1,46 +1,90 @@
-From: Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
-Subject: Re: [RFC][PATCH 0/3] Kernel memory accounting container (v2)
-Date: Fri, 14 Sep 2007 10:26:03 +0400
-Message-ID: <46EA297B.5070605@openvz.org>
-References: <46E8FEC7.2010707@openvz.org>
-	<Pine.LNX.4.64.0709131135210.9590@schroedinger.engr.sgi.com>
+From: Pavel Emelyanov <xemul@openvz.org>
+Subject: [PATCH][NETNS] Use list_for_each_entry_continue_reverse in setup_net
+Date: Fri, 14 Sep 2007 11:39:32 +0400
+Message-ID: <46EA3AB4.7060904@openvz.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1
 Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <Pine.LNX.4.64.0709131135210.9590-RYO/mD75kfhx2SFC9UQUAuF7EQX82lMiAL8bYrjMMd8@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Christoph Lameter <clameter-sJ/iWh9BUns@public.gmane.org>
-Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+Return-path: <netdev-owner@vger.kernel.org>
+Sender: netdev-owner@vger.kernel.org
+To: "Eric W. Biederman" <ebiederm@xmission.com>
+Cc: Linux Netdev List <netdev@vger.kernel.org>, Linux Containers <containers@lists.osdl.org>, devel@openvz.org, Daniel Lezcano <dlezcano@fr.ibm.com>
 List-Id: containers.vger.kernel.org
 
-Christoph Lameter wrote:
-> On Thu, 13 Sep 2007, Pavel Emelyanov wrote:
-> 
->> This is based on the SLUB allocator, Paul's containers and the
->> resource counters I made for RSS controller and which are in
->> -mm tree already.
->>
->> To play with it, one need to mount the container file system
->> with -o kmem and then mark some caches as accountable via
->> /sys/slab/<cache_name>/cache_account.
-> 
-> Hmmmm... Okay I have seen multiple people who want to control slab 
-> allocations and track memory for various reasons. Would it be possible to 
-> come up with some hook that would allow a subscription to certain SLUB 
-> events? That way multiple subsystems may track and maybe disallow certain
-> allocations in various contexts.
+I proposed introducing a list_for_each_entry_continue_reverse
+macro to be used in setup_net() when unrolling the failed
+->init callback.
 
-Do you mean some more generic than just explicit call from slab_alloc, etc?
-Ok, I will work on it.
+Here is the macro and some more cleanup in the setup_net() itself
+to remove one variable from the stack :) Minor, but the code
+looks nicer.
 
-Thanks,
-Pavel
+Signed-off-by: Pavel Emelyanov <xemul@openvz.org>
+
+---
+
+I have problems with cloning repos from git.openvz.org, so
+this patch comes to the yesterdays net-2.6.24 David's tree.
+
+diff --git a/include/linux/list.h b/include/linux/list.h
+index f29fc9c..ad9dcb9 100644
+--- a/include/linux/list.h
++++ b/include/linux/list.h
+@@ -525,6 +525,20 @@ static inline void list_splice_init_rcu(
+ 	     pos = list_entry(pos->member.next, typeof(*pos), member))
+ 
+ /**
++ * list_for_each_entry_continue_reverse - iterate backwards from the given point
++ * @pos:	the type * to use as a loop cursor.
++ * @head:	the head for your list.
++ * @member:	the name of the list_struct within the struct.
++ *
++ * Start to iterate over list of given type backwards, continuing after
++ * the current position.
++ */
++#define list_for_each_entry_continue_reverse(pos, head, member)		\
++	for (pos = list_entry(pos->member.prev, typeof(*pos), member);	\
++	     prefetch(pos->member.prev), &pos->member != (head);	\
++	     pos = list_entry(pos->member.prev, typeof(*pos), member))
++
++/**
+  * list_for_each_entry_from - iterate over list of given type from the current point
+  * @pos:	the type * to use as a loop cursor.
+  * @head:	the head for your list.
+diff --git a/net/core/net_namespace.c b/net/core/net_namespace.c
+index 1fc513c..a9dd261 100644
+--- a/net/core/net_namespace.c
++++ b/net/core/net_namespace.c
+@@ -102,7 +102,6 @@ static int setup_net(struct net *net)
+ {
+ 	/* Must be called with net_mutex held */
+ 	struct pernet_operations *ops;
+-	struct list_head *ptr;
+ 	int error;
+ 
+ 	memset(net, 0, sizeof(struct net));
+@@ -110,8 +109,7 @@ static int setup_net(struct net *net)
+ 	atomic_set(&net->use_count, 0);
+ 
+ 	error = 0;
+-	list_for_each(ptr, &pernet_list) {
+-		ops = list_entry(ptr, struct pernet_operations, list);
++	list_for_each_entry(ops, &pernet_list, list) {
+ 		if (ops->init) {
+ 			error = ops->init(net);
+ 			if (error < 0)
+@@ -120,12 +118,12 @@ static int setup_net(struct net *net)
+ 	}
+ out:
+ 	return error;
++
+ out_undo:
+ 	/* Walk through the list backwards calling the exit functions
+ 	 * for the pernet modules whose init functions did not fail.
+ 	 */
+-	for (ptr = ptr->prev; ptr != &pernet_list; ptr = ptr->prev) {
+-		ops = list_entry(ptr, struct pernet_operations, list);
++	list_for_each_entry_continue_reverse(ops, &pernet_list, list) {
+ 		if (ops->exit)
+ 			ops->exit(net);
+ 	}
