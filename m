@@ -1,41 +1,46 @@
-From: Oliver Hartkopp <oliver@hartkopp.net>
-Subject: Re: Network Namespace status
-Date: Fri, 14 Sep 2007 08:03:56 +0200
-Message-ID: <46EA244C.1050702@hartkopp.net>
-References: <m18x7a5qif.fsf@ebiederm.dsl.xmission.com>
+From: Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+Subject: Re: [RFC][PATCH 0/3] Kernel memory accounting container (v2)
+Date: Fri, 14 Sep 2007 10:26:03 +0400
+Message-ID: <46EA297B.5070605@openvz.org>
+References: <46E8FEC7.2010707@openvz.org>
+	<Pine.LNX.4.64.0709131135210.9590@schroedinger.engr.sgi.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1
 Content-Transfer-Encoding: 7bit
-Return-path: <netdev-owner@vger.kernel.org>
-In-Reply-To: <m18x7a5qif.fsf@ebiederm.dsl.xmission.com>
-Sender: netdev-owner@vger.kernel.org
-To: "Eric W. Biederman" <ebiederm@xmission.com>
-Cc: Linux Containers <containers@lists.osdl.org>, netdev@vger.kernel.org, David Miller <davem@davemloft.net>, Tejun Heo <htejun@gmail.com>, Greg Kroah-Hartman <gregkh@suse.de>, Andrew Morton <akpm@linux-foundation.org>, Thomas Gleixner <tglx@linutronix.de>, Urs Thuermann <urs@isnogud.escape.de>
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <Pine.LNX.4.64.0709131135210.9590-RYO/mD75kfhx2SFC9UQUAuF7EQX82lMiAL8bYrjMMd8@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Christoph Lameter <clameter-sJ/iWh9BUns@public.gmane.org>
+Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Eric W. Biederman wrote:
-> Looking into my patch queue I have:
-> 5 patches for cleaning up and making a per network namespace loopback device.
-> 4 patches for making rtnetlink message processing per network namespace
-> 1 patch for making AF_UNIX per network namespace
-> 1 patch for making AF_PACKET per network namespace
->
-> The ipv4 part of my patchset is currently working but it needs some
-> more cleanup and reordering of patches before it is ready to go anywhere.
-> Nothing has been done for ipv6, but the changes should very much parallel
-> ipv4.
->
-> The other protocols I haven't even looked at yet.
->   
+Christoph Lameter wrote:
+> On Thu, 13 Sep 2007, Pavel Emelyanov wrote:
+> 
+>> This is based on the SLUB allocator, Paul's containers and the
+>> resource counters I made for RSS controller and which are in
+>> -mm tree already.
+>>
+>> To play with it, one need to mount the container file system
+>> with -o kmem and then mark some caches as accountable via
+>> /sys/slab/<cache_name>/cache_account.
+> 
+> Hmmmm... Okay I have seen multiple people who want to control slab 
+> allocations and track memory for various reasons. Would it be possible to 
+> come up with some hook that would allow a subscription to certain SLUB 
+> events? That way multiple subsystems may track and maybe disallow certain
+> allocations in various contexts.
 
-Hi Eric,
-
-can you send me your current AF_PACKET patch? I just want to update our
-recent post of the CAN (controller area network) subsystem (AF_CAN)
-which is (in some parts) similar to AF_PACKET. So i can take a look on
-it to provide the latest technique in the next post ...
+Do you mean some more generic than just explicit call from slab_alloc, etc?
+Ok, I will work on it.
 
 Thanks,
-Oliver
-
-
+Pavel
