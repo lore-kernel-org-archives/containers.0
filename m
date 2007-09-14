@@ -1,37 +1,27 @@
-From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
-Subject: Re: [NETNS45][patch 1/1] remove udp rover port
-Date: Fri, 14 Sep 2007 10:04:45 -0600
-Message-ID: <m17imt2pya.fsf@ebiederm.dsl.xmission.com>
-References: <20070914154820.310553772@mai.toulouse-stg.fr.ibm.com>
-	<20070914154935.128983162@mai.toulouse-stg.fr.ibm.com>
+From: Srivatsa Vaddagiri <vatsa@linux.vnet.ibm.com>
+Subject: Re: [PATCH] Hookup group-scheduler with task container infrastructure
+Date: Fri, 14 Sep 2007 21:52:24 +0530
+Message-ID: <20070914162224.GA29072@linux.vnet.ibm.com>
+References: <20070910102259.dc45a481.akpm@linux-foundation.org> <20070910174649.GA16222@linux.vnet.ibm.com> <b647ffbd0709101528i7440a0f9m9837065a43e4a720@mail.gmail.com> <20070911044145.GC16222@linux.vnet.ibm.com> <b647ffbd0709110253y7d9564c4j88aa134330e2a292@mail.gmail.com> <20070912114202.GA30385@linux.vnet.ibm.com> <b647ffbd0709120925i690ecb11i975149037fc72979@mail.gmail.com> <20070913123324.GA6214@linux.vnet.ibm.com> <20070914094158.GA1990@elte.hu> <20070914155913.GA8751@linux.vnet.ibm.com>
+Reply-To: vatsa@linux.vnet.ibm.com
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20070914154935.128983162-WECHFHqYCmGD/CxQmPlnQ0FT0OZdM7KVQQ4Iyu8u01E@public.gmane.org>
-	(dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org's message of "Fri, 14 Sep 2007 17:48:21 +0200")
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org
-Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S933239AbXINQM0@vger.kernel.org>
+Content-Disposition: inline
+In-Reply-To: <20070914155913.GA8751@linux.vnet.ibm.com>
+Sender: linux-kernel-owner@vger.kernel.org
+To: Ingo Molnar <mingo@elte.hu>
+Cc: Dmitry Adamushko <dmitry.adamushko@gmail.com>, Andrew Morton <akpm@linux-foundation.org>, ckrm-tech@lists.sourceforge.net, linux-kernel@vger.kernel.org, containers@lists.osdl.org, Jan Engelhardt <jengelh@computergmbh.de>, dhaval@linux.vnet.ibm.com, menage@google.com
 List-Id: containers.vger.kernel.org
 
-dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org writes:
+On Fri, Sep 14, 2007 at 09:29:13PM +0530, Srivatsa Vaddagiri wrote:
+> 2. Enable only one form of grouping, which is task-container based. Provide a 
+>    user-space daemon (attached) which can automatically put tasks of different 
+Oops ..forgot to attach. But I realize that I had already sent the
+source for the daemon here:
 
-> From: Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
->
-> in net-2.6.24, the algorithm which choose a port is changed. The rover
-> port is no longer a global static variable, it is computed dynamically
-> with net_random, each time a get_port call is done.
->
-> So no need to have it in the network namespace
+	http://article.gmane.org/gmane.linux.kernel/553267
 
-Good catch.  Thanks.
-
-Eric
+-- 
+Regards,
+vatsa
