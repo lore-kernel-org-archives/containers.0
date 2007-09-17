@@ -1,12 +1,11 @@
 From: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH 31/33] memory controller make page_referenced container
-	aware v7
-Date: Mon, 17 Sep 2007 14:03:38 -0700
-Message-ID: <20070917210431.179207000@menage.corp.google.com>
+Subject: [PATCH 14/33]
+	task-containersv11-basic-task-container-framework-containers-fix-refcount-bug
+Date: Mon, 17 Sep 2007 14:03:21 -0700
+Message-ID: <20070917210428.382957000@menage.corp.google.com>
 References: <20070917210307.116234000@menage.corp.google.com>
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline;
-	filename=memory-controller-make-page_referenced-container-aware-v7.patch
+Content-Disposition: inline; filename=fixoops1.patch
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -20,194 +19,91 @@ To: akpm-hQyY1W1yCW8ekmWlsbkhG0B+6BGkLq7r@public.gmane.org, balbir-23VcF4HTsmIX0
 Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, Nick Piggin <nickpiggin-/E1597aS9LT0CCvOHzKKcA@public.gmane.org>, Peter Zijlstra <a.p.zijlstra-/NLkJaSkS4VmR6Xm/wNWPw@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-From: Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-(container->cgroup renaming by Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>)
+Fix a reference counting bug in cgroupfs
 
-Make page_referenced() cgroup aware.  Without this patch, page_referenced()
-can cause a page to be skipped while reclaiming pages.  This patch ensures
-that other cgroups do not hold pages in a particular cgroup hostage.  It
-is required to ensure that shared pages are freed from a cgroup when they
-are not actively referenced from the cgroup that brought them in
+As part of the extraction of cpusetfs to cgroupfs, a call to
+cpuset_get_dentry() was lost (justified by the fact that the dentry in
+question was now being passed down by the caller).  Since
+cpuset_get_dentry() called lookup_one_len(), this resulted in a reference
+count being missed from the directory dentry.
 
-Signed-off-by: Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+This patch removes cgroup_get_dentry() and replaces it with direct calls
+to lookup_one_len(); the initialization of cgroupfs dentry ops is done
+now in cgroup_create_file() at dentry creation time.
+
 Signed-off-by: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+
 ---
+ kernel/cgroup.c |   24 +++++++-----------------
+ 1 file changed, 7 insertions(+), 17 deletions(-)
 
- include/linux/memcontrol.h |    6 ++++++
- include/linux/rmap.h       |    5 +++--
- mm/memcontrol.c            |    5 +++++
- mm/rmap.c                  |   30 ++++++++++++++++++++++++------
- mm/vmscan.c                |    4 ++--
- 5 files changed, 40 insertions(+), 10 deletions(-)
-
-diff -puN include/linux/memcontrol.h~memory-controller-make-page_referenced-cgroup-aware-v7 include/linux/memcontrol.h
---- a/include/linux/memcontrol.h~memory-controller-make-page_referenced-cgroup-aware-v7
-+++ a/include/linux/memcontrol.h
-@@ -43,6 +43,7 @@ extern unsigned long mem_cgroup_isola
- 					int active);
- extern void mem_cgroup_out_of_memory(struct mem_cgroup *mem);
- extern int mem_cgroup_cache_charge(struct page *page, struct mm_struct *mm);
-+extern struct mem_cgroup *mm_cgroup(struct mm_struct *mm);
- 
- static inline void mem_cgroup_uncharge_page(struct page *page)
- {
-@@ -93,6 +94,11 @@ static inline int mem_cgroup_cache_ch
- 	return 0;
+Index: linux-2.6.23-rc4-mm1-new/kernel/cgroup.c
+===================================================================
+--- linux-2.6.23-rc4-mm1-new.orig/kernel/cgroup.c
++++ linux-2.6.23-rc4-mm1-new/kernel/cgroup.c
+@@ -604,19 +604,6 @@ static void cgroup_diput(struct dentry *
+ 	iput(inode);
  }
  
-+static inline struct mem_cgroup *mm_cgroup(struct mm_struct *mm)
-+{
-+	return NULL;
-+}
+-static struct dentry *cgroup_get_dentry(struct dentry *parent,
+-					   const char *name)
+-{
+-	struct dentry *d = lookup_one_len(name, parent, strlen(name));
+-	static struct dentry_operations cgroup_dops = {
+-		.d_iput = cgroup_diput,
+-	};
+-
+-	if (!IS_ERR(d))
+-		d->d_op = &cgroup_dops;
+-	return d;
+-}
+-
+ static void remove_dir(struct dentry *d)
+ {
+ 	struct dentry *parent = dget(d->d_parent);
+@@ -1507,6 +1494,10 @@ static struct inode_operations cgroup_di
+ static int cgroup_create_file(struct dentry *dentry, int mode,
+ 				struct super_block *sb)
+ {
++	static struct dentry_operations cgroup_dops = {
++		.d_iput = cgroup_diput,
++	};
 +
- #endif /* CONFIG_CGROUP_MEM_CONT */
+ 	struct inode *inode;
  
- #endif /* _LINUX_MEMCONTROL_H */
-diff -puN include/linux/rmap.h~memory-controller-make-page_referenced-cgroup-aware-v7 include/linux/rmap.h
---- a/include/linux/rmap.h~memory-controller-make-page_referenced-cgroup-aware-v7
-+++ a/include/linux/rmap.h
-@@ -8,6 +8,7 @@
- #include <linux/slab.h>
- #include <linux/mm.h>
- #include <linux/spinlock.h>
-+#include <linux/memcontrol.h>
- 
- /*
-  * The anon_vma heads a list of private "related" vmas, to scan if
-@@ -86,7 +87,7 @@ static inline void page_dup_rmap(struct 
- /*
-  * Called from mm/vmscan.c to handle paging out
-  */
--int page_referenced(struct page *, int is_locked);
-+int page_referenced(struct page *, int is_locked, struct mem_cgroup *cnt);
- int try_to_unmap(struct page *, int ignore_refs);
- 
- /*
-@@ -114,7 +115,7 @@ int page_mkclean(struct page *);
- #define anon_vma_prepare(vma)	(0)
- #define anon_vma_link(vma)	do {} while (0)
- 
--#define page_referenced(page,l) TestClearPageReferenced(page)
-+#define page_referenced(page,l,cnt) TestClearPageReferenced(page)
- #define try_to_unmap(page, refs) SWAP_FAIL
- 
- static inline int page_mkclean(struct page *page)
-diff -puN mm/memcontrol.c~memory-controller-make-page_referenced-cgroup-aware-v7 mm/memcontrol.c
---- a/mm/memcontrol.c~memory-controller-make-page_referenced-cgroup-aware-v7
-+++ a/mm/memcontrol.c
-@@ -109,6 +109,11 @@ struct mem_cgroup *mem_cgroup_from
- 				struct mem_cgroup, css);
- }
- 
-+inline struct mem_cgroup *mm_cgroup(struct mm_struct *mm)
-+{
-+	return rcu_dereference(mm->mem_cgroup);
-+}
-+
- void mm_init_cgroup(struct mm_struct *mm, struct task_struct *p)
- {
- 	struct mem_cgroup *mem;
-diff -puN mm/rmap.c~memory-controller-make-page_referenced-cgroup-aware-v7 mm/rmap.c
---- a/mm/rmap.c~memory-controller-make-page_referenced-cgroup-aware-v7
-+++ a/mm/rmap.c
-@@ -299,7 +299,8 @@ out:
- 	return referenced;
- }
- 
--static int page_referenced_anon(struct page *page)
-+static int page_referenced_anon(struct page *page,
-+				struct mem_cgroup *mem_cont)
- {
- 	unsigned int mapcount;
- 	struct anon_vma *anon_vma;
-@@ -312,6 +313,13 @@ static int page_referenced_anon(struct p
- 
- 	mapcount = page_mapcount(page);
- 	list_for_each_entry(vma, &anon_vma->head, anon_vma_node) {
-+		/*
-+		 * If we are reclaiming on behalf of a cgroup, skip
-+		 * counting on behalf of references from different
-+		 * cgroups
-+		 */
-+		if (mem_cont && (mm_cgroup(vma->vm_mm) != mem_cont))
-+			continue;
- 		referenced += page_referenced_one(page, vma, &mapcount);
- 		if (!mapcount)
- 			break;
-@@ -332,7 +340,8 @@ static int page_referenced_anon(struct p
-  *
-  * This function is only called from page_referenced for object-based pages.
-  */
--static int page_referenced_file(struct page *page)
-+static int page_referenced_file(struct page *page,
-+				struct mem_cgroup *mem_cont)
- {
- 	unsigned int mapcount;
- 	struct address_space *mapping = page->mapping;
-@@ -365,6 +374,13 @@ static int page_referenced_file(struct p
- 	mapcount = page_mapcount(page);
- 
- 	vma_prio_tree_foreach(vma, &iter, &mapping->i_mmap, pgoff, pgoff) {
-+		/*
-+		 * If we are reclaiming on behalf of a cgroup, skip
-+		 * counting on behalf of references from different
-+		 * cgroups
-+		 */
-+		if (mem_cont && (mm_cgroup(vma->vm_mm) != mem_cont))
-+			continue;
- 		if ((vma->vm_flags & (VM_LOCKED|VM_MAYSHARE))
- 				  == (VM_LOCKED|VM_MAYSHARE)) {
- 			referenced++;
-@@ -387,7 +403,8 @@ static int page_referenced_file(struct p
-  * Quick test_and_clear_referenced for all mappings to a page,
-  * returns the number of ptes which referenced the page.
-  */
--int page_referenced(struct page *page, int is_locked)
-+int page_referenced(struct page *page, int is_locked,
-+			struct mem_cgroup *mem_cont)
- {
- 	int referenced = 0;
- 
-@@ -399,14 +416,15 @@ int page_referenced(struct page *page, i
- 
- 	if (page_mapped(page) && page->mapping) {
- 		if (PageAnon(page))
--			referenced += page_referenced_anon(page);
-+			referenced += page_referenced_anon(page, mem_cont);
- 		else if (is_locked)
--			referenced += page_referenced_file(page);
-+			referenced += page_referenced_file(page, mem_cont);
- 		else if (TestSetPageLocked(page))
- 			referenced++;
- 		else {
- 			if (page->mapping)
--				referenced += page_referenced_file(page);
-+				referenced +=
-+					page_referenced_file(page, mem_cont);
- 			unlock_page(page);
- 		}
+ 	if (!dentry)
+@@ -1532,7 +1523,7 @@ static int cgroup_create_file(struct den
+ 		inode->i_size = 0;
+ 		inode->i_fop = &cgroup_file_operations;
  	}
-diff -puN mm/vmscan.c~memory-controller-make-page_referenced-cgroup-aware-v7 mm/vmscan.c
---- a/mm/vmscan.c~memory-controller-make-page_referenced-cgroup-aware-v7
-+++ a/mm/vmscan.c
-@@ -503,7 +503,7 @@ static unsigned long shrink_page_list(st
- 				goto keep_locked;
- 		}
+-
++	dentry->d_op = &cgroup_dops;
+ 	d_instantiate(dentry, inode);
+ 	dget(dentry);	/* Extra count - pin the dentry in core */
+ 	return 0;
+@@ -1553,13 +1544,12 @@ static int cgroup_create_dir(struct cgro
+ 	int error = 0;
  
--		referenced = page_referenced(page, 1);
-+		referenced = page_referenced(page, 1, sc->mem_cgroup);
- 		/* In active use or really unfreeable?  Activate it. */
- 		if (sc->order <= PAGE_ALLOC_COSTLY_ORDER &&
- 					referenced && page_mapping_inuse(page))
-@@ -1057,7 +1057,7 @@ force_reclaim_mapped:
- 		if (page_mapped(page)) {
- 			if (!reclaim_mapped ||
- 			    (total_swap_pages == 0 && PageAnon(page)) ||
--			    page_referenced(page, 0)) {
-+			    page_referenced(page, 0, sc->mem_cgroup)) {
- 				list_add(&page->lru, &l_active);
- 				continue;
- 			}
-_
+ 	parent = cont->parent->dentry;
+-	if (IS_ERR(dentry))
+-		return PTR_ERR(dentry);
+ 	error = cgroup_create_file(dentry, S_IFDIR | mode, cont->root->sb);
+ 	if (!error) {
+ 		dentry->d_fsdata = cont;
+ 		inc_nlink(parent->d_inode);
+ 		cont->dentry = dentry;
++		dget(dentry);
+ 	}
+ 	dput(dentry);
+ 
+@@ -1581,7 +1571,7 @@ int cgroup_add_file(struct cgroup *cont,
+ 	}
+ 	strcat(name, cft->name);
+ 	BUG_ON(!mutex_is_locked(&dir->d_inode->i_mutex));
+-	dentry = cgroup_get_dentry(dir, name);
++	dentry = lookup_one_len(name, dir, strlen(name));
+ 	if (!IS_ERR(dentry)) {
+ 		error = cgroup_create_file(dentry, 0644 | S_IFREG,
+ 						cont->root->sb);
 
 --
