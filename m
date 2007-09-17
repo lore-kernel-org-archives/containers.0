@@ -1,15 +1,15 @@
-From: "Peter Waskiewicz" <pjwaskiewicz-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: Re: [net-2.6.24][patch 2/2] Dynamically allocate the loopback device
-Date: Mon, 17 Sep 2007 12:12:24 -0700
-Message-ID: <224b7d320709171212o66734847kbd17efa817b482fc@mail.gmail.com>
-References: <20070917134509.222896190@mai.toulouse-stg.fr.ibm.com>
-	<20070917135133.466924283@mai.toulouse-stg.fr.ibm.com>
-	<20070917101314.5d1673da@freepuppy.rosehill.hemminger.net>
-	<46EECCD5.5090601@fr.ibm.com>
+From: Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Subject: Re: [PATCH 0/4] Kernel memory accounting container (v3)
+Date: Tue, 18 Sep 2007 02:21:03 +0530
+Message-ID: <46EEE8B7.2070805@linux.vnet.ibm.com>
+References: <46EE70B4.6060902@openvz.org>
+	<Pine.LNX.4.64.0709171126330.27057@schroedinger.engr.sgi.com>
+Reply-To: balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary="===============5665050648372599857=="
+Content-Type: text/plain; charset=ISO-8859-1
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <46EECCD5.5090601-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <Pine.LNX.4.64.0709171126330.27057-RYO/mD75kfhx2SFC9UQUAuF7EQX82lMiAL8bYrjMMd8@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -17,51 +17,41 @@ List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
 List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Mime-version: 1.0
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
-Cc: netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, Stephen Hemminger <shemminger-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, davem-fT/PcQaiUtIeIZ0/mPfg9Q@public.gmane.org, Benjamin Thery <benjamin.thery-6ktuUTfB/bM@public.gmane.org>
+To: Christoph Lameter <clameter-sJ/iWh9BUns@public.gmane.org>
+Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
---===============5665050648372599857==
-Content-Type: multipart/alternative;
-	boundary="----=_Part_17566_25653737.1190056344050"
+Christoph Lameter wrote:
+> On Mon, 17 Sep 2007, Pavel Emelyanov wrote:
+> 
+>> As I have already told kmalloc caches cannot be accounted easily
+>> so turning the accounting on for them will fail with -EINVAL.
+>> Turning the accounting off is possible only if the cache has
+>> no objects. This is done so because turning accounting off
+>> implies unaccounting of all the objects in the cache, but due
+>> to full-pages in slub are not stored in any lists (usually)
+>> this is impossible to do so, however I'm open for discussion
+>> of how to make this work.
+> 
+> Where can I find more information why is would not be possible to 
+> account kmalloc caches?
+> 
 
-------=_Part_17566_25653737.1190056344050
-Content-Type: text/plain; charset=ISO-8859-1
-Content-Transfer-Encoding: 7bit
-Content-Disposition: inline
+Hi, Christoph,
 
-This would be a good opportunity to remove the single-allocated queue struct
-in netdevice (at the bottom) that we had to put in to accomodate the static
-loopback.  Now we can set it back to a zero element list, and have
-alloc_netdev_mq() just allocate the number of queues requested, not
-num_queues - 1.
+I've wondered the same thing and asked the question. Pavel wrote
+back to me saying
 
-I'll put a patch together based on this patchset.
+"The pages that are full of objects are not linked in any list
+in kmem_cache so we just cannot find them."
 
-Thanks,
--PJ Waskiewicz
+I suspect that SLUB changes this, but I need to look at the
+allocator more carefully.
 
-------=_Part_17566_25653737.1190056344050
-Content-Type: text/html; charset=ISO-8859-1
-Content-Transfer-Encoding: 7bit
-Content-Disposition: inline
-
-This would be a good opportunity to remove the single-allocated queue struct in netdevice (at the bottom) that we had to put in to accomodate the static loopback.&nbsp; Now we can set it back to a zero element list, and have alloc_netdev_mq() just allocate the number of queues requested, not num_queues - 1.
-<br><br>I&#39;ll put a patch together based on this patchset.<br><br>Thanks,<br>-PJ Waskiewicz<br>
-
-------=_Part_17566_25653737.1190056344050--
-
---===============5665050648372599857==
-Content-Type: text/plain; charset="us-ascii"
-MIME-Version: 1.0
-Content-Transfer-Encoding: 7bit
-Content-Disposition: inline
-
-_______________________________________________
-Containers mailing list
-Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-https://lists.linux-foundation.org/mailman/listinfo/containers
---===============5665050648372599857==--
+-- 
+	Warm Regards,
+	Balbir Singh
+	Linux Technology Center
+	IBM, ISTL
