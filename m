@@ -1,228 +1,96 @@
 From: Paul Menage <menage@google.com>
-Subject: [PATCH 23/33] memory controller containers setup v7
-Date: Mon, 17 Sep 2007 14:03:30 -0700
-Message-ID: <20070917210429.848673000@menage.corp.google.com>
+Subject: [PATCH 08/33] task containersv11 shared container subsystem group arrays avoid lockdep warning
+Date: Mon, 17 Sep 2007 14:03:15 -0700
+Message-ID: <20070917210427.392714000@menage.corp.google.com>
 References: <20070917210307.116234000@menage.corp.google.com>
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1760242AbXIQVIY@vger.kernel.org>
-Content-Disposition: inline; filename=memory-controller-containers-setup-v7.patch
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1760668AbXIQVKr@vger.kernel.org>
+Content-Disposition: inline; filename=task-containersv11-shared-container-subsystem-group-arrays-avoid-lockdep-warning.patch
 Sender: linux-kernel-owner@vger.kernel.org
 To: akpm@linuxfoundation.org, balbir@linux.vnet.ibm.com, "Serge E. Hallyn" <serue@us.ibm.com>, Cedric Le Goater <clg@fr.ibm.com>, "Eric W. Biederman" <ebiederm@xmission.com>, Pavel
 Cc: Nick Piggin <nickpiggin@yahoo.com.au>, Peter Zijlstra <a.p.zijlstra@chello.nl>, pj@sgi.com, containers@lists.osdl.org, linux-kernel@vger.kernel.org
 List-Id: containers.vger.kernel.org
 
-From: Balbir Singh <balbir@linux.vnet.ibm.com>
-(container->cgroup renaming by Paul Menage <menage@google.com>)
+I think this is the right way to handle the lockdep false-positive in the
+current cgroups patches, but I'm not that familiar with lockdep so any
+suggestions for a better approach are welcomed.
 
-Setup the memory cgroup and add basic hooks and controls to integrate
-and work with the cgroup.
+In order to avoid a false-positive lockdep warning, we lock the root inode
+of a new filesystem mount prior to taking cgroup_mutex, to preserve the
+invariant that cgroup_mutex nests inside inode->i_mutex.  In order to
+prevent a lockdep false positive when locking i_mutex on a newly-created
+cgroup directory inode we use mutex_lock_nested(), with a nesting level
+of I_MUTEX_CHILD since the new inode will ultimately be a child directory
+of the parent whose i_mutex is nested outside of cgroup_mutex.
 
-Signed-off-by: Balbir Singh <balbir@linux.vnet.ibm.com>
 Signed-off-by: Paul Menage <menage@google.com>
-
+Acked-by: Peter Zijlstra <a.p.zijlstra@chello.nl>
 ---
 
- include/linux/cgroup_subsys.h |    6 +
- include/linux/memcontrol.h       |   21 ++++
- init/Kconfig                     |    7 +
- mm/Makefile                      |    1 
- mm/memcontrol.c                  |  127 +++++++++++++++++++++++++++++
- 5 files changed, 162 insertions(+)
+ kernel/cgroup.c |   17 +++++++----------
+ 1 files changed, 7 insertions(+), 10 deletions(-)
 
-diff -puN include/linux/cgroup_subsys.h~memory-controller-cgroups-setup-v7 include/linux/cgroup_subsys.h
---- a/include/linux/cgroup_subsys.h~memory-controller-cgroups-setup-v7
-+++ a/include/linux/cgroup_subsys.h
-@@ -30,3 +30,9 @@ SUBSYS(ns)
- #endif
+diff -puN kernel/cgroup.c~task-cgroupsv11-shared-cgroup-subsystem-group-arrays-avoid-lockdep-warning kernel/cgroup.c
+--- a/kernel/cgroup.c~task-cgroupsv11-shared-cgroup-subsystem-group-arrays-avoid-lockdep-warning
++++ a/kernel/cgroup.c
+@@ -867,13 +867,16 @@ static int cgroup_get_sb(struct file_
+ 	} else {
+ 		/* New superblock */
+ 		struct cgroup *cont = &root->top_cgroup;
++		struct inode *inode;
  
- /* */
-+
-+#ifdef CONFIG_CGROUP_MEM_CONT
-+SUBSYS(mem_cgroup)
-+#endif
-+
-+/* */
-diff -puN /dev/null include/linux/memcontrol.h
---- /dev/null
-+++ a/include/linux/memcontrol.h
-@@ -0,0 +1,21 @@
-+/* memcontrol.h - Memory Controller
-+ *
-+ * Copyright IBM Corporation, 2007
-+ * Author Balbir Singh <balbir@linux.vnet.ibm.com>
-+ *
-+ * This program is free software; you can redistribute it and/or modify
-+ * it under the terms of the GNU General Public License as published by
-+ * the Free Software Foundation; either version 2 of the License, or
-+ * (at your option) any later version.
-+ *
-+ * This program is distributed in the hope that it will be useful,
-+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
-+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-+ * GNU General Public License for more details.
-+ */
-+
-+#ifndef _LINUX_MEMCONTROL_H
-+#define _LINUX_MEMCONTROL_H
-+
-+#endif /* _LINUX_MEMCONTROL_H */
-+
-diff -puN init/Kconfig~memory-controller-cgroups-setup-v7 init/Kconfig
---- a/init/Kconfig~memory-controller-cgroups-setup-v7
-+++ a/init/Kconfig
-@@ -346,6 +346,13 @@ config SYSFS_DEPRECATED
- 	  If you are using a distro that was released in 2006 or later,
- 	  it should be safe to say N here.
+ 		BUG_ON(sb->s_root != NULL);
  
-+config CGROUP_MEM_CONT
-+	bool "Memory controller for cgroups"
-+	depends on CGROUPS && RESOURCE_COUNTERS
-+	help
-+	  Provides a memory controller that manages both page cache and
-+	  RSS memory.
-+
- config PROC_PID_CPUSET
- 	bool "Include legacy /proc/<pid>/cpuset file"
- 	depends on CPUSETS
-diff -puN mm/Makefile~memory-controller-cgroups-setup-v7 mm/Makefile
---- a/mm/Makefile~memory-controller-cgroups-setup-v7
-+++ a/mm/Makefile
-@@ -30,4 +30,5 @@ obj-$(CONFIG_FS_XIP) += filemap_xip.o
- obj-$(CONFIG_MIGRATION) += migrate.o
- obj-$(CONFIG_SMP) += allocpercpu.o
- obj-$(CONFIG_QUICKLIST) += quicklist.o
-+obj-$(CONFIG_CGROUP_MEM_CONT) += memcontrol.o
+ 		ret = cgroup_get_rootdir(sb);
+ 		if (ret)
+ 			goto drop_new_super;
++		inode = sb->s_root->d_inode;
  
-diff -puN /dev/null mm/memcontrol.c
---- /dev/null
-+++ a/mm/memcontrol.c
-@@ -0,0 +1,127 @@
-+/* memcontrol.c - Memory Controller
-+ *
-+ * Copyright IBM Corporation, 2007
-+ * Author Balbir Singh <balbir@linux.vnet.ibm.com>
-+ *
-+ * This program is free software; you can redistribute it and/or modify
-+ * it under the terms of the GNU General Public License as published by
-+ * the Free Software Foundation; either version 2 of the License, or
-+ * (at your option) any later version.
-+ *
-+ * This program is distributed in the hope that it will be useful,
-+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
-+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-+ * GNU General Public License for more details.
-+ */
-+
-+#include <linux/res_counter.h>
-+#include <linux/memcontrol.h>
-+#include <linux/cgroup.h>
-+
-+struct cgroup_subsys mem_cgroup_subsys;
-+
-+/*
-+ * The memory controller data structure. The memory controller controls both
-+ * page cache and RSS per cgroup. We would eventually like to provide
-+ * statistics based on the statistics developed by Rik Van Riel for clock-pro,
-+ * to help the administrator determine what knobs to tune.
-+ *
-+ * TODO: Add a water mark for the memory controller. Reclaim will begin when
-+ * we hit the water mark.
-+ */
-+struct mem_cgroup {
-+	struct cgroup_subsys_state css;
-+	/*
-+	 * the counter to account for memory usage
-+	 */
-+	struct res_counter res;
-+};
-+
-+/*
-+ * A page_cgroup page is associated with every page descriptor. The
-+ * page_cgroup helps us identify information about the cgroup
-+ */
-+struct page_cgroup {
-+	struct list_head lru;		/* per cgroup LRU list */
-+	struct page *page;
-+	struct mem_cgroup *mem_cgroup;
-+};
-+
-+
-+static inline
-+struct mem_cgroup *mem_cgroup_from_cont(struct cgroup *cont)
-+{
-+	return container_of(cgroup_subsys_state(cont,
-+				mem_cgroup_subsys_id), struct mem_cgroup,
-+				css);
-+}
-+
-+static ssize_t mem_cgroup_read(struct cgroup *cont, struct cftype *cft,
-+			struct file *file, char __user *userbuf, size_t nbytes,
-+			loff_t *ppos)
-+{
-+	return res_counter_read(&mem_cgroup_from_cont(cont)->res,
-+				cft->private, userbuf, nbytes, ppos);
-+}
-+
-+static ssize_t mem_cgroup_write(struct cgroup *cont, struct cftype *cft,
-+				struct file *file, const char __user *userbuf,
-+				size_t nbytes, loff_t *ppos)
-+{
-+	return res_counter_write(&mem_cgroup_from_cont(cont)->res,
-+				cft->private, userbuf, nbytes, ppos);
-+}
-+
-+static struct cftype mem_cgroup_files[] = {
-+	{
-+		.name = "usage",
-+		.private = RES_USAGE,
-+		.read = mem_cgroup_read,
-+	},
-+	{
-+		.name = "limit",
-+		.private = RES_LIMIT,
-+		.write = mem_cgroup_write,
-+		.read = mem_cgroup_read,
-+	},
-+	{
-+		.name = "failcnt",
-+		.private = RES_FAILCNT,
-+		.read = mem_cgroup_read,
-+	},
-+};
-+
-+static struct cgroup_subsys_state *
-+mem_cgroup_create(struct cgroup_subsys *ss, struct cgroup *cont)
-+{
-+	struct mem_cgroup *mem;
-+
-+	mem = kzalloc(sizeof(struct mem_cgroup), GFP_KERNEL);
-+	if (!mem)
-+		return -ENOMEM;
-+
-+	res_counter_init(&mem->res);
-+	return &mem->css;
-+}
-+
-+static void mem_cgroup_destroy(struct cgroup_subsys *ss,
-+				struct cgroup *cont)
-+{
-+	kfree(mem_cgroup_from_cont(cont));
-+}
-+
-+static int mem_cgroup_populate(struct cgroup_subsys *ss,
-+				struct cgroup *cont)
-+{
-+	return cgroup_add_files(cont, ss, mem_cgroup_files,
-+					ARRAY_SIZE(mem_cgroup_files));
-+}
-+
-+struct cgroup_subsys mem_cgroup_subsys = {
-+	.name = "memory",
-+	.subsys_id = mem_cgroup_subsys_id,
-+	.create = mem_cgroup_create,
-+	.destroy = mem_cgroup_destroy,
-+	.populate = mem_cgroup_populate,
-+	.early_init = 0,
-+};
++		mutex_lock(&inode->i_mutex);
+ 		mutex_lock(&cgroup_mutex);
+ 
+ 		/*
+@@ -886,12 +889,14 @@ static int cgroup_get_sb(struct file_
+ 		ret = allocate_cg_links(css_set_count, &tmp_cg_links);
+ 		if (ret) {
+ 			mutex_unlock(&cgroup_mutex);
++			mutex_unlock(&inode->i_mutex);
+ 			goto drop_new_super;
+ 		}
+ 
+ 		ret = rebind_subsystems(root, root->subsys_bits);
+ 		if (ret == -EBUSY) {
+ 			mutex_unlock(&cgroup_mutex);
++			mutex_unlock(&inode->i_mutex);
+ 			goto drop_new_super;
+ 		}
+ 
+@@ -931,16 +936,8 @@ static int cgroup_get_sb(struct file_
+ 		BUG_ON(!list_empty(&cont->children));
+ 		BUG_ON(root->number_of_cgroups != 1);
+ 
+-		/*
+-		 * I believe that it's safe to nest i_mutex inside
+-		 * cgroup_mutex in this case, since no-one else can
+-		 * be accessing this directory yet. But we still need
+-		 * to teach lockdep that this is the case - currently
+-		 * a cgroupfs remount triggers a lockdep warning
+-		 */
+-		mutex_lock(&cont->dentry->d_inode->i_mutex);
+ 		cgroup_populate_dir(cont);
+-		mutex_unlock(&cont->dentry->d_inode->i_mutex);
++		mutex_unlock(&inode->i_mutex);
+ 		mutex_unlock(&cgroup_mutex);
+ 	}
+ 
+@@ -1358,7 +1355,7 @@ static int cgroup_create_file(struct 
+ 
+ 		/* start with the directory inode held, so that we can
+ 		 * populate it without racing with another mkdir */
+-		mutex_lock(&inode->i_mutex);
++		mutex_lock_nested(&inode->i_mutex, I_MUTEX_CHILD);
+ 	} else if (S_ISREG(mode)) {
+ 		inode->i_size = 0;
+ 		inode->i_fop = &cgroup_file_operations;
 _
 
 --
