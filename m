@@ -1,171 +1,264 @@
 From: Paul Menage <menage@google.com>
-Subject: [PATCH 13/33] task containersv11 simple task container debug info subsystem
-Date: Mon, 17 Sep 2007 14:03:20 -0700
-Message-ID: <20070917210428.222009000@menage.corp.google.com>
+Subject: [PATCH 04/33] task containersv11 add fork exit hooks
+Date: Mon, 17 Sep 2007 14:03:11 -0700
+Message-ID: <20070917210426.740700000@menage.corp.google.com>
 References: <20070917210307.116234000@menage.corp.google.com>
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1758408AbXIQVFN@vger.kernel.org>
-Content-Disposition: inline; filename=task-containersv11-simple-task-container-debug-info-subsystem.patch
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1757828AbXIQVFk@vger.kernel.org>
+Content-Disposition: inline; filename=task-containersv11-add-fork-exit-hooks.patch
 Sender: linux-kernel-owner@vger.kernel.org
 To: akpm@linuxfoundation.org, balbir@linux.vnet.ibm.com, "Serge E. Hallyn" <serue@us.ibm.com>, Cedric Le Goater <clg@fr.ibm.com>, "Eric W. Biederman" <ebiederm@xmission.com>, Pavel
 Cc: Nick Piggin <nickpiggin@yahoo.com.au>, Peter Zijlstra <a.p.zijlstra@chello.nl>, pj@sgi.com, containers@lists.osdl.org, linux-kernel@vger.kernel.org
 List-Id: containers.vger.kernel.org
 
-This example subsystem exports debugging information as an aid to diagnosing
-refcount leaks, etc, in the cgroup framework.
+Adds the necessary hooks to the fork() and exit() paths to ensure that
+new children inherit their parent's cgroup assignments, and that exiting
+processes release reference counts on their cgroups.
 
 Signed-off-by: Paul Menage <menage@google.com>
 ---
 
- include/linux/cgroup_subsys.h |    4 +
- init/Kconfig                     |   10 ++
- kernel/Makefile                  |    1 
- kernel/cgroup_debug.c         |   97 +++++++++++++++++++++++++++++
- 4 files changed, 112 insertions(+)
+ include/linux/cgroup.h |    6 +
+ kernel/cgroup.c        |  121 ++++++++++++++++++++++++++++++++++++
+ kernel/exit.c             |    2 
+ kernel/fork.c             |   14 +++-
+ 4 files changed, 141 insertions(+), 2 deletions(-)
 
-diff -puN include/linux/cgroup_subsys.h~task-cgroupsv11-simple-task-cgroup-debug-info-subsystem include/linux/cgroup_subsys.h
---- a/include/linux/cgroup_subsys.h~task-cgroupsv11-simple-task-cgroup-debug-info-subsystem
-+++ a/include/linux/cgroup_subsys.h
-@@ -19,4 +19,8 @@ SUBSYS(cpuacct)
+diff -puN include/linux/cgroup.h~task-cgroupsv11-add-fork-exit-hooks include/linux/cgroup.h
+--- a/include/linux/cgroup.h~task-cgroupsv11-add-fork-exit-hooks
++++ a/include/linux/cgroup.h
+@@ -25,6 +25,9 @@ extern int cgroup_init(void);
+ extern void cgroup_init_smp(void);
+ extern void cgroup_lock(void);
+ extern void cgroup_unlock(void);
++extern void cgroup_fork(struct task_struct *p);
++extern void cgroup_fork_callbacks(struct task_struct *p);
++extern void cgroup_exit(struct task_struct *p, int run_callbacks);
  
- /* */
+ /* Per-subsystem/per-cgroup state maintained by the system. */
+ struct cgroup_subsys_state {
+@@ -215,6 +218,9 @@ int cgroup_path(const struct containe
+ static inline int cgroup_init_early(void) { return 0; }
+ static inline int cgroup_init(void) { return 0; }
+ static inline void cgroup_init_smp(void) {}
++static inline void cgroup_fork(struct task_struct *p) {}
++static inline void cgroup_fork_callbacks(struct task_struct *p) {}
++static inline void cgroup_exit(struct task_struct *p, int callbacks) {}
  
-+#ifdef CONFIG_CGROUP_DEBUG
-+SUBSYS(debug)
-+#endif
-+
- /* */
-diff -puN init/Kconfig~task-cgroupsv11-simple-task-cgroup-debug-info-subsystem init/Kconfig
---- a/init/Kconfig~task-cgroupsv11-simple-task-cgroup-debug-info-subsystem
-+++ a/init/Kconfig
-@@ -282,6 +282,16 @@ config CGROUPS
+ static inline void cgroup_lock(void) {}
+ static inline void cgroup_unlock(void) {}
+diff -puN kernel/cgroup.c~task-cgroupsv11-add-fork-exit-hooks kernel/cgroup.c
+--- a/kernel/cgroup.c~task-cgroupsv11-add-fork-exit-hooks
++++ a/kernel/cgroup.c
+@@ -132,6 +132,33 @@ list_for_each_entry(_ss, &_root->subsys_
+ #define for_each_root(_root) \
+ list_for_each_entry(_root, &roots, root_list)
  
- 	  Say N if unsure.
- 
-+config CGROUP_DEBUG
-+	bool "Example debug cgroup subsystem"
-+	depends on CGROUPS
-+	help
-+	  This option enables a simple cgroup subsystem that
-+	  exports useful debugging information about the cgroups
-+	  framework
-+
-+	  Say N if unsure
-+
- config CPUSETS
- 	bool "Cpuset support"
- 	depends on SMP && CGROUPS
-diff -puN kernel/Makefile~task-cgroupsv11-simple-task-cgroup-debug-info-subsystem kernel/Makefile
---- a/kernel/Makefile~task-cgroupsv11-simple-task-cgroup-debug-info-subsystem
-+++ a/kernel/Makefile
-@@ -39,6 +39,7 @@ obj-$(CONFIG_BSD_PROCESS_ACCT) += acct.o
- obj-$(CONFIG_KEXEC) += kexec.o
- obj-$(CONFIG_COMPAT) += compat.o
- obj-$(CONFIG_CGROUPS) += cgroup.o
-+obj-$(CONFIG_CGROUP_DEBUG) += cgroup_debug.o
- obj-$(CONFIG_CPUSETS) += cpuset.o
- obj-$(CONFIG_CGROUP_CPUACCT) += cpu_acct.o
- obj-$(CONFIG_IKCONFIG) += configs.o
-diff -puN /dev/null kernel/cgroup_debug.c
---- /dev/null
-+++ a/kernel/cgroup_debug.c
-@@ -0,0 +1,97 @@
-+/*
-+ * kernel/ccontainer_debug.c - Example cgroup subsystem that
-+ * exposes debug info
++/* Each task_struct has an embedded css_set, so the get/put
++ * operation simply takes a reference count on all the cgroups
++ * referenced by subsystems in this css_set. This can end up
++ * multiple-counting some cgroups, but that's OK - the ref-count is
++ * just a busy/not-busy indicator; ensuring that we only count each
++ * cgroup once would require taking a global lock to ensure that no
++ * subsystems moved between hierarchies while we were doing so.
 + *
-+ * Copyright (C) Google Inc, 2007
++ * Possible TODO: decide at boot time based on the number of
++ * registered subsystems and the number of CPUs or NUMA nodes whether
++ * it's better for performance to ref-count every subsystem, or to
++ * take a global lock and only add one ref count to each hierarchy.
++ */
++static void get_css_set(struct css_set *cg)
++{
++	int i;
++	for (i = 0; i < CGROUP_SUBSYS_COUNT; i++)
++		atomic_inc(&cg->subsys[i]->cgroup->count);
++}
++
++static void put_css_set(struct css_set *cg)
++{
++	int i;
++	for (i = 0; i < CGROUP_SUBSYS_COUNT; i++)
++		atomic_dec(&cg->subsys[i]->cgroup->count);
++}
++
+ /*
+  * There is one global cgroup mutex. We also require taking
+  * task_lock() when dereferencing a task's cgroup subsys pointers.
+@@ -1563,3 +1590,97 @@ int __init cgroup_init(void)
+ out:
+ 	return err;
+ }
++
++/**
++ * cgroup_fork - attach newly forked task to its parents cgroup.
++ * @tsk: pointer to task_struct of forking parent process.
 + *
-+ * Developed by Paul Menage (menage@google.com)
++ * Description: A task inherits its parent's cgroup at fork().
++ *
++ * A pointer to the shared css_set was automatically copied in
++ * fork.c by dup_task_struct().  However, we ignore that copy, since
++ * it was not made under the protection of RCU or cgroup_mutex, so
++ * might no longer be a valid cgroup pointer.  attach_task() might
++ * have already changed current->cgroup, allowing the previously
++ * referenced cgroup to be removed and freed.
++ *
++ * At the point that cgroup_fork() is called, 'current' is the parent
++ * task, and the passed argument 'child' points to the child task.
++ */
++void cgroup_fork(struct task_struct *child)
++{
++	rcu_read_lock();
++	child->cgroups = rcu_dereference(current->cgroups);
++	get_css_set(&child->cgroups);
++	rcu_read_unlock();
++}
++
++/**
++ * cgroup_fork_callbacks - called on a new task very soon before
++ * adding it to the tasklist. No need to take any locks since no-one
++ * can be operating on this task
++ */
++void cgroup_fork_callbacks(struct task_struct *child)
++{
++	if (need_forkexit_callback) {
++		int i;
++		for (i = 0; i < CGROUP_SUBSYS_COUNT; i++) {
++			struct cgroup_subsys *ss = subsys[i];
++			if (ss->fork)
++				ss->fork(ss, child);
++		}
++	}
++}
++
++/**
++ * cgroup_exit - detach cgroup from exiting task
++ * @tsk: pointer to task_struct of exiting process
++ *
++ * Description: Detach cgroup from @tsk and release it.
++ *
++ * Note that cgroups marked notify_on_release force every task in
++ * them to take the global cgroup_mutex mutex when exiting.
++ * This could impact scaling on very large systems.  Be reluctant to
++ * use notify_on_release cgroups where very high task exit scaling
++ * is required on large systems.
++ *
++ * the_top_cgroup_hack:
++ *
++ *    Set the exiting tasks cgroup to the root cgroup (top_cgroup).
++ *
++ *    We call cgroup_exit() while the task is still competent to
++ *    handle notify_on_release(), then leave the task attached to the
++ *    root cgroup in each hierarchy for the remainder of its exit.
++ *
++ *    To do this properly, we would increment the reference count on
++ *    top_cgroup, and near the very end of the kernel/exit.c do_exit()
++ *    code we would add a second cgroup function call, to drop that
++ *    reference.  This would just create an unnecessary hot spot on
++ *    the top_cgroup reference count, to no avail.
++ *
++ *    Normally, holding a reference to a cgroup without bumping its
++ *    count is unsafe.   The cgroup could go away, or someone could
++ *    attach us to a different cgroup, decrementing the count on
++ *    the first cgroup that we never incremented.  But in this case,
++ *    top_cgroup isn't going away, and either task has PF_EXITING set,
++ *    which wards off any attach_task() attempts, or task is a failed
++ *    fork, never visible to attach_task.
 + *
 + */
++void cgroup_exit(struct task_struct *tsk, int run_callbacks)
++{
++	int i;
 +
++	if (run_callbacks && need_forkexit_callback) {
++		for (i = 0; i < CGROUP_SUBSYS_COUNT; i++) {
++			struct cgroup_subsys *ss = subsys[i];
++			if (ss->exit)
++				ss->exit(ss, tsk);
++		}
++	}
++	/* Reassign the task to the init_css_set. */
++	task_lock(tsk);
++	put_css_set(&tsk->cgroups);
++	tsk->cgroups = init_task.cgroups;
++	task_unlock(tsk);
++}
+diff -puN kernel/exit.c~task-cgroupsv11-add-fork-exit-hooks kernel/exit.c
+--- a/kernel/exit.c~task-cgroupsv11-add-fork-exit-hooks
++++ a/kernel/exit.c
+@@ -33,6 +33,7 @@
+ #include <linux/delayacct.h>
+ #include <linux/freezer.h>
+ #include <linux/cpuset.h>
 +#include <linux/cgroup.h>
-+#include <linux/fs.h>
-+#include <linux/slab.h>
-+#include <linux/rcupdate.h>
+ #include <linux/syscalls.h>
+ #include <linux/signal.h>
+ #include <linux/posix-timers.h>
+@@ -981,6 +982,7 @@ fastcall NORET_TYPE void do_exit(long co
+ 	check_stack_usage();
+ 	exit_thread();
+ 	cpuset_exit(tsk);
++	cgroup_exit(tsk, 1);
+ 	exit_keys(tsk);
+ 
+ 	if (group_dead && tsk->signal->leader)
+diff -puN kernel/fork.c~task-cgroupsv11-add-fork-exit-hooks kernel/fork.c
+--- a/kernel/fork.c~task-cgroupsv11-add-fork-exit-hooks
++++ a/kernel/fork.c
+@@ -30,6 +30,7 @@
+ #include <linux/capability.h>
+ #include <linux/cpu.h>
+ #include <linux/cpuset.h>
++#include <linux/cgroup.h>
+ #include <linux/security.h>
+ #include <linux/swap.h>
+ #include <linux/syscalls.h>
+@@ -967,6 +968,7 @@ static struct task_struct *copy_process(
+ {
+ 	int retval;
+ 	struct task_struct *p = NULL;
++	int cgroup_callbacks_done = 0;
+ 
+ 	if ((clone_flags & (CLONE_NEWNS|CLONE_FS)) == (CLONE_NEWNS|CLONE_FS))
+ 		return ERR_PTR(-EINVAL);
+@@ -1068,12 +1070,13 @@ static struct task_struct *copy_process(
+ 	p->io_context = NULL;
+ 	p->audit_context = NULL;
+ 	cpuset_fork(p);
++	cgroup_fork(p);
+ #ifdef CONFIG_NUMA
+  	p->mempolicy = mpol_copy(p->mempolicy);
+  	if (IS_ERR(p->mempolicy)) {
+  		retval = PTR_ERR(p->mempolicy);
+  		p->mempolicy = NULL;
+- 		goto bad_fork_cleanup_cpuset;
++ 		goto bad_fork_cleanup_cgroup;
+  	}
+ 	mpol_fix_fork_child_flag(p);
+ #endif
+@@ -1184,6 +1187,12 @@ static struct task_struct *copy_process(
+ 	/* Perform scheduler related setup. Assign this task to a CPU. */
+ 	sched_fork(p, clone_flags);
+ 
++	/* Now that the task is set up, run cgroup callbacks if
++	 * necessary. We need to run them before the task is visible
++	 * on the tasklist. */
++	cgroup_fork_callbacks(p);
++	cgroup_callbacks_done = 1;
 +
-+#include <asm/atomic.h>
-+
-+static struct cgroup_subsys_state *debug_create(struct cgroup_subsys *ss,
-+						   struct cgroup *cont)
-+{
-+	struct cgroup_subsys_state *css = kzalloc(sizeof(*css), GFP_KERNEL);
-+
-+	if (!css)
-+		return ERR_PTR(-ENOMEM);
-+
-+	return css;
-+}
-+
-+static void debug_destroy(struct cgroup_subsys *ss, struct cgroup *cont)
-+{
-+	kfree(cont->subsys[debug_subsys_id]);
-+}
-+
-+static u64 cgroup_refcount_read(struct cgroup *cont, struct cftype *cft)
-+{
-+	return atomic_read(&cont->count);
-+}
-+
-+static u64 taskcount_read(struct cgroup *cont, struct cftype *cft)
-+{
-+	u64 count;
-+
-+	cgroup_lock();
-+	count = cgroup_task_count(cont);
-+	cgroup_unlock();
-+	return count;
-+}
-+
-+static u64 current_css_set_read(struct cgroup *cont, struct cftype *cft)
-+{
-+	return (u64)(long)current->cgroups;
-+}
-+
-+static u64 current_css_set_refcount_read(struct cgroup *cont,
-+					   struct cftype *cft)
-+{
-+	u64 count;
-+
-+	rcu_read_lock();
-+	count = atomic_read(&current->cgroups->ref.refcount);
-+	rcu_read_unlock();
-+	return count;
-+}
-+
-+static struct cftype files[] =  {
-+	{
-+		.name = "cgroup_refcount",
-+		.read_uint = cgroup_refcount_read,
-+	},
-+	{
-+		.name = "taskcount",
-+		.read_uint = taskcount_read,
-+	},
-+
-+	{
-+		.name = "current_css_set",
-+		.read_uint = current_css_set_read,
-+	},
-+
-+	{
-+		.name = "current_css_set_refcount",
-+		.read_uint = current_css_set_refcount_read,
-+	},
-+};
-+
-+static int debug_populate(struct cgroup_subsys *ss, struct cgroup *cont)
-+{
-+	return cgroup_add_files(cont, ss, files, ARRAY_SIZE(files));
-+}
-+
-+struct cgroup_subsys debug_subsys = {
-+	.name = "debug",
-+	.create = debug_create,
-+	.destroy = debug_destroy,
-+	.populate = debug_populate,
-+	.subsys_id = debug_subsys_id,
-+};
+ 	/* Need tasklist lock for parent etc handling! */
+ 	write_lock_irq(&tasklist_lock);
+ 
+@@ -1306,9 +1315,10 @@ bad_fork_cleanup_security:
+ bad_fork_cleanup_policy:
+ #ifdef CONFIG_NUMA
+ 	mpol_free(p->mempolicy);
+-bad_fork_cleanup_cpuset:
++bad_fork_cleanup_cgroup:
+ #endif
+ 	cpuset_exit(p);
++	cgroup_exit(p, cgroup_callbacks_done);
+ 	delayacct_tsk_free(p);
+ 	if (p->binfmt)
+ 		module_put(p->binfmt->module);
 _
 
 --
