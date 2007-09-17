@@ -1,33 +1,43 @@
-From: Dave Hansen <haveblue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 4/4] Account for the slub objects
-Date: Mon, 17 Sep 2007 09:08:21 -0700
-Message-ID: <1190045301.26982.56.camel@localhost>
-References: <46EE70B4.6060902@openvz.org>  <46EE74AF.70105@openvz.org>
+From: Stephen Hemminger <shemminger@linux-foundation.org>
+Subject: Re: [net-2.6.24][patch 2/2] Dynamically allocate the loopback
+ device
+Date: Mon, 17 Sep 2007 10:13:14 -0700
+Message-ID: <20070917101314.5d1673da@freepuppy.rosehill.hemminger.net>
+References: <20070917134509.222896190@mai.toulouse-stg.fr.ibm.com>
+	<20070917135133.466924283@mai.toulouse-stg.fr.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain
+Content-Type: text/plain; charset=US-ASCII
 Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <46EE74AF.70105-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
-Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Christoph Lameter <clameter-sJ/iWh9BUns@public.gmane.org>
+Return-path: <netdev-owner@vger.kernel.org>
+In-Reply-To: <20070917135133.466924283@mai.toulouse-stg.fr.ibm.com>
+Sender: netdev-owner@vger.kernel.org
+To: dlezcano@fr.ibm.com
+Cc: davem@davemloft.net, netdev@vger.kernel.org, containers@lists.osdl.org, "Eric W. Biederman" <ebiederm@xmission.com>, Kirill Korotaev <dev@sw.ru>, Benjamin Thery <benjamin.thery@bull.net>
 List-Id: containers.vger.kernel.org
 
-On Mon, 2007-09-17 at 16:35 +0400, Pavel Emelyanov wrote:
-> The struct page gets an extra pointer (just like it has with
-> the RSS controller) and this pointer points to the array of
-> the kmem_container pointers - one for each object stored on
-> that page itself.
+On Mon, 17 Sep 2007 15:45:11 +0200
+dlezcano@fr.ibm.com wrote:
 
-Can't these at least be unioned so we don't make it any _worse_ when
-both are turned on?
+> From: Daniel Lezcano <dlezcano@fr.ibm.com>
+> 
+> Doing this makes loopback.c a better example of how to do a
+> simple network device, and it removes the special case
+> single static allocation of a struct net_device, hopefully
+> making maintenance easier.
+> 
 
--- Dave
+What is before/after code and data size, does it make code smaller?
+
+>  
+> -module_init(loopback_init);
+> +fs_initcall(loopback_init);
+>  
+> +struct net_device *loopback_dev;
+>  EXPORT_SYMBOL(loopback_dev);
+
+
+
+
+
+-- 
+Stephen Hemminger <shemminger@linux-foundation.org>
