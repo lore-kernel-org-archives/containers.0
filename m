@@ -1,12 +1,12 @@
 From: Christoph Lameter <clameter-sJ/iWh9BUns@public.gmane.org>
-Subject: Re: [PATCH 0/4] Kernel memory accounting container (v3)
-Date: Mon, 17 Sep 2007 11:27:11 -0700 (PDT)
-Message-ID: <Pine.LNX.4.64.0709171126330.27057@schroedinger.engr.sgi.com>
-References: <46EE70B4.6060902@openvz.org>
+Subject: Re: [PATCH 2/4] Switch caches notification dynamically
+Date: Mon, 17 Sep 2007 11:29:33 -0700 (PDT)
+Message-ID: <Pine.LNX.4.64.0709171128380.27057@schroedinger.engr.sgi.com>
+References: <46EE70B4.6060902@openvz.org> <46EE7375.3040902@openvz.org>
 Mime-Version: 1.0
 Content-Type: TEXT/PLAIN; charset=US-ASCII
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <46EE70B4.6060902-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+In-Reply-To: <46EE7375.3040902-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -22,14 +22,11 @@ List-Id: containers.vger.kernel.org
 
 On Mon, 17 Sep 2007, Pavel Emelyanov wrote:
 
-> As I have already told kmalloc caches cannot be accounted easily
-> so turning the accounting on for them will fail with -EINVAL.
-> Turning the accounting off is possible only if the cache has
-> no objects. This is done so because turning accounting off
-> implies unaccounting of all the objects in the cache, but due
-> to full-pages in slub are not stored in any lists (usually)
-> this is impossible to do so, however I'm open for discussion
-> of how to make this work.
+> If we turn accounting on on some cache and this cache 
+> is merged with some other, this "other" will be notified
+> as well. We can solve this by disabling of cache merging, 
+> but maybe we can do it some other way.
 
-Where can I find more information why is would not be possible to 
-account kmalloc caches?
+You could write a 1 to slub_nomerge during bootup if containers are to 
+be supported? Once they are merged it is going to be difficult to separate 
+them again.
