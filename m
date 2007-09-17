@@ -1,57 +1,171 @@
-From: Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: Re: [PATCH 0/4] Kernel memory accounting container (v3)
-Date: Tue, 18 Sep 2007 02:21:03 +0530
-Message-ID: <46EEE8B7.2070805@linux.vnet.ibm.com>
-References: <46EE70B4.6060902@openvz.org>
-	<Pine.LNX.4.64.0709171126330.27057@schroedinger.engr.sgi.com>
-Reply-To: balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
-Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <Pine.LNX.4.64.0709171126330.27057-RYO/mD75kfhx2SFC9UQUAuF7EQX82lMiAL8bYrjMMd8@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Christoph Lameter <clameter-sJ/iWh9BUns@public.gmane.org>
-Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+From: Paul Menage <menage@google.com>
+Subject: [PATCH 13/33] task containersv11 simple task container debug info subsystem
+Date: Mon, 17 Sep 2007 14:03:20 -0700
+Message-ID: <20070917210428.222009000@menage.corp.google.com>
+References: <20070917210307.116234000@menage.corp.google.com>
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1758408AbXIQVFN@vger.kernel.org>
+Content-Disposition: inline; filename=task-containersv11-simple-task-container-debug-info-subsystem.patch
+Sender: linux-kernel-owner@vger.kernel.org
+To: akpm@linuxfoundation.org, balbir@linux.vnet.ibm.com, "Serge E. Hallyn" <serue@us.ibm.com>, Cedric Le Goater <clg@fr.ibm.com>, "Eric W. Biederman" <ebiederm@xmission.com>, Pavel
+Cc: Nick Piggin <nickpiggin@yahoo.com.au>, Peter Zijlstra <a.p.zijlstra@chello.nl>, pj@sgi.com, containers@lists.osdl.org, linux-kernel@vger.kernel.org
 List-Id: containers.vger.kernel.org
 
-Christoph Lameter wrote:
-> On Mon, 17 Sep 2007, Pavel Emelyanov wrote:
-> 
->> As I have already told kmalloc caches cannot be accounted easily
->> so turning the accounting on for them will fail with -EINVAL.
->> Turning the accounting off is possible only if the cache has
->> no objects. This is done so because turning accounting off
->> implies unaccounting of all the objects in the cache, but due
->> to full-pages in slub are not stored in any lists (usually)
->> this is impossible to do so, however I'm open for discussion
->> of how to make this work.
-> 
-> Where can I find more information why is would not be possible to 
-> account kmalloc caches?
-> 
+This example subsystem exports debugging information as an aid to diagnosing
+refcount leaks, etc, in the cgroup framework.
 
-Hi, Christoph,
+Signed-off-by: Paul Menage <menage@google.com>
+---
 
-I've wondered the same thing and asked the question. Pavel wrote
-back to me saying
+ include/linux/cgroup_subsys.h |    4 +
+ init/Kconfig                     |   10 ++
+ kernel/Makefile                  |    1 
+ kernel/cgroup_debug.c         |   97 +++++++++++++++++++++++++++++
+ 4 files changed, 112 insertions(+)
 
-"The pages that are full of objects are not linked in any list
-in kmem_cache so we just cannot find them."
+diff -puN include/linux/cgroup_subsys.h~task-cgroupsv11-simple-task-cgroup-debug-info-subsystem include/linux/cgroup_subsys.h
+--- a/include/linux/cgroup_subsys.h~task-cgroupsv11-simple-task-cgroup-debug-info-subsystem
++++ a/include/linux/cgroup_subsys.h
+@@ -19,4 +19,8 @@ SUBSYS(cpuacct)
+ 
+ /* */
+ 
++#ifdef CONFIG_CGROUP_DEBUG
++SUBSYS(debug)
++#endif
++
+ /* */
+diff -puN init/Kconfig~task-cgroupsv11-simple-task-cgroup-debug-info-subsystem init/Kconfig
+--- a/init/Kconfig~task-cgroupsv11-simple-task-cgroup-debug-info-subsystem
++++ a/init/Kconfig
+@@ -282,6 +282,16 @@ config CGROUPS
+ 
+ 	  Say N if unsure.
+ 
++config CGROUP_DEBUG
++	bool "Example debug cgroup subsystem"
++	depends on CGROUPS
++	help
++	  This option enables a simple cgroup subsystem that
++	  exports useful debugging information about the cgroups
++	  framework
++
++	  Say N if unsure
++
+ config CPUSETS
+ 	bool "Cpuset support"
+ 	depends on SMP && CGROUPS
+diff -puN kernel/Makefile~task-cgroupsv11-simple-task-cgroup-debug-info-subsystem kernel/Makefile
+--- a/kernel/Makefile~task-cgroupsv11-simple-task-cgroup-debug-info-subsystem
++++ a/kernel/Makefile
+@@ -39,6 +39,7 @@ obj-$(CONFIG_BSD_PROCESS_ACCT) += acct.o
+ obj-$(CONFIG_KEXEC) += kexec.o
+ obj-$(CONFIG_COMPAT) += compat.o
+ obj-$(CONFIG_CGROUPS) += cgroup.o
++obj-$(CONFIG_CGROUP_DEBUG) += cgroup_debug.o
+ obj-$(CONFIG_CPUSETS) += cpuset.o
+ obj-$(CONFIG_CGROUP_CPUACCT) += cpu_acct.o
+ obj-$(CONFIG_IKCONFIG) += configs.o
+diff -puN /dev/null kernel/cgroup_debug.c
+--- /dev/null
++++ a/kernel/cgroup_debug.c
+@@ -0,0 +1,97 @@
++/*
++ * kernel/ccontainer_debug.c - Example cgroup subsystem that
++ * exposes debug info
++ *
++ * Copyright (C) Google Inc, 2007
++ *
++ * Developed by Paul Menage (menage@google.com)
++ *
++ */
++
++#include <linux/cgroup.h>
++#include <linux/fs.h>
++#include <linux/slab.h>
++#include <linux/rcupdate.h>
++
++#include <asm/atomic.h>
++
++static struct cgroup_subsys_state *debug_create(struct cgroup_subsys *ss,
++						   struct cgroup *cont)
++{
++	struct cgroup_subsys_state *css = kzalloc(sizeof(*css), GFP_KERNEL);
++
++	if (!css)
++		return ERR_PTR(-ENOMEM);
++
++	return css;
++}
++
++static void debug_destroy(struct cgroup_subsys *ss, struct cgroup *cont)
++{
++	kfree(cont->subsys[debug_subsys_id]);
++}
++
++static u64 cgroup_refcount_read(struct cgroup *cont, struct cftype *cft)
++{
++	return atomic_read(&cont->count);
++}
++
++static u64 taskcount_read(struct cgroup *cont, struct cftype *cft)
++{
++	u64 count;
++
++	cgroup_lock();
++	count = cgroup_task_count(cont);
++	cgroup_unlock();
++	return count;
++}
++
++static u64 current_css_set_read(struct cgroup *cont, struct cftype *cft)
++{
++	return (u64)(long)current->cgroups;
++}
++
++static u64 current_css_set_refcount_read(struct cgroup *cont,
++					   struct cftype *cft)
++{
++	u64 count;
++
++	rcu_read_lock();
++	count = atomic_read(&current->cgroups->ref.refcount);
++	rcu_read_unlock();
++	return count;
++}
++
++static struct cftype files[] =  {
++	{
++		.name = "cgroup_refcount",
++		.read_uint = cgroup_refcount_read,
++	},
++	{
++		.name = "taskcount",
++		.read_uint = taskcount_read,
++	},
++
++	{
++		.name = "current_css_set",
++		.read_uint = current_css_set_read,
++	},
++
++	{
++		.name = "current_css_set_refcount",
++		.read_uint = current_css_set_refcount_read,
++	},
++};
++
++static int debug_populate(struct cgroup_subsys *ss, struct cgroup *cont)
++{
++	return cgroup_add_files(cont, ss, files, ARRAY_SIZE(files));
++}
++
++struct cgroup_subsys debug_subsys = {
++	.name = "debug",
++	.create = debug_create,
++	.destroy = debug_destroy,
++	.populate = debug_populate,
++	.subsys_id = debug_subsys_id,
++};
+_
 
-I suspect that SLUB changes this, but I need to look at the
-allocator more carefully.
-
--- 
-	Warm Regards,
-	Balbir Singh
-	Linux Technology Center
-	IBM, ISTL
+--
