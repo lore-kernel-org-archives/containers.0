@@ -1,32 +1,36 @@
-From: David Miller <davem@davemloft.net>
-Subject: Re: [PATCH][NETNS] Use list_for_each_entry_continue_reverse in
- setup_net
-Date: Sun, 16 Sep 2007 17:07:00 -0700 (PDT)
-Message-ID: <20070916.170700.116353255.davem@davemloft.net>
-References: <20070914220714.3a1e87f8@oldman>
-	<20070916.164914.15264075.davem@davemloft.net>
-	<m1odg2w3yv.fsf@ebiederm.dsl.xmission.com>
+From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
+Subject: Re: [NETNS45][PATCH 1/1] Fix network namespace unshare support.
+Date: Sun, 16 Sep 2007 20:55:38 -0600
+Message-ID: <m1r6kyt2z9.fsf@ebiederm.dsl.xmission.com>
+References: <20070914162637.429733612@frecb000701.frec.bull.fr>
+	<20070914162735.674439633@frecb000701.frec.bull.fr>
 Mime-Version: 1.0
-Content-Type: Text/Plain; charset=us-ascii
-Content-Transfer-Encoding: 7bit
-Return-path: <netdev-owner@vger.kernel.org>
-In-Reply-To: <m1odg2w3yv.fsf@ebiederm.dsl.xmission.com>
-Sender: netdev-owner@vger.kernel.org
-To: ebiederm@xmission.com
-Cc: shemminger@linux-foundation.org, xemul@openvz.org, netdev@vger.kernel.org, containers@lists.osdl.org, devel@openvz.org, dlezcano@fr.ibm.com
+Content-Type: text/plain; charset=us-ascii
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <20070914162735.674439633-okVqAf2pJUEelBkcLfQrlDWMkbuR3peG@public.gmane.org> (benjamin
+	thery's message of "Fri, 14 Sep 2007 18:26:38 +0200")
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: benjamin.thery-6ktuUTfB/bM@public.gmane.org
+Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-From: ebiederm@xmission.com (Eric W. Biederman)
-Date: Sun, 16 Sep 2007 18:06:00 -0600
+benjamin.thery-6ktuUTfB/bM@public.gmane.org writes:
 
-> I did that audit when I replied to Stephen the first time and I just
-> redid it to verify myself.  We are calling functions that can fail
-> from the init function (kmalloc in the most common).  So the
-> init function can fail.
-> 
-> So short of adding a bunch of BUG_ON's to the kernel to trap those
-> failure cases we can't remove the backwards list walk.  Especially
-> since I can initiate this code path as root by calling 
-> "clone(CLONE_NEWNET...)".
+> Add CLONE_NEWNET flag in sys_unshare() test.
+>
+> This patch should be merged with commit: 
+> "net: Add network namespace clone & unshare support."
+>
+> Signed-off-by: Benjamin Thery <benjamin.thery-6ktuUTfB/bM@public.gmane.org>
 
-I just noticed that posting and thanks for reiterating.
+Thanks you guys are really doing a good job catching when I slip up.
+
+Eric
