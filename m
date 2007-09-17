@@ -1,7 +1,7 @@
 From: Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
-Subject: [PATCH 3/4] Setup the container
-Date: Mon, 17 Sep 2007 16:33:59 +0400
-Message-ID: <46EE7437.70402@openvz.org>
+Subject: [PATCH 4/4] Account for the slub objects
+Date: Mon, 17 Sep 2007 16:35:59 +0400
+Message-ID: <46EE74AF.70105@openvz.org>
 References: <46EE70B4.6060902@openvz.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1
@@ -21,189 +21,231 @@ To: Christoph Lameter <clameter-sJ/iWh9BUns@public.gmane.org>
 Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Attach the controller to the containers. This will work
-with the SLUB allocator only. However, if we need I can
-port this on SLAB (and maybe SLOB ;) ).
+The struct page gets an extra pointer (just like it has with
+the RSS controller) and this pointer points to the array of
+the kmem_container pointers - one for each object stored on
+that page itself.
 
-This setup is simple and stupid.
+Thus the i'th object on the page is accounted to the container
+pointed by the i'th pointer on that array and when the object
+is freed we unaccount its size to this particular container,
+not the container current task belongs to.
+
+This is done so, because the context objects are freed is most
+often not the same as the one this objects was allocated in
+(due to RCU and reference counters).
 
 Signed-off-by: Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 
 ---
 
- include/linux/container_subsys.h |    6 +
- init/Kconfig                     |    6 +
- mm/Makefile                      |    1 
- mm/kmemcontrol.c                 |  123 +++++++++++++++++++++++++++++++++++++++
- 4 files changed, 136 insertions(+)
+ include/linux/mm_types.h |    7 ++
+ include/linux/slub_def.h |    2 
+ mm/kmemcontrol.c         |  126 +++++++++++++++++++++++++++++++++++++++++++++++
+ mm/slub.c                |   12 ++++
+ 4 files changed, 145 insertions(+), 2 deletions(-)
 
-diff --git a/include/linux/container_subsys.h b/include/linux/container_subsys.h
-index 81d11c2..9dd90d9 100644
---- a/include/linux/container_subsys.h
-+++ b/include/linux/container_subsys.h
-@@ -36,3 +36,9 @@ SUBSYS(mem_container)
- #endif
- 
- /* */
-+
-+#ifdef CONFIG_CONTAINER_KMEM
-+SUBSYS(kmem)
+diff --git a/include/linux/mm_types.h b/include/linux/mm_types.h
+index 48df4b4..1a41901 100644
+--- a/include/linux/mm_types.h
++++ b/include/linux/mm_types.h
+@@ -83,9 +83,14 @@ struct page {
+ 	void *virtual;			/* Kernel virtual address (NULL if
+ 					   not kmapped, ie. highmem) */
+ #endif /* WANT_PAGE_VIRTUAL */
++	union {
+ #ifdef CONFIG_CONTAINER_MEM_CONT
+-	unsigned long page_container;
++		unsigned long page_container;
 +#endif
-+
-+/* */
-diff --git a/init/Kconfig b/init/Kconfig
-index 58559ea..d499f15 100644
---- a/init/Kconfig
-+++ b/init/Kconfig
-@@ -353,6 +353,12 @@ config CONTAINER_MEM_CONT
- 	  Provides a memory controller that manages both page cache and
- 	  RSS memory.
++#ifdef CONFIG_CONTAINER_KMEM
++		struct kmem_container **containers;
+ #endif
++	};
+ #ifdef CONFIG_PAGE_OWNER
+ 	int order;
+ 	unsigned int gfp_mask;
+diff --git a/include/linux/slub_def.h b/include/linux/slub_def.h
+index d65159d..547777e 100644
+--- a/include/linux/slub_def.h
++++ b/include/linux/slub_def.h
+@@ -69,6 +69,8 @@ struct kmem_cache {
+ #endif
+ };
  
-+config CONTAINER_KMEM
-+	bool "Kernel memory controller for containers"
-+	depends on CONTAINERS && RESOURCE_COUNTERS && SLUB
-+	help
-+	  Provides a kernel memory usage control for containers
++int slab_index(void *p, struct kmem_cache *s, void *addr);
 +
- config PROC_PID_CPUSET
- 	bool "Include legacy /proc/<pid>/cpuset file"
- 	depends on CPUSETS
-diff --git a/mm/Makefile b/mm/Makefile
-index 6237dd6..1cb7e6d 100644
---- a/mm/Makefile
-+++ b/mm/Makefile
-@@ -31,4 +31,5 @@ obj-$(CONFIG_MIGRATION) += migrate.o
- obj-$(CONFIG_SMP) += allocpercpu.o
- obj-$(CONFIG_QUICKLIST) += quicklist.o
- obj-$(CONFIG_CONTAINER_MEM_CONT) += memcontrol.o
-+obj-$(CONFIG_CONTAINER_KMEM) += kmemcontrol.o
- 
+ /*
+  * Kmalloc subsystem.
+  */
 diff --git a/mm/kmemcontrol.c b/mm/kmemcontrol.c
 new file mode 100644
 index 0000000..637554b
 --- /dev/null
 +++ b/mm/kmemcontrol.c
-@@ -0,0 +1,123 @@
-+/*
-+ * kmemcontrol.c - Kernel Memory Controller
+@@ -0,6 +1,9 @@
+  * but WITHOUT ANY WARRANTY; without even the implied warranty of
+  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  * GNU General Public License for more details.
 + *
-+ * Copyright 2007 OpenVZ SWsoft Inc
-+ * Author: Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
-+ *
-+ * This program is free software; you can redistribute it and/or modify
-+ * it under the terms of the GNU General Public License as published by
-+ * the Free Software Foundation; either version 2 of the License, or
-+ * (at your option) any later version.
-+ *
-+ * This program is distributed in the hope that it will be useful,
-+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
-+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-+ * GNU General Public License for more details.
-+ */
-+
-+#include <linux/mm.h>
-+#include <linux/container.h>
-+#include <linux/res_counter.h>
-+#include <linux/err.h>
-+
-+struct kmem_container {
-+	struct container_subsys_state css;
-+	struct res_counter res;
-+};
-+
-+static inline
-+struct kmem_container *css_to_kmem(struct container_subsys_state *css)
-+{
-+	return container_of(css, struct kmem_container, css);
-+}
-+
-+static inline 
-+struct kmem_container *container_to_kmem(struct container *cont)
-+{
-+	return css_to_kmem(container_subsys_state(cont, kmem_subsys_id));
-+}
-+
-+static inline
-+struct kmem_container *task_kmem_container(struct task_struct *tsk)
-+{
-+	return css_to_kmem(task_subsys_state(tsk, kmem_subsys_id));
-+}
++ * Changelog:
++ *   2007 Pavel Emelyanov : Add slub accounting
+  */
+ 
+ #include <linux/mm.h>
+@@ -0,2 +123,126 @@
+ 	.subsys_id = kmem_subsys_id,
+ 	.early_init = 1,
+ };
 +
 +/*
-+ * containers interface
++ * slub accounting
 + */
 +
-+static struct kmem_container init_kmem_container;
-+
-+static struct container_subsys_state *kmem_create(struct container_subsys *ss,
-+		struct container *container)
++static int kmem_prepare(struct kmem_cache *s, struct page *pg, gfp_t flags)
 +{
-+	struct kmem_container *mem;
++	struct kmem_container **ptr;
 +
-+	if (unlikely((container->parent) == NULL))
-+		mem = &init_kmem_container;
-+	else
-+		mem = kzalloc(sizeof(struct kmem_container), GFP_KERNEL);
++	ptr = kzalloc(s->objects * sizeof(struct kmem_container *), flags);
++	if (ptr == NULL)
++		return -ENOMEM;
 +
-+	if (mem == NULL)
-+		return ERR_PTR(-ENOMEM);
-+
-+	res_counter_init(&mem->res);
-+	return &mem->css;
-+
++	pg->containers = ptr;
++	return 0;
 +}
 +
-+static void kmem_destroy(struct container_subsys *ss,
-+		struct container *container)
++static void kmem_release(struct kmem_cache *s, struct page *pg)
 +{
-+	kfree(container_to_kmem(container));
++	struct kmem_container **ptr;
++
++	ptr = pg->containers;
++	if (ptr == NULL)
++		return;
++
++	kfree(ptr);
++	pg->containers = NULL;
 +}
 +
-+static ssize_t kmem_container_read(struct container *cont, struct cftype *cft,
-+		struct file *file, char __user *userbuf, size_t nbytes,
-+		loff_t *ppos)
++static int kmem_charge(struct kmem_cache *s, void *obj, gfp_t gfp)
 +{
-+	return res_counter_read(&container_to_kmem(cont)->res,
-+			cft->private, userbuf, nbytes, ppos);
++	struct page *pg;
++	struct kmem_container *cnt;
++	struct kmem_container **obj_container;
++
++	pg = virt_to_head_page(obj);
++	obj_container = pg->containers;
++	if (unlikely(obj_container == NULL)) {
++		/*
++		 * turned on after some objects were allocated
++		 */
++		if (kmem_prepare(s, pg, gfp) < 0)
++			goto err;
++
++		obj_container = pg->containers;
++	}
++
++	rcu_read_lock();
++	cnt = task_kmem_container(current);
++	if (res_counter_charge(&cnt->res, s->size))
++		goto err_locked;
++
++	css_get(&cnt->css);
++	rcu_read_unlock();
++	obj_container[slab_index(obj, s, page_address(pg))] = cnt;
++	return 0;
++
++err_locked:
++	rcu_read_unlock();
++err:
++	return -ENOMEM;
 +}
 +
-+static ssize_t kmem_container_write(struct container *cont, struct cftype *cft,
-+		struct file *file, const char __user *userbuf,
-+		size_t nbytes, loff_t *ppos)
++static void kmem_uncharge(struct kmem_cache *s, void *obj)
 +{
-+	return res_counter_write(&container_to_kmem(cont)->res,
-+			cft->private, userbuf, nbytes, ppos);
++	struct page *pg;
++	struct kmem_container *cnt;
++	struct kmem_container **obj_container;
++
++	pg = virt_to_head_page(obj);
++	obj_container = pg->containers;
++	if (obj_container == NULL)
++		return;
++
++	obj_container += slab_index(obj, s, page_address(pg));
++	cnt = *obj_container;
++	if (cnt == NULL)
++		return;
++
++	res_counter_uncharge(&cnt->res, s->size);
++	*obj_container = NULL;
++	css_put(&cnt->css);
 +}
 +
-+static struct cftype kmem_files[] = {
-+	{
-+		.name = "usage",
-+		.private = RES_USAGE,
-+		.read = kmem_container_read,
-+	},
-+	{
-+		.name = "limit",
-+		.private = RES_LIMIT,
-+		.write = kmem_container_write,
-+		.read = kmem_container_read,
-+	},
-+	{
-+		.name = "failcnt",
-+		.private = RES_FAILCNT,
-+		.read = kmem_container_read,
-+	},
++static int kmem_notify(struct notifier_block *nb, unsigned long cmd, void *arg)
++{
++	int ret;
++	struct slub_notify_struct *ns;
++
++	ns = (struct slub_notify_struct *)arg;
++
++	switch (cmd) {
++	case SLUB_ALLOC:
++		ret = kmem_charge(ns->cachep, ns->objp, ns->gfp);
++		break;
++	case SLUB_FREE:
++		ret = 0;
++		kmem_uncharge(ns->cachep, ns->objp);
++		break;
++	case SLUB_NEWPAGE:
++		ret = kmem_prepare(ns->cachep, ns->objp, ns->gfp);
++		break;
++	case SLUB_FREEPAGE:
++		ret = 0;
++		kmem_release(ns->cachep, ns->objp);
++		break;
++	default:
++		return NOTIFY_DONE;
++	}
++
++	return (ret < 0) ? notifier_from_errno(ret) : NOTIFY_OK;
++}
++
++static struct notifier_block kmem_block = {
++	.notifier_call = kmem_notify,
 +};
 +
-+static int kmem_populate(struct container_subsys *ss, struct container *cnt)
++static int kmem_subsys_register(void)
 +{
-+	return container_add_files(cnt, ss, kmem_files, ARRAY_SIZE(kmem_files));
++	return slub_register_notifier(&kmem_block);
 +}
 +
-+struct container_subsys kmem_subsys = {
-+	.name = "kmem",
-+	.create = kmem_create,
-+	.destroy  = kmem_destroy,
-+	.populate = kmem_populate,
-+	.subsys_id = kmem_subsys_id,
-+	.early_init = 1,
-+};
++__initcall(kmem_subsys_register);
+diff --git a/mm/slub.c b/mm/slub.c
+index 1802645..bfb7c21 100644
+--- a/mm/slub.c
++++ b/mm/slub.c
+@@ -327,7 +327,7 @@ static inline void set_freepointer(struc
+ 	for (__p = (__free); __p; __p = get_freepointer((__s), __p))
+ 
+ /* Determine object index from a given position */
+-static inline int slab_index(void *p, struct kmem_cache *s, void *addr)
++inline int slab_index(void *p, struct kmem_cache *s, void *addr)
+ {
+ 	return (p - addr) / s->size;
+ }
+@@ -2789,6 +2900,16 @@ static int slab_unmergeable(struct kmem_
+ 	if (s->refcount < 0)
+ 		return 1;
+ 
++#ifdef CONFIG_CONTAINER_KMEM
++	/*
++	 * many caches that can be accountable are usually merged with
++	 * kmalloc caches, which are disabled for accounting for a while
++	 */
++
++	if (is_kmalloc_cache(s))
++		return 1;
++#endif
++
+ 	return 0;
+ }
