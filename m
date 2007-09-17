@@ -1,10 +1,11 @@
 From: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH 16/33] add containerstats v3
-Date: Mon, 17 Sep 2007 14:03:23 -0700
-Message-ID: <20070917210428.705765000@menage.corp.google.com>
+Subject: [PATCH 27/33] memory controller add per container lru and reclaim v7
+Date: Mon, 17 Sep 2007 14:03:34 -0700
+Message-ID: <20070917210430.503834000@menage.corp.google.com>
 References: <20070917210307.116234000@menage.corp.google.com>
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline; filename=add-containerstats-v3.patch
+Content-Disposition: inline;
+	filename=memory-controller-add-per-container-lru-and-reclaim-v7.patch
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -21,435 +22,569 @@ List-Id: containers.vger.kernel.org
 From: Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 (container->cgroup renaming by Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>)
 
-This patch is inspired by the discussion at
-http://lkml.org/lkml/2007/4/11/187 and implements per cgroup statistics
-as suggested by Andrew Morton in http://lkml.org/lkml/2007/4/11/263.  The
-patch is on top of 2.6.21-mm1 with Paul's cgroups v9 patches (forward
-ported)
+Add the page_cgroup to the per cgroup LRU.  The reclaim algorithm has
+been modified to make the isolate_lru_pages() as a pluggable component.  The
+scan_control data structure now accepts the cgroup on behalf of which
+reclaims are carried out.  try_to_free_pages() has been extended to become
+cgroup aware.
 
-This patch implements per cgroup statistics infrastructure and re-uses
-code from the taskstats interface.  A new set of cgroup operations are
-registered with commands and attributes.  It should be very easy to
-*extend* per cgroup statistics, by adding members to the cgroupstats
-structure.
-
-The current model for cgroupstats is a pull, a push model (to post
-statistics on interesting events), should be very easy to add.  Currently
-user space requests for statistics by passing the cgroup file
-descriptor.  Statistics about the state of all the tasks in the cgroup
-is returned to user space.
-
-TODO's/NOTE:
-
-This patch provides an infrastructure for implementing cgroup statistics.
-Based on the needs of each controller, we can incrementally add more statistics,
-event based support for notification of statistics, accumulation of taskstats
-into cgroup statistics in the future.
-
-Sample output
-
-# ./cgroupstats -C /cgroup/a
-sleeping 2, blocked 0, running 1, stopped 0, uninterruptible 0
-
-# ./cgroupstats -C /cgroup/
-sleeping 154, blocked 0, running 0, stopped 0, uninterruptible 0
-
-If the approach looks good, I'll enhance and post the user space utility for
-the same
-
-Feedback, comments, test results are always welcome!
-
+Signed-off-by: Pavel Emelianov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 Signed-off-by: Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 Signed-off-by: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
-
 ---
 
- Documentation/accounting/cgroupstats.txt |   27 ++++++
- include/linux/Kbuild                        |    1 
- include/linux/cgroup.h                   |    8 ++
- include/linux/cgroupstats.h              |   70 ++++++++++++++++++
- include/linux/delayacct.h                   |   13 +++
- kernel/cgroup.c                          |   55 ++++++++++++++
- kernel/taskstats.c                          |   66 ++++++++++++++++
- 7 files changed, 240 insertions(+)
+ include/linux/memcontrol.h  |   12 +++
+ include/linux/res_counter.h |   23 +++++
+ include/linux/swap.h        |    3 
+ mm/memcontrol.c             |  135 +++++++++++++++++++++++++++++++++-
+ mm/swap.c                   |    2 
+ mm/vmscan.c                 |  126 +++++++++++++++++++++++++------
+ 6 files changed, 275 insertions(+), 26 deletions(-)
 
-diff -puN /dev/null Documentation/accounting/cgroupstats.txt
---- /dev/null
-+++ a/Documentation/accounting/cgroupstats.txt
-@@ -0,0 +1,27 @@
-+Control Groupstats is inspired by the discussion at
-+http://lkml.org/lkml/2007/4/11/187 and implements per cgroup statistics as
-+suggested by Andrew Morton in http://lkml.org/lkml/2007/4/11/263.
-+
-+Per cgroup statistics infrastructure re-uses code from the taskstats
-+interface. A new set of cgroup operations are registered with commands
-+and attributes specific to cgroups. It should be very easy to
-+extend per cgroup statistics, by adding members to the cgroupstats
-+structure.
-+
-+The current model for cgroupstats is a pull, a push model (to post
-+statistics on interesting events), should be very easy to add. Currently
-+user space requests for statistics by passing the cgroup path.
-+Statistics about the state of all the tasks in the cgroup is returned to
-+user space.
-+
-+NOTE: We currently rely on delay accounting for extracting information
-+about tasks blocked on I/O. If CONFIG_TASK_DELAY_ACCT is disabled, this
-+information will not be available.
-+
-+To extract cgroup statistics a utility very similar to getdelays.c
-+has been developed, the sample output of the utility is shown below
-+
-+~/balbir/cgroupstats # ./getdelays  -C "/cgroup/a"
-+sleeping 1, blocked 0, running 1, stopped 0, uninterruptible 0
-+~/balbir/cgroupstats # ./getdelays  -C "/cgroup"
-+sleeping 155, blocked 0, running 1, stopped 0, uninterruptible 2
-diff -puN include/linux/Kbuild~add-cgroupstats-v3 include/linux/Kbuild
---- a/include/linux/Kbuild~add-cgroupstats-v3
-+++ a/include/linux/Kbuild
-@@ -47,6 +47,7 @@ header-y += coda_psdev.h
- header-y += coff.h
- header-y += comstats.h
- header-y += const.h
-+header-y += cgroupstats.h
- header-y += cycx_cfm.h
- header-y += dlm_device.h
- header-y += dlm_netlink.h
-diff -puN include/linux/cgroup.h~add-cgroupstats-v3 include/linux/cgroup.h
---- a/include/linux/cgroup.h~add-cgroupstats-v3
-+++ a/include/linux/cgroup.h
-@@ -13,6 +13,7 @@
- #include <linux/cpumask.h>
- #include <linux/nodemask.h>
- #include <linux/rcupdate.h>
-+#include <linux/cgroupstats.h>
+diff -puN include/linux/memcontrol.h~memory-controller-add-per-cgroup-lru-and-reclaim-v7 include/linux/memcontrol.h
+--- a/include/linux/memcontrol.h~memory-controller-add-per-cgroup-lru-and-reclaim-v7
++++ a/include/linux/memcontrol.h
+@@ -32,6 +32,13 @@ extern void page_assign_page_cgroup(s
+ extern struct page_cgroup *page_get_page_cgroup(struct page *page);
+ extern int mem_cgroup_charge(struct page *page, struct mm_struct *mm);
+ extern void mem_cgroup_uncharge(struct page_cgroup *pc);
++extern void mem_cgroup_move_lists(struct page_cgroup *pc, bool active);
++extern unsigned long mem_cgroup_isolate_pages(unsigned long nr_to_scan,
++					struct list_head *dst,
++					unsigned long *scanned, int order,
++					int mode, struct zone *z,
++					struct mem_cgroup *mem_cont,
++					int active);
  
- #ifdef CONFIG_CGROUPS
+ static inline void mem_cgroup_uncharge_page(struct page *page)
+ {
+@@ -71,6 +78,11 @@ static inline void mem_cgroup_uncharg
+ {
+ }
  
-@@ -29,6 +30,8 @@ extern void cgroup_fork(struct task_s
- extern void cgroup_fork_callbacks(struct task_struct *p);
- extern void cgroup_post_fork(struct task_struct *p);
- extern void cgroup_exit(struct task_struct *p, int run_callbacks);
-+extern int cgroupstats_build(struct cgroupstats *stats,
-+				struct dentry *dentry);
- 
- extern struct file_operations proc_cgroup_operations;
- 
-@@ -305,6 +308,11 @@ static inline void cgroup_exit(struct
- 
- static inline void cgroup_lock(void) {}
- static inline void cgroup_unlock(void) {}
-+static inline int cgroupstats_build(struct cgroupstats *stats,
-+					struct dentry *dentry)
++static inline void mem_cgroup_move_lists(struct page_cgroup *pc,
++						bool active)
 +{
-+	return -EINVAL;
-+}
- 
- #endif /* !CONFIG_CGROUPS */
- 
-diff -puN /dev/null include/linux/cgroupstats.h
---- /dev/null
-+++ a/include/linux/cgroupstats.h
-@@ -0,0 +1,70 @@
-+/* cgroupstats.h - exporting per-cgroup statistics
-+ *
-+ * Copyright IBM Corporation, 2007
-+ * Author Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-+ *
-+ * This program is free software; you can redistribute it and/or modify it
-+ * under the terms of version 2.1 of the GNU Lesser General Public License
-+ * as published by the Free Software Foundation.
-+ *
-+ * This program is distributed in the hope that it would be useful, but
-+ * WITHOUT ANY WARRANTY; without even the implied warranty of
-+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
-+ */
-+
-+#ifndef _LINUX_CGROUPSTATS_H
-+#define _LINUX_CGROUPSTATS_H
-+
-+#include <linux/taskstats.h>
-+
-+/*
-+ * Data shared between user space and kernel space on a per cgroup
-+ * basis. This data is shared using taskstats.
-+ *
-+ * Most of these states are derived by looking at the task->state value
-+ * For the nr_io_wait state, a flag in the delay accounting structure
-+ * indicates that the task is waiting on IO
-+ *
-+ * Each member is aligned to a 8 byte boundary.
-+ */
-+struct cgroupstats {
-+	__u64	nr_sleeping;		/* Number of tasks sleeping */
-+	__u64	nr_running;		/* Number of tasks running */
-+	__u64	nr_stopped;		/* Number of tasks in stopped state */
-+	__u64	nr_uninterruptible;	/* Number of tasks in uninterruptible */
-+					/* state */
-+	__u64	nr_io_wait;		/* Number of tasks waiting on IO */
-+};
-+
-+/*
-+ * Commands sent from userspace
-+ * Not versioned. New commands should only be inserted at the enum's end
-+ * prior to __CGROUPSTATS_CMD_MAX
-+ */
-+
-+enum {
-+	CGROUPSTATS_CMD_UNSPEC = __TASKSTATS_CMD_MAX,	/* Reserved */
-+	CGROUPSTATS_CMD_GET,		/* user->kernel request/get-response */
-+	CGROUPSTATS_CMD_NEW,		/* kernel->user event */
-+	__CGROUPSTATS_CMD_MAX,
-+};
-+
-+#define CGROUPSTATS_CMD_MAX (__CGROUPSTATS_CMD_MAX - 1)
-+
-+enum {
-+	CGROUPSTATS_TYPE_UNSPEC = 0,	/* Reserved */
-+	CGROUPSTATS_TYPE_CGROUP_STATS,	/* contains name + stats */
-+	__CGROUPSTATS_TYPE_MAX,
-+};
-+
-+#define CGROUPSTATS_TYPE_MAX (__CGROUPSTATS_TYPE_MAX - 1)
-+
-+enum {
-+	CGROUPSTATS_CMD_ATTR_UNSPEC = 0,
-+	CGROUPSTATS_CMD_ATTR_FD,
-+	__CGROUPSTATS_CMD_ATTR_MAX,
-+};
-+
-+#define CGROUPSTATS_CMD_ATTR_MAX (__CGROUPSTATS_CMD_ATTR_MAX - 1)
-+
-+#endif /* _LINUX_CGROUPSTATS_H */
-diff -puN include/linux/delayacct.h~add-cgroupstats-v3 include/linux/delayacct.h
---- a/include/linux/delayacct.h~add-cgroupstats-v3
-+++ a/include/linux/delayacct.h
-@@ -26,6 +26,7 @@
-  * Used to set current->delays->flags
-  */
- #define DELAYACCT_PF_SWAPIN	0x00000001	/* I am doing a swapin */
-+#define DELAYACCT_PF_BLKIO	0x00000002	/* I am waiting on IO */
- 
- #ifdef CONFIG_TASK_DELAY_ACCT
- 
-@@ -39,6 +40,14 @@ extern void __delayacct_blkio_end(void);
- extern int __delayacct_add_tsk(struct taskstats *, struct task_struct *);
- extern __u64 __delayacct_blkio_ticks(struct task_struct *);
- 
-+static inline int delayacct_is_task_waiting_on_io(struct task_struct *p)
-+{
-+	if (p->delays)
-+		return (p->delays->flags & DELAYACCT_PF_BLKIO);
-+	else
-+		return 0;
 +}
 +
- static inline void delayacct_set_flag(int flag)
- {
- 	if (current->delays)
-@@ -71,6 +80,7 @@ static inline void delayacct_tsk_free(st
+ #endif /* CONFIG_CGROUP_MEM_CONT */
  
- static inline void delayacct_blkio_start(void)
- {
-+	delayacct_set_flag(DELAYACCT_PF_BLKIO);
- 	if (current->delays)
- 		__delayacct_blkio_start();
- }
-@@ -79,6 +89,7 @@ static inline void delayacct_blkio_end(v
- {
- 	if (current->delays)
- 		__delayacct_blkio_end();
-+	delayacct_clear_flag(DELAYACCT_PF_BLKIO);
- }
+ #endif /* _LINUX_MEMCONTROL_H */
+diff -puN include/linux/res_counter.h~memory-controller-add-per-cgroup-lru-and-reclaim-v7 include/linux/res_counter.h
+--- a/include/linux/res_counter.h~memory-controller-add-per-cgroup-lru-and-reclaim-v7
++++ a/include/linux/res_counter.h
+@@ -99,4 +99,27 @@ int res_counter_charge(struct res_counte
+ void res_counter_uncharge_locked(struct res_counter *counter, unsigned long val);
+ void res_counter_uncharge(struct res_counter *counter, unsigned long val);
  
- static inline int delayacct_add_tsk(struct taskstats *d,
-@@ -116,6 +127,8 @@ static inline int delayacct_add_tsk(stru
- { return 0; }
- static inline __u64 delayacct_blkio_ticks(struct task_struct *tsk)
- { return 0; }
-+static inline int delayacct_is_task_waiting_on_io(struct task_struct *p)
-+{ return 0; }
- #endif /* CONFIG_TASK_DELAY_ACCT */
- 
- #endif
-diff -puN kernel/cgroup.c~add-cgroupstats-v3 kernel/cgroup.c
---- a/kernel/cgroup.c~add-cgroupstats-v3
-+++ a/kernel/cgroup.c
-@@ -42,6 +42,9 @@
- #include <linux/spinlock.h>
- #include <linux/string.h>
- #include <linux/sort.h>
-+#include <linux/delayacct.h>
-+#include <linux/cgroupstats.h>
-+
- #include <asm/atomic.h>
- 
- static DEFINE_MUTEX(cgroup_mutex);
-@@ -1739,6 +1742,58 @@ static int pid_array_load(pid_t *pidarra
- 	return n;
- }
- 
-+/**
-+ * Build and fill cgroupstats so that taskstats can export it to user
-+ * space.
-+ *
-+ * @stats: cgroupstats to fill information into
-+ * @dentry: A dentry entry belonging to the cgroup for which stats have
-+ * been requested.
-+ */
-+int cgroupstats_build(struct cgroupstats *stats, struct dentry *dentry)
++static inline bool res_counter_limit_check_locked(struct res_counter *cnt)
 +{
-+	int ret = -EINVAL;
-+	struct cgroup *cont;
-+	struct cgroup_iter it;
-+	struct task_struct *tsk;
-+	/*
-+	 * Validate dentry by checking the superblock operations
-+	 */
-+	if (dentry->d_sb->s_op != &cgroup_ops)
-+		 goto err;
++	if (cnt->usage < cnt->limit)
++		return true;
 +
-+	ret = 0;
-+	cont = dentry->d_fsdata;
-+	rcu_read_lock();
++	return false;
++}
 +
-+	cgroup_iter_start(cont, &it);
-+	while ((tsk = cgroup_iter_next(cont, &it))) {
-+		switch (tsk->state) {
-+		case TASK_RUNNING:
-+			stats->nr_running++;
-+			break;
-+		case TASK_INTERRUPTIBLE:
-+			stats->nr_sleeping++;
-+			break;
-+		case TASK_UNINTERRUPTIBLE:
-+			stats->nr_uninterruptible++;
-+			break;
-+		case TASK_STOPPED:
-+			stats->nr_stopped++;
-+			break;
-+		default:
-+			if (delayacct_is_task_waiting_on_io(tsk))
-+				stats->nr_io_wait++;
-+			break;
-+		}
-+	}
-+	cgroup_iter_end(cont, &it);
++/*
++ * Helper function to detect if the cgroup is within it's limit or
++ * not. It's currently called from cgroup_rss_prepare()
++ */
++static inline bool res_counter_check_under_limit(struct res_counter *cnt)
++{
++	bool ret;
++	unsigned long flags;
 +
-+	rcu_read_unlock();
-+err:
++	spin_lock_irqsave(&cnt->lock, flags);
++	ret = res_counter_limit_check_locked(cnt);
++	spin_unlock_irqrestore(&cnt->lock, flags);
 +	return ret;
 +}
 +
- static int cmppid(const void *a, const void *b)
- {
- 	return *(pid_t *)a - *(pid_t *)b;
-diff -puN kernel/taskstats.c~add-cgroupstats-v3 kernel/taskstats.c
---- a/kernel/taskstats.c~add-cgroupstats-v3
-+++ a/kernel/taskstats.c
-@@ -22,6 +22,9 @@
- #include <linux/delayacct.h>
- #include <linux/cpumask.h>
- #include <linux/percpu.h>
-+#include <linux/cgroupstats.h>
-+#include <linux/cgroup.h>
-+#include <linux/file.h>
- #include <net/genetlink.h>
+ #endif
+diff -puN include/linux/swap.h~memory-controller-add-per-cgroup-lru-and-reclaim-v7 include/linux/swap.h
+--- a/include/linux/swap.h~memory-controller-add-per-cgroup-lru-and-reclaim-v7
++++ a/include/linux/swap.h
+@@ -6,6 +6,7 @@
+ #include <linux/mmzone.h>
+ #include <linux/list.h>
+ #include <linux/sched.h>
++#include <linux/memcontrol.h>
+ 
  #include <asm/atomic.h>
+ #include <asm/page.h>
+@@ -190,6 +191,8 @@ extern void swap_setup(void);
+ /* linux/mm/vmscan.c */
+ extern unsigned long try_to_free_pages(struct zone **zones, int order,
+ 					gfp_t gfp_mask);
++extern unsigned long try_to_free_mem_cgroup_pages(struct mem_cgroup *mem);
++extern int __isolate_lru_page(struct page *page, int mode);
+ extern unsigned long shrink_all_memory(unsigned long nr_pages);
+ extern int vm_swappiness;
+ extern int remove_mapping(struct address_space *mapping, struct page *page);
+diff -puN mm/memcontrol.c~memory-controller-add-per-cgroup-lru-and-reclaim-v7 mm/memcontrol.c
+--- a/mm/memcontrol.c~memory-controller-add-per-cgroup-lru-and-reclaim-v7
++++ a/mm/memcontrol.c
+@@ -24,8 +24,12 @@
+ #include <linux/page-flags.h>
+ #include <linux/bit_spinlock.h>
+ #include <linux/rcupdate.h>
++#include <linux/swap.h>
++#include <linux/spinlock.h>
++#include <linux/fs.h>
  
-@@ -49,6 +52,11 @@ __read_mostly = {
- 	[TASKSTATS_CMD_ATTR_REGISTER_CPUMASK] = { .type = NLA_STRING },
- 	[TASKSTATS_CMD_ATTR_DEREGISTER_CPUMASK] = { .type = NLA_STRING },};
+ struct cgroup_subsys mem_cgroup_subsys;
++static const int MEM_CGROUP_RECLAIM_RETRIES = 5;
  
-+static struct nla_policy
-+cgroupstats_cmd_get_policy[CGROUPSTATS_CMD_ATTR_MAX+1] __read_mostly = {
-+	[CGROUPSTATS_CMD_ATTR_FD] = { .type = NLA_U32 },
-+};
-+
- struct listener {
- 	struct list_head list;
- 	pid_t pid;
-@@ -374,6 +382,51 @@ err:
- 	return NULL;
- }
- 
-+static int cgroupstats_user_cmd(struct sk_buff *skb, struct genl_info *info)
-+{
-+	int rc = 0;
-+	struct sk_buff *rep_skb;
-+	struct cgroupstats *stats;
-+	struct nlattr *na;
-+	size_t size;
-+	u32 fd;
-+	struct file *file;
-+	int fput_needed;
-+
-+	na = info->attrs[CGROUPSTATS_CMD_ATTR_FD];
-+	if (!na)
-+		return -EINVAL;
-+
-+	fd = nla_get_u32(info->attrs[CGROUPSTATS_CMD_ATTR_FD]);
-+	file = fget_light(fd, &fput_needed);
-+	if (file) {
-+		size = nla_total_size(sizeof(struct cgroupstats));
-+
-+		rc = prepare_reply(info, CGROUPSTATS_CMD_NEW, &rep_skb,
-+					size);
-+		if (rc < 0)
-+			goto err;
-+
-+		na = nla_reserve(rep_skb, CGROUPSTATS_TYPE_CGROUP_STATS,
-+					sizeof(struct cgroupstats));
-+		stats = nla_data(na);
-+		memset(stats, 0, sizeof(*stats));
-+
-+		rc = cgroupstats_build(stats, file->f_dentry);
-+		if (rc < 0)
-+			goto err;
-+
-+		fput_light(file, fput_needed);
-+		return send_reply(rep_skb, info->snd_pid);
-+	}
-+
-+err:
-+	if (file)
-+		fput_light(file, fput_needed);
-+	nlmsg_free(rep_skb);
-+	return rc;
-+}
-+
- static int taskstats_user_cmd(struct sk_buff *skb, struct genl_info *info)
- {
- 	int rc = 0;
-@@ -524,6 +577,12 @@ static struct genl_ops taskstats_ops = {
- 	.policy		= taskstats_cmd_get_policy,
+ /*
+  * The memory controller data structure. The memory controller controls both
+@@ -51,6 +55,10 @@ struct mem_cgroup {
+ 	 */
+ 	struct list_head active_list;
+ 	struct list_head inactive_list;
++	/*
++	 * spin_lock to protect the per cgroup LRU
++	 */
++	spinlock_t lru_lock;
  };
  
-+static struct genl_ops cgroupstats_ops = {
-+	.cmd		= CGROUPSTATS_CMD_GET,
-+	.doit		= cgroupstats_user_cmd,
-+	.policy		= cgroupstats_cmd_get_policy,
-+};
-+
- /* Needed early in initialization */
- void __init taskstats_init_early(void)
- {
-@@ -548,8 +607,15 @@ static int __init taskstats_init(void)
- 	if (rc < 0)
- 		goto err;
+ /*
+@@ -141,6 +149,94 @@ void __always_inline unlock_page_contain
+ 	bit_spin_unlock(PAGE_CGROUP_LOCK_BIT, &page->page_cgroup);
+ }
  
-+	rc = genl_register_ops(&family, &cgroupstats_ops);
-+	if (rc < 0)
-+		goto err_cgroup_ops;
++void __mem_cgroup_move_lists(struct page_cgroup *pc, bool active)
++{
++	if (active)
++		list_move(&pc->lru, &pc->mem_cgroup->active_list);
++	else
++		list_move(&pc->lru, &pc->mem_cgroup->inactive_list);
++}
 +
- 	family_registered = 1;
-+	printk("registered taskstats version %d\n", TASKSTATS_GENL_VERSION);
++/*
++ * This routine assumes that the appropriate zone's lru lock is already held
++ */
++void mem_cgroup_move_lists(struct page_cgroup *pc, bool active)
++{
++	struct mem_cgroup *mem;
++	if (!pc)
++		return;
++
++	mem = pc->mem_cgroup;
++
++	spin_lock(&mem->lru_lock);
++	__mem_cgroup_move_lists(pc, active);
++	spin_unlock(&mem->lru_lock);
++}
++
++unsigned long mem_cgroup_isolate_pages(unsigned long nr_to_scan,
++					struct list_head *dst,
++					unsigned long *scanned, int order,
++					int mode, struct zone *z,
++					struct mem_cgroup *mem_cont,
++					int active)
++{
++	unsigned long nr_taken = 0;
++	struct page *page;
++	unsigned long scan;
++	LIST_HEAD(pc_list);
++	struct list_head *src;
++	struct page_cgroup *pc;
++
++	if (active)
++		src = &mem_cont->active_list;
++	else
++		src = &mem_cont->inactive_list;
++
++	spin_lock(&mem_cont->lru_lock);
++	for (scan = 0; scan < nr_to_scan && !list_empty(src); scan++) {
++		pc = list_entry(src->prev, struct page_cgroup, lru);
++		page = pc->page;
++		VM_BUG_ON(!pc);
++
++		if (PageActive(page) && !active) {
++			__mem_cgroup_move_lists(pc, true);
++			scan--;
++			continue;
++		}
++		if (!PageActive(page) && active) {
++			__mem_cgroup_move_lists(pc, false);
++			scan--;
++			continue;
++		}
++
++		/*
++		 * Reclaim, per zone
++		 * TODO: make the active/inactive lists per zone
++		 */
++		if (page_zone(page) != z)
++			continue;
++
++		/*
++		 * Check if the meta page went away from under us
++		 */
++		if (!list_empty(&pc->lru))
++			list_move(&pc->lru, &pc_list);
++		else
++			continue;
++
++		if (__isolate_lru_page(page, mode) == 0) {
++			list_move(&page->lru, dst);
++			nr_taken++;
++		}
++	}
++
++	list_splice(&pc_list, src);
++	spin_unlock(&mem_cont->lru_lock);
++
++	*scanned = scan;
++	return nr_taken;
++}
++
+ /*
+  * Charge the memory controller for page usage.
+  * Return
+@@ -151,6 +247,8 @@ int mem_cgroup_charge(struct page *pa
+ {
+ 	struct mem_cgroup *mem;
+ 	struct page_cgroup *pc, *race_pc;
++	unsigned long flags;
++	unsigned long nr_retries = MEM_CGROUP_RECLAIM_RETRIES;
+ 
+ 	/*
+ 	 * Should page_cgroup's go to their own slab?
+@@ -197,7 +295,32 @@ int mem_cgroup_charge(struct page *pa
+ 	 * If we created the page_cgroup, we should free it on exceeding
+ 	 * the cgroup limit.
+ 	 */
+-	if (res_counter_charge(&mem->res, 1)) {
++	while (res_counter_charge(&mem->res, 1)) {
++		if (try_to_free_mem_cgroup_pages(mem))
++			continue;
++
++		/*
++ 		 * try_to_free_mem_cgroup_pages() might not give us a full
++ 		 * picture of reclaim. Some pages are reclaimed and might be
++ 		 * moved to swap cache or just unmapped from the cgroup.
++ 		 * Check the limit again to see if the reclaim reduced the
++ 		 * current usage of the cgroup before giving up
++ 		 */
++		if (res_counter_check_under_limit(&mem->res))
++			continue;
++			/*
++			 * Since we control both RSS and cache, we end up with a
++			 * very interesting scenario where we end up reclaiming
++			 * memory (essentially RSS), since the memory is pushed
++			 * to swap cache, we eventually end up adding those
++			 * pages back to our list. Hence we give ourselves a
++			 * few chances before we fail
++			 */
++		else if (nr_retries--) {
++			congestion_wait(WRITE, HZ/10);
++			continue;
++		}
++
+ 		css_put(&mem->css);
+ 		goto free_pc;
+ 	}
+@@ -221,6 +344,10 @@ int mem_cgroup_charge(struct page *pa
+ 	pc->page = page;
+ 	page_assign_page_cgroup(page, pc);
+ 
++	spin_lock_irqsave(&mem->lru_lock, flags);
++	list_add(&pc->lru, &mem->active_list);
++	spin_unlock_irqrestore(&mem->lru_lock, flags);
++
+ done:
+ 	unlock_page_cgroup(page);
  	return 0;
-+err_cgroup_ops:
-+	genl_unregister_ops(&family, &taskstats_ops);
- err:
- 	genl_unregister_family(&family);
- 	return rc;
+@@ -240,6 +367,7 @@ void mem_cgroup_uncharge(struct page_
+ {
+ 	struct mem_cgroup *mem;
+ 	struct page *page;
++	unsigned long flags;
+ 
+ 	if (!pc)
+ 		return;
+@@ -252,6 +380,10 @@ void mem_cgroup_uncharge(struct page_
+ 		page_assign_page_cgroup(page, NULL);
+ 		unlock_page_cgroup(page);
+ 		res_counter_uncharge(&mem->res, 1);
++
++ 		spin_lock_irqsave(&mem->lru_lock, flags);
++ 		list_del_init(&pc->lru);
++ 		spin_unlock_irqrestore(&mem->lru_lock, flags);
+ 		kfree(pc);
+ 	}
+ }
+@@ -310,6 +442,7 @@ mem_cgroup_create(struct cgroup_su
+ 	res_counter_init(&mem->res);
+ 	INIT_LIST_HEAD(&mem->active_list);
+ 	INIT_LIST_HEAD(&mem->inactive_list);
++	spin_lock_init(&mem->lru_lock);
+ 	return &mem->css;
+ }
+ 
+diff -puN mm/swap.c~memory-controller-add-per-cgroup-lru-and-reclaim-v7 mm/swap.c
+--- a/mm/swap.c~memory-controller-add-per-cgroup-lru-and-reclaim-v7
++++ a/mm/swap.c
+@@ -28,6 +28,7 @@
+ #include <linux/percpu.h>
+ #include <linux/cpu.h>
+ #include <linux/notifier.h>
++#include <linux/memcontrol.h>
+ 
+ /* How many pages do we try to swap or page in/out together? */
+ int page_cluster;
+@@ -145,6 +146,7 @@ void fastcall activate_page(struct page 
+ 		SetPageActive(page);
+ 		add_page_to_active_list(zone, page);
+ 		__count_vm_event(PGACTIVATE);
++		mem_cgroup_move_lists(page_get_page_cgroup(page), true);
+ 	}
+ 	spin_unlock_irq(&zone->lru_lock);
+ }
+diff -puN mm/vmscan.c~memory-controller-add-per-cgroup-lru-and-reclaim-v7 mm/vmscan.c
+--- a/mm/vmscan.c~memory-controller-add-per-cgroup-lru-and-reclaim-v7
++++ a/mm/vmscan.c
+@@ -37,6 +37,7 @@
+ #include <linux/delay.h>
+ #include <linux/kthread.h>
+ #include <linux/freezer.h>
++#include <linux/memcontrol.h>
+ 
+ #include <asm/tlbflush.h>
+ #include <asm/div64.h>
+@@ -68,6 +69,15 @@ struct scan_control {
+ 	int all_unreclaimable;
+ 
+ 	int order;
++
++	/* Which cgroup do we reclaim from */
++	struct mem_cgroup *mem_cgroup;
++
++	/* Pluggable isolate pages callback */
++	unsigned long (*isolate_pages)(unsigned long nr, struct list_head *dst,
++			unsigned long *scanned, int order, int mode,
++			struct zone *z, struct mem_cgroup *mem_cont,
++			int active);
+ };
+ 
+ #define lru_to_page(_head) (list_entry((_head)->prev, struct page, lru))
+@@ -626,7 +636,7 @@ keep:
+  *
+  * returns 0 on success, -ve errno on failure.
+  */
+-static int __isolate_lru_page(struct page *page, int mode)
++int __isolate_lru_page(struct page *page, int mode)
+ {
+ 	int ret = -EINVAL;
+ 
+@@ -760,6 +770,21 @@ static unsigned long isolate_lru_pages(u
+ 	return nr_taken;
+ }
+ 
++static unsigned long isolate_pages_global(unsigned long nr,
++					struct list_head *dst,
++					unsigned long *scanned, int order,
++					int mode, struct zone *z,
++					struct mem_cgroup *mem_cont,
++					int active)
++{
++	if (active)
++		return isolate_lru_pages(nr, &z->active_list, dst,
++						scanned, order, mode);
++	else
++		return isolate_lru_pages(nr, &z->inactive_list, dst,
++						scanned, order, mode);
++}
++
+ /*
+  * clear_active_flags() is a helper for shrink_active_list(), clearing
+  * any active bits from the pages in the list.
+@@ -801,11 +826,11 @@ static unsigned long shrink_inactive_lis
+ 		unsigned long nr_freed;
+ 		unsigned long nr_active;
+ 
+-		nr_taken = isolate_lru_pages(sc->swap_cluster_max,
+-			     &zone->inactive_list,
++		nr_taken = sc->isolate_pages(sc->swap_cluster_max,
+ 			     &page_list, &nr_scan, sc->order,
+ 			     (sc->order > PAGE_ALLOC_COSTLY_ORDER)?
+-					     ISOLATE_BOTH : ISOLATE_INACTIVE);
++					     ISOLATE_BOTH : ISOLATE_INACTIVE,
++				zone, sc->mem_cgroup, 0);
+ 		nr_active = clear_active_flags(&page_list);
+ 		__count_vm_events(PGDEACTIVATE, nr_active);
+ 
+@@ -1018,8 +1043,9 @@ force_reclaim_mapped:
+ 
+ 	lru_add_drain();
+ 	spin_lock_irq(&zone->lru_lock);
+-	pgmoved = isolate_lru_pages(nr_pages, &zone->active_list,
+-			    &l_hold, &pgscanned, sc->order, ISOLATE_ACTIVE);
++	pgmoved = sc->isolate_pages(nr_pages, &l_hold, &pgscanned, sc->order,
++					ISOLATE_ACTIVE, zone,
++					sc->mem_cgroup, 1);
+ 	zone->pages_scanned += pgscanned;
+ 	__mod_zone_page_state(zone, NR_ACTIVE, -pgmoved);
+ 	spin_unlock_irq(&zone->lru_lock);
+@@ -1054,6 +1080,7 @@ force_reclaim_mapped:
+ 		ClearPageActive(page);
+ 
+ 		list_move(&page->lru, &zone->inactive_list);
++		mem_cgroup_move_lists(page_get_page_cgroup(page), false);
+ 		pgmoved++;
+ 		if (!pagevec_add(&pvec, page)) {
+ 			__mod_zone_page_state(zone, NR_INACTIVE, pgmoved);
+@@ -1082,6 +1109,7 @@ force_reclaim_mapped:
+ 		SetPageLRU(page);
+ 		VM_BUG_ON(!PageActive(page));
+ 		list_move(&page->lru, &zone->active_list);
++		mem_cgroup_move_lists(page_get_page_cgroup(page), true);
+ 		pgmoved++;
+ 		if (!pagevec_add(&pvec, page)) {
+ 			__mod_zone_page_state(zone, NR_ACTIVE, pgmoved);
+@@ -1213,7 +1241,8 @@ static unsigned long shrink_zones(int pr
+  * holds filesystem locks which prevent writeout this might not work, and the
+  * allocation attempt will fail.
+  */
+-unsigned long try_to_free_pages(struct zone **zones, int order, gfp_t gfp_mask)
++unsigned long do_try_to_free_pages(struct zone **zones, gfp_t gfp_mask,
++					struct scan_control *sc)
+ {
+ 	int priority;
+ 	int ret = 0;
+@@ -1222,14 +1251,6 @@ unsigned long try_to_free_pages(struct z
+ 	struct reclaim_state *reclaim_state = current->reclaim_state;
+ 	unsigned long lru_pages = 0;
+ 	int i;
+-	struct scan_control sc = {
+-		.gfp_mask = gfp_mask,
+-		.may_writepage = !laptop_mode,
+-		.swap_cluster_max = SWAP_CLUSTER_MAX,
+-		.may_swap = 1,
+-		.swappiness = vm_swappiness,
+-		.order = order,
+-	};
+ 
+ 	count_vm_event(ALLOCSTALL);
+ 
+@@ -1244,17 +1265,22 @@ unsigned long try_to_free_pages(struct z
+ 	}
+ 
+ 	for (priority = DEF_PRIORITY; priority >= 0; priority--) {
+-		sc.nr_scanned = 0;
++		sc->nr_scanned = 0;
+ 		if (!priority)
+ 			disable_swap_token();
+-		nr_reclaimed += shrink_zones(priority, zones, &sc);
+-		shrink_slab(sc.nr_scanned, gfp_mask, lru_pages);
++		nr_reclaimed += shrink_zones(priority, zones, sc);
++		/*
++		 * Don't shrink slabs when reclaiming memory from
++		 * over limit cgroups
++		 */
++		if (sc->mem_cgroup == NULL)
++			shrink_slab(sc->nr_scanned, gfp_mask, lru_pages);
+ 		if (reclaim_state) {
+ 			nr_reclaimed += reclaim_state->reclaimed_slab;
+ 			reclaim_state->reclaimed_slab = 0;
+ 		}
+-		total_scanned += sc.nr_scanned;
+-		if (nr_reclaimed >= sc.swap_cluster_max) {
++		total_scanned += sc->nr_scanned;
++		if (nr_reclaimed >= sc->swap_cluster_max) {
+ 			ret = 1;
+ 			goto out;
+ 		}
+@@ -1266,18 +1292,18 @@ unsigned long try_to_free_pages(struct z
+ 		 * that's undesirable in laptop mode, where we *want* lumpy
+ 		 * writeout.  So in laptop mode, write out the whole world.
+ 		 */
+-		if (total_scanned > sc.swap_cluster_max +
+-					sc.swap_cluster_max / 2) {
++		if (total_scanned > sc->swap_cluster_max +
++					sc->swap_cluster_max / 2) {
+ 			wakeup_pdflush(laptop_mode ? 0 : total_scanned);
+-			sc.may_writepage = 1;
++			sc->may_writepage = 1;
+ 		}
+ 
+ 		/* Take a nap, wait for some writeback to complete */
+-		if (sc.nr_scanned && priority < DEF_PRIORITY - 2)
++		if (sc->nr_scanned && priority < DEF_PRIORITY - 2)
+ 			congestion_wait(WRITE, HZ/10);
+ 	}
+ 	/* top priority shrink_caches still had more to do? don't OOM, then */
+-	if (!sc.all_unreclaimable)
++	if (!sc->all_unreclaimable && sc->mem_cgroup == NULL)
+ 		ret = 1;
+ out:
+ 	/*
+@@ -1300,6 +1326,54 @@ out:
+ 	return ret;
+ }
+ 
++unsigned long try_to_free_pages(struct zone **zones, int order, gfp_t gfp_mask)
++{
++	struct scan_control sc = {
++		.gfp_mask = gfp_mask,
++		.may_writepage = !laptop_mode,
++		.swap_cluster_max = SWAP_CLUSTER_MAX,
++		.may_swap = 1,
++		.swappiness = vm_swappiness,
++		.order = order,
++		.mem_cgroup = NULL,
++		.isolate_pages = isolate_pages_global,
++	};
++
++	return do_try_to_free_pages(zones, gfp_mask, &sc);
++}
++
++#ifdef CONFIG_CGROUP_MEM_CONT
++
++#ifdef CONFIG_HIGHMEM
++#define ZONE_USERPAGES ZONE_HIGHMEM
++#else
++#define ZONE_USERPAGES ZONE_NORMAL
++#endif
++
++unsigned long try_to_free_mem_cgroup_pages(struct mem_cgroup *mem_cont)
++{
++	struct scan_control sc = {
++		.gfp_mask = GFP_KERNEL,
++		.may_writepage = !laptop_mode,
++		.may_swap = 1,
++		.swap_cluster_max = SWAP_CLUSTER_MAX,
++		.swappiness = vm_swappiness,
++		.order = 1,
++		.mem_cgroup = mem_cont,
++		.isolate_pages = mem_cgroup_isolate_pages,
++	};
++	int node;
++	struct zone **zones;
++
++	for_each_online_node(node) {
++		zones = NODE_DATA(node)->node_zonelists[ZONE_USERPAGES].zones;
++		if (do_try_to_free_pages(zones, sc.gfp_mask, &sc))
++			return 1;
++	}
++	return 0;
++}
++#endif
++
+ /*
+  * For kswapd, balance_pgdat() will work across all this node's zones until
+  * they are all at pages_high.
+@@ -1335,6 +1409,8 @@ static unsigned long balance_pgdat(pg_da
+ 		.swap_cluster_max = SWAP_CLUSTER_MAX,
+ 		.swappiness = vm_swappiness,
+ 		.order = order,
++		.mem_cgroup = NULL,
++		.isolate_pages = isolate_pages_global,
+ 	};
+ 	/*
+ 	 * temp_priority is used to remember the scanning priority at which
 _
 
 --
