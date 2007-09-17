@@ -1,7 +1,7 @@
 From: Dave Hansen <haveblue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 Subject: Re: [PATCH 4/4] Account for the slub objects
-Date: Mon, 17 Sep 2007 09:09:28 -0700
-Message-ID: <1190045368.26982.59.camel@localhost>
+Date: Mon, 17 Sep 2007 09:08:21 -0700
+Message-ID: <1190045301.26982.56.camel@localhost>
 References: <46EE70B4.6060902@openvz.org>  <46EE74AF.70105@openvz.org>
 Mime-Version: 1.0
 Content-Type: text/plain
@@ -22,18 +22,12 @@ Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Chris
 List-Id: containers.vger.kernel.org
 
 On Mon, 2007-09-17 at 16:35 +0400, Pavel Emelyanov wrote:
-> 
-> +
-> +       rcu_read_lock();
-> +       cnt = task_kmem_container(current);
-> +       if (res_counter_charge(&cnt->res, s->size))
-> +               goto err_locked;
-> +
-> +       css_get(&cnt->css);
-> +       rcu_read_unlock();
-> +       obj_container[slab_index(obj, s, page_address(pg))] = cnt; 
+> The struct page gets an extra pointer (just like it has with
+> the RSS controller) and this pointer points to the array of
+> the kmem_container pointers - one for each object stored on
+> that page itself.
 
-You made some effort in the description, but could we get some big fat
-comments here about what RCU is doing?
+Can't these at least be unioned so we don't make it any _worse_ when
+both are turned on?
 
 -- Dave
