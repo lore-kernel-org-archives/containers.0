@@ -1,24 +1,34 @@
-From: "Tyler Barker" <vqrhfb-XM53sOfGvwTbznEWHOhwNltqP2DMTSTvAL8bYrjMMd8@public.gmane.org>
-Subject: [[() ++.  :+ [+ (-!*])[ [!]
-Date: Tue, 18 Sep 2007 03:20:28 +0200
-Message-ID: <01c7f993$64b01ac0$19016055@vqrhfb>
+From: David Miller <davem@davemloft.net>
+Subject: Re: [net-2.6.24][patch 2/2] Dynamically allocate the loopback
+ device
+Date: Mon, 17 Sep 2007 18:53:49 -0700 (PDT)
+Message-ID: <20070917.185349.98863851.davem@davemloft.net>
+References: <20070917101314.5d1673da@freepuppy.rosehill.hemminger.net>
+	<46EECCD5.5090601@fr.ibm.com>
+	<224b7d320709171212o66734847kbd17efa817b482fc@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; format=flowed; charset="Windows-1252";
-	reply-type=original
+Content-Type: Text/Plain; charset=us-ascii
 Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
+Return-path: <netdev-owner@vger.kernel.org>
+In-Reply-To: <224b7d320709171212o66734847kbd17efa817b482fc@mail.gmail.com>
+Sender: netdev-owner@vger.kernel.org
+To: pjwaskiewicz@gmail.com
+Cc: dlezcano@fr.ibm.com, shemminger@linux-foundation.org, netdev@vger.kernel.org, ebiederm@xmission.com, containers@lists.osdl.org, benjamin.thery@bull.net
 List-Id: containers.vger.kernel.org
 
-Sy.m]b:oool F+D[E+G
-Price 0.04
-T)ar[ge+t 0.12
+From: "Peter Waskiewicz" <pjwaskiewicz@gmail.com>
+Date: Mon, 17 Sep 2007 12:12:24 -0700
+
+> This would be a good opportunity to remove the single-allocated queue struct
+> in netdevice (at the bottom) that we had to put in to accomodate the static
+> loopback.  Now we can set it back to a zero element list, and have
+> alloc_netdev_mq() just allocate the number of queues requested, not
+> num_queues - 1.
+> 
+> I'll put a patch together based on this patchset.
+
+Thanks Peter.
+
+I'll also let this sit so that Eric can provide any feedback
+he wants and also figure out how he will use this for the
+namespace stuff.
