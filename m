@@ -1,14 +1,8 @@
-From: Randy Dunlap <randy.dunlap-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 20/33] memory controller add documentation
-Date: Tue, 18 Sep 2007 09:53:13 -0700
-Message-ID: <20070918095313.9c7261f9.randy.dunlap@oracle.com>
-References: <20070917210307.116234000@menage.corp.google.com>
-	<20070917210429.361229000@menage.corp.google.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
-Content-Transfer-Encoding: 7bit
+From: dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org
+Subject: [patch 0/1] fix veth netif_carrier_off
+Date: Tue, 18 Sep 2007 18:56:45 +0200
+Message-ID: <20070918165645.365056264@mai.toulouse-stg.fr.ibm.com>
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20070917210429.361229000-B63HFAS8fGlSzHKm+aFRNNkmqwFzkYv6@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,137 +12,66 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
-Cc: Nick Piggin <nickpiggin-/E1597aS9LT0CCvOHzKKcA@public.gmane.org>, Peter Zijlstra <a.p.zijlstra-/NLkJaSkS4VmR6Xm/wNWPw@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, David Rientjes <rientjes-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, akpm-hQyY1W1yCW8ekmWlsbkhG0B+6BGkLq7r@public.gmane.org, Pavel Emelianov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+To: xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org
+Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Mon, 17 Sep 2007 14:03:27 -0700 Paul Menage wrote:
+When I tryed the veth driver, I fall into a kernel oops.
 
-> From: Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-> (container->cgroup renaming by Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>)
-> 
-> Signed-off-by: Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-> Signed-off-by: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
-> 
-> ---
-> 
->  Documentation/controllers/memory.txt |  259 +++++++++++++++++++++++++
->  1 files changed, 259 insertions(+)
-> 
-> diff -puN /dev/null Documentation/controllers/memory.txt
-> --- /dev/null
-> +++ a/Documentation/controllers/memory.txt
-> @@ -0,0 +1,259 @@
+qemu login: Oops: 0000 [#1]
+Modules linked in:
+CPU:    0
+EIP:    0060:[<c0265c9e>]    Not tainted VLI
+EFLAGS: 00000202   (2.6.23-rc6-g754f885d-dirty #33)
+EIP is at __linkwatch_run_queue+0x6a/0x175
+eax: c7fc9550   ebx: 6b6b6b6b   ecx: c3360c80   edx: 00000246
+esi: 00000001   edi: 6b6b6b6b   ebp: c7fd9f7c   esp: c7fd9f5c
+ds: 007b   es: 007b   fs: 0000  gs: 0000  ss: 0068
+Process events/0 (pid: 5, ti=c7fd8000 task=c7fc9550 task.ti=c7fd8000)
+Stack: c7fee5a8 c0387680 c7fd9f74 c02e1aaa 4f732564 c0387684 c7fee5a8 c0387680 
+       c7fd9f84 c0265dc9 c7fd9fac c011fb3c c7fd9f94 c02e277e c7fd9fac c02e1166 
+       c0265da9 c7fee5a8 c0120203 c7fd9fc8 c7fd9fd0 c01202ba 00000000 c7fc9550 
+Call Trace:
+ [<c0102c69>] show_trace_log_lvl+0x1a/0x2f
+ [<c0102d1b>] show_stack_log_lvl+0x9d/0xa5
+ [<c0102ee1>] show_registers+0x1be/0x28f
+ [<c010309a>] die+0xe8/0x208
+ [<c010d5a1>] do_page_fault+0x4ba/0x595
+ [<c02e2842>] error_code+0x6a/0x70
+ [<c0265dc9>] linkwatch_event+0x20/0x27
+ [<c011fb3c>] run_workqueue+0x7c/0x102
+ [<c01202ba>] worker_thread+0xb7/0xc5
+ [<c012270c>] kthread+0x39/0x61
+ [<c0102913>] kernel_thread_helper+0x7/0x10
+ =======================
+Code: b8 60 76 38 c0 e8 e3 ca 07 00 b8 60 76 38 c0 8b 1d 78 a7 3d c0 c7 05 78 a7 3d c0 00 00 00 00 e8 df ca 07 00 e9 ed 00 00 00 85 f6 <8b> bb f4 01 00 00 74 17 89 d8 e8 73 fe ff ff 85 c0 75 0c 89 d8 
+EIP: [<c0265c9e>] __linkwatch_run_queue+0x6a/0x175 SS:ESP 0068:c7fd9f5c
+Slab corruption: size-2048 start=c473eac8, len=2048
+Redzone: 0x9f911029d74e35b/0x9f911029d74e35b.
+Last user: [<c025be72>](free_netdev+0x1f/0x41)
+200: 6b 6b 6b 6b 6b 6b 6b 6b 6b 6b 6b 6b c0 e2 73 c4
+Prev obj: start=c473e2b0, len=2048
+Redzone: 0xd84156c5635688c0/0xd84156c5635688c0.
+Last user: [<c025bed0>](alloc_netdev_mq+0x3c/0xa1)
+000: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+010: 76 65 74 68 30 00 00 00 00 00 00 00 00 00 00 00
+Next obj: start=c473f2e0, len=2048
+Redzone: 0x9f911029d74e35b/0x9f911029d74e35b.
+Last user: [<c0260e69>](neigh_sysctl_unregister+0x2b/0x2e)
+000: 6b 6b 6b 6b 6b 6b 6b 6b 6b 6b 6b 6b 6b 6b 6b 6b
+010: 6b 6b 6b 6b 6b 6b 6b 6b 6b 6b 6b 6b 6b 6b 6b 6b
 
-> +Benefits and Purpose of the memory controller
-> +
-> +The memory controller isolates the memory behaviour of a group of tasks
-> +from the rest of the system. The article on LWN [12] mentions some probable
-> +uses of the memory controller. The memory controller can be used to
-> +
-> +a. Isolate an application or a group of applications
-> +   Memory hungry applications can be isolated and limited to a smaller
-> +   amount of memory.
-> +b. Create a cgroup with limited amount of memory, this can be used
+That happens when trying to add the veth driver using the ip command:
 
-"," makes run-on sentence.  Please use ";" or 2 sentences.
+	ip link add veth0 
 
-> +   as a good alternative to booting with mem=XXXX.
-> +c. Virtualization solutions can control the amount of memory they want
-> +   to assign to a virtual machine instance.
-> +d. A CD/DVD burner could control the amount of memory used by the
-> +   rest of the system to ensure that burning does not fail due to lack
-> +   of available memory.
-> +e. There are several other use cases, find one or use the controller just
+which fail.
 
-Ditto.
+It appears that the netif_carrier_off is placed into the setup function
+and this one is called before register_netdevice.
 
-> +   for fun (to learn and hack on the VM subsystem).
+The register_netdevice function does a lot of initialization to the netdev
+and if the netif_carrier_off is called before the register_netdev function,
+it will use and trigger an event for an uninitialized netdev.
 
-[snip]
-
-> +
-> +2.1. Design
-> +
-> +The core of the design is a counter called the res_counter. The res_counter
-> +tracks the current memory usage and limit of the group of processes associated
-> +with the controller. Each cgroup has a memory controller specific data
-> +structure (mem_cgroup) associated with it.
-> +
-> +2.2. Accounting
-> +
-[snip]
-> +
-> +The accounting is done as follows: mem_cgroup_charge() is invoked to setup
-> +the necessary data structures and check if the cgroup that is being charged
-> +is over its limit. If it is then reclaim is invoked on the cgroup.
-> +More details can be found in the reclaim section of this document.
-> +If everything goes well, a page meta-data-structure called page_cgroup is
-
-                                   ^drop second hyphen (use space)
-
-> +allocated and associated with the page.  This routine also adds the page to
-> +the per cgroup LRU.
-> +
-> +2.2.1 Accounting details
-> +
-> +All mapped pages (RSS) and unmapped user pages (Page Cache) are accounted.
-> +RSS pages are accounted at the time of page_add_*_rmap() unless they've already
-> +been accounted for earlier. A file page will be accounted for as Page Cache;
-> +it's mapped into the page tables of a process, duplicate accounting is carefully
-
-"," makes run-on sentence...
-
-> +avoided. Page Cache pages are accounted at the time of add_to_page_cache().
-> +The corresponding routines that remove a page from the page tables or removes
-
-s/removes/remove/
-
-> +a page from Page Cache is used to decrement the accounting counters of the
-> +cgroup.
-> +
-> +2.3 Shared Page Accounting
-> +
-> +Shared pages are accounted on the basis of the first touch approach. The
-> +cgroup that first touches a page is accounted for the page. The principle
-> +behind this approach is that a cgroup that aggressively uses a shared
-> +page will eventually get charged for it (once it is uncharged from
-> +the cgroup that brought it in -- this will happen on memory pressure).
-> +
-> +2.4 Reclaim
-> +
-> +Each cgroup maintains a per cgroup LRU that consists of an active
-> +and inactive list. When a cgroup goes over its limit, we first try
-> +to reclaim memory from the cgroup so as to make space for the new
-> +pages that the cgroup has touched. If the reclaim is unsuccessful,
-> +an OOM routine is invoked to select and kill the bulkiest task in the
-> +cgroup.
-> +
-> +The reclaim algorithm has not been modified for cgroups, except that
-> +pages that are selected for reclaiming come from the per cgroup LRU
-> +list.
-> +
-> +2. Locking
-
-2. ??  Section numbering is "off."
-
-> +The memory controller uses the following hierarchy
-> +
-> +1. zone->lru_lock is used for selecting pages to be isolated
-> +2. mem->lru_lock protects the per cgroup LRU
-> +3. lock_page_cgroup() is used to protect page->page_cgroup
-> +
-> +3. User Interface
-> +
-> +0. Configuration
-
-   0. Kernel build configuration
-> +
-> +a. Enable CONFIG_CGROUPS
-> +b. Enable CONFIG_RESOURCE_COUNTERS
-> +c. Enable CONFIG_CGROUP_MEM_CONT
-[snip]
-
-
----
-~Randy
+-- 
