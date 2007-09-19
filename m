@@ -1,14 +1,14 @@
 From: Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
-Subject: Re: [patch 1/1] fix bad netif_carrier_off place
-Date: Wed, 19 Sep 2007 12:35:43 +0400
-Message-ID: <46F0DF5F.9080905@openvz.org>
-References: <20070918165645.365056264@mai.toulouse-stg.fr.ibm.com>
-	<20070918170430.254614330@mai.toulouse-stg.fr.ibm.com>
+Subject: Re: [PATCH 1/4] Add notification about some major slab events
+Date: Wed, 19 Sep 2007 14:08:32 +0400
+Message-ID: <46F0F520.1010804@openvz.org>
+References: <46EE70B4.6060902@openvz.org> <46EE726F.1010707@openvz.org>
+	<Pine.LNX.4.64.0709171122150.27057@schroedinger.engr.sgi.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20070918170430.254614330-WECHFHqYCmGD/CxQmPlnQ0FT0OZdM7KVQQ4Iyu8u01E@public.gmane.org>
+In-Reply-To: <Pine.LNX.4.64.0709171122150.27057-RYO/mD75kfhx2SFC9UQUAuF7EQX82lMiAL8bYrjMMd8@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,61 +18,54 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org
-Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+To: Christoph Lameter <clameter-sJ/iWh9BUns@public.gmane.org>
+Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-> From: Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
-> 
-> If the netif_carrier_off is called before register_netdev
-> that will use and generate an event for a non initialized network
-> device and that leads to a Oops.
-> 
-> I moved the netif_carrier_off from the setup function after each 
-> register_netdev call.
-> 
-> Signed-off-by: Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
+[snip]
 
-Acked-by: Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
-
-Eric, if you managed to reproduce your oopses, does this patch help?
-
-BTW, this problem exists for some other drivers, no? E.g.
-xpnet_init() does the same thing and probably oopses as well.
-
-> ---
->  drivers/net/veth.c |    5 ++++-
->  1 file changed, 4 insertions(+), 1 deletion(-)
+>> @@ -1555,6 +1650,11 @@ static void __always_inline *slab_alloc(
+>>  	}
+>>  	local_irq_restore(flags);
+>>  
+>> +	if (object && slub_alloc_notify(s, object, gfpflags) < 0) {
+>> +		kmem_cache_free(s, object);
+>> +		return NULL;
+>> +	}
+>> +
+>>  	if (unlikely((gfpflags & __GFP_ZERO) && object))
+>>  		memset(object, 0, c->objsize);
+>>  
 > 
-> Index: net-2.6.24/drivers/net/veth.c
-> ===================================================================
-> --- net-2.6.24.orig/drivers/net/veth.c
-> +++ net-2.6.24/drivers/net/veth.c
-> @@ -286,7 +286,6 @@ static void veth_setup(struct net_device
->  	dev->features |= NETIF_F_LLTX;
->  	dev->init = veth_dev_init;
->  	dev->destructor = veth_dev_free;
-> -	netif_carrier_off(dev);
->  }
->  
->  /*
-> @@ -357,6 +356,8 @@ static int veth_newlink(struct net_devic
->  	if (err < 0)
->  		goto err_register_peer;
->  
-> +	netif_carrier_off(peer);
-> +
->  	/*
->  	 * register dev last
->  	 *
-> @@ -382,6 +383,8 @@ static int veth_newlink(struct net_devic
->  	if (err < 0)
->  		goto err_register_dev;
->  
-> +	netif_carrier_off(dev);
-> +
->  	/*
->  	 * tie the deviced together
->  	 */
-> 
-> -- 
+> Please stay completely out of the fast path. No modifications to 
+> slab_alloc or slab_free please. It is possible to force all allocations of 
+> a particular slab of interest to use the slow path in __slab_alloc (maybe 
+> as a result of the slab page allocation hook returning a certain result 
+> code). See how the SLAB_DEBUG handling does it. You can adapt that and then do the 
+> object checks in __slab_alloc.
+
+I have run the kernbench test on the kernels with a) containers support
+and b) containers and kmem accounting support but (!) turned off. The
+results are:
+                 a)             b)
+Elapsed Time     768.500000     767.050000
+User Time        679.360000     679.240000
+System Time      87.020000      86.950000
+Percent CPU      99.000000      99.000000
+Context Switches 376891.000000  375407.000000
+Sleeps           385377.000000  385426.000000
+
+The test run was kernbench -n 1 -o 4 -M, the node is i386
+DualCore Xeon 3.2GHz with 2Gb of RAM.
+
+so the fast path is still fast, and we have two ways:
+1. we keep the checks on the fastpath and have 0 overhead for
+   unaccounted caches and some overhead for accounted;
+2. we move the checks into the slow one and have 0 overhead for
+   unaccounted caches and huge overhead for accounted.
+
+I admit that I messed something, so shall I measure some 
+other activity or use another HW?
+
+Thanks,
+Pavel
