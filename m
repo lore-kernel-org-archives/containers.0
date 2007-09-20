@@ -1,14 +1,13 @@
-From: Andrew Morgan <morgan-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
-Subject: Re: [PATCH RFC] capabilities: introduce per-process
- capability	bounding set
-Date: Wed, 19 Sep 2007 21:16:58 -0700
-Message-ID: <46F1F43A.8080003@kernel.org>
-References: <20070914185257.GA11064@sergelap.austin.ibm.com>
+From: Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+Subject: Re: Kernel text size with pid namespace
+Date: Thu, 20 Sep 2007 13:13:22 +0400
+Message-ID: <46F239B2.8080500@openvz.org>
+References: <20070920001644.GA14880@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20070914185257.GA11064-6s5zFf/epYLPQpwDFJZrxKsjOiXwFzmk@public.gmane.org>
+In-Reply-To: <20070920001644.GA14880-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,36 +17,61 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+To: sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org
+Cc: Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Matt Mackall <mpm-VDJrAJ4Gl5ZBDgjK7y7TUQ@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
------BEGIN PGP SIGNED MESSAGE-----
-Hash: SHA1
+sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org wrote:
+> Matt,
+> 
+> The pid-namespace patcheset (http://lkml.org/lkml/2007/8/10/118)
+> was added to the -mm tree in 2.6.23-rc3-mm1.
+> 
+> With CONFIG_CC_OPTIMIZE_FOR_SIZE=y this patchset increases the kernel
+> text size by about 5K (closer to 6K when the config token is set to N).
 
-Serge E. Hallyn wrote:
-> +		case PR_GET_CAPBSET:
-> +			error = put_user(current->cap_bset, (unsigned long __user *)arg2);
-> +			break;
-> +		case PR_SET_CAPBSET:
-> +			if (!capable(CAP_SYS_ADMIN))
-> +				return -EPERM;
-> +			if (!cap_issubset(arg2, current->cap_bset))
-> +				return -EINVAL;
-> +			current->cap_bset = arg2;
-> +			break;
+Well, this is a new functionality, so the vmlinux size has to increase.
+And as Matt has noticed 5k is not that bad :)
 
-You need to pass the capability magic value in both get and set
-directions... Otherwise, you'll not be able to tell what vintage of
-cap_bset you are manipulating.
+> As a quick test, I uninlined several helper functions and with this
+> the text size increased by about 4K. But since most of these inline
+> functions are used in process creation/termination, we would need to
+> keep them inline, when optimizing for performance.
 
-Cheers
+I'd keep them inline for performance reasons.
 
-Andrew
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.2.6 (GNU/Linux)
+> We also do not have a config token to select pid namespace (its always
+> enabled). 
 
-iD8DBQFG8fQ0QheEq9QabfIRApzJAKCUSxj72X4F++kNGy29oO6FE/OGAgCeIrBw
-dzyfE/XF2Fl71WQvIwu/E9s=
-=hkFZ
------END PGP SIGNATURE-----
+This was one of Andrew's requirements. However, I assume that we can
+have the cloning code under this option.
+
+> Is there a cause for concern with the 5K to 6K increase in text size ?
+> If so, can/should we conditionally inline some functions ? Or move 
+> some pid namespace creation code under CONFIG_TINY or something ?
+> Are there other techniques besides uninling we could apply ?
+> 
+> For reference, I am including below, some numbers for 2.6.23-rc2-mm2
+> kernel for an x86_64 config file.  In the following filenames:
+> 
+> 	"clean" 	no pid ns patches
+> 	"opt-size"	CONFIG_CC_OPTIMIZE_FOR_SIZE=y
+> 	"no-opt"	CONFIG_CC_OPTIMIZE_FOR_SIZE=n
+> 	"uninline"	uninline several new inline functions.
+> 
+> $ size vmlinux*
+> 
+>    text    data     bss     dec     hex filename
+> 
+> 6016101  906266  772424 7694791  7569c7 vmlinux-clean-no-opt-size
+> 6021869  906330  772424 7700623  75808f vmlinux-pidns-no-opt-size
+> 6020805  906330  772424 7699559  757c67 vmlinux-pidns-no-opt-uninline-task-pid
+> 
+> 5299192  906330  772424 6977946  6a799a vmlinux-clean-opt-size
+> 5304588  906394  772424 6983406  6a8eee vmlinux-pidns-opt-size
+> 5303348  906394  772424 6982166  6a8a16 vmlinux-pidns-opt-size-uninline-task-pid
+> 
+> Thanks,
+> 
+> Suka
+> 
