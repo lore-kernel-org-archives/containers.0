@@ -1,13 +1,13 @@
-From: Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+From: Paul Jackson <pj-sJ/iWh9BUns@public.gmane.org>
 Subject: Re: Kernel text size with pid namespace
-Date: Thu, 20 Sep 2007 13:13:22 +0400
-Message-ID: <46F239B2.8080500@openvz.org>
-References: <20070920001644.GA14880@us.ibm.com>
+Date: Thu, 20 Sep 2007 04:04:06 -0700
+Message-ID: <20070920040406.57e40ece.pj@sgi.com>
+References: <20070920001644.GA14880@us.ibm.com> <46F239B2.8080500@openvz.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
+Content-Type: text/plain; charset=US-ASCII
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20070920001644.GA14880-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <46F239B2.8080500-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -17,61 +17,24 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org
-Cc: Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Matt Mackall <mpm-VDJrAJ4Gl5ZBDgjK7y7TUQ@public.gmane.org>
+To: Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, mpm-VDJrAJ4Gl5ZBDgjK7y7TUQ@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org wrote:
-> Matt,
+> > functions are used in process creation/termination, we would need to
+> > keep them inline, when optimizing for performance.
 > 
-> The pid-namespace patcheset (http://lkml.org/lkml/2007/8/10/118)
-> was added to the -mm tree in 2.6.23-rc3-mm1.
-> 
-> With CONFIG_CC_OPTIMIZE_FOR_SIZE=y this patchset increases the kernel
-> text size by about 5K (closer to 6K when the config token is set to N).
+> I'd keep them inline for performance reasons.
 
-Well, this is a new functionality, so the vmlinux size has to increase.
-And as Matt has noticed 5k is not that bad :)
+As Matt Mackall explained more carefully in his reply, it's no longer
+clear that inlining is best for performance in as many situations as
+it was the past.  Cache footprint size tends to dominate performance on
+present day processors.
 
-> As a quick test, I uninlined several helper functions and with this
-> the text size increased by about 4K. But since most of these inline
-> functions are used in process creation/termination, we would need to
-> keep them inline, when optimizing for performance.
+See also Matt's comments on the NULL struct pid check.  Getting rid
+of conditional jumps may be the more important performance issue here.
 
-I'd keep them inline for performance reasons.
-
-> We also do not have a config token to select pid namespace (its always
-> enabled). 
-
-This was one of Andrew's requirements. However, I assume that we can
-have the cloning code under this option.
-
-> Is there a cause for concern with the 5K to 6K increase in text size ?
-> If so, can/should we conditionally inline some functions ? Or move 
-> some pid namespace creation code under CONFIG_TINY or something ?
-> Are there other techniques besides uninling we could apply ?
-> 
-> For reference, I am including below, some numbers for 2.6.23-rc2-mm2
-> kernel for an x86_64 config file.  In the following filenames:
-> 
-> 	"clean" 	no pid ns patches
-> 	"opt-size"	CONFIG_CC_OPTIMIZE_FOR_SIZE=y
-> 	"no-opt"	CONFIG_CC_OPTIMIZE_FOR_SIZE=n
-> 	"uninline"	uninline several new inline functions.
-> 
-> $ size vmlinux*
-> 
->    text    data     bss     dec     hex filename
-> 
-> 6016101  906266  772424 7694791  7569c7 vmlinux-clean-no-opt-size
-> 6021869  906330  772424 7700623  75808f vmlinux-pidns-no-opt-size
-> 6020805  906330  772424 7699559  757c67 vmlinux-pidns-no-opt-uninline-task-pid
-> 
-> 5299192  906330  772424 6977946  6a799a vmlinux-clean-opt-size
-> 5304588  906394  772424 6983406  6a8eee vmlinux-pidns-opt-size
-> 5303348  906394  772424 6982166  6a8a16 vmlinux-pidns-opt-size-uninline-task-pid
-> 
-> Thanks,
-> 
-> Suka
-> 
+-- 
+                  I won't rest till it's the best ...
+                  Programmer, Linux Scalability
+                  Paul Jackson <pj-sJ/iWh9BUns@public.gmane.org> 1.925.600.0401
