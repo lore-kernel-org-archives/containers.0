@@ -1,7 +1,7 @@
 From: Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
-Subject: [PATCH 1/4] Add notification about some major slab events
-Date: Fri, 21 Sep 2007 13:17:17 +0400
-Message-ID: <46F38C1D.2080902@openvz.org>
+Subject: [PATCH 2/5] Generic notifiers for SLUB events
+Date: Fri, 21 Sep 2007 13:19:58 +0400
+Message-ID: <46F38CBE.8050601@openvz.org>
 References: <46F38B67.3020609@openvz.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1
@@ -21,166 +21,172 @@ To: Christoph Lameter <clameter-sJ/iWh9BUns@public.gmane.org>
 Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-According to Christoph, there are already multiple people who 
-want to control slab allocations and track memory for various 
-reasons. So this is an introduction of such a hooks.
+If the user wants more than one listener for SLUB event,
+it can register them all as notifier_block-s so all of
+them will be notified.
 
-Currently, functions that are to call the notifiers are empty
-and marked as "weak". Thus, if there's only _one_ listener
-to these events, it can happily link with the vmlinux and
-handle the events with more than 10% of performance saved.
+This costs us about 10% of performance loss, in comparison
+with static linking.
 
-The events tracked are:
-1. allocation of an object;
-2. freeing of an object;
-3. allocation of a new page for objects;
-4. freeing this page.
-
-More events can be added on demand.
-
-The kmem cache marked with SLAB_NOTIFY flag will cause all the
-events above to generate notifications. By default no caches
-come with this flag.
-
-The events are generated on slow paths only and as soon as the
-cache is marked as SLAB_NOTIFY, it will always use them for
-allocation.
+The selected method of notification is srcu notifier blocks.
+This is selected because the "call" path, i.e. when the 
+notification is done, is lockless and at the same time the
+handlers can sleep. Neither regular nor atomic notifiers
+provide such facilities.
 
 Signed-off-by: Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 
 ---
 
-diff --git a/include/linux/slab.h b/include/linux/slab.h
-index f3a8eec..68d8e65 100644
---- a/include/linux/slab.h
-+++ b/include/linux/slab.h
-@@ -28,6 +28,7 @@
- #define SLAB_DESTROY_BY_RCU	0x00080000UL	/* Defer freeing slabs to RCU */
- #define SLAB_MEM_SPREAD		0x00100000UL	/* Spread some memory over cpuset */
- #define SLAB_TRACE		0x00200000UL	/* Trace allocations and frees */
-+#define SLAB_NOTIFY		0x00400000UL	/* Notify major events */
+diff --git a/init/Kconfig b/init/Kconfig
+index 0bb211a..326fd55 100644
+--- a/init/Kconfig
++++ b/init/Kconfig
+@@ -593,6 +599,16 @@ config SLUB_DEBUG
+ 	  SLUB sysfs support. /sys/slab will not exist and there will be
+ 	  no support for cache validation etc.
  
- /* The following flags affect the page allocator grouping pages by mobility */
- #define SLAB_RECLAIM_ACCOUNT	0x00020000UL		/* Objects are reclaimable */
++config SLUB_NOTIFY
++	default y
++	bool "Enable SLUB events generic notification"
++	depends on SLUB
++	help
++	  When Y, this option enables generic notifications of some major
++	  slub events. However, if you do know that there will be the
++	  only listener for them, you may say N here, so that callbacks
++	  will be called directly.
++
+ choice
+ 	prompt "Choose SLAB allocator"
+ 	default SLUB
+diff --git a/include/linux/slub_def.h b/include/linux/slub_def.h
+index 40801e7..fd9a3d4 100644
+--- a/include/linux/slub_def.h
++++ b/include/linux/slub_def.h
+@@ -200,4 +202,20 @@ static __always_inline void *kmalloc_nod
+ }
+ #endif
+ 
++struct slub_notify_struct {
++	struct kmem_cache *cachep;
++	void *objp;
++	gfp_t gfp;
++};
++
++enum {
++	SLUB_ALLOC,
++	SLUB_FREE,
++	SLUB_NEWPAGE,
++	SLUB_FREEPAGE,
++};
++
++int slub_register_notifier(struct notifier_block *nb);
++void slub_unregister_notifier(struct notifier_block *nb);
++
+ #endif /* _LINUX_SLUB_DEF_H */
 diff --git a/mm/slub.c b/mm/slub.c
 index ac4f157..b5af598 100644
 --- a/mm/slub.c
 +++ b/mm/slub.c
-@@ -1040,6 +1040,29 @@ static inline unsigned long kmem_cache_f
- }
+@@ -1040,6 +1040,81 @@ static inline unsigned long kmem_cache_f
  #define slub_debug 0
  #endif
+ 
++/*
++ * notifiers
++ */
 +
-+int __attribute__ ((weak))
-+slub_alloc_notify(struct kmem_cache *cachep, void *obj, gfp_t gfp)
++#ifdef CONFIG_SLUB_NOTIFY
++static struct srcu_notifier_head slub_nb;
++
++static noinline
++int __slub_alloc_notify(int cmd_alloc, int cmd_free, struct kmem_cache *cachep,
++		void *obj, gfp_t gfp)
 +{
-+	return 0;
++	int ret, called;
++	struct slub_notify_struct arg;
++
++	arg.cachep = cachep;
++	arg.objp = obj;
++	arg.gfp = gfp;
++
++	ret = __srcu_notifier_call_chain(&slub_nb, cmd_alloc, &arg,
++			-1, &called);
++	ret = notifier_to_errno(ret);
++
++	if (ret < 0)
++		__srcu_notifier_call_chain(&slub_nb, cmd_free, &arg,
++				called, NULL);
++
++	return ret;
 +}
 +
-+void __attribute__ ((weak))
-+slub_free_notify(struct kmem_cache *cachep, void *obj)
++static noinline
++void __slub_free_notify(int cmd, struct kmem_cache *cachep, void *obj)
 +{
++	struct slub_notify_struct arg;
++
++	arg.cachep = cachep;
++	arg.objp = obj;
++	arg.gfp = 0;
++
++	srcu_notifier_call_chain(&slub_nb, cmd, &arg);
 +}
 +
-+int __attribute__ ((weak))
-+slub_newpage_notify(struct kmem_cache *cachep, struct page *pg, gfp_t gfp)
++int slub_register_notifier(struct notifier_block *nb)
 +{
-+	return 0;
++	return srcu_notifier_chain_register(&slub_nb, nb);
 +}
 +
-+void __attribute__ ((weak))
-+slub_freepage_notify(struct kmem_cache *cachep, struct page *pg)
++void slub_unregister_notifier(struct notifier_block *nb)
 +{
++	srcu_notifier_chain_unregister(&slub_nb, nb);
 +}
 +
++static inline
++int slub_alloc_notify(struct kmem_cache *cachep, void *obj, gfp_t gfp)
++{
++	return __slub_alloc_notify(SLUB_ALLOC, SLUB_FREE, cachep, obj, gfp);
++}
++
++static inline
++void slub_free_notify(struct kmem_cache *cachep, void *obj)
++{
++	__slub_free_notify(SLUB_FREE, cachep, obj);
++}
++
++static inline
++int slub_newpage_notify(struct kmem_cache *cachep, struct page *pg, gfp_t gfp)
++{
++	return __slub_alloc_notify(SLUB_NEWPAGE, SLUB_FREEPAGE, cachep, pg, gfp);
++}
++
++static inline
++void slub_freepage_notify(struct kmem_cache *cachep, struct page *pg)
++{
++	__slub_free_notify(SLUB_FREEPAGE, cachep, pg);
++}
++#else
+ int __attribute__ ((weak))
+ slub_alloc_notify(struct kmem_cache *cachep, void *obj, gfp_t gfp)
+ {
+@@ -1060,6 +1040,7 @@ static inline unsigned long kmem_cache_f
+ slub_freepage_notify(struct kmem_cache *cachep, struct page *pg)
+ {
+ }
++#endif
+ 
  /*
   * Slab allocation and freeing
-  */
-@@ -1063,7 +1162,11 @@ static struct page *allocate_slab(struct
- 		page = alloc_pages_node(node, flags, s->order);
- 
- 	if (!page)
--		return NULL;
-+		goto out;
-+
-+	if ((s->flags & SLAB_NOTIFY) &&
-+			slub_newpage_notify(s, page, flags) < 0)
-+		goto out_free;
- 
- 	mod_zone_page_state(page_zone(page),
- 		(s->flags & SLAB_RECLAIM_ACCOUNT) ?
-@@ -1071,6 +1174,11 @@ static struct page *allocate_slab(struct
- 		pages);
- 
- 	return page;
-+
-+out_free:
-+	__free_pages(page, s->order);
-+out:
-+	return NULL;
- }
- 
- static void setup_object(struct kmem_cache *s, struct page *page,
-@@ -1158,6 +1266,9 @@ static void rcu_free_slab(struct rcu_hea
- 
- static void free_slab(struct kmem_cache *s, struct page *page)
- {
-+	if (s->flags & SLAB_NOTIFY)
-+		slub_freepage_notify(s, page);
-+
- 	if (unlikely(s->flags & SLAB_DESTROY_BY_RCU)) {
- 		/*
- 		 * RCU free overloads the RCU head over the LRU
-@@ -1486,7 +1597,7 @@ load_freelist:
- 	object = c->page->freelist;
- 	if (unlikely(!object))
- 		goto another_slab;
--	if (unlikely(SlabDebug(c->page)))
-+	if (unlikely(SlabDebug(c->page)) || (s->flags & SLAB_NOTIFY))
- 		goto debug;
- 
- 	object = c->page->freelist;
-@@ -1545,12 +1656,20 @@ new_slab:
- 	return NULL;
- debug:
- 	object = c->page->freelist;
--	if (!alloc_debug_processing(s, c->page, object, addr))
-+	if (SlabDebug(c->page) &&
-+			!alloc_debug_processing(s, c->page, object, addr))
- 		goto another_slab;
- 
-+	if ((s->flags & SLAB_NOTIFY) &&
-+			slub_alloc_notify(s, object, gfpflags) < 0) {
-+		object = NULL;
-+		goto out;
-+	}
-+
- 	c->page->inuse++;
- 	c->page->freelist = object[c->offset];
- 	c->node = -1;
-+out:
- 	slab_unlock(c->page);
- 	return object;
- }
-@@ -1620,7 +1739,7 @@ static void __slab_free(struct kmem_cach
- 
- 	slab_lock(page);
- 
--	if (unlikely(SlabDebug(page)))
-+	if (unlikely(SlabDebug(page)) || (s->flags & SLAB_NOTIFY))
- 		goto debug;
- checks_ok:
- 	prior = object[offset] = page->freelist;
-@@ -1657,8 +1776,12 @@ slab_empty:
- 	return;
- 
- debug:
--	if (!free_debug_processing(s, page, x, addr))
-+	if (SlabDebug(page) && !free_debug_processing(s, page, x, addr))
- 		goto out_unlock;
-+
-+	if (s->flags & SLAB_NOTIFY)
-+		slub_free_notify(s, x);
-+
- 	goto checks_ok;
- }
+@@ -2785,8 +2916,9 @@ void __init kmem_cache_init(void)
+ #else
+ 	kmem_size = sizeof(struct kmem_cache);
+ #endif
+-
+-
++#ifdef CONFIG_SLUB_NOTIFY
++	srcu_init_notifier_head(&slub_nb);
++#endif
+ 	printk(KERN_INFO "SLUB: Genslabs=%d, HWalign=%d, Order=%d-%d, MinObjects=%d,"
+ 		" CPUs=%d, Nodes=%d\n",
+ 		caches, cache_line_size(),
