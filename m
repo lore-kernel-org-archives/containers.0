@@ -1,11 +1,13 @@
 From: Balaji Rao <balajirrao-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: [PATCH] trivial containers comment fixed
-Date: Sat, 22 Sep 2007 12:04:04 +0530
-Message-ID: <20070922063403.GA7286@sriram.theyogi.co.in>
+Subject: Re: [PATCH] trivial containers comment fixed
+Date: Sat, 22 Sep 2007 13:37:48 +0530
+Message-ID: <20070922080748.GA8402@sriram.theyogi.co.in>
+References: <20070922063403.GA7286@sriram.theyogi.co.in>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
+In-Reply-To: <20070922063403.GA7286-OhHl1utn+PnwUAcaQCZ1hPFaqf2eOAPq@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,6 +20,12 @@ Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 To: menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org
 Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
 List-Id: containers.vger.kernel.org
+
+On Sat, Sep 22, 2007 at 12:04:03PM +0530, Balaji Rao wrote:
+
+Oops! i forgot the changelog. Corrected.
+--
+Comment fixed, to match the actual arguments.
 
 Signed-off-by: Balaji Rao <balajirao-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 
@@ -34,8 +42,6 @@ Index: linux-2.6.23-rc6-mm1/kernel/container.c
   *	mode:		mode to set on new inode
   *
   *	Must be called with the mutex on the parent inode held
--- 
+--
 regards,
 balaji rao
-
-All religions, arts and sciences are branches of the same tree. All these aspirations are directed toward ennobling man's life, lifting it from the sphere of mere physical existence and leading the individual towards freedom.
