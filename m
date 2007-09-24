@@ -1,17 +1,14 @@
-From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [RFC][PATCH] Devices visibility container
-Date: Mon, 24 Sep 2007 11:53:07 -0500
-Message-ID: <20070924165307.GC31044@sergelap.austin.ibm.com>
-References: <46F77523.9020001@openvz.org>
-	<20070924143915.GA30195@sergelap.austin.ibm.com>
-	<46F7D082.7090304@openvz.org>
-	<20070924152001.GB30195@sergelap.austin.ibm.com>
-	<46F7D8A6.8040303@sw.ru>
+From: Randy Dunlap <randy.dunlap-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH 3/5] Cleanup code under CONFIG_FAIR_GROUP_SCHED
+Date: Mon, 24 Sep 2007 09:53:44 -0700
+Message-ID: <20070924095344.ee9ab10e.randy.dunlap@oracle.com>
+References: <20070924163326.GA10291@linux.vnet.ibm.com>
+	<20070924163937.GD10291@linux.vnet.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+Content-Type: text/plain; charset=US-ASCII
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <46F7D8A6.8040303-3ImXcnM4P+0@public.gmane.org>
+In-Reply-To: <20070924163937.GD10291-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -21,103 +18,61 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Kirill Korotaev <dev-3ImXcnM4P+0@public.gmane.org>
-Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+To: vatsa-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
+Cc: menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, efault-Mmb7MZpHnFY@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, dmitry.adamushko-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Quoting Kirill Korotaev (dev-3ImXcnM4P+0@public.gmane.org):
-> Serge E. Hallyn wrote:
-> > Quoting Pavel Emelyanov (xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org):
-> > 
-> >>Serge E. Hallyn wrote:
-> >>
-> >>>Quoting Pavel Emelyanov (xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org):
-> >>>
-> >>>>Hi.
-> >>>>
-> >>>>At KS we have pointed out the need in some container, that allows
-> >>>>to limit the visibility of some devices to task within it. I.e.
-> >>>>allow for /dev/null, /dev/zero etc, but disable (by default) some
-> >>>>IDE devices or SCSI discs and so on.
-> >>>>
-> >>>>Here's the beta of the container. Currently this only allows to
-> >>>>hide the _character_ devices only from the living tasks. To play 
-> >>>>with it you just create the container like this
-> >>>>
-> >>>> # mount -t container none /cont/devs -o devices
-> >>>> # mkdir /cont/devs/0
-> >>>>
-> >>>>it will have two specific files
-> >>>>
-> >>>> # ls /cont/devs
-> >>>>devices.block  devices.char  notify_on_release  releasable  release_agent  tasks
-> >>>>
-> >>>>then move a task into it
-> >>>>
-> >>>> # /bin/echo -n $$ > /cont/devs/0/tasks
-> >>>>
-> >>>>after this you won't be able to read from even /dev/zero
-> >>>>
-> >>>> # hexdump /dev/zero 
-> >>>>hexdump: /dev/zero: No such device or address
-> >>>>hexdump: /dev/zero: Bad file descriptor
-> >>>>
-> >>>>meanwhile from another ssh session you will. You may allow access
-> >>>>to /dev/zero like this
-> >>>>
-> >>>> # /bin/echo -n '+1:5' > /cont/devs/0/devices.char
-> >>>>
-> >>>>More generally, the '+<major>:<minor>' string grants access to
-> >>>>some device, and '-<major>:<minor>' disables one.
-> >>>>
-> >>>>The TODO list now looks like this:
-> >>>>* add the block devices support :) don't know how to make it yet;
-> >>>>* make /proc/devices show relevant info depending on who is
-> >>>>  reading it. currently even if major 1 is disabled for task,
-> >>>>  it will be listed in this file;
-> >>>>* make it possible to enable/disable not just individual major:minor
-> >>>>  pair, but something more flexible, e.g. major:* for all minors
-> >>>>  for given major or major:m1-m2 for minor range, etc;
-> >>>>* add the ability to restrict the read/write permissions for a 
-> >>>>  container. currently one may just control the visible-invisible
-> >>>>  state for a device in a container, but maybe just readable or
-> >>>>  just writable would be better.
-> >>>>
-> >>>>This patch is minimally tested, because I just want to know your
-> >>>>opinion on whether it worths developing the container in such a way or not.
-> >>>
-> >>>Hmm,
-> >>>
-> >>>I was thinking we would use LSM for this.  Mostly it should suffice
-> >>>to set up a reasonable /dev for the container to start with, and
-> >>>hook security_mknod() to prevent it creating devices not on it's
-> >>
-> >>Are you talking about disabling of mknod() for some files? No, please
-> >>no! This will break many... no - MANY tools inside such a container.
-> > 
-> > 
-> > What's going to break if I don't allow mknod /dev/hda1?  Is this during
-> > standard /sbin/init for a container?  And what does 'break' mean?  If
-> > you're not allowed to use the device, why should we pretend that you
-> > can create it?  Isn't that more devious?
-> > 
-> > A straight -EPERM on mknod just feels more warm+fuzzy to me.  But if
-> > things really are going to break to where you can't run a standard
-> > distro in a container, then I guess we should go with your approach.
-> 
-> at least:
-> - udev which dynamically creates dev nodes including static devices.
-> - device nodes in RPM's. rpm installation should not fail.
-> 
-> I remember there were others, but in general mknod from root should not fail
-> until there is ENOSPC. And EPERM is handled by applications on open much better
-> then on creation, since applications are ready that they are executed errorneously
-> under wrong user account.
+On Mon, 24 Sep 2007 22:09:37 +0530 Srivatsa Vaddagiri wrote:
 
-We'll need a way to prevent collusion.  For instance uid 1000 on the
-system starts a new container where he is root.  There he creates a node
-hda1 someplace and allows uid 1000 in the host container to read/write
-it...  Certain for normal files we want to allow such sharing.
+> With the view of supporting user-id based fair scheduling (and not just
+> container-based fair scheduling), this patch renames several functions
+> and makes them independent of whether they are being used for container
+> or user-id based fair scheduling.
+> 
+> Also fix a problem reported by KAMEZAWA Hiroyuki (wrt allocating
+> less-sized array for tg->cfs_rq[] and tf->se[]).
+> 
+> 
+> Signed-off-by : Srivatsa Vaddagiri <vatsa-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+> Signed-off-by : Dhaval Giani <dhaval-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+> 
+> 
+> ---
+>  include/linux/sched.h |   12 +++
+>  init/Kconfig          |   11 +--
+>  kernel/sched.c        |  172 ++++++++++++++++++--------------------------------
+>  kernel/sched_fair.c   |    5 +
+>  4 files changed, 83 insertions(+), 117 deletions(-)
+> 
+> Index: current/init/Kconfig
+> ===================================================================
+> --- current.orig/init/Kconfig
+> +++ current/init/Kconfig
+> @@ -282,13 +282,12 @@ config CPUSETS
+>  	  Say N if unsure.
+>  
+>  config FAIR_GROUP_SCHED
+> -	bool "Fair group scheduler"
+> -	depends on EXPERIMENTAL && CONTAINERS
+> +	bool "Fair group cpu scheduler"
 
-> Thanks,
-> Kirill
+Can we have "CPU" instead of "cpu" ?
+
+
+> +	default n
+> +	depends on EXPERIMENTAL
+>  	help
+> -	  This option enables you to group tasks and control CPU resource
+> -	  allocation to such groups.
+> -
+> -	  Say N if unsure.
+> +	  This feature lets cpu scheduler recognize task groups and control cpu
+> +	  bandwidth allocation to such task groups.
+>  
+>  config SYSFS_DEPRECATED
+>  	bool "Create deprecated sysfs files"
+
+
+---
+~Randy
+Phaedrus says that Quality is about caring.
