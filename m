@@ -1,13 +1,17 @@
-From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
+From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 Subject: Re: [RFC][PATCH] Devices visibility container
-Date: Mon, 24 Sep 2007 10:47:50 -0600
-Message-ID: <m1r6kodn7t.fsf@ebiederm.dsl.xmission.com>
+Date: Mon, 24 Sep 2007 11:53:07 -0500
+Message-ID: <20070924165307.GC31044@sergelap.austin.ibm.com>
 References: <46F77523.9020001@openvz.org>
+	<20070924143915.GA30195@sergelap.austin.ibm.com>
+	<46F7D082.7090304@openvz.org>
+	<20070924152001.GB30195@sergelap.austin.ibm.com>
+	<46F7D8A6.8040303@sw.ru>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <46F77523.9020001-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org> (Pavel Emelyanov's message of "Mon,
-	24 Sep 2007 12:28:19 +0400")
+Content-Disposition: inline
+In-Reply-To: <46F7D8A6.8040303-3ImXcnM4P+0@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -17,37 +21,103 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
-Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+To: Kirill Korotaev <dev-3ImXcnM4P+0@public.gmane.org>
+Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org> writes:
+Quoting Kirill Korotaev (dev-3ImXcnM4P+0@public.gmane.org):
+> Serge E. Hallyn wrote:
+> > Quoting Pavel Emelyanov (xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org):
+> > 
+> >>Serge E. Hallyn wrote:
+> >>
+> >>>Quoting Pavel Emelyanov (xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org):
+> >>>
+> >>>>Hi.
+> >>>>
+> >>>>At KS we have pointed out the need in some container, that allows
+> >>>>to limit the visibility of some devices to task within it. I.e.
+> >>>>allow for /dev/null, /dev/zero etc, but disable (by default) some
+> >>>>IDE devices or SCSI discs and so on.
+> >>>>
+> >>>>Here's the beta of the container. Currently this only allows to
+> >>>>hide the _character_ devices only from the living tasks. To play 
+> >>>>with it you just create the container like this
+> >>>>
+> >>>> # mount -t container none /cont/devs -o devices
+> >>>> # mkdir /cont/devs/0
+> >>>>
+> >>>>it will have two specific files
+> >>>>
+> >>>> # ls /cont/devs
+> >>>>devices.block  devices.char  notify_on_release  releasable  release_agent  tasks
+> >>>>
+> >>>>then move a task into it
+> >>>>
+> >>>> # /bin/echo -n $$ > /cont/devs/0/tasks
+> >>>>
+> >>>>after this you won't be able to read from even /dev/zero
+> >>>>
+> >>>> # hexdump /dev/zero 
+> >>>>hexdump: /dev/zero: No such device or address
+> >>>>hexdump: /dev/zero: Bad file descriptor
+> >>>>
+> >>>>meanwhile from another ssh session you will. You may allow access
+> >>>>to /dev/zero like this
+> >>>>
+> >>>> # /bin/echo -n '+1:5' > /cont/devs/0/devices.char
+> >>>>
+> >>>>More generally, the '+<major>:<minor>' string grants access to
+> >>>>some device, and '-<major>:<minor>' disables one.
+> >>>>
+> >>>>The TODO list now looks like this:
+> >>>>* add the block devices support :) don't know how to make it yet;
+> >>>>* make /proc/devices show relevant info depending on who is
+> >>>>  reading it. currently even if major 1 is disabled for task,
+> >>>>  it will be listed in this file;
+> >>>>* make it possible to enable/disable not just individual major:minor
+> >>>>  pair, but something more flexible, e.g. major:* for all minors
+> >>>>  for given major or major:m1-m2 for minor range, etc;
+> >>>>* add the ability to restrict the read/write permissions for a 
+> >>>>  container. currently one may just control the visible-invisible
+> >>>>  state for a device in a container, but maybe just readable or
+> >>>>  just writable would be better.
+> >>>>
+> >>>>This patch is minimally tested, because I just want to know your
+> >>>>opinion on whether it worths developing the container in such a way or not.
+> >>>
+> >>>Hmm,
+> >>>
+> >>>I was thinking we would use LSM for this.  Mostly it should suffice
+> >>>to set up a reasonable /dev for the container to start with, and
+> >>>hook security_mknod() to prevent it creating devices not on it's
+> >>
+> >>Are you talking about disabling of mknod() for some files? No, please
+> >>no! This will break many... no - MANY tools inside such a container.
+> > 
+> > 
+> > What's going to break if I don't allow mknod /dev/hda1?  Is this during
+> > standard /sbin/init for a container?  And what does 'break' mean?  If
+> > you're not allowed to use the device, why should we pretend that you
+> > can create it?  Isn't that more devious?
+> > 
+> > A straight -EPERM on mknod just feels more warm+fuzzy to me.  But if
+> > things really are going to break to where you can't run a standard
+> > distro in a container, then I guess we should go with your approach.
+> 
+> at least:
+> - udev which dynamically creates dev nodes including static devices.
+> - device nodes in RPM's. rpm installation should not fail.
+> 
+> I remember there were others, but in general mknod from root should not fail
+> until there is ENOSPC. And EPERM is handled by applications on open much better
+> then on creation, since applications are ready that they are executed errorneously
+> under wrong user account.
 
-> Hi.
->
-> At KS we have pointed out the need in some container, that allows
-> to limit the visibility of some devices to task within it. I.e.
-> allow for /dev/null, /dev/zero etc, but disable (by default) some
-> IDE devices or SCSI discs and so on.
+We'll need a way to prevent collusion.  For instance uid 1000 on the
+system starts a new container where he is root.  There he creates a node
+hda1 someplace and allows uid 1000 in the host container to read/write
+it...  Certain for normal files we want to allow such sharing.
 
-NAK
-
-We do not want a control group subsystem for this.
-
-For the short term we can just drop CAP_SYS_MKNOD.
-
-For the long term we need a device namespace for application
-migration, so they can continue to use devices with the same
-major+minor number pair after the migration event.   Things like
-ensuring a call to stat on a given file before and after the migration
-return the exact same information sounds compelling.  So I don't think
-this is even strictly limited to virtual devices anymore.  How many
-applications are there out there that memorize the stat data on a file
-and so they can detect if it has changed?
-
-If we need something between those two it may make sense to enhance
-the LSM or perhaps introduce an alternate set security hooks.  Still
-if we are going to need a full device namespace that may be a little
-much.
-
-Eric
+> Thanks,
+> Kirill
