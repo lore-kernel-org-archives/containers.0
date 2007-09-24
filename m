@@ -1,43 +1,33 @@
-From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [RFC][PATCH] Devices visibility container
-Date: Mon, 24 Sep 2007 11:18:23 -0500
-Message-ID: <20070924161823.GB31044@sergelap.austin.ibm.com>
-References: <46F77523.9020001@openvz.org>
-	<20070924143915.GA30195@sergelap.austin.ibm.com>
-	<46F7D082.7090304@openvz.org>
-	<20070924152001.GB30195@sergelap.austin.ibm.com>
-	<46F7D86D.3060106@openvz.org>
-	<20070924155139.GC30195@sergelap.austin.ibm.com>
-	<46F7DE58.1020505@fr.ibm.com>
+From: Srivatsa Vaddagiri <vatsa@linux.vnet.ibm.com>
+Subject: [PATCH 0/5] Fair group scheduler - various fixes
+Date: Mon, 24 Sep 2007 22:03:26 +0530
+Message-ID: <20070924163326.GA10291@linux.vnet.ibm.com>
+Reply-To: vatsa@linux.vnet.ibm.com
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1760105AbXIXQXP@vger.kernel.org>
 Content-Disposition: inline
-In-Reply-To: <46F7DE58.1020505-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Cedric Le Goater <clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
-Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+Sender: linux-kernel-owner@vger.kernel.org
+To: akpm@linux-foundation.org, Ingo Molnar <mingo@elte.hu>
+Cc: dmitry.adamushko@gmail.com, linux-kernel@vger.kernel.org, dhaval@linux.vnet.ibm.com, containers@lists.osdl.org, kamezawa.hiroyu@jp.fujitsu.com, menage@google.com, efault@gmx.de
 List-Id: containers.vger.kernel.org
 
-Quoting Cedric Le Goater (clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org):
-> [ ... ] 
-> 
-> > Maybe it's best if i just code up an example.  I'll be gone part of the
-> > week, and should send out new versions of some other patches first, but
-> > getting two approaches to this to compare and contrast can't hurt.
-> 
-> I guess we will need a control group subsystem in both approach, right ?
+Hello Ingo and Andrew,
+	Here are various patches to fair group scheduler code present in
+sched-devel and in 2.6.23-rc7-mm1. These patches should apply against
+both sched-devel git tree and 2.6.23-rc7-mm1 (as they are both in sync
+now).
 
-Yes.  Pavel's has one, and I would use one both for task tracking and
-to use the cgroup vfs interface to construct the device whitelists.
+Pls consider for inclusion after review.
 
-thanks,
--serge
+[there is still room for improving group fairness obtained on smp
+systems. By sending out these patches, i am hoping more folks can test
+and improve that aspect]
+
+Ingo,
+	You may want to avoid picking Patch 5/5 as it makes sense only in
+-mm tree atm.
+
+-- 
+Regards,
+vatsa
