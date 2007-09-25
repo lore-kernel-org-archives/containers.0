@@ -1,16 +1,14 @@
-From: Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: Re: [RFC][PATCH] allow "unlimited" limit value.
-Date: Tue, 25 Sep 2007 17:24:38 +0530
-Message-ID: <46F8F6FE.7040006@linux.vnet.ibm.com>
-References: <20070925193900.1af6d871.kamezawa.hiroyu@jp.fujitsu.com>
-	<46F8E7AE.2090309@linux.vnet.ibm.com>
-	<20070925202954.4e477564.kamezawa.hiroyu@jp.fujitsu.com>
-Reply-To: balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
+From: Cedric Le Goater <clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [RFC][PATCH] Devices visibility container
+Date: Tue, 25 Sep 2007 14:25:24 +0200
+Message-ID: <46F8FE34.4020703@fr.ibm.com>
+References: <46F77523.9020001@openvz.org>
+	<m1r6kodn7t.fsf@ebiederm.dsl.xmission.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20070925202954.4e477564.kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+In-Reply-To: <m1r6kodn7t.fsf-T1Yj925okcoyDheHMi7gv2pdwda3JcWeAL8bYrjMMd8@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -20,71 +18,57 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>, Pavel Emelianov <xemul-3ImXcnM4P+0@public.gmane.org>
-Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, rientjes-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org
+To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-KAMEZAWA Hiroyuki wrote:
-> On Tue, 25 Sep 2007 16:19:18 +0530
-> Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org> wrote:
-> 
->> Hi, Kamezawa-San,
->>
-> Hi,
-> 
->> Your changes make sense, but not CLUI (Command Line Usage) sense.
->> 1. The problem is that when we mix strings with numbers, tools that
->>    parse/use get confused and complicated
-> yes, maybe.
-> 
->> 2. ULONGLONG_MAX is a real limit, there is no such thing as unlimited.
->>    If the user does ever go beyond ULONGLONG_MAX, we will limit him :-)
->>
-> Oh. res_counter.c  uses LONGLONG_MAX as default value.
-> need fix ? or intended ?
+Hello Eric !
 
-Pavel do you remember why LONG was chosen instead of ULONG?
-
-> And okay there is no "unlimited" state.
+Eric W. Biederman wrote:
+> Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org> writes:
 > 
->> Having said that, I do wish to have a more intuitive interface for
->> users. May be a perl/python script to hide away the numbers game
->> from the users. What do you think?
->>
-> I agree with you that perl/python script can hide details. but they need knowledge
-> about the maximum value, which is given as default value.
+>> At KS we have pointed out the need in some container, that allows
+>> to limit the visibility of some devices to task within it. I.e.
+>> allow for /dev/null, /dev/zero etc, but disable (by default) some
+>> IDE devices or SCSI discs and so on.
 > 
-> In short, what I want is some value like RLIM_INFINITY in ulimit.
+> NAK
 > 
+> We do not want a control group subsystem for this.
 
-I like the idea of RLIM_INFINITY and how ulimit as a tool shows
-a value. I guess we need something like RES_COUNTER_LIMIT_MAX
-and the user tool can show the limit as maximum. We could also
-define a special number, RES_COUNTER_LIMIT_INFINITY, such that
-containers will not enforce limits when the limit is set to
-this value.
+we will need one way to configure the list of available devices from
+user space. Any proposal ?
 
-> 
-> Because it seems that res_counter.c will be used for other resouce control purpose,
-> I thought some generic way (value) to know/specify "the maximum value" is helpful for
-> all resource controller interface.
-> 
-> If there is an concensus that treaing ULONGLONG_MAX as default, it's ok.
-> 
+> For the short term we can just drop CAP_SYS_MKNOD.
 
-When I worked on the first version of res_counters, I used 0 to indicate
-unlimited. When Pavel posted his version, I think derived from
-beancounters, we did not want to have unlimited containers, so he used
-the maximum value
+Sure. Pavel is working on something mid-term ;)
 
-> Thanks,
-> -Kame
-> 
+> For the long term we need a device namespace for application
+> migration, so they can continue to use devices with the same
+> major+minor number pair after the migration event.   
 
-Thanks for looking into this,
+Hmm, yes. I can imagine that for some big database application using
+raw devices but it only means that the same device must be present
+upon restart. I don't see any identifier virtualization issues. 
 
--- 
-	Warm Regards,
-	Balbir Singh
-	Linux Technology Center
-	IBM, ISTL
+> Things like
+> ensuring a call to stat on a given file before and after the migration
+> return the exact same information sounds compelling.  So I don't think
+> this is even strictly limited to virtual devices anymore. How many
+> applications are there out there that memorize the stat data on a file
+> and so they can detect if it has changed?
+
+that we need to support of course, otherwise we would break things 
+like tail. 
+
+> If we need something between those two it may make sense to enhance
+> the LSM or perhaps introduce an alternate set security hooks.  Still
+> if we are going to need a full device namespace that may be a little
+> much.
+
+serge's implementation using security hooks should help us choose
+the right approach. 
+
+Thanks !
+
+C.
