@@ -1,12 +1,11 @@
-From: Christoph Lameter <clameter-sJ/iWh9BUns@public.gmane.org>
-Subject: Re: [PATCH 3/5] Switch caches notification dynamically
-Date: Tue, 25 Sep 2007 14:48:59 -0700 (PDT)
-Message-ID: <Pine.LNX.4.64.0709251447560.5072@schroedinger.engr.sgi.com>
-References: <46F91841.9070708@openvz.org> <46F919BB.2000701@openvz.org>
+From: Badari Pulavarty <pbadari-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: Unable to remove control groups on 2.6.23-rc8-mm1
+Date: Tue, 25 Sep 2007 16:38:01 -0700
+Message-ID: <1190763481.13955.52.camel@dyn9047017100.beaverton.ibm.com>
 Mime-Version: 1.0
-Content-Type: TEXT/PLAIN; charset=US-ASCII
+Content-Type: text/plain
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <46F919BB.2000701-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -16,23 +15,50 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
-Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+To: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
+Cc: containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Tue, 25 Sep 2007, Pavel Emelyanov wrote:
+Hi,
 
-> +		for_each_node_state(n, N_NORMAL_MEMORY) {
-> +			struct kmem_cache_node *node;
-> +			struct page *pg;
-> +			
-> +			node = get_node(s, n);
-> +			spin_lock_irq(&node->list_lock);
-> +			list_for_each_entry(pg, &node->partial, lru)
-> +				SetSlabDebug(pg);
-> +			spin_unlock_irq(&node->list_lock);
+I am playing with control groups on 2.6.23-rc8-mm1.
+
+I am able to mount cgroup and create subgroups. I was able
+to move some tasks into them. But, after killing tasks I am
+not able to remove the subgroups. Any idea on why ?
+
+Thanks,
+Badari
+
+elm3b155:/dev/cgroup # ls -l /dev/cgroup
+total 175
+drwxr-xr-x   4 root root      0 Sep 25 15:02 .
+drwxr-xr-x  35 root root 179272 Sep 25 14:18 ..
+-rw-r--r--   1 root root      0 Sep 25 14:22 cpuacct.load
+-rw-r--r--   1 root root      0 Sep 25 14:22 cpuacct.usage
+-rw-r--r--   1 root root      0 Sep 25 14:22 debug.cgroup_refcount
+-rw-r--r--   1 root root      0 Sep 25 14:22 debug.current_css_set
+-rw-r--r--   1 root root      0 Sep 25 14:22
+debug.current_css_set_refcount
+-rw-r--r--   1 root root      0 Sep 25 14:22 debug.taskcount
+-rw-r--r--   1 root root      0 Sep 25 14:22 memory.control_type
+-rw-r--r--   1 root root      0 Sep 25 14:22 memory.failcnt
+-rw-r--r--   1 root root      0 Sep 25 14:22 memory.limit_in_bytes
+-rw-r--r--   1 root root      0 Sep 25 14:22 memory.usage_in_bytes
+-rw-r--r--   1 root root      0 Sep 25 14:22 notify_on_release
+-rw-r--r--   1 root root      0 Sep 25 14:22 releasable
+-rw-r--r--   1 root root      0 Sep 25 14:22 release_agent
+-rw-r--r--   1 root root      0 Sep 25 14:22 tasks
+drwxr-xr-x   2 root root      0 Sep 25 16:27 xxx
+drwxr-xr-x   2 root root      0 Sep 25 14:22 yyy
 
 
-Is it necessary to mark all the existing slabs with SLAB_DEBUG? Would it 
-not be sufficient to just mark the new ones coming up? The above operation 
-could be a bit expensive.
+elm3b155:/dev/cgroup # cat xxx/tasks
+elm3b155:/dev/cgroup # cat yyy/tasks
+elm3b155:/dev/cgroup #
+
+elm3b155:/dev/cgroup # rmdir yyy
+rmdir: `yyy': Device or resource busy
+elm3b155:/dev/cgroup # rmdir xxx
+rmdir: `xxx': Device or resource busy
+elm3b155:/dev/cgroup #
