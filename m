@@ -1,17 +1,15 @@
-From: Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
-Subject: Re: [RFC][PATCH] allow "unlimited" limit value.
-Date: Tue, 25 Sep 2007 17:34:00 +0400
-Message-ID: <46F90E48.6080603@openvz.org>
-References: <20070925193900.1af6d871.kamezawa.hiroyu@jp.fujitsu.com>
-	<46F8E7AE.2090309@linux.vnet.ibm.com>
-	<20070925202954.4e477564.kamezawa.hiroyu@jp.fujitsu.com>
-	<46F8F6FE.7040006@linux.vnet.ibm.com> <46F907CE.1060807@openvz.org>
-	<46F90DCA.5030209@linux.vnet.ibm.com>
+From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
+Subject: Re: [RFC][PATCH] Devices visibility container
+Date: Tue, 25 Sep 2007 07:43:53 -0600
+Message-ID: <m1lkaudfmu.fsf@ebiederm.dsl.xmission.com>
+References: <46F77523.9020001@openvz.org>
+	<m1r6kodn7t.fsf@ebiederm.dsl.xmission.com>
+	<46F8FE34.4020703@fr.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset=us-ascii
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <46F90DCA.5030209-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+In-Reply-To: <46F8FE34.4020703-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org> (Cedric Le Goater's message of
+	"Tue, 25 Sep 2007 14:25:24 +0200")
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -21,85 +19,97 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
-Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, rientjes-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org
+To: Cedric Le Goater <clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
+Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Balbir Singh wrote:
-> Pavel Emelyanov wrote:
->> Balbir Singh wrote:
->>> KAMEZAWA Hiroyuki wrote:
->>>> On Tue, 25 Sep 2007 16:19:18 +0530
->>>> Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org> wrote:
->>>>
->>>>> Hi, Kamezawa-San,
->>>>>
->>>> Hi,
->>>>
->>>>> Your changes make sense, but not CLUI (Command Line Usage) sense.
->>>>> 1. The problem is that when we mix strings with numbers, tools that
->>>>>    parse/use get confused and complicated
->>>> yes, maybe.
->>>>
->>>>> 2. ULONGLONG_MAX is a real limit, there is no such thing as unlimited.
->>>>>    If the user does ever go beyond ULONGLONG_MAX, we will limit him :-)
->>>>>
->>>> Oh. res_counter.c  uses LONGLONG_MAX as default value.
->>>> need fix ? or intended ?
->>> Pavel do you remember why LONG was chosen instead of ULONG?
->> To prevent the overflow in "charge" routine.
->> See, if you add two numbers less than LONG_MAX, but with
->> unsigned long type each, you will never have an overflowed result.
->>
-> 
-> Aah.. Thanks, my memory short circuited on me.
-> 
->>>> And okay there is no "unlimited" state.
->>>>
->>>>> Having said that, I do wish to have a more intuitive interface for
->>>>> users. May be a perl/python script to hide away the numbers game
->>>>> from the users. What do you think?
->>>>>
->>>> I agree with you that perl/python script can hide details. but they need knowledge
->>>> about the maximum value, which is given as default value.
->>>>
->>>> In short, what I want is some value like RLIM_INFINITY in ulimit.
->>>>
->>> I like the idea of RLIM_INFINITY and how ulimit as a tool shows
->>> a value. I guess we need something like RES_COUNTER_LIMIT_MAX
->>> and the user tool can show the limit as maximum. We could also
->>> define a special number, RES_COUNTER_LIMIT_INFINITY, such that
->>> containers will not enforce limits when the limit is set to
->>> this value.
->>>
->>>> Because it seems that res_counter.c will be used for other resouce control purpose,
->>>> I thought some generic way (value) to know/specify "the maximum value" is helpful for
->>>> all resource controller interface.
->>>>
->>>> If there is an concensus that treaing ULONGLONG_MAX as default, it's ok.
->>>>
->>> When I worked on the first version of res_counters, I used 0 to indicate
->>> unlimited. When Pavel posted his version, I think derived from
->>> beancounters, we did not want to have unlimited containers, so he used
->>> the maximum value
->> Yup! Setting LONGMAX pages for container means that this container
->> is unlimited, since there're no such many pages on any arch :)
->>
-> 
-> Pavel, we no longer account in pages, we do it in bytes. Second,
-> this assumption cannot hold for long, memory sizes are growing,
-> I think we need a special value.
+Cedric Le Goater <clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org> writes:
 
-I see. And I also see that we've switched into unsigned long long.
+> Hello Eric !
+>
+> Eric W. Biederman wrote:
+>> Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org> writes:
+>> 
+>>> At KS we have pointed out the need in some container, that allows
+>>> to limit the visibility of some devices to task within it. I.e.
+>>> allow for /dev/null, /dev/zero etc, but disable (by default) some
+>>> IDE devices or SCSI discs and so on.
+>> 
+>> NAK
+>> 
+>> We do not want a control group subsystem for this.
+>
+> we will need one way to configure the list of available devices from
+> user space. Any proposal ?
 
-Well, no container may have the ULLMAX (or what is it?) bytes
-touched/allocated :) So I don't see any need in a special value.
+Proposal 1/2.  From the kernel side we have.
+dev_ns_add(kdev_t cur_dev, struct dev_ns *target_ns, kdev_t target_kdev)
+Which looks up the device and add it to the hash tables in the proper
+device namespace, and fires off the appropriate hotplug events.
 
-> 
->>>> Thanks,
->>>> -Kame
->>>>
->>> Thanks for looking into this,
->>>
-> 
-> 
+I guess the easy user space interface would be:
+echo <device_ns_pid>:<major>:<minor> > /sys/block/ram0/dev
+
+Although I suspect that we want some restrictions on what
+combinations of major and minor numbers are valid.
+
+Despite the fact that my gut says writeable sysfs files were
+a bad idea.  Since we have them my gut says sysfs the filesystem
+of devices is where we need the control files for devices.
+
+>> For the short term we can just drop CAP_SYS_MKNOD.
+>
+> Sure. Pavel is working on something mid-term ;)
+
+Well.  I don't think midterm is mergeable, I do think it is good
+for conversation though.  I also don't see why what Pavel is doing
+can't be implemented as a device namespace.
+
+>> For the long term we need a device namespace for application
+>> migration, so they can continue to use devices with the same
+>> major+minor number pair after the migration event.   
+>
+> Hmm, yes. I can imagine that for some big database application using
+> raw devices but it only means that the same device must be present
+> upon restart. I don't see any identifier virtualization issues.
+
+Well there is the classic one.  You are migrating to a machine which
+is using that major+minor number for a different device already.
+
+Especially in the cases like network block devices or SCSI talking
+to SAN, we can talk to the same device and still have a different
+major+minor number after migration in the current setup.
+
+I think we can hit similar issues with ttys, loopback devices,
+and ramdisks as well.
+
+>> Things like
+>> ensuring a call to stat on a given file before and after the migration
+>> return the exact same information sounds compelling.  So I don't think
+>> this is even strictly limited to virtual devices anymore. How many
+>> applications are there out there that memorize the stat data on a file
+>> and so they can detect if it has changed?
+>
+> that we need to support of course, otherwise we would break things 
+> like tail. 
+
+Exactly. tail, git, backup software.
+All kinds of infrequently run but interesting software.
+
+>> If we need something between those two it may make sense to enhance
+>> the LSM or perhaps introduce an alternate set security hooks.  Still
+>> if we are going to need a full device namespace that may be a little
+>> much.
+>
+> serge's implementation using security hooks should help us choose
+> the right approach. 
+
+Sure.
+
+Currently I have to agree with Alan Cox that our biggest security
+need seems to be a good implementation of revoke in the kernel.
+So we can do things like ensure a device is not being used by anyone
+else.  For removal of character and block devices we may not need a
+general thing but it is worth looking at.
+
+Eric
