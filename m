@@ -1,7 +1,7 @@
 From: Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
-Subject: [PATCH 1/5] Add notification about some major slab events
-Date: Tue, 25 Sep 2007 18:18:00 +0400
-Message-ID: <46F91898.5060400@openvz.org>
+Subject: [PATCH 3/5] Switch caches notification dynamically
+Date: Tue, 25 Sep 2007 18:22:51 +0400
+Message-ID: <46F919BB.2000701@openvz.org>
 References: <46F91841.9070708@openvz.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1
@@ -21,190 +21,106 @@ To: Christoph Lameter <clameter-sJ/iWh9BUns@public.gmane.org>
 Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-According to Christoph, there are already multiple people who 
-want to control slab allocations and track memory for various 
-reasons. So this is an introduction of such a hooks.
+The /sys/slab/<name>/cache_notify attribute controls
+whether the cache <name> is to be accounted or not.
 
-Currently, functions that are to call the notifiers are empty
-and marked as "weak". Thus, if there's only _one_ listener
-to these events, it can happily link with the vmlinux and
-handle the events with more than 10% of performance saved.
+By default no caches are accountable. Simply make
+  # echo -n 1 > /sys/slab/<name>cache_notify
+to turn notification of this cache on.
 
-The events tracked are:
-1. allocation of an object;
-2. freeing of an object;
-3. allocation of a new page for objects;
-4. freeing this page.
+If we turn accounting on on some cache and this cache 
+is merged with some other, this "other" will be notified
+as well. One can solve this by disabling of cache merging,
+i.e. booting with slub_nomerge option to the kernel.
 
-More events can be added on demand.
+Turning the notifications "on" causes all te subsequent
+allocations use the slow allocation path, so all the
+per-cpu caches are flushed and all the partial pages
+are marked as SlabDebug.
 
-The kmem cache marked with SLAB_NOTIFY flag will cause all the
-events above to generate notifications. By default no caches
-come with this flag.
+Turning the notification off is possible only when this 
+cache is empty. The reason for this is that the pages,
+that are full of objects are not linked in any list, so
+we wouldn't be able to walk these pages and tell them
+thay should not produce notifications any longer. 
 
-The events are generated on slow paths only and as soon as the
-cache is marked as SLAB_NOTIFY, it will always use them for
-allocation.
+To make "off" possible we need to rework the slub.c in 
+respect to full slabs handling (this is currently 
+available with SLUB_DEBUG only). This is in TODO.
 
 Signed-off-by: Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 
 ---
 
-diff --git a/include/linux/slab.h b/include/linux/slab.h
-index f3a8eec..68d8e65 100644
---- a/include/linux/slab.h
-+++ b/include/linux/slab.h
-@@ -28,6 +28,7 @@
- #define SLAB_DESTROY_BY_RCU	0x00080000UL	/* Defer freeing slabs to RCU */
- #define SLAB_MEM_SPREAD		0x00100000UL	/* Spread some memory over cpuset */
- #define SLAB_TRACE		0x00200000UL	/* Trace allocations and frees */
-+#define SLAB_NOTIFY		0x00400000UL	/* Notify major events */
- 
- /* The following flags affect the page allocator grouping pages by mobility */
- #define SLAB_RECLAIM_ACCOUNT	0x00020000UL		/* Objects are reclaimable */
-diff --git a/include/linux/slub_def.h b/include/linux/slub_def.h
-index 40801e7..8cfd9ff 100644
---- a/include/linux/slub_def.h
-+++ b/include/linux/slub_def.h
-@@ -200,4 +203,22 @@ static __always_inline void *kmalloc_nod
- }
- #endif
- 
-+struct slub_notify_struct {
-+	struct kmem_cache *cachep;
-+	void *objp;
-+	gfp_t gfp;
-+};
-+
-+enum {
-+	SLUB_ON,
-+	SLUB_OFF,
-+	SLUB_ALLOC,
-+	SLUB_FREE,
-+	SLUB_NEWPAGE,
-+	SLUB_FREEPAGE,
-+};
-+
-+int slub_register_notifier(struct notifier_block *nb);
-+void slub_unregister_notifier(struct notifier_block *nb);
-+
- #endif /* _LINUX_SLUB_DEF_H */
 diff --git a/mm/slub.c b/mm/slub.c
 index 31d04a3..e066a0e 100644
 --- a/mm/slub.c
 +++ b/mm/slub.c
-@@ -1040,6 +1040,43 @@ static inline unsigned long kmem_cache_f
- }
- #define slub_debug 0
+@@ -3779,6 +3932,60 @@ static ssize_t defrag_ratio_store(struct
+ SLAB_ATTR(defrag_ratio);
  #endif
-+
-+/*
-+ * notifiers
-+ */
-+
-+int __attribute__ ((weak)) slub_alloc_notify(struct kmem_cache *cachep,
-+		void *obj, gfp_t gfp)
+ 
++static ssize_t cache_notify_show(struct kmem_cache *s, char *buf)
 +{
-+	return 0;
++	return sprintf(buf, "%d\n", !!(s->flags & SLAB_NOTIFY));
 +}
 +
-+void __attribute__ ((weak)) slub_free_notify(struct kmem_cache *cachep,
-+		void *obj)
++static ssize_t cache_notify_store(struct kmem_cache *s,
++		const char *buf, size_t length)
 +{
-+}
++	int err;
++	int n;
 +
-+int __attribute__ ((weak)) slub_newpage_notify(struct kmem_cache *cachep,
-+		struct page *pg, gfp_t gfp)
-+{
-+	return 0;
-+}
++	if ((buf[0] == '1') && !(s->flags & SLAB_NOTIFY)) {
++		err = slub_on_notify(s);
++		if (err < 0)
++			return err;
 +
-+void __attribute__ ((weak)) slub_freepage_notify(struct kmem_cache *cachep,
-+		struct page *pg)
-+{
-+}
++		s->flags |= SLAB_NOTIFY;
 +
-+int __attribute__ ((weak)) slub_on_notify(struct kmem_cache *cachep)
-+{
-+	return 0;
-+}
-+
-+int __attribute__ ((weak)) slub_off_notify(struct kmem_cache *cachep)
-+{
-+	return 0;
-+}
-+
- /*
-  * Slab allocation and freeing
-  */
-@@ -1063,7 +1184,11 @@ static struct page *allocate_slab(struct
- 		page = alloc_pages_node(node, flags, s->order);
- 
- 	if (!page)
--		return NULL;
-+		goto out;
-+
-+	if ((s->flags & SLAB_NOTIFY) &&
-+			slub_newpage_notify(s, page, flags) < 0)
-+		goto out_free;
- 
- 	mod_zone_page_state(page_zone(page),
- 		(s->flags & SLAB_RECLAIM_ACCOUNT) ?
-@@ -1071,6 +1196,11 @@ static struct page *allocate_slab(struct
- 		pages);
- 
- 	return page;
-+
-+out_free:
-+	__free_pages(page, s->order);
-+out:
-+	return NULL;
- }
- 
- static void setup_object(struct kmem_cache *s, struct page *page,
-@@ -1103,7 +1233,7 @@ static struct page *new_slab(struct kmem
- 	page->slab = s;
- 	page->flags |= 1 << PG_slab;
- 	if (s->flags & (SLAB_DEBUG_FREE | SLAB_RED_ZONE | SLAB_POISON |
--			SLAB_STORE_USER | SLAB_TRACE))
-+			SLAB_STORE_USER | SLAB_TRACE | SLAB_NOTIFY))
- 		SetSlabDebug(page);
- 
- 	start = page_address(page);
-@@ -1158,6 +1288,9 @@ static void rcu_free_slab(struct rcu_hea
- 
- static void free_slab(struct kmem_cache *s, struct page *page)
- {
-+	if (s->flags & SLAB_NOTIFY)
-+		slub_freepage_notify(s, page);
-+
- 	if (unlikely(s->flags & SLAB_DESTROY_BY_RCU)) {
- 		/*
- 		 * RCU free overloads the RCU head over the LRU
-@@ -1548,9 +1681,16 @@ debug:
- 	if (!alloc_debug_processing(s, c->page, object, addr))
- 		goto another_slab;
- 
-+	if ((s->flags & SLAB_NOTIFY) &&
-+			slub_alloc_notify(s, object, gfpflags) < 0) {
-+		object = NULL;
-+		goto out;
++		flush_all(s);
++		for_each_node_state(n, N_NORMAL_MEMORY) {
++			struct kmem_cache_node *node;
++			struct page *pg;
++			
++			node = get_node(s, n);
++			spin_lock_irq(&node->list_lock);
++			list_for_each_entry(pg, &node->partial, lru)
++				SetSlabDebug(pg);
++			spin_unlock_irq(&node->list_lock);
++		}
++		return length;
 +	}
 +
- 	c->page->inuse++;
- 	c->page->freelist = object[c->offset];
- 	c->node = -1;
-+out:
- 	slab_unlock(c->page);
- 	return object;
- }
-@@ -1659,6 +1799,10 @@ slab_empty:
- debug:
- 	if (!free_debug_processing(s, page, x, addr))
- 		goto out_unlock;
++	if ((buf[0] == '0') && (s->flags & SLAB_NOTIFY)) {
++		/*
++		 * TODO: make the notifications-off work
++		 */
++		if (any_slab_objects(s))
++			return -EBUSY;
 +
-+	if (s->flags & SLAB_NOTIFY)
-+		slub_free_notify(s, x);
++		s->flags &= ~SLAB_NOTIFY;
++		err = slub_off_notify(s);
++		if (err < 0) {
++			s->flags |= SLAB_NOTIFY;
++			return err;
++		}
 +
- 	goto checks_ok;
- }
++		return length;
++	}
++
++	return -EINVAL;
++}
++
++SLAB_ATTR(cache_notify);
++
+ static struct attribute * slab_attrs[] = {
+ 	&slab_size_attr.attr,
+ 	&object_size_attr.attr,
+@@ -3809,6 +4016,7 @@ static struct attribute * slab_attrs[] =
+ #ifdef CONFIG_NUMA
+ 	&defrag_ratio_attr.attr,
+ #endif
++	&cache_notify_attr.attr,
+ 	NULL
+ };
