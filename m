@@ -1,14 +1,14 @@
 From: Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
-Subject: Re: [PATCH 3/5] Switch caches notification dynamically
-Date: Tue, 25 Sep 2007 11:46:44 +0400
-Message-ID: <46F8BCE4.4010302@openvz.org>
-References: <46F38B67.3020609@openvz.org> <46F38D3B.2050608@openvz.org>
-	<Pine.LNX.4.64.0709241406280.30982@schroedinger.engr.sgi.com>
+Subject: Re: [RFC][PATCH] Devices visibility container
+Date: Tue, 25 Sep 2007 11:48:03 +0400
+Message-ID: <46F8BD33.5040108@openvz.org>
+References: <46F77523.9020001@openvz.org>
+	<m1r6kodn7t.fsf@ebiederm.dsl.xmission.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <Pine.LNX.4.64.0709241406280.30982-RYO/mD75kfhx2SFC9UQUAuF7EQX82lMiAL8bYrjMMd8@public.gmane.org>
+In-Reply-To: <m1r6kodn7t.fsf-T1Yj925okcoyDheHMi7gv2pdwda3JcWeAL8bYrjMMd8@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,35 +18,43 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Christoph Lameter <clameter-sJ/iWh9BUns@public.gmane.org>
-Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
+To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Christoph Lameter wrote:
-> On Fri, 21 Sep 2007, Pavel Emelyanov wrote:
+Eric W. Biederman wrote:
+> Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org> writes:
 > 
->> The /sys/slab/<name>/cache_notify attribute controls
->> whether the cache <name> is to be accounted or not.
+>> Hi.
 >>
->> For the reasons described before kmalloc caches cannot
->> be turned on.
+>> At KS we have pointed out the need in some container, that allows
+>> to limit the visibility of some devices to task within it. I.e.
+>> allow for /dev/null, /dev/zero etc, but disable (by default) some
+>> IDE devices or SCSI discs and so on.
 > 
-> It looks like the patch is forbidding to turn the notification off? On is 
-> okay even if there are already objects present? 
+> NAK
+> 
+> We do not want a control group subsystem for this.
+> 
+> For the short term we can just drop CAP_SYS_MKNOD.
+> 
+> For the long term we need a device namespace for application
+> migration, so they can continue to use devices with the same
+> major+minor number pair after the migration event.   Things like
 
-Yup. If we "on" the notifications we will just receive new events.
+Oh! Can you provide us an example when after the migration some
+device's major+minor pair change on the same device?
 
-> Full slabs may exist that cannot be accounted for now. I guess that is 
-> okay because we only want to track new allocations?
-
-
-If we turn notifications off with full slabs in memory we won't be 
-able to (in case of kmem accounting) release the page's metadata that 
-the slub_newpage event attached to them.
-
-We can make this by tracking all the full slabs, and at the moment of
-"off" walk them and generate slab_free and slab_release_page events,
-but does it worth doing it ever?
-
-Thanks,
-Pavel
+> ensuring a call to stat on a given file before and after the migration
+> return the exact same information sounds compelling.  So I don't think
+> this is even strictly limited to virtual devices anymore.  How many
+> applications are there out there that memorize the stat data on a file
+> and so they can detect if it has changed?
+> 
+> If we need something between those two it may make sense to enhance
+> the LSM or perhaps introduce an alternate set security hooks.  Still
+> if we are going to need a full device namespace that may be a little
+> much.
+> 
+> Eric
+> 
