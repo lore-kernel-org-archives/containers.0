@@ -1,11 +1,22 @@
-From: "Manufacturing News" <wf-GvRzlJ8R/WPsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
-Subject: Small Business and Entrepreneurship
-Date: Sat, 22 Sep 2007 17:06:14 +0200
-Message-ID: <MDAEMON-F200709221708.AA081864md50007279789@company.mail>
-Reply-To: wf-GvRzlJ8R/WPsfHDXvbKv3WD2FQJk+8+b@public.gmane.org
+From: David Rientjes <rientjes-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [RFC][PATCH] allow "unlimited" limit value.
+Date: Tue, 25 Sep 2007 13:58:29 -0700 (PDT)
+Message-ID: <alpine.DEB.0.9999.0709251346550.30668@chino.kir.corp.google.com>
+References: <20070925193900.1af6d871.kamezawa.hiroyu@jp.fujitsu.com>
+	<20070926003056.7df087a0.kamezawa.hiroyu@jp.fujitsu.com>
+	<alpine.DEB.0.9999.0709251205390.19001@chino.kir.corp.google.com>
+	<46F95FD7.3010204@linux.vnet.ibm.com>
+	<6599ad830709251235u33dde9c8pfd56ed3d9d4fbe4b@mail.gmail.com>
+	<alpine.DEB.0.9999.0709251236040.23337@chino.kir.corp.google.com>
+	<6599ad830709251300sea126bam5a4b6f7c6bd366e0@mail.gmail.com>
+	<alpine.DEB.0.9999.0709251304030.28350@chino.kir.corp.google.com>
+	<6599ad830709251312p7cdfae3byac2048fdc64ea5ca@mail.gmail.com>
+	<alpine.DEB.0.9999.0709251325540.29575@chino.kir.corp.google.com>
+	<6599ad830709251340t6e002dcbh6d7bcc6e6405739@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary="===============8370682002224239973=="
+Content-Type: TEXT/PLAIN; charset=US-ASCII
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <6599ad830709251340t6e002dcbh6d7bcc6e6405739-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -13,85 +24,46 @@ List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
 List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Mime-version: 1.0
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-3NddpPZAyC0@public.gmane.org
+To: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
 List-Id: containers.vger.kernel.org
 
---===============8370682002224239973==
-Content-Type: text/html
-Content-Transfer-Encoding: quoted-printable
+On Tue, 25 Sep 2007, Paul Menage wrote:
 
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http:/=
-/www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-<html xmlns=3D"http://www.w3.org/1999/xhtml" xml:lang=3D"en" lang=3D"en">
-<head>
-<title>Manufacturing News</title>
-<meta http-equiv=3D"Content-Type" content=3D"text/html; charset=3Diso-=
-8859-1" />
-<style type=3D"text/css">
-body { font-family: arial,tahoma,verdana,sans-serif; font-size: 10pt; }
-</style>
-</head>
-<body>
+> > If you're fine with rounding up to the nearest page, then what's the point
+> > of exposing it as a number of bytes??  You'll never get a granularity
+> > finer than a kilobyte.
+> 
+> API != implementation.
+> 
 
-<span style=3D"font-weight: bold;">Small and Mobile Production (SMP) t=
-o resolve giant problem in developing regions</span>
+Having the limit expressed and configurable in bytes suggests that it can 
+be defined on that granularity which is obviously wrong.
 
-<br /><br />
+> > So by expressing it in terms of bytes instead of kilobytes, you're just
+> > making the largest amount of memory allowed via this interface smaller
+> > that is should have to be.
+> 
+> Yes, that's true. With a 64-bit count in bytes, we can only limit
+> people to 16 exabytes of memory. We're going to bump up against that
+> limit in no time.
+> 
 
-SMP developed a revolutionary production method that is self-contained=
-, immediate, portable, competitive, accessible because it is so cost-e=
-ffective and=20
-transportable by any means whatsoever: by land, sea, railroad or air w=
-ith more than hundreds Small and Mobile Production systems. From a tec=
-hnological=20
-standpoint, it is an incontrovertible fact that this system is aimed a=
-t solving very serious problems, starting with that which is most basi=
-c: the survival of millions=20
-of human beings.
+So, by your logic, it would be fine to express it in bits too.
 
-<br /><br />
+> > And this controller owns the memory.limit file so it can express its
+> > memory limits in whatever unit it wants.
+> >
+> 
+> Right, but it would be nice to have different memory controllers be
+> API-compatible with one another. Bytes is the lowest common
+> denominator.
+> 
 
-The SMP is the only  system in the world that can provide up to six of=
- the most essential products for basic sustenance for just one dollar =
-per day. SMP will=20
-supply to countries and developing regions the technology and necessar=
-y support for these Small and Mobile Units.
-
-<br /><br />
-
-If you are interested in being a partner in your country or region, yo=
-u can send your CV to <a href=3D"mailto:worldprogram-y7mWNqJcIDoAvxtiuMwx3w@public.gmane.org?Subject=
-=3DInterested in=20
-being a partner">SMP Partners Program</a> Marcia Anderson, Project Man=
-ager.
-
-<br /><br />
-
-----------------------------------------------------------------------=
----<br />
-If you received this in error or would like to be removed from our lis=
-t, please return us indicating: remove or un-subscribe in subject fiel=
-d, Thanks. <a=20
-href=3D"mailto:worldprogram-y7mWNqJcIDoAvxtiuMwx3w@public.gmane.org?Subject=3DRemove">The Developmen=
-t News, Editor</a><br />
-&copy; 2007 THE DEVELOPMENT NEWS. All rights reserved.
-
-</body>
-</html>
-
-
-
---===============8370682002224239973==
-Content-Type: text/plain; charset="us-ascii"
-MIME-Version: 1.0
-Content-Transfer-Encoding: 7bit
-Content-Disposition: inline
-
-_______________________________________________
-Containers mailing list
-Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-https://lists.linux-foundation.org/mailman/listinfo/containers
---===============8370682002224239973==--
+Please cite examples of other memory controllers that you can imagine 
+would actually support (not expose to userspace, but support) memory 
+limits in terms of anything smaller than kilobytes and how you plan on 
+charging for that memory as a fraction of a page size and that has any 
+reasonable hope of ever being efficient.
