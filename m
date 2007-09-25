@@ -1,15 +1,14 @@
-From: Cedric Le Goater <clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [RFC][PATCH] Devices visibility container
-Date: Tue, 25 Sep 2007 13:20:31 +0200
-Message-ID: <46F8EEFF.8000204@fr.ibm.com>
-References: <46F77523.9020001@openvz.org>
-	<6599ad830709250053m715a1848mf6c17a6dd321092@mail.gmail.com>
-	<46F8C007.1090000@openvz.org>
+From: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+Subject: Re: [RFC][PATCH] allow "unlimited" limit value.
+Date: Tue, 25 Sep 2007 20:29:54 +0900
+Message-ID: <20070925202954.4e477564.kamezawa.hiroyu@jp.fujitsu.com>
+References: <20070925193900.1af6d871.kamezawa.hiroyu@jp.fujitsu.com>
+	<46F8E7AE.2090309@linux.vnet.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
+Content-Type: text/plain; charset=US-ASCII
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <46F8C007.1090000-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+In-Reply-To: <46F8E7AE.2090309-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,29 +18,44 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
-Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+To: balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
+Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, rientjes-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Pavel Emelyanov wrote:
-> Paul Menage wrote:
->> On 9/24/07, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org> wrote:
->>>  # /bin/echo -n '+1:5' > /cont/devs/0/devices.char
->>>
->>> More generally, the '+<major>:<minor>' string grants access to
->>> some device, and '-<major>:<minor>' disables one.
->> How about a more forward-compatible API:
->>
->> <major>:<minor>=<permissions>[,<remapped_major>:<remapped_minor>]
-> 
-> I'd rather make it look like
-> 
-> <major>:<mino>[:<permissions>][:<map_major>:<map_minor>]
-> 
-> where
-> 
-> <permissions>:=[r-][w-] and NULL means rw
+On Tue, 25 Sep 2007 16:19:18 +0530
+Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org> wrote:
 
-bah. numeric mode are better.
+> Hi, Kamezawa-San,
+> 
+Hi,
 
-C.
+> Your changes make sense, but not CLUI (Command Line Usage) sense.
+> 1. The problem is that when we mix strings with numbers, tools that
+>    parse/use get confused and complicated
+yes, maybe.
+
+> 2. ULONGLONG_MAX is a real limit, there is no such thing as unlimited.
+>    If the user does ever go beyond ULONGLONG_MAX, we will limit him :-)
+> 
+Oh. res_counter.c  uses LONGLONG_MAX as default value.
+need fix ? or intended ?
+And okay there is no "unlimited" state.
+
+> Having said that, I do wish to have a more intuitive interface for
+> users. May be a perl/python script to hide away the numbers game
+> from the users. What do you think?
+> 
+I agree with you that perl/python script can hide details. but they need knowledge
+about the maximum value, which is given as default value.
+
+In short, what I want is some value like RLIM_INFINITY in ulimit.
+
+
+Because it seems that res_counter.c will be used for other resouce control purpose,
+I thought some generic way (value) to know/specify "the maximum value" is helpful for
+all resource controller interface.
+
+If there is an concensus that treaing ULONGLONG_MAX as default, it's ok.
+
+Thanks,
+-Kame
