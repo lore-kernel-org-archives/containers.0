@@ -1,7 +1,7 @@
 From: Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
-Subject: [PATCH 3/5] Switch caches notification dynamically
-Date: Tue, 25 Sep 2007 18:22:51 +0400
-Message-ID: <46F919BB.2000701@openvz.org>
+Subject: [PATCH 4/5] Setup the control group
+Date: Tue, 25 Sep 2007 18:24:30 +0400
+Message-ID: <46F91A1E.2060303@openvz.org>
 References: <46F91841.9070708@openvz.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1
@@ -21,106 +21,169 @@ To: Christoph Lameter <clameter-sJ/iWh9BUns@public.gmane.org>
 Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-The /sys/slab/<name>/cache_notify attribute controls
-whether the cache <name> is to be accounted or not.
+Attach the controller to the control groups. This will work
+with the SLUB allocator only. However, if we need I can
+port this on SLAB (and maybe SLOB ;) ).
 
-By default no caches are accountable. Simply make
-  # echo -n 1 > /sys/slab/<name>cache_notify
-to turn notification of this cache on.
-
-If we turn accounting on on some cache and this cache 
-is merged with some other, this "other" will be notified
-as well. One can solve this by disabling of cache merging,
-i.e. booting with slub_nomerge option to the kernel.
-
-Turning the notifications "on" causes all te subsequent
-allocations use the slow allocation path, so all the
-per-cpu caches are flushed and all the partial pages
-are marked as SlabDebug.
-
-Turning the notification off is possible only when this 
-cache is empty. The reason for this is that the pages,
-that are full of objects are not linked in any list, so
-we wouldn't be able to walk these pages and tell them
-thay should not produce notifications any longer. 
-
-To make "off" possible we need to rework the slub.c in 
-respect to full slabs handling (this is currently 
-available with SLUB_DEBUG only). This is in TODO.
+This setup is simple and stupid.
 
 Signed-off-by: Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 
 ---
 
-diff --git a/mm/slub.c b/mm/slub.c
-index 31d04a3..e066a0e 100644
---- a/mm/slub.c
-+++ b/mm/slub.c
-@@ -3779,6 +3932,60 @@ static ssize_t defrag_ratio_store(struct
- SLAB_ATTR(defrag_ratio);
+diff --git a/include/linux/cgroup_subsys.h b/include/linux/cgroup_subsys.h
+index d822977..bd0f493 100644
+--- a/include/linux/cgroup_subsys.h
++++ b/include/linux/cgroup_subsys.h
+@@ -36,3 +36,9 @@ SUBSYS(mem_cgroup)
  #endif
  
-+static ssize_t cache_notify_show(struct kmem_cache *s, char *buf)
+ /* */
++
++#ifdef CONFIG_CGROUP_KMEM
++SUBSYS(kmem)
++#endif
++
++/* */
+diff --git a/init/Kconfig b/init/Kconfig
+index 684ccfb..e9acc29 100644
+--- a/init/Kconfig
++++ b/init/Kconfig
+@@ -353,6 +353,12 @@ config CGROUP_MEM_CONT
+ 	  Provides a memory controller that manages both page cache and
+ 	  RSS memory.
+ 
++config CGROUP_KMEM
++	bool "Kernel memory controller for containers"
++	depends on CGROUPS && RESOURCE_COUNTERS && SLUB
++	help
++	  Provides a kernel memory usage control for containers
++
+ config PROC_PID_CPUSET
+ 	bool "Include legacy /proc/<pid>/cpuset file"
+ 	depends on CPUSETS
+diff --git a/mm/kmemcontrol.c b/mm/kmemcontrol.c
+new file mode 100644
+index 0000000..5698c0f
+--- /dev/null
++++ b/mm/kmemcontrol.c
+@@ -0,0 +1,119 @@
++/*
++ * kmemcontrol.c - Kernel Memory Controller
++ *
++ * Copyright 2007 OpenVZ SWsoft Inc
++ * Author: Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation; either version 2 of the License, or
++ * (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ */
++
++#include <linux/mm.h>
++#include <linux/cgroup.h>
++#include <linux/res_counter.h>
++#include <linux/err.h>
++
++struct kmem_container {
++	struct cgroup_subsys_state css;
++	struct res_counter res;
++};
++
++static inline struct kmem_container *css_to_kmem(struct cgroup_subsys_state *ss)
 +{
-+	return sprintf(buf, "%d\n", !!(s->flags & SLAB_NOTIFY));
++	return container_of(ss, struct kmem_container, css);
 +}
 +
-+static ssize_t cache_notify_store(struct kmem_cache *s,
-+		const char *buf, size_t length)
++static inline struct kmem_container *cgroup_to_kmem(struct cgroup *cg)
 +{
-+	int err;
-+	int n;
-+
-+	if ((buf[0] == '1') && !(s->flags & SLAB_NOTIFY)) {
-+		err = slub_on_notify(s);
-+		if (err < 0)
-+			return err;
-+
-+		s->flags |= SLAB_NOTIFY;
-+
-+		flush_all(s);
-+		for_each_node_state(n, N_NORMAL_MEMORY) {
-+			struct kmem_cache_node *node;
-+			struct page *pg;
-+			
-+			node = get_node(s, n);
-+			spin_lock_irq(&node->list_lock);
-+			list_for_each_entry(pg, &node->partial, lru)
-+				SetSlabDebug(pg);
-+			spin_unlock_irq(&node->list_lock);
-+		}
-+		return length;
-+	}
-+
-+	if ((buf[0] == '0') && (s->flags & SLAB_NOTIFY)) {
-+		/*
-+		 * TODO: make the notifications-off work
-+		 */
-+		if (any_slab_objects(s))
-+			return -EBUSY;
-+
-+		s->flags &= ~SLAB_NOTIFY;
-+		err = slub_off_notify(s);
-+		if (err < 0) {
-+			s->flags |= SLAB_NOTIFY;
-+			return err;
-+		}
-+
-+		return length;
-+	}
-+
-+	return -EINVAL;
++	return css_to_kmem(cgroup_subsys_state(cg, kmem_subsys_id));
 +}
 +
-+SLAB_ATTR(cache_notify);
++static inline struct kmem_container *task_kmem_container(struct task_struct *t)
++{
++	return css_to_kmem(task_subsys_state(t, kmem_subsys_id));
++}
 +
- static struct attribute * slab_attrs[] = {
- 	&slab_size_attr.attr,
- 	&object_size_attr.attr,
-@@ -3809,6 +4016,7 @@ static struct attribute * slab_attrs[] =
- #ifdef CONFIG_NUMA
- 	&defrag_ratio_attr.attr,
- #endif
-+	&cache_notify_attr.attr,
- 	NULL
- };
++/*
++ * cgroups interface
++ */
++
++static struct kmem_container init_kmem_container;
++
++static struct cgroup_subsys_state *kmem_create(struct cgroup_subsys *ss,
++		struct cgroup *cgroup)
++{
++	struct kmem_container *mem;
++
++	if (unlikely((cgroup->parent) == NULL))
++		mem = &init_kmem_container;
++	else
++		mem = kzalloc(sizeof(struct kmem_container), GFP_KERNEL);
++
++	if (mem == NULL)
++		return ERR_PTR(-ENOMEM);
++
++	res_counter_init(&mem->res);
++	return &mem->css;
++
++}
++
++static void kmem_destroy(struct cgroup_subsys *ss, struct cgroup *cgroup)
++{
++	kfree(cgroup_to_kmem(cgroup));
++}
++
++static ssize_t kmem_container_read(struct cgroup *cg, struct cftype *cft,
++		struct file *file, char __user *userbuf, size_t nbytes,
++		loff_t *ppos)
++{
++	return res_counter_read(&cgroup_to_kmem(cg)->res,
++			cft->private, userbuf, nbytes, ppos, NULL);
++}
++
++static ssize_t kmem_container_write(struct cgroup *cg, struct cftype *cft,
++		struct file *file, const char __user *userbuf,
++		size_t nbytes, loff_t *ppos)
++{
++	return res_counter_write(&cgroup_to_kmem(cg)->res,
++			cft->private, userbuf, nbytes, ppos, NULL);
++}
++
++static struct cftype kmem_files[] = {
++	{
++		.name = "usage",
++		.private = RES_USAGE,
++		.read = kmem_container_read,
++	},
++	{
++		.name = "limit",
++		.private = RES_LIMIT,
++		.write = kmem_container_write,
++		.read = kmem_container_read,
++	},
++	{
++		.name = "failcnt",
++		.private = RES_FAILCNT,
++		.read = kmem_container_read,
++	},
++};
++
++static int kmem_populate(struct cgroup_subsys *ss, struct cgroup *cnt)
++{
++	return cgroup_add_files(cnt, ss, kmem_files, ARRAY_SIZE(kmem_files));
++}
++
++struct cgroup_subsys kmem_subsys = {
++	.name = "kmem",
++	.create = kmem_create,
++	.destroy  = kmem_destroy,
++	.populate = kmem_populate,
++	.subsys_id = kmem_subsys_id,
++	.early_init = 1,
++};
