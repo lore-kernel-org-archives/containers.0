@@ -1,14 +1,11 @@
-From: Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
-Subject: Re: [RFC][PATCH] Devices visibility container
-Date: Tue, 25 Sep 2007 12:00:07 +0400
-Message-ID: <46F8C007.1090000@openvz.org>
-References: <46F77523.9020001@openvz.org>
-	<6599ad830709250053m715a1848mf6c17a6dd321092@mail.gmail.com>
+From: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+Subject: [RFC][PATCH] allow "unlimited" limit value.
+Date: Tue, 25 Sep 2007 19:39:00 +0900
+Message-ID: <20070925193900.1af6d871.kamezawa.hiroyu@jp.fujitsu.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
+Content-Type: text/plain; charset=US-ASCII
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <6599ad830709250053m715a1848mf6c17a6dd321092-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,36 +15,87 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
-Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+To: balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
+Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, rientjes-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Paul Menage wrote:
-> On 9/24/07, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org> wrote:
->>  # /bin/echo -n '+1:5' > /cont/devs/0/devices.char
->>
->> More generally, the '+<major>:<minor>' string grants access to
->> some device, and '-<major>:<minor>' disables one.
-> 
-> How about a more forward-compatible API:
-> 
-> <major>:<minor>=<permissions>[,<remapped_major>:<remapped_minor>]
+just for a RFC.
 
-I'd rather make it look like
+When I use memory controller, I notice that memory.limit_in_bytes shows
+just very big number, if unlimited.
 
-<major>:<mino>[:<permissions>][:<map_major>:<map_minor>]
+A user(or tool) has to know that the big number(LLONG_MAX) means "unlimted".
+IMHO, some interface which allows users to specify "unlimited" value is helpful.
 
-where
+This patch tries to define value RES_COUTNER_UNLIMITED (== LLONG_MAX) and
+modifies an interface to support "unlimted" value.
 
-<permissions>:=[r-][w-] and NULL means rw
+Because this patch breaks limit_in_bytes to some extent,
+I'm glad if someone has a better idea to show unlimited value.
+(if some easy value means "unlimited", it's helpful. LLONG_MAX is not easy
+ to be recognized.)
 
-this would keep current API compatible and allow it for extension.
+==after this patch ==
+[root@aworks kamezawa]# echo -n 400000000 > /opt/cgroup/memory.limit_in_bytes
+[root@aworks kamezawa]# cat /opt/cgroup/memory.limit_in_bytes
+400003072
+[root@aworks kamezawa]# echo -n unlimited > /opt/cgroup/memory.limit_in_bytes
+[root@aworks kamezawa]# cat /opt/cgroup/memory.limit_in_bytes
+unlimited
 
-> This would allow you the control the access that each cgroup has to a
-> given device (permissions of 0 indicates that the device isn't even
-> visible, i.e. the same as your "-<major>:<minor>" operation. For now
-> specifying the (optional) remapping could just fail, but at least the
-> API would be defined.
-> 
-> Paul
-> 
+
+Signed-off-by: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+
+
+ include/linux/res_counter.h |    1 +
+ kernel/res_counter.c        |   11 ++++++++---
+ 2 files changed, 9 insertions(+), 3 deletions(-)
+
+Index: linux-2.6.23-rc8-mm1/include/linux/res_counter.h
+===================================================================
+--- linux-2.6.23-rc8-mm1.orig/include/linux/res_counter.h
++++ linux-2.6.23-rc8-mm1/include/linux/res_counter.h
+@@ -28,6 +28,7 @@ struct res_counter {
+ 	 * the limit that usage cannot exceed
+ 	 */
+ 	unsigned long long limit;
++#define RES_COUNTER_UNLIMITED		((unsigned long long)LLONG_MAX)
+ 	/*
+ 	 * the number of unsuccessful attempts to consume the resource
+ 	 */
+Index: linux-2.6.23-rc8-mm1/kernel/res_counter.c
+===================================================================
+--- linux-2.6.23-rc8-mm1.orig/kernel/res_counter.c
++++ linux-2.6.23-rc8-mm1/kernel/res_counter.c
+@@ -16,7 +16,7 @@
+ void res_counter_init(struct res_counter *counter)
+ {
+ 	spin_lock_init(&counter->lock);
+-	counter->limit = (unsigned long long)LLONG_MAX;
++	counter->limit = RES_COUNTER_UNLIMITED;
+ }
+ 
+ int res_counter_charge_locked(struct res_counter *counter, unsigned long val)
+@@ -84,7 +84,9 @@ ssize_t res_counter_read(struct res_coun
+ 
+ 	s = buf;
+ 	val = res_counter_member(counter, member);
+-	if (read_strategy)
++	if (*val == RES_COUNTER_UNLIMITED) {
++		s += sprintf(s, "unlimited\n", *val);
++	} else if (read_strategy)
+ 		s += read_strategy(*val, s);
+ 	else
+ 		s += sprintf(s, "%llu\n", *val);
+@@ -112,7 +114,10 @@ ssize_t res_counter_write(struct res_cou
+ 
+ 	ret = -EINVAL;
+ 
+-	if (write_strategy) {
++	if ((strcmp(buf, "-1") == 0) ||
++	    (strcmp(buf,"unlimited") == 0)) {
++		tmp = RES_COUNTER_UNLIMITED;
++	} else if(write_strategy) {
+ 		if (write_strategy(buf, &tmp)) {
+ 			goto out_free;
+ 		}
