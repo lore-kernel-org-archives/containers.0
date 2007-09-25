@@ -1,15 +1,11 @@
-From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
-Subject: Re: [RFC][PATCH] Devices visibility container
-Date: Tue, 25 Sep 2007 07:43:53 -0600
-Message-ID: <m1lkaudfmu.fsf@ebiederm.dsl.xmission.com>
-References: <46F77523.9020001@openvz.org>
-	<m1r6kodn7t.fsf@ebiederm.dsl.xmission.com>
-	<46F8FE34.4020703@fr.ibm.com>
+From: Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+Subject: [PATCH 0/5] Kernel memory accounting container (v5)
+Date: Tue, 25 Sep 2007 18:16:33 +0400
+Message-ID: <46F91841.9070708@openvz.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+Content-Type: text/plain; charset=ISO-8859-1
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <46F8FE34.4020703-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org> (Cedric Le Goater's message of
-	"Tue, 25 Sep 2007 14:25:24 +0200")
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,97 +15,93 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Cedric Le Goater <clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
-Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+To: Christoph Lameter <clameter-sJ/iWh9BUns@public.gmane.org>
+Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Cedric Le Goater <clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org> writes:
+Changes since v.4:
+* make SLAB_NOTIFY caches mark pages as SlabDebug. That
+  makes the interesting paths simpler (thanks to Christoph);
+* the change above caused appropriate changes in "turn
+  notifications on" path - all available pages must become 
+  SlabDebug and page's freelists must be flushed;
+* added two more events - "on" and "off" to make kmalloc
+  caches disabling more gracefully;
+* turning notifications "off" is marked as "TODO". Right
+  now it's hard w/o massive rework of slub.c in respect to
+  full slabs handling.
 
-> Hello Eric !
->
-> Eric W. Biederman wrote:
->> Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org> writes:
->> 
->>> At KS we have pointed out the need in some container, that allows
->>> to limit the visibility of some devices to task within it. I.e.
->>> allow for /dev/null, /dev/zero etc, but disable (by default) some
->>> IDE devices or SCSI discs and so on.
->> 
->> NAK
->> 
->> We do not want a control group subsystem for this.
->
-> we will need one way to configure the list of available devices from
-> user space. Any proposal ?
+Changes since v.3:
+* moved alloc/free notification into slow path and make
+  "notify-able" caches walk this path always;
+* introduced some optimization for the case, when there's
+  only one listener for SLUB events (saves more that 10%
+  of performance);
+* ported on 2.6.23-rc6-mm1 tree.
 
-Proposal 1/2.  From the kernel side we have.
-dev_ns_add(kdev_t cur_dev, struct dev_ns *target_ns, kdev_t target_kdev)
-Which looks up the device and add it to the hash tables in the proper
-device namespace, and fires off the appropriate hotplug events.
+Changes since v.2:
+* introduced generic notifiers for slub. right now there
+  are only events, needed by accounting, but this set can
+  be extended in the future;
+* moved the controller core into separate file, so that
+  its extension and/or porting on slAb will look more 
+  logical;
+* fixed this message :).
 
-I guess the easy user space interface would be:
-echo <device_ns_pid>:<major>:<minor> > /sys/block/ram0/dev
+Changes since v.1:
+* fixed Paul's comment about subsystem registration;
+* return ERR_PTR from ->create callback, not NULL;
+* make container-to-object assignment in rcu-safe section;
+* make turning accounting on and off with "1" and "0".
 
-Although I suspect that we want some restrictions on what
-combinations of major and minor numbers are valid.
+============================================================
 
-Despite the fact that my gut says writeable sysfs files were
-a bad idea.  Since we have them my gut says sysfs the filesystem
-of devices is where we need the control files for devices.
+Long time ago we decided to start memory control with the
+user memory container. Now this container in -mm tree and
+I think we can start with the kmem one.
 
->> For the short term we can just drop CAP_SYS_MKNOD.
->
-> Sure. Pavel is working on something mid-term ;)
+First of all - why do we need this kind of control. The major
+"pros" is that kernel memory control protects the system
+from DoS attacks by processes that live in container. As our
+experience shows many exploits simply do not work in the
+container with limited kernel memory.
 
-Well.  I don't think midterm is mergeable, I do think it is good
-for conversation though.  I also don't see why what Pavel is doing
-can't be implemented as a device namespace.
+I can split the kernel memory container into 4 parts:
 
->> For the long term we need a device namespace for application
->> migration, so they can continue to use devices with the same
->> major+minor number pair after the migration event.   
->
-> Hmm, yes. I can imagine that for some big database application using
-> raw devices but it only means that the same device must be present
-> upon restart. I don't see any identifier virtualization issues.
+1. kmalloc-ed objects control
+2. vmalloc-ed objects control
+3. buddy allocated pages control
+4. kmem_cache_alloc-ed objects control
 
-Well there is the classic one.  You are migrating to a machine which
-is using that major+minor number for a different device already.
+the control of first tree types of objects has one peculiarity:
+one need to explicitly point out which allocations he wants to
+account and this becomes not-configurable and is to be discussed.
 
-Especially in the cases like network block devices or SCSI talking
-to SAN, we can talk to the same device and still have a different
-major+minor number after migration in the current setup.
+On the other hands such objects as anon_vma-s, file-s, sighangds,
+vfsmounts, etc are created by user request always and should
+always be accounted. Fortunately they are allocated from their
+own caches and thus the whole kmem cache can be accountable.
 
-I think we can hit similar issues with ttys, loopback devices,
-and ramdisks as well.
+This is exactly what this patchset does - it adds the ability
+to account for the total size of kmem-cache-allocated objects
+from specified kmem caches.
 
->> Things like
->> ensuring a call to stat on a given file before and after the migration
->> return the exact same information sounds compelling.  So I don't think
->> this is even strictly limited to virtual devices anymore. How many
->> applications are there out there that memorize the stat data on a file
->> and so they can detect if it has changed?
->
-> that we need to support of course, otherwise we would break things 
-> like tail. 
+This is based on the SLUB allocator, Paul's control groups and the
+resource counters I made for RSS controller and which are in
+-mm tree already.
 
-Exactly. tail, git, backup software.
-All kinds of infrequently run but interesting software.
+To play with it, one need to mount the container file system
+with -o kmem and then mark some caches as accountable via
+/sys/slab/<cache_name>/cache_notify.
 
->> If we need something between those two it may make sense to enhance
->> the LSM or perhaps introduce an alternate set security hooks.  Still
->> if we are going to need a full device namespace that may be a little
->> much.
->
-> serge's implementation using security hooks should help us choose
-> the right approach. 
+As I have already told kmalloc caches cannot be accounted easily
+so turning the accounting on for them will fail with -EINVAL.
 
-Sure.
+Turning the accounting off is possible only if the cache has
+no objects. This is done so because turning accounting off
+implies marking of all the slabs in the cache as not-debug, but 
+due to full-pages in slub are not stored in any lists (usually)
+this is impossible to do so, however this is in todo list.
 
-Currently I have to agree with Alan Cox that our biggest security
-need seems to be a good implementation of revoke in the kernel.
-So we can do things like ensure a device is not being used by anyone
-else.  For removal of character and block devices we may not need a
-general thing but it is worth looking at.
-
-Eric
+Thanks,
+Pavel
