@@ -1,7 +1,7 @@
 From: Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
-Subject: [PATCH 3/5] Move the IPC namespace under the option
-Date: Wed, 26 Sep 2007 19:51:12 +0400
-Message-ID: <46FA7FF0.2060100@openvz.org>
+Subject: [PATCH 4/5] Move the user namespace under the option
+Date: Wed, 26 Sep 2007 19:53:43 +0400
+Message-ID: <46FA8087.6060307@openvz.org>
 References: <46FA7D4D.8040808@openvz.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1
@@ -21,447 +21,130 @@ To: Andrew Morton <akpm-3NddpPZAyC0@public.gmane.org>
 Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Linux Kernel Mailing List <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Currently all the IPC namespace management code is in 
-ipc/util.c. I moved this code into ipc/namespace.c file
-which is compiled out when needed.
+We currently have a CONFIG_USER_NS option. Just rename it 
+into CONFIG_NAMESPACES_EXPERIMANTAL and move the init_user_ns
+into user.c file to make the kernel compile and work without 
+the namespaces support.
 
-The linux/ipc_namespace.h file is used to store the
-prototypes of the functions in namespace.c and the stubs
-for NAMESPACES=n case. This is done so, because the stub
-for copy_ipc_namespace requires the knoweledge of the
-CLONE_NEWIPC flag, which is in sched.h. But the linux/ipc.h
-file itself in included into many many .c files via the
-sys.h->sem.h sequence so adding the sched.h into it will
-make all these .c depend on sched.h which is not that good.
-On the other hand the knowledge about the namespaces stuff 
-is required in 4 .c files only.
-
-Besides, this patch compiles out some auxiliary functions
-from ipc/sem.c, msg.c and shm.c files.
-
-Signied-off-by: Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+Signed-off-by: Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 
 ---
 
-diff --git a/include/linux/ipc.h b/include/linux/ipc.h
-index 96988d1..b882610 100644
---- a/include/linux/ipc.h
-+++ b/include/linux/ipc.h
-@@ -100,56 +100,6 @@ struct kern_ipc_perm
- 	void		*security;
- };
+diff --git a/include/linux/user_namespace.h b/include/linux/user_namespace.h
+index b5f41d4..dda160c 100644
+--- a/include/linux/user_namespace.h
++++ b/include/linux/user_namespace.h
+@@ -17,7 +17,7 @@ struct user_namespace {
  
--struct ipc_ids;
--struct ipc_namespace {
--	struct kref	kref;
--	struct ipc_ids	*ids[3];
--
--	int		sem_ctls[4];
--	int		used_sems;
--
--	int		msg_ctlmax;
--	int		msg_ctlmnb;
--	int		msg_ctlmni;
--
--	size_t		shm_ctlmax;
--	size_t		shm_ctlall;
--	int		shm_ctlmni;
--	int		shm_tot;
--};
--
--extern struct ipc_namespace init_ipc_ns;
--
--#ifdef CONFIG_SYSVIPC
--#define INIT_IPC_NS(ns)		.ns		= &init_ipc_ns,
--extern void free_ipc_ns(struct kref *kref);
--extern struct ipc_namespace *copy_ipcs(unsigned long flags,
--						struct ipc_namespace *ns);
--#else
--#define INIT_IPC_NS(ns)
--static inline struct ipc_namespace *copy_ipcs(unsigned long flags,
--						struct ipc_namespace *ns)
--{
--	return ns;
--}
--#endif
--
--static inline struct ipc_namespace *get_ipc_ns(struct ipc_namespace *ns)
--{
--#ifdef CONFIG_SYSVIPC
--	if (ns)
--		kref_get(&ns->kref);
--#endif
--	return ns;
--}
--
--static inline void put_ipc_ns(struct ipc_namespace *ns)
--{
--#ifdef CONFIG_SYSVIPC
--	kref_put(&ns->kref, free_ipc_ns);
--#endif
--}
--
- #endif /* __KERNEL__ */
+ extern struct user_namespace init_user_ns;
  
- #endif /* _LINUX_IPC_H */
-diff --git a/include/linux/ipc_namespace.h b/include/linux/ipc_namespace.h
-new file mode 100644
-index 0000000..3d8a516
---- /dev/null
-+++ b/include/linux/ipc_namespace.h
-@@ -0,0 +1,67 @@
-+#ifndef __IPC_NAMESPACE_H__
-+#define __IPC_NAMESPACE_H__
-+
-+#include <linux/err.h>
-+
-+struct ipc_ids;
-+struct ipc_namespace {
-+	struct kref	kref;
-+	struct ipc_ids	*ids[3];
-+
-+	int		sem_ctls[4];
-+	int		used_sems;
-+
-+	int		msg_ctlmax;
-+	int		msg_ctlmnb;
-+	int		msg_ctlmni;
-+
-+	size_t		shm_ctlmax;
-+	size_t		shm_ctlall;
-+	int		shm_ctlmni;
-+	int		shm_tot;
+-#ifdef CONFIG_USER_NS
++#ifdef CONFIG_NAMESPACES_EXPERIMENTAL
+ 
+ static inline struct user_namespace *get_user_ns(struct user_namespace *ns)
+ {
+diff --git a/init/Kconfig b/init/Kconfig
+index 684ccfb..0db1c3b 100644
+--- a/init/Kconfig
++++ b/init/Kconfig
+@@ -206,15 +206,6 @@ config TASK_IO_ACCOUNTING
+ 
+ 	  Say N if unsure.
+ 
+-config USER_NS
+-	bool "User Namespaces (EXPERIMENTAL)"
+-	default n
+-	depends on EXPERIMENTAL
+-	help
+-	  Support user namespaces.  This allows containers, i.e.
+-	  vservers, to use user namespaces to provide different
+-	  user info for different servers.  If unsure, say N.
+-
+ config AUDIT
+ 	bool "Auditing support"
+ 	depends on NET
+diff --git a/kernel/Makefile b/kernel/Makefile
+index 76f782f..5817bfe 100644
+--- a/kernel/Makefile
++++ b/kernel/Makefile
+@@ -4,7 +4,7 @@
+ 
+ obj-y     = sched.o fork.o exec_domain.o panic.o printk.o profile.o \
+ 	    exit.o itimer.o time.o softirq.o resource.o \
+-	    sysctl.o capability.o ptrace.o timer.o user.o user_namespace.o \
++	    sysctl.o capability.o ptrace.o timer.o user.o \
+ 	    signal.o sys.o kmod.o workqueue.o pid.o \
+ 	    rcupdate.o extable.o params.o posix-timers.o \
+ 	    kthread.o wait.o kfifo.o sys_ni.o posix-cpu-timers.o mutex.o \
+@@ -50,6 +49,7 @@ obj-$(CONFIG_AUDITSYSCALL) += auditsc.o
+ obj-$(CONFIG_KPROBES) += kprobes.o
+ obj-$(CONFIG_KGDB) += kgdb.o
+ obj-$(CONFIG_NAMESPACES) += utsname.o
++obj-$(CONFIG_NAMESPACES_EXPERIMENTAL) += user_namespace.o
+ obj-$(CONFIG_SYSFS) += ksysfs.o
+ obj-$(CONFIG_DETECT_SOFTLOCKUP) += softlockup.o
+ obj-$(CONFIG_GENERIC_HARDIRQS) += irq/
+diff --git a/kernel/user.c b/kernel/user.c
+index b45f55f..d7c0831 100644
+--- a/kernel/user.c
++++ b/kernel/user.c
+@@ -17,6 +17,15 @@
+ #include <linux/module.h>
+ #include <linux/user_namespace.h>
+ 
++struct user_namespace init_user_ns = {
++	.kref = {
++		.refcount	= ATOMIC_INIT(2),
++	},
++	.root_user = &root_user,
 +};
 +
-+extern struct ipc_namespace init_ipc_ns;
++EXPORT_SYMBOL_GPL(init_user_ns);
 +
-+#ifdef CONFIG_SYSVIPC
-+#define INIT_IPC_NS(ns)		.ns		= &init_ipc_ns,
-+#else
-+#define INIT_IPC_NS(ns)
+ /*
+  * UID task count cache, to get fast user lookup in "alloc_uid"
+  * when changing user ID's (ie setuid() and friends).
+@@ -199,6 +208,7 @@ void switch_uid(struct user_struct *new_
+ 	suid_keys(current);
+ }
+ 
++#ifdef CONFIG_NAMESPACES_EXPERIMENTAL
+ void release_uids(struct user_namespace *ns)
+ {
+ 	int i;
+@@ -223,6 +233,7 @@ void release_uids(struct user_namespace 
+ 
+ 	free_uid(ns->root_user);
+ }
 +#endif
-+
-+#if defined(CONFIG_SYSVIPC) && defined(CONFIG_NAMESPACES)
-+extern void free_ipc_ns(struct kref *kref);
-+extern struct ipc_namespace *copy_ipcs(unsigned long flags,
-+						struct ipc_namespace *ns);
-+
-+static inline struct ipc_namespace *get_ipc_ns(struct ipc_namespace *ns)
-+{
-+	if (ns)
-+		kref_get(&ns->kref);
-+	return ns;
-+}
-+
-+static inline void put_ipc_ns(struct ipc_namespace *ns)
-+{
-+	kref_put(&ns->kref, free_ipc_ns);
-+}
-+#else
-+static inline struct ipc_namespace *copy_ipcs(unsigned long flags,
-+		struct ipc_namespace *ns)
-+{
-+	if (flags & CLONE_NEWIPC)
-+		return ERR_PTR(-EINVAL);
-+
-+	return ns;
-+}
-+
-+static inline struct ipc_namespace *get_ipc_ns(struct ipc_namespace *ns)
-+{
-+	return ns;
-+}
-+
-+static inline void put_ipc_ns(struct ipc_namespace *ns)
-+{
-+}
-+#endif
-+#endif
-diff --git a/ipc/util.c b/ipc/util.c
-index fd29246..44fb843 100644
---- a/ipc/util.c
-+++ b/ipc/util.c
-@@ -32,6 +32,7 @@
- #include <linux/proc_fs.h>
- #include <linux/audit.h>
+ 
+ static int __init uid_cache_init(void)
+ {
+diff --git a/kernel/user_namespace.c b/kernel/user_namespace.c
+index 7af90fc..4c90062 100644
+--- a/kernel/user_namespace.c
++++ b/kernel/user_namespace.c
+@@ -10,17 +10,6 @@
  #include <linux/nsproxy.h>
-+#include <linux/ipc_namespace.h>
+ #include <linux/user_namespace.h>
  
- #include <asm/unistd.h>
- 
-@@ -50,66 +51,6 @@ struct ipc_namespace init_ipc_ns = {
- 	},
- };
- 
--static struct ipc_namespace *clone_ipc_ns(struct ipc_namespace *old_ns)
--{
--	int err;
--	struct ipc_namespace *ns;
+-struct user_namespace init_user_ns = {
+-	.kref = {
+-		.refcount	= ATOMIC_INIT(2),
+-	},
+-	.root_user = &root_user,
+-};
 -
--	err = -ENOMEM;
--	ns = kmalloc(sizeof(struct ipc_namespace), GFP_KERNEL);
--	if (ns == NULL)
--		goto err_mem;
+-EXPORT_SYMBOL_GPL(init_user_ns);
 -
--	err = sem_init_ns(ns);
--	if (err)
--		goto err_sem;
--	err = msg_init_ns(ns);
--	if (err)
--		goto err_msg;
--	err = shm_init_ns(ns);
--	if (err)
--		goto err_shm;
+-#ifdef CONFIG_USER_NS
 -
--	kref_init(&ns->kref);
--	return ns;
--
--err_shm:
--	msg_exit_ns(ns);
--err_msg:
--	sem_exit_ns(ns);
--err_sem:
--	kfree(ns);
--err_mem:
--	return ERR_PTR(err);
--}
--
--struct ipc_namespace *copy_ipcs(unsigned long flags, struct ipc_namespace *ns)
--{
--	struct ipc_namespace *new_ns;
--
--	BUG_ON(!ns);
--	get_ipc_ns(ns);
--
--	if (!(flags & CLONE_NEWIPC))
--		return ns;
--
--	new_ns = clone_ipc_ns(ns);
--
--	put_ipc_ns(ns);
--	return new_ns;
--}
--
--void free_ipc_ns(struct kref *kref)
--{
--	struct ipc_namespace *ns;
--
--	ns = container_of(kref, struct ipc_namespace, kref);
--	sem_exit_ns(ns);
--	msg_exit_ns(ns);
--	shm_exit_ns(ns);
--	kfree(ns);
--}
--
- /**
-  *	ipc_init	-	initialise IPC subsystem
-  *
-diff --git a/ipc/namespace.c b/ipc/namespace.c
-new file mode 100644
-index 0000000..cef1139
---- /dev/null
-+++ b/ipc/namespace.c
-@@ -0,0 +1,73 @@
-+/*
-+ * linux/ipc/namespace.c
-+ * Copyright (C) 2006 Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org> OpenVZ, SWsoft Inc.
-+ */
-+
-+#include <linux/ipc.h>
-+#include <linux/msg.h>
-+#include <linux/ipc_namespace.h>
-+#include <linux/rcupdate.h>
-+#include <linux/nsproxy.h>
-+#include <linux/slab.h>
-+
-+#include "util.h"
-+
-+static struct ipc_namespace *clone_ipc_ns(struct ipc_namespace *old_ns)
-+{
-+	int err;
-+	struct ipc_namespace *ns;
-+
-+	err = -ENOMEM;
-+	ns = kmalloc(sizeof(struct ipc_namespace), GFP_KERNEL);
-+	if (ns == NULL)
-+		goto err_mem;
-+
-+	err = sem_init_ns(ns);
-+	if (err)
-+		goto err_sem;
-+	err = msg_init_ns(ns);
-+	if (err)
-+		goto err_msg;
-+	err = shm_init_ns(ns);
-+	if (err)
-+		goto err_shm;
-+
-+	kref_init(&ns->kref);
-+	return ns;
-+
-+err_shm:
-+	msg_exit_ns(ns);
-+err_msg:
-+	sem_exit_ns(ns);
-+err_sem:
-+	kfree(ns);
-+err_mem:
-+	return ERR_PTR(err);
-+}
-+
-+struct ipc_namespace *copy_ipcs(unsigned long flags, struct ipc_namespace *ns)
-+{
-+	struct ipc_namespace *new_ns;
-+
-+	BUG_ON(!ns);
-+	get_ipc_ns(ns);
-+
-+	if (!(flags & CLONE_NEWIPC))
-+		return ns;
-+
-+	new_ns = clone_ipc_ns(ns);
-+
-+	put_ipc_ns(ns);
-+	return new_ns;
-+}
-+
-+void free_ipc_ns(struct kref *kref)
-+{
-+	struct ipc_namespace *ns;
-+
-+	ns = container_of(kref, struct ipc_namespace, kref);
-+	sem_exit_ns(ns);
-+	msg_exit_ns(ns);
-+	shm_exit_ns(ns);
-+	kfree(ns);
-+}
-diff --git a/ipc/Makefile b/ipc/Makefile
-index b93bba6..d81fb35 100644
---- a/ipc/Makefile
-+++ b/ipc/Makefile
-@@ -7,4 +7,5 @@ obj-$(CONFIG_SYSVIPC) += util.o msgutil.
- obj-$(CONFIG_SYSVIPC_SYSCTL) += ipc_sysctl.o
- obj_mq-$(CONFIG_COMPAT) += compat_mq.o
- obj-$(CONFIG_POSIX_MQUEUE) += mqueue.o msgutil.o $(obj_mq-y)
-+obj-$(CONFIG_NAMESPACES) += namespace.o
- 
-diff --git a/ipc/ipc_sysctl.c b/ipc/ipc_sysctl.c
-index 79e24e8..7f4235b 100644
---- a/ipc/ipc_sysctl.c
-+++ b/ipc/ipc_sysctl.c
-@@ -14,6 +14,7 @@
- #include <linux/nsproxy.h>
- #include <linux/sysctl.h>
- #include <linux/uaccess.h>
-+#include <linux/ipc_namespace.h>
- 
- static void *get_ipc(ctl_table *table)
- {
-diff --git a/ipc/msg.c b/ipc/msg.c
-index b7274db..eb74965 100644
---- a/ipc/msg.c
-+++ b/ipc/msg.c
-@@ -36,6 +36,7 @@
- #include <linux/seq_file.h>
- #include <linux/mutex.h>
- #include <linux/nsproxy.h>
-+#include <linux/ipc_namespace.h>
- 
- #include <asm/current.h>
- #include <asm/uaccess.h>
-@@ -92,6 +93,7 @@ static void __msg_init_ns(struct ipc_nam
- 	ipc_init_ids(ids);
+ /*
+  * Clone a new ns copying an original user ns, setting refcount to 1
+  * @old_ns: namespace to clone
+@@ -84,5 +73,3 @@ void free_user_ns(struct kref *kref)
+ 	release_uids(ns);
+ 	kfree(ns);
  }
- 
-+#ifdef CONFIG_NAMESPACES
- int msg_init_ns(struct ipc_namespace *ns)
- {
- 	struct ipc_ids *ids;
-@@ -127,6 +129,7 @@ void msg_exit_ns(struct ipc_namespace *n
- 	kfree(ns->ids[IPC_MSG_IDS]);
- 	ns->ids[IPC_MSG_IDS] = NULL;
- }
-+#endif
- 
- void __init msg_init(void)
- {
-diff --git a/ipc/sem.c b/ipc/sem.c
-index 45c7e57..2e9f449 100644
---- a/ipc/sem.c
-+++ b/ipc/sem.c
-@@ -82,6 +82,7 @@
- #include <linux/seq_file.h>
- #include <linux/mutex.h>
- #include <linux/nsproxy.h>
-+#include <linux/ipc_namespace.h>
- 
- #include <asm/uaccess.h>
- #include "util.h"
-@@ -130,6 +131,7 @@ static void __sem_init_ns(struct ipc_nam
- 	ipc_init_ids(ids);
- }
- 
-+#ifdef CONFIG_NAMESPACES
- int sem_init_ns(struct ipc_namespace *ns)
- {
- 	struct ipc_ids *ids;
-@@ -165,6 +167,7 @@ void sem_exit_ns(struct ipc_namespace *n
- 	kfree(ns->ids[IPC_SEM_IDS]);
- 	ns->ids[IPC_SEM_IDS] = NULL;
- }
-+#endif
- 
- void __init sem_init (void)
- {
-diff --git a/ipc/shm.c b/ipc/shm.c
-index f28f2a3..2717cbc 100644
---- a/ipc/shm.c
-+++ b/ipc/shm.c
-@@ -38,6 +38,7 @@
- #include <linux/mutex.h>
- #include <linux/nsproxy.h>
- #include <linux/mount.h>
-+#include <linux/ipc_namespace.h>
- 
- #include <asm/uaccess.h>
- 
-@@ -97,6 +98,7 @@ static void do_shm_rmid(struct ipc_names
- 		shm_destroy(ns, shp);
- }
- 
-+#ifdef CONFIG_NAMESPACES
- int shm_init_ns(struct ipc_namespace *ns)
- {
- 	struct ipc_ids *ids;
-@@ -132,6 +134,7 @@ void shm_exit_ns(struct ipc_namespace *n
- 	kfree(ns->ids[IPC_SHM_IDS]);
- 	ns->ids[IPC_SHM_IDS] = NULL;
- }
-+#endif
- 
- void __init shm_init (void)
- {
-diff --git a/ipc/util.h b/ipc/util.h
-index 99414a3..8972402 100644
---- a/ipc/util.h
-+++ b/ipc/util.h
-@@ -20,6 +20,8 @@ void sem_init (void);
- void msg_init (void);
- void shm_init (void);
- 
-+struct ipc_namespace;
-+
- int sem_init_ns(struct ipc_namespace *ns);
- int msg_init_ns(struct ipc_namespace *ns);
- int shm_init_ns(struct ipc_namespace *ns);
-diff --git a/kernel/nsproxy.c b/kernel/nsproxy.c
-index ee68964..5a27426 100644
---- a/kernel/nsproxy.c
-+++ b/kernel/nsproxy.c
-@@ -20,6 +20,7 @@
- #include <linux/mnt_namespace.h>
- #include <linux/utsname.h>
- #include <linux/pid_namespace.h>
-+#include <linux/ipc_namespace.h>
- 
- static struct kmem_cache *nsproxy_cachep;
+-
+-#endif /* CONFIG_USER_NS */
