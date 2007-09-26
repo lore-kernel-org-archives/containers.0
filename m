@@ -1,46 +1,67 @@
-From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH] Use KMEM_CACHE macro to create the nsproxy cache
-Date: Wed, 26 Sep 2007 08:39:29 -0500
-Message-ID: <20070926133929.GA4793@sergelap.austin.ibm.com>
-References: <46FA5D0F.2090604@openvz.org>
+From: Pavel Emelyanov <xemul@openvz.org>
+Subject: Re: [PATCH] Remove unused member from nsproxy
+Date: Wed, 26 Sep 2007 17:37:18 +0400
+Message-ID: <46FA608E.1060009@openvz.org>
+References: <46FA5B39.1010204@openvz.org> <46FA5F26.2030100@fr.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <46FA5D0F.2090604-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
-Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Linux Kernel Mailing List <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+Content-Type: text/plain; charset=ISO-8859-1
+Content-Transfer-Encoding: 7bit
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1760100AbXIZNkn@vger.kernel.org>
+In-Reply-To: <46FA5F26.2030100@fr.ibm.com>
+Sender: linux-kernel-owner@vger.kernel.org
+To: Cedric Le Goater <clg@fr.ibm.com>
+Cc: Andrew Morton <akpm@osdl.org>, Linux Containers <containers@lists.osdl.org>, Linux Kernel Mailing List <linux-kernel@vger.kernel.org>
 List-Id: containers.vger.kernel.org
 
-Quoting Pavel Emelyanov (xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org):
-> The blessed way for standard caches is to use it.
-> Besides, this may give this cache a better alignment.
+Cedric Le Goater wrote:
+> Pavel Emelyanov wrote:
+>> The nslock spinlock is not used in the kernel at all. 
 > 
-> Signed-off-by: Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+> it's also useless now that you have put some RCU rules around it.
+> right ? 
 
-Acked-by: Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Exactly!
 
-> ---
+> C.
 > 
-> diff --git a/kernel/nsproxy.c b/kernel/nsproxy.c
-> index ee68964..31351cc 100644
-> --- a/kernel/nsproxy.c
-> +++ b/kernel/nsproxy.c
-> @@ -222,8 +222,7 @@ void exit_task_namespaces(struct task_st
+>> Remove it.
+>> Signed-off-by: Pavel Emelyanov <xemul@openvz.org>
+>>
+>> ---
+>>
+>> diff --git a/include/linux/init_task.h b/include/linux/init_task.h
+>> index a3f2541..cae35b6 100644
+>> --- a/include/linux/init_task.h
+>> +++ b/include/linux/init_task.h
+>> @@ -73,7 +73,6 @@ extern struct nsproxy init_nsproxy;
+>>  #define INIT_NSPROXY(nsproxy) {						\
+>>  	.pid_ns		= &init_pid_ns,					\
+>>  	.count		= ATOMIC_INIT(1),				\
+>> -	.nslock		= __SPIN_LOCK_UNLOCKED(nsproxy.nslock),		\
+>>  	.uts_ns		= &init_uts_ns,					\
+>>  	.mnt_ns		= NULL,						\
+>>  	INIT_NET_NS(net_ns)                                             \
+>> diff --git a/include/linux/nsproxy.h b/include/linux/nsproxy.h
+>> index 4d564d8..0e66b57 100644
+>> --- a/include/linux/nsproxy.h
+>> +++ b/include/linux/nsproxy.h
+>> @@ -23,7 +23,6 @@ struct pid_namespace;
+>>   */
+>>  struct nsproxy {
+>>  	atomic_t count;
+>> -	spinlock_t nslock;
+>>  	struct uts_namespace *uts_ns;
+>>  	struct ipc_namespace *ipc_ns;
+>>  	struct mnt_namespace *mnt_ns;
+>> _______________________________________________
+>> Containers mailing list
+>> Containers@lists.linux-foundation.org
+>> https://lists.linux-foundation.org/mailman/listinfo/containers
+>>
 > 
->  static int __init nsproxy_cache_init(void)
->  {
-> -	nsproxy_cachep = kmem_cache_create("nsproxy", sizeof(struct nsproxy),
-> -					   0, SLAB_PANIC, NULL);
-> +	nsproxy_cachep = KMEM_CACHE(nsproxy, SLAB_PANIC);
->  	return 0;
->  }
+> -
+> To unsubscribe from this list: send the line "unsubscribe linux-kernel" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> Please read the FAQ at  http://www.tux.org/lkml/
+> 
