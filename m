@@ -1,11 +1,17 @@
-From: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH] Simplify memory controller and resource counter I/O
-Date: Tue, 25 Sep 2007 21:17:19 -0700
-Message-ID: <46F9DD4F.50806@google.com>
+From: "Paul Menage" <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+Subject: Re: Thoughts on virtualizing task containers
+Date: Tue, 25 Sep 2007 22:23:52 -0700
+Message-ID: <6599ad830709252223r4b319d8dxa326aef8ff444606@mail.gmail.com>
+References: <6599ad830708231718x7b63f993vdfef5b503668989d@mail.gmail.com>
+	<20070827144025.GE4505@sergelap.austin.ibm.com>
+	<6599ad830708281411x32fd0ca4u22464430d14bd990@mail.gmail.com>
+	<20070911135925.GB15217@sergelap.austin.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+Content-Type: text/plain; charset=ISO-8859-1
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <20070911135925.GB15217-6s5zFf/epYLPQpwDFJZrxKsjOiXwFzmk@public.gmane.org>
+Content-Disposition: inline
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -15,275 +21,73 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Simplify the memory controller and resource counter I/O routines
+On 9/11/07, Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org> wrote:
+> Hi Paul,
+>
+> did any good ideas come up at the mini-summit or k-s, or were any
+> decisions made?
+>
 
-This patch strips out some I/O boilerplate from resource counters and
-the memory controller. It also adds locking to the resource counter
-reads and writes, and forbids writes to the root memory cgroup's limit
-file.
+Discussions were had, but decisions weren't really made.
 
-One arguable drawback to this patch is that the use of memparse() is
-lost in the cleanup. Having said that, given the existing of shell
-arithmetic, it's not clear to me that typing
+My vague thoughts on how to do virtualization are below.
 
-echo $[2<<30] > memory.limit
+1) Add support for a subsystem state object to be shared with its
+children. specifically:
+- for each subsystem, have a <subsystem.inherit> control file, which
+defaults to 0. This can only be changed when the cgroup has no
+children
+- any children of a cgroup will share subsystem state with the parent
+for any subsystems whose <inherit> file is 1
 
-is especially harder than
+This ties in with a request that Balbir made for being able to share
+resource limits between different levels of cgroups, but it's also
+useful for virtualization. It's something I wanted to describe in my
+OLS talk but didn't really have time for.
 
-echo 2G > memory.limit
+2) have a virtualization cgroup subsystem, which like other subsystems
+can be included in at most one hierarchy. The virtualization subsystem
+might perhaps be the same thing as the nsproxy subsystem?
 
-Signed-off-by: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+3) when mounting a cgroup filesystem, if the virtualization subsystem
+is mounted, and the caller is not in its root cgroup (i.e. it's a
+guest), then:
 
----
- include/linux/res_counter.h |   13 +----
- kernel/res_counter.c        |   64 +++++----------------------
- mm/memcontrol.c             |  103 ++++++++++----------------------------------
- 3 files changed, 43 insertions(+), 137 deletions(-)
+- the guest can only see subsystems in the same hierarchy, which
+additionally have <inherit> set to 0
 
-Index: container-2.6.23-rc8-mm1/include/linux/res_counter.h
-===================================================================
---- container-2.6.23-rc8-mm1.orig/include/linux/res_counter.h
-+++ container-2.6.23-rc8-mm1/include/linux/res_counter.h
-@@ -46,17 +46,12 @@ struct res_counter {
-  *
-  * @counter:     the counter in question
-  * @member:  the field to work with (see RES_xxx below)
-- * @buf:     the buffer to opeate on,...
-- * @nbytes:  its size...
-- * @pos:     and the offset.
-+ * @val:     the value passed by the user (for write)
-  */
- 
--ssize_t res_counter_read(struct res_counter *counter, int member,
--		const char __user *buf, size_t nbytes, loff_t *pos,
--		int (*read_strategy)(unsigned long long val, char *s));
--ssize_t res_counter_write(struct res_counter *counter, int member,
--		const char __user *buf, size_t nbytes, loff_t *pos,
--		int (*write_strategy)(char *buf, unsigned long long *val));
-+unsigned long long res_counter_read(struct res_counter *counter, int member);
-+int res_counter_write(struct res_counter *counter, int member,
-+		      unsigned long long val);
- 
- /*
-  * the field descriptors. one for each member of res_counter
-Index: container-2.6.23-rc8-mm1/kernel/res_counter.c
-===================================================================
---- container-2.6.23-rc8-mm1.orig/kernel/res_counter.c
-+++ container-2.6.23-rc8-mm1/kernel/res_counter.c
-@@ -75,58 +75,22 @@ res_counter_member(struct res_counter *c
- 	return NULL;
- }
- 
--ssize_t res_counter_read(struct res_counter *counter, int member,
--		const char __user *userbuf, size_t nbytes, loff_t *pos,
--		int (*read_strategy)(unsigned long long val, char *st_buf))
-+unsigned long long res_counter_read(struct res_counter *counter, int member)
- {
--	unsigned long long *val;
--	char buf[64], *s;
--
--	s = buf;
--	val = res_counter_member(counter, member);
--	if (read_strategy)
--		s += read_strategy(*val, s);
--	else
--		s += sprintf(s, "%llu\n", *val);
--	return simple_read_from_buffer((void __user *)userbuf, nbytes,
--			pos, buf, s - buf);
-+	unsigned long long val;
-+	unsigned long flags;
-+	spin_lock_irqsave(&counter->lock, flags);
-+	val = *res_counter_member(counter, member);
-+	spin_unlock_irqrestore(&counter->lock, flags);
-+	return val;
- }
- 
--ssize_t res_counter_write(struct res_counter *counter, int member,
--		const char __user *userbuf, size_t nbytes, loff_t *pos,
--		int (*write_strategy)(char *st_buf, unsigned long long *val))
-+int res_counter_write(struct res_counter *counter, int member,
-+		      unsigned long long val)
- {
--	int ret;
--	char *buf, *end;
--	unsigned long long tmp, *val;
--
--	buf = kmalloc(nbytes + 1, GFP_KERNEL);
--	ret = -ENOMEM;
--	if (buf == NULL)
--		goto out;
--
--	buf[nbytes] = '\0';
--	ret = -EFAULT;
--	if (copy_from_user(buf, userbuf, nbytes))
--		goto out_free;
--
--	ret = -EINVAL;
--
--	if (write_strategy) {
--		if (write_strategy(buf, &tmp)) {
--			goto out_free;
--		}
--	} else {
--		tmp = simple_strtoull(buf, &end, 10);
--		if (*end != '\0')
--			goto out_free;
--	}
--
--	val = res_counter_member(counter, member);
--	*val = tmp;
--	ret = nbytes;
--out_free:
--	kfree(buf);
--out:
--	return ret;
-+	unsigned long flags;
-+	spin_lock_irqsave(&counter->lock, flags);
-+	*res_counter_member(counter, member) = val;
-+	spin_unlock_irqrestore(&counter->lock, flags);
-+	return 0;
- }
-Index: container-2.6.23-rc8-mm1/mm/memcontrol.c
-===================================================================
---- container-2.6.23-rc8-mm1.orig/mm/memcontrol.c
-+++ container-2.6.23-rc8-mm1/mm/memcontrol.c
-@@ -437,112 +437,59 @@ void mem_cgroup_uncharge(struct page_cgr
- 	}
- }
- 
--int mem_cgroup_write_strategy(char *buf, unsigned long long *tmp)
--{
--	*tmp = memparse(buf, &buf);
--	if (*buf != '\0')
--		return -EINVAL;
--
--	/*
--	 * Round up the value to the closest page size
--	 */
--	*tmp = ((*tmp + PAGE_SIZE - 1) >> PAGE_SHIFT) << PAGE_SHIFT;
--	return 0;
--}
--
--static ssize_t mem_cgroup_read(struct cgroup *cont,
--			struct cftype *cft, struct file *file,
--			char __user *userbuf, size_t nbytes, loff_t *ppos)
-+static unsigned long long mem_cgroup_read(struct cgroup *cont,
-+					  struct cftype *cft)
- {
- 	return res_counter_read(&mem_cgroup_from_cont(cont)->res,
--				cft->private, userbuf, nbytes, ppos,
--				NULL);
-+				cft->private);
- }
- 
--static ssize_t mem_cgroup_write(struct cgroup *cont, struct cftype *cft,
--				struct file *file, const char __user *userbuf,
--				size_t nbytes, loff_t *ppos)
-+static int mem_cgroup_write(struct cgroup *cont, struct cftype *cft,
-+			    unsigned long long val)
- {
-+	/* Don't allow the limit to be set for the root cgroup */
-+	if (!cont->parent)
-+		return -EINVAL;
- 	return res_counter_write(&mem_cgroup_from_cont(cont)->res,
--				cft->private, userbuf, nbytes, ppos,
--				mem_cgroup_write_strategy);
-+				 cft->private, PAGE_ALIGN(val));
- }
- 
--static ssize_t mem_control_type_write(struct cgroup *cont,
--			struct cftype *cft, struct file *file,
--			const char __user *userbuf,
--			size_t nbytes, loff_t *pos)
--{
--	int ret;
--	char *buf, *end;
--	unsigned long tmp;
--	struct mem_cgroup *mem;
--
--	mem = mem_cgroup_from_cont(cont);
--	buf = kmalloc(nbytes + 1, GFP_KERNEL);
--	ret = -ENOMEM;
--	if (buf == NULL)
--		goto out;
--
--	buf[nbytes] = 0;
--	ret = -EFAULT;
--	if (copy_from_user(buf, userbuf, nbytes))
--		goto out_free;
--
--	ret = -EINVAL;
--	tmp = simple_strtoul(buf, &end, 10);
--	if (*end != '\0')
--		goto out_free;
--
--	if (tmp <= MEM_CGROUP_TYPE_UNSPEC || tmp >= MEM_CGROUP_TYPE_MAX)
--		goto out_free;
--
--	mem->control_type = tmp;
--	ret = nbytes;
--out_free:
--	kfree(buf);
--out:
--	return ret;
-+static int mem_control_type_write(struct cgroup *cont, struct cftype *cft,
-+				  u64 val)
-+{
-+	if (val <= MEM_CGROUP_TYPE_UNSPEC || val >= MEM_CGROUP_TYPE_MAX)
-+		return -EINVAL;
-+	mem_cgroup_from_cont(cont)->control_type = val;
-+	return 0;
- }
- 
--static ssize_t mem_control_type_read(struct cgroup *cont,
--				struct cftype *cft,
--				struct file *file, char __user *userbuf,
--				size_t nbytes, loff_t *ppos)
-+static u64 mem_control_type_read(struct cgroup *cont,
-+				 struct cftype *cft)
- {
--	unsigned long val;
--	char buf[64], *s;
--	struct mem_cgroup *mem;
--
--	mem = mem_cgroup_from_cont(cont);
--	s = buf;
--	val = mem->control_type;
--	s += sprintf(s, "%lu\n", val);
--	return simple_read_from_buffer((void __user *)userbuf, nbytes,
--			ppos, buf, s - buf);
-+	return mem_cgroup_from_cont(cont)->control_type;
- }
- 
- static struct cftype mem_cgroup_files[] = {
- 	{
- 		.name = "usage_in_bytes",
- 		.private = RES_USAGE,
--		.read = mem_cgroup_read,
-+		.read_uint = mem_cgroup_read,
- 	},
- 	{
- 		.name = "limit_in_bytes",
- 		.private = RES_LIMIT,
--		.write = mem_cgroup_write,
--		.read = mem_cgroup_read,
-+		.write_uint = mem_cgroup_write,
-+		.read_uint = mem_cgroup_read,
- 	},
- 	{
- 		.name = "failcnt",
- 		.private = RES_FAILCNT,
--		.read = mem_cgroup_read,
-+		.read_uint = mem_cgroup_read,
- 	},
- 	{
- 		.name = "control_type",
--		.write = mem_control_type_write,
--		.read = mem_control_type_read,
-+		.write_uint = mem_control_type_write,
-+		.read_uint = mem_control_type_read,
- 	},
- };
+- the vfsmount returned from cgroup_get_sb() doesn't refer to the root
+of the hierarchy, but instead to the cgroup directory that the guest
+is in
+
+- the guest can only mount a single hierarchy, (which therefore must
+be a subset of the hierarchy that the guest is running in)
+
+- at the time of mount, the <inherit> bits for any subsystems *not*
+selected by the guest get set to 1, thus any guest processes share the
+same subsystem state for those subsystems (this is analagous to having
+the subsystem not be mounted, at the root/host level).
+
+This approach is a little more restrictive than I'd like, but I think
+it should support the basic nested virtual server model reasonable
+well.
+
+These changes are going to require a little bit of plumbing in the
+core cgroup code, but should have very little effect on any subsystems
+themselves, except for a few ways:
+
+- each subsystem will now have a private parent/child tree running
+through its subsystem states, rather than having to use the main
+cgroup tree
+
+- there will no longer be a direct mapping from a subsystem state to a
+cgroup. I'm not sure that this will cause anyone a problem. we'll have
+to tweak the current cgroup iteration interfaces to instead iterate
+across all the processes in a subsystem state, which may include
+multiple cgroups
+
+Paul
