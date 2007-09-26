@@ -1,59 +1,113 @@
-From: David Miller <davem@davemloft.net>
-Subject: Re: [net-2.6.24][patch 2/2] Dynamically allocate the loopback
- device
-Date: Tue, 25 Sep 2007 19:24:06 -0700 (PDT)
-Message-ID: <20070925.192406.18290033.davem@davemloft.net>
-References: <224b7d320709171212o66734847kbd17efa817b482fc@mail.gmail.com>
-	<20070917.185349.98863851.davem@davemloft.net>
-	<m1r6kwpu9t.fsf@ebiederm.dsl.xmission.com>
+From: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+Subject: [PATCH] Add cgroup write_uint() helper method
+Date: Tue, 25 Sep 2007 20:12:22 -0700
+Message-ID: <46F9CE16.9080302__28726.9974746325$1190776522$gmane$org@google.com>
 Mime-Version: 1.0
-Content-Type: Text/Plain; charset=us-ascii
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 Content-Transfer-Encoding: 7bit
-Return-path: <netdev-owner@vger.kernel.org>
-In-Reply-To: <m1r6kwpu9t.fsf@ebiederm.dsl.xmission.com>
-Sender: netdev-owner@vger.kernel.org
-To: ebiederm@xmission.com
-Cc: pjwaskiewicz@gmail.com, dlezcano@fr.ibm.com, shemminger@linux-foundation.org, netdev@vger.kernel.org, containers@lists.osdl.org, benjamin.thery@bull.net
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Cc: linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-From: ebiederm@xmission.com (Eric W. Biederman)
-Date: Mon, 17 Sep 2007 20:44:14 -0600
+Add write_uint() helper method for cgroup subsystems
 
-> David Miller <davem@davemloft.net> writes:
-> 
-> > From: "Peter Waskiewicz" <pjwaskiewicz@gmail.com>
-> > Date: Mon, 17 Sep 2007 12:12:24 -0700
-> >
-> >> This would be a good opportunity to remove the single-allocated queue struct
-> >> in netdevice (at the bottom) that we had to put in to accomodate the static
-> >> loopback.  Now we can set it back to a zero element list, and have
-> >> alloc_netdev_mq() just allocate the number of queues requested, not
-> >> num_queues - 1.
-> >> 
-> >> I'll put a patch together based on this patchset.
-> >
-> > Thanks Peter.
-> >
-> > I'll also let this sit so that Eric can provide any feedback
-> > he wants and also figure out how he will use this for the
-> > namespace stuff.
-> 
-> Acked-by: "Eric W. Biederman" <ebiederm@xmission.com>
-> Not that it doesn't already have my signed off by.
+This helper is analagous to the read_uint() helper method for
+reporting u64 values to userspace. It's designed to reduce the amount
+of boilerplate requierd for creating new cgroup subsystems.
 
-I've put these patches into the just-rebased net-2.6.24 tree.
+Signed-off-by: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
 
-I made a minor modification to the second patch, the
-out_free_netdev: code in loopback_init() ended like this:
+---
+ include/linux/cgroup.h |    8 ++++++++
+ kernel/cgroup.c        |   42 ++++++++++++++++++++++++++++++++++++++----
+ 2 files changed, 46 insertions(+), 4 deletions(-)
 
-out_free_netdev:
-	free_netdev(dev);
-	goto out;
-	return err;
-};
-
-I got rid of the spurious return statement and the trailing
-semi-colon after the function closing brace.
-
-Thanks.
-
+Index: container-2.6.23-rc8-mm1/include/linux/cgroup.h
+===================================================================
+--- container-2.6.23-rc8-mm1.orig/include/linux/cgroup.h
++++ container-2.6.23-rc8-mm1/include/linux/cgroup.h
+@@ -196,6 +196,14 @@ struct cftype {
+ 	ssize_t (*write) (struct cgroup *cont, struct cftype *cft,
+ 			  struct file *file,
+ 			  const char __user *buf, size_t nbytes, loff_t *ppos);
++
++	/*
++	 * write_uint() is a shortcut for the common case of accepting
++	 * a single integer (as parsed by simple_strtoull) from
++	 * userspace. Use in place of write(); return 0 or error.
++	 */
++	int (*write_uint) (struct cgroup *cont, struct cftype *cft, u64 val);
++
+ 	int (*release) (struct inode *inode, struct file *file);
+ };
+ 
+Index: container-2.6.23-rc8-mm1/kernel/cgroup.c
+===================================================================
+--- container-2.6.23-rc8-mm1.orig/kernel/cgroup.c
++++ container-2.6.23-rc8-mm1/kernel/cgroup.c
+@@ -1274,6 +1274,39 @@ enum cgroup_filetype {
+ 	FILE_RELEASE_AGENT,
+ };
+ 
++static ssize_t cgroup_write_uint(struct cgroup *cont, struct cftype *cft,
++				 struct file *file,
++				 const char __user *userbuf,
++				 size_t nbytes, loff_t *unused_ppos)
++{
++	char buffer[64];
++	int retval = 0;
++	u64 val;
++	char *end;
++
++	if (!nbytes)
++		return -EINVAL;
++	if (nbytes >= sizeof(buffer))
++		return -E2BIG;
++	if (copy_from_user(buffer, userbuf, nbytes))
++		return -EFAULT;
++
++	buffer[nbytes] = 0;     /* nul-terminate */
++
++	/* strip newline if necessary */
++	if (nbytes && (buffer[nbytes-1] == '\n'))
++		buffer[nbytes-1] = 0;
++	val = simple_strtoull(buffer, &end, 0);
++	if (*end)
++		return -EINVAL;
++
++	/* Pass to subsystem */
++	retval = cft->write_uint(cont, cft, val);
++	if (!retval)
++		retval = nbytes;
++	return retval;
++}
++
+ static ssize_t cgroup_common_file_write(struct cgroup *cont,
+ 					   struct cftype *cft,
+ 					   struct file *file,
+@@ -1357,10 +1390,11 @@ static ssize_t cgroup_file_write(struct 
+ 
+ 	if (!cft)
+ 		return -ENODEV;
+-	if (!cft->write)
+-		return -EINVAL;
+-
+-	return cft->write(cont, cft, file, buf, nbytes, ppos);
++	if (cft->write)
++		return cft->write(cont, cft, file, buf, nbytes, ppos);
++	if (cft->write_uint)
++		return cgroup_write_uint(cont, cft, file, buf, nbytes, ppos);
++	return -EINVAL;
+ }
+ 
+ static ssize_t cgroup_read_uint(struct cgroup *cont, struct cftype *cft,
