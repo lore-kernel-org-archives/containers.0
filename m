@@ -1,11 +1,15 @@
-From: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH] Add cgroup write_uint() helper method
-Date: Tue, 25 Sep 2007 20:12:22 -0700
-Message-ID: <46F9CE16.9080302__28726.9974746325$1190776522$gmane$org@google.com>
+From: Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Subject: Re: [RFC] [PATCH] memory controller statistics
+Date: Wed, 26 Sep 2007 08:46:57 +0530
+Message-ID: <46F9CF29.9000604@linux.vnet.ibm.com>
+References: <46E12020.1060203@linux.vnet.ibm.com>
+	<20070926014843.161E61BFA33@siro.lan>
+Reply-To: balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+Content-Type: text/plain; charset=ISO-8859-1
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <20070926014843.161E61BFA33-Pcsii4f/SVk@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -15,99 +19,47 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Cc: linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: YAMAMOTO Takashi <yamamoto-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
+Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, minoura-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org, menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Add write_uint() helper method for cgroup subsystems
+YAMAMOTO Takashi wrote:
+>> YAMAMOTO Takashi wrote:
+>>> hi,
+>>>
+>>> i implemented some statistics for your memory controller.
+>>>
+>>> it's tested with 2.6.23-rc2-mm2 + memory controller v7.
+>>> i think it can be applied to 2.6.23-rc4-mm1 as well.
+>>>
+>> Thanks for doing this. We are building containerstats for
+>> per container statistics. It would be really nice to provide
+>> the statistics using that interface. I am not opposed to
+>> memory.stat, but Paul Menage recommends that one file has
+>> just one meaningful value.
+>>
+>> The other thing is that could you please report all the
+>> statistics in bytes, we are moving to that interface,
+>> I've posted patches to do that. If we are going to push
+>> a bunch of statistics in one file, please use a format
+>> separator like
+>>
+>> name: value
+> 
+> i followed /proc/vmstat.
+> are you going to convert /proc/vmstat to the format as well?
+> 
 
-This helper is analagous to the read_uint() helper method for
-reporting u64 values to userspace. It's designed to reduce the amount
-of boilerplate requierd for creating new cgroup subsystems.
+I see, no I don't plan to convert /proc/vmstat. I wanted
+to make it easier for tools to parse the format. Like
+you point out /proc/vmstat uses that format, so I guess
+this format is just fine.
 
-Signed-off-by: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+Thanks for following up.
 
----
- include/linux/cgroup.h |    8 ++++++++
- kernel/cgroup.c        |   42 ++++++++++++++++++++++++++++++++++++++----
- 2 files changed, 46 insertions(+), 4 deletions(-)
 
-Index: container-2.6.23-rc8-mm1/include/linux/cgroup.h
-===================================================================
---- container-2.6.23-rc8-mm1.orig/include/linux/cgroup.h
-+++ container-2.6.23-rc8-mm1/include/linux/cgroup.h
-@@ -196,6 +196,14 @@ struct cftype {
- 	ssize_t (*write) (struct cgroup *cont, struct cftype *cft,
- 			  struct file *file,
- 			  const char __user *buf, size_t nbytes, loff_t *ppos);
-+
-+	/*
-+	 * write_uint() is a shortcut for the common case of accepting
-+	 * a single integer (as parsed by simple_strtoull) from
-+	 * userspace. Use in place of write(); return 0 or error.
-+	 */
-+	int (*write_uint) (struct cgroup *cont, struct cftype *cft, u64 val);
-+
- 	int (*release) (struct inode *inode, struct file *file);
- };
- 
-Index: container-2.6.23-rc8-mm1/kernel/cgroup.c
-===================================================================
---- container-2.6.23-rc8-mm1.orig/kernel/cgroup.c
-+++ container-2.6.23-rc8-mm1/kernel/cgroup.c
-@@ -1274,6 +1274,39 @@ enum cgroup_filetype {
- 	FILE_RELEASE_AGENT,
- };
- 
-+static ssize_t cgroup_write_uint(struct cgroup *cont, struct cftype *cft,
-+				 struct file *file,
-+				 const char __user *userbuf,
-+				 size_t nbytes, loff_t *unused_ppos)
-+{
-+	char buffer[64];
-+	int retval = 0;
-+	u64 val;
-+	char *end;
-+
-+	if (!nbytes)
-+		return -EINVAL;
-+	if (nbytes >= sizeof(buffer))
-+		return -E2BIG;
-+	if (copy_from_user(buffer, userbuf, nbytes))
-+		return -EFAULT;
-+
-+	buffer[nbytes] = 0;     /* nul-terminate */
-+
-+	/* strip newline if necessary */
-+	if (nbytes && (buffer[nbytes-1] == '\n'))
-+		buffer[nbytes-1] = 0;
-+	val = simple_strtoull(buffer, &end, 0);
-+	if (*end)
-+		return -EINVAL;
-+
-+	/* Pass to subsystem */
-+	retval = cft->write_uint(cont, cft, val);
-+	if (!retval)
-+		retval = nbytes;
-+	return retval;
-+}
-+
- static ssize_t cgroup_common_file_write(struct cgroup *cont,
- 					   struct cftype *cft,
- 					   struct file *file,
-@@ -1357,10 +1390,11 @@ static ssize_t cgroup_file_write(struct 
- 
- 	if (!cft)
- 		return -ENODEV;
--	if (!cft->write)
--		return -EINVAL;
--
--	return cft->write(cont, cft, file, buf, nbytes, ppos);
-+	if (cft->write)
-+		return cft->write(cont, cft, file, buf, nbytes, ppos);
-+	if (cft->write_uint)
-+		return cgroup_write_uint(cont, cft, file, buf, nbytes, ppos);
-+	return -EINVAL;
- }
- 
- static ssize_t cgroup_read_uint(struct cgroup *cont, struct cftype *cft,
+-- 
+	Warm Regards,
+	Balbir Singh
+	Linux Technology Center
+	IBM, ISTL
