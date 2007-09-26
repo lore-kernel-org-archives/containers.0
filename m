@@ -1,14 +1,14 @@
-From: Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
-Subject: Re: Playing with namespaces and bloat-o-meeter
-Date: Wed, 26 Sep 2007 18:49:42 +0400
-Message-ID: <46FA7186.1070202@openvz.org>
-References: <46FA528C.3000208@openvz.org> <46FA6AC3.6090402@openvz.org>
-	<m1y7etv634.fsf@ebiederm.dsl.xmission.com>
+From: Badari Pulavarty <pbadari-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: Re: Unable to remove control groups on 2.6.23-rc8-mm1
+Date: Wed, 26 Sep 2007 08:29:54 -0700
+Message-ID: <1190820594.13955.57.camel@dyn9047017100.beaverton.ibm.com>
+References: <1190763481.13955.52.camel@dyn9047017100.beaverton.ibm.com>
+	<46F9D12B.7070402@linux.vnet.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
+Content-Type: text/plain
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <m1y7etv634.fsf-T1Yj925okcoyDheHMi7gv2pdwda3JcWeAL8bYrjMMd8@public.gmane.org>
+In-Reply-To: <46F9D12B.7070402-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,76 +18,56 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Cedric Le Goater <clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>, Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
+To: balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
+Cc: containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Eric W. Biederman wrote:
-> Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org> writes:
+On Wed, 2007-09-26 at 08:55 +0530, Balbir Singh wrote:
+> Badari Pulavarty wrote:
+> > Hi,
+> > 
+> > I am playing with control groups on 2.6.23-rc8-mm1.
+> > 
+> > I am able to mount cgroup and create subgroups. I was able
+> > to move some tasks into them. But, after killing tasks I am
+> > not able to remove the subgroups. Any idea on why ?
+> > 
+> > Thanks,
+> > Badari
+> > 
 > 
->>>  
->>> +config NAMESPACES
->>> +	bool "The namespaces support"
->>> +	help
->>> +	  Provides the way to make tasks work with different objects using
->>> +	  the same id
->>> +
->>> +config NS_UTS
->>> +	bool "Uname namespace"
->>> +	depends on NAMESPACES
->>> +	help
->>> +	  The utsname namespace
->>> +
->>> +config NS_IPC
->>> +	bool "IPC namespace"
->>> +	depends on NAMESPACES && SYSVIPC
->>> +	help
->>> +	  The SYSVIPC ids namespaces
->>> +
->>> +config NS_PIDS
->>> +	bool "PID namespace"
->>> +	depends on NAMESPACES
->>> +	help
->>> +	  Tasks see only the pids living in the same namespace and in the
->>> +	  child namespaces
->>> +
->>> +config NS_UID
->>> +	bool "UID namespace"
->>> +	depends on NAMESPACES && EXPERIMENTAL
->>> +	help
->>> +	  Support user namespaces.  This allows containers, i.e.
->>> +	  vservers, to use user namespaces to provide different
->>> +	  user info for different servers.  If unsure, say N.
->>> +
->>>  config BLK_DEV_INITRD
->>>  	bool "Initial RAM filesystem and RAM disk (initramfs/initrd) support"
->>>  	depends on BROKEN || !FRV
+> Badari,
 > 
-> The reason we removed these options earlier was a maintenance issue
-> and the fact we could not actually compile out the namespaces.
+> We account for page cache usage as well now, I suspect you
+> most likely have page/swap cache pages charged to the container.
 
-I do not propose to compile out the namespaces, I just propose
-to compile out the code that does the clone and release of new
-namespaces. This is absolutely painless.
+Yep. Even after killing all the tasks and "echo 1 > drop_caches"
+some memory still accounted for on this group.
 
-> If we don't cause maintenance complications I think the general
-> idea is fine.  But please.  This all should show up under
-> CONFIG_EMBEDDED since the only purpose is to save space.
+elm3b155:/dev/cgroup # cat zzz/memory.usage_in_bytes
+131072
 
-Hm... Ok, but I also try to save the vmlinux size on my home
-PC, so I'd be happy if I could just throw these things out.
 
-Anyway - I will move the CONFIG_NAMESPACES to be selectable
-with the EMBEDDED only.
-
-> While things are experimental there is an additional purpose of
-> not exposing people to broken or partially working code, so it
-> does make sense to have an option there.
-
-Ok, thanks.
-
-So your accolades, can they be transformed into Acked-by-s or
-just mentioned in the patch like "reviewed and approved by ..."?
-
-> Eric
+> You can try several options (some documented in Documentation/
+> controllers/memory.txt)
 > 
+> 1. Try executing sync; echo 1 > /proc/sys/vm/drop_caches
+>    and then remove the directory
+> 2. Prior to assigning tasks, set memory.control_type to 1,
+>    that tracks only RSS pages. You'll find memory.usage_in_bytes
+>    go to zero as soon as all the tasks exit
+
+This helped. 
+
+> 3. Set notify_on_release and use the release_agent and releasable
+>    to free the container once all pages charged to it are freed.
+> 
+> I wonder if I should provide a force_reclaim (hard to guarantee
+> it will work) for each container, so that the container can
+> be freed.
+> 
+
+BTW, how do I detach a "pid" from the cgroup ?
+
+Thanks,
+Badari
