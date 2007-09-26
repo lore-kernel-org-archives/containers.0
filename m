@@ -1,11 +1,14 @@
-From: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH] Fix cgroup_create_dir() comments
-Date: Tue, 25 Sep 2007 20:19:48 -0700
-Message-ID: <46F9CFD4.3020001__1710.23218795217$1190776932$gmane$org@google.com>
+From: Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Subject: Re: Unable to remove control groups on 2.6.23-rc8-mm1
+Date: Wed, 26 Sep 2007 08:55:31 +0530
+Message-ID: <46F9D12B.7070402@linux.vnet.ibm.com>
+References: <1190763481.13955.52.camel@dyn9047017100.beaverton.ibm.com>
+Reply-To: balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+Content-Type: text/plain; charset=ISO-8859-1
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <1190763481.13955.52.camel-Tq0y/nC7FQqofirLTBlK79w6IDGaBKkJqyM6JfAXOaQ@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -15,29 +18,45 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Cc: linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: Badari Pulavarty <pbadari-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Cc: containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Comment fixed, to match the actual arguments.
+Badari Pulavarty wrote:
+> Hi,
+> 
+> I am playing with control groups on 2.6.23-rc8-mm1.
+> 
+> I am able to mount cgroup and create subgroups. I was able
+> to move some tasks into them. But, after killing tasks I am
+> not able to remove the subgroups. Any idea on why ?
+> 
+> Thanks,
+> Badari
+> 
 
-Signed-off-by: Balaji Rao <balajirao-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Signed-off-by: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+Badari,
 
----
- kernel/cgroup.c |    2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+We account for page cache usage as well now, I suspect you
+most likely have page/swap cache pages charged to the container.
 
-Index: container-2.6.23-rc8-mm1/kernel/cgroup.c
-===================================================================
---- container-2.6.23-rc8-mm1.orig/kernel/cgroup.c
-+++ container-2.6.23-rc8-mm1/kernel/cgroup.c
-@@ -1569,7 +1569,7 @@ static int cgroup_create_file(struct den
-  *	cont:	the cgroup we create the directory for.
-  *		It must have a valid ->parent field
-  *		And we are going to fill its ->dentry field.
-- *	name:	The name to give to the cgroup directory. Will be copied.
-+ *	dentry: dentry of the new container
-  *	mode:	mode to set on new directory.
-  */
- static int cgroup_create_dir(struct cgroup *cont, struct dentry *dentry,
+You can try several options (some documented in Documentation/
+controllers/memory.txt)
+
+1. Try executing sync; echo 1 > /proc/sys/vm/drop_caches
+   and then remove the directory
+2. Prior to assigning tasks, set memory.control_type to 1,
+   that tracks only RSS pages. You'll find memory.usage_in_bytes
+   go to zero as soon as all the tasks exit
+3. Set notify_on_release and use the release_agent and releasable
+   to free the container once all pages charged to it are freed.
+
+I wonder if I should provide a force_reclaim (hard to guarantee
+it will work) for each container, so that the container can
+be freed.
+
+-- 
+	Warm Regards,
+	Balbir Singh
+	Linux Technology Center
+	IBM, ISTL
