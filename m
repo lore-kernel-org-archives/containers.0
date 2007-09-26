@@ -1,50 +1,59 @@
-From: yamamoto-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org (YAMAMOTO Takashi)
-Subject: Re: [RFC] [PATCH] memory controller statistics
-Date: Wed, 26 Sep 2007 10:48:42 +0900 (JST)
-Message-ID: <20070926014843.161E61BFA33@siro.lan>
-References: <46E12020.1060203@linux.vnet.ibm.com>
+From: David Miller <davem@davemloft.net>
+Subject: Re: [net-2.6.24][patch 2/2] Dynamically allocate the loopback
+ device
+Date: Tue, 25 Sep 2007 19:24:06 -0700 (PDT)
+Message-ID: <20070925.192406.18290033.davem@davemloft.net>
+References: <224b7d320709171212o66734847kbd17efa817b482fc@mail.gmail.com>
+	<20070917.185349.98863851.davem@davemloft.net>
+	<m1r6kwpu9t.fsf@ebiederm.dsl.xmission.com>
 Mime-Version: 1.0
 Content-Type: Text/Plain; charset=us-ascii
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: Your message of "Fri, 07 Sep 2007 10:55:44 +0100"
-	<46E12020.1060203-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
-Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, minoura-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org, menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org
+Content-Transfer-Encoding: 7bit
+Return-path: <netdev-owner@vger.kernel.org>
+In-Reply-To: <m1r6kwpu9t.fsf@ebiederm.dsl.xmission.com>
+Sender: netdev-owner@vger.kernel.org
+To: ebiederm@xmission.com
+Cc: pjwaskiewicz@gmail.com, dlezcano@fr.ibm.com, shemminger@linux-foundation.org, netdev@vger.kernel.org, containers@lists.osdl.org, benjamin.thery@bull.net
 List-Id: containers.vger.kernel.org
 
-> YAMAMOTO Takashi wrote:
-> > hi,
-> > 
-> > i implemented some statistics for your memory controller.
-> > 
-> > it's tested with 2.6.23-rc2-mm2 + memory controller v7.
-> > i think it can be applied to 2.6.23-rc4-mm1 as well.
-> > 
-> 
-> Thanks for doing this. We are building containerstats for
-> per container statistics. It would be really nice to provide
-> the statistics using that interface. I am not opposed to
-> memory.stat, but Paul Menage recommends that one file has
-> just one meaningful value.
-> 
-> The other thing is that could you please report all the
-> statistics in bytes, we are moving to that interface,
-> I've posted patches to do that. If we are going to push
-> a bunch of statistics in one file, please use a format
-> separator like
-> 
-> name: value
+From: ebiederm@xmission.com (Eric W. Biederman)
+Date: Mon, 17 Sep 2007 20:44:14 -0600
 
-i followed /proc/vmstat.
-are you going to convert /proc/vmstat to the format as well?
+> David Miller <davem@davemloft.net> writes:
+> 
+> > From: "Peter Waskiewicz" <pjwaskiewicz@gmail.com>
+> > Date: Mon, 17 Sep 2007 12:12:24 -0700
+> >
+> >> This would be a good opportunity to remove the single-allocated queue struct
+> >> in netdevice (at the bottom) that we had to put in to accomodate the static
+> >> loopback.  Now we can set it back to a zero element list, and have
+> >> alloc_netdev_mq() just allocate the number of queues requested, not
+> >> num_queues - 1.
+> >> 
+> >> I'll put a patch together based on this patchset.
+> >
+> > Thanks Peter.
+> >
+> > I'll also let this sit so that Eric can provide any feedback
+> > he wants and also figure out how he will use this for the
+> > namespace stuff.
+> 
+> Acked-by: "Eric W. Biederman" <ebiederm@xmission.com>
+> Not that it doesn't already have my signed off by.
 
-YAMAMOTO Takashi
+I've put these patches into the just-rebased net-2.6.24 tree.
+
+I made a minor modification to the second patch, the
+out_free_netdev: code in loopback_init() ended like this:
+
+out_free_netdev:
+	free_netdev(dev);
+	goto out;
+	return err;
+};
+
+I got rid of the spurious return statement and the trailing
+semi-colon after the function closing brace.
+
+Thanks.
+
