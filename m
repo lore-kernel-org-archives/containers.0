@@ -1,75 +1,34 @@
-From: "Serge E. Hallyn" <serue@us.ibm.com>
-Subject: Re: [PATCH 1/5] The config option itself
-Date: Wed, 26 Sep 2007 12:06:21 -0500
-Message-ID: <20070926170621.GB23435@sergelap.austin.ibm.com>
-References: <46FA7D4D.8040808@openvz.org> <46FA7E20.80207@openvz.org> <20070926163432.GA23435@sergelap.austin.ibm.com>
+From: Christoph Lameter <clameter-sJ/iWh9BUns@public.gmane.org>
+Subject: Re: [PATCH 3/5] Switch caches notification dynamically
+Date: Wed, 26 Sep 2007 10:30:18 -0700 (PDT)
+Message-ID: <Pine.LNX.4.64.0709261029300.15435@schroedinger.engr.sgi.com>
+References: <46F91841.9070708@openvz.org> <46F919BB.2000701@openvz.org>
+	<Pine.LNX.4.64.0709251447560.5072@schroedinger.engr.sgi.com>
+	<46FA28C9.9060101@openvz.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1760827AbXIZRGc@vger.kernel.org>
-Content-Disposition: inline
-In-Reply-To: <20070926163432.GA23435@sergelap.austin.ibm.com>
-Sender: linux-kernel-owner@vger.kernel.org
-To: "Serge E. Hallyn" <serue@us.ibm.com>
-Cc: Pavel Emelyanov <xemul@openvz.org>, Andrew Morton <akpm@osdl.org>, Cedric Le Goater <clg@fr.ibm.com>, "Eric W. Biederman" <ebiederm@xmission.com>, Linux Containers <containers@lists.osdl.org>, Linux Kernel Mailing List <linux-kernel@vger.kernel.org>
+Content-Type: TEXT/PLAIN; charset=US-ASCII
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <46FA28C9.9060101-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Quoting Serge E. Hallyn (serue@us.ibm.com):
-> Quoting Pavel Emelyanov (xemul@openvz.org):
-> > The option is called NAMESPACES. It can be selectable only
-> > if EMBEDDED is chosen (this was Eric's requisition). When
-> > the EMBEDDED is off namespaces will be on automatically.
-> > 
-> > One more option (NAMESPACES_EXPERIMENTAL) was added by 
-> > Serge's request to move there all the namespaces that are 
-> > not finished yet. Currently only the user and the network
-> > namespaces are such.
-> > 
-> > Signed-off-by: Pavel Emelyanov <xemul@openvz.org>
-> > 
-> > ---
-> > 
-> > diff --git a/init/Kconfig b/init/Kconfig
-> > index 684ccfb..05a71d7 100644
-> > --- a/init/Kconfig
-> > +++ b/init/Kconfig
-> > @@ -369,6 +360,23 @@ config RELAY
-> > 
-> >  	  If unsure, say N.
-> > 
-> > +config NAMESPACES
-> > +	bool "The namespaces support" if EMBEDDED
-> > +	default !EMBEDDED
-> > +	help
-> > +	  Provides the way to make tasks work with different objects using
-> > +	  the same id. For example same IPC id may refer to different objects
-> > +	  or same user id or pid may refer to different tasks when used in
-> > +	  different namespaces.
-> > +
-> > +config NAMESPACES_EXPERIMENTAL
-> > +	bool "Add the experimantal namespaces support" if EMBEDDED
-> 
-> Hi Pavel,
-> 
-> Overall this patchset looks good.
-> 
-> However the NAMESPACES_EXPERIMENTAL option should not have the
-> 'if EMBEDDED', right?  This is about EXPERIMENTAL, not about
-> EMBEDDED, unlike the plain NAMESPACES option.
-> 
-> -serge
+On Wed, 26 Sep 2007, Pavel Emelyanov wrote:
 
-Actually that doesn't seem to work either.  Even though
-SECURITY_NAMESPACES=y, the config system seems to infer that
-since NAMESPACES is not user-selectable, NAMESPACES_EXPERIMENTAL
-shouldn't be either.  So we end up with NAMESPACES_EXPERIMENTAL
-being on and not un-selectable if !EMBEDDED.
+> > Is it necessary to mark all the existing slabs with SLAB_DEBUG? Would it 
+> 
+> Yup. Otherwise we can never receive a single event e.g. if we make 
+> alloc/free in a loop, or similar, so that new slabs simply are not 
+> created.
 
-> > +	depends on NAMESPACES && EXPERIMENTAL
-> > +	default !EMBEDDED
-> > +	help
-> > +	  Also include the support for the namespaces that are not fnished
-> > +	  or well developed yet
-> > +
-> >  config BLK_DEV_INITRD
-> >  	bool "Initial RAM filesystem and RAM disk (initramfs/initrd) support"
-> >  	depends on BROKEN || !FRV
+Right but on the other hand: If objects in these slabs are freed then your 
+counters get decremented and may go negative.
