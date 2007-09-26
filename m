@@ -1,14 +1,17 @@
-From: Christoph Lameter <clameter-sJ/iWh9BUns@public.gmane.org>
-Subject: Re: [PATCH 1/5] Add notification about some major slab events
-Date: Wed, 26 Sep 2007 10:31:08 -0700 (PDT)
-Message-ID: <Pine.LNX.4.64.0709261030270.15435@schroedinger.engr.sgi.com>
-References: <46F91841.9070708@openvz.org> <46F91898.5060400@openvz.org>
-	<Pine.LNX.4.64.0709251445400.5072@schroedinger.engr.sgi.com>
-	<46FA285B.5060709@openvz.org>
+From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
+Subject: Re: [RFC][PATCH] Devices visibility container
+Date: Wed, 26 Sep 2007 13:09:46 -0600
+Message-ID: <m1641xuttx.fsf@ebiederm.dsl.xmission.com>
+References: <46F77523.9020001@openvz.org>
+	<m1r6kodn7t.fsf@ebiederm.dsl.xmission.com>
+	<46F8BD33.5040108@openvz.org>
+	<m13ax2eut7.fsf@ebiederm.dsl.xmission.com>
+	<1190820972.26982.359.camel@localhost>
 Mime-Version: 1.0
-Content-Type: TEXT/PLAIN; charset=US-ASCII
+Content-Type: text/plain; charset=us-ascii
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <46FA285B.5060709-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+In-Reply-To: <1190820972.26982.359.camel@localhost> (Dave Hansen's message of
+	"Wed, 26 Sep 2007 08:36:12 -0700")
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,19 +21,42 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
-Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+To: Dave Hansen <haveblue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Wed, 26 Sep 2007, Pavel Emelyanov wrote:
+Dave Hansen <haveblue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org> writes:
 
-> True, but we mark the slubs as notifyable at runtime, after they
-> are merged. However, once someone decides to make his slab notifyable
-> from the very beginning this makes sense, thanks.
+> On Tue, 2007-09-25 at 07:30 -0600, Eric W. Biederman wrote:
+>> Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org> writes:
+>> >
+>> > Oh! Can you provide us an example when after the migration some
+>> > device's major+minor pair change on the same device?
+>> 
+>> SCSI disks on a SAN.  Network accessible block devices.
+>> All kinds of logical/virtual devices like ttys, the loop device, and
+>> ramdisks.
+>> 
+>> It isn't especially frequent that something cares, but fundamentally
+>> the same issues apply.
+>
+> To be clear, this just covers cases where an application has
+> _internalized_ the device number, right?
 
-This also makes sense if a device driver later creates a new slab. Adding 
-the bit will switch off additional merges for that slab.
+Also cases where you want to call mknod in the container.
 
-> Oh, great! Does this mean I can put Acked-by when sending this to Andrew?
+> Most applications should be pretty happy with the devices having
+> persistent device names across a restart, and we can do that with udev
+> and no kernel patching.
 
-Yes.
+Yes.  But the applications that do internalize stat data from files
+aren't that uncommon.  git, and backup software etc.
+
+There is also a fair bit of work that is needed to get sysfs
+and the hotplug events isolated, when we start allowing mknod etc.
+
+Basically if I figure if we are going to deal with this we need to handle
+the entire problem because these pieces are user visible.  I don't
+think it is a great priority.
+
+Eric
