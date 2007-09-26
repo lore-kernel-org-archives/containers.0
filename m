@@ -1,15 +1,11 @@
-From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: Playing with namespaces and bloat-o-meeter
-Date: Wed, 26 Sep 2007 10:42:36 -0500
-Message-ID: <20070926154236.GB19515@sergelap.austin.ibm.com>
-References: <46FA528C.3000208@openvz.org> <46FA6AC3.6090402@openvz.org>
-	<m1y7etv634.fsf@ebiederm.dsl.xmission.com>
-	<46FA7186.1070202@openvz.org>
+From: Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+Subject: [PATCH 0/5] A config option to compile out some namespaces code
+Date: Wed, 26 Sep 2007 19:39:57 +0400
+Message-ID: <46FA7D4D.8040808@openvz.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+Content-Type: text/plain; charset=ISO-8859-1
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <46FA7186.1070202-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,81 +15,75 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
-Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+To: Andrew Morton <akpm-3NddpPZAyC0@public.gmane.org>
+Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Linux Kernel Mailing List <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Quoting Pavel Emelyanov (xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org):
-> Eric W. Biederman wrote:
-> > Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org> writes:
-> > 
-> >>>  
-> >>> +config NAMESPACES
-> >>> +	bool "The namespaces support"
-> >>> +	help
-> >>> +	  Provides the way to make tasks work with different objects using
-> >>> +	  the same id
-> >>> +
-> >>> +config NS_UTS
-> >>> +	bool "Uname namespace"
-> >>> +	depends on NAMESPACES
-> >>> +	help
-> >>> +	  The utsname namespace
-> >>> +
-> >>> +config NS_IPC
-> >>> +	bool "IPC namespace"
-> >>> +	depends on NAMESPACES && SYSVIPC
-> >>> +	help
-> >>> +	  The SYSVIPC ids namespaces
-> >>> +
-> >>> +config NS_PIDS
-> >>> +	bool "PID namespace"
-> >>> +	depends on NAMESPACES
-> >>> +	help
-> >>> +	  Tasks see only the pids living in the same namespace and in the
-> >>> +	  child namespaces
-> >>> +
-> >>> +config NS_UID
-> >>> +	bool "UID namespace"
-> >>> +	depends on NAMESPACES && EXPERIMENTAL
-> >>> +	help
-> >>> +	  Support user namespaces.  This allows containers, i.e.
-> >>> +	  vservers, to use user namespaces to provide different
-> >>> +	  user info for different servers.  If unsure, say N.
-> >>> +
-> >>>  config BLK_DEV_INITRD
-> >>>  	bool "Initial RAM filesystem and RAM disk (initramfs/initrd) support"
-> >>>  	depends on BROKEN || !FRV
-> > 
-> > The reason we removed these options earlier was a maintenance issue
-> > and the fact we could not actually compile out the namespaces.
-> 
-> I do not propose to compile out the namespaces, I just propose
-> to compile out the code that does the clone and release of new
-> namespaces. This is absolutely painless.
-> 
-> > If we don't cause maintenance complications I think the general
-> > idea is fine.  But please.  This all should show up under
-> > CONFIG_EMBEDDED since the only purpose is to save space.
-> 
-> Hm... Ok, but I also try to save the vmlinux size on my home
-> PC, so I'd be happy if I could just throw these things out.
-> 
-> Anyway - I will move the CONFIG_NAMESPACES to be selectable
-> with the EMBEDDED only.
-> 
-> > While things are experimental there is an additional purpose of
-> > not exposing people to broken or partially working code, so it
-> > does make sense to have an option there.
-> 
-> Ok, thanks.
-> 
-> So your accolades, can they be transformed into Acked-by-s or
-> just mentioned in the patch like "reviewed and approved by ..."?
+There were some questions like "do I need this on my cellphone"
+in reply to different namespaces patches. Indeed, the namespaces
+are not useful for most of the embedded systems, but the code
+creating and releasing them weights a lot.
 
-I for one have no objection to the idea itself.  There have been several
-good suggestions though so I would like to see one more round here to
-which I can add an Acked-by.
+So I propose to add a config option which will help embedded
+people to reduce the vmlinux size. This option simply compiles
+out the namespaces cloning and releasing code *only*, but keeps
+all the other logic untouched (e.g. the notion of init_ns).
 
-thanks,
--serge
+When someone tries to clone some namespace with their support
+turned off, he will receive an EINVAL error.
+
+This patchset can save more than 2KB from the vmlinux when
+turning the config option "NAMESPACES" to "n":
+
+$ scripts/bloat-o-meter vmlinux-no-ns vmlinux-with-ns 
+add/remove: 27/0 grow/shrink: 11/7 up/down: 2477/-340 (2137)
+function                                     old     new   delta
+copy_pid_ns                                    -     537    +537
+copy_user_ns                                   -     181    +181
+copy_ipcs                                      -     149    +149
+zap_pid_ns_processes                           -     130    +130
+copy_utsname                                   -     120    +120
+shm_exit_ns                                    -     106    +106
+sem_exit_ns                                    -     106    +106
+msg_exit_ns                                    -     106    +106
+freeary                                        -     100    +100
+release_uids                                   -      95     +95
+freeque                                        -      92     +92
+free_nsproxy                                  48     123     +75
+create_new_namespaces                        300     358     +58
+free_pid_ns                                    -      56     +56
+pid_namespaces_init                            -      48     +48
+__sem_init_ns                                  -      45     +45
+shm_init_ns                                    -      42     +42
+sem_init_ns                                    -      42     +42
+msg_init_ns                                    -      42     +42
+__shm_init_ns                                  -      38     +38
+__msg_init_ns                                  -      31     +31
+sysvipc_proc_release                           5      35     +30
+proc_kill_sb                                   5      35     +30
+free_ipc_ns                                    -      30     +30
+do_shm_rmid                                    -      29     +29
+proc_set_super                                13      38     +25
+shm_release                                   18      39     +21
+put_pid                                       75      95     +20
+alloc_pid                                    687     706     +19
+pid_caches_mutex                               -      16     +16
+free_user_ns                                   -      16     +16
+sysvipc_proc_open                            100     111     +11
+do_shmat                                     778     787      +9
+pid_caches_lh                                  -       8      +8
+free_uts_ns                                    -       5      +5
+pid_ns_cachep                                  -       4      +4
+__initcall_pid_namespaces_init6                -       4      +4
+do_exit                                     1855    1856      +1
+show_stat                                   1665    1661      -4
+sys_shmctl                                  1934    1907     -27
+msg_init                                      82      47     -35
+shm_init                                      92      47     -45
+sem_init                                      99      44     -55
+sys_msgctl                                  1394    1311     -83
+sys_semctl                                  2123    2032     -91
+
+This set was reviewed and approved by Serge, Cedric and Eric.
+
+Signed-off-by: Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
