@@ -1,17 +1,13 @@
 From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
-Subject: Re: [RFC][PATCH] Devices visibility container
-Date: Wed, 26 Sep 2007 13:09:46 -0600
-Message-ID: <m1641xuttx.fsf@ebiederm.dsl.xmission.com>
-References: <46F77523.9020001@openvz.org>
-	<m1r6kodn7t.fsf@ebiederm.dsl.xmission.com>
-	<46F8BD33.5040108@openvz.org>
-	<m13ax2eut7.fsf@ebiederm.dsl.xmission.com>
-	<1190820972.26982.359.camel@localhost>
+Subject: Re: [patch 0/3][netns] several fixes/enhancements
+Date: Wed, 26 Sep 2007 13:14:47 -0600
+Message-ID: <m11wclutlk.fsf@ebiederm.dsl.xmission.com>
+References: <20070924122112.065703991@mai.toulouse-stg.fr.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1190820972.26982.359.camel@localhost> (Dave Hansen's message of
-	"Wed, 26 Sep 2007 08:36:12 -0700")
+In-Reply-To: <20070924122112.065703991-WECHFHqYCmGD/CxQmPlnQ0FT0OZdM7KVQQ4Iyu8u01E@public.gmane.org>
+	(dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org's message of "Mon, 24 Sep 2007 14:21:12 +0200")
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -21,42 +17,21 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Dave Hansen <haveblue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+To: dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org
+Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Dave Hansen <haveblue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org> writes:
+dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org writes:
 
-> On Tue, 2007-09-25 at 07:30 -0600, Eric W. Biederman wrote:
->> Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org> writes:
->> >
->> > Oh! Can you provide us an example when after the migration some
->> > device's major+minor pair change on the same device?
->> 
->> SCSI disks on a SAN.  Network accessible block devices.
->> All kinds of logical/virtual devices like ttys, the loop device, and
->> ramdisks.
->> 
->> It isn't especially frequent that something cares, but fundamentally
->> the same issues apply.
+> The two first patches enable the arp and rtnetlink events.
+> They were working in previous version, so I don't know if 
+> they were disabled for a particular reason but I re-enable 
+> them again just in case ...
 >
-> To be clear, this just covers cases where an application has
-> _internalized_ the device number, right?
+> The third patch allows to consolidate the netlink attributes
+> when we try to show a network device linked with a network device
+> assigned to another network namespace
 
-Also cases where you want to call mknod in the container.
-
-> Most applications should be pretty happy with the devices having
-> persistent device names across a restart, and we can do that with udev
-> and no kernel patching.
-
-Yes.  But the applications that do internalize stat data from files
-aren't that uncommon.  git, and backup software etc.
-
-There is also a fair bit of work that is needed to get sysfs
-and the hotplug events isolated, when we start allowing mknod etc.
-
-Basically if I figure if we are going to deal with this we need to handle
-the entire problem because these pieces are user visible.  I don't
-think it is a great priority.
+At a first pass these patches look sane.
 
 Eric
