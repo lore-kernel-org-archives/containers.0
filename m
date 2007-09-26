@@ -1,14 +1,14 @@
 From: Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
-Subject: Re: [PATCH 3/5] Switch caches notification dynamically
-Date: Wed, 26 Sep 2007 13:39:21 +0400
-Message-ID: <46FA28C9.9060101@openvz.org>
-References: <46F91841.9070708@openvz.org> <46F919BB.2000701@openvz.org>
-	<Pine.LNX.4.64.0709251447560.5072@schroedinger.engr.sgi.com>
+Subject: Re: [PATCH 1/5] Add notification about some major slab events
+Date: Wed, 26 Sep 2007 13:37:31 +0400
+Message-ID: <46FA285B.5060709@openvz.org>
+References: <46F91841.9070708@openvz.org> <46F91898.5060400@openvz.org>
+	<Pine.LNX.4.64.0709251445400.5072@schroedinger.engr.sgi.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <Pine.LNX.4.64.0709251447560.5072-RYO/mD75kfhx2SFC9UQUAuF7EQX82lMiAL8bYrjMMd8@public.gmane.org>
+In-Reply-To: <Pine.LNX.4.64.0709251445400.5072-RYO/mD75kfhx2SFC9UQUAuF7EQX82lMiAL8bYrjMMd8@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -25,28 +25,23 @@ List-Id: containers.vger.kernel.org
 Christoph Lameter wrote:
 > On Tue, 25 Sep 2007, Pavel Emelyanov wrote:
 > 
->> +		for_each_node_state(n, N_NORMAL_MEMORY) {
->> +			struct kmem_cache_node *node;
->> +			struct page *pg;
->> +			
->> +			node = get_node(s, n);
->> +			spin_lock_irq(&node->list_lock);
->> +			list_for_each_entry(pg, &node->partial, lru)
->> +				SetSlabDebug(pg);
->> +			spin_unlock_irq(&node->list_lock);
+>> @@ -28,6 +28,7 @@
+>>  #define SLAB_DESTROY_BY_RCU	0x00080000UL	/* Defer freeing slabs to RCU */
+>>  #define SLAB_MEM_SPREAD		0x00100000UL	/* Spread some memory over cpuset */
+>>  #define SLAB_TRACE		0x00200000UL	/* Trace allocations and frees */
+>> +#define SLAB_NOTIFY		0x00400000UL	/* Notify major events */
+>>  
 > 
-> 
-> Is it necessary to mark all the existing slabs with SLAB_DEBUG? Would it 
+> You need to add SLAB_NOTIFY to the SLUB_NEVER_MERGE group. That way you 
+> can solve the merging issue.
 
-Yup. Otherwise we can never receive a single event e.g. if we make 
-alloc/free in a loop, or similar, so that new slabs simply are not 
-created.
+True, but we mark the slubs as notifyable at runtime, after they
+are merged. However, once someone decides to make his slab notifyable
+from the very beginning this makes sense, thanks.
 
-> not be sufficient to just mark the new ones coming up? The above operation 
-> could be a bit expensive.
+> Otherwise this looks okay now.
 
-Oh, that's OK from my POV - switching slabs mode was never supposed to
-be a fast path.
+Oh, great! Does this mean I can put Acked-by when sending this to Andrew?
 
 Thanks,
 Pavel
