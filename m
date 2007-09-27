@@ -1,51 +1,76 @@
-From: ebiederm@xmission.com (Eric W. Biederman)
-Subject: Re: [PATCH] net: Add network namespace clone & unshare support.
-Date: Thu, 27 Sep 2007 11:14:33 -0600
-Message-ID: <m1k5qcjaiu.fsf@ebiederm.dsl.xmission.com>
-References: <m1tzphrnq5.fsf@ebiederm.dsl.xmission.com>
-	<46FB6F1E.8070105@fr.ibm.com>
+From: Randy Dunlap <randy.dunlap@oracle.com>
+Subject: Re: [PATCH -mm] Hook up group scheduler with control groups
+Date: Thu, 27 Sep 2007 10:40:05 -0700
+Message-ID: <20070927104005.2ed0b81d.randy.dunlap@oracle.com>
+References: <20070927150624.GG4415@linux.vnet.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Return-path: <netdev-owner@vger.kernel.org>
-In-Reply-To: <46FB6F1E.8070105@fr.ibm.com> (Cedric Le Goater's message of
-	"Thu, 27 Sep 2007 10:51:42 +0200")
-Sender: netdev-owner@vger.kernel.org
-To: Cedric Le Goater <clg@fr.ibm.com>
-Cc: David Miller <davem@davemloft.net>, Linux Containers <containers@lists.osdl.org>, netdev@vger.kernel.org, Andrew Morton <akpm@linux-foundation.org>
+Content-Type: text/plain; charset=US-ASCII
+Content-Transfer-Encoding: 7bit
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1757430AbXI0Roy@vger.kernel.org>
+In-Reply-To: <20070927150624.GG4415@linux.vnet.ibm.com>
+Sender: linux-kernel-owner@vger.kernel.org
+To: vatsa@linux.vnet.ibm.com
+Cc: akpm@linux-foundation.org, Ingo Molnar <mingo@elte.hu>, dmitry.adamushko@gmail.com, efault@gmx.de, dhaval@linux.vnet.ibm.com, linux-kernel@vger.kernel.org, containers@lists.osdl.org
 List-Id: containers.vger.kernel.org
 
-Cedric Le Goater <clg@fr.ibm.com> writes:
+On Thu, 27 Sep 2007 20:36:24 +0530 Srivatsa Vaddagiri wrote:
 
->> diff --git a/include/linux/sched.h b/include/linux/sched.h
->> index a01ac6d..e10a0a8 100644
->> --- a/include/linux/sched.h
->> +++ b/include/linux/sched.h
->> @@ -27,6 +27,7 @@
->>  #define CLONE_NEWUTS		0x04000000	/* New utsname group? */
->>  #define CLONE_NEWIPC		0x08000000	/* New ipcs */
->> #define CLONE_NEWUSER 0x10000000 /* New user namespace */
->> +#define CLONE_NEWNET		0x20000000	/* New network namespace */
->
-> This new flag is going to conflict with the pid namespace flag 
-> CLONE_NEWPID in -mm. It might be worth changing it to:
->
-> #define CLONE_NEWNET		0x40000000
+> Andrew,
+> 	This is a resend of the patch I had sent earlier at:
+> 	
+> http://marc.info/?l=linux-kernel&m=119065506607858
+> 
+> This patch enables group cpu scheduler feature to work with control
+> groups.
+> 
+> Could you include this in -mm for folks to test it?
 
-Interesting, it would have been nice if someone had caught this
-detail earlier.  Oh well.
+Hi  :)
 
-Thanks for pointing this out, it's on my todo list to look into,
-and ensure we resolve.
+Uh, a few of my previous comments weren't fixed... (below)
 
-I'm confused because my notes have 0x80000000 for the pid namespace,
-and 0x40000000 for the time namespace.
 
-> The changes in nxproxy.c and fork.c will also conflict but I don't 
-> think we can do much about it for now.
+> --
+> 
+> Enable "cgroup" (formerly containers) based fair group scheduling.
+> This will let administrator create arbitrary groups of tasks (using
+> "cgroup" pseudo filesystem) and control their cpu bandwidth usage.
+> 
+> Signed-off-by : Srivatsa Vaddagiri <vatsa@linux.vnet.ibm.com>
+> Signed-off-by : Dhaval Giani <dhaval@linux.vnet.ibm.com>
+> 
+> ---
+>  include/linux/cgroup_subsys.h |    6 ++
+>  init/Kconfig                  |   24 +++++---
+>  kernel/sched.c                |  122 ++++++++++++++++++++++++++++++++++++++++++
+>  3 files changed, 145 insertions(+), 7 deletions(-)
+> 
 
-They should also be fairly easy conflicts to resolve.
+> Index: current/init/Kconfig
+> ===================================================================
+> --- current.orig/init/Kconfig
+> +++ current/init/Kconfig
+> @@ -319,6 +319,13 @@ config CPUSETS
+>  
+>  	  Say N if unsure.
+>  
+> +config RESOURCE_COUNTERS
+> +	bool "Resource counters"
+> +	help
+> +	  This option enables controller independent resource accounting
+> +          infrastructure that works with cgroups
 
-I guess we are likely to hit this conflict in the next -mm or the
-merge window, which ever comes first.
+Use tab + 2 spaces consistently for help text indentation.
+End that sentence with a ".".
 
-Eric
+> +	depends on CGROUPS
+> +
+>  config FAIR_GROUP_SCHED
+>  	bool "Fair group CPU scheduler"
+>  	default y
+
+
+
+---
+~Randy
+Phaedrus says that Quality is about caring.
