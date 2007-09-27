@@ -1,130 +1,250 @@
-From: Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [patch 3/3][NETNS45][V2] remove timewait sockets at cleanup
-Date: Thu, 27 Sep 2007 16:38:16 +0200
-Message-ID: <46FBC058.8020003@fr.ibm.com>
-References: <20070927110400.409277229@mai.toulouse-stg.fr.ibm.com>
-	<20070927111219.179053451@mai.toulouse-stg.fr.ibm.com>
-	<46FBAE9B.7030707@sw.ru>
+From: Srivatsa Vaddagiri <vatsa@linux.vnet.ibm.com>
+Subject: [PATCH -mm] Hook up group scheduler with control groups
+Date: Thu, 27 Sep 2007 20:36:24 +0530
+Message-ID: <20070927150624.GG4415@linux.vnet.ibm.com>
+Reply-To: vatsa@linux.vnet.ibm.com
 Mime-Version: 1.0
-Content-Type: text/plain; charset=KOI8-R; format=flowed
-Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <46FBAE9B.7030707-3ImXcnM4P+0@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Denis V. Lunev" <den-3ImXcnM4P+0@public.gmane.org>
-Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+Content-Type: text/plain; charset=us-ascii
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1758150AbXI0O4A@vger.kernel.org>
+Content-Disposition: inline
+Sender: linux-kernel-owner@vger.kernel.org
+To: akpm@linux-foundation.org
+Cc: Ingo Molnar <mingo@elte.hu>, dmitry.adamushko@gmail.com, efault@gmx.de, dhaval@linux.vnet.ibm.com, linux-kernel@vger.kernel.org, containers@lists.osdl.org
 List-Id: containers.vger.kernel.org
 
-Denis V. Lunev wrote:
-> Daniel Lezcano wrote:
->> From: Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
->>
->> Denis Lunev spotted that if we take a reference to the network namespace
->> with the timewait sockets, we will need to wait for their expiration to
->> have the network namespace freed. This is a waste of time, the timewait
->> sockets are for avoiding to receive a duplicate packet from the network,
->> if the network namespace is freed, the network stack is removed, so no
->> chance to receive any packets from the outside world.
->>
->> This patchset remove/destroy the timewait sockets when the
->> network namespace is freed.
->>
->> Signed-off-by: Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
->> ---
->>  net/ipv4/tcp.c |   53 +++++++++++++++++++++++++++++++++++++++++++++++++++++
->>  1 file changed, 53 insertions(+)
->>
-> 
-> [...]
-> This place seems non-trival and broken for me :( May be I am wrong.
->> + 		write_lock_bh(&head->lock);
->> +
->> +		sk_for_each_safe(sk, node, tmp, &head->twchain) {
->> +
->> +			tw = inet_twsk(sk);
->> +			if (tw->tw_net != net)
->> +				continue;
->> +
->> +			/* deschedule the timewait socket */
->> +			spin_lock(&tcp_death_row.death_lock);
->> +			if (inet_twsk_del_dead_node(tw)) {
->> +				inet_twsk_put(tw);
->> +				if (--tcp_death_row.tw_count == 0)
->> +					del_timer(&tcp_death_row.tw_timer);
-> There is a call inet_twsk_deschedule which do exactly what we need to
-> 
-> void inet_twsk_deschedule(struct inet_timewait_sock *tw,
->                           struct inet_timewait_death_row *twdr)
-> {
->         spin_lock(&twdr->death_lock);
->         if (inet_twsk_del_dead_node(tw)) {
->                 inet_twsk_put(tw);
->                 if (--twdr->tw_count == 0)
->                         del_timer(&twdr->tw_timer);
->         }
->         spin_unlock(&twdr->death_lock);
->         __inet_twsk_kill(tw, twdr->hashinfo);
-> }
-> 
-> and, from my point of view, your patch [2] is even not needed. We should do
-> 
-> restart:
->         write_lock_bh(&head->lock);
->         sk_for_each_safe(sk, node, tmp, &head->twchain) {
->             tw = inet_twsk(sk);
->             if (tw->tw_net != net)
->                 continue;
->             sock_hold(sk);
->             write_unlock_bh(&head->lock);
->             inet_twsk_deschedule(tw, &tcp_death_row);
->             inet_twsk_put(tw);
->             goto restart;
->         }
-> 
-> This removes serious locking issue. You have introduced dependency
-> between write_lock_bh(&head->lock); and
-> spin_lock(&tcp_death_row.death_lock);
-> This should be at least checked and documented in the headers. I am not
-> sure that this is correct.
-> If my approach is correct, your second patch is not needed.
-> 
-> It will also worth to local_bh_enable() at the very beginning and remove
-> _bh from write_lock.
+Andrew,
+	This is a resend of the patch I had sent earlier at:
+	
+http://marc.info/?l=linux-kernel&m=119065506607858
 
-local_bh_disable / local_bh_enable at the very beginning ?
+This patch enables group cpu scheduler feature to work with control
+groups.
 
-like that ?
+Could you include this in -mm for folks to test it?
 
--------------
+--
 
-local_bh_disable();
+Enable "cgroup" (formerly containers) based fair group scheduling.
+This will let administrator create arbitrary groups of tasks (using
+"cgroup" pseudo filesystem) and control their cpu bandwidth usage.
 
-/* Browse the the established hash table */
-for (h = 0; h < (tcp_hashinfo.ehash_size); h++) {
-                struct inet_ehash_bucket *head =
-                        inet_ehash_bucket(&tcp_hashinfo, h);
-restart:
-          write_lock(&head->lock);
-          sk_for_each_safe(sk, node, tmp, &head->twchain) {
-              tw = inet_twsk(sk);
-              if (tw->tw_net != net)
-                  continue;
-              sock_hold(sk);
-              write_unlock(&head->lock);
-              inet_twsk_deschedule(tw, &tcp_death_row);
-              inet_twsk_put(tw);
-              goto restart;
-          }	
-}
+Signed-off-by : Srivatsa Vaddagiri <vatsa@linux.vnet.ibm.com>
+Signed-off-by : Dhaval Giani <dhaval@linux.vnet.ibm.com>
 
-local_bh_enable();
+---
+ include/linux/cgroup_subsys.h |    6 ++
+ init/Kconfig                  |   24 +++++---
+ kernel/sched.c                |  122 ++++++++++++++++++++++++++++++++++++++++++
+ 3 files changed, 145 insertions(+), 7 deletions(-)
 
--------------
+Index: current/include/linux/cgroup_subsys.h
+===================================================================
+--- current.orig/include/linux/cgroup_subsys.h
++++ current/include/linux/cgroup_subsys.h
+@@ -36,3 +36,9 @@ SUBSYS(mem_cgroup)
+ #endif
+ 
+ /* */
++
++#ifdef CONFIG_FAIR_CGROUP_SCHED
++SUBSYS(cpu_cgroup)
++#endif
++
++/* */
+Index: current/init/Kconfig
+===================================================================
+--- current.orig/init/Kconfig
++++ current/init/Kconfig
+@@ -319,6 +319,13 @@ config CPUSETS
+ 
+ 	  Say N if unsure.
+ 
++config RESOURCE_COUNTERS
++	bool "Resource counters"
++	help
++	  This option enables controller independent resource accounting
++          infrastructure that works with cgroups
++	depends on CGROUPS
++
+ config FAIR_GROUP_SCHED
+ 	bool "Fair group CPU scheduler"
+ 	default y
+@@ -338,14 +345,17 @@ config FAIR_USER_SCHED
+ 	  This option will choose userid as the basis for grouping
+ 	  tasks, thus providing equal CPU bandwidth to each user.
+ 
+-endchoice
++config FAIR_CGROUP_SCHED
++	bool "Control groups"
++ 	depends on CGROUPS
++ 	help
++	  This option allows you to create arbitrary task groups
++	  using the "cgroup" pseudo filesystem and control
++	  the cpu bandwidth allocated to each such task group.
++	  Refer to Documentation/cgroups.txt for more information
++	  on "cgroup" pseudo filesystem.
+ 
+-config RESOURCE_COUNTERS
+-	bool "Resource counters"
+-	help
+-	  This option enables controller independent resource accounting
+-          infrastructure that works with cgroups
+-	depends on CGROUPS
++endchoice
+ 
+ config SYSFS_DEPRECATED
+ 	bool "Create deprecated sysfs files"
+Index: current/kernel/sched.c
+===================================================================
+--- current.orig/kernel/sched.c
++++ current/kernel/sched.c
+@@ -177,10 +177,16 @@ struct rt_prio_array {
+ 
+ #ifdef CONFIG_FAIR_GROUP_SCHED
+ 
++#include <linux/cgroup.h>
++
+ struct cfs_rq;
+ 
+ /* task group related information */
+ struct task_grp {
++#ifdef CONFIG_FAIR_CGROUP_SCHED
++	struct cgroup_subsys_state css;
++#endif
++
+ 	/* schedulable entities of this group on each cpu */
+ 	struct sched_entity **se;
+ 	/* runqueue "owned" by this group on each cpu */
+@@ -219,6 +225,9 @@ static inline struct task_grp *task_grp(
+ 
+ #ifdef CONFIG_FAIR_USER_SCHED
+ 	tg = p->user->tg;
++#elif CONFIG_FAIR_CGROUP_SCHED
++	tg = container_of(task_subsys_state(p, cpu_cgroup_subsys_id),
++				struct task_grp, css);
+ #else
+ 	tg  = &init_task_grp;
+ #endif
+@@ -6958,3 +6967,116 @@ int sched_group_set_shares(struct task_g
+ }
+ 
+ #endif 	/* CONFIG_FAIR_GROUP_SCHED */
++
++#ifdef CONFIG_FAIR_CGROUP_SCHED
++
++/* return corresponding task_grp object of a cgroup */
++static inline struct task_grp *cgroup_tg(struct cgroup *cont)
++{
++	return container_of(cgroup_subsys_state(cont, cpu_cgroup_subsys_id),
++					 struct task_grp, css);
++}
++
++static struct cgroup_subsys_state *
++cpu_cgroup_create(struct cgroup_subsys *ss, struct cgroup *cont)
++{
++	struct task_grp *tg;
++
++	if (!cont->parent) {
++		/* This is early initialization for the top cgroup */
++		init_task_grp.css.cgroup = cont;
++		return &init_task_grp.css;
++	}
++
++	/* we support only 1-level deep hierarchical scheduler atm */
++	if (cont->parent->parent)
++		return ERR_PTR(-EINVAL);
++
++	tg = sched_create_group();
++	if (IS_ERR(tg))
++		return ERR_PTR(-ENOMEM);
++
++	/* Bind the cgroup to task_grp object we just created */
++	tg->css.cgroup = cont;
++
++	return &tg->css;
++}
++
++static void cpu_cgroup_destroy(struct cgroup_subsys *ss,
++					struct cgroup *cont)
++{
++	struct task_grp *tg = cgroup_tg(cont);
++
++	sched_destroy_group(tg);
++}
++
++static int cpu_cgroup_can_attach(struct cgroup_subsys *ss,
++			     struct cgroup *cont, struct task_struct *tsk)
++{
++	/* We don't support RT-tasks being in separate groups */
++	if (tsk->sched_class != &fair_sched_class)
++		return -EINVAL;
++
++	return 0;
++}
++
++static void
++cpu_cgroup_attach(struct cgroup_subsys *ss, struct cgroup *cont,
++			struct cgroup *old_cont, struct task_struct *tsk)
++{
++	sched_move_task(tsk);
++}
++
++static ssize_t cpu_shares_write(struct cgroup *cont, struct cftype *cftype,
++				struct file *file, const char __user *userbuf,
++				size_t nbytes, loff_t *ppos)
++{
++	unsigned long shareval;
++	struct task_grp *tg = cgroup_tg(cont);
++	char buffer[2*sizeof(unsigned long) + 1];
++	int rc;
++
++	if (nbytes > 2*sizeof(unsigned long))	/* safety check */
++		return -E2BIG;
++
++	if (copy_from_user(buffer, userbuf, nbytes))
++		return -EFAULT;
++
++	buffer[nbytes] = 0;	/* nul-terminate */
++	shareval = simple_strtoul(buffer, NULL, 10);
++
++	rc = sched_group_set_shares(tg, shareval);
++
++	return (rc < 0 ? rc : nbytes);
++}
++
++static u64 cpu_shares_read_uint(struct cgroup *cont, struct cftype *cft)
++{
++	struct task_grp *tg = cgroup_tg(cont);
++
++	return (u64) tg->shares;
++}
++
++static struct cftype cpu_shares = {
++	.name = "shares",
++	.read_uint = cpu_shares_read_uint,
++	.write = cpu_shares_write,
++};
++
++static int cpu_cgroup_populate(struct cgroup_subsys *ss, struct cgroup *cont)
++{
++	return cgroup_add_file(cont, ss, &cpu_shares);
++}
++
++struct cgroup_subsys cpu_cgroup_subsys = {
++	.name 	    	= "cpu",
++	.create	    	= cpu_cgroup_create,
++	.destroy    	= cpu_cgroup_destroy,
++	.can_attach 	= cpu_cgroup_can_attach,
++	.attach     	= cpu_cgroup_attach,
++	.populate   	= cpu_cgroup_populate,
++	.subsys_id  	= cpu_cgroup_subsys_id,
++	.early_init	= 1,
++};
++
++#endif	/* CONFIG_FAIR_CGROUP_SCHED */
+
+
+
+-- 
+Regards,
+vatsa
