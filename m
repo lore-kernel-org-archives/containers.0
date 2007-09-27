@@ -1,19 +1,24 @@
-From: "Denis V. Lunev" <den@sw.ru>
-Subject: Re: [PATCH] netns:  Simplify the network namespace list locking rules.
-Date: Thu, 27 Sep 2007 09:21:56 +0400
-Message-ID: <46FB3DF4.10309@sw.ru>
-References: <46F3C777.7070103@sw.ru> <m1r6kkrce0.fsf@ebiederm.dsl.xmission.com>
+From: David Miller <davem@davemloft.net>
+Subject: Re: [PATCH] netns: Simplify the network namespace list locking
+ rules.
+Date: Wed, 26 Sep 2007 22:40:22 -0700 (PDT)
+Message-ID: <20070926.224022.54462669.davem@davemloft.net>
+References: <46F3C777.7070103@sw.ru>
+	<m1r6kkrce0.fsf@ebiederm.dsl.xmission.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
+Content-Type: Text/Plain; charset=us-ascii
 Content-Transfer-Encoding: 7bit
 Return-path: <netdev-owner@vger.kernel.org>
 In-Reply-To: <m1r6kkrce0.fsf@ebiederm.dsl.xmission.com>
 Sender: netdev-owner@vger.kernel.org
-To: "Eric W. Biederman" <ebiederm@xmission.com>
-Cc: David Miller <davem@davemloft.net>, Daniel Lezcano <dlezcano@fr.ibm.com>, Benjamin Thery <benjamin.thery@bull.net>, Kirill Korotaev <dev@sw.ru>, Linux Containers <containers@lists.osdl.org>, netdev@vger.kernel.org
+To: ebiederm@xmission.com
+Cc: dlezcano@fr.ibm.com, benjamin.thery@bull.net, dev@sw.ru, den@sw.ru, containers@lists.osdl.org, netdev@vger.kernel.org
 List-Id: containers.vger.kernel.org
 
-Eric W. Biederman wrote:
+From: ebiederm@xmission.com (Eric W. Biederman)
+Date: Wed, 26 Sep 2007 21:54:47 -0600
+
+> 
 > Denis V. Lunev <den@sw.ru> noticed that the locking rules
 > for the network namespace list are over complicated and broken.
 > 
@@ -31,4 +36,5 @@ Eric W. Biederman wrote:
 > to remove net_list_mutex altogether, and to use the rtnl_mutex instead.
 > 
 > Signed-off-by: Eric W. Biederman <ebiederm@xmission.com>
-Acked-by: Denis V. Lunev <den@openvz.org>
+
+Applied, thanks Eric.
