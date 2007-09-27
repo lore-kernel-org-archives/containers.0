@@ -1,61 +1,49 @@
-From: ebiederm@xmission.com (Eric W. Biederman)
-Subject: Re: [Devel] [PATCH 4/4] net: Make the loopback device per network namespace
-Date: Thu, 27 Sep 2007 10:48:14 -0600
-Message-ID: <m1ejgkkqb5.fsf@ebiederm.dsl.xmission.com>
-References: <m1ps05rnjv.fsf@ebiederm.dsl.xmission.com>
-	<m1ir5xrngu.fsf@ebiederm.dsl.xmission.com>
-	<m1bqbprnc2.fsf_-_@ebiederm.dsl.xmission.com>
-	<m17imdrn8r.fsf_-_@ebiederm.dsl.xmission.com> <46FB9EB1.5070908@sw.ru>
+From: Badari Pulavarty <pbadari-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [RFC}[PATCH] forced uncharge for successful rmdir.
+Date: Thu, 27 Sep 2007 09:54:26 -0700
+Message-ID: <1190912067.13955.72.camel@dyn9047017100.beaverton.ibm.com>
+References: <20070927163035.20137bb5.kamezawa.hiroyu@jp.fujitsu.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Return-path: <netdev-owner@vger.kernel.org>
-In-Reply-To: <46FB9EB1.5070908@sw.ru> (Denis V. Lunev's message of "Thu, 27
-	Sep 2007 16:14:41 +0400")
-Sender: netdev-owner@vger.kernel.org
-To: "Denis V. Lunev" <den@sw.ru>
-Cc: David Miller <davem@davemloft.net>, Linux Containers <containers@lists.osdl.org>, netdev@vger.kernel.org
+Content-Type: text/plain
+Content-Transfer-Encoding: 7bit
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <20070927163035.20137bb5.kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+Cc: containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-"Denis V. Lunev" <den@sw.ru> writes:
+On Thu, 2007-09-27 at 16:30 +0900, KAMEZAWA Hiroyuki wrote:
+> Following patch is for successful rmdir in memory cgroup.
+> 
+> Currently, rmdir against memory cgroup will fail if charged page caches are in cgroup.
+> (even if no tasks in cgroup.)
+> 
+> I don't like this. This patch implements "forced" uncharge against memory cgroup.
+> Uncharged pages will be charged again when some other cgroup/task accesses it.
+> 
+> I wonder that all unmapped page-caches in cgroup should be uncharged if "1" is written to
+> control_type.
+> 
+> I'm grad if I can hear memory controller's policy about "rmdir" against no-task-cgroup.
 
-> Eric W. Biederman wrote:
->> This patch makes loopback_dev per network namespace.  Adding
->> code to create a different loopback device for each network
->> namespace and adding the code to free a loopback device
->> when a network namespace exits.
->> 
->> This patch modifies all users the loopback_dev so they
->> access it as init_net.loopback_dev, keeping all of the
->> code compiling and working.  A later pass will be needed to
->> update the users to use something other than the initial network
->> namespace.
->
-> A pity that an important bit of explanation is missed. The
-> initialization of loopback_dev is moved from a chain of devices
-> (init_module) to a subsystem initialization to keep proper order, i.e.
-> we must be sure that the initialization order is correct.
+Works for me..
 
-That didn't happen in the patch you mentioned.  That happened
-when we started dynamically allocating the loopback device.
-That was the patch Daniel sent out a bit ago.
+elm3b155:/dev/cgroup/xxx # cat tasks
+elm3b155:/dev/cgroup/xxx #
+elm3b155:/dev/cgroup/xxx # cat memory.usage_in_bytes
+16384
+elm3b155:/dev/cgroup/xxx # echo -n 0 > memory.control_type
+elm3b155:/dev/cgroup/xxx # cat memory.usage_in_bytes
+0
 
-There are certainly some ordering issues and it may have helped
-to talk about them.  But they are because things assume the
-loopback device is present.  We have various bits of code that
-is around such as the dst_ifdown case that assumes if another
-network device is present the loopback device is present.  To
-fulfill that assumption I guess that means we have both an
-initialization order dependency and a destruction order dependency.
-
-The fact we were using module_init before actually appears to
-me to have been racy, but we got away with it because the actual
-data structure was statically allocated.
-
-Since it appears that for a dynamically allocated loopback
-registering it first and unregistering it last is necessary
-for routing.   It is likely worth looking at this a little
-more closely and making a guarantee.  So we can make it easier
-for networking layers like ipv6, that want to memorize which
-device is the loopback device.
-
-Eric
+Thanks,
+Badari
