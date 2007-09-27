@@ -1,10 +1,10 @@
 From: Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
-Subject: [patch 1/3][NETNS45][V2] add a reference to the netns for timewait
-Date: Thu, 27 Sep 2007 13:04:01 +0200
-Message-ID: <20070927111208.092780734@mai.toulouse-stg.fr.ibm.com>
+Subject: [patch 2/3][NETNS45][V2] make timewait unhash lock free
+Date: Thu, 27 Sep 2007 13:04:02 +0200
+Message-ID: <20070927111212.651097600@mai.toulouse-stg.fr.ibm.com>
 References: <20070927110400.409277229@mai.toulouse-stg.fr.ibm.com>
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline; filename=net-fix-timewait-reference.patch
+Content-Disposition: inline; filename=net-make-inet-deschedule-lockless.patch
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -20,51 +20,115 @@ List-Id: containers.vger.kernel.org
 
 From: Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
 
-When a socket changes to a timewait socket, the network namespace
-is not copied from the original socket.
+The network namespace cleanup will remove all timewait sockets
+related to it because there are pointless. 
 
-Here we hold a usage reference, not the ref count on the network
-namespace, so the network namespace will be freed either the usage
-reference is not 0. The network namespace cleanup function will 
-fail if there is any usage of it. In this case, we should ensure
-there is no usage of the network namespace.
+The problem is we need to browse the established hash table and 
+for that we need to take the lock. For each timesocket we call 
+inet_deschedule and this one take the established hash table lock
+too.
+
+The following patchset split the removing of the established hash
+into two parts, one removing the node from the hash and another
+taking the lock and calling the first one.
+
+The network namespace cleanup can be done calling the lock free
+function.
 
 Signed-off-by: Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
 ---
- include/net/inet_timewait_sock.h |    2 ++
- net/ipv4/inet_timewait_sock.c    |    1 +
- 2 files changed, 3 insertions(+)
+ include/net/inet_timewait_sock.h |   13 ++++++++++++
+ net/ipv4/inet_timewait_sock.c    |   40 +++++++++++++++++++++++++++------------
+ 2 files changed, 41 insertions(+), 12 deletions(-)
 
-Index: linux-2.6-netns/include/net/inet_timewait_sock.h
-===================================================================
---- linux-2.6-netns.orig/include/net/inet_timewait_sock.h
-+++ linux-2.6-netns/include/net/inet_timewait_sock.h
-@@ -197,12 +197,14 @@ static inline void inet_twsk_put(struct 
- {
- 	if (atomic_dec_and_test(&tw->tw_refcnt)) {
- 		struct module *owner = tw->tw_prot->owner;
-+		struct net *net = tw->tw_net;
- 		twsk_destructor((struct sock *)tw);
- #ifdef SOCK_REFCNT_DEBUG
- 		printk(KERN_DEBUG "%s timewait_sock %p released\n",
- 		       tw->tw_prot->name, tw);
- #endif
- 		kmem_cache_free(tw->tw_prot->twsk_prot->twsk_slab, tw);
-+		release_net(net);
- 		module_put(owner);
- 	}
- }
 Index: linux-2.6-netns/net/ipv4/inet_timewait_sock.c
 ===================================================================
 --- linux-2.6-netns.orig/net/ipv4/inet_timewait_sock.c
 +++ linux-2.6-netns/net/ipv4/inet_timewait_sock.c
-@@ -108,6 +108,7 @@ struct inet_timewait_sock *inet_twsk_all
- 		tw->tw_hash	    = sk->sk_hash;
- 		tw->tw_ipv6only	    = 0;
- 		tw->tw_prot	    = sk->sk_prot_creator;
-+		tw->tw_net          = hold_net(sk->sk_net);
- 		atomic_set(&tw->tw_refcnt, 1);
- 		inet_twsk_dead_node_init(tw);
- 		__module_get(tw->tw_prot->owner);
+@@ -13,25 +13,28 @@
+ #include <net/inet_timewait_sock.h>
+ #include <net/ip.h>
+ 
+-/* Must be called with locally disabled BHs. */
+-static void __inet_twsk_kill(struct inet_timewait_sock *tw,
+-			     struct inet_hashinfo *hashinfo)
++static inline int inet_twsk_unehash(struct inet_timewait_sock *tw,
++				    struct inet_hashinfo *hashinfo)
+ {
+-	struct inet_bind_hashbucket *bhead;
+-	struct inet_bind_bucket *tb;
+-	/* Unlink from established hashes. */
+-	struct inet_ehash_bucket *ehead = inet_ehash_bucket(hashinfo, tw->tw_hash);
++	struct inet_ehash_bucket *ehead =
++		inet_ehash_bucket(hashinfo, tw->tw_hash);
+ 
+ 	write_lock(&ehead->lock);
+-	if (hlist_unhashed(&tw->tw_node)) {
++	if (__inet_twsk_unehash(tw)) {
+ 		write_unlock(&ehead->lock);
+-		return;
++		return 1;
+ 	}
+-	__hlist_del(&tw->tw_node);
+-	sk_node_init(&tw->tw_node);
+ 	write_unlock(&ehead->lock);
+ 
+-	/* Disassociate with bind bucket. */
++	return 0;
++}
++
++void inet_twsk_unbhash(struct inet_timewait_sock *tw,
++		       struct inet_hashinfo *hashinfo)
++{
++	struct inet_bind_hashbucket *bhead;
++	struct inet_bind_bucket *tb;
++
+ 	bhead = &hashinfo->bhash[inet_bhashfn(tw->tw_net, tw->tw_num, hashinfo->bhash_size)];
+ 	spin_lock(&bhead->lock);
+ 	tb = tw->tw_tb;
+@@ -39,6 +42,19 @@ static void __inet_twsk_kill(struct inet
+ 	tw->tw_tb = NULL;
+ 	inet_bind_bucket_destroy(hashinfo->bind_bucket_cachep, tb);
+ 	spin_unlock(&bhead->lock);
++}
++
++/* Must be called with locally disabled BHs. */
++static void __inet_twsk_kill(struct inet_timewait_sock *tw,
++			     struct inet_hashinfo *hashinfo)
++{
++	/* Unlink from established hashes. */
++	if (inet_twsk_unehash(tw, hashinfo))
++		return;
++
++	/* Disassociate with bind bucket. */
++	inet_twsk_unbhash(tw, hashinfo);
++
+ #ifdef SOCK_REFCNT_DEBUG
+ 	if (atomic_read(&tw->tw_refcnt) != 1) {
+ 		printk(KERN_DEBUG "%s timewait_sock %p refcnt=%d\n",
+Index: linux-2.6-netns/include/net/inet_timewait_sock.h
+===================================================================
+--- linux-2.6-netns.orig/include/net/inet_timewait_sock.h
++++ linux-2.6-netns/include/net/inet_timewait_sock.h
+@@ -173,6 +173,19 @@ static inline int inet_twsk_del_dead_nod
+ 	return 0;
+ }
+ 
++static inline int __inet_twsk_unehash(struct inet_timewait_sock *tw)
++{
++	if (hlist_unhashed(&tw->tw_node))
++		return 1;
++	__hlist_del(&tw->tw_node);
++	sk_node_init(&tw->tw_node);
++
++	return 0;
++}
++
++extern void inet_twsk_unbhash(struct inet_timewait_sock *tw,
++			      struct inet_hashinfo *hashinfo);
++
+ #define inet_twsk_for_each(tw, node, head) \
+ 	hlist_for_each_entry(tw, node, head, tw_node)
+ 
 
 -- 
