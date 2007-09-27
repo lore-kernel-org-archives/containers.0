@@ -1,34 +1,37 @@
 From: ebiederm@xmission.com (Eric W. Biederman)
-Subject: [PATCH] netns: CLONE_NEWNET don't use the same clone flag as the pid namespace.
-Date: Thu, 27 Sep 2007 16:40:31 -0600
-Message-ID: <m1hclfhgv4.fsf@ebiederm.dsl.xmission.com>
+Subject: Re: [PATCH] net: Add network namespace clone & unshare support.
+Date: Thu, 27 Sep 2007 17:00:23 -0600
+Message-ID: <m18x6rhfy0.fsf@ebiederm.dsl.xmission.com>
+References: <m1tzphrnq5.fsf@ebiederm.dsl.xmission.com>
+	<46FB6F1E.8070105@fr.ibm.com>
+	<m1k5qcjaiu.fsf@ebiederm.dsl.xmission.com>
+	<20070927.124552.69400277.davem@davemloft.net>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Return-path: <netdev-owner@vger.kernel.org>
+In-Reply-To: <20070927.124552.69400277.davem@davemloft.net> (David Miller's
+	message of "Thu, 27 Sep 2007 12:45:52 -0700 (PDT)")
 Sender: netdev-owner@vger.kernel.org
 To: David Miller <davem@davemloft.net>
-Cc: netdev@vger.kernel.org, Linux Containers <containers@lists.osdl.org>
+Cc: containers@lists.osdl.org, netdev@vger.kernel.org, akpm@linux-foundation.org
 List-Id: containers.vger.kernel.org
 
+David Miller <davem@davemloft.net> writes:
 
-Signed-off-by: Eric W. Biederman <ebiederm@xmission.com>
----
- include/linux/sched.h |    2 +-
- 1 files changed, 1 insertions(+), 1 deletions(-)
+> Eric, pick an appropriate new non-conflicting number NOW.
 
-diff --git a/include/linux/sched.h b/include/linux/sched.h
-index e10a0a8..d82c1f7 100644
---- a/include/linux/sched.h
-+++ b/include/linux/sched.h
-@@ -27,7 +27,7 @@
- #define CLONE_NEWUTS		0x04000000	/* New utsname group? */
- #define CLONE_NEWIPC		0x08000000	/* New ipcs */
- #define CLONE_NEWUSER		0x10000000	/* New user namespace */
--#define CLONE_NEWNET		0x20000000	/* New network namespace */
-+#define CLONE_NEWNET		0x40000000	/* New network namespace */
- 
- /*
-  * Scheduling policies
--- 
-1.5.3.rc6.17.g1911
+Done.  My apologies for the confusion.  I thought the
+way Cedric and the IBM guys were testing someone would have
+shouted at me long before now.
 
+> This adds unnecessary extra work for Andrew Morton, which he has
+> enough of already.
+
+Cedric made a good point that we will have conflicts of code
+being added to the same place in nsproxy.c and the like.  So
+I copied Andrew to give him a heads up.
+
+I will gladly do what I can, to help.  Working against 3 trees
+development at the moment is a bit of a development challenge.
+
+Eric
