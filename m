@@ -1,276 +1,68 @@
-From: Cedric Le Goater <clg@fr.ibm.com>
-Subject: Re: [PATCH] net: Add network namespace clone & unshare support.
-Date: Thu, 27 Sep 2007 10:51:42 +0200
-Message-ID: <46FB6F1E.8070105@fr.ibm.com>
-References: <m1tzphrnq5.fsf@ebiederm.dsl.xmission.com>
+From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
+Subject: Re: [patch 3/3][netns] net: hide master/linked interface from
+	netlink
+Date: Thu, 27 Sep 2007 02:53:45 -0600
+Message-ID: <m1hclgo5eu.fsf@ebiederm.dsl.xmission.com>
+References: <20070924122112.065703991@mai.toulouse-stg.fr.ibm.com>
+	<20070924122837.979935055@mai.toulouse-stg.fr.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Content-Transfer-Encoding: 7bit
-Return-path: <netdev-owner@vger.kernel.org>
-In-Reply-To: <m1tzphrnq5.fsf@ebiederm.dsl.xmission.com>
-Sender: netdev-owner@vger.kernel.org
-To: "Eric W. Biederman" <ebiederm@xmission.com>
-Cc: David Miller <davem@davemloft.net>, Linux Containers <containers@lists.osdl.org>, netdev@vger.kernel.org
+Content-Type: text/plain; charset=us-ascii
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <20070924122837.979935055-WECHFHqYCmGD/CxQmPlnQ0FT0OZdM7KVQQ4Iyu8u01E@public.gmane.org>
+	(dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org's message of "Mon, 24 Sep 2007 14:21:15 +0200")
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org
+Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Eric W. Biederman wrote:
-> This patch allows you to create a new network namespace
-> using sys_clone, or sys_unshare.
-> 
-> As the network namespace is still experimental and under development
-> clone and unshare support is only made available when CONFIG_NET_NS is
-> selected at compile time.
-> 
-> As this patch introduces network namespace support into code paths
-> that exist when the CONFIG_NET is not selected there are a few
-> additions made to net_namespace.h to allow a few more functions
-> to be used when the networking stack is not compiled in.
-> 
-> Signed-off-by: Eric W. Biederman <ebiederm@xmission.com>
-> ---
->  include/linux/sched.h       |    1 +
->  include/net/net_namespace.h |   18 ++++++++++++++++++
->  kernel/fork.c               |    3 ++-
->  kernel/nsproxy.c            |   15 +++++++++++++--
->  net/Kconfig                 |    8 ++++++++
->  net/core/net_namespace.c    |   43 +++++++++++++++++++++++++++++++++++++++++--
->  6 files changed, 83 insertions(+), 5 deletions(-)
-> 
-> diff --git a/include/linux/sched.h b/include/linux/sched.h
-> index a01ac6d..e10a0a8 100644
-> --- a/include/linux/sched.h
-> +++ b/include/linux/sched.h
-> @@ -27,6 +27,7 @@
->  #define CLONE_NEWUTS		0x04000000	/* New utsname group? */
->  #define CLONE_NEWIPC		0x08000000	/* New ipcs */
->  #define CLONE_NEWUSER		0x10000000	/* New user namespace */
-> +#define CLONE_NEWNET		0x20000000	/* New network namespace */
+dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org writes:
 
-This new flag is going to conflict with the pid namespace flag 
-CLONE_NEWPID in -mm. It might be worth changing it to:
+> From: Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
+>
+> Actually when a network device is linked to another, the name appears
+> to be @<link>. For example, if a macvlan0 is created on top of eth0,
+> the ip link show is:
+>
+> 6: macvlan0@eth0: <BROADCAST,MULTICAST> mtu 1500 qdisc noop 
+>     link/ether 6a:d4:10:0d:a8:55 brd ff:ff:ff:ff:ff:ff
+>
+> But if we move macvlan0 to a network namespace, eth0 does no longer
+> exist inside it and the result will be:
+>
+> 6: macvlan0@if2: <BROADCAST,MULTICAST> mtu 1500 qdisc noop 
+>     link/ether 6a:d4:10:0d:a8:55 brd ff:ff:ff:ff:ff:ff
+>
+> if2 is, I guess, some random value. That can do invalid memory
+> access or inconsistent data showing.
+>
+> The patchset will avoid such case, it checks if the linked device exist
+> into the current network namespace and if it doesn't the result will
+> be:
+>
+> 6: macvlan0@NONE: <BROADCAST,MULTICAST> mtu 1500 qdisc noop 
+>     link/ether 6a:d4:10:0d:a8:55 brd ff:ff:ff:ff:ff:ff
 
-#define CLONE_NEWNET		0x40000000
+Hmm.  Currently the ifindex space is global.  Something that ultimately
+needs to be fixed to handle migration so we can preserve the ifindex
+on a device when we migrate it.
 
-The changes in nxproxy.c and fork.c will also conflict but I don't 
-think we can do much about it for now.
+So the @if2 piece is harmless, as it is just reporting the ifindex
+number because it can't figure out the name that corresponds to
+that network device.
 
-C. 
+So the worst we get is hints that some extra data exists somewhere.
+I suspect the correct fix is to not even write the additional attribute
+in this case instead of setting the value to zero.
 
->  /*
->   * Scheduling policies
-> diff --git a/include/net/net_namespace.h b/include/net/net_namespace.h
-> index ac8f830..3ea4194 100644
-> --- a/include/net/net_namespace.h
-> +++ b/include/net/net_namespace.h
-> @@ -38,11 +38,23 @@ extern struct net init_net;
-> 
->  extern struct list_head net_namespace_list;
-> 
-> +#ifdef CONFIG_NET
-> +extern struct net *copy_net_ns(unsigned long flags, struct net *net_ns);
-> +#else
-> +static inline struct net *copy_net_ns(unsigned long flags, struct net *net_ns)
-> +{
-> +	/* There is nothing to copy so this is a noop */
-> +	return net_ns;
-> +}
-> +#endif
-> +
->  extern void __put_net(struct net *net);
-> 
->  static inline struct net *get_net(struct net *net)
->  {
-> +#ifdef CONFIG_NET
->  	atomic_inc(&net->count);
-> +#endif
->  	return net;
->  }
-> 
-> @@ -60,19 +72,25 @@ static inline struct net *maybe_get_net(struct net *net)
-> 
->  static inline void put_net(struct net *net)
->  {
-> +#ifdef CONFIG_NET
->  	if (atomic_dec_and_test(&net->count))
->  		__put_net(net);
-> +#endif
->  }
-> 
->  static inline struct net *hold_net(struct net *net)
->  {
-> +#ifdef CONFIG_NET
->  	atomic_inc(&net->use_count);
-> +#endif
->  	return net;
->  }
-> 
->  static inline void release_net(struct net *net)
->  {
-> +#ifdef CONFIG_NET
->  	atomic_dec(&net->use_count);
-> +#endif
->  }
-> 
->  extern void net_lock(void);
-> diff --git a/kernel/fork.c b/kernel/fork.c
-> index 33f12f4..5e67f90 100644
-> --- a/kernel/fork.c
-> +++ b/kernel/fork.c
-> @@ -1608,7 +1608,8 @@ asmlinkage long sys_unshare(unsigned long unshare_flags)
->  	err = -EINVAL;
->  	if (unshare_flags & ~(CLONE_THREAD|CLONE_FS|CLONE_NEWNS|CLONE_SIGHAND|
->  				CLONE_VM|CLONE_FILES|CLONE_SYSVSEM|
-> -				CLONE_NEWUTS|CLONE_NEWIPC|CLONE_NEWUSER))
-> +				CLONE_NEWUTS|CLONE_NEWIPC|CLONE_NEWUSER|
-> +				CLONE_NEWNET))
->  		goto bad_unshare_out;
-> 
->  	if ((err = unshare_thread(unshare_flags)))
-> diff --git a/kernel/nsproxy.c b/kernel/nsproxy.c
-> index a4fb7d4..f1decd2 100644
-> --- a/kernel/nsproxy.c
-> +++ b/kernel/nsproxy.c
-> @@ -20,6 +20,7 @@
->  #include <linux/mnt_namespace.h>
->  #include <linux/utsname.h>
->  #include <linux/pid_namespace.h>
-> +#include <net/net_namespace.h>
-> 
->  static struct kmem_cache *nsproxy_cachep;
-> 
-> @@ -98,8 +99,17 @@ static struct nsproxy *create_new_namespaces(unsigned long flags,
->  		goto out_user;
->  	}
-> 
-> +	new_nsp->net_ns = copy_net_ns(flags, tsk->nsproxy->net_ns);
-> +	if (IS_ERR(new_nsp->net_ns)) {
-> +		err = PTR_ERR(new_nsp->net_ns);
-> +		goto out_net;
-> +	}
-> +
->  	return new_nsp;
-> 
-> +out_net:
-> +	if (new_nsp->user_ns)
-> +		put_user_ns(new_nsp->user_ns);
->  out_user:
->  	if (new_nsp->pid_ns)
->  		put_pid_ns(new_nsp->pid_ns);
-> @@ -132,7 +142,7 @@ int copy_namespaces(unsigned long flags, struct task_struct *tsk)
-> 
->  	get_nsproxy(old_ns);
-> 
-> -	if (!(flags & (CLONE_NEWNS | CLONE_NEWUTS | CLONE_NEWIPC | CLONE_NEWUSER)))
-> +	if (!(flags & (CLONE_NEWNS | CLONE_NEWUTS | CLONE_NEWIPC | CLONE_NEWUSER | CLONE_NEWNET)))
->  		return 0;
-> 
->  	if (!capable(CAP_SYS_ADMIN)) {
-> @@ -164,6 +174,7 @@ void free_nsproxy(struct nsproxy *ns)
->  		put_pid_ns(ns->pid_ns);
->  	if (ns->user_ns)
->  		put_user_ns(ns->user_ns);
-> +	put_net(ns->net_ns);
->  	kmem_cache_free(nsproxy_cachep, ns);
->  }
-> 
-> @@ -177,7 +188,7 @@ int unshare_nsproxy_namespaces(unsigned long unshare_flags,
->  	int err = 0;
-> 
->  	if (!(unshare_flags & (CLONE_NEWNS | CLONE_NEWUTS | CLONE_NEWIPC |
-> -			       CLONE_NEWUSER)))
-> +			       CLONE_NEWUSER | CLONE_NEWNET)))
->  		return 0;
-> 
->  	if (!capable(CAP_SYS_ADMIN))
-> diff --git a/net/Kconfig b/net/Kconfig
-> index cdba08c..ab4e6da 100644
-> --- a/net/Kconfig
-> +++ b/net/Kconfig
-> @@ -27,6 +27,14 @@ if NET
-> 
->  menu "Networking options"
-> 
-> +config NET_NS
-> +	bool "Network namespace support"
-> +	default n
-> +	depends on EXPERIMENTAL && !SYSFS
-> +	help
-> +	  Allow user space to create what appear to be multiple instances
-> +	  of the network stack.
-> +
->  source "net/packet/Kconfig"
->  source "net/unix/Kconfig"
->  source "net/xfrm/Kconfig"
-> diff --git a/net/core/net_namespace.c b/net/core/net_namespace.c
-> index 0e6cb02..e478e35 100644
-> --- a/net/core/net_namespace.c
-> +++ b/net/core/net_namespace.c
-> @@ -4,6 +4,7 @@
->  #include <linux/slab.h>
->  #include <linux/list.h>
->  #include <linux/delay.h>
-> +#include <linux/sched.h>
->  #include <net/net_namespace.h>
-> 
->  /*
-> @@ -32,12 +33,10 @@ void net_unlock(void)
->  	mutex_unlock(&net_list_mutex);
->  }
-> 
-> -#if 0
->  static struct net *net_alloc(void)
->  {
->  	return kmem_cache_alloc(net_cachep, GFP_KERNEL);
->  }
-> -#endif
-> 
->  static void net_free(struct net *net)
->  {
-> @@ -128,6 +127,46 @@ out_undo:
->  	goto out;
->  }
-> 
-> +struct net *copy_net_ns(unsigned long flags, struct net *old_net)
-> +{
-> +	struct net *new_net = NULL;
-> +	int err;
-> +
-> +	get_net(old_net);
-> +
-> +	if (!(flags & CLONE_NEWNET))
-> +		return old_net;
-> +
-> +#ifndef CONFIG_NET_NS
-> +	return ERR_PTR(-EINVAL);
-> +#endif
-> +
-> +	err = -ENOMEM;
-> +	new_net = net_alloc();
-> +	if (!new_net)
-> +		goto out;
-> +
-> +	mutex_lock(&net_mutex);
-> +	err = setup_net(new_net);
-> +	if (err)
-> +		goto out_unlock;
-> +
-> +	net_lock();
-> +	list_add_tail(&new_net->list, &net_namespace_list);
-> +	net_unlock();
-> +
-> +
-> +out_unlock:
-> +	mutex_unlock(&net_mutex);
-> +out:
-> +	put_net(old_net);
-> +	if (err) {
-> +		net_free(new_net);
-> +		new_net = ERR_PTR(err);
-> +	}
-> +	return new_net;
-> +}
-> +
->  static int __init net_ns_init(void)
->  {
->  	int err;
+I am not yet convinced we need to handle this case yet, at most this
+is a cosmetic issue.
 
+Eric
