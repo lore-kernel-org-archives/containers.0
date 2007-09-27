@@ -1,40 +1,88 @@
-From: Stephen Hemminger <shemminger@linux-foundation.org>
-Subject: Re: [PATCH] net: Fix running without sysfs
-Date: Wed, 26 Sep 2007 17:07:14 -0700
-Message-ID: <20070926170714.04afe275@freepuppy.rosehill>
-References: <m1zlz9rnt1.fsf@ebiederm.dsl.xmission.com>
+From: sukadev@us.ibm.com
+Subject: Re: [PATCH 1/5] The config option itself
+Date: Wed, 26 Sep 2007 19:30:24 -0700
+Message-ID: <20070927023024.GA24004@us.ibm.com>
+References: <46FA7D4D.8040808@openvz.org> <46FA7E20.80207@openvz.org> <20070926163432.GA23435@sergelap.austin.ibm.com> <20070926170621.GB23435@sergelap.austin.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
-Content-Transfer-Encoding: 7bit
-Return-path: <netdev-owner@vger.kernel.org>
-In-Reply-To: <m1zlz9rnt1.fsf@ebiederm.dsl.xmission.com>
-Sender: netdev-owner@vger.kernel.org
-To: "Eric W. Biederman" <ebiederm@xmission.com>
-Cc: David Miller <davem@davemloft.net>, netdev@vger.kernel.org, Linux Containers <containers@lists.osdl.org>
+Content-Type: text/plain; charset=us-ascii
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1753810AbXI0Cai@vger.kernel.org>
+Content-Disposition: inline
+In-Reply-To: <20070926170621.GB23435@sergelap.austin.ibm.com>
+Sender: linux-kernel-owner@vger.kernel.org
+To: "Serge E. Hallyn" <serue@us.ibm.com>
+Cc: Linux Kernel Mailing List <linux-kernel@vger.kernel.org>, "Eric W. Biederman" <ebiederm@xmission.com>, Linux Containers <containers@lists.osdl.org>, Pavel Emelyanov <xemul@openvz.org>
 List-Id: containers.vger.kernel.org
 
-On Wed, 26 Sep 2007 17:48:10 -0600
-ebiederm@xmission.com (Eric W. Biederman) wrote:
+Serge E. Hallyn [serue@us.ibm.com] wrote:
+| Quoting Serge E. Hallyn (serue@us.ibm.com):
+| > Quoting Pavel Emelyanov (xemul@openvz.org):
+| > > The option is called NAMESPACES. It can be selectable only
+| > > if EMBEDDED is chosen (this was Eric's requisition). When
+| > > the EMBEDDED is off namespaces will be on automatically.
+| > > 
+| > > One more option (NAMESPACES_EXPERIMENTAL) was added by 
+| > > Serge's request to move there all the namespaces that are 
+| > > not finished yet. Currently only the user and the network
+| > > namespaces are such.
+| > > 
+| > > Signed-off-by: Pavel Emelyanov <xemul@openvz.org>
+| > > 
+| > > ---
+| > > 
+| > > diff --git a/init/Kconfig b/init/Kconfig
+| > > index 684ccfb..05a71d7 100644
+| > > --- a/init/Kconfig
+| > > +++ b/init/Kconfig
+| > > @@ -369,6 +360,23 @@ config RELAY
+| > > 
+| > >  	  If unsure, say N.
+| > > 
+| > > +config NAMESPACES
+| > > +	bool "The namespaces support" if EMBEDDED
+| > > +	default !EMBEDDED
+| > > +	help
+| > > +	  Provides the way to make tasks work with different objects using
+| > > +	  the same id. For example same IPC id may refer to different objects
+| > > +	  or same user id or pid may refer to different tasks when used in
+| > > +	  different namespaces.
+| > > +
+| > > +config NAMESPACES_EXPERIMENTAL
+| > > +	bool "Add the experimantal namespaces support" if EMBEDDED
+| > 
+| > Hi Pavel,
+| > 
+| > Overall this patchset looks good.
+| > 
+| > However the NAMESPACES_EXPERIMENTAL option should not have the
+| > 'if EMBEDDED', right?  This is about EXPERIMENTAL, not about
+| > EMBEDDED, unlike the plain NAMESPACES option.
+| > 
+| > -serge
+| 
+| Actually that doesn't seem to work either.  Even though
+| SECURITY_NAMESPACES=y, the config system seems to infer that
+| since NAMESPACES is not user-selectable, NAMESPACES_EXPERIMENTAL
+| shouldn't be either.  So we end up with NAMESPACES_EXPERIMENTAL
+| being on and not un-selectable if !EMBEDDED.
 
-> 
-> When sysfs support is compiled out the kernel still keeps and maintains
-> the kobject tree.  So it is not safe to skip our kobject reference counting or 
-> to avoid becoming members of the kobject tree.  It is safe to not add
-> the networking specific sysfs attributes.
-> 
-> This patch removes the sysfs special cases from net/core/dev.c
-> renames functions from netdev_sysfs_xxxx to netdev_kobject_xxxx
-> and always compiles in net-sysfs.c
-> 
-> net-sysfs.c is modified with a CONFIG_SYSFS guard around the parts
-> that are actually sysfs specific.
-> 
-> Signed-off-by: Eric W. Biederman <ebiederm@xmission.com>
+Yes. Given that NAMESPACES depends on EMBEDDED, NAMESPACES_EXPERIMENTAL
+can simply depend on NAMESPACES and EXPERIMENTAL with a default of N.
 
-Acked-by: Stephen Hemminger <shemminger@linux-foundation.org>
+BTW, does the position of 'config NAMESPACES' in init/Kconfig file
+matter ?  If it is dependent on EMBEDDED, should it not come later
+in the file, after 'config EMBEDDED' ?
 
-Looks good. It also fixes a use after-free in netdev_run_todo
-when !CONFIG_SYSFS
-
--- 
-Stephen Hemminger <shemminger@linux-foundation.org>
+| 
+| > > +	depends on NAMESPACES && EXPERIMENTAL
+| > > +	default !EMBEDDED
+| > > +	help
+| > > +	  Also include the support for the namespaces that are not fnished
+| > > +	  or well developed yet
+| > > +
+| > >  config BLK_DEV_INITRD
+| > >  	bool "Initial RAM filesystem and RAM disk (initramfs/initrd) support"
+| > >  	depends on BROKEN || !FRV
+| _______________________________________________
+| Containers mailing list
+| Containers@lists.linux-foundation.org
+| https://lists.linux-foundation.org/mailman/listinfo/containers
