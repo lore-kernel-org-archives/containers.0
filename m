@@ -1,52 +1,52 @@
 From: ebiederm@xmission.com (Eric W. Biederman)
-Subject: Re: [PATCH 3/4] net ipv4: When possible test for IFF_LOOPBACK and not dev == loopback_dev
-Date: Thu, 27 Sep 2007 10:10:27 -0600
-Message-ID: <m18x6sm6mk.fsf@ebiederm.dsl.xmission.com>
-References: <m1ps05rnjv.fsf@ebiederm.dsl.xmission.com>
-	<m1ir5xrngu.fsf@ebiederm.dsl.xmission.com>
-	<m1bqbprnc2.fsf_-_@ebiederm.dsl.xmission.com>
-	<46FB873C.6060200@fr.ibm.com>
+Subject: Re: [PATCH] various dst_ifdown routines to catch refcounting bugs
+Date: Thu, 27 Sep 2007 10:27:43 -0600
+Message-ID: <m1myv8kr9c.fsf@ebiederm.dsl.xmission.com>
+References: <20070927134724.GA11531@iris.sw.ru>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Return-path: <netdev-owner@vger.kernel.org>
-In-Reply-To: <46FB873C.6060200@fr.ibm.com> (Daniel Lezcano's message of "Thu,
-	27 Sep 2007 12:34:36 +0200")
+In-Reply-To: <20070927134724.GA11531@iris.sw.ru> (Denis V. Lunev's message of
+	"Thu, 27 Sep 2007 17:47:24 +0400")
 Sender: netdev-owner@vger.kernel.org
-To: Daniel Lezcano <dlezcano@fr.ibm.com>
-Cc: David Miller <davem@davemloft.net>, Linux Containers <containers@lists.osdl.org>, netdev@vger.kernel.org, urs@isnogud.escape.de
+To: "Denis V. Lunev" <den@openvz.org>
+Cc: davem@davemloft.net, devel@openvz.org, netdev@vger.kernel.org, containers@lists.osdl.org, ebiederm@xmission.com
 List-Id: containers.vger.kernel.org
 
-Daniel Lezcano <dlezcano@fr.ibm.com> writes:
+"Denis V. Lunev" <den@openvz.org> writes:
 
-> Eric W. Biederman wrote:
->> Now that multiple loopback devices are becoming possible it makes
->> the code a little cleaner and more maintainable to test if a deivice
->> is th a loopback device by testing dev->flags & IFF_LOOPBACK instead
->> of dev == loopback_dev.
->>
->> Signed-off-by: Eric W. Biederman <ebiederm@xmission.com>
->
->
-> Urs Thuermann posted the patch:
->
-> 	[PATCH 5/7] CAN: Add virtual CAN netdevice driver
->
-> This network driver set its flag to IFF_LOOPBACK for testing.
-> Is it possible this can be a collision with your patch ?
+> Moving dst entries into init_net.loopback_dev is not a good thing.
+> This hides obvious and non-obvious ref-counting bugs.
 
-I have brought it up on that thread.  As best as I tell the CAN usage
-of IFF_LOOPBACK will be a problem even without my patch.  Assuming
-something other then the CAN layer will see the CAN devices.
+Acked-by: "Eric W. Biederman" <ebiederm@xmission.com>
 
-The CAN documentations IFF_LOOPBACK should be set on all CAN devices.
+To be clear using init_net.loopback is currently safe because we don't
+have any destination cache entries for anything except the initial
+network namespace.
 
-It seems that the people who want high performance predictable CAN
-don't want this and the people who want something they can trace
-easily want this.
+I have not yet made this change simply because I haven't gotten around
+to this part in my patches.
 
-It sounds to me like CAN routers don't exist.
+I do have a question I would like to bring up, because I like avoiding
+explicit references to loopback_dev when I can.
 
-Anyway hopefully that usage can be resolved as that code is reviewed,
-and made ready to merge.
+/* Dirty hack. We did it in 2.2 (in __dst_free),
+ * we have _very_ good reasons not to repeat
+ * this mistake in 2.3, but we have no choice
+ * now. _It_ _is_ _explicit_ _deliberate_
+ * _race_ _condition_.
+ *
+ * Commented and originally written by Alexey.
+ */
+
+What is the race that is talked about in that comment.  Can we just
+assign NULL instead of the loopback device when we bring a route down.
+My gut feeling is that something like:
+	dst->input = dst->output = dst_discard;
+may be enough.    But I don't know where the deliberate race is.
+
+I haven't traced this all of the way through but from the obvious
+parts I just get this nagging feeling that something isn't quite
+right.
 
 Eric
