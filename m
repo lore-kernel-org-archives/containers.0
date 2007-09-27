@@ -1,56 +1,51 @@
-From: ebiederm@xmission.com (Eric W. Biederman)
-Subject: Re: [PATCH 1/4] net: Dynamically allocate the per cpu counters for the loopback device.
-Date: Thu, 27 Sep 2007 01:48:00 -0600
-Message-ID: <m1myv8r1lb.fsf@ebiederm.dsl.xmission.com>
-References: <m1ps05rnjv.fsf@ebiederm.dsl.xmission.com>
-	<20070926.220901.51682476.davem@davemloft.net>
+From: Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Subject: Re: [RFC}[PATCH] forced uncharge for successful rmdir.
+Date: Thu, 27 Sep 2007 13:45:18 +0530
+Message-ID: <46FB6696.1080801@linux.vnet.ibm.com>
+References: <20070927163035.20137bb5.kamezawa.hiroyu@jp.fujitsu.com>
+Reply-To: balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Return-path: <netdev-owner@vger.kernel.org>
-In-Reply-To: <20070926.220901.51682476.davem@davemloft.net> (David Miller's
-	message of "Wed, 26 Sep 2007 22:09:01 -0700 (PDT)")
-Sender: netdev-owner@vger.kernel.org
-To: David Miller <davem@davemloft.net>
-Cc: netdev@vger.kernel.org, containers@lists.osdl.org
+Content-Type: text/plain; charset=ISO-8859-1
+Content-Transfer-Encoding: 7bit
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <20070927163035.20137bb5.kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, pbadari-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-David Miller <davem@davemloft.net> writes:
+KAMEZAWA Hiroyuki wrote:
+> Following patch is for successful rmdir in memory cgroup.
+> 
+> Currently, rmdir against memory cgroup will fail if charged page caches are in cgroup.
+> (even if no tasks in cgroup.)
+> 
+> I don't like this. This patch implements "forced" uncharge against memory cgroup.
+> Uncharged pages will be charged again when some other cgroup/task accesses it.
+> 
+> I wonder that all unmapped page-caches in cgroup should be uncharged if "1" is written to
+> control_type.
+> 
+> I'm grad if I can hear memory controller's policy about "rmdir" against no-task-cgroup.
+> 
+> Thanks,
+> -Kame
 
-> From: ebiederm@xmission.com (Eric W. Biederman)
-> Date: Wed, 26 Sep 2007 17:53:40 -0600
->
->> 
->> This patch add support for dynamically allocating the statistics counters
->> for the loopback device and adds appropriate device methods for allocating
->> and freeing the loopback device.
->> 
->> This completes support for creating multiple instances of the loopback
->> device,  in preparation for creating per network namespace instances.
->> 
->> Signed-off-by: Eric W. Biederman <ebiederm@xmission.com>
->
-> Applied to net-2.6.24, thanks.
->
->> @@ -155,7 +154,8 @@ static int loopback_xmit(struct sk_buff *skb, struct
-> net_device *dev)
->>  	dev->last_rx = jiffies;
->>  
->>  	/* it's OK to use __get_cpu_var() because BHs are off */
->> -	lb_stats = &__get_cpu_var(pcpu_lstats);
->> +	pcpu_lstats = netdev_priv(dev);
->> +	lb_stats = per_cpu_ptr(pcpu_lstats, smp_processor_id());
->>  	lb_stats->bytes += skb->len;
->>  	lb_stats->packets++;
->>  
->
-> I'm going to add a followon change that gets rid of that
-> comment about __get_cpu_var() since it is no longer
-> relevant.
+Hi, Kamezawa-San,
 
-Good point.
+Thanks for looking into this, I am traveling. I'll review and respond
+once I am back
 
-I'm not doing get_cpu/put_cpu so does the comment make sense
-in relationship to per_cpu_ptr?
-
-Eric
-
+-- 
+	Warm Regards,
+	Balbir Singh
+	Linux Technology Center
+	IBM, ISTL
