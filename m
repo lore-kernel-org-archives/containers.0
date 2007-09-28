@@ -1,39 +1,24 @@
-From: ebiederm@xmission.com (Eric W. Biederman)
-Subject: [PATCH] Update get_net_ns_by_pid
-Date: Thu, 27 Sep 2007 21:48:20 -0600
-Message-ID: <m1k5qbfo1n.fsf@ebiederm.dsl.xmission.com>
+From: David Miller <davem@davemloft.net>
+Subject: Re: [PATCH] net: Add network namespace clone & unshare support.
+Date: Thu, 27 Sep 2007 21:26:15 -0700 (PDT)
+Message-ID: <20070927.212615.18293797.davem@davemloft.net>
+References: <20070927.171053.39175054.davem@davemloft.net>
+	<20070927172533.1dd1db31.akpm@linux-foundation.org>
+	<m1r6kjfoya.fsf@ebiederm.dsl.xmission.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+Content-Type: Text/Plain; charset=us-ascii
+Content-Transfer-Encoding: 7bit
 Return-path: <netdev-owner@vger.kernel.org>
+In-Reply-To: <m1r6kjfoya.fsf@ebiederm.dsl.xmission.com>
 Sender: netdev-owner@vger.kernel.org
-To: Andrew Morton <akpm@linux-foundation.org>
-Cc: Linux Containers <containers@lists.osdl.org>, netdev@vger.kernel.org
+To: ebiederm@xmission.com
+Cc: akpm@linux-foundation.org, containers@lists.osdl.org, netdev@vger.kernel.org
 List-Id: containers.vger.kernel.org
 
+From: ebiederm@xmission.com (Eric W. Biederman)
+Date: Thu, 27 Sep 2007 21:28:45 -0600
 
-In the -mm tree the rules for access an nsproxy have changed,
-and in get_net_ns_by_pid we access the nsproxy, so update
-it to follow the new rules.
+> David, Andrew thanks you both are really are good upstream
+> maintainers to work with.
 
-Signed-off-by: "Eric W. Biederman" <ebiederm@xmission.com>
----
-
-diff --git a/net/core/rtnetlink.c b/net/core/rtnetlink.c
-index 739fbad..1caba10 100644
---- a/net/core/rtnetlink.c
-+++ b/net/core/rtnetlink.c
-@@ -746,10 +746,10 @@ static struct net *get_net_ns_by_pid(pid_t pid)
- 	rcu_read_lock();
- 	tsk = find_task_by_pid(pid);
- 	if (tsk) {
--		task_lock(tsk);
--		if (tsk->nsproxy)
--			net = get_net(tsk->nsproxy->net_ns);
--		task_unlock(tsk);
-+		struct nsproxy *nsproxy;
-+		nsproxy = task_nsproxy(tsk);
-+		if (nsproxy)
-+			net = get_net(nsproxy->net_ns);
- 	}
- 	rcu_read_unlock();
- 	return net;
+Just keep the coffee flowing :-)
