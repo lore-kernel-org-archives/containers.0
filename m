@@ -1,50 +1,35 @@
-From: Oleg Nesterov <oleg-6lXkIZvqkOAvJsYlp49lxw@public.gmane.org>
-Subject: Re: [PATCH 1/3] Signal semantics for /sbin/init
-Date: Fri, 28 Sep 2007 14:38:27 +0400
-Message-ID: <20070928103827.GA303@tv-sign.ru>
-References: <20070911041030.GA1264@us.ibm.com>
-	<20070911111928.GA123@tv-sign.ru> <46E959EB.2070207@fr.ibm.com>
-	<20070913165820.GA3465@tv-sign.ru>
-	<20070914030053.GA21242@us.ibm.com>
-	<20070917152122.GA861@tv-sign.ru>
-	<20070918190052.GA14030@us.ibm.com>
-	<20070927030453.GA24451@us.ibm.com>
+From: Cedric Le Goater <clg@fr.ibm.com>
+Subject: Re: [PATCH] net: Add network namespace clone & unshare support.
+Date: Fri, 28 Sep 2007 13:56:04 +0200
+Message-ID: <46FCEBD4.1060802@fr.ibm.com>
+References: <m1tzphrnq5.fsf@ebiederm.dsl.xmission.com> <46FB6F1E.8070105@fr.ibm.com> <m1k5qcjaiu.fsf@ebiederm.dsl.xmission.com> <20070927.124552.69400277.davem@davemloft.net> <m18x6rhfy0.fsf@ebiederm.dsl.xmission.com> <46FCC56D.9050600@fr.ibm.com> <20070928022842.8f408d71.akpm@linux-foundation.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <20070927030453.GA24451-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org
-Cc: Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Pavel Emelianov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+Content-Type: text/plain; charset=ISO-8859-1
+Content-Transfer-Encoding: 7bit
+Return-path: <netdev-owner@vger.kernel.org>
+In-Reply-To: <20070928022842.8f408d71.akpm@linux-foundation.org>
+Sender: netdev-owner@vger.kernel.org
+To: Andrew Morton <akpm@linux-foundation.org>
+Cc: "Eric W. Biederman" <ebiederm@xmission.com>, David Miller <davem@davemloft.net>, containers@lists.osdl.org, netdev@vger.kernel.org
 List-Id: containers.vger.kernel.org
 
-Hi Sukadev,
-
-On 09/26, sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org wrote:
+Andrew Morton wrote:
+> On Fri, 28 Sep 2007 11:12:13 +0200 Cedric Le Goater <clg@fr.ibm.com> wrote:
 > 
-> Any thoughts on how to proceed with this patchset ? While not complete
-> with respect to blocked signals and container init, would this patchset
-> make semantics slightly better than they are today (container-init can
-> be terminated from within the container) ?
+>>> Cedric made a good point that we will have conflicts of code
+>>> being added to the same place in nsproxy.c and the like.  So
+>>> I copied Andrew to give him a heads up.
+>> here's a suggestion,
+>>
+>> we could keep the net namespace unshare patch out of david's tree,
+>> let andrew merge and release a new -mm and, then, send the net namespace 
+>> unshare patch to andrew. that should keep nsproxy out of the andrew's 
+>> merge challenge. But david's tree will miss the unshare part for a while.
+> 
+> This patch only generates two rejects against the current -mm poop pile.
+> That's insignificant.  We don't need to do anything special to merge a
+> little patch like this one.
 
-Please do what you think right, and please use/drop this patch as you wish.
+Thanks Andrew.
 
-I am really sorry, I am very busy with my paid job, and it is very far from
-the kernel hacking. I don't have the time/energy to follow :(
-
-Besides, I've already lost the track on what's going on in this area...
-Perhaps I will be able to return in a couple of weeks, but can't promise
-anything.
-
-Good luck ;)
-
-Oleg.
+C.
