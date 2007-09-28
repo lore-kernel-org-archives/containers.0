@@ -1,13 +1,13 @@
-From: Pierre Peiffer <Pierre.Peiffer-6ktuUTfB/bM@public.gmane.org>
-Subject: [RFC][PATCH 1/2] System V IPC: new kernel API to change an ID
-Date: Fri, 28 Sep 2007 16:58:37 +0200
-Message-ID: <20070928165837.b267ff1e.Pierre.Peiffer@bull.net>
-References: <20070928165459.3b5ca2d8.Pierre.Peiffer@bull.net>
+From: Daniel Lezcano <daniel.lezcano-GANU6spQydw@public.gmane.org>
+Subject: Re: [PATCH] [NETNS45] network namespace locking rules
+Date: Fri, 28 Sep 2007 17:10:36 +0200
+Message-ID: <46FD196C.6080309@free.fr>
+References: <20070928143654.GA14129@iris.sw.ru>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20070928165459.3b5ca2d8.Pierre.Peiffer-6ktuUTfB/bM@public.gmane.org>
+In-Reply-To: <20070928143654.GA14129-aPCOdVxUTlgvJsYlp49lxw@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -17,305 +17,135 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
+To: "Denis V. Lunev" <den-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org
 List-Id: containers.vger.kernel.org
 
+Denis V. Lunev wrote:
+> Current locking for network namespace list/initialization is broken.
+> for_each_net is called under single rtnl_lock in
+> register_netdevice_notifier.
+> 
+> Locking:
+>     net_mutex -> rtnl_lock() -> dev_base_lock
+> Reasoning:
+>   - net_mutex holds serialization of the addition/removal of
+>     subsystems/modules and the creation/destruction of network
+>     namespaces as a whole
+>   - loopback device is one of such subsystems and it takes
+>     rtnl_lock inside
+>   - per/namespace RTNL netlink socket requires an iteration over
+>     namespace list inside rtnl_unlock, which is called inside net_mutex
+> Resume:
+>     net_namespace_list is guarded by both rtnl_lock & net_mutex and
+>     can be safely iterated under any of them
+> 
+> Signed-off-by: Denis V. Lunev <den-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+> 
+> --------
 
+[ cut ]
+>  
+> -void net_lock(void)
+> -{
+> -	mutex_lock(&net_list_mutex);
+> -}
+> -
+> -void net_unlock(void)
+> -{
+> -	mutex_unlock(&net_list_mutex);
+> -}
+> -
 
-From: Pierre Peiffer <pierre.peiffer-6ktuUTfB/bM@public.gmane.org>
+net_list_mutex is no more needed, right ? The removing of its 
+declaration is missing (already done in #netns49)
 
-This patch provides three new API for changing the ID of an existing
-System V IPCs.
+>  static struct net *net_alloc(void)
+>  {
+>  	return kmem_cache_alloc(net_cachep, GFP_KERNEL);
+> @@ -71,9 +62,9 @@ static void cleanup_net(struct work_struct *work)
+>  	mutex_lock(&net_mutex);
+>  
+>  	/* Don't let anyone else find us. */
+> -	net_lock();
+> +	rtnl_lock();
+>  	list_del(&net->list);
+> -	net_unlock();
+> +	rtnl_unlock();
+>  
+>  	/* Run all of the network namespace exit methods */
+>  	pernet_count = 0;
+> @@ -193,9 +184,9 @@ struct net *copy_net_ns(unsigned long flags, struct net *old_net)
+>  	if (err)
+>  		goto out_unlock;
+>  
+> -	net_lock();
+> +	rtnl_lock();
+>  	list_add_tail(&new_net->list, &net_namespace_list);
+> -	net_unlock();
+> +	rtnl_unlock();
+>  
+>  
+>  out_unlock:
+> @@ -220,14 +211,13 @@ static int __init net_ns_init(void)
+>  	mutex_lock(&net_mutex);
+>  	err = setup_net(&init_net);
+>  
+> -	net_lock();
+> +	rtnl_lock();
+>  	list_add_tail(&init_net.list, &net_namespace_list);
+> -	net_unlock();
+> +	rtnl_unlock();
+>  
+>  	mutex_unlock(&net_mutex);
+>  	if (err)
+>  		panic("Could not setup the initial network namespace");
+> -
+>  	return 0;
+>  }
+>  
 
-These APIs are:
-	long msg_mvid(struct ipc_namespace *ns, int id, int newid);
-	long sem_mvid(struct ipc_namespace *ns, int id, int newid);
-	long shm_mvid(struct ipc_namespace *ns, int id, int newid);
+Eric did already these changes in #netns49.
 
-They return 0 or an error code in case of failure.
+> diff --git a/net/core/rtnetlink.c b/net/core/rtnetlink.c
+> index 82ebc23..e610313 100644
+> --- a/net/core/rtnetlink.c
+> +++ b/net/core/rtnetlink.c
+> @@ -73,16 +73,24 @@ void __rtnl_unlock(void)
+>  void rtnl_unlock(void)
+>  {
+>  	struct net *net;
+> -	mutex_unlock(&rtnl_mutex);
+> -	
+> -	net_lock();
+> +
+> +retry:
+>  	for_each_net(net) {
+>  		struct sock *rtnl = net->rtnl;
+> +
+> +		if (rtnl == NULL || rtnl->sk_receive_queue.qlen == 0)
+> +			continue;
+> +
+> +		get_net(net);
+> +		mutex_unlock(&rtnl_mutex);
+>  		if (rtnl && rtnl->sk_receive_queue.qlen)
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-They may be useful for setting a specific ID for an IPC when preparing
-a restart operation.
+this statement is always true with the previous one.
 
-To be successful, the following rules must be respected:
-- the IPC exists (of course...)
-- the new ID must satisfy the ID computation rule.
-- the entry (in the kernel internal table of IPCs) corresponding to the n=
-ew
-  ID must be free.
+>  			rtnl->sk_data_ready(rtnl, 0);
+> -	}
+> -	net_unlock();
+> +		mutex_lock(&rtnl_mutex);
+> +		put_net(net);
+>  
+> +		goto retry;
 
-Signed-off-by: Pierre Peiffer <pierre.peiffer-6ktuUTfB/bM@public.gmane.org>
----
+Why do you need to return to the beginning of the list ?
 
- include/linux/msg.h |    1 +
- include/linux/sem.h |    1 +
- include/linux/shm.h |    1 +
- ipc/msg.c           |   32 +++++++++++++++++++++++++++
- ipc/sem.c           |   32 +++++++++++++++++++++++++++
- ipc/shm.c           |   30 ++++++++++++++++++++++++++
- ipc/util.c          |   60 +++++++++++++++++++++++++++++++++++++++++++++=
-++++++
- ipc/util.h          |    1 +
- 8 files changed, 158 insertions(+), 0 deletions(-)
+> +	}
+> +	mutex_unlock(&rtnl_mutex);
+>  	netdev_run_todo();
+>  }
 
-diff --git a/include/linux/msg.h b/include/linux/msg.h
-index f1b6074..5a1db95 100644
---- a/include/linux/msg.h
-+++ b/include/linux/msg.h
-@@ -97,6 +97,7 @@ extern long do_msgsnd(int msqid, long mtype, void __use=
-r *mtext,
- 			size_t msgsz, int msgflg);
- extern long do_msgrcv(int msqid, long *pmtype, void __user *mtext,
- 			size_t msgsz, long msgtyp, int msgflg);
-+long msg_mvid(struct ipc_namespace *ns, int id, int newid);
-=20
- #endif /* __KERNEL__ */
-=20
-diff --git a/include/linux/sem.h b/include/linux/sem.h
-index 9aaffb0..b5989fb 100644
---- a/include/linux/sem.h
-+++ b/include/linux/sem.h
-@@ -142,6 +142,7 @@ struct sysv_sem {
-=20
- extern int copy_semundo(unsigned long clone_flags, struct task_struct *t=
-sk);
- extern void exit_sem(struct task_struct *tsk);
-+long sem_mvid(struct ipc_namespace *ns, int id, int newid);
-=20
- #else
- static inline int copy_semundo(unsigned long clone_flags, struct task_st=
-ruct *tsk)
-diff --git a/include/linux/shm.h b/include/linux/shm.h
-index ad2e3af..f4ae995 100644
---- a/include/linux/shm.h
-+++ b/include/linux/shm.h
-@@ -97,6 +97,7 @@ struct shmid_kernel /* private to the kernel */
- #ifdef CONFIG_SYSVIPC
- long do_shmat(int shmid, char __user *shmaddr, int shmflg, unsigned long=
- *addr);
- extern int is_file_shm_hugepages(struct file *file);
-+long shm_mvid(struct ipc_namespace *ns, int id, int newid);
- #else
- static inline long do_shmat(int shmid, char __user *shmaddr,
- 				int shmflg, unsigned long *addr)
-diff --git a/ipc/msg.c b/ipc/msg.c
-index a03fcb5..d9d4093 100644
---- a/ipc/msg.c
-+++ b/ipc/msg.c
-@@ -382,6 +382,38 @@ copy_msqid_from_user(struct msq_setbuf *out, void __=
-user *buf, int version)
- 	}
- }
-=20
-+long msg_mvid(struct ipc_namespace *ns, int id, int newid)
-+{
-+	long err;
-+	struct msg_queue *msq;
-+
-+	mutex_lock(&msg_ids(ns).mutex);
-+	msq =3D msg_lock(ns, id);
-+
-+	err =3D -EINVAL;
-+	if (msq =3D=3D NULL)
-+			goto out_up;
-+
-+	err =3D msg_checkid(ns, msq, id);
-+	if (err)
-+		goto out_unlock_up;
-+
-+	err =3D ipc_mvid(&msg_ids(ns), id,
-+		       newid, ns->msg_ctlmni);
-+
-+	if (err)
-+		goto out_unlock_up;
-+
-+	msq->q_id =3D newid;
-+	msq->q_ctime =3D get_seconds();
-+
-+out_unlock_up:
-+	msg_unlock(msq);
-+out_up:
-+	mutex_unlock(&msg_ids(ns).mutex);
-+	return err;
-+}
-+
- asmlinkage long sys_msgctl(int msqid, int cmd, struct msqid_ds __user *b=
-uf)
- {
- 	struct kern_ipc_perm *ipcp;
-diff --git a/ipc/sem.c b/ipc/sem.c
-index b676fef..606f2e9 100644
---- a/ipc/sem.c
-+++ b/ipc/sem.c
-@@ -918,6 +918,38 @@ out_unlock:
- 	return err;
- }
-=20
-+long sem_mvid(struct ipc_namespace *ns, int id, int newid)
-+{
-+	long err;
-+	struct sem_array *sma;
-+
-+	mutex_lock(&sem_ids(ns).mutex);
-+	sma =3D sem_lock(ns, id);
-+
-+	err =3D -EINVAL;
-+	if (sma =3D=3D NULL)
-+			goto out_up;
-+
-+	err =3D sem_checkid(ns, sma, id);
-+	if (err)
-+		goto out_unlock_up;
-+
-+	err =3D ipc_mvid(&sem_ids(ns), id,
-+		       newid, ns->sc_semmni);
-+
-+	if (err)
-+		goto out_unlock_up;
-+
-+	sma->sem_id =3D newid;
-+	sma->sem_ctime =3D get_seconds();
-+
-+out_unlock_up:
-+	sem_unlock(sma);
-+out_up:
-+	mutex_unlock(&sem_ids(ns).mutex);
-+	return err;
-+}
-+
- asmlinkage long sys_semctl (int semid, int semnum, int cmd, union semun =
-arg)
- {
- 	int err =3D -EINVAL;
-diff --git a/ipc/shm.c b/ipc/shm.c
-index a86a3a5..5f4bca6 100644
---- a/ipc/shm.c
-+++ b/ipc/shm.c
-@@ -156,7 +156,37 @@ static inline int shm_addid(struct ipc_namespace *ns=
-, struct shmid_kernel *shp)
- 	return ipc_addid(&shm_ids(ns), &shp->shm_perm, ns->shm_ctlmni);
- }
-=20
-+long shm_mvid(struct ipc_namespace *ns, int id, int newid)
-+{
-+	long err;
-+	struct shmid_kernel *shp;
-+
-+	mutex_lock(&shm_ids(ns).mutex);
-+	shp =3D shm_lock(ns, id);
-+
-+	err =3D -EINVAL;
-+	if (shp =3D=3D NULL)
-+			goto out_up;
-+
-+	err =3D shm_checkid(ns, shp, id);
-+	if (err)
-+		goto out_unlock_up;
-+
-+	err =3D ipc_mvid(&shm_ids(ns), id,
-+		       newid, ns->shm_ctlmni);
-=20
-+	if (err)
-+		goto out_unlock_up;
-+
-+	shp->id =3D newid;
-+	shp->shm_ctim =3D get_seconds();
-+
-+out_unlock_up:
-+	shm_unlock(shp);
-+out_up:
-+	mutex_unlock(&shm_ids(ns).mutex);
-+	return err;
-+}
-=20
- /* This is called by fork, once for every shm attach. */
- static void shm_open(struct vm_area_struct *vma)
-diff --git a/ipc/util.c b/ipc/util.c
-index 44e5135..4f338d4 100644
---- a/ipc/util.c
-+++ b/ipc/util.c
-@@ -318,6 +318,66 @@ found:
- }
-=20
- /**
-+ *	ipc_mvid 	-	move an IPC identifier
-+ *	@ids: IPC identifier set
-+ *	@oldid: ID of the IPC permission set to move
-+ *	@newid: new ID of the IPC permission set to move
-+ *	@size: new size limit for the id array
-+ *
-+ *	Move an entry in the IPC arrays from the 'oldid' place to the
-+ *      'newid' place. The seq number of the entry is updated to match t=
-he
-+ *      'newid' value.
-+ *
-+ *	Called with the list lock and ipc_ids.mutex held.
-+ */
-+
-+int ipc_mvid(struct ipc_ids *ids, int oldid, int newid, int size)
-+{
-+	struct kern_ipc_perm *p;
-+	int old_lid =3D oldid % SEQ_MULTIPLIER;
-+	int new_lid =3D newid % SEQ_MULTIPLIER;
-+
-+	if ((new_lid >=3D size) ||
-+	    newid !=3D  (new_lid + (newid/SEQ_MULTIPLIER)*SEQ_MULTIPLIER))
-+		return -ERANGE;
-+
-+	size =3D grow_ary(ids, size);
-+
-+	BUG_ON(old_lid >=3D ids->entries->size);
-+
-+	p =3D ids->entries->p[old_lid];
-+
-+	if (!p)
-+		return -ENXIO;
-+
-+	/*
-+	 * The id (n=B0 of the entry in the table entries) may be the same
-+	 * but not the seq number.
-+	 */
-+	if (new_lid !=3D old_lid) {
-+
-+		if (ids->entries->p[new_lid])
-+			return -EBUSY;
-+
-+		ids->entries->p[new_lid] =3D p;
-+
-+		ids->entries->p[old_lid] =3D NULL;
-+
-+		if (new_lid > ids->max_id)
-+			ids->max_id =3D new_lid;
-+		if (old_lid =3D=3D ids->max_id) {
-+			do {
-+				--old_lid;
-+			} while (ids->entries->p[old_lid] =3D=3D NULL);
-+			ids->max_id =3D old_lid;
-+		}
-+	}
-+
-+	p->seq =3D newid/SEQ_MULTIPLIER;
-+	return 0;
-+}
-+
-+/**
-  *	ipc_rmid	-	remove an IPC identifier
-  *	@ids: identifier set
-  *	@id: Identifier to remove
-diff --git a/ipc/util.h b/ipc/util.h
-index 333e891..886af31 100644
---- a/ipc/util.h
-+++ b/ipc/util.h
-@@ -59,6 +59,7 @@ int ipc_findkey(struct ipc_ids* ids, key_t key);
- int ipc_addid(struct ipc_ids* ids, struct kern_ipc_perm* new, int size);
-=20
- /* must be called with both locks acquired. */
-+int ipc_mvid(struct ipc_ids *ids, int oldid, int newid, int size);
- struct kern_ipc_perm* ipc_rmid(struct ipc_ids* ids, int id);
-=20
- int ipcperms (struct kern_ipc_perm *ipcp, short flg);
-
-
---=20
-Pierre
+Denis, can you explain why this part must be modified ?
