@@ -1,61 +1,67 @@
-From: "Denis V. Lunev" <dlunev-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: Re: [PATCH] [NETNS45] network namespace locking rules
-Date: Fri, 28 Sep 2007 21:02:53 +0400
-Message-ID: <46FD33BD.9070305@gmail.com>
-References: <20070928143654.GA14129@iris.sw.ru>
-	<m1d4w2d92m.fsf@ebiederm.dsl.xmission.com>
+From: ebiederm@xmission.com (Eric W. Biederman)
+Subject: Re: /proc/net/ bad hard links count [Was: 2.6.23-rc8-mm2]
+Date: Fri, 28 Sep 2007 11:03:26 -0600
+Message-ID: <m1tzpebu3l.fsf@ebiederm.dsl.xmission.com>
+References: <20070927022220.c76a7a6e.akpm@linux-foundation.org>
+	<46FD2C10.8050105@gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <m1d4w2d92m.fsf-T1Yj925okcoyDheHMi7gv2pdwda3JcWeAL8bYrjMMd8@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, "Denis V. Lunev" <den-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+Content-Type: text/plain; charset=us-ascii
+Return-path: <netdev-owner@vger.kernel.org>
+In-Reply-To: <46FD2C10.8050105@gmail.com> (Jiri Slaby's message of "Fri, 28
+	Sep 2007 18:30:08 +0200")
+Sender: netdev-owner@vger.kernel.org
+To: Jiri Slaby <jirislaby@gmail.com>
+Cc: Andrew Morton <akpm@linux-foundation.org>, linux-kernel@vger.kernel.org, netdev@vger.kernel.org, Linux Containers <containers@lists.osdl.org>
 List-Id: containers.vger.kernel.org
 
-Eric W. Biederman wrote:
-> "Denis V. Lunev" <den-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org> writes:
-> 
->> Current locking for network namespace list/initialization is broken.
->> for_each_net is called under single rtnl_lock in
->> register_netdevice_notifier.
-> 
-> As of  984e617a3e1974022b8f671427a76ffbe886f75b this issue has
-> been addressed in net-2.6.24
-> 
-> The only remaining part to address is rtnl_unlock().
-> 
-> My current hypothesis is that rtnl_unlock() only needs to process
-> the packets that are queued while we had the rtnl_lock held,
-> to maintain the current semantics.
-> 
-> So the retry may not be necessary as it may be possible to prove
-> that the only extra packets that could come in come from another
-> thread taking the rtnl_lock and they will those packets in their
-> rtnl_unlock() if we don't.
-> 
-> I will review this later today, and add the retry if necessary.
-> 
-> One way or another I think we agree on how to get the locking correct.
-> The other details are a bit tricky but look usable.
-> 
-> Eric
-> 
+Jiri Slaby <jirislaby@gmail.com> writes:
 
-Unfortunately, the answer is 'no'. data_ready callback takes rtnl
-inside, so we can have new packets from other namespaces during the
-processing.
+> On 09/27/2007 11:22 AM, Andrew Morton wrote:
+>>
+> ftp://ftp.kernel.org/pub/linux/kernel/people/akpm/patches/2.6/2.6.23-rc8/2.6.23-rc8-mm2/
 
-No way, but restart :(
+Yep.
 
-Regards,
-	Den
+> # find /proc >/dev/null
+> find: WARNING: Hard link count is wrong for /proc/net: this may be a bug in your
+> filesystem driver.  Automatically turning on find's -noleaf option.  Earlier
+> results may have failed to include directories that should have been searched.
+> # stat net
+>   File: `net'
+>   Size: 0               Blocks: 0          IO Block: 1024   directory
+> Device: 3h/3d   Inode: 4026531864  Links: 2
+> Access: (0555/dr-xr-xr-x)  Uid: (    0/    root)   Gid: (    0/    root)
+> Access: 2007-09-28 18:21:24.651209759 +0200
+> Modify: 2007-09-28 18:21:24.651209759 +0200
+> Change: 2007-09-28 18:21:24.651209759 +0200
+> # stat net/
+>   File: `net/'
+>   Size: 0               Blocks: 0          IO Block: 1024   directory
+> Device: 3h/3d   Inode: 4026531909  Links: 4
+> Access: (0555/dr-xr-xr-x)  Uid: (    0/    root)   Gid: (    0/    root)
+> Access: 2007-09-28 18:26:48.813048220 +0200
+> Modify: 2007-09-28 18:26:48.813048220 +0200
+> Change: 2007-09-28 18:26:48.813048220 +0200
+>
+> hmm, this is some kind of weirdness :)
+
+Yes.
+
+I can explain it. For the network namespace stuff we need special handling
+of /proc/net so that depending on the network namespace we are resolving
+against you see a different behavior.  So you actually are observing
+two different directories, one being a magic invisible symlink to the
+other.
+
+Currently I am resolving against current (which has a number of
+limitations) and the weird ugly effect you are current seeing.
+
+So it looks like I need to either make /proc/net a symlink to
+/proc/self/net or make the network namespace something that we capture
+at mount time of /proc.
+
+This was my don't get hung up on this implementation detail version.
+Thanks for pointing out it has user visible problems.  I will see
+what I can do to resolve this.
+
+Eric
