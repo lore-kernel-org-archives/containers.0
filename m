@@ -1,67 +1,49 @@
-From: ebiederm@xmission.com (Eric W. Biederman)
-Subject: Re: /proc/net/ bad hard links count [Was: 2.6.23-rc8-mm2]
-Date: Fri, 28 Sep 2007 11:03:26 -0600
-Message-ID: <m1tzpebu3l.fsf@ebiederm.dsl.xmission.com>
-References: <20070927022220.c76a7a6e.akpm@linux-foundation.org>
-	<46FD2C10.8050105@gmail.com>
+From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
+Subject: Re: netns49
+Date: Fri, 28 Sep 2007 11:14:27 -0600
+Message-ID: <m1d4w2btl8.fsf@ebiederm.dsl.xmission.com>
+References: <46FD1A3B.3060306@fr.ibm.com>
+	<m1ir5uergf.fsf@ebiederm.dsl.xmission.com>
+	<46FD1E9F.4000200@fr.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-Return-path: <netdev-owner@vger.kernel.org>
-In-Reply-To: <46FD2C10.8050105@gmail.com> (Jiri Slaby's message of "Fri, 28
-	Sep 2007 18:30:08 +0200")
-Sender: netdev-owner@vger.kernel.org
-To: Jiri Slaby <jirislaby@gmail.com>
-Cc: Andrew Morton <akpm@linux-foundation.org>, linux-kernel@vger.kernel.org, netdev@vger.kernel.org, Linux Containers <containers@lists.osdl.org>
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <46FD1E9F.4000200-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org> (Daniel Lezcano's message of "Fri,
+	28 Sep 2007 17:32:47 +0200")
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
+Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, "Denis V. Lunev" <den-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>, Benjamin Thery <benjamin.thery-6ktuUTfB/bM@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Jiri Slaby <jirislaby@gmail.com> writes:
+Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org> writes:
 
-> On 09/27/2007 11:22 AM, Andrew Morton wrote:
->>
-> ftp://ftp.kernel.org/pub/linux/kernel/people/akpm/patches/2.6/2.6.23-rc8/2.6.23-rc8-mm2/
+> I think Denis and I we reached a complete patch posted a couple of hours
+> ago. Finally I didn't put the exit method in the inet_timewait_sock.c file but I
+> added it to the tcp.c file. There is a comment about that in the header of the
+> patch.
 
-Yep.
+Yes.  I saw that.  At first glance it looks good and next time I'm through
+that part of the code I will add your patches to my tree.
 
-> # find /proc >/dev/null
-> find: WARNING: Hard link count is wrong for /proc/net: this may be a bug in your
-> filesystem driver.  Automatically turning on find's -noleaf option.  Earlier
-> results may have failed to include directories that should have been searched.
-> # stat net
->   File: `net'
->   Size: 0               Blocks: 0          IO Block: 1024   directory
-> Device: 3h/3d   Inode: 4026531864  Links: 2
-> Access: (0555/dr-xr-xr-x)  Uid: (    0/    root)   Gid: (    0/    root)
-> Access: 2007-09-28 18:21:24.651209759 +0200
-> Modify: 2007-09-28 18:21:24.651209759 +0200
-> Change: 2007-09-28 18:21:24.651209759 +0200
-> # stat net/
->   File: `net/'
->   Size: 0               Blocks: 0          IO Block: 1024   directory
-> Device: 3h/3d   Inode: 4026531909  Links: 4
-> Access: (0555/dr-xr-xr-x)  Uid: (    0/    root)   Gid: (    0/    root)
-> Access: 2007-09-28 18:26:48.813048220 +0200
-> Modify: 2007-09-28 18:26:48.813048220 +0200
-> Change: 2007-09-28 18:26:48.813048220 +0200
->
-> hmm, this is some kind of weirdness :)
+My priority list of the moment is:
+rtnetlink, pf_packet, and improving /proc so I don't confuse find.
 
-Yes.
+I'm really trying to reach the point where at a bare bones level
+people can play with the functionality that is merged into the
+net-2.6.24 tree and therefore into 2.6.24.  That should make it
+easier for more people to play with and test this code.
 
-I can explain it. For the network namespace stuff we need special handling
-of /proc/net so that depending on the network namespace we are resolving
-against you see a different behavior.  So you actually are observing
-two different directories, one being a magic invisible symlink to the
-other.
-
-Currently I am resolving against current (which has a number of
-limitations) and the weird ugly effect you are current seeing.
-
-So it looks like I need to either make /proc/net a symlink to
-/proc/self/net or make the network namespace something that we capture
-at mount time of /proc.
-
-This was my don't get hung up on this implementation detail version.
-Thanks for pointing out it has user visible problems.  I will see
-what I can do to resolve this.
+My ipv4 patches are at the very least going to require a reordering
+and a careful review before I am satisfied with them.  They aren't
+exactly wrong but I think things could be done in a more obvious
+and deliberate manner.
 
 Eric
