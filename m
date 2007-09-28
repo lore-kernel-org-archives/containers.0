@@ -1,53 +1,51 @@
-From: Srivatsa Vaddagiri <vatsa@linux.vnet.ibm.com>
-Subject: Re: [PATCH -mm] Hook up group scheduler with control groups
-Date: Fri, 28 Sep 2007 08:10:26 +0530
-Message-ID: <20070928024026.GA1044@linux.vnet.ibm.com>
-References: <20070927150624.GG4415@linux.vnet.ibm.com> <20070927104005.2ed0b81d.randy.dunlap@oracle.com> <20070927180415.GC5715@linux.vnet.ibm.com> <20070927120033.45915a61.randy.dunlap@oracle.com> <20070927193512.GD5715@linux.vnet.ibm.com> <20070927164241.ca034043.akpm@linux-foundation.org>
-Reply-To: vatsa@linux.vnet.ibm.com
+From: ebiederm@xmission.com (Eric W. Biederman)
+Subject: Re: [PATCH] net: Add network namespace clone & unshare support.
+Date: Thu, 27 Sep 2007 21:28:45 -0600
+Message-ID: <m1r6kjfoya.fsf@ebiederm.dsl.xmission.com>
+References: <m1k5qcjaiu.fsf@ebiederm.dsl.xmission.com>
+	<20070927.124552.69400277.davem@davemloft.net>
+	<m18x6rhfy0.fsf@ebiederm.dsl.xmission.com>
+	<20070927.171053.39175054.davem@davemloft.net>
+	<20070927172533.1dd1db31.akpm@linux-foundation.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1761030AbXI1C36@vger.kernel.org>
-Content-Disposition: inline
-In-Reply-To: <20070927164241.ca034043.akpm@linux-foundation.org>
-Sender: linux-kernel-owner@vger.kernel.org
+Return-path: <netdev-owner@vger.kernel.org>
+In-Reply-To: <20070927172533.1dd1db31.akpm@linux-foundation.org> (Andrew
+	Morton's message of "Thu, 27 Sep 2007 17:25:33 -0700")
+Sender: netdev-owner@vger.kernel.org
 To: Andrew Morton <akpm@linux-foundation.org>
-Cc: Dhaval Giani <dhaval@linux.vnet.ibm.com>, randy.dunlap@oracle.com, mingo@elte.hu, dmitry.adamushko@gmail.com, efault@gmx.de, linux-kernel@vger.kernel.org, containers@lists.osdl.org
+Cc: David Miller <davem@davemloft.net>, containers@lists.osdl.org, netdev@vger.kernel.org
 List-Id: containers.vger.kernel.org
 
-On Thu, Sep 27, 2007 at 04:42:41PM -0700, Andrew Morton wrote:
-> > @@ -219,6 +225,9 @@ static inline struct task_grp *task_grp(
-> >  
-> >  #ifdef CONFIG_FAIR_USER_SCHED
-> >  	tg = p->user->tg;
-> > +#elif CONFIG_FAIR_CGROUP_SCHED
-> > +	tg = container_of(task_subsys_state(p, cpu_cgroup_subsys_id),
-> > +				struct task_grp, css);
-> >  #else
-> >  	tg  = &init_task_grp;
-> >  #endif
-> 
-> that's a bit funny-looking.  Are CONFIG_FAIR_CGROUP_SCHED and
-> CONFIG_FAIR_USER_SCHED mutually exclusive?
+Andrew Morton <akpm@linux-foundation.org> writes:
 
-Yes. While configuring kernel, user can choose only one of those options
-and not both.
+> On Thu, 27 Sep 2007 17:10:53 -0700 (PDT)
+> David Miller <davem@davemloft.net> wrote:
+>
+>> > I will gladly do what I can, to help.  Working against 3 trees
+>> > development at the moment is a bit of a development challenge.
+>> 
+>> Andrew has to work against 30 or so
+>
+> I wish!  A remerge presently involves pulling and merging 73 git trees, 9
+> quilt trees and maybe 1,500 -mm patches.
 
->  Doesn't seem that way.
+Yep.  There is a lot of chaos and keeping on top of it all is a pain,
+and nobody has it easy.
 
-Hmm ..why do you say that?
+Andrew probably wins award for the biggest challenge.
 
-> if
-> they're both defined then CONFIG_FAIR_USER_SCHED "wins".
-> Anyway, please confirm that this is correct?
+My todo list pales in comparison.   I only have 80+ patches in my
+queue that I need to reviewed and then pushed upstream.  50 sysfs
+patches to review and get a handle on so hopefully we can out of the
+sysfs quagmire.
 
-They can't both be defined.
+Plus I don't know how many little gotchas that need to be fixed with
+a new patch of their own.
 
-> I'll switch that to `#elif defined(CONFIG_FAIR_CGROUP_SCHED)'.  We can get
-> gcc warnings with `#if CONFIG_FOO', and people should be using `#ifdef
-> CONFIG_FOO', so I assume the same applies to #elif.
+It's coming together but it takes time.  
 
-Thx for fixing it!
+David, Andrew thanks you both are really are good upstream maintainers
+to work with.
 
--- 
-Regards,
-vatsa
+Eric
