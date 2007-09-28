@@ -1,49 +1,57 @@
-From: "Serge E. Hallyn" <serge@hallyn.com>
-Subject: Re: [PATCH] capabilities: introduce per-process capability
-	bounding set (v2)
-Date: Fri, 28 Sep 2007 14:45:41 -0500
-Message-ID: <20070928194541.GA12325@vino.hallyn.com>
-References: <20070926153737.GA15297@sergelap.austin.ibm.com>
+From: "Serge E. Hallyn" <serue@us.ibm.com>
+Subject: Re: [PATCH] Update get_net_ns_by_pid
+Date: Fri, 28 Sep 2007 18:13:54 -0500
+Message-ID: <20070928231354.GB7407@sergelap.austin.rr.com>
+References: <m1k5qbfo1n.fsf@ebiederm.dsl.xmission.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-Return-path: <linux-security-module-owner@vger.kernel.org>
+Return-path: <netdev-owner@vger.kernel.org>
 Content-Disposition: inline
-In-Reply-To: <20070926153737.GA15297@sergelap.austin.ibm.com>
-Sender: linux-security-module-owner@vger.kernel.org
-To: "Serge E. Hallyn" <serue@us.ibm.com>
-Cc: linux-security-module@vger.kernel.org, containers@lists.osdl.org, Andrew Morgan <morgan@kernel.org>, "Eric W. Biederman" <ebiederm@xmission.com>, Herbert Poetzl <herbert@13thfloor.at>
+In-Reply-To: <m1k5qbfo1n.fsf@ebiederm.dsl.xmission.com>
+Sender: netdev-owner@vger.kernel.org
+To: "Eric W. Biederman" <ebiederm@xmission.com>
+Cc: Andrew Morton <akpm@linux-foundation.org>, Linux Containers <containers@lists.osdl.org>, netdev@vger.kernel.org
 List-Id: containers.vger.kernel.org
 
-Quoting Serge E. Hallyn (serue@us.ibm.com):
-> Two comments on this patch.
+Quoting Eric W. Biederman (ebiederm@xmission.com):
 > 
-> One issue that is buggine me is when capabilities are not in the
-> kernel, we get no warning of that.  You can do PR_SET_CAPBSET,
-> and PR_GET_CAPBSET shows the right results after.  But you are in
-> no way constrained by that bset.
+> In the -mm tree the rules for access an nsproxy have changed,
+> and in get_net_ns_by_pid we access the nsproxy, so update
+> it to follow the new rules.
 > 
-> It's not clear how to fix that, because of the weird ways in which
-> commoncap.c is included in the kernel.  There is no config variable
-> you can rely on to know whether it is included or not.  All values
-> for cap_bset are valid so I can't rely on an invalid value to mean
-> we're not using it.  So the only options that come to mind are to
-> create a a global variable using_capabilities, and define an
-> __init function in security/commoncap.c that sets that to one.  That,
-> or really tweak security/Kconfig so we can in fact know when commoncap
-> will be defined.
-> 
-> Secondly, after setting the bcap, the current process'
-> capabilities are not reduced.  It takes effect after future
-> execs.  Is that deemed counterintuitive?  Or will it be
-> sufficient to properly document that in the prctl manpage?
-> 
-> thanks,
-> -serge
+> Signed-off-by: "Eric W. Biederman" <ebiederm@xmission.com>
 
-fwiw if anyone was actually thinking about these, I've
-addressed both in a new patchset.  Unfortunately adequate
-testing will have to wait until next week so I'll send the
-set out after that.
+Yup, looks right.
+
+I assume Pavel's Acked-by would actually matter, but still
+
+Acked-by: Serge Hallyn <serue@us.ibm.com>
 
 thanks,
 -serge
+
+> ---
+> 
+> diff --git a/net/core/rtnetlink.c b/net/core/rtnetlink.c
+> index 739fbad..1caba10 100644
+> --- a/net/core/rtnetlink.c
+> +++ b/net/core/rtnetlink.c
+> @@ -746,10 +746,10 @@ static struct net *get_net_ns_by_pid(pid_t pid)
+>  	rcu_read_lock();
+>  	tsk = find_task_by_pid(pid);
+>  	if (tsk) {
+> -		task_lock(tsk);
+> -		if (tsk->nsproxy)
+> -			net = get_net(tsk->nsproxy->net_ns);
+> -		task_unlock(tsk);
+> +		struct nsproxy *nsproxy;
+> +		nsproxy = task_nsproxy(tsk);
+> +		if (nsproxy)
+> +			net = get_net(nsproxy->net_ns);
+>  	}
+>  	rcu_read_unlock();
+>  	return net;
+> _______________________________________________
+> Containers mailing list
+> Containers@lists.linux-foundation.org
+> https://lists.linux-foundation.org/mailman/listinfo/containers
