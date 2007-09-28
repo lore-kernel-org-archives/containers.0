@@ -1,56 +1,53 @@
-From: Mark Nelson <markn-8fk3Idey6ehBDgjK7y7TUQ@public.gmane.org>
-Subject: Re: [PATCH] net: Add network namespace clone & unshare support.
-Date: Fri, 28 Sep 2007 10:53:58 +1000
-Message-ID: <46FC50A6.1040302@au1.ibm.com>
-References: <m1tzphrnq5.fsf@ebiederm.dsl.xmission.com>	<46FB6F1E.8070105@fr.ibm.com>	<m1k5qcjaiu.fsf@ebiederm.dsl.xmission.com>	<20070927.124552.69400277.davem@davemloft.net>
-	<m18x6rhfy0.fsf@ebiederm.dsl.xmission.com>
+From: Srivatsa Vaddagiri <vatsa@linux.vnet.ibm.com>
+Subject: Re: [PATCH -mm] Hook up group scheduler with control groups
+Date: Fri, 28 Sep 2007 08:10:26 +0530
+Message-ID: <20070928024026.GA1044@linux.vnet.ibm.com>
+References: <20070927150624.GG4415@linux.vnet.ibm.com> <20070927104005.2ed0b81d.randy.dunlap@oracle.com> <20070927180415.GC5715@linux.vnet.ibm.com> <20070927120033.45915a61.randy.dunlap@oracle.com> <20070927193512.GD5715@linux.vnet.ibm.com> <20070927164241.ca034043.akpm@linux-foundation.org>
+Reply-To: vatsa@linux.vnet.ibm.com
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <m18x6rhfy0.fsf-T1Yj925okcoyDheHMi7gv2pdwda3JcWeAL8bYrjMMd8@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, David Miller <davem-fT/PcQaiUtIeIZ0/mPfg9Q@public.gmane.org>
+Content-Type: text/plain; charset=us-ascii
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1761030AbXI1C36@vger.kernel.org>
+Content-Disposition: inline
+In-Reply-To: <20070927164241.ca034043.akpm@linux-foundation.org>
+Sender: linux-kernel-owner@vger.kernel.org
+To: Andrew Morton <akpm@linux-foundation.org>
+Cc: Dhaval Giani <dhaval@linux.vnet.ibm.com>, randy.dunlap@oracle.com, mingo@elte.hu, dmitry.adamushko@gmail.com, efault@gmx.de, linux-kernel@vger.kernel.org, containers@lists.osdl.org
 List-Id: containers.vger.kernel.org
 
-Eric W. Biederman wrote:
-> David Miller <davem-fT/PcQaiUtIeIZ0/mPfg9Q@public.gmane.org> writes:
+On Thu, Sep 27, 2007 at 04:42:41PM -0700, Andrew Morton wrote:
+> > @@ -219,6 +225,9 @@ static inline struct task_grp *task_grp(
+> >  
+> >  #ifdef CONFIG_FAIR_USER_SCHED
+> >  	tg = p->user->tg;
+> > +#elif CONFIG_FAIR_CGROUP_SCHED
+> > +	tg = container_of(task_subsys_state(p, cpu_cgroup_subsys_id),
+> > +				struct task_grp, css);
+> >  #else
+> >  	tg  = &init_task_grp;
+> >  #endif
 > 
->> Eric, pick an appropriate new non-conflicting number NOW.
-> 
-> Done.  My apologies for the confusion.  I thought the
-> way Cedric and the IBM guys were testing someone would have
-> shouted at me long before now.
+> that's a bit funny-looking.  Are CONFIG_FAIR_CGROUP_SCHED and
+> CONFIG_FAIR_USER_SCHED mutually exclusive?
 
-Sorry Eric, that was me that should have been shouting at you. It got lost because I modified the patches I extracted from your git tree so they would apply to -mm, leaving me thinking there were no extra patches...
+Yes. While configuring kernel, user can choose only one of those options
+and not both.
 
-Further apologies for dropping the ball - it won't happen again.
+>  Doesn't seem that way.
 
+Hmm ..why do you say that?
 
-Mark.
-> 
->> This adds unnecessary extra work for Andrew Morton, which he has
->> enough of already.
-> 
-> Cedric made a good point that we will have conflicts of code
-> being added to the same place in nsproxy.c and the like.  So
-> I copied Andrew to give him a heads up.
-> 
-> I will gladly do what I can, to help.  Working against 3 trees
-> development at the moment is a bit of a development challenge.
-> 
-> Eric
-> _______________________________________________
-> Containers mailing list
-> Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-> https://lists.linux-foundation.org/mailman/listinfo/containers
-> 
+> if
+> they're both defined then CONFIG_FAIR_USER_SCHED "wins".
+> Anyway, please confirm that this is correct?
+
+They can't both be defined.
+
+> I'll switch that to `#elif defined(CONFIG_FAIR_CGROUP_SCHED)'.  We can get
+> gcc warnings with `#if CONFIG_FOO', and people should be using `#ifdef
+> CONFIG_FOO', so I assume the same applies to #elif.
+
+Thx for fixing it!
+
+-- 
+Regards,
+vatsa
