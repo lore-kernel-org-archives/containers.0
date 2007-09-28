@@ -1,49 +1,49 @@
-From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
-Subject: Re: netns49
-Date: Fri, 28 Sep 2007 11:14:27 -0600
-Message-ID: <m1d4w2btl8.fsf@ebiederm.dsl.xmission.com>
-References: <46FD1A3B.3060306@fr.ibm.com>
-	<m1ir5uergf.fsf@ebiederm.dsl.xmission.com>
-	<46FD1E9F.4000200@fr.ibm.com>
+From: "Serge E. Hallyn" <serge@hallyn.com>
+Subject: Re: [PATCH] capabilities: introduce per-process capability
+	bounding set (v2)
+Date: Fri, 28 Sep 2007 14:45:41 -0500
+Message-ID: <20070928194541.GA12325@vino.hallyn.com>
+References: <20070926153737.GA15297@sergelap.austin.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <46FD1E9F.4000200-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org> (Daniel Lezcano's message of "Fri,
-	28 Sep 2007 17:32:47 +0200")
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
-Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, "Denis V. Lunev" <den-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>, Benjamin Thery <benjamin.thery-6ktuUTfB/bM@public.gmane.org>
+Return-path: <linux-security-module-owner@vger.kernel.org>
+Content-Disposition: inline
+In-Reply-To: <20070926153737.GA15297@sergelap.austin.ibm.com>
+Sender: linux-security-module-owner@vger.kernel.org
+To: "Serge E. Hallyn" <serue@us.ibm.com>
+Cc: linux-security-module@vger.kernel.org, containers@lists.osdl.org, Andrew Morgan <morgan@kernel.org>, "Eric W. Biederman" <ebiederm@xmission.com>, Herbert Poetzl <herbert@13thfloor.at>
 List-Id: containers.vger.kernel.org
 
-Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org> writes:
+Quoting Serge E. Hallyn (serue@us.ibm.com):
+> Two comments on this patch.
+> 
+> One issue that is buggine me is when capabilities are not in the
+> kernel, we get no warning of that.  You can do PR_SET_CAPBSET,
+> and PR_GET_CAPBSET shows the right results after.  But you are in
+> no way constrained by that bset.
+> 
+> It's not clear how to fix that, because of the weird ways in which
+> commoncap.c is included in the kernel.  There is no config variable
+> you can rely on to know whether it is included or not.  All values
+> for cap_bset are valid so I can't rely on an invalid value to mean
+> we're not using it.  So the only options that come to mind are to
+> create a a global variable using_capabilities, and define an
+> __init function in security/commoncap.c that sets that to one.  That,
+> or really tweak security/Kconfig so we can in fact know when commoncap
+> will be defined.
+> 
+> Secondly, after setting the bcap, the current process'
+> capabilities are not reduced.  It takes effect after future
+> execs.  Is that deemed counterintuitive?  Or will it be
+> sufficient to properly document that in the prctl manpage?
+> 
+> thanks,
+> -serge
 
-> I think Denis and I we reached a complete patch posted a couple of hours
-> ago. Finally I didn't put the exit method in the inet_timewait_sock.c file but I
-> added it to the tcp.c file. There is a comment about that in the header of the
-> patch.
+fwiw if anyone was actually thinking about these, I've
+addressed both in a new patchset.  Unfortunately adequate
+testing will have to wait until next week so I'll send the
+set out after that.
 
-Yes.  I saw that.  At first glance it looks good and next time I'm through
-that part of the code I will add your patches to my tree.
-
-My priority list of the moment is:
-rtnetlink, pf_packet, and improving /proc so I don't confuse find.
-
-I'm really trying to reach the point where at a bare bones level
-people can play with the functionality that is merged into the
-net-2.6.24 tree and therefore into 2.6.24.  That should make it
-easier for more people to play with and test this code.
-
-My ipv4 patches are at the very least going to require a reordering
-and a careful review before I am satisfied with them.  They aren't
-exactly wrong but I think things could be done in a more obvious
-and deliberate manner.
-
-Eric
+thanks,
+-serge
