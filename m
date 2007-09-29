@@ -1,46 +1,50 @@
-From: Patrick McHardy <kaber@trash.net>
-Subject: Re: [PATCH 5/5] net: Make AF_UNIX per network namespace safe.
-Date: Sat, 29 Sep 2007 19:50:14 +0200
-Message-ID: <46FE9056.1070400@trash.net>
-References: <m1myv69tfu.fsf@ebiederm.dsl.xmission.com>	<m1hcle9td8.fsf@ebiederm.dsl.xmission.com>	<m1d4w29t98.fsf_-_@ebiederm.dsl.xmission.com>	<m17ima9t52.fsf_-_@ebiederm.dsl.xmission.com>	<m11wci9t3e.fsf_-_@ebiederm.dsl.xmission.com>	<46FE73AC.40807@trash.net> <m1abr58kvq.fsf@ebiederm.dsl.xmission.com>
+From: ebiederm@xmission.com (Eric W. Biederman)
+Subject: Re: [PATCH 2/5] net: Make rtnetlink infrastructure network namespace aware
+Date: Sat, 29 Sep 2007 15:00:48 -0600
+Message-ID: <m1myv56vb3.fsf@ebiederm.dsl.xmission.com>
+References: <m1myv69tfu.fsf@ebiederm.dsl.xmission.com>
+	<m1hcle9td8.fsf@ebiederm.dsl.xmission.com>
+	<46FE72E3.3000402@trash.net>
+	<m1tzpd8lfh.fsf@ebiederm.dsl.xmission.com>
+	<46FE8FD3.2030308@trash.net>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-15
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset=us-ascii
 Return-path: <netdev-owner@vger.kernel.org>
-In-Reply-To: <m1abr58kvq.fsf@ebiederm.dsl.xmission.com>
+In-Reply-To: <46FE8FD3.2030308@trash.net> (Patrick McHardy's message of "Sat,
+	29 Sep 2007 19:48:03 +0200")
 Sender: netdev-owner@vger.kernel.org
-To: "Eric W. Biederman" <ebiederm@xmission.com>
+To: Patrick McHardy <kaber@trash.net>
 Cc: David Miller <davem@davemloft.net>, netdev@vger.kernel.org, Linux Containers <containers@lists.osdl.org>
 List-Id: containers.vger.kernel.org
 
-Eric W. Biederman wrote:
-> Patrick McHardy <kaber@trash.net> writes:
-> 
->>>Currently I don't fold the namesapce into the hash so multiple
->>>namespaces using the same socket name will be guaranteed a hash
->>>collision.
->>
->>
->>That doesn't sound like a good thing :) Is there a reason for
->>not avoiding the collisions?
-> 
-> 
-> Two reasons.  Minimizing the size of the changes to make review
-> easier, and I don't know if hash collisions are likely in practice
-> or if they matter.  I don't believe we can't physically collide and
-> have the same inode because we make a node in the filesystem.  The
-> abstract domain is local to linux and so people don't use it as much.
-> 
-> All of which boils down to.  I don't see it matter a heck of a lot
-> especially initially.  So I did the traditional unix thing and started
-> with a simple and stupid implementation.  But it didn't quite feel
-> right to me either so I documented it.
-> 
-> Whipping up a patch to take the namespace into account in mkname
-> doesn't look to hard though.
+Patrick McHardy <kaber@trash.net> writes:
 
+> Maybe I can save you some time: we used to do down_trylock()
+> for the rtnl mutex, so senders would simply return if someone
+> else was already processing the queue *or* the rtnl was locked
+> for some other reason. In the first case the process already
+> processing the queue would also process the new messages, but
+> if it the rtnl was locked for some other reason (for example
+> during module registration) the message would sit in the
+> queue until the next rtnetlink sendmsg call, which is why
+> rtnl_unlock does queue processing. Commit 6756ae4b changed
+> the down_trylock to mutex_lock, so senders will now simply wait
+> until the mutex is released and then call netlink_run_queue
+> themselves. This means its not needed anymore.
 
-It doesn't look like it would increase patch size significantly
-(about 4 more changed lines), but it could of course be done in
-a follow-up patch.
+Sounds reasonable.
 
+I started looking through the code paths and I currently cannot
+see anything that would leave a message on a kernel rtnl socket.
+
+However I did a quick test adding a WARN_ON if there were any messages
+found in the queue during rtnl_unlock and I found this code path
+getting invoked from linkwatch_event.  So there is clearly something I
+don't understand, and it sounds at odds just a bit from your
+description.
+
+If we can remove the extra queue processing that would be great,
+as it looks like a nice way to simplify the locking and the special
+cases in the code.
+
+Eric
