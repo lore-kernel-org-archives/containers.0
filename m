@@ -1,48 +1,29 @@
-From: Patrick McHardy <kaber@trash.net>
-Subject: Re: [PATCH 2/5] net: Make rtnetlink infrastructure network namespace
- aware
-Date: Sun, 30 Sep 2007 17:39:54 +0200
-Message-ID: <46FFC34A.3020701@trash.net>
-References: <m1myv69tfu.fsf@ebiederm.dsl.xmission.com>	<m1hcle9td8.fsf@ebiederm.dsl.xmission.com>	<46FE72E3.3000402@trash.net>	<m1tzpd8lfh.fsf@ebiederm.dsl.xmission.com>	<46FE8FD3.2030308@trash.net> <m1myv56vb3.fsf@ebiederm.dsl.xmission.com>
+From: Unknown <unknown@unknown.invalid>
+Subject: Business Investment from Patrick!!!
+Date: Sun, 30 Sep 2007 19:20:18 +0200
+Message-ID: <200709301720.l8UHKIAL025816@n11.sivit.org>
+Reply-To: p_ibukunesq-Qt13gs6zZMY@public.gmane.org
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-15
-Content-Transfer-Encoding: 7bit
-Return-path: <netdev-owner@vger.kernel.org>
-In-Reply-To: <m1myv56vb3.fsf@ebiederm.dsl.xmission.com>
-Sender: netdev-owner@vger.kernel.org
-To: "Eric W. Biederman" <ebiederm@xmission.com>
-Cc: David Miller <davem@davemloft.net>, netdev@vger.kernel.org, Linux Containers <containers@lists.osdl.org>
+Content-Type: text/plain
+Content-Transfer-Encoding: 8bit
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+From: Patrick Ibukun <>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Eric W. Biederman wrote:
-> Patrick McHardy <kaber@trash.net> writes:
-> 
-> 
->>Maybe I can save you some time: we used to do down_trylock()
->>for the rtnl mutex, so senders would simply return if someone
->>else was already processing the queue *or* the rtnl was locked
->>for some other reason. In the first case the process already
->>processing the queue would also process the new messages, but
->>if it the rtnl was locked for some other reason (for example
->>during module registration) the message would sit in the
->>queue until the next rtnetlink sendmsg call, which is why
->>rtnl_unlock does queue processing. Commit 6756ae4b changed
->>the down_trylock to mutex_lock, so senders will now simply wait
->>until the mutex is released and then call netlink_run_queue
->>themselves. This means its not needed anymore.
-> 
-> 
-> Sounds reasonable.
-> 
-> I started looking through the code paths and I currently cannot
-> see anything that would leave a message on a kernel rtnl socket.
-> 
-> However I did a quick test adding a WARN_ON if there were any messages
-> found in the queue during rtnl_unlock and I found this code path
-> getting invoked from linkwatch_event.  So there is clearly something I
-> don't understand, and it sounds at odds just a bit from your
-> description.
-
-
-That sounds like a bug. Did you place the WARN_ON before or after
-the mutex_unlock()?
+Dear friend,
+Best compliments of the day. Forgive my indignation if this message may come to you as a surprise and if it might offend you without your prior consent and writing through this medium.
+ 
+I am Patrick Ibukun Esq. I have a client who wants to invest in your Country with the sum of US$21.5M. My client was a former Governor of Liberia here and needs protection for his family.  If you can handle such a huge sum for investment into a profitable with low risk business, please get back to me as soon as possible for futher briefing, on the investment plan and agreement procedure. Kindly reply to the above email adds with your business profile to enable us advise our Client accordingly, and do not forget to include your telephone  contacts for easy communication.
+ 
+Thank you.
+Patrick Ibukun Esq. 
