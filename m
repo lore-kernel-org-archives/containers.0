@@ -1,56 +1,54 @@
-From: Paul Jackson <pj-sJ/iWh9BUns@public.gmane.org>
-Subject: Re: [PATCH 01/29] task containersv11 basic task container framework
-Date: Sun, 30 Sep 2007 02:36:03 -0700
-Message-ID: <20070930023603.1f73f5d9.pj@sgi.com>
-References: <20070911195239.997111000@menage.corp.google.com>
-	<20070911200144.779221000@menage.corp.google.com>
-	<20070929214043.57e9cc39.pj@sgi.com>
-	<6599ad830709300010xda1e97cp8c569ce08a87a86b@mail.gmail.com>
-	<20070930020330.6bd34dd4.akpm@linux-foundation.org>
-	<20070930021536.3bd65dc3.pj@sgi.com>
-	<20070930022942.b36dd34f.akpm@linux-foundation.org>
+From: "Denis V. Lunev" <dlunev@gmail.com>
+Subject: Re: [Devel] Re: [PATCH 2/5] net: Make rtnetlink infrastructure network
+ namespace aware
+Date: Sun, 30 Sep 2007 17:13:15 +0400
+Message-ID: <46FFA0EB.2080001@gmail.com>
+References: <m1myv69tfu.fsf@ebiederm.dsl.xmission.com>	<m1hcle9td8.fsf@ebiederm.dsl.xmission.com>	<46FE72E3.3000402@trash.net>	<m1tzpd8lfh.fsf@ebiederm.dsl.xmission.com>	<46FE8FD3.2030308@trash.net> <m1myv56vb3.fsf@ebiederm.dsl.xmission.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
+Content-Type: text/plain; charset=ISO-8859-1
 Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20070930022942.b36dd34f.akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
-Cc: dev-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org, clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org, containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org
+Return-path: <netdev-owner@vger.kernel.org>
+In-Reply-To: <m1myv56vb3.fsf@ebiederm.dsl.xmission.com>
+Sender: netdev-owner@vger.kernel.org
+To: "Eric W. Biederman" <ebiederm@xmission.com>
+Cc: Patrick McHardy <kaber@trash.net>, Linux Containers <containers@lists.osdl.org>, netdev@vger.kernel.org, David Miller <davem@davemloft.net>
 List-Id: containers.vger.kernel.org
 
-Andrew wrote:
-> so when
-> their bisection cursor moves within or after the cgroups patches, they'll
-> still have CONFIG_CGROUPS=n.  Serendipity.
+Hmm, so it looks like we do not need this queue processing at all...
 
-Unless it's one of the configs that enables cgroups by default, thanks
-to the patch:
+Regards,
+	Den
 
-  task-containers-enable-containers-by-default-in-some-configs.patch
+Eric W. Biederman wrote:
+> Patrick McHardy <kaber@trash.net> writes:
+> 
+>> Maybe I can save you some time: we used to do down_trylock()
+>> for the rtnl mutex, so senders would simply return if someone
+>> else was already processing the queue *or* the rtnl was locked
+>> for some other reason. In the first case the process already
+>> processing the queue would also process the new messages, but
+>> if it the rtnl was locked for some other reason (for example
+>> during module registration) the message would sit in the
+>> queue until the next rtnetlink sendmsg call, which is why
+>> rtnl_unlock does queue processing. Commit 6756ae4b changed
+>> the down_trylock to mutex_lock, so senders will now simply wait
+>> until the mutex is released and then call netlink_run_queue
+>> themselves. This means its not needed anymore.
+> 
+> Sounds reasonable.
+> 
+> I started looking through the code paths and I currently cannot
+> see anything that would leave a message on a kernel rtnl socket.
+> 
+> However I did a quick test adding a WARN_ON if there were any messages
+> found in the queue during rtnl_unlock and I found this code path
+> getting invoked from linkwatch_event.  So there is clearly something I
+> don't understand, and it sounds at odds just a bit from your
+> description.
+> 
+> If we can remove the extra queue processing that would be great,
+> as it looks like a nice way to simplify the locking and the special
+> cases in the code.
+> 
+> Eric
 
-namely configs:
-
- arch/ia64/configs/sn2_defconfig          |    1 +
- arch/mips/configs/ip27_defconfig         |    1 +
- arch/mips/configs/sb1250-swarm_defconfig |    1 +
- arch/powerpc/configs/cell_defconfig      |    1 +
- arch/powerpc/configs/ppc64_defconfig     |    1 +
- arch/powerpc/configs/pseries_defconfig   |    1 +
-
-But these are not commonly used configs, so that's not a big deal.
-
-So ... yeah ... good enough.
-
--- 
-                  I won't rest till it's the best ...
-                  Programmer, Linux Scalability
-                  Paul Jackson <pj-sJ/iWh9BUns@public.gmane.org> 1.925.600.0401
