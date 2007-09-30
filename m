@@ -1,39 +1,36 @@
-From: "Denis V. Lunev" <dlunev@gmail.com>
-Subject: Re: [Devel] Re: [PATCH 2/5] net: Make rtnetlink infrastructure network
- namespace aware
-Date: Sun, 30 Sep 2007 17:13:15 +0400
-Message-ID: <46FFA0EB.2080001@gmail.com>
+From: Patrick McHardy <kaber@trash.net>
+Subject: Re: [PATCH 2/5] net: Make rtnetlink infrastructure network namespace
+ aware
+Date: Sun, 30 Sep 2007 17:39:54 +0200
+Message-ID: <46FFC34A.3020701@trash.net>
 References: <m1myv69tfu.fsf@ebiederm.dsl.xmission.com>	<m1hcle9td8.fsf@ebiederm.dsl.xmission.com>	<46FE72E3.3000402@trash.net>	<m1tzpd8lfh.fsf@ebiederm.dsl.xmission.com>	<46FE8FD3.2030308@trash.net> <m1myv56vb3.fsf@ebiederm.dsl.xmission.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
+Content-Type: text/plain; charset=ISO-8859-15
 Content-Transfer-Encoding: 7bit
 Return-path: <netdev-owner@vger.kernel.org>
 In-Reply-To: <m1myv56vb3.fsf@ebiederm.dsl.xmission.com>
 Sender: netdev-owner@vger.kernel.org
 To: "Eric W. Biederman" <ebiederm@xmission.com>
-Cc: Patrick McHardy <kaber@trash.net>, Linux Containers <containers@lists.osdl.org>, netdev@vger.kernel.org, David Miller <davem@davemloft.net>
+Cc: David Miller <davem@davemloft.net>, netdev@vger.kernel.org, Linux Containers <containers@lists.osdl.org>
 List-Id: containers.vger.kernel.org
-
-Hmm, so it looks like we do not need this queue processing at all...
-
-Regards,
-	Den
 
 Eric W. Biederman wrote:
 > Patrick McHardy <kaber@trash.net> writes:
 > 
->> Maybe I can save you some time: we used to do down_trylock()
->> for the rtnl mutex, so senders would simply return if someone
->> else was already processing the queue *or* the rtnl was locked
->> for some other reason. In the first case the process already
->> processing the queue would also process the new messages, but
->> if it the rtnl was locked for some other reason (for example
->> during module registration) the message would sit in the
->> queue until the next rtnetlink sendmsg call, which is why
->> rtnl_unlock does queue processing. Commit 6756ae4b changed
->> the down_trylock to mutex_lock, so senders will now simply wait
->> until the mutex is released and then call netlink_run_queue
->> themselves. This means its not needed anymore.
+> 
+>>Maybe I can save you some time: we used to do down_trylock()
+>>for the rtnl mutex, so senders would simply return if someone
+>>else was already processing the queue *or* the rtnl was locked
+>>for some other reason. In the first case the process already
+>>processing the queue would also process the new messages, but
+>>if it the rtnl was locked for some other reason (for example
+>>during module registration) the message would sit in the
+>>queue until the next rtnetlink sendmsg call, which is why
+>>rtnl_unlock does queue processing. Commit 6756ae4b changed
+>>the down_trylock to mutex_lock, so senders will now simply wait
+>>until the mutex is released and then call netlink_run_queue
+>>themselves. This means its not needed anymore.
+> 
 > 
 > Sounds reasonable.
 > 
@@ -45,10 +42,7 @@ Eric W. Biederman wrote:
 > getting invoked from linkwatch_event.  So there is clearly something I
 > don't understand, and it sounds at odds just a bit from your
 > description.
-> 
-> If we can remove the extra queue processing that would be great,
-> as it looks like a nice way to simplify the locking and the special
-> cases in the code.
-> 
-> Eric
 
+
+That sounds like a bug. Did you place the WARN_ON before or after
+the mutex_unlock()?
