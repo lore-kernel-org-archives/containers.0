@@ -1,36 +1,30 @@
-From: Paul Jackson <pj-sJ/iWh9BUns@public.gmane.org>
-Subject: Re: [PATCH 11/29] task containersv11 make cpusets a client of
- containers
-Date: Sat, 29 Sep 2007 23:25:13 -0700
-Message-ID: <20070929232513.63fe2d9c.pj@sgi.com>
-References: <20070911195239.997111000@menage.corp.google.com>
-	<20070911200146.422879000@menage.corp.google.com>
+From: "Michael Kerrisk" <mtk.linux.lists@gmail.com>
+Subject: Re: [RFC][PATCH 0/2] New API to change the IDs of an existing IPC
+Date: Sun, 30 Sep 2007 08:30:55 +0200
+Message-ID: <517f3f820709292330i56caf106yfa18778d741f8e1a@mail.gmail.com>
+References: <20070928165829.5da76796.Pierre.Peiffer@bull.net>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
+Content-Type: text/plain; charset=ISO-8859-1
 Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20070911200146.422879000-B63HFAS8fGlSzHKm+aFRNNkmqwFzkYv6@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org
-Cc: dev-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org, clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org, containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1755037AbXI3GbM@vger.kernel.org>
+In-Reply-To: <20070928165829.5da76796.Pierre.Peiffer@bull.net>
+Content-Disposition: inline
+Sender: linux-kernel-owner@vger.kernel.org
+To: Pierre Peiffer <Pierre.Peiffer@bull.net>
+Cc: linux-kernel@vger.kernel.org, containers@lists.osdl.org, mtk-manpages@gmx.net
 List-Id: containers.vger.kernel.org
 
-There are some 21 mentions of 'manage_mutex' in the comments of
-kernel/cpuset.c remaining after this patch is applied, but no such
-mutex exists anymore.
+Hi Pierre,
 
-Could you update kernel/cpuset.c comments, Paul M., for this and
-whatever other changes apply ?
+>         As I'm seeing some discussion/interest about IPC, I would like to propose
+>  these patches, which provide an easy way to change the ID of an exiting IPC.
+> This work is done around the checkpoint/restart of applications. In the case of
+> the IPCs, we need (among others) this functionality.
 
--- 
-                  I won't rest till it's the best ...
-                  Programmer, Linux Scalability
-                  Paul Jackson <pj-sJ/iWh9BUns@public.gmane.org> 1.925.600.0401
+Can you give some more detailed explanation of why this
+functionaility is needed.  (Maybe this was explained in other threads,
+but if so I've missed it.)
+
+Cheers,
+
+Michael
