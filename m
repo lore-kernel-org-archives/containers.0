@@ -1,50 +1,81 @@
-From: "Serge E. Hallyn" <serue@us.ibm.com>
-Subject: Re: [PATCH 4/5] Move the user namespace under the option
-Date: Mon, 1 Oct 2007 09:14:26 -0500
-Message-ID: <20071001141426.GB30599@sergelap.austin.ibm.com>
-References: <46FA7D4D.8040808@openvz.org> <46FA8087.6060307@openvz.org> <46FBA2A4.2040909@fr.ibm.com> <Pine.LNX.4.64.0709270837220.5275@localhost.localdomain> <4700A7C5.5080005@openvz.org> <Pine.LNX.4.64.0710010440360.12789@localhost.localdomain>
+From: Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+Subject: Re: [PATCH 4/5] Setup the control group
+Date: Mon, 01 Oct 2007 17:51:46 +0400
+Message-ID: <4700FB72.5070409@openvz.org>
+References: <46F91841.9070708@openvz.org> <46F91A1E.2060303@openvz.org>
+	<4700FAAC.2050004@linux.vnet.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1754014AbXJAOOj@vger.kernel.org>
-Content-Disposition: inline
-In-Reply-To: <Pine.LNX.4.64.0710010440360.12789@localhost.localdomain>
-Sender: linux-kernel-owner@vger.kernel.org
-To: "Robert P. J. Day" <rpjday@mindspring.com>
-Cc: Pavel Emelyanov <xemul@openvz.org>, Cedric Le Goater <clg@fr.ibm.com>, Andrew Morton <akpm@osdl.org>, Serge Hallyn <serue@us.ibm.com>, "Eric W. Biederman" <ebiederm@xmission.com>, Linux Containers <containers@lists.osdl.org>, Linux Kernel Mailing List <linux-kernel@vger.kernel.org>
+Content-Type: text/plain; charset=ISO-8859-1
+Content-Transfer-Encoding: 7bit
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <4700FAAC.2050004-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
+Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Christoph Lameter <clameter-sJ/iWh9BUns@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Quoting Robert P. J. Day (rpjday@mindspring.com):
-> On Mon, 1 Oct 2007, Pavel Emelyanov wrote:
+Balbir Singh wrote:
+> Pavel Emelyanov wrote:
+>> Attach the controller to the control groups. This will work
+>> with the SLUB allocator only. However, if we need I can
+>> port this on SLAB (and maybe SLOB ;) ).
+>>
+>> This setup is simple and stupid.
+>>
 > 
-> > Robert P. J. Day wrote:
-> > > On Thu, 27 Sep 2007, Cedric Le Goater wrote:
-> > >
-> > >>> diff --git a/include/linux/user_namespace.h b/include/linux/user_namespace.h
-> > >>> index b5f41d4..dda160c 100644
-> > >>> --- a/include/linux/user_namespace.h
-> > >>> +++ b/include/linux/user_namespace.h
-> > >>> @@ -17,7 +17,7 @@ struct user_namespace {
-> > >>>
-> > >>>  extern struct user_namespace init_user_ns;
-> > >>>
-> > >>> -#ifdef CONFIG_USER_NS
-> > >>> +#ifdef CONFIG_NAMESPACES_EXPERIMENTAL
-> > >
-> > > is it really a good precedent to introduce Kconfig variables that
-> > > literally include the word "EXPERIMENTAL"?
-> >
-> > How else can we call it? I proposed one config option for each
-> > namespace with "depends on EXPERIMENTAL" dependency, but everyone
-> > else said that two options are much better.
+> That makes it easier for me to review it:)
+
+:)
+
+>> +static struct cftype kmem_files[] = {
+>> +	{
+>> +		.name = "usage",
+>> +		.private = RES_USAGE,
+>> +		.read = kmem_container_read,
+>> +	},
+>> +	{
+>> +		.name = "limit",
+>> +		.private = RES_LIMIT,
+>> +		.write = kmem_container_write,
+>> +		.read = kmem_container_read,
+>> +	},
+>> +	{
+>> +		.name = "failcnt",
+>> +		.private = RES_FAILCNT,
+>> +		.read = kmem_container_read,
+>> +	},
+>> +};
+>> +
 > 
-> i don't know -- perhaps something as trivially obvious as
-> NAMESPACES_V2 or something.  i just think it's awkward to take a word
-> like "EXPERIMENTAL" that already has a long and established history,
-> and start jamming it into config variable names.  but it's just an
-> observation.
+> Could we make the user interface similar to the one in the memory
+> controller please! It would make it easier for users to configure
+> and control both.
 
-But these really are EXPERIMENTAL, not just 'v2'.  They are not yet safe
-to use except for testing.  Once they are more complete and safe to use,
-they will fall under just CONFIG_NAMESPACES.
+Do you mean by merging the similar code or by making them look like
+the same? If the second, than can you point at least one difference
+except for "usage" vs "usage_in_bytes" (and similar) naming?
 
--serge
+>> +static int kmem_populate(struct cgroup_subsys *ss, struct cgroup *cnt)
+>> +{
+>> +	return cgroup_add_files(cnt, ss, kmem_files, ARRAY_SIZE(kmem_files));
+>> +}
+>> +
+>> +struct cgroup_subsys kmem_subsys = {
+>> +	.name = "kmem",
+>> +	.create = kmem_create,
+>> +	.destroy  = kmem_destroy,
+>> +	.populate = kmem_populate,
+>> +	.subsys_id = kmem_subsys_id,
+>> +	.early_init = 1,
+>> +};
+>>
+> 
+> 
