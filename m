@@ -1,16 +1,15 @@
 From: Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: Re: [PATCH 3/5] Switch caches notification dynamically
-Date: Mon, 01 Oct 2007 19:44:40 +0530
-Message-ID: <470100D0.7030700@linux.vnet.ibm.com>
-References: <46F91841.9070708@openvz.org> <46F919BB.2000701@openvz.org>
-	<4700F2E8.5050904@linux.vnet.ibm.com> <4700F476.4070806@openvz.org>
-	<4700F85B.5090902@linux.vnet.ibm.com> <4700FA0A.5040707@openvz.org>
+Subject: Re: [PATCH 4/5] Setup the control group
+Date: Mon, 01 Oct 2007 19:46:26 +0530
+Message-ID: <4701013A.3010307@linux.vnet.ibm.com>
+References: <46F91841.9070708@openvz.org> <46F91A1E.2060303@openvz.org>
+	<4700FAAC.2050004@linux.vnet.ibm.com> <4700FB72.5070409@openvz.org>
 Reply-To: balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <4700FA0A.5040707-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+In-Reply-To: <4700FB72.5070409-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -25,33 +24,17 @@ Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Chris
 List-Id: containers.vger.kernel.org
 
 Pavel Emelyanov wrote:
-> Balbir Singh wrote:
->>>>> +	if ((buf[0] == '1') && !(s->flags & SLAB_NOTIFY)) {
->>>> Won't this code break if I pass 10 as input in buf?
->>> I don't care about this :) And no /sys/slab/<xxx>/ file does.
->>> It's the problem of a user if he pass some shit and doesn't 
->>> see the notifications turned on/off ;)
->>>
->> Well, we don't want confused users? How does a user know what
->> is a valid value to pass? Are you saying that we don't need
+>> Could we make the user interface similar to the one in the memory
+>> controller please! It would make it easier for users to configure
+>> and control both.
 > 
-> The rules are simple - 1 to turn them on and 0 to turn them off
-> and nothing more. These values user sees when he "cat"s this file.
+> Do you mean by merging the similar code or by making them look like
+> the same? If the second, than can you point at least one difference
+> except for "usage" vs "usage_in_bytes" (and similar) naming?
 > 
 
-I think correct error reporting is critical, if the user sets
-the value to 01 and that ends up disabling slab notifications,
-the handling is wrong.
-
->> to care about user interface, if so I don't agree.
-> 
-> That's the convention used in the /sys/slab/<x>/ files - the
-> 1 means on the 0 means 0, all the others are not guaranteed :)
-> 
-
-Is this documented somewhere or is this interpreted from looking
-at the code of other file handlers?
-
+I meant similar naming, it makes it is easier if the naming convention
+is the same.
 
 -- 
 	Warm Regards,
