@@ -1,7 +1,7 @@
 From: "Serge E. Hallyn" <serue@us.ibm.com>
-Subject: [PATCH 3/3] capabilities: reduce current's caps when reducing bset
-Date: Mon, 1 Oct 2007 09:42:07 -0500
-Message-ID: <20071001144207.GC25345@sergelap.austin.ibm.com>
+Subject: Re: [PATCH 0/3] capabilities: per-process capbset
+Date: Mon, 1 Oct 2007 09:49:09 -0500
+Message-ID: <20071001144909.GA26322@sergelap.austin.ibm.com>
 References: <20071001144031.GA24683@sergelap.austin.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
@@ -10,41 +10,42 @@ Content-Disposition: inline
 In-Reply-To: <20071001144031.GA24683@sergelap.austin.ibm.com>
 Sender: linux-security-module-owner@vger.kernel.org
 To: containers@lists.osdl.org
-Cc: Andrew Morgan <morgan@kernel.org>, linux-security-module@vger.kernel.org
+Cc: linux-security-module@vger.kernel.org, Andrew Morgan <morgan@kernel.org>
 List-Id: containers.vger.kernel.org
 
-From 2a0af2a5364ab568fa603cc9fdaeeef67d82dc56 Mon Sep 17 00:00:00 2001
-From: Serge E. Hallyn <serue@us.ibm.com>
-Date: Fri, 28 Sep 2007 14:07:03 -0500
-Subject: [PATCH 3/3] capabilities: reduce current's caps when reducing bset
+Quoting Serge E. Hallyn (serue@us.ibm.com):
+> Here is a new per-process capability bounding set patchset
+> which I expect to send to linux-kernel soon.  It makes
+> the capbset per-process.  A process can only permanently
+> remove bits from it's bounding set, not add them.  To
+> remove bits, CAP_SYS_ADMIN is currently needed.  Maybe
+> that's not the best choice, but some privilege should
+> probably be required.
+> 
+> The intent is to allow a process tree to start with
+> certain capabilities, i.e. CAP_MKNOD, permanently
+> removed, so that running a setuid binary or one with
+> file capabilities will still not result in those
+> capabilities.  The immediate use case for this is
+> containers/virtual servers.
+> 
+> I am not taking the task_capability_lock during
+> cap_prctl_setbset(), just as it is not taken when
+> capabilities are calculated during fork.  That means
 
-When a task sets it's capability bounding set, ensure that
-pI pE and pP are subsets of the new bounding set.
+Where by fork I of course mean exec.
 
-(note the new bset is a subset of the original)
+-serge
 
-Signed-off-by: Serge E. Hallyn <serue@us.ibm.com>
----
- security/commoncap.c |    6 ++++++
- 1 files changed, 6 insertions(+), 0 deletions(-)
-
-diff --git a/security/commoncap.c b/security/commoncap.c
-index 324ff2a..dcd5af4 100644
---- a/security/commoncap.c
-+++ b/security/commoncap.c
-@@ -585,6 +585,12 @@ int cap_prctl_setbset(unsigned long new_bset)
- 	if (!cap_issubset(new_bset, current->cap_bset))
- 		return -EPERM;
- 	current->cap_bset = new_bset;
-+	current->cap_effective = cap_intersect(current->cap_effective,
-+		new_bset);
-+	current->cap_permitted = cap_intersect(current->cap_permitted,
-+		new_bset);
-+	current->cap_inheritable = cap_intersect(current->cap_inheritable,
-+		new_bset);
- 	return 0;
- }
- 
--- 
-1.5.1.6
-
+> it can race with another task doing capsetp() on it,
+> and with capgetp().  I'm still looking for comments
+> on whether the fix I sent out last week is correct.
+> If it is, then I'll take the task_capability_lock
+> during cap_prctl_setbset().
+> 
+> thanks,
+> -serge
+> _______________________________________________
+> Containers mailing list
+> Containers@lists.linux-foundation.org
+> https://lists.linux-foundation.org/mailman/listinfo/containers
