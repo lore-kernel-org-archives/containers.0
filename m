@@ -1,16 +1,15 @@
 From: "Paul Menage" <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
 Subject: Re: [Devel] Re: [PATCH 4/5] Setup the control group
-Date: Mon, 1 Oct 2007 08:50:04 -0700
-Message-ID: <6599ad830710010850q660d042av9fa5a461d3c3e445@mail.gmail.com>
+Date: Mon, 1 Oct 2007 08:52:20 -0700
+Message-ID: <6599ad830710010852w360348a7k6bc94456d6c341ac@mail.gmail.com>
 References: <46F91841.9070708@openvz.org> <46F91A1E.2060303@openvz.org>
 	<4700FAAC.2050004@linux.vnet.ibm.com> <4700FB72.5070409@openvz.org>
-	<4701013A.3010307@linux.vnet.ibm.com> <47010169.5040102@openvz.org>
-	<47010276.8060802@linux.vnet.ibm.com>
+	<4701013A.3010307@linux.vnet.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <47010276.8060802-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+In-Reply-To: <4701013A.3010307-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 Content-Disposition: inline
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
@@ -26,30 +25,23 @@ Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Chris
 List-Id: containers.vger.kernel.org
 
 On 10/1/07, Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org> wrote:
+> Pavel Emelyanov wrote:
+> >> Could we make the user interface similar to the one in the memory
+> >> controller please! It would make it easier for users to configure
+> >> and control both.
+> >
+> > Do you mean by merging the similar code or by making them look like
+> > the same? If the second, than can you point at least one difference
+> > except for "usage" vs "usage_in_bytes" (and similar) naming?
+> >
 >
-> Yes, we need to do that. Paul Menage wanted to pull in resource counters
-> into cgroups.
+> I meant similar naming, it makes it is easier if the naming convention
+> is the same.
+>
 
-No, that's not what I wanted - I just wanted to try to cut down the
-boilerplate required to use resource counters. Ideally it would be as
-simple as including a call to some function such as
-"add_res_counter(...)" which would deal with setting up all the cgroup
-control files, provide handlers, etc. This also helps to keep all the
-APIs consistent.
-
-See the patch that I sent last week entitled "Simplify memory
-controller and resource counter I/O" for a first step in that
-direction.
-
-> Also, I'd like to be able to share res_counters between
-> container groups or at-least support a hierarchy.
-
-A hierarchy sounds like a good idea.
-
-For the sharing, there are two approaches - any subsystem that wants
-sharing has to implement it itself, or else implement sharing at the
-control groups level and make it (mostly) transparent to the
-subsystems. I think I prefer the latter and have been playing with
-some ways to do this.
+I agree with this, but I'd rather see standardization on "limit/usage"
+rather than "limit_in_bytes/usage_in_bytes". Then the same API can be
+used for subsystems that use resource counters for things that can't
+be measured in bytes, e.g. number of tasks.
 
 Paul
