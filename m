@@ -1,54 +1,63 @@
-From: "Robert P. J. Day" <rpjday@mindspring.com>
-Subject: Re: [PATCH 4/5] Move the user namespace under the option
-Date: Mon, 1 Oct 2007 04:42:18 -0400 (EDT)
-Message-ID: <Pine.LNX.4.64.0710010440360.12789@localhost.localdomain>
-References: <46FA7D4D.8040808@openvz.org> <46FA8087.6060307@openvz.org>
- <46FBA2A4.2040909@fr.ibm.com> <Pine.LNX.4.64.0709270837220.5275@localhost.localdomain>
- <4700A7C5.5080005@openvz.org>
+From: ebiederm@xmission.com (Eric W. Biederman)
+Subject: Re: [Devel] Re: [PATCH 2/5] net: Make rtnetlink infrastructure network namespace aware
+Date: Mon, 01 Oct 2007 02:45:07 -0600
+Message-ID: <m13awv6x64.fsf@ebiederm.dsl.xmission.com>
+References: <m1myv69tfu.fsf@ebiederm.dsl.xmission.com>
+	<m1hcle9td8.fsf@ebiederm.dsl.xmission.com>
+	<46FE72E3.3000402@trash.net>
+	<m1tzpd8lfh.fsf@ebiederm.dsl.xmission.com>
+	<46FE8FD3.2030308@trash.net>
+	<m1myv56vb3.fsf@ebiederm.dsl.xmission.com>
+	<46FFC34A.3020701@trash.net> <4700AF4C.6020509@sw.ru>
 Mime-Version: 1.0
-Content-Type: TEXT/PLAIN; charset=US-ASCII
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1754577AbXJAIoz@vger.kernel.org>
-In-Reply-To: <4700A7C5.5080005@openvz.org>
-Sender: linux-kernel-owner@vger.kernel.org
-To: Pavel Emelyanov <xemul@openvz.org>
-Cc: Cedric Le Goater <clg@fr.ibm.com>, Andrew Morton <akpm@osdl.org>, Serge Hallyn <serue@us.ibm.com>, "Eric W. Biederman" <ebiederm@xmission.com>, Linux Containers <containers@lists.osdl.org>, Linux Kernel Mailing List <linux-kernel@vger.kernel.org>
+Content-Type: text/plain; charset=us-ascii
+Return-path: <netdev-owner@vger.kernel.org>
+In-Reply-To: <4700AF4C.6020509@sw.ru> (Denis V. Lunev's message of "Mon, 01
+	Oct 2007 12:26:52 +0400")
+Sender: netdev-owner@vger.kernel.org
+To: "Denis V. Lunev" <den@sw.ru>
+Cc: Patrick McHardy <kaber@trash.net>, Linux Containers <containers@lists.osdl.org>, netdev@vger.kernel.org, David Miller <davem@davemloft.net>
 List-Id: containers.vger.kernel.org
 
-On Mon, 1 Oct 2007, Pavel Emelyanov wrote:
+"Denis V. Lunev" <den@sw.ru> writes:
 
-> Robert P. J. Day wrote:
-> > On Thu, 27 Sep 2007, Cedric Le Goater wrote:
-> >
-> >>> diff --git a/include/linux/user_namespace.h b/include/linux/user_namespace.h
-> >>> index b5f41d4..dda160c 100644
-> >>> --- a/include/linux/user_namespace.h
-> >>> +++ b/include/linux/user_namespace.h
-> >>> @@ -17,7 +17,7 @@ struct user_namespace {
-> >>>
-> >>>  extern struct user_namespace init_user_ns;
-> >>>
-> >>> -#ifdef CONFIG_USER_NS
-> >>> +#ifdef CONFIG_NAMESPACES_EXPERIMENTAL
-> >
-> > is it really a good precedent to introduce Kconfig variables that
-> > literally include the word "EXPERIMENTAL"?
+> The presence of the message in the queue during rtnl_unlock is quite
+> possible as normal user->kernel message processing path for rtnl is the
+> following:
 >
-> How else can we call it? I proposed one config option for each
-> namespace with "depends on EXPERIMENTAL" dependency, but everyone
-> else said that two options are much better.
+> netlink_sendmsg
+>    netlink_unicast
+>       netlink_sendskb
+>           skb_queue_tail
+>           netlink_data_ready
+>               rtnetlink_rcv
+>                   mutex_lock(&rtnl_mutex);
+>                   netlink_run_queue(sk, qlen, &rtnetlink_rcv_msg);
+>                   mutex_unlock(&rtnl_mutex);
+>
+> so, the presence of the packet in the rtnl queue on rtnl_unlock is
+> normal race with a rtnetlink_rcv for me.
 
-i don't know -- perhaps something as trivially obvious as
-NAMESPACES_V2 or something.  i just think it's awkward to take a word
-like "EXPERIMENTAL" that already has a long and established history,
-and start jamming it into config variable names.  but it's just an
-observation.
+Yes.  That is what I saw in practice as well.
+Thanks for confirming this.
 
-rday
--- 
-========================================================================
-Robert P. J. Day
-Linux Consulting, Training and Annoying Kernel Pedantry
-Waterloo, Ontario, CANADA
+It happened to reproducible because I had a dhcp client asking
+for a list of links in parallel with the actual link coming up
+during boot.
 
-http://crashcourse.ca
-========================================================================
+Looking at netlink_unicast and netlink_broadcast I am generally
+convinced that we can remove the call of sk_data_ready in
+rtnl_unlock.   I think those are the only two possible paths
+through there and I don't see how we could miss a processing a
+packet on the way through there.
+
+What would be nice is if we could figure out how to eliminate
+this race.  As that would allow netlink packets to be processed
+synchronously and we could actually use current for security
+checks, and for getting the context of the calling process.
+
+Right now we are 99% of the way there but because of the above
+race the code must all be written as if netlink packets were coming
+in completely asynchronously.  Which is unfortunate and a pain.
+
+Eric
