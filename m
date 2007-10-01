@@ -1,72 +1,50 @@
-From: Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: Re: [PATCH 0/5] Kernel memory accounting container (v5)
-Date: Mon, 01 Oct 2007 19:42:59 +0530
-Message-ID: <4701006B.6050809@linux.vnet.ibm.com>
-References: <46F91841.9070708@openvz.org>
-Reply-To: balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
+From: "Serge E. Hallyn" <serue@us.ibm.com>
+Subject: Re: [PATCH 4/5] Move the user namespace under the option
+Date: Mon, 1 Oct 2007 09:14:26 -0500
+Message-ID: <20071001141426.GB30599@sergelap.austin.ibm.com>
+References: <46FA7D4D.8040808@openvz.org> <46FA8087.6060307@openvz.org> <46FBA2A4.2040909@fr.ibm.com> <Pine.LNX.4.64.0709270837220.5275@localhost.localdomain> <4700A7C5.5080005@openvz.org> <Pine.LNX.4.64.0710010440360.12789@localhost.localdomain>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <46F91841.9070708-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
-Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Christoph Lameter <clameter-sJ/iWh9BUns@public.gmane.org>
+Content-Type: text/plain; charset=us-ascii
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1754014AbXJAOOj@vger.kernel.org>
+Content-Disposition: inline
+In-Reply-To: <Pine.LNX.4.64.0710010440360.12789@localhost.localdomain>
+Sender: linux-kernel-owner@vger.kernel.org
+To: "Robert P. J. Day" <rpjday@mindspring.com>
+Cc: Pavel Emelyanov <xemul@openvz.org>, Cedric Le Goater <clg@fr.ibm.com>, Andrew Morton <akpm@osdl.org>, Serge Hallyn <serue@us.ibm.com>, "Eric W. Biederman" <ebiederm@xmission.com>, Linux Containers <containers@lists.osdl.org>, Linux Kernel Mailing List <linux-kernel@vger.kernel.org>
 List-Id: containers.vger.kernel.org
 
-Pavel Emelyanov wrote:
-> Changes since v.4:
-> * make SLAB_NOTIFY caches mark pages as SlabDebug. That
->   makes the interesting paths simpler (thanks to Christoph);
-> * the change above caused appropriate changes in "turn
->   notifications on" path - all available pages must become 
->   SlabDebug and page's freelists must be flushed;
-> * added two more events - "on" and "off" to make kmalloc
->   caches disabling more gracefully;
-> * turning notifications "off" is marked as "TODO". Right
->   now it's hard w/o massive rework of slub.c in respect to
->   full slabs handling.
+Quoting Robert P. J. Day (rpjday@mindspring.com):
+> On Mon, 1 Oct 2007, Pavel Emelyanov wrote:
 > 
-> Changes since v.3:
-> * moved alloc/free notification into slow path and make
->   "notify-able" caches walk this path always;
-> * introduced some optimization for the case, when there's
->   only one listener for SLUB events (saves more that 10%
->   of performance);
-> * ported on 2.6.23-rc6-mm1 tree.
+> > Robert P. J. Day wrote:
+> > > On Thu, 27 Sep 2007, Cedric Le Goater wrote:
+> > >
+> > >>> diff --git a/include/linux/user_namespace.h b/include/linux/user_namespace.h
+> > >>> index b5f41d4..dda160c 100644
+> > >>> --- a/include/linux/user_namespace.h
+> > >>> +++ b/include/linux/user_namespace.h
+> > >>> @@ -17,7 +17,7 @@ struct user_namespace {
+> > >>>
+> > >>>  extern struct user_namespace init_user_ns;
+> > >>>
+> > >>> -#ifdef CONFIG_USER_NS
+> > >>> +#ifdef CONFIG_NAMESPACES_EXPERIMENTAL
+> > >
+> > > is it really a good precedent to introduce Kconfig variables that
+> > > literally include the word "EXPERIMENTAL"?
+> >
+> > How else can we call it? I proposed one config option for each
+> > namespace with "depends on EXPERIMENTAL" dependency, but everyone
+> > else said that two options are much better.
 > 
-> Changes since v.2:
-> * introduced generic notifiers for slub. right now there
->   are only events, needed by accounting, but this set can
->   be extended in the future;
-> * moved the controller core into separate file, so that
->   its extension and/or porting on slAb will look more 
->   logical;
-> * fixed this message :).
-> 
-> Changes since v.1:
-> * fixed Paul's comment about subsystem registration;
-> * return ERR_PTR from ->create callback, not NULL;
-> * make container-to-object assignment in rcu-safe section;
-> * make turning accounting on and off with "1" and "0".
-> 
+> i don't know -- perhaps something as trivially obvious as
+> NAMESPACES_V2 or something.  i just think it's awkward to take a word
+> like "EXPERIMENTAL" that already has a long and established history,
+> and start jamming it into config variable names.  but it's just an
+> observation.
 
-Hi, Pavel,
+But these really are EXPERIMENTAL, not just 'v2'.  They are not yet safe
+to use except for testing.  Once they are more complete and safe to use,
+they will fall under just CONFIG_NAMESPACES.
 
-Overall, the patches look good, except for the comments
-noted in the other patch postings. I am going to test
-these patches and see how they hold out.
-
--- 
-	Warm Regards,
-	Balbir Singh
-	Linux Technology Center
-	IBM, ISTL
+-serge
