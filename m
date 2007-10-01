@@ -1,47 +1,68 @@
-From: Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
-Subject: Re: [PATCH 4/5] Move the user namespace under the option
-Date: Mon, 01 Oct 2007 11:54:45 +0400
-Message-ID: <4700A7C5.5080005@openvz.org>
-References: <46FA7D4D.8040808@openvz.org> <46FA8087.6060307@openvz.org>
-	<46FBA2A4.2040909@fr.ibm.com>
-	<Pine.LNX.4.64.0709270837220.5275@localhost.localdomain>
+From: "Denis V. Lunev" <den@sw.ru>
+Subject: Re: [Devel] Re: [PATCH 2/5] net: Make rtnetlink infrastructure network
+ namespace aware
+Date: Mon, 01 Oct 2007 12:26:52 +0400
+Message-ID: <4700AF4C.6020509@sw.ru>
+References: <m1myv69tfu.fsf@ebiederm.dsl.xmission.com>	<m1hcle9td8.fsf@ebiederm.dsl.xmission.com>	<46FE72E3.3000402@trash.net>	<m1tzpd8lfh.fsf@ebiederm.dsl.xmission.com>	<46FE8FD3.2030308@trash.net>	<m1myv56vb3.fsf@ebiederm.dsl.xmission.com> <46FFC34A.3020701@trash.net>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
+Content-Type: text/plain; charset=ISO-8859-15
 Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <Pine.LNX.4.64.0709270837220.5275-bi+AKbBUZKY6gyzm1THtWbp2dZbC/Bob@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Robert P. J. Day" <rpjday-mn4gwa5WIIQysxA8WJXlww@public.gmane.org>
-Cc: Linux Kernel Mailing List <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Cedric Le Goater <clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
+Return-path: <netdev-owner@vger.kernel.org>
+In-Reply-To: <46FFC34A.3020701@trash.net>
+Sender: netdev-owner@vger.kernel.org
+To: Patrick McHardy <kaber@trash.net>
+Cc: "Eric W. Biederman" <ebiederm@xmission.com>, Linux Containers <containers@lists.osdl.org>, netdev@vger.kernel.org, David Miller <davem@davemloft.net>
 List-Id: containers.vger.kernel.org
 
-Robert P. J. Day wrote:
-> On Thu, 27 Sep 2007, Cedric Le Goater wrote:
+Patrick McHardy wrote:
+> Eric W. Biederman wrote:
+>> Patrick McHardy <kaber@trash.net> writes:
+>>
+>>
+>>> Maybe I can save you some time: we used to do down_trylock()
+>>> for the rtnl mutex, so senders would simply return if someone
+>>> else was already processing the queue *or* the rtnl was locked
+>>> for some other reason. In the first case the process already
+>>> processing the queue would also process the new messages, but
+>>> if it the rtnl was locked for some other reason (for example
+>>> during module registration) the message would sit in the
+>>> queue until the next rtnetlink sendmsg call, which is why
+>>> rtnl_unlock does queue processing. Commit 6756ae4b changed
+>>> the down_trylock to mutex_lock, so senders will now simply wait
+>>> until the mutex is released and then call netlink_run_queue
+>>> themselves. This means its not needed anymore.
+>>
+>> Sounds reasonable.
+>>
+>> I started looking through the code paths and I currently cannot
+>> see anything that would leave a message on a kernel rtnl socket.
+>>
+>> However I did a quick test adding a WARN_ON if there were any messages
+>> found in the queue during rtnl_unlock and I found this code path
+>> getting invoked from linkwatch_event.  So there is clearly something I
+>> don't understand, and it sounds at odds just a bit from your
+>> description.
 > 
->>> diff --git a/include/linux/user_namespace.h b/include/linux/user_namespace.h
->>> index b5f41d4..dda160c 100644
->>> --- a/include/linux/user_namespace.h
->>> +++ b/include/linux/user_namespace.h
->>> @@ -17,7 +17,7 @@ struct user_namespace {
->>>
->>>  extern struct user_namespace init_user_ns;
->>>
->>> -#ifdef CONFIG_USER_NS
->>> +#ifdef CONFIG_NAMESPACES_EXPERIMENTAL
 > 
-> is it really a good precedent to introduce Kconfig variables that
-> literally include the word "EXPERIMENTAL"?
+> That sounds like a bug. Did you place the WARN_ON before or after
+> the mutex_unlock()?
 
-How else can we call it? I proposed one config option for
-each namespace with "depends on EXPERIMENTAL" dependency,
-but everyone else said that two options are much better.
+The presence of the message in the queue during rtnl_unlock is quite
+possible as normal user->kernel message processing path for rtnl is the
+following:
 
-> rday
+netlink_sendmsg
+   netlink_unicast
+      netlink_sendskb
+          skb_queue_tail
+          netlink_data_ready
+              rtnetlink_rcv
+                  mutex_lock(&rtnl_mutex);
+                  netlink_run_queue(sk, qlen, &rtnetlink_rcv_msg);
+                  mutex_unlock(&rtnl_mutex);
+
+so, the presence of the packet in the rtnl queue on rtnl_unlock is
+normal race with a rtnetlink_rcv for me.
+
+Regards,
+	Den
