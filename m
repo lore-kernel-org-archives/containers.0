@@ -1,60 +1,230 @@
-From: "Denis V. Lunev" <den@openvz.org>
-Subject: [PATCH] rtnl_unlock cleanups
-Date: Mon, 1 Oct 2007 13:51:06 +0400
-Message-ID: <20071001095106.GA7864@iris.sw.ru>
+From: Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Subject: Re: [PATCH 1/5] Add notification about some major slab events
+Date: Mon, 01 Oct 2007 17:25:39 +0530
+Message-ID: <4700E03B.6000102@linux.vnet.ibm.com>
+References: <46F91841.9070708@openvz.org> <46F91898.5060400@openvz.org>
+Reply-To: balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Return-path: <netdev-owner@vger.kernel.org>
-Content-Disposition: inline
-Sender: netdev-owner@vger.kernel.org
-To: davem@davemloft.net
-Cc: devel@openvz.org, containers@lists.osdl.org, ebiederm@xmission.com, kaber@trash.net, kuznet@ms2.inr.ac.ru, netdev@vger.kernel.org
+Content-Type: text/plain; charset=ISO-8859-1
+Content-Transfer-Encoding: 7bit
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <46F91898.5060400-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Christoph Lameter <clameter-sJ/iWh9BUns@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-There is no need to process outstanding netlink user->kernel packets
-during rtnl_unlock now. There is no rtnl_trylock in the rtnetlink_rcv
-anymore.
+Pavel Emelyanov wrote:
+> According to Christoph, there are already multiple people who 
+> want to control slab allocations and track memory for various 
+> reasons. So this is an introduction of such a hooks.
+> 
+> Currently, functions that are to call the notifiers are empty
+> and marked as "weak". Thus, if there's only _one_ listener
+> to these events, it can happily link with the vmlinux and
+> handle the events with more than 10% of performance saved.
+> 
 
-Normal code path is the following:
-netlink_sendmsg
-   netlink_unicast
-       netlink_sendskb
-           skb_queue_tail
-           netlink_data_ready
-               rtnetlink_rcv
-                   mutex_lock(&rtnl_mutex);
-                   netlink_run_queue(sk, qlen, &rtnetlink_rcv_msg);
-                   mutex_unlock(&rtnl_mutex);
+Please check that weak objects work across platforms. Please see
+http://www.ussg.iu.edu/hypermail/linux/kernel/0706.0/0593.html
 
-So, it is possible, that packets can be present in the rtnl->sk_receive_queue
-during rtnl_unlock, but there is no need to process them at that moment as
-rtnetlink_rcv for that packet is pending.
+> The events tracked are:
+> 1. allocation of an object;
+> 2. freeing of an object;
+> 3. allocation of a new page for objects;
+> 4. freeing this page.
+> 
+> More events can be added on demand.
+> 
+> The kmem cache marked with SLAB_NOTIFY flag will cause all the
+> events above to generate notifications. By default no caches
+> come with this flag.
+> 
+> The events are generated on slow paths only and as soon as the
+> cache is marked as SLAB_NOTIFY, it will always use them for
+> allocation.
+> 
+> Signed-off-by: Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+> 
+> ---
+> 
+> diff --git a/include/linux/slab.h b/include/linux/slab.h
+> index f3a8eec..68d8e65 100644
+> --- a/include/linux/slab.h
+> +++ b/include/linux/slab.h
+> @@ -28,6 +28,7 @@
+>  #define SLAB_DESTROY_BY_RCU	0x00080000UL	/* Defer freeing slabs to RCU */
+>  #define SLAB_MEM_SPREAD		0x00100000UL	/* Spread some memory over cpuset */
+>  #define SLAB_TRACE		0x00200000UL	/* Trace allocations and frees */
+> +#define SLAB_NOTIFY		0x00400000UL	/* Notify major events */
+> 
+>  /* The following flags affect the page allocator grouping pages by mobility */
+>  #define SLAB_RECLAIM_ACCOUNT	0x00020000UL		/* Objects are reclaimable */
+> diff --git a/include/linux/slub_def.h b/include/linux/slub_def.h
+> index 40801e7..8cfd9ff 100644
+> --- a/include/linux/slub_def.h
+> +++ b/include/linux/slub_def.h
+> @@ -200,4 +203,22 @@ static __always_inline void *kmalloc_nod
+>  }
+>  #endif
+> 
+> +struct slub_notify_struct {
+> +	struct kmem_cache *cachep;
+> +	void *objp;
+> +	gfp_t gfp;
+> +};
+> +
+> +enum {
+> +	SLUB_ON,
+> +	SLUB_OFF,
+> +	SLUB_ALLOC,
+> +	SLUB_FREE,
+> +	SLUB_NEWPAGE,
+> +	SLUB_FREEPAGE,
+> +};
+> +
+> +int slub_register_notifier(struct notifier_block *nb);
+> +void slub_unregister_notifier(struct notifier_block *nb);
+> +
+>  #endif /* _LINUX_SLUB_DEF_H */
+> diff --git a/mm/slub.c b/mm/slub.c
+> index 31d04a3..e066a0e 100644
+> --- a/mm/slub.c
+> +++ b/mm/slub.c
+> @@ -1040,6 +1040,43 @@ static inline unsigned long kmem_cache_f
+>  }
+>  #define slub_debug 0
+>  #endif
+> +
+> +/*
+> + * notifiers
+> + */
+> +
+> +int __attribute__ ((weak)) slub_alloc_notify(struct kmem_cache *cachep,
+> +		void *obj, gfp_t gfp)
+> +{
+> +	return 0;
+> +}
+> +
+> +void __attribute__ ((weak)) slub_free_notify(struct kmem_cache *cachep,
+> +		void *obj)
+> +{
+> +}
+> +
+> +int __attribute__ ((weak)) slub_newpage_notify(struct kmem_cache *cachep,
+> +		struct page *pg, gfp_t gfp)
+> +{
+> +	return 0;
+> +}
+> +
+> +void __attribute__ ((weak)) slub_freepage_notify(struct kmem_cache *cachep,
+> +		struct page *pg)
+> +{
+> +}
+> +
+> +int __attribute__ ((weak)) slub_on_notify(struct kmem_cache *cachep)
+> +{
+> +	return 0;
+> +}
+> +
+> +int __attribute__ ((weak)) slub_off_notify(struct kmem_cache *cachep)
+> +{
+> +	return 0;
+> +}
+> +
+>  /*
+>   * Slab allocation and freeing
+>   */
+> @@ -1063,7 +1184,11 @@ static struct page *allocate_slab(struct
+>  		page = alloc_pages_node(node, flags, s->order);
+> 
+>  	if (!page)
+> -		return NULL;
+> +		goto out;
+> +
+> +	if ((s->flags & SLAB_NOTIFY) &&
+> +			slub_newpage_notify(s, page, flags) < 0)
+> +		goto out_free;
+> 
+>  	mod_zone_page_state(page_zone(page),
+>  		(s->flags & SLAB_RECLAIM_ACCOUNT) ?
+> @@ -1071,6 +1196,11 @@ static struct page *allocate_slab(struct
+>  		pages);
+> 
+>  	return page;
+> +
+> +out_free:
+> +	__free_pages(page, s->order);
 
-Signed-off-by: Denis V. Lunev <den@openvz.org>
-Acked-by: Alexey Kuznetsov <kuznet@ms2.inr.ac.ru>
+allocate_slab fails if sub_newpage_notify() fails? Sounds a bit
+harsh, hard to review since the definition of the above function
+is not known.
 
---- ./net/core/rtnetlink.c.rtnl2	2007-08-26 19:30:38.000000000 +0400
-+++ ./net/core/rtnetlink.c	2007-10-01 13:09:03.000000000 +0400
-@@ -75,8 +75,6 @@ void __rtnl_unlock(void)
- void rtnl_unlock(void)
- {
- 	mutex_unlock(&rtnl_mutex);
--	if (rtnl && rtnl->sk_receive_queue.qlen)
--		rtnl->sk_data_ready(rtnl, 0);
- 	netdev_run_todo();
- }
- 
-@@ -1319,11 +1317,9 @@ static void rtnetlink_rcv(struct sock *s
- 	unsigned int qlen = 0;
- 
- 	do {
--		mutex_lock(&rtnl_mutex);
-+		rtnl_lock();
- 		qlen = netlink_run_queue(sk, qlen, &rtnetlink_rcv_msg);
--		mutex_unlock(&rtnl_mutex);
--
--		netdev_run_todo();
-+		rtnl_unlock();
- 	} while (qlen);
- }
- 
+> +out:
+> +	return NULL;
+>  }
+> 
+>  static void setup_object(struct kmem_cache *s, struct page *page,
+> @@ -1103,7 +1233,7 @@ static struct page *new_slab(struct kmem
+>  	page->slab = s;
+>  	page->flags |= 1 << PG_slab;
+>  	if (s->flags & (SLAB_DEBUG_FREE | SLAB_RED_ZONE | SLAB_POISON |
+> -			SLAB_STORE_USER | SLAB_TRACE))
+> +			SLAB_STORE_USER | SLAB_TRACE | SLAB_NOTIFY))
+>  		SetSlabDebug(page);
+> 
+>  	start = page_address(page);
+> @@ -1158,6 +1288,9 @@ static void rcu_free_slab(struct rcu_hea
+> 
+>  static void free_slab(struct kmem_cache *s, struct page *page)
+>  {
+> +	if (s->flags & SLAB_NOTIFY)
+> +		slub_freepage_notify(s, page);
+> +
+>  	if (unlikely(s->flags & SLAB_DESTROY_BY_RCU)) {
+>  		/*
+>  		 * RCU free overloads the RCU head over the LRU
+> @@ -1548,9 +1681,16 @@ debug:
+>  	if (!alloc_debug_processing(s, c->page, object, addr))
+>  		goto another_slab;
+> 
+> +	if ((s->flags & SLAB_NOTIFY) &&
+> +			slub_alloc_notify(s, object, gfpflags) < 0) {
+> +		object = NULL;
+> +		goto out;
+> +	}
+> +
+>  	c->page->inuse++;
+>  	c->page->freelist = object[c->offset];
+>  	c->node = -1;
+> +out:
+>  	slab_unlock(c->page);
+>  	return object;
+>  }
+> @@ -1659,6 +1799,10 @@ slab_empty:
+>  debug:
+>  	if (!free_debug_processing(s, page, x, addr))
+>  		goto out_unlock;
+> +
+> +	if (s->flags & SLAB_NOTIFY)
+> +		slub_free_notify(s, x);
+> +
+>  	goto checks_ok;
+>  }
+> 
+> 
+
+
+-- 
+	Warm Regards,
+	Balbir Singh
+	Linux Technology Center
+	IBM, ISTL
