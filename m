@@ -1,16 +1,16 @@
-From: "Paul Menage" <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [Devel] Re: [PATCH 4/5] Setup the control group
-Date: Mon, 1 Oct 2007 08:52:20 -0700
-Message-ID: <6599ad830710010852w360348a7k6bc94456d6c341ac@mail.gmail.com>
-References: <46F91841.9070708@openvz.org> <46F91A1E.2060303@openvz.org>
-	<4700FAAC.2050004@linux.vnet.ibm.com> <4700FB72.5070409@openvz.org>
-	<4701013A.3010307@linux.vnet.ibm.com>
+From: Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+Subject: Re: [PATCH 3/5] Switch caches notification dynamically
+Date: Mon, 01 Oct 2007 19:45:39 +0400
+Message-ID: <47011623.3080600@openvz.org>
+References: <46F91841.9070708@openvz.org> <46F919BB.2000701@openvz.org>
+	<4700F2E8.5050904@linux.vnet.ibm.com> <4700F476.4070806@openvz.org>
+	<4700F85B.5090902@linux.vnet.ibm.com> <4700FA0A.5040707@openvz.org>
+	<470100D0.7030700@linux.vnet.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <4701013A.3010307-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Content-Disposition: inline
+In-Reply-To: <470100D0.7030700-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -21,27 +21,37 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
-Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Christoph Lameter <clameter-sJ/iWh9BUns@public.gmane.org>, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Christoph Lameter <clameter-sJ/iWh9BUns@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On 10/1/07, Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org> wrote:
+Balbir Singh wrote:
 > Pavel Emelyanov wrote:
-> >> Could we make the user interface similar to the one in the memory
-> >> controller please! It would make it easier for users to configure
-> >> and control both.
-> >
-> > Do you mean by merging the similar code or by making them look like
-> > the same? If the second, than can you point at least one difference
-> > except for "usage" vs "usage_in_bytes" (and similar) naming?
-> >
->
-> I meant similar naming, it makes it is easier if the naming convention
-> is the same.
->
+>> Balbir Singh wrote:
+>>>>>> +	if ((buf[0] == '1') && !(s->flags & SLAB_NOTIFY)) {
+>>>>> Won't this code break if I pass 10 as input in buf?
+>>>> I don't care about this :) And no /sys/slab/<xxx>/ file does.
+>>>> It's the problem of a user if he pass some shit and doesn't 
+>>>> see the notifications turned on/off ;)
+>>>>
+>>> Well, we don't want confused users? How does a user know what
+>>> is a valid value to pass? Are you saying that we don't need
+>> The rules are simple - 1 to turn them on and 0 to turn them off
+>> and nothing more. These values user sees when he "cat"s this file.
+>>
+> 
+> I think correct error reporting is critical, if the user sets
+> the value to 01 and that ends up disabling slab notifications,
+> the handling is wrong.
 
-I agree with this, but I'd rather see standardization on "limit/usage"
-rather than "limit_in_bytes/usage_in_bytes". Then the same API can be
-used for subsystems that use resource counters for things that can't
-be measured in bytes, e.g. number of tasks.
+This is true for all the /sys/slab/<x>/ files...
 
-Paul
+>>> to care about user interface, if so I don't agree.
+>> That's the convention used in the /sys/slab/<x>/ files - the
+>> 1 means on the 0 means 0, all the others are not guaranteed :)
+>>
+> 
+> Is this documented somewhere or is this interpreted from looking
+> at the code of other file handlers?
+
+I didn't notice this in any Documentation. Maybe Christoph can
+clarify this question.
