@@ -1,68 +1,54 @@
-From: "Denis V. Lunev" <den@sw.ru>
-Subject: Re: [Devel] Re: [PATCH 2/5] net: Make rtnetlink infrastructure network
- namespace aware
-Date: Mon, 01 Oct 2007 12:26:52 +0400
-Message-ID: <4700AF4C.6020509@sw.ru>
-References: <m1myv69tfu.fsf@ebiederm.dsl.xmission.com>	<m1hcle9td8.fsf@ebiederm.dsl.xmission.com>	<46FE72E3.3000402@trash.net>	<m1tzpd8lfh.fsf@ebiederm.dsl.xmission.com>	<46FE8FD3.2030308@trash.net>	<m1myv56vb3.fsf@ebiederm.dsl.xmission.com> <46FFC34A.3020701@trash.net>
+From: "Robert P. J. Day" <rpjday@mindspring.com>
+Subject: Re: [PATCH 4/5] Move the user namespace under the option
+Date: Mon, 1 Oct 2007 04:42:18 -0400 (EDT)
+Message-ID: <Pine.LNX.4.64.0710010440360.12789@localhost.localdomain>
+References: <46FA7D4D.8040808@openvz.org> <46FA8087.6060307@openvz.org>
+ <46FBA2A4.2040909@fr.ibm.com> <Pine.LNX.4.64.0709270837220.5275@localhost.localdomain>
+ <4700A7C5.5080005@openvz.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-15
-Content-Transfer-Encoding: 7bit
-Return-path: <netdev-owner@vger.kernel.org>
-In-Reply-To: <46FFC34A.3020701@trash.net>
-Sender: netdev-owner@vger.kernel.org
-To: Patrick McHardy <kaber@trash.net>
-Cc: "Eric W. Biederman" <ebiederm@xmission.com>, Linux Containers <containers@lists.osdl.org>, netdev@vger.kernel.org, David Miller <davem@davemloft.net>
+Content-Type: TEXT/PLAIN; charset=US-ASCII
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1754577AbXJAIoz@vger.kernel.org>
+In-Reply-To: <4700A7C5.5080005@openvz.org>
+Sender: linux-kernel-owner@vger.kernel.org
+To: Pavel Emelyanov <xemul@openvz.org>
+Cc: Cedric Le Goater <clg@fr.ibm.com>, Andrew Morton <akpm@osdl.org>, Serge Hallyn <serue@us.ibm.com>, "Eric W. Biederman" <ebiederm@xmission.com>, Linux Containers <containers@lists.osdl.org>, Linux Kernel Mailing List <linux-kernel@vger.kernel.org>
 List-Id: containers.vger.kernel.org
 
-Patrick McHardy wrote:
-> Eric W. Biederman wrote:
->> Patrick McHardy <kaber@trash.net> writes:
->>
->>
->>> Maybe I can save you some time: we used to do down_trylock()
->>> for the rtnl mutex, so senders would simply return if someone
->>> else was already processing the queue *or* the rtnl was locked
->>> for some other reason. In the first case the process already
->>> processing the queue would also process the new messages, but
->>> if it the rtnl was locked for some other reason (for example
->>> during module registration) the message would sit in the
->>> queue until the next rtnetlink sendmsg call, which is why
->>> rtnl_unlock does queue processing. Commit 6756ae4b changed
->>> the down_trylock to mutex_lock, so senders will now simply wait
->>> until the mutex is released and then call netlink_run_queue
->>> themselves. This means its not needed anymore.
->>
->> Sounds reasonable.
->>
->> I started looking through the code paths and I currently cannot
->> see anything that would leave a message on a kernel rtnl socket.
->>
->> However I did a quick test adding a WARN_ON if there were any messages
->> found in the queue during rtnl_unlock and I found this code path
->> getting invoked from linkwatch_event.  So there is clearly something I
->> don't understand, and it sounds at odds just a bit from your
->> description.
-> 
-> 
-> That sounds like a bug. Did you place the WARN_ON before or after
-> the mutex_unlock()?
+On Mon, 1 Oct 2007, Pavel Emelyanov wrote:
 
-The presence of the message in the queue during rtnl_unlock is quite
-possible as normal user->kernel message processing path for rtnl is the
-following:
+> Robert P. J. Day wrote:
+> > On Thu, 27 Sep 2007, Cedric Le Goater wrote:
+> >
+> >>> diff --git a/include/linux/user_namespace.h b/include/linux/user_namespace.h
+> >>> index b5f41d4..dda160c 100644
+> >>> --- a/include/linux/user_namespace.h
+> >>> +++ b/include/linux/user_namespace.h
+> >>> @@ -17,7 +17,7 @@ struct user_namespace {
+> >>>
+> >>>  extern struct user_namespace init_user_ns;
+> >>>
+> >>> -#ifdef CONFIG_USER_NS
+> >>> +#ifdef CONFIG_NAMESPACES_EXPERIMENTAL
+> >
+> > is it really a good precedent to introduce Kconfig variables that
+> > literally include the word "EXPERIMENTAL"?
+>
+> How else can we call it? I proposed one config option for each
+> namespace with "depends on EXPERIMENTAL" dependency, but everyone
+> else said that two options are much better.
 
-netlink_sendmsg
-   netlink_unicast
-      netlink_sendskb
-          skb_queue_tail
-          netlink_data_ready
-              rtnetlink_rcv
-                  mutex_lock(&rtnl_mutex);
-                  netlink_run_queue(sk, qlen, &rtnetlink_rcv_msg);
-                  mutex_unlock(&rtnl_mutex);
+i don't know -- perhaps something as trivially obvious as
+NAMESPACES_V2 or something.  i just think it's awkward to take a word
+like "EXPERIMENTAL" that already has a long and established history,
+and start jamming it into config variable names.  but it's just an
+observation.
 
-so, the presence of the packet in the rtnl queue on rtnl_unlock is
-normal race with a rtnetlink_rcv for me.
+rday
+-- 
+========================================================================
+Robert P. J. Day
+Linux Consulting, Training and Annoying Kernel Pedantry
+Waterloo, Ontario, CANADA
 
-Regards,
-	Den
+http://crashcourse.ca
+========================================================================
