@@ -1,14 +1,14 @@
 From: Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
-Subject: Re: [PATCH 2/5] Generic notifiers for SLUB events
-Date: Mon, 01 Oct 2007 17:07:44 +0400
-Message-ID: <4700F120.2070302@openvz.org>
-References: <46F91841.9070708@openvz.org> <46F918D9.3020406@openvz.org>
-	<4700F083.1070706@linux.vnet.ibm.com>
+Subject: Re: [PATCH 3/5] Switch caches notification dynamically
+Date: Mon, 01 Oct 2007 17:21:58 +0400
+Message-ID: <4700F476.4070806@openvz.org>
+References: <46F91841.9070708@openvz.org> <46F919BB.2000701@openvz.org>
+	<4700F2E8.5050904@linux.vnet.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <4700F083.1070706-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+In-Reply-To: <4700F2E8.5050904-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -22,62 +22,97 @@ To: balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
 Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Christoph Lameter <clameter-sJ/iWh9BUns@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Balbir Singh wrote:
-> Pavel Emelyanov wrote:
->> If the user wants more than one listener for SLUB event,
->> it can register them all as notifier_block-s so all of
->> them will be notified.
+>> diff --git a/mm/slub.c b/mm/slub.c
+>> index 31d04a3..e066a0e 100644
+>> --- a/mm/slub.c
+>> +++ b/mm/slub.c
+>> @@ -3779,6 +3932,60 @@ static ssize_t defrag_ratio_store(struct
+>>  SLAB_ATTR(defrag_ratio);
+>>  #endif
 >>
->> This costs us about 10% of performance loss, in comparison
->> with static linking.
->>
->> The selected method of notification is srcu notifier blocks.
->> This is selected because the "call" path, i.e. when the 
->> notification is done, is lockless and at the same time the
->> handlers can sleep. Neither regular nor atomic notifiers
->> provide such facilities.
->>
->> Signed-off-by: Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
->>
->> ---
->>
->> diff --git a/init/Kconfig b/init/Kconfig
->> index 684ccfb..e9acc29 100644
->> --- a/init/Kconfig
->> +++ b/init/Kconfig
->> @@ -593,6 +599,16 @@ config SLUB_DEBUG
->>  	  SLUB sysfs support. /sys/slab will not exist and there will be
->>  	  no support for cache validation etc.
->>
->> +config SLUB_NOTIFY
->> +	default y
-> 
-> Should the default be on? Shouldn't it depend on KMEM?
-
-Well... I think that is should be N by default and has
-noting to do with the KMEM :) Thanks for noticing.
-
->> +	bool "Enable SLUB events generic notification"
->> +	depends on SLUB
->> +	help
->> +	  When Y, this option enables generic notifications of some major
->> +	  slub events. However, if you do know that there will be the
->> +	  only listener for them, you may say N here, so that callbacks
->> +	  will be called directly.
+>> +static ssize_t cache_notify_show(struct kmem_cache *s, char *buf)
+>> +{
+>> +	return sprintf(buf, "%d\n", !!(s->flags & SLAB_NOTIFY));
+>> +}
 >> +
->> -
->> -
->> +#ifdef CONFIG_SLUB_NOTIFY
->> +	srcu_init_notifier_head(&slub_nb);
+>> +static ssize_t cache_notify_store(struct kmem_cache *s,
+>> +		const char *buf, size_t length)
+>> +{
+>> +	int err;
+>> +	int n;
+>> +
+>> +	if ((buf[0] == '1') && !(s->flags & SLAB_NOTIFY)) {
 > 
-> Can we get rid of the #ifdef CONFIG_SLUB_NOTIFY?
+> Won't this code break if I pass 10 as input in buf?
 
-I don't think this is really useful in the __init code :)
+I don't care about this :) And no /sys/slab/<xxx>/ file does.
+It's the problem of a user if he pass some shit and doesn't 
+see the notifications turned on/off ;)
 
->> +#endif
->>  	printk(KERN_INFO "SLUB: Genslabs=%d, HWalign=%d, Order=%d-%d, MinObjects=%d,"
->>  		" CPUs=%d, Nodes=%d\n",
->>  		caches, cache_line_size(),
+>> +		err = slub_on_notify(s);
+>> +		if (err < 0)
+>> +			return err;
+>> +
+>> +		s->flags |= SLAB_NOTIFY;
+>> +
+>> +		flush_all(s);
+> 
+> Sounds like an expensive operation, can we add a comment
+> to indicate the same. Also, in the documentation, could
+> we warn the user that turning notifications on/off
+> can be expensive?
+
+Sure.
+
+>> +		for_each_node_state(n, N_NORMAL_MEMORY) {
+>> +			struct kmem_cache_node *node;
+>> +			struct page *pg;
+>> +			
+>> +			node = get_node(s, n);
+>> +			spin_lock_irq(&node->list_lock);
+>> +			list_for_each_entry(pg, &node->partial, lru)
+>> +				SetSlabDebug(pg);
+>> +			spin_unlock_irq(&node->list_lock);
+>> +		}
+>> +		return length;
+>> +	}
+>> +
+>> +	if ((buf[0] == '0') && (s->flags & SLAB_NOTIFY)) {
+> 
+> What happens if buf is 01?
+> 
+>> +		/*
+>> +		 * TODO: make the notifications-off work
+>> +		 */
+>> +		if (any_slab_objects(s))
+>> +			return -EBUSY;
+>> +
+>> +		s->flags &= ~SLAB_NOTIFY;
+>> +		err = slub_off_notify(s);
+>> +		if (err < 0) {
+>> +			s->flags |= SLAB_NOTIFY;
+>> +			return err;
+>> +		}
+>> +
+>> +		return length;
+>> +	}
+>> +
+>> +	return -EINVAL;
+>> +}
+>> +
+>> +SLAB_ATTR(cache_notify);
+>> +
+>>  static struct attribute * slab_attrs[] = {
+>>  	&slab_size_attr.attr,
+>>  	&object_size_attr.attr,
+>> @@ -3809,6 +4016,7 @@ static struct attribute * slab_attrs[] =
+>>  #ifdef CONFIG_NUMA
+>>  	&defrag_ratio_attr.attr,
+>>  #endif
+>> +	&cache_notify_attr.attr,
+>>  	NULL
+>>  };
+>>
 >>
 > 
 > 
