@@ -1,193 +1,300 @@
-From: Subrata Modak <subrata@linux.vnet.ibm.com>
-Subject: [ANNOUNCE] The Linux Test Project has been Released for SEPTEMBER
-	2007
-Date: Mon, 01 Oct 2007 19:27:09 +0530
-Message-ID: <1191247029.4651.9.camel@subratamodak.linux.ibm.com>
-Reply-To: subrata@linux.vnet.ibm.com
+From: Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Subject: Re: [PATCH 5/5] Account for the slub objects
+Date: Mon, 01 Oct 2007 19:37:27 +0530
+Message-ID: <4700FF1F.7060604@linux.vnet.ibm.com>
+References: <46F91841.9070708@openvz.org> <46F91A8A.9000001@openvz.org>
+Reply-To: balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary="=-E81cmOWnASCL309x8OC2"
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1753467AbXJAN52@vger.kernel.org>
-Sender: linux-kernel-owner@vger.kernel.org
-To: ltp-list <ltp-list@lists.sourceforge.net>, ltp-announce <ltp-announce@lists.sourceforge.net>
-Cc: linux-kernel <linux-kernel@vger.kernel.org>, kexec@lists.infradead.org, containers@lists.osdl.org, redhat-lspp@redhat.com, selinux@tycho.nsa.gov, linux-audit@redhat.com
+Content-Type: text/plain; charset=ISO-8859-1
+Content-Transfer-Encoding: 7bit
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <46F91A8A.9000001-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Christoph Lameter <clameter-sJ/iWh9BUns@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
+Pavel Emelyanov wrote:
+> The struct page gets an extra pointer (just like it has with
+> the RSS controller) and this pointer points to the array of
+> the kmem_container pointers - one for each object stored on
+> that page itself.
+> 
+> Thus the i'th object on the page is accounted to the container
+> pointed by the i'th pointer on that array and when the object
+> is freed we unaccount its size to this particular container,
+> not the container current task belongs to.
+> 
+> This is done so, because the context objects are freed is most
+> often not the same as the one this objects was allocated in
+> (due to RCU and reference counters).
+> 
+> This controller disables the kmalloc caches accounting, since
+> we cannot just track all the kmalloc calls, but we need to
+> explicitly specify which kmalloc do we want to account for
+> with (e.g.) additional GFP flag.
+> 
+> Signed-off-by: Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+> 
+> ---
+> 
+> diff --git a/include/linux/mm_types.h b/include/linux/mm_types.h
+> index f83bd17..8e1ef21 100644
+> --- a/include/linux/mm_types.h
+> +++ b/include/linux/mm_types.h
+> @@ -83,9 +83,14 @@ struct page {
+>  	void *virtual;			/* Kernel virtual address (NULL if
+>  					   not kmapped, ie. highmem) */
+>  #endif /* WANT_PAGE_VIRTUAL */
+> +	union {
+>  #ifdef CONFIG_CGROUP_MEM_CONT
+> -	unsigned long page_cgroup;
+> +		unsigned long page_cgroup;
+> +#endif
+> +#ifdef CONFIG_CGROUP_KMEM
+> +		struct kmem_container **cgroups;
+>  #endif
+> +	};
+>  #ifdef CONFIG_PAGE_OWNER
+>  	int order;
+>  	unsigned int gfp_mask;
+> diff --git a/include/linux/slub_def.h b/include/linux/slub_def.h
+> index 40801e7..8cfd9ff 100644
+> --- a/include/linux/slub_def.h
+> +++ b/include/linux/slub_def.h
+> @@ -69,6 +69,9 @@ struct kmem_cache {
+>  #endif
+>  };
+> 
+> +int slab_index(void *p, struct kmem_cache *s, void *addr);
+> +int is_kmalloc_cache(struct kmem_cache *s);
+> +
+>  /*
+>   * Kmalloc subsystem.
+>   */
+> diff --git a/mm/Makefile b/mm/Makefile
+> index 81232a1..f7ec4b7 100644
+> --- a/mm/Makefile
+> +++ b/mm/Makefile
+> @@ -31,4 +31,5 @@ obj-$(CONFIG_MIGRATION) += migrate.o
+>  obj-$(CONFIG_SMP) += allocpercpu.o
+>  obj-$(CONFIG_QUICKLIST) += quicklist.o
+>  obj-$(CONFIG_CGROUP_MEM_CONT) += memcontrol.o
+> +obj-$(CONFIG_CGROUP_KMEM) += kmemcontrol.o
+> 
+> diff --git a/mm/kmemcontrol.c b/mm/kmemcontrol.c
+> new file mode 100644
+> index 0000000..5698c0f
+> --- /dev/null
+> +++ b/mm/kmemcontrol.c
+> @@ -1,6 +1,9 @@
+>   * but WITHOUT ANY WARRANTY; without even the implied warranty of
+>   * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+>   * GNU General Public License for more details.
+> + *
+> + * Changelog:
+> + *   2007 Pavel Emelyanov : Add slub accounting
+>   */
+> 
+>  #include <linux/mm.h>
+> @@ -120,3 +129,144 @@
+>  	.subsys_id = kmem_subsys_id,
+>  	.early_init = 1,
+>  };
+> +
+> +/*
+> + * slub accounting
+> + */
+> +
+> +int slub_newpage_notify(struct kmem_cache *s, struct page *pg, gfp_t flags)
+> +{
+> +	struct kmem_container **ptr;
+> +
+> +	ptr = kzalloc(s->objects * sizeof(struct kmem_container *), flags);
+> +	if (ptr == NULL)
+> +		return -ENOMEM;
+> +
+> +	pg->cgroups = ptr;
+> +	return 0;
+> +}
+> +
+> +void slub_freepage_notify(struct kmem_cache *s, struct page *pg)
+> +{
+> +	struct kmem_container **ptr;
+> +
+> +	ptr = pg->cgroups;
+> +	if (ptr == NULL)
+> +		return;
+> +
+> +	kfree(ptr);
+> +	pg->cgroups = NULL;
+> +}
+> +
+> +int slub_alloc_notify(struct kmem_cache *s, void *obj, gfp_t gfp)
+> +{
+> +	struct page *pg;
+> +	struct kmem_container *cnt;
+> +	struct kmem_container **obj_container;
+> +
+> +	pg = virt_to_head_page(obj);
+> +	obj_container = pg->cgroups;
+> +	if (unlikely(obj_container == NULL)) {
+> +		/*
+> +		 * turned on after some objects were allocated
+> +		 */
+> +		if (slub_newpage_notify(s, pg, GFP_ATOMIC) < 0)
+> +			goto err;
+> +
+> +		obj_container = pg->cgroups;
+> +	}
+> +
+> +	rcu_read_lock();
+> +	cnt = task_kmem_container(current);
+> +	if (res_counter_charge(&cnt->res, s->size))
 
---=-E81cmOWnASCL309x8OC2
-Content-Type: text/plain
-Content-Transfer-Encoding: 7bit
+Is s->size measure in pages or bytes? I suspect it is bytes.
 
-Dear All,
+> +		goto err_locked;
+> +
+> +	css_get(&cnt->css);
+> +	rcu_read_unlock();
+> +	obj_container[slab_index(obj, s, page_address(pg))] = cnt;
+> +	return 0;
+> +
+> +err_locked:
+> +	rcu_read_unlock();
+> +err:
+> +	return -ENOMEM;
+> +}
+> +
+> +void slub_free_notify(struct kmem_cache *s, void *obj)
+> +{
+> +	struct page *pg;
+> +	struct kmem_container *cnt;
+> +	struct kmem_container **obj_container;
+> +
+> +	pg = virt_to_head_page(obj);
+> +	obj_container = pg->cgroups;
+> +	if (obj_container == NULL)
+> +		return;
+> +
+> +	obj_container += slab_index(obj, s, page_address(pg));
+> +	cnt = *obj_container;
+> +	if (cnt == NULL)
+> +		return;
+> +
+> +	res_counter_uncharge(&cnt->res, s->size);
+> +	*obj_container = NULL;
+> +	css_put(&cnt->css);
+> +}
+> +
 
-The Linux Test Project test suite has been released for the month of
-SEPTEMBER 2007. The latest version of the test-suite contains 3000+
-tests for the Linux OS and can be found at http://ltp.sourceforge.net/.
-Latest happenings in LTP can also be found at:
-http://ltp.sourceforge.net/wiki/,
-http://ltp.sourceforge.net/wikiArchives.php, and,
-IRC: irc.freenode.org #ltp.
+Quick check, slub_free_notify() and slab_alloc_notify() are called
+from serialized contexts, right?
 
-Our web site also contains other information such as:
-- A Linux test tools matrix
-- Technical papers
-- How To's on Linux testing
-- Code coverage analysis tool.
+> +int slub_on_notify(struct kmem_cache *cachep)
+> +{
+> +	return (is_kmalloc_cache(cachep) ? -EINVAL : 0);
+> +}
+> +
 
-Release Highlights:
+I know you've mentioned several times in the comments that
+kmalloc slab's cannot be accounted for, could you please
+add a big comment here as well.
 
-* Enabling Kernel Version Comparisns for Lots of Testcase(s),
-* Removal of Connectathon Testcases for want of GPLV2 license,
-* Patching of NUMA Testcases for better Statistics Collection,
-* Fixes for KDUMP scripts errors,
-* Mandatory generation of failed testcases file,
-* Fix of LTP output format as pointed out by Andrew Morton,
-* Update of OPENHPI testsuite to 2.10.0,
+Also, looks like if I turn on notification for kmalloc
+slab's, the listener fails, which will cause all
+allocations to fail?
 
-Note(s) from the Maintainer:
-LTP output will see new formats in the coming days. This will make
-interpreting output more easily and conceptually. Hope that Real Time
-Linux Testcases will see the light of the day by this month end.
+> +int slub_off_notify(struct kmem_cache *cachep)
+> +{
+> +	return 0;
+> +}
+> +
+> +#ifdef CONFIG_SLUB_NOTIFY
+> +static int kmem_notify(struct notifier_block *nb, unsigned long cmd, void *arg)
+> +{
+> +	int ret;
+> +	struct slub_notify_struct *ns;
+> +
+> +	ns = (struct slub_notify_struct *)arg;
+> +
+> +	switch (cmd) {
+> +	case SLUB_ALLOC:
+> +		ret = slub_alloc_notify(ns->cachep, ns->objp, ns->gfp);
+> +		break;
+> +	case SLUB_FREE:
+> +		ret = 0;
+> +		slub_free_notify(ns->cachep, ns->objp);
+> +		break;
+> +	case SLUB_NEWPAGE:
+> +		ret = slub_newpage_notify(ns->cachep, ns->objp, ns->gfp);
+> +		break;
+> +	case SLUB_FREEPAGE:
+> +		ret = 0;
+> +		slub_freepage_notify(ns->cachep, ns->objp);
+> +		break;
+> +	case SLUB_ON:
+> +		ret = slub_on_notify(ns->cachep);
+> +		break;
+> +	case SLUB_OFF:
+> +		ret = slub_off_notify(ns->cachep);
+> +		break;
+> +	default:
+> +		return NOTIFY_DONE;
+> +	}
+> +
+> +	return (ret < 0) ? notifier_from_errno(ret) : NOTIFY_OK;
+> +}
+> +
+> +static struct notifier_block kmem_block = {
+> +	.notifier_call = kmem_notify,
+> +};
+> +
+> +static int kmem_subsys_register(void)
+> +{
+> +	return slub_register_notifier(&kmem_block);
+> +}
+> +
+> +__initcall(kmem_subsys_register);
+> +#endif
+> diff --git a/mm/slub.c b/mm/slub.c
+> index 31d04a3..e066a0e 100644
+> --- a/mm/slub.c
+> +++ b/mm/slub.c
+> @@ -327,7 +327,7 @@ static inline void set_freepointer(struc
+>  	for (__p = (__free); __p; __p = get_freepointer((__s), __p))
+> 
+>  /* Determine object index from a given position */
+> -static inline int slab_index(void *p, struct kmem_cache *s, void *addr)
+> +inline int slab_index(void *p, struct kmem_cache *s, void *addr)
+>  {
+>  	return (p - addr) / s->size;
+>  }
+> @@ -2360,6 +2504,14 @@ EXPORT_SYMBOL(kmem_cache_destroy);
+>  struct kmem_cache kmalloc_caches[PAGE_SHIFT] __cacheline_aligned;
+>  EXPORT_SYMBOL(kmalloc_caches);
+> 
+> +int is_kmalloc_cache(struct kmem_cache *s)
+> +{
+> +	int km_idx;
+> +
+> +	km_idx = s - kmalloc_caches;
+> +	return km_idx >= 0 && km_idx < ARRAY_SIZE(kmalloc_caches);
+> +}
+> +
 
-We would encourage the community to post results to
-ltp-results@lists.sf.net,
-patches, new tests, bugs or comments/questions to ltp-list@lists.sf.net,
-http://sourceforge.net/tracker/?func=add&group_id=3382&atid=103382
-(for New Bug(s)),
-http://sourceforge.net/tracker/?func=add&group_id=3382&atid=303382
-(for New Patch(s)),
-http://sourceforge.net/tracker/?func=add&group_id=3382&atid=353382
-(for New Feature Request(s))
 
-Please also see the ChangeLog Attached (SEPTEMBER 2007):
-
-Happy testing, 
-Regards-- 
-Subrata,
-
---=-E81cmOWnASCL309x8OC2
-Content-Disposition: attachment; filename=Sep-2007_Changelog.txt
-Content-Type: text/plain; name=Sep-2007_Changelog.txt; charset=UTF-8
-Content-Transfer-Encoding: 8bit
-
-1)  Log Message: "seebs@users.sf.net" wanted to fix some anomalies in "acct01" testcase
-File(s) Affected:
-ltp/testcases/kernel/syscalls/acct/acct01.c
-
-2)  Log Message: "risrajak@linux.vnet.ibm.com" made modifications to check whether the Kernel is UTSNAMESPACE or SYSVIPC_NAMSPACE enabled
-File(s) Affected:
-ltp/testcases/kernel/containers/container_test.sh
-ltp/testcases/kernel/containers/sysvipc/Makefile
-File(s) Added:
-ltp/testcases/kernel/containers/sysvipc/check_ipcns_enabled.c
-
-3)  Log Message: "rsalveti@linux.vnet.ibm.com" fixed exit code for inotify01 and inotify02 when running with kernel < 2.6.13
-File(s) Affected:
-ltp/testcases/kernel/syscalls/inotify/inotify01.c
-ltp/testcases/kernel/syscalls/inotify/inotify02.c
-
-4)  Log Message: Fixing "ioperm02" testcase for kernel comparisns
-File(s) Affected:
-ltp/testcases/kernel/syscalls/ioperm/ioperm02.c
-
-5)  Log Message: "Sivakumar.C@in.ibm.com" induced time for Statistics collection in RHEL
-File(s) Affected:
-ltp/testcases/kernel/numa/numa01.sh
-
-6)  Log Message: Removing these Testcases as they do not satisfy GPLv2 License Agreement
-File(s) Deleted:
-ltp/testcases/network/nfs/cthon04
-	Makefile README READWIN.txt Testitems domount.c getopt.c runtests server tests.h tests.init unixdos.h
-ltp/testcases/network/nfs/cthon04/basic
-	Makefile runtests runtests.mvs subr.c test1.c test2.c test3.c test4.c test4a.c test5.c test5a.c test5b.c test6.c test7.c test7a.c test7b.c test8.c test9.c
-ltp/testcases/network/nfs/cthon04/basic/console
-	build.bat test1.mak test2.mak test3.mak test4a.mak test4.mak test5a.mak test5b.mak test5.mak test6.mak test7a.mak test7b.mak test7.mak test8.mak test9.mak
-ltp/testcases/network/nfs/cthon04/basic/dos
-	build.bat test1.mak test2.mak test3.mak test4a.mak test4.mak test5a.mak test5b.mak test5.mak test6.mak test7a.mak test7b.mak test7.mak test8.mak test9.mak
-ltp/testcases/network/nfs/cthon04/basic/scripts
-	basic2.bat basic3.bat basic.bat cthon00.mst cthon01.mst cthon02.mst cthon03.mst cthon04.mst cthon.bat runcthon.prl
-ltp/testcases/network/nfs/cthon04/general
-	large4.sh large.c Makefile makefile.tst mkdummy nroff.in rmdummy runtests runtests.wrk stat.c
-ltp/testcases/network/nfs/cthon04/lock
-	Makefile runtests tlock.c
-ltp/testcases/network/nfs/cthon04/special
-	bigfile2.c bigfile.c dupreq.c excltest.c freesp.c fstat.c holey.c Makefile negseek.c nfsidem.c nstat.c op_chmod.c op_ren.c op_unlk.c READWIN.txt rename.c 
-	rewind.c runtests runtests.wrk stat2.c stat.c telldir.c touchn.c truncate.c
-ltp/testcases/network/nfs/cthon04/special/console
-	build1.bat build.bat dupreq.mak excltest.mak fstat.mak holey.mak negseek.mak nfsidem.mak nstat.mak op_chmod.mak op_ren.mak op_unlk.mak rename.mak 
-	rewind.mak stat2.mak stat.mak touchn.mak truncate.mak
-ltp/testcases/network/nfs/cthon04/special/dos
-	build1.bat build.bat dupreq.mak excltest.mak fstat.mak holey.mak negseek.mak nfsidem.mak nstat.mak op_chmod.mak op_ren.mak op_unlk.mak rename.mak 
-	rewind.mak stat2.mak stat.mak touchn.mak truncate.mak
-ltp/testcases/network/nfs/cthon04/special/scripts
-	run.bat
-ltp/testcases/network/nfs/cthon04/tools
-	dirdmp.c dirprt.c Makefile pmapbrd.c pmaptst.c README tcp.c tcpd.c udp.c udpd.c
-
-7)  Log Message: This guides you to the new location of CTHON04, as, these Testcases has been removed from LTP for want of GPLv2 License Agreement
-File(s) Added:
-ltp/testcases/network/nfs/CTHON04_README
-
-8)  Log Message: ¨ciju@linux.vnet.ibm.com¨ fixed some Script errors while configuring ltp-kdump
-File(s) Affected:
-ltp/testcases/kdump/master
-ltp/testcases/kdump/setup
-
-9)  Log Message: KDUMP Scripts must be made executable before testing (Initial CVS Checkin error)
-File(s) Affected:
-ltp/testcases/kdump/Makefile
-
-10) Log Message: Dont use the optional POSIX postfix operator as some crappy shells actually omit it, by ¨vapier@gentoo.org¨
-File(s) Affected:
-ltp/testcases/network/generate.sh
-
-11) Log Message: Included Mandatory Failed file generation and creation of both outout and failed files even if absolute path is not an option to runltp
-File(s) Affected:
-ltp/runltp
-
-12) Log Message: Ricardo cleaned up duplicate code for enhancements in output and failed files generation
-File(s) Affected:
-ltp/runltp
-
-13) Log Message: Updating  Credits to include new contributions from members
-File(s) Affected:
-ltp/CREDITS
-
-14) Log Message: Jeff Burke wanted additional INFO when the test fails in the calloc portion of the test
-File(s) Affected:
-ltp/testcases/kernel/mem/mem/mem02.c
-
-15) Log Message: Randy temporarily fixed the var_args expander in lib/tst_res.c
-File(s) Affected:
-ltp/lib/tst_res.c
-
-16) Log Message: Patrick fixed the too chort char array
-File(s) Affected:
-ltp/testcases/open_posix_testsuite/conformance/interfaces/sem_getvalue/5-1.c
-
-17) Log Message: Ricardo Fixed the way by which tst_resm should be called from Shell Test Script
-File(s) Affected:
-ltp/runtest/tcp_cmds
-ltp/testcases/network/tcp_cmds/ping/ping01
-
-18) Log Message: James Puderer fixed -d option in LTP for better handling of temporary directory
-File(s) Affected:
-ltp/runltp
-
-19) Log Message: issue a warning if unable to actually test if F_SETLEASE is not defined
-File(s) Affected:
-ltp/testcases/kernel/syscalls/fcntl/fcntl23.c
-ltp/testcases/kernel/syscalls/fcntl/fcntl24.c
-ltp/testcases/kernel/syscalls/fcntl/fcntl25.c
-ltp/testcases/kernel/syscalls/fcntl/fcntl26.c
-ltp/testcases/kernel/syscalls/fcntl/fcntl27.c
-ltp/testcases/kernel/syscalls/fcntl/fcntl28.c
-
-20) Log Message: add -D_GNU_SOURCE since we have tests in here that test GNU-specific features (like F_SETLEASE)
-File(s) Affected:
-ltp/testcases/kernel/syscalls/fcntl/Makefile
-
-21) Log Message: Update to OpenHPI 2.10.0 (see www.openhpi.org for more info)
-File(s) Affected:
-ltp/testcases/open_hpi_testsuite
-
---=-E81cmOWnASCL309x8OC2--
+-- 
+	Warm Regards,
+	Balbir Singh
+	Linux Technology Center
+	IBM, ISTL
