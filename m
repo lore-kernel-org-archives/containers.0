@@ -1,51 +1,55 @@
-From: "Serge E. Hallyn" <serue@us.ibm.com>
-Subject: Re: [PATCH 0/3] capabilities: per-process capbset
-Date: Mon, 1 Oct 2007 09:49:09 -0500
-Message-ID: <20071001144909.GA26322@sergelap.austin.ibm.com>
-References: <20071001144031.GA24683@sergelap.austin.ibm.com>
+From: "Paul Menage" <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [Devel] Re: [PATCH 4/5] Setup the control group
+Date: Mon, 1 Oct 2007 08:50:04 -0700
+Message-ID: <6599ad830710010850q660d042av9fa5a461d3c3e445@mail.gmail.com>
+References: <46F91841.9070708@openvz.org> <46F91A1E.2060303@openvz.org>
+	<4700FAAC.2050004@linux.vnet.ibm.com> <4700FB72.5070409@openvz.org>
+	<4701013A.3010307@linux.vnet.ibm.com> <47010169.5040102@openvz.org>
+	<47010276.8060802@linux.vnet.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Return-path: <linux-security-module-owner@vger.kernel.org>
+Content-Type: text/plain; charset=ISO-8859-1
+Content-Transfer-Encoding: 7bit
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <47010276.8060802-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <20071001144031.GA24683@sergelap.austin.ibm.com>
-Sender: linux-security-module-owner@vger.kernel.org
-To: containers@lists.osdl.org
-Cc: linux-security-module@vger.kernel.org, Andrew Morgan <morgan@kernel.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
+Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Christoph Lameter <clameter-sJ/iWh9BUns@public.gmane.org>, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Quoting Serge E. Hallyn (serue@us.ibm.com):
-> Here is a new per-process capability bounding set patchset
-> which I expect to send to linux-kernel soon.  It makes
-> the capbset per-process.  A process can only permanently
-> remove bits from it's bounding set, not add them.  To
-> remove bits, CAP_SYS_ADMIN is currently needed.  Maybe
-> that's not the best choice, but some privilege should
-> probably be required.
-> 
-> The intent is to allow a process tree to start with
-> certain capabilities, i.e. CAP_MKNOD, permanently
-> removed, so that running a setuid binary or one with
-> file capabilities will still not result in those
-> capabilities.  The immediate use case for this is
-> containers/virtual servers.
-> 
-> I am not taking the task_capability_lock during
-> cap_prctl_setbset(), just as it is not taken when
-> capabilities are calculated during fork.  That means
+On 10/1/07, Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org> wrote:
+>
+> Yes, we need to do that. Paul Menage wanted to pull in resource counters
+> into cgroups.
 
-Where by fork I of course mean exec.
+No, that's not what I wanted - I just wanted to try to cut down the
+boilerplate required to use resource counters. Ideally it would be as
+simple as including a call to some function such as
+"add_res_counter(...)" which would deal with setting up all the cgroup
+control files, provide handlers, etc. This also helps to keep all the
+APIs consistent.
 
--serge
+See the patch that I sent last week entitled "Simplify memory
+controller and resource counter I/O" for a first step in that
+direction.
 
-> it can race with another task doing capsetp() on it,
-> and with capgetp().  I'm still looking for comments
-> on whether the fix I sent out last week is correct.
-> If it is, then I'll take the task_capability_lock
-> during cap_prctl_setbset().
-> 
-> thanks,
-> -serge
-> _______________________________________________
-> Containers mailing list
-> Containers@lists.linux-foundation.org
-> https://lists.linux-foundation.org/mailman/listinfo/containers
+> Also, I'd like to be able to share res_counters between
+> container groups or at-least support a hierarchy.
+
+A hierarchy sounds like a good idea.
+
+For the sharing, there are two approaches - any subsystem that wants
+sharing has to implement it itself, or else implement sharing at the
+control groups level and make it (mostly) transparent to the
+subsystems. I think I prefer the latter and have been playing with
+some ways to do this.
+
+Paul
