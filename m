@@ -1,46 +1,27 @@
-From: "Serge E. Hallyn" <serue@us.ibm.com>
-Subject: Re: [PATCH 0/3] capabilities: per-process capbset
-Date: Mon, 1 Oct 2007 22:24:03 -0500
-Message-ID: <20071002032403.GA7848@sergelap.austin.ibm.com>
-References: <20071001144031.GA24683@sergelap.austin.ibm.com> <Xine.LNX.4.64.0710011601330.7099@us.intercode.com.au>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Return-path: <linux-security-module-owner@vger.kernel.org>
-Content-Disposition: inline
-In-Reply-To: <Xine.LNX.4.64.0710011601330.7099@us.intercode.com.au>
-Sender: linux-security-module-owner@vger.kernel.org
-To: James Morris <jmorris@namei.org>
-Cc: "Serge E. Hallyn" <serue@us.ibm.com>, containers@lists.osdl.org, Andrew Morgan <morgan@kernel.org>, linux-security-module@vger.kernel.org
+From: Cedric Le Goater <clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
+Subject: [patch -mm 0/5] mqueue namespace
+Date: Tue, 02 Oct 2007 10:46:08 +0200
+Message-ID: <24683.9691921652$1191315130@news.gmane.org>
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Quoting James Morris (jmorris@namei.org):
-> On Mon, 1 Oct 2007, Serge E. Hallyn wrote:
-> 
-> > Here is a new per-process capability bounding set patchset
-> > which I expect to send to linux-kernel soon.  It makes
-> > the capbset per-process.  A process can only permanently
-> > remove bits from it's bounding set, not add them.  To
-> > remove bits, CAP_SYS_ADMIN is currently needed.  Maybe
-> > that's not the best choice, but some privilege should
-> > probably be required.
-> 
-> I'm not clear on why privilege would required for a process to remove 
-> capability bits from its set.  (Sure, if running setuid).
+Hello,
 
-I don't know what you mean by "Sure, if running setuid."
+Here's the mqueue namespace patchset. 
 
-> Doesn't that just make it more difficult to write safe applications ?
+If you're OK with it, I'll rebase on the next -mm which should contain
+the new CONFIG_NAMESPACES and send to andrew.
 
-My concern is that an unprivileged user could find a setuid root
-application that will partially run but fail unsafely if it can get,
-say, CAP_SETUID but not CAP_CHOWN, and is fooled in completing part of
-it's privileged operation, then quitting or dying due to lack additional
-privs, leaving the operation in an exploitable state.
+Thanks !
 
-No concrete examples offhand, but it feels like by not requiring
-privilege we're inviting things similar to the old sendmail capabilities
-bug.  (I don't think that exact flow is possible, but something
-similar)  After all the setuid root applications assume that if
-they ran as root, then they have full capabilities.
-
--serge
+C.
