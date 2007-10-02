@@ -1,15 +1,14 @@
-From: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
-Subject: [BUGFIX][RFC][PATCH][only -mm] FIX memory leak in memory cgroup vs.
- page migration [2/1] additional patch for migrate page/memory cgroup
-Date: Tue, 2 Oct 2007 19:12:17 +0900
-Message-ID: <20071002191217.61b4cf77.kamezawa.hiroyu@jp.fujitsu.com>
-References: <20071002183031.3352be6a.kamezawa.hiroyu@jp.fujitsu.com>
-	<20071002183306.0c132ff4.kamezawa.hiroyu@jp.fujitsu.com>
+From: Cedric Le Goater <clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [patch -mm 1/5] mqueue namespace : add struct mq_namespace
+Date: Tue, 02 Oct 2007 12:13:16 +0200
+Message-ID: <470219BC.3050702@fr.ibm.com>
+References: <20071002084608.149781400@fr.ibm.com>>
+	<20071002084906.477406083@fr.ibm.com>> <47020A29.9060403@sw.ru>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
+Content-Type: text/plain; charset=ISO-8859-1
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20071002183306.0c132ff4.kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+In-Reply-To: <47020A29.9060403-3ImXcnM4P+0@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,110 +18,27 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
-Cc: "containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org" <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, "linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org" <linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org>, Christoph Lameter <clameter-sJ/iWh9BUns@public.gmane.org>, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
+To: Kirill Korotaev <dev-3ImXcnM4P+0@public.gmane.org>
+Cc: "Denis V. Lunev" <den-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-The patch I sent needs following fix, sorry.
-Anyway, I'll repost good-version with reflected comments again.
+Hello Kirill,
 
-Thanks,
- -Kame
-=
-fix-page-migration-under-memory-controller patch needs this fix..sorry.
+Kirill Korotaev wrote:
+> Cedric,
+> 
+> how safe does it intersect with netlinks from network namespace?
+> I see mqueues can send netlink messages, have you checked how safe it is?
 
- - We should uncharge page by mem_cgroup_end_migration() only if
-   page is not charged by mem_cgroup_prepare_migration().
- - move mem_cgroup_prepare_migration() after goto:
+a ref is taken on the 'struct sock' in the mq_notify() syscall and the
+skbuff which will be send to notify the user is also allocated in the
+mq_notify() syscall. So we should be in the same net namespace when we 
+register the notification and when we notify. 
 
-  Signed-off-by: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+I hope the net guys can confirm or we will easily check in the next 
+-lxc patchset which will merge this patchset with netns.
+ 
+however, we have an issue with the signal notification in __do_notify()
+we could kill a process in a different pid namespace.
 
-Index: linux-2.6.23-rc8-mm2/mm/memcontrol.c
-===================================================================
---- linux-2.6.23-rc8-mm2.orig/mm/memcontrol.c
-+++ linux-2.6.23-rc8-mm2/mm/memcontrol.c
-@@ -445,7 +445,7 @@ retry:
- 	}
- }
- 
--void mem_cgroup_prepare_migration(struct page *page)
-+int mem_cgroup_prepare_migration(struct page *page)
- {
- 	struct page_cgroup *pc;
- 	lock_page_cgroup(page);
-@@ -453,7 +453,7 @@ void mem_cgroup_prepare_migration(struct
- 	if (pc)
- 		atomic_inc(&pc->ref_cnt);
- 	unlock_page_cgroup(page);
--	return;
-+	return (pc != NULL);
- }
- 
- void mem_cgroup_end_migration(struct page *page)
-Index: linux-2.6.23-rc8-mm2/include/linux/memcontrol.h
-===================================================================
---- linux-2.6.23-rc8-mm2.orig/include/linux/memcontrol.h
-+++ linux-2.6.23-rc8-mm2/include/linux/memcontrol.h
-@@ -47,7 +47,7 @@ extern void mem_cgroup_out_of_memory(str
- extern int mem_cgroup_cache_charge(struct page *page, struct mm_struct *mm,
- 					gfp_t gfp_mask);
- /* For handling page migration in proper way */
--extern void mem_cgroup_prepare_migration(struct page *page);
-+extern int mem_cgroup_prepare_migration(struct page *page);
- extern void mem_cgroup_end_migration(struct page *page);
- extern void mem_cgroup_page_migration(struct page *newpage, struct page *page);
- 
-@@ -114,9 +114,9 @@ static inline struct mem_cgroup *mm_cgro
- }
- 
- /* For page migration */
--static inline void mem_cgroup_prepare_migration(struct page *page)
-+static inline int mem_cgroup_prepare_migration(struct page *page)
- {
--	return;
-+	return 0;
- }
- 
- static inline void mem_cgroup_end_migration(struct mem_cgroup *cgroup)
-Index: linux-2.6.23-rc8-mm2/mm/migrate.c
-===================================================================
---- linux-2.6.23-rc8-mm2.orig/mm/migrate.c
-+++ linux-2.6.23-rc8-mm2/mm/migrate.c
-@@ -620,6 +620,7 @@ static int unmap_and_move(new_page_t get
- 	int *result = NULL;
- 	struct page *newpage = get_new_page(page, private, &result);
- 	int rcu_locked = 0;
-+	int charge = 0;
- 
- 	if (!newpage)
- 		return -ENOMEM;
-@@ -652,8 +653,6 @@ static int unmap_and_move(new_page_t get
- 		rcu_read_lock();
- 		rcu_locked = 1;
- 	}
--	mem_cgroup_prepare_migration(page);
--
- 	/*
- 	 * This is a corner case handling.
- 	 * When a new swap-cache is read into, it is linked to LRU
-@@ -663,6 +662,8 @@ static int unmap_and_move(new_page_t get
- 	 */
- 	if (!page->mapping)
- 		goto rcu_unlock;
-+
-+	charge = mem_cgroup_prepare_migration(page);
- 	/* Establish migration ptes or remove ptes */
- 	try_to_unmap(page, 1);
- 
-@@ -671,8 +672,9 @@ static int unmap_and_move(new_page_t get
- 
- 	if (rc) {
- 		remove_migration_ptes(page, page);
--		mem_cgroup_end_migration(page);
--	} else
-+		if (charge)
-+			mem_cgroup_end_migration(page);
-+	} else if (charge)
- 		mem_cgroup_end_migration(newpage);
- 
- rcu_unlock:
+C.
