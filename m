@@ -1,10 +1,11 @@
 From: Cedric Le Goater <clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
-Subject: [patch -mm 3/5] mqueue namespace : add get_sb_single_per_data()
-Date: Tue, 02 Oct 2007 10:46:11 +0200
-Message-ID: <41243.8337378719$1191315249@news.gmane.org>
+Subject: [patch -mm 2/5] mqueue namespace : add unshare support
+Date: Tue, 02 Oct 2007 10:46:10 +0200
+Message-ID: <23449.15174549$1191315356@news.gmane.org>
 References: <20071002084608.149781400@fr.ibm.com>>
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline; filename=add-get_sb_single_per_data.patch
+Content-Disposition: inline;
+	filename=mq_namespace-add-mq_namespace-to-nsproxy.patch
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -20,84 +21,212 @@ List-Id: containers.vger.kernel.org
 
 From: Cedric Le Goater <clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
 
-This is a new helper routine very similar to get_sb_single() which 
-uses the 'data' argument and the 's_fs_info' attribute of the 
-super_block to create a single super_block per 'data' value.
+This patch includes the mqueue  namespace in the nsproxy object. It  
+also adds the support of unshare() and clone() with a new clone flag 
+CLONE_NEWMQ (1 bit left in the clone flags !)
 
-if 'data' is a pointer to a namespace, it makes it easy to create
-a single super_block per namespace. This is something we need for
-the mqueue file system, and other single super_block internal
-file systems.
+CLONE_NEWMQ is required to be cloned or unshared along with CLONE_NEWNS.
+This is to make sure that no user mounts of the internal mqueue fs
+are left behind when the last task exits. 
 
-Dave, can you review this one to make sure the helper routine 
-belongs to fs/super.c ?
-
-Thanks
+It's totally harmless for the moment because the current code still 
+uses the default mqueue namespace object 'init_mq_ns' 
 
 Signed-off-by: Cedric Le Goater <clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
-
 ---
- fs/super.c         |   32 ++++++++++++++++++++++++++++++++
- include/linux/fs.h |    4 ++++
- 2 files changed, 36 insertions(+)
+ include/linux/init_task.h |    2 ++
+ include/linux/nsproxy.h   |    2 ++
+ include/linux/sched.h     |    1 +
+ ipc/mqueue.c              |   29 ++++++++++++++++++++++++++++-
+ kernel/fork.c             |   16 +++++++++++++++-
+ kernel/nsproxy.c          |   15 +++++++++++++--
+ 6 files changed, 61 insertions(+), 4 deletions(-)
 
-Index: 2.6.23-rc8-mm2/fs/super.c
+Index: 2.6.23-rc8-mm2/include/linux/init_task.h
 ===================================================================
---- 2.6.23-rc8-mm2.orig/fs/super.c
-+++ 2.6.23-rc8-mm2/fs/super.c
-@@ -853,6 +853,38 @@ int get_sb_single(struct file_system_typ
+--- 2.6.23-rc8-mm2.orig/include/linux/init_task.h
++++ 2.6.23-rc8-mm2/include/linux/init_task.h
+@@ -10,6 +10,7 @@
+ #include <linux/pid_namespace.h>
+ #include <linux/user_namespace.h>
+ #include <net/net_namespace.h>
++#include <linux/mq_namespace.h>
  
- EXPORT_SYMBOL(get_sb_single);
+ #define INIT_FDTABLE \
+ {							\
+@@ -78,6 +79,7 @@ extern struct nsproxy init_nsproxy;
+ 	INIT_NET_NS(net_ns)                                             \
+ 	INIT_IPC_NS(ipc_ns)						\
+ 	.user_ns	= &init_user_ns,				\
++	INIT_MQ_NS(mq_ns)						\
+ }
  
-+static int compare_data(struct super_block *sb, void *data)
-+{
-+	return (void *)sb->s_fs_info == data;
-+}
-+
-+int get_sb_single_per_data(struct file_system_type *fs_type,
-+	int flags, void *data,
-+	int (*fill_super)(struct super_block *, void *, int),
-+	struct vfsmount *mnt)
-+{
-+	struct super_block *s;
-+	int error;
-+
-+	s = sget(fs_type, compare_data, set_anon_super, data);
-+	if (IS_ERR(s))
-+		return PTR_ERR(s);
-+	if (!s->s_root) {
-+		s->s_flags = flags;
-+		s->s_fs_info = data;
-+		error = fill_super(s, data, flags & MS_SILENT ? 1 : 0);
-+		if (error) {
-+			up_write(&s->s_umount);
-+			deactivate_super(s);
-+			return error;
-+		}
-+		s->s_flags |= MS_ACTIVE;
+ #define INIT_SIGHAND(sighand) {						\
+Index: 2.6.23-rc8-mm2/include/linux/sched.h
+===================================================================
+--- 2.6.23-rc8-mm2.orig/include/linux/sched.h
++++ 2.6.23-rc8-mm2/include/linux/sched.h
+@@ -26,6 +26,7 @@
+ #define CLONE_NEWIPC		0x08000000	/* New ipcs */
+ #define CLONE_NEWUSER		0x10000000	/* New user namespace */
+ #define CLONE_NEWPID		0x20000000	/* New pid namespace */
++#define CLONE_NEWMQ		0x40000000	/* New posix mqueue namespace */
+ 
+ /*
+  * Scheduling policies
+Index: 2.6.23-rc8-mm2/kernel/nsproxy.c
+===================================================================
+--- 2.6.23-rc8-mm2.orig/kernel/nsproxy.c
++++ 2.6.23-rc8-mm2/kernel/nsproxy.c
+@@ -85,8 +85,17 @@ static struct nsproxy *create_new_namesp
+ 		goto out_user;
+ 	}
+ 
++	new_nsp->mq_ns = copy_mq_ns(flags, tsk->nsproxy->mq_ns);
++	if (IS_ERR(new_nsp->mq_ns)) {
++		err = PTR_ERR(new_nsp->mq_ns);
++		goto out_mq;
 +	}
-+	do_remount_sb(s, flags, data, 0);
-+	return simple_set_mnt(mnt, s);
-+}
-+EXPORT_SYMBOL(get_sb_single_per_data);
 +
- struct vfsmount *
- vfs_kern_mount(struct file_system_type *type, int flags, const char *name, void *data)
- {
-Index: 2.6.23-rc8-mm2/include/linux/fs.h
+ 	return new_nsp;
+ 
++out_mq:
++	if (new_nsp->user_ns)
++		put_user_ns(new_nsp->user_ns);
+ out_user:
+ 	if (new_nsp->pid_ns)
+ 		put_pid_ns(new_nsp->pid_ns);
+@@ -120,7 +129,7 @@ int copy_namespaces(unsigned long flags,
+ 	get_nsproxy(old_ns);
+ 
+ 	if (!(flags & (CLONE_NEWNS | CLONE_NEWUTS | CLONE_NEWIPC |
+-					CLONE_NEWUSER | CLONE_NEWPID)))
++		       CLONE_NEWUSER | CLONE_NEWPID | CLONE_NEWMQ)))
+ 		return 0;
+ 
+ 	if (!capable(CAP_SYS_ADMIN)) {
+@@ -159,6 +168,8 @@ void free_nsproxy(struct nsproxy *ns)
+ 		put_pid_ns(ns->pid_ns);
+ 	if (ns->user_ns)
+ 		put_user_ns(ns->user_ns);
++	if (ns->mq_ns)
++		put_mq_ns(ns->mq_ns);
+ 	kmem_cache_free(nsproxy_cachep, ns);
+ }
+ 
+@@ -172,7 +183,7 @@ int unshare_nsproxy_namespaces(unsigned 
+ 	int err = 0;
+ 
+ 	if (!(unshare_flags & (CLONE_NEWNS | CLONE_NEWUTS | CLONE_NEWIPC |
+-			       CLONE_NEWUSER)))
++			       CLONE_NEWUSER | CLONE_NEWMQ)))
+ 		return 0;
+ 
+ 	if (!capable(CAP_SYS_ADMIN))
+Index: 2.6.23-rc8-mm2/kernel/fork.c
 ===================================================================
---- 2.6.23-rc8-mm2.orig/include/linux/fs.h
-+++ 2.6.23-rc8-mm2/include/linux/fs.h
-@@ -1437,6 +1437,10 @@ extern int get_sb_single(struct file_sys
- 	int flags, void *data,
- 	int (*fill_super)(struct super_block *, void *, int),
- 	struct vfsmount *mnt);
-+extern int get_sb_single_per_data(struct file_system_type *fs_type,
-+	int flags, void *data,
-+	int (*fill_super)(struct super_block *, void *, int),
-+	struct vfsmount *mnt);
- extern int get_sb_nodev(struct file_system_type *fs_type,
- 	int flags, void *data,
- 	int (*fill_super)(struct super_block *, void *, int),
+--- 2.6.23-rc8-mm2.orig/kernel/fork.c
++++ 2.6.23-rc8-mm2/kernel/fork.c
+@@ -1002,6 +1002,13 @@ static struct task_struct *copy_process(
+ 	if ((clone_flags & CLONE_SIGHAND) && !(clone_flags & CLONE_VM))
+ 		return ERR_PTR(-EINVAL);
+ 
++	/*
++	 * mount namespace cannot be unshared when the mqueue
++	 * namespace is not
++	 */
++	if ((clone_flags & CLONE_NEWMQ) && !(clone_flags & CLONE_NEWNS))
++		return ERR_PTR(-EINVAL);
++
+ 	retval = security_task_create(clone_flags);
+ 	if (retval)
+ 		goto fork_out;
+@@ -1552,6 +1559,12 @@ static inline void check_unshare_flags(u
+ 		*flags_ptr |= CLONE_THREAD;
+ 
+ 	/*
++	 * If unsharing mqueue namespace, must also unshare mnt namespace.
++	 */
++	if (*flags_ptr & CLONE_NEWMQ)
++		*flags_ptr |= CLONE_NEWNS;
++
++	/*
+ 	 * If unsharing namespace, must also unshare filesystem information.
+ 	 */
+ 	if (*flags_ptr & CLONE_NEWNS)
+@@ -1668,7 +1681,8 @@ asmlinkage long sys_unshare(unsigned lon
+ 	err = -EINVAL;
+ 	if (unshare_flags & ~(CLONE_THREAD|CLONE_FS|CLONE_NEWNS|CLONE_SIGHAND|
+ 				CLONE_VM|CLONE_FILES|CLONE_SYSVSEM|
+-				CLONE_NEWUTS|CLONE_NEWIPC|CLONE_NEWUSER))
++				CLONE_NEWUTS|CLONE_NEWIPC|CLONE_NEWUSER|
++				CLONE_NEWMQ))
+ 		goto bad_unshare_out;
+ 
+ 	if ((err = unshare_thread(unshare_flags)))
+Index: 2.6.23-rc8-mm2/include/linux/nsproxy.h
+===================================================================
+--- 2.6.23-rc8-mm2.orig/include/linux/nsproxy.h
++++ 2.6.23-rc8-mm2/include/linux/nsproxy.h
+@@ -8,6 +8,7 @@ struct mnt_namespace;
+ struct uts_namespace;
+ struct ipc_namespace;
+ struct pid_namespace;
++struct mq_namespace;
+ 
+ /*
+  * A structure to contain pointers to all per-process
+@@ -29,6 +30,7 @@ struct nsproxy {
+ 	struct pid_namespace *pid_ns;
+ 	struct user_namespace *user_ns;
+ 	struct net 	     *net_ns;
++	struct mq_namespace *mq_ns;
+ };
+ extern struct nsproxy init_nsproxy;
+ 
+Index: 2.6.23-rc8-mm2/ipc/mqueue.c
+===================================================================
+--- 2.6.23-rc8-mm2.orig/ipc/mqueue.c
++++ 2.6.23-rc8-mm2/ipc/mqueue.c
+@@ -108,11 +108,38 @@ static inline struct mqueue_inode_info *
+ 	return container_of(inode, struct mqueue_inode_info, vfs_inode);
+ }
+ 
++static struct mq_namespace *clone_mq_ns(struct mq_namespace *old_ns)
++{
++	struct mq_namespace *mq_ns;
++
++	mq_ns = kmalloc(sizeof(struct mq_namespace), GFP_KERNEL);
++	if (!mq_ns)
++		return ERR_PTR(-ENOMEM);
++
++	kref_init(&mq_ns->kref);
++	mq_ns->queues_count	= 0;
++	mq_ns->queues_max	= DFLT_QUEUESMAX;
++	mq_ns->msg_max		= DFLT_MSGMAX;
++	mq_ns->msgsize_max	= DFLT_MSGSIZEMAX;
++	mq_ns->mnt		= NULL;
++	return mq_ns;
++}
++
+ struct mq_namespace *copy_mq_ns(unsigned long flags,
+ 				struct mq_namespace *old_ns)
+ {
++	struct mq_namespace *mq_ns;
++
+ 	BUG_ON(!old_ns);
+-	return get_mq_ns(old_ns);
++	get_mq_ns(old_ns);
++
++	if (!(flags & CLONE_NEWMQ))
++		return old_ns;
++
++	mq_ns = clone_mq_ns(old_ns);
++
++	put_mq_ns(old_ns);
++	return mq_ns;
+ }
+ 
+ void free_mq_ns(struct kref *kref)
 
 -- 
