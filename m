@@ -1,15 +1,16 @@
 From: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
 Subject: Re: [BUGFIX][RFC][PATCH][only -mm] FIX memory leak in memory cgroup
- vs. page migration [0/1]
-Date: Wed, 3 Oct 2007 09:39:44 +0900
-Message-ID: <20071003093944.0bec6a15.kamezawa.hiroyu@jp.fujitsu.com>
+ vs. page migration [1/1] fix page migration under memory contoller
+Date: Wed, 3 Oct 2007 09:53:16 +0900
+Message-ID: <20071003095316.4fff115e.kamezawa.hiroyu@jp.fujitsu.com>
 References: <20071002183031.3352be6a.kamezawa.hiroyu@jp.fujitsu.com>
-	<470248D7.5090403@linux.vnet.ibm.com>
+	<20071002183306.0c132ff4.kamezawa.hiroyu@jp.fujitsu.com>
+	<47026510.2000708@linux.vnet.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=US-ASCII
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <470248D7.5090403-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+In-Reply-To: <47026510.2000708-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -23,136 +24,88 @@ To: balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
 Cc: "containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org" <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, "linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org" <linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org>, Christoph Lameter <clameter-sJ/iWh9BUns@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Tue, 02 Oct 2007 19:04:15 +0530
+On Tue, 02 Oct 2007 21:04:40 +0530
 Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org> wrote:
 
 > KAMEZAWA Hiroyuki wrote:
-> > Current implementation of memory cgroup controller does following in migration.
+> > While using memory control cgroup, page-migration under it works as following.
+> > ==
+> >  1. uncharge all refs at try to unmap.
+> >  2. charge regs again remove_migration_ptes()
+> > ==
+> > This is simple but has following problems.
+> > ==
+> >  The page is uncharged and chaged back again if *mapped*.
+> >     - This means that cgroup before migraion can be different from one after
+> >       migraion
+> 
+> >From the test case mentioned earlier, this happens because the task has
+> moved from one cgroup to another, right?
+Ah, yes.
+
+
+> > And migration can migrate *not mapped* pages in future by migration-by-kernel
+> > driven by memory-unplug and defragment-by-migration at el.
 > > 
-> > 1. uncharge when unmapped.
-> > 2. charge again when remapped.
+> > This patch tries to keep memory cgroup at page migration by increasing
+> > one refcnt during it. 3 functions are added.
+> >  mem_cgroup_prepare_migration() --- increase refcnt of page->page_cgroup
+> >  mem_cgroup_end_migration()     --- decrease refcnt of page->page_cgroup
+> >  mem_cgroup_page_migration() --- copy page->page_cgroup from old page to
+> >                                  new page.
 > > 
-> > Consider migrate a page from OLD to NEW.
+> > Obviously, mem_cgroup_isolate_pages() and this page migration, which
+> > copies page_cgroup from old page to new page, has race.
 > > 
-> > In following case, memory (for page_cgroup) will leak.
+> > There seem to be  3 ways for avoiding this race.
+> >  A. take mem_group->lock while mem_cgroup_page_migration().
+> >  B. isolate pc from mem_cgroup's LRU when we isolate page from zone's LRU.
+> >  C. ignore non-LRU page at mem_cgroup_isolate_pages(). 
 > > 
-> > 1. charge OLD page as page-cache. (charge = 1
-> > 2. A process mmap OLD page. (chage + 1 = 2)
-> > 3. A process migrates it.
-> >    try_to_unmap(OLD) (charge - 1 = 1)
-> >    replace OLD with NEW
-> >    remove_migration_pte(NEW) (New is newly charged.)
-> >    discard OLD page. (page_cgroup for OLD page is not reclaimed.)
+> > This patch uses method (C.) and modifes mem_cgroup_isolate_pages() igonres
+> > !PageLRU pages.
 > > 
 > 
-> Interesting test scenario, I'll try and reproduce the problem here.
-> Why does discard OLD page not reclaim page_cgroup?
-Just because OLD page is not page-cache at discarding. (it is replaced with NEW page)
-
-
->
-> > [root@drpq kamezawa]# ./migrate_test 512Mfile 1 &
-> > [1] 4108
-> > #At the end of migration,
+> The page(s) is(are) !PageLRU only during page migration right?
 > 
-> Where can I find migrate_test?
+Hmm...!PageLRU() means that page is not on LRU.
+Then, kswapd can remove a page from LRU.
+
+> > -		if (page_zone(page) != z)
+> > +		if (page_zone(page) != z || !PageLRU(page)) {
 > 
-here, (just I wrote for this test. works on my RHEL5/2.6.18-rc8-mm2/ia64 NUMA box)
-This program doesn't check 'where is file cache ?' before migration. So please
-check it by yourself before run.
-==
+> I would prefer to do unlikely(!PageLRU(page)), since most of the
+> times the page is not under migration
+> 
+I see.
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <syscall.h>
-#include <sys/mman.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <fcntl.h>
-#include <errno.h>
-#include <numaif.h>
-#include <unistd.h>
+> > +			/* Skip this */
+> > +			/* Don't decrease scan here for avoiding dead lock */
+> 
+> Could we merge the two comments to one block comment?
+> 
+will do
 
-#define PAGESIZE	(16384)
+> >  			continue;
+> > +		}
+> > 
+> >  		/*
+> >  		 * Check if the meta page went away from under us
+> > @@ -417,8 +424,14 @@ void mem_cgroup_uncharge(struct page_cgr
+> >  		return;
+> > 
+> >  	if (atomic_dec_and_test(&pc->ref_cnt)) {
+> > +retry:
+> >  		page = pc->page;
+> >  		lock_page_cgroup(page);
+> > +		/* migration occur ? */
+> > +		if (page_get_page_cgroup(page) != pc) {
+> > +			unlock_page_cgroup(page);
+> > +			goto retry;
+> 
+> Shouldn't we check if page_get_page_cgroup(page) returns
+> NULL, if so, unlock and return?
+Hmm, I think page_get_page_cgroup(page) != pc covers it. pc is not NULL.
 
-static inline int move_pages(pid_t pid, unsigned long nr_pages,
-		const void **address,
-		const int *nodes, int *status, int flags)
-{
-	return syscall(SYS_move_pages, pid, nr_pages, address,
-			nodes, status, flags);
-}
-/*
- * migrate_test.c -- mmap file and migrate it to specified node.
- * %migrate_task file nodeid
- *
- */
-
-int main(int argc, char *argv[])
-{
-	int ret, fd, val, node[1], status[1];
-	char *addr, *c;
-	unsigned long size, nr_pages, pos;
-	struct stat statbuf;
-	void *address[1];
-	int target;
-
-	if (argc != 3) {
-		fprintf(stderr,"usage: migrate_test file node\n");
-		exit(0);
-	}
-	target = atoi(argv[2]);
-
-	fd = open(argv[1], O_RDONLY);
-	if (fd < 0) {
-		perror("open");
-		exit(1);
-	}
-
-	ret = fstat(fd, &statbuf);
-	if (ret < 0) {
-		perror("fstat");
-		exit(1);
-	}
-
-	size = statbuf.st_size;
-	nr_pages = size/PAGESIZE;
-	size = nr_pages * PAGESIZE;
-
-	addr = mmap(NULL, size, PROT_READ, MAP_SHARED, fd, 0);
-
-	if (addr == MAP_FAILED) {
-		perror("mmap");
-		exit(1);
-	}
-	/* Touch all */
-	for (pos = 0; pos < nr_pages; pos++) {
-		c = addr + pos * PAGESIZE;
-		val += *c;
-	}
-	/* Move Pages */
-	for (pos = 0; pos < nr_pages; pos++) {
-		node[0] = target;
-		status[0] = 0;
-		address[0] = addr + pos * PAGESIZE;
-		ret = move_pages(0, 1, address, node, status,
-				MPOL_MF_MOVE_ALL);
-		if (ret) {
-			perror("move_pages");
-		}
-#if 1
-		printf("pos %d %p %d %d\n",pos, address[0], node[0], status[0]);
-#endif
-	}
-	/* Touch all again....maybe unnecessary.*/
-	for (pos = 0; pos < nr_pages; pos++) {
-		c = addr + pos * PAGESIZE;
-		val += *c;
-	}
-	while (1) {
-		/* mmap until killed */
-		pause();
-	}
-	printf("val %d\n",val);
-	return 0;
-}
+Thanks,
+-Kame
