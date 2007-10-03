@@ -1,19 +1,16 @@
 From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
-Subject: Re: [patch -mm 1/5] mqueue namespace : add struct mq_namespace
-Date: Wed, 03 Oct 2007 08:32:19 -0600
-Message-ID: <m13awsfevg.fsf@ebiederm.dsl.xmission.com>
-References: <20071002084608.149781400@fr.ibm.com>
-	<20071002084906.477406083@fr.ibm.com> <47020A29.9060403@sw.ru>
-	<470219BC.3050702@fr.ibm.com>
-	<m1ir5plr3c.fsf@ebiederm.dsl.xmission.com>
-	<470237C7.5000902@fr.ibm.com> <20071002163020.GA11207@us.ibm.com>
-	<m1k5q5jv29.fsf@ebiederm.dsl.xmission.com> <470340F8.50806@fr.ibm.com>
-	<47034712.9060101@fr.ibm.com>
+Subject: Re: [patch 0/1][NETNS49] Make af_unix autobind per namespace
+Date: Wed, 03 Oct 2007 08:36:53 -0600
+Message-ID: <m1przwe03e.fsf@ebiederm.dsl.xmission.com>
+References: <20071002151846.827206013@mai.toulouse-stg.fr.ibm.com>
+	<m1fy0tjv04.fsf@ebiederm.dsl.xmission.com>
+	<4702AF67.1010707@fr.ibm.com> <47034F4F.5000901@sw.ru>
+	<47039510.7040001@fr.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <47034712.9060101-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org> (Cedric Le Goater's message of
-	"Wed, 03 Oct 2007 09:38:58 +0200")
+In-Reply-To: <47039510.7040001-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org> (Cedric Le Goater's message of
+	"Wed, 03 Oct 2007 15:11:44 +0200")
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -24,77 +21,33 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: Cedric Le Goater <clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
-Cc: "Denis V. Lunev" <den-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, den-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org, benjamin.thery-6ktuUTfB/bM@public.gmane.org, "Denis V. Lunev" <den-3ImXcnM4P+0@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
 Cedric Le Goater <clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org> writes:
-
-> [ 
->   I have big fingers this morning and I managed to send this email 
->   while typing it ... see below for the end. I should be awake now :) 
-> ]
+> my 2 cnts,
 >
->> The really challenging case to handle here  is what happens if we are
->> signaling to someone in a sibling pid namespace.  What do we set the
->> parent pid in the siginfo struct to.  I think we agreed that 0 (blame
->> the kernel) is the appropriate pid last time we talked about this.
->  
-> 0 seems appropriate for a signal coming from a parent namespace, yes. but
-> here, we could be sending a signal from a child or sibling namespace.
+> when 'restarting' a socket bound to an abstract name, we will have 
+> a EADDRINUSE if we try to rebind it to an abtract name which is 
+> already in use by a socket in a another namespace ? 
 
-Hmm.  I finally see the part of this that is problematic and
-that we aren't currently handling.
+No.
 
-> sig_i.si_signo = info->notify.sigev_signo;
-> sig_i.si_errno = 0;
-> sig_i.si_code = SI_MESGQ;
-> sig_i.si_value = info->notify.sigev_value;
-> sig_i.si_pid = current->tgid;
-> sig_i.si_uid = current->uid;
-> 
-> kill_pid_info(info->notify.sigev_signo, &sig_i, info->notify_owner);
+> it seems to me that this is an identifier and like any identifier
+> it should be private to the namespace, which probably means having
+> unix_abstract_socket_table[] per net namespace.
 
-The filling in of the signal info structure.  My gut feel says that
-should be a struct pid reference.    We need to be very careful with
-the siginfo cases, and si_pid.  Unless someone has built a mechanism
-for dealing with this I haven't seen.
+Yes it is.  It is a hash table so we are filter the hash chain
+and not having two copies of the table.  But effectively it's
+the same thing.
 
-I still think the right approach here is that if the pid doesn't map
-into the target processes pid namespace we should use 0.
+All this patch was suggesting was having a per network namespace
+copy of the data structure for the random number generator for
+generating the name.  
 
-I also strongly suspect that si_pid should be a struct pid and that we
-should translate it in the receiving process if possible.
-
-> Is there a way to catch this general issue (we have the same in sigio)
-> in the kill*(struct pid) routines ? spit a big warning when the
-> current->nsproxy->pid_ns is not a parent ?
-
-The SIGIO case is even trickier, although that may count as always
-coming from the kernel so this doesn't come up.
-
-
-In both cases what is really happening a process in a sibling
-pid namespace is doing something and the kernel is telling us about
-it.  So sending the signal is legitimate.
-
-The difficulty is that the kernel can't express the process that did
-something.  From my perspective that appears to be a fundamental
-limitation, and our only real choice is to send 0.
-
-We have a similar limitation with the uid namespace as well in this
-case.
-
-We can implement this easily by passing a struct pid.  And translating
-just before we cross the kernel/user boundary.  And if it doesn't
-translate use 0.  Basically this is just your check for seeing
-if the destination pid namespace is the same or a parent of
-the sending pid namespace.  That is what I always envisioned
-being in __pid_nr().  As I don't think it makes any sense to map
-pids from sibling pid namespaces.
-
-The reason we want in general to do the translation at the
-destination process is because we may be sending a signal
-to a process group which could have processes in multiple
-pid namespaces.
+The ``random number generator'' is just a 16bit counter that loops
+through all 64k values seeing if a name is available and if so
+using it.  Sharing our place in the loop between different namespaces
+may be ineffeicient but it should work fine.
 
 Eric
