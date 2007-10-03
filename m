@@ -1,56 +1,42 @@
-From: sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org
-Subject: Re: [patch -mm 1/5] mqueue namespace : add struct mq_namespace
-Date: Wed, 3 Oct 2007 10:09:30 -0700
-Message-ID: <20071003170930.GB338@us.ibm.com>
-References: <47020A29.9060403@sw.ru> <470219BC.3050702@fr.ibm.com>
-	<m1ir5plr3c.fsf@ebiederm.dsl.xmission.com>
-	<470237C7.5000902@fr.ibm.com> <20071002163020.GA11207@us.ibm.com>
-	<47034868.5010505@fr.ibm.com>
-	<20071003135955.GA7934@sergelap.austin.ibm.com>
-	<4703A30F.2010007@fr.ibm.com> <20071003165644.GA338@us.ibm.com>
-	<m1myv0ceqp.fsf@ebiederm.dsl.xmission.com>
+From: Paul Jackson <pj@sgi.com>
+Subject: Re: [PATCH 03/33] task containersv11 add tasks file interface
+Date: Wed, 3 Oct 2007 10:51:57 -0700
+Message-ID: <20071003105157.254c51a4.pj@sgi.com>
+References: <20070917210307.116234000@menage.corp.google.com>
+	<20070917210426.579524000@menage.corp.google.com>
+	<20071003010923.c606c176.pj@sgi.com>
+	<6599ad830710030816m32321b54gbc79c24d0a39941b@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <m1myv0ceqp.fsf-T1Yj925okcoyDheHMi7gv2pdwda3JcWeAL8bYrjMMd8@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Cedric Le Goater <clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>, "Denis V. Lunev" <den-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+Content-Type: text/plain; charset=US-ASCII
+Content-Transfer-Encoding: 7bit
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1757347AbXJCRwU@vger.kernel.org>
+In-Reply-To: <6599ad830710030816m32321b54gbc79c24d0a39941b@mail.gmail.com>
+Sender: linux-kernel-owner@vger.kernel.org
+To: Paul Menage <menage@google.com>
+Cc: akpm@linux-foundation.org, balbir@linux.vnet.ibm.com, serue@us.ibm.com, clg@fr.ibm.com, ebiederm@xmission.com, xemul@openvz.org, rientjes@google.com, svaidy@linux.vnet.ibm.com, nickpiggin@yahoo.com.au, a.p.zijlstra@chello.nl, containers@lists.osdl.org, linux-kernel@vger.kernel.org
 List-Id: containers.vger.kernel.org
 
-Eric W. Biederman [ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org] wrote:
-| sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org writes:
-| 
-| > Cedric Le Goater [clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org] wrote:
-| > | > I think you and Eric (and I) are disagreeing about those limitations.
-| > | > You take it for granted that a sibling pidns is off limits for signals.
-| > | > But the signal wasn't sent using a pid, but using a file (in SIGIO
-| > | > case).  So since the fs was shared, the signal should be sent.  An
-| > | > event happened, and the receiver wants to know about it.
-| > | 
-| > | seen that way I agree. 
-| > | 
-| > | si_code is set to SI_MESGQ, but what do we put in si_pid ? 0 ?
-| > | 
-| > | we could use the si_errno to pass extra info, like the sending process 
-| > | lives in a // world ...
-| >
-| > Does the receiver need to know that sender is in a // world ? 
-| 
-| What is a // world ?
+Paul M wrote:
+> Are there cases when userspace is
+> required to try to reattach a task to its current cpuset in order to
+> get a cpu mask change to stick?
 
-Parallel world/universe :-)
+Yes, there are such cases.
 
-I am assuming Cedric used that to refer to a sibling pid ns.
+If tasks are running in a cpuset, and someone changes the
+'cpus' of that cpuset, the tasks already in that cpuset don't
+move.  They stay with their task structs cpus_allowed pointing
+to the old value.  The only code path that user space can trigger
+that leads to changing an existing tasks cpus_allowed mask is to
+write that tasks pid to a cpuset 'tasks' file.
 
-| 
-| Eric
+So after changing the 'cpus' of a cpuset, you (something in
+user space) then has to rewrite every pid in that cpusets
+tasks file back to that same tasks file, in order to get the
+change to be applied to each of those tasks, and get them to
+start running on their new CPUs.
+
+-- 
+                  I won't rest till it's the best ...
+                  Programmer, Linux Scalability
+                  Paul Jackson <pj@sgi.com> 1.925.600.0401
