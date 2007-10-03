@@ -1,14 +1,11 @@
-From: Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
-Subject: Re: netns : close all sockets at unshare ?
-Date: Wed, 03 Oct 2007 10:40:49 +0200
-Message-ID: <47035591.4030300@fr.ibm.com>
-References: <4702BBF4.60903@fr.ibm.com>
-	<m14ph9i1l3.fsf@ebiederm.dsl.xmission.com>
+From: Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+Subject: [PATCH 0/3] Consolidate cgroup files creation for resource counters
+Date: Wed, 03 Oct 2007 14:53:27 +0400
+Message-ID: <470374A7.6030805@openvz.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+Content-Type: text/plain; charset=ISO-8859-1
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <m14ph9i1l3.fsf-T1Yj925okcoyDheHMi7gv2pdwda3JcWeAL8bYrjMMd8@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,46 +15,21 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+To: Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
 Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Eric W. Biederman wrote:
-> Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org> writes:
-> 
->> Hi,
->>
->> I was looking at some cornercases and trying to figure out what happens if
->> someone does:
->>
->> 1 - fd = socket(...)
->> 2 - unshare(CLONE_NEWNET)
->> 3 - bind(fd, ...) / listen(fd, ...)
->>
->> There is here an interaction between two namespaces.
->> Trying to catch all these little tricky paths everywhere with the network
->> namespace is painful, perhaps we should consider a more radical solution.
-> 
-> Huh?
-> 
-> socket() puts the namespace on struct sock.
-> bind/listen etc just look at that namespace. 
-> 
-> Unless I'm blind it is simple and it works now.
+Right now we have only one controller in -mm tree - the memory
+one - and it initializes all its files manually. After I developed
+the kernel memory one it turned out, that the names of resource
+counter specific files has changed. In the future, if anything in
+the resource counters change, we'll have to rewrite all the
+controllers we will have by that time.
 
-Yes, it will work.
+To make all the containers working with the resource counters
+look similar I propose to create the resource counters specific
+files in one place.
 
-Do we want to be inside a network namespace and to use a socket 
-belonging to another network namespace ? If yes, then my remark is 
-irrelevant.
+Any comments/wishes before I send it to Andrew are welcome.
 
->> Shall we close all fd sockets when doing an unshare ? like a close-on-exec
->> behavior ?
-> 
-> I think adopting that policy would dramatically reduce the usefulness
-> of network namespaces.
-> 
-> Making the mix and match cases gives the implementation much more flexibility
-> and it doesn't appear that hard right now.
-
-I am curious, why such functionality is useful ?
+Signed-off-by: Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
