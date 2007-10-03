@@ -1,94 +1,60 @@
-From: "Paul Menage" <menage@google.com>
-Subject: Re: [PATCH 03/33] task containersv11 add tasks file interface
-Date: Wed, 3 Oct 2007 08:16:53 -0700
-Message-ID: <6599ad830710030816m32321b54gbc79c24d0a39941b@mail.gmail.com>
-References: <20070917210307.116234000@menage.corp.google.com>
-	 <20070917210426.579524000@menage.corp.google.com>
-	 <20071003010923.c606c176.pj@sgi.com>
+From: Cedric Le Goater <clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [patch 0/1][NETNS49] Make af_unix autobind per namespace
+Date: Wed, 03 Oct 2007 17:34:10 +0200
+Message-ID: <4703B672.7080502@fr.ibm.com>
+References: <20071002151846.827206013@mai.toulouse-stg.fr.ibm.com>
+	<m1fy0tjv04.fsf@ebiederm.dsl.xmission.com>
+	<4702AF67.1010707@fr.ibm.com> <47034F4F.5000901@sw.ru>
+	<47039510.7040001@fr.ibm.com>
+	<m1przwe03e.fsf@ebiederm.dsl.xmission.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1
 Content-Transfer-Encoding: 7bit
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1757643AbXJCPRT@vger.kernel.org>
-In-Reply-To: <20071003010923.c606c176.pj@sgi.com>
-Content-Disposition: inline
-Sender: linux-kernel-owner@vger.kernel.org
-To: Paul Jackson <pj@sgi.com>
-Cc: akpm@linux-foundation.org, balbir@linux.vnet.ibm.com, serue@us.ibm.com, clg@fr.ibm.com, ebiederm@xmission.com, xemul@openvz.org, rientjes@google.com, svaidy@linux.vnet.ibm.com, nickpiggin@yahoo.com.au, a.p.zijlstra@chello.nl, containers@lists.osdl.org, linux-kernel@vger.kernel.org
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <m1przwe03e.fsf-T1Yj925okcoyDheHMi7gv2pdwda3JcWeAL8bYrjMMd8@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, den-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org, benjamin.thery-6ktuUTfB/bM@public.gmane.org, "Denis V. Lunev" <den-3ImXcnM4P+0@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On 10/3/07, Paul Jackson <pj@sgi.com> wrote:
->
->  - What are these apparent 'exec notifications' that are provided to
->    user space that the following mentions - I cannot find any other
->    mention of them:
->
->         With the ability to classify tasks differently for different
->         resources (by putting those resource subsystems in different
->         hierarchies) then the admin can easily set up a script which
->         receives exec notifications and depending on who is launching
->         the browser he can
+Eric W. Biederman wrote:
+> Cedric Le Goater <clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org> writes:
+>> my 2 cnts,
+>>
+>> when 'restarting' a socket bound to an abstract name, we will have 
+>> a EADDRINUSE if we try to rebind it to an abtract name which is 
+>> already in use by a socket in a another namespace ? 
+> 
+> No.
 
-It's the process connector netlink notifier. It can report
-fork/exit/exec/setuid events to userspace. See
-drivers/connector/cn_proc.c
+ok. i just went over your AF_UNIX patch and saw that 'struct net' was 
+being checked for abstract sockets.
 
->
->
->  -  It states in cgroups.txt:
->
->     *** notify_on_release is disabled in the current patch set. It will be
->     *** reactivated in a future patch in a less-intrusive manner
->
->     This doesn't seem to be true, and had better not be true.
->     From what I can tell, notify_on_release still works for cpusets,
->     and it is important that it continue to work when cgroups are
->     folded into the main line kernel.
+C.
 
-Correct, it's reactivated in a later patch in the series, but this
-intermediate comment snuck through.
-
->
->         Each cgroup object created by the system has an array of pointers,
->         indexed by subsystem id; this pointer is entirely managed by the
->         subsystem; the generic cgroup code will never touch this pointer.
->
->   Is plural "pointers", or singular "pointer", the correct wording?
-
-Probably plural.
-
->
->  - Several lines near the end of cgroups.txt start with "LL".
->    I guess they list what locks are held while taking the call,
->    but the notation seems cryptic and unfamiliar to me, and its
->    meaning here undocumented.
-
-"Locking Level", describing which locks *are* held, and which are
-*not* held during a call. I thought it was a more generally
-widely-used commenting convention, but I don't see any other uses of
-it in the kernel. I can replace them with "holds cgroup_mutex" or
-"doesn't hold cgroup_mutex" for clarity.
-
->
->  - There are many instances of the local variable 'cont', referring
->    to a struct cgroup pointer.  I presume the spelling 'cont' is a
->    holdover from the time when we called these containers.
-
-Yes, and since cgroup is short for "control group", "cont" still
-seemed like a reasonable abbreviation. (And made the automatic
-renaming much simpler).
->
->  - The code in attach_task which skips the attachment of a task to
->    the group it is already in has to be removed.  Cpusets depends
->    on reattaching a task to its current cpuset, in order to trigger
->    updating the cpus_allowed mask in the task struct.  This is a
->    hack, granted, but an important one.  It avoids checking for a
->    changed cpuset 'cpus' setting in critical scheduler code paths.
-
-I don't quite understand how this is meant to work - under what
-circumstances would it occur? Are there cases when userspace is
-required to try to reattach a task to its current cpuset in order to
-get a cpu mask change to stick?
-
-Other comments noted, thanks.
-
-Paul
+>> it seems to me that this is an identifier and like any identifier
+>> it should be private to the namespace, which probably means having
+>> unix_abstract_socket_table[] per net namespace.
+> 
+> Yes it is.  It is a hash table so we are filter the hash chain
+> and not having two copies of the table.  But effectively it's
+> the same thing.
+> 
+> All this patch was suggesting was having a per network namespace
+> copy of the data structure for the random number generator for
+> generating the name.  
+> 
+> The ``random number generator'' is just a 16bit counter that loops
+> through all 64k values seeing if a name is available and if so
+> using it.  Sharing our place in the loop between different namespaces
+> may be ineffeicient but it should work fine.
+> 
+> Eric
