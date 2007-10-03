@@ -1,72 +1,105 @@
-From: Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
-Subject: Re: netns : close all sockets at unshare ?
-Date: Wed, 03 Oct 2007 21:33:42 +0200
-Message-ID: <4703EE96.6060708@fr.ibm.com>
-References: <4702BBF4.60903@fr.ibm.com>
-	<m14ph9i1l3.fsf@ebiederm.dsl.xmission.com>
-	<47035591.4030300@fr.ibm.com>
-	<m1r6kccexw.fsf@ebiederm.dsl.xmission.com>
+From: Paul Jackson <pj@sgi.com>
+Subject: Re: [PATCH] task containersv11 add tasks file interface fix for
+ cpusets
+Date: Wed, 3 Oct 2007 13:16:32 -0700
+Message-ID: <20071003131632.fed4b848.pj@sgi.com>
+References: <20071003084241.24279.62099.sendpatchset@jackhammer.engr.sgi.com>
+	<6599ad830710030851jb44f00ft9634f9381218b6e9@mail.gmail.com>
+	<20071003105817.7adf6516.pj@sgi.com>
+	<6599ad830710031110r1a74eafej56f20cc33e72ac81@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+Content-Type: text/plain; charset=US-ASCII
 Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <m1r6kccexw.fsf-T1Yj925okcoyDheHMi7gv2pdwda3JcWeAL8bYrjMMd8@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1757721AbXJCUQv@vger.kernel.org>
+In-Reply-To: <6599ad830710031110r1a74eafej56f20cc33e72ac81@mail.gmail.com>
+Sender: linux-kernel-owner@vger.kernel.org
+To: Paul Menage <menage@google.com>
+Cc: akpm@linux-foundation.org, nickpiggin@yahoo.com.au, a.p.zijlstra@chello.nl, serue@us.ibm.com, clg@fr.ibm.com, linux-kernel@vger.kernel.org, ebiederm@xmission.com, rientjes@google.com, svaidy@linux.vnet.ibm.com, xemul@openvz.org, containers@lists.osdl.org, balbir@linux.vnet.ibm.com
 List-Id: containers.vger.kernel.org
 
-Eric W. Biederman wrote:
-> Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org> writes:
->> Yes, it will work.
->>
->> Do we want to be inside a network namespace and to use a socket belonging to
->> another network namespace ? If yes, then my remark is irrelevant.
+Paul M wrote:
+> Given that later in cpusets.txt you say:
 > 
-> Yes we do.
+> >If hotplug functionality is used
+> >to remove all the CPUs that are currently assigned to a cpuset,
+> >then the kernel will automatically update the cpus_allowed of all
+> >tasks attached to CPUs in that cpuset to allow all CPUs
 > 
->>>> Shall we close all fd sockets when doing an unshare ? like a close-on-exec
->>>> behavior ?
->>> I think adopting that policy would dramatically reduce the usefulness
->>> of network namespaces.
->>>
->>> Making the mix and match cases gives the implementation much more flexibility
->>> and it doesn't appear that hard right now.
->> I am curious, why such functionality is useful ?
+> why can't the same thing be done when changing the 'cpus' file manually.
 > 
-> There are several reasons.  Partly it is the principle of building
-> general purpose tools that can be used in a flexible way.
+> What's wrong with, in update_cpumask(), doing a loop across all
+> members of the cgroup and updating their cpus_allowed fields?
 > 
-> The biggest practical use I can see is that a control program outside
-> of a network namespace can configure and setup someone else's network
-> stack, perhaps preventing the need to enter someone else's container.
-> 
-> Another use is having a socket in an original network namespace for
-> doing a stdin/stdout style connections.
-> 
-> The planetlab folks are actually actively using this functionality
-> already, and there was a thread several months ago about how this
-> functionality was important and how they were using it.
-> 
-> This also preserves normal unix file descriptor passing semantics.
-> 
-> A final reason for it is that it removes the need for a lot of
-> brittle special cases when network namespaces are mixed in something
-> other then a 1-1 correspondence with other namespaces.  Like the one
-> you were concerned with in unshare.  Handling this case means
-> everything just works.
-> 
-> So it may be a touch harder to implement but because we don't add
-> special rules it is much easier to review.
+> The existing cpusets API is broken, since a new child can always be
+> forked between reading the tasks file and doing the writes.
 
-Very interesting. Thank you for taking the time to answer.
+Hmmm ... interesting.  Yes - that race, between fork and rewriting
+the tasks file is there, by design, and has been there for years.
 
-  -- Daniel
+So far as I know, it is a benign race.  In practice, no one that I know
+has tripped over it.  This doesn't imply that we should not look for
+opportunities to fix it, but it does mean it is not an urgent fix, in
+my experience.
+
+But there may be more issues here than that:
+ 1) The above cpusets.txt text might be both incorrect (at first
+    glance now, I suspect that it is the cpuset cpus_allowed that
+    is updated on hotplug events, not the tasks cpus_allowed) and
+    perhaps stale as well (given some recent cpuset hotplug patches
+    being worked by Cliff Wickman.)
+ 2) It is not immediately clear to me how the hotplug can work at
+    present - if it updates just the cpusets cpus_allowed but doesn't
+    get to the tasks cpus_allowed.
+ 3) So far as I can recall, the only kernel code path to update a
+    tasks cpus_allowed goes via the "set_cpus_allowed()" routine,
+    which the kernel/cpuset.c code only calls from one place, that
+    being the code that handles writing a pid to a cpuset tasks file.
+    This provides more evidence that (2) above is a problem -- no
+    hotplug code paths in the cpuset code seem to invoke this key
+    "set_cpus_allowed()" routine.
+
+Vedy vedy interesting.  Like lifting up a rock and seeing a bunch
+of weird creepy crawlies under it.
+
+I'm wondering how to proceed from here, in two regards:
+
+ 1) The cc list on this thread is long and not well focused for the
+    detailed discussion that it may take to unravel this.
+ 2) I am not optimistic that we can unravel this in time for the
+    rapidly approaching start of 2.6.24.
+
+At present, the only one of the bugs or potential bugs noted here
+that are actually biting me is the bug this patch addressed; the
+current (yes, knowingly broken) cpuset code requires the attach
+code to be run even when reattaching to the same cgroup/cpuset to
+which the task is already attached.
+
+If the 2.6.24 kernel releases with this bug, such that reattaching
+tasks to their current cpuset becomes a no-op, that will hurt.
+
+Does my patch (the one opening this thread) cause any problems
+that you know of, Paul M?
+
+So far as I can tell, this patch just removes a minor optimization, and
+other than its allowing a hack in the cpuset code to persist (a side
+affect of what logically should be a no-op), this patch should be
+unnoticeable to user land.
+
+If that's so, can we allow this patch to proceed, likely for the
+2.6.24 kernel series, while we work on killing off all the creepy
+crawlies that your good questions have exposed?
+
+And I'm tempted to continue this discussion on a new thread, as it seems
+that it could be an involved discussion not well focused on the
+interests of many on the current cc list of this message.  There may be
+more hotplug interest, and less container interest, than currently seen
+on this threads cc list.
+
+Any further suggestions, or embarrassing (;) questions?
+
+Thanks!
+
+-- 
+                  I won't rest till it's the best ...
+                  Programmer, Linux Scalability
+                  Paul Jackson <pj@sgi.com> 1.925.600.0401
