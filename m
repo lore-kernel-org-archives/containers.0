@@ -1,114 +1,45 @@
-From: Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: Re: [PATCH 2/3] Introduce the res_counter_populate() function
-Date: Wed, 03 Oct 2007 23:32:29 +0530
-Message-ID: <4703D935.6090309@linux.vnet.ibm.com>
-References: <470374A7.6030805@openvz.org> <470375B2.5090100@openvz.org>
-Reply-To: balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
+From: "Paul Menage" <menage@google.com>
+Subject: Re: [PATCH] task containersv11 add tasks file interface fix for cpusets
+Date: Wed, 3 Oct 2007 11:10:58 -0700
+Message-ID: <6599ad830710031110r1a74eafej56f20cc33e72ac81@mail.gmail.com>
+References: <20071003084241.24279.62099.sendpatchset@jackhammer.engr.sgi.com>
+	 <6599ad830710030851jb44f00ft9634f9381218b6e9@mail.gmail.com>
+	 <20071003105817.7adf6516.pj@sgi.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1
 Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <470375B2.5090100-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
-Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1758909AbXJCSLc@vger.kernel.org>
+In-Reply-To: <20071003105817.7adf6516.pj@sgi.com>
+Content-Disposition: inline
+Sender: linux-kernel-owner@vger.kernel.org
+To: Paul Jackson <pj@sgi.com>
+Cc: akpm@linux-foundation.org, nickpiggin@yahoo.com.au, a.p.zijlstra@chello.nl, serue@us.ibm.com, clg@fr.ibm.com, linux-kernel@vger.kernel.org, ebiederm@xmission.com, rientjes@google.com, svaidy@linux.vnet.ibm.com, xemul@openvz.org, containers@lists.osdl.org, balbir@linux.vnet.ibm.com
 List-Id: containers.vger.kernel.org
 
-Pavel Emelyanov wrote:
-> 
-> diff --git a/include/linux/res_counter.h b/include/linux/res_counter.h
-> index 61363ce..8ee8316 100644
-> --- a/include/linux/res_counter.h
-> +++ b/include/linux/res_counter.h
-> @@ -58,6 +58,9 @@ ssize_t res_counter_write(struct res_cou
->  		const char __user *buf, size_t nbytes, loff_t *pos,
->  		int (*write_strategy)(char *buf, unsigned long long *val));
-> 
-> +int res_counter_populate(struct cgroup_subsys *ss, struct cgroup *cont,
-> +		struct cftype files[], cft_read read_fn, cft_write write_fn);
-> +
->  /*
->   * the field descriptors. one for each member of res_counter
->   */
-> @@ -66,6 +69,8 @@ enum {
->  	RES_USAGE,
->  	RES_LIMIT,
->  	RES_FAILCNT,
-> +
-> +	RES_CFT_MAX,
->  };
-> 
+On 10/3/07, Paul Jackson <pj@sgi.com> wrote:
+>
+> Yes, something in user space has to do it.  It's part of the
+> kernel-user cpuset API.  If you change a cpuset's 'cpus', then
+> you have to rewrite each pid in its 'tasks' file back to that
+> 'tasks' file in order to get that 'cpus' change to be applied
+> to the task struct cpus_allowed of each task, and thereby visible
+> to the scheduler.
 
-This is good
+What's the rationale for this?
 
->  /*
-> diff --git a/kernel/res_counter.c b/kernel/res_counter.c
-> index d7f43cd..018eb2b 100644
-> --- a/kernel/res_counter.c
-> +++ b/kernel/res_counter.c
-> @@ -10,9 +10,34 @@
->  #include <linux/types.h>
->  #include <linux/parser.h>
->  #include <linux/fs.h>
-> +#include <linux/cgroup.h>
->  #include <linux/res_counter.h>
->  #include <linux/uaccess.h>
-> 
-> +int res_counter_populate(struct cgroup_subsys *ss, struct cgroup *cont,
-> +		struct cftype files[], cft_read read_fn, cft_write write_fn)
-> +{
-> +	/*
-> +	 * to be on the safe side
-> +	 */
-> +	memset(files, 0, RES_CFT_MAX * sizeof(struct cftype));
-> +
-> +	strcpy(files[RES_USAGE].name, "usage_in_bytes");
+Given that later in cpusets.txt you say:
 
-This needs to be controller pluggable
+>If hotplug functionality is used
+>to remove all the CPUs that are currently assigned to a cpuset,
+>then the kernel will automatically update the cpus_allowed of all
+>tasks attached to CPUs in that cpuset to allow all CPUs
 
-> +	files[RES_USAGE].private = RES_USAGE;
-> +	files[RES_USAGE].read = read_fn;
-> +
-> +	strcpy(files[RES_LIMIT].name, "limit_in_bytes");
+why can't the same thing be done when changing the 'cpus' file manually.
 
-This needs to be controller pluggable
+What's wrong with, in update_cpumask(), doing a loop across all
+members of the cgroup and updating their cpus_allowed fields?
 
-> +	files[RES_LIMIT].private = RES_LIMIT;
-> +	files[RES_LIMIT].read = read_fn;
-> +	files[RES_LIMIT].write = write_fn;
-> +
-> +	strcpy(files[RES_FAILCNT].name, "failcnt");
-> +	files[RES_FAILCNT].private = RES_FAILCNT;
-> +	files[RES_FAILCNT].read = read_fn;
-> +
-> +	return cgroup_add_files(cont, ss, files, RES_CFT_MAX);
-> +}
-> +
+The existing cpusets API is broken, since a new child can always be
+forked between reading the tasks file and doing the writes.
 
-I've been thinking of writing a tool, that will generate all
-the code necessary to write a controller under cgroups.
-Another TODO (low priority).
-
->  void res_counter_init(struct res_counter *counter)
->  {
->  	spin_lock_init(&counter->lock);
-> 
-> _______________________________________________
-> Containers mailing list
-> Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-> https://lists.linux-foundation.org/mailman/listinfo/containers
-
-
--- 
-	Warm Regards,
-	Balbir Singh
-	Linux Technology Center
-	IBM, ISTL
+Paul
