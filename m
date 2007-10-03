@@ -1,20 +1,15 @@
-From: sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org
-Subject: Re: [patch -mm 1/5] mqueue namespace : add struct mq_namespace
-Date: Wed, 3 Oct 2007 09:56:44 -0700
-Message-ID: <20071003165644.GA338@us.ibm.com>
-References: <20071002084608.149781400@fr.ibm.com>
-	<20071002084906.477406083@fr.ibm.com> <47020A29.9060403@sw.ru>
-	<470219BC.3050702@fr.ibm.com>
-	<m1ir5plr3c.fsf@ebiederm.dsl.xmission.com>
-	<470237C7.5000902@fr.ibm.com> <20071002163020.GA11207@us.ibm.com>
-	<47034868.5010505@fr.ibm.com>
-	<20071003135955.GA7934@sergelap.austin.ibm.com>
-	<4703A30F.2010007@fr.ibm.com>
+From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
+Subject: Re: netns : close all sockets at unshare ?
+Date: Wed, 03 Oct 2007 10:59:07 -0600
+Message-ID: <m1r6kccexw.fsf@ebiederm.dsl.xmission.com>
+References: <4702BBF4.60903@fr.ibm.com>
+	<m14ph9i1l3.fsf@ebiederm.dsl.xmission.com>
+	<47035591.4030300@fr.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <4703A30F.2010007-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <47035591.4030300-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org> (Daniel Lezcano's message of "Wed,
+	03 Oct 2007 10:40:49 +0200")
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -24,25 +19,53 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Cedric Le Goater <clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, "Denis V. Lunev" <den-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+To: Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
+Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Cedric Le Goater [clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org] wrote:
-| > I think you and Eric (and I) are disagreeing about those limitations.
-| > You take it for granted that a sibling pidns is off limits for signals.
-| > But the signal wasn't sent using a pid, but using a file (in SIGIO
-| > case).  So since the fs was shared, the signal should be sent.  An
-| > event happened, and the receiver wants to know about it.
-| 
-| seen that way I agree. 
-| 
-| si_code is set to SI_MESGQ, but what do we put in si_pid ? 0 ?
-| 
-| we could use the si_errno to pass extra info, like the sending process 
-| lives in a // world ...
+Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org> writes:
+>
+> Yes, it will work.
+>
+> Do we want to be inside a network namespace and to use a socket belonging to
+> another network namespace ? If yes, then my remark is irrelevant.
 
-Does the receiver need to know that sender is in a // world ? 
+Yes we do.
 
-| 
-| C.
+>>> Shall we close all fd sockets when doing an unshare ? like a close-on-exec
+>>> behavior ?
+>>
+>> I think adopting that policy would dramatically reduce the usefulness
+>> of network namespaces.
+>>
+>> Making the mix and match cases gives the implementation much more flexibility
+>> and it doesn't appear that hard right now.
+>
+> I am curious, why such functionality is useful ?
+
+There are several reasons.  Partly it is the principle of building
+general purpose tools that can be used in a flexible way.
+
+The biggest practical use I can see is that a control program outside
+of a network namespace can configure and setup someone else's network
+stack, perhaps preventing the need to enter someone else's container.
+
+Another use is having a socket in an original network namespace for
+doing a stdin/stdout style connections.
+
+The planetlab folks are actually actively using this functionality
+already, and there was a thread several months ago about how this
+functionality was important and how they were using it.
+
+This also preserves normal unix file descriptor passing semantics.
+
+A final reason for it is that it removes the need for a lot of
+brittle special cases when network namespaces are mixed in something
+other then a 1-1 correspondence with other namespaces.  Like the one
+you were concerned with in unshare.  Handling this case means
+everything just works.
+
+So it may be a touch harder to implement but because we don't add
+special rules it is much easier to review.
+
+Eric
