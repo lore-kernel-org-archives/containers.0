@@ -1,40 +1,50 @@
-From: Paul Jackson <pj@sgi.com>
-Subject: Re: [PATCH] task containersv11 add tasks file interface fix for
- cpusets
-Date: Wed, 3 Oct 2007 10:58:17 -0700
-Message-ID: <20071003105817.7adf6516.pj@sgi.com>
-References: <20071003084241.24279.62099.sendpatchset@jackhammer.engr.sgi.com>
-	<6599ad830710030851jb44f00ft9634f9381218b6e9@mail.gmail.com>
+From: Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Subject: Re: [PATCH 0/3] Consolidate cgroup files creation for resource
+	counters
+Date: Wed, 03 Oct 2007 23:29:02 +0530
+Message-ID: <4703D866.10305@linux.vnet.ibm.com>
+References: <470374A7.6030805@openvz.org>
+Reply-To: balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
 Mime-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
+Content-Type: text/plain; charset=ISO-8859-1
 Content-Transfer-Encoding: 7bit
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1758621AbXJCR6c@vger.kernel.org>
-In-Reply-To: <6599ad830710030851jb44f00ft9634f9381218b6e9@mail.gmail.com>
-Sender: linux-kernel-owner@vger.kernel.org
-To: Paul Menage <menage@google.com>
-Cc: akpm@linux-foundation.org, nickpiggin@yahoo.com.au, a.p.zijlstra@chello.nl, serue@us.ibm.com, clg@fr.ibm.com, linux-kernel@vger.kernel.org, ebiederm@xmission.com, rientjes@google.com, svaidy@linux.vnet.ibm.com, xemul@openvz.org, containers@lists.osdl.org, balbir@linux.vnet.ibm.com
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <470374A7.6030805-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Paul M wrote:
-> > The code in kernel/cgroup.c attach_task() which skips the
-> > attachment of a task to the group it is already in has to be
-> > removed.  Cpusets depends on reattaching a task to its current
-> > cpuset, in order to trigger updating the cpus_allowed mask in the
-> > task struct.
+Pavel Emelyanov wrote:
+> Right now we have only one controller in -mm tree - the memory
+> one - and it initializes all its files manually. After I developed
+> the kernel memory one it turned out, that the names of resource
+> counter specific files has changed. In the future, if anything in
+> the resource counters change, we'll have to rewrite all the
+> controllers we will have by that time.
 > 
-> Can you explain a bit more about why this is needed? (i.e. specific
-> scenarios where cpusets will break without this change).
+> To make all the containers working with the resource counters
+> look similar I propose to create the resource counters specific
+> files in one place.
 > 
-> What triggers the reattach in normal use? Something from userspace?
+> Any comments/wishes before I send it to Andrew are welcome.
+> 
+> Signed-off-by: Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 
-Yes, something in user space has to do it.  It's part of the
-kernel-user cpuset API.  If you change a cpuset's 'cpus', then
-you have to rewrite each pid in its 'tasks' file back to that
-'tasks' file in order to get that 'cpus' change to be applied
-to the task struct cpus_allowed of each task, and thereby visible
-to the scheduler.
+For memory your changes make sense, but the file names cannot
+be limit_in_bytes and usage_in_bytes for other controllers
+(if and when they use res_counters)
 
 -- 
-                  I won't rest till it's the best ...
-                  Programmer, Linux Scalability
-                  Paul Jackson <pj@sgi.com> 1.925.600.0401
+	Warm Regards,
+	Balbir Singh
+	Linux Technology Center
+	IBM, ISTL
