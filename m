@@ -1,7 +1,7 @@
 From: Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
-Subject: [PATCH 2/3] Introduce the res_counter_populate() function
-Date: Wed, 03 Oct 2007 14:57:54 +0400
-Message-ID: <470375B2.5090100@openvz.org>
+Subject: [PATCH 3/3] Use the res_counter_populate in memory controller
+Date: Wed, 03 Oct 2007 14:59:40 +0400
+Message-ID: <4703761C.5000403@openvz.org>
 References: <470374A7.6030805@openvz.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1
@@ -21,79 +21,60 @@ To: Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, Pau
 Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-This one is responsible for initializing the RES_CFT_MAX files
-properly and register them inside the container.
-
-The caller must provide the cgroup, the cgroup_subsys, the
-RES_CFT_MAX * sizeof(cftype) chunk of uninitialized memory
-and the read and write callbacks.
-
-In the future, if we add more res_counter files, change their
-names or anything else, no caller will be affected.
+Note, that the controller code dealing with the cftype files
+for resource counters becomes much shorter and won't have to 
+be changed in the future.
 
 Signed-off-by: Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 
 ---
 
-diff --git a/include/linux/res_counter.h b/include/linux/res_counter.h
-index 61363ce..8ee8316 100644
---- a/include/linux/res_counter.h
-+++ b/include/linux/res_counter.h
-@@ -58,6 +58,9 @@ ssize_t res_counter_write(struct res_cou
- 		const char __user *buf, size_t nbytes, loff_t *pos,
- 		int (*write_strategy)(char *buf, unsigned long long *val));
+diff --git a/mm/memcontrol.c b/mm/memcontrol.c
+index 1b8bf24..d1b43bc 100644
+--- a/mm/memcontrol.c
++++ b/mm/memcontrol.c
+@@ -519,28 +519,14 @@ static ssize_t mem_control_type_read(str
  
-+int res_counter_populate(struct cgroup_subsys *ss, struct cgroup *cont,
-+		struct cftype files[], cft_read read_fn, cft_write write_fn);
-+
- /*
-  * the field descriptors. one for each member of res_counter
-  */
-@@ -66,6 +69,8 @@ enum {
- 	RES_USAGE,
- 	RES_LIMIT,
- 	RES_FAILCNT,
-+
-+	RES_CFT_MAX,
+ static struct cftype mem_cgroup_files[] = {
+ 	{
+-		.name = "usage_in_bytes",
+-		.private = RES_USAGE,
+-		.read = mem_cgroup_read,
+-	},
+-	{
+-		.name = "limit_in_bytes",
+-		.private = RES_LIMIT,
+-		.write = mem_cgroup_write,
+-		.read = mem_cgroup_read,
+-	},
+-	{
+-		.name = "failcnt",
+-		.private = RES_FAILCNT,
+-		.read = mem_cgroup_read,
+-	},
+-	{
+ 		.name = "control_type",
+ 		.write = mem_control_type_write,
+ 		.read = mem_control_type_read,
+ 	},
  };
  
- /*
-diff --git a/kernel/res_counter.c b/kernel/res_counter.c
-index d7f43cd..018eb2b 100644
---- a/kernel/res_counter.c
-+++ b/kernel/res_counter.c
-@@ -10,9 +10,34 @@
- #include <linux/types.h>
- #include <linux/parser.h>
- #include <linux/fs.h>
-+#include <linux/cgroup.h>
- #include <linux/res_counter.h>
- #include <linux/uaccess.h>
++static struct cftype mem_res_counter_files[RES_CFT_MAX];
++
+ static struct mem_cgroup init_mem_cgroup;
  
-+int res_counter_populate(struct cgroup_subsys *ss, struct cgroup *cont,
-+		struct cftype files[], cft_read read_fn, cft_write write_fn)
-+{
-+	/*
-+	 * to be on the safe side
-+	 */
-+	memset(files, 0, RES_CFT_MAX * sizeof(struct cftype));
-+
-+	strcpy(files[RES_USAGE].name, "usage_in_bytes");
-+	files[RES_USAGE].private = RES_USAGE;
-+	files[RES_USAGE].read = read_fn;
-+
-+	strcpy(files[RES_LIMIT].name, "limit_in_bytes");
-+	files[RES_LIMIT].private = RES_LIMIT;
-+	files[RES_LIMIT].read = read_fn;
-+	files[RES_LIMIT].write = write_fn;
-+
-+	strcpy(files[RES_FAILCNT].name, "failcnt");
-+	files[RES_FAILCNT].private = RES_FAILCNT;
-+	files[RES_FAILCNT].read = read_fn;
-+
-+	return cgroup_add_files(cont, ss, files, RES_CFT_MAX);
-+}
-+
- void res_counter_init(struct res_counter *counter)
+ static struct cgroup_subsys_state *
+@@ -574,6 +560,13 @@ static void mem_cgroup_destroy(struct cg
+ static int mem_cgroup_populate(struct cgroup_subsys *ss,
+ 				struct cgroup *cont)
  {
- 	spin_lock_init(&counter->lock);
++	int ret;
++
++	ret = res_counter_populate(ss, cont, mem_res_counter_files,
++			mem_cgroup_read, mem_cgroup_write);
++	if (ret)
++		return ret;
++
+ 	return cgroup_add_files(cont, ss, mem_cgroup_files,
+ 					ARRAY_SIZE(mem_cgroup_files));
+ }
