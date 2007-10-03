@@ -1,51 +1,63 @@
-From: Paul Jackson <pj@sgi.com>
-Subject: [PATCH] task containersv11 add tasks file interface fix for cpusets
-Date: Wed, 03 Oct 2007 01:42:41 -0700
-Message-ID: <20071003084241.24279.62099.sendpatchset@jackhammer.engr.sgi.com>
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1757777AbXJCIm5@vger.kernel.org>
-Sender: linux-kernel-owner@vger.kernel.org
-To: Andrew Morton <akpm@linux-foundation.org>
-Cc: Nick Piggin <nickpiggin@yahoo.com.au>, Peter Zijlstra <a.p.zijlstra@chello.nl>, "Serge E. Hallyn" <serue@us.ibm.com>, Cedric Le Goater <clg@fr.ibm.com>, Paul Menage <menage@google.com>, linux-kernel@vger.kernel.org, "Eric W. Biederman" <ebiederm@xmission.com>, David Rientjes <rientjes@google.com>, Vaidyanathan Srinivasan <svaidy@linux.vnet.ibm.com>, Pavel Emelianov <xemul@openvz.org>, containers@lists.osdl.org, Paul Jackson <pj@sgi.com>, balbir@linux.vnet.ibm.com
+From: Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
+Subject: Re: netns : close all sockets at unshare ?
+Date: Wed, 03 Oct 2007 10:40:49 +0200
+Message-ID: <47035591.4030300@fr.ibm.com>
+References: <4702BBF4.60903@fr.ibm.com>
+	<m14ph9i1l3.fsf@ebiederm.dsl.xmission.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+Content-Transfer-Encoding: 7bit
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <m14ph9i1l3.fsf-T1Yj925okcoyDheHMi7gv2pdwda3JcWeAL8bYrjMMd8@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-From: Paul Jackson <pj@sgi.com>
+Eric W. Biederman wrote:
+> Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org> writes:
+> 
+>> Hi,
+>>
+>> I was looking at some cornercases and trying to figure out what happens if
+>> someone does:
+>>
+>> 1 - fd = socket(...)
+>> 2 - unshare(CLONE_NEWNET)
+>> 3 - bind(fd, ...) / listen(fd, ...)
+>>
+>> There is here an interaction between two namespaces.
+>> Trying to catch all these little tricky paths everywhere with the network
+>> namespace is painful, perhaps we should consider a more radical solution.
+> 
+> Huh?
+> 
+> socket() puts the namespace on struct sock.
+> bind/listen etc just look at that namespace. 
+> 
+> Unless I'm blind it is simple and it works now.
 
-The code in kernel/cgroup.c attach_task() which skips the
-attachment of a task to the group it is already in has to be
-removed.  Cpusets depends on reattaching a task to its current
-cpuset, in order to trigger updating the cpus_allowed mask in the
-task struct.
+Yes, it will work.
 
-The dependency of cpusets on this is a hack, granted, but an
-important one.  It lets us avoid checking for a changed cpuset
-'cpus' setting in critical scheduler code paths.
+Do we want to be inside a network namespace and to use a socket 
+belonging to another network namespace ? If yes, then my remark is 
+irrelevant.
 
-Signed-off-by: Paul Jackson <pj@sgi.com>
-Cc: Paul Menage <menage@google.com>
+>> Shall we close all fd sockets when doing an unshare ? like a close-on-exec
+>> behavior ?
+> 
+> I think adopting that policy would dramatically reduce the usefulness
+> of network namespaces.
+> 
+> Making the mix and match cases gives the implementation much more flexibility
+> and it doesn't appear that hard right now.
 
----
-
-Andrew - this patch applies directly following the patch:
-    task-containersv11-add-tasks-file-interface.patch
-
- kernel/cgroup.c |    3 ---
- 1 file changed, 3 deletions(-)
-
---- 2.6.23-rc8-mm1.orig/kernel/cgroup.c	2007-10-02 20:24:11.078925442 -0700
-+++ 2.6.23-rc8-mm1/kernel/cgroup.c	2007-10-02 20:25:41.352279374 -0700
-@@ -739,10 +739,7 @@ static int attach_task(struct cgroup *co
- 
- 	get_first_subsys(cont, NULL, &subsys_id);
- 
--	/* Nothing to do if the task is already in that cgroup */
- 	oldcont = task_cgroup(tsk, subsys_id);
--	if (cont == oldcont)
--		return 0;
- 
- 	for_each_subsys(root, ss) {
- 		if (ss->can_attach) {
-
--- 
-                          I won't rest till it's the best ...
-                          Programmer, Linux Scalability
-                          Paul Jackson <pj@sgi.com> 1.650.933.1373
+I am curious, why such functionality is useful ?
