@@ -1,84 +1,51 @@
-From: Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [patch 0/1][NETNS49] Make af_unix autobind per namespace
-Date: Wed, 03 Oct 2007 10:35:31 +0200
-Message-ID: <47035453.9090402@fr.ibm.com>
-References: <20071002151846.827206013@mai.toulouse-stg.fr.ibm.com>
-	<m1fy0tjv04.fsf@ebiederm.dsl.xmission.com>
-	<4702AF67.1010707@fr.ibm.com>
-	<m1myv1gmsl.fsf@ebiederm.dsl.xmission.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
-Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <m1myv1gmsl.fsf-T1Yj925okcoyDheHMi7gv2pdwda3JcWeAL8bYrjMMd8@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, den-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org, benjamin.thery-6ktuUTfB/bM@public.gmane.org
+From: Paul Jackson <pj@sgi.com>
+Subject: [PATCH] task containersv11 add tasks file interface fix for cpusets
+Date: Wed, 03 Oct 2007 01:42:41 -0700
+Message-ID: <20071003084241.24279.62099.sendpatchset@jackhammer.engr.sgi.com>
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1757777AbXJCIm5@vger.kernel.org>
+Sender: linux-kernel-owner@vger.kernel.org
+To: Andrew Morton <akpm@linux-foundation.org>
+Cc: Nick Piggin <nickpiggin@yahoo.com.au>, Peter Zijlstra <a.p.zijlstra@chello.nl>, "Serge E. Hallyn" <serue@us.ibm.com>, Cedric Le Goater <clg@fr.ibm.com>, Paul Menage <menage@google.com>, linux-kernel@vger.kernel.org, "Eric W. Biederman" <ebiederm@xmission.com>, David Rientjes <rientjes@google.com>, Vaidyanathan Srinivasan <svaidy@linux.vnet.ibm.com>, Pavel Emelianov <xemul@openvz.org>, containers@lists.osdl.org, Paul Jackson <pj@sgi.com>, balbir@linux.vnet.ibm.com
 List-Id: containers.vger.kernel.org
 
-Eric W. Biederman wrote:
-> Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org> writes:
-> 
->> Eric W. Biederman wrote:
->>> Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org> writes:
->>>
->>>> The following patch change autobind fonction to use the ordernum
->>>> from the network namespace instead of using the local static variable.
->>> Why do we care?
->>> Information leak?
->>> Some application is expecting a predictable autobind value?
->>>
->>> Just skimming the code it looks like it will work correctly without
->>> this.
->> I think my summary is ... too short :)
->>
->> I don't see any applications taking care of this. If they ask for an abstract
->> socket, then they don't care about the bind result. So probably, the patchset is
->> totally useless.
->>
->> But from the POV of the checkpoint/restart, we should check if this value is
->> somewhere visible from userspace and so storable by an application.
-> 
-> Right.  And we already can already specifically select this result.
-> My point is that the semi random sequence generator logic does not
-> need to be per namespace, because people don't care what the sequence.
-> That sequence is not exported to user space.
-> 
->> It appears this is the case with /proc/net/unix, where an abstract socket is
->> symbolized by the path pattern "@". Example:
->>
->> cat /proc/net/unix
->>
->> Num       RefCount Protocol Flags    Type St Inode Path
->> c6a27710: 00000002 00000000 00000000 0002 01  4357 @00003
-> 
-> Right, and that part we should definitely preserve for checkpoint/restart
-> purposes.
-> 
->> I agree by the fact that can be considered as a detail and the probability to
->> have an application storing this informaton is very small ( eg. checkpointing
->> while doing netstat in the container ). But IMHO, the paradigm "never seen from
->> userspace" fails and that justifies to have the ordernum variable relative to a
->> namespace.
-> 
-> My point was that ordernum itself is not seen.  It is just an arbitrary number
-> and we are allowed to change the algorithm for selecting a new abstract
-> namespace name at will.
+From: Paul Jackson <pj@sgi.com>
 
-Hmm, right. That makes sense.
+The code in kernel/cgroup.c attach_task() which skips the
+attachment of a task to the group it is already in has to be
+removed.  Cpusets depends on reattaching a task to its current
+cpuset, in order to trigger updating the cpus_allowed mask in the
+task struct.
 
-> If there is something in userspace that depends on the algorithm for selecting
-> the abstract name then making ordernum per namespace make sense.
+The dependency of cpusets on this is a hack, granted, but an
+important one.  It lets us avoid checking for a changed cpuset
+'cpus' setting in critical scheduler code paths.
 
-Ok, fair enough. Let's forget this patch. It is small enough to rewrite 
-it if unexpectedly something bad happens with ordernum.
+Signed-off-by: Paul Jackson <pj@sgi.com>
+Cc: Paul Menage <menage@google.com>
 
-  -- Daniel
+---
+
+Andrew - this patch applies directly following the patch:
+    task-containersv11-add-tasks-file-interface.patch
+
+ kernel/cgroup.c |    3 ---
+ 1 file changed, 3 deletions(-)
+
+--- 2.6.23-rc8-mm1.orig/kernel/cgroup.c	2007-10-02 20:24:11.078925442 -0700
++++ 2.6.23-rc8-mm1/kernel/cgroup.c	2007-10-02 20:25:41.352279374 -0700
+@@ -739,10 +739,7 @@ static int attach_task(struct cgroup *co
+ 
+ 	get_first_subsys(cont, NULL, &subsys_id);
+ 
+-	/* Nothing to do if the task is already in that cgroup */
+ 	oldcont = task_cgroup(tsk, subsys_id);
+-	if (cont == oldcont)
+-		return 0;
+ 
+ 	for_each_subsys(root, ss) {
+ 		if (ss->can_attach) {
+
+-- 
+                          I won't rest till it's the best ...
+                          Programmer, Linux Scalability
+                          Paul Jackson <pj@sgi.com> 1.650.933.1373
