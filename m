@@ -1,13 +1,14 @@
-From: Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
-Subject: [PATCH 3/3] Use the res_counter_populate in memory controller
-Date: Wed, 03 Oct 2007 14:59:40 +0400
-Message-ID: <4703761C.5000403@openvz.org>
-References: <470374A7.6030805@openvz.org>
+From: Cedric Le Goater <clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [patch 0/1][NETNS49] Make af_unix autobind per namespace
+Date: Wed, 03 Oct 2007 15:11:44 +0200
+Message-ID: <47039510.7040001@fr.ibm.com>
+References: <20071002151846.827206013@mai.toulouse-stg.fr.ibm.com>	<m1fy0tjv04.fsf@ebiederm.dsl.xmission.com>	<4702AF67.1010707@fr.ibm.com>
+	<47034F4F.5000901@sw.ru>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <470374A7.6030805-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+In-Reply-To: <47034F4F.5000901-3ImXcnM4P+0@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -17,64 +18,46 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
-Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
+To: "Denis V. Lunev" <den-3ImXcnM4P+0@public.gmane.org>
+Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, den-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, benjamin.thery-6ktuUTfB/bM@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Note, that the controller code dealing with the cftype files
-for resource counters becomes much shorter and won't have to 
-be changed in the future.
+Denis V. Lunev wrote:
+> Daniel Lezcano wrote:
+>> Eric W. Biederman wrote:
+>>> Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org> writes:
+>>>
+>>>> The following patch change autobind fonction to use the ordernum
+>>>> from the network namespace instead of using the local static variable.
+>>> Why do we care?
+>>> Information leak?
+>>> Some application is expecting a predictable autobind value?
+>>>
+>>> Just skimming the code it looks like it will work correctly without
+>>> this.
+>> I think my summary is ... too short :)
+>>
+>> I don't see any applications taking care of this. If they ask for an
+>> abstract socket, then they don't care about the bind result. So
+>> probably, the patchset is totally useless.
+>>
+>> But from the POV of the checkpoint/restart, we should check if this
+>> value is somewhere visible from userspace and so storable by an
+>> application.
+> 
+> we do not care with this in checkpointing. One namespace socket does not
+> see other namespace socket
 
-Signed-off-by: Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+my 2 cnts,
 
----
+when 'restarting' a socket bound to an abstract name, we will have 
+a EADDRINUSE if we try to rebind it to an abtract name which is 
+already in use by a socket in a another namespace ? 
 
-diff --git a/mm/memcontrol.c b/mm/memcontrol.c
-index 1b8bf24..d1b43bc 100644
---- a/mm/memcontrol.c
-+++ b/mm/memcontrol.c
-@@ -519,28 +519,14 @@ static ssize_t mem_control_type_read(str
- 
- static struct cftype mem_cgroup_files[] = {
- 	{
--		.name = "usage_in_bytes",
--		.private = RES_USAGE,
--		.read = mem_cgroup_read,
--	},
--	{
--		.name = "limit_in_bytes",
--		.private = RES_LIMIT,
--		.write = mem_cgroup_write,
--		.read = mem_cgroup_read,
--	},
--	{
--		.name = "failcnt",
--		.private = RES_FAILCNT,
--		.read = mem_cgroup_read,
--	},
--	{
- 		.name = "control_type",
- 		.write = mem_control_type_write,
- 		.read = mem_control_type_read,
- 	},
- };
- 
-+static struct cftype mem_res_counter_files[RES_CFT_MAX];
-+
- static struct mem_cgroup init_mem_cgroup;
- 
- static struct cgroup_subsys_state *
-@@ -574,6 +560,13 @@ static void mem_cgroup_destroy(struct cg
- static int mem_cgroup_populate(struct cgroup_subsys *ss,
- 				struct cgroup *cont)
- {
-+	int ret;
-+
-+	ret = res_counter_populate(ss, cont, mem_res_counter_files,
-+			mem_cgroup_read, mem_cgroup_write);
-+	if (ret)
-+		return ret;
-+
- 	return cgroup_add_files(cont, ss, mem_cgroup_files,
- 					ARRAY_SIZE(mem_cgroup_files));
- }
+it seems to me that this is an identifier and like any identifier
+it should be private to the namespace, which probably means having
+unix_abstract_socket_table[] per net namespace.
+
+Cheers,
+
+C. 
