@@ -1,14 +1,18 @@
-From: Cedric Le Goater <clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [patch 0/1][NETNS49] Make af_unix autobind per namespace
-Date: Wed, 03 Oct 2007 15:11:44 +0200
-Message-ID: <47039510.7040001@fr.ibm.com>
-References: <20071002151846.827206013@mai.toulouse-stg.fr.ibm.com>	<m1fy0tjv04.fsf@ebiederm.dsl.xmission.com>	<4702AF67.1010707@fr.ibm.com>
-	<47034F4F.5000901@sw.ru>
+From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [patch -mm 1/5] mqueue namespace : add struct mq_namespace
+Date: Wed, 3 Oct 2007 08:59:55 -0500
+Message-ID: <20071003135955.GA7934@sergelap.austin.ibm.com>
+References: <20071002084608.149781400@fr.ibm.com>
+	<20071002084906.477406083@fr.ibm.com> <47020A29.9060403@sw.ru>
+	<470219BC.3050702@fr.ibm.com>
+	<m1ir5plr3c.fsf@ebiederm.dsl.xmission.com>
+	<470237C7.5000902@fr.ibm.com> <20071002163020.GA11207@us.ibm.com>
+	<47034868.5010505@fr.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset=us-ascii
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <47034F4F.5000901-3ImXcnM4P+0@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <47034868.5010505-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,46 +22,79 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Denis V. Lunev" <den-3ImXcnM4P+0@public.gmane.org>
-Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, den-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, benjamin.thery-6ktuUTfB/bM@public.gmane.org
+To: Cedric Le Goater <clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
+Cc: "Denis V. Lunev" <den-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Denis V. Lunev wrote:
-> Daniel Lezcano wrote:
->> Eric W. Biederman wrote:
->>> Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org> writes:
->>>
->>>> The following patch change autobind fonction to use the ordernum
->>>> from the network namespace instead of using the local static variable.
->>> Why do we care?
->>> Information leak?
->>> Some application is expecting a predictable autobind value?
->>>
->>> Just skimming the code it looks like it will work correctly without
->>> this.
->> I think my summary is ... too short :)
->>
->> I don't see any applications taking care of this. If they ask for an
->> abstract socket, then they don't care about the bind result. So
->> probably, the patchset is totally useless.
->>
->> But from the POV of the checkpoint/restart, we should check if this
->> value is somewhere visible from userspace and so storable by an
->> application.
+Quoting Cedric Le Goater (clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org):
+> sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org wrote:
+> > Cedric Le Goater [clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org] wrote:
+> > | 
+> > | >> however, we have an issue with the signal notification in __do_notify()
+> > | >> we could kill a process in a different pid namespace.
+> > | > 
+> > | > So I took a quick look at the code as it is (before this patchset)
+> > | > and the taking a reference to a socket and the taking a reference to
+> > | > a struct pid should do the right thing when we intersect with other
+> > | > namespaces.  It certainly does not look like a fundamental issue.
+> > 
+> > | 
+> > | right. this should be covered when the pid namespace signal handling is 
+> > | complete. kill_pid_info() should fail to send a signal to a sibling or 
+> > | a parent pid namespace. 
+> > | 
+> > | I guess we should add a WARNING() to say that we're attempting to do so.
+> > 
+> > Just want to clarify how a signal is sent to a parent ns.
+> > 
+> > 	A process P1 sets itself up to be notified when a message arrives
+> > 	on a queue.
+> > 
+> > 	P1 then clones P2 with CLONE_NEWPID.
+> > 
+> > 	P2 writes to the message queue and thus signals P1
+> > 
+> > What should the semantics be here ?
+> > 
+> > I guess it makes less sense for two namespaces to be dependent on the same
+> > message queue this way.  But, if P2 writes to the queue, technically, the
+> > queue is not empty, so P1 should be notified, no ? 
+> > 
+> > This sounds similar to the SIGIO signal case (F_SETOWN). My understanding
+> > was that we would notify whoever was set to receive the notification, even
+> > if they were in a parent ns (again my reasoning was its based on the state
+> > of a file).
 > 
-> we do not care with this in checkpointing. One namespace socket does not
-> see other namespace socket
+> yes
+> 
+> > IOW,  should we change kill_pid_info() ?  If the caller can 'see' the
+> > 'struct pid' they can signal it. The expectation was that callers would
+> > call find_vpid() and thus only see processes in their namespace.
+> 
+> I think we have to decide on some limitations with signals 
 
-my 2 cnts,
+Yes we do, but
 
-when 'restarting' a socket bound to an abstract name, we will have 
-a EADDRINUSE if we try to rebind it to an abtract name which is 
-already in use by a socket in a another namespace ? 
+> and make sure 
+> that we cannot send a signal to a sibling pid namespace.
 
-it seems to me that this is an identifier and like any identifier
-it should be private to the namespace, which probably means having
-unix_abstract_socket_table[] per net namespace.
+I think you and Eric (and I) are disagreeing about those limitations.
+You take it for granted that a sibling pidns is off limits for signals.
+But the signal wasn't sent using a pid, but using a file (in SIGIO
+case).  So since the fs was shared, the signal should be sent.  An
+event happened, and the receiver wants to know about it.
 
-Cheers,
-
-C. 
+> This can occur
+> in some special namespaces unshare configuration which should never be used 
+> but to make sure, let's add a big WARNING when we detect such a pid namespace
+> violation.
+> 
+> If it is what you mean, I agree :)
+> 
+> Thanks,
+> 
+> C.
+> _______________________________________________
+> Containers mailing list
+> Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+> https://lists.linux-foundation.org/mailman/listinfo/containers
