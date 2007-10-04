@@ -1,38 +1,43 @@
-From: "Paul Menage" <menage@google.com>
-Subject: Re: [PATCH] task containersv11 add tasks file interface fix for cpusets
-Date: Wed, 3 Oct 2007 13:58:26 -0700
-Message-ID: <6599ad830710031358w515eb90do2596c0766f989783@mail.gmail.com>
-References: <20071003084241.24279.62099.sendpatchset@jackhammer.engr.sgi.com>
-	 <6599ad830710030851jb44f00ft9634f9381218b6e9@mail.gmail.com>
-	 <20071003105817.7adf6516.pj@sgi.com>
-	 <6599ad830710031110r1a74eafej56f20cc33e72ac81@mail.gmail.com>
-	 <20071003131632.fed4b848.pj@sgi.com>
-	 <6599ad830710031331h15d35e90lc63d845efd2de6f5@mail.gmail.com>
-	 <20071003135232.af01a624.pj@sgi.com>
+From: Paul Jackson <pj@sgi.com>
+Subject: Re: [PATCH 03/33] task containersv11 add tasks file interface
+Date: Wed, 3 Oct 2007 19:46:52 -0700
+Message-ID: <20071003194652.873b0bcf.pj@sgi.com>
+References: <20070917210307.116234000@menage.corp.google.com>
+	<20070917210426.579524000@menage.corp.google.com>
+	<20071003010923.c606c176.pj@sgi.com>
+	<6599ad830710030816m32321b54gbc79c24d0a39941b@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
+Content-Type: text/plain; charset=US-ASCII
 Content-Transfer-Encoding: 7bit
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1758699AbXJCU6n@vger.kernel.org>
-In-Reply-To: <20071003135232.af01a624.pj@sgi.com>
-Content-Disposition: inline
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1756584AbXJDCrT@vger.kernel.org>
+In-Reply-To: <6599ad830710030816m32321b54gbc79c24d0a39941b@mail.gmail.com>
 Sender: linux-kernel-owner@vger.kernel.org
-To: Paul Jackson <pj@sgi.com>
-Cc: akpm@linux-foundation.org, nickpiggin@yahoo.com.au, a.p.zijlstra@chello.nl, serue@us.ibm.com, clg@fr.ibm.com, linux-kernel@vger.kernel.org, ebiederm@xmission.com, rientjes@google.com, svaidy@linux.vnet.ibm.com, xemul@openvz.org, containers@lists.osdl.org, balbir@linux.vnet.ibm.com
+To: Paul Menage <menage@google.com>
+Cc: akpm@linux-foundation.org, balbir@linux.vnet.ibm.com, serue@us.ibm.com, clg@fr.ibm.com, ebiederm@xmission.com, xemul@openvz.org, rientjes@google.com, svaidy@linux.vnet.ibm.com, nickpiggin@yahoo.com.au, a.p.zijlstra@chello.nl, containers@lists.osdl.org, linux-kernel@vger.kernel.org
 List-Id: containers.vger.kernel.org
 
-On 10/3/07, Paul Jackson <pj@sgi.com> wrote:
->
-> But now (correct me if I'm wrong here) cgroups has a per-cgroup task
-> list, and the above loop has cost linear in the number of tasks
-> actually in the cgroup, plus (unfortunate but necessary and tolerable)
-> the cost of taking a global css_set_lock, right?
+> >  - There are many instances of the local variable 'cont', referring
+> >    to a struct cgroup pointer.  I presume the spelling 'cont' is a
+> >    holdover from the time when we called these containers.
+> 
+> Yes, and since cgroup is short for "control group", "cont" still
+> seemed like a reasonable abbreviation. (And made the automatic
+> renaming much simpler).
 
-Yes.
+The following will change all 'cont' words to your choice (I doubt
+you want to use 'XXXX' as I did here) in cgroup.c:
 
->
-> And I take it the above code snipped is missing the cgroup_iter_start,
-> correct?
+    sed -i -r 's/(\W|^)cont(\W|$)/\1XXXX\2/g' kernel/cgroup.c
 
-Oops, yes.
+I can't say for sure, but I suspect that if cgroups had always
+been cgroups (short for control groups), then these local 'cont'
+variables would have a different name.  One can often, as in this
+case, find some justification for most any name.  The question is
+which name is most quickly and easily understood.
 
-Paul
+... yes ... I'm a stickler for names ... sorry.
+
+-- 
+                  I won't rest till it's the best ...
+                  Programmer, Linux Scalability
+                  Paul Jackson <pj@sgi.com> 1.925.600.0401
