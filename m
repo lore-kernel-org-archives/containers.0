@@ -1,83 +1,80 @@
-From: Cedric Le Goater <clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
-Subject: Re: netns : close all sockets at unshare ?
-Date: Thu, 04 Oct 2007 17:27:03 +0200
-Message-ID: <47050647.2030703@fr.ibm.com>
-References: <4702BBF4.60903@fr.ibm.com>	<m14ph9i1l3.fsf@ebiederm.dsl.xmission.com>	<47035591.4030300@fr.ibm.com>
-	<m1r6kccexw.fsf@ebiederm.dsl.xmission.com>
+From: sukadev@us.ibm.com
+Subject: [PATCH] Rename is_cgroup_init()
+Date: Thu, 4 Oct 2007 09:15:59 -0700
+Message-ID: <20071004161559.GA19451@us.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <m1r6kccexw.fsf-T1Yj925okcoyDheHMi7gv2pdwda3JcWeAL8bYrjMMd8@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
+Content-Type: text/plain; charset=us-ascii
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1762290AbXJDQQV@vger.kernel.org>
+Content-Disposition: inline
+Sender: linux-kernel-owner@vger.kernel.org
+To: Andrew Morton <akpm@osdl.org>
+Cc: linux-kernel@vger.kernel.org, Containers <containers@lists.osdl.org>
 List-Id: containers.vger.kernel.org
 
-Eric W. Biederman wrote:
-> Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org> writes:
->> Yes, it will work.
->>
->> Do we want to be inside a network namespace and to use a socket belonging to
->> another network namespace ? If yes, then my remark is irrelevant.
-> 
-> Yes we do.
-> 
->>>> Shall we close all fd sockets when doing an unshare ? like a close-on-exec
->>>> behavior ?
->>> I think adopting that policy would dramatically reduce the usefulness
->>> of network namespaces.
->>>
->>> Making the mix and match cases gives the implementation much more flexibility
->>> and it doesn't appear that hard right now.
->> I am curious, why such functionality is useful ?
-> 
-> There are several reasons.  Partly it is the principle of building
-> general purpose tools that can be used in a flexible way.
-> 
-> The biggest practical use I can see is that a control program outside
-> of a network namespace can configure and setup someone else's network
-> stack, perhaps preventing the need to enter someone else's container.
-> 
-> Another use is having a socket in an original network namespace for
-> doing a stdin/stdout style connections.
+From: Sukadev Bhattiprolu <sukadev@us.ibm.com>
+Subject: [PATCH] Rename is_cgroup_init()
 
-this is also required in the HPC world. batch managers and MPI frameworks 
-often redirect stdios on the socket which was used to remotely execute
-the job. Now, if we introduce a container around the job to be able
-to migrate it, we are in the same scenario.  
+is_container_init() was accidentally renamed to is_cgroup_init() when
+renaming "container" to "control group". This patch restores the
+original name.
 
-that socket is in the original network namespace and the fds are from
-processes living in a container. 
+Signed-off-by: Sukadev Bhattiprolu <sukadev@us.ibm.com>
+Acked-by: Serge Hallyn <serue@us.ibm.com>
+---
+ include/linux/sched.h |    4 ++--
+ kernel/capability.c   |    2 +-
+ kernel/pid.c          |    4 ++--
+ 3 files changed, 5 insertions(+), 5 deletions(-)
 
-C.
+Index: 2.6.23-rc8-mm2/include/linux/sched.h
+===================================================================
+--- 2.6.23-rc8-mm2.orig/include/linux/sched.h	2007-10-02 22:05:18.000000000 -0700
++++ 2.6.23-rc8-mm2/include/linux/sched.h	2007-10-03 10:26:12.000000000 -0700
+@@ -1303,10 +1303,10 @@ static inline int is_global_init(struct 
+ }
  
-> The planetlab folks are actually actively using this functionality
-> already, and there was a thread several months ago about how this
-> functionality was important and how they were using it.
-> 
-> This also preserves normal unix file descriptor passing semantics.
-> 
-> A final reason for it is that it removes the need for a lot of
-> brittle special cases when network namespaces are mixed in something
-> other then a 1-1 correspondence with other namespaces.  Like the one
-> you were concerned with in unshare.  Handling this case means
-> everything just works.
-> 
-> So it may be a touch harder to implement but because we don't add
-> special rules it is much easier to review.
-> 
-> Eric
-> _______________________________________________
-> Containers mailing list
-> Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-> https://lists.linux-foundation.org/mailman/listinfo/containers
-> 
+ /*
+- * is_cgroup_init:
++ * is_container_init:
+  * check whether in the task is init in its own pid namespace.
+  */
+-extern int is_cgroup_init(struct task_struct *tsk);
++extern int is_container_init(struct task_struct *tsk);
+ 
+ extern struct pid *cad_pid;
+ 
+Index: 2.6.23-rc8-mm2/kernel/capability.c
+===================================================================
+--- 2.6.23-rc8-mm2.orig/kernel/capability.c	2007-09-27 13:20:11.000000000 -0700
++++ 2.6.23-rc8-mm2/kernel/capability.c	2007-10-03 10:26:35.000000000 -0700
+@@ -130,7 +130,7 @@ static inline int cap_set_all(kernel_cap
+      int found = 0;
+ 
+      do_each_thread(g, target) {
+-             if (target == current || is_cgroup_init(target->group_leader))
++             if (target == current || is_container_init(target->group_leader))
+                      continue;
+              found = 1;
+ 	     if (security_capset_check(target, effective, inheritable,
+Index: 2.6.23-rc8-mm2/kernel/pid.c
+===================================================================
+--- 2.6.23-rc8-mm2.orig/kernel/pid.c	2007-10-03 10:24:12.000000000 -0700
++++ 2.6.23-rc8-mm2/kernel/pid.c	2007-10-03 10:24:45.000000000 -0700
+@@ -81,7 +81,7 @@ struct pid_namespace init_pid_ns = {
+ };
+ EXPORT_SYMBOL_GPL(init_pid_ns);
+ 
+-int is_cgroup_init(struct task_struct *tsk)
++int is_container_init(struct task_struct *tsk)
+ {
+ 	int ret = 0;
+ 	struct pid *pid;
+@@ -94,7 +94,7 @@ int is_cgroup_init(struct task_struct *t
+ 
+ 	return ret;
+ }
+-EXPORT_SYMBOL(is_cgroup_init);
++EXPORT_SYMBOL(is_container_init);
+ 
+ /*
+  * Note: disable interrupts while the pidmap_lock is held as an
