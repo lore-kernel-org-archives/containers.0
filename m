@@ -1,19 +1,16 @@
-From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [patch -mm 1/5] mqueue namespace : add struct mq_namespace
-Date: Thu, 4 Oct 2007 08:32:36 -0500
-Message-ID: <20071004133236.GD6460@sergelap.austin.ibm.com>
-References: <m1ir5plr3c.fsf@ebiederm.dsl.xmission.com>
-	<470237C7.5000902@fr.ibm.com> <20071002163020.GA11207@us.ibm.com>
-	<47034868.5010505@fr.ibm.com>
-	<20071003135955.GA7934@sergelap.austin.ibm.com>
-	<4703A30F.2010007@fr.ibm.com> <20071003165644.GA338@us.ibm.com>
-	<m1myv0ceqp.fsf@ebiederm.dsl.xmission.com>
-	<20071003170930.GB338@us.ibm.com> <4704E6C7.5010908@fr.ibm.com>
+From: "Paul Menage" <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [Devel] [PATCH 2/3] Introduce the res_counter_populate()
+	function
+Date: Thu, 4 Oct 2007 08:01:25 -0700
+Message-ID: <6599ad830710040801v108fd7al5b8a774caca99ff6@mail.gmail.com>
+References: <4704AFC9.4030606@openvz.org> <4704B077.30502@openvz.org>
+	<4704D88D.1010005@openvz.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+Content-Type: text/plain; charset=ISO-8859-1
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <4704D88D.1010005-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <4704E6C7.5010908-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -23,46 +20,20 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Cedric Le Goater <clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, "Denis V. Lunev" <den-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+To: Kir Kolyshkin <kir-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Quoting Cedric Le Goater (clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org):
-> sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org wrote:
-> > Eric W. Biederman [ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org] wrote:
-> > | sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org writes:
-> > | 
-> > | > Cedric Le Goater [clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org] wrote:
-> > | > | > I think you and Eric (and I) are disagreeing about those limitations.
-> > | > | > You take it for granted that a sibling pidns is off limits for signals.
-> > | > | > But the signal wasn't sent using a pid, but using a file (in SIGIO
-> > | > | > case).  So since the fs was shared, the signal should be sent.  An
-> > | > | > event happened, and the receiver wants to know about it.
-> > | > | 
-> > | > | seen that way I agree. 
-> > | > | 
-> > | > | si_code is set to SI_MESGQ, but what do we put in si_pid ? 0 ?
-> > | > | 
-> > | > | we could use the si_errno to pass extra info, like the sending process 
-> > | > | lives in a // world ...
-> > | >
-> > | > Does the receiver need to know that sender is in a // world ? 
-> 
-> probably not. it would mean that the user is container aware. bad idea.
+On 10/4/07, Kir Kolyshkin <kir-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org> wrote:
+>
+> 3. Put units into a separate new files named "units" (or, well,
+> "measurement_units" (or even "measured_in") if you are fan of long
+> descriptive names). So, "cat units" will show us "bytes" or "items" or
+> "pages"...
 
-Remember we don't have to hide the fact that the user is in a
-container.  Just enough to make it convenient, but not to the
-point of going out of our way to try and hide the fact for no
-other reason than to hide the fact.
+I'd vote for this option (just "units"). Good idea. And I don't think
+there's a need for any hard-coded enumerations - just make the creator
+of the resource counter specify a const char* that can be returned in
+the units file.
 
-> > | What is a // world ?
-> > 
-> > Parallel world/universe :-)
-> > 
-> > I am assuming Cedric used that to refer to a sibling pid ns.
-> 
-> yes :) 
-> 
-> Thanks !
-> 
-> C.
+Paul
