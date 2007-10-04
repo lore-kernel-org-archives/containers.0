@@ -1,7 +1,7 @@
 From: Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
-Subject: [PATCH 1/3] Typedefs the read and write functions in cftype
-Date: Thu, 04 Oct 2007 13:18:55 +0400
-Message-ID: <4704AFFF.4000000@openvz.org>
+Subject: [PATCH 3/3] Use the res_counter_populate in memory controller
+Date: Thu, 04 Oct 2007 13:21:37 +0400
+Message-ID: <4704B0A1.1000204@openvz.org>
 References: <4704AFC9.4030606@openvz.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1
@@ -21,50 +21,60 @@ To: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Balbir Singh <
 Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-This is just to reduce the code amount in the future.
+Note, that the controller code dealing with the cftype files
+for resource counters becomes much shorter and won't have to 
+be changed in the future.
 
 Signed-off-by: Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 
 ---
 
-diff --git a/include/linux/cgroup.h b/include/linux/cgroup.h
-index 8747932..0635004 100644
---- a/include/linux/cgroup.h
-+++ b/include/linux/cgroup.h
-@@ -178,6 +178,15 @@ struct css_set {
-  *	- the 'cftype' of the file is file->f_dentry->d_fsdata
-  */
+diff --git a/mm/memcontrol.c b/mm/memcontrol.c
+index 1b8bf24..2e62d24 100644
+--- a/mm/memcontrol.c
++++ b/mm/memcontrol.c
+@@ -519,28 +519,14 @@ static ssize_t mem_control_type_read(str
  
-+struct cftype;
-+
-+typedef ssize_t (*cft_read) (struct cgroup *cont, struct cftype *cft,
-+			 struct file *file,
-+			 char __user *buf, size_t nbytes, loff_t *ppos);
-+typedef ssize_t (*cft_write) (struct cgroup *cont, struct cftype *cft,
-+			  struct file *file,
-+			  const char __user *buf, size_t nbytes, loff_t *ppos);
-+
- #define MAX_CFTYPE_NAME 64
- struct cftype {
- 	/* By convention, the name should begin with the name of the
-@@ -185,18 +194,14 @@ struct cftype {
- 	char name[MAX_CFTYPE_NAME];
- 	int private;
- 	int (*open) (struct inode *inode, struct file *file);
--	ssize_t (*read) (struct cgroup *cont, struct cftype *cft,
--			 struct file *file,
--			 char __user *buf, size_t nbytes, loff_t *ppos);
-+	cft_read read;
- 	/*
- 	 * read_uint() is a shortcut for the common case of returning a
- 	 * single integer. Use it in place of read()
- 	 */
- 	u64 (*read_uint) (struct cgroup *cont, struct cftype *cft);
--	ssize_t (*write) (struct cgroup *cont, struct cftype *cft,
--			  struct file *file,
--			  const char __user *buf, size_t nbytes, loff_t *ppos);
+ static struct cftype mem_cgroup_files[] = {
+ 	{
+-		.name = "usage_in_bytes",
+-		.private = RES_USAGE,
+-		.read = mem_cgroup_read,
+-	},
+-	{
+-		.name = "limit_in_bytes",
+-		.private = RES_LIMIT,
+-		.write = mem_cgroup_write,
+-		.read = mem_cgroup_read,
+-	},
+-	{
+-		.name = "failcnt",
+-		.private = RES_FAILCNT,
+-		.read = mem_cgroup_read,
+-	},
+-	{
+ 		.name = "control_type",
+ 		.write = mem_control_type_write,
+ 		.read = mem_control_type_read,
+ 	},
+ };
  
-+	cft_write write;
- 	/*
- 	 * write_uint() is a shortcut for the common case of accepting
- 	 * a single integer (as parsed by simple_strtoull) from
++static struct cftype mem_res_counter_files[RES_CFT_MAX];
++
+ static struct mem_cgroup init_mem_cgroup;
+ 
+ static struct cgroup_subsys_state *
+@@ -574,6 +560,13 @@ static void mem_cgroup_destroy(struct cg
+ static int mem_cgroup_populate(struct cgroup_subsys *ss,
+ 				struct cgroup *cont)
+ {
++	int ret;
++
++	ret = res_counter_populate(ss, cont, mem_res_counter_files,
++			RES_UNITS_BYTES, mem_cgroup_read, mem_cgroup_write);
++	if (ret)
++		return ret;
++
+ 	return cgroup_add_files(cont, ss, mem_cgroup_files,
+ 					ARRAY_SIZE(mem_cgroup_files));
+ }
