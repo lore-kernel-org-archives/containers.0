@@ -1,14 +1,20 @@
-From: Kir Kolyshkin <kir-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
-Subject: Re: [Devel] [PATCH 2/3] Introduce the res_counter_populate()
-	function
-Date: Thu, 04 Oct 2007 16:11:57 +0400
-Message-ID: <4704D88D.1010005@openvz.org>
-References: <4704AFC9.4030606@openvz.org> <4704B077.30502@openvz.org>
+From: Cedric Le Goater <clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [patch -mm 1/5] mqueue namespace : add struct mq_namespace
+Date: Thu, 04 Oct 2007 15:12:39 +0200
+Message-ID: <4704E6C7.5010908@fr.ibm.com>
+References: <47020A29.9060403@sw.ru> <470219BC.3050702@fr.ibm.com>
+	<m1ir5plr3c.fsf@ebiederm.dsl.xmission.com>
+	<470237C7.5000902@fr.ibm.com> <20071002163020.GA11207@us.ibm.com>
+	<47034868.5010505@fr.ibm.com>
+	<20071003135955.GA7934@sergelap.austin.ibm.com>
+	<4703A30F.2010007@fr.ibm.com> <20071003165644.GA338@us.ibm.com>
+	<m1myv0ceqp.fsf@ebiederm.dsl.xmission.com>
+	<20071003170930.GB338@us.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8; format=flowed
+Content-Type: text/plain; charset=ISO-8859-1
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <4704B077.30502-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+In-Reply-To: <20071003170930.GB338-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,62 +24,40 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
-Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+To: sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, "Denis V. Lunev" <den-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Pavel Emelyanov wrote:
-> <...skipped...>
-> +static char * units_names[RES_UNITS_MAX][RES_CFT_MAX] = {
-> +	[RES_UNITS_BYTES] = {
-> +		"usage_in_bytes",
-> +		"limit_in_bytes",
-> +		"failcnt",
-> +	},
-> +	[RES_UNITS_ITEMS] = {
-> +		"usage",
-> +		"limit",
-> +		"failcnt",
-> +	},
-> +};
->   
+sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org wrote:
+> Eric W. Biederman [ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org] wrote:
+> | sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org writes:
+> | 
+> | > Cedric Le Goater [clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org] wrote:
+> | > | > I think you and Eric (and I) are disagreeing about those limitations.
+> | > | > You take it for granted that a sibling pidns is off limits for signals.
+> | > | > But the signal wasn't sent using a pid, but using a file (in SIGIO
+> | > | > case).  So since the fs was shared, the signal should be sent.  An
+> | > | > event happened, and the receiver wants to know about it.
+> | > | 
+> | > | seen that way I agree. 
+> | > | 
+> | > | si_code is set to SI_MESGQ, but what do we put in si_pid ? 0 ?
+> | > | 
+> | > | we could use the si_errno to pass extra info, like the sending process 
+> | > | lives in a // world ...
+> | >
+> | > Does the receiver need to know that sender is in a // world ? 
 
-Sorry for being late in the game, but can we please bring back the issue 
-of naming those files?
+probably not. it would mean that the user is container aware. bad idea.
+ 
+> | What is a // world ?
+> 
+> Parallel world/universe :-)
+> 
+> I am assuming Cedric used that to refer to a sibling pid ns.
 
-To me, names like "usage_in_bytes" doesn't really make much sense, 
-unless we will also have something like "usage_in_pages" next to it -- 
-i.e. use several different units for the same resource. I seriously 
-doubt we should...
+yes :) 
+ 
+Thanks !
 
-Still, we need a way to denote units of measurement for each resource. 
-Here are the options I can think of:
-
-0. Hardcode the name of measurement units in file name, as it is 
-(partially -- only for "bytes" done now). Looks ugly to me, access 
-interface will be inconsistent, not program-friendly: as file name is 
-not "usage", but "usage*", it will be easy to implement in shell, but 
-requires some additional logic in C.
-
-1. One obvious way is to put it in documentation, i.e. say something 
-like "this parameter is measured in bytes". The problem is documentation 
-is a bit far away from the actual file we read the value from.
-
-2. Put units into the file itself, i.e. "cat usage" will print something 
-like "1024 bytes". This is very user-friendly, but not really 
-program-friendly: while in C it is just fscanf(fd, "%d", &val), shell 
-users will require something like "cut -d ' ' -f1" to extract the 
-numeric value.
-
-3. Put units into a separate new files named "units" (or, well, 
-"measurement_units" (or even "measured_in") if you are fan of long 
-descriptive names). So, "cat units" will show us "bytes" or "items" or 
-"pages"...
-
-4. Encode units into a file name, like "measured_in_bytes". This would 
-be a separate file which exist just for the sake of the name. This looks 
-bad to be since getting this info from a program is complex.
-
-I prefer approach #3 -- easy and consistent.
-> <...skipped...>
->   
+C.
