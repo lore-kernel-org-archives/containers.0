@@ -1,43 +1,89 @@
-From: "Denis V. Lunev" <dlunev@gmail.com>
-Subject: Re: [Devel] Re: [PATCH 5/5] make netlink user -> kernel interface
- synchronious
-Date: Fri, 05 Oct 2007 20:56:29 +0400
-Message-ID: <47066CBD.90307@gmail.com>
-References: <20071005144844.GA7119@iris.sw.ru> <4706653B.3050000@trash.net>
+From: Andrew Morton <akpm@linux-foundation.org>
+Subject: Re: [PATCH] Rename is_cgroup_init()
+Date: Fri, 5 Oct 2007 16:37:06 -0700
+Message-ID: <20071005163706.f93fd80c.akpm@linux-foundation.org>
+References: <20071004161559.GA19451@us.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-15
+Content-Type: text/plain; charset=US-ASCII
 Content-Transfer-Encoding: 7bit
-Return-path: <netdev-owner@vger.kernel.org>
-In-Reply-To: <4706653B.3050000@trash.net>
-Sender: netdev-owner@vger.kernel.org
-To: Patrick McHardy <kaber@trash.net>
-Cc: "Denis V. Lunev" <den@openvz.org>, containers@lists.osdl.org, netdev@vger.kernel.org, davem@davemloft.net, devel@openvz.org
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1764552AbXJEXhb@vger.kernel.org>
+In-Reply-To: <20071004161559.GA19451@us.ibm.com>
+Sender: linux-kernel-owner@vger.kernel.org
+To: sukadev@us.ibm.com
+Cc: linux-kernel@vger.kernel.org, containers@lists.osdl.org
 List-Id: containers.vger.kernel.org
 
-Patrick McHardy wrote:
-> Denis V. Lunev wrote:
->> This patch make processing netlink user -> kernel messages synchronious.
->> This change was inspired by the talk with Alexey Kuznetsov about current
->> netlink messages processing. He says that he was badly wrong when introduced 
->> asynchronious user -> kernel communication.
->>
->> The call netlink_unicast is the only path to send message to the kernel
->> netlink socket. But, unfortunately, it is also used to send data to the
->> user.
->>
->> Before this change the user message has been attached to the socket queue
->> and sk->sk_data_ready was called. The process has been blocked until all
->> pending messages were processed. The bad thing is that this processing
->> may occur in the arbitrary process context.
->>
->> This patch changes nlk->data_ready callback to get 1 skb and force packet
->> processing right in the netlink_unicast.
+On Thu, 4 Oct 2007 09:15:59 -0700
+>
+> From: Sukadev Bhattiprolu <sukadev@us.ibm.com>
+> Subject: [PATCH] Rename is_cgroup_init()
 > 
+> is_container_init() was accidentally renamed to is_cgroup_init() when
+> renaming "container" to "control group". This patch restores the
+> original name.
 > 
-> I guess the process credential stuff in netlink_skb_params can now
-> be removed as well.
+> Signed-off-by: Sukadev Bhattiprolu <sukadev@us.ibm.com>
+> Acked-by: Serge Hallyn <serue@us.ibm.com>
+> ---
+>  include/linux/sched.h |    4 ++--
+>  kernel/capability.c   |    2 +-
+>  kernel/pid.c          |    4 ++--
+>  3 files changed, 5 insertions(+), 5 deletions(-)
+> 
+> Index: 2.6.23-rc8-mm2/include/linux/sched.h
+> ===================================================================
+> --- 2.6.23-rc8-mm2.orig/include/linux/sched.h	2007-10-02 22:05:18.000000000 -0700
+> +++ 2.6.23-rc8-mm2/include/linux/sched.h	2007-10-03 10:26:12.000000000 -0700
+> @@ -1303,10 +1303,10 @@ static inline int is_global_init(struct 
+>  }
+>  
+>  /*
+> - * is_cgroup_init:
+> + * is_container_init:
+>   * check whether in the task is init in its own pid namespace.
+>   */
+> -extern int is_cgroup_init(struct task_struct *tsk);
+> +extern int is_container_init(struct task_struct *tsk);
+>  
+>  extern struct pid *cad_pid;
+>  
+> Index: 2.6.23-rc8-mm2/kernel/capability.c
+> ===================================================================
+> --- 2.6.23-rc8-mm2.orig/kernel/capability.c	2007-09-27 13:20:11.000000000 -0700
+> +++ 2.6.23-rc8-mm2/kernel/capability.c	2007-10-03 10:26:35.000000000 -0700
+> @@ -130,7 +130,7 @@ static inline int cap_set_all(kernel_cap
+>       int found = 0;
+>  
+>       do_each_thread(g, target) {
+> -             if (target == current || is_cgroup_init(target->group_leader))
+> +             if (target == current || is_container_init(target->group_leader))
+>                       continue;
+>               found = 1;
+>  	     if (security_capset_check(target, effective, inheritable,
+> Index: 2.6.23-rc8-mm2/kernel/pid.c
+> ===================================================================
+> --- 2.6.23-rc8-mm2.orig/kernel/pid.c	2007-10-03 10:24:12.000000000 -0700
+> +++ 2.6.23-rc8-mm2/kernel/pid.c	2007-10-03 10:24:45.000000000 -0700
+> @@ -81,7 +81,7 @@ struct pid_namespace init_pid_ns = {
+>  };
+>  EXPORT_SYMBOL_GPL(init_pid_ns);
+>  
+> -int is_cgroup_init(struct task_struct *tsk)
+> +int is_container_init(struct task_struct *tsk)
+>  {
+>  	int ret = 0;
+>  	struct pid *pid;
+> @@ -94,7 +94,7 @@ int is_cgroup_init(struct task_struct *t
+>  
+>  	return ret;
+>  }
+> -EXPORT_SYMBOL(is_cgroup_init);
+> +EXPORT_SYMBOL(is_container_init);
+>  
+>  /*
+>   * Note: disable interrupts while the pidmap_lock is held as an
 
-Yes, but I think the patch should be tested by more people before.
+This patch is splattered across approximately seven different patches - ugly.
 
-Regards,
-    Den
+I just edited the diffs and changelogs in place and replaced all
+occurrences of is_cgroup_init with is_container_init
