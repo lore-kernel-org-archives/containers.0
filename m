@@ -1,48 +1,56 @@
-From: "Paul Menage" <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [Devel] [PATCH 0/5] Kernel memory accounting container (v5)
-Date: Fri, 5 Oct 2007 00:11:30 -0700
-Message-ID: <6599ad830710050011x68a80013w3b60d663e2c087a@mail.gmail.com>
-References: <46F91841.9070708@openvz.org>
-	<6599ad830710010932t150aba2eid18864a90f169c64@mail.gmail.com>
-	<47023EBE.7000708@openvz.org>
+From: ebiederm@xmission.com (Eric W. Biederman)
+Subject: Re: [PATCHSET 3/4] sysfs: divorce sysfs from kobject and driver model
+Date: Fri, 05 Oct 2007 06:12:41 -0600
+Message-ID: <m1d4vtn4jq.fsf@ebiederm.dsl.xmission.com>
+References: <11902755392688-git-send-email-htejun@gmail.com>
+	<20070925221736.GA3566@kroah.com> <46FB956B.8000205@gmail.com>
+	<m1zlz7hpvn.fsf_-_@ebiederm.dsl.xmission.com>
+	<20071005062302.GB16914@kroah.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <47023EBE.7000708-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
-Content-Disposition: inline
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
-Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, Christoph Lameter <clameter-sJ/iWh9BUns@public.gmane.org>
+Content-Type: text/plain; charset=us-ascii
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1762223AbXJEMOU@vger.kernel.org>
+In-Reply-To: <20071005062302.GB16914@kroah.com> (Greg KH's message of "Thu, 4
+	Oct 2007 23:23:02 -0700")
+Sender: linux-kernel-owner@vger.kernel.org
+To: Greg KH <greg@kroah.com>
+Cc: Tejun Heo <htejun@gmail.com>, cornelia.huck@de.ibm.com, stern@rowland.harvard.edu, kay.sievers@vrfy.org, linux-kernel@vger.kernel.org, Linux Containers <containers@lists.osdl.org>
 List-Id: containers.vger.kernel.org
 
-On 10/2/07, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org> wrote:
+Greg KH <greg@kroah.com> writes:
 >
-> Such a lookup would require a hastable or something similar. We already
-> have such a bad experience (with OpenVZ RSS fractions accounting for
-> example). Hash lookups imply the CPU caches screwup and hurt the performance.
-> See also the comment below.
-
-I think you could do it with an array lookup if you assigned an index
-to each cache as it was created, and used that as an offset into a
-per-cgroup array.
-
+>>   Also fun is that the dev file implementation needs to be able to
+>>   report different major:minor numbers based on which mount of
+>>   sysfs we are dealing with.
 >
-> I thought the same some time ago and tried to make a per-beancounter kmem
-> caches. The result was awful - the memory waste was much larger than in the
-> case of pointer-per-object approach.
+> Um, no, that's not going to happen.  /dev/sda will _always_ have the
+> same major:minor number, as defined by the LSB spec.  You can not break
+> that at all.  So while you might not want to show all mounts
+> /sys/devices/block/sda/ the ones that you do, will all have the LSB
+> defined major:minor number assigned to it.
 
-OK, fair enough.
+Hmm.  If that is in the LSB it must come from
+Documentation/devices.txt  I'm not after changing the user
+visible major/minor assignments.
 
-Was this with a large number of bean counters? I imagine that with a
-small number, the waste might be rather more reasonable.
+Let me see if a concrete example will help.  Suppose I have
+have a SAN with two disks:  disk-1 and disk-2.  I have
+two machines A and B.  On machine A I get the mapping:
+sda -> disk-1, sdb ->disk-2.  On machine B I wind up with
+a different probe order so I get the mapping: sda -> disk-2
+sdb ->disk-1.
 
-Paul
+To be very clear by sda I mean the block device with major 8 and
+minor 0, and by sdb I mean the block device with major 8 and minor
+16.
+
+So I decide I want an environment on machine B that looks just
+like the environment on machine A, so I can bring transfer over
+a running program or whatever.  So I run around looking at UUID
+labels and what not and I discover that the machine B knows disk-1 as
+sdb and that machine A knows disk-1 as sda.  So I want to say:
+/sys/devices/block/sdb show up in this other device namespace as
+/sys/devices/block/sda.
+
+In that instance a running program won't notice the difference.
+
+Eric
