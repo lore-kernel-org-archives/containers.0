@@ -1,21 +1,20 @@
-From: sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org
-Subject: Re: [PATCH 1/3] Signal semantics for /sbin/init
-Date: Thu, 4 Oct 2007 21:30:30 -0700
-Message-ID: <20071005043030.GA27787@us.ibm.com>
-References: <20070911041030.GA1264@us.ibm.com>
-	<20070911111928.GA123@tv-sign.ru> <46E959EB.2070207@fr.ibm.com>
-	<20070913165820.GA3465@tv-sign.ru>
-	<20070914030053.GA21242@us.ibm.com>
-	<20070917152122.GA861@tv-sign.ru>
-	<20070918190052.GA14030@us.ibm.com>
-	<20071001170035.GA10939@sergelap.austin.ibm.com>
-	<20071001174720.GB28100@us.ibm.com>
-	<20071001180849.GA21343@sergelap.austin.ibm.com>
+From: "Paul Menage" <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH] Simplify memory controller and resource counter I/O
+Date: Thu, 4 Oct 2007 21:35:48 -0700
+Message-ID: <6599ad830710042135r665646c5sa307b5a944db7ba8@mail.gmail.com>
+References: <46F9DD4F.50806@google.com>
+	<6599ad830710041755w3ed8b1fgd3dfbe7a8e0fc6c5@mail.gmail.com>
+	<4705B02E.8040701@linux.vnet.ibm.com>
+	<6599ad830710042038g6066d8b0i9308244d2710e563@mail.gmail.com>
+	<4705B36A.7000301@linux.vnet.ibm.com>
+	<6599ad830710042054i6729870g896cedc3767fa2cf@mail.gmail.com>
+	<4705B7C7.9090905@linux.vnet.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+Content-Type: text/plain; charset=ISO-8859-1
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <4705B7C7.9090905-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <20071001180849.GA21343-6s5zFf/epYLPQpwDFJZrxKsjOiXwFzmk@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -25,38 +24,17 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Cc: Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Oleg Nesterov <oleg-6lXkIZvqkOAvJsYlp49lxw@public.gmane.org>, Pavel Emelianov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+To: balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-| > | > One solution I was thinking of was to possibly queue pending blocked
-| > | > signals to a container init seperately and then requeue them on the
-| > | > normal queue when signals are unblocked. Its definitely not an easier
-| > | > solution, but might be less intrusive than the "signal from parent ns
-| > | > flag" solution.
+On 10/4/07, Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org> wrote:
+>
+> Yes, either that way or add a strategy function, that would take
+> the string input from the user and convert it to unsigned long long
+> value. I am ok with either approach.
+>
 
-Hmm.  Stumbled upon an issue while coding this up.
+OK, new version of the patch sent in a separate mail.
 
-For real time signals, is the order in which signals are delivered
-important ? If so, the above solution won't work, because when requeing
-signals from pid namespace to the task, we may lose the order of signals.
-
-i.e:
-	- signal sig1 is blocked.
-
-	- sig1 is posted and queued on the ns->cinit_blocked_pending queue
-
-	- just as we enter sigprocmask() to unblock sig1, if sig2 is
-	  posted, we queue sig2 on task->pending queue since sig2 is not
-	  blocked.
-
-	- when we actually unblock sig1, if we requeue ns->cinit_blocked_pending
-	  signals (i.e sig1) after sig2 we end up reversing the order of the
-	  signals sig1 and sig2.
-
-	  if we requeue the ns-> signals before sig2 and another sig1
-	  was received after the sig2 and just before the unblock, we
-	  again lose the order.
-
-The order of signals is not important to legacy signals (< SIGRTMIN) but is 
-probably an issue for signals SIGRTMIN..SIGRTMAX.
+Paul
