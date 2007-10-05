@@ -1,51 +1,61 @@
-From: Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
-Subject: Re: [Devel] [PATCH 0/5] Kernel memory accounting container (v5)
-Date: Fri, 05 Oct 2007 17:17:48 +0400
-Message-ID: <4706397C.80306@openvz.org>
-References: <46F91841.9070708@openvz.org>	
-	<6599ad830710010932t150aba2eid18864a90f169c64@mail.gmail.com>	
-	<47023EBE.7000708@openvz.org>
-	<6599ad830710050011x68a80013w3b60d663e2c087a@mail.gmail.com>
+From: ebiederm@xmission.com (Eric W. Biederman)
+Subject: Re: [Devel] Re: [PATCHSET 3/4] sysfs: divorce sysfs from kobject and	driver model
+Date: Fri, 05 Oct 2007 07:24:55 -0600
+Message-ID: <m1lkahk82g.fsf@ebiederm.dsl.xmission.com>
+References: <11902755392688-git-send-email-htejun@gmail.com>
+	<20070925221736.GA3566@kroah.com> <46FB956B.8000205@gmail.com>
+	<m1zlz7hpvn.fsf_-_@ebiederm.dsl.xmission.com>
+	<20071005062302.GB16914@kroah.com>
+	<m1d4vtn4jq.fsf@ebiederm.dsl.xmission.com> <4706363A.9030807@sw.ru>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <6599ad830710050011x68a80013w3b60d663e2c087a-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
-Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, Christoph Lameter <clameter-sJ/iWh9BUns@public.gmane.org>
+Content-Type: text/plain; charset=us-ascii
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1762995AbXJEN1S@vger.kernel.org>
+In-Reply-To: <4706363A.9030807@sw.ru> (Kirill Korotaev's message of "Fri, 05
+	Oct 2007 17:03:54 +0400")
+Sender: linux-kernel-owner@vger.kernel.org
+To: Kirill Korotaev <dev@sw.ru>
+Cc: Greg KH <greg@kroah.com>, Tejun Heo <htejun@gmail.com>, kay.sievers@vrfy.org, linux-kernel@vger.kernel.org, cornelia.huck@de.ibm.com, stern@rowland.harvard.edu, Linux Containers <containers@lists.osdl.org>
 List-Id: containers.vger.kernel.org
 
-Paul Menage wrote:
-> On 10/2/07, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org> wrote:
->> Such a lookup would require a hastable or something similar. We already
->> have such a bad experience (with OpenVZ RSS fractions accounting for
->> example). Hash lookups imply the CPU caches screwup and hurt the performance.
->> See also the comment below.
-> 
-> I think you could do it with an array lookup if you assigned an index
-> to each cache as it was created, and used that as an offset into a
-> per-cgroup array.
-> 
->> I thought the same some time ago and tried to make a per-beancounter kmem
->> caches. The result was awful - the memory waste was much larger than in the
->> case of pointer-per-object approach.
-> 
-> OK, fair enough.
-> 
-> Was this with a large number of bean counters? I imagine that with a
-> small number, the waste might be rather more reasonable.
+Kirill Korotaev <dev@sw.ru> writes:
 
-Yup. I do not remember the exact number, but this model didn't scale
-well enough in respect to the number of beancounters.
+> Imho environments to be migratable should have no direct access to the devices.
+> You can use any of stacked virtual filesystems to hide real
+> device from container.
+> You will have problems much bigger than this one otherwise
+> (imagine access to video, sound etc.)
 
-> Paul
-> 
+What I am primarily concern about is when you can make the case that
+the hardware we are talking is present before and after the migration.
+
+When you are directly accessing a device.  For times when it makes
+sense to directly access hardware in a container (think infiniband
+OS-bypass NICs).  We need to tell user space that the device was
+unplugged and another one was plugged in.  If user space can cope with
+that things should continue to work.
+
+There are some very specific cases that we can support:
+- Stateless devices like /dev/zero and dev/random.
+- Virtual devices like ttys, ramdisks, loop devices
+- Remote block devices like SCSI disks on a san, iSCSI, nbd, ATAoE.
+- Local pseudo block devices like the backing devices for virtual
+  filesystems.
+
+There are very specific limits in which this can work and be useable,
+and I don't claim to have looked at all of the details, but for the
+block device case in particular we export the block device number
+to user space in stat.  There are some common applications which do
+memorize stat data for files things like: git, incremental backup
+software, and intrusion detection software.
+
+Frankly the times when this matters is rare enough I don't put a
+big priority on getting this done quickly.  However a strong case
+has been made for all of this filtering so we can run things like
+udev in a container.  Initially I only expect stateless character
+devices and ttys to be allowed in a namespace, and I don't have
+a clue what device number we will use in st_dev for stat in the
+case our block device isn't in the user space interface.  I just know
+that it sounds like where we want to be eventually and thinking
+about it now isn't a problem.
+
+Eric
