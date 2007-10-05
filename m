@@ -1,90 +1,48 @@
-From: Greg KH <greg@kroah.com>
-Subject: Re: [PATCHSET 3/4] sysfs: divorce sysfs from kobject and driver
-	model
-Date: Thu, 4 Oct 2007 23:23:02 -0700
-Message-ID: <20071005062302.GB16914@kroah.com>
-References: <11902755392688-git-send-email-htejun@gmail.com> <20070925221736.GA3566@kroah.com> <46FB956B.8000205@gmail.com> <m1zlz7hpvn.fsf_-_@ebiederm.dsl.xmission.com>
+From: "Paul Menage" <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [Devel] [PATCH 0/5] Kernel memory accounting container (v5)
+Date: Fri, 5 Oct 2007 00:11:30 -0700
+Message-ID: <6599ad830710050011x68a80013w3b60d663e2c087a@mail.gmail.com>
+References: <46F91841.9070708@openvz.org>
+	<6599ad830710010932t150aba2eid18864a90f169c64@mail.gmail.com>
+	<47023EBE.7000708@openvz.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1752135AbXJEGXM@vger.kernel.org>
+Content-Type: text/plain; charset=ISO-8859-1
+Content-Transfer-Encoding: 7bit
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <47023EBE.7000708-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <m1zlz7hpvn.fsf_-_@ebiederm.dsl.xmission.com>
-Sender: linux-kernel-owner@vger.kernel.org
-To: "Eric W. Biederman" <ebiederm@xmission.com>
-Cc: Tejun Heo <htejun@gmail.com>, cornelia.huck@de.ibm.com, stern@rowland.harvard.edu, kay.sievers@vrfy.org, linux-kernel@vger.kernel.org, Linux Containers <containers@lists.osdl.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, Christoph Lameter <clameter-sJ/iWh9BUns@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Thu, Sep 27, 2007 at 01:25:48PM -0600, Eric W. Biederman wrote:
-> 
-> I still need to look at the code in detail but I have some concerns
-> I want to inject into this conversation of future sysfs architecture.
-> 
-> - If we want to carefully limit sysfs from going to wild code review
->   is clearly not enough.  We need some technological measures to
->   assist us.  As the experience with sysctl has shown.
+On 10/2/07, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org> wrote:
+>
+> Such a lookup would require a hastable or something similar. We already
+> have such a bad experience (with OpenVZ RSS fractions accounting for
+> example). Hash lookups imply the CPU caches screwup and hurt the performance.
+> See also the comment below.
 
-I totally agree.  You should see the ways that people have tried to
-circumvent the current kobject/sysfs code over the past years.  It's so
-scary it's not even funny...
+I think you could do it with an array lookup if you assigned an index
+to each cache as it was created, and used that as an offset into a
+per-cgroup array.
 
-> - The network namespace work scheduled to be merged in 2.6.24 is 
->   currently has a dependency in Kconfig that is "&& !SYSFS"
->   because sysfs is currently very much a moving target.
-> 
->   Does it look like we can resolve Tejun's work for 2.6.24?
->   If not does it make sense to push my patches that allow
->   multiple mounts of sysfs for 2.6.24?  So I can allow
->   network namespaces in the presence of sysfs.
-> 
->   Outside of sysfs and the device model I'm only talk maybe 30 lines
->   of code...    So I could easily merge that patch later in the
->   merge window after the other pieces have gone in.
+>
+> I thought the same some time ago and tried to make a per-beancounter kmem
+> caches. The result was awful - the memory waste was much larger than in the
+> case of pointer-per-object approach.
 
-I would be interested in seeing what your patches look like.  I don't
-think that we should take any more sysfs changes for 2.6.24 as we do
-have a lot of them right now, and I don't think that Tejun and I agree
-on the future direction of the outstanding ones just yet.
+OK, fair enough.
 
-But I don't think that your multiple-mount patches could make it into
-.24, unless .23 is still weeks away.
+Was this with a large number of bean counters? I imagine that with a
+small number, the waste might be rather more reasonable.
 
-> - Farther down the road we have the device namespace.
->   The bounding requirements are:
->   - We want to restrict which set of devices a subset of process
->     can access.
-
-That's reasonable.
-
->   - When we migrate an application we want to preserve the device
->     numbers of all devices that show up in the new location.
->     So filesystems whose block devices reside on a SAN, ramdisks,
->     ttys, etc.
->     Other devices that really are different we can handle with
->     hotplug remove and add events, during the migration.
-> 
->   So while there is lower hanging fruit the requirements for a
->   device namespace are becoming clear, and don't look like something
->   we will ultimately be able to dodge.
-> 
->   For sysfs the implication is that we will need to filter the
->   hotplug events based upon the device namespace of the recipient, and
->   we will need to restrict the set of devices that show up in sysfs
->   based on who mounts it (as the prototype patches with the network
->   namespace are doing).
-
-That is going to be interesting to see how you come up with a way to do
-hat.
-
->   Also fun is that the dev file implementation needs to be able to
->   report different major:minor numbers based on which mount of
->   sysfs we are dealing with.
-
-Um, no, that's not going to happen.  /dev/sda will _always_ have the
-same major:minor number, as defined by the LSB spec.  You can not break
-that at all.  So while you might not want to show all mounts
-/sys/devices/block/sda/ the ones that you do, will all have the LSB
-defined major:minor number assigned to it.
-
-thanks,
-
-greg k-h
+Paul
