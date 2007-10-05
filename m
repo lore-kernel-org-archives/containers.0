@@ -1,60 +1,71 @@
 From: "Denis V. Lunev" <den@openvz.org>
-Subject: [PATCH 1/5] rtnl_unlock cleanups
-Date: Fri, 5 Oct 2007 18:44:14 +0400
-Message-ID: <20071005144414.GA7050@iris.sw.ru>
+Subject: [PATCH 3/5] cleanup 3rd argument in netlink_sendskb
+Date: Fri, 5 Oct 2007 18:46:23 +0400
+Message-ID: <20071005144623.GA7085@iris.sw.ru>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Return-path: <netdev-owner@vger.kernel.org>
 Content-Disposition: inline
 Sender: netdev-owner@vger.kernel.org
 To: davem@davemloft.net
-Cc: devel@openvz.org, containers@lists.osdl.org, kuznet@ms2.inr.ac.ru, netdev@vger.kernel.org
+Cc: netdev@vger.kernel.org, kuznet@ms2.inr.ac.ru, devel@openvz.org, containers@lists.osdl.org
 List-Id: containers.vger.kernel.org
 
-There is no need to process outstanding netlink user->kernel packets
-during rtnl_unlock now. There is no rtnl_trylock in the rtnetlink_rcv
-anymore.
-
-Normal code path is the following:
-netlink_sendmsg
-   netlink_unicast
-       netlink_sendskb
-           skb_queue_tail
-           netlink_data_ready
-               rtnetlink_rcv
-                   mutex_lock(&rtnl_mutex);
-                   netlink_run_queue(sk, qlen, &rtnetlink_rcv_msg);
-                   mutex_unlock(&rtnl_mutex);
-
-So, it is possible, that packets can be present in the rtnl->sk_receive_queue
-during rtnl_unlock, but there is no need to process them at that moment as
-rtnetlink_rcv for that packet is pending.
+netlink_sendskb does not use third argument. Clean it and save a couple of
+bytes.
 
 Signed-off-by: Denis V. Lunev <den@openvz.org>
 Acked-by: Alexey Kuznetsov <kuznet@ms2.inr.ac.ru>
 
---- ./net/core/rtnetlink.c.rtnl2	2007-08-26 19:30:38.000000000 +0400
-+++ ./net/core/rtnetlink.c	2007-10-01 13:09:03.000000000 +0400
-@@ -75,8 +75,6 @@ void __rtnl_unlock(void)
- void rtnl_unlock(void)
+--- ./include/linux/netlink.h.nlk5	2007-08-26 19:30:37.000000000 +0400
++++ ./include/linux/netlink.h	2007-10-02 11:53:09.000000000 +0400
+@@ -194,7 +194,7 @@ struct sock *netlink_getsockbyfilp(struc
+ int netlink_attachskb(struct sock *sk, struct sk_buff *skb, int nonblock,
+ 		long timeo, struct sock *ssk);
+ void netlink_detachskb(struct sock *sk, struct sk_buff *skb);
+-int netlink_sendskb(struct sock *sk, struct sk_buff *skb, int protocol);
++int netlink_sendskb(struct sock *sk, struct sk_buff *skb);
+ 
+ /*
+  *	skb should fit one page. This choice is good for headerless malloc.
+--- ./ipc/mqueue.c.nlk5	2007-08-26 19:30:37.000000000 +0400
++++ ./ipc/mqueue.c	2007-10-02 11:52:27.000000000 +0400
+@@ -521,8 +521,7 @@ static void __do_notify(struct mqueue_in
+ 			break;
+ 		case SIGEV_THREAD:
+ 			set_cookie(info->notify_cookie, NOTIFY_WOKENUP);
+-			netlink_sendskb(info->notify_sock,
+-					info->notify_cookie, 0);
++			netlink_sendskb(info->notify_sock, info->notify_cookie);
+ 			break;
+ 		}
+ 		/* after notification unregisters process */
+@@ -568,7 +567,7 @@ static void remove_notification(struct m
+ 	if (info->notify_owner != NULL &&
+ 	    info->notify.sigev_notify == SIGEV_THREAD) {
+ 		set_cookie(info->notify_cookie, NOTIFY_REMOVED);
+-		netlink_sendskb(info->notify_sock, info->notify_cookie, 0);
++		netlink_sendskb(info->notify_sock, info->notify_cookie);
+ 	}
+ 	put_pid(info->notify_owner);
+ 	info->notify_owner = NULL;
+--- ./net/netlink/af_netlink.c.nlk5	2007-10-02 11:43:09.000000000 +0400
++++ ./net/netlink/af_netlink.c	2007-10-02 11:50:19.000000000 +0400
+@@ -796,7 +796,7 @@ int netlink_attachskb(struct sock *sk, s
+ 	return 0;
+ }
+ 
+-int netlink_sendskb(struct sock *sk, struct sk_buff *skb, int protocol)
++int netlink_sendskb(struct sock *sk, struct sk_buff *skb)
  {
- 	mutex_unlock(&rtnl_mutex);
--	if (rtnl && rtnl->sk_receive_queue.qlen)
--		rtnl->sk_data_ready(rtnl, 0);
- 	netdev_run_todo();
+ 	int len = skb->len;
+ 
+@@ -858,7 +858,7 @@ retry:
+ 	if (err)
+ 		return err;
+ 
+-	return netlink_sendskb(sk, skb, ssk->sk_protocol);
++	return netlink_sendskb(sk, skb);
  }
  
-@@ -1319,11 +1317,9 @@ static void rtnetlink_rcv(struct sock *s
- 	unsigned int qlen = 0;
- 
- 	do {
--		mutex_lock(&rtnl_mutex);
-+		rtnl_lock();
- 		qlen = netlink_run_queue(sk, qlen, &rtnetlink_rcv_msg);
--		mutex_unlock(&rtnl_mutex);
--
--		netdev_run_todo();
-+		rtnl_unlock();
- 	} while (qlen);
- }
- 
+ int netlink_has_listeners(struct sock *sk, unsigned int group)
