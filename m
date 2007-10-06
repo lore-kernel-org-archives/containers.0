@@ -1,58 +1,47 @@
-From: Paul Jackson <pj@sgi.com>
-Subject: Re: [PATCH] task containersv11 add tasks file interface fix for
- cpusets
-Date: Sat, 6 Oct 2007 01:24:37 -0700
-Message-ID: <20071006012437.c0fd3a8a.pj@sgi.com>
-References: <20071003084241.24279.62099.sendpatchset@jackhammer.engr.sgi.com>
-	<6599ad830710030851jb44f00ft9634f9381218b6e9@mail.gmail.com>
-	<20071003105817.7adf6516.pj@sgi.com>
-	<6599ad830710031110r1a74eafej56f20cc33e72ac81@mail.gmail.com>
-	<20071003131632.fed4b848.pj@sgi.com>
-	<6599ad830710031331h15d35e90lc63d845efd2de6f5@mail.gmail.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
-Content-Transfer-Encoding: 7bit
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1761785AbXJFIY5@vger.kernel.org>
-In-Reply-To: <6599ad830710031331h15d35e90lc63d845efd2de6f5@mail.gmail.com>
-Sender: linux-kernel-owner@vger.kernel.org
-To: Paul Menage <menage@google.com>
-Cc: akpm@linux-foundation.org, nickpiggin@yahoo.com.au, a.p.zijlstra@chello.nl, serue@us.ibm.com, clg@fr.ibm.com, linux-kernel@vger.kernel.org, ebiederm@xmission.com, rientjes@google.com, svaidy@linux.vnet.ibm.com, xemul@openvz.org, containers@lists.osdl.org, balbir@linux.vnet.ibm.com
+From: Paul Jackson <pj-sJ/iWh9BUns@public.gmane.org>
+Subject: [PATCH] task containersv11 automatic userspace notification of idle
+	containers fix
+Date: Sat, 06 Oct 2007 01:34:54 -0700
+Message-ID: <20071006083454.17561.99757.sendpatchset@jackhammer.engr.sgi.com>
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
+Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Paul Menage wrote:
-> What was wrong with my suggestion from a couple of emails back? Adding
-> the following in cpuset_attach():
-> 
-> struct cgroup_iter it;
-> struct task_struct *p;
-> cgroup_iter_start(cs->css.cgroup, &it);
-> while ((p = cgroup_iter_next(cs->css.cgroup, &it)))
->        set_cpus_allowed(p, cs->cpus_allowed);
-> cgroup_iter_end(cs->css.cgroup, &it);
+From: Paul Jackson <pj-sJ/iWh9BUns@public.gmane.org>
 
-This isn't working for me.
+Need to include kmod.h to define UMH_WAIT_EXEC, at least
+for my configuration (sn2_defconfig).
 
-The key kernel routine for updating a tasks cpus_allowed
-cannot be called while holding a spinlock.
+Signed-off-by: Paul Jackson <pj-sJ/iWh9BUns@public.gmane.org>
+Cc: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
 
-But the above loop holds a spinlock, css_set_lock, between
-the cgroup_iter_start and the cgroup_iter_end.
+---
 
-I end up generating complaints of:
-	BUG: scheduling while atomic
-when I invoke the set_cpus_allowed() above.
+ kernel/cgroup.c |    1 +
+ 1 file changed, 1 insertion(+)
 
-Should css_set_lock be a mutex?  Locking changes like that
-can be risky.
-
-Or perhaps there should be another callback, called only by
-attach() requests back to the same group.  Likely cpusets would
-be the only subsystem interested in plugging that callback.
-
-That, or my original patch, which calls the attach routine
-even if re-attaching to the current cgroup ...
+--- 2.6.23-rc8-mm2.orig/kernel/cgroup.c	2007-10-05 23:35:15.615380128 -0700
++++ 2.6.23-rc8-mm2/kernel/cgroup.c	2007-10-05 23:36:55.692927139 -0700
+@@ -43,6 +43,7 @@
+ #include <linux/spinlock.h>
+ #include <linux/string.h>
+ #include <linux/sort.h>
++#include <linux/kmod.h>
+ #include <asm/atomic.h>
+ 
+ static DEFINE_MUTEX(cgroup_mutex);
 
 -- 
-                  I won't rest till it's the best ...
-                  Programmer, Linux Scalability
-                  Paul Jackson <pj@sgi.com> 1.925.600.0401
+                          I won't rest till it's the best ...
+                          Programmer, Linux Scalability
+                          Paul Jackson <pj-sJ/iWh9BUns@public.gmane.org> 1.650.933.1373
