@@ -1,89 +1,58 @@
-From: Andrew Morton <akpm@linux-foundation.org>
-Subject: Re: [PATCH] Rename is_cgroup_init()
-Date: Fri, 5 Oct 2007 16:37:06 -0700
-Message-ID: <20071005163706.f93fd80c.akpm@linux-foundation.org>
-References: <20071004161559.GA19451@us.ibm.com>
+From: Paul Jackson <pj@sgi.com>
+Subject: Re: [PATCH] task containersv11 add tasks file interface fix for
+ cpusets
+Date: Sat, 6 Oct 2007 01:24:37 -0700
+Message-ID: <20071006012437.c0fd3a8a.pj@sgi.com>
+References: <20071003084241.24279.62099.sendpatchset@jackhammer.engr.sgi.com>
+	<6599ad830710030851jb44f00ft9634f9381218b6e9@mail.gmail.com>
+	<20071003105817.7adf6516.pj@sgi.com>
+	<6599ad830710031110r1a74eafej56f20cc33e72ac81@mail.gmail.com>
+	<20071003131632.fed4b848.pj@sgi.com>
+	<6599ad830710031331h15d35e90lc63d845efd2de6f5@mail.gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=US-ASCII
 Content-Transfer-Encoding: 7bit
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1764552AbXJEXhb@vger.kernel.org>
-In-Reply-To: <20071004161559.GA19451@us.ibm.com>
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1761785AbXJFIY5@vger.kernel.org>
+In-Reply-To: <6599ad830710031331h15d35e90lc63d845efd2de6f5@mail.gmail.com>
 Sender: linux-kernel-owner@vger.kernel.org
-To: sukadev@us.ibm.com
-Cc: linux-kernel@vger.kernel.org, containers@lists.osdl.org
+To: Paul Menage <menage@google.com>
+Cc: akpm@linux-foundation.org, nickpiggin@yahoo.com.au, a.p.zijlstra@chello.nl, serue@us.ibm.com, clg@fr.ibm.com, linux-kernel@vger.kernel.org, ebiederm@xmission.com, rientjes@google.com, svaidy@linux.vnet.ibm.com, xemul@openvz.org, containers@lists.osdl.org, balbir@linux.vnet.ibm.com
 List-Id: containers.vger.kernel.org
 
-On Thu, 4 Oct 2007 09:15:59 -0700
->
-> From: Sukadev Bhattiprolu <sukadev@us.ibm.com>
-> Subject: [PATCH] Rename is_cgroup_init()
+Paul Menage wrote:
+> What was wrong with my suggestion from a couple of emails back? Adding
+> the following in cpuset_attach():
 > 
-> is_container_init() was accidentally renamed to is_cgroup_init() when
-> renaming "container" to "control group". This patch restores the
-> original name.
-> 
-> Signed-off-by: Sukadev Bhattiprolu <sukadev@us.ibm.com>
-> Acked-by: Serge Hallyn <serue@us.ibm.com>
-> ---
->  include/linux/sched.h |    4 ++--
->  kernel/capability.c   |    2 +-
->  kernel/pid.c          |    4 ++--
->  3 files changed, 5 insertions(+), 5 deletions(-)
-> 
-> Index: 2.6.23-rc8-mm2/include/linux/sched.h
-> ===================================================================
-> --- 2.6.23-rc8-mm2.orig/include/linux/sched.h	2007-10-02 22:05:18.000000000 -0700
-> +++ 2.6.23-rc8-mm2/include/linux/sched.h	2007-10-03 10:26:12.000000000 -0700
-> @@ -1303,10 +1303,10 @@ static inline int is_global_init(struct 
->  }
->  
->  /*
-> - * is_cgroup_init:
-> + * is_container_init:
->   * check whether in the task is init in its own pid namespace.
->   */
-> -extern int is_cgroup_init(struct task_struct *tsk);
-> +extern int is_container_init(struct task_struct *tsk);
->  
->  extern struct pid *cad_pid;
->  
-> Index: 2.6.23-rc8-mm2/kernel/capability.c
-> ===================================================================
-> --- 2.6.23-rc8-mm2.orig/kernel/capability.c	2007-09-27 13:20:11.000000000 -0700
-> +++ 2.6.23-rc8-mm2/kernel/capability.c	2007-10-03 10:26:35.000000000 -0700
-> @@ -130,7 +130,7 @@ static inline int cap_set_all(kernel_cap
->       int found = 0;
->  
->       do_each_thread(g, target) {
-> -             if (target == current || is_cgroup_init(target->group_leader))
-> +             if (target == current || is_container_init(target->group_leader))
->                       continue;
->               found = 1;
->  	     if (security_capset_check(target, effective, inheritable,
-> Index: 2.6.23-rc8-mm2/kernel/pid.c
-> ===================================================================
-> --- 2.6.23-rc8-mm2.orig/kernel/pid.c	2007-10-03 10:24:12.000000000 -0700
-> +++ 2.6.23-rc8-mm2/kernel/pid.c	2007-10-03 10:24:45.000000000 -0700
-> @@ -81,7 +81,7 @@ struct pid_namespace init_pid_ns = {
->  };
->  EXPORT_SYMBOL_GPL(init_pid_ns);
->  
-> -int is_cgroup_init(struct task_struct *tsk)
-> +int is_container_init(struct task_struct *tsk)
->  {
->  	int ret = 0;
->  	struct pid *pid;
-> @@ -94,7 +94,7 @@ int is_cgroup_init(struct task_struct *t
->  
->  	return ret;
->  }
-> -EXPORT_SYMBOL(is_cgroup_init);
-> +EXPORT_SYMBOL(is_container_init);
->  
->  /*
->   * Note: disable interrupts while the pidmap_lock is held as an
+> struct cgroup_iter it;
+> struct task_struct *p;
+> cgroup_iter_start(cs->css.cgroup, &it);
+> while ((p = cgroup_iter_next(cs->css.cgroup, &it)))
+>        set_cpus_allowed(p, cs->cpus_allowed);
+> cgroup_iter_end(cs->css.cgroup, &it);
 
-This patch is splattered across approximately seven different patches - ugly.
+This isn't working for me.
 
-I just edited the diffs and changelogs in place and replaced all
-occurrences of is_cgroup_init with is_container_init
+The key kernel routine for updating a tasks cpus_allowed
+cannot be called while holding a spinlock.
+
+But the above loop holds a spinlock, css_set_lock, between
+the cgroup_iter_start and the cgroup_iter_end.
+
+I end up generating complaints of:
+	BUG: scheduling while atomic
+when I invoke the set_cpus_allowed() above.
+
+Should css_set_lock be a mutex?  Locking changes like that
+can be risky.
+
+Or perhaps there should be another callback, called only by
+attach() requests back to the same group.  Likely cpusets would
+be the only subsystem interested in plugging that callback.
+
+That, or my original patch, which calls the attach routine
+even if re-attaching to the current cgroup ...
+
+-- 
+                  I won't rest till it's the best ...
+                  Programmer, Linux Scalability
+                  Paul Jackson <pj@sgi.com> 1.925.600.0401
