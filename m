@@ -1,47 +1,58 @@
-From: Paul Jackson <pj-sJ/iWh9BUns@public.gmane.org>
-Subject: [PATCH] task containersv11 automatic userspace notification of idle
-	containers fix
-Date: Sat, 06 Oct 2007 01:34:54 -0700
-Message-ID: <20071006083454.17561.99757.sendpatchset@jackhammer.engr.sgi.com>
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
-Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+From: David Rientjes <rientjes@google.com>
+Subject: Re: [PATCH] task containersv11 add tasks file interface fix for
+ cpusets
+Date: Sat, 6 Oct 2007 10:54:35 -0700 (PDT)
+Message-ID: <alpine.DEB.0.9999.0710061047400.24311@chino.kir.corp.google.com>
+References: <20071003084241.24279.62099.sendpatchset@jackhammer.engr.sgi.com> <6599ad830710030851jb44f00ft9634f9381218b6e9@mail.gmail.com> <20071003105817.7adf6516.pj@sgi.com> <6599ad830710031110r1a74eafej56f20cc33e72ac81@mail.gmail.com> <20071003131632.fed4b848.pj@sgi.com>
+ <6599ad830710031331h15d35e90lc63d845efd2de6f5@mail.gmail.com> <20071006012437.c0fd3a8a.pj@sgi.com>
+Mime-Version: 1.0
+Content-Type: TEXT/PLAIN; charset=US-ASCII
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1763837AbXJFR5o@vger.kernel.org>
+In-Reply-To: <20071006012437.c0fd3a8a.pj@sgi.com>
+Sender: linux-kernel-owner@vger.kernel.org
+To: Paul Jackson <pj@sgi.com>
+Cc: Paul Menage <menage@google.com>, Andrew Morton <akpm@linux-foundation.org>, nickpiggin@yahoo.com.au, a.p.zijlstra@chello.nl, serue@us.ibm.com, clg@fr.ibm.com, linux-kernel@vger.kernel.org, ebiederm@xmission.com, svaidy@linux.vnet.ibm.com, xemul@openvz.org, containers@lists.osdl.org, balbir@linux.vnet.ibm.com
 List-Id: containers.vger.kernel.org
 
-From: Paul Jackson <pj-sJ/iWh9BUns@public.gmane.org>
+On Sat, 6 Oct 2007, Paul Jackson wrote:
 
-Need to include kmod.h to define UMH_WAIT_EXEC, at least
-for my configuration (sn2_defconfig).
+> This isn't working for me.
+> 
+> The key kernel routine for updating a tasks cpus_allowed
+> cannot be called while holding a spinlock.
+> 
+> But the above loop holds a spinlock, css_set_lock, between
+> the cgroup_iter_start and the cgroup_iter_end.
+> 
+> I end up generating complaints of:
+> 	BUG: scheduling while atomic
+> when I invoke the set_cpus_allowed() above.
+> 
+> Should css_set_lock be a mutex?  Locking changes like that
+> can be risky.
+> 
 
-Signed-off-by: Paul Jackson <pj-sJ/iWh9BUns@public.gmane.org>
-Cc: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+It would probably be better to just save references to the tasks.
 
----
+	struct cgroup_iter it;
+	struct task_struct *p, **tasks;
+	int i = 0;
 
- kernel/cgroup.c |    1 +
- 1 file changed, 1 insertion(+)
+	cgroup_iter_start(cs->css.cgroup, &it);
+	while ((p = cgroup_iter_next(cs->css.cgroup, &it))) {
+		get_task_struct(p);
+		tasks[i++] = p;
+	}
+	cgroup_iter_end(cs->css.cgroup, &it);
 
---- 2.6.23-rc8-mm2.orig/kernel/cgroup.c	2007-10-05 23:35:15.615380128 -0700
-+++ 2.6.23-rc8-mm2/kernel/cgroup.c	2007-10-05 23:36:55.692927139 -0700
-@@ -43,6 +43,7 @@
- #include <linux/spinlock.h>
- #include <linux/string.h>
- #include <linux/sort.h>
-+#include <linux/kmod.h>
- #include <asm/atomic.h>
- 
- static DEFINE_MUTEX(cgroup_mutex);
+	while (--i >= 0) {
+		set_cpus_allowed(tasks[i], cs->cpus_allowed);
+		put_task_struct(tasks[i]);
+	}
 
--- 
-                          I won't rest till it's the best ...
-                          Programmer, Linux Scalability
-                          Paul Jackson <pj-sJ/iWh9BUns@public.gmane.org> 1.650.933.1373
+The getting and putting of the tasks will prevent them from exiting or 
+being deallocated prematurely.  But this is also a critical section that 
+will need to be protected by some mutex so it doesn't race with other 
+set_cpus_allowed().
+
+		David
