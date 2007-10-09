@@ -1,11 +1,10 @@
 From: Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
-Subject: [patch 2/2][NETNS49][IPV4][UDPLITE] activate udplite per network
-	namespace
-Date: Tue, 09 Oct 2007 19:00:09 +0200
-Message-ID: <20071009170207.876855063@mai.toulouse-stg.fr.ibm.com>
+Subject: [patch 1/2][NETNS49][IPV4][UDPLITE] add udp_proc_register per net
+Date: Tue, 09 Oct 2007 19:00:08 +0200
+Message-ID: <20071009170206.404193237@mai.toulouse-stg.fr.ibm.com>
 References: <20071009170007.487455316@mai.toulouse-stg.fr.ibm.com>
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline; filename=net-ns-ipv4-udplite-per-namespace.patch
+Content-Disposition: inline; filename=net-ns-ipv4-udplite-proc-per-net.patch
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,56 +18,56 @@ To: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org
 Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-This patch activates the udplite protocol for multiple
-network namespaces.
+This patch add a pernet subsystem to register /proc/net/udplite
+per network namespace.
 
 Signed-off-by: Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
 
 ---
- net/ipv4/udplite.c |   12 +-----------
- 1 file changed, 1 insertion(+), 11 deletions(-)
+ net/ipv4/udplite.c |   24 ++++++++++++++++++++++--
+ 1 file changed, 22 insertions(+), 2 deletions(-)
 
 Index: linux-2.6-netns/net/ipv4/udplite.c
 ===================================================================
 --- linux-2.6-netns.orig/net/ipv4/udplite.c
 +++ linux-2.6-netns/net/ipv4/udplite.c
-@@ -30,18 +30,11 @@ static int udplite_v4_get_port(struct so
- 
- static int udplite_rcv(struct sk_buff *skb)
- {
--	if (skb->dev->nd_net != &init_net) {
--		kfree_skb(skb);
--		return 0;
--	}
- 	return __udp4_lib_rcv(skb, udplite_hash, IPPROTO_UDPLITE);
- }
- 
- static void udplite_err(struct sk_buff *skb, u32 info)
- {
--	if (skb->dev->nd_net != &init_net)
--		return;
--
- 	return __udp4_lib_err(skb, info, udplite_hash);
- }
- 
-@@ -83,7 +76,7 @@ static struct inet_protosw udplite4_prot
- 	.ops		=  &inet_dgram_ops,
- 	.capability	= -1,
- 	.no_check	=  0,		/* must checksum (RFC 3828) */
--	.flags		=  INET_PROTOSW_PERMANENT,
-+	.flags		=  INET_PROTOSW_PERMANENT | INET_PROTOSW_NETNS,
+@@ -96,6 +96,27 @@ static struct udp_seq_afinfo udplite4_se
+ 	.seq_show	= udp4_seq_show,
+ 	.seq_fops	= &udplite4_seq_fops,
  };
++
++static int udplite4_proc_net_init(struct net *net)
++{
++	if (net != &init_net)
++		return -EPERM;
++
++	if (udp_proc_register(net, &udplite4_seq_afinfo)) /* udplite4_proc_init() */
++		printk(KERN_ERR "%s: Cannot register /proc!\n", __FUNCTION__);
++
++	return 0;
++}
++
++static void udplite4_proc_net_exit(struct net *net)
++{
++	udp_proc_unregister(net, &udplite4_seq_afinfo);
++}
++
++static struct pernet_operations udplite4_proc_net_ops = {
++	.init = udplite4_proc_net_init,
++	.exit = udplite4_proc_net_exit,
++};
+ #endif
+ 
+ void __init udplite4_register(void)
+@@ -109,8 +130,7 @@ void __init udplite4_register(void)
+ 	inet_register_protosw(&udplite4_protosw);
  
  #ifdef CONFIG_PROC_FS
-@@ -99,9 +92,6 @@ static struct udp_seq_afinfo udplite4_se
- 
- static int udplite4_proc_net_init(struct net *net)
- {
--	if (net != &init_net)
--		return -EPERM;
--
- 	if (udp_proc_register(net, &udplite4_seq_afinfo)) /* udplite4_proc_init() */
- 		printk(KERN_ERR "%s: Cannot register /proc!\n", __FUNCTION__);
+-	if (udp_proc_register(&init_net, &udplite4_seq_afinfo)) /* udplite4_proc_init() */
+-		printk(KERN_ERR "%s: Cannot register /proc!\n", __FUNCTION__);
++	register_pernet_subsys(&udplite4_proc_net_ops);
+ #endif
+ 	return;
  
 
 -- 
