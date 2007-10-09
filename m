@@ -1,72 +1,54 @@
-From: yamamoto-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org (YAMAMOTO Takashi)
-Subject: Re: [PATCH][for -mm] Fix and Enhancements for memory cgroup [1/6]
- fix refcnt race in charge/uncharge
-Date: Wed, 10 Oct 2007 07:31:38 +0900 (JST)
-Message-ID: <20071009223139.061C21BF47A@siro.lan>
-References: <20071009184925.ad8248d4.kamezawa.hiroyu@jp.fujitsu.com>
+From: Greg KH <greg@kroah.com>
+Subject: Re: [PATCHSET 3/4] sysfs: divorce sysfs from kobject and driver
+	model
+Date: Tue, 9 Oct 2007 15:53:06 -0700
+Message-ID: <20071009225306.GG21228@kroah.com>
+References: <11902755392688-git-send-email-htejun@gmail.com> <20070925221736.GA3566@kroah.com> <46FB956B.8000205@gmail.com> <m1zlz7hpvn.fsf_-_@ebiederm.dsl.xmission.com> <20071005062302.GB16914@kroah.com> <m1myuxloiz.fsf@ebiederm.dsl.xmission.com>
 Mime-Version: 1.0
-Content-Type: Text/Plain; charset=us-ascii
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: Your message of "Tue, 9 Oct 2007 18:49:25 +0900"
-	<20071009184925.ad8248d4.kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org
-Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
+Content-Type: text/plain; charset=us-ascii
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1756720AbXJIW7q@vger.kernel.org>
+Content-Disposition: inline
+In-Reply-To: <m1myuxloiz.fsf@ebiederm.dsl.xmission.com>
+Sender: linux-kernel-owner@vger.kernel.org
+To: "Eric W. Biederman" <ebiederm@xmission.com>
+Cc: Tejun Heo <htejun@gmail.com>, cornelia.huck@de.ibm.com, stern@rowland.harvard.edu, kay.sievers@vrfy.org, linux-kernel@vger.kernel.org, Linux Containers <containers@lists.osdl.org>
 List-Id: containers.vger.kernel.org
 
-> The logic of uncharging is 
->  - decrement refcnt -> lock page cgroup -> remove page cgroup.
-> But the logic of charging is
->  - lock page cgroup -> increment refcnt -> return.
+On Fri, Oct 05, 2007 at 06:44:04AM -0600, Eric W. Biederman wrote:
+> Greg KH <greg@kroah.com> writes:
 > 
-> Then, one charge will be added to a page_cgroup under being removed.
-> This makes no big trouble (like panic) but one charge is lost.
+> > I would be interested in seeing what your patches look like.
 > 
-> This patch add a test at charging to verify page_cgroup's refcnt is
-> greater than 0. If not, unlock and retry.
+> Sure. 
 > 
-> Signed-off-by: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+> > I don't
+> > think that we should take any more sysfs changes for 2.6.24 as we do
+> > have a lot of them right now, and I don't think that Tejun and I agree
+> > on the future direction of the outstanding ones just yet.
 > 
+> Sounds reasonable.
 > 
->  mm/memcontrol.c |    9 +++++++--
->  1 file changed, 7 insertions(+), 2 deletions(-)
+> > But I don't think that your multiple-mount patches could make it into
+> > .24, unless .23 is still weeks away.
 > 
-> Index: linux-2.6.23-rc8-mm2/mm/memcontrol.c
-> ===================================================================
-> --- linux-2.6.23-rc8-mm2.orig/mm/memcontrol.c
-> +++ linux-2.6.23-rc8-mm2/mm/memcontrol.c
-> @@ -271,14 +271,19 @@ int mem_cgroup_charge(struct page *page,
->  	 * to see if the cgroup page already has a page_cgroup associated
->  	 * with it
->  	 */
-> +retry:
->  	lock_page_cgroup(page);
->  	pc = page_get_page_cgroup(page);
->  	/*
->  	 * The page_cgroup exists and the page has already been accounted
->  	 */
->  	if (pc) {
-> -		atomic_inc(&pc->ref_cnt);
-> -		goto done;
-> +		if (unlikely(!atomic_inc_not_zero(&pc->ref_cnt))) {
-> +			/* this page is under being uncharge ? */
-> +			unlock_page_cgroup(page);
+> Well I have posted them all earlier.  At this point I it makes most
+> sense to wait until after the big merge happen and every rebases on
+> top of that.  Then everyone will have network namespace support and
+> it is easier to look through all of the patches.  Especially since
+> it looks like the merge window will open any day now.
+> 
+> I will quickly recap the essence of what I am looking at:
+> On directories of interest I tag all of their directory
+> entries with which namespace they belong to.  On a mount
+> of sysfs I remember which namespace we were in when we
+> mounted sysfs.  The I filter readdir and lookup based upon
+> the namespace I captured at mount time.  I do my best
+> to generalize it so that the logic can work for different
+> namespaces.
 
-cpu_relax() here?
+Ok, I have no objection to that.  Let's wait for 2.6.24 to settle down
+:)
 
-YAMAMOTO Takashi
+thanks,
 
-> +			goto retry;
-> +		} else
-> +			goto done;
->  	}
->  
->  	unlock_page_cgroup(page);
+greg k-h
