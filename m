@@ -1,11 +1,12 @@
-From: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
-Subject: [PATCH][for -mm] Fix and Enhancements for memory cgroup [3/6] add
- helper function for page_cgroup
-Date: Tue, 9 Oct 2007 18:51:32 +0900
-Message-ID: <20071009185132.a870b0f0.kamezawa.hiroyu@jp.fujitsu.com>
+From: Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Subject: Re: [PATCH][for -mm] Fix and Enhancements for memory cgroup [0/6]
+ intro
+Date: Tue, 09 Oct 2007 16:00:55 +0530
+Message-ID: <470B585F.9040207@linux.vnet.ibm.com>
 References: <20071009184620.8b14cbc6.kamezawa.hiroyu@jp.fujitsu.com>
+Reply-To: balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
 Mime-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
+Content-Type: text/plain; charset=ISO-8859-1
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 In-Reply-To: <20071009184620.8b14cbc6.kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
@@ -19,132 +20,52 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
-Cc: "containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org" <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, "linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org" <linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, "balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org" <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Cc: "containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org" <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, "linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org" <linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-This patch adds follwoing functions.
-   - clear_page_cgroup(page, pc)
-   - page_cgroup_assign_new_page_group(page, pc)
+KAMEZAWA Hiroyuki wrote:
+> Hi, Balbir-san
+> This is a patch set against memory cgroup I have now.
+> Reflected comments I got.
+> 
+> = 
+> [1] charge refcnt fix patch     - avoid charging against a page which is being 
+>                                   uncharged.
+> [2] fix-err-handling patch      - remove unnecesary unlock_page_cgroup()
+> [3] lock and page->cgroup patch - add helper function for charge/uncharge
+> [4] avoid handling no LRU patch - makes mem_cgroup_isolate_pages() avoid
+>                                   handling !Page_LRU pages.
+> [5] migration fix patch         - a fix for page migration.
+> [6] force reclaim patch         - add an interface for uncharging all pages in
+>                                   empty cgroup.
+> =
+> 
 
-Mainly for cleaunp.
+Thank you very much for working on this.
 
-A manner "check page->cgroup again after lock_page_cgroup()" is
-implemented in straight way.
+> BTW, which way would you like to go ?
+> 
+>   1. You'll merge this set (and my future patch) to your set as
+>      Memory Cgroup Maintainer and pass to Andrew Morton, later.
+>      And we'll work against your tree.
+>   2. I post this set to the (next) -mm. And we'll work agaisnt -mm.
+> 
 
-Signed-off-by: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+I think (2) is better. I don't maintain my own tree, so lets get
+all the fixes and enhancements into -mm
+
+> not as my usual patch, tested on x86-64 fake-NUMA.
+> 
+
+I'll also test these patches.
+
+> Thanks,
+> -Kame
+> 
 
 
-
- mm/memcontrol.c |   76 ++++++++++++++++++++++++++++++++++++--------------------
- 1 file changed, 49 insertions(+), 27 deletions(-)
-
-Index: devel-2.6.23-rc8-mm2/mm/memcontrol.c
-===================================================================
---- devel-2.6.23-rc8-mm2.orig/mm/memcontrol.c
-+++ devel-2.6.23-rc8-mm2/mm/memcontrol.c
-@@ -162,6 +162,35 @@ static void __always_inline unlock_page_
- 	bit_spin_unlock(PAGE_CGROUP_LOCK_BIT, &page->page_cgroup);
- }
- 
-+static inline int
-+page_cgroup_assign_new_page_cgroup(struct page *page, struct page_cgroup *pc)
-+{
-+	int ret = 0;
-+
-+	lock_page_cgroup(page);
-+	if (!page_get_page_cgroup(page))
-+		page_assign_page_cgroup(page, pc);
-+	else
-+		ret = 1;
-+	unlock_page_cgroup(page);
-+	return ret;
-+}
-+
-+
-+static inline struct page_cgroup *
-+clear_page_cgroup(struct page *page, struct page_cgroup *pc)
-+{
-+	struct page_cgroup *ret;
-+	/* lock and clear */
-+	lock_page_cgroup(page);
-+	ret = page_get_page_cgroup(page);
-+	if (likely(ret == pc))
-+		page_assign_page_cgroup(page, NULL);
-+	unlock_page_cgroup(page);
-+	return ret;
-+}
-+
-+
- static void __mem_cgroup_move_lists(struct page_cgroup *pc, bool active)
- {
- 	if (active)
-@@ -260,7 +289,7 @@ int mem_cgroup_charge(struct page *page,
- 				gfp_t gfp_mask)
- {
- 	struct mem_cgroup *mem;
--	struct page_cgroup *pc, *race_pc;
-+	struct page_cgroup *pc;
- 	unsigned long flags;
- 	unsigned long nr_retries = MEM_CGROUP_RECLAIM_RETRIES;
- 
-@@ -353,24 +382,16 @@ noreclaim:
- 		goto free_pc;
- 	}
- 
--	lock_page_cgroup(page);
--	/*
--	 * Check if somebody else beat us to allocating the page_cgroup
--	 */
--	race_pc = page_get_page_cgroup(page);
--	if (race_pc) {
--		kfree(pc);
--		pc = race_pc;
--		atomic_inc(&pc->ref_cnt);
--		res_counter_uncharge(&mem->res, PAGE_SIZE);
--		css_put(&mem->css);
--		goto done;
--	}
--
- 	atomic_set(&pc->ref_cnt, 1);
- 	pc->mem_cgroup = mem;
- 	pc->page = page;
--	page_assign_page_cgroup(page, pc);
-+	if (page_cgroup_assign_new_page_cgroup(page, pc)) {
-+		/* race ... undo and retry */
-+		res_counter_uncharge(&mem->res, PAGE_SIZE);
-+		css_put(&mem->css);
-+		kfree(pc);
-+		goto retry;
-+	}
- 
- 	spin_lock_irqsave(&mem->lru_lock, flags);
- 	list_add(&pc->lru, &mem->active_list);
-@@ -421,17 +442,18 @@ void mem_cgroup_uncharge(struct page_cgr
- 
- 	if (atomic_dec_and_test(&pc->ref_cnt)) {
- 		page = pc->page;
--		lock_page_cgroup(page);
--		mem = pc->mem_cgroup;
--		css_put(&mem->css);
--		page_assign_page_cgroup(page, NULL);
--		unlock_page_cgroup(page);
--		res_counter_uncharge(&mem->res, PAGE_SIZE);
--
-- 		spin_lock_irqsave(&mem->lru_lock, flags);
-- 		list_del_init(&pc->lru);
-- 		spin_unlock_irqrestore(&mem->lru_lock, flags);
--		kfree(pc);
-+		/*
-+		 * Obetaion page->cgroup and clear it under lock.
-+		 */
-+		if (clear_page_cgroup(page, pc) == pc) {
-+			mem = pc->mem_cgroup;
-+			css_put(&mem->css);
-+			res_counter_uncharge(&mem->res, PAGE_SIZE);
-+			spin_lock_irqsave(&mem->lru_lock, flags);
-+			list_del_init(&pc->lru);
-+			spin_unlock_irqrestore(&mem->lru_lock, flags);
-+			kfree(pc);
-+		}
- 	}
- }
+-- 
+	Warm Regards,
+	Balbir Singh
+	Linux Technology Center
+	IBM, ISTL
