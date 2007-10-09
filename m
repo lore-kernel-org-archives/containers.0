@@ -1,8 +1,8 @@
 From: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
-Subject: [PATCH][for -mm] Fix and Enhancements for memory cgroup [6/6] add
- force reclaim interface
-Date: Tue, 9 Oct 2007 18:55:56 +0900
-Message-ID: <20071009185556.c6117b31.kamezawa.hiroyu@jp.fujitsu.com>
+Subject: [PATCH][for -mm] Fix and Enhancements for memory cgroup [3/6] add
+ helper function for page_cgroup
+Date: Tue, 9 Oct 2007 18:51:32 +0900
+Message-ID: <20071009185132.a870b0f0.kamezawa.hiroyu@jp.fujitsu.com>
 References: <20071009184620.8b14cbc6.kamezawa.hiroyu@jp.fujitsu.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=US-ASCII
@@ -22,130 +22,129 @@ To: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
 Cc: "containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org" <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, "linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org" <linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, "balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org" <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-This patch adds an interface "memory.force_reclaim".
-Any write to this file will drop all charges in this cgroup if
-there is no task under.
+This patch adds follwoing functions.
+   - clear_page_cgroup(page, pc)
+   - page_cgroup_assign_new_page_group(page, pc)
 
-%echo 1 > /....../memory.force_reclaim
+Mainly for cleaunp.
 
-will drop all charges of memory cgroup if cgroup's tasks is empty.
-
-This is useful to invoke rmdir() against memory cgroup successfully.
-
-Tested and worked well on x86_64/fake-NUMA system.
-
-Changelog:
-  - added a new interface force_relcaim.
-  - changes spin_lock to spin_lock_irqsave().
-
+A manner "check page->cgroup again after lock_page_cgroup()" is
+implemented in straight way.
 
 Signed-off-by: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
 
 
- mm/memcontrol.c |   79 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 79 insertions(+)
+
+ mm/memcontrol.c |   76 ++++++++++++++++++++++++++++++++++++--------------------
+ 1 file changed, 49 insertions(+), 27 deletions(-)
 
 Index: devel-2.6.23-rc8-mm2/mm/memcontrol.c
 ===================================================================
 --- devel-2.6.23-rc8-mm2.orig/mm/memcontrol.c
 +++ devel-2.6.23-rc8-mm2/mm/memcontrol.c
-@@ -507,6 +507,55 @@ retry:
- 	return;
+@@ -162,6 +162,35 @@ static void __always_inline unlock_page_
+ 	bit_spin_unlock(PAGE_CGROUP_LOCK_BIT, &page->page_cgroup);
  }
  
-+static void
-+mem_cgroup_force_reclaim_list(struct mem_cgroup *mem, struct list_head *list)
++static inline int
++page_cgroup_assign_new_page_cgroup(struct page *page, struct page_cgroup *pc)
 +{
++	int ret = 0;
++
++	lock_page_cgroup(page);
++	if (!page_get_page_cgroup(page))
++		page_assign_page_cgroup(page, pc);
++	else
++		ret = 1;
++	unlock_page_cgroup(page);
++	return ret;
++}
++
++
++static inline struct page_cgroup *
++clear_page_cgroup(struct page *page, struct page_cgroup *pc)
++{
++	struct page_cgroup *ret;
++	/* lock and clear */
++	lock_page_cgroup(page);
++	ret = page_get_page_cgroup(page);
++	if (likely(ret == pc))
++		page_assign_page_cgroup(page, NULL);
++	unlock_page_cgroup(page);
++	return ret;
++}
++
++
+ static void __mem_cgroup_move_lists(struct page_cgroup *pc, bool active)
+ {
+ 	if (active)
+@@ -260,7 +289,7 @@ int mem_cgroup_charge(struct page *page,
+ 				gfp_t gfp_mask)
+ {
+ 	struct mem_cgroup *mem;
+-	struct page_cgroup *pc, *race_pc;
 +	struct page_cgroup *pc;
-+	struct page *page;
-+	int count = SWAP_CLUSTER_MAX;
-+	unsigned long flags;
-+
-+	spin_lock_irqsave(&mem->lru_lock, flags);
-+
-+	while (!list_empty(list)) {
-+		pc = list_entry(list->prev, struct page_cgroup, lru);
-+		page = pc->page;
+ 	unsigned long flags;
+ 	unsigned long nr_retries = MEM_CGROUP_RECLAIM_RETRIES;
+ 
+@@ -353,24 +382,16 @@ noreclaim:
+ 		goto free_pc;
+ 	}
+ 
+-	lock_page_cgroup(page);
+-	/*
+-	 * Check if somebody else beat us to allocating the page_cgroup
+-	 */
+-	race_pc = page_get_page_cgroup(page);
+-	if (race_pc) {
+-		kfree(pc);
+-		pc = race_pc;
+-		atomic_inc(&pc->ref_cnt);
+-		res_counter_uncharge(&mem->res, PAGE_SIZE);
+-		css_put(&mem->css);
+-		goto done;
+-	}
+-
+ 	atomic_set(&pc->ref_cnt, 1);
+ 	pc->mem_cgroup = mem;
+ 	pc->page = page;
+-	page_assign_page_cgroup(page, pc);
++	if (page_cgroup_assign_new_page_cgroup(page, pc)) {
++		/* race ... undo and retry */
++		res_counter_uncharge(&mem->res, PAGE_SIZE);
++		css_put(&mem->css);
++		kfree(pc);
++		goto retry;
++	}
+ 
+ 	spin_lock_irqsave(&mem->lru_lock, flags);
+ 	list_add(&pc->lru, &mem->active_list);
+@@ -421,17 +442,18 @@ void mem_cgroup_uncharge(struct page_cgr
+ 
+ 	if (atomic_dec_and_test(&pc->ref_cnt)) {
+ 		page = pc->page;
+-		lock_page_cgroup(page);
+-		mem = pc->mem_cgroup;
+-		css_put(&mem->css);
+-		page_assign_page_cgroup(page, NULL);
+-		unlock_page_cgroup(page);
+-		res_counter_uncharge(&mem->res, PAGE_SIZE);
+-
+- 		spin_lock_irqsave(&mem->lru_lock, flags);
+- 		list_del_init(&pc->lru);
+- 		spin_unlock_irqrestore(&mem->lru_lock, flags);
+-		kfree(pc);
++		/*
++		 * Obetaion page->cgroup and clear it under lock.
++		 */
 +		if (clear_page_cgroup(page, pc) == pc) {
++			mem = pc->mem_cgroup;
 +			css_put(&mem->css);
 +			res_counter_uncharge(&mem->res, PAGE_SIZE);
-+			list_del_init(&pc->lru);
-+			kfree(pc);
-+		} else
-+			count = 1; /* race? ...do relax */
-+
-+		if (--count == 0) {
-+			spin_unlock_irqrestore(&mem->lru_lock, flags);
-+			cond_resched();
 +			spin_lock_irqsave(&mem->lru_lock, flags);
-+			count = SWAP_CLUSTER_MAX;
++			list_del_init(&pc->lru);
++			spin_unlock_irqrestore(&mem->lru_lock, flags);
++			kfree(pc);
 +		}
-+	}
-+	spin_unlock_irqrestore(&mem->lru_lock, flags);
-+}
-+
-+int mem_cgroup_force_reclaim(struct mem_cgroup *mem)
-+{
-+	int ret = -EBUSY;
-+	while (!list_empty(&mem->active_list) ||
-+	       !list_empty(&mem->inactive_list)) {
-+		if (atomic_read(&mem->css.cgroup->count) > 0)
-+			goto out;
-+		mem_cgroup_force_reclaim_list(mem, &mem->active_list);
-+		mem_cgroup_force_reclaim_list(mem, &mem->inactive_list);
-+	}
-+	ret = 0;
-+out:
-+	css_put(&mem->css);
-+	return ret;
-+}
-+
-+
-+
- int mem_cgroup_write_strategy(char *buf, unsigned long long *tmp)
- {
- 	*tmp = memparse(buf, &buf);
-@@ -592,6 +641,31 @@ static ssize_t mem_control_type_read(str
- 			ppos, buf, s - buf);
+ 	}
  }
- 
-+
-+static ssize_t mem_force_reclaim_write(struct cgroup *cont,
-+				struct cftype *cft, struct file *file,
-+				const char __user *userbuf,
-+				size_t nbytes, loff_t *ppos)
-+{
-+	struct mem_cgroup *mem = mem_cgroup_from_cont(cont);
-+	int ret;
-+	ret = mem_cgroup_force_reclaim(mem);
-+	if (!ret)
-+		ret = nbytes;
-+	return ret;
-+}
-+
-+static ssize_t mem_force_reclaim_read(struct cgroup *cont,
-+				struct cftype *cft,
-+				struct file *file, char __user *userbuf,
-+				size_t nbytes, loff_t *ppos)
-+{
-+	char buf[2] = "0";
-+	return simple_read_from_buffer((void __user *)userbuf, nbytes,
-+			ppos, buf, strlen(buf));
-+}
-+
-+
- static struct cftype mem_cgroup_files[] = {
- 	{
- 		.name = "usage_in_bytes",
-@@ -614,6 +688,11 @@ static struct cftype mem_cgroup_files[] 
- 		.write = mem_control_type_write,
- 		.read = mem_control_type_read,
- 	},
-+	{
-+		.name = "force_reclaim",
-+		.write = mem_force_reclaim_write,
-+		.read = mem_force_reclaim_read,
-+	},
- };
- 
- static struct mem_cgroup init_mem_cgroup;
