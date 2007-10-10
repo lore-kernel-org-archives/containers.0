@@ -1,77 +1,106 @@
-From: David Rientjes <rientjes@google.com>
-Subject: Re: [PATCH] task containersv11 add tasks file interface fix for
- cpusets
-Date: Wed, 10 Oct 2007 13:59:44 -0700 (PDT)
-Message-ID: <alpine.DEB.0.9999.0710101351400.4771@chino.kir.corp.google.com>
-References: <20071003084241.24279.62099.sendpatchset@jackhammer.engr.sgi.com>  <6599ad830710030851jb44f00ft9634f9381218b6e9@mail.gmail.com>  <20071003105817.7adf6516.pj@sgi.com>  <6599ad830710031110r1a74eafej56f20cc33e72ac81@mail.gmail.com>
- <20071003131632.fed4b848.pj@sgi.com>  <6599ad830710031331h15d35e90lc63d845efd2de6f5@mail.gmail.com>  <20071006012437.c0fd3a8a.pj@sgi.com>  <alpine.DEB.0.9999.0710061047400.24311@chino.kir.corp.google.com>  <6599ad830710061411l3fb9368al319a80469d54946e@mail.gmail.com>
-  <alpine.DEB.0.9999.0710062250590.11526@chino.kir.corp.google.com> <6599ad830710101346y1ade5ccdgd3b64a041eab7ec1@mail.gmail.com>
+From: Greg KH <greg@kroah.com>
+Subject: Re: [PATCHSET 3/4] sysfs: divorce sysfs from kobject and driver
+	model
+Date: Wed, 10 Oct 2007 13:44:49 -0700
+Message-ID: <20071010204449.GA23680@kroah.com>
+References: <11902755392688-git-send-email-htejun@gmail.com> <20070925221736.GA3566@kroah.com> <46FB956B.8000205@gmail.com> <m1zlz7hpvn.fsf_-_@ebiederm.dsl.xmission.com> <20071005062302.GB16914@kroah.com> <m1d4vtn4jq.fsf@ebiederm.dsl.xmission.com> <20071009225139.GF21228@kroah.com> <m14pgzun27.fsf@ebiederm.dsl.xmission.com>
 Mime-Version: 1.0
-Content-Type: TEXT/PLAIN; charset=US-ASCII
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1756891AbXJJVAb@vger.kernel.org>
-In-Reply-To: <6599ad830710101346y1ade5ccdgd3b64a041eab7ec1@mail.gmail.com>
+Content-Type: text/plain; charset=us-ascii
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1757033AbXJJVDe@vger.kernel.org>
+Content-Disposition: inline
+In-Reply-To: <m14pgzun27.fsf@ebiederm.dsl.xmission.com>
 Sender: linux-kernel-owner@vger.kernel.org
-To: Paul Menage <menage@google.com>
-Cc: Paul Jackson <pj@sgi.com>, Andrew Morton <akpm@linux-foundation.org>, nickpiggin@yahoo.com.au, a.p.zijlstra@chello.nl, serue@us.ibm.com, clg@fr.ibm.com, linux-kernel@vger.kernel.org, ebiederm@xmission.com, svaidy@linux.vnet.ibm.com, xemul@openvz.org, containers@lists.osdl.org, balbir@linux.vnet.ibm.com
+To: "Eric W. Biederman" <ebiederm@xmission.com>
+Cc: Tejun Heo <htejun@gmail.com>, cornelia.huck@de.ibm.com, stern@rowland.harvard.edu, kay.sievers@vrfy.org, linux-kernel@vger.kernel.org, Linux Containers <containers@lists.osdl.org>
 List-Id: containers.vger.kernel.org
 
-On Wed, 10 Oct 2007, Paul Menage wrote:
-
-> On 10/6/07, David Rientjes <rientjes@google.com> wrote:
-> >
-> > It can race with sched_setaffinity().  It has to give up tasklist_lock as
-> > well to call set_cpus_allowed() and can race
-> >
-> >         cpus_allowed = cpuset_cpus_allowed(p);
-> >         cpus_and(new_mask, new_mask, cpus_allowed);
-> >         retval = set_cpus_allowed(p, new_mask);
-> >
-> > and allow a task to have a cpu outside of the cpuset's new cpus_allowed if
-> > you've taken it away between cpuset_cpus_allowed() and set_cpus_allowed().
+On Wed, Oct 10, 2007 at 07:16:48AM -0600, Eric W. Biederman wrote:
+> Greg KH <greg@kroah.com> writes:
 > 
-> cpuset_cpus_allowed() takes callback_mutex, which is held by
-> update_cpumask() when it updates cs->cpus_allowed. So if we continue
-> to hold callback_mutex across the task update loop this wouldn't be a
-> race. Having said that, holding callback mutex for that long might not
-> be a good idea.
+> > On Fri, Oct 05, 2007 at 06:12:41AM -0600, Eric W. Biederman wrote:
+> >> Greg KH <greg@kroah.com> writes:
+> >> >
+> >> >>   Also fun is that the dev file implementation needs to be able to
+> >> >>   report different major:minor numbers based on which mount of
+> >> >>   sysfs we are dealing with.
+> >> >
+> >> > Um, no, that's not going to happen.  /dev/sda will _always_ have the
+> >> > same major:minor number, as defined by the LSB spec.  You can not break
+> >> > that at all.  So while you might not want to show all mounts
+> >> > /sys/devices/block/sda/ the ones that you do, will all have the LSB
+> >> > defined major:minor number assigned to it.
+> >> 
+> >> Hmm.  If that is in the LSB it must come from
+> >> Documentation/devices.txt
+> >
+> > Yes, that is the requirement.
+> >
+> >> I'm not after changing the user visible major/minor assignments.
+> >
+> > Oh, I misunderstood what you wrote above then.
 > 
+> My above sentence is slightly misleading.  That should have been.
+> I am not after changing the device name to major:minor assignments
+> as specified in Documentation/devices.txt.
+> 
+> So within a single device namespace everything is normal and as it
+> always has been.  Weirdness only ensues when you look across device
+> namespaces.
+> 
+> >> Let me see if a concrete example will help.  Suppose I have
+> >> have a SAN with two disks:  disk-1 and disk-2.  I have
+> >> two machines A and B.  On machine A I get the mapping:
+> >> sda -> disk-1, sdb ->disk-2.  On machine B I wind up with
+> >> a different probe order so I get the mapping: sda -> disk-2
+> >> sdb ->disk-1.
+> >
+> > Ok.
+> >
+> >> To be very clear by sda I mean the block device with major 8 and
+> >> minor 0, and by sdb I mean the block device with major 8 and minor
+> >> 16.
+> >
+> > Ok.
+> >
+> >> So I decide I want an environment on machine B that looks just
+> >> like the environment on machine A, so I can bring transfer over
+> >> a running program or whatever.  So I run around looking at UUID
+> >> labels and what not and I discover that the machine B knows disk-1 as
+> >> sdb and that machine A knows disk-1 as sda.  So I want to say:
+> >> /sys/devices/block/sdb show up in this other device namespace as
+> >> /sys/devices/block/sda.
+> 
+> >
+> > Ah, but if you do that then the "other" device namespace would have
+> > /sys/devices/block/sda/dev be 8:16, right? 
+> 
+> No. The "other" device namespace I would construct on machine B to
+> look just like the device namespace that existed on machine A.
+> Making /sys/devices/block/sda would still be 8:0.
+> 
+> So to be very clear on machine B when talking about disk-1 I would have.
+> initial device namespace:
+>   /sys/devices/block/sdb
+>   /sys/devices/block/sdb/dev 8:16
+> 
+> "other" device namespace:
+>   /sys/devices/block/sda
+>   /sys/devices/block/sda/dev 8:0
+> 
+> Similarly on machine B when talking about disk-2 I would have.
+> initial device namespace:
+>   /sys/devices/block/sda
+>   /sys/devices/block/sda/dev 8:0
+> 
+> "other" device namespace:
+>   /sys/devices/block/sdb
+>   /sys/devices/block/sdb/dev 8:16
+> 
+> So between the two devices namespaces on machine B the two disks
+> would exchange their user visible identities.
 
-Moving the actual use of set_cpus_allowed() from the cgroup code to 
-sched.c would probably be the best in terms of a clean interface.  Then 
-you could protect the whole thing by sched_hotcpu_mutex, which is 
-expressly designed for migrations.
+Ah, ok, that makes more sense.
 
-Something like this:
+And seems quite difficult to do, good luck with that :)
 
-	struct cgroup_iter it;
-	struct task_struct *p, **tasks;
-	int i = 0;
-
-	cgroup_iter_start(cs->css.cgroup, &it);
-	while ((p = cgroup_iter_next(cs->css.cgroup, &it))) {
-		get_task_struct(p);
-		tasks[i++] = p;
-	}
-	cgroup_iter_end(cs->css.cgroup, &it);
-
-	while (--i >= 0) {
-		sched_migrate_task(tasks[i], cs->cpus_allowed);
-		put_task_struct(tasks[i]);
-	}
-
-kernel/sched.c:
-
-	void sched_migrate_task(struct task_struct *task,
-				cpumask_t cpus_allowed)
-	{
-		mutex_lock(&sched_hotcpu_mutex);
-		set_cpus_allowed(task, cpus_allowed);
-		mutex_unlock(&sched_hotcpu_mutex);
-	}
-
-It'd be faster to just pass **tasks to a sched.c function with the number 
-of tasks to migrate to reduce the contention on sched_hotcpu_mutex, but 
-then the put_task_struct() is left dangling over in cgroup code.  
-sched_hotcpu_mutex should be rarely contended, anyway.
-
-		David
+greg k-h
