@@ -1,13 +1,11 @@
-From: yamamoto-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org (YAMAMOTO Takashi)
-Subject: Re: [RFC] [PATCH] memory controller statistics
-Date: Wed, 10 Oct 2007 10:01:17 +0900 (JST)
-Message-ID: <20071010010117.D9A821BEEE7@siro.lan>
-References: <20071004051332.9BE2C1BF95B@siro.lan>
+From: sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org
+Subject: [RFC] [PATCH] Queue blocked signals to container-init separately
+Date: Tue, 9 Oct 2007 23:00:18 -0700
+Message-ID: <20071010060018.GA11210@us.ibm.com>
 Mime-Version: 1.0
-Content-Type: Text/Plain; charset=us-ascii
+Content-Type: text/plain; charset=us-ascii
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: Your message of "Thu,  4 Oct 2007 14:13:32 +0900 (JST)"
-	<20071004051332.9BE2C1BF95B-Pcsii4f/SVk@public.gmane.org>
+Content-Disposition: inline
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -17,301 +15,534 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, svaidy-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
-Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, minoura-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org
+To: serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org, Oleg Nesterov <oleg-6lXkIZvqkOAvJsYlp49lxw@public.gmane.org>
+Cc: Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-hi,
-
-> > i implemented some statistics for your memory controller.
-
-here's a new version.
-
-changes from the previous:
-	- make counters per-cpu.
-	- value *= PAGE_SIZE
-
-YAMAMOTO Takashi
 
 
---- linux-2.6.23-rc8-mm2-stat/mm/memcontrol.c.BACKUP	2007-10-01 17:19:57.000000000 +0900
-+++ linux-2.6.23-rc8-mm2-stat/mm/memcontrol.c	2007-10-09 13:41:43.000000000 +0900
-@@ -25,6 +25,7 @@
- #include <linux/backing-dev.h>
- #include <linux/bit_spinlock.h>
- #include <linux/rcupdate.h>
-+#include <linux/seq_file.h>
- #include <linux/swap.h>
- #include <linux/spinlock.h>
- #include <linux/fs.h>
-@@ -34,6 +35,63 @@
- struct cgroup_subsys mem_cgroup_subsys;
- static const int MEM_CGROUP_RECLAIM_RETRIES = 5;
+When a process in a container signals its container-init, we want
+to ensure that the signal does not terminate the container-init.
+i.e if the container-init has no handler for the signal, and the
+signal is fatal, we want to ignore the signal.
+
+Patches at the following URL check whether the signal will terminate
+the cinit (i.e is a fatal signal and the cinit has no handler for it).
+
+https://lists.linux-foundation.org/pipermail/containers/2007-September/007019.html
+
+But if the fatal signal is currently blocked by the container-init,
+those checks fail since we cannot ignore the signals even though it
+may be fatal. This is because the container-init may install a handler
+for that signal, before unblocking it. So we must post the signal.
+
+But if the container-init unblocks the signal without setting up
+a handler, the signal would terminate the container-init.
+
+This patch (very lightly tested :-) attempts to queue the blocked
+signals to the container init separately and then requeue them
+on the container-init's normal queue when the signal is unblocked.
+
+This patch is just a prototype and to indicate the basic idea and
+scope of changes.  If it looks interesting/feasible I could do more
+testing and possibly some reorg.
+
+
+---
+ fs/binfmt_elf.c               |    5 
+ fs/proc/array.c               |   10 +
+ include/linux/pid_namespace.h |    2 
+ kernel/pid.c                  |   12 ++
+ kernel/signal.c               |  211 ++++++++++++++++++++++++++++++++++++++++--
+ 5 files changed, 230 insertions(+), 10 deletions(-)
+
+Index: 2.6.23-rc8-mm2/kernel/signal.c
+===================================================================
+--- 2.6.23-rc8-mm2.orig/kernel/signal.c	2007-10-09 22:41:29.000000000 -0700
++++ 2.6.23-rc8-mm2/kernel/signal.c	2007-10-09 22:48:28.000000000 -0700
+@@ -46,7 +46,7 @@ static int sig_init_ignore(struct task_s
  
-+enum mem_cgroup_stat_index {
-+	/*
-+	 * for MEM_CONTAINER_TYPE_ALL, usage == pagecache + rss
-+	 */
-+	MEM_CGROUP_STAT_PAGECACHE,	/* # of pages charged as cache */
-+	MEM_CGROUP_STAT_RSS,		/* # of pages charged as rss */
-+
-+	/*
-+	 * redundant; usage == charge - uncharge
-+	 */
-+	MEM_CGROUP_STAT_CHARGE,		/* # of pages charged */
-+	MEM_CGROUP_STAT_UNCHARGE,	/* # of pages uncharged */
-+
-+	MEM_CGROUP_STAT_ACTIVE,		/* # of pages on active_list */
-+	MEM_CGROUP_STAT_INACTIVE,	/* # of pages on inactive_list */
-+
-+	MEM_CGROUP_STAT_NSTATS,
-+};
-+
-+static const struct mem_cgroup_stat_desc {
-+	const char *msg;
-+	u64 unit;
-+} mem_cgroup_stat_desc[] = {
-+	[MEM_CGROUP_STAT_PAGECACHE] = { "page_cache", PAGE_SIZE, },
-+	[MEM_CGROUP_STAT_RSS] = { "rss", PAGE_SIZE, },
-+	[MEM_CGROUP_STAT_CHARGE] = { "charge", PAGE_SIZE },
-+	[MEM_CGROUP_STAT_UNCHARGE] = { "uncharge", PAGE_SIZE, },
-+	[MEM_CGROUP_STAT_ACTIVE] = { "active", PAGE_SIZE, },
-+	[MEM_CGROUP_STAT_INACTIVE] = { "inactive", PAGE_SIZE, },
-+};
-+
-+struct mem_cgroup_stat_cpu {
-+	u64 count[MEM_CGROUP_STAT_NSTATS];
-+} ____cacheline_aligned_in_smp;
-+
-+struct mem_cgroup_stat {
-+	struct mem_cgroup_stat_cpu cpustat[NR_CPUS];
-+};
-+
-+static inline void mem_cgroup_stat_inc(struct mem_cgroup_stat * stat,
-+   enum mem_cgroup_stat_index idx)
-+{
-+	unsigned int cpu = get_cpu();
-+
-+	stat->cpustat[cpu].count[idx]++;
-+	put_cpu();
-+}
-+
-+static inline void mem_cgroup_stat_dec(struct mem_cgroup_stat * stat,
-+   enum mem_cgroup_stat_index idx)
-+{
-+	unsigned int cpu = get_cpu();
-+
-+	stat->cpustat[cpu].count[idx]--;
-+	put_cpu();
-+}
-+
- /*
-  * The memory controller data structure. The memory controller controls both
-  * page cache and RSS per cgroup. We would eventually like to provide
-@@ -63,6 +121,11 @@ struct mem_cgroup {
- 	 */
- 	spinlock_t lru_lock;
- 	unsigned long control_type;	/* control RSS or RSS+Pagecache */
-+
-+	/*
-+	 * statistics
-+	 */
-+	struct mem_cgroup_stat stat;
- };
- 
- /*
-@@ -83,6 +146,9 @@ struct page_cgroup {
- 	struct mem_cgroup *mem_cgroup;
- 	atomic_t ref_cnt;		/* Helpful when pages move b/w  */
- 					/* mapped and cached states     */
-+	int flags;
-+#define	PCGF_PAGECACHE	1	/* charged as page cache */
-+#define	PCGF_ACTIVE	2	/* on active_list */
- };
- 
- enum {
-@@ -164,10 +230,24 @@ static void __always_inline unlock_page_
- 
- static void __mem_cgroup_move_lists(struct page_cgroup *pc, bool active)
- {
--	if (active)
--		list_move(&pc->lru, &pc->mem_cgroup->active_list);
--	else
--		list_move(&pc->lru, &pc->mem_cgroup->inactive_list);
-+	struct mem_cgroup *mem = pc->mem_cgroup;
-+	struct mem_cgroup_stat *stat = &mem->stat;
-+
-+	if (active) {
-+		list_move(&pc->lru, &mem->active_list);
-+		if ((pc->flags & PCGF_ACTIVE) == 0) {
-+			mem_cgroup_stat_dec(stat, MEM_CGROUP_STAT_INACTIVE);
-+			mem_cgroup_stat_inc(stat, MEM_CGROUP_STAT_ACTIVE);
-+			pc->flags |= PCGF_ACTIVE;
-+		}
-+	} else {
-+		list_move(&pc->lru, &mem->inactive_list);
-+		if ((pc->flags & PCGF_ACTIVE) != 0) {
-+			mem_cgroup_stat_dec(stat, MEM_CGROUP_STAT_ACTIVE);
-+			mem_cgroup_stat_inc(stat, MEM_CGROUP_STAT_INACTIVE);
-+			pc->flags &= ~PCGF_ACTIVE;
-+		}
-+	}
- }
- 
- /*
-@@ -256,10 +336,11 @@ unsigned long mem_cgroup_isolate_pages(u
-  * 0 if the charge was successful
-  * < 0 if the cgroup is over its limit
-  */
--int mem_cgroup_charge(struct page *page, struct mm_struct *mm,
--				gfp_t gfp_mask)
-+int mem_cgroup_charge_common(struct page *page, struct mm_struct *mm,
-+				gfp_t gfp_mask, int is_cache)
- {
- 	struct mem_cgroup *mem;
-+	struct mem_cgroup_stat *stat;
- 	struct page_cgroup *pc, *race_pc;
- 	unsigned long flags;
- 	unsigned long nr_retries = MEM_CGROUP_RECLAIM_RETRIES;
-@@ -365,8 +446,17 @@ noreclaim:
- 	atomic_set(&pc->ref_cnt, 1);
- 	pc->mem_cgroup = mem;
- 	pc->page = page;
-+	pc->flags = (is_cache ? PCGF_PAGECACHE : 0) | PCGF_ACTIVE;
- 	page_assign_page_cgroup(page, pc);
- 
-+	stat = &mem->stat;
-+	if (is_cache)
-+		mem_cgroup_stat_inc(stat, MEM_CGROUP_STAT_PAGECACHE);
-+	else
-+		mem_cgroup_stat_inc(stat, MEM_CGROUP_STAT_RSS);
-+	mem_cgroup_stat_inc(stat, MEM_CGROUP_STAT_CHARGE);
-+	mem_cgroup_stat_inc(stat, MEM_CGROUP_STAT_ACTIVE);
-+
- 	spin_lock_irqsave(&mem->lru_lock, flags);
- 	list_add(&pc->lru, &mem->active_list);
- 	spin_unlock_irqrestore(&mem->lru_lock, flags);
-@@ -382,6 +472,14 @@ err:
- 	return -ENOMEM;
- }
- 
-+int mem_cgroup_charge(struct page *page, struct mm_struct *mm,
-+				gfp_t gfp_mask)
-+{
-+
-+	return mem_cgroup_charge_common(page, mm, gfp_mask, 0);
-+}
-+
-+
- /*
-  * See if the cached pages should be charged at all?
-  */
-@@ -394,7 +492,7 @@ int mem_cgroup_cache_charge(struct page 
- 
- 	mem = rcu_dereference(mm->mem_cgroup);
- 	if (mem->control_type == MEM_CGROUP_TYPE_ALL)
--		return mem_cgroup_charge(page, mm, gfp_mask);
-+		return mem_cgroup_charge_common(page, mm, gfp_mask, 1);
- 	else
+ 	// Currently this check is a bit racy with exec(),
+ 	// we can _simplify_ de_thread and close the race.
+-	if (likely(!is_cgroup_init(tsk->group_leader)))
++	if (likely(!is_container_init(tsk->group_leader)))
  		return 0;
- }
-@@ -417,7 +515,11 @@ void mem_cgroup_uncharge(struct page_cgr
- 		return;
  
- 	if (atomic_dec_and_test(&pc->ref_cnt)) {
-+		struct mem_cgroup_stat *stat;
-+		int is_cache;
-+
- 		page = pc->page;
-+		is_cache = (pc->flags & PCGF_PAGECACHE) != 0;
- 		lock_page_cgroup(page);
- 		mem = pc->mem_cgroup;
- 		css_put(&mem->css);
-@@ -425,7 +527,19 @@ void mem_cgroup_uncharge(struct page_cgr
- 		unlock_page_cgroup(page);
- 		res_counter_uncharge(&mem->res, PAGE_SIZE);
+ 	if (is_current_in_ancestor_pid_ns(tsk) && !in_interrupt())
+@@ -119,11 +119,28 @@ static inline int has_pending_signals(si
  
-+		stat = &mem->stat;
-+		if (is_cache)
-+			mem_cgroup_stat_dec(stat, MEM_CGROUP_STAT_PAGECACHE);
-+		else
-+			mem_cgroup_stat_dec(stat, MEM_CGROUP_STAT_RSS);
-+		mem_cgroup_stat_inc(stat, MEM_CGROUP_STAT_UNCHARGE);
-+		if ((pc->flags & PCGF_ACTIVE) != 0)
-+			mem_cgroup_stat_dec(stat, MEM_CGROUP_STAT_ACTIVE);
-+		else
-+			mem_cgroup_stat_dec(stat, MEM_CGROUP_STAT_INACTIVE);
-+
-  		spin_lock_irqsave(&mem->lru_lock, flags);
-+		BUG_ON(list_empty(&pc->lru));
-  		list_del_init(&pc->lru);
-  		spin_unlock_irqrestore(&mem->lru_lock, flags);
- 		kfree(pc);
-@@ -517,6 +631,49 @@ static ssize_t mem_control_type_read(str
- 			ppos, buf, s - buf);
- }
+ #define PENDING(p,b) has_pending_signals(&(p)->signal, (b))
  
-+static void mem_cgroup_stat_init(struct mem_cgroup_stat *stat)
++static int task_has_pending_signals(struct task_struct *t)
 +{
++	if (PENDING(&t->pending, &t->blocked) ||
++	    PENDING(&t->signal->shared_pending, &t->blocked))
++		return 1;
 +
-+	memset(stat, 0, sizeof(*stat));
-+}
++	if (is_container_init(t)) {
++		struct pid_namespace *ns = task_active_pid_ns(t);
 +
-+static int mem_control_stat_show(struct seq_file *m, void *arg)
-+{
-+	struct cgroup *cont = m->private;
-+	struct mem_cgroup *mem_cont = mem_cgroup_from_cont(cont);
-+	struct mem_cgroup_stat *stat = &mem_cont->stat;
-+	int i;
++		if (!ns)
++			return 0;
 +
-+	for (i = 0; i < ARRAY_SIZE(stat->cpustat[0].count); i++) {
-+		unsigned int cpu;
-+		u64 val;
-+
-+		val = 0;
-+		for (cpu = 0; cpu < NR_CPUS; cpu++)
-+			val += stat->cpustat[cpu].count[i];
-+
-+		seq_printf(m, "%s %llu\n", mem_cgroup_stat_desc[i].msg,
-+		    (unsigned long long)(val * mem_cgroup_stat_desc[i].unit));
++		return PENDING(&ns->cinit_blocked_pending, &t->blocked) ||
++			PENDING(&ns->cinit_blocked_shared_pending, &t->blocked);
 +	}
-+
 +	return 0;
 +}
 +
-+static const struct file_operations mem_control_stat_file_operations = {
-+	.read = seq_read,
-+	.llseek = seq_lseek,
-+	.release = single_release,
-+};
 +
-+static int mem_control_stat_open(struct inode *unused, struct file *file)
+ static int recalc_sigpending_tsk(struct task_struct *t)
+ {
+-	if (t->signal->group_stop_count > 0 ||
+-	    PENDING(&t->pending, &t->blocked) ||
+-	    PENDING(&t->signal->shared_pending, &t->blocked)) {
++	if (t->signal->group_stop_count > 0 || task_has_pending_signals(t)) {
+ 		set_tsk_thread_flag(t, TIF_SIGPENDING);
+ 		return 1;
+ 	}
+@@ -235,6 +252,20 @@ void flush_sigqueue(struct sigpending *q
+ 	}
+ }
+ 
++static void flush_cinit_signals(struct task_struct *t)
 +{
-+	/* XXX __d_cont */
-+	struct cgroup *cont = file->f_dentry->d_parent->d_fsdata;
++	struct pid_namespace *ns;
 +
-+	file->f_op = &mem_control_stat_file_operations;
-+	return single_open(file, mem_control_stat_show, cont);
++	if (!is_container_init(t))
++		return;
++	ns = task_active_pid_ns(t);
++	if (ns) {
++		flush_sigqueue(&ns->cinit_blocked_pending);
++		flush_sigqueue(&ns->cinit_blocked_shared_pending);
++
++	}
 +}
 +
- static struct cftype mem_cgroup_files[] = {
- 	{
- 		.name = "usage_in_bytes",
-@@ -539,6 +696,10 @@ static struct cftype mem_cgroup_files[] 
- 		.write = mem_control_type_write,
- 		.read = mem_control_type_read,
- 	},
-+	{
-+		.name = "stat",
-+		.open = mem_control_stat_open,
-+	},
+ /*
+  * Flush all pending signals for a task.
+  */
+@@ -246,6 +277,7 @@ void flush_signals(struct task_struct *t
+ 	clear_tsk_thread_flag(t,TIF_SIGPENDING);
+ 	flush_sigqueue(&t->pending);
+ 	flush_sigqueue(&t->signal->shared_pending);
++	flush_cinit_signals(t);
+ 	spin_unlock_irqrestore(&t->sighand->siglock, flags);
+ }
+ 
+@@ -400,6 +432,12 @@ int dequeue_signal(struct task_struct *t
+ 	/* We only dequeue private signals from ourselves, we don't let
+ 	 * signalfd steal them
+ 	 */
++	/*
++	 * Note: We can ignore any signals for container init that are
++	 * queued in the pid namespace since they are only queued there
++	 * when signals are blocked (and we don't dequeue blocked signals
++	 * here anyway)
++	 */
+ 	signr = __dequeue_signal(&tsk->pending, mask, info);
+ 	if (!signr) {
+ 		signr = __dequeue_signal(&tsk->signal->shared_pending,
+@@ -579,6 +617,21 @@ static void do_notify_parent_cldstop(str
+  * actual continuing for SIGCONT, but not the actual stopping for stop
+  * signals.  The process stop is done as a signal action for SIG_DFL.
+  */
++static void rm_from_cinit_queue(unsigned long mask, struct task_struct *t)
++{
++	struct pid_namespace *ns;
++
++	if (!is_container_init(t))
++		return;
++
++	ns = task_active_pid_ns(t);
++
++	rm_from_queue(mask, &ns->cinit_blocked_pending);
++	rm_from_queue(mask, &ns->cinit_blocked_shared_pending);
++
++	return;
++}
++
+ static void handle_stop_signal(int sig, struct task_struct *p)
+ {
+ 	struct task_struct *t;
+@@ -597,6 +650,7 @@ static void handle_stop_signal(int sig, 
+ 		 * This is a stop signal.  Remove SIGCONT from all queues.
+ 		 */
+ 		rm_from_queue(sigmask(SIGCONT), &p->signal->shared_pending);
++		rm_from_cinit_queue(sigmask(SIGCONT), p);
+ 		t = p;
+ 		do {
+ 			rm_from_queue(sigmask(SIGCONT), &t->pending);
+@@ -627,6 +681,7 @@ static void handle_stop_signal(int sig, 
+ 			spin_lock(&p->sighand->siglock);
+ 		}
+ 		rm_from_queue(SIG_KERNEL_STOP_MASK, &p->signal->shared_pending);
++		rm_from_cinit_queue(SIG_KERNEL_STOP_MASK, p);
+ 		t = p;
+ 		do {
+ 			unsigned int state;
+@@ -802,6 +857,7 @@ static int
+ specific_send_sig_info(int sig, struct siginfo *info, struct task_struct *t)
+ {
+ 	int ret = 0;
++	struct sigpending *pending;
+ 
+ 	BUG_ON(!irqs_disabled());
+ 	assert_spin_locked(&t->sighand->siglock);
+@@ -816,13 +872,75 @@ specific_send_sig_info(int sig, struct s
+ 	if (LEGACY_QUEUE(&t->pending, sig))
+ 		goto out;
+ 
+-	ret = send_signal(sig, info, t, &t->pending);
++	pending = &t->pending;
++	if (is_container_init(t) && sigismember(&t->blocked, sig) &&
++			!is_current_in_ancestor_pid_ns(t)) {
++		struct pid_namespace *ns = task_active_pid_ns(t);
++
++		/*
++		 * Hmm. If container init is exiting (ns == NULL) and we
++		 * are trying to post a blocked signal.  Post to the normal
++		 * queue for now.
++		 */
++		if (ns && LEGACY_QUEUE(&ns->cinit_blocked_pending, sig))
++			goto out;
++		else if (ns)
++			pending = &ns->cinit_blocked_pending;
++	}
++
++	ret = send_signal(sig, info, t, pending);
+ 	if (!ret && !sigismember(&t->blocked, sig))
+ 		signal_wake_up(t, sig == SIGKILL);
+ out:
+ 	return ret;
+ }
+ 
++static void requeue_cinit_signals(struct task_struct *t, sigset_t *set)
++{
++	struct sigqueue *q, *n;
++	struct pid_namespace *ns = task_active_pid_ns(t);
++	struct sigpending *ns_pending;
++	struct sigpending *ns_shpending;
++	struct sigpending *tsk_pending;
++	struct sigpending *tsk_shpending;
++
++	/*
++	 * Unblocking a signal while a process is exitng ?
++	 */
++	if (!ns)
++		return;
++
++	/*
++	 * For each signal being unblocked, remove it from the namespace
++	 * pending list and add it to task's pending list
++	 */
++	tsk_pending = &t->pending;
++	ns_pending = &ns->cinit_blocked_pending;
++
++	list_for_each_entry_safe(q, n, &ns_pending->list, list) {
++		if (sigismember(set, q->info.si_signo)) {
++			list_del_init(&q->list);
++			sigdelset(&ns_pending->signal, q->info.si_signo);
++
++			list_add_tail(&q->list, &tsk_pending->list);
++			sigaddset(&tsk_pending->signal, q->info.si_signo);
++		}
++	}
++
++	/* Repeat for the shared-pending signals */
++	tsk_shpending = &t->signal->shared_pending;
++	ns_shpending = &ns->cinit_blocked_shared_pending;
++	list_for_each_entry_safe(q, n, &ns_shpending->list, list) {
++		if (sigismember(set, q->info.si_signo)) {
++			list_del_init(&q->list);
++			sigdelset(&ns_shpending->signal, q->info.si_signo);
++
++			list_add_tail(&q->list, &tsk_shpending->list);
++			sigaddset(&tsk_shpending->signal, q->info.si_signo);
++		}
++	}
++}
++
+ /*
+  * Force a signal that the process can't ignore: if necessary
+  * we unblock the signal and change any SIG_IGN to SIG_DFL.
+@@ -848,6 +966,20 @@ force_sig_info(int sig, struct siginfo *
+ 		action->sa.sa_handler = SIG_DFL;
+ 		if (blocked) {
+ 			sigdelset(&t->blocked, sig);
++			if (is_container_init(t)) {
++				struct pid_namespace *ns;
++				sigset_t set;
++				/*
++				 * We just unblocked a signal. Requeue any
++				 * pending instances of the signal on the
++				 * namespace queue to the task's pending
++				 * queue.
++				 */
++				sigemptyset(&set);
++				sigaddset(&set, sigmask(sig));
++				ns = task_active_pid_ns(t);
++				requeue_cinit_signals(t, &set);
++			}
+ 			recalc_sigpending_and_wake(t);
+ 		}
+ 	}
+@@ -890,6 +1022,13 @@ __group_complete_signal(int sig, struct 
+ 	struct task_struct *t;
+ 
+ 	/*
++	 * If signal came from same or descendant namespace and is a
++	 * blocked signal, we process the signal when we unblock it
++	 */
++	if (!is_current_in_ancestor_pid_ns(p) && sigismember(&p->blocked, sig))
++		return;
++
++	/*
+ 	 * Now find a thread we can wake up to take the signal off the queue.
+ 	 *
+ 	 * If the main thread wants the signal, it gets first crack.
+@@ -987,6 +1126,7 @@ int
+ __group_send_sig_info(int sig, struct siginfo *info, struct task_struct *p)
+ {
+ 	int ret = 0;
++	struct sigpending *pending;
+ 
+ 	assert_spin_locked(&p->sighand->siglock);
+ 	handle_stop_signal(sig, p);
+@@ -999,12 +1139,28 @@ __group_send_sig_info(int sig, struct si
+ 		/* This is a non-RT signal and we already have one queued.  */
+ 		return ret;
+ 
++	pending = &p->signal->shared_pending;
++	if (is_container_init(p) && sigismember(&p->blocked, sig) &&
++			!is_current_in_ancestor_pid_ns(p)) {
++		struct pid_namespace *ns = task_active_pid_ns(p);
++
++		/*
++		 * Hmm. If container init is exiting (ns == NULL) and we
++		 * are trying to post a blocked signal, what should we do ?
++		 * Post to the normal queue for now.
++		 */
++		if (ns && LEGACY_QUEUE(&ns->cinit_blocked_shared_pending, sig))
++			return ret;
++		else if (ns)
++			pending = &ns->cinit_blocked_shared_pending;
++	}
++
+ 	/*
+ 	 * Put this signal on the shared-pending queue, or fail with EAGAIN.
+ 	 * We always use the shared queue for process-wide signals,
+ 	 * to avoid several races.
+ 	 */
+-	ret = send_signal(sig, info, p, &p->signal->shared_pending);
++	ret = send_signal(sig, info, p, pending);
+ 	if (unlikely(ret))
+ 		return ret;
+ 
+@@ -1365,6 +1521,7 @@ int send_sigqueue(int sig, struct sigque
+ {
+ 	unsigned long flags;
+ 	int ret = 0;
++	struct sigpending *pending;
+ 
+ 	BUG_ON(!(q->flags & SIGQUEUE_PREALLOC));
+ 
+@@ -1397,14 +1554,23 @@ int send_sigqueue(int sig, struct sigque
+ 		ret = 1;
+ 		goto out;
+ 	}
++
++	pending = &p->pending;
++	if (is_container_init(p) && sigismember(&p->blocked, sig) &&
++			!is_current_in_ancestor_pid_ns(p)) {
++		struct pid_namespace *ns = task_active_pid_ns(p);
++		if (ns)
++			pending = &ns->cinit_blocked_pending;
++	}
++
+ 	/*
+ 	 * Deliver the signal to listening signalfds. This must be called
+ 	 * with the sighand lock held.
+ 	 */
+ 	signalfd_notify(p, sig);
+ 
+-	list_add_tail(&q->list, &p->pending.list);
+-	sigaddset(&p->pending.signal, sig);
++	list_add_tail(&q->list, &pending->list);
++	sigaddset(&pending->signal, sig);
+ 	if (!sigismember(&p->blocked, sig))
+ 		signal_wake_up(p, sig == SIGKILL);
+ 
+@@ -1421,6 +1587,7 @@ send_group_sigqueue(int sig, struct sigq
+ {
+ 	unsigned long flags;
+ 	int ret = 0;
++	struct sigpending *shpending;
+ 
+ 	BUG_ON(!(q->flags & SIGQUEUE_PREALLOC));
+ 
+@@ -1435,6 +1602,14 @@ send_group_sigqueue(int sig, struct sigq
+ 		goto out;
+ 	}
+ 
++	shpending = &p->signal->shared_pending;
++	if (is_container_init(p) && sigismember(&p->blocked, sig) &&
++			!is_current_in_ancestor_pid_ns(p)) {
++		struct pid_namespace *ns = task_active_pid_ns(p);
++		if (ns)
++			shpending = &ns->cinit_blocked_shared_pending;
++	}
++
+ 	if (unlikely(!list_empty(&q->list))) {
+ 		/*
+ 		 * If an SI_TIMER entry is already queue just increment
+@@ -1456,8 +1631,8 @@ send_group_sigqueue(int sig, struct sigq
+ 	 * We always use the shared queue for process-wide signals,
+ 	 * to avoid several races.
+ 	 */
+-	list_add_tail(&q->list, &p->signal->shared_pending.list);
+-	sigaddset(&p->signal->shared_pending.signal, sig);
++	list_add_tail(&q->list, &shpending->list);
++	sigaddset(&shpending->signal, sig);
+ 
+ 	__group_complete_signal(sig, p);
+ out:
+@@ -2029,6 +2204,7 @@ int sigprocmask(int how, sigset_t *set, 
+ 		break;
+ 	case SIG_UNBLOCK:
+ 		signandsets(&current->blocked, &current->blocked, set);
++		requeue_cinit_signals(current, set);
+ 		break;
+ 	case SIG_SETMASK:
+ 		current->blocked = *set;
+@@ -2082,15 +2258,25 @@ long do_sigpending(void __user *set, uns
+ {
+ 	long error = -EINVAL;
+ 	sigset_t pending;
++	sigset_t ns_pending;
++	struct pid_namespace *ns;
+ 
+ 	if (sigsetsize > sizeof(sigset_t))
+ 		goto out;
+ 
++	sigemptyset(&ns_pending);
+ 	spin_lock_irq(&current->sighand->siglock);
++	if (is_container_init(current)) {
++		ns = task_active_pid_ns(current);
++		sigorsets(&ns_pending, &ns->cinit_blocked_pending.signal,
++				&ns->cinit_blocked_shared_pending.signal);
++	}
+ 	sigorsets(&pending, &current->pending.signal,
+ 		  &current->signal->shared_pending.signal);
+ 	spin_unlock_irq(&current->sighand->siglock);
+ 
++	sigorsets(&pending, &pending, &ns_pending);
++
+ 	/* Outside the lock because only this thread touches it.  */
+ 	sigandsets(&pending, &current->blocked, &pending);
+ 
+@@ -2387,6 +2573,11 @@ int do_sigaction(int sig, struct k_sigac
+ 				rm_from_queue_full(&mask, &t->pending);
+ 				t = next_thread(t);
+ 			} while (t != current);
++			if (is_container_init(t)) {
++				struct pid_namespace *ns = task_active_pid_ns(t);
++				rm_from_queue_full(&mask, &ns->cinit_blocked_pending);
++				rm_from_queue_full(&mask, &ns->cinit_blocked_shared_pending);
++			}
+ 		}
+ 	}
+ 
+Index: 2.6.23-rc8-mm2/fs/binfmt_elf.c
+===================================================================
+--- 2.6.23-rc8-mm2.orig/fs/binfmt_elf.c	2007-10-09 22:41:28.000000000 -0700
++++ 2.6.23-rc8-mm2/fs/binfmt_elf.c	2007-10-09 22:41:49.000000000 -0700
+@@ -42,6 +42,7 @@
+ #include <asm/uaccess.h>
+ #include <asm/param.h>
+ #include <asm/page.h>
++#include <linux/pid_namespace.h>
+ 
+ static int load_elf_binary(struct linux_binprm *bprm, struct pt_regs *regs);
+ static int load_elf_library(struct file *);
+@@ -1449,6 +1450,10 @@ static void fill_prstatus(struct elf_prs
+ {
+ 	prstatus->pr_info.si_signo = prstatus->pr_cursig = signr;
+ 	prstatus->pr_sigpend = p->pending.signal.sig[0];
++	if (is_container_init(p)) {
++		struct pid_namespace *ns = task_active_pid_ns(p);
++		prstatus->pr_sigpend |= ns->cinit_blocked_pending.signal.sig[0];
++	}
+ 	prstatus->pr_sighold = p->blocked.sig[0];
+ 	prstatus->pr_pid = task_pid_vnr(p);
+ 	prstatus->pr_ppid = task_pid_vnr(p->parent);
+Index: 2.6.23-rc8-mm2/fs/proc/array.c
+===================================================================
+--- 2.6.23-rc8-mm2.orig/fs/proc/array.c	2007-10-09 22:41:28.000000000 -0700
++++ 2.6.23-rc8-mm2/fs/proc/array.c	2007-10-09 22:41:49.000000000 -0700
+@@ -264,6 +264,16 @@ static inline char *task_sig(struct task
+ 	if (lock_task_sighand(p, &flags)) {
+ 		pending = p->pending.signal;
+ 		shpending = p->signal->shared_pending.signal;
++		if (is_container_init(p)) {
++			struct pid_namespace *ns = task_active_pid_ns(p);
++			if (ns) {
++				sigorsets(&pending, &pending,
++					&ns->cinit_blocked_pending.signal);
++				sigorsets(&shpending, &shpending,
++					&ns->cinit_blocked_shared_pending.signal);
++			}
++		}
++
+ 		blocked = p->blocked;
+ 		collect_sigign_sigcatch(p, &ignored, &caught);
+ 		num_threads = atomic_read(&p->signal->count);
+Index: 2.6.23-rc8-mm2/include/linux/pid_namespace.h
+===================================================================
+--- 2.6.23-rc8-mm2.orig/include/linux/pid_namespace.h	2007-10-09 22:41:28.000000000 -0700
++++ 2.6.23-rc8-mm2/include/linux/pid_namespace.h	2007-10-09 22:41:49.000000000 -0700
+@@ -25,6 +25,8 @@ struct pid_namespace {
+ #ifdef CONFIG_PROC_FS
+ 	struct vfsmount *proc_mnt;
+ #endif
++	struct sigpending cinit_blocked_pending;
++	struct sigpending cinit_blocked_shared_pending;
  };
  
- static struct mem_cgroup init_mem_cgroup;
-@@ -562,6 +723,7 @@ mem_cgroup_create(struct cgroup_subsys *
- 	INIT_LIST_HEAD(&mem->inactive_list);
- 	spin_lock_init(&mem->lru_lock);
- 	mem->control_type = MEM_CGROUP_TYPE_ALL;
-+	mem_cgroup_stat_init(&mem->stat);
- 	return &mem->css;
+ extern struct pid_namespace init_pid_ns;
+Index: 2.6.23-rc8-mm2/kernel/pid.c
+===================================================================
+--- 2.6.23-rc8-mm2.orig/kernel/pid.c	2007-10-09 22:41:28.000000000 -0700
++++ 2.6.23-rc8-mm2/kernel/pid.c	2007-10-09 22:41:49.000000000 -0700
+@@ -78,6 +78,12 @@ struct pid_namespace init_pid_ns = {
+ 	.last_pid = 0,
+ 	.level = 0,
+ 	.child_reaper = &init_task,
++	.cinit_blocked_pending	= {
++		.list = LIST_HEAD_INIT(init_pid_ns.cinit_blocked_pending.list),
++		.signal = {{0}}},
++	.cinit_blocked_shared_pending	= {
++		.list = LIST_HEAD_INIT(init_pid_ns.cinit_blocked_shared_pending.list),
++		.signal = {{0}}}
+ };
+ EXPORT_SYMBOL_GPL(init_pid_ns);
+ 
+@@ -621,6 +627,8 @@ static struct pid_namespace *create_pid_
+ 	ns->last_pid = 0;
+ 	ns->child_reaper = NULL;
+ 	ns->level = level;
++	init_sigpending(&ns->cinit_blocked_pending);
++	init_sigpending(&ns->cinit_blocked_shared_pending);
+ 
+ 	set_bit(0, ns->pidmap[0].page);
+ 	atomic_set(&ns->pidmap[0].nr_free, BITS_PER_PAGE - 1);
+@@ -646,6 +654,10 @@ static void destroy_pid_namespace(struct
+ 
+ 	for (i = 0; i < PIDMAP_ENTRIES; i++)
+ 		kfree(ns->pidmap[i].page);
++
++	flush_sigqueue(&ns->cinit_blocked_pending);
++	flush_sigqueue(&ns->cinit_blocked_shared_pending);
++
+ 	kmem_cache_free(pid_ns_cachep, ns);
  }
