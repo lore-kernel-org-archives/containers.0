@@ -1,69 +1,39 @@
-From: "Denis V. Lunev" <den@sw.ru>
-Subject: Re: [Devel] [PATCH 1/5] net: Modify all rtnetlink methods to only
- work	in the initial namespace
-Date: Wed, 10 Oct 2007 18:29:05 +0400
-Message-ID: <470CE1B1.30108@sw.ru>
-References: <m1myv69tfu.fsf@ebiederm.dsl.xmission.com> <470CC6F6.60706@sw.ru> <470CDC26.6010608@fr.ibm.com>
+From: Kirill Korotaev <dev-3ImXcnM4P+0@public.gmane.org>
+Subject: Re: Idle time statistics for a container
+Date: Wed, 10 Oct 2007 19:35:14 +0400
+Message-ID: <470CF132.5050003@sw.ru>
+References: <20071010142529.GA4690@linux.vnet.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
+Content-Type: text/plain; charset=us-ascii
 Content-Transfer-Encoding: 7bit
-Return-path: <netdev-owner@vger.kernel.org>
-In-Reply-To: <470CDC26.6010608@fr.ibm.com>
-Sender: netdev-owner@vger.kernel.org
-To: Daniel Lezcano <dlezcano@fr.ibm.com>
-Cc: "Eric W. Biederman" <ebiederm@xmission.com>, netdev@vger.kernel.org, Pavel Emelianov <xemul@sw.ru>, Linux Containers <containers@lists.osdl.org>, David Miller <davem@davemloft.net>
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <20071010142529.GA4690-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: vatsa-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
+Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Daniel Lezcano wrote:
-> struct net *net = in?in->nd_net:out->nd_net;
-> 
->> So, we are bound to the following options:
->> - perform additional non-uniform hacks around to place 'struct net' into
->>   other and other structures like xt_target
->> - add 7th parameter here and over
->> - introduce an skb_net field in the 'struct sk_buff' making all code
->>   uniform, at least when we have an skb
->>
->> I think that this is not the last place with such a parameter list and
->> we should make a decision at this point when the code in not mainline
->> yet.
->>
->> As far as I understand, netfilters are not touched by the Eric and we
->> can face some non-trivial problems there.
-> 
-> In Eric's git tree:
-> http://git.kernel.org/?p=linux/kernel/git/ebiederm/linux-2.6-netns.git
-> 
-> There are some modifications concerning
-> net/ipv4/netfiler/iptable_filter.c and at the ipt_hook function, there is:
-> 
-> struct net *net = (in?in:out)->nd_net;
-> 
->> So, if my point about uniformity is valid, this patchset looks wrong and
->> should be re-worked :(
-> 
-> As Eric said, we want to build the network namespace step by step,
-> taking care of not breaking the init network namespace.
-> 
-> If you want to make iptables per namespace or catch problems before the
-> code goes to Dave's tree, IMHO it will be more convenient to post to
-> containers@ the patches against netns49, where the modifications will be
-> in a network namespace big picture.
-> 
+yes, OpenVZ calculates idle statistics for VE.
+it is calculated as follows:
+cpu user/system time are incremented as usual on timer tick,
+idle time is incremented on per-VE per-VCPU runqueue when there is no tasks
+in VE runqueue.
 
-my point is somewhat another. Yes, this is enough for that place. If so,
-I must scatter these checks all around in the netfilters code. Brr.
+i.e. VE idle time is the time when there were no VE tasks on the runqueue.
 
-In forward chain the situation is different for Layer3 switching. Let's
-assume that we have an OpenVZ scheme, where the packet flows from socket
-to device and after that from device to device via forwarding path. You
-can't call skb_orphan on namespace switching as this breaks UDP flow
-regulation. Virtual network device is fast while real Ethernet is slow,
-packets will be dropped on queue in real device. So, the situation with
-packet on send path with a socket from other namespace is possible :(
-
-I just pray for uniformity to concentrate on the code rather than on
-guesses on which path we are :(
-
-Regards,
-	Den
+Srivatsa Vaddagiri wrote:
+> Hi Kirill/Hertbert,
+> 	Does Openvz or Linux-VServer provide idle time statistics per
+> container? i.e how much time a container has been idle?
+> 
+> Just exploring whether that be a usefull stats to provide on a
+> per-control group basis.
+> 
