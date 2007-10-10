@@ -1,119 +1,69 @@
-From: ebiederm@xmission.com (Eric W. Biederman)
-Subject: Re: [Devel] [PATCH 1/5] net: Modify all rtnetlink methods to only work	in the initial namespace
-Date: Wed, 10 Oct 2007 13:37:04 -0600
-Message-ID: <m13awilq1r.fsf@ebiederm.dsl.xmission.com>
-References: <m1myv69tfu.fsf@ebiederm.dsl.xmission.com> <470CC6F6.60706@sw.ru>
+From: "Paul Menage" <menage@google.com>
+Subject: Re: [PATCH] task containersv11 add tasks file interface fix for cpusets
+Date: Wed, 10 Oct 2007 13:46:36 -0700
+Message-ID: <6599ad830710101346y1ade5ccdgd3b64a041eab7ec1@mail.gmail.com>
+References: <20071003084241.24279.62099.sendpatchset@jackhammer.engr.sgi.com>
+	 <6599ad830710030851jb44f00ft9634f9381218b6e9@mail.gmail.com>
+	 <20071003105817.7adf6516.pj@sgi.com>
+	 <6599ad830710031110r1a74eafej56f20cc33e72ac81@mail.gmail.com>
+	 <20071003131632.fed4b848.pj@sgi.com>
+	 <6599ad830710031331h15d35e90lc63d845efd2de6f5@mail.gmail.com>
+	 <20071006012437.c0fd3a8a.pj@sgi.com>
+	 <alpine.DEB.0.9999.0710061047400.24311@chino.kir.corp.google.com>
+	 <6599ad830710061411l3fb9368al319a80469d54946e@mail.gmail.com>
+	 <alpine.DEB.0.9999.0710062250590.11526@chino.kir.corp.google.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Return-path: <netdev-owner@vger.kernel.org>
-In-Reply-To: <470CC6F6.60706@sw.ru> (Denis V. Lunev's message of "Wed, 10 Oct
-	2007 16:35:02 +0400")
-Sender: netdev-owner@vger.kernel.org
-To: "Denis V. Lunev" <den@sw.ru>
-Cc: David Miller <davem@davemloft.net>, Linux Containers <containers@lists.osdl.org>, netdev@vger.kernel.org, devel@openvz.org, Pavel Emelianov <xemul@sw.ru>, Kirill Korotaev <dev@sw.ru>, Daniel Lezcano <dlezcano@fr.ibm.com>
+Content-Type: text/plain; charset=ISO-8859-1
+Content-Transfer-Encoding: 7bit
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1757096AbXJJUq7@vger.kernel.org>
+In-Reply-To: <alpine.DEB.0.9999.0710062250590.11526@chino.kir.corp.google.com>
+Content-Disposition: inline
+Sender: linux-kernel-owner@vger.kernel.org
+To: David Rientjes <rientjes@google.com>
+Cc: Paul Jackson <pj@sgi.com>, Andrew Morton <akpm@linux-foundation.org>, nickpiggin@yahoo.com.au, a.p.zijlstra@chello.nl, serue@us.ibm.com, clg@fr.ibm.com, linux-kernel@vger.kernel.org, ebiederm@xmission.com, svaidy@linux.vnet.ibm.com, xemul@openvz.org, containers@lists.osdl.org, balbir@linux.vnet.ibm.com
 List-Id: containers.vger.kernel.org
 
-"Denis V. Lunev" <den@sw.ru> writes:
-
-> Eric W. Biederman wrote:
->> Before I can enable rtnetlink to work in all network namespaces
->> I need to be certain that something won't break.  So this
->> patch deliberately disables all of the rtnletlink methods in everything
->> except the initial network namespace.  After the methods have been
->> audited this extra check can be disabled.
->>
-> [...]
->>  static int br_dump_ifinfo(struct sk_buff *skb, struct netlink_callback *cb)
->>  {
->> +	struct net *net = skb->sk->sk_net;
->>  	struct net_device *dev;
->>  	int idx;
->>  
+On 10/6/07, David Rientjes <rientjes@google.com> wrote:
 >
-> I've read some code today greping 'init_net.loopback_dev' and found
-> interesting non-trivial for me issue.
+> It can race with sched_setaffinity().  It has to give up tasklist_lock as
+> well to call set_cpus_allowed() and can race
 >
-> Network namespace is extracted from the packet in two different ways in
-> TCP. This is a socket for outgoing path and a device for incoming.
-> Though, there are some places called uniformly both from incoming and
-> outgoing path.
+>         cpus_allowed = cpuset_cpus_allowed(p);
+>         cpus_and(new_mask, new_mask, cpus_allowed);
+>         retval = set_cpus_allowed(p, new_mask);
 >
-> Typical example is netfilters. They are called uniformly all around the
-> code. The prototype is the following:
->
-> static unsigned int reject6_target(struct sk_buff **pskb,
->                            const struct net_device *in,
->                            const struct net_device *out,
->                            unsigned int hooknum,
->                            const struct xt_target *target,
->                            const void *targinfo);
->
-> So, we are bound to the following options:
-> - perform additional non-uniform hacks around to place 'struct net' into
->   other and other structures like xt_target
-> - add 7th parameter here and over
+> and allow a task to have a cpu outside of the cpuset's new cpus_allowed if
+> you've taken it away between cpuset_cpus_allowed() and set_cpus_allowed().
 
-> - introduce an skb_net field in the 'struct sk_buff' making all code
->   uniform, at least when we have an skb
+cpuset_cpus_allowed() takes callback_mutex, which is held by
+update_cpumask() when it updates cs->cpus_allowed. So if we continue
+to hold callback_mutex across the task update loop this wouldn't be a
+race. Having said that, holding callback mutex for that long might not
+be a good idea.
 
-No.  That bloats a sk_buff, changes the semantics of moving a skb
-around, and decreases performance (because we have to maintain the
-field on a fast path).  
+A cleaner solution might be to drop callback_mutex after updating
+cs->cpus_allowed in update_cpumask() and then make sched_setaffinity()
+do a post-check:
 
-There will not be a skb_net field.
+	cpus_allowed = cpuset_cpus_allowed(p);
+ again:
+	cpus_and(new_mask, new_mask, cpus_allowed);
+	retval = set_cpus_allowed(p, new_mask);
+	if (!retval) {
+		/* Check for races with cpuset updates */
+		cpus_allowed = cpuset_cpus_allowed(p);
+		if (!cpus_subset(new_mask, cpus_allowed)) {
+			/*
+			 * We raced with a change to cpuset update,
+			 * and our cpumask is now outside the
+			 * permitted cpumask for the cpuset.  Since a
+			 * change to the cpuset's cpus resets the
+			 * cpumask for each task, do the same thing
+			 * here.
+			 */
+			new_mask = cpus_allowed;
+			goto again;
+		}
+	}
 
-The entire concept of skb_net is a maintenance disaster.
-
-> I think that this is not the last place with such a parameter list and
-> we should make a decision at this point when the code in not mainline yet.
-
-Certainly that is what I have a proof of concept tree for.  So we can
-see how these things look before we merge them. 
-
-> As far as I understand, netfilters are not touched by the Eric and we
-> can face some non-trivial problems there.
-
-No.  In my proof of concept tree I should have working per network
-namespace netfilter code.  My intention was to just do enough to see
-what the impact would be so most of the netfilter code (in my tree)
-insists on running in the initial network namespace.  But there are
-a few pieces that are fully converted.  Please take a look.
-
-> So, if my point about uniformity is valid, this patchset looks wrong and
-> should be re-worked :(
-
-This patchset does need to get rebased on top of net-2.6.25 when it
-opens and hopefully your patchset to remove the unnecessary work in
-rtnl_unlock, and to really process netlink requests in process
-context.  I see a need for the more fundamental change you seem to
-be advocating.
-
-Differentiating between the incoming and the outgoing code paths is
-something we already do permission checking, for locking, for
-sleeping, etc.  Modifying the code requires reading and understanding
-it in context.  That is the nature of code.
-
-This does make large patches going across the entire networking stack
-making something a network namespace parameter difficult, but it
-should not cause any problem for maintenance or other work on
-the code.  As shown by the fact that even outside the tree rebasing my
-network namespace patches has not been all that difficult.
-
-So no I don't think uniformity, or beauty or elegance is what we
-are after right now.  Trying to hard in that direction ultimately
-obfuscates the code.
-
-What we want is something that is simple, straight forward, and
-doesn't require you to be an expert in network namespaces to
-understand the code or the patches.
-
-In the particular case of the netfilter hooks we don't have a
-network namespace parameter laying around before we call NF_HOOK,
-and the idiom "net = (in?in:out)->nd_net" seems perfectly accurate
-so it seems reasonable to me to derive the network namespace that
-way in generic code.  Although thinking about this.  We know which
-hooks we are being called from so we may in fact actually know
-if which of in or out must be valid when we get to the netfilter
-hook.
-
-Eric
+Paul
