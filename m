@@ -1,184 +1,119 @@
-From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH] namespaces: introduce sys_hijack (v4)
-Date: Wed, 10 Oct 2007 13:32:34 -0500
-Message-ID: <20071010183234.GA24770@sergelap.austin.ibm.com>
-References: <20071009200928.GA21846@sergelap.austin.ibm.com>
-	<470D068F.8050405@fr.ibm.com>
+From: ebiederm@xmission.com (Eric W. Biederman)
+Subject: Re: [Devel] [PATCH 1/5] net: Modify all rtnetlink methods to only work	in the initial namespace
+Date: Wed, 10 Oct 2007 13:37:04 -0600
+Message-ID: <m13awilq1r.fsf@ebiederm.dsl.xmission.com>
+References: <m1myv69tfu.fsf@ebiederm.dsl.xmission.com> <470CC6F6.60706@sw.ru>
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary="x+6KMIRAuhnl3hBn"
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <470D068F.8050405-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Cedric Le Goater <clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
-Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
+Content-Type: text/plain; charset=us-ascii
+Return-path: <netdev-owner@vger.kernel.org>
+In-Reply-To: <470CC6F6.60706@sw.ru> (Denis V. Lunev's message of "Wed, 10 Oct
+	2007 16:35:02 +0400")
+Sender: netdev-owner@vger.kernel.org
+To: "Denis V. Lunev" <den@sw.ru>
+Cc: David Miller <davem@davemloft.net>, Linux Containers <containers@lists.osdl.org>, netdev@vger.kernel.org, devel@openvz.org, Pavel Emelianov <xemul@sw.ru>, Kirill Korotaev <dev@sw.ru>, Daniel Lezcano <dlezcano@fr.ibm.com>
 List-Id: containers.vger.kernel.org
 
+"Denis V. Lunev" <den@sw.ru> writes:
 
---x+6KMIRAuhnl3hBn
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
+> Eric W. Biederman wrote:
+>> Before I can enable rtnetlink to work in all network namespaces
+>> I need to be certain that something won't break.  So this
+>> patch deliberately disables all of the rtnletlink methods in everything
+>> except the initial network namespace.  After the methods have been
+>> audited this extra check can be disabled.
+>>
+> [...]
+>>  static int br_dump_ifinfo(struct sk_buff *skb, struct netlink_callback *cb)
+>>  {
+>> +	struct net *net = skb->sk->sk_net;
+>>  	struct net_device *dev;
+>>  	int idx;
+>>  
+>
+> I've read some code today greping 'init_net.loopback_dev' and found
+> interesting non-trivial for me issue.
+>
+> Network namespace is extracted from the packet in two different ways in
+> TCP. This is a socket for outgoing path and a device for incoming.
+> Though, there are some places called uniformly both from incoming and
+> outgoing path.
+>
+> Typical example is netfilters. They are called uniformly all around the
+> code. The prototype is the following:
+>
+> static unsigned int reject6_target(struct sk_buff **pskb,
+>                            const struct net_device *in,
+>                            const struct net_device *out,
+>                            unsigned int hooknum,
+>                            const struct xt_target *target,
+>                            const void *targinfo);
+>
+> So, we are bound to the following options:
+> - perform additional non-uniform hacks around to place 'struct net' into
+>   other and other structures like xt_target
+> - add 7th parameter here and over
 
-Quoting Cedric Le Goater (clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org):
-> Serge E. Hallyn wrote:
-> >>From 945fe66259cd0cfdc2fe846287b7821e329a558c Mon Sep 17 00:00:00 2001
-> > From: sergeh-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org <hallyn@kernel.(none)>
-> > Date: Tue, 9 Oct 2007 08:30:30 -0700
-> > Subject: [PATCH] namespaces: introduce sys_hijack (v4)
-> > 
-> > Move most of do_fork() into a new do_fork_task() which acts on
-> > a new argument, task, rather than on current.  do_fork() becomes
-> > a call to do_fork_task(current, ...).
-> > 
-> > Introduce sys_hijack (for x86 only so far).  It is like clone, but
-> >  in place of a stack pointer (which is assumed null) it accepts a
-> > pid.  The process identified by that pid is the one which is
-> > actually cloned.  Some state - include the file table, the signals
-> > and sighand (and hence tty), and the ->parent are taken from the
-> > calling process.
-> 
-> hmm, I'm wondering how this is going to work for a process which 
-> would have unshared its device (pts) namespace. How are we going 
-> to link the pts living in different namespaces if the stdios of the
-> hijacked process is using them ? like in the case of a shell, which
-> is certainly something we would like to hijacked.
-> 
-> it looks like a challenge for me. maybe I'm wrong.
+> - introduce an skb_net field in the 'struct sk_buff' making all code
+>   uniform, at least when we have an skb
 
-Might be a problem, but tough to address that until we actually
-have a dev ns or devpts ns and established semantics.
+No.  That bloats a sk_buff, changes the semantics of moving a skb
+around, and decreases performance (because we have to maintain the
+field on a fast path).  
 
-Note the filestruct comes from current, not the hijack target, so
-presumably we can work around the tty issue in any case by
-keeping an open file across the hijack?
+There will not be a skb_net field.
 
-For instance, use the attached modified version of hijack.c
-which puts a writeable fd for /tmp/helloworld in fd 5, then
-does hijack, then from the resulting shell do
+The entire concept of skb_net is a maintenance disaster.
 
-	echo ab >&5
+> I think that this is not the last place with such a parameter list and
+> we should make a decision at this point when the code in not mainline yet.
 
-So we should easily be able to work around it.
+Certainly that is what I have a proof of concept tree for.  So we can
+see how these things look before we merge them. 
 
-Or am i missing something?
+> As far as I understand, netfilters are not touched by the Eric and we
+> can face some non-trivial problems there.
 
-> > The effect is a sort of namespace enter.  The following program
-> > uses sys_hijack to 'enter' all namespaces of the specified pid.
-> > For instance in one terminal, do
-> > 
-> > 	mount -t cgroup -ons /cgroup
-> > 	hostname
-> > 	  qemu
-> > 	ns_exec -u /bin/sh
-> > 	  hostname serge
-> >           echo $$
-> >             1073
-> > 	  cat /proc/$$/cgroup
-> > 	    ns:/node_1073
-> 
-> Is there a reason to have the 'node_' prefix ? couldn't we just
-> use $pid ? 
+No.  In my proof of concept tree I should have working per network
+namespace netfilter code.  My intention was to just do enough to see
+what the impact would be so most of the netfilter code (in my tree)
+insists on running in the initial network namespace.  But there are
+a few pieces that are fully converted.  Please take a look.
 
-Good question.  It's just how the ns-cgroup does it...  If you want to
-send in a patch to change that, I'll ack it.
+> So, if my point about uniformity is valid, this patchset looks wrong and
+> should be re-worked :(
 
-> > In another terminal then do
-> > 
-> > 	hostname
-> > 	  qemu
-> > 	cat /proc/$$/cgroup
-> > 	  ns:/
-> > 	hijack 1073
-> > 	  hostname
-> > 	    serge
-> > 	  cat /proc/$$/cgroup
-> > 	    ns:/node_1073
-> > 
-> > sys_hijack is arch-dependent and is only implemented for i386 so far.
-> 
-> and worked on my qemu.
-> 
-> Thanks !
+This patchset does need to get rebased on top of net-2.6.25 when it
+opens and hopefully your patchset to remove the unnecessary work in
+rtnl_unlock, and to really process netlink requests in process
+context.  I see a need for the more fundamental change you seem to
+be advocating.
 
-Cool.  Thanks for testing.
+Differentiating between the incoming and the outgoing code paths is
+something we already do permission checking, for locking, for
+sleeping, etc.  Modifying the code requires reading and understanding
+it in context.  That is the nature of code.
 
--serge
+This does make large patches going across the entire networking stack
+making something a network namespace parameter difficult, but it
+should not cause any problem for maintenance or other work on
+the code.  As shown by the fact that even outside the tree rebasing my
+network namespace patches has not been all that difficult.
 
---x+6KMIRAuhnl3hBn
-Content-Type: text/x-csrc; charset=us-ascii
-Content-Disposition: attachment; filename="duphijack.c"
+So no I don't think uniformity, or beauty or elegance is what we
+are after right now.  Trying to hard in that direction ultimately
+obfuscates the code.
 
-#define _BSD_SOURCE
-#include <unistd.h>
-#include <sys/syscall.h>
-#include <sys/types.h>
-#include <sys/wait.h>
-#include <sys/stat.h>
-#include <sys/fcntl.h>
-#include <sys/unistd.h>
-#include <sched.h>
+What we want is something that is simple, straight forward, and
+doesn't require you to be an expert in network namespaces to
+understand the code or the patches.
 
-#ifndef CLONE_NEWUTS
-#define CLONE_NEWUTS 0x04000000
-#endif
+In the particular case of the netfilter hooks we don't have a
+network namespace parameter laying around before we call NF_HOOK,
+and the idiom "net = (in?in:out)->nd_net" seems perfectly accurate
+so it seems reasonable to me to derive the network namespace that
+way in generic code.  Although thinking about this.  We know which
+hooks we are being called from so we may in fact actually know
+if which of in or out must be valid when we get to the netfilter
+hook.
 
-int do_clone_task(void)
-{
-	execl("/bin/sh", "/bin/sh", NULL);
-}
-
-int main(int argc, char *argv[])
-{
-	int pid;
-	int ret;
-	int status;
-	int fd1, fd2;
-
-	if (argc < 2)
-		return 1;
-	pid = atoi(argv[1]);
-
-	fd1 = open("/tmp/helloworld", O_RDWR|O_CREAT);
-	if (fd1 == -1)
-		printf("Error opening /tmp/helloworld\n");
-	if (fd1 != 5) {
-		dup2(fd1, 5);
-		close(fd1);
-	}
-	write(5, "hi\n", 4);
-
-	ret = syscall(327, SIGCHLD, pid, NULL, NULL);
-
-	if  (ret == 0) {
-		return do_clone_task();
-	} else if (ret < 0) {
-		perror("sys_hijack");
-	} else {
-		printf("waiting on cloned process %d\n", ret);
-		ret = waitpid(ret, &status, __WALL);
-		printf("cloned process exited with %d (waitpid ret %d)\n",
-				status, ret);
-	}
-
-	return ret;
-}
-
---x+6KMIRAuhnl3hBn
-Content-Type: text/plain; charset="us-ascii"
-MIME-Version: 1.0
-Content-Transfer-Encoding: 7bit
-Content-Disposition: inline
-
-_______________________________________________
-Containers mailing list
-Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-https://lists.linux-foundation.org/mailman/listinfo/containers
---x+6KMIRAuhnl3hBn--
+Eric
