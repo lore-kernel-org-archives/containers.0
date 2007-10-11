@@ -1,45 +1,42 @@
-From: David Miller <davem@davemloft.net>
-Subject: Re: [PATCH 5/5] make netlink user -> kernel interface synchronious
-Date: Wed, 10 Oct 2007 21:15:38 -0700 (PDT)
-Message-ID: <20071010.211538.45511225.davem@davemloft.net>
-References: <20071005144844.GA7119@iris.sw.ru>
+From: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+Subject: [PATCH][BUGFIX][for -mm] Misc fix for memory cgroup [0/5]
+Date: Thu, 11 Oct 2007 13:53:45 +0900
+Message-ID: <20071011135345.5d9a4c06.kamezawa.hiroyu@jp.fujitsu.com>
 Mime-Version: 1.0
-Content-Type: Text/Plain; charset=us-ascii
+Content-Type: text/plain; charset=US-ASCII
 Content-Transfer-Encoding: 7bit
-Return-path: <netdev-owner@vger.kernel.org>
-In-Reply-To: <20071005144844.GA7119@iris.sw.ru>
-Sender: netdev-owner@vger.kernel.org
-To: den@openvz.org
-Cc: netdev@vger.kernel.org, kuznet@ms2.inr.ac.ru, devel@openvz.org, containers@lists.osdl.org
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
+Cc: "containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org" <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, "linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org" <linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org>, "balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org" <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-From: "Denis V. Lunev" <den@openvz.org>
-Date: Fri, 5 Oct 2007 18:48:44 +0400
+This set is a fix for memory cgroup against 2.6.23-rc8-mm2.
+Not including any new feature.
 
-> This patch make processing netlink user -> kernel messages synchronious.
-> This change was inspired by the talk with Alexey Kuznetsov about current
-> netlink messages processing. He says that he was badly wrong when introduced 
-> asynchronious user -> kernel communication.
-> 
-> The call netlink_unicast is the only path to send message to the kernel
-> netlink socket. But, unfortunately, it is also used to send data to the
-> user.
-> 
-> Before this change the user message has been attached to the socket queue
-> and sk->sk_data_ready was called. The process has been blocked until all
-> pending messages were processed. The bad thing is that this processing
-> may occur in the arbitrary process context.
-> 
-> This patch changes nlk->data_ready callback to get 1 skb and force packet
-> processing right in the netlink_unicast.
-> 
-> Kernel -> user path in netlink_unicast remains untouched.
-> 
-> EINTR processing for in netlink_run_queue was changed. It forces rtnl_lock
-> drop, but the process remains in the cycle until the message will be fully
-> processed. So, there is no need to use this kludges now.
-> 
-> Signed-off-by: Denis V. Lunev <den@openvz.org>
-> Acked-by: Alexey Kuznetsov <kuznet@ms2.inr.ac.ru>
+If this is merged to the next -mm, I'm happy.
 
-Applied.
+Patches:
+[1/5] ... fix refcnt handling in charge mem_cgroup_charge()
+[2/5] ... fix error handling path in mem_cgroup_charge()
+[3/5] ... check page->cgroup under lock again.
+[4/5] ... fix mem_cgroup_isolate_pages() to skip !PageLRU() pages.
+[5/5] ... fix page migration under memory controller, fixes leak.
+
+Changes from previous ones.
+ -- dropped new feature.... force_empty patch. It will be posted later.
+ -- fix typos
+ -- added comments
+
+Tested on x86-64/fake-NUMA system.
+
+Thanks,
+-Kame
