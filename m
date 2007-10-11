@@ -1,39 +1,23 @@
 From: David Miller <davem@davemloft.net>
-Subject: Re: [PATCH 1/5] rtnl_unlock cleanups
-Date: Wed, 10 Oct 2007 21:13:06 -0700 (PDT)
-Message-ID: <20071010.211306.108746295.davem@davemloft.net>
-References: <20071005144414.GA7050@iris.sw.ru>
+Subject: Re: [PATCH 3/5] cleanup 3rd argument in netlink_sendskb
+Date: Wed, 10 Oct 2007 21:14:09 -0700 (PDT)
+Message-ID: <20071010.211409.97289459.davem@davemloft.net>
+References: <20071005144623.GA7085@iris.sw.ru>
 Mime-Version: 1.0
 Content-Type: Text/Plain; charset=us-ascii
 Content-Transfer-Encoding: 7bit
 Return-path: <netdev-owner@vger.kernel.org>
-In-Reply-To: <20071005144414.GA7050@iris.sw.ru>
+In-Reply-To: <20071005144623.GA7085@iris.sw.ru>
 Sender: netdev-owner@vger.kernel.org
 To: den@openvz.org
-Cc: devel@openvz.org, containers@lists.osdl.org, kuznet@ms2.inr.ac.ru, netdev@vger.kernel.org
+Cc: netdev@vger.kernel.org, kuznet@ms2.inr.ac.ru, devel@openvz.org, containers@lists.osdl.org
 List-Id: containers.vger.kernel.org
 
 From: "Denis V. Lunev" <den@openvz.org>
-Date: Fri, 5 Oct 2007 18:44:14 +0400
+Date: Fri, 5 Oct 2007 18:46:23 +0400
 
-> There is no need to process outstanding netlink user->kernel packets
-> during rtnl_unlock now. There is no rtnl_trylock in the rtnetlink_rcv
-> anymore.
-> 
-> Normal code path is the following:
-> netlink_sendmsg
->    netlink_unicast
->        netlink_sendskb
->            skb_queue_tail
->            netlink_data_ready
->                rtnetlink_rcv
->                    mutex_lock(&rtnl_mutex);
->                    netlink_run_queue(sk, qlen, &rtnetlink_rcv_msg);
->                    mutex_unlock(&rtnl_mutex);
-> 
-> So, it is possible, that packets can be present in the rtnl->sk_receive_queue
-> during rtnl_unlock, but there is no need to process them at that moment as
-> rtnetlink_rcv for that packet is pending.
+> netlink_sendskb does not use third argument. Clean it and save a couple of
+> bytes.
 > 
 > Signed-off-by: Denis V. Lunev <den@openvz.org>
 > Acked-by: Alexey Kuznetsov <kuznet@ms2.inr.ac.ru>
