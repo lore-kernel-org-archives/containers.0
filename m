@@ -1,8 +1,8 @@
 From: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
-Subject: [PATCH][ just for review] memory controller enhancements [2/5]
- remember page cache
-Date: Thu, 11 Oct 2007 18:52:04 +0900
-Message-ID: <20071011185204.714f0e42.kamezawa.hiroyu@jp.fujitsu.com>
+Subject: [PATCH][ just for review] memory controller enhancements [3/5]
+ remember on which list patch
+Date: Thu, 11 Oct 2007 18:52:52 +0900
+Message-ID: <20071011185252.326ec2b3.kamezawa.hiroyu@jp.fujitsu.com>
 References: <20071011184820.7c7301c9.kamezawa.hiroyu@jp.fujitsu.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=US-ASCII
@@ -22,71 +22,51 @@ To: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
 Cc: "containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org" <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, "yamamoto-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org" <yamamoto-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>, "balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org" <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Add PCGF_PAGECACHE flag to page_cgroup to remember "this page is
-charged as page-cache."
-This is very useful for implementing precise accounting in memory cgroup.
-
+Remember page_cgroup is on active_list or not in page_cgroup->flags.
 
 Signed-off-by: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
 Signed-off-by: YAMAMOTO Takashi <yamamoto-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
 
- mm/memcontrol.c |   18 +++++++++++++++---
- 1 file changed, 15 insertions(+), 3 deletions(-)
+ mm/memcontrol.c |   12 ++++++++----
+ 1 file changed, 8 insertions(+), 4 deletions(-)
 
 Index: devel-2.6.23-rc8-mm2/mm/memcontrol.c
 ===================================================================
 --- devel-2.6.23-rc8-mm2.orig/mm/memcontrol.c
 +++ devel-2.6.23-rc8-mm2/mm/memcontrol.c
-@@ -83,6 +83,8 @@ struct page_cgroup {
- 	struct mem_cgroup *mem_cgroup;
- 	atomic_t ref_cnt;		/* Helpful when pages move b/w  */
+@@ -85,6 +85,7 @@ struct page_cgroup {
  					/* mapped and cached states     */
-+	int	 flags;
-+#define PCGF_PAGECACHE		(0x1)	/* charged as page-cache */
+ 	int	 flags;
+ #define PCGF_PAGECACHE		(0x1)	/* charged as page-cache */
++#define PCGF_ACTIVE		(0x2)	/* this is on cgroup's active list */
  };
  
  enum {
-@@ -305,8 +307,8 @@ unsigned long mem_cgroup_isolate_pages(u
-  * 0 if the charge was successful
-  * < 0 if the cgroup is over its limit
-  */
--int mem_cgroup_charge(struct page *page, struct mm_struct *mm,
--				gfp_t gfp_mask)
-+static int mem_cgroup_charge_common(struct page *page, struct mm_struct *mm,
-+				gfp_t gfp_mask, int is_cache)
+@@ -208,10 +209,13 @@ clear_page_cgroup(struct page *page, str
+ 
+ static void __mem_cgroup_move_lists(struct page_cgroup *pc, bool active)
  {
- 	struct mem_cgroup *mem;
- 	struct page_cgroup *pc;
-@@ -406,6 +408,10 @@ noreclaim:
- 	atomic_set(&pc->ref_cnt, 1);
+-	if (active)
++	if (active) {
++		pc->flags |= PCGF_ACTIVE;
+ 		list_move(&pc->lru, &pc->mem_cgroup->active_list);
+-	else
++	} else {
++		pc->flags &= ~PCGF_ACTIVE;
+ 		list_move(&pc->lru, &pc->mem_cgroup->inactive_list);
++	}
+ }
+ 
+ /*
+@@ -409,9 +413,9 @@ noreclaim:
  	pc->mem_cgroup = mem;
  	pc->page = page;
-+	if (is_cache)
-+		pc->flags = PCGF_PAGECACHE;
-+	else
-+		pc->flags = 0;
+ 	if (is_cache)
+-		pc->flags = PCGF_PAGECACHE;
++		pc->flags = PCGF_PAGECACHE | PCGF_ACTIVE;
+ 	else
+-		pc->flags = 0;
++		pc->flags = PCGF_ACTIVE;
  	if (page_cgroup_assign_new_page_cgroup(page, pc)) {
  		/*
  		 * an another charge is added to this page already.
-@@ -431,6 +437,12 @@ err:
- 	return -ENOMEM;
- }
- 
-+int mem_cgroup_charge(struct page *page, struct mm_struct *mm,
-+			gfp_t gfp_mask)
-+{
-+	return mem_cgroup_charge_common(page, mm, gfp_mask, 0);
-+}
-+
- /*
-  * See if the cached pages should be charged at all?
-  */
-@@ -443,7 +455,7 @@ int mem_cgroup_cache_charge(struct page 
- 
- 	mem = rcu_dereference(mm->mem_cgroup);
- 	if (mem->control_type == MEM_CGROUP_TYPE_ALL)
--		return mem_cgroup_charge(page, mm, gfp_mask);
-+		return mem_cgroup_charge_common(page, mm, gfp_mask, 1);
- 	else
- 		return 0;
- }
