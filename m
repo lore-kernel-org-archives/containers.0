@@ -1,8 +1,8 @@
 From: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
-Subject: [PATCH][ just for review] memory controller enhancements [3/5]
- remember on which list patch
-Date: Thu, 11 Oct 2007 18:52:52 +0900
-Message-ID: <20071011185252.326ec2b3.kamezawa.hiroyu@jp.fujitsu.com>
+Subject: [PATCH][ just for review] memory controller enhancements [5/5]
+ memory.stat file
+Date: Thu, 11 Oct 2007 18:55:06 +0900
+Message-ID: <20071011185506.2c6276f3.kamezawa.hiroyu@jp.fujitsu.com>
 References: <20071011184820.7c7301c9.kamezawa.hiroyu@jp.fujitsu.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=US-ASCII
@@ -22,51 +22,90 @@ To: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
 Cc: "containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org" <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, "yamamoto-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org" <yamamoto-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>, "balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org" <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Remember page_cgroup is on active_list or not in page_cgroup->flags.
+Show accounted information of memory cgroup by memory.stat file
 
-Signed-off-by: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
 Signed-off-by: YAMAMOTO Takashi <yamamoto-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
+Signed-off-by: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
 
- mm/memcontrol.c |   12 ++++++++----
- 1 file changed, 8 insertions(+), 4 deletions(-)
+ mm/memcontrol.c |   54 ++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 54 insertions(+)
 
 Index: devel-2.6.23-rc8-mm2/mm/memcontrol.c
 ===================================================================
 --- devel-2.6.23-rc8-mm2.orig/mm/memcontrol.c
 +++ devel-2.6.23-rc8-mm2/mm/memcontrol.c
-@@ -85,6 +85,7 @@ struct page_cgroup {
- 					/* mapped and cached states     */
- 	int	 flags;
- #define PCGF_PAGECACHE		(0x1)	/* charged as page-cache */
-+#define PCGF_ACTIVE		(0x2)	/* this is on cgroup's active list */
- };
+@@ -28,6 +28,7 @@
+ #include <linux/swap.h>
+ #include <linux/spinlock.h>
+ #include <linux/fs.h>
++#include <linux/seq_file.h>
  
- enum {
-@@ -208,10 +209,13 @@ clear_page_cgroup(struct page *page, str
+ #include <asm/uaccess.h>
  
- static void __mem_cgroup_move_lists(struct page_cgroup *pc, bool active)
- {
--	if (active)
-+	if (active) {
-+		pc->flags |= PCGF_ACTIVE;
- 		list_move(&pc->lru, &pc->mem_cgroup->active_list);
--	else
-+	} else {
-+		pc->flags &= ~PCGF_ACTIVE;
- 		list_move(&pc->lru, &pc->mem_cgroup->inactive_list);
-+	}
+@@ -828,6 +829,55 @@ static ssize_t mem_force_empty_read(stru
  }
  
- /*
-@@ -409,9 +413,9 @@ noreclaim:
- 	pc->mem_cgroup = mem;
- 	pc->page = page;
- 	if (is_cache)
--		pc->flags = PCGF_PAGECACHE;
-+		pc->flags = PCGF_PAGECACHE | PCGF_ACTIVE;
- 	else
--		pc->flags = 0;
-+		pc->flags = PCGF_ACTIVE;
- 	if (page_cgroup_assign_new_page_cgroup(page, pc)) {
- 		/*
- 		 * an another charge is added to this page already.
+ 
++static const struct mem_cgroup_stat_desc {
++	const char *msg;
++	u64 unit;
++} mem_cgroup_stat_desc[] = {
++	[MEM_CGROUP_STAT_PAGECACHE] = { "page_cache", PAGE_SIZE, },
++	[MEM_CGROUP_STAT_RSS] = { "rss", PAGE_SIZE, },
++	[MEM_CGROUP_STAT_CHARGE] = { "charge", PAGE_SIZE },
++	[MEM_CGROUP_STAT_UNCHARGE] = { "uncharge", PAGE_SIZE, },
++	[MEM_CGROUP_STAT_ACTIVE] = { "active", PAGE_SIZE, },
++	[MEM_CGROUP_STAT_INACTIVE] = { "inactive", PAGE_SIZE, },
++};
++
++static int mem_control_stat_show(struct seq_file *m, void *arg)
++{
++	struct cgroup *cont = m->private;
++	struct mem_cgroup *mem_cont = mem_cgroup_from_cont(cont);
++	struct mem_cgroup_stat *stat = &mem_cont->stat;
++	int i;
++
++	for (i = 0; i < ARRAY_SIZE(stat->cpustat[0].count); i++) {
++		unsigned int cpu;
++		s64 val;
++
++		val = 0;
++		for (cpu = 0; cpu < NR_CPUS; cpu++)
++			val += stat->cpustat[cpu].count[i];
++		val *= mem_cgroup_stat_desc[i].unit;
++		seq_printf(m, "%s %lld\n", mem_cgroup_stat_desc[i].msg, val);
++	}
++	return 0;
++}
++
++static const struct file_operations mem_control_stat_file_operations = {
++	.read = seq_read,
++	.llseek = seq_lseek,
++	.release = single_release,
++};
++
++static int mem_control_stat_open(struct inode *unused, struct file *file)
++{
++	/* XXX __d_cont */
++	struct cgroup *cont = file->f_dentry->d_parent->d_fsdata;
++
++	file->f_op = &mem_control_stat_file_operations;
++	return single_open(file, mem_control_stat_show, cont);
++}
++
++
++
+ static struct cftype mem_cgroup_files[] = {
+ 	{
+ 		.name = "usage_in_bytes",
+@@ -855,6 +905,10 @@ static struct cftype mem_cgroup_files[] 
+ 		.write = mem_force_empty_write,
+ 		.read = mem_force_empty_read,
+ 	},
++	{
++		.name = "stat",
++		.open = mem_control_stat_open,
++	},
+ };
+ 
+ static struct mem_cgroup init_mem_cgroup;
