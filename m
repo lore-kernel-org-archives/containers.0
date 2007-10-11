@@ -1,16 +1,12 @@
-From: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
-Subject: Re: [PATCH][BUGFIX][for -mm] Misc fix for memory cgroup [5/5] ---
- fix page migration under memory controller
-Date: Thu, 11 Oct 2007 21:54:13 +0900
-Message-ID: <20071011215413.c3a27633.kamezawa.hiroyu@jp.fujitsu.com>
-References: <20071011135345.5d9a4c06.kamezawa.hiroyu@jp.fujitsu.com>
-	<20071011140220.a62daf1a.kamezawa.hiroyu@jp.fujitsu.com>
-	<470E1194.6060001@linux.vnet.ibm.com>
+From: "Kendra Mccray" <iymdbbmek-pOfXxPO2z4iU6xZXA0faPpqQE7yCjDx5@public.gmane.org>
+Subject: Dont hesitate to purchase with CanadianPharmacy.
+Date: Thu, 11 Oct 2007 22:11:12 +0900
+Message-ID: <01c80c08$3242cf10$480c8c3a@iymdbbmek>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain;
+	charset="us-ascii"
+Content-Transfer-Encoding: quoted-printable
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <470E1194.6060001-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -20,20 +16,21 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
-Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org
+To: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Thu, 11 Oct 2007 17:35:40 +0530
-Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org> wrote:
+ Medications in Canada are of the same quality as American drugs and manu=
+factured according to the same strict standards but they come cheaper. Yo=
+u can also save your money as Canadian Pharmacy offers generic medication=
+s. The quality of meds is beyond all expectations as our suppliers are su=
+ch world famous manufacturers as Pfeizer, Johnson&Johnson, etc.  Canadian=
+ Pharmacy guarantees total confidentiality. We have a full range of medic=
+ations. Prices are really great. Discreet wrapping, prompt delivery, exce=
+llent service.
 
-> KAMEZAWA Hiroyuki wrote:
-> > +
-> > +static inline void
-> > +mem_cgroup_page_migration(struct page *page, struct page *newpage);
-> 
-> Typo, the semicolon needs to go :-)
->
-Oh, thanks!, will send updated version later.
+http://presentthis.cn
 
--Kame 
+Visit =ABCanadianPharmacy=BB drugstore and you will definitely make the o=
+rder!
+
+ James Patenaude
