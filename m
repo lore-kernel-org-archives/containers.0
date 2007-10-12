@@ -1,24 +1,17 @@
-From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
-Subject: Re: [PATCH] task containersv11 add tasks file interface fix for
-	cpusets
-Date: Thu, 11 Oct 2007 17:20:43 -0600
-Message-ID: <m13awhb5mc.fsf@ebiederm.dsl.xmission.com>
-References: <20071003084241.24279.62099.sendpatchset@jackhammer.engr.sgi.com>
-	<6599ad830710030851jb44f00ft9634f9381218b6e9@mail.gmail.com>
-	<20071003105817.7adf6516.pj@sgi.com>
-	<6599ad830710031110r1a74eafej56f20cc33e72ac81@mail.gmail.com>
-	<20071003131632.fed4b848.pj@sgi.com>
-	<6599ad830710031331h15d35e90lc63d845efd2de6f5@mail.gmail.com>
-	<20071006012437.c0fd3a8a.pj@sgi.com>
-	<alpine.DEB.0.9999.0710061047400.24311@chino.kir.corp.google.com>
-	<20071006125904.a26ed99f.pj@sgi.com>
-	<6599ad830710061409p2dcaa1c8u8c6864beaaafb149@mail.gmail.com>
-	<20071011150315.78c4f45f.pj@sgi.com>
+From: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+Subject: Re: [PATCH][BUGFIX][for -mm] Misc fix for memory cgroup [5/5] ---
+ fix page migration under memory controller
+Date: Fri, 12 Oct 2007 10:12:59 +0900
+Message-ID: <20071012101259.278c09e3.kamezawa.hiroyu@jp.fujitsu.com>
+References: <20071011135345.5d9a4c06.kamezawa.hiroyu@jp.fujitsu.com>
+	<20071011140220.a62daf1a.kamezawa.hiroyu@jp.fujitsu.com>
+	<470E1194.6060001@linux.vnet.ibm.com>
+	<20071011215413.c3a27633.kamezawa.hiroyu@jp.fujitsu.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+Content-Type: text/plain; charset=US-ASCII
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20071011150315.78c4f45f.pj-sJ/iWh9BUns@public.gmane.org> (Paul Jackson's message of
-	"Thu, 11 Oct 2007 15:03:15 -0700")
+In-Reply-To: <20071011215413.c3a27633.kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -28,31 +21,195 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Paul Jackson <pj-sJ/iWh9BUns@public.gmane.org>
-Cc: nickpiggin-/E1597aS9LT0CCvOHzKKcA@public.gmane.org, a.p.zijlstra-/NLkJaSkS4VmR6Xm/wNWPw@public.gmane.org, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org, rientjes-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org
+To: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
 List-Id: containers.vger.kernel.org
 
+Hi, here is fixed one.
+thanks,
+-Kame
+==
+While using memory control cgroup, page-migration under it works as following.
+==
+ 1. uncharge all refs at try to unmap.
+ 2. charge regs again remove_migration_ptes()
+==
+This is simple but has following problems.
+==
+ The page is uncharged and charged back again if *mapped*.
+    - This means that cgroup before migration can be different from one after
+      migration
+    - If page is not mapped but charged as page cache, charge is just ignored
+      (because not mapped, it will not be uncharged before migration)
+      This is memory leak.
+==
+This patch tries to keep memory cgroup at page migration by increasing
+one refcnt during it. 3 functions are added.
 
-Stupid question.
+ mem_cgroup_prepare_migration() --- increase refcnt of page->page_cgroup
+ mem_cgroup_end_migration()     --- decrease refcnt of page->page_cgroup
+ mem_cgroup_page_migration() --- copy page->page_cgroup from old page to
+                                 new page.
 
-Would it help at all if we structured this as:
-- Take the control group off of the cpus and runqueues.
-- Modify the tasks in the control group.
-- Place the control group back on the runqueues.
+During migration
+  - old page is under PG_locked.
+  - new page is under PG_locked, too.
+  - both old page and new page is not on LRU.
 
-Essentially this is what ptrace does (except for one task at a time).
+This 3 facts guarantees page_cgroup() migration has no race.
 
-Since we know that the tasks are not running, and that we have
-exclusive access to the tasks in the control group we can take action
-as if we were the actual tasks themselves.  Which should simplify
-locking.
+Tested and worked well in x86_64/fake-NUMA box.
+Changelog v2 -> v3
+  - fixed typo in !CONFIG_CGROUP_MEM_CONT case.
 
-So I think with just a touch of care we can significantly simplify the
-locking by being much more coarse grained, at the expense of this kind
-of control group operation being more expensive.  Plus we would have
-an operation that was reusable.
+Changelog v1 -> v2:
+  - reflected comments.
+  - divided a patch to !PageLRU patch and migration patch.
 
-I think the stop everything.  modify everything, start everything
-could also be used instead of an array of task structures.
 
-Eric
+
+Signed-off-by: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+
+ include/linux/memcontrol.h |   19 +++++++++++++++++++
+ mm/memcontrol.c            |   43 +++++++++++++++++++++++++++++++++++++++++++
+ mm/migrate.c               |   14 +++++++++++---
+ 3 files changed, 73 insertions(+), 3 deletions(-)
+
+Index: devel-2.6.23-rc8-mm2/mm/migrate.c
+===================================================================
+--- devel-2.6.23-rc8-mm2.orig/mm/migrate.c
++++ devel-2.6.23-rc8-mm2/mm/migrate.c
+@@ -598,9 +598,10 @@ static int move_to_new_page(struct page 
+ 	else
+ 		rc = fallback_migrate_page(mapping, newpage, page);
+ 
+-	if (!rc)
++	if (!rc) {
++		mem_cgroup_page_migration(page, newpage);
+ 		remove_migration_ptes(page, newpage);
+-	else
++	} else
+ 		newpage->mapping = NULL;
+ 
+ 	unlock_page(newpage);
+@@ -619,6 +620,7 @@ static int unmap_and_move(new_page_t get
+ 	int *result = NULL;
+ 	struct page *newpage = get_new_page(page, private, &result);
+ 	int rcu_locked = 0;
++	int charge = 0;
+ 
+ 	if (!newpage)
+ 		return -ENOMEM;
+@@ -660,14 +662,20 @@ static int unmap_and_move(new_page_t get
+ 	 */
+ 	if (!page->mapping)
+ 		goto rcu_unlock;
++
++	charge = mem_cgroup_prepare_migration(page);
+ 	/* Establish migration ptes or remove ptes */
+ 	try_to_unmap(page, 1);
+ 
+ 	if (!page_mapped(page))
+ 		rc = move_to_new_page(newpage, page);
+ 
+-	if (rc)
++	if (rc) {
+ 		remove_migration_ptes(page, page);
++		if (charge)
++			mem_cgroup_end_migration(page);
++	} else if (charge)
++		mem_cgroup_end_migration(newpage);
+ rcu_unlock:
+ 	if (rcu_locked)
+ 		rcu_read_unlock();
+Index: devel-2.6.23-rc8-mm2/include/linux/memcontrol.h
+===================================================================
+--- devel-2.6.23-rc8-mm2.orig/include/linux/memcontrol.h
++++ devel-2.6.23-rc8-mm2/include/linux/memcontrol.h
+@@ -56,6 +56,10 @@ static inline void mem_cgroup_uncharge_p
+ 	mem_cgroup_uncharge(page_get_page_cgroup(page));
+ }
+ 
++extern int mem_cgroup_prepare_migration(struct page *page);
++extern void mem_cgroup_end_migration(struct page *page);
++extern void mem_cgroup_page_migration(struct page *page, struct page *newpage);
++
+ #else /* CONFIG_CGROUP_MEM_CONT */
+ static inline void mm_init_cgroup(struct mm_struct *mm,
+ 					struct task_struct *p)
+@@ -107,6 +111,21 @@ static inline struct mem_cgroup *mm_cgro
+ 	return NULL;
+ }
+ 
++static inline int mem_cgroup_prepare_migration(struct page *page)
++{
++	return 0;
++}
++
++static inline void mem_cgroup_end_migration(struct page *page)
++{
++}
++
++static inline void
++mem_cgroup_page_migration(struct page *page, struct page *newpage)
++{
++}
++
++
+ #endif /* CONFIG_CGROUP_MEM_CONT */
+ 
+ #endif /* _LINUX_MEMCONTROL_H */
+Index: devel-2.6.23-rc8-mm2/mm/memcontrol.c
+===================================================================
+--- devel-2.6.23-rc8-mm2.orig/mm/memcontrol.c
++++ devel-2.6.23-rc8-mm2/mm/memcontrol.c
+@@ -488,6 +488,49 @@ void mem_cgroup_uncharge(struct page_cgr
+ 		}
+ 	}
+ }
++/*
++ * Returns non-zero if a page (under migration) has valid page_cgroup member.
++ * Refcnt of page_cgroup is incremented.
++ */
++
++int mem_cgroup_prepare_migration(struct page *page)
++{
++	struct page_cgroup *pc;
++	int ret = 0;
++	lock_page_cgroup(page);
++	pc = page_get_page_cgroup(page);
++	if (pc && atomic_inc_not_zero(&pc->ref_cnt))
++		ret = 1;
++	unlock_page_cgroup(page);
++	return ret;
++}
++
++void mem_cgroup_end_migration(struct page *page)
++{
++	struct page_cgroup *pc = page_get_page_cgroup(page);
++	mem_cgroup_uncharge(pc);
++}
++/*
++ * We know both *page* and *newpage* are now not-on-LRU and Pg_locked.
++ * And no race with uncharge() routines because page_cgroup for *page*
++ * has extra one reference by mem_cgroup_prepare_migration.
++ */
++
++void mem_cgroup_page_migration(struct page *page, struct page *newpage)
++{
++	struct page_cgroup *pc;
++retry:
++	pc = page_get_page_cgroup(page);
++	if (!pc)
++		return;
++	if (clear_page_cgroup(page, pc) != pc)
++		goto retry;
++	pc->page = newpage;
++	lock_page_cgroup(newpage);
++	page_assign_page_cgroup(newpage, pc);
++	unlock_page_cgroup(newpage);
++	return;
++}
+ 
+ int mem_cgroup_write_strategy(char *buf, unsigned long long *tmp)
+ {
