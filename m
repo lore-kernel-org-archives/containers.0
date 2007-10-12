@@ -1,112 +1,186 @@
-From: David Rientjes <rientjes@google.com>
-Subject: Re: [PATCH] task containersv11 add tasks file interface fix for
- cpusets
-Date: Fri, 12 Oct 2007 08:13:35 -0700 (PDT)
-Message-ID: <alpine.DEB.0.9999.0710120010210.8474@chino.kir.corp.google.com>
-References: <20071003084241.24279.62099.sendpatchset@jackhammer.engr.sgi.com> <6599ad830710030851jb44f00ft9634f9381218b6e9@mail.gmail.com> <20071003105817.7adf6516.pj@sgi.com> <6599ad830710031110r1a74eafej56f20cc33e72ac81@mail.gmail.com> <20071003131632.fed4b848.pj@sgi.com>
- <6599ad830710031331h15d35e90lc63d845efd2de6f5@mail.gmail.com> <20071006012437.c0fd3a8a.pj@sgi.com> <alpine.DEB.0.9999.0710061047400.24311@chino.kir.corp.google.com> <6599ad830710061411l3fb9368al319a80469d54946e@mail.gmail.com>
- <alpine.DEB.0.9999.0710062250590.11526@chino.kir.corp.google.com> <6599ad830710101346y1ade5ccdgd3b64a041eab7ec1@mail.gmail.com> <alpine.DEB.0.9999.0710101351400.4771@chino.kir.corp.google.com> <20071011161559.378e7766.pj@sgi.com>
-Mime-Version: 1.0
-Content-Type: TEXT/PLAIN; charset=US-ASCII
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1759018AbXJLPOh@vger.kernel.org>
-In-Reply-To: <20071011161559.378e7766.pj@sgi.com>
-Sender: linux-kernel-owner@vger.kernel.org
-To: Paul Jackson <pj@sgi.com>
-Cc: menage@google.com, akpm@linux-foundation.org, nickpiggin@yahoo.com.au, a.p.zijlstra@chello.nl, serue@us.ibm.com, clg@fr.ibm.com, linux-kernel@vger.kernel.org, ebiederm@xmission.com, svaidy@linux.vnet.ibm.com, xemul@openvz.org, containers@lists.osdl.org, balbir@linux.vnet.ibm.com
+From: Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
+Subject: [patch 1/2][NETNS49][IPV4][IGMP] make igmp proc per namespace
+Date: Fri, 12 Oct 2007 19:10:14 +0200
+Message-ID: <20071012171154.096501954@mai.toulouse-stg.fr.ibm.com>
+References: <20071012171013.105324992@mai.toulouse-stg.fr.ibm.com>
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Content-Disposition: inline; filename=net-ns-ipv4-igmp-proc-per-net.patch
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org
+Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Thu, 11 Oct 2007, Paul Jackson wrote:
+This patch makes the proc files: "igmp" and "mcfilter" per namespace.
 
-> Hmmm ... I hadn't noticed that sched_hotcpu_mutex before.
-> 
-> I wonder what it is guarding?  As best as I can guess, it seems, at
-> least in part, to be keeping the following two items consistent:
->  1) cpu_online_map
+Signed-off-by: Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
 
-Yes, it protects against cpu hot-plug or hot-unplug; cpu_online_map is 
-guaranteed to be unchanged while the mutex is being held.
+---
+ net/ipv4/igmp.c |   68 +++++++++++++++++++++++++++++++++++++++++++++++++-------
+ 1 file changed, 60 insertions(+), 8 deletions(-)
 
->  2) the per-task cpus_allowed masks
-> 
+Index: linux-2.6-netns/net/ipv4/igmp.c
+===================================================================
+--- linux-2.6-netns.orig/net/ipv4/igmp.c
++++ linux-2.6-netns/net/ipv4/igmp.c
+@@ -2291,6 +2291,7 @@ int ip_check_mc(struct in_device *in_dev
+ struct igmp_mc_iter_state {
+ 	struct net_device *dev;
+ 	struct in_device *in_dev;
++	struct net *net;
+ };
+ 
+ #define	igmp_mc_seq_private(seq)	((struct igmp_mc_iter_state *)(seq)->private)
+@@ -2299,9 +2300,10 @@ static inline struct ip_mc_list *igmp_mc
+ {
+ 	struct ip_mc_list *im = NULL;
+ 	struct igmp_mc_iter_state *state = igmp_mc_seq_private(seq);
++	struct net *net = state->net;
+ 
+ 	state->in_dev = NULL;
+-	for_each_netdev(&init_net, state->dev) {
++	for_each_netdev(net, state->dev) {
+ 		struct in_device *in_dev;
+ 		in_dev = in_dev_get(state->dev);
+ 		if (!in_dev)
+@@ -2426,31 +2428,47 @@ static int igmp_mc_seq_open(struct inode
+ 
+ 	if (!s)
+ 		goto out;
++
++	s->net = get_proc_net(inode);
++	if (!s->net)
++		goto out_kfree;
++
+ 	rc = seq_open(file, &igmp_mc_seq_ops);
+ 	if (rc)
+-		goto out_kfree;
++		goto out_put_net;
+ 
+ 	seq = file->private_data;
+ 	seq->private = s;
+ out:
+ 	return rc;
++out_put_net:
++	put_net(s->net);
+ out_kfree:
+ 	kfree(s);
+ 	goto out;
+ }
+ 
++static int igmp_mc_seq_release(struct inode *inode, struct file *file)
++{
++	struct seq_file *seq = file->private_data;
++	struct igmp_mc_iter_state *state = seq->private;
++	put_net(state->net);
++	return seq_release_private(inode, file);
++}
++
+ static const struct file_operations igmp_mc_seq_fops = {
+ 	.owner		=	THIS_MODULE,
+ 	.open		=	igmp_mc_seq_open,
+ 	.read		=	seq_read,
+ 	.llseek		=	seq_lseek,
+-	.release	=	seq_release_private,
++	.release	=	igmp_mc_seq_release,
+ };
+ 
+ struct igmp_mcf_iter_state {
+ 	struct net_device *dev;
+ 	struct in_device *idev;
+ 	struct ip_mc_list *im;
++	struct net *net;
+ };
+ 
+ #define igmp_mcf_seq_private(seq)	((struct igmp_mcf_iter_state *)(seq)->private)
+@@ -2460,10 +2478,11 @@ static inline struct ip_sf_list *igmp_mc
+ 	struct ip_sf_list *psf = NULL;
+ 	struct ip_mc_list *im = NULL;
+ 	struct igmp_mcf_iter_state *state = igmp_mcf_seq_private(seq);
++	struct net *net = state->net;
+ 
+ 	state->idev = NULL;
+ 	state->im = NULL;
+-	for_each_netdev(&init_net, state->dev) {
++	for_each_netdev(net, state->dev) {
+ 		struct in_device *idev;
+ 		idev = in_dev_get(state->dev);
+ 		if (unlikely(idev == NULL))
+@@ -2600,31 +2619,64 @@ static int igmp_mcf_seq_open(struct inod
+ 
+ 	if (!s)
+ 		goto out;
++
++	s->net = get_proc_net(inode);
++	if (!s->net)
++		goto out_kfree;
++
+ 	rc = seq_open(file, &igmp_mcf_seq_ops);
+ 	if (rc)
+-		goto out_kfree;
++		goto out_put_net;
+ 
+ 	seq = file->private_data;
+ 	seq->private = s;
+ out:
+ 	return rc;
++out_put_net:
++	put_net(s->net);
+ out_kfree:
+ 	kfree(s);
+ 	goto out;
+ }
+ 
++static int igmp_mcf_seq_release(struct inode *inode, struct file *file)
++{
++	struct seq_file *seq = file->private_data;
++	struct igmp_mcf_iter_state *state = seq->private;
++	put_net(state->net);
++	return seq_release_private(inode, file);
++
++}
++
+ static const struct file_operations igmp_mcf_seq_fops = {
+ 	.owner		=	THIS_MODULE,
+ 	.open		=	igmp_mcf_seq_open,
+ 	.read		=	seq_read,
+ 	.llseek		=	seq_lseek,
+-	.release	=	seq_release_private,
++	.release	=	igmp_mcf_seq_release,
++};
++
++static int igmp_mc_net_init(struct net *net)
++{
++	proc_net_fops_create(net, "igmp", S_IRUGO, &igmp_mc_seq_fops);
++	proc_net_fops_create(net, "mcfilter", S_IRUGO, &igmp_mcf_seq_fops);
++	return 0;
++}
++
++static void igmp_mc_net_exit(struct net *net)
++{
++	proc_net_remove(net, "igmp");
++	proc_net_remove(net, "mcfilter");
++}
++
++struct pernet_operations igmp_mc_net_ops = {
++	.init = igmp_mc_net_init,
++	.exit = igmp_mc_net_exit,
+ };
+ 
+ int __init igmp_mc_proc_init(void)
+ {
+-	proc_net_fops_create(&init_net, "igmp", S_IRUGO, &igmp_mc_seq_fops);
+-	proc_net_fops_create(&init_net, "mcfilter", S_IRUGO, &igmp_mcf_seq_fops);
++	register_pernet_subsys(&igmp_mc_net_ops);
+ 	return 0;
+ }
+ #endif
 
-It doesn't need to protect the per-task cpus_allowed per se, that's 
-already protected.  If a task's cpu affinity changes during a call to 
-set_cpus_allowed(), the migration thread will notice the change when it 
-tries to deactive the task and activate it on the destination cpu.  It 
-then becomes a no-op.
-
-That's a consequence of the fact that we can't migrate current and need a 
-kthread, particularly the source cpu's runqueue migration thread, to do it 
-when it's scheduled.  A migration request such as that includes a 
-completion variable so that the set_cpus_allowed() waits until it has 
-either been migrated or changed cpu affinity again.
-
-> That is, it seems to ensure that a task is allowed to run on some
-> online CPU.
-> 
-
-Right, the destination cpu will not be hot-unplugged out from underneath 
-the task during migration.
-
-> If that's approximately true, then shouldn't I take sched_hotcpu_mutex
-> around the entire chunk of code that handles updating a cpusets 'cpus',
-> from the time it verifies that the requested CPUs are online, until the
-> time that every affected task has its cpus_allowed updated?
-> 
-
-Not necessarily, you can iterate through a list of tasks and change their 
-cpu affinity (represented by task->cpus_allowed) by migrating them away 
-while task->cpuset->cpus_allowed remains unchanged.  The hotcpu notifier 
-cpuset_handle_cpuhp() will update that when necessary for cpu hot-plug or 
-hot-unplug events.
-
-So it's entirely possible that a cpu will be downed during your iteration 
-of tasks, but that's fine.  Just as long as it isn't downed during the 
-migration.  The cpuset's cpus_allowed will be updated by the hotcpu 
-notifier and sched_hotcpu_mutex will protect from unplugged cpus around 
-the set_cpus_allowed() call, which checks for intersection between your 
-new cpumask and cpu_online_map.
-
-> Furthermore, I should probably guard changes to and verifications
-> against the top_cpuset's cpus_allowed with this mutex as well, as it is
-> supposed to be a copy of cpu_online_map.
-> 
-
-The hotcpu notifier protects you there as well.  
-common_cpu_mem_hotplug_unplug() explicitly sets them.
-
-> And since all descendent cpusets have to have 'cpus' masks that are
-> subsets of their parents, this means guarding other chunks of cpuset
-> code that depend on the consistency of various per-cpuset cpus_allowed
-> masks and cpu_online_map.
-> 
-
-Same as above, except now you're using 
-guarantee_online_cpus_mems_in_subtree().
-
-> My current intuition is that this expanded use of sched_hotcpu_mutex in
-> the cpuset code involving various cpus_allowed masks would be a good
-> thing.
-> 
-> In sum, perhaps sched_hotcpu_mutex is guarding the dispersed kernel
-> state that depends on what CPUs are online.  This includes the per-task
-> and per-cpuset cpus_allowed masks, all of which are supposed to be some
-> non-empty subset of the online CPUs.
-> 
-
-It guards cpu_online_map from being changed while it's held.
-
-> Taking and dropping the sched_hotcpu_mutex for each task, just around
-> the call to set_cpus_allowed(), as you suggested above, doesn't seem to
-> accomplish much that I can see, and certainly doesn't seem to guard the
-> consistency of cpu_online_map with the tasks cpus_allowed masks.
-> 
-
-It's needed to serialize with other migrations such as sched_setaffinity() 
-and you can use it since all migrations will inherently need this type of 
-protection.  It makes the new cpumask consistent with cpu_online_map only 
-so far as that it's a subset; otherwise, set_cpus_allowed() will fail.  
-The particular destination cpu is chosen as any online cpu, which we know 
-won't be downed because we're holding sched_hotcpu_mutex.
-
-		David
+-- 
