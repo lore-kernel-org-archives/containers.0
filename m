@@ -1,10 +1,8 @@
 From: Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
-Subject: [patch 1/2][NETNS49][IPV4][IGMP] make igmp proc per namespace
-Date: Fri, 12 Oct 2007 19:10:14 +0200
-Message-ID: <20071012171154.096501954@mai.toulouse-stg.fr.ibm.com>
-References: <20071012171013.105324992@mai.toulouse-stg.fr.ibm.com>
+Subject: [patch 0/2][NETNS49][IPV4][IGMP] activate multicast per namespace
+Date: Fri, 12 Oct 2007 19:10:13 +0200
+Message-ID: <20071012171013.105324992@mai.toulouse-stg.fr.ibm.com>
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline; filename=net-ns-ipv4-igmp-proc-per-net.patch
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,169 +16,105 @@ To: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org
 Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-This patch makes the proc files: "igmp" and "mcfilter" per namespace.
+The following patches activate the multicast sockets for
+the namespaces. The results is a traffic going through 
+differents namespaces. So if there are several applications
+listenning to the same multicast group/port, running in
+different namespaces, they will receive multicast packets.
 
-Signed-off-by: Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
+The following program helps to test that.
 
----
- net/ipv4/igmp.c |   68 +++++++++++++++++++++++++++++++++++++++++++++++++-------
- 1 file changed, 60 insertions(+), 8 deletions(-)
+Note that the TTL field is set to 2 to avoid to packets to
+be dropped while going through the network namespace.
 
-Index: linux-2.6-netns/net/ipv4/igmp.c
-===================================================================
---- linux-2.6-netns.orig/net/ipv4/igmp.c
-+++ linux-2.6-netns/net/ipv4/igmp.c
-@@ -2291,6 +2291,7 @@ int ip_check_mc(struct in_device *in_dev
- struct igmp_mc_iter_state {
- 	struct net_device *dev;
- 	struct in_device *in_dev;
-+	struct net *net;
- };
- 
- #define	igmp_mc_seq_private(seq)	((struct igmp_mc_iter_state *)(seq)->private)
-@@ -2299,9 +2300,10 @@ static inline struct ip_mc_list *igmp_mc
- {
- 	struct ip_mc_list *im = NULL;
- 	struct igmp_mc_iter_state *state = igmp_mc_seq_private(seq);
-+	struct net *net = state->net;
- 
- 	state->in_dev = NULL;
--	for_each_netdev(&init_net, state->dev) {
-+	for_each_netdev(net, state->dev) {
- 		struct in_device *in_dev;
- 		in_dev = in_dev_get(state->dev);
- 		if (!in_dev)
-@@ -2426,31 +2428,47 @@ static int igmp_mc_seq_open(struct inode
- 
- 	if (!s)
- 		goto out;
-+
-+	s->net = get_proc_net(inode);
-+	if (!s->net)
-+		goto out_kfree;
-+
- 	rc = seq_open(file, &igmp_mc_seq_ops);
- 	if (rc)
--		goto out_kfree;
-+		goto out_put_net;
- 
- 	seq = file->private_data;
- 	seq->private = s;
- out:
- 	return rc;
-+out_put_net:
-+	put_net(s->net);
- out_kfree:
- 	kfree(s);
- 	goto out;
- }
- 
-+static int igmp_mc_seq_release(struct inode *inode, struct file *file)
-+{
-+	struct seq_file *seq = file->private_data;
-+	struct igmp_mc_iter_state *state = seq->private;
-+	put_net(state->net);
-+	return seq_release_private(inode, file);
-+}
-+
- static const struct file_operations igmp_mc_seq_fops = {
- 	.owner		=	THIS_MODULE,
- 	.open		=	igmp_mc_seq_open,
- 	.read		=	seq_read,
- 	.llseek		=	seq_lseek,
--	.release	=	seq_release_private,
-+	.release	=	igmp_mc_seq_release,
- };
- 
- struct igmp_mcf_iter_state {
- 	struct net_device *dev;
- 	struct in_device *idev;
- 	struct ip_mc_list *im;
-+	struct net *net;
- };
- 
- #define igmp_mcf_seq_private(seq)	((struct igmp_mcf_iter_state *)(seq)->private)
-@@ -2460,10 +2478,11 @@ static inline struct ip_sf_list *igmp_mc
- 	struct ip_sf_list *psf = NULL;
- 	struct ip_mc_list *im = NULL;
- 	struct igmp_mcf_iter_state *state = igmp_mcf_seq_private(seq);
-+	struct net *net = state->net;
- 
- 	state->idev = NULL;
- 	state->im = NULL;
--	for_each_netdev(&init_net, state->dev) {
-+	for_each_netdev(net, state->dev) {
- 		struct in_device *idev;
- 		idev = in_dev_get(state->dev);
- 		if (unlikely(idev == NULL))
-@@ -2600,31 +2619,64 @@ static int igmp_mcf_seq_open(struct inod
- 
- 	if (!s)
- 		goto out;
-+
-+	s->net = get_proc_net(inode);
-+	if (!s->net)
-+		goto out_kfree;
-+
- 	rc = seq_open(file, &igmp_mcf_seq_ops);
- 	if (rc)
--		goto out_kfree;
-+		goto out_put_net;
- 
- 	seq = file->private_data;
- 	seq->private = s;
- out:
- 	return rc;
-+out_put_net:
-+	put_net(s->net);
- out_kfree:
- 	kfree(s);
- 	goto out;
- }
- 
-+static int igmp_mcf_seq_release(struct inode *inode, struct file *file)
-+{
-+	struct seq_file *seq = file->private_data;
-+	struct igmp_mcf_iter_state *state = seq->private;
-+	put_net(state->net);
-+	return seq_release_private(inode, file);
-+
-+}
-+
- static const struct file_operations igmp_mcf_seq_fops = {
- 	.owner		=	THIS_MODULE,
- 	.open		=	igmp_mcf_seq_open,
- 	.read		=	seq_read,
- 	.llseek		=	seq_lseek,
--	.release	=	seq_release_private,
-+	.release	=	igmp_mcf_seq_release,
-+};
-+
-+static int igmp_mc_net_init(struct net *net)
-+{
-+	proc_net_fops_create(net, "igmp", S_IRUGO, &igmp_mc_seq_fops);
-+	proc_net_fops_create(net, "mcfilter", S_IRUGO, &igmp_mcf_seq_fops);
-+	return 0;
-+}
-+
-+static void igmp_mc_net_exit(struct net *net)
-+{
-+	proc_net_remove(net, "igmp");
-+	proc_net_remove(net, "mcfilter");
-+}
-+
-+struct pernet_operations igmp_mc_net_ops = {
-+	.init = igmp_mc_net_init,
-+	.exit = igmp_mc_net_exit,
- };
- 
- int __init igmp_mc_proc_init(void)
- {
--	proc_net_fops_create(&init_net, "igmp", S_IRUGO, &igmp_mc_seq_fops);
--	proc_net_fops_create(&init_net, "mcfilter", S_IRUGO, &igmp_mcf_seq_fops);
-+	register_pernet_subsys(&igmp_mc_net_ops);
- 	return 0;
- }
- #endif
+#include <stdio.h>
+#include <string.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <unistd.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+
+int run(int server, int daddr, int dport, int saddr, int nbmsg, int delay, int timeout)
+{
+        int fd,i;
+        struct ip_mreq mreq;
+        struct sockaddr_in addr;
+
+        socklen_t len = sizeof(addr);
+        int val;
+
+        memset(&addr,0,len);
+        memset(&mreq, 0, sizeof(mreq));
+
+        mreq.imr_multiaddr.s_addr  = daddr;
+        mreq.imr_interface.s_addr  = saddr;
+
+        addr.sin_family       = AF_INET;
+        addr.sin_port         = dport;
+        addr.sin_addr.s_addr  = INADDR_ANY;
+
+        if ((fd = socket(AF_INET,SOCK_DGRAM,0)) == -1) {
+                perror("socket");
+                return 1;
+        }
+
+        if (server)
+                if (bind(fd, (struct sockaddr*)&addr, sizeof(addr))) {
+                        perror("bind");
+                        return 1;
+                }
+
+        if (setsockopt(fd, IPPROTO_IP, IP_ADD_MEMBERSHIP, &mreq, sizeof(mreq))) {
+                perror("setsockopt ADD_MEMBER_SHIP");
+                return 1;
+        }
+
+        val = 2;
+        if (setsockopt(fd, IPPROTO_IP, IP_MULTICAST_TTL, &val, sizeof(val))) {
+                perror("setsockopt MULTICAST_TTL");
+                return 1;
+        }
+
+        /* val = 0; */
+        val = 1;
+        if (setsockopt(fd, IPPROTO_IP, IP_MULTICAST_LOOP, &val, sizeof(val))) {
+                perror("setsockopt MULTICAST_LOOP");
+                return 1;
+        }
+
+        addr.sin_addr.s_addr  = daddr;
+
+        if (server) {
+                for (i = 0; i < nbmsg; i++) {
+                        alarm(timeout);
+                        if (recv(fd,&i,sizeof(i),0) == -1) {
+                                perror("recv");
+                                return 1;
+                        }
+                        fprintf(stderr, ".");
+                }
+        } else {
+                for (i = 0; i < nbmsg; i++) {
+                        if (sendto(fd, &i, sizeof(i), MSG_CONFIRM,
+                                   (const struct sockaddr*)&addr, len) == -1) {
+                                perror("sendto");
+                                return 1;
+                        }
+                        usleep(delay);
+                }
+        }
+
+        fprintf(stderr," - done.\n");
+        return 0;
+}
+
+int main(int argc, char* argv[])
+{
+        in_addr_t dest = inet_addr("234.5.6.7");
+        int port = htons(10000);
+
+        return run(argc > 1, dest, port, 0, 1000, 50000, 60);
+}
 
 -- 
