@@ -1,15 +1,15 @@
-From: "Denis V. Lunev" <den-3ImXcnM4P+0@public.gmane.org>
+From: Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
 Subject: Re: [Devel] Re: [patch 0/2][NETNS49][IPV4][IGMP] activate multicast
  per	namespace
-Date: Mon, 15 Oct 2007 12:31:50 +0400
-Message-ID: <47132576.6020508@sw.ru>
+Date: Mon, 15 Oct 2007 18:14:41 +0200
+Message-ID: <471391F1.4090804@fr.ibm.com>
 References: <20071012171013.105324992@mai.toulouse-stg.fr.ibm.com>	<m17ils9ngz.fsf@ebiederm.dsl.xmission.com>
-	<470FE130.8040403@fr.ibm.com>
+	<470FE130.8040403@fr.ibm.com> <47132576.6020508@sw.ru>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <470FE130.8040403-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <47132576.6020508-3ImXcnM4P+0@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,63 +19,76 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
+To: "Denis V. Lunev" <den-3ImXcnM4P+0@public.gmane.org>
 Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Daniel Lezcano wrote:
-> Eric W. Biederman wrote:
->> Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org> writes:
+Denis V. Lunev wrote:
+> Daniel Lezcano wrote:
+>> Eric W. Biederman wrote:
+>>> Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org> writes:
+>>>
+>>>> The following patches activate the multicast sockets for
+>>>> the namespaces. The results is a traffic going through differents 
+>>>> namespaces. So if there are several applications
+>>>> listenning to the same multicast group/port, running in
+>>>> different namespaces, they will receive multicast packets.
+>>>
+>>> At a first glance this feels wrong.  I don't see any per
+>>> namespace filtering of multicast traffic.  Unless the
+>>> multicast traffic is routed/bridged between namespaces
+>>> it should be possible to send multicast traffic in one
+>>> namespace and listen for that same traffic in another
+>>> namespace and not get it.
 >>
->>> The following patches activate the multicast sockets for
->>> the namespaces. The results is a traffic going through differents 
->>> namespaces. So if there are several applications
->>> listenning to the same multicast group/port, running in
->>> different namespaces, they will receive multicast packets.
+>> The described behavior is the case were the namespaces are 
+>> communicating via veth like:
 >>
->> At a first glance this feels wrong.  I don't see any per
->> namespace filtering of multicast traffic.  Unless the
->> multicast traffic is routed/bridged between namespaces
->> it should be possible to send multicast traffic in one
->> namespace and listen for that same traffic in another
->> namespace and not get it.
+>> eth0
+>>  |
+>>  |        ------------- nsA
+>> veth0 <--|--> veth1    |
+>>  |        -------------
+>>  |
+>>  |        -------------nsB
+>> veth2 <--|--> veth3    |
+>>           -------------
+>>
+>>
+>> If an application is listening in nsA and nsB. And if in nsA, an 
+>> application sends multicast traffic, both will receive the packets 
+>> because they are routed by the pair device.
+>> As you said this is the correct behavior, if we have two machines 
+>> hostA and hostB in the same network and both are listening on the 
+>> multicast address and if an application on hostA send multicast 
+>> packets, both should receive the multicast packets.
+>> If the traffic is not routed, multicast will not pass through the 
+>> namespaces.
+>>
+>> The description I gave in the patchset introduction was to describe 
+>> such behavior which is, IMHO, important for inter-container 
+>> communication.
+>> Perhaps, I should have not gave this description which seems to sow 
+>> confusion in mind, sorry for that.
+>>
+>> Anyway, I hope the patchset is ok :)
 > 
-> The described behavior is the case were the namespaces are communicating 
-> via veth like:
-> 
-> eth0
->  |
->  |        ------------- nsA
-> veth0 <--|--> veth1    |
->  |        -------------
->  |
->  |        -------------nsB
-> veth2 <--|--> veth3    |
->           -------------
-> 
-> 
-> If an application is listening in nsA and nsB. And if in nsA, an 
-> application sends multicast traffic, both will receive the packets 
-> because they are routed by the pair device.
-> As you said this is the correct behavior, if we have two machines hostA 
-> and hostB in the same network and both are listening on the multicast 
-> address and if an application on hostA send multicast packets, both 
-> should receive the multicast packets.
-> If the traffic is not routed, multicast will not pass through the 
-> namespaces.
-> 
-> The description I gave in the patchset introduction was to describe such 
-> behavior which is, IMHO, important for inter-container communication.
-> Perhaps, I should have not gave this description which seems to sow 
-> confusion in mind, sorry for that.
-> 
-> Anyway, I hope the patchset is ok :)
+> hmm, by the way, will this work with macvlan?
 
-hmm, by the way, will this work with macvlan?
+I will check that. At the first glance, IMO it will not work if the 
+IP_MULTICAST_LOOP option is not set. Need to check ...
 
-also, I am dumb with multicasts :) who will clone the packet if there 
-are more than one namespace listen and there are some listeners behind 
-ethernet?
+> also, I am dumb with multicasts :) who will clone the packet if there 
+> are more than one namespace listen and there are some listeners behind 
+> ethernet?
 
-Regards,
-	Den
+For local delivery, the function is:
+
+	__udp4_lib_mcast_deliver
+
+For packet emission and loopbacking packets to ourself, it is:
+
+	ip_mc_output
+
+For behind ethernet, the packet is multicasted to the network, so it is 
+up the peers to manage the packet.
