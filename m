@@ -1,106 +1,97 @@
-From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
-Subject: Re: [Devel] Re: [patch 0/2][NETNS49][IPV4][IGMP] activate multicast
-	per	namespace
-Date: Mon, 15 Oct 2007 12:03:22 -0600
-Message-ID: <m1r6jwl0gl.fsf@ebiederm.dsl.xmission.com>
-References: <20071012171013.105324992@mai.toulouse-stg.fr.ibm.com>
-	<m17ils9ngz.fsf@ebiederm.dsl.xmission.com>
-	<470FE130.8040403@fr.ibm.com> <47132576.6020508@sw.ru>
-	<471391F1.4090804@fr.ibm.com>
+From: David Rientjes <rientjes@google.com>
+Subject: Re: [RFC] cpuset update_cgroup_cpus_allowed
+Date: Mon, 15 Oct 2007 11:49:02 -0700 (PDT)
+Message-ID: <alpine.DEB.0.9999.0710151135150.24837@chino.kir.corp.google.com>
+References: <20071015071115.16057.72116.sendpatchset@jackhammer.engr.sgi.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <471391F1.4090804-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org> (Daniel Lezcano's message of "Mon,
-	15 Oct 2007 18:14:41 +0200")
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
-Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, "Denis V. Lunev" <den-3ImXcnM4P+0@public.gmane.org>
+Content-Type: TEXT/PLAIN; charset=US-ASCII
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1764411AbXJOTIc@vger.kernel.org>
+In-Reply-To: <20071015071115.16057.72116.sendpatchset@jackhammer.engr.sgi.com>
+Sender: linux-kernel-owner@vger.kernel.org
+To: Paul Jackson <pj@sgi.com>
+Cc: Paul Menage <menage@google.com>, nickpiggin@yahoo.com.au, a.p.zijlstra@chello.nl, balbir@linux.vnet.ibm.com, linux-kernel@vger.kernel.org, clg@fr.ibm.com, ebiederm@xmission.com, containers@lists.osdl.org, serue@us.ibm.com, svaidy@linux.vnet.ibm.com, Andrew Morton <akpm@linux-foundation.org>, xemul@openvz.org
 List-Id: containers.vger.kernel.org
 
-Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org> writes:
+On Mon, 15 Oct 2007, Paul Jackson wrote:
 
-> Denis V. Lunev wrote:
->> Daniel Lezcano wrote:
->>> Eric W. Biederman wrote:
->>>> Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org> writes:
->>>>
->>>>> The following patches activate the multicast sockets for
->>>>> the namespaces. The results is a traffic going through differents
->>>>> namespaces. So if there are several applications
->>>>> listenning to the same multicast group/port, running in
->>>>> different namespaces, they will receive multicast packets.
->>>>
->>>> At a first glance this feels wrong.  I don't see any per
->>>> namespace filtering of multicast traffic.  Unless the
->>>> multicast traffic is routed/bridged between namespaces
->>>> it should be possible to send multicast traffic in one
->>>> namespace and listen for that same traffic in another
->>>> namespace and not get it.
->>>
->>> The described behavior is the case were the namespaces are communicating via
->>> veth like:
->>>
->>> eth0
->>>  |
->>>  |        ------------- nsA
->>> veth0 <--|--> veth1    |
->>>  |        -------------
->>>  |
->>>  |        -------------nsB
->>> veth2 <--|--> veth3    |
->>>           -------------
->>>
->>>
->>> If an application is listening in nsA and nsB. And if in nsA, an application
->>> sends multicast traffic, both will receive the packets because they are
->>> routed by the pair device.
->>> As you said this is the correct behavior, if we have two machines hostA and
->>> hostB in the same network and both are listening on the multicast address and
->>> if an application on hostA send multicast packets, both should receive the
->>> multicast packets.
->>> If the traffic is not routed, multicast will not pass through the namespaces.
->>>
->>> The description I gave in the patchset introduction was to describe such
->>> behavior which is, IMHO, important for inter-container communication.
->>> Perhaps, I should have not gave this description which seems to sow confusion
->>> in mind, sorry for that.
->>>
->>> Anyway, I hope the patchset is ok :)
->>
->> hmm, by the way, will this work with macvlan?
->
-> I will check that. At the first glance, IMO it will not work if the
-> IP_MULTICAST_LOOP option is not set. Need to check ...
->
->> also, I am dumb with multicasts :) who will clone the packet if there are more
->> than one namespace listen and there are some listeners behind ethernet?
->
-> For local delivery, the function is:
->
-> 	__udp4_lib_mcast_deliver
->
-> For packet emission and loopbacking packets to ourself, it is:
->
-> 	ip_mc_output
->
-> For behind ethernet, the packet is multicasted to the network, so it is up the
-> peers to manage the packet.
+> --- 2.6.23-mm1.orig/kernel/cpuset.c	2007-10-14 22:24:56.268309633 -0700
+> +++ 2.6.23-mm1/kernel/cpuset.c	2007-10-14 22:34:52.645364388 -0700
+> @@ -677,6 +677,64 @@ done:
+>  }
+>  
+>  /*
+> + * update_cgroup_cpus_allowed(cont, cpus)
+> + *
+> + * Keep looping over the tasks in cgroup 'cont', up to 'ntasks'
+> + * tasks at a time, setting each task->cpus_allowed to 'cpus',
+> + * until all tasks in the cgroup have that cpus_allowed setting.
+> + *
+> + * The 'set_cpus_allowed()' call cannot be made while holding the
+> + * css_set_lock lock embedded in the cgroup_iter_* calls, so we stash
+> + * some task pointers, in the tasks[] array on the stack, then drop
+> + * that lock (cgroup_iter_end) before looping over the stashed tasks
+> + * to update their cpus_allowed fields.
+> + *
+> + * Making the const 'ntasks' larger would use more stack space (bad),
+> + * and reduce the number of cgroup_iter_start/cgroup_iter_end calls
+> + * (good).  But perhaps more importantly, it could allow any bugs
+> + * lurking in the 'need_repeat' looping logic to remain hidden longer.
+> + * So keep ntasks rather small, to ensure any bugs in this loop logic
+> + * are exposed quickly.
+> + */
+> +static void update_cgroup_cpus_allowed(struct cgroup *cont, cpumask_t *cpus)
+> +{
+> +	int need_repeat = true;
+> +
+> +	while (need_repeat) {
+> +		struct cgroup_iter it;
+> +		const int ntasks = 10;
+> +		struct task_struct *tasks[ntasks];
+> +		struct task_struct **p, **q;
+> +
+> +		need_repeat = false;
+> +		p = tasks;
+> +
+> +		cgroup_iter_start(cont, &it);
+> +		while (1) {
+> +			struct task_struct *t;
+> +
+> +			t = cgroup_iter_next(cont, &it);
+> +			if (!t)
+> +				break;
+> +			if (cpus_equal(*cpus, t->cpus_allowed))
+> +				continue;
 
-Right.  So macvlan last I looked should handle the case of receiving an
-external multicast transmission from ethernet fine as it replicates the
-packet.  However macvlan currently doesn't replicate the packet to other
-macvlan devices on packet transmission, because with only a single namespace
-the kernel will ensure local listeners get their multicast packets by
-going through the loopback device.  The same problem exists for broadcast
-packets as well.  So is likely we want to tweak the macvlan code just
-a bit before we use it to heavily.
+By making this cpus_equal() and not cpus_intersects(), you're trying to 
+make sure that t->cpus_allowed is always equal to *cpus for each task in 
+the iterator.
 
-Eric
+> +			if (p == tasks + ntasks) {
+> +				need_repeat = true;
+> +				break;
+> +			}
+> +			get_task_struct(t);
+> +			*p++ = t;
+> +		}
+> +		cgroup_iter_end(cont, &it);
+> +
+> +		for (q = tasks; q < p; q++) {
+> +			set_cpus_allowed(*q, *cpus);
+> +			put_task_struct(*q);
+> +		}
+> +	}
+> +}
+
+Yet by not doing any locking here to prevent a cpu from being 
+hot-unplugged, you can race and allow the hot-unplug event to happen 
+before calling set_cpus_allowed().  That makes this entire function a 
+no-op with set_cpus_allowed() returning -EINVAL for every call, which 
+isn't caught, and no error is reported to userspace.
+
+Now all the tasks in the cpuset have an inconsistent state with respect to 
+their p->cpuset->cpus_allowed, because that was already updated in 
+update_cpumask().  When userspace checks that value via the 'cpus' file, 
+this is the value returned which is actually not true at all for any of 
+the tasks in 'tasks'.
+
+		David
