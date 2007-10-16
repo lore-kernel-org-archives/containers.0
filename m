@@ -1,15 +1,15 @@
-From: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
-Subject: Re: [PATCH][ just for review] memory controller enhancements [1/5]
- force empty
-Date: Tue, 16 Oct 2007 15:32:11 +0900
-Message-ID: <20071016153211.f42cc9be.kamezawa.hiroyu@jp.fujitsu.com>
-References: <20071011185128.63af3b74.kamezawa.hiroyu@jp.fujitsu.com>
-	<20071016001549.298441BF482@siro.lan>
+From: Cedric Le Goater <clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH] namespaces: introduce sys_hijack (v4)
+Date: Tue, 16 Oct 2007 10:51:04 +0200
+Message-ID: <47147B78.2060206@fr.ibm.com>
+References: <20071009200928.GA21846@sergelap.austin.ibm.com>
+	<470D068F.8050405@fr.ibm.com>
+	<20071010183234.GA24770@sergelap.austin.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
+Content-Type: text/plain; charset=ISO-8859-1
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20071016001549.298441BF482-Pcsii4f/SVk@public.gmane.org>
+In-Reply-To: <20071010183234.GA24770-6s5zFf/epYLPQpwDFJZrxKsjOiXwFzmk@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,30 +19,85 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: YAMAMOTO Takashi <yamamoto-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
-Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
+To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Tue, 16 Oct 2007 09:15:49 +0900 (JST)
-yamamoto-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org (YAMAMOTO Takashi) wrote:
 
-> > Index: devel-2.6.23-rc8-mm2/mm/memcontrol.c
-> > ===================================================================
-> > --- devel-2.6.23-rc8-mm2.orig/mm/memcontrol.c
-> > +++ devel-2.6.23-rc8-mm2/mm/memcontrol.c
-> > @@ -469,6 +469,7 @@ void mem_cgroup_uncharge(struct page_cgr
-> >  		page = pc->page;
-> >  		/*
-> >  		 * get page->cgroup and clear it under lock.
-> > +		 * force-empty can drop page->cgroup without checking refcnt.
+>> hmm, I'm wondering how this is going to work for a process which 
+>> would have unshared its device (pts) namespace. How are we going 
+>> to link the pts living in different namespaces if the stdios of the
+>> hijacked process is using them ? like in the case of a shell, which
+>> is certainly something we would like to hijacked.
+>>
+>> it looks like a challenge for me. maybe I'm wrong.
 > 
-> force_empty
+> Might be a problem, but tough to address that until we actually
+> have a dev ns or devpts ns and established semantics.
 > 
-> > +	char buf[2] = "0";
+> Note the filestruct comes from current, not the hijack target, so
+> presumably we can work around the tty issue in any case by
+> keeping an open file across the hijack?
 > 
-> it should be static const unless you want a runtime assignment.
+> For instance, use the attached modified version of hijack.c
+> which puts a writeable fd for /tmp/helloworld in fd 5, then
+> does hijack, then from the resulting shell do
 > 
-Sure, thank you for pointing out.
+> 	echo ab >&5
+> 
+> So we should easily be able to work around it.
 
-Regards,
--Kame
+yes. it should. 
+
+> Or am i missing something?
+
+I guess we need to work a little more on the pts/device namespace
+to see how it interacts. 
+
+>>> The effect is a sort of namespace enter.  The following program
+>>> uses sys_hijack to 'enter' all namespaces of the specified pid.
+>>> For instance in one terminal, do
+>>>
+>>> 	mount -t cgroup -ons /cgroup
+>>> 	hostname
+>>> 	  qemu
+>>> 	ns_exec -u /bin/sh
+>>> 	  hostname serge
+>>>           echo $$
+>>>             1073
+>>> 	  cat /proc/$$/cgroup
+>>> 	    ns:/node_1073
+>> Is there a reason to have the 'node_' prefix ? couldn't we just
+>> use $pid ? 
+> 
+> Good question.  It's just how the ns-cgroup does it...  If you want to
+> send in a patch to change that, I'll ack it.
+
+just below. 
+
+I gave a quick look to the ns subsystem and didn't see how the node_$pid 
+was destroyed. do we have to do a rmdir ?
+
+Thanks,
+
+
+C.
+
+Signed-off-by: Cedric Le Goater <clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
+---
+ kernel/cgroup.c |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+Index: 2.6.23-mm1/kernel/cgroup.c
+===================================================================
+--- 2.6.23-mm1.orig/kernel/cgroup.c
++++ 2.6.23-mm1/kernel/cgroup.c
+@@ -2604,7 +2604,7 @@ int cgroup_clone(struct task_struct *tsk
+        cg = tsk->cgroups;
+        parent = task_cgroup(tsk, subsys->subsys_id);
+ 
+-       snprintf(nodename, MAX_CGROUP_TYPE_NAMELEN, "node_%d", tsk->pid);
++       snprintf(nodename, MAX_CGROUP_TYPE_NAMELEN, "%d", tsk->pid);
+ 
+        /* Pin the hierarchy */
+        atomic_inc(&parent->root->sb->s_active);
