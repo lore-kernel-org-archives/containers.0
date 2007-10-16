@@ -1,29 +1,26 @@
 From: Paul Jackson <pj@sgi.com>
 Subject: Re: [RFC] cpuset update_cgroup_cpus_allowed
-Date: Mon, 15 Oct 2007 17:16:36 -0700
-Message-ID: <20071015171636.6213bf43.pj@sgi.com>
+Date: Mon, 15 Oct 2007 19:32:59 -0700
+Message-ID: <20071015193259.f9eb51b2.pj@sgi.com>
 References: <20071015071115.16057.72116.sendpatchset@jackhammer.engr.sgi.com>
-	<4713DA85.3020208@google.com>
+	<alpine.DEB.0.9999.0710151135150.24837@chino.kir.corp.google.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=US-ASCII
 Content-Transfer-Encoding: 7bit
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1764473AbXJPAQz@vger.kernel.org>
-In-Reply-To: <4713DA85.3020208@google.com>
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1763072AbXJPCdU@vger.kernel.org>
+In-Reply-To: <alpine.DEB.0.9999.0710151135150.24837@chino.kir.corp.google.com>
 Sender: linux-kernel-owner@vger.kernel.org
-To: Paul Menage <menage@google.com>
-Cc: rientjes@google.com, nickpiggin@yahoo.com.au, a.p.zijlstra@chello.nl, balbir@linux.vnet.ibm.com, linux-kernel@vger.kernel.org, clg@fr.ibm.com, ebiederm@xmission.com, containers@lists.osdl.org, serue@us.ibm.com, svaidy@linux.vnet.ibm.com, akpm@linux-foundation.org, xemul@openvz.org
+To: David Rientjes <rientjes@google.com>
+Cc: menage@google.com, nickpiggin@yahoo.com.au, a.p.zijlstra@chello.nl, balbir@linux.vnet.ibm.com, linux-kernel@vger.kernel.org, clg@fr.ibm.com, ebiederm@xmission.com, containers@lists.osdl.org, serue@us.ibm.com, svaidy@linux.vnet.ibm.com, akpm@linux-foundation.org, xemul@openvz.org
 List-Id: containers.vger.kernel.org
 
-Paul M wrote:
-> Here's an alternative for consideration, below.
+> Yet by not doing any locking here to prevent a cpu from being 
+> hot-unplugged, you can race and allow the hot-unplug event to happen 
+> before calling set_cpus_allowed().  That makes this entire function a 
+> no-op with set_cpus_allowed() returning -EINVAL for every call, which 
+> isn't caught, and no error is reported to userspace.
 
-I don't see the alternative -- I just see my patch, with the added
-blurbage:
-
-  #12 - /usr/local/google/home/menage/kernel9/linux/kernel/cpuset.c ====
-  # action=edit type=text
-
-Should I be increasing my caffeine intake?
+Good point ... hmmm ...
 
 -- 
                   I won't rest till it's the best ...
