@@ -1,10 +1,14 @@
-From: "Ken Hopkins" <CaseyewingSoto-3erNDfIYXP98fCCB1iTX4w@public.gmane.org>
-Subject: $5,000 to $500,000 or more
-Date: Tue, 16 Oct 2007 19:13:35 -0100
-Message-ID: <de9a01c81018$193f56a0$4a817a54@MARIALUISA>
+From: Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Subject: Re: [PATCH] memory cgroup enhancements [0/5] intro
+Date: Tue, 16 Oct 2007 23:50:28 +0530
+Message-ID: <471500EC.1080502@linux.vnet.ibm.com>
+References: <20071016191949.cd50f12f.kamezawa.hiroyu@jp.fujitsu.com>
+Reply-To: balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary="===============5620757344601819147=="
+Content-Type: text/plain; charset=ISO-8859-1
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <20071016191949.cd50f12f.kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -12,80 +16,49 @@ List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
 List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Mime-version: 1.0
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
+To: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
+Cc: "containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org" <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, "linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org" <linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org>, "yamamoto-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org" <yamamoto-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-This is a multi-part message in MIME format.
+KAMEZAWA Hiroyuki wrote:
+> This patch set adds
+>  - force_empty interface, which drops all charges in memory cgroup.
+>    This enables rmdir() against unused memory cgroup.
+>  - the memory cgroup statistics accounting.
+> 
+> Based on 2.6.23-mm1 + http://lkml.org/lkml/2007/10/12/53
+> 
+> Changes from previous version is
+>  - merged comments.
+>  - based on 2.6.23-mm1
+>  - removed Charge/Uncharge counter.
+> 
+> [1/5] ... force_empty patch
+> [2/5] ... remember page is charged as page-cache patch
+> [3/5] ... remember page is on which list patch
+> [4/5] ... memory cgroup statistics patch
+> [5/5] ... show statistics patch
+> 
+> tested on x86-64/fake-NUMA + CONFIG_PREEMPT=y/n (for testing preempt_disable())
+> 
+> Any comments are welcome.
+> 
 
---===============5620757344601819147==
-Content-Type: multipart/alternative;
-	boundary="----=_NextPart_000_DE96_01C81018.193F56A0"
+Hi, KAMEZAWA-San,
 
-This is a multi-part message in MIME format.
+I would prefer these patches to go in once the fixes that you've posted
+earlier have gone in (the migration fix series). I am yet to test the
+migration fix per-se, but the series seemed quite fine to me. Andrew
+could you please pick it up.
 
-------=_NextPart_000_DE96_01C81018.193F56A0
-Content-Type: text/plain;
-	charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
-
-Let us assist with the placement of working capital business loans for =
-small to medium sized businesses in all 50 states
-
-We've created an affordable, simple, and flexible approach to providing =
-working capital of $5,000 to $500,000 or more.
-
-No obligation application. No cost to apply. No closing costs. Poor =
-credit not a problem.
-
-Get approved in 48 hours! with a simple application process & quick =
-funding, Call Us Free on 877-347-3607
-
-------=_NextPart_000_DE96_01C81018.193F56A0
-Content-Type: text/html;
-	charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
-
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
-<HTML><HEAD>
-<META http-equiv=3DContent-Type content=3D"text/html; charset=3DUTF-8">
-<META content=3D"MSHTML 6.00.2800.1458" name=3D"GENERATOR">
-</HEAD>
-<BODY bgColor=3D#ffffff>
-<DIV><FONT face=3DArial size=3D2><B>Let us assist with the placement of =
-working=20
-capital business loans for small to medium sized businesses in all 50=20
-states</B></FONT></DIV>
-<DIV><FONT face=3DArial size=3D2>&nbsp;</FONT></DIV>
-<DIV><FONT face=3DArial size=3D2>We've created an affordable, simple, =
-and flexible=20
-approach to providing working capital of $5,000 to $500,000 or=20
-more.</FONT></DIV> =20
-<DIV><FONT face=3DArial size=3D2>&nbsp;</FONT></DIV>
-<DIV><FONT face=3DArial size=3D2><B>No obligation application. No cost =
-to apply. No=20
-closing costs. Poor credit not a problem.</B></FONT></DIV>
-<DIV><FONT face=3DArial size=3D2>&nbsp;</FONT></DIV>
-<DIV><FONT face=3DArial size=3D2>Get approved in 48 hours! with a =
-simple=20
-application process & quick funding, Call Us Free on=20
-<B>877-347-3607</B></FONT></DIV>
-</BODY></HTML>
+> -Kame
+> 
 
 
-------=_NextPart_000_DE96_01C81018.193F56A0--
-
-
---===============5620757344601819147==
-Content-Type: text/plain; charset="us-ascii"
-MIME-Version: 1.0
-Content-Transfer-Encoding: 7bit
-Content-Disposition: inline
-
-_______________________________________________
-Containers mailing list
-Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-https://lists.linux-foundation.org/mailman/listinfo/containers
---===============5620757344601819147==--
+-- 
+	Warm Regards,
+	Balbir Singh
+	Linux Technology Center
+	IBM, ISTL
