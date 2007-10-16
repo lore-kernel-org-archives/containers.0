@@ -1,15 +1,14 @@
-From: Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: Re: [BUGFIX][RFC][PATCH][only -mm] FIX memory leak in memory cgroup
- vs. page migration [0/1]
-Date: Wed, 17 Oct 2007 02:33:28 +0530
-Message-ID: <47152720.2020007@linux.vnet.ibm.com>
-References: <20071002183031.3352be6a.kamezawa.hiroyu@jp.fujitsu.com>
-Reply-To: balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
+From: Cedric Le Goater <clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [Devel] [PATCH] namespaces: introduce sys_hijack (v4)
+Date: Tue, 16 Oct 2007 23:28:22 +0200
+Message-ID: <47152CF6.7000605@fr.ibm.com>
+References: <20071009200928.GA21846@sergelap.austin.ibm.com>	<6599ad830710160209w64765f2ao6a1f811b4ea50708@mail.gmail.com>	<20071016143744.GC30799@sergelap.austin.ibm.com>	<6599ad830710160932t3769bc29w8a6461274226633d@mail.gmail.com>	<20071016185737.GA4115@sergelap.austin.ibm.com>	<6599ad830710161203h50198ae5o73bfacad32dd8bb6@mail.gmail.com>
+	<20071016191200.GB4115@sergelap.austin.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
+Content-Type: text/plain; charset=ISO-8859-1
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20071002183031.3352be6a.kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+In-Reply-To: <20071016191200.GB4115-6s5zFf/epYLPQpwDFJZrxKsjOiXwFzmk@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,32 +18,20 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
-Cc: "containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org" <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, "linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org" <linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org>, Christoph Lameter <clameter-sJ/iWh9BUns@public.gmane.org>
+To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-KAMEZAWA Hiroyuki wrote:
-[snip]
-> # migrate_test mmaps 512Mfile and call system call move_pages(). and sleep.
-> [root@drpq kamezawa]# ./migrate_test 512Mfile 1 &
-> [1] 4108
 
-This step fails for me. I get an -ENOENT error from the utility you sent
-me. As I look through the migration code more (It's too late for me to
-double check), but it seems that only pages mapped in the process are
-migrated. cat(1) won't really map anything. Am I missing some of the
-reproduction steps?
+> asmlinkage long sys_hijack(unsigned long clone_flags, int which,
+> 			   unsigned long id);
 
-> #At the end of migration,
-> [root@drpq kamezawa]# cat /opt/mem_control/group_?/memory.usage_in_bytes
-> 539738112
-> 537706496
-> 
-> #Wow, charge is twice ;)
+I expect to get more explanation of the arguments in the patch 
+you are going to send :)
 
+'which' is used as a switch for 'id' : pid or fd on a open cgroup 
+directory. right ? 
 
--- 
-	Warm Regards,
-	Balbir Singh
-	Linux Technology Center
-	IBM, ISTL
+Thanks,
+
+C. 
