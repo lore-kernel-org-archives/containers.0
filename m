@@ -1,41 +1,31 @@
-From: yamamoto-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org (YAMAMOTO Takashi)
-Subject: Re: [PATCH][ just for review] memory controller enhancements [1/5]
- force empty
-Date: Tue, 16 Oct 2007 09:15:49 +0900 (JST)
-Message-ID: <20071016001549.298441BF482@siro.lan>
-References: <20071011185128.63af3b74.kamezawa.hiroyu@jp.fujitsu.com>
+From: Paul Jackson <pj@sgi.com>
+Subject: Re: [RFC] cpuset update_cgroup_cpus_allowed
+Date: Mon, 15 Oct 2007 17:16:36 -0700
+Message-ID: <20071015171636.6213bf43.pj@sgi.com>
+References: <20071015071115.16057.72116.sendpatchset@jackhammer.engr.sgi.com>
+	<4713DA85.3020208@google.com>
 Mime-Version: 1.0
-Content-Type: Text/Plain; charset=us-ascii
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: Your message of "Thu, 11 Oct 2007 18:51:28 +0900"
-	<20071011185128.63af3b74.kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org
-Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
+Content-Type: text/plain; charset=US-ASCII
+Content-Transfer-Encoding: 7bit
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1764473AbXJPAQz@vger.kernel.org>
+In-Reply-To: <4713DA85.3020208@google.com>
+Sender: linux-kernel-owner@vger.kernel.org
+To: Paul Menage <menage@google.com>
+Cc: rientjes@google.com, nickpiggin@yahoo.com.au, a.p.zijlstra@chello.nl, balbir@linux.vnet.ibm.com, linux-kernel@vger.kernel.org, clg@fr.ibm.com, ebiederm@xmission.com, containers@lists.osdl.org, serue@us.ibm.com, svaidy@linux.vnet.ibm.com, akpm@linux-foundation.org, xemul@openvz.org
 List-Id: containers.vger.kernel.org
 
-> Index: devel-2.6.23-rc8-mm2/mm/memcontrol.c
-> ===================================================================
-> --- devel-2.6.23-rc8-mm2.orig/mm/memcontrol.c
-> +++ devel-2.6.23-rc8-mm2/mm/memcontrol.c
-> @@ -469,6 +469,7 @@ void mem_cgroup_uncharge(struct page_cgr
->  		page = pc->page;
->  		/*
->  		 * get page->cgroup and clear it under lock.
-> +		 * force-empty can drop page->cgroup without checking refcnt.
+Paul M wrote:
+> Here's an alternative for consideration, below.
 
-force_empty
+I don't see the alternative -- I just see my patch, with the added
+blurbage:
 
-> +	char buf[2] = "0";
+  #12 - /usr/local/google/home/menage/kernel9/linux/kernel/cpuset.c ====
+  # action=edit type=text
 
-it should be static const unless you want a runtime assignment.
+Should I be increasing my caffeine intake?
 
-YAMAMOTO Takashi
+-- 
+                  I won't rest till it's the best ...
+                  Programmer, Linux Scalability
+                  Paul Jackson <pj@sgi.com> 1.925.600.0401
