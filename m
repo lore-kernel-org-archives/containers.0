@@ -1,67 +1,91 @@
-From: ebiederm@xmission.com (Eric W. Biederman)
-Subject: Re: [PATCHSET 3/4] sysfs: divorce sysfs from kobject and driver model
-Date: Tue, 16 Oct 2007 17:54:06 -0600
-Message-ID: <m1r6jufwf5.fsf@ebiederm.dsl.xmission.com>
-References: <11902755392688-git-send-email-htejun@gmail.com>
-	<20070925221736.GA3566@kroah.com> <46FB956B.8000205@gmail.com>
-	<m1zlz7hpvn.fsf_-_@ebiederm.dsl.xmission.com>
-	<20071005062302.GB16914@kroah.com>
-	<m1d4vtn4jq.fsf@ebiederm.dsl.xmission.com>
-	<20071009225139.GF21228@kroah.com>
-	<m14pgzun27.fsf@ebiederm.dsl.xmission.com>
-	<20071016221816.GA14787@us.ibm.com>
+From: "Tiffany Cordova" <CindyvisitorStarr-IRQzNv7Ril2dQnJuSAr7PQ@public.gmane.org>
+Subject: $5,000 to $500,000 or more
+Date: Tue, 16 Oct 2007 21:06:06 +0300
+Message-ID: <f7e501c81051$c25b5520$265613be@famila4adc8993>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S934671AbXJPXz6@vger.kernel.org>
-In-Reply-To: <20071016221816.GA14787@us.ibm.com> (sukadev@us.ibm.com's message
-	of "Tue, 16 Oct 2007 15:18:16 -0700")
-Sender: linux-kernel-owner@vger.kernel.org
-To: sukadev@us.ibm.com
-Cc: Greg KH <greg@kroah.com>, Tejun Heo <htejun@gmail.com>, kay.sievers@vrfy.org, linux-kernel@vger.kernel.org, Linux Containers <containers@lists.osdl.org>, stern@rowland.harvard.edu, cornelia.huck@de.ibm.com
+Content-Type: multipart/mixed; boundary="===============6921307114248855522=="
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Mime-version: 1.0
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-sukadev@us.ibm.com writes:
+This is a multi-part message in MIME format.
 
-> | No. The "other" device namespace I would construct on machine B to
-> | look just like the device namespace that existed on machine A.
-> | Making /sys/devices/block/sda would still be 8:0.
-> | 
-> | So to be very clear on machine B when talking about disk-1 I would have.
-> | initial device namespace:
-> |   /sys/devices/block/sdb
-> |   /sys/devices/block/sdb/dev 8:16
-> | 
-> | "other" device namespace:
-> |   /sys/devices/block/sda
-> |   /sys/devices/block/sda/dev 8:0
-> | 
-> | Similarly on machine B when talking about disk-2 I would have.
-> | initial device namespace:
-> |   /sys/devices/block/sda
-> |   /sys/devices/block/sda/dev 8:0
-> | 
-> | "other" device namespace:
-> |   /sys/devices/block/sdb
-> |   /sys/devices/block/sdb/dev 8:16
-> | 
-> | So between the two devices namespaces on machine B the two disks
-> | would exchange their user visible identities.
->
-> So an application that would migrate from machine A to B has to
-> use virtual names (like "disk-1" and "disk-2") to access the disk
-> right ? 
+--===============6921307114248855522==
+Content-Type: multipart/alternative;
+	boundary="----=_NextPart_000_F7E1_01C81051.C25B5520"
 
-No.  It is worse you need to access a filesystem and probably
-a block device that is available on both machine A and machine B.
-With care we can introduce appropriate namespaces and namespace semantics
-so we can make the names be what we need.
+This is a multi-part message in MIME format.
 
-For a classic tricky case think what it would require to migrate
-a git archive with checked out files and not need to say
-"git-update-index --refresh" before you work with the files.
+------=_NextPart_000_F7E1_01C81051.C25B5520
+Content-Type: text/plain;
+	charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
 
-I used names like disk-1 and disk-2 instead of UUIDs because it
-was easier for me to type and think about.  You do need some
-kind of absolute disk or filesystem identity you can refer back to.
+Let us assist with the placement of working capital business loans for =
+small to medium sized businesses in all 50 states
 
-Eric
+We've created an affordable, simple, and flexible approach to providing =
+working capital of $5,000 to $500,000 or more.
+
+No obligation application. No cost to apply. No closing costs. Poor =
+credit not a problem.
+
+Get approved in 48 hours! with a simple application process & quick =
+funding, Call Us Free on 877-347-3607
+
+------=_NextPart_000_F7E1_01C81051.C25B5520
+Content-Type: text/html;
+	charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
+
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<HTML><HEAD>
+<META http-equiv=3DContent-Type content=3D"text/html; charset=3DUTF-8">
+<META content=3D"MSHTML 6.00.2800.1458" name=3D"GENERATOR">
+</HEAD>
+<BODY bgColor=3D#ffffff>
+<DIV><FONT face=3DArial size=3D2><B>Let us assist with the placement of =
+working=20
+capital business loans for small to medium sized businesses in all 50=20
+states</B></FONT></DIV>
+<DIV><FONT face=3DArial size=3D2>&nbsp;</FONT></DIV>
+<DIV><FONT face=3DArial size=3D2>We've created an affordable, simple, =
+and flexible=20
+approach to providing working capital of $5,000 to $500,000 or=20
+more.</FONT></DIV> =20
+<DIV><FONT face=3DArial size=3D2>&nbsp;</FONT></DIV>
+<DIV><FONT face=3DArial size=3D2><B>No obligation application. No cost =
+to apply. No=20
+closing costs. Poor credit not a problem.</B></FONT></DIV>
+<DIV><FONT face=3DArial size=3D2>&nbsp;</FONT></DIV>
+<DIV><FONT face=3DArial size=3D2>Get approved in 48 hours! with a =
+simple=20
+application process & quick funding, Call Us Free on=20
+<B>877-347-3607</B></FONT></DIV>
+</BODY></HTML>
+
+
+------=_NextPart_000_F7E1_01C81051.C25B5520--
+
+
+--===============6921307114248855522==
+Content-Type: text/plain; charset="us-ascii"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+Content-Disposition: inline
+
+_______________________________________________
+Containers mailing list
+Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+https://lists.linux-foundation.org/mailman/listinfo/containers
+--===============6921307114248855522==--
