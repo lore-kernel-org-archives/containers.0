@@ -1,8 +1,8 @@
 From: Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
 Subject: Re: [PATCH] [NETNS49] support for per/namespace routing cache
 	cleanup
-Date: Wed, 17 Oct 2007 16:46:34 +0200
-Message-ID: <4716204A.60603@fr.ibm.com>
+Date: Wed, 17 Oct 2007 17:05:36 +0200
+Message-ID: <471624C0.9020108@fr.ibm.com>
 References: <20071017111215.GA29653@iris.sw.ru> <4715F60F.6060304@fr.ibm.com>
 	<4716055D.4010102@sw.ru> <471610E8.8020008@fr.ibm.com>
 	<471617CA.9090901@sw.ru>
@@ -21,7 +21,7 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: "Denis V. Lunev" <den-3ImXcnM4P+0@public.gmane.org>
-Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, "Denis V. Lunev" <den-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org
+Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, "Denis V. Lunev" <den-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org, Benjamin Thery <benjamin.thery-6ktuUTfB/bM@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
 Denis V. Lunev wrote:
@@ -69,59 +69,13 @@ Denis V. Lunev wrote:
 >>>
 >>> The idea to iterate over the list of each namespace to flush is bad. 
 >>> We are in atomic context. The list is protected by the mutex.
->>>
->>> The idea of several timers (per namespace) is also bad. You will 
->>> iterate over large cache several times.
->>>
->>> No other acceptable way here for me :(.
->>>
->>> As for "the trigger" - rt_cache_flush, looks like you are right. We 
->>> should pass namespace as a parameter. This should be done as a 
->>> separate patch.
->>
->> If we change:
->>
->>     rt_cache_flush(struct net *net, int delay);
->>
->> and inside we call rt_cache_flush((unsigned long)net);
->>
->> And then we check in the rt_run_flush function,
->>
->>     struct net *net = (struct net *)dummy;
->>
->>     ...
->>     for (i = rt_hash_mask; i >= 0; i--) {
->>         ...
->>         if (dummy && rth->fl.fl_net != net)
->>             continue
->>         ...
->>     ...
->>
->> So when rt_run_flush is called synchronously, the netns is specified 
->> in dummy and only the routes belonging to netns are flushed. Otherwise 
->> when it is called by the timer, netns is not set so all routes are 
->> flushed.
->>
-> 
-> this does not look good for me. The size of this cache for 4GB host is 
-> 2*10^6 entries for IPv4 with a 131072 chains. The conventional 
-> mainstream kernel wants to merge the routing cache cleanup requests from 
-> the different sources if they are delayed (default).
-> 
-> The main idea for this patch is to protect all other namespaces from the 
-> current one. This cache is an important resource. You proposal will work 
-> for the forced synchronous cleanups. Though, there are some requests 
-> with results in the delayed rt_run_flush via [mod/add]_timer
-> 
-> How should we handle them?
 
-IHMO we should let the timer to remove all routes.
+Oh, by the way, I forgot something important you spotted with the list 
+protected by the mutex.
 
-The problem you raised is someone in a namespace can flush routes for 
-another namespaces and mess the network traffic for them.
-This case is resolved with the synchronous call to rt_cache_flush and 
-netns parameter.
+When looking at ipv6/fib_hash.c with Benjamin, we need to browse the 
+network namespaces list for the garbage collecting, but we are in an 
+interrupt handler, so I can not use rtnl_lock.
 
-The second point here is we can have a lot of routes and the timer will 
-flush them all, with or without namespaces.
-IMHO I don't think we should handle this case ... for now.
+Why is not possible to protect the list with a simple spinlock ? so we 
+can call spin_lock_bh when we are in interrupt handler.
