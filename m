@@ -1,18 +1,10 @@
-From: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
-Subject: Re: [PATCH] memory cgroup enhancements [1/5]  force_empty for
- memory cgroup
-Date: Wed, 17 Oct 2007 14:50:09 +0900
-Message-ID: <20071017145009.e4a56c0d.kamezawa.hiroyu@jp.fujitsu.com>
-References: <20071016191949.cd50f12f.kamezawa.hiroyu@jp.fujitsu.com>
-	<20071016192341.1c3746df.kamezawa.hiroyu@jp.fujitsu.com>
-	<alpine.DEB.0.9999.0710162113300.13648@chino.kir.corp.google.com>
-	<20071017141609.0eb60539.kamezawa.hiroyu@jp.fujitsu.com>
-	<alpine.DEB.0.9999.0710162232540.27242@chino.kir.corp.google.com>
+From: "Nicolas Finch" <samir29thanasis-LvOzb7gyLngANPMfv7sqcg@public.gmane.org>
+Subject: Re: Simple Application
+Date: Wed, 17 Oct 2007 05:32:01 +0000
+Message-ID: <000501c8108e$04fd4b5d$b320c4ac@orclbyqc>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
-Content-Transfer-Encoding: 7bit
+Content-Type: multipart/mixed; boundary="===============8480570772520811315=="
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <alpine.DEB.0.9999.0710162232540.27242-X6Q0R45D7oAcqpCFd4KODRPsWskHk0ljAL8bYrjMMd8@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -20,30 +12,79 @@ List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
 List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Mime-version: 1.0
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: David Rientjes <rientjes-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
-Cc: "containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org" <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, "linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org" <linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org>, "yamamoto-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org" <yamamoto-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>, "balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org" <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+To: Shawna Yoder <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Tue, 16 Oct 2007 22:38:18 -0700 (PDT)
-David Rientjes <rientjes-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org> wrote:
-> > Thanks,
-> 
-> You mean make it write-only?  Typically it would be as easy as only 
-> specifying a mode of S_IWUSR so that it can only be written to, the 
-> S_IFREG is already provided by cgroup_add_file().
-> 
-> Unfortunately, cgroups do not appear to allow that.  It hardcodes
-> the permissions of 0644 | S_IFREG into the cgroup_create_file() call from 
-> cgroup_add_file(), which is a bug.  Cgroup files should be able to be 
-> marked as read-only or write-only depending on their semantics.
-> 
-> So until that bug gets fixed and you're allowed to pass your own file 
-> modes to cgroup_add_files(), you'll have to provide the read function.
-> 
-Hmm. it seems I have to read current cgroup code more.
-Thank you for advice.
+This is a multi-part message in MIME format.
 
-Regards,
--Kame
+--===============8480570772520811315==
+Content-Type: multipart/alternative;
+	boundary="----=_NextPart_000_0002_01C8108E.04FC9016"
+
+This is a multi-part message in MIME format.
+
+------=_NextPart_000_0002_01C8108E.04FC9016
+Content-Type: text/plain;
+	charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
+
+
+Let us assist with the placement of working capital business loans for =
+small to medium sized businesses in all 50 states
+&nbsp;
+We've created an affordable, simple, and flexible approach to providing =
+working capital of $5,000 to $500,000 or more.
+  &nbsp;
+
+No obligation application. No cost to apply. No closing costs. Poor =
+credit not a problem.
+&nbsp;
+Get approved in 48 hours! with a simple application process & quick =
+funding, Call Us Free on=20
+877-292-6896
+------=_NextPart_000_0002_01C8108E.04FC9016
+Content-Type: text/html;
+	charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
+
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<HTML><HEAD>
+<META http-equiv=3DContent-Type content=3D"text/html; =
+charset=3Diso-8859-1">
+<META content=3D"MSHTML 6.00.3790.2759" name=3DGENERATOR>
+<STYLE></STYLE>
+</HEAD>
+<BODY>
+<DIV><FONT face=3DArial size=3D2><B>Let us assist with the placement of =
+working capital business loans for small to medium sized businesses in =
+all 50 states</B></FONT></DIV>
+<DIV><FONT face=3DArial size=3D2>&nbsp;</FONT></DIV>
+<DIV><FONT face=3DArial size=3D2>We've created an affordable, simple, =
+and flexible approach to providing working capital of $5,000 to $500,000 =
+or more.</FONT></DIV> =20
+<DIV><FONT face=3DArial size=3D2>&nbsp;</FONT></DIV>
+<DIV><FONT face=3DArial size=3D2><B>No obligation application. No cost =
+to apply. No closing costs. Poor credit not a problem.</B></FONT></DIV>
+<DIV><FONT face=3DArial size=3D2>&nbsp;</FONT></DIV>
+<DIV><FONT face=3DArial size=3D2>Get approved in 48 hours! with a simple =
+application process & quick funding, Call Us Free on =
+<B>877-292-6896</B></FONT></DIV>
+</BODY></HTML>
+------=_NextPart_000_0002_01C8108E.04FC9016--
+
+
+
+--===============8480570772520811315==
+Content-Type: text/plain; charset="us-ascii"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+Content-Disposition: inline
+
+_______________________________________________
+Containers mailing list
+Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+https://lists.linux-foundation.org/mailman/listinfo/containers
+--===============8480570772520811315==--
