@@ -1,14 +1,17 @@
 From: "Denis V. Lunev" <den-3ImXcnM4P+0@public.gmane.org>
-Subject: Re: [PATCH 2/3] [NETNS49] Add struct net to all calls for
-	rt_cache_flush
-Date: Thu, 18 Oct 2007 18:40:48 +0400
-Message-ID: <47177070.4000700@sw.ru>
-References: <20071018100330.GA23415@iris.sw.ru> <471764A9.2080703@fr.ibm.com>
+Subject: Re: [PATCH] [NETNS49] support for per/namespace routing cache
+	cleanup
+Date: Thu, 18 Oct 2007 18:51:23 +0400
+Message-ID: <471772EB.2060206@sw.ru>
+References: <20071017111215.GA29653@iris.sw.ru> <4715F60F.6060304@fr.ibm.com>
+	<4716055D.4010102@sw.ru> <471610E8.8020008@fr.ibm.com>
+	<471617CA.9090901@sw.ru> <471624C0.9020108@fr.ibm.com>
+	<47164CBD.3040107@gmail.com> <471708D8.3080808@bull.net>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <471764A9.2080703-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <471708D8.3080808-6ktuUTfB/bM@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,35 +21,27 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
-Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, "Denis V. Lunev" <den-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org, benjamin.thery-6ktuUTfB/bM@public.gmane.org
+To: Benjamin Thery <benjamin.thery-6ktuUTfB/bM@public.gmane.org>
+Cc: "Denis V. Lunev" <dlunev-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org, Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, "Denis V. Lunev" <den-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Daniel Lezcano wrote:
+Benjamin Thery wrote:
 > Denis V. Lunev wrote:
->> commit 628d4768843fc6d572596b91e29f8ce6506c276a
->> Author: Denis V. Lunev <den-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
->> Date:   Thu Oct 18 12:48:38 2007 +0400
->>
->>     Add struct net to all calls for rt_cache_flush. Additionally, the 
->> function
->>     manipulating with timer should not actually call the garbage 
->> collector as
->>     the namespace is not known in the global rt_secret_rebuild.
->>         Signed-off-by: Denis V. Lunev <den-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
->>
+>> Daniel Lezcano wrote:
+>>> Oh, by the way, I forgot something important you spotted with the list
+>>> protected by the mutex.
+>>>
+>>> When looking at ipv6/fib_hash.c with Benjamin, we need to browse the
+>>> network namespaces list for the garbage collecting, but we are in an
+>>> interrupt handler, so I can not use rtnl_lock.
+>> where exactly....
 > 
-> I see you are using current->nsproxy->net_ns for sysctl stuff. Normally 
-> you should use ctl->extra2 where the struct net is stored. But in the 
-> case of route sysctl, it is not per namespace, so ctl->extra2 is NULL.
-> I will look at that and make it per namespace, so you will be able to 
-> build this patch on top of it and remove current->nsproxy->net_ns.
+> Actually, it is in net/ipv6/ip6_fib.c, in fib6_clean_all().
+> 
+> fib6_clean_all() is called by fib6_run_gc() handler of the 
+> ip6_fib_timer. 
+> If we don't want to have one such timer per net namespace, in 
+> fib6_clean_all() we have to go through all net to clean their own
+> fib_table_hash (using for_each_net() protected by rtnl_lock).
 
-I think that this is quite boring. It is impossible to get the namespace 
-almost anywhere even when it is safe to use this :(
-
-extra2 is a bad place, as it has a conventional meaning for other 
-kernel. For example it is used for quite a lot of sysctl-s anywhere.
-
-Regards,
-	Den
+after careful thinking, one timer per/namespace looks better for me :)
