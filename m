@@ -1,94 +1,79 @@
-From: sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org
-Subject: Re: [DRAFT] Container mini-summit notes v0.01
-Date: Wed, 17 Oct 2007 17:52:16 -0700
-Message-ID: <20071018005216.GA916@us.ibm.com>
-References: <6599ad830709050700y278d653eu371375c2fc107ef@mail.gmail.com>
-	<20070905143808.GG1403@sergelap.austin.ibm.com>
-	<46DF35DA.1090102@cs.columbia.edu>
-	<20070905235828.GA32475@sergelap.austin.ibm.com>
-	<46DFBE60.6030404@fr.ibm.com>
-	<20070906153243.GA15436@sergelap.austin.ibm.com>
-	<m1wsv0x5sv.fsf@ebiederm.dsl.xmission.com>
-	<20070910141834.GA5866@sergelap.austin.ibm.com>
-	<m1642iqz6x.fsf@ebiederm.dsl.xmission.com>
-	<46FABD9D.50407@cs.columbia.edu>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <46FABD9D.50407-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Cc: Kir Kolyshkin <kir-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>, Masahiko Takahashi <masahiko-3NddpPZAyC0@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Pavel Emelianov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+From: menage@google.com (Paul Menage)
+Subject: [PATCH] Simplify /proc/cgroups
+Date: Wed, 17 Oct 2007 19:56:36 -0700 (PDT)
+Message-ID: <20071018025636.ADCDE3D6261@localhost>
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1762349AbXJRC5G@vger.kernel.org>
+Sender: linux-kernel-owner@vger.kernel.org
+To: akpm@linux-foundation.org, pj@sgi.com
+Cc: containers@lists.osdl.org, linux-kernel@vger.kernel.org
 List-Id: containers.vger.kernel.org
 
-Oren Laadan [orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org] wrote:
-| 
-| (sorry from the delay, been away :)
-| 
-| Eric W. Biederman wrote:
-| > "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org> writes:
-| > 
-| >> Sorry, I was focusing on the virtual server needs.
-| >>
-| >> devpts is it's own fs so I was fully expecting to make it mountable
-| >> multiple times so a container can have it's own /dev/pts/0.  So what
-| >> other virtual devices would we want to be able to rec-reate for a
-| >> migrated application?  (I wonder (a) what gregkh will say about having
-| >> a device namespace, and (b) what the sysfs implications will be)
-| > 
-| > Depends.  There are things like the loop device that could be interesting.
-| > There may be some others.  I haven't looked at it enough detail to get
-| > beyond the fact that in some sense it isn't just limited to pts devices.
-| > 
-| > A multimount devpts is interesting though.
-| 
-| Devices I had to deal with (in zap) so far - to be able to ckpt/restart
-| (and migrate) a desktop session:
-| 
-| * /dev/rtc  (e.g. for mplayer)
-| 
-| * /dev/dsp
-| 
-| * /dev/random ?  (to isolate entropy pools ?)
-| 
-| * virtual consoles - e.g. in zap, an X server that uses a virtual device
-| runs inside a pod/container/VE (and X per-se requires a virtual console)
-| 
-| * virtual terminals - e.g. in zap we allow access to a pod from the host
-| without a need to run 'sshd' inside and setup a network in the pod. (Then
-| with a suitable utility and network access to the host, this also allows
-| sort of remote (a-la serial) console access).
-| >From inside the pod it looks like /dev/tty{1,2,..}, so one can run 'getty'
-| processes inside the pod. From the outside (for the admin, e.g.) it is an
-| extended /dev/tty that has an extra ioctl to multiplex access, so the
-| admin (program) can ask to be connected to tty X of pod Y, and it will
-| connect to that console (like connecting via serial line).
+This patch simplifies /proc/cgroups by removing pointers and some
+debugging information, and simply presenting a list of subsystems,
+which hierarchy they are part of (if any) and the number of cgroups
+created for that subsystem. Hierarchy id is determined by the bitmask
+of subsystem ids attached to that hierarchy.
 
-This sounds really interesting. Were these devices part of a complete
-device namespace ?  IOW, does say /dev/tty2 in each pods have the same
-major/minor number (4,2) ? Does each '/dev/tty2' have a separate entry
-in sysfs ?
+Signed-off-by: Paul Menage <menage@google.com>
 
+---
 
-| The main advantage is that as a virtual device it can be migrated (with
-| its buffers, if not empty, as they reside inside the pod) so upon restart
-| they go with the 'getty' processes that use them. The (old) admin will
-| see the line dropped, and the (new) admin after the migration can connect
-| at the new machine.
-| 
-| Oren.
-| 
-| 
-| _______________________________________________
-| Containers mailing list
-| Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-| https://lists.linux-foundation.org/mailman/listinfo/containers
+Several people have commented that /proc/cgroups is too confusing or
+contains strange information. Here's an attempt to simplify it. New
+typical output looks like:
+
+#subsys_name	hierarchy	num_cgroups
+cpuset	1	2
+cpuacct	10	1
+debug	0	1
+ns	10	1
+memory	0	1
+cpu	0	1
+
+Maybe there should be more tabs so that the columns line up better?
+But then it'll be out of line if people create subsystems with longer
+names ...
+
+ kernel/cgroup.c | 25 ++++---------------------
+ 1 file changed, 4 insertions(+), 21 deletions(-)
+
+Index: container-2.6.23-mm1/kernel/cgroup.c
+===================================================================
+--- container-2.6.23-mm1.orig/kernel/cgroup.c
++++ container-2.6.23-mm1/kernel/cgroup.c
+@@ -2403,31 +2403,14 @@ static int proc_cgroupstats_show(struct 
+ 	int i;
+ 	struct cgroupfs_root *root;
+ 
++	seq_puts(m, "#subsys_name\thierarchy\tnum_cgroups\n");
+ 	mutex_lock(&cgroup_mutex);
+-	seq_puts(m, "Hierarchies:\n");
+-	for_each_root(root) {
+-		struct cgroup_subsys *ss;
+-		int first = 1;
+-		seq_printf(m, "%p: bits=%lx cgroups=%d (", root,
+-			   root->subsys_bits, root->number_of_cgroups);
+-		for_each_subsys(root, ss) {
+-			seq_printf(m, "%s%s", first ? "" : ", ", ss->name);
+-			first = false;
+-		}
+-		seq_putc(m, ')');
+-		if (root->sb) {
+-			seq_printf(m, " s_active=%d",
+-				   atomic_read(&root->sb->s_active));
+-		}
+-		seq_putc(m, '\n');
+-	}
+-	seq_puts(m, "Subsystems:\n");
+ 	for (i = 0; i < CGROUP_SUBSYS_COUNT; i++) {
+ 		struct cgroup_subsys *ss = subsys[i];
+-		seq_printf(m, "%d: name=%s hierarchy=%p\n",
+-			   i, ss->name, ss->root);
++		seq_printf(m, "%s\t%d\t%d\n",
++			   ss->name, ss->root->subsys_bits,
++			   ss->root->number_of_cgroups);
+ 	}
+-	seq_printf(m, "Control Group groups: %d\n", css_set_count);
+ 	mutex_unlock(&cgroup_mutex);
+ 	return 0;
+ }
