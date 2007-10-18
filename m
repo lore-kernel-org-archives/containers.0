@@ -1,8 +1,8 @@
 From: "Denis V. Lunev" <dlunev-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 Subject: Re: [PATCH] [NETNS49] support for per/namespace routing cache
 	cleanup
-Date: Thu, 18 Oct 2007 23:01:44 +0400
-Message-ID: <4717AD98.5000102@gmail.com>
+Date: Thu, 18 Oct 2007 23:05:33 +0400
+Message-ID: <4717AE7D.1060000@gmail.com>
 References: <20071017111215.GA29653@iris.sw.ru> <4715F60F.6060304@fr.ibm.com>
 	<4716055D.4010102@sw.ru> <471610E8.8020008@fr.ibm.com>
 	<471617CA.9090901@sw.ru> <471624C0.9020108@fr.ibm.com>
@@ -23,7 +23,7 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: Benjamin Thery <benjamin.thery-6ktuUTfB/bM@public.gmane.org>
-Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, "Denis V. Lunev" <den-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org
+Cc: "Denis V. Lunev" <dlunev-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org, Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, "Denis V. Lunev" <den-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
 Benjamin Thery wrote:
@@ -48,22 +48,12 @@ Benjamin Thery wrote:
 >> after careful thinking, one timer per/namespace looks better for me :)
 > 
 > Why? :)
-
-This is
-- scalable: no long-long iteration over 1000 namespace
-- easy in respect to a patch I just sent. We should not allow to drop 
-cache from all namespaces from one
-- and this approach was good for Alexey Kuznetsov. We have talked about 
-this discussing OpenVZ implementation
-
 > Then you'll have to find a way pass the target net to fib6_run_gc() 
 > (the timer handler). current->nsproxy->net_ns won't work :)
-> One timer for all looked simpler to me.
-> 
-> Can there be an impact on performance if we have several GC timers
-> for the several netns running? 
 
-the amount of job is not greater. Isn't it?
+sorry for spam :) forget to mention that the namespace can be passed via 
+timer data :) yes - additional structure will be required
 
-Regards,
-	Den
+By the way, why do you, guys, so dislike our approach :) In that case 
+there will be no problem to get context from currrent. Yes. In soft 
+interrupt also :))
