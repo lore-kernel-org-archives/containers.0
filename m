@@ -1,42 +1,45 @@
-From: Martin Schwidefsky <schwidefsky@de.ibm.com>
-Subject: Re: 2.6.23-mm1 s390 driver problem
-Date: Fri, 19 Oct 2007 11:20:53 +0200
-Message-ID: <1192785653.25150.9.camel@localhost>
-References: <20071018200148.GA14234@vino.hallyn.com>
-	 <200710182215.56428.borntraeger@de.ibm.com>
-	 <20071018203151.GA15382@vino.hallyn.com>
-	 <1192780036.25150.7.camel@localhost>  <471875E0.8040308@fr.ibm.com>
-Reply-To: schwidefsky@de.ibm.com
+From: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+Subject: [RFC][PATCH] memory cgroup enhancements updated [0/10] intro
+Date: Fri, 19 Oct 2007 18:24:36 +0900
+Message-ID: <20071019182436.485e20cd.kamezawa.hiroyu@jp.fujitsu.com>
 Mime-Version: 1.0
-Content-Type: text/plain
+Content-Type: text/plain; charset=US-ASCII
 Content-Transfer-Encoding: 7bit
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1764599AbXJSJVO@vger.kernel.org>
-In-Reply-To: <471875E0.8040308@fr.ibm.com>
-Sender: linux-kernel-owner@vger.kernel.org
-To: Cedric Le Goater <clg@fr.ibm.com>
-Cc: "Serge E. Hallyn" <serge@hallyn.com>, Christian Borntraeger <borntraeger@de.ibm.com>, Andrew Morton <akpm@osdl.org>, linux-kernel@vger.kernel.org, cornelia.huck@de.ibm.com, heiko.carstens@de.ibm.com, sam@ravnborg.org, Linux Containers <containers@lists.osdl.org>
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: "containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org" <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
+Cc: "yamamoto-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org" <yamamoto-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>, rientjes-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, "balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org" <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
+These patches are for memory cgroup on my queue.
+Just dumping before week-end.
+I'd like to post these against the next -mm.
 
-On Fri, 2007-10-19 at 11:16 +0200, Cedric Le Goater wrote:
-> > This is the vmlinux.lds.S problem. The cleanup patch from Sam Ravnborg
-> > moved the __initramfs_start and __initramfs_end symbols into
-> > the .init.ramfs section. This is in itself not a problem, but it
-> > surfaced a bug: there is no *(.init.initramfs), that needs to be
-> > *(init.ramfs). I corrected this in the upstream patch but 2.6.23-mm1 has
-> > the older one that still causes the "Cannot open root device". For
-> > 2.6.23-mm1 use the patch below.
-> > 
-> 
-> thanks martin, 
-> 
-> that helped going a little further in the boot process but we then have 
-> a network issue when bringing the network interface up :
+This is RFC again. 
+Comments for previous version is reflected AMAP, thanks.
 
-See http://marc.info/?l=linux-kernel&m=119270398931208&w=2
- 
--- 
-blue skies,
-  Martin.
+Some of patches has no change. Several pathces are new.
 
-"Reality continues to ruin my life." - Calvin.
+[1/10] fix try_to_free_mem_cgroup_pages() for NUMA (NEW)
+[2/10] force_empty for drop all page_cgroup in empty cgroup. (REFLESHED)
+[3/10] rememember page is charged as page cache (changed #define placement)
+[4/10] rememember page is on active list (changed #define placement)
+[5/10] per cpu memory cgroup accounting
+[6/10] show per cpu memory cgroup accounting
+[7/10] account failcnt for RSS and CACHE (NEW)
+[8/10] add pre_destroy handler for cgroup (NEW)
+[9/10] do force_empty at rmdir() implicitly (NEW)
+[10/10] NUMA-aware accounting. (NEW)
+
+Any comments are welcome.
+
+Thanks,
+-Kame
