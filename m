@@ -1,8 +1,8 @@
 From: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
-Subject: [RFC][PATCH] memory cgroup enhancements updated [4/10] record page
- cgroup on active list
-Date: Fri, 19 Oct 2007 18:31:48 +0900
-Message-ID: <20071019183148.6e60af83.kamezawa.hiroyu@jp.fujitsu.com>
+Subject: [RFC][PATCH] memory cgroup enhancements updated [8/10] add
+ pre_destroy handler
+Date: Fri, 19 Oct 2007 18:35:44 +0900
+Message-ID: <20071019183544.0f5172b2.kamezawa.hiroyu@jp.fujitsu.com>
 References: <20071019182436.485e20cd.kamezawa.hiroyu@jp.fujitsu.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=US-ASCII
@@ -22,56 +22,47 @@ To: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
 Cc: "containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org" <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, "yamamoto-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org" <yamamoto-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>, rientjes-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, "balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org" <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Remember page_cgroup is on active_list or not in page_cgroup->flags.
+My main purpose of this patch is for memory controller..
 
-Against 2.6.23-mm1.
+This patch adds a handler "pre_destroy" to cgroup_subsys.
+It is called before cgroup_rmdir() checks all subsys's refcnt.
 
-Changelog v1->v2
-  - moved #define to out-side of struct definition
+I think this is useful for subsyses which have some extra refs
+even if there are no tasks in cgroup.
 
 Signed-off-by: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
-Signed-off-by: YAMAMOTO Takashi <yamamoto-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
 
- mm/memcontrol.c |   12 ++++++++----
- 1 file changed, 8 insertions(+), 4 deletions(-)
+ include/linux/cgroup.h |    1 +
+ kernel/cgroup.c        |    7 +++++++
+ 2 files changed, 8 insertions(+)
 
-Index: devel-2.6.23-mm1/mm/memcontrol.c
+Index: devel-2.6.23-mm1/include/linux/cgroup.h
 ===================================================================
---- devel-2.6.23-mm1.orig/mm/memcontrol.c
-+++ devel-2.6.23-mm1/mm/memcontrol.c
-@@ -86,6 +86,7 @@ struct page_cgroup {
- 	int	 flags;
- };
- #define PCGF_PAGECACHE		(0x1)	/* charged as page-cache */
-+#define PCGF_ACTIVE		(0x2)	/* page_cgroup is on active list */
- 
- enum {
- 	MEM_CGROUP_TYPE_UNSPEC = 0,
-@@ -208,10 +209,13 @@ clear_page_cgroup(struct page *page, str
- 
- static void __mem_cgroup_move_lists(struct page_cgroup *pc, bool active)
- {
--	if (active)
-+	if (active) {
-+		pc->flags |= PCGF_ACTIVE;
- 		list_move(&pc->lru, &pc->mem_cgroup->active_list);
--	else
-+	} else {
-+		pc->flags &= ~PCGF_ACTIVE;
- 		list_move(&pc->lru, &pc->mem_cgroup->inactive_list);
+--- devel-2.6.23-mm1.orig/include/linux/cgroup.h
++++ devel-2.6.23-mm1/include/linux/cgroup.h
+@@ -233,6 +233,7 @@ int cgroup_is_descendant(const struct cg
+ struct cgroup_subsys {
+ 	struct cgroup_subsys_state *(*create)(struct cgroup_subsys *ss,
+ 						  struct cgroup *cont);
++	void (*pre_destroy)(struct cgroup_subsys *ss, struct cgroup *cont);
+ 	void (*destroy)(struct cgroup_subsys *ss, struct cgroup *cont);
+ 	int (*can_attach)(struct cgroup_subsys *ss,
+ 			  struct cgroup *cont, struct task_struct *tsk);
+Index: devel-2.6.23-mm1/kernel/cgroup.c
+===================================================================
+--- devel-2.6.23-mm1.orig/kernel/cgroup.c
++++ devel-2.6.23-mm1/kernel/cgroup.c
+@@ -2158,6 +2158,13 @@ static int cgroup_rmdir(struct inode *un
+ 	parent = cont->parent;
+ 	root = cont->root;
+ 	sb = root->sb;
++	/*
++	 * Notify subsyses that rmdir() request comes.
++	 */
++	for_each_subsys(root, ss) {
++		if ((cont->subsys[ss->subsys_id]) && ss->pre_destroy)
++			ss->pre_destroy(ss, cont);
 +	}
- }
  
- int task_in_mem_cgroup(struct task_struct *task, const struct mem_cgroup *mem)
-@@ -421,9 +425,9 @@ noreclaim:
- 	pc->mem_cgroup = mem;
- 	pc->page = page;
- 	if (is_cache)
--		pc->flags = PCGF_PAGECACHE;
-+		pc->flags = PCGF_PAGECACHE | PCGF_ACTIVE;
- 	else
--		pc->flags = 0;
-+		pc->flags = PCGF_ACTIVE;
- 	if (page_cgroup_assign_new_page_cgroup(page, pc)) {
- 		/*
- 		 * an another charge is added to this page already.
+ 	if (cgroup_has_css_refs(cont)) {
+ 		mutex_unlock(&cgroup_mutex);
