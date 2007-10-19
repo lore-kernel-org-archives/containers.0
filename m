@@ -1,58 +1,38 @@
-From: Martin Schwidefsky <schwidefsky@de.ibm.com>
-Subject: Re: 2.6.23-mm1 s390 driver problem
-Date: Fri, 19 Oct 2007 13:25:29 +0200
-Message-ID: <1192793129.25150.12.camel@localhost>
-References: <20071018200148.GA14234@vino.hallyn.com>
-	 <200710182215.56428.borntraeger@de.ibm.com>
-	 <20071018203151.GA15382@vino.hallyn.com>
-	 <1192780036.25150.7.camel@localhost> <471875E0.8040308@fr.ibm.com>
-	 <20071019022719.537ee71f.akpm@linux-foundation.org>
-	 <47189242.8090006@fr.ibm.com>
-Reply-To: schwidefsky@de.ibm.com
+From: "Paul Menage" <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [Devel] [RFC][PATCH] memory cgroup enhancements updated [7/10]
+	RSS/CACHE failcnt
+Date: Fri, 19 Oct 2007 09:54:23 -0700
+Message-ID: <6599ad830710190954v276e8997l889be2b0ddfcaa61@mail.gmail.com>
+References: <20071019182436.485e20cd.kamezawa.hiroyu@jp.fujitsu.com>
+	<20071019183452.3b7057ca.kamezawa.hiroyu@jp.fujitsu.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1
-Content-Transfer-Encoding: QUOTED-PRINTABLE
-Return-path: <netdev-owner@vger.kernel.org>
-In-Reply-To: <47189242.8090006@fr.ibm.com>
-Sender: netdev-owner@vger.kernel.org
-To: Cedric Le Goater <clg@fr.ibm.com>
-Cc: Andrew Morton <akpm@linux-foundation.org>, "Serge E. Hallyn" <serge@hallyn.com>, Christian Borntraeger <borntraeger@de.ibm.com>, linux-kernel@vger.kernel.org, cornelia.huck@de.ibm.com, heiko.carstens@de.ibm.com, sam@ravnborg.org, Linux Containers <containers@lists.osdl.org>, netdev@vger.kernel.org
+Content-Transfer-Encoding: 7bit
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <20071019183452.3b7057ca.kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+Content-Disposition: inline
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+Cc: "containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org" <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, "yamamoto-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org" <yamamoto-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>, rientjes-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, "balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org" <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
+On 10/19/07, KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org> wrote:
+> cgroup's resource has "failure" counter. But I think memory cgroup
+> has 2 types of failure
+>         - failure of cache
+>         - failure of RSS
 
-On Fri, 2007-10-19 at 13:17 +0200, Cedric Le Goater wrote:
-> > please cc netdev on network issues.
->=20
-> yes.
->=20
-> >> Bringing up interface eth0:  ------------=DD cut here =A8---------=
----=20
-> >> Kernel BUG at 0000000000000002 =DDverbose debug info unavailable=A8=
-=20
-> >> illegal operation: 0001 =DD#1=A8=20
-> >=20
-> > that's a network issue ;)
-> >=20
-> >> 00000000002b3352 gives : include/linux/netdevice.h:819
-> >>
-> >=20
-> > I have a feeling that we fixed this.  But there's no BUG at 2.6.23-=
-mm1's
-> > include/linux/netdevice.h:819. =20
->=20
-> but dev->header_ops is bogus. right ?
->=20
-> > How about setting CONFIG_DEBUG_BUGVERBOSE=3Dy?
->=20
-> it is set :(
+Why do you think these are significantly different? Also, what kind of
+failure do we get when a task tries to fault on a mapping for a
+file-backed VMA? That's both RSS (since it's due to be mapped into the
+process' memory) and pagecache (assuming a cache-backed filesystem).
 
-This is definitly a problem with the header_ops in the qeth network
-driver. I've asked our network team to take care of it. Stay tuned..
-
---=20
-blue skies,
-  Martin.
-
-"Reality continues to ruin my life." - Calvin.
-
-
+Paul
