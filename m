@@ -1,8 +1,8 @@
 From: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
-Subject: [RFC][PATCH] memory cgroup enhancements updated [8/10] add
- pre_destroy handler
-Date: Fri, 19 Oct 2007 18:35:44 +0900
-Message-ID: <20071019183544.0f5172b2.kamezawa.hiroyu@jp.fujitsu.com>
+Subject: [RFC][PATCH] memory cgroup enhancements updated [7/10] RSS/CACHE
+ failcnt
+Date: Fri, 19 Oct 2007 18:34:52 +0900
+Message-ID: <20071019183452.3b7057ca.kamezawa.hiroyu@jp.fujitsu.com>
 References: <20071019182436.485e20cd.kamezawa.hiroyu@jp.fujitsu.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=US-ASCII
@@ -22,47 +22,56 @@ To: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
 Cc: "containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org" <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, "yamamoto-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org" <yamamoto-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>, rientjes-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, "balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org" <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-My main purpose of this patch is for memory controller..
+cgroup's resource has "failure" counter. But I think memory cgroup
+has 2 types of failure
+	- failure of cache
+	- failure of RSS
 
-This patch adds a handler "pre_destroy" to cgroup_subsys.
-It is called before cgroup_rmdir() checks all subsys's refcnt.
-
-I think this is useful for subsyses which have some extra refs
-even if there are no tasks in cgroup.
+This patch adds above 2 information to stat file.
+Above information is shown in "byte". But I wonder showing just counter
+is better o not...rather than PAGE_SIZE.
 
 Signed-off-by: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
 
- include/linux/cgroup.h |    1 +
- kernel/cgroup.c        |    7 +++++++
- 2 files changed, 8 insertions(+)
 
-Index: devel-2.6.23-mm1/include/linux/cgroup.h
+ mm/memcontrol.c |   13 +++++++++++++
+ 1 file changed, 13 insertions(+)
+
+Index: devel-2.6.23-mm1/mm/memcontrol.c
 ===================================================================
---- devel-2.6.23-mm1.orig/include/linux/cgroup.h
-+++ devel-2.6.23-mm1/include/linux/cgroup.h
-@@ -233,6 +233,7 @@ int cgroup_is_descendant(const struct cg
- struct cgroup_subsys {
- 	struct cgroup_subsys_state *(*create)(struct cgroup_subsys *ss,
- 						  struct cgroup *cont);
-+	void (*pre_destroy)(struct cgroup_subsys *ss, struct cgroup *cont);
- 	void (*destroy)(struct cgroup_subsys *ss, struct cgroup *cont);
- 	int (*can_attach)(struct cgroup_subsys *ss,
- 			  struct cgroup *cont, struct task_struct *tsk);
-Index: devel-2.6.23-mm1/kernel/cgroup.c
-===================================================================
---- devel-2.6.23-mm1.orig/kernel/cgroup.c
-+++ devel-2.6.23-mm1/kernel/cgroup.c
-@@ -2158,6 +2158,13 @@ static int cgroup_rmdir(struct inode *un
- 	parent = cont->parent;
- 	root = cont->root;
- 	sb = root->sb;
+--- devel-2.6.23-mm1.orig/mm/memcontrol.c
++++ devel-2.6.23-mm1/mm/memcontrol.c
+@@ -50,6 +50,11 @@ enum mem_cgroup_stat_index {
+ 	 */
+ 	MEM_CGROUP_STAT_ACTIVE,	   /* # of pages in active list */
+ 	MEM_CGROUP_STAT_INACTIVE,  /* # of pages on inactive list */
 +	/*
-+	 * Notify subsyses that rmdir() request comes.
++	 * precise failcnt
 +	 */
-+	for_each_subsys(root, ss) {
-+		if ((cont->subsys[ss->subsys_id]) && ss->pre_destroy)
-+			ss->pre_destroy(ss, cont);
-+	}
++	MEM_CGROUP_STAT_FAIL_RSS,  /* # of failure in RSS charging */
++	MEM_CGROUP_STAT_FAIL_CACHE,/* # of failure in CACHE charging */
  
- 	if (cgroup_has_css_refs(cont)) {
- 		mutex_unlock(&cgroup_mutex);
+ 	MEM_CGROUP_STAT_NSTATS,
+ };
+@@ -486,6 +491,12 @@ retry:
+ 	 */
+ 	while (res_counter_charge(&mem->res, PAGE_SIZE)) {
+ 		bool is_atomic = gfp_mask & GFP_ATOMIC;
++		if (is_cache)
++			mem_cgroup_stat_inc(&mem->stat,
++				MEM_CGROUP_STAT_FAIL_CACHE);
++		else
++			mem_cgroup_stat_inc(&mem->stat,
++				MEM_CGROUP_STAT_FAIL_RSS);
+ 		/*
+ 		 * We cannot reclaim under GFP_ATOMIC, fail the charge
+ 		 */
+@@ -850,6 +861,8 @@ static const struct mem_cgroup_stat_desc
+ 	[MEM_CGROUP_STAT_RSS] = { "rss", PAGE_SIZE, },
+ 	[MEM_CGROUP_STAT_ACTIVE] = { "active", PAGE_SIZE, },
+ 	[MEM_CGROUP_STAT_INACTIVE] = { "inactive", PAGE_SIZE, },
++	[MEM_CGROUP_STAT_FAIL_RSS] = { "rss_failure", PAGE_SIZE, },
++	[MEM_CGROUP_STAT_FAIL_CACHE] = { "cache_failure", PAGE_SIZE, },
+ };
+ 
+ static int mem_control_stat_show(struct seq_file *m, void *arg)
