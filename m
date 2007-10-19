@@ -1,8 +1,8 @@
 From: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
-Subject: [RFC][PATCH] memory cgroup enhancements updated [10/10] NUMA aware
- account
-Date: Fri, 19 Oct 2007 18:37:30 +0900
-Message-ID: <20071019183730.a6e8c105.kamezawa.hiroyu@jp.fujitsu.com>
+Subject: [RFC][PATCH] memory cgroup enhancements updated [2/10] force empty
+ interface
+Date: Fri, 19 Oct 2007 18:30:31 +0900
+Message-ID: <20071019183031.9ef60d07.kamezawa.hiroyu@jp.fujitsu.com>
 References: <20071019182436.485e20cd.kamezawa.hiroyu@jp.fujitsu.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=US-ASCII
@@ -22,285 +22,189 @@ To: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
 Cc: "containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org" <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, "yamamoto-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org" <yamamoto-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>, rientjes-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, "balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org" <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-This patch is a trial for making stat for memory_cgroup NUMA-aware.
+This patch adds an interface "memory.force_empty".
+Any write to this file will drop all charges in this cgroup if
+there is no task under.
 
- * dividing per-cpu stat to handle nid information.
- * add nid information to page_cgroup
- * Because init routine has to call kmalloc, init_early is set to be 0.
+%echo 1 > /....../memory.force_empty
 
-This is just a trial at this stage. Any comments are welcome.
-Works well on my fake NUMA system.
-I think we can add "numastat" based on this.
+will drop all charges of memory cgroup if cgroup's tasks is empty.
+
+This is useful to invoke rmdir() against memory cgroup successfully.
+
+Tested and worked well on x86_64/fake-NUMA system.
+
+Changelog v4 -> v5:
+  - added comments to mem_cgroup_force_empty()
+  - made mem_force_empty_read return -EINVAL
+  - cleanup mem_cgroup_force_empty_list()
+  - removed SWAP_CLUSTER_MAX
+
+Changelog v3 -> v4:
+  - adjusted to 2.6.23-mm1
+  - fixed typo
+  - changes buf[2]="0" to static const
+
+Changelog v2 -> v3:
+  - changed the name from force_reclaim to force_empty.
+
+Changelog v1 -> v2:
+  - added a new interface force_reclaim.
+  - changes spin_lock to spin_lock_irqsave().
+
 
 Signed-off-by: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
 
 
- mm/memcontrol.c |   97 ++++++++++++++++++++++++++++++++++++++++----------------
- 1 file changed, 71 insertions(+), 26 deletions(-)
+ mm/memcontrol.c |  110 ++++++++++++++++++++++++++++++++++++++++++++++++++++----
+ 1 file changed, 103 insertions(+), 7 deletions(-)
 
 Index: devel-2.6.23-mm1/mm/memcontrol.c
 ===================================================================
 --- devel-2.6.23-mm1.orig/mm/memcontrol.c
 +++ devel-2.6.23-mm1/mm/memcontrol.c
-@@ -29,6 +29,7 @@
- #include <linux/spinlock.h>
- #include <linux/fs.h>
- #include <linux/seq_file.h>
-+#include <linux/vmalloc.h>
- 
- #include <asm/uaccess.h>
- 
-@@ -59,12 +60,18 @@ enum mem_cgroup_stat_index {
- 	MEM_CGROUP_STAT_NSTATS,
- };
- 
-+#ifndef CONFIG_NUMA
- struct mem_cgroup_stat_cpu {
--	s64 count[MEM_CGROUP_STAT_NSTATS];
-+	s64 count[1][MEM_CGROUP_STAT_NSTATS];
- } ____cacheline_aligned_in_smp;
-+#else
-+struct mem_cgroup_stat_cpu {
-+	s64 count[MAX_NUMNODES][MEM_CGROUP_STAT_NSTATS];
-+} ____cacheline_aligned_in_smp;
-+#endif
- 
- struct mem_cgroup_stat {
--	struct mem_cgroup_stat_cpu cpustat[NR_CPUS];
-+	struct mem_cgroup_stat_cpu *cpustat[NR_CPUS];
- };
- 
- /*
-@@ -72,28 +79,28 @@ struct mem_cgroup_stat {
-  * MUST be called under preempt_disable().
-  */
- static inline void __mem_cgroup_stat_add(struct mem_cgroup_stat *stat,
--                enum mem_cgroup_stat_index idx, int val)
-+		enum mem_cgroup_stat_index idx, int nid, int val)
- {
- 	int cpu = smp_processor_id();
- #ifdef CONFIG_PREEMPT
- 	VM_BUG_ON(preempt_count() == 0);
- #endif
--	stat->cpustat[cpu].count[idx] += val;
-+	stat->cpustat[cpu]->count[nid][idx] += val;
- }
- 
- static inline void mem_cgroup_stat_inc(struct mem_cgroup_stat *stat,
--		enum mem_cgroup_stat_index idx)
-+		enum mem_cgroup_stat_index idx, int nid)
- {
- 	preempt_disable();
--	__mem_cgroup_stat_add(stat, idx, 1);
-+	__mem_cgroup_stat_add(stat, idx, nid, 1);
- 	preempt_enable();
- }
- 
- static inline void mem_cgroup_stat_dec(struct mem_cgroup_stat *stat,
--		enum mem_cgroup_stat_index idx)
-+		enum mem_cgroup_stat_index idx, int nid)
- {
- 	preempt_disable();
--	__mem_cgroup_stat_add(stat, idx, -1);
-+	__mem_cgroup_stat_add(stat, idx, nid, -1);
- 	preempt_enable();
- }
- 
-@@ -149,6 +156,7 @@ struct page_cgroup {
- 	struct list_head lru;		/* per cgroup LRU list */
- 	struct page *page;
- 	struct mem_cgroup *mem_cgroup;
-+	int	nid;
- 	atomic_t ref_cnt;		/* Helpful when pages move b/w  */
- 					/* mapped and cached states     */
- 	int	 flags;
-@@ -169,21 +177,23 @@ enum {
-  * We have to modify several values at charge/uncharge..
-  */
- static inline void
--mem_cgroup_charge_statistics(struct mem_cgroup *mem, int flags, int charge)
-+mem_cgroup_charge_statistics(struct mem_cgroup *mem, int nid,
-+				int flags, int charge)
- {
- 	int val = (charge)? 1 : -1;
- 	struct mem_cgroup_stat *stat = &mem->stat;
- 	preempt_disable();
- 
- 	if (flags & PCGF_PAGECACHE)
--		__mem_cgroup_stat_add(stat, MEM_CGROUP_STAT_PAGECACHE, val);
-+		__mem_cgroup_stat_add(stat,
-+				MEM_CGROUP_STAT_PAGECACHE, nid, val);
- 	else
--		__mem_cgroup_stat_add(stat, MEM_CGROUP_STAT_RSS, val);
-+		__mem_cgroup_stat_add(stat, MEM_CGROUP_STAT_RSS, nid, val);
- 
- 	if (flags & PCGF_ACTIVE)
--		__mem_cgroup_stat_add(stat, MEM_CGROUP_STAT_ACTIVE, val);
-+		__mem_cgroup_stat_add(stat, MEM_CGROUP_STAT_ACTIVE, nid, val);
- 	else
--		__mem_cgroup_stat_add(stat, MEM_CGROUP_STAT_INACTIVE, val);
-+		__mem_cgroup_stat_add(stat, MEM_CGROUP_STAT_INACTIVE, nid, val);
- 
- 	preempt_enable();
- }
-@@ -315,8 +325,10 @@ static void __mem_cgroup_move_lists(stru
- 	if (moved) {
- 		struct mem_cgroup_stat *stat = &mem->stat;
- 		preempt_disable();
--		__mem_cgroup_stat_add(stat, MEM_CGROUP_STAT_ACTIVE, moved);
--		__mem_cgroup_stat_add(stat, MEM_CGROUP_STAT_INACTIVE, -moved);
-+		__mem_cgroup_stat_add(stat, MEM_CGROUP_STAT_ACTIVE,
-+							pc->nid, moved);
-+		__mem_cgroup_stat_add(stat, MEM_CGROUP_STAT_INACTIVE,
-+					pc->nid, -moved);
- 		preempt_enable();
- 	}
- 	if (active) {
-@@ -493,10 +505,10 @@ retry:
- 		bool is_atomic = gfp_mask & GFP_ATOMIC;
- 		if (is_cache)
- 			mem_cgroup_stat_inc(&mem->stat,
--				MEM_CGROUP_STAT_FAIL_CACHE);
-+				MEM_CGROUP_STAT_FAIL_CACHE, page_to_nid(page));
- 		else
- 			mem_cgroup_stat_inc(&mem->stat,
--				MEM_CGROUP_STAT_FAIL_RSS);
-+				MEM_CGROUP_STAT_FAIL_RSS, page_to_nid(page));
+@@ -480,6 +480,7 @@ void mem_cgroup_uncharge(struct page_cgr
+ 		page = pc->page;
  		/*
- 		 * We cannot reclaim under GFP_ATOMIC, fail the charge
+ 		 * get page->cgroup and clear it under lock.
++		 * force_empty can drop page->cgroup without checking refcnt.
  		 */
-@@ -537,6 +549,7 @@ noreclaim:
- 	atomic_set(&pc->ref_cnt, 1);
- 	pc->mem_cgroup = mem;
- 	pc->page = page;
-+	pc->nid = page_to_nid(page);
- 	if (is_cache)
- 		pc->flags = PCGF_PAGECACHE | PCGF_ACTIVE;
- 	else
-@@ -554,7 +567,7 @@ noreclaim:
- 	}
- 
- 	/* Update statistics vector */
--	mem_cgroup_charge_statistics(mem, pc->flags, true);
-+	mem_cgroup_charge_statistics(mem, pc->nid, pc->flags, true);
- 
- 	spin_lock_irqsave(&mem->lru_lock, flags);
- 	list_add(&pc->lru, &mem->active_list);
-@@ -621,7 +634,8 @@ void mem_cgroup_uncharge(struct page_cgr
- 			spin_lock_irqsave(&mem->lru_lock, flags);
+ 		if (clear_page_cgroup(page, pc) == pc) {
+ 			mem = pc->mem_cgroup;
+@@ -489,13 +490,6 @@ void mem_cgroup_uncharge(struct page_cgr
  			list_del_init(&pc->lru);
  			spin_unlock_irqrestore(&mem->lru_lock, flags);
--			mem_cgroup_charge_statistics(mem, pc->flags, false);
-+			mem_cgroup_charge_statistics(mem, pc->nid, pc->flags,
-+						false);
  			kfree(pc);
+-		} else {
+-			/*
+-			 * Note:This will be removed when force-empty patch is
+-			 * applied. just show warning here.
+-			 */
+-			printk(KERN_ERR "Race in mem_cgroup_uncharge() ?");
+-			dump_stack();
  		}
  	}
-@@ -657,6 +671,7 @@ void mem_cgroup_end_migration(struct pag
- void mem_cgroup_page_migration(struct page *page, struct page *newpage)
- {
- 	struct page_cgroup *pc;
-+	struct mem_cgroup *mem;
- retry:
- 	pc = page_get_page_cgroup(page);
- 	if (!pc)
-@@ -664,6 +679,11 @@ retry:
- 	if (clear_page_cgroup(page, pc) != pc)
- 		goto retry;
- 	pc->page = newpage;
-+	pc->nid = page_to_nid(newpage);
-+	mem = pc->mem_cgroup;
-+	mem_cgroup_charge_statistics(mem, page_to_nid(page), pc->flags, false);
-+	mem_cgroup_charge_statistics(mem,
-+				page_to_nid(newpage), pc->flags, true);
- 	lock_page_cgroup(newpage);
- 	page_assign_page_cgroup(newpage, pc);
- 	unlock_page_cgroup(newpage);
-@@ -697,7 +717,8 @@ retry:
- 			css_put(&mem->css);
- 			res_counter_uncharge(&mem->res, PAGE_SIZE);
- 			list_del_init(&pc->lru);
--			mem_cgroup_charge_statistics(mem, pc->flags, false);
-+			mem_cgroup_charge_statistics(mem, pc->flags, pc->nid,
-+					false);
- 			kfree(pc);
- 		} else 	/* being uncharged ? ...do relax */
- 			break;
-@@ -872,13 +893,16 @@ static int mem_control_stat_show(struct 
- 	struct mem_cgroup_stat *stat = &mem_cont->stat;
- 	int i;
- 
--	for (i = 0; i < ARRAY_SIZE(stat->cpustat[0].count); i++) {
-+	for (i = 0; i < MEM_CGROUP_STAT_NSTATS; i++) {
- 		unsigned int cpu;
-+		int node;
- 		s64 val;
- 
- 		val = 0;
--		for (cpu = 0; cpu < NR_CPUS; cpu++)
--			val += stat->cpustat[cpu].count[i];
-+		for_each_possible_cpu(cpu)
-+			for_each_node_state(node, N_POSSIBLE)
-+				val += stat->cpustat[cpu]->count[node][i];
-+
- 		val *= mem_cgroup_stat_desc[i].unit;
- 		seq_printf(m, "%s %lld\n", mem_cgroup_stat_desc[i].msg, val);
- 	}
-@@ -941,12 +965,14 @@ static struct cgroup_subsys_state *
- mem_cgroup_create(struct cgroup_subsys *ss, struct cgroup *cont)
- {
- 	struct mem_cgroup *mem;
-+	int cpu;
- 
- 	if (unlikely((cont->parent) == NULL)) {
- 		mem = &init_mem_cgroup;
- 		init_mm.mem_cgroup = mem;
--	} else
-+	} else {
- 		mem = kzalloc(sizeof(struct mem_cgroup), GFP_KERNEL);
-+	}
- 
- 	if (mem == NULL)
- 		return NULL;
-@@ -956,6 +982,17 @@ mem_cgroup_create(struct cgroup_subsys *
- 	INIT_LIST_HEAD(&mem->inactive_list);
- 	spin_lock_init(&mem->lru_lock);
- 	mem->control_type = MEM_CGROUP_TYPE_ALL;
-+
-+	for_each_possible_cpu(cpu) {
-+		int nid = cpu_to_node(cpu);
-+		struct mem_cgroup_stat_cpu *mcsc;
-+		if (sizeof(*mcsc) < PAGE_SIZE)
-+			mcsc = kmalloc_node(sizeof(*mcsc), GFP_KERNEL, nid);
-+		else
-+			mcsc = vmalloc_node(sizeof(*mcsc), nid);
-+		memset(mcsc, 0, sizeof(*mcsc));
-+		mem->stat.cpustat[cpu] = mcsc;
-+	}
- 	return &mem->css;
+ }
+@@ -543,6 +537,76 @@ retry:
+ 	return;
  }
  
-@@ -969,7 +1006,15 @@ static void mem_cgroup_pre_destroy(struc
- static void mem_cgroup_destroy(struct cgroup_subsys *ss,
- 				struct cgroup *cont)
++/*
++ * This routine traverse page_cgroup in given list and drop them all.
++ * This routine ignores page_cgroup->ref_cnt.
++ * *And* this routine doesn't reclaim page itself, just removes page_cgroup.
++ */
++#define FORCE_UNCHARGE_BATCH	(128)
++static void
++mem_cgroup_force_empty_list(struct mem_cgroup *mem, struct list_head *list)
++{
++	struct page_cgroup *pc;
++	struct page *page;
++	int count;
++	unsigned long flags;
++
++retry:
++	count = FORCE_UNCHARGE_BATCH;
++	spin_lock_irqsave(&mem->lru_lock, flags);
++
++	while (--count && !list_empty(list)) {
++		pc = list_entry(list->prev, struct page_cgroup, lru);
++		page = pc->page;
++		/* Avoid race with charge */
++		atomic_set(&pc->ref_cnt, 0);
++		if (clear_page_cgroup(page, pc) == pc) {
++			css_put(&mem->css);
++			res_counter_uncharge(&mem->res, PAGE_SIZE);
++			list_del_init(&pc->lru);
++			kfree(pc);
++		} else 	/* being uncharged ? ...do relax */
++			break;
++	}
++	spin_unlock_irqrestore(&mem->lru_lock, flags);
++	if (!list_empty(list)) {
++		cond_resched();
++		goto retry;
++	}
++	return;
++}
++
++/*
++ * make mem_cgroup's charge to be 0 if there is no task.
++ * This enables deleting this mem_cgroup.
++ */
++
++int mem_cgroup_force_empty(struct mem_cgroup *mem)
++{
++	int ret = -EBUSY;
++	css_get(&mem->css);
++	/*
++	 * page reclaim code (kswapd etc..) will move pages between
++`	 * active_list <-> inactive_list while we don't take a lock.
++	 * So, we have to do loop here until all lists are empty.
++	 */
++	while (!(list_empty(&mem->active_list) &&
++		 list_empty(&mem->inactive_list))) {
++		if (atomic_read(&mem->css.cgroup->count) > 0)
++			goto out;
++		/* drop all page_cgroup in active_list */
++		mem_cgroup_force_empty_list(mem, &mem->active_list);
++		/* drop all page_cgroup in inactive_list */
++		mem_cgroup_force_empty_list(mem, &mem->inactive_list);
++	}
++	ret = 0;
++out:
++	css_put(&mem->css);
++	return ret;
++}
++
++
++
+ int mem_cgroup_write_strategy(char *buf, unsigned long long *tmp)
  {
--	kfree(mem_cgroup_from_cont(cont));
+ 	*tmp = memparse(buf, &buf);
+@@ -628,6 +692,33 @@ static ssize_t mem_control_type_read(str
+ 			ppos, buf, s - buf);
+ }
+ 
++
++static ssize_t mem_force_empty_write(struct cgroup *cont,
++				struct cftype *cft, struct file *file,
++				const char __user *userbuf,
++				size_t nbytes, loff_t *ppos)
++{
 +	struct mem_cgroup *mem = mem_cgroup_from_cont(cont);
-+	int cpu;
-+	for_each_possible_cpu(cpu) {
-+		if (sizeof(struct mem_cgroup_stat_cpu) < PAGE_SIZE)
-+			kfree(mem->stat.cpustat[cpu]);
-+		else
-+			vfree(mem->stat.cpustat[cpu]);
-+	}
-+	kfree(mem);
- }
- 
- static int mem_cgroup_populate(struct cgroup_subsys *ss,
-@@ -1021,5 +1066,5 @@ struct cgroup_subsys mem_cgroup_subsys =
- 	.destroy = mem_cgroup_destroy,
- 	.populate = mem_cgroup_populate,
- 	.attach = mem_cgroup_move_task,
--	.early_init = 1,
-+	.early_init = 0,
++	int ret;
++	ret = mem_cgroup_force_empty(mem);
++	if (!ret)
++		ret = nbytes;
++	return ret;
++}
++
++/*
++ * Note: This should be removed if cgroup supports write-only file.
++ */
++
++static ssize_t mem_force_empty_read(struct cgroup *cont,
++				struct cftype *cft,
++				struct file *file, char __user *userbuf,
++				size_t nbytes, loff_t *ppos)
++{
++	return -EINVAL;
++}
++
++
+ static struct cftype mem_cgroup_files[] = {
+ 	{
+ 		.name = "usage_in_bytes",
+@@ -650,6 +741,11 @@ static struct cftype mem_cgroup_files[] 
+ 		.write = mem_control_type_write,
+ 		.read = mem_control_type_read,
+ 	},
++	{
++		.name = "force_empty",
++		.write = mem_force_empty_write,
++		.read = mem_force_empty_read,
++	},
  };
+ 
+ static struct mem_cgroup init_mem_cgroup;
