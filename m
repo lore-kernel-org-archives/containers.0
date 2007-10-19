@@ -1,15 +1,16 @@
-From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
-Subject: Re: [PATCH 2/3] [NETNS49] Add struct net to all calls for
-	rt_cache_flush
-Date: Fri, 19 Oct 2007 13:23:42 -0600
-Message-ID: <m11wbqhps1.fsf@ebiederm.dsl.xmission.com>
-References: <20071018100330.GA23415@iris.sw.ru> <471764A9.2080703@fr.ibm.com>
-	<47177070.4000700@sw.ru>
+From: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+Subject: Re: [Devel] [RFC][PATCH] memory cgroup enhancements updated [7/10]
+ RSS/CACHE failcnt
+Date: Sat, 20 Oct 2007 07:33:38 +0900
+Message-ID: <20071020073338.2cf41a34.kamezawa.hiroyu@jp.fujitsu.com>
+References: <20071019182436.485e20cd.kamezawa.hiroyu@jp.fujitsu.com>
+	<20071019183452.3b7057ca.kamezawa.hiroyu@jp.fujitsu.com>
+	<6599ad830710190954v276e8997l889be2b0ddfcaa61@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+Content-Type: text/plain; charset=US-ASCII
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <47177070.4000700-3ImXcnM4P+0@public.gmane.org> (Denis V. Lunev's message of "Thu, 18
-	Oct 2007 18:40:48 +0400")
+In-Reply-To: <6599ad830710190954v276e8997l889be2b0ddfcaa61-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,39 +20,32 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Denis V. Lunev" <den-3ImXcnM4P+0@public.gmane.org>
-Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, "Denis V. Lunev" <den-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>, benjamin.thery-6ktuUTfB/bM@public.gmane.org
+To: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, yamamoto-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org, rientjes-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-"Denis V. Lunev" <den-3ImXcnM4P+0@public.gmane.org> writes:
+On Fri, 19 Oct 2007 09:54:23 -0700
+"Paul Menage" <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org> wrote:
 
+> On 10/19/07, KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org> wrote:
+> > cgroup's resource has "failure" counter. But I think memory cgroup
+> > has 2 types of failure
+> >         - failure of cache
+> >         - failure of RSS
+> 
+> Why do you think these are significantly different? Also, what kind of
+> failure do we get when a task tries to fault on a mapping for a
+> file-backed VMA? That's both RSS (since it's due to be mapped into the
+> process' memory) and pagecache (assuming a cache-backed filesystem).
+> 
+One is for checking how memory cgroup works.
+When memory reaches limit and amount of CACHE doesn't change but
+CACHE.failure increases, maybe CACHE is rotating.
 
-> I think that this is quite boring. It is impossible to get the namespace almost
-> anywhere even when it is safe to use this :(
+One is for debug, I'd like to check swapiness <-> RSS.failure:CACHE.failure
+releationship. It's ok to turn these params to be DEBUG option.
 
-Well for sysctl is my intention to eventually have:
-/proc/sys -> /proc/self/sys
-/proc/<pid>/sys
+File-backed VMA gets RSS.failure.
 
-So it doesn't depend on who you are so much as who you are doing the work
-for.  Especially in the networking context.
-
-The goal for filesystem interfaces to namespaces is that long term we
-should not care who is accessing the file but rather which file is being
-accessed.  This allows for monitoring and control applications outsides
-the container.  Applications like the planetlab monitoring framework where
-the monitoring applications runs in a low privilege container and can
-still monitor the entire box.
-
-I don't quite have the user interface side of the network namspace proc
-and sysctl interfaces sorted out but I do have the internal interfaces
-working in a way that supports this.
-
-> extra2 is a bad place, as it has a conventional meaning for other kernel. For
-> example it is used for quite a lot of sysctl-s anywhere.
-
-extra1 and extra2 are defined to be whatever the user of that sysctl table
-entry want them to be.  Frequently they are used for min/max behavior
-but if your sysctl has another use for them that is fine.
-
-Eric
+Thanks,
+-Kame
