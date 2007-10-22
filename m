@@ -1,15 +1,13 @@
-From: Hugh Dickins <hugh-DTz5qymZ9yRBDgjK7y7TUQ@public.gmane.org>
-Subject: Re: [RFC] [-mm PATCH] Memory controller fix swap charging context
- in unuse_pte()
-Date: Mon, 22 Oct 2007 19:51:33 +0100 (BST)
-Message-ID: <Pine.LNX.4.64.0710221933570.21262@blonde.wat.veritas.com>
-References: <20071005041406.21236.88707.sendpatchset@balbir-laptop>
-	<Pine.LNX.4.64.0710071735530.13138@blonde.wat.veritas.com>
-	<4713A2F2.1010408@linux.vnet.ibm.com>
+From: yamamoto-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org (YAMAMOTO Takashi)
+Subject: Re: [RFC] [PATCH] memory controller background reclamation
+Date: Tue, 23 Oct 2007 08:44:30 +0900 (JST)
+Message-ID: <20071022234430.EE6B11C1231@siro.lan>
+References: <471CCB85.3040905@linux.vnet.ibm.com>
 Mime-Version: 1.0
-Content-Type: TEXT/PLAIN; charset=US-ASCII
+Content-Type: Text/Plain; charset=us-ascii
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <4713A2F2.1010408-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+In-Reply-To: Your message of "Mon, 22 Oct 2007 21:40:45 +0530"
+	<471CCB85.3040905-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,42 +17,66 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Linux MM Mailing List <linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org>
+To: balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
+Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, minoura-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Mon, 15 Oct 2007, Balbir Singh wrote:
-> Hugh Dickins wrote:
+hi,
+
+> > @@ -250,6 +256,69 @@ unsigned long mem_cgroup_isolate_pages(u
+> >  	return nr_taken;
+> >  }
 > > 
-> > --- 2.6.23-rc8-mm2/mm/swapfile.c	2007-09-27 12:03:36.000000000 +0100
-> > +++ linux/mm/swapfile.c	2007-10-07 14:33:05.000000000 +0100
-> > @@ -507,11 +507,23 @@ unsigned int count_swap_pages(int type, 
-> >   * just let do_wp_page work it out if a write is requested later - to
-> >   * force COW, vm_page_prot omits write permission from any private vma.
-> >   */
-> > -static int unuse_pte(struct vm_area_struct *vma, pte_t *pte,
-> > +static int unuse_pte(struct vm_area_struct *vma, pmd_t *pmd,
-> >  		unsigned long addr, swp_entry_t entry, struct page *page)
-...
+> > +static int
+> > +mem_cgroup_need_reclaim(struct mem_cgroup *mem)
+> > +{
+> > +	struct res_counter * const cnt = &mem->res;
+> > +	int doreclaim;
+> > +	unsigned long flags;
+> > +
+> > +	/* XXX should be in res_counter */
+> > +	/* XXX should not hardcode a watermark */
 > 
-> I tested this patch and it seems to be working fine. I tried swapoff -a
-> in the middle of tests consuming swap. Not 100% rigorous, but a good
-> test nevertheless.
+> We could add the following API to resource counters
 > 
-> Tested-by: Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+> res_counter_set_low_watermark
+> res_counter_set_high_watermark
+> res_counter_below_low_watermark
+> res_counter_above_high_watermark
+> 
+> and add
+> 
+> low_watermark
+> high_watermark
+> 
+> members to the resource group. We could push out data
+> upto the low watermark from the cgroup.
 
-Thanks, Balbir.  Sorry for the delay.  I've not forgotten our
-agreement that I should be splitting it into before-and-after
-mem cgroup patches.  But it's low priority for me until we're
-genuinely assigning to a cgroup there.  Hope to get back to
-looking into that tomorrow, but no promises.
+it sounds fine to me.
 
-I think you still see no problem, where I claim that simply
-omitting the mem charge mods from mm/swap_state.c leads to OOMs?
-Maybe our difference is because my memhog in the cgroup is using
-more memory than RAM, not just more memory than allowed to the
-cgroup.  I suspect that arrives at a state (when the swapcache
-pages are not charged) where it cannot locate the pages it needs
-to reclaim to stay within its limit.
+> > +static void
+> > +mem_cgroup_reclaim(struct work_struct *work)
+> > +{
+> > +	struct mem_cgroup * const mem =
+> > +	    container_of(work, struct mem_cgroup, reclaim_work);
+> > +	int batch_count = 128; /* XXX arbitrary */
+> > +
+> > +	for (; batch_count > 0; batch_count--) {
+> > +		if (!mem_cgroup_need_reclaim(mem))
+> > +			break;
+> > +		/*
+> > +		 * XXX try_to_free_foo is not a correct mechanism to
+> > +		 * use here.  eg. ALLOCSTALL counter
+> > +		 * revisit later.
+> > +		 */
+> > +		if (!try_to_free_mem_cgroup_pages(mem, GFP_KERNEL))
+> 
+> We could make try_to_free_mem_cgroup_pages, batch aware and pass that
+> in scan_control.
 
-Hugh
+in the comment above, i meant that it might be better to introduce
+something like balance_pgdat rather than using try_to_free_mem_cgroup_pages.
+with the current design of cgroup lru lists, probably it doesn't
+matter much except statistics, tho.
+
+YAMAMOTO Takashi
