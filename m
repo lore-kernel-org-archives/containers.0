@@ -1,11 +1,10 @@
-From: Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+From: Vaidyanathan Srinivasan <svaidy-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 Subject: Re: [RFC] [PATCH] memory controller background reclamation
-Date: Mon, 22 Oct 2007 21:40:45 +0530
-Message-ID: <471CCB85.3040905@linux.vnet.ibm.com>
+Date: Mon, 22 Oct 2007 22:40:31 +0530
+Message-ID: <471CD987.5030800@linux.vnet.ibm.com>
 References: <20071022094349.60B351C1015@siro.lan>
-Reply-To: balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+Content-Type: text/plain; charset=ISO-8859-1
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 In-Reply-To: <20071022094349.60B351C1015-Pcsii4f/SVk@public.gmane.org>
@@ -19,7 +18,7 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: YAMAMOTO Takashi <yamamoto-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
-Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, minoura-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org
+Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, minoura-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
 List-Id: containers.vger.kernel.org
 
 YAMAMOTO Takashi wrote:
@@ -88,11 +87,12 @@ YAMAMOTO Takashi wrote:
 > 		u 0.46s s 6.53s e 49.28s maj 22223 min 209384 in 0 out 0
 > 
 > 		memory.failcnt after a run: 1589
-
-Looks quite nice!
-
 > -----
-> 
+
+Results looks good.  Background reclaim will definitely help performance.
+I am sure once we get the thresholds correct, the performance will improve
+further.
+
 > 
 > --- linux-2.6.23-rc8-mm2-cgkswapd/mm/memcontrol.c.BACKUP	2007-10-01 17:19:57.000000000 +0900
 > +++ linux-2.6.23-rc8-mm2-cgkswapd/mm/memcontrol.c	2007-10-22 13:46:01.000000000 +0900
@@ -136,22 +136,6 @@ Looks quite nice!
 > +
 > +	/* XXX should be in res_counter */
 > +	/* XXX should not hardcode a watermark */
-
-We could add the following API to resource counters
-
-res_counter_set_low_watermark
-res_counter_set_high_watermark
-res_counter_below_low_watermark
-res_counter_above_high_watermark
-
-and add
-
-low_watermark
-high_watermark
-
-members to the resource group. We could push out data
-upto the low watermark from the cgroup.
-
 > +	spin_lock_irqsave(&cnt->lock, flags);
 > +	doreclaim = cnt->usage > cnt->limit / 4 * 3;
 > +	spin_unlock_irqrestore(&cnt->lock, flags);
@@ -199,11 +183,6 @@ upto the low watermark from the cgroup.
 > +		 * revisit later.
 > +		 */
 > +		if (!try_to_free_mem_cgroup_pages(mem, GFP_KERNEL))
-
-We could make try_to_free_mem_cgroup_pages, batch aware and pass that
-in scan_control.
-
-
 > +			break;
 > +	}
 > +	if (batch_count == 0)
@@ -253,9 +232,7 @@ in scan_control.
 >  }
 > 
 
+Can we potentially avoid direct reclaim and sleep if the charge is exceeded
+and let the background reclaim do the job and wake us up?
 
--- 
-	Warm Regards,
-	Balbir Singh
-	Linux Technology Center
-	IBM, ISTL
+--Vaidy
