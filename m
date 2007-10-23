@@ -1,78 +1,105 @@
-From: Srivatsa Vaddagiri <vatsa-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: Re: [PATCH 2/2] CFS CGroup: Report usage
-Date: Tue, 23 Oct 2007 23:08:37 +0530
-Message-ID: <20071023173837.GG4667__49099.8742673129$1193160579$gmane$org@linux.vnet.ibm.com>
-References: <471D4523.4040509@google.com>
-	<20071023164704.GE4667@linux.vnet.ibm.com>
-	<6599ad830710230941y5d175688ob3a4d9ac42ba8c8f@mail.gmail.com>
-Reply-To: vatsa-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
+From: Crispin Cowan <crispin@crispincowan.com>
+Subject: Re: LSM and Containers
+Date: Tue, 23 Oct 2007 10:57:36 -0700
+Message-ID: <471E3610.7030102@crispincowan.com>
+References: <200710220224.l9M2Og5t020815@sapphire.spiritone.com> <20071022035954.GA30991@kroah.com> <471CE238.5040107@qumranet.com> <e7d8f83e0710221559i6b14469fjebceee12c6dec98e@mail.gmail.com> <471D8877.5030901@crispincowan.com> <20071023133210.GC3086@sergelap.austin.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <6599ad830710230941y5d175688ob3a4d9ac42ba8c8f-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Content-Type: text/plain; charset=ISO-8859-1
+Content-Transfer-Encoding: 7bit
+Return-path: <linux-security-module-owner@vger.kernel.org>
+In-Reply-To: <20071023133210.GC3086@sergelap.austin.ibm.com>
+Sender: linux-security-module-owner@vger.kernel.org
+To: "Serge E. Hallyn" <serue@us.ibm.com>
+Cc: Peter Dolding <oiaohm@gmail.com>, linux-security-module@vger.kernel.org, Containers <containers@lists.osdl.org>
 List-Id: containers.vger.kernel.org
 
-On Tue, Oct 23, 2007 at 09:41:49AM -0700, Paul Menage wrote:
-> > > Adds a cpu.usage file to the CFS cgroup that reports CPU usage in
-> > > milliseconds for that cgroup's tasks
-> >
-> > It would be nice to split this into user and sys time at some point.
-> 
-> Sounds reasonable - but does CFS track this?
+Serge E. Hallyn wrote:
+> Quoting Crispin Cowan (crispin@crispincowan.com):
+>   
+>> It is my understanding of containers that they are intended to be a
+>> *lightweight* virtualization technique, giving each container
+>> effectively a private copy of identical instances of the host OS.
+>>
+>> If you want to rent out divergent distros, kernels, etc. then it seems
+>> to me that heavier virtualization like Xen, KVM, VMware, etc. are the
+>> right answer, rather than trying to force difficult kernel solutions
+>> into the container and LSM features into the kernel.
+>>     
+> For different kernels, yes, but unless you pick two distros which
+> require incompatible kernel features (?) I don't see running, say,
+> gentoo, fedora, and ubuntu under different containers as a problem.
+>
+> Perhaps the biggest reason not to do that, speaking practically, is that
+> you miss out on some of the ability to share /usr, /lib, etc readonly
+> among containers to save overall disk space.
+>   
+This is why it just doesn't seem very reasonable. People who want to do
+that will just use KVM or Xen. People who want the efficiency of
+lightweight containers, and have enough load pressure to care, can just
+have one Fedora physical box with many containers all running Fedora,
+and another openSUSE physical box with many containers all running openSUSE.
 
-No, not for a group. We could extend account_user_time() and
-account_systime_time() in this regard.
+I can see how you *could* manage to run different distros in different
+containers, but you would have to make many compromises. No sharing of
+read-only disk as Serge said. You would have to pick one kernel, as no 2
+distros I know of actually run the same kernel. You would have to pick
+one set of device drivers, and one LSM. By the time you deal with all
+this crap, just using KVM or Xen starts to look good :-)
 
-> > We have also received request to provide idle time for a
-> > container/cgroup.
-> 
-> The semantics of "idle time" for a cgroup on a shared system seem a
-> bit fuzzy. How would you define it?
+>> I call it "difficult" because you would have to build a great big switch
+>> into the LSM interface, so that each hook is dispatched to the LSM
+>> module being used by the current container. This will impose some
+>> complexity and overhead, making each hook slower. Worse,the semantics
+>> become painfully undefined if a syscall by one container touches an
+>> object owned by a different container; which LSM gets called to mediate
+>> the access?
+>>     
+> At first my thought was this is worse than dealing with stacker.
+>
+> But on the other hand, perhaps introducing some sort of 'personality' to
+> objects and subjects, where the personality decides which LSM is invoked
+> for access, can be done more optimally than one would think.  It would
+> probably require strict enforcement that two "things" with different
+> personalities can NOT mix, ever.
+>   
+Yes, that's what you would have to do. But I basically don't think it is
+a good idea; use full virtualization if you don't want to share kernel
+features among your virtual guests.
 
-I think the percentage of time when it didn't have any runnable task in
-its runqueues.
+>> What makes a *lot* more sense to me is for individual LSMs to try to
+>> "containerize" themselves. This is actually the AppArmor plan: we hope
+>> to eventually support having a private AppArmor policy per container.
+>>     
+> Agreed, that had been my assumption.  That, and that the configuring
+> of LSM policies inside a container would simply be disabled if say
+> loading a suse container under a fedora host.
+>   
+This is why running an openSUSE container under a Fedora host (or vice
+versa) seems daft to me.
 
-> Suppose you have two cgroups that would each want to use, say, 55% of
-> a CPU - technically they should each be regarded as having 45% idle
-> time, but if they run on a the same CPU the chances are that they will
-> both always have some processes on their runqueue due to contention
-> with the other group. So how would you measure the difference between
-> this and a cgroup that really is trying to use 100%?
+>> Thus all of the containers on the physical machine will be running
+>> identical kernels, and all will use AppArmor, but each one can have a
+>> different AppArmor policy set, so that e.g. my private Apache process
+>> instance is confined in my container different than your Apache process
+>> is confined in your container.
+>>
+>> I see no barrier to SELinux or SMACK or TOMOYO doing the same thing. But
+>> I see *big* barriers to trying to support multiple LSM modules in the
+>> kernel at the same time with each container using the LSM of its choice.
+>>     
+> It's not as clear to me how SMACK (or the MLS/MCS portion of selinux)
+> would be handled.
+>   
+That actually seems easier to me. You may not need to do anything at all
+to the MLS/MCS code. There is no actual "policy" in MLS, it is just a
+single policy (label dominance) and all of your "policy" is expressed
+through labeling. So what you do is make the container ID be part of the
+label schema, and poof! none of the containers are permitted to touch
+objects belonging to any others, because they cannot dominate each other.
 
-Good point. I think we need to subtract out the time it was waiting on runqueue
-when calculating idle time.
-
-	|------- . . . . . . ---------zzzzzzzzzzzz.......-----------|
-	t0     t1	     t2	      t3 	 t4     t5          t6
-
-
-	----	-> Running time
-	....	-> Waiting time (to get on the cpu)
-	zzzz	-> Sleeping time (when it didnt want to run because of
-		   lack of tasks)
-
-So, in this case, 
-
-	idle time = (t4 - t3) / [ (t6 - t1) - (t2-t1) - (t5-t4) 
-
-?
-
-This idle time will be a per-cpu stat for every cgroup and needs to be
-consolidated across cpus into a single idle-stat number, just like how
-top does it.
+Crispin
 
 -- 
-Regards,
-vatsa
+Crispin Cowan, Ph.D.               http://crispincowan.com/~crispin/
+	       Itanium. Vista. GPLv3. Complexity at work
+
