@@ -1,7 +1,7 @@
 From: Srivatsa Vaddagiri <vatsa-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 Subject: Re: [PATCH 2/2] CFS CGroup: Report usage
-Date: Tue, 23 Oct 2007 22:13:07 +0530
-Message-ID: <20071023164307.GD4667@linux.vnet.ibm.com>
+Date: Tue, 23 Oct 2007 22:17:04 +0530
+Message-ID: <20071023164704.GE4667__23724.3927702822$1193157367$gmane$org@linux.vnet.ibm.com>
 References: <471D4523.4040509@google.com>
 Reply-To: vatsa-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
 Mime-Version: 1.0
@@ -23,13 +23,15 @@ Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, And
 List-Id: containers.vger.kernel.org
 
 On Mon, Oct 22, 2007 at 05:49:39PM -0700, Paul Menage wrote:
-> +	for_each_possible_cpu(i) {
-> +		unsigned long flags;
-> +		spin_lock_irqsave(&tg->cfs_rq[i]->rq->lock, flags);
+> Report CPU usage in CFS Cgroup directories
+> 
+> Adds a cpu.usage file to the CFS cgroup that reports CPU usage in
+> milliseconds for that cgroup's tasks
 
-A simpler form of this would be just:
-
-		spin_lock_irqsave(&cpu_rq(i)->lock, flags);
+It would be nice to split this into user and sys time at some point.
+We have also received request to provide idle time for a
+container/cgroup. I presume these will need to be provided as additional files
+(in addition to cpu.usage that is)?
 
 -- 
 Regards,
