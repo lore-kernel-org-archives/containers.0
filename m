@@ -1,201 +1,90 @@
-From: menage@google.com (Paul Menage)
-Subject: [PATCH] Move cgroups destroy() callbacks to cgroup_diput()
-Date: Tue, 23 Oct 2007 02:31:50 -0700 (PDT)
-Message-ID: <20071023093150.50E683D6287@localhost>
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1753028AbXJWJfd@vger.kernel.org>
-Sender: linux-kernel-owner@vger.kernel.org
-To: pj@sgi.com, vatsa@in.ibm.com
-Cc: containers@lists.osdl.org, linux-kernel@vger.kernel.org
+From: "Serge E. Hallyn" <serue@us.ibm.com>
+Subject: Re: LSM and Containers (was: LSM conversion to static interface)
+Date: Tue, 23 Oct 2007 08:32:10 -0500
+Message-ID: <20071023133210.GC3086@sergelap.austin.ibm.com>
+References: <200710220224.l9M2Og5t020815@sapphire.spiritone.com> <20071022035954.GA30991@kroah.com> <471CE238.5040107@qumranet.com> <e7d8f83e0710221559i6b14469fjebceee12c6dec98e@mail.gmail.com> <471D8877.5030901@crispincowan.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+Return-path: <linux-security-module-owner@vger.kernel.org>
+Content-Disposition: inline
+In-Reply-To: <471D8877.5030901@crispincowan.com>
+Sender: linux-security-module-owner@vger.kernel.org
+To: Crispin Cowan <crispin@crispincowan.com>
+Cc: Peter Dolding <oiaohm@gmail.com>, linux-security-module@vger.kernel.org, Containers <containers@lists.osdl.org>
 List-Id: containers.vger.kernel.org
 
-Move the calls to the cgroup subsystem destroy() methods from
-cgroup_rmdir() to cgroup_diput(). This allows control file reads and
-writes to access their subsystem state without having to be concerned
-with locking against cgroup destruction - the control file dentry will
-keep the cgroup and its subsystem state objects alive until the file
-is closed.
+Quoting Crispin Cowan (crispin@crispincowan.com):
+> Peter, I may be mistaken, but I think you are talking about an entirely
+> different issue than the LSM static interface issue, so I've changed the
+> subject.
+> 
+> Peter Dolding wrote:
+> > You are all focusing on vendors.  I am thinking server farm or people
+> > running many different distros side by side using containers.
+> This right here is a challenging goal.
+> 
+> It completely surprises me that anyone would consider trying to run
+> different distros in different containers.
 
-The documentation is updated to reflect the changed semantics of
-destroy(); additionally the locking comments for destroy() and some
-other methods were clarified and decrustified.
+It seems reasonable to me.
 
-Signed-off-by: Paul Menage <menage@google.com>
+> It would especially surprise
+> me if one tried to run different kernels in different containers.
 
----
- Documentation/cgroups.txt |   22 +++++++++++-----------
- kernel/cgroup.c           |   36 ++++++++++++++++++++++++------------
- 2 files changed, 35 insertions(+), 23 deletions(-)
+That's not just unreasonable, it's impossible :)
 
-Index: container-2.6.23-mm1/kernel/cgroup.c
-===================================================================
---- container-2.6.23-mm1.orig/kernel/cgroup.c
-+++ container-2.6.23-mm1/kernel/cgroup.c
-@@ -592,6 +592,7 @@ static void cgroup_diput(struct dentry *
- 	/* is dentry a directory ? if so, kfree() associated cgroup */
- 	if (S_ISDIR(inode->i_mode)) {
- 		struct cgroup *cgrp = dentry->d_fsdata;
-+		struct cgroup_subsys *ss;
- 		BUG_ON(!(cgroup_is_removed(cgrp)));
- 		/* It's possible for external users to be holding css
- 		 * reference counts on a cgroup; css_put() needs to
-@@ -600,6 +601,23 @@ static void cgroup_diput(struct dentry *
- 		 * queue the cgroup to be handled by the release
- 		 * agent */
- 		synchronize_rcu();
-+
-+		mutex_lock(&cgroup_mutex);
-+		/*
-+		 * Release the subsystem state objects.
-+		 */
-+		for_each_subsys(cgrp->root, ss) {
-+			if (cgrp->subsys[ss->subsys_id])
-+				ss->destroy(ss, cgrp);
-+		}
-+
-+		cgrp->root->number_of_cgroups--;
-+		mutex_unlock(&cgroup_mutex);
-+
-+		/* Drop the active superblock reference that we took when we
-+		 * created the cgroup */
-+		deactivate_super(cgrp->root->sb);
-+
- 		kfree(cgrp);
- 	}
- 	iput(inode);
-@@ -1333,6 +1351,10 @@ static ssize_t cgroup_common_file_write(
- 
- 	mutex_lock(&cgroup_mutex);
- 
-+	/*
-+	 * This was already checked for in cgroup_file_write(), but
-+	 * check again now we're holding cgroup_mutex.
-+	 */
- 	if (cgroup_is_removed(cgrp)) {
- 		retval = -ENODEV;
- 		goto out2;
-@@ -1388,7 +1410,7 @@ static ssize_t cgroup_file_write(struct 
- 	struct cftype *cft = __d_cft(file->f_dentry);
- 	struct cgroup *cgrp = __d_cgrp(file->f_dentry->d_parent);
- 
--	if (!cft)
-+	if (!cft || cgroup_is_removed(cgrp))
- 		return -ENODEV;
- 	if (cft->write)
- 		return cft->write(cgrp, cft, file, buf, nbytes, ppos);
-@@ -1458,7 +1480,7 @@ static ssize_t cgroup_file_read(struct f
- 	struct cftype *cft = __d_cft(file->f_dentry);
- 	struct cgroup *cgrp = __d_cgrp(file->f_dentry->d_parent);
- 
--	if (!cft)
-+	if (!cft || cgroup_is_removed(cgrp))
- 		return -ENODEV;
- 
- 	if (cft->read)
-@@ -2139,7 +2161,6 @@ static int cgroup_rmdir(struct inode *un
- 	struct cgroup *cgrp = dentry->d_fsdata;
- 	struct dentry *d;
- 	struct cgroup *parent;
--	struct cgroup_subsys *ss;
- 	struct super_block *sb;
- 	struct cgroupfs_root *root;
- 
-@@ -2164,11 +2185,6 @@ static int cgroup_rmdir(struct inode *un
- 		return -EBUSY;
- 	}
- 
--	for_each_subsys(root, ss) {
--		if (cgrp->subsys[ss->subsys_id])
--			ss->destroy(ss, cgrp);
--	}
--
- 	spin_lock(&release_list_lock);
- 	set_bit(CGRP_REMOVED, &cgrp->flags);
- 	if (!list_empty(&cgrp->release_list))
-@@ -2183,15 +2199,11 @@ static int cgroup_rmdir(struct inode *un
- 
- 	cgroup_d_remove_dir(d);
- 	dput(d);
--	root->number_of_cgroups--;
- 
- 	set_bit(CGRP_RELEASABLE, &parent->flags);
- 	check_for_release(parent);
- 
- 	mutex_unlock(&cgroup_mutex);
--	/* Drop the active superblock reference that we took when we
--	 * created the cgroup */
--	deactivate_super(sb);
- 	return 0;
- }
- 
-Index: container-2.6.23-mm1/Documentation/cgroups.txt
-===================================================================
---- container-2.6.23-mm1.orig/Documentation/cgroups.txt
-+++ container-2.6.23-mm1/Documentation/cgroups.txt
-@@ -456,7 +456,7 @@ methods are create/destroy. Any others t
- be successful no-ops.
- 
- struct cgroup_subsys_state *create(struct cgroup *cont)
--LL=cgroup_mutex
-+(cgroup_mutex held by caller)
- 
- Called to create a subsystem state object for a cgroup. The
- subsystem should allocate its subsystem state object for the passed
-@@ -471,14 +471,19 @@ it's the root of the hierarchy) and may 
- initialization code.
- 
- void destroy(struct cgroup *cont)
--LL=cgroup_mutex
-+(cgroup_mutex held by caller)
- 
--The cgroup system is about to destroy the passed cgroup; the
--subsystem should do any necessary cleanup
-+The cgroup system is about to destroy the passed cgroup; the subsystem
-+should do any necessary cleanup and free its subsystem state
-+object. By the time this method is called, the cgroup has already been
-+unlinked from the file system and from the child list of its parent;
-+cgroup->parent is still valid. (Note - can also be called for a
-+newly-created cgroup if an error occurs after this subsystem's
-+create() method has been called for the new cgroup).
- 
- int can_attach(struct cgroup_subsys *ss, struct cgroup *cont,
- 	       struct task_struct *task)
--LL=cgroup_mutex
-+(cgroup_mutex held by caller)
- 
- Called prior to moving a task into a cgroup; if the subsystem
- returns an error, this will abort the attach operation.  If a NULL
-@@ -489,25 +494,20 @@ remain valid while the caller holds cgro
- 
- void attach(struct cgroup_subsys *ss, struct cgroup *cont,
- 	    struct cgroup *old_cont, struct task_struct *task)
--LL=cgroup_mutex
--
- 
- Called after the task has been attached to the cgroup, to allow any
- post-attachment activity that requires memory allocations or blocking.
- 
- void fork(struct cgroup_subsy *ss, struct task_struct *task)
--LL=callback_mutex, maybe read_lock(tasklist_lock)
- 
- Called when a task is forked into a cgroup. Also called during
- registration for all existing tasks.
- 
- void exit(struct cgroup_subsys *ss, struct task_struct *task)
--LL=callback_mutex
- 
- Called during task exit
- 
- int populate(struct cgroup_subsys *ss, struct cgroup *cont)
--LL=none
- 
- Called after creation of a cgroup to allow a subsystem to populate
- the cgroup directory with file entries.  The subsystem should make
-@@ -524,7 +524,7 @@ example in cpusets, no task may attach b
- up.
- 
- void bind(struct cgroup_subsys *ss, struct cgroup *root)
--LL=callback_mutex
-+(cgroup_mutex held by caller)
- 
- Called when a cgroup subsystem is rebound to a different hierarchy
- and root cgroup. Currently this will only involve movement between
+> It is my understanding of containers that they are intended to be a
+> *lightweight* virtualization technique, giving each container
+> effectively a private copy of identical instances of the host OS.
+> 
+> If you want to rent out divergent distros, kernels, etc. then it seems
+> to me that heavier virtualization like Xen, KVM, VMware, etc. are the
+> right answer, rather than trying to force difficult kernel solutions
+> into the container and LSM features into the kernel.
+
+For different kernels, yes, but unless you pick two distros which
+require incompatible kernel features (?) I don't see running, say,
+gentoo, fedora, and ubuntu under different containers as a problem.
+
+Perhaps the biggest reason not to do that, speaking practically, is that
+you miss out on some of the ability to share /usr, /lib, etc readonly
+among containers to save overall disk space.
+
+> I call it "difficult" because you would have to build a great big switch
+> into the LSM interface, so that each hook is dispatched to the LSM
+> module being used by the current container. This will impose some
+> complexity and overhead, making each hook slower. Worse,the semantics
+> become painfully undefined if a syscall by one container touches an
+> object owned by a different container; which LSM gets called to mediate
+> the access?
+
+At first my thought was this is worse than dealing with stacker.
+
+But on the other hand, perhaps introducing some sort of 'personality' to
+objects and subjects, where the personality decides which LSM is invoked
+for access, can be done more optimally than one would think.  It would
+probably require strict enforcement that two "things" with different
+personalities can NOT mix, ever.
+
+> What makes a *lot* more sense to me is for individual LSMs to try to
+> "containerize" themselves. This is actually the AppArmor plan: we hope
+> to eventually support having a private AppArmor policy per container.
+
+Agreed, that had been my assumption.  That, and that the configuring
+of LSM policies inside a container would simply be disabled if say
+loading a suse container under a fedora host.
+
+> Thus all of the containers on the physical machine will be running
+> identical kernels, and all will use AppArmor, but each one can have a
+> different AppArmor policy set, so that e.g. my private Apache process
+> instance is confined in my container different than your Apache process
+> is confined in your container.
+> 
+> I see no barrier to SELinux or SMACK or TOMOYO doing the same thing. But
+> I see *big* barriers to trying to support multiple LSM modules in the
+> kernel at the same time with each container using the LSM of its choice.
+
+It's not as clear to me how SMACK (or the MLS/MCS portion of selinux)
+would be handled.
+
+-serge
