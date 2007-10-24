@@ -1,15 +1,14 @@
-From: Srivatsa Vaddagiri <vatsa-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: Re: [PATCH] Move cgroups destroy() callbacks to cgroup_diput()
-Date: Wed, 24 Oct 2007 10:16:12 +0530
-Message-ID: <20071024044612.GC7099@linux.vnet.ibm.com>
-References: <20071023093150.50E683D6287@localhost>
-	<6599ad830710231920r72600bbavec927e90e298b4f4@mail.gmail.com>
-Reply-To: vatsa-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
+From: Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>
+Subject: Re: [PATCH 1/2] CFS CGroup: Code cleanup
+Date: Wed, 24 Oct 2007 08:50:19 +0200
+Message-ID: <20071024065019.GB25322__28338.7127369226$1193208744$gmane$org@elte.hu>
+References: <471EAEBB.8000302@google.com>
+	<20071024044537.GB7099@linux.vnet.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <6599ad830710231920r72600bbavec927e90e298b4f4-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
+In-Reply-To: <20071024044537.GB7099-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,15 +18,23 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
-Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
+To: Srivatsa Vaddagiri <vatsa-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Tue, Oct 23, 2007 at 07:20:19PM -0700, Paul Menage wrote:
-> OK, if no-one has any complaints about this I'll send it on to akpm.
 
-Looks good to me ..
+* Srivatsa Vaddagiri <vatsa-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org> wrote:
 
--- 
-Regards,
-vatsa
+> On Tue, Oct 23, 2007 at 07:32:27PM -0700, Paul Menage wrote:
+> > Clean up some CFS CGroup code
+> > 
+> > - replace "cont" with "cgrp" in a few places in the CFS cgroup code, 
+> > - use write_uint rather than write for cpu.shares write function
+> > 
+> > Signed-off-by: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+> 
+> Acked-by : Srivatsa Vaddagiri <vatsa-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+
+thanks, applied.
+
+	Ingo
