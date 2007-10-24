@@ -1,17 +1,11 @@
-From: "Paul Menage" <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 2/2] CFS CGroup: Report usage
-Date: Tue, 23 Oct 2007 19:28:22 -0700
-Message-ID: <6599ad830710231928n65a80021w582a07b5993377f8__15301.5141412199$1193193002$gmane$org@mail.gmail.com>
-References: <471D4523.4040509@google.com>
-	<20071023164704.GE4667@linux.vnet.ibm.com>
-	<6599ad830710230941y5d175688ob3a4d9ac42ba8c8f@mail.gmail.com>
-	<20071023173837.GG4667@linux.vnet.ibm.com>
+From: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+Subject: [PATCH 1/2] CFS CGroup: Code cleanup
+Date: Tue, 23 Oct 2007 19:32:27 -0700
+Message-ID: <471EAEBB.8000302__14835.6854719625$1193193246$gmane$org@google.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20071023173837.GG4667-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Content-Disposition: inline
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -21,51 +15,139 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: vatsa-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>, Srivatsa Vaddagiri <vatsa-xthvdsQ13ZrQT0dZR+AlfA@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On 10/23/07, Srivatsa Vaddagiri <vatsa-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org> wrote:
-> > Suppose you have two cgroups that would each want to use, say, 55% of
-> > a CPU - technically they should each be regarded as having 45% idle
-> > time, but if they run on a the same CPU the chances are that they will
-> > both always have some processes on their runqueue due to contention
-> > with the other group. So how would you measure the difference between
-> > this and a cgroup that really is trying to use 100%?
->
-> Good point. I think we need to subtract out the time it was waiting on runqueue
-> when calculating idle time.
->
->         |------- . . . . . . ---------zzzzzzzzzzzz.......-----------|
->         t0     t1            t2       t3         t4     t5          t6
->
->
->         ----    -> Running time
->         ....    -> Waiting time (to get on the cpu)
->         zzzz    -> Sleeping time (when it didnt want to run because of
->                    lack of tasks)
->
-> So, in this case,
->
->         idle time = (t4 - t3) / [ (t6 - t1) - (t2-t1) - (t5-t4)
->
+Clean up some CFS CGroup code
 
-Do you mean (t6 - t0) where you have (t6 - t1)?
+- replace "cont" with "cgrp" in a few places in the CFS cgroup code, 
+- use write_uint rather than write for cpu.shares write function
 
-> ?
->
-> This idle time will be a per-cpu stat for every cgroup and needs to be
-> consolidated across cpus into a single idle-stat number, just like how
-> top does it.
+Signed-off-by: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
 
-This would be an idle fraction, not an idle time. (seconds divided by seconds)
+---
 
-It doesn't seem quite right to me that a cgroup's idle time metric be
-affected by the activity of other cgroups on the machine, but it's
-hard to come up with a way of measuring it that doesn't have this
-behaviour - which is why, in the absence of hard CPU partitioning,
-it's not clear to me how much use this would be.
+This is a resend of yesterday's mail with the same subject; the final hunk was missing from yesterday's patch. The second patch in the series was unaffected by this.
 
-What would people be planning to use it for?
 
-Paul
+ kernel/sched.c |   53 ++++++++++++++++++-----------------------------------
+ 1 file changed, 18 insertions(+), 35 deletions(-)
+
+Index: container-2.6.23-mm1/kernel/sched.c
+===================================================================
+--- container-2.6.23-mm1.orig/kernel/sched.c
++++ container-2.6.23-mm1/kernel/sched.c
+@@ -6936,25 +6936,25 @@ unsigned long sched_group_shares(struct 
+ #ifdef CONFIG_FAIR_CGROUP_SCHED
+ 
+ /* return corresponding task_group object of a cgroup */
+-static inline struct task_group *cgroup_tg(struct cgroup *cont)
++static inline struct task_group *cgroup_tg(struct cgroup *cgrp)
+ {
+-	return container_of(cgroup_subsys_state(cont, cpu_cgroup_subsys_id),
+-					 struct task_group, css);
++	return container_of(cgroup_subsys_state(cgrp, cpu_cgroup_subsys_id),
++			    struct task_group, css);
+ }
+ 
+ static struct cgroup_subsys_state *
+-cpu_cgroup_create(struct cgroup_subsys *ss, struct cgroup *cont)
++cpu_cgroup_create(struct cgroup_subsys *ss, struct cgroup *cgrp)
+ {
+ 	struct task_group *tg;
+ 
+-	if (!cont->parent) {
++	if (!cgrp->parent) {
+ 		/* This is early initialization for the top cgroup */
+-		init_task_group.css.cgroup = cont;
++		init_task_group.css.cgroup = cgrp;
+ 		return &init_task_group.css;
+ 	}
+ 
+ 	/* we support only 1-level deep hierarchical scheduler atm */
+-	if (cont->parent->parent)
++	if (cgrp->parent->parent)
+ 		return ERR_PTR(-EINVAL);
+ 
+ 	tg = sched_create_group();
+@@ -6962,21 +6962,21 @@ cpu_cgroup_create(struct cgroup_subsys *
+ 		return ERR_PTR(-ENOMEM);
+ 
+ 	/* Bind the cgroup to task_group object we just created */
+-	tg->css.cgroup = cont;
++	tg->css.cgroup = cgrp;
+ 
+ 	return &tg->css;
+ }
+ 
+ static void cpu_cgroup_destroy(struct cgroup_subsys *ss,
+-					struct cgroup *cont)
++			       struct cgroup *cgrp)
+ {
+-	struct task_group *tg = cgroup_tg(cont);
++	struct task_group *tg = cgroup_tg(cgrp);
+ 
+ 	sched_destroy_group(tg);
+ }
+ 
+ static int cpu_cgroup_can_attach(struct cgroup_subsys *ss,
+-			     struct cgroup *cont, struct task_struct *tsk)
++			     struct cgroup *cgrp, struct task_struct *tsk)
+ {
+ 	/* We don't support RT-tasks being in separate groups */
+ 	if (tsk->sched_class != &fair_sched_class)
+@@ -6986,38 +6986,21 @@ static int cpu_cgroup_can_attach(struct 
+ }
+ 
+ static void
+-cpu_cgroup_attach(struct cgroup_subsys *ss, struct cgroup *cont,
++cpu_cgroup_attach(struct cgroup_subsys *ss, struct cgroup *cgrp,
+ 			struct cgroup *old_cont, struct task_struct *tsk)
+ {
+ 	sched_move_task(tsk);
+ }
+ 
+-static ssize_t cpu_shares_write(struct cgroup *cont, struct cftype *cftype,
+-				struct file *file, const char __user *userbuf,
+-				size_t nbytes, loff_t *ppos)
++static int cpu_shares_write_uint(struct cgroup *cgrp, struct cftype *cftype,
++				u64 shareval)
+ {
+-	unsigned long shareval;
+-	struct task_group *tg = cgroup_tg(cont);
+-	char buffer[2*sizeof(unsigned long) + 1];
+-	int rc;
+-
+-	if (nbytes > 2*sizeof(unsigned long))	/* safety check */
+-		return -E2BIG;
+-
+-	if (copy_from_user(buffer, userbuf, nbytes))
+-		return -EFAULT;
+-
+-	buffer[nbytes] = 0;	/* nul-terminate */
+-	shareval = simple_strtoul(buffer, NULL, 10);
+-
+-	rc = sched_group_set_shares(tg, shareval);
+-
+-	return (rc < 0 ? rc : nbytes);
++	return sched_group_set_shares(cgroup_tg(cgrp), shareval);
+ }
+ 
+-static u64 cpu_shares_read_uint(struct cgroup *cont, struct cftype *cft)
++static u64 cpu_shares_read_uint(struct cgroup *cgrp, struct cftype *cft)
+ {
+-	struct task_group *tg = cgroup_tg(cont);
++	struct task_group *tg = cgroup_tg(cgrp);
+ 
+ 	return (u64) tg->shares;
+ }
+@@ -7025,7 +7008,7 @@ static u64 cpu_shares_read_uint(struct c
+ static struct cftype cpu_shares = {
+ 	.name = "shares",
+ 	.read_uint = cpu_shares_read_uint,
+-	.write = cpu_shares_write,
++	.write_uint = cpu_shares_write_uint,
+ };
+ 
+ static int cpu_cgroup_populate(struct cgroup_subsys *ss, struct cgroup *cont)
