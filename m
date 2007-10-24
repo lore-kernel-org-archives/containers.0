@@ -1,151 +1,226 @@
-From: Peter Dolding <oiaohm@gmail.com>
-Subject: Re: LSM and Containers
-Date: Wed, 24 Oct 2007 10:07:50 +1000
-Message-ID: <471E8CD6.9060305@gmail.com>
-References: <200710220224.l9M2Og5t020815@sapphire.spiritone.com> <20071022035954.GA30991@kroah.com> <471CE238.5040107@qumranet.com> <e7d8f83e0710221559i6b14469fjebceee12c6dec98e@mail.gmail.com> <471D8877.5030901@crispincowan.com> <20071023133210.GC3086@sergelap.austin.ibm.com> <471E3610.7030102@crispincowan.com>
+From: "Paul Menage" <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH] Move cgroups destroy() callbacks to cgroup_diput()
+Date: Tue, 23 Oct 2007 19:20:19 -0700
+Message-ID: <6599ad830710231920r72600bbavec927e90e298b4f4@mail.gmail.com>
+References: <20071023093150.50E683D6287@localhost>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+Content-Type: text/plain; charset=ISO-8859-1
 Content-Transfer-Encoding: 7bit
-Return-path: <linux-security-module-owner@vger.kernel.org>
-In-Reply-To: <471E3610.7030102@crispincowan.com>
-Sender: linux-security-module-owner@vger.kernel.org
-To: linux-security-module@vger.kernel.org, Containers <containers@lists.osdl.org>
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <20071023093150.50E683D6287@localhost>
+Content-Disposition: inline
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: pj-sJ/iWh9BUns@public.gmane.org, vatsa-xthvdsQ13ZrQT0dZR+AlfA@public.gmane.org
+Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Crispin Cowan wrote:
-> Serge E. Hallyn wrote:
->   
->> Quoting Crispin Cowan (crispin@crispincowan.com):
->>   
->>     
->>> It is my understanding of containers that they are intended to be a
->>> *lightweight* virtualization technique, giving each container
->>> effectively a private copy of identical instances of the host OS.
->>>
->>> If you want to rent out divergent distros, kernels, etc. then it seems
->>> to me that heavier virtualization like Xen, KVM, VMware, etc. are the
->>> right answer, rather than trying to force difficult kernel solutions
->>> into the container and LSM features into the kernel.
->>>     
->>>       
->> For different kernels, yes, but unless you pick two distros which
->> require incompatible kernel features (?) I don't see running, say,
->> gentoo, fedora, and ubuntu under different containers as a problem.
->>
->> Perhaps the biggest reason not to do that, speaking practically, is that
->> you miss out on some of the ability to share /usr, /lib, etc readonly
->> among containers to save overall disk space.
->>   
->>     
-> This is why it just doesn't seem very reasonable. People who want to do
-> that will just use KVM or Xen. People who want the efficiency of
-> lightweight containers, and have enough load pressure to care, can just
-> have one Fedora physical box with many containers all running Fedora,
-> and another openSUSE physical box with many containers all running openSUSE.
+OK, if no-one has any complaints about this I'll send it on to akpm.
+
+Paul
+
+On 10/23/07, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org> wrote:
+> Move the calls to the cgroup subsystem destroy() methods from
+> cgroup_rmdir() to cgroup_diput(). This allows control file reads and
+> writes to access their subsystem state without having to be concerned
+> with locking against cgroup destruction - the control file dentry will
+> keep the cgroup and its subsystem state objects alive until the file
+> is closed.
 >
-> I can see how you *could* manage to run different distros in different
-> containers, but you would have to make many compromises. No sharing of
-> read-only disk as Serge said. You would have to pick one kernel, as no 2
-> distros I know of actually run the same kernel. You would have to pick
-> one set of device drivers, and one LSM. By the time you deal with all
-> this crap, just using KVM or Xen starts to look good :-)
->   
-Sorry the reason for doing it is 1 set of driver.  In particular 
-Opengl.   KVM, Xen, Lguest... All virtual machines cannot handle it 
-effectively so you have one very high comprise.  Containers can.
-
-Same with other devices some devices don't take well at all being 
-wrapped up in KVM,  Xen and other systems.  Running the same kernel is 
-not a issue to me.
-
-Most distributions I have run with standard from kernel.org with there 
-LSM.   Nothing else added to kernel.   So the different kernel is null 
-and void.   If LSM are rebuild we will see distro kernels with support 
-for a broad range of distro support.   You may have a distro that allows 
-like the top 10 server Distributions to be run under it.  Of course you 
-are not going to be using any stock kernel from those Distros if they 
-don't support running other distros.   I would not bring it up if I had 
-not run OpenSuse Fedora and Debian and other distros of the same kernel 
-before.   How simple in initrd load the LSM for the Distro that was 
-it.   There is no technical problem at the kernel for doing it.  Also 
-part of the reason why I despise static LSM's becoming only option cross 
-distro performance testing of a kernel to see if there is a difference 
-will be made harder since I will have to build the kernel more than 
-once.    Now when I get to containers you are now saying I cannot do the 
-same thing.
-
-I know current LSM model does not fit well for this.   Because its a 
-giant hooking solution.   This solution is not suitable to exist well 
-with containers and massively limiting on security improvements to the 
-over all os that can be done..
-
-The LSM model needs ripping in two to work great with containers and 
-along the way allow applications and users to take care of there own 
-problems.
-
-Enforcement modules and Controllers.
-
-Controllers work on threads and processors created to allocate security 
-limitations.   LSM level controller can grant higher security access to 
-threads and processors than what they all ready have to the level of the 
-LSM.  User/program level controllers can only remove permissions to do 
-things this is most likely better as a feature of the Enforcement 
-modules.   LSM level controllers have to be attached to kernel or a 
-security containers.  Since a container could all ready have limits from 
-another LSMs put on it could only allocate permissions inside those limts.
-
-Enforcement is exactly that.    Enforcement modules would be like posix 
-file caps and so on.  An option has to be choose here if  Enforcement 
-modules have to report to LSM level controller on secuirty change 
-request to lower and expand or only to expand or not at all.  Not at all 
-being default because it could be a new feature the controller does not 
-know how to handle or want to handle.   Most likely this would be 
-controller option on what if any information it wants out of the 
-Enforcement modules.   Default operation of all enforcement modules is 
-like posix file caps is lower only.     No option to expand what has all 
-ready been given.   With a LSM controller asking to be given notice of 
-change of a Enforcement section it can allow raising or forbid 
-lowering.  Applications developers like GUI Filemanagers wine... Can 
-depend on the Enforcement parts always being there.
-
-This is a overall system wide upgrade of security  that does not fail 
-completely just because you disable the contoller.   Because if all 
-applications are doing there own internal thread based and process id 
-based enforcements what can be far tighter than what any controller can 
-do since they know what the application should be doing where.
-
-I hear different people asking for a LSM to be build into kernel.   This 
-is not a  requirement.    The enforcement features of LSM's are.  Each 
-one of the enforcement features is a upgrade to the overall security of 
-the operating system no matter the LSM loaded or even if LSM is loaded.
-
-Basically just like containers take responsibility for parts 
-individually when put  into once piece become a virtual server.   The 
-same needs to be done with LSM's.    The controller is the final thing 
-that joins the parts up.   Not coming with the parts in one huge blob as 
-LSM do now.  The huge blob problem is why they don't want to work right 
-containers.  Over head is small with
-Controllers.  From Enforcement module to Controller is always the same 
-depth.  When Controller goes to change permissions its checked against 
-the list its allowed.   At this point does not matter if you are 1 deep 
-or 1000 deep.   Since there is no need to go any deeper or run other 
-Controllers to get information.   Just the first Controller the one you 
-might statically build in gets told it has every permission to do 
-whatever it sees fit maybe.   The first Controller at build time could 
-have its rights limited.  Just like selinux strict mode for all.  As you 
-can see 100 percent the same path level no matter what.  Only thing that 
-changes in what controller you are in.
-
-As bad as it sounds to some people doing this will lower the security 
-difference between selinux apparmor or other LSM's .  This forces user 
-and security friendly solutions out of LSM makers.  Yes true completion 
-to produce the best and leave users as least exposed as able.   Not my 
-LSM is better than yours arguments with complexity of comparing.  It 
-will be simpler to compare LSM's ok what enforcement modules does it 
-control.   Does that cover the area I need.   Then look at how it 
-controls them and choose.
-
-Note LSM controllers could be Security Containers.   Just one Container 
-is set default off the start line.
-
-Peter Dolding
+> The documentation is updated to reflect the changed semantics of
+> destroy(); additionally the locking comments for destroy() and some
+> other methods were clarified and decrustified.
+>
+> Signed-off-by: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+>
+> ---
+>  Documentation/cgroups.txt |   22 +++++++++++-----------
+>  kernel/cgroup.c           |   36 ++++++++++++++++++++++++------------
+>  2 files changed, 35 insertions(+), 23 deletions(-)
+>
+> Index: container-2.6.23-mm1/kernel/cgroup.c
+> ===================================================================
+> --- container-2.6.23-mm1.orig/kernel/cgroup.c
+> +++ container-2.6.23-mm1/kernel/cgroup.c
+> @@ -592,6 +592,7 @@ static void cgroup_diput(struct dentry *
+>         /* is dentry a directory ? if so, kfree() associated cgroup */
+>         if (S_ISDIR(inode->i_mode)) {
+>                 struct cgroup *cgrp = dentry->d_fsdata;
+> +               struct cgroup_subsys *ss;
+>                 BUG_ON(!(cgroup_is_removed(cgrp)));
+>                 /* It's possible for external users to be holding css
+>                  * reference counts on a cgroup; css_put() needs to
+> @@ -600,6 +601,23 @@ static void cgroup_diput(struct dentry *
+>                  * queue the cgroup to be handled by the release
+>                  * agent */
+>                 synchronize_rcu();
+> +
+> +               mutex_lock(&cgroup_mutex);
+> +               /*
+> +                * Release the subsystem state objects.
+> +                */
+> +               for_each_subsys(cgrp->root, ss) {
+> +                       if (cgrp->subsys[ss->subsys_id])
+> +                               ss->destroy(ss, cgrp);
+> +               }
+> +
+> +               cgrp->root->number_of_cgroups--;
+> +               mutex_unlock(&cgroup_mutex);
+> +
+> +               /* Drop the active superblock reference that we took when we
+> +                * created the cgroup */
+> +               deactivate_super(cgrp->root->sb);
+> +
+>                 kfree(cgrp);
+>         }
+>         iput(inode);
+> @@ -1333,6 +1351,10 @@ static ssize_t cgroup_common_file_write(
+>
+>         mutex_lock(&cgroup_mutex);
+>
+> +       /*
+> +        * This was already checked for in cgroup_file_write(), but
+> +        * check again now we're holding cgroup_mutex.
+> +        */
+>         if (cgroup_is_removed(cgrp)) {
+>                 retval = -ENODEV;
+>                 goto out2;
+> @@ -1388,7 +1410,7 @@ static ssize_t cgroup_file_write(struct
+>         struct cftype *cft = __d_cft(file->f_dentry);
+>         struct cgroup *cgrp = __d_cgrp(file->f_dentry->d_parent);
+>
+> -       if (!cft)
+> +       if (!cft || cgroup_is_removed(cgrp))
+>                 return -ENODEV;
+>         if (cft->write)
+>                 return cft->write(cgrp, cft, file, buf, nbytes, ppos);
+> @@ -1458,7 +1480,7 @@ static ssize_t cgroup_file_read(struct f
+>         struct cftype *cft = __d_cft(file->f_dentry);
+>         struct cgroup *cgrp = __d_cgrp(file->f_dentry->d_parent);
+>
+> -       if (!cft)
+> +       if (!cft || cgroup_is_removed(cgrp))
+>                 return -ENODEV;
+>
+>         if (cft->read)
+> @@ -2139,7 +2161,6 @@ static int cgroup_rmdir(struct inode *un
+>         struct cgroup *cgrp = dentry->d_fsdata;
+>         struct dentry *d;
+>         struct cgroup *parent;
+> -       struct cgroup_subsys *ss;
+>         struct super_block *sb;
+>         struct cgroupfs_root *root;
+>
+> @@ -2164,11 +2185,6 @@ static int cgroup_rmdir(struct inode *un
+>                 return -EBUSY;
+>         }
+>
+> -       for_each_subsys(root, ss) {
+> -               if (cgrp->subsys[ss->subsys_id])
+> -                       ss->destroy(ss, cgrp);
+> -       }
+> -
+>         spin_lock(&release_list_lock);
+>         set_bit(CGRP_REMOVED, &cgrp->flags);
+>         if (!list_empty(&cgrp->release_list))
+> @@ -2183,15 +2199,11 @@ static int cgroup_rmdir(struct inode *un
+>
+>         cgroup_d_remove_dir(d);
+>         dput(d);
+> -       root->number_of_cgroups--;
+>
+>         set_bit(CGRP_RELEASABLE, &parent->flags);
+>         check_for_release(parent);
+>
+>         mutex_unlock(&cgroup_mutex);
+> -       /* Drop the active superblock reference that we took when we
+> -        * created the cgroup */
+> -       deactivate_super(sb);
+>         return 0;
+>  }
+>
+> Index: container-2.6.23-mm1/Documentation/cgroups.txt
+> ===================================================================
+> --- container-2.6.23-mm1.orig/Documentation/cgroups.txt
+> +++ container-2.6.23-mm1/Documentation/cgroups.txt
+> @@ -456,7 +456,7 @@ methods are create/destroy. Any others t
+>  be successful no-ops.
+>
+>  struct cgroup_subsys_state *create(struct cgroup *cont)
+> -LL=cgroup_mutex
+> +(cgroup_mutex held by caller)
+>
+>  Called to create a subsystem state object for a cgroup. The
+>  subsystem should allocate its subsystem state object for the passed
+> @@ -471,14 +471,19 @@ it's the root of the hierarchy) and may
+>  initialization code.
+>
+>  void destroy(struct cgroup *cont)
+> -LL=cgroup_mutex
+> +(cgroup_mutex held by caller)
+>
+> -The cgroup system is about to destroy the passed cgroup; the
+> -subsystem should do any necessary cleanup
+> +The cgroup system is about to destroy the passed cgroup; the subsystem
+> +should do any necessary cleanup and free its subsystem state
+> +object. By the time this method is called, the cgroup has already been
+> +unlinked from the file system and from the child list of its parent;
+> +cgroup->parent is still valid. (Note - can also be called for a
+> +newly-created cgroup if an error occurs after this subsystem's
+> +create() method has been called for the new cgroup).
+>
+>  int can_attach(struct cgroup_subsys *ss, struct cgroup *cont,
+>                struct task_struct *task)
+> -LL=cgroup_mutex
+> +(cgroup_mutex held by caller)
+>
+>  Called prior to moving a task into a cgroup; if the subsystem
+>  returns an error, this will abort the attach operation.  If a NULL
+> @@ -489,25 +494,20 @@ remain valid while the caller holds cgro
+>
+>  void attach(struct cgroup_subsys *ss, struct cgroup *cont,
+>             struct cgroup *old_cont, struct task_struct *task)
+> -LL=cgroup_mutex
+> -
+>
+>  Called after the task has been attached to the cgroup, to allow any
+>  post-attachment activity that requires memory allocations or blocking.
+>
+>  void fork(struct cgroup_subsy *ss, struct task_struct *task)
+> -LL=callback_mutex, maybe read_lock(tasklist_lock)
+>
+>  Called when a task is forked into a cgroup. Also called during
+>  registration for all existing tasks.
+>
+>  void exit(struct cgroup_subsys *ss, struct task_struct *task)
+> -LL=callback_mutex
+>
+>  Called during task exit
+>
+>  int populate(struct cgroup_subsys *ss, struct cgroup *cont)
+> -LL=none
+>
+>  Called after creation of a cgroup to allow a subsystem to populate
+>  the cgroup directory with file entries.  The subsystem should make
+> @@ -524,7 +524,7 @@ example in cpusets, no task may attach b
+>  up.
+>
+>  void bind(struct cgroup_subsys *ss, struct cgroup *root)
+> -LL=callback_mutex
+> +(cgroup_mutex held by caller)
+>
+>  Called when a cgroup subsystem is rebound to a different hierarchy
+>  and root cgroup. Currently this will only involve movement between
+> -
+> To unsubscribe from this list: send the line "unsubscribe linux-kernel" in
+> the body of a message to majordomo-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> Please read the FAQ at  http://www.tux.org/lkml/
+>
