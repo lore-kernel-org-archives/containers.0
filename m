@@ -1,16 +1,16 @@
 From: Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: Re: [RFC][PATCH] memory cgroup enhancements updated [3/10] remember
- pagecache
-Date: Wed, 24 Oct 2007 19:26:34 +0530
-Message-ID: <471F4F12.8050708@linux.vnet.ibm.com>
+Subject: Re: [RFC][PATCH] memory cgroup enhancements updated [8/10] add
+ pre_destroy handler
+Date: Wed, 24 Oct 2007 20:19:34 +0530
+Message-ID: <471F5B7E.2020007@linux.vnet.ibm.com>
 References: <20071019182436.485e20cd.kamezawa.hiroyu@jp.fujitsu.com>
-	<20071019183106.b5afda2f.kamezawa.hiroyu@jp.fujitsu.com>
+	<20071019183544.0f5172b2.kamezawa.hiroyu@jp.fujitsu.com>
 Reply-To: balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20071019183106.b5afda2f.kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+In-Reply-To: <20071019183544.0f5172b2.kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -25,90 +25,53 @@ Cc: "containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org" <containers-qjLDD68F18O
 List-Id: containers.vger.kernel.org
 
 KAMEZAWA Hiroyuki wrote:
-> Add PCGF_PAGECACHE flag to page_cgroup to remember "this page is
-> charged as page-cache."
-> This is very useful for implementing precise accounting in memory cgroup.
+> My main purpose of this patch is for memory controller..
 > 
-> Changelog v1 -> v2
->   - moved #define to out-side of struct definition
+> This patch adds a handler "pre_destroy" to cgroup_subsys.
+> It is called before cgroup_rmdir() checks all subsys's refcnt.
+> 
+> I think this is useful for subsyses which have some extra refs
+> even if there are no tasks in cgroup.
 > 
 > Signed-off-by: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
-> Signed-off-by: YAMAMOTO Takashi <yamamoto-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
 > 
->  mm/memcontrol.c |   18 +++++++++++++++---
->  1 file changed, 15 insertions(+), 3 deletions(-)
+>  include/linux/cgroup.h |    1 +
+>  kernel/cgroup.c        |    7 +++++++
+>  2 files changed, 8 insertions(+)
 > 
-> Index: devel-2.6.23-mm1/mm/memcontrol.c
+> Index: devel-2.6.23-mm1/include/linux/cgroup.h
 > ===================================================================
-> --- devel-2.6.23-mm1.orig/mm/memcontrol.c
-> +++ devel-2.6.23-mm1/mm/memcontrol.c
-> @@ -83,7 +83,9 @@ struct page_cgroup {
->  	struct mem_cgroup *mem_cgroup;
->  	atomic_t ref_cnt;		/* Helpful when pages move b/w  */
->  					/* mapped and cached states     */
-> +	int	 flags;
->  };
-> +#define PCGF_PAGECACHE		(0x1)	/* charged as page-cache */
+> --- devel-2.6.23-mm1.orig/include/linux/cgroup.h
+> +++ devel-2.6.23-mm1/include/linux/cgroup.h
+> @@ -233,6 +233,7 @@ int cgroup_is_descendant(const struct cg
+>  struct cgroup_subsys {
+>  	struct cgroup_subsys_state *(*create)(struct cgroup_subsys *ss,
+>  						  struct cgroup *cont);
+> +	void (*pre_destroy)(struct cgroup_subsys *ss, struct cgroup *cont);
+>  	void (*destroy)(struct cgroup_subsys *ss, struct cgroup *cont);
+>  	int (*can_attach)(struct cgroup_subsys *ss,
+>  			  struct cgroup *cont, struct task_struct *tsk);
+> Index: devel-2.6.23-mm1/kernel/cgroup.c
+> ===================================================================
+> --- devel-2.6.23-mm1.orig/kernel/cgroup.c
+> +++ devel-2.6.23-mm1/kernel/cgroup.c
+> @@ -2158,6 +2158,13 @@ static int cgroup_rmdir(struct inode *un
+>  	parent = cont->parent;
+>  	root = cont->root;
+>  	sb = root->sb;
+> +	/*
+> +	 * Notify subsyses that rmdir() request comes.
+> +	 */
+> +	for_each_subsys(root, ss) {
+> +		if ((cont->subsys[ss->subsys_id]) && ss->pre_destroy)
+> +			ss->pre_destroy(ss, cont);
+> +	}
 > 
->  enum {
->  	MEM_CGROUP_TYPE_UNSPEC = 0,
-> @@ -315,8 +317,8 @@ unsigned long mem_cgroup_isolate_pages(u
->   * 0 if the charge was successful
->   * < 0 if the cgroup is over its limit
->   */
-> -int mem_cgroup_charge(struct page *page, struct mm_struct *mm,
-> -				gfp_t gfp_mask)
-> +static int mem_cgroup_charge_common(struct page *page, struct mm_struct *mm,
-> +				gfp_t gfp_mask, int is_cache)
->  {
->  	struct mem_cgroup *mem;
->  	struct page_cgroup *pc;
-> @@ -418,6 +420,10 @@ noreclaim:
->  	atomic_set(&pc->ref_cnt, 1);
->  	pc->mem_cgroup = mem;
->  	pc->page = page;
-> +	if (is_cache)
-> +		pc->flags = PCGF_PAGECACHE;
 
-I prefer PAGE_CGROUP_CACHE since cache can be page cache/swap cache.
+Is pre_destroy really required? Can't we do what we do here in destroy?
 
-> +	else
-> +		pc->flags = 0;
->  	if (page_cgroup_assign_new_page_cgroup(page, pc)) {
->  		/*
->  		 * an another charge is added to this page already.
-> @@ -442,6 +448,12 @@ err:
->  	return -ENOMEM;
->  }
-> 
-> +int mem_cgroup_charge(struct page *page, struct mm_struct *mm,
-> +			gfp_t gfp_mask)
-> +{
-> +	return mem_cgroup_charge_common(page, mm, gfp_mask, 0);
-
-Could we define
-
-enum {
-	MEM_CGROUP_CHARGE_TYPE_CACHE  = 0,
-	MEM_CGROUP_CHARGE_TYPE_MAPPED = 1,
-};
-
-and use the enums here and below.
-
-> +}
-> +
->  /*
->   * See if the cached pages should be charged at all?
->   */
-> @@ -454,7 +466,7 @@ int mem_cgroup_cache_charge(struct page 
-> 
->  	mem = rcu_dereference(mm->mem_cgroup);
->  	if (mem->control_type == MEM_CGROUP_TYPE_ALL)
-> -		return mem_cgroup_charge(page, mm, gfp_mask);
-> +		return mem_cgroup_charge_common(page, mm, gfp_mask, 1);
->  	else
->  		return 0;
->  }
+>  	if (cgroup_has_css_refs(cont)) {
+>  		mutex_unlock(&cgroup_mutex);
 > 
 
 
