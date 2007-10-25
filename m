@@ -1,30 +1,34 @@
-From: "Denis V. Lunev" <den@sw.ru>
-Subject: Re: [Devel] Re: [NETNS] Oops in register_pernet_operations() with
- CONFIG_NET_NS=n (resend, was wrong patch)
-Date: Thu, 25 Oct 2007 18:14:50 +0400
-Message-ID: <4720A4DA.6000800@sw.ru>
+From: Benjamin Thery <benjamin.thery@bull.net>
+Subject: Re: [NETNS] Oops in register_pernet_operations() with CONFIG_NET_NS=n
+Date: Thu, 25 Oct 2007 16:50:08 +0200
+Message-ID: <4720AD20.5030902@bull.net>
 References: <47209317.8000802@bull.net> <4720A181.3060003@sw.ru>
 Mime-Version: 1.0
-Content-Type: multipart/mixed;
- boundary="------------050202070204000009080409"
+Content-Type: text/plain; charset=ISO-8859-1
+Content-Transfer-Encoding: 7bit
 Return-path: <netdev-owner@vger.kernel.org>
 In-Reply-To: <4720A181.3060003@sw.ru>
 Sender: netdev-owner@vger.kernel.org
-To: Benjamin Thery <benjamin.thery@bull.net>
-Cc: Linux Netdev List <netdev@vger.kernel.org>, Cedric Le Goater <clg@fr.ibm.com>, Linux Containers <containers@lists.osdl.org>, David Miller <davem@davemloft.net>
+To: "Denis V. Lunev" <den@sw.ru>
+Cc: Pavel Emelianov <xemul@openvz.org>, "Eric W. Biederman" <ebiederm@xmission.com>, David Miller <davem@davemloft.net>, Linux Netdev List <netdev@vger.kernel.org>, Cedric Le Goater <clg@fr.ibm.com>, Linux Containers <containers@lists.osdl.org>, Daniel Lezcano <dlezcano@fr.ibm.com>
 List-Id: containers.vger.kernel.org
-
-This is a multi-part message in MIME format.
---------------050202070204000009080409
-Content-Type: text/plain; charset=ISO-8859-1
-Content-Transfer-Encoding: 7bit
 
 Denis V. Lunev wrote:
 > The patch attached should help. The idea is simple. The "init" should be
 > called only once without NETNS. Period. No need for any lists.
-> 
+
+This is the kind of idea I had but I didn't think it could be 
+that simple. :) 
+Thanks Denis.
+
 > I'll resend it to Dave after the ACK.
-> 
+
+Tested on x86_64 with CONFIG_NET_NS=n and y. 
+It fixes the issue we observed.
+
+Acked-by: Benjamin Thery <benjamin.thery@bull.net>
+
+
 > Regards,
 > 	Den
 > 
@@ -74,30 +78,11 @@ Denis V. Lunev wrote:
 >>
 >> Regards,
 >> Benjamin
+>>
+> 
 
 
---------------050202070204000009080409
-Content-Type: text/plain;
- name="diff-no-netns"
-Content-Transfer-Encoding: 7bit
-Content-Disposition: inline;
- filename="diff-no-netns"
+-- 
+B e n j a m i n   T h e r y  - BULL/DT/Open Software R&D
 
-diff --git a/net/core/net_namespace.c b/net/core/net_namespace.c
-index 6f71db8..cc306dc 100644
---- a/net/core/net_namespace.c
-+++ b/net/core/net_namespace.c
-@@ -186,7 +186,11 @@ static int register_pernet_operations(struct list_head *list,
- 	int error;
- 
- 	error = 0;
-+#ifdef CONFIG_NET_NS
- 	list_add_tail(&ops->list, list);
-+#else
-+	INIT_LIST_HEAD(&ops->list);
-+#endif
- 	for_each_net(net) {
- 		if (ops->init) {
- 			error = ops->init(net);
-
---------------050202070204000009080409--
+   http://www.bull.com
