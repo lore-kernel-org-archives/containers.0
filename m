@@ -1,88 +1,43 @@
-From: Benjamin Thery <benjamin.thery@bull.net>
+From: ebiederm@xmission.com (Eric W. Biederman)
 Subject: Re: [NETNS] Oops in register_pernet_operations() with CONFIG_NET_NS=n
-Date: Thu, 25 Oct 2007 16:50:08 +0200
-Message-ID: <4720AD20.5030902@bull.net>
+Date: Thu, 25 Oct 2007 09:03:37 -0600
+Message-ID: <m1bqan6xti.fsf@ebiederm.dsl.xmission.com>
 References: <47209317.8000802@bull.net> <4720A181.3060003@sw.ru>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset=us-ascii
 Return-path: <netdev-owner@vger.kernel.org>
-In-Reply-To: <4720A181.3060003@sw.ru>
+In-Reply-To: <4720A181.3060003@sw.ru> (Denis V. Lunev's message of "Thu, 25
+	Oct 2007 18:00:33 +0400")
 Sender: netdev-owner@vger.kernel.org
 To: "Denis V. Lunev" <den@sw.ru>
-Cc: Pavel Emelianov <xemul@openvz.org>, "Eric W. Biederman" <ebiederm@xmission.com>, David Miller <davem@davemloft.net>, Linux Netdev List <netdev@vger.kernel.org>, Cedric Le Goater <clg@fr.ibm.com>, Linux Containers <containers@lists.osdl.org>, Daniel Lezcano <dlezcano@fr.ibm.com>
+Cc: Benjamin Thery <benjamin.thery@bull.net>, Pavel Emelianov <xemul@openvz.org>, David Miller <davem@davemloft.net>, Linux Netdev List <netdev@vger.kernel.org>, Cedric Le Goater <clg@fr.ibm.com>, Linux Containers <containers@lists.osdl.org>, Daniel Lezcano <dlezcano@fr.ibm.com>
 List-Id: containers.vger.kernel.org
 
-Denis V. Lunev wrote:
+"Denis V. Lunev" <den@sw.ru> writes:
+
 > The patch attached should help. The idea is simple. The "init" should be
 > called only once without NETNS. Period. No need for any lists.
-
-This is the kind of idea I had but I didn't think it could be 
-that simple. :) 
-Thanks Denis.
-
+>
 > I'll resend it to Dave after the ACK.
 
-Tested on x86_64 with CONFIG_NET_NS=n and y. 
-It fixes the issue we observed.
+First in the case of the code that is currently merged none of 
+the __net_init __net_exit or __net_initdata can be modular, so for
+2.6.24 there is no fix needed. Yeah.
 
-Acked-by: Benjamin Thery <benjamin.thery@bull.net>
+Second the whole concept of concept pernet_operations being __init
+doesn't work when you have modular code that calls unregister_pernet_subsys().
+Because unregister calls the exit method from the pernet_operations
+structure.  So the patch doesn't even begin to address the real
+issue.
 
+Third from my perspective CONFIG_NET_NS is a temporary measure
+designed to last only until we have enough implementation experience 
+so that we can feel comfortable removing the experimental status of
+the network namespace work.  It was not my intention for it to be a
+space saving measure.  So I think it is silly to go marking up the
+patches in development with __net_initdata etc.
 
-> Regards,
-> 	Den
-> 
-> Benjamin Thery wrote:
->> Hello Pavel,
->>
->> I've found a problem with one of your patch related to netns:
->>
->> * [NETNS] Move some code into __init section when CONFIG_NET_NS=n (v2)
->>    http://www.spinics.net/lists/netdev/msg43310.html
->>
->> This patch introduces the __net_init/__net_exit/__net_initdata
->> defines to save some memory when CONFIG_NET_NS is not set.
->>
->> Cedric Le Goater reported he had a *non-fatal* oops when booting
->> a 2.6.23-mm1-lxc1 kernel with CONFIG_NET_NS=n. (2.6.23-mm1-lxc1 
->> contains the NETNS49 patchset). The oops occured when modules 
->> related to iptables were loaded after the boot completes.
->>
->> The problem is the following:
->>
->> - Your patch adds the __net_initdata attribute to pernet_operations 
->>   structures.
->>
->> - pernet_operations are registered via register_pernet_subsys() and 
->>   linked in the pernet_list during boot.
->>
->> - At the end of boot, pernet_operations are freed (because of the
->>   __net_initdata attribute), and the pernet_list (or first_device list) 
->>   points to freed memory.
->>
->> - After boot, network modules which are netns-aware try to register
->>   themselves with register_pernet_subsys() and ...KABOOM... page
->>   fault when accessing pernet_list (or first_device list).
->>   (I reproduce Cedric's oops with the command: iptables --list)
->>
->> This is not a problem right now in 2.6.23-mm1 or net-2.6 because 
->> there are very few netns-aware network subsystems merged and they
->> are all initialized during boot. But it will be problematic when 
->> we will merge netns code for subsystems which can be built as 
->> modules (eg. iptables, ...). I'm not sure we can use 
->> __net_init_data for pernet_operations then. 
->> Maybe we can add some checks in register_pernet_operations
->> when CONFIG_NET_NS=n.
->>
->> I haven't found a fix yet.
->>
->> Regards,
->> Benjamin
->>
-> 
+At least so far I think __net_initdata is a totally bogus concept
+and I'm not certain about the other two. 
 
-
--- 
-B e n j a m i n   T h e r y  - BULL/DT/Open Software R&D
-
-   http://www.bull.com
+Eric
