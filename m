@@ -1,81 +1,82 @@
 From: "Denis V. Lunev" <den@sw.ru>
-Subject: Re: [NETNS] Oops in register_pernet_operations() with CONFIG_NET_NS=n
-Date: Thu, 25 Oct 2007 18:00:33 +0400
-Message-ID: <4720A181.3060003@sw.ru>
-References: <47209317.8000802@bull.net>
+Subject: Re: [Devel] Re: [NETNS] Oops in register_pernet_operations() with
+ CONFIG_NET_NS=n (resend, was wrong patch)
+Date: Thu, 25 Oct 2007 18:14:50 +0400
+Message-ID: <4720A4DA.6000800@sw.ru>
+References: <47209317.8000802@bull.net> <4720A181.3060003@sw.ru>
 Mime-Version: 1.0
 Content-Type: multipart/mixed;
- boundary="------------090407040905080605000301"
+ boundary="------------050202070204000009080409"
 Return-path: <netdev-owner@vger.kernel.org>
-In-Reply-To: <47209317.8000802@bull.net>
+In-Reply-To: <4720A181.3060003@sw.ru>
 Sender: netdev-owner@vger.kernel.org
 To: Benjamin Thery <benjamin.thery@bull.net>
-Cc: Pavel Emelianov <xemul@openvz.org>, "Eric W. Biederman" <ebiederm@xmission.com>, David Miller <davem@davemloft.net>, Linux Netdev List <netdev@vger.kernel.org>, Cedric Le Goater <clg@fr.ibm.com>, Linux Containers <containers@lists.osdl.org>, Daniel Lezcano <dlezcano@fr.ibm.com>
+Cc: Linux Netdev List <netdev@vger.kernel.org>, Cedric Le Goater <clg@fr.ibm.com>, Linux Containers <containers@lists.osdl.org>, David Miller <davem@davemloft.net>
 List-Id: containers.vger.kernel.org
 
 This is a multi-part message in MIME format.
---------------090407040905080605000301
+--------------050202070204000009080409
 Content-Type: text/plain; charset=ISO-8859-1
 Content-Transfer-Encoding: 7bit
 
-The patch attached should help. The idea is simple. The "init" should be
-called only once without NETNS. Period. No need for any lists.
-
-I'll resend it to Dave after the ACK.
-
-Regards,
-	Den
-
-Benjamin Thery wrote:
-> Hello Pavel,
+Denis V. Lunev wrote:
+> The patch attached should help. The idea is simple. The "init" should be
+> called only once without NETNS. Period. No need for any lists.
 > 
-> I've found a problem with one of your patch related to netns:
-> 
-> * [NETNS] Move some code into __init section when CONFIG_NET_NS=n (v2)
->    http://www.spinics.net/lists/netdev/msg43310.html
-> 
-> This patch introduces the __net_init/__net_exit/__net_initdata
-> defines to save some memory when CONFIG_NET_NS is not set.
-> 
-> Cedric Le Goater reported he had a *non-fatal* oops when booting
-> a 2.6.23-mm1-lxc1 kernel with CONFIG_NET_NS=n. (2.6.23-mm1-lxc1 
-> contains the NETNS49 patchset). The oops occured when modules 
-> related to iptables were loaded after the boot completes.
-> 
-> The problem is the following:
-> 
-> - Your patch adds the __net_initdata attribute to pernet_operations 
->   structures.
-> 
-> - pernet_operations are registered via register_pernet_subsys() and 
->   linked in the pernet_list during boot.
-> 
-> - At the end of boot, pernet_operations are freed (because of the
->   __net_initdata attribute), and the pernet_list (or first_device list) 
->   points to freed memory.
-> 
-> - After boot, network modules which are netns-aware try to register
->   themselves with register_pernet_subsys() and ...KABOOM... page
->   fault when accessing pernet_list (or first_device list).
->   (I reproduce Cedric's oops with the command: iptables --list)
-> 
-> This is not a problem right now in 2.6.23-mm1 or net-2.6 because 
-> there are very few netns-aware network subsystems merged and they
-> are all initialized during boot. But it will be problematic when 
-> we will merge netns code for subsystems which can be built as 
-> modules (eg. iptables, ...). I'm not sure we can use 
-> __net_init_data for pernet_operations then. 
-> Maybe we can add some checks in register_pernet_operations
-> when CONFIG_NET_NS=n.
-> 
-> I haven't found a fix yet.
+> I'll resend it to Dave after the ACK.
 > 
 > Regards,
-> Benjamin
+> 	Den
 > 
+> Benjamin Thery wrote:
+>> Hello Pavel,
+>>
+>> I've found a problem with one of your patch related to netns:
+>>
+>> * [NETNS] Move some code into __init section when CONFIG_NET_NS=n (v2)
+>>    http://www.spinics.net/lists/netdev/msg43310.html
+>>
+>> This patch introduces the __net_init/__net_exit/__net_initdata
+>> defines to save some memory when CONFIG_NET_NS is not set.
+>>
+>> Cedric Le Goater reported he had a *non-fatal* oops when booting
+>> a 2.6.23-mm1-lxc1 kernel with CONFIG_NET_NS=n. (2.6.23-mm1-lxc1 
+>> contains the NETNS49 patchset). The oops occured when modules 
+>> related to iptables were loaded after the boot completes.
+>>
+>> The problem is the following:
+>>
+>> - Your patch adds the __net_initdata attribute to pernet_operations 
+>>   structures.
+>>
+>> - pernet_operations are registered via register_pernet_subsys() and 
+>>   linked in the pernet_list during boot.
+>>
+>> - At the end of boot, pernet_operations are freed (because of the
+>>   __net_initdata attribute), and the pernet_list (or first_device list) 
+>>   points to freed memory.
+>>
+>> - After boot, network modules which are netns-aware try to register
+>>   themselves with register_pernet_subsys() and ...KABOOM... page
+>>   fault when accessing pernet_list (or first_device list).
+>>   (I reproduce Cedric's oops with the command: iptables --list)
+>>
+>> This is not a problem right now in 2.6.23-mm1 or net-2.6 because 
+>> there are very few netns-aware network subsystems merged and they
+>> are all initialized during boot. But it will be problematic when 
+>> we will merge netns code for subsystems which can be built as 
+>> modules (eg. iptables, ...). I'm not sure we can use 
+>> __net_init_data for pernet_operations then. 
+>> Maybe we can add some checks in register_pernet_operations
+>> when CONFIG_NET_NS=n.
+>>
+>> I haven't found a fix yet.
+>>
+>> Regards,
+>> Benjamin
 
 
---------------090407040905080605000301
+--------------050202070204000009080409
 Content-Type: text/plain;
  name="diff-no-netns"
 Content-Transfer-Encoding: 7bit
@@ -83,7 +84,7 @@ Content-Disposition: inline;
  filename="diff-no-netns"
 
 diff --git a/net/core/net_namespace.c b/net/core/net_namespace.c
-index 6f71db8..9ba4809 100644
+index 6f71db8..cc306dc 100644
 --- a/net/core/net_namespace.c
 +++ b/net/core/net_namespace.c
 @@ -186,7 +186,11 @@ static int register_pernet_operations(struct list_head *list,
@@ -92,11 +93,11 @@ index 6f71db8..9ba4809 100644
  	error = 0;
 +#ifdef CONFIG_NET_NS
  	list_add_tail(&ops->list, list);
-+#endif
++#else
 +	INIT_LIST_HEAD(&ops->list);
 +#endif
  	for_each_net(net) {
  		if (ops->init) {
  			error = ops->init(net);
 
---------------090407040905080605000301--
+--------------050202070204000009080409--
