@@ -1,86 +1,109 @@
-From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
-Subject: [PATCH] pidns: Place under CONFIG_EXPERIMENTAL
-Date: Fri, 26 Oct 2007 11:40:59 -0600
-Message-ID: <m1640t3has.fsf@ebiederm.dsl.xmission.com>
+From: ebiederm@xmission.com (Eric W. Biederman)
+Subject: [PATCH] proc: Fix proc_kill_inodes to kill dentries on all proc superblocks
+Date: Fri, 26 Oct 2007 11:48:55 -0600
+Message-ID: <m1y7dp22d4.fsf@ebiederm.dsl.xmission.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Linus Torvalds <torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
-Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1757456AbXJZRuJ@vger.kernel.org>
+Sender: linux-kernel-owner@vger.kernel.org
+To: Linus Torvalds <torvalds@linux-foundation.org>
+Cc: Andrew Morton <akpm@linux-foundation.org>, Al Viro <viro@ftp.linux.org.uk>, linux-kernel@vger.kernel.org, Pavel Emelyanov <xemul@openvz.org>, Sukadev Bhattiprolu <sukadev@us.ibm.com>, Linux Containers <containers@lists.osdl.org>
 List-Id: containers.vger.kernel.org
 
 
-I finally found a chance to review the pid namespace implementation in
-detail and currently it is much to easy to find issues where the
-kernel does the wrong thing outside of the initial pid namespace.
-At the same time the pid namespace code we have does appear
-to be a good base to build on.
+It appears we overlooked support for removing generic proc files
+when we added support for multiple proc super blocks.  Handle
+that now.
 
-Therefore until the dust settles and we are certain we have the
-ABI and the implementation as correct as humanly possible let's
-hide the availability of process ID namespaces behind
-CONFIG_EXPERIMENTAL.
+Since all of the relevant code is already inside of a spin_lock
+we can just grab the superblock lock and walk through all of
+the instances of proc superblocks.
 
-Allowing users to avoid bugs, and removing a guarantee of bug
-compatibility.  Allowing any issues that may be found to
-be fixed properly.
+Heavy weight but it is simple and should work.
 
-If CONFIG_PID_NS=N this patch will cause copy_pid_ns to
-unconditionally return -EINVAL removing the availability
-of multiple pid namespaces.
-
-Signed-off-by: Eric W. Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+Signed-off-by: Eric W. Biederman <ebiederm@xmission.com>
 ---
- init/Kconfig |   12 ++++++++++++
- kernel/pid.c |    4 ++++
- 2 files changed, 16 insertions(+), 0 deletions(-)
+ fs/proc/generic.c  |   38 +++++++++++++++++++++-----------------
+ fs/proc/internal.h |    2 ++
+ fs/proc/root.c     |    2 +-
+ 3 files changed, 24 insertions(+), 18 deletions(-)
 
-diff --git a/init/Kconfig b/init/Kconfig
-index 8b88d0b..72e37c0 100644
---- a/init/Kconfig
-+++ b/init/Kconfig
-@@ -215,6 +215,18 @@ config USER_NS
- 	  vservers, to use user namespaces to provide different
- 	  user info for different servers.  If unsure, say N.
+diff --git a/fs/proc/generic.c b/fs/proc/generic.c
+index 1bdb624..3906770 100644
+--- a/fs/proc/generic.c
++++ b/fs/proc/generic.c
+@@ -561,28 +561,32 @@ static int proc_register(struct proc_dir_entry * dir, struct proc_dir_entry * dp
+ static void proc_kill_inodes(struct proc_dir_entry *de)
+ {
+ 	struct list_head *p;
+-	struct super_block *sb = proc_mnt->mnt_sb;
++	struct super_block *sb;
  
-+config PID_NS
-+	bool "PID Namespaces (EXPERIMENTAL)"
-+	default n
-+	depends on EXPERIMENTAL
-+	help
-+	  Suport process id namespaces.  This allows having multiple
-+	  process with the same pid as long as they are in different
-+	  pid namespaces.  This is a building block of containers.
+ 	/*
+ 	 * Actually it's a partial revoke().
+ 	 */
+-	file_list_lock();
+-	list_for_each(p, &sb->s_files) {
+-		struct file * filp = list_entry(p, struct file, f_u.fu_list);
+-		struct dentry * dentry = filp->f_path.dentry;
+-		struct inode * inode;
+-		const struct file_operations *fops;
+-
+-		if (dentry->d_op != &proc_dentry_operations)
+-			continue;
+-		inode = dentry->d_inode;
+-		if (PDE(inode) != de)
+-			continue;
+-		fops = filp->f_op;
+-		filp->f_op = NULL;
+-		fops_put(fops);
++	spin_lock(&sb_lock);
++	list_for_each_entry(sb, &proc_fs_type.fs_supers, s_instances) {
++		file_list_lock();
++		list_for_each(p, &sb->s_files) {
++			struct file * filp = list_entry(p, struct file, f_u.fu_list);
++			struct dentry * dentry = filp->f_path.dentry;
++			struct inode * inode;
++			const struct file_operations *fops;
 +
-+	  Unless you want to work with an experimental feature
-+	  say N here.
-+
- config AUDIT
- 	bool "Auditing support"
- 	depends on NET
-diff --git a/kernel/pid.c b/kernel/pid.c
-index d1db36b..8a5637b 100644
---- a/kernel/pid.c
-+++ b/kernel/pid.c
-@@ -599,6 +599,10 @@ struct pid_namespace *copy_pid_ns(unsigned long flags, struct pid_namespace *old
- 	if (flags & CLONE_THREAD)
- 		goto out_put;
++			if (dentry->d_op != &proc_dentry_operations)
++				continue;
++			inode = dentry->d_inode;
++			if (PDE(inode) != de)
++				continue;
++			fops = filp->f_op;
++			filp->f_op = NULL;
++			fops_put(fops);
++		}
++		file_list_unlock();
+ 	}
+-	file_list_unlock();
++	spin_unlock(&sb_lock);
+ }
  
-+#ifndef CONFIG_PID_NS
-+	goto out_put;
-+#endif
+ static struct proc_dir_entry *proc_create(struct proc_dir_entry **parent,
+diff --git a/fs/proc/internal.h b/fs/proc/internal.h
+index 1820eb2..1b2b6c6 100644
+--- a/fs/proc/internal.h
++++ b/fs/proc/internal.h
+@@ -78,3 +78,5 @@ static inline int proc_fd(struct inode *inode)
+ {
+ 	return PROC_I(inode)->fd;
+ }
 +
- 	new_ns = create_pid_namespace(old_ns->level + 1);
- 	if (!IS_ERR(new_ns))
- 		new_ns->parent = get_pid_ns(old_ns);
++extern struct file_system_type proc_fs_type;
+diff --git a/fs/proc/root.c b/fs/proc/root.c
+index ec9cb3b..1f86bb8 100644
+--- a/fs/proc/root.c
++++ b/fs/proc/root.c
+@@ -98,7 +98,7 @@ static void proc_kill_sb(struct super_block *sb)
+ 	put_pid_ns(ns);
+ }
+ 
+-static struct file_system_type proc_fs_type = {
++struct file_system_type proc_fs_type = {
+ 	.name		= "proc",
+ 	.get_sb		= proc_get_sb,
+ 	.kill_sb	= proc_kill_sb,
 -- 
 1.5.3.rc6.17.g1911
