@@ -1,34 +1,38 @@
-From: "Denis V. Lunev" <den@sw.ru>
-Subject: Re: [PATCH] remove __net_initdata attribute
-Date: Fri, 26 Oct 2007 15:28:32 +0400
-Message-ID: <4721CF60.5060600@sw.ru>
-References: <20071026095652.GA8788@iris.sw.ru>
+From: David Miller <davem@davemloft.net>
+Subject: Re: [NETNS] Oops in register_pernet_operations() with
+ CONFIG_NET_NS=n
+Date: Fri, 26 Oct 2007 04:31:55 -0700 (PDT)
+Message-ID: <20071026.043155.75000997.davem@davemloft.net>
+References: <m1y7dr5esy.fsf@ebiederm.dsl.xmission.com>
+	<4720C9B9.80706@gmail.com>
+	<m1bqan5cuk.fsf@ebiederm.dsl.xmission.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
+Content-Type: Text/Plain; charset=us-ascii
 Content-Transfer-Encoding: 7bit
 Return-path: <netdev-owner@vger.kernel.org>
-In-Reply-To: <20071026095652.GA8788@iris.sw.ru>
+In-Reply-To: <m1bqan5cuk.fsf@ebiederm.dsl.xmission.com>
 Sender: netdev-owner@vger.kernel.org
-To: "Denis V. Lunev" <den@openvz.org>
-Cc: davem@davemloft.net, devel@openvz.org, netdev@vger.kernel.org, containers@lists.osdl.org, benjamin.thery@bull.net, clg@fr.ibm.com
+To: ebiederm@xmission.com
+Cc: dlunev@gmail.com, benjamin.thery@bull.net, xemul@openvz.org, netdev@vger.kernel.org, clg@fr.ibm.com, containers@lists.osdl.org, dlezcano@fr.ibm.com
 List-Id: containers.vger.kernel.org
 
-Dave, I am sorry, plz disregard the patch :(
+From: ebiederm@xmission.com (Eric W. Biederman)
+Date: Thu, 25 Oct 2007 11:21:55 -0600
 
-- if the file is a part of the kernel, __exit (and pernet_unregister)
-  will never called and should be dropped
-- if the file is a part of a module, __init is NOT dropped on the
-  module loading stage
-
-So, we can still make embedded people happy :) Thanks Pavel to pointing
-me this out.
-
-Denis V. Lunev wrote:
-> The discussion with Eric W. Biederman reveals that the concept for
-> __net_initdata is bogus. The ->exit method of pernet_operations
-> should be called during module exit.
+> > By the way, I think that we can in the case of undefined CONFIG_NET_NS
+> > reduce register to calling ->init method and unregister to calling
+> > ->exit method.
+> >
+> > This is a correct thing at least for now and will be welcomed by the all
+> > embedded/etc people.
 > 
-> So, discard this attribute.
-> 
-> Signed-off-by: Denis V. Lunev <den@openvz.org>
+> I'm not fundamentally opposed.  Earlier versions of my patchset
+> did that and more.   However I think the pain is greater then the
+> gain right now.  Especially since this concept seem to require
+> having quality inspected into it.
 
+I think the correct thing to do for now is to simply remove these
+__net_* markers and their definitions.  There are so many tricky cases
+that it is easier to just get rid of them.
+
+Could someone send me a patch which does that?
