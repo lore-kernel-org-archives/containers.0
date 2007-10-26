@@ -1,60 +1,43 @@
-From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
-Subject: Re: [Devel] [PATCH] pidns: Limit kill -1 and cap_set_all
-Date: Fri, 26 Oct 2007 16:10:04 -0600
-Message-ID: <m1myu5y1c3.fsf__33511.7183546119$1193436788$gmane$org@ebiederm.dsl.xmission.com>
-References: <CBC546DD07068244AEC110EFEDA58B72358940@excite.int.sw-soft.com>
+From: ebiederm@xmission.com (Eric W. Biederman)
+Subject: Re: [Devel] [PATCH] pidns: Place under CONFIG_EXPERIMENTAL (take 2)
+Date: Fri, 26 Oct 2007 16:34:28 -0600
+Message-ID: <m1abq5y07f.fsf@ebiederm.dsl.xmission.com>
+References: <CBC546DD07068244AEC110EFEDA58B7235893F@excite.int.sw-soft.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <CBC546DD07068244AEC110EFEDA58B72358940-8Cmw1+NI3eM4STc1AIfMP5Z3qXmFLfmx@public.gmane.org>
-	(Kir Kolyshkin's message of "Fri, 26 Oct 2007 17:06:54 -0400")
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Kir Kolyshkin <kir-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
-Cc: akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, containers-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, oleg-6lXkIZvqkOAvJsYlp49lxw@public.gmane.org
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1765727AbXJZWfI@vger.kernel.org>
+In-Reply-To: <CBC546DD07068244AEC110EFEDA58B7235893F@excite.int.sw-soft.com>
+	(Kir Kolyshkin's message of "Fri, 26 Oct 2007 16:58:32 -0400")
+Sender: linux-kernel-owner@vger.kernel.org
+To: Kir Kolyshkin <kir@openvz.org>
+Cc: containers@lists.osdl.org, akpm@linux-foundation.org, linux-kernel@vger.kernel.org, torvalds@linux-foundation.org
 List-Id: containers.vger.kernel.org
 
-"Kir Kolyshkin" <kir-66LJJ20gB3DQT0dZR+AlfA@public.gmane.org> writes:
+"Kir Kolyshkin" <kir@swsoft.com> writes:
 
-> Eric, this problem is a known one. Currently Pavel and Sukadev are working on a
-> appropriate signal management for namespaces.
+> Speaking of this particular patch -- I don't understand how you fix
+> "innumerable little bugs" by providing stubs instead of real functions.
 
-I'm fairly certain that the signal issue you they are dealing with
-is how to keep children from killing the init of a pid namespace.
-At least that is what Suka mentioned when I asked him earlier,
-and that is the discussion I have at various times on the containers
-list.
+I think it would be a disaster to use pid namespaces as currently
+implemented 2.6.24-rc1 in a production environment.
 
-This is a totally different issue.  This is keeping
-kill -1 in a child pid namespace from sending a signal to
-every process in the system.
+There are lots of little bugs and I am certain know one knows what
+they are all right now.
 
-It is a bad bug and this patch is a complete fix for it.
-To my knowledge Pavel and Suka just overlooked this case.
+Therefore not creating more then the initial pid namespace in a
+production environment sounds like the responsible thing to do for
+2.6.24.
 
-> If you'd first sent this patch for discussion/review to containers@, you'd know
-> that the patch is very incomplete.
+This patch enables people to guarantee they don't run software
+that will create additional pid namespaces and expose them to
+the bugs we have not yet found, and it says look out.  Don't
+mess with this unless you know what you are doing.
 
-I explicitly asked Suka, Pavel, and Cedric how complete they thought 
-the pid namespace was before I started sending patches.  With
-Pavel at a conference it makes sense why he did not reply.
+That message of Look out be careful is what I really care
+about sending to users of the kernel. 
 
-For the most part Suka and Cedric did not know about the issues
-that I have been finding and fixing.
-
-So since several of them have been fixable with trivial simple fixes
-and because we have passed -rc1 and it is now time for bug fixes
-and possibly a few cleanups.  I have been making bug fixes.
-
-Kir I am happy from feedback from people who can understand the code
-and patches.  But I am not going to hold up sending simple obviously
-correct fixes for discussion.
+The best way I know to do that is to mark the feature
+(EXPERIMENTAL) and have a config option for the feature
+that depends on CONFIG_EXPERIMENTAL.
 
 Eric
