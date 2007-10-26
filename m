@@ -1,71 +1,106 @@
-From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
-Subject: [PATCH] proc: Simplify and correct proc_flush_task
-Date: Fri, 26 Oct 2007 13:43:28 -0600
-Message-ID: <m1r6jhzmov.fsf_-_@ebiederm.dsl.xmission.com>
+From: ebiederm@xmission.com (Eric W. Biederman)
+Subject: [PATCH] pidns: Limit kill -1 and cap_set_all
+Date: Fri, 26 Oct 2007 14:37:48 -0600
+Message-ID: <m1k5p9zk6b.fsf_-_@ebiederm.dsl.xmission.com>
 References: <m1y7dp22d4.fsf@ebiederm.dsl.xmission.com>
 	<alpine.LFD.0.999.0710261105440.30120@woody.linux-foundation.org>
+	<m1r6jhzmov.fsf_-_@ebiederm.dsl.xmission.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <alpine.LFD.0.999.0710261105440.30120-5CScLwifNT1QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-	(Linus Torvalds's message of "Fri, 26 Oct 2007 11:06:52 -0700 (PDT)")
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Linus Torvalds <torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
-Cc: linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Al Viro <viro-rfM+Q5joDG/XmaaqVzeoHQ@public.gmane.org>, Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1764542AbXJZUiz@vger.kernel.org>
+In-Reply-To: <m1r6jhzmov.fsf_-_@ebiederm.dsl.xmission.com> (Eric
+	W. Biederman's message of "Fri, 26 Oct 2007 13:43:28 -0600")
+Sender: linux-kernel-owner@vger.kernel.org
+To: Linus Torvalds <torvalds@linux-foundation.org>
+Cc: Andrew Morton <akpm@linux-foundation.org>, linux-kernel@vger.kernel.org, Pavel Emelyanov <xemul@openvz.org>, Sukadev Bhattiprolu <sukadev@us.ibm.com>, Linux Containers <containers@lists.osdl.org>, Oleg Nesterov <oleg@tv-sign.ru>
 List-Id: containers.vger.kernel.org
 
 
-Currently we special case when we have only the initial pid namespace.
-Unfortunately in doing so the copied case for the other namespaces was
-broken so we don't properly flush the thread directories :(
+This patch implements task_in_pid_ns and uses it to limit cap_set_all
+and sys_kill(-1,) to only those tasks in the current pid namespace.
 
-So this patch removes the unnecessary special case (removing a
-usage of proc_mnt) and corrects the flushing of the thread directories.
+Without this we have a setup for a very nasty surprise.
 
-Signed-off-by: Eric W. Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+Signed-off-by: Eric W. Biederman <ebiederm@xmission.com>
 ---
- fs/proc/base.c |   15 ++++++---------
- 1 files changed, 6 insertions(+), 9 deletions(-)
+ include/linux/pid_namespace.h |    2 ++
+ kernel/capability.c           |    3 +++
+ kernel/pid.c                  |   11 +++++++++++
+ kernel/signal.c               |    5 ++++-
+ 4 files changed, 20 insertions(+), 1 deletions(-)
 
-diff --git a/fs/proc/base.c b/fs/proc/base.c
-index aeaf0d0..a17c268 100644
---- a/fs/proc/base.c
-+++ b/fs/proc/base.c
-@@ -2328,21 +2328,18 @@ out:
+diff --git a/include/linux/pid_namespace.h b/include/linux/pid_namespace.h
+index 0227e68..b454678 100644
+--- a/include/linux/pid_namespace.h
++++ b/include/linux/pid_namespace.h
+@@ -78,4 +78,6 @@ static inline struct task_struct *task_child_reaper(struct task_struct *tsk)
+ 	return tsk->nsproxy->pid_ns->child_reaper;
+ }
  
- void proc_flush_task(struct task_struct *task)
++extern int task_in_pid_ns(struct task_struct *tsk, struct pid_namespace *ns);
++
+ #endif /* _LINUX_PID_NS_H */
+diff --git a/kernel/capability.c b/kernel/capability.c
+index efbd9cd..a801016 100644
+--- a/kernel/capability.c
++++ b/kernel/capability.c
+@@ -125,6 +125,7 @@ static inline int cap_set_all(kernel_cap_t *effective,
+ 			       kernel_cap_t *inheritable,
+ 			       kernel_cap_t *permitted)
  {
--	int i, leader;
--	struct pid *pid, *tgid;
-+	int i;
-+	struct pid *pid, *tgid = NULL;
++     struct pid_namespace *pid_ns = current->nsproxy->pid_ns;
+      struct task_struct *g, *target;
+      int ret = -EPERM;
+      int found = 0;
+@@ -132,6 +133,8 @@ static inline int cap_set_all(kernel_cap_t *effective,
+      do_each_thread(g, target) {
+              if (target == current || is_container_init(target->group_leader))
+                      continue;
++             if (!task_in_pid_ns(target, pid_ns))
++		     continue;
+              found = 1;
+ 	     if (security_capset_check(target, effective, inheritable,
+ 						permitted))
+diff --git a/kernel/pid.c b/kernel/pid.c
+index f815455..1c332ca 100644
+--- a/kernel/pid.c
++++ b/kernel/pid.c
+@@ -430,6 +430,17 @@ struct pid *find_get_pid(pid_t nr)
+ 	return pid;
+ }
+ 
++static int pid_in_pid_ns(struct pid *pid, struct pid_namespace *ns)
++{
++	return pid && (ns->level <= pid->level) &&
++		pid->numbers[ns->level].ns == ns;
++}
++
++int task_in_pid_ns(struct task_struct *task, struct pid_namespace *ns)
++{
++	return pid_in_pid_ns(task_pid(task), ns);
++}
++
+ pid_t pid_nr_ns(struct pid *pid, struct pid_namespace *ns)
+ {
  	struct upid *upid;
+diff --git a/kernel/signal.c b/kernel/signal.c
+index 1200630..8f5a31f 100644
+--- a/kernel/signal.c
++++ b/kernel/signal.c
+@@ -1147,10 +1147,13 @@ static int kill_something_info(int sig, struct siginfo *info, int pid)
+ 	} else if (pid == -1) {
+ 		int retval = 0, count = 0;
+ 		struct task_struct * p;
++		struct pid_namespace *ns = current->nsproxy->pid_ns;
  
--	leader = thread_group_leader(task);
--	proc_flush_task_mnt(proc_mnt, task->pid, leader ? task->tgid : 0);
- 	pid = task_pid(task);
--	if (pid->level == 0)
--		return;
-+	if (thread_group_leader(task))
-+		tgid = task_tgid(task);
- 
--	tgid = task_tgid(task);
--	for (i = 1; i <= pid->level; i++) {
-+	for (i = 0; i <= pid->level; i++) {
- 		upid = &pid->numbers[i];
- 		proc_flush_task_mnt(upid->ns->proc_mnt, upid->nr,
--				leader ? 0 : tgid->numbers[i].nr);
-+			tgid ? tgid->numbers[i].nr : 0);
- 	}
- 
- 	upid = &pid->numbers[pid->level];
+ 		read_lock(&tasklist_lock);
+ 		for_each_process(p) {
+-			if (p->pid > 1 && !same_thread_group(p, current)) {
++			if (!is_container_init(p) &&
++			    !same_thread_group(p, current) &&
++			    task_in_pid_ns(p, ns)) {
+ 				int err = group_send_sig_info(sig, info, p);
+ 				++count;
+ 				if (err != -EPERM)
 -- 
 1.5.3.rc6.17.g1911
