@@ -1,79 +1,60 @@
-From: ebiederm@xmission.com (Eric W. Biederman)
-Subject: Re: [Devel] [PATCH] pidns: Place under CONFIG_EXPERIMENTAL (take 2)
-Date: Fri, 26 Oct 2007 15:59:29 -0600
-Message-ID: <m1ve8ty1tq.fsf@ebiederm.dsl.xmission.com>
-References: <CBC546DD07068244AEC110EFEDA58B7235893F@excite.int.sw-soft.com>
+From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
+Subject: Re: [Devel] [PATCH] pidns: Limit kill -1 and cap_set_all
+Date: Fri, 26 Oct 2007 16:10:04 -0600
+Message-ID: <m1myu5y1c3.fsf__33511.7183546119$1193436788$gmane$org@ebiederm.dsl.xmission.com>
+References: <CBC546DD07068244AEC110EFEDA58B72358940@excite.int.sw-soft.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1765564AbXJZWA2@vger.kernel.org>
-In-Reply-To: <CBC546DD07068244AEC110EFEDA58B7235893F@excite.int.sw-soft.com>
-	(Kir Kolyshkin's message of "Fri, 26 Oct 2007 16:58:32 -0400")
-Sender: linux-kernel-owner@vger.kernel.org
-To: Kir Kolyshkin <kir@swsoft.com>
-Cc: containers@lists.osdl.org, akpm@linux-foundation.org, linux-kernel@vger.kernel.org, torvalds@linux-foundation.org, kir@openvz.org
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <CBC546DD07068244AEC110EFEDA58B72358940-8Cmw1+NI3eM4STc1AIfMP5Z3qXmFLfmx@public.gmane.org>
+	(Kir Kolyshkin's message of "Fri, 26 Oct 2007 17:06:54 -0400")
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Kir Kolyshkin <kir-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+Cc: akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, containers-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, oleg-6lXkIZvqkOAvJsYlp49lxw@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-"Kir Kolyshkin" <kir@swsoft.com> writes:
+"Kir Kolyshkin" <kir-66LJJ20gB3DQT0dZR+AlfA@public.gmane.org> writes:
 
-> Eric,
->
-> Could you please hold off the horses a bit and wait till Pavel Emelyanov
-> returns? It means next Monday; he's currently at a conference whose organisers
-> don't provide internet access.
+> Eric, this problem is a known one. Currently Pavel and Sukadev are working on a
+> appropriate signal management for namespaces.
 
-When we decided to go top down (i.e. user interface first) instead of
-bottom up with the pid namespace implementation it was my
-understanding that we had agreed we would make the pid namespaces
-depend on CONFIG_EXPERIMENTAL so that we wouldn't be stuck forever
-supporting early ABI mistakes.
+I'm fairly certain that the signal issue you they are dealing with
+is how to keep children from killing the init of a pid namespace.
+At least that is what Suka mentioned when I asked him earlier,
+and that is the discussion I have at various times on the containers
+list.
 
-So to my knowledge the conversation has already happened.  I believe
-something in the confusion of trying to use these options to shrink
-the kernel and the futility of that, caused whatever config options
-we had before to be dropped.
+This is a totally different issue.  This is keeping
+kill -1 in a child pid namespace from sending a signal to
+every process in the system.
 
-Further I was happy to let Pavel and Suka work on this code because
-the appeared to know what they were doing and it freed me to do other
-things.  I don't think there are any mysteries in what we are trying
-to do that I need them to explain.
+It is a bad bug and this patch is a complete fix for it.
+To my knowledge Pavel and Suka just overlooked this case.
 
-> I feel it makes great sense to review/discuss patches first on containers@
-> first before submitting directly to lkml/Linus.
+> If you'd first sent this patch for discussion/review to containers@, you'd know
+> that the patch is very incomplete.
 
-My feel before starting to review the pid namespace patches was that
-the work was essentially done except a handful of minor details.  Upon
-closer examination, I found that not to be the case.  My rough fix
-queue had 25 or so patches as of last night to fix pid namespace
-issues.
+I explicitly asked Suka, Pavel, and Cedric how complete they thought 
+the pid namespace was before I started sending patches.  With
+Pavel at a conference it makes sense why he did not reply.
 
-I have no confidence that we will fix all of the pid namespaces issues
-before 2.6.24-final.  I do think we can get most of them fixed.
+For the most part Suka and Cedric did not know about the issues
+that I have been finding and fixing.
 
-Given that most of the remaining issues are integration issues
-with the rest of the kernel having the code merged should make
-it much easier to see what is going on and actually fix things.
-So I am not in favor of reverting this code despite seeing numerous
-problems.
+So since several of them have been fixable with trivial simple fixes
+and because we have passed -rc1 and it is now time for bug fixes
+and possibly a few cleanups.  I have been making bug fixes.
 
-> Speaking of this particular patch -- I don't understand how you fix
-> "innumerable little bugs" by providing stubs instead of real functions.
-> Sent from my BlackBerry; please reply to kir@openvz.org
-
-It doesn't fix the bugs it avoids them because there is no way to
-get to the them and trigger them.  So far I have yet to find a bug
-that is a problem with only a single pid namespace in the kernel.
-
-Since everyone agrees that there are at least some deficiencies in
-the current pid namespace I think this makes sense, to mark
-the code as EXPERIMENTAL and have a way for people who care to
-shut it off just so they don't have to worry about new issues.
-
-As far as how the config option is implemented I don't much care
-so long as I get the -EINVAL when I pass CLONE_NEWPID as root.
-
-Essentially this patch is part of a defense in depth against pid
-namespace problems hitting people.  This patch is my first line
-of defense.  Actually fixing all of the rest of the known bugs
-is the other line.
+Kir I am happy from feedback from people who can understand the code
+and patches.  But I am not going to hold up sending simple obviously
+correct fixes for discussion.
 
 Eric
