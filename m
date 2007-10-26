@@ -1,43 +1,86 @@
-From: ebiederm@xmission.com (Eric W. Biederman)
-Subject: Re: [Devel] [PATCH] pidns: Place under CONFIG_EXPERIMENTAL (take 2)
-Date: Fri, 26 Oct 2007 16:34:28 -0600
-Message-ID: <m1abq5y07f.fsf@ebiederm.dsl.xmission.com>
-References: <CBC546DD07068244AEC110EFEDA58B7235893F@excite.int.sw-soft.com>
+From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
+Subject: Re: Q: How complete is the pid namespace in mainline
+Date: Fri, 26 Oct 2007 17:09:26 -0600
+Message-ID: <m14pgdxyl5.fsf@ebiederm.dsl.xmission.com>
+References: <m1bqam4fpg.fsf@ebiederm.dsl.xmission.com>
+	<20071026171718.GB11942@us.ibm.com>
+	<m1r6jh211e.fsf@ebiederm.dsl.xmission.com>
+	<20071026212959.GA15511@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1765727AbXJZWfI@vger.kernel.org>
-In-Reply-To: <CBC546DD07068244AEC110EFEDA58B7235893F@excite.int.sw-soft.com>
-	(Kir Kolyshkin's message of "Fri, 26 Oct 2007 16:58:32 -0400")
-Sender: linux-kernel-owner@vger.kernel.org
-To: Kir Kolyshkin <kir@openvz.org>
-Cc: containers@lists.osdl.org, akpm@linux-foundation.org, linux-kernel@vger.kernel.org, torvalds@linux-foundation.org
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <20071026212959.GA15511-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org> (sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org's message
+	of "Fri, 26 Oct 2007 14:29:59 -0700")
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org
+Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Cedric Le Goater <clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-"Kir Kolyshkin" <kir@swsoft.com> writes:
+sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org writes:
 
-> Speaking of this particular patch -- I don't understand how you fix
-> "innumerable little bugs" by providing stubs instead of real functions.
+> Eric W. Biederman [ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org] wrote:
+> | sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org writes:
+> | >
+> | > Dave had suggested we print a warning the first time a container-init
+> forks()
+> | > without a handler for a fatal signal. I was planning on adding that as
+> | > patch 4 of the signal patch set and get some feedback.
+> | 
+> | Yes.  How to cleanly handle signalling of container init is
+> | a tricky one.  It does sound like you have made a reasonable start
+> | there.
+> | 
+> | Suka it is a lot more then that.  How much more I'm not certain
+> | of.  I suspect the only way to find the rest of the cases is
+> | just go through the code with a fine tooth come and read and look.
+>
+> I agree. I did not mean to ignore the kthread conversions and was only
+> referring to the core pid namespace clone stuff.
 
-I think it would be a disaster to use pid namespaces as currently
-implemented 2.6.24-rc1 in a production environment.
+Sure, and that make sense.
 
-There are lots of little bugs and I am certain know one knows what
-they are all right now.
+> | So far doing that it has not at all hard for me to find either
+> | bugs or places where the implementation can be improved.
+> | 
+> | Currently we have little things like kill(-1,...) signalling the
+> | wrong set of processes, and a couple of proc bugs.
+>
+> I just realized the fix for this is in the signal patchset I was
+> referring to.
+>
+> https://lists.linux-foundation.org/pipermail/containers/2007-August/006987.html
+>
+> I notice that you have sent a patch for the kill -1.
 
-Therefore not creating more then the initial pid namespace in a
-production environment sounds like the responsible thing to do for
-2.6.24.
+Yes. I'm trying to get out as many simple little bug fixes
+as I can.
 
-This patch enables people to guarantee they don't run software
-that will create additional pid namespaces and expose them to
-the bugs we have not yet found, and it says look out.  Don't
-mess with this unless you know what you are doing.
+Sorry for missing the fact you guys had generated some patches
+to address this.  Still I think mine is a little more comprehensive
+and shorter ;)
 
-That message of Look out be careful is what I really care
-about sending to users of the kernel. 
+That bug is on my list of really nasty bugs I want to avoid.
 
-The best way I know to do that is to mark the feature
-(EXPERIMENTAL) and have a config option for the feature
-that depends on CONFIG_EXPERIMENTAL.
+> The proc_mnt bug Linus found seems to have slipped through when
+> merging Pavel's and my patches.
+
+I really don't mind a handful of little bugs, it would be
+surprising if something hadn't slipped through at this point.
+
+As long as everyone is aware that it is going to take a bit
+to find everything and stabilizing it all and everyone keeps
+looking we should be fine.
+
+Oh.  Do you know if there was a good reason for forcing
+the tty, session, and process group of a the first process
+in a pid namespace?
 
 Eric
