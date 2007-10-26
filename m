@@ -1,68 +1,120 @@
-From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
-Subject: Re: Q: How complete is the pid namespace in mainline
-Date: Fri, 26 Oct 2007 03:33:25 -0600
-Message-ID: <m1ve8u2pay.fsf@ebiederm.dsl.xmission.com>
-References: <m1bqam4fpg.fsf@ebiederm.dsl.xmission.com>
-	<4721AAD6.60501@fr.ibm.com>
+From: "Denis V. Lunev" <den@openvz.org>
+Subject: [PATCH] remove __net_initdata attribute
+Date: Fri, 26 Oct 2007 13:56:52 +0400
+Message-ID: <20071026095652.GA8788@iris.sw.ru>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <4721AAD6.60501-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org> (Cedric Le Goater's message of "Fri,
-	26 Oct 2007 10:52:38 +0200")
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Cedric Le Goater <clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
-Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+Return-path: <netdev-owner@vger.kernel.org>
+Content-Disposition: inline
+Sender: netdev-owner@vger.kernel.org
+To: davem@davemloft.net
+Cc: den@openvz.org, devel@openvz.org, netdev@vger.kernel.org, containers@lists.osdl.org, benjamin.thery@bull.net, clg@fr.ibm.com
 List-Id: containers.vger.kernel.org
 
-Cedric Le Goater <clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org> writes:
+The discussion with Eric W. Biederman reveals that the concept for
+__net_initdata is bogus. The ->exit method of pernet_operations
+should be called during module exit.
 
-> Eric W. Biederman wrote:
->> Guys how complete do you fee the pid namespace support is that
->> has been merged into Linus's tree?
->> 
->> My impression until I started reading through code earlier today
->> was that the support was just about done except for a couple of
->> tricky details.
->
-> Yes It looks sane.
->
-> Here's what I have in mind :
->
-> * there are some patches from suka that make sure the pid namespace init 
->   is not getting abusively killed by one of this children 
-> * the pid cleanup is not complete 
-> 	. locks
-> 	. kthread (i should work soon on improving kthread to support 
->           signals)
->
-> IMO, the proc mount shouldn't be under the pid namespace. we will 
-> need that sooner or later.
+So, discard this attribute.
 
-I was hoping to get a larger list of unfixed issues.
+Signed-off-by: Denis V. Lunev <den@openvz.org>
 
-Currently from my review I have generated about 25 bugfix patches.
-Several of them in some fairly obvious places.
-
-I think it is a good base to build on, but it feels to like we still
-have a significant ways to go.
-
-I think the assumption that we can use global pid numbers instead
-of instead of struct pids is racy, and a serious maintenance problem.
-It leads to silent breakage of routines like get_net_ns_by_pid,
-and possibly a couple of other places.
-
-I'm really not happy with pid_nr meaning a pid number in the
-init_pid_ns and pid_vnr meaning a pid number meaning a pid in the
-local pid namespace.  But that is just a matter of names so I
-don't think it has caused any problems.   Short of making it
-to easy to get a pid number in the &init_pid_ns. 
-
-Eric
+diff --git a/drivers/net/loopback.c b/drivers/net/loopback.c
+index 662b8d1..45f30a2 100644
+--- a/drivers/net/loopback.c
++++ b/drivers/net/loopback.c
+@@ -284,7 +284,7 @@ static __net_exit void loopback_net_exit(struct net *net)
+ 	unregister_netdev(dev);
+ }
+ 
+-static struct pernet_operations __net_initdata loopback_net_ops = {
++static struct pernet_operations loopback_net_ops = {
+        .init = loopback_net_init,
+        .exit = loopback_net_exit,
+ };
+diff --git a/fs/proc/proc_net.c b/fs/proc/proc_net.c
+index 2e91fb7..cbc5a95 100644
+--- a/fs/proc/proc_net.c
++++ b/fs/proc/proc_net.c
+@@ -185,7 +185,7 @@ static __net_exit void proc_net_ns_exit(struct net *net)
+ 	kfree(net->proc_net_root);
+ }
+ 
+-struct pernet_operations __net_initdata proc_net_ns_ops = {
++struct pernet_operations proc_net_ns_ops = {
+ 	.init = proc_net_ns_init,
+ 	.exit = proc_net_ns_exit,
+ };
+diff --git a/include/net/net_namespace.h b/include/net/net_namespace.h
+index 93aa87d..5279466 100644
+--- a/include/net/net_namespace.h
++++ b/include/net/net_namespace.h
+@@ -102,11 +102,9 @@ static inline void release_net(struct net *net)
+ #ifdef CONFIG_NET_NS
+ #define __net_init
+ #define __net_exit
+-#define __net_initdata
+ #else
+ #define __net_init	__init
+ #define __net_exit	__exit_refok
+-#define __net_initdata	__initdata
+ #endif
+ 
+ struct pernet_operations {
+diff --git a/net/core/dev.c b/net/core/dev.c
+index f1647d7..1afcb56 100644
+--- a/net/core/dev.c
++++ b/net/core/dev.c
+@@ -2665,7 +2665,7 @@ static void __net_exit dev_proc_net_exit(struct net *net)
+ 	proc_net_remove(net, "dev");
+ }
+ 
+-static struct pernet_operations __net_initdata dev_proc_ops = {
++static struct pernet_operations dev_proc_ops = {
+ 	.init = dev_proc_net_init,
+ 	.exit = dev_proc_net_exit,
+ };
+@@ -4325,7 +4325,7 @@ static void __net_exit netdev_exit(struct net *net)
+ 	kfree(net->dev_index_head);
+ }
+ 
+-static struct pernet_operations __net_initdata netdev_net_ops = {
++static struct pernet_operations netdev_net_ops = {
+ 	.init = netdev_init,
+ 	.exit = netdev_exit,
+ };
+@@ -4356,7 +4356,7 @@ static void __net_exit default_device_exit(struct net *net)
+ 	rtnl_unlock();
+ }
+ 
+-static struct pernet_operations __net_initdata default_device_ops = {
++static struct pernet_operations default_device_ops = {
+ 	.exit = default_device_exit,
+ };
+ 
+diff --git a/net/core/dev_mcast.c b/net/core/dev_mcast.c
+index 15241cf..ae35405 100644
+--- a/net/core/dev_mcast.c
++++ b/net/core/dev_mcast.c
+@@ -285,7 +285,7 @@ static void __net_exit dev_mc_net_exit(struct net *net)
+ 	proc_net_remove(net, "dev_mcast");
+ }
+ 
+-static struct pernet_operations __net_initdata dev_mc_net_ops = {
++static struct pernet_operations dev_mc_net_ops = {
+ 	.init = dev_mc_net_init,
+ 	.exit = dev_mc_net_exit,
+ };
+diff --git a/net/netlink/af_netlink.c b/net/netlink/af_netlink.c
+index 3252729..4f994c0 100644
+--- a/net/netlink/af_netlink.c
++++ b/net/netlink/af_netlink.c
+@@ -1888,7 +1888,7 @@ static void __net_exit netlink_net_exit(struct net *net)
+ #endif
+ }
+ 
+-static struct pernet_operations __net_initdata netlink_net_ops = {
++static struct pernet_operations netlink_net_ops = {
+ 	.init = netlink_net_init,
+ 	.exit = netlink_net_exit,
+ };
