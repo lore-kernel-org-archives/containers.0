@@ -1,37 +1,41 @@
-From: Andrew Morton <akpm@linux-foundation.org>
-Subject: Re: [Devel] [PATCH] pidns: Place under CONFIG_EXPERIMENTAL (take 2)
-Date: Fri, 26 Oct 2007 19:18:45 -0700
-Message-ID: <20071026191845.fd0f75c8.akpm@linux-foundation.org>
-References: <CBC546DD07068244AEC110EFEDA58B7235893F@excite.int.sw-soft.com>
-	<m1ve8ty1tq.fsf@ebiederm.dsl.xmission.com>
-	<20071027002448.GH30533@stusta.de>
-	<m18x5puyw7.fsf@ebiederm.dsl.xmission.com>
-	<20071027020408.GO30533@stusta.de>
+From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
+Subject: Re: [PATCH] namespaces: introduce sys_hijack (v7)
+Date: Fri, 26 Oct 2007 20:29:08 -0600
+Message-ID: <m1tzodthmz.fsf@ebiederm.dsl.xmission.com>
+References: <20071024222125.GA8641@sergelap.austin.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
-Content-Transfer-Encoding: 7bit
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1754313AbXJ0CTT@vger.kernel.org>
-In-Reply-To: <20071027020408.GO30533@stusta.de>
-Sender: linux-kernel-owner@vger.kernel.org
-To: Adrian Bunk <bunk@kernel.org>
-Cc: ebiederm@xmission.com, kir@swsoft.com, containers@lists.osdl.org, linux-kernel@vger.kernel.org, torvalds@linux-foundation.org, kir@openvz.org
+Content-Type: text/plain; charset=us-ascii
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <20071024222125.GA8641-6s5zFf/epYLPQpwDFJZrxKsjOiXwFzmk@public.gmane.org> (Serge
+	E. Hallyn's message of "Wed, 24 Oct 2007 17:21:25 -0500")
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-> On Sat, 27 Oct 2007 04:04:08 +0200 Adrian Bunk <bunk@kernel.org> wrote:
-> > be happy to hear if someone has a better idea.
-> 
-> There is a difference between "complete the feature" and "early adopters 
-> to start playing with the feature" on the one side, and making something 
-> available in a released kernel on the other side.
-> 
-> For development and playing with it it can depend on BROKEN (perhaps 
-> with the dependency removed through the first -rc kernels), but as soon 
-> as it's available in a -final kernel the ABI is fixed.
-> 
+"Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org> writes:
 
-Yes, if we're not 100% certain that the interfaces are correnct and unchanging
-and that the implementation is solid, we should disable the feature at Kconfig time.
+> This is just a first stab at doing hijack by cgroup files.  I force
+> using the 'tasks' file just so that I can (a) predict and check
+> the name of the file, (b) make sure it's a cgroup file, and then
+> (c) trust that taking __d_cont(dentry parent) gives me a legitimate
+> container.
+>
+> Seems to work at least.
 
-The best option would be to fix things asap.  But assuming that option isn't
-reasonable and/or safe, we can slip a `depends on BROKEN' into -rc6 then
-resume development for 2.6.25.
+Grr.  I really want to look at this, as it seems a pretty sane
+idea from my side.  Once we get do_fork_task we also have a very nice
+way to speed of kthread_create.
+
+Anyway off to being burried in trying to stabalize what we have merged
+for 2.6.24.  There is a lot there that can use some polish.
+
+Eric
