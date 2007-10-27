@@ -1,7 +1,7 @@
 From: sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org
-Subject: [PATCH] Masquerade sender information
-Date: Sat, 27 Oct 2007 12:02:16 -0700
-Message-ID: <20071027190216.GB10397@us.ibm.com>
+Subject: [PATCH 1/2] Container-init must be immune to unwanted signals
+Date: Sat, 27 Oct 2007 12:07:29 -0700
+Message-ID: <20071027190729.GC10397@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
@@ -19,110 +19,115 @@ To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Pave
 Cc: Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
+Note: this patch applies on top of Eric's patch:
+
+	http://lkml.org/lkml/2007/10/26/440
+
+---
 
 From: Sukadev Bhattiprolu <sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH] Masquerade sender information
+Subject: [PATCH 1/2] Container-init must be immune to unwanted signals
 
-With multiple pid namespaces, sender of a signal could be in an ancestor
-namespace of the receiver and so the sender will not have a valid 'pid_t'
-in the receiver's namespace.
+Container-init process must appear like a normal process to its sibling
+in the parent namespace and should be killable (or not) in the usual way.
 
-In this case, masquerade the 'siginfo' for the signal to pretend that the
-signal originated from the kernel.
+But it must be immune to any unwanted signals from within its own namespace.
+
+At the time of sending the signal, check if receiver is container-init
+and if signal is an unwanted one. If its unwanted signal, ignore the
+signal right away.
+
+Note: 
+	A limitation with this patch is that if the signal is blocked by the
+	container-init at the time of the check, we cannot ignore the signal
+	because the container-init may install a handler for the signal before
+	unblocking it.
+
+	But if the container-init unblocks the signal without installing the
+	handler, the unwanted signal will still be delivered to the container-
+	init. If the unwanted signal is fatal (i.e default action is to
+	terminate), we end up terminating the container-init and hence the
+	container.
+
+	We have not been able to find a clean-way to address this blocked
+	signal issue in the kernel. It appears easier to let the container-
+	init decide what it wants to do with signals i.e have it _explicitly_
+	ignore or handle all fatal signals.
+
+	The next patch in this set prints a warning the first time a
+	container-init process fork()s without ignoring or handling a fatal
+	signal.
 
 Signed-off-by: Sukadev Bhattiprolu <sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 ---
- include/linux/pid.h           |    8 ++++++++
- include/linux/pid_namespace.h |    1 +
- kernel/pid.c                  |   13 +++++++++++++
- kernel/signal.c               |   15 +++++++++++++++
- 4 files changed, 37 insertions(+)
+ include/linux/pid_namespace.h |    6 +++++-
+ kernel/pid.c                  |    9 ++++++++-
+ kernel/signal.c               |    5 ++++-
+ 3 files changed, 17 insertions(+), 3 deletions(-)
 
-Index: 2.6.23-mm1/include/linux/pid.h
-===================================================================
---- 2.6.23-mm1.orig/include/linux/pid.h	2007-10-27 08:48:56.000000000 -0700
-+++ 2.6.23-mm1/include/linux/pid.h	2007-10-27 09:56:53.000000000 -0700
-@@ -123,6 +123,14 @@ extern struct pid *alloc_pid(struct pid_
- extern void FASTCALL(free_pid(struct pid *pid));
- extern void zap_pid_ns_processes(struct pid_namespace *pid_ns);
- 
-+static inline struct pid_namespace *pid_active_ns(struct pid *pid)
-+{
-+       if (!pid)
-+               return NULL;
-+
-+       return pid->numbers[pid->level].ns;
-+}
-+
- /*
-  * the helpers to get the pid's id seen from different namespaces
-  *
-Index: 2.6.23-mm1/kernel/pid.c
-===================================================================
---- 2.6.23-mm1.orig/kernel/pid.c	2007-10-27 08:50:51.000000000 -0700
-+++ 2.6.23-mm1/kernel/pid.c	2007-10-27 10:03:28.000000000 -0700
-@@ -430,6 +430,19 @@ struct pid *find_get_pid(pid_t nr)
- 	return pid;
- }
- 
-+/*
-+ * Return TRUE if the active pid namespace of @tsk is same as active
-+ * pid namespace of 'current'.
-+ *
-+ * Note the difference between this and the task_in_pid_ns() below.
-+ * task_in_pid_ns() includes processes in descendant pid name spaces
-+ * but pid_ns_equal() only matches _active_ pid namespaces.
-+ */
-+int pid_ns_equal(struct task_struct *tsk)
-+{
-+	return pid_active_ns(task_pid(current)) == pid_active_ns(task_pid(tsk));
-+}
-+
- static int pid_in_pid_ns(struct pid *pid, struct pid_namespace *ns)
- {
- 	return pid && (ns->level <= pid->level) &&
 Index: 2.6.23-mm1/kernel/signal.c
 ===================================================================
---- 2.6.23-mm1.orig/kernel/signal.c	2007-10-27 08:50:51.000000000 -0700
-+++ 2.6.23-mm1/kernel/signal.c	2007-10-27 10:02:04.000000000 -0700
-@@ -679,6 +679,20 @@ static void handle_stop_signal(int sig, 
- 	}
+--- 2.6.23-mm1.orig/kernel/signal.c	2007-10-27 10:08:36.000000000 -0700
++++ 2.6.23-mm1/kernel/signal.c	2007-10-27 10:08:36.000000000 -0700
+@@ -45,7 +45,10 @@ static int sig_init_ignore(struct task_s
+ 
+ 	// Currently this check is a bit racy with exec(),
+ 	// we can _simplify_ de_thread and close the race.
+-	if (likely(!is_global_init(tsk->group_leader)))
++	if (likely(!is_container_init(tsk->group_leader)))
++		return 0;
++
++	if (task_in_descendant_pid_ns(tsk) && !in_interrupt())
+ 		return 0;
+ 
+ 	return 1;
+Index: 2.6.23-mm1/kernel/pid.c
+===================================================================
+--- 2.6.23-mm1.orig/kernel/pid.c	2007-10-27 10:08:36.000000000 -0700
++++ 2.6.23-mm1/kernel/pid.c	2007-10-27 10:34:59.000000000 -0700
+@@ -445,7 +445,7 @@ int pid_ns_equal(struct task_struct *tsk
+ 
+ static int pid_in_pid_ns(struct pid *pid, struct pid_namespace *ns)
+ {
+-	return pid && (ns->level <= pid->level) &&
++	return pid && ns && (ns->level <= pid->level) &&
+ 		pid->numbers[ns->level].ns == ns;
  }
  
-+static void masquerade_sender(struct task_struct *t, struct sigqueue *q)
+@@ -454,6 +454,13 @@ int task_in_pid_ns(struct task_struct *t
+ 	return pid_in_pid_ns(task_pid(task), ns);
+ }
+ 
++int task_in_descendant_pid_ns(struct task_struct *tsk)
 +{
-+       /*
-+        * If the sender does not have a pid_t in the receiver's active
-+        * pid namespace, set si_pid to 0 and pretend signal originated
-+        * from the kernel.
-+        */
-+       if (!pid_ns_equal(t)) {
-+               q->info.si_pid = 0;
-+               q->info.si_uid = 0;
-+               q->info.si_code = SI_KERNEL;
-+       }
++	struct pid_namespace *ns = task_active_pid_ns(current);
++
++	return task_in_pid_ns(tsk, ns) && !pid_ns_equal(tsk);
 +}
 +
- static int send_signal(int sig, struct siginfo *info, struct task_struct *t,
- 			struct sigpending *signals)
+ pid_t pid_nr_ns(struct pid *pid, struct pid_namespace *ns)
  {
-@@ -730,6 +744,7 @@ static int send_signal(int sig, struct s
- 			copy_siginfo(&q->info, info);
- 			break;
- 		}
-+		masquerade_sender(t, q);
- 	} else if (!is_si_special(info)) {
- 		if (sig >= SIGRTMIN && info->si_code != SI_USER)
- 		/*
+ 	struct upid *upid;
 Index: 2.6.23-mm1/include/linux/pid_namespace.h
 ===================================================================
---- 2.6.23-mm1.orig/include/linux/pid_namespace.h	2007-10-27 09:44:25.000000000 -0700
-+++ 2.6.23-mm1/include/linux/pid_namespace.h	2007-10-27 10:04:20.000000000 -0700
-@@ -56,6 +56,7 @@ static inline struct task_struct *task_c
- 	return tsk->nsproxy->pid_ns->child_reaper;
+--- 2.6.23-mm1.orig/include/linux/pid_namespace.h	2007-10-27 10:08:36.000000000 -0700
++++ 2.6.23-mm1/include/linux/pid_namespace.h	2007-10-27 10:32:27.000000000 -0700
+@@ -47,7 +47,10 @@ static inline void put_pid_ns(struct pid
+ 
+ static inline struct pid_namespace *task_active_pid_ns(struct task_struct *tsk)
+ {
+-	return tsk->nsproxy->pid_ns;
++	if (tsk->nsproxy)
++		return tsk->nsproxy->pid_ns;
++
++	return NULL;
  }
  
-+extern int pid_ns_equal(struct task_struct *tsk);
+ static inline struct task_struct *task_child_reaper(struct task_struct *tsk)
+@@ -58,5 +61,6 @@ static inline struct task_struct *task_c
+ 
+ extern int pid_ns_equal(struct task_struct *tsk);
  extern int task_in_pid_ns(struct task_struct *tsk, struct pid_namespace *ns);
++extern int task_in_descendant_pid_ns(struct task_struct *tsk);
  
  #endif /* _LINUX_PID_NS_H */
