@@ -1,77 +1,103 @@
-From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
-Subject: [RFC][PATCH] fork: Don't special case CLONE_NEWPID for process or
-	sessions
-Date: Fri, 26 Oct 2007 19:49:48 -0600
-Message-ID: <m11wbhuy0z.fsf@ebiederm.dsl.xmission.com>
+From: Adrian Bunk <bunk@kernel.org>
+Subject: Re: [Devel] [PATCH] pidns: Place under CONFIG_EXPERIMENTAL (take 2)
+Date: Sat, 27 Oct 2007 04:04:08 +0200
+Message-ID: <20071027020408.GO30533@stusta.de>
+References: <CBC546DD07068244AEC110EFEDA58B7235893F@excite.int.sw-soft.com> <m1ve8ty1tq.fsf@ebiederm.dsl.xmission.com> <20071027002448.GH30533@stusta.de> <m18x5puyw7.fsf@ebiederm.dsl.xmission.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
-Cc: Oleg Nesterov <oleg-6lXkIZvqkOAvJsYlp49lxw@public.gmane.org>, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+Content-Type: text/plain; charset=utf-8
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1754742AbXJ0CD6@vger.kernel.org>
+Content-Disposition: inline
+In-Reply-To: <m18x5puyw7.fsf@ebiederm.dsl.xmission.com>
+Sender: linux-kernel-owner@vger.kernel.org
+To: "Eric W. Biederman" <ebiederm@xmission.com>
+Cc: Kir Kolyshkin <kir@swsoft.com>, containers@lists.osdl.org, akpm@linux-foundation.org, linux-kernel@vger.kernel.org, torvalds@linux-foundation.org, kir@openvz.org
 List-Id: containers.vger.kernel.org
 
+On Fri, Oct 26, 2007 at 07:31:04PM -0600, Eric W. Biederman wrote:
+> Adrian Bunk <bunk@kernel.org> writes:
+> 
+> > CONFIG_EXPERIMENTAL is a weak hint that some code might not (yet) be in 
+> > a perfect state, but it does not have any semantics regarding
+> > userspace ABIs.
+> 
+> Code that might not (yet) be in a perfect state sums it up pretty
+> well.  There is not plan or expectation to change magic numbers or
+> things like that but the behavior of the code may change as bug and
+> such are fixed.
+> 
+> > A dependency on BROKEN seems more appropriate.
+> 
+> Since you can't select that it seems a little strong.
+> 
+> ...
+> 
+> One of the things we talked about at the kernel summit is how
+> almost inevitably when new user space interfaces are introduced
+> there are problems.  Someone over looks something, something
+> gets changed to get through the review something like that.  There was
+> discussion but no consensus on how do introduce something like that
+> but still allow our selves the ability to fix it.  Keeping the
+> code under CONFIG_EXPERIMENTAL is the best suggest I have seen
+> so far.  Even if it is slightly expanding the definition of
+> CONFIG_EXPERIMENTAL.
+> 
+> Every place the kernel uses pids is a huge scope.  It is very
+> easy to miss something with a scope that wide.  So the engineer
+> in me says chances of us missing something are pretty huge.
+> Especially since I know we have bugs in -rc1.
+> 
+> If it turns out that making multiple pid namespaces work is
+> hopeless we can always change the dependency to BROKEN later.
 
-Given that the kernel supports sys_setsid we don't need a special case
-in fork if we want to set: session == pgrp == pid.
+No, we can't after 2.6.24 got released.
 
-The historical (although not 2.6) linux behavior has been to start the
-init with session == pgrp == 0 which is effectively what removing this
-special case will do. 
+Let me make an example:
+- looking at the timelines, e.g. Ubuntu 8.04 LTS is likely to
+  ship with 2.6.24
+- this experimental feature might be enabled there
+- this Ubuntu release with this kernel will be supported and used
+  for five years
 
-Is there any reason why we want/need this special case in fork?  Or
-can we remove it and save some code, make copy_process easier to read
-easier to maintain, and possibly a little faster?
+> As for ABI and behavioral characteristics currently that is
+> largely well defined.  You are supposed to get the exact
+> same thing as you would on the system if you only had a
+> single pid namespace.  The places where we have questionable
+> semantics is in the intersections between namespaces.  
+> 
+> That is not an area I am willing to stand up and say we got
+> it perfect the first time, I'm going to support our behavior
+> quirks forever if I can find soon enough.  Very few applications
+> will care, and the differences might really matter at some point.
+> 
+> So does any one have any better suggestions on how to deal
+> with features that are enough work you aren't going to get them
+> perfect the first time.  You need the code merged or else you
+> can not complete the feature (too many dependencies through out the
+> code).  You want early adopters to start playing with the feature
+> so you can get feed back and you can test to make certain everything
+> is going ok.  You want to retain the ability to fix implementation
+> details even if those details are user visible, for a time until
+> things seem as good as they can reasonably get.
+> 
+> Roughly that sounds like CONFIG_EXPERIMENTAL to me.  But I would
+> be happy to hear if someone has a better idea.
 
-I know it is a little weird belong to a process groups that isn't
-visible in your pid namespace, but it there are no good reasons
-why it shouldn't work.
+There is a difference between "complete the feature" and "early adopters 
+to start playing with the feature" on the one side, and making something 
+available in a released kernel on the other side.
 
-I think making this change makes the interface more flexible,
-and general.
+For development and playing with it it can depend on BROKEN (perhaps 
+with the dependency removed through the first -rc kernels), but as soon 
+as it's available in a -final kernel the ABI is fixed.
 
-Signed-off-by: Eric W. Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
----
- kernel/fork.c |   18 +++++-------------
- 1 files changed, 5 insertions(+), 13 deletions(-)
+> Eric
 
-diff --git a/kernel/fork.c b/kernel/fork.c
-index ddafdfa..b0de799 100644
---- a/kernel/fork.c
-+++ b/kernel/fork.c
-@@ -1292,20 +1292,12 @@ static struct task_struct *copy_process(unsigned long clone_flags,
- 		if (thread_group_leader(p)) {
- 			if (clone_flags & CLONE_NEWPID) {
- 				p->nsproxy->pid_ns->child_reaper = p;
--				p->signal->tty = NULL;
--				set_task_pgrp(p, p->pid);
--				set_task_session(p, p->pid);
--				attach_pid(p, PIDTYPE_PGID, pid);
--				attach_pid(p, PIDTYPE_SID, pid);
--			} else {
--				p->signal->tty = current->signal->tty;
--				set_task_pgrp(p, task_pgrp_nr(current));
--				set_task_session(p, task_session_nr(current));
--				attach_pid(p, PIDTYPE_PGID,
--						task_pgrp(current));
--				attach_pid(p, PIDTYPE_SID,
--						task_session(current));
- 			}
-+			p->signal->tty = current->signal->tty;
-+			set_task_pgrp(p, task_pgrp_nr(current));
-+			set_task_session(p, task_session_nr(current));
-+			attach_pid(p, PIDTYPE_PGID, task_pgrp(current));
-+			attach_pid(p, PIDTYPE_SID, task_session(current));
- 
- 			list_add_tail_rcu(&p->tasks, &init_task.tasks);
- 			__get_cpu_var(process_counts)++;
+cu
+Adrian
+
 -- 
-1.5.3.rc6.17.g1911
+
+       "Is there not promise of rain?" Ling Tan asked suddenly out
+        of the darkness. There had been need of rain for many days.
+       "Only a promise," Lao Er said.
+                                       Pearl S. Buck - Dragon Seed
