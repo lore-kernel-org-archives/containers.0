@@ -1,7 +1,7 @@
 From: sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org
-Subject: [PATCH] Signal semantics for /sbin/init
-Date: Sat, 27 Oct 2007 12:00:10 -0700
-Message-ID: <20071027190010.GA10397@us.ibm.com>
+Subject: [PATCH] Masquerade sender information
+Date: Sat, 27 Oct 2007 12:02:16 -0700
+Message-ID: <20071027190216.GB10397@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
@@ -15,160 +15,114 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org, Pavel Emelianov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>, Oleg Nesterov <oleg-6lXkIZvqkOAvJsYlp49lxw@public.gmane.org>
+To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Pavel Emelianov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>, Oleg Nesterov <oleg-6lXkIZvqkOAvJsYlp49lxw@public.gmane.org>
 Cc: Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
 
-
-(This is Oleg's patch with my tweaks to compile, Oleg pls sign-off).
----
-
 From: Sukadev Bhattiprolu <sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH 1/3] Signal semantics for /sbin/init
+Subject: [PATCH] Masquerade sender information
 
-Currently, /sbin/init is protected from unhandled signals by the
-"current == child_reaper(current)" check in get_signal_to_deliver().
-This is not enough, we have multiple problems:
+With multiple pid namespaces, sender of a signal could be in an ancestor
+namespace of the receiver and so the sender will not have a valid 'pid_t'
+in the receiver's namespace.
 
-	- this doesn't work for multi-threaded inits, and we can't
-	  fix this by simply making this check group-wide.
-
-	- /sbin/init and kernel threads are not protected from
-	  handle_stop_signal(). Minor problem, but not good and
-	  allows to "steal" SIGCONT or change ->signal->flags.
-
-	- /sbin/init is not protected from __group_complete_signal(),
-	  sig_fatal() can set SIGNAL_GROUP_EXIT and block exec(), kill
-	  sub-threads, set ->group_stop_count, etc.
-
-Also, with support for multiple pid namespaces, we need an ability to
-actually kill the sub-namespace's init from the parent namespace. In
-this case it is not possible (without painful and intrusive changes)
-to make the "should we honor this signal" decision on the receiver's
-side.
-
-Hopefully this patch (adds 43 bytes to kernel/signal.o) can solve
-these problems.
-
-Notes:
-
-	- Blocked signals are never ignored, so init still can receive
-	  a pending blocked signal after sigprocmask(SIG_UNBLOCK).
-	  Easy to fix, but probably we can ignore this issue.
-
-	- this patch allows us to simplify de_thread() playing games
-	  with pid_ns->child_reaper.
-
-(Side note: the current behaviour of things like force_sig_info_fault()
- is not very good, init should not ignore these signals and go to the
- endless loop. Exit + panic is imho better, easy to chamge)
-
-Oleg.
+In this case, masquerade the 'siginfo' for the signal to pretend that the
+signal originated from the kernel.
 
 Signed-off-by: Sukadev Bhattiprolu <sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-
 ---
- kernel/signal.c |   44 ++++++++++++++++++++++++++++++--------------
- 1 file changed, 30 insertions(+), 14 deletions(-)
+ include/linux/pid.h           |    8 ++++++++
+ include/linux/pid_namespace.h |    1 +
+ kernel/pid.c                  |   13 +++++++++++++
+ kernel/signal.c               |   15 +++++++++++++++
+ 4 files changed, 37 insertions(+)
 
-Index: 2.6.23-mm1/kernel/signal.c
+Index: 2.6.23-mm1/include/linux/pid.h
 ===================================================================
---- 2.6.23-mm1.orig/kernel/signal.c	2007-10-27 08:48:56.000000000 -0700
-+++ 2.6.23-mm1/kernel/signal.c	2007-10-27 08:49:23.000000000 -0700
-@@ -26,6 +26,7 @@
- #include <linux/freezer.h>
- #include <linux/pid_namespace.h>
- #include <linux/nsproxy.h>
-+#include <linux/hardirq.h>
+--- 2.6.23-mm1.orig/include/linux/pid.h	2007-10-27 08:48:56.000000000 -0700
++++ 2.6.23-mm1/include/linux/pid.h	2007-10-27 09:56:53.000000000 -0700
+@@ -123,6 +123,14 @@ extern struct pid *alloc_pid(struct pid_
+ extern void FASTCALL(free_pid(struct pid *pid));
+ extern void zap_pid_ns_processes(struct pid_namespace *pid_ns);
  
- #include <asm/param.h>
- #include <asm/uaccess.h>
-@@ -39,11 +40,32 @@
- 
- static struct kmem_cache *sigqueue_cachep;
- 
-+static int sig_init_ignore(struct task_struct *tsk)
++static inline struct pid_namespace *pid_active_ns(struct pid *pid)
 +{
- 
--static int sig_ignored(struct task_struct *t, int sig)
-+	// Currently this check is a bit racy with exec(),
-+	// we can _simplify_ de_thread and close the race.
-+	if (likely(!is_global_init(tsk->group_leader)))
-+		return 0;
++       if (!pid)
++               return NULL;
 +
-+	return 1;
++       return pid->numbers[pid->level].ns;
 +}
 +
-+static int sig_task_ignore(struct task_struct *tsk, int sig)
- {
--	void __user * handler;
-+	void __user * handler = tsk->sighand->action[sig-1].sa.sa_handler;
-+
-+	if (handler == SIG_IGN)
-+		return 1;
-+
-+	if (handler != SIG_DFL)
-+		return 0;
- 
-+	return sig_kernel_ignore(sig) || sig_init_ignore(tsk);
-+}
-+
-+static int sig_ignored(struct task_struct *t, int sig)
-+{
- 	/*
- 	 * Tracers always want to know about signals..
- 	 */
-@@ -58,10 +80,7 @@ static int sig_ignored(struct task_struc
- 	if (sigismember(&t->blocked, sig))
- 		return 0;
- 
--	/* Is it explicitly or implicitly ignored? */
--	handler = t->sighand->action[sig-1].sa.sa_handler;
--	return   handler == SIG_IGN ||
--		(handler == SIG_DFL && sig_kernel_ignore(sig));
-+	return sig_task_ignore(t, sig);
+ /*
+  * the helpers to get the pid's id seen from different namespaces
+  *
+Index: 2.6.23-mm1/kernel/pid.c
+===================================================================
+--- 2.6.23-mm1.orig/kernel/pid.c	2007-10-27 08:50:51.000000000 -0700
++++ 2.6.23-mm1/kernel/pid.c	2007-10-27 10:03:28.000000000 -0700
+@@ -430,6 +430,19 @@ struct pid *find_get_pid(pid_t nr)
+ 	return pid;
  }
  
- /*
-@@ -566,6 +585,9 @@ static void handle_stop_signal(int sig, 
- 		 */
- 		return;
- 
-+	if (sig_init_ignore(p))
-+		return;
++/*
++ * Return TRUE if the active pid namespace of @tsk is same as active
++ * pid namespace of 'current'.
++ *
++ * Note the difference between this and the task_in_pid_ns() below.
++ * task_in_pid_ns() includes processes in descendant pid name spaces
++ * but pid_ns_equal() only matches _active_ pid namespaces.
++ */
++int pid_ns_equal(struct task_struct *tsk)
++{
++	return pid_active_ns(task_pid(current)) == pid_active_ns(task_pid(tsk));
++}
 +
- 	if (sig_kernel_stop(sig)) {
+ static int pid_in_pid_ns(struct pid *pid, struct pid_namespace *ns)
+ {
+ 	return pid && (ns->level <= pid->level) &&
+Index: 2.6.23-mm1/kernel/signal.c
+===================================================================
+--- 2.6.23-mm1.orig/kernel/signal.c	2007-10-27 08:50:51.000000000 -0700
++++ 2.6.23-mm1/kernel/signal.c	2007-10-27 10:02:04.000000000 -0700
+@@ -679,6 +679,20 @@ static void handle_stop_signal(int sig, 
+ 	}
+ }
+ 
++static void masquerade_sender(struct task_struct *t, struct sigqueue *q)
++{
++       /*
++        * If the sender does not have a pid_t in the receiver's active
++        * pid namespace, set si_pid to 0 and pretend signal originated
++        * from the kernel.
++        */
++       if (!pid_ns_equal(t)) {
++               q->info.si_pid = 0;
++               q->info.si_uid = 0;
++               q->info.si_code = SI_KERNEL;
++       }
++}
++
+ static int send_signal(int sig, struct siginfo *info, struct task_struct *t,
+ 			struct sigpending *signals)
+ {
+@@ -730,6 +744,7 @@ static int send_signal(int sig, struct s
+ 			copy_siginfo(&q->info, info);
+ 			break;
+ 		}
++		masquerade_sender(t, q);
+ 	} else if (!is_si_special(info)) {
+ 		if (sig >= SIGRTMIN && info->si_code != SI_USER)
  		/*
- 		 * This is a stop signal.  Remove SIGCONT from all queues.
-@@ -1860,12 +1882,6 @@ relock:
- 		if (sig_kernel_ignore(signr)) /* Default is nothing. */
- 			continue;
+Index: 2.6.23-mm1/include/linux/pid_namespace.h
+===================================================================
+--- 2.6.23-mm1.orig/include/linux/pid_namespace.h	2007-10-27 09:44:25.000000000 -0700
++++ 2.6.23-mm1/include/linux/pid_namespace.h	2007-10-27 10:04:20.000000000 -0700
+@@ -56,6 +56,7 @@ static inline struct task_struct *task_c
+ 	return tsk->nsproxy->pid_ns->child_reaper;
+ }
  
--		/*
--		 * Global init gets no signals it doesn't want.
--		 */
--		if (is_global_init(current))
--			continue;
--
- 		if (sig_kernel_stop(signr)) {
- 			/*
- 			 * The default action is to stop all threads in
-@@ -2317,6 +2333,7 @@ int do_sigaction(int sig, struct k_sigac
- 	k = &current->sighand->action[sig-1];
++extern int pid_ns_equal(struct task_struct *tsk);
+ extern int task_in_pid_ns(struct task_struct *tsk, struct pid_namespace *ns);
  
- 	spin_lock_irq(&current->sighand->siglock);
-+
- 	if (oact)
- 		*oact = *k;
- 
-@@ -2335,8 +2352,7 @@ int do_sigaction(int sig, struct k_sigac
- 		 *   (for example, SIGCHLD), shall cause the pending signal to
- 		 *   be discarded, whether or not it is blocked"
- 		 */
--		if (act->sa.sa_handler == SIG_IGN ||
--		   (act->sa.sa_handler == SIG_DFL && sig_kernel_ignore(sig))) {
-+		if (sig_task_ignore(current, sig)) {
- 			struct task_struct *t = current;
- 			sigemptyset(&mask);
- 			sigaddset(&mask, sig);
+ #endif /* _LINUX_PID_NS_H */
