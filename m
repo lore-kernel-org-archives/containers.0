@@ -1,8 +1,8 @@
-From: "Rolf Johnson" <comprisable-mFUhVIoHfQeXA8mmQ+AKtg@public.gmane.org>
+From: "Eddy Clark" <atoner-WfiYH6aA5yBl57MIdRCFDg@public.gmane.org>
 Subject: Symantec Norton 36O, Enhanced Security Edition 29$,
 	Save 59.95$ 0ff Retai|
-Date: Sun, 28 Oct 2007 00:43:52 +0200
-Message-ID: <000001c818ea$59ea4b80$0100007f@localhost>
+Date: Sun, 28 Oct 2007 02:59:01 +0300
+Message-ID: <000001c818f4$94f17c80$0100007f@localhost>
 Content-Type: text/plain;
     charset="us-ascii"
 Content-Transfer-Encoding: 7bit
