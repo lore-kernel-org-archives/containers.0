@@ -1,20 +1,11 @@
-From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
-Subject: Re: [Devel] [PATCH] pidns: Place under CONFIG_EXPERIMENTAL (take 2)
-Date: Sat, 27 Oct 2007 01:41:43 -0600
-Message-ID: <m1prz1rolk.fsf@ebiederm.dsl.xmission.com>
-References: <CBC546DD07068244AEC110EFEDA58B7235893F@excite.int.sw-soft.com>
-	<m1ve8ty1tq.fsf@ebiederm.dsl.xmission.com>
-	<20071027002448.GH30533@stusta.de>
-	<m18x5puyw7.fsf@ebiederm.dsl.xmission.com>
-	<20071027020408.GO30533@stusta.de>
-	<20071026191845.fd0f75c8.akpm@linux-foundation.org>
-	<m18x5pte18.fsf@ebiederm.dsl.xmission.com>
-	<20071026214046.c61e248d.akpm@linux-foundation.org>
+From: sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org
+Subject: [PATCH] Signal semantics for /sbin/init
+Date: Sat, 27 Oct 2007 12:00:10 -0700
+Message-ID: <20071027190010.GA10397@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20071026214046.c61e248d.akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org> (Andrew
-	Morton's message of "Fri, 26 Oct 2007 21:40:46 -0700")
+Content-Disposition: inline
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -24,54 +15,160 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
-Cc: kir-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org, Adrian Bunk <bunk-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Cedric Le Goater <clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>, containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, kir-66LJJ20gB3DQT0dZR+AlfA@public.gmane.org, torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+To: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org, Pavel Emelianov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>, Oleg Nesterov <oleg-6lXkIZvqkOAvJsYlp49lxw@public.gmane.org>
+Cc: Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org> writes:
 
-> Given that a lot of this development will hopefully happen over the next
-> two months, ...
 
-A lot.  Various pieces are a major effort in their own right.
-Improving the kthread API so it can be used universally and
-allow removal all of the kernel_thread users.
-Reducing to an absolute minimum usage of pid_t.
+(This is Oleg's patch with my tweaks to compile, Oleg pls sign-off).
+---
 
-I know several of the things with signal handling had Oleg
-scratching his head.
+From: Sukadev Bhattiprolu <sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: [PATCH 1/3] Signal semantics for /sbin/init
 
-There is enough development there I question if the code will even be
-canidates for merging into 2.6.24.
+Currently, /sbin/init is protected from unhandled signals by the
+"current == child_reaper(current)" check in get_signal_to_deliver().
+This is not enough, we have multiple problems:
 
-I can imagine an -mm tree that has everything ready to go in
-the next two months.
+	- this doesn't work for multi-threaded inits, and we can't
+	  fix this by simply making this check group-wide.
 
->> It hurts me to even ponder what thinking makes it that 
->> CONFIG_EXPERIMENTAL isn't enough to keep a stable distro
->> from shipping the code in their stable kernel, and locking us into
->> trouble.
->> 
->> With that said.  I think I should just respin the patchset now and add
->> the "depends on BROKEN".  
->
-> it doesn't make sense to make it all dependent upon BROKEN now.  Better
-> would be to make it dependant upon CONFIG_SOMETHING_ELSE now, which depends
-> upon EXPERIMENTAL and which will, around -rc6, be changed to depend upon
-> BROKEN.
+	- /sbin/init and kernel threads are not protected from
+	  handle_stop_signal(). Minor problem, but not good and
+	  allows to "steal" SIGCONT or change ->signal->flags.
 
-So we now have my patch which makes it depend on CONFIG_PID_NS.  
-Which is what started this thread. 
+	- /sbin/init is not protected from __group_complete_signal(),
+	  sig_fatal() can set SIGNAL_GROUP_EXIT and block exec(), kill
+	  sub-threads, set ->group_stop_count, etc.
 
-> If that makes sense.
+Also, with support for multiple pid namespaces, we need an ability to
+actually kill the sub-namespace's init from the parent namespace. In
+this case it is not possible (without painful and intrusive changes)
+to make the "should we honor this signal" decision on the receiver's
+side.
 
-Yes.
+Hopefully this patch (adds 43 bytes to kernel/signal.o) can solve
+these problems.
 
-> It's all a bit unusual and complex, but this is an exceptional set of
-> features - let's hang in there.
+Notes:
 
-Sure.  One small step at a time.
+	- Blocked signals are never ignored, so init still can receive
+	  a pending blocked signal after sigprocmask(SIG_UNBLOCK).
+	  Easy to fix, but probably we can ignore this issue.
 
-- Step One add a config option.
+	- this patch allows us to simplify de_thread() playing games
+	  with pid_ns->child_reaper.
 
-Eric
+(Side note: the current behaviour of things like force_sig_info_fault()
+ is not very good, init should not ignore these signals and go to the
+ endless loop. Exit + panic is imho better, easy to chamge)
+
+Oleg.
+
+Signed-off-by: Sukadev Bhattiprolu <sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+
+---
+ kernel/signal.c |   44 ++++++++++++++++++++++++++++++--------------
+ 1 file changed, 30 insertions(+), 14 deletions(-)
+
+Index: 2.6.23-mm1/kernel/signal.c
+===================================================================
+--- 2.6.23-mm1.orig/kernel/signal.c	2007-10-27 08:48:56.000000000 -0700
++++ 2.6.23-mm1/kernel/signal.c	2007-10-27 08:49:23.000000000 -0700
+@@ -26,6 +26,7 @@
+ #include <linux/freezer.h>
+ #include <linux/pid_namespace.h>
+ #include <linux/nsproxy.h>
++#include <linux/hardirq.h>
+ 
+ #include <asm/param.h>
+ #include <asm/uaccess.h>
+@@ -39,11 +40,32 @@
+ 
+ static struct kmem_cache *sigqueue_cachep;
+ 
++static int sig_init_ignore(struct task_struct *tsk)
++{
+ 
+-static int sig_ignored(struct task_struct *t, int sig)
++	// Currently this check is a bit racy with exec(),
++	// we can _simplify_ de_thread and close the race.
++	if (likely(!is_global_init(tsk->group_leader)))
++		return 0;
++
++	return 1;
++}
++
++static int sig_task_ignore(struct task_struct *tsk, int sig)
+ {
+-	void __user * handler;
++	void __user * handler = tsk->sighand->action[sig-1].sa.sa_handler;
++
++	if (handler == SIG_IGN)
++		return 1;
++
++	if (handler != SIG_DFL)
++		return 0;
+ 
++	return sig_kernel_ignore(sig) || sig_init_ignore(tsk);
++}
++
++static int sig_ignored(struct task_struct *t, int sig)
++{
+ 	/*
+ 	 * Tracers always want to know about signals..
+ 	 */
+@@ -58,10 +80,7 @@ static int sig_ignored(struct task_struc
+ 	if (sigismember(&t->blocked, sig))
+ 		return 0;
+ 
+-	/* Is it explicitly or implicitly ignored? */
+-	handler = t->sighand->action[sig-1].sa.sa_handler;
+-	return   handler == SIG_IGN ||
+-		(handler == SIG_DFL && sig_kernel_ignore(sig));
++	return sig_task_ignore(t, sig);
+ }
+ 
+ /*
+@@ -566,6 +585,9 @@ static void handle_stop_signal(int sig, 
+ 		 */
+ 		return;
+ 
++	if (sig_init_ignore(p))
++		return;
++
+ 	if (sig_kernel_stop(sig)) {
+ 		/*
+ 		 * This is a stop signal.  Remove SIGCONT from all queues.
+@@ -1860,12 +1882,6 @@ relock:
+ 		if (sig_kernel_ignore(signr)) /* Default is nothing. */
+ 			continue;
+ 
+-		/*
+-		 * Global init gets no signals it doesn't want.
+-		 */
+-		if (is_global_init(current))
+-			continue;
+-
+ 		if (sig_kernel_stop(signr)) {
+ 			/*
+ 			 * The default action is to stop all threads in
+@@ -2317,6 +2333,7 @@ int do_sigaction(int sig, struct k_sigac
+ 	k = &current->sighand->action[sig-1];
+ 
+ 	spin_lock_irq(&current->sighand->siglock);
++
+ 	if (oact)
+ 		*oact = *k;
+ 
+@@ -2335,8 +2352,7 @@ int do_sigaction(int sig, struct k_sigac
+ 		 *   (for example, SIGCHLD), shall cause the pending signal to
+ 		 *   be discarded, whether or not it is blocked"
+ 		 */
+-		if (act->sa.sa_handler == SIG_IGN ||
+-		   (act->sa.sa_handler == SIG_DFL && sig_kernel_ignore(sig))) {
++		if (sig_task_ignore(current, sig)) {
+ 			struct task_struct *t = current;
+ 			sigemptyset(&mask);
+ 			sigaddset(&mask, sig);
