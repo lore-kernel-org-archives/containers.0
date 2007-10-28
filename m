@@ -1,60 +1,122 @@
-From: ebiederm@xmission.com (Eric W. Biederman)
-Subject: Re: [Devel] [PATCH] pidns: Place under CONFIG_EXPERIMENTAL (take 2)
-Date: Sun, 28 Oct 2007 12:31:30 -0600
-Message-ID: <m13avvqef1.fsf@ebiederm.dsl.xmission.com>
-References: <CBC546DD07068244AEC110EFEDA58B7235893F@excite.int.sw-soft.com>
-	<m1ve8ty1tq.fsf@ebiederm.dsl.xmission.com>
-	<20071027002448.GH30533@stusta.de>
-	<m18x5puyw7.fsf@ebiederm.dsl.xmission.com> <4724B4F2.7070500@goop.org>
-	<20071028170008.GD7227@stusta.de>
+From: Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Subject: Re: [RFC] [-mm PATCH] Memory controller fix swap charging context
+	in unuse_pte()
+Date: Mon, 29 Oct 2007 02:02:19 +0530
+Message-ID: <20071028203219.GA7145@linux.vnet.ibm.com>
+References: <20071005041406.21236.88707.sendpatchset@balbir-laptop>
+	<Pine.LNX.4.64.0710071735530.13138@blonde.wat.veritas.com>
+	<4713A2F2.1010408@linux.vnet.ibm.com>
+	<Pine.LNX.4.64.0710221933570.21262@blonde.wat.veritas.com>
+	<471F3732.5050407@linux.vnet.ibm.com>
+	<Pine.LNX.4.64.0710252002540.25735@blonde.wat.veritas.com>
+	<4724F0BC.1020209@linux.vnet.ibm.com>
+Reply-To: balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1755948AbXJ1Sd2@vger.kernel.org>
-In-Reply-To: <20071028170008.GD7227@stusta.de> (Adrian Bunk's message of "Sun,
-	28 Oct 2007 18:00:08 +0100")
-Sender: linux-kernel-owner@vger.kernel.org
-To: Adrian Bunk <bunk@kernel.org>
-Cc: Jeremy Fitzhardinge <jeremy@goop.org>, Kir Kolyshkin <kir@swsoft.com>, containers@lists.osdl.org, akpm@linux-foundation.org, linux-kernel@vger.kernel.org, torvalds@linux-foundation.org, kir@openvz.org
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <4724F0BC.1020209-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Hugh Dickins <hugh-DTz5qymZ9yRBDgjK7y7TUQ@public.gmane.org>
+Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Linux MM Mailing List <linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Adrian Bunk <bunk@kernel.org> writes:
+On Mon, Oct 29, 2007 at 01:57:40AM +0530, Balbir Singh wrote:
+Hugh Dickins wrote:
 
-> On Sun, Oct 28, 2007 at 09:12:34AM -0700, Jeremy Fitzhardinge wrote:
->> Eric W. Biederman wrote:
->> > Roughly that sounds like CONFIG_EXPERIMENTAL to me.  But I would
->> > be happy to hear if someone has a better idea.
->> 
->> Rather than overload an existing config option, why not add one with the
->> specific semantics you want: CONFIG_UNSTABLE_UABI.  The problem seems
->> like one which which may occur again, though one hopes not too often.  I
->> guess the risk is that people will leave their subsystems depending on
->> it permanently (sysfs?), so it ends up being set all the time and
->> becomes as useless as EXPERIMENTAL...
->
-> Then let SYSFS depend on UNSTABLE_UABI for the next 10 years and we have 
-> an excuse for breaking the ABI with each new kernel...
->
-> Either the ABI is stable or it should not be exposed to users at all.
+[snip]
+ 
+> Without your mem_cgroup mods in mm/swap_state.c, unuse_pte makes
+> the right assignments (I believe).  But I find that swapout (using
+> 600M in a 512M machine) from a 200M cgroup quickly OOMs, whereas
+> it behaves correctly with your mm/swap_state.c.
+> 
 
-If we need a new config for it.  CONFIG_IMMATURE is the closest I
-can think of.
+On my UML setup, I booted the UML instance with 512M of memory and
+used the swapout program that you shared. I tried two things
 
-Horrible ABI damage like reassigning magic numbers won't happen.
-Argument passing won't change (unless it is simply impossible).
-However there are little details which might change.  Things like
-error codes or the behavior in unlikely circumstances.  Bugs are
-expected to exist and so we bug compatibility isn't expect to be
-maintained.
 
-The bottom line is that when things are new they are immature and
-very rarely do they come out of the gate perfect.  That is something
-we need to recognize and deal with.  We need to communicate this
-to our users (distros and other developers) and we need to work
-quickly to get the kinks out so that the code really is mature.
+1. Ran swapout without any changes. The program ran well without
+   any OOM condition occuring, lot of reclaim occured.
+2. Ran swapout with the changes to mm/swap_state.c removed (diff below)
+   and I still did not see any OOM. The reclaim count was much lesser
+   since swap cache did not get accounted back to the cgroup from
+   which pages were being evicted.
 
-I'm not looking for excuses to mess up or do the wrong thing.
-I just know that as an engineer getting it perfect out of the
-gate isn't going to happen.  So I'm doing what I can to ask
-people to ease into using something new.
+I am not sure why I don't see the OOM that you see, still trying. May be
+I missing something obvious at this late hour in the night :-)
 
-Eric
+Output of the tests
+-------------------
+
+balbir@ubuntu:/container/swapout$ cat memory.limit_in_bytes
+209715200
+balbir@ubuntu:/container/swapout$ cat memory.usage_in_bytes
+65536
+balbir@ubuntu:/container/swapout$ cat tasks
+1815
+1847
+balbir@ubuntu:/container/swapout$ ps
+  PID TTY          TIME CMD
+ 1815 pts/0    00:00:00 bash
+ 1848 pts/0    00:00:00 ps
+balbir@ubuntu:/container/swapout$ ~/swapout
+balbir@ubuntu:/container/swapout$ echo $?
+0
+balbir@ubuntu:/container/swapout$ cat memory.failcnt
+18
+
+Diff to remove mods from swap_state.c (for testing only)
+--------------------------------------------------------
+
+--- mm/swap_state.c.org	2007-10-29 01:42:14.000000000 +0530
++++ mm/swap_state.c	2007-10-29 01:52:48.000000000 +0530
+@@ -79,10 +79,6 @@ static int __add_to_swap_cache(struct pa
+ 	BUG_ON(PageSwapCache(page));
+ 	BUG_ON(PagePrivate(page));
+ 
+-	error = mem_cgroup_cache_charge(page, current->mm, gfp_mask);
+-	if (error)
+-		goto out;
+-
+ 	error = radix_tree_preload(gfp_mask);
+ 	if (!error) {
+ 		write_lock_irq(&swapper_space.tree_lock);
+@@ -94,14 +90,11 @@ static int __add_to_swap_cache(struct pa
+ 			set_page_private(page, entry.val);
+ 			total_swapcache_pages++;
+ 			__inc_zone_page_state(page, NR_FILE_PAGES);
+-		} else
+-			mem_cgroup_uncharge_page(page);
++		}
+ 
+ 		write_unlock_irq(&swapper_space.tree_lock);
+ 		radix_tree_preload_end();
+-	} else
+-		mem_cgroup_uncharge_page(page);
+-out:
++	}
+ 	return error;
+ }
+ 
+@@ -141,7 +134,6 @@ void __delete_from_swap_cache(struct pag
+ 	BUG_ON(PageWriteback(page));
+ 	BUG_ON(PagePrivate(page));
+ 
+-	mem_cgroup_uncharge_page(page);
+ 	radix_tree_delete(&swapper_space.page_tree, page_private(page));
+ 	set_page_private(page, 0);
+ 	ClearPageSwapCache(page);
+-- 
+	Warm Regards,
+	Balbir Singh
+	Linux Technology Center
+	IBM, ISTL
