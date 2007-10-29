@@ -1,122 +1,134 @@
-From: Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: Re: [RFC] [-mm PATCH] Memory controller fix swap charging context
-	in unuse_pte()
-Date: Mon, 29 Oct 2007 02:02:19 +0530
-Message-ID: <20071028203219.GA7145@linux.vnet.ibm.com>
-References: <20071005041406.21236.88707.sendpatchset@balbir-laptop>
-	<Pine.LNX.4.64.0710071735530.13138@blonde.wat.veritas.com>
-	<4713A2F2.1010408@linux.vnet.ibm.com>
-	<Pine.LNX.4.64.0710221933570.21262@blonde.wat.veritas.com>
-	<471F3732.5050407@linux.vnet.ibm.com>
-	<Pine.LNX.4.64.0710252002540.25735@blonde.wat.veritas.com>
-	<4724F0BC.1020209@linux.vnet.ibm.com>
-Reply-To: balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
+From: Kirill Korotaev <dev@openvz.org>
+Subject: Re: [PATCH] pidns: Place under CONFIG_EXPERIMENTAL (take 2)
+Date: Mon, 29 Oct 2007 10:51:24 +0300
+Message-ID: <472590FC.8070502@openvz.org>
+References: <m1640t3has.fsf@ebiederm.dsl.xmission.com>	<alpine.LFD.0.999.0710261053030.30120@woody.linux-foundation.org> <m1y7dpzn1s.fsf_-_@ebiederm.dsl.xmission.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <4724F0BC.1020209-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Hugh Dickins <hugh-DTz5qymZ9yRBDgjK7y7TUQ@public.gmane.org>
-Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Linux MM Mailing List <linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org>
+Content-Transfer-Encoding: 7bit
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1757261AbXJ2Hq7@vger.kernel.org>
+In-Reply-To: <m1y7dpzn1s.fsf_-_@ebiederm.dsl.xmission.com>
+Sender: linux-kernel-owner@vger.kernel.org
+To: "Eric W. Biederman" <ebiederm@xmission.com>
+Cc: Linus Torvalds <torvalds@linux-foundation.org>, Linux Containers <containers@lists.osdl.org>, Andrew Morton <akpm@linux-foundation.org>, linux-kernel@vger.kernel.org, Pavel Emelyanov <xemul@openvz.org>
 List-Id: containers.vger.kernel.org
 
-On Mon, Oct 29, 2007 at 01:57:40AM +0530, Balbir Singh wrote:
-Hugh Dickins wrote:
+Can you please send namespace related patches to containers@ ML first
+before sending them to Linus/Andrew?
 
-[snip]
- 
-> Without your mem_cgroup mods in mm/swap_state.c, unuse_pte makes
-> the right assignments (I believe).  But I find that swapout (using
-> 600M in a 512M machine) from a 200M cgroup quickly OOMs, whereas
-> it behaves correctly with your mm/swap_state.c.
+Thanks,
+Kirill
+
+
+Eric W. Biederman wrote:
+> This is my trivial patch to swat innumerable little bugs
+> with a single blow.
 > 
-
-On my UML setup, I booted the UML instance with 512M of memory and
-used the swapout program that you shared. I tried two things
-
-
-1. Ran swapout without any changes. The program ran well without
-   any OOM condition occuring, lot of reclaim occured.
-2. Ran swapout with the changes to mm/swap_state.c removed (diff below)
-   and I still did not see any OOM. The reclaim count was much lesser
-   since swap cache did not get accounted back to the cgroup from
-   which pages were being evicted.
-
-I am not sure why I don't see the OOM that you see, still trying. May be
-I missing something obvious at this late hour in the night :-)
-
-Output of the tests
--------------------
-
-balbir@ubuntu:/container/swapout$ cat memory.limit_in_bytes
-209715200
-balbir@ubuntu:/container/swapout$ cat memory.usage_in_bytes
-65536
-balbir@ubuntu:/container/swapout$ cat tasks
-1815
-1847
-balbir@ubuntu:/container/swapout$ ps
-  PID TTY          TIME CMD
- 1815 pts/0    00:00:00 bash
- 1848 pts/0    00:00:00 ps
-balbir@ubuntu:/container/swapout$ ~/swapout
-balbir@ubuntu:/container/swapout$ echo $?
-0
-balbir@ubuntu:/container/swapout$ cat memory.failcnt
-18
-
-Diff to remove mods from swap_state.c (for testing only)
---------------------------------------------------------
-
---- mm/swap_state.c.org	2007-10-29 01:42:14.000000000 +0530
-+++ mm/swap_state.c	2007-10-29 01:52:48.000000000 +0530
-@@ -79,10 +79,6 @@ static int __add_to_swap_cache(struct pa
- 	BUG_ON(PageSwapCache(page));
- 	BUG_ON(PagePrivate(page));
- 
--	error = mem_cgroup_cache_charge(page, current->mm, gfp_mask);
--	if (error)
--		goto out;
--
- 	error = radix_tree_preload(gfp_mask);
- 	if (!error) {
- 		write_lock_irq(&swapper_space.tree_lock);
-@@ -94,14 +90,11 @@ static int __add_to_swap_cache(struct pa
- 			set_page_private(page, entry.val);
- 			total_swapcache_pages++;
- 			__inc_zone_page_state(page, NR_FILE_PAGES);
--		} else
--			mem_cgroup_uncharge_page(page);
-+		}
- 
- 		write_unlock_irq(&swapper_space.tree_lock);
- 		radix_tree_preload_end();
--	} else
--		mem_cgroup_uncharge_page(page);
--out:
-+	}
- 	return error;
- }
- 
-@@ -141,7 +134,6 @@ void __delete_from_swap_cache(struct pag
- 	BUG_ON(PageWriteback(page));
- 	BUG_ON(PagePrivate(page));
- 
--	mem_cgroup_uncharge_page(page);
- 	radix_tree_delete(&swapper_space.page_tree, page_private(page));
- 	set_page_private(page, 0);
- 	ClearPageSwapCache(page);
--- 
-	Warm Regards,
-	Balbir Singh
-	Linux Technology Center
-	IBM, ISTL
+> After some intensive review (my apologies for not having
+> gotten to this sooner) what we have looks like a good
+> base to build on with the current pid namespace code but
+> it is not complete, and it is still much to simple to find
+> issues where the kernel does the wrong thing outside of
+> the initial pid namespace.
+> 
+> Until the dust settles and we are certain we have the ABI and
+> the implementation is as correct as humanly possible let's keep
+> process ID namespaces behind CONFIG_EXPERIMENTAL. 
+> 
+> Allowing us the option of fixing any ABI or other bugs
+> we find as long as they are minor.
+> 
+> Allowing users of the kernel to avoid those bugs simply
+> by ensuring their kernel does not have support for multiple
+> pid namespaces.
+> 
+> Signed-off-by: Eric W. Biederman <ebiederm@xmission.com>
+> ---
+>  include/linux/pid_namespace.h |   22 ++++++++++++++++++++++
+>  init/Kconfig                  |   12 ++++++++++++
+>  kernel/pid.c                  |    2 ++
+>  3 files changed, 36 insertions(+), 0 deletions(-)
+> 
+> diff --git a/include/linux/pid_namespace.h b/include/linux/pid_namespace.h
+> index 0135c76..0227e68 100644
+> --- a/include/linux/pid_namespace.h
+> +++ b/include/linux/pid_namespace.h
+> @@ -29,6 +29,7 @@ struct pid_namespace {
+>  
+>  extern struct pid_namespace init_pid_ns;
+>  
+> +#ifdef CONFIG_PID_NS
+>  static inline struct pid_namespace *get_pid_ns(struct pid_namespace *ns)
+>  {
+>  	if (ns != &init_pid_ns)
+> @@ -45,6 +46,27 @@ static inline void put_pid_ns(struct pid_namespace *ns)
+>  		kref_put(&ns->kref, free_pid_ns);
+>  }
+>  
+> +#else /* !CONFIG_PID_NS */
+> +#include <linux/err.h>
+> +
+> +static inline struct pid_namespace *get_pid_ns(struct pid_namespace *ns)
+> +{
+> +	return ns;
+> +}
+> +
+> +static inline struct pid_namespace *copy_pid_ns(unsigned long flags, struct pid_namespace *ns)
+> +{
+> +	if (flags & CLONE_NEWPID)
+> +		ns = ERR_PTR(-EINVAL);
+> +	return ns;
+> +}
+> +
+> +static inline void put_pid_ns(struct pid_namespace *ns)
+> +{
+> +}
+> +
+> +#endif /* CONFIG_PID_NS */
+> +
+>  static inline struct pid_namespace *task_active_pid_ns(struct task_struct *tsk)
+>  {
+>  	return tsk->nsproxy->pid_ns;
+> diff --git a/init/Kconfig b/init/Kconfig
+> index 8b88d0b..72e37c0 100644
+> --- a/init/Kconfig
+> +++ b/init/Kconfig
+> @@ -215,6 +215,18 @@ config USER_NS
+>  	  vservers, to use user namespaces to provide different
+>  	  user info for different servers.  If unsure, say N.
+>  
+> +config PID_NS
+> +	bool "PID Namespaces (EXPERIMENTAL)"
+> +	default n
+> +	depends on EXPERIMENTAL
+> +	help
+> +	  Suport process id namespaces.  This allows having multiple
+> +	  process with the same pid as long as they are in different
+> +	  pid namespaces.  This is a building block of containers.
+> +
+> +	  Unless you want to work with an experimental feature
+> +	  say N here.
+> +
+>  config AUDIT
+>  	bool "Auditing support"
+>  	depends on NET
+> diff --git a/kernel/pid.c b/kernel/pid.c
+> index d1db36b..f815455 100644
+> --- a/kernel/pid.c
+> +++ b/kernel/pid.c
+> @@ -537,6 +537,7 @@ err_alloc:
+>  	return NULL;
+>  }
+>  
+> +#ifdef CONFIG_PID_NS
+>  static struct pid_namespace *create_pid_namespace(int level)
+>  {
+>  	struct pid_namespace *ns;
+> @@ -621,6 +622,7 @@ void free_pid_ns(struct kref *kref)
+>  	if (parent != NULL)
+>  		put_pid_ns(parent);
+>  }
+> +#endif /* CONFIG_PID_NS */
+>  
+>  void zap_pid_ns_processes(struct pid_namespace *pid_ns)
+>  {
