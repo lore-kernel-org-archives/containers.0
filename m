@@ -1,109 +1,44 @@
-From: Kirill Korotaev <dev@openvz.org>
-Subject: Re: [PATCH] pidns: Limit kill -1 and cap_set_all
-Date: Mon, 29 Oct 2007 11:38:01 +0300
-Message-ID: <47259BE9.4050904@openvz.org>
-References: <m1y7dp22d4.fsf@ebiederm.dsl.xmission.com>	<alpine.LFD.0.999.0710261105440.30120@woody.linux-foundation.org>	<m1r6jhzmov.fsf_-_@ebiederm.dsl.xmission.com> <m1k5p9zk6b.fsf_-_@ebiederm.dsl.xmission.com>
+From: Cedric Le Goater <clg@fr.ibm.com>
+Subject: Re: [Devel] [PATCH] pidns: Place under CONFIG_EXPERIMENTAL (take
+ 2)
+Date: Mon, 29 Oct 2007 11:13:42 +0100
+Message-ID: <4725B256.3020807@fr.ibm.com>
+References: <CBC546DD07068244AEC110EFEDA58B7235893F@excite.int.sw-soft.com>	<m1ve8ty1tq.fsf@ebiederm.dsl.xmission.com>	<20071027002448.GH30533@stusta.de>	<m18x5puyw7.fsf@ebiederm.dsl.xmission.com> <4724B4F2.7070500@goop.org>	<20071028170008.GD7227@stusta.de> <m13avvqef1.fsf@ebiederm.dsl.xmission.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+Content-Type: text/plain; charset=ISO-8859-1
 Content-Transfer-Encoding: 7bit
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1757107AbXJ2Iex@vger.kernel.org>
-In-Reply-To: <m1k5p9zk6b.fsf_-_@ebiederm.dsl.xmission.com>
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1757936AbXJ2KOA@vger.kernel.org>
+In-Reply-To: <m13avvqef1.fsf@ebiederm.dsl.xmission.com>
 Sender: linux-kernel-owner@vger.kernel.org
 To: "Eric W. Biederman" <ebiederm@xmission.com>
-Cc: Linus Torvalds <torvalds@linux-foundation.org>, linux-kernel@vger.kernel.org, Linux Containers <containers@lists.osdl.org>, Andrew Morton <akpm@linux-foundation.org>, Oleg Nesterov <oleg@tv-sign.ru>, Pavel Emelyanov <xemul@openvz.org>
+Cc: Adrian Bunk <bunk@kernel.org>, Jeremy Fitzhardinge <jeremy@goop.org>, Kir Kolyshkin <kir@swsoft.com>, containers@lists.osdl.org, akpm@linux-foundation.org, linux-kernel@vger.kernel.org, torvalds@linux-foundation.org, kir@openvz.org
 List-Id: containers.vger.kernel.org
 
-I dislike this patch:
-it's not scalable/efficient to travers all the tasks
-while we know the pid namespace we care about.
-
-Kirill
-
-
 Eric W. Biederman wrote:
-> This patch implements task_in_pid_ns and uses it to limit cap_set_all
-> and sys_kill(-1,) to only those tasks in the current pid namespace.
+> Adrian Bunk <bunk@kernel.org> writes:
 > 
-> Without this we have a setup for a very nasty surprise.
+>> On Sun, Oct 28, 2007 at 09:12:34AM -0700, Jeremy Fitzhardinge wrote:
+>>> Eric W. Biederman wrote:
+>>>> Roughly that sounds like CONFIG_EXPERIMENTAL to me.  But I would
+>>>> be happy to hear if someone has a better idea.
+>>> Rather than overload an existing config option, why not add one with the
+>>> specific semantics you want: CONFIG_UNSTABLE_UABI.  The problem seems
+>>> like one which which may occur again, though one hopes not too often.  I
+>>> guess the risk is that people will leave their subsystems depending on
+>>> it permanently (sysfs?), so it ends up being set all the time and
+>>> becomes as useless as EXPERIMENTAL...
+>> Then let SYSFS depend on UNSTABLE_UABI for the next 10 years and we have 
+>> an excuse for breaking the ABI with each new kernel...
+>>
+>> Either the ABI is stable or it should not be exposed to users at all.
 > 
-> Signed-off-by: Eric W. Biederman <ebiederm@xmission.com>
-> ---
->  include/linux/pid_namespace.h |    2 ++
->  kernel/capability.c           |    3 +++
->  kernel/pid.c                  |   11 +++++++++++
->  kernel/signal.c               |    5 ++++-
->  4 files changed, 20 insertions(+), 1 deletions(-)
-> 
-> diff --git a/include/linux/pid_namespace.h b/include/linux/pid_namespace.h
-> index 0227e68..b454678 100644
-> --- a/include/linux/pid_namespace.h
-> +++ b/include/linux/pid_namespace.h
-> @@ -78,4 +78,6 @@ static inline struct task_struct *task_child_reaper(struct task_struct *tsk)
->  	return tsk->nsproxy->pid_ns->child_reaper;
->  }
->  
-> +extern int task_in_pid_ns(struct task_struct *tsk, struct pid_namespace *ns);
-> +
->  #endif /* _LINUX_PID_NS_H */
-> diff --git a/kernel/capability.c b/kernel/capability.c
-> index efbd9cd..a801016 100644
-> --- a/kernel/capability.c
-> +++ b/kernel/capability.c
-> @@ -125,6 +125,7 @@ static inline int cap_set_all(kernel_cap_t *effective,
->  			       kernel_cap_t *inheritable,
->  			       kernel_cap_t *permitted)
->  {
-> +     struct pid_namespace *pid_ns = current->nsproxy->pid_ns;
->       struct task_struct *g, *target;
->       int ret = -EPERM;
->       int found = 0;
-> @@ -132,6 +133,8 @@ static inline int cap_set_all(kernel_cap_t *effective,
->       do_each_thread(g, target) {
->               if (target == current || is_container_init(target->group_leader))
->                       continue;
-> +             if (!task_in_pid_ns(target, pid_ns))
-> +		     continue;
->               found = 1;
->  	     if (security_capset_check(target, effective, inheritable,
->  						permitted))
-> diff --git a/kernel/pid.c b/kernel/pid.c
-> index f815455..1c332ca 100644
-> --- a/kernel/pid.c
-> +++ b/kernel/pid.c
-> @@ -430,6 +430,17 @@ struct pid *find_get_pid(pid_t nr)
->  	return pid;
->  }
->  
-> +static int pid_in_pid_ns(struct pid *pid, struct pid_namespace *ns)
-> +{
-> +	return pid && (ns->level <= pid->level) &&
-> +		pid->numbers[ns->level].ns == ns;
-> +}
-> +
-> +int task_in_pid_ns(struct task_struct *task, struct pid_namespace *ns)
-> +{
-> +	return pid_in_pid_ns(task_pid(task), ns);
-> +}
-> +
->  pid_t pid_nr_ns(struct pid *pid, struct pid_namespace *ns)
->  {
->  	struct upid *upid;
-> diff --git a/kernel/signal.c b/kernel/signal.c
-> index 1200630..8f5a31f 100644
-> --- a/kernel/signal.c
-> +++ b/kernel/signal.c
-> @@ -1147,10 +1147,13 @@ static int kill_something_info(int sig, struct siginfo *info, int pid)
->  	} else if (pid == -1) {
->  		int retval = 0, count = 0;
->  		struct task_struct * p;
-> +		struct pid_namespace *ns = current->nsproxy->pid_ns;
->  
->  		read_lock(&tasklist_lock);
->  		for_each_process(p) {
-> -			if (p->pid > 1 && !same_thread_group(p, current)) {
-> +			if (!is_container_init(p) &&
-> +			    !same_thread_group(p, current) &&
-> +			    task_in_pid_ns(p, ns)) {
->  				int err = group_send_sig_info(sig, info, p);
->  				++count;
->  				if (err != -EPERM)
+> If we need a new config for it.  CONFIG_IMMATURE is the closest I
+> can think of.
+
+Pavel also has a CONFIG_NAMESPACES patch that he should be resending to 
+andrew when 2.6.24-rc1-mm1 is released. pidns will go under this option, 
+like all the other namespaces, and should protect the distros from shipping 
+any immature namespace.
+
+
+C.
