@@ -1,50 +1,128 @@
-From: Dave Hansen <haveblue@us.ibm.com>
-Subject: Re: [PATCH] pidns: Limit kill -1 and cap_set_all
-Date: Mon, 29 Oct 2007 09:02:18 -0700
-Message-ID: <1193673738.24087.176.camel@localhost>
-References: <m1y7dp22d4.fsf@ebiederm.dsl.xmission.com>
-	 <alpine.LFD.0.999.0710261105440.30120@woody.linux-foundation.org>
-	 <m1r6jhzmov.fsf_-_@ebiederm.dsl.xmission.com>
-	 <m1k5p9zk6b.fsf_-_@ebiederm.dsl.xmission.com>
+From: Dave Hansen <haveblue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH] Signal semantics for /sbin/init
+Date: Mon, 29 Oct 2007 09:13:37 -0700
+Message-ID: <1193674417.24087.185.camel@localhost>
+References: <20071027190010.GA10397@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain
 Content-Transfer-Encoding: 7bit
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1758112AbXJ2QCk@vger.kernel.org>
-In-Reply-To: <m1k5p9zk6b.fsf_-_@ebiederm.dsl.xmission.com>
-Sender: linux-kernel-owner@vger.kernel.org
-To: "Eric W. Biederman" <ebiederm@xmission.com>
-Cc: Linus Torvalds <torvalds@linux-foundation.org>, linux-kernel@vger.kernel.org, Linux Containers <containers@lists.osdl.org>, Andrew Morton <akpm@linux-foundation.org>, Oleg Nesterov <oleg@tv-sign.ru>, Pavel Emelyanov <xemul@openvz.org>, "Sukadev Bhattiprolu [imap]" <sukadev@us.ibm.com>
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <20071027190010.GA10397-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org
+Cc: clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org, Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Oleg Nesterov <oleg-6lXkIZvqkOAvJsYlp49lxw@public.gmane.org>, Pavel Emelianov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Fri, 2007-10-26 at 14:37 -0600, Eric W. Biederman wrote:
-> 
-> +static int pid_in_pid_ns(struct pid *pid, struct pid_namespace *ns)
+On Sat, 2007-10-27 at 12:00 -0700, sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org wrote:
+> +static int sig_init_ignore(struct task_struct *tsk)
 > +{
-> +       return pid && (ns->level <= pid->level) &&
-> +               pid->numbers[ns->level].ns == ns;
+> -static int sig_ignored(struct task_struct *t, int sig)
+> +	// Currently this check is a bit racy with exec(),
+> +	// we can _simplify_ de_thread and close the race.
+> +	if (likely(!is_global_init(tsk->group_leader)))
+> +		return 0;
+> +
+> +	return 1;
 > +}
 
-Could we blow this out a little bit?  (I think the blown-out version
-lends itself to being better commented, and easier to read.)  Also, can
-we think of any better name for this?  It seems a bit funky that:
+Umm.  C++ comments? ;)
 
-	pid_in_pid_ns(mypid, &init_pid_ns);
+Also, I'm not sure an out-of-line function this small really needs a
+likely/unlikely hint.  Seems like a waste of the bytes to me.
 
-would _ever_ return 0.  So, it isn't truly a test for belonging *in* a
-namespace, but having that namespace be the lowest level one.  I think
-Suka toyed with calling it an "active" or "primary" pid namespace.  That
-differentiated mere membership in a pid namespace from the one that
-actually molds that pid's view of the world.
+> +static int sig_task_ignore(struct task_struct *tsk, int sig)
+>  {
+> -	void __user * handler;
+> +	void __user * handler = tsk->sighand->action[sig-1].sa.sa_handler;
+> +
+> +	if (handler == SIG_IGN)
+> +		return 1;
 
-static int pid_in_pid_ns(struct pid *pid, struct pid_namespace *ns)
-{
-	if (!pid)
-		return 0;
-	if (ns->level > pid->level)
-		return 0;
-	if (pid->numbers[ns->level].ns != ns)
-		return 0;
-	return 1;
-}
+Something simple like:
+/*
+ * ensure that the process is expecting to get this signal,
+ * and thus won't get SIG_...
+ */
+Would be helpful to understand your motivation here.
 
+> +	if (handler != SIG_DFL)
+> +		return 0;
+> 
+> +	return sig_kernel_ignore(sig) || sig_init_ignore(tsk);
+> +}
+
+> +static int sig_ignored(struct task_struct *t, int sig)
+> +{
+>  	/*
+>  	 * Tracers always want to know about signals..
+>  	 */
+> @@ -58,10 +80,7 @@ static int sig_ignored(struct task_struc
+>  	if (sigismember(&t->blocked, sig))
+>  		return 0;
+> 
+> -	/* Is it explicitly or implicitly ignored? */
+> -	handler = t->sighand->action[sig-1].sa.sa_handler;
+> -	return   handler == SIG_IGN ||
+> -		(handler == SIG_DFL && sig_kernel_ignore(sig));
+> +	return sig_task_ignore(t, sig);
+>  }
+
+And technically, your helper patch could be separated out from the rest
+here.  It isn't a huge deal, but it would be nice.
+
+>  /*
+> @@ -566,6 +585,9 @@ static void handle_stop_signal(int sig, 
+>  		 */
+>  		return;
+> 
+> +	if (sig_init_ignore(p))
+> +		return;
+
+The function name isn't quite good enough to understand why this is
+here.  Quick comment, maybe?
+
+>  	if (sig_kernel_stop(sig)) {
+>  		/*
+>  		 * This is a stop signal.  Remove SIGCONT from all queues.
+> @@ -1860,12 +1882,6 @@ relock:
+>  		if (sig_kernel_ignore(signr)) /* Default is nothing. */
+>  			continue;
+> 
+> -		/*
+> -		 * Global init gets no signals it doesn't want.
+> -		 */
+> -		if (is_global_init(current))
+> -			continue;
+> -
+>  		if (sig_kernel_stop(signr)) {
+>  			/*
+>  			 * The default action is to stop all threads in
+> @@ -2317,6 +2333,7 @@ int do_sigaction(int sig, struct k_sigac
+>  	k = &current->sighand->action[sig-1];
+> 
+>  	spin_lock_irq(&current->sighand->siglock);
+> +
+>  	if (oact)
+>  		*oact = *k;
+
+Fix that, please.
+
+> @@ -2335,8 +2352,7 @@ int do_sigaction(int sig, struct k_sigac
+>  		 *   (for example, SIGCHLD), shall cause the pending signal to
+>  		 *   be discarded, whether or not it is blocked"
+>  		 */
+> -		if (act->sa.sa_handler == SIG_IGN ||
+> -		   (act->sa.sa_handler == SIG_DFL && sig_kernel_ignore(sig))) {
+> +		if (sig_task_ignore(current, sig)) {
+>  			struct task_struct *t = current;
+>  			sigemptyset(&mask);
+>  			sigaddset(&mask, sig);
 -- Dave
