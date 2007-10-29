@@ -1,134 +1,109 @@
 From: Kirill Korotaev <dev@openvz.org>
-Subject: Re: [PATCH] pidns: Place under CONFIG_EXPERIMENTAL (take 2)
-Date: Mon, 29 Oct 2007 10:51:24 +0300
-Message-ID: <472590FC.8070502@openvz.org>
-References: <m1640t3has.fsf@ebiederm.dsl.xmission.com>	<alpine.LFD.0.999.0710261053030.30120@woody.linux-foundation.org> <m1y7dpzn1s.fsf_-_@ebiederm.dsl.xmission.com>
+Subject: Re: [PATCH] pidns: Limit kill -1 and cap_set_all
+Date: Mon, 29 Oct 2007 11:38:01 +0300
+Message-ID: <47259BE9.4050904@openvz.org>
+References: <m1y7dp22d4.fsf@ebiederm.dsl.xmission.com>	<alpine.LFD.0.999.0710261105440.30120@woody.linux-foundation.org>	<m1r6jhzmov.fsf_-_@ebiederm.dsl.xmission.com> <m1k5p9zk6b.fsf_-_@ebiederm.dsl.xmission.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Transfer-Encoding: 7bit
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1757261AbXJ2Hq7@vger.kernel.org>
-In-Reply-To: <m1y7dpzn1s.fsf_-_@ebiederm.dsl.xmission.com>
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1757107AbXJ2Iex@vger.kernel.org>
+In-Reply-To: <m1k5p9zk6b.fsf_-_@ebiederm.dsl.xmission.com>
 Sender: linux-kernel-owner@vger.kernel.org
 To: "Eric W. Biederman" <ebiederm@xmission.com>
-Cc: Linus Torvalds <torvalds@linux-foundation.org>, Linux Containers <containers@lists.osdl.org>, Andrew Morton <akpm@linux-foundation.org>, linux-kernel@vger.kernel.org, Pavel Emelyanov <xemul@openvz.org>
+Cc: Linus Torvalds <torvalds@linux-foundation.org>, linux-kernel@vger.kernel.org, Linux Containers <containers@lists.osdl.org>, Andrew Morton <akpm@linux-foundation.org>, Oleg Nesterov <oleg@tv-sign.ru>, Pavel Emelyanov <xemul@openvz.org>
 List-Id: containers.vger.kernel.org
 
-Can you please send namespace related patches to containers@ ML first
-before sending them to Linus/Andrew?
+I dislike this patch:
+it's not scalable/efficient to travers all the tasks
+while we know the pid namespace we care about.
 
-Thanks,
 Kirill
 
 
 Eric W. Biederman wrote:
-> This is my trivial patch to swat innumerable little bugs
-> with a single blow.
+> This patch implements task_in_pid_ns and uses it to limit cap_set_all
+> and sys_kill(-1,) to only those tasks in the current pid namespace.
 > 
-> After some intensive review (my apologies for not having
-> gotten to this sooner) what we have looks like a good
-> base to build on with the current pid namespace code but
-> it is not complete, and it is still much to simple to find
-> issues where the kernel does the wrong thing outside of
-> the initial pid namespace.
-> 
-> Until the dust settles and we are certain we have the ABI and
-> the implementation is as correct as humanly possible let's keep
-> process ID namespaces behind CONFIG_EXPERIMENTAL. 
-> 
-> Allowing us the option of fixing any ABI or other bugs
-> we find as long as they are minor.
-> 
-> Allowing users of the kernel to avoid those bugs simply
-> by ensuring their kernel does not have support for multiple
-> pid namespaces.
+> Without this we have a setup for a very nasty surprise.
 > 
 > Signed-off-by: Eric W. Biederman <ebiederm@xmission.com>
 > ---
->  include/linux/pid_namespace.h |   22 ++++++++++++++++++++++
->  init/Kconfig                  |   12 ++++++++++++
->  kernel/pid.c                  |    2 ++
->  3 files changed, 36 insertions(+), 0 deletions(-)
+>  include/linux/pid_namespace.h |    2 ++
+>  kernel/capability.c           |    3 +++
+>  kernel/pid.c                  |   11 +++++++++++
+>  kernel/signal.c               |    5 ++++-
+>  4 files changed, 20 insertions(+), 1 deletions(-)
 > 
 > diff --git a/include/linux/pid_namespace.h b/include/linux/pid_namespace.h
-> index 0135c76..0227e68 100644
+> index 0227e68..b454678 100644
 > --- a/include/linux/pid_namespace.h
 > +++ b/include/linux/pid_namespace.h
-> @@ -29,6 +29,7 @@ struct pid_namespace {
->  
->  extern struct pid_namespace init_pid_ns;
->  
-> +#ifdef CONFIG_PID_NS
->  static inline struct pid_namespace *get_pid_ns(struct pid_namespace *ns)
->  {
->  	if (ns != &init_pid_ns)
-> @@ -45,6 +46,27 @@ static inline void put_pid_ns(struct pid_namespace *ns)
->  		kref_put(&ns->kref, free_pid_ns);
+> @@ -78,4 +78,6 @@ static inline struct task_struct *task_child_reaper(struct task_struct *tsk)
+>  	return tsk->nsproxy->pid_ns->child_reaper;
 >  }
 >  
-> +#else /* !CONFIG_PID_NS */
-> +#include <linux/err.h>
+> +extern int task_in_pid_ns(struct task_struct *tsk, struct pid_namespace *ns);
 > +
-> +static inline struct pid_namespace *get_pid_ns(struct pid_namespace *ns)
-> +{
-> +	return ns;
-> +}
-> +
-> +static inline struct pid_namespace *copy_pid_ns(unsigned long flags, struct pid_namespace *ns)
-> +{
-> +	if (flags & CLONE_NEWPID)
-> +		ns = ERR_PTR(-EINVAL);
-> +	return ns;
-> +}
-> +
-> +static inline void put_pid_ns(struct pid_namespace *ns)
-> +{
-> +}
-> +
-> +#endif /* CONFIG_PID_NS */
-> +
->  static inline struct pid_namespace *task_active_pid_ns(struct task_struct *tsk)
+>  #endif /* _LINUX_PID_NS_H */
+> diff --git a/kernel/capability.c b/kernel/capability.c
+> index efbd9cd..a801016 100644
+> --- a/kernel/capability.c
+> +++ b/kernel/capability.c
+> @@ -125,6 +125,7 @@ static inline int cap_set_all(kernel_cap_t *effective,
+>  			       kernel_cap_t *inheritable,
+>  			       kernel_cap_t *permitted)
 >  {
->  	return tsk->nsproxy->pid_ns;
-> diff --git a/init/Kconfig b/init/Kconfig
-> index 8b88d0b..72e37c0 100644
-> --- a/init/Kconfig
-> +++ b/init/Kconfig
-> @@ -215,6 +215,18 @@ config USER_NS
->  	  vservers, to use user namespaces to provide different
->  	  user info for different servers.  If unsure, say N.
->  
-> +config PID_NS
-> +	bool "PID Namespaces (EXPERIMENTAL)"
-> +	default n
-> +	depends on EXPERIMENTAL
-> +	help
-> +	  Suport process id namespaces.  This allows having multiple
-> +	  process with the same pid as long as they are in different
-> +	  pid namespaces.  This is a building block of containers.
-> +
-> +	  Unless you want to work with an experimental feature
-> +	  say N here.
-> +
->  config AUDIT
->  	bool "Auditing support"
->  	depends on NET
+> +     struct pid_namespace *pid_ns = current->nsproxy->pid_ns;
+>       struct task_struct *g, *target;
+>       int ret = -EPERM;
+>       int found = 0;
+> @@ -132,6 +133,8 @@ static inline int cap_set_all(kernel_cap_t *effective,
+>       do_each_thread(g, target) {
+>               if (target == current || is_container_init(target->group_leader))
+>                       continue;
+> +             if (!task_in_pid_ns(target, pid_ns))
+> +		     continue;
+>               found = 1;
+>  	     if (security_capset_check(target, effective, inheritable,
+>  						permitted))
 > diff --git a/kernel/pid.c b/kernel/pid.c
-> index d1db36b..f815455 100644
+> index f815455..1c332ca 100644
 > --- a/kernel/pid.c
 > +++ b/kernel/pid.c
-> @@ -537,6 +537,7 @@ err_alloc:
->  	return NULL;
+> @@ -430,6 +430,17 @@ struct pid *find_get_pid(pid_t nr)
+>  	return pid;
 >  }
 >  
-> +#ifdef CONFIG_PID_NS
->  static struct pid_namespace *create_pid_namespace(int level)
+> +static int pid_in_pid_ns(struct pid *pid, struct pid_namespace *ns)
+> +{
+> +	return pid && (ns->level <= pid->level) &&
+> +		pid->numbers[ns->level].ns == ns;
+> +}
+> +
+> +int task_in_pid_ns(struct task_struct *task, struct pid_namespace *ns)
+> +{
+> +	return pid_in_pid_ns(task_pid(task), ns);
+> +}
+> +
+>  pid_t pid_nr_ns(struct pid *pid, struct pid_namespace *ns)
 >  {
->  	struct pid_namespace *ns;
-> @@ -621,6 +622,7 @@ void free_pid_ns(struct kref *kref)
->  	if (parent != NULL)
->  		put_pid_ns(parent);
->  }
-> +#endif /* CONFIG_PID_NS */
+>  	struct upid *upid;
+> diff --git a/kernel/signal.c b/kernel/signal.c
+> index 1200630..8f5a31f 100644
+> --- a/kernel/signal.c
+> +++ b/kernel/signal.c
+> @@ -1147,10 +1147,13 @@ static int kill_something_info(int sig, struct siginfo *info, int pid)
+>  	} else if (pid == -1) {
+>  		int retval = 0, count = 0;
+>  		struct task_struct * p;
+> +		struct pid_namespace *ns = current->nsproxy->pid_ns;
 >  
->  void zap_pid_ns_processes(struct pid_namespace *pid_ns)
->  {
+>  		read_lock(&tasklist_lock);
+>  		for_each_process(p) {
+> -			if (p->pid > 1 && !same_thread_group(p, current)) {
+> +			if (!is_container_init(p) &&
+> +			    !same_thread_group(p, current) &&
+> +			    task_in_pid_ns(p, ns)) {
+>  				int err = group_send_sig_info(sig, info, p);
+>  				++count;
+>  				if (err != -EPERM)
