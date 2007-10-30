@@ -1,43 +1,35 @@
-From: Daniel Lezcano <dlezcano@fr.ibm.com>
-Subject: [PATCH][NETNS] fix net released by rcu callback
-Date: Tue, 30 Oct 2007 11:33:59 +0100
-Message-ID: <47270897.4000409@fr.ibm.com>
+From: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+Subject: [RFC][ for -mm] memory cgroup enhancements take3 [0/9] intro
+Date: Tue, 30 Oct 2007 20:12:06 +0900
+Message-ID: <20071030201206.86a510e0.kamezawa.hiroyu@jp.fujitsu.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+Content-Type: text/plain; charset=US-ASCII
 Content-Transfer-Encoding: 7bit
-Return-path: <netdev-owner@vger.kernel.org>
-Sender: netdev-owner@vger.kernel.org
-To: David Miller <davem@davemloft.net>, "Eric W. Biederman" <ebiederm@xmission.com>
-Cc: Linux Netdev List <netdev@vger.kernel.org>, Linux Containers <containers@lists.osdl.org>
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: "containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org" <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
+Cc: "yamamoto-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org" <yamamoto-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>, "balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org" <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-When a network namespace reference is held by a network subsystem,
-and when this reference is decremented in a rcu update callback, we
-must ensure that there is no more outstanding rcu update before
-trying to free the network namespace.
+Hi, this is updated set of enhancements for memory cgroup in my box.
+I'd like to post some of these when the next -mm is shipped.
+(but rebase and more test should be done.)
 
-In the normal case, the rcu_barrier is called when the network namespace
-is exiting in the cleanup_net function.
+Any comments are welcome.
 
-But when a network namespace creation fails, and the subsystems are
-undone (like the cleanup), the rcu_barrier is missing.
+Changes from previous sets:
+ - added comments/explanation.
+ - dropped failcnt patch
+ - modified per-node numastat to zonestat
+ - and small changes for good looking.
 
-This patch adds the missing rcu_barrier.
-
-Signed-off-by: Daniel Lezcano <dlezcano@fr.ibm.com>
----
-  net/core/net_namespace.c |    2 ++
-  1 file changed, 2 insertions(+)
-
-Index: net-2.6/net/core/net_namespace.c
-===================================================================
---- net-2.6.orig/net/core/net_namespace.c
-+++ net-2.6/net/core/net_namespace.c
-@@ -112,6 +112,8 @@ out_undo:
-                 if (ops->exit)
-                         ops->exit(net);
-         }
-+
-+       rcu_barrier();
-         goto out;
-  }
+Thanks,
+-Kame
