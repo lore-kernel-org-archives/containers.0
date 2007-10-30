@@ -1,54 +1,39 @@
-From: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
-Subject: Re: [RFC][ for -mm] memory cgroup enhancements take3 [9/9] per zone
- stat
-Date: Tue, 30 Oct 2007 21:44:08 +0900
-Message-ID: <20071030214408.a421715e.kamezawa.hiroyu@jp.fujitsu.com>
-References: <20071030213615.abbdfba5.kamezawa.hiroyu@jp.fujitsu.com>
-	<20071030124241.654F91C5BE4@siro.lan>
+From: Daniel Lezcano <dlezcano@fr.ibm.com>
+Subject: [IPV6] cleanup : remove proc_net_remove called twice
+Date: Tue, 30 Oct 2007 13:55:57 +0100
+Message-ID: <472729DD.4070504@fr.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20071030124241.654F91C5BE4-Pcsii4f/SVk@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: YAMAMOTO Takashi <yamamoto-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
-Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
+Return-path: <netdev-owner@vger.kernel.org>
+Sender: netdev-owner@vger.kernel.org
+To: David Miller <davem@davemloft.net>, "Eric W. Biederman" <ebiederm@xmission.com>
+Cc: Linux Netdev List <netdev@vger.kernel.org>, Linux Containers <containers@lists.osdl.org>
 List-Id: containers.vger.kernel.org
 
-On Tue, 30 Oct 2007 21:42:41 +0900 (JST)
-yamamoto-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org (YAMAMOTO Takashi) wrote:
+The file /proc/net/if_inet6 is removed twice.
+First time in:
+         inet6_exit
+              ->addrconf_cleanup
+And followed a few lines after by:
+         inet6_exit
+              -> if6_proc_exit
 
-> > > > +	if (active && !(pc->flags & PAGE_CGROUP_FLAG_ACTIVE))
-> > > > +		direction = 1; /*from inactive to acvive */
-> > > > +	if (!active && (pc->flags & PAGE_CGROUP_FLAG_ACTIVE))
-> > > > +		direction = -1;
-> > > > +
-> > > > +	if (direction) {
-> > > > +		struct mem_cgroup_zonestat *zstat = &pc->mem_cgroup->zonestat;
-> > > > +		int index = page_cgroup_to_zonestat_index(pc);
-> > > > +		preempt_disable();
-> > > > +		__mem_cgroup_zonestat_add(zstat, MEM_CGROUP_ZONESTAT_ACTIVE,
-> > > > +			direction, index);
-> > > > +		__mem_cgroup_zonestat_add(zstat, MEM_CGROUP_ZONESTAT_INACTIVE,
-> > > > +			direction, index);
-> > > 
-> > > dec?
-> > > 
-> > direction(add value) is 1 or -1 here. Hmm, this is maybe confusing.
-> > ok, I'll clean up this.
-> 
-> adding the same value to both of active and inactive seems wrong.
-> i think you want to subtract 'direction' from inactive here.
-> 
+Signed-off-by: Daniel Lezcano <dlezcano@fr.ibm.com>
+---
+  net/ipv6/addrconf.c |    4 ----
+  1 file changed, 4 deletions(-)
 
-Ahh, ok, thanks. will fix.
+Index: net-2.6/net/ipv6/addrconf.c
+===================================================================
+--- net-2.6.orig/net/ipv6/addrconf.c
++++ net-2.6/net/ipv6/addrconf.c
+@@ -4288,8 +4288,4 @@ void __exit addrconf_cleanup(void)
+         del_timer(&addr_chk_timer);
 
--Kame
+         rtnl_unlock();
+-
+-#ifdef CONFIG_PROC_FS
+-       proc_net_remove(&init_net, "if_inet6");
+-#endif
+  }
