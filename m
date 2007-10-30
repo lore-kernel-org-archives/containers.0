@@ -1,38 +1,35 @@
-From: ebiederm@xmission.com (Eric W. Biederman)
-Subject: Re: [patch 1/1][NETNS] resend:  fix net released by rcu callback
-Date: Tue, 30 Oct 2007 16:34:29 -0600
-Message-ID: <m1sl3sjkp6.fsf@ebiederm.dsl.xmission.com>
+From: David Miller <davem@davemloft.net>
+Subject: Re: [patch 1/1][NETNS] resend: fix net released by rcu callback
+Date: Tue, 30 Oct 2007 15:39:05 -0700 (PDT)
+Message-ID: <20071030.153905.34390407.davem@davemloft.net>
 References: <20071030162139.954791193@mai.toulouse-stg.fr.ibm.com>
 	<20071030162305.458123510@mai.toulouse-stg.fr.ibm.com>
-	<m1odegl47t.fsf@ebiederm.dsl.xmission.com> <4727A57E.501@fr.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+Content-Type: Text/Plain; charset=us-ascii
+Content-Transfer-Encoding: 7bit
 Return-path: <netdev-owner@vger.kernel.org>
-In-Reply-To: <4727A57E.501@fr.ibm.com> (Daniel Lezcano's message of "Tue, 30
-	Oct 2007 22:43:26 +0100")
+In-Reply-To: <20071030162305.458123510@mai.toulouse-stg.fr.ibm.com>
 Sender: netdev-owner@vger.kernel.org
-To: Daniel Lezcano <dlezcano@fr.ibm.com>
-Cc: davem@davemloft.net, containers@lists.osdl.org, netdev@vger.kernel.org
+To: dlezcano@fr.ibm.com
+Cc: ebiederm@xmission.com, containers@lists.osdl.org, netdev@vger.kernel.org
 List-Id: containers.vger.kernel.org
 
-Daniel Lezcano <dlezcano@fr.ibm.com> writes:
+From: Daniel Lezcano <dlezcano@fr.ibm.com>
+Date: Tue, 30 Oct 2007 17:21:40 +0100
 
-> Yes, I had this problem when doing ipv6 isolation for netns49. The ipv6
-> subsystem creation failed and the different subsystem where rollbacked in the
-> setup_net function.
-> When the network namespace was about to be freed in free_net function, I had the
-> error with an usage refcount different from zero.
-> It appears that was coming from core/neighbour.c
->
-> neigh_parms_release
->  -> neigh_rcu_free_parms
->    -> neigh_parms_put
->      -> neigh_parms_destroy
->        -> release_net
->
-> The free_net function was called before rcu callback neigh_rcu_free_parms.
+> When a network namespace reference is held by a network subsystem,
+> and when this reference is decremented in a rcu update callback, we
+> must ensure that there is no more outstanding rcu update before 
+> trying to free the network namespace.
+> 
+> In the normal case, the rcu_barrier is called when the network namespace
+> is exiting in the cleanup_net function.
+> 
+> But when a network namespace creation fails, and the subsystems are
+> undone (like the cleanup), the rcu_barrier is missing.
+> 
+> This patch adds the missing rcu_barrier.
+> 
+> Signed-off-by: Daniel Lezcano <dlezcano@fr.ibm.com>
 
-Ok. Cool.  It is good to know that this patch was tested.  These kinds
-of subtle fixes are always more solid when you can actually test them.
-
-Eric
+Applied, thanks Daniel.
