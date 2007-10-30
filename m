@@ -1,14 +1,15 @@
-From: yamamoto-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org (YAMAMOTO Takashi)
+From: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
 Subject: Re: [RFC][ for -mm] memory cgroup enhancements take3 [9/9] per zone
  stat
-Date: Tue, 30 Oct 2007 21:42:41 +0900 (JST)
-Message-ID: <20071030124241.654F91C5BE4@siro.lan>
+Date: Tue, 30 Oct 2007 21:44:08 +0900
+Message-ID: <20071030214408.a421715e.kamezawa.hiroyu@jp.fujitsu.com>
 References: <20071030213615.abbdfba5.kamezawa.hiroyu@jp.fujitsu.com>
+	<20071030124241.654F91C5BE4@siro.lan>
 Mime-Version: 1.0
-Content-Type: Text/Plain; charset=us-ascii
+Content-Type: text/plain; charset=US-ASCII
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: Your message of "Tue, 30 Oct 2007 21:36:15 +0900"
-	<20071030213615.abbdfba5.kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+In-Reply-To: <20071030124241.654F91C5BE4-Pcsii4f/SVk@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,30 +19,36 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org
+To: YAMAMOTO Takashi <yamamoto-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
 Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-> > > +	if (active && !(pc->flags & PAGE_CGROUP_FLAG_ACTIVE))
-> > > +		direction = 1; /*from inactive to acvive */
-> > > +	if (!active && (pc->flags & PAGE_CGROUP_FLAG_ACTIVE))
-> > > +		direction = -1;
-> > > +
-> > > +	if (direction) {
-> > > +		struct mem_cgroup_zonestat *zstat = &pc->mem_cgroup->zonestat;
-> > > +		int index = page_cgroup_to_zonestat_index(pc);
-> > > +		preempt_disable();
-> > > +		__mem_cgroup_zonestat_add(zstat, MEM_CGROUP_ZONESTAT_ACTIVE,
-> > > +			direction, index);
-> > > +		__mem_cgroup_zonestat_add(zstat, MEM_CGROUP_ZONESTAT_INACTIVE,
-> > > +			direction, index);
-> > 
-> > dec?
-> > 
-> direction(add value) is 1 or -1 here. Hmm, this is maybe confusing.
-> ok, I'll clean up this.
+On Tue, 30 Oct 2007 21:42:41 +0900 (JST)
+yamamoto-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org (YAMAMOTO Takashi) wrote:
 
-adding the same value to both of active and inactive seems wrong.
-i think you want to subtract 'direction' from inactive here.
+> > > > +	if (active && !(pc->flags & PAGE_CGROUP_FLAG_ACTIVE))
+> > > > +		direction = 1; /*from inactive to acvive */
+> > > > +	if (!active && (pc->flags & PAGE_CGROUP_FLAG_ACTIVE))
+> > > > +		direction = -1;
+> > > > +
+> > > > +	if (direction) {
+> > > > +		struct mem_cgroup_zonestat *zstat = &pc->mem_cgroup->zonestat;
+> > > > +		int index = page_cgroup_to_zonestat_index(pc);
+> > > > +		preempt_disable();
+> > > > +		__mem_cgroup_zonestat_add(zstat, MEM_CGROUP_ZONESTAT_ACTIVE,
+> > > > +			direction, index);
+> > > > +		__mem_cgroup_zonestat_add(zstat, MEM_CGROUP_ZONESTAT_INACTIVE,
+> > > > +			direction, index);
+> > > 
+> > > dec?
+> > > 
+> > direction(add value) is 1 or -1 here. Hmm, this is maybe confusing.
+> > ok, I'll clean up this.
+> 
+> adding the same value to both of active and inactive seems wrong.
+> i think you want to subtract 'direction' from inactive here.
+> 
 
-YAMAMOTO Takashi
+Ahh, ok, thanks. will fix.
+
+-Kame
