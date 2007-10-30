@@ -1,8 +1,8 @@
 From: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
-Subject: [RFC][ for -mm] memory cgroup enhancements take3 [5/9] per-cpu
- status accounting
-Date: Tue, 30 Oct 2007 20:18:33 +0900
-Message-ID: <20071030201833.6a8a6ea5.kamezawa.hiroyu@jp.fujitsu.com>
+Subject: [RFC][ for -mm] memory cgroup enhancements take3 [4/9] remember
+ active
+Date: Tue, 30 Oct 2007 20:17:36 +0900
+Message-ID: <20071030201736.fc6c1c9a.kamezawa.hiroyu@jp.fujitsu.com>
 References: <20071030201206.86a510e0.kamezawa.hiroyu@jp.fujitsu.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=US-ASCII
@@ -22,161 +22,55 @@ To: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
 Cc: "containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org" <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, "yamamoto-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org" <yamamoto-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>, "balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org" <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Add statistics account infrastructure for memory controller.
+Remember page_cgroup is on active_list or not in page_cgroup->flags.
 
-Changelov v2 -> v3
- - adjusted to rename of #define PAGE_CGROUP_FLAG....
- - dropped ACTIVE/INACTIVE counter.
-   They should be accounted against per zone. Then, using pcp counter,
-   we need array of NR_CPU * MAX_NUMNODES * NR_ZONES against all stats.
-   This is too big for statistics *per-memory-cgroup*.
-   ACTIVE/INACTIVE counter is added as per-zone statistics later.
+Against 2.6.23-mm1.
 
-Changelog v1 -> v2
- - Removed Charge/Uncharge counter
- - reflected comments.
-   - changes __move_lists() args.
-   - changes __mem_cgroup_stat_add() name, comment and added VM_BUGON
-
-Changes from original:
- - divided into 2 patch (account and show info)
- - changed from u64 to s64
- - added mem_cgroup_stat_add() and batched statistics modification logic.
- - removed stat init code because mem_cgroup is allocated by kzalloc().
-
+Changelov v2->v3
+  - renamed #define PCGF_ACTIVE to PAGE_CGROUP_FLAG_ACTIVE.
+Changelog v1->v2
+  - moved #define to out-side of struct definition
 
 Signed-off-by: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
 Signed-off-by: YAMAMOTO Takashi <yamamoto-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
 
- mm/memcontrol.c |   83 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 83 insertions(+)
+ mm/memcontrol.c |   10 +++++++---
+ 1 file changed, 7 insertions(+), 3 deletions(-)
 
 Index: devel-2.6.23-mm1/mm/memcontrol.c
 ===================================================================
 --- devel-2.6.23-mm1.orig/mm/memcontrol.c
 +++ devel-2.6.23-mm1/mm/memcontrol.c
-@@ -35,6 +35,58 @@ struct cgroup_subsys mem_cgroup_subsys;
- static const int MEM_CGROUP_RECLAIM_RETRIES = 5;
- 
- /*
-+ * Statistics for memory cgroup.
-+ */
-+enum mem_cgroup_stat_index {
-+	/*
-+	 * For MEM_CONTAINER_TYPE_ALL, usage = pagecache + rss.
-+	 */
-+	MEM_CGROUP_STAT_PAGECACHE, /* # of pages charged as cache */
-+	MEM_CGROUP_STAT_RSS,	   /* # of pages charged as rss */
-+
-+	MEM_CGROUP_STAT_NSTATS,
-+};
-+
-+struct mem_cgroup_stat_cpu {
-+	s64 count[MEM_CGROUP_STAT_NSTATS];
-+} ____cacheline_aligned_in_smp;
-+
-+struct mem_cgroup_stat {
-+	struct mem_cgroup_stat_cpu cpustat[NR_CPUS];
-+};
-+
-+/*
-+ * For batching....mem_cgroup_charge_statistics()(see below).
-+ * MUST be called under preempt_disable().
-+ */
-+static inline void __mem_cgroup_stat_add(struct mem_cgroup_stat *stat,
-+                enum mem_cgroup_stat_index idx, int val)
-+{
-+	int cpu = smp_processor_id();
-+#ifdef CONFIG_PREEMPT
-+	VM_BUG_ON(preempt_count() == 0);
-+#endif
-+	stat->cpustat[cpu].count[idx] += val;
-+}
-+
-+static inline void mem_cgroup_stat_inc(struct mem_cgroup_stat *stat,
-+		enum mem_cgroup_stat_index idx)
-+{
-+	preempt_disable();
-+	__mem_cgroup_stat_add(stat, idx, 1);
-+	preempt_enable();
-+}
-+
-+static inline void mem_cgroup_stat_dec(struct mem_cgroup_stat *stat,
-+		enum mem_cgroup_stat_index idx)
-+{
-+	preempt_disable();
-+	__mem_cgroup_stat_add(stat, idx, -1);
-+	preempt_enable();
-+}
-+
-+
-+/*
-  * The memory controller data structure. The memory controller controls both
-  * page cache and RSS per cgroup. We would eventually like to provide
-  * statistics based on the statistics developed by Rik Van Riel for clock-pro,
-@@ -63,6 +115,10 @@ struct mem_cgroup {
- 	 */
- 	spinlock_t lru_lock;
- 	unsigned long control_type;	/* control RSS or RSS+Pagecache */
-+	/*
-+	 * statistics.
-+	 */
-+	struct mem_cgroup_stat stat;
+@@ -86,6 +86,7 @@ struct page_cgroup {
+ 	int	 flags;
  };
+ #define PAGE_CGROUP_FLAG_CACHE	(0x1)	/* charged as cache */
++#define PAGE_CGROUP_FLAG_ACTIVE (0x2)	/* page is active in this cgroup */
  
- /*
-@@ -101,6 +157,28 @@ enum charge_type {
- 	MEM_CGROUP_CHARGE_TYPE_MAPPED = 0,
- };
+ enum {
+ 	MEM_CGROUP_TYPE_UNSPEC = 0,
+@@ -213,10 +214,13 @@ clear_page_cgroup(struct page *page, str
  
-+/*
-+ * Batched statistics modification.
-+ * We have to modify several values at charge/uncharge..
-+ */
-+static inline void
-+mem_cgroup_charge_statistics(struct mem_cgroup *mem, int flags, int charge)
-+{
-+	int val = (charge)? 1 : -1;
-+	struct mem_cgroup_stat *stat = &mem->stat;
-+	preempt_disable();
-+
-+	if (flags & PAGE_CGROUP_FLAG_CACHE)
-+		__mem_cgroup_stat_add(stat, MEM_CGROUP_STAT_PAGECACHE, val);
-+	else
-+		__mem_cgroup_stat_add(stat, MEM_CGROUP_STAT_RSS, val);
-+
-+	preempt_enable();
-+}
-+
-+
-+
-+
- static struct mem_cgroup init_mem_cgroup;
+ static void __mem_cgroup_move_lists(struct page_cgroup *pc, bool active)
+ {
+-	if (active)
++	if (active) {
++		pc->flags |= PAGE_CGROUP_FLAG_ACTIVE;
+ 		list_move(&pc->lru, &pc->mem_cgroup->active_list);
+-	else
++	} else {
++		pc->flags &= ~PAGE_CGROUP_FLAG_ACTIVE;
+ 		list_move(&pc->lru, &pc->mem_cgroup->inactive_list);
++	}
+ }
  
- static inline
-@@ -444,6 +522,9 @@ noreclaim:
- 		goto retry;
- 	}
- 
-+	/* Update statistics vector */
-+	mem_cgroup_charge_statistics(mem, pc->flags, true);
-+
- 	spin_lock_irqsave(&mem->lru_lock, flags);
- 	list_add(&pc->lru, &mem->active_list);
- 	spin_unlock_irqrestore(&mem->lru_lock, flags);
-@@ -511,6 +592,7 @@ void mem_cgroup_uncharge(struct page_cgr
- 			spin_lock_irqsave(&mem->lru_lock, flags);
- 			list_del_init(&pc->lru);
- 			spin_unlock_irqrestore(&mem->lru_lock, flags);
-+			mem_cgroup_charge_statistics(mem, pc->flags, false);
- 			kfree(pc);
- 		}
- 	}
-@@ -586,6 +668,7 @@ retry:
- 			css_put(&mem->css);
- 			res_counter_uncharge(&mem->res, PAGE_SIZE);
- 			list_del_init(&pc->lru);
-+			mem_cgroup_charge_statistics(mem, pc->flags, false);
- 			kfree(pc);
- 		} else 	/* being uncharged ? ...do relax */
- 			break;
+ int task_in_mem_cgroup(struct task_struct *task, const struct mem_cgroup *mem)
+@@ -425,7 +429,7 @@ noreclaim:
+ 	atomic_set(&pc->ref_cnt, 1);
+ 	pc->mem_cgroup = mem;
+ 	pc->page = page;
+-	pc->flags = 0;
++	pc->flags = PAGE_CGROUP_FLAG_ACTIVE;
+ 	if (ctype == MEM_CGROUP_CHARGE_TYPE_CACHE)
+ 		pc->flags |= PAGE_CGROUP_FLAG_CACHE;
+ 	if (page_cgroup_assign_new_page_cgroup(page, pc)) {
