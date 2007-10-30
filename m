@@ -1,8 +1,8 @@
 From: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
-Subject: [RFC][ for -mm] memory cgroup enhancements take3 [7/9] add
- memory.stat file
-Date: Tue, 30 Oct 2007 20:19:44 +0900
-Message-ID: <20071030201944.08279599.kamezawa.hiroyu@jp.fujitsu.com>
+Subject: [RFC][ for -mm] memory cgroup enhancements take3 [8/9] implicit
+ force_empty at rmdir
+Date: Tue, 30 Oct 2007 20:21:39 +0900
+Message-ID: <20071030202139.2f925964.kamezawa.hiroyu@jp.fujitsu.com>
 References: <20071030201206.86a510e0.kamezawa.hiroyu@jp.fujitsu.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=US-ASCII
@@ -22,89 +22,37 @@ To: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
 Cc: "containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org" <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, "yamamoto-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org" <yamamoto-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>, "balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org" <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Show accounted information of memory cgroup by memory.stat file
+This patch adds pre_destroy handler for mem_cgroup and try to make
+mem_cgroup empty at rmdir().
 
-Changelog v1->v2
- - dropped Charge/Uncharge entry.
-
-Signed-off-by: YAMAMOTO Takashi <yamamoto-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
 Signed-off-by: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
 
- mm/memcontrol.c |   50 ++++++++++++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 50 insertions(+)
+ mm/memcontrol.c |    8 ++++++++
+ 1 file changed, 8 insertions(+)
 
 Index: devel-2.6.23-mm1/mm/memcontrol.c
 ===================================================================
 --- devel-2.6.23-mm1.orig/mm/memcontrol.c
 +++ devel-2.6.23-mm1/mm/memcontrol.c
-@@ -28,6 +28,7 @@
- #include <linux/swap.h>
- #include <linux/spinlock.h>
- #include <linux/fs.h>
-+#include <linux/seq_file.h>
- 
- #include <asm/uaccess.h>
- 
-@@ -824,6 +825,51 @@ static ssize_t mem_force_empty_read(stru
+@@ -927,6 +927,13 @@ mem_cgroup_create(struct cgroup_subsys *
+ 	return &mem->css;
  }
  
- 
-+static const struct mem_cgroup_stat_desc {
-+	const char *msg;
-+	u64 unit;
-+} mem_cgroup_stat_desc[] = {
-+	[MEM_CGROUP_STAT_PAGECACHE] = { "page_cache", PAGE_SIZE, },
-+	[MEM_CGROUP_STAT_RSS] = { "rss", PAGE_SIZE, },
-+};
-+
-+static int mem_control_stat_show(struct seq_file *m, void *arg)
++static void mem_cgroup_pre_destroy(struct cgroup_subsys *ss,
++					struct cgroup *cont)
 +{
-+	struct cgroup *cont = m->private;
-+	struct mem_cgroup *mem_cont = mem_cgroup_from_cont(cont);
-+	struct mem_cgroup_stat *stat = &mem_cont->stat;
-+	int i;
-+
-+	for (i = 0; i < ARRAY_SIZE(stat->cpustat[0].count); i++) {
-+		unsigned int cpu;
-+		s64 val;
-+
-+		val = 0;
-+		for (cpu = 0; cpu < NR_CPUS; cpu++)
-+			val += stat->cpustat[cpu].count[i];
-+		val *= mem_cgroup_stat_desc[i].unit;
-+		seq_printf(m, "%s %lld\n", mem_cgroup_stat_desc[i].msg, val);
-+	}
-+	return 0;
++	struct mem_cgroup *mem = mem_cgroup_from_cont(cont);
++	mem_cgroup_force_empty(mem);
 +}
 +
-+static const struct file_operations mem_control_stat_file_operations = {
-+	.read = seq_read,
-+	.llseek = seq_lseek,
-+	.release = single_release,
-+};
-+
-+static int mem_control_stat_open(struct inode *unused, struct file *file)
-+{
-+	/* XXX __d_cont */
-+	struct cgroup *cont = file->f_dentry->d_parent->d_fsdata;
-+
-+	file->f_op = &mem_control_stat_file_operations;
-+	return single_open(file, mem_control_stat_show, cont);
-+}
-+
-+
-+
- static struct cftype mem_cgroup_files[] = {
- 	{
- 		.name = "usage_in_bytes",
-@@ -851,6 +897,10 @@ static struct cftype mem_cgroup_files[] 
- 		.write = mem_force_empty_write,
- 		.read = mem_force_empty_read,
- 	},
-+	{
-+		.name = "stat",
-+		.open = mem_control_stat_open,
-+	},
- };
- 
- static struct mem_cgroup init_mem_cgroup;
+ static void mem_cgroup_destroy(struct cgroup_subsys *ss,
+ 				struct cgroup *cont)
+ {
+@@ -978,6 +985,7 @@ struct cgroup_subsys mem_cgroup_subsys =
+ 	.name = "memory",
+ 	.subsys_id = mem_cgroup_subsys_id,
+ 	.create = mem_cgroup_create,
++	.pre_destroy = mem_cgroup_pre_destroy,
+ 	.destroy = mem_cgroup_destroy,
+ 	.populate = mem_cgroup_populate,
+ 	.attach = mem_cgroup_move_task,
