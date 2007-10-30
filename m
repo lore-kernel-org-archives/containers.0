@@ -1,13 +1,22 @@
-From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
-Subject: Re: [PATCH] Signal semantics for /sbin/init
-Date: Mon, 29 Oct 2007 19:24:34 -0600
-Message-ID: <m1bqahmm25.fsf@ebiederm.dsl.xmission.com>
-References: <20071027190010.GA10397@us.ibm.com>
+From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Subject: Re: [DRAFT] Container mini-summit notes v0.01
+Date: Tue, 30 Oct 2007 00:35:15 -0400
+Message-ID: <4726B483.4050105@cs.columbia.edu>
+References: <6599ad830709050700y278d653eu371375c2fc107ef@mail.gmail.com>
+	<20070905143808.GG1403@sergelap.austin.ibm.com>
+	<46DF35DA.1090102@cs.columbia.edu>
+	<20070905235828.GA32475@sergelap.austin.ibm.com>
+	<46DFBE60.6030404@fr.ibm.com>
+	<20070906153243.GA15436@sergelap.austin.ibm.com>
+	<m1wsv0x5sv.fsf@ebiederm.dsl.xmission.com>
+	<20070910141834.GA5866@sergelap.austin.ibm.com>
+	<m1642iqz6x.fsf@ebiederm.dsl.xmission.com>
+	<46FABD9D.50407@cs.columbia.edu> <20071018005216.GA916@us.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+Content-Type: text/plain; charset=us-ascii; format=flowed
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20071027190010.GA10397-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org> (sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org's message
-	of "Sat, 27 Oct 2007 12:00:10 -0700")
+In-Reply-To: <20071018005216.GA916-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,171 +27,76 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org
-Cc: Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org, Oleg Nesterov <oleg-6lXkIZvqkOAvJsYlp49lxw@public.gmane.org>, Pavel Emelianov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+Cc: Kir Kolyshkin <kir-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>, Masahiko Takahashi <masahiko-3NddpPZAyC0@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Pavel Emelianov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org writes:
+sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org wrote:
+> Oren Laadan [orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org] wrote:
+> | 
+> | (sorry from the delay, been away :)
+> | 
+> | Eric W. Biederman wrote:
+> | > "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org> writes:
+> | > 
+> | >> Sorry, I was focusing on the virtual server needs.
+> | >>
+> | >> devpts is it's own fs so I was fully expecting to make it mountable
+> | >> multiple times so a container can have it's own /dev/pts/0.  So what
+> | >> other virtual devices would we want to be able to rec-reate for a
+> | >> migrated application?  (I wonder (a) what gregkh will say about having
+> | >> a device namespace, and (b) what the sysfs implications will be)
+> | > 
+> | > Depends.  There are things like the loop device that could be interesting.
+> | > There may be some others.  I haven't looked at it enough detail to get
+> | > beyond the fact that in some sense it isn't just limited to pts devices.
+> | > 
+> | > A multimount devpts is interesting though.
+> | 
+> | Devices I had to deal with (in zap) so far - to be able to ckpt/restart
+> | (and migrate) a desktop session:
+> | 
+> | * /dev/rtc  (e.g. for mplayer)
+> | 
+> | * /dev/dsp
+> | 
+> | * /dev/random ?  (to isolate entropy pools ?)
+> | 
+> | * virtual consoles - e.g. in zap, an X server that uses a virtual device
+> | runs inside a pod/container/VE (and X per-se requires a virtual console)
+> | 
+> | * virtual terminals - e.g. in zap we allow access to a pod from the host
+> | without a need to run 'sshd' inside and setup a network in the pod. (Then
+> | with a suitable utility and network access to the host, this also allows
+> | sort of remote (a-la serial) console access).
+> | >From inside the pod it looks like /dev/tty{1,2,..}, so one can run 'getty'
+> | processes inside the pod. From the outside (for the admin, e.g.) it is an
+> | extended /dev/tty that has an extra ioctl to multiplex access, so the
+> | admin (program) can ask to be connected to tty X of pod Y, and it will
+> | connect to that console (like connecting via serial line).
+> 
+> This sounds really interesting. Were these devices part of a complete
+> device namespace ?  IOW, does say /dev/tty2 in each pods have the same
+> major/minor number (4,2) ? Does each '/dev/tty2' have a separate entry
+> in sysfs ?
 
-> (This is Oleg's patch with my tweaks to compile, Oleg pls sign-off).
-> ---
->
-> From: Sukadev Bhattiprolu <sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-> Subject: [PATCH 1/3] Signal semantics for /sbin/init
->
-> Currently, /sbin/init is protected from unhandled signals by the
-> "current == child_reaper(current)" check in get_signal_to_deliver().
-> This is not enough, we have multiple problems:
->
-> 	- this doesn't work for multi-threaded inits, and we can't
-> 	  fix this by simply making this check group-wide.
->
-> 	- /sbin/init and kernel threads are not protected from
-> 	  handle_stop_signal(). Minor problem, but not good and
-> 	  allows to "steal" SIGCONT or change ->signal->flags.
->
-> 	- /sbin/init is not protected from __group_complete_signal(),
-> 	  sig_fatal() can set SIGNAL_GROUP_EXIT and block exec(), kill
-> 	  sub-threads, set ->group_stop_count, etc.
->
-> Also, with support for multiple pid namespaces, we need an ability to
-> actually kill the sub-namespace's init from the parent namespace. In
-> this case it is not possible (without painful and intrusive changes)
-> to make the "should we honor this signal" decision on the receiver's
-> side.
->
-> Hopefully this patch (adds 43 bytes to kernel/signal.o) can solve
-> these problems.
->
-> Notes:
->
-> 	- Blocked signals are never ignored, so init still can receive
-> 	  a pending blocked signal after sigprocmask(SIG_UNBLOCK).
-> 	  Easy to fix, but probably we can ignore this issue.
->
-> 	- this patch allows us to simplify de_thread() playing games
-> 	  with pid_ns->child_reaper.
->
-> (Side note: the current behaviour of things like force_sig_info_fault()
->  is not very good, init should not ignore these signals and go to the
->  endless loop. Exit + panic is imho better, easy to chamge)
->
-> Oleg.
->
-> Signed-off-by: Sukadev Bhattiprolu <sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+yes, they are virtualization-aware (keep in mind that this was done
+before the recent work on namespaces), by having the open() method check
+in which pod (namespace) it is called and act accordingly. So /dev/zty2
+(zty stands for zap-tty) has the same maj/min in all pods. while at this
+moment it is not integrated with sysfs, I see no reason not to do so.
 
-I kept thinking about the problem and the ignored signal issue
-really disturbed me, because we did not have a clean definition
-on how things are supposed to work.  I do think Oleg was on the right
-track.
-
-If we make the rule:
-When sending a signal to init.  The presence of a signal handler
-that is neither SIG_IGN nor SIG_DFL allows the signal to be sent to
-init.  If the signal is not sent it is silently dropped, without
-becoming pending.  Further if init specifies it's signal handler as
-SIG_IGN or SIG_DFL all pending signals will be dropped.
-
-The only noticeable user space difference from todays init
-is that it no longer needs to worry about signals becoming
-pending when it has them marked as SIG_DFL or SIG_IGN, and
-then it blocks them.
-
-This change by making the presence of a signal handler effectively
-a permission check allows us to do all of the work before
-we enqueue the signal.  Which means that we can now allow
-force_sig_info to send signals to init and that panic the kernel
-instead of going into an infinite busy loop taking an exception
-sending a signal and then retaking the same exception.
-
-This change also makes it possible to easily implement the 
-the desired semantics of /sbin/init for pid namespaces where
-outer processes can kill init but processes inside the pid
-namespace can not.
-
-Please take a look and tell me what you think.
-
-diff --git a/kernel/signal.c b/kernel/signal.c
-index 4537bdd..79856eb 100644
---- a/kernel/signal.c
-+++ b/kernel/signal.c
-@@ -546,6 +546,22 @@ static int check_kill_permission(int sig, struct siginfo *info,
- 	return security_task_kill(t, info, sig, 0);
- }
- 
-+static int sig_available(struct task_struct *tsk, int sig)
-+{
-+	void __user * handler;
-+	int available = 1;
-+
-+	if (likely(!is_global_init(tsk)))
-+		goto out;
-+
-+	handler = tsk->sighand->action[sig-1].sa.sa_handler;
-+	available = (handler != SIG_IGN) &&
-+		    (handler != SIG_DFL);
-+out:
-+	return available;
-+}
-+
-+
- /* forward decl */
- static void do_notify_parent_cldstop(struct task_struct *tsk, int why);
- 
-@@ -948,6 +964,9 @@ __group_send_sig_info(int sig, struct siginfo *info, struct task_struct *p)
- 	int ret = 0;
- 
- 	assert_spin_locked(&p->sighand->siglock);
-+	if (!sig_available(p, sig))
-+		return ret;
-+
- 	handle_stop_signal(sig, p);
- 
- 	/* Short-circuit ignored signals.  */
-@@ -1379,6 +1398,11 @@ send_group_sigqueue(int sig, struct sigqueue *q, struct task_struct *p)
- 	read_lock(&tasklist_lock);
- 	/* Since it_lock is held, p->sighand cannot be NULL. */
- 	spin_lock_irqsave(&p->sighand->siglock, flags);
-+	if (!sig_available(p, sig)) {
-+		ret = 1;
-+		goto out;
-+	}
-+
- 	handle_stop_signal(sig, p);
- 
- 	/* Short-circuit ignored signals.  */
-@@ -1860,12 +1884,6 @@ relock:
- 		if (sig_kernel_ignore(signr)) /* Default is nothing. */
- 			continue;
- 
--		/*
--		 * Global init gets no signals it doesn't want.
--		 */
--		if (is_global_init(current))
--			continue;
--
- 		if (sig_kernel_stop(signr)) {
- 			/*
- 			 * The default action is to stop all threads in
-@@ -2246,8 +2264,10 @@ static int do_tkill(int tgid, int pid, int sig)
- 		 */
- 		if (!error && sig && p->sighand) {
- 			spin_lock_irq(&p->sighand->siglock);
--			handle_stop_signal(sig, p);
--			error = specific_send_sig_info(sig, &info, p);
-+			if (sig_available(p, sig)) {
-+				handle_stop_signal(sig, p);
-+				error = specific_send_sig_info(sig, &info, p);
-+			}
- 			spin_unlock_irq(&p->sighand->siglock);
- 		}
- 	}
-@@ -2336,7 +2356,8 @@ int do_sigaction(int sig, struct k_sigaction *act, struct k_sigaction *oact)
- 		 *   be discarded, whether or not it is blocked"
- 		 */
- 		if (act->sa.sa_handler == SIG_IGN ||
--		   (act->sa.sa_handler == SIG_DFL && sig_kernel_ignore(sig))) {
-+		   (act->sa.sa_handler == SIG_DFL && sig_kernel_ignore(sig)) ||
-+		   !sig_available(current, sig)) {
- 			struct task_struct *t = current;
- 			sigemptyset(&mask);
- 			sigaddset(&mask, sig);
+> 
+> 
+> | The main advantage is that as a virtual device it can be migrated (with
+> | its buffers, if not empty, as they reside inside the pod) so upon restart
+> | they go with the 'getty' processes that use them. The (old) admin will
+> | see the line dropped, and the (new) admin after the migration can connect
+> | at the new machine.
+> | 
+> | Oren.
+> | 
+> | 
+> | _______________________________________________
+> | Containers mailing list
+> | Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+> | https://lists.linux-foundation.org/mailman/listinfo/containers
