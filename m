@@ -1,39 +1,41 @@
-From: Daniel Lezcano <dlezcano@fr.ibm.com>
-Subject: [IPV6] cleanup : remove proc_net_remove called twice
-Date: Tue, 30 Oct 2007 13:55:57 +0100
-Message-ID: <472729DD.4070504@fr.ibm.com>
+From: Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
+Subject: [PATCH][NETNS] release net when pneigh_lookup fails
+Date: Tue, 30 Oct 2007 14:06:03 +0100
+Message-ID: <47272C3B.5080601@fr.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 Content-Transfer-Encoding: 7bit
-Return-path: <netdev-owner@vger.kernel.org>
-Sender: netdev-owner@vger.kernel.org
-To: David Miller <davem@davemloft.net>, "Eric W. Biederman" <ebiederm@xmission.com>
-Cc: Linux Netdev List <netdev@vger.kernel.org>, Linux Containers <containers@lists.osdl.org>
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+Cc: Containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-The file /proc/net/if_inet6 is removed twice.
-First time in:
-         inet6_exit
-              ->addrconf_cleanup
-And followed a few lines after by:
-         inet6_exit
-              -> if6_proc_exit
+When the neighbour table constructor fails, the network namespace is
+not released. This patch fix that.
 
-Signed-off-by: Daniel Lezcano <dlezcano@fr.ibm.com>
+Signed-off-by: Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
 ---
-  net/ipv6/addrconf.c |    4 ----
-  1 file changed, 4 deletions(-)
+  net/core/neighbour.c |    1 +
+  1 file changed, 1 insertion(+)
 
-Index: net-2.6/net/ipv6/addrconf.c
+Index: linux-2.6-netns/net/core/neighbour.c
 ===================================================================
---- net-2.6.orig/net/ipv6/addrconf.c
-+++ net-2.6/net/ipv6/addrconf.c
-@@ -4288,8 +4288,4 @@ void __exit addrconf_cleanup(void)
-         del_timer(&addr_chk_timer);
-
-         rtnl_unlock();
--
--#ifdef CONFIG_PROC_FS
--       proc_net_remove(&init_net, "if_inet6");
--#endif
-  }
+--- linux-2.6-netns.orig/net/core/neighbour.c
++++ linux-2.6-netns/net/core/neighbour.c
+@@ -497,6 +497,7 @@ struct pneigh_entry * pneigh_lookup(stru
+         if (tbl->pconstructor && tbl->pconstructor(n)) {
+                 if (dev)
+                         dev_put(dev);
++               release_net(n->net);
+                 kfree(n);
+                 n = NULL;
+                 goto out;
