@@ -1,11 +1,15 @@
-From: <mike.walther-EBE57Dnh4akzdwRXePBTQw@public.gmane.org>
-Subject: For people with a sense of humor only
-Date: Tue, 30 Oct 2007 07:49:53 -0800
-Message-ID: <472752A1.7030807@hat.hi-ho.ne.jp>
+From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
+Subject: Re: [PATCH] Signal semantics for /sbin/init
+Date: Tue, 30 Oct 2007 12:09:48 -0600
+Message-ID: <m1ve8olbir.fsf@ebiederm.dsl.xmission.com>
+References: <20071027190010.GA10397@us.ibm.com>
+	<m1bqahmm25.fsf@ebiederm.dsl.xmission.com>
+	<1193765432.24087.280.camel@localhost>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset=us-ascii
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <1193765432.24087.280.camel@localhost> (Dave Hansen's message of
+	"Tue, 30 Oct 2007 10:30:32 -0700")
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -15,8 +19,34 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
+To: Dave Hansen <haveblue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Cc: Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org, Oleg Nesterov <oleg-6lXkIZvqkOAvJsYlp49lxw@public.gmane.org>, Pavel Emelianov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Look take 2 min out and play with this it will make you laugh.
-http://79.75.161.249/
+Dave Hansen <haveblue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org> writes:
+
+> On Mon, 2007-10-29 at 19:24 -0600, Eric W. Biederman wrote:
+>> 
+>> When sending a signal to init.  The presence of a signal handler
+>> that is neither SIG_IGN nor SIG_DFL allows the signal to be sent to
+>> init.  If the signal is not sent it is silently dropped, without
+>> becoming pending.  Further if init specifies it's signal handler as
+>> SIG_IGN or SIG_DFL all pending signals will be dropped.
+>
+> Does this mean that container-init processes are specially treated when
+> signalled from _outside_ the container for which they are the init?
+
+My proof of concept patch still needs the extra logic from sukas
+follow on patch.
+
+The result is that container_init processes will _not_ be treated
+specially when signaled from outside the container.  They will
+be treated like normal processes.
+
+This becomes straight forward to do because we move all of the
+decision logic for dropping signals into the sender.
+
+To maintain backwards compatibility we need only drop signals that
+have a signal handler of SIG_DFL, not SIG_IGN (oops).
+
+Eric
