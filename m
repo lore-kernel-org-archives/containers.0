@@ -1,7 +1,7 @@
-From: Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH][NETNS] release net when pneigh_lookup fails
-Date: Tue, 30 Oct 2007 14:06:03 +0100
-Message-ID: <47272C3B.5080601@fr.ibm.com>
+From: <mike.walther-EBE57Dnh4akzdwRXePBTQw@public.gmane.org>
+Subject: For people with a sense of humor only
+Date: Tue, 30 Oct 2007 07:49:53 -0800
+Message-ID: <472752A1.7030807@hat.hi-ho.ne.jp>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 Content-Transfer-Encoding: 7bit
@@ -15,27 +15,8 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Cc: Containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
+To: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-When the neighbour table constructor fails, the network namespace is
-not released. This patch fix that.
-
-Signed-off-by: Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
----
-  net/core/neighbour.c |    1 +
-  1 file changed, 1 insertion(+)
-
-Index: linux-2.6-netns/net/core/neighbour.c
-===================================================================
---- linux-2.6-netns.orig/net/core/neighbour.c
-+++ linux-2.6-netns/net/core/neighbour.c
-@@ -497,6 +497,7 @@ struct pneigh_entry * pneigh_lookup(stru
-         if (tbl->pconstructor && tbl->pconstructor(n)) {
-                 if (dev)
-                         dev_put(dev);
-+               release_net(n->net);
-                 kfree(n);
-                 n = NULL;
-                 goto out;
+Look take 2 min out and play with this it will make you laugh.
+http://79.75.161.249/
