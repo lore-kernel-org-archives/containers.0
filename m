@@ -1,17 +1,13 @@
-From: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
-Subject: Re: [RFC][ for -mm] memory cgroup enhancements take3 [1/9] fix
- try_to_free_mem_cgroup_pages() numa handling
-Date: Wed, 31 Oct 2007 14:36:56 +0900
-Message-ID: <20071031143656.b004c164.kamezawa.hiroyu@jp.fujitsu.com>
-References: <20071030201206.86a510e0.kamezawa.hiroyu@jp.fujitsu.com>
-	<20071030201431.56f6b242.kamezawa.hiroyu@jp.fujitsu.com>
-	<1193765494.24087.282.camel@localhost>
-	<472777B0.3020405@linux.vnet.ibm.com>
+From: Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+Subject: Re: [PATCH] pidns: Place under CONFIG_EXPERIMENTAL
+Date: Wed, 31 Oct 2007 12:52:41 +0300
+Message-ID: <47285069.1020506@openvz.org>
+References: <m1640t3has.fsf@ebiederm.dsl.xmission.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
+Content-Type: text/plain; charset=ISO-8859-1
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <472777B0.3020405-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+In-Reply-To: <m1640t3has.fsf-T1Yj925okcoyDheHMi7gv2pdwda3JcWeAL8bYrjMMd8@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -21,34 +17,85 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
-Cc: "containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org" <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, "yamamoto-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org" <yamamoto-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
+To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Tue, 30 Oct 2007 23:58:00 +0530
-Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org> wrote:
-
-> Dave Hansen wrote:
-> > On Tue, 2007-10-30 at 20:14 +0900, KAMEZAWA Hiroyuki wrote:
-> >> -       for_each_online_node(node) {
-> >> -               zones =
-> >> NODE_DATA(node)->node_zonelists[target_zone].zones;
-> >> -               if (do_try_to_free_pages(zones, sc.gfp_mask, &sc))
-> >> +       zones = NODE_DATA(node)->node_zonelists[target_zone].zones;
-> >> +       if (do_try_to_free_pages(zones, sc.gfp_mask, &sc))
-> >>                         return 1;
-> >> -       }
-> >>         return 0;
-> >>  }
-> >>  #endif 
-> > 
-> > Am I reading the diff wrong, or is that return indented too far?
-> > 
-> > -- Dave
+Eric W. Biederman wrote:
+> I finally found a chance to review the pid namespace implementation in
+> detail and currently it is much to easy to find issues where the
+> kernel does the wrong thing outside of the initial pid namespace.
+> At the same time the pid namespace code we have does appear
+> to be a good base to build on.
 > 
-> Good catch! It is indeed indented one additional tab away from where it
-> should be.
+> Therefore until the dust settles and we are certain we have the
+> ABI and the implementation as correct as humanly possible let's
+> hide the availability of process ID namespaces behind
+> CONFIG_EXPERIMENTAL.
 
-Thanks, I'll check my tree.
+Sorry for the late answer - I was out for a conference and the
+organization committee didn't provide an internet access.
 
--Kame
+I currently have a set of patches that move all the namespaces
+cloning code under the config option. This is done to help
+embedded people have a small kernel.
+
+I was planning to wait with this set untill 2.6.24-rc-mm1 kernel,
+but since (as I see) this is required rather badly I will send this
+set in a couple of days.
+
+Thanks,
+Pavel
+
+> Allowing users to avoid bugs, and removing a guarantee of bug
+> compatibility.  Allowing any issues that may be found to
+> be fixed properly.
+> 
+> If CONFIG_PID_NS=N this patch will cause copy_pid_ns to
+> unconditionally return -EINVAL removing the availability
+> of multiple pid namespaces.
+> 
+> Signed-off-by: Eric W. Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+> ---
+>  init/Kconfig |   12 ++++++++++++
+>  kernel/pid.c |    4 ++++
+>  2 files changed, 16 insertions(+), 0 deletions(-)
+> 
+> diff --git a/init/Kconfig b/init/Kconfig
+> index 8b88d0b..72e37c0 100644
+> --- a/init/Kconfig
+> +++ b/init/Kconfig
+> @@ -215,6 +215,18 @@ config USER_NS
+>  	  vservers, to use user namespaces to provide different
+>  	  user info for different servers.  If unsure, say N.
+>  
+> +config PID_NS
+> +	bool "PID Namespaces (EXPERIMENTAL)"
+> +	default n
+> +	depends on EXPERIMENTAL
+> +	help
+> +	  Suport process id namespaces.  This allows having multiple
+> +	  process with the same pid as long as they are in different
+> +	  pid namespaces.  This is a building block of containers.
+> +
+> +	  Unless you want to work with an experimental feature
+> +	  say N here.
+> +
+>  config AUDIT
+>  	bool "Auditing support"
+>  	depends on NET
+> diff --git a/kernel/pid.c b/kernel/pid.c
+> index d1db36b..8a5637b 100644
+> --- a/kernel/pid.c
+> +++ b/kernel/pid.c
+> @@ -599,6 +599,10 @@ struct pid_namespace *copy_pid_ns(unsigned long flags, struct pid_namespace *old
+>  	if (flags & CLONE_THREAD)
+>  		goto out_put;
+>  
+> +#ifndef CONFIG_PID_NS
+> +	goto out_put;
+> +#endif
+> +
+>  	new_ns = create_pid_namespace(old_ns->level + 1);
+>  	if (!IS_ERR(new_ns))
+>  		new_ns->parent = get_pid_ns(old_ns);
