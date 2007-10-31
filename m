@@ -1,38 +1,49 @@
-From: Pavel Emelyanov <xemul@openvz.org>
-Subject: Re: [PATCH 2/5] Move the UTS namespace under the option
-Date: Wed, 31 Oct 2007 17:04:29 +0300
-Message-ID: <47288B6D.4080703@openvz.org>
-References: <47285FEE.9030001@openvz.org> <472861D3.4060303@openvz.org> <47287C05.5060903@fr.ibm.com>
+From: Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
+Subject: [RFD] net list protected by rcu
+Date: Wed, 31 Oct 2007 15:42:13 +0100
+Message-ID: <47289445.1060108@fr.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 Content-Transfer-Encoding: 7bit
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1758341AbXJaNGO@vger.kernel.org>
-In-Reply-To: <47287C05.5060903@fr.ibm.com>
-Sender: linux-kernel-owner@vger.kernel.org
-To: Cedric Le Goater <clg@fr.ibm.com>
-Cc: Andrew Morton <akpm@osdl.org>, "Eric W. Biederman" <ebiederm@xmission.com>, Serge Hallyn <serue@us.ibm.com>, Linux Containers <containers@lists.osdl.org>, Linux Kernel Mailing List <linux-kernel@vger.kernel.org>
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, "Denis V. Lunev" <den-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>, Benjamin Thery <benjamin.thery-6ktuUTfB/bM@public.gmane.org>
+Cc: "container >> Linux Containers" <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Cedric Le Goater wrote:
->> diff --git a/init/Kconfig b/init/Kconfig
->> index fc76773..d592aa2 100644
->> --- a/init/Kconfig
->> +++ b/init/Kconfig
->> @@ -409,6 +409,13 @@ config NAMESPACES
->>  	  or same user id or pid may refer to different tasks when used in
->>  	  different namespaces.
->>
->> +config UTS_NS
->> +	bool "UTS namespace"
->> +	depends on NAMESPACES
-> 
-> should we add a 'default y' like in 2.6.23 ?
+Hi,
 
-I think no. This is an experimental stuff, so the ones who really
-need it should better say it explicitly.
+Benjamin and I, we are currently looking for using IPV6 for the network 
+namespaces.
 
-> C.
-> 
+There is a special case where we must browse the network namespace list 
+to check the routes ages at a given time for garbage collecting.
 
-Thanks,
-Pavel
+fib6_run_gc
+  => fib6_clean_all
+
+In this function we browse the network namespace list with the usual 
+macro: for_each_net, which should be protected by rtnl_lock.
+
+The function fib6_run_gc is a timer callback, that means we are called 
+from interrupt handler. But in this case, we can not use rtnl_lock 
+because it locks a mutex and this is forbidden to do that from an 
+interrupt handler.
+
+If we put apart the fact there is perhaps a better solution than 
+browsing the netns list (eg. make a gc timer per namespace), can we 
+consider to simply use the RCU to lock the network namespace list ?
+
+So we can remove the rtnl_lock calls in the network namespaces and just 
+use rcu_read_lock for browsing the netns list in the network code. That 
+will be more flexible, we can use it in interrupt handler, we can nest 
+with another rcu_read_lock and we don't add more locking contention for 
+the network.
