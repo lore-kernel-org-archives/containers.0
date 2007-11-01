@@ -1,85 +1,51 @@
-From: Alexey Dobriyan <adobriyan@sw.ru>
-Subject: Re: [Devel] Re: [PATCH resend] proc: Fix proc_kill_inodes to kill dentries on all proc superblocks
-Date: Thu, 1 Nov 2007 18:59:38 +0300
-Message-ID: <20071101155938.GB16499@localhost.sw.ru>
-References: <m1ir4mezzy.fsf@ebiederm.dsl.xmission.com> <4729F549.6090905@openvz.org>
+From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH] Masquerade sender information
+Date: Thu, 1 Nov 2007 11:50:26 -0500
+Message-ID: <20071101165026.GA25234@sergelap.austin.ibm.com>
+References: <20071027190216.GB10397@us.ibm.com>
+	<m1hck9ofcz.fsf@ebiederm.dsl.xmission.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1757577AbXKAQBN@vger.kernel.org>
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <4729F549.6090905@openvz.org>
-Sender: linux-kernel-owner@vger.kernel.org
-To: Pavel Emelyanov <xemul@openvz.org>
-Cc: "Eric W. Biederman" <ebiederm@xmission.com>, Andrew Morton <akpm@linux-foundation.org>, Linux Containers <containers@lists.osdl.org>, linux-kernel@vger.kernel.org
+In-Reply-To: <m1hck9ofcz.fsf-T1Yj925okcoyDheHMi7gv2pdwda3JcWeAL8bYrjMMd8@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+Cc: clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org, Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Oleg Nesterov <oleg-6lXkIZvqkOAvJsYlp49lxw@public.gmane.org>, Pavel Emelianov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Thu, Nov 01, 2007 at 06:48:25PM +0300, Pavel Emelyanov wrote:
-> Eric W. Biederman wrote:
-> > It appears we overlooked support for removing generic proc files
-> > when we added support for multiple proc super blocks.  Handle
-> > that now.
-> > 
-> > Signed-off-by: Eric W. Biederman <ebiederm@xmission.com>
+Quoting Eric W. Biederman (ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org):
+> sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org writes:
 > 
-> AFAIS this is just making the kill for all the super blocks
-> we have.
+> > From: Sukadev Bhattiprolu <sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+> > Subject: [PATCH] Masquerade sender information
+> >
+> > With multiple pid namespaces, sender of a signal could be in an ancestor
+> > namespace of the receiver and so the sender will not have a valid 'pid_t'
+> > in the receiver's namespace.
+> >
+> > In this case, masquerade the 'siginfo' for the signal to pretend that the
+> > signal originated from the kernel.
 > 
-> Acked-by: Pavel Emelyanov <xemul@openvz.org>
+> At first glance this looks ok.  I think the only case where we can
+> be sending a signal from inside a pid namespace to something not
+> in a child pid namespace is if we are the kernel.  In which case
 
-bzzrt, this function is executed only for directories and symlinks,
-obviously buggy (you can't flip ->f_op on live file) and is going away
-after readdir/rmmod races for directories will be dealt the same way as
-for regular file.
+Are we now blocking F_SETOWN|F_SETSIG signals to outside our pid
+namespace?  mq_notify?  (I didn't think we were)
 
-> > --- a/fs/proc/generic.c
-> > +++ b/fs/proc/generic.c
-> > @@ -561,28 +561,32 @@ static int proc_register(struct proc_dir_entry * dir, struct proc_dir_entry * dp
-> >  static void proc_kill_inodes(struct proc_dir_entry *de)
-> >  {
-> >  	struct list_head *p;
-> > -	struct super_block *sb = proc_mnt->mnt_sb;
-> > +	struct super_block *sb;
-> >  
-> >  	/*
-> >  	 * Actually it's a partial revoke().
-> >  	 */
-> > -	file_list_lock();
-> > -	list_for_each(p, &sb->s_files) {
-> > -		struct file * filp = list_entry(p, struct file, f_u.fu_list);
-> > -		struct dentry * dentry = filp->f_path.dentry;
-> > -		struct inode * inode;
-> > -		const struct file_operations *fops;
-> > -
-> > -		if (dentry->d_op != &proc_dentry_operations)
-> > -			continue;
-> > -		inode = dentry->d_inode;
-> > -		if (PDE(inode) != de)
-> > -			continue;
-> > -		fops = filp->f_op;
-> > -		filp->f_op = NULL;
-> > -		fops_put(fops);
-> > +	spin_lock(&sb_lock);
-> > +	list_for_each_entry(sb, &proc_fs_type.fs_supers, s_instances) {
-> > +		file_list_lock();
-> > +		list_for_each(p, &sb->s_files) {
-> > +			struct file * filp = list_entry(p, struct file, f_u.fu_list);
-> > +			struct dentry * dentry = filp->f_path.dentry;
-> > +			struct inode * inode;
-> > +			const struct file_operations *fops;
-> > +
-> > +			if (dentry->d_op != &proc_dentry_operations)
-> > +				continue;
-> > +			inode = dentry->d_inode;
-> > +			if (PDE(inode) != de)
-> > +				continue;
-> > +			fops = filp->f_op;
-> > +			filp->f_op = NULL;
-> > +			fops_put(fops);
-> > +		}
-> > +		file_list_unlock();
-> >  	}
-> > -	file_list_unlock();
-> > +	spin_unlock(&sb_lock);
-> >  }
-
-Yup, all this bogo-revoke is going away RSN. you just kicked my lazy ass.
+> we also want si_pid = 0.
+> 
+> If that holds this problem is easier then I was thinking it would
+> be.
+> 
+> Eric
+> 
