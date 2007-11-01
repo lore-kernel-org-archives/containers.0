@@ -1,13 +1,16 @@
-From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH] namespaces: introduce sys_hijack (v7)
-Date: Wed, 31 Oct 2007 18:13:59 -0500
-Message-ID: <20071031231359.GA5141@sergelap.austin.ibm.com>
-References: <20071024222125.GA8641@sergelap.austin.ibm.com>
+From: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+Subject: Re: [PATCH] memory cgroup enhancements take 4 [5/8] add status
+ accounting function for memory cgroup
+Date: Thu, 1 Nov 2007 09:29:56 +0900
+Message-ID: <20071101092956.489798fb.kamezawa.hiroyu@jp.fujitsu.com>
+References: <20071031192213.4f736fac.kamezawa.hiroyu@jp.fujitsu.com>
+	<20071031193046.a58f2ef0.kamezawa.hiroyu@jp.fujitsu.com>
+	<20071031151234.4fcb42b2.akpm@linux-foundation.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+Content-Type: text/plain; charset=US-ASCII
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <20071024222125.GA8641-6s5zFf/epYLPQpwDFJZrxKsjOiXwFzmk@public.gmane.org>
+In-Reply-To: <20071031151234.4fcb42b2.akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -17,37 +20,56 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+To: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
+Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, yamamoto-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Quoting Serge E. Hallyn (serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org):
-> This is just a first stab at doing hijack by cgroup files.  I force
-> using the 'tasks' file just so that I can (a) predict and check
-> the name of the file, (b) make sure it's a cgroup file, and then
-> (c) trust that taking __d_cont(dentry parent) gives me a legitimate
-> container.
+At first, thank you for review.
+
+On Wed, 31 Oct 2007 15:12:34 -0700
+Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org> wrote:
+> > +static inline void __mem_cgroup_stat_add(struct mem_cgroup_stat *stat,
+> > +                enum mem_cgroup_stat_index idx, int val)
+> > +{
+> > +	int cpu = smp_processor_id();
+> > +	preempt_disable();
+> > +	stat->cpustat[cpu].count[idx] += val;
+> > +	preempt_enable();
+> > +}
 > 
-> Seems to work at least.
+> This is clearly doing smp_processor_id() in preemptible code.  (or the
+> preempt_disable() just isn't needed).  I fixed it up.
 > 
-> Paul, does this look reasonable?  task_from_cgroup_fd() in particular.
-
-The patch I sent does 'hijack a cgroup' by taking a task in the cgroup
-and hijacking it.
-
-Paul would like to be able to 'enter a cgroup', even if it is empty.
-Hijack takes more than just the nsproxy from the hijacked task, so
-this would result in different behavior between hijacking a populated
-cgroup and an empty cgroup.  So we might want to introduce a third
-type of hijacking, so we have HIJACK_PID, HIJACK_CGROUP, and
-HIJACK_EMPTY_CGROUP.
-
-It also then acts like the nsproxy cgroup patchset I sent out months
-ago for simply entering namespaces.  In fact this would need to be
-restricted to ns cgroups, and ns cgroups would need to grab a reference
-to the nsproxy.
-
-So do we want to allow hijacking/entering an empty cgroup?
+Thanks,
+> Please ensure that you test with all runtime debugging options enabled -
+> you should have seen a warning here.
+> 
+Sorry, I'll take care.
 
 
--serge
+> > +/*
+> > + * For accounting under irq disable, no need for increment preempt count.
+> > + */
+> > +static inline void __mem_cgroup_stat_add_safe(struct mem_cgroup_stat *stat,
+> > +		enum mem_cgroup_stat_index idx, int val)
+> > +{
+> > +	int cpu = smp_processor_id();
+> > +	stat->cpustat[cpu].count[idx] += val;
+> > +}
+> 
+> There's a wild amount of inlining in that file.  Please, just don't do it -
+> inline is a highly specialised thing and is rarely needed.
+> 
+> When I removed the obviously-wrong inline statements, the size of
+> mm/memcontrol.o went from 3823 bytes down to 3495.
+> 
+> It also caused this:
+> 
+> mm/memcontrol.c:65: warning: '__mem_cgroup_stat_add' defined but not used
+> 
+> so I guess I'll just remove that.
+> 
+ok. I'll add again if it is needed again.
+
+Thanks,
+-Kame
