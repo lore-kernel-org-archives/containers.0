@@ -1,17 +1,13 @@
-From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
-Subject: Re: [RFC][PATCH] fork: Don't special case CLONE_NEWPID for process
-	or sessions
-Date: Thu, 01 Nov 2007 11:03:42 -0600
-Message-ID: <m1lk9hew41.fsf@ebiederm.dsl.xmission.com>
-References: <m11wbhuy0z.fsf@ebiederm.dsl.xmission.com>
-	<4729AA30.6080301@openvz.org>
-	<m1mytyf16m.fsf@ebiederm.dsl.xmission.com>
-	<4729F2CF.2080101@openvz.org>
+From: Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+Subject: Re: [PATCH] Masquerade sender information
+Date: Thu, 01 Nov 2007 20:03:27 +0300
+Message-ID: <472A06DF.5050100@openvz.org>
+References: <20071027190216.GB10397@us.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+Content-Type: text/plain; charset=ISO-8859-1
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <4729F2CF.2080101-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org> (Pavel Emelyanov's message of "Thu,
-	01 Nov 2007 18:37:51 +0300")
+In-Reply-To: <20071027190216.GB10397-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -21,63 +17,121 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
-Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Oleg Nesterov <oleg-6lXkIZvqkOAvJsYlp49lxw@public.gmane.org>
+To: sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org
+Cc: clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Oleg Nesterov <oleg-6lXkIZvqkOAvJsYlp49lxw@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org> writes:
+sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org wrote:
+> From: Sukadev Bhattiprolu <sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+> Subject: [PATCH] Masquerade sender information
+> 
+> With multiple pid namespaces, sender of a signal could be in an ancestor
+> namespace of the receiver and so the sender will not have a valid 'pid_t'
+> in the receiver's namespace.
+> 
+> In this case, masquerade the 'siginfo' for the signal to pretend that the
+> signal originated from the kernel.
+> 
+> Signed-off-by: Sukadev Bhattiprolu <sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 
->> As this is the main reason for this I don't see any reason to keep
->> the current clone behavior.
->
-> Are you talking about keeping the ability to kill the outer processes? 
+Hmm... Definitely looks good. I thought that the problem was that 
+the siginfo structure is not always allocated, but hey!, if we
+failed to allocate it, then it doesn't really matter whether we 
+masquerade something or not! Good point!
 
-I am talking about keeping the session and pgrp from the outer pid namespace.
-Signals going out is less important.
-
->> Sending signals to our process group and our parent is an ability that
->> we allow even the most untrusted processes normally, and it is an
->> ability we can easily remove simply by calling setsid.
->
-> You mix two things together - letting tasks send signals to their 
-> groups is good, but letting tasks send signals outside the namespace
-> is bad.
-
-If we have a case where we can send signals to the parent namespace
-that makes some setting si_pid more difficult.  So on those grounds
-it is technically worth avoiding if we can.
-
-I don't see any problem sharing a session and a process group 
-optionally with processes outside the pid namespace, and in fact
-I find that desirable.  So we don't always have to run pid
-namespace leaders as daemons.  To not be a daemon we need
-the session, pgrp, and tty  from the outside.
-
-As for sending signals outside since setsid nicely closes that hole
-in the cases we want to avoid, I am ambivalent about whether
-we should look for a more robust solution to handling si_pid in which
-case technical objections go away or if we should disallow the sending
-altogether.
-
-If the code can readily handle the full general case 
-
-Since si_pid is always task_pid(current) fixing the technical side may
-not be much of a problem.
-
-The way namespaces are defined sending signals outside the namespace
-is almost impossible (because the pid lookup fails).  If we get past
-that sending signals is well defined and I don't have a problem with
-it.
-
-To support migration and strong virtual servers it is necessary that
-we close all of the holes where we can get access to objects outside
-of our namespace.  In general that doesn't mean we should remove the
-possibility for other users.
-
-> Well, we allow a tiny possibility to have shared pids, but do we
-> really want to support this possibility in the rest of the code?
-
-There is essentially no cost if things are implemented properly.  Just
-use struct pid and it works.  So I don't see a reason to avoid it.
-
-Eric
+> ---
+>  include/linux/pid.h           |    8 ++++++++
+>  include/linux/pid_namespace.h |    1 +
+>  kernel/pid.c                  |   13 +++++++++++++
+>  kernel/signal.c               |   15 +++++++++++++++
+>  4 files changed, 37 insertions(+)
+> 
+> Index: 2.6.23-mm1/include/linux/pid.h
+> ===================================================================
+> --- 2.6.23-mm1.orig/include/linux/pid.h	2007-10-27 08:48:56.000000000 -0700
+> +++ 2.6.23-mm1/include/linux/pid.h	2007-10-27 09:56:53.000000000 -0700
+> @@ -123,6 +123,14 @@ extern struct pid *alloc_pid(struct pid_
+>  extern void FASTCALL(free_pid(struct pid *pid));
+>  extern void zap_pid_ns_processes(struct pid_namespace *pid_ns);
+>  
+> +static inline struct pid_namespace *pid_active_ns(struct pid *pid)
+> +{
+> +       if (!pid)
+> +               return NULL;
+> +
+> +       return pid->numbers[pid->level].ns;
+> +}
+> +
+>  /*
+>   * the helpers to get the pid's id seen from different namespaces
+>   *
+> Index: 2.6.23-mm1/kernel/pid.c
+> ===================================================================
+> --- 2.6.23-mm1.orig/kernel/pid.c	2007-10-27 08:50:51.000000000 -0700
+> +++ 2.6.23-mm1/kernel/pid.c	2007-10-27 10:03:28.000000000 -0700
+> @@ -430,6 +430,19 @@ struct pid *find_get_pid(pid_t nr)
+>  	return pid;
+>  }
+>  
+> +/*
+> + * Return TRUE if the active pid namespace of @tsk is same as active
+> + * pid namespace of 'current'.
+> + *
+> + * Note the difference between this and the task_in_pid_ns() below.
+> + * task_in_pid_ns() includes processes in descendant pid name spaces
+> + * but pid_ns_equal() only matches _active_ pid namespaces.
+> + */
+> +int pid_ns_equal(struct task_struct *tsk)
+> +{
+> +	return pid_active_ns(task_pid(current)) == pid_active_ns(task_pid(tsk));
+> +}
+> +
+>  static int pid_in_pid_ns(struct pid *pid, struct pid_namespace *ns)
+>  {
+>  	return pid && (ns->level <= pid->level) &&
+> Index: 2.6.23-mm1/kernel/signal.c
+> ===================================================================
+> --- 2.6.23-mm1.orig/kernel/signal.c	2007-10-27 08:50:51.000000000 -0700
+> +++ 2.6.23-mm1/kernel/signal.c	2007-10-27 10:02:04.000000000 -0700
+> @@ -679,6 +679,20 @@ static void handle_stop_signal(int sig, 
+>  	}
+>  }
+>  
+> +static void masquerade_sender(struct task_struct *t, struct sigqueue *q)
+> +{
+> +       /*
+> +        * If the sender does not have a pid_t in the receiver's active
+> +        * pid namespace, set si_pid to 0 and pretend signal originated
+> +        * from the kernel.
+> +        */
+> +       if (!pid_ns_equal(t)) {
+> +               q->info.si_pid = 0;
+> +               q->info.si_uid = 0;
+> +               q->info.si_code = SI_KERNEL;
+> +       }
+> +}
+> +
+>  static int send_signal(int sig, struct siginfo *info, struct task_struct *t,
+>  			struct sigpending *signals)
+>  {
+> @@ -730,6 +744,7 @@ static int send_signal(int sig, struct s
+>  			copy_siginfo(&q->info, info);
+>  			break;
+>  		}
+> +		masquerade_sender(t, q);
+>  	} else if (!is_si_special(info)) {
+>  		if (sig >= SIGRTMIN && info->si_code != SI_USER)
+>  		/*
+> Index: 2.6.23-mm1/include/linux/pid_namespace.h
+> ===================================================================
+> --- 2.6.23-mm1.orig/include/linux/pid_namespace.h	2007-10-27 09:44:25.000000000 -0700
+> +++ 2.6.23-mm1/include/linux/pid_namespace.h	2007-10-27 10:04:20.000000000 -0700
+> @@ -56,6 +56,7 @@ static inline struct task_struct *task_c
+>  	return tsk->nsproxy->pid_ns->child_reaper;
+>  }
+>  
+> +extern int pid_ns_equal(struct task_struct *tsk);
+>  extern int task_in_pid_ns(struct task_struct *tsk, struct pid_namespace *ns);
+>  
+>  #endif /* _LINUX_PID_NS_H */
+> 
