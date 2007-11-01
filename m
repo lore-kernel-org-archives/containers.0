@@ -1,13 +1,17 @@
 From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
-Subject: Re: [PATCH] Masquerade sender information
-Date: Thu, 01 Nov 2007 10:59:31 -0600
-Message-ID: <m1mytxewb0.fsf@ebiederm.dsl.xmission.com>
-References: <20071027190216.GB10397@us.ibm.com>
+Subject: Re: [RFC][PATCH] fork: Don't special case CLONE_NEWPID for process
+	or sessions
+Date: Thu, 01 Nov 2007 11:03:42 -0600
+Message-ID: <m1lk9hew41.fsf@ebiederm.dsl.xmission.com>
+References: <m11wbhuy0z.fsf@ebiederm.dsl.xmission.com>
+	<4729AA30.6080301@openvz.org>
+	<m1mytyf16m.fsf@ebiederm.dsl.xmission.com>
+	<4729F2CF.2080101@openvz.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20071027190216.GB10397-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org> (sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org's message
-	of "Sat, 27 Oct 2007 12:02:16 -0700")
+In-Reply-To: <4729F2CF.2080101-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org> (Pavel Emelyanov's message of "Thu,
+	01 Nov 2007 18:37:51 +0300")
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -17,43 +21,63 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org
-Cc: clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Oleg Nesterov <oleg-6lXkIZvqkOAvJsYlp49lxw@public.gmane.org>, Pavel Emelianov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+To: Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Oleg Nesterov <oleg-6lXkIZvqkOAvJsYlp49lxw@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org writes:
+Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org> writes:
 
-> +static void masquerade_sender(struct task_struct *t, struct sigqueue *q)
-> +{
-> +       /*
-> +        * If the sender does not have a pid_t in the receiver's active
-> +        * pid namespace, set si_pid to 0 and pretend signal originated
-> +        * from the kernel.
-> +        */
-> +       if (!pid_ns_equal(t)) {
-> +               q->info.si_pid = 0;
-> +               q->info.si_uid = 0;
-> +               q->info.si_code = SI_KERNEL;
-> +       }
-> +}
+>> As this is the main reason for this I don't see any reason to keep
+>> the current clone behavior.
+>
+> Are you talking about keeping the ability to kill the outer processes? 
 
-It looks like we are hooked in the right place.  However the way we
-are handling this appears wrong.
+I am talking about keeping the session and pgrp from the outer pid namespace.
+Signals going out is less important.
 
-First.  If we have an si_code that does not use si_pid then we should
-not be changing si_pid, because the structure is a union and that field
-is not always a pid value.
+>> Sending signals to our process group and our parent is an ability that
+>> we allow even the most untrusted processes normally, and it is an
+>> ability we can easily remove simply by calling setsid.
+>
+> You mix two things together - letting tasks send signals to their 
+> groups is good, but letting tasks send signals outside the namespace
+> is bad.
 
+If we have a case where we can send signals to the parent namespace
+that makes some setting si_pid more difficult.  So on those grounds
+it is technically worth avoiding if we can.
 
-My gut feel says the code should be something like:
+I don't see any problem sharing a session and a process group 
+optionally with processes outside the pid namespace, and in fact
+I find that desirable.  So we don't always have to run pid
+namespace leaders as daemons.  To not be a daemon we need
+the session, pgrp, and tty  from the outside.
 
-switch (q->info->si_code & __SI_MASK) {
-case __SI_KILL:
-case __SI_CHILD:
-case __SI_RT:
-case __MESQ:
-       q->info->si_pid = task_pid_nr_ns(current, t->nsproxy->pid_ns);
-       break;
-}
+As for sending signals outside since setsid nicely closes that hole
+in the cases we want to avoid, I am ambivalent about whether
+we should look for a more robust solution to handling si_pid in which
+case technical objections go away or if we should disallow the sending
+altogether.
+
+If the code can readily handle the full general case 
+
+Since si_pid is always task_pid(current) fixing the technical side may
+not be much of a problem.
+
+The way namespaces are defined sending signals outside the namespace
+is almost impossible (because the pid lookup fails).  If we get past
+that sending signals is well defined and I don't have a problem with
+it.
+
+To support migration and strong virtual servers it is necessary that
+we close all of the holes where we can get access to objects outside
+of our namespace.  In general that doesn't mean we should remove the
+possibility for other users.
+
+> Well, we allow a tiny possibility to have shared pids, but do we
+> really want to support this possibility in the rest of the code?
+
+There is essentially no cost if things are implemented properly.  Just
+use struct pid and it works.  So I don't see a reason to avoid it.
 
 Eric
