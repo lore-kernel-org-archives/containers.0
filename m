@@ -1,15 +1,15 @@
-From: Cedric Le Goater <clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH] Masquerade sender information
-Date: Fri, 02 Nov 2007 14:40:24 +0100
-Message-ID: <472B28C8.8020302@fr.ibm.com>
-References: <20071027190216.GB10397@us.ibm.com>
-	<m1hck9ofcz.fsf@ebiederm.dsl.xmission.com>
-	<20071101165026.GA25234@sergelap.austin.ibm.com>
+From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH] namespaces: introduce sys_hijack (v7)
+Date: Fri, 2 Nov 2007 08:43:50 -0500
+Message-ID: <20071102134350.GA947@sergelap.austin.ibm.com>
+References: <20071024222125.GA8641@sergelap.austin.ibm.com>
+	<20071031231359.GA5141@sergelap.austin.ibm.com>
+	<6599ad830711012252w5c8c29bbhd025e273ad5b5361@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset=us-ascii
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20071101165026.GA25234-6s5zFf/epYLPQpwDFJZrxKsjOiXwFzmk@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <6599ad830711012252w5c8c29bbhd025e273ad5b5361-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,40 +19,61 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Cc: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Oleg Nesterov <oleg-6lXkIZvqkOAvJsYlp49lxw@public.gmane.org>, Pavel Emelianov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+To: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Serge E. Hallyn wrote:
-> Quoting Eric W. Biederman (ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org):
->> sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org writes:
->>
->>> From: Sukadev Bhattiprolu <sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
->>> Subject: [PATCH] Masquerade sender information
->>>
->>> With multiple pid namespaces, sender of a signal could be in an ancestor
->>> namespace of the receiver and so the sender will not have a valid 'pid_t'
->>> in the receiver's namespace.
->>>
->>> In this case, masquerade the 'siginfo' for the signal to pretend that the
->>> signal originated from the kernel.
->> At first glance this looks ok.  I think the only case where we can
->> be sending a signal from inside a pid namespace to something not
->> in a child pid namespace is if we are the kernel.  In which case
+Quoting Paul Menage (menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org):
+> On Oct 31, 2007 4:13 PM, Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org> wrote:
+> >
+> > Paul would like to be able to 'enter a cgroup', even if it is empty.
+> > Hijack takes more than just the nsproxy from the hijacked task, so
+> > this would result in different behavior between hijacking a populated
+> > cgroup and an empty cgroup.  So we might want to introduce a third
+> > type of hijacking, so we have HIJACK_PID, HIJACK_CGROUP, and
+> > HIJACK_EMPTY_CGROUP.
 > 
-> Are we now blocking F_SETOWN|F_SETSIG signals to outside our pid
-> namespace?  mq_notify?  (I didn't think we were)
+> Do we need all three distinctions? If there was a process in the
+> cgroup, you could just use HIJACK_PID to hijack it. So HIJACK_CGROUP
 
-My understanding is that we're not blokcing and that a process killing 
-another process in a sibling pid namespace will have a si_pid = 0.
+No, then you might worry about pid wraparound.  Sure it may seem silly
+in most use cases, but if you're requesting the attach through some web
+interface, it could happen.
 
-C. 
-
+> could just do what you're currently calling HIJACK_EMPTY_CGROUP.
 > 
->> we also want si_pid = 0.
->>
->> If that holds this problem is easier then I was thinking it would
->> be.
->>
->> Eric
->>
+> >
+> > It also then acts like the nsproxy cgroup patchset I sent out months
+> > ago for simply entering namespaces.  In fact this would need to be
+> > restricted to ns cgroups, and ns cgroups would need to grab a reference
+> > to the nsproxy.
+> 
+> Doesn't the nsproxy cgroup already grab an nsproxy reference?
+
+No.  That was done in my patches implementing namespace enter.
+But that can easily be added.
+
+> > So do we want to allow hijacking/entering an empty cgroup?
+> 
+> In general, entering an emtpy cgroup is a perfectly fine thing to do -
+> it's only the ns_proxy case where this is complicated, since some
+> namespaces aren't safe against third-party changes to the task's
+> ns_proxy.
+> 
+> There really should be some way to enter such a set of namespaces, and
+> doing it at fork time pretty much has to be safe since that's when
+> nsproxy changes normally occur.
+
+Well the main difference is that on fork, most namespaces give you a
+copy of the original namespace, so open resources remain valid.  Whereas
+with hijack/enter, you get a "random" populated namespace.
+
+Still I don't think it should be a problem since the resources generally
+retain references to the namespaces in which they are valid.
+
+> Being able to do it at other times
+> (maybe only operating on current?) would be nice too.
+> 
+> Paul
+
+-serge
