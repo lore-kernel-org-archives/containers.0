@@ -1,7 +1,7 @@
-From: "Horst Young" <epithalamic-RcgCaqYq5UmD2xfEYUDpZg@public.gmane.org>
+From: "Justin Morris" <incorirgibility-J6JC6+xKI/S3O2zq0BpkLAC/G2K4zDHf@public.gmane.org>
 Subject: <heap M!crosoft+Ad06e Sof+ware
-Date: Fri, 02 Nov 2007 18:17:02 +0100
-Message-ID: <000001c81d73$9cd97280$0100007f@localhost>
+Date: Fri, 02 Nov 2007 20:10:44 +0100
+Message-ID: <000001c81d83$4ecc6b00$0100007f@localhost>
 Content-Type: text/plain;
     charset="us-ascii"
 Content-Transfer-Encoding: 7bit
