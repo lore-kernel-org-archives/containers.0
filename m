@@ -1,13 +1,15 @@
 From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
-Subject: Re: Pid namespaces problems
-Date: Sat, 03 Nov 2007 22:06:48 -0600
-Message-ID: <m1640id57r.fsf@ebiederm.dsl.xmission.com>
-References: <472AE42F.5000602@openvz.org>
+Subject: Re: [PATCH] Masquerade sender information
+Date: Sat, 03 Nov 2007 22:12:53 -0600
+Message-ID: <m11wb6d4xm.fsf@ebiederm.dsl.xmission.com>
+References: <20071027190216.GB10397@us.ibm.com>
+	<m1mytxewb0.fsf@ebiederm.dsl.xmission.com>
+	<472B2EBC.3010504@fr.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <472AE42F.5000602-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org> (Pavel Emelyanov's message of "Fri,
-	02 Nov 2007 11:47:43 +0300")
+In-Reply-To: <472B2EBC.3010504-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org> (Cedric Le Goater's message of
+	"Fri, 02 Nov 2007 15:05:48 +0100")
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -17,78 +19,63 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
-Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
+To: Cedric Le Goater <clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
+Cc: Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Oleg Nesterov <oleg-6lXkIZvqkOAvJsYlp49lxw@public.gmane.org>, Pavel Emelianov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org> writes:
+Cedric Le Goater <clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org> writes:
 
-> Hi, Eric, Suka.
+> Eric W. Biederman wrote:
+>> sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org writes:
+>> 
+>>> +static void masquerade_sender(struct task_struct *t, struct sigqueue *q)
+>>> +{
+>>> +       /*
+>>> +        * If the sender does not have a pid_t in the receiver's active
+>>> +        * pid namespace, set si_pid to 0 and pretend signal originated
+>>> +        * from the kernel.
+>>> +        */
+>>> +       if (!pid_ns_equal(t)) {
+>>> +               q->info.si_pid = 0;
+>>> +               q->info.si_uid = 0;
+>>> +               q->info.si_code = SI_KERNEL;
+>>> +       }
+>>> +}
+>> 
+>> It looks like we are hooked in the right place.  However the way we
+>> are handling this appears wrong.
+>> 
+>> First.  If we have an si_code that does not use si_pid then we should
+>> not be changing si_pid, because the structure is a union and that field
+>> is not always a pid value.
+>> 
+>> 
+>> My gut feel says the code should be something like:
+>> 
+>> switch (q->info->si_code & __SI_MASK) {
+>> case __SI_KILL:
+>> case __SI_CHILD:
+>> case __SI_RT:
+>> case __MESQ:
+>>        q->info->si_pid = task_pid_nr_ns(current, t->nsproxy->pid_ns);
+>>        break;
+>> }
 >
-> Eric, you and Ulrich claim that pid namespaces are full of BUGs.
-> Can you please share you BUG list with me, so I could correct
-> mine.
+> IMHO, it should be 
+>
+> 	q->info->si_pid = 0.
+>
+> we're trying to cover the case where the sender does not have a pid_t in 
+> the receiver's active pid namespace.
 
-To be clear.  I think the current pid namespace work is incomplete.
-I do not think the pid namespaces is fundamentally buggy the way
-Ingo and Ulrich were suggesting (my apologies for the delayed
-reply I have been away from my computer).
+Yes.  However you are currently missing the case where the target pid
+namespace is a parent pid namespace.  So besides applying the change
+to liberally we also missed the case when sending to a parent pid
+namespace.  task_tgid_nr_ns(current, t->nsporxy->pid_ns) handles that.
 
-I think I shared just about everything I know of off the top
-of my head in earlier threads.  But I haven't tried to
-find an exhaustive list of uncorrected code as they pop
-up fairly easily when I audit various pid users.  Which
-lead me to conclude that the pid namespace is not complete.
-
-> Things as I see them now are the following:
-> 1. signals delivery is not perfect in the namespace
-> 2. fs/lock.c will report wrong ids in the namespace
-> 3. some kernel threads (nfs) still use old api (relevant
->    for a namespace only)
-> 4. tsk->pid and tsk->tgid should not be explicitly used
-     A wrapper that gets those values for use in printk.
-
-As a general principle I am opposed to using global pid values
-(except in kernel print statements).  Using them we continue
-to have pid wrap around issues if we store them, and mixing
-global pid_t values and non-global pid_t values is all too possible.
-
-For example:
-  fs/autofs/inode.c: line 83 *pgrp = task_pgrp_nr(current);
-  fs/autofs/inode.c: line 117: *pgrp = option;
-
-We are simultaneously assigning a global pid and a pid from
-the current pid namespace to the same variable.  Ouch!
-
-Used in anything but the init_pid namespace that code is wrong.
-
-So with stupid things like that I would very much like to 
-convert everything to storing and comparing struct pid pointers
-which have essentially the same cost as pid_t values, can
-be used the same way, but cannot be accidentally mixed with
-with pid_t operations.  So they are just less error prone.
-
-> I'd appreciate some specific information, like "the ttys
-> in drivers/char/tty_io.c may break the pid refcounting"
-> rather than abstract "this is not clear whether the
-> refcounting is good in fs/locks.c"
-
-You are picking on the one instance that I figured I would need
-further review to see if there was work that needed to be done.  That
-is what I meant by unclear.  I didn't know if the code was safe and
-the code wasn't using one of the idioms that would have made me
-certain that the code was safe.
-
-- We need to store a struct pid reference on the sysvipc semaphores (and
-  probably the other sysvipc objects) so that if they are used across
-  namespace boundaries we can convert and give processes the pid for
-  their local namespace.
-
-- There are several architectures with their own signal functions for
-  other OS compatibility that have are using _pid and not _vpid
-  variants of functions. (irix and solaris)
-  arch/mips/kernel/irixsig.c:irix_waitsys
-  arch/mips/kernel/sysirix.c:irix_setpgrp
-  arch/sparc64/solaris/misc.c:solaris_procids
+Technically I think that is safe right now, but I think I would like
+to pass in the task_struct of the sender because we have a few odd
+instances where current is not the sender although every case I have
+traced we do continue to be in the same process group.
 
 Eric
