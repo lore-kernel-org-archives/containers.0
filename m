@@ -1,11 +1,13 @@
-From: "Cary Rasmussen" <eygmp-j+H8kcVc5DmjfpyLsbbDOw@public.gmane.org>
-Subject: Purchase popular impotency treatment drugs in Canada for the best
-	Net prices.
-Date: Mon, 5 Nov 2007 12:38:37 +0800
-Message-ID: <01c81fa8$c9513b90$b7be56da@eygmp>
+From: Mark Nelson <markn-8fk3Idey6ehBDgjK7y7TUQ@public.gmane.org>
+Subject: Re: [PATCH] namespaces: introduce sys_hijack (v8)
+Date: Mon, 05 Nov 2007 16:18:50 +1100
+Message-ID: <472EA7BA.3030401@au1.ibm.com>
+References: <20071102203226.GA10475@sergelap.austin.ibm.com>
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary="===============7286063947133073369=="
+Content-Type: text/plain; charset=ISO-8859-1
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <20071102203226.GA10475-6s5zFf/epYLPQpwDFJZrxKsjOiXwFzmk@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -13,81 +15,48 @@ List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
 List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Mime-version: 1.0
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-This is a multi-part message in MIME format.
+Hi Serge,
 
---===============7286063947133073369==
-Content-Type: multipart/alternative;
-	boundary="----=_NextPart_000_0006_01C81FA8.C9513B90"
+Quick fix (feel free to just fold it into your patch). There may be
+a smarter way of fixing this, but this worked for -lxc...
 
-This is a multi-part message in MIME format.
+Thanks!
 
-------=_NextPart_000_0006_01C81FA8.C9513B90
-Content-Type: text/plain;
-	charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-
-  Nowadays many health organizations warn people that order medications to be careful while choosing online drugstores.   Please read this information carefully as it concerns your health. >Go to "Canadian Phamacy" siteNumber #1 drugstore on the Web.Gregory Bonavia
+Mark.
 
 
-------=_NextPart_000_0006_01C81FA8.C9513B90
-Content-Type: text/html;
-	charset="us-ascii"
-Content-Transfer-Encoding: quoted-printable
+ERR_PTR is now used in cgroup code so we need to include err.h
 
-<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w=3D"urn:schemas-microsoft-com:office:word" xmlns=3D=
-"http://www.w3.org/TR/REC-html40">
+This fixes the build error with CGROUPS disabled:
 
-<head>
-<META HTTP-EQUIV=3D"Content-Type" CONTENT=3D"text/html; charset=3Dus-asci=
-i">
-<meta name=3DGenerator content=3D"Microsoft Word 11 (filtered medium)">
-</head>
-<body>
-<html><body>
+In file included from include/linux/cpuset.h:14,
+                 from mm/slub.c:19:
+include/linux/cgroup.h: In function 'task_from_cgroup_fd':
+include/linux/cgroup.h:329: error: implicit declaration of function 'ERR_PTR'
+include/linux/cgroup.h:329: warning: return makes pointer from integer without a cast
+make[2]: *** [mm/slub.o] Error 1
+make[1]: *** [mm] Error 2
+make: *** [sub-make] Error 2
 
-<p>
-&nbsp; Nowadays many health organizations warn people that order medicati=
-ons to be careful while choosing online drugstores.
-</p>
-<p>
-   Please read this information carefully as it concerns your health.
-</p>
+Signed-off-by: Mark Nelson <markn-8fk3Idey6ehBDgjK7y7TUQ@public.gmane.org>
+---
+ include/linux/cgroup.h |    1 +
+ 1 file changed, 1 insertion(+)
 
-
-
- <a href=3D<!--  content  -->><font size=3D+1 color=3Dblack><b>Go to "Can=
-adian Phamacy" site</b></font></a>
-
-<p>
-<b>Number #1 drugstore on the Web.</b>
-</p>
-
-
-<p>
-Gregory Bonavia
-</p>
-
-</body></html>
-</body>
-</html>
-
-------=_NextPart_000_0006_01C81FA8.C9513B90--
-
-
---===============7286063947133073369==
-Content-Type: text/plain; charset="us-ascii"
-MIME-Version: 1.0
-Content-Transfer-Encoding: 7bit
-Content-Disposition: inline
-
-_______________________________________________
-Containers mailing list
-Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-https://lists.linux-foundation.org/mailman/listinfo/containers
---===============7286063947133073369==--
+Index: linux/include/linux/cgroup.h
+===================================================================
+--- linux.orig/include/linux/cgroup.h
++++ linux/include/linux/cgroup.h
+@@ -14,6 +14,7 @@
+ #include <linux/nodemask.h>
+ #include <linux/rcupdate.h>
+ #include <linux/cgroupstats.h>
++#include <linux/err.h>
+ 
+ #ifdef CONFIG_CGROUPS
