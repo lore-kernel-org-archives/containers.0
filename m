@@ -1,14 +1,15 @@
-From: Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
-Subject: Re: namespaces compatibility list
-Date: Tue, 06 Nov 2007 19:10:33 +0300
-Message-ID: <473091F9.10406@openvz.org>
-References: <47304729.8000309@openvz.org> <4730640D.9030407@fr.ibm.com>
-	<4730655C.8000306@openvz.org> <47308FDB.4010302@fr.ibm.com>
+From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
+Subject: Re: Pid namespaces problems
+Date: Tue, 06 Nov 2007 09:28:19 -0700
+Message-ID: <m14pfz8hjw.fsf@ebiederm.dsl.xmission.com>
+References: <472AE42F.5000602@openvz.org>
+	<m1640id57r.fsf@ebiederm.dsl.xmission.com>
+	<47301A14.9040304@openvz.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset=us-ascii
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <47308FDB.4010302-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <47301A14.9040304-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org> (Pavel Emelyanov's message of "Tue,
+	06 Nov 2007 10:39:00 +0300")
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,46 +19,79 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Cedric Le Goater <clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
-Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+To: Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Cedric Le Goater wrote:
-> Pavel Emelyanov wrote:
->> Cedric Le Goater wrote:
->>> Pavel Emelyanov wrote:
->>>> Hi guys!
->>>>
->>>> As you might have seen, recently there was some spontaneous 
->>>> discussion about the namespaces-working-together problems.
->>>>
->>>> Ted T'so proposed to create some document that describes what
->>>> problems user may have when he/she creates some new namespace,
->>>> but keeps others shared. I like this idea, so here's the draft
->>>> with the problems I currently have in mind and can describe 
->>>> somewhat audibly - the "namespaces compatibility list".
->>> that compatibility list could be encoded in the way we check
->>> the clone flags in copy_process() and unshare(). It would 
->>> also be good to have it as a comment somewhere in kernel/fork.c
->> How can we insure, that a new task will not share the files
->> with its parent to address the PID namespaces vs VFS namespaces
->> interaction? There's no way to do it. We can only keep them in
->> one IPC namespace...
-> 
-> ? I'm not sure I understand you.
+Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org> writes:
 
-As far as I understand, you propose the check for the clone flags
-in the copy_process()/sys_unshare() and return -EINVAL for the cases
-we consider to be unsafe. E.g. when a user wants to clone new pid
-namespace, he must clone the ipc namespace as well.
+> Yup. I agree with this too. I'm about to deprecate the pid and tgid
+> fields in the task_struct (but not remove to make printk-s faster
+> and smaller).
+>
+> The work is in progress here.
 
-But my point is that this check is not enough - user may kill himself
-by cloning a pid namespace and sharing the pids via the filesystem 
-(like with the example with futexes) and there's no way to check for 
-this situation in the copy_process()/sys_unchare.
+Last time I looked at the printks, it looked to me like we wanted
+to print both the global pid and tsk->comm.  When we printed which
+process did what, and helpers to do that would be nice.
 
-I mean that this list cannot be encoded. But we can warn user, that
-some stuff will stop working if he violates some rules.
+printk of any of this information is rare enough that size is
+the important thing not speed.
 
-> C.
-> 
+I'm hoping we can come up with a nice wrapper to  use with
+printk that we can bury all of the logic in.  Possibly something
+like NIP_QUAD.
+
+>> 
+>> - We need to store a struct pid reference on the sysvipc semaphores (and
+>>   probably the other sysvipc objects) so that if they are used across
+>>   namespace boundaries we can convert and give processes the pid for
+>>   their local namespace.
+>
+> Hm.. What if they are used across two not-connected namespaces? E.g.
+> two different children of init namespace?
+
+Well we get a 0 pid value.  But at least we get a correct pid value when
+they are mixed in a way that it possible to have one.
+
+There are also the credentials for AF_UNIX sockets that need this same
+treatment.
+
+>> - There are several architectures with their own signal functions for
+>>   other OS compatibility that have are using _pid and not _vpid
+>>   variants of functions. (irix and solaris)
+>>   arch/mips/kernel/irixsig.c:irix_waitsys
+>>   arch/mips/kernel/sysirix.c:irix_setpgrp
+>>   arch/sparc64/solaris/misc.c:solaris_procids
+>
+> Ok. Looks like your list is the same as mine. That's good to hear
+> that I haven't missed anything important.
+
+I guess there are also all of the things we have been discussing
+with respect to signals, and clone semantics.
+
+In particular after having looked at the issue it looks like
+we can send signals between namespaces, and it doesn't look
+like it is going to hard to support setting si_pid properly.
+
+So because we can do that I don't see any reason for the
+extra special case in clone for a new pid namespace.
+
+I expect the only places we really differ is how to handle
+pids in the cross namespace cases.
+
+> So, I see that you're about to take a closer look at the pid
+> namespaces. If so, then what time can we expect the net namespace
+> activity to go on? Or (if you don't mind) can we start merging
+> the patches to David as soon as he opens his 2.6.25 merge window?
+
+My current plan is roughly:
+- Take a trip and be offline for about a week (sorry folks my timing sucks)
+- Poke on pid namespaces until I have a good feeling about where
+  things are going (especially the cross namespace work).
+- Get back to merging the network namespaces.
+  sysctl, sysfs, af_packet, af_unix, and eventually ipv4.
+
+I try and work where I can do the most good.
+
+Eric
