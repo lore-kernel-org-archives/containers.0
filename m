@@ -1,55 +1,36 @@
-From: Sukadev Bhattiprolu <sukadev@us.ibm.com>
-Subject: Re: PID namespaces break initrd+hibernate combination?
-Date: Mon, 05 Nov 2007 19:25:07 -0800
-Message-ID: <472FDE93.4020900@us.ibm.com>
-References: <200711050936.36615.nigel@nigel.suspend2.net>
+From: "Daniel Bryan" <dwsakubm-MiIjCJ2Ym7UAvxtiuMwx3w@public.gmane.org>
+Subject: Buy medications in Canada and lower your medication expenses.
+Date: Tue, 6 Nov 2007 11:35:20 +0800
+Message-ID: <01c82069$1c8ac310$15a0c27a@dwsakubm>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8; format=flowed
-Content-Transfer-Encoding: 7bit
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1757214AbXKFD1j@vger.kernel.org>
-In-Reply-To: <200711050936.36615.nigel@nigel.suspend2.net>
-Sender: linux-kernel-owner@vger.kernel.org
-To: nigel@suspend2.net
-Cc: LKML <linux-kernel@vger.kernel.org>, suspend2-devel <suspend2-devel@lists.suspend2.net>, Rafael Wysocki <rjw@sisk.pl>, Containers@lists.osdl.org
+Content-Type: text/plain;
+	charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Nigel Cunningham wrote:
-> Hi all.
->
-> Please excuse me if this has already been answered. I'm not currently subscribed to LKML.
->
-> I've just been preparing a new tux-on-ice release against Linus' current tree, and encountered a failure to freeze pid 1 when seeking to resume, using an initrd:
->
-> [   74.192734] Freezing of tasks failed after 19.99 seconds (1 tasks refusing to freeze):
-> [   74.193502]   task                        PC stack   pid father
-> [   74.193504] swapper       S ffff810002023030  4968     1      0
-> [   74.193512]  ffff81000203fdb0 0000000000000046 ffff810002023040 ffff810003249140
-> [   74.194296]  ffff81000203fd80 ffffffff803150a1 ffff81000203fdb0 ffff810002023180
-> [   74.195087]  ffff810002023030 0000000000000004 0000000000000001 0000000000000001
-> [   74.195860] Call Trace:
-> [   74.196123]  [<ffffffff803150a1>] security_task_wait+0x11/0x20
-> [   74.196692]  [<ffffffff802320cd>] do_wait+0x51d/0xda0
-> [   74.197187]  [<ffffffff802292f0>] default_wake_function+0x0/0x10
-> [   74.197772]  [<ffffffff8023297c>] sys_wait4+0x2c/0x30
-> [   74.198264]  [<ffffffff805f4bb5>] initrd_load+0x175/0x370
-> [   74.198794]  [<ffffffff805f211f>] prepare_namespace+0x8f/0x1d0
-> [   74.199362]  [<ffffffff805f174d>] kernel_init+0x1ad/0x2b0
-> [   74.199889]  [<ffffffff8047e526>] _spin_unlock_irq+0x26/0x60
-> [   74.200439]  [<ffffffff8022afc7>] finish_task_switch+0x67/0xc0
-> [   74.201008]  [<ffffffff8020c548>] child_rip+0xa/0x12
-> [   74.201494]  [<ffffffff80364770>] acpi_os_acquire_lock+0x9/0xb
-> [   74.202063]  [<ffffffff805f15a0>] kernel_init+0x0/0x2b0
-> [   74.202570]  [<ffffffff8020c53e>] child_rip+0x0/0x12
->
-> I believe it might be related to pid namespaces, but am not completely sure yet (will do a git bisect if needs be).
->   
-Hmm. prepare_namespace() seems more about mounting root filesystem and 
-less about pid namespace.
-but I could be wrong. Do you have any more console messages ? CCing the 
-containers list
-> So, then, I'm writing to ask: Is this a known issue? Is there any fix already available that I've not found in my googling?
->
-> Regards,
->
-> Nigel
->   
+ The best way to save on your medications is to order them in Canada, as =
+they are cheaper there. You don't have to worry about the quality, purcha=
+se with =ABCanadianPharmacy=BB online drugstore and you'll receive world =
+class quality meds!
+
+ =ABCanadianPharmacy=BB offers 100% safe, effective and pure generic medi=
+cations. Only high quality pharmaceutical products at the cheapest prices=
+ in Canada! All the popular medications are available online. Great servi=
+ce, quick shipping and complete security!
+
+http://middlefeel.cn
+
+ =ABCanadianPharmacy=BB is the drugstore you get used to trust!
+
+Daniel Bryan
