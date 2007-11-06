@@ -1,14 +1,15 @@
-From: Cedric Le Goater <clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
+From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
 Subject: Re: namespaces compatibility list
-Date: Tue, 06 Nov 2007 17:48:32 +0100
-Message-ID: <47309AE0.5070602@fr.ibm.com>
-References: <47304729.8000309@openvz.org>
-	<m1ode772lx.fsf@ebiederm.dsl.xmission.com>
+Date: Tue, 06 Nov 2007 10:00:27 -0700
+Message-ID: <m1ejf371hw.fsf@ebiederm.dsl.xmission.com>
+References: <47304729.8000309@openvz.org> <4730640D.9030407@fr.ibm.com>
+	<4730655C.8000306@openvz.org> <47308FDB.4010302@fr.ibm.com>
+	<473091F9.10406@openvz.org> <47309A51.1050607@fr.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset=us-ascii
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <m1ode772lx.fsf-T1Yj925okcoyDheHMi7gv2pdwda3JcWeAL8bYrjMMd8@public.gmane.org>
+In-Reply-To: <47309A51.1050607-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org> (Cedric Le Goater's message of
+	"Tue, 06 Nov 2007 17:46:09 +0100")
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,29 +19,29 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+To: Cedric Le Goater <clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
 Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Eric W. Biederman wrote:
-> Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org> writes:
-> 
->> +2. Intentionnaly, two equal user ids in different user namespaces
->> +   should not be equal from the VFS point of view. In other
->> +   words, user 10 in one user namespace shouldn't have the same
->> +   access permissions to files, beloging to user 10 in another
->> +   namespace. But currently this is not so.
-> 
-> I don't know where this is going to land for a final call.
-> But if the pid namespace has a chance of landing under CONFIG_BROKEN
-> for the final stable release.
+Cedric Le Goater <clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org> writes:
+> right. I think we can address Ulrich concerns first because we have 
+> a solution for it (which looks like unsharing all namespaces at once,
+> here comes back the container object story :)
 
-I prefered immature but he, any config name would do, just to make sure it
-doesn't get shipped by default in distros
+It doesn't work because we can't create a fresh mount namespace.
 
-> We seriously want to consider the user namespace for the same treatment.
-> We all seem to agree that it is incomplete.
+We need to create all new mounts (and deny access to the old ones)
+if we want to prevent all possibility of user space goof ups.
 
-yes.
+While that is easy enough to build an application to do we can't
+easily enforce that in the kernel.  Currently this is all
+CAP_SYS_ADMIN so only root can do this anyway.  So we can easily
+say don't do that then.
 
-C.
+Clone flag consistency checking should only be used to enforce
+cases where the kernel side cannot support correctly.  Currently
+the kernel has no problems with the current mix and match possibilities
+short of implementation deficiencies.  So I do not see us
+addressing Ulrich's concerns with clone flags.
+
+Eric
