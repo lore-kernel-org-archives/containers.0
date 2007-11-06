@@ -1,10 +1,10 @@
-From: Kirill Korotaev <dev-3ImXcnM4P+0@public.gmane.org>
+From: Cedric Le Goater <clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
 Subject: Re: namespaces compatibility list
-Date: Tue, 06 Nov 2007 15:36:01 +0300
-Message-ID: <47305FB1.9020403@sw.ru>
+Date: Tue, 06 Nov 2007 13:54:37 +0100
+Message-ID: <4730640D.9030407@fr.ibm.com>
 References: <47304729.8000309@openvz.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+Content-Type: text/plain; charset=ISO-8859-1
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 In-Reply-To: <47304729.8000309-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
@@ -18,15 +18,8 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
-Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Cedric Le Goater <clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 List-Id: containers.vger.kernel.org
-
-imho very good idea and we'll have more and more docs there...
-(the only issue I see - it would be nice to have cgroups docs in the same place,
-though cgroups are not about namespaces directly.)
-
-Acked-By: Kirill Korotaev <dev-3ImXcnM4P+0@public.gmane.org>
-
 
 Pavel Emelyanov wrote:
 > Hi guys!
@@ -39,7 +32,11 @@ Pavel Emelyanov wrote:
 > but keeps others shared. I like this idea, so here's the draft
 > with the problems I currently have in mind and can describe 
 > somewhat audibly - the "namespaces compatibility list".
-> 
+
+that compatibility list could be encoded in the way we check
+the clone flags in copy_process() and unshare(). It would 
+also be good to have it as a comment somewhere in kernel/fork.c
+
 > The Documentation/namespaces/ dir is about to contain more
 > docs about the namespaces stuff (e.g. I'm going to prepare
 > a doc about the pid namespaces, maybe Serge will want to
@@ -48,6 +45,19 @@ Pavel Emelyanov wrote:
 > but currently there will be only one file.
 > 
 > What would you say about it?
+
+well, as this is user space issues, I'd say that we should
+help building a good man page. What's in  Documentation/
+could help to do that but I don't trust documentation when
+it's maintained in 2 places. 
+
+So a check_flags() routine for namespaces with all the required 
+comments would probably be more helpful for the manpage 
+maintainer. 
+ 
+I was thinking of merging some clone flags together also and
+keep only 3, NS, PID and NET. 
+
 > 
 > Signed-off-by: Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 > 
@@ -76,6 +86,25 @@ Pavel Emelyanov wrote:
 > +User			 2
 > +Net
 > +
+
+funny, I had just started doing :
+
+depends	on	VFS	PID	IPC	NET	UTS	MQ
+VFS		*
+PID		*	*				
+IPC			*	*			
+NET  					*	*	
+UTS						*	
+MQ		*	*		?	*	*
+
+I kept VFS out for the moment.
+
+I would rather build a matrix giving the dependencies. nop ? which
+is a way to enforce the clone flags.
+
+C.
+
+
 > +1. Both the IPC and the PID namespaces provide IDs to address
 > +   object inside the kernel. E.g. semaphore with ipcid or
 > +   process group with pid.
@@ -91,9 +120,4 @@ Pavel Emelyanov wrote:
 > +   words, user 10 in one user namespace shouldn't have the same
 > +   access permissions to files, beloging to user 10 in another
 > +   namespace. But currently this is not so.
-> 
-> _______________________________________________
-> Containers mailing list
-> Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-> https://lists.linux-foundation.org/mailman/listinfo/containers
 > 
