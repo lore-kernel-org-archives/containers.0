@@ -1,49 +1,24 @@
-From: Daniel Lezcano <daniel.lezcano-GANU6spQydw@public.gmane.org>
-Subject: Re: Pid namespaces problems
-Date: Wed, 07 Nov 2007 10:00:23 +0100
-Message-ID: <47317EA7.6030500@free.fr>
-References: <472AE42F.5000602@openvz.org>	<m1640id57r.fsf@ebiederm.dsl.xmission.com>	<47301A14.9040304@openvz.org>
-	<4731772D.3060806@fr.ibm.com>
+From: "Denis V. Lunev" <den@openvz.org>
+Subject: [PATCH 0/2] fix for OOPS in pernet list operations if
+	CONFIG_NET_NS undefined
+Date: Wed, 7 Nov 2007 14:59:11 +0300
+Message-ID: <20071107115911.GA10136@iris.sw.ru>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
-Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <4731772D.3060806-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Cedric Le Goater <clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
-Cc: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, "Denis V. Lunev" <den-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>, Benjamin Thery <benjamin.thery-6ktuUTfB/bM@public.gmane.org>
+Content-Type: text/plain; charset=us-ascii
+Return-path: <netdev-owner@vger.kernel.org>
+Content-Disposition: inline
+Sender: netdev-owner@vger.kernel.org
+To: davem@davemloft.net
+Cc: devel@openvz.org, containers@lists.osdl.org, netdev@vger.kernel.org, clg@fr.ibm.com, benjamin.thery@bull.net
 List-Id: containers.vger.kernel.org
 
-Cedric Le Goater wrote:
->>> - There are several architectures with their own signal functions for
->>>   other OS compatibility that have are using _pid and not _vpid
->>>   variants of functions. (irix and solaris)
->>>   arch/mips/kernel/irixsig.c:irix_waitsys
->>>   arch/mips/kernel/sysirix.c:irix_setpgrp
->>>   arch/sparc64/solaris/misc.c:solaris_procids
->> Ok. Looks like your list is the same as mine. That's good to hear
->> that I haven't missed anything important.
-> 
-> We've also talked about af_unix credentials.
-> 
->> So, I see that you're about to take a closer look at the pid
->> namespaces. If so, then what time can we expect the net namespace
->> activity to go on? Or (if you don't mind) can we start merging
->> the patches to David as soon as he opens his 2.6.25 merge window?
-> 
-> I think daniel and benjamin are also getting ready for the 2.6.25 
-> merge window.
+These patches are addressed to the oops reported by the Cedric Le Goater
+a week ago. The pernet_operations were discarder during kernel boot and
+this breaks further operations as this 
 
-Yes. It can be cool if we can sync up Benjamin, Pavel, Denis, Eric and I 
-with the different parts to be posted. Benjamin and I we began to look 
-at ipv4. This is a big part, perhaps we can split that into several 
-subset and dispatch them, except if Pavel and Denis already rebase ipv4 
-for net-2.6, in this case feel free to send them out.
+Though, the patch from Pavel Emelyanov was partially reverted
+by the Eric W. Biederman [commit 2b008b0a8e96b726c603c5e1a5a7a509b5f61e35]
+
+So, I revert the Eric patch (actually, Eric one can be simply dropped) and
+fix original code. There is no need for such complex code if CONFIG_NET_NS
+is not defined.
