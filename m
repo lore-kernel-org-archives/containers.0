@@ -1,107 +1,236 @@
 From: "Denis V. Lunev" <den@openvz.org>
-Subject: [PATCH 2/2] move unneeded data to initdata section
-Date: Wed, 7 Nov 2007 15:01:00 +0300
-Message-ID: <20071107120100.GA10185@iris.sw.ru>
+Subject: [PATCH] [RESEND] small possible memory leak in FIB rules
+Date: Wed, 7 Nov 2007 16:36:36 +0300
+Message-ID: <20071107133636.GA10719@iris.sw.ru>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Return-path: <netdev-owner@vger.kernel.org>
 Content-Disposition: inline
 Sender: netdev-owner@vger.kernel.org
-To: davem@davemloft.net
-Cc: devel@openvz.org, containers@lists.osdl.org, netdev@vger.kernel.org, clg@fr.ibm.com, benjamin.thery@bull.net
+To: davem@davemloft.net, den@openvz.org
+Cc: devel@openvz.org, containers@lists.osdl.org, netdev@vger.kernel.org
 List-Id: containers.vger.kernel.org
 
-This patch reverts Eric's commit 2b008b0a8e96b726c603c5e1a5a7a509b5f61e35
+This patch fixes a small memory leak. Default fib rules can be deleted by
+the user if the rule does not carry FIB_RULE_PERMANENT flag, f.e. by
+	ip rule flush
 
-It diets .text & .data section of the kernel if CONFIG_NET_NS is not set.
-This is safe after list operations cleanup.
+Such a rule will not be freed as the ref-counter has 2 on start and becomes
+clearly unreachable after removal.
 
-Signed-of-by: Denis V. Lunev <den@openvz.org>
+Signed-off-by: Denis V. Lunev <den@openvz.org>
+Acked-by: Alexey Kuznetsov <kuznet@ms2.inr.ac.ru>
 
---- ./drivers/net/loopback.c.reversed	2007-10-30 14:45:07.000000000 +0300
-+++ ./drivers/net/loopback.c	2007-11-01 17:30:55.000000000 +0300
-@@ -284,7 +284,7 @@ static __net_exit void loopback_net_exit
- 	unregister_netdev(dev);
- }
- 
--static struct pernet_operations loopback_net_ops = {
-+static struct pernet_operations __net_initdata loopback_net_ops = {
-        .init = loopback_net_init,
-        .exit = loopback_net_exit,
- };
---- ./fs/proc/proc_net.c.reversed	2007-10-30 14:45:07.000000000 +0300
-+++ ./fs/proc/proc_net.c	2007-11-01 17:30:57.000000000 +0300
-@@ -185,7 +185,7 @@ static __net_exit void proc_net_ns_exit(
- 	kfree(net->proc_net_root);
- }
- 
--static struct pernet_operations proc_net_ns_ops = {
-+static struct pernet_operations __net_initdata proc_net_ns_ops = {
- 	.init = proc_net_ns_init,
- 	.exit = proc_net_ns_exit,
- };
---- ./include/net/net_namespace.h.reversed	2007-10-30 14:45:07.000000000 +0300
-+++ ./include/net/net_namespace.h	2007-11-01 17:30:58.000000000 +0300
-@@ -102,9 +102,11 @@ static inline void release_net(struct ne
- #ifdef CONFIG_NET_NS
- #define __net_init
- #define __net_exit
-+#define __net_initdata
- #else
- #define __net_init	__init
- #define __net_exit	__exit_refok
-+#define __net_initdata	__initdata
+---------
+
+ include/net/fib_rules.h |    3 ++
+ net/core/fib_rules.c    |   22 ++++++++++++++++++++
+ net/decnet/dn_rules.c   |   13 +-----------
+ net/ipv4/fib_rules.c    |   51 ++++++++++++++++++------------------------------
+ net/ipv6/fib6_rules.c   |   37 ++++++++++++++--------------------
+ 5 files changed, 62 insertions(+), 64 deletions(-)
+
+---------
+
+diff --git a/include/net/fib_rules.h b/include/net/fib_rules.h
+--- a/include/net/fib_rules.h
++++ b/include/net/fib_rules.h
+@@ -107,4 +107,7 @@ extern int			fib_rules_unregister(struct fib_rules_ops *);
+ extern int			fib_rules_lookup(struct fib_rules_ops *,
+ 						 struct flowi *, int flags,
+ 						 struct fib_lookup_arg *);
++extern int			fib_default_rule_add(struct fib_rules_ops *,
++			   			     u32 pref, u32 table,
++						     u32 flags);
  #endif
+diff --git a/net/core/fib_rules.c b/net/core/fib_rules.c
+index 13de6f5..848132b 100644
+--- a/net/core/fib_rules.c
++++ b/net/core/fib_rules.c
+@@ -18,6 +18,28 @@
+ static LIST_HEAD(rules_ops);
+ static DEFINE_SPINLOCK(rules_mod_lock);
  
- struct pernet_operations {
---- ./net/core/dev.c.reversed	2007-10-30 14:45:08.000000000 +0300
-+++ ./net/core/dev.c	2007-11-01 17:30:58.000000000 +0300
-@@ -2676,7 +2676,7 @@ static void __net_exit dev_proc_net_exit
- 	proc_net_remove(net, "dev");
++int fib_default_rule_add(struct fib_rules_ops *ops,
++			 u32 pref, u32 table, u32 flags)
++{
++	struct fib_rule *r;
++
++	r = kzalloc(ops->rule_size, GFP_KERNEL);
++	if (r == NULL)
++		return -ENOMEM;
++
++	atomic_set(&r->refcnt, 1);
++	r->action = FR_ACT_TO_TBL;
++	r->pref = pref;
++	r->table = table;
++	r->flags = flags;
++
++	/* The lock is not required here, the list in unreacheable
++	 * at the moment this function is called */
++	list_add_tail(&r->list, &ops->rules_list);
++	return 0;
++}
++EXPORT_SYMBOL(fib_default_rule_add);
++
+ static void notify_rule_change(int event, struct fib_rule *rule,
+ 			       struct fib_rules_ops *ops, struct nlmsghdr *nlh,
+ 			       u32 pid);
+diff --git a/net/decnet/dn_rules.c b/net/decnet/dn_rules.c
+index ddd3f04..ffebea0 100644
+--- a/net/decnet/dn_rules.c
++++ b/net/decnet/dn_rules.c
+@@ -48,15 +48,6 @@ struct dn_fib_rule
+ 	u8			flags;
+ };
+ 
+-static struct dn_fib_rule default_rule = {
+-	.common = {
+-		.refcnt =		ATOMIC_INIT(2),
+-		.pref =			0x7fff,
+-		.table =		RT_TABLE_MAIN,
+-		.action =		FR_ACT_TO_TBL,
+-	},
+-};
+-
+ 
+ int dn_fib_lookup(struct flowi *flp, struct dn_fib_res *res)
+ {
+@@ -262,8 +253,8 @@ static struct fib_rules_ops dn_fib_rules_ops = {
+ 
+ void __init dn_fib_rules_init(void)
+ {
+-	list_add_tail(&default_rule.common.list,
+-			&dn_fib_rules_ops.rules_list);
++	BUG_ON(fib_default_rule_add(&dn_fib_rules_ops, 0x7fff,
++			            RT_TABLE_MAIN, 0));
+ 	fib_rules_register(&dn_fib_rules_ops);
  }
  
--static struct pernet_operations dev_proc_ops = {
-+static struct pernet_operations __net_initdata dev_proc_ops = {
- 	.init = dev_proc_net_init,
- 	.exit = dev_proc_net_exit,
- };
-@@ -4336,7 +4336,7 @@ static void __net_exit netdev_exit(struc
- 	kfree(net->dev_index_head);
- }
- 
--static struct pernet_operations  netdev_net_ops = {
-+static struct pernet_operations __net_initdata netdev_net_ops = {
- 	.init = netdev_init,
- 	.exit = netdev_exit,
- };
-@@ -4367,7 +4367,7 @@ static void __net_exit default_device_ex
- 	rtnl_unlock();
- }
- 
--static struct pernet_operations  default_device_ops = {
-+static struct pernet_operations __net_initdata default_device_ops = {
- 	.exit = default_device_exit,
- };
- 
---- ./net/core/dev_mcast.c.reversed	2007-10-30 14:45:08.000000000 +0300
-+++ ./net/core/dev_mcast.c	2007-11-01 17:31:00.000000000 +0300
-@@ -285,7 +285,7 @@ static void __net_exit dev_mc_net_exit(s
- 	proc_net_remove(net, "dev_mcast");
- }
- 
--static struct pernet_operations dev_mc_net_ops = {
-+static struct pernet_operations __net_initdata dev_mc_net_ops = {
- 	.init = dev_mc_net_init,
- 	.exit = dev_mc_net_exit,
- };
---- ./net/netlink/af_netlink.c.reversed	2007-10-30 14:45:08.000000000 +0300
-+++ ./net/netlink/af_netlink.c	2007-11-01 17:31:01.000000000 +0300
-@@ -1888,7 +1888,7 @@ static void __net_exit netlink_net_exit(
+diff --git a/net/ipv4/fib_rules.c b/net/ipv4/fib_rules.c
+index f16839c..a0ada3a 100644
+--- a/net/ipv4/fib_rules.c
++++ b/net/ipv4/fib_rules.c
+@@ -49,33 +49,6 @@ struct fib4_rule
  #endif
+ };
+ 
+-static struct fib4_rule default_rule = {
+-	.common = {
+-		.refcnt =	ATOMIC_INIT(2),
+-		.pref =		0x7FFF,
+-		.table =	RT_TABLE_DEFAULT,
+-		.action =	FR_ACT_TO_TBL,
+-	},
+-};
+-
+-static struct fib4_rule main_rule = {
+-	.common = {
+-		.refcnt =	ATOMIC_INIT(2),
+-		.pref =		0x7FFE,
+-		.table =	RT_TABLE_MAIN,
+-		.action =	FR_ACT_TO_TBL,
+-	},
+-};
+-
+-static struct fib4_rule local_rule = {
+-	.common = {
+-		.refcnt =	ATOMIC_INIT(2),
+-		.table =	RT_TABLE_LOCAL,
+-		.action =	FR_ACT_TO_TBL,
+-		.flags =	FIB_RULE_PERMANENT,
+-	},
+-};
+-
+ #ifdef CONFIG_NET_CLS_ROUTE
+ u32 fib_rules_tclass(struct fib_result *res)
+ {
+@@ -319,11 +292,27 @@ static struct fib_rules_ops fib4_rules_ops = {
+ 	.owner		= THIS_MODULE,
+ };
+ 
+-void __init fib4_rules_init(void)
++static int __init fib_default_rules_init(void)
+ {
+-	list_add_tail(&local_rule.common.list, &fib4_rules_ops.rules_list);
+-	list_add_tail(&main_rule.common.list, &fib4_rules_ops.rules_list);
+-	list_add_tail(&default_rule.common.list, &fib4_rules_ops.rules_list);
++	int err;
++
++	err = fib_default_rule_add(&fib4_rules_ops, 0,
++				   RT_TABLE_LOCAL, FIB_RULE_PERMANENT);
++	if (err < 0)
++		return err;
++	err = fib_default_rule_add(&fib4_rules_ops, 0x7FFE,
++				   RT_TABLE_MAIN, 0);
++	if (err < 0)
++		return err;
++	err = fib_default_rule_add(&fib4_rules_ops, 0x7FFF,
++				   RT_TABLE_DEFAULT, 0);
++	if (err < 0)
++		return err;
++	return 0;
++}
+ 
++void __init fib4_rules_init(void)
++{
++	BUG_ON(fib_default_rules_init());
+ 	fib_rules_register(&fib4_rules_ops);
+ }
+diff --git a/net/ipv6/fib6_rules.c b/net/ipv6/fib6_rules.c
+index 706622a..428c6b0 100644
+--- a/net/ipv6/fib6_rules.c
++++ b/net/ipv6/fib6_rules.c
+@@ -31,25 +31,6 @@ struct fib6_rule
+ 
+ static struct fib_rules_ops fib6_rules_ops;
+ 
+-static struct fib6_rule main_rule = {
+-	.common = {
+-		.refcnt =	ATOMIC_INIT(2),
+-		.pref =		0x7FFE,
+-		.action =	FR_ACT_TO_TBL,
+-		.table =	RT6_TABLE_MAIN,
+-	},
+-};
+-
+-static struct fib6_rule local_rule = {
+-	.common = {
+-		.refcnt =	ATOMIC_INIT(2),
+-		.pref =		0,
+-		.action =	FR_ACT_TO_TBL,
+-		.table =	RT6_TABLE_LOCAL,
+-		.flags =	FIB_RULE_PERMANENT,
+-	},
+-};
+-
+ struct dst_entry *fib6_rule_lookup(struct flowi *fl, int flags,
+ 				   pol_lookup_t lookup)
+ {
+@@ -270,11 +251,23 @@ static struct fib_rules_ops fib6_rules_ops = {
+ 	.owner			= THIS_MODULE,
+ };
+ 
+-void __init fib6_rules_init(void)
++static int __init fib6_default_rules_init(void)
+ {
+-	list_add_tail(&local_rule.common.list, &fib6_rules_ops.rules_list);
+-	list_add_tail(&main_rule.common.list, &fib6_rules_ops.rules_list);
++	int err;
++
++	err = fib_default_rule_add(&fib6_rules_ops, 0,
++				   RT6_TABLE_LOCAL, FIB_RULE_PERMANENT);
++	if (err < 0)
++		return err;
++	err = fib_default_rule_add(&fib6_rules_ops, 0x7FFE, RT6_TABLE_MAIN, 0);
++	if (err < 0)
++		return err;
++	return 0;
++}
+ 
++void __init fib6_rules_init(void)
++{
++	BUG_ON(fib6_default_rules_init());
+ 	fib_rules_register(&fib6_rules_ops);
  }
  
--static struct pernet_operations netlink_net_ops = {
-+static struct pernet_operations __net_initdata netlink_net_ops = {
- 	.init = netlink_net_init,
- 	.exit = netlink_net_exit,
- };
