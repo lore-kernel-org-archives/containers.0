@@ -1,61 +1,44 @@
-From: "Denis V. Lunev" <den@sw.ru>
-Subject: Re: [PATCH] No need to inc/dec packet_socks_nr if PACKET_REFCNT_DEBUG
- is not set
-Date: Thu, 08 Nov 2007 13:51:30 +0300
-Message-ID: <4732EA32.6060105@sw.ru>
-References: <20071108103731.GA22373@iris.sw.ru>
+From: "Denis V. Lunev" <den-3ImXcnM4P+0@public.gmane.org>
+Subject: Re: Pid namespaces problems
+Date: Thu, 08 Nov 2007 13:53:02 +0300
+Message-ID: <4732EA8E.7080400@sw.ru>
+References: <472AE42F.5000602@openvz.org>	<m1640id57r.fsf@ebiederm.dsl.xmission.com>	<47301A14.9040304@openvz.org>
+	<4731772D.3060806@fr.ibm.com> <47317EA7.6030500@free.fr>
+	<4731E3DE.6000501@openvz.org> <4731F4BC.4000203@fr.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1
 Content-Transfer-Encoding: 7bit
-Return-path: <netdev-owner@vger.kernel.org>
-In-Reply-To: <20071108103731.GA22373@iris.sw.ru>
-Sender: netdev-owner@vger.kernel.org
-To: "Denis V. Lunev" <den@openvz.org>
-Cc: davem@davemloft.net, devel@openvz.org, containers@lists.osdl.org, netdev@vger.kernel.org
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <4731F4BC.4000203-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
+Cc: Cedric Le Goater <clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, "Denis V. Lunev" <den-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>, Benjamin Thery <benjamin.thery-6ktuUTfB/bM@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-pls disregard this, Pavel have sent one similar already
+Daniel Lezcano wrote:
 
-Denis V. Lunev wrote:
-> No need to inc/dec packet_socks_nr if PACKET_REFCNT_DEBUG is not set.
-> 
-> Signed-off-by: Denis V. Lunev <den@openvz.org>
-> 
-> --- ./net/packet/af_packet.c.packetrefcnt	2007-11-08 13:48:22.000000000 +0300
-> +++ ./net/packet/af_packet.c	2007-11-08 13:54:29.000000000 +0300
-> @@ -135,7 +135,9 @@ dev->hard_header == NULL (ll header is a
->     packet classifier depends on it.
->   */
->  
-> +#ifdef PACKET_REFCNT_DEBUG
->  static atomic_t packet_socks_nr;
-> +#endif
->  
->  
->  /* Private packet socket structures. */
-> @@ -232,8 +234,8 @@ static void packet_sock_destruct(struct 
->  		return;
->  	}
->  
-> -	atomic_dec(&packet_socks_nr);
->  #ifdef PACKET_REFCNT_DEBUG
-> +	atomic_dec(&packet_socks_nr);
->  	printk(KERN_DEBUG "PACKET socket %p is free, %d are alive\n", sk, atomic_read(&packet_socks_nr));
->  #endif
->  }
-> @@ -1005,7 +1007,9 @@ static int packet_create(struct net *net
->  	po->num = proto;
->  
->  	sk->sk_destruct = packet_sock_destruct;
-> +#ifdef PACKET_REFCNT_DEBUG
->  	atomic_inc(&packet_socks_nr);
-> +#endif
->  
->  	/*
->  	 *	Attach a protocol block
-> -
-> To unsubscribe from this list: send the line "unsubscribe netdev" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
+>  * the first one is the locking of the network namespace list by
+> rtnl_lock, so from the timer callback we can not browse the network
+> namespace list to check the age of the routes. It is a problem I would
+> like to talk with Denis if he has time
 
+From my point of view, the situation is clear. The timer should be
+per/namespace. The situation is completely different as one in IPv4.
+
+>  * the loopback refcounting is not correctly handled in ipv6. This
+> protocol do not expect to have the loopback to be unregistered, so there
+> is some problem with the addr_ifdown function when exiting the network
+> namespace
+
+I think that default routing targets and similar staff should be
+dynamically allocated as a start and submitted now. No need to wait
+NETNS infrastructure. I have sent similar cleanup for fib rules
+recently. No answer from David yet.
