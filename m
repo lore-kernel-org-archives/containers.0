@@ -1,76 +1,26 @@
-From: Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
-Subject: Re: net namespace plans for 2.6.25 (was Re: Pid namespaces problems)
-Date: Fri, 09 Nov 2007 13:14:32 +0300
-Message-ID: <47343308.1050604@openvz.org>
-References: <472AE42F.5000602@openvz.org>	<m1640id57r.fsf@ebiederm.dsl.xmission.com>	<47301A14.9040304@openvz.org>
-	<4731772D.3060806@fr.ibm.com> <47317EA7.6030500@free.fr>
-	<4731E3DE.6000501@openvz.org> <4731F4BC.4000203@fr.ibm.com>
-	<4732EA8E.7080400@sw.ru> <47330F1F.4080806@fr.ibm.com>
-	<47331122.3000304@openvz.org> <47331241.2090501@fr.ibm.com>
-	<473312FD.5030609@fr.ibm.com> <473315F5.20608@openvz.org>
-	<473318A0.7010509@fr.ibm.com>
+From: Ingo Molnar <mingo@elte.hu>
+Subject: Re: [BUG]: Crash with CONFIG_FAIR_CGROUP_SCHED=y
+Date: Fri, 9 Nov 2007 11:25:23 +0100
+Message-ID: <20071109102523.GA10903@elte.hu>
+References: <20071108234805.GA2240@us.ibm.com> <20071109070214.GO3143@linux.vnet.ibm.com> <b647ffbd0711090045o5ebf4681q78f939f5c1e71fe1@mail.gmail.com> <20071109101437.GA22544@linux.vnet.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <473318A0.7010509-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
-Cc: Cedric Le Goater <clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, "Denis V. Lunev" <den-3ImXcnM4P+0@public.gmane.org>, Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, "Denis V. Lunev" <den-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>, Benjamin Thery <benjamin.thery-6ktuUTfB/bM@public.gmane.org>
+Content-Type: text/plain; charset=us-ascii
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1754134AbXKIKc5@vger.kernel.org>
+Content-Disposition: inline
+In-Reply-To: <20071109101437.GA22544@linux.vnet.ibm.com>
+Sender: linux-kernel-owner@vger.kernel.org
+To: Srivatsa Vaddagiri <vatsa@linux.vnet.ibm.com>
+Cc: Dmitry Adamushko <dmitry.adamushko@gmail.com>, sukadev@us.ibm.com, balbir@in.ibm.com, Containers <containers@lists.osdl.org>, ckrm-tech@lists.sourceforge.net, linux-kernel@vger.kernel.org, dhaval@linux.vnet.ibm.com, efault@gmx.de
 List-Id: containers.vger.kernel.org
 
-Daniel Lezcano wrote:
-> Pavel Emelyanov wrote:
->> Daniel Lezcano wrote:
->>> Denis V. Lunev wrote:
->>>  > Daniel Lezcano wrote:
->>>  >> Denis V. Lunev wrote:
->>>  >>> Daniel Lezcano wrote:
->>>  >>>
->>>  >>>>  * the first one is the locking of the network namespace list by
->>>  >>>> rtnl_lock, so from the timer callback we can not browse the network
->>>  >>>> namespace list to check the age of the routes. It is a problem I would
->>>  >>>> like to talk with Denis if he has time
->>>  >>> From my point of view, the situation is clear. The timer should be
->>>  >>> per/namespace. The situation is completely different as one in IPv4.
->>>  >> We thought to make a timer per namespace for ipv6, but we are a little
->>>  >> afraid for the performances when there will be a lot of containers.
->>>  >> Anyway, we can do a timer per namespace and optimize that later. I will
->>>  >> cook a new patch to take into account that for the next week.
->>>  >
->>>  > IMHO not a problem. tcp_write_timer is per/socket timer. If this works
->>>  > efficiently, per/namespace one will work also.
->>>
->>> That's right, this is a good argument. By the way, the amount of work to 
->>> be done in the tcp_write_timer is perhaps smaller than the one done in 
->>> the ipv6 routing age check, no ? Anyway, I'm not against a timer per 
->>> namespace in this case, I already did a try before rolling back to a 
->>> for_each_net in the gc timer, that changes a little the API, but nothing 
->> We can easily make the netns list rcu protected to address this issue.
->> If you're interested, I can prepare a patch tomorrow.
-> 
-> Sure, I'm interested :)
-> 
-> Benjamin and I, we thought about using a rcu to avoid to use a timer per 
-> namespace in ipv6 but we faced to the problem with rtnl_unlock function 
-> when the network namespace is protected with the rtnl_lock/rtnl_unlock. 
-> In the function rtnl_unlock (not the one in net-2.6 but the one which is 
-> in netns49), there is loop, for_each_net, in this loop, we do 
-> rtnl_unlock, call sk_data_ready and take the lock again. If we are in 
-> rcu protected model, this loop will take a lock (one time just before 
-> sk_data_ready and one time in the sk_data_ready function). As far as I 
-> understand with rcu, we should not block inside a rcu_read_lock, right ?
 
-Right. I will look at it. I think that if we protect the list with RCU
-the rtnl_lock() protection will be not needed any longer.
+* Srivatsa Vaddagiri <vatsa@linux.vnet.ibm.com> wrote:
 
-Thanks,
-Pavel
+> With the patch below, I could run ns_exec() fine w/o a crash.
+> 
+> Suka, can you verify whether this patch fixes your problem?
+
+thanks, applied. I'll wait for confirmation from Suka before sending it 
+to Linus.
+
+	Ingo
