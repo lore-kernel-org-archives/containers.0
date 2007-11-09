@@ -1,14 +1,10 @@
-From: Srivatsa Vaddagiri <vatsa-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: Re: [BUG]: Crash with CONFIG_FAIR_CGROUP_SCHED=y
-Date: Fri, 9 Nov 2007 12:32:14 +0530
-Message-ID: <20071109070214.GO3143@linux.vnet.ibm.com>
-References: <20071108234805.GA2240@us.ibm.com>
-Reply-To: vatsa-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
+From: Hugh Dickins <hugh-DTz5qymZ9yRBDgjK7y7TUQ@public.gmane.org>
+Subject: [PATCH 1/6 mm] swapoff: scan ptes preemptibly
+Date: Fri, 9 Nov 2007 07:08:48 +0000 (GMT)
+Message-ID: <Pine.LNX.4.64.0711090700530.21638@blonde.wat.veritas.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+Content-Type: TEXT/PLAIN; charset=US-ASCII
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <20071108234805.GA2240-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,130 +14,98 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org
-Cc: dhaval-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, ckrm-tech-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org, efault-Mmb7MZpHnFY@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, dmitry.adamushko-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>
+To: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
+Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Thu, Nov 08, 2007 at 03:48:05PM -0800, sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org wrote:
-> With CONFIG_FAIR_CGROUP_SCHED=y, following commands on 2.6.24-rc1 crash
-> the system.
+Provided that CONFIG_HIGHPTE is not set, unuse_pte_range can reduce latency
+in swapoff by scanning the page table preemptibly: so long as unuse_pte is
+careful to recheck that entry under pte lock.
 
-Thanks for reporting the problem. It was caused because of the fact that
-current task isn't kept in its runqueue in case of sched_fair class
-tasks.
+(To tell the truth, this patch was not inspired by any cries for lower
+latency here: rather, this restructuring permits a future memory controller
+patch to allocate with GFP_KERNEL in unuse_pte, where before it could not.
+But it would be wrong to tuck this change away inside a memcgroup patch.)
 
-With the patch below, I could run ns_exec w/o any crash. Can you pls
-verify it works for you as well?
-
-Ingo,
-	Once Suka verifies that the patch fixes his crash, I would request you 
-to include the same in your tree and route it to Linus.
-
---
-
-current task is not present in its runqueue in case of sched_fair class
-tasks. Take care of this fact in rt_mutex_setprio(),
-sched_setscheduler() and sched_move_task() routines.
-
-Signed-off-by : Srivatsa Vaddagiri <vatsa-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-
-
+Signed-off-by: Hugh Dickins <hugh-DTz5qymZ9yRBDgjK7y7TUQ@public.gmane.org>
 ---
- kernel/sched.c |   45 +++++++++++++++++++++++++--------------------
- 1 files changed, 25 insertions(+), 20 deletions(-)
+This patch could go anywhere in the mm series before the memory-controller
+patches: I suggest just after swapin-fix-valid-swaphandles-defect.patch
+Subsequent patches N/6 go in different places amongst the memory-controller
+patches: please see accompanying suggestions.
 
-Index: current/kernel/sched.c
-===================================================================
---- current.orig/kernel/sched.c
-+++ current/kernel/sched.c
-@@ -3986,11 +3986,13 @@ void rt_mutex_setprio(struct task_struct
- 	oldprio = p->prio;
- 	on_rq = p->se.on_rq;
- 	running = task_running(rq, p);
--	if (on_rq) {
-+	if (on_rq)
- 		dequeue_task(rq, p, 0);
--		if (running)
--			p->sched_class->put_prev_task(rq, p);
--	}
-+	/* current task is not kept in its runqueue in case of sched_fair class.
-+	 * Hence we need the 'on_rq?' and 'running?' tests to be separate.
+ mm/swapfile.c |   38 +++++++++++++++++++++++++++++++-------
+ 1 file changed, 31 insertions(+), 7 deletions(-)
+
+--- patch0/mm/swapfile.c	2007-11-07 19:41:45.000000000 +0000
++++ patch1/mm/swapfile.c	2007-11-08 12:34:12.000000000 +0000
+@@ -506,9 +506,19 @@ unsigned int count_swap_pages(int type, 
+  * just let do_wp_page work it out if a write is requested later - to
+  * force COW, vm_page_prot omits write permission from any private vma.
+  */
+-static void unuse_pte(struct vm_area_struct *vma, pte_t *pte,
++static int unuse_pte(struct vm_area_struct *vma, pmd_t *pmd,
+ 		unsigned long addr, swp_entry_t entry, struct page *page)
+ {
++	spinlock_t *ptl;
++	pte_t *pte;
++	int found = 1;
++
++	pte = pte_offset_map_lock(vma->vm_mm, pmd, addr, &ptl);
++	if (unlikely(!pte_same(*pte, swp_entry_to_pte(entry)))) {
++		found = 0;
++		goto out;
++	}
++
+ 	inc_mm_counter(vma->vm_mm, anon_rss);
+ 	get_page(page);
+ 	set_pte_at(vma->vm_mm, addr, pte,
+@@ -520,6 +530,9 @@ static void unuse_pte(struct vm_area_str
+ 	 * immediately swapped out again after swapon.
+ 	 */
+ 	activate_page(page);
++out:
++	pte_unmap_unlock(pte, ptl);
++	return found;
+ }
+ 
+ static int unuse_pte_range(struct vm_area_struct *vma, pmd_t *pmd,
+@@ -528,22 +541,33 @@ static int unuse_pte_range(struct vm_are
+ {
+ 	pte_t swp_pte = swp_entry_to_pte(entry);
+ 	pte_t *pte;
+-	spinlock_t *ptl;
+ 	int found = 0;
+ 
+-	pte = pte_offset_map_lock(vma->vm_mm, pmd, addr, &ptl);
++	/*
++	 * We don't actually need pte lock while scanning for swp_pte: since
++	 * we hold page lock and mmap_sem, swp_pte cannot be inserted into the
++	 * page table while we're scanning; though it could get zapped, and on
++	 * some architectures (e.g. x86_32 with PAE) we might catch a glimpse
++	 * of unmatched parts which look like swp_pte, so unuse_pte must
++	 * recheck under pte lock.  Scanning without pte lock lets it be
++	 * preemptible whenever CONFIG_PREEMPT but not CONFIG_HIGHPTE.
 +	 */
-+	if (running)
-+		p->sched_class->put_prev_task(rq, p);
- 
- 	if (rt_prio(prio))
- 		p->sched_class = &rt_sched_class;
-@@ -3999,9 +4001,9 @@ void rt_mutex_setprio(struct task_struct
- 
- 	p->prio = prio;
- 
-+	if (running)
-+		p->sched_class->set_curr_task(rq);
- 	if (on_rq) {
--		if (running)
--			p->sched_class->set_curr_task(rq);
- 		enqueue_task(rq, p, 0);
- 		inc_load(rq, p);
++	pte = pte_offset_map(pmd, addr);
+ 	do {
  		/*
-@@ -4298,18 +4300,20 @@ recheck:
- 	update_rq_clock(rq);
- 	on_rq = p->se.on_rq;
- 	running = task_running(rq, p);
--	if (on_rq) {
-+	if (on_rq)
- 		deactivate_task(rq, p, 0);
--		if (running)
--			p->sched_class->put_prev_task(rq, p);
--	}
-+	/* current task is not kept in its runqueue in case of sched_fair class.
-+	 * Hence we need the 'on_rq?' and 'running?' tests to be separate.
-+	 */
-+	if (running)
-+		p->sched_class->put_prev_task(rq, p);
- 
- 	oldprio = p->prio;
- 	__setscheduler(rq, p, policy, param->sched_priority);
- 
-+	if (running)
-+		p->sched_class->set_curr_task(rq);
- 	if (on_rq) {
--		if (running)
--			p->sched_class->set_curr_task(rq);
- 		activate_task(rq, p, 0);
- 		/*
- 		 * Reschedule if we are currently running on this runqueue and
-@@ -7036,19 +7040,20 @@ void sched_move_task(struct task_struct 
- 	running = task_running(rq, tsk);
- 	on_rq = tsk->se.on_rq;
- 
--	if (on_rq) {
-+	if (on_rq)
- 		dequeue_task(rq, tsk, 0);
--		if (unlikely(running))
--			tsk->sched_class->put_prev_task(rq, tsk);
--	}
-+	/* current task is not kept in its runqueue in case of sched_fair class.
-+	 * Hence we need the 'on_rq?' and 'running?' tests to be separate.
-+	 */
-+	if (unlikely(running))
-+		tsk->sched_class->put_prev_task(rq, tsk);
- 
- 	set_task_cfs_rq(tsk);
- 
--	if (on_rq) {
--		if (unlikely(running))
--			tsk->sched_class->set_curr_task(rq);
-+	if (unlikely(running))
-+		tsk->sched_class->set_curr_task(rq);
-+	if (on_rq)
- 		enqueue_task(rq, tsk, 0);
--	}
- 
- done:
- 	task_rq_unlock(rq, &flags);
-
-
--- 
-Regards,
-vatsa
+ 		 * swapoff spends a _lot_ of time in this loop!
+ 		 * Test inline before going to call unuse_pte.
+ 		 */
+ 		if (unlikely(pte_same(*pte, swp_pte))) {
+-			unuse_pte(vma, pte++, addr, entry, page);
+-			found = 1;
+-			break;
++			pte_unmap(pte);
++			found = unuse_pte(vma, pmd, addr, entry, page);
++			if (found)
++				goto out;
++			pte = pte_offset_map(pmd, addr);
+ 		}
+ 	} while (pte++, addr += PAGE_SIZE, addr != end);
+-	pte_unmap_unlock(pte - 1, ptl);
++	pte_unmap(pte - 1);
++out:
+ 	return found;
+ }
