@@ -1,60 +1,114 @@
-From: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
-Subject: Re: [PATCH 5/6 mm] memcgroup: fix zone isolation OOM
-Date: Fri, 9 Nov 2007 18:27:29 +0900
-Message-ID: <20071109182729.b0f0fe4a.kamezawa.hiroyu@jp.fujitsu.com>
-References: <Pine.LNX.4.64.0711090700530.21638@blonde.wat.veritas.com>
-	<Pine.LNX.4.64.0711090712180.21663@blonde.wat.veritas.com>
+From: Srivatsa Vaddagiri <vatsa@linux.vnet.ibm.com>
+Subject: Re: [BUG]: Crash with CONFIG_FAIR_CGROUP_SCHED=y
+Date: Fri, 9 Nov 2007 15:44:37 +0530
+Message-ID: <20071109101437.GA22544@linux.vnet.ibm.com>
+References: <20071108234805.GA2240@us.ibm.com> <20071109070214.GO3143@linux.vnet.ibm.com> <b647ffbd0711090045o5ebf4681q78f939f5c1e71fe1@mail.gmail.com>
+Reply-To: vatsa@linux.vnet.ibm.com
 Mime-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
-Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <Pine.LNX.4.64.0711090712180.21663-VFT1Jj/mpSzq8/QPP7pA5326JSxr+BKB@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Hugh Dickins <hugh-DTz5qymZ9yRBDgjK7y7TUQ@public.gmane.org>
-Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Content-Type: text/plain; charset=us-ascii
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1754330AbXKIKCi@vger.kernel.org>
+Content-Disposition: inline
+In-Reply-To: <b647ffbd0711090045o5ebf4681q78f939f5c1e71fe1@mail.gmail.com>
+Sender: linux-kernel-owner@vger.kernel.org
+To: Dmitry Adamushko <dmitry.adamushko@gmail.com>
+Cc: sukadev@us.ibm.com, balbir@in.ibm.com, Containers <containers@lists.osdl.org>, ckrm-tech@lists.sourceforge.net, linux-kernel@vger.kernel.org, dhaval@linux.vnet.ibm.com, Ingo Molnar <mingo@elte.hu>, efault@gmx.de
 List-Id: containers.vger.kernel.org
 
-On Fri, 9 Nov 2007 07:13:22 +0000 (GMT)
-Hugh Dickins <hugh-DTz5qymZ9yRBDgjK7y7TUQ@public.gmane.org> wrote:
+On Fri, Nov 09, 2007 at 09:45:21AM +0100, Dmitry Adamushko wrote:
+> Humm... the 'current' is not kept within the tree but
+> current->se.on_rq is supposed to be '1' ,
+> so the old code looks ok to me (at least for the 'leaf' elements).
 
-> mem_cgroup_charge_common shows a tendency to OOM without good reason,
-> when a memhog goes well beyond its rss limit but with plenty of swap
-> available.  Seen on x86 but not on PowerPC; seen when the next patch
-> omits swapcache from memcgroup, but we presume it can happen without.
-> 
-> mem_cgroup_isolate_pages is not quite satisfying reclaim's criteria
-> for OOM avoidance.  Already it has to scan beyond the nr_to_scan limit
-> when it finds a !LRU page or an active page when handling inactive or
-> an inactive page when handling active.  It needs to do exactly the same
-> when it finds a page from the wrong zone (the x86 tests had two zones,
-> the PowerPC tests had only one).
-> 
-> Don't increment scan and then decrement it in these cases, just move
-> the incrementation down.  Fix recent off-by-one when checking against
-> nr_to_scan.  Cut out "Check if the meta page went away from under us",
-> presumably left over from early debugging: no amount of such checks
-> could save us if this list really were being updated without locking.
-> 
-> This change does make the unlimited scan while holding two spinlocks
-> even worse - bad for latency and bad for containment; but that's a
-> separate issue which is better left to be fixed a little later.
-> 
+You are damned right! Sorry my mistake with the previous analysis and
+(as I now find out) testing :(
 
-Okay, I agree with this logic for scan.
+There are couple of problems discovered by Suka's test:
 
-I'll consider some kind of optimization for avoiding all list scan
-because of a zone's page is not included in cgroup's lru.
+- The test requires the cgroup filesystem to be mounted with
+  atleast the cpu and ns options (i.e both namespace and cpu 
+  controllers are active in the same hierarchy). 
 
-Maybe counting the number of active/inactive per zone (or per node) will
-be first help.
+	# mkdir /dev/cpuctl
+	# mount -t cgroup -ocpu,ns none cpuctl
+	(or simply)
+	# mount -t cgroup none cpuctl -> Will activate all controllers
+					 in same hierarchy.
 
-Thanks,
--Kame
+- The test invokes clone() with CLONE_NEWNS set. This causes a a new child
+  to be created, also a new group (do_fork->copy_namespaces->ns_cgroup_clone->
+  cgroup_clone) and the child is attached to the new group (cgroup_clone->
+  attach_task->sched_move_task). At this point in time, the child's scheduler 
+  related fields are uninitialized (including its on_rq field, which it has
+  inherited from parent). As a result sched_move_task thinks its on
+  runqueue, when it isn't.
+
+  As a solution to this problem, I moved sched_fork() call, which
+  initializes scheduler related fields on a new task, before
+  copy_namespaces(). I am not sure though whether moving up will
+  cause other side-effects. Do you see any issue?
+
+- The second problem exposed by this test is that task_new_fair()
+  assumes that parent and child will be part of the same group (which 
+  needn't be as this test shows). As a result, cfs_rq->curr can be NULL
+  for the child.
+
+  The solution is to test for curr pointer being NULL in
+  task_new_fair().
+
+
+With the patch below, I could run ns_exec() fine w/o a crash.
+
+Suka, can you verify whether this patch fixes your problem?
+
+
+--
+
+Fix copy_namespace() <-> sched_fork() dependency in do_fork, by moving
+up sched_fork().
+
+Also introduce a NULL pointer check for 'curr' in task_new_fair().
+
+Signed-off-by : Srivatsa Vaddagiri <vatsa@linux.vnet.ibm.com>
+
+---
+ kernel/fork.c       |    6 +++---
+ kernel/sched_fair.c |    2 +-
+ 2 files changed, 4 insertions(+), 4 deletions(-)
+
+Index: current/kernel/fork.c
+===================================================================
+--- current.orig/kernel/fork.c
++++ current/kernel/fork.c
+@@ -1121,6 +1121,9 @@ static struct task_struct *copy_process(
+ 	p->blocked_on = NULL; /* not blocked yet */
+ #endif
+ 
++	/* Perform scheduler related setup. Assign this task to a CPU. */
++	sched_fork(p, clone_flags);
++
+ 	if ((retval = security_task_alloc(p)))
+ 		goto bad_fork_cleanup_policy;
+ 	if ((retval = audit_alloc(p)))
+@@ -1210,9 +1213,6 @@ static struct task_struct *copy_process(
+ 	INIT_LIST_HEAD(&p->ptrace_children);
+ 	INIT_LIST_HEAD(&p->ptrace_list);
+ 
+-	/* Perform scheduler related setup. Assign this task to a CPU. */
+-	sched_fork(p, clone_flags);
+-
+ 	/* Now that the task is set up, run cgroup callbacks if
+ 	 * necessary. We need to run them before the task is visible
+ 	 * on the tasklist. */
+Index: current/kernel/sched_fair.c
+===================================================================
+--- current.orig/kernel/sched_fair.c
++++ current/kernel/sched_fair.c
+@@ -1023,7 +1023,7 @@ static void task_new_fair(struct rq *rq,
+ 	place_entity(cfs_rq, se, 1);
+ 
+ 	if (sysctl_sched_child_runs_first && this_cpu == task_cpu(p) &&
+-			curr->vruntime < se->vruntime) {
++			curr && curr->vruntime < se->vruntime) {
+ 		/*
+ 		 * Upon rescheduling, sched_class::put_prev_task() will place
+ 		 * 'current' within the tree based on its new key value.
