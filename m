@@ -1,114 +1,76 @@
-From: Srivatsa Vaddagiri <vatsa@linux.vnet.ibm.com>
-Subject: Re: [BUG]: Crash with CONFIG_FAIR_CGROUP_SCHED=y
-Date: Fri, 9 Nov 2007 15:44:37 +0530
-Message-ID: <20071109101437.GA22544@linux.vnet.ibm.com>
-References: <20071108234805.GA2240@us.ibm.com> <20071109070214.GO3143@linux.vnet.ibm.com> <b647ffbd0711090045o5ebf4681q78f939f5c1e71fe1@mail.gmail.com>
-Reply-To: vatsa@linux.vnet.ibm.com
+From: Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+Subject: Re: net namespace plans for 2.6.25 (was Re: Pid namespaces problems)
+Date: Fri, 09 Nov 2007 13:14:32 +0300
+Message-ID: <47343308.1050604@openvz.org>
+References: <472AE42F.5000602@openvz.org>	<m1640id57r.fsf@ebiederm.dsl.xmission.com>	<47301A14.9040304@openvz.org>
+	<4731772D.3060806@fr.ibm.com> <47317EA7.6030500@free.fr>
+	<4731E3DE.6000501@openvz.org> <4731F4BC.4000203@fr.ibm.com>
+	<4732EA8E.7080400@sw.ru> <47330F1F.4080806@fr.ibm.com>
+	<47331122.3000304@openvz.org> <47331241.2090501@fr.ibm.com>
+	<473312FD.5030609@fr.ibm.com> <473315F5.20608@openvz.org>
+	<473318A0.7010509@fr.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1754330AbXKIKCi@vger.kernel.org>
-Content-Disposition: inline
-In-Reply-To: <b647ffbd0711090045o5ebf4681q78f939f5c1e71fe1@mail.gmail.com>
-Sender: linux-kernel-owner@vger.kernel.org
-To: Dmitry Adamushko <dmitry.adamushko@gmail.com>
-Cc: sukadev@us.ibm.com, balbir@in.ibm.com, Containers <containers@lists.osdl.org>, ckrm-tech@lists.sourceforge.net, linux-kernel@vger.kernel.org, dhaval@linux.vnet.ibm.com, Ingo Molnar <mingo@elte.hu>, efault@gmx.de
+Content-Type: text/plain; charset=ISO-8859-1
+Content-Transfer-Encoding: 7bit
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <473318A0.7010509-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
+Cc: Cedric Le Goater <clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, "Denis V. Lunev" <den-3ImXcnM4P+0@public.gmane.org>, Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, "Denis V. Lunev" <den-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>, Benjamin Thery <benjamin.thery-6ktuUTfB/bM@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Fri, Nov 09, 2007 at 09:45:21AM +0100, Dmitry Adamushko wrote:
-> Humm... the 'current' is not kept within the tree but
-> current->se.on_rq is supposed to be '1' ,
-> so the old code looks ok to me (at least for the 'leaf' elements).
+Daniel Lezcano wrote:
+> Pavel Emelyanov wrote:
+>> Daniel Lezcano wrote:
+>>> Denis V. Lunev wrote:
+>>>  > Daniel Lezcano wrote:
+>>>  >> Denis V. Lunev wrote:
+>>>  >>> Daniel Lezcano wrote:
+>>>  >>>
+>>>  >>>>  * the first one is the locking of the network namespace list by
+>>>  >>>> rtnl_lock, so from the timer callback we can not browse the network
+>>>  >>>> namespace list to check the age of the routes. It is a problem I would
+>>>  >>>> like to talk with Denis if he has time
+>>>  >>> From my point of view, the situation is clear. The timer should be
+>>>  >>> per/namespace. The situation is completely different as one in IPv4.
+>>>  >> We thought to make a timer per namespace for ipv6, but we are a little
+>>>  >> afraid for the performances when there will be a lot of containers.
+>>>  >> Anyway, we can do a timer per namespace and optimize that later. I will
+>>>  >> cook a new patch to take into account that for the next week.
+>>>  >
+>>>  > IMHO not a problem. tcp_write_timer is per/socket timer. If this works
+>>>  > efficiently, per/namespace one will work also.
+>>>
+>>> That's right, this is a good argument. By the way, the amount of work to 
+>>> be done in the tcp_write_timer is perhaps smaller than the one done in 
+>>> the ipv6 routing age check, no ? Anyway, I'm not against a timer per 
+>>> namespace in this case, I already did a try before rolling back to a 
+>>> for_each_net in the gc timer, that changes a little the API, but nothing 
+>> We can easily make the netns list rcu protected to address this issue.
+>> If you're interested, I can prepare a patch tomorrow.
+> 
+> Sure, I'm interested :)
+> 
+> Benjamin and I, we thought about using a rcu to avoid to use a timer per 
+> namespace in ipv6 but we faced to the problem with rtnl_unlock function 
+> when the network namespace is protected with the rtnl_lock/rtnl_unlock. 
+> In the function rtnl_unlock (not the one in net-2.6 but the one which is 
+> in netns49), there is loop, for_each_net, in this loop, we do 
+> rtnl_unlock, call sk_data_ready and take the lock again. If we are in 
+> rcu protected model, this loop will take a lock (one time just before 
+> sk_data_ready and one time in the sk_data_ready function). As far as I 
+> understand with rcu, we should not block inside a rcu_read_lock, right ?
 
-You are damned right! Sorry my mistake with the previous analysis and
-(as I now find out) testing :(
+Right. I will look at it. I think that if we protect the list with RCU
+the rtnl_lock() protection will be not needed any longer.
 
-There are couple of problems discovered by Suka's test:
-
-- The test requires the cgroup filesystem to be mounted with
-  atleast the cpu and ns options (i.e both namespace and cpu 
-  controllers are active in the same hierarchy). 
-
-	# mkdir /dev/cpuctl
-	# mount -t cgroup -ocpu,ns none cpuctl
-	(or simply)
-	# mount -t cgroup none cpuctl -> Will activate all controllers
-					 in same hierarchy.
-
-- The test invokes clone() with CLONE_NEWNS set. This causes a a new child
-  to be created, also a new group (do_fork->copy_namespaces->ns_cgroup_clone->
-  cgroup_clone) and the child is attached to the new group (cgroup_clone->
-  attach_task->sched_move_task). At this point in time, the child's scheduler 
-  related fields are uninitialized (including its on_rq field, which it has
-  inherited from parent). As a result sched_move_task thinks its on
-  runqueue, when it isn't.
-
-  As a solution to this problem, I moved sched_fork() call, which
-  initializes scheduler related fields on a new task, before
-  copy_namespaces(). I am not sure though whether moving up will
-  cause other side-effects. Do you see any issue?
-
-- The second problem exposed by this test is that task_new_fair()
-  assumes that parent and child will be part of the same group (which 
-  needn't be as this test shows). As a result, cfs_rq->curr can be NULL
-  for the child.
-
-  The solution is to test for curr pointer being NULL in
-  task_new_fair().
-
-
-With the patch below, I could run ns_exec() fine w/o a crash.
-
-Suka, can you verify whether this patch fixes your problem?
-
-
---
-
-Fix copy_namespace() <-> sched_fork() dependency in do_fork, by moving
-up sched_fork().
-
-Also introduce a NULL pointer check for 'curr' in task_new_fair().
-
-Signed-off-by : Srivatsa Vaddagiri <vatsa@linux.vnet.ibm.com>
-
----
- kernel/fork.c       |    6 +++---
- kernel/sched_fair.c |    2 +-
- 2 files changed, 4 insertions(+), 4 deletions(-)
-
-Index: current/kernel/fork.c
-===================================================================
---- current.orig/kernel/fork.c
-+++ current/kernel/fork.c
-@@ -1121,6 +1121,9 @@ static struct task_struct *copy_process(
- 	p->blocked_on = NULL; /* not blocked yet */
- #endif
- 
-+	/* Perform scheduler related setup. Assign this task to a CPU. */
-+	sched_fork(p, clone_flags);
-+
- 	if ((retval = security_task_alloc(p)))
- 		goto bad_fork_cleanup_policy;
- 	if ((retval = audit_alloc(p)))
-@@ -1210,9 +1213,6 @@ static struct task_struct *copy_process(
- 	INIT_LIST_HEAD(&p->ptrace_children);
- 	INIT_LIST_HEAD(&p->ptrace_list);
- 
--	/* Perform scheduler related setup. Assign this task to a CPU. */
--	sched_fork(p, clone_flags);
--
- 	/* Now that the task is set up, run cgroup callbacks if
- 	 * necessary. We need to run them before the task is visible
- 	 * on the tasklist. */
-Index: current/kernel/sched_fair.c
-===================================================================
---- current.orig/kernel/sched_fair.c
-+++ current/kernel/sched_fair.c
-@@ -1023,7 +1023,7 @@ static void task_new_fair(struct rq *rq,
- 	place_entity(cfs_rq, se, 1);
- 
- 	if (sysctl_sched_child_runs_first && this_cpu == task_cpu(p) &&
--			curr->vruntime < se->vruntime) {
-+			curr && curr->vruntime < se->vruntime) {
- 		/*
- 		 * Upon rescheduling, sched_class::put_prev_task() will place
- 		 * 'current' within the tree based on its new key value.
+Thanks,
+Pavel
