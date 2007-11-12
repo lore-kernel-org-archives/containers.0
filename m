@@ -1,48 +1,43 @@
-From: "Denis V. Lunev" <dlunev@gmail.com>
-Subject: Re: [patch 1/1][NETNS][IPV6] protect addrconf from loopback registration
-Date: Tue, 13 Nov 2007 00:00:08 +0300
-Message-ID: <4738BED8.4060701@gmail.com>
-References: <20071112151953.052335971@mai.toulouse-stg.fr.ibm.com> <20071112152403.273795630@mai.toulouse-stg.fr.ibm.com> <473879C3.5020301@sw.ru> <m1ejev4dap.fsf@ebiederm.dsl.xmission.com> <473886E2.3020703@fr.ibm.com>
+From: David Miller <davem@davemloft.net>
+Subject: Re: [patch 1/1][NETNS][IPV6] protect addrconf from loopback
+ registration
+Date: Mon, 12 Nov 2007 14:24:55 -0800 (PST)
+Message-ID: <20071112.142455.73541417.davem@davemloft.net>
+References: <473879C3.5020301@sw.ru>
+	<47387B31.20805@fr.ibm.com>
+	<473883FF.5010505@sw.ru>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
+Content-Type: Text/Plain; charset=us-ascii
 Content-Transfer-Encoding: 7bit
 Return-path: <netdev-owner@vger.kernel.org>
-In-Reply-To: <473886E2.3020703@fr.ibm.com>
+In-Reply-To: <473883FF.5010505@sw.ru>
 Sender: netdev-owner@vger.kernel.org
-To: Daniel Lezcano <dlezcano@fr.ibm.com>
-Cc: "Eric W. Biederman" <ebiederm@xmission.com>, davem@davemloft.net, netdev@vger.kernel.org, xemul@openvz.org, containers@lists.osdl.org, yoshfuji@linux-ipv6.org, Benjamin Thery <benjamin.thery@bull.net>
+To: den@sw.ru
+Cc: dlezcano@fr.ibm.com, netdev@vger.kernel.org, xemul@openvz.org, ebiederm@xmission.com, containers@lists.osdl.org, yoshfuji@linux-ipv6.org, benjamin.thery@bull.net
 List-Id: containers.vger.kernel.org
 
-> Let me try to clarify:
-> 
->  * when the init network namespace is created, the loopback is created
-> first, before ipv6, and the notifier call chain for ipv6 is not setup,
-> so the protocol does not receive the REGISTER event
-> 
->  * when the init network namespace is destroyed during shutdown, the
-> loopback is not unregistered, so there is no UNREGISTER event
-> 
->  * when we create a new network namespace, a new instance of the
-> loopback is created and a NETDEV_REGISTER is sent to ipv6 because the
-> notifier call chain has been setup by the init netns (while ipv6
-> protocol is not yet configured for the namespace which is being created)
-> 
->  * when the network namespace exits, the loopback is unregistered after
-> the ipv6 protocol but the NETDEV_UNREGISTER is sent to addrconf_notify
-> while the ipv6 protocol has been destroyed.
+From: "Denis V. Lunev" <den@sw.ru>
+Date: Mon, 12 Nov 2007 19:49:03 +0300
 
-this should not be a problem :). IPv6 exiting code could remove in_dev6
-at the protocol layer. In this case the notifier will be noop. This
-approach is completely equivalent to the unloading of IPv6 module with
-persistent loopback.
+> Unregister for a loopback in !init_net is a _valid_ operation and should
+> be clean, i.e. without kludges in the path. This is the only way to
+> check the ref-counting.
 
-The registration is still the problem. May be we need to separate
-registration from initialization and perform it after protocol layer for
-all loopback devices? I'd like this right now, but this is tight change...
+For ipv6 the stack really wants to pin down the loopback
+device because we need a valid inet6_dev object to reference
+at all times in order to simplify the per-device SNMP
+statistic bumping.
 
-> 
-> 
-> The objective of the patch is to discard these events because they were
-> never taken into account and they are not expected to be receive by ipv6
-> protocol.
-> 
+When a non-loopback device goes down, we point any existing
+references to that device's idev to the loopback one instead.
+
+I really consider taking down the loopback device to be
+an invalid operation at least how things are implemented
+currently.
+
+There was a suggestion to have a "dummy" device that takes the
+place of "point dangling idev refs to loopback's one".  But
+some people get upset when statistical events get lost, and
+rightly so.  Such a dummy device would either need to be
+invisible to the user, or show up and be utterly confusing.
+
