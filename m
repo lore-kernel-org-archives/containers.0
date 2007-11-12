@@ -1,14 +1,15 @@
 From: Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: Re: [PATCH 1/6 mm] swapoff: scan ptes preemptibly
-Date: Mon, 12 Nov 2007 10:34:02 +0530
-Message-ID: <4737DEC2.2080803@linux.vnet.ibm.com>
+Subject: Re: [PATCH 3/6 mm] memcgroup: fix try_to_free order
+Date: Mon, 12 Nov 2007 10:35:34 +0530
+Message-ID: <4737DF1E.1020701@linux.vnet.ibm.com>
 References: <Pine.LNX.4.64.0711090700530.21638@blonde.wat.veritas.com>
+	<Pine.LNX.4.64.0711090710310.21663@blonde.wat.veritas.com>
 Reply-To: balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
 Mime-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
+Content-Type: text/plain; charset=ISO-8859-1
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <Pine.LNX.4.64.0711090700530.21638-VFT1Jj/mpSzq8/QPP7pA5326JSxr+BKB@public.gmane.org>
+In-Reply-To: <Pine.LNX.4.64.0711090710310.21663-VFT1Jj/mpSzq8/QPP7pA5326JSxr+BKB@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -23,22 +24,32 @@ Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, linux-mm-Bw31MaZKKs3Ytjv
 List-Id: containers.vger.kernel.org
 
 Hugh Dickins wrote:
-> Provided that CONFIG_HIGHPTE is not set, unuse_pte_range can reduce latency
-> in swapoff by scanning the page table preemptibly: so long as unuse_pte is
-> careful to recheck that entry under pte lock.
-> 
-> (To tell the truth, this patch was not inspired by any cries for lower
-> latency here: rather, this restructuring permits a future memory controller
-> patch to allocate with GFP_KERNEL in unuse_pte, where before it could not.
-> But it would be wrong to tuck this change away inside a memcgroup patch.)
+> Why does try_to_free_mem_cgroup_pages try for order 1 pages?  It's called
+> when mem_cgroup_charge_common would go over the limit, and that's adding
+> an order 0 page.  I see no reason: it has to be a typo: fix it.
 > 
 > Signed-off-by: Hugh Dickins <hugh-DTz5qymZ9yRBDgjK7y7TUQ@public.gmane.org>
 > ---
+> Insert just after memory-controller-add-per-container-lru-and-reclaim-v7.patch
+> 
+>  mm/vmscan.c |    2 +-
+>  1 file changed, 1 insertion(+), 1 deletion(-)
+> 
+> --- patch2/mm/vmscan.c	2007-11-08 15:46:21.000000000 +0000
+> +++ patch3/mm/vmscan.c	2007-11-08 15:48:08.000000000 +0000
+> @@ -1354,7 +1354,7 @@ unsigned long try_to_free_mem_cgroup_pag
+>  		.may_swap = 1,
+>  		.swap_cluster_max = SWAP_CLUSTER_MAX,
+>  		.swappiness = vm_swappiness,
+> -		.order = 1,
+> +		.order = 0,
+>  		.mem_cgroup = mem_cont,
+>  		.isolate_pages = mem_cgroup_isolate_pages,
+>  	};
 
-Looks good to me
+Thanks for catching this, it is a typo
 
-Acked-by: Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org> and earlier
-Tested-by: Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Acked-by: Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 
 -- 
 	Warm Regards,
