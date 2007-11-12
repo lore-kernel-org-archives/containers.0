@@ -1,55 +1,71 @@
-From: Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
-Subject: Re: net-2.6-netns
-Date: Mon, 12 Nov 2007 18:13:58 +0300
-Message-ID: <47386DB6.30904@openvz.org>
-References: <47385CAB.1090702@fr.ibm.com> <47385FE8.9060605@sw.ru>
-	<47386AC0.3020607@sw.ru> <47386A73.6090509@fr.ibm.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <47386A73.6090509-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
-Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, "Denis V. Lunev" <den-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Benjamin Thery <benjamin.thery-6ktuUTfB/bM@public.gmane.org>
+From: Daniel Lezcano <dlezcano@fr.ibm.com>
+Subject: [patch 1/1][NETNS][IPV6] protect addrconf from loopback registration
+Date: Mon, 12 Nov 2007 16:19:54 +0100
+Message-ID: <20071112152403.273795630@mai.toulouse-stg.fr.ibm.com>
+References: <20071112151953.052335971@mai.toulouse-stg.fr.ibm.com>
+Return-path: <netdev-owner@vger.kernel.org>
+Content-Disposition: inline; filename=protect-addrconf-from-loopback-reg-notifications.patch
+Sender: netdev-owner@vger.kernel.org
+To: davem@davemloft.net
+Cc: netdev@vger.kernel.org, den@sw.ru, xemul@openvz.org, ebiederm@xmission.com, containers@lists.osdl.org, yoshfuji@linux-ipv6.org, Benjamin Thery <benjamin.thery@bull.net>
 List-Id: containers.vger.kernel.org
 
-Daniel Lezcano wrote:
-> Denis V. Lunev wrote:
->> Denis V. Lunev wrote:
->>> Daniel Lezcano wrote:
->>>> Hi Pavel,
->>>>
->>>> I am rebasing the ipv6 patchset for the net-2.6-netns.
->>>>
->>>> There are some parts missing in the current git tree, like
->>>> net/core/neighbour.c.
->>>>
->>>> Are you fixing that with the rebase of ipv4 ?
->>>>
->>> They are in progress now. I need 1-2 days to complete with this, Dave
->>> has accepted my patch with FIB rules and this have some impact on
->>> original Eris's code
->>>
->>> Regards,
->>> 	Den
->>>
->> We have just rebased current work to latest Dave's tree + added next
->> portion of Eric's patches.
-> 
-> Excellent.
-> 
-> Who is federating the patchset ? I mean, to who should I send to patches ?
+The loopback is now dynamically allocated. The ipv6 code was written
+considering the loopback is allocated before the ipv6 protocol 
+initialization. This is still the case when we don't use multiple
+network namespaces.
 
-To Denis. Cc to me.
+In the case of the network namespaces, ipv6 notification handler is
+already setup and active (done by the initial network namespace), 
+so when a network namespace is created, a new instance of the 
+loopback device, via dynamic allocation, will trigger a REGISTER event
+to addrconf_notify and this one will try to setup the network device
+while the ipv6 protocol is not yet initialized for the network namespace.
 
-Thanks,
-Pavel
+Because the ipv6 is relying on the fact that the loopback device will
+not trigger REGISTER/UNREGISTER events, I just protect the addrconf_notify
+function when the loopback register event is triggered.
+
+In the case of multiple network namespaces, the usual ipv6 protocol 
+initialization will be done after the loopback initialization with 
+the subsystem registration mechanism.
+
+Signed-off-by: Daniel Lezcano <dlezcano@fr.ibm.com>
+Signed-off-by: Benjamin Thery <benjamin.thery@bull.net>
+---
+ net/ipv6/addrconf.c |    9 +++++++--
+ 1 file changed, 7 insertions(+), 2 deletions(-)
+
+Index: linux-2.6-netns/net/ipv6/addrconf.c
+===================================================================
+--- linux-2.6-netns.orig/net/ipv6/addrconf.c
++++ linux-2.6-netns/net/ipv6/addrconf.c
+@@ -2272,7 +2272,8 @@ static int addrconf_notify(struct notifi
+ 
+ 	switch(event) {
+ 	case NETDEV_REGISTER:
+-		if (!idev && dev->mtu >= IPV6_MIN_MTU) {
++		if (!(dev->flags & IFF_LOOPBACK) &&
++		    !idev && dev->mtu >= IPV6_MIN_MTU) {
+ 			idev = ipv6_add_dev(dev);
+ 			if (!idev)
+ 				return notifier_from_errno(-ENOMEM);
+@@ -2366,11 +2367,15 @@ static int addrconf_notify(struct notifi
+ 		/* MTU falled under IPV6_MIN_MTU. Stop IPv6 on this interface. */
+ 
+ 	case NETDEV_DOWN:
++		addrconf_ifdown(dev, 0);
++		break;
++
+ 	case NETDEV_UNREGISTER:
+ 		/*
+ 		 *	Remove all addresses from this interface.
+ 		 */
+-		addrconf_ifdown(dev, event != NETDEV_DOWN);
++		if (!(dev->flags & IFF_LOOPBACK))
++			addrconf_ifdown(dev, 1);
+ 		break;
+ 
+ 	case NETDEV_CHANGENAME:
+
+-- 
