@@ -1,16 +1,15 @@
-From: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
-Subject: Re: [PATCH 6/6 mm] memcgroup: revert swap_state mods
-Date: Mon, 12 Nov 2007 14:17:57 +0900
-Message-ID: <20071112141757.13ce67dd.kamezawa.hiroyu@jp.fujitsu.com>
+From: Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Subject: Re: [PATCH 5/6 mm] memcgroup: fix zone isolation OOM
+Date: Mon, 12 Nov 2007 12:12:57 +0530
+Message-ID: <4737F5F1.5030907@linux.vnet.ibm.com>
 References: <Pine.LNX.4.64.0711090700530.21638@blonde.wat.veritas.com>
-	<Pine.LNX.4.64.0711090713300.21663@blonde.wat.veritas.com>
-	<20071109182156.7174e92b.kamezawa.hiroyu@jp.fujitsu.com>
-	<Pine.LNX.4.64.0711120447010.23491@blonde.wat.veritas.com>
+	<Pine.LNX.4.64.0711090712180.21663@blonde.wat.veritas.com>
+Reply-To: balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
 Mime-Version: 1.0
 Content-Type: text/plain; charset=US-ASCII
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <Pine.LNX.4.64.0711120447010.23491-VFT1Jj/mpSzq8/QPP7pA5326JSxr+BKB@public.gmane.org>
+In-Reply-To: <Pine.LNX.4.64.0711090712180.21663-VFT1Jj/mpSzq8/QPP7pA5326JSxr+BKB@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -21,35 +20,44 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: Hugh Dickins <hugh-DTz5qymZ9yRBDgjK7y7TUQ@public.gmane.org>
-Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Mon, 12 Nov 2007 04:57:03 +0000 (GMT)
-Hugh Dickins <hugh-DTz5qymZ9yRBDgjK7y7TUQ@public.gmane.org> wrote:
-> > Could I confirm a change in the logic  ?
-> > 
-> >  * Before this patch, wrong swapcache charge is added to one who
-> >    called try_to_free_page().
+Hugh Dickins wrote:
+> mem_cgroup_charge_common shows a tendency to OOM without good reason,
+> when a memhog goes well beyond its rss limit but with plenty of swap
+> available.  Seen on x86 but not on PowerPC; seen when the next patch
+> omits swapcache from memcgroup, but we presume it can happen without.
 > 
-> try_to_free_pages?  No, I don't think any wrong charge was made
-> there. 
-Ah, sorry. I misundestood when it was added to swapcache... 
+> mem_cgroup_isolate_pages is not quite satisfying reclaim's criteria
+> for OOM avoidance.  Already it has to scan beyond the nr_to_scan limit
+> when it finds a !LRU page or an active page when handling inactive or
+> an inactive page when handling active.  It needs to do exactly the same
+> when it finds a page from the wrong zone (the x86 tests had two zones,
+> the PowerPC tests had only one).
+> 
+> Don't increment scan and then decrement it in these cases, just move
+> the incrementation down.  Fix recent off-by-one when checking against
+> nr_to_scan.  Cut out "Check if the meta page went away from under us",
+> presumably left over from early debugging: no amount of such checks
+> could save us if this list really were being updated without locking.
+> 
 
-> It was when reading in swap pages.  The usual way is by
-> swapin_readahead, which reads in a cluster of swap pages, which
-> are quite likely to belong to different memcgroups, but were all
-> charged to the one which is doing the fault on its target page.
-> Another way is in swapoff, where they all got charged to whoever
-> was doing the swapoff (and the charging in unuse_pte was a no-op).
-> 
-I see.
+It's a spill over from the old code, we do all operations under
+the mem_cont's lru_lock.
 
-> >  * After this patch, anonymous page's charge will drop to 0 when
-> >    page_remove_rmap() is called.
+> This change does make the unlimited scan while holding two spinlocks
+> even worse - bad for latency and bad for containment; but that's a
+> separate issue which is better left to be fixed a little later.
 > 
-> Yes, when its final (usually its only) page_remove_rmap is called.
-> 
-Thank you for confirmation !
+> Signed-off-by: Hugh Dickins <hugh-DTz5qymZ9yRBDgjK7y7TUQ@public.gmane.org>
 
-Regards,
--Kame
+For the swapout test case scenario sent by Hugh
+
+Tested-by: Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+
+-- 
+	Warm Regards,
+	Balbir Singh
+	Linux Technology Center
+	IBM, ISTL
