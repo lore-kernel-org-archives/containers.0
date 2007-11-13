@@ -1,47 +1,121 @@
-From: "Paul Menage" <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
-Subject: Re: Revert for cgroups CPU accounting subsystem patch
-Date: Mon, 12 Nov 2007 23:59:50 -0800
-Message-ID: <6599ad830711122359s5a4397f1ye6df324f57449721__2625.91448049552$1194940868$gmane$org@mail.gmail.com>
-References: <6599ad830711122125u576e85a6w428466a0ab46dbc6@mail.gmail.com>
-	<20071113060038.GC3359@linux.vnet.ibm.com>
-	<6599ad830711122205g88aae4fua8dd76cf6e8ab84d@mail.gmail.com>
-	<47394B84.8030008@linux.vnet.ibm.com>
-	<6599ad830711122310nf7530cfs5ef1fea061b1252c@mail.gmail.com>
-	<47395277.1060006@linux.vnet.ibm.com>
-	<20071113075946.GA14731@linux.vnet.ibm.com>
+From: Daniel Lezcano <dlezcano@fr.ibm.com>
+Subject: Re: [patch 1/1][NETNS][IPV6] protect addrconf from loopback registration
+Date: Tue, 13 Nov 2007 11:55:32 +0100
+Message-ID: <473982A4.5020905@fr.ibm.com>
+References: <20071112151953.052335971@mai.toulouse-stg.fr.ibm.com> <20071112152403.273795630@mai.toulouse-stg.fr.ibm.com> <473879C3.5020301@sw.ru> <m1ejev4dap.fsf@ebiederm.dsl.xmission.com> <473886E2.3020703@fr.ibm.com> <m16407450i.fsf@ebiederm.dsl.xmission.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20071113075946.GA14731-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Content-Disposition: inline
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: vatsa-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, LKML <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>, Linus Torvalds <torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Return-path: <netdev-owner@vger.kernel.org>
+In-Reply-To: <m16407450i.fsf@ebiederm.dsl.xmission.com>
+Sender: netdev-owner@vger.kernel.org
+To: "Eric W. Biederman" <ebiederm@xmission.com>
+Cc: "Denis V. Lunev" <den@sw.ru>, davem@davemloft.net, netdev@vger.kernel.org, xemul@openvz.org, containers@lists.osdl.org, yoshfuji@linux-ipv6.org, Benjamin Thery <benjamin.thery@bull.net>
 List-Id: containers.vger.kernel.org
 
-On Nov 12, 2007 11:59 PM, Srivatsa Vaddagiri <vatsa-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org> wrote:
->
-> Thinking of it more, this requirement to "group tasks for only accounting
-> purpose" may be required for other resources (mem, io, network etc) as well?
-> Should we have a generic accounting controller which can provide these
-> various resource usgae stats for a group (cpu, mem etc) by iterating thr' the
-> task list for the group and summing up the corresponding stats already present
-> in task structure?
+Eric W. Biederman wrote:
+> Daniel Lezcano <dlezcano@fr.ibm.com> writes:
+> 
+>> Eric W. Biederman wrote:
+>>> "Denis V. Lunev" <den@sw.ru> writes:
+>>>
+>>>>> Index: linux-2.6-netns/net/ipv6/addrconf.c
+>>>>> ===================================================================
+>>>>> --- linux-2.6-netns.orig/net/ipv6/addrconf.c
+>>>>> +++ linux-2.6-netns/net/ipv6/addrconf.c
+>>>>> @@ -2272,7 +2272,8 @@ static int addrconf_notify(struct notifi
+>>>>>   	switch(event) {
+>>>>>  	case NETDEV_REGISTER:
+>>>>> -		if (!idev && dev->mtu >= IPV6_MIN_MTU) {
+>>>>> +		if (!(dev->flags & IFF_LOOPBACK) &&
+>>>>> +		    !idev && dev->mtu >= IPV6_MIN_MTU) {
+>>> It is idev being true here for the loopback device that would
+>>> prevent things not missing the REGISTER event.
+>>>
+>>> Hmm.  But we do call ipv6_add_dev on loopback and now the loopback
+>>> device is practically guaranteed to be the first device so we can
+>>> probably just remove the special case in addrconf_init.
+>>>
+>>> Anyway Daniels patch makes increasingly less sense the more I look
+>>> at it.
+>> Let me try to clarify:
+>>
+>>  * when the init network namespace is created, the loopback is created first,
+>> before ipv6, and the notifier call chain for ipv6 is not setup, so the protocol
+>> does not receive the REGISTER event
+>>
+>>  * when the init network namespace is destroyed during shutdown, the loopback is
+>> not unregistered, so there is no UNREGISTER event
+> 
+> * When addrconf_init calls register_netdevice_notifier we receive
+>   NETDEV_REGISTER and NETDEV_UP for all network devices that are in
+>   the system including the loopback device.
 
-In theory it could certainly be useful - but it can only be done if
-something in the kernel is already keeping track of resources on a
-per-task basis. This works for CPU, but isn't really possible for
-memory without doing something lame like just adding up the tasks' RSS
-values (since the page accounting is the hard part - limiting is easy
-once you have accounting).
+Thanks for the information. Effectively, I missed this :|
 
-Paul
+>>  * when we create a new network namespace, a new instance of the loopback is
+>> created and a NETDEV_REGISTER is sent to ipv6 because the notifier call chain
+>> has been setup by the init netns (while ipv6 protocol is not yet configured for
+>> the namespace which is being created)
+> 
+> Possibly there may be some ordering issues here.
+> 
+>>  * when the network namespace exits, the loopback is unregistered after the ipv6
+>> protocol but the NETDEV_UNREGISTER is sent to addrconf_notify while the ipv6
+>> protocol has been destroyed.
+>>
+>>
+>> The objective of the patch is to discard these events because they were never
+>> taken into account and they are not expected to be receive by ipv6 protocol.
+> 
+> My opinion is that both your analysis is slightly off (as to the cause
+> of your problems) and that your approach to fix your problem is wrong
+> because you don't untangle the knot you keep it.
+
+Yes, I will look at how to fix that properly.
+
+> ...
+> I have register_pernet_subsys and register_per_net_device to ensure
+> that when we create a new network namespace all of the subsystems are
+> initialized before the network devices are initialize.  So ipv6 should
+> be ready before we initialize the new loopback device comes into
+> existence.
+> 
+> The preservation of the order of the network namespace callbacks
+> ensures that the loopback device will be the first network device
+> registered, and if it helps we can take advantage of that in reference
+> to the weirdness from the comment below.
+> 
+> 	/* The addrconf netdev notifier requires that loopback_dev
+> 	 * has it's ipv6 private information allocated and setup
+> 	 * before it can bring up and give link-local addresses
+> 	 * to other devices which are up.
+> 	 *
+> 	 * Unfortunately, loopback_dev is not necessarily the first
+> 	 * entry in the global dev_base list of net devices.  In fact,
+> 	 * it is likely to be the very last entry on that list.
+> 	 * So this causes the notifier registry below to try and
+> 	 * give link-local addresses to all devices besides loopback_dev
+> 	 * first, then loopback_dev, which cases all the non-loopback_dev
+> 	 * devices to fail to get a link-local address.
+> 	 *
+> 	 * So, as a temporary fix, allocate the ipv6 structure for
+> 	 * loopback_dev first by hand.
+> 	 * Longer term, all of the dependencies ipv6 has upon the loopback
+> 	 * device and it being up should be removed.
+> 	 */
+> 
+> We can just special case registration of the loopback device to
+> do:
+> 	ip6_null_entry.u.dst.dev = init_net.loopback_dev;
+> 	ip6_null_entry.rt6i_idev = in6_dev_get(init_net.loopback_dev);
+> #ifdef CONFIG_IPV6_MULTIPLE_TABLES
+> 	ip6_prohibit_entry.u.dst.dev = init_net.loopback_dev;
+> 	ip6_prohibit_entry.rt6i_idev = in6_dev_get(init_net.loopback_dev);
+> 	ip6_blk_hole_entry.u.dst.dev = init_net.loopback_dev;
+> 	ip6_blk_hole_entry.rt6i_idev = in6_dev_get(init_net.loopback_dev);
+> #endif
+> 
+> Which would remove the special case from addrconf_init.
+
+
