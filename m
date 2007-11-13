@@ -1,31 +1,26 @@
 From: David Miller <davem@davemloft.net>
-Subject: Re: [PATCH 1/2] cleanup pernet operation without CONFIG_NET_NS
-Date: Tue, 13 Nov 2007 03:24:07 -0800 (PST)
-Message-ID: <20071113.032407.155828314.davem@davemloft.net>
-References: <20071107120007.GA10169@iris.sw.ru>
+Subject: Re: [PATCH 2/2] move unneeded data to initdata section
+Date: Tue, 13 Nov 2007 03:24:15 -0800 (PST)
+Message-ID: <20071113.032415.57038512.davem@davemloft.net>
+References: <20071107120100.GA10185@iris.sw.ru>
 Mime-Version: 1.0
 Content-Type: Text/Plain; charset=us-ascii
 Content-Transfer-Encoding: 7bit
 Return-path: <netdev-owner@vger.kernel.org>
-In-Reply-To: <20071107120007.GA10169@iris.sw.ru>
+In-Reply-To: <20071107120100.GA10185@iris.sw.ru>
 Sender: netdev-owner@vger.kernel.org
 To: den@openvz.org
 Cc: devel@openvz.org, containers@lists.osdl.org, netdev@vger.kernel.org, clg@fr.ibm.com, benjamin.thery@bull.net
 List-Id: containers.vger.kernel.org
 
 From: "Denis V. Lunev" <den@openvz.org>
-Date: Wed, 7 Nov 2007 15:00:07 +0300
+Date: Wed, 7 Nov 2007 15:01:00 +0300
 
-> If CONFIG_NET_NS is not set, the only namespace is possible.
+> This patch reverts Eric's commit 2b008b0a8e96b726c603c5e1a5a7a509b5f61e35
 > 
-> This patch removes list of pernet_operations and cleanups code a bit.
-> This list is not needed if there are no namespaces. We should just call
-> ->init method.
+> It diets .text & .data section of the kernel if CONFIG_NET_NS is not set.
+> This is safe after list operations cleanup.
 > 
-> Additionally, the ->exit will be called on module unloading only. This
-> case is safe - the code is not discarded. For the in/kernel code, ->exit
-> should never be called.
-> 
-> Signed-off-by: Denis V. Lunev <den@openvz.org>
+> Signed-of-by: Denis V. Lunev <den@openvz.org>
 
-Applied.
+Applied, thanks Denis.
