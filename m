@@ -1,57 +1,64 @@
 From: ebiederm@xmission.com (Eric W. Biederman)
 Subject: Re: [patch 1/1][NETNS][IPV6] protect addrconf from loopback registration
-Date: Tue, 13 Nov 2007 05:59:38 -0700
-Message-ID: <m1r6iu2tdx.fsf@ebiederm.dsl.xmission.com>
-References: <473879C3.5020301@sw.ru> <47387B31.20805@fr.ibm.com>
-	<473883FF.5010505@sw.ru>
-	<20071112.142455.73541417.davem@davemloft.net>
+Date: Tue, 13 Nov 2007 06:11:37 -0700
+Message-ID: <m1ir462sty.fsf@ebiederm.dsl.xmission.com>
+References: <m1ejev4dap.fsf@ebiederm.dsl.xmission.com>
+	<473886E2.3020703@fr.ibm.com>
+	<m16407450i.fsf@ebiederm.dsl.xmission.com>
+	<20071113.105229.57026325.yoshfuji@linux-ipv6.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+Content-Type: text/plain; charset=euc-jp
+Content-Transfer-Encoding: QUOTED-PRINTABLE
 Return-path: <netdev-owner@vger.kernel.org>
-In-Reply-To: <20071112.142455.73541417.davem@davemloft.net> (David Miller's
-	message of "Mon, 12 Nov 2007 14:24:55 -0800 (PST)")
+In-Reply-To: <20071113.105229.57026325.yoshfuji@linux-ipv6.org> (YOSHIFUJI
+	Hideaki's message of "Tue, 13 Nov 2007 10:52:29 +0900 (JST)")
 Sender: netdev-owner@vger.kernel.org
-To: David Miller <davem@davemloft.net>
-Cc: den@sw.ru, dlezcano@fr.ibm.com, netdev@vger.kernel.org, xemul@openvz.org, containers@lists.osdl.org, yoshfuji@linux-ipv6.org, benjamin.thery@bull.net
+To: YOSHIFUJI Hideaki / =?euc-jp?B?tcjGo7HRzMA=?= <yoshfuji@linux-ipv6.org>
+Cc: dlezcano@fr.ibm.com, den@sw.ru, davem@davemloft.net, netdev@vger.kernel.org, xemul@openvz.org, containers@lists.osdl.org, benjamin.thery@bull.net
 List-Id: containers.vger.kernel.org
 
-David Miller <davem@davemloft.net> writes:
+YOSHIFUJI Hideaki / =B5=C8=C6=A3=B1=D1=CC=C0 <yoshfuji@linux-ipv6.org> =
+writes:
 
-Well this is a weird way to get to this part of the conversation.
-
-> From: "Denis V. Lunev" <den@sw.ru>
-> Date: Mon, 12 Nov 2007 19:49:03 +0300
+> In article <m16407450i.fsf@ebiederm.dsl.xmission.com> (at Mon, 12 Nov=
+ 2007
+> 12:50:53 -0700), ebiederm@xmission.com (Eric W. Biederman) says:
 >
->> Unregister for a loopback in !init_net is a _valid_ operation and should
->> be clean, i.e. without kludges in the path. This is the only way to
->> check the ref-counting.
+>> My opinion is that both your analysis is slightly off (as to the cau=
+se
+>> of your problems) and that your approach to fix your problem is wron=
+g
+>> because you don't untangle the knot you keep it.
+> :
+>> I have register_pernet_subsys and register_per_net_device to ensure
+>> that when we create a new network namespace all of the subsystems ar=
+e
+>> initialized before the network devices are initialize.  So ipv6 shou=
+ld
+>> be ready before we initialize the new loopback device comes into
+>> existence.
 >
-> For ipv6 the stack really wants to pin down the loopback
-> device because we need a valid inet6_dev object to reference
-> at all times in order to simplify the per-device SNMP
-> statistic bumping.
->
-> When a non-loopback device goes down, we point any existing
-> references to that device's idev to the loopback one instead.
->
-> I really consider taking down the loopback device to be
-> an invalid operation at least how things are implemented
-> currently.
+> User may not load ipv6.ko at boot, and then do "modprobe ipv6".
+> Do you take this into account?
 
-In a secondary network namespace the current implementation
-registers the loopback device before all other network devices
-in a network namespace and it unregisters the loopback device
-after all other network devices.
+Absolutely.
 
-So we don't endanger the current scheme of pointing any existing
-reference to the loopback device.  In fact the current ipv6 addrconf_cleanup
-largely does the same thing.
+In the general case the infrastructure has to work for netfilter, ipv6,
+and other parts of the networking stack that can be made modular.
 
-Unregistering the loopback device is definitely a case where we need
-to tread very carefully.
+The only limitation is that if you update struct net to add a new field
+to help a modular ipv6 the core kernel needs to be recompiled.
 
-Bug we absolutely need to do all of our cleanup for a network
-namespace went it goes away and that includes removing the per network
-namespace copy of the loopback device.
+When you load ipv6.ko late in the game first we call the init methods
+which will eventually register the per network namespace registration
+methods.  Then register_netdevice_notifier is called.  At which point
+ipv6 is ready for the registration method.
+
+=46or additional network namespace (which is the case that was claimed
+was in trouble) the pernet_susbsys logic initializes all of the
+subsystems before it initializes any of the network devices.
+Effectively persevering the initialization order that exists today
+with just the init methods and register_netdevice_notifier.
+
 
 Eric
