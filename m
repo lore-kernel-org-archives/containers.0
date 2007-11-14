@@ -1,64 +1,56 @@
-From: ebiederm@xmission.com (Eric W. Biederman)
-Subject: Re: [patch 1/1][NETNS][IPV6] protect addrconf from loopback registration
-Date: Tue, 13 Nov 2007 06:11:37 -0700
-Message-ID: <m1ir462sty.fsf@ebiederm.dsl.xmission.com>
-References: <m1ejev4dap.fsf@ebiederm.dsl.xmission.com>
-	<473886E2.3020703@fr.ibm.com>
-	<m16407450i.fsf@ebiederm.dsl.xmission.com>
-	<20071113.105229.57026325.yoshfuji@linux-ipv6.org>
+From: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+Subject: [RFC][ for -mm] memory controller enhancements for NUMA [1/10]
+ record nid/zid on page_cgroup
+Date: Wed, 14 Nov 2007 17:41:31 +0900
+Message-ID: <20071114174131.cf7c4aa6.kamezawa.hiroyu@jp.fujitsu.com>
+References: <20071114173950.92857eaa.kamezawa.hiroyu@jp.fujitsu.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=euc-jp
-Content-Transfer-Encoding: QUOTED-PRINTABLE
-Return-path: <netdev-owner@vger.kernel.org>
-In-Reply-To: <20071113.105229.57026325.yoshfuji@linux-ipv6.org> (YOSHIFUJI
-	Hideaki's message of "Tue, 13 Nov 2007 10:52:29 +0900 (JST)")
-Sender: netdev-owner@vger.kernel.org
-To: YOSHIFUJI Hideaki / =?euc-jp?B?tcjGo7HRzMA=?= <yoshfuji@linux-ipv6.org>
-Cc: dlezcano@fr.ibm.com, den@sw.ru, davem@davemloft.net, netdev@vger.kernel.org, xemul@openvz.org, containers@lists.osdl.org, benjamin.thery@bull.net
+Content-Type: text/plain; charset=US-ASCII
+Content-Transfer-Encoding: 7bit
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <20071114173950.92857eaa.kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+Cc: "containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org" <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, "linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org" <linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org>, "yamamoto-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org" <yamamoto-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>, hugh-DTz5qymZ9yRBDgjK7y7TUQ@public.gmane.org, "balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org" <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-YOSHIFUJI Hideaki / =B5=C8=C6=A3=B1=D1=CC=C0 <yoshfuji@linux-ipv6.org> =
-writes:
+This patch adds nid/zoneid value to page cgroup.
+This helps per-zone accounting for memory cgroup and reclaim routine.
 
-> In article <m16407450i.fsf@ebiederm.dsl.xmission.com> (at Mon, 12 Nov=
- 2007
-> 12:50:53 -0700), ebiederm@xmission.com (Eric W. Biederman) says:
->
->> My opinion is that both your analysis is slightly off (as to the cau=
-se
->> of your problems) and that your approach to fix your problem is wron=
-g
->> because you don't untangle the knot you keep it.
-> :
->> I have register_pernet_subsys and register_per_net_device to ensure
->> that when we create a new network namespace all of the subsystems ar=
-e
->> initialized before the network devices are initialize.  So ipv6 shou=
-ld
->> be ready before we initialize the new loopback device comes into
->> existence.
->
-> User may not load ipv6.ko at boot, and then do "modprobe ipv6".
-> Do you take this into account?
+Signed-off-by: KAMEZAWA Hiroyuki <kmaezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
 
-Absolutely.
+ mm/memcontrol.c |    6 ++++++
+ 1 file changed, 6 insertions(+)
 
-In the general case the infrastructure has to work for netfilter, ipv6,
-and other parts of the networking stack that can be made modular.
-
-The only limitation is that if you update struct net to add a new field
-to help a modular ipv6 the core kernel needs to be recompiled.
-
-When you load ipv6.ko late in the game first we call the init methods
-which will eventually register the per network namespace registration
-methods.  Then register_netdevice_notifier is called.  At which point
-ipv6 is ready for the registration method.
-
-=46or additional network namespace (which is the case that was claimed
-was in trouble) the pernet_susbsys logic initializes all of the
-subsystems before it initializes any of the network devices.
-Effectively persevering the initialization order that exists today
-with just the init methods and register_netdevice_notifier.
-
-
-Eric
+Index: linux-2.6.24-rc2-mm1/mm/memcontrol.c
+===================================================================
+--- linux-2.6.24-rc2-mm1.orig/mm/memcontrol.c
++++ linux-2.6.24-rc2-mm1/mm/memcontrol.c
+@@ -131,6 +131,8 @@ struct page_cgroup {
+ 	atomic_t ref_cnt;		/* Helpful when pages move b/w  */
+ 					/* mapped and cached states     */
+ 	int	 flags;
++	short	nid;
++	short	zid;
+ };
+ #define PAGE_CGROUP_FLAG_CACHE	(0x1)	/* charged as cache */
+ #define PAGE_CGROUP_FLAG_ACTIVE (0x2)	/* page is active in this cgroup */
+@@ -216,6 +218,10 @@ void page_assign_page_cgroup(struct page
+ 		VM_BUG_ON(!page_cgroup_locked(page));
+ 	locked = (page->page_cgroup & PAGE_CGROUP_LOCK);
+ 	page->page_cgroup = ((unsigned long)pc | locked);
++	if (pc) {
++		pc->nid = page_to_nid(page);
++		pc->zid = page_zonenum(page);
++	}
+ }
+ 
+ struct page_cgroup *page_get_page_cgroup(struct page *page)
