@@ -1,15 +1,14 @@
-From: Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [patch 1/1][NETNS] fix fib_frontend compilation error
-Date: Wed, 14 Nov 2007 17:18:10 +0100
-Message-ID: <473B1FC2.9030003@fr.ibm.com>
-References: <20071114142443.794857293@mai.toulouse-stg.fr.ibm.com>
-	<20071114142523.283777897@mai.toulouse-stg.fr.ibm.com>
-	<473B1F63.5040105@sw.ru>
+From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
+Subject: Re: net 2.6.25
+Date: Wed, 14 Nov 2007 11:19:38 -0700
+Message-ID: <m1tznozo3p.fsf@ebiederm.dsl.xmission.com>
+References: <473AC169.1030202@sw.ru>
+	<m1ve8517dd.fsf@ebiederm.dsl.xmission.com> <473AC8C8.6070307@sw.ru>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=KOI8-R; format=flowed
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset=us-ascii
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <473B1F63.5040105-3ImXcnM4P+0@public.gmane.org>
+In-Reply-To: <473AC8C8.6070307-3ImXcnM4P+0@public.gmane.org> (Denis V. Lunev's message of "Wed, 14
+	Nov 2007 13:07:04 +0300")
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -20,16 +19,14 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: "Denis V. Lunev" <den-3ImXcnM4P+0@public.gmane.org>
-Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
+Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Benjamin Thery <benjamin.thery-6ktuUTfB/bM@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Denis V. Lunev wrote:
-> applied... though I am not too familiar with git and the author has been
-> set to me rather than you with your signed-off :(
+"Denis V. Lunev" <den-3ImXcnM4P+0@public.gmane.org> writes:
 
-It's ok :)
+> Will you be happy, if I'll re-merge all of them from scratch preserving
+> original subjects from the letters?
 
-I think you should specify the --author option when commiting.
+Yes that is my big issue.
 
-By the way, I see that there are some patches without your Signed-off 
-and you are in the delivery path, shouldn't you Signed-off all the patches ?
+Eric
