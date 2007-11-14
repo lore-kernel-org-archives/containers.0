@@ -1,13 +1,14 @@
-From: Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
-Subject: Re: netns compilation
-Date: Wed, 14 Nov 2007 18:09:59 +0300
-Message-ID: <473B0FC7.6040900@openvz.org>
-References: <473B0DF7.2050509@fr.ibm.com>
+From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
+Subject: Re: net 2.6.25
+Date: Wed, 14 Nov 2007 09:03:30 -0700
+Message-ID: <m1fxz824rx.fsf@ebiederm.dsl.xmission.com>
+References: <473AC169.1030202@sw.ru> <473ACE7F.5080007@fr.ibm.com>
+	<473AD3F0.1000604@sw.ru>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset=us-ascii
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <473B0DF7.2050509-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <473AD3F0.1000604-3ImXcnM4P+0@public.gmane.org> (Denis V. Lunev's message of "Wed, 14
+	Nov 2007 13:54:40 +0300")
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -17,27 +18,33 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
-Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, "Denis V. Lunev" <den-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+To: "Denis V. Lunev" <den-3ImXcnM4P+0@public.gmane.org>
+Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Benjamin Thery <benjamin.thery-6ktuUTfB/bM@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Daniel Lezcano wrote:
-> Actually the CONFIG_NET_NS is depending on CONFIG_NET and !CONFIG_SYSFS
-> 
-> In order to disable CONFIG_SYSFS, I must specify CONFIG_EMBEDDED to have 
-> the choice to unset the sysfs.
-> 
-> Why don't we make CONFIG_NET_NS depends on CONFIG_NET and 
-> CONFIG_SYSFS_DEPRECATED ?
-> 
+"Denis V. Lunev" <den-3ImXcnM4P+0@public.gmane.org> writes:
 
-AFAIK the SYSFS_DEPRECATED hides the sysfs functionality (files)
-that is not recommended to use, but doesn't disable the sysfs
-filesystem as is. On the other hand the NET_NS doesn't require 
-any deprecated sysfs files, it just can't work at all with the 
-SYSFS turned on. 
+> Daniel Lezcano wrote:
+>> Denis V. Lunev wrote:
+>>> Hello, guys!
+>>>
+>>> David has been opened net-2.6.25 tree yesterday, so we could send a new
+>>> portion of NETNS there. If there are no objections, I'll send first six
+>>> patches from OpenVZ GIT tomorrow, i.e. RTNL infrastructure, Packet &
+>>> Unix sockets virtualization + some our /proc cleanups.
+>> 
+>> Did Pavel had time to look at RCU looking mechanism to replace
+>> rtnl_lock/rtnl_unlock to protect the netns list ?
+> not yet
+>
+>> ps: isn't the openvz mailing list already subscribed to containers@
+> hmm :) Pavel say yes :) trying...
 
-That's why the things look like this.
+Well honestly I think I would rather have a spin lock then an rcu thing.
 
-Thanks,
-Pavel
+It may not be a big deal because we already have to check the count and
+if it is zero ignore the namespace, so rcu may not add complications but
+changing something that already has interesting usage and lifetime rules
+to rcu sends up warning signs for me.
+
+Eric
