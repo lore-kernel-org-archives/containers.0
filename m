@@ -1,7 +1,7 @@
 From: Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
-Subject: [PATCH 2/6] Move the UTS namespace under UTS_NS option
-Date: Wed, 14 Nov 2007 14:30:06 +0300
-Message-ID: <473ADC3E.8090609@openvz.org>
+Subject: [PATCH 4/6] Cleanup the code managed with the USER_NS option
+Date: Wed, 14 Nov 2007 14:36:57 +0300
+Message-ID: <473ADDD9.6090709@openvz.org>
 References: <473ADB5B.50902@openvz.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1
@@ -21,101 +21,136 @@ To: Andrew Morton <akpm-3NddpPZAyC0@public.gmane.org>
 Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Cedric Le Goater <clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Linux Kernel Mailing List <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Currently all the namespace management code is in the 
-kernel/utsname.c file, so just compile it out and make stubs 
-in the appropriate header.
+Make the user_namespace.o compilation depend on this option and 
+move the init_user_ns into user.c file to make the kernel compile
+and work without the namespaces support. This make the user
+namespace code be organized similar to other namespaces'.
 
-The init namespace itself is in init/version.c and is in the
-kernel all the time.
+Also mask the USER_NS option as "depend on NAMESPACES".
 
 Signed-off-by: Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 
 ---
 
-diff --git a/include/linux/utsname.h b/include/linux/utsname.h
-index 923db99..1123267 100644
---- a/include/linux/utsname.h
-+++ b/include/linux/utsname.h
-@@ -35,6 +35,7 @@ struct new_utsname {
- #include <linux/sched.h>
- #include <linux/kref.h>
- #include <linux/nsproxy.h>
-+#include <linux/err.h>
- #include <asm/atomic.h>
- 
- struct uts_namespace {
-@@ -43,6 +44,7 @@ struct uts_namespace {
- };
- extern struct uts_namespace init_uts_ns;
- 
-+#ifdef CONFIG_UTS_NS
- static inline void get_uts_ns(struct uts_namespace *ns)
- {
- 	kref_get(&ns->kref);
-@@ -56,6 +58,25 @@ static inline void put_uts_ns(struct uts_namespace *ns)
- {
- 	kref_put(&ns->kref, free_uts_ns);
- }
-+#else
-+static inline void get_uts_ns(struct uts_namespace *ns)
-+{
-+}
-+
-+static inline void put_uts_ns(struct uts_namespace *ns)
-+{
-+}
-+
-+static inline struct uts_namespace *copy_utsname(unsigned long flags,
-+					struct uts_namespace *ns)
-+{
-+	if (flags & CLONE_NEWUTS)
-+		return ERR_PTR(-EINVAL);
-+
-+	return ns;
-+}
-+#endif
-+
- static inline struct new_utsname *utsname(void)
- {
- 	return &current->nsproxy->uts_ns->name;
 diff --git a/init/Kconfig b/init/Kconfig
-index 4ccc1a0..2139218 100644
+index fe73fe6..825f10c 100644
 --- a/init/Kconfig
 +++ b/init/Kconfig
-@@ -413,6 +413,13 @@ config NAMESPACES
- 	  or same user id or pid may refer to different tasks when used in
- 	  different namespaces.
+@@ -206,15 +206,6 @@ config TASK_IO_ACCOUNTING
  
-+config UTS_NS
-+	bool "UTS namespace"
-+	depends on NAMESPACES
+ 	  Say N if unsure.
+ 
+-config USER_NS
+-	bool "User Namespaces (EXPERIMENTAL)"
+-	default n
+-	depends on EXPERIMENTAL
+-	help
+-	  Support user namespaces.  This allows containers, i.e.
+-	  vservers, to use user namespaces to provide different
+-	  user info for different servers.  If unsure, say N.
+-
+ config PID_NS
+ 	bool "PID Namespaces (EXPERIMENTAL)"
+ 	default n
+@@ -427,6 +418,14 @@ config IPC_NS
+ 	  In this namespace tasks work with IPC ids which correspond to
+ 	  different IPC objects in different namespaces
+ 
++config USER_NS
++	bool "User namespace (EXPERIMENTAL)"
++	depends on NAMESPACES && EXPERIMENTAL
 +	help
-+	  In this namespace tasks see different info provided with the
-+	  uname() system call
++	  This allows containers, i.e. vservers, to use user namespaces
++	  to provide different user info for different servers.
++	  If unsure, say N.
 +
  config BLK_DEV_INITRD
  	bool "Initial RAM filesystem and RAM disk (initramfs/initrd) support"
  	depends on BROKEN || !FRV
 diff --git a/kernel/Makefile b/kernel/Makefile
-index 876dbcd..19d2411 100644
+index 19d2411..d01cb7b 100644
 --- a/kernel/Makefile
 +++ b/kernel/Makefile
-@@ -9,7 +9,7 @@ obj-y     = sched.o fork.o exec_domain.o panic.o printk.o profile.o \
+@@ -4,7 +4,7 @@
+ 
+ obj-y     = sched.o fork.o exec_domain.o panic.o printk.o profile.o \
+ 	    exit.o itimer.o time.o softirq.o resource.o \
+-	    sysctl.o capability.o ptrace.o timer.o user.o user_namespace.o \
++	    sysctl.o capability.o ptrace.o timer.o user.o \
+ 	    signal.o sys.o kmod.o workqueue.o pid.o \
  	    rcupdate.o extable.o params.o posix-timers.o \
  	    kthread.o wait.o kfifo.o sys_ni.o posix-cpu-timers.o mutex.o \
- 	    hrtimer.o rwsem.o nsproxy.o srcu.o \
--	    utsname.o notifier.o pm_qos_params.o
-+	    notifier.o pm_qos_params.o
- 
- obj-$(CONFIG_SYSCTL) += sysctl_check.o
- obj-$(CONFIG_STACKTRACE) += stacktrace.o
-@@ -48,6 +48,7 @@ obj-$(CONFIG_AUDIT) += audit.o auditfilter.o
- obj-$(CONFIG_AUDITSYSCALL) += auditsc.o
+@@ -49,6 +49,7 @@ obj-$(CONFIG_AUDITSYSCALL) += auditsc.o
  obj-$(CONFIG_AUDIT_TREE) += audit_tree.o
  obj-$(CONFIG_KPROBES) += kprobes.o
-+obj-$(CONFIG_UTS_NS) += utsname.o
+ obj-$(CONFIG_UTS_NS) += utsname.o
++obj-$(CONFIG_USER_NS) += user_namespace.o
  obj-$(CONFIG_SYSFS) += ksysfs.o
  obj-$(CONFIG_DETECT_SOFTLOCKUP) += softlockup.o
  obj-$(CONFIG_GENERIC_HARDIRQS) += irq/
+diff --git a/kernel/user.c b/kernel/user.c
+index 74a1ddf..624e3d7 100644
+--- a/kernel/user.c
++++ b/kernel/user.c
+@@ -17,6 +17,15 @@
+ #include <linux/module.h>
+ #include <linux/user_namespace.h>
+ 
++struct user_namespace init_user_ns = {
++	.kref = {
++		.refcount	= ATOMIC_INIT(2),
++	},
++	.root_user = &root_user,
++};
++
++EXPORT_SYMBOL_GPL(init_user_ns);
++
+ /*
+  * UID task count cache, to get fast user lookup in "alloc_uid"
+  * when changing user ID's (ie setuid() and friends).
+@@ -430,6 +439,7 @@ void switch_uid(struct user_struct *new_user)
+ 	suid_keys(current);
+ }
+ 
++#ifdef CONFIG_USER_NS
+ void release_uids(struct user_namespace *ns)
+ {
+ 	int i;
+@@ -454,6 +464,7 @@ void release_uids(struct user_namespace *ns)
+ 
+ 	free_uid(ns->root_user);
+ }
++#endif
+ 
+ static int __init uid_cache_init(void)
+ {
+diff --git a/kernel/user_namespace.c b/kernel/user_namespace.c
+index 7af90fc..4c90062 100644
+--- a/kernel/user_namespace.c
++++ b/kernel/user_namespace.c
+@@ -10,17 +10,6 @@
+ #include <linux/nsproxy.h>
+ #include <linux/user_namespace.h>
+ 
+-struct user_namespace init_user_ns = {
+-	.kref = {
+-		.refcount	= ATOMIC_INIT(2),
+-	},
+-	.root_user = &root_user,
+-};
+-
+-EXPORT_SYMBOL_GPL(init_user_ns);
+-
+-#ifdef CONFIG_USER_NS
+-
+ /*
+  * Clone a new ns copying an original user ns, setting refcount to 1
+  * @old_ns: namespace to clone
+@@ -84,5 +73,3 @@ void free_user_ns(struct kref *kref)
+ 	release_uids(ns);
+ 	kfree(ns);
+ }
+-
+-#endif /* CONFIG_USER_NS */
 -- 
 1.5.3.4
