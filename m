@@ -1,11 +1,11 @@
 From: Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
-Subject: [patch 05/10][NETNS][IP6_FIB] make fib6_clean_all per namespace
-Date: Thu, 15 Nov 2007 15:01:48 +0100
-Message-ID: <20071115140544.737942959@mai.toulouse-stg.fr.ibm.com>
+Subject: [patch 10/10][NETNS][IP6_FIB] make gc timer handle several network
+	namespace
+Date: Thu, 15 Nov 2007 15:01:53 +0100
+Message-ID: <20071115140626.262024924@mai.toulouse-stg.fr.ibm.com>
 References: <20071115140143.597214582@mai.toulouse-stg.fr.ibm.com>
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline;
-	filename=ip6-fib-make-fib6_clean_all-per-namespace.patch
+Content-Disposition: inline; filename=ip6-fib-gc-timer-per-namespace.patch
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,103 +19,96 @@ To: den-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org
 Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, Benjamin Thery <benjamin.thery-6ktuUTfB/bM@public.gmane.org>, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org, xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-The function fib6_clean_all takes the network namespace
-as parameter. This is useful for example to flush the routes
-related to a specific network namespace.
+Move the timer initialization at the network namespace creation
+and store the namespace in the timer argument.
+
+That enables multiple timer per network namespace to do garbage
+collecting.
 
 Signed-off-by: Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
 Signed-off-by: Benjamin Thery <benjamin.thery-6ktuUTfB/bM@public.gmane.org>
 ---
- include/net/ip6_fib.h |    3 ++-
- net/ipv6/ip6_fib.c    |    7 ++++---
- net/ipv6/route.c      |   10 ++++++----
- 3 files changed, 12 insertions(+), 8 deletions(-)
+ net/ipv6/ip6_fib.c |   33 +++++++++++++++++----------------
+ 1 file changed, 17 insertions(+), 16 deletions(-)
 
-Index: linux-2.6-netns/include/net/ip6_fib.h
-===================================================================
---- linux-2.6-netns.orig/include/net/ip6_fib.h
-+++ linux-2.6-netns/include/net/ip6_fib.h
-@@ -207,7 +207,8 @@ struct fib6_node		*fib6_locate(struct fi
- 					     struct in6_addr *daddr, int dst_len,
- 					     struct in6_addr *saddr, int src_len);
- 
--extern void			fib6_clean_all(int (*func)(struct rt6_info *, void *arg),
-+extern void			fib6_clean_all(struct net *net,
-+					       int (*func)(struct rt6_info *, void *arg),
- 					       int prune, void *arg);
- 
- extern int			fib6_add(struct fib6_node *root,
 Index: linux-2.6-netns/net/ipv6/ip6_fib.c
 ===================================================================
 --- linux-2.6-netns.orig/net/ipv6/ip6_fib.c
 +++ linux-2.6-netns/net/ipv6/ip6_fib.c
-@@ -1349,7 +1349,7 @@ static void fib6_clean_tree(struct fib6_
- 	fib6_walk(&c.w);
- }
- 
--void fib6_clean_all(int (*func)(struct rt6_info *, void *arg),
-+void fib6_clean_all(struct net *net, int (*func)(struct rt6_info *, void *arg),
- 		    int prune, void *arg)
+@@ -1466,12 +1466,23 @@ static void fib6_gc_timer_cb(unsigned lo
+ static int fib6_net_init(struct net *net)
  {
- 	struct fib6_table *table;
-@@ -1359,7 +1359,7 @@ void fib6_clean_all(int (*func)(struct r
+ 	int ret;
++	struct timer_list *timer;
  
- 	rcu_read_lock();
- 	for (h = 0; h < FIB_TABLE_HASHSZ; h++) {
--		head = &init_net.fib_table_hash[h];
-+		head = &net->fib_table_hash[h];
- 		hlist_for_each_entry_rcu(table, node, head, tb6_hlist) {
- 			write_lock_bh(&table->tb6_lock);
- 			fib6_clean_tree(&table->tb6_root, func, prune, arg);
-@@ -1448,7 +1448,8 @@ void fib6_run_gc(unsigned long dummy)
- 	gc_args.more = 0;
- 
- 	ndisc_dst_gc(&gc_args.more);
--	fib6_clean_all(fib6_age, 0, NULL);
+ 	ret = -ENOMEM;
++ 	timer = kzalloc(sizeof(*timer), GFP_KERNEL);
++ 	if (!timer)
++		goto out;
 +
-+	fib6_clean_all(&init_net, fib6_age, 0, NULL);
++	timer->function = fib6_gc_timer_cb;
++	timer->expires = 0;
++	timer->data = (unsigned long)net;
++	timer->base = &boot_tvec_bases;
++ 	net->ip6_fib_timer = timer;
++
+ 	net->fib_table_hash = kzalloc(sizeof(*net->fib_table_hash)*FIB_TABLE_HASHSZ,
+ 				      GFP_KERNEL);
+ 	if (!net->fib_table_hash)
+-		goto out;
++		goto out_timer;
  
- 	if (gc_args.more)
- 		mod_timer(&ip6_fib_timer, jiffies + ip6_rt_gc_interval);
-Index: linux-2.6-netns/net/ipv6/route.c
-===================================================================
---- linux-2.6-netns.orig/net/ipv6/route.c
-+++ linux-2.6-netns/net/ipv6/route.c
-@@ -1860,7 +1860,7 @@ static int fib6_ifdown(struct rt6_info *
+ 	net->fib6_main_tbl = kzalloc(sizeof(*net->fib6_main_tbl), GFP_KERNEL);
+ 	if (!net->fib6_main_tbl)
+@@ -1498,12 +1509,17 @@ static int fib6_net_init(struct net *net
  
- void rt6_ifdown(struct net_device *dev)
+ out_fib6_main_tbl:
+ 	kfree(net->fib_table_hash);
++out_timer:
++	kfree(timer);
+ out:
+ 	return ret;
+  }
+ 
+ static void fib6_net_exit(struct net *net)
  {
--	fib6_clean_all(fib6_ifdown, 0, dev);
-+	fib6_clean_all(dev->nd_net, fib6_ifdown, 0, dev);
- }
++	del_timer(net->ip6_fib_timer);
++	kfree(net->ip6_fib_timer);
++
+ #ifdef CONFIG_IPV6_MULTIPLE_TABLES
+ 	kfree(net->fib6_local_tbl);
+ #endif
+@@ -1518,31 +1534,16 @@ static struct pernet_operations fib6_net
  
- struct rt6_mtu_change_arg
-@@ -1916,7 +1916,7 @@ void rt6_mtu_change(struct net_device *d
- 		.mtu = mtu,
- 	};
- 
--	fib6_clean_all(rt6_mtu_change_route, 0, &arg);
-+	fib6_clean_all(dev->nd_net, rt6_mtu_change_route, 0, &arg);
- }
- 
- static const struct nla_policy rtm_ipv6_policy[RTA_MAX+1] = {
-@@ -2307,13 +2307,15 @@ static int rt6_info_route(struct rt6_inf
- 
- static int ipv6_route_show(struct seq_file *m, void *v)
+ void __init fib6_init(void)
  {
--	fib6_clean_all(rt6_info_route, 0, m);
-+	struct net *net = (struct net *)v;
-+	fib6_clean_all(net, rt6_info_route, 0, m);
- 	return 0;
+- 	struct timer_list *timer;
+-
+ 	fib6_node_kmem = kmem_cache_create("fib6_nodes",
+ 					   sizeof(struct fib6_node),
+ 					   0, SLAB_HWCACHE_ALIGN|SLAB_PANIC,
+ 					   NULL);
+-
+-	timer = kzalloc(sizeof(*timer), GFP_KERNEL);
+-	if (!timer)
+-		panic("IPV6: failed to allocate the gc timer\n");
+-
+-	timer->function = fib6_gc_timer_cb;
+-	timer->expires = 0;
+-	timer->data = (unsigned long)&init_net;
+-	timer->base = &boot_tvec_bases;
+-	init_net.ip6_fib_timer = timer;
+-
+ 	register_pernet_subsys(&fib6_net_ops);
+         __rtnl_register(PF_INET6, RTM_GETROUTE, NULL, inet6_dump_fib);
  }
  
- static int ipv6_route_open(struct inode *inode, struct file *file)
+ void fib6_gc_cleanup(void)
  {
--	return single_open(file, ipv6_route_show, NULL);
-+	struct net *net = get_proc_net(inode);
-+	return single_open(file, ipv6_route_show, net);
+-	del_timer(timer);
+-	kfree(timer);
+ 	unregister_pernet_subsys(&fib6_net_ops);
+ 	kmem_cache_destroy(fib6_node_kmem);
  }
- 
- static const struct file_operations ipv6_route_proc_fops = {
 
 -- 
