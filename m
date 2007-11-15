@@ -1,44 +1,45 @@
-From: ebiederm@xmission.com (Eric W. Biederman)
+From: Sam Ravnborg <sam@ravnborg.org>
 Subject: Re: [PATCH 2/2] move unneeded data to initdata section
-Date: Thu, 15 Nov 2007 11:19:26 -0700
-Message-ID: <m13av7xtg1.fsf@ebiederm.dsl.xmission.com>
-References: <20071107120100.GA10185@iris.sw.ru>
-	<m1abpfy3xz.fsf@ebiederm.dsl.xmission.com> <473C5ABC.5090204@sw.ru>
-	<20071115151429.GC22825@uranus.ravnborg.org>
+Date: Thu, 15 Nov 2007 19:43:34 +0100
+Message-ID: <20071115184334.GC23914@uranus.ravnborg.org>
+References: <20071107120100.GA10185@iris.sw.ru> <m1abpfy3xz.fsf@ebiederm.dsl.xmission.com> <473C5ABC.5090204@sw.ru> <20071115151429.GC22825@uranus.ravnborg.org> <m13av7xtg1.fsf@ebiederm.dsl.xmission.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Return-path: <netdev-owner@vger.kernel.org>
-In-Reply-To: <20071115151429.GC22825@uranus.ravnborg.org> (Sam Ravnborg's
-	message of "Thu, 15 Nov 2007 16:14:29 +0100")
+Content-Disposition: inline
+In-Reply-To: <m13av7xtg1.fsf@ebiederm.dsl.xmission.com>
 Sender: netdev-owner@vger.kernel.org
-To: Sam Ravnborg <sam@ravnborg.org>
+To: "Eric W. Biederman" <ebiederm@xmission.com>
 Cc: "Denis V. Lunev" <den@sw.ru>, "Denis V. Lunev" <den@openvz.org>, davem@davemloft.net, containers@lists.osdl.org, netdev@vger.kernel.org, clg@fr.ibm.com, benjamin.thery@bull.net
 List-Id: containers.vger.kernel.org
 
-Sam Ravnborg <sam@ravnborg.org> writes:
+On Thu, Nov 15, 2007 at 11:19:26AM -0700, Eric W. Biederman wrote:
+> Sam Ravnborg <sam@ravnborg.org> writes:
+> 
+> > On Thu, Nov 15, 2007 at 05:42:04PM +0300, Denis V. Lunev wrote:
+> >> 
+> >> nothing is discarded after module load. Though, I can be wrong. Could
+> >> you point me to the exact place?
+> > If __initdata is not discarded after module load then we should do it.
+> > There is no reason to waste __initdata RAM when the module is loaded.
+> 
+> Down at the bottom of sys_init_module we have:
+> 
+> 	/* Drop initial reference. */
+> 	module_put(mod);
+> 	unwind_remove_table(mod->unwind_info, 1);
+> 
+> 	module_free(mod, mod->module_init);
+> ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 	mod->module_init = NULL;
+> 	mod->init_size = 0;
+> 	mod->init_text_size = 0;
+> 	mutex_unlock(&module_mutex);
+> 
+> 	return 0;
+> 
+> Which frees the memory for the .init sections.
 
-> On Thu, Nov 15, 2007 at 05:42:04PM +0300, Denis V. Lunev wrote:
->> 
->> nothing is discarded after module load. Though, I can be wrong. Could
->> you point me to the exact place?
-> If __initdata is not discarded after module load then we should do it.
-> There is no reason to waste __initdata RAM when the module is loaded.
+Thanks for clarifying this Eric - should have looked myself..
 
-Down at the bottom of sys_init_module we have:
-
-	/* Drop initial reference. */
-	module_put(mod);
-	unwind_remove_table(mod->unwind_info, 1);
-
-	module_free(mod, mod->module_init);
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-	mod->module_init = NULL;
-	mod->init_size = 0;
-	mod->init_text_size = 0;
-	mutex_unlock(&module_mutex);
-
-	return 0;
-
-Which frees the memory for the .init sections.
-
-Eric
+	Sam
