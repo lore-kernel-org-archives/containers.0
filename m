@@ -1,461 +1,255 @@
-From: "Denis V. Lunev" <den@openvz.org>
-Subject: [PATCH 2.6.25 6/6] net: consolidate net namespace related proc
-	files creation
-Date: Thu, 15 Nov 2007 19:01:50 +0300
-Message-ID: <20071115160150.GA25520@iris.sw.ru>
+From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [RFC PATCH] namespaces: document unshare security implications
+Date: Thu, 15 Nov 2007 10:40:35 -0600
+Message-ID: <20071115164035.GA23349@sergelap.austin.ibm.com>
+References: <20071109222145.GA30476@sergelap.austin.ibm.com>
+	<m1ir43y5na.fsf@ebiederm.dsl.xmission.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-Return-path: <netdev-owner@vger.kernel.org>
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-Sender: netdev-owner@vger.kernel.org
-To: davem@davemloft.net
-Cc: containers@lists.osdl.org, netdev@vger.kernel.org, ebiederm@xmission.com, dlezcano@fr.ibm.com
+In-Reply-To: <m1ir43y5na.fsf-T1Yj925okcoyDheHMi7gv2pdwda3JcWeAL8bYrjMMd8@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-net: consolidate net namespace related proc files creation
+Quoting Eric W. Biederman (ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org):
+> "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org> writes:
 
-Signed-off-by: Denis V. Lunev <den@openvz.org>
-Signed-off-by: Pavel Emelyanov <xemul@openvz.org>
+Thanks for responding, Eric.  Good points.
+
+> > Ok, the following isn't meant so much as a patch as for discussion.
+> > However, this may be a change we want to think about for awhile and
+> > collect opinions and facts.  So having this file sitting in the
+> > kernel tree (updated with the results of any discussion we have in the
+> > meantime) may be useful.
+> >
+> > So what do people think?  Are we ok using CAP_SYS_ADMIN?  Do we
+> > authorize unsharing of each resource using the capability required
+> > to administrate the resource?  Do we introduce CAP_NS_UNSHARE?  Do
+> > we add CAP_SYS_USHARE, CAP_NET_UNSHARE, and CAP_USER_UNSHARE?  Or
+> > do we allow unprivileged users to unshare, trusting that the actual
+> > administration is properly authorized?
+> 
+> Well if we ant to sit this in the kernel we need to remove mention
+> of CAP_NS_UNSHARE.
+
+Mostly for now I wanted it to sit in the mailing list :)
+
+> However even there the document below is only an ok first stab at
+> documenting things.
+> 
+> The big big big problem are suid executables.  If we don't have suid
+> executables and the namespaces only apply to our children we can
+> unshare them all day long and no one cares.  If we do have suid executables
+> any messing up of their context that they are not prepared to deal with
+> is a potential security violation.
+
+Ok let's look just at the mounts namespace since that one is complete.
+
+Unsharing the mounts namespace makes no change in mounts context, and
+does not provide the user any additional privilege to make such change.
+So suid executable are safe.
+
+> So I think CAP_SYS_ADMIN is a good starting place.  It is trivial verifiable
+> that it is safe.  So starting there allows us to work on other aspects
+> of the problem for now.
+
+It was a good starting place, but at this point I have two concerns with
+sticking with CAP_SYS_ADMIN:
+
+	1. now that file capabilities are upstream, people may want to
+	add just the requisite capability in fP for an unsharing helper
+	program.  Cedric had mentioned wanting to do that.
+	If we are going to switch to unprivileged unshares, then doing
+	so later is ok.  But if we're going to switch to a custom
+	capability later, then that could be seen as an API change
+	since users will have to switch the capability on all the
+	unsharing programs.
+
+	2. As I pointed out a few times, we can cleanly separate
+	unsharing namespace and actually manipulating the resources.
+	By requiring CAP_SYS_ADMIN for both unsharing a mounts namespace
+	and for performing privileged mounts, any program given the
+	authority to unshare is automatically given the authority to
+	also completely manipulate the mounts, both in the new private
+	namespace and the original namespace (by just not unsharing).
+
+	It's even worse with the net namespace, since the privilege
+	needed to unshare the namespace authorizes you to update
+	*other* namespaces in the system, but *not* network devices!
+	But like you say let's stick with established namespaces.
+
+So while I started the original email just wanting some discussion, now
+I'm actually thinking that we should consider the appended patch soon.
+
+> I would like to remove the restrictions from creating new namespaces
+> however we will either have to have restrictions like the current
+> unprivileged mount patches, so we don't surprised root.
+
+Yes, exactly, we need to understand exactly how the resources being
+unshared can be updated and how separate the unsharing and updating
+really are semantically (per namespace).  That's why I wanted to start
+floating the document now.  I don't think it's something one person can
+sit down and write out in one sitting, bc something will be overlooked.
+
+> Or we figure out
+> how to ensure we don't have suid applications.
+
+...  "how to ensure we don't have suid applications" seems the wrong
+level to think at.  Rather, for each namespace, what do the tools which
+will be privileged to perform updates depend upon?
+
+An obvious example is depending on a file location, i.e. /etc/fstab.
+The proper implementation of user mounts solves that.  /etc/resolv.conf
+is another example, except in this case we have the updating of the
+network namespace (kinda) depending on proper updates of the mounts
+namespace (and user namespace).
+
+> Given my intuitive understanding of a complete uid namespace it
+> fundamentally prohibits suid executables from executing because those
+> users simply do not exist in the new namespace.  So my hunch is we can
+> drop the requirement for CAP_SYS_ADMIN on namespace creation in
+> concert with a uid namespace creation.
+> 
+> So my feeling at the moment is that we need to flesh out and complete
+> the namespaces we have user, net, pid, user and then come back and
+> see what we can do.
+
+I think you're saying "what we're doing is at least safe, so let's wait
+to change things."
+
+My assertion is that the current approach is not the safest bc we have
+to give unneeded extra authority to a mounts unsharing helper.
+
+> I don't think it makes sense to document a snapshot in time of the
+> discussion with unresolved issues in the Documentation directory.
+
+1. The basics aren't going to change, updating your network namespace
+will require CAP_NET_ADMIN.
+
+2. These things should really be considered now, bc resulting
+implications may have effects on the namespace design.  As an example,
+the interaction of network namespaces, pid namespaces, netlink sockets,
+and audit daemons makes me uneasy.
+
+> Documenting what is and how we got there is fine (that is timeless)
+> documenting what could be will likely be out of date before the patch
+> is merged into Linus's tree.
+
+Yes you're right.  I'm keeping my own list, just turned it into a patch
+for getting comment :)  But keeping the doc in sync with the code
+in several trees would be (near) impossible.
+
+> 
+> Eric
+
+From 0e04048d0a22cfd9507487a09ca8d7aa500be1c2 Mon Sep 17 00:00:00 2001
+From: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Date: Thu, 15 Nov 2007 10:47:32 -0500
+Subject: [PATCH 1/1] namespaces: introduce CAP_NS_UNSHARE for some namespaces
+
+(purely for comment at this point)
+
+Unsharing and manipulating a namespace can be - depending upon the
+namespace and the implications of unsharing - two different things.
+But we are using the same capability to authorize unsharing and
+manipulating the mounts and uts namespaces.
+
+Using CAP_SYS_ADMIN to authorize namespace unshares means that a program
+given just the CAP_SYS_ADMIN file permitted capability also authorizes
+the program to manipulate the namespaces - before and after unshare.
+
+Introduce CAP_NS_UNSHARE and use it to authorize unsharing of the
+uts and mounts namespaces.
+
+CAP_SYS_ADMIN continues to authorize the unsharing of other namespaces
+until the implications are better understood.
+
+Signed-off-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 ---
- fs/proc/proc_net.c       |   38 ++++++++++++++++++++++++++++++++++++++
- include/linux/seq_file.h |   13 +++++++++++++
- net/core/dev.c           |   28 +++++-----------------------
- net/core/dev_mcast.c     |   26 ++++----------------------
- net/netlink/af_netlink.c |   33 +++++++--------------------------
- net/packet/af_packet.c   |   26 ++++----------------------
- net/unix/af_unix.c       |   31 ++++++-------------------------
- net/wireless/wext.c      |   24 +++---------------------
- 8 files changed, 80 insertions(+), 139 deletions(-)
+ include/linux/capability.h |    4 ++++
+ kernel/nsproxy.c           |   29 ++++++++++++++++++++++++-----
+ 2 files changed, 28 insertions(+), 5 deletions(-)
 
-diff --git a/fs/proc/proc_net.c b/fs/proc/proc_net.c
-index 131f9c6..421ea28 100644
---- a/fs/proc/proc_net.c
-+++ b/fs/proc/proc_net.c
-@@ -22,10 +22,48 @@
- #include <linux/mount.h>
- #include <linux/nsproxy.h>
- #include <net/net_namespace.h>
-+#include <linux/seq_file.h>
+diff --git a/include/linux/capability.h b/include/linux/capability.h
+index a1d93da..2660f8a 100644
+--- a/include/linux/capability.h
++++ b/include/linux/capability.h
+@@ -314,6 +314,10 @@ typedef struct kernel_cap_struct {
  
- #include "internal.h"
+ #define CAP_SETFCAP	     31
  
- 
-+int seq_open_net(struct inode *ino, struct file *f,
-+		 const struct seq_operations *ops, int size)
-+{
-+	struct net *net;
-+	struct seq_net_private *p;
++/* Unshare mounts namespace */
++/* Unshare UTS namespace */
++#define CAP_NS_UNSHARE       32
 +
-+	BUG_ON(size < sizeof(*p));
-+
-+	net = get_proc_net(ino);
-+	if (net == NULL)
-+		return -ENXIO;
-+
-+	p = __seq_open_private(f, ops, size);
-+	if (p == NULL) {
-+		put_net(net);
-+		return -ENOMEM;
-+	}
-+	p->net = net;
-+	return 0;
-+}
-+EXPORT_SYMBOL_GPL(seq_open_net);
-+
-+int seq_release_net(struct inode *ino, struct file *f)
-+{
-+	struct seq_file *seq;
-+	struct seq_net_private *p;
-+
-+	seq = f->private_data;
-+	p = seq->private;
-+
-+	put_net(p->net);
-+	seq_release_private(ino, f);
-+	return 0;
-+}
-+EXPORT_SYMBOL_GPL(seq_release_net);
-+
-+
- struct proc_dir_entry *proc_net_fops_create(struct net *net,
- 	const char *name, mode_t mode, const struct file_operations *fops)
- {
-diff --git a/include/linux/seq_file.h b/include/linux/seq_file.h
-index ebbc02b..648dfeb 100644
---- a/include/linux/seq_file.h
-+++ b/include/linux/seq_file.h
-@@ -63,5 +63,18 @@ extern struct list_head *seq_list_start_head(struct list_head *head,
- extern struct list_head *seq_list_next(void *v, struct list_head *head,
- 		loff_t *ppos);
- 
-+struct net;
-+struct seq_net_private {
-+	struct net *net;
-+};
-+
-+int seq_open_net(struct inode *, struct file *,
-+		 const struct seq_operations *, int);
-+int seq_release_net(struct inode *, struct file *);
-+static inline struct net *seq_file_net(struct seq_file *seq)
-+{
-+	return ((struct seq_net_private *)seq->private)->net;
-+}
-+
- #endif
- #endif
-diff --git a/net/core/dev.c b/net/core/dev.c
-index 86d6261..043e2f8 100644
---- a/net/core/dev.c
-+++ b/net/core/dev.c
-@@ -2360,7 +2360,7 @@ static int dev_ifconf(struct net *net, char __user *arg)
+ /*
+  * Bit location of each capability (used by user-space library and kernel)
   */
- void *dev_seq_start(struct seq_file *seq, loff_t *pos)
- {
--	struct net *net = seq->private;
-+	struct net *net = seq_file_net(seq);
- 	loff_t off;
- 	struct net_device *dev;
+diff --git a/kernel/nsproxy.c b/kernel/nsproxy.c
+index 79f871b..a4972fb 100644
+--- a/kernel/nsproxy.c
++++ b/kernel/nsproxy.c
+@@ -114,6 +114,25 @@ out_ns:
+ 	return ERR_PTR(err);
+ }
  
-@@ -2378,7 +2378,7 @@ void *dev_seq_start(struct seq_file *seq, loff_t *pos)
++#define NEED_CAPSYSADMIN_FLAGS \
++		(CLONE_NEWIPC| \
++		CLONE_NEWUSER| \
++		CLONE_NEWPID| \
++		CLONE_NEWNET)
++
++#define NEED_CAPNSUNSHARE_FLAGS \
++		(CLONE_NEWNS | \
++		CLONE_NEWUTS)
++
++static int authorize_unshare(unsigned long flags)
++{
++	if ((flags & NEED_CAPSYSADMIN_FLAGS) && !capable(CAP_SYS_ADMIN))
++		return -EPERM;
++	if ((flags & NEED_CAPNSUNSHARE_FLAGS) && !capable(CAP_NS_UNSHARE))
++		return -EPERM;
++	return 0;
++}
++
+ /*
+  * called from clone.  This now handles copy for nsproxy and all
+  * namespaces therein.
+@@ -133,10 +152,9 @@ int copy_namespaces(unsigned long flags, struct task_struct *tsk)
+ 				CLONE_NEWUSER | CLONE_NEWPID | CLONE_NEWNET)))
+ 		return 0;
  
- void *dev_seq_next(struct seq_file *seq, void *v, loff_t *pos)
- {
--	struct net *net = seq->private;
-+	struct net *net = seq_file_net(seq);
- 	++*pos;
- 	return v == SEQ_START_TOKEN ?
- 		first_net_device(net) : next_net_device((struct net_device *)v);
-@@ -2477,26 +2477,8 @@ static const struct seq_operations dev_seq_ops = {
- 
- static int dev_seq_open(struct inode *inode, struct file *file)
- {
--	struct seq_file *seq;
--	int res;
--	res =  seq_open(file, &dev_seq_ops);
--	if (!res) {
--		seq = file->private_data;
--		seq->private = get_proc_net(inode);
--		if (!seq->private) {
--			seq_release(inode, file);
--			res = -ENXIO;
--		}
+-	if (!capable(CAP_SYS_ADMIN)) {
+-		err = -EPERM;
++	err = authorize_unshare(flags);
++	if (err)
+ 		goto out;
 -	}
--	return res;
--}
--
--static int dev_seq_release(struct inode *inode, struct file *file)
--{
--	struct seq_file *seq = file->private_data;
--	struct net *net = seq->private;
--	put_net(net);
--	return seq_release(inode, file);
-+	return seq_open_net(inode, file, &dev_seq_ops,
-+			    sizeof(struct seq_net_private));
- }
  
- static const struct file_operations dev_seq_fops = {
-@@ -2504,7 +2486,7 @@ static const struct file_operations dev_seq_fops = {
- 	.open    = dev_seq_open,
- 	.read    = seq_read,
- 	.llseek  = seq_lseek,
--	.release = dev_seq_release,
-+	.release = seq_release_net,
- };
+ 	new_ns = create_new_namespaces(flags, tsk, tsk->fs);
+ 	if (IS_ERR(new_ns)) {
+@@ -186,8 +204,9 @@ int unshare_nsproxy_namespaces(unsigned long unshare_flags,
+ 			       CLONE_NEWUSER | CLONE_NEWNET)))
+ 		return 0;
  
- static const struct seq_operations softnet_seq_ops = {
-diff --git a/net/core/dev_mcast.c b/net/core/dev_mcast.c
-index 69fff16..63f0b33 100644
---- a/net/core/dev_mcast.c
-+++ b/net/core/dev_mcast.c
-@@ -187,7 +187,7 @@ EXPORT_SYMBOL(dev_mc_unsync);
- #ifdef CONFIG_PROC_FS
- static void *dev_mc_seq_start(struct seq_file *seq, loff_t *pos)
- {
--	struct net *net = seq->private;
-+	struct net *net = seq_file_net(seq);
- 	struct net_device *dev;
- 	loff_t off = 0;
+-	if (!capable(CAP_SYS_ADMIN))
+-		return -EPERM;
++	err = authorize_unshare(unshare_flags);
++	if (err)
++		goto out;
  
-@@ -241,26 +241,8 @@ static const struct seq_operations dev_mc_seq_ops = {
- 
- static int dev_mc_seq_open(struct inode *inode, struct file *file)
- {
--	struct seq_file *seq;
--	int res;
--	res = seq_open(file, &dev_mc_seq_ops);
--	if (!res) {
--		seq = file->private_data;
--		seq->private = get_proc_net(inode);
--		if (!seq->private) {
--			seq_release(inode, file);
--			res = -ENXIO;
--		}
--	}
--	return res;
--}
--
--static int dev_mc_seq_release(struct inode *inode, struct file *file)
--{
--	struct seq_file *seq = file->private_data;
--	struct net *net = seq->private;
--	put_net(net);
--	return seq_release(inode, file);
-+	return seq_open_net(inode, file, &dev_mc_seq_ops,
-+			    sizeof(struct seq_net_private));
- }
- 
- static const struct file_operations dev_mc_seq_fops = {
-@@ -268,7 +250,7 @@ static const struct file_operations dev_mc_seq_fops = {
- 	.open    = dev_mc_seq_open,
- 	.read    = seq_read,
- 	.llseek  = seq_lseek,
--	.release = dev_mc_seq_release,
-+	.release = seq_release_net,
- };
- 
- #endif
-diff --git a/net/netlink/af_netlink.c b/net/netlink/af_netlink.c
-index de3988b..1518244 100644
---- a/net/netlink/af_netlink.c
-+++ b/net/netlink/af_netlink.c
-@@ -1681,7 +1681,7 @@ int nlmsg_notify(struct sock *sk, struct sk_buff *skb, u32 pid,
- 
- #ifdef CONFIG_PROC_FS
- struct nl_seq_iter {
--	struct net *net;
-+	struct seq_net_private p;
- 	int link;
- 	int hash_idx;
- };
-@@ -1699,7 +1699,7 @@ static struct sock *netlink_seq_socket_idx(struct seq_file *seq, loff_t pos)
- 
- 		for (j = 0; j <= hash->mask; j++) {
- 			sk_for_each(s, node, &hash->table[j]) {
--				if (iter->net != s->sk_net)
-+				if (iter->p.net != s->sk_net)
- 					continue;
- 				if (off == pos) {
- 					iter->link = i;
-@@ -1734,7 +1734,7 @@ static void *netlink_seq_next(struct seq_file *seq, void *v, loff_t *pos)
- 	s = v;
- 	do {
- 		s = sk_next(s);
--	} while (s && (iter->net != s->sk_net));
-+	} while (s && (iter->p.net != s->sk_net));
- 	if (s)
- 		return s;
- 
-@@ -1746,7 +1746,7 @@ static void *netlink_seq_next(struct seq_file *seq, void *v, loff_t *pos)
- 
- 		for (; j <= hash->mask; j++) {
- 			s = sk_head(&hash->table[j]);
--			while (s && (iter->net != s->sk_net))
-+			while (s && (iter->p.net != s->sk_net))
- 				s = sk_next(s);
- 			if (s) {
- 				iter->link = i;
-@@ -1802,27 +1802,8 @@ static const struct seq_operations netlink_seq_ops = {
- 
- static int netlink_seq_open(struct inode *inode, struct file *file)
- {
--	struct nl_seq_iter *iter;
--
--	iter = __seq_open_private(file, &netlink_seq_ops, sizeof(*iter));
--	if (!iter)
--		return -ENOMEM;
--
--	iter->net = get_proc_net(inode);
--	if (!iter->net) {
--		seq_release_private(inode, file);
--		return -ENXIO;
--	}
--
--	return 0;
--}
--
--static int netlink_seq_release(struct inode *inode, struct file *file)
--{
--	struct seq_file *seq = file->private_data;
--	struct nl_seq_iter *iter = seq->private;
--	put_net(iter->net);
--	return seq_release_private(inode, file);
-+	return seq_open_net(inode, file, &netlink_seq_ops,
-+				sizeof(struct nl_seq_iter));
- }
- 
- static const struct file_operations netlink_seq_fops = {
-@@ -1830,7 +1811,7 @@ static const struct file_operations netlink_seq_fops = {
- 	.open		= netlink_seq_open,
- 	.read		= seq_read,
- 	.llseek		= seq_lseek,
--	.release	= netlink_seq_release,
-+	.release	= seq_release_net,
- };
- 
- #endif
-diff --git a/net/packet/af_packet.c b/net/packet/af_packet.c
-index 45e3cbc..ace29f1 100644
---- a/net/packet/af_packet.c
-+++ b/net/packet/af_packet.c
-@@ -1871,7 +1871,7 @@ static inline struct sock *packet_seq_idx(struct net *net, loff_t off)
- 
- static void *packet_seq_start(struct seq_file *seq, loff_t *pos)
- {
--	struct net *net = seq->private;
-+	struct net *net = seq_file_net(seq);
- 	read_lock(&net->packet_sklist_lock);
- 	return *pos ? packet_seq_idx(net, *pos - 1) : SEQ_START_TOKEN;
- }
-@@ -1924,26 +1924,8 @@ static const struct seq_operations packet_seq_ops = {
- 
- static int packet_seq_open(struct inode *inode, struct file *file)
- {
--	struct seq_file *seq;
--	int res;
--	res = seq_open(file, &packet_seq_ops);
--	if (!res) {
--		seq = file->private_data;
--		seq->private = get_proc_net(inode);
--		if (!seq->private) {
--			seq_release(inode, file);
--			res = -ENXIO;
--		}
--	}
--	return res;
--}
--
--static int packet_seq_release(struct inode *inode, struct file *file)
--{
--	struct seq_file *seq=  file->private_data;
--	struct net *net = seq->private;
--	put_net(net);
--	return seq_release(inode, file);
-+	return seq_open_net(inode, file, &packet_seq_ops,
-+			    sizeof(struct seq_net_private));
- }
- 
- static const struct file_operations packet_seq_fops = {
-@@ -1951,7 +1933,7 @@ static const struct file_operations packet_seq_fops = {
- 	.open		= packet_seq_open,
- 	.read		= seq_read,
- 	.llseek		= seq_lseek,
--	.release	= packet_seq_release,
-+	.release	= seq_release_net,
- };
- 
- #endif
-diff --git a/net/unix/af_unix.c b/net/unix/af_unix.c
-index 93d7e55..6be6d87 100644
---- a/net/unix/af_unix.c
-+++ b/net/unix/af_unix.c
-@@ -2011,7 +2011,7 @@ static unsigned int unix_poll(struct file * file, struct socket *sock, poll_tabl
- 
- #ifdef CONFIG_PROC_FS
- struct unix_iter_state {
--	struct net *net;
-+	struct seq_net_private p;
- 	int i;
- };
- static struct sock *unix_seq_idx(struct unix_iter_state *iter, loff_t pos)
-@@ -2020,7 +2020,7 @@ static struct sock *unix_seq_idx(struct unix_iter_state *iter, loff_t pos)
- 	struct sock *s;
- 
- 	for (s = first_unix_socket(&iter->i); s; s = next_unix_socket(&iter->i, s)) {
--		if (s->sk_net != iter->net)
-+		if (s->sk_net != iter->p.net)
- 			continue;
- 		if (off == pos)
- 			return s;
-@@ -2047,7 +2047,7 @@ static void *unix_seq_next(struct seq_file *seq, void *v, loff_t *pos)
- 		sk = first_unix_socket(&iter->i);
- 	else
- 		sk = next_unix_socket(&iter->i, sk);
--	while (sk && (sk->sk_net != iter->net))
-+	while (sk && (sk->sk_net != iter->p.net))
- 		sk = next_unix_socket(&iter->i, sk);
- 	return sk;
- }
-@@ -2111,27 +2111,8 @@ static const struct seq_operations unix_seq_ops = {
- 
- static int unix_seq_open(struct inode *inode, struct file *file)
- {
--	struct unix_iter_state *it;
--       
--	it = __seq_open_private(file, &unix_seq_ops,
--				sizeof(struct unix_iter_state));
--	if (it == NULL)
--		return -ENOMEM;
--
--	it->net = get_proc_net(inode);
--	if (it->net == NULL) {
--		seq_release_private(inode, file);
--		return -ENXIO;
--	}
--	return 0;
--}
--
--static int unix_seq_release(struct inode *inode, struct file *file)
--{
--	struct seq_file *seq = file->private_data;
--	struct unix_iter_state *iter = seq->private;
--	put_net(iter->net);
--	return seq_release_private(inode, file);
-+	return seq_open_net(inode, file, &unix_seq_ops,
-+			    sizeof(struct unix_iter_state));
- }
- 
- static const struct file_operations unix_seq_fops = {
-@@ -2139,7 +2120,7 @@ static const struct file_operations unix_seq_fops = {
- 	.open		= unix_seq_open,
- 	.read		= seq_read,
- 	.llseek		= seq_lseek,
--	.release	= unix_seq_release,
-+	.release	= seq_release_net,
- };
- 
- #endif
-diff --git a/net/wireless/wext.c b/net/wireless/wext.c
-index 85805f2..3ffbd1b 100644
---- a/net/wireless/wext.c
-+++ b/net/wireless/wext.c
-@@ -673,26 +673,8 @@ static const struct seq_operations wireless_seq_ops = {
- 
- static int wireless_seq_open(struct inode *inode, struct file *file)
- {
--	struct seq_file *seq;
--	int res;
--	res = seq_open(file, &wireless_seq_ops);
--	if (!res) {
--		seq = file->private_data;
--		seq->private = get_proc_net(inode);
--		if (!seq->private) {
--			seq_release(inode, file);
--			res = -ENXIO;
--		}
--	}
--	return res;
--}
--
--static int wireless_seq_release(struct inode *inode, struct file *file)
--{
--	struct seq_file *seq = file->private_data;
--	struct net *net = seq->private;
--	put_net(net);
--	return seq_release(inode, file);
-+	return seq_open_net(inode, file, &wireless_seq_ops,
-+			    sizeof(struct seq_net_private));
- }
- 
- static const struct file_operations wireless_seq_fops = {
-@@ -700,7 +682,7 @@ static const struct file_operations wireless_seq_fops = {
- 	.open    = wireless_seq_open,
- 	.read    = seq_read,
- 	.llseek  = seq_lseek,
--	.release = wireless_seq_release,
-+	.release = seq_release_net,
- };
- 
- int wext_proc_init(struct net *net)
+ 	*new_nsp = create_new_namespaces(unshare_flags, current,
+ 				new_fs ? new_fs : current->fs);
 -- 
-1.5.3.rc5
-
+1.5.1.1.GIT
