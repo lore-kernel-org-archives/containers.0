@@ -1,142 +1,45 @@
-From: Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
-Subject: [patch 09/10][NETNS][IP6_FIB] move the gc timer to the namespace
-Date: Thu, 15 Nov 2007 15:01:52 +0100
-Message-ID: <20071115140620.796384520@mai.toulouse-stg.fr.ibm.com>
-References: <20071115140143.597214582@mai.toulouse-stg.fr.ibm.com>
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline; filename=ip6-fib-gc-timer-init-net.patch
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: den-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org
-Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, Benjamin Thery <benjamin.thery-6ktuUTfB/bM@public.gmane.org>, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org, xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org
+From: ebiederm@xmission.com (Eric W. Biederman)
+Subject: Re: [PATCH 2/2] move unneeded data to initdata section
+Date: Thu, 15 Nov 2007 07:32:40 -0700
+Message-ID: <m1abpfy3xz.fsf@ebiederm.dsl.xmission.com>
+References: <20071107120100.GA10185@iris.sw.ru>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+Return-path: <netdev-owner@vger.kernel.org>
+In-Reply-To: <20071107120100.GA10185@iris.sw.ru> (Denis V. Lunev's message of
+	"Wed, 7 Nov 2007 15:01:00 +0300")
+Sender: netdev-owner@vger.kernel.org
+To: "Denis V. Lunev" <den@openvz.org>
+Cc: davem@davemloft.net, containers@lists.osdl.org, netdev@vger.kernel.org, clg@fr.ibm.com, benjamin.thery@bull.net
 List-Id: containers.vger.kernel.org
 
-Move the timer definition inside the network namespace. The gc timer is
-no longer referenced as a global variable but as to be relative to the
-init_net.
+"Denis V. Lunev" <den@openvz.org> writes:
 
-Signed-off-by: Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
-Signed-off-by: Benjamin Thery <benjamin.thery-6ktuUTfB/bM@public.gmane.org>
----
- include/net/net_namespace.h |    2 ++
- net/ipv6/ip6_fib.c          |   37 +++++++++++++++++++------------------
- 2 files changed, 21 insertions(+), 18 deletions(-)
+> This patch reverts Eric's commit 2b008b0a8e96b726c603c5e1a5a7a509b5f61e35
+>
+> It diets .text & .data section of the kernel if CONFIG_NET_NS is not set.
+> This is safe after list operations cleanup.
 
-Index: linux-2.6-netns/include/net/net_namespace.h
-===================================================================
---- linux-2.6-netns.orig/include/net/net_namespace.h
-+++ linux-2.6-netns/include/net/net_namespace.h
-@@ -38,6 +38,8 @@ struct net {
- #ifdef CONFIG_IPV6_MULTIPLE_TABLES
- 	struct fib6_table       *fib6_local_tbl;
- #endif /* CONFIG_IPV6_MULTIPLE_TABLES */
-+
-+	struct timer_list       *ip6_fib_timer;
- #endif /* CONFIG_IPV6 */
- 
- 	struct sock 		*rtnl;			/* rtnetlink socket */
-Index: linux-2.6-netns/net/ipv6/ip6_fib.c
-===================================================================
---- linux-2.6-netns.orig/net/ipv6/ip6_fib.c
-+++ linux-2.6-netns/net/ipv6/ip6_fib.c
-@@ -93,8 +93,6 @@ static int fib6_walk_continue(struct fib
- 
- static __u32 rt_sernum;
- 
--static struct timer_list *ip6_fib_timer;
--
- static struct fib6_walker_t fib6_walker_list = {
- 	.prev	= &fib6_walker_list,
- 	.next	= &fib6_walker_list,
-@@ -664,15 +662,15 @@ static int fib6_add_rt2node(struct fib6_
- 
- static __inline__ void fib6_start_gc(struct rt6_info *rt)
- {
--	if (ip6_fib_timer->expires == 0 &&
-+	if (init_net.ip6_fib_timer->expires == 0 &&
- 	    (rt->rt6i_flags & (RTF_EXPIRES|RTF_CACHE)))
--		mod_timer(ip6_fib_timer, jiffies + ip6_rt_gc_interval);
-+		mod_timer(init_net.ip6_fib_timer, jiffies + ip6_rt_gc_interval);
- }
- 
- void fib6_force_start_gc(void)
- {
--	if (ip6_fib_timer->expires == 0)
--		mod_timer(ip6_fib_timer, jiffies + ip6_rt_gc_interval);
-+	if (init_net.ip6_fib_timer->expires == 0)
-+		mod_timer(init_net.ip6_fib_timer, jiffies + ip6_rt_gc_interval);
- }
- 
- /*
-@@ -1439,7 +1437,7 @@ void fib6_run_gc(unsigned long expires, 
- 	} else {
- 		local_bh_disable();
- 		if (!spin_trylock(&fib6_gc_lock)) {
--			mod_timer(ip6_fib_timer, jiffies + HZ);
-+			mod_timer(init_net.ip6_fib_timer, jiffies + HZ);
- 			local_bh_enable();
- 			return;
- 		}
-@@ -1452,10 +1450,10 @@ void fib6_run_gc(unsigned long expires, 
- 	fib6_clean_all(net, fib6_age, 0, NULL);
- 
- 	if (gc_args.more)
--		mod_timer(ip6_fib_timer, jiffies + ip6_rt_gc_interval);
-+		mod_timer(init_net.ip6_fib_timer, jiffies + ip6_rt_gc_interval);
- 	else {
--		del_timer(ip6_fib_timer);
--		ip6_fib_timer->expires = 0;
-+		del_timer(init_net.ip6_fib_timer);
-+		init_net.ip6_fib_timer->expires = 0;
- 	}
- 	spin_unlock_bh(&fib6_gc_lock);
- }
-@@ -1520,19 +1518,22 @@ static struct pernet_operations fib6_net
- 
- void __init fib6_init(void)
- {
-+ 	struct timer_list *timer;
-+
- 	fib6_node_kmem = kmem_cache_create("fib6_nodes",
- 					   sizeof(struct fib6_node),
- 					   0, SLAB_HWCACHE_ALIGN|SLAB_PANIC,
- 					   NULL);
- 
--	ip6_fib_timer = kzalloc(sizeof(*ip6_fib_timer), GFP_KERNEL);
--	if (!ip6_fib_timer)
-+	timer = kzalloc(sizeof(*timer), GFP_KERNEL);
-+	if (!timer)
- 		panic("IPV6: failed to allocate the gc timer\n");
- 
--	ip6_fib_timer->function = fib6_gc_timer_cb;
--	ip6_fib_timer->expires = 0;
--	ip6_fib_timer->data = (unsigned long)&init_net;
--	ip6_fib_timer->base = &boot_tvec_bases;
-+	timer->function = fib6_gc_timer_cb;
-+	timer->expires = 0;
-+	timer->data = (unsigned long)&init_net;
-+	timer->base = &boot_tvec_bases;
-+	init_net.ip6_fib_timer = timer;
- 
- 	register_pernet_subsys(&fib6_net_ops);
-         __rtnl_register(PF_INET6, RTM_GETROUTE, NULL, inet6_dump_fib);
-@@ -1540,8 +1541,8 @@ void __init fib6_init(void)
- 
- void fib6_gc_cleanup(void)
- {
--	del_timer(ip6_fib_timer);
--	kfree(ip6_fib_timer);
-+	del_timer(timer);
-+	kfree(timer);
- 	unregister_pernet_subsys(&fib6_net_ops);
- 	kmem_cache_destroy(fib6_node_kmem);
- }
+Ok.  This patch is technically safe because none of the touched
+code can live in a module and so we never touch the exit code path.
 
--- 
+However in the general case and as a code idiom this __net_initdata
+on struct pernet_operations is fundamentally horribly broken.
+
+Look at what happens if we use this idiom in module.  There
+is only one definition of __initdata ".init.data".  The module
+loader places all sections that begin with .init in a region of
+memory that will be discarded after module initialization.  
+
+So in register_pernet_operations we pass in the a pointer to struct
+pernet_operations and call the init method.  Later when we remove the
+module we again pass in the pointer to struct pernet_operations which
+lived in an init section so it has been discarded.  We dereference
+that pointer to find the exit method and KABOOM!!!!
+
+So I'm still opposed to __net_initdata on the grounds that at best
+it is like putting our head under a guillotine and reaching up and
+sawing at the row that holds the blade up with a pocket knife.  It is
+a think rope and a puny knife so you are safe for a while....
+
+Eric
