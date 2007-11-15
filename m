@@ -1,61 +1,88 @@
-From: Sam Ravnborg <sam@ravnborg.org>
-Subject: Re: [PATCH 2/2] move unneeded data to initdata section
-Date: Thu, 15 Nov 2007 20:34:35 +0100
-Message-ID: <20071115193435.GE23914@uranus.ravnborg.org>
-References: <20071107120100.GA10185@iris.sw.ru> <m1abpfy3xz.fsf@ebiederm.dsl.xmission.com> <473C5ABC.5090204@sw.ru> <20071115151429.GC22825@uranus.ravnborg.org> <m13av7xtg1.fsf@ebiederm.dsl.xmission.com> <20071115184334.GC23914@uranus.ravnborg.org> <473C9B3A.4020401@sw.ru>
+From: "Serge E. Hallyn" <serue@us.ibm.com>
+Subject: [RFC PATCH 1/2] capabilities: define CONFIG_COMMONCAP
+Date: Thu, 15 Nov 2007 17:16:15 -0600
+Message-ID: <20071115231615.GA3851@sergelap.austin.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-Return-path: <netdev-owner@vger.kernel.org>
+Return-path: <linux-security-module-owner@vger.kernel.org>
 Content-Disposition: inline
-In-Reply-To: <473C9B3A.4020401@sw.ru>
-Sender: netdev-owner@vger.kernel.org
-To: "Denis V. Lunev" <den@sw.ru>
-Cc: "Eric W. Biederman" <ebiederm@xmission.com>, "Denis V. Lunev" <den@openvz.org>, davem@davemloft.net, containers@lists.osdl.org, netdev@vger.kernel.org, clg@fr.ibm.com, benjamin.thery@bull.net
+Sender: linux-security-module-owner@vger.kernel.org
+To: Linux Containers <containers@lists.osdl.org>, linux-security-module@vger.kernel.org
 List-Id: containers.vger.kernel.org
 
-On Thu, Nov 15, 2007 at 10:17:14PM +0300, Denis V. Lunev wrote:
-> 
-> will you mind against this?
+From 1512a99aedb7a75ac993ccef91a42c97e1baefc5 Mon Sep 17 00:00:00 2001
+From: Serge E. Hallyn <serue@us.ibm.com>
+Date: Fri, 28 Sep 2007 10:33:33 -0500
+Subject: [PATCH 1/2] capabilities: define CONFIG_COMMONCAP
 
-> diff --git a/include/net/net_namespace.h b/include/net/net_namespace.h
-> index 5dd6d90..d136707 100644
-> --- a/include/net/net_namespace.h
-> +++ b/include/net/net_namespace.h
-> @@ -119,10 +119,14 @@ static inline struct net *maybe_get_net(struct net *net)
->  #ifdef CONFIG_NET_NS
->  #define __net_init
->  #define __net_exit
-> -#define __net_initdata
->  #else
->  #define __net_init	__init
->  #define __net_exit	__exit_refok
-> +#endif
-> +
-> +#if defined(CONFIG_NET_NS) || defined(MODULE)
-> +#define __net_initdata
-> +#else
->  #define __net_initdata	__initdata
->  #endif
-  
-n principle I am against this approach.
-__initdata is far too overloaded with different stuff.
+currently the compilation of commoncap.c is determined
+through Makefile logic.  So there is no single CONFIG
+variable which can be relied upon to know whether it
+will be compiled.
 
-A much more preferred approach should be to create new sections
-named for example .init.data.net and .init.data.net.module
+Define CONFIG_COMMONCAP to be true when lsm is not
+compiled in, or when the capability or rootplug modules
+are compiled.  These are the cases when commoncap is
+currently compiled.  Use this variable in security/Makefile
+to determine commoncap.c's compilation.
 
-And then in include/asm-generic/vmlinux.lds.h decide the
-location of these sections.
+Apart from being a logic cleanup, this is needed by the
+upcoming cap_bset patch so that prctl can know whether
+PR_SET_BSET should be supported.
 
-On top of this we would have to teach modpost about these new sections.
-But the advantage of this approach is that the section mismatch
-checks are *independent* of the module being a MODULE or build-in.
-The check will still happen.
+Changelog:
+	Nov 15: make CONFIG_FILE_CAPABILITIES just depend on
+		COMMONCAP.  Unfortunately since rootplug doesn't
+		hook cap_setxattr, it would be not quite right
+		to allow CONFIG_FILE_CAPABILITIES with rootplug.
 
-In this way we avoid the situation where a warning only pops up
-in certain configurations.
+Signed-off-by: Serge E. Hallyn <serue@us.ibm.com>
+---
+ security/Kconfig  |    6 +++++-
+ security/Makefile |    9 +++------
+ 2 files changed, 8 insertions(+), 7 deletions(-)
 
-To do so will obviously require a bit more linker script
-consolidation but if you or some else could step in a do this
-it would be great!
+diff --git a/security/Kconfig b/security/Kconfig
+index 8086e61..de7f9fe 100644
+--- a/security/Kconfig
++++ b/security/Kconfig
+@@ -80,9 +80,13 @@ config SECURITY_CAPABILITIES
+ 	  This enables the "default" Linux capabilities functionality.
+ 	  If you are unsure how to answer this question, answer Y.
+ 
++config COMMONCAP
++	bool
++	default !SECURITY || SECURITY_CAPABILITIES || SECURITY_ROOTPLUG
++
+ config SECURITY_FILE_CAPABILITIES
+ 	bool "File POSIX Capabilities (EXPERIMENTAL)"
+-	depends on (SECURITY=n || SECURITY_CAPABILITIES!=n) && EXPERIMENTAL
++	depends on COMMONCAP && !SECURITY_ROOTPLUG && EXPERIMENTAL
+ 	default n
+ 	help
+ 	  This enables filesystem capabilities, allowing you to give
+diff --git a/security/Makefile b/security/Makefile
+index ef87df2..7cccc81 100644
+--- a/security/Makefile
++++ b/security/Makefile
+@@ -5,14 +5,11 @@
+ obj-$(CONFIG_KEYS)			+= keys/
+ subdir-$(CONFIG_SECURITY_SELINUX)	+= selinux
+ 
+-# if we don't select a security model, use the default capabilities
+-ifneq ($(CONFIG_SECURITY),y)
+-obj-y		+= commoncap.o
+-endif
++obj-$(CONFIG_COMMONCAP)			+= commoncap.o
+ 
+ # Object file lists
+ obj-$(CONFIG_SECURITY)			+= security.o dummy.o inode.o
+ # Must precede capability.o in order to stack properly.
+ obj-$(CONFIG_SECURITY_SELINUX)		+= selinux/built-in.o
+-obj-$(CONFIG_SECURITY_CAPABILITIES)	+= commoncap.o capability.o
+-obj-$(CONFIG_SECURITY_ROOTPLUG)		+= commoncap.o root_plug.o
++obj-$(CONFIG_SECURITY_CAPABILITIES)	+= capability.o
++obj-$(CONFIG_SECURITY_ROOTPLUG)		+= root_plug.o
+-- 
+1.5.1.1.GIT
 
-	Sam
