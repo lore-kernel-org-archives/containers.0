@@ -1,15 +1,15 @@
 From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
-Subject: Re: [patch 1/1][NETNS] fix compilation error
-Date: Thu, 15 Nov 2007 06:29:09 -0700
-Message-ID: <m1sl37y6vu.fsf@ebiederm.dsl.xmission.com>
-References: <20071114104348.624640717@mai.toulouse-stg.fr.ibm.com>
-	<20071114104459.680016471@mai.toulouse-stg.fr.ibm.com>
-	<473AD556.9020601@sw.ru>
+Subject: Re: [patch 1/1][NETNS] fix fib_frontend compilation error
+Date: Thu, 15 Nov 2007 06:31:18 -0700
+Message-ID: <m1oddvy6s9.fsf@ebiederm.dsl.xmission.com>
+References: <20071114142443.794857293@mai.toulouse-stg.fr.ibm.com>
+	<20071114142523.283777897@mai.toulouse-stg.fr.ibm.com>
+	<473B1F63.5040105@sw.ru> <473B1FC2.9030003@fr.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <473AD556.9020601-3ImXcnM4P+0@public.gmane.org> (Denis V. Lunev's message of "Wed, 14
-	Nov 2007 14:00:38 +0300")
+In-Reply-To: <473B1FC2.9030003-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org> (Daniel Lezcano's message of "Wed,
+	14 Nov 2007 17:18:10 +0100")
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,39 +19,22 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Denis V. Lunev" <den-3ImXcnM4P+0@public.gmane.org>
-Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
+To: Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
+Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, "Denis V. Lunev" <den-3ImXcnM4P+0@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-"Denis V. Lunev" <den-3ImXcnM4P+0@public.gmane.org> writes:
+Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org> writes:
 
-> done by the next Eric's patch. Just pushed
+> Denis V. Lunev wrote:
+>> applied... though I am not too familiar with git and the author has been
+>> set to me rather than you with your signed-off :(
 >
-> Daniel Lezcano wrote:
->> fix rtentry_to_fib_config compilation error.
->> Replaced the init_net() function call to &init_net.
->> 
->> Signed-off-by: Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
->> ---
->>  net/ipv4/fib_frontend.c |    2 +-
->>  1 file changed, 1 insertion(+), 1 deletion(-)
->> 
->> Index: linux-2.6-netns/net/ipv4/fib_frontend.c
->> ===================================================================
->> --- linux-2.6-netns.orig/net/ipv4/fib_frontend.c
->> +++ linux-2.6-netns/net/ipv4/fib_frontend.c
->> @@ -294,7 +294,7 @@ static int rtentry_to_fib_config(int cmd
->>  	memset(cfg, 0, sizeof(*cfg));
->>  	cfg->fc_nlinfo.pid = 0;
->>  	cfg->fc_nlinfo.nlh = NULL;
->> -	cfg->fc_nlinfo.net = init_net();
->> +	cfg->fc_nlinfo.net = &init_net;
->>  
->>  	if (rt->rt_dst.sa_family != AF_INET)
->>  		return -EAFNOSUPPORT;
->> 
+> It's ok :)
+>
+> I think you should specify the --author option when commiting.
 
-Oops.  Looks like some more old cruft I have failed to find and fix.
-The joy of refactoring through a series of patches...
+My normal technique here is to simply save the entire email message
+and then do git-am email.txt and git picks it all up from the
+headers.
 
 Eric
