@@ -1,59 +1,42 @@
-From: Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
-Subject: cleanup in workq and dst_destroy
-Date: Fri, 16 Nov 2007 17:32:04 +0100
-Message-ID: <473DC604.9070601@fr.ibm.com>
+From: Randy Dunlap <randy.dunlap@oracle.com>
+Subject: Re: [PATCH][DOCUMENTATION] The namespaces compatibility list doc
+Date: Fri, 16 Nov 2007 08:48:20 -0800
+Message-ID: <20071116084820.cc8ccd19.randy.dunlap@oracle.com>
+References: <473D6434.5020201@openvz.org>
+	<473DBCC2.70506@fr.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+Content-Type: text/plain; charset=US-ASCII
 Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Denis V. Lunev" <den-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Benjamin Thery <benjamin.thery-6ktuUTfB/bM@public.gmane.org>, Pavel Emelianov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1760814AbXKPQui@vger.kernel.org>
+In-Reply-To: <473DBCC2.70506@fr.ibm.com>
+Sender: linux-kernel-owner@vger.kernel.org
+To: Daniel Lezcano <dlezcano@fr.ibm.com>
+Cc: Pavel Emelyanov <xemul@openvz.org>, Andrew Morton <akpm@osdl.org>, Theodore Tso <tytso@mit.edu>, Linux Kernel Mailing List <linux-kernel@vger.kernel.org>, Cedric Le Goater <clg@fr.ibm.com>, "Eric W. Biederman" <ebiederm@xmission.com>, Linux Containers <containers@lists.osdl.org>
 List-Id: containers.vger.kernel.org
 
-Hi all,
+On Fri, 16 Nov 2007 16:52:34 +0100 Daniel Lezcano wrote:
 
-while doing ipv6 namespace, we were faced to a problem with the loopback 
-and the dst_destroy function.
+> > +1. Both the IPC and the PID namespaces provide IDs to address
+> > +   object inside the kernel. E.g. semaphore with ipcid or
+> > +   process group with pid.
+> > +
+> > +   In both cases, tasks shouldn't try exposing this id to some
+> > +   other task living in a different namespace via a shared filesystem
+> > +   or IPC shmem/message. The fact is that this ID is only valid
+> > +   within the namespace it was obtained in and may refer to some
+> > +   other object in another namespace.
+> > +
+> > +2. Intentionnaly, two equal user ids in different user namespaces
+>        Intentionaly
 
-When the network namespace exits, the cleanup function is called by 
-schedule_work and this function will browse the net ops list to call the 
-different exit methods for the registered subsystems.
+        Intentionally,
 
-The different subsystems will shutdown their resources and in particular 
-addrconf subsystem will ifdown the loopback. This function will call
-rt6_ifdown
-  -> fib6_clean_all
-   -> fib6_clean_node
-    -> fib6_clean_tree
-     -> fib6_clean_node
-      -> fib6_del
-       -> fib6_del_route
-        -> rt6_release
-         ->dst_free
-          -> __dst_free
+> > +   should not be equal from the VFS point of view. In other
+> > +   words, user 10 in one user namespace shouldn't have the same
+> > +   access permissions to files, beloging to user 10 in another
+>                                     belonging
+> > +   namespace. But currently this is not so.
+> > +
 
-The __dst_free function will schedule_delayed_work the dst_gc_work function.
-
-The dst_gc_work will call dst_destroy and finally this one will call 
-dst->ops->destroy ops function which is ip6_dst_destroy.
-
-The problem here is we have the workq blocked because we are running 
-inside the netns cleanup function. So the delayed work will not run 
-until we exits the cleanup function. But the loopback is still 
-referenced by the ip6 routes, the netdev_unregister will loop 
-indefinitly => dead lock.
-
-By the way, this bug appears with ipv6 but it is perhaps pending with ipv4.
-
-Benjamin as proposed to create a separate workq for the network 
-namespace, so in the worst case we have the unregister looping until the 
-ip6 route are shut downed. Is it an acceptable solution ?
+---
+~Randy
