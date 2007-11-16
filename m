@@ -1,120 +1,59 @@
-From: Pavel Emelyanov <xemul@openvz.org>
-Subject: Re: [PATCH][DOCUMENTATION] The namespaces compatibility list doc
-Date: Fri, 16 Nov 2007 19:11:25 +0300
-Message-ID: <473DC12D.3010401@openvz.org>
-References: <473D6434.5020201@openvz.org> <473DBCC2.70506@fr.ibm.com>
+From: Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
+Subject: cleanup in workq and dst_destroy
+Date: Fri, 16 Nov 2007 17:32:04 +0100
+Message-ID: <473DC604.9070601@fr.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 Content-Transfer-Encoding: 7bit
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1762278AbXKPQMO@vger.kernel.org>
-In-Reply-To: <473DBCC2.70506@fr.ibm.com>
-Sender: linux-kernel-owner@vger.kernel.org
-To: Daniel Lezcano <dlezcano@fr.ibm.com>
-Cc: Andrew Morton <akpm@osdl.org>, Theodore Tso <tytso@mit.edu>, Linux Kernel Mailing List <linux-kernel@vger.kernel.org>, Cedric Le Goater <clg@fr.ibm.com>, "Eric W. Biederman" <ebiederm@xmission.com>, Linux Containers <containers@lists.osdl.org>
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: "Denis V. Lunev" <den-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Benjamin Thery <benjamin.thery-6ktuUTfB/bM@public.gmane.org>, Pavel Emelianov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Daniel Lezcano wrote:
-> Pavel Emelyanov wrote:
->> >From time to time people begin discussions about how the
->> namespaces are working/going-to-work together.
->>
->> Ted T'so proposed to create some document that describes what
->> problems user may have when he/she creates some new namespace,
->> but keeps others shared. I liked this idea, so here's the 
->> initial version of such a document with the problems I currently 
->> have in mind and can describe somewhat audibly - the "namespaces 
->> compatibility list".
->>
->> The Documentation/namespaces/ directory is about to contain more
->> docs about the namespaces stuff.
->>
->> Thanks to Cedirc for notes and spell checks on the doc.
->>
->> Signed-off-by: Pavel Emelyanov <xemul@openvz.org>
->>
->> ---
->>
->> commit 83061c56e1c4dcd54d48a62b108d219a7f5279a0
->> Author: Pavel <pavel@xemulnb.sw.ru>
->> Date:   Fri Nov 16 12:25:53 2007 +0300
->>
->>     Namespaces compatibility list
->>
->> diff --git a/Documentation/00-INDEX b/Documentation/00-INDEX
->> index 910e511..3ead06b 100644
->> --- a/Documentation/00-INDEX
->> +++ b/Documentation/00-INDEX
->> @@ -262,6 +262,8 @@ mtrr.txt
->>  	- how to use PPro Memory Type Range Registers to increase performance.
->>  mutex-design.txt
->>  	- info on the generic mutex subsystem.
->> +namespaces/
->> +	- directory with various information about namespaces
->>  nbd.txt
->>  	- info on a TCP implementation of a network block device.
->>  netlabel/
->> diff --git a/Documentation/namespaces/compatibility-list.txt b/Documentation/namespaces/compatibility-list.txt
->> new file mode 100644
->> index 0000000..9c9e5c1
->> --- /dev/null
->> +++ b/Documentation/namespaces/compatibility-list.txt
->> @@ -0,0 +1,33 @@
->> +	Namespaces compatibility list
->> +
->> +This document contains the information about the problems user
->> +may have when creating tasks living in different namespaces.
->> +
->> +Here's the summary. This matrix shows the known problems, that
->> +occur when tasks share some namespace (the columns) while living
->> +in different other namespaces (the rows):
->> +
->> +	UTS	IPC	VFS	PID	User	Net
->> +UTS	 X
->> +IPC		 X	 1               
->> +VFS			 X
->> +PID		 1	 1	 X               
->> +User			 2		 X
->> +Net						 
->> +
-> 
-> 	UTS	IPC	VFS	PID	User	Net
-> UTS	 X
-> IPC		 X	 1               3
-> VFS			 X
-> PID		 1	 1	 X
-> User			 2		 X
-> Net						
-> 
->> +1. Both the IPC and the PID namespaces provide IDs to address
->> +   object inside the kernel. E.g. semaphore with ipcid or
->> +   process group with pid.
->> +
->> +   In both cases, tasks shouldn't try exposing this id to some
->> +   other task living in a different namespace via a shared filesystem
->> +   or IPC shmem/message. The fact is that this ID is only valid
->> +   within the namespace it was obtained in and may refer to some
->> +   other object in another namespace.
->> +
->> +2. Intentionnaly, two equal user ids in different user namespaces
->        Intentionaly
->> +   should not be equal from the VFS point of view. In other
->> +   words, user 10 in one user namespace shouldn't have the same
->> +   access permissions to files, beloging to user 10 in another
->                                     belonging
->> +   namespace. But currently this is not so.
->> +
-> 
-> 3. IPC and User
-> 
-> Two processes running in different user namespaces but with the same 
-> uids can access with the same permissions to the IPC created by one or 
-> other process
+Hi all,
 
-Different user and equal IPC is where the row UID and column 
-IPC cross, not the vice versa.
+while doing ipv6 namespace, we were faced to a problem with the loopback 
+and the dst_destroy function.
 
-Anything, thanks, please send an incremental patch if Andrew 
-accepts this one.
+When the network namespace exits, the cleanup function is called by 
+schedule_work and this function will browse the net ops list to call the 
+different exit methods for the registered subsystems.
 
-Thanks,
-Pavel
+The different subsystems will shutdown their resources and in particular 
+addrconf subsystem will ifdown the loopback. This function will call
+rt6_ifdown
+  -> fib6_clean_all
+   -> fib6_clean_node
+    -> fib6_clean_tree
+     -> fib6_clean_node
+      -> fib6_del
+       -> fib6_del_route
+        -> rt6_release
+         ->dst_free
+          -> __dst_free
+
+The __dst_free function will schedule_delayed_work the dst_gc_work function.
+
+The dst_gc_work will call dst_destroy and finally this one will call 
+dst->ops->destroy ops function which is ip6_dst_destroy.
+
+The problem here is we have the workq blocked because we are running 
+inside the netns cleanup function. So the delayed work will not run 
+until we exits the cleanup function. But the loopback is still 
+referenced by the ip6 routes, the netdev_unregister will loop 
+indefinitly => dead lock.
+
+By the way, this bug appears with ipv6 but it is perhaps pending with ipv4.
+
+Benjamin as proposed to create a separate workq for the network 
+namespace, so in the worst case we have the unregister looping until the 
+ip6 route are shut downed. Is it an acceptable solution ?
