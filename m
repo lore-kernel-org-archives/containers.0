@@ -1,18 +1,16 @@
-From: sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org
-Subject: Re: [PATCH] Signal semantics for /sbin/init
-Date: Sat, 17 Nov 2007 09:38:22 -0800
-Message-ID: <20071117173822.GA330@us.ibm.com>
-References: <20071027190010.GA10397@us.ibm.com>
-	<m1bqahmm25.fsf@ebiederm.dsl.xmission.com>
-	<20071030213710.GA22763@us.ibm.com>
-	<m1y7dkjl3k.fsf@ebiederm.dsl.xmission.com>
-	<20071102210047.GA8714@us.ibm.com>
-	<m1wssybpzu.fsf@ebiederm.dsl.xmission.com>
+From: Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Subject: Re: [RFC][PATCH] memory controller per zone patches take 2 [9/10]
+ per-zone-lru for memory cgroup
+Date: Sat, 17 Nov 2007 23:21:22 +0530
+Message-ID: <473F2A1A.8000703@linux.vnet.ibm.com>
+References: <20071116191107.46dd523a.kamezawa.hiroyu@jp.fujitsu.com>
+	<20071116192642.8c7f07c9.kamezawa.hiroyu@jp.fujitsu.com>
+Reply-To: balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+Content-Type: text/plain; charset=ISO-8859-1
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <m1wssybpzu.fsf-T1Yj925okcoyDheHMi7gv2pdwda3JcWeAL8bYrjMMd8@public.gmane.org>
+In-Reply-To: <20071116192642.8c7f07c9.kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -22,18 +20,40 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Cc: Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org, Oleg Nesterov <oleg-6lXkIZvqkOAvJsYlp49lxw@public.gmane.org>, Pavel Emelianov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+To: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+Cc: "containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org" <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, "linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org" <linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org>, "yamamoto-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org" <yamamoto-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Eric W. Biederman [ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org] wrote:
-| sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org writes:
-| 
-| > Eric,
-| >
-| > Can you send out your modified patch for this - I can port mine on top
-| > and resend ?
-| 
-| Yes.  I will see send that version in just a bit. 
+KAMEZAWA Hiroyuki wrote:
+> This patch implements per-zone lru for memory cgroup.
+> This patch makes use of mem_cgroup_per_zone struct for per zone lru.
+> 
+> LRU can be accessed by
+> 
+>    mz = mem_cgroup_zoneinfo(mem_cgroup, node, zone);
+>    &mz->active_list
+>    &mz->inactive_list
+> 
+>    or
+>    mz = page_cgroup_zoneinfo(page_cgroup, node, zone);
+>    &mz->active_list
+>    &mz->inactive_list
+> 
+> 
+> Changelog v1->v2
+>   - merged to mem_cgroup_per_zone struct.
+>   - handle page migraiton.
+> 
+> Signed-off-by: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+> 
 
-Eric, can you send this when you get a chance.
+Thanks, this has been a long pending TODO. What is pending now on my
+plate is re-organizing res_counter to become aware of the filesystem
+hierarchy. I want to split out the LRU lists from the memory controller
+and resource counters.
+
+-- 
+	Warm Regards,
+	Balbir Singh
+	Linux Technology Center
+	IBM, ISTL
