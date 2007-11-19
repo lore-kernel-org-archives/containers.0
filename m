@@ -1,11 +1,11 @@
-From: Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
+From: Benjamin Thery <benjamin.thery-6ktuUTfB/bM@public.gmane.org>
 Subject: Re: cleanup in workq and dst_destroy
-Date: Mon, 19 Nov 2007 10:03:56 +0100
-Message-ID: <4741517C.5050605@fr.ibm.com>
+Date: Mon, 19 Nov 2007 10:16:29 +0100
+Message-ID: <4741546D.6010500@bull.net>
 References: <473DC604.9070601@fr.ibm.com> <473DCE16.8020809@sw.ru>
 	<47414D64.9040304@fr.ibm.com> <4741501C.1090002@sw.ru>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+Content-Type: text/plain; charset=ISO-8859-1
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 In-Reply-To: <4741501C.1090002-3ImXcnM4P+0@public.gmane.org>
@@ -18,8 +18,8 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Denis V. Lunev" <den-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
-Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Benjamin Thery <benjamin.thery-6ktuUTfB/bM@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Pavel Emelianov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+To: "Denis V. Lunev" <den-3ImXcnM4P+0@public.gmane.org>
+Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, "Denis V. Lunev" <den-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Pavel Emelianov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
 Denis V. Lunev wrote:
@@ -75,5 +75,22 @@ Denis V. Lunev wrote:
 > should be run outside of all current mechanisms in the separate thread,
 > specially designated to namespace(s) stop.
 
+Interesting.
+How do you create the thread? Do you use a special workqueue to replace the 
+use of the global keventd workqueue, as I proposed, or do you use another 
+mechanism to create the thread?
+I mean do you create one thread per exiting namespace (each time a namespace
+is exiting you spawn a new thread for the cleanup) or do you create a workqueue
+at system init where you'll queue all cleanup routines (cleanup_net) for all
+exiting namespaces?
 
-ah, ok. I didn't caught the meaning of the previous sentence.
+Currently, on our side, we have a small patch that creates a special 
+workqueue in net_ns_init(), and we queue clean_net() in this workqueue
+in __put_net(). 
+
+Benjamin
+
+-- 
+B e n j a m i n   T h e r y  - BULL/DT/Open Software R&D
+
+   http://www.bull.com
