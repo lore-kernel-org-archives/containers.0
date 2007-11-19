@@ -1,20 +1,13 @@
-From: Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: Re: [RFC][PATCH] memory controller per zone patches take 2 [9/10]
- per-zone-lru for memory cgroup
-Date: Mon, 19 Nov 2007 14:04:23 +0530
-Message-ID: <47414A8F.8020807@linux.vnet.ibm.com>
-References: <20071116191107.46dd523a.kamezawa.hiroyu@jp.fujitsu.com>
-	<20071116192642.8c7f07c9.kamezawa.hiroyu@jp.fujitsu.com>
-	<473F2A1A.8000703@linux.vnet.ibm.com>
-	<20071119104826.e4ba02ca.kamezawa.hiroyu@jp.fujitsu.com>
-	<47412B5B.80409@linux.vnet.ibm.com>
-	<20071119153549.d6f6f1de.kamezawa.hiroyu@jp.fujitsu.com>
-Reply-To: balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
+From: Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
+Subject: Re: cleanup in workq and dst_destroy
+Date: Mon, 19 Nov 2007 09:46:28 +0100
+Message-ID: <47414D64.9040304@fr.ibm.com>
+References: <473DC604.9070601@fr.ibm.com> <473DCE16.8020809@sw.ru>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20071119153549.d6f6f1de.kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+In-Reply-To: <473DCE16.8020809-3ImXcnM4P+0@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -24,63 +17,54 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
-Cc: "containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org" <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, "linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org" <linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org>, "yamamoto-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org" <yamamoto-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
+To: "Denis V. Lunev" <den-3ImXcnM4P+0@public.gmane.org>
+Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, "Denis V. Lunev" <den-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>, Benjamin Thery <benjamin.thery-6ktuUTfB/bM@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Pavel Emelianov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-KAMEZAWA Hiroyuki wrote:
-> On Mon, 19 Nov 2007 11:51:15 +0530
-> Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org> wrote:
->>> =
->>> /cgroup/group_A/group_A_1
->>>             .  /group_A_2
->>>                /group_A_3
->>> (LRU(s) will be used for maintaining parent/child groups.)
->>>
->> The LRU's will be shared, my vision is
+Denis V. Lunev wrote:
+> Daniel Lezcano wrote:
+>> Hi all,
 >>
->> 		LRU
->> 		^ ^
->> 		| |
->> 	Mem-----+ +----Mem
+>> while doing ipv6 namespace, we were faced to a problem with the loopback
+>> and the dst_destroy function.
 >>
+>> When the network namespace exits, the cleanup function is called by
+>> schedule_work and this function will browse the net ops list to call the
+>> different exit methods for the registered subsystems.
 >>
->> That two or more mem_cgroup's can refer to the same LRU list and have
->> their own resource counters. This setup will be used in the case
->> of a hierarchy, so that a child can share memory with its parent
->> and have it's own limit.
+>> The different subsystems will shutdown their resources and in particular
+>> addrconf subsystem will ifdown the loopback. This function will call
+>> rt6_ifdown
+>>  -> fib6_clean_all
+>>   -> fib6_clean_node
+>>    -> fib6_clean_tree
+>>     -> fib6_clean_node
+>>      -> fib6_del
+>>       -> fib6_del_route
+>>        -> rt6_release
+>>         ->dst_free
+>>          -> __dst_free
 >>
->> The mem_cgroup will basically then only contain a reference
->> to the LRU list.
+>> The __dst_free function will schedule_delayed_work the dst_gc_work
+>> function.
 >>
-> Hmm, interesting. 
+>> The dst_gc_work will call dst_destroy and finally this one will call
+>> dst->ops->destroy ops function which is ip6_dst_destroy.
+>>
+>> The problem here is we have the workq blocked because we are running
+>> inside the netns cleanup function. So the delayed work will not run
+>> until we exits the cleanup function. But the loopback is still
+>> referenced by the ip6 routes, the netdev_unregister will loop
+>> indefinitly => dead lock.
+>>
+>> By the way, this bug appears with ipv6 but it is perhaps pending with ipv4.
+>>
+>> Benjamin as proposed to create a separate workq for the network
+>> namespace, so in the worst case we have the unregister looping until the
+>> ip6 route are shut downed. Is it an acceptable solution ?
+>>
 > 
-> Then, 
->    group_A_1's usage + group_A_2's usage + group_A_3's usgae < group_A's limit.
->    group_A_1, group_A_2, group_A_3 has its own limit.
+> we are doing this staff in the special thread. There are a lot of
+> difficult things to perform like synchronize_net & netdev_run_todo inside
 
-Yes that is correct
-
-> In plan.
-> 
-> I wonder if we want rich control functions, we need "share" or "priority" among
-> childs. (but maybe this will be complicated one.)
-> 
-
-That would nice and the end goal of providing this feature. We also need
-to provide soft-limits (more complex) and guarantees (with the kernel
-memory controller coming in - nice to have, but not necessary for now)
-
-> Thank you for explanation.
-> 
-> Regards,
-> -Kame
-> 
-
-Thanks for helping out the memory controller.
-
--- 
-	Warm Regards,
-	Balbir Singh
-	Linux Technology Center
-	IBM, ISTL
+The special thread ? do you mean keventd_wq ?
