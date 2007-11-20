@@ -1,72 +1,31 @@
-From: "Serge E. Hallyn" <serue@us.ibm.com>
-Subject: Re: [PATCH 1/1] capabilities: introduce per-process capability
-	bounding set (v8)
-Date: Tue, 20 Nov 2007 14:23:40 -0600
-Message-ID: <20071120202340.GA15804@sergelap.austin.ibm.com>
-References: <20071119212519.GA23178@sergelap.austin.ibm.com> <47425727.10702@kernel.org> <20071120200746.GA15698@sergelap.austin.ibm.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Return-path: <linux-security-module-owner@vger.kernel.org>
-Content-Disposition: inline
-In-Reply-To: <20071120200746.GA15698@sergelap.austin.ibm.com>
-Sender: linux-security-module-owner@vger.kernel.org
-To: "Serge E. Hallyn" <serue@us.ibm.com>
-Cc: Andrew Morgan <morgan@kernel.org>, Chris Wright <chrisw@sous-sol.org>, casey@schaufler-ca.com, Andrew Morton <akpm@google.com>, Stephen Smalley <sds@tycho.nsa.gov>, KaiGai Kohei <kaigai@kaigai.gr.jp>, James Morris <jmorris@namei.org>, linux-security-module@vger.kernel.org, Linux Containers <containers@lists.osdl.org>
+From: "Noemi Parker" <pteraspidae-qzHThbIDIDRWk0Htik3J/w@public.gmane.org>
+Subject: Adobe Photoshop CS3 Extended MAC/XP/Vista for 89,
+	Retails @ 999 (You Save 909)
+Date: Tue, 20 Nov 2007 16:52:41 -0600
+Message-ID: <000001c82bc6$d230ed80$0100007f@localhost>
+Content-Type: text/plain;
+    charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Quoting Serge E. Hallyn (serue@us.ibm.com):
-> How about the following?
+autodesk autocad electrical 2006 - 99
+microsoft onenote pro 2003 - 29
+mcafee desktop firewall 8.0.493 - 39
+grand theft auto: san andreas - 29
+steinberg nuendo 3.1 - 99
+microsoft visual basic professional 6.0 - 49
+mindjet mindmanager 7 for mac - 39
+zend studio - 49
 
-Argh, with the following on top of it...
-
--serge
-
-
-From 470a68120cda83875a281354b897f3bda04b58fc Mon Sep 17 00:00:00 2001
-From: Serge E. Hallyn <serue@us.ibm.com>
-Date: Tue, 20 Nov 2007 15:12:54 -0500
-Subject: [PATCH 1/1] capbset: fix compilation when CONFIG_SECURITY=n
-
-without this patch, kernel/sys.c has undefined reference
-to cap_prctl_drop().
-
-Signed-off-by: Serge E. Hallyn <serue@us.ibm.com>
----
- kernel/sys.c         |    4 ++++
- security/commoncap.c |    4 ----
- 2 files changed, 4 insertions(+), 4 deletions(-)
-
-diff --git a/kernel/sys.c b/kernel/sys.c
-index b528e75..efc495e 100644
---- a/kernel/sys.c
-+++ b/kernel/sys.c
-@@ -1747,7 +1747,11 @@ asmlinkage long sys_prctl(int option, unsigned long arg2, unsigned long arg3,
- 				return -EINVAL;
- 			return !!cap_raised(current->cap_bset, arg2);
- 		case PR_CAPBSET_DROP:
-+#ifdef CONFIG_SECURITY_FILE_CAPABILITIES
- 			return cap_prctl_drop(arg2);
-+#else
-+			return -EINVAL;
-+#endif
- 
- 		default:
- 			error = -EINVAL;
-diff --git a/security/commoncap.c b/security/commoncap.c
-index b72825e..e909f4f 100644
---- a/security/commoncap.c
-+++ b/security/commoncap.c
-@@ -594,10 +594,6 @@ int cap_task_kill(struct task_struct *p, struct siginfo *info,
- {
- 	return 0;
- }
--long cap_prctl_drop(unsigned long cap)
--{
--	return -EINVAL;
--}
- #endif
- 
- void cap_task_reparent_to_init (struct task_struct *p)
--- 
-1.5.1.1.GIT
-
+visit  cheapoemsoft7 .com  in Internet Explorer
