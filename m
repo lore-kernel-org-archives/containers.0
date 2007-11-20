@@ -1,25 +1,24 @@
 From: David Miller <davem@davemloft.net>
-Subject: Re: [PATCH 2.6.25 6/6] net: consolidate net namespace related proc
- files creation
-Date: Mon, 19 Nov 2007 22:33:54 -0800 (PST)
-Message-ID: <20071119.223354.177275738.davem@davemloft.net>
-References: <20071115160150.GA25520@iris.sw.ru>
+Subject: Re: [PATCH][net-2.6.25][NETNS] make netns cleanup to run in a
+ separate workqueue
+Date: Mon, 19 Nov 2007 23:18:34 -0800 (PST)
+Message-ID: <20071119.231834.115257346.davem@davemloft.net>
+References: <47416909.4000602@fr.ibm.com>
+	<47416DF3.700@sw.ru>
+	<47416EC1.7080702@sw.ru>
 Mime-Version: 1.0
 Content-Type: Text/Plain; charset=us-ascii
 Content-Transfer-Encoding: 7bit
 Return-path: <netdev-owner@vger.kernel.org>
-In-Reply-To: <20071115160150.GA25520@iris.sw.ru>
+In-Reply-To: <47416EC1.7080702@sw.ru>
 Sender: netdev-owner@vger.kernel.org
-To: den@openvz.org
-Cc: containers@lists.osdl.org, netdev@vger.kernel.org, ebiederm@xmission.com, dlezcano@fr.ibm.com
+To: dev@sw.ru
+Cc: dlezcano@fr.ibm.com, netdev@vger.kernel.org, ebiederm@xmission.com, containers@lists.osdl.org, den@openvz.org, benjamin.thery@bull.net
 List-Id: containers.vger.kernel.org
 
-From: "Denis V. Lunev" <den@openvz.org>
-Date: Thu, 15 Nov 2007 19:01:50 +0300
+From: Kirill Korotaev <dev@sw.ru>
+Date: Mon, 19 Nov 2007 14:08:49 +0300
 
-> net: consolidate net namespace related proc files creation
-> 
-> Signed-off-by: Denis V. Lunev <den@openvz.org>
-> Signed-off-by: Pavel Emelyanov <xemul@openvz.org>
+> Acked-By: Kirill Korotaev <dev@sw.ru>
 
-Also applied, thanks a lot.
+I've applied this patch, thanks everyone.
