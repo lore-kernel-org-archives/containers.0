@@ -1,16 +1,17 @@
-From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 1/1] capabilities: introduce per-process capability
-	bounding set (v8)
-Date: Tue, 20 Nov 2007 12:32:42 -0600
-Message-ID: <20071120183242.GA11967@sergelap.austin.ibm.com>
-References: <20071119212519.GA23178@sergelap.austin.ibm.com>
-	<47425727.10702@kernel.org>
-	<20071120181452.GA10765@sergelap.austin.ibm.com>
+From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
+Subject: Re: [PATCH 0/3] Sysctl shadow management
+Date: Tue, 20 Nov 2007 12:47:26 -0700
+Message-ID: <m1myt8snqp.fsf@ebiederm.dsl.xmission.com>
+References: <4742C73C.3010904@openvz.org>
+	<m1y7ctrrrd.fsf@ebiederm.dsl.xmission.com>
+	<4742DF51.8060402@openvz.org>
+	<m1tznhrli5.fsf@ebiederm.dsl.xmission.com>
+	<4742FEF6.6080609@openvz.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <20071120181452.GA10765-6s5zFf/epYLPQpwDFJZrxKsjOiXwFzmk@public.gmane.org>
+In-Reply-To: <4742FEF6.6080609-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org> (Pavel Emelyanov's message of "Tue,
+	20 Nov 2007 18:36:22 +0300")
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -20,101 +21,44 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Cc: Andrew Morton <akpm-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, KaiGai Kohei <kaigai-vifXKdUkV5/bmG5+kqVDhQ@public.gmane.org>, Chris Wright <chrisw-69jw2NvuJkxg9hUCZPvPmw@public.gmane.org>, Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, linux-security-module-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, casey-iSGtlc1asvQWG2LlvL+J4A@public.gmane.org, Stephen Smalley <sds-+05T5uksL2qpZYMLLGbcSA@public.gmane.org>, Andrew Morgan <morgan-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+To: Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Cedric Le Goater <clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Quoting Serge E. Hallyn (serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org):
-> Quoting Andrew Morgan (morgan-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org):
-> > -----BEGIN PGP SIGNED MESSAGE-----
-> > Hash: SHA1
-> > 
-> > Serge E. Hallyn wrote:
-> > > Andrew, this version follows all of your suggestions.  Definately nicer
-> > > userspace interface.  thanks
-> > [...]
-> > > 
-> > >  /* Allow ioperm/iopl access */
-> > > @@ -314,6 +314,10 @@ typedef struct kernel_cap_struct {
-> > >  
-> > >  #define CAP_SETFCAP	     31
-> > >  
-> > > +#define CAP_NUM_CAPS         32
-> > > +
-> > > +#define cap_valid(x) ((x) >= 0 && (x) < CAP_NUM_CAPS)
-> > > +
-> > 
-> > Could you change the name of CAP_NUM_CAPS? There is some libcap building
-> > code that does the following to automatically build the "cap_*" names
-> > for libcap, and this new define above messes that up! :-(
-> > 
-> > sed -ne '/^#define[ \t]CAP[_A-Z]\+[ \t]\+[0-9]\+/{s/^#define \([^
-> > \t]*\)[ \t]*\([^ \t]*\)/  \{ \2, \"\1\"
-> > \},/;y/ABCDEFGHIJKLMNOPQRSTUVWXYZ/abcdefghijklmnopqrstuvwxyz/;p;}' <
-> > $(KERNEL_HEADERS)/linux/capability.h | fgrep -v 0x > cap_names.sed
-> > 
-> > Something like:
-> > 
-> >   #define CAP_NUM_CAPS (CAP_SETFCAP+1)
-> > 
-> > will save me some hassle. :-)
-> 
-> Gotcha.  Will change that.
-> 
-> I worry that what you have is just a *touch* too busy so whoever adds
-> capability #32 might forget to update CAP_NUM_CAPS, but it looks like
-> 
-> #define CAP_LAST_CAP CAP_SETFCAP
-> 
-> #define cap_valid(x) ((x) >= 0 && (x) <= CAP_LAST_CAP)
-> 
-> should also be ok for libcap.
-> 
-> > [...]
-> > 
-> > >  /*
-> > >   * Bit location of each capability (used by user-space library and kernel)
-> > >   */
-> > > @@ -350,6 +354,17 @@ typedef struct kernel_cap_struct {
-> > >  
-> > >  #define CAP_INIT_INH_SET    CAP_EMPTY_SET
-> > >  
-> > 
-> > Its kind of a pity to put a kernel config ifdef in a header file. Could
-> > you put the ifdef code in the c-files that uses these definitions?
-> 
-> Hmm, now that you mention it, I notice that the exact same block of
-> code is still in commoncap.c.  I must have lost the patch hunk dropping
-> that some time ago...
-> 
-> But at this point CAP_INIT_BSET is only used in
-> include/linux/init_task.h.  And I'd really rather not put the definition
-> in there.
-> 
-> Note that the conditional is under a #ifdef __KERNEL__, so applications
-> shouldn't be looking at it anyway.  Does that help?
-> 
-> > > +#ifdef CONFIG_SECURITY_FILE_CAPABILITIES
-> > 
-> > In my experience when headers define things differently based on
-> > configuration #defines, other users of header files (apps, kernel
-> > modules etc.), never quite know what the current define is. If we can
-> > avoid conditional code like this in this header file, I'd be happier.
-> > 
-> > > +#ifdef CONFIG_SECURITY_FILE_CAPABILITIES
-> > 
-> > ditto.
-> 
-> For this I really can't, because that is the recommended way to handle
-> functions with different behavior per CONFIG_ variables.  #ifdefs are to
-> be kept out of .c files to improve their readability, and helper
-> functions called in .c files are to have their definition in .h files
-> depend on the CONFIG_ variables.
+Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org> writes:
 
-On second thought, I'm going to do exactly what you suggest, because
-removing CONFIG_SECURITY_FILE_CAPABILITIES checks severaly reduces
-the amount of recompilation when you switch between
-CONFIG_SECURITY_FILE_CAPABILITIES=y and n.
+> Eric W. Biederman wrote:
+>> To be very very very clear.
+>> 
+>> This is the way I think we should do the core sysctl infrastructure.
+>> 
+>> On top of the register_sysctl_table patch, getting all of the
+>> infrastructure in at once.
+>> 
+>> With a list of lists so we don't kill ourselves when we try to
+>> implement sysctls that are per network devices.
+>
+> Hm... My patch looks to do very very same thing, but in
+> a bit simpler manner. Except for the absence of the
+> sysctl paths, but they are just cleanups. I think I can
+> port them on top of my shadows :) Thanks
 
-thanks,
--serge
+Then slow down and listen.
+
+Your code simply does not address module unload races. BAD BAD BAD.
+
+Your code skips sysctl_check allowing buggy sysctl tables to continue
+to exist BAD BAD BAD.
+
+Your code does not implement a list of lists needed to implement
+a dynamic list of network devices, instead leaving it to the user of
+sysctl registration code to do. (Which is where the bulk of your
+simplicity seems to come from).  BAD BAD BAD. 
+
+So I'm sorry.  Your code is simpler because it is WORSE.
+
+Your code is race prone, encourages buggy users, and doesn't even
+solve the same problem.  So no I don't think it makes a bit
+of sense.
+
+Eric
