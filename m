@@ -1,131 +1,41 @@
-From: Andrew Morgan <morgan@kernel.org>
-Subject: Re: [PATCH 1/1] capabilities: introduce per-process capability	bounding
- set (v8)
-Date: Wed, 21 Nov 2007 23:10:13 -0800
-Message-ID: <47452B55.8000603@kernel.org>
-References: <20071119212519.GA23178@sergelap.austin.ibm.com> <47425727.10702@kernel.org> <20071120181452.GA10765@sergelap.austin.ibm.com>
+From: yamamoto-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org (YAMAMOTO Takashi)
+Subject: Re: [RFC][PATCH] memory controller per zone patches take 2 [4/10]
+ calculate mapped ratio for memory cgroup
+Date: Thu, 22 Nov 2007 17:34:20 +0900 (JST)
+Message-ID: <20071122083421.49E681CEE8C@siro.lan>
+References: <20071119104246.d38de797.kamezawa.hiroyu@jp.fujitsu.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Content-Transfer-Encoding: 7bit
-Return-path: <linux-security-module-owner@vger.kernel.org>
-In-Reply-To: <20071120181452.GA10765@sergelap.austin.ibm.com>
-Sender: linux-security-module-owner@vger.kernel.org
-To: "Serge E. Hallyn" <serue@us.ibm.com>
-Cc: Chris Wright <chrisw@sous-sol.org>, casey@schaufler-ca.com, Andrew Morton <akpm@google.com>, Stephen Smalley <sds@tycho.nsa.gov>, KaiGai Kohei <kaigai@kaigai.gr.jp>, James Morris <jmorris@namei.org>, linux-security-module@vger.kernel.org, Linux Containers <containers@lists.osdl.org>
+Content-Type: Text/Plain; charset=us-ascii
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: Your message of "Mon, 19 Nov 2007 10:42:46 +0900"
+	<20071119104246.d38de797.kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org
+Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
 List-Id: containers.vger.kernel.org
 
------BEGIN PGP SIGNED MESSAGE-----
-Hash: SHA1
-
-Serge E. Hallyn wrote:
-> I worry that what you have is just a *touch* too busy so whoever adds
-> capability #32 might forget to update CAP_NUM_CAPS, but it looks like
+> > > +	/* usage is recorded in bytes */
+> > > +	total = mem->res.usage >> PAGE_SHIFT;
+> > > +	rss = mem_cgroup_read_stat(&mem->stat, MEM_CGROUP_STAT_RSS);
+> > > +	return (rss * 100) / total;
+> > 
+> > Never tried 64 bit division on a 32 bit system. I hope we don't
+> > have to resort to do_div() sort of functionality.
+> > 
+> Hmm, maybe it's better to make these numebrs be just "long".
+> I'll try to change per-cpu-counter implementation.
 > 
-> #define CAP_LAST_CAP CAP_SETFCAP
-> 
-> #define cap_valid(x) ((x) >= 0 && (x) <= CAP_LAST_CAP)
-> 
-> should also be ok for libcap.
+> Thanks,
+> -Kame
 
-FWIW libcap computes the upper limit itself in the process of consuming
-all that sed'ed stuff. You do need it for the kernel, and this seems
-like a fine mechanism.
+besides that, i think 'total' can be zero here.
 
->>> +long cap_prctl_drop(unsigned long cap)
->>> +{
->>> +	if (!capable(CAP_SETPCAP))
->>> +		return -EPERM;
->>> +	if (!cap_valid(cap))
->>> +		return -EINVAL;
->>> +	cap_lower(current->cap_bset, cap);
->> I think the following lines are overkill. Basically, the next exec()
->> will perform the pP/pE clipping, and cap_bset should only interact with
->> fP (and not fI).
->>
->> We already have a mechanism to manipulate pI, which in turn gates fI.
->> And this same mechanism (libcap) can clip pE, pP if it is needed pre-exec().
->>
->> So, if you want to drop a capability irrevocably, you drop it in bset,
->> and separately in pI. The current process may continue to have the
->> capability, but post-exec the working process tree has lost it. For
->> things like login, this is desirable.
-> 
-> Ok...
-> 
-> I think this makes sense.  It seems pretty subtle and complicated, and
-> therefore I'm a little worried that it will be fragile against future
-> code changes.  Someone will think it's a good idea to slightly change
-> the capset() semantics and only a year later will we realize that the
-> bounding set is no longer working...
-
-We'll have to be diligent then :-) In truth, the whole model is not
-entirely unsubtle.
-
-> So this will all have to be very well documented (and tested).
-> 
-> (Actually I notice that capabilities(7) manpage isn't in the libcap
-> sources.  So an update to that is probably long overdue...)
-
-I don't believe it ever was. So far as I can tell this file has had its
-own life as part of the 'manpages' package.
-
->> This also makes it possible for you to allow pI to have a capability
->> otherwise banned in cap_bset which is useful with limited role accounts.
-> 
-> Yeah...  so the way you'd see this happening, I assume, is that
-> 
-> 	1. login would keep some capset in pI for user hallyn,
-
-The pam_cap module in the libcap2 tree already does the pI part of this
-via libcap (and I intend adding this prctl/cap_bset support in libcap
-and that module too).
-
-> 	2. so if /bin/foo had some nonempty fI, hallyn could run
-> 	   /bin/foo with cap_intersect(pI|fI)?
-
-Yes. The inheritable set is precisely for supporting role-account things
-like this, but unlike the superuser concept (any app can be run with
-privilege), the application needs to be prepared to wield them - via its
-fI bits - before the capabilities are available.
-
-> So now the bounding set would place a restriction on what /bin/login in
-> some container could leave in hallyn's pI.
-
-To be clear, I'm saying that cap_bset will limit what a process can
-'add' to the pre-existing pI set, and not what can be 'left in' there.
-That is, if pI contains something not present in cap_bset, it will
-survive unless some process drops it.
-
-For completeness, without this new check:
-
->> You might want to replace the above three lines with a restriction
->> elsewhere on what CAP_SETPCAP can newly set in
->> commoncap.c:cap_capset_check().
-
-it was possible to subvert the bounding set (in your container, but more
-generally in any process tree) as follows:
-
-capbound drop cap_net_raw
-noraw> cp /bin/ping evil-ping
-noraw> cc evil-shell.c -o evil-shell
-
-   <since you've not dropped cap_setfcap, the following will work>
-
-noraw> sudo /sbin/setcap cap_setpcap=pe evil-shell
-noraw> sudo /sbin/setcap cap_net_raw=ie evil-ping
-noraw> ./evil-shell
-
-<evil-shell uses CAP_SETPCAP to raise pI=CAP_NET_RAW>
-
-       evil> ./evil-ping another-hack-completed.evil.com
-
-Cheers
-
-Andrew
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.2.6 (GNU/Linux)
-
-iD8DBQFHRStSQheEq9QabfIRAqo8AJ9wr+h0bTHgp7iT5fI2lYmuKKa75wCffMsT
-Q7y/JN4NuImodhYvm5mvGwY=
-=sTdY
------END PGP SIGNATURE-----
+YAMAMOTO Takashi
