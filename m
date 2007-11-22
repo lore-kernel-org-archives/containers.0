@@ -1,14 +1,14 @@
 From: Andrew Morgan <morgan@kernel.org>
 Subject: Re: [PATCH 1/1] capabilities: introduce per-process capability	bounding
  set (v8)
-Date: Wed, 21 Nov 2007 22:41:45 -0800
-Message-ID: <474524A9.5010204@kernel.org>
-References: <20071119212519.GA23178@sergelap.austin.ibm.com> <47425727.10702@kernel.org> <20071120200746.GA15698@sergelap.austin.ibm.com> <20071120202340.GA15804@sergelap.austin.ibm.com>
+Date: Wed, 21 Nov 2007 23:10:13 -0800
+Message-ID: <47452B55.8000603@kernel.org>
+References: <20071119212519.GA23178@sergelap.austin.ibm.com> <47425727.10702@kernel.org> <20071120181452.GA10765@sergelap.austin.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1
 Content-Transfer-Encoding: 7bit
 Return-path: <linux-security-module-owner@vger.kernel.org>
-In-Reply-To: <20071120202340.GA15804@sergelap.austin.ibm.com>
+In-Reply-To: <20071120181452.GA10765@sergelap.austin.ibm.com>
 Sender: linux-security-module-owner@vger.kernel.org
 To: "Serge E. Hallyn" <serue@us.ibm.com>
 Cc: Chris Wright <chrisw@sous-sol.org>, casey@schaufler-ca.com, Andrew Morton <akpm@google.com>, Stephen Smalley <sds@tycho.nsa.gov>, KaiGai Kohei <kaigai@kaigai.gr.jp>, James Morris <jmorris@namei.org>, linux-security-module@vger.kernel.org, Linux Containers <containers@lists.osdl.org>
@@ -17,85 +17,115 @@ List-Id: containers.vger.kernel.org
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-Serge,
+Serge E. Hallyn wrote:
+> I worry that what you have is just a *touch* too busy so whoever adds
+> capability #32 might forget to update CAP_NUM_CAPS, but it looks like
+> 
+> #define CAP_LAST_CAP CAP_SETFCAP
+> 
+> #define cap_valid(x) ((x) >= 0 && (x) <= CAP_LAST_CAP)
+> 
+> should also be ok for libcap.
 
-  16d76d11d27f32487366a7cec6a52f6ec4fb1cbb
-+ 470a68120cda83875a281354b897f3bda04b58fc
+FWIW libcap computes the upper limit itself in the process of consuming
+all that sed'ed stuff. You do need it for the kernel, and this seems
+like a fine mechanism.
 
-Could you also modify the old comment above
+>>> +long cap_prctl_drop(unsigned long cap)
+>>> +{
+>>> +	if (!capable(CAP_SETPCAP))
+>>> +		return -EPERM;
+>>> +	if (!cap_valid(cap))
+>>> +		return -EINVAL;
+>>> +	cap_lower(current->cap_bset, cap);
+>> I think the following lines are overkill. Basically, the next exec()
+>> will perform the pP/pE clipping, and cap_bset should only interact with
+>> fP (and not fI).
+>>
+>> We already have a mechanism to manipulate pI, which in turn gates fI.
+>> And this same mechanism (libcap) can clip pE, pP if it is needed pre-exec().
+>>
+>> So, if you want to drop a capability irrevocably, you drop it in bset,
+>> and separately in pI. The current process may continue to have the
+>> capability, but post-exec the working process tree has lost it. For
+>> things like login, this is desirable.
+> 
+> Ok...
+> 
+> I think this makes sense.  It seems pretty subtle and complicated, and
+> therefore I'm a little worried that it will be fragile against future
+> code changes.  Someone will think it's a good idea to slightly change
+> the capset() semantics and only a year later will we realize that the
+> bounding set is no longer working...
 
- #define CAP_SETPCAP          8
+We'll have to be diligent then :-) In truth, the whole model is not
+entirely unsubtle.
 
-"add any capability to the current process' inheritable set"
+> So this will all have to be very well documented (and tested).
+> 
+> (Actually I notice that capabilities(7) manpage isn't in the libcap
+> sources.  So an update to that is probably long overdue...)
 
-to read
+I don't believe it ever was. So far as I can tell this file has had its
+own life as part of the 'manpages' package.
 
-"add any capability, from cap_bset, to the current process' inheritable set"
+>> This also makes it possible for you to allow pI to have a capability
+>> otherwise banned in cap_bset which is useful with limited role accounts.
+> 
+> Yeah...  so the way you'd see this happening, I assume, is that
+> 
+> 	1. login would keep some capset in pI for user hallyn,
 
-Otherwise, this all looks good.
+The pam_cap module in the libcap2 tree already does the pI part of this
+via libcap (and I intend adding this prctl/cap_bset support in libcap
+and that module too).
 
-Thanks
+> 	2. so if /bin/foo had some nonempty fI, hallyn could run
+> 	   /bin/foo with cap_intersect(pI|fI)?
+
+Yes. The inheritable set is precisely for supporting role-account things
+like this, but unlike the superuser concept (any app can be run with
+privilege), the application needs to be prepared to wield them - via its
+fI bits - before the capabilities are available.
+
+> So now the bounding set would place a restriction on what /bin/login in
+> some container could leave in hallyn's pI.
+
+To be clear, I'm saying that cap_bset will limit what a process can
+'add' to the pre-existing pI set, and not what can be 'left in' there.
+That is, if pI contains something not present in cap_bset, it will
+survive unless some process drops it.
+
+For completeness, without this new check:
+
+>> You might want to replace the above three lines with a restriction
+>> elsewhere on what CAP_SETPCAP can newly set in
+>> commoncap.c:cap_capset_check().
+
+it was possible to subvert the bounding set (in your container, but more
+generally in any process tree) as follows:
+
+capbound drop cap_net_raw
+noraw> cp /bin/ping evil-ping
+noraw> cc evil-shell.c -o evil-shell
+
+   <since you've not dropped cap_setfcap, the following will work>
+
+noraw> sudo /sbin/setcap cap_setpcap=pe evil-shell
+noraw> sudo /sbin/setcap cap_net_raw=ie evil-ping
+noraw> ./evil-shell
+
+<evil-shell uses CAP_SETPCAP to raise pI=CAP_NET_RAW>
+
+       evil> ./evil-ping another-hack-completed.evil.com
+
+Cheers
 
 Andrew
-
-Serge E. Hallyn wrote:
-> Quoting Serge E. Hallyn (serue@us.ibm.com):
->> How about the following?
-> 
-> Argh, with the following on top of it...
-> 
-> -serge
-> 
-> 
->>From 470a68120cda83875a281354b897f3bda04b58fc Mon Sep 17 00:00:00 2001
-> From: Serge E. Hallyn <serue@us.ibm.com>
-> Date: Tue, 20 Nov 2007 15:12:54 -0500
-> Subject: [PATCH 1/1] capbset: fix compilation when CONFIG_SECURITY=n
-> 
-> without this patch, kernel/sys.c has undefined reference
-> to cap_prctl_drop().
-> 
-> Signed-off-by: Serge E. Hallyn <serue@us.ibm.com>
-> ---
->  kernel/sys.c         |    4 ++++
->  security/commoncap.c |    4 ----
->  2 files changed, 4 insertions(+), 4 deletions(-)
-> 
-> diff --git a/kernel/sys.c b/kernel/sys.c
-> index b528e75..efc495e 100644
-> --- a/kernel/sys.c
-> +++ b/kernel/sys.c
-> @@ -1747,7 +1747,11 @@ asmlinkage long sys_prctl(int option, unsigned long arg2, unsigned long arg3,
->  				return -EINVAL;
->  			return !!cap_raised(current->cap_bset, arg2);
->  		case PR_CAPBSET_DROP:
-> +#ifdef CONFIG_SECURITY_FILE_CAPABILITIES
->  			return cap_prctl_drop(arg2);
-> +#else
-> +			return -EINVAL;
-> +#endif
->  
->  		default:
->  			error = -EINVAL;
-> diff --git a/security/commoncap.c b/security/commoncap.c
-> index b72825e..e909f4f 100644
-> --- a/security/commoncap.c
-> +++ b/security/commoncap.c
-> @@ -594,10 +594,6 @@ int cap_task_kill(struct task_struct *p, struct siginfo *info,
->  {
->  	return 0;
->  }
-> -long cap_prctl_drop(unsigned long cap)
-> -{
-> -	return -EINVAL;
-> -}
->  #endif
->  
->  void cap_task_reparent_to_init (struct task_struct *p)
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.2.6 (GNU/Linux)
 
-iD8DBQFHRSSmQheEq9QabfIRAk8zAJ9u+RFKmZroCUIZzyHDX9XIP4v/EgCcCTJN
-eGcNpqTMzOiLYwMGow3RAWQ=
-=GSo6
+iD8DBQFHRStSQheEq9QabfIRAqo8AJ9wr+h0bTHgp7iT5fI2lYmuKKa75wCffMsT
+Q7y/JN4NuImodhYvm5mvGwY=
+=sTdY
 -----END PGP SIGNATURE-----
