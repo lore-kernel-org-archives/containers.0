@@ -1,15 +1,14 @@
 From: kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org
-Subject: Re: Re: [RFC][PATCH] memory controller per zone patches take 2
-	[4/10] calculate mapped ratio for memory cgroup
-Date: Thu, 22 Nov 2007 22:31:10 +0900 (JST)
-Message-ID: <20501143.1195738270607.kamezawa.hiroyu@jp.fujitsu.com>
-References: <20071122084647.485981CEE98@siro.lan>
-	<20071122174015.c5ef61ae.kamezawa.hiroyu@jp.fujitsu.com>
+Subject: Re: Re: [RFC] [PATCH] memory controller background reclamation
+Date: Thu, 22 Nov 2007 22:33:13 +0900 (JST)
+Message-ID: <9342270.1195738393143.kamezawa.hiroyu@jp.fujitsu.com>
+References: <20071122085733.758AD1CEE9F@siro.lan>
+	<20071115061602.856171CD9BF@siro.lan>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="iso-2022-jp"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20071122084647.485981CEE98-Pcsii4f/SVk@public.gmane.org>
+In-Reply-To: <20071122085733.758AD1CEE9F-Pcsii4f/SVk@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -20,36 +19,13 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: YAMAMOTO Takashi <yamamoto-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
-Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
+Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, minoura-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
 List-Id: containers.vger.kernel.org
 
 
->> Ah, This is what I do now.
->> ==
->> +/*
->> + * Calculate mapped_ratio under memory controller. This will be used in
->> + * vmscan.c for deteremining we have to reclaim mapped pages.
->> + */
->> +int mem_cgroup_calc_mapped_ratio(struct mem_cgroup *mem)
->> +{
->> +       long total, rss;
->> +
->> +       /*
->> +        * usage is recorded in bytes. But, here, we assume the number of
->> +        * physical pages can be represented by "long" on any arch.
->> +        */
->> +       total = (long) (mem->res.usage >> PAGE_SHIFT);
->> +       rss = (long)mem_cgroup_read_stat(&mem->stat, MEM_CGROUP_STAT_RSS);
->> +       return (int)((rss * 100L) / total);
->> +}
->> ==
->> 
->> maybe works well.
->> 
->> -Kame
+>here's a new version.
 >
->i meant that "/ total" can cause a division-by-zero exception.
->
-ouch, ok, will fix.
+Thank you. I'll review and try to merge yours in the next week,
 
+Regards,
 -Kame
