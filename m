@@ -1,398 +1,324 @@
-From: Pierre Peiffer <pierre.peiffer@bull.net>
-Subject: [PATCH 2.6.24-rc3-mm1] IPC: make struct ipc_ids static in
- ipc_namespace
-Date: Thu, 22 Nov 2007 15:54:48 +0100
-Message-ID: <20071122155448.3193c856.pierre.peiffer@bull.net>
+From: Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Subject: Re: [RFC] [PATCH] memory controller background reclamation
+Date: Fri, 23 Nov 2007 09:16:12 +0530
+Message-ID: <47464D04.2030906@linux.vnet.ibm.com>
+References: <20071115061602.856171CD9BF@siro.lan>
+	<20071122085733.758AD1CEE9F@siro.lan>
+Reply-To: balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
 Mime-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
+Content-Type: text/plain; charset=ISO-8859-1
 Content-Transfer-Encoding: 7bit
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1754174AbXKVOzX@vger.kernel.org>
-Sender: linux-kernel-owner@vger.kernel.org
-To: akpm@linux-foundation.org
-Cc: linux-kernel@vger.kernel.org, containers@lists.osdl.org
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <20071122085733.758AD1CEE9F-Pcsii4f/SVk@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: YAMAMOTO Takashi <yamamoto-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
+Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, minoura-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org
 List-Id: containers.vger.kernel.org
 
+YAMAMOTO Takashi wrote:
+> changes from the previous:
+> - rebase to linux-2.6.24-rc2-mm1 + kamezawa patchset.
+> - create workqueue when setting high watermark, rather than cgroup creation
+>   which is earlier on boot.
+> 
+> YAMAMOTO Takashi
+> 
+> 
+> Signed-off-by: YAMAMOTO Takashi <yamamoto-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
+> ---
+> 
+> --- linux-2.6.24-rc2-mm1-kame-pd/include/linux/res_counter.h.BACKUP	2007-11-14 16:05:48.000000000 +0900
+> +++ linux-2.6.24-rc2-mm1-kame-pd/include/linux/res_counter.h	2007-11-22 15:14:32.000000000 +0900
+> @@ -32,6 +32,13 @@ struct res_counter {
+>  	 * the number of unsuccessful attempts to consume the resource
+>  	 */
+>  	unsigned long long failcnt;
+> +
+> +	/*
+> +	 * watermarks
+> +	 */
+> +	unsigned long long high_watermark;
+> +	unsigned long long low_watermark;
+> +
+>  	/*
+>  	 * the lock to protect all of the above.
+>  	 * the routines below consider this to be IRQ-safe
+> @@ -66,6 +73,8 @@ enum {
+>  	RES_USAGE,
+>  	RES_LIMIT,
+>  	RES_FAILCNT,
+> +	RES_HIGH_WATERMARK,
+> +	RES_LOW_WATERMARK,
+>  };
+> 
+>  /*
+> @@ -124,4 +133,26 @@ static inline bool res_counter_check_und
+>  	return ret;
+>  }
+> 
+> +static inline bool res_counter_below_low_watermark(struct res_counter *cnt)
+> +{
+> +	bool ret;
+> +	unsigned long flags;
+> +
+> +	spin_lock_irqsave(&cnt->lock, flags);
+> +	ret = cnt->usage < cnt->low_watermark;
+> +	spin_unlock_irqrestore(&cnt->lock, flags);
+> +	return ret;
+> +}
+> +
+> +static inline bool res_counter_above_high_watermark(struct res_counter *cnt)
+> +{
+> +	bool ret;
+> +	unsigned long flags;
+> +
+> +	spin_lock_irqsave(&cnt->lock, flags);
+> +	ret = cnt->usage > cnt->high_watermark;
+> +	spin_unlock_irqrestore(&cnt->lock, flags);
+> +	return ret;
+> +}
+> +
+>  #endif
+> --- linux-2.6.24-rc2-mm1-kame-pd/kernel/res_counter.c.BACKUP	2007-11-14 16:05:52.000000000 +0900
+> +++ linux-2.6.24-rc2-mm1-kame-pd/kernel/res_counter.c	2007-11-22 15:14:32.000000000 +0900
+> @@ -17,6 +17,8 @@ void res_counter_init(struct res_counter
+>  {
+>  	spin_lock_init(&counter->lock);
+>  	counter->limit = (unsigned long long)LLONG_MAX;
+> +	counter->high_watermark = (unsigned long long)LLONG_MAX;
+> +	counter->low_watermark = (unsigned long long)LLONG_MAX;
+
+Should low watermark also be LLONG_MAX?
+
+>  }
+> 
+>  int res_counter_charge_locked(struct res_counter *counter, unsigned long val)
+> @@ -69,6 +71,10 @@ res_counter_member(struct res_counter *c
+>  		return &counter->limit;
+>  	case RES_FAILCNT:
+>  		return &counter->failcnt;
+> +	case RES_HIGH_WATERMARK:
+> +		return &counter->high_watermark;
+> +	case RES_LOW_WATERMARK:
+> +		return &counter->low_watermark;
+>  	};
+> 
+>  	BUG();
+> @@ -99,6 +105,7 @@ ssize_t res_counter_write(struct res_cou
+>  	int ret;
+>  	char *buf, *end;
+>  	unsigned long long tmp, *val;
+> +	unsigned long flags;
+> 
+>  	buf = kmalloc(nbytes + 1, GFP_KERNEL);
+>  	ret = -ENOMEM;
+> @@ -122,9 +129,29 @@ ssize_t res_counter_write(struct res_cou
+>  			goto out_free;
+>  	}
+> 
+> +	spin_lock_irqsave(&counter->lock, flags);
+>  	val = res_counter_member(counter, member);
+> +	/* ensure low_watermark <= high_watermark <= limit */
+> +	switch (member) {
+> +	case RES_LIMIT:
+> +		if (tmp < counter->high_watermark)
+> +			goto out_locked;
+> +		break;
+> +	case RES_HIGH_WATERMARK:
+> +		if (tmp > counter->limit || tmp < counter->low_watermark)
+> +			goto out_locked;
+> +		break;
+> +	case RES_LOW_WATERMARK:
+> +		if (tmp > counter->high_watermark)
+> +			goto out_locked;
+> +		break;
+> +	}
+>  	*val = tmp;
+> +	BUG_ON(counter->high_watermark > counter->limit);
+> +	BUG_ON(counter->low_watermark > counter->high_watermark);
+>  	ret = nbytes;
+> +out_locked:
+> +	spin_unlock_irqrestore(&counter->lock, flags);
+>  out_free:
+>  	kfree(buf);
+>  out:
+> --- linux-2.6.24-rc2-mm1-kame-pd/mm/memcontrol.c.BACKUP	2007-11-20 13:11:09.000000000 +0900
+> +++ linux-2.6.24-rc2-mm1-kame-pd/mm/memcontrol.c	2007-11-22 16:29:26.000000000 +0900
+> @@ -28,6 +28,7 @@
+>  #include <linux/rcupdate.h>
+>  #include <linux/swap.h>
+>  #include <linux/spinlock.h>
+> +#include <linux/workqueue.h>
+>  #include <linux/fs.h>
+>  #include <linux/seq_file.h>
+> 
+> @@ -138,6 +139,10 @@ struct mem_cgroup {
+>  	 * statistics.
+>  	 */
+>  	struct mem_cgroup_stat stat;
+> +	/*
+> +	 * background reclamation.
+> +	 */
+> +	struct work_struct reclaim_work;
+>  };
+> 
+>  /*
+> @@ -240,6 +245,21 @@ static unsigned long mem_cgroup_get_all_
+> 
+>  static struct mem_cgroup init_mem_cgroup;
+> 
+> +static DEFINE_MUTEX(mem_cgroup_workqueue_init_lock);
+> +static struct workqueue_struct *mem_cgroup_workqueue;
+> +
+> +static void mem_cgroup_create_workqueue(void)
+> +{
+> +
+> +	if (mem_cgroup_workqueue != NULL)
+> +		return;
+> +
+> +	mutex_lock(&mem_cgroup_workqueue_init_lock);
+> +	if (mem_cgroup_workqueue == NULL)
+> +		mem_cgroup_workqueue = create_workqueue("mem_cgroup");
+> +	mutex_unlock(&mem_cgroup_workqueue_init_lock);
+> +}
+> +
+>  static inline
+>  struct mem_cgroup *mem_cgroup_from_cont(struct cgroup *cont)
+>  {
+> @@ -566,6 +586,50 @@ unsigned long mem_cgroup_isolate_pages(u
+>  	return nr_taken;
+>  }
+> 
+> +static void
+> +mem_cgroup_schedule_reclaim(struct mem_cgroup *mem)
+> +{
+> +
+> +	if (mem_cgroup_workqueue == NULL) {
+> +		BUG_ON(mem->css.cgroup->parent != NULL);
+> +		return;
+> +	}
+> +
+> +	if (work_pending(&mem->reclaim_work))
+> +		return;
+> +
+> +	css_get(&mem->css); /* XXX need some thoughts wrt cgroup removal. */
+> +	/*
+> +	 * XXX workqueue is not an ideal mechanism for our purpose.
+> +	 * revisit later.
+> +	 */
+> +	if (!queue_work(mem_cgroup_workqueue, &mem->reclaim_work))
+> +		css_put(&mem->css);
+> +}
+> +
+> +static void
+> +mem_cgroup_reclaim(struct work_struct *work)
+> +{
+> +	struct mem_cgroup * const mem =
+> +	    container_of(work, struct mem_cgroup, reclaim_work);
+> +	int batch_count = 128; /* XXX arbitrary */
+
+Could we define and use something like MEM_CGROUP_BATCH_COUNT for now?
+Later we could consider and see if it needs to be tunable. numbers are
+hard to read in code.
+
+> +
+> +	for (; batch_count > 0; batch_count--) {
+> +		if (res_counter_below_low_watermark(&mem->res))
+> +			break;
+
+Shouldn't we also check to see that we start reclaim in background only
+when we are above the high watermark?
+
+> +		/*
+> +		 * XXX try_to_free_foo is not a correct mechanism to
+> +		 * use here.  eg. ALLOCSTALL counter
+> +		 * revisit later.
+> +		 */
+> +		if (!try_to_free_mem_cgroup_pages(mem, GFP_KERNEL))
+> +			break;
+> +	}
+> +	if (batch_count == 0)
+> +		mem_cgroup_schedule_reclaim(mem);
+> +	css_put(&mem->css);
+> +}
+> +
+>  /*
+>   * Charge the memory controller for page usage.
+>   * Return
+> @@ -631,6 +695,12 @@ retry:
+>  	rcu_read_unlock();
+> 
+>  	/*
+> +	 * schedule background reclaim if we are above the high watermark.
+> +	 */
+> +	if (res_counter_above_high_watermark(&mem->res))
+> +		mem_cgroup_schedule_reclaim(mem);
+> +
+> +	/*
+>  	 * If we created the page_cgroup, we should free it on exceeding
+>  	 * the cgroup limit.
+>  	 */
+> @@ -939,9 +1009,16 @@ static ssize_t mem_cgroup_write(struct c
+>  				struct file *file, const char __user *userbuf,
+>  				size_t nbytes, loff_t *ppos)
+>  {
+> -	return res_counter_write(&mem_cgroup_from_cont(cont)->res,
+> +	ssize_t ret;
+> +
+> +	ret = res_counter_write(&mem_cgroup_from_cont(cont)->res,
+>  				cft->private, userbuf, nbytes, ppos,
+>  				mem_cgroup_write_strategy);
+> +
+> +	if (ret >= 0 && cft->private == RES_HIGH_WATERMARK)
+> +		mem_cgroup_create_workqueue();
+> +
+> +	return ret;
+>  }
+> 
+>  static ssize_t mem_control_type_write(struct cgroup *cont,
+> @@ -1097,6 +1174,18 @@ static struct cftype mem_cgroup_files[] 
+>  		.read = mem_cgroup_read,
+>  	},
+>  	{
+> +		.name = "high_watermark_in_bytes",
+> +		.private = RES_HIGH_WATERMARK,
+> +		.write = mem_cgroup_write,
+> +		.read = mem_cgroup_read,
+> +	},
+> +	{
+> +		.name = "low_watermark_in_bytes",
+> +		.private = RES_LOW_WATERMARK,
+> +		.write = mem_cgroup_write,
+> +		.read = mem_cgroup_read,
+> +	},
+> +	{
+>  		.name = "control_type",
+>  		.write = mem_control_type_write,
+>  		.read = mem_control_type_read,
+> @@ -1161,6 +1250,8 @@ mem_cgroup_create(struct cgroup_subsys *
+>  		if (alloc_mem_cgroup_per_zone_info(mem, node))
+>  			goto free_out;
+> 
+> +	INIT_WORK(&mem->reclaim_work, mem_cgroup_reclaim);
+> +
+>  	return &mem->css;
+>  free_out:
+>  	for_each_node_state(node, N_POSSIBLE)
 
 
-Each ipc_namespace contains a table of 3 pointers to struct ipc_ids (3 for
-msg, sem and shm, structure used to store all ipcs)
-These 'struct ipc_ids' are dynamically allocated for each icp_namespace as
-the ipc_namespace itself (for the init namespace, they are initialized with
-pointers to static variables instead)
+I'll start some tests on these patches.
 
-It is so for historical reason: in fact, before the use of idr to store the
-ipcs, the ipcs were stored in tables of variable length, depending of the
-maximum number of ipc allowed.
-Now, these 'struct ipc_ids' have a fixed size. As they are allocated in any
-cases for each new ipc_namespace, there is no gain of memory in having them
-allocated separately of the struct ipc_namespace.
-
-This patch proposes to make this table static in the struct ipc_namespace.
-Thus, we can allocate all in once and get rid of all the code needed to
-allocate and free these ipc_ids separately.
-
-Signed-off-by: Pierre Peiffer <pierre.peiffer@bull.net>
----
- include/linux/ipc_namespace.h |   13 +++++++++++--
- ipc/msg.c                     |   26 ++++----------------------
- ipc/namespace.c               |   25 ++++---------------------
- ipc/sem.c                     |   26 ++++----------------------
- ipc/shm.c                     |   26 ++++----------------------
- ipc/util.c                    |    6 +++---
- ipc/util.h                    |   16 ++++------------
- 7 files changed, 34 insertions(+), 104 deletions(-)
-
-Index: b/include/linux/ipc_namespace.h
-===================================================================
---- a/include/linux/ipc_namespace.h
-+++ b/include/linux/ipc_namespace.h
-@@ -2,11 +2,20 @@
- #define __IPC_NAMESPACE_H__
- 
- #include <linux/err.h>
-+#include <linux/idr.h>
-+#include <linux/rwsem.h>
-+
-+struct ipc_ids {
-+	int in_use;
-+	unsigned short seq;
-+	unsigned short seq_max;
-+	struct rw_semaphore rw_mutex;
-+	struct idr ipcs_idr;
-+};
- 
--struct ipc_ids;
- struct ipc_namespace {
- 	struct kref	kref;
--	struct ipc_ids	*ids[3];
-+	struct ipc_ids	ids[3];
- 
- 	int		sem_ctls[4];
- 	int		used_sems;
-Index: b/ipc/msg.c
-===================================================================
---- a/ipc/msg.c
-+++ b/ipc/msg.c
-@@ -67,9 +67,7 @@ struct msg_sender {
- #define SEARCH_NOTEQUAL		3
- #define SEARCH_LESSEQUAL	4
- 
--static struct ipc_ids init_msg_ids;
--
--#define msg_ids(ns)	(*((ns)->ids[IPC_MSG_IDS]))
-+#define msg_ids(ns)	((ns)->ids[IPC_MSG_IDS])
- 
- #define msg_unlock(msq)		ipc_unlock(&(msq)->q_perm)
- #define msg_buildid(id, seq)	ipc_buildid(id, seq)
-@@ -80,30 +78,17 @@ static int newque(struct ipc_namespace *
- static int sysvipc_msg_proc_show(struct seq_file *s, void *it);
- #endif
- 
--static void __msg_init_ns(struct ipc_namespace *ns, struct ipc_ids *ids)
-+void msg_init_ns(struct ipc_namespace *ns)
- {
--	ns->ids[IPC_MSG_IDS] = ids;
- 	ns->msg_ctlmax = MSGMAX;
- 	ns->msg_ctlmnb = MSGMNB;
- 	ns->msg_ctlmni = MSGMNI;
- 	atomic_set(&ns->msg_bytes, 0);
- 	atomic_set(&ns->msg_hdrs, 0);
--	ipc_init_ids(ids);
-+	ipc_init_ids(&ns->ids[IPC_MSG_IDS]);
- }
- 
- #ifdef CONFIG_IPC_NS
--int msg_init_ns(struct ipc_namespace *ns)
--{
--	struct ipc_ids *ids;
--
--	ids = kmalloc(sizeof(struct ipc_ids), GFP_KERNEL);
--	if (ids == NULL)
--		return -ENOMEM;
--
--	__msg_init_ns(ns, ids);
--	return 0;
--}
--
- void msg_exit_ns(struct ipc_namespace *ns)
- {
- 	struct msg_queue *msq;
-@@ -126,15 +111,12 @@ void msg_exit_ns(struct ipc_namespace *n
- 	}
- 
- 	up_write(&msg_ids(ns).rw_mutex);
--
--	kfree(ns->ids[IPC_MSG_IDS]);
--	ns->ids[IPC_MSG_IDS] = NULL;
- }
- #endif
- 
- void __init msg_init(void)
- {
--	__msg_init_ns(&init_ipc_ns, &init_msg_ids);
-+	msg_init_ns(&init_ipc_ns);
- 	ipc_init_proc_interface("sysvipc/msg",
- 				"       key      msqid perms      cbytes       qnum lspid lrpid   uid   gid  cuid  cgid      stime      rtime      ctime\n",
- 				IPC_MSG_IDS, sysvipc_msg_proc_show);
-Index: b/ipc/namespace.c
-===================================================================
---- a/ipc/namespace.c
-+++ b/ipc/namespace.c
-@@ -14,35 +14,18 @@
- 
- static struct ipc_namespace *clone_ipc_ns(struct ipc_namespace *old_ns)
- {
--	int err;
- 	struct ipc_namespace *ns;
- 
--	err = -ENOMEM;
- 	ns = kmalloc(sizeof(struct ipc_namespace), GFP_KERNEL);
- 	if (ns == NULL)
--		goto err_mem;
-+		return ERR_PTR(-ENOMEM);
- 
--	err = sem_init_ns(ns);
--	if (err)
--		goto err_sem;
--	err = msg_init_ns(ns);
--	if (err)
--		goto err_msg;
--	err = shm_init_ns(ns);
--	if (err)
--		goto err_shm;
-+	sem_init_ns(ns);
-+	msg_init_ns(ns);
-+	shm_init_ns(ns);
- 
- 	kref_init(&ns->kref);
- 	return ns;
--
--err_shm:
--	msg_exit_ns(ns);
--err_msg:
--	sem_exit_ns(ns);
--err_sem:
--	kfree(ns);
--err_mem:
--	return ERR_PTR(err);
- }
- 
- struct ipc_namespace *copy_ipcs(unsigned long flags, struct ipc_namespace *ns)
-Index: b/ipc/sem.c
-===================================================================
---- a/ipc/sem.c
-+++ b/ipc/sem.c
-@@ -87,14 +87,12 @@
- #include <asm/uaccess.h>
- #include "util.h"
- 
--#define sem_ids(ns)	(*((ns)->ids[IPC_SEM_IDS]))
-+#define sem_ids(ns)	((ns)->ids[IPC_SEM_IDS])
- 
- #define sem_unlock(sma)		ipc_unlock(&(sma)->sem_perm)
- #define sem_checkid(sma, semid)	ipc_checkid(&sma->sem_perm, semid)
- #define sem_buildid(id, seq)	ipc_buildid(id, seq)
- 
--static struct ipc_ids init_sem_ids;
--
- static int newary(struct ipc_namespace *, struct ipc_params *);
- static void freeary(struct ipc_namespace *, struct sem_array *);
- #ifdef CONFIG_PROC_FS
-@@ -118,30 +116,17 @@ static int sysvipc_sem_proc_show(struct 
- #define sc_semopm	sem_ctls[2]
- #define sc_semmni	sem_ctls[3]
- 
--static void __sem_init_ns(struct ipc_namespace *ns, struct ipc_ids *ids)
-+void sem_init_ns(struct ipc_namespace *ns)
- {
--	ns->ids[IPC_SEM_IDS] = ids;
- 	ns->sc_semmsl = SEMMSL;
- 	ns->sc_semmns = SEMMNS;
- 	ns->sc_semopm = SEMOPM;
- 	ns->sc_semmni = SEMMNI;
- 	ns->used_sems = 0;
--	ipc_init_ids(ids);
-+	ipc_init_ids(&ns->ids[IPC_SEM_IDS]);
- }
- 
- #ifdef CONFIG_IPC_NS
--int sem_init_ns(struct ipc_namespace *ns)
--{
--	struct ipc_ids *ids;
--
--	ids = kmalloc(sizeof(struct ipc_ids), GFP_KERNEL);
--	if (ids == NULL)
--		return -ENOMEM;
--
--	__sem_init_ns(ns, ids);
--	return 0;
--}
--
- void sem_exit_ns(struct ipc_namespace *ns)
- {
- 	struct sem_array *sma;
-@@ -163,15 +148,12 @@ void sem_exit_ns(struct ipc_namespace *n
- 		total++;
- 	}
- 	up_write(&sem_ids(ns).rw_mutex);
--
--	kfree(ns->ids[IPC_SEM_IDS]);
--	ns->ids[IPC_SEM_IDS] = NULL;
- }
- #endif
- 
- void __init sem_init (void)
- {
--	__sem_init_ns(&init_ipc_ns, &init_sem_ids);
-+	sem_init_ns(&init_ipc_ns);
- 	ipc_init_proc_interface("sysvipc/sem",
- 				"       key      semid perms      nsems   uid   gid  cuid  cgid      otime      ctime\n",
- 				IPC_SEM_IDS, sysvipc_sem_proc_show);
-Index: b/ipc/util.c
-===================================================================
---- a/ipc/util.c
-+++ b/ipc/util.c
-@@ -782,7 +782,7 @@ static void *sysvipc_proc_next(struct se
- 	if (ipc && ipc != SEQ_START_TOKEN)
- 		ipc_unlock(ipc);
- 
--	return sysvipc_find_ipc(iter->ns->ids[iface->ids], *pos, pos);
-+	return sysvipc_find_ipc(&iter->ns->ids[iface->ids], *pos, pos);
- }
- 
- /*
-@@ -795,7 +795,7 @@ static void *sysvipc_proc_start(struct s
- 	struct ipc_proc_iface *iface = iter->iface;
- 	struct ipc_ids *ids;
- 
--	ids = iter->ns->ids[iface->ids];
-+	ids = &iter->ns->ids[iface->ids];
- 
- 	/*
- 	 * Take the lock - this will be released by the corresponding
-@@ -826,7 +826,7 @@ static void sysvipc_proc_stop(struct seq
- 	if (ipc && ipc != SEQ_START_TOKEN)
- 		ipc_unlock(ipc);
- 
--	ids = iter->ns->ids[iface->ids];
-+	ids = &iter->ns->ids[iface->ids];
- 	/* Release the lock we took in start() */
- 	up_read(&ids->rw_mutex);
- }
-Index: b/ipc/util.h
-===================================================================
---- a/ipc/util.h
-+++ b/ipc/util.h
-@@ -10,7 +10,6 @@
- #ifndef _IPC_UTIL_H
- #define _IPC_UTIL_H
- 
--#include <linux/idr.h>
- #include <linux/err.h>
- 
- #define USHRT_MAX 0xffff
-@@ -22,22 +21,14 @@ void shm_init (void);
- 
- struct ipc_namespace;
- 
--int sem_init_ns(struct ipc_namespace *ns);
--int msg_init_ns(struct ipc_namespace *ns);
--int shm_init_ns(struct ipc_namespace *ns);
-+void sem_init_ns(struct ipc_namespace *ns);
-+void msg_init_ns(struct ipc_namespace *ns);
-+void shm_init_ns(struct ipc_namespace *ns);
- 
- void sem_exit_ns(struct ipc_namespace *ns);
- void msg_exit_ns(struct ipc_namespace *ns);
- void shm_exit_ns(struct ipc_namespace *ns);
- 
--struct ipc_ids {
--	int in_use;
--	unsigned short seq;
--	unsigned short seq_max;
--	struct rw_semaphore rw_mutex;
--	struct idr ipcs_idr;
--};
--
- /*
-  * Structure that holds the parameters needed by the ipc operations
-  * (see after)
-@@ -68,6 +59,7 @@ struct ipc_ops {
- };
- 
- struct seq_file;
-+struct ipc_ids;
- 
- void ipc_init_ids(struct ipc_ids *);
- #ifdef CONFIG_PROC_FS
-Index: b/ipc/shm.c
-===================================================================
---- a/ipc/shm.c
-+++ b/ipc/shm.c
-@@ -56,9 +56,7 @@ struct shm_file_data {
- static const struct file_operations shm_file_operations;
- static struct vm_operations_struct shm_vm_ops;
- 
--static struct ipc_ids init_shm_ids;
--
--#define shm_ids(ns)	(*((ns)->ids[IPC_SHM_IDS]))
-+#define shm_ids(ns)	((ns)->ids[IPC_SHM_IDS])
- 
- #define shm_unlock(shp)			\
- 	ipc_unlock(&(shp)->shm_perm)
-@@ -72,14 +70,13 @@ static void shm_destroy (struct ipc_name
- static int sysvipc_shm_proc_show(struct seq_file *s, void *it);
- #endif
- 
--static void __shm_init_ns(struct ipc_namespace *ns, struct ipc_ids *ids)
-+void shm_init_ns(struct ipc_namespace *ns)
- {
--	ns->ids[IPC_SHM_IDS] = ids;
- 	ns->shm_ctlmax = SHMMAX;
- 	ns->shm_ctlall = SHMALL;
- 	ns->shm_ctlmni = SHMMNI;
- 	ns->shm_tot = 0;
--	ipc_init_ids(ids);
-+	ipc_init_ids(&ns->ids[IPC_SHM_IDS]);
- }
- 
- /*
-@@ -98,18 +95,6 @@ static void do_shm_rmid(struct ipc_names
- }
- 
- #ifdef CONFIG_IPC_NS
--int shm_init_ns(struct ipc_namespace *ns)
--{
--	struct ipc_ids *ids;
--
--	ids = kmalloc(sizeof(struct ipc_ids), GFP_KERNEL);
--	if (ids == NULL)
--		return -ENOMEM;
--
--	__shm_init_ns(ns, ids);
--	return 0;
--}
--
- void shm_exit_ns(struct ipc_namespace *ns)
- {
- 	struct shmid_kernel *shp;
-@@ -131,15 +116,12 @@ void shm_exit_ns(struct ipc_namespace *n
- 		total++;
- 	}
- 	up_write(&shm_ids(ns).rw_mutex);
--
--	kfree(ns->ids[IPC_SHM_IDS]);
--	ns->ids[IPC_SHM_IDS] = NULL;
- }
- #endif
- 
- void __init shm_init (void)
- {
--	__shm_init_ns(&init_ipc_ns, &init_shm_ids);
-+	shm_init_ns(&init_ipc_ns);
- 	ipc_init_proc_interface("sysvipc/shm",
- 				"       key      shmid perms       size  cpid  lpid nattch   uid   gid  cuid  cgid      atime      dtime      ctime\n",
- 				IPC_SHM_IDS, sysvipc_shm_proc_show);
 
 -- 
-Pierre Peiffer
+	Warm Regards,
+	Balbir Singh
+	Linux Technology Center
+	IBM, ISTL
