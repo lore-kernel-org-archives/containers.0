@@ -1,40 +1,51 @@
-From: Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: Re: [RFC] [PATCH] memory controller background reclamation
-Date: Mon, 26 Nov 2007 09:39:04 +0530
-Message-ID: <474A46E0.5000606@linux.vnet.ibm.com>
-References: <47464D04.2030906@linux.vnet.ibm.com>
-	<20071126024710.8F4ED1CF411@siro.lan>
-Reply-To: balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
+From: "Serge E. Hallyn" <serue@us.ibm.com>
+Subject: Re: [PATCH] utsns: Restore proper namespace handling.
+Date: Mon, 26 Nov 2007 09:19:17 -0600
+Message-ID: <20071126151917.GF547@sergelap.austin.ibm.com>
+References: <m11wagpxw6.fsf@ebiederm.dsl.xmission.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20071126024710.8F4ED1CF411-Pcsii4f/SVk@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: YAMAMOTO Takashi <yamamoto-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
-Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, minoura-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org
+Content-Type: text/plain; charset=us-ascii
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1753906AbXKZPTd@vger.kernel.org>
+Content-Disposition: inline
+In-Reply-To: <m11wagpxw6.fsf@ebiederm.dsl.xmission.com>
+Sender: linux-kernel-owner@vger.kernel.org
+To: "Eric W. Biederman" <ebiederm@xmission.com>
+Cc: Linus Torvalds <torvalds@linux-foundation.org>, Linux Containers <containers@lists.osdl.org>, Andrew Morton <akpm@linux-foundation.org>, linux-kernel@vger.kernel.org
 List-Id: containers.vger.kernel.org
 
-YAMAMOTO Takashi wrote:
-
->> I'll start some tests on these patches.
+Quoting Eric W. Biederman (ebiederm@xmission.com):
 > 
-> thanks.
+> When CONFIG_UTS_NS was removed it seems that we also deleted
+> the code for handling sysctls in the other then the initial
+> uts namespace.   This patch restores that code.
 > 
+> Signed-off-by: Eric W. Biederman <ebiederm@xmission.com>
 
-I tried testing, but the patch failed to apply. I think thats because it
-was ported on top of the NUMA patches by KAMEZAWA-San. I'll rebase and test.
+Thanks, Eric.
 
--- 
-	Warm Regards,
-	Balbir Singh
-	Linux Technology Center
-	IBM, ISTL
+Acked-by: Serge Hallyn <serue@us.ibm.com>
+
+> ---
+>  kernel/utsname_sysctl.c |    2 ++
+>  1 files changed, 2 insertions(+), 0 deletions(-)
+> 
+> diff --git a/kernel/utsname_sysctl.c b/kernel/utsname_sysctl.c
+> index c76c064..71f58c3 100644
+> --- a/kernel/utsname_sysctl.c
+> +++ b/kernel/utsname_sysctl.c
+> @@ -18,6 +18,8 @@
+>  static void *get_uts(ctl_table *table, int write)
+>  {
+>  	char *which = table->data;
+> +	struct uts_namespace *uts_ns = current->nsproxy->uts_ns;
+> +	which = (which - (char *)&init_uts_ns) + (char *)uts_ns;
+> 
+>  	if (!write)
+>  		down_read(&uts_sem);
+> -- 
+> 1.5.3.rc6.17.g1911
+> 
+> _______________________________________________
+> Containers mailing list
+> Containers@lists.linux-foundation.org
+> https://lists.linux-foundation.org/mailman/listinfo/containers
