@@ -1,50 +1,68 @@
-From: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
-Subject: Re: [PATCH 2.6.24-rc3-mm1] IPC: consolidate sem_exit_ns(),
- msg_exit_ns and shm_exit_ns()
-Date: Mon, 26 Nov 2007 22:46:36 -0800
-Message-ID: <20071126224636.ca1ef92e.akpm@linux-foundation.org>
-References: <20071123175250.0f584913.pierre.peiffer@bull.net>
-	<20071126224438.df547263.akpm@linux-foundation.org>
+From: Andrew Morton <akpm@linux-foundation.org>
+Subject: Re: [PATCH] utsns: Restore proper namespace handling.
+Date: Mon, 26 Nov 2007 22:55:17 -0800
+Message-ID: <20071126225517.0245a86d.akpm@linux-foundation.org>
+References: <m11wagpxw6.fsf@ebiederm.dsl.xmission.com>
+	<20071126151917.GF547@sergelap.austin.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=US-ASCII
 Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20071126224438.df547263.akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Pierre Peiffer <pierre.peiffer-6ktuUTfB/bM@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1754417AbXK0G4L@vger.kernel.org>
+In-Reply-To: <20071126151917.GF547@sergelap.austin.ibm.com>
+Sender: linux-kernel-owner@vger.kernel.org
+To: "Serge E. Hallyn" <serue@us.ibm.com>
+Cc: "Eric W. Biederman" <ebiederm@xmission.com>, Linus Torvalds <torvalds@linux-foundation.org>, Linux Containers <containers@lists.osdl.org>, linux-kernel@vger.kernel.org
 List-Id: containers.vger.kernel.org
 
-On Mon, 26 Nov 2007 22:44:38 -0800 Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org> wrote:
+On Mon, 26 Nov 2007 09:19:17 -0600 "Serge E. Hallyn" <serue@us.ibm.com> wrote:
 
-> On Fri, 23 Nov 2007 17:52:50 +0100 Pierre Peiffer <pierre.peiffer-6ktuUTfB/bM@public.gmane.org> wrote:
-> 
-> > sem_exit_ns(), msg_exit_ns() and shm_exit_ns() are all called when an ipc_namespace is
-> > released to free all ipcs of each type.
-> > But in fact, they do the same thing: they loop around all ipcs to free them
-> > individually by calling a specific routine.
+> Quoting Eric W. Biederman (ebiederm@xmission.com):
 > > 
-> > This patch proposes to consolidate this by introducing a common function, free_ipcs(),
-> > that do the job. The specific routine to call on each individual ipcs is passed as
-> > parameter. For this, these ipc-specific 'free' routines are reworked to take a
-> > generic 'struct ipc_perm' as parameter.
+> > When CONFIG_UTS_NS was removed it seems that we also deleted
+> > the code for handling sysctls in the other then the initial
+> > uts namespace.   This patch restores that code.
+> > 
+> > Signed-off-by: Eric W. Biederman <ebiederm@xmission.com>
 > 
-> This conflicts in more-than-trivial ways with Pavel's
-> move-the-ipc-namespace-under-ipc_ns-option.patch, which was in
-> 2.6.24-rc3-mm1.
+> Thanks, Eric.
 > 
+> Acked-by: Serge Hallyn <serue@us.ibm.com>
+> 
+> > ---
+> >  kernel/utsname_sysctl.c |    2 ++
+> >  1 files changed, 2 insertions(+), 0 deletions(-)
+> > 
+> > diff --git a/kernel/utsname_sysctl.c b/kernel/utsname_sysctl.c
+> > index c76c064..71f58c3 100644
+> > --- a/kernel/utsname_sysctl.c
+> > +++ b/kernel/utsname_sysctl.c
+> > @@ -18,6 +18,8 @@
+> >  static void *get_uts(ctl_table *table, int write)
+> >  {
+> >  	char *which = table->data;
+> > +	struct uts_namespace *uts_ns = current->nsproxy->uts_ns;
+> > +	which = (which - (char *)&init_uts_ns) + (char *)uts_ns;
+> > 
+> >  	if (!write)
+> >  		down_read(&uts_sem);
 
-err, no, it wasn't that patch.  For some reason your change assumes that
-msg_exit_ns() (for example) doesn't have these lines:
+I already have a (more codingstylely attractive) version of this from
+Pavel, for which I shall steal your ack.
 
-        kfree(ns->ids[IPC_MSG_IDS]);
-        ns->ids[IPC_MSG_IDS] = NULL;
+--- a/kernel/utsname_sysctl.c~isolate-the-uts-namespaces-domainname-and-hostname-back
++++ a/kernel/utsname_sysctl.c
+@@ -18,6 +18,10 @@
+ static void *get_uts(ctl_table *table, int write)
+ {
+ 	char *which = table->data;
++	struct uts_namespace *uts_ns;
++
++	uts_ns = current->nsproxy->uts_ns;
++	which = (which - (char *)&init_uts_ns) + (char *)uts_ns;
+ 
+ 	if (!write)
+ 		down_read(&uts_sem);
+_
 
-in it.
+
+Those pointer tricksies are revolting.  What's going on in there?
