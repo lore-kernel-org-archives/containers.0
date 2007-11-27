@@ -1,256 +1,177 @@
-From: KAMEZAWA Hiroyuki <kamezawa.hiroyu@jp.fujitsu.com>
-Subject: [PATCH][for -mm] per-zone and reclaim enhancements for memory
- controller take 3 [10/10] per-zone-lock for cgroup
-Date: Tue, 27 Nov 2007 12:11:36 +0900
-Message-ID: <20071127121136.927ec944.kamezawa.hiroyu@jp.fujitsu.com>
-References: <20071127115525.e9779108.kamezawa.hiroyu@jp.fujitsu.com>
+From: Casey Schaufler <casey-iSGtlc1asvQWG2LlvL+J4A@public.gmane.org>
+Subject: Re: [PATCH 2/2] hijack: update task_alloc_security
+Date: Mon, 26 Nov 2007 21:04:37 -0800 (PST)
+Message-ID: <820903.72193.qm__24853.0868128457$1196139977$gmane$org@web36603.mail.mud.yahoo.com>
+References: <474B7A51.3080300@au1.ibm.com>
+Reply-To: casey-iSGtlc1asvQWG2LlvL+J4A@public.gmane.org
 Mime-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
-Content-Transfer-Encoding: 7bit
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1756769AbXK0DIw@vger.kernel.org>
-In-Reply-To: <20071127115525.e9779108.kamezawa.hiroyu@jp.fujitsu.com>
-Sender: linux-kernel-owner@vger.kernel.org
-To: KAMEZAWA Hiroyuki <kamezawa.hiroyu@jp.fujitsu.com>
-Cc: Andrew Morton <akpm@linux-foundation.org>, "balbir@linux.vnet.ibm.com" <balbir@linux.vnet.ibm.com>, "yamamoto@valinux.co.jp" <yamamoto@valinux.co.jp>, "linux-mm@kvack.org" <linux-mm@kvack.org>, "containers@lists.osdl.org" <containers@lists.osdl.org>, LKML <linux-kernel@vger.kernel.org>
+Content-Type: text/plain; charset=iso-8859-1
+Content-Transfer-Encoding: 8bit
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <474B7A51.3080300-8fk3Idey6ehBDgjK7y7TUQ@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Mark Nelson <markn-8fk3Idey6ehBDgjK7y7TUQ@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Cc: linux-security-module-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, selinux-+05T5uksL2qpZYMLLGbcSA@public.gmane.org, menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, Stephen Smalley <sds-+05T5uksL2qpZYMLLGbcSA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Now, lru is per-zone.
 
-Then, lru_lock can be (should be) per-zone, too.
-This patch implementes per-zone lru lock.
+--- Mark Nelson <markn-8fk3Idey6ehBDgjK7y7TUQ@public.gmane.org> wrote:
 
-lru_lock is placed into mem_cgroup_per_zone struct.
+> Subject: [PATCH 2/2] hijack: update task_alloc_security
+> 
+> Update task_alloc_security() to take the hijacked task as a second
+> argument.
 
-lock can be accessed by
-   mz = mem_cgroup_zoneinfo(mem_cgroup, node, zone);
-   &mz->lru_lock
+Could y'all bring me up to speed on what this is intended to
+accomplish so that I can understand the Smack implications?
 
-   or
-   mz = page_cgroup_zoneinfo(page_cgroup);
-   &mz->lru_lock
+Thank you.
+
+> For the selinux version, refuse permission if hijack_src!=current,
+> since we have no idea what the proper behavior is.  Even if we
+> assume that the resulting child should be in the hijacked task's
+> domain, depending on the policy that may not be enough information
+> since init_t executing /bin/bash could result in a different domain
+> than login_t executing /bin/bash.
+> 
+> Signed-off-by: Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+> Signed-off-by: Mark Nelson <markn-8fk3Idey6ehBDgjK7y7TUQ@public.gmane.org>
+> ---
+>  include/linux/security.h |   12 +++++++++---
+>  kernel/fork.c            |    2 +-
+>  security/dummy.c         |    3 ++-
+>  security/security.c      |    4 ++--
+>  security/selinux/hooks.c |    6 +++++-
+>  5 files changed, 19 insertions(+), 8 deletions(-)
+> 
+> Index: upstream/include/linux/security.h
+> ===================================================================
+> --- upstream.orig/include/linux/security.h
+> +++ upstream/include/linux/security.h
+> @@ -545,9 +545,13 @@ struct request_sock;
+>   *	Return 0 if permission is granted.
+>   * @task_alloc_security:
+>   *	@p contains the task_struct for child process.
+> + *	@task contains the task_struct for process to be hijacked
+>   *	Allocate and attach a security structure to the p->security field. The
+>   *	security field is initialized to NULL when the task structure is
+>   *	allocated.
+> + *	@task will usually be current.  If it is not equal to current, then
+> + *	a sys_hijack system call is going on, and current is asking for a
+> + *	child to be created in the context of the hijack src, @task.
+>   *	Return 0 if operation was successful.
+>   * @task_free_security:
+>   *	@p contains the task_struct for process.
+> @@ -1301,7 +1305,8 @@ struct security_operations {
+>  	int (*dentry_open)  (struct file *file);
+>  
+>  	int (*task_create) (unsigned long clone_flags);
+> -	int (*task_alloc_security) (struct task_struct * p);
+> +	int (*task_alloc_security) (struct task_struct *p,
+> +				    struct task_struct *task);
+>  	void (*task_free_security) (struct task_struct * p);
+>  	int (*task_setuid) (uid_t id0, uid_t id1, uid_t id2, int flags);
+>  	int (*task_post_setuid) (uid_t old_ruid /* or fsuid */ ,
+> @@ -1549,7 +1554,7 @@ int security_file_send_sigiotask(struct 
+>  int security_file_receive(struct file *file);
+>  int security_dentry_open(struct file *file);
+>  int security_task_create(unsigned long clone_flags);
+> -int security_task_alloc(struct task_struct *p);
+> +int security_task_alloc(struct task_struct *p, struct task_struct *task);
+>  void security_task_free(struct task_struct *p);
+>  int security_task_setuid(uid_t id0, uid_t id1, uid_t id2, int flags);
+>  int security_task_post_setuid(uid_t old_ruid, uid_t old_euid,
+> @@ -2021,7 +2026,8 @@ static inline int security_task_create (
+>  	return 0;
+>  }
+>  
+> -static inline int security_task_alloc (struct task_struct *p)
+> +static inline int security_task_alloc(struct task_struct *p,
+> +				       struct task_struct *task)
+>  {
+>  	return 0;
+>  }
+> Index: upstream/kernel/fork.c
+> ===================================================================
+> --- upstream.orig/kernel/fork.c
+> +++ upstream/kernel/fork.c
+> @@ -1177,7 +1177,7 @@ static struct task_struct *copy_process(
+>  	/* Perform scheduler related setup. Assign this task to a CPU. */
+>  	sched_fork(p, clone_flags);
+>  
+> -	if ((retval = security_task_alloc(p)))
+> +	if ((retval = security_task_alloc(p, task)))
+>  		goto bad_fork_cleanup_policy;
+>  	if ((retval = audit_alloc(p)))
+>  		goto bad_fork_cleanup_security;
+> Index: upstream/security/dummy.c
+> ===================================================================
+> --- upstream.orig/security/dummy.c
+> +++ upstream/security/dummy.c
+> @@ -475,7 +475,8 @@ static int dummy_task_create (unsigned l
+>  	return 0;
+>  }
+>  
+> -static int dummy_task_alloc_security (struct task_struct *p)
+> +static int dummy_task_alloc_security(struct task_struct *p,
+> +				      struct task_struct *task)
+>  {
+>  	return 0;
+>  }
+> Index: upstream/security/security.c
+> ===================================================================
+> --- upstream.orig/security/security.c
+> +++ upstream/security/security.c
+> @@ -568,9 +568,9 @@ int security_task_create(unsigned long c
+>  	return security_ops->task_create(clone_flags);
+>  }
+>  
+> -int security_task_alloc(struct task_struct *p)
+> +int security_task_alloc(struct task_struct *p, struct task_struct *task)
+>  {
+> -	return security_ops->task_alloc_security(p);
+> +	return security_ops->task_alloc_security(p, task);
+>  }
+>  
+>  void security_task_free(struct task_struct *p)
+> Index: upstream/security/selinux/hooks.c
+> ===================================================================
+> --- upstream.orig/security/selinux/hooks.c
+> +++ upstream/security/selinux/hooks.c
+> @@ -2788,11 +2788,15 @@ static int selinux_task_create(unsigned 
+>  	return task_has_perm(current, current, PROCESS__FORK);
+>  }
+>  
+> -static int selinux_task_alloc_security(struct task_struct *tsk)
+> +static int selinux_task_alloc_security(struct task_struct *tsk,
+> +				      struct task_struct *hijack_src)
+>  {
+>  	struct task_security_struct *tsec1, *tsec2;
+>  	int rc;
+>  
+> +	if (hijack_src != current)
+> +		return -EPERM;
+> +
+>  	tsec1 = current->security;
+>  
+>  	rc = task_alloc_security(tsk);
+> -
+> To unsubscribe from this list: send the line "unsubscribe
+> linux-security-module" in
+> the body of a message to majordomo-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> 
+> 
+> 
 
 
-Signed-off-by: KAMEZAWA hiroyuki <kmaezawa.hiroyu@jp.fujitsu.com>
-
- mm/memcontrol.c |   71 ++++++++++++++++++++++++++++++++++----------------------
- 1 file changed, 44 insertions(+), 27 deletions(-)
-
-Index: linux-2.6.24-rc3-mm1/mm/memcontrol.c
-===================================================================
---- linux-2.6.24-rc3-mm1.orig/mm/memcontrol.c	2007-11-27 11:24:16.000000000 +0900
-+++ linux-2.6.24-rc3-mm1/mm/memcontrol.c	2007-11-27 11:24:22.000000000 +0900
-@@ -89,6 +89,10 @@
- };
- 
- struct mem_cgroup_per_zone {
-+	/*
-+	 * spin_lock to protect the per cgroup LRU
-+	 */
-+	spinlock_t		lru_lock;
- 	struct list_head	active_list;
- 	struct list_head	inactive_list;
- 	unsigned long count[NR_MEM_CGROUP_ZSTAT];
-@@ -126,10 +130,7 @@
- 	 * per zone LRU lists.
- 	 */
- 	struct mem_cgroup_lru_info info;
--	/*
--	 * spin_lock to protect the per cgroup LRU
--	 */
--	spinlock_t lru_lock;
-+
- 	unsigned long control_type;	/* control RSS or RSS+Pagecache */
- 	int	prev_priority;	/* for recording reclaim priority */
- 	/*
-@@ -410,15 +411,16 @@
-  */
- void mem_cgroup_move_lists(struct page_cgroup *pc, bool active)
- {
--	struct mem_cgroup *mem;
-+	struct mem_cgroup_per_zone *mz;
-+	unsigned long flags;
-+
- 	if (!pc)
- 		return;
- 
--	mem = pc->mem_cgroup;
--
--	spin_lock(&mem->lru_lock);
-+	mz = page_cgroup_zoneinfo(pc);
-+	spin_lock_irqsave(&mz->lru_lock, flags);
- 	__mem_cgroup_move_lists(pc, active);
--	spin_unlock(&mem->lru_lock);
-+	spin_unlock_irqrestore(&mz->lru_lock, flags);
- }
- 
- /*
-@@ -528,7 +530,7 @@
- 		src = &mz->inactive_list;
- 
- 
--	spin_lock(&mem_cont->lru_lock);
-+	spin_lock(&mz->lru_lock);
- 	scan = 0;
- 	list_for_each_entry_safe_reverse(pc, tmp, src, lru) {
- 		if (scan >= nr_to_scan)
-@@ -558,7 +560,7 @@
- 	}
- 
- 	list_splice(&pc_list, src);
--	spin_unlock(&mem_cont->lru_lock);
-+	spin_unlock(&mz->lru_lock);
- 
- 	*scanned = scan;
- 	return nr_taken;
-@@ -577,6 +579,7 @@
- 	struct page_cgroup *pc;
- 	unsigned long flags;
- 	unsigned long nr_retries = MEM_CGROUP_RECLAIM_RETRIES;
-+	struct mem_cgroup_per_zone *mz;
- 
- 	/*
- 	 * Should page_cgroup's go to their own slab?
-@@ -688,10 +691,11 @@
- 		goto retry;
- 	}
- 
--	spin_lock_irqsave(&mem->lru_lock, flags);
-+	mz = page_cgroup_zoneinfo(pc);
-+	spin_lock_irqsave(&mz->lru_lock, flags);
- 	/* Update statistics vector */
- 	__mem_cgroup_add_list(pc);
--	spin_unlock_irqrestore(&mem->lru_lock, flags);
-+	spin_unlock_irqrestore(&mz->lru_lock, flags);
- 
- done:
- 	return 0;
-@@ -733,6 +737,7 @@
- void mem_cgroup_uncharge(struct page_cgroup *pc)
- {
- 	struct mem_cgroup *mem;
-+	struct mem_cgroup_per_zone *mz;
- 	struct page *page;
- 	unsigned long flags;
- 
-@@ -745,6 +750,7 @@
- 
- 	if (atomic_dec_and_test(&pc->ref_cnt)) {
- 		page = pc->page;
-+		mz = page_cgroup_zoneinfo(pc);
- 		/*
- 		 * get page->cgroup and clear it under lock.
- 		 * force_empty can drop page->cgroup without checking refcnt.
-@@ -753,9 +759,9 @@
- 			mem = pc->mem_cgroup;
- 			css_put(&mem->css);
- 			res_counter_uncharge(&mem->res, PAGE_SIZE);
--			spin_lock_irqsave(&mem->lru_lock, flags);
-+			spin_lock_irqsave(&mz->lru_lock, flags);
- 			__mem_cgroup_remove_list(pc);
--			spin_unlock_irqrestore(&mem->lru_lock, flags);
-+			spin_unlock_irqrestore(&mz->lru_lock, flags);
- 			kfree(pc);
- 		}
- 	}
-@@ -794,24 +800,29 @@
- 	struct page_cgroup *pc;
- 	struct mem_cgroup *mem;
- 	unsigned long flags;
-+	struct mem_cgroup_per_zone *mz;
- retry:
- 	pc = page_get_page_cgroup(page);
- 	if (!pc)
- 		return;
- 	mem = pc->mem_cgroup;
-+	mz = page_cgroup_zoneinfo(pc);
- 	if (clear_page_cgroup(page, pc) != pc)
- 		goto retry;
--
--	spin_lock_irqsave(&mem->lru_lock, flags);
-+	spin_lock_irqsave(&mz->lru_lock, flags);
- 
- 	__mem_cgroup_remove_list(pc);
-+	spin_unlock_irqrestore(&mz->lru_lock, flags);
-+
- 	pc->page = newpage;
- 	lock_page_cgroup(newpage);
- 	page_assign_page_cgroup(newpage, pc);
- 	unlock_page_cgroup(newpage);
--	__mem_cgroup_add_list(pc);
- 
--	spin_unlock_irqrestore(&mem->lru_lock, flags);
-+	mz = page_cgroup_zoneinfo(pc);
-+	spin_lock_irqsave(&mz->lru_lock, flags);
-+	__mem_cgroup_add_list(pc);
-+	spin_unlock_irqrestore(&mz->lru_lock, flags);
- 	return;
- }
- 
-@@ -822,18 +833,26 @@
-  */
- #define FORCE_UNCHARGE_BATCH	(128)
- static void
--mem_cgroup_force_empty_list(struct mem_cgroup *mem, struct list_head *list)
-+mem_cgroup_force_empty_list(struct mem_cgroup *mem,
-+			    struct mem_cgroup_per_zone *mz,
-+			    int active)
- {
- 	struct page_cgroup *pc;
- 	struct page *page;
- 	int count;
- 	unsigned long flags;
-+	struct list_head *list;
-+
-+	if (active)
-+		list = &mz->active_list;
-+	else
-+		list = &mz->inactive_list;
- 
- 	if (list_empty(list))
- 		return;
- retry:
- 	count = FORCE_UNCHARGE_BATCH;
--	spin_lock_irqsave(&mem->lru_lock, flags);
-+	spin_lock_irqsave(&mz->lru_lock, flags);
- 
- 	while (--count && !list_empty(list)) {
- 		pc = list_entry(list->prev, struct page_cgroup, lru);
-@@ -850,7 +869,7 @@
- 		} else 	/* being uncharged ? ...do relax */
- 			break;
- 	}
--	spin_unlock_irqrestore(&mem->lru_lock, flags);
-+	spin_unlock_irqrestore(&mz->lru_lock, flags);
- 	if (!list_empty(list)) {
- 		cond_resched();
- 		goto retry;
-@@ -881,11 +900,9 @@
- 				struct mem_cgroup_per_zone *mz;
- 				mz = mem_cgroup_zoneinfo(mem, node, zid);
- 				/* drop all page_cgroup in active_list */
--				mem_cgroup_force_empty_list(mem,
--							&mz->active_list);
-+				mem_cgroup_force_empty_list(mem, mz, 1);
- 				/* drop all page_cgroup in inactive_list */
--				mem_cgroup_force_empty_list(mem,
--							&mz->inactive_list);
-+				mem_cgroup_force_empty_list(mem, mz, 0);
- 			}
- 	}
- 	ret = 0;
-@@ -1112,6 +1129,7 @@
- 		mz = &pn->zoneinfo[zone];
- 		INIT_LIST_HEAD(&mz->active_list);
- 		INIT_LIST_HEAD(&mz->inactive_list);
-+		spin_lock_init(&mz->lru_lock);
- 	}
- 	return 0;
- }
-@@ -1136,7 +1154,6 @@
- 
- 	res_counter_init(&mem->res);
- 
--	spin_lock_init(&mem->lru_lock);
- 	mem->control_type = MEM_CGROUP_TYPE_ALL;
- 	memset(&mem->info, 0, sizeof(mem->info));
- 
+Casey Schaufler
+casey-iSGtlc1asvQWG2LlvL+J4A@public.gmane.org
