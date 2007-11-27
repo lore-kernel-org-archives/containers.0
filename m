@@ -1,12 +1,11 @@
-From: Casey Schaufler <casey-iSGtlc1asvQWG2LlvL+J4A@public.gmane.org>
+From: Joshua Brindle <method-PzTJMJMxY2mwxnkjfAeQoA@public.gmane.org>
 Subject: Re: [PATCH 2/2] hijack: update task_alloc_security
-Date: Mon, 26 Nov 2007 21:04:37 -0800 (PST)
-Message-ID: <820903.72193.qm__24853.0868128457$1196139977$gmane$org@web36603.mail.mud.yahoo.com>
-References: <474B7A51.3080300@au1.ibm.com>
-Reply-To: casey-iSGtlc1asvQWG2LlvL+J4A@public.gmane.org
+Date: Tue, 27 Nov 2007 00:52:21 -0500
+Message-ID: <474BB095.8080302__39536.5203767598$1196142858$gmane$org@manicmethod.com>
+References: <474B78CB.5070607@au1.ibm.com> <474B7A51.3080300@au1.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=iso-8859-1
-Content-Transfer-Encoding: 8bit
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 In-Reply-To: <474B7A51.3080300-8fk3Idey6ehBDgjK7y7TUQ@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
@@ -18,30 +17,41 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Mark Nelson <markn-8fk3Idey6ehBDgjK7y7TUQ@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Cc: linux-security-module-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, selinux-+05T5uksL2qpZYMLLGbcSA@public.gmane.org, menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, Stephen Smalley <sds-+05T5uksL2qpZYMLLGbcSA@public.gmane.org>
+To: Mark Nelson <markn-8fk3Idey6ehBDgjK7y7TUQ@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-security-module-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, selinux-+05T5uksL2qpZYMLLGbcSA@public.gmane.org, menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, Stephen Smalley <sds-+05T5uksL2qpZYMLLGbcSA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-
---- Mark Nelson <markn-8fk3Idey6ehBDgjK7y7TUQ@public.gmane.org> wrote:
-
+Mark Nelson wrote:
 > Subject: [PATCH 2/2] hijack: update task_alloc_security
-> 
+>
 > Update task_alloc_security() to take the hijacked task as a second
 > argument.
-
-Could y'all bring me up to speed on what this is intended to
-accomplish so that I can understand the Smack implications?
-
-Thank you.
-
+>
 > For the selinux version, refuse permission if hijack_src!=current,
 > since we have no idea what the proper behavior is.  Even if we
 > assume that the resulting child should be in the hijacked task's
 > domain, depending on the policy that may not be enough information
 > since init_t executing /bin/bash could result in a different domain
 > than login_t executing /bin/bash.
-> 
+>
+>   
+This means its basically not possible to hijack tasks with SELinux 
+right? It would be a shame if this weren't useful to people running SELinux.
+
+It seems to me (I may be wrong, I'm sure someone will let me know if I 
+am) that the right way to handle this with SELinux is to check to see if 
+the current task (caller of sys_hijack) has permission to ptrace (or 
+some other permission deemed suitable, perhaps a new one) and if so copy 
+the security blob pointer from the hijacked task to the new one (we 
+don't want tranquility problems).
+
+ From your paragraph above it seems like you were thinking there should 
+be a transition at hijack time but we don't automatically transition 
+anywhere except exec.
+
+Anyway, I just don't think you should completely disable this for 
+SELinux users.
+
 > Signed-off-by: Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 > Signed-off-by: Mark Nelson <markn-8fk3Idey6ehBDgjK7y7TUQ@public.gmane.org>
 > ---
@@ -51,7 +61,7 @@ Thank you.
 >  security/security.c      |    4 ++--
 >  security/selinux/hooks.c |    6 +++++-
 >  5 files changed, 19 insertions(+), 8 deletions(-)
-> 
+>
 > Index: upstream/include/linux/security.h
 > ===================================================================
 > --- upstream.orig/include/linux/security.h
@@ -164,14 +174,8 @@ Thank you.
 >  
 >  	rc = task_alloc_security(tsk);
 > -
-> To unsubscribe from this list: send the line "unsubscribe
-> linux-security-module" in
+> To unsubscribe from this list: send the line "unsubscribe linux-security-module" in
 > the body of a message to majordomo-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 > More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
-> 
-> 
-
-
-Casey Schaufler
-casey-iSGtlc1asvQWG2LlvL+J4A@public.gmane.org
+>
+>   
