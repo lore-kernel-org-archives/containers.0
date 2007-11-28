@@ -1,265 +1,196 @@
-From: Pavel Emelyanov <xemul@openvz.org>
-Subject: Re: [patch -mm 2/4] mqueue namespace : add unshare support
-Date: Wed, 28 Nov 2007 20:32:11 +0300
-Message-ID: <474DA61B.5030301@openvz.org>
-References: <20071128163728.177495768@fr.ibm.com>> <20071128164349.196734045@fr.ibm.com>>
+From: Lee Schermerhorn <Lee.Schermerhorn@hp.com>
+Subject: Re: [PATCH][for -mm] per-zone and reclaim enhancements for memory
+	controller take 3 [3/10] per-zone active inactive counter
+Date: Wed, 28 Nov 2007 16:19:59 -0500
+Message-ID: <1196284799.5318.34.camel@localhost>
+References: <20071127115525.e9779108.kamezawa.hiroyu@jp.fujitsu.com>
+	 <20071127120048.ef5f2005.kamezawa.hiroyu@jp.fujitsu.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
+Content-Type: text/plain
 Content-Transfer-Encoding: 7bit
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1762218AbXK1RdS@vger.kernel.org>
-In-Reply-To: <20071128164349.196734045@fr.ibm.com>>
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1761457AbXK1VVG@vger.kernel.org>
+In-Reply-To: <20071127120048.ef5f2005.kamezawa.hiroyu@jp.fujitsu.com>
 Sender: linux-kernel-owner@vger.kernel.org
-To: Cedric Le Goater <clg@fr.ibm.com>
-Cc: Andrew Morton <akpm@linux-foundation.org>, Linux Containers <containers@lists.osdl.org>, Linux Kernel Mailing List <linux-kernel@vger.kernel.org>, "Eric W. Biederman" <ebiederm@xmission.com>
+To: KAMEZAWA Hiroyuki <kamezawa.hiroyu@jp.fujitsu.com>
+Cc: Andrew Morton <akpm@linux-foundation.org>, "balbir@linux.vnet.ibm.com" <balbir@linux.vnet.ibm.com>, "yamamoto@valinux.co.jp" <yamamoto@valinux.co.jp>, "linux-mm@kvack.org" <linux-mm@kvack.org>, "containers@lists.osdl.org" <containers@lists.osdl.org>, LKML <linux-kernel@vger.kernel.org>, Christoph Lameter <clameter@sgi.com>
 List-Id: containers.vger.kernel.org
 
-Cedric Le Goater wrote:
-> From: Cedric Le Goater <clg@fr.ibm.com>
-> 
-> This patch includes the mqueue namespace in the nsproxy object. It  
-> also adds the support of unshare() and clone() with a new clone flag 
-> CLONE_NEWMQ (1 bit left in the clone flags !)
-> 
-> CLONE_NEWMQ is required to be cloned or unshared along with CLONE_NEWNS.
-> This is to make sure that no user mounts of the internal mqueue fs
-> are left behind when the last task exits. 
-> 
-> It's totally harmless for the moment because the current code still 
-> uses the default mqueue namespace object 'init_mq_ns' 
-> 
-> Signed-off-by: Cedric Le Goater <clg@fr.ibm.com>
-> ---
->  include/linux/init_task.h    |    2 ++
->  include/linux/mq_namespace.h |    4 ++++
->  include/linux/nsproxy.h      |    2 ++
->  include/linux/sched.h        |    1 +
->  ipc/mq_namespace.c           |   36 +++++++++++++++++++++++++++++++++++-
->  kernel/fork.c                |   15 ++++++++++++++-
->  kernel/nsproxy.c             |   16 ++++++++++++++--
->  7 files changed, 72 insertions(+), 4 deletions(-)
-> 
-> Index: 2.6.24-rc3-mm2/include/linux/init_task.h
-> ===================================================================
-> --- 2.6.24-rc3-mm2.orig/include/linux/init_task.h
-> +++ 2.6.24-rc3-mm2/include/linux/init_task.h
-> @@ -10,6 +10,7 @@
->  #include <linux/pid_namespace.h>
->  #include <linux/user_namespace.h>
->  #include <net/net_namespace.h>
-> +#include <linux/mq_namespace.h>
->  
->  #define INIT_FDTABLE \
->  {							\
-> @@ -78,6 +79,7 @@ extern struct nsproxy init_nsproxy;
->  	INIT_NET_NS(net_ns)                                             \
->  	INIT_IPC_NS(ipc_ns)						\
->  	.user_ns	= &init_user_ns,				\
-> +	INIT_MQ_NS(mq_ns)						\
->  }
->  
->  #define INIT_SIGHAND(sighand) {						\
-> Index: 2.6.24-rc3-mm2/include/linux/sched.h
-> ===================================================================
-> --- 2.6.24-rc3-mm2.orig/include/linux/sched.h
-> +++ 2.6.24-rc3-mm2/include/linux/sched.h
-> @@ -27,6 +27,7 @@
->  #define CLONE_NEWUSER		0x10000000	/* New user namespace */
->  #define CLONE_NEWPID		0x20000000	/* New pid namespace */
->  #define CLONE_NEWNET		0x40000000	/* New network namespace */
-> +#define CLONE_NEWMQ		0x80000000	/* New posix mqueue namespace */
+Just a "heads up":  This patch is the apparent cause of a boot time
+panic--null pointer deref--on my numa platform.  See below.
 
-That's it :) We've run out of clone flags on 32-bit platforms :(
-
->  /*
->   * Scheduling policies
-> Index: 2.6.24-rc3-mm2/kernel/nsproxy.c
+On Tue, 2007-11-27 at 12:00 +0900, KAMEZAWA Hiroyuki wrote:
+> Counting active/inactive per-zone in memory controller.
+> 
+> This patch adds per-zone status in memory cgroup.
+> These values are often read (as per-zone value) by page reclaiming.
+> 
+> In current design, per-zone stat is just a unsigned long value and 
+> not an atomic value because they are modified only under lru_lock.
+> (So, atomic_ops is not necessary.)
+> 
+> This patch adds ACTIVE and INACTIVE per-zone status values.
+> 
+> For handling per-zone status, this patch adds
+>   struct mem_cgroup_per_zone {
+> 		...
+>   }
+> and some helper functions. This will be useful to add per-zone objects
+> in mem_cgroup.
+> 
+> This patch turns memory controller's early_init to be 0 for calling 
+> kmalloc() in initialization.
+> 
+> Changelog V2 -> V3
+>   - fixed comments.
+> 
+> Changelog V1 -> V2
+>   - added mem_cgroup_per_zone struct.
+>       This will help following patches to implement per-zone objects and
+>       pack them into a struct.
+>   - added __mem_cgroup_add_list() and __mem_cgroup_remove_list()
+>   - fixed page migration handling.
+>   - renamed zstat to info (per-zone-info)
+>     This will be place for per-zone information(lru, lock, ..)
+>   - use page_cgroup_nid()/zid() funcs.
+> 
+> Acked-by: Balbir Singh <balbir@linux.vnet.ibm.com>
+> Signed-off-by: KAMEZAWA Hiroyuki <kamezawa.hiroyu@jp.fujitsu.com>
+> 
+> 
+>  mm/memcontrol.c |  164 +++++++++++++++++++++++++++++++++++++++++++++++++++++---
+>  1 file changed, 157 insertions(+), 7 deletions(-)
+> 
+> Index: linux-2.6.24-rc3-mm1/mm/memcontrol.c
 > ===================================================================
-> --- 2.6.24-rc3-mm2.orig/kernel/nsproxy.c
-> +++ 2.6.24-rc3-mm2/kernel/nsproxy.c
-> @@ -93,8 +93,17 @@ static struct nsproxy *create_new_namesp
->  		goto out_net;
->  	}
+> --- linux-2.6.24-rc3-mm1.orig/mm/memcontrol.c	2007-11-26 16:39:00.000000000 +0900
+> +++ linux-2.6.24-rc3-mm1/mm/memcontrol.c	2007-11-26 16:39:02.000000000 +0900
+> @@ -78,6 +78,31 @@
+<snip>
 >  
-> +	new_nsp->mq_ns = copy_mq_ns(flags, tsk->nsproxy->mq_ns);
-> +	if (IS_ERR(new_nsp->mq_ns)) {
-> +		err = PTR_ERR(new_nsp->mq_ns);
-> +		goto out_mq;
-> +	}
-> +
->  	return new_nsp;
->  
-> +out_mq:
-> +	if (new_nsp->user_ns)
-> +		put_user_ns(new_nsp->user_ns);
->  out_net:
->  	if (new_nsp->user_ns)
->  		put_user_ns(new_nsp->user_ns);
-> @@ -131,7 +140,8 @@ int copy_namespaces(unsigned long flags,
->  	get_nsproxy(old_ns);
->  
->  	if (!(flags & (CLONE_NEWNS | CLONE_NEWUTS | CLONE_NEWIPC |
-> -				CLONE_NEWUSER | CLONE_NEWPID | CLONE_NEWNET)))
-> +				CLONE_NEWUSER | CLONE_NEWPID |
-> +				CLONE_NEWNET | CLONE_NEWMQ)))
->  		return 0;
->  
->  	if (!capable(CAP_SYS_ADMIN)) {
-> @@ -170,6 +180,8 @@ void free_nsproxy(struct nsproxy *ns)
->  		put_pid_ns(ns->pid_ns);
->  	if (ns->user_ns)
->  		put_user_ns(ns->user_ns);
-> +	if (ns->mq_ns)
-> +		put_mq_ns(ns->mq_ns);
->  	put_net(ns->net_ns);
->  	kmem_cache_free(nsproxy_cachep, ns);
->  }
-> @@ -184,7 +196,7 @@ int unshare_nsproxy_namespaces(unsigned 
->  	int err = 0;
->  
->  	if (!(unshare_flags & (CLONE_NEWNS | CLONE_NEWUTS | CLONE_NEWIPC |
-> -			       CLONE_NEWUSER | CLONE_NEWNET)))
-> +			       CLONE_NEWUSER | CLONE_NEWNET | CLONE_NEWMQ)))
->  		return 0;
->  
->  	if (!capable(CAP_SYS_ADMIN))
-> Index: 2.6.24-rc3-mm2/kernel/fork.c
-> ===================================================================
-> --- 2.6.24-rc3-mm2.orig/kernel/fork.c
-> +++ 2.6.24-rc3-mm2/kernel/fork.c
-> @@ -1004,6 +1004,13 @@ static struct task_struct *copy_process(
->  	if ((clone_flags & CLONE_SIGHAND) && !(clone_flags & CLONE_VM))
->  		return ERR_PTR(-EINVAL);
->  
-> +	/*
-> +	 * mount namespace cannot be unshared when the mqueue
-> +	 * namespace is not
-
-vice versa - mqueue namespace cannot be unshared when the mount one is not ;)
-
-> +	 */
-> +	if ((clone_flags & CLONE_NEWMQ) && !(clone_flags & CLONE_NEWNS))
-> +		return ERR_PTR(-EINVAL);
-> +
->  	retval = security_task_create(clone_flags);
->  	if (retval)
->  		goto fork_out;
-> @@ -1570,6 +1577,12 @@ static void check_unshare_flags(unsigned
->  		*flags_ptr |= CLONE_THREAD;
->  
->  	/*
-> +	 * If unsharing mqueue namespace, must also unshare mnt namespace.
-> +	 */
-> +	if (*flags_ptr & CLONE_NEWMQ)
-> +		*flags_ptr |= CLONE_NEWNS;
-> +
-> +	/*
->  	 * If unsharing namespace, must also unshare filesystem information.
->  	 */
->  	if (*flags_ptr & CLONE_NEWNS)
-> @@ -1687,7 +1700,7 @@ asmlinkage long sys_unshare(unsigned lon
->  	if (unshare_flags & ~(CLONE_THREAD|CLONE_FS|CLONE_NEWNS|CLONE_SIGHAND|
->  				CLONE_VM|CLONE_FILES|CLONE_SYSVSEM|
->  				CLONE_NEWUTS|CLONE_NEWIPC|CLONE_NEWUSER|
-> -				CLONE_NEWNET))
-> +				CLONE_NEWNET|CLONE_NEWMQ))
->  		goto bad_unshare_out;
->  
->  	if ((err = unshare_thread(unshare_flags)))
-> Index: 2.6.24-rc3-mm2/include/linux/nsproxy.h
-> ===================================================================
-> --- 2.6.24-rc3-mm2.orig/include/linux/nsproxy.h
-> +++ 2.6.24-rc3-mm2/include/linux/nsproxy.h
-> @@ -8,6 +8,7 @@ struct mnt_namespace;
->  struct uts_namespace;
->  struct ipc_namespace;
->  struct pid_namespace;
-> +struct mq_namespace;
->  
->  /*
->   * A structure to contain pointers to all per-process
-> @@ -29,6 +30,7 @@ struct nsproxy {
->  	struct pid_namespace *pid_ns;
->  	struct user_namespace *user_ns;
->  	struct net 	     *net_ns;
-> +	struct mq_namespace *mq_ns;
->  };
->  extern struct nsproxy init_nsproxy;
->  
-> Index: 2.6.24-rc3-mm2/ipc/mq_namespace.c
-> ===================================================================
-> --- 2.6.24-rc3-mm2.orig/ipc/mq_namespace.c
-> +++ 2.6.24-rc3-mm2/ipc/mq_namespace.c
-> @@ -10,14 +10,48 @@
->   */
->  
->  #include <linux/mq_namespace.h>
-> +#include <linux/slab.h>
-> +#include <linux/sched.h>
-> +#include <linux/err.h>
-> +
-> +static struct mq_namespace *clone_mq_ns(struct mq_namespace *old_ns)
+> +static int alloc_mem_cgroup_per_zone_info(struct mem_cgroup *mem, int node)
 > +{
-> +	struct mq_namespace *mq_ns;
+> +	struct mem_cgroup_per_node *pn;
 > +
-> +	mq_ns = kmalloc(sizeof(struct mq_namespace), GFP_KERNEL);
-> +	if (!mq_ns)
-> +		return ERR_PTR(-ENOMEM);
-> +
-> +	kref_init(&mq_ns->kref);
-> +	mq_ns->queues_count	= 0;
-> +	mq_ns->queues_max	= DFLT_QUEUESMAX;
-> +	mq_ns->msg_max		= DFLT_MSGMAX;
-> +	mq_ns->msgsize_max	= DFLT_MSGSIZEMAX;
-> +	mq_ns->mnt		= NULL;
-> +	return mq_ns;
+> +	pn = kmalloc_node(sizeof(*pn), GFP_KERNEL, node);
+> +	if (!pn)
+> +		return 1;
+> +	mem->info.nodeinfo[node] = pn;
+> +	memset(pn, 0, sizeof(*pn));
+> +	return 0;
 > +}
+> +
+>  static struct mem_cgroup init_mem_cgroup;
 >  
->  struct mq_namespace *copy_mq_ns(unsigned long flags,
->  				struct mq_namespace *old_ns)
+>  static struct cgroup_subsys_state *
+>  mem_cgroup_create(struct cgroup_subsys *ss, struct cgroup *cont)
 >  {
-> +	struct mq_namespace *mq_ns;
+>  	struct mem_cgroup *mem;
+> +	int node;
+>  
+>  	if (unlikely((cont->parent) == NULL)) {
+>  		mem = &init_mem_cgroup;
+> @@ -907,7 +1039,19 @@
+>  	INIT_LIST_HEAD(&mem->inactive_list);
+>  	spin_lock_init(&mem->lru_lock);
+>  	mem->control_type = MEM_CGROUP_TYPE_ALL;
+> +	memset(&mem->info, 0, sizeof(mem->info));
 > +
->  	BUG_ON(!old_ns);
-> -	return get_mq_ns(old_ns);
-> +	get_mq_ns(old_ns);
+> +	for_each_node_state(node, N_POSSIBLE)
+> +		if (alloc_mem_cgroup_per_zone_info(mem, node))
+> +			goto free_out;
 > +
-> +	if (!(flags & CLONE_NEWMQ))
-> +		return old_ns;
-> +
-> +	mq_ns = clone_mq_ns(old_ns);
-> +
-> +	put_mq_ns(old_ns);
-> +	return mq_ns;
+
+As soon as this loop hits the first non-existent node on my platform, I
+get a NULL pointer deref down in __alloc_pages.  Stack trace below.
+
+Perhaps N_POSSIBLE should be N_HIGH_MEMORY?  That would require handling
+of memory/node hotplug for each memory control group, right?  But, I'm
+going to try N_HIGH_MEMORY as a work around.
+
+Lee
+>  	return &mem->css;
+> +free_out:
+> +	for_each_node_state(node, N_POSSIBLE)
+> +		kfree(mem->info.nodeinfo[node]);
+> +	if (cont->parent != NULL)
+> +		kfree(mem);
+> +	return NULL;
 >  }
 >  
->  void free_mq_ns(struct kref *kref)
+>  static void mem_cgroup_pre_destroy(struct cgroup_subsys *ss,
+> @@ -920,6 +1064,12 @@
+>  static void mem_cgroup_destroy(struct cgroup_subsys *ss,
+>  				struct cgroup *cont)
 >  {
-> +	struct mq_namespace *ns;
+> +	int node;
+> +	struct mem_cgroup *mem = mem_cgroup_from_cont(cont);
 > +
-> +	ns = container_of(kref, struct mq_namespace, kref);
-> +	kfree(ns);
->  }
-> Index: 2.6.24-rc3-mm2/include/linux/mq_namespace.h
-> ===================================================================
-> --- 2.6.24-rc3-mm2.orig/include/linux/mq_namespace.h
-> +++ 2.6.24-rc3-mm2/include/linux/mq_namespace.h
-> @@ -2,6 +2,7 @@
->  #define _LINUX_MQ_NAMESPACE_H
->  
->  #include <linux/kref.h>
-> +#include <linux/err.h>
->  
->  struct vfsmount;
->  
-> @@ -57,6 +58,9 @@ static inline struct mq_namespace *get_m
->  static inline struct mq_namespace *copy_mq_ns(unsigned long flags,
->  					struct mq_namespace *old_ns)
->  {
-> +	if (flags & CLONE_NEWMQ)
-> +		return ERR_PTR(-EINVAL);
+> +	for_each_node_state(node, N_POSSIBLE)
+> +		kfree(mem->info.nodeinfo[node]);
 > +
->  	return old_ns;
+>  	kfree(mem_cgroup_from_cont(cont));
 >  }
 >  
-> 
-> -- 
+> @@ -972,5 +1122,5 @@
+>  	.destroy = mem_cgroup_destroy,
+>  	.populate = mem_cgroup_populate,
+>  	.attach = mem_cgroup_move_task,
+> -	.early_init = 1,
+> +	.early_init = 0,
+>  };
+
+Initializing cgroup subsys memory
+Unable to handle kernel NULL pointer dereference (address 0000000000003c80)
+swapper[0]: Oops 11012296146944 [1]
+Modules linked in:
+
+Pid: 0, CPU 0, comm:              swapper
+psr : 00001210084a6010 ifs : 8000000000000b1a ip  : [<a000000100132e11>]    Not tainted
+ip is at __alloc_pages+0x31/0x6e0
+unat: 0000000000000000 pfs : 000000000000060f rsc : 0000000000000003
+rnat: a0000001009db3b8 bsps: a0000001009e0490 pr  : 656960155aa65659
+ldrs: 0000000000000000 ccv : 0000000000000000 fpsr: 0009804c8a70433f
+csd : 0000000000000000 ssd : 0000000000000000
+b0  : a000000100187370 b6  : a000000100194440 b7  : a00000010086d560
+f6  : 1003e0000000000000000 f7  : 1003e0000000000000055
+f8  : 1003e00000000000000c0 f9  : 1003e0000000000003fc0
+f10 : 1003e00000000000000c0 f11 : 1003e0000000000000055
+r1  : a000000100bc0f10 r2  : ffffffffffe00006 r3  : 0000000000020000
+r8  : 0000000000071ef0 r9  : 0000000000000005 r10 : e00007002034d588
+r11 : e00007002034d580 r12 : a0000001008e3df0 r13 : a0000001008dc000
+r14 : 0000000000000001 r15 : e00007002034d5b0 r16 : 0000000000001e78
+r17 : ffffffffffff04e0 r18 : 0000000000100002 r19 : 0000000000000000
+r20 : 0000000000100002 r21 : 00000000000003cf r22 : 000000000000000f
+r23 : 00000000000003c0 r24 : 0000000000000010 r25 : 0000000000000001
+r26 : a0000001008e3e20 r27 : 0000000000000000 r28 : e0000701813dc088
+r29 : e0000701813dc080 r30 : 0000000000000000 r31 : a000000100918ea8
+
+Call Trace:
+ [<a000000100014de0>] show_stack+0x80/0xa0
+                                sp=a0000001008e39c0 bsp=a0000001008dd1b0
+ [<a000000100015a70>] show_regs+0x870/0x8a0
+                                sp=a0000001008e3b90 bsp=a0000001008dd158
+ [<a00000010003d130>] die+0x190/0x300
+                                sp=a0000001008e3b90 bsp=a0000001008dd110
+ [<a000000100071b80>] ia64_do_page_fault+0x8e0/0xa20
+                                sp=a0000001008e3b90 bsp=a0000001008dd0b8
+ [<a00000010000b5c0>] ia64_leave_kernel+0x0/0x270
+                                sp=a0000001008e3c20 bsp=a0000001008dd0b8
+ [<a000000100132e10>] __alloc_pages+0x30/0x6e0
+                                sp=a0000001008e3df0 bsp=a0000001008dcfe0
+ [<a000000100187370>] new_slab+0x610/0x6c0
+                                sp=a0000001008e3e00 bsp=a0000001008dcf80
+ [<a000000100187470>] get_new_slab+0x50/0x200
+                                sp=a0000001008e3e00 bsp=a0000001008dcf48
+ [<a000000100187900>] __slab_alloc+0x2e0/0x4e0
+                                sp=a0000001008e3e00 bsp=a0000001008dcf00
+ [<a000000100187c80>] kmem_cache_alloc_node+0x180/0x200
+                                sp=a0000001008e3e10 bsp=a0000001008dcec0
+ [<a0000001001945a0>] mem_cgroup_create+0x160/0x400
+                                sp=a0000001008e3e10 bsp=a0000001008dce78
+ [<a0000001000f0940>] cgroup_init_subsys+0xa0/0x400
+                                sp=a0000001008e3e20 bsp=a0000001008dce28
+ [<a0000001008521f0>] cgroup_init+0x90/0x160
+                                sp=a0000001008e3e20 bsp=a0000001008dce00
+ [<a000000100831960>] start_kernel+0x700/0x820
+                                sp=a0000001008e3e20 bsp=a0000001008dcd80
