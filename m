@@ -1,13 +1,14 @@
-From: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
-Subject: [RFC][ only for review ] memory controller bacground reclaim [5/5]
-Date: Wed, 28 Nov 2007 17:57:13 +0900
-Message-ID: <20071128175713.4e9b8fff.kamezawa.hiroyu@jp.fujitsu.com>
-References: <20071128174923.1f54f53f.kamezawa.hiroyu@jp.fujitsu.com>
+From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH 1/2] namespaces: introduce sys_hijack (v10)
+Date: Wed, 28 Nov 2007 08:25:35 -0600
+Message-ID: <20071128142535.GA1114__23360.2203698412$1196261028$gmane$org@sergelap.austin.ibm.com>
+References: <20071127223829.GA21753@sergelap.austin.ibm.com>
+	<85084.30222.qm@web36605.mail.mud.yahoo.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset=us-ascii
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20071128174923.1f54f53f.kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <85084.30222.qm-9MnE1aMSM06vuULXzWHTWIglqE1Y4D90QQ4Iyu8u01E@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -17,171 +18,149 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
-Cc: "containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org" <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, "yamamoto-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org" <yamamoto-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>, xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org, menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, "balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org" <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+To: Casey Schaufler <casey-iSGtlc1asvQWG2LlvL+J4A@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-security-module-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Crispin Cowan <crispin-RL8T2ARnKKfZw9hOtrW0rA@public.gmane.org>, selinux-+05T5uksL2qpZYMLLGbcSA@public.gmane.org, menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, Stephen Smalley <sds-+05T5uksL2qpZYMLLGbcSA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Create a daemon which does background page reclaim.
+Quoting Casey Schaufler (casey-iSGtlc1asvQWG2LlvL+J4A@public.gmane.org):
+> 
+> --- "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org> wrote:
+> 
+> > Quoting Stephen Smalley (sds-+05T5uksL2qpZYMLLGbcSA@public.gmane.org):
+> > > On Tue, 2007-11-27 at 10:11 -0600, Serge E. Hallyn wrote:
+> > > > Quoting Crispin Cowan (crispin-RL8T2ARnKKfZw9hOtrW0rA@public.gmane.org):
+> > > > > Just the name "sys_hijack" makes me concerned.
+> > > > > 
+> > > > > This post describes a bunch of "what", but doesn't tell us about "why"
+> > > > > we would want this. What is it for?
+> > > > 
+> > > > Please see my response to Casey's email.
+> > > > 
+> > > > > And I second Casey's concern about careful management of the privilege
+> > > > > required to "hijack" a process.
+> > > > 
+> > > > Absolutely.  We're definately still in RFC territory.
+> > > > 
+> > > > Note that there are currently several proposed (but no upstream) ways to
+> > > > accomplish entering a namespace:
+> > > > 
+> > > > 	1. bind_ns() is a new pair of syscalls proposed by Cedric.  An
+> > > > 	nsproxy is given an integer id.  The id can be used to enter
+> > > > 	an nsproxy, basically a straight current->nsproxy = target_nsproxy;
+> > > > 
+> > > > 	2. I had previously posted a patchset on top of the nsproxy
+> > > > 	cgroup which allowed entering a nsproxy through the ns cgroup
+> > > > 	interface.
+> > > > 
+> > > > There are objections to both those patchsets because simply switching a
+> > > > task's nsproxy using a syscall or file write in the middle of running a
+> > > > binary is quite unsafe.  Eric Biederman had suggested using ptrace or
+> > > > something like it to accomplish the goal.
+> > > > 
+> > > > Just using ptrace is however not safe either.  You are inheriting *all*
+> > > > of the target's context, so it shouldn't be difficult for a nefarious
+> > > > container/vserver admin to trick the host admin into running something
+> > > > which gives the container/vserver admin full access to the host.
+> > > 
+> > > I don't follow the above - with ptrace, you are controlling a process
+> > > already within the container (hence in theory already limited to its
+> > > container), and it continues to execute within that container.  What's
+> > > the issue there?
+> > 
+> > Hmm, yeah, I may have overspoken - I'm not good at making up exploits
+> > but while I see it possible to confuse the host admin by setting bogus
+> > environment, I guess there may not be an actual exploit.
+> > 
+> > Still after the fork induced through ptrace, we'll have to execute a
+> > file out of the hijacked process' namespaces and path (unless we get
+> > *really* 'exotic').  With hijack, execution continues under the caller's
+> > control, which I do much prefer.
+> > 
+> > The remaining advantages of hijack over ptrace (beside "using ptrace for
+> > that is crufty") are
+> > 
+> > 	1. not subject to pid wraparound (when doing hijack_cgroup
+> > 	   or hijack_ns)
+> > 	2. ability to enter a namespace which has no active processes
+> > 
+> > These also highlight selinux issues.  In the case of hijacking an
+> > empty cgroup, there is no security context (because there is no task) so
+> > the context of 'current' will be used.  In the case of hijacking a
+> > populated cgroup, a task is chosen "at random" to be the hijack source.
+> > 
+> > So there are two ways to look at deciding which context to use.  Since
+> > control continues in the original acting process' context, we might
+> > want the child to continue in its context.  However if the process
+> > creates any objects in the virtual server, we don't want them
+> > mislabeled, so we might want the task in the hijacked task's context.
+> 
+> I wouldn't be surprised if you've been over this a dozen times
+> already, but why hijack an existing process instead of injecting
+> a new one with completely specified attributes?
 
-This daemon
-  * starts when usage > high_watermark
-  * stops when usage < low_watermark.
+That's really all that hijack does.  current is the one being cloned,
+then we switch the namespace pointers over to those of the hijacked
+process or cgroup.  We also fix some ids which must be relative to the
+task's new namespaces, i.e. pids, uids, etc.  Clone is really the only
+time we can sanely do this especially because of the pid namespace
+construction.
 
-Because kthread_run() cannot be used when init_mem_cgroup is initialized(Sigh),
-thread for init_mem_cgroup is invoked later by initcall.
+Or, what do you mean by 'completely specified' attributes?
 
-Changes from YAMAMOTO-san's version
- * use kthread instead of workqueue.
+> That way you don't
+> distinguish between an empty cgroup and a propulated one and you're
+> not at the mercy of the available hijackees.
 
-Signed-off-by: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
-From: YAMAMOTO Takashi <yamamoto-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
+You aren't with hijack, because it is just a clone, and you continue
+execution as though you'd just cloned.  So mostly only namespace
+pointers and some necessarily related resources are switched over.
+Open files, stack, environment, they all come from current.
 
+Looking back over copy_hijackable_info(), I suspect capabilities should
+be kept from current, not taken from the hijacked task.
 
+I'd like to say the same for the selinux context, but again then I worry
+about files in the container being created with the wrong context.
 
- mm/memcontrol.c |   79 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 79 insertions(+)
+> I know that I would be
+> much less uncomfortable with that schenario.
 
-Index: linux-2.6.24-rc3-mm1/mm/memcontrol.c
-===================================================================
---- linux-2.6.24-rc3-mm1.orig/mm/memcontrol.c	2007-11-28 16:44:57.000000000 +0900
-+++ linux-2.6.24-rc3-mm1/mm/memcontrol.c	2007-11-28 17:21:57.000000000 +0900
-@@ -30,6 +30,8 @@
- #include <linux/spinlock.h>
- #include <linux/fs.h>
- #include <linux/seq_file.h>
-+#include <linux/kthread.h>
-+#include <linux/freezer.h>
- 
- #include <asm/uaccess.h>
- 
-@@ -122,6 +124,13 @@
- 	 */
- 	struct res_counter res;
- 	/*
-+	 * background reclaim
-+	 */
-+	struct {
-+		wait_queue_head_t waitq;
-+		struct task_struct *thread;
-+	} daemon;
-+	/*
- 	 * Per cgroup active and inactive list, similar to the
- 	 * per zone LRU lists.
- 	 */
-@@ -401,6 +410,17 @@
- 	}
- }
- 
-+static void
-+mem_cgroup_schedule_reclaim(struct mem_cgroup *mem)
-+{
-+	if (!unlikely(mem->daemon.thread))
-+		return;
-+	if (!waitqueue_active(&mem->daemon.waitq))
-+		return;
-+	wake_up_interruptible(&mem->daemon.waitq);
-+}
-+
-+
- int task_in_mem_cgroup(struct task_struct *task, const struct mem_cgroup *mem)
- {
- 	int ret;
-@@ -677,6 +697,8 @@
- 			mem_cgroup_out_of_memory(mem, GFP_KERNEL);
- 		goto free_pc;
- 	}
-+	if (res_counter_above_high_watermark(&mem->res))
-+		mem_cgroup_schedule_reclaim(mem);
- 
- 	atomic_set(&pc->ref_cnt, 1);
- 	pc->mem_cgroup = mem;
-@@ -832,6 +854,38 @@
- }
- 
- /*
-+ * Background page reclaim daeom for memory controller.
-+ */
-+
-+static int mem_cgroup_reclaim_daemon(void *data)
-+{
-+	DEFINE_WAIT(wait);
-+	struct mem_cgroup *mem = data;
-+
-+	css_get(&mem->css);
-+	set_freezable();
-+
-+	while (!kthread_should_stop()) {
-+		prepare_to_wait(&mem->daemon.waitq, &wait, TASK_INTERRUPTIBLE);
-+		
-+		if (res_counter_below_low_watermark(&mem->res)) {
-+			if (!kthread_should_stop()) {
-+				schedule();
-+				try_to_freeze();
-+			}
-+			finish_wait(&mem->daemon.waitq, &wait);
-+			continue;
-+		}
-+		finish_wait(&mem->daemon.waitq, &wait);
-+		try_to_free_mem_cgroup_pages(mem, GFP_HIGHUSER_MOVABLE);
-+	}
-+
-+	css_put(&mem->css);
-+	
-+	return 0;
-+}
-+
-+/*
-  * This routine traverse page_cgroup in given list and drop them all.
-  * This routine ignores page_cgroup->ref_cnt.
-  * *And* this routine doesn't reclaim page itself, just removes page_cgroup.
-@@ -1045,6 +1100,7 @@
- {
- 	struct mem_cgroup *mem = mem_cgroup_from_cont(cont);
- 	int ret;
-+
- 	ret = mem_cgroup_force_empty(mem);
- 	if (!ret)
- 		ret = nbytes;
-@@ -1188,6 +1244,16 @@
- 
- static struct mem_cgroup init_mem_cgroup;
- 
-+static int __init mem_cgroup_reclaim_init(void)
-+{
-+	init_mem_cgroup.daemon.thread = kthread_run(mem_cgroup_reclaim_daemon,
-+					&init_mem_cgroup, "memcontd");
-+	if (IS_ERR(init_mem_cgroup.daemon.thread))
-+		BUG();
-+	return 0;
-+}
-+late_initcall(mem_cgroup_reclaim_init);
-+
- static struct cgroup_subsys_state *
- mem_cgroup_create(struct cgroup_subsys *ss, struct cgroup *cont)
- {
-@@ -1212,6 +1278,17 @@
- 		if (alloc_mem_cgroup_per_zone_info(mem, node))
- 			goto free_out;
- 
-+	/* Memory Reclaim Daemon per cgroup */
-+	init_waitqueue_head(&mem->daemon.waitq);
-+	if (mem != &init_mem_cgroup) {
-+		/* Complicated...but we cannot call kthread create here..*/
-+		/* init call will later assign kthread */
-+		mem->daemon.thread = kthread_run(mem_cgroup_reclaim_daemon,
-+					mem, "memcontd");
-+		if (IS_ERR(mem->daemon.thread))
-+			goto free_out;
-+	}
-+
- 	return &mem->css;
- free_out:
- 	for_each_node_state(node, N_POSSIBLE)
-@@ -1226,6 +1303,7 @@
- {
- 	struct mem_cgroup *mem = mem_cgroup_from_cont(cont);
- 	mem_cgroup_force_empty(mem);
-+	kthread_stop(mem->daemon.thread);
- }
- 
- static void mem_cgroup_destroy(struct cgroup_subsys *ss,
+I'm not clear on what your scenario is or why it would be more
+comforting.  Can you elaborate?
+
+thanks,
+-serge
+
+> > Sigh.  So here's why I thought I'd punt on selinux at least until I had
+> > a working selinux-enforced container/vserver  :)
+> > 
+> > -serge
+> > 
+> > PS: I'm certainly open to the suggestion that the kernel patch in the
+> > end us as crufty as using ptrace.
+> > 
+> > > > That's where the hijack idea came from.  Yes, I called it hijack to make
+> > > > sure alarm bells went off :) bc it's definately still worrisome.  But at
+> > > > this point I believe it is the safest solution suggested so far.
+> > > 
+> > > -- 
+> > > Stephen Smalley
+> > > National Security Agency
+> > > 
+> > > -
+> > > To unsubscribe from this list: send the line "unsubscribe
+> > linux-security-module" in
+> > > the body of a message to majordomo-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+> > > More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> > -
+> > To unsubscribe from this list: send the line "unsubscribe
+> > linux-security-module" in
+> > the body of a message to majordomo-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+> > More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> > 
+> > 
+> > 
+> 
+> 
+> Casey Schaufler
+> casey-iSGtlc1asvQWG2LlvL+J4A@public.gmane.org
