@@ -1,17 +1,10 @@
-From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 1/2] namespaces: introduce sys_hijack (v10)
-Date: Wed, 28 Nov 2007 09:23:59 -0600
-Message-ID: <20071128152359.GA4756__40407.6187442572$1196263653$gmane$org@sergelap.austin.ibm.com>
-References: <474B78CB.5070607@au1.ibm.com> <474BC017.6060801@crispincowan.com>
-	<20071127161132.GD32362@sergelap.austin.ibm.com>
-	<1196186964.3925.129.camel@moss-spartans.epoch.ncsc.mil>
-	<20071127223829.GA21753@sergelap.austin.ibm.com>
-	<1196262054.13820.23.camel@moss-spartans.epoch.ncsc.mil>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+From: Cedric Le Goater <clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
+Subject: [patch -mm 3/4] mqueue namespace : enable the mqueue namespace
+Date: Wed, 28 Nov 2007 17:37:31 +0100
+Message-ID: <26525.1845740297$1196268413@news.gmane.org>
+References: <20071128163728.177495768@fr.ibm.com>>
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <1196262054.13820.23.camel-/ugcdrsPCSfIm9DtXLC9OUVfdvkotuLY+aIohriVLy8@public.gmane.org>
+Content-Disposition: inline; filename=mq_namespace-use-mq_namespace.patch
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -21,122 +14,175 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Stephen Smalley <sds-+05T5uksL2qpZYMLLGbcSA@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-security-module-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Crispin Cowan <crispin-RL8T2ARnKKfZw9hOtrW0rA@public.gmane.org>, selinux-+05T5uksL2qpZYMLLGbcSA@public.gmane.org, menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org
+To: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
+Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Cedric Le Goater <clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Linux Kernel Mailing List <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Pavel Emelianov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Quoting Stephen Smalley (sds-+05T5uksL2qpZYMLLGbcSA@public.gmane.org):
-> On Tue, 2007-11-27 at 16:38 -0600, Serge E. Hallyn wrote:
-> > Quoting Stephen Smalley (sds-+05T5uksL2qpZYMLLGbcSA@public.gmane.org):
-> > > On Tue, 2007-11-27 at 10:11 -0600, Serge E. Hallyn wrote:
-> > > > Quoting Crispin Cowan (crispin-RL8T2ARnKKfZw9hOtrW0rA@public.gmane.org):
-> > > > > Just the name "sys_hijack" makes me concerned.
-> > > > > 
-> > > > > This post describes a bunch of "what", but doesn't tell us about "why"
-> > > > > we would want this. What is it for?
-> > > > 
-> > > > Please see my response to Casey's email.
-> > > > 
-> > > > > And I second Casey's concern about careful management of the privilege
-> > > > > required to "hijack" a process.
-> > > > 
-> > > > Absolutely.  We're definately still in RFC territory.
-> > > > 
-> > > > Note that there are currently several proposed (but no upstream) ways to
-> > > > accomplish entering a namespace:
-> > > > 
-> > > > 	1. bind_ns() is a new pair of syscalls proposed by Cedric.  An
-> > > > 	nsproxy is given an integer id.  The id can be used to enter
-> > > > 	an nsproxy, basically a straight current->nsproxy = target_nsproxy;
-> > > > 
-> > > > 	2. I had previously posted a patchset on top of the nsproxy
-> > > > 	cgroup which allowed entering a nsproxy through the ns cgroup
-> > > > 	interface.
-> > > > 
-> > > > There are objections to both those patchsets because simply switching a
-> > > > task's nsproxy using a syscall or file write in the middle of running a
-> > > > binary is quite unsafe.  Eric Biederman had suggested using ptrace or
-> > > > something like it to accomplish the goal.
-> > > > 
-> > > > Just using ptrace is however not safe either.  You are inheriting *all*
-> > > > of the target's context, so it shouldn't be difficult for a nefarious
-> > > > container/vserver admin to trick the host admin into running something
-> > > > which gives the container/vserver admin full access to the host.
-> > > 
-> > > I don't follow the above - with ptrace, you are controlling a process
-> > > already within the container (hence in theory already limited to its
-> > > container), and it continues to execute within that container.  What's
-> > > the issue there?
-> > 
-> > Hmm, yeah, I may have overspoken - I'm not good at making up exploits
-> > but while I see it possible to confuse the host admin by setting bogus
-> > environment, I guess there may not be an actual exploit.
-> > 
-> > Still after the fork induced through ptrace, we'll have to execute a
-> > file out of the hijacked process' namespaces and path (unless we get
-> > *really* 'exotic').  With hijack, execution continues under the caller's
-> > control, which I do much prefer.
-> > 
-> > The remaining advantages of hijack over ptrace (beside "using ptrace for
-> > that is crufty") are
-> > 
-> > 	1. not subject to pid wraparound (when doing hijack_cgroup
-> > 	   or hijack_ns)
-> > 	2. ability to enter a namespace which has no active processes
-> 
-> So possibly I'm missing something, but the situation with hijack seems
-> more exploitable than ptrace to me - you've created a hybrid task with
-> one foot in current's world (open files, tty, connection to parent,
-> executable) and one foot in the target's world (namespaces, uid/gid)
-> which can then be leveraged by other tasks within the target's
-> world/container as a way of breaking out of the container.  No?
+From: Cedric Le Goater <clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
 
-I *think* the things coming out of the new container are well enough
-chosen to prevent that.  I see where you're opening up to being killed
-by a task in the target container, though.  But apart from setting a
-PF_FLAG I'm not sure how to stop that anyway.
+Move forward and start using the mqueue namespace.
 
-This actually reminds me that we need a valid uid in the target
-namespace in the HIJACK_NS case.  It's not a problem right now, but
-as I was just looking at fixing up kernel/signal.c in light of user
-namespaces, it is something to keep in mind.
+The single super block mount of the file system is modified to allow 
+one mount per namespace. This is achieved by storing the namespace 
+in the super_block s_fs_info attribute. 
 
-> > These also highlight selinux issues.  In the case of hijacking an
-> > empty cgroup, there is no security context (because there is no task) so
-> > the context of 'current' will be used.  In the case of hijacking a
-> > populated cgroup, a task is chosen "at random" to be the hijack source.
-> 
-> Seems like you might be better off with a single operation for creating
-> a new task within a given namespace set / cgroup rather than trying to
-> handle multiple situations with different semantics / inheritance
-> behavior.  IOW, forget about hijacking a specific pid or picking a task
-> at random from a populated cgroup - just always initialize the state of
-> the newly created task in the same manner based solely on elements of
-> the caller's state and the cgroup's state.
+Signed-off-by: Cedric Le Goater <clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
+---
+ include/linux/mq_namespace.h |    2 ++
+ ipc/mq_namespace.c           |    8 +++++++-
+ ipc/mqueue.c                 |   42 +++++++++++++++++++++++++++++++++++-------
+ 3 files changed, 44 insertions(+), 8 deletions(-)
 
-So you're saying implement only the HIJACK_NS?
+Index: 2.6.24-rc3-mm2/ipc/mqueue.c
+===================================================================
+--- 2.6.24-rc3-mm2.orig/ipc/mqueue.c
++++ 2.6.24-rc3-mm2/ipc/mqueue.c
+@@ -32,6 +32,7 @@
+ #include <linux/nsproxy.h>
+ #include <linux/pid.h>
+ #include <linux/mq_namespace.h>
++#include <linux/parser.h>
+ 
+ #include <net/sock.h>
+ #include "util.h"
+@@ -200,11 +201,38 @@ static int mqueue_fill_super(struct supe
+ 	return 0;
+ }
+ 
++static int compare_data(struct super_block *sb, void *data)
++{
++	return sb->s_fs_info == data;
++}
++
+ static int mqueue_get_sb(struct file_system_type *fs_type,
+ 			 int flags, const char *dev_name,
+ 			 void *data, struct vfsmount *mnt)
+ {
+-	return get_sb_single(fs_type, flags, data, mqueue_fill_super, mnt);
++	struct super_block *s;
++	int error;
++	struct mq_namespace *mq_ns = current->nsproxy->mq_ns;
++
++	if (flags & MS_KERNMOUNT)
++		mq_ns = (struct mq_namespace *) data;
++
++	s = sget(fs_type, compare_data, set_anon_super, mq_ns);
++	if (IS_ERR(s))
++		return PTR_ERR(s);
++	if (!s->s_root) {
++		s->s_flags = flags;
++		s->s_fs_info = mq_ns;
++		error = mqueue_fill_super(s, data, flags & MS_SILENT ? 1 : 0);
++		if (error) {
++			up_write(&s->s_umount);
++			deactivate_super(s);
++			return error;
++		}
++		s->s_flags |= MS_ACTIVE;
++	}
++	do_remount_sb(s, flags, data, 0);
++	return simple_set_mnt(mnt, s);
+ }
+ 
+ static void init_once(struct kmem_cache *cachep, void *foo)
+@@ -235,7 +263,7 @@ static void mqueue_delete_inode(struct i
+ 	struct user_struct *user;
+ 	unsigned long mq_bytes;
+ 	int i;
+-	struct mq_namespace *mq_ns = &init_mq_ns;
++	struct mq_namespace *mq_ns = inode->i_sb->s_fs_info;
+ 
+ 	if (S_ISDIR(inode->i_mode)) {
+ 		clear_inode(inode);
+@@ -268,7 +296,7 @@ static int mqueue_create(struct inode *d
+ 	struct inode *inode;
+ 	struct mq_attr *attr = dentry->d_fsdata;
+ 	int error;
+-	struct mq_namespace *mq_ns = &init_mq_ns;
++	struct mq_namespace *mq_ns = dir->i_sb->s_fs_info;
+ 
+ 	spin_lock(&mq_lock);
+ 	if (mq_ns->queues_count >= mq_ns->queues_max &&
+@@ -659,7 +687,7 @@ asmlinkage long sys_mq_open(const char _
+ 	struct file *filp;
+ 	char *name;
+ 	int fd, error;
+-	struct mq_namespace *mq_ns = &init_mq_ns;
++	struct mq_namespace *mq_ns = current->nsproxy->mq_ns;
+ 
+ 	error = audit_mq_open(oflag, mode, u_attr);
+ 	if (error != 0)
+@@ -731,7 +759,7 @@ asmlinkage long sys_mq_unlink(const char
+ 	char *name;
+ 	struct dentry *dentry;
+ 	struct inode *inode = NULL;
+-	struct mq_namespace *mq_ns = &init_mq_ns;
++	struct mq_namespace *mq_ns = current->nsproxy->mq_ns;
+ 
+ 	name = getname(u_name);
+ 	if (IS_ERR(name))
+@@ -1196,7 +1224,7 @@ static struct super_operations mqueue_su
+ 	.drop_inode = generic_delete_inode,
+ };
+ 
+-static struct file_system_type mqueue_fs_type = {
++struct file_system_type mqueue_fs_type = {
+ 	.name = "mqueue",
+ 	.get_sb = mqueue_get_sb,
+ 	.kill_sb = kill_litter_super,
+@@ -1273,7 +1301,7 @@ static int __init init_mqueue_fs(void)
+ 	if (error)
+ 		goto out_sysctl;
+ 
+-	init_mq_ns.mnt = kern_mount(&mqueue_fs_type);
++	init_mq_ns.mnt = kern_mount_data(&mqueue_fs_type, &init_mq_ns);
+ 	if (IS_ERR(init_mq_ns.mnt)) {
+ 		error = PTR_ERR(init_mq_ns.mnt);
+ 		goto out_filesystem;
+Index: 2.6.24-rc3-mm2/include/linux/mq_namespace.h
+===================================================================
+--- 2.6.24-rc3-mm2.orig/include/linux/mq_namespace.h
++++ 2.6.24-rc3-mm2/include/linux/mq_namespace.h
+@@ -3,6 +3,7 @@
+ 
+ #include <linux/kref.h>
+ #include <linux/err.h>
++#include <linux/fs.h>
+ 
+ struct vfsmount;
+ 
+@@ -17,6 +18,7 @@ struct mq_namespace {
+ };
+ 
+ extern struct mq_namespace init_mq_ns;
++extern struct file_system_type mqueue_fs_type;
+ 
+ /* default values */
+ #define DFLT_QUEUESMAX	256	/* max number of message queues */
+Index: 2.6.24-rc3-mm2/ipc/mq_namespace.c
+===================================================================
+--- 2.6.24-rc3-mm2.orig/ipc/mq_namespace.c
++++ 2.6.24-rc3-mm2/ipc/mq_namespace.c
+@@ -27,7 +27,12 @@ static struct mq_namespace *clone_mq_ns(
+ 	mq_ns->queues_max	= DFLT_QUEUESMAX;
+ 	mq_ns->msg_max		= DFLT_MSGMAX;
+ 	mq_ns->msgsize_max	= DFLT_MSGSIZEMAX;
+-	mq_ns->mnt		= NULL;
++	mq_ns->mnt		= kern_mount_data(&mqueue_fs_type, mq_ns);
++	if (IS_ERR(mq_ns->mnt)) {
++		void *error = mq_ns->mnt;
++		kfree(mq_ns);
++		return error;
++	}
+ 	return mq_ns;
+ }
+ 
+@@ -53,5 +58,6 @@ void free_mq_ns(struct kref *kref)
+ 	struct mq_namespace *ns;
+ 
+ 	ns = container_of(kref, struct mq_namespace, kref);
++	mntput(ns->mnt);
+ 	kfree(ns);
+ }
 
-I'm fine with that.  Does anyone on the containers list object?
-
-> > So there are two ways to look at deciding which context to use.  Since
-> > control continues in the original acting process' context, we might
-> > want the child to continue in its context.  However if the process
-> > creates any objects in the virtual server, we don't want them
-> > mislabeled, so we might want the task in the hijacked task's context.
-> 
-> I suspect that we want to continue in the parent's context, and then the
-> program can always use setfscreatecon() or exec a helper in a different
-> context if it wants to create files with contexts tailored to the
-> target.
-
-That sounds good to me...
-
-So we're looking at:
-
-	1. drop HIJACK_PID and HIJACK_CGROUP
-
-	2. have selinux_task_alloc_security() always set task->security
-	to current->security and allow the hijack case.
-
-thanks,
--serge
+-- 
