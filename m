@@ -1,10 +1,11 @@
 From: Cedric Le Goater <clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
-Subject: [patch -mm 3/4] mqueue namespace : enable the mqueue namespace
-Date: Wed, 28 Nov 2007 17:37:31 +0100
-Message-ID: <26525.1845740297$1196268413@news.gmane.org>
+Subject: [patch -mm 2/4] mqueue namespace : add unshare support
+Date: Wed, 28 Nov 2007 17:37:30 +0100
+Message-ID: <36801.4075248086$1196268426@news.gmane.org>
 References: <20071128163728.177495768@fr.ibm.com>>
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline; filename=mq_namespace-use-mq_namespace.patch
+Content-Disposition: inline;
+	filename=mq_namespace-add-mq_namespace-to-nsproxy.patch
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -20,169 +21,245 @@ List-Id: containers.vger.kernel.org
 
 From: Cedric Le Goater <clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
 
-Move forward and start using the mqueue namespace.
+This patch includes the mqueue namespace in the nsproxy object. It  
+also adds the support of unshare() and clone() with a new clone flag 
+CLONE_NEWMQ (1 bit left in the clone flags !)
 
-The single super block mount of the file system is modified to allow 
-one mount per namespace. This is achieved by storing the namespace 
-in the super_block s_fs_info attribute. 
+CLONE_NEWMQ is required to be cloned or unshared along with CLONE_NEWNS.
+This is to make sure that no user mounts of the internal mqueue fs
+are left behind when the last task exits. 
+
+It's totally harmless for the moment because the current code still 
+uses the default mqueue namespace object 'init_mq_ns' 
 
 Signed-off-by: Cedric Le Goater <clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
 ---
- include/linux/mq_namespace.h |    2 ++
- ipc/mq_namespace.c           |    8 +++++++-
- ipc/mqueue.c                 |   42 +++++++++++++++++++++++++++++++++++-------
- 3 files changed, 44 insertions(+), 8 deletions(-)
+ include/linux/init_task.h    |    2 ++
+ include/linux/mq_namespace.h |    4 ++++
+ include/linux/nsproxy.h      |    2 ++
+ include/linux/sched.h        |    1 +
+ ipc/mq_namespace.c           |   36 +++++++++++++++++++++++++++++++++++-
+ kernel/fork.c                |   15 ++++++++++++++-
+ kernel/nsproxy.c             |   16 ++++++++++++++--
+ 7 files changed, 72 insertions(+), 4 deletions(-)
 
-Index: 2.6.24-rc3-mm2/ipc/mqueue.c
+Index: 2.6.24-rc3-mm2/include/linux/init_task.h
 ===================================================================
---- 2.6.24-rc3-mm2.orig/ipc/mqueue.c
-+++ 2.6.24-rc3-mm2/ipc/mqueue.c
-@@ -32,6 +32,7 @@
- #include <linux/nsproxy.h>
- #include <linux/pid.h>
- #include <linux/mq_namespace.h>
-+#include <linux/parser.h>
+--- 2.6.24-rc3-mm2.orig/include/linux/init_task.h
++++ 2.6.24-rc3-mm2/include/linux/init_task.h
+@@ -10,6 +10,7 @@
+ #include <linux/pid_namespace.h>
+ #include <linux/user_namespace.h>
+ #include <net/net_namespace.h>
++#include <linux/mq_namespace.h>
  
- #include <net/sock.h>
- #include "util.h"
-@@ -200,11 +201,38 @@ static int mqueue_fill_super(struct supe
- 	return 0;
+ #define INIT_FDTABLE \
+ {							\
+@@ -78,6 +79,7 @@ extern struct nsproxy init_nsproxy;
+ 	INIT_NET_NS(net_ns)                                             \
+ 	INIT_IPC_NS(ipc_ns)						\
+ 	.user_ns	= &init_user_ns,				\
++	INIT_MQ_NS(mq_ns)						\
  }
  
-+static int compare_data(struct super_block *sb, void *data)
-+{
-+	return sb->s_fs_info == data;
-+}
-+
- static int mqueue_get_sb(struct file_system_type *fs_type,
- 			 int flags, const char *dev_name,
- 			 void *data, struct vfsmount *mnt)
- {
--	return get_sb_single(fs_type, flags, data, mqueue_fill_super, mnt);
-+	struct super_block *s;
-+	int error;
-+	struct mq_namespace *mq_ns = current->nsproxy->mq_ns;
-+
-+	if (flags & MS_KERNMOUNT)
-+		mq_ns = (struct mq_namespace *) data;
-+
-+	s = sget(fs_type, compare_data, set_anon_super, mq_ns);
-+	if (IS_ERR(s))
-+		return PTR_ERR(s);
-+	if (!s->s_root) {
-+		s->s_flags = flags;
-+		s->s_fs_info = mq_ns;
-+		error = mqueue_fill_super(s, data, flags & MS_SILENT ? 1 : 0);
-+		if (error) {
-+			up_write(&s->s_umount);
-+			deactivate_super(s);
-+			return error;
-+		}
-+		s->s_flags |= MS_ACTIVE;
+ #define INIT_SIGHAND(sighand) {						\
+Index: 2.6.24-rc3-mm2/include/linux/sched.h
+===================================================================
+--- 2.6.24-rc3-mm2.orig/include/linux/sched.h
++++ 2.6.24-rc3-mm2/include/linux/sched.h
+@@ -27,6 +27,7 @@
+ #define CLONE_NEWUSER		0x10000000	/* New user namespace */
+ #define CLONE_NEWPID		0x20000000	/* New pid namespace */
+ #define CLONE_NEWNET		0x40000000	/* New network namespace */
++#define CLONE_NEWMQ		0x80000000	/* New posix mqueue namespace */
+ 
+ /*
+  * Scheduling policies
+Index: 2.6.24-rc3-mm2/kernel/nsproxy.c
+===================================================================
+--- 2.6.24-rc3-mm2.orig/kernel/nsproxy.c
++++ 2.6.24-rc3-mm2/kernel/nsproxy.c
+@@ -93,8 +93,17 @@ static struct nsproxy *create_new_namesp
+ 		goto out_net;
+ 	}
+ 
++	new_nsp->mq_ns = copy_mq_ns(flags, tsk->nsproxy->mq_ns);
++	if (IS_ERR(new_nsp->mq_ns)) {
++		err = PTR_ERR(new_nsp->mq_ns);
++		goto out_mq;
 +	}
-+	do_remount_sb(s, flags, data, 0);
-+	return simple_set_mnt(mnt, s);
++
+ 	return new_nsp;
+ 
++out_mq:
++	if (new_nsp->user_ns)
++		put_user_ns(new_nsp->user_ns);
+ out_net:
+ 	if (new_nsp->user_ns)
+ 		put_user_ns(new_nsp->user_ns);
+@@ -131,7 +140,8 @@ int copy_namespaces(unsigned long flags,
+ 	get_nsproxy(old_ns);
+ 
+ 	if (!(flags & (CLONE_NEWNS | CLONE_NEWUTS | CLONE_NEWIPC |
+-				CLONE_NEWUSER | CLONE_NEWPID | CLONE_NEWNET)))
++				CLONE_NEWUSER | CLONE_NEWPID |
++				CLONE_NEWNET | CLONE_NEWMQ)))
+ 		return 0;
+ 
+ 	if (!capable(CAP_SYS_ADMIN)) {
+@@ -170,6 +180,8 @@ void free_nsproxy(struct nsproxy *ns)
+ 		put_pid_ns(ns->pid_ns);
+ 	if (ns->user_ns)
+ 		put_user_ns(ns->user_ns);
++	if (ns->mq_ns)
++		put_mq_ns(ns->mq_ns);
+ 	put_net(ns->net_ns);
+ 	kmem_cache_free(nsproxy_cachep, ns);
  }
+@@ -184,7 +196,7 @@ int unshare_nsproxy_namespaces(unsigned 
+ 	int err = 0;
  
- static void init_once(struct kmem_cache *cachep, void *foo)
-@@ -235,7 +263,7 @@ static void mqueue_delete_inode(struct i
- 	struct user_struct *user;
- 	unsigned long mq_bytes;
- 	int i;
--	struct mq_namespace *mq_ns = &init_mq_ns;
-+	struct mq_namespace *mq_ns = inode->i_sb->s_fs_info;
+ 	if (!(unshare_flags & (CLONE_NEWNS | CLONE_NEWUTS | CLONE_NEWIPC |
+-			       CLONE_NEWUSER | CLONE_NEWNET)))
++			       CLONE_NEWUSER | CLONE_NEWNET | CLONE_NEWMQ)))
+ 		return 0;
  
- 	if (S_ISDIR(inode->i_mode)) {
- 		clear_inode(inode);
-@@ -268,7 +296,7 @@ static int mqueue_create(struct inode *d
- 	struct inode *inode;
- 	struct mq_attr *attr = dentry->d_fsdata;
- 	int error;
--	struct mq_namespace *mq_ns = &init_mq_ns;
-+	struct mq_namespace *mq_ns = dir->i_sb->s_fs_info;
- 
- 	spin_lock(&mq_lock);
- 	if (mq_ns->queues_count >= mq_ns->queues_max &&
-@@ -659,7 +687,7 @@ asmlinkage long sys_mq_open(const char _
- 	struct file *filp;
- 	char *name;
- 	int fd, error;
--	struct mq_namespace *mq_ns = &init_mq_ns;
-+	struct mq_namespace *mq_ns = current->nsproxy->mq_ns;
- 
- 	error = audit_mq_open(oflag, mode, u_attr);
- 	if (error != 0)
-@@ -731,7 +759,7 @@ asmlinkage long sys_mq_unlink(const char
- 	char *name;
- 	struct dentry *dentry;
- 	struct inode *inode = NULL;
--	struct mq_namespace *mq_ns = &init_mq_ns;
-+	struct mq_namespace *mq_ns = current->nsproxy->mq_ns;
- 
- 	name = getname(u_name);
- 	if (IS_ERR(name))
-@@ -1196,7 +1224,7 @@ static struct super_operations mqueue_su
- 	.drop_inode = generic_delete_inode,
- };
- 
--static struct file_system_type mqueue_fs_type = {
-+struct file_system_type mqueue_fs_type = {
- 	.name = "mqueue",
- 	.get_sb = mqueue_get_sb,
- 	.kill_sb = kill_litter_super,
-@@ -1273,7 +1301,7 @@ static int __init init_mqueue_fs(void)
- 	if (error)
- 		goto out_sysctl;
- 
--	init_mq_ns.mnt = kern_mount(&mqueue_fs_type);
-+	init_mq_ns.mnt = kern_mount_data(&mqueue_fs_type, &init_mq_ns);
- 	if (IS_ERR(init_mq_ns.mnt)) {
- 		error = PTR_ERR(init_mq_ns.mnt);
- 		goto out_filesystem;
-Index: 2.6.24-rc3-mm2/include/linux/mq_namespace.h
+ 	if (!capable(CAP_SYS_ADMIN))
+Index: 2.6.24-rc3-mm2/kernel/fork.c
 ===================================================================
---- 2.6.24-rc3-mm2.orig/include/linux/mq_namespace.h
-+++ 2.6.24-rc3-mm2/include/linux/mq_namespace.h
-@@ -3,6 +3,7 @@
+--- 2.6.24-rc3-mm2.orig/kernel/fork.c
++++ 2.6.24-rc3-mm2/kernel/fork.c
+@@ -1004,6 +1004,13 @@ static struct task_struct *copy_process(
+ 	if ((clone_flags & CLONE_SIGHAND) && !(clone_flags & CLONE_VM))
+ 		return ERR_PTR(-EINVAL);
  
- #include <linux/kref.h>
- #include <linux/err.h>
-+#include <linux/fs.h>
++	/*
++	 * mount namespace cannot be unshared when the mqueue
++	 * namespace is not
++	 */
++	if ((clone_flags & CLONE_NEWMQ) && !(clone_flags & CLONE_NEWNS))
++		return ERR_PTR(-EINVAL);
++
+ 	retval = security_task_create(clone_flags);
+ 	if (retval)
+ 		goto fork_out;
+@@ -1570,6 +1577,12 @@ static void check_unshare_flags(unsigned
+ 		*flags_ptr |= CLONE_THREAD;
  
- struct vfsmount;
+ 	/*
++	 * If unsharing mqueue namespace, must also unshare mnt namespace.
++	 */
++	if (*flags_ptr & CLONE_NEWMQ)
++		*flags_ptr |= CLONE_NEWNS;
++
++	/*
+ 	 * If unsharing namespace, must also unshare filesystem information.
+ 	 */
+ 	if (*flags_ptr & CLONE_NEWNS)
+@@ -1687,7 +1700,7 @@ asmlinkage long sys_unshare(unsigned lon
+ 	if (unshare_flags & ~(CLONE_THREAD|CLONE_FS|CLONE_NEWNS|CLONE_SIGHAND|
+ 				CLONE_VM|CLONE_FILES|CLONE_SYSVSEM|
+ 				CLONE_NEWUTS|CLONE_NEWIPC|CLONE_NEWUSER|
+-				CLONE_NEWNET))
++				CLONE_NEWNET|CLONE_NEWMQ))
+ 		goto bad_unshare_out;
  
-@@ -17,6 +18,7 @@ struct mq_namespace {
+ 	if ((err = unshare_thread(unshare_flags)))
+Index: 2.6.24-rc3-mm2/include/linux/nsproxy.h
+===================================================================
+--- 2.6.24-rc3-mm2.orig/include/linux/nsproxy.h
++++ 2.6.24-rc3-mm2/include/linux/nsproxy.h
+@@ -8,6 +8,7 @@ struct mnt_namespace;
+ struct uts_namespace;
+ struct ipc_namespace;
+ struct pid_namespace;
++struct mq_namespace;
+ 
+ /*
+  * A structure to contain pointers to all per-process
+@@ -29,6 +30,7 @@ struct nsproxy {
+ 	struct pid_namespace *pid_ns;
+ 	struct user_namespace *user_ns;
+ 	struct net 	     *net_ns;
++	struct mq_namespace *mq_ns;
  };
+ extern struct nsproxy init_nsproxy;
  
- extern struct mq_namespace init_mq_ns;
-+extern struct file_system_type mqueue_fs_type;
- 
- /* default values */
- #define DFLT_QUEUESMAX	256	/* max number of message queues */
 Index: 2.6.24-rc3-mm2/ipc/mq_namespace.c
 ===================================================================
 --- 2.6.24-rc3-mm2.orig/ipc/mq_namespace.c
 +++ 2.6.24-rc3-mm2/ipc/mq_namespace.c
-@@ -27,7 +27,12 @@ static struct mq_namespace *clone_mq_ns(
- 	mq_ns->queues_max	= DFLT_QUEUESMAX;
- 	mq_ns->msg_max		= DFLT_MSGMAX;
- 	mq_ns->msgsize_max	= DFLT_MSGSIZEMAX;
--	mq_ns->mnt		= NULL;
-+	mq_ns->mnt		= kern_mount_data(&mqueue_fs_type, mq_ns);
-+	if (IS_ERR(mq_ns->mnt)) {
-+		void *error = mq_ns->mnt;
-+		kfree(mq_ns);
-+		return error;
-+	}
- 	return mq_ns;
+@@ -10,14 +10,48 @@
+  */
+ 
+ #include <linux/mq_namespace.h>
++#include <linux/slab.h>
++#include <linux/sched.h>
++#include <linux/err.h>
++
++static struct mq_namespace *clone_mq_ns(struct mq_namespace *old_ns)
++{
++	struct mq_namespace *mq_ns;
++
++	mq_ns = kmalloc(sizeof(struct mq_namespace), GFP_KERNEL);
++	if (!mq_ns)
++		return ERR_PTR(-ENOMEM);
++
++	kref_init(&mq_ns->kref);
++	mq_ns->queues_count	= 0;
++	mq_ns->queues_max	= DFLT_QUEUESMAX;
++	mq_ns->msg_max		= DFLT_MSGMAX;
++	mq_ns->msgsize_max	= DFLT_MSGSIZEMAX;
++	mq_ns->mnt		= NULL;
++	return mq_ns;
++}
+ 
+ struct mq_namespace *copy_mq_ns(unsigned long flags,
+ 				struct mq_namespace *old_ns)
+ {
++	struct mq_namespace *mq_ns;
++
+ 	BUG_ON(!old_ns);
+-	return get_mq_ns(old_ns);
++	get_mq_ns(old_ns);
++
++	if (!(flags & CLONE_NEWMQ))
++		return old_ns;
++
++	mq_ns = clone_mq_ns(old_ns);
++
++	put_mq_ns(old_ns);
++	return mq_ns;
  }
  
-@@ -53,5 +58,6 @@ void free_mq_ns(struct kref *kref)
- 	struct mq_namespace *ns;
- 
- 	ns = container_of(kref, struct mq_namespace, kref);
-+	mntput(ns->mnt);
- 	kfree(ns);
+ void free_mq_ns(struct kref *kref)
+ {
++	struct mq_namespace *ns;
++
++	ns = container_of(kref, struct mq_namespace, kref);
++	kfree(ns);
  }
+Index: 2.6.24-rc3-mm2/include/linux/mq_namespace.h
+===================================================================
+--- 2.6.24-rc3-mm2.orig/include/linux/mq_namespace.h
++++ 2.6.24-rc3-mm2/include/linux/mq_namespace.h
+@@ -2,6 +2,7 @@
+ #define _LINUX_MQ_NAMESPACE_H
+ 
+ #include <linux/kref.h>
++#include <linux/err.h>
+ 
+ struct vfsmount;
+ 
+@@ -57,6 +58,9 @@ static inline struct mq_namespace *get_m
+ static inline struct mq_namespace *copy_mq_ns(unsigned long flags,
+ 					struct mq_namespace *old_ns)
+ {
++	if (flags & CLONE_NEWMQ)
++		return ERR_PTR(-EINVAL);
++
+ 	return old_ns;
+ }
+ 
 
 -- 
