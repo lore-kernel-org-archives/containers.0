@@ -1,15 +1,15 @@
 From: Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 Subject: Re: [RFC][ only for review ] memory controller bacground reclaim
- [2/5] set/get ops for res_counter
-Date: Wed, 28 Nov 2007 14:09:26 +0300
-Message-ID: <474D4C66.2080303@openvz.org>
+ [1/5] spinlock fix in res_counter modification
+Date: Wed, 28 Nov 2007 14:08:31 +0300
+Message-ID: <474D4C2F.8020701@openvz.org>
 References: <20071128174923.1f54f53f.kamezawa.hiroyu@jp.fujitsu.com>
-	<20071128175239.e20ec09d.kamezawa.hiroyu@jp.fujitsu.com>
+	<20071128175135.c42adecc.kamezawa.hiroyu@jp.fujitsu.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20071128175239.e20ec09d.kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+In-Reply-To: <20071128175135.c42adecc.kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -24,71 +24,42 @@ Cc: "containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org" <containers-qjLDD68F18O
 List-Id: containers.vger.kernel.org
 
 KAMEZAWA Hiroyuki wrote:
-> At implmenting high/low watermark in res_counter, it will be better to
-> adjust high/low value when limit changes. (or don't allow user to specify
-> high/low value)
-> 
-> This patch adds *internal* interface to modify resource value.
-> (If there are only limit/usage/failcnt, these routines are not necessary but..)
-> And will be used later.
+> spinlock is necessary when someone changes res_counter value.
+> splited out from YAMAMOTO's background page reclaim for memory cgroup set.
 > 
 > Signed-off-by: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+> From: YAMAMOTO Takashi <yamamoto-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
 > 
->  include/linux/res_counter.h |    7 +++++++
->  kernel/res_counter.c        |   19 +++++++++++++++++++
->  2 files changed, 26 insertions(+)
 > 
-> Index: linux-2.6.24-rc3-mm1/include/linux/res_counter.h
-> ===================================================================
-> --- linux-2.6.24-rc3-mm1.orig/include/linux/res_counter.h	2007-11-28 14:18:21.000000000 +0900
-> +++ linux-2.6.24-rc3-mm1/include/linux/res_counter.h	2007-11-28 14:18:33.000000000 +0900
-> @@ -59,6 +59,13 @@
->  		int (*write_strategy)(char *buf, unsigned long long *val));
->  
->  /*
-> + * A routine for set/get limitation value from kernel internal code.
-> + * res->lock should be held before call this.
-> + */
-> +unsigned long long res_counter_get(struct res_counter *counter, int member);
-> +void res_counter_set(struct res_counter *conter, int member,
-> +			unsigned long long val);
-> +/*
->   * the field descriptors. one for each member of res_counter
->   */
->  
+>  kernel/res_counter.c |    5 +++--
+>  1 file changed, 3 insertions(+), 2 deletions(-)
+> 
 > Index: linux-2.6.24-rc3-mm1/kernel/res_counter.c
 > ===================================================================
-> --- linux-2.6.24-rc3-mm1.orig/kernel/res_counter.c	2007-11-28 14:18:21.000000000 +0900
-> +++ linux-2.6.24-rc3-mm1/kernel/res_counter.c	2007-11-28 14:18:33.000000000 +0900
-> @@ -75,6 +75,25 @@
->  	return NULL;
->  }
->  
-> +unsigned long long res_counter_get(struct res_counter *res, int member)
-> +{
-> +	unsigned long long *val;
-> +
-> +	val = res_counter_member(res, member);
-> +
-> +	return *val;
-> +}
-> +
-> +void res_counter_set(struct res_counter *res, int member,
-> +			unsigned long long newval)
-> +{
-> +	unsigned long long *val;
-> +
-> +	val = res_counter_member(res, member);
-> +	*val = newval;
+> --- linux-2.6.24-rc3-mm1.orig/kernel/res_counter.c	2007-11-27 14:07:44.000000000 +0900
+> +++ linux-2.6.24-rc3-mm1/kernel/res_counter.c	2007-11-27 14:09:40.000000000 +0900
+> @@ -98,7 +98,7 @@
+>  {
+>  	int ret;
+>  	char *buf, *end;
+> -	unsigned long long tmp, *val;
+> +	unsigned long long flags, tmp, *val;
 
-You put locking here in the res_counter_write() (patch #1). Why
-is it missed here?
+Flags for irqsave should be unsigned long. No?
 
-> +	return;
-> +}
-> +
->  ssize_t res_counter_read(struct res_counter *counter, int member,
->  		const char __user *userbuf, size_t nbytes, loff_t *pos,
->  		int (*read_strategy)(unsigned long long val, char *st_buf))
+>  	buf = kmalloc(nbytes + 1, GFP_KERNEL);
+>  	ret = -ENOMEM;
+> @@ -121,9 +121,10 @@
+>  		if (*end != '\0')
+>  			goto out_free;
+>  	}
+> -
+> +	spin_lock_irqsave(&counter->lock, flags);
+>  	val = res_counter_member(counter, member);
+>  	*val = tmp;
+> +	spin_unlock_irqrestore(&counter->lock, flags);
+>  	ret = nbytes;
+>  out_free:
+>  	kfree(buf);
 > 
 > 
