@@ -1,43 +1,72 @@
-From: ebiederm@xmission.com (Eric W. Biederman)
-Subject: Re: [patch -mm 2/4] mqueue namespace : add unshare support
-Date: Thu, 29 Nov 2007 08:03:44 -0700
-Message-ID: <m1y7chccvj.fsf@ebiederm.dsl.xmission.com>
-References: <20071128163728.177495768@fr.ibm.com>
-	<20071128164349.196734045@fr.ibm.com>
+From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH 2/2] hijack: update task_alloc_security
+Date: Thu, 29 Nov 2007 09:38:15 -0600
+Message-ID: <20071129153815.GA8140__10414.7791433663$1196350833$gmane$org@sergelap.austin.ibm.com>
+References: <474B78CB.5070607@au1.ibm.com> <474B7A51.3080300@au1.ibm.com>
+	<474BB095.8080302@manicmethod.com>
+	<1196174188.3925.32.camel@moss-spartans.epoch.ncsc.mil>
+	<20071127154356.GA32362@sergelap.austin.ibm.com>
+	<474D0188.2040600@crispincowan.com>
+	<20071128145422.GC3820@sergelap.austin.ibm.com>
+	<474E3E4E.3060908@crispincowan.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S932294AbXK2PGb@vger.kernel.org>
-In-Reply-To: <20071128164349.196734045@fr.ibm.com>> (Cedric Le Goater's
-	message of "Wed, 28 Nov 2007 17:37:30 +0100")
-Sender: linux-kernel-owner@vger.kernel.org
-To: Cedric Le Goater <clg@fr.ibm.com>
-Cc: Andrew Morton <akpm@linux-foundation.org>, Linux Containers <containers@lists.osdl.org>, Linux Kernel Mailing List <linux-kernel@vger.kernel.org>, Pavel Emelianov <xemul@openvz.org>
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <474E3E4E.3060908-RL8T2ARnKKfZw9hOtrW0rA@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Crispin Cowan <crispin-RL8T2ARnKKfZw9hOtrW0rA@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Joshua Brindle <method-PzTJMJMxY2mwxnkjfAeQoA@public.gmane.org>, linux-security-module-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, selinux-+05T5uksL2qpZYMLLGbcSA@public.gmane.org, menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, Stephen Smalley <sds-+05T5uksL2qpZYMLLGbcSA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Cedric Le Goater <clg@fr.ibm.com> writes:
+Quoting Crispin Cowan (crispin-RL8T2ARnKKfZw9hOtrW0rA@public.gmane.org):
+> Serge E. Hallyn wrote:
+> > Quoting Crispin Cowan (crispin-RL8T2ARnKKfZw9hOtrW0rA@public.gmane.org):
+> >   
+> >> Is there to be an LSM hook, so that modules can decide on an arbitrary
+> >> decision of whether to allow a hijack? So that this "do the right
+> >> SELinux" thing can be generalized for all LSMs to do the right thing.
+> >>     
+> > Currently:
+> >
+> > 	1. the permission is granted through ptrace
+> > 	2. the lsm knows a hijack is going in security_task_alloc()
+> > 		when task != current
+> >
+> > so the lsm has all the information it needs.  But I have no objection
+> > to a separate security_task_hijack() hook if you find the ptrace hook
+> > insufficient.
+> >   
+> I find that ptrace, specifically CAP_SYS_PTRACE, is overloaded. AppArmor
+> is having problems because we have to choose between granting
+> cap_sys_ptrace, or not allowing the process to read /proc/pid/self &
+> such like. So there, the problem is that we have to grant too much power
+> to a process to just let it read some /proc stuff about itself.
+> 
+> Here the problem appears to be the other way. cap_sys_ptrace is powerful
+> enough to mess with other user's processes on the system, but if ptrace
+> gives you hijack, then that seems to give you the power to control
+> processes in someone else's namespace.
 
-> From: Cedric Le Goater <clg@fr.ibm.com>
->
-> This patch includes the mqueue namespace in the nsproxy object. It  
-> also adds the support of unshare() and clone() with a new clone flag 
-> CLONE_NEWMQ (1 bit left in the clone flags !)
->
-> CLONE_NEWMQ is required to be cloned or unshared along with CLONE_NEWNS.
-> This is to make sure that no user mounts of the internal mqueue fs
-> are left behind when the last task exits. 
+The user namespace patchset I'm working on right now to start having
+signals respect user namespaces introduces CAP_NS_OVERRIDE.  Once that
+is in, then hijack would require CAP_NS_OVERRIDE|CAP_SYS_PTRACE.
 
-Sounds reasonable.  It would be cool if we didn't have to do this.
-(Why isn't the mqueue fs not MS_NOUSER?)  Ah well.
+Of course, since we're considering only allowing HIJACK_NS which is
+only allowed into a different namespace, hijack would then always
+require CAP_NS_OVERRIDE...
 
-I'm not certain about requiring CLONE_NEWNS but it looks to be
-ugly if we try and work it the other way.
+Does that suffice?
 
-> It's totally harmless for the moment because the current code still 
-> uses the default mqueue namespace object 'init_mq_ns' 
+If you still prefer an LSM hook, we can add that.
 
-I don't believe the harmless part.  Creating new objects should really
-come after we have the code to really make them work.  In some sense
-the next patch which makes this work causes ABI breakage.  Closely
-packed together it doesn't matter but...
-
-Eric
+thanks,
+-serge
