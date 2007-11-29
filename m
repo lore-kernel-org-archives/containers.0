@@ -1,106 +1,68 @@
-From: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
-Subject: Re: [RFC][ only for review ] memory controller bacground reclaim
- [5/5]
-Date: Thu, 29 Nov 2007 10:26:09 +0900
-Message-ID: <20071129102609.306dcd56.kamezawa.hiroyu@jp.fujitsu.com>
-References: <20071128174923.1f54f53f.kamezawa.hiroyu@jp.fujitsu.com>
-	<20071128175713.4e9b8fff.kamezawa.hiroyu@jp.fujitsu.com>
-	<474D4BAE.7090407@openvz.org>
+From: KAMEZAWA Hiroyuki <kamezawa.hiroyu@jp.fujitsu.com>
+Subject: Re: [PATCH][for -mm] per-zone and reclaim enhancements for memory
+ controller take 3 [3/10] per-zone active inactive counter
+Date: Thu, 29 Nov 2007 10:37:02 +0900
+Message-ID: <20071129103702.cbc5cf73.kamezawa.hiroyu@jp.fujitsu.com>
+References: <20071127115525.e9779108.kamezawa.hiroyu@jp.fujitsu.com>
+	<20071127120048.ef5f2005.kamezawa.hiroyu@jp.fujitsu.com>
+	<1196284799.5318.34.camel@localhost>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=US-ASCII
 Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <474D4BAE.7090407-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
-Cc: "containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org" <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, "yamamoto-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org" <yamamoto-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>, menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, "balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org" <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1762633AbXK2BeU@vger.kernel.org>
+In-Reply-To: <1196284799.5318.34.camel@localhost>
+Sender: linux-kernel-owner@vger.kernel.org
+To: Lee Schermerhorn <Lee.Schermerhorn@hp.com>
+Cc: Andrew Morton <akpm@linux-foundation.org>, "balbir@linux.vnet.ibm.com" <balbir@linux.vnet.ibm.com>, "yamamoto@valinux.co.jp" <yamamoto@valinux.co.jp>, "linux-mm@kvack.org" <linux-mm@kvack.org>, "containers@lists.osdl.org" <containers@lists.osdl.org>, LKML <linux-kernel@vger.kernel.org>, Christoph Lameter <clameter@sgi.com>
 List-Id: containers.vger.kernel.org
 
-On Wed, 28 Nov 2007 14:06:22 +0300
-Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org> wrote:
-> > +	struct {
-> > +		wait_queue_head_t waitq;
-> > +		struct task_struct *thread;
-> > +	} daemon;
+On Wed, 28 Nov 2007 16:19:59 -0500
+Lee Schermerhorn <Lee.Schermerhorn@hp.com> wrote:
+
+> As soon as this loop hits the first non-existent node on my platform, I
+> get a NULL pointer deref down in __alloc_pages.  Stack trace below.
 > 
-> Does this HAS to be a struct?
+> Perhaps N_POSSIBLE should be N_HIGH_MEMORY?  That would require handling
+> of memory/node hotplug for each memory control group, right?  But, I'm
+> going to try N_HIGH_MEMORY as a work around.
 > 
-No, but for shorter name of member.
-(I'd like to add another waitq for avoiding contention in reclaiming,
- If I can.)
+Hmm, ok. (>_<
 
 
-> > + * Background page reclaim daeom for memory controller.
-> > + */
-> > +
-> > +static int mem_cgroup_reclaim_daemon(void *data)
-> > +{
-> > +	DEFINE_WAIT(wait);
-> > +	struct mem_cgroup *mem = data;
-> > +
-> > +	css_get(&mem->css);
+> Call Trace:
+>  [<a000000100014de0>] show_stack+0x80/0xa0
+>                                 sp=a0000001008e39c0 bsp=a0000001008dd1b0
+>  [<a000000100015a70>] show_regs+0x870/0x8a0
+>                                 sp=a0000001008e3b90 bsp=a0000001008dd158
+>  [<a00000010003d130>] die+0x190/0x300
+>                                 sp=a0000001008e3b90 bsp=a0000001008dd110
+>  [<a000000100071b80>] ia64_do_page_fault+0x8e0/0xa20
+>                                 sp=a0000001008e3b90 bsp=a0000001008dd0b8
+>  [<a00000010000b5c0>] ia64_leave_kernel+0x0/0x270
+>                                 sp=a0000001008e3c20 bsp=a0000001008dd0b8
+>  [<a000000100132e10>] __alloc_pages+0x30/0x6e0
+>                                 sp=a0000001008e3df0 bsp=a0000001008dcfe0
+>  [<a000000100187370>] new_slab+0x610/0x6c0
+>                                 sp=a0000001008e3e00 bsp=a0000001008dcf80
+>  [<a000000100187470>] get_new_slab+0x50/0x200
+>                                 sp=a0000001008e3e00 bsp=a0000001008dcf48
+>  [<a000000100187900>] __slab_alloc+0x2e0/0x4e0
+>                                 sp=a0000001008e3e00 bsp=a0000001008dcf00
+>  [<a000000100187c80>] kmem_cache_alloc_node+0x180/0x200
+>                                 sp=a0000001008e3e10 bsp=a0000001008dcec0
+>  [<a0000001001945a0>] mem_cgroup_create+0x160/0x400
+>                                 sp=a0000001008e3e10 bsp=a0000001008dce78
+>  [<a0000001000f0940>] cgroup_init_subsys+0xa0/0x400
+>                                 sp=a0000001008e3e20 bsp=a0000001008dce28
+>  [<a0000001008521f0>] cgroup_init+0x90/0x160
+>                                 sp=a0000001008e3e20 bsp=a0000001008dce00
+>  [<a000000100831960>] start_kernel+0x700/0x820
+>                                 sp=a0000001008e3e20 bsp=a0000001008dcd80
 > 
-> Won't this prevent the css from being removed?
-> 
-This refcnt is dropped when this thread dies.
-pre_destroy handler handles this at rmdir().
+Maybe zonelists of NODE_DATA() is not initialized. you are right.
+I think N_HIGH_MEMORY will be suitable here...(I'll consider node-hotplug case later.)
 
-
-> >  	struct mem_cgroup *mem = mem_cgroup_from_cont(cont);
-> >  	int ret;
-> > +
-> 
-> This hunk is not needed :)
-> 
-yes :)
-
-> >  	ret = mem_cgroup_force_empty(mem);
-> >  	if (!ret)
-> >  		ret = nbytes;
-> > @@ -1188,6 +1244,16 @@
-> >  
-> >  static struct mem_cgroup init_mem_cgroup;
-> >  
-> > +static int __init mem_cgroup_reclaim_init(void)
-> > +{
-> > +	init_mem_cgroup.daemon.thread = kthread_run(mem_cgroup_reclaim_daemon,
-> > +					&init_mem_cgroup, "memcontd");
-> > +	if (IS_ERR(init_mem_cgroup.daemon.thread))
-> > +		BUG();
-> > +	return 0;
-> > +}
-> > +late_initcall(mem_cgroup_reclaim_init);
-> > +
-> >  static struct cgroup_subsys_state *
-> >  mem_cgroup_create(struct cgroup_subsys *ss, struct cgroup *cont)
-> >  {
-> > @@ -1212,6 +1278,17 @@
-> >  		if (alloc_mem_cgroup_per_zone_info(mem, node))
-> >  			goto free_out;
-> >  
-> > +	/* Memory Reclaim Daemon per cgroup */
-> > +	init_waitqueue_head(&mem->daemon.waitq);
-> > +	if (mem != &init_mem_cgroup) {
-> > +		/* Complicated...but we cannot call kthread create here..*/
-> > +		/* init call will later assign kthread */
-> > +		mem->daemon.thread = kthread_run(mem_cgroup_reclaim_daemon,
-> > +					mem, "memcontd");
-> > +		if (IS_ERR(mem->daemon.thread))
-> > +			goto free_out;
-> 
-> goto free_mem_cgroup_per_zone_info()?
-> 
-Ah.. there may be some bugs. will fix soon.
-
-Thank you for all your comments.
+Thank you for test!
 
 Regards,
 -Kame
