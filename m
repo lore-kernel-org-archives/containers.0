@@ -1,365 +1,340 @@
-From: ebiederm@xmission.com (Eric W. Biederman)
-Subject: [PATCH 3/4] sysctl: Infrastructure for per namespace sysctls
-Date: Thu, 29 Nov 2007 10:51:50 -0700
-Message-ID: <m1bq9dc53d.fsf_-_@ebiederm.dsl.xmission.com>
-References: <4742C73C.3010904@openvz.org>
-	<m1odddc5mf.fsf@ebiederm.dsl.xmission.com>
-	<m1k5o1c5eh.fsf_-_@ebiederm.dsl.xmission.com>
-	<m1fxypc5cd.fsf_-_@ebiederm.dsl.xmission.com>
+From: Srivatsa Vaddagiri <vatsa-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Subject: [PATCH] sched: cpu accounting controller
+Date: Fri, 30 Nov 2007 00:47:37 +0530
+Message-ID: <20071129191737.GH5681__48291.9227485128$1196363444$gmane$org@linux.vnet.ibm.com>
+References: <6599ad830711122125u576e85a6w428466a0ab46dbc6@mail.gmail.com>
+	<20071113060038.GC3359@linux.vnet.ibm.com>
+	<6599ad830711122205g88aae4fua8dd76cf6e8ab84d@mail.gmail.com>
+	<20071113074805.GA13499@linux.vnet.ibm.com>
+	<6599ad830711122357i60482475o10c0e0935a9e00c0@mail.gmail.com>
+Reply-To: vatsa-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-Return-path: <netdev-owner@vger.kernel.org>
-In-Reply-To: <m1fxypc5cd.fsf_-_@ebiederm.dsl.xmission.com> (Eric
-	W. Biederman's message of "Thu, 29 Nov 2007 10:46:26 -0700")
-Sender: netdev-owner@vger.kernel.org
-To: Herbert Xu <herbert@gondor.apana.org.au>, Andrew Morton <akpm@linux-foundation.org>
-Cc: Serge Hallyn <serue@us.ibm.com>, Daniel Lezcano <dlezcano@fr.ibm.com>, Cedric Le Goater <clg@fr.ibm.com>, Linux Containers <containers@lists.osdl.org>, Pavel Emelyanov <xemul@openvz.org>, netdev@vger.kernel.org, linux-kernel@vger.kernel.org, David Miller <davem@davemloft.net>
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <6599ad830711122357i60482475o10c0e0935a9e00c0-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+Cc: dhaval-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, LKML <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, skumar-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>, Linus Torvalds <torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
+On Mon, Nov 12, 2007 at 11:57:03PM -0800, Paul Menage wrote:
+> > Regarding your concern about tracking cpu usage in different ways, it
+> > could be mitigated if we have cpuacct controller track usage as per
+> > information present in a task's sched entity structure
+> > (tsk->se.sum_exec_runtime) i.e call cpuacct_charge() from
+> > __update_curr() which would accumulate the execution time of the
+> > group in a SMP friendly manner (i.e dump it in a per-cpu per-group counter
+> > first and then aggregate to a global per-group counter).
+> 
+> That seems more reasonable than the current approach in cpu_acct.c
 
-This patch implements the basic infrastructure for per namespace sysctls.
+Paul,
+	Sorry about the delay in getting back to this thread. I realized
+very recently that cpuacct controller has been removed from Linus's tree
+and have attempted to rework it as per our discussions.
 
-A list of lists of sysctl headers is added, allowing each namespace to have
-it's own list of sysctl headers.
+Linus/Ingo,
+	Commit cfb5285660aad4931b2ebbfa902ea48a37dfffa1 removed a usefull 
+feature for us, which provided a cpu accounting resource controller. This 
+feature would be usefull if someone wants to group tasks only for accounting 
+purpose and doesnt really want to exercise any control over their cpu 
+consumption.
 
-Each list of sysctl headers has a lookup function to find the first
-sysctl header in the list, allowing the lists to have a per namespace
-instance.
+The patch below reintroduces the feature. It is based on Paul Menage's
+original patch (Commit 62d0df64065e7c135d0002f069444fbdfc64768f), with
+these differences:
 
-register_sysct_root is added to tell sysctl.c about additional
-lists of sysctl_headers.  As all of the users are expected to be in
-kernel no unregister function is provided.
+	- Removed load average information. I felt it needs
+	  more thought (esp to deal with SMP and virtualized platforms)
+	  and can be added for 2.6.25 after more discussions.
+	- Convert group cpu usage to be nanosecond accurate (as rest
+	  of the cfs stats are) and invoke cpuacct_charge() from 
+	  the respective scheduler classes
 
-sysctl_head_next is updated to walk through the list of lists.
+The patch also modifies the cpu controller not to provide the same
+accounting information.
 
-__register_sysctl_paths is added to add a new sysctl table on
-a non-default sysctl list.
+Todo:
+	- Make the accounting scalable on SMP systems (perhaps
+ 	  for 2.6.25)
 
-The only intrusive part of this patch is propagating the information
-to decided which list of sysctls to use for sysctl_check_table.
 
-Signed-off-by: Eric W. Biederman <ebiederm@xmission.com>
+Signed-off-by: Srivatsa Vaddagiri <vatsa-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+
 ---
- include/linux/sysctl.h |   16 ++++++++-
- kernel/sysctl.c        |   93 ++++++++++++++++++++++++++++++++++++++++++------
- kernel/sysctl_check.c  |   25 +++++++------
- 3 files changed, 111 insertions(+), 23 deletions(-)
+ include/linux/cgroup_subsys.h |    6 ++
+ include/linux/cpu_acct.h      |   14 +++++
+ init/Kconfig                  |    7 ++
+ kernel/Makefile               |    1 
+ kernel/cpu_acct.c             |  103 ++++++++++++++++++++++++++++++++++++++++++
+ kernel/sched.c                |   27 -----------
+ kernel/sched_fair.c           |    5 ++
+ kernel/sched_rt.c             |    1 
+ 8 files changed, 138 insertions(+), 26 deletions(-)
 
-diff --git a/include/linux/sysctl.h b/include/linux/sysctl.h
-index 8b2e9e0..cd1da5c 100644
---- a/include/linux/sysctl.h
-+++ b/include/linux/sysctl.h
-@@ -951,7 +951,9 @@ enum
- 
- /* For the /proc/sys support */
- struct ctl_table;
-+struct nsproxy;
- extern struct ctl_table_header *sysctl_head_next(struct ctl_table_header *prev);
-+extern struct ctl_table_header *__sysctl_head_next(struct nsproxy *namespaces, struct ctl_table_header *prev);
- extern void sysctl_head_finish(struct ctl_table_header *prev);
- extern int sysctl_perm(struct ctl_table *table, int op);
- 
-@@ -1055,6 +1057,13 @@ struct ctl_table
- 	void *extra2;
- };
- 
-+struct ctl_table_root {
-+	struct list_head root_list;
-+	struct list_head header_list;
-+	struct list_head *(*lookup)(struct ctl_table_root *root,
-+					   struct nsproxy *namespaces);
-+};
-+
- /* struct ctl_table_header is used to maintain dynamic lists of
-    struct ctl_table trees. */
- struct ctl_table_header
-@@ -1064,6 +1073,7 @@ struct ctl_table_header
- 	int used;
- 	struct completion *unregistering;
- 	struct ctl_table *ctl_table_arg;
-+	struct ctl_table_root *root;
- };
- 
- /* struct ctl_path describes where in the hierarchy a table is added */
-@@ -1073,12 +1083,16 @@ struct ctl_path
- 	int ctl_name;
- };
- 
-+void register_sysctl_root(struct ctl_table_root *root);
-+struct ctl_table_header *__register_sysctl_paths(
-+	struct ctl_table_root *root, struct nsproxy *namespaces,
-+	const struct ctl_path *path, struct ctl_table *table);
- struct ctl_table_header *register_sysctl_table(struct ctl_table * table);
- struct ctl_table_header *register_sysctl_paths(const struct ctl_path *path,
- 						struct ctl_table *table);
- 
- void unregister_sysctl_table(struct ctl_table_header * table);
--int sysctl_check_table(struct ctl_table *table);
-+int sysctl_check_table(struct nsproxy *namespaces, struct ctl_table *table);
- 
- #else /* __KERNEL__ */
- 
-diff --git a/kernel/sysctl.c b/kernel/sysctl.c
-index effae87..ad4b709 100644
---- a/kernel/sysctl.c
-+++ b/kernel/sysctl.c
-@@ -156,8 +156,16 @@ static int proc_dointvec_taint(struct ctl_table *table, int write, struct file *
+Index: current/include/linux/cgroup_subsys.h
+===================================================================
+--- current.orig/include/linux/cgroup_subsys.h
++++ current/include/linux/cgroup_subsys.h
+@@ -11,6 +11,12 @@
+ SUBSYS(cpuset)
  #endif
  
- static struct ctl_table root_table[];
--static struct ctl_table_header root_table_header =
--	{ root_table, LIST_HEAD_INIT(root_table_header.ctl_entry) };
-+static struct ctl_table_root sysctl_table_root;
-+static struct ctl_table_header root_table_header = {
-+	.ctl_table = root_table,
-+	.ctl_entry = LIST_HEAD_INIT(sysctl_table_root.header_list),
-+	.root = &sysctl_table_root,
-+};
-+static struct ctl_table_root sysctl_table_root = {
-+	.root_list = LIST_HEAD_INIT(sysctl_table_root.root_list),
-+	.header_list = LIST_HEAD_INIT(root_table_header.ctl_entry),
-+};
- 
- static struct ctl_table kern_table[];
- static struct ctl_table vm_table[];
-@@ -1300,12 +1308,27 @@ void sysctl_head_finish(struct ctl_table_header *head)
- 	spin_unlock(&sysctl_lock);
- }
- 
--struct ctl_table_header *sysctl_head_next(struct ctl_table_header *prev)
-+static struct list_head *
-+lookup_header_list(struct ctl_table_root *root, struct nsproxy *namespaces)
- {
-+	struct list_head *header_list;
-+	header_list = &root->header_list;
-+	if (root->lookup)
-+		header_list = root->lookup(root, namespaces);
-+	return header_list;
-+}
++#ifdef CONFIG_CGROUP_CPUACCT
++SUBSYS(cpuacct)
++#endif
 +
-+struct ctl_table_header *__sysctl_head_next(struct nsproxy *namespaces,
-+					    struct ctl_table_header *prev)
-+{
-+	struct ctl_table_root *root;
-+	struct list_head *header_list;
- 	struct ctl_table_header *head;
- 	struct list_head *tmp;
++/* */
 +
- 	spin_lock(&sysctl_lock);
- 	if (prev) {
-+		head = prev;
- 		tmp = &prev->ctl_entry;
- 		unuse_table(prev);
- 		goto next;
-@@ -1319,14 +1342,38 @@ struct ctl_table_header *sysctl_head_next(struct ctl_table_header *prev)
- 		spin_unlock(&sysctl_lock);
- 		return head;
- 	next:
-+		root = head->root;
- 		tmp = tmp->next;
--		if (tmp == &root_table_header.ctl_entry)
--			break;
-+		header_list = lookup_header_list(root, namespaces);
-+		if (tmp != header_list)
-+			continue;
+ /* */
+ 
+ #ifdef CONFIG_CGROUP_DEBUG
+Index: current/include/linux/cpu_acct.h
+===================================================================
+--- /dev/null
++++ current/include/linux/cpu_acct.h
+@@ -0,0 +1,14 @@
 +
-+		do {
-+			root = list_entry(root->root_list.next,
-+					struct ctl_table_root, root_list);
-+			if (root == &sysctl_table_root)
-+				goto out;
-+			header_list = lookup_header_list(root, namespaces);
-+		} while (list_empty(header_list));
-+		tmp = header_list->next;
- 	}
-+out:
- 	spin_unlock(&sysctl_lock);
- 	return NULL;
- }
- 
-+struct ctl_table_header *sysctl_head_next(struct ctl_table_header *prev)
-+{
-+	return __sysctl_head_next(current->nsproxy, prev);
-+}
++#ifndef _LINUX_CPU_ACCT_H
++#define _LINUX_CPU_ACCT_H
 +
-+void register_sysctl_root(struct ctl_table_root *root)
-+{
-+	spin_lock(&sysctl_lock);
-+	list_add_tail(&root->root_list, &sysctl_table_root.root_list);
-+	spin_unlock(&sysctl_lock);
-+}
++#include <linux/cgroup.h>
++#include <asm/cputime.h>
 +
- #ifdef CONFIG_SYSCTL_SYSCALL
- int do_sysctl(int __user *name, int nlen, void __user *oldval, size_t __user *oldlenp,
- 	       void __user *newval, size_t newlen)
-@@ -1483,14 +1530,16 @@ static __init int sysctl_init(void)
- {
- 	int err;
- 	sysctl_set_parent(NULL, root_table);
--	err = sysctl_check_table(root_table);
-+	err = sysctl_check_table(current->nsproxy, root_table);
- 	return 0;
- }
++#ifdef CONFIG_CGROUP_CPUACCT
++extern void cpuacct_charge(struct task_struct *, u64 cputime);
++#else
++static inline void cpuacct_charge(struct task_struct *p, u64 cputime) {}
++#endif
++
++#endif
+Index: current/init/Kconfig
+===================================================================
+--- current.orig/init/Kconfig
++++ current/init/Kconfig
+@@ -354,6 +354,13 @@ config FAIR_CGROUP_SCHED
  
- core_initcall(sysctl_init);
+ endchoice
  
- /**
-- * register_sysctl_paths - register a sysctl hierarchy
-+ * __register_sysctl_paths - register a sysctl hierarchy
-+ * @root: List of sysctl headers to register on
-+ * @namespaces: Data to compute which lists of sysctl entries are visible
-  * @path: The path to the directory the sysctl table is in.
-  * @table: the top-level table structure
-  *
-@@ -1558,9 +1607,12 @@ core_initcall(sysctl_init);
-  * This routine returns %NULL on a failure to register, and a pointer
-  * to the table header on success.
-  */
--struct ctl_table_header *register_sysctl_paths(const struct ctl_path *path,
--						struct ctl_table *table)
-+struct ctl_table_header *__register_sysctl_paths(
-+	struct ctl_table_root *root,
-+	struct nsproxy *namespaces,
-+	const struct ctl_path *path, struct ctl_table *table)
- {
-+	struct list_head *header_list;
- 	struct ctl_table_header *header;
- 	struct ctl_table *new, **prevp;
- 	unsigned int n, npath;
-@@ -1603,19 +1655,38 @@ struct ctl_table_header *register_sysctl_paths(const struct ctl_path *path,
- 	INIT_LIST_HEAD(&header->ctl_entry);
- 	header->used = 0;
- 	header->unregistering = NULL;
-+	header->root = root;
- 	sysctl_set_parent(NULL, header->ctl_table);
--	if (sysctl_check_table(header->ctl_table)) {
-+	if (sysctl_check_table(namespaces, header->ctl_table)) {
- 		kfree(header);
- 		return NULL;
- 	}
- 	spin_lock(&sysctl_lock);
--	list_add_tail(&header->ctl_entry, &root_table_header.ctl_entry);
-+	header_list = lookup_header_list(root, namespaces);
-+	list_add_tail(&header->ctl_entry, header_list);
- 	spin_unlock(&sysctl_lock);
- 
- 	return header;
- }
- 
- /**
-+ * register_sysctl_table_path - register a sysctl table hierarchy
-+ * @path: The path to the directory the sysctl table is in.
-+ * @table: the top-level table structure
++config CGROUP_CPUACCT
++	bool "Simple CPU accounting cgroup subsystem"
++	depends on CGROUPS
++	help
++	  Provides a simple Resource Controller for monitoring the
++	  total CPU consumed by the tasks in a cgroup
++
+ config SYSFS_DEPRECATED
+ 	bool "Create deprecated sysfs files"
+ 	default y
+Index: current/kernel/Makefile
+===================================================================
+--- current.orig/kernel/Makefile
++++ current/kernel/Makefile
+@@ -40,6 +40,7 @@ obj-$(CONFIG_COMPAT) += compat.o
+ obj-$(CONFIG_CGROUPS) += cgroup.o
+ obj-$(CONFIG_CGROUP_DEBUG) += cgroup_debug.o
+ obj-$(CONFIG_CPUSETS) += cpuset.o
++obj-$(CONFIG_CGROUP_CPUACCT) += cpu_acct.o
+ obj-$(CONFIG_CGROUP_NS) += ns_cgroup.o
+ obj-$(CONFIG_IKCONFIG) += configs.o
+ obj-$(CONFIG_STOP_MACHINE) += stop_machine.o
+Index: current/kernel/cpu_acct.c
+===================================================================
+--- /dev/null
++++ current/kernel/cpu_acct.c
+@@ -0,0 +1,103 @@
++/*
++ * kernel/cpu_acct.c - CPU accounting cgroup subsystem
 + *
-+ * Register a sysctl table hierarchy. @table should be a filled in ctl_table
-+ * array. A completely 0 filled entry terminates the table.
++ * Copyright (C) Google Inc, 2006
 + *
-+ * See __register_sysctl_paths for more details.
++ * Developed by Paul Menage (menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org) and Balbir Singh
++ * (balbir-xthvdsQ13ZrQT0dZR+AlfA@public.gmane.org)
++ *
 + */
-+struct ctl_table_header *register_sysctl_paths(const struct ctl_path *path,
-+						struct ctl_table *table)
++
++/*
++ * Example cgroup subsystem for reporting total CPU usage of tasks in a
++ * cgroup.
++ */
++
++#include <linux/module.h>
++#include <linux/cgroup.h>
++#include <linux/fs.h>
++#include <linux/rcupdate.h>
++
++#include <asm/div64.h>
++
++struct cpuacct {
++	struct cgroup_subsys_state css;
++	spinlock_t lock;
++	/* total time used by this class (in nanoseconds) */
++	u64 time;
++};
++
++struct cgroup_subsys cpuacct_subsys;
++
++static inline struct cpuacct *cgroup_ca(struct cgroup *cont)
 +{
-+	return __register_sysctl_paths(&sysctl_table_root, current->nsproxy,
-+					path, table);
++	return container_of(cgroup_subsys_state(cont, cpuacct_subsys_id),
++			    struct cpuacct, css);
 +}
 +
-+/**
-  * register_sysctl_table - register a sysctl table hierarchy
-  * @table: the top-level table structure
-  *
-diff --git a/kernel/sysctl_check.c b/kernel/sysctl_check.c
-index fdfca0d..2544852 100644
---- a/kernel/sysctl_check.c
-+++ b/kernel/sysctl_check.c
-@@ -1352,7 +1352,8 @@ static void sysctl_repair_table(struct ctl_table *table)
- 	}
++static inline struct cpuacct *task_ca(struct task_struct *task)
++{
++	return container_of(task_subsys_state(task, cpuacct_subsys_id),
++			    struct cpuacct, css);
++}
++
++static struct cgroup_subsys_state *cpuacct_create(
++	struct cgroup_subsys *ss, struct cgroup *cont)
++{
++	struct cpuacct *ca = kzalloc(sizeof(*ca), GFP_KERNEL);
++
++	if (!ca)
++		return ERR_PTR(-ENOMEM);
++	spin_lock_init(&ca->lock);
++	return &ca->css;
++}
++
++static void cpuacct_destroy(struct cgroup_subsys *ss,
++			    struct cgroup *cont)
++{
++	kfree(cgroup_ca(cont));
++}
++
++static u64 cpuusage_read(struct cgroup *cont, struct cftype *cft)
++{
++	struct cpuacct *ca = cgroup_ca(cont);
++
++	return ca->time;
++}
++
++static struct cftype files[] = {
++	{
++		.name = "usage",
++		.read_uint = cpuusage_read,
++	},
++};
++
++static int cpuacct_populate(struct cgroup_subsys *ss, struct cgroup *cont)
++{
++	return cgroup_add_files(cont, ss, files, ARRAY_SIZE(files));
++}
++
++void cpuacct_charge(struct task_struct *task, u64 cputime)
++{
++	struct cpuacct *ca;
++	unsigned long flags;
++
++	if (!cpuacct_subsys.active)
++		return;
++	rcu_read_lock();
++	ca = task_ca(task);
++	if (ca) {
++		spin_lock_irqsave(&ca->lock, flags);
++		ca->time += cputime;
++		spin_unlock_irqrestore(&ca->lock, flags);
++	}
++	rcu_read_unlock();
++}
++
++struct cgroup_subsys cpuacct_subsys = {
++	.name = "cpuacct",
++	.create = cpuacct_create,
++	.destroy = cpuacct_destroy,
++	.populate = cpuacct_populate,
++	.subsys_id = cpuacct_subsys_id,
++};
+Index: current/kernel/sched.c
+===================================================================
+--- current.orig/kernel/sched.c
++++ current/kernel/sched.c
+@@ -52,6 +52,7 @@
+ #include <linux/cpu.h>
+ #include <linux/cpuset.h>
+ #include <linux/percpu.h>
++#include <linux/cpu_acct.h>
+ #include <linux/kthread.h>
+ #include <linux/seq_file.h>
+ #include <linux/sysctl.h>
+@@ -7221,38 +7222,12 @@ static u64 cpu_shares_read_uint(struct c
+ 	return (u64) tg->shares;
  }
  
--static struct ctl_table *sysctl_check_lookup(struct ctl_table *table)
-+static struct ctl_table *sysctl_check_lookup(struct nsproxy *namespaces,
-+						struct ctl_table *table)
- {
- 	struct ctl_table_header *head;
- 	struct ctl_table *ref, *test;
-@@ -1360,8 +1361,8 @@ static struct ctl_table *sysctl_check_lookup(struct ctl_table *table)
+-static u64 cpu_usage_read(struct cgroup *cgrp, struct cftype *cft)
+-{
+-	struct task_group *tg = cgroup_tg(cgrp);
+-	unsigned long flags;
+-	u64 res = 0;
+-	int i;
+-
+-	for_each_possible_cpu(i) {
+-		/*
+-		 * Lock to prevent races with updating 64-bit counters
+-		 * on 32-bit arches.
+-		 */
+-		spin_lock_irqsave(&cpu_rq(i)->lock, flags);
+-		res += tg->se[i]->sum_exec_runtime;
+-		spin_unlock_irqrestore(&cpu_rq(i)->lock, flags);
+-	}
+-	/* Convert from ns to ms */
+-	do_div(res, NSEC_PER_MSEC);
+-
+-	return res;
+-}
+-
+ static struct cftype cpu_files[] = {
+ 	{
+ 		.name = "shares",
+ 		.read_uint = cpu_shares_read_uint,
+ 		.write_uint = cpu_shares_write_uint,
+ 	},
+-	{
+-		.name = "usage",
+-		.read_uint = cpu_usage_read,
+-	},
+ };
  
- 	depth = sysctl_depth(table);
+ static int cpu_cgroup_populate(struct cgroup_subsys *ss, struct cgroup *cont)
+Index: current/kernel/sched_fair.c
+===================================================================
+--- current.orig/kernel/sched_fair.c
++++ current/kernel/sched_fair.c
+@@ -351,6 +351,11 @@ static void update_curr(struct cfs_rq *c
  
--	for (head = sysctl_head_next(NULL); head;
--	     head = sysctl_head_next(head)) {
-+	for (head = __sysctl_head_next(namespaces, NULL); head;
-+	     head = __sysctl_head_next(namespaces, head)) {
- 		cur_depth = depth;
- 		ref = head->ctl_table;
- repeat:
-@@ -1406,13 +1407,14 @@ static void set_fail(const char **fail, struct ctl_table *table, const char *str
- 	*fail = str;
+ 	__update_curr(cfs_rq, curr, delta_exec);
+ 	curr->exec_start = now;
++	if (entity_is_task(curr)) {
++		struct task_struct *curtask = task_of(curr);
++
++		cpuacct_charge(curtask, delta_exec);
++	}
  }
  
--static int sysctl_check_dir(struct ctl_table *table)
-+static int sysctl_check_dir(struct nsproxy *namespaces,
-+				struct ctl_table *table)
- {
- 	struct ctl_table *ref;
- 	int error;
+ static inline void
+Index: current/kernel/sched_rt.c
+===================================================================
+--- current.orig/kernel/sched_rt.c
++++ current/kernel/sched_rt.c
+@@ -23,6 +23,7 @@ static void update_curr_rt(struct rq *rq
  
- 	error = 0;
--	ref = sysctl_check_lookup(table);
-+	ref = sysctl_check_lookup(namespaces, table);
- 	if (ref) {
- 		int match = 0;
- 		if ((!table->procname && !ref->procname) ||
-@@ -1437,11 +1439,12 @@ static int sysctl_check_dir(struct ctl_table *table)
- 	return error;
+ 	curr->se.sum_exec_runtime += delta_exec;
+ 	curr->se.exec_start = rq->clock;
++	cpuacct_charge(curr, delta_exec);
  }
  
--static void sysctl_check_leaf(struct ctl_table *table, const char **fail)
-+static void sysctl_check_leaf(struct nsproxy *namespaces,
-+				struct ctl_table *table, const char **fail)
- {
- 	struct ctl_table *ref;
- 
--	ref = sysctl_check_lookup(table);
-+	ref = sysctl_check_lookup(namespaces, table);
- 	if (ref && (ref != table))
- 		set_fail(fail, table, "Sysctl already exists");
- }
-@@ -1465,7 +1468,7 @@ static void sysctl_check_bin_path(struct ctl_table *table, const char **fail)
- 	}
- }
- 
--int sysctl_check_table(struct ctl_table *table)
-+int sysctl_check_table(struct nsproxy *namespaces, struct ctl_table *table)
- {
- 	int error = 0;
- 	for (; table->ctl_name || table->procname; table++) {
-@@ -1495,7 +1498,7 @@ int sysctl_check_table(struct ctl_table *table)
- 				set_fail(&fail, table, "Directory with extra1");
- 			if (table->extra2)
- 				set_fail(&fail, table, "Directory with extra2");
--			if (sysctl_check_dir(table))
-+			if (sysctl_check_dir(namespaces, table))
- 				set_fail(&fail, table, "Inconsistent directory names");
- 		} else {
- 			if ((table->strategy == sysctl_data) ||
-@@ -1544,7 +1547,7 @@ int sysctl_check_table(struct ctl_table *table)
- 			if (!table->procname && table->proc_handler)
- 				set_fail(&fail, table, "proc_handler without procname");
- #endif
--			sysctl_check_leaf(table, &fail);
-+			sysctl_check_leaf(namespaces, table, &fail);
- 		}
- 		sysctl_check_bin_path(table, &fail);
- 		if (fail) {
-@@ -1552,7 +1555,7 @@ int sysctl_check_table(struct ctl_table *table)
- 			error = -EINVAL;
- 		}
- 		if (table->child)
--			error |= sysctl_check_table(table->child);
-+			error |= sysctl_check_table(namespaces, table->child);
- 	}
- 	return error;
- }
--- 
-1.5.3.rc6.17.g1911
+ static void enqueue_task_rt(struct rq *rq, struct task_struct *p, int wakeup)
 
+-- 
+Regards,
+vatsa
