@@ -1,96 +1,43 @@
-From: Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: Re: [RFC][ only for review ] memory controller bacground reclaim
- [0/5] (Does anyone have an idea about throttling ?)
-Date: Thu, 29 Nov 2007 20:12:51 +0530
-Message-ID: <474ECFEB.9090202@linux.vnet.ibm.com>
-References: <20071128174923.1f54f53f.kamezawa.hiroyu@jp.fujitsu.com>
-	<20071129205324.f9e7ab4e.kamezawa.hiroyu@jp.fujitsu.com>
-Reply-To: balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
+From: ebiederm@xmission.com (Eric W. Biederman)
+Subject: Re: [patch -mm 2/4] mqueue namespace : add unshare support
+Date: Thu, 29 Nov 2007 08:03:44 -0700
+Message-ID: <m1y7chccvj.fsf@ebiederm.dsl.xmission.com>
+References: <20071128163728.177495768@fr.ibm.com>
+	<20071128164349.196734045@fr.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20071129205324.f9e7ab4e.kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
-Cc: "containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org" <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Lee Schermerhorn <Lee.Schermerhorn-VXdhtT5mjnY@public.gmane.org>, "yamamoto-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org" <yamamoto-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>, menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, Pavel Emelianov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+Content-Type: text/plain; charset=us-ascii
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S932294AbXK2PGb@vger.kernel.org>
+In-Reply-To: <20071128164349.196734045@fr.ibm.com>> (Cedric Le Goater's
+	message of "Wed, 28 Nov 2007 17:37:30 +0100")
+Sender: linux-kernel-owner@vger.kernel.org
+To: Cedric Le Goater <clg@fr.ibm.com>
+Cc: Andrew Morton <akpm@linux-foundation.org>, Linux Containers <containers@lists.osdl.org>, Linux Kernel Mailing List <linux-kernel@vger.kernel.org>, Pavel Emelianov <xemul@openvz.org>
 List-Id: containers.vger.kernel.org
 
-KAMEZAWA Hiroyuki wrote:
-> On Wed, 28 Nov 2007 17:49:23 +0900
-> KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org> wrote:
-> 
->> Hi, this set is for memory controller background reclaim.
->>
->> Merged YAMAMOTO-san's version onto 2.6.23-rc3-mm1 + my NUMA patch.
->> And splitted to several sets.
->>
->> Major changes from his one is
->>  - use kthread instead of work_queue
->>  - adjust high/low watermark when limit changes automatically
->>    and set default value. (a user can specify his own later.)
->>
-> FYI rather than RFC.
-> 
-> I wrote attached patch and run kernbench on 8CPU/2Node NUMA/ia64.
-> It does make -j 32.
-> 
-> Memory limitation was 800M. Low/High watermark here was 750M/780M.
-> 
-> == These numbers are stable to some extent.==
-> 2.6.24-rc3-mm2: (Limit: 800M)     
-> Average Optimal -j 32 Load Run:
-> Elapsed Time 358.933---------------------------(*)
-> User Time 1069.63
-> System Time 140.667
-> Percent CPU 337.333
-> Context Switches 220821
-> Sleeps 196912
-> 
-> 2.6.24-rc3-mm2 + throttle (Limit:800M)
-> Average Optimal -j 32 Load Run:
-> Elapsed Time 266.697---------------------------(*)
-> User Time 1105.39
-> System Time 124.423
-> Percent CPU 471.667
-> Context Switches 251797
-> Sleeps 231038
-> 
-> 2.6.24-rc3-mm2 + throttle + High/Low watermark.
-> (low:750M High:780M Limit:800M)
-> Average Optimal -j 32 Load Run:
-> Elapsed Time 266.844---------------------------(*)
-> User Time 1112.9
-> System Time 112.273
-> Percent CPU 473.667
-> Context Switches 251795
-> Sleeps 220339
-> ==
-> 
+Cedric Le Goater <clg@fr.ibm.com> writes:
 
-Looks good to me, was there any impact on memory.failcnt?
+> From: Cedric Le Goater <clg@fr.ibm.com>
+>
+> This patch includes the mqueue namespace in the nsproxy object. It  
+> also adds the support of unshare() and clone() with a new clone flag 
+> CLONE_NEWMQ (1 bit left in the clone flags !)
+>
+> CLONE_NEWMQ is required to be cloned or unshared along with CLONE_NEWNS.
+> This is to make sure that no user mounts of the internal mqueue fs
+> are left behind when the last task exits. 
 
-> Seems throttling reclaim has some good effect (for kernbench).
-> Does anyone have an idea for throttling  reclaiming of memory controller ?
-> 
+Sounds reasonable.  It would be cool if we didn't have to do this.
+(Why isn't the mqueue fs not MS_NOUSER?)  Ah well.
 
-In the past I've run workloads of apache+geronimo+open trade, I've run
-linear sequential memory access tests, kernbench, lmbench, database
-benchmarks (DOTS, pgbench, etc). I think Lee Schermerhorn has a very
-interesting setup (that I need to learn to replicate).
+I'm not certain about requiring CLONE_NEWNS but it looks to be
+ugly if we try and work it the other way.
 
-> Thanks,
-> -Kame
--- 
-	Warm Regards,
-	Balbir Singh
-	Linux Technology Center
-	IBM, ISTL
+> It's totally harmless for the moment because the current code still 
+> uses the default mqueue namespace object 'init_mq_ns' 
+
+I don't believe the harmless part.  Creating new objects should really
+come after we have the code to really make them work.  In some sense
+the next patch which makes this work causes ABI breakage.  Closely
+packed together it doesn't matter but...
+
+Eric
