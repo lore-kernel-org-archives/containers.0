@@ -1,72 +1,52 @@
-From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 2/2] hijack: update task_alloc_security
-Date: Thu, 29 Nov 2007 09:38:15 -0600
-Message-ID: <20071129153815.GA8140__10414.7791433663$1196350833$gmane$org@sergelap.austin.ibm.com>
-References: <474B78CB.5070607@au1.ibm.com> <474B7A51.3080300@au1.ibm.com>
-	<474BB095.8080302@manicmethod.com>
-	<1196174188.3925.32.camel@moss-spartans.epoch.ncsc.mil>
-	<20071127154356.GA32362@sergelap.austin.ibm.com>
-	<474D0188.2040600@crispincowan.com>
-	<20071128145422.GC3820@sergelap.austin.ibm.com>
-	<474E3E4E.3060908@crispincowan.com>
+From: ebiederm@xmission.com (Eric W. Biederman)
+Subject: [PATCH 0/4] Sysctl namespace support
+Date: Thu, 29 Nov 2007 10:40:24 -0700
+Message-ID: <m1odddc5mf.fsf@ebiederm.dsl.xmission.com>
+References: <4742C73C.3010904@openvz.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <474E3E4E.3060908-RL8T2ARnKKfZw9hOtrW0rA@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Crispin Cowan <crispin-RL8T2ARnKKfZw9hOtrW0rA@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Joshua Brindle <method-PzTJMJMxY2mwxnkjfAeQoA@public.gmane.org>, linux-security-module-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, selinux-+05T5uksL2qpZYMLLGbcSA@public.gmane.org, menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, Stephen Smalley <sds-+05T5uksL2qpZYMLLGbcSA@public.gmane.org>
+Return-path: <netdev-owner@vger.kernel.org>
+In-Reply-To: <4742C73C.3010904@openvz.org> (Pavel Emelyanov's message of "Tue,
+	20 Nov 2007 14:38:36 +0300")
+Sender: netdev-owner@vger.kernel.org
+To: Herbert Xu <herbert@gondor.apana.org.au>, Andrew Morton <akpm@linux-foundation.org>
+Cc: Serge Hallyn <serue@us.ibm.com>, Daniel Lezcano <dlezcano@fr.ibm.com>, Cedric Le Goater <clg@fr.ibm.com>, Linux Containers <containers@lists.osdl.org>, Pavel Emelyanov <xemul@openvz.org>, netdev@vger.kernel.org, linux-kernel@vger.kernel.org, David Miller <davem@davemloft.net>
 List-Id: containers.vger.kernel.org
 
-Quoting Crispin Cowan (crispin-RL8T2ARnKKfZw9hOtrW0rA@public.gmane.org):
-> Serge E. Hallyn wrote:
-> > Quoting Crispin Cowan (crispin-RL8T2ARnKKfZw9hOtrW0rA@public.gmane.org):
-> >   
-> >> Is there to be an LSM hook, so that modules can decide on an arbitrary
-> >> decision of whether to allow a hijack? So that this "do the right
-> >> SELinux" thing can be generalized for all LSMs to do the right thing.
-> >>     
-> > Currently:
-> >
-> > 	1. the permission is granted through ptrace
-> > 	2. the lsm knows a hijack is going in security_task_alloc()
-> > 		when task != current
-> >
-> > so the lsm has all the information it needs.  But I have no objection
-> > to a separate security_task_hijack() hook if you find the ptrace hook
-> > insufficient.
-> >   
-> I find that ptrace, specifically CAP_SYS_PTRACE, is overloaded. AppArmor
-> is having problems because we have to choose between granting
-> cap_sys_ptrace, or not allowing the process to read /proc/pid/self &
-> such like. So there, the problem is that we have to grant too much power
-> to a process to just let it read some /proc stuff about itself.
-> 
-> Here the problem appears to be the other way. cap_sys_ptrace is powerful
-> enough to mess with other user's processes on the system, but if ptrace
-> gives you hijack, then that seems to give you the power to control
-> processes in someone else's namespace.
 
-The user namespace patchset I'm working on right now to start having
-signals respect user namespaces introduces CAP_NS_OVERRIDE.  Once that
-is in, then hijack would require CAP_NS_OVERRIDE|CAP_SYS_PTRACE.
+Currently the network namespace work has gotten about as far as we can
+without the ability to make sysctls that are per network namespace.
 
-Of course, since we're considering only allowing HIJACK_NS which is
-only allowed into a different namespace, hijack would then always
-require CAP_NS_OVERRIDE...
+The techniques we have been using for other namespace of examining
+current and replacing the ctl_table.data field depending on the
+namespace instance that current->nsproxy refers to are both ugly
+and do not work for the network sysctls.
 
-Does that suffice?
+The case in handling the networking sysctls that does not work with
+the existing ugly pointer munging techniques are directories like
+/proc/sys/net/ipv4/conf/ and /proc/sys/net/ipv4/neigh/ whose contents
+vary depending on the networking devices present in the network
+namespace.
 
-If you still prefer an LSM hook, we can add that.
+Adding support to the sysctl infrastructure to allow to register
+a sysctl table for a particular instance of a particular namespace
+removes the need for magic sysctl methods, and allows the use
+of the techniques for managing dynamic sysctl tables used for years
+in the network stack.
 
-thanks,
--serge
+
+
+Herbert we need this infrastructure most in net-2.6.25 (as not having
+it is a current bottleneck to further development of the network
+namespace) so these patches are against net-2.6.25.
+
+Andrew also need this infrastructure in -mm so that we can take
+advantage of this new infrastructure when implementing other
+namespaces.
+
+So I expect the sane way to deal with this patchset is to merge into
+both net-2.6.25 and -mm and then Andrew can drop or disable the
+patches once he pulls bases -mm on a version of net-2.6.25 with
+the changes.
+
+Eric
