@@ -1,34 +1,29 @@
-From: Christoph Lameter <clameter@sgi.com>
+From: yamamoto@valinux.co.jp (YAMAMOTO Takashi)
 Subject: Re: [PATCH][for -mm] per-zone and reclaim enhancements for memory
  controller take 3 [3/10] per-zone active inactive counter
-Date: Wed, 28 Nov 2007 19:26:29 -0800 (PST)
-Message-ID: <Pine.LNX.4.64.0711281924580.20367@schroedinger.engr.sgi.com>
-References: <20071127115525.e9779108.kamezawa.hiroyu@jp.fujitsu.com>
- <20071127120048.ef5f2005.kamezawa.hiroyu@jp.fujitsu.com>
- <1196284799.5318.34.camel@localhost> <20071129103702.cbc5cf73.kamezawa.hiroyu@jp.fujitsu.com>
- <20071129112406.c6820a5e.kamezawa.hiroyu@jp.fujitsu.com>
- <20071129121834.c18ff796.kamezawa.hiroyu@jp.fujitsu.com>
+Date: Thu, 29 Nov 2007 12:33:28 +0900 (JST)
+Message-ID: <20071129033328.20E5F1CFEAA@siro.lan>
+References: <20071127120048.ef5f2005.kamezawa.hiroyu@jp.fujitsu.com>
 Mime-Version: 1.0
-Content-Type: TEXT/PLAIN; charset=US-ASCII
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1761331AbXK2D0m@vger.kernel.org>
-In-Reply-To: <20071129121834.c18ff796.kamezawa.hiroyu@jp.fujitsu.com>
+Content-Type: Text/Plain; charset=us-ascii
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1761239AbXK2Ddj@vger.kernel.org>
+In-Reply-To: Your message of "Tue, 27 Nov 2007 12:00:48 +0900"
+	<20071127120048.ef5f2005.kamezawa.hiroyu@jp.fujitsu.com>
 Sender: linux-kernel-owner@vger.kernel.org
-To: KAMEZAWA Hiroyuki <kamezawa.hiroyu@jp.fujitsu.com>
-Cc: Lee Schermerhorn <Lee.Schermerhorn@hp.com>, Andrew Morton <akpm@linux-foundation.org>, "balbir@linux.vnet.ibm.com" <balbir@linux.vnet.ibm.com>, "yamamoto@valinux.co.jp" <yamamoto@valinux.co.jp>, "linux-mm@kvack.org" <linux-mm@kvack.org>, "containers@lists.osdl.org" <containers@lists.osdl.org>, LKML <linux-kernel@vger.kernel.org>
+To: kamezawa.hiroyu@jp.fujitsu.com
+Cc: linux-kernel@vger.kernel.org, linux-mm@kvack.org, containers@lists.osdl.org, akpm@linux-foundation.org, balbir@linux.vnet.ibm.com
 List-Id: containers.vger.kernel.org
 
-On Thu, 29 Nov 2007, KAMEZAWA Hiroyuki wrote:
+> +static inline struct mem_cgroup_per_zone *
+> +mem_cgroup_zoneinfo(struct mem_cgroup *mem, int nid, int zid)
+> +{
+> +	if (!mem->info.nodeinfo[nid])
 
-> ok, just use N_HIGH_MEMORY here and add comment for hotplugging support is not yet.
-> 
-> Christoph-san, Lee-san, could you confirm following ?
-> 
-> - when SLAB is used, kmalloc_node() against offline node will success.
-> - when SLUB is used, kmalloc_node() against offline node will panic.
-> 
-> Then, the caller should take care that node is online before kmalloc().
+can this be true?
 
-Hmmmm... An offline node implies that the per node structure does not 
-exist. SLAB should fail too. If there is something wrong with the allocs 
-then its likely a difference in the way hotplug was put into SLAB and 
-SLUB.
+YAMAMOTO Takashi
+
+> +		return NULL;
+> +	return &mem->info.nodeinfo[nid]->zoneinfo[zid];
+> +}
+> +
