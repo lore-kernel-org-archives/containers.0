@@ -1,55 +1,44 @@
-From: Cedric Le Goater <clg@fr.ibm.com>
+From: Cedric Le Goater <clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
 Subject: Re: [patch -mm 2/4] mqueue namespace : add unshare support
-Date: Thu, 29 Nov 2007 11:28:15 +0100
-Message-ID: <474E943F.40804@fr.ibm.com>
-References: <20071128163728.177495768@fr.ibm.com>> <20071128164349.196734045@fr.ibm.com>> <474DA61B.5030301@openvz.org>
+Date: Thu, 29 Nov 2007 11:28:28 +0100
+Message-ID: <474E944C.4020809@fr.ibm.com>
+References: <20071128163728.177495768@fr.ibm.com>>
+	<20071128164349.196734045@fr.ibm.com>>
+	<474DA61B.5030301@openvz.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1
 Content-Transfer-Encoding: 7bit
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1758891AbXK2K3G@vger.kernel.org>
-In-Reply-To: <474DA61B.5030301@openvz.org>
-Sender: linux-kernel-owner@vger.kernel.org
-To: Pavel Emelyanov <xemul@openvz.org>
-Cc: Andrew Morton <akpm@linux-foundation.org>, Linux Containers <containers@lists.osdl.org>, Linux Kernel Mailing List <linux-kernel@vger.kernel.org>, "Eric W. Biederman" <ebiederm@xmission.com>
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <474DA61B.5030301-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Linux Kernel Mailing List <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-
->> Index: 2.6.24-rc3-mm2/kernel/fork.c
+>> Index: 2.6.24-rc3-mm2/include/linux/sched.h
 >> ===================================================================
->> --- 2.6.24-rc3-mm2.orig/kernel/fork.c
->> +++ 2.6.24-rc3-mm2/kernel/fork.c
->> @@ -1004,6 +1004,13 @@ static struct task_struct *copy_process(
->>  	if ((clone_flags & CLONE_SIGHAND) && !(clone_flags & CLONE_VM))
->>  		return ERR_PTR(-EINVAL);
->>  
->> +	/*
->> +	 * mount namespace cannot be unshared when the mqueue
->> +	 * namespace is not
+>> --- 2.6.24-rc3-mm2.orig/include/linux/sched.h
+>> +++ 2.6.24-rc3-mm2/include/linux/sched.h
+>> @@ -27,6 +27,7 @@
+>>  #define CLONE_NEWUSER		0x10000000	/* New user namespace */
+>>  #define CLONE_NEWPID		0x20000000	/* New pid namespace */
+>>  #define CLONE_NEWNET		0x40000000	/* New network namespace */
+>> +#define CLONE_NEWMQ		0x80000000	/* New posix mqueue namespace */
 > 
-> vice versa - mqueue namespace cannot be unshared when the mount one is not ;)
+> That's it :) We've run out of clone flags on 32-bit platforms :(
 
-arg. yes :) 
+yes. 
 
-Thanks !
+I have been giving some thoughts to a clone2() to extend the flags but
+andrew is preparing to recycle CLONE_DETACHED and CLONE_STOPPED for
+2.6.26. Some we might have some more time in front of us.
 
 C.
-
-
-Signed-off-by: Cedric Le Goater <clg@fr.ibm.com>
----
- kernel/fork.c |    2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
-
-Index: 2.6.24-rc3-mm2/kernel/fork.c
-===================================================================
---- 2.6.24-rc3-mm2.orig/kernel/fork.c
-+++ 2.6.24-rc3-mm2/kernel/fork.c
-@@ -1005,7 +1005,7 @@ static struct task_struct *copy_process(
-                return ERR_PTR(-EINVAL);
- 
-        /*
--        * mount namespace cannot be unshared when the mqueue
-+        * mqueue namespace cannot be unshared when the mount
-         * namespace is not
-         */
-        if ((clone_flags & CLONE_NEWMQ) && !(clone_flags & CLONE_NEWNS))
