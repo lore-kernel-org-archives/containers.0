@@ -1,30 +1,47 @@
 From: Pavel Emelyanov <xemul@openvz.org>
-Subject: [PATCH 0/4 net-2.6.15][UNIX] Make unix sysctls per-namespace
-Date: Fri, 30 Nov 2007 19:23:53 +0300
-Message-ID: <47503919.8060103@openvz.org>
+Subject: Re: [PATCH 4/4] net: Implement the per network namespace sysctl	infrastructure
+Date: Fri, 30 Nov 2007 19:23:15 +0300
+Message-ID: <475038F3.9010209@openvz.org>
+References: <4742C73C.3010904@openvz.org> <m1odddc5mf.fsf@ebiederm.dsl.xmission.com> <m1k5o1c5eh.fsf_-_@ebiederm.dsl.xmission.com> <m1fxypc5cd.fsf_-_@ebiederm.dsl.xmission.com> <m1bq9dc53d.fsf_-_@ebiederm.dsl.xmission.com> <m17ik1c50m.fsf_-_@ebiederm.dsl.xmission.com> <20071130161856.GA10588@sergelap.austin.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1
 Content-Transfer-Encoding: 7bit
 Return-path: <netdev-owner@vger.kernel.org>
+In-Reply-To: <20071130161856.GA10588@sergelap.austin.ibm.com>
 Sender: netdev-owner@vger.kernel.org
-To: Herbert Xu <herbert@gondor.apana.org.au>
-Cc: "Eric W. Biederman" <ebiederm@xmission.com>, Linux Netdev List <netdev@vger.kernel.org>, Linux Containers <containers@lists.osdl.org>, Daniel Lezcano <dlezcano@fr.ibm.com>
+To: "Serge E. Hallyn" <serue@us.ibm.com>
+Cc: "Eric W. Biederman" <ebiederm@xmission.com>, Herbert Xu <herbert@gondor.apana.org.au>, Andrew Morton <akpm@linux-foundation.org>, Daniel Lezcano <dlezcano@fr.ibm.com>, Cedric Le Goater <clg@fr.ibm.com>, Linux Containers <containers@lists.osdl.org>, netdev@vger.kernel.org, linux-kernel@vger.kernel.org, David Miller <davem@davemloft.net>
 List-Id: containers.vger.kernel.org
 
-Hi, Herbert, guys.
+[snip]
 
-Since you have accepted some net-namespaces-related work
-from Eric (sysctl namespaces), I hope, that you can pay 
-some attention to further work in this direction.
+>> +					&namespaces, path, table);
+> 
+> Hey Eric,
+> 
+> the patches look nice.
 
-This set makes the unix-sockets sysctls (currently this
-includes the sys/net/unix/max_dgram_qlen only) per net
-namespace.
+Agree ;)
 
-I splitted it into four patches, to make the review simpler.
-Hope that this split will help.
+> The hand-forcing of the passed-in net_ns into a copy of current->nsproxy
+> does make it seem like nsproxy may not be the best choice of what to
+> pass in.  Doesn't only net_sysctl_root->lookup() look at the argument?
+> 
+> But I assume you don't want to be more general than sending in a
+> nsproxy so as to dissuade abuse of this interface for needlessly complex
+> sysctl interfaces?
+> 
+> (Well I expect that'll become clear once the the patches using this
+> come out.)
+> 
+> Are you planning to use this infrastructure for the uts and ipc
+> sysctls as well?
 
-This set resembles the one Eric has in his netns tree, but
-differs in some (maybe minor) ways.
+I have sent some patches concerning uts and ipc already.
+I'd appreciate any feedback on it :)
 
-Signed-off-by: Pavel Emelyanov <xemul@openvz.org>
+> thanks,
+> -serge
+
+Thanks,
+Pavel
