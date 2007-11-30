@@ -1,146 +1,51 @@
-From: Pavel Emelyanov <xemul@openvz.org>
-Subject: [PATCH 4/4 (resent) net-2.6.25][UNIX] Make the unix sysctl tables
- per-namespace
-Date: Fri, 30 Nov 2007 19:37:28 +0300
-Message-ID: <47503C48.8020001@openvz.org>
-References: <47503919.8060103@openvz.org>
+From: Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>
+Subject: Re: [PATCH] sched: cpu accounting controller (V2)
+Date: Fri, 30 Nov 2007 20:46:47 +0100
+Message-ID: <20071130194647.GA24428@elte.hu>
+References: <6599ad830711122205g88aae4fua8dd76cf6e8ab84d@mail.gmail.com>
+	<20071113074805.GA13499@linux.vnet.ibm.com>
+	<6599ad830711122357i60482475o10c0e0935a9e00c0@mail.gmail.com>
+	<20071129191737.GH5681@linux.vnet.ibm.com>
+	<20071129113035.bbdf35db.akpm@linux-foundation.org>
+	<20071129201833.GA18023@linux.vnet.ibm.com>
+	<20071130124225.GM5681@linux.vnet.ibm.com>
+	<475005F7.7080702@linux.vnet.ibm.com>
+	<20071130135331.GA7145@elte.hu>
+	<47505A53.8080906@linux.vnet.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Content-Transfer-Encoding: 7bit
-Return-path: <netdev-owner@vger.kernel.org>
-In-Reply-To: <47503919.8060103@openvz.org>
-Sender: netdev-owner@vger.kernel.org
-To: Herbert Xu <herbert@gondor.apana.org.au>
-Cc: "Eric W. Biederman" <ebiederm@xmission.com>, Linux Netdev List <netdev@vger.kernel.org>, Linux Containers <containers@lists.osdl.org>, Daniel Lezcano <dlezcano@fr.ibm.com>
+Content-Type: text/plain; charset=us-ascii
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <47505A53.8080906-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Cc: dhaval-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, vatsa-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, skumar-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-I'm awfully sorry, but I noticed, that I sent the wrong patch
-right after I pressed the "Send" button. The first version
-contains a fatal error - the return code in register function
-should be inverted (the if (net->unix_ctl != NULL) one). Otherwise 
-the registered table will be freed :(
 
-Sorry. This is the correct patch.
+* Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org> wrote:
 
-This is the core. 
+> > thx. Have you done targeted testing of it as well? The (v2) patch is 
+> > in sched-devel.git:
+> > 
+> >    git://git.kernel.org/pub/scm/linux/kernel/git/mingo/linux-2.6-sched-devel.git
+> > 	Ingo
+> 
+> Tested the patches on top of 2.6.24-rc3. The patches work fine. Ran 
+> some simple tests like cpuspin (spin on the cpu), ran several tasks in 
+> the same group and timed them. Compared their time stamps with 
+> cpuacct.usage.
+> 
+> Tested-by: Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 
- * add the ctl_table_header on the struct net;
- * make the unix_sysctl_register and _unregister clone the table;
- * moves calls to them into per-net init and exit callbacks;
- * move the .data pointer in the proper place.
+thanks!
 
-Signed-off-by: Pavel Emelyanov <xemul@openvz.org>
-
----
-
-diff --git a/include/net/net_namespace.h b/include/net/net_namespace.h
-index b0cf075..f97b2a4 100644
---- a/include/net/net_namespace.h
-+++ b/include/net/net_namespace.h
-@@ -11,6 +11,8 @@
- struct proc_dir_entry;
- struct net_device;
- struct sock;
-+struct ctl_table_header;
-+
- struct net {
- 	atomic_t		count;		/* To decided when the network
- 						 *  namespace should be freed.
-@@ -41,6 +43,7 @@ struct net {
- 
- 	/* unix sockets */
- 	int			sysctl_unix_max_dgram_qlen;
-+	struct ctl_table_header	*unix_ctl;
- };
- 
- #ifdef CONFIG_NET
-diff --git a/net/unix/af_unix.c b/net/unix/af_unix.c
-index 73620d6..b8a2189 100644
---- a/net/unix/af_unix.c
-+++ b/net/unix/af_unix.c
-@@ -2139,10 +2139,14 @@ static int unix_net_init(struct net *net)
- 	int error = -ENOMEM;
- 
- 	net->sysctl_unix_max_dgram_qlen = 10;
-+	if (unix_sysctl_register(net))
-+		goto out;
- 
- #ifdef CONFIG_PROC_FS
--	if (!proc_net_fops_create(net, "unix", 0, &unix_seq_fops))
-+	if (!proc_net_fops_create(net, "unix", 0, &unix_seq_fops)) {
-+		unix_sysctl_unregister(net);
- 		goto out;
-+	}
- #endif
- 	error = 0;
- out:
-@@ -2151,6 +2155,7 @@ out:
- 
- static void unix_net_exit(struct net *net)
- {
-+	unix_sysctl_unregister(net);
- 	proc_net_remove(net, "unix");
- }
- 
-@@ -2175,7 +2180,6 @@ static int __init af_unix_init(void)
- 
- 	sock_register(&unix_family_ops);
- 	register_pernet_subsys(&unix_net_ops);
--	unix_sysctl_register(&init_net);
- out:
- 	return rc;
- }
-@@ -2183,7 +2187,6 @@ out:
- static void __exit af_unix_exit(void)
- {
- 	sock_unregister(PF_UNIX);
--	unix_sysctl_unregister(&init_net);
- 	proto_unregister(&unix_proto);
- 	unregister_pernet_subsys(&unix_net_ops);
- }
-diff --git a/net/unix/sysctl_net_unix.c b/net/unix/sysctl_net_unix.c
-index 43dd356..1c57f8f 100644
---- a/net/unix/sysctl_net_unix.c
-+++ b/net/unix/sysctl_net_unix.c
-@@ -32,16 +32,33 @@ static struct ctl_path unix_path[] = {
- 	{ },
- };
- 
--static struct ctl_table_header * unix_sysctl_header;
--
- int unix_sysctl_register(struct net *net)
- {
--	unix_sysctl_header = register_sysctl_paths(unix_path, unix_table);
--	return unix_sysctl_header == NULL ? -ENOMEM : 0;
-+	struct ctl_table *table;
-+
-+	table = kmemdup(unix_table, sizeof(unix_table), GFP_KERNEL);
-+	if (table == NULL)
-+		goto err_alloc;
-+
-+	table[0].data = &net->sysctl_unix_max_dgram_qlen;
-+	net->unix_ctl = register_net_sysctl_table(net, unix_path, table);
-+	if (net->unix_ctl == NULL)
-+		goto err_reg;
-+
-+	return 0;
-+
-+err_reg:
-+	kfree(table);
-+err_alloc:
-+	return -ENOMEM;
- }
- 
- void unix_sysctl_unregister(struct net *net)
- {
--	unregister_sysctl_table(unix_sysctl_header);
-+	struct ctl_table *table;
-+
-+	table = net->unix_ctl->ctl_table_arg;
-+	unregister_sysctl_table(net->unix_ctl);
-+	kfree(table);
- }
- 
--- 
-1.5.3.4
-
+	Ingo
