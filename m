@@ -1,154 +1,85 @@
-From: "Serge E. Hallyn" <serue@us.ibm.com>
-Subject: Re: [PATCH 4/4] net: Implement the per network namespace sysctl
-	infrastructure
-Date: Fri, 30 Nov 2007 10:18:56 -0600
-Message-ID: <20071130161856.GA10588@sergelap.austin.ibm.com>
-References: <4742C73C.3010904@openvz.org> <m1odddc5mf.fsf@ebiederm.dsl.xmission.com> <m1k5o1c5eh.fsf_-_@ebiederm.dsl.xmission.com> <m1fxypc5cd.fsf_-_@ebiederm.dsl.xmission.com> <m1bq9dc53d.fsf_-_@ebiederm.dsl.xmission.com> <m17ik1c50m.fsf_-_@ebiederm.dsl.xmission.com>
+From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH 1/2] namespaces: introduce sys_hijack (v10)
+Date: Fri, 30 Nov 2007 08:50:16 -0600
+Message-ID: <20071130145016.GE6250__5033.84312983162$1196439916$gmane$org@sergelap.austin.ibm.com>
+References: <474B78CB.5070607@au1.ibm.com> <474BC017.6060801@crispincowan.com>
+	<20071127161132.GD32362@sergelap.austin.ibm.com>
+	<1196186964.3925.129.camel@moss-spartans.epoch.ncsc.mil>
+	<20071127223829.GA21753@sergelap.austin.ibm.com>
+	<1196262054.13820.23.camel@moss-spartans.epoch.ncsc.mil>
+	<20071128152359.GA4756@sergelap.austin.ibm.com>
+	<474F70B3.5020006@au1.ibm.com>
+	<m1wss0a27g.fsf@ebiederm.dsl.xmission.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-Return-path: <netdev-owner@vger.kernel.org>
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <m17ik1c50m.fsf_-_@ebiederm.dsl.xmission.com>
-Sender: netdev-owner@vger.kernel.org
-To: "Eric W. Biederman" <ebiederm@xmission.com>
-Cc: Herbert Xu <herbert@gondor.apana.org.au>, Andrew Morton <akpm@linux-foundation.org>, Serge Hallyn <serue@us.ibm.com>, Daniel Lezcano <dlezcano@fr.ibm.com>, Cedric Le Goater <clg@fr.ibm.com>, Linux Containers <containers@lists.osdl.org>, Pavel Emelyanov <xemul@openvz.org>, netdev@vger.kernel.org, linux-kernel@vger.kernel.org, David Miller <davem@davemloft.net>
+In-Reply-To: <m1wss0a27g.fsf-T1Yj925okcoyDheHMi7gv2pdwda3JcWeAL8bYrjMMd8@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-security-module-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Crispin Cowan <crispin-RL8T2ARnKKfZw9hOtrW0rA@public.gmane.org>, selinux-+05T5uksL2qpZYMLLGbcSA@public.gmane.org, menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, Stephen Smalley <sds-+05T5uksL2qpZYMLLGbcSA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Quoting Eric W. Biederman (ebiederm@xmission.com):
+Quoting Eric W. Biederman (ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org):
+> Mark Nelson <markn-8fk3Idey6ehBDgjK7y7TUQ@public.gmane.org> writes:
 > 
-> The user interface is: register_net_sysctl_table and
-> unregister_net_sysctl_table.  Very much like the current
-> interface except there is a network namespace parameter.
+> > Hi Paul and Eric,
+> >
+> > Do you guys have any objections to dropping the hijack_pid() and
+> > hijack_cgroup() parts of sys_hijack, leaving just hijack_ns() (see
+> > below for discussion)?
 > 
-> With this any sysctl registered with register_net_sysctl_table
-> will only show up to tasks in the same network namespace.
+> I need to step back and study what is being proposed.
 > 
-> All other sysctls continue to be globally visible.
-> 
-> Signed-off-by: Eric W. Biederman <ebiederm@xmission.com>
-> ---
->  include/net/net_namespace.h |    9 +++++++
->  net/sysctl_net.c            |   57 +++++++++++++++++++++++++++++++++++++++++++
->  2 files changed, 66 insertions(+), 0 deletions(-)
-> 
-> diff --git a/include/net/net_namespace.h b/include/net/net_namespace.h
-> index 4d0d634..235214c 100644
-> --- a/include/net/net_namespace.h
-> +++ b/include/net/net_namespace.h
-> @@ -25,6 +25,8 @@ struct net {
->  	struct proc_dir_entry 	*proc_net_stat;
->  	struct proc_dir_entry 	*proc_net_root;
-> 
-> +	struct list_head	sysctl_table_headers;
-> +
->  	struct net_device       *loopback_dev;          /* The loopback */
-> 
->  	struct list_head 	dev_base_head;
-> @@ -144,4 +146,11 @@ extern void unregister_pernet_subsys(struct pernet_operations *);
->  extern int register_pernet_device(struct pernet_operations *);
->  extern void unregister_pernet_device(struct pernet_operations *);
-> 
-> +struct ctl_path;
-> +struct ctl_table;
-> +struct ctl_table_header;
-> +extern struct ctl_table_header *register_net_sysctl_table(struct net *net,
-> +	const struct ctl_path *path, struct ctl_table *table);
-> +extern void unregister_net_sysctl_table(struct ctl_table_header *header);
-> +
->  #endif /* __NET_NET_NAMESPACE_H */
-> diff --git a/net/sysctl_net.c b/net/sysctl_net.c
-> index cd4eafb..c50c793 100644
-> --- a/net/sysctl_net.c
-> +++ b/net/sysctl_net.c
-> @@ -14,6 +14,7 @@
-> 
->  #include <linux/mm.h>
->  #include <linux/sysctl.h>
-> +#include <linux/nsproxy.h>
-> 
->  #include <net/sock.h>
-> 
-> @@ -54,3 +55,59 @@ struct ctl_table net_table[] = {
->  #endif
->  	{ 0 },
->  };
-> +
-> +static struct list_head *
-> +net_ctl_header_lookup(struct ctl_table_root *root, struct nsproxy *namespaces)
-> +{
-> +	return &namespaces->net_ns->sysctl_table_headers;
-> +}
-> +
-> +static struct ctl_table_root net_sysctl_root = {
-> +	.lookup = net_ctl_header_lookup,
-> +};
-> +
-> +static int sysctl_net_init(struct net *net)
-> +{
-> +	INIT_LIST_HEAD(&net->sysctl_table_headers);
-> +	return 0;
-> +}
-> +
-> +static void sysctl_net_exit(struct net *net)
-> +{
-> +	WARN_ON(!list_empty(&net->sysctl_table_headers));
-> +	return;
-> +}
-> +
-> +static struct pernet_operations sysctl_pernet_ops = {
-> +	.init = sysctl_net_init,
-> +	.exit = sysctl_net_exit,
-> +};
-> +
-> +static __init int sysctl_init(void)
-> +{
-> +	int ret;
-> +	ret = register_pernet_subsys(&sysctl_pernet_ops);
-> +	if (ret)
-> +		goto out;
-> +	register_sysctl_root(&net_sysctl_root);
-> +out:
-> +	return ret;
-> +}
-> +subsys_initcall(sysctl_init);
-> +
-> +struct ctl_table_header *register_net_sysctl_table(struct net *net,
-> +	const struct ctl_path *path, struct ctl_table *table)
-> +{
-> +	struct nsproxy namespaces;
-> +	namespaces = *current->nsproxy;
-> +	namespaces.net_ns = net;
-> +	return __register_sysctl_paths(&net_sysctl_root,
-> +					&namespaces, path, table);
+> My gut feeling is that you are proposing something that does not
+> support forking me a process inside a container so I can have a
+> shell without having to run a login program.
 
-Hey Eric,
+Hmm, depends on exactly what you want, but you may be right.
 
-the patches look nice.
+In terms of namespaces it'll be in the target container, including
+having a pid in the container.
 
-The hand-forcing of the passed-in net_ns into a copy of current->nsproxy
-does make it seem like nsproxy may not be the best choice of what to
-pass in.  Doesn't only net_sysctl_root->lookup() look at the argument?
+The most dangerous part about the purely ptrace method you mention is
+that pieces of the ptraced process' environment may leak, pollute,
+and attack your new process.  But it shouldn't be impossible to do
+it safely.  Just tedious.
 
-But I assume you don't want to be more general than sending in a
-nsproxy so as to dissuade abuse of this interface for needlessly complex
-sysctl interfaces?
+> There is a reason I proposed ptrace as an initial prototype.
+> 
+> All of the other uses of enter in a namespace context I feel confident
+> we can support by just having proper virtual filesystems available
+> to processes outside of the container.  For monitoring and control.
 
-(Well I expect that'll become clear once the the patches using this
-come out.)
+I think you're showing an unhealthy amount of trust in both our ability
+to provide full fs-based controls to all filesystems and to your own and
+other people's abilities to never mess up a container.  As an example of
+the former, will you be able to create and configure a network interface
+or add iptables rules purely through fs interface?  As an example of the
+latter, one little mistake and your container's mounts ns may no longer
+be a slave of yours or of /containers/c_22/root.  It might take you
+years to figure out that all the time when you were doing
 
-Are you planning to use this infrastructure for the uts and ipc
-sysctls as well?
+	mount --bind /mnt/nas /containers/c_22/root/mnt/backup
+	echo 1 > /containers/c_22/root/root/backup-trigger
+	read /containers/c_22/root/root/backup-callback
+	umount /containers/c_22/root/mnt/backup
+
+your backups weren't going to your network storage but just being copied
+on local disk...
+
+BUT more importantly, it sounds like you are not interested in
+hijack_pid or hijack_cgroup, and Paul is only intersted in
+hijack_ns.  So noone will mind if we dump the other two?  It
+should greatly simplify the patch!
 
 thanks,
 -serge
-
-> +}
-> +EXPORT_SYMBOL_GPL(register_net_sysctl_table);
-> +
-> +void unregister_net_sysctl_table(struct ctl_table_header *header)
-> +{
-> +	return unregister_sysctl_table(header);
-> +}
-> +EXPORT_SYMBOL_GPL(unregister_net_sysctl_table);
-> -- 
-> 1.5.3.rc6.17.g1911
