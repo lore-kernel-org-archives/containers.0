@@ -1,51 +1,70 @@
-From: Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>
-Subject: Re: [PATCH] sched: cpu accounting controller (V2)
-Date: Fri, 30 Nov 2007 20:46:47 +0100
-Message-ID: <20071130194647.GA24428@elte.hu>
-References: <6599ad830711122205g88aae4fua8dd76cf6e8ab84d@mail.gmail.com>
-	<20071113074805.GA13499@linux.vnet.ibm.com>
-	<6599ad830711122357i60482475o10c0e0935a9e00c0@mail.gmail.com>
-	<20071129191737.GH5681@linux.vnet.ibm.com>
-	<20071129113035.bbdf35db.akpm@linux-foundation.org>
-	<20071129201833.GA18023@linux.vnet.ibm.com>
-	<20071130124225.GM5681@linux.vnet.ibm.com>
-	<475005F7.7080702@linux.vnet.ibm.com>
-	<20071130135331.GA7145@elte.hu>
-	<47505A53.8080906@linux.vnet.ibm.com>
+From: ebiederm@xmission.com (Eric W. Biederman)
+Subject: Re: [PATCH 4/4] net: Implement the per network namespace sysctl infrastructure
+Date: Fri, 30 Nov 2007 14:49:25 -0700
+Message-ID: <m13aun9zfe.fsf@ebiederm.dsl.xmission.com>
+References: <4742C73C.3010904@openvz.org>
+	<m1odddc5mf.fsf@ebiederm.dsl.xmission.com>
+	<m1k5o1c5eh.fsf_-_@ebiederm.dsl.xmission.com>
+	<m1fxypc5cd.fsf_-_@ebiederm.dsl.xmission.com>
+	<m1bq9dc53d.fsf_-_@ebiederm.dsl.xmission.com>
+	<m17ik1c50m.fsf_-_@ebiederm.dsl.xmission.com>
+	<20071130161856.GA10588@sergelap.austin.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <47505A53.8080906-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Cc: dhaval-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, vatsa-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, skumar-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org
+Return-path: <netdev-owner@vger.kernel.org>
+In-Reply-To: <20071130161856.GA10588@sergelap.austin.ibm.com> (Serge
+	E. Hallyn's message of "Fri, 30 Nov 2007 10:18:56 -0600")
+Sender: netdev-owner@vger.kernel.org
+To: "Serge E. Hallyn" <serue@us.ibm.com>
+Cc: Herbert Xu <herbert@gondor.apana.org.au>, Andrew Morton <akpm@linux-foundation.org>, Daniel Lezcano <dlezcano@fr.ibm.com>, Cedric Le Goater <clg@fr.ibm.com>, Linux Containers <containers@lists.osdl.org>, Pavel Emelyanov <xemul@openvz.org>, netdev@vger.kernel.org, linux-kernel@vger.kernel.org, David Miller <davem@davemloft.net>
 List-Id: containers.vger.kernel.org
 
+"Serge E. Hallyn" <serue@us.ibm.com> writes:
 
-* Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org> wrote:
+>
+> Hey Eric,
+>
+> the patches look nice.
+>
+> The hand-forcing of the passed-in net_ns into a copy of current->nsproxy
+> does make it seem like nsproxy may not be the best choice of what to
+> pass in.  Doesn't only net_sysctl_root->lookup() look at the argument?
 
-> > thx. Have you done targeted testing of it as well? The (v2) patch is 
-> > in sched-devel.git:
-> > 
-> >    git://git.kernel.org/pub/scm/linux/kernel/git/mingo/linux-2.6-sched-devel.git
-> > 	Ingo
-> 
-> Tested the patches on top of 2.6.24-rc3. The patches work fine. Ran 
-> some simple tests like cpuspin (spin on the cpu), ran several tasks in 
-> the same group and timed them. Compared their time stamps with 
-> cpuacct.usage.
-> 
-> Tested-by: Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Yes.  Although I call it from __register_sysctl_paths.
 
-thanks!
+> But I assume you don't want to be more general than sending in a
+> nsproxy so as to dissuade abuse of this interface for needlessly complex
+> sysctl interfaces?
 
-	Ingo
+A bit of that.  I would love to pass in a task_struct so you can use
+anything from a task.  The trouble is I don't have any task_structs or
+nsproxys with the proper value at the point where I am first setting
+this up.  Further I have to have the full sysctl lookup working or I
+could not call sysctl_check.
+
+> (Well I expect that'll become clear once the the patches using this
+> come out.)
+>
+> Are you planning to use this infrastructure for the uts and ipc
+> sysctls as well?
+
+Yes.  Where it comes in especially useful, is I can move /proc/sys
+to /proc/sys/<tgid>/task/<pid>/sys.  And get a particular processes
+view of sysctl.  
+
+We also get a little more reuse of common functions.
+
+Otherwise Pavel does have a point that using this for uts and ipc
+is not a savings lines of code wise.
+
+After having seen Pavel changes I am asking myself if there is a sane
+way to remove the ctl_name argument from the ctl_path.
+
+Anyway where I am with the nsproxy question was that I don't
+see anything easily better.  What I have works and gets the job
+done, and doesn't have any module unload races or holes where a sloppy
+programmer can mess up the sysctl tree.  We needed a solution.
+Trying any harder to find something better would take ages.  So
+I figured this implementation was good enough.
+
+Eric
