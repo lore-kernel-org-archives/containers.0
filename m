@@ -1,47 +1,60 @@
-From: Mark Lord <lkml@rtr.ca>
-Subject: Re: namespace support requires network modules to say "GPL"
-Date: Sat, 01 Dec 2007 08:13:48 -0500
-Message-ID: <47515E0C.9010405@rtr.ca>
-References: <m163zi9425.fsf@ebiederm.dsl.xmission.com> <47515D39.9030900@rtr.ca>
+From: Pavel Emelyanov <xemul@openvz.org>
+Subject: Re: [PATCH 4/4 (resent) net-2.6.25][UNIX] Make the unix sysctl tables
+ per-namespace
+Date: Sat, 01 Dec 2007 16:19:43 +0300
+Message-ID: <47515F6F.1090805@openvz.org>
+References: <47503919.8060103@openvz.org> <47503C48.8020001@openvz.org> <20071201125726.GC15910@gondor.apana.org.au> <47515C79.9060903@openvz.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+Content-Type: text/plain; charset=ISO-8859-1
 Content-Transfer-Encoding: 7bit
 Return-path: <netdev-owner@vger.kernel.org>
-In-Reply-To: <47515D39.9030900@rtr.ca>
+In-Reply-To: <47515C79.9060903@openvz.org>
 Sender: netdev-owner@vger.kernel.org
-To: "Eric W. Biederman" <ebiederm@xmission.com>
-Cc: Greg Kroah-Hartman <gregkh@suse.de>, Greg KH <greg@kroah.com>, Tejun Heo <htejun@gmail.com>, Linux Containers <containers@lists.osdl.org>, netdev@vger.kernel.org, cornelia.huck@de.ibm.com, stern@rowland.harvard.edu, kay.sievers@vrfy.org, linux-kernel@vger.kernel.org, Andrew Morton <akpm@linux-foundation.org>, Herbert Xu <herbert@gondor.apana.org.au>, David Miller <davem@davemloft.net>, Linus Torvalds <torvalds@osdl.org>
+To: "Denis V. Lunev" <den@openvz.org>, Herbert Xu <herbert@gondor.apana.org.au>
+Cc: "Eric W. Biederman" <ebiederm@xmission.com>, Linux Netdev List <netdev@vger.kernel.org>, Linux Containers <containers@lists.osdl.org>, Daniel Lezcano <dlezcano@fr.ibm.com>
 List-Id: containers.vger.kernel.org
 
-Mark Lord wrote:
->> Now that we have network namespace support merged it is time to
->> revisit the sysfs support so we can remove the dependency on !SYSFS.
-> ...
-> Now that the namespace updates are part of 2.6.24,
-> there is a major inconsistency in network EXPORT_SYMBOLs.
+Denis V. Lunev wrote:
+> Herbert Xu wrote:
+>> On Fri, Nov 30, 2007 at 07:37:28PM +0300, Pavel Emelyanov wrote:
+>>> Signed-off-by: Pavel Emelyanov <xemul@openvz.org>
+>> All applied to net-2.6.25.
+>>
+>>> diff --git a/include/net/net_namespace.h b/include/net/net_namespace.h
+>>> index b0cf075..f97b2a4 100644
+>>> --- a/include/net/net_namespace.h
+>>> +++ b/include/net/net_namespace.h
+>>> @@ -41,6 +43,7 @@ struct net {
+>>>  
+>>>  	/* unix sockets */
+>>>  	int			sysctl_unix_max_dgram_qlen;
+>>> +	struct ctl_table_header	*unix_ctl;
+>>>  };
+>> But I gotta say this struct/file is going to be enormous.  It's also
+>> one of those files that causes everything to get recompiled.  Maybe
+>> we ought to make a rule that each subsystem only gets to have at most
+>> one entry in it :)
+>>
+>> Thanks,
 > 
-> It used to be that an external network module could get away without
-> having to add a MODULE_LICENSE("GPL*") line to the source.
-> 
-> In support of that, common networking functions (still) use EXPORT_SYMBOL()
-> rather than the more restrictive EXPORT_SYMBOL_GPL().
-> 
-> Eg.  register_netdev(), sk_alloc(), __dev_get_by_name().
-> 
-> But now, none of those three are actually usable by default,
-> because they all require "init_net", which is EXPORT_SYMBOL_GPL().
-> 
-> So.. It appears that one of three things should really happen next:
-> 
-> 1) Change the other exports to also be EXPORT_SYMBOL_GPL.
-> 
-> 2) Have register_netdev, sk_alloc, and __dev_get_by_name default
-> to using init_net when NULL is specified in the namespace field.
-> 
-> or
-> 3) Change init_net to be EXPORT_SYMBOL_GPL.
-..
+> Good point, thanks. We'll start thinking in that direction. Right now it
+> is not finally cursed with all staff around.
 
-Obviously that should instead say:
+Agree, the point is good :) but it has one pitfall :(
 
-3) Change init_net to be EXPORT_SYMBOL instead of EXPORT_SYMBOL_GPL.
+Look, now we make _one_ dereference to get any net->xxx variable 
+(sysctl, list head, lock, etc). When we force each subsystem 
+has it's "private" pointer on this, we'll make them take _two_ 
+dereferences. Before the whole net namespace stuff started we
+made _zero_ dereferences :) This may tell upon the performance.
+
+I'm not claiming that this is the major case against this idea,
+but when developing this idea, I think we should keep that fact
+in ming and pay good attention to performance regressions.
+
+> Regards,
+> 	Den
+
+Thanks,
+Pavel
+
