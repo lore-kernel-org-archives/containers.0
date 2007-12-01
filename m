@@ -1,15 +1,18 @@
-From: "Denis V. Lunev" <den-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
-Subject: Re: [PATCH 4/4 (resent) net-2.6.25][UNIX] Make the unix sysctl
- tables per-namespace
-Date: Sat, 01 Dec 2007 16:07:05 +0300
-Message-ID: <47515C79.9060903@openvz.org>
-References: <47503919.8060103@openvz.org> <47503C48.8020001@openvz.org>
-	<20071201125726.GC15910@gondor.apana.org.au>
+From: "Paul Menage" <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [RFC][ only for review ] memory controller bacground reclaim
+	[4/5] high/low watermark for memory controller
+Date: Sat, 1 Dec 2007 08:55:12 -0800
+Message-ID: <6599ad830712010855j7967ddeau1a558474de4eea19@mail.gmail.com>
+References: <20071128174923.1f54f53f.kamezawa.hiroyu@jp.fujitsu.com>
+	<20071128175607.37df2187.kamezawa.hiroyu@jp.fujitsu.com>
+	<6599ad830711302309p3a68828fjec6793bc9d854a1@mail.gmail.com>
+	<47513B50.8090003@linux.vnet.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20071201125726.GC15910-lOAM2aK0SrRLBo1qDEOMRrpzq4S04n8Q@public.gmane.org>
+In-Reply-To: <47513B50.8090003-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Content-Disposition: inline
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,36 +22,22 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Herbert Xu <herbert-lOAM2aK0SrRLBo1qDEOMRrpzq4S04n8Q@public.gmane.org>
-Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Linux Netdev List <netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+To: balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
+Cc: "containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org" <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, "yamamoto-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org" <yamamoto-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>, xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Herbert Xu wrote:
-> On Fri, Nov 30, 2007 at 07:37:28PM +0300, Pavel Emelyanov wrote:
->> Signed-off-by: Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
-> 
-> All applied to net-2.6.25.
-> 
->> diff --git a/include/net/net_namespace.h b/include/net/net_namespace.h
->> index b0cf075..f97b2a4 100644
->> --- a/include/net/net_namespace.h
->> +++ b/include/net/net_namespace.h
->> @@ -41,6 +43,7 @@ struct net {
->>  
->>  	/* unix sockets */
->>  	int			sysctl_unix_max_dgram_qlen;
->> +	struct ctl_table_header	*unix_ctl;
->>  };
-> 
-> But I gotta say this struct/file is going to be enormous.  It's also
-> one of those files that causes everything to get recompiled.  Maybe
-> we ought to make a rule that each subsystem only gets to have at most
-> one entry in it :)
-> 
-> Thanks,
+On Dec 1, 2007 2:45 AM, Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org> wrote:
+> >
+> > which would correspond to a line in the "mem.api" auto-generated control file as
+> >
+>
+> The user is expected to cat "memory.api" in order to figure out how to
+> use the file?
+>
 
-Good point, thanks. We'll start thinking in that direction. Right now it
-is not finally cursed with all staff around.
+Yes, the very first time they try to use a particular cgroup, if
+they've not bothered to read any documentation about it. There has to
+be some documentation *somewhere*, and putting some of the basic bits
+at a point where they're immediately accessible could be an advantage.
 
-Regards,
-	Den
+Paul
