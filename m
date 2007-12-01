@@ -1,23 +1,17 @@
 From: Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: Re: [PATCH] sched: cpu accounting controller (V2)
-Date: Sat, 01 Dec 2007 15:21:09 +0530
-Message-ID: <47512E8D.6090805__15230.0561349422$1196502759$gmane$org@linux.vnet.ibm.com>
-References: <6599ad830711122125u576e85a6w428466a0ab46dbc6@mail.gmail.com>
-	<20071113060038.GC3359@linux.vnet.ibm.com>
-	<6599ad830711122205g88aae4fua8dd76cf6e8ab84d@mail.gmail.com>
-	<20071113074805.GA13499@linux.vnet.ibm.com>
-	<6599ad830711122357i60482475o10c0e0935a9e00c0@mail.gmail.com>
-	<20071129191737.GH5681@linux.vnet.ibm.com>
-	<20071129113035.bbdf35db.akpm@linux-foundation.org>
-	<20071129201833.GA18023@linux.vnet.ibm.com>
-	<20071130124225.GM5681@linux.vnet.ibm.com>
-	<6599ad830711302348n49900ca8jfa66fa71fde76a67@mail.gmail.com>
+Subject: Re: [RFC][ only for review ] memory controller bacground reclaim
+ [4/5] high/low watermark for memory controller
+Date: Sat, 01 Dec 2007 16:15:36 +0530
+Message-ID: <47513B50.8090003@linux.vnet.ibm.com>
+References: <20071128174923.1f54f53f.kamezawa.hiroyu@jp.fujitsu.com>
+	<20071128175607.37df2187.kamezawa.hiroyu@jp.fujitsu.com>
+	<6599ad830711302309p3a68828fjec6793bc9d854a1@mail.gmail.com>
 Reply-To: balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <6599ad830711302348n49900ca8jfa66fa71fde76a67-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
+In-Reply-To: <6599ad830711302309p3a68828fjec6793bc9d854a1-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -28,31 +22,58 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
-Cc: dhaval-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, vatsa-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, skumar-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, mingo-X9Un+BFzKDI@public.gmane.org
+Cc: "containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org" <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, "yamamoto-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org" <yamamoto-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>, xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org
 List-Id: containers.vger.kernel.org
 
 Paul Menage wrote:
-> Hi Vatsa,
+> On Nov 28, 2007 12:56 AM, KAMEZAWA Hiroyuki
+> <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org> wrote:
+>>         {
+>> +               .name = "low_watermark_in_bytes",
+>> +               .private = RES_LOW_WATERMARK,
+>> +               .write = mem_cgroup_write,
+>> +               .read = mem_cgroup_read,
+>> +       },
+>> +       {
+>> +               .name = "high_watermark_in_bytes",
+>> +               .private = RES_HIGH_WATERMARK,
+>> +               .write = mem_cgroup_write,
+>> +               .read = mem_cgroup_read,
+>> +       },
 > 
-> Thanks, this looks pretty good.
+> From a style point of view, I dislike having the "in_bytes" suffix
+> tacked on to all the memory controller filenames.
 > 
-> On Nov 30, 2007 4:42 AM, Srivatsa Vaddagiri <vatsa-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org> wrote:
->>         - Removed load average information. I felt it needs more thought (esp
->>           to deal with SMP and virtualized platforms) and can be added for
->>           2.6.25 after more discussions.
+
+The idea came from Andrew, when he suggested it.
+
+Please see /proc/sys/vm. We have files like min_free_kbyes, I think it's
+a good idea to tell the user what units are used.
+
+> If people really want this to be self-documenting, how about we allow
+> cgroup control files to specify metadata, which would be presented to
+> the user via an auto-generated "api" file.
 > 
-> The "load" value was never a load average, it was just a count of the
-> % cpu time used in the previous fixed window of time, updated at the
-> end of each window.
+> As an example, the addition above might then look something like:
 > 
-> Maybe we can instead do something based tracking the length of the run
-> queue for the cgroup?
+> {
+>     .name = "low_watermark",
+>     .units = "bytes",
+>     .description = "usage below which background reclaim stops",
+>     .write = mem_cgroup_write,
+>     .read = mem_cgroup_read,
+> }
+> 
+> which would correspond to a line in the "mem.api" auto-generated control file as
+> 
+
+The user is expected to cat "memory.api" in order to figure out how to
+use the file?
+
+> low_watermark: usage below which background reclaim stops (bytes)
 > 
 > Paul
 
-Length of the runqueue gives no idea of the weight of the tasks on the
-runqueue. I still prefer to have a top'ish view of the load on the
-system. The load average can be extracted using container group statistics.
 
 -- 
 	Warm Regards,
