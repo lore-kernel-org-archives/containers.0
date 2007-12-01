@@ -1,15 +1,21 @@
 From: "Paul Menage" <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [RFC][ only for review ] memory controller bacground reclaim
-	[5/5]
-Date: Fri, 30 Nov 2007 23:16:26 -0800
-Message-ID: <6599ad830711302316o61a82e9frf5db5f158ddb7e2a@mail.gmail.com>
-References: <20071128174923.1f54f53f.kamezawa.hiroyu@jp.fujitsu.com>
-	<20071128175713.4e9b8fff.kamezawa.hiroyu@jp.fujitsu.com>
+Subject: Re: [PATCH] sched: cpu accounting controller (V2)
+Date: Fri, 30 Nov 2007 23:48:15 -0800
+Message-ID: <6599ad830711302348n49900ca8jfa66fa71fde76a67__29106.3992459842$1196495403$gmane$org@mail.gmail.com>
+References: <6599ad830711122125u576e85a6w428466a0ab46dbc6@mail.gmail.com>
+	<20071113060038.GC3359@linux.vnet.ibm.com>
+	<6599ad830711122205g88aae4fua8dd76cf6e8ab84d@mail.gmail.com>
+	<20071113074805.GA13499@linux.vnet.ibm.com>
+	<6599ad830711122357i60482475o10c0e0935a9e00c0@mail.gmail.com>
+	<20071129191737.GH5681@linux.vnet.ibm.com>
+	<20071129113035.bbdf35db.akpm@linux-foundation.org>
+	<20071129201833.GA18023@linux.vnet.ibm.com>
+	<20071130124225.GM5681@linux.vnet.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20071128175713.4e9b8fff.kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+In-Reply-To: <20071130124225.GM5681-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 Content-Disposition: inline
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
@@ -20,24 +26,25 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
-Cc: "containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org" <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, "yamamoto-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org" <yamamoto-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>, xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org, "balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org" <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+To: vatsa-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
+Cc: dhaval-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, skumar-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, mingo-X9Un+BFzKDI@public.gmane.org, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Nov 28, 2007 12:57 AM, KAMEZAWA Hiroyuki
-<kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org> wrote:
-> @@ -1226,6 +1303,7 @@
->  {
->         struct mem_cgroup *mem = mem_cgroup_from_cont(cont);
->         mem_cgroup_force_empty(mem);
-> +       kthread_stop(mem->daemon.thread);
->  }
->
+Hi Vatsa,
 
-This means that if the user tries to delete the cgroup (hence calling
-the predestroy handlers) but fails (e.g. because some other subsystem
-is still busy) then the cgroup's reclaim daemon will have exited but
-the cgroup will still exist. I think you should wait until the actual
-destroy call, and synchronize with the exiting reclaim daemon.
+Thanks, this looks pretty good.
+
+On Nov 30, 2007 4:42 AM, Srivatsa Vaddagiri <vatsa-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org> wrote:
+>
+>         - Removed load average information. I felt it needs more thought (esp
+>           to deal with SMP and virtualized platforms) and can be added for
+>           2.6.25 after more discussions.
+
+The "load" value was never a load average, it was just a count of the
+% cpu time used in the previous fixed window of time, updated at the
+end of each window.
+
+Maybe we can instead do something based tracking the length of the run
+queue for the cgroup?
 
 Paul
