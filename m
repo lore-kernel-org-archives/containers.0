@@ -1,50 +1,46 @@
-From: "Paul Menage" <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH] sched: cpu accounting controller (V2)
-Date: Fri, 30 Nov 2007 23:48:15 -0800
-Message-ID: <6599ad830711302348n49900ca8jfa66fa71fde76a67__29106.3992459842$1196495403$gmane$org@mail.gmail.com>
-References: <6599ad830711122125u576e85a6w428466a0ab46dbc6@mail.gmail.com>
-	<20071113060038.GC3359@linux.vnet.ibm.com>
-	<6599ad830711122205g88aae4fua8dd76cf6e8ab84d@mail.gmail.com>
-	<20071113074805.GA13499@linux.vnet.ibm.com>
-	<6599ad830711122357i60482475o10c0e0935a9e00c0@mail.gmail.com>
-	<20071129191737.GH5681@linux.vnet.ibm.com>
-	<20071129113035.bbdf35db.akpm@linux-foundation.org>
-	<20071129201833.GA18023@linux.vnet.ibm.com>
-	<20071130124225.GM5681@linux.vnet.ibm.com>
+From: ebiederm@xmission.com (Eric W. Biederman)
+Subject: [PATCH 0/10] sysfs network namespace support
+Date: Sat, 01 Dec 2007 02:06:58 -0700
+Message-ID: <m163zi9425.fsf@ebiederm.dsl.xmission.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20071130124225.GM5681-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Content-Disposition: inline
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: vatsa-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
-Cc: dhaval-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, skumar-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, mingo-X9Un+BFzKDI@public.gmane.org, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
+Content-Type: text/plain; charset=us-ascii
+Return-path: <netdev-owner@vger.kernel.org>
+Sender: netdev-owner@vger.kernel.org
+To: Greg Kroah-Hartman <gregkh@suse.de>, Greg KH <greg@kroah.com>
+Cc: Tejun Heo <htejun@gmail.com>, Linux Containers <containers@lists.osdl.org>, netdev@vger.kernel.org, cornelia.huck@de.ibm.com, stern@rowland.harvard.edu, kay.sievers@vrfy.org, linux-kernel@vger.kernel.org, Andrew Morton <akpm@linux-foundation.org>, Herbert Xu <herbert@gondor.apana.org.au>, David Miller <davem@davemloft.net>
 List-Id: containers.vger.kernel.org
 
-Hi Vatsa,
 
-Thanks, this looks pretty good.
+Now that we have network namespace support merged it is time to
+revisit the sysfs support so we can remove the dependency on !SYSFS.
 
-On Nov 30, 2007 4:42 AM, Srivatsa Vaddagiri <vatsa-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org> wrote:
->
->         - Removed load average information. I felt it needs more thought (esp
->           to deal with SMP and virtualized platforms) and can be added for
->           2.6.25 after more discussions.
+I'm not even trying to base this on any of Tejun's very interesting 
+work on sysfs to remove the coupling between kobjects and
+sysfs_dirents.  For my objective that just means I would need to
+spend several more weeks staring at sysfs trying to figure out
+how to get where I am going and iterating several times from yet
+another new starting place.  I want to get something working before I
+try for anymore perfection.
 
-The "load" value was never a load average, it was just a count of the
-% cpu time used in the previous fixed window of time, updated at the
-end of each window.
+I don't expect the userspace side of this to ever change which is
+close enough to perfect for me.
 
-Maybe we can instead do something based tracking the length of the run
-queue for the cgroup?
+The bulk of the patches are the changes to allow multiple sysfs
+superblocks.
 
-Paul
+Then comes the tagged directory sysfs support which uses information
+captured at mount time to decide which object with which tag will
+appear in a directory.
+
+Then the support for renaming and deleting objects where the source
+may be ambiguous because of tagging.
+
+Then finally the network namespace support so it is clear how all
+of this tied together.
+
+Greg the last patch that enables tagged directory support seems
+to make most sense living in your tree, as it lives half in
+fs/sysfs/mount.c, and half in net/core/net-sysfs.c and all of
+it's dependencies are in Linus tree except for this patchset.
+
+Eric
