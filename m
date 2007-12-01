@@ -1,82 +1,43 @@
-From: Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: Re: [RFC][ only for review ] memory controller bacground reclaim
- [4/5] high/low watermark for memory controller
-Date: Sat, 01 Dec 2007 16:15:36 +0530
-Message-ID: <47513B50.8090003@linux.vnet.ibm.com>
-References: <20071128174923.1f54f53f.kamezawa.hiroyu@jp.fujitsu.com>
-	<20071128175607.37df2187.kamezawa.hiroyu@jp.fujitsu.com>
-	<6599ad830711302309p3a68828fjec6793bc9d854a1@mail.gmail.com>
-Reply-To: balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
+From: Herbert Xu <herbert@gondor.apana.org.au>
+Subject: Re: [PATCH 4/4 (resent) net-2.6.25][UNIX] Make the unix sysctl tables per-namespace
+Date: Sat, 1 Dec 2007 23:57:26 +1100
+Message-ID: <20071201125726.GC15910@gondor.apana.org.au>
+References: <47503919.8060103@openvz.org> <47503C48.8020001@openvz.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <6599ad830711302309p3a68828fjec6793bc9d854a1-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
-Cc: "containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org" <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, "yamamoto-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org" <yamamoto-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>, xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org
+Content-Type: text/plain; charset=us-ascii
+Return-path: <netdev-owner@vger.kernel.org>
+Content-Disposition: inline
+In-Reply-To: <47503C48.8020001@openvz.org>
+Sender: netdev-owner@vger.kernel.org
+To: Pavel Emelyanov <xemul@openvz.org>
+Cc: "Eric W. Biederman" <ebiederm@xmission.com>, Linux Netdev List <netdev@vger.kernel.org>, Linux Containers <containers@lists.osdl.org>, Daniel Lezcano <dlezcano@fr.ibm.com>
 List-Id: containers.vger.kernel.org
 
-Paul Menage wrote:
-> On Nov 28, 2007 12:56 AM, KAMEZAWA Hiroyuki
-> <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org> wrote:
->>         {
->> +               .name = "low_watermark_in_bytes",
->> +               .private = RES_LOW_WATERMARK,
->> +               .write = mem_cgroup_write,
->> +               .read = mem_cgroup_read,
->> +       },
->> +       {
->> +               .name = "high_watermark_in_bytes",
->> +               .private = RES_HIGH_WATERMARK,
->> +               .write = mem_cgroup_write,
->> +               .read = mem_cgroup_read,
->> +       },
+On Fri, Nov 30, 2007 at 07:37:28PM +0300, Pavel Emelyanov wrote:
 > 
-> From a style point of view, I dislike having the "in_bytes" suffix
-> tacked on to all the memory controller filenames.
-> 
+> Signed-off-by: Pavel Emelyanov <xemul@openvz.org>
 
-The idea came from Andrew, when he suggested it.
+All applied to net-2.6.25.
 
-Please see /proc/sys/vm. We have files like min_free_kbyes, I think it's
-a good idea to tell the user what units are used.
+> diff --git a/include/net/net_namespace.h b/include/net/net_namespace.h
+> index b0cf075..f97b2a4 100644
+> --- a/include/net/net_namespace.h
+> +++ b/include/net/net_namespace.h
+> @@ -41,6 +43,7 @@ struct net {
+>  
+>  	/* unix sockets */
+>  	int			sysctl_unix_max_dgram_qlen;
+> +	struct ctl_table_header	*unix_ctl;
+>  };
 
-> If people really want this to be self-documenting, how about we allow
-> cgroup control files to specify metadata, which would be presented to
-> the user via an auto-generated "api" file.
-> 
-> As an example, the addition above might then look something like:
-> 
-> {
->     .name = "low_watermark",
->     .units = "bytes",
->     .description = "usage below which background reclaim stops",
->     .write = mem_cgroup_write,
->     .read = mem_cgroup_read,
-> }
-> 
-> which would correspond to a line in the "mem.api" auto-generated control file as
-> 
+But I gotta say this struct/file is going to be enormous.  It's also
+one of those files that causes everything to get recompiled.  Maybe
+we ought to make a rule that each subsystem only gets to have at most
+one entry in it :)
 
-The user is expected to cat "memory.api" in order to figure out how to
-use the file?
-
-> low_watermark: usage below which background reclaim stops (bytes)
-> 
-> Paul
-
-
+Thanks,
 -- 
-	Warm Regards,
-	Balbir Singh
-	Linux Technology Center
-	IBM, ISTL
+Visit Openswan at http://www.openswan.org/
+Email: Herbert Xu ~{PmV>HI~} <herbert@gondor.apana.org.au>
+Home Page: http://gondor.apana.org.au/~herbert/
+PGP Key: http://gondor.apana.org.au/~herbert/pubkey.txt
