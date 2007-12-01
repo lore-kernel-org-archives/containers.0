@@ -1,53 +1,46 @@
-From: Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: Re: [RFC][ only for review ] memory controller bacground reclaim
- [4/5] high/low watermark for memory controller
-Date: Sat, 01 Dec 2007 22:46:19 +0530
-Message-ID: <475196E3.2060500@linux.vnet.ibm.com>
-References: <20071128174923.1f54f53f.kamezawa.hiroyu@jp.fujitsu.com>
-	<20071128175607.37df2187.kamezawa.hiroyu@jp.fujitsu.com>
-	<6599ad830711302309p3a68828fjec6793bc9d854a1@mail.gmail.com>
-	<47513B50.8090003@linux.vnet.ibm.com>
-	<6599ad830712010855j7967ddeau1a558474de4eea19@mail.gmail.com>
-Reply-To: balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
+From: Stephen Hemminger <shemminger@linux-foundation.org>
+Subject: Re: namespace support requires network modules to say "GPL"
+Date: Sat, 1 Dec 2007 11:17:36 -0800
+Message-ID: <20071201111736.297dd99a@freepuppy.rosehill>
+References: <m163zi9425.fsf@ebiederm.dsl.xmission.com>
+	<47515D39.9030900@rtr.ca>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
+Content-Type: text/plain; charset=US-ASCII
 Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <6599ad830712010855j7967ddeau1a558474de4eea19-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
-Cc: "containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org" <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, "yamamoto-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org" <yamamoto-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>, xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org
+Return-path: <netdev-owner@vger.kernel.org>
+In-Reply-To: <47515D39.9030900@rtr.ca>
+Sender: netdev-owner@vger.kernel.org
+To: Mark Lord <lkml@rtr.ca>
+Cc: "Eric W. Biederman" <ebiederm@xmission.com>, Greg Kroah-Hartman <gregkh@suse.de>, Greg KH <greg@kroah.com>, Tejun Heo <htejun@gmail.com>, Linux Containers <containers@lists.osdl.org>, netdev@vger.kernel.org, cornelia.huck@de.ibm.com, stern@rowland.harvard.edu, kay.sievers@vrfy.org, linux-kernel@vger.kernel.org, Andrew Morton <akpm@linux-foundation.org>, Herbert Xu <herbert@gondor.apana.org.au>, David Miller <davem@davemloft.net>, Linus Torvalds <torvalds@linux-foundation.org>
 List-Id: containers.vger.kernel.org
 
-Paul Menage wrote:
-> On Dec 1, 2007 2:45 AM, Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org> wrote:
->>> which would correspond to a line in the "mem.api" auto-generated control file as
->>>
->> The user is expected to cat "memory.api" in order to figure out how to
->> use the file?
->>
-> 
-> Yes, the very first time they try to use a particular cgroup, if
-> they've not bothered to read any documentation about it. There has to
-> be some documentation *somewhere*, and putting some of the basic bits
-> at a point where they're immediately accessible could be an advantage.
-> 
-> Paul
+On Sat, 01 Dec 2007 08:10:17 -0500
+Mark Lord <lkml@rtr.ca> wrote:
 
-I worry about the kernel size bloat due to adding documentation in the
-kernel. I don't think the documentation belongs to the kernel image, but
-using file names like /proc/sys/vm/min_free_kbytes is a much better idea.
+> > Now that we have network namespace support merged it is time to
+> > revisit the sysfs support so we can remove the dependency on !SYSFS.
+> ...
+> 
+> Now that the namespace updates are part of 2.6.24,
+> there is a major inconsistency in network EXPORT_SYMBOLs.
+> 
+> It used to be that an external network module could get away without
+> having to add a MODULE_LICENSE("GPL*") line to the source.
+> 
+> In support of that, common networking functions (still) use EXPORT_SYMBOL()
+> rather than the more restrictive EXPORT_SYMBOL_GPL().
+> 
+> Eg.  register_netdev(), sk_alloc(), __dev_get_by_name().
+> 
+> But now, none of those three are actually usable by default,
+> because they all require "init_net", which is EXPORT_SYMBOL_GPL().
+> 
+
+Then init_net needs to be not GPL limited. Sorry, we need to allow
+non GPL network drivers.  There is a fine line between keeping the
+binary seething masses from accessing random kernel functions, and allowing
+reasonable (but still non GPL) things like ndiswrapper to use network
+device interface.
 
 -- 
-	Warm Regards,
-	Balbir Singh
-	Linux Technology Center
-	IBM, ISTL
+Stephen Hemminger <shemminger@linux-foundation.org>
