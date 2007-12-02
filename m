@@ -1,49 +1,38 @@
-From: Stephen Hemminger <shemminger@linux-foundation.org>
+From: Alan Cox <alan@lxorguk.ukuu.org.uk>
 Subject: Re: namespace support requires network modules to say "GPL"
-Date: Sat, 1 Dec 2007 20:23:54 -0800
-Message-ID: <20071201202354.672aed18@freepuppy.rosehill>
+Date: Sun, 2 Dec 2007 13:51:04 +0000
+Message-ID: <20071202135104.006c5a15@the-village.bc.nu>
 References: <m163zi9425.fsf@ebiederm.dsl.xmission.com>
 	<47515D39.9030900@rtr.ca>
 	<20071201111736.297dd99a@freepuppy.rosehill>
 	<20071201163035.321fd554@freepuppy.rosehill>
-	<475227B1.2060802@rtr.ca>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=US-ASCII
 Content-Transfer-Encoding: 7bit
 Return-path: <netdev-owner@vger.kernel.org>
-In-Reply-To: <475227B1.2060802@rtr.ca>
+In-Reply-To: <20071201163035.321fd554@freepuppy.rosehill>
 Sender: netdev-owner@vger.kernel.org
-To: Mark Lord <lkml@rtr.ca>
+To: Stephen Hemminger <shemminger@linux-foundation.org>
 Cc: linux-kernel@vger.kernel.org, netdev@vger.kernel.org, containers@lists.osdl.org
 List-Id: containers.vger.kernel.org
 
-On Sat, 01 Dec 2007 22:34:09 -0500
-Mark Lord <lkml@rtr.ca> wrote:
+On Sat, 1 Dec 2007 16:30:35 -0800
+Stephen Hemminger <shemminger@linux-foundation.org> wrote:
 
-> Stephen Hemminger wrote:
-> > On Sat, 1 Dec 2007 11:17:36 -0800
-> > Stephen Hemminger <shemminger@linux-foundation.org> wrote:
+> On Sat, 1 Dec 2007 11:17:36 -0800
+> Stephen Hemminger <shemminger@linux-foundation.org> wrote:
+> 
+> > Then init_net needs to be not GPL limited. Sorry, we need to allow
+> > non GPL network drivers.  There is a fine line between keeping the
+> > binary seething masses from accessing random kernel functions, and allowing
+> > reasonable (but still non GPL) things like ndiswrapper to use network
+> > device interface.
 > > 
-> >> Then init_net needs to be not GPL limited. Sorry, we need to allow
-> >> non GPL network drivers.  There is a fine line between keeping the
-> >> binary seething masses from accessing random kernel functions, and allowing
-> >> reasonable (but still non GPL) things like ndiswrapper to use network
-> >> device interface.
-> >>
-> > I spoke too soon earlier, ndiswrapper builds and loads against current
-> > 2.6.24-rc3. Vmware and proprietary VPN software probably do not. Once again I don't
-> > give a damn, but the enterprise distro vendors certainly care.
-> ...
-> 
-> Naw, enterprise (or any other) distro vendors shouldn't have any issues here,
-> since they can just patch their kernels around any issues.
-> 
-> But it looks like Eric has this one thought out well enough.
+> I spoke too soon earlier, ndiswrapper builds and loads against current
+> 2.6.24-rc3. Vmware and proprietary VPN software probably do not. Once again I don't
+> give a damn, but the enterprise distro vendors certainly care.
 
-So you are saying all this is not a problem, fine.
-Any affected parties can certainly lobby for themselves. But I suspect
-they all think the kernel community is a bunch of ... and will just ignore
-the problem. 
+Enterprise distro vendors ship kernels from the 2.6.19 era, so I don't
+see why they care.
 
--- 
-Stephen Hemminger <shemminger@linux-foundation.org>
+Alan
