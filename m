@@ -1,38 +1,51 @@
-From: Alan Cox <alan@lxorguk.ukuu.org.uk>
+From: Ben Greear <greearb@candelatech.com>
 Subject: Re: namespace support requires network modules to say "GPL"
-Date: Sun, 2 Dec 2007 13:51:04 +0000
-Message-ID: <20071202135104.006c5a15@the-village.bc.nu>
-References: <m163zi9425.fsf@ebiederm.dsl.xmission.com>
-	<47515D39.9030900@rtr.ca>
-	<20071201111736.297dd99a@freepuppy.rosehill>
-	<20071201163035.321fd554@freepuppy.rosehill>
+Date: Sun, 02 Dec 2007 11:28:56 -0800
+Message-ID: <47530778.7030605@candelatech.com>
+References: <m163zi9425.fsf@ebiederm.dsl.xmission.com>	<47515D39.9030900@rtr.ca>	<20071201111736.297dd99a@freepuppy.rosehill>	<20071201163035.321fd554@freepuppy.rosehill>	<475227B1.2060802@rtr.ca> <20071201202354.672aed18@freepuppy.rosehill>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 Content-Transfer-Encoding: 7bit
 Return-path: <netdev-owner@vger.kernel.org>
-In-Reply-To: <20071201163035.321fd554@freepuppy.rosehill>
+In-Reply-To: <20071201202354.672aed18@freepuppy.rosehill>
 Sender: netdev-owner@vger.kernel.org
 To: Stephen Hemminger <shemminger@linux-foundation.org>
-Cc: linux-kernel@vger.kernel.org, netdev@vger.kernel.org, containers@lists.osdl.org
+Cc: Mark Lord <lkml@rtr.ca>, linux-kernel@vger.kernel.org, netdev@vger.kernel.org, containers@lists.osdl.org
 List-Id: containers.vger.kernel.org
 
-On Sat, 1 Dec 2007 16:30:35 -0800
-Stephen Hemminger <shemminger@linux-foundation.org> wrote:
+Stephen Hemminger wrote:
+>>
+>> Naw, enterprise (or any other) distro vendors shouldn't have any issues here,
+>> since they can just patch their kernels around any issues.
+>>
+>> But it looks like Eric has this one thought out well enough.
+>>     
+>
+> So you are saying all this is not a problem, fine.
+> Any affected parties can certainly lobby for themselves. But I suspect
+> they all think the kernel community is a bunch of ... and will just ignore
+> the problem. 
+>   
+I have a binary module that uses dev_get_by_name...it's sort of a 
+bridge-like thing and
+needs user-space to tell it which device to listen for packets on...
 
-> On Sat, 1 Dec 2007 11:17:36 -0800
-> Stephen Hemminger <shemminger@linux-foundation.org> wrote:
-> 
-> > Then init_net needs to be not GPL limited. Sorry, we need to allow
-> > non GPL network drivers.  There is a fine line between keeping the
-> > binary seething masses from accessing random kernel functions, and allowing
-> > reasonable (but still non GPL) things like ndiswrapper to use network
-> > device interface.
-> > 
-> I spoke too soon earlier, ndiswrapper builds and loads against current
-> 2.6.24-rc3. Vmware and proprietary VPN software probably do not. Once again I don't
-> give a damn, but the enterprise distro vendors certainly care.
+This code doesn't need or care about name-spaces, so I don't see how it 
+could really
+be infringing on the author's code (any worse than loading a binary 
+driver into the kernel
+ever does).
 
-Enterprise distro vendors ship kernels from the 2.6.19 era, so I don't
-see why they care.
+I would certainly prefer to not have to patch around any problems with 
+calling dev_get_by_name
+from a non-gpl module, but if required, I can probably figure something 
+out...
 
-Alan
+Thanks,
+Ben
+
+-- 
+Ben Greear <greearb@candelatech.com> 
+Candela Technologies Inc  http://www.candelatech.com
+
+
