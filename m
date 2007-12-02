@@ -1,64 +1,139 @@
-From: Crispin Cowan <crispin-RL8T2ARnKKfZw9hOtrW0rA@public.gmane.org>
-Subject: Re: [PATCH 2/2] hijack: update task_alloc_security
-Date: Sat, 01 Dec 2007 17:07:52 -0800
-Message-ID: <47520568.6030108__22651.7803072513$1196557730$gmane$org@crispincowan.com>
-References: <474B78CB.5070607@au1.ibm.com> <474B7A51.3080300@au1.ibm.com>
-	<474BB095.8080302@manicmethod.com>
-	<1196174188.3925.32.camel@moss-spartans.epoch.ncsc.mil>
-	<20071127154356.GA32362@sergelap.austin.ibm.com>
-	<474D0188.2040600@crispincowan.com>
-	<20071128145422.GC3820@sergelap.austin.ibm.com>
-	<474E3E4E.3060908@crispincowan.com>
-	<20071129153815.GA8140@sergelap.austin.ibm.com>
+From: ebiederm@xmission.com (Eric W. Biederman)
+Subject: Re: namespace support requires network modules to say "GPL"
+Date: Sat, 01 Dec 2007 18:08:09 -0700
+Message-ID: <m1eje552fa.fsf@ebiederm.dsl.xmission.com>
+References: <m163zi9425.fsf@ebiederm.dsl.xmission.com>
+	<47515D39.9030900@rtr.ca> <20071201111736.297dd99a@freepuppy.rosehill>
+	<20071201192341.6750fbdb@the-village.bc.nu>
+	<20071201113815.5df0960a@freepuppy.rosehill>
+	<m13aum5g1x.fsf@ebiederm.dsl.xmission.com> <4751C238.6010609@rtr.ca>
+	<20071201122926.5c887588@laptopd505.fenrus.org>
+	<4751DC3C.1050606@rtr.ca> <m1tzn23t6k.fsf@ebiederm.dsl.xmission.com>
+	<4751F380.7040309@rtr.ca>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20071129153815.GA8140-6s5zFf/epYLPQpwDFJZrxKsjOiXwFzmk@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Joshua Brindle <method-PzTJMJMxY2mwxnkjfAeQoA@public.gmane.org>, linux-security-module-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, selinux-+05T5uksL2qpZYMLLGbcSA@public.gmane.org, menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, Stephen Smalley <sds-+05T5uksL2qpZYMLLGbcSA@public.gmane.org>
+Content-Type: text/plain; charset=us-ascii
+Return-path: <netdev-owner@vger.kernel.org>
+In-Reply-To: <4751F380.7040309@rtr.ca> (Mark Lord's message of "Sat, 01 Dec
+	2007 18:51:28 -0500")
+Sender: netdev-owner@vger.kernel.org
+To: Mark Lord <lkml@rtr.ca>
+Cc: Arjan van de Ven <arjan@infradead.org>, Stephen Hemminger <shemminger@linux-foundation.org>, Alan Cox <alan@lxorguk.ukuu.org.uk>, Greg Kroah-Hartman <gregkh@suse.de>, Greg KH <greg@kroah.com>, Tejun Heo <htejun@gmail.com>, Linux Containers <containers@lists.osdl.org>, netdev@vger.kernel.org, cornelia.huck@de.ibm.com, stern@rowland.harvard.edu, kay.sievers@vrfy.org, linux-kernel@vger.kernel.org, Andrew Morton <akpm@linux-foundation.org>, Herbert Xu <herbert@gondor.apana.org.au>, David Miller <davem@davemloft.net>, Linus Torvalds <torvalds@linux-foundation.org>
 List-Id: containers.vger.kernel.org
 
-Serge E. Hallyn wrote:
-> Quoting Crispin Cowan (crispin-RL8T2ARnKKfZw9hOtrW0rA@public.gmane.org):
->   
->> I find that ptrace, specifically CAP_SYS_PTRACE, is overloaded. AppArmor
->> is having problems because we have to choose between granting
->> cap_sys_ptrace, or not allowing the process to read /proc/pid/self &
->> such like. So there, the problem is that we have to grant too much power
->> to a process to just let it read some /proc stuff about itself.
+Mark Lord <lkml@rtr.ca> writes:
+
+> Eric W. Biederman wrote:
+>> Mark Lord <lkml@rtr.ca> writes:
 >>
->> Here the problem appears to be the other way. cap_sys_ptrace is powerful
->> enough to mess with other user's processes on the system, but if ptrace
->> gives you hijack, then that seems to give you the power to control
->> processes in someone else's namespace.
->>     
-> The user namespace patchset I'm working on right now to start having
-> signals respect user namespaces introduces CAP_NS_OVERRIDE.  Once that
-> is in, then hijack would require CAP_NS_OVERRIDE|CAP_SYS_PTRACE.
+>>> Arjan van de Ven wrote:
+>>>> On Sat, 01 Dec 2007 15:21:12 -0500
+>>>> Mark Lord <lkml@rtr.ca> wrote:
+>>>>
+>>>>> Eric W. Biederman wrote:
+>>>>>> Stephen Hemminger <shemminger@linux-foundation.org> writes:
+>>>>>> Sure.  We keep the updated dev_get_by_XXXX that takes a network
+>>>>>> namespace parameter.
+>>>>> ..
+>>>>>
+>>>>> And what should code be passing in when "# CONFIG_NET_NS is not set" ?
+>>>> network drivers probably really really don't want to call
+>>>> dev_get_by_XXX...
+>>> ..
+>>>
+>>> Fine.  But all of them want to call sk_alloc(),
+>>
+>> network drivers should be calling sk_alloc less then they should
+>> call dev_get_by_XXXX.  Only protocols call sk_alloc.
+> ..
 >
-> Of course, since we're considering only allowing HIJACK_NS which is
-> only allowed into a different namespace, hijack would then always
-> require CAP_NS_OVERRIDE...
+> I think I saw some bridge code that calls it, too.
+> Regardless, it's EXPORT_SYMBOL(), but now unusable
+> due to the GPL-only symbol "init_net".
 >
-> Does that suffice?
->   
-I think that CAP_NS_OVERRIDE|CAP_SYS_PTRACE is a problem because of the
-| making ptrace more powerful than it is now. If you make it
-CAP_NS_OVERRIDE only, then the problem goes away.
+> Meanwhile, you are avoiding answering the question:
 
-Crispin
+What EXPORT_SYMBOL_GPL means is I don't have a clue how you
+can use this without being a derivative work of the linux kernel.  I
+think that is true for init_net and I stand by that.  It is a very
+internal symbol.
 
--- 
-Crispin Cowan, Ph.D.               http://crispincowan.com/~crispin
-CEO, Mercenary Linux		   http://mercenarylinux.com/
-	       Itanium. Vista. GPLv3. Complexity at work
+Further the only case that I think might pass the derivative work
+test would be a network driver, and I am not affecting those.
+
+I also believe that since it isn't mandatory you get your struct
+net pointer by taking the address of a GPL only symbol that
+those interfaces can continue to be used.
+
+However I do suspect you are right that it may be more correct
+to realized that only a derivative work could possibly use those
+interfaces and tell 3rd parties that loud and clear.
+
+We also have the policy of not changing exports from EXPORT_SYMBOL
+to EXPORT_SYMBOL_GPL.  So making that such a change is difficult.
+
+>>>>> And what should code be passing in when "# CONFIG_NET_NS is not set" ?
+> ..
+>
+>>> and many want to do register_netdev().
+>>
+>> I haven't even touched register_netdev.
+> ..
+>
+> Bull-pucky.  Somebody did:
+>
+>> @@ -3361,6 +3595,8 @@ int register_netdevice(struct net_device *dev)
+>>
+>>         /* When net_device's are persistent, this will be fatal. */
+>>         BUG_ON(dev->reg_state != NETREG_UNINITIALIZED);
+>> +       BUG_ON(!dev->nd_net);
+>> +       net = dev->nd_net;
+>>
+>>         spin_lock_init(&dev->queue_lock);
+>>         spin_lock_init(&dev->_xmit_lock);
+> ..
+>
+> That new BUG_ON() line complains if nd_net has not been initialized,
+> and the only thing I see drivers putting there is GPL-only "&init_net".
+
+Yes and alloc_netdev initializes it.  All network drivers are required
+to call alloc_netdev.
+
+So register_netdev from a device driver perspective has not changed.
+
+Anything the above change breaks happens to be a broken network device
+driver.
+
+>>> So what should they be using there ?
+>>
+>> What are you having problems with?
+> ..
+>
+> Avoiding the question again there, too.
+
+No.  I am saying that I don't see a problem.  All of the real world
+problems that I actually know of are code bugs.  I asked for
+a real world problem to see if there was something I was missing
+in my analysis.  That isn't avoiding the problem that is trying
+to see if I was wrong.
+
+> I personally am not having problems with anything.
+> But I noticed the API change, and would like somebody to fix it.
+> Any of the three ways (or a fourth, if you've got one) might do.
+
+Honestly I think I have done the best I can with the knowledge and
+information that I have.    I do not think dropping the GPL from
+the export of init_net makes sense.  I think turning a NULL into
+init_net is a technical joke.  That parameter is there because
+that is someplace where we need to pay attention to our network
+namespace.
+
+Which only leaves your first option of making more symbols
+EXPORT_SYMBOL_GPL as even interesting.
+
+That would seem to make some sense, given the attitudes and
+perceptions of the current network developers.  
+
+However I'm not volunteering for that one as finishing up the network
+and pid namespaces already has my plate full.
+
+Eric
