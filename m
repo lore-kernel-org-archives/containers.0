@@ -1,51 +1,47 @@
-From: Arjan van de Ven <arjan@infradead.org>
-Subject: Re: namespace support requires network modules to say "GPL"
-Date: Mon, 3 Dec 2007 07:34:39 -0800
-Message-ID: <20071203073439.7fe05875@laptopd505.fenrus.org>
-References: <m163zi9425.fsf@ebiederm.dsl.xmission.com>
-	<47515D39.9030900@rtr.ca>
-	<20071201111736.297dd99a@freepuppy.rosehill>
-	<20071201163035.321fd554@freepuppy.rosehill>
-	<475227B1.2060802@rtr.ca>
-	<1196670255.4127.21.camel@rukbat>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
-Content-Transfer-Encoding: 7bit
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1752674AbXLCPgr@vger.kernel.org>
-In-Reply-To: <1196670255.4127.21.camel@rukbat>
-Sender: linux-kernel-owner@vger.kernel.org
-To: Romano Giannetti <romanol@upcomillas.es>
-Cc: Mark Lord <lkml@rtr.ca>, Stephen Hemminger <shemminger@linux-foundation.org>, linux-kernel@vger.kernel.org, netdev@vger.kernel.org, containers@lists.osdl.org
+From: Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
+Subject: [patch 02/38][IPV6] Makefile - Activate netns configuration when
+	sysctl is off
+Date: Mon, 03 Dec 2007 17:16:38 +0100
+Message-ID: <20071203162435.959964400@mai.toulouse-stg.fr.ibm.com>
+References: <20071203161636.308694257@mai.toulouse-stg.fr.ibm.com>
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Content-Disposition: inline;
+	filename=disable-config-net-ns-if-config-sysctl-is-on.patch
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: den-3ImXcnM4P+0@public.gmane.org
+Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, Benjamin Thery <benjamin.thery-6ktuUTfB/bM@public.gmane.org>, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org, xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Mon, 03 Dec 2007 09:24:15 +0100
-Romano Giannetti <romanol@upcomillas.es> wrote:
+Sysctl per namespace is not yet finished, like sysfs. In order
+to avoid problems related with that, I disable netns if sysctl
+is compiled in the kernel.
 
-> 
-> 
-> On Sat, 2007-12-01 at 22:34 -0500, Mark Lord wrote:
-> > Stephen Hemminger wrote:.
-> > >>
-> > > I spoke too soon earlier, ndiswrapper builds and loads against
-> > > current 2.6.24-rc3. Vmware and proprietary VPN software probably
-> > > do not. Once again I don't give a damn, but the enterprise distro
-> > > vendors certainly care.
-> > ...
-> > 
-> > Naw, enterprise (or any other) distro vendors shouldn't have any
-> > issues here, since they can just patch their kernels around any
-> > issues.
-> 
-> Please pardon me for jumping in; 
+Signed-off-by: Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
+Signed-off-by: Benjamin Thery <benjamin.thery-6ktuUTfB/bM@public.gmane.org>
+---
+ net/Kconfig |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-> 
-> What I think is that every time VMware or (worst) ndiswrapper breaks,
-
-if you had read the thread... ndiswrapper doesn't break, and vmware
-driver had some bugs that, once fixed, no no longer break either....
-
+Index: linux-2.6-netns/net/Kconfig
+===================================================================
+--- linux-2.6-netns.orig/net/Kconfig
++++ linux-2.6-netns/net/Kconfig
+@@ -30,7 +30,7 @@ menu "Networking options"
+ config NET_NS
+ 	bool "Network namespace support"
+ 	default n
+-	depends on EXPERIMENTAL && !SYSFS
++	depends on EXPERIMENTAL && !SYSFS && !SYSCTL
+ 	help
+ 	  Allow user space to create what appear to be multiple instances
+ 	  of the network stack.
 
 -- 
-If you want to reach me at my work email, use arjan@linux.intel.com
-For development, discussion and tips for power savings, 
-visit http://www.lesswatts.org
