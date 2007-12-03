@@ -1,12 +1,11 @@
 From: Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
-Subject: [patch 37/38][IPV6] ndisc - dynamically allocate default
-	neigh_parms for ndisc
-Date: Mon, 03 Dec 2007 17:17:13 +0100
-Message-ID: <20071203162533.125537422@mai.toulouse-stg.fr.ibm.com>
+Subject: [patch 20/38][IPV6] fib6_rules - make fib_rules per network
+	namespace
+Date: Mon, 03 Dec 2007 17:16:56 +0100
+Message-ID: <20071203162506.886033709@mai.toulouse-stg.fr.ibm.com>
 References: <20071203161636.308694257@mai.toulouse-stg.fr.ibm.com>
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline;
-	filename=IPv6-ndisc-dynamic-allocation-of-neigh_parms.patch
+Content-Disposition: inline; filename=fib6-rules-per-network-namespace.patch
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -20,89 +19,50 @@ To: den-3ImXcnM4P+0@public.gmane.org
 Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, Benjamin Thery <benjamin.thery-6ktuUTfB/bM@public.gmane.org>, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org, xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-This patch dynamically allocates default neigh_parms for IPv6 network 
-discovery and store them in struct net. That provides the basic changes 
-needed to support ndisc for multiple network namespaces.
+This patch makes the fib6_rules per network namespace.
 
-Signed-off-by: Benjamin Thery <benjamin.thery-6ktuUTfB/bM@public.gmane.org>
 Signed-off-by: Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
+Signed-off-by: Benjamin Thery <benjamin.thery-6ktuUTfB/bM@public.gmane.org>
 ---
- include/net/net_namespace.h |    3 +++
- net/ipv6/ndisc.c            |   38 +++++++++++++++++++++++++++++++-------
- 2 files changed, 34 insertions(+), 7 deletions(-)
+ net/ipv6/fib6_rules.c |    6 ++++--
+ 1 file changed, 4 insertions(+), 2 deletions(-)
 
-Index: linux-2.6-netns/include/net/net_namespace.h
+Index: linux-2.6-netns/net/ipv6/fib6_rules.c
 ===================================================================
---- linux-2.6-netns.orig/include/net/net_namespace.h
-+++ linux-2.6-netns/include/net/net_namespace.h
-@@ -83,6 +83,9 @@ struct net {
- 	unsigned int		fib_info_hash_size;
- 	unsigned int		fib_info_cnt;
- 	struct hlist_head	*fib_info_devhash;
-+
-+ 	/* IPv6 ndisc.c */
-+ 	struct neigh_parms	*ndisc_neigh_parms_default;
- };
- 
- #ifdef CONFIG_NET
-Index: linux-2.6-netns/net/ipv6/ndisc.c
-===================================================================
---- linux-2.6-netns.orig/net/ipv6/ndisc.c
-+++ linux-2.6-netns/net/ipv6/ndisc.c
-@@ -1764,23 +1764,47 @@ int __init ndisc_init(struct net_proto_f
- 
- 	neigh_table_init(&nd_tbl);
- 
-+	init_net.ndisc_neigh_parms_default =
-+		neigh_parms_alloc_default(&nd_tbl, &init_net);
-+	if (!init_net.ndisc_neigh_parms_default) {
-+		err = -ENOMEM;
-+		goto out_neigh_parms;
-+	}
-+
- #ifdef CONFIG_SYSCTL
--	neigh_sysctl_register(NULL, &nd_tbl.parms, NET_IPV6, NET_IPV6_NEIGH,
--			      "ipv6",
--			      &ndisc_ifinfo_sysctl_change,
--			      &ndisc_ifinfo_sysctl_strategy);
-+	if ((err = neigh_sysctl_register(NULL,
-+					 init_net.ndisc_neigh_parms_default,
-+					 NET_IPV6, NET_IPV6_NEIGH,
-+					 "ipv6",
-+					 &ndisc_ifinfo_sysctl_change,
-+					 &ndisc_ifinfo_sysctl_strategy)))
-+	     goto out_sysctl;
- #endif
--
- 	register_netdevice_notifier(&ndisc_netdev_notifier);
--	return 0;
-+out:
-+	return err;
-+#ifdef CONFIG_SYSCTL
-+out_sysctl:
-+	neigh_parms_release(&nd_tbl, init_net.ndisc_neigh_parms_default);
-+#endif
-+out_neigh_parms:
-+	sock_release(ndisc_socket);
-+	goto out;
- }
- 
- void ndisc_cleanup(void)
+--- linux-2.6-netns.orig/net/ipv6/fib6_rules.c
++++ linux-2.6-netns/net/ipv6/fib6_rules.c
+@@ -53,6 +53,7 @@ static int fib6_rule_action(struct fib_r
+ 			    int flags, struct fib_lookup_arg *arg)
  {
-+	struct neigh_parms *parms = init_net.ndisc_neigh_parms_default;
-+
- 	unregister_netdevice_notifier(&ndisc_netdev_notifier);
-+
-+	if (parms) {
- #ifdef CONFIG_SYSCTL
--	neigh_sysctl_unregister(&nd_tbl.parms);
-+		neigh_sysctl_unregister(parms);
- #endif
-+		neigh_parms_release(&nd_tbl, parms);
-+		init_net.ndisc_neigh_parms_default = NULL;
-+	}
- 	neigh_table_clear(&nd_tbl);
- 	sock_release(ndisc_socket);
- 	ndisc_socket = NULL; /* For safety. */
+ 	struct rt6_info *rt = NULL;
++	struct net *net = flp->fl_net;
+ 	struct fib6_table *table;
+ 	pol_lookup_t lookup = arg->lookup_ptr;
+ 
+@@ -71,7 +72,7 @@ static int fib6_rule_action(struct fib_r
+ 		goto discard_pkt;
+ 	}
+ 
+-	table = fib6_get_table(&init_net, rule->table);
++	table = fib6_get_table(net, rule->table);
+ 	if (table)
+ 		rt = lookup(table, flp, flags);
+ 
+@@ -145,13 +146,14 @@ static int fib6_rule_configure(struct fi
+ 			       struct nlattr **tb)
+ {
+ 	int err = -EINVAL;
++	struct net *net = skb->sk->sk_net;
+ 	struct fib6_rule *rule6 = (struct fib6_rule *) rule;
+ 
+ 	if (rule->action == FR_ACT_TO_TBL) {
+ 		if (rule->table == RT6_TABLE_UNSPEC)
+ 			goto errout;
+ 
+-		if (fib6_new_table(&init_net, rule->table) == NULL) {
++		if (fib6_new_table(net, rule->table) == NULL) {
+ 			err = -ENOBUFS;
+ 			goto errout;
+ 		}
 
 -- 
