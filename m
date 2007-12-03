@@ -1,11 +1,11 @@
 From: Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
-Subject: [patch 09/38][IPV6] inet6_addr - make ipv6_chk_home_addr namespace
-	aware
-Date: Mon, 03 Dec 2007 17:16:45 +0100
-Message-ID: <20071203162448.331430757@mai.toulouse-stg.fr.ibm.com>
+Subject: [patch 19/38][IPV6] ip6_fib - make the ip6 fib gc timer handle
+	several network namespaces
+Date: Mon, 03 Dec 2007 17:16:55 +0100
+Message-ID: <20071203162504.767668296@mai.toulouse-stg.fr.ibm.com>
 References: <20071203161636.308694257@mai.toulouse-stg.fr.ibm.com>
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline; filename=inet6-addr-ipv6-chk-home-addr.patch
+Content-Disposition: inline; filename=ip6-fib-gc-timer-per-namespace.patch
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,64 +19,96 @@ To: den-3ImXcnM4P+0@public.gmane.org
 Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, Benjamin Thery <benjamin.thery-6ktuUTfB/bM@public.gmane.org>, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org, xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Looks if the address is belonging to the network namespace, otherwise
-discard the address for the check.
+Move the timer initialization at the network namespace creation
+and store the network namespace in the timer argument.
+
+That enables multiple timers (one per network namespace) to do garbage
+collecting.
 
 Signed-off-by: Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
 Signed-off-by: Benjamin Thery <benjamin.thery-6ktuUTfB/bM@public.gmane.org>
 ---
- include/net/addrconf.h |    3 ++-
- net/ipv6/addrconf.c    |    4 +++-
- net/ipv6/exthdrs.c     |    2 +-
- 3 files changed, 6 insertions(+), 3 deletions(-)
+ net/ipv6/ip6_fib.c |   32 +++++++++++++++++---------------
+ 1 file changed, 17 insertions(+), 15 deletions(-)
 
-Index: linux-2.6-netns/include/net/addrconf.h
+Index: linux-2.6-netns/net/ipv6/ip6_fib.c
 ===================================================================
---- linux-2.6-netns.orig/include/net/addrconf.h
-+++ linux-2.6-netns/include/net/addrconf.h
-@@ -64,7 +64,8 @@ extern int			ipv6_chk_addr(struct net *n
- 					      int strict);
- 
- #if defined(CONFIG_IPV6_MIP6) || defined(CONFIG_IPV6_MIP6_MODULE)
--extern int			ipv6_chk_home_addr(struct in6_addr *addr);
-+extern int			ipv6_chk_home_addr(struct net *net,
-+						   struct in6_addr *addr);
- #endif
- extern struct inet6_ifaddr      *ipv6_get_ifaddr(struct net *net,
- 						 struct in6_addr *addr,
-Index: linux-2.6-netns/net/ipv6/addrconf.c
-===================================================================
---- linux-2.6-netns.orig/net/ipv6/addrconf.c
-+++ linux-2.6-netns/net/ipv6/addrconf.c
-@@ -2848,13 +2848,15 @@ void if6_proc_exit(void)
- 
- #if defined(CONFIG_IPV6_MIP6) || defined(CONFIG_IPV6_MIP6_MODULE)
- /* Check if address is a home address configured on any interface. */
--int ipv6_chk_home_addr(struct in6_addr *addr)
-+int ipv6_chk_home_addr(struct net *net, struct in6_addr *addr)
+--- linux-2.6-netns.orig/net/ipv6/ip6_fib.c
++++ linux-2.6-netns/net/ipv6/ip6_fib.c
+@@ -1471,12 +1471,23 @@ static void fib6_gc_timer_cb(unsigned lo
+ static int fib6_net_init(struct net *net)
  {
- 	int ret = 0;
- 	struct inet6_ifaddr * ifp;
- 	u8 hash = ipv6_addr_hash(addr);
- 	read_lock_bh(&addrconf_hash_lock);
- 	for (ifp = inet6_addr_lst[hash]; ifp; ifp = ifp->lst_next) {
-+		if (ifp->idev->dev->nd_net != net)
-+			continue;
- 		if (ipv6_addr_cmp(&ifp->addr, addr) == 0 &&
- 		    (ifp->flags & IFA_F_HOMEADDRESS)) {
- 			ret = 1;
-Index: linux-2.6-netns/net/ipv6/exthdrs.c
-===================================================================
---- linux-2.6-netns.orig/net/ipv6/exthdrs.c
-+++ linux-2.6-netns/net/ipv6/exthdrs.c
-@@ -467,7 +467,7 @@ looped_back:
- 			kfree_skb(skb);
- 			return -1;
- 		}
--		if (!ipv6_chk_home_addr(addr)) {
-+		if (!ipv6_chk_home_addr(&init_net, addr)) {
- 			IP6_INC_STATS_BH(ip6_dst_idev(skb->dst),
- 					 IPSTATS_MIB_INADDRERRORS);
- 			kfree_skb(skb);
+ 	int ret;
++	struct timer_list *timer;
+ 
+ 	ret = -ENOMEM;
++ 	timer = kzalloc(sizeof(*timer), GFP_KERNEL);
++ 	if (!timer)
++		goto out;
++
++	timer->function = fib6_gc_timer_cb;
++	timer->expires = 0;
++	timer->data = (unsigned long)net;
++	timer->base = &boot_tvec_bases;
++ 	net->ip6_fib_timer = timer;
++
+ 	net->fib_table_hash = kzalloc(sizeof(*net->fib_table_hash)*FIB_TABLE_HASHSZ,
+ 				      GFP_KERNEL);
+ 	if (!net->fib_table_hash)
+-		goto out;
++		goto out_timer;
+ 
+ 	net->fib6_main_tbl = kzalloc(sizeof(*net->fib6_main_tbl), GFP_KERNEL);
+ 	if (!net->fib6_main_tbl)
+@@ -1503,12 +1514,17 @@ static int fib6_net_init(struct net *net
+ 
+ out_fib6_main_tbl:
+ 	kfree(net->fib_table_hash);
++out_timer:
++	kfree(timer);
+ out:
+ 	return ret;
+  }
+ 
+ static void fib6_net_exit(struct net *net)
+ {
++	del_timer(net->ip6_fib_timer);
++	kfree(net->ip6_fib_timer);
++
+ #ifdef CONFIG_IPV6_MULTIPLE_TABLES
+ 	kfree(net->fib6_local_tbl);
+ #endif
+@@ -1523,31 +1539,17 @@ static struct pernet_operations fib6_net
+ 
+ void __init fib6_init(void)
+ {
+- 	struct timer_list *timer;
+-
+ 	fib6_node_kmem = kmem_cache_create("fib6_nodes",
+ 					   sizeof(struct fib6_node),
+ 					   0, SLAB_HWCACHE_ALIGN|SLAB_PANIC,
+ 					   NULL);
+ 
+-	timer = kzalloc(sizeof(*timer), GFP_KERNEL);
+-	if (!timer)
+-		panic("IPV6: failed to allocate the gc timer\n");
+-
+-	timer->function = fib6_gc_timer_cb;
+-	timer->expires = 0;
+-	timer->data = (unsigned long)&init_net;
+-	timer->base = &boot_tvec_bases;
+-	init_net.ip6_fib_timer = timer;
+-
+ 	register_pernet_subsys(&fib6_net_ops);
+         __rtnl_register(PF_INET6, RTM_GETROUTE, NULL, inet6_dump_fib);
+ }
+ 
+ void fib6_gc_cleanup(void)
+ {
+-	del_timer(init_net.ip6_fib_timer);
+-	kfree(init_net.ip6_fib_timer);
+ 	unregister_pernet_subsys(&fib6_net_ops);
+ 	kmem_cache_destroy(fib6_node_kmem);
+ }
 
 -- 
