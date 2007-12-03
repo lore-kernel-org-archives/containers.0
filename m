@@ -1,54 +1,55 @@
-From: Patrick McHardy <kaber@trash.net>
-Subject: Re: namespace support requires network modules to say "GPL"
-Date: Sun, 02 Dec 2007 22:59:46 +0100
-Message-ID: <47532AD2.8090704@trash.net>
-References: <m163zi9425.fsf@ebiederm.dsl.xmission.com> <47515D39.9030900@rtr.ca> <20071201111736.297dd99a@freepuppy.rosehill> <20071201163035.321fd554@freepuppy.rosehill> <475227B1.2060802@rtr.ca> <20071201202354.672aed18@freepuppy.rosehill> <47530778.7030605@candelatech.com> <47530FAC.1070804@trash.net> <20071202204356.GN15974@stusta.de>
+From: "David Schwartz" <davids@webmaster.com>
+Subject: RE: namespace support requires network modules to say "GPL"
+Date: Sun, 2 Dec 2007 16:02:17 -0800
+Message-ID: <MDEHLPKNGKAHNMBLJOLKGEDMIJAC.davids@webmaster.com>
+References: <20071201192341.6750fbdb@the-village.bc.nu>
+Reply-To: davids@webmaster.com
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-15; format=flowed
+Content-Type: text/plain;
+	charset="US-ASCII"
 Content-Transfer-Encoding: 7bit
 Return-path: <netdev-owner@vger.kernel.org>
-In-Reply-To: <20071202204356.GN15974@stusta.de>
+In-Reply-To: <20071201192341.6750fbdb@the-village.bc.nu>
 Sender: netdev-owner@vger.kernel.org
-To: Adrian Bunk <bunk@kernel.org>
-Cc: Ben Greear <greearb@candelatech.com>, Stephen Hemminger <shemminger@linux-foundation.org>, Mark Lord <lkml@rtr.ca>, linux-kernel@vger.kernel.org, netdev@vger.kernel.org, containers@lists.osdl.org
+To: Stephen Hemminger <shemminger@linux-foundation.org>, Alan Cox <alan@lxorguk.ukuu.org.uk>
+Cc: Mark Lord <lkml@rtr.ca>, "Eric W. Biederman" <ebiederm@xmission.com>, Greg Kroah-Hartman <gregkh@suse.de>, Greg KH <greg@kroah.com>, Tejun Heo <htejun@gmail.com>, Linux Containers <containers@lists.osdl.org>, netdev@vger.kernel.org, cornelia.huck@de.ibm.com, stern@rowland.harvard.edu, kay.sievers@vrfy.org, linux-kernel@vger.kernel.org, Andrew Morton <akpm@linux-foundation.org>, Herbert Xu <herbert@gondor.apana.org.au>, David Miller <davem@davemloft.net>, Linus Torvalds <torvalds@linux-foundation.org>
 List-Id: containers.vger.kernel.org
 
-Adrian Bunk wrote:
-> On Sun, Dec 02, 2007 at 09:03:56PM +0100, Patrick McHardy wrote:
+
+> > Then init_net needs to be not GPL limited. Sorry, we need to allow
+> > non GPL network drivers.  There is a fine line between keeping the
+
+> Why - they aren't exactly likely to be permissible by law
+
+Really? What law and/or what clause in the GPL says that derivative works
+have to be licensed under the GPL? Or does the kernel have some new
+technique to determine whether or not code has been distributed?
+
+As I read the GPL, it only requires you to release something under the GPL
+if you distribute it. The kernel has no idea whether or not code has been
+distributed. So if it's enforcing the GPL, it cannot prohibit anything
+non-distributed code can lawfully do. (Ergo, it's *NOT* *ENFORCING* the
+GPL.)
+
+> > binary seething masses from accessing random kernel functions,
+> and allowing
+> > reasonable (but still non GPL) things like ndiswrapper to use network
+> > device interface.
 >
->> For all I care binary modules can break, but frankly I don't see
->> how encapsulating a couple of structures and pointers in a new
->> structure and adding a new argument to existing functions shifts
->> the decision about how a function should be usable to the namespace
->> guys. IMO all functions should continue to be usable as before,
->> as decided by whoever actually wrote them.
->> ...
-> 
-> Even ignoring the fact that it's unclear whether distributing modules 
-> with not GPLv2 compatible licences is legal at all or might bring you in 
-> jail,
+> Its up to the ndiswrapper authors how the licence their code, but they
+> should respect how we licence ours.
 
-Agreed, lets ignore that :)
+You license yours under the GPL, so they should respect the GPL.
 
-> your statement has an interesting implication:
-> 
-> Stuff like e.g. the EXPORT_SYMBOL(sk_alloc) predates the 
-> EXPORT_SYMBOL_GPL stuff.
-> 
-> Who is considered the author of this code?
-> 
-> And when should he state whether he prefers to use EXPORT_SYMBOL_GPL 
-> but wasn't able to use it at that when he wrote it since his code 
-> predates it and is glad to be able to decide this now?
+It sounds like we're back to where we were years ago. Didn't we already
+agree that EXPORT_SYMBOL_GPL was *NOT* a GPL-enforcement mechanism and had
+nothing to do with respecting the GPL? After all, if it s a GPL-enforcement
+mechanism, why is it not a "further restriction" which is prohibited by the
+GPL? (The GPL contains no restrictions on what code can use what symbols if
+that code is not distributed, but EXPORT_SYMBOL_GPL does.)
+
+Are you now claiming that EXPORT_SYMBOL_GPL is intended to enforce the GPL?
+
+DS
 
 
-He can state it when he feels like it, I don't see the point.
-Authors generally get to decide whether they use EXPORT_SYMBOL
-or EXPORT_SYMBOL_GPL unless in cases where its really clear-cut
-that EXPORT_SYMBOL is inapproriate. But thats a different matter.
-
-If a symbol was OK to be used previously and something using it
-would not automatically be considered a derived work, how does
-passing &init_net to the function just to make the compiler
-happy, avoid BUG_ONs and generally keep things working as before
-make it more of a derived work?
