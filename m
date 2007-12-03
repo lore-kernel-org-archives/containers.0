@@ -1,11 +1,11 @@
 From: Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
-Subject: [patch 05/38][IPV6] inet6_addr - make use of the new ipv6_chk_addr
-	function
-Date: Mon, 03 Dec 2007 17:16:41 +0100
-Message-ID: <20071203162441.975627556@mai.toulouse-stg.fr.ibm.com>
+Subject: [patch 14/38][IPV6] ip6_fib - make fib6_clean_all per namespace
+Date: Mon, 03 Dec 2007 17:16:50 +0100
+Message-ID: <20071203162456.650902423@mai.toulouse-stg.fr.ibm.com>
 References: <20071203161636.308694257@mai.toulouse-stg.fr.ibm.com>
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline; filename=inet6-addr-ipv6-chk-addr-2.patch
+Content-Disposition: inline;
+	filename=ip6-fib-make-fib6_clean_all-per-namespace.patch
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,204 +19,122 @@ To: den-3ImXcnM4P+0@public.gmane.org
 Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, Benjamin Thery <benjamin.thery-6ktuUTfB/bM@public.gmane.org>, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org, xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-The previous patch changed the ipv6_chk_addr API and tried
-to be focused on the network namespace check. A wrapper avoided
-to have the differents caller to be modified.
-
-This patch removes the wrapper and propagate the function API
-change to all callers.
+The function fib6_clean_all takes the network namespace
+as parameter. This is useful for example to flush the routes
+related to a specific network namespace.
 
 Signed-off-by: Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
 Signed-off-by: Benjamin Thery <benjamin.thery-6ktuUTfB/bM@public.gmane.org>
 ---
- include/net/addrconf.h |    9 +--------
- net/ipv6/addrconf.c    |    4 ++--
- net/ipv6/af_inet6.c    |    2 +-
- net/ipv6/anycast.c     |    2 +-
- net/ipv6/datagram.c    |    2 +-
- net/ipv6/icmp.c        |    2 +-
- net/ipv6/ip6_tunnel.c  |    8 ++++----
- net/ipv6/ndisc.c       |    2 +-
- net/ipv6/raw.c         |    2 +-
- net/sctp/ipv6.c        |    5 +++--
- 10 files changed, 16 insertions(+), 22 deletions(-)
+ include/net/ip6_fib.h |    3 ++-
+ net/ipv6/ip6_fib.c    |    7 ++++---
+ net/ipv6/route.c      |   22 +++++++++++++++++-----
+ 3 files changed, 23 insertions(+), 9 deletions(-)
 
-Index: linux-2.6-netns/include/net/addrconf.h
+Index: linux-2.6-netns/include/net/ip6_fib.h
 ===================================================================
---- linux-2.6-netns.orig/include/net/addrconf.h
-+++ linux-2.6-netns/include/net/addrconf.h
-@@ -58,18 +58,11 @@ extern int			addrconf_add_ifaddr(void __
- extern int			addrconf_del_ifaddr(void __user *arg);
- extern int			addrconf_set_dstaddr(void __user *arg);
+--- linux-2.6-netns.orig/include/net/ip6_fib.h
++++ linux-2.6-netns/include/net/ip6_fib.h
+@@ -207,7 +207,8 @@ struct fib6_node		*fib6_locate(struct fi
+ 					     struct in6_addr *daddr, int dst_len,
+ 					     struct in6_addr *saddr, int src_len);
  
--extern int			__ipv6_chk_addr(struct net *net,
-+extern int			ipv6_chk_addr(struct net *net,
- 					      struct in6_addr *addr,
- 					      struct net_device *dev,
- 					      int strict);
+-extern void			fib6_clean_all(int (*func)(struct rt6_info *, void *arg),
++extern void			fib6_clean_all(struct net *net,
++					       int (*func)(struct rt6_info *, void *arg),
+ 					       int prune, void *arg);
  
--static inline int ipv6_chk_addr(struct in6_addr *addr,
--				struct net_device *dev,
--				int strict)
--{
--	return __ipv6_chk_addr(&init_net, addr, dev, strict);
--}
--
- #if defined(CONFIG_IPV6_MIP6) || defined(CONFIG_IPV6_MIP6_MODULE)
- extern int			ipv6_chk_home_addr(struct in6_addr *addr);
- #endif
-Index: linux-2.6-netns/net/ipv6/addrconf.c
+ extern int			fib6_add(struct fib6_node *root,
+Index: linux-2.6-netns/net/ipv6/ip6_fib.c
 ===================================================================
---- linux-2.6-netns.orig/net/ipv6/addrconf.c
-+++ linux-2.6-netns/net/ipv6/addrconf.c
-@@ -1181,7 +1181,7 @@ static int ipv6_count_addresses(struct i
- 	return cnt;
+--- linux-2.6-netns.orig/net/ipv6/ip6_fib.c
++++ linux-2.6-netns/net/ipv6/ip6_fib.c
+@@ -1354,7 +1354,7 @@ static void fib6_clean_tree(struct fib6_
+ 	fib6_walk(&c.w);
  }
  
--int __ipv6_chk_addr(struct net *net, struct in6_addr *addr,
-+int ipv6_chk_addr(struct net *net, struct in6_addr *addr,
- 		  struct net_device *dev, int strict)
+-void fib6_clean_all(int (*func)(struct rt6_info *, void *arg),
++void fib6_clean_all(struct net *net, int (*func)(struct rt6_info *, void *arg),
+ 		    int prune, void *arg)
  {
- 	struct inet6_ifaddr * ifp;
-@@ -1202,7 +1202,7 @@ int __ipv6_chk_addr(struct net *net, str
- 	return ifp != NULL;
+ 	struct fib6_table *table;
+@@ -1364,7 +1364,7 @@ void fib6_clean_all(int (*func)(struct r
+ 
+ 	rcu_read_lock();
+ 	for (h = 0; h < FIB_TABLE_HASHSZ; h++) {
+-		head = &init_net.fib_table_hash[h];
++		head = &net->fib_table_hash[h];
+ 		hlist_for_each_entry_rcu(table, node, head, tb6_hlist) {
+ 			write_lock_bh(&table->tb6_lock);
+ 			fib6_clean_tree(&table->tb6_root, func, prune, arg);
+@@ -1453,7 +1453,8 @@ void fib6_run_gc(unsigned long dummy)
+ 	gc_args.more = 0;
+ 
+ 	ndisc_dst_gc(&gc_args.more);
+-	fib6_clean_all(fib6_age, 0, NULL);
++
++	fib6_clean_all(&init_net, fib6_age, 0, NULL);
+ 
+ 	if (gc_args.more)
+ 		mod_timer(&ip6_fib_timer, jiffies + ip6_rt_gc_interval);
+Index: linux-2.6-netns/net/ipv6/route.c
+===================================================================
+--- linux-2.6-netns.orig/net/ipv6/route.c
++++ linux-2.6-netns/net/ipv6/route.c
+@@ -1876,7 +1876,7 @@ static int fib6_ifdown(struct rt6_info *
+ 
+ void rt6_ifdown(struct net_device *dev)
+ {
+-	fib6_clean_all(fib6_ifdown, 0, dev);
++	fib6_clean_all(dev->nd_net, fib6_ifdown, 0, dev);
  }
  
--EXPORT_SYMBOL(__ipv6_chk_addr);
-+EXPORT_SYMBOL(ipv6_chk_addr);
+ struct rt6_mtu_change_arg
+@@ -1932,7 +1932,7 @@ void rt6_mtu_change(struct net_device *d
+ 		.mtu = mtu,
+ 	};
  
- static
- int ipv6_chk_same_addr(const struct in6_addr *addr, struct net_device *dev)
-Index: linux-2.6-netns/net/ipv6/af_inet6.c
-===================================================================
---- linux-2.6-netns.orig/net/ipv6/af_inet6.c
-+++ linux-2.6-netns/net/ipv6/af_inet6.c
-@@ -314,7 +314,7 @@ int inet6_bind(struct socket *sock, stru
- 			 */
- 			v4addr = LOOPBACK4_IPV6;
- 			if (!(addr_type & IPV6_ADDR_MULTICAST))	{
--				if (!ipv6_chk_addr(&addr->sin6_addr, dev, 0)) {
-+				if (!ipv6_chk_addr(&init_net, &addr->sin6_addr, dev, 0)) {
- 					if (dev)
- 						dev_put(dev);
- 					err = -EADDRNOTAVAIL;
-Index: linux-2.6-netns/net/ipv6/anycast.c
-===================================================================
---- linux-2.6-netns.orig/net/ipv6/anycast.c
-+++ linux-2.6-netns/net/ipv6/anycast.c
-@@ -89,7 +89,7 @@ int ipv6_sock_ac_join(struct sock *sk, i
- 		return -EPERM;
- 	if (ipv6_addr_is_multicast(addr))
- 		return -EINVAL;
--	if (ipv6_chk_addr(addr, NULL, 0))
-+	if (ipv6_chk_addr(&init_net, addr, NULL, 0))
- 		return -EINVAL;
- 
- 	pac = sock_kmalloc(sk, sizeof(struct ipv6_ac_socklist), GFP_KERNEL);
-Index: linux-2.6-netns/net/ipv6/datagram.c
-===================================================================
---- linux-2.6-netns.orig/net/ipv6/datagram.c
-+++ linux-2.6-netns/net/ipv6/datagram.c
-@@ -550,7 +550,7 @@ int datagram_send_ctl(struct msghdr *msg
- 						return -ENODEV;
- 				}
- 			}
--			if (!ipv6_chk_addr(&src_info->ipi6_addr, dev, 0)) {
-+			if (!ipv6_chk_addr(&init_net, &src_info->ipi6_addr, dev, 0)) {
- 				if (dev)
- 					dev_put(dev);
- 				err = -EINVAL;
-Index: linux-2.6-netns/net/ipv6/icmp.c
-===================================================================
---- linux-2.6-netns.orig/net/ipv6/icmp.c
-+++ linux-2.6-netns/net/ipv6/icmp.c
-@@ -331,7 +331,7 @@ void icmpv6_send(struct sk_buff *skb, in
- 	 */
- 	addr_type = ipv6_addr_type(&hdr->daddr);
- 
--	if (ipv6_chk_addr(&hdr->daddr, skb->dev, 0))
-+	if (ipv6_chk_addr(&init_net, &hdr->daddr, skb->dev, 0))
- 		saddr = &hdr->daddr;
- 
- 	/*
-Index: linux-2.6-netns/net/ipv6/ip6_tunnel.c
-===================================================================
---- linux-2.6-netns.orig/net/ipv6/ip6_tunnel.c
-+++ linux-2.6-netns/net/ipv6/ip6_tunnel.c
-@@ -654,8 +654,8 @@ static inline int ip6_tnl_rcv_ctl(struct
- 			ldev = dev_get_by_index(&init_net, p->link);
- 
- 		if ((ipv6_addr_is_multicast(&p->laddr) ||
--		     likely(ipv6_chk_addr(&p->laddr, ldev, 0))) &&
--		    likely(!ipv6_chk_addr(&p->raddr, NULL, 0)))
-+		     likely(ipv6_chk_addr(&init_net, &p->laddr, ldev, 0))) &&
-+		    likely(!ipv6_chk_addr(&init_net, &p->raddr, NULL, 0)))
- 			ret = 1;
- 
- 		if (ldev)
-@@ -789,12 +789,12 @@ static inline int ip6_tnl_xmit_ctl(struc
- 		if (p->link)
- 			ldev = dev_get_by_index(&init_net, p->link);
- 
--		if (unlikely(!ipv6_chk_addr(&p->laddr, ldev, 0)))
-+		if (unlikely(!ipv6_chk_addr(&init_net, &p->laddr, ldev, 0)))
- 			printk(KERN_WARNING
- 			       "%s xmit: Local address not yet configured!\n",
- 			       p->name);
- 		else if (!ipv6_addr_is_multicast(&p->raddr) &&
--			 unlikely(ipv6_chk_addr(&p->raddr, NULL, 0)))
-+			 unlikely(ipv6_chk_addr(&init_net, &p->raddr, NULL, 0)))
- 			printk(KERN_WARNING
- 			       "%s xmit: Routing loop! "
- 			       "Remote address found on this node!\n",
-Index: linux-2.6-netns/net/ipv6/ndisc.c
-===================================================================
---- linux-2.6-netns.orig/net/ipv6/ndisc.c
-+++ linux-2.6-netns/net/ipv6/ndisc.c
-@@ -654,7 +654,7 @@ static void ndisc_solicit(struct neighbo
- 	struct in6_addr *target = (struct in6_addr *)&neigh->primary_key;
- 	int probes = atomic_read(&neigh->probes);
- 
--	if (skb && ipv6_chk_addr(&ipv6_hdr(skb)->saddr, dev, 1))
-+	if (skb && ipv6_chk_addr(&init_net, &ipv6_hdr(skb)->saddr, dev, 1))
- 		saddr = &ipv6_hdr(skb)->saddr;
- 
- 	if ((probes -= neigh->parms->ucast_probes) < 0) {
-Index: linux-2.6-netns/net/ipv6/raw.c
-===================================================================
---- linux-2.6-netns.orig/net/ipv6/raw.c
-+++ linux-2.6-netns/net/ipv6/raw.c
-@@ -298,7 +298,7 @@ static int rawv6_bind(struct sock *sk, s
- 		v4addr = LOOPBACK4_IPV6;
- 		if (!(addr_type & IPV6_ADDR_MULTICAST))	{
- 			err = -EADDRNOTAVAIL;
--			if (!ipv6_chk_addr(&addr->sin6_addr, dev, 0)) {
-+			if (!ipv6_chk_addr(&init_net, &addr->sin6_addr, dev, 0)) {
- 				if (dev)
- 					dev_put(dev);
- 				goto out;
-Index: linux-2.6-netns/net/sctp/ipv6.c
-===================================================================
---- linux-2.6-netns.orig/net/sctp/ipv6.c
-+++ linux-2.6-netns/net/sctp/ipv6.c
-@@ -558,7 +558,7 @@ static int sctp_v6_available(union sctp_
- 	if (!(type & IPV6_ADDR_UNICAST))
- 		return 0;
- 
--	return ipv6_chk_addr(in6, NULL, 0);
-+	return ipv6_chk_addr(&init_net, in6, NULL, 0);
+-	fib6_clean_all(rt6_mtu_change_route, 0, &arg);
++	fib6_clean_all(dev->nd_net, rt6_mtu_change_route, 0, &arg);
  }
  
- /* This function checks if the address is a valid address to be used for
-@@ -860,7 +860,8 @@ static int sctp_inet6_bind_verify(struct
- 			dev = dev_get_by_index(&init_net, addr->v6.sin6_scope_id);
- 			if (!dev)
- 				return 0;
--			if (!ipv6_chk_addr(&addr->v6.sin6_addr, dev, 0)) {
-+			if (!ipv6_chk_addr(&init_net, &addr->v6.sin6_addr,
-+					   dev, 0)) {
- 				dev_put(dev);
- 				return 0;
- 			}
+ static const struct nla_policy rtm_ipv6_policy[RTA_MAX+1] = {
+@@ -2318,13 +2318,25 @@ static int rt6_info_route(struct rt6_inf
+ 
+ static int ipv6_route_show(struct seq_file *m, void *v)
+ {
+-	fib6_clean_all(rt6_info_route, 0, m);
++	struct net *net = (struct net *)m->private;
++	fib6_clean_all(net, rt6_info_route, 0, m);
+ 	return 0;
+ }
+ 
+ static int ipv6_route_open(struct inode *inode, struct file *file)
+ {
+-	return single_open(file, ipv6_route_show, NULL);
++	struct net *net = get_proc_net(inode);
++	if (!net)
++		return -ENXIO;
++	return single_open(file, ipv6_route_show, net);
++}
++
++static int ipv6_route_release(struct inode *inode, struct file *file)
++{
++	struct seq_file *seq = file->private_data;
++	struct net *net = seq->private;
++	put_net(net);
++	return single_release(inode, file);
+ }
+ 
+ static const struct file_operations ipv6_route_proc_fops = {
+@@ -2332,7 +2344,7 @@ static const struct file_operations ipv6
+ 	.open		= ipv6_route_open,
+ 	.read		= seq_read,
+ 	.llseek		= seq_lseek,
+-	.release	= single_release,
++	.release	= ipv6_route_release,
+ };
+ 
+ static int rt6_stats_seq_show(struct seq_file *seq, void *v)
 
 -- 
