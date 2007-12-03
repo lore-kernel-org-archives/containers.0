@@ -1,11 +1,12 @@
 From: Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
-Subject: [patch 12/38][IPV6] ip6_fib - move the fib table to the network
-	namespace
-Date: Mon, 03 Dec 2007 17:16:48 +0100
-Message-ID: <20071203162453.368428873@mai.toulouse-stg.fr.ibm.com>
+Subject: [patch 38/38][IPV6] ndisc - make ndisc handle multiple network
+	namespaces
+Date: Mon, 03 Dec 2007 17:17:14 +0100
+Message-ID: <20071203162534.807278346@mai.toulouse-stg.fr.ibm.com>
 References: <20071203161636.308694257@mai.toulouse-stg.fr.ibm.com>
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline; filename=ip6-fib-init-net.patch
+Content-Disposition: inline;
+	filename=IPv6-ndisc-make-ndisc-handle-multiple-network-namespace.patch
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,253 +20,170 @@ To: den-3ImXcnM4P+0@public.gmane.org
 Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, Benjamin Thery <benjamin.thery-6ktuUTfB/bM@public.gmane.org>, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org, xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Move the global definition of the fib table to the network namespace
-structure and make their access to the initial network namespace.
+Make ndisc handle multiple network namespaces: 
+Remove references to init_net, add network namespace parameters and add 
+pernet_operations for ndisc
 
 Signed-off-by: Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
 Signed-off-by: Benjamin Thery <benjamin.thery-6ktuUTfB/bM@public.gmane.org>
 ---
- include/net/net_namespace.h |    9 +++
- net/ipv6/ip6_fib.c          |  110 ++++++++++++++++++++++++++++----------------
- 2 files changed, 80 insertions(+), 39 deletions(-)
+ net/ipv6/ndisc.c |   90 +++++++++++++++++++++++++++++++++----------------------
+ 1 file changed, 55 insertions(+), 35 deletions(-)
 
-Index: linux-2.6-netns/include/net/net_namespace.h
+Index: linux-2.6-netns/net/ipv6/ndisc.c
 ===================================================================
---- linux-2.6-netns.orig/include/net/net_namespace.h
-+++ linux-2.6-netns/include/net/net_namespace.h
-@@ -44,6 +44,15 @@ struct net {
- 	struct fib_rules_ops	*fib4_rules_ops;
- #endif /* CONFIG_IP_MULTIPLE_TABLES */
+--- linux-2.6-netns.orig/net/ipv6/ndisc.c
++++ linux-2.6-netns/net/ipv6/ndisc.c
+@@ -442,12 +442,12 @@ static void pndisc_destructor(struct pne
+  *	Send a Neighbour Advertisement
+  */
  
-+	/* ipv6 routing table */
-+#if defined(CONFIG_IPV6) || defined(CONFIG_IPV6_MODULE)
-+	struct hlist_head       *fib_table_hash;
-+	struct fib6_table       *fib6_main_tbl;
-+#ifdef CONFIG_IPV6_MULTIPLE_TABLES
-+	struct fib6_table       *fib6_local_tbl;
-+#endif /* CONFIG_IPV6_MULTIPLE_TABLES */
-+#endif /* CONFIG_IPV6 */
-+
- 	struct sock 		*rtnl;			/* rtnetlink socket */
+-static inline void ndisc_flow_init(struct flowi *fl, u8 type,
++static inline void ndisc_flow_init(struct net *net, struct flowi *fl, u8 type,
+ 			    struct in6_addr *saddr, struct in6_addr *daddr,
+ 			    int oif)
+ {
+ 	memset(fl, 0, sizeof(*fl));
+-	fl->fl_net = &init_net;
++	fl->fl_net = net;
+ 	ipv6_addr_copy(&fl->fl6_src, saddr);
+ 	ipv6_addr_copy(&fl->fl6_dst, daddr);
+ 	fl->proto	 	= IPPROTO_ICMPV6;
+@@ -475,7 +475,7 @@ static void __ndisc_send(struct net_devi
  
- 	/* List of all packet sockets. */
-Index: linux-2.6-netns/net/ipv6/ip6_fib.c
-===================================================================
---- linux-2.6-netns.orig/net/ipv6/ip6_fib.c
-+++ linux-2.6-netns/net/ipv6/ip6_fib.c
-@@ -166,14 +166,11 @@ static __inline__ void rt6_release(struc
- 		dst_free(&rt->u.dst);
- }
+ 	type = icmp6h->icmp6_type;
  
--static struct fib6_table *fib6_main_tbl;
+-	ndisc_flow_init(&fl, type, saddr, daddr,
++	ndisc_flow_init(dev->nd_net, &fl, type, saddr, daddr,
+ 			dev->ifindex);
+ 
+ 	dst = ndisc_dst_alloc(dev, neigh, daddr, ip6_output);
+@@ -791,7 +791,7 @@ static void ndisc_recv_ns(struct sk_buff
+ 		if (ipv6_chk_acast_addr(dev, &msg->target) ||
+ 		    (idev->cnf.forwarding &&
+ 		     (ipv6_devconf.proxy_ndp || idev->cnf.proxy_ndp) &&
+-		     (pneigh = pneigh_lookup(&nd_tbl, &init_net,
++		     (pneigh = pneigh_lookup(&nd_tbl, dev->nd_net,
+ 					     &msg->target, dev, 0)) != NULL)) {
+ 			if (!(NEIGH_CB(skb)->flags & LOCALLY_ENQUEUED) &&
+ 			    skb->pkt_type != PACKET_HOST &&
+@@ -932,7 +932,7 @@ static void ndisc_recv_na(struct sk_buff
+ 		 */
+ 		if (lladdr && !memcmp(lladdr, dev->dev_addr, dev->addr_len) &&
+ 		    ipv6_devconf.forwarding && ipv6_devconf.proxy_ndp &&
+-		    pneigh_lookup(&nd_tbl, &init_net, &msg->target, dev, 0)) {
++		    pneigh_lookup(&nd_tbl, dev->nd_net, &msg->target, dev, 0)) {
+ 			/* XXX: idev->cnf.prixy_ndp */
+ 			goto out;
+ 		}
+@@ -1440,8 +1440,8 @@ void ndisc_send_redirect(struct sk_buff 
+ 		return;
+ 	}
+ 
+-	ndisc_flow_init(&fl, NDISC_REDIRECT, &saddr_buf, &ipv6_hdr(skb)->saddr,
+-			dev->ifindex);
++	ndisc_flow_init(dev->nd_net, &fl, NDISC_REDIRECT, &saddr_buf,
++			&ipv6_hdr(skb)->saddr, dev->ifindex);
+ 
+ 	dst = ip6_route_output(NULL, &fl);
+ 	if (dst == NULL)
+@@ -1616,9 +1616,6 @@ static int ndisc_netdev_event(struct not
+ 	struct net_device *dev = ptr;
+ 	struct net *net = dev->nd_net;
+ 
+-	if (dev->nd_net != &init_net)
+-		return NOTIFY_DONE;
 -
- #ifdef CONFIG_IPV6_MULTIPLE_TABLES
- #define FIB_TABLE_HASHSZ 256
- #else
- #define FIB_TABLE_HASHSZ 1
- #endif
--static struct hlist_head *fib_table_hash;
- 
- static void fib6_link_table(struct fib6_table *tb)
- {
-@@ -191,13 +188,11 @@ static void fib6_link_table(struct fib6_
- 	 * No protection necessary, this is the only list mutatation
- 	 * operation, tables never disappear once they exist.
- 	 */
--	hlist_add_head_rcu(&tb->tb6_hlist, &fib_table_hash[h]);
-+	hlist_add_head_rcu(&tb->tb6_hlist, &init_net.fib_table_hash[h]);
- }
- 
- #ifdef CONFIG_IPV6_MULTIPLE_TABLES
- 
--static struct fib6_table *fib6_local_tbl;
--
- static struct fib6_table *fib6_alloc_table(u32 id)
- {
- 	struct fib6_table *table;
-@@ -232,6 +227,7 @@ struct fib6_table *fib6_new_table(u32 id
- struct fib6_table *fib6_get_table(u32 id)
- {
- 	struct fib6_table *tb;
-+	struct hlist_head *head;
- 	struct hlist_node *node;
- 	unsigned int h;
- 
-@@ -239,7 +235,8 @@ struct fib6_table *fib6_get_table(u32 id
- 		id = RT6_TABLE_MAIN;
- 	h = id & (FIB_TABLE_HASHSZ - 1);
- 	rcu_read_lock();
--	hlist_for_each_entry_rcu(tb, node, &fib_table_hash[h], tb6_hlist) {
-+	head = &init_net.fib_table_hash[h];
-+	hlist_for_each_entry_rcu(tb, node, head, tb6_hlist) {
- 		if (tb->tb6_id == id) {
- 			rcu_read_unlock();
- 			return tb;
-@@ -252,8 +249,8 @@ struct fib6_table *fib6_get_table(u32 id
- 
- static void __init fib6_tables_init(void)
- {
--	fib6_link_table(fib6_main_tbl);
--	fib6_link_table(fib6_local_tbl);
-+	fib6_link_table(init_net.fib6_main_tbl);
-+	fib6_link_table(init_net.fib6_local_tbl);
- }
- 
- #else
-@@ -265,18 +262,18 @@ struct fib6_table *fib6_new_table(u32 id
- 
- struct fib6_table *fib6_get_table(u32 id)
- {
--	return fib6_main_tbl;
-+	return init_net.fib6_main_tbl;
- }
- 
- struct dst_entry *fib6_rule_lookup(struct flowi *fl, int flags,
- 				   pol_lookup_t lookup)
- {
--	return (struct dst_entry *) lookup(fib6_main_tbl, fl, flags);
-+	return (struct dst_entry *) lookup(init_net.fib6_main_tbl, fl, flags);
- }
- 
- static void __init fib6_tables_init(void)
- {
--	fib6_link_table(fib6_main_tbl);
-+	fib6_link_table(init_net.fib6_main_tbl);
- }
+ 	switch (event) {
+ 	case NETDEV_CHANGEADDR:
+ 		neigh_changeaddr(&nd_tbl, dev);
+@@ -1735,6 +1732,52 @@ static int ndisc_ifinfo_sysctl_strategy(
  
  #endif
-@@ -357,6 +354,7 @@ static int inet6_dump_fib(struct sk_buff
- 	struct fib6_walker_t *w;
- 	struct fib6_table *tb;
- 	struct hlist_node *node;
-+	struct hlist_head *head;
- 	int res = 0;
  
- 	if (net != &init_net)
-@@ -390,7 +388,8 @@ static int inet6_dump_fib(struct sk_buff
- 
- 	for (h = s_h; h < FIB_TABLE_HASHSZ; h++, s_e = 0) {
- 		e = 0;
--		hlist_for_each_entry(tb, node, &fib_table_hash[h], tb6_hlist) {
-+		head = &init_net.fib_table_hash[h];
-+		hlist_for_each_entry(tb, node, head, tb6_hlist) {
- 			if (e < s_e)
- 				goto next;
- 			res = fib6_dump_table(tb, skb, cb);
-@@ -1363,12 +1362,13 @@ void fib6_clean_all(int (*func)(struct r
- {
- 	struct fib6_table *table;
- 	struct hlist_node *node;
-+	struct hlist_head *head;
- 	unsigned int h;
- 
- 	rcu_read_lock();
- 	for (h = 0; h < FIB_TABLE_HASHSZ; h++) {
--		hlist_for_each_entry_rcu(table, node, &fib_table_hash[h],
--					 tb6_hlist) {
-+		head = &init_net.fib_table_hash[h];
-+		hlist_for_each_entry_rcu(table, node, head, tb6_hlist) {
- 			write_lock_bh(&table->tb6_lock);
- 			fib6_clean_tree(&table->tb6_root, func, prune, arg);
- 			write_unlock_bh(&table->tb6_lock);
-@@ -1467,42 +1467,74 @@ void fib6_run_gc(unsigned long dummy)
- 	spin_unlock_bh(&fib6_gc_lock);
- }
- 
--void __init fib6_init(void)
-+static int fib6_net_init(struct net *net)
- {
--	fib6_node_kmem = kmem_cache_create("fib6_nodes",
--					   sizeof(struct fib6_node),
--					   0, SLAB_HWCACHE_ALIGN|SLAB_PANIC,
--					   NULL);
-+	int ret;
- 
--	fib_table_hash = kzalloc(sizeof(*fib_table_hash)*FIB_TABLE_HASHSZ, GFP_KERNEL);
--	if (!fib_table_hash)
--		panic("IPV6: Failed to allocate fib_table_hash.\n");
--
--	fib6_main_tbl = kzalloc(sizeof(*fib6_main_tbl), GFP_KERNEL);
--	if (!fib6_main_tbl)
--		panic("IPV6: Failed to allocate fib6_main_tbl.\n");
--
--	fib6_main_tbl->tb6_id = RT6_TABLE_MAIN;
--	fib6_main_tbl->tb6_root.leaf = &ip6_null_entry;
--	fib6_main_tbl->tb6_root.fn_flags = RTN_ROOT | RTN_TL_ROOT | RTN_RTINFO;
-+	if (net != &init_net)
-+		return -EPERM;
-+
-+	ret = -ENOMEM;
-+	net->fib_table_hash = kzalloc(sizeof(*net->fib_table_hash)*FIB_TABLE_HASHSZ,
-+				      GFP_KERNEL);
-+	if (!net->fib_table_hash)
-+		goto out;
-+
-+	net->fib6_main_tbl = kzalloc(sizeof(*net->fib6_main_tbl), GFP_KERNEL);
-+	if (!net->fib6_main_tbl)
-+		goto out_fib6_main_tbl;
-+
-+	net->fib6_main_tbl->tb6_id = RT6_TABLE_MAIN;
-+	net->fib6_main_tbl->tb6_root.leaf = &ip6_null_entry;
-+	net->fib6_main_tbl->tb6_root.fn_flags = RTN_ROOT | RTN_TL_ROOT | RTN_RTINFO;
- 
- #ifdef CONFIG_IPV6_MULTIPLE_TABLES
--	fib6_local_tbl = kzalloc(sizeof(*fib6_local_tbl), GFP_KERNEL);
--	if (!fib6_local_tbl)
--		panic("IPV6: Failed to allocate fib6_local_tbl.\n");
--
--	fib6_local_tbl->tb6_id = RT6_TABLE_LOCAL;
--	fib6_local_tbl->tb6_root.leaf = &ip6_null_entry;
--	fib6_local_tbl->tb6_root.fn_flags = RTN_ROOT | RTN_TL_ROOT | RTN_RTINFO;
-+	net->fib6_local_tbl = kzalloc(sizeof(*net->fib6_local_tbl), GFP_KERNEL);
-+	if (!net->fib6_local_tbl) {
-+		kfree(net->fib6_main_tbl);
-+		goto out_fib6_main_tbl;
-+	}
-+	net->fib6_local_tbl->tb6_id = RT6_TABLE_LOCAL;
-+	net->fib6_local_tbl->tb6_root.leaf = &ip6_null_entry;
-+	net->fib6_local_tbl->tb6_root.fn_flags = RTN_ROOT | RTN_TL_ROOT | RTN_RTINFO;
- #endif
- 
- 	fib6_tables_init();
- 
--	__rtnl_register(PF_INET6, RTM_GETROUTE, NULL, inet6_dump_fib);
-+out_fib6_main_tbl:
-+	kfree(net->fib_table_hash);
-+out:
-+	return ret;
-+ }
-+
-+static void fib6_net_exit(struct net *net)
++static int ndisc_net_init(struct net *net)
 +{
-+#ifdef CONFIG_IPV6_MULTIPLE_TABLES
-+	kfree(net->fib6_local_tbl);
++	int err = 0;
++
++	net->ndisc_neigh_parms_default =
++		neigh_parms_alloc_default(&nd_tbl, net);
++	if (!net->ndisc_neigh_parms_default) {
++		err = -ENOMEM;
++		goto out;
++	}
++
++#ifdef CONFIG_SYSCTL
++	if ((err = neigh_sysctl_register(NULL,
++					 net->ndisc_neigh_parms_default,
++					 NET_IPV6, NET_IPV6_NEIGH,
++					 "ipv6",
++					 &ndisc_ifinfo_sysctl_change,
++					 &ndisc_ifinfo_sysctl_strategy)))
++	     goto out_sysctl;
 +#endif
-+	kfree(net->fib6_main_tbl);
-+	kfree(net->fib_table_hash);
++out:
++	return err;
++#ifdef CONFIG_SYSCTL
++out_sysctl:
++	neigh_parms_release(&nd_tbl, net->ndisc_neigh_parms_default);
++	goto out;
++#endif
 +}
 +
-+static struct pernet_operations fib6_net_ops = {
-+	.init = fib6_net_init,
-+	.exit = fib6_net_exit,
++static void ndisc_net_exit(struct net *net)
++{
++	struct neigh_parms *parms = net->ndisc_neigh_parms_default;
++	if (parms) {
++#ifdef CONFIG_SYSCTL
++		neigh_sysctl_unregister(parms);
++#endif
++		neigh_parms_release(&nd_tbl, parms);
++		net->ndisc_neigh_parms_default = NULL;
++	}
++}
++
++static struct pernet_operations ndisc_net_ops = {
++	.init = ndisc_net_init,
++	.exit = ndisc_net_exit,
 +};
 +
-+void __init fib6_init(void)
-+{
-+	fib6_node_kmem = kmem_cache_create("fib6_nodes",
-+					   sizeof(struct fib6_node),
-+					   0, SLAB_HWCACHE_ALIGN|SLAB_PANIC,
-+					   NULL);
-+
-+	register_pernet_subsys(&fib6_net_ops);
-+        __rtnl_register(PF_INET6, RTM_GETROUTE, NULL, inet6_dump_fib);
+ int __init ndisc_init(struct net_proto_family *ops)
+ {
+ 	struct ipv6_pinfo *np;
+@@ -1764,32 +1807,9 @@ int __init ndisc_init(struct net_proto_f
+ 
+ 	neigh_table_init(&nd_tbl);
+ 
+-	init_net.ndisc_neigh_parms_default =
+-		neigh_parms_alloc_default(&nd_tbl, &init_net);
+-	if (!init_net.ndisc_neigh_parms_default) {
+-		err = -ENOMEM;
+-		goto out_neigh_parms;
+-	}
+-
+-#ifdef CONFIG_SYSCTL
+-	if ((err = neigh_sysctl_register(NULL,
+-					 init_net.ndisc_neigh_parms_default,
+-					 NET_IPV6, NET_IPV6_NEIGH,
+-					 "ipv6",
+-					 &ndisc_ifinfo_sysctl_change,
+-					 &ndisc_ifinfo_sysctl_strategy)))
+-	     goto out_sysctl;
+-#endif
++	register_pernet_subsys(&ndisc_net_ops);
+ 	register_netdevice_notifier(&ndisc_netdev_notifier);
+-out:
+-	return err;
+-#ifdef CONFIG_SYSCTL
+-out_sysctl:
+-	neigh_parms_release(&nd_tbl, init_net.ndisc_neigh_parms_default);
+-#endif
+-out_neigh_parms:
+-	sock_release(ndisc_socket);
+-	goto out;
++	return 0;
  }
  
- void fib6_gc_cleanup(void)
- {
- 	del_timer(&ip6_fib_timer);
-+	unregister_pernet_subsys(&fib6_net_ops);
- 	kmem_cache_destroy(fib6_node_kmem);
- }
+ void ndisc_cleanup(void)
 
 -- 
