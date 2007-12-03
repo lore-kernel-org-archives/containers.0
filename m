@@ -1,78 +1,48 @@
-From: Daniel Lezcano <daniel.lezcano@free.fr>
-Subject: Re: namespace support requires network modules to say "GPL"
-Date: Mon, 03 Dec 2007 19:57:53 +0100
-Message-ID: <475451B1.1030006@free.fr>
-References: <m163zi9425.fsf@ebiederm.dsl.xmission.com>	<47515D39.9030900@rtr.ca>	<20071201111736.297dd99a@freepuppy.rosehill>	<20071201163035.321fd554@freepuppy.rosehill>	<475227B1.2060802@rtr.ca>	<20071201202354.672aed18@freepuppy.rosehill>	<47530778.7030605@candelatech.com>	<47530FAC.1070804@trash.net>	<m1fxyj1y1y.fsf@ebiederm.dsl.xmission.com> <47544896.7070101@candelatech.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
-Content-Transfer-Encoding: 7bit
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1753628AbXLCS7t@vger.kernel.org>
-In-Reply-To: <47544896.7070101@candelatech.com>
-Sender: linux-kernel-owner@vger.kernel.org
-To: Ben Greear <greearb@candelatech.com>
-Cc: "Eric W. Biederman" <ebiederm@xmission.com>, netdev@vger.kernel.org, linux-kernel@vger.kernel.org, containers@lists.osdl.org, Mark Lord <lkml@rtr.ca>, Stephen Hemminger <shemminger@linux-foundation.org>
+From: Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
+Subject: [patch 00/38][IPV6] ipv6 per network namespace
+Date: Mon, 03 Dec 2007 17:16:36 +0100
+Message-ID: <20071203161636.308694257@mai.toulouse-stg.fr.ibm.com>
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: den-3ImXcnM4P+0@public.gmane.org
+Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org, xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Ben Greear wrote:
-> Eric W. Biederman wrote:
->> Patrick McHardy <kaber@trash.net> writes:
->>
->>  
->>> Ben Greear wrote:
->>>    
->>>> I have a binary module that uses dev_get_by_name...it's sort of a 
->>>> bridge-like
->>>> thing and
->>>> needs user-space to tell it which device to listen for packets on...
->>>>
->>>> This code doesn't need or care about name-spaces, so I don't see how 
->>>> it could
->>>> really
->>>> be infringing on the author's code (any worse than loading a binary 
->>>> driver
->>>> into the kernel
->>>> ever does).
->>>>       
->>
->> Regardless of infringement it is incompatible with a complete network
->> namespace implementation.  Further it sounds like the module you are
->> describing defines a kernel ABI without being merged and hopes that
->> ABI will still be supportable in the future.  Honestly I think doing so
->> is horrible code maintenance policy.
->>   
-> I don't mind if the ABI changes, so long as I can still use something 
-> similar.
-> 
-> The namespace logic is interesting to me in general, but at this point I 
-> can't think of a way that
-> it actually helps this particular module.  All I really need is a way to 
-> grab every frame
-> from eth0 and then transmit it to eth1.  I'm currently doing this by 
-> finding the netdevice
-> and registering a raw-packet protocol (ie, like tcpdump would do).  At 
-> least up to 2.6.23,
-> this does not require any hacks to the kernel and uses only non GPL 
-> exported symbols.
-> 
-> Based on my understanding of the namespace logic, if I never add any 
-> namespaces,
-> the general network layout should look similar to how it does today, so 
-> I should have
-> no logical problem with my module.
-> 
->> Once things are largely complete it makes sense to argue with out of
->> tree module authors that because they don't have network namespace
->> support in their modules, their modules are broken.     
-> Does this imply that every module that accesses the network code *must* 
-> become
-> GPL simply because it must interact with namespace logic that is 
-> exported as GPL only symbols?
+This patchset provides the changes to make the ipv6 protocol to handle
+multiple network namespaces.
 
-That's right, with init_net's EXPORT_SYMBOL_GPL and dev_get_xx, we 
-enforce people to be GPL whatever they didn't asked to have the 
-namespaces in their code.
+There is a pre-requesite which is already merged in net-2.6.25, it is
+the separate workq for the network namespace cleanup. It will
+disappear when Denis will rebase the patchset to the latest
+net-2.6.25.
 
-Eric, why can we simply change EXPORT_SYMBOL_GPL to EXPORT_SYMBOL for 
-init_net ?
+The sysctl per net is not yet implemented (coming soon), the patchset
+adds a check to activate the network namespace only if sysctl is
+disabled. It will be reverted as soon as we handle sysctl.
 
+This subset makes per namespace:
 
+ * inet6_addr
+ * ip6_fib
+ * fib6_rules
+ * rt6_stats
+ * rt6_info
+ * route6
+ * addrconf
+ * ndisc
+
+The patchset is a little big, but it is difficult to check and test without
+a minimal subset of features of the protocol. So at this point we are able to
+create routes and addresses per namespaces, we can check the procfs files,
+setup interfaces, check the address autoconfiguration is done and the
+different routes are created, etc ...
+
+-- 
