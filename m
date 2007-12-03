@@ -1,12 +1,11 @@
 From: Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
-Subject: [patch 26/38][IPV6] route6 - Pass the network namespace parameter
-	to rt6_lookup
-Date: Mon, 03 Dec 2007 17:17:02 +0100
-Message-ID: <20071203162516.122045161@mai.toulouse-stg.fr.ibm.com>
+Subject: [patch 18/38][IPV6] ip6_fib - move the ip6 fib gc timer to the
+	network namespace
+Date: Mon, 03 Dec 2007 17:16:54 +0100
+Message-ID: <20071203162503.027409013@mai.toulouse-stg.fr.ibm.com>
 References: <20071203161636.308694257@mai.toulouse-stg.fr.ibm.com>
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline;
-	filename=route6-pass-network-namespace-to-rt6_lookup.patch
+Content-Disposition: inline; filename=ip6-fib-gc-timer-init-net.patch
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -20,167 +19,125 @@ To: den-3ImXcnM4P+0@public.gmane.org
 Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, Benjamin Thery <benjamin.thery-6ktuUTfB/bM@public.gmane.org>, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org, xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Add a network namespace parameter to rt6_lookup().
+Move the timer definition inside the network namespace structure. 
+The gc timer is no longer referenced as a global variable but is now 
+relative to the init_net.
 
 Signed-off-by: Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
 Signed-off-by: Benjamin Thery <benjamin.thery-6ktuUTfB/bM@public.gmane.org>
 ---
- include/net/ip6_route.h |    3 ++-
- net/ipv6/addrconf.c     |    4 ++--
- net/ipv6/anycast.c      |    2 +-
- net/ipv6/ip6_tunnel.c   |    4 ++--
- net/ipv6/mcast.c        |    4 ++--
- net/ipv6/route.c        |    9 +++++----
- net/ipv6/sit.c          |    4 ++--
- 7 files changed, 16 insertions(+), 14 deletions(-)
+ include/net/net_namespace.h |    2 ++
+ net/ipv6/ip6_fib.c          |   37 +++++++++++++++++++------------------
+ 2 files changed, 21 insertions(+), 18 deletions(-)
 
-Index: linux-2.6-netns/include/net/ip6_route.h
+Index: linux-2.6-netns/include/net/net_namespace.h
 ===================================================================
---- linux-2.6-netns.orig/include/net/ip6_route.h
-+++ linux-2.6-netns/include/net/ip6_route.h
-@@ -73,7 +73,8 @@ extern void			rt6_sndmsg(int type, struc
- 					   int dstlen, int srclen,
- 					   int metric, __u32 flags);
+--- linux-2.6-netns.orig/include/net/net_namespace.h
++++ linux-2.6-netns/include/net/net_namespace.h
+@@ -51,6 +51,8 @@ struct net {
+ #ifdef CONFIG_IPV6_MULTIPLE_TABLES
+ 	struct fib6_table       *fib6_local_tbl;
+ #endif /* CONFIG_IPV6_MULTIPLE_TABLES */
++
++	struct timer_list       *ip6_fib_timer;
+ #endif /* CONFIG_IPV6 */
  
--extern struct rt6_info		*rt6_lookup(struct in6_addr *daddr,
-+extern struct rt6_info		*rt6_lookup(struct net *net,
-+					    struct in6_addr *daddr,
- 					    struct in6_addr *saddr,
- 					    int oif, int flags);
- 
-Index: linux-2.6-netns/net/ipv6/addrconf.c
+ 	struct sock 		*rtnl;			/* rtnetlink socket */
+Index: linux-2.6-netns/net/ipv6/ip6_fib.c
 ===================================================================
---- linux-2.6-netns.orig/net/ipv6/addrconf.c
-+++ linux-2.6-netns/net/ipv6/addrconf.c
-@@ -728,7 +728,7 @@ static void ipv6_del_addr(struct inet6_i
- 		struct rt6_info *rt;
+--- linux-2.6-netns.orig/net/ipv6/ip6_fib.c
++++ linux-2.6-netns/net/ipv6/ip6_fib.c
+@@ -93,8 +93,6 @@ static int fib6_walk_continue(struct fib
  
- 		ipv6_addr_prefix(&prefix, &ifp->addr, ifp->prefix_len);
--		rt = rt6_lookup(&prefix, NULL, ifp->idev->dev->ifindex, 1);
-+		rt = rt6_lookup(&init_net, &prefix, NULL, ifp->idev->dev->ifindex, 1);
+ static __u32 rt_sernum;
  
- 		if (rt && ((rt->rt6i_flags & (RTF_GATEWAY | RTF_DEFAULT)) == 0)) {
- 			if (onlink == 0) {
-@@ -1672,7 +1672,7 @@ void addrconf_prefix_rcv(struct net_devi
+-static struct timer_list *ip6_fib_timer;
+-
+ static struct fib6_walker_t fib6_walker_list = {
+ 	.prev	= &fib6_walker_list,
+ 	.next	= &fib6_walker_list,
+@@ -664,15 +662,15 @@ static int fib6_add_rt2node(struct fib6_
  
- 	if (pinfo->onlink) {
- 		struct rt6_info *rt;
--		rt = rt6_lookup(&pinfo->prefix, NULL, dev->ifindex, 1);
-+		rt = rt6_lookup(&init_net, &pinfo->prefix, NULL, dev->ifindex, 1);
- 
- 		if (rt && ((rt->rt6i_flags & (RTF_GATEWAY | RTF_DEFAULT)) == 0)) {
- 			if (rt->rt6i_flags&RTF_EXPIRES) {
-Index: linux-2.6-netns/net/ipv6/anycast.c
-===================================================================
---- linux-2.6-netns.orig/net/ipv6/anycast.c
-+++ linux-2.6-netns/net/ipv6/anycast.c
-@@ -101,7 +101,7 @@ int ipv6_sock_ac_join(struct sock *sk, i
- 	if (ifindex == 0) {
- 		struct rt6_info *rt;
- 
--		rt = rt6_lookup(addr, NULL, 0, 0);
-+		rt = rt6_lookup(&init_net, addr, NULL, 0, 0);
- 		if (rt) {
- 			dev = rt->rt6i_dev;
- 			dev_hold(dev);
-Index: linux-2.6-netns/net/ipv6/ip6_tunnel.c
-===================================================================
---- linux-2.6-netns.orig/net/ipv6/ip6_tunnel.c
-+++ linux-2.6-netns/net/ipv6/ip6_tunnel.c
-@@ -602,7 +602,7 @@ ip6ip6_err(struct sk_buff *skb, struct i
- 		skb_reset_network_header(skb2);
- 
- 		/* Try to guess incoming interface */
--		rt = rt6_lookup(&ipv6_hdr(skb2)->saddr, NULL, 0, 0);
-+		rt = rt6_lookup(&init_net, &ipv6_hdr(skb2)->saddr, NULL, 0, 0);
- 
- 		if (rt && rt->rt6i_dev)
- 			skb2->dev = rt->rt6i_dev;
-@@ -1112,7 +1112,7 @@ static void ip6_tnl_link_config(struct i
- 		int strict = (ipv6_addr_type(&p->raddr) &
- 			      (IPV6_ADDR_MULTICAST|IPV6_ADDR_LINKLOCAL));
- 
--		struct rt6_info *rt = rt6_lookup(&p->raddr, &p->laddr,
-+		struct rt6_info *rt = rt6_lookup(&init_net, &p->raddr, &p->laddr,
- 						 p->link, strict);
- 
- 		if (rt == NULL)
-Index: linux-2.6-netns/net/ipv6/mcast.c
-===================================================================
---- linux-2.6-netns.orig/net/ipv6/mcast.c
-+++ linux-2.6-netns/net/ipv6/mcast.c
-@@ -208,7 +208,7 @@ int ipv6_sock_mc_join(struct sock *sk, i
- 
- 	if (ifindex == 0) {
- 		struct rt6_info *rt;
--		rt = rt6_lookup(addr, NULL, 0, 0);
-+		rt = rt6_lookup(&init_net, addr, NULL, 0, 0);
- 		if (rt) {
- 			dev = rt->rt6i_dev;
- 			dev_hold(dev);
-@@ -294,7 +294,7 @@ static struct inet6_dev *ip6_mc_find_dev
- 	if (ifindex == 0) {
- 		struct rt6_info *rt;
- 
--		rt = rt6_lookup(group, NULL, 0, 0);
-+		rt = rt6_lookup(&init_net, group, NULL, 0, 0);
- 		if (rt) {
- 			dev = rt->rt6i_dev;
- 			dev_hold(dev);
-Index: linux-2.6-netns/net/ipv6/route.c
-===================================================================
---- linux-2.6-netns.orig/net/ipv6/route.c
-+++ linux-2.6-netns/net/ipv6/route.c
-@@ -553,11 +553,12 @@ out:
- 
+ static __inline__ void fib6_start_gc(struct rt6_info *rt)
+ {
+-	if (ip6_fib_timer->expires == 0 &&
++	if (init_net.ip6_fib_timer->expires == 0 &&
+ 	    (rt->rt6i_flags & (RTF_EXPIRES|RTF_CACHE)))
+-		mod_timer(ip6_fib_timer, jiffies + ip6_rt_gc_interval);
++		mod_timer(init_net.ip6_fib_timer, jiffies + ip6_rt_gc_interval);
  }
  
--struct rt6_info *rt6_lookup(struct in6_addr *daddr, struct in6_addr *saddr,
-+struct rt6_info *rt6_lookup(struct net *net,
-+			    struct in6_addr *daddr, struct in6_addr *saddr,
- 			    int oif, int strict)
+ void fib6_force_start_gc(void)
  {
- 	struct flowi fl = {
--		.fl_net = &init_net,
-+		.fl_net = net,
- 		.oif = oif,
- 		.nl_u = {
- 			.ip6_u = {
-@@ -1164,7 +1165,7 @@ int ip6_route_add(struct fib6_config *cf
- 			if (!(gwa_type&IPV6_ADDR_UNICAST))
- 				goto out;
+-	if (ip6_fib_timer->expires == 0)
+-		mod_timer(ip6_fib_timer, jiffies + ip6_rt_gc_interval);
++	if (init_net.ip6_fib_timer->expires == 0)
++		mod_timer(init_net.ip6_fib_timer, jiffies + ip6_rt_gc_interval);
+ }
  
--			grt = rt6_lookup(gw_addr, NULL, cfg->fc_ifindex, 1);
-+			grt = rt6_lookup(&init_net, gw_addr, NULL, cfg->fc_ifindex, 1);
+ /*
+@@ -1444,7 +1442,7 @@ void fib6_run_gc(unsigned long expires, 
+ 	} else {
+ 		local_bh_disable();
+ 		if (!spin_trylock(&fib6_gc_lock)) {
+-			mod_timer(ip6_fib_timer, jiffies + HZ);
++			mod_timer(init_net.ip6_fib_timer, jiffies + HZ);
+ 			local_bh_enable();
+ 			return;
+ 		}
+@@ -1457,10 +1455,10 @@ void fib6_run_gc(unsigned long expires, 
+ 	fib6_clean_all(net, fib6_age, 0, NULL);
  
- 			err = -EHOSTUNREACH;
- 			if (grt == NULL)
-@@ -1486,7 +1487,7 @@ void rt6_pmtu_discovery(struct in6_addr 
- 	struct rt6_info *rt, *nrt;
- 	int allfrag = 0;
+ 	if (gc_args.more)
+-		mod_timer(ip6_fib_timer, jiffies + ip6_rt_gc_interval);
++		mod_timer(init_net.ip6_fib_timer, jiffies + ip6_rt_gc_interval);
+ 	else {
+-		del_timer(ip6_fib_timer);
+-		ip6_fib_timer->expires = 0;
++		del_timer(init_net.ip6_fib_timer);
++		init_net.ip6_fib_timer->expires = 0;
+ 	}
+ 	spin_unlock_bh(&fib6_gc_lock);
+ }
+@@ -1525,19 +1523,22 @@ static struct pernet_operations fib6_net
  
--	rt = rt6_lookup(daddr, saddr, dev->ifindex, 0);
-+	rt = rt6_lookup(dev->nd_net, daddr, saddr, dev->ifindex, 0);
- 	if (rt == NULL)
- 		return;
+ void __init fib6_init(void)
+ {
++ 	struct timer_list *timer;
++
+ 	fib6_node_kmem = kmem_cache_create("fib6_nodes",
+ 					   sizeof(struct fib6_node),
+ 					   0, SLAB_HWCACHE_ALIGN|SLAB_PANIC,
+ 					   NULL);
  
-Index: linux-2.6-netns/net/ipv6/sit.c
-===================================================================
---- linux-2.6-netns.orig/net/ipv6/sit.c
-+++ linux-2.6-netns/net/ipv6/sit.c
-@@ -341,11 +341,11 @@ out:
- 	skb_reset_network_header(skb2);
+-	ip6_fib_timer = kzalloc(sizeof(*ip6_fib_timer), GFP_KERNEL);
+-	if (!ip6_fib_timer)
++	timer = kzalloc(sizeof(*timer), GFP_KERNEL);
++	if (!timer)
+ 		panic("IPV6: failed to allocate the gc timer\n");
  
- 	/* Try to guess incoming interface */
--	rt6i = rt6_lookup(&iph6->saddr, NULL, NULL, 0);
-+	rt6i = rt6_lookup(&init_net, &iph6->saddr, NULL, NULL, 0);
- 	if (rt6i && rt6i->rt6i_dev) {
- 		skb2->dev = rt6i->rt6i_dev;
+-	ip6_fib_timer->function = fib6_gc_timer_cb;
+-	ip6_fib_timer->expires = 0;
+-	ip6_fib_timer->data = (unsigned long)&init_net;
+-	ip6_fib_timer->base = &boot_tvec_bases;
++	timer->function = fib6_gc_timer_cb;
++	timer->expires = 0;
++	timer->data = (unsigned long)&init_net;
++	timer->base = &boot_tvec_bases;
++	init_net.ip6_fib_timer = timer;
  
--		rt6i = rt6_lookup(&iph6->daddr, &iph6->saddr, NULL, 0);
-+		rt6i = rt6_lookup(&init_net, &iph6->daddr, &iph6->saddr, NULL, 0);
+ 	register_pernet_subsys(&fib6_net_ops);
+         __rtnl_register(PF_INET6, RTM_GETROUTE, NULL, inet6_dump_fib);
+@@ -1545,8 +1546,8 @@ void __init fib6_init(void)
  
- 		if (rt6i && rt6i->rt6i_dev && rt6i->rt6i_dev->type == ARPHRD_SIT) {
- 			struct ip_tunnel *t = netdev_priv(rt6i->rt6i_dev);
+ void fib6_gc_cleanup(void)
+ {
+-	del_timer(ip6_fib_timer);
+-	kfree(ip6_fib_timer);
++	del_timer(init_net.ip6_fib_timer);
++	kfree(init_net.ip6_fib_timer);
+ 	unregister_pernet_subsys(&fib6_net_ops);
+ 	kmem_cache_destroy(fib6_node_kmem);
+ }
 
 -- 
