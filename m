@@ -1,11 +1,10 @@
 From: Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
-Subject: [patch 16/38][IPV6] ip6_fib - make ip6 fib gc timer mindless changes
-Date: Mon, 03 Dec 2007 17:16:52 +0100
-Message-ID: <20071203162500.038553774@mai.toulouse-stg.fr.ibm.com>
+Subject: [patch 07/38][IPV6] inet6_addr - ipv6_get_ifaddr namespace aware
+Date: Mon, 03 Dec 2007 17:16:43 +0100
+Message-ID: <20071203162445.610125209@mai.toulouse-stg.fr.ibm.com>
 References: <20071203161636.308694257@mai.toulouse-stg.fr.ibm.com>
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline;
-	filename=ip6-fib-make-gc-timer-mindless-changes.patch
+Content-Disposition: inline; filename=inet6-addr-ipv6-get-ifaddr.patch
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,83 +18,70 @@ To: den-3ImXcnM4P+0@public.gmane.org
 Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, Benjamin Thery <benjamin.thery-6ktuUTfB/bM@public.gmane.org>, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org, xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-The patch prepares to dynamically allocate the ip6_fib_timer timer.
-It changes all reference to the global static variable to a
-globally defined pointer to the global static variable.
+The inet6_addr_lst is browsed taking into account the network 
+namespace specified as parameter. If an address does not belong
+to the specified namespace, it is ignored.
 
-That makes all the code use a pointer instead of a static variable.
+In order to reduce the scope of the patch, a wrapper has been
+created to not impact all the callers.
+
+The next patch will remove this wrapper and change all the wrappers
+to take into account this new parameter.
 
 Signed-off-by: Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
 Signed-off-by: Benjamin Thery <benjamin.thery-6ktuUTfB/bM@public.gmane.org>
 ---
- net/ipv6/ip6_fib.c |   21 +++++++++++----------
- 1 file changed, 11 insertions(+), 10 deletions(-)
+ include/net/addrconf.h |   15 ++++++++++++---
+ net/ipv6/addrconf.c    |    5 ++++-
+ 2 files changed, 16 insertions(+), 4 deletions(-)
 
-Index: linux-2.6-netns/net/ipv6/ip6_fib.c
+Index: linux-2.6-netns/include/net/addrconf.h
 ===================================================================
---- linux-2.6-netns.orig/net/ipv6/ip6_fib.c
-+++ linux-2.6-netns/net/ipv6/ip6_fib.c
-@@ -95,7 +95,8 @@ static __u32 rt_sernum;
+--- linux-2.6-netns.orig/include/net/addrconf.h
++++ linux-2.6-netns/include/net/addrconf.h
+@@ -66,9 +66,18 @@ extern int			ipv6_chk_addr(struct net *n
+ #if defined(CONFIG_IPV6_MIP6) || defined(CONFIG_IPV6_MIP6_MODULE)
+ extern int			ipv6_chk_home_addr(struct in6_addr *addr);
+ #endif
+-extern struct inet6_ifaddr *	ipv6_get_ifaddr(struct in6_addr *addr,
+-						struct net_device *dev,
+-						int strict);
++extern struct inet6_ifaddr      *__ipv6_get_ifaddr(struct net *net,
++						   struct in6_addr *addr,
++						   struct net_device *dev,
++						   int strict);
++
++static inline struct inet6_ifaddr *ipv6_get_ifaddr(struct in6_addr *addr,
++						   struct net_device *dev,
++						   int strict)
++{
++	return __ipv6_get_ifaddr(&init_net, addr, dev, strict);
++}
++
+ extern int			ipv6_get_saddr(struct dst_entry *dst, 
+ 					       struct in6_addr *daddr,
+ 					       struct in6_addr *saddr);
+Index: linux-2.6-netns/net/ipv6/addrconf.c
+===================================================================
+--- linux-2.6-netns.orig/net/ipv6/addrconf.c
++++ linux-2.6-netns/net/ipv6/addrconf.c
+@@ -1223,13 +1223,16 @@ int ipv6_chk_same_addr(struct net *net, 
+ 	return ifp != NULL;
+ }
  
- static void fib6_gc_timer_cb(unsigned long arg);
- 
--static DEFINE_TIMER(ip6_fib_timer, fib6_gc_timer_cb, 0, (unsigned long)&init_net);
-+static DEFINE_TIMER(__ip6_fib_timer, fib6_gc_timer_cb, 0, (unsigned long)&init_net);
-+static struct timer_list *ip6_fib_timer = &__ip6_fib_timer;
- 
- static struct fib6_walker_t fib6_walker_list = {
- 	.prev	= &fib6_walker_list,
-@@ -666,15 +667,15 @@ static int fib6_add_rt2node(struct fib6_
- 
- static __inline__ void fib6_start_gc(struct rt6_info *rt)
+-struct inet6_ifaddr * ipv6_get_ifaddr(struct in6_addr *addr, struct net_device *dev, int strict)
++struct inet6_ifaddr * __ipv6_get_ifaddr(struct net *net, struct in6_addr *addr,
++					struct net_device *dev, int strict)
  {
--	if (ip6_fib_timer.expires == 0 &&
-+	if (ip6_fib_timer->expires == 0 &&
- 	    (rt->rt6i_flags & (RTF_EXPIRES|RTF_CACHE)))
--		mod_timer(&ip6_fib_timer, jiffies + ip6_rt_gc_interval);
-+		mod_timer(ip6_fib_timer, jiffies + ip6_rt_gc_interval);
- }
+ 	struct inet6_ifaddr * ifp;
+ 	u8 hash = ipv6_addr_hash(addr);
  
- void fib6_force_start_gc(void)
- {
--	if (ip6_fib_timer.expires == 0)
--		mod_timer(&ip6_fib_timer, jiffies + ip6_rt_gc_interval);
-+	if (ip6_fib_timer->expires == 0)
-+		mod_timer(ip6_fib_timer, jiffies + ip6_rt_gc_interval);
- }
- 
- /*
-@@ -1446,7 +1447,7 @@ void fib6_run_gc(unsigned long expires, 
- 	} else {
- 		local_bh_disable();
- 		if (!spin_trylock(&fib6_gc_lock)) {
--			mod_timer(&ip6_fib_timer, jiffies + HZ);
-+			mod_timer(ip6_fib_timer, jiffies + HZ);
- 			local_bh_enable();
- 			return;
- 		}
-@@ -1459,10 +1460,10 @@ void fib6_run_gc(unsigned long expires, 
- 	fib6_clean_all(net, fib6_age, 0, NULL);
- 
- 	if (gc_args.more)
--		mod_timer(&ip6_fib_timer, jiffies + ip6_rt_gc_interval);
-+		mod_timer(ip6_fib_timer, jiffies + ip6_rt_gc_interval);
- 	else {
--		del_timer(&ip6_fib_timer);
--		ip6_fib_timer.expires = 0;
-+		del_timer(ip6_fib_timer);
-+		ip6_fib_timer->expires = 0;
- 	}
- 	spin_unlock_bh(&fib6_gc_lock);
- }
-@@ -1538,7 +1539,7 @@ void __init fib6_init(void)
- 
- void fib6_gc_cleanup(void)
- {
--	del_timer(&ip6_fib_timer);
-+	del_timer(ip6_fib_timer);
- 	unregister_pernet_subsys(&fib6_net_ops);
- 	kmem_cache_destroy(fib6_node_kmem);
- }
+ 	read_lock_bh(&addrconf_hash_lock);
+ 	for(ifp = inet6_addr_lst[hash]; ifp; ifp=ifp->lst_next) {
++		if (ifp->idev->dev->nd_net != net)
++			continue;
+ 		if (ipv6_addr_equal(&ifp->addr, addr)) {
+ 			if (dev == NULL || ifp->idev->dev == dev ||
+ 			    !(ifp->scope&(IFA_LINK|IFA_HOST) || strict)) {
 
 -- 
