@@ -1,10 +1,11 @@
 From: Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
-Subject: [patch 04/38][IPV6] inet6_addr - check ipv6 address per namespace
-Date: Mon, 03 Dec 2007 17:16:40 +0100
-Message-ID: <20071203162438.964724827@mai.toulouse-stg.fr.ibm.com>
+Subject: [patch 01/38][IPV6] net-2.6.25 - make netns cleanup to run in a
+	separate queue
+Date: Mon, 03 Dec 2007 17:16:37 +0100
+Message-ID: <20071203162433.595935897@mai.toulouse-stg.fr.ibm.com>
 References: <20071203161636.308694257@mai.toulouse-stg.fr.ibm.com>
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline; filename=inet6-addr-ipv6-chk-addr.patch
+Content-Disposition: inline; filename=create-workq-for-the-namespace.patch
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -15,80 +16,59 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: den-3ImXcnM4P+0@public.gmane.org
-Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, Benjamin Thery <benjamin.thery-6ktuUTfB/bM@public.gmane.org>, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org, xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org
+Cc: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org, containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, "Denis V. Lunev" <den-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>, xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org, Benjamin Thery <benjamin.thery-6ktuUTfB/bM@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-When a new address is added, we must check if the new address does 
-not already exists.
-This patch makes this check to be aware of a network namespace,
-so the check will look if the address already exists for the specified
-network namespace. While the addresses are browsed, the addresses
-which do not belong to the namespace are discarded.
-
-The modifications are trivial here and they do not touch the 
-callers of the function ipv6_chk_addr.
+This patch adds a separate workqueue for cleaning up a network 
+namespace. If we use the keventd workqueue to execute cleanup_net(), 
+there is a problem to unregister devices in IPv6. Indeed the code 
+that cleans up also schedule work in keventd: as long as cleanup_net() 
+hasn't return, dst_gc_task() cannot run and as long as dst_gc_task() has
+not run, there are still some references pending on the net devices and
+cleanup_net() can not unregister and exit the keventd workqueue.
 
 Signed-off-by: Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
 Signed-off-by: Benjamin Thery <benjamin.thery-6ktuUTfB/bM@public.gmane.org>
+Acked-by: Denis V. Lunev <den-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+Acked-By: Kirill Korotaev <dev-3ImXcnM4P+0@public.gmane.org>
 ---
- include/net/addrconf.h |   11 ++++++++++-
- net/ipv6/addrconf.c    |    7 +++++--
- 2 files changed, 15 insertions(+), 3 deletions(-)
+ net/core/net_namespace.c |    9 ++++++++-
+ 1 file changed, 8 insertions(+), 1 deletion(-)
 
-Index: linux-2.6-netns/include/net/addrconf.h
+Index: linux-2.6-netns/net/core/net_namespace.c
 ===================================================================
---- linux-2.6-netns.orig/include/net/addrconf.h
-+++ linux-2.6-netns/include/net/addrconf.h
-@@ -58,9 +58,18 @@ extern int			addrconf_add_ifaddr(void __
- extern int			addrconf_del_ifaddr(void __user *arg);
- extern int			addrconf_set_dstaddr(void __user *arg);
+--- linux-2.6-netns.orig/net/core/net_namespace.c
++++ linux-2.6-netns/net/core/net_namespace.c
+@@ -58,6 +58,7 @@ out_undo:
  
--extern int			ipv6_chk_addr(struct in6_addr *addr,
-+extern int			__ipv6_chk_addr(struct net *net,
-+					      struct in6_addr *addr,
- 					      struct net_device *dev,
- 					      int strict);
-+
-+static inline int ipv6_chk_addr(struct in6_addr *addr,
-+				struct net_device *dev,
-+				int strict)
-+{
-+	return __ipv6_chk_addr(&init_net, addr, dev, strict);
-+}
-+
- #if defined(CONFIG_IPV6_MIP6) || defined(CONFIG_IPV6_MIP6_MODULE)
- extern int			ipv6_chk_home_addr(struct in6_addr *addr);
- #endif
-Index: linux-2.6-netns/net/ipv6/addrconf.c
-===================================================================
---- linux-2.6-netns.orig/net/ipv6/addrconf.c
-+++ linux-2.6-netns/net/ipv6/addrconf.c
-@@ -1181,13 +1181,16 @@ static int ipv6_count_addresses(struct i
- 	return cnt;
- }
+ #ifdef CONFIG_NET_NS
+ static struct kmem_cache *net_cachep;
++static struct workqueue_struct *netns_wq;
  
--int ipv6_chk_addr(struct in6_addr *addr, struct net_device *dev, int strict)
-+int __ipv6_chk_addr(struct net *net, struct in6_addr *addr,
-+		  struct net_device *dev, int strict)
+ static struct net *net_alloc(void)
  {
- 	struct inet6_ifaddr * ifp;
- 	u8 hash = ipv6_addr_hash(addr);
- 
- 	read_lock_bh(&addrconf_hash_lock);
- 	for(ifp = inet6_addr_lst[hash]; ifp; ifp=ifp->lst_next) {
-+		if (ifp->idev->dev->nd_net != net)
-+			continue;
- 		if (ipv6_addr_equal(&ifp->addr, addr) &&
- 		    !(ifp->flags&IFA_F_TENTATIVE)) {
- 			if (dev == NULL || ifp->idev->dev == dev ||
-@@ -1199,7 +1202,7 @@ int ipv6_chk_addr(struct in6_addr *addr,
- 	return ifp != NULL;
+@@ -149,7 +150,7 @@ void __put_net(struct net *net)
+ {
+ 	/* Cleanup the network namespace in process context */
+ 	INIT_WORK(&net->work, cleanup_net);
+-	schedule_work(&net->work);
++	queue_work(netns_wq, &net->work);
  }
+ EXPORT_SYMBOL_GPL(__put_net);
  
--EXPORT_SYMBOL(ipv6_chk_addr);
-+EXPORT_SYMBOL(__ipv6_chk_addr);
+@@ -171,7 +172,13 @@ static int __init net_ns_init(void)
+ 	net_cachep = kmem_cache_create("net_namespace", sizeof(struct net),
+ 					SMP_CACHE_BYTES,
+ 					SLAB_PANIC, NULL);
++
++	/* Create workqueue for cleanup */
++	netns_wq = create_singlethread_workqueue("netns");
++	if (!netns_wq)
++		panic("Could not create netns workq");
+ #endif
++
+ 	mutex_lock(&net_mutex);
+ 	err = setup_net(&init_net);
  
- static
- int ipv6_chk_same_addr(const struct in6_addr *addr, struct net_device *dev)
 
 -- 
