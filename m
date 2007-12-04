@@ -1,16 +1,14 @@
-From: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+From: yamamoto-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org (YAMAMOTO Takashi)
 Subject: Re: [RFC][for -mm] memory controller enhancements for reclaiming
- take2 [5/8] throttling simultaneous callers of try_to_free_mem_cgroup_pages
-Date: Tue, 4 Dec 2007 10:33:32 +0900
-Message-ID: <20071204103332.ad4cf9b5.kamezawa.hiroyu@jp.fujitsu.com>
-References: <20071203183355.0061ddeb.kamezawa.hiroyu@jp.fujitsu.com>
-	<20071203183921.72005b21.kamezawa.hiroyu@jp.fujitsu.com>
-	<20071203092418.58631593@bree.surriel.com>
+ take2 [7/8] bacground reclaim for memory controller
+Date: Tue,  4 Dec 2007 12:07:55 +0900 (JST)
+Message-ID: <20071204030756.25A971D0B8F@siro.lan>
+References: <20071203184244.200faee8.kamezawa.hiroyu@jp.fujitsu.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
-Content-Transfer-Encoding: 7bit
+Content-Type: Text/Plain; charset=us-ascii
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20071203092418.58631593-Fuq27k0DHcCSkoNiqTzCLQ@public.gmane.org>
+In-Reply-To: Your message of "Mon, 3 Dec 2007 18:42:44 +0900"
+	<20071203184244.200faee8.kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -20,58 +18,48 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Rik van Riel <riel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Cc: "yamamoto-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org" <yamamoto-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>, "linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org" <linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org>, "containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org" <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, "balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org" <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org
+To: kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org
+Cc: riel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Mon, 3 Dec 2007 09:24:18 -0500
-Rik van Riel <riel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org> wrote:
+> @@ -1186,6 +1251,16 @@ static void free_mem_cgroup_per_zone_inf
+>  
+>  static struct mem_cgroup init_mem_cgroup;
+>  
+> +static int __init mem_cgroup_reclaim_init(void)
+> +{
+> +	init_mem_cgroup.daemon.thread = kthread_run(mem_cgroup_reclaim_daemon,
+> +					&init_mem_cgroup, "memcontd");
+> +	if (IS_ERR(init_mem_cgroup.daemon.thread))
+> +		BUG();
+> +	return 0;
+> +}
+> +late_initcall(mem_cgroup_reclaim_init);
+> +
+>  static struct cgroup_subsys_state *
+>  mem_cgroup_create(struct cgroup_subsys *ss, struct cgroup *cont)
+>  {
+> @@ -1213,6 +1288,17 @@ mem_cgroup_create(struct cgroup_subsys *
+>  		if (alloc_mem_cgroup_per_zone_info(mem, node))
+>  			goto free_out;
+>  
+> +	/* Memory Reclaim Daemon per cgroup */
+> +	init_waitqueue_head(&mem->daemon.waitq);
+> +	if (mem != &init_mem_cgroup) {
+> +		/* Complicated...but we cannot call kthread create here..*/
+> +		/* init call will later assign kthread */
+> +		mem->daemon.thread = kthread_run(mem_cgroup_reclaim_daemon,
+> +					mem, "memcontd");
+> +		if (IS_ERR(mem->daemon.thread))
+> +			goto free_out;
+> +	}
+> +
+>  	return &mem->css;
+>  free_out:
+>  	for_each_node_state(node, N_POSSIBLE)
 
-> On Mon, 3 Dec 2007 18:39:21 +0900
-> KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org> wrote:
-> 
-> > Add throttling direct reclaim.
-> > 
-> > Trying heavy workload under memory controller, you'll see too much
-> > iowait and system seems heavy. (This is not good.... memory controller
-> > is usually used for isolating system workload)
-> > And too much memory are reclaimed.
-> > 
-> > This patch adds throttling function for direct reclaim.
-> > Currently, num_online_cpus/(4) + 1 threads can do direct memory reclaim
-> > under memory controller.
-> 
-> The same problems are true of global reclaim.
-> 
-> Now that we're discussing this RFC anyway, I wonder if we
-> should think about moving this restriction to the global
-> reclaim level...
-> 
-Hmm, I agree to some extent.
-I'd like to add the same level of parameters to memory controller AMAP.
+you don't need the kthread as far as RES_HWMARK is "infinite".
+given the current default value of RES_HWMARK, you can simplify
+initialization by deferring the kthread creation to mem_cgroup_write.
 
-But, IMHO, there are differences basically.
-
-Memory controller's reclaim is much heavier than global LRU because of
-increasing footprint , the number of atomic ops....
-And memory controller's reclaim policy is simpler than global because
-it is not  kicked by memory shortage and almost all gfk_mask is GFP_HIGHUSER_MOVABLE
-and order is always 0.
- 
-I think starting from throttling memory controller is not so bad because 
-it's heavy and it's simple. The benefit of this throttoling is clearer than
-globals.
-
-Adding this kind of controls to global memory allocator/LRU may cause
-unexpected slow down in application's response time. High-response application
-users may dislike this. We may need another gfp_flag or sysctl to allow
-throttling in global.
-For memory controller, the user sets its memory limitation by himself. He can
-adjust parameters and the workload. So, I think this throttoling is not so
-problematic in memory controller as global.
-
-Of course, we can export "do throttoling or not" control in cgroup interface.
-
-
-Thanks,
--Kame 
+YAMAMOTO Takashi
