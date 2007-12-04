@@ -1,14 +1,18 @@
-From: Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
-Subject: Re: [PATCH] memory.min_usage (seqlock for res_counter)
-Date: Tue, 04 Dec 2007 14:10:42 +0300
-Message-ID: <475535B2.1020801@openvz.org>
-References: <20071204164615.fc871e44.kamezawa.hiroyu@jp.fujitsu.com>	<20071204075854.5850B1D0BFA@siro.lan>
-	<20071204195436.77fc911b.kamezawa.hiroyu@jp.fujitsu.com>
+From: Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Subject: Re: [RFC][for -mm] memory controller enhancements for reclaiming
+ take2 [5/8] throttling simultaneous callers of try_to_free_mem_cgroup_pages
+Date: Tue, 04 Dec 2007 18:57:22 +0530
+Message-ID: <475555BA.7070805@linux.vnet.ibm.com>
+References: <20071203183355.0061ddeb.kamezawa.hiroyu@jp.fujitsu.com>
+	<20071203183921.72005b21.kamezawa.hiroyu@jp.fujitsu.com>
+	<20071203092418.58631593@bree.surriel.com>
+	<20071204103332.ad4cf9b5.kamezawa.hiroyu@jp.fujitsu.com>
+Reply-To: balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20071204195436.77fc911b.kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+In-Reply-To: <20071204103332.ad4cf9b5.kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,144 +23,89 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
-Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, minoura-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org, YAMAMOTO Takashi <yamamoto-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
+Cc: Rik van Riel <riel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, "yamamoto-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org" <yamamoto-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>, "linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org" <linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org>, "containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org" <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org
 List-Id: containers.vger.kernel.org
 
 KAMEZAWA Hiroyuki wrote:
-> This is seqlock version res_counter.
-> Maybe this this will reduce # of spin_lock.
+> On Mon, 3 Dec 2007 09:24:18 -0500
+> Rik van Riel <riel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org> wrote:
 > 
-> Pavel-san, How about this ?
+>> On Mon, 3 Dec 2007 18:39:21 +0900
+>> KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org> wrote:
+>>
+>>> Add throttling direct reclaim.
+>>>
+>>> Trying heavy workload under memory controller, you'll see too much
+>>> iowait and system seems heavy. (This is not good.... memory controller
+>>> is usually used for isolating system workload)
+>>> And too much memory are reclaimed.
+>>>
+>>> This patch adds throttling function for direct reclaim.
+>>> Currently, num_online_cpus/(4) + 1 threads can do direct memory reclaim
+>>> under memory controller.
+>> The same problems are true of global reclaim.
+>>
+>> Now that we're discussing this RFC anyway, I wonder if we
+>> should think about moving this restriction to the global
+>> reclaim level...
+>>
+> Hmm, I agree to some extent.
+> I'd like to add the same level of parameters to memory controller AMAP.
+> 
 
-AFAIS the readlock is used only in the check_under_limit(),
-but I think, that even if we read usage and limit values
-in this case non-atomically, this won't result in any 
-dramatic sequence at all. No?
+The CKRM memory controller had the following parameters for throttling
 
-On the other hand, we make the charge/uncharge routines
-work longer :(
+Watermarks
 
-> -Kame
-> ==
-> resource counter's spinlock can be seqlock. (res_counter doesn't include
-> any pointers.)
+shrink_at
+shrink_to
+
+and
+
+num_shrinks
+shrink_interval
+
+Number of times shrink can be called in a shrink_interval.
+
+
+> But, IMHO, there are differences basically.
 > 
-> And it will be good to avoid atomic ops if we can when we just checks
-> value.
+> Memory controller's reclaim is much heavier than global LRU because of
+> increasing footprint , the number of atomic ops....
+> And memory controller's reclaim policy is simpler than global because
+> it is not  kicked by memory shortage and almost all gfk_mask is GFP_HIGHUSER_MOVABLE
+> and order is always 0.
 > 
-> Signed-off-by: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+> I think starting from throttling memory controller is not so bad because 
+> it's heavy and it's simple. The benefit of this throttoling is clearer than
+> globals.
 > 
+
+I think global throttling is good as well, sometimes under heavy load I
+find several tasks stuck in reclaim. I suspect throttling them and avoid
+ this scenario. May be worth experimenting an thinking about it deserves
+more discussion.
+
+> Adding this kind of controls to global memory allocator/LRU may cause
+> unexpected slow down in application's response time. High-response application
+> users may dislike this. We may need another gfp_flag or sysctl to allow
+> throttling in global.
+> For memory controller, the user sets its memory limitation by himself. He can
+> adjust parameters and the workload. So, I think this throttoling is not so
+> problematic in memory controller as global.
 > 
+> Of course, we can export "do throttoling or not" control in cgroup interface.
 > 
+
+I think we should export the interface.
+
 > 
->  include/linux/res_counter.h |   24 +++++++-----------------
->  kernel/res_counter.c        |   14 +++++++-------
->  2 files changed, 14 insertions(+), 24 deletions(-)
+> Thanks,
+> -Kame 
 > 
-> Index: linux-2.6.24-rc3-mm2/include/linux/res_counter.h
-> ===================================================================
-> --- linux-2.6.24-rc3-mm2.orig/include/linux/res_counter.h
-> +++ linux-2.6.24-rc3-mm2/include/linux/res_counter.h
-> @@ -12,6 +12,7 @@
->   */
->  
->  #include <linux/cgroup.h>
-> +#include <linux/seqlock.h>
->  
->  /*
->   * The core object. the cgroup that wishes to account for some
-> @@ -36,7 +37,7 @@ struct res_counter {
->  	 * the lock to protect all of the above.
->  	 * the routines below consider this to be IRQ-safe
->  	 */
-> -	spinlock_t lock;
-> +	seqlock_t lock;
->  };
->  
->  /*
-> @@ -101,27 +102,17 @@ int res_counter_charge(struct res_counte
->  void res_counter_uncharge_locked(struct res_counter *counter, unsigned long val);
->  void res_counter_uncharge(struct res_counter *counter, unsigned long val);
->  
-> -static inline bool res_counter_limit_check_locked(struct res_counter *cnt)
-> -{
-> -	if (cnt->usage < cnt->limit)
-> -		return true;
-> -
-> -	return false;
-> -}
-> -
-> -/*
-> - * Helper function to detect if the cgroup is within it's limit or
-> - * not. It's currently called from cgroup_rss_prepare()
-> - */
->  static inline bool res_counter_check_under_limit(struct res_counter *cnt)
->  {
->  	bool ret;
-> -	unsigned long flags;
-> +	unsigned long seq;
->  
-> -	spin_lock_irqsave(&cnt->lock, flags);
-> -	ret = res_counter_limit_check_locked(cnt);
-> -	spin_unlock_irqrestore(&cnt->lock, flags);
-> +	do {
-> +		seq = read_seqbegin(&cnt->lock);
-> +		ret = (cnt->usage < cnt->limit);
-> +	} while (read_seqretry(&cnt->lock, seq));
->  	return ret;
->  }
->  
-> +
->  #endif
-> Index: linux-2.6.24-rc3-mm2/kernel/res_counter.c
-> ===================================================================
-> --- linux-2.6.24-rc3-mm2.orig/kernel/res_counter.c
-> +++ linux-2.6.24-rc3-mm2/kernel/res_counter.c
-> @@ -15,7 +15,7 @@
->  
->  void res_counter_init(struct res_counter *counter)
->  {
-> -	spin_lock_init(&counter->lock);
-> +	seqlock_init(&counter->lock);
->  	counter->limit = (unsigned long long)LLONG_MAX;
->  }
->  
-> @@ -35,9 +35,9 @@ int res_counter_charge(struct res_counte
->  	int ret;
->  	unsigned long flags;
->  
-> -	spin_lock_irqsave(&counter->lock, flags);
-> +	write_seqlock_irqsave(&counter->lock, flags);
->  	ret = res_counter_charge_locked(counter, val);
-> -	spin_unlock_irqrestore(&counter->lock, flags);
-> +	write_sequnlock_irqrestore(&counter->lock, flags);
->  	return ret;
->  }
->  
-> @@ -53,9 +53,9 @@ void res_counter_uncharge(struct res_cou
->  {
->  	unsigned long flags;
->  
-> -	spin_lock_irqsave(&counter->lock, flags);
-> +	write_seqlock_irqsave(&counter->lock, flags);
->  	res_counter_uncharge_locked(counter, val);
-> -	spin_unlock_irqrestore(&counter->lock, flags);
-> +	write_sequnlock_irqrestore(&counter->lock, flags);
->  }
->  
->  
-> @@ -122,10 +122,10 @@ ssize_t res_counter_write(struct res_cou
->  		if (*end != '\0')
->  			goto out_free;
->  	}
-> -	spin_lock_irqsave(&counter->lock, flags);
-> +	write_seqlock_irqsave(&counter->lock, flags);
->  	val = res_counter_member(counter, member);
->  	*val = tmp;
-> -	spin_unlock_irqrestore(&counter->lock, flags);
-> +	write_sequnlock_irqrestore(&counter->lock, flags);
->  	ret = nbytes;
->  out_free:
->  	kfree(buf);
-> 
-> 
+
+-- 
+	Warm Regards,
+	Balbir Singh
+	Linux Technology Center
+	IBM, ISTL
