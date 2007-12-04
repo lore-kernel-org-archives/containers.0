@@ -1,16 +1,16 @@
 From: Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 Subject: Re: [RFC][for -mm] memory controller enhancements for reclaiming
- take2 [1/8] clean up : remove unused variable
-Date: Tue, 04 Dec 2007 21:25:19 +0530
-Message-ID: <47557867.4020304@linux.vnet.ibm.com>
+ take2 [2/8] add BUG_ON() in mem_cgroup_zoneinfo
+Date: Tue, 04 Dec 2007 21:31:32 +0530
+Message-ID: <475579DC.6020006@linux.vnet.ibm.com>
 References: <20071203183355.0061ddeb.kamezawa.hiroyu@jp.fujitsu.com>
-	<20071203183537.059262e9.kamezawa.hiroyu@jp.fujitsu.com>
+	<20071203183639.48a4b1f3.kamezawa.hiroyu@jp.fujitsu.com>
 Reply-To: balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20071203183537.059262e9.kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+In-Reply-To: <20071203183639.48a4b1f3.kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -25,28 +25,27 @@ Cc: "riel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org" <riel-H+wXaHxf7aLQT0dZR+AlfA@
 List-Id: containers.vger.kernel.org
 
 KAMEZAWA Hiroyuki wrote:
-> This check is not necessary now.
+> This should be BUG_ON(). I misunderstood initialization path.
 > 
 > Signed-off-by: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
 > 
+>  mm/memcontrol.c |    3 +--
+>  1 file changed, 1 insertion(+), 2 deletions(-)
 > 
 > Index: linux-2.6.24-rc3-mm2/mm/memcontrol.c
 > ===================================================================
 > --- linux-2.6.24-rc3-mm2.orig/mm/memcontrol.c
 > +++ linux-2.6.24-rc3-mm2/mm/memcontrol.c
-> @@ -860,9 +860,7 @@ retry:
->  		/* Avoid race with charge */
->  		atomic_set(&pc->ref_cnt, 0);
->  		if (clear_page_cgroup(page, pc) == pc) {
-> -			int active;
->  			css_put(&mem->css);
-> -			active = pc->flags & PAGE_CGROUP_FLAG_ACTIVE;
-
-Good Catch, __mem_cgroup_remove_list() takes care of this.
-
->  			res_counter_uncharge(&mem->res, PAGE_SIZE);
->  			__mem_cgroup_remove_list(pc);
->  			kfree(pc);
+> @@ -206,8 +206,7 @@ static void mem_cgroup_charge_statistics
+>  static inline struct mem_cgroup_per_zone *
+>  mem_cgroup_zoneinfo(struct mem_cgroup *mem, int nid, int zid)
+>  {
+> -	if (!mem->info.nodeinfo[nid])
+> -		return NULL;
+> +	BUG_ON(!mem->info.nodeinfo[nid]);
+>  	return &mem->info.nodeinfo[nid]->zoneinfo[zid];
+>  }
+> 
 > 
 
 Acked-by: Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
