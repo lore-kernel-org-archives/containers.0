@@ -1,42 +1,46 @@
-From: Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: Re: [RFC][for -mm] memory controller enhancements for reclaiming
- take2 [3/8] define free_mem_cgroup_per_zone_info
-Date: Tue, 04 Dec 2007 22:02:05 +0530
-Message-ID: <47558105.1050603@linux.vnet.ibm.com>
-References: <20071203183355.0061ddeb.kamezawa.hiroyu@jp.fujitsu.com>
-	<20071203183719.b929cb92.kamezawa.hiroyu@jp.fujitsu.com>
-Reply-To: balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
+From: ebiederm@xmission.com (Eric W. Biederman)
+Subject: Re: namespace support requires network modules to say "GPL"
+Date: Tue, 04 Dec 2007 10:59:05 -0700
+Message-ID: <m18x4axrx2.fsf@ebiederm.dsl.xmission.com>
+References: <m163zi9425.fsf@ebiederm.dsl.xmission.com>
+	<47515D39.9030900@rtr.ca> <20071201111736.297dd99a@freepuppy.rosehill>
+	<20071201163035.321fd554@freepuppy.rosehill> <475227B1.2060802@rtr.ca>
+	<20071201202354.672aed18@freepuppy.rosehill>
+	<47530778.7030605@candelatech.com> <47530FAC.1070804@trash.net>
+	<m1fxyj1y1y.fsf@ebiederm.dsl.xmission.com>
+	<47544896.7070101@candelatech.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20071203183719.b929cb92.kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
-Cc: "riel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org" <riel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, "yamamoto-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org" <yamamoto-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>, "linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org" <linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org>, "containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org" <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org
+Content-Type: text/plain; charset=us-ascii
+Return-path: <netdev-owner@vger.kernel.org>
+In-Reply-To: <47544896.7070101@candelatech.com> (Ben Greear's message of "Mon,
+	03 Dec 2007 10:19:02 -0800")
+Sender: netdev-owner@vger.kernel.org
+To: Ben Greear <greearb@candelatech.com>
+Cc: Patrick McHardy <kaber@trash.net>, Stephen Hemminger <shemminger@linux-foundation.org>, Mark Lord <lkml@rtr.ca>, linux-kernel@vger.kernel.org, netdev@vger.kernel.org, containers@lists.osdl.org, David Miller <davem@davemloft.net>
 List-Id: containers.vger.kernel.org
 
-KAMEZAWA Hiroyuki wrote:
-> Now allocation of per_zone of mem_controller is done by
-> alloc_mem_cgroup_per_zone_info(). Then it will be good to use
-> free_mem_cgroup_per_zone_info() for maintainance.
-> 
-> Signed-off-by: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+Ben Greear <greearb@candelatech.com> writes:
 
-Looks good
+>> Regardless of infringement it is incompatible with a complete network
+>> namespace implementation.  Further it sounds like the module you are
+>> describing defines a kernel ABI without being merged and hopes that
+>> ABI will still be supportable in the future.  Honestly I think doing so
+>> is horrible code maintenance policy.
+>>
+> I don't mind if the ABI changes, so long as I can still use something similar.
 
-Acked-by: Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+It has occurred to me that I am seeing an implication here that may in fact not
+exist.
 
--- 
-	Warm Regards,
-	Balbir Singh
-	Linux Technology Center
-	IBM, ISTL
+My impression of dev_get_by_xxxx is that the function is only able to be used
+sanely when being part of the definition of a kernel/userspace interface.  With
+the further assumption on my part that you need to define a new instance of
+dev_get_by_xxxx 
+
+It has just occurred to me that it is possible to reuse the SIOCBRADDIF
+and SIOCBRDELIF for that same purpose without defining a new kernel/userspace
+interface.
+
+What and how are you using dev_get_by_xxx?
+
+Eric
