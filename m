@@ -1,14 +1,14 @@
-From: "Paul Menage" <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [Devel] [PATCH] memory.min_usage
-Date: Mon, 3 Dec 2007 22:03:57 -0800
-Message-ID: <6599ad830712032203t48e455cbjd25a40cf93cb453f@mail.gmail.com>
-References: <20071204040934.44AF41D0BA3@siro.lan>
+From: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+Subject: Re: [RFC][for -mm] memory controller enhancements for reclaiming
+ take2 [0/8] introduction
+Date: Tue, 4 Dec 2007 15:46:20 +0900
+Message-ID: <20071204154620.72a17f73.kamezawa.hiroyu@jp.fujitsu.com>
+References: <20071203183355.0061ddeb.kamezawa.hiroyu@jp.fujitsu.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
+Content-Type: text/plain; charset=US-ASCII
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20071204040934.44AF41D0BA3-Pcsii4f/SVk@public.gmane.org>
-Content-Disposition: inline
+In-Reply-To: <20071203183355.0061ddeb.kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,19 +18,30 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: YAMAMOTO Takashi <yamamoto-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
-Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, minoura-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
+To: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+Cc: "containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org" <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, "linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org" <linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org, "balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org" <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Dec 3, 2007 8:09 PM, YAMAMOTO Takashi <yamamoto-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org> wrote:
-> +static u64 mem_cgroup_min_usage_read(struct cgroup *cont, struct cftype *cft)
-> +{
-> +       struct mem_cgroup *mem = mem_cgroup_from_cont(cont);
-> +
-> +       return mem->min_usage;
-> +}
-> +
+On Mon, 3 Dec 2007 18:33:55 +0900
+KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org> wrote:
 
-This won't be atomic on a 32-bit arch, and I don't think you have any locking.
+> [Patches]
+> [1/8] ... remove unused variable (clean up)
+> [2/8] ... change 'if' sentense to BUG_ON() (clean up)
+> [3/8] ... add free_mem_cgroup_per_zone_info (clean up)
+> [4/8] ... possible race fix in resource controler
+> [5/8] ... throttling simultaneous direct reclaim under cgroup
+> [6/8] ... high/low watermark for resource controler
+> [7/8] ... use high/low watermark in memory controler
+> [8/8] ... wake up reclaim waiters at unchage.
+> 
 
-Paul
+Hi, Andrew. I think patch 5-8 should be got more review and discussion.
+
+I'd like to schedule them to the next -mm. (because rc4 is shipped...)
+But patch 1-4 are just clean up and bug fix and seems no side-effect.
+
+Could you pick up 1-4 to -mm if Balbir and Pavel gives me ack ?
+
+Thanks,
+-Kame
