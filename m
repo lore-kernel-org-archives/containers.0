@@ -1,18 +1,14 @@
 From: Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: Re: [RFC][for -mm] memory controller enhancements for reclaiming
- take2 [5/8] throttling simultaneous callers of try_to_free_mem_cgroup_pages
-Date: Tue, 04 Dec 2007 18:57:22 +0530
-Message-ID: <475555BA.7070805@linux.vnet.ibm.com>
-References: <20071203183355.0061ddeb.kamezawa.hiroyu@jp.fujitsu.com>
-	<20071203183921.72005b21.kamezawa.hiroyu@jp.fujitsu.com>
-	<20071203092418.58631593@bree.surriel.com>
-	<20071204103332.ad4cf9b5.kamezawa.hiroyu@jp.fujitsu.com>
+Subject: Re: [PATCH] memory.min_usage
+Date: Tue, 04 Dec 2007 19:00:25 +0530
+Message-ID: <47555671.2060608@linux.vnet.ibm.com>
+References: <20071204040934.44AF41D0BA3@siro.lan>
 Reply-To: balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20071204103332.ad4cf9b5.kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+In-Reply-To: <20071204040934.44AF41D0BA3-Pcsii4f/SVk@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -22,87 +18,176 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
-Cc: Rik van Riel <riel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, "yamamoto-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org" <yamamoto-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>, "linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org" <linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org>, "containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org" <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org
+To: YAMAMOTO Takashi <yamamoto-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
+Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, minoura-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-KAMEZAWA Hiroyuki wrote:
-> On Mon, 3 Dec 2007 09:24:18 -0500
-> Rik van Riel <riel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org> wrote:
+YAMAMOTO Takashi wrote:
+> hi,
 > 
->> On Mon, 3 Dec 2007 18:39:21 +0900
->> KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org> wrote:
->>
->>> Add throttling direct reclaim.
->>>
->>> Trying heavy workload under memory controller, you'll see too much
->>> iowait and system seems heavy. (This is not good.... memory controller
->>> is usually used for isolating system workload)
->>> And too much memory are reclaimed.
->>>
->>> This patch adds throttling function for direct reclaim.
->>> Currently, num_online_cpus/(4) + 1 threads can do direct memory reclaim
->>> under memory controller.
->> The same problems are true of global reclaim.
->>
->> Now that we're discussing this RFC anyway, I wonder if we
->> should think about moving this restriction to the global
->> reclaim level...
->>
-> Hmm, I agree to some extent.
-> I'd like to add the same level of parameters to memory controller AMAP.
+> here's a patch to implement memory.min_usage,
+> which controls the minimum memory usage for a cgroup.
+> 
+> it works similarly to mlock;
+> global memory reclamation doesn't reclaim memory from
+> cgroups whose memory usage is below the value.
+> setting it too high is a dangerous operation.
+> 
+> it's against 2.6.24-rc3-mm2 + memory.swappiness patch i posted here yesterday.
+> but it's logically independent from the swappiness patch.
 > 
 
-The CKRM memory controller had the following parameters for throttling
+Hi,
 
-Watermarks
+I think it's a good approach, but we need to make the reclaim dependent
+on priority. I think that if we stop reclaiming from a cgroup even
+though there is high global pressure, it might be a bad idea.
 
-shrink_at
-shrink_to
+> todo:
+> - restrict non-root user's operation ragardless of owner of cgroupfs files?
 
-and
+Sorry, I don't understand this and I think using file permissions is a
+good idea.
 
-num_shrinks
-shrink_interval
-
-Number of times shrink can be called in a shrink_interval.
-
-
-> But, IMHO, there are differences basically.
-> 
-> Memory controller's reclaim is much heavier than global LRU because of
-> increasing footprint , the number of atomic ops....
-> And memory controller's reclaim policy is simpler than global because
-> it is not  kicked by memory shortage and almost all gfk_mask is GFP_HIGHUSER_MOVABLE
-> and order is always 0.
-> 
-> I think starting from throttling memory controller is not so bad because 
-> it's heavy and it's simple. The benefit of this throttoling is clearer than
-> globals.
+> - make oom killer aware of this?
 > 
 
-I think global throttling is good as well, sometimes under heavy load I
-find several tasks stuck in reclaim. I suspect throttling them and avoid
- this scenario. May be worth experimenting an thinking about it deserves
-more discussion.
+Yes, we might also need a memory controller version of
 
-> Adding this kind of controls to global memory allocator/LRU may cause
-> unexpected slow down in application's response time. High-response application
-> users may dislike this. We may need another gfp_flag or sysctl to allow
-> throttling in global.
-> For memory controller, the user sets its memory limitation by himself. He can
-> adjust parameters and the workload. So, I think this throttoling is not so
-> problematic in memory controller as global.
-> 
-> Of course, we can export "do throttoling or not" control in cgroup interface.
-> 
+1. overcommit
+2. oom_adj* parameters
 
-I think we should export the interface.
 
+> YAMAMOTO Takashi
 > 
-> Thanks,
-> -Kame 
 > 
+> Signed-off-by: YAMAMOTO Takashi <yamamoto-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
+> ---
+> 
+> --- linux-2.6.24-rc3-mm2-swappiness/include/linux/memcontrol.h.BACKUP2	2007-12-03 13:52:37.000000000 +0900
+> +++ linux-2.6.24-rc3-mm2-swappiness/include/linux/memcontrol.h	2007-12-03 14:07:45.000000000 +0900
+> @@ -47,6 +47,7 @@ extern int mem_cgroup_cache_charge(struc
+>  					gfp_t gfp_mask);
+>  int task_in_mem_cgroup(struct task_struct *task, const struct mem_cgroup *mem);
+>  extern int mem_cgroup_swappiness(struct mem_cgroup *mem);
+> +extern int mem_cgroup_canreclaim(struct page *page, struct mem_cgroup *mem);
+> 
+>  static inline struct mem_cgroup *mm_cgroup(const struct mm_struct *mm)
+>  {
+> --- linux-2.6.24-rc3-mm2-swappiness/mm/memcontrol.c.BACKUP2	2007-12-03 13:52:13.000000000 +0900
+> +++ linux-2.6.24-rc3-mm2-swappiness/mm/memcontrol.c	2007-12-04 11:42:07.000000000 +0900
+> @@ -134,6 +134,7 @@ struct mem_cgroup {
+>  	unsigned long control_type;	/* control RSS or RSS+Pagecache */
+>  	int	prev_priority;	/* for recording reclaim priority */
+>  	unsigned int swappiness;	/* swappiness */
+> +	unsigned long long min_usage; /* XXX should be a part of res_counter? */
+>  	/*
+>  	 * statistics.
+>  	 */
+> @@ -1096,6 +1097,22 @@ static u64 mem_cgroup_swappiness_read(st
+>  	return mem->swappiness;
+>  }
+> 
+> +static int mem_cgroup_min_usage_write(struct cgroup *cont, struct cftype *cft,
+> +				       u64 val)
+> +{
+> +	struct mem_cgroup *mem = mem_cgroup_from_cont(cont);
+> +
+> +	mem->min_usage = val;
+> +	return 0;
+> +}
+> +
+> +static u64 mem_cgroup_min_usage_read(struct cgroup *cont, struct cftype *cft)
+> +{
+> +	struct mem_cgroup *mem = mem_cgroup_from_cont(cont);
+> +
+> +	return mem->min_usage;
+> +}
+> +
+>  static struct cftype mem_cgroup_files[] = {
+>  	{
+>  		.name = "usage_in_bytes",
+> @@ -1132,6 +1149,11 @@ static struct cftype mem_cgroup_files[] 
+>  		.write_uint = mem_cgroup_swappiness_write,
+>  		.read_uint = mem_cgroup_swappiness_read,
+>  	},
+> +	{
+> +		.name = "min_usage_in_bytes",
+> +		.write_uint = mem_cgroup_min_usage_write,
+> +		.read_uint = mem_cgroup_min_usage_read,
+> +	},
+>  };
+> 
+>  /* XXX probably it's better to move try_to_free_mem_cgroup_pages to
+> @@ -1142,6 +1164,36 @@ int mem_cgroup_swappiness(struct mem_cgr
+>  	return mem->swappiness;
+>  }
+> 
+> +int mem_cgroup_canreclaim(struct page *page, struct mem_cgroup *mem1)
+> +{
+> +	struct page_cgroup *pc;
+> +	int result = 1;
+> +
+> +	if (mem1 != NULL)
+> +		return 1;
+> +
+> +	lock_page_cgroup(page);
+> +	pc = page_get_page_cgroup(page);
+> +	if (pc) {
+> +		struct mem_cgroup *mem2 = pc->mem_cgroup;
+> +		unsigned long long min_usage;
+> +
+> +		BUG_ON(mem2 == NULL);
+> +		min_usage = mem2->min_usage;
+> +		if (min_usage != 0) {
+> +			unsigned long flags;
+> +
+> +			spin_lock_irqsave(&mem2->res.lock, flags);
+> +			if (mem2->res.usage <= min_usage)
+> +				result = 0;
+> +			spin_unlock_irqrestore(&mem2->res.lock, flags);
+> +		}
+> +	}
+> +	unlock_page_cgroup(page);
+> +
+> +	return result;
+> +}
+> +
+>  static int alloc_mem_cgroup_per_zone_info(struct mem_cgroup *mem, int node)
+>  {
+>  	struct mem_cgroup_per_node *pn;
+> --- linux-2.6.24-rc3-mm2-swappiness/mm/vmscan.c.BACKUP2	2007-12-03 13:52:22.000000000 +0900
+> +++ linux-2.6.24-rc3-mm2-swappiness/mm/vmscan.c	2007-12-03 14:11:42.000000000 +0900
+> @@ -531,6 +531,11 @@ static unsigned long shrink_page_list(st
+>  					referenced && page_mapping_inuse(page))
+>  			goto activate_locked;
+> 
+> +#ifdef CONFIG_CGROUP_MEM_CONT
+> +		if (!mem_cgroup_canreclaim(page, sc->mem_cgroup))
+> +			goto activate_locked;
+> +#endif /* CONFIG_CGROUP_MEM_CONT */
+> +
+>  #ifdef CONFIG_SWAP
+>  		/*
+>  		 * Anonymous process memory has backing store?
+> @@ -1122,6 +1127,12 @@ static void shrink_active_list(unsigned 
+>  			list_add(&page->lru, &l_active);
+>  			continue;
+>  		}
+> +#ifdef CONFIG_CGROUP_MEM_CONT
+> +		if (!mem_cgroup_canreclaim(page, sc->mem_cgroup)) {
+> +			list_add(&page->lru, &l_active);
+> +			continue;
+> +		}
+> +#endif /* CONFIG_CGROUP_MEM_CONT */
+>  		list_add(&page->lru, &l_inactive);
+>  	}
+> 
+> _______________________________________________
+> Containers mailing list
+> Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+> https://lists.linux-foundation.org/mailman/listinfo/containers
+
 
 -- 
 	Warm Regards,
