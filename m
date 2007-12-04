@@ -1,66 +1,80 @@
-From: "Denis V. Lunev" <den@openvz.org>
-Subject: [PATCH 4/4] netns: prevent usage of flowi with not initialized
-	fl_net in routing (v2)
-Date: Tue, 4 Dec 2007 21:52:14 +0300
-Message-ID: <20071204185214.GA6658@iris.sw.ru>
+From: Ben Greear <greearb@candelatech.com>
+Subject: Re: namespace support requires network modules to say "GPL"
+Date: Tue, 04 Dec 2007 10:57:01 -0800
+Message-ID: <4755A2FD.9020608@candelatech.com>
+References: <m163zi9425.fsf@ebiederm.dsl.xmission.com>	<47515D39.9030900@rtr.ca> <20071201111736.297dd99a@freepuppy.rosehill>	<20071201163035.321fd554@freepuppy.rosehill> <475227B1.2060802@rtr.ca>	<20071201202354.672aed18@freepuppy.rosehill>	<47530778.7030605@candelatech.com> <47530FAC.1070804@trash.net>	<m1fxyj1y1y.fsf@ebiederm.dsl.xmission.com>	<47544896.7070101@candelatech.com> <m18x4axrx2.fsf@ebiederm.dsl.xmission.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+Content-Transfer-Encoding: 7bit
 Return-path: <netdev-owner@vger.kernel.org>
-Content-Disposition: inline
+In-Reply-To: <m18x4axrx2.fsf@ebiederm.dsl.xmission.com>
 Sender: netdev-owner@vger.kernel.org
-To: davem@davemloft.net
-Cc: devel@openvz.org, netdev@vger.kernel.org, containers@lists.osdl.org
+To: "Eric W. Biederman" <ebiederm@xmission.com>
+Cc: Patrick McHardy <kaber@trash.net>, Stephen Hemminger <shemminger@linux-foundation.org>, Mark Lord <lkml@rtr.ca>, linux-kernel@vger.kernel.org, netdev@vger.kernel.org, containers@lists.osdl.org, David Miller <davem@davemloft.net>
 List-Id: containers.vger.kernel.org
 
-Notify that flowi with not initialized fl_net is used. This is a temporary
-measure to simplify maintenance of the patchset.
+Eric W. Biederman wrote:
+> Ben Greear <greearb@candelatech.com> writes:
+>
+>   
+>>> Regardless of infringement it is incompatible with a complete network
+>>> namespace implementation.  Further it sounds like the module you are
+>>> describing defines a kernel ABI without being merged and hopes that
+>>> ABI will still be supportable in the future.  Honestly I think doing so
+>>> is horrible code maintenance policy.
+>>>
+>>>       
+>> I don't mind if the ABI changes, so long as I can still use something similar.
+>>     
+>
+> It has occurred to me that I am seeing an implication here that may in fact not
+> exist.
+>
+> My impression of dev_get_by_xxxx is that the function is only able to be used
+> sanely when being part of the definition of a kernel/userspace interface.  With
+> the further assumption on my part that you need to define a new instance of
+> dev_get_by_xxxx 
+>
+> It has just occurred to me that it is possible to reuse the SIOCBRADDIF
+> and SIOCBRDELIF for that same purpose without defining a new kernel/userspace
+> interface.
+>
+> What and how are you using dev_get_by_xxx?
+>   
+I have a module that has a collection of 2-port bridges.  These bridges 
+are used for emulation
+purposes (somewhat similar to netem's feature set).  Each bridge is 
+logically independent
+of the others.   To set up a bridge, I do something like:
 
-Changes from v1:
-- changed BUG_ON to WARN_ON. Thanks to Patrick McHardy
+echo add_my_bridge my_br1 eth0 eth1 > /proc/net/foo/config
 
-Signed-off-by: Denis V. Lunev <den@openvz.org>
----
- net/ipv4/route.c      |    1 +
- net/ipv6/fib6_rules.c |    1 +
- net/ipv6/ip6_fib.c    |    1 +
- 3 files changed, 3 insertions(+), 0 deletions(-)
+Inside the module, it reads "eth0" and "eth1" and needs to find those
+devices (ie, dev_get_by_name).  It then registers to receive all pkts from
+eth1 and transmit them on eth0, and vice versa.
 
-diff --git a/net/ipv4/route.c b/net/ipv4/route.c
-index 84a7f32..996fd9e 100644
---- a/net/ipv4/route.c
-+++ b/net/ipv4/route.c
-@@ -2444,6 +2444,7 @@ int ip_route_output_flow(struct rtable **rp, struct flowi *flp, struct sock *sk,
- {
- 	int err;
- 
-+	WARN_ON(flp->fl_net == NULL);
- 	if ((err = __ip_route_output_key(rp, flp)) != 0)
- 		return err;
- 
-diff --git a/net/ipv6/fib6_rules.c b/net/ipv6/fib6_rules.c
-index 428c6b0..326ea69 100644
---- a/net/ipv6/fib6_rules.c
-+++ b/net/ipv6/fib6_rules.c
-@@ -38,6 +38,7 @@ struct dst_entry *fib6_rule_lookup(struct flowi *fl, int flags,
- 		.lookup_ptr = lookup,
- 	};
- 
-+	WARN_ON(fl->fl_net == NULL);
- 	fib_rules_lookup(&fib6_rules_ops, fl, flags, &arg);
- 	if (arg.rule)
- 		fib_rule_put(arg.rule);
-diff --git a/net/ipv6/ip6_fib.c b/net/ipv6/ip6_fib.c
-index 31b60a0..706cb72 100644
---- a/net/ipv6/ip6_fib.c
-+++ b/net/ipv6/ip6_fib.c
-@@ -282,6 +282,7 @@ struct fib6_table *fib6_get_table(u32 id)
- struct dst_entry *fib6_rule_lookup(struct flowi *fl, int flags,
- 				   pol_lookup_t lookup)
- {
-+	WARN_ON(fl->fl_net == NULL);
- 	return (struct dst_entry *) lookup(&fib6_main_tbl, fl, flags);
- }
- 
+If it would not require GPL symbols, I have no problem changing my API 
+to be something
+like:
+
+echo add_my_bridge my_br1 eth0 namespaceX eth1 namespaceY > 
+/proc/net/foo/config
+
+I am using procfs so that I don't have to define any new 'official'
+kernel ABI, as that would more likely be a derivative work, and is a pain
+to keep up to date with changing kernels anyway...
+
+Personally, it seems useful for my module to be able to have eth0 in one 
+namespace
+and eth1 in another, but I won't complain if they both have to be in the 
+same namespace
+or even just in the default namespace due to GPL symbol issues.
+
+Thanks,
+Ben
+
 -- 
-1.5.3.rc5
+Ben Greear <greearb@candelatech.com> 
+Candela Technologies Inc  http://www.candelatech.com
+
 
