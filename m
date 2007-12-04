@@ -1,13 +1,14 @@
-From: yamamoto-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org (YAMAMOTO Takashi)
-Subject: Re: [Devel] [PATCH] memory.min_usage
-Date: Tue,  4 Dec 2007 16:02:57 +0900 (JST)
-Message-ID: <20071204070257.CA4171D0BCD@siro.lan>
-References: <6599ad830712032203t48e455cbjd25a40cf93cb453f@mail.gmail.com>
+From: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+Subject: Re: [PATCH] memory.min_usage
+Date: Tue, 4 Dec 2007 16:27:53 +0900
+Message-ID: <20071204162753.c28cc550.kamezawa.hiroyu@jp.fujitsu.com>
+References: <20071204145831.da477f5b.kamezawa.hiroyu@jp.fujitsu.com>
+	<20071204070122.16DDD1D0BCD@siro.lan>
 Mime-Version: 1.0
-Content-Type: Text/Plain; charset=us-ascii
+Content-Type: text/plain; charset=US-ASCII
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: Your message of "Mon, 3 Dec 2007 22:03:57 -0800"
-	<6599ad830712032203t48e455cbjd25a40cf93cb453f-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
+In-Reply-To: <20071204070122.16DDD1D0BCD-Pcsii4f/SVk@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -17,23 +18,34 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org
-Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, minoura-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
+To: YAMAMOTO Takashi <yamamoto-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
+Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, minoura-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-> On Dec 3, 2007 8:09 PM, YAMAMOTO Takashi <yamamoto-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org> wrote:
-> > +static u64 mem_cgroup_min_usage_read(struct cgroup *cont, struct cftype *cft)
-> > +{
-> > +       struct mem_cgroup *mem = mem_cgroup_from_cont(cont);
-> > +
-> > +       return mem->min_usage;
-> > +}
-> > +
-> 
-> This won't be atomic on a 32-bit arch, and I don't think you have any locking.
-> 
-> Paul
+On Tue,  4 Dec 2007 16:01:21 +0900 (JST)
+yamamoto-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org (YAMAMOTO Takashi) wrote:
 
-sure.  probably it's better to make it a part of res_counter.
+> > BTW, how about add a status to res_counter ?
+> > My (based on your) current patch uses watermark_state.
+> > 
+> > Maybe we can change it to be resource_state and show following status.
+> > 
+> > RES_STATE_HIT_LIMIT,
+> > RES_STATE_ABOVE_HWATER,
+> > RES_STATE_ABOVE_LWATER,
+> > RES_STATE_STABLE, ?
+> > RES_STATE_BELOW_MIN,
+> > 
+> > Useful ?
+> 
+> how about making res_counter use seq_lock?
+> 
+I thought of that when I wrote hi/low watermark patches.
+But I didn't try....
+Hmm, but maybe worth trying.
 
-YAMAMOTO Takashi
+Pavel, can we change res_counter->lock to seq_lock ?
+If we can, I'll write a patch.
+
+Thanks,
+-Kame
