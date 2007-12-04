@@ -1,196 +1,55 @@
-From: Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: Re: [PATCH] memory.min_usage
-Date: Tue, 04 Dec 2007 19:00:25 +0530
-Message-ID: <47555671.2060608@linux.vnet.ibm.com>
-References: <20071204040934.44AF41D0BA3@siro.lan>
-Reply-To: balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
+From: Stephen Hemminger <shemminger@linux-foundation.org>
+Subject: Re: [PATCH 1/4] netns: Tag the network flow with the network
+ namespace it is in (v2)
+Date: Tue, 4 Dec 2007 06:26:05 -0800
+Message-ID: <20071204062605.508cf812@shemminger-laptop>
+References: <20071204095333.GA6029@iris.sw.ru>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
+Content-Type: text/plain; charset=US-ASCII
 Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20071204040934.44AF41D0BA3-Pcsii4f/SVk@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: YAMAMOTO Takashi <yamamoto-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
-Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, minoura-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org
+Return-path: <netdev-owner@vger.kernel.org>
+In-Reply-To: <20071204095333.GA6029@iris.sw.ru>
+Sender: netdev-owner@vger.kernel.org
+To: "Denis V. Lunev" <den@openvz.org>
+Cc: davem@davemloft.net, devel@openvz.org, netdev@vger.kernel.org, containers@lists.osdl.org
 List-Id: containers.vger.kernel.org
 
-YAMAMOTO Takashi wrote:
-> hi,
+On Tue, 4 Dec 2007 12:53:33 +0300
+"Denis V. Lunev" <den@openvz.org> wrote:
+
+> As well as marking flows this indirectly marks the ipv4 routing cache
+> as every routing entry contains a flow.
 > 
-> here's a patch to implement memory.min_usage,
-> which controls the minimum memory usage for a cgroup.
+> It is useful to add the network namespace into flows as frequently
+> the routing information for ingoing and outgoing network packets is
+> collected into a flow structure which is then used for several functions
+> as it sorts out what is going on.
 > 
-> it works similarly to mlock;
-> global memory reclamation doesn't reclaim memory from
-> cgroups whose memory usage is below the value.
-> setting it too high is a dangerous operation.
+> Changes from v1:
+> - remove flow.h dependency from net_namespace.h
 > 
-> it's against 2.6.24-rc3-mm2 + memory.swappiness patch i posted here yesterday.
-> but it's logically independent from the swappiness patch.
-> 
-
-Hi,
-
-I think it's a good approach, but we need to make the reclaim dependent
-on priority. I think that if we stop reclaiming from a cgroup even
-though there is high global pressure, it might be a bad idea.
-
-> todo:
-> - restrict non-root user's operation ragardless of owner of cgroupfs files?
-
-Sorry, I don't understand this and I think using file permissions is a
-good idea.
-
-> - make oom killer aware of this?
-> 
-
-Yes, we might also need a memory controller version of
-
-1. overcommit
-2. oom_adj* parameters
-
-
-> YAMAMOTO Takashi
-> 
-> 
-> Signed-off-by: YAMAMOTO Takashi <yamamoto-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
+> Signed-off-by: Denis V. Lunev <den@openvz.org>
+> Signed-off-by: Eric W. Biederman <ebiederm@xmission.com>
 > ---
+>  include/net/flow.h |    2 ++
+>  1 files changed, 2 insertions(+), 0 deletions(-)
 > 
-> --- linux-2.6.24-rc3-mm2-swappiness/include/linux/memcontrol.h.BACKUP2	2007-12-03 13:52:37.000000000 +0900
-> +++ linux-2.6.24-rc3-mm2-swappiness/include/linux/memcontrol.h	2007-12-03 14:07:45.000000000 +0900
-> @@ -47,6 +47,7 @@ extern int mem_cgroup_cache_charge(struc
->  					gfp_t gfp_mask);
->  int task_in_mem_cgroup(struct task_struct *task, const struct mem_cgroup *mem);
->  extern int mem_cgroup_swappiness(struct mem_cgroup *mem);
-> +extern int mem_cgroup_canreclaim(struct page *page, struct mem_cgroup *mem);
-> 
->  static inline struct mem_cgroup *mm_cgroup(const struct mm_struct *mm)
->  {
-> --- linux-2.6.24-rc3-mm2-swappiness/mm/memcontrol.c.BACKUP2	2007-12-03 13:52:13.000000000 +0900
-> +++ linux-2.6.24-rc3-mm2-swappiness/mm/memcontrol.c	2007-12-04 11:42:07.000000000 +0900
-> @@ -134,6 +134,7 @@ struct mem_cgroup {
->  	unsigned long control_type;	/* control RSS or RSS+Pagecache */
->  	int	prev_priority;	/* for recording reclaim priority */
->  	unsigned int swappiness;	/* swappiness */
-> +	unsigned long long min_usage; /* XXX should be a part of res_counter? */
->  	/*
->  	 * statistics.
->  	 */
-> @@ -1096,6 +1097,22 @@ static u64 mem_cgroup_swappiness_read(st
->  	return mem->swappiness;
->  }
-> 
-> +static int mem_cgroup_min_usage_write(struct cgroup *cont, struct cftype *cft,
-> +				       u64 val)
-> +{
-> +	struct mem_cgroup *mem = mem_cgroup_from_cont(cont);
-> +
-> +	mem->min_usage = val;
-> +	return 0;
-> +}
-> +
-> +static u64 mem_cgroup_min_usage_read(struct cgroup *cont, struct cftype *cft)
-> +{
-> +	struct mem_cgroup *mem = mem_cgroup_from_cont(cont);
-> +
-> +	return mem->min_usage;
-> +}
-> +
->  static struct cftype mem_cgroup_files[] = {
->  	{
->  		.name = "usage_in_bytes",
-> @@ -1132,6 +1149,11 @@ static struct cftype mem_cgroup_files[] 
->  		.write_uint = mem_cgroup_swappiness_write,
->  		.read_uint = mem_cgroup_swappiness_read,
->  	},
-> +	{
-> +		.name = "min_usage_in_bytes",
-> +		.write_uint = mem_cgroup_min_usage_write,
-> +		.read_uint = mem_cgroup_min_usage_read,
-> +	},
->  };
-> 
->  /* XXX probably it's better to move try_to_free_mem_cgroup_pages to
-> @@ -1142,6 +1164,36 @@ int mem_cgroup_swappiness(struct mem_cgr
->  	return mem->swappiness;
->  }
-> 
-> +int mem_cgroup_canreclaim(struct page *page, struct mem_cgroup *mem1)
-> +{
-> +	struct page_cgroup *pc;
-> +	int result = 1;
-> +
-> +	if (mem1 != NULL)
-> +		return 1;
-> +
-> +	lock_page_cgroup(page);
-> +	pc = page_get_page_cgroup(page);
-> +	if (pc) {
-> +		struct mem_cgroup *mem2 = pc->mem_cgroup;
-> +		unsigned long long min_usage;
-> +
-> +		BUG_ON(mem2 == NULL);
-> +		min_usage = mem2->min_usage;
-> +		if (min_usage != 0) {
-> +			unsigned long flags;
-> +
-> +			spin_lock_irqsave(&mem2->res.lock, flags);
-> +			if (mem2->res.usage <= min_usage)
-> +				result = 0;
-> +			spin_unlock_irqrestore(&mem2->res.lock, flags);
-> +		}
-> +	}
-> +	unlock_page_cgroup(page);
-> +
-> +	return result;
-> +}
-> +
->  static int alloc_mem_cgroup_per_zone_info(struct mem_cgroup *mem, int node)
->  {
->  	struct mem_cgroup_per_node *pn;
-> --- linux-2.6.24-rc3-mm2-swappiness/mm/vmscan.c.BACKUP2	2007-12-03 13:52:22.000000000 +0900
-> +++ linux-2.6.24-rc3-mm2-swappiness/mm/vmscan.c	2007-12-03 14:11:42.000000000 +0900
-> @@ -531,6 +531,11 @@ static unsigned long shrink_page_list(st
->  					referenced && page_mapping_inuse(page))
->  			goto activate_locked;
-> 
-> +#ifdef CONFIG_CGROUP_MEM_CONT
-> +		if (!mem_cgroup_canreclaim(page, sc->mem_cgroup))
-> +			goto activate_locked;
-> +#endif /* CONFIG_CGROUP_MEM_CONT */
-> +
->  #ifdef CONFIG_SWAP
->  		/*
->  		 * Anonymous process memory has backing store?
-> @@ -1122,6 +1127,12 @@ static void shrink_active_list(unsigned 
->  			list_add(&page->lru, &l_active);
->  			continue;
->  		}
-> +#ifdef CONFIG_CGROUP_MEM_CONT
-> +		if (!mem_cgroup_canreclaim(page, sc->mem_cgroup)) {
-> +			list_add(&page->lru, &l_active);
-> +			continue;
-> +		}
-> +#endif /* CONFIG_CGROUP_MEM_CONT */
->  		list_add(&page->lru, &l_inactive);
->  	}
-> 
-> _______________________________________________
-> Containers mailing list
-> Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-> https://lists.linux-foundation.org/mailman/listinfo/containers
+> diff --git a/include/net/flow.h b/include/net/flow.h
+> index af59fa5..9590bbe 100644
+> --- a/include/net/flow.h
+> +++ b/include/net/flow.h
+> @@ -10,7 +10,9 @@
+>  #include <linux/in6.h>
+>  #include <asm/atomic.h>
+>  
+> +struct net;
+>  struct flowi {
+> +	struct net *fl_net;
+>  	int	oif;
+>  	int	iif;
+>  	__u32	mark;
+> -- 
 
-
--- 
-	Warm Regards,
-	Balbir Singh
-	Linux Technology Center
-	IBM, ISTL
+Can this be made conditional on network namespaces being configured on?
+That way the flow structure won't have to grow taking more space.
+It matters in DoS attacks where flow cache becomes a critical resource.
