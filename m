@@ -1,68 +1,77 @@
-From: Brian Haley <brian.haley-VXdhtT5mjnY@public.gmane.org>
-Subject: Re: [patch 12/38][IPV6] ip6_fib - move the fib table to the network
- namespace
-Date: Tue, 04 Dec 2007 14:28:07 -0500
-Message-ID: <4755AA47.3000501@hp.com>
-References: <20071203161636.308694257@mai.toulouse-stg.fr.ibm.com>
-	<20071203162453.368428873@mai.toulouse-stg.fr.ibm.com>
+From: Ben Greear <greearb@candelatech.com>
+Subject: Re: namespace support requires network modules to say "GPL"
+Date: Tue, 04 Dec 2007 11:35:47 -0800
+Message-ID: <4755AC13.1060904@candelatech.com>
+References: <m163zi9425.fsf@ebiederm.dsl.xmission.com>	<47515D39.9030900@rtr.ca> <20071201111736.297dd99a@freepuppy.rosehill>	<20071201163035.321fd554@freepuppy.rosehill> <475227B1.2060802@rtr.ca>	<20071201202354.672aed18@freepuppy.rosehill>	<47530778.7030605@candelatech.com> <47530FAC.1070804@trash.net>	<m1fxyj1y1y.fsf@ebiederm.dsl.xmission.com>	<47544896.7070101@candelatech.com> <475451B1.1030006@free.fr>	<m163zexrqi.fsf@ebiederm.dsl.xmission.com>	<4755A025.8090903@candelatech.com> <m1odd6w9p6.fsf@ebiederm.dsl.xmission.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20071203162453.368428873-WECHFHqYCmGD/CxQmPlnQ0FT0OZdM7KVQQ4Iyu8u01E@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
-Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, Benjamin Thery <benjamin.thery-6ktuUTfB/bM@public.gmane.org>, xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org, den-3ImXcnM4P+0@public.gmane.org
+Return-path: <netdev-owner@vger.kernel.org>
+In-Reply-To: <m1odd6w9p6.fsf@ebiederm.dsl.xmission.com>
+Sender: netdev-owner@vger.kernel.org
+To: "Eric W. Biederman" <ebiederm@xmission.com>
+Cc: Daniel Lezcano <daniel.lezcano@free.fr>, netdev@vger.kernel.org, linux-kernel@vger.kernel.org, containers@lists.osdl.org, Mark Lord <lkml@rtr.ca>, Stephen Hemminger <shemminger@linux-foundation.org>, David Miller <davem@davemloft.net>
 List-Id: containers.vger.kernel.org
 
-Hi Daniel,
+Eric W. Biederman wrote:
+> Ben Greear <greearb@candelatech.com> writes:
+> 
+>> Eric W. Biederman wrote:
+>>> However there also seem to be simpler cases like Ben's bridge module,
+>>> that don't appear to have any global state.
+>>>
+>> Well, my module has some global state, but I don't think it needs to care about
+>> namespaces.  My first impression is that my module should be able to bridge
+>> namespaces...not be contained within one.  I can have user-space make sure that
+>> I don't bridge between
+>> devices in different name-spaces, or perhaps bridging between namespaces
+>> wouldn't be a problem anyway. 
+> 
+> Bridging between namespaces should not be a problem, but it could be
+> a bit of a challenge to setup (in finding the network devices).
+> Probably the easy way is to setup the bridging and then move one of the
+> network devices to the other network namespace.
+> 
+> Essentially bridging between two network devices in two network
+> namespaces looks like bridging between two network devices on two
+> separate network stacks.   Although internally things look a little
+> better.
 
-Daniel Lezcano wrote:
-> Move the global definition of the fib table to the network namespace
-> structure and make their access to the initial network namespace.
-....
-> -void __init fib6_init(void)
-> +static int fib6_net_init(struct net *net)
->  {
-> -	fib6_node_kmem = kmem_cache_create("fib6_nodes",
-> -					   sizeof(struct fib6_node),
-> -					   0, SLAB_HWCACHE_ALIGN|SLAB_PANIC,
-> -					   NULL);
-> +	int ret;
->  
-> -	fib_table_hash = kzalloc(sizeof(*fib_table_hash)*FIB_TABLE_HASHSZ, GFP_KERNEL);
-> -	if (!fib_table_hash)
-> -		panic("IPV6: Failed to allocate fib_table_hash.\n");
-> -
-> -	fib6_main_tbl = kzalloc(sizeof(*fib6_main_tbl), GFP_KERNEL);
-> -	if (!fib6_main_tbl)
-> -		panic("IPV6: Failed to allocate fib6_main_tbl.\n");
-> -
-> -	fib6_main_tbl->tb6_id = RT6_TABLE_MAIN;
-> -	fib6_main_tbl->tb6_root.leaf = &ip6_null_entry;
-> -	fib6_main_tbl->tb6_root.fn_flags = RTN_ROOT | RTN_TL_ROOT | RTN_RTINFO;
-> +	if (net != &init_net)
-> +		return -EPERM;
-> +
-> +	ret = -ENOMEM;
-> +	net->fib_table_hash = kzalloc(sizeof(*net->fib_table_hash)*FIB_TABLE_HASHSZ,
-> +				      GFP_KERNEL);
-> +	if (!net->fib_table_hash)
-> +		goto out;
+Ok, that sounds fine.
 
-So originally, the fib_table_hash was global with no allocation 
-necessary.  Then in patch 11 you changed it to be dynamic and panic() on 
-failure.  Now it just gracefully returns.  Do you really want to do that 
-for the init_net namespace?  Won't the next routine that tries to access 
-this NULL pointer oops?  Same for fib6_main_table, fib6_local_table, 
-fib6_stats, etc.  Or did I miss where the callers error-out on an ENOMEM?
+>> Currently I use procfs and ioctls bound to a procfs file descriptor.
+> 
+> Which is where it gets tricky   You are defining new userspace ABIs.
+> I can see where they occasionally make sense during development
+> and prototyping but long term out of tree userspace interfaces appear
+> to me to be a real maintenance problem.
 
--Brian
+They are completely contained within my module, and no one is going
+to change my module w/out me knowing, so actually I have very little
+problem here :)
+
+>> For namespaces in general, will there be a way to just do a dev_get_by_* and
+>> find the
+>> device in *any* namespace and query the device to see what namespace it is in?
+>> Then my module or some other more clever piece of code can determine the
+>> namespaces
+>> (by comparing pointers if nothing else) and make proper decision.  For instance,
+>> maybe
+>> we want to bridge two namespaces, or maybe we want to forbid that ever
+>> happening...
+> 
+> The issue is that fundamentally all userspace device identifiers can
+> be duped between namespaces.  So since there is no unique identifier
+> we can not implement a function to do that.
+
+Ok, but can a netdev at least know what namespace it is in?  I don't
+need this for my module, but it seems very useful knowledge...
+
+Thanks,
+Ben
+
+
+-- 
+Ben Greear <greearb@candelatech.com>
+Candela Technologies Inc  http://www.candelatech.com
+
