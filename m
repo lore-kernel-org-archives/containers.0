@@ -1,67 +1,40 @@
-From: David Miller <davem@davemloft.net>
-Subject: Re: namespace support requires network modules to say "GPL"
-Date: Tue, 04 Dec 2007 22:14:47 -0800 (PST)
-Message-ID: <20071204.221447.158735674.davem@davemloft.net>
-References: <m163zexrqi.fsf@ebiederm.dsl.xmission.com>
-	<4755A025.8090903@candelatech.com>
-	<m1odd6w9p6.fsf@ebiederm.dsl.xmission.com>
+From: "Denis V. Lunev" <den@sw.ru>
+Subject: Re: [PATCH 1/4] netns: Tag the network flow with the network namespace
+ it is in (v2)
+Date: Wed, 05 Dec 2007 09:49:54 +0300
+Message-ID: <47564A12.3040502@sw.ru>
+References: <E1IzgRN-0006Hq-00@gondolin.me.apana.org.au>
 Mime-Version: 1.0
-Content-Type: Text/Plain; charset=us-ascii
+Content-Type: text/plain; charset=KOI8-R
 Content-Transfer-Encoding: 7bit
 Return-path: <netdev-owner@vger.kernel.org>
-In-Reply-To: <m1odd6w9p6.fsf@ebiederm.dsl.xmission.com>
+In-Reply-To: <E1IzgRN-0006Hq-00@gondolin.me.apana.org.au>
 Sender: netdev-owner@vger.kernel.org
-To: ebiederm@xmission.com
-Cc: greearb@candelatech.com, daniel.lezcano@free.fr, netdev@vger.kernel.org, linux-kernel@vger.kernel.org, containers@lists.osdl.org, lkml@rtr.ca, shemminger@linux-foundation.org
+To: Herbert Xu <herbert@gondor.apana.org.au>
+Cc: shemminger@linux-foundation.org, den@openvz.org, davem@davemloft.net, devel@openvz.org, netdev@vger.kernel.org, containers@lists.osdl.org
 List-Id: containers.vger.kernel.org
 
-From: ebiederm@xmission.com (Eric W. Biederman)
-Date: Tue, 04 Dec 2007 12:17:57 -0700
-
-> Ben Greear <greearb@candelatech.com> writes:
+Herbert Xu wrote:
+> Denis V. Lunev <den@sw.ru> wrote:
+>> could you exactly point me out the flow cache your are talking about.
+>> Is this dst entry cache or struct flow_cache described in the
+>> net/core/flow.c
 > 
-> > If I *do* need to add some sort of namespace
-> > awareness to just achieve today's functionality, I don't mind making the
-> > changes,
-> > so long as I don't need to change to GPL licensing.  Perhaps at the least you
-> > can export enough symbols w/out GPL tag to achieve backwards compat with .23
-> > and previous kernels, or rework dev_get_by_* etc to not need GPL'd namespace
-> > symbols and just return the device in the default namespace?
+> The flow object is embedded in struct rtable so does its size change?
 > 
-> IANAL but to me your code sounds like a derivative work of the linux
-> kernel.  Which implies that if you are distributing your module you
-> need to change to GPL licensing.  The _GPL tag on EXPORT_SYMBOL does
-> not change those rules.
+> Cheers,
 
-Eric, YANAL and you are also full of hot air.  You are really
-testing my patience on this issue.
+SLAB allocator, x86_64 host
 
-You fail to ever describe on what factual basis you are making
-these claims.  And the reason is that you have ZERO factual basis
-for your claims.
+Before the patch:
+ip6_dst_cache        384   10
+xfrm_dst_cache       384   10
+ip_dst_cache         384   10
 
-Here are the facts:
+After the patch:
+ip6_dst_cache        384   10
+xfrm_dst_cache       384   10
+ip_dst_cache         384   10
 
-1) Never, ever, have the function for looking up network devices been
-   classified as GPL-only symbols.
-
-   They provide a device based upon a lookup key.
-
-2) You in no way have changed what those functions do in any way
-   whatsoever.  They still provide a reference to a network device
-   based upon a given lookup key.
-
-   The functions are still doing the same thing they always have.
-
-Therefore, you have decided to uniliaterally change the licensing of
-these functions based solely upon your opinion, and not because of
-some real change you've made to the code in question.
-
-You have no right to do this.
-
-This is unreasonable, and you must fix this immediately.
-
-And I do mean now, not after you've written several more excessively
-long diatribes about how you feel in this matter.
-
-Thank you.
+Regards,
+	Den
