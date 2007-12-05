@@ -1,82 +1,46 @@
-From: Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [patch 12/38][IPV6] ip6_fib - move the fib table to the network
- namespace
-Date: Wed, 05 Dec 2007 11:05:00 +0100
-Message-ID: <475677CC.2040201@fr.ibm.com>
-References: <20071203161636.308694257@mai.toulouse-stg.fr.ibm.com>
-	<20071203162453.368428873@mai.toulouse-stg.fr.ibm.com>
-	<4755AA47.3000501@hp.com>
+From: David Miller <davem@davemloft.net>
+Subject: Re: [PATCH 1/4] netns: Tag the network flow with the network
+ namespace it is in (v2)
+Date: Wed, 05 Dec 2007 02:10:36 -0800 (PST)
+Message-ID: <20071205.021036.22032476.davem@davemloft.net>
+References: <20071204095333.GA6029@iris.sw.ru>
+	<20071204062605.508cf812@shemminger-laptop>
+	<47559FA9.2080109@sw.ru>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+Content-Type: Text/Plain; charset=us-ascii
 Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <4755AA47.3000501-VXdhtT5mjnY@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Brian Haley <brian.haley-VXdhtT5mjnY@public.gmane.org>
-Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, Benjamin Thery <benjamin.thery-6ktuUTfB/bM@public.gmane.org>, xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org, den-3ImXcnM4P+0@public.gmane.org
+Return-path: <netdev-owner@vger.kernel.org>
+In-Reply-To: <47559FA9.2080109@sw.ru>
+Sender: netdev-owner@vger.kernel.org
+To: den@sw.ru
+Cc: shemminger@linux-foundation.org, den@openvz.org, devel@openvz.org, netdev@vger.kernel.org, containers@lists.osdl.org
 List-Id: containers.vger.kernel.org
 
-Brian Haley wrote:
-> Hi Daniel,
+From: "Denis V. Lunev" <den@sw.ru>
+Date: Tue, 04 Dec 2007 21:42:49 +0300
+
+> Stephen Hemminger wrote:
+> > Can this be made conditional on network namespaces being configured on?
+> > That way the flow structure won't have to grow taking more space.
+> > It matters in DoS attacks where flow cache becomes a critical resource.
 > 
-> Daniel Lezcano wrote:
->> Move the global definition of the fib table to the network namespace
->> structure and make their access to the initial network namespace.
-> ....
->> -void __init fib6_init(void)
->> +static int fib6_net_init(struct net *net)
->>  {
->> -    fib6_node_kmem = kmem_cache_create("fib6_nodes",
->> -                       sizeof(struct fib6_node),
->> -                       0, SLAB_HWCACHE_ALIGN|SLAB_PANIC,
->> -                       NULL);
->> +    int ret;
->>  
->> -    fib_table_hash = 
->> kzalloc(sizeof(*fib_table_hash)*FIB_TABLE_HASHSZ, GFP_KERNEL);
->> -    if (!fib_table_hash)
->> -        panic("IPV6: Failed to allocate fib_table_hash.\n");
->> -
->> -    fib6_main_tbl = kzalloc(sizeof(*fib6_main_tbl), GFP_KERNEL);
->> -    if (!fib6_main_tbl)
->> -        panic("IPV6: Failed to allocate fib6_main_tbl.\n");
->> -
->> -    fib6_main_tbl->tb6_id = RT6_TABLE_MAIN;
->> -    fib6_main_tbl->tb6_root.leaf = &ip6_null_entry;
->> -    fib6_main_tbl->tb6_root.fn_flags = RTN_ROOT | RTN_TL_ROOT | 
->> RTN_RTINFO;
->> +    if (net != &init_net)
->> +        return -EPERM;
->> +
->> +    ret = -ENOMEM;
->> +    net->fib_table_hash = 
->> kzalloc(sizeof(*net->fib_table_hash)*FIB_TABLE_HASHSZ,
->> +                      GFP_KERNEL);
->> +    if (!net->fib_table_hash)
->> +        goto out;
+> could you exactly point me out the flow cache your are talking about.
+> Is this dst entry cache or struct flow_cache described in the
+> net/core/flow.c
 > 
-> So originally, the fib_table_hash was global with no allocation 
-> necessary.  Then in patch 11 you changed it to be dynamic and panic() on 
-> failure.  Now it just gracefully returns.  Do you really want to do that 
-> for the init_net namespace?  Won't the next routine that tries to access 
-> this NULL pointer oops?  Same for fib6_main_table, fib6_local_table, 
-> fib6_stats, etc.  Or did I miss where the callers error-out on an ENOMEM?
+> For the latter case, there is completely no difference in the size on my
+> x86_64 host with SLAB allocator, i.e. there are 30 objects per slab
+> with/without fl_net (objsize = 128).
 
-Yes, you are right, this is not consistent and we should not panic 
-neither ignore the error. I should have modified the ip6_route_init and 
-returned an error in case of register_pernet_subsys failure. So the ipv6 
-initialization can fails safely.
+This may be true, but another thing to consider is that flow
+objects sit on the stack in many call sites.
 
-I will post some modifications around that for net-2.6.25 for netdev@.
+I won't let this block your patch, but I want you to be cognizant
+of this issue in the future, it's not all about SLAB.
 
-Thanks for catching that.
-
-	-- Daniel
+You should also BTW consider how this change will effect D-cache
+access patterns and L2 cache utilization.  Some object access
+patterns may not fit in the cache, which did beforehand, which
+can kill performance.  We're talking about something which gets
+touched multiple times per packet at routing rates in the
+million packet per second range.
