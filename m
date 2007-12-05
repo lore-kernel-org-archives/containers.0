@@ -1,61 +1,37 @@
-From: David Miller <davem@davemloft.net>
-Subject: Re: [PATCH 1/4] netns: Tag the network flow with the network
- namespace it is in (v2)
-Date: Wed, 05 Dec 2007 02:13:18 -0800 (PST)
-Message-ID: <20071205.021318.144125922.davem@davemloft.net>
-References: <20071204095333.GA6029@iris.sw.ru>
+From: "Denis V. Lunev" <den-3ImXcnM4P+0@public.gmane.org>
+Subject: namespace acceptance process. bad news
+Date: Wed, 05 Dec 2007 13:42:42 +0300
+Message-ID: <475680A2.2000907@sw.ru>
 Mime-Version: 1.0
-Content-Type: Text/Plain; charset=us-ascii
+Content-Type: text/plain; charset=KOI8-R
 Content-Transfer-Encoding: 7bit
-Return-path: <netdev-owner@vger.kernel.org>
-In-Reply-To: <20071204095333.GA6029@iris.sw.ru>
-Sender: netdev-owner@vger.kernel.org
-To: den@openvz.org
-Cc: devel@openvz.org, netdev@vger.kernel.org, containers@lists.osdl.org
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Pavel Emelianov <xemul-3ImXcnM4P+0@public.gmane.org>, Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>de
 List-Id: containers.vger.kernel.org
 
-From: "Denis V. Lunev" <den@openvz.org>
-Date: Tue, 4 Dec 2007 12:53:33 +0300
+Hello, All!
 
-> As well as marking flows this indirectly marks the ipv4 routing cache
-> as every routing entry contains a flow.
-> 
-> It is useful to add the network namespace into flows as frequently
-> the routing information for ingoing and outgoing network packets is
-> collected into a flow structure which is then used for several functions
-> as it sorts out what is going on.
-> 
-> Changes from v1:
-> - remove flow.h dependency from net_namespace.h
-> 
-> Signed-off-by: Denis V. Lunev <den@openvz.org>
-> Signed-off-by: Eric W. Biederman <ebiederm@xmission.com>
+We are completely bite to ground with the current Eric's patchset today
+by Dave Miller. flowi tagging considered wrong. The same opinion has
+been received from Alexey Kuznetsov :(
 
-Hmmm, actually I change my mind.
+So, it seems that we can't push this approach.
 
-> @@ -10,7 +10,9 @@
->  #include <linux/in6.h>
->  #include <asm/atomic.h>
->  
-> +struct net;
->  struct flowi {
-> +	struct net *fl_net;
->  	int	oif;
->  	int	iif;
->  	__u32	mark;
+Daniel, Benjamin, should I merge your code to our git after this news or
+we should stop a bit and think? We have talked on OLS that if Dave stop
+us with current approach we could try global context as in OpenVz.
 
-I'm not applying this, it's going to have a negative impact on routing
-performance.
+I think I'll code this a bit and see a reaction, but we need to have
+some agreement here :)
 
-It also changes the semantics of the flowi object in a way I very
-much dislike, in that there is now non-clobberable state in there.
-
-Previously only addressing identifying objects were present in the
-flow, you could use it any context, and there were no pointer
-dereferencing or object references from this thing.  It was very
-simple.
-
-That is no longer the case after your patch and I don't want us
-to go down this path.
-
-Please find another way to implement this.
+Regards,
+	Den
