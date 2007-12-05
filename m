@@ -1,46 +1,61 @@
 From: David Miller <davem@davemloft.net>
 Subject: Re: [PATCH 1/4] netns: Tag the network flow with the network
  namespace it is in (v2)
-Date: Wed, 05 Dec 2007 02:10:36 -0800 (PST)
-Message-ID: <20071205.021036.22032476.davem@davemloft.net>
+Date: Wed, 05 Dec 2007 02:13:18 -0800 (PST)
+Message-ID: <20071205.021318.144125922.davem@davemloft.net>
 References: <20071204095333.GA6029@iris.sw.ru>
-	<20071204062605.508cf812@shemminger-laptop>
-	<47559FA9.2080109@sw.ru>
 Mime-Version: 1.0
 Content-Type: Text/Plain; charset=us-ascii
 Content-Transfer-Encoding: 7bit
 Return-path: <netdev-owner@vger.kernel.org>
-In-Reply-To: <47559FA9.2080109@sw.ru>
+In-Reply-To: <20071204095333.GA6029@iris.sw.ru>
 Sender: netdev-owner@vger.kernel.org
-To: den@sw.ru
-Cc: shemminger@linux-foundation.org, den@openvz.org, devel@openvz.org, netdev@vger.kernel.org, containers@lists.osdl.org
+To: den@openvz.org
+Cc: devel@openvz.org, netdev@vger.kernel.org, containers@lists.osdl.org
 List-Id: containers.vger.kernel.org
 
-From: "Denis V. Lunev" <den@sw.ru>
-Date: Tue, 04 Dec 2007 21:42:49 +0300
+From: "Denis V. Lunev" <den@openvz.org>
+Date: Tue, 4 Dec 2007 12:53:33 +0300
 
-> Stephen Hemminger wrote:
-> > Can this be made conditional on network namespaces being configured on?
-> > That way the flow structure won't have to grow taking more space.
-> > It matters in DoS attacks where flow cache becomes a critical resource.
+> As well as marking flows this indirectly marks the ipv4 routing cache
+> as every routing entry contains a flow.
 > 
-> could you exactly point me out the flow cache your are talking about.
-> Is this dst entry cache or struct flow_cache described in the
-> net/core/flow.c
+> It is useful to add the network namespace into flows as frequently
+> the routing information for ingoing and outgoing network packets is
+> collected into a flow structure which is then used for several functions
+> as it sorts out what is going on.
 > 
-> For the latter case, there is completely no difference in the size on my
-> x86_64 host with SLAB allocator, i.e. there are 30 objects per slab
-> with/without fl_net (objsize = 128).
+> Changes from v1:
+> - remove flow.h dependency from net_namespace.h
+> 
+> Signed-off-by: Denis V. Lunev <den@openvz.org>
+> Signed-off-by: Eric W. Biederman <ebiederm@xmission.com>
 
-This may be true, but another thing to consider is that flow
-objects sit on the stack in many call sites.
+Hmmm, actually I change my mind.
 
-I won't let this block your patch, but I want you to be cognizant
-of this issue in the future, it's not all about SLAB.
+> @@ -10,7 +10,9 @@
+>  #include <linux/in6.h>
+>  #include <asm/atomic.h>
+>  
+> +struct net;
+>  struct flowi {
+> +	struct net *fl_net;
+>  	int	oif;
+>  	int	iif;
+>  	__u32	mark;
 
-You should also BTW consider how this change will effect D-cache
-access patterns and L2 cache utilization.  Some object access
-patterns may not fit in the cache, which did beforehand, which
-can kill performance.  We're talking about something which gets
-touched multiple times per packet at routing rates in the
-million packet per second range.
+I'm not applying this, it's going to have a negative impact on routing
+performance.
+
+It also changes the semantics of the flowi object in a way I very
+much dislike, in that there is now non-clobberable state in there.
+
+Previously only addressing identifying objects were present in the
+flow, you could use it any context, and there were no pointer
+dereferencing or object references from this thing.  It was very
+simple.
+
+That is no longer the case after your patch and I don't want us
+to go down this path.
+
+Please find another way to implement this.
