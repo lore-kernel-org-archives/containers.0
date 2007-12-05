@@ -1,43 +1,30 @@
 From: David Miller <davem@davemloft.net>
 Subject: Re: namespace support requires network modules to say "GPL"
-Date: Tue, 04 Dec 2007 22:01:50 -0800 (PST)
-Message-ID: <20071204.220150.141230758.davem@davemloft.net>
+Date: Tue, 04 Dec 2007 22:07:44 -0800 (PST)
+Message-ID: <20071204.220744.166144729.davem@davemloft.net>
 References: <47544896.7070101@candelatech.com>
-	<475451B1.1030006@free.fr>
-	<m163zexrqi.fsf@ebiederm.dsl.xmission.com>
+	<m18x4axrx2.fsf@ebiederm.dsl.xmission.com>
+	<4755A2FD.9020608@candelatech.com>
 Mime-Version: 1.0
 Content-Type: Text/Plain; charset=us-ascii
 Content-Transfer-Encoding: 7bit
 Return-path: <netdev-owner@vger.kernel.org>
-In-Reply-To: <m163zexrqi.fsf@ebiederm.dsl.xmission.com>
+In-Reply-To: <4755A2FD.9020608@candelatech.com>
 Sender: netdev-owner@vger.kernel.org
-To: ebiederm@xmission.com
-Cc: daniel.lezcano@free.fr, greearb@candelatech.com, netdev@vger.kernel.org, linux-kernel@vger.kernel.org, containers@lists.osdl.org, lkml@rtr.ca, shemminger@linux-foundation.org
+To: greearb@candelatech.com
+Cc: ebiederm@xmission.com, kaber@trash.net, shemminger@linux-foundation.org, lkml@rtr.ca, linux-kernel@vger.kernel.org, netdev@vger.kernel.org, containers@lists.osdl.org
 List-Id: containers.vger.kernel.org
 
-From: ebiederm@xmission.com (Eric W. Biederman)
-Date: Tue, 04 Dec 2007 11:03:01 -0700
+From: Ben Greear <greearb@candelatech.com>
+Date: Tue, 04 Dec 2007 10:57:01 -0800
 
-> I am confused.  I don't see a path forward that feels right.
+> echo add_my_bridge my_br1 eth0 namespaceX eth1 namespaceY > 
+> /proc/net/foo/config
 
-Eric, instead of writing a book about how you feel, look
-at the simple facts and resolve this quickly.
+Each process executes in a namespace, so specifying the namespace
+is redundant, just fetch the current process's namespace to pass
+into the dev_get_by_*() routines.
 
-You added a new key, the namespace, to the looking up of
-network objects.
-
-Big deal.
-
-That does not imply a change in licensing for the interfaces
-where you added that new aspect of the key to the argument
-list.
-
-This symbol licensing decision was not your's to make, so you must
-revert the new licensing change you are enforcing upon everyone.
-
-I want a de-GPL patch in my mailbox from you within the next 24 hours
-or I will code one up myself.  This is getting beyond rediculious.
-
-My patience is completely gone on this matter, resolve this now.
-
-Thanks.
+Anyone interested in using a different namespace's devices
+can change the namespace the process is executing in before
+the procfs echo.
