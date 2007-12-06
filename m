@@ -1,14 +1,13 @@
-From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
-Subject: Re: [PATCH] pid: sys_wait... fixes
-Date: Thu, 06 Dec 2007 10:21:39 -0700
-Message-ID: <m1y7c7spr0.fsf@ebiederm.dsl.xmission.com>
-References: <m17ijsv7iu.fsf@ebiederm.dsl.xmission.com>
-	<20071206170145.GA10674@tv-sign.ru>
+From: Oleg Nesterov <oleg-6lXkIZvqkOAvJsYlp49lxw@public.gmane.org>
+Subject: [PATCH] sys_getsid: don't use ->nsproxy directly
+Date: Thu, 6 Dec 2007 20:53:14 +0300
+Message-ID: <20071206175314.GA11727@tv-sign.ru>
+References: <m11wa0v31c.fsf@ebiederm.dsl.xmission.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20071206170145.GA10674-6lXkIZvqkOAvJsYlp49lxw@public.gmane.org> (Oleg Nesterov's message of
-	"Thu, 6 Dec 2007 20:01:45 +0300")
+Content-Disposition: inline
+In-Reply-To: <m11wa0v31c.fsf-T1Yj925okcoyDheHMi7gv2pdwda3JcWeAL8bYrjMMd8@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,33 +17,40 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Oleg Nesterov <oleg-6lXkIZvqkOAvJsYlp49lxw@public.gmane.org>
-Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Oleg Nesterov <oleg-6lXkIZvqkOAvJsYlp49lxw@public.gmane.org> writes:
+With the new semantics of find_vpid() we don't need to play with ->nsproxy
+explicitely, _vxx() do the right things.
 
-> On 12/05, Eric W. Biederman wrote:
->> 
->> This modifies do_wait and eligible_child to take a pair of
->> enum pid_type and struct pid *pid to precisely specify what
->> set of processes are eligible to be waited for,  instead of the
->> raw pid_t value from sys_wait4.
->
-> Personally, I like this patch very much. Not only it fixes the bug,
-> in my opinion it also makes the code more clean.
->
-> However at first glance it has a minor fixable problem,
->
->> +	if (type < PIDTYPE_MAX) {
->> +		if (p->pids[type].pid != pid)
->>  			return 0;
->>  	}
->
-> If type != PIDTYPE_PID we can't trust p->pids[type].pid unless p is a
-> group leader. This .pid could be just a "random value".
+Also s/tasklist/rcu/.
 
-Ugh.  You are correct.  Thanks for the review.
-That is one annoying special case.
+Signed-off-by: Oleg Nesterov <oleg-6lXkIZvqkOAvJsYlp49lxw@public.gmane.org>
 
-Eric
+--- PT/kernel/sys.c~	2007-12-05 21:43:18.000000000 +0300
++++ PT/kernel/sys.c	2007-12-06 20:09:02.000000000 +0300
+@@ -1025,19 +1025,16 @@ asmlinkage long sys_getsid(pid_t pid)
+ 	else {
+ 		int retval;
+ 		struct task_struct *p;
+-		struct pid_namespace *ns;
+ 
+-		ns = current->nsproxy->pid_ns;
+-
+-		read_lock(&tasklist_lock);
+-		p = find_task_by_pid_ns(pid, ns);
++		rcu_read_lock();
++		p = find_task_by_vpid(pid);
+ 		retval = -ESRCH;
+ 		if (p) {
+ 			retval = security_task_getsid(p);
+ 			if (!retval)
+-				retval = task_session_nr_ns(p, ns);
++				retval = task_session_vnr(p);
+ 		}
+-		read_unlock(&tasklist_lock);
++		rcu_read_unlock();
+ 		return retval;
+ 	}
+ }
