@@ -1,122 +1,146 @@
-From: "Denis V. Lunev" <den@openvz.org>
-Subject: [PATCH 2.6.25] multiple namespaces in the all dst_ifdown routines
-Date: Thu, 6 Dec 2007 15:17:46 +0300
-Message-ID: <20071206121746.GA17899@iris.sw.ru>
+From: "Serge E. Hallyn" <serue@us.ibm.com>
+Subject: Re: [RFC][PATCH] Pid namespaces vs locks interaction
+Date: Thu, 6 Dec 2007 08:53:40 -0600
+Message-ID: <20071206145340.GB7083@sergelap.austin.ibm.com>
+References: <200712061411.32159.vgusev@openvz.org> <200712061557.29543.vgusev@openvz.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-Return-path: <netdev-owner@vger.kernel.org>
+Return-path: <linux-fsdevel-owner@vger.kernel.org>
 Content-Disposition: inline
-Sender: netdev-owner@vger.kernel.org
-To: davem@davemloft.net
-Cc: containers@lists.osdl.org, devel@openvz.org, netdev@vger.kernel.org
+In-Reply-To: <200712061557.29543.vgusev@openvz.org>
+Sender: linux-fsdevel-owner@vger.kernel.org
+To: Vitaliy Gusev <vgusev@openvz.org>
+Cc: "J. Bruce Fields" <bfields@fieldses.org>, linux-fsdevel@vger.kernel.org, Linux Containers <containers@lists.osdl.org>
 List-Id: containers.vger.kernel.org
 
-move dst entries to a namespace loopback to catch refcounting leaks.
+Quoting Vitaliy Gusev (vgusev@openvz.org):
+> Hello!
+> 
+> I am working on pid namespaces vs locks interaction and want to evaluate the 
+> idea.
+> fcntl(F_GETLK,..) can return pid of process for not current pid namespace (if 
+> process is belonged to the several namespaces). It is true also for pids 
+> in /proc/locks. So correct behavior is saving pointer to the struct pid of 
+> the process lock owner.
+> -- 
+> Thank,
+> Vitaliy Gusev
 
-Signed-off-by: Denis V. Lunev <den@openvz.org>
----
- net/core/dst.c          |    4 ++--
- net/ipv4/route.c        |    5 +++--
- net/ipv4/xfrm4_policy.c |    3 ++-
- net/ipv6/route.c        |    7 +++++--
- net/ipv6/xfrm6_policy.c |    3 ++-
- net/xfrm/xfrm_policy.c  |    2 +-
- 6 files changed, 15 insertions(+), 9 deletions(-)
+> diff --git a/fs/locks.c b/fs/locks.c
+> index 8b8388e..d2d3d75 100644
+> --- a/fs/locks.c
+> +++ b/fs/locks.c
+> @@ -125,6 +125,7 @@
+>  #include <linux/syscalls.h>
+>  #include <linux/time.h>
+>  #include <linux/rcupdate.h>
+> +#include <linux/pid_namespace.h>
+> 
+>  #include <asm/semaphore.h>
+>  #include <asm/uaccess.h>
+> @@ -185,6 +186,7 @@ void locks_init_lock(struct file_lock *fl)
+>  	fl->fl_fasync = NULL;
+>  	fl->fl_owner = NULL;
+>  	fl->fl_pid = 0;
+> +	fl->fl_nspid = NULL;
 
-diff --git a/net/core/dst.c b/net/core/dst.c
-index f538061..5c6cfc4 100644
---- a/net/core/dst.c
-+++ b/net/core/dst.c
-@@ -279,11 +279,11 @@ static inline void dst_ifdown(struct dst_entry *dst, struct net_device *dev,
- 	if (!unregister) {
- 		dst->input = dst->output = dst_discard;
- 	} else {
--		dst->dev = init_net.loopback_dev;
-+		dst->dev = dst->dev->nd_net->loopback_dev;
- 		dev_hold(dst->dev);
- 		dev_put(dev);
- 		if (dst->neighbour && dst->neighbour->dev == dev) {
--			dst->neighbour->dev = init_net.loopback_dev;
-+			dst->neighbour->dev = dst->dev;
- 			dev_put(dev);
- 			dev_hold(dst->neighbour->dev);
- 		}
-diff --git a/net/ipv4/route.c b/net/ipv4/route.c
-index dae1290..e4aa97e 100644
---- a/net/ipv4/route.c
-+++ b/net/ipv4/route.c
-@@ -1425,8 +1425,9 @@ static void ipv4_dst_ifdown(struct dst_entry *dst, struct net_device *dev,
- {
- 	struct rtable *rt = (struct rtable *) dst;
- 	struct in_device *idev = rt->idev;
--	if (dev != init_net.loopback_dev && idev && idev->dev == dev) {
--		struct in_device *loopback_idev = in_dev_get(init_net.loopback_dev);
-+	if (dev != dev->nd_net->loopback_dev && idev && idev->dev == dev) {
-+		struct in_device *loopback_idev =
-+			in_dev_get(dev->nd_net->loopback_dev);
- 		if (loopback_idev) {
- 			rt->idev = loopback_idev;
- 			in_dev_put(idev);
-diff --git a/net/ipv4/xfrm4_policy.c b/net/ipv4/xfrm4_policy.c
-index 19fdf8a..e086260 100644
---- a/net/ipv4/xfrm4_policy.c
-+++ b/net/ipv4/xfrm4_policy.c
-@@ -216,7 +216,8 @@ static void xfrm4_dst_ifdown(struct dst_entry *dst, struct net_device *dev,
- 
- 	xdst = (struct xfrm_dst *)dst;
- 	if (xdst->u.rt.idev->dev == dev) {
--		struct in_device *loopback_idev = in_dev_get(init_net.loopback_dev);
-+		struct in_device *loopback_idev =
-+			in_dev_get(dev->nd_net->loopback_dev);
- 		BUG_ON(!loopback_idev);
- 
- 		do {
-diff --git a/net/ipv6/route.c b/net/ipv6/route.c
-index e36cac9..e757a3c 100644
---- a/net/ipv6/route.c
-+++ b/net/ipv6/route.c
-@@ -216,9 +216,12 @@ static void ip6_dst_ifdown(struct dst_entry *dst, struct net_device *dev,
- {
- 	struct rt6_info *rt = (struct rt6_info *)dst;
- 	struct inet6_dev *idev = rt->rt6i_idev;
-+	struct net_device *loopback_dev =
-+		dev->nd_net->loopback_dev;
- 
--	if (dev != init_net.loopback_dev && idev != NULL && idev->dev == dev) {
--		struct inet6_dev *loopback_idev = in6_dev_get(init_net.loopback_dev);
-+	if (dev != loopback_dev && idev != NULL && idev->dev == dev) {
-+		struct inet6_dev *loopback_idev =
-+			in6_dev_get(loopback_dev);
- 		if (loopback_idev != NULL) {
- 			rt->rt6i_idev = loopback_idev;
- 			in6_dev_put(idev);
-diff --git a/net/ipv6/xfrm6_policy.c b/net/ipv6/xfrm6_policy.c
-index cc0d151..7b360ea 100644
---- a/net/ipv6/xfrm6_policy.c
-+++ b/net/ipv6/xfrm6_policy.c
-@@ -233,7 +233,8 @@ static void xfrm6_dst_ifdown(struct dst_entry *dst, struct net_device *dev,
- 
- 	xdst = (struct xfrm_dst *)dst;
- 	if (xdst->u.rt6.rt6i_idev->dev == dev) {
--		struct inet6_dev *loopback_idev = in6_dev_get(init_net.loopback_dev);
-+		struct inet6_dev *loopback_idev =
-+			in6_dev_get(dev->nd_net->loopback_dev);
- 		BUG_ON(!loopback_idev);
- 
- 		do {
-diff --git a/net/xfrm/xfrm_policy.c b/net/xfrm/xfrm_policy.c
-index a9ac748..900f6b6 100644
---- a/net/xfrm/xfrm_policy.c
-+++ b/net/xfrm/xfrm_policy.c
-@@ -1932,7 +1932,7 @@ static int stale_bundle(struct dst_entry *dst)
- void xfrm_dst_ifdown(struct dst_entry *dst, struct net_device *dev)
- {
- 	while ((dst = dst->child) && dst->xfrm && dst->dev == dev) {
--		dst->dev = init_net.loopback_dev;
-+		dst->dev = dev->nd_net->loopback_dev;
- 		dev_hold(dst->dev);
- 		dev_put(dev);
- 	}
--- 
-1.5.3.rc5
+The idea seems right, but why are you keeping fl->fl_pid around?
+
+Seems like the safer thing to do would be to have a separate
+struct user_flock, with an integer pid, for communicating to userspace,
+and a struct flock, with struct pid, for kernel use?  Then fcntl_getlk()
+and fcntl_setlk() do the appropriate conversions.
+
+thanks,
+-serge
+
+>  	fl->fl_file = NULL;
+>  	fl->fl_flags = 0;
+>  	fl->fl_type = 0;
+> @@ -553,6 +555,8 @@ static void locks_insert_lock(struct file_lock **pos, struct file_lock *fl)
+>  {
+>  	list_add(&fl->fl_link, &file_lock_list);
+> 
+> +	fl->fl_nspid = get_pid(task_tgid(current));
+> +
+>  	/* insert into file's list */
+>  	fl->fl_next = *pos;
+>  	*pos = fl;
+> @@ -584,6 +588,11 @@ static void locks_delete_lock(struct file_lock **thisfl_p)
+>  	if (fl->fl_ops && fl->fl_ops->fl_remove)
+>  		fl->fl_ops->fl_remove(fl);
+> 
+> +	if (fl->fl_nspid) {
+> +		put_pid(fl->fl_nspid);
+> +		fl->fl_nspid = NULL;
+> +	}
+> +
+>  	locks_wake_up_blocks(fl);
+>  	locks_free_lock(fl);
+>  }
+> @@ -673,14 +682,16 @@ posix_test_lock(struct file *filp, struct file_lock *fl)
+>  		if (posix_locks_conflict(fl, cfl))
+>  			break;
+>  	}
+> -	if (cfl)
+> +	if (cfl) {
+>  		__locks_copy_lock(fl, cfl);
+> -	else
+> +		if (cfl->fl_nspid)
+> +			fl->fl_pid = pid_nr_ns(cfl->fl_nspid, 
+> +						task_active_pid_ns(current));
+> +	} else
+>  		fl->fl_type = F_UNLCK;
+>  	unlock_kernel();
+>  	return;
+>  }
+> -
+>  EXPORT_SYMBOL(posix_test_lock);
+> 
+>  /* This function tests for deadlock condition before putting a process to
+> @@ -2084,6 +2095,12 @@ static void lock_get_status(struct seq_file *f, struct file_lock *fl,
+>  							int id, char *pfx)
+>  {
+>  	struct inode *inode = NULL;
+> +	unsigned int fl_pid;
+> +
+> +	if (fl->fl_nspid)
+> +		fl_pid = pid_nr_ns(fl->fl_nspid, task_active_pid_ns(current));
+> +	else
+> +		fl_pid = fl->fl_pid;
+> 
+>  	if (fl->fl_file != NULL)
+>  		inode = fl->fl_file->f_path.dentry->d_inode;
+> @@ -2124,16 +2141,16 @@ static void lock_get_status(struct seq_file *f, struct file_lock *fl,
+>  	}
+>  	if (inode) {
+>  #ifdef WE_CAN_BREAK_LSLK_NOW
+> -		seq_printf(f, "%d %s:%ld ", fl->fl_pid,
+> +		seq_printf(f, "%d %s:%ld ", fl_pid,
+>  				inode->i_sb->s_id, inode->i_ino);
+>  #else
+>  		/* userspace relies on this representation of dev_t ;-( */
+> -		seq_printf(f, "%d %02x:%02x:%ld ", fl->fl_pid,
+> +		seq_printf(f, "%d %02x:%02x:%ld ", fl_pid,
+>  				MAJOR(inode->i_sb->s_dev),
+>  				MINOR(inode->i_sb->s_dev), inode->i_ino);
+>  #endif
+>  	} else {
+> -		seq_printf(f, "%d <none>:0 ", fl->fl_pid);
+> +		seq_printf(f, "%d <none>:0 ", fl_pid);
+>  	}
+>  	if (IS_POSIX(fl)) {
+>  		if (fl->fl_end == OFFSET_MAX)
+> diff --git a/include/linux/fs.h b/include/linux/fs.h
+> index b3ec4a4..5876f68 100644
+> --- a/include/linux/fs.h
+> +++ b/include/linux/fs.h
+> @@ -870,6 +870,7 @@ struct file_lock {
+>  	struct list_head fl_block;	/* circular list of blocked processes */
+>  	fl_owner_t fl_owner;
+>  	unsigned int fl_pid;
+> +	struct pid *fl_nspid;
+>  	wait_queue_head_t fl_wait;
+>  	struct file *fl_file;
+>  	unsigned char fl_flags;
 
