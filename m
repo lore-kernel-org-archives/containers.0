@@ -1,42 +1,25 @@
-From: "Denis V. Lunev" <den@openvz.org>
-Subject: [PATCH] remove prototype of ip_rt_advice
-Date: Thu, 6 Dec 2007 13:17:43 +0300
-Message-ID: <20071206101743.GA10673@iris.sw.ru>
+From: ebiederm@xmission.com (Eric W. Biederman)
+Subject: Re: [PATCH] lost content of /proc/sys/fs/binfmt_misc
+Date: Thu, 06 Dec 2007 03:17:16 -0700
+Message-ID: <m1fxygt9eb.fsf@ebiederm.dsl.xmission.com>
+References: <20071205143518.GA24886@iris.sw.ru>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-Return-path: <netdev-owner@vger.kernel.org>
-Content-Disposition: inline
-Sender: netdev-owner@vger.kernel.org
-To: davem@davemloft.net
-Cc: containers@lists.osdl.org, devel@openvz.org, netdev@vger.kernel.org
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1753238AbXLFKS7@vger.kernel.org>
+In-Reply-To: <20071205143518.GA24886@iris.sw.ru> (Denis V. Lunev's message of
+	"Wed, 5 Dec 2007 17:35:18 +0300")
+Sender: linux-kernel-owner@vger.kernel.org
+To: "Denis V. Lunev" <den@openvz.org>
+Cc: akpm@linux-foundation.org, marcus@better.se, containers@lists.osdl.org, devel@openvz.org, linux-kernel@vger.kernel.org
 List-Id: containers.vger.kernel.org
 
-ip_rt_advice has been gone, so no need to keep prototype and debug message.
+"Denis V. Lunev" <den@openvz.org> writes:
 
-Signed-off-by: Denis V. Lunev <den@openvz.org>
---
-diff --git a/include/net/route.h b/include/net/route.h
-index f7ce625..59b0b19 100644
---- a/include/net/route.h
-+++ b/include/net/route.h
-@@ -109,7 +109,6 @@ struct in_device;
- extern int		ip_rt_init(void);
- extern void		ip_rt_redirect(__be32 old_gw, __be32 dst, __be32 new_gw,
- 				       __be32 src, struct net_device *dev);
--extern void		ip_rt_advice(struct rtable **rp, int advice);
- extern void		rt_cache_flush(int how);
- extern int		__ip_route_output_key(struct rtable **, const struct flowi *flp);
- extern int		ip_route_output_key(struct rtable **, struct flowi *flp);
-diff --git a/net/ipv4/route.c b/net/ipv4/route.c
-index 134cab5..cefae61 100644
---- a/net/ipv4/route.c
-+++ b/net/ipv4/route.c
-@@ -1198,7 +1198,7 @@ static struct dst_entry *ipv4_negative_advice(struct dst_entry *dst)
- 			unsigned hash = rt_hash(rt->fl.fl4_dst, rt->fl.fl4_src,
- 						rt->fl.oif);
- #if RT_CACHE_DEBUG >= 1
--			printk(KERN_DEBUG "ip_rt_advice: redirect to "
-+			printk(KERN_DEBUG "ipv4_negative_advice: redirect to "
- 					  "%u.%u.%u.%u/%02x dropped\n",
- 				NIPQUAD(rt->rt_dst), rt->fl.fl4_tos);
- #endif
+> /proc/sys/fs/binfmt_misc dentry disappeared during d_revalidate.
+> d_revalidate only dentries from shadowed one and below.
+> http://bugzilla.kernel.org/show_bug.cgi?id=9504
+
+Denis this is decent except it doesn't completely close the possibility of
+leaking mounts.  It just refuses to leak mounts on everything except /proc/net.
+
+Eric
