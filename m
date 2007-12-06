@@ -1,80 +1,50 @@
-From: "Serge E. Hallyn" <serue@us.ibm.com>
-Subject: Re: [RFC][PATCH] Pid namespaces vs locks interaction
-Date: Thu, 6 Dec 2007 09:51:30 -0600
-Message-ID: <20071206155130.GA12463@sergelap.austin.ibm.com>
-References: <200712061411.32159.vgusev@openvz.org> <200712061557.29543.vgusev@openvz.org> <20071206145340.GB7083@sergelap.austin.ibm.com> <200712061819.59841.vgusev@openvz.org>
+From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
+Subject: Re: [PATCH] proc: Do not invalidate dentries with submounts
+Date: Thu, 06 Dec 2007 09:05:02 -0700
+Message-ID: <m17ijru7v5.fsf@ebiederm.dsl.xmission.com>
+References: <20071205143518.GA24886@iris.sw.ru>
+	<m1bq94t951.fsf@ebiederm.dsl.xmission.com> <4757CF70.3020508@sw.ru>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-Return-path: <linux-fsdevel-owner@vger.kernel.org>
-Content-Disposition: inline
-In-Reply-To: <200712061819.59841.vgusev@openvz.org>
-Sender: linux-fsdevel-owner@vger.kernel.org
-To: Vitaliy Gusev <vgusev@openvz.org>
-Cc: "Serge E. Hallyn" <serue@us.ibm.com>, "J. Bruce Fields" <bfields@fieldses.org>, linux-fsdevel@vger.kernel.org, Linux Containers <containers@lists.osdl.org>
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <4757CF70.3020508-3ImXcnM4P+0@public.gmane.org> (Denis V. Lunev's message of "Thu, 06
+	Dec 2007 13:31:12 +0300")
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: "Denis V. Lunev" <den-3ImXcnM4P+0@public.gmane.org>
+Cc: linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, marcus-sJr3legBufCzQB+pC5nmwQ@public.gmane.org, containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, "Denis V. Lunev" <den-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Quoting Vitaliy Gusev (vgusev@openvz.org):
-> On 6 December 2007 17:53:40 Serge E. Hallyn wrote:
-> > Quoting Vitaliy Gusev (vgusev@openvz.org):
-> > > Hello!
-> > >
-> > > I am working on pid namespaces vs locks interaction and want to evaluate
-> > > the idea.
-> > > fcntl(F_GETLK,..) can return pid of process for not current pid namespace
-> > > (if process is belonged to the several namespaces). It is true also for
-> > > pids in /proc/locks. So correct behavior is saving pointer to the struct
-> > > pid of the process lock owner.
-> > > --
-> > > Thank,
-> > > Vitaliy Gusev
-> > >
-> > > diff --git a/fs/locks.c b/fs/locks.c
-> > > index 8b8388e..d2d3d75 100644
-> > > --- a/fs/locks.c
-> > > +++ b/fs/locks.c
-> > > @@ -125,6 +125,7 @@
-> > >  #include <linux/syscalls.h>
-> > >  #include <linux/time.h>
-> > >  #include <linux/rcupdate.h>
-> > > +#include <linux/pid_namespace.h>
-> > >
-> > >  #include <asm/semaphore.h>
-> > >  #include <asm/uaccess.h>
-> > > @@ -185,6 +186,7 @@ void locks_init_lock(struct file_lock *fl)
-> > >  	fl->fl_fasync = NULL;
-> > >  	fl->fl_owner = NULL;
-> > >  	fl->fl_pid = 0;
-> > > +	fl->fl_nspid = NULL;
-> >
-> > The idea seems right, but why are you keeping fl->fl_pid around?
-> >
-> > Seems like the safer thing to do would be to have a separate
-> > struct user_flock, with an integer pid, for communicating to userspace,
-> > and a struct flock, with struct pid, for kernel use?  Then fcntl_getlk()
-> > and fcntl_setlk() do the appropriate conversions.
-> 
-> fl_pid is used by nfs, fuse and gfs2. For instance nfs  keeps in fl_pid some 
-> unique id to identify locking process between hosts - it is not a process 
-> pid.
+"Denis V. Lunev" <den-3ImXcnM4P+0@public.gmane.org> writes:
 
-Ok, but so the struct user_flock->fl_pid is being set to the task's
-virtual pid, while the struct kernel_flock->fl_pid is being set to
-task->tgid for nfsd use.
+> you have changed the behavior of revalidation by shadows. I think it
+> will be better to restore it and keep new one for shadows (and below)
+> only, which has been done by my yesterday patch.
 
-Why can't nfs just generate a uniqueid from the struct pid when it
-needs it?
+- I think it is better to move forward rather then back.
+- The old proc dentry caching behavior is actually too aggressive, and has
+  problem corner cases.  Keeping the dentries when we have something mounted
+  on top is a trade off that is the least of two evils.
+- My change fixes the mount leak on all of /proc not just on /proc/generic.
 
-Fuse just seems to copy the pid to report it to userspace, so it would
-just copy pid_vnr(kernel_flock->pid) into user_flock->fl_pid.
+What you did is a hack that restored the old slightly buggy behavior.  Which
+is fine if we can't find anything better.  It is not code that is on the
+path towards a /proc that properly caches it's dentries.
 
-Anyway I haven't looked at all the uses of struct fl_pid, but you
-can always get the pidnr back from the struct pid if needed so there
-should be no problem.
+With the old behavior a random user space application can open a file or
+a directory in /proc pinning it's dcache entry.  Then the module supplying
+that open file can be removed and reinserted.  Until the user space application
+removes reference to that /proc file all you will be able to find is the
+version of the file from before /proc was removed.
 
-The split definately seems worthwhile to me, so that
-user_flock->fl_pidnr can always be said to be the pid in the acting
-process' namespace, and flock->fl_pid can always be a struct pid,
-rather than having fl_pid sometimes be current->tgid, or sometimes
-pid_vnr(flock->fl_nspid)...
+That sounds like a way to trigger nasty behavior to me.  I would like
+to remove that possibility from the kernel if I can.
 
--serge
+Eric
