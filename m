@@ -1,28 +1,24 @@
-From: "Hannah Tanner" <pcerppohpcse-y7yXyTFB4M4AvxtiuMwx3w@public.gmane.org>
-Subject: Reputable online casino!
-Date: Fri, 7 Dec 2007 01:37:54 -0500
-Message-ID: <01c83871$c9b1c5f0$7550e860@pcerppohpcse>
+From: David Miller <davem@davemloft.net>
+Subject: Re: [PATCH 2.6.25] multiple namespaces in the all dst_ifdown
+ routines
+Date: Fri, 07 Dec 2007 00:39:14 -0800 (PST)
+Message-ID: <20071207.003914.143266434.davem@davemloft.net>
+References: <20071206121746.GA17899@iris.sw.ru>
 Mime-Version: 1.0
-Content-Type: text/plain;
-	charset="iso-8859-1"
+Content-Type: Text/Plain; charset=us-ascii
 Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Return-path: <netdev-owner@vger.kernel.org>
+In-Reply-To: <20071206121746.GA17899@iris.sw.ru>
+Sender: netdev-owner@vger.kernel.org
+To: den@openvz.org
+Cc: containers@lists.osdl.org, devel@openvz.org, netdev@vger.kernel.org
 List-Id: containers.vger.kernel.org
 
- Play the most popular casino games at home! Black Jack, Slots, Roulette, Poker, Craps! Just download easy to use free software, register free account and play your favorite game. Receive free $2400 bonus to start play with!
+From: "Denis V. Lunev" <den@openvz.org>
+Date: Thu, 6 Dec 2007 15:17:46 +0300
 
- Golden Gate Casino guarantees competent customer support for all players, quick response in case you have question or problem and instant payouts. Fair gaming only!
+> move dst entries to a namespace loopback to catch refcounting leaks.
+> 
+> Signed-off-by: Denis V. Lunev <den@openvz.org>
 
-http://geocities.com/ArronWarner96/
-
-   Enjoy pure pleasure of gambling from home without stress!
+Applied, thanks.
