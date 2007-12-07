@@ -1,7 +1,7 @@
 From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: [RFC] [PATCH 1/8] user namespaces: add ns to user_struct
-Date: Fri, 7 Dec 2007 13:13:36 -0600
-Message-ID: <20071207191336.GA10432@sergelap.austin.ibm.com>
+Subject: [RFC] [PATCH 5/8] userns: handle user namespaces in file sigio
+Date: Fri, 7 Dec 2007 13:14:44 -0600
+Message-ID: <20071207191444.GE10432@sergelap.austin.ibm.com>
 References: <20071207191259.GA10293@sergelap.austin.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
@@ -20,372 +20,180 @@ Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 To: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-From 8a15d1ac1a24ec96847e17ca7f0ba69ae42ac75b Mon Sep 17 00:00:00 2001
+From 649ee38555a07f5ce052a8483a5f271fc31054d3 Mon Sep 17 00:00:00 2001
 From: sergeh-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org <sergeh-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Date: Wed, 28 Nov 2007 14:50:54 -0800
-Subject: [RFC] [PATCH 1/8] user namespaces: add ns to user_struct
+Date: Tue, 4 Dec 2007 15:37:48 -0800
+Subject: [RFC] [PATCH 5/8] userns: handle user namespaces in file sigio
 
-Add the user_namespace to user_struct.
+Store user namespaces in fown_struct.  _f_modown() sets the
+user_ns to current's, or to NULL if current has
+capable(CAP_NS_OVERRIDE).
 
-Use ns to make sure we get right user with uid_hash_find().
+Only allow a signal to be sent through sigio if the recipient
+is in the same user namespace or the sender (meaning the user
+who did the F_SETOWN, not the one triggering io) has
+CAP_NS_OVERRIDE.
 
-Move /sys/kernel/uids/<uid> under
-/sys/kernel/uids/<user_ns_address/<uid>
+Test as follows:
 
-Changelog:
-	Dec 7: Fix user->uid access at fs/dquot.c (Mark Nelson)
+	1. log in as user hallyn in two windows
+	2. in window 1, run vim
+	3. in window 2, get pid for vim, i.e. PID=`pidof vim`
+	4. mkfifo ab
+	5. set_sigio ab $PID
+
+If both logins are in same userns, the vim is killed.
+if the logins are in separate user namespaces, vim is not
+	killed.
+
+**************************************************************
+set_sigio.c
+**************************************************************
+ #include <stdio.h>
+ #include <unistd.h>
+ #include <stdlib.h>
+ #include <sys/types.h>
+ #include <sys/stat.h>
+ #define __USE_GNU
+ #include <fcntl.h>
+
+int main(int argc, char *argv[])
+{
+	int err;
+	int pid;
+	int fd = open(argv[1], O_RDWR);
+
+	if (!fd) {
+		perror("open");
+		exit(1);
+	}
+	printf("asked to set owner to %s\n", argv[2]);
+	pid = atoi(argv[2]);
+	printf("setting owner to %d\n", pid);
+	err = fcntl(fd, F_SETOWN, pid);
+	if (err == -1) {
+		perror("fcntl 1\n");
+		exit(1);
+	}
+	err = fcntl(fd, F_SETSIG, 9);
+	if (err == -1) {
+		perror("fcntl 3\n");
+		exit(1);
+	}
+	err = fcntl(fd, F_SETFL, O_ASYNC);
+	if (err == -1) {
+		perror("fcntl 2\n");
+		exit(1);
+	}
+
+	write(fd, "ab", 2);
+
+	close(fd);
+	printf("done\n");
+}
+**************************************************************
 
 Signed-off-by: Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 ---
- fs/dquot.c                     |    2 +-
- fs/ioprio.c                    |    2 +-
- include/linux/sched.h          |    3 +-
- include/linux/types.h          |   10 +++++
- include/linux/user_namespace.h |    3 +
- kernel/user.c                  |   80 ++++++++++++++++++++++++++++++++++++---
- kernel/user_namespace.c        |   14 ++++++-
- security/keys/process_keys.c   |    8 ++--
- 8 files changed, 107 insertions(+), 15 deletions(-)
+ fs/fcntl.c         |   53 ++++++++++++++++++++++++++++++++++++++++++++++-----
+ include/linux/fs.h |    2 +-
+ 2 files changed, 48 insertions(+), 7 deletions(-)
 
-diff --git a/fs/dquot.c b/fs/dquot.c
-index 50e7c2a..e86232b 100644
---- a/fs/dquot.c
-+++ b/fs/dquot.c
-@@ -948,7 +948,7 @@ static void send_warning(const struct dquot *dquot, const char warntype)
- 		MINOR(dquot->dq_sb->s_dev));
- 	if (ret)
- 		goto attr_err_out;
--	ret = nla_put_u64(skb, QUOTA_NL_A_CAUSED_ID, current->user->uid);
-+	ret = nla_put_u64(skb, QUOTA_NL_A_CAUSED_ID, current->user->uid.uid);
- 	if (ret)
- 		goto attr_err_out;
- 	genlmsg_end(skb, msg_head);
-diff --git a/fs/ioprio.c b/fs/ioprio.c
-index e4e01bc..2ec1430 100644
---- a/fs/ioprio.c
-+++ b/fs/ioprio.c
-@@ -214,7 +214,7 @@ asmlinkage long sys_ioprio_get(int which, int who)
- 				break;
+diff --git a/fs/fcntl.c b/fs/fcntl.c
+index 8685263..124408a 100644
+--- a/fs/fcntl.c
++++ b/fs/fcntl.c
+@@ -19,6 +19,7 @@
+ #include <linux/signal.h>
+ #include <linux/rcupdate.h>
+ #include <linux/pid_namespace.h>
++#include <linux/user_namespace.h>
  
- 			do_each_thread(g, p) {
--				if (p->uid != user->uid)
-+				if (!task_user_equiv(p, user))
- 					continue;
- 				tmpio = get_task_ioprio(p);
- 				if (tmpio < 0)
-diff --git a/include/linux/sched.h b/include/linux/sched.h
-index 9efd7f2..4768051 100644
---- a/include/linux/sched.h
-+++ b/include/linux/sched.h
-@@ -565,7 +565,7 @@ struct user_struct {
- 
- 	/* Hash table maintenance information */
- 	struct hlist_node uidhash_node;
--	uid_t uid;
-+	struct k_uid_t uid;
- 
- #ifdef CONFIG_FAIR_USER_SCHED
- 	struct task_group *tg;
-@@ -1584,6 +1584,7 @@ static inline struct user_struct *get_uid(struct user_struct *u)
- extern void free_uid(struct user_struct *);
- extern void switch_uid(struct user_struct *);
- extern void release_uids(struct user_namespace *ns);
-+extern int task_user_equiv(struct task_struct *tsk, struct user_struct *u);
- 
- #include <asm/current.h>
- 
-diff --git a/include/linux/types.h b/include/linux/types.h
-index f4f8d19..a6a130e 100644
---- a/include/linux/types.h
-+++ b/include/linux/types.h
-@@ -37,6 +37,16 @@ typedef __kernel_gid32_t	gid_t;
- typedef __kernel_uid16_t        uid16_t;
- typedef __kernel_gid16_t        gid16_t;
- 
-+struct k_uid_t {
-+	uid_t uid;
-+	struct user_namespace *ns;
-+};
-+
-+struct k_gid_t {
-+	gid_t gid;
-+	struct user_namespace *ns;
-+};
-+
- typedef unsigned long		uintptr_t;
- 
- #ifdef CONFIG_UID16
-diff --git a/include/linux/user_namespace.h b/include/linux/user_namespace.h
-index b5f41d4..bb5e88a 100644
---- a/include/linux/user_namespace.h
-+++ b/include/linux/user_namespace.h
-@@ -12,6 +12,9 @@
- struct user_namespace {
- 	struct kref		kref;
- 	struct hlist_head	uidhash_table[UIDHASH_SZ];
-+#if defined(CONFIG_FAIR_USER_SCHED) && defined(CONFIG_SYSFS)
-+	struct kobject		kobject;
-+#endif
- 	struct user_struct	*root_user;
+ #include <asm/poll.h>
+ #include <asm/siginfo.h>
+@@ -259,10 +260,23 @@ static void f_modown(struct file *filp, struct pid *pid, enum pid_type type,
+ 	write_lock_irq(&filp->f_owner.lock);
+ 	if (force || !filp->f_owner.pid) {
+ 		put_pid(filp->f_owner.pid);
++		put_user_ns(filp->f_owner.uid.ns);
+ 		filp->f_owner.pid = get_pid(pid);
+ 		filp->f_owner.pid_type = type;
+-		filp->f_owner.uid = uid;
+-		filp->f_owner.euid = euid;
++		filp->f_owner.uid.uid = uid;
++		filp->f_owner.euid.uid = euid;
++		if (pid) {
++			if (capable(CAP_NS_OVERRIDE) && capable(CAP_KILL)) {
++				filp->f_owner.uid.ns = NULL;
++				filp->f_owner.euid.ns = NULL;
++			} else {
++				filp->f_owner.uid.ns =
++						current->nsproxy->user_ns;
++				filp->f_owner.euid.ns =
++						current->nsproxy->user_ns;
++				get_user_ns(filp->f_owner.uid.ns);
++			}
++		}
+ 	}
+ 	write_unlock_irq(&filp->f_owner.lock);
+ }
+@@ -457,13 +471,40 @@ static const long band_table[NSIGPOLL] = {
+ 	POLLHUP | POLLERR			/* POLL_HUP */
  };
  
-diff --git a/kernel/user.c b/kernel/user.c
-index fb0a67e..766c640 100644
---- a/kernel/user.c
-+++ b/kernel/user.c
-@@ -53,6 +53,10 @@ struct user_struct root_user = {
- 	.files		= ATOMIC_INIT(0),
- 	.sigpending	= ATOMIC_INIT(0),
- 	.locked_shm     = 0,
-+	.uid		= {
-+		.uid = 0,
-+		.ns = &init_user_ns,
-+	},
- #ifdef CONFIG_KEYS
- 	.uid_keyring	= &root_user_keyring,
- 	.session_keyring = &root_session_keyring,
-@@ -75,13 +79,30 @@ static void uid_hash_remove(struct user_struct *up)
- 	hlist_del_init(&up->uidhash_node);
- }
- 
--static struct user_struct *uid_hash_find(uid_t uid, struct hlist_head *hashent)
-+int k_uid_equiv(struct k_uid_t a, struct k_uid_t b)
++static inline int sigio_userns_check_ok(struct task_struct *p,
++					struct fown_struct *fown)
 +{
-+	if (a.uid == b.uid && a.ns == b.ns)
++	if (!fown->euid.ns)
++		return 1;
++	if (p->nsproxy->user_ns == fown->euid.ns)
 +		return 1;
 +	return 0;
 +}
 +
-+int task_user_equiv(struct task_struct *tsk, struct user_struct *u)
++static inline int sigio_uids_check_ok(struct task_struct *p,
++				      struct fown_struct *fown)
 +{
-+	if (tsk->uid != u->uid.uid)
++	return ((fown->euid.uid == 0) ||
++	 (fown->euid.uid == p->suid) || (fown->euid.uid == p->uid) ||
++	 (fown->uid.uid == p->suid) || (fown->uid.uid == p->uid));
++}
++
++#define lsm_sigiotask_ok(p, fown, sig) \
++	(!security_file_send_sigiotask(p, fown, sig))
++
+ static inline int sigio_perm(struct task_struct *p,
+                              struct fown_struct *fown, int sig)
+ {
+-	return (((fown->euid == 0) ||
+-		 (fown->euid == p->suid) || (fown->euid == p->uid) ||
+-		 (fown->uid == p->suid) || (fown->uid == p->uid)) &&
+-		!security_file_send_sigiotask(p, fown, sig));
++	if (!sigio_userns_check_ok(p, fown))
 +		return 0;
-+	if (tsk->nsproxy->user_ns != u->uid.ns)
++
++	if (!sigio_uids_check_ok(p, fown))
 +		return 0;
++
++	if (!lsm_sigiotask_ok(p, fown, sig))
++		return 0;
++
 +	return 1;
-+}
-+
-+static struct user_struct *uid_hash_find(struct k_uid_t uid,
-+				struct hlist_head *hashent)
- {
- 	struct user_struct *user;
- 	struct hlist_node *h;
- 
- 	hlist_for_each_entry(user, h, hashent, uidhash_node) {
--		if (user->uid == uid) {
-+		if (k_uid_equiv(user->uid, uid)) {
- 			atomic_inc(&user->__count);
- 			return user;
- 		}
-@@ -191,8 +212,9 @@ static int uids_user_create(struct user_struct *up)
- 	memset(kobj, 0, sizeof(struct kobject));
- 	kobj->ktype = &uids_ktype;
- 	kobj->kset = uids_kset;
-+	kobj->parent = &up->uid.ns->kobject;
- 	kobject_init(kobj);
--	kobject_set_name(&up->kobj, "%d", up->uid);
-+	kobject_set_name(kobj, "%d", up->uid.uid);
- 	error = kobject_add(kobj);
- 	if (error)
- 		goto done;
-@@ -202,6 +224,9 @@ done:
- 	return error;
  }
  
-+int register_user_ns_kobj(struct user_namespace *ns);
-+void unregister_user_ns_kobj(struct user_namespace *ns);
-+
- /* create these entries in sysfs:
-  * 	"/sys/kernel/uids" directory
-  * 	"/sys/kernel/uids/0" directory (for root user)
-@@ -209,10 +234,16 @@ done:
-  */
- int __init uids_sysfs_init(void)
- {
-+	int error;
-+
- 	uids_kset = kset_create_and_register("uids", NULL, kernel_kobj);
- 	if (!uids_kset)
- 		return -ENOMEM;
+ static void send_sigio_to_task(struct task_struct *p,
+diff --git a/include/linux/fs.h b/include/linux/fs.h
+index 8323ebf..cb3894d 100644
+--- a/include/linux/fs.h
++++ b/include/linux/fs.h
+@@ -747,7 +747,7 @@ struct fown_struct {
+ 	rwlock_t lock;          /* protects pid, uid, euid fields */
+ 	struct pid *pid;	/* pid or -pgrp where SIGIO should be sent */
+ 	enum pid_type pid_type;	/* Kind of process group SIGIO should be sent to */
+-	uid_t uid, euid;	/* uid/euid of process setting the owner */
++	struct k_uid_t uid, euid; /* uid/euid of process setting the owner */
+ 	int signum;		/* posix.1b rt signal to be delivered on IO */
+ };
  
-+	error = register_user_ns_kobj(&init_user_ns);
-+	if (error)
-+		return error;
-+
- 	return uids_user_create(&root_user);
- }
- 
-@@ -270,6 +301,31 @@ static inline void free_user(struct user_struct *up, unsigned long flags)
- 	schedule_work(&up->work);
- }
- 
-+int register_user_ns_kobj(struct user_namespace *ns)
-+{
-+	struct kobject *obj = &ns->kobject;
-+	int error;
-+
-+	obj->parent = &uids_kset->kobj;
-+	obj->kset = uids_kset;
-+	kobject_set_name(obj, "%lx", (unsigned long)ns);
-+	kobject_init(obj);
-+	kobject_uevent(obj, KOBJ_ADD);
-+
-+	error = kobject_add(obj);
-+	if (error)
-+		return error;
-+
-+	return 0;
-+}
-+
-+void unregister_user_ns_kobj(struct user_namespace *ns)
-+{
-+	struct kobject *obj = &ns->kobject;
-+	kobject_uevent(obj, KOBJ_REMOVE);
-+	kobject_del(obj);
-+}
-+
- #else	/* CONFIG_FAIR_USER_SCHED && CONFIG_SYSFS */
- 
- int uids_sysfs_init(void) { return 0; }
-@@ -291,6 +347,8 @@ static inline void free_user(struct user_struct *up, unsigned long flags)
- 	kmem_cache_free(uid_cachep, up);
- }
- 
-+int register_user_ns_kobj(struct user_namespace *ns) { return 0; }
-+void unregister_user_ns_kobj(struct user_namespace *ns) {}
- #endif
- 
- /*
-@@ -304,9 +362,12 @@ struct user_struct *find_user(uid_t uid)
- 	struct user_struct *ret;
- 	unsigned long flags;
- 	struct user_namespace *ns = current->nsproxy->user_ns;
-+	struct k_uid_t kuid;
- 
-+	kuid.ns = current->nsproxy->user_ns;
-+	kuid.uid = uid;
- 	spin_lock_irqsave(&uidhash_lock, flags);
--	ret = uid_hash_find(uid, uidhashentry(ns, uid));
-+	ret = uid_hash_find(kuid, uidhashentry(ns, uid));
- 	spin_unlock_irqrestore(&uidhash_lock, flags);
- 	return ret;
- }
-@@ -329,6 +390,10 @@ struct user_struct * alloc_uid(struct user_namespace *ns, uid_t uid)
- {
- 	struct hlist_head *hashent = uidhashentry(ns, uid);
- 	struct user_struct *up, *new;
-+	struct k_uid_t kuid;
-+
-+	kuid.ns = ns;
-+	kuid.uid = uid;
- 
- 	/* Make uid_hash_find() + uids_user_create() + uid_hash_insert()
- 	 * atomic.
-@@ -336,7 +401,7 @@ struct user_struct * alloc_uid(struct user_namespace *ns, uid_t uid)
- 	uids_mutex_lock();
- 
- 	spin_lock_irq(&uidhash_lock);
--	up = uid_hash_find(uid, hashent);
-+	up = uid_hash_find(kuid, hashent);
- 	spin_unlock_irq(&uidhash_lock);
- 
- 	if (!up) {
-@@ -344,7 +409,8 @@ struct user_struct * alloc_uid(struct user_namespace *ns, uid_t uid)
- 		if (!new)
- 			goto out_unlock;
- 
--		new->uid = uid;
-+		new->uid.uid = uid;
-+		new->uid.ns = ns;
- 		atomic_set(&new->__count, 1);
- 		atomic_set(&new->processes, 0);
- 		atomic_set(&new->files, 0);
-@@ -372,7 +438,7 @@ struct user_struct * alloc_uid(struct user_namespace *ns, uid_t uid)
- 		 * on adding the same user already..
- 		 */
- 		spin_lock_irq(&uidhash_lock);
--		up = uid_hash_find(uid, hashent);
-+		up = uid_hash_find(kuid, hashent);
- 		if (up) {
- 			/* This case is not possible when CONFIG_FAIR_USER_SCHED
- 			 * is defined, since we serialize alloc_uid() using
-diff --git a/kernel/user_namespace.c b/kernel/user_namespace.c
-index 4c90062..7dc6cc7 100644
---- a/kernel/user_namespace.c
-+++ b/kernel/user_namespace.c
-@@ -10,6 +10,9 @@
- #include <linux/nsproxy.h>
- #include <linux/user_namespace.h>
- 
-+int register_user_ns_kobj(struct user_namespace *ns);
-+void unregister_user_ns_kobj(struct user_namespace *ns);
-+
- /*
-  * Clone a new ns copying an original user ns, setting refcount to 1
-  * @old_ns: namespace to clone
-@@ -19,12 +22,16 @@ static struct user_namespace *clone_user_ns(struct user_namespace *old_ns)
- {
- 	struct user_namespace *ns;
- 	struct user_struct *new_user;
--	int n;
-+	int n, err;
- 
- 	ns = kmalloc(sizeof(struct user_namespace), GFP_KERNEL);
- 	if (!ns)
- 		return ERR_PTR(-ENOMEM);
- 
-+	err = register_user_ns_kobj(ns);
-+	if (err)
-+		goto out_free_ns;
-+
- 	kref_init(&ns->kref);
- 
- 	for (n = 0; n < UIDHASH_SZ; ++n)
-@@ -47,6 +54,10 @@ static struct user_namespace *clone_user_ns(struct user_namespace *old_ns)
- 
- 	switch_uid(new_user);
- 	return ns;
-+
-+out_free_ns:
-+	kfree(ns);
-+	return ERR_PTR(err);
- }
- 
- struct user_namespace * copy_user_ns(int flags, struct user_namespace *old_ns)
-@@ -71,5 +82,6 @@ void free_user_ns(struct kref *kref)
- 
- 	ns = container_of(kref, struct user_namespace, kref);
- 	release_uids(ns);
-+	unregister_user_ns_kobj(ns);
- 	kfree(ns);
- }
-diff --git a/security/keys/process_keys.c b/security/keys/process_keys.c
-index c886a2b..0343a52 100644
---- a/security/keys/process_keys.c
-+++ b/security/keys/process_keys.c
-@@ -75,9 +75,9 @@ int alloc_uid_keyring(struct user_struct *user,
- 	int ret;
- 
- 	/* concoct a default session keyring */
--	sprintf(buf, "_uid_ses.%u", user->uid);
-+	sprintf(buf, "_uid_ses.%u", user->uid.uid);
- 
--	session_keyring = keyring_alloc(buf, user->uid, (gid_t) -1, ctx,
-+	session_keyring = keyring_alloc(buf, user->uid.uid, (gid_t) -1, ctx,
- 					KEY_ALLOC_IN_QUOTA, NULL);
- 	if (IS_ERR(session_keyring)) {
- 		ret = PTR_ERR(session_keyring);
-@@ -86,9 +86,9 @@ int alloc_uid_keyring(struct user_struct *user,
- 
- 	/* and a UID specific keyring, pointed to by the default session
- 	 * keyring */
--	sprintf(buf, "_uid.%u", user->uid);
-+	sprintf(buf, "_uid.%u", user->uid.uid);
- 
--	uid_keyring = keyring_alloc(buf, user->uid, (gid_t) -1, ctx,
-+	uid_keyring = keyring_alloc(buf, user->uid.uid, (gid_t) -1, ctx,
- 				    KEY_ALLOC_IN_QUOTA, session_keyring);
- 	if (IS_ERR(uid_keyring)) {
- 		key_put(session_keyring);
 -- 
 1.5.1
