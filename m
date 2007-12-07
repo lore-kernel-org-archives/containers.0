@@ -1,7 +1,8 @@
 From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: [RFC] [PATCH 8/8] userns: oom_kill: remove uid==0 checks
-Date: Fri, 7 Dec 2007 13:16:00 -0600
-Message-ID: <20071207191600.GH10432@sergelap.austin.ibm.com>
+Subject: [RFC] [PATCH 6/8] userns: agp: remove uid comparison as security
+	check
+Date: Fri, 7 Dec 2007 13:15:08 -0600
+Message-ID: <20071207191508.GF10432@sergelap.austin.ibm.com>
 References: <20071207191259.GA10293@sergelap.austin.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
@@ -20,50 +21,34 @@ Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 To: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-From a5fd2d7c75168076dc6b4b94ea8cda529fc506b1 Mon Sep 17 00:00:00 2001
+From d4ca1a9749c5b40325ec2db9fcde2f2cbd0e0978 Mon Sep 17 00:00:00 2001
 From: sergeh-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org <sergeh-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Date: Wed, 5 Dec 2007 14:07:40 -0800
-Subject: [RFC] [PATCH 8/8] userns: oom_kill: remove uid==0 checks
+Date: Wed, 5 Dec 2007 13:55:36 -0800
+Subject: [RFC] [PATCH 6/8] userns: agp: remove uid comparison as security check
 
-Root processes are considered more important when out of memory
-and killing proceses.  The check for CAP_SYS_ADMIN was augmented
-with a check for uid==0 or euid==0.
+In the face of user namespaces, a uid==0 check for security is
+not safe.  Switch to a capability check.
 
-There are several possible ways to look at this:
-
-	1. uid comparisons are unnecessary, trust CAP_SYS_ADMIN
-	   alone.  However CAP_SYS_RESOURCE is the one that really
-	   means "give me extra resources" so allow for that as
-	   well.
-	2. Any privileged code should be protected, but uid is not
-	   an indication of privilege.  So we should check whether
-	   any capabilities are active in pP.
-	3. uid==0 makes processes on the host as well as in containers
-	   more important, so we should keep the existing checks.
-	4. uid==0 makes processes only on the host more important,
-	   even without any capabilities.  So we should be keeping
-	   the (uid==0||euid==0) check but only when
-	   userns==&init_user_ns.
-
-I'm following number 1 here.
+I'm not sure I picked the right capability, but this being AGP
+CAP_SYS_RAWIO seemed to make sense.
 
 Signed-off-by: Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 ---
- mm/oom_kill.c |    2 +-
+ drivers/char/agp/frontend.c |    2 +-
  1 files changed, 1 insertions(+), 1 deletions(-)
 
-diff --git a/mm/oom_kill.c b/mm/oom_kill.c
-index 016127e..9fd8d5d 100644
---- a/mm/oom_kill.c
-+++ b/mm/oom_kill.c
-@@ -128,7 +128,7 @@ unsigned long badness(struct task_struct *p, unsigned long uptime,
- 	 * Superuser processes are usually more important, so we make it
- 	 * less likely that we kill those.
- 	 */
--	if (__capable(p, CAP_SYS_ADMIN) || p->uid == 0 || p->euid == 0)
-+	if (__capable(p, CAP_SYS_ADMIN) || __capable(p, CAP_SYS_RESOURCE))
- 		points /= 4;
+diff --git a/drivers/char/agp/frontend.c b/drivers/char/agp/frontend.c
+index 9bd5a95..55d7a82 100644
+--- a/drivers/char/agp/frontend.c
++++ b/drivers/char/agp/frontend.c
+@@ -689,7 +689,7 @@ static int agp_open(struct inode *inode, struct file *file)
+ 	set_bit(AGP_FF_ALLOW_CLIENT, &priv->access_flags);
+ 	priv->my_pid = current->pid;
  
- 	/*
+-	if ((current->uid == 0) || (current->suid == 0)) {
++	if (capable(CAP_SYS_RAWIO)) {
+ 		/* Root priv, can be controller */
+ 		set_bit(AGP_FF_ALLOW_CONTROLLER, &priv->access_flags);
+ 	}
 -- 
 1.5.1
