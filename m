@@ -1,27 +1,29 @@
-From: "Leroy Hood" <aceuie-iA3+RHPOETxBDgjK7y7TUQ@public.gmane.org>
-Subject: Eat what you want without gaining in weight!
-Date: Fri, 7 Dec 2007 16:38:47 +0800
-Message-ID: <01c838ef$a3d5b4d0$6db8addc@aceuie>
+From: David Miller <davem@davemloft.net>
+Subject: Re: [PATCH 2.6.25] Remove ip_fib_local_table and ip_fib_main_table
+ defines
+Date: Fri, 07 Dec 2007 00:46:21 -0800 (PST)
+Message-ID: <20071207.004621.13302830.davem@davemloft.net>
+References: <20071206145825.GA22435@iris.sw.ru>
 Mime-Version: 1.0
-Content-Type: text/plain;
-	charset="windows-1250"
+Content-Type: Text/Plain; charset=us-ascii
 Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Return-path: <netdev-owner@vger.kernel.org>
+In-Reply-To: <20071206145825.GA22435@iris.sw.ru>
+Sender: netdev-owner@vger.kernel.org
+To: den@openvz.org
+Cc: containers@lists.osdl.org, devel@openvz.org, netdev@vger.kernel.org, ebiederm@xmission.com
 List-Id: containers.vger.kernel.org
 
-Most people associate losing weight with exhausting exercises, calories calculating and starving. However, there are such products that allow you to lose your weight in a fast, but natural way.
-  Safe, all natural and with no side effects Hoodia Gordonii makes your fat losing process pleasant. Your mood is raising, you feel better, you are strong and full of energy! Hoodia Gordonii radically burns your fat and increases overall energy.
+From: "Denis V. Lunev" <den@openvz.org>
+Date: Thu, 6 Dec 2007 17:58:25 +0300
 
-http://geocities.com/JonHubbard66/
+> From: Eric W. Biederman <ebiederm@xmission.com>
+> 
+> There are only 2 users and it doesn't hurt to call fib_get_table
+> instead, and it makes it easier to make the fib network namespace
+> aware.
+> 
+> Signed-off-by: Eric W. Biederman <ebiederm@xmission.com>
+> Signed-off-by: Denis V. Lunev <den@openvz.org>
 
-Order this ultimate product for a successful weight loss!
+Applied, thanks.
