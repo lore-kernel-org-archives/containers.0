@@ -1,8 +1,8 @@
 From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: [RFC] [PATCH 2/8] Bump the value of CAP_LAST_CAP to reflect the
-	current last cap value.
-Date: Fri, 7 Dec 2007 13:13:58 -0600
-Message-ID: <20071207191358.GB10432@sergelap.austin.ibm.com>
+Subject: [RFC] [PATCH 7/8] userns: reiser4: replace uid==0 check with
+	capability
+Date: Fri, 7 Dec 2007 13:15:28 -0600
+Message-ID: <20071207191528.GG10432@sergelap.austin.ibm.com>
 References: <20071207191259.GA10293@sergelap.austin.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
@@ -21,44 +21,35 @@ Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 To: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-From d01c86d95bc6d59d7ca3689a9737a1aa9e8d3b59 Mon Sep 17 00:00:00 2001
-From: Casey Schaufler <casey-iSGtlc1asvQWG2LlvL+J4A@public.gmane.org>
-Date: Wed, 28 Nov 2007 18:48:59 -0800
-Subject: [RFC] [PATCH 2/8] Bump the value of CAP_LAST_CAP to reflect the current last cap value.
+From c257cb67ce00c8769730cfa92379a53009d99b28 Mon Sep 17 00:00:00 2001
+From: sergeh-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org <sergeh-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Date: Wed, 5 Dec 2007 14:02:45 -0800
+Subject: [RFC] [PATCH 7/8] userns: reiser4: replace uid==0 check with capability
 
-It appears that the patch that introduced CAP_LAST_CAP and the patch
-that introduced CAP_MAC_ADMIN came in more or less at the same time.
+Reiser4 gives root some reserved blocks.  Replace the uid==0 check, which
+is not safe in the face of user namespaces, with a CAP_SYS_RESOURCE check,
+which seems appropriate.
 
-Signed-off-by: Casey Schaufler <casey-iSGtlc1asvQWG2LlvL+J4A@public.gmane.org>
+The per-uid and per-guid reservations appear unimplemented so I'm ignoring
+them.
+
+Signed-off-by: Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 ---
- include/linux/capability.h |    8 ++++----
- 1 files changed, 4 insertions(+), 4 deletions(-)
+ fs/reiser4/super.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
 
-diff --git a/include/linux/capability.h b/include/linux/capability.h
-index d0add24..7d50ff6 100644
---- a/include/linux/capability.h
-+++ b/include/linux/capability.h
-@@ -315,10 +315,6 @@ typedef struct kernel_cap_struct {
- 
- #define CAP_SETFCAP	     31
- 
--#define CAP_LAST_CAP         CAP_SETFCAP
--
--#define cap_valid(x) ((x) >= 0 && (x) <= CAP_LAST_CAP)
--
- /* Override MAC access.
-    The base kernel enforces no MAC policy.
-    An LSM may enforce a MAC policy, and if it does and it chooses
-@@ -336,6 +332,10 @@ typedef struct kernel_cap_struct {
- 
- #define CAP_MAC_ADMIN        33
- 
-+#define CAP_LAST_CAP         CAP_MAC_ADMIN
-+
-+#define cap_valid(x) ((x) >= 0 && (x) <= CAP_LAST_CAP)
-+
- /*
-  * Bit location of each capability (used by user-space library and kernel)
-  */
+diff --git a/fs/reiser4/super.c b/fs/reiser4/super.c
+index bc4113e..50e3d09 100644
+--- a/fs/reiser4/super.c
++++ b/fs/reiser4/super.c
+@@ -144,7 +144,7 @@ long reiser4_reserved_blocks(const struct super_block *super	/* super block
+ 		reserved += reserved_for_gid(super, gid);
+ 	if (REISER4_SUPPORT_UID_SPACE_RESERVATION)
+ 		reserved += reserved_for_uid(super, uid);
+-	if (REISER4_SUPPORT_ROOT_SPACE_RESERVATION && (uid == 0))
++	if (REISER4_SUPPORT_ROOT_SPACE_RESERVATION && capable(CAP_SYS_RESOURCE))
+ 		reserved += reserved_for_root(super);
+ 	return reserved;
+ }
 -- 
 1.5.1
