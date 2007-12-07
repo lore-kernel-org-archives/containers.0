@@ -1,28 +1,110 @@
-From: "Aldo Bower" <tein-8Xcc/htk1ff2eFz/2MeuCQ@public.gmane.org>
-Subject: Increase the amount of semen that you produce with WonderCum
-Date: Fri, 7 Dec 2007 22:11:47 +0800
-Message-ID: <01c8391e$28e97610$abeba83c@tein>
+From: "Denis V. Lunev" <den@openvz.org>
+Subject: [PATCH 2.6.25 1/3] ipv4: no need pass pointer to a default into
+	fib_detect_death
+Date: Fri, 7 Dec 2007 19:09:19 +0300
+Message-ID: <20071207160919.GA21678@iris.sw.ru>
 Mime-Version: 1.0
-Content-Type: text/plain;
-	charset="windows-1250"
-Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Content-Type: text/plain; charset=us-ascii
+Return-path: <netdev-owner@vger.kernel.org>
+Content-Disposition: inline
+Sender: netdev-owner@vger.kernel.org
+To: davem@davemloft.net
+Cc: containers@lists.osdl.org, devel@openvz.org, netdev@vger.kernel.org
 List-Id: containers.vger.kernel.org
 
-  No other product improves men's health in such a natural and effective way. WonderCum is a wonderful combination of herbs which are known for increasing sperm volume and their efficacy in male impotence. It also contains some herbs to make you calm down and relieve some stress, a prerequisite for desire and arousal.
+ipv4: no need pass pointer to a default into fib_detect_death
 
- Contact our customer service if you need help and have questions or just fill online form to make your order. 100% money back guarantee ensures the top quality of product.
+Signed-off-by: Denis V. Lunev <den@openvz.org>
+Acked-by: Alexey Kuznetsov <kuznet@ms2.inr.ac.ru>
+---
+ net/ipv4/fib_hash.c      |    4 ++--
+ net/ipv4/fib_lookup.h    |    2 +-
+ net/ipv4/fib_semantics.c |    6 +++---
+ net/ipv4/fib_trie.c      |    4 ++--
+ 4 files changed, 8 insertions(+), 8 deletions(-)
 
-http://geocities.com/MeredithHays36/
+diff --git a/net/ipv4/fib_hash.c b/net/ipv4/fib_hash.c
+index 30ff657..76bb7fd 100644
+--- a/net/ipv4/fib_hash.c
++++ b/net/ipv4/fib_hash.c
+@@ -314,7 +314,7 @@ fn_hash_select_default(struct fib_table *tb, const struct flowi *flp, struct fib
+ 				if (next_fi != res->fi)
+ 					break;
+ 			} else if (!fib_detect_death(fi, order, &last_resort,
+-						     &last_idx, &fn_hash_last_dflt)) {
++						     &last_idx, fn_hash_last_dflt)) {
+ 				if (res->fi)
+ 					fib_info_put(res->fi);
+ 				res->fi = fi;
+@@ -332,7 +332,7 @@ fn_hash_select_default(struct fib_table *tb, const struct flowi *flp, struct fib
+ 		goto out;
+ 	}
+ 
+-	if (!fib_detect_death(fi, order, &last_resort, &last_idx, &fn_hash_last_dflt)) {
++	if (!fib_detect_death(fi, order, &last_resort, &last_idx, fn_hash_last_dflt)) {
+ 		if (res->fi)
+ 			fib_info_put(res->fi);
+ 		res->fi = fi;
+diff --git a/net/ipv4/fib_lookup.h b/net/ipv4/fib_lookup.h
+index eef9eec..6c9dd42 100644
+--- a/net/ipv4/fib_lookup.h
++++ b/net/ipv4/fib_lookup.h
+@@ -36,6 +36,6 @@ extern struct fib_alias *fib_find_alias(struct list_head *fah,
+ 					u8 tos, u32 prio);
+ extern int fib_detect_death(struct fib_info *fi, int order,
+ 			    struct fib_info **last_resort,
+-			    int *last_idx, int *dflt);
++			    int *last_idx, int dflt);
+ 
+ #endif /* _FIB_LOOKUP_H */
+diff --git a/net/ipv4/fib_semantics.c b/net/ipv4/fib_semantics.c
+index ec9b0dd..bbd4a24 100644
+--- a/net/ipv4/fib_semantics.c
++++ b/net/ipv4/fib_semantics.c
+@@ -346,7 +346,7 @@ struct fib_alias *fib_find_alias(struct list_head *fah, u8 tos, u32 prio)
+ }
+ 
+ int fib_detect_death(struct fib_info *fi, int order,
+-		     struct fib_info **last_resort, int *last_idx, int *dflt)
++		     struct fib_info **last_resort, int *last_idx, int dflt)
+ {
+ 	struct neighbour *n;
+ 	int state = NUD_NONE;
+@@ -358,10 +358,10 @@ int fib_detect_death(struct fib_info *fi, int order,
+ 	}
+ 	if (state==NUD_REACHABLE)
+ 		return 0;
+-	if ((state&NUD_VALID) && order != *dflt)
++	if ((state&NUD_VALID) && order != dflt)
+ 		return 0;
+ 	if ((state&NUD_VALID) ||
+-	    (*last_idx<0 && order > *dflt)) {
++	    (*last_idx<0 && order > dflt)) {
+ 		*last_resort = fi;
+ 		*last_idx = order;
+ 	}
+diff --git a/net/ipv4/fib_trie.c b/net/ipv4/fib_trie.c
+index 6385cca..914a0d2 100644
+--- a/net/ipv4/fib_trie.c
++++ b/net/ipv4/fib_trie.c
+@@ -1827,7 +1827,7 @@ fn_trie_select_default(struct fib_table *tb, const struct flowi *flp, struct fib
+ 			if (next_fi != res->fi)
+ 				break;
+ 		} else if (!fib_detect_death(fi, order, &last_resort,
+-					     &last_idx, &trie_last_dflt)) {
++					     &last_idx, trie_last_dflt)) {
+ 			if (res->fi)
+ 				fib_info_put(res->fi);
+ 			res->fi = fi;
+@@ -1843,7 +1843,7 @@ fn_trie_select_default(struct fib_table *tb, const struct flowi *flp, struct fib
+ 		goto out;
+ 	}
+ 
+-	if (!fib_detect_death(fi, order, &last_resort, &last_idx, &trie_last_dflt)) {
++	if (!fib_detect_death(fi, order, &last_resort, &last_idx, trie_last_dflt)) {
+ 		if (res->fi)
+ 			fib_info_put(res->fi);
+ 		res->fi = fi;
+-- 
+1.5.3.rc5
 
-  Change your life with WonderCum!
