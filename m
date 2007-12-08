@@ -1,29 +1,25 @@
 From: David Miller <davem@davemloft.net>
-Subject: Re: [PATCH net-2.6.25 3/3]sysctl: make sysctl_somaxconn
- per-namespace
-Date: Sat, 08 Dec 2007 00:12:48 -0800 (PST)
-Message-ID: <20071208.001248.208605097.davem@davemloft.net>
-References: <475946D0.7020104@openvz.org>
+Subject: Re: [PATCH 2.6.25 1/3] ipv4: no need pass pointer to a default
+ into fib_detect_death
+Date: Sat, 08 Dec 2007 00:23:33 -0800 (PST)
+Message-ID: <20071208.002333.169878447.davem@davemloft.net>
+References: <20071207160919.GA21678@iris.sw.ru>
 Mime-Version: 1.0
 Content-Type: Text/Plain; charset=us-ascii
 Content-Transfer-Encoding: 7bit
 Return-path: <netdev-owner@vger.kernel.org>
-In-Reply-To: <475946D0.7020104@openvz.org>
+In-Reply-To: <20071207160919.GA21678@iris.sw.ru>
 Sender: netdev-owner@vger.kernel.org
-To: xemul@openvz.org
-Cc: netdev@vger.kernel.org, containers@lists.osdl.org, devel@openvz.org
+To: den@openvz.org
+Cc: containers@lists.osdl.org, devel@openvz.org, netdev@vger.kernel.org
 List-Id: containers.vger.kernel.org
 
-From: Pavel Emelyanov <xemul@openvz.org>
-Date: Fri, 07 Dec 2007 16:12:48 +0300
+From: "Denis V. Lunev" <den@openvz.org>
+Date: Fri, 7 Dec 2007 19:09:19 +0300
 
-> Just move the variable on the struct net and adjust
-> its usage.
+> ipv4: no need pass pointer to a default into fib_detect_death
 > 
-> Others sysctls from sys.net.core table are more
-> difficult to virtualize (i.e. make them per-namespace),
-> but I'll look at them as well a bit later.
-> 
-> Signed-off-by: Pavel Emelyanov <xemul@oenvz.org>
+> Signed-off-by: Denis V. Lunev <den@openvz.org>
+> Acked-by: Alexey Kuznetsov <kuznet@ms2.inr.ac.ru>
 
 Applied, thanks.
