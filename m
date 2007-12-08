@@ -1,40 +1,34 @@
 From: David Miller <davem@davemloft.net>
-Subject: Re: [PATCH net-2.6.25 1/3]sysctl: make the sys.net.core sysctls
- per-namespace
-Date: Sat, 08 Dec 2007 00:10:38 -0800 (PST)
-Message-ID: <20071208.001038.256039822.davem@davemloft.net>
-References: <47594587.6060308@openvz.org>
+Subject: Re: [PATCH net-2.6.25 2/3]sysctl: prepare core tables to point to
+ netns variables
+Date: Sat, 08 Dec 2007 00:12:05 -0800 (PST)
+Message-ID: <20071208.001205.166185340.davem@davemloft.net>
+References: <47594659.2050505@openvz.org>
 Mime-Version: 1.0
 Content-Type: Text/Plain; charset=us-ascii
 Content-Transfer-Encoding: 7bit
 Return-path: <netdev-owner@vger.kernel.org>
-In-Reply-To: <47594587.6060308@openvz.org>
+In-Reply-To: <47594659.2050505@openvz.org>
 Sender: netdev-owner@vger.kernel.org
 To: xemul@openvz.org
 Cc: netdev@vger.kernel.org, containers@lists.osdl.org, devel@openvz.org
 List-Id: containers.vger.kernel.org
 
 From: Pavel Emelyanov <xemul@openvz.org>
-Date: Fri, 07 Dec 2007 16:07:19 +0300
+Date: Fri, 07 Dec 2007 16:10:49 +0300
 
-> Making them per-namespace is required for the following 
-> two reasons:
+> Some of ctl variables are going to be on the struct 
+> net. Here's the way to adjust the ->data pointer on the
+> ctl_table-s to point on the right variable.
 > 
->  First, some ctl values have a per-namespace meaning.
->  Second, making them writable from the sub-namespace
->  is an isolation hole.
+> Since some pointers still point on the global variables,
+> I keep turning the write bits off on such tables.
 > 
-> So I introduce the pernet operations to create these
-> tables. For init_net I use the existing statically
-> declared tables, for sub-namespace they are duplicated
-> and the write bits are removed from the mode.
+> This looks to become a common procedure for net sysctls,
+> so later parts of this code may migrate to some more
+> generic place.
 > 
 > Signed-off-by: Pavel Emelyanov <xemul@openvz.org>
 
-Applied to net-2.6.25, but I fear you're going to need to do something
-similar for ipv4, ipv6, and who knows what other protocols.  And as a
-result we'll end up with all kinds of protocol specific things in the
-net namespace structure which totally stinks.
-
-Such things will need to be registered dynamically just like the
-protocols themselves are into the kernel.
+Applied, but please see if you can find a more pretty way to
+do this, thanks.
