@@ -1,127 +1,55 @@
-From: "Denis V. Lunev" <den@openvz.org>
-Subject: [PATCH 2.6.25] UNIX: remove unused declaration of
-	sysctl_unix_max_dgram_qlen
-Date: Mon, 10 Dec 2007 19:37:25 +0300
-Message-ID: <20071210163725.GA24044@iris.sw.ru>
+From: Kirill Korotaev <dev-3ImXcnM4P+0@public.gmane.org>
+Subject: Re: [PATCH][RFC] freezer : add the TIF_FREEZE flag to all archs
+Date: Mon, 10 Dec 2007 19:42:21 +0300
+Message-ID: <475D6C6D.5010903@sw.ru>
+References: <47594F8C.7070900@fr.ibm.com> <200712101736.29676.rjw@sisk.pl>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-Return-path: <netdev-owner@vger.kernel.org>
-Content-Disposition: inline
-Sender: netdev-owner@vger.kernel.org
-To: davem@davemloft.net
-Cc: containers@lists.osdl.org, devel@openvz.org, netdev@vger.kernel.org
+Content-Transfer-Encoding: 7bit
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <200712101736.29676.rjw-KKrjLPT3xs0@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: "Rafael J. Wysocki" <rjw-KKrjLPT3xs0@public.gmane.org>
+Cc: linux-arch-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, linux-pm-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Cedric Le Goater <clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Recently David Miller and Herbert Xu pointed out that struct net becomes
-overbloated and un-maintainable. There are two solutions:
-- provide a pointer to a network subsystem definition from struct net.
-  This costs an additional dereferrence
-- place sub-system definition into the structure itself. This will speedup
-  run-time access at the cost of recompilation time
+>>From: Cedric Le Goater <clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
+> 
+> 
+> Sorry for the delay, I somehow managed to overlook your message.
+> 
+> 
+>>This patch is the first step in making the refrigerator() available 
+>>to all architectures, even for those without power management. 
+>>
+>>The purpose of such a change is to be able to use the refrigerator() 
+>>in a new control group subsystem which will implement a control group
+>>freezer.
+> 
+> 
+> Hm, sounds interesting, but ...
+>  
+> 
+>>If you think this is safe and not utterly stupid, I'll send the rest
+>>of the patchset exporting the refrigerator to all arches.
+> 
+> 
+> ... you will need to provide some details, I think.
+> 
+> I also think that it's safe to define TIF_FREEZE for all architectures, but
+> the usefulness of it will very much depend on the purpose. :-)
 
-The second approach looks better for us. Other sub-systems will be converted
-to this approach if this will be accepted :)
+refrigerator() can be used (and is actually used in OpenVZ containers) to freeze
+container processes for checkpointing (live migration).
+So this can be used regardless system suspend and on all archs.
 
-Signed-off-by: Denis V. Lunev <den@openvz.org>
----
-diff --git a/include/net/net_namespace.h b/include/net/net_namespace.h
-index b62e31f..f60e1ce 100644
---- a/include/net/net_namespace.h
-+++ b/include/net/net_namespace.h
-@@ -8,6 +8,8 @@
- #include <linux/workqueue.h>
- #include <linux/list.h>
- 
-+#include <net/netns/unix.h>
-+
- struct proc_dir_entry;
- struct net_device;
- struct sock;
-@@ -46,8 +48,7 @@ struct net {
- 	struct hlist_head	packet_sklist;
- 
- 	/* unix sockets */
--	int			sysctl_unix_max_dgram_qlen;
--	struct ctl_table_header	*unix_ctl;
-+	struct netns_unix	unx;
- };
- 
- #ifdef CONFIG_NET
-diff --git a/include/net/netns/unix.h b/include/net/netns/unix.h
-new file mode 100644
-index 0000000..27b4e7f
---- /dev/null
-+++ b/include/net/netns/unix.h
-@@ -0,0 +1,13 @@
-+/*
-+ * Unix network namespace
-+ */
-+#ifndef __NETNS_UNIX_H__
-+#define __NETNS_UNIX_H__
-+
-+struct ctl_table_header;
-+struct netns_unix {
-+	int			sysctl_unix_max_dgram_qlen;
-+	struct ctl_table_header	*unix_ctl;
-+};
-+
-+#endif /* __NETNS_UNIX_H__ */
-diff --git a/net/unix/af_unix.c b/net/unix/af_unix.c
-index b8a2189..06f7ec8 100644
---- a/net/unix/af_unix.c
-+++ b/net/unix/af_unix.c
-@@ -592,7 +592,7 @@ static struct sock * unix_create1(struct net *net, struct socket *sock)
- 				&af_unix_sk_receive_queue_lock_key);
- 
- 	sk->sk_write_space	= unix_write_space;
--	sk->sk_max_ack_backlog	= net->sysctl_unix_max_dgram_qlen;
-+	sk->sk_max_ack_backlog	= net->unx.sysctl_unix_max_dgram_qlen;
- 	sk->sk_destruct		= unix_sock_destructor;
- 	u	  = unix_sk(sk);
- 	u->dentry = NULL;
-@@ -2138,7 +2138,7 @@ static int unix_net_init(struct net *net)
- {
- 	int error = -ENOMEM;
- 
--	net->sysctl_unix_max_dgram_qlen = 10;
-+	net->unx.sysctl_unix_max_dgram_qlen = 10;
- 	if (unix_sysctl_register(net))
- 		goto out;
- 
-diff --git a/net/unix/sysctl_net_unix.c b/net/unix/sysctl_net_unix.c
-index 553ef6a..fbddfb5 100644
---- a/net/unix/sysctl_net_unix.c
-+++ b/net/unix/sysctl_net_unix.c
-@@ -18,7 +18,7 @@ static ctl_table unix_table[] = {
- 	{
- 		.ctl_name	= NET_UNIX_MAX_DGRAM_QLEN,
- 		.procname	= "max_dgram_qlen",
--		.data		= &init_net.sysctl_unix_max_dgram_qlen,
-+		.data		= &init_net.unx.sysctl_unix_max_dgram_qlen,
- 		.maxlen		= sizeof(int),
- 		.mode		= 0644,
- 		.proc_handler	= &proc_dointvec
-@@ -40,9 +40,9 @@ int unix_sysctl_register(struct net *net)
- 	if (table == NULL)
- 		goto err_alloc;
- 
--	table[0].data = &net->sysctl_unix_max_dgram_qlen;
--	net->unix_ctl = register_net_sysctl_table(net, unix_path, table);
--	if (net->unix_ctl == NULL)
-+	table[0].data = &net->unx.sysctl_unix_max_dgram_qlen;
-+	net->unx.unix_ctl = register_net_sysctl_table(net, unix_path, table);
-+	if (net->unx.unix_ctl == NULL)
- 		goto err_reg;
- 
- 	return 0;
-@@ -57,8 +57,8 @@ void unix_sysctl_unregister(struct net *net)
- {
- 	struct ctl_table *table;
- 
--	table = net->unix_ctl->ctl_table_arg;
--	unregister_sysctl_table(net->unix_ctl);
-+	table = net->unx.unix_ctl->ctl_table_arg;
-+	unregister_sysctl_table(net->unx.unix_ctl);
- 	kfree(table);
- }
- 
+Thanks,
+Kirill
