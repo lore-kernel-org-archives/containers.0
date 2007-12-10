@@ -1,13 +1,12 @@
-From: "Luciano Reyes" <dwseklm-LZnDXO6D0gs@public.gmane.org>
-Subject: Enjoy gambling in the most reliable online casino!
-Date: Sun, 9 Dec 2007 19:51:47 +0000 (UTC)
-Message-ID: <01c83aa4$c5e9caa0$eb530d57@dwseklm>
+From: "Selma Fischer" <tegqlu-DEKvDOQTS+DkV66Bam9s8kEOCMrvLtNR@public.gmane.org>
+Subject: Reliable software only!
+Date: Mon, 10 Dec 2007 04:58:58 -0400
+Message-ID: <01c83ae9$5f41d500$e64cd129@tegqlu>
 Mime-Version: 1.0
 Content-Type: text/plain;
-	charset="iso-8859-1"
+	charset="Windows-1252"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Date: , 9 Dec 2007 20:47:54 +0100
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -20,10 +19,10 @@ Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
- Feel like gambling? Golden Gate Casino is worth your attention. All popular casino games, great welcome bonus, fast to download, easy to use and completely free software!
+  Save on your software purchasing programs at absolutely low prices. Huge selection of programs! All European languages versions of programs and applications! There are also soft for MACINTOSH. No trial or demo versions! Original soft only!
 
- We provide 24 hours a day, 7 days a week support and service! Truly fair play guaranteed for players. High level of security!
+ Professional customer service will help in case some problem with installation occurs. All updates are available to download free of charge. Money back guarantee!
 
-http://geocities.com/LandonBender45/
+http://geocities.com/VirgilWeeks23/
 
-   Gamble at home without worry and rush!
+   Check our site for discounts!
