@@ -1,14 +1,15 @@
 From: "Denis V. Lunev" <den@openvz.org>
-Subject: [PATCH 2.6.25] netns: struct net content re-work
-Date: Mon, 10 Dec 2007 19:36:45 +0300
-Message-ID: <20071210163645.GA24030@iris.sw.ru>
+Subject: [PATCH 2.6.25] UNIX: remove unused declaration of
+	sysctl_unix_max_dgram_qlen
+Date: Mon, 10 Dec 2007 19:37:25 +0300
+Message-ID: <20071210163725.GA24044@iris.sw.ru>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Return-path: <netdev-owner@vger.kernel.org>
 Content-Disposition: inline
 Sender: netdev-owner@vger.kernel.org
 To: davem@davemloft.net
-Cc: containers@lists.osdl.org, devel@openvz.org, netdev@vger.kernel.org, herbert@gondor.apana.org.au
+Cc: containers@lists.osdl.org, devel@openvz.org, netdev@vger.kernel.org
 List-Id: containers.vger.kernel.org
 
 Recently David Miller and Herbert Xu pointed out that struct net becomes
