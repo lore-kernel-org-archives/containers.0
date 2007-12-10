@@ -1,10 +1,10 @@
-From: "Selma Fischer" <tegqlu-DEKvDOQTS+DkV66Bam9s8kEOCMrvLtNR@public.gmane.org>
-Subject: Reliable software only!
-Date: Mon, 10 Dec 2007 04:58:58 -0400
-Message-ID: <01c83ae9$5f41d500$e64cd129@tegqlu>
+From: "Nathaniel Porter" <dwsecuritybankm-o7tR/nIX9VgH/gIF+KabEQ@public.gmane.org>
+Subject: Reputable online casino!
+Date: Mon, 10 Dec 2007 18:12:59 +0800
+Message-ID: <01c83b58$4b818780$b629da3a@dwsecuritybankm>
 Mime-Version: 1.0
 Content-Type: text/plain;
-	charset="Windows-1252"
+	charset="iso-8859-2"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
@@ -16,13 +16,13 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-  Save on your software purchasing programs at absolutely low prices. Huge selection of programs! All European languages versions of programs and applications! There are also soft for MACINTOSH. No trial or demo versions! Original soft only!
+ Visit Golden Gate casino and you won't be disappointed. Huge welcome bonus! Free to download software! Most popular games! Register free account today and take the advantage of playing when and whatever you like.
 
- Professional customer service will help in case some problem with installation occurs. All updates are available to download free of charge. Money back guarantee!
+ Golden Gate Casino guarantees competent customer support for all players, quick response in case you have question or problem and instant payouts. Fair gaming only!
 
-http://geocities.com/VirgilWeeks23/
+http://geocities.com/CecilKaufman07/
 
-   Check our site for discounts!
+   Start downloading free software now!
