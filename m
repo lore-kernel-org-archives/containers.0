@@ -1,31 +1,28 @@
-From: David Miller <davem@davemloft.net>
-Subject: Re: [PATCH 2.6.25] netns: struct net content re-work
-Date: Mon, 10 Dec 2007 20:12:06 -0800 (PST)
-Message-ID: <20071210.201206.143407583.davem@davemloft.net>
-References: <475D7849.3030206@fr.ibm.com>
-	<475D7C56.9020402@sw.ru>
-	<m1lk8127yg.fsf@ebiederm.dsl.xmission.com>
+From: "Eugenio Kirk" <jkxysrg-QRUTGtgCtKbBo8WWo/YXkQ@public.gmane.org>
+Subject: Software in many languages!
+Date: Tue, 11 Dec 2007 13:50:38 +0900
+Message-ID: <01c83bfc$cf8d4b00$4ab66d59@jkxysrg>
 Mime-Version: 1.0
-Content-Type: Text/Plain; charset=us-ascii
+Content-Type: text/plain;
+	charset="windows-1250"
 Content-Transfer-Encoding: 7bit
-Return-path: <netdev-owner@vger.kernel.org>
-In-Reply-To: <m1lk8127yg.fsf@ebiederm.dsl.xmission.com>
-Sender: netdev-owner@vger.kernel.org
-To: ebiederm@xmission.com
-Cc: dev@sw.ru, dlezcano@fr.ibm.com, containers@lists.osdl.org, den@openvz.org, herbert@gondor.apana.org.au, netdev@vger.kernel.org
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-From: ebiederm@xmission.com (Eric W. Biederman)
-Date: Mon, 10 Dec 2007 21:04:07 -0700
+  Don't waste time waiting for delivery of your software on a CD. Download and install it immediately. Choose the program you need from more than 270 programs in many languages.
 
-> Kirill Korotaev <dev@sw.ru> writes:
-> 
-> > Daniel Lezcano wrote:
-> >> Denis V. Lunev wrote:
-> >> Can you change this from unx to unix ?
-> >
-> > no, it won't compile. Guess why :)
-> 
-> Hmm.  It looks like it is a #define somewhere gcc?
+ We provide help in installing software. You can ask any question and get a free of charge consultation. Guaranteed access to all updates! Friendly and professional service!
 
-It is a platform CPP pre-define for UNIX platforms.
+http://geocities.com/LawrenceFulton52/
+
+   The best software products at the best prices.
