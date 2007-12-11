@@ -1,55 +1,175 @@
-From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
-Subject: Re: [patch 2/2][NETNS][RFD] use dst_entries to retrieve the network
-	namespace pointer
-Date: Tue, 11 Dec 2007 10:31:34 -0700
-Message-ID: <m1ir35yw7d.fsf@ebiederm.dsl.xmission.com>
-References: <20071211131231.701104221@ICON-9-164-138-215.megacenter.de.ibm.com>
-	<20071211131754.788346594@ICON-9-164-138-215.megacenter.de.ibm.com>
-	<475EC229.8020605@sw.ru>
+From: Pavel Emelyanov <xemul@openvz.org>
+Subject: [PATCH net-2.6.25 7/7] Switch users of ipv4_devconf(_all) to use
+ the pernet one
+Date: Tue, 11 Dec 2007 21:02:18 +0300
+Message-ID: <475ED0AA.5080106@openvz.org>
+References: <475ECC69.1040809@openvz.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <475EC229.8020605-3ImXcnM4P+0@public.gmane.org> (Denis V. Lunev's message of "Tue, 11
-	Dec 2007 20:00:25 +0300")
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Denis V. Lunev" <den-3ImXcnM4P+0@public.gmane.org>
-Cc: xemul-3ImXcnM4P+0@public.gmane.org, containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, kuznet-v/Mj1YrvjDBInbfyfbPRSQ@public.gmane.org, davem-fT/PcQaiUtIeIZ0/mPfg9Q@public.gmane.org, benjamin.thery-6ktuUTfB/bM@public.gmane.org
+Content-Type: text/plain; charset=ISO-8859-1
+Content-Transfer-Encoding: 7bit
+Return-path: <netdev-owner@vger.kernel.org>
+In-Reply-To: <475ECC69.1040809@openvz.org>
+Sender: netdev-owner@vger.kernel.org
+To: David Miller <davem@davemloft.net>
+Cc: Linux Netdev List <netdev@vger.kernel.org>, Linux Containers <containers@lists.osdl.org>, devel@openvz.org
 List-Id: containers.vger.kernel.org
 
-"Denis V. Lunev" <den-3ImXcnM4P+0@public.gmane.org> writes:
+These are scattered over the code, but almost all the 
+"critical" places already have the proper struct net
+at hand except for snmp proc showing function and routing 
+rtnl handler.
 
-> Daniel Lezcano wrote:
->> The objective we have is to remove the fl_net field from the struct flowi.
->> 
->> In the previous patch, we make the network namespace to go up to the
-> dst_entry.
->> This patch makes an example in how we can use the dst_entry/rtable combined
-> with
->> a container_of to retrieve the network namespace when we have the flowi
-> parameter.
->> 
->> One restriction is we should pass always a flowi parameter coming from a
-> struct
->> dst_entry.
-> this is an obfuscation IMHO. You use rtable instead of flowi, so
-> - rtable obtain flowi meaning and keeps original meaning
-> - stack usage in increased
->
-> So, for the case, I think it is better to have an additional parameter
-> on IP route output path. (There is a device on the input one).
+Signed-off-by: Pavel Emelyanov <xemul@openvz.org>
 
-Sounds right, and for shared code as well.
+---
 
-The only reason I used flowi in my proof of concept implementation
-is that it seemed to be a prebuilt structure for passing that kind of
-thing so I could save a bit of pain by extending what already existed.
+diff --git a/include/linux/inetdevice.h b/include/linux/inetdevice.h
+index 962a062..b3c5081 100644
+--- a/include/linux/inetdevice.h
++++ b/include/linux/inetdevice.h
+@@ -44,7 +44,8 @@ struct in_device
+ };
+ 
+ #define IPV4_DEVCONF(cnf, attr) ((cnf).data[NET_IPV4_CONF_ ## attr - 1])
+-#define IPV4_DEVCONF_ALL(attr) IPV4_DEVCONF(ipv4_devconf, attr)
++#define IPV4_DEVCONF_ALL(net, attr) \
++	IPV4_DEVCONF((*(net)->ipv4.devconf_all), attr)
+ 
+ static inline int ipv4_devconf_get(struct in_device *in_dev, int index)
+ {
+@@ -71,11 +72,14 @@ static inline void ipv4_devconf_setall(struct in_device *in_dev)
+ 	ipv4_devconf_set((in_dev), NET_IPV4_CONF_ ## attr, (val))
+ 
+ #define IN_DEV_ANDCONF(in_dev, attr) \
+-	(IPV4_DEVCONF_ALL(attr) && IN_DEV_CONF_GET((in_dev), attr))
++	(IPV4_DEVCONF_ALL(in_dev->dev->nd_net, attr) && \
++	 IN_DEV_CONF_GET((in_dev), attr))
+ #define IN_DEV_ORCONF(in_dev, attr) \
+-	(IPV4_DEVCONF_ALL(attr) || IN_DEV_CONF_GET((in_dev), attr))
++	(IPV4_DEVCONF_ALL(in_dev->dev->nd_net, attr) || \
++	 IN_DEV_CONF_GET((in_dev), attr))
+ #define IN_DEV_MAXCONF(in_dev, attr) \
+-	(max(IPV4_DEVCONF_ALL(attr), IN_DEV_CONF_GET((in_dev), attr)))
++	(max(IPV4_DEVCONF_ALL(in_dev->dev->nd_net, attr), \
++	     IN_DEV_CONF_GET((in_dev), attr)))
+ 
+ #define IN_DEV_FORWARD(in_dev)		IN_DEV_CONF_GET((in_dev), FORWARDING)
+ #define IN_DEV_MFORWARD(in_dev)		IN_DEV_ANDCONF((in_dev), MC_FORWARDING)
+diff --git a/net/ipv4/arp.c b/net/ipv4/arp.c
+index 41a4d73..cd4c95a 100644
+--- a/net/ipv4/arp.c
++++ b/net/ipv4/arp.c
+@@ -861,7 +861,7 @@ static int arp_process(struct sk_buff *skb)
+ 
+ 	n = __neigh_lookup(&arp_tbl, &sip, dev, 0);
+ 
+-	if (IPV4_DEVCONF_ALL(ARP_ACCEPT)) {
++	if (IPV4_DEVCONF_ALL(dev->nd_net, ARP_ACCEPT)) {
+ 		/* Unsolicited ARP is not accepted by default.
+ 		   It is possible, that this option should be enabled for some
+ 		   devices (strip is candidate)
+@@ -956,7 +956,7 @@ out_of_mem:
+ static int arp_req_set_proxy(struct net *net, struct net_device *dev, int on)
+ {
+ 	if (dev == NULL) {
+-		IPV4_DEVCONF_ALL(PROXY_ARP) = on;
++		IPV4_DEVCONF_ALL(net, PROXY_ARP) = on;
+ 		return 0;
+ 	}
+ 	if (__in_dev_get_rtnl(dev)) {
+diff --git a/net/ipv4/devinet.c b/net/ipv4/devinet.c
+index cd957f4..e94de54 100644
+--- a/net/ipv4/devinet.c
++++ b/net/ipv4/devinet.c
+@@ -1259,9 +1259,9 @@ static void devinet_copy_dflt_conf(struct net *net, int i)
+ static void inet_forward_change(struct net *net)
+ {
+ 	struct net_device *dev;
+-	int on = IPV4_DEVCONF_ALL(FORWARDING);
++	int on = IPV4_DEVCONF_ALL(net, FORWARDING);
+ 
+-	IPV4_DEVCONF_ALL(ACCEPT_REDIRECTS) = !on;
++	IPV4_DEVCONF_ALL(net, ACCEPT_REDIRECTS) = !on;
+ 	IPV4_DEVCONF_DFLT(net, FORWARDING) = on;
+ 
+ 	read_lock(&dev_base_lock);
+@@ -1361,7 +1361,7 @@ static int devinet_sysctl_forward(ctl_table *ctl, int write,
+ 	if (write && *valp != val) {
+ 		struct net *net = ctl->extra2;
+ 
+-		if (valp == &IPV4_DEVCONF_ALL(FORWARDING))
++		if (valp == &IPV4_DEVCONF_ALL(net, FORWARDING))
+ 			inet_forward_change(net);
+ 		else if (valp != &IPV4_DEVCONF_DFLT(net, FORWARDING))
+ 			rt_cache_flush(0);
+diff --git a/net/ipv4/igmp.c b/net/ipv4/igmp.c
+index c560a93..d3d5906 100644
+--- a/net/ipv4/igmp.c
++++ b/net/ipv4/igmp.c
+@@ -130,12 +130,12 @@
+  */
+ 
+ #define IGMP_V1_SEEN(in_dev) \
+-	(IPV4_DEVCONF_ALL(FORCE_IGMP_VERSION) == 1 || \
++	(IPV4_DEVCONF_ALL(in_dev->dev->nd_net, FORCE_IGMP_VERSION) == 1 || \
+ 	 IN_DEV_CONF_GET((in_dev), FORCE_IGMP_VERSION) == 1 || \
+ 	 ((in_dev)->mr_v1_seen && \
+ 	  time_before(jiffies, (in_dev)->mr_v1_seen)))
+ #define IGMP_V2_SEEN(in_dev) \
+-	(IPV4_DEVCONF_ALL(FORCE_IGMP_VERSION) == 2 || \
++	(IPV4_DEVCONF_ALL(in_dev->dev->nd_net, FORCE_IGMP_VERSION) == 2 || \
+ 	 IN_DEV_CONF_GET((in_dev), FORCE_IGMP_VERSION) == 2 || \
+ 	 ((in_dev)->mr_v2_seen && \
+ 	  time_before(jiffies, (in_dev)->mr_v2_seen)))
+diff --git a/net/ipv4/ipmr.c b/net/ipv4/ipmr.c
+index 1187928..9947f52 100644
+--- a/net/ipv4/ipmr.c
++++ b/net/ipv4/ipmr.c
+@@ -849,7 +849,7 @@ static void mrtsock_destruct(struct sock *sk)
+ {
+ 	rtnl_lock();
+ 	if (sk == mroute_socket) {
+-		IPV4_DEVCONF_ALL(MC_FORWARDING)--;
++		IPV4_DEVCONF_ALL(sk->sk_net, MC_FORWARDING)--;
+ 
+ 		write_lock_bh(&mrt_lock);
+ 		mroute_socket=NULL;
+@@ -898,7 +898,7 @@ int ip_mroute_setsockopt(struct sock *sk,int optname,char __user *optval,int opt
+ 			mroute_socket=sk;
+ 			write_unlock_bh(&mrt_lock);
+ 
+-			IPV4_DEVCONF_ALL(MC_FORWARDING)++;
++			IPV4_DEVCONF_ALL(sk->sk_net, MC_FORWARDING)++;
+ 		}
+ 		rtnl_unlock();
+ 		return ret;
+diff --git a/net/ipv4/proc.c b/net/ipv4/proc.c
+index ce34b28..41734db 100644
+--- a/net/ipv4/proc.c
++++ b/net/ipv4/proc.c
+@@ -309,7 +309,8 @@ static int snmp_seq_show(struct seq_file *seq, void *v)
+ 		seq_printf(seq, " %s", snmp4_ipstats_list[i].name);
+ 
+ 	seq_printf(seq, "\nIp: %d %d",
+-		   IPV4_DEVCONF_ALL(FORWARDING) ? 1 : 2, sysctl_ip_default_ttl);
++		   IPV4_DEVCONF_ALL(&init_net, FORWARDING) ? 1 : 2,
++		   sysctl_ip_default_ttl);
+ 
+ 	for (i = 0; snmp4_ipstats_list[i].name != NULL; i++)
+ 		seq_printf(seq, " %lu",
+diff --git a/net/ipv4/route.c b/net/ipv4/route.c
+index cc064e6..499e1e3 100644
+--- a/net/ipv4/route.c
++++ b/net/ipv4/route.c
+@@ -2615,7 +2615,7 @@ static int rt_fill_info(struct sk_buff *skb, u32 pid, u32 seq, int event,
+ 		__be32 dst = rt->rt_dst;
+ 
+ 		if (MULTICAST(dst) && !LOCAL_MCAST(dst) &&
+-		    IPV4_DEVCONF_ALL(MC_FORWARDING)) {
++		    IPV4_DEVCONF_ALL(&init_net, MC_FORWARDING)) {
+ 			int err = ipmr_get_route(skb, r, nowait);
+ 			if (err <= 0) {
+ 				if (!nowait) {
+-- 
+1.5.3.4
 
-Eric
