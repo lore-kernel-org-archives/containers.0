@@ -1,97 +1,75 @@
-From: Pavel Emelyanov <xemul@openvz.org>
-Subject: [PATCH net-2.6.25 6/7] Switch users of ipv4_devconf_dflt to use the
- pernet one
-Date: Tue, 11 Dec 2007 20:59:58 +0300
-Message-ID: <475ED01E.5020505@openvz.org>
-References: <475ECC69.1040809@openvz.org>
+From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
+Subject: Re: [patch 1/2][NETNS][RFD] store the network namespace pointer in
+	the dst_entry structure
+Date: Tue, 11 Dec 2007 10:07:18 -0700
+Message-ID: <m1myshyxbt.fsf@ebiederm.dsl.xmission.com>
+References: <20071211131231.701104221@ICON-9-164-138-215.megacenter.de.ibm.com>
+	<20071211131749.644219049@ICON-9-164-138-215.megacenter.de.ibm.com>
+	<m1r6htz0sn.fsf@ebiederm.dsl.xmission.com>
+	<475EB777.4070704@fr.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Content-Transfer-Encoding: 7bit
-Return-path: <netdev-owner@vger.kernel.org>
-In-Reply-To: <475ECC69.1040809@openvz.org>
-Sender: netdev-owner@vger.kernel.org
-To: David Miller <davem@davemloft.net>
-Cc: Linux Netdev List <netdev@vger.kernel.org>, Linux Containers <containers@lists.osdl.org>, devel@openvz.org
+Content-Type: text/plain; charset=us-ascii
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <475EB777.4070704-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org> (Daniel Lezcano's message of "Tue,
+	11 Dec 2007 17:14:47 +0100")
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
+Cc: xemul-3ImXcnM4P+0@public.gmane.org, den-3ImXcnM4P+0@public.gmane.org, containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, kuznet-v/Mj1YrvjDBInbfyfbPRSQ@public.gmane.org, davem-fT/PcQaiUtIeIZ0/mPfg9Q@public.gmane.org, benjamin.thery-6ktuUTfB/bM@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-They are all collected in the net/ipv4/devinet.c file and
-mostly use the IPV4_DEVCONF_DFLT macro.
+Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org> writes:
 
-So I add the net parameter to it and patch users accordingly.
+>> Could you please place the struct net *net pointer up by the
+>> network device pointer.
+>>>  };
+>>
+>> I know we need a net pointer in struct rt_table, because it
+>> is a hash table that we can't dynamically allocate so we need
+>> to place a network namespace pointer as part of the hash key.
+>>
+>> For the ipv6 fib tables I don't recall needing a net pointer as we didn't have
+>> a hash table and could instead have separate
+>> roots for different namespaces.
+>
+> Yes don't need for the hash table but we used it to pass the network namespace
+> parameter to the underlying function which need the net parameter.
+>
+> We are facing two problems when removing the fl_net field from flowi:
+>
+>  * The first one is the fl_net is used as a key. This problem can be handled
+> simply in moving the netns to the rtable.
 
-Signed-off-by: Pavel Emelyanov <xemul@openvz.org>
+Yes.
 
----
+>  * The second one is the usage made by the fl_net to pass through the different
+> function calls the network namespace pointer without changing all functions
+> signature. This problem can be solved if we put the netns pointer in the
+> dst_entry structure, so when we are in ipv4, we use container_of on rtable and
+> when we are in ipv6, we use the container_of on rt6_info. So everywhere with the
+> flowi, we can retrieve the netns.
 
-diff --git a/net/ipv4/devinet.c b/net/ipv4/devinet.c
-index 996f07e..cd957f4 100644
---- a/net/ipv4/devinet.c
-+++ b/net/ipv4/devinet.c
-@@ -83,7 +83,8 @@ static struct ipv4_devconf ipv4_devconf_dflt = {
- 	},
- };
- 
--#define IPV4_DEVCONF_DFLT(attr) IPV4_DEVCONF(ipv4_devconf_dflt, attr)
-+#define IPV4_DEVCONF_DFLT(net, attr) \
-+	IPV4_DEVCONF((*net->ipv4.devconf_dflt), attr)
- 
- static const struct nla_policy ifa_ipv4_policy[IFA_MAX+1] = {
- 	[IFA_LOCAL]     	= { .type = NLA_U32 },
-@@ -164,7 +165,8 @@ static struct in_device *inetdev_init(struct net_device *dev)
- 	if (!in_dev)
- 		goto out;
- 	INIT_RCU_HEAD(&in_dev->rcu_head);
--	memcpy(&in_dev->cnf, &ipv4_devconf_dflt, sizeof(in_dev->cnf));
-+	memcpy(&in_dev->cnf, dev->nd_net->ipv4.devconf_dflt,
-+			sizeof(in_dev->cnf));
- 	in_dev->cnf.sysctl = NULL;
- 	in_dev->dev = dev;
- 	if ((in_dev->arp_parms = neigh_parms_alloc(dev, &arp_tbl)) == NULL)
-@@ -1248,7 +1250,7 @@ static void devinet_copy_dflt_conf(struct net *net, int i)
- 		rcu_read_lock();
- 		in_dev = __in_dev_get_rcu(dev);
- 		if (in_dev && !test_bit(i, in_dev->cnf.state))
--			in_dev->cnf.data[i] = ipv4_devconf_dflt.data[i];
-+			in_dev->cnf.data[i] = net->ipv4.devconf_dflt->data[i];
- 		rcu_read_unlock();
- 	}
- 	read_unlock(&dev_base_lock);
-@@ -1260,7 +1262,7 @@ static void inet_forward_change(struct net *net)
- 	int on = IPV4_DEVCONF_ALL(FORWARDING);
- 
- 	IPV4_DEVCONF_ALL(ACCEPT_REDIRECTS) = !on;
--	IPV4_DEVCONF_DFLT(FORWARDING) = on;
-+	IPV4_DEVCONF_DFLT(net, FORWARDING) = on;
- 
- 	read_lock(&dev_base_lock);
- 	for_each_netdev(net, dev) {
-@@ -1289,7 +1291,7 @@ static int devinet_conf_proc(ctl_table *ctl, int write,
- 
- 		set_bit(i, cnf->state);
- 
--		if (cnf == &ipv4_devconf_dflt)
-+		if (cnf == net->ipv4.devconf_dflt)
- 			devinet_copy_dflt_conf(net, i);
- 	}
- 
-@@ -1342,7 +1344,7 @@ static int devinet_conf_sysctl(ctl_table *table, int __user *name, int nlen,
- 
- 	set_bit(i, cnf->state);
- 
--	if (cnf == &ipv4_devconf_dflt)
-+	if (cnf == net->ipv4.devconf_dflt)
- 		devinet_copy_dflt_conf(net, i);
- 
- 	return 1;
-@@ -1361,7 +1363,7 @@ static int devinet_sysctl_forward(ctl_table *ctl, int write,
- 
- 		if (valp == &IPV4_DEVCONF_ALL(FORWARDING))
- 			inet_forward_change(net);
--		else if (valp != &IPV4_DEVCONF_DFLT(FORWARDING))
-+		else if (valp != &IPV4_DEVCONF_DFLT(net, FORWARDING))
- 			rt_cache_flush(0);
- 	}
- 
--- 
-1.5.3.4
+That doesn't work as rt6_info does not currently hold a struct flowi.
 
+>> I find this slightly odd as I didn't wind up needing to add
+>> a struct net pointer in struct dst in my proof of concept tree
+>> and struct dst doesn't have a struct flowi so that would not
+>> have prevented it.
+>
+> The idea is to put the net in the dst_entry because it is accessible from rtable
+> or rt6_info and these ones contain a flowi field.
+
+And since that isn't true, the idea seems to fall flat on it's face.
+
+I expect most of the instances of struct flowi that we would be
+looking things up with would be on the stack so the earlier concerns
+raised would likely still need to be addressed.
+
+Eric
