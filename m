@@ -1,12 +1,14 @@
-From: "Eugenio Kirk" <jkxysrg-QRUTGtgCtKbBo8WWo/YXkQ@public.gmane.org>
-Subject: Software in many languages!
-Date: Tue, 11 Dec 2007 13:50:38 +0900
-Message-ID: <01c83bfc$cf8d4b00$4ab66d59@jkxysrg>
+From: "Denis V. Lunev" <den-3ImXcnM4P+0@public.gmane.org>
+Subject: Re: [PATCH 2.6.25] netns: struct net content re-work
+Date: Tue, 11 Dec 2007 10:33:45 +0300
+Message-ID: <475E3D59.10804@sw.ru>
+References: <20071210163645.GA24030@iris.sw.ru>
+	<m1prxd28h3.fsf@ebiederm.dsl.xmission.com>
 Mime-Version: 1.0
-Content-Type: text/plain;
-	charset="windows-1250"
+Content-Type: text/plain; charset=ISO-8859-1
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <m1prxd28h3.fsf-T1Yj925okcoyDheHMi7gv2pdwda3JcWeAL8bYrjMMd8@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -16,13 +18,53 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, "Denis V. Lunev" <den-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>, herbert-lOAM2aK0SrRLBo1qDEOMRrpzq4S04n8Q@public.gmane.org, davem-fT/PcQaiUtIeIZ0/mPfg9Q@public.gmane.org, netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-  Don't waste time waiting for delivery of your software on a CD. Download and install it immediately. Choose the program you need from more than 270 programs in many languages.
+Eric W. Biederman wrote:
+> The idea of separate structures make sense, and seems needed and useful.
+> 
+> "Denis V. Lunev" <den-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org> writes:
+> 
+>> diff --git a/include/net/netns/unix.h b/include/net/netns/unix.h
+>> new file mode 100644
+>> index 0000000..27b4e7f
+>> --- /dev/null
+>> +++ b/include/net/netns/unix.h
+>                    ^^^^^^
+> Given that we are making this per protocol adding a separate directory
+> to hold them seems to be the wrong grouping.  Ideally we want everything
+> for the protocol all together in the same location so it is easy
+> to find.  Possibly with a user/kernel split.
+> 
+> So perhaps unix_net.h
+The idea was simple:
+- I can name 5 files right now
+- I want them to be shown to gather by ls
+- so, there are 2 ways, namely:
+  # include/net/netns/unix.h
+  # include/net/netns-unix.h
 
- We provide help in installing software. You can ask any question and get a free of charge consultation. Guaranteed access to all updates! Friendly and professional service!
+Regards,
+	Den
 
-http://geocities.com/LawrenceFulton52/
-
-   The best software products at the best prices.
+> 
+>> @@ -0,0 +1,13 @@
+>> +/*
+>> + * Unix network namespace
+>> + */
+>> +#ifndef __NETNS_UNIX_H__
+>> +#define __NETNS_UNIX_H__
+>> +
+>> +struct ctl_table_header;
+>> +struct netns_unix {
+>> +	int			sysctl_unix_max_dgram_qlen;
+>> +	struct ctl_table_header	*unix_ctl;
+>> +};
+> 
+> How about struct unix_net?  I think that tracks a little better
+> with how we have done struct in_device, ip6_dev and their friends.
+> 
+> Eric
+> 
