@@ -1,7 +1,7 @@
 From: Pavel Emelyanov <xemul@openvz.org>
-Subject: [PATCH net-2.6.25 4/7] Store the net pointer on devinet's ctl tables
-Date: Tue, 11 Dec 2007 20:53:55 +0300
-Message-ID: <475ECEB3.7060502@openvz.org>
+Subject: [PATCH net-2.6.25 5/7] Move the devinet pointers on the struct net
+Date: Tue, 11 Dec 2007 20:57:18 +0300
+Message-ID: <475ECF7E.2060103@openvz.org>
 References: <475ECC69.1040809@openvz.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1
@@ -13,149 +13,181 @@ To: David Miller <davem@davemloft.net>
 Cc: Linux Netdev List <netdev@vger.kernel.org>, Linux Containers <containers@lists.osdl.org>, devel@openvz.org
 List-Id: containers.vger.kernel.org
 
-Some handers and strategies of devinet sysctl tables need
-to know the net to propagate the ctl change to all the
-net devices.
+This is the core.
 
-I use the (currently unused) extra2 pointer on the tables
-to get it.
+Add all and default pointers on the netns_ipv4 and register
+a new pernet subsys to initialize them.
 
-Holding the reference on the struct net is not possible,
-because otherwise we'll get a net->ctl_table->net circular
-dependency. But since the ctl tables are unregistered during 
-the net destruction, this is safe to get it w/o additional 
-protection.
+Also add the ctl_table_header to register the 
+net.ipv4.ip_forward ctl.
+
+I don't allocate additional memory for init_net, but use
+global devinets.
 
 Signed-off-by: Pavel Emelyanov <xemul@openvz.org>
 
 ---
 
+diff --git a/include/net/netns/ipv4.h b/include/net/netns/ipv4.h
+index ce830d5..e06d7cf 100644
+--- a/include/net/netns/ipv4.h
++++ b/include/net/netns/ipv4.h
+@@ -4,6 +4,12 @@
+ 
+ #ifndef __NETNS_IPV4_H__
+ #define __NETNS_IPV4_H__
++struct ctl_table_header;
++struct ipv4_devconf;
++
+ struct netns_ipv4 {
++	struct ctl_table_header	*forw_hdr;
++	struct ipv4_devconf	*devconf_all;
++	struct ipv4_devconf	*devconf_dflt;
+ };
+ #endif
 diff --git a/net/ipv4/devinet.c b/net/ipv4/devinet.c
-index 872883e..bfb0fb0 100644
+index bfb0fb0..996f07e 100644
 --- a/net/ipv4/devinet.c
 +++ b/net/ipv4/devinet.c
-@@ -1237,12 +1237,12 @@ errout:
+@@ -62,6 +62,7 @@
+ #include <net/route.h>
+ #include <net/ip_fib.h>
+ #include <net/rtnetlink.h>
++#include <net/net_namespace.h>
  
- #ifdef CONFIG_SYSCTL
+ struct ipv4_devconf ipv4_devconf = {
+ 	.data = {
+@@ -1498,7 +1499,7 @@ static int __devinet_sysctl_register(struct net *net, char *dev_name,
+ 	devinet_ctl_path[DEVINET_CTL_PATH_DEV].procname = t->dev_name;
+ 	devinet_ctl_path[DEVINET_CTL_PATH_DEV].ctl_name = ctl_name;
  
--static void devinet_copy_dflt_conf(int i)
-+static void devinet_copy_dflt_conf(struct net *net, int i)
- {
- 	struct net_device *dev;
- 
- 	read_lock(&dev_base_lock);
--	for_each_netdev(&init_net, dev) {
-+	for_each_netdev(net, dev) {
- 		struct in_device *in_dev;
- 		rcu_read_lock();
- 		in_dev = __in_dev_get_rcu(dev);
-@@ -1253,7 +1253,7 @@ static void devinet_copy_dflt_conf(int i)
- 	read_unlock(&dev_base_lock);
- }
- 
--static void inet_forward_change(void)
-+static void inet_forward_change(struct net *net)
- {
- 	struct net_device *dev;
- 	int on = IPV4_DEVCONF_ALL(FORWARDING);
-@@ -1262,7 +1262,7 @@ static void inet_forward_change(void)
- 	IPV4_DEVCONF_DFLT(FORWARDING) = on;
- 
- 	read_lock(&dev_base_lock);
--	for_each_netdev(&init_net, dev) {
-+	for_each_netdev(net, dev) {
- 		struct in_device *in_dev;
- 		rcu_read_lock();
- 		in_dev = __in_dev_get_rcu(dev);
-@@ -1283,12 +1283,13 @@ static int devinet_conf_proc(ctl_table *ctl, int write,
- 
- 	if (write) {
- 		struct ipv4_devconf *cnf = ctl->extra1;
-+		struct net *net = ctl->extra2;
- 		int i = (int *)ctl->data - cnf->data;
- 
- 		set_bit(i, cnf->state);
- 
- 		if (cnf == &ipv4_devconf_dflt)
--			devinet_copy_dflt_conf(i);
-+			devinet_copy_dflt_conf(net, i);
- 	}
- 
- 	return ret;
-@@ -1299,6 +1300,7 @@ static int devinet_conf_sysctl(ctl_table *table, int __user *name, int nlen,
- 			       void __user *newval, size_t newlen)
- {
- 	struct ipv4_devconf *cnf;
-+	struct net *net;
- 	int *valp = table->data;
- 	int new;
- 	int i;
-@@ -1334,12 +1336,13 @@ static int devinet_conf_sysctl(ctl_table *table, int __user *name, int nlen,
- 	*valp = new;
- 
- 	cnf = table->extra1;
-+	net = table->extra2;
- 	i = (int *)table->data - cnf->data;
- 
- 	set_bit(i, cnf->state);
- 
- 	if (cnf == &ipv4_devconf_dflt)
--		devinet_copy_dflt_conf(i);
-+		devinet_copy_dflt_conf(net, i);
- 
- 	return 1;
- }
-@@ -1353,8 +1356,10 @@ static int devinet_sysctl_forward(ctl_table *ctl, int write,
- 	int ret = proc_dointvec(ctl, write, filp, buffer, lenp, ppos);
- 
- 	if (write && *valp != val) {
-+		struct net *net = ctl->extra2;
-+
- 		if (valp == &IPV4_DEVCONF_ALL(FORWARDING))
--			inet_forward_change();
-+			inet_forward_change(net);
- 		else if (valp != &IPV4_DEVCONF_DFLT(FORWARDING))
- 			rt_cache_flush(0);
- 	}
-@@ -1478,6 +1483,7 @@ static void __devinet_sysctl_register(char *dev_name, int ctl_name,
- 	for (i = 0; i < ARRAY_SIZE(t->devinet_vars) - 1; i++) {
- 		t->devinet_vars[i].data += (char *)p - (char *)&ipv4_devconf;
- 		t->devinet_vars[i].extra1 = p;
-+		t->devinet_vars[i].extra2 = net;
- 	}
- 
- 	/*
-@@ -1525,8 +1531,8 @@ static void devinet_sysctl_register(struct in_device *idev)
- {
- 	neigh_sysctl_register(idev->dev, idev->arp_parms, NET_IPV4,
- 			NET_IPV4_NEIGH, "ipv4", NULL, NULL);
--	__devinet_sysctl_register(idev->dev->name, idev->dev->ifindex,
--			&idev->cnf);
-+	__devinet_sysctl_register(idev->dev->nd_net, idev->dev->name,
-+			idev->dev->ifindex, &idev->cnf);
- }
- 
- static void devinet_sysctl_unregister(struct in_device *idev)
-@@ -1547,6 +1553,7 @@ static struct ctl_table ctl_forward_entry[] = {
- 		.proc_handler	= devinet_sysctl_forward,
- 		.strategy	= devinet_conf_sysctl,
- 		.extra1		= &ipv4_devconf,
-+		.extra2		= &init_net,
- 	},
+-	t->sysctl_header = register_sysctl_paths(devinet_ctl_path,
++	t->sysctl_header = register_net_sysctl_table(net, devinet_ctl_path,
+ 			t->devinet_vars);
+ 	if (!t->sysctl_header)
+ 		goto free_procname;
+@@ -1558,27 +1559,113 @@ static struct ctl_table ctl_forward_entry[] = {
  	{ },
  };
-@@ -1566,9 +1573,9 @@ void __init devinet_init(void)
+ 
+-static __initdata struct ctl_path net_ipv4_path[] = {
++static __net_initdata struct ctl_path net_ipv4_path[] = {
+ 	{ .procname = "net", .ctl_name = CTL_NET, },
+ 	{ .procname = "ipv4", .ctl_name = NET_IPV4, },
+ 	{ },
+ };
+ 
++static __net_init int devinet_init_net(struct net *net)
++{
++	int err;
++	struct ctl_table *tbl;
++	struct ipv4_devconf *all, *dflt;
++	struct ctl_table_header *forw_hdr;
++
++	err = -ENOMEM;
++	all = &ipv4_devconf;
++	dflt = &ipv4_devconf_dflt;
++	tbl = ctl_forward_entry;
++
++	if (net != &init_net) {
++		all = kmemdup(all, sizeof(ipv4_devconf), GFP_KERNEL);
++		if (all == NULL)
++			goto err_alloc_all;
++
++		dflt = kmemdup(dflt, sizeof(ipv4_devconf_dflt), GFP_KERNEL);
++		if (dflt == NULL)
++			goto err_alloc_dflt;
++
++		tbl = kmemdup(tbl, sizeof(ctl_forward_entry), GFP_KERNEL);
++		if (tbl == NULL)
++			goto err_alloc_ctl;
++
++		tbl[0].data = &all->data[NET_IPV4_CONF_FORWARDING - 1];
++		tbl[0].extra1 = all;
++		tbl[0].extra2 = net;
++	}
++
++#ifdef CONFIG_SYSCTL
++	err = __devinet_sysctl_register(net, "all",
++			NET_PROTO_CONF_ALL, all);
++	if (err < 0)
++		goto err_reg_all;
++
++	err = __devinet_sysctl_register(net, "default",
++			NET_PROTO_CONF_DEFAULT, dflt);
++	if (err < 0)
++		goto err_reg_dflt;
++
++	err = -ENOMEM;
++	forw_hdr = register_net_sysctl_table(net, net_ipv4_path, tbl);
++	if (forw_hdr == NULL)
++		goto err_reg_ctl;
++#endif
++
++	net->ipv4.forw_hdr = forw_hdr;
++	net->ipv4.devconf_all = all;
++	net->ipv4.devconf_dflt = dflt;
++	return 0;
++
++#ifdef CONFIG_SYSCTL
++err_reg_ctl:
++	__devinet_sysctl_unregister(dflt);
++err_reg_dflt:
++	__devinet_sysctl_unregister(all);
++err_reg_all:
++	if (tbl != ctl_forward_entry)
++		kfree(tbl);
++#endif
++err_alloc_ctl:
++	if (dflt != &ipv4_devconf_dflt)
++		kfree(dflt);
++err_alloc_dflt:
++	if (all != &ipv4_devconf)
++		kfree(all);
++err_alloc_all:
++	return err;
++}
++
++static __net_exit void devinet_exit_net(struct net *net)
++{
++	struct ctl_table *tbl;
++
++	tbl = net->ipv4.forw_hdr->ctl_table_arg;
++#ifdef CONFIG_SYSCTL
++	unregister_net_sysctl_table(net->ipv4.forw_hdr);
++	__devinet_sysctl_unregister(net->ipv4.devconf_dflt);
++	__devinet_sysctl_unregister(net->ipv4.devconf_all);
++#endif
++	kfree(tbl);
++	kfree(net->ipv4.devconf_dflt);
++	kfree(net->ipv4.devconf_all);
++}
++
++static __net_initdata struct pernet_operations devinet_ops = {
++	.init = devinet_init_net,
++	.exit = devinet_exit_net,
++};
++
+ void __init devinet_init(void)
+ {
++	register_pernet_subsys(&devinet_ops);
++
+ 	register_gifconf(PF_INET, inet_gifconf);
+ 	register_netdevice_notifier(&ip_netdev_notifier);
+ 
+ 	rtnl_register(PF_INET, RTM_NEWADDR, inet_rtm_newaddr, NULL);
  	rtnl_register(PF_INET, RTM_DELADDR, inet_rtm_deladdr, NULL);
  	rtnl_register(PF_INET, RTM_GETADDR, NULL, inet_dump_ifaddr);
- #ifdef CONFIG_SYSCTL
--	__devinet_sysctl_register("all", NET_PROTO_CONF_ALL,
-+	__devinet_sysctl_register(&init_net, "all", NET_PROTO_CONF_ALL,
- 			&ipv4_devconf);
--	__devinet_sysctl_register("default", NET_PROTO_CONF_DEFAULT,
-+	__devinet_sysctl_register(&init_net, "default", NET_PROTO_CONF_DEFAULT,
- 			&ipv4_devconf_dflt);
- 	register_sysctl_paths(net_ipv4_path, ctl_forward_entry);
- #endif
+-#ifdef CONFIG_SYSCTL
+-	__devinet_sysctl_register(&init_net, "all", NET_PROTO_CONF_ALL,
+-			&ipv4_devconf);
+-	__devinet_sysctl_register(&init_net, "default", NET_PROTO_CONF_DEFAULT,
+-			&ipv4_devconf_dflt);
+-	register_sysctl_paths(net_ipv4_path, ctl_forward_entry);
+-#endif
+ }
+ 
+ EXPORT_SYMBOL(in_dev_finish_destroy);
 -- 
 1.5.3.4
 
