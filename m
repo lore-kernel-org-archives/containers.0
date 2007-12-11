@@ -1,50 +1,65 @@
 From: ebiederm@xmission.com (Eric W. Biederman)
 Subject: Re: [PATCH 2.6.25] netns: struct net content re-work
-Date: Mon, 10 Dec 2007 20:52:56 -0700
-Message-ID: <m1prxd28h3.fsf@ebiederm.dsl.xmission.com>
-References: <20071210163645.GA24030@iris.sw.ru>
+Date: Mon, 10 Dec 2007 21:04:07 -0700
+Message-ID: <m1lk8127yg.fsf@ebiederm.dsl.xmission.com>
+References: <20071210163645.GA24030@iris.sw.ru> <475D7849.3030206@fr.ibm.com>
+	<475D7C56.9020402@sw.ru>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Return-path: <netdev-owner@vger.kernel.org>
-In-Reply-To: <20071210163645.GA24030@iris.sw.ru> (Denis V. Lunev's message of
-	"Mon, 10 Dec 2007 19:36:45 +0300")
+In-Reply-To: <475D7C56.9020402@sw.ru> (Kirill Korotaev's message of "Mon, 10
+	Dec 2007 20:50:14 +0300")
 Sender: netdev-owner@vger.kernel.org
-To: "Denis V. Lunev" <den@openvz.org>
-Cc: davem@davemloft.net, containers@lists.osdl.org, netdev@vger.kernel.org, herbert@gondor.apana.org.au
+To: Kirill Korotaev <dev@sw.ru>
+Cc: Daniel Lezcano <dlezcano@fr.ibm.com>, containers@lists.osdl.org, "Denis V. Lunev" <den@openvz.org>, herbert@gondor.apana.org.au, davem@davemloft.net, netdev@vger.kernel.org
 List-Id: containers.vger.kernel.org
 
+Kirill Korotaev <dev@sw.ru> writes:
 
-The idea of separate structures make sense, and seems needed and useful.
+> Daniel Lezcano wrote:
+>> Denis V. Lunev wrote:
+>> 
+>>>Recently David Miller and Herbert Xu pointed out that struct net becomes
+>>>overbloated and un-maintainable. There are two solutions:
+>>>- provide a pointer to a network subsystem definition from struct net.
+>>>  This costs an additional dereferrence
+>>>- place sub-system definition into the structure itself. This will speedup
+>>>  run-time access at the cost of recompilation time
+>>>
+>>>The second approach looks better for us. 
+>> 
+>> 
+>> Yes, we do not need/want a pointer in this structure and add more 
+>> dereference in the network code.
 
-"Denis V. Lunev" <den@openvz.org> writes:
+If it does go that way we just carefully pass around a properly
+typed structure in that subsystem to reduce the cost.  Still 
+it would be nice not to need to add the extra pointer.
 
-> diff --git a/include/net/netns/unix.h b/include/net/netns/unix.h
-> new file mode 100644
-> index 0000000..27b4e7f
-> --- /dev/null
-> +++ b/include/net/netns/unix.h
-                   ^^^^^^
-Given that we are making this per protocol adding a separate directory
-to hold them seems to be the wrong grouping.  Ideally we want everything
-for the protocol all together in the same location so it is easy
-to find.  Possibly with a user/kernel split.
+>>>index b62e31f..f60e1ce 100644
+>>>--- a/include/net/net_namespace.h
+>>>+++ b/include/net/net_namespace.h
+>>>@@ -8,6 +8,8 @@
+>>> #include <linux/workqueue.h>
+>>> #include <linux/list.h>
+>>>
+>>>+#include <net/netns/unix.h>
+>>>+
+>>> struct proc_dir_entry;
+>>> struct net_device;
+>>> struct sock;
+>>>@@ -46,8 +48,7 @@ struct net {
+>>> 	struct hlist_head	packet_sklist;
+>>>
+>>> 	/* unix sockets */
+>>>-	int			sysctl_unix_max_dgram_qlen;
+>>>-	struct ctl_table_header	*unix_ctl;
+>>>+	struct netns_unix	unx;
+>> 
+>> 
+>> Can you change this from unx to unix ?
+>
+> no, it won't compile. Guess why :)
 
-So perhaps unix_net.h
-
-> @@ -0,0 +1,13 @@
-> +/*
-> + * Unix network namespace
-> + */
-> +#ifndef __NETNS_UNIX_H__
-> +#define __NETNS_UNIX_H__
-> +
-> +struct ctl_table_header;
-> +struct netns_unix {
-> +	int			sysctl_unix_max_dgram_qlen;
-> +	struct ctl_table_header	*unix_ctl;
-> +};
-
-How about struct unix_net?  I think that tracks a little better
-with how we have done struct in_device, ip6_dev and their friends.
-
+Hmm.  It looks like it is a #define somewhere gcc?
 Eric
