@@ -1,10 +1,10 @@
-From: "Ray Herron" <skstcafup-FTZPZAHnebNZSAmHFfZ+lNBPR1lH4CV8@public.gmane.org>
-Subject: Work hard, play harder.
-Date: Wed, 12 Dec 2007 04:43:38 -0800
-Message-ID: <01c83c79$8fb87900$b9aedc29@skstcafup>
+From: "Gretchen Parra" <dwseodom-VnwywGYHGS4AvxtiuMwx3w@public.gmane.org>
+Subject: Get your free 2400$ welcome bonus and win much more!
+Date: Wed, 12 Dec 2007 04:43:59 -0800
+Message-ID: <01c83c79$9c3cd180$b9aedc29@dwseodom>
 Mime-Version: 1.0
 Content-Type: text/plain;
-	charset="windows-1250"
+	charset="iso-8859-1"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
@@ -16,13 +16,13 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
+To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
- Where to gamble online? Check the list of the games in Golden Gate Casino! Just download free software and play from the comfort of your home! Get started and receive $2400 welcome bonus!
+ Now you have a brilliant possibility to feel casino excitement without leaving your house. All your favorite games are available to play in Golden Gate Casino. Just download free software and start playing.
 
- Golden Gate Casino guarantees competent customer support for all players, quick response in case you have question or problem and instant payouts. Fair gaming only!
+ Great online casino Golden Gate is one of the leading casinos known for fair playing, excellent customer service available to contact 24 hour a day, 7 days a week and prompt payouts.
 
-http://geocities.com/EvelynFrank99/
+http://geocities.com/KarynFox46/
 
-   Top choice casino!
+   Enjoy pure pleasure of gambling from home without stress!
