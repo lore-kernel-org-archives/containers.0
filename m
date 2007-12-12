@@ -1,45 +1,45 @@
 From: "Serge E. Hallyn" <serue@us.ibm.com>
-Subject: [RFC] [PATCH -mm] agp: remove uid comparison as security check
-Date: Wed, 12 Dec 2007 14:57:05 -0600
-Message-ID: <20071212205704.GA24708@sergelap.austin.ibm.com>
+Subject: [RFC] [PATCH -mm] reiser4: replace uid==0 check with capability
+Date: Wed, 12 Dec 2007 15:01:07 -0600
+Message-ID: <20071212210107.GB24708@sergelap.austin.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1761162AbXLLU5e@vger.kernel.org>
+Return-path: <reiserfs-devel-owner@vger.kernel.org>
 Content-Disposition: inline
-Sender: linux-kernel-owner@vger.kernel.org
-To: Linux Containers <containers@lists.osdl.org>, lkml <linux-kernel@vger.kernel.org>
-Cc: tungstengraphics.com@sergelap.austin.ibm.com, zwane@infradead.org, hugh@veritas.com, airlied@linux.ie
+Sender: reiserfs-devel-owner@vger.kernel.org
+To: Linux Containers <containers@lists.osdl.org>, lkml <linux-kernel@vger.kernel.org>, reiserfs-dev@namesys.com, reiserfs-devel@vger.kernel.org
 List-Id: containers.vger.kernel.org
 
-From d4ca1a9749c5b40325ec2db9fcde2f2cbd0e0978 Mon Sep 17 00:00:00 2001
+From c257cb67ce00c8769730cfa92379a53009d99b28 Mon Sep 17 00:00:00 2001
 From: serue@us.ibm.com <serue@us.ibm.com>
-Date: Wed, 5 Dec 2007 13:55:36 -0800
-Subject: [RFC] [PATCH -mm] agp: remove uid comparison as security check
+Date: Wed, 5 Dec 2007 14:02:45 -0800
+Subject: [RFC] [PATCH -mm] reiser4: replace uid==0 check with capability
 
-In the face of containers and user namespaces, a uid==0 check for
-security is not safe.  Switch to a capability check.
+Reiser4 gives root some reserved blocks.  Replace the uid==0 check, which
+is not safe in the face of user namespaces, with a CAP_SYS_RESOURCE check,
+which seems appropriate.
 
-I'm not sure I picked the right capability, but this being AGP
-CAP_SYS_RAWIO seemed to make sense.
+The per-uid and per-guid reservations appear unimplemented so I'm ignoring
+them.
 
 Signed-off-by: Serge Hallyn <serue@us.ibm.com>
 ---
- drivers/char/agp/frontend.c |    2 +-
+ fs/reiser4/super.c |    2 +-
  1 files changed, 1 insertions(+), 1 deletions(-)
 
-diff --git a/drivers/char/agp/frontend.c b/drivers/char/agp/frontend.c
-index 9bd5a95..55d7a82 100644
---- a/drivers/char/agp/frontend.c
-+++ b/drivers/char/agp/frontend.c
-@@ -689,7 +689,7 @@ static int agp_open(struct inode *inode, struct file *file)
- 	set_bit(AGP_FF_ALLOW_CLIENT, &priv->access_flags);
- 	priv->my_pid = current->pid;
- 
--	if ((current->uid == 0) || (current->suid == 0)) {
-+	if (capable(CAP_SYS_RAWIO)) {
- 		/* Root priv, can be controller */
- 		set_bit(AGP_FF_ALLOW_CONTROLLER, &priv->access_flags);
- 	}
+diff --git a/fs/reiser4/super.c b/fs/reiser4/super.c
+index bc4113e..50e3d09 100644
+--- a/fs/reiser4/super.c
++++ b/fs/reiser4/super.c
+@@ -144,7 +144,7 @@ long reiser4_reserved_blocks(const struct super_block *super	/* super block
+ 		reserved += reserved_for_gid(super, gid);
+ 	if (REISER4_SUPPORT_UID_SPACE_RESERVATION)
+ 		reserved += reserved_for_uid(super, uid);
+-	if (REISER4_SUPPORT_ROOT_SPACE_RESERVATION && (uid == 0))
++	if (REISER4_SUPPORT_ROOT_SPACE_RESERVATION && capable(CAP_SYS_RESOURCE))
+ 		reserved += reserved_for_root(super);
+ 	return reserved;
+ }
 -- 
 1.5.1
 
