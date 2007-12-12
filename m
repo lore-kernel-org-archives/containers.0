@@ -1,13 +1,14 @@
 From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
-Subject: [PATCH 1/9] sig: Fix mqueue pid
-Date: Wed, 12 Dec 2007 05:40:54 -0700
-Message-ID: <m1y7c0xezt.fsf@ebiederm.dsl.xmission.com>
+Subject: [PATCH 2/9] sig: Fix SI_USER si_pid
+Date: Wed, 12 Dec 2007 05:42:24 -0700
+Message-ID: <m1tzmoxexb.fsf_-_@ebiederm.dsl.xmission.com>
 References: <m13au8ytos.fsf@ebiederm.dsl.xmission.com>
+	<m1y7c0xezt.fsf@ebiederm.dsl.xmission.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <m13au8ytos.fsf-T1Yj925okcoyDheHMi7gv2pdwda3JcWeAL8bYrjMMd8@public.gmane.org> (Eric W. Biederman's
-	message of "Wed, 12 Dec 2007 05:38:11 -0700")
+In-Reply-To: <m1y7c0xezt.fsf-T1Yj925okcoyDheHMi7gv2pdwda3JcWeAL8bYrjMMd8@public.gmane.org> (Eric W. Biederman's
+	message of "Wed, 12 Dec 2007 05:40:54 -0700")
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -22,30 +23,41 @@ Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Oleg 
 List-Id: containers.vger.kernel.org
 
 
-Currently in the sig info for posix message queues we are reporting the
-task id and not the task group id.  Given that this is a posix interface
-and that si_pid is defined by posix as returning the process id, we should
-be reporting the task group id.
+Currently we have a few instances where we are generating signals
+setting si_code to SI_USER and si_pid to the task id.
 
-So fix this interface.
+However in the case of SI_USER we are using a posix defined
+interface, and posix defines si_pid as the sending process id.  Which
+in linux is equivalent to the task group id.
+
+So fix SI_USER to fill in the proper si_pid value.
 
 Signed-off-by: Eric W. Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 ---
- ipc/mqueue.c |    2 +-
- 1 files changed, 1 insertions(+), 1 deletions(-)
+ kernel/signal.c |    4 ++--
+ 1 files changed, 2 insertions(+), 2 deletions(-)
 
-diff --git a/ipc/mqueue.c b/ipc/mqueue.c
-index 7d1b8aa..d3feadf 100644
---- a/ipc/mqueue.c
-+++ b/ipc/mqueue.c
-@@ -510,7 +510,7 @@ static void __do_notify(struct mqueue_inode_info *info)
- 			sig_i.si_errno = 0;
- 			sig_i.si_code = SI_MESGQ;
- 			sig_i.si_value = info->notify.sigev_value;
--			sig_i.si_pid = task_pid_vnr(current);
-+			sig_i.si_pid = task_tgid_vnr(current);
- 			sig_i.si_uid = current->uid;
+diff --git a/kernel/signal.c b/kernel/signal.c
+index 280bccb..694a643 100644
+--- a/kernel/signal.c
++++ b/kernel/signal.c
+@@ -694,7 +694,7 @@ static int send_signal(int sig, struct siginfo *info, struct task_struct *t,
+ 			q->info.si_signo = sig;
+ 			q->info.si_errno = 0;
+ 			q->info.si_code = SI_USER;
+-			q->info.si_pid = task_pid_vnr(current);
++			q->info.si_pid = task_tgid_vnr(current);
+ 			q->info.si_uid = current->uid;
+ 			break;
+ 		case (unsigned long) SEND_SIG_PRIV:
+@@ -1794,7 +1794,7 @@ relock:
+ 				info->si_signo = signr;
+ 				info->si_errno = 0;
+ 				info->si_code = SI_USER;
+-				info->si_pid = task_pid_vnr(current->parent);
++				info->si_pid = task_tgid_vnr(current->parent);
+ 				info->si_uid = current->parent->uid;
+ 			}
  
- 			kill_pid_info(info->notify.sigev_signo,
 -- 
 1.5.3.rc6.17.g1911
