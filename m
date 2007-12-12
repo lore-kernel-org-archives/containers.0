@@ -1,42 +1,56 @@
-From: ebiederm@xmission.com (Eric W. Biederman)
-Subject: [PATCH] Mark timer_stats as incompatible with multiple pid namespaces
-Date: Wed, 12 Dec 2007 16:10:56 -0700
-Message-ID: <m13au7tsov.fsf@ebiederm.dsl.xmission.com>
+From: Edward Shishkin <edward.shishkin@gmail.com>
+Subject: Re: [RFC] [PATCH -mm] reiser4: replace uid==0 check with capability
+Date: Thu, 13 Dec 2007 02:36:27 +0300
+Message-ID: <4760707B.2040007@gmail.com>
+References: <20071212210107.GB24708@sergelap.austin.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1760100AbXLLXMt@vger.kernel.org>
-Sender: linux-kernel-owner@vger.kernel.org
-To: Ingo Molnar <mingo@elte.hu>, Thomas Gleixner <tglx@linutronix.de>
-Cc: Linux Containers <containers@lists.osdl.org>, linux-kernel@vger.kernel.org
+Content-Type: text/plain; charset=us-ascii; format=flowed
+Content-Transfer-Encoding: 7bit
+Return-path: <reiserfs-devel-owner@vger.kernel.org>
+In-Reply-To: <20071212210107.GB24708@sergelap.austin.ibm.com>
+Sender: reiserfs-devel-owner@vger.kernel.org
+To: "Serge E. Hallyn" <serue@us.ibm.com>
+Cc: Linux Containers <containers@lists.osdl.org>, lkml <linux-kernel@vger.kernel.org>, reiserfs-devel@vger.kernel.org
 List-Id: containers.vger.kernel.org
 
+Serge E. Hallyn wrote:
 
-/proc/timer_stats currently reports the user of a timer by pid,
-which is a reasonable approach.  However if you are not in
-the initial pid namespace the pid that is reported is nonsense.
+>>From c257cb67ce00c8769730cfa92379a53009d99b28 Mon Sep 17 00:00:00 2001
+>From: serue@us.ibm.com <serue@us.ibm.com>
+>Date: Wed, 5 Dec 2007 14:02:45 -0800
+>Subject: [RFC] [PATCH -mm] reiser4: replace uid==0 check with capability
+>
+>Reiser4 gives root some reserved blocks.  Replace the uid==0 check, which
+>is not safe in the face of user namespaces, with a CAP_SYS_RESOURCE check,
+>which seems appropriate.
+>
+>  
+>
 
-Therefore until we can make timer_stats pid namespace safe just
-disable it in the build if pid namespace support is selected
-so we at least know we have a conflict.
+Agreed. Thanks,
+Edward.
 
-Signed-off-by: Eric W. Biederman <ebiederm@xmission.com>
----
- lib/Kconfig.debug |    2 +-
- 1 files changed, 1 insertions(+), 1 deletions(-)
-
-diff --git a/lib/Kconfig.debug b/lib/Kconfig.debug
-index cc42773..c8e81e6 100644
---- a/lib/Kconfig.debug
-+++ b/lib/Kconfig.debug
-@@ -146,7 +146,7 @@ config SCHEDSTATS
- 
- config TIMER_STATS
- 	bool "Collect kernel timers statistics"
--	depends on DEBUG_KERNEL && PROC_FS
-+	depends on DEBUG_KERNEL && PROC_FS && !PID_NS
- 	help
- 	  If you say Y here, additional code will be inserted into the
- 	  timer routines to collect statistics about kernel timers being
--- 
-1.5.3.rc6.17.g1911
+>The per-uid and per-guid reservations appear unimplemented so I'm ignoring
+>them.
+>
+>Signed-off-by: Serge Hallyn <serue@us.ibm.com>
+>---
+> fs/reiser4/super.c |    2 +-
+> 1 files changed, 1 insertions(+), 1 deletions(-)
+>
+>diff --git a/fs/reiser4/super.c b/fs/reiser4/super.c
+>index bc4113e..50e3d09 100644
+>--- a/fs/reiser4/super.c
+>+++ b/fs/reiser4/super.c
+>@@ -144,7 +144,7 @@ long reiser4_reserved_blocks(const struct super_block *super	/* super block
+> 		reserved += reserved_for_gid(super, gid);
+> 	if (REISER4_SUPPORT_UID_SPACE_RESERVATION)
+> 		reserved += reserved_for_uid(super, uid);
+>-	if (REISER4_SUPPORT_ROOT_SPACE_RESERVATION && (uid == 0))
+>+	if (REISER4_SUPPORT_ROOT_SPACE_RESERVATION && capable(CAP_SYS_RESOURCE))
+> 		reserved += reserved_for_root(super);
+> 	return reserved;
+> }
+>  
+>
 
