@@ -1,50 +1,45 @@
-From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
-Subject: Re: [PATCH 8/9] signal: Drop signals before sending them to init.
-Date: Wed, 12 Dec 2007 12:33:08 -0700
-Message-ID: <m1tzmnu2rv.fsf@ebiederm.dsl.xmission.com>
-References: <m13au8ytos.fsf@ebiederm.dsl.xmission.com>
-	<m1y7c0xezt.fsf@ebiederm.dsl.xmission.com>
-	<m1tzmoxexb.fsf_-_@ebiederm.dsl.xmission.com>
-	<m1prxcxeum.fsf_-_@ebiederm.dsl.xmission.com>
-	<m1lk80xeps.fsf_-_@ebiederm.dsl.xmission.com>
-	<m1hcioxenh.fsf_-_@ebiederm.dsl.xmission.com>
-	<m1d4tcxelu.fsf_-_@ebiederm.dsl.xmission.com>
-	<m18x40xeg6.fsf_-_@ebiederm.dsl.xmission.com>
-	<m13au8xe8m.fsf_-_@ebiederm.dsl.xmission.com>
-	<20071212190042.GA22469@sergelap.austin.ibm.com>
+From: "Serge E. Hallyn" <serue@us.ibm.com>
+Subject: [RFC] [PATCH -mm] agp: remove uid comparison as security check
+Date: Wed, 12 Dec 2007 14:57:05 -0600
+Message-ID: <20071212205704.GA24708@sergelap.austin.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20071212190042.GA22469-6s5zFf/epYLPQpwDFJZrxKsjOiXwFzmk@public.gmane.org> (Serge
-	E. Hallyn's message of "Wed, 12 Dec 2007 13:00:42 -0600")
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Oleg Nesterov <oleg-6lXkIZvqkOAvJsYlp49lxw@public.gmane.org>, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1761162AbXLLU5e@vger.kernel.org>
+Content-Disposition: inline
+Sender: linux-kernel-owner@vger.kernel.org
+To: Linux Containers <containers@lists.osdl.org>, lkml <linux-kernel@vger.kernel.org>
+Cc: tungstengraphics.com@sergelap.austin.ibm.com, zwane@infradead.org, hugh@veritas.com, airlied@linux.ie
 List-Id: containers.vger.kernel.org
 
-"Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org> writes:
+From d4ca1a9749c5b40325ec2db9fcde2f2cbd0e0978 Mon Sep 17 00:00:00 2001
+From: serue@us.ibm.com <serue@us.ibm.com>
+Date: Wed, 5 Dec 2007 13:55:36 -0800
+Subject: [RFC] [PATCH -mm] agp: remove uid comparison as security check
 
-> Quoting Eric W. Biederman (ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org):
->> 
->> Currently init drops all signals including SIGKILL that are sent to it
->> that it does not ignore and does have a handler for.  Extending this to
->
-> Description is crucial in this patchset, so should the above not be:
->
-> 	"does not have a handler for"
+In the face of containers and user namespaces, a uid==0 check for
+security is not safe.  Switch to a capability check.
 
-Yes.  It should say "does not have a handler for."  Instead of
-"does have a handler for."  Oops.  I thought that was what I wrote!
+I'm not sure I picked the right capability, but this being AGP
+CAP_SYS_RAWIO seemed to make sense.
 
->
-> ?
+Signed-off-by: Serge Hallyn <serue@us.ibm.com>
+---
+ drivers/char/agp/frontend.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
 
-Eric
+diff --git a/drivers/char/agp/frontend.c b/drivers/char/agp/frontend.c
+index 9bd5a95..55d7a82 100644
+--- a/drivers/char/agp/frontend.c
++++ b/drivers/char/agp/frontend.c
+@@ -689,7 +689,7 @@ static int agp_open(struct inode *inode, struct file *file)
+ 	set_bit(AGP_FF_ALLOW_CLIENT, &priv->access_flags);
+ 	priv->my_pid = current->pid;
+ 
+-	if ((current->uid == 0) || (current->suid == 0)) {
++	if (capable(CAP_SYS_RAWIO)) {
+ 		/* Root priv, can be controller */
+ 		set_bit(AGP_FF_ALLOW_CONTROLLER, &priv->access_flags);
+ 	}
+-- 
+1.5.1
+
