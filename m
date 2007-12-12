@@ -1,7 +1,7 @@
-From: "Carolina Montano" <dwsavagepaperm-ZJ6LB2J84q7fZgS0VCX5YQ@public.gmane.org>
-Subject: Gamble in the best online casino!
-Date: Wed, 12 Dec 2007 16:18:43 -0500
-Message-ID: <01c83cda$a9d67380$2aece348@dwsavagepaperm>
+From: "Josie Levy" <dwsargassom-xyrzeihUkRXk1uMJSBkQmQ@public.gmane.org>
+Subject: Get your free 2400$ welcome bonus and win much more!
+Date: Wed, 12 Dec 2007 16:18:48 -0500
+Message-ID: <01c83cda$acd16400$2aece348@dwsargassom>
 Mime-Version: 1.0
 Content-Type: text/plain;
 	charset="us-ascii"
@@ -16,13 +16,13 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
+To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
  Play the most popular casino games at home! Black Jack, Slots, Roulette, Poker, Craps! Just download easy to use free software, register free account and play your favorite game. Receive free $2400 bonus to start play with!
 
- Register with Golden Gate Casino and enjoy a great atmosphere of the real casino, friendly customer support, absolute security and safety.
+ Great online casino Golden Gate is one of the leading casinos known for fair playing, excellent customer service available to contact 24 hour a day, 7 days a week and prompt payouts.
 
-http://geocities.com/EdmundPage80/
+http://geocities.com/AlyssaHopper94/
 
-   Play casino games any time you like.
+   Simply try and you'll like it!
