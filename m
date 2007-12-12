@@ -1,95 +1,38 @@
-From: "Serge E. Hallyn" <serue@us.ibm.com>
-Subject: Re: [RFC][PATCH] Pid namespaces vs locks interaction
-Date: Wed, 12 Dec 2007 12:42:25 -0600
-Message-ID: <20071212184225.GA23504@sergelap.austin.ibm.com>
-References: <200712061411.32159.vgusev@openvz.org> <200712121907.25283.vgusev@openvz.org> <20071212173115.GA21956@sergelap.austin.ibm.com> <200712122042.41990.vgusev@openvz.org>
+From: David Miller <davem@davemloft.net>
+Subject: Re: [PATCH 2.6.25] netns: network namespace was passed into
+ dev_getbyhwaddr but not used
+Date: Wed, 12 Dec 2007 10:50:22 -0800 (PST)
+Message-ID: <20071212.105022.221007365.davem@davemloft.net>
+References: <20071212110517.GA11626@iris.sw.ru>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Return-path: <linux-fsdevel-owner@vger.kernel.org>
-Content-Disposition: inline
-In-Reply-To: <200712122042.41990.vgusev@openvz.org>
-Sender: linux-fsdevel-owner@vger.kernel.org
-To: Vitaliy Gusev <vgusev@openvz.org>
-Cc: "Serge E. Hallyn" <serue@us.ibm.com>, "J. Bruce Fields" <bfields@fieldses.org>, linux-fsdevel@vger.kernel.org, Linux Containers <containers@lists.osdl.org>, Pavel Emelyanov <xemul@sw.ru>
+Content-Type: Text/Plain; charset=us-ascii
+Content-Transfer-Encoding: 7bit
+Return-path: <netdev-owner@vger.kernel.org>
+In-Reply-To: <20071212110517.GA11626@iris.sw.ru>
+Sender: netdev-owner@vger.kernel.org
+To: den@openvz.org
+Cc: containers@lists.osdl.org, devel@openvz.org, netdev@vger.kernel.org
 List-Id: containers.vger.kernel.org
 
-Quoting Vitaliy Gusev (vgusev@openvz.org):
-> On 12 December 2007 20:31:15 Serge E. Hallyn wrote:
-> > Quoting Vitaliy Gusev (vgusev@openvz.org):
-> > > Hello
-> > >
-> > > On 6 December 2007 18:51:30 Serge E. Hallyn wrote:
-> > > > > fl_pid is used by nfs, fuse and gfs2. For instance nfs  keeps in
-> > > > > fl_pid some unique id to identify locking process between hosts - it
-> > > > > is not a process pid.
-> > > >
-> > > > Ok, but so the struct user_flock->fl_pid is being set to the task's
-> > > > virtual pid, while the struct kernel_flock->fl_pid is being set to
-> > > > task->tgid for nfsd use.
-> > > >
-> > > > Why can't nfs just generate a uniqueid from the struct pid when it
-> > > > needs it?
-> > >
-> > > I think it is hard. lockd uses struct nlm_host to get process unique id
-> > > (see __nlm_alloc_pid() function).
-> >
-> > Looks pretty simple though...  That whole set of code could even stay
-> > the same except for in __nlm_alloc_pid():
-> >
-> > 	option 1: compare struct pid* instead of uint32_t pid
-> > 	option 2: use the "global pid" out of the stored struct pid,
-> > 		something like pid->numbers[0].nr.
+From: "Denis V. Lunev" <den@openvz.org>
+Date: Wed, 12 Dec 2007 14:05:17 +0300
+
+> netns: network namespace was passed into dev_getbyhwaddr but not used
 > 
-> We can't use process pid. Process pid is circulated!  NFS (lockd)  needs 
-> unique process id between hosts which can't repeat oneself.
+> Signed-off-by: Denis V. Lunev <den@openvz.org>
 
-Ok sorry - by letting this thread sit a few days I lost track of where
-we were.
+Applied.
 
-I see now, so you're saying fl_pid for nfs is not in fact a task pid.
-It's a magically derived unique id.  (And you say it is unique across
-all the nfs clients?)
+Please always put the subsystem name in the headline in
+all capitals and surround it with brackets, like this:
 
-So does the p in fl_pid stand for something, or could we rename it to
-fl_id or fl_uniqueid?
+[NETNS]: Blah blah blah.
 
-Maybe that's too much bother, but so long as we're bothering with a pid
-cleanup at all it seems worth it to me.  On the other hand maybe
-J. Bruce Fields was right and we should accept the fact that the
-flock->fl_pid shouldn't be taken too seriously, and leave it be.
+Also treat the description line as a true English sentence, this means
+capitalize the first word and put a period at the end of it.  This is
+a changelog message for a professional piece of software, not some
+"innanet" slang talk on some IRC channel. :-)
 
--serge
-
-> > > > Fuse just seems to copy the pid to report it to userspace, so it would
-> > > > just copy pid_vnr(kernel_flock->pid) into user_flock->fl_pid.
-> > > >
-> > > > Anyway I haven't looked at all the uses of struct fl_pid, but you
-> > > > can always get the pidnr back from the struct pid if needed so there
-> > > > should be no problem.
-> > > >
-> > > > The split definately seems worthwhile to me, so that
-> > > > user_flock->fl_pidnr can always be said to be the pid in the acting
-> > > > process' namespace, and flock->fl_pid can always be a struct pid,
-> > > > rather than having fl_pid sometimes be current->tgid, or sometimes
-> > > > pid_vnr(flock->fl_nspid)...
-> > > >
-> > > > -serge
-> > > > -
-> > > > To unsubscribe from this list: send the line "unsubscribe
-> > > > linux-fsdevel" in the body of a message to majordomo@vger.kernel.org
-> > > > More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> > >
-> > > --
-> > > Thank,
-> > > Vitaliy Gusev
-> >
-> > -
-> > To unsubscribe from this list: send the line "unsubscribe linux-fsdevel" in
-> > the body of a message to majordomo@vger.kernel.org
-> > More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
-> 
-> 
-> -- 
-> Thank,
-> Vitaliy Gusev
+I make these edits to every one of your patch submissions and it's
+getting tiring, I hoped you would notice this yourself before my
+needing to tell you about it explicitly :-)
