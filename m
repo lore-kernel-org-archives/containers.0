@@ -1,10 +1,13 @@
 From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
-Subject: [PATCH 0/9] Core pid namespace enhancements
-Date: Wed, 12 Dec 2007 05:38:11 -0700
-Message-ID: <m13au8ytos.fsf@ebiederm.dsl.xmission.com>
+Subject: [PATCH 1/9] sig: Fix mqueue pid
+Date: Wed, 12 Dec 2007 05:40:54 -0700
+Message-ID: <m1y7c0xezt.fsf@ebiederm.dsl.xmission.com>
+References: <m13au8ytos.fsf@ebiederm.dsl.xmission.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <m13au8ytos.fsf-T1Yj925okcoyDheHMi7gv2pdwda3JcWeAL8bYrjMMd8@public.gmane.org> (Eric W. Biederman's
+	message of "Wed, 12 Dec 2007 05:38:11 -0700")
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,14 +22,30 @@ Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Oleg 
 List-Id: containers.vger.kernel.org
 
 
-The following patchset updates the pid namespace infrastructure
-so we don't constantly have to worry if we have been called
-before or after exit_task_namespaces, by using the pid_namespace
-obtained from a processes pid, handles the general case of setting
-si_pid in struct sig_info, changes where we drop signals sent to init,
-and enhances that changes to also work with the per namespace init.
+Currently in the sig info for posix message queues we are reporting the
+task id and not the task group id.  Given that this is a posix interface
+and that si_pid is defined by posix as returning the process id, we should
+be reporting the task group id.
 
-Thus resolving most of the big gotchas with the current pid namespace
-implementation.
+So fix this interface.
 
-Eric
+Signed-off-by: Eric W. Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+---
+ ipc/mqueue.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+diff --git a/ipc/mqueue.c b/ipc/mqueue.c
+index 7d1b8aa..d3feadf 100644
+--- a/ipc/mqueue.c
++++ b/ipc/mqueue.c
+@@ -510,7 +510,7 @@ static void __do_notify(struct mqueue_inode_info *info)
+ 			sig_i.si_errno = 0;
+ 			sig_i.si_code = SI_MESGQ;
+ 			sig_i.si_value = info->notify.sigev_value;
+-			sig_i.si_pid = task_pid_vnr(current);
++			sig_i.si_pid = task_tgid_vnr(current);
+ 			sig_i.si_uid = current->uid;
+ 
+ 			kill_pid_info(info->notify.sigev_signo,
+-- 
+1.5.3.rc6.17.g1911
