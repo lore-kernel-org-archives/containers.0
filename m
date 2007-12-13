@@ -1,74 +1,37 @@
-From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
-Subject: Re: [PATCH 8/9] signal: Drop signals before sending them to init.
-Date: Thu, 13 Dec 2007 11:50:09 -0700
-Message-ID: <m1y7byqvj2.fsf@ebiederm.dsl.xmission.com>
-References: <m1y7c0xezt.fsf@ebiederm.dsl.xmission.com>
-	<m1tzmoxexb.fsf_-_@ebiederm.dsl.xmission.com>
-	<m1prxcxeum.fsf_-_@ebiederm.dsl.xmission.com>
-	<m1lk80xeps.fsf_-_@ebiederm.dsl.xmission.com>
-	<m1hcioxenh.fsf_-_@ebiederm.dsl.xmission.com>
-	<m1d4tcxelu.fsf_-_@ebiederm.dsl.xmission.com>
-	<m18x40xeg6.fsf_-_@ebiederm.dsl.xmission.com>
-	<m13au8xe8m.fsf_-_@ebiederm.dsl.xmission.com>
-	<20071213162502.GB219@tv-sign.ru>
-	<m1bq8uscu4.fsf@ebiederm.dsl.xmission.com>
-	<20071213181802.GA486@tv-sign.ru>
+From: Ingo Molnar <mingo@elte.hu>
+Subject: Re: [PATCH] Mark timer_stats as incompatible with multiple pid
+	namespaces
+Date: Thu, 13 Dec 2007 21:26:21 +0100
+Message-ID: <20071213202621.GC25130@elte.hu>
+References: <m13au7tsov.fsf@ebiederm.dsl.xmission.com> <20071213090102.GB1926@elte.hu> <m1r6hqstat.fsf@ebiederm.dsl.xmission.com> <20071213130423.GB28340@elte.hu> <m1ir32sejc.fsf@ebiederm.dsl.xmission.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20071213181802.GA486-6lXkIZvqkOAvJsYlp49lxw@public.gmane.org> (Oleg Nesterov's message of
-	"Thu, 13 Dec 2007 21:18:02 +0300")
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Oleg Nesterov <oleg-6lXkIZvqkOAvJsYlp49lxw@public.gmane.org>
-Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1765573AbXLMU0w@vger.kernel.org>
+Content-Disposition: inline
+In-Reply-To: <m1ir32sejc.fsf@ebiederm.dsl.xmission.com>
+Sender: linux-kernel-owner@vger.kernel.org
+To: "Eric W. Biederman" <ebiederm@xmission.com>
+Cc: Thomas Gleixner <tglx@linutronix.de>, Linux Containers <containers@lists.osdl.org>, linux-kernel@vger.kernel.org
 List-Id: containers.vger.kernel.org
 
-Oleg Nesterov <oleg-6lXkIZvqkOAvJsYlp49lxw@public.gmane.org> writes:
 
-> OK, if we change the semantics for /sbin/init signals we can avoid
-> a lot of problems,
+* Eric W. Biederman <ebiederm@xmission.com> wrote:
 
-Yes.  Otherwise we must track the source of the signals.
+> > the problem is, this interface stores historic PIDs too - i.e. PIDs 
+> > of tasks that might have exited already.
+> 
+> Well struct pid * works in that case if you grab the reference to it.
 
->> No.  We should treat signals that we process for /sbin/init completely
->> normally.
->
-> ... including this one. I am not arguing.
->
->> This gives /sbin/init completely normal signal handling if the signal is
->> ever enqueued.  Something trivial to implement and explain.
->
-> Well, I am not sure about "explain" though. Unless I missed something
-> this makes the semantics a bit special.
+but the display of the stats might happen much later. The point of this 
+API is to save pid+comm, which gives users a good idea about what caused 
+the events in the past - without having to pin any resource of that 
+task.
 
-Well the semantics are a bit special for init period.  I just
-make them special in a slightly different way.
+>  {
+>  	timer->start_site = NULL;
+> +	pit_pid(timer->start_pid);
+> +	timer->start_pid = NULL;
 
-> Suppose that init does sigtimedwait() but the handler == SIG_DFL.
+s/pit/put, right?
 
-Yes that is a bit surprising.  However it is still easy to explain.
-The signal is never enqueued so sigtimedwait never gets the chance
-to do anything with it.  Interestingly enough this is not a problem
-for the current sysvinit.
-
-sysvinit does this at start up:
-        /*
-         *      Ignore all signals.
-         */
-        for(f = 1; f <= NSIG; f++)
-                SETSIG(sa, f, SIG_IGN, SA_RESTART);
-
-
-So everything is initialized to SIG_IGN by userspace, in the common case.
-Which means none of this special case logic will actually kick in, except
-for SIGKILL and SIGSTOP.  The signals we can't change.
-
-Eric
+	Ingo
