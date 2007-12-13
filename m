@@ -1,28 +1,34 @@
-From: "Doug Arnold" <dwsaurianm-kKO7GQhbGQHR7s880joybQ@public.gmane.org>
-Subject: Enjoy gambling in the most reliable online casino!
-Date: Thu, 13 Dec 2007 06:56:25 +0200
-Message-ID: <01c83d55$46d5f280$7614e958@dwsaurianm>
+From: "Denis V. Lunev" <den@sw.ru>
+Subject: Re: [PATCH 2.6.25] IPv4: thresholds in fib_trie.c are not modified,
+ make them const
+Date: Thu, 13 Dec 2007 10:32:58 +0300
+Message-ID: <4760E02A.70509@sw.ru>
+References: <20071212110555.GA11638@iris.sw.ru> <20071212.105833.237798467.davem@davemloft.net>
 Mime-Version: 1.0
-Content-Type: text/plain;
-	charset="iso-8859-1"
+Content-Type: text/plain; charset=ISO-8859-1
 Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Return-path: <netdev-owner@vger.kernel.org>
+In-Reply-To: <20071212.105833.237798467.davem@davemloft.net>
+Sender: netdev-owner@vger.kernel.org
+To: David Miller <davem@davemloft.net>
+Cc: den@openvz.org, containers@lists.osdl.org, devel@openvz.org, netdev@vger.kernel.org
 List-Id: containers.vger.kernel.org
 
- Play the most popular casino games at home! Black Jack, Slots, Roulette, Poker, Craps! Just download easy to use free software, register free account and play your favorite game. Receive free $2400 bonus to start play with!
+David Miller wrote:
+> From: "Denis V. Lunev" <den@openvz.org>
+> Date: Wed, 12 Dec 2007 14:05:55 +0300
+> 
+>> -static int halve_threshold = 25;
+>> -static int inflate_threshold = 50;
+>> -static int halve_threshold_root = 15;
+>> -static int inflate_threshold_root = 25;
+> 
+> halve_threshold_root and inflate_threshold_root have different
+> values in the net-2.6.25 tree.
 
- Golden Gate Casino guarantees competent customer support for all players, quick response in case you have question or problem and instant payouts. Fair gaming only!
+oops. this was accidentally changed during porting of the code from the
+one old tree and committed by mistake. I'll resend correct patch in a minute
 
-http://geocities.com/KirkChen31/
-
-   Start downloading free software now!
+> 
+> What tree are you patching against?  These were changed way
+> back in:
