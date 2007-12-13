@@ -1,40 +1,32 @@
-From: "Denis V. Lunev" <den@openvz.org>
-Subject: [PATCH 2.6.25] [IPV4] Thresholds in fib_trie.c are used as consts,
-	so make them const.
-Date: Thu, 13 Dec 2007 11:06:18 +0300
-Message-ID: <20071213080618.GA6530@iris.sw.ru>
+From: Ingo Molnar <mingo@elte.hu>
+Subject: Re: [PATCH] Mark timer_stats as incompatible with multiple pid
+	namespaces
+Date: Thu, 13 Dec 2007 10:01:02 +0100
+Message-ID: <20071213090102.GB1926@elte.hu>
+References: <m13au7tsov.fsf@ebiederm.dsl.xmission.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-Return-path: <netdev-owner@vger.kernel.org>
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1758572AbXLMJCb@vger.kernel.org>
 Content-Disposition: inline
-Sender: netdev-owner@vger.kernel.org
-To: davem@davemloft.net
-Cc: containers@lists.osdl.org, devel@openvz.org, netdev@vger.kernel.org
+In-Reply-To: <m13au7tsov.fsf@ebiederm.dsl.xmission.com>
+Sender: linux-kernel-owner@vger.kernel.org
+To: "Eric W. Biederman" <ebiederm@xmission.com>
+Cc: Thomas Gleixner <tglx@linutronix.de>, Linux Containers <containers@lists.osdl.org>, linux-kernel@vger.kernel.org
 List-Id: containers.vger.kernel.org
 
-[IPV4] Thresholds in fib_trie.c are used as consts, so make them const.
 
-There are several thresholds for trie fib hash management. They are used
-in the code as a constants. Make them constants from the compiler point of
-view.
+* Eric W. Biederman <ebiederm@xmission.com> wrote:
 
-Signed-off-by: Denis V. Lunev <den@openvz.org>
----
-diff --git a/net/ipv4/fib_trie.c b/net/ipv4/fib_trie.c
---- a/net/ipv4/fib_trie.c
-+++ b/net/ipv4/fib_trie.c
-@@ -299,10 +299,10 @@ static inline void check_tnode(const struct tnode *tn)
- 	WARN_ON(tn && tn->pos+tn->bits > 32);
- }
- 
--static int halve_threshold = 25;
--static int inflate_threshold = 50;
--static int halve_threshold_root = 8;
--static int inflate_threshold_root = 15;
-+static const int halve_threshold = 25;
-+static const int inflate_threshold = 50;
-+static const int halve_threshold_root = 8;
-+static const int inflate_threshold_root = 15;
- 
- 
- static void __alias_free_mem(struct rcu_head *head)
+> /proc/timer_stats currently reports the user of a timer by pid, which 
+> is a reasonable approach.  However if you are not in the initial pid 
+> namespace the pid that is reported is nonsense.
+> 
+> Therefore until we can make timer_stats pid namespace safe just 
+> disable it in the build if pid namespace support is selected so we at 
+> least know we have a conflict.
+
+What the heck??? Please solve this properly instead of hiding it. 
+/proc/timer_stats is damn useful and it's a must-have for powertop to 
+work.
+
+	Ingo
