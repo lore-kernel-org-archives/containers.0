@@ -1,28 +1,48 @@
-From: "Latonya Kendrick" <dwsinfalm-2SqTPMdqk8HQT0dZR+AlfA@public.gmane.org>
-Subject: Work hard, play harder.
-Date: Thu, 13 Dec 2007 06:04:59 -0600
-Message-ID: <01c83d4e$176fb780$fee83fcf@dwsinfalm>
+From: Ingo Molnar <mingo@elte.hu>
+Subject: Re: [PATCH] Mark timer_stats as incompatible with multiple pid
+	namespaces
+Date: Thu, 13 Dec 2007 14:04:23 +0100
+Message-ID: <20071213130423.GB28340@elte.hu>
+References: <m13au7tsov.fsf@ebiederm.dsl.xmission.com> <20071213090102.GB1926@elte.hu> <m1r6hqstat.fsf@ebiederm.dsl.xmission.com>
 Mime-Version: 1.0
-Content-Type: text/plain;
-	charset="iso-8859-2"
-Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Content-Type: text/plain; charset=us-ascii
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1761599AbXLMNEw@vger.kernel.org>
+Content-Disposition: inline
+In-Reply-To: <m1r6hqstat.fsf@ebiederm.dsl.xmission.com>
+Sender: linux-kernel-owner@vger.kernel.org
+To: "Eric W. Biederman" <ebiederm@xmission.com>
+Cc: Thomas Gleixner <tglx@linutronix.de>, Linux Containers <containers@lists.osdl.org>, linux-kernel@vger.kernel.org
 List-Id: containers.vger.kernel.org
 
- Welcome to Golden Gate Casino that offers you a unique possibility to win real money online. Download for free totally realistic and secure software which brings game excitement right into your home and receive 2400$ welcome bonus!
 
- We guarantee absolute privacy of player information. Friendly 24/7 customer support, quick payouts, only fair gaming!
+* Eric W. Biederman <ebiederm@xmission.com> wrote:
 
-http://geocities.com/ReginaldMccullough86/
+> > What the heck??? Please solve this properly instead of hiding it. 
+> > /proc/timer_stats is damn useful and it's a must-have for powertop 
+> > to work.
+> 
+> Hmm.  Perhaps the dependency conflict should go in the other direction 
+> then.
+> 
+> My goal is to document the issue while a proper fix is being written. 
+> I have known about this for all of about 1 day now.  It was added 
+> since last time I went through the kernel and made a thorough sweep of 
+> pid users.
+> 
+> What the proper fix is isn't even obvious at this point. Possibly it 
+> is making /proc/timer_stats disappear in child pid namespaces.
+>   Which we don't currently have the infrastructure fore.
+>
+> Possibly it is reworking the stats collection so we store a struct pid 
+> * instead of a pid_t value.  So we would know if the reader of the 
+> value can even see processes you have collected stats for.
 
-   Choose Golden Gate Casino!
+the problem is, this interface stores historic PIDs too - i.e. PIDs of 
+tasks that might have exited already.
+
+the proper way would be to also store the namespace address, and to 
+filter out non-matching entries. (If leakage of this data across 
+namespace creation is of any concern then flush out existing namespace 
+data when a namespace is destroyed)
+
+	Ingo
