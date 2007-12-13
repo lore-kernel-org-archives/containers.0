@@ -1,16 +1,17 @@
-From: sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org
+From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
 Subject: Re: [PATCH 3/9] pid: Implement ns_of_pid.
-Date: Wed, 12 Dec 2007 16:59:45 -0800
-Message-ID: <20071213005945.GB27896@us.ibm.com>
+Date: Wed, 12 Dec 2007 18:25:44 -0700
+Message-ID: <m1ve73s7vr.fsf@ebiederm.dsl.xmission.com>
 References: <m13au8ytos.fsf@ebiederm.dsl.xmission.com>
 	<m1y7c0xezt.fsf@ebiederm.dsl.xmission.com>
 	<m1tzmoxexb.fsf_-_@ebiederm.dsl.xmission.com>
 	<m1prxcxeum.fsf_-_@ebiederm.dsl.xmission.com>
+	<20071213005945.GB27896@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <m1prxcxeum.fsf_-_-T1Yj925okcoyDheHMi7gv2pdwda3JcWeAL8bYrjMMd8@public.gmane.org>
+In-Reply-To: <20071213005945.GB27896-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org> (sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org's message
+	of "Wed, 12 Dec 2007 16:59:45 -0800")
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -20,66 +21,35 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+To: sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org
 Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Oleg Nesterov <oleg-6lXkIZvqkOAvJsYlp49lxw@public.gmane.org>, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Eric W. Biederman [ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org] wrote:
-| 
-| A current problem with the pid namespace is that it is
-| easy to do pid related work after exit_task_namespaces which
-| drops the nsproxy pointer.
-| 
-| However if we are doing pid namespace related work we are
-| always operating on some struct pid which retains the pid_namespace
-| pointer of the pid namespace it was allocated in.
-| 
-| So provide ns_of_pid which allows us to find the pid
-| namespace a pid was allocated in.
-| 
-| Using this we have the needed infrastructure to do pid
-| namespace related work at anytime we have a struct pid,
-| removing the chance of accidentally having a NULL
-| pointer dereference when accessing current->nsproxy.
+sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org writes:
 
-Yep.
+>
+> My patch refers to this function as pid_active_pid_ns() - I have
+> been meaning to send that out on top of your signals patch.
+> Since a pid has many namespaces, we have been using 'active pid ns'
+> to refer to this ns.
 
-| 
-| Signed-off-by: Eric W. Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-| ---
-|  include/linux/pid.h |   11 +++++++++++
-|  1 files changed, 11 insertions(+), 0 deletions(-)
-| 
-| diff --git a/include/linux/pid.h b/include/linux/pid.h
-| index f84d532..c4b56c0 100644
-| --- a/include/linux/pid.h
-| +++ b/include/linux/pid.h
-| @@ -123,6 +123,17 @@ int next_pidmap(struct pid_namespace *pid_ns, int last);
-|  extern struct pid *alloc_pid(struct pid_namespace *ns);
-|  extern void FASTCALL(free_pid(struct pid *pid));
-| 
-| +/* ns_of_pid returns the pid namespace in which the specified
-| + * pid was allocated.
-| + */
-| +static inline struct pid_namespace *ns_of_pid(struct pid *pid)
+Currently we don't ask for any of the others, and the namespace
+the pid came from is special.  That fundamentally is the namespace
+of the pid.  The rest byproducts of being in that pid namespace,
+as we could derive them by walking the namespace's parent list.
 
-My patch refers to this function as pid_active_pid_ns() - I have
-been meaning to send that out on top of your signals patch.
-Since a pid has many namespaces, we have been using 'active pid ns'
-to refer to this ns.
+> Even your next patch modifies task_active_pid_ns() to use this.
+> So can we rename this functio to pid_active_pid_ns() ?
 
-Even your next patch modifies task_active_pid_ns() to use this.
-So can we rename this functio to pid_active_pid_ns() ?
+I'd be more inclined to rename task_active_pid_ns to task_pid_ns.
 
-| +{
-| +	struct pid_namespace *ns = NULL;
-| +	if (pid)
-| +		ns = pid->numbers[pid->level].ns;
-| +	return ns;
-| +}
-| +
-|  /*
-|   * the helpers to get the pid's id seen from different namespaces
-|   *
-| -- 
-| 1.5.3.rc6.17.g1911
+And to rename pid_in_pid_ns that Pavel has issues with to pid_in_ns.
+
+When I read active_pid_ns I wonder what the other namespaces are
+that we are distinguishing this from.  They do exist in the
+implementation but so far it is a complete don't care.
+
+So I expect being as terse as we can while still conveying all of the
+relevant information is the most maintainable long term.
+
+Eric
