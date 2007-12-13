@@ -1,34 +1,40 @@
-From: "Denis V. Lunev" <den@sw.ru>
-Subject: Re: [PATCH 2.6.25] IPv4: thresholds in fib_trie.c are not modified,
- make them const
-Date: Thu, 13 Dec 2007 10:32:58 +0300
-Message-ID: <4760E02A.70509@sw.ru>
-References: <20071212110555.GA11638@iris.sw.ru> <20071212.105833.237798467.davem@davemloft.net>
+From: "Denis V. Lunev" <den@openvz.org>
+Subject: [PATCH 2.6.25] [IPV4] Thresholds in fib_trie.c are used as consts,
+	so make them const.
+Date: Thu, 13 Dec 2007 11:06:18 +0300
+Message-ID: <20071213080618.GA6530@iris.sw.ru>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset=us-ascii
 Return-path: <netdev-owner@vger.kernel.org>
-In-Reply-To: <20071212.105833.237798467.davem@davemloft.net>
+Content-Disposition: inline
 Sender: netdev-owner@vger.kernel.org
-To: David Miller <davem@davemloft.net>
-Cc: den@openvz.org, containers@lists.osdl.org, devel@openvz.org, netdev@vger.kernel.org
+To: davem@davemloft.net
+Cc: containers@lists.osdl.org, devel@openvz.org, netdev@vger.kernel.org
 List-Id: containers.vger.kernel.org
 
-David Miller wrote:
-> From: "Denis V. Lunev" <den@openvz.org>
-> Date: Wed, 12 Dec 2007 14:05:55 +0300
-> 
->> -static int halve_threshold = 25;
->> -static int inflate_threshold = 50;
->> -static int halve_threshold_root = 15;
->> -static int inflate_threshold_root = 25;
-> 
-> halve_threshold_root and inflate_threshold_root have different
-> values in the net-2.6.25 tree.
+[IPV4] Thresholds in fib_trie.c are used as consts, so make them const.
 
-oops. this was accidentally changed during porting of the code from the
-one old tree and committed by mistake. I'll resend correct patch in a minute
+There are several thresholds for trie fib hash management. They are used
+in the code as a constants. Make them constants from the compiler point of
+view.
 
-> 
-> What tree are you patching against?  These were changed way
-> back in:
+Signed-off-by: Denis V. Lunev <den@openvz.org>
+---
+diff --git a/net/ipv4/fib_trie.c b/net/ipv4/fib_trie.c
+--- a/net/ipv4/fib_trie.c
++++ b/net/ipv4/fib_trie.c
+@@ -299,10 +299,10 @@ static inline void check_tnode(const struct tnode *tn)
+ 	WARN_ON(tn && tn->pos+tn->bits > 32);
+ }
+ 
+-static int halve_threshold = 25;
+-static int inflate_threshold = 50;
+-static int halve_threshold_root = 8;
+-static int inflate_threshold_root = 15;
++static const int halve_threshold = 25;
++static const int inflate_threshold = 50;
++static const int halve_threshold_root = 8;
++static const int inflate_threshold_root = 15;
+ 
+ 
+ static void __alias_free_mem(struct rcu_head *head)
