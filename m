@@ -1,56 +1,85 @@
-From: Edward Shishkin <edward.shishkin@gmail.com>
-Subject: Re: [RFC] [PATCH -mm] reiser4: replace uid==0 check with capability
-Date: Thu, 13 Dec 2007 02:36:27 +0300
-Message-ID: <4760707B.2040007@gmail.com>
-References: <20071212210107.GB24708@sergelap.austin.ibm.com>
+From: sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org
+Subject: Re: [PATCH 3/9] pid: Implement ns_of_pid.
+Date: Wed, 12 Dec 2007 16:59:45 -0800
+Message-ID: <20071213005945.GB27896@us.ibm.com>
+References: <m13au8ytos.fsf@ebiederm.dsl.xmission.com>
+	<m1y7c0xezt.fsf@ebiederm.dsl.xmission.com>
+	<m1tzmoxexb.fsf_-_@ebiederm.dsl.xmission.com>
+	<m1prxcxeum.fsf_-_@ebiederm.dsl.xmission.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii; format=flowed
-Content-Transfer-Encoding: 7bit
-Return-path: <reiserfs-devel-owner@vger.kernel.org>
-In-Reply-To: <20071212210107.GB24708@sergelap.austin.ibm.com>
-Sender: reiserfs-devel-owner@vger.kernel.org
-To: "Serge E. Hallyn" <serue@us.ibm.com>
-Cc: Linux Containers <containers@lists.osdl.org>, lkml <linux-kernel@vger.kernel.org>, reiserfs-devel@vger.kernel.org
+Content-Type: text/plain; charset=us-ascii
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <m1prxcxeum.fsf_-_-T1Yj925okcoyDheHMi7gv2pdwda3JcWeAL8bYrjMMd8@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Oleg Nesterov <oleg-6lXkIZvqkOAvJsYlp49lxw@public.gmane.org>, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Serge E. Hallyn wrote:
+Eric W. Biederman [ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org] wrote:
+| 
+| A current problem with the pid namespace is that it is
+| easy to do pid related work after exit_task_namespaces which
+| drops the nsproxy pointer.
+| 
+| However if we are doing pid namespace related work we are
+| always operating on some struct pid which retains the pid_namespace
+| pointer of the pid namespace it was allocated in.
+| 
+| So provide ns_of_pid which allows us to find the pid
+| namespace a pid was allocated in.
+| 
+| Using this we have the needed infrastructure to do pid
+| namespace related work at anytime we have a struct pid,
+| removing the chance of accidentally having a NULL
+| pointer dereference when accessing current->nsproxy.
 
->>From c257cb67ce00c8769730cfa92379a53009d99b28 Mon Sep 17 00:00:00 2001
->From: serue@us.ibm.com <serue@us.ibm.com>
->Date: Wed, 5 Dec 2007 14:02:45 -0800
->Subject: [RFC] [PATCH -mm] reiser4: replace uid==0 check with capability
->
->Reiser4 gives root some reserved blocks.  Replace the uid==0 check, which
->is not safe in the face of user namespaces, with a CAP_SYS_RESOURCE check,
->which seems appropriate.
->
->  
->
+Yep.
 
-Agreed. Thanks,
-Edward.
+| 
+| Signed-off-by: Eric W. Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+| ---
+|  include/linux/pid.h |   11 +++++++++++
+|  1 files changed, 11 insertions(+), 0 deletions(-)
+| 
+| diff --git a/include/linux/pid.h b/include/linux/pid.h
+| index f84d532..c4b56c0 100644
+| --- a/include/linux/pid.h
+| +++ b/include/linux/pid.h
+| @@ -123,6 +123,17 @@ int next_pidmap(struct pid_namespace *pid_ns, int last);
+|  extern struct pid *alloc_pid(struct pid_namespace *ns);
+|  extern void FASTCALL(free_pid(struct pid *pid));
+| 
+| +/* ns_of_pid returns the pid namespace in which the specified
+| + * pid was allocated.
+| + */
+| +static inline struct pid_namespace *ns_of_pid(struct pid *pid)
 
->The per-uid and per-guid reservations appear unimplemented so I'm ignoring
->them.
->
->Signed-off-by: Serge Hallyn <serue@us.ibm.com>
->---
-> fs/reiser4/super.c |    2 +-
-> 1 files changed, 1 insertions(+), 1 deletions(-)
->
->diff --git a/fs/reiser4/super.c b/fs/reiser4/super.c
->index bc4113e..50e3d09 100644
->--- a/fs/reiser4/super.c
->+++ b/fs/reiser4/super.c
->@@ -144,7 +144,7 @@ long reiser4_reserved_blocks(const struct super_block *super	/* super block
-> 		reserved += reserved_for_gid(super, gid);
-> 	if (REISER4_SUPPORT_UID_SPACE_RESERVATION)
-> 		reserved += reserved_for_uid(super, uid);
->-	if (REISER4_SUPPORT_ROOT_SPACE_RESERVATION && (uid == 0))
->+	if (REISER4_SUPPORT_ROOT_SPACE_RESERVATION && capable(CAP_SYS_RESOURCE))
-> 		reserved += reserved_for_root(super);
-> 	return reserved;
-> }
->  
->
+My patch refers to this function as pid_active_pid_ns() - I have
+been meaning to send that out on top of your signals patch.
+Since a pid has many namespaces, we have been using 'active pid ns'
+to refer to this ns.
 
+Even your next patch modifies task_active_pid_ns() to use this.
+So can we rename this functio to pid_active_pid_ns() ?
+
+| +{
+| +	struct pid_namespace *ns = NULL;
+| +	if (pid)
+| +		ns = pid->numbers[pid->level].ns;
+| +	return ns;
+| +}
+| +
+|  /*
+|   * the helpers to get the pid's id seen from different namespaces
+|   *
+| -- 
+| 1.5.3.rc6.17.g1911
