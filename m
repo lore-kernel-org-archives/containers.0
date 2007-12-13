@@ -1,48 +1,112 @@
-From: Ingo Molnar <mingo@elte.hu>
-Subject: Re: [PATCH] Mark timer_stats as incompatible with multiple pid
-	namespaces
-Date: Thu, 13 Dec 2007 14:04:23 +0100
-Message-ID: <20071213130423.GB28340@elte.hu>
-References: <m13au7tsov.fsf@ebiederm.dsl.xmission.com> <20071213090102.GB1926@elte.hu> <m1r6hqstat.fsf@ebiederm.dsl.xmission.com>
+From: "Denis V. Lunev" <den@openvz.org>
+Subject: [PATCH 2.6.25] [IPV6] Always pass a valid nl_info to
+	inet6_rt_notify.
+Date: Thu, 13 Dec 2007 16:58:54 +0300
+Message-ID: <20071213135854.GA9691@iris.sw.ru>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1761599AbXLMNEw@vger.kernel.org>
+Return-path: <netdev-owner@vger.kernel.org>
 Content-Disposition: inline
-In-Reply-To: <m1r6hqstat.fsf@ebiederm.dsl.xmission.com>
-Sender: linux-kernel-owner@vger.kernel.org
-To: "Eric W. Biederman" <ebiederm@xmission.com>
-Cc: Thomas Gleixner <tglx@linutronix.de>, Linux Containers <containers@lists.osdl.org>, linux-kernel@vger.kernel.org
+Sender: netdev-owner@vger.kernel.org
+To: davem@davemloft.net
+Cc: containers@lists.osdl.org, devel@openvz.org, netdev@vger.kernel.org, dlezcano@fr.ibm.com
 List-Id: containers.vger.kernel.org
 
+[IPV6] Always pass a valid nl_info to inet6_rt_notify.
 
-* Eric W. Biederman <ebiederm@xmission.com> wrote:
+This makes the code in the inet6_rt_notify more straightforward and provides
+groud for namespace passing.
 
-> > What the heck??? Please solve this properly instead of hiding it. 
-> > /proc/timer_stats is damn useful and it's a must-have for powertop 
-> > to work.
-> 
-> Hmm.  Perhaps the dependency conflict should go in the other direction 
-> then.
-> 
-> My goal is to document the issue while a proper fix is being written. 
-> I have known about this for all of about 1 day now.  It was added 
-> since last time I went through the kernel and made a thorough sweep of 
-> pid users.
-> 
-> What the proper fix is isn't even obvious at this point. Possibly it 
-> is making /proc/timer_stats disappear in child pid namespaces.
->   Which we don't currently have the infrastructure fore.
->
-> Possibly it is reworking the stats collection so we store a struct pid 
-> * instead of a pid_t value.  So we would know if the reader of the 
-> value can even see processes you have collected stats for.
+Signed-off-by: Denis V. Lunev <den@openvz.org>
+---
+ net/ipv6/ip6_fib.c |    3 ++-
+ net/ipv6/route.c   |   27 +++++++++++++--------------
+ 2 files changed, 15 insertions(+), 15 deletions(-)
 
-the problem is, this interface stores historic PIDs too - i.e. PIDs of 
-tasks that might have exited already.
+diff --git a/net/ipv6/ip6_fib.c b/net/ipv6/ip6_fib.c
+index 5fae045..df05c6f 100644
+--- a/net/ipv6/ip6_fib.c
++++ b/net/ipv6/ip6_fib.c
+@@ -1315,6 +1315,7 @@ static int fib6_walk(struct fib6_walker_t *w)
+ 
+ static int fib6_clean_node(struct fib6_walker_t *w)
+ {
++	struct nl_info info = {};
+ 	int res;
+ 	struct rt6_info *rt;
+ 	struct fib6_cleaner_t *c = container_of(w, struct fib6_cleaner_t, w);
+@@ -1323,7 +1324,7 @@ static int fib6_clean_node(struct fib6_walker_t *w)
+ 		res = c->func(rt, c->arg);
+ 		if (res < 0) {
+ 			w->leaf = rt;
+-			res = fib6_del(rt, NULL);
++			res = fib6_del(rt, &info);
+ 			if (res) {
+ #if RT6_DEBUG >= 2
+ 				printk(KERN_DEBUG "fib6_clean_node: del failed: rt=%p@%p err=%d\n", rt, rt->rt6i_node, res);
+diff --git a/net/ipv6/route.c b/net/ipv6/route.c
+index 1530934..02354a7 100644
+--- a/net/ipv6/route.c
++++ b/net/ipv6/route.c
+@@ -604,7 +604,8 @@ static int __ip6_ins_rt(struct rt6_info *rt, struct nl_info *info)
+ 
+ int ip6_ins_rt(struct rt6_info *rt)
+ {
+-	return __ip6_ins_rt(rt, NULL);
++	struct nl_info info = {};
++	return __ip6_ins_rt(rt, &info);
+ }
+ 
+ static struct rt6_info *rt6_alloc_cow(struct rt6_info *ort, struct in6_addr *daddr,
+@@ -1261,7 +1262,8 @@ static int __ip6_del_rt(struct rt6_info *rt, struct nl_info *info)
+ 
+ int ip6_del_rt(struct rt6_info *rt)
+ {
+-	return __ip6_del_rt(rt, NULL);
++	struct nl_info info = {};
++	return __ip6_del_rt(rt, &info);
+ }
+ 
+ static int ip6_route_del(struct fib6_config *cfg)
+@@ -2238,29 +2240,26 @@ errout:
+ void inet6_rt_notify(int event, struct rt6_info *rt, struct nl_info *info)
+ {
+ 	struct sk_buff *skb;
+-	u32 pid = 0, seq = 0;
+-	struct nlmsghdr *nlh = NULL;
+-	int err = -ENOBUFS;
+-
+-	if (info) {
+-		pid = info->pid;
+-		nlh = info->nlh;
+-		if (nlh)
+-			seq = nlh->nlmsg_seq;
+-	}
++	u32 seq;
++	int err;
++
++	err = -ENOBUFS;
++	seq = info->nlh != NULL ? info->nlh->nlmsg_seq : 0;
+ 
+ 	skb = nlmsg_new(rt6_nlmsg_size(), gfp_any());
+ 	if (skb == NULL)
+ 		goto errout;
+ 
+-	err = rt6_fill_node(skb, rt, NULL, NULL, 0, event, pid, seq, 0, 0);
++	err = rt6_fill_node(skb, rt, NULL, NULL, 0,
++				event, info->pid, seq, 0, 0);
+ 	if (err < 0) {
+ 		/* -EMSGSIZE implies BUG in rt6_nlmsg_size() */
+ 		WARN_ON(err == -EMSGSIZE);
+ 		kfree_skb(skb);
+ 		goto errout;
+ 	}
+-	err = rtnl_notify(skb, &init_net, pid, RTNLGRP_IPV6_ROUTE, nlh, gfp_any());
++	err = rtnl_notify(skb, &init_net, info->pid,
++				RTNLGRP_IPV6_ROUTE, info->nlh, gfp_any());
+ errout:
+ 	if (err < 0)
+ 		rtnl_set_sk_err(&init_net, RTNLGRP_IPV6_ROUTE, err);
+-- 
+1.5.3.rc5
 
-the proper way would be to also store the namespace address, and to 
-filter out non-matching entries. (If leakage of this data across 
-namespace creation is of any concern then flush out existing namespace 
-data when a namespace is destroyed)
-
-	Ingo
