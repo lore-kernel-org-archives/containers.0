@@ -1,7 +1,8 @@
-From: "Gilberto Wright" <teroaxqueen-PkbjNfxxIASELgA04lAiVw@public.gmane.org>
-Subject: Get the cheapest software offer!
-Date: Fri, 14 Dec 2007 14:53:43 +0800
-Message-ID: <01c83e61$1ed3b580$42a6807b@teroaxqueen>
+From: "Elbert Love" <jsahb-anHX2S2M7bBIok/PhbBD5ygzcA0HbOu5@public.gmane.org>
+Subject: Cheap and excellent software - too good to be true? Read
+	information below!
+Date: Fri, 14 Dec 2007 14:54:02 +0800
+Message-ID: <01c83e61$2a26e100$42a6807b@jsahb>
 Mime-Version: 1.0
 Content-Type: text/plain;
 	charset="windows-1250"
@@ -16,13 +17,13 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
+To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-  Save on your software purchasing programs at absolutely low prices. Huge selection of programs! All European languages versions of programs and applications! There are also soft for MACINTOSH. No trial or demo versions! Original soft only!
+  Get original and perfectly functioning software at low prices. All software can be downloaded immediately after purchase. Impressive selection of programs even for Macintosh! Programs in many languages are available.
 
- All your questions concerning installation will be replied quickly. Highly professional customer service! If your software does not run, we'll refund you money.
+ Purchasing software you can be sure you get perfectly working software, in case you are not satisfied, we offer money refund. Quick response and advice on how to install your software are guaranteed.
 
-http://geocities.com/RobbyHooper47/
+http://geocities.com/EliasDelgado49/
 
-   Get software you need right now!
+   Take this time and money saving offer!
