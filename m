@@ -1,59 +1,73 @@
-From: ebiederm@xmission.com (Eric W. Biederman)
-Subject: Re: [PATCH] Mark timer_stats as incompatible with multiple pid namespaces
-Date: Thu, 13 Dec 2007 14:48:31 -0700
-Message-ID: <m1lk7yqn9s.fsf@ebiederm.dsl.xmission.com>
-References: <m13au7tsov.fsf@ebiederm.dsl.xmission.com>
-	<20071213090102.GB1926@elte.hu>
-	<m1r6hqstat.fsf@ebiederm.dsl.xmission.com>
-	<20071213130423.GB28340@elte.hu>
-	<m1ir32sejc.fsf@ebiederm.dsl.xmission.com>
-	<20071213202621.GC25130@elte.hu>
-	<m1prxaqo62.fsf@ebiederm.dsl.xmission.com>
-	<20071213213710.GB25563@elte.hu>
+From: "Matthes Altmiller" <split-niJQDPgaaODQT0dZR+AlfA@public.gmane.org>
+Subject: inboards
+Date: Fri, 14 Dec 2007 00:28:16 +0000
+Message-ID: <3426663437.20071214002532@zoobaz.com>
+Reply-To: Matthes Altmiller <split-niJQDPgaaODQT0dZR+AlfA@public.gmane.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S932591AbXLMVvW@vger.kernel.org>
-In-Reply-To: <20071213213710.GB25563@elte.hu> (Ingo Molnar's message of "Thu,
-	13 Dec 2007 22:37:11 +0100")
-Sender: linux-kernel-owner@vger.kernel.org
-To: Ingo Molnar <mingo@elte.hu>
-Cc: Thomas Gleixner <tglx@linutronix.de>, Linux Containers <containers@lists.osdl.org>, linux-kernel@vger.kernel.org
+Content-Type: multipart/mixed; boundary="===============2888780021190522113=="
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Mime-version: 1.0
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Ingo Molnar <mingo@elte.hu> writes:
+--===============2888780021190522113==
+Content-Type: multipart/alternative;
+ boundary="----------1AD0634BF87817"
 
-> * Eric W. Biederman <ebiederm@xmission.com> wrote:
->
->> >> Well struct pid * works in that case if you grab the reference to 
->> >> it.
->> >
->> > but the display of the stats might happen much later. The point of 
->> > this API is to save pid+comm, which gives users a good idea about 
->> > what caused the events in the past - without having to pin any 
->> > resource of that task.
->> 
->> Likewise struct pid is designed not to be a problem if pinned. It is a 
->> little heavier then it used to be with the addition of pid namespace 
->> support but not much.  And if it is to heavy struct pid needs to be 
->> fixed.
->> 
->> Holding the struct pid very much does not pin the task struct, and it 
->> shouldn't pin any other resources.  I agree 64bytes or so is a bit 
->> more to pin then 4 bytes but it really isn't a lot.
->
-> yeah, and i have no conceptual objections - i just wanted to outline the 
-> thinking behind /proc/timer_stats.
+------------1AD0634BF87817
+Content-Type: text/plain; charset=iso-8859-1
+Content-Transfer-Encoding: quoted-printable
 
-Sure.  Appreciated.  Outlining the thinking in the other direction
-struct pid is supposed to be the pid representation in the kernel.
-All of the pid_t stuff really should be pushed as close to the
-kernel/user boundary as possible.  The closer I get to that ideal
-the more cases I find that we need to handle like /proc/timer_stats
-and the closer we get to having a complete pid namespace. <pant pant pant>
+Ahn nyeong, =20
+ =20
+   Virus found in this message, please delete it without futher reading
 
-A struct pid is also now all you pin (besides the inevitable file,
-dentry, inode trio) when you open a directory in /proc.  So the
-task can be freed.  Which removed some low-mem exhaustion scenarios
-when we introduced it.
 
-Eric
+   And in all probability she did kill mary gerrard. Else??
+a relation? No? Some business matter? I looking at? Jock
+and babie, who were on a good.  
+------------1AD0634BF87817
+Content-Type: text/html; charset=iso-8859-1
+Content-Transfer-Encoding: quoted-printable
+
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">  =20
+<html><head>  <title></title>  =20
+<META http-equiv=3DContent-Type content=3D"text/html; charset=3D"iso-8859-1=
+">=20
+</head>
+
+<body>=09
+
+<p>Ahn nyeong,<a name=3D"#wtrt">
+</a></p><b>
+</b>=20
+<br>Virus found in this message, please delete it without futher reading <b=
+r><b></b><br><strong></strong><br><span name=3D"#wqqt">   </span>
+<p><a name=3D"#tttq">=09</a>And in all probability she did kill mary gerrar=
+d. Else??<br>  a relation? No? Some business matter? I looking at? Jock<br>=
+  and babie, who were on a good.
+</p></body></html>
+<a href=3D"http://gfedaleroofing.com/.hid-chenckcf-aaaakdce/">
+</a>
+------------1AD0634BF87817--
+
+--===============2888780021190522113==
+Content-Type: text/plain; charset="us-ascii"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+Content-Disposition: inline
+
+_______________________________________________
+Containers mailing list
+Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+https://lists.linux-foundation.org/mailman/listinfo/containers
+--===============2888780021190522113==--
