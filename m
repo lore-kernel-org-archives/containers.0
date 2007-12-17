@@ -1,69 +1,72 @@
-From: "Serge E. Hallyn" <serue@us.ibm.com>
-Subject: Re: [patch 1/2] [RFC] Simple tamper-proof device filesystem.
-Date: Mon, 17 Dec 2007 13:48:02 -0600
-Message-ID: <20071217194802.GA14156@sergelap.austin.ibm.com>
-References: <20071216080441.435456586@I-love.SAKURA.ne.jp> <20071216080628.061470932@I-love.SAKURA.ne.jp> <200712161944.HEI26071.MOtOFLVHFSQFOJ@I-love.SAKURA.ne.jp> <200712161956.BJE32406.FOOHtQJLMFOSVF@I-love.SAKURA.ne.jp>
+From: "Dmitry Adamushko" <dmitry.adamushko-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Subject: Re: Re: Hang with fair cgroup scheduler (reproducer is attached.)
+Date: Mon, 17 Dec 2007 23:52:37 +0100
+Message-ID: <b647ffbd0712171452u1d3308aewaacfcd9129374994@mail.gmail.com>
+References: <1197810077.12959.40.camel@earth>
+	<Pine.LNX.4.58.0712161801590.27494@gandalf.stny.rr.com>
+	<b647ffbd0712170223n13509130s7850c081f3b6c1e@mail.gmail.com>
+	<Pine.LNX.4.58.0712171227230.5678@gandalf.stny.rr.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Return-path: <linux-fsdevel-owner@vger.kernel.org>
+Content-Type: text/plain; charset=ISO-8859-1
+Content-Transfer-Encoding: 7bit
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <Pine.LNX.4.58.0712171227230.5678-f9ZlEuEWxVcI6MkJdU+c8EEOCMrvLtNR@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <200712161956.BJE32406.FOOHtQJLMFOSVF@I-love.SAKURA.ne.jp>
-Sender: linux-fsdevel-owner@vger.kernel.org
-To: Tetsuo Handa <penguin-kernel@I-love.SAKURA.ne.jp>
-Cc: linux-fsdevel@vger.kernel.org, linux-kernel@vger.kernel.org, Linux Containers <containers@lists.osdl.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Steven Rostedt <rostedt-nx8X9YLhiw1AfugRpC6u6w@public.gmane.org>
+Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Quoting Tetsuo Handa (penguin-kernel@I-love.SAKURA.ne.jp):
-> A brief description about SYAORAN:
-> 
->  SYAORAN stands for "Simple Yet All-important Object Realizing Abiding
->  Nexus". SYAORAN is a filesystem for /dev with Mandatory Access Control.
-> 
->  /dev needs to be writable, but this means that files on /dev might be
->  tampered with. SYAORAN can restrict combinations of (pathname, attribute)
->  that the system can create. The attribute is one of directory, regular
->  file, FIFO, UNIX domain socket, symbolic link, character or block device
->  file with major/minor device numbers.
-> 
->  SYAORAN can ensure /dev/null is a character device file with major=1 minor=3.
-> 
->  Policy specifications for this filesystem is at
->  http://tomoyo.sourceforge.jp/en/1.5.x/policy-syaoran.html
-> 
-> Why not use FUSE?
-> 
->  Because /dev has to be available through the lifetime of the kernel.
->  It is not acceptable if /dev stops working due to SIGKILL or OOM-killer.
-> 
-> Why not use SELinux?
-> 
->  Because SELinux doesn't guarantee filename and its attribute.
->  The purpose of this filesystem is to ensure filename and its attribute
->  (e.g. /dev/null is guaranteed to be a character device file
->  with major=1 and minor=3).
+[ trimmed the cc' list ]
 
-We need something similar for system containers (like vservers).  We
-will likely want root in a container to be confined to a certain set
-of devices.
+On 17/12/2007, Steven Rostedt <rostedt-nx8X9YLhiw1AfugRpC6u6w@public.gmane.org> wrote:
+>
+> On Mon, 17 Dec 2007, Dmitry Adamushko wrote:
+>
+> >
+> > It may be related, maybe not. One 'abnormal' thing (at least, it
+> > occurs only once in this log. Should be checked wheather it happens
+> > when the system works fine) is that a few iterations before the oops
+> > happens we observe the following pattern:
+> >
+> > CPU=2 [94359.651930] hackbench:1932(120:120:120:T) -->>
+> > hackbench:1591(120:120:120)
+> >
+> > CPU=2 [94359.651980] hackbench:1591(49:120:120:T) -->> swapper:0(140:120:140)
+>
+> Thanks for noticing. The -rt patch has more priority inheritance
+> situations than vanilla kernel (sleeping spinlocks or semaphors, and even
+> the Preempt RCU Boost logic).
 
-For starters we expect to use the capability bounding sets (see
-http://lkml.org/lkml/2007/11/26/206).  So a container will have a static
-/dev predefined, and CAP_MKNOD will be removed from its capability
-bounding set so that root in a container cannot create any more new
-devices.
+One more thing is that we don't actually see a point where that
+'hackbench' gets its priority lifted.
 
-For future more sophisticated device controls, two similar approaches
-have been suggested (one by me, see
-https://lists.linux-foundation.org/pipermail/containers/2007-September/007423.html
-and
-https://lists.linux-foundation.org/pipermail/containers/2007-November/008589.html
-).  Both actually control the devices a process can create period,
-rather than trying to control at the filesystem.  And yes, these both
-lack the feature in your solution that for instance 'c 1 3' must be
-called null, which appears to be the kind of guarantee apparmor likes to
-provide.
+It was scheduled in as a NORMAL task and scheduled out as a RT one.
+i.e. the task got its prio elevated while it was running... a
+contention with the task on another CPU?
 
-To use your approach, i guess we would have to use selinux (or tomoyo)
-to enforce that devices may only be created under /dev?
+anyway, i.e. this task must have 'p->se.on_rq == 1' and I'd expect to
+see "switched_to_rt" message somewhere in between... hmm?
+(check_class_changed() shoud have been called in task_setprio()).
 
--serge
+btw., we do see one 'switched_from_rt --> switched_to_fair' case for
+another 'hackbench' on CPU #0... according to traces, this one might
+get a prio lifted while sleeping (it got scheduled in as a RT task).
+
+
+
+>
+> -- Steve
+>
+
+-- 
+Best regards,
+Dmitry Adamushko
