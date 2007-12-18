@@ -1,39 +1,44 @@
-From: Tetsuo Handa <penguin-kernel-1yMVhJb1mP/7nzcFbJAaVXf5DAMn2ifp@public.gmane.org>
+From: "Serge E. Hallyn" <serue@us.ibm.com>
 Subject: Re: [patch 1/2] [RFC] Simple tamper-proof device filesystem.
-Date: Tue, 18 Dec 2007 09:03:23 +0900
-Message-ID: <200712180003.lBI03N7F092396@www262.sakura.ne.jp>
-References: <20071216080441.435456586@I-love.SAKURA.ne.jp>
-	<20071216080628.061470932@I-love.SAKURA.ne.jp>
-	<200712161944.HEI26071.MOtOFLVHFSQFOJ@I-love.SAKURA.ne.jp>
-	<200712161956.BJE32406.FOOHtQJLMFOSVF@I-love.SAKURA.ne.jp>
-	<20071217194802.GA14156@sergelap.austin.ibm.com>
+Date: Mon, 17 Dec 2007 18:39:55 -0600
+Message-ID: <20071218003955.GA27048@sergelap.austin.ibm.com>
+References: <20071216080441.435456586@I-love.SAKURA.ne.jp> <20071216080628.061470932@I-love.SAKURA.ne.jp> <200712161944.HEI26071.MOtOFLVHFSQFOJ@I-love.SAKURA.ne.jp> <200712161956.BJE32406.FOOHtQJLMFOSVF@I-love.SAKURA.ne.jp> <20071217194802.GA14156@sergelap.austin.ibm.com> <200712180003.lBI03N7F092396@www262.sakura.ne.jp>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="ISO-2022-JP"
-Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20071217194802.GA14156-6s5zFf/epYLPQpwDFJZrxKsjOiXwFzmk@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "\"\\\"Serge E. Hallyn\\\"\"" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Cc: linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Content-Type: text/plain; charset=us-ascii
+Return-path: <linux-fsdevel-owner@vger.kernel.org>
+Content-Disposition: inline
+In-Reply-To: <200712180003.lBI03N7F092396@www262.sakura.ne.jp>
+Sender: linux-fsdevel-owner@vger.kernel.org
+To: Tetsuo Handa <penguin-kernel@i-love.sakura.ne.jp>
+Cc: "Serge E. Hallyn" <serue@us.ibm.com>, linux-fsdevel@vger.kernel.org, linux-kernel@vger.kernel.org, Linux Containers <containers@lists.osdl.org>
 List-Id: containers.vger.kernel.org
 
-Hello.
+Quoting Tetsuo Handa (penguin-kernel@i-love.sakura.ne.jp):
+> Hello.
+> 
+> Serge E. Hallyn wrote:
+> > CAP_MKNOD will be removed from its capability
+> I think it is not enough because the root can rename/unlink device files
+> (mv /dev/sda1 /dev/tmp; mv /dev/sda2 /dev/sda1; mv /dev/tmp /dev/sda2).
 
-Serge E. Hallyn wrote:
-> CAP_MKNOD will be removed from its capability
-I think it is not enough because the root can rename/unlink device files
-(mv /dev/sda1 /dev/tmp; mv /dev/sda2 /dev/sda1; mv /dev/tmp /dev/sda2).
+Sure but that doesn't bother us :)
 
-> To use your approach, i guess we would have to use selinux (or tomoyo)
-> to enforce that devices may only be created under /dev?
-Everyone can use this filesystem alone.
-But use with MAC (or whatever access control mechanisms that prevent
-attackers from unmounting/overlaying this filesystem) is recomennded.
+The admin in the container has his own /dev directory and can do what he
+likes with the devices he's allowed to have.  He just shouldn't have
+access to others.  If he wants to rename /dev/sda1 to /dev/sda5 that's
+his choice.
+
+> > To use your approach, i guess we would have to use selinux (or tomoyo)
+> > to enforce that devices may only be created under /dev?
+> Everyone can use this filesystem alone.
+
+Sure but it is worthless alone.
+
+No?
+
+What will keep the container admin from doing 'mknod /root/hda1 b 3 1'?
+
+> But use with MAC (or whatever access control mechanisms that prevent
+> attackers from unmounting/overlaying this filesystem) is recomennded.
+
+-serge
