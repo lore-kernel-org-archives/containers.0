@@ -1,50 +1,127 @@
-From: Tetsuo Handa <penguin-kernel@i-love.sakura.ne.jp>
-Subject: Re: [patch 1/2] [RFC] Simple tamper-proof device filesystem.
-Date: Tue, 18 Dec 2007 12:40:25 +0900
-Message-ID: <200712180340.lBI3eQk3039357@www262.sakura.ne.jp>
-References: <20071216080441.435456586@I-love.SAKURA.ne.jp> <20071216080628.061470932@I-love.SAKURA.ne.jp> <200712161944.HEI26071.MOtOFLVHFSQFOJ@I-love.SAKURA.ne.jp> <200712161956.BJE32406.FOOHtQJLMFOSVF@I-love.SAKURA.ne.jp> <20071217194802.GA14156@sergelap.austin.ibm.com> <200712180003.lBI03N7F092396@www262.sakura.ne.jp> <20071218003955.GA27048@sergelap.austin.ibm.com> <20071218015557.GA28652@sergelap.austin.ibm.com> <200712180226.lBI2QL1d020811@www262.sakura.ne.jp> <20071218025329.GA12429@vino.hallyn.com>
+From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
+Subject: Re: [PATCH 8/9] signal: Drop signals before sending them to init.
+Date: Mon, 17 Dec 2007 21:06:52 -0700
+Message-ID: <m1ir2wd4tf.fsf@ebiederm.dsl.xmission.com>
+References: <m1prxcxeum.fsf_-_@ebiederm.dsl.xmission.com>
+	<m1lk80xeps.fsf_-_@ebiederm.dsl.xmission.com>
+	<m1hcioxenh.fsf_-_@ebiederm.dsl.xmission.com>
+	<m1d4tcxelu.fsf_-_@ebiederm.dsl.xmission.com>
+	<m18x40xeg6.fsf_-_@ebiederm.dsl.xmission.com>
+	<m13au8xe8m.fsf_-_@ebiederm.dsl.xmission.com>
+	<20071213162502.GB219@tv-sign.ru>
+	<m1bq8uscu4.fsf@ebiederm.dsl.xmission.com>
+	<20071213181802.GA486@tv-sign.ru>
+	<m1y7byqvj2.fsf@ebiederm.dsl.xmission.com>
+	<20071216155244.GA216@tv-sign.ru>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="ISO-2022-JP"
-Content-Transfer-Encoding: 7bit
-Return-path: <linux-fsdevel-owner@vger.kernel.org>
-In-Reply-To: <20071218025329.GA12429@vino.hallyn.com>
-Sender: linux-fsdevel-owner@vger.kernel.org
-To: serge@hallyn.com
-Cc: "\"\\\"Serge E. Hallyn\\\"\"" <serue@us.ibm.com>, linux-fsdevel@vger.kernel.org, linux-kernel@vger.kernel.org, Linux Containers <containers@lists.osdl.org>
+Content-Type: text/plain; charset=us-ascii
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <20071216155244.GA216-6lXkIZvqkOAvJsYlp49lxw@public.gmane.org> (Oleg Nesterov's message of
+	"Sun, 16 Dec 2007 18:52:44 +0300")
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Oleg Nesterov <oleg-6lXkIZvqkOAvJsYlp49lxw@public.gmane.org>
+Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Hello.
+Oleg Nesterov <oleg-6lXkIZvqkOAvJsYlp49lxw@public.gmane.org> writes:
 
-Serge E. Hallyn wrote:
-> Nope, try
-> 
->   touch /root/hda1
->   ls -l /root/hda1
->   mount --bind /dev/hda1 /root/hda1
->   ls -l /root/hda1
+> On 12/13, Eric W. Biederman wrote:
+>>
+>> Oleg Nesterov <oleg-6lXkIZvqkOAvJsYlp49lxw@public.gmane.org> writes:
+>> 
+>> > OK, if we change the semantics for /sbin/init signals we can avoid
+>> > a lot of problems,
+>> 
+>> Yes.  Otherwise we must track the source of the signals.
+>
+> Yes.
 
-[root@sakura ~]# touch /root/hda1
-[root@sakura ~]# ls -l /root/hda1
--rw-r--r-- 1 root root 0 Dec 18 12:04 /root/hda1
-[root@sakura ~]# mount --bind /dev/hda1 /root/hda1
-[root@sakura ~]# ls -l /root/hda1
-brw-r----- 1 root disk 3, 1 Dec 18  2007 /root/hda1
+Good.  We have fundamental agreement that we should slightly
+change the definition of how signals to init are dropped.
 
-Oh, surprising.
-I didn't know mount() accepts non-directory for mount-point.
-But I think this is not a mount operation
-because I can't see the contents of /dev/hda1 through /root/hda1 .
-Can I see the contents of /dev/hda1 through /root/hda1 ?
+For me the really important part is that we have a clean
+definition so that we can fix bugs in the implementation.
+Rather then declaring a particular implementation is the
+definition and getting lost there.
 
+>> > Well, I am not sure about "explain" though. Unless I missed something
+>> > this makes the semantics a bit special.
+>> 
+>> Well the semantics are a bit special for init period.  I just
+>> make them special in a slightly different way.
+>
+> Yes.
+>
+> But still I personally can't agree with the new behaviour.
 
-> Then it sounds like this filesystem is something Tomoyo can use.
+You argument that a program that blocks signals wants them is
+compelling, especially since blocking signals is not a common
+thing to do.
 
-I had / partition mounted for read-only so that the admin can't do
-'mknod /root/hda1 b 3 1' in 2003, and I named it
-"Security Advancement Know-how Upon Readonly Approach for Linux" or SAKURA Linux.
-This filesystem (SYAORAN) is developed to make /dev writable and tamper-proof
-when / partition is read-only or protected by MAC.
-TOMOYO is a pathname-based MAC implementation, and
-SAKURA and SYAORAN were merged into TOMOYO Linux. ;-)
+So I would have no problem with a definition said signals
+will be dropped when sent to init if at the time they are
+sent the signal is SIG_DFL and unblocked.
 
-Regards.
+>> > Suppose that init does sigtimedwait() but the handler == SIG_DFL.
+>>
+>> Yes that is a bit surprising.  However it is still easy to explain.
+>> The signal is never enqueued so sigtimedwait never gets the chance
+>> to do anything with it.
+>
+> But this precisely means that sigtimedwait() is just broken for init.
+>
+> Another example. /sbin/init execs, and tries to make sure it doesn't
+> miss the important signal (say, SIGCHLD). So it blocks SIGCHLD, execs,
+> and the new program installs the handler. However, the handler == SIG_DFL
+> right after exec, so signal could be missed.
+>
+> Eric, I think the blocked signal should be enqueued. If application
+> blocks the signal, this is the strong indication it does care about
+> it, we shouldn't throw it out.
+
+A reasonable argument.
+
+> Yes, this also has surprises. If init unblocks the signal without
+> installing the handler, it could be killed. But this can happen with
+> your patch as well. sig_init_drop() returns false if we have a handler,
+> but this races with sys_rt_sigaction() which can set SIG_DFL, so init
+> could be killed.
+
+I am checking under the sighand lock so we should not race,
+at least not internally to the kernel.
+
+> IOW, I still have a strong feeling that this patch
+>
+> 	http://marc.info/?l=linux-kernel&m=118753610515859
+>
+> is better, and more correct. That said, this all is very subjective,
+> I can't "prove" this of course.
+
+My fundamental problem with that patch is that it drops signals
+after we have started processing them, and it modifies the code
+of an optimization.
+
+To have a clean definition and clean semantics I think we need
+to drop the signal earlier in the path.  Which is what I
+really object to in your patch.
+
+> Yes sure, the "good" init shouldn't have any problems with any approach.
+
+So the only day to day case we care about are programs that are not
+built to be init like /bin/bash running as init.  For cases like
+this I can see a real advantage in not dropping blocked signals going
+to init, they might even use sigtimedwait.
+
+For day to day usage I don't see any practical difference in
+dropping or not dropping blocked signals, because the default
+is unblocked.
+
+Eric
