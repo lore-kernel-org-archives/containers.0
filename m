@@ -1,57 +1,50 @@
-From: Oren Laadan <orenl@cs.columbia.edu>
+From: Tetsuo Handa <penguin-kernel@i-love.sakura.ne.jp>
 Subject: Re: [patch 1/2] [RFC] Simple tamper-proof device filesystem.
-Date: Mon, 17 Dec 2007 22:04:00 -0500
-Message-ID: <476738A0.9010601@cs.columbia.edu>
-References: <20071216080441.435456586@I-love.SAKURA.ne.jp> <20071216080628.061470932@I-love.SAKURA.ne.jp> <200712161944.HEI26071.MOtOFLVHFSQFOJ@I-love.SAKURA.ne.jp> <200712161956.BJE32406.FOOHtQJLMFOSVF@I-love.SAKURA.ne.jp> <20071217194802.GA14156@sergelap.austin.ibm.com> <200712180003.lBI03N7F092396@www262.sakura.ne.jp> <20071218003955.GA27048@sergelap.austin.ibm.com> <476724E3.6060901@cs.columbia.edu> <20071218020933.GA28745@sergelap.austin.ibm.com>
+Date: Tue, 18 Dec 2007 12:40:25 +0900
+Message-ID: <200712180340.lBI3eQk3039357@www262.sakura.ne.jp>
+References: <20071216080441.435456586@I-love.SAKURA.ne.jp> <20071216080628.061470932@I-love.SAKURA.ne.jp> <200712161944.HEI26071.MOtOFLVHFSQFOJ@I-love.SAKURA.ne.jp> <200712161956.BJE32406.FOOHtQJLMFOSVF@I-love.SAKURA.ne.jp> <20071217194802.GA14156@sergelap.austin.ibm.com> <200712180003.lBI03N7F092396@www262.sakura.ne.jp> <20071218003955.GA27048@sergelap.austin.ibm.com> <20071218015557.GA28652@sergelap.austin.ibm.com> <200712180226.lBI2QL1d020811@www262.sakura.ne.jp> <20071218025329.GA12429@vino.hallyn.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+Content-Type: text/plain; charset="ISO-2022-JP"
 Content-Transfer-Encoding: 7bit
 Return-path: <linux-fsdevel-owner@vger.kernel.org>
-In-Reply-To: <20071218020933.GA28745@sergelap.austin.ibm.com>
+In-Reply-To: <20071218025329.GA12429@vino.hallyn.com>
 Sender: linux-fsdevel-owner@vger.kernel.org
-To: "Serge E. Hallyn" <serue@us.ibm.com>
-Cc: Tetsuo Handa <penguin-kernel@i-love.sakura.ne.jp>, linux-fsdevel@vger.kernel.org, Linux Containers <containers@lists.osdl.org>, linux-kernel@vger.kernel.org
+To: serge@hallyn.com
+Cc: "\"\\\"Serge E. Hallyn\\\"\"" <serue@us.ibm.com>, linux-fsdevel@vger.kernel.org, linux-kernel@vger.kernel.org, Linux Containers <containers@lists.osdl.org>
 List-Id: containers.vger.kernel.org
 
+Hello.
 
 Serge E. Hallyn wrote:
-> Quoting Oren Laadan (orenl@cs.columbia.edu):
->> I hate to bring this again, but what if the admin in the container
->> mounts an external file system (eg. nfs, usb, loop mount from a file,
->> or via fuse), and that file system already has a device that we would
->> like to ban inside that container ?
+> Nope, try
 > 
-> Miklos' user mount patches enforced that if !capable(CAP_MKNOD),
-> then mnt->mnt_flags |= MNT_NODEV.  So that's no problem.
+>   touch /root/hda1
+>   ls -l /root/hda1
+>   mount --bind /dev/hda1 /root/hda1
+>   ls -l /root/hda1
 
-Yes, that works to disallow all device files from a mounted file system.
+[root@sakura ~]# touch /root/hda1
+[root@sakura ~]# ls -l /root/hda1
+-rw-r--r-- 1 root root 0 Dec 18 12:04 /root/hda1
+[root@sakura ~]# mount --bind /dev/hda1 /root/hda1
+[root@sakura ~]# ls -l /root/hda1
+brw-r----- 1 root disk 3, 1 Dec 18  2007 /root/hda1
 
-But it's a black and white thing: either they are all banned or allowed;
-you can't have some devices allowed and others not, depending on type
-A scenario where this may be useful is, for instance, if we some apps in
-the container to execute withing a pre-made chroot (sub)tree within that
-container.
+Oh, surprising.
+I didn't know mount() accepts non-directory for mount-point.
+But I think this is not a mount operation
+because I can't see the contents of /dev/hda1 through /root/hda1 .
+Can I see the contents of /dev/hda1 through /root/hda1 ?
 
-> 
-> But that's been pulled out of -mm! ?  Crap.
-> 
->> Since anyway we will have to keep a white- (or black-) list of devices
->> that are permitted in a container, and that list may change even change
->> per container -- why not enforce the access control at the VFS layer ?
->> It's safer in the long run.
-> 
-> By that you mean more along the lines of Pavel's patch than my whitelist
-> LSM, or you actually mean Tetsuo's filesystem (i assume you don't mean that
-> by 'vfs layer' :), or something different entirely?
 
-:)
+> Then it sounds like this filesystem is something Tomoyo can use.
 
-By 'vfs' I mean at open() time, and not at mount(), or mknod() time.
-Either yours or Pavel's; I tend to prefer not to use LSM as it may
-collide with future security modules.
+I had / partition mounted for read-only so that the admin can't do
+'mknod /root/hda1 b 3 1' in 2003, and I named it
+"Security Advancement Know-how Upon Readonly Approach for Linux" or SAKURA Linux.
+This filesystem (SYAORAN) is developed to make /dev writable and tamper-proof
+when / partition is read-only or protected by MAC.
+TOMOYO is a pathname-based MAC implementation, and
+SAKURA and SYAORAN were merged into TOMOYO Linux. ;-)
 
-Oren.
-
-> 
-> thanks,
-> -serge
+Regards.
