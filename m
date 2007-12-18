@@ -1,23 +1,26 @@
 From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
-Subject: Re: [PATCH 8/9] signal: Drop signals before sending them to init.
-Date: Mon, 17 Dec 2007 21:06:52 -0700
-Message-ID: <m1ir2wd4tf.fsf@ebiederm.dsl.xmission.com>
-References: <m1prxcxeum.fsf_-_@ebiederm.dsl.xmission.com>
+Subject: Re: [PATCH 9/9] signal: Ignore signals sent to the pid namespace
+	init
+Date: Tue, 18 Dec 2007 01:37:40 -0700
+Message-ID: <m18x3sbdpn.fsf@ebiederm.dsl.xmission.com>
+References: <m13au8ytos.fsf@ebiederm.dsl.xmission.com>
+	<m1y7c0xezt.fsf@ebiederm.dsl.xmission.com>
+	<m1tzmoxexb.fsf_-_@ebiederm.dsl.xmission.com>
+	<m1prxcxeum.fsf_-_@ebiederm.dsl.xmission.com>
 	<m1lk80xeps.fsf_-_@ebiederm.dsl.xmission.com>
 	<m1hcioxenh.fsf_-_@ebiederm.dsl.xmission.com>
 	<m1d4tcxelu.fsf_-_@ebiederm.dsl.xmission.com>
 	<m18x40xeg6.fsf_-_@ebiederm.dsl.xmission.com>
 	<m13au8xe8m.fsf_-_@ebiederm.dsl.xmission.com>
-	<20071213162502.GB219@tv-sign.ru>
-	<m1bq8uscu4.fsf@ebiederm.dsl.xmission.com>
-	<20071213181802.GA486@tv-sign.ru>
-	<m1y7byqvj2.fsf@ebiederm.dsl.xmission.com>
-	<20071216155244.GA216@tv-sign.ru>
+	<m1y7c0vzm4.fsf_-_@ebiederm.dsl.xmission.com>
+	<20071213162811.GC219@tv-sign.ru>
+	<m1aboesbnu.fsf@ebiederm.dsl.xmission.com>
+	<m13au6savt.fsf@ebiederm.dsl.xmission.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20071216155244.GA216-6lXkIZvqkOAvJsYlp49lxw@public.gmane.org> (Oleg Nesterov's message of
-	"Sun, 16 Dec 2007 18:52:44 +0300")
+In-Reply-To: <m13au6savt.fsf-T1Yj925okcoyDheHMi7gv2pdwda3JcWeAL8bYrjMMd8@public.gmane.org> (Eric W. Biederman's
+	message of "Thu, 13 Dec 2007 11:33:10 -0700")
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -31,97 +34,41 @@ To: Oleg Nesterov <oleg-6lXkIZvqkOAvJsYlp49lxw@public.gmane.org>
 Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Oleg Nesterov <oleg-6lXkIZvqkOAvJsYlp49lxw@public.gmane.org> writes:
+ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman) writes:
 
-> On 12/13, Eric W. Biederman wrote:
+> ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman) writes:
 >>
->> Oleg Nesterov <oleg-6lXkIZvqkOAvJsYlp49lxw@public.gmane.org> writes:
->> 
->> > OK, if we change the semantics for /sbin/init signals we can avoid
->> > a lot of problems,
->> 
->> Yes.  Otherwise we must track the source of the signals.
+>> Yes.  If we are not in process context (in_interrupt) we do infer
+>> the sender incorrectly.  Duh.  I saw something in earlier patches
+>> people had posted didn't understand it, and didn't get an answer
+>> when I asked about it. 
 >
-> Yes.
-
-Good.  We have fundamental agreement that we should slightly
-change the definition of how signals to init are dropped.
-
-For me the really important part is that we have a clean
-definition so that we can fix bugs in the implementation.
-Rather then declaring a particular implementation is the
-definition and getting lost there.
-
->> > Well, I am not sure about "explain" though. Unless I missed something
->> > this makes the semantics a bit special.
->> 
->> Well the semantics are a bit special for init period.  I just
->> make them special in a slightly different way.
+> Grr. Rather I didn't see a reply when I asked about it.  I just
+> spotted Suka's old reply telling me it was to attempt to prevent
+> init from getting sigio.    Clearly I have a big fat blind spot
+> here you could drive a truck through.
 >
-> Yes.
->
-> But still I personally can't agree with the new behaviour.
+> Kernel generated signals are a pain because they are neither fish nor
+> fowl. They are sent privileged, but we don't necessarily want to give
+> them all curtsies and deliver them.  Grr.
 
-You argument that a program that blocks signals wants them is
-compelling, especially since blocking signals is not a common
-thing to do.
+I solved this in my thinking earlier but I should really mention it.
+There are two kinds of kernel generated signals.
 
-So I would have no problem with a definition said signals
-will be dropped when sent to init if at the time they are
-sent the signal is SIG_DFL and unblocked.
+- Services like timers, SIGIO, etc where the kernel is doing something
+  on behalf of the process.
+- Process management where we send SIGKILL to make a process go away.
 
->> > Suppose that init does sigtimedwait() but the handler == SIG_DFL.
->>
->> Yes that is a bit surprising.  However it is still easy to explain.
->> The signal is never enqueued so sigtimedwait never gets the chance
->> to do anything with it.
->
-> But this precisely means that sigtimedwait() is just broken for init.
->
-> Another example. /sbin/init execs, and tries to make sure it doesn't
-> miss the important signal (say, SIGCHLD). So it blocks SIGCHLD, execs,
-> and the new program installs the handler. However, the handler == SIG_DFL
-> right after exec, so signal could be missed.
->
-> Eric, I think the blocked signal should be enqueued. If application
-> blocks the signal, this is the strong indication it does care about
-> it, we shouldn't throw it out.
+For services we clearly want to ignore the signal.
+For the kernel flexing's it's muscle we want to accept the signal,
+and let init die and accept the consequences.  Unfortunately we
+don't do that today.
 
-A reasonable argument.
+Since most signals are services and since we want to preserve today
+semantics we want to drop kernel generated signals.
 
-> Yes, this also has surprises. If init unblocks the signal without
-> installing the handler, it could be killed. But this can happen with
-> your patch as well. sig_init_drop() returns false if we have a handler,
-> but this races with sys_rt_sigaction() which can set SIG_DFL, so init
-> could be killed.
-
-I am checking under the sighand lock so we should not race,
-at least not internally to the kernel.
-
-> IOW, I still have a strong feeling that this patch
->
-> 	http://marc.info/?l=linux-kernel&m=118753610515859
->
-> is better, and more correct. That said, this all is very subjective,
-> I can't "prove" this of course.
-
-My fundamental problem with that patch is that it drops signals
-after we have started processing them, and it modifies the code
-of an optimization.
-
-To have a clean definition and clean semantics I think we need
-to drop the signal earlier in the path.  Which is what I
-really object to in your patch.
-
-> Yes sure, the "good" init shouldn't have any problems with any approach.
-
-So the only day to day case we care about are programs that are not
-built to be init like /bin/bash running as init.  For cases like
-this I can see a real advantage in not dropping blocked signals going
-to init, they might even use sigtimedwait.
-
-For day to day usage I don't see any practical difference in
-dropping or not dropping blocked signals, because the default
-is unblocked.
+For those cases where it matters we can have the kernel send a signal
+by a different path, that doesn't give init the option of ignoring
+the signal.
 
 Eric
