@@ -1,59 +1,45 @@
-From: "Serge E. Hallyn" <serue@us.ibm.com>
-Subject: Re: [patch 1/2] [RFC] Simple tamper-proof device filesystem.
-Date: Wed, 19 Dec 2007 08:13:30 -0600
-Message-ID: <20071219141330.GB31694@sergelap.austin.ibm.com>
-References: <20071216080441.435456586@I-love.SAKURA.ne.jp> <20071216080628.061470932@I-love.SAKURA.ne.jp> <200712161944.HEI26071.MOtOFLVHFSQFOJ@I-love.SAKURA.ne.jp> <200712161956.BJE32406.FOOHtQJLMFOSVF@I-love.SAKURA.ne.jp> <20071217194802.GA14156@sergelap.austin.ibm.com> <200712180003.lBI03N7F092396@www262.sakura.ne.jp> <20071218003955.GA27048@sergelap.austin.ibm.com> <476724E3.6060901@cs.columbia.edu> <20071218020933.GA28745@sergelap.austin.ibm.com> <476738A0.9010601@cs.columbia.edu>
+From: "Denis V. Lunev" <den-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+Subject: [PATCH netns-2.6.25 0/19] routing virtualization
+Date: Wed, 19 Dec 2007 18:21:51 +0300
+Message-ID: <4769370F.5020303@openvz.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Return-path: <linux-fsdevel-owner@vger.kernel.org>
-Content-Disposition: inline
-In-Reply-To: <476738A0.9010601@cs.columbia.edu>
-Sender: linux-fsdevel-owner@vger.kernel.org
-To: Oren Laadan <orenl@cs.columbia.edu>
-Cc: "Serge E. Hallyn" <serue@us.ibm.com>, Tetsuo Handa <penguin-kernel@i-love.sakura.ne.jp>, linux-fsdevel@vger.kernel.org, Linux Containers <containers@lists.osdl.org>, linux-kernel@vger.kernel.org
+Content-Type: text/plain; charset=KOI8-R
+Content-Transfer-Encoding: 7bit
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: David Miller <davem-fT/PcQaiUtIeIZ0/mPfg9Q@public.gmane.org>
+Cc: netdev <netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Benjamin Thery <benjamin.thery-6ktuUTfB/bM@public.gmane.org>, xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Quoting Oren Laadan (orenl@cs.columbia.edu):
-> 
-> Serge E. Hallyn wrote:
-> > Quoting Oren Laadan (orenl@cs.columbia.edu):
-> >> I hate to bring this again, but what if the admin in the container
-> >> mounts an external file system (eg. nfs, usb, loop mount from a file,
-> >> or via fuse), and that file system already has a device that we would
-> >> like to ban inside that container ?
-> > 
-> > Miklos' user mount patches enforced that if !capable(CAP_MKNOD),
-> > then mnt->mnt_flags |= MNT_NODEV.  So that's no problem.
-> 
-> Yes, that works to disallow all device files from a mounted file system.
-> 
-> But it's a black and white thing: either they are all banned or allowed;
-> you can't have some devices allowed and others not, depending on type
-> A scenario where this may be useful is, for instance, if we some apps in
-> the container to execute withing a pre-made chroot (sub)tree within that
-> container.
+Hi, David!
 
-Yes, it's workable short-term, and we've always said that a more
-complete solution would be worked on later, as people have time.
+This set adds namespace support for routing tables & rules manipulation
+in the different namespaces. So, one could create a namespace and
+setup IPv4 routing there how he wants.
 
-> > But that's been pulled out of -mm! ?  Crap.
-> > 
-> >> Since anyway we will have to keep a white- (or black-) list of devices
-> >> that are permitted in a container, and that list may change even change
-> >> per container -- why not enforce the access control at the VFS layer ?
-> >> It's safer in the long run.
-> > 
-> > By that you mean more along the lines of Pavel's patch than my whitelist
-> > LSM, or you actually mean Tetsuo's filesystem (i assume you don't mean that
-> > by 'vfs layer' :), or something different entirely?
-> 
-> :)
-> 
-> By 'vfs' I mean at open() time, and not at mount(), or mknod() time.
-> Either yours or Pavel's; I tend to prefer not to use LSM as it may
-> collide with future security modules.
+After this patch user will have the ability to configure and
+observe its own isolated set of routing rules/tables, but they
+all will be unused. I.e. routing decisions inside the network
+stack are still made based on the init_net's rules. The reason for doing
+so is to have something self-consistent and not too huge :)
 
-Yeah I keep waffling.  The LSM is so simple...  but i do prefer Pavel's
-patch.  Let's keep pursuing that.
+The sequence is the following:
+- viritualize generic FIB rules operations
+- change IPv4 FIB initialization sequence
+- virtualize FIB tables access
 
--serge
+After this, the 'ip' utility and the /proc interface will start
+working correctly inside a namespace, while the 'route' utility
+will not, because IP sockets currently cannot be created in non-init
+namespace.
+
+Regards,
+	Den
