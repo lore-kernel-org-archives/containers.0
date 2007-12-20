@@ -1,87 +1,163 @@
-From: "Serge E. Hallyn" <serue@us.ibm.com>
-Subject: Re: [patch 1/2] [RFC] Simple tamper-proof device filesystem.
-Date: Thu, 20 Dec 2007 08:09:42 -0600
-Message-ID: <20071220140942.GA2096@sergelap.austin.ibm.com>
-References: <20071217194802.GA14156@sergelap.austin.ibm.com> <200712180003.lBI03N7F092396@www262.sakura.ne.jp> <20071218003955.GA27048@sergelap.austin.ibm.com> <476724E3.6060901@cs.columbia.edu> <20071218020933.GA28745@sergelap.austin.ibm.com> <476738A0.9010601@cs.columbia.edu> <4768E7B2.40203@openvz.org> <20071219141004.GA31694@sergelap.austin.ibm.com> <4769B228.4030705@cs.columbia.edu> <476A1CE0.30505@openvz.org>
+From: "President-R5LstBpoAfc1Ex83mVvMeUEOCMrvLtNR@public.gmane.org" <President-R5LstBpoAfc1Ex83mVvMeUEOCMrvLtNR@public.gmane.org>
+Subject: The Smart New Way To Connect With Singles
+Date: Thu, 20 Dec 2007 11:18:04 -1000
+Message-ID: <a255d6939a23ec7866e8fb5c5b1e530d@localip>
+Reply-To: President-R5LstBpoAfc1Ex83mVvMeUEOCMrvLtNR@public.gmane.org
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Return-path: <linux-fsdevel-owner@vger.kernel.org>
-Content-Disposition: inline
-In-Reply-To: <476A1CE0.30505@openvz.org>
-Sender: linux-fsdevel-owner@vger.kernel.org
-To: Pavel Emelyanov <xemul@openvz.org>
-Cc: Oren Laadan <orenl@cs.columbia.edu>, "Serge E. Hallyn" <serue@us.ibm.com>, Tetsuo Handa <penguin-kernel@i-love.sakura.ne.jp>, linux-fsdevel@vger.kernel.org, Linux Containers <containers@lists.osdl.org>, linux-kernel@vger.kernel.org
+Content-Type: multipart/mixed; boundary="===============5567789892047832051=="
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Mime-version: 1.0
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Quoting Pavel Emelyanov (xemul@openvz.org):
-> Oren Laadan wrote:
-> > 
-> > Serge E. Hallyn wrote:
-> >> Quoting Pavel Emelyanov (xemul@openvz.org):
-> >>> Oren Laadan wrote:
-> >>>> Serge E. Hallyn wrote:
-> >>>>> Quoting Oren Laadan (orenl@cs.columbia.edu):
-> >>>>>> I hate to bring this again, but what if the admin in the container
-> >>>>>> mounts an external file system (eg. nfs, usb, loop mount from a file,
-> >>>>>> or via fuse), and that file system already has a device that we would
-> >>>>>> like to ban inside that container ?
-> >>>>> Miklos' user mount patches enforced that if !capable(CAP_MKNOD),
-> >>>>> then mnt->mnt_flags |= MNT_NODEV.  So that's no problem.
-> >>>> Yes, that works to disallow all device files from a mounted file system.
-> >>>>
-> >>>> But it's a black and white thing: either they are all banned or allowed;
-> >>>> you can't have some devices allowed and others not, depending on type
-> >>>> A scenario where this may be useful is, for instance, if we some apps in
-> >>>> the container to execute withing a pre-made chroot (sub)tree within that
-> >>>> container.
-> >>>>
-> >>>>> But that's been pulled out of -mm! ?  Crap.
-> >>>>>
-> >>>>>> Since anyway we will have to keep a white- (or black-) list of devices
-> >>>>>> that are permitted in a container, and that list may change even change
-> >>>>>> per container -- why not enforce the access control at the VFS layer ?
-> >>>>>> It's safer in the long run.
-> >>>>> By that you mean more along the lines of Pavel's patch than my whitelist
-> >>>>> LSM, or you actually mean Tetsuo's filesystem (i assume you don't mean that
-> >>>>> by 'vfs layer' :), or something different entirely?
-> >>>> :)
-> >>>>
-> >>>> By 'vfs' I mean at open() time, and not at mount(), or mknod() time.
-> >>>> Either yours or Pavel's; I tend to prefer not to use LSM as it may
-> >>>> collide with future security modules.
-> >>> Oren, AFAIS you've seen my patches for device access controller, right?
-> > 
-> > If you mean this one:
-> > http://openvz.org/pipermail/devel/2007-September/007647.html
-> > then ack :)
-> 
-> Great! Thanks.
-> 
-> >>> Maybe we can revisit the issue then and try to come to agreement on what
-> >>> kind of model and implementation we all want?
-> >> That would be great, Pavel.  I do prefer your solution over my LSM, so
-> >> if we can get an elegant block device control right in the vfs code that
-> >> would be my preference.
-> > 
-> > I concur.
-> > 
-> > So it seems to me that we are all in favor of the model where open()
-> > of a device will consult a black/white-list. Also, we are all in favor
-> > of a non-LSM implementation, Pavel's code being a good example.
-> 
-> Thank you, Oren and Serge! I will revisit this issue then, but
-> I have a vacation the next week and, after this, we have a New
-> Year and Christmas holidays in Russia. So I will be able to go
-> on with it only after the 7th January :( Hope this is OK for you.
-> 
-> Besides, Andrew told that he would pay little attention to new
-> features till the 2.6.24 release, so I'm afraid we won't have this 
-> even in -mm in the nearest months :(
-> 
-> Thanks,
-> Pavel
+This is a multi-part message in MIME format.
 
-Cool, let me know any way I can help when you get started.
+--===============5567789892047832051==
+Content-Type: multipart/alternative; boundary="----=NextMime00A_000_4818428D"
 
-thanks,
--serge
+This is a multi-part message in MIME format.
+
+------=NextMime00A_000_4818428D
+Content-Type: text/plain;
+	charset="ISO-8859-1"
+Content-Transfer-Encoding: quoted-printable
+
+This is an HTML email, please use HTML format to open it!
+
+------=NextMime00A_000_4818428D
+Content-Type: text/html;
+	charset="ISO-8859-1"
+Content-Transfer-Encoding: quoted-printable
+
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4=2E0 Transitional//EN">
+<HTML>
+<HEAD>
+<TITLE>Letter</TITLE>
+<META HTTP-EQUIV=3D"Content-Type" CONTENT=3D"text/html; charset=3DISO-8859-=
+1">
+<META NAME=3D"Generator" CONTENT=3D"NetObjects Fusion 8 for Windows">
+</HEAD>
+<BODY text=3D#000000 bgColor=3D#99ccff leftMargin=3D0 topMargin=3D0 MARGINH=
+EIGHT=3D"0"=20
+MARGINWIDTH=3D"0"=20
+NOF=3D"(MB=3D(ZeroMargins, 0, 0, 0, 0), L=3D(LetterLayout, 520, 513))">
+<CENTER>
+<TABLE cellSpacing=3D0 cellPadding=3D0 width=3D495 border=3D0 NOF=3D"LY">
+  <TBODY>
+  <TR vAlign=3Dtop align=3Dleft>
+    <TD></TD>
+    <TD width=3D470>
+      <P align=3Dcenter><FONT=20
+      face=3DArial,Helvetica,Geneva,Sans-serif,sans-serif>Cupid=2Ecom charg=
+es=20
+      <B>$29=2E95</B></FONT><B></B></P></TD></TR>
+  <TR vAlign=3Dtop align=3Dleft>
+    <TD colSpan=3D2 height=3D5></TD></TR>
+  <TR vAlign=3Dtop align=3Dleft>
+    <TD></TD>
+    <TD width=3D470>
+      <P align=3Dcenter><FONT=20
+      face=3DArial,Helvetica,Geneva,Sans-serif,sans-serif>Match=2Ecom charg=
+es=20
+      </FONT><FONT face=3DArial,Helvetica,Geneva,Sans-serif,sans-serif=20
+      size=3D+1><B>$34=2E99</B></FONT><B></B></P></TD></TR>
+  <TR vAlign=3Dtop align=3Dleft>
+    <TD colSpan=3D2 height=3D1></TD></TR>
+  <TR vAlign=3Dtop align=3Dleft>
+    <TD></TD>
+    <TD width=3D470>
+      <P align=3Dcenter><FONT=20
+      face=3DArial,Helvetica,Geneva,Sans-serif,sans-serif>eHarmony charges=
+=20
+      </FONT><FONT face=3DArial,Helvetica,Geneva,Sans-serif,sans-serif=20
+      size=3D+2><B>$59=2E95 !</B></FONT><B></B></P></TD></TR>
+  <TR vAlign=3Dtop align=3Dleft>
+    <TD colSpan=3D2 height=3D13></TD></TR>
+  <TR vAlign=3Dtop align=3Dleft>
+    <TD></TD>
+    <TD width=3D470>
+      <P align=3Dcenter><FONT=20
+      face=3DArial,Helvetica,Geneva,Sans-serif,sans-serif>but with=20
+      the<BR></FONT><FONT face=3DArial,Helvetica,Geneva,Sans-serif,sans-ser=
+if=20
+      size=3D+3><B>SideStep Network</B></FONT><B></B></P></TD></TR>
+  <TR vAlign=3Dtop align=3Dleft>
+    <TD colSpan=3D2 height=3D6></TD></TR>
+  <TR vAlign=3Dtop align=3Dleft>
+    <TD></TD>
+    <TD width=3D470>
+      <P align=3Dcenter><FONT=20
+      face=3DArial,Helvetica,Geneva,Sans-serif,sans-serif>You can<BR></FONT=
+><FONT=20
+      face=3DArial,Helvetica,Geneva,Sans-serif,sans-serif size=3D+1><B><U>c=
+onnect=20
+      with anyone<BR></U></B>on <BR><B><U>any personal ad web=20
+      site<BR></U></B></FONT><FONT=20
+      face=3DArial,Helvetica,Geneva,Sans-serif,sans-serif>for<BR></FONT><FO=
+NT=20
+      face=3DArial,Helvetica,Geneva,Sans-serif,sans-serif size=3D+2>just <B=
+><I>99=20
+      cents ! !</I></B></FONT></P></TD></TR>
+  <TR vAlign=3Dtop align=3Dleft>
+    <TD colSpan=3D2 height=3D13></TD></TR>
+  <TR vAlign=3Dtop align=3Dleft>
+    <TD></TD>
+    <TD width=3D470>
+      <P><FONT face=3DArial,Helvetica,Geneva,Sans-serif,sans-serif>It</FONT=
+>'<FONT=20
+      face=3DArial,Helvetica,Geneva,Sans-serif,sans-serif>s the smart new w=
+ay to=20
+      connect with people whose profiles you</FONT>'<FONT=20
+      face=3DArial,Helvetica,Geneva,Sans-serif,sans-serif>ve seen on person=
+al ad=20
+      web sites=2E No need to become a paying member of those sites=2E Use =
+the=20
+      SideStep Network and you can connect for <B>just 99 cents=20
+      !<BR><BR></B>Registering with SideStep is totally free and takes just=
+=20
+      seconds=2E<BR><BR>The only cost is when you decide to make contact wi=
+th=20
+      someone=2E</FONT></P></TD></TR>
+  <TR vAlign=3Dtop align=3Dleft>
+    <TD colSpan=3D2 height=3D12></TD></TR>
+  <TR vAlign=3Dtop align=3Dleft>
+    <TD></TD>
+    <TD width=3D470>
+      <P align=3Dcenter><FONT face=3DArial,Helvetica,Geneva,Sans-serif,sans=
+-serif>So=20
+      give it a try=2E<BR><BR>Visit </FONT><A=20
+      href=3D"http://www=2ESideStepNetwork=2Ecom=2E"><FONT=20
+      face=3DArial,Helvetica,Geneva,Sans-serif,sans-serif>www=2ESideStepNet=
+work=2Ecom=2E</FONT></A><FONT=20
+      face=3DArial,Helvetica,Geneva,Sans-serif,sans-serif>=20
+  </FONT></P></TD></TR></TBODY></TABLE></CENTER><BR><BR><BR><BR><BR>
+<CENTER>To have your email address placed on our Do Not Send list<BR>please=
+=20
+write to DoNotSend@SideStepNetwork=2Ecom </CENTER>
+</BODY>
+</HTML>
+=20
+
+------=NextMime00A_000_4818428D--
+
+
+--===============5567789892047832051==
+Content-Type: text/plain; charset="us-ascii"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+Content-Disposition: inline
+
+_______________________________________________
+Containers mailing list
+Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+https://lists.linux-foundation.org/mailman/listinfo/containers
+--===============5567789892047832051==--
