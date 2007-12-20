@@ -1,163 +1,73 @@
-From: "President-R5LstBpoAfc1Ex83mVvMeUEOCMrvLtNR@public.gmane.org" <President-R5LstBpoAfc1Ex83mVvMeUEOCMrvLtNR@public.gmane.org>
-Subject: The Smart New Way To Connect With Singles
-Date: Thu, 20 Dec 2007 11:18:04 -1000
-Message-ID: <a255d6939a23ec7866e8fb5c5b1e530d@localip>
-Reply-To: President-R5LstBpoAfc1Ex83mVvMeUEOCMrvLtNR@public.gmane.org
+From: David Miller <davem@davemloft.net>
+Subject: Re: [PATCH net-2.6.25 1/19] [NETNS] Add netns parameter to
+ fib_rules_(un)register.
+Date: Thu, 20 Dec 2007 15:46:36 -0800 (PST)
+Message-ID: <20071220.154636.86238588.davem@davemloft.net>
+References: <4769370F.5020303@openvz.org>
+	<1198077889-10693-2-git-send-email-den@openvz.org>
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary="===============5567789892047832051=="
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Mime-version: 1.0
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Content-Type: Text/Plain; charset=us-ascii
+Content-Transfer-Encoding: 7bit
+Return-path: <netdev-owner@vger.kernel.org>
+In-Reply-To: <1198077889-10693-2-git-send-email-den@openvz.org>
+Sender: netdev-owner@vger.kernel.org
+To: den@openvz.org
+Cc: benjamin.thery@bull.net, dlezcano@fr.ibm.com, devel@openvz.org, containers@lists.osdl.org, netdev@vger.kernel.org, xemul@openvz.org
 List-Id: containers.vger.kernel.org
 
-This is a multi-part message in MIME format.
+From: "Denis V. Lunev" <den@openvz.org>
+Date: Wed, 19 Dec 2007 18:24:31 +0300
 
---===============5567789892047832051==
-Content-Type: multipart/alternative; boundary="----=NextMime00A_000_4818428D"
+> @@ -101,14 +101,12 @@ static inline u32 frh_get_table(struct fib_rule_hdr *frh, struct nlattr **nla)
+>  	return frh->table;
+>  }
+>  
+> -extern int			fib_rules_register(struct fib_rules_ops *);
+> -extern int			fib_rules_unregister(struct fib_rules_ops *);
+> -extern void                     fib_rules_cleanup_ops(struct fib_rules_ops *);
+> +extern int fib_rules_register(struct net *, struct fib_rules_ops *);
+> +extern int fib_rules_unregister(struct net *, struct fib_rules_ops *);
+> +extern void fib_rules_cleanup_ops(struct fib_rules_ops *);
+>  
+> -extern int			fib_rules_lookup(struct fib_rules_ops *,
+> -						 struct flowi *, int flags,
+> -						 struct fib_lookup_arg *);
+> -extern int			fib_default_rule_add(struct fib_rules_ops *,
+> -						     u32 pref, u32 table,
+> -						     u32 flags);
+> +extern int fib_rules_lookup(struct fib_rules_ops *, struct flowi *, int flags,
+> +			    struct fib_lookup_arg *);
+> +extern int fib_default_rule_add(struct fib_rules_ops *, u32 pref, u32 table,
+> +				u32 flags);
+>  #endif
 
-This is a multi-part message in MIME format.
+Please do not make gratuitous coding style changes like this!
 
-------=NextMime00A_000_4818428D
-Content-Type: text/plain;
-	charset="ISO-8859-1"
-Content-Transfer-Encoding: quoted-printable
+What bothers you so much that there is lots of whitespace there after
+the "extern int"?  Does it bother you so much that you think the side
+effect of your patch being unreadable is worth it?!?!
 
-This is an HTML email, please use HTML format to open it!
+Why is it unreadable?  I'm glad you asked....
 
-------=NextMime00A_000_4818428D
-Content-Type: text/html;
-	charset="ISO-8859-1"
-Content-Transfer-Encoding: quoted-printable
+Just like me, someone will have to read this over carefully to
+see what you're actually doing.
 
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4=2E0 Transitional//EN">
-<HTML>
-<HEAD>
-<TITLE>Letter</TITLE>
-<META HTTP-EQUIV=3D"Content-Type" CONTENT=3D"text/html; charset=3DISO-8859-=
-1">
-<META NAME=3D"Generator" CONTENT=3D"NetObjects Fusion 8 for Windows">
-</HEAD>
-<BODY text=3D#000000 bgColor=3D#99ccff leftMargin=3D0 topMargin=3D0 MARGINH=
-EIGHT=3D"0"=20
-MARGINWIDTH=3D"0"=20
-NOF=3D"(MB=3D(ZeroMargins, 0, 0, 0, 0), L=3D(LetterLayout, 520, 513))">
-<CENTER>
-<TABLE cellSpacing=3D0 cellPadding=3D0 width=3D495 border=3D0 NOF=3D"LY">
-  <TBODY>
-  <TR vAlign=3Dtop align=3Dleft>
-    <TD></TD>
-    <TD width=3D470>
-      <P align=3Dcenter><FONT=20
-      face=3DArial,Helvetica,Geneva,Sans-serif,sans-serif>Cupid=2Ecom charg=
-es=20
-      <B>$29=2E95</B></FONT><B></B></P></TD></TR>
-  <TR vAlign=3Dtop align=3Dleft>
-    <TD colSpan=3D2 height=3D5></TD></TR>
-  <TR vAlign=3Dtop align=3Dleft>
-    <TD></TD>
-    <TD width=3D470>
-      <P align=3Dcenter><FONT=20
-      face=3DArial,Helvetica,Geneva,Sans-serif,sans-serif>Match=2Ecom charg=
-es=20
-      </FONT><FONT face=3DArial,Helvetica,Geneva,Sans-serif,sans-serif=20
-      size=3D+1><B>$34=2E99</B></FONT><B></B></P></TD></TR>
-  <TR vAlign=3Dtop align=3Dleft>
-    <TD colSpan=3D2 height=3D1></TD></TR>
-  <TR vAlign=3Dtop align=3Dleft>
-    <TD></TD>
-    <TD width=3D470>
-      <P align=3Dcenter><FONT=20
-      face=3DArial,Helvetica,Geneva,Sans-serif,sans-serif>eHarmony charges=
-=20
-      </FONT><FONT face=3DArial,Helvetica,Geneva,Sans-serif,sans-serif=20
-      size=3D+2><B>$59=2E95 !</B></FONT><B></B></P></TD></TR>
-  <TR vAlign=3Dtop align=3Dleft>
-    <TD colSpan=3D2 height=3D13></TD></TR>
-  <TR vAlign=3Dtop align=3Dleft>
-    <TD></TD>
-    <TD width=3D470>
-      <P align=3Dcenter><FONT=20
-      face=3DArial,Helvetica,Geneva,Sans-serif,sans-serif>but with=20
-      the<BR></FONT><FONT face=3DArial,Helvetica,Geneva,Sans-serif,sans-ser=
-if=20
-      size=3D+3><B>SideStep Network</B></FONT><B></B></P></TD></TR>
-  <TR vAlign=3Dtop align=3Dleft>
-    <TD colSpan=3D2 height=3D6></TD></TR>
-  <TR vAlign=3Dtop align=3Dleft>
-    <TD></TD>
-    <TD width=3D470>
-      <P align=3Dcenter><FONT=20
-      face=3DArial,Helvetica,Geneva,Sans-serif,sans-serif>You can<BR></FONT=
-><FONT=20
-      face=3DArial,Helvetica,Geneva,Sans-serif,sans-serif size=3D+1><B><U>c=
-onnect=20
-      with anyone<BR></U></B>on <BR><B><U>any personal ad web=20
-      site<BR></U></B></FONT><FONT=20
-      face=3DArial,Helvetica,Geneva,Sans-serif,sans-serif>for<BR></FONT><FO=
-NT=20
-      face=3DArial,Helvetica,Geneva,Sans-serif,sans-serif size=3D+2>just <B=
-><I>99=20
-      cents ! !</I></B></FONT></P></TD></TR>
-  <TR vAlign=3Dtop align=3Dleft>
-    <TD colSpan=3D2 height=3D13></TD></TR>
-  <TR vAlign=3Dtop align=3Dleft>
-    <TD></TD>
-    <TD width=3D470>
-      <P><FONT face=3DArial,Helvetica,Geneva,Sans-serif,sans-serif>It</FONT=
->'<FONT=20
-      face=3DArial,Helvetica,Geneva,Sans-serif,sans-serif>s the smart new w=
-ay to=20
-      connect with people whose profiles you</FONT>'<FONT=20
-      face=3DArial,Helvetica,Geneva,Sans-serif,sans-serif>ve seen on person=
-al ad=20
-      web sites=2E No need to become a paying member of those sites=2E Use =
-the=20
-      SideStep Network and you can connect for <B>just 99 cents=20
-      !<BR><BR></B>Registering with SideStep is totally free and takes just=
-=20
-      seconds=2E<BR><BR>The only cost is when you decide to make contact wi=
-th=20
-      someone=2E</FONT></P></TD></TR>
-  <TR vAlign=3Dtop align=3Dleft>
-    <TD colSpan=3D2 height=3D12></TD></TR>
-  <TR vAlign=3Dtop align=3Dleft>
-    <TD></TD>
-    <TD width=3D470>
-      <P align=3Dcenter><FONT face=3DArial,Helvetica,Geneva,Sans-serif,sans=
--serif>So=20
-      give it a try=2E<BR><BR>Visit </FONT><A=20
-      href=3D"http://www=2ESideStepNetwork=2Ecom=2E"><FONT=20
-      face=3DArial,Helvetica,Geneva,Sans-serif,sans-serif>www=2ESideStepNet=
-work=2Ecom=2E</FONT></A><FONT=20
-      face=3DArial,Helvetica,Geneva,Sans-serif,sans-serif>=20
-  </FONT></P></TD></TR></TBODY></TABLE></CENTER><BR><BR><BR><BR><BR>
-<CENTER>To have your email address placed on our Do Not Send list<BR>please=
-=20
-write to DoNotSend@SideStepNetwork=2Ecom </CENTER>
-</BODY>
-</HTML>
-=20
+Are you deleting all the existing declarations and adding new
+ones with different names?
 
-------=NextMime00A_000_4818428D--
+Are you deleting some of them, but keeping others yet changing
+the arguments to them somehow?
 
+Are you deleting some of them, but masterbating with the coding
+style of others?
 
---===============5567789892047832051==
-Content-Type: text/plain; charset="us-ascii"
-MIME-Version: 1.0
-Content-Transfer-Encoding: 7bit
-Content-Disposition: inline
+NOBODY KNOWS!
 
-_______________________________________________
-Containers mailing list
-Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-https://lists.linux-foundation.org/mailman/listinfo/containers
---===============5567789892047832051==--
+Whereas if you just deleted the lines for the functions you
+are removing, it would be totally clear what is happening.
+
+This patch, from a reviewability standpoint, sucks.  It makes
+efficient patch review next to impossible.
+
+I'm not looking at the rest of this patch set, clean this stuff up and
+resubmit it all, thank you.
