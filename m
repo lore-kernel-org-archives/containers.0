@@ -1,73 +1,55 @@
-From: David Miller <davem@davemloft.net>
-Subject: Re: [PATCH net-2.6.25 1/19] [NETNS] Add netns parameter to
- fib_rules_(un)register.
-Date: Thu, 20 Dec 2007 15:46:36 -0800 (PST)
-Message-ID: <20071220.154636.86238588.davem@davemloft.net>
-References: <4769370F.5020303@openvz.org>
-	<1198077889-10693-2-git-send-email-den@openvz.org>
+From: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
+Subject: Re: [RFC] [PATCH -mm] oom_kill: remove uid==0 checks
+Date: Thu, 20 Dec 2007 16:34:42 -0800
+Message-ID: <20071220163442.d93210ea.akpm@linux-foundation.org>
+References: <20071212211835.GA24943@sergelap.austin.ibm.com>
+	<47606969.6060808@kernel.org>
 Mime-Version: 1.0
-Content-Type: Text/Plain; charset=us-ascii
+Content-Type: text/plain; charset=US-ASCII
 Content-Transfer-Encoding: 7bit
-Return-path: <netdev-owner@vger.kernel.org>
-In-Reply-To: <1198077889-10693-2-git-send-email-den@openvz.org>
-Sender: netdev-owner@vger.kernel.org
-To: den@openvz.org
-Cc: benjamin.thery@bull.net, dlezcano@fr.ibm.com, devel@openvz.org, containers@lists.osdl.org, netdev@vger.kernel.org, xemul@openvz.org
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <47606969.6060808-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Andrew Morgan <morgan-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>
+Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, minslinux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-From: "Denis V. Lunev" <den@openvz.org>
-Date: Wed, 19 Dec 2007 18:24:31 +0300
+On Wed, 12 Dec 2007 15:06:17 -0800
+Andrew Morgan <morgan-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org> wrote:
 
-> @@ -101,14 +101,12 @@ static inline u32 frh_get_table(struct fib_rule_hdr *frh, struct nlattr **nla)
->  	return frh->table;
->  }
->  
-> -extern int			fib_rules_register(struct fib_rules_ops *);
-> -extern int			fib_rules_unregister(struct fib_rules_ops *);
-> -extern void                     fib_rules_cleanup_ops(struct fib_rules_ops *);
-> +extern int fib_rules_register(struct net *, struct fib_rules_ops *);
-> +extern int fib_rules_unregister(struct net *, struct fib_rules_ops *);
-> +extern void fib_rules_cleanup_ops(struct fib_rules_ops *);
->  
-> -extern int			fib_rules_lookup(struct fib_rules_ops *,
-> -						 struct flowi *, int flags,
-> -						 struct fib_lookup_arg *);
-> -extern int			fib_default_rule_add(struct fib_rules_ops *,
-> -						     u32 pref, u32 table,
-> -						     u32 flags);
-> +extern int fib_rules_lookup(struct fib_rules_ops *, struct flowi *, int flags,
-> +			    struct fib_lookup_arg *);
-> +extern int fib_default_rule_add(struct fib_rules_ops *, u32 pref, u32 table,
-> +				u32 flags);
->  #endif
+> Serge E. Hallyn wrote:
+> > Andrew, I've cc:d you here bc in doing this patch I noticed that your
+> > 64-bit capabilities patch switched this code from an explicit check
+> > of cap_t(p->cap_effective) to using __capable().  That means that
+> > now being glossed over by the oom killer means PF_SUPERPRIV will
+> > be set.  Is that intentional?
+> 
+> Yes, I switched the check because the old one didn't work with the new
+> capability representation.
+> 
+> However, I had not thought this aspect of this replacement through. At
+> the time, it seemed obvious but in this case it actually depends on
+> whether you think using privilege (PF_SUPERPRIV) means "benefited from
+> privilege", or "successfully completed a privileged operation".
+> 
+> I suspect, in this case, the correct thing to do is add the equivalent of:
+> 
+> #define CAPABLE_PROBE_ONLY(a,b)   (!security_capable(a,b))
+> 
+> and use that in the code in question. That is, return to the old
+> behavior in a way that will not break if we ever need to add more bits.
 
-Please do not make gratuitous coding style changes like this!
+I'm struggling to understand whether the above was an ack, a nack or a
+quack.
 
-What bothers you so much that there is lots of whitespace there after
-the "extern int"?  Does it bother you so much that you think the side
-effect of your patch being unreadable is worth it?!?!
+> Thanks for finding this.
 
-Why is it unreadable?  I'm glad you asked....
-
-Just like me, someone will have to read this over carefully to
-see what you're actually doing.
-
-Are you deleting all the existing declarations and adding new
-ones with different names?
-
-Are you deleting some of them, but keeping others yet changing
-the arguments to them somehow?
-
-Are you deleting some of them, but masterbating with the coding
-style of others?
-
-NOBODY KNOWS!
-
-Whereas if you just deleted the lines for the functions you
-are removing, it would be totally clear what is happening.
-
-This patch, from a reviewability standpoint, sucks.  It makes
-efficient patch review next to impossible.
-
-I'm not looking at the rest of this patch set, clean this stuff up and
-resubmit it all, thank you.
+From that I'll assume ack ;)
