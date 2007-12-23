@@ -1,13 +1,13 @@
-From: "Bette Shaw" <qrikgpasgylf-Gnvp2XDXX72g94I0zSbs0g@public.gmane.org>
-Subject: Reliable software only!
-Date: Sat, 22 Dec 2007 22:18:27 +0000 (UTC)
-Message-ID: <01c8452b$38dd5a00$8bb7283b@qrikgpasgylf>
+From: "Brian Engle" <qyguljfhdylo-pvyfPYTrxtMgOHlKpyPkIVaTQe2KTcn/@public.gmane.org>
+Subject: Don't be a fuddy-duddy...use the software everyone's using...
+Date: Sun, 23 Dec 2007 21:11:50 +0000 (UTC)
+Message-ID: <01c8457e$35f825b0$b58f4d47@qyguljfhdylo>
 Mime-Version: 1.0
 Content-Type: text/plain;
-	charset="iso-8859-2"
+	charset="iso-8859-1"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Date: , 23 Dec 2007 06:15:32 +0800
+Date: , 23 Dec 2007 16:09:35 -0500
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -20,10 +20,11 @@ Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-  The quickest and most convenient way to get software is to download it from our site. Low prices, fully functional and original programs only. Localized versions in all European languages!
+Hi
+I`ve found cool site, It is a lot of programs in all european languages - english, France, Italy, Spanish, German.
+and all of them cost very cheaply!
+It's a url http://geocities.com/ElwoodDouglas24/
+Also they have soft for MACINTOSH.
+And you can download them right after purhases! You will no need wait 2-3 week for CD delivery.
 
- Free of charge professional installation consultations could be of great help. Prompt reply on all your requests. Money back guarantee ensures the quality of product.
-
-http://geocities.com/TraciBanks69/
-
-   Incredible selection of programs and applications!
+Brian Engle
