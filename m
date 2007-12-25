@@ -1,13 +1,13 @@
-From: "Brian Engle" <qyguljfhdylo-pvyfPYTrxtMgOHlKpyPkIVaTQe2KTcn/@public.gmane.org>
-Subject: Don't be a fuddy-duddy...use the software everyone's using...
-Date: Sun, 23 Dec 2007 21:11:50 +0000 (UTC)
-Message-ID: <01c8457e$35f825b0$b58f4d47@qyguljfhdylo>
+From: "Olga Dominguez" <dwsoccerm-HzeYXsZBA79mR6Xm/wNWPw@public.gmane.org>
+Subject: Receive a real time experience of gambling without visiting a real
+	casino!
+Date: Tue, 25 Dec 2007 15:11:08 +0100
+Message-ID: <01c84708$608616d0$05101554@dwsoccerm>
 Mime-Version: 1.0
 Content-Type: text/plain;
-	charset="iso-8859-1"
+	charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Date: , 23 Dec 2007 16:09:35 -0500
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -17,14 +17,13 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Hi
-I`ve found cool site, It is a lot of programs in all european languages - english, France, Italy, Spanish, German.
-and all of them cost very cheaply!
-It's a url http://geocities.com/ElwoodDouglas24/
-Also they have soft for MACINTOSH.
-And you can download them right after purhases! You will no need wait 2-3 week for CD delivery.
+ Visit Golden Gate casino and you won't be disappointed. Huge welcome bonus! Free to download software! Most popular games! Register free account today and take the advantage of playing when and whatever you like.
 
-Brian Engle
+ Among our advantages are: fast payouts, high degree of security, all around the clock customer support. These are few reasons why Golden Gate casino is so popular
+
+http://geocities.com/CliffordPetersen41/
+
+   Simply try and you'll like it!
