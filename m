@@ -1,8 +1,7 @@
-From: "Julio Crain" <dwsitecentersm-+GwvjBt1dvcswetKESUqMA@public.gmane.org>
-Subject: Receive a real time experience of gambling without visiting a real
-	casino!
-Date: Thu, 27 Dec 2007 08:05:08 +0200
-Message-ID: <01c8485f$321e5200$1307b44e@dwsitecentersm>
+From: "Teri Roman" <dwspiritwarriorsm-MlrnPyGMuclMG4tL0cngSNBPR1lH4CV8@public.gmane.org>
+Subject: Work hard, play harder.
+Date: Fri, 28 Dec 2007 02:29:39 +0500
+Message-ID: <01c848f9$7eb66b80$f86c5e4d@dwspiritwarriorsm>
 Mime-Version: 1.0
 Content-Type: text/plain;
 	charset="windows-1250"
@@ -17,13 +16,13 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
+To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
- Feel like gambling? Golden Gate Casino is worth your attention. All popular casino games, great welcome bonus, fast to download, easy to use and completely free software!
+ Play the most popular casino games at home! Black Jack, Slots, Roulette, Poker, Craps! Just download easy to use free software, register free account and play your favorite game. Receive free $2400 bonus to start play with!
 
- Among our advantages are: fast payouts, high degree of security, all around the clock customer support. These are few reasons why Golden Gate casino is so popular
+ Golden Gate Casino guarantees competent customer support for all players, quick response in case you have question or problem and instant payouts. Fair gaming only!
 
-http://geocities.com/AnnmarieJensen52/
+http://geocities.com/DominiqueStevens90/
 
-   Don't hesitate, register now!
+   Choose Golden Gate Casino!
