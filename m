@@ -1,11 +1,11 @@
-From: "Tina Marucci" <dwsmartm-hxZZEg+6OFBeoWH0uzbU5w@public.gmane.org>
-Subject: Great saving opportunity!
-Date: Fri, 28 Dec 2007 11:09:49 +0100
-Message-ID: <01c84942$299e0470$08190b53@dwsmartm>
+From: "Glenn Lowry" <dwsheerluckdesignsm-rHaStvWWQX2287//2obPolaTQe2KTcn/@public.gmane.org>
+Subject: Get your free 2400$ welcome bonus and win much more!
+Date: Fri, 28 Dec 2007 15:49:34 +0200
+Message-ID: <01c84969$3df63b00$c90ce958@dwsheerluckdesignsm>
 Mime-Version: 1.0
 Content-Type: text/plain;
 	charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
@@ -19,13 +19,10 @@ Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-    Nowadays many health organizations warn people that order medications=
- to be careful while choosing online drugstores. Canadian =ABCanadianPhar=
-macy=BB drugstore offers their customers internationally certified qualit=
-y generic medications produced from the best raw materials.
+ Amateur in gambling? Never visited a real casino? Golden Gate casino is one of the most popular internet gambling destinations which offers the most popular games, such as Black Jack, Slots, Roulette, Poker, Craps, etc. Download free realistic and easy to use software and feel the atmosphere of the real casino!
 
-http://geocities.com/IleneHarper88/
+ Play with us and you'll appreciate our support available 24/7, level of security, the quality of software! Enjoy our big bonuses!
 
- We hope this information will help you to solve your health problems.=20
+http://geocities.com/ChiDuffy41/
 
-Tina Marucci
+   Gamble at home without worry and rush!
