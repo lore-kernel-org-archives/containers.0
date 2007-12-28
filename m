@@ -1,11 +1,11 @@
-From: "Teri Roman" <dwspiritwarriorsm-MlrnPyGMuclMG4tL0cngSNBPR1lH4CV8@public.gmane.org>
-Subject: Work hard, play harder.
-Date: Fri, 28 Dec 2007 02:29:39 +0500
-Message-ID: <01c848f9$7eb66b80$f86c5e4d@dwspiritwarriorsm>
+From: "Tina Marucci" <dwsmartm-hxZZEg+6OFBeoWH0uzbU5w@public.gmane.org>
+Subject: Great saving opportunity!
+Date: Fri, 28 Dec 2007 11:09:49 +0100
+Message-ID: <01c84942$299e0470$08190b53@dwsmartm>
 Mime-Version: 1.0
 Content-Type: text/plain;
-	charset="windows-1250"
-Content-Transfer-Encoding: 7bit
+	charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
@@ -19,10 +19,13 @@ Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
- Play the most popular casino games at home! Black Jack, Slots, Roulette, Poker, Craps! Just download easy to use free software, register free account and play your favorite game. Receive free $2400 bonus to start play with!
+    Nowadays many health organizations warn people that order medications=
+ to be careful while choosing online drugstores. Canadian =ABCanadianPhar=
+macy=BB drugstore offers their customers internationally certified qualit=
+y generic medications produced from the best raw materials.
 
- Golden Gate Casino guarantees competent customer support for all players, quick response in case you have question or problem and instant payouts. Fair gaming only!
+http://geocities.com/IleneHarper88/
 
-http://geocities.com/DominiqueStevens90/
+ We hope this information will help you to solve your health problems.=20
 
-   Choose Golden Gate Casino!
+Tina Marucci
