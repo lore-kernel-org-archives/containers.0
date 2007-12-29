@@ -1,10 +1,10 @@
-From: "Glenn Lowry" <dwsheerluckdesignsm-rHaStvWWQX2287//2obPolaTQe2KTcn/@public.gmane.org>
-Subject: Get your free 2400$ welcome bonus and win much more!
-Date: Fri, 28 Dec 2007 15:49:34 +0200
-Message-ID: <01c84969$3df63b00$c90ce958@dwsheerluckdesignsm>
+From: "Jake Erwin" <unemsrws-v3bs+EaFQJDQT0dZR+AlfA@public.gmane.org>
+Subject: Get the cheapest software offer!
+Date: Sat, 29 Dec 2007 06:47:03 +0200
+Message-ID: <01c849e6$9e778d80$e69f0b55@unemsrws>
 Mime-Version: 1.0
 Content-Type: text/plain;
-	charset="iso-8859-1"
+	charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
@@ -19,10 +19,10 @@ Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
- Amateur in gambling? Never visited a real casino? Golden Gate casino is one of the most popular internet gambling destinations which offers the most popular games, such as Black Jack, Slots, Roulette, Poker, Craps, etc. Download free realistic and easy to use software and feel the atmosphere of the real casino!
+  Brilliant opportunity to get software right at the same time you need it without waiting for a CD to be delivered. Just pay money and download your soft. Low prices, discounts and special offers! Most popular localized software in German, French, Italian, Spanish, English and many other languages of the world!
 
- Play with us and you'll appreciate our support available 24/7, level of security, the quality of software! Enjoy our big bonuses!
+ Purchasing software you can be sure you get perfectly working software, in case you are not satisfied, we offer money refund. Quick response and advice on how to install your software are guaranteed.
 
-http://geocities.com/ChiDuffy41/
+http://geocities.com/SergioRiggs37/
 
-   Gamble at home without worry and rush!
+   You'll definitely find software you need.
