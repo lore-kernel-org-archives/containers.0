@@ -1,13 +1,13 @@
-From: "Donna Herman" <temp-KrCj8oD6ksw@public.gmane.org>
-Subject: Get any soft you need without delays.
-Date: Tue, 1 Jan 2008 16:50:24 +0000 (UTC)
-Message-ID: <02d7fd44$14710000$266a4248@temp>
+From: "Pamela Dale" <cixnp-LaTp2N02TKP8LG1pIfCmOUEOCMrvLtNR@public.gmane.org>
+Subject: Receive a real time experience of gambling without visiting a real
+	casino!
+Date: Wed, 1 Jan 2008 20:43:35 +0200
+Message-ID: <01c84cb6$fa783580$d68ade4d@cixnp>
 Mime-Version: 1.0
 Content-Type: text/plain;
-	charset="iso-8859-2"
+	charset="windows-1250"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Date: Tue, 0 Jan 2008 11:45:50 -0500
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -17,13 +17,13 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
+To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-  Take the opportunity to buy cheap applications, which are supposed to cost 5 to 20 times more! Only original and fully functional versions available to download immediately after you purchase. Also programs for Macintosh! Software in many languages!
+ Where to gamble online? Check the list of the games in Golden Gate Casino! Just download free software and play from the comfort of your home! Get started and receive $2400 welcome bonus!
 
- We provide help in installing software. You can ask any question and get a free of charge consultation. Guaranteed access to all updates! Friendly and professional service!
+ Register with Golden Gate Casino and enjoy a great atmosphere of the real casino, friendly customer support, absolute security and safety.
 
-http://geocities.com/QuintonParrish18/
+http://geocities.com/AlanRandall44/
 
-   Purchase perfectly functioning software.
+   Start downloading free software now!
