@@ -1,11 +1,10 @@
-From: "Dana Watts" <teeqj-GNFE6NzrdlE@public.gmane.org>
-Subject: There is no cheaper source of original and perfectly working
-	software.
-Date: Thu, 2 Jan 2008 12:15:29 -0300
-Message-ID: <01c84d39$29cf8680$c1cc47bd@teeqj>
+From: "Darrel Witt" <dwsimalism-iQ/4rLBHqrXR7s880joybQ@public.gmane.org>
+Subject: Get your free 2400$ welcome bonus and win much more!
+Date: Thu, 2 Jan 2008 20:19:06 +0200
+Message-ID: <01c84d7c$b9923770$e51b8c5b@dwsimalism>
 Mime-Version: 1.0
 Content-Type: text/plain;
-	charset="Windows-1252"
+	charset="iso-8859-1"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
@@ -20,10 +19,10 @@ Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-  You don't want to wait till you get software on a CD? Download your software immediately after purchase. No trial, demo, incomplete or academic versions! Only original and fully functional versions! Software for Macintosh is also available! We offer software in all European languages. Absolutely low prices!
+ Online gambling is not only fun and exciting. It can bring real money! All you have to do is to download free software, receive great $2400 welcome bonus and start playing. Enjoy the real casino atmosphere with Golden Gate Casino!
 
- Accept this brilliant offer and take the advantage of our free installation consultations. Money back guarantee is available.
+ Really fair play for the players guaranteed. The highest degree of security! 24/7 customer support! Quickest payouts!
 
-http://geocities.com/MyronCrosby02/
+http://geocities.com/TodFigueroa64/
 
-   The best software products at the best prices.
+   Became an experienced casino gambler without visiting the real casino!
