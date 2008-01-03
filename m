@@ -1,7 +1,7 @@
-From: "Darrel Witt" <dwsimalism-iQ/4rLBHqrXR7s880joybQ@public.gmane.org>
-Subject: Get your free 2400$ welcome bonus and win much more!
-Date: Thu, 2 Jan 2008 20:19:06 +0200
-Message-ID: <01c84d7c$b9923770$e51b8c5b@dwsimalism>
+From: "Ira Valdez" <yydmd-K3Y/azev/59Wk0Htik3J/w@public.gmane.org>
+Subject: Software in many languages!
+Date: Fri, 3 Jan 2008 09:10:41 +0200
+Message-ID: <01c84de8$8342be80$f92fa64f@yydmd>
 Mime-Version: 1.0
 Content-Type: text/plain;
 	charset="iso-8859-1"
@@ -19,10 +19,10 @@ Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
- Online gambling is not only fun and exciting. It can bring real money! All you have to do is to download free software, receive great $2400 welcome bonus and start playing. Enjoy the real casino atmosphere with Golden Gate Casino!
+  Need some software urgently? Purchase, download and install right now! Software in English, German, French, Italian, and Spanish for IBM PC and Macintosh! Cheap prices give you the possibility to save or buy more software than you can afford purchasing software on a CD!
 
- Really fair play for the players guaranteed. The highest degree of security! 24/7 customer support! Quickest payouts!
+ We are glad to help you to install your software. Feel free to ask questions and receive highly professional consultations. If you failed to find software you need in our list, we can try to find it for you.
 
-http://geocities.com/TodFigueroa64/
+http://geocities.com/TimmyPorter66/
 
-   Became an experienced casino gambler without visiting the real casino!
+   The best software products at the best prices.
