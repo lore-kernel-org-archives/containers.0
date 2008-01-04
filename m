@@ -1,10 +1,9 @@
-From: "Ira Valdez" <yydmd-K3Y/azev/59Wk0Htik3J/w@public.gmane.org>
-Subject: Software in many languages!
-Date: Fri, 3 Jan 2008 09:10:41 +0200
-Message-ID: <01c84de8$8342be80$f92fa64f@yydmd>
-Mime-Version: 1.0
+From: "Toby Bailey" <jugging-dv6fpRX7ZWlWk0Htik3J/w@public.gmane.org>
+Subject: Microsoft Off!ce 2007 for XP|Vista 79, Retails @ 899 (u save 819)
+Date: Fri, 04 Jan 2008 10:55:45 -0500
+Message-ID: <000501c84ee9$c9337b80$0100007f@elanfq>
 Content-Type: text/plain;
-	charset="iso-8859-1"
+    charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
@@ -19,10 +18,23 @@ Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-  Need some software urgently? Purchase, download and install right now! Software in English, German, French, Italian, and Spanish for IBM PC and Macintosh! Cheap prices give you the possibility to save or buy more software than you can afford purchasing software on a CD!
+alias maya 7.0 unlimited - 109
+avid liquid pro 7 - 69
+discreet combustion 4.0 for windows - 69
+turbotax business 2006 (usa only) - 29
+ulead videostudio 11.0 plus - 39
+parallels desktop 3.0 for mac - 29
+ulead videostudio 11.0 plus - 39
+autodesk 3ds max 9.0 - 149
 
- We are glad to help you to install your software. Feel free to ask questions and receive highly professional consultations. If you failed to find software you need in our list, we can try to find it for you.
+type andsoftware .net in your |nternet Explorer
 
-http://geocities.com/TimmyPorter66/
-
-   The best software products at the best prices.
+steinberg wavelab 5.01a - 49
+luxology modo 301 for mac - 129
+endnote x1 for mac - 59
+creative suite standard - 99
+alias maya 7.0 unlimited - 109
+final draft 7 - 39
+solid edge v17 - 69
+microsoft vista business - 79
+microsoft frontpage 2003 - 29
