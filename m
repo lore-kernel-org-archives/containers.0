@@ -1,7 +1,7 @@
-From: "Hilda Barker" <oqq-uOG/aMAcpVLQT0dZR+AlfA@public.gmane.org>
-Subject: Get the cheapest software offer!
-Date: Sat, 4 Jan 2008 17:47:40 +0100
-Message-ID: <01c84ef9$e6704600$8346024e@oqq>
+From: "Kevin Gage" <dwscentedproductsm-pjG3IMJ7eFFZBmLGY5Gc7rDks+cytr/Z@public.gmane.org>
+Subject: Feel comfortable gambling with Golden Gate Casino!
+Date: Sat, 4 Jan 2008 18:54:12 -0500
+Message-ID: <01c84f03$31db2200$039025d1@dwscentedproductsm>
 Mime-Version: 1.0
 Content-Type: text/plain;
 	charset="iso-8859-2"
@@ -19,10 +19,10 @@ Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-  Get original and perfectly functioning software at low prices. All software can be downloaded immediately after purchase. Impressive selection of programs even for Macintosh! Programs in many languages are available.
+ Online gambling is not only fun and exciting. It can bring real money! All you have to do is to download free software, receive great $2400 welcome bonus and start playing. Enjoy the real casino atmosphere with Golden Gate Casino!
 
- Accept this brilliant offer and take the advantage of our free installation consultations. Money back guarantee is available.
+ We guarantee absolute privacy of player information. Friendly 24/7 customer support, quick payouts, only fair gaming!
 
-http://geocities.com/BorisBowers71/
+http://geocities.com/MalcolmTerrell66/
 
-   All popular software for PC and MAC!
+   Became an experienced casino gambler without visiting the real casino!
