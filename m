@@ -1,10 +1,10 @@
-From: "Althea Palmer" <yycrpucqajju-o2inBOpDX3NZroRs9YW3xA@public.gmane.org>
-Subject: Purchase software at surprisingly low prices!
-Date: Fri, 3 Jan 2008 22:56:00 +0100
-Message-ID: <01c84e5b$cee28000$190e4c59@yycrpucqajju>
+From: "Hilda Barker" <oqq-uOG/aMAcpVLQT0dZR+AlfA@public.gmane.org>
+Subject: Get the cheapest software offer!
+Date: Sat, 4 Jan 2008 17:47:40 +0100
+Message-ID: <01c84ef9$e6704600$8346024e@oqq>
 Mime-Version: 1.0
 Content-Type: text/plain;
-	charset="us-ascii"
+	charset="iso-8859-2"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
@@ -19,10 +19,10 @@ Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-  Take the opportunity to buy cheap applications, which are supposed to cost 5 to 20 times more! Only original and fully functional versions available to download immediately after you purchase. Also programs for Macintosh! Software in many languages!
+  Get original and perfectly functioning software at low prices. All software can be downloaded immediately after purchase. Impressive selection of programs even for Macintosh! Programs in many languages are available.
 
- After purchasing you can install our software on any computer you'd like since it's not restricted. Access to all updates! Money back guarantee!
+ Accept this brilliant offer and take the advantage of our free installation consultations. Money back guarantee is available.
 
-http://geocities.com/LaverneSoto64/
+http://geocities.com/BorisBowers71/
 
-   Incredible selection of programs and applications!
+   All popular software for PC and MAC!
