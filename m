@@ -1,12 +1,13 @@
-From: "Juan Baker" <sioux-g5JPcOMD2Q3W5vn75QwBj9BPR1lH4CV8@public.gmane.org>
-Subject: Adobe Font Folio 11 for MAC\XP\Vista 189,
-	Retails @ 2599 (u save 2409)
-Date: Sun, 06 Jan 2008 18:33:49 +0700
-Message-ID: <000501c85057$a8893400$0100007f@txbcgu>
+From: "Lolita Powell" <tennisqueen5nn-W0dLhRnhau/U/9gw9voE1hlHr6yJLyVpAL8bYrjMMd8@public.gmane.org>
+Subject: Get the cheapest software offer!
+Date: Sun, 6 Jan 2008 15:42:06 +0000 (UTC)
+Message-ID: <01c84f6e$0c2494e0$0fcb8b18@tennisqueen5nn>
+Mime-Version: 1.0
 Content-Type: text/plain;
-    charset="us-ascii"
+	charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Date: , 5 Jan 2008 07:39:04 -0800
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -16,23 +17,13 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
+To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-endnote x1 for mac - 59
-microsoft frontpage 2003 - 29
-roxio digitalmedia studio deluxe suite 7.0 - 49
-autodesk aliasstudio 2008 - 109
-corel painter ix for mac - 39
+  Take the opportunity to buy cheap applications, which are supposed to cost 5 to 20 times more! Only original and fully functional versions available to download immediately after you purchase. Also programs for Macintosh! Software in many languages!
 
-type xprimesoft . net in Internet Exp!orer
+ Purchasing software you can be sure you get perfectly working software, in case you are not satisfied, we offer money refund. Quick response and advice on how to install your software are guaranteed.
 
-microsoft visual studio 2005 professional edition - 149
-microsoft visual basic professional 6.0 - 49
-autodesk architectural studio 3.0 - 39
-mcafee internet security suite version 7.0 - 29
-adobe acrobat professional 7 - 69
-adobe photoshop cs2 v 9.0 - 69
-turbotax business 2006 (usa only) - 29
-adobe audition 2.0 - 49
-stuffit deluxe 11 for mac - 29
+http://geocities.com/DiegoFuentes94/
+
+   You'll definitely find software you need.
