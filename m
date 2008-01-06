@@ -1,10 +1,10 @@
-From: "Kevin Gage" <dwscentedproductsm-pjG3IMJ7eFFZBmLGY5Gc7rDks+cytr/Z@public.gmane.org>
-Subject: Feel comfortable gambling with Golden Gate Casino!
-Date: Sat, 4 Jan 2008 18:54:12 -0500
-Message-ID: <01c84f03$31db2200$039025d1@dwscentedproductsm>
-Mime-Version: 1.0
+From: "Juan Baker" <sioux-g5JPcOMD2Q3W5vn75QwBj9BPR1lH4CV8@public.gmane.org>
+Subject: Adobe Font Folio 11 for MAC\XP\Vista 189,
+	Retails @ 2599 (u save 2409)
+Date: Sun, 06 Jan 2008 18:33:49 +0700
+Message-ID: <000501c85057$a8893400$0100007f@txbcgu>
 Content-Type: text/plain;
-	charset="iso-8859-2"
+    charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
@@ -16,13 +16,23 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
 List-Id: containers.vger.kernel.org
 
- Online gambling is not only fun and exciting. It can bring real money! All you have to do is to download free software, receive great $2400 welcome bonus and start playing. Enjoy the real casino atmosphere with Golden Gate Casino!
+endnote x1 for mac - 59
+microsoft frontpage 2003 - 29
+roxio digitalmedia studio deluxe suite 7.0 - 49
+autodesk aliasstudio 2008 - 109
+corel painter ix for mac - 39
 
- We guarantee absolute privacy of player information. Friendly 24/7 customer support, quick payouts, only fair gaming!
+type xprimesoft . net in Internet Exp!orer
 
-http://geocities.com/MalcolmTerrell66/
-
-   Became an experienced casino gambler without visiting the real casino!
+microsoft visual studio 2005 professional edition - 149
+microsoft visual basic professional 6.0 - 49
+autodesk architectural studio 3.0 - 39
+mcafee internet security suite version 7.0 - 29
+adobe acrobat professional 7 - 69
+adobe photoshop cs2 v 9.0 - 69
+turbotax business 2006 (usa only) - 29
+adobe audition 2.0 - 49
+stuffit deluxe 11 for mac - 29
