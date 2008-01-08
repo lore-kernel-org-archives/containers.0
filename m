@@ -1,7 +1,7 @@
-From: "Alexander Turner" <cavabaja.com-5oW1wY+IOMUZale1y2Z89dBPR1lH4CV8@public.gmane.org>
+From: "Drake Long" <registertix.com-HqgDEucC1ZVWk0Htik3J/w@public.gmane.org>
 Subject: Microsoft Vista Ultimate for 89, Retails @ 399 (You Save 310)
-Date: Tue, 8 Jan 2008 16:37:46 +0000 (UTC)
-Message-ID: <000401c85214$3c9ffa80$0100007f@mcoobg>
+Date: Tue, 8 Jan 2008 16:39:32 +0000 (UTC)
+Message-ID: <000401c85214$3c9ffa80$0100007f__38698.655824601$1199810395$gmane$org@mcoobg>
 Content-Type: text/plain;
 	charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -16,7 +16,7 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
 List-Id: containers.vger.kernel.org
 
 
