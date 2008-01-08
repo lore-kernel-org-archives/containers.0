@@ -1,31 +1,39 @@
-From: Samuel Thibault <samuel.thibault@ens-lyon.org>
-Subject: Re: util-linux-ng: unprivileged mounts support
-Date: Tue, 8 Jan 2008 15:47:18 +0000
-Message-ID: <20080108154718.GH4222@implementation.uk.xensource.com>
-References: <E1JCCyk-0002pY-AM@pomaz-ex.szeredi.hu> <200801081031.06826.vapier@gentoo.org>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=iso-8859-1
-Content-Transfer-Encoding: QUOTED-PRINTABLE
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1760266AbYAHPsS@vger.kernel.org>
-Content-Disposition: inline
-In-Reply-To: <200801081031.06826.vapier@gentoo.org>
-Sender: linux-kernel-owner@vger.kernel.org
-To: Mike Frysinger <vapier@gentoo.org>
-Cc: Miklos Szeredi <miklos@szeredi.hu>, util-linux-ng@vger.kernel.org, akpm@linux-foundation.org, hch@infradead.org, serue@us.ibm.com, viro@ftp.linux.org.uk, ebiederm@xmission.com, kzak@redhat.com, linux-fsdevel@vger.kernel.org, linux-kernel@vger.kernel.org, containers@lists.osdl.org
+From: "Alexander Turner" <cavabaja.com-5oW1wY+IOMUZale1y2Z89dBPR1lH4CV8@public.gmane.org>
+Subject: Microsoft Vista Ultimate for 89, Retails @ 399 (You Save 310)
+Date: Tue, 8 Jan 2008 16:37:46 +0000 (UTC)
+Message-ID: <000401c85214$3c9ffa80$0100007f@mcoobg>
+Content-Type: text/plain;
+	charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Date: mar, 08 ene 2008 11:34:03 -0500
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Mike Frysinger, le Tue 08 Jan 2008 10:31:04 -0500, a =E9crit :
-> with all the non-linux changes that have gone in, does there need to =
-be header=20
-> checks here and then have mount.c key off of them ?  i'm thinking so =
-=2E..
 
-Sure!
+Type 'xhighersoftware. com' in Internet browser
+(please delete space and quotes)
 
-Samuel
---
-To unsubscribe from this list: send the line "unsubscribe linux-kernel"=
- in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
-Please read the FAQ at  http://www.tux.org/lkml/
+alias motionbuilder 6.0 - 49
+autodesk autocad electrical 2006 - 99
+symantec norton 360 - 29
+cakewalk project 5 - 59
+sony sound forge 9.0 - 49
+adobe acrobat 3d - 59
+alias studiotools 11.02 - 49
+mindjet mindmanager 7 for mac - 39
+quarkxpress passport 7.3 - 79
+microsoft money home & business 7 - 39
+avid liquid pro 7 - 69
+sony acid pro 6 - 59
+
+You can save 75-90% here!
