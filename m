@@ -1,54 +1,46 @@
-From: Miklos Szeredi <miklos@szeredi.hu>
-Subject: Re: [patch 7/9] unprivileged mounts: allow unprivileged fuse mounts
-Date: Wed, 09 Jan 2008 15:14:13 +0100
-Message-ID: <E1JCbh7-0005u7-0L@pomaz-ex.szeredi.hu>
-References: <20080108113502.184459371@szeredi.hu> <20080108113630.861045063@szeredi.hu> <20080108214625.GE5050@ucw.cz> <E1JCN9I-0004DB-DF@pomaz-ex.szeredi.hu> <20080108225820.GA9735@elf.ucw.cz> <E1JCWxm-0005Fn-36@pomaz-ex.szeredi.hu> <20080109113325.GC9735@elf.ucw.cz> <E1JCan7-0005mP-UE@pomaz-ex.szeredi.hu> <20080109133506.GI9735@elf.ucw.cz> <E1JCbIb-0005rA-5O@pomaz-ex.szeredi.hu> <20080109140051.GB12784@elf.ucw.cz>
-Return-path: <linux-fsdevel-owner@vger.kernel.org>
-In-reply-to: <20080109140051.GB12784@elf.ucw.cz> (message from Pavel Machek on
-	Wed, 9 Jan 2008 15:00:51 +0100)
-Sender: linux-fsdevel-owner@vger.kernel.org
-To: pavel@ucw.cz
-Cc: akpm@linux-foundation.org, hch@infradead.org, serue@us.ibm.com, viro@ftp.linux.org.uk, ebiederm@xmission.com, kzak@redhat.com, linux-fsdevel@vger.kernel.org, linux-kernel@vger.kernel.org, containers@lists.osdl.org, util-linux-ng@vger.kernel.org
+From: "Denis V. Lunev" <den-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+Subject: [PATCH netns-2.6.25 0/19] routing virtualization v2
+Date: Wed, 09 Jan 2008 21:03:03 +0300
+Message-ID: <47850C57.60907@openvz.org>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=KOI8-R
+Content-Transfer-Encoding: 7bit
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: David Miller <davem-fT/PcQaiUtIeIZ0/mPfg9Q@public.gmane.org>
+Cc: netdev <netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Benjamin Thery <benjamin.thery-6ktuUTfB/bM@public.gmane.org>, xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-> > > I'm not saying fuse is worthless. It is a nice toy for single-user
-> > > systems. But I do not think we should be merging "allow ordinary users
-> > > to mount their own fuse's" before issues above are fixed.
-> > 
-> > I think multi user systems are not all that interesting.  And I
-> > suspect very few of them want reliably working suspend/hibernate
-> > (which they wouldn't get due to other issues anyway), or have weird
-> > shutdown scripts which stop when they are unable to umount
-> > filesystems.
-> 
-> Weird shutdown scripts? I believe all shutdown scripts have this issue
-> -- if you want to [cleanly] unmount your / filesystem, you need all
-> the opens for write closed, right...? Which self-deadlocked fused
-> holding files open will prevent.
-> 
-> > For paranoid sysadmins, I suggest not enabling fuse for unprivileged
-> > users, which is pretty easy to do: just don't set /dev/fuse to be
-> > world read-writable (which is the default BTW).
-> > 
-> > So your reasons just don't warrant a big effort involving VFS hacking,
-> > etc.  Patches are of course welcome.
-> 
-> Well, I believe code with obscure, but almost impossible to fix
-> problems should not be merged...
+Hi, Dave!
 
-That code _has_ been merged, something like 3 years ago, and is doing
-fine, thank you.
+This set adds namespace support for routing tables & rules manipulation
+in the different namespaces. So, one could create a namespace and
+setup IPv4 routing there how he wants.
 
-The unprivileged mounts code, which we should be discussing, doesn't
-change anything about that, except to not require another suid-root
-utility.  Many distributions enabling unprivileged mounting by default
-_now_, so it's not as if there's some great danger in doing this
-slightly differently.
+After this patch user will have the ability to configure and
+observe its own isolated set of routing rules/tables, but they
+all will be unused. I.e. routing decisions inside the network
+stack are still made based on the init_net's rules. The reason for doing
+so is to have something self-consistent and not too huge :)
 
-> Anyway, I believe it would be fair to mention kill -9 no longer
-> working and shutdown/hibernation/multiuser problems it implies in the
-> changelogs and probably sysctl documentation or how is this enabled.
+The sequence is the following:
+- viritualize generic FIB rules operations
+- change IPv4 FIB initialization sequence
+- virtualize FIB tables access
 
-Sure.
+After this, the 'ip' utility and the /proc interface will start
+working correctly inside a namespace, while the 'route' utility
+will not, because IP sockets currently cannot be created in non-init
+namespace.
 
-Miklos
+Changes from v1:
+- fixed spacing in the fib_rules.h
+- improved patch description by the suggestion of Daniel Lezcano
