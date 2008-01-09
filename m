@@ -1,41 +1,52 @@
-From: Karel Zak <kzak@redhat.com>
-Subject: Re: [patch 6/9] unprivileged mounts: allow unprivileged mounts
-Date: Wed, 9 Jan 2008 12:11:20 +0100
-Message-ID: <20080109111120.GI3926@petra.dvoda.cz>
-References: <20080108113502.184459371@szeredi.hu> <20080108113629.192719163@szeredi.hu>
+From: Pavel Machek <pavel@ucw.cz>
+Subject: Re: [patch 7/9] unprivileged mounts: allow unprivileged fuse mounts
+Date: Wed, 9 Jan 2008 12:12:42 +0100
+Message-ID: <20080109111242.GB9735@elf.ucw.cz>
+References: <20080108113502.184459371@szeredi.hu> <20080108113630.861045063@szeredi.hu> <20080108214625.GE5050@ucw.cz> <E1JCN9I-0004DB-DF@pomaz-ex.szeredi.hu> <47840DAC.5000108@nigel.suspend2.net> <E1JCWax-0005Ck-Kg@pomaz-ex.szeredi.hu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Return-path: <linux-fsdevel-owner@vger.kernel.org>
 Content-Disposition: inline
-In-Reply-To: <20080108113629.192719163@szeredi.hu>
+In-Reply-To: <E1JCWax-0005Ck-Kg@pomaz-ex.szeredi.hu>
 Sender: linux-fsdevel-owner@vger.kernel.org
 To: Miklos Szeredi <miklos@szeredi.hu>
-Cc: akpm@linux-foundation.org, hch@infradead.org, serue@us.ibm.com, viro@ftp.linux.org.uk, ebiederm@xmission.com, linux-fsdevel@vger.kernel.org, linux-kernel@vger.kernel.org, containers@lists.osdl.org, util-linux-ng@vger.kernel.org
+Cc: nigel@nigel.suspend2.net, akpm@linux-foundation.org, hch@infradead.org, serue@us.ibm.com, viro@ftp.linux.org.uk, ebiederm@xmission.com, kzak@redhat.com, linux-fsdevel@vger.kernel.org, linux-kernel@vger.kernel.org, containers@lists.osdl.org, util-linux-ng@vger.kernel.org
 List-Id: containers.vger.kernel.org
 
-On Tue, Jan 08, 2008 at 12:35:08PM +0100, Miklos Szeredi wrote:
-> Define a new fs flag FS_SAFE, which denotes, that unprivileged mounting of
-> this filesystem may not constitute a security problem.
+On Wed 2008-01-09 09:47:31, Miklos Szeredi wrote:
+> > >> On Tue 2008-01-08 12:35:09, Miklos Szeredi wrote:
+> > >>> From: Miklos Szeredi <mszeredi@suse.cz>
+> > >>>
+> > >>> Use FS_SAFE for "fuse" fs type, but not for "fuseblk".
+> > >>>
+> > >>> FUSE was designed from the beginning to be safe for unprivileged users.  This
+> > >>> has also been verified in practice over many years.  In addition unprivileged
+> > >> Eh? So 'kill -9 no longer works' and 'suspend no longer works' is not
+> > >> considered important enough to even mention?
+> > > 
+> > > No.  Because in practice they don't seem to matter.  Also because
+> > > there's no way in which fuse could be done differently to address
+> > > these issues.
+> > 
+> > Could you clarify, please? I hope I'm getting the wrong end of the stick
+> > - it sounds to me like you and Pavel are saying that this patch breaks
+> > suspending to ram (and hibernating?) but you want to push it anyway
+> > because you haven't been able to produce an instance, don't think
+> > suspending or hibernating matter and couldn't fix fuse anyway?
 > 
-> Since most filesystems haven't been designed with unprivileged mounting in
-> mind, a thorough audit is needed before setting this flag.
+> This patch has nothing to do with suspend or hibernate.  What this
+> patchset does, is help get rid of fusermount, a suid-root mount
+> helper.  It also opens up new possibilities, which are not fuse
+> related.
 > 
-> For "safe" filesystems also allow unprivileged forced unmounting.
+> Fuse has bad interactions with the freezer, theoretically.  In
+> practice, I remember just one bug report (that sparked off this whole
+> "do we need freezer, or don't we" flamefest), that actually got fixed
+> fairly quickly, ...maybe.  Rafael probably remembers better.
 
- What about to list "safe" filesystems anywhere in /proc/fs/ ? I think
- it's very important information for admins.
-
- Note, your patch for mount(8) is always trying to use unprivileged
- mount(2) for non-root users. It's overkill when unprivileged mounts are
- supported for bind mounts and fuse only. It would be nice to check
- if FS is "safe" before switch to unprivileged mode.
-
- The "safe" definition is also very subjective and it depends on your
- level of paranoia. There should be a way (e.g. /proc) how control and
- modify the list of "safe" filesystems. For example I have no problem
- to mark cifs as "safe" for my home server.
-
-    Karel
-
+In practice, if the "unpriviledged fuse" gets enabled, any user can
+prevent suspend/hibernation from working.
+									Pavel
 -- 
- Karel Zak  <kzak@redhat.com>
+(english) http://www.livejournal.com/~pavelmachek
+(cesky, pictures) http://atrey.karlin.mff.cuni.cz/~pavel/picture/horses/blog.html
