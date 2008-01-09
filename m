@@ -1,8 +1,7 @@
 From: "Denis V. Lunev" <den-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
-Subject: [PATCH net-2.6.25 1/19] [NETNS] Add netns parameter to
-	fib_rules_(un)register.
-Date: Wed,  9 Jan 2008 21:04:22 +0300
-Message-ID: <1199901880-6812-1-git-send-email-den@openvz.org>
+Subject: [PATCH net-2.6.25 13/19] [NETNS] Namespacing IPv4 fib rules.
+Date: Wed,  9 Jan 2008 21:04:34 +0300
+Message-ID: <1199901880-6812-13-git-send-email-den@openvz.org>
 References: <47850C57.60907@openvz.org>
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 In-Reply-To: <47850C57.60907-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
@@ -19,108 +18,164 @@ To: davem-fT/PcQaiUtIeIZ0/mPfg9Q@public.gmane.org
 Cc: netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org, benjamin.thery-6ktuUTfB/bM@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-The patch extends the different fib rules API in order to pass the network
-namespace pointer. That will allow to access the different tables from
-a namespace relative object. As usual, the pointer to the init_net variable
-is passed as parameter so we don't break the network.
+The final trick for rules: place fib4_rules_ops into struct net and modify
+initialization path for this.
 
 Acked-by: Benjamin Thery <benjamin.thery-6ktuUTfB/bM@public.gmane.org>
 Acked-by: Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
 Signed-off-by: Denis V. Lunev <den-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 ---
- include/net/fib_rules.h |    4 ++--
- net/core/fib_rules.c    |    4 ++--
- net/decnet/dn_rules.c   |    4 ++--
- net/ipv4/fib_rules.c    |    2 +-
- net/ipv6/fib6_rules.c   |    4 ++--
- 5 files changed, 9 insertions(+), 9 deletions(-)
+ include/net/netns/ipv4.h |    5 +++++
+ net/ipv4/fib_rules.c     |   44 ++++++++++++++++++++++++--------------------
+ 2 files changed, 29 insertions(+), 20 deletions(-)
 
-diff --git a/include/net/fib_rules.h b/include/net/fib_rules.h
-index 2364db1..af62345 100644
---- a/include/net/fib_rules.h
-+++ b/include/net/fib_rules.h
-@@ -101,8 +101,8 @@ static inline u32 frh_get_table(struct fib_rule_hdr *frh, struct nlattr **nla)
- 	return frh->table;
- }
+diff --git a/include/net/netns/ipv4.h b/include/net/netns/ipv4.h
+index e06d7cf..299f8c6 100644
+--- a/include/net/netns/ipv4.h
++++ b/include/net/netns/ipv4.h
+@@ -4,14 +4,19 @@
  
--extern int			fib_rules_register(struct fib_rules_ops *);
--extern int			fib_rules_unregister(struct fib_rules_ops *);
-+extern int fib_rules_register(struct net *, struct fib_rules_ops *);
-+extern int fib_rules_unregister(struct net *, struct fib_rules_ops *);
- extern void                     fib_rules_cleanup_ops(struct fib_rules_ops *);
+ #ifndef __NETNS_IPV4_H__
+ #define __NETNS_IPV4_H__
++
+ struct ctl_table_header;
+ struct ipv4_devconf;
++struct fib_rules_ops;
  
- extern int			fib_rules_lookup(struct fib_rules_ops *,
-diff --git a/net/core/fib_rules.c b/net/core/fib_rules.c
-index fcbf41c..ada9c81 100644
---- a/net/core/fib_rules.c
-+++ b/net/core/fib_rules.c
-@@ -74,7 +74,7 @@ static void flush_route_cache(struct fib_rules_ops *ops)
- 		ops->flush_cache();
- }
- 
--int fib_rules_register(struct fib_rules_ops *ops)
-+int fib_rules_register(struct net *net, struct fib_rules_ops *ops)
- {
- 	int err = -EEXIST;
- 	struct fib_rules_ops *o;
-@@ -113,7 +113,7 @@ void fib_rules_cleanup_ops(struct fib_rules_ops *ops)
- }
- EXPORT_SYMBOL_GPL(fib_rules_cleanup_ops);
- 
--int fib_rules_unregister(struct fib_rules_ops *ops)
-+int fib_rules_unregister(struct net *net, struct fib_rules_ops *ops)
- {
- 	int err = 0;
- 	struct fib_rules_ops *o;
-diff --git a/net/decnet/dn_rules.c b/net/decnet/dn_rules.c
-index ffebea0..0b5e2b9 100644
---- a/net/decnet/dn_rules.c
-+++ b/net/decnet/dn_rules.c
-@@ -255,12 +255,12 @@ void __init dn_fib_rules_init(void)
- {
- 	BUG_ON(fib_default_rule_add(&dn_fib_rules_ops, 0x7fff,
- 			            RT_TABLE_MAIN, 0));
--	fib_rules_register(&dn_fib_rules_ops);
-+	fib_rules_register(&init_net, &dn_fib_rules_ops);
- }
- 
- void __exit dn_fib_rules_cleanup(void)
- {
--	fib_rules_unregister(&dn_fib_rules_ops);
-+	fib_rules_unregister(&init_net, &dn_fib_rules_ops);
- }
- 
- 
+ struct netns_ipv4 {
+ #ifdef CONFIG_SYSCTL
+ 	struct ctl_table_header	*forw_hdr;
+ #endif
+ 	struct ipv4_devconf	*devconf_all;
+ 	struct ipv4_devconf	*devconf_dflt;
++#ifdef CONFIG_IP_MULTIPLE_TABLES
++	struct fib_rules_ops	*rules_ops;
++#endif
+ };
+ #endif
 diff --git a/net/ipv4/fib_rules.c b/net/ipv4/fib_rules.c
-index a0ada3a..eac3f71 100644
+index 49819fe..72232ab 100644
 --- a/net/ipv4/fib_rules.c
 +++ b/net/ipv4/fib_rules.c
-@@ -314,5 +314,5 @@ static int __init fib_default_rules_init(void)
- void __init fib4_rules_init(void)
+@@ -32,8 +32,6 @@
+ #include <net/ip_fib.h>
+ #include <net/fib_rules.h>
+ 
+-static struct fib_rules_ops fib4_rules_ops;
+-
+ struct fib4_rule
  {
- 	BUG_ON(fib_default_rules_init());
--	fib_rules_register(&fib4_rules_ops);
-+	fib_rules_register(&init_net, &fib4_rules_ops);
+ 	struct fib_rule		common;
+@@ -63,7 +61,7 @@ int fib_lookup(struct flowi *flp, struct fib_result *res)
+ 	};
+ 	int err;
+ 
+-	err = fib_rules_lookup(&fib4_rules_ops, flp, 0, &arg);
++	err = fib_rules_lookup(init_net.ipv4.rules_ops, flp, 0, &arg);
+ 	res->r = arg.rule;
+ 
+ 	return err;
+@@ -149,6 +147,7 @@ static int fib4_rule_configure(struct fib_rule *rule, struct sk_buff *skb,
+ 			       struct nlmsghdr *nlh, struct fib_rule_hdr *frh,
+ 			       struct nlattr **tb)
+ {
++	struct net *net = skb->sk->sk_net;
+ 	int err = -EINVAL;
+ 	struct fib4_rule *rule4 = (struct fib4_rule *) rule;
+ 
+@@ -159,7 +158,7 @@ static int fib4_rule_configure(struct fib_rule *rule, struct sk_buff *skb,
+ 		if (rule->action == FR_ACT_TO_TBL) {
+ 			struct fib_table *table;
+ 
+-			table = fib_empty_table(&init_net);
++			table = fib_empty_table(net);
+ 			if (table == NULL) {
+ 				err = -ENOBUFS;
+ 				goto errout;
+@@ -250,9 +249,9 @@ static u32 fib4_rule_default_pref(struct fib_rules_ops *ops)
+ 	struct list_head *pos;
+ 	struct fib_rule *rule;
+ 
+-	if (!list_empty(&fib4_rules_ops.rules_list)) {
+-		pos = fib4_rules_ops.rules_list.next;
+-		if (pos->next != &fib4_rules_ops.rules_list) {
++	if (!list_empty(&ops->rules_list)) {
++		pos = ops->rules_list.next;
++		if (pos->next != &ops->rules_list) {
+ 			rule = list_entry(pos->next, struct fib_rule, list);
+ 			if (rule->pref)
+ 				return rule->pref - 1;
+@@ -274,7 +273,7 @@ static void fib4_rule_flush_cache(void)
+ 	rt_cache_flush(-1);
  }
-diff --git a/net/ipv6/fib6_rules.c b/net/ipv6/fib6_rules.c
-index 9ce2e0a..e4d7e5a 100644
---- a/net/ipv6/fib6_rules.c
-+++ b/net/ipv6/fib6_rules.c
-@@ -273,7 +273,7 @@ int __init fib6_rules_init(void)
- 	if (ret)
- 		goto out;
  
--	ret = fib_rules_register(&fib6_rules_ops);
-+	ret = fib_rules_register(&init_net, &fib6_rules_ops);
- 	if (ret)
- 		goto out_default_rules_init;
- out:
-@@ -286,5 +286,5 @@ out_default_rules_init:
+-static struct fib_rules_ops fib4_rules_ops = {
++static struct fib_rules_ops fib4_rules_ops_template = {
+ 	.family		= AF_INET,
+ 	.rule_size	= sizeof(struct fib4_rule),
+ 	.addr_size	= sizeof(u32),
+@@ -288,24 +287,20 @@ static struct fib_rules_ops fib4_rules_ops = {
+ 	.flush_cache	= fib4_rule_flush_cache,
+ 	.nlgroup	= RTNLGRP_IPV4_RULE,
+ 	.policy		= fib4_rule_policy,
+-	.rules_list	= LIST_HEAD_INIT(fib4_rules_ops.rules_list),
+ 	.owner		= THIS_MODULE,
+ };
  
- void fib6_rules_cleanup(void)
+-static int __init fib_default_rules_init(void)
++static int fib_default_rules_init(struct fib_rules_ops *ops)
  {
--	fib_rules_unregister(&fib6_rules_ops);
-+	fib_rules_unregister(&init_net, &fib6_rules_ops);
+ 	int err;
+ 
+-	err = fib_default_rule_add(&fib4_rules_ops, 0,
+-				   RT_TABLE_LOCAL, FIB_RULE_PERMANENT);
++	err = fib_default_rule_add(ops, 0, RT_TABLE_LOCAL, FIB_RULE_PERMANENT);
+ 	if (err < 0)
+ 		return err;
+-	err = fib_default_rule_add(&fib4_rules_ops, 0x7FFE,
+-				   RT_TABLE_MAIN, 0);
++	err = fib_default_rule_add(ops, 0x7FFE, RT_TABLE_MAIN, 0);
+ 	if (err < 0)
+ 		return err;
+-	err = fib_default_rule_add(&fib4_rules_ops, 0x7FFF,
+-				   RT_TABLE_DEFAULT, 0);
++	err = fib_default_rule_add(ops, 0x7FFF, RT_TABLE_DEFAULT, 0);
+ 	if (err < 0)
+ 		return err;
+ 	return 0;
+@@ -314,20 +309,29 @@ static int __init fib_default_rules_init(void)
+ int __net_init fib4_rules_init(struct net *net)
+ {
+ 	int err;
++	struct fib_rules_ops *ops;
++
++	ops = kmemdup(&fib4_rules_ops_template, sizeof(*ops), GFP_KERNEL);
++	if (ops == NULL)
++		return -ENOMEM;
++	INIT_LIST_HEAD(&ops->rules_list);
++	fib_rules_register(net, ops);
+ 
+-	fib_rules_register(net, &fib4_rules_ops);
+-	err = fib_default_rules_init();
++	err = fib_default_rules_init(ops);
+ 	if (err < 0)
+ 		goto fail;
++	net->ipv4.rules_ops = ops;
+ 	return 0;
+ 
+ fail:
+ 	/* also cleans all rules already added */
+-	fib_rules_unregister(net, &fib4_rules_ops);
++	fib_rules_unregister(net, ops);
++	kfree(ops);
+ 	return err;
+ }
+ 
+ void __net_exit fib4_rules_exit(struct net *net)
+ {
+-	fib_rules_unregister(net, &fib4_rules_ops);
++	fib_rules_unregister(net, net->ipv4.rules_ops);
++	kfree(net->ipv4.rules_ops);
  }
 -- 
 1.5.3.rc5
