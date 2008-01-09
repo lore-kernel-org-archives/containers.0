@@ -1,11 +1,10 @@
 From: "Denis V. Lunev" <den-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
-Subject: [PATCH netns-2.6.25 0/19] routing virtualization v2
-Date: Wed, 09 Jan 2008 21:03:03 +0300
-Message-ID: <47850C57.60907@openvz.org>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=KOI8-R
-Content-Transfer-Encoding: 7bit
+Subject: [PATCH net-2.6.25 17/19] [NETNS] Pass namespace through ip_rt_ioctl.
+Date: Wed,  9 Jan 2008 21:04:38 +0300
+Message-ID: <1199901880-6812-17-git-send-email-den@openvz.org>
+References: <47850C57.60907@openvz.org>
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <47850C57.60907-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -15,32 +14,95 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: David Miller <davem-fT/PcQaiUtIeIZ0/mPfg9Q@public.gmane.org>
-Cc: netdev <netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Benjamin Thery <benjamin.thery-6ktuUTfB/bM@public.gmane.org>, xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org
+To: davem-fT/PcQaiUtIeIZ0/mPfg9Q@public.gmane.org
+Cc: netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org, benjamin.thery-6ktuUTfB/bM@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Hi, Dave!
+... up to rtentry_to_fib_config
 
-This set adds namespace support for routing tables & rules manipulation
-in the different namespaces. So, one could create a namespace and
-setup IPv4 routing there how he wants.
+Acked-by: Benjamin Thery <benjamin.thery-6ktuUTfB/bM@public.gmane.org>
+Acked-by: Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
+Signed-off-by: Denis V. Lunev <den-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+---
+ include/net/route.h     |    2 +-
+ net/ipv4/af_inet.c      |    2 +-
+ net/ipv4/fib_frontend.c |    8 ++++----
+ net/ipv4/ipconfig.c     |    2 +-
+ 4 files changed, 7 insertions(+), 7 deletions(-)
 
-After this patch user will have the ability to configure and
-observe its own isolated set of routing rules/tables, but they
-all will be unused. I.e. routing decisions inside the network
-stack are still made based on the init_net's rules. The reason for doing
-so is to have something self-consistent and not too huge :)
-
-The sequence is the following:
-- viritualize generic FIB rules operations
-- change IPv4 FIB initialization sequence
-- virtualize FIB tables access
-
-After this, the 'ip' utility and the /proc interface will start
-working correctly inside a namespace, while the 'route' utility
-will not, because IP sockets currently cannot be created in non-init
-namespace.
-
-Changes from v1:
-- fixed spacing in the fib_rules.h
-- improved patch description by the suggestion of Daniel Lezcano
+diff --git a/include/net/route.h b/include/net/route.h
+index b777000..5847e6f 100644
+--- a/include/net/route.h
++++ b/include/net/route.h
+@@ -120,7 +120,7 @@ extern void		ip_rt_send_redirect(struct sk_buff *skb);
+ extern unsigned		inet_addr_type(struct net *net, __be32 addr);
+ extern unsigned		inet_dev_addr_type(struct net *net, const struct net_device *dev, __be32 addr);
+ extern void		ip_rt_multicast_event(struct in_device *);
+-extern int		ip_rt_ioctl(unsigned int cmd, void __user *arg);
++extern int		ip_rt_ioctl(struct net *, unsigned int cmd, void __user *arg);
+ extern void		ip_rt_get_source(u8 *src, struct rtable *rt);
+ extern int		ip_rt_dump(struct sk_buff *skb,  struct netlink_callback *cb);
+ 
+diff --git a/net/ipv4/af_inet.c b/net/ipv4/af_inet.c
+index 6fac905..f0968a1 100644
+--- a/net/ipv4/af_inet.c
++++ b/net/ipv4/af_inet.c
+@@ -793,7 +793,7 @@ int inet_ioctl(struct socket *sock, unsigned int cmd, unsigned long arg)
+ 		case SIOCADDRT:
+ 		case SIOCDELRT:
+ 		case SIOCRTMSG:
+-			err = ip_rt_ioctl(cmd, (void __user *)arg);
++			err = ip_rt_ioctl(sk->sk_net, cmd, (void __user *)arg);
+ 			break;
+ 		case SIOCDARP:
+ 		case SIOCGARP:
+diff --git a/net/ipv4/fib_frontend.c b/net/ipv4/fib_frontend.c
+index cecb660..a5c47fc 100644
+--- a/net/ipv4/fib_frontend.c
++++ b/net/ipv4/fib_frontend.c
+@@ -437,7 +437,7 @@ static int rtentry_to_fib_config(struct net *net, int cmd, struct rtentry *rt,
+  *	Handle IP routing ioctl calls. These are used to manipulate the routing tables
+  */
+ 
+-int ip_rt_ioctl(unsigned int cmd, void __user *arg)
++int ip_rt_ioctl(struct net *net, unsigned int cmd, void __user *arg)
+ {
+ 	struct fib_config cfg;
+ 	struct rtentry rt;
+@@ -453,18 +453,18 @@ int ip_rt_ioctl(unsigned int cmd, void __user *arg)
+ 			return -EFAULT;
+ 
+ 		rtnl_lock();
+-		err = rtentry_to_fib_config(&init_net, cmd, &rt, &cfg);
++		err = rtentry_to_fib_config(net, cmd, &rt, &cfg);
+ 		if (err == 0) {
+ 			struct fib_table *tb;
+ 
+ 			if (cmd == SIOCDELRT) {
+-				tb = fib_get_table(&init_net, cfg.fc_table);
++				tb = fib_get_table(net, cfg.fc_table);
+ 				if (tb)
+ 					err = tb->tb_delete(tb, &cfg);
+ 				else
+ 					err = -ESRCH;
+ 			} else {
+-				tb = fib_new_table(&init_net, cfg.fc_table);
++				tb = fib_new_table(net, cfg.fc_table);
+ 				if (tb)
+ 					err = tb->tb_insert(tb, &cfg);
+ 				else
+diff --git a/net/ipv4/ipconfig.c b/net/ipv4/ipconfig.c
+index 7288adb..7a89247 100644
+--- a/net/ipv4/ipconfig.c
++++ b/net/ipv4/ipconfig.c
+@@ -302,7 +302,7 @@ static int __init ic_route_ioctl(unsigned int cmd, struct rtentry *arg)
+ 
+ 	mm_segment_t oldfs = get_fs();
+ 	set_fs(get_ds());
+-	res = ip_rt_ioctl(cmd, (void __user *) arg);
++	res = ip_rt_ioctl(&init_net, cmd, (void __user *) arg);
+ 	set_fs(oldfs);
+ 	return res;
+ }
+-- 
+1.5.3.rc5
