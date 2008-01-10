@@ -1,23 +1,30 @@
 From: David Miller <davem@davemloft.net>
-Subject: Re: [PATCH netns-2.6.25 0/19] routing virtualization v2
-Date: Thu, 10 Jan 2008 03:38:12 -0800 (PST)
-Message-ID: <20080110.033812.253438990.davem@davemloft.net>
-References: <47850C57.60907@openvz.org>
+Subject: Re: [PATCH 2.6.25] [ATM] Oops reading net/atm/arp
+Date: Thu, 10 Jan 2008 03:51:51 -0800 (PST)
+Message-ID: <20080110.035151.48521188.davem@davemloft.net>
+References: <20080110112853.GA16173@iris.sw.ru>
 Mime-Version: 1.0
 Content-Type: Text/Plain; charset=us-ascii
 Content-Transfer-Encoding: 7bit
 Return-path: <netdev-owner@vger.kernel.org>
-In-Reply-To: <47850C57.60907@openvz.org>
+In-Reply-To: <20080110112853.GA16173@iris.sw.ru>
 Sender: netdev-owner@vger.kernel.org
 To: den@openvz.org
-Cc: benjamin.thery@bull.net, dlezcano@fr.ibm.com, devel@openvz.org, containers@lists.osdl.org, netdev@vger.kernel.org, xemul@openvz.org
+Cc: dlezcano@fr.ibm.com, xemul@openvz.org, netdev@vger.kernel.org, containers@lists.osdl.org, devel@openvz.org
 List-Id: containers.vger.kernel.org
 
 From: "Denis V. Lunev" <den@openvz.org>
-Date: Wed, 09 Jan 2008 21:03:03 +0300
+Date: Thu, 10 Jan 2008 14:28:53 +0300
 
-> This set adds namespace support for routing tables & rules
-> manipulation in the different namespaces. So, one could create a
-> namespace and setup IPv4 routing there how he wants.
+> cat /proc/net/atm/arp causes the NULL pointer dereference in the
+> get_proc_net+0xc/0x3a. This happens as proc_get_net believes that the
+> parent proc dir entry contains struct net.
+> 
+> Fix this assumption for "net/atm" case.
+> 
+> The problem is introduced by the commit c0097b07abf5f92ab135d024dd41bd2aada1512f
+> from Eric W. Biederman/Daniel Lezcano.
+> 
+> Signed-off-by: Denis V. Lunev <den@openvz.org>
 
-All 19 patches applied, thanks Denis.
+Applied, thanks.
