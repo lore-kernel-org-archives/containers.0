@@ -1,185 +1,149 @@
-From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [patch 5/9] unprivileged mounts: allow unprivileged bind mounts
-Date: Wed, 9 Jan 2008 22:47:24 -0600
-Message-ID: <20080110044724.GA31894@sergelap.austin.ibm.com>
-References: <20080108113502.184459371@szeredi.hu> <20080108113626.895583537@szeredi.hu>
+From: "Super Star" <candyshop999-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Subject: Dan Shonka,
+	New Fantasy Football Web Site Combines Power of 20 Magazines
+Date: Thu, 10 Jan 2008 11:51:21 +0200
+Message-ID: <eb5142cf0801100151s3595617ct279a53102ee86c86@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Return-path: <util-linux-ng-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <20080108113626.895583537-sUDqSbJrdHQHWmgEVkV9KA@public.gmane.org>
-Sender: util-linux-ng-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-To: Miklos Szeredi <miklos-sUDqSbJrdHQHWmgEVkV9KA@public.gmane.org>
-Cc: akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, hch-wEGCiKHe2LqWVfeAwA7xHQ@public.gmane.org, serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org, viro-rfM+Q5joDG/XmaaqVzeoHQ@public.gmane.org, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org, kzak-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, util-linux-ng-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Content-Type: multipart/mixed; boundary="===============8770670839963935405=="
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Mime-version: 1.0
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Quoting Miklos Szeredi (miklos-sUDqSbJrdHQHWmgEVkV9KA@public.gmane.org):
-> From: Miklos Szeredi <mszeredi-AlSwsSmVLrQ@public.gmane.org>
-> 
-> Allow bind mounts to unprivileged users if the following conditions are met:
-> 
->   - mountpoint is not a symlink
->   - parent mount is owned by the user
->   - the number of user mounts is below the maximum
-> 
-> Unprivileged mounts imply MS_SETUSER, and will also have the "nosuid" and
-> "nodev" mount flags set.
-> 
-> In particular, if mounting process doesn't have CAP_SETUID capability,
-> then the "nosuid" flag will be added, and if it doesn't have CAP_MKNOD
-> capability, then the "nodev" flag will be added.
+--===============8770670839963935405==
+Content-Type: multipart/alternative;
+	boundary="----=_Part_6007_20920285.1199958681692"
 
-That little part by itself is really needed in order to make the ability
-to remove CAP_MKNOD from a process tree's bounding set meaningful.
-Else instead of creating /dev/hda1, the user can just mount a filesystem
-with hda1 existing on it.  (Which is why I was surprised when one day
-I found this code missing :)
+------=_Part_6007_20920285.1199958681692
+Content-Type: text/plain; charset=ISO-8859-1
+Content-Transfer-Encoding: 7bit
+Content-Disposition: inline
 
-But of course I'm a fan of the patchset altogether.  I plan to review in
-more detail early next week, but since I liked the previous submission I
-don't see myself having any complaints, so I'm glad to see the reviews
-by others.
+Dan Shonka, New Fantasy Football Web Site Combines Power of 20 Magazines
 
-thanks,
--serge
+http://www.ourlads.com
 
-> Signed-off-by: Miklos Szeredi <mszeredi-AlSwsSmVLrQ@public.gmane.org>
-> ---
-> 
-> Index: linux/fs/namespace.c
-> ===================================================================
-> --- linux.orig/fs/namespace.c	2008-01-04 13:47:49.000000000 +0100
-> +++ linux/fs/namespace.c	2008-01-04 13:48:01.000000000 +0100
-> @@ -487,11 +487,34 @@ static void dec_nr_user_mounts(void)
->  	spin_unlock(&vfsmount_lock);
->  }
-> 
-> -static void set_mnt_user(struct vfsmount *mnt)
-> +static int reserve_user_mount(void)
-> +{
-> +	int err = 0;
-> +
-> +	spin_lock(&vfsmount_lock);
-> +	if (nr_user_mounts >= max_user_mounts && !capable(CAP_SYS_ADMIN))
-> +		err = -EPERM;
-> +	else
-> +		nr_user_mounts++;
-> +	spin_unlock(&vfsmount_lock);
-> +	return err;
-> +}
-> +
-> +static void __set_mnt_user(struct vfsmount *mnt)
->  {
->  	BUG_ON(mnt->mnt_flags & MNT_USER);
->  	mnt->mnt_uid = current->fsuid;
->  	mnt->mnt_flags |= MNT_USER;
-> +
-> +	if (!capable(CAP_SETUID))
-> +		mnt->mnt_flags |= MNT_NOSUID;
-> +	if (!capable(CAP_MKNOD))
-> +		mnt->mnt_flags |= MNT_NODEV;
-> +}
-> +
-> +static void set_mnt_user(struct vfsmount *mnt)
-> +{
-> +	__set_mnt_user(mnt);
->  	spin_lock(&vfsmount_lock);
->  	nr_user_mounts++;
->  	spin_unlock(&vfsmount_lock);
-> @@ -510,10 +533,16 @@ static struct vfsmount *clone_mnt(struct
->  					int flag)
->  {
->  	struct super_block *sb = old->mnt_sb;
-> -	struct vfsmount *mnt = alloc_vfsmnt(old->mnt_devname);
-> +	struct vfsmount *mnt;
-> 
-> +	if (flag & CL_SETUSER) {
-> +		int err = reserve_user_mount();
-> +		if (err)
-> +			return ERR_PTR(err);
-> +	}
-> +	mnt = alloc_vfsmnt(old->mnt_devname);
->  	if (!mnt)
-> -		return ERR_PTR(-ENOMEM);
-> +		goto alloc_failed;
-> 
->  	mnt->mnt_flags = old->mnt_flags;
->  	atomic_inc(&sb->s_active);
-> @@ -525,7 +554,7 @@ static struct vfsmount *clone_mnt(struct
->  	/* don't copy the MNT_USER flag */
->  	mnt->mnt_flags &= ~MNT_USER;
->  	if (flag & CL_SETUSER)
-> -		set_mnt_user(mnt);
-> +		__set_mnt_user(mnt);
-> 
->  	if (flag & CL_SLAVE) {
->  		list_add(&mnt->mnt_slave, &old->mnt_slave_list);
-> @@ -550,6 +579,11 @@ static struct vfsmount *clone_mnt(struct
->  		spin_unlock(&vfsmount_lock);
->  	}
->  	return mnt;
-> +
-> + alloc_failed:
-> +	if (flag & CL_SETUSER)
-> +		dec_nr_user_mounts();
-> +	return ERR_PTR(-ENOMEM);
->  }
-> 
->  static inline void __mntput(struct vfsmount *mnt)
-> @@ -986,22 +1020,26 @@ asmlinkage long sys_oldumount(char __use
-> 
->  #endif
-> 
-> -static int mount_is_safe(struct nameidata *nd)
-> +/*
-> + * Conditions for unprivileged mounts are:
-> + * - mountpoint is not a symlink
-> + * - mountpoint is in a mount owned by the user
-> + */
-> +static bool permit_mount(struct nameidata *nd, int *flags)
->  {
-> +	struct inode *inode = nd->path.dentry->d_inode;
-> +
->  	if (capable(CAP_SYS_ADMIN))
-> -		return 0;
-> -	return -EPERM;
-> -#ifdef notyet
-> -	if (S_ISLNK(nd->path.dentry->d_inode->i_mode))
-> -		return -EPERM;
-> -	if (nd->path.dentry->d_inode->i_mode & S_ISVTX) {
-> -		if (current->uid != nd->path.dentry->d_inode->i_uid)
-> -			return -EPERM;
-> -	}
-> -	if (vfs_permission(nd, MAY_WRITE))
-> -		return -EPERM;
-> -	return 0;
-> -#endif
-> +		return true;
-> +
-> +	if (S_ISLNK(inode->i_mode))
-> +		return false;
-> +
-> +	if (!is_mount_owner(nd->path.mnt, current->fsuid))
-> +		return false;
-> +
-> +	*flags |= MS_SETUSER;
-> +	return true;
->  }
-> 
->  static int lives_below_in_same_fs(struct dentry *d, struct dentry *dentry)
-> @@ -1245,9 +1283,10 @@ static int do_loopback(struct nameidata 
->  	int clone_fl;
->  	struct nameidata old_nd;
->  	struct vfsmount *mnt = NULL;
-> -	int err = mount_is_safe(nd);
-> -	if (err)
-> -		return err;
-> +	int err;
-> +
-> +	if (!permit_mount(nd, &flags))
-> +		return -EPERM;
->  	if (!old_name || !*old_name)
->  		return -EINVAL;
->  	err = path_lookup(old_name, LOOKUP_FOLLOW, &old_nd);
-> 
-> --
+
+Wall, NJ (PRWEB) August 15, 2007 -- A new Web site is ready to revolutionize
+the way fantasy football players research for their drafts.
+
+ FantasyMagazineReview.com launched this week, giving fantasy football
+players unique tools to prepare for the fantasy football season.
+
+ First, Fantasy Magazine Review took over 25 magazines and reviewed them
+based on more than 150 different objective criteria. Then, a unique
+algorithm was used to score the magazines.
+
+ FantasyMagazineReview.com also has cheat sheets and expert player rankings
+based on all of the magazines. Fantasy football players can make their own
+cheat sheets, fully customized to their leagues. Players can also compare
+and merge their personal and custom rankings with those of the magazines.
+
+ Since year-to-year accuracy is an important component of fantasy player
+rankings, Fantasy Magazine Review reviewed each magazine's player rankings
+from the previous year to determine how accurately they predicted
+performances.
+
+ Readers can also use the magazine search feature to find specific
+components of the individual magazines to find the mag that best suits their
+needs.
+
+ Fantasy players can purchase a one-year subscription for $9.99. Memberships
+last until May 31, 2008.
+
+ Fantasy Magazine Review is a sister site of FantasyTrainingCamp.com, which
+was released in early July. Fantasy Training Camp is a 10-section course
+designed to teach and enhance fantasy football skills to over 15 million
+fantasy football players.
+
+ About Fantasy Magazine Review
+
+FantasyMagazineReview.com, by Fantasy Brains, LLC, is a powerful set of data
+and tools to help fantasy football players dominate their league. Every
+major fantasy football magazine is ranked and reviewed. Custom player
+rankings are available for any possible league-scoring format.
+
+ About Fantasy Brains
+
+Fantasy Brains, LLC was founded in 2006 by C.J. DeSantis, a 21-year fantasy
+football veteran. Fantasy Brains was designed to provide unique data, tools,
+and resources to help fantasy football players win and enjoy the game.
+
+ ###
+
+------=_Part_6007_20920285.1199958681692
+Content-Type: text/html; charset=ISO-8859-1
+Content-Transfer-Encoding: 7bit
+Content-Disposition: inline
+
+Dan Shonka, New Fantasy Football Web Site Combines Power of 20 Magazines<br><br><a href="http://www.ourlads.com">http://www.ourlads.com</a><br><br><br> Wall, NJ (PRWEB) August 15, 2007 -- A new Web site is ready to
+revolutionize the way fantasy football players research for their
+drafts.<p>
+</p><p>
+FantasyMagazineReview.com launched this week, giving fantasy football
+players unique tools to prepare for the fantasy football season.</p><p>
+</p><p>
+First, Fantasy Magazine Review took over 25 magazines and reviewed them
+based on more than 150 different objective criteria. Then, a unique
+algorithm was used to score the magazines.</p><p>
+</p><p>
+FantasyMagazineReview.com also has cheat sheets and expert player
+rankings based on all of the magazines. Fantasy football players can
+make their own cheat sheets, fully customized to their leagues. Players
+can also compare and merge their personal and custom rankings with
+those of the magazines.</p><p>
+</p><p>
+Since year-to-year accuracy is an important component of fantasy player
+rankings, Fantasy Magazine Review reviewed each magazine&#39;s player
+rankings from the previous year to determine how accurately they
+predicted performances.</p><p>
+</p><p>
+Readers can also use the magazine search feature to find specific
+components of the individual magazines to find the mag that best suits
+their needs.</p><p>
+</p><p>
+Fantasy players can purchase a one-year subscription for $9.99. Memberships last until May 31, 2008.</p><p>
+</p><p>
+Fantasy Magazine Review is a sister site of FantasyTrainingCamp.com,
+which was released in early July. Fantasy Training Camp is a 10-section
+course designed to teach and enhance fantasy football skills to over 15
+million fantasy football players.</p><p>
+</p><p>
+About Fantasy Magazine Review</p><p>
+FantasyMagazineReview.com, by Fantasy Brains, LLC, is a powerful set of
+data and tools to help fantasy football players dominate their league.
+Every major fantasy football magazine is ranked and reviewed. Custom
+player rankings are available for any possible league-scoring format. </p><p>
+</p><p>
+About Fantasy Brains</p><p>
+Fantasy Brains, LLC was founded in 2006 by C.J. DeSantis, a 21-year
+fantasy football veteran. Fantasy Brains was designed to provide unique
+data, tools, and resources to help fantasy football players win and
+enjoy the game.</p><p>
+</p><p>
+###</p>
+	
+	<br>
+
+------=_Part_6007_20920285.1199958681692--
+
+--===============8770670839963935405==
+Content-Type: text/plain; charset="us-ascii"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+Content-Disposition: inline
+
+_______________________________________________
+Containers mailing list
+Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+https://lists.linux-foundation.org/mailman/listinfo/containers
+--===============8770670839963935405==--
