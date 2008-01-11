@@ -1,26 +1,35 @@
-From: David Miller <davem@davemloft.net>
-Subject: Re: [PATCH 2.6.25] [NEIGH] Make /proc/net/arp opening consistent
- with seq_net_open semantics
-Date: Thu, 10 Jan 2008 03:53:37 -0800 (PST)
-Message-ID: <20080110.035337.195644262.davem@davemloft.net>
-References: <20080110113219.GA16233@iris.sw.ru>
-Mime-Version: 1.0
-Content-Type: Text/Plain; charset=us-ascii
+From: "Spass Walker" <vorticist-LIn66QuxwveSp6XkQsLJ4VaTQe2KTcn/@public.gmane.org>
+Subject: Ado6e FotoshopCS3 Extended for MAC\XP\Vlsta 89,
+	Retail 999 (save 909)
+Date: Fri, 11 Jan 2008 11:36:28 +0200
+Message-ID: <000401c85435$10af8f80$0100007f@btmhywa>
+Content-Type: text/plain;
+    charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-Return-path: <netdev-owner@vger.kernel.org>
-In-Reply-To: <20080110113219.GA16233@iris.sw.ru>
-Sender: netdev-owner@vger.kernel.org
-To: den@openvz.org
-Cc: dlezcano@fr.ibm.com, xemul@openvz.org, netdev@vger.kernel.org, containers@lists.osdl.org, devel@openvz.org
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-From: "Denis V. Lunev" <den@openvz.org>
-Date: Thu, 10 Jan 2008 14:32:19 +0300
+sony acid pro 6 - 59
+solid edge v17 - 69
 
-> seq_open_net requires that first field of the seq->private data to be
-> struct seq_net_private. In reality this is a single pointer to a struct net
-> for now. The patch makes code consistent.
-> 
-> Signed-off-by: Denis V. Lunev <den@openvz.org>
+v!sit "realfastoem . com" in Internet browser grand theft auto: san andreas - 29
 
-Applied, thanks for correcting this.
+steinberg cubase sx 2.2.0.33 - 39
+cadlink signlab vinyl 7.1 - 69
+steinberg nuendo 3.1 - 99
+nero 7 premium - 39
+macrovision installshield premier edition 2008 - 199
+mcafee internet security suite version 7.0 - 29
+microsoft visual studio 2005 professional edition - 149
+adobe illustrator cs2 - 59
+graphisoft archicad 9.0 r1 international - 69
