@@ -1,160 +1,175 @@
-From: "Serge E. Hallyn" <serue@us.ibm.com>
-Subject: Re: [patch 3/9] unprivileged mounts: account user mounts
-Date: Mon, 14 Jan 2008 15:53:51 -0600
-Message-ID: <20080114215351.GC6704@sergelap.austin.ibm.com>
-References: <20080108113502.184459371@szeredi.hu> <20080108113623.446872155@szeredi.hu>
+From: "Paul Menage" <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH 4/4] The control group itself
+Date: Mon, 14 Jan 2008 13:54:33 -0800
+Message-ID: <6599ad830801141354p5b165cdao8d6184adb9ab61b6@mail.gmail.com>
+References: <47833C3A.8090106@openvz.org> <47833FF6.6060901@openvz.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Return-path: <linux-fsdevel-owner@vger.kernel.org>
+Content-Type: text/plain; charset=ISO-8859-1
+Content-Transfer-Encoding: 7bit
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <47833FF6.6060901-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <20080108113623.446872155@szeredi.hu>
-Sender: linux-fsdevel-owner@vger.kernel.org
-To: Miklos Szeredi <miklos@szeredi.hu>
-Cc: akpm@linux-foundation.org, hch@infradead.org, serue@us.ibm.com, viro@ftp.linux.org.uk, ebiederm@xmission.com, kzak@redhat.com, linux-fsdevel@vger.kernel.org, linux-kernel@vger.kernel.org, containers@lists.osdl.org, util-linux-ng@vger.kernel.org
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Quoting Miklos Szeredi (miklos@szeredi.hu):
-> From: Miklos Szeredi <mszeredi@suse.cz>
-> 
-> Add sysctl variables for accounting and limiting the number of user
-> mounts.
-> 
-> The maximum number of user mounts is set to 1024 by default.  This
-> won't in itself enable user mounts, setting a mount to be owned by a
-> user is first needed
-> 
-> [akpm]
->  - don't use enumerated sysctls
-> 
-> Signed-off-by: Miklos Szeredi <mszeredi@suse.cz>
-
-Seems sane enough, given your responses to Dave.
-
-Acked-by: Serge Hallyn <serue@us.ibm.com>
-
+On Jan 8, 2008 1:18 AM, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org> wrote:
+> Each new group will have its own maps for char and block
+> layers. The devices access list is tuned via the
+> devices.permissions file.
+>
+> One may read from the file to get the configured
+> state. E.g.
+>
+> # cat /cont/devices/0/devices.permissions
+> c 1:* rw
+> b 8:1 rw
+>
+> The top container isn't initialized, so that the char
+> and block layers will use the global maps to lookup
+> their devices.
+>
+> Signed-off-by: Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+>
 > ---
-> 
-> Index: linux/Documentation/filesystems/proc.txt
-> ===================================================================
-> --- linux.orig/Documentation/filesystems/proc.txt	2008-01-03 17:12:58.000000000 +0100
-> +++ linux/Documentation/filesystems/proc.txt	2008-01-03 21:15:35.000000000 +0100
-> @@ -1012,6 +1012,15 @@ reaches aio-max-nr then io_setup will fa
->  raising aio-max-nr does not result in the pre-allocation or re-sizing
->  of any kernel data structures.
-> 
-> +nr_user_mounts and max_user_mounts
-> +----------------------------------
+>
+> diff --git a/fs/Makefile b/fs/Makefile
+> index 82b6ae1..a085706 100644
+> --- a/fs/Makefile
+> +++ b/fs/Makefile
+> @@ -63,6 +63,8 @@ obj-y                         += devpts/
+>
+>  obj-$(CONFIG_PROFILING)                += dcookies.o
+>  obj-$(CONFIG_DLM)              += dlm/
 > +
-> +These represent the number of "user" mounts and the maximum number of
-> +"user" mounts respectively.  User mounts may be created by
-> +unprivileged users.  User mounts may also be created with sysadmin
-> +privileges on behalf of a user, in which case nr_user_mounts may
-> +exceed max_user_mounts.
+> +obj-$(CONFIG_CGROUP_DEVS)      += devscontrol.o
+>
+>  # Do not add any filesystems before this line
+>  obj-$(CONFIG_REISERFS_FS)      += reiserfs/
+> diff --git a/fs/devscontrol.c b/fs/devscontrol.c
+> new file mode 100644
+> index 0000000..ea282f3
+> --- /dev/null
+> +++ b/fs/devscontrol.c
+> @@ -0,0 +1,291 @@
+> +/*
+> + * devscontrol.c - Device Controller
+> + *
+> + * Copyright 2007 OpenVZ SWsoft Inc
+> + * Author: Pavel Emelyanov <xemul at openvz.org>
+> + *
+> + * This program is free software; you can redistribute it and/or modify
+> + * it under the terms of the GNU General Public License as published by
+> + * the Free Software Foundation; either version 2 of the License, or
+> + * (at your option) any later version.
+> + *
+> + * This program is distributed in the hope that it will be useful,
+> + * but WITHOUT ANY WARRANTY; without even the implied warranty of
+> + * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+> + * GNU General Public License for more details.
+> + */
 > +
->  2.2 /proc/sys/fs/binfmt_misc - Miscellaneous binary formats
->  -----------------------------------------------------------
-> 
-> Index: linux/fs/namespace.c
-> ===================================================================
-> --- linux.orig/fs/namespace.c	2008-01-03 21:14:16.000000000 +0100
-> +++ linux/fs/namespace.c	2008-01-03 21:15:35.000000000 +0100
-> @@ -44,6 +44,9 @@ static struct list_head *mount_hashtable
->  static struct kmem_cache *mnt_cache __read_mostly;
->  static struct rw_semaphore namespace_sem;
-> 
-> +int nr_user_mounts;
-> +int max_user_mounts = 1024;
+> +#include <linux/cgroup.h>
+> +#include <linux/cdev.h>
+> +#include <linux/err.h>
+> +#include <linux/devscontrol.h>
+> +#include <linux/uaccess.h>
+> +#include <linux/fs.h>
+> +#include <linux/genhd.h>
 > +
->  /* /sys/fs */
->  struct kobject *fs_kobj;
->  EXPORT_SYMBOL_GPL(fs_kobj);
-> @@ -477,11 +480,30 @@ static struct vfsmount *skip_mnt_tree(st
->  	return p;
->  }
-> 
-> +static void dec_nr_user_mounts(void)
+> +struct devs_cgroup {
+> +       struct cgroup_subsys_state css;
+> +
+> +       struct kobj_map *cdev_map;
+> +       struct kobj_map *bdev_map;
+> +};
+> +
+> +static inline
+> +struct devs_cgroup *css_to_devs(struct cgroup_subsys_state *css)
 > +{
-> +	spin_lock(&vfsmount_lock);
-> +	nr_user_mounts--;
-> +	spin_unlock(&vfsmount_lock);
+> +       return container_of(css, struct devs_cgroup, css);
 > +}
 > +
->  static void set_mnt_user(struct vfsmount *mnt)
->  {
->  	BUG_ON(mnt->mnt_flags & MNT_USER);
->  	mnt->mnt_uid = current->fsuid;
->  	mnt->mnt_flags |= MNT_USER;
-> +	spin_lock(&vfsmount_lock);
-> +	nr_user_mounts++;
-> +	spin_unlock(&vfsmount_lock);
+> +static inline
+> +struct devs_cgroup *cgroup_to_devs(struct cgroup *cont)
+> +{
+> +       return css_to_devs(cgroup_subsys_state(cont, devs_subsys_id));
 > +}
 > +
-> +static void clear_mnt_user(struct vfsmount *mnt)
+> +struct kobj_map *task_cdev_map(struct task_struct *tsk)
 > +{
-> +	if (mnt->mnt_flags & MNT_USER) {
-> +		mnt->mnt_uid = 0;
-> +		mnt->mnt_flags &= ~MNT_USER;
-> +		dec_nr_user_mounts();
-> +	}
->  }
-> 
->  static struct vfsmount *clone_mnt(struct vfsmount *old, struct dentry *root,
-> @@ -542,6 +564,7 @@ static inline void __mntput(struct vfsmo
->  	 */
->  	WARN_ON(atomic_read(&mnt->__mnt_writers));
->  	dput(mnt->mnt_root);
-> +	clear_mnt_user(mnt);
->  	free_vfsmnt(mnt);
->  	deactivate_super(sb);
->  }
-> @@ -1306,6 +1329,7 @@ static int do_remount(struct nameidata *
->  	else
->  		err = do_remount_sb(sb, flags, data, 0);
->  	if (!err) {
-> +		clear_mnt_user(nd->path.mnt);
->  		nd->path.mnt->mnt_flags = mnt_flags;
->  		if (flags & MS_SETUSER)
->  			set_mnt_user(nd->path.mnt);
-> Index: linux/include/linux/fs.h
-> ===================================================================
-> --- linux.orig/include/linux/fs.h	2008-01-03 20:52:38.000000000 +0100
-> +++ linux/include/linux/fs.h	2008-01-03 21:15:35.000000000 +0100
-> @@ -50,6 +50,9 @@ extern struct inodes_stat_t inodes_stat;
-> 
->  extern int leases_enable, lease_break_time;
-> 
-> +extern int nr_user_mounts;
-> +extern int max_user_mounts;
+> +       struct cgroup_subsys_state *css;
 > +
->  #ifdef CONFIG_DNOTIFY
->  extern int dir_notify_enable;
->  #endif
-> Index: linux/kernel/sysctl.c
-> ===================================================================
-> --- linux.orig/kernel/sysctl.c	2008-01-03 17:13:22.000000000 +0100
-> +++ linux/kernel/sysctl.c	2008-01-03 21:15:35.000000000 +0100
-> @@ -1288,6 +1288,22 @@ static struct ctl_table fs_table[] = {
->  #endif	
->  #endif
->  	{
-> +		.ctl_name	= CTL_UNNUMBERED,
-> +		.procname	= "nr_user_mounts",
-> +		.data		= &nr_user_mounts,
-> +		.maxlen		= sizeof(int),
-> +		.mode		= 0444,
-> +		.proc_handler	= &proc_dointvec,
-> +	},
-> +	{
-> +		.ctl_name	= CTL_UNNUMBERED,
-> +		.procname	= "max_user_mounts",
-> +		.data		= &max_user_mounts,
-> +		.maxlen		= sizeof(int),
-> +		.mode		= 0644,
-> +		.proc_handler	= &proc_dointvec,
-> +	},
-> +	{
->  		.ctl_name	= KERN_SETUID_DUMPABLE,
->  		.procname	= "suid_dumpable",
->  		.data		= &suid_dumpable,
-> 
-> --
+> +       css = task_subsys_state(tsk, devs_subsys_id);
+> +       if (css->cgroup->parent == NULL)
+> +               return NULL;
+> +       else
+> +               return css_to_devs(css)->cdev_map;
+> +}
+
+For this (and task_bdev_map) it would be cleaner to just leave the
+cdev_map and bdev_map in the root cgroup as NULL, so you could just
+make this
+
+struct kobj_map *task_cdev_map(struct task_struct *tsk)
+{
+  return css_to_devs(task_subsys_state(tsk, devs_subsys_id))->cdev_map;
+}
+> +
+> +static ssize_t devs_write(struct cgroup *cont, struct cftype *cft,
+> +               struct file *f, const char __user *ubuf,
+> +               size_t nbytes, loff_t *pos)
+> +{
+> +       int err, all, chrdev;
+> +       dev_t dev;
+> +       char buf[64];
+> +       struct devs_cgroup *devs;
+> +       mode_t mode;
+> +
+> +       if (copy_from_user(buf, ubuf, sizeof(buf)))
+> +               return -EFAULT;
+> +
+> +       buf[sizeof(buf) - 1] = 0;
+> +       err = decode_perms_str(buf, &chrdev, &dev, &all, &mode);
+> +       if (err < 0)
+> +               return err;
+> +
+> +       devs = cgroup_to_devs(cont);
+> +
+> +       if (mode == 0) {
+> +               if (chrdev)
+> +                       err = cdev_del_from_map(devs->cdev_map, dev, all);
+> +               else
+> +                       err = bdev_del_from_map(devs->bdev_map, dev, all);
+
+There's no locking involved on these calls, other than the cgroups
+code guaranteeing that the subsystem objects themselves won't go away.
+A quick look over the kobj_map calls suggests that these calls may be
+thread-safe - can you confirm that. (And maybe comment at the top of
+the function?)
+
+> +       arg.buf = (char *)__get_free_page(GFP_KERNEL);
+> +       if (arg.buf == NULL)
+> +               return -ENOMEM;
+> +
+> +       devs = cgroup_to_devs(cont);
+> +       arg.pos = 0;
+> +
+> +       arg.chrdev = 1;
+> +       cdev_iterate_map(devs->cdev_map, devs_dump_one, &arg);
+> +
+> +       arg.chrdev = 0;
+> +       bdev_iterate_map(devs->bdev_map, devs_dump_one, &arg);
+
+Is there any chance of this overflowing the buffer page?
+
+Paul
