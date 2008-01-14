@@ -1,16 +1,14 @@
-From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: Namespaces exhausted CLONE_XXX bits problem
-Date: Mon, 14 Jan 2008 12:07:48 -0600
-Message-ID: <20080114180748.GA2772@sergelap.austin.ibm.com>
-References: <478B6764.6050300@openvz.org> <478B7549.2020000@fr.ibm.com>
-	<478B76C4.8050804@openvz.org> <478B7DB3.9050702@fr.ibm.com>
-	<20080114163246.GA31663@sergelap.austin.ibm.com>
-	<478B9345.30004@openvz.org>
+From: "Paul Menage" <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH 0/4] Devices accessibility control group (v2)
+Date: Mon, 14 Jan 2008 13:18:49 -0800
+Message-ID: <6599ad830801141318h121a6a80h9af68c52431c48b8@mail.gmail.com>
+References: <47833C3A.8090106@openvz.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+Content-Type: text/plain; charset=ISO-8859-1
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <47833C3A.8090106-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <478B9345.30004-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -21,47 +19,14 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
-Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Cedric Le Goater <clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
+Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Quoting Pavel Emelyanov (xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org):
-> Serge E. Hallyn wrote:
-> > Quoting Cedric Le Goater (clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org):
-> >> to be more precise :
-> >>
-> >> 	long sys_clone_something(struct clone_something_args args) 
-> >>
-> >> and 
-> >>
-> >> 	long sys_unshare_something(struct unshare_something_args args) 
-> >>
-> >> The arg passing will be slower bc of the copy_from_user() but we will 
-> >> still have the sys_clone syscall for the fast path.
-> >>
-> >> C.
-> > 
-> > I'm fine with the direction you're going, but just as one more option,
-> > we could follow more of the selinux/lsm approach of first requesting
-> > clone/unshare options, then doing the actual clone/unshare.  So
-> > something like
-> > 
-> > 	sys_clone_request(extended_64bit_clone_flags)
-> 
-> What if we someday hit the 64-bit limit? :)
-> 
-> > 	sys_clone(usual args)
-> > 
-> > or
-> > 
-> > 	echo pid,mqueue,user,ipc,uts,net > /proc/self/clone_unshare
-> > 	clone()
-> 
-> Well, this is how sys_indirect() was intended to work. Nobody
-> liked it, so I'm afraid this will also not be accepted.
+On Jan 8, 2008 1:02 AM, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org> wrote:
+> * Add the support for devices ranges. I.e. someone might
+>   wish to tell smth like b 5:[0-10] r- to this subsystem.
 
-I would have thought sys_indirect would be disliked because
-it looks like an ioctl type multiplexor.  Whereas sys_clone_request()
-or /proc/self/clone_unshare simply sets arguments in advance, the
-way /proc/self/attr/current does.
+I'd be inclined to leave support for that in userspace, rather than
+adding fancier parsing to the kernel API.
 
--serge
+Paul
