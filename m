@@ -1,13 +1,13 @@
 From: "Serge E. Hallyn" <serue@us.ibm.com>
-Subject: Re: [patch 5/9] unprivileged mounts: allow unprivileged bind mounts
-Date: Mon, 14 Jan 2008 16:42:40 -0600
-Message-ID: <20080114224240.GE6704@sergelap.austin.ibm.com>
-References: <20080108113502.184459371@szeredi.hu> <20080108113626.895583537@szeredi.hu>
+Subject: Re: [patch 6/9] unprivileged mounts: allow unprivileged mounts
+Date: Mon, 14 Jan 2008 16:58:26 -0600
+Message-ID: <20080114225826.GF6704@sergelap.austin.ibm.com>
+References: <20080108113502.184459371@szeredi.hu> <20080108113629.192719163@szeredi.hu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Return-path: <linux-fsdevel-owner@vger.kernel.org>
 Content-Disposition: inline
-In-Reply-To: <20080108113626.895583537@szeredi.hu>
+In-Reply-To: <20080108113629.192719163@szeredi.hu>
 Sender: linux-fsdevel-owner@vger.kernel.org
 To: Miklos Szeredi <miklos@szeredi.hu>
 Cc: akpm@linux-foundation.org, hch@infradead.org, serue@us.ibm.com, viro@ftp.linux.org.uk, ebiederm@xmission.com, kzak@redhat.com, linux-fsdevel@vger.kernel.org, linux-kernel@vger.kernel.org, containers@lists.osdl.org, util-linux-ng@vger.kernel.org
@@ -16,20 +16,23 @@ List-Id: containers.vger.kernel.org
 Quoting Miklos Szeredi (miklos@szeredi.hu):
 > From: Miklos Szeredi <mszeredi@suse.cz>
 > 
-> Allow bind mounts to unprivileged users if the following conditions are met:
+> Define a new fs flag FS_SAFE, which denotes, that unprivileged mounting of
+> this filesystem may not constitute a security problem.
 > 
->   - mountpoint is not a symlink
->   - parent mount is owned by the user
->   - the number of user mounts is below the maximum
+> Since most filesystems haven't been designed with unprivileged mounting in
+> mind, a thorough audit is needed before setting this flag.
 > 
-> Unprivileged mounts imply MS_SETUSER, and will also have the "nosuid" and
-> "nodev" mount flags set.
+> For "safe" filesystems also allow unprivileged forced unmounting.
 > 
-> In particular, if mounting process doesn't have CAP_SETUID capability,
-> then the "nosuid" flag will be added, and if it doesn't have CAP_MKNOD
-> capability, then the "nodev" flag will be added.
+> Move subtype handling from do_kern_mount() into do_new_mount().  All
+> other callers are kernel-internal and do not need subtype support.
 > 
 > Signed-off-by: Miklos Szeredi <mszeredi@suse.cz>
+
+This patch itself doesn't assign FS_SAFE to any filesystems, so
+presuming that there is such a thing as an fs safe for users to
+mount, and/or users sign their systems away through a sysctl,
+this patch in itself appears right.
 
 Acked-by: Serge Hallyn <serue@us.ibm.com>
 
@@ -37,138 +40,205 @@ Acked-by: Serge Hallyn <serue@us.ibm.com>
 > 
 > Index: linux/fs/namespace.c
 > ===================================================================
-> --- linux.orig/fs/namespace.c	2008-01-04 13:47:49.000000000 +0100
-> +++ linux/fs/namespace.c	2008-01-04 13:48:01.000000000 +0100
-> @@ -487,11 +487,34 @@ static void dec_nr_user_mounts(void)
->  	spin_unlock(&vfsmount_lock);
+> --- linux.orig/fs/namespace.c	2008-01-03 21:20:11.000000000 +0100
+> +++ linux/fs/namespace.c	2008-01-03 21:21:06.000000000 +0100
+> @@ -960,14 +960,16 @@ static bool is_mount_owner(struct vfsmou
+>  /*
+>   * umount is permitted for
+>   *  - sysadmin
+> - *  - mount owner, if not forced umount
+> + *  - mount owner
+> + *    o if not forced umount,
+> + *    o if forced umount, and filesystem is "safe"
+>   */
+>  static bool permit_umount(struct vfsmount *mnt, int flags)
+>  {
+>  	if (capable(CAP_SYS_ADMIN))
+>  		return true;
+> 
+> -	if (flags & MNT_FORCE)
+> +	if ((flags & MNT_FORCE) && !(mnt->mnt_sb->s_type->fs_flags & FS_SAFE))
+>  		return false;
+> 
+>  	return is_mount_owner(mnt, current->fsuid);
+> @@ -1025,13 +1027,17 @@ asmlinkage long sys_oldumount(char __use
+>   * - mountpoint is not a symlink
+>   * - mountpoint is in a mount owned by the user
+>   */
+> -static bool permit_mount(struct nameidata *nd, int *flags)
+> +static bool permit_mount(struct nameidata *nd, struct file_system_type *type,
+> +			 int *flags)
+>  {
+>  	struct inode *inode = nd->path.dentry->d_inode;
+> 
+>  	if (capable(CAP_SYS_ADMIN))
+>  		return true;
+> 
+> +	if (type && !(type->fs_flags & FS_SAFE))
+> +		return false;
+> +
+>  	if (S_ISLNK(inode->i_mode))
+>  		return false;
+> 
+> @@ -1285,7 +1291,7 @@ static int do_loopback(struct nameidata 
+>  	struct vfsmount *mnt = NULL;
+>  	int err;
+> 
+> -	if (!permit_mount(nd, &flags))
+> +	if (!permit_mount(nd, NULL, &flags))
+>  		return -EPERM;
+>  	if (!old_name || !*old_name)
+>  		return -EINVAL;
+> @@ -1466,30 +1472,76 @@ out:
+>  	return err;
 >  }
 > 
-> -static void set_mnt_user(struct vfsmount *mnt)
-> +static int reserve_user_mount(void)
+> +static struct vfsmount *fs_set_subtype(struct vfsmount *mnt, const char *fstype)
 > +{
-> +	int err = 0;
+> +	int err;
+> +	const char *subtype = strchr(fstype, '.');
+> +	if (subtype) {
+> +		subtype++;
+> +		err = -EINVAL;
+> +		if (!subtype[0])
+> +			goto err;
+> +	} else
+> +		subtype = "";
 > +
-> +	spin_lock(&vfsmount_lock);
-> +	if (nr_user_mounts >= max_user_mounts && !capable(CAP_SYS_ADMIN))
-> +		err = -EPERM;
-> +	else
-> +		nr_user_mounts++;
-> +	spin_unlock(&vfsmount_lock);
-> +	return err;
+> +	mnt->mnt_sb->s_subtype = kstrdup(subtype, GFP_KERNEL);
+> +	err = -ENOMEM;
+> +	if (!mnt->mnt_sb->s_subtype)
+> +		goto err;
+> +	return mnt;
+> +
+> + err:
+> +	mntput(mnt);
+> +	return ERR_PTR(err);
 > +}
 > +
-> +static void __set_mnt_user(struct vfsmount *mnt)
+>  /*
+>   * create a new mount for userspace and request it to be added into the
+>   * namespace's tree
+>   */
+> -static int do_new_mount(struct nameidata *nd, char *type, int flags,
+> +static int do_new_mount(struct nameidata *nd, char *fstype, int flags,
+>  			int mnt_flags, char *name, void *data)
 >  {
->  	BUG_ON(mnt->mnt_flags & MNT_USER);
->  	mnt->mnt_uid = current->fsuid;
->  	mnt->mnt_flags |= MNT_USER;
-> +
-> +	if (!capable(CAP_SETUID))
-> +		mnt->mnt_flags |= MNT_NOSUID;
-> +	if (!capable(CAP_MKNOD))
-> +		mnt->mnt_flags |= MNT_NODEV;
-> +}
-> +
-> +static void set_mnt_user(struct vfsmount *mnt)
-> +{
-> +	__set_mnt_user(mnt);
->  	spin_lock(&vfsmount_lock);
->  	nr_user_mounts++;
->  	spin_unlock(&vfsmount_lock);
-> @@ -510,10 +533,16 @@ static struct vfsmount *clone_mnt(struct
->  					int flag)
->  {
->  	struct super_block *sb = old->mnt_sb;
-> -	struct vfsmount *mnt = alloc_vfsmnt(old->mnt_devname);
-> +	struct vfsmount *mnt;
+> +	int err;
+>  	struct vfsmount *mnt;
+> +	struct file_system_type *type;
 > 
-> +	if (flag & CL_SETUSER) {
-> +		int err = reserve_user_mount();
+> -	if (!type || !memchr(type, 0, PAGE_SIZE))
+> +	if (!fstype || !memchr(fstype, 0, PAGE_SIZE))
+>  		return -EINVAL;
+> 
+> -	/* we need capabilities... */
+> -	if (!capable(CAP_SYS_ADMIN))
+> -		return -EPERM;
+> -
+> -	mnt = do_kern_mount(type, flags & ~MS_SETUSER, name, data);
+> -	if (IS_ERR(mnt))
+> +	type = get_fs_type(fstype);
+> +	if (!type)
+> +		return -ENODEV;
+> +
+> +	err = -EPERM;
+> +	if (!permit_mount(nd, type, &flags))
+> +		goto out_put_filesystem;
+> +
+> +	if (flags & MS_SETUSER) {
+> +		err = reserve_user_mount();
 > +		if (err)
-> +			return ERR_PTR(err);
+> +			goto out_put_filesystem;
 > +	}
-> +	mnt = alloc_vfsmnt(old->mnt_devname);
->  	if (!mnt)
-> -		return ERR_PTR(-ENOMEM);
-> +		goto alloc_failed;
+> +
+> +	mnt = vfs_kern_mount(type, flags & ~MS_SETUSER, name, data);
+> +	if (!IS_ERR(mnt) && (type->fs_flags & FS_HAS_SUBTYPE) &&
+> +	    !mnt->mnt_sb->s_subtype)
+> +		mnt = fs_set_subtype(mnt, fstype);
+> +	put_filesystem(type);
+> +	if (IS_ERR(mnt)) {
+> +		if (flags & MS_SETUSER)
+> +			dec_nr_user_mounts();
+>  		return PTR_ERR(mnt);
+> +	}
 > 
->  	mnt->mnt_flags = old->mnt_flags;
->  	atomic_inc(&sb->s_active);
-> @@ -525,7 +554,7 @@ static struct vfsmount *clone_mnt(struct
->  	/* don't copy the MNT_USER flag */
->  	mnt->mnt_flags &= ~MNT_USER;
->  	if (flag & CL_SETUSER)
+>  	if (flags & MS_SETUSER)
 > -		set_mnt_user(mnt);
 > +		__set_mnt_user(mnt);
 > 
->  	if (flag & CL_SLAVE) {
->  		list_add(&mnt->mnt_slave, &old->mnt_slave_list);
-> @@ -550,6 +579,11 @@ static struct vfsmount *clone_mnt(struct
->  		spin_unlock(&vfsmount_lock);
->  	}
->  	return mnt;
+>  	return do_add_mount(mnt, nd, mnt_flags, NULL);
 > +
-> + alloc_failed:
-> +	if (flag & CL_SETUSER)
-> +		dec_nr_user_mounts();
-> +	return ERR_PTR(-ENOMEM);
+> + out_put_filesystem:
+> +	put_filesystem(type);
+> +	return err;
 >  }
 > 
->  static inline void __mntput(struct vfsmount *mnt)
-> @@ -986,22 +1020,26 @@ asmlinkage long sys_oldumount(char __use
+>  /*
+> @@ -1520,7 +1572,7 @@ int do_add_mount(struct vfsmount *newmnt
+>  	if (S_ISLNK(newmnt->mnt_root->d_inode->i_mode))
+>  		goto unlock;
 > 
->  #endif
+> -	/* MNT_USER was set earlier */
+> +	/* some flags may have been set earlier */
+>  	newmnt->mnt_flags |= mnt_flags;
+>  	if ((err = graft_tree(newmnt, nd)))
+>  		goto unlock;
+> Index: linux/include/linux/fs.h
+> ===================================================================
+> --- linux.orig/include/linux/fs.h	2008-01-03 21:15:35.000000000 +0100
+> +++ linux/include/linux/fs.h	2008-01-03 21:21:06.000000000 +0100
+> @@ -96,6 +96,7 @@ extern int dir_notify_enable;
+>  #define FS_REQUIRES_DEV 1 
+>  #define FS_BINARY_MOUNTDATA 2
+>  #define FS_HAS_SUBTYPE 4
+> +#define FS_SAFE 8		/* Safe to mount by unprivileged users */
+>  #define FS_REVAL_DOT	16384	/* Check the paths ".", ".." for staleness */
+>  #define FS_RENAME_DOES_D_MOVE	32768	/* FS will handle d_move()
+>  					 * during rename() internally.
+> Index: linux/fs/super.c
+> ===================================================================
+> --- linux.orig/fs/super.c	2008-01-02 21:42:10.000000000 +0100
+> +++ linux/fs/super.c	2008-01-03 21:21:06.000000000 +0100
+> @@ -906,29 +906,6 @@ out:
 > 
-> -static int mount_is_safe(struct nameidata *nd)
-> +/*
-> + * Conditions for unprivileged mounts are:
-> + * - mountpoint is not a symlink
-> + * - mountpoint is in a mount owned by the user
-> + */
-> +static bool permit_mount(struct nameidata *nd, int *flags)
+>  EXPORT_SYMBOL_GPL(vfs_kern_mount);
+> 
+> -static struct vfsmount *fs_set_subtype(struct vfsmount *mnt, const char *fstype)
+> -{
+> -	int err;
+> -	const char *subtype = strchr(fstype, '.');
+> -	if (subtype) {
+> -		subtype++;
+> -		err = -EINVAL;
+> -		if (!subtype[0])
+> -			goto err;
+> -	} else
+> -		subtype = "";
+> -
+> -	mnt->mnt_sb->s_subtype = kstrdup(subtype, GFP_KERNEL);
+> -	err = -ENOMEM;
+> -	if (!mnt->mnt_sb->s_subtype)
+> -		goto err;
+> -	return mnt;
+> -
+> - err:
+> -	mntput(mnt);
+> -	return ERR_PTR(err);
+> -}
+> -
+>  struct vfsmount *
+>  do_kern_mount(const char *fstype, int flags, const char *name, void *data)
 >  {
-> +	struct inode *inode = nd->path.dentry->d_inode;
-> +
->  	if (capable(CAP_SYS_ADMIN))
-> -		return 0;
-> -	return -EPERM;
-> -#ifdef notyet
-> -	if (S_ISLNK(nd->path.dentry->d_inode->i_mode))
-> -		return -EPERM;
-> -	if (nd->path.dentry->d_inode->i_mode & S_ISVTX) {
-> -		if (current->uid != nd->path.dentry->d_inode->i_uid)
-> -			return -EPERM;
-> -	}
-> -	if (vfs_permission(nd, MAY_WRITE))
-> -		return -EPERM;
-> -	return 0;
-> -#endif
-> +		return true;
-> +
-> +	if (S_ISLNK(inode->i_mode))
-> +		return false;
-> +
-> +	if (!is_mount_owner(nd->path.mnt, current->fsuid))
-> +		return false;
-> +
-> +	*flags |= MS_SETUSER;
-> +	return true;
+> @@ -937,9 +914,6 @@ do_kern_mount(const char *fstype, int fl
+>  	if (!type)
+>  		return ERR_PTR(-ENODEV);
+>  	mnt = vfs_kern_mount(type, flags, name, data);
+> -	if (!IS_ERR(mnt) && (type->fs_flags & FS_HAS_SUBTYPE) &&
+> -	    !mnt->mnt_sb->s_subtype)
+> -		mnt = fs_set_subtype(mnt, fstype);
+>  	put_filesystem(type);
+>  	return mnt;
 >  }
-> 
->  static int lives_below_in_same_fs(struct dentry *d, struct dentry *dentry)
-> @@ -1245,9 +1283,10 @@ static int do_loopback(struct nameidata 
->  	int clone_fl;
->  	struct nameidata old_nd;
->  	struct vfsmount *mnt = NULL;
-> -	int err = mount_is_safe(nd);
-> -	if (err)
-> -		return err;
-> +	int err;
-> +
-> +	if (!permit_mount(nd, &flags))
-> +		return -EPERM;
->  	if (!old_name || !*old_name)
->  		return -EINVAL;
->  	err = path_lookup(old_name, LOOKUP_FOLLOW, &old_nd);
 > 
 > --
