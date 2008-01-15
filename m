@@ -1,15 +1,19 @@
 From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 2/4] The character devices layer changes
-Date: Tue, 15 Jan 2008 08:54:48 -0600
-Message-ID: <20080115145448.GF4453@sergelap.austin.ibm.com>
-References: <47833C3A.8090106@openvz.org> <47833E93.6010108@openvz.org>
-	<20080114170333.GA15077@sergelap.austin.ibm.com>
-	<478C6942.4050903@openvz.org>
+Subject: Re: [patch 8/9] unprivileged mounts: propagation: inherit owner
+	from parent
+Date: Tue, 15 Jan 2008 08:59:19 -0600
+Message-ID: <20080115145919.GG4453@sergelap.austin.ibm.com>
+References: <20080108113502.184459371@szeredi.hu>
+	<20080108113632.895453887@szeredi.hu>
+	<20080114231340.GG6704@sergelap.austin.ibm.com>
+	<E1JEjCG-0000wz-BS@pomaz-ex.szeredi.hu>
+	<20080115142115.GC4453@sergelap.austin.ibm.com>
+	<E1JEmv3-0001RN-6J@pomaz-ex.szeredi.hu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <478C6942.4050903-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+In-Reply-To: <E1JEmv3-0001RN-6J-8f8m9JG5TPIdUIPVzhDTVZP2KDSNp7ea@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,68 +23,62 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
-Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+To: Miklos Szeredi <miklos-sUDqSbJrdHQHWmgEVkV9KA@public.gmane.org>
+Cc: linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, hch-wEGCiKHe2LqWVfeAwA7xHQ@public.gmane.org, containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, kzak-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org, viro-rfM+Q5joDG/XmaaqVzeoHQ@public.gmane.org, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, util-linux-ng-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Quoting Pavel Emelyanov (xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org):
-> Serge E. Hallyn wrote:
-> > Quoting Pavel Emelyanov (xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org):
-> >> These changes include the API for the control group
-> >> to map/remap/unmap the devices with their permissions
-> >> and one important thing.
-> >>
-> >> The fact is that the struct cdev is cached in the inode
-> >> for faster access, so once we looked one up we go through
-> >> the fast path and omit the kobj_lookup() call. This is no
-> >> longer good when we restrict the access to cdevs.
-> >>
-> >> To address this issue, I store the last_perm and last(_map)
-> >> fields on the struct cdev (and protect them with the cdev_lock)
-> >> and force the re-lookup in the kobj mappings if needed.
-> >>
-> >> I know, this might be slow, but I have two points for it:
-> >> 1. The re-lookup happens on open() only which is not
-> >>    a fast-path. Besides, this is so for block layer and
-> >>    nobody complains;
-> >> 2. On a well-isolated setup, when each container has its
-> >>    own filesystem this is no longer a problem - each
-> >>    cgroup will cache the cdev on its inode and work good.
+Quoting Miklos Szeredi (miklos-sUDqSbJrdHQHWmgEVkV9KA@public.gmane.org):
+> > > > > On mount propagation, let the owner of the clone be inherited from the
+> > > > > parent into which it has been propagated.  Also if the parent has the
+> > > > > "nosuid" flag, set this flag for the child as well.
+> > > > 
+> > > > What about nodev?
+> > > 
+> > > Hmm, I think the nosuid thing is meant to prevent suid mounts being
+> > > introduced into a "suidless" namespace.  This doesn't apply to dev
+> > > mounts, which are quite safe in a suidless environment, as long as the
+> > > user is not able to create devices.  But that should be taken care of
+> > > by capability tests.
+> > > 
+> > > I'll update the description.
 > > 
-> > What about simply returning -EPERM when open()ing a cdev
-> > with ->map!=task_cdev_map(current)?
-> 
-> In this case it will HAVE to setup isolated filesystem for
-> each cgroup. I thought that this flexibility doesn't hurt.
-
-The cost and effort of setting up a private /dev seems so minimal to me
-it seems worth not dealing with the inode->map switching around.
-
-But maybe that's just me.
-
-> > Shouldn't be a problem for ttys, since the container init
-> > already has the tty open, right?
-> 
-> Yup, but this is not the case for /dev/null or /dev/zero.
-> 
-> > Otherwise, the patchset looks good to me.  Want to look
-> > through this one a little more (i think that'd be easier
-> > with the -EPERM approach) and scrutinize patch 4, but
-> > overall it makes sense.
-> 
-> OK, thanks.
-> 
-> > If I understand right, we're taking 14k per cgroup for
-> > kobjmaps?  Do we consider that a problem?
-> 
-> 14k? I allocate the struct kobj_map which is only 256 pointers
-> (i.e. - 2K) and the struct probe that is 32 bytes. I.e. 4k
-> or a single page. I think this is OK.
-
-Oops, I was thinking the probes were all pre-allocated.  Sorry.
-
-> > thanks,
-> > -serge
+> > Hmm,
 > > 
+> > Part of me wants to say the safest thing for now would be to refuse
+> > mounts propagation from non-user mounts to user mounts.
+> > 
+> > I assume you're thinking about a fully user-mounted chroot, where
+> > the user woudl still want to be able to stick in a cdrom and have
+> > it automounted under /mnt/cdrom, propagated from the root mounts ns?
 > 
-> [snip]
+> Right.
+> 
+> > But then are there no devices which the user could create on a floppy
+> > while inserted into his own laptop, owned by his own uid, then insert
+> > into this machine, and use the device under the auto-mounted /dev/floppy
+> > to gain inappropriate access?
+> 
+> I assume, that the floppy and cdrom are already mounted with
+> nosuid,nodev.
+
+Yeah, of course, what I'm saying is no different whether the upper mount
+is a user mount or not.  You're right.
+
+> The problem case is I think is if a sysadmin does some mounting in the
+> initial namespace, and this is propagated into the fully user-mounted
+> namespace (or chroot), so that a mount with suid binaries slips in.
+> Which is bad, because the user may be able rearange the namespace, to
+> trick the suid program to something it should not do.
+
+And really this shouldn't be an issue at all - the usermount chroot
+would be set up under something like /share/hallyn/root, so the admin
+would have to purposely set up propagation into that tree, so this
+won't be happening by accident.
+
+> OTOH, a mount with devices can't be abused this way, since it is not
+> possible to gain privileges to files/devices just by rearanging the
+> mounts.
+
+Thanks for humoring me,
+
+-serge
