@@ -1,57 +1,64 @@
-From: Miklos Szeredi <miklos@szeredi.hu>
-Subject: Re: [patch 8/9] unprivileged mounts: propagation: inherit owner
-	from parent
-Date: Tue, 15 Jan 2008 15:37:37 +0100
-Message-ID: <E1JEmv3-0001RN-6J@pomaz-ex.szeredi.hu>
-References: <20080108113502.184459371@szeredi.hu> <20080108113632.895453887@szeredi.hu> <20080114231340.GG6704@sergelap.austin.ibm.com> <E1JEjCG-0000wz-BS@pomaz-ex.szeredi.hu> <20080115142115.GC4453@sergelap.austin.ibm.com>
-Return-path: <linux-fsdevel-owner@vger.kernel.org>
-In-reply-to: <20080115142115.GC4453@sergelap.austin.ibm.com>
-	(serue@us.ibm.com)
-Sender: linux-fsdevel-owner@vger.kernel.org
-Cc: miklos@szeredi.hu, serue@us.ibm.com, akpm@linux-foundation.org, hch@infradead.org, viro@ftp.linux.org.uk, ebiederm@xmission.com, kzak@redhat.com, linux-fsdevel@vger.kernel.org, linux-kernel@vger.kernel.org, containers@lists.osdl.org, util-linux-ng@vger.kernel.org
+From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH 4/4] The control group itself
+Date: Tue, 15 Jan 2008 08:44:40 -0600
+Message-ID: <20080115144440.GE4453@sergelap.austin.ibm.com>
+References: <47833C3A.8090106@openvz.org> <47833FF6.6060901@openvz.org>
+	<20080114174056.GB15077@sergelap.austin.ibm.com>
+	<478C6669.7070705@openvz.org>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <478C6669.7070705-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-> > > > On mount propagation, let the owner of the clone be inherited from the
-> > > > parent into which it has been propagated.  Also if the parent has the
-> > > > "nosuid" flag, set this flag for the child as well.
-> > > 
-> > > What about nodev?
+Quoting Pavel Emelyanov (xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org):
+> [snip]
+> 
+> > Thanks for working on this, Pavel.
 > > 
-> > Hmm, I think the nosuid thing is meant to prevent suid mounts being
-> > introduced into a "suidless" namespace.  This doesn't apply to dev
-> > mounts, which are quite safe in a suidless environment, as long as the
-> > user is not able to create devices.  But that should be taken care of
-> > by capability tests.
+> > My only question with this patch is - so if I create a devs
+> > cgroup which only has access to, say /dev/loop0 and /dev/tty3,
+> > and someone in that cgroup manages to create a new cgroup, the
+> > new cgroup will have all the default permissions again, rather
+> > than inherit the permissions from this cgroup, right?
+> 
+> Right. When you create a new cgroup you have an empty perms
+> set. Maybe it's worth inheriting the perms from the parent
+> container, but I think that empty set is better as you will
+> reconfigure it anyway.
+> 
+> [snip]
+> 
+> >> +static ssize_t devs_write(struct cgroup *cont, struct cftype *cft,
+> >> +		struct file *f, const char __user *ubuf,
+> >> +		size_t nbytes, loff_t *pos)
+> >> +{
+> >> +	int err, all, chrdev;
+> >> +	dev_t dev;
+> >> +	char buf[64];
+> >> +	struct devs_cgroup *devs;
+> >> +	mode_t mode;
 > > 
-> > I'll update the description.
+> > (Of course this will require some privilege, i assume that's a detail
+> > you'll add next time around)
 > 
-> Hmm,
-> 
-> Part of me wants to say the safest thing for now would be to refuse
-> mounts propagation from non-user mounts to user mounts.
-> 
-> I assume you're thinking about a fully user-mounted chroot, where
-> the user woudl still want to be able to stick in a cdrom and have
-> it automounted under /mnt/cdrom, propagated from the root mounts ns?
+> Hm... I though that privileges are governed at the cgroup level.... No?
 
-Right.
+I don't think so...  Wouldn't really make sense for the cgroup
+infrastructure to presume to know what to enforce, and I don't see any
+checks around the _write functions in cgroup.c, and no capable() calls
+at all.
 
-> But then are there no devices which the user could create on a floppy
-> while inserted into his own laptop, owned by his own uid, then insert
-> into this machine, and use the device under the auto-mounted /dev/floppy
-> to gain inappropriate access?
-
-I assume, that the floppy and cdrom are already mounted with
-nosuid,nodev.
-
-The problem case is I think is if a sysadmin does some mounting in the
-initial namespace, and this is propagated into the fully user-mounted
-namespace (or chroot), so that a mount with suid binaries slips in.
-Which is bad, because the user may be able rearange the namespace, to
-trick the suid program to something it should not do.
-
-OTOH, a mount with devices can't be abused this way, since it is not
-possible to gain privileges to files/devices just by rearanging the
-mounts.
-
-Miklos
+-serge
