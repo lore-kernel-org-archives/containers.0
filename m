@@ -1,14 +1,14 @@
 From: Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
-Subject: Re: [PATCH 4/4] The control group itself
-Date: Tue, 15 Jan 2008 10:58:48 +0300
-Message-ID: <478C67B8.9000301@openvz.org>
-References: <47833C3A.8090106@openvz.org> <47833FF6.6060901@openvz.org>
-	<6599ad830801141354p5b165cdao8d6184adb9ab61b6@mail.gmail.com>
+Subject: Re: [PATCH 2/4] The character devices layer changes
+Date: Tue, 15 Jan 2008 11:05:22 +0300
+Message-ID: <478C6942.4050903@openvz.org>
+References: <47833C3A.8090106@openvz.org> <47833E93.6010108@openvz.org>
+	<20080114170333.GA15077@sergelap.austin.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <6599ad830801141354p5b165cdao8d6184adb9ab61b6-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
+In-Reply-To: <20080114170333.GA15077-6s5zFf/epYLPQpwDFJZrxKsjOiXwFzmk@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,176 +18,60 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
-Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
+To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Paul Menage wrote:
-> On Jan 8, 2008 1:18 AM, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org> wrote:
->> Each new group will have its own maps for char and block
->> layers. The devices access list is tuned via the
->> devices.permissions file.
+Serge E. Hallyn wrote:
+> Quoting Pavel Emelyanov (xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org):
+>> These changes include the API for the control group
+>> to map/remap/unmap the devices with their permissions
+>> and one important thing.
 >>
->> One may read from the file to get the configured
->> state. E.g.
+>> The fact is that the struct cdev is cached in the inode
+>> for faster access, so once we looked one up we go through
+>> the fast path and omit the kobj_lookup() call. This is no
+>> longer good when we restrict the access to cdevs.
 >>
->> # cat /cont/devices/0/devices.permissions
->> c 1:* rw
->> b 8:1 rw
+>> To address this issue, I store the last_perm and last(_map)
+>> fields on the struct cdev (and protect them with the cdev_lock)
+>> and force the re-lookup in the kobj mappings if needed.
 >>
->> The top container isn't initialized, so that the char
->> and block layers will use the global maps to lookup
->> their devices.
->>
->> Signed-off-by: Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
->>
->> ---
->>
->> diff --git a/fs/Makefile b/fs/Makefile
->> index 82b6ae1..a085706 100644
->> --- a/fs/Makefile
->> +++ b/fs/Makefile
->> @@ -63,6 +63,8 @@ obj-y                         += devpts/
->>
->>  obj-$(CONFIG_PROFILING)                += dcookies.o
->>  obj-$(CONFIG_DLM)              += dlm/
->> +
->> +obj-$(CONFIG_CGROUP_DEVS)      += devscontrol.o
->>
->>  # Do not add any filesystems before this line
->>  obj-$(CONFIG_REISERFS_FS)      += reiserfs/
->> diff --git a/fs/devscontrol.c b/fs/devscontrol.c
->> new file mode 100644
->> index 0000000..ea282f3
->> --- /dev/null
->> +++ b/fs/devscontrol.c
->> @@ -0,0 +1,291 @@
->> +/*
->> + * devscontrol.c - Device Controller
->> + *
->> + * Copyright 2007 OpenVZ SWsoft Inc
->> + * Author: Pavel Emelyanov <xemul at openvz.org>
->> + *
->> + * This program is free software; you can redistribute it and/or modify
->> + * it under the terms of the GNU General Public License as published by
->> + * the Free Software Foundation; either version 2 of the License, or
->> + * (at your option) any later version.
->> + *
->> + * This program is distributed in the hope that it will be useful,
->> + * but WITHOUT ANY WARRANTY; without even the implied warranty of
->> + * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
->> + * GNU General Public License for more details.
->> + */
->> +
->> +#include <linux/cgroup.h>
->> +#include <linux/cdev.h>
->> +#include <linux/err.h>
->> +#include <linux/devscontrol.h>
->> +#include <linux/uaccess.h>
->> +#include <linux/fs.h>
->> +#include <linux/genhd.h>
->> +
->> +struct devs_cgroup {
->> +       struct cgroup_subsys_state css;
->> +
->> +       struct kobj_map *cdev_map;
->> +       struct kobj_map *bdev_map;
->> +};
->> +
->> +static inline
->> +struct devs_cgroup *css_to_devs(struct cgroup_subsys_state *css)
->> +{
->> +       return container_of(css, struct devs_cgroup, css);
->> +}
->> +
->> +static inline
->> +struct devs_cgroup *cgroup_to_devs(struct cgroup *cont)
->> +{
->> +       return css_to_devs(cgroup_subsys_state(cont, devs_subsys_id));
->> +}
->> +
->> +struct kobj_map *task_cdev_map(struct task_struct *tsk)
->> +{
->> +       struct cgroup_subsys_state *css;
->> +
->> +       css = task_subsys_state(tsk, devs_subsys_id);
->> +       if (css->cgroup->parent == NULL)
->> +               return NULL;
->> +       else
->> +               return css_to_devs(css)->cdev_map;
->> +}
+>> I know, this might be slow, but I have two points for it:
+>> 1. The re-lookup happens on open() only which is not
+>>    a fast-path. Besides, this is so for block layer and
+>>    nobody complains;
+>> 2. On a well-isolated setup, when each container has its
+>>    own filesystem this is no longer a problem - each
+>>    cgroup will cache the cdev on its inode and work good.
 > 
-> For this (and task_bdev_map) it would be cleaner to just leave the
-> cdev_map and bdev_map in the root cgroup as NULL, so you could just
-> make this
+> What about simply returning -EPERM when open()ing a cdev
+> with ->map!=task_cdev_map(current)?
+
+In this case it will HAVE to setup isolated filesystem for
+each cgroup. I thought that this flexibility doesn't hurt.
+
+> Shouldn't be a problem for ttys, since the container init
+> already has the tty open, right?
+
+Yup, but this is not the case for /dev/null or /dev/zero.
+
+> Otherwise, the patchset looks good to me.  Want to look
+> through this one a little more (i think that'd be easier
+> with the -EPERM approach) and scrutinize patch 4, but
+> overall it makes sense.
+
+OK, thanks.
+
+> If I understand right, we're taking 14k per cgroup for
+> kobjmaps?  Do we consider that a problem?
+
+14k? I allocate the struct kobj_map which is only 256 pointers
+(i.e. - 2K) and the struct probe that is 32 bytes. I.e. 4k
+or a single page. I think this is OK.
+
+> thanks,
+> -serge
 > 
-> struct kobj_map *task_cdev_map(struct task_struct *tsk)
-> {
->   return css_to_devs(task_subsys_state(tsk, devs_subsys_id))->cdev_map;
-> }
 
-Ok, thanks, I'll make it in the next version.
-
->> +
->> +static ssize_t devs_write(struct cgroup *cont, struct cftype *cft,
->> +               struct file *f, const char __user *ubuf,
->> +               size_t nbytes, loff_t *pos)
->> +{
->> +       int err, all, chrdev;
->> +       dev_t dev;
->> +       char buf[64];
->> +       struct devs_cgroup *devs;
->> +       mode_t mode;
->> +
->> +       if (copy_from_user(buf, ubuf, sizeof(buf)))
->> +               return -EFAULT;
->> +
->> +       buf[sizeof(buf) - 1] = 0;
->> +       err = decode_perms_str(buf, &chrdev, &dev, &all, &mode);
->> +       if (err < 0)
->> +               return err;
->> +
->> +       devs = cgroup_to_devs(cont);
->> +
->> +       if (mode == 0) {
->> +               if (chrdev)
->> +                       err = cdev_del_from_map(devs->cdev_map, dev, all);
->> +               else
->> +                       err = bdev_del_from_map(devs->bdev_map, dev, all);
-> 
-> There's no locking involved on these calls, other than the cgroups
-> code guaranteeing that the subsystem objects themselves won't go away.
-> A quick look over the kobj_map calls suggests that these calls may be
-> thread-safe - can you confirm that. (And maybe comment at the top of
-> the function?)
-
-Yup. The locking inside this call is unnecessary as maps
-are atomic by themselves. I'll add the comment about it.
-
->> +       arg.buf = (char *)__get_free_page(GFP_KERNEL);
->> +       if (arg.buf == NULL)
->> +               return -ENOMEM;
->> +
->> +       devs = cgroup_to_devs(cont);
->> +       arg.pos = 0;
->> +
->> +       arg.chrdev = 1;
->> +       cdev_iterate_map(devs->cdev_map, devs_dump_one, &arg);
->> +
->> +       arg.chrdev = 0;
->> +       bdev_iterate_map(devs->bdev_map, devs_dump_one, &arg);
-> 
-> Is there any chance of this overflowing the buffer page?
-
-Well, I have checks that we've filled all the page and do not
-go on dumping the info in this case. So the only bad thing user
-can have is that he doesn't see the full perms list, but the
-kernel won't OOPs ;) Since we have from 8 to 16 bytes per perm
-line, we may have from 256 to 256 permissions set for cgroup. 
-
-Not that much, but that's enough for a first time (I haven't seen 
-any OpenVZ user who sets more than 50 devperms). But sure this 
-is one of TODO-s for the next patch versions.
-
-> Paul
-> 
+[snip]
