@@ -1,49 +1,63 @@
 From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [patch 8/9] unprivileged mounts: propagation: inherit owner
-	from parent
-Date: Tue, 15 Jan 2008 08:21:15 -0600
-Message-ID: <20080115142115.GC4453@sergelap.austin.ibm.com>
-References: <20080108113502.184459371@szeredi.hu> <20080108113632.895453887@szeredi.hu> <20080114231340.GG6704@sergelap.austin.ibm.com> <E1JEjCG-0000wz-BS@pomaz-ex.szeredi.hu>
+Subject: Re: Namespaces exhausted CLONE_XXX bits problem
+Date: Tue, 15 Jan 2008 08:35:24 -0600
+Message-ID: <20080115143524.GD4453@sergelap.austin.ibm.com>
+References: <478B6764.6050300@openvz.org> <478B7549.2020000@fr.ibm.com>
+	<478B76C4.8050804@openvz.org> <478B7DB3.9050702@fr.ibm.com>
+	<20080114163246.GA31663@sergelap.austin.ibm.com>
+	<478C665C.80106@fr.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-Return-path: <util-linux-ng-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <E1JEjCG-0000wz-BS-8f8m9JG5TPIdUIPVzhDTVZP2KDSNp7ea@public.gmane.org>
-Sender: util-linux-ng-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-To: Miklos Szeredi <miklos-sUDqSbJrdHQHWmgEVkV9KA@public.gmane.org>
-Cc: serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, hch-wEGCiKHe2LqWVfeAwA7xHQ@public.gmane.org, viro-rfM+Q5joDG/XmaaqVzeoHQ@public.gmane.org, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org, kzak-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, util-linux-ng-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+In-Reply-To: <478C665C.80106-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Cedric Le Goater <clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
+Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Quoting Miklos Szeredi (miklos-sUDqSbJrdHQHWmgEVkV9KA@public.gmane.org):
-> > Quoting Miklos Szeredi (miklos-sUDqSbJrdHQHWmgEVkV9KA@public.gmane.org):
-> > > From: Miklos Szeredi <mszeredi-AlSwsSmVLrQ@public.gmane.org>
-> > > 
-> > > On mount propagation, let the owner of the clone be inherited from the
-> > > parent into which it has been propagated.  Also if the parent has the
-> > > "nosuid" flag, set this flag for the child as well.
+Quoting Cedric Le Goater (clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org):
+> Serge E. Hallyn wrote:
+> > Quoting Cedric Le Goater (clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org):
+> >> to be more precise :
+> >>
+> >> 	long sys_clone_something(struct clone_something_args args) 
+> >>
+> >> and 
+> >>
+> >> 	long sys_unshare_something(struct unshare_something_args args) 
+> >>
+> >> The arg passing will be slower bc of the copy_from_user() but we will 
+> >> still have the sys_clone syscall for the fast path.
+> >>
+> >> C.
 > > 
-> > What about nodev?
+> > I'm fine with the direction you're going, but just as one more option,
+> > we could follow more of the selinux/lsm approach of first requesting
+> > clone/unshare options, then doing the actual clone/unshare.  So
+> > something like
+> > 
+> > 	sys_clone_request(extended_64bit_clone_flags)
+> > 	sys_clone(usual args)
+> > 
+> > or
+> > 
+> > 	echo pid,mqueue,user,ipc,uts,net > /proc/self/clone_unshare
+> > 	clone()
 > 
-> Hmm, I think the nosuid thing is meant to prevent suid mounts being
-> introduced into a "suidless" namespace.  This doesn't apply to dev
-> mounts, which are quite safe in a suidless environment, as long as the
-> user is not able to create devices.  But that should be taken care of
-> by capability tests.
-> 
-> I'll update the description.
+> For my information, why selinux/lsm chose that 2 steps approach ?
+> What kind of issues are they trying to solve ?
 
-Hmm,
-
-Part of me wants to say the safest thing for now would be to refuse
-mounts propagation from non-user mounts to user mounts.
-
-I assume you're thinking about a fully user-mounted chroot, where
-the user woudl still want to be able to stick in a cdrom and have
-it automounted under /mnt/cdrom, propagated from the root mounts ns?
-
-But then are there no devices which the user could create on a floppy
-while inserted into his own laptop, owned by his own uid, then insert
-into this machine, and use the device under the auto-mounted /dev/floppy
-to gain inappropriate access?
+Well an interface was needed to allow multiple LSMs to query and set
+task information.  Using a syscall (which was attempted) required
+ioctl-like subcommands which was not accepted.
 
 -serge
