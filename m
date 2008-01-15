@@ -1,14 +1,19 @@
 From: Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
-Subject: Re: [PATCH 0/4] Devices accessibility control group (v2)
-Date: Tue, 15 Jan 2008 11:22:03 +0300
-Message-ID: <478C6D2B.6020904@openvz.org>
-References: <47833C3A.8090106@openvz.org> <20080112212014.GA12085@us.ibm.com>
-	<478B14DB.4000106@openvz.org> <20080114174220.GA17825@us.ibm.com>
+Subject: Re: Namespaces exhausted CLONE_XXX bits problem
+Date: Tue, 15 Jan 2008 11:25:56 +0300
+Message-ID: <478C6E14.1050901@openvz.org>
+References: <478B6764.6050300@openvz.org> <478B7549.2020000@fr.ibm.com>	
+	<478B76C4.8050804@openvz.org> <478B7DB3.9050702@fr.ibm.com>	
+	<20080114163246.GA31663@sergelap.austin.ibm.com>	
+	<478B9345.30004@openvz.org>
+	<20080114180748.GA2772@sergelap.austin.ibm.com>	
+	<478BD5CD.7030607@cs.columbia.edu>
+	<1200347674.22674.28.camel@localhost>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20080114174220.GA17825-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <1200347674.22674.28.camel@localhost>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,80 +23,39 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org
-Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+To: Dave Hansen <haveblue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Cedric Le Goater <clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org wrote:
-> | > I started playing with this and noticed that even if I try to
-> | > enable read access to device [c, 1:3] it also grants access
-> | > to device [c, 1:5]. 
-> | 
-> | Hm... I can't reproduce this:
-> | 
-> | # /bin/echo 'c 1:3 r-' > /cnt/dev/0/devices.permissions
-> | # /bin/echo -n $$ > /cnt/dev/0/tasks
-> | # cat /cnt/dev/0/devices.permissions 
-> | c 1:3 r-
-> | # hexdump /dev/null 
-> | # hexdump /dev/zero 
-> | hexdump: /dev/zero: No such device or address
-> | hexdump: /dev/zero: Bad file descriptor
-> | 
-> | Maybe you have played with devs cgroups before getting this?
-> | Can you show what's the contents of the devices.permissions file
-> | in your case?
+Dave Hansen wrote:
+> On Mon, 2008-01-14 at 16:36 -0500, Oren Laadan wrote:
+>> I second the concern of running out of 64 bits of flags. In fact, the
+>> problem with the flags is likely to be valid outside our context, and
+>> general to the linux kernel soon. Should we not discuss it there
+>> too ? 
 > 
-> Here is the repro again. I even tried after a reboot. Basically,
-> granting access to /dev/null is also granting access to /dev/zero.
+> It would be pretty easy to make a new one expandable:
 > 
-> 	# cat devices.permissions
-> 	# hexdump /dev/zero
-> 	hexdump: /dev/zero: No such device or address
-> 	hexdump: /dev/zero: Bad file descriptor
-> 	# hexdump /dev/null
-> 	hexdump: /dev/null: No such device or address
-> 	hexdump: /dev/null: Bad file descriptor
-> 	# echo 'c 1:3 r-' > devices.permissions
-> 	# hexdump /dev/null
-> 	# hexdump /dev/zero
-> 	0000000 0000 0000 0000 0000 0000 0000 0000 0000
-> 	*
-> 	^C
-> 	# cat tasks
-> 	3279
-> 	22266
-> 	# ps
-> 	  PID TTY          TIME CMD
-> 	 3279 pts/0    00:00:00 bash
-> 	22267 pts/0    00:00:00 ps
+> 	sys_newclone(int len, unsigned long *flags_array)
 > 
+> Then you could give it a virtually unlimited number of "unsigned long"s
+> pointed to by "flags_array".
+> 
+> Plus, the old clone just becomes:
+> 
+>         sys_oldclone(unsigned long flags)
+>         {
+>         	do_newclone(1, &flags);
+>         }
+> 
+> We could validate the flags array address in sys_newclone(), then call
+> do_newclone().
 
-This all looks completely incomprehensible :( 
+Hmm. I have an idea how to make this w/o a new system call. This might
+look wierd, but. Why not stopple the last bit with a CLONE_NEWCLONE and
+consider the parent_tidptr/child_tidptr in this case as the pointer to 
+an array of extra arguments/flargs?
 
-Here's my test:
-# mount -t cgroup none /cnt/dev/ -o devices
-# mkdir /cnt/dev/0
-# /bin/echo -n $$ > /cnt/dev/0/tasks 
-# cat /cnt/dev/0/devices.permissions 
-# hexdump /dev/zero 
-hexdump: /dev/zero: No such device or address
-hexdump: /dev/zero: Bad file descriptor
-# hexdump /dev/null 
-hexdump: /dev/null: No such device or address
-hexdump: /dev/null: Bad file descriptor
-# echo 'c 1:3 r-' > /cnt/dev/0/devices.permissions
-# cat /cnt/dev/0/devices.permissions 
-c 1:3 r-
-# hexdump /dev/null 
-# hexdump /dev/zero 
-hexdump: /dev/zero: No such device or address
-hexdump: /dev/zero: Bad file descriptor
-
-
-Sukadev, could you please try to track the problem as you
-seem to be the only person who's experiencing problems
-with that.
-
-Thanks,
-Pavel
+> -- Dave
+> 
+> 
