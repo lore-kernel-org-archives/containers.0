@@ -1,99 +1,59 @@
-From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [patch 9/9] unprivileged mounts: add "no submounts" flag
-Date: Mon, 14 Jan 2008 17:39:10 -0600
-Message-ID: <20080114233910.GI6704@sergelap.austin.ibm.com>
-References: <20080108113502.184459371@szeredi.hu> <20080108113634.382855604@szeredi.hu>
+From: Cedric Le Goater <clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
+Subject: Re: Namespaces exhausted CLONE_XXX bits problem
+Date: Tue, 15 Jan 2008 08:53:00 +0100
+Message-ID: <478C665C.80106@fr.ibm.com>
+References: <478B6764.6050300@openvz.org> <478B7549.2020000@fr.ibm.com>
+	<478B76C4.8050804@openvz.org> <478B7DB3.9050702@fr.ibm.com>
+	<20080114163246.GA31663@sergelap.austin.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Return-path: <util-linux-ng-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <20080108113634.382855604-sUDqSbJrdHQHWmgEVkV9KA@public.gmane.org>
-Sender: util-linux-ng-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-To: Miklos Szeredi <miklos-sUDqSbJrdHQHWmgEVkV9KA@public.gmane.org>
-Cc: akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, hch-wEGCiKHe2LqWVfeAwA7xHQ@public.gmane.org, serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org, viro-rfM+Q5joDG/XmaaqVzeoHQ@public.gmane.org, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org, kzak-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, util-linux-ng-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Content-Type: text/plain; charset=ISO-8859-1
+Content-Transfer-Encoding: 7bit
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <20080114163246.GA31663-6s5zFf/epYLPQpwDFJZrxKsjOiXwFzmk@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Quoting Miklos Szeredi (miklos-sUDqSbJrdHQHWmgEVkV9KA@public.gmane.org):
-> From: Miklos Szeredi <mszeredi-AlSwsSmVLrQ@public.gmane.org>
+Serge E. Hallyn wrote:
+> Quoting Cedric Le Goater (clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org):
+>> to be more precise :
+>>
+>> 	long sys_clone_something(struct clone_something_args args) 
+>>
+>> and 
+>>
+>> 	long sys_unshare_something(struct unshare_something_args args) 
+>>
+>> The arg passing will be slower bc of the copy_from_user() but we will 
+>> still have the sys_clone syscall for the fast path.
+>>
+>> C.
 > 
-> Add a new mount flag "nomnt", which denies submounts for the owner.
-> This would be useful, if we want to support traditional /etc/fstab
-> based user mounts.
+> I'm fine with the direction you're going, but just as one more option,
+> we could follow more of the selinux/lsm approach of first requesting
+> clone/unshare options, then doing the actual clone/unshare.  So
+> something like
 > 
-> In this case mount(8) would still have to be suid-root, to check the
-> mountpoint against the user/users flag in /etc/fstab, but /etc/mtab
-> would no longer be mandatory for storing the actual owner of the
-> mount.
+> 	sys_clone_request(extended_64bit_clone_flags)
+> 	sys_clone(usual args)
+> 
+> or
+> 
+> 	echo pid,mqueue,user,ipc,uts,net > /proc/self/clone_unshare
+> 	clone()
 
-Ah, I see, so the floppy drive could be mounted as a MNT_NOMNT but
-MNT_USER mount with mnt_owner set.  Makes sense.  I'd ask for a better
-name than 'nomnt', but I can't think of one myself.
+For my information, why selinux/lsm chose that 2 steps approach ?
+What kind of issues are they trying to solve ?
 
-> Signed-off-by: Miklos Szeredi <mszeredi-AlSwsSmVLrQ@public.gmane.org>
+Thanks,
 
-Acked-by: Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-
-> ---
-> 
-> Index: linux/fs/namespace.c
-> ===================================================================
-> --- linux.orig/fs/namespace.c	2008-01-04 13:49:52.000000000 +0100
-> +++ linux/fs/namespace.c	2008-01-04 13:50:28.000000000 +0100
-> @@ -694,6 +694,7 @@ static int show_vfsmnt(struct seq_file *
->  		{ MNT_NOATIME, ",noatime" },
->  		{ MNT_NODIRATIME, ",nodiratime" },
->  		{ MNT_RELATIME, ",relatime" },
-> +		{ MNT_NOMNT, ",nomnt" },
->  		{ 0, NULL }
->  	};
->  	struct proc_fs_info *fs_infop;
-> @@ -1044,6 +1045,9 @@ static bool permit_mount(struct nameidat
->  	if (S_ISLNK(inode->i_mode))
->  		return false;
-> 
-> +	if (nd->path.mnt->mnt_flags & MNT_NOMNT)
-> +		return false;
-> +
->  	if (!is_mount_owner(nd->path.mnt, current->fsuid))
->  		return false;
-> 
-> @@ -1888,9 +1892,11 @@ long do_mount(char *dev_name, char *dir_
->  		mnt_flags |= MNT_RELATIME;
->  	if (flags & MS_RDONLY)
->  		mnt_flags |= MNT_READONLY;
-> +	if (flags & MS_NOMNT)
-> +		mnt_flags |= MNT_NOMNT;
-> 
-> -	flags &= ~(MS_NOSUID | MS_NOEXEC | MS_NODEV | MS_ACTIVE |
-> -		   MS_NOATIME | MS_NODIRATIME | MS_RELATIME| MS_KERNMOUNT);
-> +	flags &= ~(MS_NOSUID | MS_NOEXEC | MS_NODEV | MS_ACTIVE | MS_NOATIME |
-> +			MS_NODIRATIME | MS_RELATIME | MS_KERNMOUNT | MS_NOMNT);
-> 
->  	/* ... and get the mountpoint */
->  	retval = path_lookup(dir_name, LOOKUP_FOLLOW, &nd);
-> Index: linux/include/linux/fs.h
-> ===================================================================
-> --- linux.orig/include/linux/fs.h	2008-01-04 13:49:12.000000000 +0100
-> +++ linux/include/linux/fs.h	2008-01-04 13:49:58.000000000 +0100
-> @@ -130,6 +130,7 @@ extern int dir_notify_enable;
->  #define MS_KERNMOUNT	(1<<22) /* this is a kern_mount call */
->  #define MS_I_VERSION	(1<<23) /* Update inode I_version field */
->  #define MS_SETUSER	(1<<24) /* set mnt_uid to current user */
-> +#define MS_NOMNT	(1<<25) /* don't allow unprivileged submounts */
->  #define MS_ACTIVE	(1<<30)
->  #define MS_NOUSER	(1<<31)
-> 
-> Index: linux/include/linux/mount.h
-> ===================================================================
-> --- linux.orig/include/linux/mount.h	2008-01-04 13:45:45.000000000 +0100
-> +++ linux/include/linux/mount.h	2008-01-04 13:49:58.000000000 +0100
-> @@ -30,6 +30,7 @@ struct mnt_namespace;
->  #define MNT_NODIRATIME	0x10
->  #define MNT_RELATIME	0x20
->  #define MNT_READONLY	0x40	/* does the user want this to be r/o? */
-> +#define MNT_NOMNT	0x80
-> 
->  #define MNT_SHRINKABLE	0x100
->  #define MNT_IMBALANCED_WRITE_COUNT	0x200 /* just for debugging */
-> 
-> --
+C. 
