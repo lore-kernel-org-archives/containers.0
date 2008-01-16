@@ -1,58 +1,29 @@
-From: "Denis V. Lunev" <den-3ImXcnM4P+0@public.gmane.org>
-Subject: Re: OLS2008 "namespaces status update" report
-Date: Wed, 16 Jan 2008 16:16:34 +0300
-Message-ID: <478E03B2.7090905@sw.ru>
-References: <478DC1BF.6070507@openvz.org> <478DD0FD.60804@fr.ibm.com>
-	<478DDACF.4030802@openvz.org>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <478DDACF.4030802-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
-Cc: Kir Kolyshkin <kir-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>, Cedric Le Goater <clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Denis Lunev <den-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>, Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+From: corbet@lwn.net (Jonathan Corbet)
+Subject: Re: [PATCH 1/2] Extend sys_clone and sys_unshare system calls API
+Date: Wed, 16 Jan 2008 07:23:40 -0700
+Message-ID: <9803.1200493420@vena.lwn.net>
+References: <478DFF8F.9030006@openvz.org>
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1755379AbYAPOXv@vger.kernel.org>
+In-reply-to: Your message of "Wed, 16 Jan 2008 15:58:55 +0300."
+             <478DFF8F.9030006@openvz.org>
+Sender: linux-kernel-owner@vger.kernel.org
+To: Pavel Emelyanov <xemul@openvz.org>
+Cc: Linux Containers <containers@lists.osdl.org>, Linux Kernel Mailing List <linux-kernel@vger.kernel.org>, Cedric Le Goater <clg@fr.ibm.com>, drepper@redhat.com, Serge Hallyn <serue@us.ibm.com>, Andrew Morton <akpm@linux-foundation.org>
 List-Id: containers.vger.kernel.org
 
-By the way, may be it is better to request a BOF rather than mini-summit
-to have a presentation of our work for a "outside" world...
+Hi, Pavel,
 
-Regards,
-	Den
+[Adding Ulrich]
 
-Pavel Emelyanov wrote:
-> Cedric Le Goater wrote:
->> Pavel Emelyanov wrote:
->>> Hi, guys.
->>>
->>> We're coming up to the deadline of proposals submissions for
->>> OLS2008 and I noticed, that we didn't decide whether we're
->>> going to make some summary report about the namespaces/cgroups
->>> development status.
->>>
->>> I think it worth making this one.
->> OK. Let's work on an abstract.
-> 
-> Fine :) Actually the main question is - who will be 
-> responsible for this talk. If nobody objects I can 
-> take care of it ;)
-> 
->>> Besides, we can send a request for a mini-summit.
->> Yes !
-> 
-> :)
-> 
->> C.
->>
-> 
-> Thanks,
-> Pavel
-> 
+> I use the last bit in the clone_flags for CLONE_LONGARG. When set it
+> will denote that the child_tidptr is not a pointer to a tid storage,
+> but the pointer to the struct long_clone_struct which currently 
+> looks like this:
+
+I'm probably just totally off the deep end, but something did occur to
+me: this looks an awful lot like a special version of the sys_indirect()
+idea.  Unless it has been somehow decided that sys_indirect() is the
+wrong idea, might it not be better to look at making that interface
+solve the extended clone() problem as well?
+
+jon
