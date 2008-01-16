@@ -1,14 +1,14 @@
-From: Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: Re: LTP result output for container-init
-Date: Wed, 16 Jan 2008 21:37:09 +0530
-Message-ID: <20080116160709.GA8716@balbir.in.ibm.com>
-References: <1200497268.3999.17.camel@localhost.localdomain>
-Reply-To: balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
+From: Kir Kolyshkin <kir-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+Subject: Re: OLS2008 "namespaces status update" report
+Date: Wed, 16 Jan 2008 19:08:55 +0300
+Message-ID: <478E2C17.1010109@openvz.org>
+References: <478DC1BF.6070507@openvz.org> <478DD0FD.60804@fr.ibm.com>
+	<478DDACF.4030802@openvz.org> <478E03B2.7090905@sw.ru>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=iso-8859-1
+Content-Type: text/plain; charset=UTF-8; format=flowed
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <1200497268.3999.17.camel-bi+AKbBUZKY6gyzm1THtWbp2dZbC/Bob@public.gmane.org>
+In-Reply-To: <478E03B2.7090905-3ImXcnM4P+0@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,79 +18,58 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: risrajak-xthvdsQ13ZrQT0dZR+AlfA@public.gmane.org
-Cc: Poornima.Nayak-xthvdsQ13ZrQT0dZR+AlfA@public.gmane.org, containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, serue-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
+To: "Denis V. Lunev" <den-3ImXcnM4P+0@public.gmane.org>
+Cc: Kir Kolyshkin <kir-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>, Cedric Le Goater <clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Denis Lunev <den-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>, Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-* Rishikesh K. Rajak <risrajak-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org> [2008-01-16 20:57:48]:
+Guess we can have both. BOF format is a bit different (not too much 
+time, more people), so better to have mini-summit first.
 
-Hi, Rishi,
+BTW does anybody knows whether the Kernel Summit will be "attached" to 
+OLS this year?
 
-> Hi All,
-> 
-> Today i ran full LTP on kernel 2.6.24-rc6 inside container-init and also
-> on parent namespace and got some observations.
-> 
-> Here is the machine information:
->     Linux rishi.in.ibm.com 2.6.18-53.el5 #1 SMP Wed Oct 10 16:34:02 EDT
-> 2007 i686 i686 i386 GNU/Linux
-> 
->     OS: SLES 10
-> 
-
-Are you sure? Looks like this is a RHEL5 kernel (from your uname)
-
-> I found these fcntl are failing inside container and it pass on parent
-> namespace. I am attaching the log file with this mail.
-> 
-> These failures are conceding with 2.6.23-mm1 itself. Just wanted to know
-
-What do you mean by conceding with 2.6.23-mm1?
-
-> if someone is working on this still.
-
-LTP mailing list would be a better place to ask
-
-> 
->   fcntl11                        FAIL
->   fcntl14                        FAIL
->   fcntl17                        FAIL
->   fcntl19                        FAIL
->   fcntl20                        FAIL
->   fcntl21                        FAIL
-> 
-> And also other observation was:
-> 
-> syslog is failing inside parent namespace but pass inside
-> container-init.
-> 
-> syslog01                       FAIL
-> 1                                        
-> syslog02                       FAIL
-> 1                                        
-> syslog08                       FAIL
-> 1                                        
-> 
-> Please let me know your opinion on this.
-> 
-
-These are good results, but analysis of the results will be very
-useful. For example
-
-1. You could list the diff with a LTP run in parent namespace vs
-   within the container
-2. diff b/w LTP run in parent namespace vs a kernel without containers
-   enabled (this would obviously imply that the containers test cases
-   won't run)
-
-You could then try and get to the root cause of the failure(s) and
-report them.
-
-It would be useful to post the same results to the LTP mailing list
-and I 
-
--- 
-	Warm Regards,
-	Balbir Singh
-	Linux Technology Center
-	IBM, ISTL
+Denis V. Lunev wrote:
+> By the way, may be it is better to request a BOF rather than mini-summit
+> to have a presentation of our work for a "outside" world...
+>
+> Regards,
+> 	Den
+>
+> Pavel Emelyanov wrote:
+>   
+>> Cedric Le Goater wrote:
+>>     
+>>> Pavel Emelyanov wrote:
+>>>       
+>>>> Hi, guys.
+>>>>
+>>>> We're coming up to the deadline of proposals submissions for
+>>>> OLS2008 and I noticed, that we didn't decide whether we're
+>>>> going to make some summary report about the namespaces/cgroups
+>>>> development status.
+>>>>
+>>>> I think it worth making this one.
+>>>>         
+>>> OK. Let's work on an abstract.
+>>>       
+>> Fine :) Actually the main question is - who will be 
+>> responsible for this talk. If nobody objects I can 
+>> take care of it ;)
+>>
+>>     
+>>>> Besides, we can send a request for a mini-summit.
+>>>>         
+>>> Yes !
+>>>       
+>> :)
+>>
+>>     
+>>> C.
+>>>
+>>>       
+>> Thanks,
+>> Pavel
+>>
+>>     
+>
+>   
