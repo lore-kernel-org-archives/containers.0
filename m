@@ -1,14 +1,15 @@
-From: sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org
-Subject: Re: LTP result output for container-init
-Date: Wed, 16 Jan 2008 09:31:58 -0800
-Message-ID: <20080116173158.GA19456@us.ibm.com>
-References: <1200497268.3999.17.camel@localhost.localdomain>
-	<1200502497.22674.163.camel@localhost>
+From: Dave Hansen <haveblue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH] An attempt to have an unlimitedly extendable sys_clone
+Date: Wed, 16 Jan 2008 09:52:57 -0800
+Message-ID: <1200505977.22674.182.camel@localhost>
+References: <478CAC32.4080809@openvz.org>
+	<39689.192.168.101.12.1200407681.squirrel@intranet>
+	<478DB1AC.6050508@openvz.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+Content-Type: text/plain
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <1200502497.22674.163.camel@localhost>
+In-Reply-To: <478DB1AC.6050508-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,37 +19,35 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Dave Hansen <haveblue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Cc: Poornima.Nayak-xthvdsQ13ZrQT0dZR+AlfA@public.gmane.org, risrajak-xthvdsQ13ZrQT0dZR+AlfA@public.gmane.org, containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, serue-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
+To: Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Cedric Le Goater <clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Dave Hansen [haveblue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org] wrote:
-| On Wed, 2008-01-16 at 20:57 +0530, Rishikesh K. Rajak wrote:
-| > These failures are conceding with 2.6.23-mm1 itself. Just wanted to
-| > know if someone is working on this still.
+On Wed, 2008-01-16 at 10:26 +0300, Pavel Emelyanov wrote:
+> > This means that software built against a newer kernel won't work on an
+> > older one. Surely that's not intended?
+> 
+> It is intended. If I ask an old kernel to clone the mq namespace, but
+> it doesn't support such, that I'd better like to get an -EINVAL error
+> rather than be silently held in an old global namespace.
 
-I think Rishi is referring to these failures when running LTP in
-a child pid namespace. That is a known problem. Its not a regression
-but a pending task in pid namespace cleanup.
+There's at least one thing that this doesn't handle.  Let's say we have
+a clone64(long, long) but that the kernel we're running is old and don't
+know about any valid flags in the second long, yet. 
 
-| > 
-| >   fcntl11                        FAIL
-| >   fcntl14                        FAIL
-| >   fcntl17                        FAIL
-| >   fcntl19                        FAIL
-| >   fcntl20                        FAIL
-| >   fcntl21                        FAIL
-| 
-| Do you mean that these are happening with 2.6.23-mm1, even without any
-| lxc patches?
-| 
-| Have you reported these to LKML or to Andrew Morton?  If not, please do.
-| You can make sure to garner attention by putting something like,
-| 
-| 	2.6.23-mm1 fcntl regressions
-| 
-| as the subject.  But, please do make sure they're regressions, and
-| pinpoint the versions where they occur.  You should also be prepared to
-| do a bisection of the patches in -mm to find it.
-| 
-| -- Dave
+Somebody who knows about lots of new flags 10 years down the line passes
+clone(0x1234, 0x0) to the old kernel.  That's OK, because the kernel
+knows about all of the flags that *ARE* set.
+
+Your proposal is basically this:
+
+	clone(flags, {size, stuff});
+
+and if the in-kernel size isn't exactly the same as the size passed in,
+it punts.  It doesn't matter if anything in "stuff" was actually going
+to be used, or if the old kernel *could* have handled it, it just punts.
+
+Honestly, I don't think it's that big of a deal, I just wish you'd
+acknowledge it. ;)
+
+-- Dave
