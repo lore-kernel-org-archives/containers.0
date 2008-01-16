@@ -1,161 +1,89 @@
-From: Miklos Szeredi <miklos@szeredi.hu>
-Subject: [patch 07/10] unprivileged mounts: add sysctl tunable for "safe" property
-Date: Wed, 16 Jan 2008 13:31:54 +0100
-Message-ID: <20080116123433.126167584@szeredi.hu>
+From: Miklos Szeredi <miklos-sUDqSbJrdHQHWmgEVkV9KA@public.gmane.org>
+Subject: [patch 10/10] unprivileged mounts: add "no submounts" flag
+Date: Wed, 16 Jan 2008 13:31:57 +0100
+Message-ID: <20080116123437.933853100@szeredi.hu>
 References: <20080116123147.466284860@szeredi.hu>
-Return-path: <linux-fsdevel-owner@vger.kernel.org>
-Content-Disposition: inline; filename=unprivileged-mounts-add-sysctl-tunable-for-safe-property.patch
-Sender: linux-fsdevel-owner@vger.kernel.org
-To: akpm@linux-foundation.org, hch@infradead.org, serue@us.ibm.com, viro@ftp.linux.org.uk, kzak@redhat.com
-Cc: linux-fsdevel@vger.kernel.org, linux-kernel@vger.kernel.org, containers@lists.osdl.org, util-linux-ng@vger.kernel.org
+Return-path: <util-linux-ng-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+Content-Disposition: inline; filename=unprivileged-mounts-add-no-submounts-flag.patch
+Sender: util-linux-ng-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, hch-wEGCiKHe2LqWVfeAwA7xHQ@public.gmane.org, serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org, viro-rfM+Q5joDG/XmaaqVzeoHQ@public.gmane.org, kzak-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
+Cc: linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, util-linux-ng-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-From: Miklos Szeredi <mszeredi@suse.cz>
+From: Miklos Szeredi <mszeredi-AlSwsSmVLrQ@public.gmane.org>
 
-Add the following:
+Add a new mount flag "nosubmnt", which denies submounts for the owner.
+This would be useful, if we want to support traditional /etc/fstab
+based user mounts.
 
-  /proc/sys/fs/types/${FS_TYPE}/usermount_safe
+In this case mount(8) would still have to be suid-root, to check the
+mountpoint against the user/users flag in /etc/fstab, but /etc/mtab
+would no longer be mandatory for storing the actual owner of the
+mount.
 
-Signed-off-by: Miklos Szeredi <mszeredi@suse.cz>
+Signed-off-by: Miklos Szeredi <mszeredi-AlSwsSmVLrQ@public.gmane.org>
+Acked-by: Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 ---
 
-Index: linux/fs/filesystems.c
+Index: linux/fs/namespace.c
 ===================================================================
---- linux.orig/fs/filesystems.c	2008-01-16 13:24:52.000000000 +0100
-+++ linux/fs/filesystems.c	2008-01-16 13:25:09.000000000 +0100
-@@ -12,6 +12,7 @@
- #include <linux/kmod.h>
- #include <linux/init.h>
- #include <linux/module.h>
-+#include <linux/sysctl.h>
- #include <asm/uaccess.h>
+--- linux.orig/fs/namespace.c	2008-01-16 13:25:11.000000000 +0100
++++ linux/fs/namespace.c	2008-01-16 13:25:12.000000000 +0100
+@@ -700,6 +700,7 @@ static int show_vfsmnt(struct seq_file *
+ 		{ MNT_NOATIME, ",noatime" },
+ 		{ MNT_NODIRATIME, ",nodiratime" },
+ 		{ MNT_RELATIME, ",relatime" },
++		{ MNT_NOSUBMNT, ",nosubmnt" },
+ 		{ 0, NULL }
+ 	};
+ 	struct proc_fs_info *fs_infop;
+@@ -1050,6 +1051,9 @@ static bool permit_mount(struct nameidat
+ 	if (S_ISLNK(inode->i_mode))
+ 		return false;
  
- /*
-@@ -51,6 +52,57 @@ static struct file_system_type **find_fi
- 	return p;
- }
++	if (nd->path.mnt->mnt_flags & MNT_NOSUBMNT)
++		return false;
++
+ 	if (!is_mount_owner(nd->path.mnt, current->fsuid))
+ 		return false;
  
-+#define MAX_FILESYSTEM_VARS 1
-+
-+struct filesystem_sysctl_table {
-+	struct ctl_table_header *header;
-+	struct ctl_table table[MAX_FILESYSTEM_VARS + 1];
-+};
-+
-+/*
-+ * Create /sys/fs/types/${FSNAME} directory with per fs-type tunables.
-+ */
-+static int filesystem_sysctl_register(struct file_system_type *fs)
-+{
-+	struct filesystem_sysctl_table *t;
-+	struct ctl_path path[] = {
-+		{ .procname = "fs", .ctl_name = CTL_FS },
-+		{ .procname = "types", .ctl_name = CTL_UNNUMBERED },
-+		{ .procname = fs->name, .ctl_name = CTL_UNNUMBERED },
-+		{ }
-+	};
-+
-+	t = kzalloc(sizeof(*t), GFP_KERNEL);
-+	if (!t)
-+		return -ENOMEM;
-+
-+
-+	t->table[0].ctl_name = CTL_UNNUMBERED;
-+	t->table[0].procname = "usermount_safe";
-+	t->table[0].maxlen = sizeof(int);
-+	t->table[0].data = &fs->fs_safe;
-+	t->table[0].mode = 0644;
-+	t->table[0].proc_handler = &proc_dointvec;
-+
-+	t->header = register_sysctl_paths(path, t->table);
-+	if (!t->header) {
-+		kfree(t);
-+		return -ENOMEM;
-+	}
-+
-+	fs->sysctl_table = t;
-+
-+	return 0;
-+}
-+
-+static void filesystem_sysctl_unregister(struct file_system_type *fs)
-+{
-+	struct filesystem_sysctl_table *t = fs->sysctl_table;
-+
-+	unregister_sysctl_table(t->header);
-+	kfree(t);
-+}
-+
- /**
-  *	register_filesystem - register a new filesystem
-  *	@fs: the file system structure
-@@ -80,6 +132,13 @@ int register_filesystem(struct file_syst
- 	else
- 		*p = fs;
- 	write_unlock(&file_systems_lock);
-+
-+	if (res == 0) {
-+		res = filesystem_sysctl_register(fs);
-+		if (res != 0)
-+			unregister_filesystem(fs);
-+	}
-+
- 	return res;
- }
+@@ -1894,9 +1898,11 @@ long do_mount(char *dev_name, char *dir_
+ 		mnt_flags |= MNT_RELATIME;
+ 	if (flags & MS_RDONLY)
+ 		mnt_flags |= MNT_READONLY;
++	if (flags & MS_NOSUBMNT)
++		mnt_flags |= MNT_NOSUBMNT;
  
-@@ -108,6 +167,7 @@ int unregister_filesystem(struct file_sy
- 			*tmp = fs->next;
- 			fs->next = NULL;
- 			write_unlock(&file_systems_lock);
-+			filesystem_sysctl_unregister(fs);
- 			return 0;
- 		}
- 		tmp = &(*tmp)->next;
+-	flags &= ~(MS_NOSUID | MS_NOEXEC | MS_NODEV | MS_ACTIVE |
+-		   MS_NOATIME | MS_NODIRATIME | MS_RELATIME| MS_KERNMOUNT);
++	flags &= ~(MS_NOSUID | MS_NOEXEC | MS_NODEV | MS_ACTIVE | MS_NOATIME |
++		   MS_NODIRATIME | MS_RELATIME | MS_KERNMOUNT | MS_NOSUBMNT);
+ 
+ 	/* ... and get the mountpoint */
+ 	retval = path_lookup(dir_name, LOOKUP_FOLLOW, &nd);
 Index: linux/include/linux/fs.h
 ===================================================================
---- linux.orig/include/linux/fs.h	2008-01-16 13:25:09.000000000 +0100
-+++ linux/include/linux/fs.h	2008-01-16 13:25:09.000000000 +0100
-@@ -1437,6 +1437,7 @@ struct file_system_type {
- 	struct module *owner;
- 	struct file_system_type * next;
- 	struct list_head fs_supers;
-+	struct filesystem_sysctl_table *sysctl_table;
+--- linux.orig/include/linux/fs.h	2008-01-16 13:25:11.000000000 +0100
++++ linux/include/linux/fs.h	2008-01-16 13:25:12.000000000 +0100
+@@ -129,6 +129,7 @@ extern int dir_notify_enable;
+ #define MS_KERNMOUNT	(1<<22) /* this is a kern_mount call */
+ #define MS_I_VERSION	(1<<23) /* Update inode I_version field */
+ #define MS_SETUSER	(1<<24) /* set mnt_uid to current user */
++#define MS_NOSUBMNT	(1<<25) /* don't allow unprivileged submounts */
+ #define MS_ACTIVE	(1<<30)
+ #define MS_NOUSER	(1<<31)
  
- 	struct lock_class_key s_lock_key;
- 	struct lock_class_key s_umount_key;
-Index: linux/Documentation/filesystems/proc.txt
+Index: linux/include/linux/mount.h
 ===================================================================
---- linux.orig/Documentation/filesystems/proc.txt	2008-01-16 13:25:07.000000000 +0100
-+++ linux/Documentation/filesystems/proc.txt	2008-01-16 13:25:09.000000000 +0100
-@@ -43,6 +43,7 @@ Table of Contents
-   2.13	/proc/<pid>/oom_score - Display current oom-killer score
-   2.14	/proc/<pid>/io - Display the IO accounting fields
-   2.15	/proc/<pid>/coredump_filter - Core dump filtering settings
-+  2.16	/proc/sys/fs/types - File system type specific parameters
+--- linux.orig/include/linux/mount.h	2008-01-16 13:25:05.000000000 +0100
++++ linux/include/linux/mount.h	2008-01-16 13:25:12.000000000 +0100
+@@ -30,6 +30,7 @@ struct mnt_namespace;
+ #define MNT_NODIRATIME	0x10
+ #define MNT_RELATIME	0x20
+ #define MNT_READONLY	0x40	/* does the user want this to be r/o? */
++#define MNT_NOSUBMNT	0x80
  
- ------------------------------------------------------------------------------
- Preface
-@@ -2283,4 +2284,21 @@ For example:
-   $ echo 0x7 > /proc/self/coredump_filter
-   $ ./some_program
- 
-+2.16 /proc/sys/fs/types/ - File system type specific parameters
-+----------------------------------------------------------------
-+
-+There's a separate directory /proc/sys/fs/types/<type>/ for each
-+filesystem type, containing the following files:
-+
-+usermount_safe
-+--------------
-+
-+Setting this to non-zero will allow filesystems of this type to be
-+mounted by unprivileged users (note, that there are other
-+prerequisites as well).
-+
-+Care should be taken when enabling this, since most
-+filesystems haven't been designed with unprivileged mounting
-+in mind.
-+
- ------------------------------------------------------------------------------
+ #define MNT_SHRINKABLE	0x100
+ #define MNT_IMBALANCED_WRITE_COUNT	0x200 /* just for debugging */
 
 --
