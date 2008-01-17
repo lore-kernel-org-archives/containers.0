@@ -1,40 +1,36 @@
-From: Miklos Szeredi <miklos@szeredi.hu>
-Subject: Re: [patch] util-linux-ng: unprivileged mounts support
-Date: Wed, 16 Jan 2008 21:33:30 +0100
-Message-ID: <E1JFEx0-0004tn-TZ@pomaz-ex.szeredi.hu>
-References: <E1JF7Xh-0003q3-Qv@pomaz-ex.szeredi.hu> <200801160817.12812.vapier@gentoo.org>
-Return-path: <linux-fsdevel-owner@vger.kernel.org>
-In-reply-to: <200801160817.12812.vapier@gentoo.org> (message from Mike
-	Frysinger on Wed, 16 Jan 2008 08:17:10 -0500)
-Sender: linux-fsdevel-owner@vger.kernel.org
-To: vapier@gentoo.org
-Cc: miklos@szeredi.hu, util-linux-ng@vger.kernel.org, akpm@linux-foundation.org, hch@infradead.org, serue@us.ibm.com, viro@ftp.linux.org.uk, kzak@redhat.com, linux-fsdevel@vger.kernel.org, linux-kernel@vger.kernel.org, containers@lists.osdl.org
+From: "Toerless Arnold" <embouchures-UGxA+25r4l0dV3kInhc/7/YzP/tXu1R3@public.gmane.org>
+Subject: Ado6e Akrobat Pro 8 for MAC\XP\Vlsta 79, Retail 599 (save 520)
+Date: Thu, 17 Jan 2008 10:57:45 +0900
+Message-ID: <000901c858ab$81c6cb00$0100007f@cfjde>
+Content-Type: text/plain;
+    charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-> > This is an experimental patch for supporing unprivileged mounts and
-> > umounts.  The following features are added:
-> 
-> same feedback as last time ... the cap stuff needs to be made optional and 
-> proper header checks added to configure ...
-
-Later, sure.  For now, I'm concentrating on the actual functionality.
-
-> > 1) If mount/umount are suid, first try without privileges.
-> >
-> > This is done by forking, dropping privileges in child, and redirecting
-> > stderr to /dev/null.  If this succeeds, then parent exits with zero
-> > exit code.  Otherwise parent continues normally (with privileges).
-> > This isn't perfect, because the wrong error message will be printed if
-> > mount/umount failed not because of insufficient privileges, but some
-> > other error (e.g. mountpoint busy).
-> 
-> this normalization of error information does kind of suck ... but i
-> think the way it's written, the end user will still get the real
-> answer the second time around when the mount is attempted with root
-> privs and not stderr sent to /dev/null ?
-
-No, for example the user will get: "only root can umount foo" instead
-of "foo is busy", which is very misleading, if the user _can_ umount
-foo.
-
-Miklos
+type 'ezmicrosoftnow . com' in Internet browser
+roxio toast titanium 8 - 39
+roxio digitalmedia studio deluxe suite 7.0 - 49
+2003 microsoft office professional with business contact manager for outlook - 69
+creative suite premium 2 - 149
+adobe audition 2.0 - 49
+coreldraw graphics suite x3 - 59
+microsoft frontpage 2003 - 29
+ms xp professional with sp2 - 49
+adobe acrobat professional 7 - 69
+nero 7 premium - 39
+mindjet mindmanager pro 7.0 - 39
+adobe audition 2.0 - 49
+adobe dreamweaver cs3 - 59
+ulead photoimpact 12 - 79
+autodesk 3ds max 9.0 - 149
