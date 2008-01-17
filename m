@@ -1,95 +1,45 @@
-From: Daniel Lezcano <dlezcano@fr.ibm.com>
-Subject: Re: [PATCH 0/3 net-2.6.25] call FIB rule->action in the correct namespace
-Date: Thu, 17 Jan 2008 11:41:36 +0100
-Message-ID: <478F30E0.5090901@fr.ibm.com>
-References: <478F2933.1000007@openvz.org>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII;
-	format=flowed
-Content-Transfer-Encoding: 7BIT
-Return-path: <netdev-owner@vger.kernel.org>
-In-Reply-To: <478F2933.1000007@openvz.org>
-Sender: netdev-owner@vger.kernel.org
-To: "Denis V. Lunev" <den@openvz.org>
-Cc: David Miller <davem@davemloft.net>, netdev <netdev@vger.kernel.org>, Linux Containers <containers@lists.osdl.org>, devel@openvz.org
+From: corbet@lwn.net (Jonathan Corbet)
+Subject: Extending syscalls (was: [PATCH 1/2] Extend sys_clone and sys_unshare system calls API)
+Date: Thu, 17 Jan 2008 08:02:05 -0700
+Message-ID: <25712.1200582125@vena.lwn.net>
+References: <20080117034844.GA27894@ZenIV.linux.org.uk>
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1754899AbYAQPCV@vger.kernel.org>
+In-reply-to: Your message of "Thu, 17 Jan 2008 03:48:44 GMT."
+             <20080117034844.GA27894@ZenIV.linux.org.uk>
+Sender: linux-kernel-owner@vger.kernel.org
+To: Al Viro <viro@ZenIV.linux.org.uk>
+Cc: Pavel Emelyanov <xemul@openvz.org>, Linux Containers <containers@lists.osdl.org>, Linux Kernel Mailing List <linux-kernel@vger.kernel.org>, Cedric Le Goater <clg@fr.ibm.com>, drepper@redhat.com, Serge Hallyn <serue@us.ibm.com>, Andrew Morton <akpm@linux-foundation.org>
 List-Id: containers.vger.kernel.org
 
-Denis V. Lunev wrote:
-> FIB rule->action should operate in the same namespace as fib_lookup.
-> This is definitely missed right now.
+Al Viro sez:
+
+> Nah, just put an XML parser into the kernel to have the form match the
+> contents...
 > 
-> There are two ways to implement this: pass struct net into another rules
-> API call (2 levels) or place netns into rule struct directly. The second
-> approach seems better as the code will grow less.
-> 
-> Additionally, the patchset cleanups struct net from
-> fib_rules_register/unregister to have network namespace context at the
-> time of default rules creation.
-> 
-> Signed-off-by: Denis V. Lunev <den@openvz.org>
+> Al "perhaps we should newgroup alt.tasteless.api for all that stuff" Viro
 
-Acked-by: Daniel Lezcano <dlezcano@fr.ibm.com>
+Heh, indeed.  But we do seem to have a recurring problem of people
+wanting to extend sys_foo() beyond the confines of its original API.
+I've observed a few ways of doing that:
 
--- 
+ - create sys_foo2() (or sys_foo64(), or sys_fooat(), or sys_pfoo(),
+   or...) and add the new stuff there.
 
+ - Put a version number into the API somewhere - wireless extensions,
+   for example.
 
+ - Set a flag saying "I've stashed some additional parameters somewhere
+   else."  That's sys_indirect() and the current proposal for extending
+   clone().
 
+ - Just do it all with a kernel-based XML parser.  I think we should
+   call this approach sys_viro() in honor of its champion.
 
+ - Do it all in sysfs
 
+The first approach has traditionally been the most popular.  If we have
+a consensus that this is the way to extend system calls in the future,
+it would be nice to set that down somewhere.  We could avoid a lot of
+API blind alleys that way.
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-Sauf indication contraire ci-dessus:
-Compagnie IBM France
-Sie`ge Social : Tour Descartes, 2, avenue Gambetta, La De'fense 5, 92400
-Courbevoie
-RCS Nanterre 552 118 465
-Forme Sociale : S.A.S.
-Capital Social : 542.737.118 ?
-SIREN/SIRET : 552 118 465 02430
+jon
