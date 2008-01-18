@@ -1,27 +1,52 @@
-From: "Denis V. Lunev" <den@sw.ru>
-Subject: [PATCH 0/4 net-2.6.25] Proper netlink kernel sockets disposal.
-Date: Fri, 18 Jan 2008 15:51:47 +0300
-Message-ID: <4790A0E3.9080006@sw.ru>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=KOI8-R
-Content-Transfer-Encoding: 7bit
+From: "Denis V. Lunev" <den@openvz.org>
+Subject: [PATCH] [NETNS 2/4 net-2.6.25] Memory leak on network namespace stop.
+Date: Fri, 18 Jan 2008 15:53:14 +0300
+Message-ID: <1200660796-22737-2-git-send-email-den@openvz.org>
+References: <4790A0E3.9080006@sw.ru>
 Return-path: <netdev-owner@vger.kernel.org>
+In-Reply-To: <4790A0E3.9080006@sw.ru>
 Sender: netdev-owner@vger.kernel.org
-To: David Miller <davem@davemloft.net>
-Cc: netdev <netdev@vger.kernel.org>, Linux Containers <containers@lists.osdl.org>, devel@openvz.org
+To: davem@davemloft.net
+Cc: netdev@vger.kernel.org, devel@openvz.org, containers@lists.osdl.org, "Denis V. Lunev" <den@openvz.org>
 List-Id: containers.vger.kernel.org
 
-Alexey Dobriyan found, that virtualized netlink kernel sockets (fibl &
-rtnl) are leaked during namespace start/stop loop.
-
-Leaking fix (simple and obvious) reveals that netlink kernel socket
-disposal leads to OOPSes:
-- nl_table[protocol]->listeners is double freed
-- sometimes during namespace stop netlink_sock_destruct
-  BUG_TRAP(!atomic_read(&sk->sk_rmem_alloc)); is hit
-
-This set address all these issues.
+Network namespace allocates 2 kernel netlink sockets, fibnl & rtnl. These
+sockets should be disposed properly, i.e. by sock_release. Plain sock_put
+is not enough.
 
 Signed-off-by: Denis V. Lunev <den@openvz.org>
-Tested-by: Alexey Dobriayn <adobriyan@openvz.org>
+Tested-by: Alexey Dobriyan <adobriyan@openvz.org>
+---
+ net/core/rtnetlink.c    |    2 +-
+ net/ipv4/fib_frontend.c |    2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/net/core/rtnetlink.c b/net/core/rtnetlink.c
+index 4a07e83..2c1f665 100644
+--- a/net/core/rtnetlink.c
++++ b/net/core/rtnetlink.c
+@@ -1381,7 +1381,7 @@ static void rtnetlink_net_exit(struct net *net)
+ 		 * free.
+ 		 */
+ 		sk->sk_net = get_net(&init_net);
+-		sock_put(sk);
++		sock_release(net->rtnl->sk_socket);
+ 		net->rtnl = NULL;
+ 	}
+ }
+diff --git a/net/ipv4/fib_frontend.c b/net/ipv4/fib_frontend.c
+index 8ddcd3f..4e5216e 100644
+--- a/net/ipv4/fib_frontend.c
++++ b/net/ipv4/fib_frontend.c
+@@ -881,7 +881,7 @@ static void nl_fib_lookup_exit(struct net *net)
+ 	 * initial network namespace. So the socket will  be safe to free.
+ 	 */
+ 	net->ipv4.fibnl->sk_net = get_net(&init_net);
+-	sock_put(net->ipv4.fibnl);
++	sock_release(net->ipv4.fibnl->sk_socket);
+ }
+ 
+ static void fib_disable_ip(struct net_device *dev, int force)
+-- 
+1.5.3.rc5
 
