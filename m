@@ -1,33 +1,39 @@
-From: David Miller <davem@davemloft.net>
-Subject: Re: [PATCH 0/4 net-2.6.25] Proper netlink kernel sockets disposal.
-Date: Fri, 18 Jan 2008 23:55:43 -0800 (PST)
-Message-ID: <20080118.235543.220450302.davem@davemloft.net>
-References: <4790A0E3.9080006@sw.ru>
+From: Szabolcs Szakacsits <szaka-IyvsvuGDJ8VAfugRpC6u6w@public.gmane.org>
+Subject: Re: [patch] util-linux-ng: unprivileged mounts support
+Date: Sat, 19 Jan 2008 18:05:15 +0200 (MET DST)
+Message-ID: <Pine.LNX.4.61.0801191745520.4482@dhcppc1>
+References: <E1JF7Xh-0003q3-Qv@pomaz-ex.szeredi.hu>
 Mime-Version: 1.0
-Content-Type: Text/Plain; charset=us-ascii
-Content-Transfer-Encoding: 7bit
-Return-path: <netdev-owner@vger.kernel.org>
-In-Reply-To: <4790A0E3.9080006@sw.ru>
-Sender: netdev-owner@vger.kernel.org
-To: den@sw.ru
-Cc: netdev@vger.kernel.org, containers@lists.osdl.org, devel@openvz.org
+Content-Type: TEXT/PLAIN; charset=US-ASCII
+Return-path: <util-linux-ng-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+In-Reply-To: <E1JF7Xh-0003q3-Qv-8f8m9JG5TPIdUIPVzhDTVZP2KDSNp7ea@public.gmane.org>
+Sender: util-linux-ng-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: Miklos Szeredi <miklos-sUDqSbJrdHQHWmgEVkV9KA@public.gmane.org>
+Cc: util-linux-ng-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, hch-wEGCiKHe2LqWVfeAwA7xHQ@public.gmane.org, serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org, viro-rfM+Q5joDG/XmaaqVzeoHQ@public.gmane.org, kzak-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-From: "Denis V. Lunev" <den@sw.ru>
-Date: Fri, 18 Jan 2008 15:51:47 +0300
 
-> Alexey Dobriyan found, that virtualized netlink kernel sockets (fibl &
-> rtnl) are leaked during namespace start/stop loop.
-> 
-> Leaking fix (simple and obvious) reveals that netlink kernel socket
-> disposal leads to OOPSes:
-> - nl_table[protocol]->listeners is double freed
-> - sometimes during namespace stop netlink_sock_destruct
->   BUG_TRAP(!atomic_read(&sk->sk_rmem_alloc)); is hit
-> 
-> This set address all these issues.
-> 
-> Signed-off-by: Denis V. Lunev <den@openvz.org>
-> Tested-by: Alexey Dobriayn <adobriyan@openvz.org>
+On Wed, 16 Jan 2008, Miklos Szeredi wrote:
 
-All 4 patches applied, thanks!
+> This is an experimental patch for supporing unprivileged mounts and
+> umounts.  
+
+User unmount unfortunately still doesn't work if the kernel doesn't have 
+the unprivileged mount support but as we discussed this in last July that 
+shouldn't be needed for this case.
+
+  % mount -t ntfs-3g /dev/hda10 /tmp/test
+  % cat /proc/mounts | grep /tmp/test                                                                         
+  /dev/hda10 /tmp/test fuseblk rw,nosuid,nodev,user_id=501,group_id=501,allow_other 0 0
+  % mount | grep /tmp/test
+  /dev/hda10 on /tmp/test type fuseblk (rw,nosuid,nodev,allow_other,blksize=1024,user=szaka)
+  % umount /tmp/test
+  umount: /dev/hda10: not mounted
+  umount: /tmp/test: must be superuser to umount
+  umount: /dev/hda10: not mounted
+  umount: /tmp/test: must be superuser to umount
+
+	Szaka
+
+--
+NTFS-3G:  http://ntfs-3g.org
