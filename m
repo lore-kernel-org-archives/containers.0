@@ -1,14 +1,14 @@
 From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [patch 09/10] unprivileged mounts: propagation: inherit owner
-	from parent
-Date: Mon, 21 Jan 2008 14:23:06 -0600
-Message-ID: <20080121202306.GA5536@sergelap.austin.rr.com>
-References: <20080116123147.466284860@szeredi.hu> <20080116123436.411935940@szeredi.hu>
+Subject: Re: [patch 07/10] unprivileged mounts: add sysctl tunable for
+	"safe" property
+Date: Mon, 21 Jan 2008 14:32:49 -0600
+Message-ID: <20080121203249.GB5536@sergelap.austin.rr.com>
+References: <20080116123147.466284860@szeredi.hu> <20080116123433.126167584@szeredi.hu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Return-path: <util-linux-ng-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <20080116123436.411935940-sUDqSbJrdHQHWmgEVkV9KA@public.gmane.org>
+In-Reply-To: <20080116123433.126167584-sUDqSbJrdHQHWmgEVkV9KA@public.gmane.org>
 Sender: util-linux-ng-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 To: Miklos Szeredi <miklos-sUDqSbJrdHQHWmgEVkV9KA@public.gmane.org>
 Cc: akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, hch-wEGCiKHe2LqWVfeAwA7xHQ@public.gmane.org, serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org, viro-rfM+Q5joDG/XmaaqVzeoHQ@public.gmane.org, kzak-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, util-linux-ng-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
@@ -17,227 +17,158 @@ List-Id: containers.vger.kernel.org
 Quoting Miklos Szeredi (miklos-sUDqSbJrdHQHWmgEVkV9KA@public.gmane.org):
 > From: Miklos Szeredi <mszeredi-AlSwsSmVLrQ@public.gmane.org>
 > 
-> On mount propagation, let the owner of the clone be inherited from the
-> parent into which it has been propagated.
+> Add the following:
 > 
-> If the parent has the "nosuid" flag, set this flag for the child as
-> well.  This is needed for the suid-less namespace (use case #2 in the
-> first patch header), where all mounts are owned by the user and have
-> the nosuid flag set.  In this case the propagated mount needs to have
-> nosuid, otherwise a suid executable may be misused by the user.
-> 
-> Similar treatment is not needed for "nodev", because devices can't be
-> abused this way: the user is not able to gain privileges to devices by
-> rearranging the mount namespace.
+>   /proc/sys/fs/types/${FS_TYPE}/usermount_safe
 > 
 > Signed-off-by: Miklos Szeredi <mszeredi-AlSwsSmVLrQ@public.gmane.org>
-
-As discussed many months ago this does seem like the most appropriate
-behavior for propagation.
-
-Acked-by: Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-
 > ---
 > 
-> Index: linux/fs/namespace.c
+> Index: linux/fs/filesystems.c
 > ===================================================================
-> --- linux.orig/fs/namespace.c	2008-01-16 13:25:09.000000000 +0100
-> +++ linux/fs/namespace.c	2008-01-16 13:25:11.000000000 +0100
-> @@ -506,10 +506,10 @@ static int reserve_user_mount(void)
->  	return err;
+> --- linux.orig/fs/filesystems.c	2008-01-16 13:24:52.000000000 +0100
+> +++ linux/fs/filesystems.c	2008-01-16 13:25:09.000000000 +0100
+> @@ -12,6 +12,7 @@
+>  #include <linux/kmod.h>
+>  #include <linux/init.h>
+>  #include <linux/module.h>
+> +#include <linux/sysctl.h>
+>  #include <asm/uaccess.h>
+> 
+>  /*
+> @@ -51,6 +52,57 @@ static struct file_system_type **find_fi
+>  	return p;
 >  }
 > 
-> -static void __set_mnt_user(struct vfsmount *mnt)
-> +static void __set_mnt_user(struct vfsmount *mnt, uid_t owner)
->  {
->  	WARN_ON(mnt->mnt_flags & MNT_USER);
-> -	mnt->mnt_uid = current->fsuid;
-> +	mnt->mnt_uid = owner;
->  	mnt->mnt_flags |= MNT_USER;
-> 
->  	if (!capable(CAP_SETUID))
-> @@ -520,7 +520,7 @@ static void __set_mnt_user(struct vfsmou
-> 
->  static void set_mnt_user(struct vfsmount *mnt)
->  {
-> -	__set_mnt_user(mnt);
-> +	__set_mnt_user(mnt, current->fsuid);
->  	spin_lock(&vfsmount_lock);
->  	nr_user_mounts++;
->  	spin_unlock(&vfsmount_lock);
-> @@ -536,7 +536,7 @@ static void clear_mnt_user(struct vfsmou
->  }
-> 
->  static struct vfsmount *clone_mnt(struct vfsmount *old, struct dentry *root,
-> -					int flag)
-> +					int flag, uid_t owner)
->  {
->  	struct super_block *sb = old->mnt_sb;
->  	struct vfsmount *mnt;
-> @@ -560,7 +560,10 @@ static struct vfsmount *clone_mnt(struct
->  	/* don't copy the MNT_USER flag */
->  	mnt->mnt_flags &= ~MNT_USER;
->  	if (flag & CL_SETUSER)
-> -		__set_mnt_user(mnt);
-> +		__set_mnt_user(mnt, owner);
+> +#define MAX_FILESYSTEM_VARS 1
 > +
-> +	if (flag & CL_NOSUID)
-> +		mnt->mnt_flags |= MNT_NOSUID;
-> 
->  	if (flag & CL_SLAVE) {
->  		list_add(&mnt->mnt_slave, &old->mnt_slave_list);
-> @@ -1066,7 +1069,7 @@ static int lives_below_in_same_fs(struct
->  }
-> 
->  struct vfsmount *copy_tree(struct vfsmount *mnt, struct dentry *dentry,
-> -					int flag)
-> +					int flag, uid_t owner)
->  {
->  	struct vfsmount *res, *p, *q, *r, *s;
->  	struct nameidata nd;
-> @@ -1074,7 +1077,7 @@ struct vfsmount *copy_tree(struct vfsmou
->  	if (!(flag & CL_COPY_ALL) && IS_MNT_UNBINDABLE(mnt))
->  		return ERR_PTR(-EPERM);
-> 
-> -	res = q = clone_mnt(mnt, dentry, flag);
-> +	res = q = clone_mnt(mnt, dentry, flag, owner);
->  	if (IS_ERR(q))
->  		goto error;
->  	q->mnt_mountpoint = mnt->mnt_mountpoint;
-> @@ -1096,7 +1099,7 @@ struct vfsmount *copy_tree(struct vfsmou
->  			p = s;
->  			nd.path.mnt = q;
->  			nd.path.dentry = p->mnt_mountpoint;
-> -			q = clone_mnt(p, p->mnt_root, flag);
-> +			q = clone_mnt(p, p->mnt_root, flag, owner);
->  			if (IS_ERR(q))
->  				goto error;
->  			spin_lock(&vfsmount_lock);
-> @@ -1121,7 +1124,7 @@ struct vfsmount *collect_mounts(struct v
->  {
->  	struct vfsmount *tree;
->  	down_read(&namespace_sem);
-> -	tree = copy_tree(mnt, dentry, CL_COPY_ALL | CL_PRIVATE);
-> +	tree = copy_tree(mnt, dentry, CL_COPY_ALL | CL_PRIVATE, 0);
->  	up_read(&namespace_sem);
->  	return tree;
->  }
-> @@ -1292,7 +1295,8 @@ static int do_change_type(struct nameida
->   */
->  static int do_loopback(struct nameidata *nd, char *old_name, int flags)
->  {
-> -	int clone_fl;
-> +	int clone_fl = 0;
-> +	uid_t owner = 0;
->  	struct nameidata old_nd;
->  	struct vfsmount *mnt = NULL;
->  	int err;
-> @@ -1313,11 +1317,17 @@ static int do_loopback(struct nameidata 
->  	if (!check_mnt(nd->path.mnt) || !check_mnt(old_nd.path.mnt))
->  		goto out;
-> 
-> -	clone_fl = (flags & MS_SETUSER) ? CL_SETUSER : 0;
-> +	if (flags & MS_SETUSER) {
-> +		clone_fl |= CL_SETUSER;
-> +		owner = current->fsuid;
+> +struct filesystem_sysctl_table {
+> +	struct ctl_table_header *header;
+> +	struct ctl_table table[MAX_FILESYSTEM_VARS + 1];
+> +};
+> +
+> +/*
+> + * Create /sys/fs/types/${FSNAME} directory with per fs-type tunables.
+> + */
+> +static int filesystem_sysctl_register(struct file_system_type *fs)
+> +{
+> +	struct filesystem_sysctl_table *t;
+> +	struct ctl_path path[] = {
+> +		{ .procname = "fs", .ctl_name = CTL_FS },
+> +		{ .procname = "types", .ctl_name = CTL_UNNUMBERED },
+> +		{ .procname = fs->name, .ctl_name = CTL_UNNUMBERED },
+> +		{ }
+> +	};
+> +
+> +	t = kzalloc(sizeof(*t), GFP_KERNEL);
+> +	if (!t)
+> +		return -ENOMEM;
+> +
+> +
+> +	t->table[0].ctl_name = CTL_UNNUMBERED;
+> +	t->table[0].procname = "usermount_safe";
+> +	t->table[0].maxlen = sizeof(int);
+> +	t->table[0].data = &fs->fs_safe;
+> +	t->table[0].mode = 0644;
+> +	t->table[0].proc_handler = &proc_dointvec;
+> +
+> +	t->header = register_sysctl_paths(path, t->table);
+> +	if (!t->header) {
+> +		kfree(t);
+> +		return -ENOMEM;
 > +	}
 > +
->  	if (flags & MS_REC)
-> -		mnt = copy_tree(old_nd.path.mnt, old_nd.path.dentry, clone_fl);
-> +		mnt = copy_tree(old_nd.path.mnt, old_nd.path.dentry, clone_fl,
-> +				owner);
+> +	fs->sysctl_table = t;
+> +
+> +	return 0;
+> +}
+> +
+> +static void filesystem_sysctl_unregister(struct file_system_type *fs)
+> +{
+> +	struct filesystem_sysctl_table *t = fs->sysctl_table;
+> +
+> +	unregister_sysctl_table(t->header);
+> +	kfree(t);
+> +}
+> +
+>  /**
+>   *	register_filesystem - register a new filesystem
+>   *	@fs: the file system structure
+> @@ -80,6 +132,13 @@ int register_filesystem(struct file_syst
 >  	else
-> -		mnt = clone_mnt(old_nd.path.mnt, old_nd.path.dentry, clone_fl);
-> +		mnt = clone_mnt(old_nd.path.mnt, old_nd.path.dentry, clone_fl,
-> +				owner);
-> 
->  	err = PTR_ERR(mnt);
->  	if (IS_ERR(mnt))
-> @@ -1541,7 +1551,7 @@ static int do_new_mount(struct nameidata
->  	}
-> 
->  	if (flags & MS_SETUSER)
-> -		__set_mnt_user(mnt);
-> +		__set_mnt_user(mnt, current->fsuid);
-> 
->  	return do_add_mount(mnt, nd, mnt_flags, NULL);
-> 
-> @@ -1937,7 +1947,7 @@ static struct mnt_namespace *dup_mnt_ns(
->  	down_write(&namespace_sem);
->  	/* First pass: copy the tree topology */
->  	new_ns->root = copy_tree(mnt_ns->root, mnt_ns->root->mnt_root,
-> -					CL_COPY_ALL | CL_EXPIRE);
-> +					CL_COPY_ALL | CL_EXPIRE, 0);
->  	if (IS_ERR(new_ns->root)) {
->  		up_write(&namespace_sem);
->  		kfree(new_ns);
-> Index: linux/fs/pnode.c
-> ===================================================================
-> --- linux.orig/fs/pnode.c	2008-01-16 13:25:07.000000000 +0100
-> +++ linux/fs/pnode.c	2008-01-16 13:25:11.000000000 +0100
-> @@ -181,15 +181,28 @@ int propagate_mnt(struct vfsmount *dest_
-> 
->  	for (m = propagation_next(dest_mnt, dest_mnt); m;
->  			m = propagation_next(m, dest_mnt)) {
-> -		int type;
-> +		int clflags;
-> +		uid_t owner = 0;
->  		struct vfsmount *source;
-> 
->  		if (IS_MNT_NEW(m))
->  			continue;
-> 
-> -		source =  get_source(m, prev_dest_mnt, prev_src_mnt, &type);
-> +		source =  get_source(m, prev_dest_mnt, prev_src_mnt, &clflags);
-> 
-> -		child = copy_tree(source, source->mnt_root, type);
-> +		if (m->mnt_flags & MNT_USER) {
-> +			clflags |= CL_SETUSER;
-> +			owner = m->mnt_uid;
+>  		*p = fs;
+>  	write_unlock(&file_systems_lock);
 > +
-> +			/*
-> +			 * If propagating into a user mount which doesn't
-> +			 * allow suid, then make sure, the child(ren) won't
-> +			 * allow suid either
-> +			 */
-> +			if (m->mnt_flags & MNT_NOSUID)
-> +				clflags |= CL_NOSUID;
-> +		}
-> +		child = copy_tree(source, source->mnt_root, clflags, owner);
->  		if (IS_ERR(child)) {
->  			ret = PTR_ERR(child);
->  			list_splice(tree_list, tmp_list.prev);
-> Index: linux/fs/pnode.h
-> ===================================================================
-> --- linux.orig/fs/pnode.h	2008-01-16 13:25:05.000000000 +0100
-> +++ linux/fs/pnode.h	2008-01-16 13:25:11.000000000 +0100
-> @@ -24,6 +24,7 @@
->  #define CL_PROPAGATION 		0x10
->  #define CL_PRIVATE 		0x20
->  #define CL_SETUSER		0x40
-> +#define CL_NOSUID		0x80
-> 
->  static inline void set_mnt_shared(struct vfsmount *mnt)
->  {
-> @@ -36,4 +37,6 @@ int propagate_mnt(struct vfsmount *, str
->  		struct list_head *);
->  int propagate_umount(struct list_head *);
->  int propagate_mount_busy(struct vfsmount *, int);
-> +struct vfsmount *copy_tree(struct vfsmount *, struct dentry *, int, uid_t);
+> +	if (res == 0) {
+> +		res = filesystem_sysctl_register(fs);
+
+What do you think about doing this only if FS_SAFE is also set,
+so for instance at first only FUSE would allow itself to be
+made user-mountable?
+
+A safe thing to do, or overly intrusive?
+
+> +		if (res != 0)
+> +			unregister_filesystem(fs);
+> +	}
 > +
->  #endif /* _LINUX_PNODE_H */
+>  	return res;
+>  }
+> 
+> @@ -108,6 +167,7 @@ int unregister_filesystem(struct file_sy
+>  			*tmp = fs->next;
+>  			fs->next = NULL;
+>  			write_unlock(&file_systems_lock);
+> +			filesystem_sysctl_unregister(fs);
+>  			return 0;
+>  		}
+>  		tmp = &(*tmp)->next;
 > Index: linux/include/linux/fs.h
 > ===================================================================
 > --- linux.orig/include/linux/fs.h	2008-01-16 13:25:09.000000000 +0100
-> +++ linux/include/linux/fs.h	2008-01-16 13:25:11.000000000 +0100
-> @@ -1493,7 +1493,6 @@ extern int may_umount(struct vfsmount *)
->  extern void umount_tree(struct vfsmount *, int, struct list_head *);
->  extern void release_mounts(struct list_head *);
->  extern long do_mount(char *, char *, char *, unsigned long, void *);
-> -extern struct vfsmount *copy_tree(struct vfsmount *, struct dentry *, int);
->  extern void mnt_set_mountpoint(struct vfsmount *, struct dentry *,
->  				  struct vfsmount *);
->  extern struct vfsmount *collect_mounts(struct vfsmount *, struct dentry *);
+> +++ linux/include/linux/fs.h	2008-01-16 13:25:09.000000000 +0100
+> @@ -1437,6 +1437,7 @@ struct file_system_type {
+>  	struct module *owner;
+>  	struct file_system_type * next;
+>  	struct list_head fs_supers;
+> +	struct filesystem_sysctl_table *sysctl_table;
+> 
+>  	struct lock_class_key s_lock_key;
+>  	struct lock_class_key s_umount_key;
+> Index: linux/Documentation/filesystems/proc.txt
+> ===================================================================
+> --- linux.orig/Documentation/filesystems/proc.txt	2008-01-16 13:25:07.000000000 +0100
+> +++ linux/Documentation/filesystems/proc.txt	2008-01-16 13:25:09.000000000 +0100
+> @@ -43,6 +43,7 @@ Table of Contents
+>    2.13	/proc/<pid>/oom_score - Display current oom-killer score
+>    2.14	/proc/<pid>/io - Display the IO accounting fields
+>    2.15	/proc/<pid>/coredump_filter - Core dump filtering settings
+> +  2.16	/proc/sys/fs/types - File system type specific parameters
+> 
+>  ------------------------------------------------------------------------------
+>  Preface
+> @@ -2283,4 +2284,21 @@ For example:
+>    $ echo 0x7 > /proc/self/coredump_filter
+>    $ ./some_program
+> 
+> +2.16 /proc/sys/fs/types/ - File system type specific parameters
+> +----------------------------------------------------------------
+> +
+> +There's a separate directory /proc/sys/fs/types/<type>/ for each
+> +filesystem type, containing the following files:
+> +
+> +usermount_safe
+> +--------------
+> +
+> +Setting this to non-zero will allow filesystems of this type to be
+> +mounted by unprivileged users (note, that there are other
+> +prerequisites as well).
+> +
+> +Care should be taken when enabling this, since most
+> +filesystems haven't been designed with unprivileged mounting
+> +in mind.
+> +
+>  ------------------------------------------------------------------------------
 > 
 > --
 > -
