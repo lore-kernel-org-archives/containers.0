@@ -1,117 +1,246 @@
-From: "Serge E. Hallyn" <serue@us.ibm.com>
-Subject: Re: [patch 08/10] unprivileged mounts: make fuse safe
-Date: Mon, 21 Jan 2008 14:41:21 -0600
-Message-ID: <20080121204121.GC5536@sergelap.austin.rr.com>
-References: <20080116123147.466284860@szeredi.hu> <20080116123434.881038854@szeredi.hu>
+From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [patch 09/10] unprivileged mounts: propagation: inherit owner
+	from parent
+Date: Mon, 21 Jan 2008 14:23:06 -0600
+Message-ID: <20080121202306.GA5536@sergelap.austin.rr.com>
+References: <20080116123147.466284860@szeredi.hu> <20080116123436.411935940@szeredi.hu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1758988AbYAUV0N@vger.kernel.org>
+Return-path: <util-linux-ng-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <20080116123434.881038854@szeredi.hu>
-Sender: linux-kernel-owner@vger.kernel.org
-To: Miklos Szeredi <miklos@szeredi.hu>
-Cc: akpm@linux-foundation.org, hch@infradead.org, serue@us.ibm.com, viro@ftp.linux.org.uk, kzak@redhat.com, linux-fsdevel@vger.kernel.org, linux-kernel@vger.kernel.org, containers@lists.osdl.org, util-linux-ng@vger.kernel.org
+In-Reply-To: <20080116123436.411935940-sUDqSbJrdHQHWmgEVkV9KA@public.gmane.org>
+Sender: util-linux-ng-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: Miklos Szeredi <miklos-sUDqSbJrdHQHWmgEVkV9KA@public.gmane.org>
+Cc: akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, hch-wEGCiKHe2LqWVfeAwA7xHQ@public.gmane.org, serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org, viro-rfM+Q5joDG/XmaaqVzeoHQ@public.gmane.org, kzak-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, util-linux-ng-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Quoting Miklos Szeredi (miklos@szeredi.hu):
-> From: Miklos Szeredi <mszeredi@suse.cz>
+Quoting Miklos Szeredi (miklos-sUDqSbJrdHQHWmgEVkV9KA@public.gmane.org):
+> From: Miklos Szeredi <mszeredi-AlSwsSmVLrQ@public.gmane.org>
 > 
-> Don't require the "user_id=" and "group_id=" options for unprivileged mounts,
-> but if they are present, verify them for sanity.
+> On mount propagation, let the owner of the clone be inherited from the
+> parent into which it has been propagated.
 > 
-> Disallow the "allow_other" option for unprivileged mounts.
+> If the parent has the "nosuid" flag, set this flag for the child as
+> well.  This is needed for the suid-less namespace (use case #2 in the
+> first patch header), where all mounts are owned by the user and have
+> the nosuid flag set.  In this case the propagated mount needs to have
+> nosuid, otherwise a suid executable may be misused by the user.
 > 
-> FUSE was designed from the beginning to be safe for unprivileged
-> users.  This has also been verified in practice over many years, with
-> some distributions enabling unprivileged FUSE mounts by default.
+> Similar treatment is not needed for "nodev", because devices can't be
+> abused this way: the user is not able to gain privileges to devices by
+> rearranging the mount namespace.
 > 
-> However there are some properties of FUSE, that could make it unsafe
-> for certain situations (e.g. multiuser system with untrusted users):
-> 
->  - It is not always possible to use kill(2) (not even with SIGKILL) to
->    terminate a process using a FUSE filesystem.  However it is
->    possible to use any of the following instead:
->      o kill the filesystem daemon
->      o use forced umounting
->      o use the "fusectl" control filesystem
-> 
->  - As a special case of the above, killing a self-deadlocked FUSE
->    process is not possible, and even killall5 will not terminate it.
-> 
->  - Due to the design of the process freezer, a hanging (due to network
->    problems, etc) or malicious filesystem may prevent suspending to
->    ram or hibernation to succeed.  This is not actually unique to
->    FUSE, as any hanging network filesystem will have the same affect.
-> 
-> If the above could pose a threat to the system, it is recommended,
-> that the '/proc/sys/fs/types/fuse/safe' sysctl tunable is not turned
-> on, and/or '/dev/fuse' is not made world-readable and writable.
-> 
-> Signed-off-by: Miklos Szeredi <mszeredi@suse.cz>
+> Signed-off-by: Miklos Szeredi <mszeredi-AlSwsSmVLrQ@public.gmane.org>
 
-I was going to say "this should of course be acked by a fuse
-maintainer", then I look at MAINTAINERS :)  So never mind.
+As discussed many months ago this does seem like the most appropriate
+behavior for propagation.
 
-Acked-by: Serge Hallyn <serue@us.ibm.com>
+Acked-by: Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 
 > ---
 > 
-> Index: linux/fs/fuse/inode.c
+> Index: linux/fs/namespace.c
 > ===================================================================
-> --- linux.orig/fs/fuse/inode.c	2008-01-16 13:24:52.000000000 +0100
-> +++ linux/fs/fuse/inode.c	2008-01-16 13:25:10.000000000 +0100
-> @@ -357,6 +357,19 @@ static int parse_fuse_opt(char *opt, str
->  	d->max_read = ~0;
->  	d->blksize = 512;
+> --- linux.orig/fs/namespace.c	2008-01-16 13:25:09.000000000 +0100
+> +++ linux/fs/namespace.c	2008-01-16 13:25:11.000000000 +0100
+> @@ -506,10 +506,10 @@ static int reserve_user_mount(void)
+>  	return err;
+>  }
 > 
-> +	/*
-> +	 * For unprivileged mounts use current uid/gid.  Still allow
-> +	 * "user_id" and "group_id" options for compatibility, but
-> +	 * only if they match these values.
-> +	 */
-> +	if (!capable(CAP_SYS_ADMIN)) {
-> +		d->user_id = current->uid;
-> +		d->user_id_present = 1;
-> +		d->group_id = current->gid;
-> +		d->group_id_present = 1;
+> -static void __set_mnt_user(struct vfsmount *mnt)
+> +static void __set_mnt_user(struct vfsmount *mnt, uid_t owner)
+>  {
+>  	WARN_ON(mnt->mnt_flags & MNT_USER);
+> -	mnt->mnt_uid = current->fsuid;
+> +	mnt->mnt_uid = owner;
+>  	mnt->mnt_flags |= MNT_USER;
+> 
+>  	if (!capable(CAP_SETUID))
+> @@ -520,7 +520,7 @@ static void __set_mnt_user(struct vfsmou
+> 
+>  static void set_mnt_user(struct vfsmount *mnt)
+>  {
+> -	__set_mnt_user(mnt);
+> +	__set_mnt_user(mnt, current->fsuid);
+>  	spin_lock(&vfsmount_lock);
+>  	nr_user_mounts++;
+>  	spin_unlock(&vfsmount_lock);
+> @@ -536,7 +536,7 @@ static void clear_mnt_user(struct vfsmou
+>  }
+> 
+>  static struct vfsmount *clone_mnt(struct vfsmount *old, struct dentry *root,
+> -					int flag)
+> +					int flag, uid_t owner)
+>  {
+>  	struct super_block *sb = old->mnt_sb;
+>  	struct vfsmount *mnt;
+> @@ -560,7 +560,10 @@ static struct vfsmount *clone_mnt(struct
+>  	/* don't copy the MNT_USER flag */
+>  	mnt->mnt_flags &= ~MNT_USER;
+>  	if (flag & CL_SETUSER)
+> -		__set_mnt_user(mnt);
+> +		__set_mnt_user(mnt, owner);
 > +
+> +	if (flag & CL_NOSUID)
+> +		mnt->mnt_flags |= MNT_NOSUID;
+> 
+>  	if (flag & CL_SLAVE) {
+>  		list_add(&mnt->mnt_slave, &old->mnt_slave_list);
+> @@ -1066,7 +1069,7 @@ static int lives_below_in_same_fs(struct
+>  }
+> 
+>  struct vfsmount *copy_tree(struct vfsmount *mnt, struct dentry *dentry,
+> -					int flag)
+> +					int flag, uid_t owner)
+>  {
+>  	struct vfsmount *res, *p, *q, *r, *s;
+>  	struct nameidata nd;
+> @@ -1074,7 +1077,7 @@ struct vfsmount *copy_tree(struct vfsmou
+>  	if (!(flag & CL_COPY_ALL) && IS_MNT_UNBINDABLE(mnt))
+>  		return ERR_PTR(-EPERM);
+> 
+> -	res = q = clone_mnt(mnt, dentry, flag);
+> +	res = q = clone_mnt(mnt, dentry, flag, owner);
+>  	if (IS_ERR(q))
+>  		goto error;
+>  	q->mnt_mountpoint = mnt->mnt_mountpoint;
+> @@ -1096,7 +1099,7 @@ struct vfsmount *copy_tree(struct vfsmou
+>  			p = s;
+>  			nd.path.mnt = q;
+>  			nd.path.dentry = p->mnt_mountpoint;
+> -			q = clone_mnt(p, p->mnt_root, flag);
+> +			q = clone_mnt(p, p->mnt_root, flag, owner);
+>  			if (IS_ERR(q))
+>  				goto error;
+>  			spin_lock(&vfsmount_lock);
+> @@ -1121,7 +1124,7 @@ struct vfsmount *collect_mounts(struct v
+>  {
+>  	struct vfsmount *tree;
+>  	down_read(&namespace_sem);
+> -	tree = copy_tree(mnt, dentry, CL_COPY_ALL | CL_PRIVATE);
+> +	tree = copy_tree(mnt, dentry, CL_COPY_ALL | CL_PRIVATE, 0);
+>  	up_read(&namespace_sem);
+>  	return tree;
+>  }
+> @@ -1292,7 +1295,8 @@ static int do_change_type(struct nameida
+>   */
+>  static int do_loopback(struct nameidata *nd, char *old_name, int flags)
+>  {
+> -	int clone_fl;
+> +	int clone_fl = 0;
+> +	uid_t owner = 0;
+>  	struct nameidata old_nd;
+>  	struct vfsmount *mnt = NULL;
+>  	int err;
+> @@ -1313,11 +1317,17 @@ static int do_loopback(struct nameidata 
+>  	if (!check_mnt(nd->path.mnt) || !check_mnt(old_nd.path.mnt))
+>  		goto out;
+> 
+> -	clone_fl = (flags & MS_SETUSER) ? CL_SETUSER : 0;
+> +	if (flags & MS_SETUSER) {
+> +		clone_fl |= CL_SETUSER;
+> +		owner = current->fsuid;
 > +	}
 > +
->  	while ((p = strsep(&opt, ",")) != NULL) {
->  		int token;
->  		int value;
-> @@ -385,6 +398,8 @@ static int parse_fuse_opt(char *opt, str
->  		case OPT_USER_ID:
->  			if (match_int(&args[0], &value))
->  				return 0;
-> +			if (d->user_id_present && d->user_id != value)
-> +				return 0;
->  			d->user_id = value;
->  			d->user_id_present = 1;
->  			break;
-> @@ -392,6 +407,8 @@ static int parse_fuse_opt(char *opt, str
->  		case OPT_GROUP_ID:
->  			if (match_int(&args[0], &value))
->  				return 0;
-> +			if (d->group_id_present && d->group_id != value)
-> +				return 0;
->  			d->group_id = value;
->  			d->group_id_present = 1;
->  			break;
-> @@ -596,6 +613,10 @@ static int fuse_fill_super(struct super_
->  	if (!parse_fuse_opt((char *) data, &d, is_bdev))
->  		return -EINVAL;
+>  	if (flags & MS_REC)
+> -		mnt = copy_tree(old_nd.path.mnt, old_nd.path.dentry, clone_fl);
+> +		mnt = copy_tree(old_nd.path.mnt, old_nd.path.dentry, clone_fl,
+> +				owner);
+>  	else
+> -		mnt = clone_mnt(old_nd.path.mnt, old_nd.path.dentry, clone_fl);
+> +		mnt = clone_mnt(old_nd.path.mnt, old_nd.path.dentry, clone_fl,
+> +				owner);
 > 
-> +	/* This is a privileged option */
-> +	if ((d.flags & FUSE_ALLOW_OTHER) && !capable(CAP_SYS_ADMIN))
-> +		return -EPERM;
+>  	err = PTR_ERR(mnt);
+>  	if (IS_ERR(mnt))
+> @@ -1541,7 +1551,7 @@ static int do_new_mount(struct nameidata
+>  	}
+> 
+>  	if (flags & MS_SETUSER)
+> -		__set_mnt_user(mnt);
+> +		__set_mnt_user(mnt, current->fsuid);
+> 
+>  	return do_add_mount(mnt, nd, mnt_flags, NULL);
+> 
+> @@ -1937,7 +1947,7 @@ static struct mnt_namespace *dup_mnt_ns(
+>  	down_write(&namespace_sem);
+>  	/* First pass: copy the tree topology */
+>  	new_ns->root = copy_tree(mnt_ns->root, mnt_ns->root->mnt_root,
+> -					CL_COPY_ALL | CL_EXPIRE);
+> +					CL_COPY_ALL | CL_EXPIRE, 0);
+>  	if (IS_ERR(new_ns->root)) {
+>  		up_write(&namespace_sem);
+>  		kfree(new_ns);
+> Index: linux/fs/pnode.c
+> ===================================================================
+> --- linux.orig/fs/pnode.c	2008-01-16 13:25:07.000000000 +0100
+> +++ linux/fs/pnode.c	2008-01-16 13:25:11.000000000 +0100
+> @@ -181,15 +181,28 @@ int propagate_mnt(struct vfsmount *dest_
+> 
+>  	for (m = propagation_next(dest_mnt, dest_mnt); m;
+>  			m = propagation_next(m, dest_mnt)) {
+> -		int type;
+> +		int clflags;
+> +		uid_t owner = 0;
+>  		struct vfsmount *source;
+> 
+>  		if (IS_MNT_NEW(m))
+>  			continue;
+> 
+> -		source =  get_source(m, prev_dest_mnt, prev_src_mnt, &type);
+> +		source =  get_source(m, prev_dest_mnt, prev_src_mnt, &clflags);
+> 
+> -		child = copy_tree(source, source->mnt_root, type);
+> +		if (m->mnt_flags & MNT_USER) {
+> +			clflags |= CL_SETUSER;
+> +			owner = m->mnt_uid;
 > +
->  	if (is_bdev) {
->  #ifdef CONFIG_BLOCK
->  		if (!sb_set_blocksize(sb, d.blksize))
+> +			/*
+> +			 * If propagating into a user mount which doesn't
+> +			 * allow suid, then make sure, the child(ren) won't
+> +			 * allow suid either
+> +			 */
+> +			if (m->mnt_flags & MNT_NOSUID)
+> +				clflags |= CL_NOSUID;
+> +		}
+> +		child = copy_tree(source, source->mnt_root, clflags, owner);
+>  		if (IS_ERR(child)) {
+>  			ret = PTR_ERR(child);
+>  			list_splice(tree_list, tmp_list.prev);
+> Index: linux/fs/pnode.h
+> ===================================================================
+> --- linux.orig/fs/pnode.h	2008-01-16 13:25:05.000000000 +0100
+> +++ linux/fs/pnode.h	2008-01-16 13:25:11.000000000 +0100
+> @@ -24,6 +24,7 @@
+>  #define CL_PROPAGATION 		0x10
+>  #define CL_PRIVATE 		0x20
+>  #define CL_SETUSER		0x40
+> +#define CL_NOSUID		0x80
+> 
+>  static inline void set_mnt_shared(struct vfsmount *mnt)
+>  {
+> @@ -36,4 +37,6 @@ int propagate_mnt(struct vfsmount *, str
+>  		struct list_head *);
+>  int propagate_umount(struct list_head *);
+>  int propagate_mount_busy(struct vfsmount *, int);
+> +struct vfsmount *copy_tree(struct vfsmount *, struct dentry *, int, uid_t);
+> +
+>  #endif /* _LINUX_PNODE_H */
+> Index: linux/include/linux/fs.h
+> ===================================================================
+> --- linux.orig/include/linux/fs.h	2008-01-16 13:25:09.000000000 +0100
+> +++ linux/include/linux/fs.h	2008-01-16 13:25:11.000000000 +0100
+> @@ -1493,7 +1493,6 @@ extern int may_umount(struct vfsmount *)
+>  extern void umount_tree(struct vfsmount *, int, struct list_head *);
+>  extern void release_mounts(struct list_head *);
+>  extern long do_mount(char *, char *, char *, unsigned long, void *);
+> -extern struct vfsmount *copy_tree(struct vfsmount *, struct dentry *, int);
+>  extern void mnt_set_mountpoint(struct vfsmount *, struct dentry *,
+>  				  struct vfsmount *);
+>  extern struct vfsmount *collect_mounts(struct vfsmount *, struct dentry *);
 > 
 > --
 > -
 > To unsubscribe from this list: send the line "unsubscribe linux-fsdevel" in
-> the body of a message to majordomo@vger.kernel.org
+> the body of a message to majordomo-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 > More majordomo info at  http://vger.kernel.org/majordomo-info.html
