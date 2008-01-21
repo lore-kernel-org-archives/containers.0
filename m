@@ -1,16 +1,14 @@
-From: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
-Subject: Re: A consideration on memory controller.
-Date: Mon, 21 Jan 2008 19:22:59 +0900
-Message-ID: <20080121192259.fe704050.kamezawa.hiroyu@jp.fujitsu.com>
-References: <20080121170759.3dc02561.kamezawa.hiroyu@jp.fujitsu.com>
-	<20080121082852.GB7796@balbir.in.ibm.com>
-	<20080121181920.28353c34.kamezawa.hiroyu@jp.fujitsu.com>
-	<20080121095036.GB9817@balbir.in.ibm.com>
+From: Cedric Le Goater <clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH] An attempt to have an unlimitedly extendable sys_clone
+Date: Mon, 21 Jan 2008 11:36:38 +0100
+Message-ID: <479475B6.1020308@fr.ibm.com>
+References: <478CAC32.4080809@openvz.org> <478CB73E.30603@fr.ibm.com>
+	<478CC7AD.7060908@fr.ibm.com> <478DB4CC.1090102@openvz.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
+Content-Type: text/plain; charset=ISO-8859-1
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20080121095036.GB9817-SINUvgVNF2CyUtPGxGje5AC/G2K4zDHf@public.gmane.org>
+In-Reply-To: <478DB4CC.1090102-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -20,39 +18,31 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
-Cc: "containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org" <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
+To: Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Mon, 21 Jan 2008 15:20:36 +0530
-Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org> wrote:
+Hello Pavel !
 
-> > > This topic needs more discussion, we have some form of page-cache
-> > > control built into the memory controller.
-> > > 
-> > Hmm. ok. I'looking forward to see.
-> > 
+Pavel Emelyanov wrote:
+>> Here's the unshare part if you want to fold that with your patch.
 > 
-> Could you elaborate on what sort of page-cache control you need, is it
-> global page-cache control?
+> Thanks, Cedric. I'll pick that up.
 > 
-What I mentioned to in my mail was global page cache. 
+>> Thanks,
+> 
+> OK, thanks everyone, I'll try to cook the final patch today
+> and send it to Andrew as an RFC.
 
-But, my purpose is isolate workload between applications and guarantee
-stable performance/latency and memory controller's limiting page usage
-feature will do half of work.
-So, per-cgroup page-cache control is (maybe) good enough for making applications
-stable by keeping room for immediate use of anon and by avoiding unnecessary swapout.
+As Al said it, it's probably not the direction to follow to extend the 
+clone flags :) But the problem being real, I think we need to insist. 
 
-but above can be archieved by
- - reserve/guarantee amount of free memory by some technique, bacground 
-   kthread, throttling,
- - do good design of swappiness.
- - etc...
+First, we could simplify the API by using child_tidptr to pass a 64bits 
+array of flags. This would still be a brutal syscall argument hijack but 
+we can't do better without a new syscall.
 
-So, the word "limiting page cache" itself is not important. Above will
-limit amount of page-cache as a result.
-Ways to reach my goal is not one, maybe. I should find the best one :)
+Next, we could send the same code using a new syscall.
 
-Thanks,
--Kame
+I have time to work on that. 
+
+C.
