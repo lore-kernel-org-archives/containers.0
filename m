@@ -1,29 +1,33 @@
-From: Szabolcs Szakacsits <szaka-IyvsvuGDJ8VAfugRpC6u6w@public.gmane.org>
-Subject: Re: [patch] util-linux-ng: unprivileged mounts support
-Date: Sat, 19 Jan 2008 23:42:33 +0200 (MET DST)
-Message-ID: <Pine.LNX.4.61.0801192306420.4482@dhcppc1>
-References: <E1JF7Xh-0003q3-Qv@pomaz-ex.szeredi.hu> <Pine.LNX.4.61.0801191745520.4482@dhcppc1>
- <E1JGKMY-00033X-FF@pomaz-ex.szeredi.hu>
+From: David Miller <davem@davemloft.net>
+Subject: Re: [PATCH 0/3 net-2.6.25] call FIB rule->action in the correct
+ namespace
+Date: Sun, 20 Jan 2008 16:47:38 -0800 (PST)
+Message-ID: <20080120.164738.01409375.davem@davemloft.net>
+References: <478F2933.1000007@openvz.org>
 Mime-Version: 1.0
-Content-Type: TEXT/PLAIN; charset=US-ASCII
-Return-path: <util-linux-ng-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <E1JGKMY-00033X-FF-8f8m9JG5TPIdUIPVzhDTVZP2KDSNp7ea@public.gmane.org>
-Sender: util-linux-ng-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-To: Miklos Szeredi <miklos-sUDqSbJrdHQHWmgEVkV9KA@public.gmane.org>
-Cc: util-linux-ng-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, hch-wEGCiKHe2LqWVfeAwA7xHQ@public.gmane.org, serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org, viro-rfM+Q5joDG/XmaaqVzeoHQ@public.gmane.org, kzak-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, linux-fsdevel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
+Content-Type: Text/Plain; charset=us-ascii
+Content-Transfer-Encoding: 7bit
+Return-path: <netdev-owner@vger.kernel.org>
+In-Reply-To: <478F2933.1000007@openvz.org>
+Sender: netdev-owner@vger.kernel.org
+To: den@openvz.org
+Cc: dlezcano@fr.ibm.com, netdev@vger.kernel.org, containers@lists.osdl.org, devel@openvz.org
 List-Id: containers.vger.kernel.org
 
+From: "Denis V. Lunev" <den@openvz.org>
+Date: Thu, 17 Jan 2008 13:08:51 +0300
 
-On Sat, 19 Jan 2008, Miklos Szeredi wrote:
+> FIB rule->action should operate in the same namespace as fib_lookup.
+> This is definitely missed right now.
 > 
-> But 'fusermount -u /tmp/test' does work, doesn't it?
+> There are two ways to implement this: pass struct net into another rules
+> API call (2 levels) or place netns into rule struct directly. The second
+> approach seems better as the code will grow less.
+> 
+> Additionally, the patchset cleanups struct net from
+> fib_rules_register/unregister to have network namespace context at the
+> time of default rules creation.
+> 
+> Signed-off-by: Denis V. Lunev <den@openvz.org>
 
-You're submitting patches to get rid of fusermount, aren't you?
-
-Most users absolutely have no idea what fusermount is and they would 
-__really__ like to see umount(8) working finally. 
-
-	Szaka
-
---
-NTFS-3G:  http://ntfs-3g.org
+All 3 patches applied, thanks.
