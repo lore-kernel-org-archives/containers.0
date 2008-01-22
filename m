@@ -1,35 +1,27 @@
-From: "william romsay" <williamromsay-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: Hershey Felder, Musical Instruments For The Blind
-Date: Tue, 22 Jan 2008 11:09:32 +0200
-Message-ID: <9e338f8f0801220109o24745ebeg9a779233c8656863@mail.gmail.com>
+From: "Denis V. Lunev" <den@openvz.org>
+Subject: [PATCH 0/12 net-2.6.25] [NETNS]: Routing namespacing on IP output
+ path.
+Date: Tue, 22 Jan 2008 18:58:54 +0300
+Message-ID: <479612BE.8030409@openvz.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
+Content-Type: text/plain; charset=KOI8-R
 Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Return-path: <netdev-owner@vger.kernel.org>
+Sender: netdev-owner@vger.kernel.org
+To: David Miller <davem@davemloft.net>
+Cc: netdev <netdev@vger.kernel.org>, devel@openvz.org, Linux Containers <containers@lists.osdl.org>
 List-Id: containers.vger.kernel.org
 
-Hershey Felder, Musical Instruments For The Blind
+This set introduces namespacing in the IP output path. The namespace is
+added to all routing API functions except ones with a valid socket. This
+is very intrusive.
+
+Routing cache is virtualized as a part of this efforts, though the hash
+function is not tuned to use namespace id. This not required to work in
+initial namespace.
+
+ICMP replies now also use correct namespace.
+
+Signed-off-by: Denis V. Lunev <den@openvz.org>
 
 
-
-Blind children can learn to play a musical instrument just as well and often
-even better than, sighted children provided the desire and interest is
-there. Blind children often have a strong sense of rhythm and musical
-sensation since their hearing is more in tuned with the world. Of course the
-assumption should not be made that just because they are blind they should
-play a musical instrument. However if a child or an adult who is visually
-impaired decides that playing a musical instrument is something they would
-find beneficial, then by all means, there should be every consideration made
-just as you would for a sighted individual. There are instruments which are
-better suited for the visually impaired than others. Most string instrume...
