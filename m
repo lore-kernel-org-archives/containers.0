@@ -1,28 +1,35 @@
-From: David Miller <davem@davemloft.net>
-Subject: Re: [PATCH 0/6 net-2.6.25] Provide correct namespace on IPv4
- packet input path.
-Date: Mon, 21 Jan 2008 17:35:19 -0800 (PST)
-Message-ID: <20080121.173519.222926081.davem@davemloft.net>
-References: <4794B10E.7010703@sw.ru>
+From: "william romsay" <williamromsay-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Subject: Hershey Felder, Musical Instruments For The Blind
+Date: Tue, 22 Jan 2008 11:09:32 +0200
+Message-ID: <9e338f8f0801220109o24745ebeg9a779233c8656863@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: Text/Plain; charset=us-ascii
+Content-Type: text/plain; charset=ISO-8859-1
 Content-Transfer-Encoding: 7bit
-Return-path: <netdev-owner@vger.kernel.org>
-In-Reply-To: <4794B10E.7010703@sw.ru>
-Sender: netdev-owner@vger.kernel.org
-To: den@sw.ru
-Cc: netdev@vger.kernel.org, devel@openvz.org, containers@lists.osdl.org
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Content-Disposition: inline
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-From: "Denis V. Lunev" <den@sw.ru>
-Date: Mon, 21 Jan 2008 17:49:50 +0300
+Hershey Felder, Musical Instruments For The Blind
 
-> This patchset sequentially adds namespace parameter to fib_lookup and
-> inetdev_by_index. After that it is possible to pass network namespace
-> from input packet to routing engine.
-> 
-> Output path is much more intrusive and will be sent separately.
-> 
-> Signed-off-by: Denis V. Lunev <den@openvz.org>
 
-All 6 patches applied, thanks.
+
+Blind children can learn to play a musical instrument just as well and often
+even better than, sighted children provided the desire and interest is
+there. Blind children often have a strong sense of rhythm and musical
+sensation since their hearing is more in tuned with the world. Of course the
+assumption should not be made that just because they are blind they should
+play a musical instrument. However if a child or an adult who is visually
+impaired decides that playing a musical instrument is something they would
+find beneficial, then by all means, there should be every consideration made
+just as you would for a sighted individual. There are instruments which are
+better suited for the visually impaired than others. Most string instrume...
