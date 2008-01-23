@@ -1,13 +1,13 @@
-From: Rishikesh K Rajak <risrajak-xthvdsQ13ZrQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [Devel] LTP result output for container-init
-Date: Thu, 24 Jan 2008 18:13:09 +0530
-Message-ID: <OF49CE4161.0752AA9E-ON652573DA.00452D52-652573DA.0045EA46@in.ibm.com>
-References: <1200497268.3999.17.camel@localhost.localdomain>
-	<4798693E.5080801@openvz.org>
+From: Pavel Machek <pavel-+ZI9xUNit7I@public.gmane.org>
+Subject: Re: [PATCH 1/2] Extend sys_clone and sys_unshare system calls API
+Date: Wed, 23 Jan 2008 20:59:30 +0000
+Message-ID: <20080123205930.GA5233@ucw.cz>
+References: <478DFF8F.9030006@openvz.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
+Content-Type: text/plain; charset=us-ascii
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <4798693E.5080801-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <478DFF8F.9030006-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,91 +18,32 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
-Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, Poornima Nayak <Poornima.Nayak-xthvdsQ13ZrQT0dZR+AlfA@public.gmane.org>, serue-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
+Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Cedric Le Goater <clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>, Linux Kernel Mailing List <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
+On Wed 2008-01-16 15:58:55, Pavel Emelyanov wrote:
+> There's only one bit in the clone_flags left, so we won't be able 
+> to create more namespaces after we make it busy. Besides, for 
+> checkpoint/restart jobs we might want to create tasks with given
+> pids (virtual of course). And nobody knows for sure what else might 
+> be required from clone() in the future.
+> 
+> This is an attempt to create a extendable API for clone and unshare.
+> Actually this patch is a request for comment about the overall
+> design. If it will turn out to "look good", then we'll select some
+> better names for new flag and data types.
+> 
+> I use the last bit in the clone_flags for CLONE_LONGARG. When set it
+> will denote that the child_tidptr is not a pointer to a tid storage,
+> but the pointer to the struct long_clone_struct which currently 
+> looks like this:
+> 
+> struct long_clone_arg {
+> 	int size;
+> };
 
-
-Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org> wrote on 01/24/2008 04:02:30 PM:
-
-> Rishikesh K. Rajak wrote:
-> > Hi All,
-> >
-> > Today i ran full LTP on kernel 2.6.24-rc6 inside container-init and
-also
-> > on parent namespace and got some observations.
-> >
-> > Here is the machine information:
-> >     Linux rishi.in.ibm.com 2.6.18-53.el5 #1 SMP Wed Oct 10 16:34:02 EDT
->
-> Wait a bit - this uname string shows the 2.6.18-53.el5 kernel, but
-> you say, that this was 2.6.24-rc6.
-
-Ahh... i am extremely sorry, typo in copy-paste. it is basically my local
-laptop uname.
-
-Here is the exact uname.
-
-Linux x206h 2.6.24-rc6 #1 SMP Wed Dec 5 09:02:21 UTC 2007 i686 i686 i386
-GNU/LinuxT
-
->
-> > 2007 i686 i686 i386 GNU/Linux
-> >
-> >     OS: SLES 10
-> >
-> > I found these fcntl are failing inside container and it pass on parent
-> > namespace. I am attaching the log file with this mail.
-> >
-> > These failures are conceding with 2.6.23-mm1 itself. Just wanted to
-know
-> > if someone is working on this still.
-> >
-> >   fcntl11                        FAIL
-> >   fcntl14                        FAIL
-> >   fcntl17                        FAIL
-> >   fcntl19                        FAIL
-> >   fcntl20                        FAIL
-> >   fcntl21                        FAIL
-> >
-> > And also other observation was:
-> >
-> > syslog is failing inside parent namespace but pass inside
-> > container-init.
-> >
-> > syslog01                       FAIL
-> > 1
-> > syslog02                       FAIL
-> > 1
-> > syslog08                       FAIL
-> > 1
->
-> Have just tested this with SLES10 - syslogs are working...
->
-> > Please let me know your opinion on this.
-> >
-> > Thanks
-> >
-> > Rishi
-> > IBM LTC
-> > Bangalore
-> >
-> >
-> >
-> >
-------------------------------------------------------------------------
-> >
-> > _______________________________________________
-> > Containers mailing list
-> > Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-> > https://lists.linux-foundation.org/mailman/listinfo/containers
-> >
-> >
-> >
-------------------------------------------------------------------------
-> >
-> > _______________________________________________
-> > Devel mailing list
-> > Devel-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org
-> > https://openvz.org/mailman/listinfo/devel
->
+Ugly as night, I'd say. (Al said it better). What about just adding
+clone2 syscall, that takes u64?
+-- 
+(english) http://www.livejournal.com/~pavelmachek
+(cesky, pictures) http://atrey.karlin.mff.cuni.cz/~pavel/picture/horses/blog.html
