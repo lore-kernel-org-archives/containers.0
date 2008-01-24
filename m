@@ -1,14 +1,10 @@
 From: yamamoto-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org (YAMAMOTO Takashi)
-Subject: Re: [dm-devel] [PATCH 0/2] dm-band: The I/O bandwidth controller:
- Overview
-Date: Thu, 24 Jan 2008 12:38:07 +0900 (JST)
-Message-ID: <20080124033807.42D7B1E3C0C__43009.0969698087$1201146091$gmane$org@siro.lan>
-References: <20080124.012103.105433865.taka@valinux.co.jp>
+Subject: [PATCH] reject '\n' in a cgroup name
+Date: Thu, 24 Jan 2008 14:20:49 +0900 (JST)
+Message-ID: <20080124052049.A2A8A1E3C0D@siro.lan>
 Mime-Version: 1.0
 Content-Type: Text/Plain; charset=us-ascii
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: Your message of "Thu, 24 Jan 2008 01:21:03 +0900 (JST)"
-	<20080124.012103.105433865.taka-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,27 +14,43 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: taka-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org
-Cc: xen-devel-GuqFBffKawuULHF6PoxzQEEOCMrvLtNR@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, virtualization-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, dm-devel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, agk-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
+To: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
+Cc: linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-> Hi,
-> 
-> > On Wed, Jan 23, 2008 at 09:53:50PM +0900, Ryo Tsuruta wrote:
-> > > Dm-band gives bandwidth to each job according to its weight, 
-> > > which each job can set its own value to.
-> > > At this time, a job is a group of processes with the same pid or pgrp or uid.
-> > 
-> > It seems to rely on 'current' to classify bios and doesn't do it until the map
-> > function is called, possibly in a different process context, so it won't
-> > always identify the original source of the I/O correctly:
-> 
-> Yes, this should be mentioned in the document with the current implementation
-> as you pointed out.
-> 
-> By the way, I think once a memory controller of cgroup is introduced, it will
-> help to track down which cgroup is the original source.
+hi,
 
-do you mean to make this a part of the memory subsystem?
+the following patch rejects '\n' in a cgroup name.
+otherwise /proc/$$/cgroup is not parsable.
+
+example:
+	imawoto% cat /proc/$$/cgroup
+	memory:/
+	imawoto% mkdir -p "
+	memory:/foo"
+	imawoto% echo $$ >| "
+	memory:/foo/tasks"
+	imawoto% cat /proc/$$/cgroup
+	memory:/
+	memory:/foo
+	imawoto% 
 
 YAMAMOTO Takashi
+
+
+Signed-off-by: YAMAMOTO Takashi <yamamoto-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
+---
+
+--- linux-2.6.24-rc8-mm1/kernel/cgroup.c.BACKUP	2008-01-23 14:43:29.000000000 +0900
++++ linux-2.6.24-rc8-mm1/kernel/cgroup.c	2008-01-24 13:56:28.000000000 +0900
+@@ -2216,6 +2216,10 @@ static long cgroup_create(struct cgroup 
+ 	struct cgroup_subsys *ss;
+ 	struct super_block *sb = root->sb;
+ 
++	/* reject a newline.  otherwise /proc/$$/cgroup is not parsable. */
++	if (strchr(dentry->d_name.name, '\n'))
++		return -EINVAL;
++
+ 	cgrp = kzalloc(sizeof(*cgrp), GFP_KERNEL);
+ 	if (!cgrp)
+ 		return -ENOMEM;
