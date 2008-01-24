@@ -1,13 +1,15 @@
-From: Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
-Subject: Re: [Devel] LTP result output for container-init
-Date: Thu, 24 Jan 2008 12:59:01 +0300
-Message-ID: <47986165.4050407@openvz.org>
-References: <1200497268.3999.17.camel@localhost.localdomain>
+From: Hirokazu Takahashi <taka-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
+Subject: Re: [dm-devel] [PATCH 0/2] dm-band: The I/O bandwidth controller:
+ Overview
+Date: Thu, 24 Jan 2008 19:14:56 +0900 (JST)
+Message-ID: <20080124.191456.119427875.taka__20079.7885926024$1201169817$gmane$org@valinux.co.jp>
+References: <20080124.012103.105433865.taka@valinux.co.jp>
+	<20080124033807.42D7B1E3C0C@siro.lan>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
+Content-Type: Text/Plain; charset=us-ascii
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1200497268.3999.17.camel-bi+AKbBUZKY6gyzm1THtWbp2dZbC/Bob@public.gmane.org>
+In-Reply-To: <20080124033807.42D7B1E3C0C-Pcsii4f/SVk@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -17,109 +19,38 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: risrajak-xthvdsQ13ZrQT0dZR+AlfA@public.gmane.org
-Cc: Poornima.Nayak-xthvdsQ13ZrQT0dZR+AlfA@public.gmane.org, containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, serue-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
+To: yamamoto-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org
+Cc: xen-devel-GuqFBffKawuULHF6PoxzQEEOCMrvLtNR@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, virtualization-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, dm-devel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, agk-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Rishikesh K. Rajak wrote:
-> Hi All,
-> 
-> Today i ran full LTP on kernel 2.6.24-rc6 inside container-init and also
-> on parent namespace and got some observations.
-> 
-> Here is the machine information:
->     Linux rishi.in.ibm.com 2.6.18-53.el5 #1 SMP Wed Oct 10 16:34:02 EDT
-> 2007 i686 i686 i386 GNU/Linux
-> 
->     OS: SLES 10
-> 
-> I found these fcntl are failing inside container and it pass on parent
-> namespace. I am attaching the log file with this mail.
-> 
-> These failures are conceding with 2.6.23-mm1 itself. Just wanted to know
-> if someone is working on this still.
-> 
->   fcntl11                        FAIL
->   fcntl14                        FAIL
->   fcntl17                        FAIL
->   fcntl19                        FAIL
->   fcntl20                        FAIL
->   fcntl21                        FAIL
+Hi,
 
-As I already said, these are fixed in -mm tree with the 
-pid-namespaces-vs-locks-interaction.patch patch.
+> > > On Wed, Jan 23, 2008 at 09:53:50PM +0900, Ryo Tsuruta wrote:
+> > > > Dm-band gives bandwidth to each job according to its weight, 
+> > > > which each job can set its own value to.
+> > > > At this time, a job is a group of processes with the same pid or pgrp or uid.
+> > > 
+> > > It seems to rely on 'current' to classify bios and doesn't do it until the map
+> > > function is called, possibly in a different process context, so it won't
+> > > always identify the original source of the I/O correctly:
+> > 
+> > Yes, this should be mentioned in the document with the current implementation
+> > as you pointed out.
+> > 
+> > By the way, I think once a memory controller of cgroup is introduced, it will
+> > help to track down which cgroup is the original source.
+> 
+> do you mean to make this a part of the memory subsystem?
 
-> And also other observation was:
-> 
-> syslog is failing inside parent namespace but pass inside
-> container-init.
-> 
-> syslog01                       FAIL
-> 1                                        
-> syslog02                       FAIL
-> 1                                        
-> syslog08                       FAIL
-> 1                                        
+I just think if the memory subsystem is in front of us, we don't need to
+reinvent the wheel.
 
-What really bothers me in this case is that in the "output"
-file you attached I see
+But I don't have a concrete image how the interface between dm-band and
+the memory subsystem should be designed yet. I'd be appreciate if some of
+the cgroup developers give some ideas about it.
 
-<<<test_output>>>
-syslog08    0  INFO  :   Test all the facilities at a particular level.
-syslog08    0  INFO  :   Facilities available are: LOG_KERN, LOG_USER, LOG_MAIL
-syslog08    0  INFO  :   LOG_DAEMON, LOG_AUTH, LOG_LPR.
-syslog08    0  INFO  :   Don't know how to send kernel messages from syslog()
-syslog08    0  INFO  :   o Create seperate entries in config file for each facility.
-syslog08    0  INFO  :   o Send the message and grep for the entry in log file.
+Thanks,
+Hirokazu Takahashi.
 
-syslog08    0  INFO  :  syslog: Testing all the facilities
 
-syslog08    0  INFO  :  Doing facility: user...
-syslog08    0  INFO  :  Restart /etc/init.d/syslog 
-syslog08    0  INFO  :   Facility user passed
-syslog08    0  INFO  :  Doing facility: mail...
-syslog08    0  INFO  :  Restart /etc/init.d/syslog
-syslog08    0  INFO  :   Facility mail failed
-syslog08    0  INFO  :  Doing facility: daemon...
-syslog08    0  INFO  :  Restart /etc/init.d/syslog
-syslog08    0  INFO  :   Facility daemon passed
-syslog08    0  INFO  :  Doing facility: auth...
-syslog08    0  INFO  :  Restart /etc/init.d/syslog
-syslog08    0  INFO  :   Facility auth passed
-syslog08    0  INFO  :  Doing facility: lpr...
-syslog08    0  INFO  :  Restart /etc/init.d/syslog
-syslog08    0  INFO  :   Facility lpr passed
-syslog08    1  PASS  :  some facilities failed to work
-syslog08    0  INFO  :  restart /etc/init.d/syslog
-
-The says it passed, but the status is "some facilities failed to 
-work" and the log file says that the test failed %)
-
-I launched ltp on my box but the 01, 02 and 08 syslog tests
-passed... I have a CentOS 4 setup on this node, maybe this
-is a SuSE issue? Rishikesh, can you try this on another OS?
-
-> Please let me know your opinion on this.
-> 
-> Thanks
-> 
-> Rishi
-> IBM LTC
-> Bangalore
-> 
-> 
-> 
-> ------------------------------------------------------------------------
-> 
-> _______________________________________________
-> Containers mailing list
-> Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-> https://lists.linux-foundation.org/mailman/listinfo/containers
-> 
-> 
-> ------------------------------------------------------------------------
-> 
-> _______________________________________________
-> Devel mailing list
-> Devel-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org
-> https://openvz.org/mailman/listinfo/devel
+> YAMAMOTO Takashi
