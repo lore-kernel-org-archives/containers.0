@@ -1,8 +1,8 @@
 From: Daniel Lezcano <dlezcano@fr.ibm.com>
 Subject: Re: [PATCH 3/7 net-2.6.25] [IPV4]: Prohibit assignment of 0.0.0.0
  as interface address.
-Date: Fri, 25 Jan 2008 15:37:53 +0100
-Message-ID: <4799F441.9050705@fr.ibm.com>
+Date: Fri, 25 Jan 2008 15:48:05 +0100
+Message-ID: <4799F6A5.7040703@fr.ibm.com>
 References: <1201269123-20378-1-git-send-email-den@openvz.org> <1201269123-20378-3-git-send-email-den@openvz.org> <4799EBBE.6080706@fr.ibm.com> <4799EE8C.60407@sw.ru>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1; format=flowed
@@ -32,5 +32,7 @@ Denis V. Lunev wrote:
 > 
 > For this case there is an IOCTL/netlink "remove IP address".
 
-That's right. But there are people relying on 0.0.0.0 to remove IP 
-addresses, especially in the bridge scripts.
+And I forgot to mention the general broadcast.
+This is need for the dhcp protocol. If you are not able to set your 
+interface to 0.0.0.0, you will be not able to send a 255.255.255.255 
+broadcast message to have your IP address.
