@@ -1,44 +1,36 @@
-From: "Daniel Hokka Zakrisson" <daniel@hozac.com>
-Subject: Re: [PATCH 0/4] user namespaces: introduction
-Date: Mon, 28 Jan 2008 20:24:24 +0100 (CET)
-Message-ID: <34757.192.168.101.12.1201548264.squirrel@intranet>
-References: <20080128190828.GA8909@sergelap.austin.ibm.com>
+From: "Pansy Lange" <dwimunam-QRURRTPvMu8@public.gmane.org>
+Subject: All products to cure yourself
+Date: Mon, 28 Jan 2008 19:53:59 +0000
+Message-ID: <016376006.66176003271058@imuna.sk>
+Reply-To: dwimunam-QRURRTPvMu8@public.gmane.org
 Mime-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
-Content-Transfer-Encoding: 7BIT
-Return-path: <linux-security-module-owner@vger.kernel.org>
-In-Reply-To: <20080128190828.GA8909@sergelap.austin.ibm.com>
-Sender: linux-security-module-owner@vger.kernel.org
-To: "Serge E. Hallyn" <serue@us.ibm.com>
-Cc: Cedric Le Goater <clg@fr.ibm.com>, "Eric W. Biederman" <ebiederm@xmission.com>, Linux Containers <containers@lists.osdl.org>, linux-security-module@vger.kernel.org
+Content-Type: text/plain; charset=iso-8859-1
+Content-Transfer-Encoding: quoted-printable
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Serge E. Hallyn wrote:
-> Here is a small patchset I've been sitting on for awhile
-> to make signaling mostly subject to user namespaces.  In
-> particular,
->
-> 	1. store user_namespace in user struct
-> 	2. introduce CAP_NS_OVERRIDE
-> 	3. require CAP_NS_OVERRIDE to signal another user namespace
->
-> The first step should have been done all along.  Else wouldn't
-> a hash collision on (ns1, uid) and (ns2, uid), however unlikely,
-> give us wrong results at uid_hash_find()?
 
-Unless I've completely misunderstood the code, each namespace has a
-separate hash. Please correct me if I'm wrong.
+Special Winter offer from CanadianPharmacy. 20% discount for every item f=
+rom really astonishing selection of products. Don't waste time. CanadianP=
+harmacy offers high quality Canadian products meeting all Pharmaceutical =
+Standards. Wide selection of products which are cheaper than American one=
+s are available to order online. Easy, secure and confidential ordering p=
+rocess.12 free bonus pills will be received with any order over $300.We o=
+ffer best prices for best people.
+http://geocities.com/mathewhodges40/Thank You for Your time and for your =
+attention.
 
-> The main remaining signaling+userns issue is of course the
-> siginfo.  Tacking a userns onto siginfo is a pain due to
-> lifetime mgmt issues.  I haven't decided whether to just
-> catch all the callers and fake uid=0 if user namespaces
-> aren't the same, introduce some unique non-refcounted id to
-> represent (user,user_ns), or find some other way to deal with
-> it.
->
-> thanks,
-> -serge
-
--- 
-Daniel Hokka Zakrisson
+SafeUnsubscribe&trade;
+This email was sent to containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, by dwimunam-QRURRTPvMu8@public.gmane.org
+Update Profile/Email Address | Instant removal with SafeUnsubscribe=99 | =
+Privacy Policy.
