@@ -1,62 +1,37 @@
-From: "Serge E. Hallyn" <serue@us.ibm.com>
-Subject: Re: [PATCH 0/4] user namespaces: introduction
-Date: Mon, 28 Jan 2008 13:44:50 -0600
-Message-ID: <20080128194450.GA9745@sergelap.austin.rr.com>
-References: <20080128190828.GA8909@sergelap.austin.ibm.com> <34757.192.168.101.12.1201548264.squirrel@intranet>
+From: "Sara Tompkins" <dwihservicesm-pZjnbvS1GUV0ubjbjo6WXg@public.gmane.org>
+Subject: Our half price offer is valid till
+Date: Mon, 28 Jan 2008 18:58:58 -0600
+Message-ID: <977532557.17348700826719@ihservices.com>
+Reply-To: dwihservicesm-pZjnbvS1GUV0ubjbjo6WXg@public.gmane.org
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Return-path: <linux-security-module-owner@vger.kernel.org>
-Content-Disposition: inline
-In-Reply-To: <34757.192.168.101.12.1201548264.squirrel@intranet>
-Sender: linux-security-module-owner@vger.kernel.org
-To: Daniel Hokka Zakrisson <daniel@hozac.com>
-Cc: "Serge E. Hallyn" <serue@us.ibm.com>, Cedric Le Goater <clg@fr.ibm.com>, "Eric W. Biederman" <ebiederm@xmission.com>, Linux Containers <containers@lists.osdl.org>, linux-security-module@vger.kernel.org
+Content-Type: text/plain; charset=Windows-1252
+Content-Transfer-Encoding: quoted-printable
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Quoting Daniel Hokka Zakrisson (daniel@hozac.com):
-> Serge E. Hallyn wrote:
-> > Here is a small patchset I've been sitting on for awhile
-> > to make signaling mostly subject to user namespaces.  In
-> > particular,
-> >
-> > 	1. store user_namespace in user struct
-> > 	2. introduce CAP_NS_OVERRIDE
-> > 	3. require CAP_NS_OVERRIDE to signal another user namespace
-> >
-> > The first step should have been done all along.  Else wouldn't
-> > a hash collision on (ns1, uid) and (ns2, uid), however unlikely,
-> > give us wrong results at uid_hash_find()?
-> 
-> Unless I've completely misunderstood the code, each namespace has a
-> separate hash. Please correct me if I'm wrong.
 
-So it does!
+Great news. CanadianPharmacy has announced a half-price offer for all the=
+ pharmaceutical products. It's not a joke, discounts are really amazing.C=
+anadianPharmacy is your choice when you're looking for the place to buy p=
+roducts in a safe and confidential way. Full range of 100% generic produc=
+ts which are available to order online. Prompt delivery, personal approac=
+h, excellent service.Order over $300 and get 12 bonus pills for free.Get =
+the quality products you deserve.=20
+http://geocities.com/fritzhuber611/Thank You for Your time and for your a=
+ttention.
 
-Yikes, how did I misread that so badly?
-
-That means the find_user() code may be simplified a bit after all.
-Well, or we could keep this and go to a single hash to save some
-memory...
-
-Thanks Daniel.
-
--serge
-
-> 
-> > The main remaining signaling+userns issue is of course the
-> > siginfo.  Tacking a userns onto siginfo is a pain due to
-> > lifetime mgmt issues.  I haven't decided whether to just
-> > catch all the callers and fake uid=0 if user namespaces
-> > aren't the same, introduce some unique non-refcounted id to
-> > represent (user,user_ns), or find some other way to deal with
-> > it.
-> >
-> > thanks,
-> > -serge
-> 
-> -- 
-> Daniel Hokka Zakrisson
-> -
-> To unsubscribe from this list: send the line "unsubscribe linux-security-module" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+SafeUnsubscribe&trade;
+This email was sent to containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, by dwihservicesm@ihserv=
+ices.com
+Update Profile/Email Address | Instant removal with SafeUnsubscribe=99 | =
+Privacy Policy.
