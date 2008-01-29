@@ -1,11 +1,11 @@
 From: pierre.peiffer-6ktuUTfB/bM@public.gmane.org
-Subject: [PATCH 2.6.24-rc8-mm1 15/15] (RFC) IPC/semaphores: add write()
-	operation to semundo file in procfs
-Date: Tue, 29 Jan 2008 17:02:44 +0100
-Message-ID: <20080129162303.605253402@bull.net>
+Subject: [PATCH 2.6.24-rc8-mm1 14/15] (RFC) IPC/semaphores: prepare semundo
+	code to work on another task than current
+Date: Tue, 29 Jan 2008 17:02:43 +0100
+Message-ID: <20080129162232.843976550@bull.net>
 References: <20080129160229.612172683@bull.net>
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline; filename=ipc_procfs_semundo_write.patch
+Content-Disposition: inline; filename=ipc_prepare_semundo_write.patch
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -20,306 +20,188 @@ List-Id: containers.vger.kernel.org
 
 From: Pierre Peiffer <pierre.peiffer-6ktuUTfB/bM@public.gmane.org>
 
-This patch adds the write operation to the semundo file.
-This write operation allows root to add or update the semundo list and
-their values for a given process.
+In order to modify the semundo-list of a task from procfs, we must be able to
+work on any target task.
+But all the existing code playing with the semundo-list, currently works
+only on the 'current' task, and does not allow to specify any target task.
 
-The user must provide some lines, each containing the semaphores ID
-followed by the semaphores values to undo.
+This patch changes all these routines to allow them to work on a specified
+task, passed in parameter, instead of current.
 
-The operation failed if the given semaphore ID does not exist or if the
-number of values does not match the number of semaphores in the array.
+This is mainly a preparation for the semundo_write() operation, on the
+/proc/<pid>/semundo file, as provided in the next patch.
 
 Signed-off-by: Pierre Peiffer <pierre.peiffer-6ktuUTfB/bM@public.gmane.org>
 ---
 
- fs/proc/base.c |    2 
- ipc/sem.c      |  232 +++++++++++++++++++++++++++++++++++++++++++++++++++++++--
- 2 files changed, 227 insertions(+), 7 deletions(-)
+ ipc/sem.c |   90 ++++++++++++++++++++++++++++++++++++++++++++++----------------
+ 1 file changed, 68 insertions(+), 22 deletions(-)
 
-Index: b/fs/proc/base.c
-===================================================================
---- a/fs/proc/base.c
-+++ b/fs/proc/base.c
-@@ -2256,7 +2256,7 @@ static const struct pid_entry tgid_base_
- 	INF("io",	S_IRUGO, pid_io_accounting),
- #endif
- #ifdef CONFIG_SYSVIPC
--	REG("semundo",   S_IRUGO, semundo),
-+	REG("semundo",   S_IWUSR|S_IRUGO, semundo),
- #endif
- };
- 
 Index: b/ipc/sem.c
 ===================================================================
 --- a/ipc/sem.c
 +++ b/ipc/sem.c
-@@ -1580,6 +1580,9 @@ static struct seq_operations semundo_op 
- 
- /*
-  * semundo_open: open operation for /proc/<PID>/semundo file
-+ *
-+ * If the file is opened in write mode and no semundo list exists for
-+ * this target PID, it is created here.
-  */
- static int semundo_open(struct inode *inode, struct file *file)
- {
-@@ -1598,18 +1601,31 @@ static int semundo_open(struct inode *in
- 		undo_list = rcu_dereference(task->sysvsem.undo_list);
- 		if (undo_list)
- 			ret = !atomic_inc_not_zero(&undo_list->refcnt);
--		put_task_struct(task);
- 	}
- 	rcu_read_unlock();
- 
--	if (!task || ret)
-+	if (!task)
- 		return -EINVAL;
- 
--	ret = seq_open(file, &semundo_op);
-+	if (ret) {
-+		put_task_struct(task);
-+		return -EINVAL;
-+	}
-+
-+
-+	/* Create an undo_list if needed and if file is opened in write mode */
-+	if (!undo_list && (file->f_flags & O_WRONLY || file->f_flags & O_RDWR))
-+		ret = get_undo_list(task, &undo_list);
-+
-+	put_task_struct(task);
-+
- 	if (!ret) {
--		struct seq_file *m = file->private_data;
--		m->private = undo_list;
--		return 0;
-+		ret = seq_open(file, &semundo_op);
-+		if (!ret) {
-+			struct seq_file *m = file->private_data;
-+			m->private = undo_list;
-+			return 0;
-+		}
- 	}
- 
- 	if (undo_list && atomic_dec_and_test(&undo_list->refcnt))
-@@ -1617,6 +1633,209 @@ static int semundo_open(struct inode *in
- 	return ret;
+@@ -1017,8 +1017,9 @@ asmlinkage long sys_semctl (int semid, i
  }
  
-+/* Skip all spaces at the beginning of the buffer */
-+static inline int skip_space(const char __user **buf, size_t *len)
-+{
-+	char c = 0;
-+	while (*len) {
-+		if (get_user(c, *buf))
-+			return -EFAULT;
-+		if (c != '\t' && c != ' ')
-+			break;
-+		--*len;
-+		++*buf;
-+	}
-+	return c;
-+}
-+
-+/* Retrieve the first numerical value contained in the string.
-+ * Note: The value is supposed to be a 32-bit integer.
-+ */
-+static inline int get_next_value(const char __user **buf, size_t *len, int *val)
-+{
-+#define BUFLEN 11
-+	int err, neg = 0, left;
-+	char s[BUFLEN], *p;
-+
-+	err = skip_space(buf, len);
-+	if (err < 0)
-+		return err;
-+	if (!*len)
-+		return INT_MAX;
-+	if (err == '\n') {
-+		++*buf;
-+		--*len;
-+		return INT_MAX;
-+	}
-+	if (err == '-') {
-+		++*buf;
-+		--*len;
-+		neg = 1;
-+	}
-+
-+	left = *len;
-+	if (left > sizeof(s) - 1)
-+		left = sizeof(s) - 1;
-+	if (copy_from_user(s, *buf, left))
-+		return -EFAULT;
-+
-+	s[left] = 0;
-+	p = s;
-+	if (*p < '0' || *p > '9')
-+		return -EINVAL;
-+
-+	*val = simple_strtoul(p, &p, 0);
-+	if (neg)
-+		*val = -(*val);
-+
-+	left = p-s;
-+	(*len) -= left;
-+	(*buf) += left;
-+
-+	return 0;
-+#undef BUFLEN
-+}
-+
-+/* semundo_readline: read a line of /proc/<PID>/semundo file
-+ * Return the number of value read or an errcode
-+ */
-+static inline int semundo_readline(const char __user **buf, size_t *left,
-+				   int *id,  short *array, int array_len)
-+{
-+	int i, val, err;
-+
-+	/* Read semid */
-+	err = get_next_value(buf, left, id);
-+	if (err)
-+		return err;
-+
-+	/* Read all (semundo-) values of a full line */
-+	for (i = 0; ; i++) {
-+
-+		err = get_next_value(buf, left, &val);
-+		if (err < 0)
-+			return err;
-+		/* reach end of line or end of buffer */
-+		if (err == INT_MAX)
-+			break;
-+		/* Return an error if we get more values then expected */
-+		if (i < array_len)
-+			array[i] = val;
-+		else
-+			return -EINVAL;
-+	}
-+	return i;
-+}
-+
-+/* semundo_update: set or update the undo values of the given undo_list
-+ * for a given semaphore id.
-+ */
-+static inline int semundo_update(struct sem_undo_list *undo_list, int id,
-+				 short array[], int size)
-+{
-+	struct sem_undo *un;
-+	struct sem_array *sma;
-+	struct ipc_namespace *ns = undo_list->ns;
-+
-+retry_undo:
-+	un = find_undo(undo_list, id);
-+	if (IS_ERR(un))
-+		return PTR_ERR(un);
-+
-+	/* lookup the sem_array */
-+	sma = sem_lock(ns, id);
-+	if (IS_ERR(sma))
-+		return PTR_ERR(sma);
-+
-+	/*
-+	 * semid identifiers are not unique - find_undo may have
-+	 * allocated an undo structure, it was invalidated by an RMID
-+	 * and now a new array which received the same id.
-+	 * Check and retry.
-+	 */
-+	if (un->semid == -1) {
-+		sem_unlock(sma);
-+		goto retry_undo;
-+	}
-+
-+	/*
-+	 * If the number of values given does not match the number of
-+	 * semaphores in the array, consider this as an error.
-+	 */
-+	if (size != sma->sem_nsems) {
-+		sem_unlock(sma);
-+		return -EINVAL;
-+	}
-+
-+	/* update the undo values */
-+	while (--size >= 0)
-+		un->semadj[size] = array[size];
-+
-+	sem_unlock(sma);
-+	return 0;
-+}
-+
-+/*
-+ * write operation for /proc/<pid>/semundo file
+ /* If the task doesn't already have a undo_list, then allocate one
+- * here.  We guarantee there is only one thread using this undo list,
+- * and current is THE ONE
++ * here.
++ * The target task (tsk) is current in the general case, except when
++ * accessed from the procfs (ie when writting to /proc/<pid>/semundo)
+  *
+  * If this allocation and assignment succeeds, but later
+  * portions of this code fail, there is no need to free the sem_undo_list.
+@@ -1026,22 +1027,60 @@ asmlinkage long sys_semctl (int semid, i
+  * at exit time.
+  *
+  * This can block, so callers must hold no locks.
 + *
-+ * It allows to set or update the sem_undo list for this task, for the given
-+ * semaphore ID with the given 'undo' values.
-+ *
-+ * The expected format of the given string is
-+ * "semID <val1> <val2> ... <valN>"
-+ *
-+ * The semID must match an existing semaphore array and the number of
-+ * of values following the semID must match the number of semaphores in
-+ * the corresponding array.
-+ *
-+ * Multiple semID can be passed simultaneously, the newline ('\n') behaving as
-+ * a separator in this case.
-+ *
-+ * Note: passing a sem_undo list (all undo values of one semID) through multiple
-+ * write-calls is not allowed.
-+ */
-+static ssize_t semundo_write(struct file *file, const char __user *buf,
-+			     size_t count, loff_t *ppos)
-+{
-+	struct seq_file *m = file->private_data;
-+	short *array;
-+	int err, max_sem, id = 0;
-+	size_t left = count;
-+	struct sem_undo_list *undo_list = m->private;
++ * Note: task_lock is used to synchronize 1. several possible concurrent
++ * creations and 2. the free of the undo_list (done when the task using it
++ * exits). In the second case, we check the PF_EXITING flag to not create
++ * an undo_list for a task which has exited.
++ * If there already is an undo_list for this task, there is no need
++ * to held the task-lock to retrieve it, as the pointer can not change
++ * afterwards.
+  */
+-static inline int get_undo_list(struct sem_undo_list **undo_listp)
++static inline int get_undo_list(struct task_struct *tsk,
++				struct sem_undo_list **ulp)
+ {
+-	struct sem_undo_list *undo_list;
++	if (tsk->sysvsem.undo_list == NULL) {
++		struct sem_undo_list *undo_list;
+ 
+-	undo_list = current->sysvsem.undo_list;
+-	if (!undo_list) {
+-		undo_list = kzalloc(sizeof(*undo_list), GFP_KERNEL);
++		/* we must alloc a new one */
++		undo_list = kmalloc(sizeof(*undo_list), GFP_KERNEL);
+ 		if (undo_list == NULL)
+ 			return -ENOMEM;
 +
-+	/* The undo_list must have been retrieved or created
-+	   in semundo_open() */
-+	if (undo_list == NULL)
-+		return -EINVAL;
++		task_lock(tsk);
 +
-+	max_sem = undo_list->ns->sc_semmsl;
-+
-+	array = kmalloc(sizeof(short)*max_sem, GFP_KERNEL);
-+	if (array == NULL)
-+		return -ENOMEM;
-+
-+	while (left) {
-+		int nval;
-+
-+		/* Read a line */
-+		nval = semundo_readline(&buf, &left, &id, array, max_sem);
-+		if (nval < 0) {
-+			err = nval;
++		/* check again if there is an undo_list for this task */
++		if (tsk->sysvsem.undo_list) {
++			if (tsk != current)
++				atomic_inc(&tsk->sysvsem.undo_list->refcnt);
++			task_unlock(tsk);
++			kfree(undo_list);
 +			goto out;
 +		}
 +
-+		/* Update the values for the given semid */
-+		err = semundo_update(undo_list, id, array, nval);
-+		if (err)
-+			goto out;
-+	}
-+	err = count - left;
-+
+ 		spin_lock_init(&undo_list->lock);
+-		atomic_set(&undo_list->refcnt, 1);
+-		undo_list->ns = get_ipc_ns(current->nsproxy->ipc_ns);
+-		current->sysvsem.undo_list = undo_list;
++		/*
++		 * If tsk is not current (meaning that current is creating
++		 * a semundo_list for a target task through procfs), and if
++		 * it's not being exited then refcnt must be 2: the target
++		 * task tsk + current.
++		 */
++		if (tsk == current)
++			atomic_set(&undo_list->refcnt, 1);
++		else if (!(tsk->flags & PF_EXITING))
++			atomic_set(&undo_list->refcnt, 2);
++		else {
++			task_unlock(tsk);
++			kfree(undo_list);
++			return -EINVAL;
++		}
++		undo_list->ns = get_ipc_ns(tsk->nsproxy->ipc_ns);
++		undo_list->proc_list = NULL;
++		tsk->sysvsem.undo_list = undo_list;
++		task_unlock(tsk);
+ 	}
+-	*undo_listp = undo_list;
 +out:
-+	kfree(array);
-+	return err;
-+}
-+
- static int semundo_release(struct inode *inode, struct file *file)
++	*ulp = tsk->sysvsem.undo_list;
+ 	return 0;
+ }
+ 
+@@ -1065,17 +1104,12 @@ static struct sem_undo *lookup_undo(stru
+ 	return un;
+ }
+ 
+-static struct sem_undo *find_undo(struct ipc_namespace *ns, int semid)
++static struct sem_undo *find_undo(struct sem_undo_list *ulp, int semid)
  {
- 	struct seq_file *m = file->private_data;
-@@ -1631,6 +1850,7 @@ static int semundo_release(struct inode 
- const struct file_operations proc_semundo_operations = {
- 	.open		= semundo_open,
- 	.read		= seq_read,
-+	.write		= semundo_write,
- 	.llseek		= seq_lseek,
- 	.release	= semundo_release,
- };
+ 	struct sem_array *sma;
+-	struct sem_undo_list *ulp;
+ 	struct sem_undo *un, *new;
++	struct ipc_namespace *ns;
+ 	int nsems;
+-	int error;
+-
+-	error = get_undo_list(&ulp);
+-	if (error)
+-		return ERR_PTR(error);
+ 
+ 	spin_lock(&ulp->lock);
+ 	un = lookup_undo(ulp, semid);
+@@ -1083,6 +1117,8 @@ static struct sem_undo *find_undo(struct
+ 	if (likely(un!=NULL))
+ 		goto out;
+ 
++	ns = ulp->ns;
++
+ 	/* no undo structure around - allocate one. */
+ 	sma = sem_lock_check(ns, semid);
+ 	if (IS_ERR(sma))
+@@ -1133,6 +1169,7 @@ asmlinkage long sys_semtimedop(int semid
+ 	struct sem_array *sma;
+ 	struct sembuf fast_sops[SEMOPM_FAST];
+ 	struct sembuf* sops = fast_sops, *sop;
++	struct sem_undo_list *ulp;
+ 	struct sem_undo *un;
+ 	int undos = 0, alter = 0, max;
+ 	struct sem_queue queue;
+@@ -1177,9 +1214,13 @@ asmlinkage long sys_semtimedop(int semid
+ 			alter = 1;
+ 	}
+ 
++	error = get_undo_list(current, &ulp);
++	if (error)
++		goto out_free;
++
+ retry_undos:
+ 	if (undos) {
+-		un = find_undo(ns, semid);
++		un = find_undo(ulp, semid);
+ 		if (IS_ERR(un)) {
+ 			error = PTR_ERR(un);
+ 			goto out_free;
+@@ -1305,7 +1346,7 @@ int copy_semundo(unsigned long clone_fla
+ 	int error;
+ 
+ 	if (clone_flags & CLONE_SYSVSEM) {
+-		error = get_undo_list(&undo_list);
++		error = get_undo_list(current, &undo_list);
+ 		if (error)
+ 			return error;
+ 		atomic_inc(&undo_list->refcnt);
+@@ -1405,10 +1446,15 @@ next_entry:
+ 	kfree(undo_list);
+ }
+ 
+-/* called from do_exit() */
++/* exit_sem: called from do_exit()
++ * task_lock is used to synchronize with get_undo_list()
++ */
+ void exit_sem(struct task_struct *tsk)
+ {
+-	struct sem_undo_list *ul = tsk->sysvsem.undo_list;
++	struct sem_undo_list *ul;
++	task_lock(tsk);
++	ul = tsk->sysvsem.undo_list;
++	task_unlock(tsk);
+ 	if (ul) {
+ 		rcu_assign_pointer(tsk->sysvsem.undo_list, NULL);
+ 		synchronize_rcu();
 
 -- 
 Pierre Peiffer
