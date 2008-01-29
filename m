@@ -1,11 +1,11 @@
 From: pierre.peiffer-6ktuUTfB/bM@public.gmane.org
-Subject: [PATCH 2.6.24-rc8-mm1 11/15] (RFC) IPC: new IPC_SETALL command to
-	modify all settings
-Date: Tue, 29 Jan 2008 17:02:40 +0100
-Message-ID: <20080129162101.364025453@bull.net>
+Subject: [PATCH 2.6.24-rc8-mm1 08/15] IPC: consolidate all xxxctl_down()
+	functions
+Date: Tue, 29 Jan 2008 17:02:37 +0100
+Message-ID: <20080129161929.817008842@bull.net>
 References: <20080129160229.612172683@bull.net>
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline; filename=ipc_setall.patch
+Content-Disposition: inline; filename=ipc_introduce_ipcctl_pre_down.patch
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,268 +18,291 @@ Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 To: linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-From: Pierre Peiffer <pierre.peiffer-6ktuUTfB/bM@public.gmane.org>
+semctl_down(), msgctl_down() and shmctl_down() are used to handle the same
+set of commands for each kind of IPC. They all start to do the same job (they
+retrieve the ipc and do some permission checks) before handling the commands
+on their own.
 
-This patch adds a new IPC_SETALL command to the System V IPCs set of commands,
-which allows to change all the settings of an IPC
-
-It works exactly the same way as the IPC_SET command, except that it
-additionally changes all the times and the pids values
+This patch proposes to consolidate this by moving these same pieces of code
+into one common function called ipcctl_pre_down().
+It simplifies a little these xxxctl_down() functions and increases a little
+the maintainability.
 
 Signed-off-by: Pierre Peiffer <pierre.peiffer-6ktuUTfB/bM@public.gmane.org>
 Acked-by: Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 ---
+ ipc/msg.c  |   48 +++++-------------------------------------------
+ ipc/sem.c  |   42 ++++--------------------------------------
+ ipc/shm.c  |   42 ++++--------------------------------------
+ ipc/util.c |   51 +++++++++++++++++++++++++++++++++++++++++++++++++++
+ ipc/util.h |    2 ++
+ 5 files changed, 66 insertions(+), 119 deletions(-)
 
- include/linux/ipc.h      |    1 +
- ipc/compat.c             |    3 +++
- ipc/msg.c                |   15 +++++++++++++--
- ipc/sem.c                |   10 +++++++++-
- ipc/shm.c                |   13 ++++++++++++-
- ipc/util.c               |    7 ++++++-
- security/selinux/hooks.c |    3 +++
- 7 files changed, 47 insertions(+), 5 deletions(-)
-
-Index: b/include/linux/ipc.h
-===================================================================
---- a/include/linux/ipc.h
-+++ b/include/linux/ipc.h
-@@ -40,6 +40,7 @@ struct ipc_perm
- #define IPC_STAT   2     /* get ipc_perm options */
- #define IPC_INFO   3     /* see ipcs */
- #define IPC_SETID  4     /* set ipc ID */
-+#define IPC_SETALL 5     /* set all parameters */
- 
- /*
-  * Version flags for semctl, msgctl, and shmctl commands
-Index: b/ipc/compat.c
-===================================================================
---- a/ipc/compat.c
-+++ b/ipc/compat.c
-@@ -282,6 +282,7 @@ long compat_sys_semctl(int first, int se
- 			err = -EFAULT;
- 		break;
- 
-+	case IPC_SETALL:
- 	case IPC_SET:
- 		if (version == IPC_64) {
- 			err = get_compat_semid64_ds(&s64, compat_ptr(pad));
-@@ -431,6 +432,7 @@ long compat_sys_msgctl(int first, int se
- 		err = sys_msgctl(first, second, uptr);
- 		break;
- 
-+	case IPC_SETALL:
- 	case IPC_SET:
- 		if (version == IPC_64) {
- 			err = get_compat_msqid64(&m64, uptr);
-@@ -621,6 +623,7 @@ long compat_sys_shmctl(int first, int se
- 		break;
- 
- 
-+	case IPC_SETALL:
- 	case IPC_SET:
- 		if (version == IPC_64) {
- 			err = get_compat_shmid64_ds(&s64, uptr);
-Index: b/ipc/msg.c
-===================================================================
---- a/ipc/msg.c
-+++ b/ipc/msg.c
-@@ -426,7 +426,7 @@ static int msgctl_down(struct ipc_namesp
- 	struct msg_queue *msq;
- 	int err;
- 
--	if (cmd == IPC_SET) {
-+	if (cmd == IPC_SET || cmd == IPC_SETALL) {
- 		if (copy_msqid_from_user(&msqid64, buf, version))
- 			return -EFAULT;
- 	}
-@@ -447,6 +447,7 @@ static int msgctl_down(struct ipc_namesp
- 		freeque(ns, ipcp);
- 		goto out_up;
- 	case IPC_SET:
-+	case IPC_SETALL:
- 		if (msqid64.msg_qbytes > ns->msg_ctlmnb &&
- 		    !capable(CAP_SYS_RESOURCE)) {
- 			err = -EPERM;
-@@ -456,7 +457,14 @@ static int msgctl_down(struct ipc_namesp
- 		msq->q_qbytes = msqid64.msg_qbytes;
- 
- 		ipc_update_perm(&msqid64.msg_perm, ipcp);
--		msq->q_ctime = get_seconds();
-+		if (cmd == IPC_SETALL) {
-+			msq->q_stime = msqid64.msg_stime;
-+			msq->q_rtime = msqid64.msg_rtime;
-+			msq->q_ctime = msqid64.msg_ctime;
-+			msq->q_lspid = msqid64.msg_lspid;
-+			msq->q_lrpid = msqid64.msg_lrpid;
-+		} else
-+			msq->q_ctime = get_seconds();
- 		/* sleeping receivers might be excluded by
- 		 * stricter permissions.
- 		 */
-@@ -507,6 +515,8 @@ asmlinkage long sys_msgctl(int msqid, in
- 		return -EINVAL;
- 
- 	version = ipc_parse_version(&cmd);
-+	if (version < 0)
-+		return -EINVAL;
- 	ns = current->nsproxy->ipc_ns;
- 
- 	switch (cmd) {
-@@ -594,6 +604,7 @@ asmlinkage long sys_msgctl(int msqid, in
- 		return success_return;
- 	}
- 	case IPC_SET:
-+	case IPC_SETALL:
- 	case IPC_RMID:
- 		err = msgctl_down(ns, msqid, cmd, buf, version);
- 		return err;
 Index: b/ipc/sem.c
 ===================================================================
 --- a/ipc/sem.c
 +++ b/ipc/sem.c
-@@ -913,7 +913,7 @@ static int semctl_down(struct ipc_namesp
- 	struct semid64_ds semid64;
- 	struct kern_ipc_perm *ipcp;
+@@ -142,21 +142,6 @@ void __init sem_init (void)
+ }
  
--	if(cmd == IPC_SET) {
-+	if (cmd == IPC_SET || cmd == IPC_SETALL) {
+ /*
+- * This routine is called in the paths where the rw_mutex is held to protect
+- * access to the idr tree.
+- */
+-static inline struct sem_array *sem_lock_check_down(struct ipc_namespace *ns,
+-						int id)
+-{
+-	struct kern_ipc_perm *ipcp = ipc_lock_check_down(&sem_ids(ns), id);
+-
+-	if (IS_ERR(ipcp))
+-		return (struct sem_array *)ipcp;
+-
+-	return container_of(ipcp, struct sem_array, sem_perm);
+-}
+-
+-/*
+  * sem_lock_(check_) routines are called in the paths where the rw_mutex
+  * is not held.
+  */
+@@ -880,31 +865,12 @@ static int semctl_down(struct ipc_namesp
  		if (copy_semid_from_user(&semid64, arg.buf, version))
  			return -EFAULT;
  	}
-@@ -936,6 +936,11 @@ static int semctl_down(struct ipc_namesp
- 		ipc_update_perm(&semid64.sem_perm, ipcp);
- 		sma->sem_ctime = get_seconds();
- 		break;
-+	case IPC_SETALL:
-+		ipc_update_perm(&semid64.sem_perm, ipcp);
-+		sma->sem_ctime = semid64.sem_ctime;
-+		sma->sem_otime = semid64.sem_otime;
-+		break;
- 	case IPC_SETID:
- 		err = sem_chid_nolock(ns, sma, (int)arg.val);
- 		break;
-@@ -978,6 +983,8 @@ asmlinkage long sys_semctl (int semid, i
- 		return -EINVAL;
+-	down_write(&sem_ids(ns).rw_mutex);
+-	sma = sem_lock_check_down(ns, semid);
+-	if (IS_ERR(sma)) {
+-		err = PTR_ERR(sma);
+-		goto out_up;
+-	}
+-
+-	ipcp = &sma->sem_perm;
  
- 	version = ipc_parse_version(&cmd);
-+	if (version < 0)
-+		return -EINVAL;
- 	ns = current->nsproxy->ipc_ns;
- 
- 	switch(cmd) {
-@@ -998,6 +1005,7 @@ asmlinkage long sys_semctl (int semid, i
- 		return err;
- 	case IPC_RMID:
- 	case IPC_SET:
-+	case IPC_SETALL:
- 		err = semctl_down(ns, semid, cmd, version, arg);
- 		return err;
- 	case IPC_SETID:
-Index: b/ipc/shm.c
-===================================================================
---- a/ipc/shm.c
-+++ b/ipc/shm.c
-@@ -658,7 +658,7 @@ static int shmctl_down(struct ipc_namesp
- 	struct shmid_kernel *shp;
- 	int err;
+-	err = audit_ipc_obj(ipcp);
+-	if (err)
+-		goto out_unlock;
++	ipcp = ipcctl_pre_down(&sem_ids(ns), semid, cmd, &semid64.sem_perm, 0);
++	if (IS_ERR(ipcp))
++		return PTR_ERR(ipcp);
  
 -	if (cmd == IPC_SET) {
-+	if (cmd == IPC_SET || cmd == IPC_SETALL) {
- 		if (copy_shmid_from_user(&shmid64, buf, version))
- 			return -EFAULT;
- 	}
-@@ -680,6 +680,14 @@ static int shmctl_down(struct ipc_namesp
- 		ipc_update_perm(&shmid64.shm_perm, ipcp);
- 		shp->shm_ctim = get_seconds();
- 		break;
-+	case IPC_SETALL:
-+		ipc_update_perm(&shmid64.shm_perm, ipcp);
-+		shp->shm_atim = shmid64.shm_atime;
-+		shp->shm_dtim = shmid64.shm_dtime;
-+		shp->shm_ctim = shmid64.shm_ctime;
-+		shp->shm_cprid = shmid64.shm_cpid;
-+		shp->shm_lprid = shmid64.shm_lpid;
-+		break;
- 	case IPC_SETID:
- 		err = shm_chid_nolock(ns, shp, (int)(long)buf);
- 		break;
-@@ -723,6 +731,8 @@ asmlinkage long sys_shmctl(int shmid, in
- 	}
+-		err = audit_ipc_set_perm(0, semid64.sem_perm.uid,
+-					 semid64.sem_perm.gid,
+-					 semid64.sem_perm.mode);
+-		if (err)
+-			goto out_unlock;
+-	}
+-	if (current->euid != ipcp->cuid && 
+-	    current->euid != ipcp->uid && !capable(CAP_SYS_ADMIN)) {
+-	    	err=-EPERM;
+-		goto out_unlock;
+-	}
++	sma = container_of(ipcp, struct sem_array, sem_perm);
  
- 	version = ipc_parse_version(&cmd);
-+	if (version < 0)
-+		return -EINVAL;
- 	ns = current->nsproxy->ipc_ns;
- 
- 	switch (cmd) { /* replace with proc interface ? */
-@@ -870,6 +880,7 @@ asmlinkage long sys_shmctl(int shmid, in
- 	}
- 	case IPC_RMID:
- 	case IPC_SET:
-+	case IPC_SETALL:
- 		err = shmctl_down(ns, shmid, cmd, buf, version);
- 		return err;
- 	case IPC_SETID:
+ 	err = security_sem_semctl(sma, cmd);
+ 	if (err)
 Index: b/ipc/util.c
 ===================================================================
 --- a/ipc/util.c
 +++ b/ipc/util.c
-@@ -855,7 +855,7 @@ struct kern_ipc_perm *ipcctl_pre_down(st
- 	if (err)
- 		goto out_unlock;
- 
--	if (cmd == IPC_SET) {
-+	if (cmd == IPC_SET || cmd == IPC_SETALL) {
- 		err = audit_ipc_set_perm(extrat_perm, perm->uid,
- 					 perm->gid, perm->mode);
- 		if (err)
-@@ -883,6 +883,8 @@ out_up:
-  *	Return IPC_64 for new style IPC and IPC_OLD for old style IPC. 
-  *	The @cmd value is turned from an encoding command and version into
-  *	just the command code.
-+ *	In case of incompatibility between the command and the style, an
-+ *	errcode is returned.
-  */
-  
- int ipc_parse_version (int *cmd)
-@@ -891,6 +893,9 @@ int ipc_parse_version (int *cmd)
- 		*cmd ^= IPC_64;
- 		return IPC_64;
- 	} else {
-+		/* don't support this command for old ipc */
-+		if (*cmd == IPC_SETALL)
-+			return -EINVAL;
- 		return IPC_OLD;
- 	}
+@@ -774,6 +774,57 @@ void ipc_update_perm(struct ipc64_perm *
+ 		| (in->mode & S_IRWXUGO);
  }
-Index: b/security/selinux/hooks.c
+ 
++/**
++ * ipcctl_pre_down - retrieve an ipc and check permissions for some IPC_XXX cmd
++ * @ids:  the table of ids where to look for the ipc
++ * @id:   the id of the ipc to retrieve
++ * @cmd:  the cmd to check
++ * @perm: the permission to set
++ * @extra_perm: one extra permission parameter used by msq
++ *
++ * This function does some common audit and permissions check for some IPC_XXX
++ * cmd and is called from semctl_down, shmctl_down and msgctl_down.
++ * It must be called without any lock held and
++ *  - retrieves the ipc with the given id in the given table.
++ *  - performs some audit and permission check, depending on the given cmd
++ *  - returns the ipc with both ipc and rw_mutex locks held in case of success
++ *    or an err-code without any lock held otherwise.
++ */
++struct kern_ipc_perm *ipcctl_pre_down(struct ipc_ids *ids, int id, int cmd,
++				      struct ipc64_perm *perm, int extrat_perm)
++{
++	struct kern_ipc_perm *ipcp;
++	int err;
++
++	down_write(&ids->rw_mutex);
++	ipcp = ipc_lock_check_down(ids, id);
++	if (IS_ERR(ipcp)) {
++		err = PTR_ERR(ipcp);
++		goto out_up;
++	}
++
++	err = audit_ipc_obj(ipcp);
++	if (err)
++		goto out_unlock;
++
++	if (cmd == IPC_SET) {
++		err = audit_ipc_set_perm(extrat_perm, perm->uid,
++					 perm->gid, perm->mode);
++		if (err)
++			goto out_unlock;
++	}
++	if (current->euid == ipcp->cuid ||
++	    current->euid == ipcp->uid || capable(CAP_SYS_ADMIN))
++		return ipcp;
++
++	err = -EPERM;
++out_unlock:
++	ipc_unlock(ipcp);
++out_up:
++	up_write(&ids->rw_mutex);
++	return ERR_PTR(err);
++}
++
+ #ifdef __ARCH_WANT_IPC_PARSE_VERSION
+ 
+ 
+Index: b/ipc/util.h
 ===================================================================
---- a/security/selinux/hooks.c
-+++ b/security/selinux/hooks.c
-@@ -4651,6 +4651,7 @@ static int selinux_msg_queue_msgctl(stru
- 		perms = MSGQ__GETATTR | MSGQ__ASSOCIATE;
- 		break;
- 	case IPC_SET:
-+	case IPC_SETALL:
- 	case IPC_SETID:
- 		perms = MSGQ__SETATTR;
- 		break;
-@@ -4800,6 +4801,7 @@ static int selinux_shm_shmctl(struct shm
- 		perms = SHM__GETATTR | SHM__ASSOCIATE;
- 		break;
- 	case IPC_SET:
-+	case IPC_SETALL:
- 	case IPC_SETID:
- 		perms = SHM__SETATTR;
- 		break;
-@@ -4912,6 +4914,7 @@ static int selinux_sem_semctl(struct sem
- 		perms = SEM__DESTROY;
- 		break;
- 	case IPC_SET:
-+	case IPC_SETALL:
- 	case IPC_SETID:
- 		perms = SEM__SETATTR;
- 		break;
+--- a/ipc/util.h
++++ b/ipc/util.h
+@@ -113,6 +113,8 @@ struct kern_ipc_perm *ipc_lock(struct ip
+ void kernel_to_ipc64_perm(struct kern_ipc_perm *in, struct ipc64_perm *out);
+ void ipc64_perm_to_ipc_perm(struct ipc64_perm *in, struct ipc_perm *out);
+ void ipc_update_perm(struct ipc64_perm *in, struct kern_ipc_perm *out);
++struct kern_ipc_perm *ipcctl_pre_down(struct ipc_ids *ids, int id, int cmd,
++				      struct ipc64_perm *perm, int extrat_perm);
+ 
+ #if defined(__ia64__) || defined(__x86_64__) || defined(__hppa__) || defined(__XTENSA__)
+   /* On IA-64, we always use the "64-bit version" of the IPC structures.  */ 
+Index: b/ipc/msg.c
+===================================================================
+--- a/ipc/msg.c
++++ b/ipc/msg.c
+@@ -104,21 +104,6 @@ void __init msg_init(void)
+ }
+ 
+ /*
+- * This routine is called in the paths where the rw_mutex is held to protect
+- * access to the idr tree.
+- */
+-static inline struct msg_queue *msg_lock_check_down(struct ipc_namespace *ns,
+-						int id)
+-{
+-	struct kern_ipc_perm *ipcp = ipc_lock_check_down(&msg_ids(ns), id);
+-
+-	if (IS_ERR(ipcp))
+-		return (struct msg_queue *)ipcp;
+-
+-	return container_of(ipcp, struct msg_queue, q_perm);
+-}
+-
+-/*
+  * msg_lock_(check_) routines are called in the paths where the rw_mutex
+  * is not held.
+  */
+@@ -400,35 +385,12 @@ static int msgctl_down(struct ipc_namesp
+ 			return -EFAULT;
+ 	}
+ 
+-	down_write(&msg_ids(ns).rw_mutex);
+-	msq = msg_lock_check_down(ns, msqid);
+-	if (IS_ERR(msq)) {
+-		err = PTR_ERR(msq);
+-		goto out_up;
+-	}
+-
+-	ipcp = &msq->q_perm;
+-
+-	err = audit_ipc_obj(ipcp);
+-	if (err)
+-		goto out_unlock;
+-
+-	if (cmd == IPC_SET) {
+-		err = audit_ipc_set_perm(msqid64.msg_qbytes,
+-					 msqid64.msg_perm.uid,
+-					 msqid64.msg_perm.gid,
+-					 msqid64.msg_perm.mode);
+-		if (err)
+-			goto out_unlock;
+-	}
++	ipcp = ipcctl_pre_down(&msg_ids(ns), msqid, cmd,
++			       &msqid64.msg_perm, msqid64.msg_qbytes);
++	if (IS_ERR(ipcp))
++		return PTR_ERR(ipcp);
+ 
+-	if (current->euid != ipcp->cuid &&
+-	    current->euid != ipcp->uid &&
+-	    !capable(CAP_SYS_ADMIN)) {
+-		/* We _could_ check for CAP_CHOWN above, but we don't */
+-		err = -EPERM;
+-		goto out_unlock;
+-	}
++	msq = container_of(ipcp, struct msg_queue, q_perm);
+ 
+ 	err = security_msg_queue_msgctl(msq, cmd);
+ 	if (err)
+Index: b/ipc/shm.c
+===================================================================
+--- a/ipc/shm.c
++++ b/ipc/shm.c
+@@ -127,18 +127,6 @@ static inline struct shmid_kernel *shm_l
+ 	return container_of(ipcp, struct shmid_kernel, shm_perm);
+ }
+ 
+-static inline struct shmid_kernel *shm_lock_check_down(
+-						struct ipc_namespace *ns,
+-						int id)
+-{
+-	struct kern_ipc_perm *ipcp = ipc_lock_check_down(&shm_ids(ns), id);
+-
+-	if (IS_ERR(ipcp))
+-		return (struct shmid_kernel *)ipcp;
+-
+-	return container_of(ipcp, struct shmid_kernel, shm_perm);
+-}
+-
+ /*
+  * shm_lock_(check_) routines are called in the paths where the rw_mutex
+  * is not held.
+@@ -629,33 +617,11 @@ static int shmctl_down(struct ipc_namesp
+ 			return -EFAULT;
+ 	}
+ 
+-	down_write(&shm_ids(ns).rw_mutex);
+-	shp = shm_lock_check_down(ns, shmid);
+-	if (IS_ERR(shp)) {
+-		err = PTR_ERR(shp);
+-		goto out_up;
+-	}
+-
+-	ipcp = &shp->shm_perm;
+-
+-	err = audit_ipc_obj(ipcp);
+-	if (err)
+-		goto out_unlock;
+-
+-	if (cmd == IPC_SET) {
+-		err = audit_ipc_set_perm(0, shmid64.shm_perm.uid,
+-					 shmid64.shm_perm.gid,
+-					 shmid64.shm_perm.mode);
+-		if (err)
+-			goto out_unlock;
+-	}
++	ipcp = ipcctl_pre_down(&shm_ids(ns), shmid, cmd, &shmid64.shm_perm, 0);
++	if (IS_ERR(ipcp))
++		return PTR_ERR(ipcp);
+ 
+-	if (current->euid != ipcp->uid &&
+-	    current->euid != ipcp->cuid &&
+-	    !capable(CAP_SYS_ADMIN)) {
+-		err = -EPERM;
+-		goto out_unlock;
+-	}
++	shp = container_of(ipcp, struct shmid_kernel, shm_perm);
+ 
+ 	err = security_shm_shmctl(shp, cmd);
+ 	if (err)
 
 -- 
 Pierre Peiffer
