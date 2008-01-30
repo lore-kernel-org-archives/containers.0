@@ -1,17 +1,16 @@
-From: Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: Re: [Devel] OLS paper topics
-Date: Wed, 30 Jan 2008 14:28:13 +0530
-Message-ID: <47A03C25.8030205@linux.vnet.ibm.com>
-References: <20080123195736.GA7823@sergelap.austin.ibm.com>
-	<47990BAB.4050106@openvz.org>
-	<20080124225002.GC13819@sergelap.austin.ibm.com>
-	<47A03A73.6070408@openvz.org>
-Reply-To: balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
+From: Pierre Peiffer <pierre.peiffer-6ktuUTfB/bM@public.gmane.org>
+Subject: Re: [PATCH 2.6.24-rc8-mm1 09/15] (RFC) IPC: new kernel API to change
+ an ID
+Date: Wed, 30 Jan 2008 10:52:14 +0100
+Message-ID: <47A048CE.40106@bull.net>
+References: <20080129160229.612172683@bull.net>
+	<20080129162000.454857358@bull.net>
+	<20080129210656.GB1990@martell.zuzino.mipt.ru>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset=ISO-8859-1
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <47A03A73.6070408-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+In-Reply-To: <20080129210656.GB1990-QDJVlCTZ4KWTKS93B3g+7KFoa47nwP16@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -21,96 +20,63 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Kir Kolyshkin <kir-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
-Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
+To: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Kir Kolyshkin wrote:
-> Serge E. Hallyn wrote:
->> Quoting Kir Kolyshkin (kir-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org):
->> =20
->>> Serge E. Hallyn wrote:
->>>   =20
->>>> mini-summit:
->>>>     I will submit for a 1-day mini-summit.  Some interesting
->>>>     remaining topics for the mini-summit would include device
->>>>     namespaces, ttys and syslog, and lots of checkpoint/restart.
->>>>        =20
->>> That's right, obviously the title of the mini-summit would be somethi=
-ng
->>> like "Linux Kernel Containers".
->>>    =20
+
+
+Alexey Dobriyan wrote:
+> On Tue, Jan 29, 2008 at 05:02:38PM +0100, pierre.peiffer-6ktuUTfB/bM@public.gmane.org wrote:
+>> This patch provides three new API to change the ID of an existing
+>> System V IPCs.
 >>
->> Attached is what I currently had for a proposal to send to the OLS
->> committee.  (Please feel free to edit and add to the wiki)
->>  =20
->=20
-> Some people have made a few minor changes in the version at wiki. I
-> guess no more major changes will be done. Here it is:
->=20
-> =3D=3D Topic =3D=3D
->=20
-> Namespaces, containers, cgroups, and container checkpoint/restart.
->=20
-> =3D=3D Description =3D=3D
->=20
-> Development for namespaces and cgroups is well underway in the
-> mainline kernel. To keep momentum going and keep the loosely
-> knit teams of developers well-coordinated, a physical meeting in
-> which to discuss future development plans is needed.
-> Additionally, we are at a point where crucial decisions about
-> the nature of a "container object" and about the checkpoint/restart
-> design need to be made.
->=20
-> A final set of topics will be decided upon through mailing lists
-> ahead of time, but potential topics include:
-> * Handling filesystem/namespace synchronization
-> * Handling of /proc and /sysfs within containers
-> * Additional needed namespaces (i.e. device namespace)
-> * Nature of a 'container' =E2=80=94 kernel object or userspace fiction
-> * Additional cgroups and their design
-> * How to initiate and synchronize checkpoint/restart
-> * How to enter a 'container' ?
->=20
+>> These APIs are:
+>> 	long msg_chid(struct ipc_namespace *ns, int id, int newid);
+>> 	long sem_chid(struct ipc_namespace *ns, int id, int newid);
+>> 	long shm_chid(struct ipc_namespace *ns, int id, int newid);
+>>
+>> They return 0 or an error code in case of failure.
+>>
+>> They may be useful for setting a specific ID for an IPC when preparing
+>> a restart operation.
+>>
+>> To be successful, the following rules must be respected:
+>> - the IPC exists (of course...)
+>> - the new ID must satisfy the ID computation rule.
+>> - the entry in the idr corresponding to the new ID must be free.
+> 
+>>  ipc/util.c          |   48 ++++++++++++++++++++++++++++++++++++++++++++++++
+>>  ipc/util.h          |    1 +
+>>  8 files changed, 197 insertions(+)
+> 
+> For the record, OpenVZ uses "create with predefined ID" method which
+> leads to less code. For example, change at the end is all we want from
+> ipc/util.c .
+> 
 
-Resource Management for containers?
+Yes, indeed, I saw that. The idea here is, at the end, to propose a more
+"userspace oriented" solution.
+As we can't use msgget(), etc, API to specify an ID, I think we can at least
+change it afterwards
 
-> =3D=3D Moderators =3D=3D
-> {{Out|These are just suggestions, please edit here or let us know if yo=
-u
-> do or do not want to moderate.}}
->=20
-> * Namespaces/containers: Serge Hallyn, Cedric Le Goater
-> * cgroups: Paul Menage
-> * Checkpoint/restart: Dave Hansen, Cedric Le Goater
->=20
+> Also, if ids were A and B at the moment of checkpoint, and during
+> restart they became B and A you'll get collision in both ways which you
+> techically can avoid by classic "tmp = A, A = B, B = tmp"
 
-Resource Management? - I don't mind moderating that if it happens to be
-included in the summit or can we merge it with cgroups?
+In the general case, yes, you're right.
+In the case of the checkpoint/restart, this is not necessarily a problem, as we
+will probably restart an application in an empty "container"/"namespace"; Thus
+we can create all needed IPCs in an empty IPC namespace like this:
+1. create first IPC
+2. change its ID
+3. create the second IPC
+4. change its ID
+5. etc..
 
-> =3D=3D Expected Time Required =3D=3D
->=20
-> One day.
->=20
-> =3D=3D Number of Attendees =3D=3D
->=20
-> Approximately 30.
->=20
-> =3D=3D Technical Requirements =3D=3D
->=20
-> * Projector and screen
-> * Whiteboard
-> * Network access
-> * Power for laptops
-> * doughnuts and croissants for participants
-> _______________________________________________
-> Containers mailing list
-> Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-> https://lists.linux-foundation.org/mailman/listinfo/containers
+But yes, I agree that if we can directly create an IPC with the right ID, it
+would be better; may be with an IPC_CREATE command or something like that if the
+direction is to do that from userspace.
 
-
---=20
-	Warm Regards,
-	Balbir Singh
-	Linux Technology Center
-	IBM, ISTL
+-- 
+Pierre Peiffer
