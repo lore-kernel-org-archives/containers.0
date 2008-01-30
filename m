@@ -1,16 +1,15 @@
-From: Ryo Tsuruta <ryov-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
-Subject: Re: [Xen-devel] dm-band: The I/O bandwidth controller: Performance
- Report
-Date: Wed, 30 Jan 2008 12:32:02 +0900 (JST)
-Message-ID: <20080130.123202.189729685.ryov__45961.5877517082$1201664037$gmane$org@valinux.co.jp>
-References: <20080123.215350.193721890.ryov@valinux.co.jp>
-	<20080125.160720.183032233.ryov@valinux.co.jp>
-	<479ECAC9.5070709@jp.fujitsu.com>
+From: Kir Kolyshkin <kir-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+Subject: Re: [Devel] OLS paper topics
+Date: Wed, 30 Jan 2008 11:50:59 +0300
+Message-ID: <47A03A73.6070408@openvz.org>
+References: <20080123195736.GA7823@sergelap.austin.ibm.com>
+	<47990BAB.4050106@openvz.org>
+	<20080124225002.GC13819@sergelap.austin.ibm.com>
 Mime-Version: 1.0
-Content-Type: Text/Plain; charset=us-ascii
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset=UTF-8; format=flowed
+Content-Transfer-Encoding: quoted-printable
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <479ECAC9.5070709-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+In-Reply-To: <20080124225002.GC13819-6s5zFf/epYLPQpwDFJZrxKsjOiXwFzmk@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -20,48 +19,77 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: inakoshi.hiroya-+CUm20s59erQFUHtdCDX3A@public.gmane.org
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, xen-devel-GuqFBffKawuULHF6PoxzQEEOCMrvLtNR@public.gmane.org, virtualization-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, dm-devel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Hi,
+Serge E. Hallyn wrote:
+> Quoting Kir Kolyshkin (kir-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org):
+>  =20
+>> Serge E. Hallyn wrote:
+>>    =20
+>>> mini-summit:
+>>> 	I will submit for a 1-day mini-summit.  Some interesting
+>>> 	remaining topics for the mini-summit would include device
+>>> 	namespaces, ttys and syslog, and lots of checkpoint/restart.
+>>>  =20
+>>>      =20
+>> That's right, obviously the title of the mini-summit would be somethin=
+g
+>> like "Linux Kernel Containers".
+>>    =20
+>
+> Attached is what I currently had for a proposal to send to the OLS
+> committee.  (Please feel free to edit and add to the wiki)
+>  =20
 
-> you mean that you run 128 processes on each user-device pairs?  Namely,
-> I guess that
-> 
->   user1: 128 processes on sdb5,
->   user2: 128 processes on sdb5,
->   another: 128 processes on sdb5,
->   user2: 128 processes on sdb6.
+Some people have made a few minor changes in the version at wiki. I=20
+guess no more major changes will be done. Here it is:
 
-"User-device pairs" means "band groups", right?
-What I actually did is the followings:
+=3D=3D Topic =3D=3D
 
-  user1: 128 processes on sdb5,
-  user2: 128 processes on sdb5,
-  user3: 128 processes on sdb5,
-  user4: 128 processes on sdb6.
+Namespaces, containers, cgroups, and container checkpoint/restart.
 
-> The second preliminary studies might be:
-> - What if you use a different I/O size on each device (or device-user pair)?
-> - What if you use a different number of processes on each device (or
-> device-user pair)?
+=3D=3D Description =3D=3D
 
-There are other ideas of controlling bandwidth, limiting bytes-per-sec,
-latency time or something. I think it is possible to implement it if 
-a lot of people really require it. I feel there wouldn't be a single
-correct answer for this issue. Posting good ideas how it should work
-and submitting patches for it are also welcome.
+Development for namespaces and cgroups is well underway in the
+mainline kernel. To keep momentum going and keep the loosely
+knit teams of developers well-coordinated, a physical meeting in
+which to discuss future development plans is needed.
+Additionally, we are at a point where crucial decisions about
+the nature of a "container object" and about the checkpoint/restart
+design need to be made.
 
-> And my impression is that it's natural dm-band is in device-mapper,
-> separated from I/O scheduler.  Because bandwidth control and I/O
-> scheduling are two different things, it may be simpler that they are
-> implemented in different layers.
+A final set of topics will be decided upon through mailing lists
+ahead of time, but potential topics include:
+* Handling filesystem/namespace synchronization
+* Handling of /proc and /sysfs within containers
+* Additional needed namespaces (i.e. device namespace)
+* Nature of a 'container' =E2=80=94 kernel object or userspace fiction
+* Additional cgroups and their design
+* How to initiate and synchronize checkpoint/restart
+* How to enter a 'container' ?
 
-I would like to know how dm-band works on various configurations on
-various type of hardware. I'll try running dm-band on with other
-configurations. Any reports or impressions of dm-band on your machines
-are also welcome.
+=3D=3D Moderators =3D=3D
+{{Out|These are just suggestions, please edit here or let us know if you=20
+do or do not want to moderate.}}
 
-Thanks,
-Ryo Tsuruta
+* Namespaces/containers: Serge Hallyn, Cedric Le Goater
+* cgroups: Paul Menage
+* Checkpoint/restart: Dave Hansen, Cedric Le Goater
+
+=3D=3D Expected Time Required =3D=3D
+
+One day.
+
+=3D=3D Number of Attendees =3D=3D
+
+Approximately 30.
+
+=3D=3D Technical Requirements =3D=3D
+
+* Projector and screen
+* Whiteboard
+* Network access
+* Power for laptops
+* doughnuts and croissants for participants
