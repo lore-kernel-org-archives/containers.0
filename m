@@ -1,133 +1,49 @@
-From: Srivatsa Vaddagiri <vatsa@linux.vnet.ibm.com>
-Subject: [RFC] Default child of a cgroup
-Date: Thu, 31 Jan 2008 08:10:49 +0530
-Message-ID: <20080131024049.GA9544@linux.vnet.ibm.com>
-Reply-To: vatsa@linux.vnet.ibm.com
+From: Dhaval Giani <dhaval-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Subject: Re: [Devel] OLS paper topics
+Date: Thu, 31 Jan 2008 13:19:16 +0530
+Message-ID: <20080131074916.GA4621@linux.vnet.ibm.com>
+References: <20080123195736.GA7823@sergelap.austin.ibm.com>
+	<47990BAB.4050106@openvz.org>
+	<20080124225002.GC13819@sergelap.austin.ibm.com>
+	<47A03A73.6070408@openvz.org> <47A03C25.8030205@linux.vnet.ibm.com>
+	<20080130104336.GD3862@linux.vnet.ibm.com>
+	<20080130154043.GB1206@sergelap.austin.ibm.com>
+Reply-To: Dhaval Giani <dhaval-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1760739AbYAaC36@vger.kernel.org>
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-Sender: linux-kernel-owner@vger.kernel.org
-To: linux-kernel@vger.kernel.org
-Cc: a.p.zijlstra@chello.nl, Ingo Molnar <mingo@elte.hu>, menage@google.com, containers@lists.osdl.org, dhaval@linux.vnet.ibm.com, Balbir Singh <balbir@in.ibm.com>, pj@sgi.com
+In-Reply-To: <20080130154043.GB1206-6s5zFf/epYLPQpwDFJZrxKsjOiXwFzmk@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Cc: Kir Kolyshkin <kir-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>, Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Hi,
-	As we were implementing multiple-hierarchy support for CPU
-controller, we hit some oddities in its implementation, partly related
-to current cgroups implementation. Peter and I have been debating on the 
-exact solution and I thought of bringing that discussion to lkml.
+On Wed, Jan 30, 2008 at 09:40:43AM -0600, Serge E. Hallyn wrote:
+> Quoting Dhaval Giani (dhaval-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org):
+> 
+> Ok I figured resource mgmt and cgroups would be combined, but I'm fine
+> splitting them.  So can I do:
+> 
+> cgroups: Paul Menage, Balbir
+> Resource Management: dhaval, someone from openvz (Pavel?)
+> 
+> ?
 
-Consider the cgroup filesystem structure for managing cpu resource.
+Fine with me.
 
-	# mount -t cgroup -ocpu,cpuacct none /cgroup
-	# mkdir /cgroup/A
-	# mkdir /cgroup/B
-	# mkdir /cgroup/A/a1
-
-will result in:
-
-	/cgroup
-	   |------<tasks>
-	   |------<cpuacct.usage>
- 	   |------<cpu.shares>
-	   |
-	   |----[A]
-	   |     |----<tasks>
-	   |     |----<cpuacct.usage>
-	   |     |----<cpu.shares>
-	   |     |
-	   |     |---[a1]
-	   |           |----<tasks>
-	   |   	       |----<cpuacct.usage>
-	   |           |----<cpu.shares>
-	   |           |
-	   |
-	   |----[B]
-	   |     |----<tasks>
-	   |     |----<cpuacct.usage>
-	   |     |----<cpu.shares>
-	   |     
-
-
-Here are some questions that arise in this picture:
-
-1. What is the relationship of the task-group in A/tasks with the
-   task-group in A/a1/tasks? In otherwords do they form siblings
-   of the same parent A?
-
-2. Somewhat related to the above question, how much resource should the 
-   task-group A/a1/tasks get in relation to A/tasks? Is it 1/2 of parent
-   A's share or 1/(1 + N) of parent A's share (where N = number of tasks
-   in A/tasks)?
-
-3. What should A/cpuacct.usage reflect? CPU usage of A/tasks? Or CPU usage
-   of all siblings put together? It can reflect only one, in which case
-   user has to manually derive the other component of the statistics.
- 
-It seems to me that tasks in A/tasks form what can be called the
-"default" child group of A, in which case:
-
-4. Modifications to A/cpu.shares should affect the parent or its default
-   child group (A/tasks)?
-
-To avoid these ambiguities, it may be good if cgroup create this
-"default child group" automatically whenever a cgroup is created?
-Something like below (not the absence of tasks file in some directories
-now):
-
-
-	/cgroup
-	   |
-	   |------<cpuacct.usage>
- 	   |------<cpu.shares>
-	   |
-  	   |---[def_child]
-	   |     |----<tasks>
-	   |     |----<cpuacct.usage>
-	   |     |----<cpu.shares>
-	   |     |
-	   |
-	   |----[A]
-	   |     |
-	   |     |----<cpuacct.usage>
-	   |     |----<cpu.shares>
-	   |     |
-	   |     |---[def_child]
-	   |     |     |----<tasks>
-	   |   	 |     |----<cpuacct.usage>
-	   |     |     |----<cpu.shares>
-	   |     |     |
-	   |     | 
-	   |     |---[a1]
-	   |           |
-	   |   	       |----<cpuacct.usage>
-	   |           |----<cpu.shares>
-	   |           |
-	   | 	       |---[def_child]
-	   |	       |       |---<tasks>
-	   |	       |       |---<cpuacct.usage>
-	   | 	       |       |---<cpu.shares>
-	   |	       |       |
-	   |
-	   |----[B]
-	   |     |
-	   |     |----<cpuacct.usage>
-	   |     |----<cpu.shares>
-	   |     | 
-	   |     |---[def_child]
-	   |     |     |----<tasks>
-	   |   	 |     |----<cpuacct.usage>
-	   |     |     |----<cpu.shares>
-	   |     |     |
-
-Note that user cannot create subdirectories under def_child with this
-scheme! I am also not sure what impact this will have on other resources
-like cpusets ..
-
-Thoughts?
-
+> 
+> thanks,
+> -serge
 
 -- 
-Regards,
-vatsa
+regards,
+Dhaval
