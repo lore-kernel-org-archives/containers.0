@@ -1,15 +1,16 @@
-From: Nadia Derbey <Nadia.Derbey-6ktuUTfB/bM@public.gmane.org>
-Subject: Re: [PATCH 2.6.24-rc8-mm1 05/15] IPC/semaphores: remove one unused
- parameter from semctl_down()
-Date: Thu, 31 Jan 2008 09:32:46 +0100
-Message-ID: <47A187AE.1000809__41251.5352866196$1201769406$gmane$org@bull.net>
+From: Pierre Peiffer <pierre.peiffer-6ktuUTfB/bM@public.gmane.org>
+Subject: Re: [PATCH 2.6.24-rc8-mm1 09/15] (RFC) IPC: new kernel API to change
+ an ID
+Date: Thu, 31 Jan 2008 10:00:55 +0100
+Message-ID: <47A18E47.5050206__11340.5698947192$1201770255$gmane$org@bull.net>
 References: <20080129160229.612172683@bull.net>
-	<20080129161758.154775218@bull.net>
+	<20080129162000.454857358@bull.net>
+	<20080129210656.GB1990@martell.zuzino.mipt.ru>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii; format=flowed
+Content-Type: text/plain; charset=ISO-8859-1
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20080129161758.154775218-6ktuUTfB/bM@public.gmane.org>
+In-Reply-To: <20080129210656.GB1990-QDJVlCTZ4KWTKS93B3g+7KFoa47nwP16@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,50 +20,64 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: pierre.peiffer-6ktuUTfB/bM@public.gmane.org
+To: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-pierre.peiffer-6ktuUTfB/bM@public.gmane.org wrote:
-> From: Pierre Peiffer <pierre.peiffer-6ktuUTfB/bM@public.gmane.org>
-> 
-> semctl_down() takes one unused parameter: semnum.
-> This patch proposes to get rid of it.
-> 
-> Signed-off-by: Pierre Peiffer <pierre.peiffer-6ktuUTfB/bM@public.gmane.org>
-> Acked-by: Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-> ---
->  ipc/sem.c |    6 +++---
->  1 file changed, 3 insertions(+), 3 deletions(-)
-> 
-> Index: b/ipc/sem.c
-> ===================================================================
-> --- a/ipc/sem.c
-> +++ b/ipc/sem.c
-> @@ -882,8 +882,8 @@ static inline unsigned long copy_semid_f
->   * to be held in write mode.
->   * NOTE: no locks must be held, the rw_mutex is taken inside this function.
->   */
-> -static int semctl_down(struct ipc_namespace *ns, int semid, int semnum,
-> -		int cmd, int version, union semun arg)
-> +static int semctl_down(struct ipc_namespace *ns, int semid,
-> +		       int cmd, int version, union semun arg)
->  {
->  	struct sem_array *sma;
->  	int err;
-> @@ -974,7 +974,7 @@ asmlinkage long sys_semctl (int semid, i
->  		return err;
->  	case IPC_RMID:
->  	case IPC_SET:
-> -		err = semctl_down(ns,semid,semnum,cmd,version,arg);
-> +		err = semctl_down(ns, semid, cmd, version, arg);
->  		return err;
->  	default:
->  		return -EINVAL;
-> 
+Hi again,
 
-Looks like semnum is only used in semctl_main(). Why not removing it 
-from semctl_nolock() too?
+	Thinking more about this, I think I must clarify why I choose this way.
+In fact, the idea of these patches is to provide the missing user APIs (or
+extend the existing ones) that allow to set or update _all_ properties of all
+IPCs, as needed in the case of the checkpoint/restart of an application (the
+current user API does not allow to specify an ID for a created IPC, for
+example). And this, without changing the existing API of course.
 
-Regards,
-Nadia
+	And msgget(), semget() and shmget() does not have any parameter we can use to
+specify an ID.
+	That's why I've decided to not change these routines and add a new control
+command, IP_SETID, with which we can can change the ID of an IPC. (that looks to
+me more straightforward and logical)
+
+	Now, this patch is, in fact, only a preparation for the patch 10/15 which
+really complete the user API by adding this IPC_SETID command.
+
+(... continuing below ...)
+
+Alexey Dobriyan wrote:
+> On Tue, Jan 29, 2008 at 05:02:38PM +0100, pierre.peiffer-6ktuUTfB/bM@public.gmane.org wrote:
+>> This patch provides three new API to change the ID of an existing
+>> System V IPCs.
+>>
+>> These APIs are:
+>> 	long msg_chid(struct ipc_namespace *ns, int id, int newid);
+>> 	long sem_chid(struct ipc_namespace *ns, int id, int newid);
+>> 	long shm_chid(struct ipc_namespace *ns, int id, int newid);
+>>
+>> They return 0 or an error code in case of failure.
+>>
+>> They may be useful for setting a specific ID for an IPC when preparing
+>> a restart operation.
+>>
+>> To be successful, the following rules must be respected:
+>> - the IPC exists (of course...)
+>> - the new ID must satisfy the ID computation rule.
+>> - the entry in the idr corresponding to the new ID must be free.
+> 
+>>  ipc/util.c          |   48 ++++++++++++++++++++++++++++++++++++++++++++++++
+>>  ipc/util.h          |    1 +
+>>  8 files changed, 197 insertions(+)
+> 
+> For the record, OpenVZ uses "create with predefined ID" method which
+> leads to less code. For example, change at the end is all we want from
+> ipc/util.c .
+
+And in fact, you do that from kernel space, you don't have the constraint to fit
+the existing user API.
+Again, this patch, even if it presents a new kernel API, is in fact a
+preparation for the next patch which introduces a new user API.
+
+Do you think that this could fit your need ?
+
+-- 
+Pierre
