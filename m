@@ -1,12 +1,10 @@
 From: Nadia.Derbey-6ktuUTfB/bM@public.gmane.org
-Subject: [RFC][PATCH v2 3/7] Defining the slab_memory_callback priority as a
-	constant
-Date: Thu, 31 Jan 2008 14:40:21 +0100
-Message-ID: <20080131135355.410741000@bull.net>
+Subject: [RFC][PATCH v2 5/7] Invoke the ipcns notifier chain as a work item
+Date: Thu, 31 Jan 2008 14:40:23 +0100
+Message-ID: <20080131135356.242752000@bull.net>
 References: <20080131134018.273154000@bull.net>
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline;
-	filename=ipc_slab_memory_callback_prio_to_const.patch
+Content-Disposition: inline; filename=ipc_ipcns_notification_workqueue.patch
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -20,48 +18,55 @@ To: linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, y-goto-+CUm20s59erQFUH
 Cc: linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-[PATCH 03/07]
+[PATCH 05/07]
 
-This is a trivial patch that defines the priority of slab_memory_callback in
-the callback chain as a constant.
-This is to prepare for next patch in the series.
+This patche makes the memory hotplug chain's mutex held for a shorter time:
+when memory is offlined or onlined a work item is added to the global
+workqueue.
+When the work item is run, it notifies the ipcns notifier chain with the
+IPCNS_MEMCHANGED event.
 
 Signed-off-by: Nadia Derbey <Nadia.Derbey-6ktuUTfB/bM@public.gmane.org>
 
 ---
- include/linux/memory.h |    6 ++++++
- mm/slub.c              |    2 +-
- 2 files changed, 7 insertions(+), 1 deletion(-)
+ ipc/util.c |   17 +++++++++++++++--
+ 1 file changed, 15 insertions(+), 2 deletions(-)
 
-Index: linux-2.6.24/include/linux/memory.h
+Index: linux-2.6.24/ipc/util.c
 ===================================================================
---- linux-2.6.24.orig/include/linux/memory.h	2008-01-29 16:54:38.000000000 +0100
-+++ linux-2.6.24/include/linux/memory.h	2008-01-31 10:30:37.000000000 +0100
-@@ -54,6 +54,12 @@ struct memory_notify {
- struct notifier_block;
- struct mem_section;
+--- linux-2.6.24.orig/ipc/util.c	2008-01-31 11:04:51.000000000 +0100
++++ linux-2.6.24/ipc/util.c	2008-01-31 11:41:01.000000000 +0100
+@@ -57,6 +57,14 @@ atomic_t nr_ipc_ns = ATOMIC_INIT(1);
  
-+/*
-+ * Priorities for the hotplug memory callback routines (stored in decreasing
-+ * order in the callback chain)
-+ */
-+#define SLAB_CALLBACK_PRI       1
+ #ifdef CONFIG_MEMORY_HOTPLUG
+ 
++static void ipc_memory_notifier(struct work_struct *work)
++{
++	ipcns_notify(IPCNS_MEMCHANGED);
++}
 +
- #ifndef CONFIG_MEMORY_HOTPLUG_SPARSE
- static inline int memory_dev_init(void)
++static DECLARE_WORK(ipc_memory_wq, ipc_memory_notifier);
++
++
+ static int ipc_memory_callback(struct notifier_block *self,
+ 				unsigned long action, void *arg)
  {
-Index: linux-2.6.24/mm/slub.c
-===================================================================
---- linux-2.6.24.orig/mm/slub.c	2008-01-29 16:54:49.000000000 +0100
-+++ linux-2.6.24/mm/slub.c	2008-01-31 10:31:34.000000000 +0100
-@@ -2816,7 +2816,7 @@ void __init kmem_cache_init(void)
- 	kmalloc_caches[0].refcount = -1;
- 	caches++;
- 
--	hotplug_memory_notifier(slab_memory_callback, 1);
-+	hotplug_memory_notifier(slab_memory_callback, SLAB_CALLBACK_PRI);
- #endif
- 
- 	/* Able to allocate the per node structures */
+@@ -65,9 +73,14 @@ static int ipc_memory_callback(struct no
+ 	case MEM_OFFLINE:   /* or offline: it's time to recompute msgmni */
+ 		/*
+ 		 * This is done by invoking the ipcns notifier chain with the
+-		 * IPC_MEMCHANGED event
++		 * IPC_MEMCHANGED event.
++		 * In order not to keep the lock on the hotplug memory chain
++		 * for too long, queue a work item that will, when waken up,
++		 * activate the ipcns notification chain.
++		 * No need to keep several ipc work items on the queue.
+ 		 */
+-		ipcns_notify(IPCNS_MEMCHANGED);
++		if (!work_pending(&ipc_memory_wq))
++			schedule_work(&ipc_memory_wq);
+ 		break;
+ 	case MEM_GOING_ONLINE:
+ 	case MEM_GOING_OFFLINE:
 
 --
