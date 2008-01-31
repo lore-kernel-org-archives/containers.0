@@ -1,19 +1,15 @@
-From: Dhaval Giani <dhaval-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: Re: [Devel] OLS paper topics
-Date: Thu, 31 Jan 2008 13:19:16 +0530
-Message-ID: <20080131074916.GA4621@linux.vnet.ibm.com>
-References: <20080123195736.GA7823@sergelap.austin.ibm.com>
-	<47990BAB.4050106@openvz.org>
-	<20080124225002.GC13819@sergelap.austin.ibm.com>
-	<47A03A73.6070408@openvz.org> <47A03C25.8030205@linux.vnet.ibm.com>
-	<20080130104336.GD3862@linux.vnet.ibm.com>
-	<20080130154043.GB1206@sergelap.austin.ibm.com>
-Reply-To: Dhaval Giani <dhaval-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+From: Nadia Derbey <Nadia.Derbey-6ktuUTfB/bM@public.gmane.org>
+Subject: Re: [PATCH 2.6.24-rc8-mm1 05/15] IPC/semaphores: remove one unused
+ parameter from semctl_down()
+Date: Thu, 31 Jan 2008 09:32:46 +0100
+Message-ID: <47A187AE.1000809__41251.5352866196$1201769406$gmane$org@bull.net>
+References: <20080129160229.612172683@bull.net>
+	<20080129161758.154775218@bull.net>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+Content-Type: text/plain; charset=us-ascii; format=flowed
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <20080130154043.GB1206-6s5zFf/epYLPQpwDFJZrxKsjOiXwFzmk@public.gmane.org>
+In-Reply-To: <20080129161758.154775218-6ktuUTfB/bM@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -23,27 +19,50 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Cc: Kir Kolyshkin <kir-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>, Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+To: pierre.peiffer-6ktuUTfB/bM@public.gmane.org
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Wed, Jan 30, 2008 at 09:40:43AM -0600, Serge E. Hallyn wrote:
-> Quoting Dhaval Giani (dhaval-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org):
+pierre.peiffer-6ktuUTfB/bM@public.gmane.org wrote:
+> From: Pierre Peiffer <pierre.peiffer-6ktuUTfB/bM@public.gmane.org>
 > 
-> Ok I figured resource mgmt and cgroups would be combined, but I'm fine
-> splitting them.  So can I do:
+> semctl_down() takes one unused parameter: semnum.
+> This patch proposes to get rid of it.
 > 
-> cgroups: Paul Menage, Balbir
-> Resource Management: dhaval, someone from openvz (Pavel?)
+> Signed-off-by: Pierre Peiffer <pierre.peiffer-6ktuUTfB/bM@public.gmane.org>
+> Acked-by: Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+> ---
+>  ipc/sem.c |    6 +++---
+>  1 file changed, 3 insertions(+), 3 deletions(-)
 > 
-> ?
+> Index: b/ipc/sem.c
+> ===================================================================
+> --- a/ipc/sem.c
+> +++ b/ipc/sem.c
+> @@ -882,8 +882,8 @@ static inline unsigned long copy_semid_f
+>   * to be held in write mode.
+>   * NOTE: no locks must be held, the rw_mutex is taken inside this function.
+>   */
+> -static int semctl_down(struct ipc_namespace *ns, int semid, int semnum,
+> -		int cmd, int version, union semun arg)
+> +static int semctl_down(struct ipc_namespace *ns, int semid,
+> +		       int cmd, int version, union semun arg)
+>  {
+>  	struct sem_array *sma;
+>  	int err;
+> @@ -974,7 +974,7 @@ asmlinkage long sys_semctl (int semid, i
+>  		return err;
+>  	case IPC_RMID:
+>  	case IPC_SET:
+> -		err = semctl_down(ns,semid,semnum,cmd,version,arg);
+> +		err = semctl_down(ns, semid, cmd, version, arg);
+>  		return err;
+>  	default:
+>  		return -EINVAL;
+> 
 
-Fine with me.
+Looks like semnum is only used in semctl_main(). Why not removing it 
+from semctl_nolock() too?
 
-> 
-> thanks,
-> -serge
-
--- 
-regards,
-Dhaval
+Regards,
+Nadia
