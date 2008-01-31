@@ -1,212 +1,133 @@
-From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 2.6.24-rc8-mm1 12/15] (RFC) IPC/semaphores: make use of
-	RCU to free the sem_undo_list
-Date: Wed, 30 Jan 2008 15:26:50 -0600
-Message-ID: <20080130212650.GA8945__704.429930965666$1201730017$gmane$org@sergelap.austin.rr.com>
-References: <20080129160229.612172683@bull.net>
-	<20080129162131.743970100@bull.net>
+From: Srivatsa Vaddagiri <vatsa@linux.vnet.ibm.com>
+Subject: [RFC] Default child of a cgroup
+Date: Thu, 31 Jan 2008 08:10:49 +0530
+Message-ID: <20080131024049.GA9544@linux.vnet.ibm.com>
+Reply-To: vatsa@linux.vnet.ibm.com
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1760739AbYAaC36@vger.kernel.org>
 Content-Disposition: inline
-In-Reply-To: <20080129162131.743970100-6ktuUTfB/bM@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: pierre.peiffer-6ktuUTfB/bM@public.gmane.org
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Sender: linux-kernel-owner@vger.kernel.org
+To: linux-kernel@vger.kernel.org
+Cc: a.p.zijlstra@chello.nl, Ingo Molnar <mingo@elte.hu>, menage@google.com, containers@lists.osdl.org, dhaval@linux.vnet.ibm.com, Balbir Singh <balbir@in.ibm.com>, pj@sgi.com
 List-Id: containers.vger.kernel.org
 
-Quoting pierre.peiffer-6ktuUTfB/bM@public.gmane.org (pierre.peiffer-6ktuUTfB/bM@public.gmane.org):
-> From: Pierre Peiffer <pierre.peiffer-6ktuUTfB/bM@public.gmane.org>
-> 
-> Today, the sem_undo_list is freed when the last task using it exits.
-> There is no mechanism in place, that allows a safe concurrent access to
-> the sem_undo_list of a target task and protects efficiently against a
-> task-exit.
-> 
-> That is okay for now as we don't need this.
-> 
-> As I would like to provide a /proc interface to access this data, I need
-> such a safe access, without blocking the target task if possible. 
-> 
-> This patch proposes to introduce the use of RCU to delay the real free of
-> these sem_undo_list structures. They can then be accessed in a safe manner
-> by any tasks inside read critical section, this way:
-> 
-> 	struct sem_undo_list *undo_list;
-> 	int ret;
-> 	...
-> 	rcu_read_lock();
-> 	undo_list = rcu_dereference(task->sysvsem.undo_list);
-> 	if (undo_list)
-> 		ret = atomic_inc_not_zero(&undo_list->refcnt);
-> 	rcu_read_unlock();
-> 	...
-> 	if (undo_list && ret) {
-> 		/* section where undo_list can be used quietly */
-> 		...
-> 	}
-> 	...
+Hi,
+	As we were implementing multiple-hierarchy support for CPU
+controller, we hit some oddities in its implementation, partly related
+to current cgroups implementation. Peter and I have been debating on the 
+exact solution and I thought of bringing that discussion to lkml.
 
-And of course then
+Consider the cgroup filesystem structure for managing cpu resource.
 
-	if (atomic_dec_and_test(&undo_list->refcnt))
-		free_semundo_list(undo_list);
+	# mount -t cgroup -ocpu,cpuacct none /cgroup
+	# mkdir /cgroup/A
+	# mkdir /cgroup/B
+	# mkdir /cgroup/A/a1
 
-by that task.
+will result in:
 
-> 
-> Signed-off-by: Pierre Peiffer <pierre.peiffer-6ktuUTfB/bM@public.gmane.org>
+	/cgroup
+	   |------<tasks>
+	   |------<cpuacct.usage>
+ 	   |------<cpu.shares>
+	   |
+	   |----[A]
+	   |     |----<tasks>
+	   |     |----<cpuacct.usage>
+	   |     |----<cpu.shares>
+	   |     |
+	   |     |---[a1]
+	   |           |----<tasks>
+	   |   	       |----<cpuacct.usage>
+	   |           |----<cpu.shares>
+	   |           |
+	   |
+	   |----[B]
+	   |     |----<tasks>
+	   |     |----<cpuacct.usage>
+	   |     |----<cpu.shares>
+	   |     
 
-Looks correct in terms of locking/refcounting.
 
-Signed-off-by: Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Here are some questions that arise in this picture:
 
-thanks,
--serge
+1. What is the relationship of the task-group in A/tasks with the
+   task-group in A/a1/tasks? In otherwords do they form siblings
+   of the same parent A?
 
-> ---
-> 
->  include/linux/sem.h |    7 +++++--
->  ipc/sem.c           |   42 ++++++++++++++++++++++++++----------------
->  2 files changed, 31 insertions(+), 18 deletions(-)
-> 
-> Index: b/include/linux/sem.h
-> ===================================================================
-> --- a/include/linux/sem.h
-> +++ b/include/linux/sem.h
-> @@ -115,7 +115,8 @@ struct sem_queue {
->  };
-> 
->  /* Each task has a list of undo requests. They are executed automatically
-> - * when the process exits.
-> + * when the last refcnt of sem_undo_list is released (ie when the process exits
-> + * in the general case)
->   */
->  struct sem_undo {
->  	struct sem_undo *	proc_next;	/* next entry on this process */
-> @@ -125,12 +126,14 @@ struct sem_undo {
->  };
-> 
->  /* sem_undo_list controls shared access to the list of sem_undo structures
-> - * that may be shared among all a CLONE_SYSVSEM task group.
-> + * that may be shared among all a CLONE_SYSVSEM task group or with an external
-> + * process which changes the list through procfs.
->   */ 
->  struct sem_undo_list {
->  	atomic_t	refcnt;
->  	spinlock_t	lock;
->  	struct sem_undo	*proc_list;
-> +	struct ipc_namespace *ns;
->  };
-> 
->  struct sysv_sem {
-> Index: b/ipc/sem.c
-> ===================================================================
-> --- a/ipc/sem.c
-> +++ b/ipc/sem.c
-> @@ -1038,6 +1038,7 @@ static inline int get_undo_list(struct s
->  			return -ENOMEM;
->  		spin_lock_init(&undo_list->lock);
->  		atomic_set(&undo_list->refcnt, 1);
-> +		undo_list->ns = get_ipc_ns(current->nsproxy->ipc_ns);
->  		current->sysvsem.undo_list = undo_list;
->  	}
->  	*undo_listp = undo_list;
-> @@ -1316,7 +1317,8 @@ int copy_semundo(unsigned long clone_fla
->  }
-> 
->  /*
-> - * add semadj values to semaphores, free undo structures.
-> + * add semadj values to semaphores, free undo structures, if there is no
-> + * more user.
->   * undo structures are not freed when semaphore arrays are destroyed
->   * so some of them may be out of date.
->   * IMPLEMENTATION NOTE: There is some confusion over whether the
-> @@ -1326,23 +1328,17 @@ int copy_semundo(unsigned long clone_fla
->   * The original implementation attempted to do this (queue and wait).
->   * The current implementation does not do so. The POSIX standard
->   * and SVID should be consulted to determine what behavior is mandated.
-> + *
-> + * Note:
-> + * A concurrent task is only allowed to access and go through the list
-> + * of sem_undo if it successfully grabs a refcnt.
->   */
-> -void exit_sem(struct task_struct *tsk)
-> +static void free_semundo_list(struct sem_undo_list *undo_list)
->  {
-> -	struct sem_undo_list *undo_list;
->  	struct sem_undo *u, **up;
-> -	struct ipc_namespace *ns;
-> 
-> -	undo_list = tsk->sysvsem.undo_list;
-> -	if (!undo_list)
-> -		return;
-> -
-> -	if (!atomic_dec_and_test(&undo_list->refcnt))
-> -		return;
-> -
-> -	ns = tsk->nsproxy->ipc_ns;
-> -	/* There's no need to hold the semundo list lock, as current
-> -         * is the last task exiting for this undo list.
-> +	/* There's no need to hold the semundo list lock, as there are
-> +	 * no more tasks or possible users for this undo list.
->  	 */
->  	for (up = &undo_list->proc_list; (u = *up); *up = u->proc_next, kfree(u)) {
->  		struct sem_array *sma;
-> @@ -1354,7 +1350,7 @@ void exit_sem(struct task_struct *tsk)
-> 
->  		if(semid == -1)
->  			continue;
-> -		sma = sem_lock(ns, semid);
-> +		sma = sem_lock(undo_list->ns, semid);
->  		if (IS_ERR(sma))
->  			continue;
-> 
-> @@ -1368,7 +1364,8 @@ void exit_sem(struct task_struct *tsk)
->  			if (u == un)
->  				goto found;
->  		}
-> -		printk ("exit_sem undo list error id=%d\n", u->semid);
-> +		printk(KERN_ERR "free_semundo_list error id=%d\n",
-> +		       u->semid);
->  		goto next_entry;
->  found:
->  		*unp = un->id_next;
-> @@ -1404,9 +1401,22 @@ found:
->  next_entry:
->  		sem_unlock(sma);
->  	}
-> +	put_ipc_ns(undo_list->ns);
->  	kfree(undo_list);
->  }
-> 
-> +/* called from do_exit() */
-> +void exit_sem(struct task_struct *tsk)
-> +{
-> +	struct sem_undo_list *ul = tsk->sysvsem.undo_list;
-> +	if (ul) {
-> +		rcu_assign_pointer(tsk->sysvsem.undo_list, NULL);
-> +		synchronize_rcu();
-> +		if (atomic_dec_and_test(&ul->refcnt))
-> +			free_semundo_list(ul);
-> +	}
-> +}
-> +
->  #ifdef CONFIG_PROC_FS
->  static int sysvipc_sem_proc_show(struct seq_file *s, void *it)
->  {
-> 
-> -- 
-> Pierre Peiffer
-> _______________________________________________
-> Containers mailing list
-> Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-> https://lists.linux-foundation.org/mailman/listinfo/containers
+2. Somewhat related to the above question, how much resource should the 
+   task-group A/a1/tasks get in relation to A/tasks? Is it 1/2 of parent
+   A's share or 1/(1 + N) of parent A's share (where N = number of tasks
+   in A/tasks)?
+
+3. What should A/cpuacct.usage reflect? CPU usage of A/tasks? Or CPU usage
+   of all siblings put together? It can reflect only one, in which case
+   user has to manually derive the other component of the statistics.
+ 
+It seems to me that tasks in A/tasks form what can be called the
+"default" child group of A, in which case:
+
+4. Modifications to A/cpu.shares should affect the parent or its default
+   child group (A/tasks)?
+
+To avoid these ambiguities, it may be good if cgroup create this
+"default child group" automatically whenever a cgroup is created?
+Something like below (not the absence of tasks file in some directories
+now):
+
+
+	/cgroup
+	   |
+	   |------<cpuacct.usage>
+ 	   |------<cpu.shares>
+	   |
+  	   |---[def_child]
+	   |     |----<tasks>
+	   |     |----<cpuacct.usage>
+	   |     |----<cpu.shares>
+	   |     |
+	   |
+	   |----[A]
+	   |     |
+	   |     |----<cpuacct.usage>
+	   |     |----<cpu.shares>
+	   |     |
+	   |     |---[def_child]
+	   |     |     |----<tasks>
+	   |   	 |     |----<cpuacct.usage>
+	   |     |     |----<cpu.shares>
+	   |     |     |
+	   |     | 
+	   |     |---[a1]
+	   |           |
+	   |   	       |----<cpuacct.usage>
+	   |           |----<cpu.shares>
+	   |           |
+	   | 	       |---[def_child]
+	   |	       |       |---<tasks>
+	   |	       |       |---<cpuacct.usage>
+	   | 	       |       |---<cpu.shares>
+	   |	       |       |
+	   |
+	   |----[B]
+	   |     |
+	   |     |----<cpuacct.usage>
+	   |     |----<cpu.shares>
+	   |     | 
+	   |     |---[def_child]
+	   |     |     |----<tasks>
+	   |   	 |     |----<cpuacct.usage>
+	   |     |     |----<cpu.shares>
+	   |     |     |
+
+Note that user cannot create subdirectories under def_child with this
+scheme! I am also not sure what impact this will have on other resources
+like cpusets ..
+
+Thoughts?
+
+
+-- 
+Regards,
+vatsa
