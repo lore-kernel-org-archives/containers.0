@@ -1,16 +1,10 @@
-From: Kirill Korotaev <dev-3ImXcnM4P+0@public.gmane.org>
-Subject: Re: [PATCH 2.6.24-rc8-mm1 09/15] (RFC) IPC: new kernel API to change
- an ID
-Date: Thu, 31 Jan 2008 16:11:26 +0300
-Message-ID: <47A1C8FE.9010700__3704.14287685907$1201785237$gmane$org@sw.ru>
-References: <20080129160229.612172683@bull.net>	<20080129162000.454857358@bull.net>	<20080129210656.GB1990@martell.zuzino.mipt.ru>
-	<47A18E47.5050206@bull.net> <47A19AC2.7040709@sw.ru>
-	<47A1B78C.7050405@bull.net>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Content-Transfer-Encoding: 7bit
+From: Nadia.Derbey-6ktuUTfB/bM@public.gmane.org
+Subject: [RFC][PATCH v2 1/7] Scaling msgmni to the amount of lowmem
+Date: Thu, 31 Jan 2008 14:40:19 +0100
+Message-ID: <20080131135354.583979000@bull.net>
+References: <20080131134018.273154000@bull.net>
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <47A1B78C.7050405-6ktuUTfB/bM@public.gmane.org>
+Content-Disposition: inline; filename=ipc_scale_msgmni_with_lowmem.patch
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -20,122 +14,119 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Pierre Peiffer <pierre.peiffer-6ktuUTfB/bM@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, y-goto-+CUm20s59erQFUHtdCDX3A@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org
+Cc: linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Pierre,
+[PATCH 01/07]
 
-my point is that after you've added interface "set IPCID", you'll need more and more for checkpointing:
-- "create/setup conntrack" (otherwise connections get dropped),
-- "set task start time" (needed for Oracle checkpointing BTW),
-- "set some statistics counters (e.g. networking or taskstats)"
-- "restore inotify"
-and so on and so forth.
+This patch computes msg_ctlmni to make it scale with the amount of lowmem.
+msg_ctlmni is now set to make the message queues occupy 1/32 of the available
+lowmem.
 
-Exporting such intimate kernel interfaces to user space doesn't look sane.
-Exactly from compatibility and maintenance POV. You'll be burden with supporting them for a long time.
-Remember recent story with SLUB and /proc/slabinfo?
+Some cleaning has also been done for the MSGPOOL constant: the msgctl man page
+says it's not used, but it also defines it as a size in bytes (the code
+expresses it in Kbytes).
 
-Hope I made my argument more clear this time.
+Signed-off-by: Nadia Derbey <Nadia.Derbey-6ktuUTfB/bM@public.gmane.org>
 
-Thanks,
-Kirill
+---
+ include/linux/msg.h |   14 ++++++++++++--
+ ipc/msg.c           |   37 ++++++++++++++++++++++++++++++++++++-
+ 2 files changed, 48 insertions(+), 3 deletions(-)
 
+Index: linux-2.6.24/include/linux/msg.h
+===================================================================
+--- linux-2.6.24.orig/include/linux/msg.h	2008-01-29 16:54:40.000000000 +0100
++++ linux-2.6.24/include/linux/msg.h	2008-01-31 08:47:48.000000000 +0100
+@@ -49,16 +49,26 @@ struct msginfo {
+ 	unsigned short  msgseg; 
+ };
+ 
++/*
++ * Scaling factor to compute msgmni:
++ * the memory dedicated to msg queues (msgmni * msgmnb) should occupy
++ * at most 1/MSG_MEM_SCALE of the lowmem (see the formula in ipc/msg.c):
++ * up to 8MB       : msgmni = 16 (MSGMNI)
++ * 4 GB            : msgmni = 8K
++ * more than 16 GB : msgmni = 32K (IPCMNI)
++ */
++#define MSG_MEM_SCALE 32
++
+ #define MSGMNI    16   /* <= IPCMNI */     /* max # of msg queue identifiers */
+ #define MSGMAX  8192   /* <= INT_MAX */   /* max size of message (bytes) */
+ #define MSGMNB 16384   /* <= INT_MAX */   /* default max size of a message queue */
+ 
+ /* unused */
+-#define MSGPOOL (MSGMNI*MSGMNB/1024)  /* size in kilobytes of message pool */
++#define MSGPOOL (MSGMNI * MSGMNB) /* size in bytes of message pool */
+ #define MSGTQL  MSGMNB            /* number of system message headers */
+ #define MSGMAP  MSGMNB            /* number of entries in message map */
+ #define MSGSSZ  16                /* message segment size */
+-#define __MSGSEG ((MSGPOOL*1024)/ MSGSSZ) /* max no. of segments */
++#define __MSGSEG (MSGPOOL / MSGSSZ) /* max no. of segments */
+ #define MSGSEG (__MSGSEG <= 0xffff ? __MSGSEG : 0xffff)
+ 
+ #ifdef __KERNEL__
+Index: linux-2.6.24/ipc/msg.c
+===================================================================
+--- linux-2.6.24.orig/ipc/msg.c	2008-01-29 16:55:04.000000000 +0100
++++ linux-2.6.24/ipc/msg.c	2008-01-31 09:58:25.000000000 +0100
+@@ -27,6 +27,7 @@
+ #include <linux/msg.h>
+ #include <linux/spinlock.h>
+ #include <linux/init.h>
++#include <linux/mm.h>
+ #include <linux/proc_fs.h>
+ #include <linux/list.h>
+ #include <linux/security.h>
+@@ -79,12 +80,46 @@ static int newque(struct ipc_namespace *
+ static int sysvipc_msg_proc_show(struct seq_file *s, void *it);
+ #endif
+ 
++/*
++ * Scale msgmni with the available lowmem size: the memory dedicated to msg
++ * queues should occupy at most 1/MSG_MEM_SCALE of lowmem.
++ * This should be done staying within the (MSGMNI , IPCMNI) range.
++ */
++static void recompute_msgmni(struct ipc_namespace *ns)
++{
++	struct sysinfo i;
++	unsigned long allowed;
++
++	si_meminfo(&i);
++	allowed = (((i.totalram - i.totalhigh) / MSG_MEM_SCALE) * i.mem_unit)
++		/ MSGMNB;
++
++	if (allowed < MSGMNI) {
++		ns->msg_ctlmni = MSGMNI;
++		goto out_callback;
++	}
++
++	if (allowed > IPCMNI) {
++		ns->msg_ctlmni = IPCMNI;
++		goto out_callback;
++	}
++
++	ns->msg_ctlmni = allowed;
++
++out_callback:
++
++	printk(KERN_INFO "msgmni has been set to %d for ipc namespace %p\n",
++		ns->msg_ctlmni, ns);
++}
++
+ static void __msg_init_ns(struct ipc_namespace *ns, struct ipc_ids *ids)
+ {
+ 	ns->ids[IPC_MSG_IDS] = ids;
+ 	ns->msg_ctlmax = MSGMAX;
+ 	ns->msg_ctlmnb = MSGMNB;
+-	ns->msg_ctlmni = MSGMNI;
++
++	recompute_msgmni(ns);
++
+ 	atomic_set(&ns->msg_bytes, 0);
+ 	atomic_set(&ns->msg_hdrs, 0);
+ 	ipc_init_ids(ids);
 
-Pierre Peiffer wrote:
-> 
-> Kirill Korotaev wrote:
->> Why user space can need this API? for checkpointing only?
-> 
-> I would say "at least for checkpointing"... ;) May be someone else may find an
-> interest about this for something else.
-> In fact, I'm sure that you have some interest in checkpointing; and thus, you
-> have probably some ideas in mind; but whatever the solution you will propose,
-> I'm pretty sure that I could say the same thing for your solution.
-> And what I finally think is: even if it's for "checkpointing only", if many
-> people are interested by this, it may be sufficient to push this ?
-> 
->> Then I would not consider it for inclusion until it is clear how to implement checkpointing.
->> As for me personally - I'm against exporting such APIs, since they are not needed in real-life user space applications and maintaining it forever for compatibility doesn't worth it.
-> 
-> Maintaining these patches is not a big deal, really, but this is not the main
-> point; the "need in real life" (1) is in fact the main one, and then, the "is
-> this solution the best one ?" (2) the second one.
-> 
-> About (1), as said in my first mail, as the namespaces and containers are being
-> integrated into the mainline kernel, checkpoint/restart is (or will be) the next
-> need.
-> About (2), my solution propose to do that, as much as possible from userspace,
-> to minimize the kernel impact. Of course, this is subject to discussion. My
-> opinion is that doing a full checkpoint/restart from kernel space will need lot
-> of new specific and intrusive code; I'm not sure that this will be acceptable by
-> the community. But this is my opinion only. Discusion is opened.
-> 
->> Also such APIs allow creation of non-GPL checkpointing in user-space, which can be of concern as well.
-> 
-> Honestly, I don't think this really a concern at all. I mean: I've never seen
-> "this allows non-GPL binary and thus, this is bad" as an argument to reject a
-> functionality, but I may be wrong, and thus, it can be discussed as well.
-> I think the points (1) and (2) as stated above are the key ones.
-> 
-> Pierre
-> 
->> Kirill
->>
->>
->> Pierre Peiffer wrote:
->>> Hi again,
->>>
->>> 	Thinking more about this, I think I must clarify why I choose this way.
->>> In fact, the idea of these patches is to provide the missing user APIs (or
->>> extend the existing ones) that allow to set or update _all_ properties of all
->>> IPCs, as needed in the case of the checkpoint/restart of an application (the
->>> current user API does not allow to specify an ID for a created IPC, for
->>> example). And this, without changing the existing API of course.
->>>
->>> 	And msgget(), semget() and shmget() does not have any parameter we can use to
->>> specify an ID.
->>> 	That's why I've decided to not change these routines and add a new control
->>> command, IP_SETID, with which we can can change the ID of an IPC. (that looks to
->>> me more straightforward and logical)
->>>
->>> 	Now, this patch is, in fact, only a preparation for the patch 10/15 which
->>> really complete the user API by adding this IPC_SETID command.
->>>
->>> (... continuing below ...)
->>>
->>> Alexey Dobriyan wrote:
->>>> On Tue, Jan 29, 2008 at 05:02:38PM +0100, pierre.peiffer-6ktuUTfB/bM@public.gmane.org wrote:
->>>>> This patch provides three new API to change the ID of an existing
->>>>> System V IPCs.
->>>>>
->>>>> These APIs are:
->>>>> 	long msg_chid(struct ipc_namespace *ns, int id, int newid);
->>>>> 	long sem_chid(struct ipc_namespace *ns, int id, int newid);
->>>>> 	long shm_chid(struct ipc_namespace *ns, int id, int newid);
->>>>>
->>>>> They return 0 or an error code in case of failure.
->>>>>
->>>>> They may be useful for setting a specific ID for an IPC when preparing
->>>>> a restart operation.
->>>>>
->>>>> To be successful, the following rules must be respected:
->>>>> - the IPC exists (of course...)
->>>>> - the new ID must satisfy the ID computation rule.
->>>>> - the entry in the idr corresponding to the new ID must be free.
->>>>>  ipc/util.c          |   48 ++++++++++++++++++++++++++++++++++++++++++++++++
->>>>>  ipc/util.h          |    1 +
->>>>>  8 files changed, 197 insertions(+)
->>>> For the record, OpenVZ uses "create with predefined ID" method which
->>>> leads to less code. For example, change at the end is all we want from
->>>> ipc/util.c .
->>> And in fact, you do that from kernel space, you don't have the constraint to fit
->>> the existing user API.
->>> Again, this patch, even if it presents a new kernel API, is in fact a
->>> preparation for the next patch which introduces a new user API.
->>>
->>> Do you think that this could fit your need ?
->>>
->>
-> 
+--
