@@ -1,51 +1,176 @@
-From: yamamoto-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org (YAMAMOTO Takashi)
-Subject: [PATCH] fix spurious EBUSY on memory cgroup removal
-Date: Fri,  1 Feb 2008 12:46:24 +0900 (JST)
-Message-ID: <20080201034624.770651E3C10@siro.lan>
+From: Dhaval Giani <dhaval@linux.vnet.ibm.com>
+Subject: Re: [RFC] Default child of a cgroup
+Date: Fri, 1 Feb 2008 09:23:25 +0530
+Message-ID: <20080201035325.GB12475@linux.vnet.ibm.com>
+References: <20080131024049.GA9544@linux.vnet.ibm.com> <47A20EC8.4050006@linux.vnet.ibm.com>
+Reply-To: Dhaval Giani <dhaval@linux.vnet.ibm.com>
 Mime-Version: 1.0
-Content-Type: Text/Plain; charset=us-ascii
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
-Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org
+Content-Type: text/plain; charset=us-ascii
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1764138AbYBADxo@vger.kernel.org>
+Content-Disposition: inline
+In-Reply-To: <47A20EC8.4050006@linux.vnet.ibm.com>
+Sender: linux-kernel-owner@vger.kernel.org
+To: Balbir Singh <balbir@linux.vnet.ibm.com>
+Cc: vatsa@linux.vnet.ibm.com, linux-kernel@vger.kernel.org, a.p.zijlstra@chello.nl, Ingo Molnar <mingo@elte.hu>, menage@google.com, containers@lists.osdl.org, Balbir Singh <balbir@in.ibm.com>, pj@sgi.com
 List-Id: containers.vger.kernel.org
 
-hi,
+On Thu, Jan 31, 2008 at 11:39:12PM +0530, Balbir Singh wrote:
+> Srivatsa Vaddagiri wrote:
+> > Hi,
+> > 	As we were implementing multiple-hierarchy support for CPU
+> > controller, we hit some oddities in its implementation, partly related
+> > to current cgroups implementation. Peter and I have been debating on the 
+> > exact solution and I thought of bringing that discussion to lkml.
+> > 
+> > Consider the cgroup filesystem structure for managing cpu resource.
+> > 
+> > 	# mount -t cgroup -ocpu,cpuacct none /cgroup
+> > 	# mkdir /cgroup/A
+> > 	# mkdir /cgroup/B
+> > 	# mkdir /cgroup/A/a1
+> > 
+> > will result in:
+> > 
+> > 	/cgroup
+> > 	   |------<tasks>
+> > 	   |------<cpuacct.usage>
+> >  	   |------<cpu.shares>
+> > 	   |
+> > 	   |----[A]
+> > 	   |     |----<tasks>
+> > 	   |     |----<cpuacct.usage>
+> > 	   |     |----<cpu.shares>
+> > 	   |     |
+> > 	   |     |---[a1]
+> > 	   |           |----<tasks>
+> > 	   |   	       |----<cpuacct.usage>
+> > 	   |           |----<cpu.shares>
+> > 	   |           |
+> > 	   |
+> > 	   |----[B]
+> > 	   |     |----<tasks>
+> > 	   |     |----<cpuacct.usage>
+> > 	   |     |----<cpu.shares>
+> > 	   |     
+> > 
+> > 
+> > Here are some questions that arise in this picture:
+> > 
+> > 1. What is the relationship of the task-group in A/tasks with the
+> >    task-group in A/a1/tasks? In otherwords do they form siblings
+> >    of the same parent A?
+> > 
+> 
+> I consider them to be the same relationship between directories and files.
+> A/tasks are siblings of A/a1 and A/other children, *but* the entities of
+> interest are A and A/a1.
+> 
+> > 2. Somewhat related to the above question, how much resource should the 
+> >    task-group A/a1/tasks get in relation to A/tasks? Is it 1/2 of parent
+> >    A's share or 1/(1 + N) of parent A's share (where N = number of tasks
+> >    in A/tasks)?
+> > 
+> 
+> I propose that it gets 1/2 of the bandwidth, here is why
+> 
+> 1. Assume that a task in A/tasks forks 1000 children, what happens to the
+> bandwidth of A/a1's tasks then? We have no control over how many tasks can be
+> created on A/tasks as a consequence of moving one task to A/tasks. Doing it the
+> other way would mean, that A/a1/tasks will get 1/1001 of the bandwidth (sounds
+> very unfair and prone to Denial of Service/Fairness)
+> 
+> 
+> > 3. What should A/cpuacct.usage reflect? CPU usage of A/tasks? Or CPU usage
+> >    of all siblings put together? It can reflect only one, in which case
+> >    user has to manually derive the other component of the statistics.
+> > 
+> 
+> It should reflect the accumulated usage of A's children and the tasks in A.
+> 
 
-the following patch is to fix spurious EBUSY on cgroup removal.
+I've been taking the root group as an example, and extending it. The
+root group does not reflect the usage of all the tasks in it. (IIRC,
+can't seem to find the stats file there now, please correct me if I am
+wrong)
 
-YAMAMOTO Takashi
+> > It seems to me that tasks in A/tasks form what can be called the
+> > "default" child group of A, in which case:
+> > 
+> > 4. Modifications to A/cpu.shares should affect the parent or its default
+> >    child group (A/tasks)?
+> > 
+> > To avoid these ambiguities, it may be good if cgroup create this
+> > "default child group" automatically whenever a cgroup is created?
+> > Something like below (not the absence of tasks file in some directories
+> > now):
+> > 
+> 
+> I think the concept makes sense, but creating a default child is going to be
+> confusing, as it is not really a child of A.
+> 
 
+For all practical purposes, it is the same as the init_task_group which
+is at the parent level.
 
-call mm_free_cgroup earlier.
-otherwise a reference due to lazy mm switching can prevent cgroup removal.
+> > 
+> > 	/cgroup
+> > 	   |
+> > 	   |------<cpuacct.usage>
+> >  	   |------<cpu.shares>
+> > 	   |
+> >   	   |---[def_child]
+> > 	   |     |----<tasks>
+> > 	   |     |----<cpuacct.usage>
+> > 	   |     |----<cpu.shares>
+> > 	   |     |
+> > 	   |
+> > 	   |----[A]
+> > 	   |     |
+> > 	   |     |----<cpuacct.usage>
+> > 	   |     |----<cpu.shares>
+> > 	   |     |
+> > 	   |     |---[def_child]
+> > 	   |     |     |----<tasks>
+> > 	   |   	 |     |----<cpuacct.usage>
+> > 	   |     |     |----<cpu.shares>
+> > 	   |     |     |
+> > 	   |     | 
+> > 	   |     |---[a1]
+> > 	   |           |
+> > 	   |   	       |----<cpuacct.usage>
+> > 	   |           |----<cpu.shares>
+> > 	   |           |
+> > 	   | 	       |---[def_child]
+> > 	   |	       |       |---<tasks>
+> > 	   |	       |       |---<cpuacct.usage>
+> > 	   | 	       |       |---<cpu.shares>
+> > 	   |	       |       |
+> > 	   |
+> > 	   |----[B]
+> > 	   |     |
+> > 	   |     |----<cpuacct.usage>
+> > 	   |     |----<cpu.shares>
+> > 	   |     | 
+> > 	   |     |---[def_child]
+> > 	   |     |     |----<tasks>
+> > 	   |   	 |     |----<cpuacct.usage>
+> > 	   |     |     |----<cpu.shares>
+> > 	   |     |     |
+> > 
+> > Note that user cannot create subdirectories under def_child with this
+> > scheme! I am also not sure what impact this will have on other resources
+> > like cpusets ..
+> > 
+> 
+> Which means we'll need special logic in the cgroup filesystem to handle
+> def_child. Not a very good idea.
+> 
 
-Signed-off-by: YAMAMOTO Takashi <yamamoto-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
----
+Not really. That issue would come into play if every task group was
+assigned a control group. The task group is not exposed to the outside
+world. (That's why its a hidden task group)
 
---- linux-2.6.24-rc8-mm1/kernel/fork.c.BACKUP	2008-01-23 14:43:29.000000000 +0900
-+++ linux-2.6.24-rc8-mm1/kernel/fork.c	2008-01-31 17:26:31.000000000 +0900
-@@ -393,7 +393,6 @@ void __mmdrop(struct mm_struct *mm)
- {
- 	BUG_ON(mm == &init_mm);
- 	mm_free_pgd(mm);
--	mm_free_cgroup(mm);
- 	destroy_context(mm);
- 	free_mm(mm);
- }
-@@ -415,6 +414,7 @@ void mmput(struct mm_struct *mm)
- 			spin_unlock(&mmlist_lock);
- 		}
- 		put_swap_token(mm);
-+		mm_free_cgroup(mm);
- 		mmdrop(mm);
- 	}
- }
+Thanks,
+-- 
+regards,
+Dhaval
