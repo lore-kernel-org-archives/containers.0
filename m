@@ -1,84 +1,273 @@
-From: Srivatsa Vaddagiri <vatsa@linux.vnet.ibm.com>
-Subject: Re: [RFC] Default child of a cgroup
-Date: Fri, 1 Feb 2008 13:49:31 +0530
-Message-ID: <20080201081931.GA21572@linux.vnet.ibm.com>
-References: <20080131024049.GA9544@linux.vnet.ibm.com> <6599ad830801311839x33cf2ebco9f501571fc129b11@mail.gmail.com>
-Reply-To: vatsa@linux.vnet.ibm.com
+From: Pierre Peiffer <pierre.peiffer-6ktuUTfB/bM@public.gmane.org>
+Subject: Re: [PATCH 2.6.24-rc8-mm1 14/15] (RFC) IPC/semaphores:
+ prepare	semundo code to work on another task than current
+Date: Fri, 01 Feb 2008 13:09:48 +0100
+Message-ID: <47A30C0C.8050905__33206.0094610371$1201867905$gmane$org@bull.net>
+References: <20080129160229.612172683@bull.net>
+	<20080129162232.843976550@bull.net>
+	<20080130214430.GB8945@sergelap.austin.rr.com>
+	<47A19988.5030108@bull.net>
+	<20080131180125.GA5617@sergelap.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1756311AbYBAIPX@vger.kernel.org>
-Content-Disposition: inline
-In-Reply-To: <6599ad830801311839x33cf2ebco9f501571fc129b11@mail.gmail.com>
-Sender: linux-kernel-owner@vger.kernel.org
-To: Paul Menage <menage@google.com>
-Cc: linux-kernel@vger.kernel.org, a.p.zijlstra@chello.nl, Ingo Molnar <mingo@elte.hu>, containers@lists.osdl.org, dhaval@linux.vnet.ibm.com, Balbir Singh <balbir@in.ibm.com>, pj@sgi.com
+Content-Type: text/plain; charset=ISO-8859-1
+Content-Transfer-Encoding: 7bit
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <20080131180125.GA5617-6s5zFf/epYL1ENwx4SLHqw@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Thu, Jan 31, 2008 at 06:39:56PM -0800, Paul Menage wrote:
-> On Jan 30, 2008 6:40 PM, Srivatsa Vaddagiri <vatsa@linux.vnet.ibm.com> wrote:
-> >
-> > Here are some questions that arise in this picture:
-> >
-> > 1. What is the relationship of the task-group in A/tasks with the
-> >    task-group in A/a1/tasks? In otherwords do they form siblings
-> >    of the same parent A?
+
+
+Serge E. Hallyn wrote:
+> Quoting Pierre Peiffer (pierre.peiffer-6ktuUTfB/bM@public.gmane.org):
+>>
+>> Serge E. Hallyn wrote:
+>>> Quoting pierre.peiffer-6ktuUTfB/bM@public.gmane.org (pierre.peiffer-6ktuUTfB/bM@public.gmane.org):
+>>>> From: Pierre Peiffer <pierre.peiffer-6ktuUTfB/bM@public.gmane.org>
+>>>>
+>>>> In order to modify the semundo-list of a task from procfs, we must be able to
+>>>> work on any target task.
+>>>> But all the existing code playing with the semundo-list, currently works
+>>>> only on the 'current' task, and does not allow to specify any target task.
+>>>>
+>>>> This patch changes all these routines to allow them to work on a specified
+>>>> task, passed in parameter, instead of current.
+>>>>
+>>>> This is mainly a preparation for the semundo_write() operation, on the
+>>>> /proc/<pid>/semundo file, as provided in the next patch.
+>>>>
+>>>> Signed-off-by: Pierre Peiffer <pierre.peiffer-6ktuUTfB/bM@public.gmane.org>
+>>>> ---
+>>>>
+>>>>  ipc/sem.c |   90 ++++++++++++++++++++++++++++++++++++++++++++++----------------
+>>>>  1 file changed, 68 insertions(+), 22 deletions(-)
+>>>>
+>>>> Index: b/ipc/sem.c
+>>>> ===================================================================
+>>>> --- a/ipc/sem.c
+>>>> +++ b/ipc/sem.c
+>>>> @@ -1017,8 +1017,9 @@ asmlinkage long sys_semctl (int semid, i
+>>>>  }
+>>>>
+>>>>  /* If the task doesn't already have a undo_list, then allocate one
+>>>> - * here.  We guarantee there is only one thread using this undo list,
+>>>> - * and current is THE ONE
+>>>> + * here.
+>>>> + * The target task (tsk) is current in the general case, except when
+>>>> + * accessed from the procfs (ie when writting to /proc/<pid>/semundo)
+>>>>   *
+>>>>   * If this allocation and assignment succeeds, but later
+>>>>   * portions of this code fail, there is no need to free the sem_undo_list.
+>>>> @@ -1026,22 +1027,60 @@ asmlinkage long sys_semctl (int semid, i
+>>>>   * at exit time.
+>>>>   *
+>>>>   * This can block, so callers must hold no locks.
+>>>> + *
+>>>> + * Note: task_lock is used to synchronize 1. several possible concurrent
+>>>> + * creations and 2. the free of the undo_list (done when the task using it
+>>>> + * exits). In the second case, we check the PF_EXITING flag to not create
+>>>> + * an undo_list for a task which has exited.
+>>>> + * If there already is an undo_list for this task, there is no need
+>>>> + * to held the task-lock to retrieve it, as the pointer can not change
+>>>> + * afterwards.
+>>>>   */
+>>>> -static inline int get_undo_list(struct sem_undo_list **undo_listp)
+>>>> +static inline int get_undo_list(struct task_struct *tsk,
+>>>> +				struct sem_undo_list **ulp)
+>>>>  {
+>>>> -	struct sem_undo_list *undo_list;
+>>>> +	if (tsk->sysvsem.undo_list == NULL) {
+>>>> +		struct sem_undo_list *undo_list;
+>>> Hmm, this is weird.  If there was no undo_list and
+>>> tsk!=current, you set the refcnt to 2.  But if there was an
+>>> undo list and tsk!=current, where do you inc the refcnt?
+>>>
+>> I inc it  outside this function, as I don't call get_undo_list() if there is an
+>> undo_list.
+>> This appears most clearly in the next patch, in semundo_open() for example.
 > 
-> I'd argue the same as Balbir - tasks in A/tasks are are children of A
-> and are siblings of a1, a2, etc.
-
-> > 2. Somewhat related to the above question, how much resource should the
-> >    task-group A/a1/tasks get in relation to A/tasks? Is it 1/2 of parent
-> >    A's share or 1/(1 + N) of parent A's share (where N = number of tasks
-> >    in A/tasks)?
+> Ok, so however unlikely, there is a flow that could cause you a problem:
+> T2 calls semundo_open() for T1.  T1 does not yet have a semundolist.
+> T2.semundo_open() calls get_undo_list, just then T1 creats its own
+> semundo_list.  T2 comes to top of get_undo_list() and see
+> tsk->sysvsem.undo_list != NULL, simply returns a pointer to the
+> undo_list.  Now you never increment the count.
 > 
-> Each process in A should have a scheduler weight that's derived from
-> its static_prio field. Similarly each subgroup of A will have a
-> scheduler weight that's determined by its cpu.shares value. So the cpu
-> share of any child (be it a task or a subgroup) would be equal to its
-> own weight divided by the sum of weights of all children.
+Right.
 
-Assuming all tasks are of same prio, then what you are saying is that
-A/a1/tasks should cumulatively recv 1/(1 + N) of parent's share.
+And yesterday, with more testing in the corners, I've found another issue: if I
+use /proc/self/semundo, I don't have tsk != current and the refcnt is wrong too.
 
-After some thought, that seems like a reasonable expectation. The only issue
-I have for that is it breaks current behavior in mainline. Assume this
-structure:
+Thanks for finding this !
 
- 	   /
- 	   |------<tasks>
- 	   |------<cpuacct.usage>
-  	   |------<cpu.shares>
- 	   |
- 	   |----[A]
- 	   |     |----<tasks>
- 	   |     |----<cpuacct.usage>
- 	   |     |----<cpu.shares>
+P.
 
-
-then, going by above argument, /A/tasks should recv 1/(1+M)% of system
-resources (M -> number of tasks in /tasks), whereas it receives 1/2 of
-system resources currently (assuming /cpu.shares and /A/cpu.shares are
-same).
-
-Balbir, is this behaviour same for memory controller as well?
-
-So pick any option, we are talking of deviating from current
-behavior, which perhaps is a non-issue if we want to DTRT.
-
-> So yes, if a task in A forks lots of children, those children could
-> end up getting a disproportionate amount of the CPU compared to tasks
-> in A/a1 - but that's the same as the situation without cgroups. If you
-> want to control cpu usage between different sets of processes in A,
-> they should be in sibling cgroups, not directly in A.
+>>>> -	undo_list = current->sysvsem.undo_list;
+>>>> -	if (!undo_list) {
+>>>> -		undo_list = kzalloc(sizeof(*undo_list), GFP_KERNEL);
+>>>> +		/* we must alloc a new one */
+>>>> +		undo_list = kmalloc(sizeof(*undo_list), GFP_KERNEL);
+>>>>  		if (undo_list == NULL)
+>>>>  			return -ENOMEM;
+>>>> +
+>>>> +		task_lock(tsk);
+>>>> +
+>>>> +		/* check again if there is an undo_list for this task */
+>>>> +		if (tsk->sysvsem.undo_list) {
+>>>> +			if (tsk != current)
+>>>> +				atomic_inc(&tsk->sysvsem.undo_list->refcnt);
+>>>> +			task_unlock(tsk);
+>>>> +			kfree(undo_list);
+>>>> +			goto out;
+>>>> +		}
+>>>> +
+>>>>  		spin_lock_init(&undo_list->lock);
+>>>> -		atomic_set(&undo_list->refcnt, 1);
+>>>> -		undo_list->ns = get_ipc_ns(current->nsproxy->ipc_ns);
+>>>> -		current->sysvsem.undo_list = undo_list;
+>>>> +		/*
+>>>> +		 * If tsk is not current (meaning that current is creating
+>>>> +		 * a semundo_list for a target task through procfs), and if
+>>>> +		 * it's not being exited then refcnt must be 2: the target
+>>>> +		 * task tsk + current.
+>>>> +		 */
+>>>> +		if (tsk == current)
+>>>> +			atomic_set(&undo_list->refcnt, 1);
+>>>> +		else if (!(tsk->flags & PF_EXITING))
+>>>> +			atomic_set(&undo_list->refcnt, 2);
+>>>> +		else {
+>>>> +			task_unlock(tsk);
+>>>> +			kfree(undo_list);
+>>>> +			return -EINVAL;
+>>>> +		}
+>>>> +		undo_list->ns = get_ipc_ns(tsk->nsproxy->ipc_ns);
+>>>> +		undo_list->proc_list = NULL;
+>>>> +		tsk->sysvsem.undo_list = undo_list;
+>>>> +		task_unlock(tsk);
+>>>>  	}
+>>>> -	*undo_listp = undo_list;
+>>>> +out:
+>>>> +	*ulp = tsk->sysvsem.undo_list;
+>>>>  	return 0;
+>>>>  }
+>>>>
+>>>> @@ -1065,17 +1104,12 @@ static struct sem_undo *lookup_undo(stru
+>>>>  	return un;
+>>>>  }
+>>>>
+>>>> -static struct sem_undo *find_undo(struct ipc_namespace *ns, int semid)
+>>>> +static struct sem_undo *find_undo(struct sem_undo_list *ulp, int semid)
+>>>>  {
+>>>>  	struct sem_array *sma;
+>>>> -	struct sem_undo_list *ulp;
+>>>>  	struct sem_undo *un, *new;
+>>>> +	struct ipc_namespace *ns;
+>>>>  	int nsems;
+>>>> -	int error;
+>>>> -
+>>>> -	error = get_undo_list(&ulp);
+>>>> -	if (error)
+>>>> -		return ERR_PTR(error);
+>>>>
+>>>>  	spin_lock(&ulp->lock);
+>>>>  	un = lookup_undo(ulp, semid);
+>>>> @@ -1083,6 +1117,8 @@ static struct sem_undo *find_undo(struct
+>>>>  	if (likely(un!=NULL))
+>>>>  		goto out;
+>>>>
+>>>> +	ns = ulp->ns;
+>>>> +
+>>>>  	/* no undo structure around - allocate one. */
+>>>>  	sma = sem_lock_check(ns, semid);
+>>>>  	if (IS_ERR(sma))
+>>>> @@ -1133,6 +1169,7 @@ asmlinkage long sys_semtimedop(int semid
+>>>>  	struct sem_array *sma;
+>>>>  	struct sembuf fast_sops[SEMOPM_FAST];
+>>>>  	struct sembuf* sops = fast_sops, *sop;
+>>>> +	struct sem_undo_list *ulp;
+>>>>  	struct sem_undo *un;
+>>>>  	int undos = 0, alter = 0, max;
+>>>>  	struct sem_queue queue;
+>>>> @@ -1177,9 +1214,13 @@ asmlinkage long sys_semtimedop(int semid
+>>>>  			alter = 1;
+>>>>  	}
+>>>>
+>>>> +	error = get_undo_list(current, &ulp);
+>>>> +	if (error)
+>>>> +		goto out_free;
+>>>> +
+>>>>  retry_undos:
+>>>>  	if (undos) {
+>>>> -		un = find_undo(ns, semid);
+>>>> +		un = find_undo(ulp, semid);
+>>>>  		if (IS_ERR(un)) {
+>>>>  			error = PTR_ERR(un);
+>>>>  			goto out_free;
+>>>> @@ -1305,7 +1346,7 @@ int copy_semundo(unsigned long clone_fla
+>>>>  	int error;
+>>>>
+>>>>  	if (clone_flags & CLONE_SYSVSEM) {
+>>>> -		error = get_undo_list(&undo_list);
+>>>> +		error = get_undo_list(current, &undo_list);
+>>>>  		if (error)
+>>>>  			return error;
+>>>>  		atomic_inc(&undo_list->refcnt);
+>>>> @@ -1405,10 +1446,15 @@ next_entry:
+>>>>  	kfree(undo_list);
+>>>>  }
+>>>>
+>>>> -/* called from do_exit() */
+>>>> +/* exit_sem: called from do_exit()
+>>>> + * task_lock is used to synchronize with get_undo_list()
+>>> Ok I had to think about this again.  I'd like the comment
+>>> here to point out that the task_lock here acts as a barrier
+>>> between the prior setting of PF_EXITING and the undo_list
+>>> being freed here, so that get_undo_list() will either see
+>>> PF_EXITING is NOT in the tsk->flags, in which case it will
+>>> insert the undo_list before the task_lock() is grabbed here,
+>>> and with count=2, so that it gets correctly put here in
+>>> exit_sem, or it will see PF_EXITING set and cancel the
+>>> undo_list it was creating.
+>>>
+>> Yep, I will add this to clarify this point.
+>>
+>> Thanks Serge.
+>>
+>> P.
+>>
+>>>> + */
+>>>>  void exit_sem(struct task_struct *tsk)
+>>>>  {
+>>>> -	struct sem_undo_list *ul = tsk->sysvsem.undo_list;
+>>>> +	struct sem_undo_list *ul;
+>>>> +	task_lock(tsk);
+>>>> +	ul = tsk->sysvsem.undo_list;
+>>>> +	task_unlock(tsk);
+>>>>  	if (ul) {
+>>>>  		rcu_assign_pointer(tsk->sysvsem.undo_list, NULL);
+>>>>  		synchronize_rcu();
+>>>>
+>>>> -- 
+>>>> Pierre Peiffer
+>>>> _______________________________________________
+>>>> Containers mailing list
+>>>> Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+>>>> https://lists.linux-foundation.org/mailman/listinfo/containers
+>>>
+>> -- 
+>> Pierre Peiffer
 > 
-> Is there a restriction in CFS that stops a given group from
-> simultaneously holding tasks and sub-groups? If so, couldn't we change
-> CFS to make it possible rather than enforcing awkward restructions on
-> cgroups?
-
-Should be possible, need to look closely at what will need to change
-(load_balance routines for sure).
+> 
 
 -- 
-Regards,
-vatsa
+Pierre Peiffer
