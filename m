@@ -1,14 +1,12 @@
-From: Pavel Machek <pavel-+ZI9xUNit7I@public.gmane.org>
-Subject: Re: [PATCH 2.6.24-rc8-mm1 00/15] IPC: code rewrite + new
-	functionalities
-Date: Sat, 2 Feb 2008 18:23:52 +0000
-Message-ID: <20080202182351.GC4456__36594.5291858681$1201976771$gmane$org@ucw.cz>
-References: <20080129160229.612172683@bull.net>
+From: "Deirdre Brandon" <ialtmfqq-qyWgOHTkXjckldQh2BBpgw@public.gmane.org>
+Subject: Cheapest software prices!
+Date: Sat, 2 Feb 2008 21:58:22 +0200
+Message-ID: <01c865e6$ba7cbe80$88c76157@ialtmfqq>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+Content-Type: text/plain;
+	charset="iso-8859-2"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <20080129160229.612172683-6ktuUTfB/bM@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,34 +16,13 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: pierre.peiffer-6ktuUTfB/bM@public.gmane.org
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Hi!
+  You don't want to wait till you get software on a CD? Download your software immediately after purchase. No trial, demo, incomplete or academic versions! Only original and fully functional versions! Software for Macintosh is also available! We offer software in all European languages. Absolutely low prices!
 
-> * Patches 9 to 15 propose to add some functionalities, and thus are
-> submitted here for RFC, about both the interest and their implementation.
-> These functionalities are:
->     - Two new control-commands:
-> 	. IPC_SETID: to change an IPC's id.
-> 	. IPC_SETALL: behaves as IPC_SET, except that it also sets all time
-> 	  and pid values)
->     - add a /proc/<pid>/semundo file to read and write the undo values of
-> some semaphores for a given process.
-> 
-> 	As the namespaces and the "containers" are being integrated in the
-> kernel, these functionalities may be a first step to implement  the
-> checkpoint/restart of an application: in fact the existing API does not allow
-> to specify or to change an ID when creating an IPC, when restarting an
-> application, and the times/pids values of each IPCs are also altered. May be
-> someone may find another interest about this ?
-> 
-> So again, comments are welcome.
+ We provide help in installing software. You can ask any question and get a free of charge consultation. Guaranteed access to all updates! Friendly and professional service!
 
-Checkpoint/restart is nice, but... sysV ipc is broken by design, do we
-really want to extend it?
-							Pavel
--- 
-(english) http://www.livejournal.com/~pavelmachek
-(cesky, pictures) http://atrey.karlin.mff.cuni.cz/~pavel/picture/horses/blog.html
+http://geocities.com/tobycarey231/
+
+   You'll definitely find software you need.
