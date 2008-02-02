@@ -1,14 +1,14 @@
-From: Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: Re: [PATCH] fix spurious EBUSY on memory cgroup removal
-Date: Sat, 02 Feb 2008 09:40:57 +0530
-Message-ID: <47A3ED51.1010900@linux.vnet.ibm.com>
-References: <20080201034624.770651E3C10@siro.lan>
-Reply-To: balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
+From: Pavel Machek <pavel-+ZI9xUNit7I@public.gmane.org>
+Subject: Re: [PATCH 2.6.24-rc8-mm1 00/15] IPC: code rewrite + new
+	functionalities
+Date: Sat, 2 Feb 2008 18:23:52 +0000
+Message-ID: <20080202182351.GC4456__36594.5291858681$1201976771$gmane$org@ucw.cz>
+References: <20080129160229.612172683@bull.net>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset=us-ascii
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20080201034624.770651E3C10-Pcsii4f/SVk@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <20080129160229.612172683-6ktuUTfB/bM@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,53 +18,34 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: YAMAMOTO Takashi <yamamoto-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
-Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org
+To: pierre.peiffer-6ktuUTfB/bM@public.gmane.org
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-YAMAMOTO Takashi wrote:
-> hi,
-> 
-> the following patch is to fix spurious EBUSY on cgroup removal.
-> 
-> YAMAMOTO Takashi
-> 
-> 
-> call mm_free_cgroup earlier.
-> otherwise a reference due to lazy mm switching can prevent cgroup removal.
-> 
-> Signed-off-by: YAMAMOTO Takashi <yamamoto-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
-> ---
-> 
-> --- linux-2.6.24-rc8-mm1/kernel/fork.c.BACKUP	2008-01-23 14:43:29.000000000 +0900
-> +++ linux-2.6.24-rc8-mm1/kernel/fork.c	2008-01-31 17:26:31.000000000 +0900
-> @@ -393,7 +393,6 @@ void __mmdrop(struct mm_struct *mm)
->  {
->  	BUG_ON(mm == &init_mm);
->  	mm_free_pgd(mm);
-> -	mm_free_cgroup(mm);
->  	destroy_context(mm);
->  	free_mm(mm);
->  }
-> @@ -415,6 +414,7 @@ void mmput(struct mm_struct *mm)
->  			spin_unlock(&mmlist_lock);
->  		}
->  		put_swap_token(mm);
-> +		mm_free_cgroup(mm);
->  		mmdrop(mm);
->  	}
->  }
+Hi!
 
-The difference I see with the change is that mmput() will now call
-mm_free_cgroup() when mm->mm_users drop to 0 and __mmdrop() will call it when
-mm->mm_count drops to 0.
+> * Patches 9 to 15 propose to add some functionalities, and thus are
+> submitted here for RFC, about both the interest and their implementation.
+> These functionalities are:
+>     - Two new control-commands:
+> 	. IPC_SETID: to change an IPC's id.
+> 	. IPC_SETALL: behaves as IPC_SET, except that it also sets all time
+> 	  and pid values)
+>     - add a /proc/<pid>/semundo file to read and write the undo values of
+> some semaphores for a given process.
+> 
+> 	As the namespaces and the "containers" are being integrated in the
+> kernel, these functionalities may be a first step to implement  the
+> checkpoint/restart of an application: in fact the existing API does not allow
+> to specify or to change an ID when creating an IPC, when restarting an
+> application, and the times/pids values of each IPCs are also altered. May be
+> someone may find another interest about this ?
+> 
+> So again, comments are welcome.
 
-I think this change makes sense
-
-Acked-by: Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-
+Checkpoint/restart is nice, but... sysV ipc is broken by design, do we
+really want to extend it?
+							Pavel
 -- 
-	Warm Regards,
-	Balbir Singh
-	Linux Technology Center
-	IBM, ISTL
+(english) http://www.livejournal.com/~pavelmachek
+(cesky, pictures) http://atrey.karlin.mff.cuni.cz/~pavel/picture/horses/blog.html
