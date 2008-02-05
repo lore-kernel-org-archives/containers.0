@@ -1,41 +1,28 @@
-From: Cedric Le Goater <legoater@free.fr>
-Subject: Re: [PATCH 2/2] extend clone_flags using parent_tidptr argument
-Date: Tue, 05 Feb 2008 09:20:43 +0100
-Message-ID: <47A81C5B.9080000@free.fr>
-References: <47A74AED.1080806@free.fr>	<20080204202416.GA26422@sergelap.austin.ibm.com> <20080204133810.0077ec0d.akpm@linux-foundation.org>
+From: "Marian Carpenter" <dwrltam-s50+gS9vr3U@public.gmane.org>
+Subject: Reliable software only!
+Date: Tue, 5 Feb 2008 03:01:30 -0600
+Message-ID: <01c867a3$680c8400$05205261@dwrltam>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+Content-Type: text/plain;
+	charset="iso-8859-2"
 Content-Transfer-Encoding: 7bit
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1757707AbYBEIU6@vger.kernel.org>
-In-Reply-To: <20080204133810.0077ec0d.akpm@linux-foundation.org>
-Sender: linux-kernel-owner@vger.kernel.org
-To: Andrew Morton <akpm@linux-foundation.org>
-Cc: "Serge E. Hallyn" <serue@us.ibm.com>, linux-kernel@vger.kernel.org, containers@lists.osdl.org, xemul@openvz.org
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Andrew Morton wrote:
-> On Mon, 4 Feb 2008 14:24:16 -0600
-> "Serge E. Hallyn" <serue@us.ibm.com> wrote:
-> 
->> Quoting Cedric Le Goater (legoater@free.fr):
->>> From: Cedric Le Goater <clg@fr.ibm.com>
->>>
->>> We have at least 2 patchsets requiring each a new clone flag and there it 
->>> is, we've reached the limit, none are left.  
->>> This patch uses the CLONE_DETACHED flag (unused) as a marker to extend the 
->> Are we pretty sure that there is no legacy software out there which has
->> continued to specify CLONE_DETACHED since the kernel ignores it?
-> 
-> Please see -mm's
-> clone-prepare-to-recycle-clone_detached-and-clone_stopped.patch
-> 
-> That patch has been cut back to only recycle CLONE_STOPPED because there
-> indeed was software out there which is setting CLONE_DETACHED.
-> 
-> See http://linux.derkeiler.com/Mailing-Lists/Kernel/2007-11/msg04293.html
+  Get original and perfectly functioning software at low prices. All software can be downloaded immediately after purchase. Impressive selection of programs even for Macintosh! Programs in many languages are available.
 
-bummer, I used the wrong one :/
- 
-Thanks,
+ Free of charge professional installation consultations could be of great help. Prompt reply on all your requests. Money back guarantee ensures the quality of product.
 
-C.
+http://geocities.com/brendasmith504/
+
+   Get software you need right now!
