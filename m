@@ -1,9 +1,11 @@
-From: "Hal Long" <seals-K7t6Aye45MPYr1cDCadbXNBPR1lH4CV8@public.gmane.org>
-Subject: /\utodesk 3D Studlo Max 9 for XP 149. Retail 6720 -save 2842-
-Date: Tue, 05 Feb 2008 16:11:06 -0500
-Message-ID: <000401c8683a$2fd5ed00$0100007f@oqyfpcp>
+From: "Ron Whitaker" <dwprimarkm-V/YnPpwcKjld2+I6+x7OVA@public.gmane.org>
+Subject: There is no cheaper source of original and perfectly working
+	software.
+Date: Tue, 5 Feb 2008 20:43:15 -0400
+Message-ID: <01c86837$bb376980$dcd1ed40@dwprimarkm>
+Mime-Version: 1.0
 Content-Type: text/plain;
-    charset="us-ascii"
+	charset="iso-8859-2"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
@@ -18,20 +20,10 @@ Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-adobe illustrator cs3 - 69
-corel wordperfect office standard edition 12 - 49
-adobe contribute cs3 - 39
-microsoft sql server developer edition 2005 - 69
-masterwriter 1.0 - 49
-cakewalk project 5 - 59
-honestech vhs to dvd dlx3 - 29
-readiris pro 11.5 for mac - 39
-adobe golive cs2 - 49
-adobe atmosphere 1.0 - 29
+  Great site to purchase more than 270 programs! Even for Macintosh! Software in all European languages available! Cheap prices and original programs only! There are special offers and discounts for you to make even more significant savings.
 
-goto -mymicrosoft4less .com- |n Web Browser
-Cut 0ut - before you goto |n Web Browser
+ Accept this brilliant offer and take the advantage of our free installation consultations. Money back guarantee is available.
 
-luxology modo 301 for mac - 129
-grand theft auto: san andreas - 29
-microsoft expression studio 1.0 - 79
+http://geocities.com/marionsawyer576/
+
+   Check our site for discounts!
