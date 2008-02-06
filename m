@@ -1,14 +1,14 @@
-From: Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
-Subject: Re: [Devel] [RFC][PATCH 3/4]: Enable multiple mounts of /dev/pts
-Date: Wed, 06 Feb 2008 18:57:08 +0300
-Message-ID: <47A9D8D4.6030404@openvz.org>
+From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [RFC][PATCH 4/4]: Enable cloning PTY namespaces
+Date: Wed, 6 Feb 2008 10:03:28 -0600
+Message-ID: <20080206160328.GC15351@sergelap.austin.ibm.com>
 References: <20080206050428.GA19461@us.ibm.com>
-	<20080206051055.GC19764@us.ibm.com>
+	<20080206051117.GD19764@us.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset=us-ascii
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20080206051055.GC19764-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <20080206051117.GD19764-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -22,250 +22,393 @@ To: sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org
 Cc: Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org wrote:
+Quoting sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org (sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org):
 > From: Sukadev Bhattiprolu <sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-> Subject: [RFC][PATCH 3/4]: Enable multiple mounts of /dev/pts
+> Subject: [RFC][PATCH 4/4]: Enable cloning PTY namespaces
 > 
-> To support multiple PTY namespaces, we should be allow multiple mounts of
-> /dev/pts, once within each PTY namespace.
+> Enable cloning PTY namespaces.
 > 
-> This patch removes the get_sb_single() in devpts_get_sb() and uses test and
-> set sb interfaces to allow remounting /dev/pts.  The patch also removes the
-> globals, 'devpts_root' and uses current_pts_mnt() to access 'devpts_mnt'
+> TODO:
+> 	This version temporarily uses the clone flag '0x80000000' which
+> 	is unused in mainline atm, but used for CLONE_IO in -mm. 
+> 	While we must extend clone() (urgently) to solve this, it hopefully
+> 	does not affect review of the rest of this patchset.
 > 
 > Changelog:
 > 	- Version 0: Based on earlier versions from Serge Hallyn and
 > 	  Matt Helsley.
 > 
 > Signed-off-by: Sukadev Bhattiprolu <sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+
+Thanks for carrying this forward, Suka, and Matt.
+
+Of course it still needs at least Pavel's concern addressed, but
+
+Signed-off-by: Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+
+to start the SOB chain.
+
+thanks,
+-serge
+
 > ---
->  fs/devpts/inode.c |  120 +++++++++++++++++++++++++++++++++++++++++++++---------
->  1 file changed, 101 insertions(+), 19 deletions(-)
+>  fs/devpts/inode.c         |   84 +++++++++++++++++++++++++++++++++++++++-------
+>  include/linux/devpts_fs.h |   52 ++++++++++++++++++++++++++++
+>  include/linux/init_task.h |    1 
+>  include/linux/nsproxy.h   |    2 +
+>  include/linux/sched.h     |    2 +
+>  kernel/fork.c             |    2 -
+>  kernel/nsproxy.c          |   17 ++++++++-
+>  7 files changed, 146 insertions(+), 14 deletions(-)
 > 
 > Index: linux-2.6.24/fs/devpts/inode.c
 > ===================================================================
-> --- linux-2.6.24.orig/fs/devpts/inode.c	2008-02-05 17:30:52.000000000 -0800
-> +++ linux-2.6.24/fs/devpts/inode.c	2008-02-05 19:16:39.000000000 -0800
-> @@ -34,7 +34,10 @@ static inline struct idr *current_pts_ns
+> --- linux-2.6.24.orig/fs/devpts/inode.c	2008-02-05 19:16:39.000000000 -0800
+> +++ linux-2.6.24/fs/devpts/inode.c	2008-02-05 20:27:41.000000000 -0800
+> @@ -25,18 +25,25 @@
+>  #define DEVPTS_SUPER_MAGIC 0x1cd1
+> 
+>  extern int pty_limit;		/* Config limit on Unix98 ptys */
+> -static DEFINE_IDR(allocated_ptys);
+>  static DECLARE_MUTEX(allocated_ptys_lock);
+> +static struct file_system_type devpts_fs_type;
+> +
+> +struct pts_namespace init_pts_ns = {
+> +	.kref = {
+> +		.refcount = ATOMIC_INIT(2),
+> +	},
+> +	.allocated_ptys = IDR_INIT(init_pts_ns.allocated_ptys),
+> +	.mnt = NULL,
+> +};
+> 
+>  static inline struct idr *current_pts_ns_allocated_ptys(void)
+>  {
+> -	return &allocated_ptys;
+> +	return &current->nsproxy->pts_ns->allocated_ptys;
 >  }
->  
->  static struct vfsmount *devpts_mnt;
-> -static struct dentry *devpts_root;
-> +static inline struct vfsmount *current_pts_ns_mnt(void)
-> +{
-> +	return devpts_mnt;
-> +}
->  
+> 
+> -static struct vfsmount *devpts_mnt;
+>  static inline struct vfsmount *current_pts_ns_mnt(void)
+>  {
+> -	return devpts_mnt;
+> +	return current->nsproxy->pts_ns->mnt;
+>  }
+> 
 >  static struct {
->  	int setuid;
-> @@ -130,7 +133,7 @@ devpts_fill_super(struct super_block *s,
->  	inode->i_fop = &simple_dir_operations;
->  	inode->i_nlink = 2;
->  
-> -	devpts_root = s->s_root = d_alloc_root(inode);
-> +	s->s_root = d_alloc_root(inode);
->  	if (s->s_root)
->  		return 0;
->  	
-> @@ -140,10 +143,53 @@ fail:
->  	return -ENOMEM;
+> @@ -59,6 +66,42 @@ static match_table_t tokens = {
+>  	{Opt_err, NULL}
+>  };
+> 
+> +struct pts_namespace *new_pts_ns(void)
+> +{
+> +	struct pts_namespace *ns;
+> +
+> +	ns = kmalloc(sizeof(*ns), GFP_KERNEL);
+> +	if (!ns)
+> +		return ERR_PTR(-ENOMEM);
+> +
+> +	ns->mnt = kern_mount_data(&devpts_fs_type, ns);
+> +	if (IS_ERR(ns->mnt)) {
+> +		kfree(ns);
+> +		return ERR_PTR(PTR_ERR(ns->mnt));
+> +	}
+> +
+> +	idr_init(&ns->allocated_ptys);
+> +	kref_init(&ns->kref);
+> +
+> +	return ns;
+> +}
+> +
+> +void free_pts_ns(struct kref *ns_kref)
+> +{
+> +	struct pts_namespace *ns;
+> +
+> +	ns = container_of(ns_kref, struct pts_namespace, kref);
+> +	BUG_ON(ns == &init_pts_ns);
+> +
+> +	mntput(ns->mnt);
+> +	/*
+> +	 * TODO:
+> +	 *      idr_remove_all(&ns->allocated_ptys); introduced in 2.6.23
+> +	 */
+> +	idr_destroy(&ns->allocated_ptys);
+> +	kfree(ns);
+> +}
+> +
+>  static int devpts_remount(struct super_block *sb, int *flags, char *data)
+>  {
+>  	char *p;
+> @@ -160,18 +203,27 @@ static int devpts_test_sb(struct super_b
+> 
+>  static int devpts_set_sb(struct super_block *sb, void *data)
+>  {
+> -	sb->s_fs_info = data;
+> +	struct pts_namespace *ns = data;
+> +
+> +	sb->s_fs_info = get_pts_ns(ns);
+>  	return set_anon_super(sb, NULL);
 >  }
->  
-> +/*
-> + * We use test and set super-block operations to help determine whether we
-> + * need a new super-block for this namespace. get_sb() walks the list of
-> + * existing devpts supers, comparing them with the @data ptr. Since we
-> + * passed 'current's namespace as the @data pointer we can compare the
-> + * namespace pointer in the super-block's 's_fs_info'.  If the test is
-> + * TRUE then get_sb() returns a new active reference to the super block.
-> + * Otherwise, it helps us build an active reference to a new one.
-> + */
-> +
-> +static int devpts_test_sb(struct super_block *sb, void *data)
-> +{
-> +	return sb->s_fs_info == data;
-> +}
-> +
-> +static int devpts_set_sb(struct super_block *sb, void *data)
-> +{
-> +	sb->s_fs_info = data;
-> +	return set_anon_super(sb, NULL);
-> +}
-> +
+> 
 >  static int devpts_get_sb(struct file_system_type *fs_type,
 >  	int flags, const char *dev_name, void *data, struct vfsmount *mnt)
 >  {
-> -	return get_sb_single(fs_type, flags, data, devpts_fill_super, mnt);
-> +	struct super_block *sb;
-> +	int err;
-> +
-> +	/* hereafter we're very simlar to get_sb_nodev */
-> +	sb = sget(fs_type, devpts_test_sb, devpts_set_sb, data);
-> +	if (IS_ERR(sb))
-> +		return PTR_ERR(sb);
-> +
-> +	if (sb->s_root)
-> +		return simple_set_mnt(mnt, sb);
-> +
-> +	sb->s_flags = flags;
-> +	err = devpts_fill_super(sb, data, flags & MS_SILENT ? 1 : 0);
-> +	if (err) {
-> +		up_write(&sb->s_umount);
-> +		deactivate_super(sb);
-> +		return err;
-> +	}
-> +
-
-That stuff becomes very very similar to that in proc :)
-Makes sense to consolidate. Maybe...
-
-> +	sb->s_flags |= MS_ACTIVE;
-> +	devpts_mnt = mnt;
-> +
-> +	return simple_set_mnt(mnt, sb);
->  }
->  
->  static struct file_system_type devpts_fs_type = {
-> @@ -158,10 +204,9 @@ static struct file_system_type devpts_fs
->   * to the System V naming convention
->   */
->  
-> -static struct dentry *get_node(int num)
-> +static struct dentry *get_node(struct dentry *root, int num)
->  {
->  	char s[12];
-> -	struct dentry *root = devpts_root;
->  	mutex_lock(&root->d_inode->i_mutex);
->  	return lookup_one_len(s, root, sprintf(s, "%d", num));
->  }
-> @@ -207,12 +252,28 @@ int devpts_pty_new(struct tty_struct *tt
->  	struct tty_driver *driver = tty->driver;
->  	dev_t device = MKDEV(driver->major, driver->minor_start+number);
->  	struct dentry *dentry;
-> -	struct inode *inode = new_inode(devpts_mnt->mnt_sb);
-> +	struct dentry *root;
-> +	struct vfsmount *mnt;
-> +	struct inode *inode;
-> +
->  
->  	/* We're supposed to be given the slave end of a pty */
->  	BUG_ON(driver->type != TTY_DRIVER_TYPE_PTY);
->  	BUG_ON(driver->subtype != PTY_TYPE_SLAVE);
->  
-> +	mnt = current_pts_ns_mnt();
-> +	if (!mnt)
-> +		return -ENOSYS;
-> +	root = mnt->mnt_root;
-> +
-> +	mutex_lock(&root->d_inode->i_mutex);
-> +	inode = idr_find(current_pts_ns_allocated_ptys(), number);
-> +	mutex_unlock(&root->d_inode->i_mutex);
-> +
-> +	if (inode && !IS_ERR(inode))
-> +		return -EEXIST;
-> +
-> +	inode = new_inode(mnt->mnt_sb);
->  	if (!inode)
->  		return -ENOMEM;
->  
-> @@ -222,23 +283,31 @@ int devpts_pty_new(struct tty_struct *tt
->  	inode->i_mtime = inode->i_atime = inode->i_ctime = CURRENT_TIME;
->  	init_special_inode(inode, S_IFCHR|config.mode, device);
->  	inode->i_private = tty;
-> +	idr_replace(current_pts_ns_allocated_ptys(), inode, number);
->  
-> -	dentry = get_node(number);
-> +	dentry = get_node(root, number);
->  	if (!IS_ERR(dentry) && !dentry->d_inode) {
->  		d_instantiate(dentry, inode);
-> -		fsnotify_create(devpts_root->d_inode, dentry);
-> +		fsnotify_create(root->d_inode, dentry);
->  	}
->  
-> -	mutex_unlock(&devpts_root->d_inode->i_mutex);
-> +	mutex_unlock(&root->d_inode->i_mutex);
->  
->  	return 0;
->  }
->  
->  struct tty_struct *devpts_get_tty(int number)
->  {
-> -	struct dentry *dentry = get_node(number);
-> +	struct vfsmount *mnt;
-> +	struct dentry *dentry;
->  	struct tty_struct *tty;
->  
-> +	mnt = current_pts_ns_mnt();
-> +	if (!mnt)
-> +		return NULL;
-> +
-> +	dentry = get_node(mnt->mnt_root, number);
-> +
->  	tty = NULL;
->  	if (!IS_ERR(dentry)) {
->  		if (dentry->d_inode)
-> @@ -246,14 +315,21 @@ struct tty_struct *devpts_get_tty(int nu
->  		dput(dentry);
->  	}
->  
-> -	mutex_unlock(&devpts_root->d_inode->i_mutex);
-> +	mutex_unlock(&mnt->mnt_root->d_inode->i_mutex);
->  
->  	return tty;
->  }
->  
->  void devpts_pty_kill(int number)
->  {
-> -	struct dentry *dentry = get_node(number);
-> +	struct dentry *dentry;
-> +	struct dentry *root;
-> +	struct vfsmount *mnt;
-> +
-> +	mnt = current_pts_ns_mnt();
-> +	root = mnt->mnt_root;
-> +
-> +	dentry = get_node(root, number);
->  
->  	if (!IS_ERR(dentry)) {
->  		struct inode *inode = dentry->d_inode;
-> @@ -264,17 +340,23 @@ void devpts_pty_kill(int number)
->  		}
->  		dput(dentry);
->  	}
-> -	mutex_unlock(&devpts_root->d_inode->i_mutex);
-> +	mutex_unlock(&root->d_inode->i_mutex);
->  }
->  
->  static int __init init_devpts_fs(void)
->  {
-> -	int err = register_filesystem(&devpts_fs_type);
-> -	if (!err) {
-> -		devpts_mnt = kern_mount(&devpts_fs_type);
-> -		if (IS_ERR(devpts_mnt))
-> -			err = PTR_ERR(devpts_mnt);
-> -	}
-> +	struct vfsmount *mnt;
-> +	int err;
-> +
-> +	err = register_filesystem(&devpts_fs_type);
-> +	if (err)
-> +		return err;
-> +
-> +	mnt = kern_mount_data(&devpts_fs_type, NULL);
-> +	if (IS_ERR(mnt))
-> +		err = PTR_ERR(mnt);
+> +	struct pts_namespace *ns;
+>  	struct super_block *sb;
+>  	int err;
+> 
+> +	/* hereafter we're very similar to proc_get_sb */
+> +	if (flags & MS_KERNMOUNT)
+> +		ns = data;
 > +	else
-> +		devpts_mnt = mnt;
+> +		ns = current->nsproxy->pts_ns;
+> +
+>  	/* hereafter we're very simlar to get_sb_nodev */
+> -	sb = sget(fs_type, devpts_test_sb, devpts_set_sb, data);
+> +	sb = sget(fs_type, devpts_test_sb, devpts_set_sb, ns);
+>  	if (IS_ERR(sb))
+>  		return PTR_ERR(sb);
+> 
+> @@ -187,16 +239,25 @@ static int devpts_get_sb(struct file_sys
+>  	}
+> 
+>  	sb->s_flags |= MS_ACTIVE;
+> -	devpts_mnt = mnt;
+> +	ns->mnt = mnt;
+> 
+>  	return simple_set_mnt(mnt, sb);
+>  }
+> 
+> +static void devpts_kill_sb(struct super_block *sb)
+> +{
+> +       struct pts_namespace *ns;
+> +
+> +       ns = sb->s_fs_info;
+> +       kill_anon_super(sb);
+> +       put_pts_ns(ns);
+> +}
+> +
+>  static struct file_system_type devpts_fs_type = {
+>  	.owner		= THIS_MODULE,
+>  	.name		= "devpts",
+>  	.get_sb		= devpts_get_sb,
+> -	.kill_sb	= kill_anon_super,
+> +	.kill_sb	= devpts_kill_sb,
+>  };
+> 
+>  /*
+> @@ -352,18 +413,19 @@ static int __init init_devpts_fs(void)
+>  	if (err)
+>  		return err;
+> 
+> -	mnt = kern_mount_data(&devpts_fs_type, NULL);
+> +	mnt = kern_mount_data(&devpts_fs_type, &init_pts_ns);
+>  	if (IS_ERR(mnt))
+>  		err = PTR_ERR(mnt);
+>  	else
+> -		devpts_mnt = mnt;
+> +		init_pts_ns.mnt = mnt;
 >  	return err;
 >  }
->  
+> 
+>  static void __exit exit_devpts_fs(void)
+>  {
+>  	unregister_filesystem(&devpts_fs_type);
+> -	mntput(devpts_mnt);
+> +	mntput(init_pts_ns.mnt);
+> +	init_pts_ns.mnt = NULL;
+>  }
+> 
+>  module_init(init_devpts_fs)
+> Index: linux-2.6.24/include/linux/devpts_fs.h
+> ===================================================================
+> --- linux-2.6.24.orig/include/linux/devpts_fs.h	2008-02-05 19:16:39.000000000 -0800
+> +++ linux-2.6.24/include/linux/devpts_fs.h	2008-02-05 20:21:08.000000000 -0800
+> @@ -14,9 +14,45 @@
+>  #define _LINUX_DEVPTS_FS_H
+> 
+>  #include <linux/errno.h>
+> +#include <linux/nsproxy.h>
+> +#include <linux/kref.h>
+> +#include <linux/idr.h>
+> +
+> +struct pts_namespace {
+> +	struct kref kref;
+> +	struct idr allocated_ptys;
+> +	struct vfsmount *mnt;
+> +};
+> +
+> +extern struct pts_namespace init_pts_ns;
+> 
+>  #ifdef CONFIG_UNIX98_PTYS
+> 
+> +extern struct pts_namespace *new_pts_ns(void);
+> +extern void free_pts_ns(struct kref *kref);
+> +
+> +static inline struct pts_namespace *get_pts_ns(struct pts_namespace *ns)
+> +{
+> +	if (ns)
+> +		kref_get(&ns->kref);
+> +	return ns;
+> +}
+> +
+> +static inline void put_pts_ns(struct pts_namespace *ns)
+> +{
+> +	if (ns)
+> +		kref_put(&ns->kref, free_pts_ns);
+> +}
+> +
+> +static inline struct pts_namespace *copy_pts_ns(unsigned long flags,
+> +		struct pts_namespace *old_ns)
+> +{
+> +	if (flags & CLONE_NEWPTS)
+> +		return new_pts_ns();
+> +	else
+> +		return get_pts_ns(old_ns);
+> +}
+> +
+>  int devpts_new_index(void);
+>  void devpts_kill_index(int idx);
+>  int devpts_pty_new(struct tty_struct *tty);      /* mknod in devpts */
+> @@ -26,6 +62,22 @@ void devpts_pty_kill(int number);		 /* u
+>  #else
+> 
+>  /* Dummy stubs in the no-pty case */
+> +
+> +static inline struct pts_namespace *get_pts_ns(struct pts_namespace *ns)
+> +{
+> +	return &init_pts_ns;
+> +}
+> +
+> +static inline void put_pts_ns(struct pts_namespace *ns) { }
+> +
+> +static inline struct pts_namespace *copy_pts_ns(unsigned long flags,
+> +		struct pts_namespace *old_ns)
+> +{
+> +	if (flags & CLONE_NEWPTS)
+> +		return ERR_PTR(-EINVAL);
+> +	return old_ns;
+> +}
+> +
+>  static inline int devpts_new_index(void) { return -EINVAL; }
+>  static inline void devpts_kill_index(int idx) { }
+>  static inline int devpts_pty_new(struct tty_struct *tty) { return -EINVAL; }
+> Index: linux-2.6.24/include/linux/init_task.h
+> ===================================================================
+> --- linux-2.6.24.orig/include/linux/init_task.h	2008-02-05 19:16:39.000000000 -0800
+> +++ linux-2.6.24/include/linux/init_task.h	2008-02-05 19:18:00.000000000 -0800
+> @@ -77,6 +77,7 @@ extern struct nsproxy init_nsproxy;
+>  	.mnt_ns		= NULL,						\
+>  	INIT_NET_NS(net_ns)                                             \
+>  	INIT_IPC_NS(ipc_ns)						\
+> +	.pts_ns		= &init_pts_ns,					\
+>  	.user_ns	= &init_user_ns,				\
+>  }
+> 
+> Index: linux-2.6.24/include/linux/nsproxy.h
+> ===================================================================
+> --- linux-2.6.24.orig/include/linux/nsproxy.h	2008-02-05 19:16:39.000000000 -0800
+> +++ linux-2.6.24/include/linux/nsproxy.h	2008-02-05 19:18:00.000000000 -0800
+> @@ -8,6 +8,7 @@ struct mnt_namespace;
+>  struct uts_namespace;
+>  struct ipc_namespace;
+>  struct pid_namespace;
+> +struct pts_namespace;
+> 
+>  /*
+>   * A structure to contain pointers to all per-process
+> @@ -29,6 +30,7 @@ struct nsproxy {
+>  	struct pid_namespace *pid_ns;
+>  	struct user_namespace *user_ns;
+>  	struct net 	     *net_ns;
+> +	struct pts_namespace *pts_ns;
+>  };
+>  extern struct nsproxy init_nsproxy;
+> 
+> Index: linux-2.6.24/include/linux/sched.h
+> ===================================================================
+> --- linux-2.6.24.orig/include/linux/sched.h	2008-02-05 19:16:39.000000000 -0800
+> +++ linux-2.6.24/include/linux/sched.h	2008-02-05 19:54:05.000000000 -0800
+> @@ -27,6 +27,8 @@
+>  #define CLONE_NEWUSER		0x10000000	/* New user namespace */
+>  #define CLONE_NEWPID		0x20000000	/* New pid namespace */
+>  #define CLONE_NEWNET		0x40000000	/* New network namespace */
+> +#define CLONE_NEWPTS    	(CLONE_NEWNS|0x80000000) /* Temporary - only for patch review */
+> +							 /* Badly need to /extend clone() !!! */
+> 
+>  /*
+>   * Scheduling policies
+> Index: linux-2.6.24/kernel/fork.c
+> ===================================================================
+> --- linux-2.6.24.orig/kernel/fork.c	2008-02-05 19:16:39.000000000 -0800
+> +++ linux-2.6.24/kernel/fork.c	2008-02-05 19:18:00.000000000 -0800
+> @@ -1655,7 +1655,7 @@ asmlinkage long sys_unshare(unsigned lon
+>  	if (unshare_flags & ~(CLONE_THREAD|CLONE_FS|CLONE_NEWNS|CLONE_SIGHAND|
+>  				CLONE_VM|CLONE_FILES|CLONE_SYSVSEM|
+>  				CLONE_NEWUTS|CLONE_NEWIPC|CLONE_NEWUSER|
+> -				CLONE_NEWNET))
+> +				CLONE_NEWNET|CLONE_NEWPTS))
+>  		goto bad_unshare_out;
+> 
+>  	if ((err = unshare_thread(unshare_flags)))
+> Index: linux-2.6.24/kernel/nsproxy.c
+> ===================================================================
+> --- linux-2.6.24.orig/kernel/nsproxy.c	2008-02-05 19:16:39.000000000 -0800
+> +++ linux-2.6.24/kernel/nsproxy.c	2008-02-05 19:18:00.000000000 -0800
+> @@ -21,6 +21,7 @@
+>  #include <linux/utsname.h>
+>  #include <linux/pid_namespace.h>
+>  #include <net/net_namespace.h>
+> +#include <linux/devpts_fs.h>
+> 
+>  static struct kmem_cache *nsproxy_cachep;
+> 
+> @@ -92,8 +93,17 @@ static struct nsproxy *create_new_namesp
+>  		goto out_net;
+>  	}
+> 
+> +	new_nsp->pts_ns = copy_pts_ns(flags, tsk->nsproxy->pts_ns);
+> +	if (IS_ERR(new_nsp->pts_ns)) {
+> +		err = PTR_ERR(new_nsp->pts_ns);
+> +		goto out_pts;
+> +	}
+> +
+>  	return new_nsp;
+> 
+> +out_pts:
+> +	if (new_nsp->net_ns)
+> +		put_net(new_nsp->net_ns);
+>  out_net:
+>  	if (new_nsp->user_ns)
+>  		put_user_ns(new_nsp->user_ns);
+> @@ -130,7 +140,8 @@ int copy_namespaces(unsigned long flags,
+>  	get_nsproxy(old_ns);
+> 
+>  	if (!(flags & (CLONE_NEWNS | CLONE_NEWUTS | CLONE_NEWIPC |
+> -				CLONE_NEWUSER | CLONE_NEWPID | CLONE_NEWNET)))
+> +				CLONE_NEWUSER | CLONE_NEWPID | CLONE_NEWNET |
+> +				CLONE_NEWPTS)))
+>  		return 0;
+> 
+>  	if (!capable(CAP_SYS_ADMIN)) {
+> @@ -169,6 +180,8 @@ void free_nsproxy(struct nsproxy *ns)
+>  		put_pid_ns(ns->pid_ns);
+>  	if (ns->user_ns)
+>  		put_user_ns(ns->user_ns);
+> +	if (ns->pts_ns)
+> +		put_pts_ns(ns->pts_ns);
+>  	put_net(ns->net_ns);
+>  	kmem_cache_free(nsproxy_cachep, ns);
+>  }
+> @@ -183,7 +196,7 @@ int unshare_nsproxy_namespaces(unsigned 
+>  	int err = 0;
+> 
+>  	if (!(unshare_flags & (CLONE_NEWNS | CLONE_NEWUTS | CLONE_NEWIPC |
+> -			       CLONE_NEWUSER | CLONE_NEWNET)))
+> +			       CLONE_NEWUSER | CLONE_NEWNET | CLONE_NEWPTS)))
+>  		return 0;
+> 
+>  	if (!capable(CAP_SYS_ADMIN))
 > _______________________________________________
 > Containers mailing list
 > Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 > https://lists.linux-foundation.org/mailman/listinfo/containers
-> 
-> _______________________________________________
-> Devel mailing list
-> Devel-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org
-> https://openvz.org/mailman/listinfo/devel
-> 
