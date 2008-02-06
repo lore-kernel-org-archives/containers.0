@@ -1,18 +1,20 @@
 From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [Devel] [RFC][PATCH 4/4]: Enable cloning PTY namespaces
-Date: Wed, 6 Feb 2008 13:45:02 -0600
-Message-ID: <20080206194502.GC19349@sergelap.austin.ibm.com>
+Subject: Re: [Devel] [RFC][PATCH 3/4]: Enable multiple mounts of /dev/pts
+Date: Wed, 6 Feb 2008 13:58:55 -0600
+Message-ID: <20080206195855.GE19349@sergelap.austin.ibm.com>
 References: <20080206050428.GA19461@us.ibm.com>
-	<20080206051117.GD19764@us.ibm.com> <47A9780F.1070803@openvz.org>
-	<20080206153750.GA15351@sergelap.austin.ibm.com>
-	<47A9D5FA.2000205@openvz.org>
-	<20080206162557.GA16518@sergelap.austin.ibm.com>
-	<47A9E1C6.2020607@openvz.org> <47A9F5B6.7010902@fr.ibm.com>
+	<20080206051055.GC19764@us.ibm.com> <47A9D8D4.6030404@openvz.org>
+	<20080206161608.GA16278@sergelap.austin.ibm.com>
+	<47A9DF31.2040302@openvz.org>
+	<20080206164328.GA16726@sergelap.austin.ibm.com>
+	<47AA0995.9020003@cs.columbia.edu>
+	<20080206193724.GB19349@sergelap.austin.ibm.com>
+	<47AA0EBB.3020806@cs.columbia.edu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <47A9F5B6.7010902-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <47AA0EBB.3020806-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -22,67 +24,88 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Cedric Le Goater <clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
-Cc: Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Cc: Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Cedric Le Goater <clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Quoting Cedric Le Goater (clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org):
-> >>>>>>  
-> >>>>>> +struct pts_namespace *new_pts_ns(void)
-> >>>>>> +{
-> >>>>>> +	struct pts_namespace *ns;
-> >>>>>> +
-> >>>>>> +	ns = kmalloc(sizeof(*ns), GFP_KERNEL);
-> >>>>>> +	if (!ns)
-> >>>>>> +		return ERR_PTR(-ENOMEM);
-> >>>>>> +
-> >>>>>> +	ns->mnt = kern_mount_data(&devpts_fs_type, ns);
-> >>>>> You create a circular references here - the namespace
-> >>>>> holds the vfsmnt, the vfsmnt holds a superblock, a superblock
-> >>>>> holds the namespace.
-> >>>> Hmm, yeah, good point.  That was probably in my original version last
-> >>>> year, so my fault not Suka's.  Suka, would it work to have the
-> >>>> sb->s_info point to the namespace but not grab a reference, than have
-> >>> If you don't then you may be in situation, when this devpts
-> >>> is mounted from userspace and in case the namespace is dead
-> >>> superblock will point to garbage... Superblock MUST hold the
-> >>> namespace :)
-> >> But when the ns is freed sb->s_info would be NULL.  Surely the helpers
-> >> can be made to handle that safely?
-> > 
-> > Hm... How do we find the proper superblock? Have a reference on
-> > it from the namespace? I'm afraid it will be easy to resolve the
-> > locking issues here.
-> > 
-> > I propose another scheme - we simply don't have ANY references
-> > from namespace to superblock/vfsmount, but get the current
-> > namespace in devpts_get_sb() and put in devpts_free_sb().
-> 
-> I've choosen another path in mq_ns. 
-> 
-> I also don't take any refcount on superblock/vfsmount of the new mq_ns 
-> bc of the circular ref. I've considered that namespaces only apply to 
-> processes : the refcount of a namespace is incremented each time a new 
-> task is cloned and the namespace (in my case mq_ns) is released when  
-> the last tasks exists. But this becomes an issue with user mounts which 
-> survives task death. you end up having a user mount pointing to a bogus
-> mq_ns. 
-> 
-> unless you require to have CLONE_NEWNS at the sametime.
-> 
-> Now, this CLONE_NEWNS enforcement seems to be an issue with bind mount.
-> 
-> ... jumping to the other thread :)
+Quoting Oren Laadan (orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org):
+>
+>
+> Serge E. Hallyn wrote:
+>> Quoting Oren Laadan (orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org):
+>>>
+>>> Serge E. Hallyn wrote:
+>>>> Quoting Pavel Emelyanov (xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org):
+>>>>> Serge E. Hallyn wrote:
+>>>>>> Quoting Pavel Emelyanov (xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org):
+>>>>>>> sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org wrote:
+>>>>>>>> From: Sukadev Bhattiprolu <sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+>>>>>>>> Subject: [RFC][PATCH 3/4]: Enable multiple mounts of /dev/pts
+>>> [SNIP]
+>>>
+>>>>>>> That stuff becomes very very similar to that in proc :)
+>>>>>>> Makes sense to consolidate. Maybe...
+>>>>>> Yeah, and the mqns that Cedric sent too.  I think Cedric said he'd
+>>>>>> started an a patch implementing a helper.  Cedric?
+>>>>> Mmm. I wanted to send one small objection to Cedric's patches with 
+>>>>> mqns,
+>>>>> but the thread was abandoned by the time I decided to do-it-right-now.
+>>>>>
+>>>>> So I can put it here: forcing the CLONE_NEWNS is not very good, since
+>>>>> this makes impossible to push a bind mount inside a new namespace, 
+>>>>> which
+>>>>> may operate in some chroot environment. But this ability is heavily
+>>>> Which direction do you want to go?  I'm wondering whether mounts
+>>>> propagation can address it.
+>>>> Though really, I think you're right - we shouldn't break the kernel
+>>>> doing CLONE_NEWMQ or CLONE_NEWPTS without CLONE_NEWNS, so we shouldn't
+>>>> force the combination.
+>>>>> exploited in OpenVZ, so if we can somehow avoid forcing the NEWNS flag
+>>>>> that would be very very good :) See my next comment about this issue.
+>>>>>
+>>>>>> Pavel, not long ago you said you were starting to look at tty and pty
+>>>>>> stuff - did you have any different ideas on devpts virtualization, or
+>>>>>> are you ok with this minus your comments thus far?
+>>>>> I have a similar idea of how to implement this, but I didn't thought
+>>>>> about the details. As far as this issue is concerned, I see no reasons
+>>>>> why we need a kern_mount-ed devtpsfs instance. If we don't make such,
+>>>>> we may safely hold the ptsns from the superblock and be happy. The
+>>>>> same seems applicable to the mqns, no?
+>>>> But the current->nsproxy->devpts->mnt is used in several functions in
+>>>> patch 3.
+>>>>> The reason I have the kern_mount-ed instance of proc for pid namespaces
+>>>>> is that I need a vfsmount to flush task entries from, but allowing
+>>>>> it to be NULL (i.e. no kern_mount, but optional user mounts) means
+>>>>> handing all the possible races, which is too heavy. But do we actually
+>>>>> need the vfsmount for devpts and mqns if no user-space mounts exist?
+>>>>>
+>>>>> Besides, I planned to include legacy ptys virtualization and console
+>>>>> virtualizatin in this namespace, but it seems, that it is not present
+>>>>> in this particular one.
+>>>> I had been thinking the consoles would have their own ns, since there's
+>>>> really nothing linking them,  but there really is no good reason why
+>>>> userspace should ever want them separate.  So I'm fine with combining
+>>>> them.
+>>> If you want to run something like an X server inside each container
+>>> (eg each container holds a desktop session of a different user), then
+>>> you need a separate virtual-console namespace for each container.
+>> Ok, but whether the consoles and devpts are unshared with the same
+>> cloneflag or not isn't an issue, right?
+>
+> true. (I misread your comment.)
+> (
+> modulo that we are additional-clone-flags-challenged ...)
 
-But once again, given that the mnt/sb is a view into a namespace bound
-to a set of tasks, if all those tasks have exited, I see nothing wrong
-with having sb->s_info being made NULL, so that a task in another
-namespace attempting to access the exited namespace through a user mount
-sees an empty directory.
+Right, plus the fact that the number of clone flags involved becomes
+almost obscene.  Let's see if Pavel and Suka have a preference, since
+one of them seems likely to end up coding it  :)
 
-So again I recommend that we should simply have sb->s_info point to
-the namespace but without taking a reference, and have free_x_ns() set
-x_ns->mnt->sb->s_info to NULL.  (That'll take a barrier of some kind,
-which we can maybe build into the common helper)
+>>> (yes, X per-se needs to provide remote display as opposed to use
+>>> local hardware; see http://www.ncl.cs.columbia.edu/research/thinc/)
 
+Nice, by the way :)
+
+>> -serge
+
+thanks,
 -serge
