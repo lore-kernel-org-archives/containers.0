@@ -1,7 +1,7 @@
 From: Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
-Subject: [PATCH 2/4] The character devices layer changes
-Date: Thu, 07 Feb 2008 15:59:04 +0300
-Message-ID: <47AB0098.8010003@openvz.org>
+Subject: [PATCH 3/4] The block devices layer changes
+Date: Thu, 07 Feb 2008 15:59:48 +0300
+Message-ID: <47AB00C4.6040205@openvz.org>
 References: <47AAFFF2.9030804@openvz.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1
@@ -21,166 +21,180 @@ To: Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>, Sukadev Bhatti
 Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-These changes include the API for the control group
-to map/remap/unmap the devices with their permissions
-and one important thing.
+They are the same as for the character layer, but
+the good news is that there are no caching in this
+case.
 
-The fact is that the struct cdev is cached in the inode
-for faster access, so once we looked one up we go through
-the fast path and omit the kobj_lookup() call. This is no
-longer good when we restrict the access to cdevs. Another
-problem is that different char devices may use one struct
-cdev object, so having an access to one of them grants us
-access to another, so we have to re-lookup the kobj map
-each open.
+So this patch is smaller and easier to understand
+as compared to the previous one.
 
 Signed-off-by: Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 
 ---
 
-diff --git a/fs/char_dev.c b/fs/char_dev.c
-index 2c7a8b5..ddacab7 100644
---- a/fs/char_dev.c
-+++ b/fs/char_dev.c
-@@ -22,6 +22,8 @@
- #include <linux/mutex.h>
- #include <linux/backing-dev.h>
- 
+diff --git a/block/genhd.c b/block/genhd.c
+index 5e4ab4b..6f9ef48 100644
+--- a/block/genhd.c
++++ b/block/genhd.c
+@@ -8,6 +8,7 @@
+ #include <linux/kdev_t.h>
+ #include <linux/kernel.h>
+ #include <linux/blkdev.h>
 +#include <linux/devscontrol.h>
-+
- #ifdef CONFIG_KMOD
- #include <linux/kmod.h>
- #endif
-@@ -362,17 +364,31 @@ int chrdev_open(struct inode * inode, struct file * filp)
- 	struct cdev *p;
- 	struct cdev *new = NULL;
- 	int ret = 0;
-+	struct kobj_map *map;
-+
-+	map = task_cdev_map(current);
-+	if (map == NULL)
-+		map = cdev_map;
- 
- 	spin_lock(&cdev_lock);
- 	p = inode->i_cdev;
--	if (!p) {
-+	if (!p || map != cdev_map) {
- 		struct kobject *kobj;
- 		int idx;
-+		mode_t mode;
-+
- 		spin_unlock(&cdev_lock);
--		kobj = kobj_lookup(cdev_map, inode->i_rdev, &idx);
-+		kobj = kobj_lookup(map, inode->i_rdev, &mode, &idx);
- 		if (!kobj)
- 			return -ENXIO;
- 		new = container_of(kobj, struct cdev, kobj);
-+		BUG_ON(p != NULL && p != new);
-+
-+		if ((filp->f_mode & mode) != filp->f_mode) {
-+			cdev_put(new);
-+			return -EACCES;
-+		}
-+
- 		spin_lock(&cdev_lock);
- 		p = inode->i_cdev;
- 		if (!p) {
-@@ -461,6 +477,53 @@ int cdev_add(struct cdev *p, dev_t dev, unsigned count)
- 	return kobj_map(cdev_map, dev, count, NULL, exact_match, exact_lock, p);
+ #include <linux/init.h>
+ #include <linux/spinlock.h>
+ #include <linux/seq_file.h>
+@@ -195,6 +196,57 @@ void unlink_gendisk(struct gendisk *disk)
+ 			      disk->minors);
  }
  
 +#ifdef CONFIG_CGROUP_DEVS
-+int cdev_add_to_map(struct kobj_map *map, dev_t dev, int all, mode_t mode)
++int bdev_add_to_map(struct kobj_map *map, dev_t dev, int all, mode_t mode)
 +{
 +	int tmp;
-+	struct kobject *k;
-+	struct cdev *c;
++	struct kobject *kobj;
++	struct device *d;
++	struct gendisk *disk;
 +
-+	k = kobj_lookup(cdev_map, dev, NULL, &tmp);
-+	if (k == NULL)
++	kobj = kobj_lookup(bdev_map, dev, NULL, &tmp);
++	if (kobj == NULL)
 +		return -ENODEV;
 +
-+	c = container_of(k, struct cdev, kobj);
-+	tmp = kobj_remap(map, dev, mode, all ? MINORMASK : 1, NULL,
-+			exact_match, exact_lock, c);
++	d = kobj_to_dev(kobj);
++	disk = dev_to_disk(d);
++	tmp = kobj_remap(map, dev, mode, all ? MINORBITS : 1, NULL,
++			exact_match, exact_lock, disk);
 +	if (tmp < 0) {
-+		cdev_put(c);
++		put_disk(disk);
 +		return tmp;
 +	}
 +
 +	return 0;
 +}
 +
-+int cdev_del_from_map(struct kobj_map *map, dev_t dev, int all)
++int bdev_del_from_map(struct kobj_map *map, dev_t dev, int all)
 +{
 +	int tmp;
-+	struct kobject *k;
-+	struct cdev *c;
++	struct kobject *kobj;
++	struct device *d;
++	struct gendisk *disk;
 +
-+	k = kobj_lookup(cdev_map, dev, NULL, &tmp);
-+	if (k == NULL)
++	kobj = kobj_lookup(bdev_map, dev, NULL, &tmp);
++	if (kobj == NULL)
 +		return -ENODEV;
 +
-+	c = container_of(k, struct cdev, kobj);
-+	kobj_unmap(map, dev, all ? MINORMASK : 1);
++	d = kobj_to_dev(kobj);
++	disk = dev_to_disk(d);
++	kobj_unmap(map, dev, all ? MINORBITS : 1);
 +
-+	cdev_put(c);
-+	cdev_put(c);
++	put_disk(disk);
++	put_disk(disk);
 +	return 0;
 +}
 +
-+void cdev_iterate_map(struct kobj_map *map,
++void bdev_iterate_map(struct kobj_map *map,
 +		int (*fn)(dev_t, int, mode_t, void *), void *x)
 +{
 +	kobj_map_iterate(map, fn, x);
 +}
 +#endif
 +
- static void cdev_unmap(dev_t dev, unsigned count)
+ /**
+  * get_gendisk - get partitioning information for a given device
+  * @dev: device to get partitioning information for
+@@ -202,10 +254,18 @@ void unlink_gendisk(struct gendisk *disk)
+  * This function gets the structure containing partitioning
+  * information for the given device @dev.
+  */
+-struct gendisk *get_gendisk(dev_t devt, int *part)
++struct gendisk *get_gendisk(dev_t devt, mode_t *mode, int *part)
  {
- 	kobj_unmap(cdev_map, dev, count);
-@@ -540,9 +603,19 @@ static struct kobject *base_probe(dev_t dev, int *part, void *data)
+-	struct kobject *kobj = kobj_lookup(bdev_map, devt, part);
+-	struct device *dev = kobj_to_dev(kobj);
++	struct kobj_map *map;
++	struct kobject *kobj;
++	struct device *dev;
++
++	map = task_bdev_map(current);
++	if (map == NULL)
++		map = bdev_map;
++
++	kobj = kobj_lookup(map, devt, mode, part);
++	dev = kobj_to_dev(kobj);
+ 
+ 	return  kobj ? dev_to_disk(dev) : NULL;
+ }
+@@ -356,10 +416,20 @@ static struct kobject *base_probe(dev_t devt, int *part, void *data)
  	return NULL;
  }
  
-+struct kobj_map *cdev_map_init(void)
++struct kobj_map *bdev_map_init(void)
 +{
-+	return kobj_map_init(base_probe, &chrdevs_lock);
++	return kobj_map_init(base_probe, &block_class_lock);
 +}
 +
-+void cdev_map_fini(struct kobj_map *map)
++void bdev_map_fini(struct kobj_map *map)
 +{
 +	kobj_map_fini(map);
 +}
 +
- void __init chrdev_init(void)
+ static int __init genhd_device_init(void)
  {
--	cdev_map = kobj_map_init(base_probe, &chrdevs_lock);
-+	cdev_map = cdev_map_init();
- 	bdi_init(&directly_mappable_cdev_bdi);
- }
+ 	class_register(&block_class);
+-	bdev_map = kobj_map_init(base_probe, &block_class_lock);
++	bdev_map = bdev_map_init();
+ 	blk_dev_init();
  
-diff --git a/include/linux/cdev.h b/include/linux/cdev.h
-index 1e29b13..fe0e560 100644
---- a/include/linux/cdev.h
-+++ b/include/linux/cdev.h
-@@ -9,6 +9,7 @@
- struct file_operations;
- struct inode;
- struct module;
+ #ifndef CONFIG_SYSFS_DEPRECATED
+diff --git a/fs/block_dev.c b/fs/block_dev.c
+index 55295a4..03b1b5e 100644
+--- a/fs/block_dev.c
++++ b/fs/block_dev.c
+@@ -1129,16 +1129,25 @@ static int do_open(struct block_device *bdev, struct file *file, int for_part)
+ 	struct module *owner = NULL;
+ 	struct gendisk *disk;
+ 	int ret = -ENXIO;
++	mode_t mode;
+ 	int part;
+ 
+ 	file->f_mapping = bdev->bd_inode->i_mapping;
+ 	lock_kernel();
+-	disk = get_gendisk(bdev->bd_dev, &part);
++	disk = get_gendisk(bdev->bd_dev, &mode, &part);
+ 	if (!disk) {
+ 		unlock_kernel();
+ 		bdput(bdev);
+ 		return ret;
+ 	}
++
++	if ((file->f_mode & mode) != file->f_mode) {
++		unlock_kernel();
++		bdput(bdev);
++		put_disk(disk);
++		return -EACCES;
++	}
++
+ 	owner = disk->fops->owner;
+ 
+ 	mutex_lock_nested(&bdev->bd_mutex, for_part);
+diff --git a/include/linux/genhd.h b/include/linux/genhd.h
+index 1dbea0a..4a92b65 100644
+--- a/include/linux/genhd.h
++++ b/include/linux/genhd.h
+@@ -240,7 +240,15 @@ extern int get_blkdev_list(char *, int);
+ extern void add_disk(struct gendisk *disk);
+ extern void del_gendisk(struct gendisk *gp);
+ extern void unlink_gendisk(struct gendisk *gp);
+-extern struct gendisk *get_gendisk(dev_t dev, int *part);
++extern struct gendisk *get_gendisk(dev_t dev, mode_t *mode, int *part);
++
 +struct kobj_map;
++extern int bdev_add_to_map(struct kobj_map *, dev_t dev, int all, mode_t mode);
++extern int bdev_del_from_map(struct kobj_map *map, dev_t dev, int all);
++extern void bdev_iterate_map(struct kobj_map *map,
++		int (*fn)(dev_t, int, mode_t, void *), void *x);
++extern struct kobj_map *bdev_map_init(void);
++extern void bdev_map_fini(struct kobj_map *map);
  
- struct cdev {
- 	struct kobject kobj;
-@@ -33,5 +34,11 @@ void cd_forget(struct inode *);
- 
- extern struct backing_dev_info directly_mappable_cdev_bdi;
- 
-+int cdev_add_to_map(struct kobj_map *map, dev_t dev, int all, mode_t mode);
-+int cdev_del_from_map(struct kobj_map *map, dev_t dev, int all);
-+struct kobj_map *cdev_map_init(void);
-+void cdev_map_fini(struct kobj_map *map);
-+void cdev_iterate_map(struct kobj_map *,
-+		int (*fn)(dev_t, int, mode_t, void *), void *);
- #endif
- #endif
+ extern void set_device_ro(struct block_device *bdev, int flag);
+ extern void set_disk_ro(struct gendisk *disk, int flag);
