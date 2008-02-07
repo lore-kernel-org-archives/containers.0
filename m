@@ -1,15 +1,8 @@
 From: Cedric Le Goater <clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [Devel] [RFC][PATCH 3/4]: Enable multiple mounts of /dev/pts
-Date: Thu, 07 Feb 2008 11:25:09 +0100
-Message-ID: <47AADC85.1080206@fr.ibm.com>
-References: <20080206050428.GA19461@us.ibm.com>	<20080206051055.GC19764@us.ibm.com>
-	<47A9D8D4.6030404@openvz.org>	<20080206161608.GA16278@sergelap.austin.ibm.com>	<47A9DF31.2040302@openvz.org>	<20080206164328.GA16726@sergelap.austin.ibm.com>	<47A9E6C5.7030209@openvz.org>
-	<20080206173211.GA17655@sergelap.austin.ibm.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Content-Transfer-Encoding: 7bit
+Subject: [patch 0/3] clone64() and unshare64()
+Date: Thu, 07 Feb 2008 11:31:35 +0100
+Message-ID: <36656.0197821402$1202380879@news.gmane.org>
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20080206173211.GA17655-6s5zFf/epYLPQpwDFJZrxKsjOiXwFzmk@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,24 +12,15 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Cc: Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+To: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
+Cc: xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org
 List-Id: containers.vger.kernel.org
 
->> Off-topic: does any of you know whether Andrew is willing to accept
->> new features in the nearest future? The problem is that I have a 
->> device visibility controller fixed and pending to send, but I can't
->> guess a good time for it :)
+yet another try to extend the clone flags and probably not the last !
+but I hope to raise some discussion on this topic with this simple API. 
 
-I have the clone64/unshare64 syscalls ready for most common arches :
+I plan to send to Andrew if no one has objections.
 
-	x86, x86_64, x86_64(32), ppc64, ppc64(32), s390x, s390x(31)
+Thanks !
 
-do you care to review or shall I send directly to andrew ?
-
-There's a freezer patchset also that I need to resend ...
-
-C. 
- 
-> Well even if Andrew won't take it I'd like to see it, so I'd appreciate
-> a resend.
+C.
