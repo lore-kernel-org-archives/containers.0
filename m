@@ -1,31 +1,34 @@
-From: Paul Jackson <pj-sJ/iWh9BUns@public.gmane.org>
-Subject: Re: [PATCH] Filesystems visibility control group
-Date: Thu, 7 Feb 2008 12:13:29 -0600
-Message-ID: <20080207121329.39135cea.pj@sgi.com>
-References: <47AB1E14.1080203@openvz.org>
+From: Peter Zijlstra <a.p.zijlstra@chello.nl>
+Subject: Re: [PATCH][DOCUMENTATION] Minimal controller code for a quick
+	start
+Date: Thu, 07 Feb 2008 21:28:57 +0100
+Message-ID: <1202416137.6274.42.camel@lappy>
+References: <47AB25AD.30400@openvz.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
+Content-Type: text/plain
 Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <47AB1E14.1080203-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
-Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1761279AbYBGU3V@vger.kernel.org>
+In-Reply-To: <47AB25AD.30400@openvz.org>
+Sender: linux-kernel-owner@vger.kernel.org
+To: Pavel Emelyanov <xemul@openvz.org>
+Cc: Andrew Morton <akpm@linux-foundation.org>, Paul Menage <menage@google.com>, Linux Containers <containers@lists.osdl.org>, Linux Kernel Mailing List <linux-kernel@vger.kernel.org>
 List-Id: containers.vger.kernel.org
 
-> useful to have a filesystem visibility control group.
 
-idle minds would like to know ... what is one of these?
+On Thu, 2008-02-07 at 18:37 +0300, Pavel Emelyanov wrote:
+> The Documentation/cgroups.txt file contains the info on how
+> to write some controller for cgroups subsystem, but even with
+> this, one need to write quite a lot of code before developing
+> the core (or copy-n-paste it from some other place).
+> 
+> I propose to put this minimal controller into Documentation
+> directory to let people copy-n-paste a) from a known place and 
+> b) a small piece of code.
+> 
+> Besides, many people learn better reading an example rather
+> than/along with a document.
 
--- 
-                  I won't rest till it's the best ...
-                  Programmer, Linux Scalability
-                  Paul Jackson <pj-sJ/iWh9BUns@public.gmane.org> 1.940.382.4214
+
+While on the subject, could someone document struct cgroup_subsys. In
+particular, I've wondered why we have: cgroup_subsys::can_attach() and
+not use a return value in cgroup_subsys::attach()?
