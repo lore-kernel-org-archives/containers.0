@@ -1,15 +1,14 @@
 From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH] Filesystems visibility control group
-Date: Fri, 8 Feb 2008 09:54:48 -0600
-Message-ID: <20080208155448.GA13683@sergelap.austin.ibm.com>
-References: <47AB1E14.1080203@openvz.org>
-	<1202404169.9065.21.camel@nimitz.home.sr71.net>
-	<47AC0F2B.3070903@openvz.org>
+Subject: Re: [PATCH 0/4] Devices accessibility control group (v3, release
+	candidate)
+Date: Fri, 8 Feb 2008 10:12:17 -0600
+Message-ID: <20080208161217.GA14201@sergelap.austin.ibm.com>
+References: <47AAFFF2.9030804@openvz.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <47AC0F2B.3070903-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+In-Reply-To: <47AAFFF2.9030804-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -20,37 +19,58 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
-Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
+Cc: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
 Quoting Pavel Emelyanov (xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org):
-> Dave Hansen wrote:
-> > On Thu, 2008-02-07 at 18:04 +0300, Pavel Emelyanov wrote:
-> >> Having this proxy is the easiest way to keep the global list and
-> >> file_system_type structure (almost) untouched and simplify the code.
-> >>
-> >> The filesystems.list file syntax is simple: [+-]<name> without
-> >> a '\n' at the end. Made for 2.6.24-rc8-mm1
-> > 
-> > For what would you want this?  What kinds of filesystems would you like
-> > to restrict the use of in a container?
+> Changes from v2:
+> * Fixed problems pointed out by Sukadev with permissions
+>   revoke. Now we have to perform kobject re-lookup on
+>   each char device open, just like for block ones, so I
+>   think this is OK.
 > 
-> Any you want to.
-> 
-> E.g. ext3 with its journaling thread. Having 100 containers
-> with a journal in each kills the node. 
-> E.g. cgroupsfs if you don't want your cgroup create its 
-> own ones. 
+> The /proc/devices tune is still in TODO list, as I have
+> problems with getting majors _in_a_simple_manner_ from a 
+> map, that contains a mix of major/minor pairs in 
+> arbitrary order.
 
-Ah, so that answers that question - you enforce this by umounting
-/cgroups in the container and not letting them remount it?
+Thanks for posting, Pavel.  I'm sorry, I'm *trying* to review these, but
+my eyes are glazing over.  (Not because of your patches I'll start by
+just testing it a bit either this afternoon or monday.
 
-> E.g. NFS that can stuck on umount and block you container
-> on stop.
+thanks,
+-serge
+
+> The second version is here:
+> http://openvz.org/pipermail/devel/2008-January/010160.html
+> Changes from v1:
 > 
-> > -- Dave
+> * Added the block devices support :) It turned out to
+>   be a bit simpler than the char one (or I missed
+>   something significant);
+> * Now we can enable/disable not just individual devices,
+>   but the whole major with all its minors (see the TODO
+>   list beyond as well);
+> * Added the ability to restrict the read/write permissions
+>   to devices, not just visible/invisible state.
 > 
-> _______________________________________________
-> Containers mailing list
-> Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-> https://lists.linux-foundation.org/mailman/listinfo/containers
+> The first version was here:
+> http://openvz.org/pipermail/devel/2007-September/007647.html
+> 
+> I still don't pay much attention to split this set well, so 
+> this will most likely won't work with git-bisect, but I think 
+> this is OK for now. I will sure split it better when I send 
+> it to Andrew.
+> 
+> The set is prepared against the 2.6.24-rc8-mm1.
+> 
+> To play with it - run a standard procedure:
+> 
+>  # mount -t container none /cont/devs -o devices
+>  # mkdir /cont/devs/0
+>  # echo -n $$ > /cont/devs/0/tasks
+> 
+> and tune device permissions.
+> 
+> Thanks,
+> Pavel
