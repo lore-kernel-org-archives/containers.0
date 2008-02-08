@@ -1,37 +1,91 @@
-From: "Denis V. Lunev" <den@openvz.org>
-Subject: RE: cgroup: limit network bandwidth
-Date: Fri, 08 Feb 2008 10:52:56 +0300
-Message-ID: <1202457176.31674.12.camel@iris.sw.ru>
+From: Pavel Emelyanov <xemul@openvz.org>
+Subject: Re: [PATCH][DOCUMENTATION] Minimal controller code for a quick start
+Date: Fri, 08 Feb 2008 11:09:09 +0300
+Message-ID: <47AC0E25.1060603@openvz.org>
+References: <47AB25AD.30400@openvz.org> <6599ad830802071245r321efddat89a17b091cb5db4b@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain
+Content-Type: text/plain; charset=ISO-8859-1
 Content-Transfer-Encoding: 7bit
-Return-path: <netdev-owner@vger.kernel.org>
-Sender: netdev-owner@vger.kernel.org
-To: righiandr@users.sourceforge.net
-Cc: Linux Netdev List <netdev@vger.kernel.org>, Balbir Singh <balbir@linux.vnet.ibm.com>, Naveen Gupta <ngupta@google.com>, Paul Menage <menage@google.com>, Linux Containers <containers@lists.osdl.org>
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1761701AbYBHIJi@vger.kernel.org>
+In-Reply-To: <6599ad830802071245r321efddat89a17b091cb5db4b@mail.gmail.com>
+Sender: linux-kernel-owner@vger.kernel.org
+To: Paul Menage <menage@google.com>
+Cc: Andrew Morton <akpm@linux-foundation.org>, Linux Containers <containers@lists.osdl.org>, Linux Kernel Mailing List <linux-kernel@vger.kernel.org>
 List-Id: containers.vger.kernel.org
 
-Hello, Andrea!
+Paul Menage wrote:
+> On Feb 7, 2008 7:37 AM, Pavel Emelyanov <xemul@openvz.org> wrote:
+>> The Documentation/cgroups.txt file contains the info on how
+>> to write some controller for cgroups subsystem, but even with
+>> this, one need to write quite a lot of code before developing
+>> the core (or copy-n-paste it from some other place).
+> 
+> Good idea.
+> 
+>> +
+>> +static ssize_t foo_bar_read(struct cgroup *cg, struct cftype *cft,
+>> +               struct file *file, char __user *userbuf,
+>> +               size_t nbytes, loff_t *ppos)
+>> +{
+>> +       struct foo_cgroup *foo;
+>> +
+>> +       foo = foo_from_cgroup(cg);
+>> +
+>> +       /*
+>> +        * produce some output
+>> +        */
+>> +
+>> +       return nbytes;
+>> +}
+>> +
+>> +static ssize_t foo_bar_write(struct cgroup *cg, struct cftype *cft,
+>> +               struct file *file, const char __user *userbuf,
+>> +               size_t nbytes, loff_t *ppos)
+>> +{
+>> +       struct foo_cgroup *foo;
+>> +
+>> +       foo = foo_from_cgroup(cg);
+>> +
+>> +       /*
+>> +        * read and tune the foo
+>> +        */
+>> +
+>> +       return nbytes;
+>> +}
+>> +
+>> +static struct cftype foo_files[] = {
+>> +       {
+>> +               .name = "bar",
+>> +               .read = foo_bar_read,
+>> +               .write = foo_bar_write,
+>> +       },
+>> +};
+> 
+> Can you structure this example so as to encourage people to use the
+> more formatted read/write routines, such as read_int64 and
+> write_int64?
 
-I have occasionally seen your patch on LWN (missed one in netdev@) and
-have two words about. May be this is not too late. I have missed my
-entire mailbox yesterday and have not followed the discussion. Pls
-forgive me.
+And one more for ->read_strategy hints :) Well, I thought that
+it should be the _minimal_ controller.
 
-Rate-limiting message receive is nothing good at all. First, if we talk
-about i386, the most important resource is low memory. There are no more
-than 1 Gb of it. You suggest to keep it used more time than usual and
-this usage will not reduce network traffic to the node for UDP cases.
+>> +
+>> +static struct cgroup_subsys_state *foo_create(struct cgroup_subsys *cs,
+>> +               struct cgroup *cg)
+>> +{
+>> +       struct foo_cgroup *foo;
+>> +
+> 
+> Maybe add a comment here that mentions that if your cgroup needs very
+> early initialization, you can check for cg->parent being NULL, and
+> return a statically-constructed structure here. (And set
+> foo_subsys.early_init = 1)
 
-For TCP the situation is slightly better. But not quite a big. For a
-case of rather slow group with a bug traffic you will just eat 64kb *
-Nsockets of receive buffers.
+Yet again - this is rather a special feature, that your controller
+needs an early initialization - for a very minimal one this is not
+required.
 
-So, resource usage is just increased for a case. This is unfortunate. In
-order to proper rate-limiting you need to calculate memory used
-- dropping incoming packets early for UDP
-- manage TCP window on the base of buffer memory used by the cgroup
+Maybe we can have two examples? One is the minimal one and the other
+is an advanced one with ->attach callbacks, etc?
 
-Regards,
-	Den
-
+> Paul
+> 
