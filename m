@@ -1,28 +1,37 @@
-From: "Marcy Woodruff" <lpp-ZnIpGwu6UCE@public.gmane.org>
-Subject: Purchase software at surprisingly low prices!
-Date: Fri, 8 Feb 2008 06:46:54 +0100
-Message-ID: <01c86a1e$64386600$2a819b4e@lpp>
+From: "Denis V. Lunev" <den@openvz.org>
+Subject: RE: cgroup: limit network bandwidth
+Date: Fri, 08 Feb 2008 10:52:56 +0300
+Message-ID: <1202457176.31674.12.camel@iris.sw.ru>
 Mime-Version: 1.0
-Content-Type: text/plain;
-	charset="windows-1250"
+Content-Type: text/plain
 Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Return-path: <netdev-owner@vger.kernel.org>
+Sender: netdev-owner@vger.kernel.org
+To: righiandr@users.sourceforge.net
+Cc: Linux Netdev List <netdev@vger.kernel.org>, Balbir Singh <balbir@linux.vnet.ibm.com>, Naveen Gupta <ngupta@google.com>, Paul Menage <menage@google.com>, Linux Containers <containers@lists.osdl.org>
 List-Id: containers.vger.kernel.org
 
-  Get original and perfectly functioning software at low prices. All software can be downloaded immediately after purchase. Impressive selection of programs even for Macintosh! Programs in many languages are available.
+Hello, Andrea!
 
- Professional customer service will help in case some problem with installation occurs. All updates are available to download free of charge. Money back guarantee!
+I have occasionally seen your patch on LWN (missed one in netdev@) and
+have two words about. May be this is not too late. I have missed my
+entire mailbox yesterday and have not followed the discussion. Pls
+forgive me.
 
-http://geocities.com/philbonner298/
+Rate-limiting message receive is nothing good at all. First, if we talk
+about i386, the most important resource is low memory. There are no more
+than 1 Gb of it. You suggest to keep it used more time than usual and
+this usage will not reduce network traffic to the node for UDP cases.
 
-   Original software only!
+For TCP the situation is slightly better. But not quite a big. For a
+case of rather slow group with a bug traffic you will just eat 64kb *
+Nsockets of receive buffers.
+
+So, resource usage is just increased for a case. This is unfortunate. In
+order to proper rate-limiting you need to calculate memory used
+- dropping incoming packets early for UDP
+- manage TCP window on the base of buffer memory used by the cgroup
+
+Regards,
+	Den
+
