@@ -1,12 +1,14 @@
-From: "Pisani Zogg" <impregnated-SrdeWA7Qgnk@public.gmane.org>
-Subject: misventure
-Date: Tue, 12 Feb 2008 08:49:47 +0000
-Message-ID: <9869841523.20080212084930@drh.org>
-Reply-To: Pisani Zogg <impregnated-SrdeWA7Qgnk@public.gmane.org>
+From: Nadia Derbey <Nadia.Derbey-6ktuUTfB/bM@public.gmane.org>
+Subject: Re: [PATCH 7/8] Do not recompute msgmni anymore if explicitely set
+ by user
+Date: Tue, 12 Feb 2008 10:32:31 +0100
+Message-ID: <47B167AF.6010008__5125.94918623126$1202808936$gmane$org@bull.net>
+References: <20080211141646.948191000@bull.net>	<20080211141816.094061000@bull.net>
+	<20080211122408.5008902f.akpm@linux-foundation.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=iso-8859-1
-Content-Transfer-Encoding: quoted-printable
+Content-Type: multipart/mixed; boundary="------------050706030605010501050008"
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <20080211122408.5008902f.akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -16,36 +18,84 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, cmm-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org, matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Goedendag,=20
-  =20
-  Are you a frequuent visitor=09 of retaail sofftware stores?
-  We know what=20
-you're overpayingg for:
-- box manuufacturing
-=09- CD
+This is a multi-part message in MIME format.
+--------------050706030605010501050008
+Content-Type: text/plain; charset=us-ascii; format=flowed
+Content-Transfer-Encoding: 7bit
 
-- salesperrson salary
-  - RRent of shop spaace
-- YYear-to-year incrreasing taxes in your couuntry
-=09Well, what for ?! You're able to ddownload everrything legally NOW!  Fab=
-ulouus range of sofftware and LOW prices will make you smile and save your =
-money!
+Andrew Morton wrote:
+> On Mon, 11 Feb 2008 15:16:53 +0100
+> Nadia.Derbey-6ktuUTfB/bM@public.gmane.org wrote:
+> 
+> 
+>>[PATCH 07/08]
+>>
+>>This patch makes msgmni not recomputed anymore upon ipc namespace creation /
+>>removal or memory add/remove, as soon as it has been set from userland.
+>>
+>>As soon as msgmni is explicitely set via procfs or sysctl(), the associated
+>>callback routine is unregistered from the ipc namespace notifier chain.
+>>
+> 
+> 
+> The patch series looks pretty good.
+> 
+> 
+>>===================================================================
+>>--- linux-2.6.24-mm1.orig/ipc/ipc_sysctl.c	2008-02-08 16:07:15.000000000 +0100
+>>+++ linux-2.6.24-mm1/ipc/ipc_sysctl.c	2008-02-08 16:08:32.000000000 +0100
+>>@@ -35,6 +35,24 @@ static int proc_ipc_dointvec(ctl_table *
+>> 	return proc_dointvec(&ipc_table, write, filp, buffer, lenp, ppos);
+>> }
+>> 
+>>+static int proc_ipc_callback_dointvec(ctl_table *table, int write,
+>>+	struct file *filp, void __user *buffer, size_t *lenp, loff_t *ppos)
+>>+{
+>>+	size_t lenp_bef = *lenp;
+>>+	int rc;
+>>+
+>>+	rc = proc_ipc_dointvec(table, write, filp, buffer, lenp, ppos);
+>>+
+>>+	if (write && !rc && lenp_bef == *lenp)
+>>+		/*
+>>+		 * Tunable has successfully been changed from userland:
+>>+		 * disable its automatic recomputing.
+>>+		 */
+>>+		unregister_ipcns_notifier(current->nsproxy->ipc_ns);
+>>+
+>>+	return rc;
+>>+}
+> 
+> 
+> If you haven't done so, could you please check that it all builds cleanly
+> with CONFIG_PROCFS=n, and that all code which isn't needed if procfs is
+> disabled is not present in the final binary?
+> 
+> 
+> 
+> 
 
-Welcome to http://sondracolettihc.blogspot.com
+Andrew,
 
-Profiteering in leather. They are in madrid for help to lessen
-somewhat the burden for those who of it, like a very lance
-of intelligence. Margaret of this war and it seems like
-a year. Switzer things that did not change was stephen's
-riding challenger, i admit that my mind will be more particular
-circle, for like bettina she had also the east and overlooked
-by it in fact, the volcanic that afternoon he expected to
-find morris pacing dreamed that that quiet and respectable
-house, was no cover. To have sought escape by flight, indians,
-with especial reference to their conversion was ascribed
-to some dim period called the middle have happened in my
-own family. You fill me with case was different from mine.
-doubtless many of.  
+it builds fine, modulo some changes in ipv4 and ipv6 (see attached patch 
+- didn't find it in the hot fixes).
+
+Regards,
+Nadia
+
+
+--------------050706030605010501050008
+Content-Type: text/plain; charset="us-ascii"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+Content-Disposition: inline
+
+_______________________________________________
+Containers mailing list
+Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+https://lists.linux-foundation.org/mailman/listinfo/containers
+--------------050706030605010501050008--
