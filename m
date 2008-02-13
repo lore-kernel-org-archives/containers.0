@@ -1,7 +1,8 @@
-From: "Alberto Peterson" <solanacea.com-HJ82pCvTvcbtMQMe8zrC0Ix8Rpr+ynqq@public.gmane.org>
-Subject: Microsoft Vista U|timate for 89, Retails @ 399 (repayment 310)
-Date: Wed, 13 Feb 2008 20:53:26 +0100
-Message-ID: <000701c86e79$e90b7700$0100007f@fwdbfpr>
+From: "Flora Ho" <dwsaxegaardm-qUWM3GNQlGjHIrknJkPJpg@public.gmane.org>
+Subject: Get any soft you need without delays.
+Date: Wed, 13 Feb 2008 21:01:57 +0100
+Message-ID: <01c86e83$ab335ba0$bbb6425b@dwsaxegaardm>
+Mime-Version: 1.0
 Content-Type: text/plain;
 	charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -15,22 +16,13 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
+To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-steinberg wavelab 5.01a - 49
-microsoft expression studio 1.0 - 79
+  You don't want to wait till you get software on a CD? Download your software immediately after purchase. No trial, demo, incomplete or academic versions! Only original and fully functional versions! Software for Macintosh is also available! We offer software in all European languages. Absolutely low prices!
 
-Put ''blatnoyoem. com'' to Expl0rer of Internet
-(w/o '' and space)
+ All your questions concerning installation will be replied quickly. Highly professional customer service! If your software does not run, we'll refund you money.
 
-adobe after effects 7.0 standard - 59
-adobe audition 2.0 - 49
-steinberg wavelab 5.01a - 49
-autodesk autocad electrical 2006 - 99
-cakewalk project 5 - 59
-parallels desktop 3.0 for mac - 29
-realize voice 3.51 - 29
-readiris pro 11.5 for mac - 39
-microsoft onenote pro 2003 - 29
-adobe illustrator cs2 - 59
+http://geocities.com/coybrady949/
+
+   Get software you need right now!
