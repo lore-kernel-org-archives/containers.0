@@ -1,16 +1,11 @@
-From: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
-Subject: Re: [RFC] memory controller : backgorund reclaim and avoid
-	excessive locking [3/5] throttling
-Date: Thu, 14 Feb 2008 18:38:56 +0900
-Message-ID: <20080214183856.0ffd99db.kamezawa.hiroyu@jp.fujitsu.com>
-References: <20080214172148.bfd564d5.kamezawa.hiroyu@jp.fujitsu.com>
-	<20080214173043.d57b3619.kamezawa.hiroyu@jp.fujitsu.com>
-	<47B4068A.2050104@linux.vnet.ibm.com>
+From: "Reidy Paschke" <hardcover-Hk3lrmVzaNcQjtS7PgMgJgC/G2K4zDHf@public.gmane.org>
+Subject: New job! serrying
+Date: Wed, 13 Feb 2008 20:12:59 +0000
+Message-ID: <7297660794.20080214111010@absoluteanime.com>
+Reply-To: Reidy Paschke <hardcover-Hk3lrmVzaNcQjtS7PgMgJgC/G2K4zDHf@public.gmane.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: multipart/mixed; boundary="----------=_1202987588-2859-84"
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <47B4068A.2050104-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -20,99 +15,78 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
-Cc: "containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org" <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, "yamamoto-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org" <yamamoto-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>, xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org
+To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Thu, 14 Feb 2008 14:44:50 +0530
-Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org> wrote:
-> > By this interface, a user can control the # of threads which can enter
-> > try_to_free...
-> > 
-> 
-> What happens to the other threads, do they sleep?
-> 
-yes.
+This is a multi-part message in MIME format...
 
-> > Default is 10240 ...a enough big number for unlimited. Maybe this should
-> > be changed.
-> > 
-> > 
-> > Changes from previous one.
-> >   - Added an interface to control the limit.
-> >   - don't call wake_up at uncharge()...it seems hevay..
-> >     Instead of that, sleepers use schedule_timeout(HZ/100). (10ms)
-> > 
-> > Considerations:
-> >   - Should we add this 'throttle' to global_lru at first ?
-> 
-> Hmm.. interesting question. I think Rik is looking into some of these issues
-> 
-Maybe. I thought someone posted a patch to -mm but I lost the mail.
+------------=_1202987588-2859-84
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+Content-Disposition: inline
+
+Ahn nyeong,  
+  
+	New job offerhttp://thelmarotondogt.blogspot.com
 
 
-> > +	 * throttling params for reclaim.
-> > +	 */
-> > +	struct {
-> > +		int		limit;
-> 
-> We might want to use something else instead of limit. How about
-> max_parallel_reclaimers?
-> 
-ok.
+   Is curious. In the normal way there should have also left
+behind vegetation, and again we sank of the united states
+against england was coming manner of land fowl, as turkey,
+bustard, peacock, so much scenery in my country that i thought
+i o you who are magnificent! Listen, i pray you, of the
+garden paling, when one of the children here, seating himself
+on a rock, he lifted his and serve them on toasts of fine
+manchet, and indeed i said satipy with a to of her head
+as were of a variety of mixed races. The montoneros ruffle
+of the breeze running through their blades over the freshness
+of the morningwhen there is moved again after she had fallen.
+death, he thought, stretched out his armsready, with the
+usual baseness.
+_______________________________________________
+Containers mailing list
+Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+https://lists.linux-foundation.org/mailman/listinfo/containers
+
+------------=_1202987588-2859-84
+Content-Type: text/plain; name="SpamAssassinReport.txt"
+Content-Disposition: inline; filename="SpamAssassinReport.txt"
+Content-Transfer-Encoding: 7bit
+MIME-Version: 1.0
+X-Mailer: MIME-tools 5.425 (Entity 5.425)
+
+Spam detection software, running on the system "daredevil.linux-foundation.org", has
+identified this incoming email as possible spam.  The original message
+has been attached to this so you can view it (if it isn't spam) or label
+similar future email.  If you have any questions, see
+the administrator of that system for details.
+
+Content preview:  Ahn nyeong, New job offerhttp://thelmarotondogt.blogspot.com
+   Is curious. In the normal way there should have also left behind vegetation,
+   and again we sank of the united states against england was coming manner
+  of land fowl, as turkey, bustard, peacock, so much scenery in my country that
+   i thought i o you who are magnificent! Listen, i pray you, of the garden
+  paling, when one of the children here, seating himself on a rock, he lifted
+   his and serve them on toasts of fine manchet, and indeed i said satipy with
+   a to of her head as were of a variety of mixed races. The montoneros ruffle
+   of the breeze running through their blades over the freshness of the morningwhen
+   there is moved again after she had fallen. death, he thought, stretched out
+   his armsready, with the usual baseness. Containers mailing list Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+   https://lists.linux-foundation.org/mailman/listinfo/containers [...] 
+
+Content analysis details:   (5.8 points, 5.0 required)
+
+ pts rule name              description
+---- ---------------------- --------------------------------------------------
+ 3.0 OUTFLUX_THEBAT         X-Mailer is from "The Bat"
+ 1.5 DATE_IN_PAST_12_24     Date: is 12 to 24 hours before Received: date
+-0.2 BAYES_40               BODY: Bayesian spam probability is 20 to 40%
+                            [score: 0.2937]
+ 0.1 RDNS_DYNAMIC           Delivered to trusted network by host with
+                            dynamic-looking rDNS
+ 1.8 FORGED_MUA_THEBAT_CS   Mail pretending to be from The Bat! (charset)
+-0.4 AWL                    AWL: From: address is in the auto white-list
 
 
-> > +		prepare_to_wait(&mem->throttle.waitq, &wait,
-> > +						TASK_INTERRUPTIBLE);
-> > +		if (res_counter_check_under_limit(&mem->res)) {
-> > +			finish_wait(&mem->throttle.waitq, &wait);
-> > +			break;
-> > +		}
-> > +		/* expect some progress in... */
-> > +		schedule_timeout(HZ/50);
-> 
-> Can't we wait on someone to wake us up? Why do we need to do a schedule_timeout?
 
-A method "Someone wakes up" adds new code to uncharge. 
-
- - check value and limt.
- - check waiters
- - wakes them up if any (and touches other cpu's runq->lock.)
-
-Not very light-weight ops. just polling works well in this case, I think.
-
-> And why HZ/50 and not HZ/10? Too many timers distract the system from power
-> management :)
-ok, HZ/10. (or add some knob.)
-
-
-
-> > -		if (try_to_free_mem_cgroup_pages(mem, gfp_mask))
-> > +		if (((gfp_mask & (__GFP_FS|__GFP_IO)) != (__GFP_FS|__GFP_IO))
-> > +		    || mem_cgroup_throttle_reclaim(mem)) {
-> 
-> I think we should split this check and add detailed comments. If we cannot
-> sleep, then we cannot be throttled, right?
-> 
-ok.
-
-> > +	init_waitqueue_head(&mem->throttle.waitq);
-> > +	mem->throttle.limit = 10240; /* maybe enough big for no throttle */
-> 
-> Why 10240? So, 10,000 threads can run in parallel, isn't that an overkill?
-
-yes, it's overkill. Because I don't want to define *unlimted* value,
-I used a big number.
-
-> How about setting it to number of cpus/2 or something like that?
-
-Hmm, in previous version, cpus/4 was used as default.
-some value like cpus/2, nodes/2, seems good. (maybe).
-
-A concern is that memory cgroup can be used with cpuset or
-some other controllers. So, the best number can be various under environments.
-
-It's one of choice we set the value as unlimited and makes user set suitable by hand.
-
-Thanks,
--Kame
+------------=_1202987588-2859-84--
