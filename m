@@ -1,17 +1,11 @@
-From: Paul Jackson <pj-sJ/iWh9BUns@public.gmane.org>
-Subject: Re: [PATCH 4/4] The control group itself
-Date: Tue, 12 Feb 2008 20:42:15 -0600
-Message-ID: <20080212204215.2eca689f.pj@sgi.com>
-References: <47AAFFF2.9030804@openvz.org> <47AB013B.8060502@openvz.org>
-	<20080211173830.GA22160@sergelap.ibm.com>
-	<47B174B2.5010500@openvz.org>
-	<20080212172134.GA12177@sergelap.austin.ibm.com>
-	<6599ad830802121817n7713fa85h51aedf4df74aa764@mail.gmail.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
+From: "Alberto Peterson" <solanacea.com-HJ82pCvTvcbtMQMe8zrC0Ix8Rpr+ynqq@public.gmane.org>
+Subject: Microsoft Vista U|timate for 89, Retails @ 399 (repayment 310)
+Date: Wed, 13 Feb 2008 20:53:26 +0100
+Message-ID: <000701c86e79$e90b7700$0100007f@fwdbfpr>
+Content-Type: text/plain;
+	charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <6599ad830802121817n7713fa85h51aedf4df74aa764-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -21,21 +15,22 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
-Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org
+To: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Paul M wrote:
-> > Is there any
-> > way it would be ok to have cgroup_file_write() check for CAP_SYS_ADMIN?
-> 
-> Sure, we could have flags in the subsys object for this kind of thing
-> that let particular subsystems request this.
+steinberg wavelab 5.01a - 49
+microsoft expression studio 1.0 - 79
 
-That sounds like it would work fine ... the cpuset subsystem would
-just not request this.
+Put ''blatnoyoem. com'' to Expl0rer of Internet
+(w/o '' and space)
 
--- 
-                  I won't rest till it's the best ...
-                  Programmer, Linux Scalability
-                  Paul Jackson <pj-sJ/iWh9BUns@public.gmane.org> 1.940.382.4214
+adobe after effects 7.0 standard - 59
+adobe audition 2.0 - 49
+steinberg wavelab 5.01a - 49
+autodesk autocad electrical 2006 - 99
+cakewalk project 5 - 59
+parallels desktop 3.0 for mac - 29
+realize voice 3.51 - 29
+readiris pro 11.5 for mac - 39
+microsoft onenote pro 2003 - 29
+adobe illustrator cs2 - 59
