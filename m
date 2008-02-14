@@ -1,8 +1,8 @@
 From: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
 Subject: [RFC] memory controller : backgorund reclaim and avoid excessive
-	locking [1/5] high-low watermark
-Date: Thu, 14 Feb 2008 17:28:01 +0900
-Message-ID: <20080214172801.b1c35067.kamezawa.hiroyu@jp.fujitsu.com>
+	locking [4/5] borrow resource
+Date: Thu, 14 Feb 2008 17:35:04 +0900
+Message-ID: <20080214173504.cc1aa42e.kamezawa.hiroyu@jp.fujitsu.com>
 References: <20080214172148.bfd564d5.kamezawa.hiroyu@jp.fujitsu.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -22,200 +22,217 @@ To: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
 Cc: "containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org" <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, "yamamoto-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org" <yamamoto-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>, xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org, "balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org" <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Add High/Low watermark support to res_counter.
+One of contended lock is counter->lock.
 
-This adds high/low watermark support to res_counter.
+Now, counter->usage is changed by PAGE_SIZE. This patch changes 
+this to be PAGE_SIZE * borrow_factor and cache "borrow" in
+per cpu area.
 
-Adds new member hwmark, lwmark, wmark_state to res_counter struct.
+This reduce # of lock against counter->lock.
 
-Users of res_counter must keep lwmark <= hwmark <= limit.
-(set params as lwmark == hwmark == limit will disable this feature.)
 
-wmark_state is added to read wmark status without lock.
+Signed-off-by: KAMEZAWA Hiroyuki <kaemzawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
 
-Codes will be like this. (check status after charge.)
-
-	if (res_counter_charge(cnt...)) { <----(need lock)
-		.....
-	}
-	if (res_counter_above_hwmark(cnt)) <---- (no lock)
-		trigger background jobs...
-
-If I have to check under lock, please teach me.
-
-counter->hwmark and counter->lwmark is not automatically adjusted
-when limit is changed. So, users must change lwmark, hwmark before
-changing limit.
-
-Changelog
-  * made variable names shorter.
-  * adjusted to 2.6.24-mm1
-
-Signed-off-by: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
-
- include/linux/res_counter.h |   30 ++++++++++++++++++++++++
- kernel/res_counter.c        |   53 +++++++++++++++++++++++++++++++++++++++-----
- 2 files changed, 78 insertions(+), 5 deletions(-)
-
-Index: linux-2.6.24-mm1/include/linux/res_counter.h
+Index: linux-2.6.24-mm1/mm/memcontrol.c
 ===================================================================
---- linux-2.6.24-mm1.orig/include/linux/res_counter.h
-+++ linux-2.6.24-mm1/include/linux/res_counter.h
-@@ -19,6 +19,16 @@
-  * the helpers described beyond
-  */
- 
-+/*
-+ * Watermark status.
-+ */
-+
-+enum watermark_state {
-+	RES_WMARK_BELOW_LOW = 0,	/* usage < low <= high <= max */
-+	RES_WMARK_ABOVE_LOW,	/* low <= usage < high <= max */
-+	RES_WMARK_ABOVE_HIGH,	/* low <= high <= usage <= max */
-+};
-+
- struct res_counter {
- 	/*
- 	 * the current resource consumption level
-@@ -33,10 +43,18 @@ struct res_counter {
+--- linux-2.6.24-mm1.orig/mm/memcontrol.c
++++ linux-2.6.24-mm1/mm/memcontrol.c
+@@ -47,7 +47,8 @@ enum mem_cgroup_stat_index {
  	 */
- 	unsigned long long failcnt;
- 	/*
-+	 * for supporting High/Low watermak
-+	 * Must keep low <= high <= limit.
-+	 */
-+	unsigned long long hwmark;
-+	unsigned long long lwmark;
-+	enum watermark_state wmark_state; /* changed at charge/uncharge */
-+	/*
- 	 * the lock to protect all of the above.
- 	 * the routines below consider this to be IRQ-safe
- 	 */
- 	spinlock_t lock;
-+
+ 	MEM_CGROUP_STAT_CACHE, 	   /* # of pages charged as cache */
+ 	MEM_CGROUP_STAT_RSS,	   /* # of pages charged as rss */
+-
++	MEM_CGROUP_STAT_BORROW,	   /* # of per-cpu borrow resource from
++					global resource */
+ 	MEM_CGROUP_STAT_NSTATS,
  };
  
- /*
-@@ -66,6 +84,8 @@ enum {
- 	RES_USAGE,
- 	RES_LIMIT,
- 	RES_FAILCNT,
-+	RES_HWMARK,
-+	RES_LWMARK,
- };
+@@ -134,6 +135,9 @@ struct mem_cgroup {
+ 	struct mem_cgroup_lru_info info;
  
- /*
-@@ -124,4 +144,14 @@ static inline bool res_counter_check_und
- 	return ret;
- }
- 
-+static inline bool res_counter_below_lwmark(struct res_counter *cnt)
-+{
-+	smp_rmb();
-+	return (cnt->wmark_state == RES_WMARK_BELOW_LOW);
-+}
-+static inline bool res_counter_above_hwmark(struct res_counter *cnt)
-+{
-+	smp_rmb();
-+	return (cnt->wmark_state == RES_WMARK_ABOVE_HIGH);
-+}
- #endif
-Index: linux-2.6.24-mm1/kernel/res_counter.c
-===================================================================
---- linux-2.6.24-mm1.orig/kernel/res_counter.c
-+++ linux-2.6.24-mm1/kernel/res_counter.c
-@@ -17,16 +17,29 @@ void res_counter_init(struct res_counter
- {
- 	spin_lock_init(&counter->lock);
- 	counter->limit = (unsigned long long)LLONG_MAX;
-+	counter->lwmark = (unsigned long long)LLONG_MAX;
-+	counter->hwmark = (unsigned long long)LLONG_MAX;
-+	counter->wmark_state = RES_WMARK_BELOW_LOW;
- }
- 
- int res_counter_charge_locked(struct res_counter *counter, unsigned long val)
- {
--	if (counter->usage + val > counter->limit) {
-+	unsigned long long newval = counter->usage + val;
-+	if (newval > counter->limit) {
- 		counter->failcnt++;
- 		return -ENOMEM;
- 	}
- 
--	counter->usage += val;
-+        if (newval > counter->hwmark) {
-+		counter->wmark_state = RES_WMARK_ABOVE_HIGH;
-+		smp_wmb();
-+	} else if (newval > counter->lwmark) {
-+		counter->wmark_state = RES_WMARK_ABOVE_LOW;
-+		smp_wmb();
-+	}
+ 	int	prev_priority;	/* for recording reclaim priority */
 +
-+	counter->usage = newval;
++	int	borrow_unit;	  /* size of unit for borrowing resource */
 +
- 	return 0;
+ 	/*
+ 	 * statistics.
+ 	 */
+@@ -611,6 +615,92 @@ unsigned long mem_cgroup_isolate_pages(u
+ 	return nr_taken;
  }
  
-@@ -43,10 +56,18 @@ int res_counter_charge(struct res_counte
- 
- void res_counter_uncharge_locked(struct res_counter *counter, unsigned long val)
- {
-+	unsigned long long newval = counter->usage - val;
- 	if (WARN_ON(counter->usage < val))
--		val = counter->usage;
-+		newval = 0;
- 
--	counter->usage -= val;
-+	if (newval < counter->lwmark) {
-+		counter->wmark_state = RES_WMARK_BELOW_LOW;
-+		smp_wmb();
-+	} else if (newval < counter->hwmark) {
-+		counter->wmark_state = RES_WMARK_ABOVE_LOW;
-+		smp_wmb();
++/* FIXME?  we assume that size is always PAGE_SIZE. */
++
++static int mem_cgroup_borrow_and_charge(struct mem_cgroup *mem, int size)
++{
++	unsigned long flags;
++	int ret;
++
++	ret = 0;
++
++	local_irq_save(flags);
++	if (mem->borrow_unit) {
++		int cpu;
++		s64 *bwp;
++		cpu = smp_processor_id();
++		bwp = &mem->stat.cpustat[cpu].count[MEM_CGROUP_STAT_BORROW];
++		if (*bwp > size) {
++			*bwp -= size;
++			goto out;
++		}
++		/* try to charge */
++		ret = res_counter_charge(&mem->res, mem->borrow_unit);
++		if (!ret) { /* success */
++			*bwp += (mem->borrow_unit - size);
++			goto out;
++		}
 +	}
-+	counter->usage = newval;
- }
++	spin_lock(&mem->res.lock);
++	ret = res_counter_charge_locked(&mem->res, size);
++	spin_unlock(&mem->res.lock);
++out:
++	local_irq_restore(flags);
++	return ret;
++}
++
++static void mem_cgroup_return_and_uncharge(struct mem_cgroup *mem, int size)
++{
++	unsigned long flags;
++	int uncharge_size = 0;
++
++	local_irq_save(flags);
++	if (mem->borrow_unit) {
++		int limit = mem->borrow_unit * 2;
++		int cpu;
++		s64 *bwp;
++		cpu = smp_processor_id();
++		bwp = &mem->stat.cpustat[cpu].count[MEM_CGROUP_STAT_BORROW];
++		*bwp += size;
++		if (*bwp > limit) {
++			uncharge_size = *bwp - mem->borrow_unit;
++			*bwp = mem->borrow_unit;
++		}
++	} else
++		uncharge_size = size;
++
++	if (uncharge_size) {
++		spin_lock(&mem->res.lock);
++		res_counter_uncharge_locked(&mem->res, size);
++		spin_unlock(&mem->res.lock);
++	}
++	local_irq_restore(flags);
++
++	return;
++}
++
++static void drain_local_borrow(void *data)
++{
++	int cpu;
++	int borrow;
++	unsigned long flags;
++	struct mem_cgroup *mem = data;
++
++	local_irq_save(flags);
++	cpu = smp_processor_id();
++	borrow = mem->stat.cpustat[cpu].count[MEM_CGROUP_STAT_BORROW];
++	mem->stat.cpustat[cpu].count[MEM_CGROUP_STAT_BORROW] = 0;
++	spin_lock(&mem->res.lock);
++	res_counter_uncharge_locked(&mem->res, borrow);
++	spin_unlock(&mem->res.lock);
++	local_irq_restore(flags);
++}
++
++static void drain_all_borrow(struct mem_cgroup *mem)
++{
++	on_each_cpu(drain_local_borrow, mem, 0, 1);
++}
++
+ /*
+  * Charge the memory controller for page usage.
+  * Return
+@@ -681,7 +771,7 @@ retry:
+ 	 * If we created the page_cgroup, we should free it on exceeding
+ 	 * the cgroup limit.
+ 	 */
+-	while (res_counter_charge(&mem->res, PAGE_SIZE)) {
++	while (mem_cgroup_borrow_and_charge(mem, PAGE_SIZE)) {
+ 		int ret;
+ 		if (!(gfp_mask & __GFP_WAIT))
+ 			goto out;
+@@ -709,6 +799,8 @@ retry:
+ 		if (res_counter_check_under_limit(&mem->res))
+ 			continue;
  
- void res_counter_uncharge(struct res_counter *counter, unsigned long val)
-@@ -69,6 +90,10 @@ res_counter_member(struct res_counter *c
- 		return &counter->limit;
- 	case RES_FAILCNT:
- 		return &counter->failcnt;
-+	case RES_HWMARK:
-+		return &counter->hwmark;
-+	case RES_LWMARK:
-+		return &counter->lwmark;
- 	};
- 
- 	BUG();
-@@ -123,10 +148,28 @@ ssize_t res_counter_write(struct res_cou
- 			goto out_free;
++		if (nr_retries < MEM_CGROUP_RECLAIM_RETRIES)
++			drain_all_borrow(mem);
+ 		if (!nr_retries--) {
+ 			mem_cgroup_out_of_memory(mem, gfp_mask);
+ 			goto out;
+@@ -805,7 +897,7 @@ void mem_cgroup_uncharge(struct page_cgr
+ 		if (clear_page_cgroup(page, pc) == pc) {
+ 			mem = pc->mem_cgroup;
+ 			css_put(&mem->css);
+-			res_counter_uncharge(&mem->res, PAGE_SIZE);
++			mem_cgroup_return_and_uncharge(mem, PAGE_SIZE);
+ 			spin_lock_irqsave(&mz->lru_lock, flags);
+ 			__mem_cgroup_remove_list(pc);
+ 			spin_unlock_irqrestore(&mz->lru_lock, flags);
+@@ -1005,6 +1097,7 @@ int mem_cgroup_force_empty(struct mem_cg
+ 				/* drop all page_cgroup in inactive_list */
+ 				mem_cgroup_force_empty_list(mem, mz, 0);
+ 			}
++		drain_all_borrow(mem);
  	}
- 	spin_lock_irqsave(&counter->lock, flags);
-+	switch (member) {
-+		case RES_LIMIT:
-+			if (counter->hwmark > tmp)
-+				goto unlock_free;
-+			break;
-+		case RES_HWMARK:
-+			if (tmp < counter->lwmark ||
-+			    tmp > counter->limit)
-+				goto unlock_free;
-+			break;
-+		case RES_LWMARK:
-+			if (tmp > counter->hwmark)
-+				goto unlock_free;
-+			break;
-+		default:
-+			break;
-+	}
- 	val = res_counter_member(counter, member);
- 	*val = tmp;
--	spin_unlock_irqrestore(&counter->lock, flags);
- 	ret = nbytes;
-+unlock_free:
-+	spin_unlock_irqrestore(&counter->lock, flags);
- out_free:
- 	kfree(buf);
+ 	ret = 0;
  out:
+@@ -1109,12 +1202,29 @@ static u64 mem_throttle_read(struct cgro
+ 	return (u64)mem->throttle.limit;
+ }
+ 
++static int mem_bulkratio_write(struct cgroup *cont, struct cftype *cft, u64 val)
++{
++	struct mem_cgroup *mem = mem_cgroup_from_cont(cont);
++	int unit = val * PAGE_SIZE;
++	if (unit > (PAGE_SIZE << (MAX_ORDER/2)))
++		return -EINVAL;
++	mem->borrow_unit = unit;
++	return 0;
++}
++
++static u64 mem_bulkratio_read(struct cgroup *cont, struct cftype *cft)
++{
++	struct mem_cgroup *mem = mem_cgroup_from_cont(cont);
++	return (u64)(mem->borrow_unit/PAGE_SIZE);
++}
++
+ static const struct mem_cgroup_stat_desc {
+ 	const char *msg;
+ 	u64 unit;
+ } mem_cgroup_stat_desc[] = {
+ 	[MEM_CGROUP_STAT_CACHE] = { "cache", PAGE_SIZE, },
+ 	[MEM_CGROUP_STAT_RSS] = { "rss", PAGE_SIZE, },
++	[MEM_CGROUP_STAT_BORROW] = { "borrow", 1, },
+ };
+ 
+ static int mem_control_stat_show(struct seq_file *m, void *arg)
+@@ -1205,6 +1315,11 @@ static struct cftype mem_cgroup_files[] 
+ 		.read_uint  = mem_throttle_read,
+ 	},
+ 	{
++		.name = "bulkratio",
++		.write_uint = mem_bulkratio_write,
++		.read_uint = mem_bulkratio_read,
++	},
++	{
+ 		.name = "stat",
+ 		.open = mem_control_stat_open,
+ 	},
+@@ -1279,6 +1394,8 @@ mem_cgroup_create(struct cgroup_subsys *
+ 	mem->throttle.limit = 10240; /* maybe enough big for no throttle */
+ 	atomic_set(&mem->throttle.reclaimers, 0);
+ 
++	mem->borrow_unit = 0; /* Work at strict/precise mode as default */
++
+ 	return &mem->css;
+ free_out:
+ 	for_each_node_state(node, N_POSSIBLE)
