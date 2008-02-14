@@ -1,11 +1,15 @@
-From: "Reidy Paschke" <hardcover-Hk3lrmVzaNcQjtS7PgMgJgC/G2K4zDHf@public.gmane.org>
-Subject: New job! serrying
-Date: Wed, 13 Feb 2008 20:12:59 +0000
-Message-ID: <7297660794.20080214111010@absoluteanime.com>
-Reply-To: Reidy Paschke <hardcover-Hk3lrmVzaNcQjtS7PgMgJgC/G2K4zDHf@public.gmane.org>
+From: Nadia Derbey <Nadia.Derbey-6ktuUTfB/bM@public.gmane.org>
+Subject: Re: [PATCH 7/8] Do not recompute msgmni anymore if explicitely set
+	by user
+Date: Thu, 14 Feb 2008 12:47:57 +0100
+Message-ID: <47B42A6D.7050209__3219.39589125595$1202989971$gmane$org@bull.net>
+References: <20080211141646.948191000@bull.net>	<20080211141816.094061000@bull.net>	<20080211122408.5008902f.akpm@linux-foundation.org>	<47B167AF.6010008@bull.net>	<20080212014444.8bc3791b.akpm@linux-foundation.org>	<47B1B7F4.8080009@bull.net>
+	<20080212114439.e08085f1.akpm@linux-foundation.org>
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary="----------=_1202987588-2859-84"
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <20080212114439.e08085f1.akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -15,78 +19,83 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, cmm-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org, matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-This is a multi-part message in MIME format...
+Andrew Morton wrote:
+> On Tue, 12 Feb 2008 16:15:00 +0100
+> Nadia Derbey <Nadia.Derbey-6ktuUTfB/bM@public.gmane.org> wrote:
+> 
+> 
+>>Andrew Morton wrote:
+>>
+>>>On Tue, 12 Feb 2008 10:32:31 +0100 Nadia Derbey <Nadia.Derbey-6ktuUTfB/bM@public.gmane.org> wrote:
+>>>
+>>>
+>>>
+>>>>it builds fine, modulo some changes in ipv4 and ipv6 (see attached patch 
+>>>>- didn't find it in the hot fixes).
+>>>
+>>>
+>>>OK, thanks for checking.  Did you confirm that we don't have unneeded code
+>>>in vmlinux when CONFIG_PROCFS=n?  I guess before-and-after comparison of
+>>>the size(1) output would tell us.
+>>>
+>>>Those networking build problems appear to have already been fixed.
+>>>
+>>>In future, please quote the compiler error output in the changelog when
+>>>sending build fixes or warning fixes, thanks.
+>>>
+>>>
+>>>
+>>
+>>BEFORE:
+>>
+>>lkernel@akt$ size vmlinux
+>>    text    data     bss     dec     hex filename
+>>4318525  454484  462848 5235857  4fe491 vmlinux
+>>
+>>
+>>AFTER:
+>>
+>>lkernel@akt$ size vmlinux
+>>    text    data     bss     dec     hex filename
+>>4323161  454484  462848 5240493  4ff6ad vmlinux
+>>
+>>which makes it +4636 = +0.11%
+>>
+>>I've got the details for */built-in.o if needed.
+>>
+> 
+> 
+> That seems to be a lot of increase.  Are you sure you had CONFIG_PROCFS=n
+> in both cases?  If so, the patch must have added a lot of code which will
+> never be executed?
+> 
+> 
+> 
+Well, the patches that are impacted by procfs being configured or not 
+are #7 and #8. While the sizes I've sent you are before all patches 
+applied vs after all patches applied :-(
 
-------------=_1202987588-2859-84
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-Content-Disposition: inline
+So here are the "interesting sizes" - all with CONFIG_PROC_FS unset:
 
-Ahn nyeong,  
-  
-	New job offerhttp://thelmarotondogt.blogspot.com
+before patch 7:
+    text    data     bss     dec     hex filename
+4318757  454484  462848 5236089  4fe579 vmlinux
 
+before patch 8:
+    text    data     bss     dec     hex filename
+4318853  454484  462848 5236185  4fe5d9 vmlinux    +96
 
-   Is curious. In the normal way there should have also left
-behind vegetation, and again we sank of the united states
-against england was coming manner of land fowl, as turkey,
-bustard, peacock, so much scenery in my country that i thought
-i o you who are magnificent! Listen, i pray you, of the
-garden paling, when one of the children here, seating himself
-on a rock, he lifted his and serve them on toasts of fine
-manchet, and indeed i said satipy with a to of her head
-as were of a variety of mixed races. The montoneros ruffle
-of the breeze running through their blades over the freshness
-of the morningwhen there is moved again after she had fallen.
-death, he thought, stretched out his armsready, with the
-usual baseness.
-_______________________________________________
-Containers mailing list
-Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-https://lists.linux-foundation.org/mailman/listinfo/containers
+after patch 8:
+4319055  454484  462848 5236387  4fe6a3 vmlinux    +202
 
-------------=_1202987588-2859-84
-Content-Type: text/plain; name="SpamAssassinReport.txt"
-Content-Disposition: inline; filename="SpamAssassinReport.txt"
-Content-Transfer-Encoding: 7bit
-MIME-Version: 1.0
-X-Mailer: MIME-tools 5.425 (Entity 5.425)
+The higher difference after patch 8 is because I'm adding the new 
+interface blocking_notifier_chain_cond_register() even if CONFIG_PROC_FS 
+is not defined. This is to cover the case where msgmni is set through 
+the sysctl() syscall (CONFIG_SYSCTL_SYSCALL).
 
-Spam detection software, running on the system "daredevil.linux-foundation.org", has
-identified this incoming email as possible spam.  The original message
-has been attached to this so you can view it (if it isn't spam) or label
-similar future email.  If you have any questions, see
-the administrator of that system for details.
-
-Content preview:  Ahn nyeong, New job offerhttp://thelmarotondogt.blogspot.com
-   Is curious. In the normal way there should have also left behind vegetation,
-   and again we sank of the united states against england was coming manner
-  of land fowl, as turkey, bustard, peacock, so much scenery in my country that
-   i thought i o you who are magnificent! Listen, i pray you, of the garden
-  paling, when one of the children here, seating himself on a rock, he lifted
-   his and serve them on toasts of fine manchet, and indeed i said satipy with
-   a to of her head as were of a variety of mixed races. The montoneros ruffle
-   of the breeze running through their blades over the freshness of the morningwhen
-   there is moved again after she had fallen. death, he thought, stretched out
-   his armsready, with the usual baseness. Containers mailing list Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-   https://lists.linux-foundation.org/mailman/listinfo/containers [...] 
-
-Content analysis details:   (5.8 points, 5.0 required)
-
- pts rule name              description
----- ---------------------- --------------------------------------------------
- 3.0 OUTFLUX_THEBAT         X-Mailer is from "The Bat"
- 1.5 DATE_IN_PAST_12_24     Date: is 12 to 24 hours before Received: date
--0.2 BAYES_40               BODY: Bayesian spam probability is 20 to 40%
-                            [score: 0.2937]
- 0.1 RDNS_DYNAMIC           Delivered to trusted network by host with
-                            dynamic-looking rDNS
- 1.8 FORGED_MUA_THEBAT_CS   Mail pretending to be from The Bat! (charset)
--0.4 AWL                    AWL: From: address is in the auto white-list
-
-
-
-------------=_1202987588-2859-84--
+Regards,
+Nadia
