@@ -1,14 +1,13 @@
 From: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
-Subject: [RFC][PATCH 7/7] CGroup API: Update cpusets to use cgroup structured
-	file API
-Date: Fri, 15 Feb 2008 12:44:25 -0800
-Message-ID: <20080215204821.778088000__35504.2227115065$1203108635$gmane$org@menage.corp.google.com>
+Subject: [RFC][PATCH 3/7] CGroup API: Use cgroup map for memcontrol stats file
+Date: Fri, 15 Feb 2008 12:44:21 -0800
+Message-ID: <20080215204821.079806000__33292.8236028694$1203108640$gmane$org@menage.corp.google.com>
 References: <20080215204418.535025000@menage.corp.google.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline; filename=cpuset_files.patch
+Content-Disposition: inline; filename=memcontrol_use_cgroup_map.patch
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -22,292 +21,82 @@ To: balbir-xthvdsQ13ZrQT0dZR+AlfA@public.gmane.org, pj-sJ/iWh9BUns@public.gmane.
 Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Many of the cpusets control files are simple integer values, which
-don't require the overhead of memory allocations for reads and writes.
-
-Move the handlers for these control files into cpuset_read_uint() and
-cpuset_write_uint(). This also has the advantage that the control
-files show up as "u64" rather than "string" in the cgroup.api file.
+Remove the seq_file boilerplate used to construct the memcontrol stats
+map, and instead use the new map representation for cgroup control
+files
 
 Signed-off-by: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
 
 ---
- kernel/cpuset.c |  158 +++++++++++++++++++++++++++++---------------------------
- 1 file changed, 83 insertions(+), 75 deletions(-)
+ mm/memcontrol.c |   30 ++++++------------------------
+ 1 file changed, 6 insertions(+), 24 deletions(-)
 
-Index: cgroupmap-2.6.24-mm1/kernel/cpuset.c
+Index: cgroupmap-2.6.24-mm1/mm/memcontrol.c
 ===================================================================
---- cgroupmap-2.6.24-mm1.orig/kernel/cpuset.c
-+++ cgroupmap-2.6.24-mm1/kernel/cpuset.c
-@@ -999,19 +999,6 @@ int current_cpuset_is_being_rebound(void
+--- cgroupmap-2.6.24-mm1.orig/mm/memcontrol.c
++++ cgroupmap-2.6.24-mm1/mm/memcontrol.c
+@@ -974,9 +974,9 @@ static const struct mem_cgroup_stat_desc
+ 	[MEM_CGROUP_STAT_RSS] = { "rss", PAGE_SIZE, },
+ };
+ 
+-static int mem_control_stat_show(struct seq_file *m, void *arg)
++static int mem_control_stat_show(struct cgroup *cont, struct cftype *cft,
++				 struct cgroup_map_cb *cb)
+ {
+-	struct cgroup *cont = m->private;
+ 	struct mem_cgroup *mem_cont = mem_cgroup_from_cont(cont);
+ 	struct mem_cgroup_stat *stat = &mem_cont->stat;
+ 	int i;
+@@ -986,8 +986,7 @@ static int mem_control_stat_show(struct 
+ 
+ 		val = mem_cgroup_read_stat(stat, i);
+ 		val *= mem_cgroup_stat_desc[i].unit;
+-		seq_printf(m, "%s %lld\n", mem_cgroup_stat_desc[i].msg,
+-				(long long)val);
++		cb->fill(cb, mem_cgroup_stat_desc[i].msg, val);
+ 	}
+ 	/* showing # of active pages */
+ 	{
+@@ -997,29 +996,12 @@ static int mem_control_stat_show(struct 
+ 						MEM_CGROUP_ZSTAT_INACTIVE);
+ 		active = mem_cgroup_get_all_zonestat(mem_cont,
+ 						MEM_CGROUP_ZSTAT_ACTIVE);
+-		seq_printf(m, "active %ld\n", (active) * PAGE_SIZE);
+-		seq_printf(m, "inactive %ld\n", (inactive) * PAGE_SIZE);
++		cb->fill(cb, "active", (active) * PAGE_SIZE);
++		cb->fill(cb, "inactive", (inactive) * PAGE_SIZE);
+ 	}
+ 	return 0;
  }
  
- /*
-- * Call with cgroup_mutex held.
-- */
+-static const struct file_operations mem_control_stat_file_operations = {
+-	.read = seq_read,
+-	.llseek = seq_lseek,
+-	.release = single_release,
+-};
 -
--static int update_memory_pressure_enabled(struct cpuset *cs, char *buf)
+-static int mem_control_stat_open(struct inode *unused, struct file *file)
 -{
--	if (simple_strtoul(buf, NULL, 10) != 0)
--		cpuset_memory_pressure_enabled = 1;
--	else
--		cpuset_memory_pressure_enabled = 0;
--	return 0;
+-	/* XXX __d_cont */
+-	struct cgroup *cont = file->f_dentry->d_parent->d_fsdata;
+-
+-	file->f_op = &mem_control_stat_file_operations;
+-	return single_open(file, mem_control_stat_show, cont);
 -}
 -
--/*
-  * update_flag - read a 0 or a 1 in a file and update associated flag
-  * bit:	the bit to update (CS_CPU_EXCLUSIVE, CS_MEM_EXCLUSIVE,
-  *				CS_SCHED_LOAD_BALANCE,
-@@ -1023,15 +1010,13 @@ static int update_memory_pressure_enable
-  * Call with cgroup_mutex held.
-  */
- 
--static int update_flag(cpuset_flagbits_t bit, struct cpuset *cs, char *buf)
-+static int update_flag(cpuset_flagbits_t bit, struct cpuset *cs,
-+		       int turning_on)
- {
--	int turning_on;
- 	struct cpuset trialcs;
- 	int err;
- 	int cpus_nonempty, balance_flag_changed;
- 
--	turning_on = (simple_strtoul(buf, NULL, 10) != 0);
--
- 	trialcs = *cs;
- 	if (turning_on)
- 		set_bit(bit, &trialcs.flags);
-@@ -1247,44 +1232,66 @@ static ssize_t cpuset_common_file_write(
- 	case FILE_MEMLIST:
- 		retval = update_nodemask(cs, buffer);
- 		break;
-+	default:
-+		retval = -EINVAL;
-+		goto out2;
-+	}
-+
-+	if (retval == 0)
-+		retval = nbytes;
-+out2:
-+	cgroup_unlock();
-+out1:
-+	kfree(buffer);
-+	return retval;
-+}
-+
-+static int cpuset_write_uint(struct cgroup *cgrp, struct cftype *cft, u64 val)
-+{
-+	int retval = 0;
-+	struct cpuset *cs = cgroup_cs(cgrp);
-+	cpuset_filetype_t type = cft->private;
-+
-+	cgroup_lock();
-+
-+	if (cgroup_is_removed(cgrp)) {
-+		cgroup_unlock();
-+		return -ENODEV;
-+	}
-+
-+	switch (type) {
- 	case FILE_CPU_EXCLUSIVE:
--		retval = update_flag(CS_CPU_EXCLUSIVE, cs, buffer);
-+		retval = update_flag(CS_CPU_EXCLUSIVE, cs, val);
- 		break;
- 	case FILE_MEM_EXCLUSIVE:
--		retval = update_flag(CS_MEM_EXCLUSIVE, cs, buffer);
-+		retval = update_flag(CS_MEM_EXCLUSIVE, cs, val);
- 		break;
- 	case FILE_SCHED_LOAD_BALANCE:
--		retval = update_flag(CS_SCHED_LOAD_BALANCE, cs, buffer);
-+		retval = update_flag(CS_SCHED_LOAD_BALANCE, cs, val);
- 		break;
- 	case FILE_MEMORY_MIGRATE:
--		retval = update_flag(CS_MEMORY_MIGRATE, cs, buffer);
-+		retval = update_flag(CS_MEMORY_MIGRATE, cs, val);
- 		break;
- 	case FILE_MEMORY_PRESSURE_ENABLED:
--		retval = update_memory_pressure_enabled(cs, buffer);
-+		cpuset_memory_pressure_enabled = val;
- 		break;
- 	case FILE_MEMORY_PRESSURE:
- 		retval = -EACCES;
- 		break;
- 	case FILE_SPREAD_PAGE:
--		retval = update_flag(CS_SPREAD_PAGE, cs, buffer);
-+		retval = update_flag(CS_SPREAD_PAGE, cs, val);
- 		cs->mems_generation = cpuset_mems_generation++;
- 		break;
- 	case FILE_SPREAD_SLAB:
--		retval = update_flag(CS_SPREAD_SLAB, cs, buffer);
-+		retval = update_flag(CS_SPREAD_SLAB, cs, val);
- 		cs->mems_generation = cpuset_mems_generation++;
- 		break;
- 	default:
- 		retval = -EINVAL;
--		goto out2;
-+		break;
- 	}
--
--	if (retval == 0)
--		retval = nbytes;
--out2:
- 	cgroup_unlock();
--out1:
--	kfree(buffer);
--	return retval;
-+	return -EINVAL;
- }
- 
- /*
-@@ -1345,30 +1352,6 @@ static ssize_t cpuset_common_file_read(s
- 	case FILE_MEMLIST:
- 		s += cpuset_sprintf_memlist(s, cs);
- 		break;
--	case FILE_CPU_EXCLUSIVE:
--		*s++ = is_cpu_exclusive(cs) ? '1' : '0';
--		break;
--	case FILE_MEM_EXCLUSIVE:
--		*s++ = is_mem_exclusive(cs) ? '1' : '0';
--		break;
--	case FILE_SCHED_LOAD_BALANCE:
--		*s++ = is_sched_load_balance(cs) ? '1' : '0';
--		break;
--	case FILE_MEMORY_MIGRATE:
--		*s++ = is_memory_migrate(cs) ? '1' : '0';
--		break;
--	case FILE_MEMORY_PRESSURE_ENABLED:
--		*s++ = cpuset_memory_pressure_enabled ? '1' : '0';
--		break;
--	case FILE_MEMORY_PRESSURE:
--		s += sprintf(s, "%d", fmeter_getrate(&cs->fmeter));
--		break;
--	case FILE_SPREAD_PAGE:
--		*s++ = is_spread_page(cs) ? '1' : '0';
--		break;
--	case FILE_SPREAD_SLAB:
--		*s++ = is_spread_slab(cs) ? '1' : '0';
--		break;
- 	default:
- 		retval = -EINVAL;
- 		goto out;
-@@ -1381,8 +1364,32 @@ out:
- 	return retval;
- }
- 
 -
 -
-+static u64 cpuset_read_uint(struct cgroup *cont, struct cftype *cft)
-+{
-+	struct cpuset *cs = cgroup_cs(cont);
-+	cpuset_filetype_t type = cft->private;
-+	switch (type) {
-+	case FILE_CPU_EXCLUSIVE:
-+		return is_cpu_exclusive(cs);
-+	case FILE_MEM_EXCLUSIVE:
-+		return is_mem_exclusive(cs);
-+	case FILE_SCHED_LOAD_BALANCE:
-+		return is_sched_load_balance(cs);
-+	case FILE_MEMORY_MIGRATE:
-+		return is_memory_migrate(cs);
-+	case FILE_MEMORY_PRESSURE_ENABLED:
-+		return cpuset_memory_pressure_enabled;
-+	case FILE_MEMORY_PRESSURE:
-+		return fmeter_getrate(&cs->fmeter);
-+		break;
-+	case FILE_SPREAD_PAGE:
-+		return is_spread_page(cs);
-+	case FILE_SPREAD_SLAB:
-+		return is_spread_slab(cs);
-+	default:
-+		BUG();
-+	}
-+}
- 
- 
- /*
-@@ -1405,57 +1412,58 @@ static struct cftype cft_mems = {
- 
- static struct cftype cft_cpu_exclusive = {
- 	.name = "cpu_exclusive",
--	.read = cpuset_common_file_read,
--	.write = cpuset_common_file_write,
-+	.read_uint = cpuset_read_uint,
-+	.write_uint = cpuset_write_uint,
- 	.private = FILE_CPU_EXCLUSIVE,
+ static struct cftype mem_cgroup_files[] = {
+ 	{
+ 		.name = "usage_in_bytes",
+@@ -1044,7 +1026,7 @@ static struct cftype mem_cgroup_files[] 
+ 	},
+ 	{
+ 		.name = "stat",
+-		.open = mem_control_stat_open,
++		.read_map = mem_control_stat_show,
+ 	},
  };
  
- static struct cftype cft_mem_exclusive = {
- 	.name = "mem_exclusive",
--	.read = cpuset_common_file_read,
--	.write = cpuset_common_file_write,
-+	.read_uint = cpuset_read_uint,
-+	.write_uint = cpuset_write_uint,
- 	.private = FILE_MEM_EXCLUSIVE,
- };
- 
- static struct cftype cft_sched_load_balance = {
- 	.name = "sched_load_balance",
--	.read = cpuset_common_file_read,
--	.write = cpuset_common_file_write,
-+	.read_uint = cpuset_read_uint,
-+	.write_uint = cpuset_write_uint,
- 	.private = FILE_SCHED_LOAD_BALANCE,
- };
- 
- static struct cftype cft_memory_migrate = {
- 	.name = "memory_migrate",
--	.read = cpuset_common_file_read,
--	.write = cpuset_common_file_write,
-+	.read_uint = cpuset_read_uint,
-+	.read_uint = cpuset_read_uint,
-+	.write_uint = cpuset_write_uint,
- 	.private = FILE_MEMORY_MIGRATE,
- };
- 
- static struct cftype cft_memory_pressure_enabled = {
- 	.name = "memory_pressure_enabled",
--	.read = cpuset_common_file_read,
--	.write = cpuset_common_file_write,
-+	.read_uint = cpuset_read_uint,
-+	.write_uint = cpuset_write_uint,
- 	.private = FILE_MEMORY_PRESSURE_ENABLED,
- };
- 
- static struct cftype cft_memory_pressure = {
- 	.name = "memory_pressure",
--	.read = cpuset_common_file_read,
--	.write = cpuset_common_file_write,
-+	.read_uint = cpuset_read_uint,
-+	.write_uint = cpuset_write_uint,
- 	.private = FILE_MEMORY_PRESSURE,
- };
- 
- static struct cftype cft_spread_page = {
- 	.name = "memory_spread_page",
--	.read = cpuset_common_file_read,
--	.write = cpuset_common_file_write,
-+	.read_uint = cpuset_read_uint,
-+	.write_uint = cpuset_write_uint,
- 	.private = FILE_SPREAD_PAGE,
- };
- 
- static struct cftype cft_spread_slab = {
- 	.name = "memory_spread_slab",
--	.read = cpuset_common_file_read,
--	.write = cpuset_common_file_write,
-+	.read_uint = cpuset_read_uint,
-+	.write_uint = cpuset_write_uint,
- 	.private = FILE_SPREAD_SLAB,
- };
- 
-@@ -1584,7 +1592,7 @@ static void cpuset_destroy(struct cgroup
- 	cpuset_update_task_memory_state();
- 
- 	if (is_sched_load_balance(cs))
--		update_flag(CS_SCHED_LOAD_BALANCE, cs, "0");
-+		update_flag(CS_SCHED_LOAD_BALANCE, cs, 0);
- 
- 	number_of_cpusets--;
- 	kfree(cs);
 
 --
