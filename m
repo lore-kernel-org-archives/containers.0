@@ -1,14 +1,16 @@
-From: Nadia Derbey <Nadia.Derbey-6ktuUTfB/bM@public.gmane.org>
-Subject: Re: [PATCH 1/8] Scaling msgmni to the amount of lowmem
-Date: Mon, 18 Feb 2008 10:19:08 +0100
-Message-ID: <47B94D8C.8040605__49508.5936425768$1203326586$gmane$org@bull.net>
-References: <20080211141646.948191000@bull.net>	<20080211141813.354484000@bull.net>
-	<20080215215916.8566d337.akpm@linux-foundation.org>
+From: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+Subject: Re: [RFC][PATCH 1/7] CGroup API: Add cgroup.api control file
+Date: Mon, 18 Feb 2008 17:45:12 +0800
+Message-ID: <47B953A8.9030206__47789.4728341655$1203328236$gmane$org@cn.fujitsu.com>
+References: <20080215204418.535025000@menage.corp.google.com>	
+	<20080215204820.734926000@menage.corp.google.com>	
+	<47B6B5CA.7040201@linux.vnet.ibm.com>
+	<6599ad830802160944v6d529570k1ade6df273ca3d0d@mail.gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20080215215916.8566d337.akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
+In-Reply-To: <6599ad830802160944v6d529570k1ade6df273ca3d0d-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,53 +20,46 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, cmm-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org, matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org
+To: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, vatsa-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, Pavel Emelianov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Andrew Morton wrote:
-> On Mon, 11 Feb 2008 15:16:47 +0100 Nadia.Derbey-6ktuUTfB/bM@public.gmane.org wrote:
-> 
-> 
->>[PATCH 01/08]
+Paul Menage wrote:
+> On Feb 16, 2008 2:07 AM, Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org> wrote:
+>> Paul Menage wrote:
 >>
->>This patch computes msg_ctlmni to make it scale with the amount of lowmem.
->>msg_ctlmni is now set to make the message queues occupy 1/32 of the available
->>lowmem.
+>> Hi, Paul,
 >>
->>Some cleaning has also been done for the MSGPOOL constant: the msgctl man page
->>says it's not used, but it also defines it as a size in bytes (the code
->>expresses it in Kbytes).
->>
+>> Do we need to use a cgroup.api file? Why not keep up to date documentation and
+>> get users to use that. I fear that, cgroup.api will not be kept up-to-date,
+>> leading to confusion.
 > 
-> 
-> Something's wrong here.  Running LTP's msgctl08 (specifically:
-> ltp-full-20070228) cripples the machine.  It's a 4-way 4GB x86_64.
-> 
-> http://userweb.kernel.org/~akpm/config-x.txt
-> http://userweb.kernel.org/~akpm/dmesg-x.txt
-> 
-> Normally msgctl08 will complete in a second or two.  With this patch I
-> don't know how long it will take to complete, and the machine is horridly
-> bogged down.  It does recover if you manage to kill msgctl08.  Feels like
-> a terrible memory shortage, but there's plenty of memory free and it isn't
-> swapping.
-> 
-> 
+> The cgroup.api file isn't meant to give complete documentation for a
+> control file, simply a brief indication of its usage.
 > 
 
-Before the patchset, msgctl08 used to be run with the old msgmni value: 
-16. Now it is run with a much higher msgmni value (1746 in my case), 
-since it scales to the memory size.
-When I call "msgctl08 100000 16" it completes fast.
+But we don't have /proc/proc.api or /sys/sysfs.api ...
 
-Doing the follwing on the ref kernel:
-echo 1746 > /proc/sys/kernel/msgmni
-msgctl08 100000 1746
+> The aim is that most bits of the information reported in cgroup.api
+> are auto-generated, so there shouldn't be problems with it getting
+> out-of-date.
+> 
+> Is it just the space used by the documentation string that you're
+> objecting to? The other function of the file is to declare a type for
+> each variable.
+> 
 
-makes th test block too :-(
+[root@localhost mnt]# cat cgroup.api
+debug.current_css_set_refcount  u64
+debug.current_css_set   u64
+debug.taskcount u64
+debug.cgroup_refcount   u64
+cgroup.release_agent    string  Path to release agent binary
+cgroup.api      unknown Control file descriptions
+cgroup.releasable       u64     Is this cgroup able to be freed when empty
+cgroup.notify_on_release        u64     Should the release agent trigger when this cgroup is empty
+cgroup.tasks    string  Thread ids of threads in this cgroup
 
-Will check to see where the problem comes from.
+It seems to me this is a little messy.
 
-Rgards,
-Nadia
+And is it better to describe the debug subsystem too?
