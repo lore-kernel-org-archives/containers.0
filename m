@@ -1,18 +1,14 @@
-From: Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: Re: [PATCH] memcgroup: remove a useless VM_BUG_ON()
-Date: Mon, 18 Feb 2008 13:42:06 +0530
-Message-ID: <47B93DD6.9030309__46734.6306228594$1203322680$gmane$org@linux.vnet.ibm.com>
-References: <47B9223C.9020106@linux.vnet.ibm.com>
-	<20080218062209.DA59B1E3C58@siro.lan>
-	<47B923C8.3090904@linux.vnet.ibm.com>
-	<47B929EE.7080202@cn.fujitsu.com>
-	<47B92D47.2050008@linux.vnet.ibm.com> <47B93518.6@cn.fujitsu.com>
-Reply-To: balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
+From: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+Subject: Re: [PATCH 1/7] cgroup: fix and update documentation
+Date: Mon, 18 Feb 2008 16:25:14 +0800
+Message-ID: <47B940EA.5000305__9789.73932001299$1203323407$gmane$org@cn.fujitsu.com>
+References: <47B91C75.6000907@cn.fujitsu.com>
+	<20080218010255.a808714f.pj@sgi.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <47B93518.6-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+In-Reply-To: <20080218010255.a808714f.pj-sJ/iWh9BUns@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -22,42 +18,20 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Cc: akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: Paul Jackson <pj-sJ/iWh9BUns@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Li Zefan wrote:
-> Remove this VM_BUG_ON(), as Balbir stated:
+Paul Jackson wrote:
+> Li Zefan wrote:
+>>  *** notify_on_release is disabled in the current patch set. It will be
+>> -*** reactivated in a future patch in a less-intrusive manner
+>> +*** reactivated in a future patch in a less-intrusive manner.
 > 
-> We used to have a for loop with !list_empty() as a termination condition
-> and VM_BUG_ON(!pc) is a spill over. With the new loop, VM_BUG_ON(!pc) does not
-> make sense.
+> Someone should verify this, but I'm pretty sure that notify_on_release
+> is now working ... no longer disabled.  I believe the above line from
+> the documentation is out of date.
 > 
-> Signed-off-by: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-> ---
->  mm/memcontrol.c |    1 -
->  1 files changed, 0 insertions(+), 1 deletions(-)
-> 
-> diff --git a/mm/memcontrol.c b/mm/memcontrol.c
-> index 718acf8..631002d 100644
-> --- a/mm/memcontrol.c
-> +++ b/mm/memcontrol.c
-> @@ -534,7 +534,6 @@ unsigned long mem_cgroup_isolate_pages(unsigned long nr_to_scan,
->  		if (scan >= nr_to_scan)
->  			break;
->  		page = pc->page;
-> -		VM_BUG_ON(!pc);
-> 
->  		if (unlikely(!PageLRU(page)))
->  			continue;
 
-This seems much better
-
-Acked-by: Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-
-
--- 
-	Warm Regards,
-	Balbir Singh
-	Linux Technology Center
-	IBM, ISTL
+Aha, it does work now. I tried it but it didn't seem to work, maybe I didn't
+something wrong. I'll resend a new patch.
