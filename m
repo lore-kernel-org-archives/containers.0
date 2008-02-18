@@ -1,15 +1,18 @@
-From: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Subject: Re: [RFC][PATCH 7/7] CGroup API: Update cpusets to use cgroup
-	structured file API
-Date: Mon, 18 Feb 2008 17:55:27 +0800
-Message-ID: <47B9560F.3030402__23857.839316088$1203329018$gmane$org@cn.fujitsu.com>
-References: <20080215204418.535025000@menage.corp.google.com>	<20080215204821.778088000@menage.corp.google.com>
-	<20080216212901.70fe35ce.pj@sgi.com>
+From: Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Subject: Re: [RFC][PATCH 1/7] CGroup API: Add cgroup.api control file
+Date: Mon, 18 Feb 2008 16:02:59 +0530
+Message-ID: <47B95EDB.1020400__46149.9991165057$1203331179$gmane$org@linux.vnet.ibm.com>
+References: <20080215204418.535025000@menage.corp.google.com>	
+	<20080215204820.734926000@menage.corp.google.com>	
+	<47B6B5CA.7040201@linux.vnet.ibm.com>
+	<6599ad830802160944v6d529570k1ade6df273ca3d0d@mail.gmail.com>
+	<47B953A8.9030206@cn.fujitsu.com>
+Reply-To: balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20080216212901.70fe35ce.pj-sJ/iWh9BUns@public.gmane.org>
+In-Reply-To: <47B953A8.9030206-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,32 +22,43 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Paul Jackson <pj-sJ/iWh9BUns@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, vatsa-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org
+To: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>, vatsa-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, Pavel Emelianov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Paul Jackson wrote:
-> Ok ... this would (I suspect, just from code reading, no bytes were
-> harmed in actual testing of this) have a minor change to how white
-> space is handled writing integer flags to cpuset files, and a minor
-> inconstency.
+Li Zefan wrote:
+> Paul Menage wrote:
+>> On Feb 16, 2008 2:07 AM, Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org> wrote:
+>>> Paul Menage wrote:
+>>>
+>>> Hi, Paul,
+>>>
+>>> Do we need to use a cgroup.api file? Why not keep up to date documentation and
+>>> get users to use that. I fear that, cgroup.api will not be kept up-to-date,
+>>> leading to confusion.
+>> The cgroup.api file isn't meant to give complete documentation for a
+>> control file, simply a brief indication of its usage.
+>>
 > 
->  1) Existing cpuset code lets you set a flag (e.g. cpu_exclusive) by doing:
-> 	echo '1 rumplestiltskin' > cpu_exclusive   # same as: echo 1 > cpu_exclusive
->     With this patch, that probably fails, EINVAL.
-> 
->  2) With this patch, one can write "1" or "1\n" to cpuset integer files, but one
->     cannot successfully write "1\r\n" or "1 " or "1 \n".  However, for the cpuset
->     control files that take strings, not single integers, one -can- have any mix
->     of trailing white space.
-> 
-> So far as I know, I have no requirement to write rumplestiltskin to cpuset files ;).
-> So I'm content to let the minor change in (1) pass without further comment.
-> 
-> I'd like to recommend consideration of the following patch, to address the
-> minor inconsistency of (2), and to save a few bytes of kernel text space.
+> But we don't have /proc/proc.api or /sys/sysfs.api ...
 > 
 
-For memory controller, we have to do this:
-	echo -n 4m > memory.limit_in_bytes
-'-n' is necessary. This is another inconsistency..
+Yes, doing that would make the size of the kernel go out of control.
+
+>> The aim is that most bits of the information reported in cgroup.api
+>> are auto-generated, so there shouldn't be problems with it getting
+>> out-of-date.
+>>
+>> Is it just the space used by the documentation string that you're
+>> objecting to? The other function of the file is to declare a type for
+>> each variable.
+>>
+
+I like the documentation aspect, it is the space that I object to.
+
+
+-- 
+	Warm Regards,
+	Balbir Singh
+	Linux Technology Center
+	IBM, ISTL
