@@ -1,15 +1,15 @@
-From: yamamoto-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org (YAMAMOTO Takashi)
-Subject: Re: [RFC] memory controller : backgorund reclaim and avoid excessive
-	locking [5/5] lazy page_cgroup freeing
-Date: Mon, 18 Feb 2008 10:58:40 +0900 (JST)
-Message-ID: <20080218015840.CE6FF1E3C58@siro.lan>
-References: <20080214173624.d29b26d9.kamezawa.hiroyu@jp.fujitsu.com>
+From: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+Subject: Re: [RFC] memory controller : backgorund reclaim and avoid
+	excessive locking [4/5] borrow resource
+Date: Mon, 18 Feb 2008 11:06:57 +0900
+Message-ID: <20080218110657.e5e9a9ec.kamezawa.hiroyu@jp.fujitsu.com>
+References: <20080214173504.cc1aa42e.kamezawa.hiroyu@jp.fujitsu.com>
+	<20080218005335.D93F51E3C5A@siro.lan>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: Your message of "Thu, 14 Feb 2008 17:36:24 +0900"
-	<20080214173624.d29b26d9.kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+In-Reply-To: <20080218005335.D93F51E3C5A-Pcsii4f/SVk@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,61 +19,76 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org
+To: YAMAMOTO Takashi <yamamoto-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
 Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-> +	/*
-> +	 * For lazy freeing (not GC)
-> +	 */
-> +	struct {
-> +		struct mem_cgroup_per_zone *mz;
-> +		int			num;
-> +#define GARBAGE_MAXSIZE		(16)
-> +		struct page_cgroup	*vec[GARBAGE_MAXSIZE];
-> +	} garbage[NR_CPUS];
->  };
+On Mon, 18 Feb 2008 09:53:35 +0900 (JST)
+yamamoto-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org (YAMAMOTO Takashi) wrote:
 
-i think you want to dedicate cache lines.
+> > +		/* try to charge */
+> > +		ret = res_counter_charge(&mem->res, mem->borrow_unit);
+> > +		if (!ret) { /* success */
+> > +			*bwp += (mem->borrow_unit - size);
+> > +			goto out;
+> > +		}
+> > +	}
+> > +	spin_lock(&mem->res.lock);
+> > +	ret = res_counter_charge_locked(&mem->res, size);
+> > +	spin_unlock(&mem->res.lock);
+> 
+> although i don't know if it matters, this retrying of charge affects failcnt.
+> 
+Hmm, yes. But what failcnt means is not so clear anyway.
 
-> @@ -176,12 +185,14 @@ struct page_cgroup {
->  	struct list_head lru;		/* per cgroup LRU list */
->  	struct page *page;
->  	struct mem_cgroup *mem_cgroup;
-> +	struct mem_cgroup_per_zone *mz;	/* now belongs to...*/
 
-is this for performance?
+> > +static void mem_cgroup_return_and_uncharge(struct mem_cgroup *mem, int size)
+> > +{
+> > +	unsigned long flags;
+> > +	int uncharge_size = 0;
+> > +
+> > +	local_irq_save(flags);
+> > +	if (mem->borrow_unit) {
+> > +		int limit = mem->borrow_unit * 2;
+> > +		int cpu;
+> > +		s64 *bwp;
+> > +		cpu = smp_processor_id();
+> > +		bwp = &mem->stat.cpustat[cpu].count[MEM_CGROUP_STAT_BORROW];
+> > +		*bwp += size;
+> > +		if (*bwp > limit) {
+> > +			uncharge_size = *bwp - mem->borrow_unit;
+> > +			*bwp = mem->borrow_unit;
+> > +		}
+> > +	} else
+> > +		uncharge_size = size;
+> > +
+> > +	if (uncharge_size) {
+> > +		spin_lock(&mem->res.lock);
+> > +		res_counter_uncharge_locked(&mem->res, size);
+> 
+> s/size/uncharge_size/
+> 
+Oops...will fix.
 
-> @@ -408,10 +427,12 @@ static void __mem_cgroup_move_lists(stru
->  	if (active) {
->  		MEM_CGROUP_ZSTAT(mz, MEM_CGROUP_ZSTAT_ACTIVE) += 1;
->  		pc->flags |= PAGE_CGROUP_FLAG_ACTIVE;
-> +		pc->mz = mz;
->  		list_move(&pc->lru, &mz->active_list);
->  	} else {
->  		MEM_CGROUP_ZSTAT(mz, MEM_CGROUP_ZSTAT_INACTIVE) += 1;
->  		pc->flags &= ~PAGE_CGROUP_FLAG_ACTIVE;
-> +		pc->mz = mz;
->  		list_move(&pc->lru, &mz->inactive_list);
->  	}
->  }
 
-isn't pc->mz already assigned by __mem_cgroup_add_list?
+> > @@ -1109,12 +1202,29 @@ static u64 mem_throttle_read(struct cgro
+> >  	return (u64)mem->throttle.limit;
+> >  }
+> >  
+> > +static int mem_bulkratio_write(struct cgroup *cont, struct cftype *cft, u64 val)
+> > +{
+> > +	struct mem_cgroup *mem = mem_cgroup_from_cont(cont);
+> > +	int unit = val * PAGE_SIZE;
+> > +	if (unit > (PAGE_SIZE << (MAX_ORDER/2)))
+> > +		return -EINVAL;
+> > +	mem->borrow_unit = unit;
+> > +	return 0;
+> > +}
+> 
+> it seems unsafe with concurrent mem_cgroup_borrow_and_charge or
+> mem_cgroup_return_and_uncharge.
+> 
+Hmm, making this to be not configurable will be good.
 
-> @@ -1050,11 +1114,15 @@ mem_cgroup_force_empty_list(struct mem_c
->  	if (list_empty(list))
->  		return;
->  retry:
-> +	all_free_garbages(mem);
->  	count = FORCE_UNCHARGE_BATCH;
->  	spin_lock_irqsave(&mz->lru_lock, flags);
->  
->  	while (--count && !list_empty(list)) {
->  		pc = list_entry(list->prev, struct page_cgroup, lru);
-> +		/* If there are still garbage, exit and retry */
-> +		if (pc->flags & PAGE_CGROUP_FLAG_GARBAGE)
-> +			break;
-
-i think mem_cgroup_isolate_pages needs a similar check.
-
-YAMAMOTO Takashi
+Thanks,
+-Kame
