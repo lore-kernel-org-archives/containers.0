@@ -1,17 +1,14 @@
-From: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
-Subject: Re: [PATCH] memcgroup: remove a useless VM_BUG_ON()
-Date: Mon, 18 Feb 2008 17:48:55 +0900
-Message-ID: <20080218174855.de9182c3.kamezawa.hiroyu__2225.39158207855$1203324459$gmane$org@jp.fujitsu.com>
-References: <47B9223C.9020106@linux.vnet.ibm.com>
-	<20080218062209.DA59B1E3C58@siro.lan>
-	<47B923C8.3090904@linux.vnet.ibm.com>
-	<47B929EE.7080202@cn.fujitsu.com>
-	<47B92D47.2050008@linux.vnet.ibm.com> <47B93518.6@cn.fujitsu.com>
+From: Nadia Derbey <Nadia.Derbey-6ktuUTfB/bM@public.gmane.org>
+Subject: Re: [PATCH 1/8] Scaling msgmni to the amount of lowmem
+Date: Mon, 18 Feb 2008 10:19:08 +0100
+Message-ID: <47B94D8C.8040605__49508.5936425768$1203326586$gmane$org@bull.net>
+References: <20080211141646.948191000@bull.net>	<20080211141813.354484000@bull.net>
+	<20080215215916.8566d337.akpm@linux-foundation.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <47B93518.6-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+In-Reply-To: <20080215215916.8566d337.akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -21,40 +18,53 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Cc: linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
+To: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, cmm-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org, matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Mon, 18 Feb 2008 15:34:48 +0800
-Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org> wrote:
+Andrew Morton wrote:
+> On Mon, 11 Feb 2008 15:16:47 +0100 Nadia.Derbey-6ktuUTfB/bM@public.gmane.org wrote:
+> 
+> 
+>>[PATCH 01/08]
+>>
+>>This patch computes msg_ctlmni to make it scale with the amount of lowmem.
+>>msg_ctlmni is now set to make the message queues occupy 1/32 of the available
+>>lowmem.
+>>
+>>Some cleaning has also been done for the MSGPOOL constant: the msgctl man page
+>>says it's not used, but it also defines it as a size in bytes (the code
+>>expresses it in Kbytes).
+>>
+> 
+> 
+> Something's wrong here.  Running LTP's msgctl08 (specifically:
+> ltp-full-20070228) cripples the machine.  It's a 4-way 4GB x86_64.
+> 
+> http://userweb.kernel.org/~akpm/config-x.txt
+> http://userweb.kernel.org/~akpm/dmesg-x.txt
+> 
+> Normally msgctl08 will complete in a second or two.  With this patch I
+> don't know how long it will take to complete, and the machine is horridly
+> bogged down.  It does recover if you manage to kill msgctl08.  Feels like
+> a terrible memory shortage, but there's plenty of memory free and it isn't
+> swapping.
+> 
+> 
+> 
 
-> Remove this VM_BUG_ON(), as Balbir stated:
-> 
-> We used to have a for loop with !list_empty() as a termination condition
-> and VM_BUG_ON(!pc) is a spill over. With the new loop, VM_BUG_ON(!pc) does not
-> make sense.
-> 
-> Signed-off-by: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-> ---
->  mm/memcontrol.c |    1 -
->  1 files changed, 0 insertions(+), 1 deletions(-)
-> 
-> diff --git a/mm/memcontrol.c b/mm/memcontrol.c
-> index 718acf8..631002d 100644
-> --- a/mm/memcontrol.c
-> +++ b/mm/memcontrol.c
-> @@ -534,7 +534,6 @@ unsigned long mem_cgroup_isolate_pages(unsigned long nr_to_scan,
->  		if (scan >= nr_to_scan)
->  			break;
->  		page = pc->page;
-> -		VM_BUG_ON(!pc);
->  
->  		if (unlikely(!PageLRU(page)))
->  			continue;
-> -- 
-> 1.5.4.rc3
-> 
-Acked-by: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+Before the patchset, msgctl08 used to be run with the old msgmni value: 
+16. Now it is run with a much higher msgmni value (1746 in my case), 
+since it scales to the memory size.
+When I call "msgctl08 100000 16" it completes fast.
 
-Thanks,
--Kame
+Doing the follwing on the ref kernel:
+echo 1746 > /proc/sys/kernel/msgmni
+msgctl08 100000 1746
+
+makes th test block too :-(
+
+Will check to see where the problem comes from.
+
+Rgards,
+Nadia
