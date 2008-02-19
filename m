@@ -1,85 +1,32 @@
-From: Daniel Lezcano <dlezcano@fr.ibm.com>
-Subject: Re: [PATCH 6/17 net-2.6.26] [NETNS]: Default arp parameters lookup.
-Date: Tue, 19 Feb 2008 11:22:35 +0100
-Message-ID: <47BAADEB.3080005@fr.ibm.com>
-References: <1203406116.27296.1.camel@iris.sw.ru> <1203406297-32725-6-git-send-email-den@openvz.org> <47BA9E0B.6080209@fr.ibm.com> <1203413980.27296.9.camel@iris.sw.ru> <47BAA690.2010504@fr.ibm.com> <1203415549.27296.16.camel@iris.sw.ru>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
-Content-Transfer-Encoding: 7bit
+From: "Denis V. Lunev" <den@openvz.org>
+Subject: [PATCH] [NETNS]: Namespace leak in pneigh_lookup.
+Date: Tue, 19 Feb 2008 16:12:38 +0300
+Message-ID: <1203426758-27813-1-git-send-email-den@openvz.org>
 Return-path: <netdev-owner@vger.kernel.org>
-In-Reply-To: <1203415549.27296.16.camel@iris.sw.ru>
 Sender: netdev-owner@vger.kernel.org
-To: "Denis V. Lunev" <den@openvz.org>
-Cc: davem@davemloft.net, netdev@vger.kernel.org, containers@lists.osdl.org, devel@openvz.org
+To: davem@davemloft.net
+Cc: netdev@vger.kernel.org, containers@lists.osdl.org, devel@openvz.org, dlezcano@fr.ibm.com, "Denis V. Lunev" <den@openvz.org>
 List-Id: containers.vger.kernel.org
 
-Denis V. Lunev wrote:
-> On Tue, 2008-02-19 at 10:51 +0100, Daniel Lezcano wrote:
->> Denis V. Lunev wrote:
->>> On Tue, 2008-02-19 at 10:14 +0100, Daniel Lezcano wrote:
->>>> Denis V. Lunev wrote:
->>>>> Default ARP parameters should be findable regardless of the context.
->>>>> Required to make inetdev_event working.
->>>>>
->>>>> Signed-off-by: Denis V. Lunev <den@openvz.org>
->>>>> ---
->>>>>  net/core/neighbour.c |    4 +---
->>>>>  1 files changed, 1 insertions(+), 3 deletions(-)
->>>>>
->>>>> diff --git a/net/core/neighbour.c b/net/core/neighbour.c
->>>>> index c895ad4..45ed620 100644
->>>>> --- a/net/core/neighbour.c
->>>>> +++ b/net/core/neighbour.c
->>>>> @@ -1275,9 +1275,7 @@ static inline struct neigh_parms *lookup_neigh_params(struct neigh_table *tbl,
->>>>>  	struct neigh_parms *p;
->>>>>
->>>>>  	for (p = &tbl->parms; p; p = p->next) {
->>>>> -		if (p->net != net)
->>>>> -			continue;
->>>>> -		if ((p->dev && p->dev->ifindex == ifindex) ||
->>>>> +		if ((p->dev && p->dev->ifindex == ifindex && p->net == net) ||
->>>>>  		    (!p->dev && !ifindex))
->>>>>  			return p;
->>>>>  	}
->>>> If the values are:
->>>> 	p->dev == NULL
->>>> 	ifindex == 0
->>>> 	p->net != net
->>>>
->>>> The parms should not be taken into account and the looping must 
->>>> continue. But with this modification it is not the case, if we specify 
->>>> parms ifindex == 0, the first parms with the dev field set to NULL will 
->>>> be taken belonging or not to the right net.
->>> They should be taken. In the other case inetdev_event will fail for sure
->>> in the middle. You could check.
->>>
->>> These are ARP defaults and I do not see a problem for now to get them.
->> Because there is a parms default per namespace. So several instances of 
->> them per nd table. That was the initial approach with Eric's patchset.
->>
-> 
-> These changes are not in mainstream and I do not want to touch ARP as
-> this is not a simple thing. In reality ARP will be needed only when
-> we'll have a real device inside a namespace.
-> 
-> Right now I prefer to have minimal set of working changes to finish IP
-> and upper layers.
+release_net is missed on the error path in pneigh_lookup.
 
-core/neighbour.c is a common part between several protocols, especially 
-ipv4 and ipv6. If you modify this function just to fit your need in the 
-arp that will block me for ipv6 until you make parms default per 
-namespace. So please, find another way to do that, perhaps just add a 
-helper function.
+Signed-off-by: Denis V. Lunev <den@openvz.org>
+---
+ net/core/neighbour.c |    1 +
+ 1 files changed, 1 insertions(+), 0 deletions(-)
 
-I suggest you do parms default per namespace first, it is quite small 
-and easy :)
+diff --git a/net/core/neighbour.c b/net/core/neighbour.c
+index 7bb6a9a..174e29e 100644
+--- a/net/core/neighbour.c
++++ b/net/core/neighbour.c
+@@ -507,6 +507,7 @@ struct pneigh_entry * pneigh_lookup(struct neigh_table *tbl,
+ 	if (tbl->pconstructor && tbl->pconstructor(n)) {
+ 		if (dev)
+ 			dev_put(dev);
++		release_net(net);
+ 		kfree(n);
+ 		n = NULL;
+ 		goto out;
+-- 
+1.5.3.rc5
 
-Just let me the time to send the copy-parms-default function.
-
-Is it ok ?
-
-   -- Daniel
-
-
-
-  -- Daniel
