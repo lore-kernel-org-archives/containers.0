@@ -1,32 +1,25 @@
-From: "Denis V. Lunev" <den@openvz.org>
-Subject: [PATCH] [NETNS]: Namespace leak in pneigh_lookup.
-Date: Tue, 19 Feb 2008 16:12:38 +0300
-Message-ID: <1203426758-27813-1-git-send-email-den@openvz.org>
+From: Patrick McHardy <kaber@trash.net>
+Subject: Re: [PATCH 3/17 net-2.6.26] [NETFILTER]: Consolidate masq_inet_event
+ and masq_device_event.
+Date: Tue, 19 Feb 2008 15:10:11 +0100
+Message-ID: <47BAE343.4050206@trash.net>
+References: <1203406116.27296.1.camel@iris.sw.ru> <1203406297-32725-3-git-send-email-den@openvz.org>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=ISO-8859-15; format=flowed
+Content-Transfer-Encoding: 7bit
 Return-path: <netdev-owner@vger.kernel.org>
+In-Reply-To: <1203406297-32725-3-git-send-email-den@openvz.org>
 Sender: netdev-owner@vger.kernel.org
-To: davem@davemloft.net
-Cc: netdev@vger.kernel.org, containers@lists.osdl.org, devel@openvz.org, dlezcano@fr.ibm.com, "Denis V. Lunev" <den@openvz.org>
+To: "Denis V. Lunev" <den@openvz.org>
+Cc: davem@davemloft.net, netdev@vger.kernel.org, containers@lists.osdl.org, devel@openvz.org
 List-Id: containers.vger.kernel.org
 
-release_net is missed on the error path in pneigh_lookup.
+Denis V. Lunev wrote:
+> They do exactly the same job.
+> 
+> Signed-off-by: Denis V. Lunev <den@openvz.org>
+> ---
+>  net/ipv4/netfilter/ipt_MASQUERADE.c |   14 ++------------
+>  1 files changed, 2 insertions(+), 12 deletions(-)
 
-Signed-off-by: Denis V. Lunev <den@openvz.org>
----
- net/core/neighbour.c |    1 +
- 1 files changed, 1 insertions(+), 0 deletions(-)
-
-diff --git a/net/core/neighbour.c b/net/core/neighbour.c
-index 7bb6a9a..174e29e 100644
---- a/net/core/neighbour.c
-+++ b/net/core/neighbour.c
-@@ -507,6 +507,7 @@ struct pneigh_entry * pneigh_lookup(struct neigh_table *tbl,
- 	if (tbl->pconstructor && tbl->pconstructor(n)) {
- 		if (dev)
- 			dev_put(dev);
-+		release_net(net);
- 		kfree(n);
- 		n = NULL;
- 		goto out;
--- 
-1.5.3.rc5
-
+Looks fine.
