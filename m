@@ -1,7 +1,7 @@
 From: "Denis V. Lunev" <den@openvz.org>
-Subject: [PATCH 11/17 net-2.6.26] [IPV4]: rt_cache_get_next should take rt_genid into account.
-Date: Tue, 19 Feb 2008 10:31:31 +0300
-Message-ID: <1203406297-32725-11-git-send-email-den@openvz.org>
+Subject: [PATCH 6/17 net-2.6.26] [NETNS]: Default arp parameters lookup.
+Date: Tue, 19 Feb 2008 10:31:26 +0300
+Message-ID: <1203406297-32725-6-git-send-email-den@openvz.org>
 References: <1203406116.27296.1.camel@iris.sw.ru>
 Return-path: <netdev-owner@vger.kernel.org>
 In-Reply-To: <1203406116.27296.1.camel@iris.sw.ru>
@@ -10,57 +10,29 @@ To: davem@davemloft.net
 Cc: netdev@vger.kernel.org, containers@lists.osdl.org, devel@openvz.org, "Denis V. Lunev" <den@openvz.org>
 List-Id: containers.vger.kernel.org
 
-In the other case /proc/net/rt_cache will look inconsistent in respect to
-genid.
+Default ARP parameters should be findable regardless of the context.
+Required to make inetdev_event working.
 
 Signed-off-by: Denis V. Lunev <den@openvz.org>
-Acked-by: Alexey Kuznetsov <kuznet@ms2.inr.ac.ru>
 ---
- net/ipv4/route.c |   18 +++++++++++++-----
- 1 files changed, 13 insertions(+), 5 deletions(-)
+ net/core/neighbour.c |    4 +---
+ 1 files changed, 1 insertions(+), 3 deletions(-)
 
-diff --git a/net/ipv4/route.c b/net/ipv4/route.c
-index 44708ab..67df872 100644
---- a/net/ipv4/route.c
-+++ b/net/ipv4/route.c
-@@ -294,7 +294,8 @@ static struct rtable *rt_cache_get_first(struct rt_cache_iter_state *st)
- 	return r;
- }
+diff --git a/net/core/neighbour.c b/net/core/neighbour.c
+index c895ad4..45ed620 100644
+--- a/net/core/neighbour.c
++++ b/net/core/neighbour.c
+@@ -1275,9 +1275,7 @@ static inline struct neigh_parms *lookup_neigh_params(struct neigh_table *tbl,
+ 	struct neigh_parms *p;
  
--static struct rtable *rt_cache_get_next(struct rt_cache_iter_state *st, struct rtable *r)
-+static struct rtable *__rt_cache_get_next(struct rt_cache_iter_state *st,
-+					  struct rtable *r)
- {
- 	r = r->u.dst.rt_next;
- 	while (!r) {
-@@ -307,16 +308,23 @@ static struct rtable *rt_cache_get_next(struct rt_cache_iter_state *st, struct r
- 	return rcu_dereference(r);
- }
- 
-+static struct rtable *rt_cache_get_next(struct rt_cache_iter_state *st,
-+					struct rtable *r)
-+{
-+	while ((r = __rt_cache_get_next(st, r)) != NULL) {
-+		if (r->rt_genid == st->genid)
-+			break;
-+	}
-+	return r;
-+}
-+
- static struct rtable *rt_cache_get_idx(struct rt_cache_iter_state *st, loff_t pos)
- {
- 	struct rtable *r = rt_cache_get_first(st);
- 
- 	if (r)
--		while (pos && (r = rt_cache_get_next(st, r))) {
--			if (r->rt_genid != st->genid)
--				continue;
-+		while (pos && (r = rt_cache_get_next(st, r)))
- 			--pos;
--		}
- 	return pos ? NULL : r;
- }
- 
+ 	for (p = &tbl->parms; p; p = p->next) {
+-		if (p->net != net)
+-			continue;
+-		if ((p->dev && p->dev->ifindex == ifindex) ||
++		if ((p->dev && p->dev->ifindex == ifindex && p->net == net) ||
+ 		    (!p->dev && !ifindex))
+ 			return p;
+ 	}
 -- 
 1.5.3.rc5
 
