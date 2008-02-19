@@ -1,16 +1,17 @@
-From: Nadia Derbey <Nadia.Derbey-6ktuUTfB/bM@public.gmane.org>
-Subject: Re: [LTP] [PATCH 1/8] Scaling msgmni to the amount of lowmem
-Date: Tue, 19 Feb 2008 18:16:12 +0100
-Message-ID: <47BB0EDC.5000002__44373.6102701679$1203441621$gmane$org@bull.net>
-References: <20080211141646.948191000@bull.net>	
-	<20080211141813.354484000@bull.net>	
-	<20080215215916.8566d337.akpm@linux-foundation.org>	
-	<47B94D8C.8040605@bull.net> <47B9835A.3060507@bull.net>
-	<1203411055.4612.5.camel@subratamodak.linux.ibm.com>
+From: Paul Jackson <pj-sJ/iWh9BUns@public.gmane.org>
+Subject: Re: [RFC][PATCH 1/7] CGroup API: Add cgroup.api control file
+Date: Tue, 19 Feb 2008 15:57:42 -0600
+Message-ID: <20080219155742.0298f25f.pj__26073.1224473149$1203458527$gmane$org@sgi.com>
+References: <20080215204418.535025000@menage.corp.google.com>
+	<20080215204820.734926000@menage.corp.google.com>
+	<47B6B5CA.7040201@linux.vnet.ibm.com>
+	<6599ad830802160944v6d529570k1ade6df273ca3d0d@mail.gmail.com>
+	<47B953A8.9030206@cn.fujitsu.com>
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary="------------070801070409020708020001"
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1203411055.4612.5.camel-NRFfyExJdYpgXGGE5LP+UZlqa2bBAFbm0E9HWUfgJXw@public.gmane.org>
+In-Reply-To: <47B953A8.9030206-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -20,134 +21,48 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: subrata-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
-Cc: ltp-list-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, cmm-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org, matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
+To: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, vatsa-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-This is a multi-part message in MIME format.
---------------070801070409020708020001
-Content-Type: text/plain; charset=us-ascii; format=flowed
-Content-Transfer-Encoding: 7bit
+Li Zefan wrote:
+> It seems to me this is a little messy.
 
-Subrata Modak wrote:
->>Nadia Derbey wrote:
->>
->>>Andrew Morton wrote:
->>>
->>>
->>>>On Mon, 11 Feb 2008 15:16:47 +0100 Nadia.Derbey-6ktuUTfB/bM@public.gmane.org wrote:
->>>>
->>>>
->>>>
->>>>>[PATCH 01/08]
->>>>>
->>>>>This patch computes msg_ctlmni to make it scale with the amount of 
->>>>>lowmem.
->>>>>msg_ctlmni is now set to make the message queues occupy 1/32 of the 
->>>>>available
->>>>>lowmem.
->>>>>
->>>>>Some cleaning has also been done for the MSGPOOL constant: the msgctl 
->>>>>man page
->>>>>says it's not used, but it also defines it as a size in bytes (the code
->>>>>expresses it in Kbytes).
->>>>>
->>>>
->>>>
->>>>Something's wrong here.  Running LTP's msgctl08 (specifically:
->>>>ltp-full-20070228) cripples the machine.  It's a 4-way 4GB x86_64.
->>>>
->>>>http://userweb.kernel.org/~akpm/config-x.txt
->>>>http://userweb.kernel.org/~akpm/dmesg-x.txt
->>>>
->>>>Normally msgctl08 will complete in a second or two.  With this patch I
->>>>don't know how long it will take to complete, and the machine is horridly
->>>>bogged down.  It does recover if you manage to kill msgctl08.  Feels like
->>>>a terrible memory shortage, but there's plenty of memory free and it 
->>>>isn't
->>>>swapping.
->>>>
->>>>
->>>>
->>>
->>>Before the patchset, msgctl08 used to be run with the old msgmni value: 
->>>16. Now it is run with a much higher msgmni value (1746 in my case), 
->>>since it scales to the memory size.
->>>When I call "msgctl08 100000 16" it completes fast.
->>>
->>>Doing the follwing on the ref kernel:
->>>echo 1746 > /proc/sys/kernel/msgmni
->>>msgctl08 100000 1746
->>>
->>>makes th test block too :-(
->>>
->>>Will check to see where the problem comes from.
->>>
->>
->>Well, actually, the test does not block, it only takes much much more 
->>time to be executed:
->>
->>doing this:
->>date; ./msgctl08 100000 XXX; date
->>
->>
->>gives us the following results:
->>XXX           16   32   64   128   256   512   1024   1746
->>time(secs)     2    4    8    16    32    64    132    241
->>
->>XXX is the # of msg queues to be created = # of processes to be forked 
->>as readers = # of processes to be created as writers
->>time is approximative since it is obtained by a "date" before and after.
->>
->>XXX used to be 16 before the patchset  ---> 1st column
->>     --> 16 processes forked as reader
->>     --> + 16 processes forked as writers
->>     --> + 16 msg queues
->>XXX = 1746 (on my victim) after the patchset ---> last column
->>     --> 1746 reader processes forked
->>     --> + 1746 writers forked
->>     --> + 1746 msg queues created
->>
->>The same tests on the ref kernel give approximatly the same results.
->>
->>So if we don't want this longer time to appear as a regression, the LTP 
->>should be changed:
->>1) either by setting the result of get_max_msgqueues() as the MSGMNI 
->>constant (16) (that would be the best solution in my mind)
->>2) or by warning the tester that it may take a long time to finish.
->>
->>There would be 3 tests impacted:
->>
->>kernel/syscalls/ipc/msgctl/msgctl08.c
->>kernel/syscalls/ipc/msgctl/msgctl09.c
->>kernel/syscalls/ipc/msgget/msgget03.c
-> 
-> 
-> We will change the test case if need that be. Nadia, kindly send us the
-> patch set which will do the necessary changes.
-> 
-> Regards--
-> Subrata
-> 
+Agreed.  It looks too finicky to base real software on;  that is, I
+doubt that any robust application or user level software is going to
+depend on it for serious automated self-configuration.
 
-Subrata,
+I haven't seen a serious problem with cpuset documentation, which is
+the earlier API of this flavor (though, granted, I'd be the last
+person on the planet to see such ;).  It seems to me that this style
+of API is easy enough for a variety of people to figure out that this
+won't help that much.  And certainly the more interesting details that
+need documentation are far too verbose for this presentation.
 
-You'll find the patch in attachment.
-FYI I didn't change msgget03.c since we need to get the actual max value 
-in order to generate an error.
+So ... little or no programmatic use, little or no human use.
 
-Regards,
-Nadia
+It also reminds me a bit, in a very loose way, of efforts in sysfs that
+have taken us a while, and too many changes, to get right.  One needs to
+be -selective- in what one exposes, in order to minimize maintenance costs
+and maximize the signal-to-noise ratio, over time.  This feels like it
+exposes too much.
 
+Finally, it goes against the one thingie per file (at most, one scalar
+vector) that has worked well for us when tried.
 
---------------070801070409020708020001
-Content-Type: text/plain; charset="us-ascii"
-MIME-Version: 1.0
-Content-Transfer-Encoding: 7bit
-Content-Disposition: inline
+As to the motivations Paul M gives:
+ 1) Avoid "an arbitrary mess of ad-hoc APIs":
+	We can still do that, whether or not we "self-document" these
+	API's in this manner.
+ 2) binary APIs versus ASCII APIs:
+	Well, I have an ASCII API bias, not surprising.  But I'd
+	suggest not doing things "in anticipation" of some future
+	fuzzy binary API support.  Wait until that day actually arrives.
+ 3) The memory controller currently has files with the "_in_bytes":
+	The traditional way to handle this is Documentation and man
+	pages; good enough for my granddad, good enough for me ;).
 
-_______________________________________________
-Containers mailing list
-Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-https://lists.linux-foundation.org/mailman/listinfo/containers
---------------070801070409020708020001--
+-- 
+                  I won't rest till it's the best ...
+                  Programmer, Linux Scalability
+                  Paul Jackson <pj-sJ/iWh9BUns@public.gmane.org> 1.940.382.4214
