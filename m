@@ -1,7 +1,7 @@
 From: Nadia Derbey <Nadia.Derbey-6ktuUTfB/bM@public.gmane.org>
 Subject: Re: [LTP] [PATCH 1/8] Scaling msgmni to the amount of lowmem
-Date: Thu, 21 Feb 2008 09:39:07 +0100
-Message-ID: <47BD38AB.80408__46022.07206558$1203583763$gmane$org@bull.net>
+Date: Thu, 21 Feb 2008 13:36:42 +0100
+Message-ID: <47BD705A.9020309__8019.0441491597$1203597669$gmane$org@bull.net>
 References: <20080211141646.948191000@bull.net>	
 	<20080211141813.354484000@bull.net>	
 	<20080215215916.8566d337.akpm@linux-foundation.org>	
@@ -47,9 +47,11 @@ Matt Helsley wrote:
 > version is best?
 > 
 
-Yes, you're completely right.
+So, here's the new patch based on Matt's points.
 
-I'll resend a patch today.
+Subrata, it has to be applied on top of the original ltp-full-20080131. 
+Please tell me if you'd prefer one based on the merged version you've 
+got (i.e. with my Tuesday patch applied).
 
 Regards,
 Nadia
