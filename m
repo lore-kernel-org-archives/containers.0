@@ -1,23 +1,16 @@
-From: Subrata Modak <subrata-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: Re: [LTP] [PATCH 1/8] Scaling msgmni to the amount of lowmem
-Date: Fri, 22 Feb 2008 14:11:26 +0530
-Message-ID: <1203669686.4567.0.camel__7876.90104120902$1203669951$gmane$org@subratamodak.linux.ibm.com>
-References: <20080211141646.948191000@bull.net>
-	<20080211141813.354484000@bull.net>
-	<20080215215916.8566d337.akpm@linux-foundation.org>
-	<47B94D8C.8040605@bull.net>  <47B9835A.3060507@bull.net>
-	<1203411055.4612.5.camel@subratamodak.linux.ibm.com>
-	<47BB0EDC.5000002@bull.net>
-	<1203459418.7408.39.camel@localhost.localdomain>
-	<47BD705A.9020309@bull.net> <47BD7648.5010309@bull.net>
-	<1203601178.4604.18.camel@subratamodak.linux.ibm.com>
-	<47BE6AD0.6070309@bull.net>
-Reply-To: subrata-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
+From: "Paul Menage" <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH 4/4] The control group itself
+Date: Sat, 23 Feb 2008 15:12:59 -0800
+Message-ID: <6599ad830802231512t20343cabq738df3039c8a1d1f@mail.gmail.com>
+References: <47AAFFF2.9030804@openvz.org> <47AB013B.8060502@openvz.org>
+	<6599ad830802211247t21fdc4e4hfe637fcffd98ded7@mail.gmail.com>
+	<47BE83FD.7060908@openvz.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <47BE6AD0.6070309-6ktuUTfB/bM@public.gmane.org>
+In-Reply-To: <47BE83FD.7060908-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+Content-Disposition: inline
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -27,61 +20,37 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Nadia Derbey <Nadia.Derbey-6ktuUTfB/bM@public.gmane.org>
-Cc: ltp-list-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, cmm-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org, Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
+To: Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Fri, 2008-02-22 at 07:25 +0100, Nadia Derbey wrote:
-> Subrata Modak wrote:
-> >>Nadia Derbey wrote:
-> >>
-> >>>Matt Helsley wrote:
-> >>>
-> >>>
-> >>>>On Tue, 2008-02-19 at 18:16 +0100, Nadia Derbey wrote:
-> >>>>
-> >>>><snip>
-> >>>>
-> >>>>>+#define MAX_MSGQUEUES  16      /* MSGMNI as defined in linux/msg.h */
-> >>>>>+
-> >>>>
-> >>>>
-> >>>>
-> >>>>It's not quite the maximum anymore, is it? More like the minumum
-> >>>>maximum ;). A better name might better document what the test is
-> >>>>actually trying to do.
-> >>>>
-> >>>>One question I have is whether the unpatched test is still valuable.
-> >>>>Based on my limited knowledge of the test I suspect it's still a correct
-> >>>>test of message queues. If so, perhaps renaming the old test (so it's
-> >>>>not confused with a performance regression) and adding your patched
-> >>>>version is best?
-> >>>>
-> >>>
-> >>>So, here's the new patch based on Matt's points.
-> >>>
-> >>>Subrata, it has to be applied on top of the original ltp-full-20080131. 
-> >>>Please tell me if you'd prefer one based on the merged version you've 
-> >>>got (i.e. with my Tuesday patch applied).
-> > 
-> > 
-> > Nadia, I would prefer Patch on the top of the already merged version (on
-> > top of latest CVS snapshot as of today). Anyways, thanks for all these
-> > effort :-)
-> > 
-> > --Subrata
-> > 
-> 
-> In attachment, you'll find a patch to apply on top of the patches I sent 
-> you on Tuesday.
+On Fri, Feb 22, 2008 at 12:12 AM, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org> wrote:
+>
+>  Hmm, you mean make them a binary files?
 
-Nadia,
+No, not by default. But I'm working on a plan to have an optional
+binary API to cgroups, that would allow multiple control files to be
+read in a binary format with a single system call. The existing API
+would still be available as well, of course. The idea would be that
+monitoring programs that frequently read lots of values from a single
+cgroup (or even multiple cgroups) would be able to do so more cheaply
+than by making multiple different reads on different files.
 
-Thanks a ton for that. The same has been merged.
+In order for this to work, CGroups needs to know the data type of a
+given control file - so this would only be available for the control
+files that use typed cgroup output methods rather than the raw file
+output interface.
 
-Regards--
-Subrata
+>  I thought that filesystem-based
+>  API should be human readable and writable as much as possible...
+>
 
-> 
-> Regards,
-> Nadia
+Yes, but even without a binary API it makes sense for values that are
+likely to be parsed by programs be in a consistent format.
+
+But after thinking more about this, I think that the devices
+permission control file output doesn't really fall under this category
+- from a programmatic point of view, I suspect it's write-only, and
+only humans will be reading the output, for debugging.
+
+Paul
