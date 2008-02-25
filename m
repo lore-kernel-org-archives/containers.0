@@ -1,14 +1,14 @@
-From: menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org
-Subject: [PATCH 09/10] CGroup API files: Move "releasable" to cgroup_debug
-	subsystem
-Date: Sat, 23 Feb 2008 14:47:34 -0800
-Message-ID: <20080223232618.606225000__12226.9571097151$1203809921$gmane$org@menage.corp.google.com>
-References: <20080223224725.115590000@menage.corp.google.com>
+From: "Paul Menage" <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH] cgroup: fix default notify_on_release setting
+Date: Sun, 24 Feb 2008 22:22:44 -0800
+Message-ID: <6599ad830802242222p7d42d2b2ue7c585eae8f3bed__41350.4868316979$1203920712$gmane$org@mail.gmail.com>
+References: <47C257EB.5060600@cn.fujitsu.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline; filename=move_releasable.patch
+In-Reply-To: <47C257EB.5060600-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+Content-Disposition: inline
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,136 +18,50 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, balbir-xthvdsQ13ZrQT0dZR+AlfA@public.gmane.org, pj-sJ/iWh9BUns@public.gmane.org, Pavel Emelianov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>, KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>, YAMAMOTO
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, LKML <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-The "releasable" control file provided by the cgroup framework exports
-the state of a per-cgroup flag that's related to the notify-on-release
-feature. This isn't really generally useful, unless you're trying to
-debug this particular feature of cgroups.
+On Sun, Feb 24, 2008 at 9:53 PM, Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org> wrote:
+> The documentation says the default value of notify_on_release of
+>  a child cgroup is inherited from its parent, which is reasonable,
+>  but the implementation just sets the flag disabled.
+>
+>  Signed-off-by: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
 
-This patch moves the "releasable" file to the cgroup_debug subsystem.
+Acked-by: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
 
-Signed-off-by: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+Yes, I guess it makes sense to follow the original cpusets behaviour.
+I think that got lost when the notify-on-release functionality was
+temporarily removed during cgroups development.
 
----
- include/linux/cgroup.h |   11 +++++++++++
- kernel/cgroup.c        |   23 -----------------------
- kernel/cgroup_debug.c  |   12 +++++++++++-
- 3 files changed, 22 insertions(+), 24 deletions(-)
-
-Index: cgroup-2.6.25-rc2-mm1/include/linux/cgroup.h
-===================================================================
---- cgroup-2.6.25-rc2-mm1.orig/include/linux/cgroup.h
-+++ cgroup-2.6.25-rc2-mm1/include/linux/cgroup.h
-@@ -88,6 +88,17 @@ static inline void css_put(struct cgroup
- 		__css_put(css);
- }
- 
-+/* bits in struct cgroup flags field */
-+enum {
-+	/* Control Group is dead */
-+	CGRP_REMOVED,
-+	/* Control Group has previously had a child cgroup or a task,
-+	 * but no longer (only if CGRP_NOTIFY_ON_RELEASE is set) */
-+	CGRP_RELEASABLE,
-+	/* Control Group requires release notifications to userspace */
-+	CGRP_NOTIFY_ON_RELEASE,
-+};
-+
- struct cgroup {
- 	unsigned long flags;		/* "unsigned long" so bitops work */
- 
-Index: cgroup-2.6.25-rc2-mm1/kernel/cgroup.c
-===================================================================
---- cgroup-2.6.25-rc2-mm1.orig/kernel/cgroup.c
-+++ cgroup-2.6.25-rc2-mm1/kernel/cgroup.c
-@@ -119,17 +119,6 @@ static int root_count;
-  */
- static int need_forkexit_callback;
- 
--/* bits in struct cgroup flags field */
--enum {
--	/* Control Group is dead */
--	CGRP_REMOVED,
--	/* Control Group has previously had a child cgroup or a task,
--	 * but no longer (only if CGRP_NOTIFY_ON_RELEASE is set) */
--	CGRP_RELEASABLE,
--	/* Control Group requires release notifications to userspace */
--	CGRP_NOTIFY_ON_RELEASE,
--};
--
- /* convenient tests for these bits */
- inline int cgroup_is_removed(const struct cgroup *cgrp)
- {
-@@ -1299,7 +1288,6 @@ enum cgroup_filetype {
- 	FILE_DIR,
- 	FILE_TASKLIST,
- 	FILE_NOTIFY_ON_RELEASE,
--	FILE_RELEASABLE,
- 	FILE_RELEASE_AGENT,
- };
- 
-@@ -2169,11 +2157,6 @@ static u64 cgroup_read_notify_on_release
- 	return notify_on_release(cgrp);
- }
- 
--static u64 cgroup_read_releasable(struct cgroup *cgrp, struct cftype *cft)
--{
--	return test_bit(CGRP_RELEASABLE, &cgrp->flags);
--}
--
- /*
-  * for the common functions, 'private' gives the type of file
-  */
-@@ -2193,12 +2176,6 @@ static struct cftype files[] = {
- 		.write = cgroup_common_file_write,
- 		.private = FILE_NOTIFY_ON_RELEASE,
- 	},
--
--	{
--		.name = "releasable",
--		.read_u64 = cgroup_read_releasable,
--		.private = FILE_RELEASABLE,
--	}
- };
- 
- static struct cftype cft_release_agent = {
-Index: cgroup-2.6.25-rc2-mm1/kernel/cgroup_debug.c
-===================================================================
---- cgroup-2.6.25-rc2-mm1.orig/kernel/cgroup_debug.c
-+++ cgroup-2.6.25-rc2-mm1/kernel/cgroup_debug.c
-@@ -1,5 +1,5 @@
- /*
-- * kernel/ccontainer_debug.c - Example cgroup subsystem that
-+ * kernel/cgroup_debug.c - Example cgroup subsystem that
-  * exposes debug info
-  *
-  * Copyright (C) Google Inc, 2007
-@@ -62,6 +62,11 @@ static u64 current_css_set_refcount_read
- 	return count;
- }
- 
-+static u64 releasable_read(struct cgroup *cgrp, struct cftype *cft)
-+{
-+	return test_bit(CGRP_RELEASABLE, &cgrp->flags);
-+}
-+
- static struct cftype files[] =  {
- 	{
- 		.name = "cgroup_refcount",
-@@ -81,6 +86,11 @@ static struct cftype files[] =  {
- 		.name = "current_css_set_refcount",
- 		.read_u64 = current_css_set_refcount_read,
- 	},
-+
-+	{
-+		.name = "releasable",
-+		.read_u64 = releasable_read,
-+	}
- };
- 
- static int debug_populate(struct cgroup_subsys *ss, struct cgroup *cont)
-
---
+>  ---
+>   kernel/cgroup.c |    4 +++-
+>   1 files changed, 3 insertions(+), 1 deletions(-)
+>
+>  diff --git a/kernel/cgroup.c b/kernel/cgroup.c
+>  index d8abe99..e9c2fb0 100644
+>  --- a/kernel/cgroup.c
+>  +++ b/kernel/cgroup.c
+>  @@ -2232,7 +2232,6 @@ static long cgroup_create(struct cgroup *parent, struct dentry *dentry,
+>
+>         mutex_lock(&cgroup_mutex);
+>
+>  -       cgrp->flags = 0;
+>         INIT_LIST_HEAD(&cgrp->sibling);
+>         INIT_LIST_HEAD(&cgrp->children);
+>         INIT_LIST_HEAD(&cgrp->css_sets);
+>  @@ -2242,6 +2241,9 @@ static long cgroup_create(struct cgroup *parent, struct dentry *dentry,
+>         cgrp->root = parent->root;
+>         cgrp->top_cgroup = parent->top_cgroup;
+>
+>  +       if (notify_on_release(parent))
+>  +               set_bit(CGRP_NOTIFY_ON_RELEASE, &cgrp->flags);
+>  +
+>         for_each_subsys(root, ss) {
+>                 struct cgroup_subsys_state *css = ss->create(ss, cgrp);
+>                 if (IS_ERR(css)) {
+>  --
+>  1.5.4.rc3
+>
+>
