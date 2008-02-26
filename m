@@ -1,16 +1,16 @@
-From: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Subject: Re: [PATCH 00/10] CGroup API files: Various cleanup to CGroup control
-	files
-Date: Tue, 26 Feb 2008 15:48:50 +0800
-Message-ID: <47C3C462.4000706__5241.92125672034$1204012348$gmane$org@cn.fujitsu.com>
-References: <20080223224725.115590000@menage.corp.google.com>	
-	<47C3862D.8080603@cn.fujitsu.com>
-	<6599ad830802252219p77f41917u7c6c137c8e5448e0@mail.gmail.com>
+From: Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+Subject: Re: [PATCH 4/4] The control group itself
+Date: Tue, 26 Feb 2008 10:54:09 +0300
+Message-ID: <47C3C5A1.6090501@openvz.org>
+References: <47AAFFF2.9030804@openvz.org> <47AB013B.8060502@openvz.org>	
+	<6599ad830802211247t21fdc4e4hfe637fcffd98ded7@mail.gmail.com>	
+	<47BE83FD.7060908@openvz.org>
+	<6599ad830802231512t20343cabq738df3039c8a1d1f@mail.gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <6599ad830802252219p77f41917u7c6c137c8e5448e0-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
+In-Reply-To: <6599ad830802231512t20343cabq738df3039c8a1d1f-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -21,22 +21,45 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
-Cc: YAMAMOTO Takashi <yamamoto-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Pavel Emelianov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
 Paul Menage wrote:
-> On Mon, Feb 25, 2008 at 7:23 PM, Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org> wrote:
->>  Should those pathces be rebased againt 2.6.25-rc3 ?
+> On Fri, Feb 22, 2008 at 12:12 AM, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org> wrote:
+>>  Hmm, you mean make them a binary files?
+> 
+> No, not by default. But I'm working on a plan to have an optional
+> binary API to cgroups, that would allow multiple control files to be
+> read in a binary format with a single system call. The existing API
+> would still be available as well, of course. The idea would be that
+> monitoring programs that frequently read lots of values from a single
+> cgroup (or even multiple cgroups) would be able to do so more cheaply
+> than by making multiple different reads on different files.
+> 
+> In order for this to work, CGroups needs to know the data type of a
+> given control file - so this would only be available for the control
+> files that use typed cgroup output methods rather than the raw file
+> output interface.
+
+Sounds reasonable.
+
+>>  I thought that filesystem-based
+>>  API should be human readable and writable as much as possible...
 >>
 > 
-> No, because they're against 2.6.25-rc2-mm1, which is already has (I
-> think) any of the new bits in 2.6.25-rc3 that would be affected by
-> these patches.
+> Yes, but even without a binary API it makes sense for values that are
+> likely to be parsed by programs be in a consistent format.
 > 
+> But after thinking more about this, I think that the devices
+> permission control file output doesn't really fall under this category
+> - from a programmatic point of view, I suspect it's write-only, and
+> only humans will be reading the output, for debugging.
+
+Yup. So, if you're fine with the proposed API, I think I will prepare
+this set and send it to Andrew this week.
+
 > Paul
+> 
 
--rc2-mm1 came out on 2008-02-16, but the patches I posted several days ago
-has been merged into -rc3, so your patches don't apply now. :(
-
-Think about ./MAINTAINERS update and set up a git tree for development of
-cgroup and cgroup subsystems as Andrew suggested. :)
+Thanks,
+Pavel
