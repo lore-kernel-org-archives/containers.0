@@ -1,16 +1,15 @@
-From: Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
-Subject: Re: [PATCH 4/4] The control group itself
-Date: Tue, 26 Feb 2008 10:54:09 +0300
-Message-ID: <47C3C5A1.6090501@openvz.org>
-References: <47AAFFF2.9030804@openvz.org> <47AB013B.8060502@openvz.org>	
-	<6599ad830802211247t21fdc4e4hfe637fcffd98ded7@mail.gmail.com>	
-	<47BE83FD.7060908@openvz.org>
-	<6599ad830802231512t20343cabq738df3039c8a1d1f@mail.gmail.com>
+From: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+Subject: Re: [PATCH 05/10] CGroup API files: Update cpusets to use cgroup
+	structured file API
+Date: Wed, 27 Feb 2008 08:54:08 +0800
+Message-ID: <47C4B4B0.4010700__38899.2109489211$1204073981$gmane$org@cn.fujitsu.com>
+References: <20080223224725.115590000@menage.corp.google.com>
+	<20080223232617.958345000@menage.corp.google.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <6599ad830802231512t20343cabq738df3039c8a1d1f-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
+In-Reply-To: <20080223232617.958345000-B63HFAS8fGlSzHKm+aFRNNkmqwFzkYv6@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -20,46 +19,17 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
-Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
+To: menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org
+Cc: YAMAMOTO Takashi <yamamoto-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Pavel Emelianov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Paul Menage wrote:
-> On Fri, Feb 22, 2008 at 12:12 AM, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org> wrote:
->>  Hmm, you mean make them a binary files?
-> 
-> No, not by default. But I'm working on a plan to have an optional
-> binary API to cgroups, that would allow multiple control files to be
-> read in a binary format with a single system call. The existing API
-> would still be available as well, of course. The idea would be that
-> monitoring programs that frequently read lots of values from a single
-> cgroup (or even multiple cgroups) would be able to do so more cheaply
-> than by making multiple different reads on different files.
-> 
-> In order for this to work, CGroups needs to know the data type of a
-> given control file - so this would only be available for the control
-> files that use typed cgroup output methods rather than the raw file
-> output interface.
+menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org wrote:
+> +	case FILE_MEMORY_MIGRATE:
+> +		return is_memory_migrate(cs);
+> +	case FILE_MEMORY_PRESSURE_ENABLED:
+> +		return cpuset_memory_pressure_enabled;
+> +	case FILE_MEMORY_PRESSURE:
+> +		return fmeter_getrate(&cs->fmeter);
+> +		break;
 
-Sounds reasonable.
-
->>  I thought that filesystem-based
->>  API should be human readable and writable as much as possible...
->>
-> 
-> Yes, but even without a binary API it makes sense for values that are
-> likely to be parsed by programs be in a consistent format.
-> 
-> But after thinking more about this, I think that the devices
-> permission control file output doesn't really fall under this category
-> - from a programmatic point of view, I suspect it's write-only, and
-> only humans will be reading the output, for debugging.
-
-Yup. So, if you're fine with the proposed API, I think I will prepare
-this set and send it to Andrew this week.
-
-> Paul
-> 
-
-Thanks,
-Pavel
+redundant 'break'
