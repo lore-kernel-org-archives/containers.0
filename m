@@ -1,48 +1,86 @@
-From: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
+From: "Paul Menage" <menage@google.com>
 Subject: Re: [RFC] Prefixing cgroup generic control filenames with "cgroup."
-Date: Thu, 28 Feb 2008 13:40:27 -0800
-Message-ID: <20080228134027.05b2aa87.akpm@linux-foundation.org>
+Date: Thu, 28 Feb 2008 14:06:30 -0800
+Message-ID: <6599ad830802281406t38e486d8g267df1873bc754c2@mail.gmail.com>
 References: <6599ad830802281314s25c033d6tc021725ae28aef8d@mail.gmail.com>
-	<20080228132142.4d4b1eef.akpm@linux-foundation.org>
-	<6599ad830802281328q162d0585v3ac6b45a119a4a05@mail.gmail.com>
+	 <20080228132142.4d4b1eef.akpm@linux-foundation.org>
+	 <6599ad830802281328q162d0585v3ac6b45a119a4a05@mail.gmail.com>
+	 <20080228134027.05b2aa87.akpm@linux-foundation.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
+Content-Type: text/plain; charset=ISO-8859-1
 Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <6599ad830802281328q162d0585v3ac6b45a119a4a05-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
-Cc: a.p.zijlstra-/NLkJaSkS4VmR6Xm/wNWPw@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1762129AbYB1WG5@vger.kernel.org>
+In-Reply-To: <20080228134027.05b2aa87.akpm@linux-foundation.org>
+Content-Disposition: inline
+Sender: linux-kernel-owner@vger.kernel.org
+To: Andrew Morton <akpm@linux-foundation.org>
+Cc: containers@lists.osdl.org, linux-kernel@vger.kernel.org, balbir@linux.vnet.ibm.com, a.p.zijlstra@chello.nl, xemul@openvz.org, pj@sgi.com
 List-Id: containers.vger.kernel.org
 
-On Thu, 28 Feb 2008 13:28:31 -0800
-"Paul Menage" <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org> wrote:
+On Thu, Feb 28, 2008 at 1:40 PM, Andrew Morton
+<akpm@linux-foundation.org> wrote:
+>
+>  Maybe cgroups shouldn't be putting kernel-generated files in places where
+>  user-specified files appear?
+>
 
-> On Thu, Feb 28, 2008 at 1:21 PM, Andrew Morton
-> <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org> wrote:
-> 
-> >
-> >  Because if something is in /foo/bar/cgroup/notify_on_release then
-> >  prefixing the filename with "cgroup_" seems pretty pointless.
-> >
-> 
-> The point would be to avoid situations where a user has code that
-> creates a group directory called "foo", and then in a future kernel
-> release cgroups introduces a control file called "foo". If it's
-> prefixed, then the user just has to avoid creating groups prefixed by
-> "cgroup." or any subsystem name, so collisions will be less likely.
-> 
+Well, that API (mixing control files and group directories in the same
+directory namespace) was inherited directly from cpusets.
 
-Maybe cgroups shouldn't be putting kernel-generated files in places where
-user-specified files appear?
+It wouldn't be hard to throw that away and move all the user-created
+group directories into their own subdirectory, i.e. change the
+existing directory layout from something like:
 
-(Am still thrashing around a bit here without an overview of the overall
-layout and naming).
+/mnt/cgroup/
+    tasks
+    cpu.shares
+    memory.limit_in_bytes
+    memory.usage_in_bytes
+    user_created_groupname1/
+        tasks
+        cpu.shares
+        memory.limit_in_bytes
+        memory.usage_in_bytes
+    user_created_groupname2/
+        tasks
+        cpu.shares
+        memory.limit_in_bytes
+        memory.usage_in_bytes
+
+to something like:
+
+/mnt/cgroup/
+    tasks
+    cpu.shares
+    memory.limit_in_bytes
+    memory.usage_in_bytes
+    groups/
+        user_created_groupname1/
+            tasks
+            cpu.shares
+            memory.limit_in_bytes
+            memory.usage_in_bytes
+            groups/
+        user_created_groupname2/
+            tasks
+            cpu.shares
+            memory.limit_in_bytes
+            memory.usage_in_bytes
+            groups/
+
+That would completely solve the namespace problem, at the cost of a
+little extra verbosity/inelegance for human users (I suspect
+programmatic users would prefer it), and lack of compatibility with
+2.6.24. I'd also need to make the existing model a mount option so
+that we could keep compatibility with the cpusets filesystem API.
+
+>  (Am still thrashing around a bit here without an overview of the overall
+>  layout and naming).
+
+Pretty much the same as cpusets, other than the additional
+kernel-generated files in each directory, as provided by the resource
+subsystems. So the same potential problem faced cpusets, but the fact
+that new cpuset features weren't being developed quickly meant the
+problem was less likely to actually bite people.
+
+Paul
