@@ -1,44 +1,59 @@
-From: "Vera" <email.raywy-j4bW6ZQTeQfyN2pjzbMxXVAUjnlXr6A1@public.gmane.org>
-Subject: Outdoorsex Treffpunkte
-Date: Thu, 28 Feb 2008 10:03:16 -0200
-Message-ID: <21819EBD.159DC877@telecentro.com.ar>
-Reply-To: Vera <email.raywy-j4bW6ZQTeQfyN2pjzbMxXVAUjnlXr6A1@public.gmane.org>
+From: sukadev@us.ibm.com
+Subject: [PATCH] Fix warning in kernel/pid.c
+Date: Thu, 28 Feb 2008 10:12:45 -0800
+Message-ID: <20080228181245.GA26319@us.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: An Dich <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
+Content-Type: text/plain; charset=us-ascii
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1756417AbYB1SPP@vger.kernel.org>
+Content-Disposition: inline
+Sender: linux-kernel-owner@vger.kernel.org
+To: Andrew Morton <akpm@osdl.org>
+Cc: Pavel Emelianov <xemul@openvz.org>, Containers <containers@lists.osdl.org>, linux-kernel@vger.kernel.org
 List-Id: containers.vger.kernel.org
 
-axwvzbs - AMSS - 4654
+
+From: Sukadev Bhattiprolu <sukadev@us.ibm.com>
+Subject: [PATCH]: Fix compile warning in kernel/pid.c
+
+We get a warning in kernel/pid.c due to the deprecated find_task_by_pid().
+Make the function inline in sched.h to avoid the warning.
+
+Signed-off-by: Sukadev Bhattiprolu <sukadev@us.ibm.com>
 ---
+ include/linux/sched.h |    5 ++++-
+ kernel/pid.c          |    6 ------
+ 2 files changed, 4 insertions(+), 7 deletions(-)
 
-
-Die besten Parkplatztreffs und Outdoorsex Treffpunkte
-
-In unserer Datenbank findest Du Girls, Paare und M=E4nner die geile Kontakte
-auf Parkpl=E4tzen suchen. =
-
-Wer viel auf Reisen ist, oder zuhause der Partner wartet, wird hier jede
-Menge M=F6glichkeiten entdecken.
-
-Bei uns erhalten Sie die sch=E4rfsten Parkplatz Sex Adressen! Unsere
-Datenbank ist vorallem f=FCr jedermann zug=E4ngig und liefert dir die besten
-Informationen zu allen g=E4ngigen Sextreffpunkten rund um die Parkpl=E4tze
-Europas. Bei den Parkplatztreffen fallen f=FCr Sie keine Kosten an, da es s=
-ich
-bei bei den Treffen um private Sextreffen handelt die ohne finanzielles
-Interesse zustande kommen. =
-
-
-
-http://rastplatzsex2.tk
+Index: linux-2.6-25-rc2-mm1/include/linux/sched.h
+===================================================================
+--- linux-2.6-25-rc2-mm1.orig/include/linux/sched.h	2008-02-27 16:07:52.000000000 -0800
++++ linux-2.6-25-rc2-mm1/include/linux/sched.h	2008-02-27 16:29:31.000000000 -0800
+@@ -1632,7 +1632,10 @@ extern struct pid_namespace init_pid_ns;
+ extern struct task_struct *find_task_by_pid_type_ns(int type, int pid,
+ 		struct pid_namespace *ns);
+ 
+-extern struct task_struct *find_task_by_pid(pid_t nr) __deprecated;
++static inline struct task_struct *__deprecated find_task_by_pid(pid_t nr)
++{
++	return find_task_by_pid_type_ns(PIDTYPE_PID, nr, &init_pid_ns);
++}
+ extern struct task_struct *find_task_by_vpid(pid_t nr);
+ extern struct task_struct *find_task_by_pid_ns(pid_t nr,
+ 		struct pid_namespace *ns);
+Index: linux-2.6-25-rc2-mm1/kernel/pid.c
+===================================================================
+--- linux-2.6-25-rc2-mm1.orig/kernel/pid.c	2008-02-27 15:18:22.000000000 -0800
++++ linux-2.6-25-rc2-mm1/kernel/pid.c	2008-02-27 16:29:31.000000000 -0800
+@@ -380,12 +380,6 @@ struct task_struct *find_task_by_pid_typ
+ 
+ EXPORT_SYMBOL(find_task_by_pid_type_ns);
+ 
+-struct task_struct *find_task_by_pid(pid_t nr)
+-{
+-	return find_task_by_pid_type_ns(PIDTYPE_PID, nr, &init_pid_ns);
+-}
+-EXPORT_SYMBOL(find_task_by_pid);
+-
+ struct task_struct *find_task_by_vpid(pid_t vnr)
+ {
+ 	return find_task_by_pid_type_ns(PIDTYPE_PID, vnr,
