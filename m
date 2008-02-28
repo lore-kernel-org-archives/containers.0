@@ -1,21 +1,33 @@
-From: serge@hallyn.com
+From: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
 Subject: Re: [RFC] Prefixing cgroup generic control filenames with "cgroup."
-Date: Thu, 28 Feb 2008 15:33:19 -0600
-Message-ID: <20080228213319.GC1232@vino.hallyn.com>
-References: <6599ad830802281314s25c033d6tc021725ae28aef8d@mail.gmail.com> <20080228132142.4d4b1eef.akpm@linux-foundation.org> <6599ad830802281328q162d0585v3ac6b45a119a4a05@mail.gmail.com>
+Date: Thu, 28 Feb 2008 13:40:27 -0800
+Message-ID: <20080228134027.05b2aa87.akpm@linux-foundation.org>
+References: <6599ad830802281314s25c033d6tc021725ae28aef8d@mail.gmail.com>
+	<20080228132142.4d4b1eef.akpm@linux-foundation.org>
+	<6599ad830802281328q162d0585v3ac6b45a119a4a05@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S932574AbYB1VgU@vger.kernel.org>
-Content-Disposition: inline
-In-Reply-To: <6599ad830802281328q162d0585v3ac6b45a119a4a05@mail.gmail.com>
-Sender: linux-kernel-owner@vger.kernel.org
-To: Paul Menage <menage@google.com>
-Cc: Andrew Morton <akpm@linux-foundation.org>, containers@lists.osdl.org, linux-kernel@vger.kernel.org, balbir@linux.vnet.ibm.com, a.p.zijlstra@chello.nl, xemul@openvz.org, pj@sgi.com
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <6599ad830802281328q162d0585v3ac6b45a119a4a05-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+Cc: a.p.zijlstra-/NLkJaSkS4VmR6Xm/wNWPw@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Quoting Paul Menage (menage@google.com):
+On Thu, 28 Feb 2008 13:28:31 -0800
+"Paul Menage" <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org> wrote:
+
 > On Thu, Feb 28, 2008 at 1:21 PM, Andrew Morton
-> <akpm@linux-foundation.org> wrote:
+> <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org> wrote:
 > 
 > >
 > >  Because if something is in /foo/bar/cgroup/notify_on_release then
@@ -27,14 +39,10 @@ Quoting Paul Menage (menage@google.com):
 > release cgroups introduces a control file called "foo". If it's
 > prefixed, then the user just has to avoid creating groups prefixed by
 > "cgroup." or any subsystem name, so collisions will be less likely.
+> 
 
-Have you already run into that case?
+Maybe cgroups shouldn't be putting kernel-generated files in places where
+user-specified files appear?
 
-You said the set of files belong to cgroup itself is likely to increase
-- do you have some candidates in mind?  Perhaps ones which are likely
-to conflict with choice taskgroup names?
-
-If anything I'd say add a 'prefix_cgroup' mount option and use it to
-decide whether to prefix or not (rather than use the noprefix option).
-
--serge
+(Am still thrashing around a bit here without an overview of the overall
+layout and naming).
