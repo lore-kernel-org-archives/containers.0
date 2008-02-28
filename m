@@ -1,59 +1,45 @@
-From: sukadev@us.ibm.com
-Subject: [PATCH] Fix warning in kernel/pid.c
-Date: Thu, 28 Feb 2008 10:12:45 -0800
-Message-ID: <20080228181245.GA26319@us.ibm.com>
+From: "Paul Menage" <menage@google.com>
+Subject: [RFC] Prefixing cgroup generic control filenames with "cgroup."
+Date: Thu, 28 Feb 2008 13:14:05 -0800
+Message-ID: <6599ad830802281314s25c033d6tc021725ae28aef8d@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1756417AbYB1SPP@vger.kernel.org>
+Content-Type: text/plain; charset=ISO-8859-1
+Content-Transfer-Encoding: 7bit
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S932402AbYB1VO1@vger.kernel.org>
 Content-Disposition: inline
 Sender: linux-kernel-owner@vger.kernel.org
-To: Andrew Morton <akpm@osdl.org>
-Cc: Pavel Emelianov <xemul@openvz.org>, Containers <containers@lists.osdl.org>, linux-kernel@vger.kernel.org
+To: Linux Containers <containers@lists.osdl.org>, LKML <linux-kernel@vger.kernel.org>, Balbir Singh <balbir@linux.vnet.ibm.com>, Peter Zijlstra <a.p.zijlstra@chello.nl>, Pavel Eme
+Cc: Andrew Morton <akpm@linux-foundation.org>
 List-Id: containers.vger.kernel.org
 
+All control files created by cgroup subsystems are given a prefix
+corresponding to their subsystem name. But control files provided by
+cgroups itself have no prefix. Currently that set of files is just
+"tasks", "notify_on_release" and "release_agent", but that set is
+likely to expand in the future. To reduce the risk of clashes, it
+would make sense to prefix these files and any future ones with the
+"cgroup." prefix.
 
-From: Sukadev Bhattiprolu <sukadev@us.ibm.com>
-Subject: [PATCH]: Fix compile warning in kernel/pid.c
+The only reason that I can see *not* to do this would be for
+compatibility with 2.6.24. Do people think this is a strong enough
+reason to leave the existing names? If distros are planning to ship
+products based on 2.6.24, presumably they'd be adding their own
+patches anyway, so they could add a trivial prefix change patch too.
+(I realise this discussion would have been more useful *before* 2.6.24
+shipped, but I didn't quite get round to it ...)
 
-We get a warning in kernel/pid.c due to the deprecated find_task_by_pid().
-Make the function inline in sched.h to avoid the warning.
+A compromise might be to keep "tasks" unprefixed, and say that future
+names get the "cgroup." prefix; in this case I'd be inclined to add
+the prefix to notify_on_release and release_agent on the grounds that
+there's much less chance of breaking anyone with those files since (I
+suspect) they're much less used.
 
-Signed-off-by: Sukadev Bhattiprolu <sukadev@us.ibm.com>
----
- include/linux/sched.h |    5 ++++-
- kernel/pid.c          |    6 ------
- 2 files changed, 4 insertions(+), 7 deletions(-)
+Note that if you mount a cgroup filesystem with the "noprefix" option,
+which is what the cpuset filesystem wrapper does, no subsystems have
+prefixes, and in this case the "cgroup." prefix wouldn't be used
+either. So this doesn't affect any users that explicitly mount cpusets
+rather than cgroups.
 
-Index: linux-2.6-25-rc2-mm1/include/linux/sched.h
-===================================================================
---- linux-2.6-25-rc2-mm1.orig/include/linux/sched.h	2008-02-27 16:07:52.000000000 -0800
-+++ linux-2.6-25-rc2-mm1/include/linux/sched.h	2008-02-27 16:29:31.000000000 -0800
-@@ -1632,7 +1632,10 @@ extern struct pid_namespace init_pid_ns;
- extern struct task_struct *find_task_by_pid_type_ns(int type, int pid,
- 		struct pid_namespace *ns);
- 
--extern struct task_struct *find_task_by_pid(pid_t nr) __deprecated;
-+static inline struct task_struct *__deprecated find_task_by_pid(pid_t nr)
-+{
-+	return find_task_by_pid_type_ns(PIDTYPE_PID, nr, &init_pid_ns);
-+}
- extern struct task_struct *find_task_by_vpid(pid_t nr);
- extern struct task_struct *find_task_by_pid_ns(pid_t nr,
- 		struct pid_namespace *ns);
-Index: linux-2.6-25-rc2-mm1/kernel/pid.c
-===================================================================
---- linux-2.6-25-rc2-mm1.orig/kernel/pid.c	2008-02-27 15:18:22.000000000 -0800
-+++ linux-2.6-25-rc2-mm1/kernel/pid.c	2008-02-27 16:29:31.000000000 -0800
-@@ -380,12 +380,6 @@ struct task_struct *find_task_by_pid_typ
- 
- EXPORT_SYMBOL(find_task_by_pid_type_ns);
- 
--struct task_struct *find_task_by_pid(pid_t nr)
--{
--	return find_task_by_pid_type_ns(PIDTYPE_PID, nr, &init_pid_ns);
--}
--EXPORT_SYMBOL(find_task_by_pid);
--
- struct task_struct *find_task_by_vpid(pid_t vnr)
- {
- 	return find_task_by_pid_type_ns(PIDTYPE_PID, vnr,
+Thoughts?
+
+Paul
