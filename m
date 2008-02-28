@@ -1,32 +1,51 @@
-From: "Paul Menage" <menage@google.com>
+From: serge@hallyn.com
 Subject: Re: [RFC] Prefixing cgroup generic control filenames with "cgroup."
-Date: Thu, 28 Feb 2008 13:28:31 -0800
-Message-ID: <6599ad830802281328q162d0585v3ac6b45a119a4a05@mail.gmail.com>
+Date: Thu, 28 Feb 2008 15:28:35 -0600
+Message-ID: <20080228212835.GB1232@vino.hallyn.com>
 References: <6599ad830802281314s25c033d6tc021725ae28aef8d@mail.gmail.com>
-	 <20080228132142.4d4b1eef.akpm@linux-foundation.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Content-Transfer-Encoding: 7bit
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1764307AbYB1V2v@vger.kernel.org>
-In-Reply-To: <20080228132142.4d4b1eef.akpm@linux-foundation.org>
+Content-Type: text/plain; charset=us-ascii
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S932217AbYB1Vbv@vger.kernel.org>
 Content-Disposition: inline
+In-Reply-To: <6599ad830802281314s25c033d6tc021725ae28aef8d@mail.gmail.com>
 Sender: linux-kernel-owner@vger.kernel.org
-To: Andrew Morton <akpm@linux-foundation.org>
-Cc: containers@lists.osdl.org, linux-kernel@vger.kernel.org, balbir@linux.vnet.ibm.com, a.p.zijlstra@chello.nl, xemul@openvz.org, pj@sgi.com
+To: Paul Menage <menage@google.com>
+Cc: Linux Containers <containers@lists.osdl.org>, LKML <linux-kernel@vger.kernel.org>, Balbir Singh <balbir@linux.vnet.ibm.com>, Peter Zijlstra <a.p.zijlstra@chello.nl>, Pavel Emelianov <xemul@openvz.org>, Paul Jackson <pj@sgi.com>, Andrew Morton <akpm@linux-foundation.org>
 List-Id: containers.vger.kernel.org
 
-On Thu, Feb 28, 2008 at 1:21 PM, Andrew Morton
-<akpm@linux-foundation.org> wrote:
+Quoting Paul Menage (menage@google.com):
+> All control files created by cgroup subsystems are given a prefix
+> corresponding to their subsystem name. But control files provided by
+> cgroups itself have no prefix. Currently that set of files is just
+> "tasks", "notify_on_release" and "release_agent", but that set is
+> likely to expand in the future. To reduce the risk of clashes, it
+> would make sense to prefix these files and any future ones with the
+> "cgroup." prefix.
+> 
+> The only reason that I can see *not* to do this would be for
+> compatibility with 2.6.24. Do people think this is a strong enough
+> reason to leave the existing names? If distros are planning to ship
+> products based on 2.6.24, presumably they'd be adding their own
+> patches anyway, so they could add a trivial prefix change patch too.
+> (I realise this discussion would have been more useful *before* 2.6.24
+> shipped, but I didn't quite get round to it ...)
+> 
+> A compromise might be to keep "tasks" unprefixed, and say that future
+> names get the "cgroup." prefix; in this case I'd be inclined to add
+> the prefix to notify_on_release and release_agent on the grounds that
+> there's much less chance of breaking anyone with those files since (I
+> suspect) they're much less used.
+> 
+> Note that if you mount a cgroup filesystem with the "noprefix" option,
+> which is what the cpuset filesystem wrapper does, no subsystems have
+> prefixes, and in this case the "cgroup." prefix wouldn't be used
+> either. So this doesn't affect any users that explicitly mount cpusets
+> rather than cgroups.
+> 
+> Thoughts?
 
->
->  Because if something is in /foo/bar/cgroup/notify_on_release then
->  prefixing the filename with "cgroup_" seems pretty pointless.
->
+To me it seems quite logical that files belonging to the cgroup
+subsystem would have no prefix, and I don't see any good reason to
+do so.
 
-The point would be to avoid situations where a user has code that
-creates a group directory called "foo", and then in a future kernel
-release cgroups introduces a control file called "foo". If it's
-prefixed, then the user just has to avoid creating groups prefixed by
-"cgroup." or any subsystem name, so collisions will be less likely.
-
-Paul
+-serge
