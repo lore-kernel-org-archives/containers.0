@@ -1,63 +1,39 @@
-From: "Paul Menage" <menage@google.com>
-Subject: Re: [RFC] [PATCH] Re: Prefixing cgroup generic control filenames with "cgroup."
-Date: Fri, 29 Feb 2008 01:34:37 -0800
-Message-ID: <6599ad830802290134u4cdfba44v39fd725b5c422720@mail.gmail.com>
+From: Xpl++ <xpl-d4um4pvOpxY@public.gmane.org>
+Subject: Re: [RFC] Prefixing cgroup generic control filenames with "cgroup."
+Date: Fri, 29 Feb 2008 13:38:20 +0200
+Message-ID: <47C7EEAC.7010907@amln.net>
 References: <6599ad830802281314s25c033d6tc021725ae28aef8d@mail.gmail.com>
-	 <20080228132142.4d4b1eef.akpm@linux-foundation.org>
-	 <6599ad830802281328q162d0585v3ac6b45a119a4a05@mail.gmail.com>
-	 <20080228134027.05b2aa87.akpm@linux-foundation.org>
-	 <6599ad830802281406t38e486d8g267df1873bc754c2@mail.gmail.com>
-	 <20080228142100.2dce0e46.akpm@linux-foundation.org>
-	 <47C79F39.5080005@google.com> <20080229002051.86de45a5.pj@sgi.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
+Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1756096AbYB2Je4@vger.kernel.org>
-In-Reply-To: <20080229002051.86de45a5.pj@sgi.com>
-Content-Disposition: inline
-Sender: linux-kernel-owner@vger.kernel.org
-To: Paul Jackson <pj@sgi.com>
-Cc: akpm@linux-foundation.org, containers@lists.osdl.org, linux-kernel@vger.kernel.org, balbir@linux.vnet.ibm.com, a.p.zijlstra@chello.nl, xemul@openvz.org
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <6599ad830802281314s25c033d6tc021725ae28aef8d-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+Cc: Peter Zijlstra <a.p.zijlstra-/NLkJaSkS4VmR6Xm/wNWPw@public.gmane.org>, LKML <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, Pavel Emelianov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Thu, Feb 28, 2008 at 10:20 PM, Paul Jackson <pj@sgi.com> wrote:
+Paul Menage ??????:
+> ...
 >
->  For example, what would have been cgroup:
->
->         /mnt/cgroup/user_created_groupname1/user_created_groupname2
->
->  now becomes:
->
->         /mnt/cgroup/cgroups/user_created_groupname1/cgroups/user_created_groupname2
->
->  Right?
+> A compromise might be to keep "tasks" unprefixed, and say that future
+> names get the "cgroup." prefix; in this case I'd be inclined to add
+> the prefix to notify_on_release and release_agent on the grounds that
+> there's much less chance of breaking anyone with those files since (I
+> suspect) they're much less used.
+>   
+This makes most sense to me. It won't break any existing software (most 
+likely) while it seems reasonable to leave 'tasks' unprefixed as this is 
+something that any software using any subsystem of cgroup would be using 
+anyway and it is not that much associated with a particulat subsystem.
 
-Well, the additional components are called "groups" not "cgroups", but
-basically yes.
-
->
->  You're doing this just to "protect the user from themself", to make
->  it more difficult for them to rely on some name that in a future
->  version is no longer available.
-
-Correct. "Future-proofing" and "Forward planning" are two
-alternatively-nuanced ways of describing this ...
-
->
->  There is really a trivial resolution to this ... stake out what
->  additional kernel generated names might ever be added ... some
->  pattern(s) of characters which all future names will match, which
->  leave wide swaths of names safely available, in perpetuity, for
->  user created names, with no risk of future collision.
-
-Yes, we could just say "the kernel reserves the right to use any names
-that begin with a lower-case letter, and no others", and be done with
-it. That leaves a bit of an ugly taste in my mouth, but if people seem
-to prefer that approach we can go for it.
-
->
->  And did I say incompatible with released versions?
-
-Not at all incompatible if it requires a mount option to enable it ...
-
-Paul
+Regards,
+Peter Litov.
