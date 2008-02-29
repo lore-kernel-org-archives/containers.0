@@ -1,66 +1,71 @@
-From: "Paul Menage" <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+From: Paul Jackson <pj@sgi.com>
 Subject: Re: [RFC] Prefixing cgroup generic control filenames with "cgroup."
-Date: Thu, 28 Feb 2008 17:03:33 -0800
-Message-ID: <6599ad830802281703hb3cff06r8ba4755f705a0879@mail.gmail.com>
+Date: Thu, 28 Feb 2008 19:22:32 -0600
+Message-ID: <20080228192232.b2211b4d.pj@sgi.com>
 References: <6599ad830802281314s25c033d6tc021725ae28aef8d@mail.gmail.com>
 	<20080228173618.139f5bb4.pj@sgi.com>
+	<6599ad830802281703hb3cff06r8ba4755f705a0879@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
+Content-Type: text/plain; charset=US-ASCII
 Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20080228173618.139f5bb4.pj-sJ/iWh9BUns@public.gmane.org>
-Content-Disposition: inline
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Paul Jackson <pj-sJ/iWh9BUns@public.gmane.org>
-Cc: a.p.zijlstra-/NLkJaSkS4VmR6Xm/wNWPw@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1760925AbYB2BWt@vger.kernel.org>
+In-Reply-To: <6599ad830802281703hb3cff06r8ba4755f705a0879@mail.gmail.com>
+Sender: linux-kernel-owner@vger.kernel.org
+To: Paul Menage <menage@google.com>
+Cc: containers@lists.osdl.org, linux-kernel@vger.kernel.org, balbir@linux.vnet.ibm.com, a.p.zijlstra@chello.nl, xemul@openvz.org, akpm@linux-foundation.org
 List-Id: containers.vger.kernel.org
 
-On Thu, Feb 28, 2008 at 3:36 PM, Paul Jackson <pj-sJ/iWh9BUns@public.gmane.org> wrote:
->
->  We could accomplish that much by decreeing that future new kernel
->  generated names that we might add follow some stronger convention,
->  such as the cgroup_ or appropriate subsystem prefix.
+> Subsystem-created files already have an appropriate prefix.
 
-Subsystem-created files already have an appropriate prefix.
+Good ... such little consistencies in naming are helpful, when
+voluntarily self imposed, without incompatible changes to published
+names.
 
-> No need to
->  change the existing well known names for this reason.
+> > No need to
+> >  change the existing well known names for this reason.
+> 
+> But that's part of my point - is it reasonable to describe a system
+> that was only introduced in 2.6.24 as "well-known"?
 
-But that's part of my point - is it reasonable to describe a system
-that was only introduced in 2.6.24 as "well-known"?
+In their earlier cpuset context, "tasks" and "notify_on_release" have
+been well known for years.
 
->
->    Actually, in terms of 'common names used
->  by humans' some of these names, "tasks" and "notify_on_release", date
->  back much earlier than that.  Please don't rename these two files in
->  cgroups; and of course absolutely don't rename them in cpusets.
+And breaking actual compatibility, in a way that will break more than
+the tiniest set of users, even over one release, should not be done
+without both (1) a really good cause, and (2) a plan for migrating
+users over a couple of releases to the new interface.
 
-No, I wasn't planning to make any changes to cpusets.
+> >  back much earlier than that.  Please don't rename these two files in
+> >  cgroups; and of course absolutely don't rename them in cpusets.
+> 
+> No, I wasn't planning to make any changes to cpusets.
 
->
->  Please don't end up with different names of these files, depending on
->  whether you're in cgroups or cpusets, either.
+Yeah - I figured you wouldn't risk my wrath changing this in cpusets ;).
 
-That already happens - when mounted as the "cpuset" filesystem, we
-have names like "mems_allowed". When mounted as cgroups, we have names
-like cpuset.mems_allowed.
+Could you please not change them in cgroups, either?
 
->
-> > Could we do something like auto-prefixing user-created directories with a
->  > fixed string so that there is no way in which the user can cause a
->  > collision with kernel-created files?
->
->  Lordy lordy -- a bunch of intrusive, complicating crap to solve a
->  non-existent problem (sorry for the indelicate choice of words ;).
+> >  Please don't end up with different names of these files, depending on
+> >  whether you're in cgroups or cpusets, either.
+> 
+> That already happens - when mounted as the "cpuset" filesystem, we
+> have names like "mems_allowed". When mounted as cgroups, we have names
+> like cpuset.mems_allowed.
 
-No, I don't like that idea either.
+Ok - it does make sense that cpuset specific files, when embedded in the
+more general purpose cgroups, are adorned with name prefixes that they
+didn't have in the legacy API.  And besides, it is what is -- we released
+it, and there's no compelling disaster forcing a change.
 
-Paul
+But generic cgroup infrastructure files, such as "tasks", have not had
+such adornments.  And now, that is what it is -- released, and sufficient
+to remain as it is.
+
+> No, I don't like that idea either.
+
+Good (and extra credit for saying so with fewer words and more politely
+than I managed ;).
+
+-- 
+                  I won't rest till it's the best ...
+                  Programmer, Linux Scalability
+                  Paul Jackson <pj@sgi.com> 1.940.382.4214
