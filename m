@@ -1,75 +1,63 @@
-From: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
-Subject: Re: A strange behavior of sched_fair
-Date: Thu, 28 Feb 2008 23:08:20 -0800
-Message-ID: <20080228230820.22ad38b3.akpm@linux-foundation.org>
-References: <47C5E977.2010401@jp.fujitsu.com>
+From: "Paul Menage" <menage@google.com>
+Subject: Re: [RFC] [PATCH] Re: Prefixing cgroup generic control filenames with "cgroup."
+Date: Fri, 29 Feb 2008 01:34:37 -0800
+Message-ID: <6599ad830802290134u4cdfba44v39fd725b5c422720@mail.gmail.com>
+References: <6599ad830802281314s25c033d6tc021725ae28aef8d@mail.gmail.com>
+	 <20080228132142.4d4b1eef.akpm@linux-foundation.org>
+	 <6599ad830802281328q162d0585v3ac6b45a119a4a05@mail.gmail.com>
+	 <20080228134027.05b2aa87.akpm@linux-foundation.org>
+	 <6599ad830802281406t38e486d8g267df1873bc754c2@mail.gmail.com>
+	 <20080228142100.2dce0e46.akpm@linux-foundation.org>
+	 <47C79F39.5080005@google.com> <20080229002051.86de45a5.pj@sgi.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
+Content-Type: text/plain; charset=ISO-8859-1
 Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <47C5E977.2010401-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Kei Tokunaga <tokunaga.keiich-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
-Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, mingo-X9Un+BFzKDI@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1756096AbYB2Je4@vger.kernel.org>
+In-Reply-To: <20080229002051.86de45a5.pj@sgi.com>
+Content-Disposition: inline
+Sender: linux-kernel-owner@vger.kernel.org
+To: Paul Jackson <pj@sgi.com>
+Cc: akpm@linux-foundation.org, containers@lists.osdl.org, linux-kernel@vger.kernel.org, balbir@linux.vnet.ibm.com, a.p.zijlstra@chello.nl, xemul@openvz.org
 List-Id: containers.vger.kernel.org
 
+On Thu, Feb 28, 2008 at 10:20 PM, Paul Jackson <pj@sgi.com> wrote:
+>
+>  For example, what would have been cgroup:
+>
+>         /mnt/cgroup/user_created_groupname1/user_created_groupname2
+>
+>  now becomes:
+>
+>         /mnt/cgroup/cgroups/user_created_groupname1/cgroups/user_created_groupname2
+>
+>  Right?
 
-(cc containers list)
+Well, the additional components are called "groups" not "cgroups", but
+basically yes.
 
-On Wed, 27 Feb 2008 17:51:35 -0500 Kei Tokunaga <tokunaga.keiich-+CUm20s59erQFUHtdCDX3A@public.gmane.org> wrote:
+>
+>  You're doing this just to "protect the user from themself", to make
+>  it more difficult for them to rely on some name that in a future
+>  version is no longer available.
 
-> Hi Ingo,
-> 
-> I am playing around with sched_fair and cgroup, and it seems like
-> I hit a possible bug.  Could you also check if that is a bug?
-> 
-> Description of behavior:
->    Start a cpu-bound task (t1), attach it to a cgroup (cgA), and let the
->    task to run for a while (e.g. several tens of seconds or a couple of
->    minutes would be adequate.)  Then, start another cpu-bound task (t2)
->    and attach it to cgA in the way described in "Steps to Reproduce" section.
->    You will see t1 does not get run for a while.
->    (The tasks may not have to be cpu-bound, but it is easier to see the
->     behavior using cpu-bound tasks.)
-> 
-> How reproducible:
->    Always.
-> 
-> Environments where I saw the behavior:
->    2.6.25-rc3 with resource management functions enabled on ia64 box.
-> 
-> Steps to Reproduce:
->    # mkdir /dev/cgroup
->    # mount -t cgroup -ocpuset,cpu cpu /dev/cgroup
->    # mkdir /dev/cgroup/{a,b}
->    # echo 0 > /dev/cgroup/a/cpuset.cpus
->    # echo 0 > /dev/cgroup/b/cpuset.cpus
->    # echo 1 > /dev/cgroup/a/cpuset.mems
->    # echo 1 > /dev/cgroup/b/cpuset.mems
->    # echo $$ > /dev/cgroup/b/tasks
->    # ./a.out & echo $! > /dev/cgroup/a/tasks (a.out is just a for-loop program)
->      [Wait for several tens of seconds or a couple of minutes.]
->    # ./a.out2 & echo $! > /dev/cgroup/a/tasks (a.out2 is just a for-loop program)
->      [You will see a.out does not get run for a while by running top command.]
-> 
-> Additional Info:
->    a.out2 needs to be started from the shell of cgroup-b in order to
->    reproduce the problem (, unless the system is UP.)  Starting a.out2
->    in the manner, se->vruntime (or something to create the se->vruntime)
->    of a.out2 seems to be initialized to a small value, compared to the
->    value of a.out.  And the fair scheduler only runs a.out2 until the
->    se->vruntime catches up with the se->vruntime of a.out.
-> 
-> Thanks,
-> Kei
-> --
-> Kei Tokunaga
-> Fujitsu (Red Hat On-site Partner)
+Correct. "Future-proofing" and "Forward planning" are two
+alternatively-nuanced ways of describing this ...
+
+>
+>  There is really a trivial resolution to this ... stake out what
+>  additional kernel generated names might ever be added ... some
+>  pattern(s) of characters which all future names will match, which
+>  leave wide swaths of names safely available, in perpetuity, for
+>  user created names, with no risk of future collision.
+
+Yes, we could just say "the kernel reserves the right to use any names
+that begin with a lower-case letter, and no others", and be done with
+it. That leaves a bit of an ugly taste in my mouth, but if people seem
+to prefer that approach we can go for it.
+
+>
+>  And did I say incompatible with released versions?
+
+Not at all incompatible if it requires a mount option to enable it ...
+
+Paul
