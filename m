@@ -1,70 +1,75 @@
-From: Paul Jackson <pj@sgi.com>
-Subject: Re: [RFC] [PATCH] Re: Prefixing cgroup generic control filenames
- with "cgroup."
-Date: Fri, 29 Feb 2008 00:20:51 -0600
-Message-ID: <20080229002051.86de45a5.pj@sgi.com>
-References: <6599ad830802281314s25c033d6tc021725ae28aef8d@mail.gmail.com>
-	<20080228132142.4d4b1eef.akpm@linux-foundation.org>
-	<6599ad830802281328q162d0585v3ac6b45a119a4a05@mail.gmail.com>
-	<20080228134027.05b2aa87.akpm@linux-foundation.org>
-	<6599ad830802281406t38e486d8g267df1873bc754c2@mail.gmail.com>
-	<20080228142100.2dce0e46.akpm@linux-foundation.org>
-	<47C79F39.5080005@google.com>
+From: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
+Subject: Re: A strange behavior of sched_fair
+Date: Thu, 28 Feb 2008 23:08:20 -0800
+Message-ID: <20080228230820.22ad38b3.akpm@linux-foundation.org>
+References: <47C5E977.2010401@jp.fujitsu.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
+Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1758829AbYB2GVP@vger.kernel.org>
-In-Reply-To: <47C79F39.5080005@google.com>
-Sender: linux-kernel-owner@vger.kernel.org
-To: Paul Menage <menage@google.com>
-Cc: akpm@linux-foundation.org, containers@lists.osdl.org, linux-kernel@vger.kernel.org, balbir@linux.vnet.ibm.com, a.p.zijlstra@chello.nl, xemul@openvz.org
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <47C5E977.2010401-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Kei Tokunaga <tokunaga.keiich-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, mingo-X9Un+BFzKDI@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Paul M wrote:
-> Thoughts? Is this a direction we want to go in? As an option, or by default?
 
-So ... this proposal adds a 'groups' subdirectory in each cgroup, and places
-the user generated subgroups in there.
+(cc containers list)
 
-It looks like an unnecessary, incompatible and complicating change to me.
+On Wed, 27 Feb 2008 17:51:35 -0500 Kei Tokunaga <tokunaga.keiich-+CUm20s59erQFUHtdCDX3A@public.gmane.org> wrote:
 
-For example, what would have been cgroup:
-
-	/mnt/cgroup/user_created_groupname1/user_created_groupname2
-
-now becomes:
-
-	/mnt/cgroup/cgroups/user_created_groupname1/cgroups/user_created_groupname2
-
-Right?
-
-Why would you do this?
-
-There is no problem with the current implementation, no bug we're
-having trouble coding a fix for, no feature we're have trouble adding.
-The current code, that simply doesn't allow colliding user names
-because the kernel provided names are already there, works just fine.
-
-You're doing this just to "protect the user from themself", to make
-it more difficult for them to rely on some name that in a future
-version is no longer available.
-
-It annoys users, and rightfully so, to have to permanently deal with
-interface warts, because the computer is trying to protect the user
-from some hypothetical scenario that is not a problem the user needs
-solving.
-
-There is really a trivial resolution to this ... stake out what
-additional kernel generated names might ever be added ... some
-pattern(s) of characters which all future names will match, which
-leave wide swaths of names safely available, in perpetuity, for
-user created names, with no risk of future collision.
-
-And did I say incompatible with released versions?
-
-Hopefully Paul M isn't too surprised that I'm not endorsing this one ;).
-
--- 
-                  I won't rest till it's the best ...
-                  Programmer, Linux Scalability
-                  Paul Jackson <pj@sgi.com> 1.940.382.4214
+> Hi Ingo,
+> 
+> I am playing around with sched_fair and cgroup, and it seems like
+> I hit a possible bug.  Could you also check if that is a bug?
+> 
+> Description of behavior:
+>    Start a cpu-bound task (t1), attach it to a cgroup (cgA), and let the
+>    task to run for a while (e.g. several tens of seconds or a couple of
+>    minutes would be adequate.)  Then, start another cpu-bound task (t2)
+>    and attach it to cgA in the way described in "Steps to Reproduce" section.
+>    You will see t1 does not get run for a while.
+>    (The tasks may not have to be cpu-bound, but it is easier to see the
+>     behavior using cpu-bound tasks.)
+> 
+> How reproducible:
+>    Always.
+> 
+> Environments where I saw the behavior:
+>    2.6.25-rc3 with resource management functions enabled on ia64 box.
+> 
+> Steps to Reproduce:
+>    # mkdir /dev/cgroup
+>    # mount -t cgroup -ocpuset,cpu cpu /dev/cgroup
+>    # mkdir /dev/cgroup/{a,b}
+>    # echo 0 > /dev/cgroup/a/cpuset.cpus
+>    # echo 0 > /dev/cgroup/b/cpuset.cpus
+>    # echo 1 > /dev/cgroup/a/cpuset.mems
+>    # echo 1 > /dev/cgroup/b/cpuset.mems
+>    # echo $$ > /dev/cgroup/b/tasks
+>    # ./a.out & echo $! > /dev/cgroup/a/tasks (a.out is just a for-loop program)
+>      [Wait for several tens of seconds or a couple of minutes.]
+>    # ./a.out2 & echo $! > /dev/cgroup/a/tasks (a.out2 is just a for-loop program)
+>      [You will see a.out does not get run for a while by running top command.]
+> 
+> Additional Info:
+>    a.out2 needs to be started from the shell of cgroup-b in order to
+>    reproduce the problem (, unless the system is UP.)  Starting a.out2
+>    in the manner, se->vruntime (or something to create the se->vruntime)
+>    of a.out2 seems to be initialized to a small value, compared to the
+>    value of a.out.  And the fair scheduler only runs a.out2 until the
+>    se->vruntime catches up with the se->vruntime of a.out.
+> 
+> Thanks,
+> Kei
+> --
+> Kei Tokunaga
+> Fujitsu (Red Hat On-site Partner)
