@@ -1,35 +1,45 @@
-From: Sam Ravnborg <sam@ravnborg.org>
-Subject: Purpose of __net_exit & friends [Was: [ICMP6]: Consolidate fail ...]
-Date: Fri, 29 Feb 2008 21:12:47 +0100
-Message-ID: <20080229201247.GA7139@uranus.ravnborg.org>
-References: <1204292360.10368.11.camel@iris.sw.ru> <1204292458-11636-12-git-send-email-den@openvz.org> <20080229.112342.76764059.davem@davemloft.net>
+From: David Miller <davem@davemloft.net>
+Subject: Re: Purpose of __net_exit & friends
+Date: Fri, 29 Feb 2008 12:23:55 -0800 (PST)
+Message-ID: <20080229.122355.90044797.davem@davemloft.net>
+References: <1204292458-11636-12-git-send-email-den@openvz.org>
+	<20080229.112342.76764059.davem@davemloft.net>
+	<20080229201247.GA7139@uranus.ravnborg.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+Content-Type: Text/Plain; charset=us-ascii
+Content-Transfer-Encoding: 7bit
 Return-path: <netdev-owner@vger.kernel.org>
-Content-Disposition: inline
-In-Reply-To: <20080229.112342.76764059.davem@davemloft.net>
+In-Reply-To: <20080229201247.GA7139@uranus.ravnborg.org>
 Sender: netdev-owner@vger.kernel.org
-To: David Miller <davem@davemloft.net>
+To: sam@ravnborg.org
 Cc: den@openvz.org, netdev@vger.kernel.org, containers@lists.osdl.org
 List-Id: containers.vger.kernel.org
 
-On Fri, Feb 29, 2008 at 11:23:42AM -0800, David Miller wrote:
-> From: "Denis V. Lunev" <den@openvz.org>
-> Date: Fri, 29 Feb 2008 16:40:58 +0300
+From: Sam Ravnborg <sam@ravnborg.org>
+Date: Fri, 29 Feb 2008 21:12:47 +0100
+
+> On Fri, Feb 29, 2008 at 11:23:42AM -0800, David Miller wrote:
+> > From: "Denis V. Lunev" <den@openvz.org>
+> > Date: Fri, 29 Feb 2008 16:40:58 +0300
+> > 
+> > > +static void __net_exit icmpv6_sk_exit(struct net *net)
+> > > +{
+> > 
+> > Since you call this from __new_init code, won't this
+> > create a section conflict when ipv6 is built statically
+> > into the kernel?
 > 
-> > +static void __net_exit icmpv6_sk_exit(struct net *net)
-> > +{
+> I have noticed this __net_init/__net_exit stuff before
+> but never got around to ask about it.
 > 
-> Since you call this from __new_init code, won't this
-> create a section conflict when ipv6 is built statically
-> into the kernel?
+> Whats the actual purpose and are there any strict
+> rules as to what may be called from where?
+> If there are we should apply the same checks as we do
+> for __devinit/__devexit and friends.
 
-I have noticed this __net_init/__net_exit stuff before
-but never got around to ask about it.
+Basically, if network namespace support isn't enabled,
+these functions can act like normal __init and __exit
+functions.
 
-Whats the actual purpose and are there any strict
-rules as to what may be called from where?
-If there are we should apply the same checks as we do
-for __devinit/__devexit and friends.
-
-	Sam
+Otherwise we have to keep them around so that they can
+be called when namespaces are created and destroyed.
