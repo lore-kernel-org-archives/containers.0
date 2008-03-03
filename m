@@ -1,92 +1,116 @@
-From: Daniel Lezcano <dlezcano@fr.ibm.com>
-Subject: network namespace ipv6 perfs
-Date: Mon, 03 Mar 2008 15:20:16 +0100
-Message-ID: <47CC0920.6000005@fr.ibm.com>
+From: Benjamin Thery <benjamin.thery@bull.net>
+Subject: Re: network namespace ipv6 perfs
+Date: Mon, 03 Mar 2008 15:42:03 +0100
+Message-ID: <47CC0E3B.1040809@bull.net>
+References: <47CC0920.6000005@fr.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1;
 	format=flowed
 Content-Transfer-Encoding: QUOTED-PRINTABLE
 Return-path: <netdev-owner@vger.kernel.org>
+In-Reply-To: <47CC0920.6000005@fr.ibm.com>
 Sender: netdev-owner@vger.kernel.org
-To: Linux Containers <containers@lists.osdl.org>, Linux Netdev List <netdev@vger.kernel.org>
-Cc: Benjamin Thery <benjamin.thery@bull.net>
+To: Daniel Lezcano <dlezcano@fr.ibm.com>
+Cc: Linux Containers <containers@lists.osdl.org>, Linux Netdev List <netdev@vger.kernel.org>
 List-Id: containers.vger.kernel.org
 
-Hi,
+Daniel Lezcano wrote:
+> Hi,
+>=20
+> Some performance tests was made by Benjamin to watch out the impact o=
+f=20
+> the network namespace. The good news is there is no impact when used=20
+> with or without namespaces. That has been checked using a real networ=
+k=20
+> device inside a network namespace.
+>=20
+> These results are consistent with the ones previously made for ipv4.
+>=20
+> http://lxc.sourceforge.net/network/bench_ipv6_graph.php
+>=20
+> Thanks to Benjamin who did all the performance tests :)
 
-Some performance tests was made by Benjamin to watch out the impact of=20
-the network namespace. The good news is there is no impact when used=20
-with or without namespaces. That has been checked using a real network=20
-device inside a network namespace.
+In these results, may be, there is one thing that should be explained.
+It is the CPU utilization overhead in the 'veth' case.
 
-These results are consistent with the ones previously made for ipv4.
+Compared to physical devices or macvlan, veth interfaces don't benefit
+from hardware offloading mechanisms: i.e. checksums have to be computed
+by the soft. That explains the big overhead in CPU utilization when
+using this kind of virtual interface.
 
-http://lxc.sourceforge.net/network/bench_ipv6_graph.php
+Benjamin
 
-Thanks to Benjamin who did all the performance tests :)
+>=20
+> Regards
+>     -- Daniel
+>=20
+>=20
+>=20
+>=20
+>=20
+>=20
+>=20
+>=20
+>=20
+>=20
+>=20
+>=20
+>=20
+>=20
+>=20
+>=20
+>=20
+>=20
+>=20
+>=20
+>=20
+>=20
+>=20
+>=20
+>=20
+>=20
+>=20
+>=20
+>=20
+>=20
+>=20
+>=20
+>=20
+>=20
+>=20
+>=20
+>=20
+>=20
+>=20
+>=20
+>=20
+>=20
+>=20
+>=20
+>=20
+>=20
+>=20
+>=20
+>=20
+>=20
+>=20
+>=20
+>=20
+>=20
+> Sauf indication contraire ci-dessus:
+> Compagnie IBM France
+> Si=E8ge Social : Tour Descartes, 2, avenue Gambetta, La D=E9fense 5, =
+92400
+> Courbevoie
+> RCS Nanterre 552 118 465
+> Forme Sociale : S.A.S.
+> Capital Social : 542.737.118 ?
+> SIREN/SIRET : 552 118 465 02430
+>=20
+>=20
 
-Regards
-	-- Daniel
 
+--=20
+B e n j a m i n   T h e r y  - BULL/DT/Open Software R&D
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-Sauf indication contraire ci-dessus:
-Compagnie IBM France
-Si=E8ge Social : Tour Descartes, 2, avenue Gambetta, La D=E9fense 5, 92=
-400
-Courbevoie
-RCS Nanterre 552 118 465
-=46orme Sociale : S.A.S.
-Capital Social : 542.737.118 ?
-SIREN/SIRET : 552 118 465 02430
+    http://www.bull.com
