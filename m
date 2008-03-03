@@ -1,7 +1,7 @@
 From: Benjamin Thery <benjamin.thery@bull.net>
 Subject: Re: network namespace ipv6 perfs
-Date: Mon, 03 Mar 2008 15:42:03 +0100
-Message-ID: <47CC0E3B.1040809@bull.net>
+Date: Mon, 03 Mar 2008 15:48:12 +0100
+Message-ID: <47CC0FAC.1010306@bull.net>
 References: <47CC0920.6000005@fr.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1;
@@ -13,6 +13,14 @@ Sender: netdev-owner@vger.kernel.org
 To: Daniel Lezcano <dlezcano@fr.ibm.com>
 Cc: Linux Containers <containers@lists.osdl.org>, Linux Netdev List <netdev@vger.kernel.org>
 List-Id: containers.vger.kernel.org
+
+One more thing about these results: the kernel.
+The version used to run these tests was 2.6.25-rc1 from Dave Miller's
+net-2.6 tree.
+
+(and I included results from a vanilla 2.6.23.16 as reference)
+
+Benjamin
 
 Daniel Lezcano wrote:
 > Hi,
@@ -29,17 +37,6 @@ k=20
 > http://lxc.sourceforge.net/network/bench_ipv6_graph.php
 >=20
 > Thanks to Benjamin who did all the performance tests :)
-
-In these results, may be, there is one thing that should be explained.
-It is the CPU utilization overhead in the 'veth' case.
-
-Compared to physical devices or macvlan, veth interfaces don't benefit
-from hardware offloading mechanisms: i.e. checksums have to be computed
-by the soft. That explains the big overhead in CPU utilization when
-using this kind of virtual interface.
-
-Benjamin
-
 >=20
 > Regards
 >     -- Daniel
