@@ -1,113 +1,119 @@
-From: Benjamin Thery <benjamin.thery@bull.net>
-Subject: Re: network namespace ipv6 perfs
-Date: Mon, 03 Mar 2008 15:48:12 +0100
-Message-ID: <47CC0FAC.1010306@bull.net>
-References: <47CC0920.6000005@fr.ibm.com>
+From: Pavel Emelyanov <xemul@openvz.org>
+Subject: Re: [Devel] Re: network namespace ipv6 perfs
+Date: Mon, 03 Mar 2008 17:55:11 +0300
+Message-ID: <47CC114F.8050104@openvz.org>
+References: <47CC0920.6000005@fr.ibm.com> <47CC0E3B.1040809@bull.net>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1;
-	format=flowed
+Content-Type: text/plain; charset=ISO-8859-1
 Content-Transfer-Encoding: QUOTED-PRINTABLE
 Return-path: <netdev-owner@vger.kernel.org>
-In-Reply-To: <47CC0920.6000005@fr.ibm.com>
+In-Reply-To: <47CC0E3B.1040809@bull.net>
 Sender: netdev-owner@vger.kernel.org
-To: Daniel Lezcano <dlezcano@fr.ibm.com>
-Cc: Linux Containers <containers@lists.osdl.org>, Linux Netdev List <netdev@vger.kernel.org>
+To: Benjamin Thery <benjamin.thery@bull.net>
+Cc: Daniel Lezcano <dlezcano@fr.ibm.com>, Linux Containers <containers@lists.osdl.org>, Linux Netdev List <netdev@vger.kernel.org>, Denis Lunev <den@openvz.org>
 List-Id: containers.vger.kernel.org
 
-One more thing about these results: the kernel.
-The version used to run these tests was 2.6.25-rc1 from Dave Miller's
-net-2.6 tree.
+Benjamin Thery wrote:
+> Daniel Lezcano wrote:
+>> Hi,
+>>
+>> Some performance tests was made by Benjamin to watch out the impact =
+of=20
+>> the network namespace. The good news is there is no impact when used=
+=20
+>> with or without namespaces. That has been checked using a real netwo=
+rk=20
+>> device inside a network namespace.
+>>
+>> These results are consistent with the ones previously made for ipv4.
+>>
+>> http://lxc.sourceforge.net/network/bench_ipv6_graph.php
+>>
+>> Thanks to Benjamin who did all the performance tests :)
+>=20
+> In these results, may be, there is one thing that should be explained=
+=2E
+> It is the CPU utilization overhead in the 'veth' case.
+>=20
+> Compared to physical devices or macvlan, veth interfaces don't benefi=
+t
+> from hardware offloading mechanisms: i.e. checksums have to be comput=
+ed
+> by the soft. That explains the big overhead in CPU utilization when
 
-(and I included results from a vanilla 2.6.23.16 as reference)
+You can tune the veth devices not to account checksum when unnecessary.
 
-Benjamin
-
-Daniel Lezcano wrote:
-> Hi,
+> using this kind of virtual interface.
 >=20
-> Some performance tests was made by Benjamin to watch out the impact o=
-f=20
-> the network namespace. The good news is there is no impact when used=20
-> with or without namespaces. That has been checked using a real networ=
-k=20
-> device inside a network namespace.
+> Benjamin
 >=20
-> These results are consistent with the ones previously made for ipv4.
->=20
-> http://lxc.sourceforge.net/network/bench_ipv6_graph.php
->=20
-> Thanks to Benjamin who did all the performance tests :)
->=20
-> Regards
->     -- Daniel
->=20
->=20
->=20
->=20
->=20
->=20
->=20
->=20
->=20
->=20
->=20
->=20
->=20
->=20
->=20
->=20
->=20
->=20
->=20
->=20
->=20
->=20
->=20
->=20
->=20
->=20
->=20
->=20
->=20
->=20
->=20
->=20
->=20
->=20
->=20
->=20
->=20
->=20
->=20
->=20
->=20
->=20
->=20
->=20
->=20
->=20
->=20
->=20
->=20
->=20
->=20
->=20
->=20
->=20
-> Sauf indication contraire ci-dessus:
-> Compagnie IBM France
-> Si=E8ge Social : Tour Descartes, 2, avenue Gambetta, La D=E9fense 5, =
-92400
-> Courbevoie
-> RCS Nanterre 552 118 465
-> Forme Sociale : S.A.S.
-> Capital Social : 542.737.118 ?
-> SIREN/SIRET : 552 118 465 02430
+>> Regards
+>>     -- Daniel
+>>
+>>
+>>
+>>
+>>
+>>
+>>
+>>
+>>
+>>
+>>
+>>
+>>
+>>
+>>
+>>
+>>
+>>
+>>
+>>
+>>
+>>
+>>
+>>
+>>
+>>
+>>
+>>
+>>
+>>
+>>
+>>
+>>
+>>
+>>
+>>
+>>
+>>
+>>
+>>
+>>
+>>
+>>
+>>
+>>
+>>
+>>
+>>
+>>
+>>
+>>
+>>
+>>
+>>
+>> Sauf indication contraire ci-dessus:
+>> Compagnie IBM France
+>> Si=E8ge Social : Tour Descartes, 2, avenue Gambetta, La D=E9fense 5,=
+ 92400
+>> Courbevoie
+>> RCS Nanterre 552 118 465
+>> Forme Sociale : S.A.S.
+>> Capital Social : 542.737.118 ?
+>> SIREN/SIRET : 552 118 465 02430
+>>
+>>
 >=20
 >=20
 
-
---=20
-B e n j a m i n   T h e r y  - BULL/DT/Open Software R&D
-
-    http://www.bull.com
