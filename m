@@ -1,97 +1,34 @@
-From: ebiederm@xmission.com (Eric W. Biederman)
-Subject: Re: [PATCH 0/2] Fix /proc/net in presence of net namespaces
-Date: Sat, 01 Mar 2008 19:03:28 -0700
-Message-ID: <m14pbp51cf.fsf@ebiederm.dsl.xmission.com>
-References: <47C6D743.1050802@openvz.org>
-	<m1y794514k.fsf@ebiederm.dsl.xmission.com>
-	<20080228211720.GA1232@vino.hallyn.com>
-	<m1k5ko4sfi.fsf@ebiederm.dsl.xmission.com>
-	<47C7BB1B.9060906@openvz.org>
+From: Li Zefan <lizf@cn.fujitsu.com>
+Subject: Re: [RFC] Prefixing cgroup generic control filenames with "cgroup."
+Date: Mon, 03 Mar 2008 16:23:51 +0900
+Message-ID: <47CBA787.8020100@cn.fujitsu.com>
+References: <6599ad830802281314s25c033d6tc021725ae28aef8d@mail.gmail.com> <47C7EEAC.7010907@amln.net>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Return-path: <netdev-owner@vger.kernel.org>
-In-Reply-To: <47C7BB1B.9060906@openvz.org> (Pavel Emelyanov's message of "Fri,
-	29 Feb 2008 10:58:19 +0300")
-Sender: netdev-owner@vger.kernel.org
-To: Pavel Emelyanov <xemul@openvz.org>
-Cc: serge@hallyn.com, Andrew Morton <akpm@linux-foundation.org>, David Miller <davem@davemloft.net>, Alexey Dobriyan <adobriyan@openvz.org>, Linux Netdev List <netdev@vger.kernel.org>, Linux Kernel Mailing List <linux-kernel@vger.kernel.org>, Linux Containers <containers@lists.osdl.org>
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+Content-Transfer-Encoding: 7bit
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1756717AbYCCH2x@vger.kernel.org>
+In-Reply-To: <47C7EEAC.7010907@amln.net>
+Sender: linux-kernel-owner@vger.kernel.org
+To: Xpl++ <xpl@amln.net>
+Cc: Paul Menage <menage@google.com>, Linux Containers <containers@lists.osdl.org>, LKML <linux-kernel@vger.kernel.org>, Balbir Singh <balbir@linux.vnet.ibm.com>, Peter Zijlstra <a.p.zijlstra@chello.nl>, Pavel Emelianov <xemul@openvz.org>, Paul Jackson <pj@sgi.com>, Andrew Morton <akpm@linux-foundation.org>
 List-Id: containers.vger.kernel.org
 
+Xpl++ wrote:
+> Paul Menage ??????:
+>> ...
+>>
+>> A compromise might be to keep "tasks" unprefixed, and say that future
+>> names get the "cgroup." prefix; in this case I'd be inclined to add
+>> the prefix to notify_on_release and release_agent on the grounds that
+>> there's much less chance of breaking anyone with those files since (I
+>> suspect) they're much less used.
+>>   
+> This makes most sense to me. It won't break any existing software 
+> (most likely) while it seems reasonable to leave 'tasks' unprefixed as 
+> this is something that any software using any subsystem of cgroup 
+> would be using anyway and it is not that much associated with a 
+> particulat subsystem.
+>
 
-
-- The experience from vserver, planetlab and OpenVZ is that it is good
-  to be able to monitor processes in other namespaces.  
-
-- The linux experience says filesystems are a good way to do that.
-
-- So we really want to filesystem monitoring interfaces to depend on
-  the filesystem mount options instead of current.
-
-- Starting with making /proc and sysctls depend on current is a cheap
-  way to get things up and going.
-
-- When I consider breaking things up into multiple filesystems I run
-  across the occasional file that depends on multiple namespaces.
-  uids in /proc/sysvipc/* for example.  Luckily I have yet to find
-  any directory structures that depend on more then one namespace.
-
-  Maybe that can be handled properly by capturing multiple 
-  namespaces at mount time but I am a bit leery of that.
-
-- The visibility of namespaces should be match the visibility of the
-  processes that use them.   Access control of course can be more
-  restricted.
-
-- We want to see how namespaces connect to tasks.
-
-Therefore.
-
-/proc/net, /proc/sys, /proc/sysvipc, and probably a few others
-should migrate under /proc/<pid>/task/<tid> (not under /proc/<pid>
-so we can finally straighten out the task group vs task issue).
-
-Todays problem of course is /proc/net/
-
-What I had intended to implement was:
-/proc/current -> /proc/<pid>/task/<tid>
-(A new symlink to the task directory)
-
-/proc/net -> /proc/current/net
-(like /proc/mounts)
-
-The only downside of placing files under the task directory is
-that we use a lot more dentries for /proc.
-
-....
-
-Optimizations.
-
-If the dentry pressure is significant and we don't have data from
-other namespaces in the files causing us to want to present the
-information differently for different processes I support using
-an id and a per namespace upper level directory.  With a symlink
-into there from the task directories.
-
-/proc/<pid>/task/<tid>/net -> ../../.../netns/<netns id>
-
-
-The id I would use is a struct pid because that makes the id useful
-for userspace monitoring and control applications and because we
-can migrate it.
-
-In my view /proc/netns/<pids> would be implemented like
-/proc/<pids> with readdir and lookup returning different contents
-based upon the pid namespace captured when we mounted proc.
-
-Further struct pid would be enhanced so that as long as we have
-a namespace using a struct pid as an id we would not free that pid_nr
-in any of the pid namespaces.  Just like we do with process groups
-and sessions today.
-
-I think for the network namespace and network /proc files that
-optimization is safe.  I seem to recall checking and not finding any
-ids from other namespaces in the files under /proc/net.
-
-I will try for some more detailed replies.
-
-Eric
+And it makes most sense to me too, though I still doubt name collision 
+will be a problem.
