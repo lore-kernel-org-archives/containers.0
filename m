@@ -1,119 +1,64 @@
-From: Pavel Emelyanov <xemul@openvz.org>
+From: "Benjamin Thery" <ben.thery@gmail.com>
 Subject: Re: [Devel] Re: network namespace ipv6 perfs
-Date: Mon, 03 Mar 2008 17:55:11 +0300
-Message-ID: <47CC114F.8050104@openvz.org>
+Date: Mon, 3 Mar 2008 16:04:47 +0100
+Message-ID: <939d53060803030704g5d693c19i34061f1a896d91cd@mail.gmail.com>
 References: <47CC0920.6000005@fr.ibm.com> <47CC0E3B.1040809@bull.net>
+	 <47CC114F.8050104@openvz.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1
-Content-Transfer-Encoding: QUOTED-PRINTABLE
+Content-Transfer-Encoding: 7bit
 Return-path: <netdev-owner@vger.kernel.org>
-In-Reply-To: <47CC0E3B.1040809@bull.net>
+In-Reply-To: <47CC114F.8050104@openvz.org>
+Content-Disposition: inline
 Sender: netdev-owner@vger.kernel.org
-To: Benjamin Thery <benjamin.thery@bull.net>
-Cc: Daniel Lezcano <dlezcano@fr.ibm.com>, Linux Containers <containers@lists.osdl.org>, Linux Netdev List <netdev@vger.kernel.org>, Denis Lunev <den@openvz.org>
+To: Pavel Emelyanov <xemul@openvz.org>
+Cc: Benjamin Thery <benjamin.thery@bull.net>, Daniel Lezcano <dlezcano@fr.ibm.com>, Linux Containers <containers@lists.osdl.org>, Linux Netdev List <netdev@vger.kernel.org>, Denis Lunev <den@openvz.org>
 List-Id: containers.vger.kernel.org
 
-Benjamin Thery wrote:
-> Daniel Lezcano wrote:
->> Hi,
->>
->> Some performance tests was made by Benjamin to watch out the impact =
-of=20
->> the network namespace. The good news is there is no impact when used=
-=20
->> with or without namespaces. That has been checked using a real netwo=
-rk=20
->> device inside a network namespace.
->>
->> These results are consistent with the ones previously made for ipv4.
->>
->> http://lxc.sourceforge.net/network/bench_ipv6_graph.php
->>
->> Thanks to Benjamin who did all the performance tests :)
->=20
-> In these results, may be, there is one thing that should be explained=
-=2E
-> It is the CPU utilization overhead in the 'veth' case.
->=20
-> Compared to physical devices or macvlan, veth interfaces don't benefi=
-t
-> from hardware offloading mechanisms: i.e. checksums have to be comput=
-ed
-> by the soft. That explains the big overhead in CPU utilization when
+On Mon, Mar 3, 2008 at 3:55 PM, Pavel Emelyanov <xemul@openvz.org> wrote:
+> Benjamin Thery wrote:
+>  > Daniel Lezcano wrote:
+>  >> Hi,
+>  >>
+>  >> Some performance tests was made by Benjamin to watch out the impact of
+>  >> the network namespace. The good news is there is no impact when used
+>  >> with or without namespaces. That has been checked using a real network
+>  >> device inside a network namespace.
+>  >>
+>  >> These results are consistent with the ones previously made for ipv4.
+>  >>
+>  >> http://lxc.sourceforge.net/network/bench_ipv6_graph.php
+>  >>
+>  >> Thanks to Benjamin who did all the performance tests :)
+>  >
+>  > In these results, may be, there is one thing that should be explained.
+>  > It is the CPU utilization overhead in the 'veth' case.
+>  >
+>  > Compared to physical devices or macvlan, veth interfaces don't benefit
+>  > from hardware offloading mechanisms: i.e. checksums have to be computed
+>  > by the soft. That explains the big overhead in CPU utilization when
+>
+>  You can tune the veth devices not to account checksum when unnecessary.
 
-You can tune the veth devices not to account checksum when unnecessary.
+Oh. This is interesting.
 
-> using this kind of virtual interface.
->=20
-> Benjamin
->=20
->> Regards
->>     -- Daniel
->>
->>
->>
->>
->>
->>
->>
->>
->>
->>
->>
->>
->>
->>
->>
->>
->>
->>
->>
->>
->>
->>
->>
->>
->>
->>
->>
->>
->>
->>
->>
->>
->>
->>
->>
->>
->>
->>
->>
->>
->>
->>
->>
->>
->>
->>
->>
->>
->>
->>
->>
->>
->>
->>
->> Sauf indication contraire ci-dessus:
->> Compagnie IBM France
->> Si=E8ge Social : Tour Descartes, 2, avenue Gambetta, La D=E9fense 5,=
- 92400
->> Courbevoie
->> RCS Nanterre 552 118 465
->> Forme Sociale : S.A.S.
->> Capital Social : 542.737.118 ?
->> SIREN/SIRET : 552 118 465 02430
->>
->>
->=20
->=20
+You mean with ethtool -K rx/tx?
+I will give it a try.
 
+Benjamin
+
+>
+>
+>  > using this kind of virtual interface.
+>  >
+>  > Benjamin
+>  >
+>  >> Regards
+>  >>     -- Daniel
+>  >>
+
+>--
+> To unsubscribe from this list: send the line "unsubscribe netdev" in
+>  the body of a message to majordomo@vger.kernel.org
+>  More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>
