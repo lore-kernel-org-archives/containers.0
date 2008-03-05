@@ -1,20 +1,17 @@
-From: "Paul Menage" <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+From: Xpl++ <xpl-d4um4pvOpxY@public.gmane.org>
 Subject: Re: [RFC] libcg: design and plans
-Date: Wed, 5 Mar 2008 10:55:02 -0800
-Message-ID: <6599ad830803051055r56045dffvbb04a50bc903e0dc__32942.9072597579$1204743565$gmane$org@mail.gmail.com>
+Date: Wed, 05 Mar 2008 21:36:20 +0200
+Message-ID: <47CEF634.1070506__39718.822312034$1204745872$gmane$org@amln.net>
 References: <20080304152341.GB5659@linux.vnet.ibm.com>
-	<6599ad830803042215n6aedb3eeub0c037e6a4e7bb34@mail.gmail.com>
-	<20080305103343.GA22217@linux.vnet.ibm.com>
-	<6599ad830803050241k590e4389ud95b9b3ef920f8b6@mail.gmail.com>
-	<20080305110730.GB22217@linux.vnet.ibm.com>
-	<6599ad830803050351p91bdacahd47059e863f56817@mail.gmail.com>
-	<47CEAD38.3080501@linux.vnet.ibm.com>
+	<47CD83C7.4020206@amln.net>
+	<20080305052631.GA26361@linux.vnet.ibm.com>
+	<47CE8A67.3050109@amln.net>
+	<20080305155310.GA5349@linux.vnet.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <47CEAD38.3080501-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Content-Disposition: inline
+In-Reply-To: <20080305155310.GA5349-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -24,74 +21,53 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
-Cc: Peter Zijlstra <a.p.zijlstra-/NLkJaSkS4VmR6Xm/wNWPw@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Srivatsa Vaddagiri <vatsa-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, lkml <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Sudhir Kumar <skumar-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, Dhaval Giani <dhaval-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+To: Dhaval Giani <dhaval-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Cc: fedora-devel-list-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, opensuse-packaging-stAJ6ESoqRxg9hUCZPvPmw@public.gmane.org, Peter Zijlstra <a.p.zijlstra-/NLkJaSkS4VmR6Xm/wNWPw@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, lkml <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Srivatsa Vaddagiri <vatsa-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, Sudhir Kumar <skumar-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Wed, Mar 5, 2008 at 6:24 AM, Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org> wrote:
-> Paul Menage wrote:
->  > On Wed, Mar 5, 2008 at 3:07 AM, Dhaval Giani <dhaval-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org> wrote:
->  >>  OK. Hmm, I've not really thought about it. At first thought, it should
->  >>  not be very difficult. Only thing I am not sure is the arbitrary
->  >>  grouping of the groups (ok, a bit confusing).
->  >
->  > I suspect that the main form of composite grouping is going to be
->  > between parents and children. E.g. you might want to say things like:
->  >
->  > create_group(A, memory=1G, cpu=100)
->  > create_group(B, parent=A, memory=inherit, cpu=20)
->  > create_group(C, parent=A, memory=inherit, cpu=30)
->  >
->  > i.e. both B and C inherit/share their memory limit from their parent,
->  > but have their own CPU groups (child groups of their parent?)
->  >
->
->  No, we don't plan on doing that. What we plan on doing is
->
->  1. Specify the mount point for each controller
->  2. In the create group API, specify the name of the group and the various
->  parameters.
->
->  If for example CPU is mounted at /cpu and Memory at /mem
->
->  Then a specification for creation of group A would be of the form
->
->  create_group(A, cpu=100, memory=100M)
->
->  Then,
->
->  /cpu/A has shares set to 100 and /mem/A has memory.limit set to 100M
->
->  If you want to create subgroups under A, you specify
->
->  create_group(A/B, memory=200M, cpu=50)
->
->  That would create /cpu/A/B and /mem/A/B
->
->  Please note that memory and CPU hierarchy needs work in the kernel. The shares
->  and hierarchy support is pending. We need to make the res_counters
->  infrastructure aware of hierarchies.
->
+Hi Dhaval,
 
-I think there are two different kinds of sharing going on here:
+Dhaval Giani ??????:
+>> Imagine having a shared/joint household savings account with your wife, and 
+>> taking money from it without your wife knowing and vice versa .. then at 
+>> some point when you thought that you have some $5K to buy the new super 
+>> duper laptop you dreamt about your entire life - surprise - no enough 
+>> resources :)
+>> This is somewhat the equivalent of multiple independent resourse managers 
+>> :) It won't end well :)
+>> Should they be expected to be adequate in doing their job, they cannot be 
+>> independent since they manage a shared resource.
+>>
+>>     
+>
+> I don't quite agree with your analogy here. The point here is that each
+> resource manager operates in its own area, and has already been assigned
+> some resources which it cannot change. Its more like you can take $x at
+> the most from the account and your wife $y with x+y<=total money.
+>   
+Ok .. so imagine that your kid got sick and you need more than $x, while 
+you wife does not need any money at that particular moment?
+Would you:
 
-- A and B each have individual limits, and you additionally want their
-total usage to be capped by some parent limit. E.g. A and B each have
-a 100MB memory limit, and you want their total combined usage to not
-exceed 150MB. This kind of sharing has to be handled by the resource
-counter abstraction
+a) take a loan (buy more hardware/resources, just because we can), 
+despite the fact you already have them in you account, and since we're 
+talking about your child it's in the interest of both you and your wife 
+(tha family, 'the whole' so to speak) to cure the illness
 
-- you want A and B to be treated identically for the purposes of some
-particular resource, e.g. you want a single CFS group to which all
-threads in A and B are equal members, or a single memory cgroup for
-all allocations by A or B, or the same device control table for A and
-B (but you want A and B to be treated separately for some other
-resource type). This can be handled in userspace in the way I outlined
-above, and it would be good if libcg could handle the setup required
-for this. It could also be done in the kernel with something like the
-parent/child subsystem group inheritance that I also mentioned above,
-if there was demand. But if so it should be a property of cgroups
-rather than any individual resource controller, since it's a feature
-that could be useful for all cgroups.
+b) notify your wife there is an emergency and you will need some extra 
+money which has to come from her $y quota, take the money, make the kid 
+happy, and just continue business as usual? (that is - being smart and 
+dynamic in resource allocation)
 
-Paul
+With the proposed libcg, answer a) seems to be the only option .. and my 
+company is not like M$ so I don't have extra resources to waste just 
+because I was told resources cannot be managed dynamicaly :)
+Why would one need to manage node resources dynamicaly: in our real-life 
+production system we have to manage resources dynamicaly, because any 
+other solution would require at least twice as much hardware, which will 
+also inevitably lead to a necessity to hire more qualified admins, which 
+is once again not so wise for small/medium business .. and not to 
+mention the extra CO2 caused by the few more dozens of servers :)
+
+Regards,
+Peter.
