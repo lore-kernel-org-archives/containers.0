@@ -1,16 +1,11 @@
-From: Dhaval Giani <dhaval-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: Re: [RFC] libcg: design and plans
-Date: Wed, 5 Mar 2008 10:56:31 +0530
-Message-ID: <20080305052631.GA26361__16386.5995048129$1204695047$gmane$org@linux.vnet.ibm.com>
-References: <20080304152341.GB5659@linux.vnet.ibm.com>
-	<47CD83C7.4020206@amln.net>
-Reply-To: Dhaval Giani <dhaval-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+From: Kazunaga Ikeno <k-ikeno-l0HG/lpvHE58UrSeD/g0lQ@public.gmane.org>
+Subject: [RFC][PATCH 0/1]a new optional function for task assignment to cgroup
+Date: Wed, 05 Mar 2008 14:39:54 +0900
+Message-ID: <47CE322A.9060907__30898.5177580782$1204695733$gmane$org@ak.jp.nec.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <47CD83C7.4020206-d4um4pvOpxY@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -20,51 +15,127 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Xpl++ <xpl-d4um4pvOpxY@public.gmane.org>
-Cc: fedora-devel-list-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, opensuse-packaging-stAJ6ESoqRxg9hUCZPvPmw@public.gmane.org, Peter Zijlstra <a.p.zijlstra-/NLkJaSkS4VmR6Xm/wNWPw@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, lkml <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Srivatsa Vaddagiri <vatsa-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, Sudhir Kumar <skumar-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org
+To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Cc: linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Hi Peter,
+Hi -
 
-Thanks for your comments.
+This is a patch of a new optional function for task assignment to cgroup, RFC.
 
-On Tue, Mar 04, 2008 at 07:15:51PM +0200, Xpl++ wrote:
-> Hi,
->
-> I was wonder if creating such library makes any sense at all, considering 
-> the nature of cgroups, the way they work and their possible application?
-> It seems to me that any attempt to create a 'simple' API would actualy 
-> result in something that will be much harder to use that just making raw 
-> mkdir/open/read/write/close operations.
 
-These simple APIs are nothing but raw mkdir/open/read/write/close
-operations.
+== Purpose =================================================
 
->  Another thing is suggested config 
-> for this lib would be more appropriate for a daemon rather than a library.
-> In general - cgroup is a very flexible subsystem that can be used in a wide 
-> variety of ways and modes and trying to create a universal simple API would 
-> more likely result in something hard to manage and work with.
-> The idea of having multiple container managers (applications that use 
-> libcg) creates a lots of questions and possible issues. Containers are 
-> supposed provide a flexible resource management and task grouping ability, 
-> which somewhat implies that there cannot be two different resource managers 
-> per node without one knowing well the desires/goals/methods of the other 
-> and vice versa. And should there be only one manager per node - probably it 
-> will be easier for it to use cgroup subsystem directly rather than using a 
-> wrapper library?
+To provide the function that leads a task, corresponding to the conditions specified
+beforehand, to a specific cgroup directory.
 
-I disagree. Allowing multiple resource managers allows more flexibility.
-One thing the configuration subsystem aims to do is to allow permissions
-to the groups. With this happening, a resource manager does not need to
-about the existence of other groups, it can control only the resources
-allotted to it. And since the top level is controlled by the
-administrator, he is aware of the groups and their needs. (I've given an
-example of such a scenario in the document as well).
 
-Hope this helps answer your question.
+== Description =============================================
+
+This patch provides the function that leads a task, corresponding to the conditions
+specified beforehand, to a specific cgroup directory.
+
+Currently, this patch uses user-id as a condition to lead a task. On its I/F,
+specifies user-id of a task and a cgroup directory.
+
+The task set to specified user-id will automatically lead to the cgroup directory.
+(it is attached to specific cgroup)
+
+This function makes possible to attach a task to cgroup automatically when
+specific user logs in, also to attach a task of a service which is set to
+specific effective user-id to specific cgroup mechanically.
+
+This function is just option, all the functions of cgroup are the same.
+Also the migration of a task between cgroup directories can do by rewriting pid
+of a control tasks file, including a task leading by this option.
+
+It is able to enter two or more set of user-id and cgroup directory.
+Specified cgroup directory may be the same or that may not be.
+But it's not able to enter same user-id to plural cgroup directories to lead.
+
+
+== Interface ===============================================
+
+   /lead_option  -  control file of this option
+
+[example for reading a configuration]
+
+       # cat /cgroup/lead_option
+
+       uid:202        leadto:/cpuset/bar_cg
+       uid:201        leadto:/cpuset/foo_cg
+
+      * nothing appears before assignment.
+
+[example for adding an entry]
+- To lead a task(uid 201) to /cgroup/foo_cg
+
+       # echo uid:201 leadto:/cpuset/foo_cg > /cpuset/lead_option
+
+       * set a uid of task and cgroup dirctory to lead.
+       * Remake an entry uid to cgroup directory if set uid already exists.
+
+[example for delete an entry]
+- To delete an entry of uid
+
+       # echo uid:201 > /cpuset/lead_option
+
+       * To delete a registration, omit "leadto:" token.
+
+
+== Operation example (chronological order) ==================
+
+The follows is an example of the operation.
+
+# ############################
+# # Various confirmation before testing
+# ############################
+# id
+uid=0(root) gid=0(root) groups=0(root)
+# df /cpuset
+Filesystem           1K-blocks      Used Available Use% Mounted on
+none                         0         0         0   -  /cpuset
+# more /proc/self/cgroup
+cpuset:/
+# id foo
+uid=201(foo) gid=100(users) groups=100(users)
+# id bar
+uid=202(foo) gid=100(users) groups=100(users)
+# ############################
+# # Add an entry of user foo,bar
+# ############################
+# echo uid:201 leadto:/cpuset/foo_cg > /cpuset/lead_option
+# echo uid:202 leadto:/cpuset/bar_cg > /cpuset/lead_option
+# more /cpuset/lead_option
+uid:202        leadto:/cpuset/bar_cg
+uid:201        leadto:/cpuset/foo_cg
+# ############################
+# # Confirmation of the assignment of user foo,bar - (1)
+# ############################
+# su - foo
+$ more /proc/$$/cgroup
+cpuset:/foo_cg
+$ more /proc/self/cgroup
+cpuset:/foo_cg
+$ su bar --command "more /proc/self/cgroup"
+cpuset:/bar_cg
+$ exit
+# ############################
+# # Delete an entry of user foo,bar
+# ############################
+# echo uid:201 > /cpuset/lead_option
+# echo uid:202 > /cpuset/lead_option
+# more /cpuset/lead_option
+# ############################
+# # Confirmation of the assignment of user foo,bar - (2)
+# ############################
+# su - foo
+$ more /proc/$$/cgroup
+cpuset:/
+$ su bar --command "more /proc/self/cgroup"
+cpuset:/
+$
+
 
 Thanks,
--- 
-regards,
-Dhaval
+- Kazunaga Ikeno.
