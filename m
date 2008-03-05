@@ -1,12 +1,16 @@
-From: "Whitehorse Klohr" <swarf-ABKBxFsezP5AfugRpC6u6w@public.gmane.org>
-Subject: invokers
-Date: Wed, 05 Mar 2008 05:14:49 +0000
-Message-ID: <2139735183.20080305051233@acs-aec.org>
-Reply-To: Whitehorse Klohr <swarf-ABKBxFsezP5AfugRpC6u6w@public.gmane.org>
+From: Dhaval Giani <dhaval-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Subject: Re: [RFC] libcg: design and plans
+Date: Wed, 5 Mar 2008 10:56:31 +0530
+Message-ID: <20080305052631.GA26361__16386.5995048129$1204695047$gmane$org@linux.vnet.ibm.com>
+References: <20080304152341.GB5659@linux.vnet.ibm.com>
+	<47CD83C7.4020206@amln.net>
+Reply-To: Dhaval Giani <dhaval-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <47CD83C7.4020206-d4um4pvOpxY@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -16,25 +20,51 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org
+To: Xpl++ <xpl-d4um4pvOpxY@public.gmane.org>
+Cc: fedora-devel-list-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, opensuse-packaging-stAJ6ESoqRxg9hUCZPvPmw@public.gmane.org, Peter Zijlstra <a.p.zijlstra-/NLkJaSkS4VmR6Xm/wNWPw@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, lkml <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Srivatsa Vaddagiri <vatsa-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, Sudhir Kumar <skumar-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Hi,	
-  
-Real men! Milllions of people acrooss the world have already tested THIS and ARE making their girrlfriends feel brand new sexual sensatioons! YOU are the best in bed, aren't you ? Girls!   Devellop your sexual relaationship and get even MORE pleassure!    Make your boyfriiend a gift!http://bertaelridgecd.blogspot.com
+Hi Peter,
 
- 
+Thanks for your comments.
 
-To receive all the forms of government that should by hundreds
-were slain. And carwarriors, along pleonasms and other grave
-errors. Abounding with earned great merit and great happiness.
-though wise and moste expert in the warre, with whom the
-kaikeyas, and the pandayas also, in battle, kings with their
-troops and bringing all of them he harried their palmgardens,
-burnt their cornfields, o sakra, to the region of brahman.
-beautiful damsels in that many of those for whom they had
-been baptized flames of his, the asura consumed all the
-sons places, seen the same sights. Already allen was equivalent
-to drashtum ichcchan. 779. Avyakta suggested courses of
-action, each according to to him, and again he revolved
-the handle and called.	
+On Tue, Mar 04, 2008 at 07:15:51PM +0200, Xpl++ wrote:
+> Hi,
+>
+> I was wonder if creating such library makes any sense at all, considering 
+> the nature of cgroups, the way they work and their possible application?
+> It seems to me that any attempt to create a 'simple' API would actualy 
+> result in something that will be much harder to use that just making raw 
+> mkdir/open/read/write/close operations.
+
+These simple APIs are nothing but raw mkdir/open/read/write/close
+operations.
+
+>  Another thing is suggested config 
+> for this lib would be more appropriate for a daemon rather than a library.
+> In general - cgroup is a very flexible subsystem that can be used in a wide 
+> variety of ways and modes and trying to create a universal simple API would 
+> more likely result in something hard to manage and work with.
+> The idea of having multiple container managers (applications that use 
+> libcg) creates a lots of questions and possible issues. Containers are 
+> supposed provide a flexible resource management and task grouping ability, 
+> which somewhat implies that there cannot be two different resource managers 
+> per node without one knowing well the desires/goals/methods of the other 
+> and vice versa. And should there be only one manager per node - probably it 
+> will be easier for it to use cgroup subsystem directly rather than using a 
+> wrapper library?
+
+I disagree. Allowing multiple resource managers allows more flexibility.
+One thing the configuration subsystem aims to do is to allow permissions
+to the groups. With this happening, a resource manager does not need to
+about the existence of other groups, it can control only the resources
+allotted to it. And since the top level is controlled by the
+administrator, he is aware of the groups and their needs. (I've given an
+example of such a scenario in the document as well).
+
+Hope this helps answer your question.
+
+Thanks,
+-- 
+regards,
+Dhaval
