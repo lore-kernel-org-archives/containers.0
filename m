@@ -1,14 +1,13 @@
-From: "Paul Menage" <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+From: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
 Subject: Re: [RFC/PATCH] cgroup swap subsystem
-Date: Tue, 4 Mar 2008 22:36:19 -0800
-Message-ID: <6599ad830803042236x3e5fdf0dmaf4119997025ba40@mail.gmail.com>
+Date: Wed, 5 Mar 2008 15:53:29 +0900
+Message-ID: <20080305155329.60e02f48.kamezawa.hiroyu@jp.fujitsu.com>
 References: <47CE36A9.3060204@mxp.nes.nec.co.jp>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 In-Reply-To: <47CE36A9.3060204-YQH0OdQVrdy45+QrQBaojngSJqDPrsil@public.gmane.org>
-Content-Disposition: inline
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -22,134 +21,100 @@ To: Daisuke Nishimura <nishimura-YQH0OdQVrdy45+QrQBaojngSJqDPrsil@public.gmane.o
 Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Hi Daisuke,
+On Wed, 05 Mar 2008 14:59:05 +0900
+Daisuke Nishimura <nishimura-YQH0OdQVrdy45+QrQBaojngSJqDPrsil@public.gmane.org> wrote:
 
-Most of my comments below are to do with style issues with cgroups,
-rather than the details of the memory management code.
+>  #ifdef CONFIG_CGROUP_MEM_CONT
+> +/*
+> + * A page_cgroup page is associated with every page descriptor. The
+> + * page_cgroup helps us identify information about the cgroup
+> + */
+> +struct page_cgroup {
+> +	struct list_head lru;		/* per cgroup LRU list */
+> +	struct page *page;
+> +	struct mem_cgroup *mem_cgroup;
+> +#ifdef CONFIG_CGROUP_SWAP_LIMIT
+> +	struct mm_struct *pc_mm;
+> +#endif
+> +	atomic_t ref_cnt;		/* Helpful when pages move b/w  */
+> +					/* mapped and cached states     */
+> +	int	 flags;
+> +};
+>  
+As first impression, I don't like to increase size of this...but have no alternative
+idea.
 
-2008/3/4 Daisuke Nishimura <nishimura-YQH0OdQVrdy45+QrQBaojngSJqDPrsil@public.gmane.org>:
->  +/*
->  + * A page_cgroup page is associated with every page descriptor. The
->  + * page_cgroup helps us identify information about the cgroup
->  + */
->  +struct page_cgroup {
->  +       struct list_head lru;           /* per cgroup LRU list */
->  +       struct page *page;
->  +       struct mem_cgroup *mem_cgroup;
->  +#ifdef CONFIG_CGROUP_SWAP_LIMIT
->  +       struct mm_struct *pc_mm;
->  +#endif
->  +       atomic_t ref_cnt;               /* Helpful when pages move b/w  */
->  +                                       /* mapped and cached states     */
->  +       int      flags;
->  +};
->
->  +
->  +#ifdef CONFIG_CGROUP_SWAP_LIMIT
->  +struct swap_cgroup {
->  +       struct cgroup_subsys_state css;
->  +       struct res_counter res;
->  +};
->  +
->  +static inline struct swap_cgroup *swap_cgroup_from_cgrp(struct cgroup *cgrp)
->  +{
->  +       return container_of(cgroup_subsys_state(cgrp, swap_subsys_id),
->  +                               struct swap_cgroup,
->  +                               css);
->  +}
->  +
->  +static inline struct swap_cgroup *swap_cgroup_from_task(struct task_struct *p)
->  +{
->  +       return container_of(task_subsys_state(p, swap_subsys_id),
->  +                               struct swap_cgroup, css);
->  +}
 
-Can't these definitions be moved into swap_limit.c?
 
->  @@ -254,15 +243,27 @@ struct mem_cgroup *mem_cgroup_from_task(
->   void mm_init_cgroup(struct mm_struct *mm, struct task_struct *p)
->   {
->         struct mem_cgroup *mem;
->  +#ifdef CONFIG_CGROUP_SWAP_LIMIT
->  +       struct swap_cgroup *swap;
->  +#endif
->
->         mem = mem_cgroup_from_task(p);
->         css_get(&mem->css);
->         mm->mem_cgroup = mem;
->  +
->  +#ifdef CONFIG_CGROUP_SWAP_LIMIT
->  +       swap = swap_cgroup_from_task(p);
->  +       css_get(&swap->css);
->  +       mm->swap_cgroup = swap;
->  +#endif
+>  static inline int page_cgroup_locked(struct page *page)
+> @@ -664,6 +665,10 @@ retry:
+>  	pc->flags = PAGE_CGROUP_FLAG_ACTIVE;
+>  	if (ctype == MEM_CGROUP_CHARGE_TYPE_CACHE)
+>  		pc->flags |= PAGE_CGROUP_FLAG_CACHE;
+> +#ifdef CONFIG_CGROUP_SWAP_LIMIT
+> +	atomic_inc(&mm->mm_count);
+> +	pc->pc_mm = mm;
+> +#endif
+>  
+Strongly Nack to this atomic_inc(). 
+What happens when tmpfs pages goes to swap ?
 
-My feeling is that it would be cleaner to move this code into
-swap_limit.c, and have a separate mm_init_swap_cgroup() function. (And
-a mm_free_swap_cgroup() function).
 
->  +       pc = page_get_page_cgroup(page);
->  +       if (WARN_ON(!pc))
->  +               mm = &init_mm;
->  +       else
->  +               mm = pc->pc_mm;
->  +       BUG_ON(!mm);
+>  	if (!page || page_cgroup_assign_new_page_cgroup(page, pc)) {
+>  		/*
+> @@ -673,6 +678,9 @@ retry:
 
-Is this safe against races with the mem.force_empty operation?
+> +int swap_cgroup_charge(struct page *page,
+> +			struct swap_info_struct *si,
+> +			unsigned long offset)
+> +{
+> +	int ret;
+> +	struct page_cgroup *pc;
+> +	struct mm_struct *mm;
+> +	struct swap_cgroup *swap;
+> +
+> +	BUG_ON(!page);
+> +
+> +	/*
+> +	 * Pages to be swapped out should have been charged by memory cgroup,
+> +	 * but very rarely, pc would be NULL (pc is not reliable without lock,
+> +	 * so I should fix here).
+> +	 * In such cases, we charge the init_mm now.
+> +	 */
+> +	pc = page_get_page_cgroup(page);
+> +	if (WARN_ON(!pc))
+> +		mm = &init_mm;
+> +	else
+> +		mm = pc->pc_mm;
+> +	BUG_ON(!mm);
+> +
+> +	rcu_read_lock();
+> +	swap = rcu_dereference(mm->swap_cgroup);
+> +	rcu_read_unlock();
+> +	BUG_ON(!swap);
+Is there no race ?
 
->  +
->  +       rcu_read_lock();
->  +       swap = rcu_dereference(mm->swap_cgroup);
->  +       rcu_read_unlock();
->  +       BUG_ON(!swap);
+At first look, remembering mm struct is not very good.
+Remembering swap controller itself is better.
+If you go this direction, how about this way ?
 
-Is it safe to do rcu_read_unlock() while you are still planning to
-operate on the value of "swap"?
+==
+enum {
+#ifdef CONFIG_CGROUP_MEM_CONT
+	MEMORY_RESOURCE_CONTROLLER,
+#endif
+#ifdef CONFIG_CGROUP_SWAP_CONT
+	SWAP_CONTROLLER,
+#endif
+	NR_PAGE_CONTROLLER,
+}
 
->  +
->  +static ssize_t swap_cgroup_read(struct cgroup *cgrp,
->  +                               struct cftype *cft, struct file *file,
->  +                               char __user *userbuf, size_t nbytes,
->  +                               loff_t *ppos)
->  +{
->  +       return res_counter_read(&swap_cgroup_from_cgrp(cgrp)->res,
->  +                               cft->private, userbuf, nbytes, ppos,
->  +                               NULL);
->  +}
+struct page_cgroup {
+	......
+	void*	controlls[NR_PAGE_CONTROLLER];
+	....
+};
+==
 
-Can you use the cgroups read_u64 method, and just call res_counter_read_u64?
-
->  +
->  +static int swap_cgroup_write_strategy(char *buf, unsigned long long *tmp)
->  +{
->  +       *tmp = memparse(buf, &buf);
->  +       if (*buf != '\0')
->  +               return -EINVAL;
->  +
->  +       /*
->  +        * Round up the value to the closest page size
->  +        */
->  +       *tmp = ((*tmp + PAGE_SIZE - 1) >> PAGE_SHIFT) << PAGE_SHIFT;
->  +       return 0;
->  +}
-
-This is the same as mem_cgroup_write_strategy. As part of your patch,
-can you create a res_counter_write_pagealign() strategy function in
-res_counter.c and use it from the memory and swap cgroups?
-
->  +
->  +#ifdef CONFIG_CGROUP_SWAP_LIMIT
->  +               p->swap_cgroup = vmalloc(maxpages * sizeof(*swap_cgroup));
->  +               if (!(p->swap_cgroup)) {
->  +                       error = -ENOMEM;
->  +                       goto bad_swap;
->  +               }
->  +               memset(p->swap_cgroup, 0, maxpages * sizeof(*swap_cgroup));
->  +#endif
-
-It would be nice to only allocate these the first time the swap cgroup
-subsystem becomes active, to avoid the overhead for people not using
-it; even better if you can free it again if the swap subsystem becomes
-inactive again.
-
-Paul
+Thanks,
+-Kame
