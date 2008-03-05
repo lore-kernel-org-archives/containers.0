@@ -1,15 +1,11 @@
-From: "Paul Menage" <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [RFC][PATCH 0/1]a new optional function for task assignment to
-	cgroup
-Date: Tue, 4 Mar 2008 21:56:13 -0800
-Message-ID: <6599ad830803042156y5a28978fi995eb9050f8f5320__45237.9887145527$1204696695$gmane$org@mail.gmail.com>
-References: <47CE322A.9060907@ak.jp.nec.com>
+From: Daisuke Nishimura <nishimura-YQH0OdQVrdy45+QrQBaojngSJqDPrsil@public.gmane.org>
+Subject: [RFC/PATCH] cgroup swap subsystem
+Date: Wed, 05 Mar 2008 14:59:05 +0900
+Message-ID: <47CE36A9.3060204@mxp.nes.nec.co.jp>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <47CE322A.9060907-l0HG/lpvHE58UrSeD/g0lQ@public.gmane.org>
-Content-Disposition: inline
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,158 +15,702 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Kazunaga Ikeno <k-ikeno-l0HG/lpvHE58UrSeD/g0lQ@public.gmane.org>, Dhaval Giani <dhaval-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org
+Cc: xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Hi Kazunaga,
+Hi.
 
-On Tue, Mar 4, 2008 at 9:39 PM, Kazunaga Ikeno <k-ikeno-l0HG/lpvHE58UrSeD/g0lQ@public.gmane.org> wrote:
-> Hi -
->
->  This is a patch of a new optional function for task assignment to cgroup, RFC.
->
->
->  == Purpose =================================================
->
->  To provide the function that leads a task, corresponding to the conditions specified
->  beforehand, to a specific cgroup directory.
->
+Even if limiting memory usage by cgroup memory subsystem
+or isolating memory by cpuset, swap space is shared, so
+resource isolation is not enough. If one group uses up all the
+swap space, it can affect other groups.
 
-This is something that's been discussed before, originally as part of
-CKRM with a complex rule engine in the kernel space.
+I try making a patch of swap subsystem based on memory
+subsystem, which limits swap usage per cgroup.
+It can now charge and limit the swap usage.
 
-Basically, the general agreement was that it's a case where a simple
-API is going to be too simple for the majority of users, and a complex
-API that satisfies everyone is going to be too messy/heavyweight.
+I implemented this feature as a new subsystem,
+not as a part of memory subsystem, because I don't want to
+make big change to memcontrol.c, and even if implemented
+as other subsystem, users can manage memory and swap on
+the same cgroup directory if mount them together.
 
-This is something that can be done in a userspace daemon via the
-process events connector - when you get a PROC_EVENT_UID event, you
-can move the process into the appropriate cgroup (you may also need to
-check any recently-forked children). This also gives you more
-flexibility than you can have in the kernel - you can base your
-decision on more complex factors than simply the uid of the process.
+Basic idea of my implementation:
+  - what will be charged ?
+    the number of swap entries.
 
-Dhaval Giani had a prototype implementation of such a daemon.
+  - when to charge/uncharge ?
+    charge at get_swap_entry(), and uncharge at swap_entry_free().
 
-Paul
+  - to what group charge the swap entry ?
+    To determine to what swap_cgroup (corresponding to mem_cgroup in
+    memory subsystem) the swap entry should be charged,
+    I added a pointer to mm_struct to page_cgroup(pc->pc_mm), and
+    changed the argument of get_swap_entry() from (void) to
+    (struct page *). As a result, get_swap_entry() can determine
+    to what swap_cgroup it should charge the swap entry
+    by referring to page->page_cgroup->mm_struct->swap_cgroup.
 
->
->  == Description =============================================
->
->  This patch provides the function that leads a task, corresponding to the conditions
->  specified beforehand, to a specific cgroup directory.
->
->  Currently, this patch uses user-id as a condition to lead a task. On its I/F,
->  specifies user-id of a task and a cgroup directory.
->
->  The task set to specified user-id will automatically lead to the cgroup directory.
->  (it is attached to specific cgroup)
->
->  This function makes possible to attach a task to cgroup automatically when
->  specific user logs in, also to attach a task of a service which is set to
->  specific effective user-id to specific cgroup mechanically.
->
->  This function is just option, all the functions of cgroup are the same.
->  Also the migration of a task between cgroup directories can do by rewriting pid
->  of a control tasks file, including a task leading by this option.
->
->  It is able to enter two or more set of user-id and cgroup directory.
->  Specified cgroup directory may be the same or that may not be.
->  But it's not able to enter same user-id to plural cgroup directories to lead.
->
->
->  == Interface ===============================================
->
->    /lead_option  -  control file of this option
->
->  [example for reading a configuration]
->
->        # cat /cgroup/lead_option
->
->        uid:202        leadto:/cpuset/bar_cg
->        uid:201        leadto:/cpuset/foo_cg
->
->       * nothing appears before assignment.
->
->  [example for adding an entry]
->  - To lead a task(uid 201) to /cgroup/foo_cg
->
->        # echo uid:201 leadto:/cpuset/foo_cg > /cpuset/lead_option
->
->        * set a uid of task and cgroup dirctory to lead.
->        * Remake an entry uid to cgroup directory if set uid already exists.
->
->  [example for delete an entry]
->  - To delete an entry of uid
->
->        # echo uid:201 > /cpuset/lead_option
->
->        * To delete a registration, omit "leadto:" token.
->
->
->  == Operation example (chronological order) ==================
->
->  The follows is an example of the operation.
->
->  # ############################
->  # # Various confirmation before testing
->  # ############################
->  # id
->  uid=0(root) gid=0(root) groups=0(root)
->  # df /cpuset
->  Filesystem           1K-blocks      Used Available Use% Mounted on
->  none                         0         0         0   -  /cpuset
->  # more /proc/self/cgroup
->  cpuset:/
->  # id foo
->  uid=201(foo) gid=100(users) groups=100(users)
->  # id bar
->  uid=202(foo) gid=100(users) groups=100(users)
->  # ############################
->  # # Add an entry of user foo,bar
->  # ############################
->  # echo uid:201 leadto:/cpuset/foo_cg > /cpuset/lead_option
->  # echo uid:202 leadto:/cpuset/bar_cg > /cpuset/lead_option
->  # more /cpuset/lead_option
->  uid:202        leadto:/cpuset/bar_cg
->  uid:201        leadto:/cpuset/foo_cg
->  # ############################
->  # # Confirmation of the assignment of user foo,bar - (1)
->  # ############################
->  # su - foo
->  $ more /proc/$$/cgroup
->  cpuset:/foo_cg
->  $ more /proc/self/cgroup
->  cpuset:/foo_cg
->  $ su bar --command "more /proc/self/cgroup"
->  cpuset:/bar_cg
->  $ exit
->  # ############################
->  # # Delete an entry of user foo,bar
->  # ############################
->  # echo uid:201 > /cpuset/lead_option
->  # echo uid:202 > /cpuset/lead_option
->  # more /cpuset/lead_option
->  # ############################
->  # # Confirmation of the assignment of user foo,bar - (2)
->  # ############################
->  # su - foo
->  $ more /proc/$$/cgroup
->  cpuset:/
->  $ su bar --command "more /proc/self/cgroup"
->  cpuset:/
->  $
->
->
->  Thanks,
->  - Kazunaga Ikeno.
->
->
->
->  --
->  To unsubscribe from this list: send the line "unsubscribe linux-kernel" in
->  the body of a message to majordomo-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
->  More majordomo info at  http://vger.kernel.org/majordomo-info.html
->  Please read the FAQ at  http://www.tux.org/lkml/
->
+  - from what group uncharge the swap entry ?
+    I added to swap_info_struct a member 'struct swap_cgroup **',
+    array of pointer to which swap_cgroup the swap entry is
+    charged.
+
+Todo:
+  - rebase new kernel, and split into some patches.
+  - Merge with memory subsystem (if it would be better), or
+    remove dependency on CONFIG_CGROUP_MEM_CONT if possible
+    (needs to make page_cgroup more generic one).
+  - More tests, cleanups, and feartures   :-)  
+
+
+Any comments or discussions would be appreciated.
+
+Thanks,
+Daisuke Nishimura
+
+
+Signed-off-by: Daisuke Nishimura <nishimura-YQH0OdQVrdy45+QrQBaojngSJqDPrsil@public.gmane.org>
+
+---
+diff -uprN linux-2.6.24-mm1/include/linux/cgroup_subsys.h linux-2.6.24-mm1-swaplimit/include/linux/cgroup_subsys.h
+--- linux-2.6.24-mm1/include/linux/cgroup_subsys.h	2008-02-04 14:34:24.000000000 +0900
++++ linux-2.6.24-mm1-swaplimit/include/linux/cgroup_subsys.h	2008-03-03 10:56:56.000000000 +0900
+@@ -42,3 +42,9 @@ SUBSYS(mem_cgroup)
+ #endif
+ 
+ /* */
++
++#ifdef CONFIG_CGROUP_SWAP_LIMIT
++SUBSYS(swap)
++#endif
++
++/* */
+diff -uprN linux-2.6.24-mm1/include/linux/memcontrol.h linux-2.6.24-mm1-swaplimit/include/linux/memcontrol.h
+--- linux-2.6.24-mm1/include/linux/memcontrol.h	2008-02-04 14:34:24.000000000 +0900
++++ linux-2.6.24-mm1-swaplimit/include/linux/memcontrol.h	2008-03-03 10:56:56.000000000 +0900
+@@ -29,6 +29,21 @@ struct page;
+ struct mm_struct;
+ 
+ #ifdef CONFIG_CGROUP_MEM_CONT
++/*
++ * A page_cgroup page is associated with every page descriptor. The
++ * page_cgroup helps us identify information about the cgroup
++ */
++struct page_cgroup {
++	struct list_head lru;		/* per cgroup LRU list */
++	struct page *page;
++	struct mem_cgroup *mem_cgroup;
++#ifdef CONFIG_CGROUP_SWAP_LIMIT
++	struct mm_struct *pc_mm;
++#endif
++	atomic_t ref_cnt;		/* Helpful when pages move b/w  */
++					/* mapped and cached states     */
++	int	 flags;
++};
+ 
+ extern void mm_init_cgroup(struct mm_struct *mm, struct task_struct *p);
+ extern void mm_free_cgroup(struct mm_struct *mm);
+diff -uprN linux-2.6.24-mm1/include/linux/mm_types.h linux-2.6.24-mm1-swaplimit/include/linux/mm_types.h
+--- linux-2.6.24-mm1/include/linux/mm_types.h	2008-02-04 14:34:24.000000000 +0900
++++ linux-2.6.24-mm1-swaplimit/include/linux/mm_types.h	2008-03-03 10:56:56.000000000 +0900
+@@ -233,6 +233,9 @@ struct mm_struct {
+ #ifdef CONFIG_CGROUP_MEM_CONT
+ 	struct mem_cgroup *mem_cgroup;
+ #endif
++#ifdef CONFIG_CGROUP_SWAP_LIMIT
++	struct swap_cgroup *swap_cgroup;
++#endif
+ };
+ 
+ #endif /* _LINUX_MM_TYPES_H */
+diff -uprN linux-2.6.24-mm1/include/linux/swap.h linux-2.6.24-mm1-swaplimit/include/linux/swap.h
+--- linux-2.6.24-mm1/include/linux/swap.h	2008-02-04 14:34:24.000000000 +0900
++++ linux-2.6.24-mm1-swaplimit/include/linux/swap.h	2008-03-03 10:56:56.000000000 +0900
+@@ -7,6 +7,7 @@
+ #include <linux/list.h>
+ #include <linux/memcontrol.h>
+ #include <linux/sched.h>
++#include <linux/swap_limit.h>
+ 
+ #include <asm/atomic.h>
+ #include <asm/page.h>
+@@ -141,6 +142,9 @@ struct swap_info_struct {
+ 	struct swap_extent *curr_swap_extent;
+ 	unsigned old_block_size;
+ 	unsigned short * swap_map;
++#ifdef CONFIG_CGROUP_SWAP_LIMIT
++	struct swap_cgroup **swap_cgroup;
++#endif
+ 	unsigned int lowest_bit;
+ 	unsigned int highest_bit;
+ 	unsigned int cluster_next;
+@@ -239,7 +243,7 @@ extern struct page *swapin_readahead(swp
+ extern long total_swap_pages;
+ extern unsigned int nr_swapfiles;
+ extern void si_swapinfo(struct sysinfo *);
+-extern swp_entry_t get_swap_page(void);
++extern swp_entry_t get_swap_page(struct page *);
+ extern swp_entry_t get_swap_page_of_type(int);
+ extern int swap_duplicate(swp_entry_t);
+ extern int valid_swaphandles(swp_entry_t, unsigned long *);
+@@ -342,7 +346,7 @@ static inline int remove_exclusive_swap_
+ 	return 0;
+ }
+ 
+-static inline swp_entry_t get_swap_page(void)
++static inline swp_entry_t get_swap_page(struct page *page)
+ {
+ 	swp_entry_t entry;
+ 	entry.val = 0;
+diff -uprN linux-2.6.24-mm1/include/linux/swap_limit.h linux-2.6.24-mm1-swaplimit/include/linux/swap_limit.h
+--- linux-2.6.24-mm1/include/linux/swap_limit.h	1970-01-01 09:00:00.000000000 +0900
++++ linux-2.6.24-mm1-swaplimit/include/linux/swap_limit.h	2008-03-03 10:56:56.000000000 +0900
+@@ -0,0 +1,65 @@
++/*
++ * swap_limit.h
++ *
++ */
++#ifndef _LINUX_SWAP_LIMIT_H
++#define _LINUX_SWAP_LIMIT_H
++
++#include <linux/swap.h>
++#include <linux/cgroup.h>
++#include <linux/res_counter.h>
++
++struct swap_cgroup;
++struct swap_info_struct;
++
++#ifdef CONFIG_CGROUP_SWAP_LIMIT
++struct swap_cgroup {
++	struct cgroup_subsys_state css;
++	struct res_counter res;
++};
++
++static inline struct swap_cgroup *swap_cgroup_from_cgrp(struct cgroup *cgrp)
++{
++	return container_of(cgroup_subsys_state(cgrp, swap_subsys_id),
++				struct swap_cgroup,
++				css);
++}
++
++static inline struct swap_cgroup *swap_cgroup_from_task(struct task_struct *p)
++{
++	return container_of(task_subsys_state(p, swap_subsys_id),
++				struct swap_cgroup, css);
++}
++
++extern int swap_cgroup_charge(struct page *page,
++				struct swap_info_struct *si,
++				unsigned long offset);
++extern void swap_cgroup_uncharge(struct swap_info_struct *si,
++				unsigned long offset);
++
++#else /* CONFIG_CGROUP_SWAP_LIMIT */
++static inline struct swap_cgroup *swap_cgroup_from_cgrp(struct cgroup *cgrp)
++{
++	return NULL;
++}
++
++static inline struct swap_cgroup *swap_cgroup_from_task(struct task_struct *p)
++{
++	return NULL;
++}
++
++static inline int swap_cgroup_charge(struct page *page,
++					struct swap_info_struct *si,
++					unsigned long offset)
++{
++	return 0;
++}
++
++static inline void swap_cgroup_uncharge(struct swap_info_struct *si,
++					unsigned long offset)
++{
++}
++
++#endif
++
++#endif
+diff -uprN linux-2.6.24-mm1/init/Kconfig linux-2.6.24-mm1-swaplimit/init/Kconfig
+--- linux-2.6.24-mm1/init/Kconfig	2008-02-04 14:34:24.000000000 +0900
++++ linux-2.6.24-mm1-swaplimit/init/Kconfig	2008-03-03 10:56:56.000000000 +0900
+@@ -383,6 +383,12 @@ config CGROUP_MEM_CONT
+ 	  Provides a memory controller that manages both page cache and
+ 	  RSS memory.
+ 
++config CGROUP_SWAP_LIMIT
++	bool "cgroup subsystem for swap"
++	depends on CGROUP_MEM_CONT && SWAP
++	help
++	  Provides a swap controller that manages and limits swap usage.
++
+ config PROC_PID_CPUSET
+ 	bool "Include legacy /proc/<pid>/cpuset file"
+ 	depends on CPUSETS
+diff -uprN linux-2.6.24-mm1/mm/Makefile linux-2.6.24-mm1-swaplimit/mm/Makefile
+--- linux-2.6.24-mm1/mm/Makefile	2008-02-04 14:34:24.000000000 +0900
++++ linux-2.6.24-mm1-swaplimit/mm/Makefile	2008-03-03 10:56:56.000000000 +0900
+@@ -32,4 +32,5 @@ obj-$(CONFIG_MIGRATION) += migrate.o
+ obj-$(CONFIG_SMP) += allocpercpu.o
+ obj-$(CONFIG_QUICKLIST) += quicklist.o
+ obj-$(CONFIG_CGROUP_MEM_CONT) += memcontrol.o
++obj-$(CONFIG_CGROUP_SWAP_LIMIT) += swap_limit.o
+ 
+diff -uprN linux-2.6.24-mm1/mm/memcontrol.c linux-2.6.24-mm1-swaplimit/mm/memcontrol.c
+--- linux-2.6.24-mm1/mm/memcontrol.c	2008-02-04 14:34:24.000000000 +0900
++++ linux-2.6.24-mm1-swaplimit/mm/memcontrol.c	2008-03-03 10:56:56.000000000 +0900
+@@ -19,6 +19,7 @@
+ 
+ #include <linux/res_counter.h>
+ #include <linux/memcontrol.h>
++#include <linux/swap_limit.h>
+ #include <linux/cgroup.h>
+ #include <linux/mm.h>
+ #include <linux/smp.h>
+@@ -146,18 +147,6 @@ struct mem_cgroup {
+ #define PAGE_CGROUP_LOCK_BIT 	0x0
+ #define PAGE_CGROUP_LOCK 		(1 << PAGE_CGROUP_LOCK_BIT)
+ 
+-/*
+- * A page_cgroup page is associated with every page descriptor. The
+- * page_cgroup helps us identify information about the cgroup
+- */
+-struct page_cgroup {
+-	struct list_head lru;		/* per cgroup LRU list */
+-	struct page *page;
+-	struct mem_cgroup *mem_cgroup;
+-	atomic_t ref_cnt;		/* Helpful when pages move b/w  */
+-					/* mapped and cached states     */
+-	int	 flags;
+-};
+ #define PAGE_CGROUP_FLAG_CACHE	(0x1)	/* charged as cache */
+ #define PAGE_CGROUP_FLAG_ACTIVE (0x2)	/* page is active in this cgroup */
+ 
+@@ -254,15 +243,27 @@ struct mem_cgroup *mem_cgroup_from_task(
+ void mm_init_cgroup(struct mm_struct *mm, struct task_struct *p)
+ {
+ 	struct mem_cgroup *mem;
++#ifdef CONFIG_CGROUP_SWAP_LIMIT
++	struct swap_cgroup *swap;
++#endif
+ 
+ 	mem = mem_cgroup_from_task(p);
+ 	css_get(&mem->css);
+ 	mm->mem_cgroup = mem;
++
++#ifdef CONFIG_CGROUP_SWAP_LIMIT
++	swap = swap_cgroup_from_task(p);
++	css_get(&swap->css);
++	mm->swap_cgroup = swap;
++#endif
+ }
+ 
+ void mm_free_cgroup(struct mm_struct *mm)
+ {
+ 	css_put(&mm->mem_cgroup->css);
++#ifdef CONFIG_CGROUP_SWAP_LIMIT
++	css_put(&mm->swap_cgroup->css);
++#endif
+ }
+ 
+ static inline int page_cgroup_locked(struct page *page)
+@@ -664,6 +665,10 @@ retry:
+ 	pc->flags = PAGE_CGROUP_FLAG_ACTIVE;
+ 	if (ctype == MEM_CGROUP_CHARGE_TYPE_CACHE)
+ 		pc->flags |= PAGE_CGROUP_FLAG_CACHE;
++#ifdef CONFIG_CGROUP_SWAP_LIMIT
++	atomic_inc(&mm->mm_count);
++	pc->pc_mm = mm;
++#endif
+ 
+ 	if (!page || page_cgroup_assign_new_page_cgroup(page, pc)) {
+ 		/*
+@@ -673,6 +678,9 @@ retry:
+ 		 */
+ 		res_counter_uncharge(&mem->res, PAGE_SIZE);
+ 		css_put(&mem->css);
++#ifdef CONFIG_CGROUP_SWAP_LIMIT
++		mmdrop(mm);
++#endif
+ 		kfree(pc);
+ 		if (!page)
+ 			goto done;
+@@ -744,6 +752,9 @@ void mem_cgroup_uncharge(struct page_cgr
+ 		if (clear_page_cgroup(page, pc) == pc) {
+ 			mem = pc->mem_cgroup;
+ 			css_put(&mem->css);
++#ifdef CONFIG_CGROUP_SWAP_LIMIT
++			mmdrop(pc->pc_mm);
++#endif
+ 			res_counter_uncharge(&mem->res, PAGE_SIZE);
+ 			spin_lock_irqsave(&mz->lru_lock, flags);
+ 			__mem_cgroup_remove_list(pc);
+@@ -859,6 +870,9 @@ retry:
+ 		atomic_set(&pc->ref_cnt, 0);
+ 		if (clear_page_cgroup(page, pc) == pc) {
+ 			css_put(&mem->css);
++#ifdef CONFIG_CGROUP_SWAP_LIMIT
++			mmdrop(pc->pc_mm);
++#endif
+ 			res_counter_uncharge(&mem->res, PAGE_SIZE);
+ 			__mem_cgroup_remove_list(pc);
+ 			kfree(pc);
+diff -uprN linux-2.6.24-mm1/mm/shmem.c linux-2.6.24-mm1-swaplimit/mm/shmem.c
+--- linux-2.6.24-mm1/mm/shmem.c	2008-02-04 14:34:24.000000000 +0900
++++ linux-2.6.24-mm1-swaplimit/mm/shmem.c	2008-03-03 10:56:56.000000000 +0900
+@@ -1024,7 +1024,7 @@ static int shmem_writepage(struct page *
+ 	 * want to check if there's a redundant swappage to be discarded.
+ 	 */
+ 	if (wbc->for_reclaim)
+-		swap = get_swap_page();
++		swap = get_swap_page(page);
+ 	else
+ 		swap.val = 0;
+ 
+diff -uprN linux-2.6.24-mm1/mm/swap_limit.c linux-2.6.24-mm1-swaplimit/mm/swap_limit.c
+--- linux-2.6.24-mm1/mm/swap_limit.c	1970-01-01 09:00:00.000000000 +0900
++++ linux-2.6.24-mm1-swaplimit/mm/swap_limit.c	2008-03-05 14:39:23.000000000 +0900
+@@ -0,0 +1,194 @@
++/*
++ * swap_limit.c - SWAP controller (based on memcontrol.c)
++ *
++ */
++
++#include <linux/err.h>
++#include <linux/fs.h>
++#include <linux/types.h>
++#include <linux/sched.h>
++#include <linux/mm.h>
++#include <linux/swap.h>
++#include <linux/rcupdate.h>
++#include <linux/cgroup.h>
++#include <linux/res_counter.h>
++#include <linux/memcontrol.h>
++#include <linux/swap_limit.h>
++
++static struct swap_cgroup init_swap_cgroup;
++
++int swap_cgroup_charge(struct page *page,
++			struct swap_info_struct *si,
++			unsigned long offset)
++{
++	int ret;
++	struct page_cgroup *pc;
++	struct mm_struct *mm;
++	struct swap_cgroup *swap;
++
++	BUG_ON(!page);
++
++	/*
++	 * Pages to be swapped out should have been charged by memory cgroup,
++	 * but very rarely, pc would be NULL (pc is not reliable without lock,
++	 * so I should fix here).
++	 * In such cases, we charge the init_mm now.
++	 */
++	pc = page_get_page_cgroup(page);
++	if (WARN_ON(!pc))
++		mm = &init_mm;
++	else
++		mm = pc->pc_mm;
++	BUG_ON(!mm);
++
++	rcu_read_lock();
++	swap = rcu_dereference(mm->swap_cgroup);
++	rcu_read_unlock();
++	BUG_ON(!swap);
++
++	ret = res_counter_charge(&swap->res, PAGE_SIZE);
++	if (!ret) {
++		css_get(&swap->css);
++		si->swap_cgroup[offset] = swap;
++	}
++
++	return ret;
++}
++
++void swap_cgroup_uncharge(struct swap_info_struct *si, unsigned long offset)
++{
++	struct swap_cgroup *swap = si->swap_cgroup[offset];
++
++	/*
++	 * "swap" would be NULL:
++	 *  1. when get_swap_page() failed at charging swap_cgroup,
++	 *     and called swap_entry_free().
++	 *  2. when this swap entry had been assigned by
++	 *     get_swap_page_of_type() (via SWSUSP ?).
++	 */
++	if (swap) {
++		res_counter_uncharge(&swap->res, PAGE_SIZE);
++		si->swap_cgroup[offset] = NULL;
++		css_put(&swap->css);
++	}
++}
++
++static struct cgroup_subsys_state *swap_cgroup_create(struct cgroup_subsys *ss,
++						      struct cgroup *cgrp)
++{
++	struct swap_cgroup *swap;
++
++	if (unlikely((cgrp->parent) == NULL)) {
++		swap = &init_swap_cgroup;
++		init_mm.swap_cgroup = swap;
++	} else
++		swap = kzalloc(sizeof(struct swap_cgroup), GFP_KERNEL);
++
++	if (swap == NULL)
++		return ERR_PTR(-ENOMEM);
++
++	res_counter_init(&swap->res);
++
++	return &swap->css;
++}
++
++static void swap_cgroup_destroy(struct cgroup_subsys *ss, struct cgroup *cgrp)
++{
++	kfree(swap_cgroup_from_cgrp(cgrp));
++}
++
++static ssize_t swap_cgroup_read(struct cgroup *cgrp,
++				struct cftype *cft, struct file *file,
++				char __user *userbuf, size_t nbytes,
++				loff_t *ppos)
++{
++	return res_counter_read(&swap_cgroup_from_cgrp(cgrp)->res,
++				cft->private, userbuf, nbytes, ppos,
++				NULL);
++}
++
++static int swap_cgroup_write_strategy(char *buf, unsigned long long *tmp)
++{
++	*tmp = memparse(buf, &buf);
++	if (*buf != '\0')
++		return -EINVAL;
++
++	/*
++	 * Round up the value to the closest page size
++	 */
++	*tmp = ((*tmp + PAGE_SIZE - 1) >> PAGE_SHIFT) << PAGE_SHIFT;
++	return 0;
++}
++
++static ssize_t swap_cgroup_write(struct cgroup *cgrp, struct cftype *cft,
++				 struct file *file, const char __user *userbuf,
++				 size_t nbytes, loff_t *ppos)
++{
++	return res_counter_write(&swap_cgroup_from_cgrp(cgrp)->res,
++				 cft->private, userbuf, nbytes, ppos,
++				 swap_cgroup_write_strategy);
++}
++
++static struct cftype swap_files[] = {
++	{
++		.name = "usage_in_bytes",
++		.private = RES_USAGE,
++		.read = swap_cgroup_read,
++	},
++	{
++		.name = "limit_in_bytes",
++		.private = RES_LIMIT,
++		.write = swap_cgroup_write,
++		.read = swap_cgroup_read,
++	},
++	{
++		.name = "failcnt",
++		.private = RES_FAILCNT,
++		.read = swap_cgroup_read,
++	},
++};
++
++static int swap_cgroup_populate(struct cgroup_subsys *ss, struct cgroup *cgrp)
++{
++	return cgroup_add_files(cgrp, ss, swap_files, ARRAY_SIZE(swap_files));
++}
++
++static void swap_cgroup_move_task(struct cgroup_subsys *ss,
++				  struct cgroup *cgrp,
++				  struct cgroup *old_cgrp,
++				  struct task_struct *p)
++{
++	struct mm_struct *mm;
++	struct swap_cgroup *swap, *old_swap;
++
++	mm = get_task_mm(p);
++	if (mm == NULL)
++		return;
++
++	swap = swap_cgroup_from_cgrp(cgrp);
++	old_swap = swap_cgroup_from_cgrp(old_cgrp);
++
++	if (swap == old_swap)
++		goto out;
++
++	if (p->tgid != p->pid)
++		goto out;
++
++	css_get(&swap->css);
++	rcu_assign_pointer(mm->swap_cgroup, swap);
++	css_put(&old_swap->css);
++
++out:
++	mmput(mm);
++	return;
++}
++
++struct cgroup_subsys swap_subsys = {
++	.name = "swap",
++	.create = swap_cgroup_create,
++	.destroy = swap_cgroup_destroy,
++	.populate = swap_cgroup_populate,
++	.subsys_id = swap_subsys_id,
++	.attach = swap_cgroup_move_task,
++	.early_init = 0,
++};
+diff -uprN linux-2.6.24-mm1/mm/swap_state.c linux-2.6.24-mm1-swaplimit/mm/swap_state.c
+--- linux-2.6.24-mm1/mm/swap_state.c	2008-02-04 14:34:24.000000000 +0900
++++ linux-2.6.24-mm1-swaplimit/mm/swap_state.c	2008-03-03 10:56:56.000000000 +0900
+@@ -128,7 +128,7 @@ int add_to_swap(struct page * page, gfp_
+ 	BUG_ON(!PageUptodate(page));
+ 
+ 	for (;;) {
+-		entry = get_swap_page();
++		entry = get_swap_page(page);
+ 		if (!entry.val)
+ 			return 0;
+ 
+diff -uprN linux-2.6.24-mm1/mm/swapfile.c linux-2.6.24-mm1-swaplimit/mm/swapfile.c
+--- linux-2.6.24-mm1/mm/swapfile.c	2008-02-04 14:34:24.000000000 +0900
++++ linux-2.6.24-mm1-swaplimit/mm/swapfile.c	2008-03-03 10:56:56.000000000 +0900
+@@ -28,6 +28,7 @@
+ #include <linux/capability.h>
+ #include <linux/syscalls.h>
+ #include <linux/memcontrol.h>
++#include <linux/swap_limit.h>
+ 
+ #include <asm/pgtable.h>
+ #include <asm/tlbflush.h>
+@@ -172,7 +173,10 @@ no_page:
+ 	return 0;
+ }
+ 
+-swp_entry_t get_swap_page(void)
++/* get_swap_page() calls this */
++static int swap_entry_free(struct swap_info_struct *, unsigned long);
++
++swp_entry_t get_swap_page(struct page *page)
+ {
+ 	struct swap_info_struct *si;
+ 	pgoff_t offset;
+@@ -201,6 +205,16 @@ swp_entry_t get_swap_page(void)
+ 		swap_list.next = next;
+ 		offset = scan_swap_map(si);
+ 		if (offset) {
++			/*
++			 * This should be the first use of this swap entry,
++			 * so charge this swap entry now.
++			 */
++			if (swap_cgroup_charge(page, si, offset)) {
++				/* should free this entry */
++				swap_entry_free(si, offset);
++
++				goto noswap;
++			}
+ 			spin_unlock(&swap_lock);
+ 			return swp_entry(type, offset);
+ 		}
+@@ -285,6 +299,7 @@ static int swap_entry_free(struct swap_i
+ 				swap_list.next = p - swap_info;
+ 			nr_swap_pages++;
+ 			p->inuse_pages--;
++			swap_cgroup_uncharge(p, offset);
+ 		}
+ 	}
+ 	return count;
+@@ -1207,6 +1222,9 @@ asmlinkage long sys_swapoff(const char _
+ {
+ 	struct swap_info_struct * p = NULL;
+ 	unsigned short *swap_map;
++#ifdef CONFIG_CGROUP_SWAP_LIMIT
++	struct swap_cgroup **swap_cgroup;
++#endif
+ 	struct file *swap_file, *victim;
+ 	struct address_space *mapping;
+ 	struct inode *inode;
+@@ -1309,10 +1327,17 @@ asmlinkage long sys_swapoff(const char _
+ 	p->max = 0;
+ 	swap_map = p->swap_map;
+ 	p->swap_map = NULL;
++#ifdef CONFIG_CGROUP_SWAP_LIMIT
++	swap_cgroup = p->swap_cgroup;
++	p->swap_cgroup = NULL;
++#endif
+ 	p->flags = 0;
+ 	spin_unlock(&swap_lock);
+ 	mutex_unlock(&swapon_mutex);
+ 	vfree(swap_map);
++#ifdef CONFIG_CGROUP_SWAP_LIMIT
++	vfree(swap_cgroup);
++#endif
+ 	inode = mapping->host;
+ 	if (S_ISBLK(inode->i_mode)) {
+ 		struct block_device *bdev = I_BDEV(inode);
+@@ -1460,6 +1485,9 @@ asmlinkage long sys_swapon(const char __
+ 	unsigned long maxpages = 1;
+ 	int swapfilesize;
+ 	unsigned short *swap_map;
++#ifdef CONFIG_CGROUP_SWAP_LIMIT
++	struct swap_cgroup **swap_cgroup;
++#endif
+ 	struct page *page = NULL;
+ 	struct inode *inode = NULL;
+ 	int did_down = 0;
+@@ -1483,6 +1511,9 @@ asmlinkage long sys_swapon(const char __
+ 	p->swap_file = NULL;
+ 	p->old_block_size = 0;
+ 	p->swap_map = NULL;
++#ifdef CONFIG_CGROUP_SWAP_LIMIT
++	p->swap_cgroup = NULL;
++#endif
+ 	p->lowest_bit = 0;
+ 	p->highest_bit = 0;
+ 	p->cluster_nr = 0;
+@@ -1647,6 +1678,15 @@ asmlinkage long sys_swapon(const char __
+ 				1 /* header page */;
+ 		if (error)
+ 			goto bad_swap;
++
++#ifdef CONFIG_CGROUP_SWAP_LIMIT
++		p->swap_cgroup = vmalloc(maxpages * sizeof(*swap_cgroup));
++		if (!(p->swap_cgroup)) {
++			error = -ENOMEM;
++			goto bad_swap;
++		}
++		memset(p->swap_cgroup, 0, maxpages * sizeof(*swap_cgroup));
++#endif
+ 	}
+ 
+ 	if (nr_good_pages) {
+@@ -1704,13 +1744,22 @@ bad_swap:
+ bad_swap_2:
+ 	spin_lock(&swap_lock);
+ 	swap_map = p->swap_map;
++#ifdef CONFIG_CGROUP_SWAP_LIMIT
++	swap_cgroup = p->swap_cgroup;
++#endif
+ 	p->swap_file = NULL;
+ 	p->swap_map = NULL;
++#ifdef CONFIG_CGROUP_SWAP_LIMIT
++	p->swap_cgroup = NULL;
++#endif
+ 	p->flags = 0;
+ 	if (!(swap_flags & SWAP_FLAG_PREFER))
+ 		++least_priority;
+ 	spin_unlock(&swap_lock);
+ 	vfree(swap_map);
++#ifdef CONFIG_CGROUP_SWAP_LIMIT
++	vfree(swap_cgroup);
++#endif
+ 	if (swap_file)
+ 		filp_close(swap_file, NULL);
+ out:
