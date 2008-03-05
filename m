@@ -1,48 +1,83 @@
-From: Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: Re: [RFC] libcg: design and plans
-Date: Wed, 05 Mar 2008 17:57:42 +0530
-Message-ID: <47CE91BE.9050503@linux.vnet.ibm.com>
-References: <20080304152341.GB5659@linux.vnet.ibm.com>
-	<6599ad830803050401j2dbbfaa7ycdf0bbfce59539b2@mail.gmail.com>
-Reply-To: balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
+From: Pavel Emelyanov <xemul@openvz.org>
+Subject: Re: [Devel] Re: network namespace ipv6 perfs
+Date: Wed, 05 Mar 2008 15:39:02 +0300
+Message-ID: <47CE9466.90101@openvz.org>
+References: <47CC0920.6000005@fr.ibm.com> <47CC0E3B.1040809@bull.net>	 <47CC114F.8050104@openvz.org> <939d53060803030704g5d693c19i34061f1a896d91cd@mail.gmail.com> <47CC3516.7030901@bull.net>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
+Content-Type: text/plain; charset=ISO-8859-1
 Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <6599ad830803050401j2dbbfaa7ycdf0bbfce59539b2-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
-Cc: Dhaval Giani <dhaval-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Srivatsa Vaddagiri <vatsa-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, Sudhir Kumar <skumar-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, Peter Zijlstra <a.p.zijlstra-/NLkJaSkS4VmR6Xm/wNWPw@public.gmane.org>
+Return-path: <netdev-owner@vger.kernel.org>
+In-Reply-To: <47CC3516.7030901@bull.net>
+Sender: netdev-owner@vger.kernel.org
+To: Benjamin Thery <benjamin.thery@bull.net>
+Cc: Benjamin Thery <ben.thery@gmail.com>, Daniel Lezcano <dlezcano@fr.ibm.com>, Linux Containers <containers@lists.osdl.org>, Linux Netdev List <netdev@vger.kernel.org>, Denis Lunev <den@openvz.org>
 List-Id: containers.vger.kernel.org
 
-Paul Menage wrote:
-> On Tue, Mar 4, 2008 at 7:23 AM, Dhaval Giani <dhaval-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org> wrote:
->>  libcg will be written mainly in C with lex and yacc for parsing the configuration
->>  files.
+Benjamin Thery wrote:
+> Benjamin Thery wrote:
+>> On Mon, Mar 3, 2008 at 3:55 PM, Pavel Emelyanov <xemul@openvz.org> wrote:
+>>> Benjamin Thery wrote:
+>>>  > Daniel Lezcano wrote:
+>>>  >> Hi,
+>>>  >>
+>>>  >> Some performance tests was made by Benjamin to watch out the impact of
+>>>  >> the network namespace. The good news is there is no impact when used
+>>>  >> with or without namespaces. That has been checked using a real network
+>>>  >> device inside a network namespace.
+>>>  >>
+>>>  >> These results are consistent with the ones previously made for ipv4.
+>>>  >>
+>>>  >> http://lxc.sourceforge.net/network/bench_ipv6_graph.php
+>>>  >>
+>>>  >> Thanks to Benjamin who did all the performance tests :)
+>>>  >
+>>>  > In these results, may be, there is one thing that should be explained.
+>>>  > It is the CPU utilization overhead in the 'veth' case.
+>>>  >
+>>>  > Compared to physical devices or macvlan, veth interfaces don't benefit
+>>>  > from hardware offloading mechanisms: i.e. checksums have to be computed
+>>>  > by the soft. That explains the big overhead in CPU utilization when
+>>>
+>>>  You can tune the veth devices not to account checksum when unnecessary.
+>> Oh. This is interesting.
+>>
+>> You mean with ethtool -K rx/tx?
+>> I will give it a try.
+> 
+> Pavel,
+> 
+> I had no luck with "ethtool -K veth0 rx on tx on".
+> On my testbed, with these options TCP drops packets
+> (trying to establish a ssh connection between init and child namespace).
+> 
+> 
+> Then, I tested "ethtool -K veth0 rx on tx off".
+> This time TCP (and netperf) work, but I see no difference in
+> CPU load compared to the case without offloading.
+> 
+> Can I tune veth differently?
+
+Yup. You may try turn tso and sg on as well.
+
+> (BTW, I run netperf between a child namespace on host A and netserv
+> on host B. The stream goes through the following interface:
+> veth1 on A -> veth0 on A -> eth1 on A -> ("real network") -> eth1 on B)
+> 
+> Benjamin
+> 
+>>>  > using this kind of virtual interface.
+>>>  >
+>>>  > Benjamin
+>>>  >
+>>>  >> Regards
+>>>  >>     -- Daniel
+>>>  >>
+>>> --
+>>> To unsubscribe from this list: send the line "unsubscribe netdev" in
+>>>  the body of a message to majordomo@vger.kernel.org
+>>>  More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>>>
 >>
 > 
-> One suggestion - for configuration management tools like this I'd opt
-> for C++ or Python over C, in order to be able to use STL (or the
-> python libraries). Object-Orientation may be useful or maybe not, but
-> classes like string, vector, hash_map, etc, make life so much easier.
 > 
-> Paul
 
-Object-orientation is not very useful in this case. STIL is useful, if we don't
-find equivalent functionality, we might consider using C++ or the C++ compiler
-and libraries and export "C" interfaces. But for now, our plan is to use the C
-compiler
-
--- 
-	Warm Regards,
-	Balbir Singh
-	Linux Technology Center
-	IBM, ISTL
