@@ -1,13 +1,13 @@
 From: "Paul Menage" <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [RFC] libcg: design and plans
-Date: Tue, 4 Mar 2008 22:15:20 -0800
-Message-ID: <6599ad830803042215n6aedb3eeub0c037e6a4e7bb34__19137.9508040429$1204697862$gmane$org@mail.gmail.com>
-References: <20080304152341.GB5659@linux.vnet.ibm.com>
+Subject: Re: [RFC/PATCH] cgroup swap subsystem
+Date: Tue, 4 Mar 2008 22:36:19 -0800
+Message-ID: <6599ad830803042236x3e5fdf0dmaf4119997025ba40@mail.gmail.com>
+References: <47CE36A9.3060204@mxp.nes.nec.co.jp>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20080304152341.GB5659-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+In-Reply-To: <47CE36A9.3060204-YQH0OdQVrdy45+QrQBaojngSJqDPrsil@public.gmane.org>
 Content-Disposition: inline
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
@@ -18,42 +18,138 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Dhaval Giani <dhaval-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Cc: fedora-devel-list-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, opensuse-packaging-stAJ6ESoqRxg9hUCZPvPmw@public.gmane.org, Peter Zijlstra <a.p.zijlstra-/NLkJaSkS4VmR6Xm/wNWPw@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, lkml <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Srivatsa Vaddagiri <vatsa-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, Sudhir Kumar <skumar-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+To: Daisuke Nishimura <nishimura-YQH0OdQVrdy45+QrQBaojngSJqDPrsil@public.gmane.org>
+Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Hi Dhaval,
+Hi Daisuke,
 
-On Tue, Mar 4, 2008 at 7:23 AM, Dhaval Giani <dhaval-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org> wrote:
-> Hi,
+Most of my comments below are to do with style issues with cgroups,
+rather than the details of the memory management code.
+
+2008/3/4 Daisuke Nishimura <nishimura-YQH0OdQVrdy45+QrQBaojngSJqDPrsil@public.gmane.org>:
+>  +/*
+>  + * A page_cgroup page is associated with every page descriptor. The
+>  + * page_cgroup helps us identify information about the cgroup
+>  + */
+>  +struct page_cgroup {
+>  +       struct list_head lru;           /* per cgroup LRU list */
+>  +       struct page *page;
+>  +       struct mem_cgroup *mem_cgroup;
+>  +#ifdef CONFIG_CGROUP_SWAP_LIMIT
+>  +       struct mm_struct *pc_mm;
+>  +#endif
+>  +       atomic_t ref_cnt;               /* Helpful when pages move b/w  */
+>  +                                       /* mapped and cached states     */
+>  +       int      flags;
+>  +};
 >
->  We have been working on a library for control groups which would provide
->  simple APIs for programmers to utilize from userspace and make use of
->  control groups.
+>  +
+>  +#ifdef CONFIG_CGROUP_SWAP_LIMIT
+>  +struct swap_cgroup {
+>  +       struct cgroup_subsys_state css;
+>  +       struct res_counter res;
+>  +};
+>  +
+>  +static inline struct swap_cgroup *swap_cgroup_from_cgrp(struct cgroup *cgrp)
+>  +{
+>  +       return container_of(cgroup_subsys_state(cgrp, swap_subsys_id),
+>  +                               struct swap_cgroup,
+>  +                               css);
+>  +}
+>  +
+>  +static inline struct swap_cgroup *swap_cgroup_from_task(struct task_struct *p)
+>  +{
+>  +       return container_of(task_subsys_state(p, swap_subsys_id),
+>  +                               struct swap_cgroup, css);
+>  +}
+
+Can't these definitions be moved into swap_limit.c?
+
+>  @@ -254,15 +243,27 @@ struct mem_cgroup *mem_cgroup_from_task(
+>   void mm_init_cgroup(struct mm_struct *mm, struct task_struct *p)
+>   {
+>         struct mem_cgroup *mem;
+>  +#ifdef CONFIG_CGROUP_SWAP_LIMIT
+>  +       struct swap_cgroup *swap;
+>  +#endif
 >
->  We are still designing the library and the APIs. I've attached the
->  design (as of now) to get some feedback from the community whether we
->  are heading in the correct direction and what else should be addressed.
+>         mem = mem_cgroup_from_task(p);
+>         css_get(&mem->css);
+>         mm->mem_cgroup = mem;
+>  +
+>  +#ifdef CONFIG_CGROUP_SWAP_LIMIT
+>  +       swap = swap_cgroup_from_task(p);
+>  +       css_get(&swap->css);
+>  +       mm->swap_cgroup = swap;
+>  +#endif
 
-There are a few things that it would be nice to include in such a
-library, if you're going to develop one:
+My feeling is that it would be cleaner to move this code into
+swap_limit.c, and have a separate mm_init_swap_cgroup() function. (And
+a mm_free_swap_cgroup() function).
 
-- the ability to create abstract groups of processes, and resource
-groups, and have the ability to tie these together arbitrarily. E.g
-you might create abstract groups A, B and C, and be able to say that A
-and B share memory with each other but not with C, and all three
-groups are isolated from each other for CPU. Then libcg would mount
-different resource types in different cgroup hierarchies (you would
-probably tell it ahead of time which combinations of sharing you would
-want, in order that it could minimize the number of mounted
-hierarchies). When you tell libcg to move a process into abstract
-group A, it would move it into the appropriate resource group in each
-hierarchy.
+>  +       pc = page_get_page_cgroup(page);
+>  +       if (WARN_ON(!pc))
+>  +               mm = &init_mm;
+>  +       else
+>  +               mm = pc->pc_mm;
+>  +       BUG_ON(!mm);
 
-- an interface for gathering usage stats from cgroups.
+Is this safe against races with the mem.force_empty operation?
 
-- support for dynamically migrating processes between groups based on
-process connector events (i.e. a finished version of the daemon that
-you were working on last year)
+>  +
+>  +       rcu_read_lock();
+>  +       swap = rcu_dereference(mm->swap_cgroup);
+>  +       rcu_read_unlock();
+>  +       BUG_ON(!swap);
+
+Is it safe to do rcu_read_unlock() while you are still planning to
+operate on the value of "swap"?
+
+>  +
+>  +static ssize_t swap_cgroup_read(struct cgroup *cgrp,
+>  +                               struct cftype *cft, struct file *file,
+>  +                               char __user *userbuf, size_t nbytes,
+>  +                               loff_t *ppos)
+>  +{
+>  +       return res_counter_read(&swap_cgroup_from_cgrp(cgrp)->res,
+>  +                               cft->private, userbuf, nbytes, ppos,
+>  +                               NULL);
+>  +}
+
+Can you use the cgroups read_u64 method, and just call res_counter_read_u64?
+
+>  +
+>  +static int swap_cgroup_write_strategy(char *buf, unsigned long long *tmp)
+>  +{
+>  +       *tmp = memparse(buf, &buf);
+>  +       if (*buf != '\0')
+>  +               return -EINVAL;
+>  +
+>  +       /*
+>  +        * Round up the value to the closest page size
+>  +        */
+>  +       *tmp = ((*tmp + PAGE_SIZE - 1) >> PAGE_SHIFT) << PAGE_SHIFT;
+>  +       return 0;
+>  +}
+
+This is the same as mem_cgroup_write_strategy. As part of your patch,
+can you create a res_counter_write_pagealign() strategy function in
+res_counter.c and use it from the memory and swap cgroups?
+
+>  +
+>  +#ifdef CONFIG_CGROUP_SWAP_LIMIT
+>  +               p->swap_cgroup = vmalloc(maxpages * sizeof(*swap_cgroup));
+>  +               if (!(p->swap_cgroup)) {
+>  +                       error = -ENOMEM;
+>  +                       goto bad_swap;
+>  +               }
+>  +               memset(p->swap_cgroup, 0, maxpages * sizeof(*swap_cgroup));
+>  +#endif
+
+It would be nice to only allocate these the first time the swap cgroup
+subsystem becomes active, to avoid the overhead for people not using
+it; even better if you can free it again if the swap subsystem becomes
+inactive again.
 
 Paul
