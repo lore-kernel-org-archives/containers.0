@@ -1,17 +1,14 @@
-From: Xpl++ <xpl-d4um4pvOpxY@public.gmane.org>
-Subject: Re: [RFC] libcg: design and plans
-Date: Wed, 05 Mar 2008 21:36:20 +0200
-Message-ID: <47CEF634.1070506__39718.822312034$1204745872$gmane$org@amln.net>
-References: <20080304152341.GB5659@linux.vnet.ibm.com>
-	<47CD83C7.4020206@amln.net>
-	<20080305052631.GA26361@linux.vnet.ibm.com>
-	<47CE8A67.3050109@amln.net>
-	<20080305155310.GA5349@linux.vnet.ibm.com>
+From: Hirokazu Takahashi <taka-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
+Subject: Re: [RFC/PATCH] cgroup swap subsystem
+Date: Thu, 06 Mar 2008 06:51:53 +0900 (JST)
+Message-ID: <20080306.065153.22592867.taka@valinux.co.jp>
+References: <47CE36A9.3060204@mxp.nes.nec.co.jp>
+	<20080305155329.60e02f48.kamezawa.hiroyu@jp.fujitsu.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20080305155310.GA5349-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+In-Reply-To: <20080305155329.60e02f48.kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -21,53 +18,36 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Dhaval Giani <dhaval-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Cc: fedora-devel-list-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, opensuse-packaging-stAJ6ESoqRxg9hUCZPvPmw@public.gmane.org, Peter Zijlstra <a.p.zijlstra-/NLkJaSkS4VmR6Xm/wNWPw@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, lkml <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Srivatsa Vaddagiri <vatsa-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, Sudhir Kumar <skumar-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org
+To: nishimura-YQH0OdQVrdy45+QrQBaojngSJqDPrsil@public.gmane.org
+Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Hi Dhaval,
+Hi,
 
-Dhaval Giani ??????:
->> Imagine having a shared/joint household savings account with your wife, and 
->> taking money from it without your wife knowing and vice versa .. then at 
->> some point when you thought that you have some $5K to buy the new super 
->> duper laptop you dreamt about your entire life - surprise - no enough 
->> resources :)
->> This is somewhat the equivalent of multiple independent resourse managers 
->> :) It won't end well :)
->> Should they be expected to be adequate in doing their job, they cannot be 
->> independent since they manage a shared resource.
->>
->>     
->
-> I don't quite agree with your analogy here. The point here is that each
-> resource manager operates in its own area, and has already been assigned
-> some resources which it cannot change. Its more like you can take $x at
-> the most from the account and your wife $y with x+y<=total money.
->   
-Ok .. so imagine that your kid got sick and you need more than $x, while 
-you wife does not need any money at that particular moment?
-Would you:
+> >  #ifdef CONFIG_CGROUP_MEM_CONT
+> > +/*
+> > + * A page_cgroup page is associated with every page descriptor. The
+> > + * page_cgroup helps us identify information about the cgroup
+> > + */
+> > +struct page_cgroup {
+> > +	struct list_head lru;		/* per cgroup LRU list */
+> > +	struct page *page;
+> > +	struct mem_cgroup *mem_cgroup;
+> > +#ifdef CONFIG_CGROUP_SWAP_LIMIT
+> > +	struct mm_struct *pc_mm;
+> > +#endif
+> > +	atomic_t ref_cnt;		/* Helpful when pages move b/w  */
+> > +					/* mapped and cached states     */
+> > +	int	 flags;
+> > +};
+> >  
+> As first impression, I don't like to increase size of this...but have no alternative
+> idea.
 
-a) take a loan (buy more hardware/resources, just because we can), 
-despite the fact you already have them in you account, and since we're 
-talking about your child it's in the interest of both you and your wife 
-(tha family, 'the whole' so to speak) to cure the illness
+If you really want to make the swap space subsystem and the memory subsystem
+work independently each other, you can possibly introduce a new data
+structure that binds pages in the swapcache and swap_cgroup.
+It would be enough since only a small part of the pages are in the swapcache.
 
-b) notify your wife there is an emergency and you will need some extra 
-money which has to come from her $y quota, take the money, make the kid 
-happy, and just continue business as usual? (that is - being smart and 
-dynamic in resource allocation)
-
-With the proposed libcg, answer a) seems to be the only option .. and my 
-company is not like M$ so I don't have extra resources to waste just 
-because I was told resources cannot be managed dynamicaly :)
-Why would one need to manage node resources dynamicaly: in our real-life 
-production system we have to manage resources dynamicaly, because any 
-other solution would require at least twice as much hardware, which will 
-also inevitably lead to a necessity to hire more qualified admins, which 
-is once again not so wise for small/medium business .. and not to 
-mention the extra CO2 caused by the few more dozens of servers :)
-
-Regards,
-Peter.
+Thanks,
+Hirokazu Takahashi.
