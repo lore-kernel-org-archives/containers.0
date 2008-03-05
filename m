@@ -1,83 +1,43 @@
-From: Pavel Emelyanov <xemul@openvz.org>
-Subject: Re: [Devel] Re: network namespace ipv6 perfs
-Date: Wed, 05 Mar 2008 15:39:02 +0300
-Message-ID: <47CE9466.90101@openvz.org>
-References: <47CC0920.6000005@fr.ibm.com> <47CC0E3B.1040809@bull.net>	 <47CC114F.8050104@openvz.org> <939d53060803030704g5d693c19i34061f1a896d91cd@mail.gmail.com> <47CC3516.7030901@bull.net>
+From: Hugh Dickins <hugh-DTz5qymZ9yRBDgjK7y7TUQ@public.gmane.org>
+Subject: Re: [RFC/PATCH] cgroup swap subsystem
+Date: Wed, 5 Mar 2008 14:07:07 +0000 (GMT)
+Message-ID: <Pine.LNX.4.64.0803051400000.22243@blonde.site>
+References: <47CE36A9.3060204@mxp.nes.nec.co.jp> <47CE5AE2.2050303@openvz.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
+Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-Return-path: <netdev-owner@vger.kernel.org>
-In-Reply-To: <47CC3516.7030901@bull.net>
-Sender: netdev-owner@vger.kernel.org
-To: Benjamin Thery <benjamin.thery@bull.net>
-Cc: Benjamin Thery <ben.thery@gmail.com>, Daniel Lezcano <dlezcano@fr.ibm.com>, Linux Containers <containers@lists.osdl.org>, Linux Netdev List <netdev@vger.kernel.org>, Denis Lunev <den@openvz.org>
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <47CE5AE2.2050303-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Benjamin Thery wrote:
-> Benjamin Thery wrote:
->> On Mon, Mar 3, 2008 at 3:55 PM, Pavel Emelyanov <xemul@openvz.org> wrote:
->>> Benjamin Thery wrote:
->>>  > Daniel Lezcano wrote:
->>>  >> Hi,
->>>  >>
->>>  >> Some performance tests was made by Benjamin to watch out the impact of
->>>  >> the network namespace. The good news is there is no impact when used
->>>  >> with or without namespaces. That has been checked using a real network
->>>  >> device inside a network namespace.
->>>  >>
->>>  >> These results are consistent with the ones previously made for ipv4.
->>>  >>
->>>  >> http://lxc.sourceforge.net/network/bench_ipv6_graph.php
->>>  >>
->>>  >> Thanks to Benjamin who did all the performance tests :)
->>>  >
->>>  > In these results, may be, there is one thing that should be explained.
->>>  > It is the CPU utilization overhead in the 'veth' case.
->>>  >
->>>  > Compared to physical devices or macvlan, veth interfaces don't benefit
->>>  > from hardware offloading mechanisms: i.e. checksums have to be computed
->>>  > by the soft. That explains the big overhead in CPU utilization when
->>>
->>>  You can tune the veth devices not to account checksum when unnecessary.
->> Oh. This is interesting.
->>
->> You mean with ethtool -K rx/tx?
->> I will give it a try.
+On Wed, 5 Mar 2008, Pavel Emelyanov wrote:
+> Daisuke Nishimura wrote:
+> > 
+> > Todo:
+> >   - rebase new kernel, and split into some patches.
+> >   - Merge with memory subsystem (if it would be better), or
+> >     remove dependency on CONFIG_CGROUP_MEM_CONT if possible
+> >     (needs to make page_cgroup more generic one).
 > 
-> Pavel,
-> 
-> I had no luck with "ethtool -K veth0 rx on tx on".
-> On my testbed, with these options TCP drops packets
-> (trying to establish a ssh connection between init and child namespace).
-> 
-> 
-> Then, I tested "ethtool -K veth0 rx on tx off".
-> This time TCP (and netperf) work, but I see no difference in
-> CPU load compared to the case without offloading.
-> 
-> Can I tune veth differently?
+> Merge is a must IMHO. I can hardly imagine a situation in which
+> someone would need these two separately.
 
-Yup. You may try turn tso and sg on as well.
+Strongly agree.  Nobody's interested in swap as such: it's just
+secondary memory, where RAM is primary memory.  People want to
+control memory as the sum of the two; and I expect they may also
+want to control primary memory (all that the current memcg does)
+within that.  I wonder if such nesting of limits fits easily
+into cgroups or will be problematic.
 
-> (BTW, I run netperf between a child namespace on host A and netserv
-> on host B. The stream goes through the following interface:
-> veth1 on A -> veth0 on A -> eth1 on A -> ("real network") -> eth1 on B)
-> 
-> Benjamin
-> 
->>>  > using this kind of virtual interface.
->>>  >
->>>  > Benjamin
->>>  >
->>>  >> Regards
->>>  >>     -- Daniel
->>>  >>
->>> --
->>> To unsubscribe from this list: send the line "unsubscribe netdev" in
->>>  the body of a message to majordomo@vger.kernel.org
->>>  More majordomo info at  http://vger.kernel.org/majordomo-info.html
->>>
->>
-> 
-> 
-
+Hugh
