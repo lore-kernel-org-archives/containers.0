@@ -1,14 +1,14 @@
-From: "Denis V. Lunev" <den-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
-Subject: Re: [Devel] Re: [RFC] libcg: design and plans
-Date: Wed, 05 Mar 2008 10:17:47 +0300
-Message-ID: <1204701467.15157.3.camel__47117.3619073399$1204701878$gmane$org@iris.sw.ru>
-References: <20080304152341.GB5659@linux.vnet.ibm.com>
-	<6599ad830803042215n6aedb3eeub0c037e6a4e7bb34@mail.gmail.com>
+From: Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Subject: Re: [RFC/PATCH] cgroup swap subsystem
+Date: Wed, 05 Mar 2008 12:58:54 +0530
+Message-ID: <47CE4BB6.8050803@linux.vnet.ibm.com>
+References: <47CE36A9.3060204@mxp.nes.nec.co.jp>
+Reply-To: balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <6599ad830803042215n6aedb3eeub0c037e6a4e7bb34-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
+In-Reply-To: <47CE36A9.3060204-YQH0OdQVrdy45+QrQBaojngSJqDPrsil@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,46 +18,89 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
-Cc: fedora-devel-list-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, opensuse-packaging-stAJ6ESoqRxg9hUCZPvPmw@public.gmane.org, Dhaval Giani <dhaval-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Srivatsa Vaddagiri <vatsa-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, lkml <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Sudhir Kumar <skumar-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, Peter Zijlstra <a.p.zijlstra-/NLkJaSkS4VmR6Xm/wNWPw@public.gmane.org>
+To: Daisuke Nishimura <nishimura-YQH0OdQVrdy45+QrQBaojngSJqDPrsil@public.gmane.org>
+Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Hugh Dickins <hugh-DTz5qymZ9yRBDgjK7y7TUQ@public.gmane.org>, xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Tue, 2008-03-04 at 22:15 -0800, Paul Menage wrote:
-> Hi Dhaval,
+Daisuke Nishimura wrote:
+> Hi.
 > 
-> On Tue, Mar 4, 2008 at 7:23 AM, Dhaval Giani <dhaval-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org> wrote:
-> > Hi,
-> >
-> >  We have been working on a library for control groups which would provide
-> >  simple APIs for programmers to utilize from userspace and make use of
-> >  control groups.
-> >
-> >  We are still designing the library and the APIs. I've attached the
-> >  design (as of now) to get some feedback from the community whether we
-> >  are heading in the correct direction and what else should be addressed.
+> Even if limiting memory usage by cgroup memory subsystem
+> or isolating memory by cpuset, swap space is shared, so
+> resource isolation is not enough. If one group uses up all the
+> swap space, it can affect other groups.
 > 
-> There are a few things that it would be nice to include in such a
-> library, if you're going to develop one:
+
+Yes, that is true. Please ensure that you also cc Hugh Dickins for all swap
+related changes.
+
+> I try making a patch of swap subsystem based on memory
+> subsystem, which limits swap usage per cgroup.
+> It can now charge and limit the swap usage.
 > 
-> - the ability to create abstract groups of processes, and resource
-> groups, and have the ability to tie these together arbitrarily. E.g
-> you might create abstract groups A, B and C, and be able to say that A
-> and B share memory with each other but not with C, and all three
-> groups are isolated from each other for CPU. Then libcg would mount
-> different resource types in different cgroup hierarchies (you would
-> probably tell it ahead of time which combinations of sharing you would
-> want, in order that it could minimize the number of mounted
-> hierarchies). When you tell libcg to move a process into abstract
-> group A, it would move it into the appropriate resource group in each
-> hierarchy.
+> I implemented this feature as a new subsystem,
+> not as a part of memory subsystem, because I don't want to
+> make big change to memcontrol.c, and even if implemented
+> as other subsystem, users can manage memory and swap on
+> the same cgroup directory if mount them together.
+> 
 
-There is one more important thing. In addition to the processes you must
-unite or provide a way to unite other objects like sockets. This is
-needed to create a group-based socket buffer management.
+I agree, the swap system should be independent of the memory resource controller.
 
-The mapping between socket and a process does not exists right now and,
-we can have (virtually), sockets from from different namespaces in one
-process.
+> Basic idea of my implementation:
+>   - what will be charged ?
+>     the number of swap entries.
+> 
+>   - when to charge/uncharge ?
+>     charge at get_swap_entry(), and uncharge at swap_entry_free().
+> 
 
-Regards,
-    Den
+You mean get_swap_page(), I suppose. The assumption in the code is that every
+swap page being charged has already been charged by the memory controller (that
+will go against making the controllers independent). Also, be careful of any
+charge operations under a spin_lock(). We tried controlling pages in the swap
+cache, but Hugh found problems with it, specially due to accounting for pages
+that are read ahead to the correct cgroup.
+
+>   - to what group charge the swap entry ?
+>     To determine to what swap_cgroup (corresponding to mem_cgroup in
+>     memory subsystem) the swap entry should be charged,
+>     I added a pointer to mm_struct to page_cgroup(pc->pc_mm), and
+>     changed the argument of get_swap_entry() from (void) to
+>     (struct page *). As a result, get_swap_entry() can determine
+>     to what swap_cgroup it should charge the swap entry
+>     by referring to page->page_cgroup->mm_struct->swap_cgroup.
+> 
+
+I presume this is for the case when the memory and swap controllers are mounted
+in different hierarchies. It seems like too many dereferences to get to the
+swap_cgroup
+
+>   - from what group uncharge the swap entry ?
+>     I added to swap_info_struct a member 'struct swap_cgroup **',
+>     array of pointer to which swap_cgroup the swap entry is
+>     charged.
+> 
+> Todo:
+>   - rebase new kernel, and split into some patches.
+>   - Merge with memory subsystem (if it would be better), or
+>     remove dependency on CONFIG_CGROUP_MEM_CONT if possible
+>     (needs to make page_cgroup more generic one).
+>   - More tests, cleanups, and feartures   :-)  
+> 
+> 
+> Any comments or discussions would be appreciated.
+> 
+
+To be honest, I tried looking at the code, but there were too many #ifdefs and I
+sort of lost myself in them.
+
+> Thanks,
+> Daisuke Nishimura
+> 
+
+-- 
+	Warm Regards,
+	Balbir Singh
+	Linux Technology Center
+	IBM, ISTL
