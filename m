@@ -1,14 +1,19 @@
-From: Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
-Subject: Re: [RFC/PATCH] cgroup swap subsystem
-Date: Wed, 05 Mar 2008 17:14:12 +0300
-Message-ID: <47CEAAB4.8070208@openvz.org>
-References: <47CE36A9.3060204@mxp.nes.nec.co.jp> <47CE5AE2.2050303@openvz.org>
-	<Pine.LNX.4.64.0803051400000.22243@blonde.site>
+From: Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Subject: Re: [RFC] libcg: design and plans
+Date: Wed, 05 Mar 2008 19:54:56 +0530
+Message-ID: <47CEAD38.3080501__46152.4478313096$1204727389$gmane$org@linux.vnet.ibm.com>
+References: <20080304152341.GB5659@linux.vnet.ibm.com>
+	<6599ad830803042215n6aedb3eeub0c037e6a4e7bb34@mail.gmail.com>
+	<20080305103343.GA22217@linux.vnet.ibm.com>
+	<6599ad830803050241k590e4389ud95b9b3ef920f8b6@mail.gmail.com>
+	<20080305110730.GB22217@linux.vnet.ibm.com>
+	<6599ad830803050351p91bdacahd47059e863f56817@mail.gmail.com>
+Reply-To: balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <Pine.LNX.4.64.0803051400000.22243-popGQ1T0qN76K7/ahGyk6A@public.gmane.org>
+In-Reply-To: <6599ad830803050351p91bdacahd47059e863f56817-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,31 +23,57 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Hugh Dickins <hugh-DTz5qymZ9yRBDgjK7y7TUQ@public.gmane.org>
-Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
+To: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+Cc: Peter Zijlstra <a.p.zijlstra-/NLkJaSkS4VmR6Xm/wNWPw@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Srivatsa Vaddagiri <vatsa-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, lkml <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Sudhir Kumar <skumar-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, Dhaval Giani <dhaval-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Hugh Dickins wrote:
-> On Wed, 5 Mar 2008, Pavel Emelyanov wrote:
->> Daisuke Nishimura wrote:
->>> Todo:
->>>   - rebase new kernel, and split into some patches.
->>>   - Merge with memory subsystem (if it would be better), or
->>>     remove dependency on CONFIG_CGROUP_MEM_CONT if possible
->>>     (needs to make page_cgroup more generic one).
->> Merge is a must IMHO. I can hardly imagine a situation in which
->> someone would need these two separately.
+Paul Menage wrote:
+> On Wed, Mar 5, 2008 at 3:07 AM, Dhaval Giani <dhaval-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org> wrote:
+>>  OK. Hmm, I've not really thought about it. At first thought, it should
+>>  not be very difficult. Only thing I am not sure is the arbitrary
+>>  grouping of the groups (ok, a bit confusing).
 > 
-> Strongly agree.  Nobody's interested in swap as such: it's just
-> secondary memory, where RAM is primary memory.  People want to
-> control memory as the sum of the two; and I expect they may also
-> want to control primary memory (all that the current memcg does)
-> within that.  I wonder if such nesting of limits fits easily
-> into cgroups or will be problematic.
-
-This nesting would affect the res_couter abstraction, not the
-cgroup infrastructure. Current design of resource counters doesn't
-allow for such thing, but the extension is a couple-of-lines patch :)
-
-> Hugh
+> I suspect that the main form of composite grouping is going to be
+> between parents and children. E.g. you might want to say things like:
 > 
+> create_group(A, memory=1G, cpu=100)
+> create_group(B, parent=A, memory=inherit, cpu=20)
+> create_group(C, parent=A, memory=inherit, cpu=30)
+> 
+> i.e. both B and C inherit/share their memory limit from their parent,
+> but have their own CPU groups (child groups of their parent?)
+>
+
+No, we don't plan on doing that. What we plan on doing is
+
+1. Specify the mount point for each controller
+2. In the create group API, specify the name of the group and the various
+parameters.
+
+If for example CPU is mounted at /cpu and Memory at /mem
+
+Then a specification for creation of group A would be of the form
+
+create_group(A, cpu=100, memory=100M)
+
+Then,
+
+/cpu/A has shares set to 100 and /mem/A has memory.limit set to 100M
+
+If you want to create subgroups under A, you specify
+
+create_group(A/B, memory=200M, cpu=50)
+
+That would create /cpu/A/B and /mem/A/B
+
+Please note that memory and CPU hierarchy needs work in the kernel. The shares
+and hierarchy support is pending. We need to make the res_counters
+infrastructure aware of hierarchies.
+
+
+
+-- 
+	Warm Regards,
+	Balbir Singh
+	Linux Technology Center
+	IBM, ISTL
