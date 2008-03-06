@@ -1,15 +1,17 @@
 From: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
-Subject: Re: Supporting overcommit with the memory controller
-Date: Thu, 6 Mar 2008 12:20:27 +0900
-Message-ID: <20080306122027.018e7d52.kamezawa.hiroyu@jp.fujitsu.com>
-References: <6599ad830803051617w7835d9b2l69bbc1a0423eac41@mail.gmail.com>
-	<20080306100158.a521af1b.kamezawa.hiroyu@jp.fujitsu.com>
-	<6599ad830803051854x5ee204bej7212d9c1e444e4d0@mail.gmail.com>
+Subject: Re: [RFC/PATCH] cgroup swap subsystem
+Date: Thu, 6 Mar 2008 17:33:47 +0900
+Message-ID: <20080306173347.f6c5c84c.kamezawa.hiroyu@jp.fujitsu.com>
+References: <47CE36A9.3060204@mxp.nes.nec.co.jp> <47CE5AE2.2050303@openvz.org>
+	<Pine.LNX.4.64.0803051400000.22243@blonde.site>
+	<47CEAAB4.8070208@openvz.org>
+	<20080306093324.77c6d7f4.kamezawa.hiroyu@jp.fujitsu.com>
+	<47CFA941.4070507@openvz.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <6599ad830803051854x5ee204bej7212d9c1e444e4d0-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
+In-Reply-To: <47CFA941.4070507-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,86 +21,46 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
-Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Hugh Dickins <hugh-DTz5qymZ9yRBDgjK7y7TUQ@public.gmane.org>, Pavel Emelianov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>, Linux Memory Management List <linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org>, Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+To: Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, Hugh Dickins <hugh-DTz5qymZ9yRBDgjK7y7TUQ@public.gmane.org>, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Wed, 5 Mar 2008 18:54:52 -0800
-"Paul Menage" <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org> wrote:
+On Thu, 06 Mar 2008 11:20:17 +0300
+Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org> wrote:
 
-> On Wed, Mar 5, 2008 at 5:01 PM, KAMEZAWA Hiroyuki
-> <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org> wrote:
-> >  > But to make this more interesting, there are plenty of jobs that will
-> >  > happily fill as much pagecache as they have available. Even a job
-> >  > that's just writing out logs will continually expand its pagecache
-> >  > usage without anything to stop it, and so just keeping the reserved
-> >  > pool at a fixed amount of free memory will result in the job expanding
-> >  > even if it doesn't need to.
-> >  It's current memory management style. "reclaim only when necessary".
-> >
+> KAMEZAWA Hiroyuki wrote:
+> > On Wed, 05 Mar 2008 17:14:12 +0300
+> > Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org> wrote:
+> >>> Strongly agree.  Nobody's interested in swap as such: it's just
+> >>> secondary memory, where RAM is primary memory.  People want to
+> >>> control memory as the sum of the two; and I expect they may also
+> >>> want to control primary memory (all that the current memcg does)
+> >>> within that.  I wonder if such nesting of limits fits easily
+> >>> into cgroups or will be problematic.
+> >> This nesting would affect the res_couter abstraction, not the
+> >> cgroup infrastructure. Current design of resource counters doesn't
+> >> allow for such thing, but the extension is a couple-of-lines patch :)
+> >>
+> > IMHO, keeping res_counter simple is better.
+> > 
+> > Is this kind of new entry in mem_cgroup not good ?
+> > ==
+> > struct mem_cgroup {
+> > 	...
+> > 	struct res_counter	memory_limit.
+> > 	struct res_counter	swap_limit.
+> > 	..
+> > }
 > 
-> Exactly - if the high-priority latency-sensitive job really needs that
-> extra memory, we want it to be able to automatically squash/kill the
-> low-priority job when memory runs low, and not suffer any latency
-> spikes. But if it doesn't actually need the memory, we'd rather use it
-> for low-priority batch stuff. The "no latency spikes" bit is important
-> - we don't want the high-priority job to get bogged down in
-> try_to_free_pages() and out_of_memory() loops when it needs to
-> allocate memory.
+> I meant the same thing actually. By "nesting would affect" I
+> meant, that we might want to make res_counters hierarchical.
 > 
-In our measurements(on RHEL5), setting dirty_ratio to suitable value can 
-help us to avoid *long* latency in most of *usual* situation.
-(I'm sorry that I can't show the numbers, please try.)
-Some mm people are trying to improve the kernel behavior under *unusual*
-situation. If you don't want any latency spikes for high priority processes,
-we'll have to try to make global page allocator handle priority of process/pages.
+> That would kill two birds with one stone - we will make a true
+> hierarchical memory accounting and let charging of two counters
+> with one call.
 
-It seems what you really want is priority based file-cache control.
-I have no objectio to using cgroup as controller interface of it.
-
-For avoiding spike, I'm now considering to support dirty_ratio
-for memcg. (Now, it seems difficut.)
-
-> >  >
-> >  Can Balbir's soft-limit patches help ?
-> >
-> >  It reclamims each cgroup's pages to soft-limit if the system needs.
-> >
-> >  Make limitation  like this
-> >
-> >  Assume 4G server.
-> >                            Limit      soft-limit
-> >  Not important Apss:         2G          100M
-> >  Important Apps    :         3G          2.7G
-> >
-> >  When the system memory reachs to the limit, each cgroup's memory usages will
-> >  goes down to soft-limit. (And there will 1.3G of free pages in above example)
-> >
-> 
-> Yes, that could be a useful part of the solution - I suspect we'd need
-> to have kswapd do the soft-limit push back as well as in
-> try_to_free_pages(), to avoid the high-priority jobs getting stuck in
-> the reclaim code. It would also be nice if we had:
-> 
-> - a way to have the soft-limit pushing kick in substantially *before*
-> the machine ran out of memory, to provide a buffer for the
-> high-priority jobs.
-> 
-Maybe background-reclaim thread can be a help. (I'm now maintaining a patch.)
-
-> - a way to measure the actual working set of a cgroup (which may be
-> smaller than its allocated memory if it has plenty of stale pagecache
-> pages allocated). Maybe refaults, or maybe usage-based information.
-> 
-Hmm, current memory resource controller shows
-
-- failcnt
-- active/inactive
-- rss/cache
-
-I think we have enough infrastructure to account additional parameters.
-But I think support all vmstat members for memcg is a bit overkill.
-We'll have to choice what is necessary.
+Hierarchical res_counter makes sense.
+Making it in simple/reasonable style will be our challenge. 
 
 Thanks,
 -Kame
