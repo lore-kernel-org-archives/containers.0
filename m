@@ -1,17 +1,13 @@
-From: "Paul Menage" <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [RFC/PATCH] cgroup swap subsystem
-Date: Wed, 5 Mar 2008 16:35:43 -0800
-Message-ID: <6599ad830803051635i3bf54d7yc61087a4bd8d2cff@mail.gmail.com>
-References: <47CE36A9.3060204@mxp.nes.nec.co.jp> <47CE5AE2.2050303@openvz.org>
-	<Pine.LNX.4.64.0803051400000.22243@blonde.site>
-	<47CEAAB4.8070208@openvz.org>
-	<20080306093324.77c6d7f4.kamezawa.hiroyu@jp.fujitsu.com>
+From: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+Subject: Re: Supporting overcommit with the memory controller
+Date: Thu, 6 Mar 2008 10:01:58 +0900
+Message-ID: <20080306100158.a521af1b.kamezawa.hiroyu@jp.fujitsu.com>
+References: <6599ad830803051617w7835d9b2l69bbc1a0423eac41@mail.gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20080306093324.77c6d7f4.kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
-Content-Disposition: inline
+In-Reply-To: <6599ad830803051617w7835d9b2l69bbc1a0423eac41-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -21,23 +17,75 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
-Cc: linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, Hugh Dickins <hugh-DTz5qymZ9yRBDgjK7y7TUQ@public.gmane.org>, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
+To: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Hugh Dickins <hugh-DTz5qymZ9yRBDgjK7y7TUQ@public.gmane.org>, Pavel Emelianov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>, Linux Memory Management List <linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org>, Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Wed, Mar 5, 2008 at 4:33 PM, KAMEZAWA Hiroyuki
-<kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org> wrote:
->  Is this kind of new entry in mem_cgroup not good ?
->  ==
->  struct mem_cgroup {
->         ...
->         struct res_counter      memory_limit.
->         struct res_counter      swap_limit.
->         ..
+On Wed, 5 Mar 2008 16:17:13 -0800
+"Paul Menage" <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org> wrote:
+> Users are poor at determining how much memory their jobs will actually
+> use (partly due to poor estimation, partly due to high variance of
+> memory usage on some jobs). So, we want to overcommit machines, i.e.
+> we want the total limits granted to all cgroups add up to more than
+> the total size of the machine.
+> 
+just depends on middle-ware. I think most of them will not allow that.
 
-I agree with this - main memory and swap memory are rather different
-kinds of resources, with very different performance characteristics.
-It should be possible to control them completely independently (e.g.
-this job gets 100M of main memory, and doesn't swap at all).
 
-Paul
+> So for each job we need a (per-job configurable) amount of memory
+> that's essentially reserved for that job. That way the high-priority
+> job can carry on allocating from its reserved pool even while the
+> low-priority job is OOMing; the low-priority job can't touch the
+> reserved pool of the high-priority job.
+> 
+Hmm, but current resource charging is independent from page allocator.
+(I think this is a good aspect of current design.)
+
+> But to make this more interesting, there are plenty of jobs that will
+> happily fill as much pagecache as they have available. Even a job
+> that's just writing out logs will continually expand its pagecache
+> usage without anything to stop it, and so just keeping the reserved
+> pool at a fixed amount of free memory will result in the job expanding
+> even if it doesn't need to. 
+It's current memory management style. "reclaim only when necessary".
+
+> Therefore we want to be able to include in
+> the "reserved" pool, memory that's allocated by the job, but which can
+> be freed without causing performance penalties for the job. (e.g. log
+> files, or pages from a large on-disk data file with little access
+> locality of reference) So suppose we'd decided to keep a reserve of
+> 200M for a particular job - if it had 200M of stale log file pages in
+> the pagecache then we could treat those as the 200M reserve, and not
+> have to keep on expanding the reserve pool.
+> 
+> We've been approximating this reasonably well with a combination of
+> cpusets, fake numa, and some hacks to determine how many pages in each
+> node haven't been touched recently (this is a bit different from the
+> active/inactive distinction). By assigning physical chunks of memory
+> (fake numa nodes) to different jobs, we get the pre-reservation that
+> we need. But using fake numa is a little inflexible, so it would be
+> nice to be able to use a page-based memory controller.
+> 
+> Is this something that would be possible to set up with the current
+> memory controller? My impression is that this isn't quite possible
+> yet, but maybe I've not just thought hard enough. I suspect that we'd
+> need at least the addition of page refault data, and the ability to
+> pre-reserve pages for a group.
+> 
+Can Balbir's soft-limit patches help ?
+
+It reclamims each cgroup's pages to soft-limit if the system needs.
+
+Make limitation  like this
+
+Assume 4G server.
+                           Limit      soft-limit
+Not important Apss:         2G          100M
+Important Apps    :         3G          2.7G
+
+When the system memory reachs to the limit, each cgroup's memory usages will
+goes down to soft-limit. (And there will 1.3G of free pages in above example)
+
+
+Thanks,
+-Kame
