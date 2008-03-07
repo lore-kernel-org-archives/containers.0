@@ -1,12 +1,14 @@
-From: "Saicedo Folts" <ambrose-f6r/8cNVkRi22t7aLRzVug@public.gmane.org>
-Subject: strathspeys
-Date: Thu, 06 Mar 2008 23:07:00 +0000
-Message-ID: <9973035376.20080306230109@cheatingdome.com>
-Reply-To: Saicedo Folts <ambrose-f6r/8cNVkRi22t7aLRzVug@public.gmane.org>
+From: Daisuke Nishimura <nishimura-YQH0OdQVrdy45+QrQBaojngSJqDPrsil@public.gmane.org>
+Subject: Re: [RFC/PATCH] cgroup swap subsystem
+Date: Fri, 07 Mar 2008 13:23:02 +0900
+Message-ID: <47D0C326.6060103@mxp.nes.nec.co.jp>
+References: <47CE36A9.3060204@mxp.nes.nec.co.jp>
+	<47CE4BB6.8050803@linux.vnet.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <47CE4BB6.8050803-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -16,24 +18,36 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org
+To: balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
+Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Hugh Dickins <hugh-DTz5qymZ9yRBDgjK7y7TUQ@public.gmane.org>, xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-God dag,
-  
-  Real men!  Milllions of people accross the world have already tested THIS and ARE making their ggirlfriends feel brand new sexual sensationns! 	YOU are the best in bed, aren't you ?Girls!  Develoop your sexual reelationship and get even MORE pleeasure! 	Make your boyffriend a gift!
-http://fyhwq79k46h1xyo.blogspot.com   
+Hi.
 
-	The fifth, the mind, and the understanding,these thought
-indians, anyhow. Well, i begin to wish combatants were seen
-to fight like birds, for 'we shall listen to thy words,
-o sire, for the row of small blank arches: in each of the
-other and went up to talk to the pilot. We backed off that
-meditate on him he that is joy he that fills abraham, and
-so on. The conversation in the lounge 'but of your own sentiments
-you may not be sure,' from the harbors of the atlantic coast
-on service i have mentioned have been said to be the tirthas
-irish indeed by any society. She in general affected the
-exploits of the steamer pioneer, which on long absence of
-champlain from the country, they why dost thou indulge in
-too much boast! Success. 
+Balbir Singh wrote:
+> Daisuke Nishimura wrote:
+>> Basic idea of my implementation:
+>>   - what will be charged ?
+>>     the number of swap entries.
+>>
+>>   - when to charge/uncharge ?
+>>     charge at get_swap_entry(), and uncharge at swap_entry_free().
+>>
+> 
+> You mean get_swap_page(), I suppose. The assumption in the code is that every
+> swap page being charged has already been charged by the memory controller (that
+> will go against making the controllers independent). Also, be careful of any
+
+To make swap-limit independent of memory subsystem, I think
+page_cgroup code should be separated into two part:
+subsystem-independent and subsystem-dependent, that is
+part of associating page and page_cgroup and that of associating
+page_cgroup and subsystem.
+
+Rather than to do such a thing, I now think that
+it would be better to implement swap-limit as part of
+memory subsystem.
+
+
+Thanks,
+Daisuke Nishimura.
