@@ -1,14 +1,16 @@
 From: Daisuke Nishimura <nishimura-YQH0OdQVrdy45+QrQBaojngSJqDPrsil@public.gmane.org>
 Subject: Re: [RFC/PATCH] cgroup swap subsystem
-Date: Fri, 07 Mar 2008 13:23:02 +0900
-Message-ID: <47D0C326.6060103@mxp.nes.nec.co.jp>
-References: <47CE36A9.3060204@mxp.nes.nec.co.jp>
-	<47CE4BB6.8050803@linux.vnet.ibm.com>
+Date: Fri, 07 Mar 2008 17:22:29 +0900
+Message-ID: <47D0FB45.1030209@mxp.nes.nec.co.jp>
+References: <47CFD957.3060402@mxp.nes.nec.co.jp>
+	<47CE36A9.3060204@mxp.nes.nec.co.jp>
+	<20080305155329.60e02f48.kamezawa.hiroyu@jp.fujitsu.com>
+	<6197904.1204808216900.kamezawa.hiroyu@jp.fujitsu.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <47CE4BB6.8050803-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+In-Reply-To: <6197904.1204808216900.kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,35 +20,37 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
-Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Hugh Dickins <hugh-DTz5qymZ9yRBDgjK7y7TUQ@public.gmane.org>, xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org
+To: kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org
+Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org, hugh-DTz5qymZ9yRBDgjK7y7TUQ@public.gmane.org, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
 List-Id: containers.vger.kernel.org
 
 Hi.
 
-Balbir Singh wrote:
-> Daisuke Nishimura wrote:
->> Basic idea of my implementation:
->>   - what will be charged ?
->>     the number of swap entries.
+kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org wrote:
+>>> At first look, remembering mm struct is not very good.
+>>> Remembering swap controller itself is better.
+>> The swap_cgroup when the page(and page_cgroup) is allocated and
+>> the swap_cgroup when the page is going to be swapped out may be
+>> different by swap_cgroup_move_task(), so I think swap_cgroup
+>> to be charged should be determined at the point of swapout.
 >>
->>   - when to charge/uncharge ?
->>     charge at get_swap_entry(), and uncharge at swap_entry_free().
->>
+> Accounting swap against an entity which allocs anon memory is
+> not strange. Problem here is move_task itself.
+> Now, charges against anon is not moved when a task which uses it
+> is moved. please fix this behavior first if you think this is
+> problematic.
 > 
-> You mean get_swap_page(), I suppose. The assumption in the code is that every
-> swap page being charged has already been charged by the memory controller (that
-> will go against making the controllers independent). Also, be careful of any
+> But, finally, a daemon driven by process event connector
+> determines the group before process starts using anon. It's
+> doubtful that it's worth to add complicated/costly ones.
+> 
 
-To make swap-limit independent of memory subsystem, I think
-page_cgroup code should be separated into two part:
-subsystem-independent and subsystem-dependent, that is
-part of associating page and page_cgroup and that of associating
-page_cgroup and subsystem.
+I agree with you.
 
-Rather than to do such a thing, I now think that
-it would be better to implement swap-limit as part of
-memory subsystem.
+I think the current behavior of move_task is problematic,
+and should fix it.
+But fixing it would be difficult and add a costly process,
+so I should consider more.
 
 
 Thanks,
