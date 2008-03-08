@@ -1,13 +1,13 @@
 From: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
-Subject: Re: [PATCH 1/2] Add the max_usage member on the res_counter
-Date: Sat, 8 Mar 2008 13:33:07 +0900
-Message-ID: <20080308133307.a2e02402.kamezawa.hiroyu@jp.fujitsu.com>
-References: <47D15FAF.3000204@openvz.org>
+Subject: Re: [PATCH 2/2] Make res_counter hierarchical
+Date: Sat, 8 Mar 2008 13:45:14 +0900
+Message-ID: <20080308134514.434f38f4.kamezawa.hiroyu@jp.fujitsu.com>
+References: <47D16004.7050204@openvz.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <47D15FAF.3000204-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+In-Reply-To: <47D16004.7050204-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -21,93 +21,83 @@ To: Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 Cc: Linux MM <linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org>, Linux-FOgKQjlUJ6BQetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Fri, 07 Mar 2008 18:30:55 +0300
+On Fri, 07 Mar 2008 18:32:20 +0300
 Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org> wrote:
 
-> This is a very usefull feature. E.g. one may set the
-> limit to "unlimited" value and check for the memory
-> requirements of a new container.
+> This allows us two things basically:
 > 
-Hm, I like this. Could you add a method to reset this counter ?
+> 1. If the subgroup has the limit higher than its parent has
+>    then the one will get more memory than allowed.
+> 2. When we will need to account for a resource in more than
+>    one place, we'll be able to use this technics.
+> 
+>    Look, consider we have a memory limit and swap limit. The
+>    memory limit is the limit for the sum of RSS, page cache
+>    and swap usage. To account for this gracefuly, we'll set
+>    two counters:
+> 
+> 	   res_counter mem_counter;
+> 	   res_counter swap_counter;
+> 
+>    attach mm to the swap one
+> 
+> 	   mm->mem_cnt = &swap_counter;
+> 
+>    and make the swap_counter be mem's child. That's it. If we
+>    want hierarchical support, then the tree will look like this:
+> 
+>    mem_counter_top
+>     swap_counter_top <- mm_struct living at top
+>      mem_counter_sub
+>       swap_counter_sub <- mm_struct living at sub
+> 
+Hmm? seems strange.
+
+IMO, a parent's usage is just sum of all childs'.
+And, historically, memory overcommit is done agaist "memory usage + swap".
+
+How about this ?
+    <mem_counter_top, swap_counter_top>
+	<mem_counter_sub, swap_counter_sub>
+	<mem_counter_sub, swap_counter_sub>
+	<mem_counter_sub, swap_counter_sub>
+
+   mem_counter_top.usage == sum of all mem_coutner_sub.usage
+   swap_counter_sub.usage = sum of all swap_counter_sub.usage
+
+
+> @@ -976,19 +976,22 @@ static void free_mem_cgroup_per_zone_info(struct mem_cgroup *mem, int node)
+>  static struct cgroup_subsys_state *
+>  mem_cgroup_create(struct cgroup_subsys *ss, struct cgroup *cont)
+>  {
+> -	struct mem_cgroup *mem;
+> +	struct mem_cgroup *mem, *parent;
+>  	int node;
+>  
+>  	if (unlikely((cont->parent) == NULL)) {
+>  		mem = &init_mem_cgroup;
+>  		init_mm.mem_cgroup = mem;
+> -	} else
+> +		parent = NULL;
+> +	} else {
+>  		mem = kzalloc(sizeof(struct mem_cgroup), GFP_KERNEL);
+> +		parent = mem_cgroup_from_cont(cont->parent);
+> +	}
+>  
+>  	if (mem == NULL)
+>  		return ERR_PTR(-ENOMEM);
+>  
+> -	res_counter_init(&mem->res);
+> +	res_counter_init(&mem->res, parent ? &parent->res : NULL);
+>  
+I have no objection to add some hierarchical support to res_counter.
+
+But we should wait to add it to mem_cgroup because we have to add 
+some amount of codes to handle hierarchy under mem_cgroup in reasonable way.
+for example) 
+	- hierarchical memory reclaim
+	- keeping fairness between sub memory controllers.
+	  etc...
 
 Thanks,
 -Kame
-
-
-> Signed-off-by: Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
-> 
-> ---
->  include/linux/res_counter.h |    5 +++++
->  kernel/res_counter.c        |    4 ++++
->  mm/memcontrol.c             |    5 +++++
->  3 files changed, 14 insertions(+), 0 deletions(-)
-> 
-> diff --git a/include/linux/res_counter.h b/include/linux/res_counter.h
-> index 8cb1ecd..2c4deb5 100644
-> --- a/include/linux/res_counter.h
-> +++ b/include/linux/res_counter.h
-> @@ -25,6 +25,10 @@ struct res_counter {
->  	 */
->  	unsigned long long usage;
->  	/*
-> +	 * the maximal value of the usage from the counter creation
-> +	 */
-> +	unsigned long long max_usage;
-> +	/*
->  	 * the limit that usage cannot exceed
->  	 */
->  	unsigned long long limit;
-> @@ -67,6 +71,7 @@ ssize_t res_counter_write(struct res_counter *counter, int member,
->  
->  enum {
->  	RES_USAGE,
-> +	RES_MAX_USAGE,
->  	RES_LIMIT,
->  	RES_FAILCNT,
->  };
-> diff --git a/kernel/res_counter.c b/kernel/res_counter.c
-> index 791ff2b..f1f20c2 100644
-> --- a/kernel/res_counter.c
-> +++ b/kernel/res_counter.c
-> @@ -27,6 +27,8 @@ int res_counter_charge_locked(struct res_counter *counter, unsigned long val)
->  	}
->  
->  	counter->usage += val;
-> +	if (counter->usage > counter->max_usage)
-> +		counter->max_usage = counter->usage;
->  	return 0;
->  }
->  
-> @@ -65,6 +67,8 @@ res_counter_member(struct res_counter *counter, int member)
->  	switch (member) {
->  	case RES_USAGE:
->  		return &counter->usage;
-> +	case RES_MAX_USAGE:
-> +		return &counter->max_usage;
->  	case RES_LIMIT:
->  		return &counter->limit;
->  	case RES_FAILCNT:
-> diff --git a/mm/memcontrol.c b/mm/memcontrol.c
-> index 2d59163..e5c741a 100644
-> --- a/mm/memcontrol.c
-> +++ b/mm/memcontrol.c
-> @@ -911,6 +911,11 @@ static struct cftype mem_cgroup_files[] = {
->  		.read_u64 = mem_cgroup_read,
->  	},
->  	{
-> +		.name = "max_usage_in_bytes",
-> +		.private = RES_MAX_USAGE,
-> +		.read_u64 = mem_cgroup_read,
-> +	},
-> +	{
->  		.name = "limit_in_bytes",
->  		.private = RES_LIMIT,
->  		.write = mem_cgroup_write,
-> -- 
-> 1.5.3.4
-> 
-> --
-> To unsubscribe, send a message with 'unsubscribe linux-mm' in
-> the body to majordomo-Bw31MaZKKs0EbZ0PF+XxCw@public.gmane.org  For more info on Linux MM,
-> see: http://www.linux-mm.org/ .
-> Don't email: <a href=mailto:"dont-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org"> email-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org </a>
