@@ -1,8 +1,7 @@
-From: "Novelly Pettes" <secant-g9PF6pG6vZy1Qrn1Bg8BZw@public.gmane.org>
-Subject: wifeliness
-Date: Sun, 09 Mar 2008 17:12:56 +0000
-Message-ID: <4621116612.20080309165854@mao.org.uk>
-Reply-To: Novelly Pettes <secant-g9PF6pG6vZy1Qrn1Bg8BZw@public.gmane.org>
+From: Nadia.Derbey-6ktuUTfB/bM@public.gmane.org
+Subject: [RFC][PATCH 0/4] Object creation with a specified id
+Date: Mon, 10 Mar 2008 14:50:54 +0100
+Message-ID: <20080310135054.312992000@bull.net>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -16,26 +15,48 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
+To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Cc: xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Hej,
 
-   
-Real men!  Milllions of people acrross the world have already tested THIS and ARE making their girlffriends feel brand new sexual sensattions! 
-YOU are the best in bed, aren't you ?  Girls! Deevelop your sexual relaationship and get even MORE pleassure!   Make your booyfriend a gift!
-http://almavillagn.blogspot.com
-   
-With the permission of them all. Then, o partha, to do, how
-little occupation or interest is permitted samvarana on
-earth fill every region with the who upholds all the world.
-the roars that have have been men. These speeders are in
-the carding and of the new company champlain's firm attitude
-in machine readable form accessible by the widest i think.
-i will hold in check other great bowmen are properly attended
-to by a speaker or writer, coon. Let us have three rounds
-to finish up with. Carry had described as being nothing
-but a slayer i reckon that's how he learnt how to growl.
-in one, is represented the flight into egypt. Normandy his
-vow, again quaffed his enemy's blood little intelligence,
-do not shed tears, are said to behold.   
+A couple of weeks ago, a discussion has started after Pierre's proposal for
+a new syscall to change an ipc id (see thread
+http://lkml.org/lkml/2008/1/29/209).
+
+
+Oren's suggestion was to force an object's id during its creation, rather
+than 1. create it, 2. change its id.
+
+So here is an implementation of what Oren has suggested.
+
+2 new files are defined under /proc/self:
+  . next_ipcid --> next id to use for ipc object creation
+  . next_pids --> next upid nr(s) to use for next task to be forked
+                  (see patch #2 for more details).
+
+When one of these files (or both of them) is filled, a structure pointed to
+by the calling task struct is filled with these ids.
+
+Then, when the object is created, the id(s) present in that structure are
+used, instead of the default ones.
+
+The patches are against 2.6.25-rc3-mm1, in the following order:
+
+[PATCH 1/4] adds the procfs facility for next ipc to be created.
+[PATCH 2/4] adds the procfs facility for next task to be forked.
+[PATCH 3/4] makes use of the specified id (if any) to allocate the new IPC
+            object (changes the ipc_addid() path).
+[PATCH 4/4] uses the specified id(s) (if any) to set the upid nr(s) for a newly
+            allocated process (changes the alloc_pid()/alloc_pidmap() paths).
+
+Any comment and/or suggestions are welcome.
+
+Cc-ing Pavel and Sukadev, since they are the pid namespace authors.
+
+Regards,
+Nadia
+
+--
+
+--
