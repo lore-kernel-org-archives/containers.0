@@ -1,35 +1,108 @@
-From: KAMEZAWA Hiroyuki <kamezawa.hiroyu@jp.fujitsu.com>
-Subject: Re: [PATCH 2/3] memcg: put a restriction on writing
- memory.force_empty
-Date: Tue, 11 Mar 2008 19:23:38 +0900
-Message-ID: <20080311192338.9f89ca70.kamezawa.hiroyu@jp.fujitsu.com>
-References: <47D65A36.4020008@cn.fujitsu.com>
-	<47D65BAA.60908@linux.vnet.ibm.com>
+From: Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+Subject: Re: [RFC][PATCH 4/4] PID: use the target ID specified in procfs
+Date: Tue, 11 Mar 2008 15:04:39 +0300
+Message-ID: <47D67557.7080506@openvz.org>
+References: <20080310135054.312992000@bull.net>
+	<20080310135209.769712000@bull.net>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
+Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1756326AbYCKK2w@vger.kernel.org>
-In-Reply-To: <47D65BAA.60908@linux.vnet.ibm.com>
-Sender: linux-kernel-owner@vger.kernel.org
-To: balbir@linux.vnet.ibm.com
-Cc: Li Zefan <lizf@cn.fujitsu.com>, Andrew Morton <akpm@linux-foundation.org>, Paul Menage <menage@google.com>, Pavel Emelianov <xemul@openvz.org>, LKML <linux-kernel@vger.kernel.org>, linux-mm@kvack.org, Linux Containers <containers@lists.osdl.org>
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <20080310135209.769712000-6ktuUTfB/bM@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Nadia.Derbey-6ktuUTfB/bM@public.gmane.org
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Tue, 11 Mar 2008 15:45:06 +0530
-Balbir Singh <balbir@linux.vnet.ibm.com> wrote:
+Nadia.Derbey-6ktuUTfB/bM@public.gmane.org wrote:
+> @@ -122,14 +122,26 @@ static void free_pidmap(struct upid *upi
+>  	atomic_inc(&map->nr_free);
+>  }
+>  
+> -static int alloc_pidmap(struct pid_namespace *pid_ns)
+> +static int alloc_pidmap(struct pid_namespace *pid_ns, struct pid_list *pid_l,
+> +			int level)
+>  {
+>  	int i, offset, max_scan, pid, last = pid_ns->last_pid;
+>  	struct pidmap *map;
+>  
+> -	pid = last + 1;
+> -	if (pid >= pid_max)
+> -		pid = RESERVED_PIDS;
+> +	if (!pid_l) {
+> +		pid = last + 1;
+> +		if (pid >= pid_max)
+> +			pid = RESERVED_PIDS;
+> +	} else {
+> +		/*
+> +		 * There's a target pid, so use it instead
+> +		 */
+> +		BUG_ON(level < 0);
+> +		pid = PID_AT(pid_l, level);
+> +		if (pid >= pid_max)
+> +			return -EINVAL;
+> +	}
+> +
+>  	offset = pid & BITS_PER_PAGE_MASK;
+>  	map = &pid_ns->pidmap[pid/BITS_PER_PAGE];
+>  	max_scan = (pid_max + BITS_PER_PAGE - 1)/BITS_PER_PAGE - !offset;
+> @@ -153,9 +165,16 @@ static int alloc_pidmap(struct pid_names
+>  			do {
+>  				if (!test_and_set_bit(offset, map->page)) {
+>  					atomic_dec(&map->nr_free);
+> -					pid_ns->last_pid = pid;
+> +					if (!pid_l)
+> +						pid_ns->last_pid = pid;
+> +					else
+> +						pid_ns->last_pid = max(last,
+> +									pid);
+>  					return pid;
+>  				}
+> +				if (pid_l)
+> +					/* Target pid is already in use */
+> +					return -EBUSY;
+>  				offset = find_next_offset(map, offset);
+>  				pid = mk_pid(pid_ns, map, offset);
+>  			/*
+> @@ -179,7 +198,7 @@ static int alloc_pidmap(struct pid_names
+>  		}
+>  		pid = mk_pid(pid_ns, map, offset);
+>  	}
+> -	return -1;
+> +	return -ENOMEM;
+>  }
+>  
+>  int next_pidmap(struct pid_namespace *pid_ns, int last)
 
-> Li Zefan wrote:
-> > We can write whatever to memory.force_empty:
-> > 
-> >         echo 999 > memory.force_empty
-> >         echo wow > memory.force_empty
-> > 
-> > This is odd, so let's make '1' to be the only valid value.
-> 
-> I suspect as long as there is no unreasonable side-effect, writing 999 or wow
-> should be OK.
-> 
-I agree with Balbir.
+As fas as this particular piece of code is concerned this all can 
+be shrunk down to
 
-Thanks,
--Kame
+static int set_vpidmap(struct pid_namespace *ns, int pid)
+{
+        int offset;
+        pidmap_t *map;
+
+        offset = pid & BITS_PER_PAGE_MASK;
+        map = ns->pidmap + vpid / BITS_PER_PAGE;
+
+        if (unlikely(alloc_pidmap_page(map)))
+                return -ENOMEM;
+
+        if (test_and_set_bit(offset, map->page))
+                return -EEXIST;
+
+        atomic_dec(&map->nr_free);
+        return pid;
+}
+
+where the alloc_pidmap_page is a consolidated part of code from alloc_pidmap.
+
+And I'm scared of what the alloc_pid is going to become.
