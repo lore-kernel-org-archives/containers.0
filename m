@@ -1,16 +1,20 @@
-From: Nadia Derbey <Nadia.Derbey-6ktuUTfB/bM@public.gmane.org>
-Subject: Re: [RFC][PATCH 4/4] PID: use the target ID specified in procfs
-Date: Tue, 11 Mar 2008 16:55:04 +0100
-Message-ID: <47D6AB58.2010002@bull.net>
-References: <20080310135054.312992000@bull.net>
-	<20080310135209.769712000@bull.net>
-	<47D67557.7080506@openvz.org> <47D6A52D.6030701@bull.net>
-	<47D6A741.9080708@openvz.org>
+From: "Paul Menage" <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH 2/2] Make res_counter hierarchical
+Date: Tue, 11 Mar 2008 08:56:08 -0700
+Message-ID: <6599ad830803110856j5333f032n2e26fb51111a839c@mail.gmail.com>
+References: <47D16004.7050204@openvz.org>
+	<20080308134514.434f38f4.kamezawa.hiroyu@jp.fujitsu.com>
+	<47D63FBC.1010805@openvz.org>
+	<6599ad830803110157u71fe6c3cse125d0202610413b@mail.gmail.com>
+	<20080311181325.c0bf6b90.kamezawa.hiroyu@jp.fujitsu.com>
+	<6599ad830803110211u1cb48874l30aa75d21dc2b23@mail.gmail.com>
+	<47D64E0A.3090907@linux.vnet.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <47D6A741.9080708-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+In-Reply-To: <47D64E0A.3090907-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Content-Disposition: inline
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -20,227 +24,35 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
+Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Linux MM <linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org>, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Pavel Emelyanov wrote:
-> Nadia Derbey wrote:
-> 
->>Pavel Emelyanov wrote:
->>
->>>Nadia.Derbey-6ktuUTfB/bM@public.gmane.org wrote:
->>>
->>>
->>>>@@ -122,14 +122,26 @@ static void free_pidmap(struct upid *upi
->>>>	atomic_inc(&map->nr_free);
->>>>}
->>>>
->>>>-static int alloc_pidmap(struct pid_namespace *pid_ns)
->>>>+static int alloc_pidmap(struct pid_namespace *pid_ns, struct pid_list *pid_l,
->>>>+			int level)
->>>>{
->>>>	int i, offset, max_scan, pid, last = pid_ns->last_pid;
->>>>	struct pidmap *map;
->>>>
->>>>-	pid = last + 1;
->>>>-	if (pid >= pid_max)
->>>>-		pid = RESERVED_PIDS;
->>>>+	if (!pid_l) {
->>>>+		pid = last + 1;
->>>>+		if (pid >= pid_max)
->>>>+			pid = RESERVED_PIDS;
->>>>+	} else {
->>>>+		/*
->>>>+		 * There's a target pid, so use it instead
->>>>+		 */
->>>>+		BUG_ON(level < 0);
->>>>+		pid = PID_AT(pid_l, level);
->>>>+		if (pid >= pid_max)
->>>>+			return -EINVAL;
->>>>+	}
->>>>+
->>>>	offset = pid & BITS_PER_PAGE_MASK;
->>>>	map = &pid_ns->pidmap[pid/BITS_PER_PAGE];
->>>>	max_scan = (pid_max + BITS_PER_PAGE - 1)/BITS_PER_PAGE - !offset;
->>>>@@ -153,9 +165,16 @@ static int alloc_pidmap(struct pid_names
->>>>			do {
->>>>				if (!test_and_set_bit(offset, map->page)) {
->>>>					atomic_dec(&map->nr_free);
->>>>-					pid_ns->last_pid = pid;
->>>>+					if (!pid_l)
->>>>+						pid_ns->last_pid = pid;
->>>>+					else
->>>>+						pid_ns->last_pid = max(last,
->>>>+									pid);
->>>>					return pid;
->>>>				}
->>>>+				if (pid_l)
->>>>+					/* Target pid is already in use */
->>>>+					return -EBUSY;
->>>>				offset = find_next_offset(map, offset);
->>>>				pid = mk_pid(pid_ns, map, offset);
->>>>			/*
->>>>@@ -179,7 +198,7 @@ static int alloc_pidmap(struct pid_names
->>>>		}
->>>>		pid = mk_pid(pid_ns, map, offset);
->>>>	}
->>>>-	return -1;
->>>>+	return -ENOMEM;
->>>>}
->>>>
->>>>int next_pidmap(struct pid_namespace *pid_ns, int last)
->>>
->>>As fas as this particular piece of code is concerned this all can 
->>>be shrunk down to
->>>
->>>static int set_vpidmap(struct pid_namespace *ns, int pid)
->>>{
->>>        int offset;
->>>        pidmap_t *map;
->>>
->>>        offset = pid & BITS_PER_PAGE_MASK;
->>>        map = ns->pidmap + vpid / BITS_PER_PAGE;
->>>
->>>        if (unlikely(alloc_pidmap_page(map)))
->>>                return -ENOMEM;
->>>
->>>        if (test_and_set_bit(offset, map->page))
->>>                return -EEXIST;
->>>
->>>        atomic_dec(&map->nr_free);
->>>        return pid;
->>>}
->>>
->>>where the alloc_pidmap_page is a consolidated part of code from alloc_pidmap.
->>>
->>>And I'm scared of what the alloc_pid is going to become.
->>>
->>>
->>
->>It's true that I made alloc_pid() become uggly, but this patchset was 
->>more intended to continue a discussion.
->>
->>What we could do is the following (not compiled, not tested...):
->>
->>struct pid *alloc_pid(struct pid_namespace *ns)
->>{
->>         struct pid *pid;
->>         enum pid_type type;
->>         int i, nr;
->>         struct pid_namespace *tmp;
->>         struct upid *upid;
->>
->>         pid = kmem_cache_alloc(ns->pid_cachep, GFP_KERNEL);
->>         if (!pid) {
->>                 pid = ERR_PTR(-ENOMEM);
->>                 goto out;
->>         }
->>
->>         tmp = ns;
->>         i = ns->level;
->>
->>         if (current->next_id && (current->next_id->flag & SYS_ID_PID)) {
->>                 tmp = set_predefined_pids(ns,
->>                               current->next_id->pid_ids);
->>                 if (IS_ERR(tmp)) {
->>                         nr = PTR_ERR(tmp);
->>                         goto out_free;
->>                 }
->>         }
->>
->>         /*
->>          * Let the lower levels upid nrs be automatically allocated
->>          */
->>         for ( ; i >= 0; i--) {
->>                 nr = alloc_pidmap(tmp, NULL, -1);
->>                 if (nr < 0)
->>                         goto out_free;
->>....
->>
->>which would only add a test and a function call to alloc_pid() ==> more 
->>readable.
->>with set_predefined_pids defined as follows (still not compiled, not 
->>tested, ...):
->>
->>struct pid_namespace *set_predefined_pids(struct pid_namespace *ns,
->>                                         struct pid_list *pid_l)
->>{
->>         int rel_level;
->>
->>         BUG_ON(!pid_l);
->>
->>         rel_level = pid_l->npids - 1;
->>         if (rel_level > ns->level)
->>                 return ERR_PTR(-EINVAL);
->>
->>         /*
->>          * Use the predefined upid nrs for levels ns->level down to
->>          * ns->level - rel_level
->>          */
->>         for ( ; rel_level >= 0; i--, rel_level--) {
->>                 nr = alloc_pidmap(tmp, pid_l, rel_level);
->>                 if (nr < 0)
->>                         return ERR_PTR(nr);
->>
->>                 pid->numbers[i].nr = nr;
->>                 pid->numbers[i].ns = tmp;
->>                 tmp = tmp->parent;
->>         }
->>
->>         current->next_id->flag &= ~SYS_ID_PID;
->>         pids_free(pid_l);
->>         current->next_id->pid_ids = NULL;
->>
->>         return tmp;
->>}
->>
->>
->>Don't you think that mixing this with your 1st proposal (the 
->>set_vpidmap() one), would make things look better?
-> 
-> 
-> I'd prefer seeing
-> 
-> --- a/kernel/pid.c
-> +++ b/kernel/pid.c
-> @@ -247,7 +247,7 @@ struct pid *alloc_pid(struct pid_namespace *ns)
->  {
->         struct pid *pid;
->         enum pid_type type;
-> -       int i, nr;
-> +       int i, nr, req_nr;
->         struct pid_namespace *tmp;
->         struct upid *upid;
->  
-> @@ -257,7 +257,11 @@ struct pid *alloc_pid(struct pid_namespace *ns)
->  
->         tmp = ns;
->         for (i = ns->level; i >= 0; i--) {
-> -               nr = alloc_pidmap(tmp);
-> +               req_nr = get_required_pidnr(ns, i);
-> +               if (req_nr > 0)
-> +                       nr = set_pidmap(tmp, req_nr);
-> +               else
-> +                       nr = alloc_pidmap(tmp);
->                 if (nr < 0)
->                         goto out_free;
->  
-> 
-> in alloc_pid() and not much than that.
-> 
-> 
+On Tue, Mar 11, 2008 at 2:16 AM, Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org> wrote:
+>
+> Paul Menage wrote:
+>  > On Tue, Mar 11, 2008 at 2:13 AM, KAMEZAWA Hiroyuki
+>  > <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org> wrote:
+>  >>  or remove all relationship among counters of *different* type of resources.
+>  >>  user-land-daemon will do enough jobs.
+>  >>
+>  >
+>  > Yes, that would be my preferred choice, if people agree that
+>  > hierarchically limiting overall virtual memory isn't useful. (I don't
+>  > think I have a use for it myself).
+>  >
+>
+>  Virtual limits are very useful. I have a patch ready to send out.
+>  They limit the amount of paging a cgroup can do (virtual limit - RSS limit).
 
-But doing this in the existing path, we are unconditionally adding for 
-each level:
-. a call to get_required_pidnr()
-. a test (on req_nr value)
+Ah, from this should I assume that you're talking about virtual
+address space limits, not virtual memory limits?
 
-while with what I proposed in my previous mail I'm adding only 1 test to 
-the existing alloc_pid() path. But I agree with that it may be still not 
-perfect.
+My comment above was referring to Pavel's proposal to limit total
+virtual memory (RAM + swap) for a cgroup, and then limit swap as a
+subset of that, which basically makes it impossible to limit the RAM
+usage of cgroups properly if you also want to allow swap usage.
 
-Or may be I missed something?
+Virtual address space limits are somewhat orthogonal to that.
 
-Regards,
-Nadia
+Paul
