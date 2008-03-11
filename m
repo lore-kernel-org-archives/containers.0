@@ -1,14 +1,14 @@
 From: Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
-Subject: Re: [PATCH 1/2] Add the max_usage member on the res_counter
-Date: Tue, 11 Mar 2008 11:41:45 +0300
-Message-ID: <47D645C9.3020201@openvz.org>
-References: <47D15FAF.3000204@openvz.org>
-	<20080308133307.a2e02402.kamezawa.hiroyu@jp.fujitsu.com>
+Subject: Re: [PATCH 2/2] Make res_counter hierarchical
+Date: Tue, 11 Mar 2008 11:38:50 +0300
+Message-ID: <47D6451A.7090807@openvz.org>
+References: <47D16004.7050204@openvz.org>	<20080308134514.434f38f4.kamezawa.hiroyu@jp.fujitsu.com>	<47D63FBC.1010805@openvz.org>
+	<20080311173225.937935eb.kamezawa.hiroyu@jp.fujitsu.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20080308133307.a2e02402.kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+In-Reply-To: <20080311173225.937935eb.kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,30 +18,64 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>, Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Linux MM <linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org>, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+To: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Linux MM <linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org>, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
 KAMEZAWA Hiroyuki wrote:
-> On Fri, 07 Mar 2008 18:30:55 +0300
+> On Tue, 11 Mar 2008 11:15:56 +0300
 > Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org> wrote:
-> 
->> This is a very usefull feature. E.g. one may set the
->> limit to "unlimited" value and check for the memory
->> requirements of a new container.
+>>> Hmm? seems strange.
+>>>
+>>> IMO, a parent's usage is just sum of all childs'.
+>>> And, historically, memory overcommit is done agaist "memory usage + swap".
+>>>
+>>> How about this ?
+>>>     <mem_counter_top, swap_counter_top>
+>>> 	<mem_counter_sub, swap_counter_sub>
+>>> 	<mem_counter_sub, swap_counter_sub>
+>>> 	<mem_counter_sub, swap_counter_sub>
+>>>
+>>>    mem_counter_top.usage == sum of all mem_coutner_sub.usage
+>>>    swap_counter_sub.usage = sum of all swap_counter_sub.usage
+>> I've misprinted in y tree, sorry.
+>> The correct hierarchy as I see it is
 >>
-> Hm, I like this. Could you add a method to reset this counter ?
-
-OK. Sounds reasonable.
-
-> How about
+> thank you.
 > 
-> 	counter->max_usage = max(counter->usage, counter->max_usage);
-
-No, I prefer explicit checks :)
-
-> Looks very good,
+>> <mem_couter_0>
+>>  + -- <swap_counter_0>
+>>  + -- <mem_counter_1>
+>>  |     + -- <swap_counter_1>
+>>  |     + -- <mem_counter_11>
+>>  |     |     + -- <swap_counter_11>
+>>  |     + -- <mem_counter_12>
+>>  |           + -- <swap_counter_12>
+>>  + -- <mem_counter_2>
+>>  |     + -- <swap_counter_2>
+>>  |     + -- <mem_counter_21>
+>>  |     |     + -- <swap_counter_21>
+>>  |     + -- <mem_counter_22>
+>>  |           + -- <swap_counter_22>
+>>  + -- <mem_counter_N>
+>>        + -- <swap_counter_N>
+>>        + -- <mem_counter_N1>
+>>        |     + -- <swap_counter_N1>
+>>        + -- <mem_counter_N2>
+>>              + -- <swap_counter_N2>
+>>
+> please let me confirm.
 > 
-> Acked-by: Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+> - swap_counter_X.limit can be defined independent from mem_counter_X.limit ?
+> - swap_conter_N1's limit and swap_counter_N's have some relationship ?
 
-OK. I'll push this change the the git at openvz.org then.
+No. The mem_counter_N_limit is the limit for all the memory, that the
+Nth group consumes. This includes the RSS, page cache and swap for this
+group and all the child groups. Since RSS and page cache are accounted
+together, this limit tracks the sum of (memory + swap) values over the
+subtree started at the given group.
+
+> Thanks,
+> -kame
+> 
+> 
