@@ -1,13 +1,14 @@
-From: Nadia.Derbey-6ktuUTfB/bM@public.gmane.org
-Subject: [RFC][PATCH 4/4] PID: use the target ID specified in procfs
-Date: Mon, 10 Mar 2008 14:50:58 +0100
-Message-ID: <20080310135209.769712000@bull.net>
-References: <20080310135054.312992000@bull.net>
+From: Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+Subject: Re: [PATCH 2/2] Make res_counter hierarchical
+Date: Tue, 11 Mar 2008 11:15:56 +0300
+Message-ID: <47D63FBC.1010805@openvz.org>
+References: <47D16004.7050204@openvz.org>
+	<20080308134514.434f38f4.kamezawa.hiroyu@jp.fujitsu.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline; filename=upidnr_use_next_id.patch
+In-Reply-To: <20080308134514.434f38f4.kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -17,171 +18,114 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Cc: xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org
+To: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Linux MM <linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org>, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-[PATCH 04/04]
+KAMEZAWA Hiroyuki wrote:
+> On Fri, 07 Mar 2008 18:32:20 +0300
+> Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org> wrote:
+> 
+>> This allows us two things basically:
+>>
+>> 1. If the subgroup has the limit higher than its parent has
+>>    then the one will get more memory than allowed.
+>> 2. When we will need to account for a resource in more than
+>>    one place, we'll be able to use this technics.
+>>
+>>    Look, consider we have a memory limit and swap limit. The
+>>    memory limit is the limit for the sum of RSS, page cache
+>>    and swap usage. To account for this gracefuly, we'll set
+>>    two counters:
+>>
+>> 	   res_counter mem_counter;
+>> 	   res_counter swap_counter;
+>>
+>>    attach mm to the swap one
+>>
+>> 	   mm->mem_cnt = &swap_counter;
+>>
+>>    and make the swap_counter be mem's child. That's it. If we
+>>    want hierarchical support, then the tree will look like this:
+>>
+>>    mem_counter_top
+>>     swap_counter_top <- mm_struct living at top
+>>      mem_counter_sub
+>>       swap_counter_sub <- mm_struct living at sub
+>>
+> Hmm? seems strange.
+> 
+> IMO, a parent's usage is just sum of all childs'.
+> And, historically, memory overcommit is done agaist "memory usage + swap".
+> 
+> How about this ?
+>     <mem_counter_top, swap_counter_top>
+> 	<mem_counter_sub, swap_counter_sub>
+> 	<mem_counter_sub, swap_counter_sub>
+> 	<mem_counter_sub, swap_counter_sub>
+> 
+>    mem_counter_top.usage == sum of all mem_coutner_sub.usage
+>    swap_counter_sub.usage = sum of all swap_counter_sub.usage
 
-This patch makes use of the target ids specified by a previous write to
-/proc/self/next_pids as the ids to use to allocate the next upid nrs.
-Upper levels upid nrs that are not specified in next_pids file are left to the
-kernel choice.
+I've misprinted in y tree, sorry.
+The correct hierarchy as I see it is
 
-Signed-off-by: Nadia Derbey <Nadia.Derbey-6ktuUTfB/bM@public.gmane.org>
+<mem_couter_0>
+ + -- <swap_counter_0>
+ + -- <mem_counter_1>
+ |     + -- <swap_counter_1>
+ |     + -- <mem_counter_11>
+ |     |     + -- <swap_counter_11>
+ |     + -- <mem_counter_12>
+ |           + -- <swap_counter_12>
+ + -- <mem_counter_2>
+ |     + -- <swap_counter_2>
+ |     + -- <mem_counter_21>
+ |     |     + -- <swap_counter_21>
+ |     + -- <mem_counter_22>
+ |           + -- <swap_counter_22>
+ + -- <mem_counter_N>
+       + -- <swap_counter_N>
+       + -- <mem_counter_N1>
+       |     + -- <swap_counter_N1>
+       + -- <mem_counter_N2>
+             + -- <swap_counter_N2>
 
----
- kernel/fork.c |    5 ++-
- kernel/pid.c  |   80 ++++++++++++++++++++++++++++++++++++++++++++++++++--------
- 2 files changed, 73 insertions(+), 12 deletions(-)
-
-Index: linux-2.6.25-rc3-mm1/kernel/pid.c
-===================================================================
---- linux-2.6.25-rc3-mm1.orig/kernel/pid.c	2008-03-10 09:19:02.000000000 +0100
-+++ linux-2.6.25-rc3-mm1/kernel/pid.c	2008-03-10 13:45:52.000000000 +0100
-@@ -122,14 +122,26 @@ static void free_pidmap(struct upid *upi
- 	atomic_inc(&map->nr_free);
- }
- 
--static int alloc_pidmap(struct pid_namespace *pid_ns)
-+static int alloc_pidmap(struct pid_namespace *pid_ns, struct pid_list *pid_l,
-+			int level)
- {
- 	int i, offset, max_scan, pid, last = pid_ns->last_pid;
- 	struct pidmap *map;
- 
--	pid = last + 1;
--	if (pid >= pid_max)
--		pid = RESERVED_PIDS;
-+	if (!pid_l) {
-+		pid = last + 1;
-+		if (pid >= pid_max)
-+			pid = RESERVED_PIDS;
-+	} else {
-+		/*
-+		 * There's a target pid, so use it instead
-+		 */
-+		BUG_ON(level < 0);
-+		pid = PID_AT(pid_l, level);
-+		if (pid >= pid_max)
-+			return -EINVAL;
-+	}
-+
- 	offset = pid & BITS_PER_PAGE_MASK;
- 	map = &pid_ns->pidmap[pid/BITS_PER_PAGE];
- 	max_scan = (pid_max + BITS_PER_PAGE - 1)/BITS_PER_PAGE - !offset;
-@@ -153,9 +165,16 @@ static int alloc_pidmap(struct pid_names
- 			do {
- 				if (!test_and_set_bit(offset, map->page)) {
- 					atomic_dec(&map->nr_free);
--					pid_ns->last_pid = pid;
-+					if (!pid_l)
-+						pid_ns->last_pid = pid;
-+					else
-+						pid_ns->last_pid = max(last,
-+									pid);
- 					return pid;
- 				}
-+				if (pid_l)
-+					/* Target pid is already in use */
-+					return -EBUSY;
- 				offset = find_next_offset(map, offset);
- 				pid = mk_pid(pid_ns, map, offset);
- 			/*
-@@ -179,7 +198,7 @@ static int alloc_pidmap(struct pid_names
- 		}
- 		pid = mk_pid(pid_ns, map, offset);
- 	}
--	return -1;
-+	return -ENOMEM;
- }
- 
- int next_pidmap(struct pid_namespace *pid_ns, int last)
-@@ -250,14 +269,55 @@ struct pid *alloc_pid(struct pid_namespa
- 	int i, nr;
- 	struct pid_namespace *tmp;
- 	struct upid *upid;
-+	struct pid_list *pid_l = NULL;
-+	int rel_level = -1;
-+
-+	/*
-+	 * If there is a list of upid nrs specified, use it instead of letting
-+	 * the kernel chose them for us.
-+	 */
-+	if (current->next_id && (current->next_id->flag & SYS_ID_PID)) {
-+		pid_l = current->next_id->pid_ids;
-+		BUG_ON(!pid_l);
-+		rel_level = pid_l->npids - 1;
-+		if (rel_level > ns->level) {
-+			pid = ERR_PTR(-EINVAL);
-+			goto out;
-+		}
-+	}
- 
- 	pid = kmem_cache_alloc(ns->pid_cachep, GFP_KERNEL);
--	if (!pid)
-+	if (!pid) {
-+		pid = ERR_PTR(-ENOMEM);
- 		goto out;
-+	}
- 
- 	tmp = ns;
--	for (i = ns->level; i >= 0; i--) {
--		nr = alloc_pidmap(tmp);
-+	/*
-+	 * Use the predefined upid nrs for levels ns->level down to
-+	 * ns->level - rel_level
-+	 */
-+	for (i = ns->level; rel_level >= 0; i--, rel_level--) {
-+		nr = alloc_pidmap(tmp, pid_l, rel_level);
-+		if (nr < 0)
-+			goto out_free;
-+
-+		pid->numbers[i].nr = nr;
-+		pid->numbers[i].ns = tmp;
-+		tmp = tmp->parent;
-+	}
-+
-+	if (pid_l) {
-+		current->next_id->flag &= ~SYS_ID_PID;
-+		pids_free(pid_l);
-+		current->next_id->pid_ids = NULL;
-+	}
-+
-+	/*
-+	 * Let the lower levels upid nrs be automatically allocated
-+	 */
-+	for ( ; i >= 0; i--) {
-+		nr = alloc_pidmap(tmp, NULL, -1);
- 		if (nr < 0)
- 			goto out_free;
- 
-@@ -288,7 +348,7 @@ out_free:
- 		free_pidmap(pid->numbers + i);
- 
- 	kmem_cache_free(ns->pid_cachep, pid);
--	pid = NULL;
-+	pid = ERR_PTR(nr);
- 	goto out;
- }
- 
-Index: linux-2.6.25-rc3-mm1/kernel/fork.c
-===================================================================
---- linux-2.6.25-rc3-mm1.orig/kernel/fork.c	2008-03-10 09:19:01.000000000 +0100
-+++ linux-2.6.25-rc3-mm1/kernel/fork.c	2008-03-10 13:48:03.000000000 +0100
-@@ -1197,10 +1197,11 @@ static struct task_struct *copy_process(
- 		goto bad_fork_cleanup_io;
- 
- 	if (pid != &init_struct_pid) {
--		retval = -ENOMEM;
- 		pid = alloc_pid(task_active_pid_ns(p));
--		if (!pid)
-+		if (IS_ERR(pid)) {
-+			retval = PTR_ERR(pid);
- 			goto bad_fork_cleanup_io;
-+		}
- 
- 		if (clone_flags & CLONE_NEWPID) {
- 			retval = pid_ns_prepare_proc(task_active_pid_ns(p));
-
---
+> 
+>> @@ -976,19 +976,22 @@ static void free_mem_cgroup_per_zone_info(struct mem_cgroup *mem, int node)
+>>  static struct cgroup_subsys_state *
+>>  mem_cgroup_create(struct cgroup_subsys *ss, struct cgroup *cont)
+>>  {
+>> -	struct mem_cgroup *mem;
+>> +	struct mem_cgroup *mem, *parent;
+>>  	int node;
+>>  
+>>  	if (unlikely((cont->parent) == NULL)) {
+>>  		mem = &init_mem_cgroup;
+>>  		init_mm.mem_cgroup = mem;
+>> -	} else
+>> +		parent = NULL;
+>> +	} else {
+>>  		mem = kzalloc(sizeof(struct mem_cgroup), GFP_KERNEL);
+>> +		parent = mem_cgroup_from_cont(cont->parent);
+>> +	}
+>>  
+>>  	if (mem == NULL)
+>>  		return ERR_PTR(-ENOMEM);
+>>  
+>> -	res_counter_init(&mem->res);
+>> +	res_counter_init(&mem->res, parent ? &parent->res : NULL);
+>>  
+> I have no objection to add some hierarchical support to res_counter.
+> 
+> But we should wait to add it to mem_cgroup because we have to add 
+> some amount of codes to handle hierarchy under mem_cgroup in reasonable way.
+> for example) 
+> 	- hierarchical memory reclaim
+> 	- keeping fairness between sub memory controllers.
+> 	  etc...
+> 
+> Thanks,
+> -Kame
+> 
+> 
