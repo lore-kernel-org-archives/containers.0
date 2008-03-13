@@ -1,7 +1,7 @@
 From: Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
-Subject: [PATCH 2/3] Use triggers in force_empty and max_usage files
-Date: Thu, 13 Mar 2008 14:37:23 +0300
-Message-ID: <47D911F3.1050108@openvz.org>
+Subject: [PATCH 1/3] Add the trigger callback to struct cftype
+Date: Thu, 13 Mar 2008 14:36:17 +0300
+Message-ID: <47D911B1.1010309@openvz.org>
 References: <47D9114F.6020301@openvz.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -21,65 +21,51 @@ To: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Balbir Singh <
 Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
+Trigger callback can be used to receive a kick-up from the
+user space. The string written is ignored.
+
+The cftype->private is used for multiplexing events.
+
 Signed-off-by: Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 
 ---
- mm/memcontrol.c |   21 ++++++---------------
- 1 files changed, 6 insertions(+), 15 deletions(-)
+ include/linux/cgroup.h |    8 ++++++++
+ kernel/cgroup.c        |    4 ++++
+ 2 files changed, 12 insertions(+), 0 deletions(-)
 
-diff --git a/mm/memcontrol.c b/mm/memcontrol.c
-index c27141d..d3ec3e3 100644
---- a/mm/memcontrol.c
-+++ b/mm/memcontrol.c
-@@ -868,27 +868,18 @@ static ssize_t mem_cgroup_write(struct cgroup *cont, struct cftype *cft,
- 				mem_cgroup_write_strategy);
+diff --git a/include/linux/cgroup.h b/include/linux/cgroup.h
+index 785a01c..2d1d151 100644
+--- a/include/linux/cgroup.h
++++ b/include/linux/cgroup.h
+@@ -243,6 +243,14 @@ struct cftype {
+ 	 */
+ 	int (*write_s64) (struct cgroup *cgrp, struct cftype *cft, s64 val);
+ 
++	/*
++	 * trigger() callback can be used to get some kick from the
++	 * userspace, when the actual string written is not important
++	 * at all. The private field can be used to determine the
++	 * kick type for multiplexing.
++	 */
++	int (*trigger)(struct cgroup *cgrp, unsigned int event);
++
+ 	int (*release) (struct inode *inode, struct file *file);
+ };
+ 
+diff --git a/kernel/cgroup.c b/kernel/cgroup.c
+index e8e8ec4..f2d8f25 100644
+--- a/kernel/cgroup.c
++++ b/kernel/cgroup.c
+@@ -1410,6 +1410,10 @@ static ssize_t cgroup_file_write(struct file *file, const char __user *buf,
+ 		return cft->write(cgrp, cft, file, buf, nbytes, ppos);
+ 	if (cft->write_u64 || cft->write_s64)
+ 		return cgroup_write_X64(cgrp, cft, file, buf, nbytes, ppos);
++	if (cft->trigger) {
++		int ret = cft->trigger(cgrp, (unsigned int)cft->private);
++		return ret ? ret : nbytes;
++	}
+ 	return -EINVAL;
  }
  
--static ssize_t mem_cgroup_max_reset(struct cgroup *cont, struct cftype *cft,
--				struct file *file, const char __user *userbuf,
--				size_t nbytes, loff_t *ppos)
-+static int mem_cgroup_max_reset(struct cgroup *cont, unsigned int event)
- {
- 	struct mem_cgroup *mem;
- 
- 	mem = mem_cgroup_from_cont(cont);
- 	res_counter_reset_max(&mem->res);
--	return nbytes;
-+	return 0;
- }
- 
--static ssize_t mem_force_empty_write(struct cgroup *cont,
--				struct cftype *cft, struct file *file,
--				const char __user *userbuf,
--				size_t nbytes, loff_t *ppos)
-+static int mem_force_empty_write(struct cgroup *cont, unsigned int event)
- {
--	struct mem_cgroup *mem = mem_cgroup_from_cont(cont);
--	int ret = mem_cgroup_force_empty(mem);
--	if (!ret)
--		ret = nbytes;
--	return ret;
-+	return mem_cgroup_force_empty(mem_cgroup_from_cont(cont));
- }
- 
- static const struct mem_cgroup_stat_desc {
-@@ -936,7 +927,7 @@ static struct cftype mem_cgroup_files[] = {
- 	{
- 		.name = "max_usage_in_bytes",
- 		.private = RES_MAX_USAGE,
--		.write = mem_cgroup_max_reset,
-+		.trigger = mem_cgroup_max_reset,
- 		.read_u64 = mem_cgroup_read,
- 	},
- 	{
-@@ -952,7 +943,7 @@ static struct cftype mem_cgroup_files[] = {
- 	},
- 	{
- 		.name = "force_empty",
--		.write = mem_force_empty_write,
-+		.trigger = mem_force_empty_write,
- 	},
- 	{
- 		.name = "stat",
 -- 
 1.5.3.4
