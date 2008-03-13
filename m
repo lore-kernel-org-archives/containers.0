@@ -1,13 +1,17 @@
 From: Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
-Subject: Re: [PATCH 2/2] Make res_counter hierarchical
-Date: Thu, 13 Mar 2008 11:56:58 +0300
-Message-ID: <47D8EC5A.20907@openvz.org>
-References: <47D16004.7050204@openvz.org> <20080312230541.CB9021E703D@siro.lan>
+Subject: Re: [PATCH] Add a 'trigger' callback on struct cftype.
+Date: Thu, 13 Mar 2008 12:37:45 +0300
+Message-ID: <47D8F5E9.5000203@openvz.org>
+References: <47D6A36F.2080706@openvz.org>	
+	<6599ad830803110900j7d47bd6eqf8747bdb704c9226@mail.gmail.com>	
+	<47D6AF98.4030204@openvz.org>
+	<6599ad830803110916i1bbc7c7an2412c0facb3496ef@mail.gmail.com>
+	<47D6B19A.3080906@openvz.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20080312230541.CB9021E703D-Pcsii4f/SVk@public.gmane.org>
+In-Reply-To: <47D6B19A.3080906-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -17,45 +21,37 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: YAMAMOTO Takashi <yamamoto-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
-Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
+To: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-YAMAMOTO Takashi wrote:
->> @@ -36,10 +37,26 @@ int res_counter_charge(struct res_counter *counter, unsigned long val)
->>  {
->>  	int ret;
->>  	unsigned long flags;
->> +	struct res_counter *c, *unroll_c;
->> +
->> +	local_irq_save(flags);
->> +	for (c = counter; c != NULL; c = c->parent) {
->> +		spin_lock(&c->lock);
->> +		ret = res_counter_charge_locked(c, val);
->> +		spin_unlock(&c->lock);
->> +		if (ret < 0)
->> +			goto unroll;
->> +	}
->> +	local_irq_restore(flags);
->> +	return 0;
->>  
->> -	spin_lock_irqsave(&counter->lock, flags);
->> -	ret = res_counter_charge_locked(counter, val);
->> -	spin_unlock_irqrestore(&counter->lock, flags);
->> +unroll:
->> +	for (unroll_c = counter; unroll_c != c; unroll_c = unroll_c->parent) {
->> +		spin_lock(&unroll_c->lock);
->> +		res_counter_uncharge_locked(unroll_c, val);
->> +		spin_unlock(&unroll_c->lock);
->> +	}
->> +	local_irq_restore(flags);
->>  	return ret;
->>  }
+Pavel Emelyanov wrote:
+> Paul Menage wrote:
+>> On Tue, Mar 11, 2008 at 9:13 AM, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org> wrote:
+>>> --- a/include/linux/cgroup.h
+>>>  +++ b/include/linux/cgroup.h
+>>>  @@ -243,7 +243,7 @@ struct cftype {
+>>>
+>>>          */
+>>>         int (*write_s64) (struct cgroup *cgrp, struct cftype *cft, s64 val);
+>>>
+>>>  -       void (*trigger) (struct cgroup *cgrp, unsigned int event);
+>>>  +       int (*trigger) (struct cgroup *cgrp, unsigned int event);
+>> To be more name-compatible with the other read_X/write_X functions,
+>> how about write_void rather than trigger?
 > 
-> what prevents the topology (in particular, ->parent pointers) from
-> changing behind us?
+> Because it's not a write actually, this is just some kick-up which came
+> from the user space. And the fact, that it is triggered via the sys_write
+> is just a VFS-based API constraints. Besides, if we ever have a binary 
+> API with cgroups, this trigger can be triggered :) via some other system
+> call, rather than write.
 
-The res_counter client must provide this. Currently cgroup subsystem does this.
+So, Paul, do you have any more objections to the patch? If no, I will
+prepare the set for Andrew, all the more so, I noticed, that there's
+no ability to reset the failcounter, which is required and can be easily
+implemented with the triggers.
 
-> YAMAMOTO Takashi
+>> Paul
+>>
+> 
 > 
