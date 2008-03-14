@@ -1,13 +1,14 @@
-From: Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
-Subject: Re: nets: status of sysfs with netns
-Date: Fri, 14 Mar 2008 18:44:49 +0300
-Message-ID: <47DA9D71.2010707@openvz.org>
-References: <47DA9BEA.9070907@bull.net>
+From: David Howells <dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: Re: Containers don't handle keys, but should they?
+Date: Fri, 14 Mar 2008 15:49:20 +0000
+Message-ID: <8853.1205509760@redhat.com>
+References: <20080314145447.GG9741@sergelap.austin.ibm.com>
+	<7519.1205494679@redhat.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <47DA9BEA.9070907-6ktuUTfB/bM@public.gmane.org>
+In-Reply-To: <20080314145447.GG9741-6s5zFf/epYLPQpwDFJZrxKsjOiXwFzmk@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -17,38 +18,28 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Benjamin Thery <benjamin.thery-6ktuUTfB/bM@public.gmane.org>
-Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Cc: dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Benjamin Thery wrote:
-> Eric, Pavel,
-> 
-> I haven't followed everything about the sysfs/netns issue recently and I 
-> think I have missed some of its recent developments in the past weeks. 
-> So I'm wondering what is the current status? Is anyone still working on it?
+Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org> wrote:
 
-I'm thinking on it, but have no graceful solution :( Sysfs is a big...
-no - HUUUUUUUUUUGE problem.
+> It looks like maybe just adding a struct user_namespace * to a struct key
+> should suffice.
 
-> As several netns patches for IPv4 and IPv6 have already been merged in 
-> net-2.6.26, it would be great to have the sysfs part also to help people 
-> who want test netns.
-> Right now, it is a pain to boot and test a system with CONFIG_SYSFS=n.
-> 
-> (I know the problem is not trivial and won't be easy to solve. I just 
-> want to be sure it is not forgotten)
+That's not quite sufficient.  The per-UID key_user structs also need to be
+differentiated.  Unfortunately, I can't just merge it into user_struct as I
+then end up with a reference loop user_struct -> uid_keyring -> user_struct.
 
-It is (unfortunately) not.
+Rooting the key_user trees in user_namespace will probably do the trick.
 
-> Pavel, I've heard you sent (or have) a patch that prevents sysfs access 
-> from a "child" netns. A patch that can be a good workaround until we 
-> have the full thing ready. I can't find it in mailing lists archives, 
-> can you give some hints about where to find it? :)
+A couple of questions:
 
-Hm. I haven't had plans to do such things actually.
+ (1) A process may inherit a session keyring over clone().  Should this be
+     discarded if CLONE_NEWUSER is set?  Or would I need to copy it?
 
-> Thanks a lot.
-> 
-> Benjamin
-> 
+ (2) In a recent patch, I've given the root user its own quota limits.  Is UID
+     0 always the root user in any container?  Or would it make more sense
+     just to scrap the per-root quota limits?
+
+David
