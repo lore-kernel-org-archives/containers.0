@@ -1,47 +1,33 @@
-From: James Morris <jmorris@namei.org>
-Subject: Re: [PATCH] cgroups: implement device whitelist lsm (v3)
-Date: Fri, 14 Mar 2008 21:17:12 +1100 (EST)
-Message-ID: <Xine.LNX.4.64.0803142039460.32184@us.intercode.com.au>
-References: <20080313144142.GB11265@sergelap.austin.ibm.com>
+From: David Howells <dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: Containers don't handle keys, but should they?
+Date: Fri, 14 Mar 2008 11:37:59 +0000
+Message-ID: <7519.1205494679@redhat.com>
 Mime-Version: 1.0
-Content-Type: TEXT/PLAIN; charset=US-ASCII
-Return-path: <linux-security-module-owner@vger.kernel.org>
-In-Reply-To: <20080313144142.GB11265@sergelap.austin.ibm.com>
-Sender: linux-security-module-owner@vger.kernel.org
-To: "Serge E. Hallyn" <serue@us.ibm.com>
-Cc: lkml <linux-kernel@vger.kernel.org>, linux-security-module@vger.kernel.org, Linux Containers <containers@lists.osdl.org>, Casey Schaufler <casey@schaufler-ca.com>, Greg KH <greg@kroah.com>, Pavel Emelianov <xemul@openvz.org>, Stephen Smalley <sds@epoch.ncsc.mil>
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Cc: dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Thu, 13 Mar 2008, Serge E. Hallyn wrote:
 
-> Implement a cgroup using the LSM interface to enforce open and mknod
-> on device files.
+Am I right in thinking that a UID in one container is not necessarily
+equivalent to the numerically equivalent UID in another container?
 
-Actually, I'm not sure that the LSM approach in general is best here.
+If that's the case then the key management code will need changing as it
+assumes all keys belonging to one numeric UID eat out of the same quota and
+the numeric UIDs are used in security checks.
 
-The LSM model is that standard DAC logic lives in the core kernel, and 
-that extended security logic (e.g. MAC) is called after DAC via hooks.  
-cgroups has introduced new security logic of its own, which is arguably 
-"standard DAC" when cgroups is enabled.
+Furthermore, processes in one container can access keys created by a process
+in another container by ID.  Is this desirable or not?
 
-I can understand Greg not wanting this security logic in the core kernel, 
-but it is specific to cgroups (which itself is security model agnostic) 
-and does not stand alone as a distinct security framework.
-
-The fact that all existing LSMs need to invoke exactly the same code is an 
-indicator that it doesn't belong in LSM.
-
-Moving this logic into LSM means that instead of the cgroups security 
-logic being called from one place in the main kernel (where cgroups 
-lives), it must be called identically from each LSM (none of which are 
-even aware of cgroups), which I think is pretty obviously the wrong 
-solution.
-
-This is baggage which comes with cgroups -- please don't push it into LSM 
-to try and hide that.
-
-
-- James
--- 
-James Morris
-<jmorris@namei.org>
+David
