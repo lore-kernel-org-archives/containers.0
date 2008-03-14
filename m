@@ -1,98 +1,37 @@
-From: Li Zefan <lizf@cn.fujitsu.com>
-Subject: Re: [PATCH 1/3] res_counter: introduce res_counter_write_u64()
-Date: Fri, 14 Mar 2008 08:34:49 +0900
-Message-ID: <47D9BA19.8000504@cn.fujitsu.com>
-References: <47D65A27.80605@cn.fujitsu.com> <20080311192117.f7e23636.kamezawa.hiroyu@jp.fujitsu.com>
+From: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+Subject: Re: [PATCH 0/3] Implement triggers for control groups.
+Date: Fri, 14 Mar 2008 11:08:23 +0900
+Message-ID: <20080314110823.521974ec.kamezawa.hiroyu@jp.fujitsu.com>
+References: <47D9114F.6020301@openvz.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
+Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1757611AbYCMXru@vger.kernel.org>
-In-Reply-To: <20080311192117.f7e23636.kamezawa.hiroyu@jp.fujitsu.com>
-Sender: linux-kernel-owner@vger.kernel.org
-To: KAMEZAWA Hiroyuki <kamezawa.hiroyu@jp.fujitsu.com>
-Cc: Andrew Morton <akpm@linux-foundation.org>, Balbir Singh <balbir@linux.vnet.ibm.com>, Pavel Emelianov <xemul@openvz.org>, Paul Menage <menage@google.com>, LKML <linux-kernel@vger.kernel.org>, linux-mm@kvack.org, Linux Containers <containers@lists.osdl.org>
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <47D9114F.6020301-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-KAMEZAWA Hiroyuki wrote:
-> On Tue, 11 Mar 2008 19:08:39 +0900
-> Li Zefan <lizf@cn.fujitsu.com> wrote:
-> 
->> This function can be used to assign the value of a resource counter member.
->>
-> Why don't you make this function to do the same work as res_counter_write() ?
-> 
+On Thu, 13 Mar 2008 14:34:39 +0300
+Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org> wrote:
 
-You mean to deal with write strategy? We don't need that complexity. If it does
-the same work as res_counter_write(), it's just a redundant function. ;)
+> Hi, guys.
+> 
+> This is the final set I'm going to send to Andrew. It has a new
+> feature - fail counter reset - and splitted, so I send it for a
+> final review (maybe some Acked-by-s ;) ) before sending to Andrew.
+> 
+> Signed-off-by: Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 
-But I forgot to take res_counter->lock ...
+I like this new interface. thank you.
 
-> Thanks,
-> -Kame
-> 
-> 
->> Signed-off-by: Li Zefan <lizf@cn.fujitsu.com>
->> ---
->>  include/linux/res_counter.h |    9 ++++++---
->>  kernel/res_counter.c        |    9 +++++++++
->>  2 files changed, 15 insertions(+), 3 deletions(-)
->>
->> diff --git a/include/linux/res_counter.h b/include/linux/res_counter.h
->> index 8cb1ecd..8c23f7f 100644
->> --- a/include/linux/res_counter.h
->> +++ b/include/linux/res_counter.h
->> @@ -41,9 +41,10 @@ struct res_counter {
->>  
->>  /**
->>   * Helpers to interact with userspace
->> - * res_counter_read_u64() - returns the value of the specified member.
->> - * res_counter_read/_write - put/get the specified fields from the
->> - * res_counter struct to/from the user
->> + * res_counter_read_64/_write_u64 - returns/assigns the value of the
->> + *	specified member
->> + * res_counter_read/_write - puts/gets the specified fields from the
->> + *	res_counter struct to/from the user
->>   *
->>   * @counter:     the counter in question
->>   * @member:  the field to work with (see RES_xxx below)
->> @@ -53,6 +54,8 @@ struct res_counter {
->>   */
->>  
->>  u64 res_counter_read_u64(struct res_counter *counter, int member);
->> +void res_counter_write_u64(struct res_counter *counter, int member,
->> +			   unsigned long long val);
->>  
->>  ssize_t res_counter_read(struct res_counter *counter, int member,
->>  		const char __user *buf, size_t nbytes, loff_t *pos,
->> diff --git a/kernel/res_counter.c b/kernel/res_counter.c
->> index 791ff2b..a16b727 100644
->> --- a/kernel/res_counter.c
->> +++ b/kernel/res_counter.c
->> @@ -97,6 +97,15 @@ u64 res_counter_read_u64(struct res_counter *counter, int member)
->>  	return *res_counter_member(counter, member);
->>  }
->>  
->> +void res_counter_write_u64(struct res_counter *counter, int member,
->> +			   unsigned long long val)
->> +{
->> +	unsigned long long *tmp;
->> +
->> +	tmp = res_counter_member(counter, member);
->> +	*tmp = val;
->> +}
->> +
->>  ssize_t res_counter_write(struct res_counter *counter, int member,
->>  		const char __user *userbuf, size_t nbytes, loff_t *pos,
->>  		int (*write_strategy)(char *st_buf, unsigned long long *val))
->> -- 
->> 1.5.4.rc3
->>
->> --
->> To unsubscribe, send a message with 'unsubscribe linux-mm' in
->> the body to majordomo@kvack.org.  For more info on Linux MM,
->> see: http://www.linux-mm.org/ .
->> Don't email: <a href=mailto:"dont@kvack.org"> email@kvack.org </a>
->>
-> 
-> 
-> 
+Acked-by: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
