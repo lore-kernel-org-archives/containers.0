@@ -1,13 +1,15 @@
-From: Benjamin Thery <benjamin.thery-6ktuUTfB/bM@public.gmane.org>
-Subject: Re: nets: status of sysfs with netns
-Date: Fri, 14 Mar 2008 16:54:07 +0100
-Message-ID: <47DA9F9F.5060502@bull.net>
-References: <47DA9BEA.9070907@bull.net> <47DA9D71.2010707@openvz.org>
+From: Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+Subject: Re: [RFC][PATCH 0/4] Object creation with a specified id
+Date: Fri, 14 Mar 2008 18:56:49 +0300
+Message-ID: <47DAA041.9090009@openvz.org>
+References: <20080310135054.312992000@bull.net>
+	<47D9B5B7.6060803@cs.columbia.edu> <47DA195B.8070704@bull.net>
+	<47DA9EB5.8040704@cs.columbia.edu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <47DA9D71.2010707-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+In-Reply-To: <47DA9EB5.8040704-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -17,54 +19,44 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
-Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Pavel Emelyanov wrote:
-> Benjamin Thery wrote:
->> Eric, Pavel,
->>
->> I haven't followed everything about the sysfs/netns issue recently and I 
->> think I have missed some of its recent developments in the past weeks. 
->> So I'm wondering what is the current status? Is anyone still working on it?
+Oren Laadan wrote:
 > 
-> I'm thinking on it, but have no graceful solution :( Sysfs is a big...
-> no - HUUUUUUUUUUGE problem.
+> Nadia Derbey wrote:
+>> Oren Laadan wrote:
+>>>
+>>> Nadia.Derbey-6ktuUTfB/bM@public.gmane.org wrote:
+>>>
+>>>> A couple of weeks ago, a discussion has started after Pierre's 
+>>>> proposal for
+>>>> a new syscall to change an ipc id (see thread
+>>>> http://lkml.org/lkml/2008/1/29/209).
+>>>>
+>>>>
+>>>> Oren's suggestion was to force an object's id during its creation, 
+>>>> rather
+>>>> than 1. create it, 2. change its id.
+>>>>
+>>>> So here is an implementation of what Oren has suggested.
+>>>>
+>>>> 2 new files are defined under /proc/self:
+>>>>   . next_ipcid --> next id to use for ipc object creation
+>>>>   . next_pids --> next upid nr(s) to use for next task to be forked
+>>>>                   (see patch #2 for more details).
+>>>
+>>> Generally looks good. One meta-comment, though:
+>>>
+>>> I wonder why you use separate files for separate resources, 
+>> That would be needed in a situation wheere we don't care about next, 
+>> say, ipc id to be created but we need a predefined pid. But I must admit 
+>> I don't see any pratical application to it.
+> 
+> exactly; why set the next-ipc value so far in advance ?  I think it's
+> better (and less confusing) if we require that setting the next-id value
+> be done right before the respective syscall.
 
-Agreed.
-
->> As several netns patches for IPv4 and IPv6 have already been merged in 
->> net-2.6.26, it would be great to have the sysfs part also to help people 
->> who want test netns.
->> Right now, it is a pain to boot and test a system with CONFIG_SYSFS=n.
->>
->> (I know the problem is not trivial and won't be easy to solve. I just 
->> want to be sure it is not forgotten)
-> 
-> It is (unfortunately) not.
-> 
->> Pavel, I've heard you sent (or have) a patch that prevents sysfs access 
->> from a "child" netns. A patch that can be a good workaround until we 
->> have the full thing ready. I can't find it in mailing lists archives, 
->> can you give some hints about where to find it? :)
-> 
-> Hm. I haven't had plans to do such things actually.
-
-Oh, that explains why I didn't find it :)
-I must have misunderstood what I heard...
-
-> 
->> Thanks a lot.
->>
->> Benjamin
->>
-> 
-> 
-> 
-
-
--- 
-B e n j a m i n   T h e r y  - BULL/DT/Open Software R&D
-
-    http://www.bull.com
+And race with some other syscall caller? This will only work if the next-ipc-id
+and the next-pid are on a task_struct. Are they (at least supposed to be such)?
