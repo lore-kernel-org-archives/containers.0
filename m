@@ -1,78 +1,129 @@
-From: Baguio Vacation Apartments <baguiovacationapartments.pma-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: Welcome to Baguio Vacation Apartments!
-Date: Sat, 15 Mar 2008 06:27:32 +0800
-Message-ID: <1719078975.20050864564568__21887.4510647312$1205533859$gmane$org@abv.bg>
-Reply-To: Baguio Vacation Apartments <baguiovacationapartments.pma-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+From: Casey Schaufler <casey@schaufler-ca.com>
+Subject: Re: [PATCH] cgroups: implement device whitelist lsm (v3)
+Date: Fri, 14 Mar 2008 15:44:26 -0700 (PDT)
+Message-ID: <176755.88432.qm@web36612.mail.mud.yahoo.com>
+References: <1205516516.22912.92.camel@moss-spartans.epoch.ncsc.mil>
+Reply-To: casey@schaufler-ca.com
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary="===============5239723131808624299=="
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org
+Content-Type: text/plain; charset=US-ASCII
+Content-Transfer-Encoding: 7BIT
+Return-path: <linux-security-module-owner@vger.kernel.org>
+In-Reply-To: <1205516516.22912.92.camel@moss-spartans.epoch.ncsc.mil>
+Sender: linux-security-module-owner@vger.kernel.org
+To: Stephen Smalley <sds@epoch.ncsc.mil>, "Serge E. Hallyn" <serue@us.ibm.com>
+Cc: James Morris <jmorris@namei.org>, lkml <linux-kernel@vger.kernel.org>, linux-security-module@vger.kernel.org, Linux Containers <containers@lists.osdl.org>, Casey Schaufler <casey@schaufler-ca.com>, Greg KH <greg@kroah.com>, Pavel Emelianov <xemul@openvz.org>
 List-Id: containers.vger.kernel.org
 
---===============5239723131808624299==
-Content-Transfer-Encoding: quoted-printable
-X-MIME-Autoconverted: from 8bit to quoted-printable by smtp1.linux-foundation.org id m2EMT79A026193
+
+--- Stephen Smalley <sds@epoch.ncsc.mil> wrote:
+
+> 
+> ... 
+> > I completely disagree.   We have two separate frameworks in the kernel,
+> > one to enforce generic additional security stuff, and one to track
+> > tasks.  When I need a feature which tracks tasks to do some security
+> > tasks, it seems obvious that I would use both, just like to enforce a
+> > certain type of MAC I end up using both netfilter and LSM through
+> > selinux.
+> 
+> Depends on whether you think LSM hooks are like netfilter hooks (i.e.
+> fine for each module to just implement a few here and there, then
+> combine resulting modules), or whether they are about implementing
+> complete security models (ala SELinux or Smack).  As they currently
+> exist, they aren't very well suited to the former - they impose a cost
+> on all hooked operations in order to hook any at all, as has been a
+> concern for your device controller.
+
+I don't intend that Smack be thought of as a complete security model.
+Smack implements Mandatory Access Control, but leaves the privilege
+mechanism (root and/or capabilities) to the whims of others. Similarly
+Smack does not do DAC (unlike SELinux with MCS) although "owned rules"
+has been proposed as an additional feature. I certainly wouldn't
+want every new facility that comes in to require multiple versions
+that depend on the other LSMs involved. It's true that today's LSM is
+optimized for the only LSM that existed a year ago, and that was a
+monolythic security model.
+
+> > > > The fact that all existing LSMs need to invoke exactly the same code is
+> an 
+> > > > indicator that it doesn't belong in LSM.
+> > 
+> > No, that's like saying capabilities don't belong in LSM because all LSMS
+> > need to invoke it the same way.  What it is an indicator of is that
+> > there are (not-quite-)orthogonal pieces of security which users might
+> > want to use together.
+> 
+> Likely not a popular view, but capabilities don't belong in LSM.
+
+I share this view, which add credibility to the claim that it's
+not popular. (smiley)
+
+> Look
+> at them:  the capability state is still directly embedded in the
+> relevant kernel data structures, various bits of capability specific
+> logic and interfaces remain in the core kernel,
+
+It does seem as if a separate Linux Privilege Module framework
+might be a better scheme. It would be very easy to pull out, and
+simple to create the obvious LPMs:
+
+- Traditional root
+  hooks look like "return (euid == 0) ? 0 : -EACCES;"
+- No access check at all
+  hooks look like "return 0;"
+- Root or capabilities
+  hooks look like "return (euid == 0 || capable(xxx)) ? 0 : -EACCES;"
+- Pure capabilities
+  hooks look like "return capable(xxx) ? 0 : -EACCES;"
+
+> they don't present a
+> complete security model (just an auxiliary to some other model like DAC
+> or Smack for privilege purposes), they use only a small subset of the
+> hooks, they force LSM to violate its usual restrictive-only paradigm to
+> support capable(), CONFIG_SECURITY=n still has to invoke the capability
+> functions, and all of the other LSMs do need to call it the same way to
+> keep Linux working as expected for applications and users.
+
+Plus, if SELinux wants to abandon capabilities they can add thier own
+scheme or insist the user use the noop LPM and do whatever they like
+in the LSM. Smack has no intention of mucking with the privilege
+mechanism, and will happily go along with whatever the rest of the
+system wants to use, although the noop LSM seems a bit pointless in
+that case.
+
+> The original promise was that LSM would allow kernels to be built that
+> shed capabilities altogether,
+
+I don't remember that, but it's been a long time so it could be true.
+
+> but in practice no one seems to do that as
+> both users and applications expect them to exist in Linux.  In fact, the
+> possibility of not having capabilities present has caused problems that
+> have led to the dummy module being turned more and more into a clone of
+> the capabilities module (actually managing and testing the capability
+> bits rather than just uid == 0 as originally).
+
+This is why Smack is sticking to MAC rather than trying to be a
+wholistic security policy mechanism. To quote the prophet, "God
+created the world in 7 days, but then, He didn't have an install
+base".
+
+> So I wouldn't point to capabilities as a counter example to James' point
+> - they are actually a supporting example.
+
+In particular, capabilities are not an access control mechanism,
+they are a privilege mechanism. A lot of discussion about LSM has
+centered around the appropriate charactoristics of an LSM, and
+these discussions always assume that the LSM in question is
+exactly an access control mechanism. If we split the LSM into
+a LACM for access control and an LPM for privilege management
+maybe we can eliminate the most contentious issues.
+ 
+Does anyone know why that would be stoopid before I whack out
+patches?
+
+Thank you.
 
 
-Good Location    Good View=20
-
-BAGUIO VACATION APARTMENTS
-
-Ideal for
-
- . Family Reunions . Vacations .
-. Meetings and Conferences .
-. Weddings and Receptions .
-
-APARTMENT TYPE	BEDS	RATES=09
-Two-Bedroom	5 beds	P2,500/day=09
-Three-Bedroom	10 beds	P4,000/day=09
-
-. fully furnished . extra beds .
-. cooking allowed . spacious garden for jogging / biking .
-. foggy . beautiful sunset view .
-. CLUBHOUSE=20
-with meeting rooms=85
-. ideal for family / social /  vacation / gatherings /=20
-seminars / conferences
-
-BAGUIO VACATION APARTMENTS
-Pines Garden Villas Subdivision
- 28 Munoz Drive, Km. 4
-Upper Purok 7, Bgy. Asin, Circumferential Road
-Baguio City, Philippines=20
-Mobile Numbers: 0918.939.5629  0917.519.0713
-Baguio Telefax: 074.445.5546
-Email:  baguiovacation-IjrZGBnH3lHR7s880joybQ@public.gmane.org <mailto:baguiovacation-IjrZGBnH3lHR7s880joybQ@public.gmane.org>
-baguiovacation-ZJ1lI1tsz2jR7s880joybQ@public.gmane.org <mailto:baguiovacation-ZJ1lI1tsz2jR7s880joybQ@public.gmane.org>
-baguiovacationapartments.pma-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org <mailto:baguiovacationapartments.p=
-ma-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Contact:  Engr. Ed Cepe
-
-For more information, please visit our website:
-<http://www.baguiovacationapartment.com/>
-
-Or click link=85
-<http://ph.88db.com/ph/Services/Post_Detail.page/travel_and_leisure/Hotel=
-s_Accommodation/?PostID=3D152533>
-
---===============5239723131808624299==
-Content-Type: text/plain; charset="us-ascii"
-MIME-Version: 1.0
-Content-Disposition: inline
-Content-Transfer-Encoding: 7bit
-
-_______________________________________________
-Containers mailing list
-Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-https://lists.linux-foundation.org/mailman/listinfo/containers
---===============5239723131808624299==--
+Casey Schaufler
+casey@schaufler-ca.com
