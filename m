@@ -1,15 +1,15 @@
-From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: Containers don't handle keys, but should they?
-Date: Fri, 14 Mar 2008 11:17:11 -0500
-Message-ID: <20080314161711.GA7166@sergelap.austin.ibm.com>
-References: <20080314145447.GG9741@sergelap.austin.ibm.com>
-	<7519.1205494679@redhat.com> <8853.1205509760@redhat.com>
+From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Subject: Re: [RFC][PATCH 0/4] Object creation with a specified id
+Date: Fri, 14 Mar 2008 12:45:31 -0400
+Message-ID: <47DAABAB.7000706@cs.columbia.edu>
+References: <20080310135054.312992000@bull.net>
+	<47D9B5B7.6060803@cs.columbia.edu> <47DA195B.8070704@bull.net>
+	<47DA9EB5.8040704@cs.columbia.edu> <47DAA3AA.4050906@bull.net>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <8853.1205509760-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <47DAA3AA.4050906-6ktuUTfB/bM@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,37 +19,193 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: David Howells <dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org
+To: Nadia Derbey <Nadia.Derbey-6ktuUTfB/bM@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Quoting David Howells (dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org):
-> Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org> wrote:
-> 
-> > It looks like maybe just adding a struct user_namespace * to a struct key
-> > should suffice.
-> 
-> That's not quite sufficient.  The per-UID key_user structs also need to be
-> differentiated.  Unfortunately, I can't just merge it into user_struct as I
-> then end up with a reference loop user_struct -> uid_keyring -> user_struct.
-> 
-> Rooting the key_user trees in user_namespace will probably do the trick.
-> 
-> A couple of questions:
-> 
->  (1) A process may inherit a session keyring over clone().  Should this be
->      discarded if CLONE_NEWUSER is set?  Or would I need to copy it?
 
-Someone else may have stronger feelings about this.  Personally so long
-as a container setup program has a way of discarding the keyring
-manually I think that's fine.
 
->  (2) In a recent patch, I've given the root user its own quota limits.  Is UID
->      0 always the root user in any container?  Or would it make more sense
->      just to scrap the per-root quota limits?
+Nadia Derbey wrote:
+> Oren Laadan wrote:
+>>
+>>
+>> Nadia Derbey wrote:
+>>
+>>> Oren Laadan wrote:
+>>>
+>>>>
+>>>>
+>>>> Nadia.Derbey-6ktuUTfB/bM@public.gmane.org wrote:
+>>>>
+>>>>> A couple of weeks ago, a discussion has started after Pierre's 
+>>>>> proposal for
+>>>>> a new syscall to change an ipc id (see thread
+>>>>> http://lkml.org/lkml/2008/1/29/209).
+>>>>>
+>>>>>
+>>>>> Oren's suggestion was to force an object's id during its creation, 
+>>>>> rather
+>>>>> than 1. create it, 2. change its id.
+>>>>>
+>>>>> So here is an implementation of what Oren has suggested.
+>>>>>
+>>>>> 2 new files are defined under /proc/self:
+>>>>>   . next_ipcid --> next id to use for ipc object creation
+>>>>>   . next_pids --> next upid nr(s) to use for next task to be forked
+>>>>>                   (see patch #2 for more details).
+>>>>
+>>>>
+>>>>
+>>>> Generally looks good. One meta-comment, though:
+>>>>
+>>>> I wonder why you use separate files for separate resources, 
+>>>
+>>>
+>>> That would be needed in a situation wheere we don't care about next, 
+>>> say, ipc id to be created but we need a predefined pid. But I must 
+>>> admit I don't see any pratical application to it.
+>>
+>>
+>> exactly; why set the next-ipc value so far in advance ?  I think it's
+>> better (and less confusing) if we require that setting the next-id value
+>> be done right before the respective syscall.
+> 
+> Ok, but this "requirement" should be widely agreed upon ;-)
 
-Yeah uid 0 may not have a bunch of privileges, but it is still the root
-user.
+A discussion on the overall checkpoint/restart policy is certainly due
+(and increasingly noted recently).
 
-thanks,
--serge
+> What I mean here is that the solution with 1 file per "object type" can 
+> easily be extended imho:
+
+I'm aiming at simplicity and minimal (but not restrictive) API for user
+space. I argue that we never really need more than one predetermined value
+at a time (eg see below), and the cost of setting such value is so small
+that there is no real benefit in setting more than one at a time (either
+via multiple files or via an array of values). If in fact you wanted more
+than one type at a time, you could still make it happen with a single
+file without adding many user-visible files in /proc/<pid>.
+
+So far, I can't think of any such identifier that we'd like to pre-set
+that does not fit into a "long" type; simply because the kernel does not
+use such identifiers in the first place (pid, ipc, pty#, vc# .. etc). To
+be on the safe side, we can require that the format be "long VAL", just
+in case (and later you could have other formats).
+
+The only exception, perhaps, is if a TCP connection is rebuilt with a,
+say, connect() syscall, and some information needs to be "predetermined"
+so we'll need to extend the format. That can be done with another type
+eg. "tcp ....." or a separate file (per your view), _then_, not now.
+(As a side note, I don't suggest that this is how TCP will be restored).
+
+In any event, the bottom line is that a single file, with a single
+value at a time (possibly annotated with a type), is the simplest, and
+isn't restrictive, for our purposes. Looking one step ahead, simplicity
+and minimal commitment to user space is important in trying to push this
+to the mainline kernel...
+
+> I don't know how the restart is supposed to work, but we can imagine 
+> feeding all these files with all the object ids just before restart and 
+
+Building on my own experience with zap I envision the restart operation
+of a given task occurring in the context of that task. (I assume this is
+how restart will work). Therefore, it makes much sense that before every
+syscall that requires a pre-determined resource identifier (eg. clone,
+ipc, pty allocation), the task will place the desired value in "next_id"
+(and that will only be meaningful during restart) and invoke the said
+syscall. Voila.
+
+Note that the restart will "rebuild" the container's state (and the task
+state) as it reads in the data from some source. It is likely that not
+all data will be available when the first said syscall is about to be
+invoked, so you may not be able to feed everything ahead of time.
+
+
+> let the process pick up the objects ids as it needs them.
+> Of course, this would require to enhance the files formats, as well as 
+> the way things are stored in the task_struct.
+> 
+> Hope what I'm saying is not too stupid ;-) ?
+> 
+> Regards,
+> Nadia
+> 
+>>
+>>>
+>>>> and why you'd
+>>>> want to write multiple identifiers in one go;
+>>>
+>>>
+>>> I used multiple identifiers only for the pid values: this is because 
+>>> when a new pid value is allocated for a process that belongs to 
+>>> nested namespaces, the lower level upid nr values are allocated in a 
+>>> single shot. (see alloc_pid()).
+>>>
+>>>> it seems to complicate the
+>>>> code and interface with minimal gain.
+>>>> In practice, a process will only do either one or the other, so a 
+>>>> single
+>>>> file is enough (e.g. "next_id").
+>>>> Also, writing a single value at a time followed by the syscall is 
+>>>> enough;
+>>>> it's definitely not a performance issue to have multiple calls.
+>>>> We assume the user/caller knows what she's doing, so no need to 
+>>>> classify
+>>>> the identifier (that is, tell the kernel it's a pid, or an ipc id) 
+>>>> ahead
+>>>> of time. The caller simply writes a value and then calls the relevant
+>>>> syscall, or otherwise the results may not be what she expected...
+>>>> If such context is expected to be required (although I don't see any at
+>>>> the moment),  we can require that the user write "TYPE VALUE" pair to
+>>>> the "next_id" file.
+>>>
+>>>
+>>> That's exactly what I wanted to avoid by creating 1 file per object.
+>>> Now, it's true that in a restart context where I guess that things 
+>>> will be done synchronously, we could have a single next_id file.
+>>>
+>>>>
+>>>>>
+>>>>> When one of these files (or both of them) is filled, a structure 
+>>>>> pointed to
+>>>>> by the calling task struct is filled with these ids.
+>>>>>
+>>>>> Then, when the object is created, the id(s) present in that 
+>>>>> structure are
+>>>>> used, instead of the default ones.
+>>>>>
+>>>>> The patches are against 2.6.25-rc3-mm1, in the following order:
+>>>>>
+>>>>> [PATCH 1/4] adds the procfs facility for next ipc to be created.
+>>>>> [PATCH 2/4] adds the procfs facility for next task to be forked.
+>>>>> [PATCH 3/4] makes use of the specified id (if any) to allocate the 
+>>>>> new IPC
+>>>>>             object (changes the ipc_addid() path).
+>>>>> [PATCH 4/4] uses the specified id(s) (if any) to set the upid nr(s) 
+>>>>> for a newly
+>>>>>             allocated process (changes the 
+>>>>> alloc_pid()/alloc_pidmap() paths).
+>>>>>
+>>>>> Any comment and/or suggestions are welcome.
+>>>>>
+>>>>> Cc-ing Pavel and Sukadev, since they are the pid namespace authors.
+>>>>>
+>>>>> Regards,
+>>>>> Nadia
+>>>>>
+>>>>> -- 
+>>>>>
+>>>>> -- 
+>>>>
+>>>>
+>>>>
+>>>>
+>>>
+>>>
+>>> Regards,
+>>> Nadia
+>>
+>>
+>>
+> 
+> 
