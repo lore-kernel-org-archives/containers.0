@@ -1,15 +1,15 @@
-From: Nadia Derbey <Nadia.Derbey-6ktuUTfB/bM@public.gmane.org>
-Subject: Re: [RFC][PATCH 0/4] Object creation with a specified id
-Date: Fri, 14 Mar 2008 17:11:34 +0100
-Message-ID: <47DAA3B6.5080908@bull.net>
-References: <20080310135054.312992000@bull.net>
-	<47D9B5B7.6060803@cs.columbia.edu> <47DA195B.8070704@bull.net>
-	<47DA9EB5.8040704@cs.columbia.edu> <47DAA041.9090009@openvz.org>
+From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: Re: Containers don't handle keys, but should they?
+Date: Fri, 14 Mar 2008 11:17:11 -0500
+Message-ID: <20080314161711.GA7166@sergelap.austin.ibm.com>
+References: <20080314145447.GG9741@sergelap.austin.ibm.com>
+	<7519.1205494679@redhat.com> <8853.1205509760@redhat.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <47DAA041.9090009-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <8853.1205509760-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,56 +19,37 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: David Howells <dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Pavel Emelyanov wrote:
-> Oren Laadan wrote:
+Quoting David Howells (dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org):
+> Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org> wrote:
 > 
->>Nadia Derbey wrote:
->>
->>>Oren Laadan wrote:
->>>
->>>>Nadia.Derbey-6ktuUTfB/bM@public.gmane.org wrote:
->>>>
->>>>
->>>>>A couple of weeks ago, a discussion has started after Pierre's 
->>>>>proposal for
->>>>>a new syscall to change an ipc id (see thread
->>>>>http://lkml.org/lkml/2008/1/29/209).
->>>>>
->>>>>
->>>>>Oren's suggestion was to force an object's id during its creation, 
->>>>>rather
->>>>>than 1. create it, 2. change its id.
->>>>>
->>>>>So here is an implementation of what Oren has suggested.
->>>>>
->>>>>2 new files are defined under /proc/self:
->>>>>  . next_ipcid --> next id to use for ipc object creation
->>>>>  . next_pids --> next upid nr(s) to use for next task to be forked
->>>>>                  (see patch #2 for more details).
->>>>
->>>>Generally looks good. One meta-comment, though:
->>>>
->>>>I wonder why you use separate files for separate resources, 
->>>
->>>That would be needed in a situation wheere we don't care about next, 
->>>say, ipc id to be created but we need a predefined pid. But I must admit 
->>>I don't see any pratical application to it.
->>
->>exactly; why set the next-ipc value so far in advance ?  I think it's
->>better (and less confusing) if we require that setting the next-id value
->>be done right before the respective syscall.
+> > It looks like maybe just adding a struct user_namespace * to a struct key
+> > should suffice.
 > 
+> That's not quite sufficient.  The per-UID key_user structs also need to be
+> differentiated.  Unfortunately, I can't just merge it into user_struct as I
+> then end up with a reference loop user_struct -> uid_keyring -> user_struct.
 > 
-> And race with some other syscall caller? This will only work if the next-ipc-id
-> and the next-pid are on a task_struct. Are they (at least supposed to be such)?
+> Rooting the key_user trees in user_namespace will probably do the trick.
 > 
+> A couple of questions:
 > 
+>  (1) A process may inherit a session keyring over clone().  Should this be
+>      discarded if CLONE_NEWUSER is set?  Or would I need to copy it?
 
-Yes they are.
+Someone else may have stronger feelings about this.  Personally so long
+as a container setup program has a way of discarding the keyring
+manually I think that's fine.
 
-Regards,
-Nadia
+>  (2) In a recent patch, I've given the root user its own quota limits.  Is UID
+>      0 always the root user in any container?  Or would it make more sense
+>      just to scrap the per-root quota limits?
+
+Yeah uid 0 may not have a bunch of privileges, but it is still the root
+user.
+
+thanks,
+-serge
