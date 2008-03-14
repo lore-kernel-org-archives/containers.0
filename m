@@ -1,15 +1,16 @@
-From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: Re: [RFC][PATCH 0/4] Object creation with a specified id
-Date: Fri, 14 Mar 2008 12:45:31 -0400
-Message-ID: <47DAABAB.7000706@cs.columbia.edu>
-References: <20080310135054.312992000@bull.net>
-	<47D9B5B7.6060803@cs.columbia.edu> <47DA195B.8070704@bull.net>
-	<47DA9EB5.8040704@cs.columbia.edu> <47DAA3AA.4050906@bull.net>
+From: Stephen Smalley <sds-FVV4AS6k8l2W8mdqIt43Ew@public.gmane.org>
+Subject: Re: [PATCH] cgroups: implement device whitelist lsm (v3)
+Date: Fri, 14 Mar 2008 13:41:56 -0400
+Message-ID: <1205516516.22912.92.camel@moss-spartans.epoch.ncsc.mil>
+References: <20080313144142.GB11265@sergelap.austin.ibm.com>
+	<Xine.LNX.4.64.0803142039460.32184@us.intercode.com.au>
+	<1205501248.22912.35.camel@moss-spartans.epoch.ncsc.mil>
+	<20080314143216.GC9741@sergelap.austin.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <47DAA3AA.4050906-6ktuUTfB/bM@public.gmane.org>
+In-Reply-To: <20080314143216.GC9741-6s5zFf/epYLPQpwDFJZrxKsjOiXwFzmk@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,193 +20,106 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Nadia Derbey <Nadia.Derbey-6ktuUTfB/bM@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org
+To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Cc: Greg KH <greg-U8xfFu+wG4EAvxtiuMwx3w@public.gmane.org>, lkml <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Casey Schaufler <casey-iSGtlc1asvQWG2LlvL+J4A@public.gmane.org>, linux-security-module-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Pavel Emelianov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
 
-
-Nadia Derbey wrote:
-> Oren Laadan wrote:
->>
->>
->> Nadia Derbey wrote:
->>
->>> Oren Laadan wrote:
->>>
->>>>
->>>>
->>>> Nadia.Derbey-6ktuUTfB/bM@public.gmane.org wrote:
->>>>
->>>>> A couple of weeks ago, a discussion has started after Pierre's 
->>>>> proposal for
->>>>> a new syscall to change an ipc id (see thread
->>>>> http://lkml.org/lkml/2008/1/29/209).
->>>>>
->>>>>
->>>>> Oren's suggestion was to force an object's id during its creation, 
->>>>> rather
->>>>> than 1. create it, 2. change its id.
->>>>>
->>>>> So here is an implementation of what Oren has suggested.
->>>>>
->>>>> 2 new files are defined under /proc/self:
->>>>>   . next_ipcid --> next id to use for ipc object creation
->>>>>   . next_pids --> next upid nr(s) to use for next task to be forked
->>>>>                   (see patch #2 for more details).
->>>>
->>>>
->>>>
->>>> Generally looks good. One meta-comment, though:
->>>>
->>>> I wonder why you use separate files for separate resources, 
->>>
->>>
->>> That would be needed in a situation wheere we don't care about next, 
->>> say, ipc id to be created but we need a predefined pid. But I must 
->>> admit I don't see any pratical application to it.
->>
->>
->> exactly; why set the next-ipc value so far in advance ?  I think it's
->> better (and less confusing) if we require that setting the next-id value
->> be done right before the respective syscall.
+On Fri, 2008-03-14 at 09:32 -0500, Serge E. Hallyn wrote:
+> Quoting Stephen Smalley (sds-FVV4AS6k8l2W8mdqIt43Ew@public.gmane.org):
+> > 
+> > On Fri, 2008-03-14 at 21:17 +1100, James Morris wrote:
+> > > On Thu, 13 Mar 2008, Serge E. Hallyn wrote:
+> > > 
+> > > > Implement a cgroup using the LSM interface to enforce open and mknod
+> > > > on device files.
+> > > 
+> > > Actually, I'm not sure that the LSM approach in general is best here.
+> > > 
+> > > The LSM model is that standard DAC logic lives in the core kernel, and 
+> > > that extended security logic (e.g. MAC) is called after DAC via hooks.  
+> > > cgroups has introduced new security logic of its own, which is arguably 
+> > > "standard DAC" when cgroups is enabled.
+> > > 
+> > > I can understand Greg not wanting this security logic in the core kernel, 
+> > > but it is specific to cgroups (which itself is security model agnostic) 
+> > > and does not stand alone as a distinct security framework.
 > 
-> Ok, but this "requirement" should be widely agreed upon ;-)
+> I completely disagree.   We have two separate frameworks in the kernel,
+> one to enforce generic additional security stuff, and one to track
+> tasks.  When I need a feature which tracks tasks to do some security
+> tasks, it seems obvious that I would use both, just like to enforce a
+> certain type of MAC I end up using both netfilter and LSM through
+> selinux.
 
-A discussion on the overall checkpoint/restart policy is certainly due
-(and increasingly noted recently).
+Depends on whether you think LSM hooks are like netfilter hooks (i.e.
+fine for each module to just implement a few here and there, then
+combine resulting modules), or whether they are about implementing
+complete security models (ala SELinux or Smack).  As they currently
+exist, they aren't very well suited to the former - they impose a cost
+on all hooked operations in order to hook any at all, as has been a
+concern for your device controller.
 
-> What I mean here is that the solution with 1 file per "object type" can 
-> easily be extended imho:
-
-I'm aiming at simplicity and minimal (but not restrictive) API for user
-space. I argue that we never really need more than one predetermined value
-at a time (eg see below), and the cost of setting such value is so small
-that there is no real benefit in setting more than one at a time (either
-via multiple files or via an array of values). If in fact you wanted more
-than one type at a time, you could still make it happen with a single
-file without adding many user-visible files in /proc/<pid>.
-
-So far, I can't think of any such identifier that we'd like to pre-set
-that does not fit into a "long" type; simply because the kernel does not
-use such identifiers in the first place (pid, ipc, pty#, vc# .. etc). To
-be on the safe side, we can require that the format be "long VAL", just
-in case (and later you could have other formats).
-
-The only exception, perhaps, is if a TCP connection is rebuilt with a,
-say, connect() syscall, and some information needs to be "predetermined"
-so we'll need to extend the format. That can be done with another type
-eg. "tcp ....." or a separate file (per your view), _then_, not now.
-(As a side note, I don't suggest that this is how TCP will be restored).
-
-In any event, the bottom line is that a single file, with a single
-value at a time (possibly annotated with a type), is the simplest, and
-isn't restrictive, for our purposes. Looking one step ahead, simplicity
-and minimal commitment to user space is important in trying to push this
-to the mainline kernel...
-
-> I don't know how the restart is supposed to work, but we can imagine 
-> feeding all these files with all the object ids just before restart and 
-
-Building on my own experience with zap I envision the restart operation
-of a given task occurring in the context of that task. (I assume this is
-how restart will work). Therefore, it makes much sense that before every
-syscall that requires a pre-determined resource identifier (eg. clone,
-ipc, pty allocation), the task will place the desired value in "next_id"
-(and that will only be meaningful during restart) and invoke the said
-syscall. Voila.
-
-Note that the restart will "rebuild" the container's state (and the task
-state) as it reads in the data from some source. It is likely that not
-all data will be available when the first said syscall is about to be
-invoked, so you may not be able to feed everything ahead of time.
-
-
-> let the process pick up the objects ids as it needs them.
-> Of course, this would require to enhance the files formats, as well as 
-> the way things are stored in the task_struct.
+> > > The fact that all existing LSMs need to invoke exactly the same code is an 
+> > > indicator that it doesn't belong in LSM.
 > 
-> Hope what I'm saying is not too stupid ;-) ?
+> No, that's like saying capabilities don't belong in LSM because all LSMS
+> need to invoke it the same way.  What it is an indicator of is that
+> there are (not-quite-)orthogonal pieces of security which users might
+> want to use together.
+
+Likely not a popular view, but capabilities don't belong in LSM.  Look
+at them:  the capability state is still directly embedded in the
+relevant kernel data structures, various bits of capability specific
+logic and interfaces remain in the core kernel, they don't present a
+complete security model (just an auxiliary to some other model like DAC
+or Smack for privilege purposes), they use only a small subset of the
+hooks, they force LSM to violate its usual restrictive-only paradigm to
+support capable(), CONFIG_SECURITY=n still has to invoke the capability
+functions, and all of the other LSMs do need to call it the same way to
+keep Linux working as expected for applications and users.
+
+The original promise was that LSM would allow kernels to be built that
+shed capabilities altogether, but in practice no one seems to do that as
+both users and applications expect them to exist in Linux.  In fact, the
+possibility of not having capabilities present has caused problems that
+have led to the dummy module being turned more and more into a clone of
+the capabilities module (actually managing and testing the capability
+bits rather than just uid == 0 as originally).
+
+So I wouldn't point to capabilities as a counter example to James' point
+- they are actually a supporting example.
+
+> As I told stephen I hope to provide the enhanced selinux support for
+> devices, and at that point perhaps you won't want to support
+> SELINUX+CGROUPS_DEV anymore.
 > 
-> Regards,
-> Nadia
+> Now that's just my opinion and it doesn't count for much.  I'll do
+> whatever everyone can agree on, but will wait for Paul's opinion about
+> adding cgroup hooks next to the two security hooks.
 > 
->>
->>>
->>>> and why you'd
->>>> want to write multiple identifiers in one go;
->>>
->>>
->>> I used multiple identifiers only for the pid values: this is because 
->>> when a new pid value is allocated for a process that belongs to 
->>> nested namespaces, the lower level upid nr values are allocated in a 
->>> single shot. (see alloc_pid()).
->>>
->>>> it seems to complicate the
->>>> code and interface with minimal gain.
->>>> In practice, a process will only do either one or the other, so a 
->>>> single
->>>> file is enough (e.g. "next_id").
->>>> Also, writing a single value at a time followed by the syscall is 
->>>> enough;
->>>> it's definitely not a performance issue to have multiple calls.
->>>> We assume the user/caller knows what she's doing, so no need to 
->>>> classify
->>>> the identifier (that is, tell the kernel it's a pid, or an ipc id) 
->>>> ahead
->>>> of time. The caller simply writes a value and then calls the relevant
->>>> syscall, or otherwise the results may not be what she expected...
->>>> If such context is expected to be required (although I don't see any at
->>>> the moment),  we can require that the user write "TYPE VALUE" pair to
->>>> the "next_id" file.
->>>
->>>
->>> That's exactly what I wanted to avoid by creating 1 file per object.
->>> Now, it's true that in a restart context where I guess that things 
->>> will be done synchronously, we could have a single next_id file.
->>>
->>>>
->>>>>
->>>>> When one of these files (or both of them) is filled, a structure 
->>>>> pointed to
->>>>> by the calling task struct is filled with these ids.
->>>>>
->>>>> Then, when the object is created, the id(s) present in that 
->>>>> structure are
->>>>> used, instead of the default ones.
->>>>>
->>>>> The patches are against 2.6.25-rc3-mm1, in the following order:
->>>>>
->>>>> [PATCH 1/4] adds the procfs facility for next ipc to be created.
->>>>> [PATCH 2/4] adds the procfs facility for next task to be forked.
->>>>> [PATCH 3/4] makes use of the specified id (if any) to allocate the 
->>>>> new IPC
->>>>>             object (changes the ipc_addid() path).
->>>>> [PATCH 4/4] uses the specified id(s) (if any) to set the upid nr(s) 
->>>>> for a newly
->>>>>             allocated process (changes the 
->>>>> alloc_pid()/alloc_pidmap() paths).
->>>>>
->>>>> Any comment and/or suggestions are welcome.
->>>>>
->>>>> Cc-ing Pavel and Sukadev, since they are the pid namespace authors.
->>>>>
->>>>> Regards,
->>>>> Nadia
->>>>>
->>>>> -- 
->>>>>
->>>>> -- 
->>>>
->>>>
->>>>
->>>>
->>>
->>>
->>> Regards,
->>> Nadia
->>
->>
->>
+> > > Moving this logic into LSM means that instead of the cgroups security 
+> > > logic being called from one place in the main kernel (where cgroups 
+> > > lives), it must be called identically from each LSM (none of which are 
+> > > even aware of cgroups), which I think is pretty obviously the wrong 
+> > > solution.
+> > > 
+> > > This is baggage which comes with cgroups -- please don't push it into LSM 
+> > > to try and hide that.
+> > 
+> > I agree with the above, and would further note that I would expect the
+> > SELinux solution to the problem would be done not by stacking with or
+> > calling this device whitelist lsm but instead by introducing the ability
+> > to bind security labels to devices within the kernel (independent of the
+> > particular device node(s) in the filesystem used to access that device)
+> > and applying permission checks on those device labels when processes
+> > attempt to create or access those devices (again independent of the
+> > particular device node used to access them).  That keeps the policy
+> > integrated and analyzable and avoids an external dependency.
 > 
+> Agreed.
 > 
+> -serge
+-- 
+Stephen Smalley
+National Security Agency
