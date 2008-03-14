@@ -1,118 +1,47 @@
-From: Nadia Derbey <Nadia.Derbey-6ktuUTfB/bM@public.gmane.org>
-Subject: Re: [RFC][PATCH 0/4] Object creation with a specified id
-Date: Fri, 14 Mar 2008 07:21:15 +0100
-Message-ID: <47DA195B.8070704@bull.net>
-References: <20080310135054.312992000@bull.net>
-	<47D9B5B7.6060803@cs.columbia.edu>
+From: James Morris <jmorris@namei.org>
+Subject: Re: [PATCH] cgroups: implement device whitelist lsm (v3)
+Date: Fri, 14 Mar 2008 21:17:12 +1100 (EST)
+Message-ID: <Xine.LNX.4.64.0803142039460.32184@us.intercode.com.au>
+References: <20080313144142.GB11265@sergelap.austin.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <47D9B5B7.6060803-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org
+Content-Type: TEXT/PLAIN; charset=US-ASCII
+Return-path: <linux-security-module-owner@vger.kernel.org>
+In-Reply-To: <20080313144142.GB11265@sergelap.austin.ibm.com>
+Sender: linux-security-module-owner@vger.kernel.org
+To: "Serge E. Hallyn" <serue@us.ibm.com>
+Cc: lkml <linux-kernel@vger.kernel.org>, linux-security-module@vger.kernel.org, Linux Containers <containers@lists.osdl.org>, Casey Schaufler <casey@schaufler-ca.com>, Greg KH <greg@kroah.com>, Pavel Emelianov <xemul@openvz.org>, Stephen Smalley <sds@epoch.ncsc.mil>
 List-Id: containers.vger.kernel.org
 
-Oren Laadan wrote:
-> 
-> 
-> Nadia.Derbey-6ktuUTfB/bM@public.gmane.org wrote:
-> 
->> A couple of weeks ago, a discussion has started after Pierre's 
->> proposal for
->> a new syscall to change an ipc id (see thread
->> http://lkml.org/lkml/2008/1/29/209).
->>
->>
->> Oren's suggestion was to force an object's id during its creation, rather
->> than 1. create it, 2. change its id.
->>
->> So here is an implementation of what Oren has suggested.
->>
->> 2 new files are defined under /proc/self:
->>   . next_ipcid --> next id to use for ipc object creation
->>   . next_pids --> next upid nr(s) to use for next task to be forked
->>                   (see patch #2 for more details).
-> 
-> 
-> Generally looks good. One meta-comment, though:
-> 
-> I wonder why you use separate files for separate resources, 
+On Thu, 13 Mar 2008, Serge E. Hallyn wrote:
 
-That would be needed in a situation wheere we don't care about next, 
-say, ipc id to be created but we need a predefined pid. But I must admit 
-I don't see any pratical application to it.
+> Implement a cgroup using the LSM interface to enforce open and mknod
+> on device files.
 
-> and why you'd
-> want to write multiple identifiers in one go;
+Actually, I'm not sure that the LSM approach in general is best here.
 
-I used multiple identifiers only for the pid values: this is because 
-when a new pid value is allocated for a process that belongs to nested 
-namespaces, the lower level upid nr values are allocated in a single 
-shot. (see alloc_pid()).
+The LSM model is that standard DAC logic lives in the core kernel, and 
+that extended security logic (e.g. MAC) is called after DAC via hooks.  
+cgroups has introduced new security logic of its own, which is arguably 
+"standard DAC" when cgroups is enabled.
 
-> it seems to complicate the
-> code and interface with minimal gain.
-> In practice, a process will only do either one or the other, so a single
-> file is enough (e.g. "next_id").
-> Also, writing a single value at a time followed by the syscall is enough;
-> it's definitely not a performance issue to have multiple calls.
-> We assume the user/caller knows what she's doing, so no need to classify
-> the identifier (that is, tell the kernel it's a pid, or an ipc id) ahead
-> of time. The caller simply writes a value and then calls the relevant
-> syscall, or otherwise the results may not be what she expected...
-> If such context is expected to be required (although I don't see any at
-> the moment),  we can require that the user write "TYPE VALUE" pair to
-> the "next_id" file.
+I can understand Greg not wanting this security logic in the core kernel, 
+but it is specific to cgroups (which itself is security model agnostic) 
+and does not stand alone as a distinct security framework.
 
-That's exactly what I wanted to avoid by creating 1 file per object.
-Now, it's true that in a restart context where I guess that things will 
-be done synchronously, we could have a single next_id file.
+The fact that all existing LSMs need to invoke exactly the same code is an 
+indicator that it doesn't belong in LSM.
 
-> 
->>
->> When one of these files (or both of them) is filled, a structure 
->> pointed to
->> by the calling task struct is filled with these ids.
->>
->> Then, when the object is created, the id(s) present in that structure are
->> used, instead of the default ones.
->>
->> The patches are against 2.6.25-rc3-mm1, in the following order:
->>
->> [PATCH 1/4] adds the procfs facility for next ipc to be created.
->> [PATCH 2/4] adds the procfs facility for next task to be forked.
->> [PATCH 3/4] makes use of the specified id (if any) to allocate the new 
->> IPC
->>             object (changes the ipc_addid() path).
->> [PATCH 4/4] uses the specified id(s) (if any) to set the upid nr(s) 
->> for a newly
->>             allocated process (changes the alloc_pid()/alloc_pidmap() 
->> paths).
->>
->> Any comment and/or suggestions are welcome.
->>
->> Cc-ing Pavel and Sukadev, since they are the pid namespace authors.
->>
->> Regards,
->> Nadia
->>
->> -- 
->>
->> -- 
-> 
-> 
-> 
+Moving this logic into LSM means that instead of the cgroups security 
+logic being called from one place in the main kernel (where cgroups 
+lives), it must be called identically from each LSM (none of which are 
+even aware of cgroups), which I think is pretty obviously the wrong 
+solution.
+
+This is baggage which comes with cgroups -- please don't push it into LSM 
+to try and hide that.
 
 
-Regards,
-Nadia
+- James
+-- 
+James Morris
+<jmorris@namei.org>
