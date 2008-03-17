@@ -1,89 +1,156 @@
 From: Stephen Smalley <sds@epoch.ncsc.mil>
 Subject: Re: [PATCH] cgroups: implement device whitelist lsm (v3)
-Date: Mon, 17 Mar 2008 12:48:10 -0400
-Message-ID: <1205772490.22912.208.camel@moss-spartans.epoch.ncsc.mil>
-References: <784599.23478.qm@web36615.mail.mud.yahoo.com>
+Date: Mon, 17 Mar 2008 09:26:39 -0400
+Message-ID: <1205760399.22912.183.camel@moss-spartans.epoch.ncsc.mil>
+References: <176755.88432.qm@web36612.mail.mud.yahoo.com>
 Mime-Version: 1.0
 Content-Type: text/plain
 Content-Transfer-Encoding: 7bit
 Return-path: <linux-security-module-owner@vger.kernel.org>
-In-Reply-To: <784599.23478.qm@web36615.mail.mud.yahoo.com>
+In-Reply-To: <176755.88432.qm@web36612.mail.mud.yahoo.com>
 Sender: linux-security-module-owner@vger.kernel.org
 To: casey@schaufler-ca.com
 Cc: "Serge E. Hallyn" <serue@us.ibm.com>, James Morris <jmorris@namei.org>, lkml <linux-kernel@vger.kernel.org>, linux-security-module@vger.kernel.org, Linux Containers <containers@lists.osdl.org>, Greg KH <greg@kroah.com>, Pavel Emelianov <xemul@openvz.org>
 List-Id: containers.vger.kernel.org
 
 
-On Mon, 2008-03-17 at 09:16 -0700, Casey Schaufler wrote:
-> --- "Serge E. Hallyn" <serue@us.ibm.com> wrote:
+On Fri, 2008-03-14 at 15:44 -0700, Casey Schaufler wrote:
+> --- Stephen Smalley <sds@epoch.ncsc.mil> wrote:
 > 
-> > Quoting Casey Schaufler (casey@schaufler-ca.com):
-> > ...
-> > > In particular, capabilities are not an access control mechanism,
-> > > they are a privilege mechanism. A lot of discussion about LSM has
-> > > centered around the appropriate charactoristics of an LSM, and
-> > > these discussions always assume that the LSM in question is
-> > > exactly an access control mechanism. If we split the LSM into
-> > > a LACM for access control and an LPM for privilege management
-> > > maybe we can eliminate the most contentious issues.
-> > > 
-> > > Does anyone know why that would be stoopid before I whack out
-> > > patches?
 > > 
-> > No I'd like to see those patches.  It would ideally allow LSM to become
-> > *purely* restrictive and LPM to be purely empowering, presumably making
-> > the resulting hook sets easier to review and maintain.  The LPM wouldn't
-> > (I assume) gain any *new* hook points so we wouldn't be adding any new
-> > places for hooks to be overriden by a rootkit.
+> > ... 
+> > > I completely disagree.   We have two separate frameworks in the kernel,
+> > > one to enforce generic additional security stuff, and one to track
+> > > tasks.  When I need a feature which tracks tasks to do some security
+> > > tasks, it seems obvious that I would use both, just like to enforce a
+> > > certain type of MAC I end up using both netfilter and LSM through
+> > > selinux.
+> > 
+> > Depends on whether you think LSM hooks are like netfilter hooks (i.e.
+> > fine for each module to just implement a few here and there, then
+> > combine resulting modules), or whether they are about implementing
+> > complete security models (ala SELinux or Smack).  As they currently
+> > exist, they aren't very well suited to the former - they impose a cost
+> > on all hooked operations in order to hook any at all, as has been a
+> > concern for your device controller.
 > 
-> I don't expect to put in any additional hooks points, although
-> it's safe to bet that someone will want to pretty quickly. What
-> I see as the big concern is our old friend the granularity question.
-> I can pretty well predict that we'll have quite a bruhaha over
-> whether each hook point should have it's own hook or if they should
-> be shared based on the privilege supported. For example, in namei.c
-> the function generic_permission() currently calls
-> capable(CAP_DAC_OVERRIDE). The privilege supported approach would
-> be to create a hook that gets used in many places that is a drop-in
-> replacement for that,
+> I don't intend that Smack be thought of as a complete security model.
+> Smack implements Mandatory Access Control, but leaves the privilege
+> mechanism (root and/or capabilities) to the whims of others. Similarly
+> Smack does not do DAC (unlike SELinux with MCS) although "owned rules"
+> has been proposed as an additional feature. I certainly wouldn't
+> want every new facility that comes in to require multiple versions
+> that depend on the other LSMs involved. It's true that today's LSM is
+> optimized for the only LSM that existed a year ago, and that was a
+> monolythic security model.
+
+By complete security model, I don't mean it has to be MAC+DAC
++privileges.  Just that it does in fact implement a well formed security
+model, not just an ad hoc set of stupid security tricks.  Smack and
+SELinux are examples of the former.
+
+> > > > > The fact that all existing LSMs need to invoke exactly the same code is
+> > an 
+> > > > > indicator that it doesn't belong in LSM.
+> > > 
+> > > No, that's like saying capabilities don't belong in LSM because all LSMS
+> > > need to invoke it the same way.  What it is an indicator of is that
+> > > there are (not-quite-)orthogonal pieces of security which users might
+> > > want to use together.
+> > 
+> > Likely not a popular view, but capabilities don't belong in LSM.
 > 
->         if (capable(CAP_DAC_OVERRIDE))
-> becomes
->         if (lpm_dac_override())
-
-nit:  I'd use priv_ rather than lpm_, just as we use security_ rather
-than lsm_.
-
-Do you plan to pass other arguments to the privilege hook call, like the
-object?  If not, then there is no point in changing the capable call
-sites at all - just change its implementation to invoke a priv_capable()
-hook instead of a security_capable() hook.
-
-> The alternative is to go the same route as the LSM, where it
-> becomes
+> I share this view, which add credibility to the claim that it's
+> not popular. (smiley)
 > 
->         if (lpm_generic_permission_may_exec())
+> > Look
+> > at them:  the capability state is still directly embedded in the
+> > relevant kernel data structures, various bits of capability specific
+> > logic and interfaces remain in the core kernel,
 > 
-> The former scheme is much easier to implement. It also would
-> mean that if would wanted to implement a finer granularity on
-> DAC overrides (e.g. CAP_DAC_READ, CAP_DAC_WRITE, CAP_DAC_EXECUTE)
-> you would have to introduce new hooks. That wouldn't be any worse
-> than today's situation where you would have to change the argument
-> passed to capable as far as the calling (e.g. generic_permission)
-> code is concerned, but it would mean updating all the LPMs. I
-> currently count 1084 calls to capable (sloppy grep method) and that's
-> way too many hooks in my mind. But, if there's anyone who thinks
-> that the way to go is for each existing capable call to be a hook,
-> feel free to make a convincing argument.
+> It does seem as if a separate Linux Privilege Module framework
+> might be a better scheme. It would be very easy to pull out, and
+> simple to create the obvious LPMs:
 > 
-> This should be fun.
+> - Traditional root
+>   hooks look like "return (euid == 0) ? 0 : -EACCES;"
+> - No access check at all
+>   hooks look like "return 0;"
+> - Root or capabilities
+>   hooks look like "return (euid == 0 || capable(xxx)) ? 0 : -EACCES;"
+> - Pure capabilities
+>   hooks look like "return capable(xxx) ? 0 : -EACCES;"
+> 
+> > they don't present a
+> > complete security model (just an auxiliary to some other model like DAC
+> > or Smack for privilege purposes), they use only a small subset of the
+> > hooks, they force LSM to violate its usual restrictive-only paradigm to
+> > support capable(), CONFIG_SECURITY=n still has to invoke the capability
+> > functions, and all of the other LSMs do need to call it the same way to
+> > keep Linux working as expected for applications and users.
+> 
+> Plus, if SELinux wants to abandon capabilities they can add thier own
+> scheme or insist the user use the noop LPM and do whatever they like
+> in the LSM. Smack has no intention of mucking with the privilege
+> mechanism, and will happily go along with whatever the rest of the
+> system wants to use, although the noop LSM seems a bit pointless in
+> that case.
+> 
+> > The original promise was that LSM would allow kernels to be built that
+> > shed capabilities altogether,
+> 
+> I don't remember that, but it's been a long time so it could be true.
 
-Changing all of the call sites seems a bit prohibitive for an initial
-implementation; rewiring the internals of capable() to use a new
-privilege hook interface would be a lot simpler.
+"One of the explicit requirements to get LSM into the kernel was to have
+the ability to make capabilities be a module.  This allows the embedded
+people to completely remove capabilities, as they really want this.  I
+don't think we can ignore this, no matter how much of a pain in the butt
+it is :)" - Greg KH
 
-You also have to migrate the other security hooks presently used to
-support capabilities to your privilege framework.
+Quoted from:
+http://marc.info/?l=linux-security-module&m=99236500727804&w=2
+
+Ironically, since that time, capabilities have doubled in size and still
+can't be removed from the core kernel since LSM didn't push the state
+into the security blobs.
+
+> 
+> > but in practice no one seems to do that as
+> > both users and applications expect them to exist in Linux.  In fact, the
+> > possibility of not having capabilities present has caused problems that
+> > have led to the dummy module being turned more and more into a clone of
+> > the capabilities module (actually managing and testing the capability
+> > bits rather than just uid == 0 as originally).
+> 
+> This is why Smack is sticking to MAC rather than trying to be a
+> wholistic security policy mechanism. To quote the prophet, "God
+> created the world in 7 days, but then, He didn't have an install
+> base".
+>
+> > So I wouldn't point to capabilities as a counter example to James' point
+> > - they are actually a supporting example.
+> 
+> In particular, capabilities are not an access control mechanism,
+> they are a privilege mechanism. A lot of discussion about LSM has
+> centered around the appropriate charactoristics of an LSM, and
+> these discussions always assume that the LSM in question is
+> exactly an access control mechanism. If we split the LSM into
+> a LACM for access control and an LPM for privilege management
+> maybe we can eliminate the most contentious issues.
+>  
+> Does anyone know why that would be stoopid before I whack out
+> patches?
+
+If you do re-factor it in that manner, SELinux will have to register
+under both schemes in order to preserve its current logic, of course.
+
+And there are points of overlap between the two schemes even for
+non-privilege-managing security modules (e.g. they both need hooks on
+ptrace, inode_setxattr, etc).
+
+Lastly, since LSM didn't really do the job of migrating the capability
+state out of the core kernel data structures and fully encapsulating the
+capability logic, you'd have to do that work too to do it right.
 
 -- 
 Stephen Smalley
