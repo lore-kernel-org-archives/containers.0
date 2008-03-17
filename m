@@ -1,71 +1,33 @@
-From: "Paul Menage" <menage@google.com>
-Subject: Re: [PATCH -mm] cgroup: fix boot option parsing
-Date: Mon, 17 Mar 2008 16:26:57 +0800
-Message-ID: <6599ad830803170126g3f886cb6l94462c52dcf0a03a@mail.gmail.com>
-References: <47DE2AD9.503@cn.fujitsu.com>
+From: yamamoto-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org (YAMAMOTO Takashi)
+Subject: Re: [RFC][PATCH] another swap controller for cgroup
+Date: Mon, 17 Mar 2008 17:50:03 +0900 (JST)
+Message-ID: <20080317085003.EA4511E7A77@siro.lan>
+References: <47DE2894.6010306@mxp.nes.nec.co.jp>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
+Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1755963AbYCQI1U@vger.kernel.org>
-In-Reply-To: <47DE2AD9.503@cn.fujitsu.com>
-Content-Disposition: inline
-Sender: linux-kernel-owner@vger.kernel.org
-To: Li Zefan <lizf@cn.fujitsu.com>
-Cc: Andrew Morton <akpm@linux-foundation.org>, Balbir Singh <balbir@linux.vnet.ibm.com>, LKML <linux-kernel@vger.kernel.org>, Linux Containers <containers@lists.osdl.org>
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: Your message of "Mon, 17 Mar 2008 17:15:16 +0900"
+	<47DE2894.6010306-YQH0OdQVrdy45+QrQBaojngSJqDPrsil@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: nishimura-YQH0OdQVrdy45+QrQBaojngSJqDPrsil@public.gmane.org
+Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, minoura-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org, hugh-DTz5qymZ9yRBDgjK7y7TUQ@public.gmane.org, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Mon, Mar 17, 2008 at 4:24 PM, Li Zefan <lizf@cn.fujitsu.com> wrote:
-> When boot with 'cgroup_disable=cpuacct', it turns out subsystem
->  'cpu' is disabled.
->
->  When Balbir posted the patch to add cgroup boot option support,
->  Paul M noticed this problem, but the patch was accepted without
->  fixing it.
->
->  Signed-off-by: Li Zefan <lizf@cn.fujitsu.com>
+> > - anonymous objects (shmem) are not accounted.
+> IMHO, shmem should be accounted.
+> I agree it's difficult in your implementation,
+> but are you going to support it?
 
-Acked-by: Paul Menage <menage@google.com>
+it should be trivial to track how much swap an anonymous object is using.
+i'm not sure how it should be associated with cgroups, tho.
 
->  ---
->   kernel/cgroup.c |   15 ++++++---------
->   1 files changed, 6 insertions(+), 9 deletions(-)
->
->  diff --git a/kernel/cgroup.c b/kernel/cgroup.c
->  index e8e8ec4..54c28ea 100644
->  --- a/kernel/cgroup.c
->  +++ b/kernel/cgroup.c
->  @@ -3062,25 +3062,22 @@ static void cgroup_release_agent(struct work_struct *work)
->   static int __init cgroup_disable(char *str)
->   {
->         int i;
->  +       char *token;
->  +
->  +       while ((token = strsep(&str, ",")) != NULL) {
->  +               if (!*token)
->  +                       continue;
->
->  -       while (*str) {
->                 for (i = 0; i < CGROUP_SUBSYS_COUNT; i++) {
->                         struct cgroup_subsys *ss = subsys[i];
->
->  -                       if (!strncmp(str, ss->name, strlen(ss->name))) {
->  +                       if (!strcmp(token, ss->name)) {
->                                 ss->disabled = 1;
->                                 printk(KERN_INFO "Disabling %s control group"
->                                         " subsystem\n", ss->name);
->                                 break;
->                         }
->                 }
->  -               /*
->  -                * Find the next option if any
->  -                */
->  -               while (*str && (*str != ','))
->  -                       str++;
->  -               if (*str == ',')
->  -                       str++;
->         }
->         return 1;
->   }
->  --
->  1.5.4.rc3
->
+YAMAMOTO Takashi
