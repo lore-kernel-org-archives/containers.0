@@ -1,45 +1,63 @@
-From: Daisuke Nishimura <nishimura-YQH0OdQVrdy45+QrQBaojngSJqDPrsil@public.gmane.org>
-Subject: Re: [RFC][PATCH] another swap controller for cgroup
-Date: Mon, 17 Mar 2008 17:15:16 +0900
-Message-ID: <47DE2894.6010306@mxp.nes.nec.co.jp>
-References: <20080317020407.8512E1E7995@siro.lan>
+From: Li Zefan <lizf@cn.fujitsu.com>
+Subject: [PATCH -mm] cgroup: fix boot option parsing
+Date: Mon, 17 Mar 2008 17:24:57 +0900
+Message-ID: <47DE2AD9.503@cn.fujitsu.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
+Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20080317020407.8512E1E7995-Pcsii4f/SVk@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: yamamoto-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org
-Cc: minoura-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org, Linux MM <linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org>, Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Hugh Dickins <hugh-DTz5qymZ9yRBDgjK7y7TUQ@public.gmane.org>, Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1754772AbYCQIZu@vger.kernel.org>
+Sender: linux-kernel-owner@vger.kernel.org
+To: Andrew Morton <akpm@linux-foundation.org>
+Cc: Paul Menage <menage@google.com>, Balbir Singh <balbir@linux.vnet.ibm.com>, LKML <linux-kernel@vger.kernel.org>, Linux Containers <containers@lists.osdl.org>
 List-Id: containers.vger.kernel.org
 
-Hi, Yamamoto-san.
+When boot with 'cgroup_disable=cpuacct', it turns out subsystem
+'cpu' is disabled.
 
-I'm reviewing and testing your patch now.
+When Balbir posted the patch to add cgroup boot option support,
+Paul M noticed this problem, but the patch was accepted without
+fixing it.
 
-I think your implementation is better because:
-- the group to be charged is determined correctly
-  at the point of swapout, without fixing the behavior
-  of move_task of memcg.
-  (I think the behavior of move_task of memcg should be
-  fixed anyway.)
-- the group to be uncharged is remembered in page struct
-  of pmd, so there is no need to add array of pointers
-  to swap_info_struct.
+Signed-off-by: Li Zefan <lizf@cn.fujitsu.com>
+---
+ kernel/cgroup.c |   15 ++++++---------
+ 1 files changed, 6 insertions(+), 9 deletions(-)
 
-> - anonymous objects (shmem) are not accounted.
-IMHO, shmem should be accounted.
-I agree it's difficult in your implementation,
-but are you going to support it?
-
-
-Thanks,
-Daisuke Nishimura.
+diff --git a/kernel/cgroup.c b/kernel/cgroup.c
+index e8e8ec4..54c28ea 100644
+--- a/kernel/cgroup.c
++++ b/kernel/cgroup.c
+@@ -3062,25 +3062,22 @@ static void cgroup_release_agent(struct work_struct *work)
+ static int __init cgroup_disable(char *str)
+ {
+ 	int i;
++	char *token;
++
++	while ((token = strsep(&str, ",")) != NULL) {
++		if (!*token)
++			continue;
+ 
+-	while (*str) {
+ 		for (i = 0; i < CGROUP_SUBSYS_COUNT; i++) {
+ 			struct cgroup_subsys *ss = subsys[i];
+ 
+-			if (!strncmp(str, ss->name, strlen(ss->name))) {
++			if (!strcmp(token, ss->name)) {
+ 				ss->disabled = 1;
+ 				printk(KERN_INFO "Disabling %s control group"
+ 					" subsystem\n", ss->name);
+ 				break;
+ 			}
+ 		}
+-		/*
+-		 * Find the next option if any
+-		 */
+-		while (*str && (*str != ','))
+-			str++;
+-		if (*str == ',')
+-			str++;
+ 	}
+ 	return 1;
+ }
+-- 
+1.5.4.rc3
