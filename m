@@ -1,17 +1,11 @@
-From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: Re: [RFC][PATCH 0/4] Object creation with a specified id
-Date: Sun, 16 Mar 2008 15:08:44 -0400
-Message-ID: <47DD703C.4030809@cs.columbia.edu>
-References: <20080310135054.312992000@bull.net>
-	<47D9B5B7.6060803@cs.columbia.edu> <47DA195B.8070704@bull.net>
-	<47DA9EB5.8040704@cs.columbia.edu> <47DAA3AA.4050906@bull.net>
-	<47DAABAB.7000706@cs.columbia.edu>
-	<20080316034320.GA19793@sergelap.austin.rr.com>
+From: yamamoto-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org (YAMAMOTO Takashi)
+Subject: [RFC][PATCH] another swap controller for cgroup
+Date: Mon, 17 Mar 2008 11:04:07 +0900 (JST)
+Message-ID: <20080317020407.8512E1E7995@siro.lan>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20080316034320.GA19793-6s5zFf/epYLPQpwDFJZrxFMas7LaWZ9n@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -21,227 +15,729 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org
+To: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
+Cc: minoura-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, hugh-DTz5qymZ9yRBDgjK7y7TUQ@public.gmane.org, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
 List-Id: containers.vger.kernel.org
 
+hi,
+
+the following is another swap controller, which was designed and
+implemented independently from nishimura-san's one.
+
+some random differences from nishimura-san's one:
+- counts and limits the number of ptes with swap entries instead of
+  on-disk swap slots.
+- no swapon-time memory allocation.
+- anonymous objects (shmem) are not accounted.
+- precise wrt moving tasks between cgroups. 
+
+this patch contains some unrelated small fixes which i've posted separately:
+- exe_file fput botch fix
+- cgroup_rmdir EBUSY fix
+
+any comments?
+
+YAMAMOTO Takashi
 
 
-Serge E. Hallyn wrote:
-> Quoting Oren Laadan (orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org):
->>
->> Nadia Derbey wrote:
->>> Oren Laadan wrote:
->>>>
->>>> Nadia Derbey wrote:
->>>>
->>>>> Oren Laadan wrote:
->>>>>
->>>>>>
->>>>>> Nadia.Derbey-6ktuUTfB/bM@public.gmane.org wrote:
->>>>>>
->>>>>>> A couple of weeks ago, a discussion has started after Pierre's 
->>>>>>> proposal for
->>>>>>> a new syscall to change an ipc id (see thread
->>>>>>> http://lkml.org/lkml/2008/1/29/209).
->>>>>>>
->>>>>>>
->>>>>>> Oren's suggestion was to force an object's id during its creation, 
->>>>>>> rather
->>>>>>> than 1. create it, 2. change its id.
->>>>>>>
->>>>>>> So here is an implementation of what Oren has suggested.
->>>>>>>
->>>>>>> 2 new files are defined under /proc/self:
->>>>>>>   . next_ipcid --> next id to use for ipc object creation
->>>>>>>   . next_pids --> next upid nr(s) to use for next task to be forked
->>>>>>>                   (see patch #2 for more details).
->>>>>>
->>>>>>
->>>>>> Generally looks good. One meta-comment, though:
->>>>>>
->>>>>> I wonder why you use separate files for separate resources, 
->>>>>
->>>>> That would be needed in a situation wheere we don't care about next, 
->>>>> say, ipc id to be created but we need a predefined pid. But I must 
->>>>> admit I don't see any pratical application to it.
->>>>
->>>> exactly; why set the next-ipc value so far in advance ?  I think it's
->>>> better (and less confusing) if we require that setting the next-id value
->>>> be done right before the respective syscall.
->>> Ok, but this "requirement" should be widely agreed upon ;-)
->> A discussion on the overall checkpoint/restart policy is certainly due
->> (and increasingly noted recently).
->>
->>> What I mean here is that the solution with 1 file per "object type" can 
->>> easily be extended imho:
->> I'm aiming at simplicity and minimal (but not restrictive) API for user
->> space. I argue that we never really need more than one predetermined value
->> at a time (eg see below), and the cost of setting such value is so small
->> that there is no real benefit in setting more than one at a time (either
->> via multiple files or via an array of values). If in fact you wanted more
->> than one type at a time, you could still make it happen with a single
->> file without adding many user-visible files in /proc/<pid>.
->>
->> So far, I can't think of any such identifier that we'd like to pre-set
->> that does not fit into a "long" type;
-> 
-> As Nadia has mentioned, if we have checkpointed a container which has
-> another pid namespace underneath itself, then we will need to restart
-> some tasks with two predetermined pids.  So we'll need two (or more)
-> longs for the tasks in deeper namespaces.
-
-I see. So more than a single "long" type is probably needed. I'd still
-prefer that the "scope" of a preset identifier through "next_id" should
-be the subsequent syscall; so if you need multiple values for the next
-syscall you use it, but you don't support leftovers for the next syscall
-to use. The typing system can be something like "long VAL" and then for
-array "long* VAL VAL VAL ...", for instance.
-
-> 
->> simply because the kernel does not
->> use such identifiers in the first place (pid, ipc, pty#, vc# .. etc). To
->> be on the safe side, we can require that the format be "long VAL", just
->> in case (and later you could have other formats).
->>
->> The only exception, perhaps, is if a TCP connection is rebuilt with a,
->> say, connect() syscall, and some information needs to be "predetermined"
->> so we'll need to extend the format. That can be done with another type
->> eg. "tcp ....." or a separate file (per your view), _then_, not now.
->> (As a side note, I don't suggest that this is how TCP will be restored).
->>
->> In any event, the bottom line is that a single file, with a single
->> value at a time (possibly annotated with a type), is the simplest, and
->> isn't restrictive, for our purposes. Looking one step ahead, simplicity
->> and minimal commitment to user space is important in trying to push this
->> to the mainline kernel...
->>
->>> I don't know how the restart is supposed to work, but we can imagine 
->>> feeding all these files with all the object ids just before restart and 
->> Building on my own experience with zap I envision the restart operation
->> of a given task occurring in the context of that task.
-> 
-> Could be, but not necessarily the case.  Eric has mentioned using elf
-> files for restart, and that's one way to go, but whether one central
-
-I'm not familiar with the details of this.
-
-> restart task sets up all the children or the children set themselves up
-> is yet another design point we haven't decided.  I would think that
-> with a centralized restart it would be easier to assure for instance
-> that shared anon pages would be properly set up and shared, but since
-> you advocate each-task-starts-itself I trust zap must handle that.
-
-The main reason I think a task should setup itself, is because most of
-the setup requires that new resources be allocated, and the kernel is
-already centered around this approach that a task allocates for itself,
-not for another task. For instance, if you need to restore a VMA, you
-simply call mmap(), a new file, you call open() etc.
-
-Shared anon pages are one example of shared resources that may be used
-by multiple processes. Zap's approach is to have the "first" user (in
-the sense of the first time the resource is seen during checkpoint) do
-the actual restore, and place it in a global table, and then subsequent
-tasks will find it in the table and "map" it into their view.
-
-Decentralizing also allow multiple tasks to restart concurrently.
-
-Are we ready to start concrete discussion on the architecture for the 
-checkpoint/restart ?  (and if so .. time to change the subject line).
-
-> 
->> (I assume this is
->> how restart will work). Therefore, it makes much sense that before every
->> syscall that requires a pre-determined resource identifier (eg. clone,
->> ipc, pty allocation), the task will place the desired value in "next_id"
->> (and that will only be meaningful during restart) and invoke the said
->> syscall. Voila.
->>
->> Note that the restart will "rebuild" the container's state (and the task
->> state) as it reads in the data from some source. It is likely that not
->> all data will be available when the first said syscall is about to be
->> invoked, so you may not be able to feed everything ahead of time.
->>
->>
->>> let the process pick up the objects ids as it needs them.
->>> Of course, this would require to enhance the files formats, as well as 
->>> the way things are stored in the task_struct.
->>>
->>> Hope what I'm saying is not too stupid ;-) ?
->>>
->>> Regards,
->>> Nadia
->>>
->>>>>> and why you'd
->>>>>> want to write multiple identifiers in one go;
->>>>>
->>>>> I used multiple identifiers only for the pid values: this is because 
->>>>> when a new pid value is allocated for a process that belongs to 
->>>>> nested namespaces, the lower level upid nr values are allocated in a 
->>>>> single shot. (see alloc_pid()).
->>>>>
->>>>>> it seems to complicate the
->>>>>> code and interface with minimal gain.
->>>>>> In practice, a process will only do either one or the other, so a 
->>>>>> single
->>>>>> file is enough (e.g. "next_id").
->>>>>> Also, writing a single value at a time followed by the syscall is 
->>>>>> enough;
->>>>>> it's definitely not a performance issue to have multiple calls.
->>>>>> We assume the user/caller knows what she's doing, so no need to 
->>>>>> classify
->>>>>> the identifier (that is, tell the kernel it's a pid, or an ipc id) 
->>>>>> ahead
->>>>>> of time. The caller simply writes a value and then calls the relevant
->>>>>> syscall, or otherwise the results may not be what she expected...
->>>>>> If such context is expected to be required (although I don't see any at
->>>>>> the moment),  we can require that the user write "TYPE VALUE" pair to
->>>>>> the "next_id" file.
->>>>>
->>>>> That's exactly what I wanted to avoid by creating 1 file per object.
->>>>> Now, it's true that in a restart context where I guess that things 
->>>>> will be done synchronously, we could have a single next_id file.
->>>>>
->>>>>>> When one of these files (or both of them) is filled, a structure 
->>>>>>> pointed to
->>>>>>> by the calling task struct is filled with these ids.
->>>>>>>
->>>>>>> Then, when the object is created, the id(s) present in that 
->>>>>>> structure are
->>>>>>> used, instead of the default ones.
->>>>>>>
->>>>>>> The patches are against 2.6.25-rc3-mm1, in the following order:
->>>>>>>
->>>>>>> [PATCH 1/4] adds the procfs facility for next ipc to be created.
->>>>>>> [PATCH 2/4] adds the procfs facility for next task to be forked.
->>>>>>> [PATCH 3/4] makes use of the specified id (if any) to allocate the 
->>>>>>> new IPC
->>>>>>>             object (changes the ipc_addid() path).
->>>>>>> [PATCH 4/4] uses the specified id(s) (if any) to set the upid nr(s) 
->>>>>>> for a newly
->>>>>>>             allocated process (changes the 
->>>>>>> alloc_pid()/alloc_pidmap() paths).
->>>>>>>
->>>>>>> Any comment and/or suggestions are welcome.
->>>>>>>
->>>>>>> Cc-ing Pavel and Sukadev, since they are the pid namespace authors.
->>>>>>>
->>>>>>> Regards,
->>>>>>> Nadia
->>>>>>>
->>>>>>> -- 
->>>>>>>
->>>>>>> -- 
->>>>>>
->>>>>>
->>>>>>
->>>>>
->>>>> Regards,
->>>>> Nadia
->>>>
->>>>
->>>
->> _______________________________________________
->> Containers mailing list
->> Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
->> https://lists.linux-foundation.org/mailman/listinfo/containers
+--- linux-2.6.25-rc3-mm1/init/Kconfig.BACKUP	2008-03-05 15:45:50.000000000 +0900
++++ linux-2.6.25-rc3-mm1/init/Kconfig	2008-03-12 11:52:48.000000000 +0900
+@@ -379,6 +379,12 @@ config CGROUP_MEM_RES_CTLR
+ 	  Only enable when you're ok with these trade offs and really
+ 	  sure you need the memory resource controller.
+ 
++config CGROUP_SWAP_RES_CTLR
++	bool "Swap Resource Controller for Control Groups"
++	depends on CGROUPS && RESOURCE_COUNTERS
++	help
++	  XXX TBD
++
+ config SYSFS_DEPRECATED
+ 	bool "Create deprecated sysfs files"
+ 	depends on SYSFS
+--- linux-2.6.25-rc3-mm1/mm/swapfile.c.BACKUP	2008-03-05 15:45:52.000000000 +0900
++++ linux-2.6.25-rc3-mm1/mm/swapfile.c	2008-03-14 17:25:40.000000000 +0900
+@@ -28,6 +28,7 @@
+ #include <linux/capability.h>
+ #include <linux/syscalls.h>
+ #include <linux/memcontrol.h>
++#include <linux/swapcontrol.h>
+ 
+ #include <asm/pgtable.h>
+ #include <asm/tlbflush.h>
+@@ -526,6 +527,7 @@ static int unuse_pte(struct vm_area_stru
+ 	}
+ 
+ 	inc_mm_counter(vma->vm_mm, anon_rss);
++	swap_cgroup_uncharge(pmd_page(*pmd));
+ 	get_page(page);
+ 	set_pte_at(vma->vm_mm, addr, pte,
+ 		   pte_mkold(mk_pte(page, vma->vm_page_prot)));
+--- linux-2.6.25-rc3-mm1/mm/Makefile.BACKUP	2008-03-05 15:45:51.000000000 +0900
++++ linux-2.6.25-rc3-mm1/mm/Makefile	2008-03-12 11:53:31.000000000 +0900
+@@ -33,4 +33,5 @@ obj-$(CONFIG_MIGRATION) += migrate.o
+ obj-$(CONFIG_SMP) += allocpercpu.o
+ obj-$(CONFIG_QUICKLIST) += quicklist.o
+ obj-$(CONFIG_CGROUP_MEM_RES_CTLR) += memcontrol.o
++obj-$(CONFIG_CGROUP_SWAP_RES_CTLR) += swapcontrol.o
+ 
+--- linux-2.6.25-rc3-mm1/mm/rmap.c.BACKUP	2008-03-05 15:45:52.000000000 +0900
++++ linux-2.6.25-rc3-mm1/mm/rmap.c	2008-03-17 07:45:16.000000000 +0900
+@@ -49,6 +49,7 @@
+ #include <linux/module.h>
+ #include <linux/kallsyms.h>
+ #include <linux/memcontrol.h>
++#include <linux/swapcontrol.h>
+ 
+ #include <asm/tlbflush.h>
+ 
+@@ -237,8 +238,9 @@ unsigned long page_address_in_vma(struct
+  *
+  * On success returns with pte mapped and locked.
+  */
+-pte_t *page_check_address(struct page *page, struct mm_struct *mm,
+-			  unsigned long address, spinlock_t **ptlp)
++pte_t *page_check_address1(struct page *page, struct mm_struct *mm,
++			  unsigned long address, spinlock_t **ptlp,
++			  struct page **ptpp)
+ {
+ 	pgd_t *pgd;
+ 	pud_t *pud;
+@@ -269,12 +271,21 @@ pte_t *page_check_address(struct page *p
+ 	spin_lock(ptl);
+ 	if (pte_present(*pte) && page_to_pfn(page) == pte_pfn(*pte)) {
+ 		*ptlp = ptl;
++		if (ptpp != NULL) {
++			*ptpp = pmd_page(*(pmd));
++		}
+ 		return pte;
+ 	}
+ 	pte_unmap_unlock(pte, ptl);
+ 	return NULL;
+ }
+ 
++pte_t *page_check_address(struct page *page, struct mm_struct *mm,
++			  unsigned long address, spinlock_t **ptlp)
++{
++	return page_check_address1(page, mm, address, ptlp, NULL);
++}
++
+ /*
+  * Subfunctions of page_referenced: page_referenced_one called
+  * repeatedly from either page_referenced_anon or page_referenced_file.
+@@ -710,13 +721,14 @@ static int try_to_unmap_one(struct page 
+ 	pte_t *pte;
+ 	pte_t pteval;
+ 	spinlock_t *ptl;
++	struct page *ptp;
+ 	int ret = SWAP_AGAIN;
+ 
+ 	address = vma_address(page, vma);
+ 	if (address == -EFAULT)
+ 		goto out;
+ 
+-	pte = page_check_address(page, mm, address, &ptl);
++	pte = page_check_address1(page, mm, address, &ptl, &ptp);
+ 	if (!pte)
+ 		goto out;
+ 
+@@ -731,6 +743,12 @@ static int try_to_unmap_one(struct page 
+ 		goto out_unmap;
+ 	}
+ 
++	if (!migration && PageSwapCache(page) && swap_cgroup_charge(ptp, mm)) {
++		/* XXX should make the caller free the swap slot? */
++		ret = SWAP_FAIL;
++		goto out_unmap;
++	}
++
+ 	/* Nuke the page table entry. */
+ 	flush_cache_page(vma, address, page_to_pfn(page));
+ 	pteval = ptep_clear_flush(vma, address, pte);
+--- linux-2.6.25-rc3-mm1/mm/memory.c.BACKUP	2008-03-05 15:45:52.000000000 +0900
++++ linux-2.6.25-rc3-mm1/mm/memory.c	2008-03-14 18:54:21.000000000 +0900
+@@ -51,6 +51,7 @@
+ #include <linux/init.h>
+ #include <linux/writeback.h>
+ #include <linux/memcontrol.h>
++#include <linux/swapcontrol.h>
+ 
+ #include <asm/pgalloc.h>
+ #include <asm/uaccess.h>
+@@ -431,10 +432,10 @@ struct page *vm_normal_page(struct vm_ar
+  * covered by this vma.
+  */
+ 
+-static inline void
++static inline int
+ copy_one_pte(struct mm_struct *dst_mm, struct mm_struct *src_mm,
+ 		pte_t *dst_pte, pte_t *src_pte, struct vm_area_struct *vma,
+-		unsigned long addr, int *rss)
++		unsigned long addr, int *rss, struct page *dst_ptp)
+ {
+ 	unsigned long vm_flags = vma->vm_flags;
+ 	pte_t pte = *src_pte;
+@@ -445,6 +446,11 @@ copy_one_pte(struct mm_struct *dst_mm, s
+ 		if (!pte_file(pte)) {
+ 			swp_entry_t entry = pte_to_swp_entry(pte);
+ 
++			if (!is_write_migration_entry(entry) &&
++			    swap_cgroup_charge(dst_ptp, dst_mm)) {
++				return -ENOMEM;
++			}
++
+ 			swap_duplicate(entry);
+ 			/* make sure dst_mm is on swapoff's mmlist. */
+ 			if (unlikely(list_empty(&dst_mm->mmlist))) {
+@@ -494,6 +500,7 @@ copy_one_pte(struct mm_struct *dst_mm, s
+ 
+ out_set_pte:
+ 	set_pte_at(dst_mm, addr, dst_pte, pte);
++	return 0;
+ }
+ 
+ static int copy_pte_range(struct mm_struct *dst_mm, struct mm_struct *src_mm,
+@@ -504,6 +511,8 @@ static int copy_pte_range(struct mm_stru
+ 	spinlock_t *src_ptl, *dst_ptl;
+ 	int progress = 0;
+ 	int rss[2];
++	struct page *dst_ptp;
++	int error = 0;
+ 
+ again:
+ 	rss[1] = rss[0] = 0;
+@@ -515,6 +524,7 @@ again:
+ 	spin_lock_nested(src_ptl, SINGLE_DEPTH_NESTING);
+ 	arch_enter_lazy_mmu_mode();
+ 
++	dst_ptp = pmd_page(*(dst_pmd));
+ 	do {
+ 		/*
+ 		 * We are holding two locks at this point - either of them
+@@ -530,7 +540,11 @@ again:
+ 			progress++;
+ 			continue;
+ 		}
+-		copy_one_pte(dst_mm, src_mm, dst_pte, src_pte, vma, addr, rss);
++		error = copy_one_pte(dst_mm, src_mm, dst_pte, src_pte, vma,
++		    addr, rss, dst_ptp);
++		if (error) {
++			break;
++		}
+ 		progress += 8;
+ 	} while (dst_pte++, src_pte++, addr += PAGE_SIZE, addr != end);
+ 
+@@ -540,9 +554,9 @@ again:
+ 	add_mm_rss(dst_mm, rss[0], rss[1]);
+ 	pte_unmap_unlock(dst_pte - 1, dst_ptl);
+ 	cond_resched();
+-	if (addr != end)
++	if (addr != end && error == 0)
+ 		goto again;
+-	return 0;
++	return error;
+ }
+ 
+ static inline int copy_pmd_range(struct mm_struct *dst_mm, struct mm_struct *src_mm,
+@@ -697,8 +711,12 @@ static unsigned long zap_pte_range(struc
+ 		 */
+ 		if (unlikely(details))
+ 			continue;
+-		if (!pte_file(ptent))
++		if (!pte_file(ptent)) {
++			if (!is_migration_entry(pte_to_swp_entry(ptent))) {
++				swap_cgroup_uncharge(pmd_page(*pmd));
++			}
+ 			free_swap_and_cache(pte_to_swp_entry(ptent));
++		}
+ 		pte_clear_not_present_full(mm, addr, pte, tlb->fullmm);
+ 	} while (pte++, addr += PAGE_SIZE, (addr != end && *zap_work > 0));
+ 
+@@ -2076,6 +2094,7 @@ static int do_swap_page(struct mm_struct
+ 	/* The page isn't present yet, go ahead with the fault. */
+ 
+ 	inc_mm_counter(mm, anon_rss);
++	swap_cgroup_uncharge(pmd_page(*pmd));
+ 	pte = mk_pte(page, vma->vm_page_prot);
+ 	if (write_access && can_share_swap_page(page)) {
+ 		pte = maybe_mkwrite(pte_mkdirty(pte), vma);
+--- linux-2.6.25-rc3-mm1/mm/swapcontrol.c.BACKUP	2008-03-12 12:08:30.000000000 +0900
++++ linux-2.6.25-rc3-mm1/mm/swapcontrol.c	2008-03-17 08:27:53.000000000 +0900
+@@ -0,0 +1,298 @@
++
++/*
++ * swapcontrol.c COPYRIGHT FUJITSU LIMITED 2008
++ *
++ * Author: yamamoto-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org
++ */
++
++#include <linux/err.h>
++#include <linux/cgroup.h>
++#include <linux/hugetlb.h>
++#include <linux/res_counter.h>
++#include <linux/pagemap.h>
++#include <linux/slab.h>
++#include <linux/swap.h>
++#include <linux/swapcontrol.h>
++#include <linux/swapops.h>
++
++struct swap_cgroup {
++	struct cgroup_subsys_state scg_css;
++	struct res_counter scg_counter;
++};
++
++#define	css_to_scg(css)	container_of((css), struct swap_cgroup, scg_css)
++#define	cg_to_css(cg)	cgroup_subsys_state((cg), swap_cgroup_subsys_id)
++#define	cg_to_scg(cg)	css_to_scg(cg_to_css(cg))
++
++/*
++ * called with page table locked.
++ */
++int
++swap_cgroup_charge(struct page *ptp, struct mm_struct *mm)
++{
++	struct swap_cgroup *scg = ptp->ptp_swap_cgroup;
++
++	BUG_ON(mm == NULL);
++	BUG_ON(mm->swap_cgroup == NULL);
++	if (scg == NULL) {
++		/*
++		 * see swap_cgroup_attach.
++		 */
++		rmb();
++		scg = mm->swap_cgroup;
++		BUG_ON(scg == NULL);
++		ptp->ptp_swap_cgroup = scg;
++	}
++	return res_counter_charge(&scg->scg_counter, PAGE_CACHE_SIZE);
++}
++
++/*
++ * called with page table locked.
++ */
++void
++swap_cgroup_uncharge(struct page *ptp)
++{
++	struct swap_cgroup * const scg = ptp->ptp_swap_cgroup;
++
++	if (scg == NULL) {
++		return;
++	}
++	res_counter_uncharge(&scg->scg_counter, PAGE_CACHE_SIZE);
++}
++
++
++void
++swap_cgroup_init_mm(struct mm_struct *mm, struct task_struct *t)
++{
++	struct swap_cgroup *scg;
++	struct cgroup *cg;
++
++	/* mm->swap_cgroup is not NULL in the case of dup_mm */
++	cg = task_cgroup(t, swap_cgroup_subsys_id);
++	BUG_ON(cg == NULL);
++	scg = cg_to_scg(cg);
++	BUG_ON(scg == NULL);
++	css_get(&scg->scg_css);
++	mm->swap_cgroup = scg;
++}
++
++void
++swap_cgroup_exit_mm(struct mm_struct *mm)
++{
++
++	BUG_ON(mm->swap_cgroup == NULL);
++	css_put(&mm->swap_cgroup->scg_css);
++	mm->swap_cgroup = NULL;
++}
++
++static u64
++swap_cgroup_read_u64(struct cgroup *cg, struct cftype *cft)
++{
++
++	return res_counter_read_u64(&cg_to_scg(cg)->scg_counter, cft->private);
++}
++
++static int
++swap_cgroup_write_u64(struct cgroup *cg, struct cftype *cft, u64 val)
++{
++	struct res_counter *counter = &cg_to_scg(cg)->scg_counter;
++	unsigned long flags;
++
++	/* XXX res_counter_write_u64 */
++	BUG_ON(cft->private != RES_LIMIT);
++	spin_lock_irqsave(&counter->lock, flags);
++	counter->limit = val;
++	spin_unlock_irqrestore(&counter->lock, flags);
++	return 0;
++}
++
++static const struct cftype files[] = {
++	{
++		.name = "usage_in_bytes",
++		.private = RES_USAGE,
++		.read_u64 = swap_cgroup_read_u64,
++	},
++	{
++		.name = "failcnt",
++		.private = RES_FAILCNT,
++		.read_u64 = swap_cgroup_read_u64,
++	},
++	{
++		.name = "limit_in_bytes",
++		.private = RES_LIMIT,
++		.read_u64 = swap_cgroup_read_u64,
++		.write_u64 = swap_cgroup_write_u64,
++	},
++};
++
++static struct cgroup_subsys_state *
++swap_cgroup_create(struct cgroup_subsys *ss, struct cgroup *cg)
++{
++	struct swap_cgroup *scg;
++
++	scg = kzalloc(sizeof(*scg), GFP_KERNEL);
++	if (scg == NULL) {
++		return ERR_PTR(-ENOMEM);
++	}
++	res_counter_init(&scg->scg_counter);
++	if (unlikely(cg->parent == NULL)) {
++		init_mm.swap_cgroup = scg;
++	}
++	return &scg->scg_css;
++}
++
++static void
++swap_cgroup_destroy(struct cgroup_subsys *ss, struct cgroup *cg)
++{
++
++	kfree(cg_to_scg(cg));
++}
++
++static int
++swap_cgroup_populate(struct cgroup_subsys *ss, struct cgroup *cg)
++{
++
++	return cgroup_add_files(cg, ss, files, ARRAY_SIZE(files));
++}
++
++struct swap_cgroup_attach_mm_cb_args {
++	struct vm_area_struct *vma;
++	struct swap_cgroup *oldscg;
++	struct swap_cgroup *newscg;
++};
++
++static int
++swap_cgroup_attach_mm_cb(pmd_t *pmd, unsigned long startva, unsigned long endva,
++    void *private)
++{
++	const struct swap_cgroup_attach_mm_cb_args * const args = private;
++	struct vm_area_struct * const vma = args->vma;
++	struct swap_cgroup * const oldscg = args->oldscg;
++	struct swap_cgroup * const newscg = args->newscg;
++	struct page *ptp;
++	spinlock_t *ptl;
++	const pte_t *startpte;
++	const pte_t *pte;
++	unsigned long va;
++	int swslots;
++	int bytes;
++
++	BUG_ON((startva & ~PMD_MASK) != 0);
++	BUG_ON((endva & ~PMD_MASK) != 0);
++
++	startpte = pte_offset_map_lock(vma->vm_mm, pmd, startva, &ptl);
++	ptp = pmd_page(*pmd);
++	if (ptp->ptp_swap_cgroup == NULL || ptp->ptp_swap_cgroup == newscg) {
++		goto out;
++	}
++	BUG_ON(ptp->ptp_swap_cgroup != oldscg);
++
++	/*
++	 * count the number of swap entries in this page table page.
++	 */
++	swslots = 0;
++	for (va = startva, pte = startpte; va != endva;
++	    pte++, va += PAGE_SIZE) {
++		const pte_t pt_entry = *pte;
++
++		if (pte_present(pt_entry)) {
++			continue;
++		}
++		if (pte_none(pt_entry)) {
++			continue;
++		}
++		if (pte_file(pt_entry)) {
++			continue;
++		}
++		if (is_migration_entry(pte_to_swp_entry(pt_entry))) {
++			continue;
++		}
++		swslots++;
++	}
++
++	bytes = swslots * PAGE_CACHE_SIZE;
++	res_counter_uncharge(&oldscg->scg_counter, bytes);
++	/*
++	 * XXX ignore newscg's limit because cgroup ->attach method can't fail.
++	 */
++	res_counter_charge_force(&newscg->scg_counter, bytes);
++	ptp->ptp_swap_cgroup = newscg;
++out:
++	pte_unmap_unlock(startpte, ptl);
++
++	return 0;
++}
++
++static const struct mm_walk swap_cgroup_attach_mm_walk = {
++	.pmd_entry = swap_cgroup_attach_mm_cb,
++};
++
++static void
++swap_cgroup_attach_mm(struct mm_struct *mm, struct swap_cgroup *oldscg,
++    struct swap_cgroup *newscg)
++{
++	struct swap_cgroup_attach_mm_cb_args args;
++	struct vm_area_struct *vma;
++
++	args.oldscg = oldscg;
++	args.newscg = newscg;
++	down_read(&mm->mmap_sem);
++	for (vma = mm->mmap; vma; vma = vma->vm_next) {
++		if (is_vm_hugetlb_page(vma)) {
++			continue;
++		}
++		args.vma = vma;
++		walk_page_range(mm, vma->vm_start & PMD_MASK,
++		    (vma->vm_end + PMD_SIZE - 1) & PMD_MASK,
++		    &swap_cgroup_attach_mm_walk, &args);
++	}
++	up_read(&mm->mmap_sem);
++}
++
++static void
++swap_cgroup_attach(struct cgroup_subsys *ss, struct cgroup *newcg,
++    struct cgroup *oldcg, struct task_struct *t)
++{
++	struct swap_cgroup *oldscg;
++	struct swap_cgroup *newscg;
++	struct mm_struct *mm;
++
++	BUG_ON(oldcg == NULL);
++	BUG_ON(newcg == NULL);
++	BUG_ON(cg_to_css(oldcg) == NULL);
++	BUG_ON(cg_to_css(newcg) == NULL);
++	BUG_ON(oldcg == newcg);
++
++	if (!thread_group_leader(t)) {
++		return;
++	}
++	mm = get_task_mm(t);
++	if (mm == NULL) {
++		return;
++	}
++	oldscg = cg_to_scg(oldcg);
++	newscg = cg_to_scg(newcg);
++	BUG_ON(oldscg == newscg);
++	css_get(&newscg->scg_css);
++	BUG_ON(mm->swap_cgroup != oldscg);
++	mm->swap_cgroup = newscg;
++	/*
++	 * issue a barrier to ensure that swap_cgroup_charge will
++	 * see the new mm->swap_cgroup.  it might be redundant given locking
++	 * activities around, but this is not a performance critical path
++	 * anyway.
++	 */
++	wmb();
++	swap_cgroup_attach_mm(mm, oldscg, newscg);
++	css_put(&oldscg->scg_css);
++	mmput(mm);
++}
++
++struct cgroup_subsys swap_cgroup_subsys = {
++	.name = "swap",
++	.subsys_id = swap_cgroup_subsys_id,
++	.create = swap_cgroup_create,
++	.destroy = swap_cgroup_destroy,
++	.populate = swap_cgroup_populate,
++	.attach = swap_cgroup_attach,
++};
+--- linux-2.6.25-rc3-mm1/include/linux/swapcontrol.h.BACKUP	2008-03-13 07:18:00.000000000 +0900
++++ linux-2.6.25-rc3-mm1/include/linux/swapcontrol.h	2008-03-14 15:32:36.000000000 +0900
+@@ -0,0 +1,50 @@
++
++/*
++ * swapcontrol.h COPYRIGHT FUJITSU LIMITED 2008
++ *
++ * Author: yamamoto-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org
++ */
++
++struct task_struct;
++struct mm_struct;
++struct page;
++
++#if defined(CONFIG_CGROUP_SWAP_RES_CTLR)
++
++int swap_cgroup_charge(struct page *, struct mm_struct *);
++void swap_cgroup_uncharge(struct page *);
++void swap_cgroup_init_mm(struct mm_struct *, struct task_struct *);
++void swap_cgroup_exit_mm(struct mm_struct *);
++
++#else /* defined(CONFIG_CGROUP_SWAP_RES_CTLR) */
++
++static inline int
++swap_cgroup_charge(struct page *ptp, struct mm_struct *mm)
++{
++
++	/* nothing */
++	return 0;
++}
++
++static inline void
++swap_cgroup_uncharge(struct page *ptp)
++{
++
++	/* nothing */
++}
++
++static void
++swap_cgroup_init_mm(struct mm_struct *mm, struct task_struct *t)
++{
++
++	/* nothing */
++}
++
++static inline void
++swap_cgroup_exit_mm(struct mm_struct *mm)
++{
++
++	/* nothing */
++}
++
++#endif /* defined(CONFIG_CGROUP_SWAP_RES_CTLR) */
+--- linux-2.6.25-rc3-mm1/include/linux/res_counter.h.BACKUP	2008-03-05 15:45:48.000000000 +0900
++++ linux-2.6.25-rc3-mm1/include/linux/res_counter.h	2008-03-17 08:03:16.000000000 +0900
+@@ -90,6 +90,7 @@ void res_counter_init(struct res_counter
+ 
+ int res_counter_charge_locked(struct res_counter *counter, unsigned long val);
+ int res_counter_charge(struct res_counter *counter, unsigned long val);
++void res_counter_charge_force(struct res_counter *counter, unsigned long val);
+ 
+ /*
+  * uncharge - tell that some portion of the resource is released
+--- linux-2.6.25-rc3-mm1/include/linux/cgroup_subsys.h.BACKUP	2008-03-05 15:45:46.000000000 +0900
++++ linux-2.6.25-rc3-mm1/include/linux/cgroup_subsys.h	2008-03-12 12:01:32.000000000 +0900
+@@ -42,3 +42,9 @@ SUBSYS(mem_cgroup)
+ #endif
+ 
+ /* */
++
++#ifdef CONFIG_CGROUP_SWAP_RES_CTLR
++SUBSYS(swap_cgroup)
++#endif
++
++/* */
+--- linux-2.6.25-rc3-mm1/include/linux/mm.h.BACKUP	2008-03-05 15:45:47.000000000 +0900
++++ linux-2.6.25-rc3-mm1/include/linux/mm.h	2008-03-17 07:28:05.000000000 +0900
+@@ -888,6 +888,7 @@ static inline pmd_t *pmd_alloc(struct mm
+ 
+ static inline void pgtable_page_ctor(struct page *page)
+ {
++	page->ptp_swap_cgroup = NULL;
+ 	pte_lock_init(page);
+ 	inc_zone_page_state(page, NR_PAGETABLE);
+ }
+--- linux-2.6.25-rc3-mm1/include/linux/mm_types.h.BACKUP	2008-03-05 15:45:47.000000000 +0900
++++ linux-2.6.25-rc3-mm1/include/linux/mm_types.h	2008-03-17 07:24:47.000000000 +0900
+@@ -19,6 +19,7 @@
+ #define AT_VECTOR_SIZE (2*(AT_VECTOR_SIZE_ARCH + AT_VECTOR_SIZE_BASE + 1))
+ 
+ struct address_space;
++struct swap_cgroup;
+ 
+ #if NR_CPUS >= CONFIG_SPLIT_PTLOCK_CPUS
+ typedef atomic_long_t mm_counter_t;
+@@ -70,6 +71,7 @@ struct page {
+ 	union {
+ 		pgoff_t index;		/* Our offset within mapping. */
+ 		void *freelist;		/* SLUB: freelist req. slab lock */
++		struct swap_cgroup *ptp_swap_cgroup; /* PTP: swap cgroup */
+ 	};
+ 	struct list_head lru;		/* Pageout list, eg. active_list
+ 					 * protected by zone->lru_lock !
+@@ -230,6 +232,9 @@ struct mm_struct {
+ #ifdef CONFIG_CGROUP_MEM_RES_CTLR
+ 	struct mem_cgroup *mem_cgroup;
+ #endif
++#ifdef CONFIG_CGROUP_SWAP_RES_CTLR
++	struct swap_cgroup *swap_cgroup;
++#endif
+ 
+ #ifdef CONFIG_PROC_FS
+ 	/* store ref to file /proc/<pid>/exe symlink points to */
+--- linux-2.6.25-rc3-mm1/kernel/res_counter.c.BACKUP	2008-03-05 15:45:50.000000000 +0900
++++ linux-2.6.25-rc3-mm1/kernel/res_counter.c	2008-03-17 08:03:59.000000000 +0900
+@@ -41,6 +41,15 @@ int res_counter_charge(struct res_counte
+ 	return ret;
+ }
+ 
++void res_counter_charge_force(struct res_counter *counter, unsigned long val)
++{
++	unsigned long flags;
++
++	spin_lock_irqsave(&counter->lock, flags);
++	counter->usage += val;
++	spin_unlock_irqrestore(&counter->lock, flags);
++}
++
+ void res_counter_uncharge_locked(struct res_counter *counter, unsigned long val)
+ {
+ 	if (WARN_ON(counter->usage < val))
+--- linux-2.6.25-rc3-mm1/kernel/fork.c.BACKUP	2008-03-05 15:45:50.000000000 +0900
++++ linux-2.6.25-rc3-mm1/kernel/fork.c	2008-03-17 09:17:39.000000000 +0900
+@@ -41,6 +41,7 @@
+ #include <linux/mount.h>
+ #include <linux/audit.h>
+ #include <linux/memcontrol.h>
++#include <linux/swapcontrol.h>
+ #include <linux/profile.h>
+ #include <linux/rmap.h>
+ #include <linux/acct.h>
+@@ -361,6 +362,7 @@ static struct mm_struct * mm_init(struct
+ 	mm_init_cgroup(mm, p);
+ 
+ 	if (likely(!mm_alloc_pgd(mm))) {
++		swap_cgroup_init_mm(mm, p);
+ 		mm->def_flags = 0;
+ 		return mm;
+ 	}
+@@ -394,7 +396,6 @@ void __mmdrop(struct mm_struct *mm)
+ {
+ 	BUG_ON(mm == &init_mm);
+ 	mm_free_pgd(mm);
+-	mm_free_cgroup(mm);
+ 	destroy_context(mm);
+ 	free_mm(mm);
+ }
+@@ -417,6 +418,8 @@ void mmput(struct mm_struct *mm)
+ 			spin_unlock(&mmlist_lock);
+ 		}
+ 		put_swap_token(mm);
++		mm_free_cgroup(mm);
++		swap_cgroup_exit_mm(mm);
+ 		mmdrop(mm);
+ 	}
+ }
+@@ -523,11 +526,12 @@ static struct mm_struct *dup_mm(struct t
+ 	if (init_new_context(tsk, mm))
+ 		goto fail_nocontext;
+ 
++	dup_mm_exe_file(oldmm, mm);
++
+ 	err = dup_mmap(mm, oldmm);
+ 	if (err)
+ 		goto free_pt;
+ 
+-	dup_mm_exe_file(oldmm, mm);
+ 	mm->hiwater_rss = get_mm_rss(mm);
+ 	mm->hiwater_vm = mm->total_vm;
