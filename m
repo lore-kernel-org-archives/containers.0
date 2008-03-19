@@ -1,14 +1,14 @@
-From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
-Subject: Re: nets: status of sysfs with netns
-Date: Tue, 18 Mar 2008 11:01:23 -0600
-Message-ID: <m1lk4gufto.fsf@ebiederm.dsl.xmission.com>
-References: <47DA9BEA.9070907@bull.net> <47DA9D71.2010707@openvz.org>
+From: Hirokazu Takahashi <taka-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
+Subject: Re: [PATCH O/4] Block I/O tracking
+Date: Wed, 19 Mar 2008 12:59:08 +0900 (JST)
+Message-ID: <20080319.125908.14787908.taka@valinux.co.jp>
+References: <20080318.182251.93858044.taka@valinux.co.jp>
+	<20080318191624.85ca135f.kamezawa.hiroyu@jp.fujitsu.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <47DA9D71.2010707-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org> (Pavel Emelyanov's message of "Fri,
-	14 Mar 2008 18:44:49 +0300")
+In-Reply-To: <20080318191624.85ca135f.kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,52 +18,51 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
-Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Benjamin Thery <benjamin.thery-6ktuUTfB/bM@public.gmane.org>
+To: kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org
+Cc: linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org> writes:
+Hi,
 
-> Benjamin Thery wrote:
->> Eric, Pavel,
->> 
->> I haven't followed everything about the sysfs/netns issue recently and I 
->> think I have missed some of its recent developments in the past weeks. 
->> So I'm wondering what is the current status? Is anyone still working on it?
->
-> I'm thinking on it, but have no graceful solution :( Sysfs is a big...
-> no - HUUUUUUUUUUGE problem.
->
->> As several netns patches for IPv4 and IPv6 have already been merged in 
->> net-2.6.26, it would be great to have the sysfs part also to help people 
->> who want test netns.
->> Right now, it is a pain to boot and test a system with CONFIG_SYSFS=n.
->> 
->> (I know the problem is not trivial and won't be easy to solve. I just 
->> want to be sure it is not forgotten)
->
-> It is (unfortunately) not.
->
->> Pavel, I've heard you sent (or have) a patch that prevents sysfs access 
->> from a "child" netns. A patch that can be a good workaround until we 
->> have the full thing ready. I can't find it in mailing lists archives, 
->> can you give some hints about where to find it? :)
->
-> Hm. I haven't had plans to do such things actually.
->
->> Thanks a lot.
+> >  # mount -t cgroup -o bio none /cgroup/bio
+> > 
+> > Then, you make new bio cgroups and put some processes in them.
+> > 
+> >  # mkdir /cgroup/bio/bgroup1
+> >  # mkdir /cgroup/bio/bgroup2
+> >  # echo 1234 /cgroup/bio/bgroup1/tasks
+> >  # echo 5678 /cgroup/bio/bgroup1/tasks
+> > 
+> > Now you check the ids of the bio cgroups which you just created.
+> > 
+> >  # cat /cgroup/bio/bgroup1/bio.id
+> >    1
+> >  # cat /cgroup/bio/bgroup2/bio.id
+> >    2
+> > 
+> > Finally, you can attach the cgroups to "ioband1" and assign them weights.
+> > 
+> >  # dmsetup message ioband1 0 type cgroup
+> >  # dmsetup message ioband1 0 attach 1
+> >  # dmsetup message ioband1 0 attach 2
+> >  # dmsetup message ioband1 0 weight 1:30
+> >  # dmsetup message ioband1 0 weight 2:60
+> > 
+> > You can find the manual of dm-ioband at
+> > http://people.valinux.co.jp/~ryov/dm-ioband/manual/index.html.
+> > But the user interface for the bio cgroup is temporal and it will be
+> > changed after the io_context support. 
+> > 
+> I'm grad if these some kinds of params rather than 'id' are also shown
+> under cgroup.
 
-Sorry guys.  I think my initial reply got lost.
+You mean each bio cgroup has to have a lot of files which shows the status
+of the cgroup or allows you to control the cgroup.
+I think this should be done after the cgroup bio subsystem supports
+io_context since the interface will be changed to support it.
 
-Currently my approach was approved in code review.  The only hold up
-seems to be time, and gregkh getting overloaded and dropping the
-patches, for the Nth time.
+> Thanks,
+> -Kame
 
-So I need to resend.  I won't for a week or two because I am right in
-the middle of moving.
-
-Sorry I thought I had replied to the earlier question of status with
-this but is seems that message got lost somewhere in the delivery
-process.
-
-Eric
+Thank you,
+Hirokazu Takahashi.
