@@ -1,22 +1,47 @@
-From: Elena <ramsdams-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: hi
-Date: Sat, 22 Mar 2008 17:23:58 +0100
-Message-ID: <200803221624.m2MGNwVW011772@d09.dinaserver.com>
-Reply-To: ramsdams-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org
+From: David Miller <davem@davemloft.net>
+Subject: Re: [PATCH 1/3] [IPV6]: Event type in addrconf_ifdown is mis-used.
+Date: Sat, 22 Mar 2008 17:38:43 -0700 (PDT)
+Message-ID: <20080322.173843.71057686.davem@davemloft.net>
+References: <1205850761.9163.21.camel@iris.sw.ru>
+	<1205850925-11736-1-git-send-email-den@openvz.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
+Content-Type: Text/Plain; charset=us-ascii
 Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Return-path: <netdev-owner@vger.kernel.org>
+In-Reply-To: <1205850925-11736-1-git-send-email-den@openvz.org>
+Sender: netdev-owner@vger.kernel.org
+To: den@openvz.org
+Cc: yoshfuji@linux-ipv6.org, netdev@vger.kernel.org, kaber@trash.net, containers@lists.osdl.org, dlezcano@fr.ibm.com, benjamin.thery@bull.net
 List-Id: containers.vger.kernel.org
 
-Hi dear!! My letter will surprise you!!  My name - Elena. My age-26 years. I live in Russia!! Private life didn\'t turn out well. I decided to find a foreign man. I dream to meet a decent, kind and clever man!! It is difficult to tell about myself. If this is of any interest to you, write to me.My address - ramsdams-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org   I\'ll wait!! Kisses Elena
+From: "Denis V. Lunev" <den@openvz.org>
+Date: Tue, 18 Mar 2008 17:35:23 +0300
+
+> addrconf_ifdown is broken in respect to the usage of how parameter. This
+> function is called with (event != NETDEV_DOWN) and (2) on the IPv6 stop.
+> It the latter case inet6_dev from loopback device should be destroyed.
+> 
+> Signed-off-by: Denis V. Lunev <den@openvz.org>
+
+The code purposefully treats "2" specially because when IPV6 routes
+are destroyed they are changed to point to the loopback device's
+inet6_dev object.
+
+This allows statistic bumping code to not have to check if it has a
+NULL inet6_dev pointer or not, because that's now impossible.
+
+Since ipv6 is not unloadable, addrconf_cleanup(), and thus the
+"how == 2" case can only occur when ipv6 fails to load properly.
+The only real consequence of this bug is that if ipv6 fails
+to load properly, a subsequent successfull load of ipv6 will
+leak the loopback device's inet6_dev object, which isn't that
+much of a big deal.
+
+I understand that for namespaces you have to deal with multiple
+loopback devices, but you'll need to solve that problem while
+still handling the wish of the ipv6 stack for inet6_dev objects
+of loopback devices to be permanent and guarenteed to always
+be around for the sake of statistics bumping.
+
+I thus can't apply any of these patches until those issues are
+resolved.
