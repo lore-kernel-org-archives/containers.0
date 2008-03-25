@@ -1,30 +1,57 @@
-From: David Miller <davem@davemloft.net>
-Subject: Re: [PATCH 0/11 net-2.6.26] UDP/ICMP/TCP for a namespace
-Date: Mon, 24 Mar 2008 15:44:19 -0700 (PDT)
-Message-ID: <20080324.154419.85665963.davem@davemloft.net>
-References: <1206369185.23705.7.camel@iris.sw.ru>
+From: yamamoto-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org (YAMAMOTO Takashi)
+Subject: Re: [RFC][PATCH] another swap controller for cgroup
+Date: Tue, 25 Mar 2008 12:10:39 +0900 (JST)
+Message-ID: <20080325031039.549831E9292@siro.lan>
+References: <47E79A26.3070401@mxp.nes.nec.co.jp>
 Mime-Version: 1.0
-Content-Type: Text/Plain; charset=us-ascii
+Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-Return-path: <netdev-owner@vger.kernel.org>
-In-Reply-To: <1206369185.23705.7.camel@iris.sw.ru>
-Sender: netdev-owner@vger.kernel.org
-To: den@openvz.org
-Cc: netdev@vger.kernel.org, devel@openvz.org, containers@lists.osdl.org, xemul@openvz.org
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: Your message of "Mon, 24 Mar 2008 21:10:14 +0900"
+	<47E79A26.3070401-YQH0OdQVrdy45+QrQBaojngSJqDPrsil@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: nishimura-YQH0OdQVrdy45+QrQBaojngSJqDPrsil@public.gmane.org
+Cc: minoura-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, hugh-DTz5qymZ9yRBDgjK7y7TUQ@public.gmane.org, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-From: "Denis V. Lunev" <den@openvz.org>
-Date: Mon, 24 Mar 2008 17:33:05 +0300
+hi,
 
-> This patch set finally enables TCP/UDP and ICMP inside a namespace.
-> In order to do this we fix ARP processing, IP options processing and
-> allow packets to flow to namespace aware protocols.
+> Daisuke Nishimura wrote:
+> > Hi, Yamamoto-san.
+> > 
+> > I'm reviewing and testing your patch now.
+> > 
 > 
-> Finally, this makes namespace functional and alive :)
+> In building kernel infinitely(in a cgroup of
+> memory.limit=64M and swap.limit=128M, with swappiness=100),
+> almost all of the swap (1GB) is consumed as swap cache
+> after a day or so.
+> As a result, processes are occasionally OOM-killed even when
+> the swap.usage of the group doesn't exceed the limit.
 > 
-> Signed-off-by: Denis V. Lunev <den@openvz.org>
+> I don't know why the swap cache uses up swap space.
+> I will test whether a similar issue happens without your patch.
+> Do you have any thoughts?
 
-Thanks for all of your hard work, applied.
+my patch tends to yield more swap cache because it makes try_to_unmap
+fail and shrink_page_list leaves swap cache in that case.
+i'm not sure how it causes 1GB swap cache, tho.
 
-I'll push this to my net-2.6.26 tree after some build
-sanity checking.
+YAMAMOTO Takashi
+
+> 
+> BTW, I think that it would be better, in the sence of
+> isolating memory resource, if there is a framework
+> to limit the usage of swap cache.
+> 
+> 
+> Thanks,
+> Daisuke Nishimura.
