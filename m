@@ -1,22 +1,16 @@
-From: Herbert Poetzl <herbert-dBHVzrDq9nF4Lj/PQRBjDg@public.gmane.org>
-Subject: Re: [PATCH] ptrace: it is fun to strace /sbin/init
-Date: Tue, 25 Mar 2008 20:07:43 +0100
-Message-ID: <20080325190743.GA2379@MAIL.13thfloor.at>
-References: <20080323135110.GA294@tv-sign.ru>
-	<20080324160102.GB4069@atrey.karlin.mff.cuni.cz>
-	<20080324164059.GA4767@tv-sign.ru>
-	<20080324223925.GD2426@elf.ucw.cz>
-	<20080324230458.GA173@tv-sign.ru>
-	<1206446637.3302.134.camel@moss-spartans.epoch.ncsc.mil>
-	<20080325134001.GB5984@sergelap.austin.rr.com>
-	<1206455835.3302.185.camel@moss-spartans.epoch.ncsc.mil>
-	<20080325180611.GB19176@sergelap.ibm.com>
+From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH 5/7]: Determine pts_ns from a pty's inode.
+Date: Tue, 25 Mar 2008 16:14:06 -0500
+Message-ID: <20080325211406.GA5817@sergelap.austin.ibm.com>
+References: <20080325035904.GB27451@us.ibm.com>
+	<20080325042541.GE27864@us.ibm.com>
+	<20080325151705.GE9561@sergelap.austin.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <20080325180611.GB19176-6s5zFf/epYL1ENwx4SLHqw@public.gmane.org>
+In-Reply-To: <20080325151705.GE9561-6s5zFf/epYLPQpwDFJZrxKsjOiXwFzmk@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -27,65 +21,72 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Cc: linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Chris Wright <chrisw-69jw2NvuJkxg9hUCZPvPmw@public.gmane.org>, Andrew Morgan <morgan-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Pavel Machek <pavel-+ZI9xUNit7I@public.gmane.org>, Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Stephen Smalley <sds-+05T5uksL2qpZYMLLGbcSA@public.gmane.org>, Oleg Nesterov <oleg-6lXkIZvqkOAvJsYlp49lxw@public.gmane.org>, Roland McGrath <roland-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+Cc: Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>, Pavel Emelianov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Tue, Mar 25, 2008 at 01:06:11PM -0500, Serge E. Hallyn wrote:
-> Quoting Stephen Smalley (sds-+05T5uksL2qpZYMLLGbcSA@public.gmane.org):
+Quoting Serge E. Hallyn (serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org):
+> Quoting sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org (sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org):
 > > 
-> > On Tue, 2008-03-25 at 08:40 -0500, Serge E. Hallyn wrote:
-> > > Quoting Stephen Smalley (sds-+05T5uksL2qpZYMLLGbcSA@public.gmane.org):
-> > > > 
-> > > > On Tue, 2008-03-25 at 02:04 +0300, Oleg Nesterov wrote:
-> > > > > On 03/24, Pavel Machek wrote:
-> > > > > >
-> > > > > > > /sbin/init is important, but there are other important (and sometimes
-> > > > > > > much more important) services. Why it is so special so that we can't
-> > > > > > > debug/strace it?
-> > > > > > 
-> > > > > > Maybe. Let's kill /sbin/init protection in 2.6.26. But making it
-> > > > > > optional is wrong.
-> > > > > 
-> > > > > You are right, the boot parameter is silly. How about sysctl?
-> > > > > 
-> > > > > Stephen, do you see any security problems if we make /sbin/init
-> > > > > ptraceable by default?
-> > > > 
-> > > > Not an issue for SELinux (we apply an orthogonal check based on security
-> > > > context, so we can already block ptrace of init independent of whether
-> > > > root/CAP_SYS_PTRACE can do it).  I'm not sure though as to whether
-> > > > people using capabilities have ever relied on this special protection of
-> > > > init (e.g. custom init spawns children with lesser capabilities and
-> > > > relies on the fact that they cannot ptrace init to effectively re-gain
-> > > > those capabilities, even if they possess CAP_SYS_PTRACE).
-> > > 
-> > > Still thinking it through, but it seems like special casing init isn't
-> > > useful.  There are likely to be other tasks with all capabilities
-> > > set which the malicious task could just as well ptrace to do his
-> > > mischief, right?
+> > From: Sukadev Bhattiprolu <sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+> > Subject: [PATCH 5/7]: Determine pts_ns from a pty's inode.
 > > 
-> > Depends on the bounding set.  Didn't it used to be the case that only
-> > init had CAP_SETPCAP (until the meaning of it was changed by the
-> > filesystem capability support)?
+> > The devpts interfaces currently operate on a specific pts namespace
+> > which they get from the 'current' task.
+> > 
+> > With implementation of containers and cloning of PTS namespaces, we want
+> > to be able to access PTYs in a child-pts-ns from a parent-pts-ns. For
+> > instance we could bind-mount and pivot-root the child container on
+> > '/vserver/vserver1' and then access the "pts/0" of 'vserver1' using 
+> > 
+> > 	$ echo foo > /vserver/vserver1/dev/pts/0
+> > 	
+> > The task doing the above 'echo' could be in parent-pts-ns. So we find
+> > the 'pts-ns' of the above file from the inode representing the above
+> > file rather than from the 'current' task.
+> > 
+> > Note that we need to find and hold a reference to the pts_ns to prevent
+> > the pts_ns from being freed while it is being accessed from 'outside'.
+> > 
+> > This patch implements, 'pts_ns_from_inode()' which returns the pts_ns
+> > using 'inode->i_sb->s_fs_info'.
+> > 
+> > Since, the 'inode' information is not visible inside devpts code itself,
+> > this patch modifies the tty driver code to determine the pts_ns and passes
+> > it into devpts.
+> > 
+> > TODO:
+> > 	What is the expected behavior when '/dev/tty' or '/dev/ptmx' are
+> > 	accessed from parent-pts-ns. i.e:
+> > 
+> > 		$ echo "foobar" > /vserver/vserver1/dev/tty)
+> > 		
+> > 	This patch currently ignores the '/vserver/vserver1' part (that
 > 
-> Not quite.  CAP_SETPCAP was taken out of everyone's bounding set.  But
-> kernel/sysctl.c allowed only init to add capabilities to the bounding
-> set.  (Whereas CAP_SYS_MODULE was sufficient to remove them).
+> The way this is phrased it almost sounds like you're considering using
+> the pathnames to figure out the ptsns to use :).
 > 
-> > Might want to double check with e.g. the vservers folks that they
-> > weren't relying in any way on special handling of init.
+> It's not clear to me what is the sane thing to do.
 > 
-> Herbert, Pavel, do you have objections to allowing ptrace of init?
-> (I believe Eric has already Acked the idea iirc?)
+> what you're doing here - have /dev/ptmx and /dev/tty always use
+> current->'s ptsns - isn't ideal.
+> 
+> It would be nicer to not have a 'devpts ns', and instead have a
+> full device namespace.  However, then it still isn't clear how to tie
+> /vs/vs1/dev/ptmx to vs1's device namespace, since there is no device
+> fs to which to tie the devns.
+> 
+> We could tie the devns to a device inode on mknod, using the devns of
+> the creating task.  Then when starting up vs1, you just have to always
+> let vs1 create /dev/ptmx and /dev/tty.  I can't think of anything
+> better offhand.
+> 
+> Other ideas?
 
-inside a guest, by default no (i.e. there simply is
-no capability for that), on the host the behaviour is
-unmodified .. note that there are guests without init
-where the blend through init is protected in a special
-way
+I suppose you could just create /dev/pts/ptmx and /dev/pts/tty.
+Recommend that in containers /dev/ptmx and /dev/tty be symlinks
+into /dev/pts.  Applications don't need to change.  If
+ptmx_open() sees that inode->i_sb is a devptsfs, it gets the
+namespace from the sb.  If not, then it was a device in /dev
+and it gets the nmespace from current.
 
-HTH,
-Herbert
-
-> thanks,
-> -serge
+-serge
