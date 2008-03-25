@@ -1,16 +1,16 @@
-From: Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: Re: [PATCH] fix spurious EBUSY on memory cgroup removal
-Date: Tue, 25 Mar 2008 11:58:16 +0530
-Message-ID: <47E89B80.3000806@linux.vnet.ibm.com>
-References: <20080325054713.948EF1E92EC@siro.lan>
-	<20080324225309.0a1ab8ec.akpm@linux-foundation.org>
-	<20080325153020.d9179428.kamezawa.hiroyu@jp.fujitsu.com>
-Reply-To: balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
+From: Daisuke Nishimura <nishimura-YQH0OdQVrdy45+QrQBaojngSJqDPrsil@public.gmane.org>
+Subject: Re: [RFC][PATCH] another swap controller for cgroup
+Date: Tue, 25 Mar 2008 15:46:28 +0900
+Message-ID: <47E89FC4.4090105@mxp.nes.nec.co.jp>
+References: <20080317020407.8512E1E7995@siro.lan>
+	<47DE2894.6010306@mxp.nes.nec.co.jp>
+	<47E79A26.3070401@mxp.nes.nec.co.jp>
+	<47E79CF0.6040308@linux.vnet.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20080325153020.d9179428.kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+In-Reply-To: <47E79CF0.6040308-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -20,28 +20,49 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
-Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, YAMAMOTO Takashi <yamamoto-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>, minoura-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org
+To: balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
+Cc: minoura-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org, yamamoto-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org, Linux MM <linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org>, Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Hugh Dickins <hugh-DTz5qymZ9yRBDgjK7y7TUQ@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-KAMEZAWA Hiroyuki wrote:
-> On Mon, 24 Mar 2008 22:53:09 -0700
-> Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org> wrote:
-> 
->> On Tue, 25 Mar 2008 14:47:13 +0900 (JST) yamamoto-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org (YAMAMOTO Takashi) wrote:
+Balbir Singh wrote:
+> Daisuke Nishimura wrote:
+>> Daisuke Nishimura wrote:
+>>> Hi, Yamamoto-san.
+>>>
+>>> I'm reviewing and testing your patch now.
+>>>
+>> In building kernel infinitely(in a cgroup of
+>> memory.limit=64M and swap.limit=128M, with swappiness=100),
+>> almost all of the swap (1GB) is consumed as swap cache
+>> after a day or so.
+>> As a result, processes are occasionally OOM-killed even when
+>> the swap.usage of the group doesn't exceed the limit.
 >>
->>> [ resending with To: akpm.  Andrew, can you include this in -mm tree? ]
->> Shouldn't it be in 2.6.25?
+>> I don't know why the swap cache uses up swap space.
+>> I will test whether a similar issue happens without your patch.
+>> Do you have any thoughts?
 >>
-> I think this should be.
+>>
+>> BTW, I think that it would be better, in the sence of
+>> isolating memory resource, if there is a framework
+>> to limit the usage of swap cache.
 > 
-> Thanks,
-> -Kame
+> We had this earlier, but dropped it later due to issues related to swap
+> readahead and assigning the pages to the correct cgroup.
+> 
+Yes, I know.
 
-Me too
+In my swap subsystem posted before, I charge swap entries
+and remember to which cgroup each swap entries is charged
+in an array of pointers. So swap caches is charged as swap
+not memory, and swap usage including swap cache can be accounted.
 
--- 
-	Warm Regards,
-	Balbir Singh
-	Linux Technology Center
-	IBM, ISTL
+There may be better solution, and one of the issue of
+my implementation is swap_cgroup_chage() returns error
+before reclaiming swap entries which are only used
+by swap caches.
+I'm considering this issue now.
+
+
+Thanks,
+Daisuke Nishimura.
