@@ -1,64 +1,78 @@
-From: "Serge E. Hallyn" <serue@us.ibm.com>
-Subject: Re: [PATCH] ptrace: it is fun to strace /sbin/init
-Date: Tue, 25 Mar 2008 13:06:11 -0500
-Message-ID: <20080325180611.GB19176@sergelap.ibm.com>
-References: <20080323135110.GA294@tv-sign.ru> <20080324160102.GB4069@atrey.karlin.mff.cuni.cz> <20080324164059.GA4767@tv-sign.ru> <20080324223925.GD2426@elf.ucw.cz> <20080324230458.GA173@tv-sign.ru> <1206446637.3302.134.camel@moss-spartans.epoch.ncsc.mil> <20080325134001.GB5984@sergelap.austin.rr.com> <1206455835.3302.185.camel@moss-spartans.epoch.ncsc.mil>
+From: sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org
+Subject: Re: [PATCH 4/7] Implement get_pts_ns() and put_pts_ns()
+Date: Tue, 25 Mar 2008 11:44:16 -0700
+Message-ID: <20080325184416.GB4344@us.ibm.com>
+References: <20080325035904.GB27451@us.ibm.com>
+	<20080325042507.GD27864@us.ibm.com>
+	<20080325152903.GF9561@sergelap.austin.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1757694AbYCYSGY@vger.kernel.org>
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <1206455835.3302.185.camel@moss-spartans.epoch.ncsc.mil>
-Sender: linux-kernel-owner@vger.kernel.org
-To: Stephen Smalley <sds@tycho.nsa.gov>
-Cc: "Serge E. Hallyn" <serue@us.ibm.com>, Oleg Nesterov <oleg@tv-sign.ru>, Pavel Machek <pavel@ucw.cz>, Andrew Morton <akpm@linux-foundation.org>, "Eric W. Biederman" <ebiederm@xmission.com>, Pavel Emelyanov <xemul@openvz.org>, Roland McGrath <roland@redhat.com>, linux-kernel@vger.kernel.org, Chris Wright <chrisw@sous-sol.org>, Andrew Morgan <morgan@kernel.org>, Linux Containers <containers@lists.osdl.org>, Herbert Poetzl <herbert@13thfloor.at>
+In-Reply-To: <20080325152903.GF9561-6s5zFf/epYLPQpwDFJZrxKsjOiXwFzmk@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Cc: Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>, Pavel Emelianov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Quoting Stephen Smalley (sds@tycho.nsa.gov):
-> 
-> On Tue, 2008-03-25 at 08:40 -0500, Serge E. Hallyn wrote:
-> > Quoting Stephen Smalley (sds@tycho.nsa.gov):
-> > > 
-> > > On Tue, 2008-03-25 at 02:04 +0300, Oleg Nesterov wrote:
-> > > > On 03/24, Pavel Machek wrote:
-> > > > >
-> > > > > > /sbin/init is important, but there are other important (and sometimes
-> > > > > > much more important) services. Why it is so special so that we can't
-> > > > > > debug/strace it?
-> > > > > 
-> > > > > Maybe. Let's kill /sbin/init protection in 2.6.26. But making it
-> > > > > optional is wrong.
-> > > > 
-> > > > You are right, the boot parameter is silly. How about sysctl?
-> > > > 
-> > > > Stephen, do you see any security problems if we make /sbin/init
-> > > > ptraceable by default?
-> > > 
-> > > Not an issue for SELinux (we apply an orthogonal check based on security
-> > > context, so we can already block ptrace of init independent of whether
-> > > root/CAP_SYS_PTRACE can do it).  I'm not sure though as to whether
-> > > people using capabilities have ever relied on this special protection of
-> > > init (e.g. custom init spawns children with lesser capabilities and
-> > > relies on the fact that they cannot ptrace init to effectively re-gain
-> > > those capabilities, even if they possess CAP_SYS_PTRACE).
-> > 
-> > Still thinking it through, but it seems like special casing init isn't
-> > useful.  There are likely to be other tasks with all capabilities
-> > set which the malicious task could just as well ptrace to do his
-> > mischief, right?
-> 
-> Depends on the bounding set.  Didn't it used to be the case that only
-> init had CAP_SETPCAP (until the meaning of it was changed by the
-> filesystem capability support)?
+Serge E. Hallyn [serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org] wrote:
+| Quoting sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org (sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org):
+| > 
+| > From: Sukadev Bhattiprolu <sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+| > Subject: [PATCH 4/7]: Implement get_pts_ns() and put_pts_ns()
+| > 
+| > Implement get_pts_ns() and put_pts_ns() interfaces.
+| > 
+| > Signed-off-by: Sukadev Bhattiprolu <sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+| > ---
+| >  include/linux/devpts_fs.h |   21 ++++++++++++++++++++-
+| >  1 file changed, 20 insertions(+), 1 deletion(-)
+| > 
+| > Index: 2.6.25-rc5-mm1/include/linux/devpts_fs.h
+| > ===================================================================
+| > --- 2.6.25-rc5-mm1.orig/include/linux/devpts_fs.h	2008-03-24 20:04:31.000000000 -0700
+| > +++ 2.6.25-rc5-mm1/include/linux/devpts_fs.h	2008-03-24 20:05:05.000000000 -0700
+| > @@ -27,13 +27,26 @@ struct pts_namespace {
+| >  extern struct pts_namespace init_pts_ns;
+| > 
+| >  #ifdef CONFIG_UNIX98_PTYS
+| > -
+| >  int devpts_new_index(void);
+| >  void devpts_kill_index(int idx);
+| >  int devpts_pty_new(struct tty_struct *tty);      /* mknod in devpts */
+| >  struct tty_struct *devpts_get_tty(int number);	 /* get tty structure */
+| >  void devpts_pty_kill(int number);		 /* unlink */
+| > 
+| > +static inline void free_pts_ns(struct kref *ns_kref) { }
+| > +
+| > +static inline struct pts_namespace *get_pts_ns(struct pts_namespace *ns)
+| > +{
+| > +	if (ns && (ns != &init_pts_ns))
+| > +		kref_get(&ns->kref);
+| > +	return ns;
+| > +}
+| > +static inline void put_pts_ns(struct pts_namespace *ns)
+| > +{
+| > +	if (ns && (ns != &init_pts_ns))
+| > +		kref_put(&ns->kref, free_pts_ns);
+| 
+| This isn't right, or I'm not thinking right.  Don't you somewhere
+| need to
+| 
+| 	1. rcu_assign ns->mnt->mnt_sb->s_fs_info to NULL
+| 	2. wait a grace period
+| 	3. call free_pts_ns and check the refcount on the ns again?
+| 
+| and then do pts_ns_from_inode() under an rcu_read_lock and grab
+| a ref to the ns?
 
-Not quite.  CAP_SETPCAP was taken out of everyone's bounding set.  But
-kernel/sysctl.c allowed only init to add capabilities to the bounding
-set.  (Whereas CAP_SYS_MODULE was sufficient to remove them).
-
-> Might want to double check with e.g. the vservers folks that they
-> weren't relying in any way on special handling of init.
-
-Herbert, Pavel, do you have objections to allowing ptrace of init?
-(I believe Eric has already Acked the idea iirc?)
-
-thanks,
--serge
+Yes, we need the rcu to grab the reference to pts_ns.
