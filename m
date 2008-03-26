@@ -1,131 +1,64 @@
-From: Daniel Lezcano <dlezcano@fr.ibm.com>
-Subject: [patch 3/3][NETNS][IPV6] flowlabels - make proc per namespace
-Date: Wed, 26 Mar 2008 13:28:35 +0100
-Message-ID: <20080326123138.898237825@mai.toulouse-stg.fr.ibm.com>
-References: <20080326122832.564021438@mai.toulouse-stg.fr.ibm.com>
-Return-path: <netdev-owner@vger.kernel.org>
-Content-Disposition: inline; filename=ip6-flowlabel-proc-per-namespace.patch
-Sender: netdev-owner@vger.kernel.org
-To: davem@davemloft.net
-Cc: netdev@vger.kernel.org, containers@lists.osdl.org, den@openvz.org, xemul@openvz.org, benjamin.thery@bull.net
+From: sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org
+Subject: Re: [PATCH 5/7]: Determine pts_ns from a pty's inode.
+Date: Wed, 26 Mar 2008 07:55:21 -0700
+Message-ID: <20080326145521.GA24292@us.ibm.com>
+References: <20080325035904.GB27451@us.ibm.com>
+	<20080325042541.GE27864@us.ibm.com>
+	<20080325151705.GE9561@sergelap.austin.ibm.com>
+	<20080325211406.GA5817@sergelap.austin.ibm.com>
+	<20080326020328.GA11747@us.ibm.com>
+	<20080326025038.GA24538@sergelap.austin.ibm.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <20080326025038.GA24538-6s5zFf/epYLPQpwDFJZrxKsjOiXwFzmk@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Cc: Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>, Pavel Emelianov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Make /proc/net/ip6_flowlabel show only flow labels belonging to the
-current network namespace.
+Serge E. Hallyn [serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org] wrote:
+| > | I suppose you could just create /dev/pts/ptmx and /dev/pts/tty.
+| > | Recommend that in containers /dev/ptmx and /dev/tty be symlinks
+| > | into /dev/pts.  Applications don't need to change.  If
+| > | ptmx_open() sees that inode->i_sb is a devptsfs, it gets the
+| > | namespace from the sb.  If not, then it was a device in /dev
+| > | and it gets the nmespace from current.
+| > 
+| > But we would still depend on user-space remounting /dev/pts after
+| > the clone right ? Until they do that we would access the parent
+| > container's /dev/pts/ptmx ?
+| 
+| Yes.  Which is the right thing to do imo.
 
-Signed-off-by: Benjamin Thery <benjamin.thery@bull.net>
-Signed-off-by: Daniel Lezcano <dlezcano@fr.ibm.com>
----
- net/ipv6/ip6_flowlabel.c |   39 +++++++++++++++++++++++----------------
- 1 file changed, 23 insertions(+), 16 deletions(-)
+Hmm, that sounds reasonable, although slightly inconsistent with pid-ns,
+where pid starts at 1 regardless of whether /proc is remounted.
 
-Index: net-2.6.26/net/ipv6/ip6_flowlabel.c
-===================================================================
---- net-2.6.26.orig/net/ipv6/ip6_flowlabel.c
-+++ net-2.6.26/net/ipv6/ip6_flowlabel.c
-@@ -611,6 +611,7 @@ done:
- #ifdef CONFIG_PROC_FS
- 
- struct ip6fl_iter_state {
-+	struct seq_net_private p;
- 	int bucket;
- };
- 
-@@ -620,12 +621,15 @@ static struct ip6_flowlabel *ip6fl_get_f
- {
- 	struct ip6_flowlabel *fl = NULL;
- 	struct ip6fl_iter_state *state = ip6fl_seq_private(seq);
-+	struct net *net = seq_file_net(seq);
- 
- 	for (state->bucket = 0; state->bucket <= FL_HASH_MASK; ++state->bucket) {
--		if (fl_ht[state->bucket]) {
--			fl = fl_ht[state->bucket];
-+		fl = fl_ht[state->bucket];
-+
-+		while (fl && fl->fl_net != net)
-+			fl = fl->next;
-+		if (fl)
- 			break;
--		}
- 	}
- 	return fl;
- }
-@@ -633,12 +637,18 @@ static struct ip6_flowlabel *ip6fl_get_f
- static struct ip6_flowlabel *ip6fl_get_next(struct seq_file *seq, struct ip6_flowlabel *fl)
- {
- 	struct ip6fl_iter_state *state = ip6fl_seq_private(seq);
-+	struct net *net = seq_file_net(seq);
- 
- 	fl = fl->next;
-+try_again:
-+	while (fl && fl->fl_net != net)
-+		fl = fl->next;
-+
- 	while (!fl) {
--		if (++state->bucket <= FL_HASH_MASK)
-+		if (++state->bucket <= FL_HASH_MASK) {
- 			fl = fl_ht[state->bucket];
--		else
-+			goto try_again;
-+		} else
- 			break;
- 	}
- 	return fl;
-@@ -708,8 +718,8 @@ static const struct seq_operations ip6fl
- 
- static int ip6fl_seq_open(struct inode *inode, struct file *file)
- {
--	return seq_open_private(file, &ip6fl_seq_ops,
--			sizeof(struct ip6fl_iter_state));
-+	return seq_open_net(inode, file, &ip6fl_seq_ops,
-+			    sizeof(struct ip6fl_iter_state));
- }
- 
- static const struct file_operations ip6fl_seq_fops = {
-@@ -717,12 +727,13 @@ static const struct file_operations ip6f
- 	.open		=	ip6fl_seq_open,
- 	.read		=	seq_read,
- 	.llseek		=	seq_lseek,
--	.release	=	seq_release_private,
-+	.release	=	seq_release_net,
- };
- 
- static int ip6_flowlabel_proc_init(struct net *net)
- {
--	if (!proc_net_fops_create(net, "ip6_flowlabel", S_IRUGO, &ip6fl_seq_fops))
-+	if (!proc_net_fops_create(net, "ip6_flowlabel",
-+				  S_IRUGO, &ip6fl_seq_fops))
- 		return -ENOMEM;
- 	return 0;
- }
-@@ -745,25 +756,21 @@ static inline void ip6_flowlabel_proc_fi
- static inline void ip6_flowlabel_net_exit(struct net *net)
- {
- 	ip6_fl_purge(net);
-+	ip6_flowlabel_proc_fini(net);
- }
- 
- static struct pernet_operations ip6_flowlabel_net_ops = {
-+	.init = ip6_flowlabel_proc_init,
- 	.exit = ip6_flowlabel_net_exit,
- };
- 
- int ip6_flowlabel_init(void)
- {
--	int err;
--
--	err = register_pernet_subsys(&ip6_flowlabel_net_ops);
--	if (err)
--		return err;
--	return ip6_flowlabel_proc_init(&init_net);
-+	return register_pernet_subsys(&ip6_flowlabel_net_ops);
- }
- 
- void ip6_flowlabel_cleanup(void)
- {
- 	del_timer(&ip6_fl_gc_timer);
- 	unregister_pernet_subsys(&ip6_flowlabel_net_ops);
--	ip6_flowlabel_proc_fini(&init_net);
- }
+But even so, if user fails to establish the symlink, clones the pts ns
+and tries to create a pty, we would end up with different pts nses again ?
 
--- 
+i.e
+	/dev/ptmx is still a char dev in root fs
+	clone(pts_ns)
+		( In child, (before remount /dev/pts))
+		open("/dev/ptmx")
+		open("/dev/pts/0")
+
+Since ptmx is not in devpts, we use current_pts_ns() or child-pts-ns
+Since /dev/pts is not remounted in child, we get the parent pts-ns from
+
+If we can somehow detect the incorrect configuration and fail either
+open, we should be ok :-)
+inode.
+
+Suka
