@@ -1,83 +1,40 @@
-From: sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org
-Subject: Re: [PATCH 5/7]: Determine pts_ns from a pty's inode.
-Date: Wed, 26 Mar 2008 08:18:43 -0700
-Message-ID: <20080326151843.GA31568@us.ibm.com>
-References: <20080325035904.GB27451@us.ibm.com>
-	<20080325042541.GE27864@us.ibm.com>
-	<20080325151705.GE9561@sergelap.austin.ibm.com>
-	<20080325211406.GA5817@sergelap.austin.ibm.com>
-	<20080326020328.GA11747@us.ibm.com>
-	<20080326025038.GA24538@sergelap.austin.ibm.com>
-	<20080326145521.GA24292@us.ibm.com>
-	<20080326151205.GA16621@sergelap.ibm.com>
+From: Andrew Morgan <morgan@kernel.org>
+Subject: Re: [PATCH] ptrace: it is fun to strace /sbin/init
+Date: Wed, 26 Mar 2008 08:31:11 -0700
+Message-ID: <47EA6C3F.40408@kernel.org>
+References: <20080323135110.GA294@tv-sign.ru> <20080324160102.GB4069@atrey.karlin.mff.cuni.cz> <20080324164059.GA4767@tv-sign.ru> <20080324223925.GD2426@elf.ucw.cz> <20080324230458.GA173@tv-sign.ru> <1206446637.3302.134.camel@moss-spartans.epoch.ncsc.mil> <20080325134001.GB5984@sergelap.austin.rr.com> <1206455835.3302.185.camel@moss-spartans.epoch.ncsc.mil> <20080325180611.GB19176@sergelap.ibm.com> <20080325215555.GB12770@elf.ucw.cz>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <20080326151205.GA16621-6s5zFf/epYL1ENwx4SLHqw@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Cc: Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>, Pavel Emelianov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1756923AbYCZPcS@vger.kernel.org>
+In-Reply-To: <20080325215555.GB12770@elf.ucw.cz>
+Sender: linux-kernel-owner@vger.kernel.org
+To: Pavel Machek <pavel@ucw.cz>
+Cc: "Serge E. Hallyn" <serue@us.ibm.com>, Stephen Smalley <sds@tycho.nsa.gov>, Oleg Nesterov <oleg@tv-sign.ru>, Andrew Morton <akpm@linux-foundation.org>, "Eric W. Biederman" <ebiederm@xmission.com>, Pavel Emelyanov <xemul@openvz.org>, Roland McGrath <roland@redhat.com>, linux-kernel@vger.kernel.org, Chris Wright <chrisw@sous-sol.org>, Linux Containers <containers@lists.osdl.org>, Herbert Poetzl <herbert@13thfloor.at>
 List-Id: containers.vger.kernel.org
 
-Serge E. Hallyn [serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org] wrote:
-| Quoting sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org (sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org):
-| > Serge E. Hallyn [serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org] wrote:
-| > | > | I suppose you could just create /dev/pts/ptmx and /dev/pts/tty.
-| > | > | Recommend that in containers /dev/ptmx and /dev/tty be symlinks
-| > | > | into /dev/pts.  Applications don't need to change.  If
-| > | > | ptmx_open() sees that inode->i_sb is a devptsfs, it gets the
-| > | > | namespace from the sb.  If not, then it was a device in /dev
-| > | > | and it gets the nmespace from current.
-| > | > 
-| > | > But we would still depend on user-space remounting /dev/pts after
-| > | > the clone right ? Until they do that we would access the parent
-| > | > container's /dev/pts/ptmx ?
-| > | 
-| > | Yes.  Which is the right thing to do imo.
-| > 
-| > Hmm, that sounds reasonable, although slightly inconsistent with pid-ns,
-| > where pid starts at 1 regardless of whether /proc is remounted.
-| 
-| Very different cases.  The pid is the task's pid in the new pidns.
-| The task ALSO has a different pid in the parent pidns.
-| 
-| The pts only has an identity in one ptsns.
-| 
-| > But even so, if user fails to establish the symlink, clones the pts ns
-| > and tries to create a pty, we would end up with different pts nses again ?
-| 
-| Yes.  So what?
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA1
 
-We would end up allocating a pts index from child-pts-ns (i.e index 0)
-and attempt to open /dev/pts/0 which could be an existing pty in the
-parent pts ns ?
-| 
-| > i.e
-| > 	/dev/ptmx is still a char dev in root fs
-| > 	clone(pts_ns)
-| > 		( In child, (before remount /dev/pts))
-| > 		open("/dev/ptmx")
-| > 		open("/dev/pts/0")
-| > 
-| > Since ptmx is not in devpts, we use current_pts_ns() or child-pts-ns
-| > Since /dev/pts is not remounted in child, we get the parent pts-ns from
-| > 
-| > If we can somehow detect the incorrect configuration and fail either
-| > open, we should be ok :-)
-| 
-| I completely disagree with this sentiment.  The kernel doesn't need
-| to detect an "incorrect configuration" if it isn't dangerous.  One
-| man's "incorrect configuration" is another man's useful trick.
+FWIW. I completely concur.
 
-Myabe configuration is the wrong word, but unless I am missing something
-above, spanning two pts-nses is an error condition ?
+Pavel Machek wrote:
+|> Herbert, Pavel, do you have objections to allowing ptrace of init?
+|> (I believe Eric has already Acked the idea iirc?)
+|
+| No problem from me...
+|
+| (..but do not introduce command line option or sysctl. It is not worth
+it).
+
+Cheers
+
+Andrew
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.7 (Darwin)
+Comment: Using GnuPG with Mozilla - http://enigmail.mozdev.org
+
+iD8DBQFH6mw8+bHCR3gb8jsRAsKjAJ40JnoyrqGzgIZPgz5gv9uqeeiZ1wCdFKSv
+snEU/yiVdWQ4cGSwbU3A8Hg=
+=xArK
+-----END PGP SIGNATURE-----
