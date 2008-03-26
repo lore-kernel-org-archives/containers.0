@@ -1,32 +1,58 @@
 From: Balaji Rao <balajirrao@gmail.com>
-Subject: [RFC][-mm] [0/2] Basic stats for cgroups
-Date: Wed, 26 Mar 2008 23:48:40 +0530
-Message-ID: <200803262348.40928.balajirrao@gmail.com>
+Subject: [RFC][-mm] [2/2] Simple stats for memory resource controller
+Date: Wed, 26 Mar 2008 23:48:59 +0530
+Message-ID: <200803262348.59785.balajirrao@gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain;
   charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1761788AbYCZSY4@vger.kernel.org>
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1762101AbYCZSZl@vger.kernel.org>
 Content-Disposition: inline
 Sender: linux-kernel-owner@vger.kernel.org
 To: linux-kernel@vger.kernel.org
-Cc: containers@lists.osdl.org, dhaval@linux.vnet.ibm.com, balbir@in.ibm.comcontainers@lists.osdl.org, menage@google.com, a.p.zijlstra@chello.nl
+Cc: containers@lists.osdl.org, menage@google.com, balbir@in.ibm.com, dhaval@linux.vnet.ibm.com
 List-Id: containers.vger.kernel.org
 
-Hello,
+This patch implements trivial statistics for the memory resource controller.
 
-This patchset is a first step towards implementing stats for cgroup 
-subsystems. Only a few trivial stats for cpu and memory resource controller 
-have been implemented for now. Please provide comments on the general 
-direction and any suggestions on how you would like the cgroupstats framework 
-to be implemented.
+Signed-off-by: Balaji Rao <balajirrao@gmail.com>
+CC: Balbir Singh <balbir@linux.vnet.ibm.com>
+CC: Dhaval Giani <dhaval@linux.vnet.ibm.com>
 
-roadmap
---------
-implement a generic statistics framework for cgroups,
-unification with taskstats/netlink interface,
-add more statistics 
 
--- 
-regards,
-balaji rao
+diff --git a/mm/memcontrol.c b/mm/memcontrol.c
+index eb681a6..84f3fe5 100644
+--- a/mm/memcontrol.c
++++ b/mm/memcontrol.c
+@@ -45,6 +45,8 @@ enum mem_cgroup_stat_index {
+ 	 */
+ 	MEM_CGROUP_STAT_CACHE, 	   /* # of pages charged as cache */
+ 	MEM_CGROUP_STAT_RSS,	   /* # of pages charged as rss */
++	MEM_CGROUP_STAT_PGIN_COUNT,	/* # of pages paged in */
++	MEM_CGROUP_STAT_PGOUT_COUNT,	/* # of pages paged out */
+ 
+ 	MEM_CGROUP_STAT_NSTATS,
+ };
+@@ -196,6 +198,13 @@ static void mem_cgroup_charge_statistics(struct mem_cgroup *mem, int flags,
+ 		__mem_cgroup_stat_add_safe(stat, MEM_CGROUP_STAT_CACHE, val);
+ 	else
+ 		__mem_cgroup_stat_add_safe(stat, MEM_CGROUP_STAT_RSS, val);
++
++	if (charge)
++		__mem_cgroup_stat_add_safe(stat,
++				MEM_CGROUP_STAT_PGIN_COUNT, 1);
++	else
++		__mem_cgroup_stat_add_safe(stat,
++				MEM_CGROUP_STAT_PGOUT_COUNT, 1);
+ }
+ 
+ static struct mem_cgroup_per_zone *
+@@ -886,6 +895,8 @@ static const struct mem_cgroup_stat_desc {
+ } mem_cgroup_stat_desc[] = {
+ 	[MEM_CGROUP_STAT_CACHE] = { "cache", PAGE_SIZE, },
+ 	[MEM_CGROUP_STAT_RSS] = { "rss", PAGE_SIZE, },
++	[MEM_CGROUP_STAT_PGIN_COUNT] = {"page_in_count", 1, },
++	[MEM_CGROUP_STAT_PGOUT_COUNT] = {"page_out_count", 1, },
+ };
+ 
+ static int mem_control_stat_show(struct cgroup *cont, struct cftype *cft,
