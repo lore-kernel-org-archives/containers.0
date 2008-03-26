@@ -1,41 +1,55 @@
-From: Alexey Dobriyan <adobriyan@sw.ru>
-Subject: Re: [Devel] Re: [PATCH 1/2 net-2.6.26] [NETNS]: Compilation fix for include/linux/netdevice.h.
-Date: Wed, 26 Mar 2008 12:22:21 +0300
-Message-ID: <200803261222.22409.adobriyan@sw.ru>
-References: <1206517259-29152-1-git-send-email-den@openvz.org> <20080326.004742.92048899.davem@davemloft.net>
+From: "Francisca T Hannah" <bantu0carnival-lvLBfygZjWhl57MIdRCFDg@public.gmane.org>
+Subject: Physician List in the US
+Date: Wed, 26 Mar 2008 08:00:30 -0300
+Message-ID: <43331.5054433935$1206526080@news.gmane.org>
 Mime-Version: 1.0
-Content-Type: text/plain;
-  charset="iso-8859-1"
+Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-Return-path: <netdev-owner@vger.kernel.org>
-In-Reply-To: <20080326.004742.92048899.davem@davemloft.net>
-Content-Disposition: inline
-Sender: netdev-owner@vger.kernel.org
-To: devel@openvz.org
-Cc: David Miller <davem@davemloft.net>, den@openvz.org, yoshfuji@linux-ipv6.org, netdev@vger.kernel.org, containers@lists.osdl.org
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: containers-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Wednesday 26 March 2008 10:47:42 David Miller wrote:
-> From: "Denis V. Lunev" <den@openvz.org>
-> Date: Wed, 26 Mar 2008 10:40:58 +0300
->
-> > Commit commit c346dca10840a874240c78efe3f39acf4312a1f2
-> > ([NET] NETNS: Omit net_device->nd_net without CONFIG_NET_NS)
-> > breaks compilation with CONFIG_NET_NS set.
-> >
-> > Fix the typo.
-> >
-> > Signed-off-by: Denis V. Lunev <den@openvz.org>
->
-> Applied.
->
-> Too bad allmodconfig doesn't enable things which are y/n only.
 
-Right now NET_NS can be more or less reliably selected via:
 
-    echo '# CONFIG_SYSFS is not set' >foo
-    echo 'CONFIG_NET_NS=y'           >>foo
-    KCONFIG_ALLCONFIG=foo make allmodconfig
 
-But this trick a) doesn't work with some options, b) likely to break when
-someone will start selecting SYSFS.
+The package below is valued at over $2000 when purchased individually
+
+Board Certified Physicians in the USA 
+
+788,219 in total * 17,213 emails
+
+34 primary and secondary specialties
+
+Over a dozen sortable fields
+
+
+Pharmaceutical Companies in the United States
+Names and email addresses of 47,000 employees in high-ranking positions
+
+American Hospitals
+more than 23k hospital administrators in over 7k hospitals [worth over $300 alone)
+
+Extensive Directory of Dentists in the United States
+Practically every dentist in America is listed here
+
+Listing of US Chiropractors
+Over than 100k chiropractors practicing in the USA
+
+
+reduced price is now: 
+$393 for everything
+
+Email us at:      gerald.dubriwny-PkbjNfxxIARBDgjK7y7TUQ@public.gmane.org
+
+  
+
+exp. mar 29
