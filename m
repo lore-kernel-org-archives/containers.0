@@ -1,7 +1,7 @@
 From: "Francisca T Hannah" <bantu0carnival-lvLBfygZjWhl57MIdRCFDg@public.gmane.org>
 Subject: Physician List in the US
 Date: Wed, 26 Mar 2008 08:00:30 -0300
-Message-ID: <20233.0468375751$1206526080@news.gmane.org>
+Message-ID: <17512.3913250447$1206526080@news.gmane.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
