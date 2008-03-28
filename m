@@ -1,13 +1,13 @@
 From: Nadia.Derbey-6ktuUTfB/bM@public.gmane.org
-Subject: [RFC][PATCH 4/4] PID: use the target ID specified in procfs
-Date: Fri, 28 Mar 2008 10:53:13 +0100
-Message-ID: <20080328095547.794858000@bull.net>
+Subject: [RFC][PATCH 2/4] Provide a new procfs interface to set next upid nr(s)
+Date: Fri, 28 Mar 2008 10:53:11 +0100
+Message-ID: <20080328095547.135077000@bull.net>
 References: <20080328095309.117134000@bull.net>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline; filename=upidnr_use_next_id.patch
+Content-Disposition: inline; filename=proc_set_next_ids.patch
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -21,232 +21,259 @@ To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Cc: Nadia Derbey <Nadia.Derbey-6ktuUTfB/bM@public.gmane.org>, xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-[PATCH 04/04]
+[PATCH 02/04]
 
-This patch makes use of the target ids specified by a previous write to
-/proc/self/next_id as the ids to use to allocate the next upid nrs.
-Upper levels upid nrs that are not specified in next_pids file are left to the
-kernel choice.
+This patch proposes the procfs facilities needed to feed the id(s) for the
+next task to be forked.
+
+say n is the number of pids to be provided through procfs:
+
+if an
+echo "LONG<n> X0 X1 ... X<n-1>" > /proc/self/next_id
+is issued, the next task to be forked will have its upid nrs set as follows
+(say it is forked in a pid ns of level L):
+
+level         upid nr
+L ----------> X0
+..
+L - i ------> Xi
+..
+L - n + 1 --> X<n-1>
+
+Then, for levels L-n down to level 0, the pids will be left to the kernel
+choice.
 
 Signed-off-by: Nadia Derbey <Nadia.Derbey-6ktuUTfB/bM@public.gmane.org>
 
 ---
- include/linux/pid.h |    2 
- kernel/fork.c       |    3 -
- kernel/pid.c        |  141 +++++++++++++++++++++++++++++++++++++++++++++-------
- 3 files changed, 126 insertions(+), 20 deletions(-)
+ include/linux/sysids.h |   27 ++++++++-
+ kernel/nextid.c        |  146 ++++++++++++++++++++++++++++++++++++++++++-------
+ 2 files changed, 153 insertions(+), 20 deletions(-)
 
-Index: linux-2.6.25-rc3-mm1/include/linux/pid.h
+Index: linux-2.6.25-rc3-mm1/include/linux/sysids.h
 ===================================================================
---- linux-2.6.25-rc3-mm1.orig/include/linux/pid.h	2008-03-28 08:18:53.000000000 +0100
-+++ linux-2.6.25-rc3-mm1/include/linux/pid.h	2008-03-28 08:21:19.000000000 +0100
-@@ -119,7 +119,7 @@ extern struct pid *find_get_pid(int nr);
- extern struct pid *find_ge_pid(int nr, struct pid_namespace *);
- int next_pidmap(struct pid_namespace *pid_ns, int last);
+--- linux-2.6.25-rc3-mm1.orig/include/linux/sysids.h	2008-03-27 18:02:08.000000000 +0100
++++ linux-2.6.25-rc3-mm1/include/linux/sysids.h	2008-03-28 08:19:49.000000000 +0100
+@@ -8,8 +8,33 @@
+ #ifndef _LINUX_SYSIDS_H
+ #define _LINUX_SYSIDS_H
  
--extern struct pid *alloc_pid(struct pid_namespace *ns);
-+extern struct pid *alloc_pid(struct pid_namespace *ns, int *retval);
- extern void free_pid(struct pid *pid);
++
++#define NIDS_SMALL       32
++#define NIDS_PER_BLOCK   ((unsigned int)(PAGE_SIZE / sizeof(long)))
++
++/* access the ids "array" with this macro */
++#define ID_AT(pi, i)	\
++	((pi)->blocks[(i) / NIDS_PER_BLOCK][(i) % NIDS_PER_BLOCK])
++
++
++/*
++ * List of ids for the next object to be created. This presently applies to
++ * next process to be created.
++ * The next process to be created is associated to a set of upid nrs: one for
++ * each pid namespace level that process belongs to.
++ * upid nrs from level 0 up to level <npids - 1> will be automatically
++ * allocated.
++ * upid nr for level nids will be set to blocks[0][0]
++ * upid nr for level <nids + i> will be set to ID_AT(ids, i);
++ *
++ * If a single id is needed, nids is set to 1 and small_block[0] is set to
++ * that id.
++ */
+ struct sys_id {
+-	long id;
++	int nids;
++	long small_block[NIDS_SMALL];
++	int nblocks;
++	long *blocks[0];
+ };
  
- /*
-Index: linux-2.6.25-rc3-mm1/kernel/fork.c
+ extern ssize_t get_nextid(struct task_struct *, char *);
+Index: linux-2.6.25-rc3-mm1/kernel/nextid.c
 ===================================================================
---- linux-2.6.25-rc3-mm1.orig/kernel/fork.c	2008-03-28 08:18:53.000000000 +0100
-+++ linux-2.6.25-rc3-mm1/kernel/fork.c	2008-03-28 08:21:19.000000000 +0100
-@@ -1199,8 +1199,7 @@ static struct task_struct *copy_process(
- 		goto bad_fork_cleanup_io;
+--- linux-2.6.25-rc3-mm1.orig/kernel/nextid.c	2008-03-27 18:02:08.000000000 +0100
++++ linux-2.6.25-rc3-mm1/kernel/nextid.c	2008-03-28 08:20:52.000000000 +0100
+@@ -13,46 +13,148 @@
  
- 	if (pid != &init_struct_pid) {
--		retval = -ENOMEM;
--		pid = alloc_pid(task_active_pid_ns(p));
-+		pid = alloc_pid(task_active_pid_ns(p), &retval);
- 		if (!pid)
- 			goto bad_fork_cleanup_io;
  
-Index: linux-2.6.25-rc3-mm1/kernel/pid.c
-===================================================================
---- linux-2.6.25-rc3-mm1.orig/kernel/pid.c	2008-03-28 08:18:53.000000000 +0100
-+++ linux-2.6.25-rc3-mm1/kernel/pid.c	2008-03-28 08:21:19.000000000 +0100
-@@ -122,6 +122,26 @@ static void free_pidmap(struct upid *upi
- 	atomic_inc(&map->nr_free);
- }
  
-+static inline int alloc_pidmap_page(struct pidmap *map)
++static struct sys_id *id_blocks_alloc(int idsetsize)
 +{
-+	if (unlikely(!map->page)) {
-+		void *page = kzalloc(PAGE_SIZE, GFP_KERNEL);
-+		/*
-+		 * Free the page if someone raced with us
-+		 * installing it:
-+		 */
-+		spin_lock_irq(&pidmap_lock);
-+		if (map->page)
-+			kfree(page);
-+		else
-+			map->page = page;
-+		spin_unlock_irq(&pidmap_lock);
-+		if (unlikely(!map->page))
-+			return -1;
++	struct sys_id *ids;
++	int nblocks;
++	int i;
++
++	nblocks = (idsetsize + NIDS_PER_BLOCK - 1) / NIDS_PER_BLOCK;
++	BUG_ON(nblocks < 1);
++
++	ids = kmalloc(sizeof(*ids) + nblocks * sizeof(long *), GFP_KERNEL);
++	if (!ids)
++		return NULL;
++	ids->nids = idsetsize;
++	ids->nblocks = nblocks;
++
++	if (idsetsize <= NIDS_SMALL)
++		ids->blocks[0] = ids->small_block;
++	else {
++		for (i = 0; i < nblocks; i++) {
++			long *b;
++			b = (void *)__get_free_page(GFP_KERNEL);
++			if (!b)
++				goto out_undo_partial_alloc;
++			ids->blocks[i] = b;
++		}
 +	}
-+	return 0;
++	return ids;
++
++out_undo_partial_alloc:
++	while (--i >= 0)
++		free_page((unsigned long)ids->blocks[i]);
++
++	kfree(ids);
++	return NULL;
 +}
 +
- static int alloc_pidmap(struct pid_namespace *pid_ns)
++static void id_blocks_free(struct sys_id *ids)
++{
++	if (ids == NULL)
++		return;
++
++	if (ids->blocks[0] != ids->small_block) {
++		int i;
++		for (i = 0; i < ids->nblocks; i++)
++			free_page((unsigned long)ids->blocks[i]);
++	}
++	ids->nids = 0;
++	return;
++}
++
+ ssize_t get_nextid(struct task_struct *task, char *buffer)
  {
- 	int i, offset, max_scan, pid, last = pid_ns->last_pid;
-@@ -134,21 +154,8 @@ static int alloc_pidmap(struct pid_names
- 	map = &pid_ns->pidmap[pid/BITS_PER_PAGE];
- 	max_scan = (pid_max + BITS_PER_PAGE - 1)/BITS_PER_PAGE - !offset;
- 	for (i = 0; i <= max_scan; ++i) {
--		if (unlikely(!map->page)) {
--			void *page = kzalloc(PAGE_SIZE, GFP_KERNEL);
--			/*
--			 * Free the page if someone raced with us
--			 * installing it:
--			 */
--			spin_lock_irq(&pidmap_lock);
--			if (map->page)
--				kfree(page);
--			else
--				map->page = page;
--			spin_unlock_irq(&pidmap_lock);
--			if (unlikely(!map->page))
--				break;
--		}
-+		if (unlikely(alloc_pidmap_page(map)))
-+			break;
- 		if (likely(atomic_read(&map->nr_free))) {
- 			do {
- 				if (!test_and_set_bit(offset, map->page)) {
-@@ -182,6 +189,35 @@ static int alloc_pidmap(struct pid_names
- 	return -1;
++	ssize_t count = 0;
+ 	struct sys_id *sid;
++	char *bufptr = buffer;
++	int i;
+ 
+ 	sid = task->next_id;
+-	if (!sid)
++	if (!sid || !sid->nids)
+ 		return snprintf(buffer, sizeof(buffer), "-1\n");
+ 
+-	return snprintf(buffer, sizeof(buffer), "%ld\n", sid->id);
++	for (i = 0; i < sid->nids - 1; i++)
++		count += sprintf(&bufptr[count], "%ld ", ID_AT(sid, i));
++
++	count += sprintf(&bufptr[count], "%ld", ID_AT(sid, i));
++
++	return count;
  }
  
-+/*
-+ * Return a predefined pid value if successful (ID_AT(pid_l, level)),
-+ * -errno else
-+ */
-+static int alloc_fixed_pidmap(struct pid_namespace *pid_ns,
-+			struct sys_id *pid_l, int level)
-+{
-+	int offset, pid;
-+	struct pidmap *map;
+-static int set_single_id(struct task_struct *task, char *buffer)
++static int fill_nextid_list(struct task_struct *task, int nids, char *buffer)
+ {
+-	struct sys_id *sid;
+-	long next_id;
++	char *token, *buff = buffer;
+ 	char *end;
++	struct sys_id *sid;
++	struct sys_id *old_list = task->next_id;
++	int i;
+ 
+-	next_id = simple_strtol(buffer, &end, 0);
+-	if (end == buffer || (end && !isspace(*end)))
+-		return -EINVAL;
++	sid = id_blocks_alloc(nids);
++	if (!sid)
++		return -ENOMEM;
+ 
+-	sid = task->next_id;
+-	if (!sid) {
+-		sid = kzalloc(sizeof(*sid), GFP_KERNEL);
+-		if (!sid)
+-			return -ENOMEM;
+-		task->next_id = sid;
++	i = 0;
++	while ((token = strsep(&buff, " ")) != NULL && i < nids) {
++		long id;
 +
-+	pid = ID_AT(pid_l, level);
-+	if (pid < RESERVED_PIDS || pid >= pid_max)
++		if (!*token)
++			goto out_free;
++		id = simple_strtol(token, &end, 0);
++		if (end == token || (*end && !isspace(*end)))
++			goto out_free;
++		ID_AT(sid, i) = id;
++		i++;
++	}
++
++	if (i != nids)
++		/* Not enough pids compared to npids */
++		goto out_free;
++
++	if (old_list) {
++		id_blocks_free(old_list);
++		kfree(old_list);
+ 	}
+ 
+-	sid->id = next_id;
++	task->next_id = sid;
+ 
+ 	return 0;
++
++out_free:
++	id_blocks_free(sid);
++	return -EINVAL;
++}
++
++/*
++ * Parses a line with the following format:
++ * <x> <id0> ... <idx-1>
++ * and sets <id0> to <idx-1> as the sequence of ids to be used for the next
++ * object to be created by the task.
++ * This applies to processes that need 1 id per namespace level.
++ * Any trailing character on the line is skipped.
++ */
++static int set_multiple_ids(struct task_struct *task, char *nb, char *buffer)
++{
++	int nids;
++	char *end;
++
++	nids = simple_strtol(nb, &end, 0);
++	if (*end)
 +		return -EINVAL;
 +
-+	map = &pid_ns->pidmap[pid / BITS_PER_PAGE];
++	if (nids <= 0)
++		return -EINVAL;
 +
-+	if (unlikely(alloc_pidmap_page(map)))
-+		return -ENOMEM;
-+
-+	offset = pid & BITS_PER_PAGE_MASK;
-+	if (test_and_set_bit(offset, map->page))
-+		return -EBUSY;
-+
-+	atomic_dec(&map->nr_free);
-+	pid_ns->last_pid = max(pid_ns->last_pid, pid);
-+
-+	return pid;
-+}
-+
- int next_pidmap(struct pid_namespace *pid_ns, int last)
- {
- 	int offset;
-@@ -243,20 +279,91 @@ void free_pid(struct pid *pid)
- 	call_rcu(&pid->rcu, delayed_put_pid);
++	return fill_nextid_list(task, nids, buffer);
  }
  
--struct pid *alloc_pid(struct pid_namespace *ns)
-+/*
-+ * Called by alloc_pid() to use a list of predefined ids for the calling
-+ * process' upper ns levels.
-+ * Returns next pid ns to visit if successful (may be NULL if walked through
-+ * the entire pid ns hierarchy).
-+ * i is filled with next level to be visited (useful for the error cases).
-+ */
-+static struct pid_namespace *set_predefined_pids(struct pid_namespace *ns,
-+						struct pid *pid,
-+						struct sys_id *pid_l,
-+						int *next_level)
-+{
-+	struct pid_namespace *tmp;
-+	int rel_level, i, nr;
-+
-+	rel_level = pid_l->nids - 1;
-+	if (rel_level > ns->level)
-+		return ERR_PTR(-EINVAL);
-+
-+	tmp = ns;
-+
-+	/*
-+	 * Use the predefined upid nrs for levels ns->level down to
-+	 * ns->level - rel_level
-+	 */
-+	for (i = ns->level ; rel_level >= 0; i--, rel_level--) {
-+		nr = alloc_fixed_pidmap(tmp, pid_l, rel_level);
-+		if (nr < 0) {
-+			tmp = ERR_PTR(nr);
-+			goto out;
-+		}
-+
-+		pid->numbers[i].nr = nr;
-+		pid->numbers[i].ns = tmp;
-+		tmp = tmp->parent;
-+	}
-+
-+	id_blocks_free(pid_l);
-+
-+out:
-+	*next_level = i;
-+	return tmp;
-+}
-+
-+struct pid *alloc_pid(struct pid_namespace *ns, int *retval)
+ #define SINGLE_LONG "LONG"
+ 
+ /*
+  * Parses a line written to /proc/self/next_id.
+- * this line has the following format:
++ * this line has one of the following format:
+  * LONG id              --> a single id is specified
++ * LONG<x> id0 ... id<x-1> --> a sequence of ids is specified
+  */
+ int set_nextid(struct task_struct *task, char *buffer)
  {
- 	struct pid *pid;
- 	enum pid_type type;
- 	int i, nr;
- 	struct pid_namespace *tmp;
- 	struct upid *upid;
-+	struct sys_id *pid_l;
+@@ -63,7 +165,13 @@ int set_nextid(struct task_struct *task,
+ 		return -EINVAL;
  
-+	*retval = -ENOMEM;
- 	pid = kmem_cache_alloc(ns->pid_cachep, GFP_KERNEL);
- 	if (!pid)
- 		goto out;
- 
- 	tmp = ns;
--	for (i = ns->level; i >= 0; i--) {
-+	i = ns->level;
+ 	if (!strcmp(token, SINGLE_LONG))
+-		return set_single_id(task, out);
+-	else
+-		return -EINVAL;
++		return fill_nextid_list(task, 1, out);
++	else {
++		size_t sz = strlen(SINGLE_LONG);
 +
-+	/*
-+	 * If there is a list of upid nrs specified, use it instead of letting
-+	 * the kernel chose the upid nrs for us.
-+	 */
-+	pid_l = current->next_id;
-+	if (pid_l && pid_l->nids) {
-+		/*
-+		 * returns the next ns to be visited in the following loop
-+		 * (or NULL if we are done).
-+		 * i is filled in with the next level to be visited. We need
-+		 * it to undo things in the error cases.
-+		 */
-+		tmp = set_predefined_pids(ns, pid, pid_l, &i);
-+		if (IS_ERR(tmp)) {
-+			*retval = PTR_ERR(tmp);
-+			goto out_free;
-+		}
++		if (!strncmp(token, SINGLE_LONG, sz))
++			return set_multiple_ids(task, token + sz, out);
++		else
++			return -EINVAL;
 +	}
-+
-+	*retval = -ENOMEM;
-+	/*
-+	 * Let the lower levels upid nrs be automatically allocated
-+	 */
-+	for ( ; i >= 0; i--) {
- 		nr = alloc_pidmap(tmp);
- 		if (nr < 0)
- 			goto out_free;
+ }
 
 --
