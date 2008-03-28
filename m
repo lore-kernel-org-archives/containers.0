@@ -1,11 +1,16 @@
-From: Baguio Pines Garden Villas <pinesgardenvillas-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: Baguio Pines Garden Villas
-Date: Fri, 28 Mar 2008 18:25:36 +0800
-Message-ID: <1719078975.20050864564568__22414.4218177118$1206700162$gmane$org@abv.bg>
-Reply-To: Baguio Pines Garden Villas <pinesgardenvillas-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+From: Arnaldo Carvalho de Melo <acme-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH 2/11 net-2.6.26] [DCCP]: Replace socket with sock for
+	reset sending.
+Date: Fri, 28 Mar 2008 11:39:59 -0300
+Message-ID: <20080328143959.GT14945@ghostprotocols.net>
+References: <1206695071.3271.8.camel@iris.sw.ru>
+	<1206695338-5947-2-git-send-email-den@openvz.org>
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary="===============1446943247710923309=="
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <1206695338-5947-2-git-send-email-den-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -15,60 +20,48 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org
+To: "Denis V. Lunev" <den-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, davem-fT/PcQaiUtIeIZ0/mPfg9Q@public.gmane.org
 List-Id: containers.vger.kernel.org
 
---===============1446943247710923309==
-Content-Transfer-Encoding: quoted-printable
-X-MIME-Autoconverted: from 8bit to quoted-printable by smtp1.linux-foundation.org id m2SAQPmM027965
+Em Fri, Mar 28, 2008 at 12:08:49PM +0300, Denis V. Lunev escreveu:
+> Replace dccp_v(4|6)_ctl_socket with sock to unify a code with TCP/ICMP.
+> 
+> Signed-off-by: Denis V. Lunev <den-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+> ---
+>  net/dccp/ipv4.c |   16 +++++++++-------
+>  net/dccp/ipv6.c |   10 ++++++----
+>  2 files changed, 15 insertions(+), 11 deletions(-)
+> 
+> diff --git a/net/dccp/ipv4.c b/net/dccp/ipv4.c
+> index 4ca8b0c..79a9a4a 100644
+> --- a/net/dccp/ipv4.c
+> +++ b/net/dccp/ipv4.c
+> @@ -36,7 +36,7 @@
+>   * the Out-of-the-blue (OOTB) packets. A control sock will be created
+>   * for this socket at the initialization time.
+>   */
+> -static struct socket *dccp_v4_ctl_socket;
+> +static struct sock *dccp_v4_ctl_sk;
+>  
+>  int dccp_v4_connect(struct sock *sk, struct sockaddr *uaddr, int addr_len)
+>  {
+> @@ -514,11 +514,11 @@ static void dccp_v4_ctl_send_reset(struct sock *sk, struct sk_buff *rxskb)
+>  	if (rxskb->rtable->rt_type != RTN_LOCAL)
+>  		return;
+>  
+> -	dst = dccp_v4_route_skb(dccp_v4_ctl_socket->sk, rxskb);
+> +	dst = dccp_v4_route_skb(dccp_v4_ctl_sk, rxskb);
+>  	if (dst == NULL)
+>  		return;
+>  
+> -	skb = dccp_ctl_make_reset(dccp_v4_ctl_socket, rxskb);
+> +	skb = dccp_ctl_make_reset(dccp_v4_ctl_sk->sk_socket, rxskb);
 
+Why not make dccp_ctl_make_reset receive a struct sock too? It only uses
+ctl->sk anyway. But I guess that can be on a follow-up patch, could you
+that?
 
-BAGUIO
-PINES GARDEN VILLAS
+Thanks,
 
-... not simply a subdivision, but a euphoric blend
- of nature and architecture developed by=20
-M.J. PROPERTIES=20
-as a mixed use residential subdivision whose goal is to deliver the best =
-executive class villas, townhomes, condominiums and=20
-leisure living, right in the heart of Baguio City.
-
-FOR SALE=20
-. SUBDIVISION LOTS .
-. CONDOMINIUM UNITS .
-master-planned and designed by world-class=20
-Architects Manuel Manosa and Geronimo Manahan=20
-of PROS (Planning Resources and Operations Systems)
-=85 a total of eight model villas to choose from
-Choose your lot and find the model villa designed=20
-and adapted to suit its terrain.
-
-	only 3.4 km away from downtown Baguio
-	over 9 hectares of exquisite landscaping
-	majestic view of the China Sea sunset
-
-For more information, please visit our website:
-                               <http://www.pinesgardenvillas.com>
-
-PINES GARDEN VILLAS
-No. 28 Munoz Drive, Km. 4
-Upper Purok 7, Bgy. Asin, Circumferential Road
-Baguio City, Philippines=20
-Mobile Numbers: 0918.939.5629  0917.519.0713
-Baguio Telefax: 074.445.5546
-Email:  pinesgardenvillas-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org <mailto:pinesgardenvillas-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Website: <http://www.pinesgardenvillas.com/>=20
-Contact:  Engr. Ed Cepe
-
-
---===============1446943247710923309==
-Content-Type: text/plain; charset="us-ascii"
-MIME-Version: 1.0
-Content-Disposition: inline
-Content-Transfer-Encoding: 7bit
-
-_______________________________________________
-Containers mailing list
-Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-https://lists.linux-foundation.org/mailman/listinfo/containers
---===============1446943247710923309==--
+- Arnaldo
