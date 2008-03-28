@@ -1,99 +1,74 @@
-From: Peter Zijlstra <a.p.zijlstra@chello.nl>
-Subject: Re: [RFC][-mm] [1/2] Simple stats for cpu resource controller
-Date: Fri, 28 Mar 2008 11:17:16 +0100
-Message-ID: <1206699436.8514.617.camel@twins>
-References: <200803262348.45219.balajirrao@gmail.com>
-	 <1206561490.24529.2.camel@lappy>  <200803281532.37670.balajirrao@gmail.com>
+From: Baguio Pines Garden Villas <pinesgardenvillas-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Subject: Baguio Pines Garden Villas
+Date: Fri, 28 Mar 2008 18:25:36 +0800
+Message-ID: <1719078975.20050864564568__22414.4218177118$1206700162$gmane$org@abv.bg>
+Reply-To: Baguio Pines Garden Villas <pinesgardenvillas-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 Mime-Version: 1.0
-Content-Type: text/plain
-Content-Transfer-Encoding: 7bit
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1755304AbYC1KRh@vger.kernel.org>
-In-Reply-To: <200803281532.37670.balajirrao@gmail.com>
-Sender: linux-kernel-owner@vger.kernel.org
-To: Balaji Rao <balajirrao@gmail.com>
-Cc: linux-kernel@vger.kernel.org, menage@google.com, balbir@in.ibm.com, containers@lists.osdl.org, dhaval@linux.vnet.ibm.com
+Content-Type: multipart/mixed; boundary="===============1446943247710923309=="
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: containers-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Fri, 2008-03-28 at 15:32 +0530, Balaji Rao wrote:
-> On Thursday 27 March 2008 01:28:10 am Peter Zijlstra wrote:
-> > On Wed, 2008-03-26 at 23:48 +0530, Balaji Rao wrote:
-> <snip>
-> > > +/* Called under irq disable. */
-> > > +static void __cpu_cgroup_stat_add_safe(struct cpu_cgroup_stat *stat,
-> > > +		enum cpu_cgroup_stat_index idx, int val)
-> > 
-> > What is safe about this function?
-> > 
-> That it can be called only from an interrupt context.
+--===============1446943247710923309==
+Content-Transfer-Encoding: quoted-printable
+X-MIME-Autoconverted: from 8bit to quoted-printable by smtp1.linux-foundation.org id m2SAQPmM027965
 
-It can be called from any context that has hardirqs disabled. And the __
-prefix suggests as much, no need to tag _safe to the end as well, we
-never do that.
 
-> > > +{
-> > > +	int cpu = smp_processor_id();
-> > > +
-> > > +	BUG_ON(!irqs_disabled());
-> > > +	stat->cpustat[cpu].count[idx] += val;
-> > > +}
-> > > +#endif
-> > > +
-> > >  /* task group related information */
-> > >  struct task_group {
-> > >  #ifdef CONFIG_CGROUP_SCHED
-> > >  	struct cgroup_subsys_state css;
-> > > +	struct cpu_cgroup_stat stat;
-> > >  #endif
-> > >  
-> > >  #ifdef CONFIG_FAIR_GROUP_SCHED
-> > > @@ -3670,6 +3698,16 @@ void account_user_time(struct task_struct *p, cputime_t cputime)
-> > >  		cpustat->nice = cputime64_add(cpustat->nice, tmp);
-> > >  	else
-> > >  		cpustat->user = cputime64_add(cpustat->user, tmp);
-> > > +
-> > > +	/* Charge the task's group */
-> > > +#ifdef CONFIG_CGROUP_SCHED 
-> > > +	{
-> > > +	struct task_group *tg;
-> > > +	tg = task_group(p);
-> > > +	__cpu_cgroup_stat_add_safe(&tg->stat, CPU_CGROUP_STAT_UTIME,
-> > > +			cputime_to_msecs(cputime));
-> > > +	}
-> > > +#endif
-> > >  }
-> > >  
-> > >  /*
-> > > @@ -3733,6 +3771,15 @@ void account_system_time(struct task_struct *p, int hardirq_offset,
-> > >  		cpustat->idle = cputime64_add(cpustat->idle, tmp);
-> > >  	/* Account for system time used */
-> > >  	acct_update_integrals(p);
-> > > +
-> > > +#ifdef CONFIG_CGROUP_SCHED
-> > > +	{
-> > > +	struct task_group *tg;
-> > > +	tg = task_group(p);
-> > > +	__cpu_cgroup_stat_add_safe(&tg->stat, CPU_CGROUP_STAT_STIME,
-> > > +			cputime_to_msecs(cputime));
-> > > +	}
-> > > +#endif
-> > >  }
-> > 
-> > So both of these are tick based? The normal CFS [us]time stats are not.
-> > 
-> Hmmm.. Yea, right. So I should use the approach used by task_utime and task_stime when reporting it, right ?
+BAGUIO
+PINES GARDEN VILLAS
 
-Not sure what you want to use this for, but yeah, that makes most sense.
+... not simply a subdivision, but a euphoric blend
+ of nature and architecture developed by=20
+M.J. PROPERTIES=20
+as a mixed use residential subdivision whose goal is to deliver the best =
+executive class villas, townhomes, condominiums and=20
+leisure living, right in the heart of Baguio City.
 
-That is, I do know _what_ you want to use it for, just not sure which
-requirements you put on it. The pure tick based thing might be good
-enough for most purposes, the runtime proportion thing is just more
-accurate.
+FOR SALE=20
+. SUBDIVISION LOTS .
+. CONDOMINIUM UNITS .
+master-planned and designed by world-class=20
+Architects Manuel Manosa and Geronimo Manahan=20
+of PROS (Planning Resources and Operations Systems)
+=85 a total of eight model villas to choose from
+Choose your lot and find the model villa designed=20
+and adapted to suit its terrain.
 
-> > >  /*
-> > > @@ -7939,6 +7986,40 @@ static u64 cpu_shares_read_u64(struct cgroup *cgrp, struct cftype *cft)
-> > >  
-> > >  	return (u64) tg->shares;
-> > >  }
-> > > +
-> 
-> Thanks for the review.
+	only 3.4 km away from downtown Baguio
+	over 9 hectares of exquisite landscaping
+	majestic view of the China Sea sunset
+
+For more information, please visit our website:
+                               <http://www.pinesgardenvillas.com>
+
+PINES GARDEN VILLAS
+No. 28 Munoz Drive, Km. 4
+Upper Purok 7, Bgy. Asin, Circumferential Road
+Baguio City, Philippines=20
+Mobile Numbers: 0918.939.5629  0917.519.0713
+Baguio Telefax: 074.445.5546
+Email:  pinesgardenvillas-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org <mailto:pinesgardenvillas-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Website: <http://www.pinesgardenvillas.com/>=20
+Contact:  Engr. Ed Cepe
+
+
+--===============1446943247710923309==
+Content-Type: text/plain; charset="us-ascii"
+MIME-Version: 1.0
+Content-Disposition: inline
+Content-Transfer-Encoding: 7bit
+
+_______________________________________________
+Containers mailing list
+Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+https://lists.linux-foundation.org/mailman/listinfo/containers
+--===============1446943247710923309==--
