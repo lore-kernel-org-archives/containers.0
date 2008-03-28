@@ -1,45 +1,65 @@
-From: "Denis V. Lunev" <den@openvz.org>
-Subject: [PATCH 4/11 net-2.6.26] [SCTP]: Use inet_csk_ctl_sock_create for control socket creation.
-Date: Fri, 28 Mar 2008 12:08:51 +0300
-Message-ID: <1206695338-5947-4-git-send-email-den@openvz.org>
-References: <1206695071.3271.8.camel@iris.sw.ru>
-Return-path: <netdev-owner@vger.kernel.org>
-In-Reply-To: <1206695071.3271.8.camel@iris.sw.ru>
-Sender: netdev-owner@vger.kernel.org
-To: davem@davemloft.net
-Cc: netdev@vger.kernel.org, containers@lists.osdl.org, "Denis V. Lunev" <den@openvz.org>
+From: Nadia.Derbey-6ktuUTfB/bM@public.gmane.org
+Subject: [RFC][PATCH 0/4] Object creation with a pre-defined id (v2)
+Date: Fri, 28 Mar 2008 10:53:09 +0100
+Message-ID: <20080328095309.117134000@bull.net>
+Mime-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Cc: xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-sk->sk_proc->(un)hash is noop right now, so the unification is correct.
 
-Signed-off-by: Denis V. Lunev <den@openvz.org>
----
- net/sctp/protocol.c |    7 ++-----
- 1 files changed, 2 insertions(+), 5 deletions(-)
+Hi,
 
-diff --git a/net/sctp/protocol.c b/net/sctp/protocol.c
-index 5aea911..5b0323c 100644
---- a/net/sctp/protocol.c
-+++ b/net/sctp/protocol.c
-@@ -680,16 +680,13 @@ static int sctp_ctl_sock_init(void)
- 	else
- 		family = PF_INET;
- 
--	err = sock_create_kern(family, SOCK_SEQPACKET, IPPROTO_SCTP,
--			       &sctp_ctl_socket);
-+	err = inet_csk_ctl_sock_create(&sctp_ctl_socket,
-+				       family, SOCK_SEQPACKET, IPPROTO_SCTP);
- 	if (err < 0) {
- 		printk(KERN_ERR
- 		       "SCTP: Failed to create the SCTP control socket.\n");
- 		return err;
- 	}
--	sctp_ctl_socket->sk->sk_allocation = GFP_ATOMIC;
--	inet_sk(sctp_ctl_socket->sk)->uc_ttl = -1;
--
- 	return 0;
- }
- 
--- 
-1.5.3.rc5
+Here is a second version of what has been proposed 2 weeks ago to create
+an object with a pre-defined id (this feature would be used during the
+restart operation) - see thread https://lists.linux-foundation.org/pipermail/containers/2008-March/thread.html#10287
 
+Main changes since last version:
+  . Pavel's suggestion has been integrated; this makes things more readable:
+    alloc_pidmap() is unchanged and a alloc_fixed_pidmap() is added for the
+    predefined ids.
+  . Oren's suggestion has been integrated:
+    We now have a single file under /proc/self (/proc/self/next_id).
+    When this file is filled, a structure pointed to by the calling task struct
+    is filled with the id(s).
+    Then, when the object is created, the id(s) present in that structure are
+    used, instead of the default ones.
+    The syntax is one of:
+      . echo "LONG XX" > /proc/self/next_id
+        next object to be created will have an id set to XX
+      . echo "LONG<n> X0 ... X<n-1>" > /proc/self/next_id
+        next object to be created will have its ids set to XX0, ... X<n-1>
+        This is particularly useful for processes that may have several ids
+        if they belong to nested namespaces.
+
+The objects covered here are ipc objects and processes.
+
+The patches are still against 2.6.25-rc3-mm1, in the following order:
+
+[PATCH 1/4] adds the procfs facility for next object to be created, this
+            object being associated to a single id.
+[PATCH 2/4] enhances the procfs facility for objects associated to multiple
+            ids (like processes).
+[PATCH 3/4] makes use of the specified id (if any) to allocate the new IPC
+            object (changes the ipc_addid() path).
+[PATCH 4/4] uses the specified id(s) (if any) to set the upid nr(s) for a newly
+            allocated process (changes the alloc_pid() path).
+
+Any comment and/or suggestions are welcome.
+
+Regards,
+Nadia
+
+--
