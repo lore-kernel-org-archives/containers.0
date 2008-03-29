@@ -1,7 +1,7 @@
 From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 Subject: Re: [RFC][PATCH 0/4] Object creation with a pre-defined id (v2)
-Date: Fri, 28 Mar 2008 20:09:13 -0400 (EDT)
-Message-ID: <Pine.LNX.4.64.0803282001280.1670@compute01.cs.columbia.edu.cs.columbia.edu>
+Date: Fri, 28 Mar 2008 20:13:16 -0400 (EDT)
+Message-ID: <Pine.LNX.4.64.0803282012530.1670@compute01.cs.columbia.edu.cs.columbia.edu>
 References: <20080328095309.117134000@bull.net>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -54,6 +54,8 @@ I suggest that there be a way for the process to reset its task->next_id
 discarding previous settings, e.g. to recover from an error condition and
 prevent subsuquent syscalls from using the task->next_id unintentionally. 
 Something like "echo RESET > /proc/self/next_id" (or s/RESET/0/ ... etc).
+
+Oren.
 
 > The objects covered here are ipc objects and processes.
 >
