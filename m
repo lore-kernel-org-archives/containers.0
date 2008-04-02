@@ -1,14 +1,14 @@
-From: "Paul Menage" <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH -mm 2/3] cgroup: simplify init_subsys()
-Date: Wed, 2 Apr 2008 03:26:24 -0700
-Message-ID: <6599ad830804020326o7947e3e5k25249e6b1c00e6b5__13614.7588062615$1207132106$gmane$org@mail.gmail.com>
-References: <47F2EC94.8030707@cn.fujitsu.com>
+From: Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Subject: Re: [PATCH 2/2] Make res_counter hierarchical
+Date: Wed, 02 Apr 2008 20:56:55 +0530
+Message-ID: <47F3A5BF.1080301@linux.vnet.ibm.com>
+References: <47D16004.7050204@openvz.org>
+Reply-To: balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <47F2EC94.8030707-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Content-Disposition: inline
+In-Reply-To: <47D16004.7050204-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,29 +18,22 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, LKML <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+To: Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Linux MM <linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org>, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Daisuke Nishimura <nishimura-YQH0OdQVrdy45+QrQBaojngSJqDPrsil@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Tue, Apr 1, 2008 at 7:16 PM, Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org> wrote:
->  -
->  -       /* If this subsystem requested that it be notified with fork
->  -        * events, we should send it one now for every process in the
->  -        * system */
->  -       if (ss->fork) {
->  -               struct task_struct *g, *p;
->  -
->  -               read_lock(&tasklist_lock);
->  -               do_each_thread(g, p) {
->  -                       ss->fork(ss, p);
->  -               } while_each_thread(g, p);
->  -               read_unlock(&tasklist_lock);
->  -       }
+Pavel Emelyanov wrote:
+> This allows us two things basically:
+> 
 
-Should we maybe call ss->fork(ss, &init_task) ? Or just document that
-ss->fork() explicitly doesn't get called for init.
+Pavel,
 
-Maybe also add some BUG()s to confirm that no other tasks have in fact
-been forked by this point?
+Do you have any further updates on this. I think we need a way of being able to
+implement reclaim per hierarchy as mentioned earlier. Do you want me to take a
+look at it?
 
-Paul
+-- 
+	Warm Regards,
+	Balbir Singh
+	Linux Technology Center
+	IBM, ISTL
