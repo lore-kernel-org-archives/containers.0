@@ -1,7 +1,8 @@
 From: "Satoshi UCHIDA" <s-uchida-LYU95VJlayp8UrSeD/g0lQ@public.gmane.org>
-Subject: [RFC][patch 9/12][CFQ-cgroup] Control cfq_data per cgroup
-Date: Thu, 3 Apr 2008 16:16:06 +0900
-Message-ID: <006601c8955a$956af870$c040e950$__37949.2357410074$1207207091$gmane$org@jp.nec.com>
+Subject: [PATCH] [RFC][patch 10/12][CFQ-cgroup] Search cfq_data when not
+	connected
+Date: Thu, 3 Apr 2008 16:16:57 +0900
+Message-ID: <006701c8955a$b3c5a950$1b50fbf0$__30600.5579921932$1207207123$gmane$org@jp.nec.com>
 References: <007801c893d9$d89726f0$89c574d0$@jp.nec.com>		<008001c893db$4e2eccf0$ea8c66d0$@jp.nec.com>	<6599ad830804021541s3c1e3197y77d87f63bf47e4b3@mail.gmail.com>
 	<005d01c89559$9e538200$dafa8600$@jp.nec.com>
 Mime-Version: 1.0
@@ -23,265 +24,132 @@ To: 'Satoshi UCHIDA' <s-uchida-LYU95VJlayp8UrSeD/g0lQ@public.gmane.org>, 'Paul M
 Cc: axboe-tSWWG44O7X1aa/9Udqfwiw@public.gmane.org, tom-sugawara-LYU95VJlayp8UrSeD/g0lQ@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-This patch expands cfq data to handling multi cfq_data in group.
-This control is used rb_tree and the key is used a pointer of cfq_meta_data.
+This patch is possible to select a cfq_data corresponding group with task.
+This is used when merge, merge check, queue check and queue setting.
+
+The new cfq optional operations:
+The "cfq_search_data_fn" defines a function that selects a correct cfq_data when
+cfq_queue and requests are not connected yet. 
 
       Signed-off-by: Satoshi UCHIDA <uchida-LYU95VJlayp8UrSeD/g0lQ@public.gmane.org>
 
 ---
- block/cfq-cgroup.c          |  121 ++++++++++++++++++++++++++++++++++++++++++-
- include/linux/cfq-iosched.h |    6 ++
- include/linux/cgroup.h      |    1 +
- kernel/cgroup.c             |    6 ++
- 4 files changed, 133 insertions(+), 1 deletions(-)
+ block/cfq-cgroup.c          |   32 ++++++++++++++++++++++++++++++++
+ block/cfq-iosched.c         |   12 ++++++++++++
+ include/linux/cfq-iosched.h |    2 ++
+ 3 files changed, 46 insertions(+), 0 deletions(-)
 
 diff --git a/block/cfq-cgroup.c b/block/cfq-cgroup.c
-index ba0f3db..1ad9d33 100644
+index 1ad9d33..6a8a219 100644
 --- a/block/cfq-cgroup.c
 +++ b/block/cfq-cgroup.c
-@@ -23,6 +23,9 @@ static const int cfq_cgroup_slice_idle = HZ / 125;
- struct cfq_cgroup {
- 	struct cgroup_subsys_state css;
- 	unsigned int ioprio;
+@@ -35,6 +35,12 @@ static inline struct cfq_cgroup *cgroup_to_cfq_cgroup(struct cgroup *cont)
+ 			    struct cfq_cgroup, css);
+ }
+ 
++static inline struct cfq_cgroup *task_to_cfq_cgroup(struct task_struct *tsk)
++{
++	return container_of(task_subsys_state(tsk, cfq_subsys_id),
++			    struct cfq_cgroup, css);
++}
 +
-+	struct rb_root sibling_tree;
-+	unsigned int siblings;
- };
- 
- 
-@@ -35,6 +38,8 @@ static inline struct cfq_cgroup *cgroup_to_cfq_cgroup(struct cgroup *cont)
  /*
   * Add device or cgroup data functions.
   */
-+struct cfq_data *__cfq_cgroup_init_queue(struct request_queue *q, void *data);
-+
- static struct cfq_meta_data *cfq_cgroup_init_meta_data(struct cfq_data *cfqd, struct request_queue *q)
- {
- 	struct cfq_meta_data *cfqmd;
-@@ -90,16 +95,75 @@ static void cfq_meta_data_sibling_tree_add(struct cfq_meta_data *cfqmd,
- 	cfqmd->siblings++;
- 	cfqd->cfqmd = cfqmd;
- }
-- 
-+
-+static void cfq_cgroup_sibling_tree_add(struct cfq_cgroup *cfqc,
-+					struct cfq_data *cfqd)
+@@ -392,6 +398,32 @@ struct cgroup_subsys cfq_subsys = {
+ };
+ 
+ 
++struct cfq_data *cfq_cgroup_search_data(void *data,
++					struct task_struct *tsk)
 +{
-+	struct rb_node **p;
-+	struct rb_node *parent = NULL;
-+
-+	BUG_ON(!RB_EMPTY_NODE(&cfqd->group_node));
-+
-+	p = &cfqc->sibling_tree.rb_node;
-+
-+	while (*p) {
-+		struct cfq_data *__cfqd;
-+		struct rb_node **n;
-+
-+		parent = *p;
-+		__cfqd = rb_entry(parent, struct cfq_data, group_node);
-+
-+		if (cfqd->cfqmd < __cfqd->cfqmd) {
-+			n = &(*p)->rb_left;
-+		} else {
-+			n = &(*p)->rb_right;
-+		}
-+		p = n;
-+	}
-+		
-+	rb_link_node(&cfqd->group_node, parent, p);
-+	rb_insert_color(&cfqd->group_node, &cfqc->sibling_tree);
-+	cfqc->siblings++;
-+	cfqd->cfqc = cfqc;
-+}
-+
-+static void *cfq_cgroup_init_cfq_data(struct cfq_cgroup *cfqc, struct cfq_data *cfqd)
-+{
-+	struct cgroup *child;
-+
-+	/* setting cfq_data for cfq_cgroup */
-+	if (!cfqc) {
-+		cfqc = cgroup_to_cfq_cgroup(get_root_subsys(&cfq_subsys));	
-+		cfq_cgroup_sibling_tree_add(cfqc, cfqd);
-+	} else {
-+		struct cfq_data *__cfqd;
-+		__cfqd = __cfq_cgroup_init_queue(CFQ_DRV_UNIQ_DATA(cfqd).queue, cfqd->cfqmd);
-+		if (!__cfqd)
-+			return NULL;
-+		cfq_cgroup_sibling_tree_add(cfqc, __cfqd);
-+	}
-+
-+	/* check and create cfq_data for children */
-+	if (cfqc->css.cgroup)
-+		list_for_each_entry(child, &cfqc->css.cgroup->children, children){
-+			cfq_cgroup_init_cfq_data(cgroup_to_cfq_cgroup(child), cfqd);
-+		}
-+
-+	return cfqc;
-+}
-+
-+
- struct cfq_data *__cfq_cgroup_init_queue(struct request_queue *q, void *data)
- {
- 	struct cfq_meta_data *cfqmd = (struct cfq_meta_data *)data;
- 	struct cfq_data *cfqd = __cfq_init_cfq_data(q);
-+	int root = 0;
- 
- 	if (!cfqd)
- 		return NULL;
- 
- 	RB_CLEAR_NODE(&cfqd->sib_node);
-+  	RB_CLEAR_NODE(&cfqd->group_node);
- 
- 	if (!cfqmd) {
-        		cfqmd = cfq_cgroup_init_meta_data(cfqd, q);
-@@ -107,12 +171,35 @@ struct cfq_data *__cfq_cgroup_init_queue(struct request_queue *q, void *data)
- 			kfree(cfqd);
- 			return NULL;
- 		}
-+		root = 1;
- 	}
- 	cfq_meta_data_sibling_tree_add(cfqmd, cfqd);
- 
-+	if (root)
-+		cfq_cgroup_init_cfq_data(NULL, cfqd);
-+
- 	return cfqd;
- }
- 
-+static void *cfq_cgroup_init_cgroup(struct cfq_cgroup *cfqc, struct cgroup *parent)
-+{
-+	struct rb_node *p;
-+	if (parent) {
-+		struct cfq_cgroup *cfqc_p = cgroup_to_cfq_cgroup(parent);
-+
-+		p = rb_first(&cfqc_p->sibling_tree);
-+		while (p != NULL) {
-+			struct cfq_data *__cfqd;
-+			__cfqd = rb_entry(p, struct cfq_data, group_node);
-+
-+			cfq_cgroup_init_cfq_data(cfqc, __cfqd);
-+
-+			p = rb_next(p);		
-+		}		
-+	}
-+
-+	return cfqc;
-+}
- 
- static struct cgroup_subsys_state *
- cfq_cgroup_create(struct cgroup_subsys *ss, struct cgroup *cont)
-@@ -130,6 +217,11 @@ cfq_cgroup_create(struct cgroup_subsys *ss, struct cgroup *cont)
- 		return ERR_PTR(-ENOMEM);
- 
- 	cfqc->ioprio = 3;
-+	cfqc->sibling_tree = RB_ROOT;
-+	cfqc->siblings = 0;
-+
-+	if (!cfq_cgroup_init_cgroup(cfqc, cont->parent))
-+		return ERR_PTR(-ENOMEM);
- 
- 	return &cfqc->css;	
- }
-@@ -144,6 +236,12 @@ static void cfq_cgroup_erase_meta_data_siblings(struct cfq_meta_data *cfqmd, str
- 	cfqmd->siblings--;
- }
- 
-+static void cfq_cgroup_erase_cgroup_siblings(struct cfq_cgroup *cfqc, struct cfq_data *cfqd)
-+{
-+	rb_erase(&cfqd->group_node, &cfqc->sibling_tree);
-+	cfqc->siblings--;	
-+}
-+
- static void cfq_exit_device_group(struct cfq_meta_data *cfqmd)
- {
- 	struct rb_node *p, *n;
-@@ -156,6 +254,7 @@ static void cfq_exit_device_group(struct cfq_meta_data *cfqmd)
- 		cfqd = rb_entry(p, struct cfq_data, sib_node);
- 
- 		cfq_cgroup_erase_meta_data_siblings(cfqmd, cfqd);
-+		cfq_cgroup_erase_cgroup_siblings(cfqd->cfqc, cfqd);
- 		__cfq_exit_data(cfqd);
- 
- 		p = n;
-@@ -170,8 +269,28 @@ static void __cfq_cgroup_exit_data(struct cfq_data *cfqd)
- 	kfree(cfqmd);
- }
- 
-+static void cfq_exit_cgroup(struct cfq_cgroup *cfqc)
-+{
-+	struct rb_node *p, *n;
-+	struct cfq_data *cfqd;
-+
-+	p =  rb_first(&cfqc->sibling_tree);
++	struct cfq_data *cfqd = (struct cfq_data *)data;
++	struct cfq_meta_data *cfqmd = cfqd->cfqmd;
++	struct cfq_cgroup *cont = task_to_cfq_cgroup(tsk);
++	struct rb_node *p = cont->sibling_tree.rb_node;
 +
 +	while (p) {
-+		n = rb_next(p);
-+		cfqd = rb_entry(p, struct cfq_data, group_node);
++		struct cfq_data *__cfqd;
++		__cfqd = rb_entry(p, struct cfq_data, group_node);
 +
-+		cfq_cgroup_erase_meta_data_siblings(cfqd->cfqmd, cfqd);
-+		cfq_cgroup_erase_cgroup_siblings(cfqc, cfqd);
-+		__cfq_exit_data(cfqd);			
 +
-+		p = n;
++		if (cfqmd < __cfqd->cfqmd) {
++			p = p->rb_left;
++		} else if (cfqmd > __cfqd->cfqmd) {
++			p = p->rb_right;
++		} else {
++			return __cfqd;
++		}
 +	}
++
++	return NULL;
 +}
 +
- static void cfq_cgroup_destroy(struct cgroup_subsys *ss, struct cgroup *cont)
- {
-+	cfq_exit_cgroup(cgroup_to_cfq_cgroup(cont));
- 	kfree(cgroup_to_cfq_cgroup(cont));
- }
++
+ struct cfq_ops opt = {
+ 	.cfq_init_queue_fn = __cfq_cgroup_init_queue,
+ 	.cfq_exit_queue_fn = __cfq_cgroup_exit_data,
+diff --git a/block/cfq-iosched.c b/block/cfq-iosched.c
+index b1757bc..3aa320a 100644
+--- a/block/cfq-iosched.c
++++ b/block/cfq-iosched.c
+@@ -623,6 +623,9 @@ static int cfq_merge(struct request_queue *q, struct request **req,
+ 	struct cfq_data *cfqd = q->elevator->elevator_data;
+ 	struct request *__rq;
  
++	if (opt.cfq_search_data_fn)
++		cfqd = opt.cfq_search_data_fn(cfqd, current);
++
+ 	__rq = cfq_find_rq_fmerge(cfqd, bio);
+ 	if (__rq && elv_rq_merge_ok(__rq, bio)) {
+ 		*req = __rq;
+@@ -663,6 +666,9 @@ static int cfq_allow_merge(struct request_queue *q, struct request *rq,
+ 	struct cfq_io_context *cic;
+ 	struct cfq_queue *cfqq;
+ 
++	if (opt.cfq_search_data_fn)
++		cfqd = opt.cfq_search_data_fn(cfqd, current);
++
+ 	/*
+ 	 * Disallow merge of a sync bio into an async request.
+ 	 */
+@@ -1832,6 +1838,9 @@ static int cfq_may_queue(struct request_queue *q, int rw)
+ 	struct cfq_io_context *cic;
+ 	struct cfq_queue *cfqq;
+ 
++	if (opt.cfq_search_data_fn)
++		cfqd = opt.cfq_search_data_fn(cfqd, current);
++
+ 	/*
+ 	 * don't force setup of a queue from here, as a call to may_queue
+ 	 * does not necessarily imply that a request actually will be queued.
+@@ -1888,6 +1897,9 @@ cfq_set_request(struct request_queue *q, struct request *rq, gfp_t gfp_mask)
+ 	struct cfq_queue *cfqq;
+ 	unsigned long flags;
+ 
++	if (opt.cfq_search_data_fn)
++		cfqd = opt.cfq_search_data_fn(cfqd, current);
++	
+ 	might_sleep_if(gfp_mask & __GFP_WAIT);
+ 
+ 	cic = cfq_get_io_context(cfqd, gfp_mask);
 diff --git a/include/linux/cfq-iosched.h b/include/linux/cfq-iosched.h
-index c8879a7..93256ce 100644
+index 93256ce..a382953 100644
 --- a/include/linux/cfq-iosched.h
 +++ b/include/linux/cfq-iosched.h
-@@ -94,10 +94,16 @@ struct cfq_data {
- 	struct list_head cic_list;
+@@ -131,11 +131,13 @@ static inline struct request_queue * __cfq_container_of_queue(struct work_struct
  
- #ifdef CONFIG_CGROUP_CFQ
-+	/* device unique attribute */
- 	struct cfq_meta_data *cfqmd;
- 	/* sibling_tree member for cfq_meta_data */
- 	struct rb_node sib_node;
+ typedef struct cfq_data *(cfq_init_queue_fn)(struct request_queue *, void *);
+ typedef void (cfq_exit_queue_fn)(struct cfq_data *);
++typedef struct cfq_data *(cfq_search_data_fn)(void *, struct task_struct *);
  
-+	/* cfq_cgroup attribute */
-+	struct cfq_cgroup *cfqc;
-+	/* group_tree member for cfq_cgroup */
-+	struct rb_node group_node;
-+
- #else
- 	struct cfq_driver_data cfq_driv_d;
- #endif
-diff --git a/include/linux/cgroup.h b/include/linux/cgroup.h
-index 785a01c..6423951 100644
---- a/include/linux/cgroup.h
-+++ b/include/linux/cgroup.h
-@@ -356,6 +356,7 @@ struct task_struct *cgroup_iter_next(struct cgroup *cgrp,
- void cgroup_iter_end(struct cgroup *cgrp, struct cgroup_iter *it);
- int cgroup_scan_tasks(struct cgroup_scanner *scan);
- int cgroup_attach_task(struct cgroup *, struct task_struct *);
-+struct cgroup* get_root_subsys(struct cgroup_subsys *css);
+ struct cfq_ops
+ {
+ 	cfq_init_queue_fn *cfq_init_queue_fn;
+ 	cfq_exit_queue_fn *cfq_exit_queue_fn;
++	cfq_search_data_fn *cfq_search_data_fn;
+ };
  
- #else /* !CONFIG_CGROUPS */
- 
-diff --git a/kernel/cgroup.c b/kernel/cgroup.c
-index e8e8ec4..1ef1de7 100644
---- a/kernel/cgroup.c
-+++ b/kernel/cgroup.c
-@@ -1290,6 +1290,12 @@ static int attach_task_by_pid(struct cgroup *cgrp, char *pidbuf)
- 	return ret;
- }
- 
-+
-+struct cgroup* get_root_subsys(struct cgroup_subsys *css)
-+{
-+	return &css->root->top_cgroup;
-+}
-+
- /* The various types of files and directories in a cgroup file system */
- enum cgroup_filetype {
- 	FILE_ROOT,
+ extern struct cfq_ops opt;
 -- 
 1.5.4.1
