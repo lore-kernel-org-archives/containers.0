@@ -1,15 +1,13 @@
-From: "Satoshi UCHIDA" <s-uchida-LYU95VJlayp8UrSeD/g0lQ@public.gmane.org>
-Subject: [RFC][patch 12/12][CFQ-cgroup] entry/remove active cfq_data
-Date: Thu, 3 Apr 2008 16:18:10 +0900
-Message-ID: <006901c8955a$df18d140$9d4a73c0$__14694.8512796827$1207207217$gmane$org@jp.nec.com>
-References: <007801c893d9$d89726f0$89c574d0$@jp.nec.com>		<008001c893db$4e2eccf0$ea8c66d0$@jp.nec.com>	<6599ad830804021541s3c1e3197y77d87f63bf47e4b3@mail.gmail.com>
-	<005d01c89559$9e538200$dafa8600$@jp.nec.com>
+From: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+Subject: Re: [PATCH -mm 1/3] cgroup: use a hash table for css_set finding
+Date: Thu, 3 Apr 2008 16:24:59 +0900
+Message-ID: <20080403162459.4a90d574.kamezawa.hiroyu__35156.876469455$1207207389$gmane$org@jp.fujitsu.com>
+References: <47F470AB.2070904@cn.fujitsu.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <005d01c89559$9e538200$dafa8600$@jp.nec.com>
-Content-Language: ja
+In-Reply-To: <47F470AB.2070904-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,120 +17,61 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: 'Satoshi UCHIDA' <s-uchida-LYU95VJlayp8UrSeD/g0lQ@public.gmane.org>, 'Paul Menage' <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Cc: axboe-tSWWG44O7X1aa/9Udqfwiw@public.gmane.org, tom-sugawara-LYU95VJlayp8UrSeD/g0lQ@public.gmane.org
+To: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+Cc: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, LKML <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-This patch controls whether cfq_data is active or not.
-When cfq_data is not active and active cfq_queue is inserted into cfq_data,
-cfq_data is activated.
-When cfq_data is active and active cfq_queue is not exist,
-cfq_data is deactivated.
 
-The new cfq optional operations:
-The "cfq_add_cfqq_opt_fn" defines a function that runs an additional process
-when active queue is inserted into cfq_data.
+On Thu, 03 Apr 2008 13:52:43 +0800
+Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org> wrote:
+> +/* hash table for cgroup groups. This improves the performance to
+> + * find an existing css_set */
+> +#define CSS_SET_HASH_BITS	7
+> +#define CSS_SET_TABLE_SIZE	(1 << CSS_SET_HASH_BITS)
+> +static struct hlist_head css_set_table[CSS_SET_TABLE_SIZE];
 
-The "cfq_del_cfqq_opt_fn" defines a function that runs an additional process
-when active queue is removed in cfq_data.
+How above number is selected ?
 
-      Signed-off-by: Satoshi UCHIDA <uchida-LYU95VJlayp8UrSeD/g0lQ@public.gmane.org>
+> +static struct hlist_head *css_set_hash(struct cgroup_subsys_state *css[])
+> +{
+> +	int i;
+> +	int index;
+> +	unsigned long tmp = 0UL;
+> +
+> +	for (i = 0; i < CGROUP_SUBSYS_COUNT; i++)
+> +		tmp += (unsigned long)css[i];
+> +
 
----
- block/cfq-cgroup.c          |   28 ++++++++++++++++++++++++++++
- block/cfq-iosched.c         |    6 ++++++
- include/linux/cfq-iosched.h |    4 ++++
- 3 files changed, 38 insertions(+), 0 deletions(-)
+maybe css[i]'s lower 2-3 bits will be ignored. because thery are always 0.
 
-diff --git a/block/cfq-cgroup.c b/block/cfq-cgroup.c
-index 27a9a7a..f868f4f 100644
---- a/block/cfq-cgroup.c
-+++ b/block/cfq-cgroup.c
-@@ -741,6 +741,32 @@ static int cfq_cgroup_active_data_check(struct cfq_data *cfqd)
- 	return (cfqd->cfqmd->active_data == cfqd);
- }
- 
-+static void cfq_cgroup_add_cfqd_rr(struct cfq_data *cfqd)
-+{
-+	if (!cfq_cfqd_on_rr(cfqd)) {
-+		cfq_mark_cfqd_on_rr(cfqd);
-+		cfqd->cfqmd->busy_data++;
-+
-+		cfq_cgroup_service_tree_add(cfqd, 0);
-+	}
-+}
-+
-+
-+static void cfq_cgroup_del_cfqd_rr(struct cfq_data *cfqd)
-+{
-+	if (RB_EMPTY_ROOT(&cfqd->service_tree.rb)) {
-+		struct cfq_meta_data *cfqdd = cfqd->cfqmd;
-+		BUG_ON(!cfq_cfqd_on_rr(cfqd));
-+		cfq_clear_cfqd_on_rr(cfqd);
-+		if (!RB_EMPTY_NODE(&cfqd->rb_node)) {
-+			cfq_rb_erase(&cfqd->rb_node,
-+				     &cfqdd->service_tree);
-+		}
-+		BUG_ON(!cfqdd->busy_data);
-+		cfqdd->busy_data--;
-+	}	
-+}
-+
- struct cfq_ops opt = {
- 	.cfq_init_queue_fn = __cfq_cgroup_init_queue,
- 	.cfq_exit_queue_fn = __cfq_cgroup_exit_data,
-@@ -749,4 +775,6 @@ struct cfq_ops opt = {
- 	.cfq_completed_request_after_fn = cfq_cgroup_completed_request_after,
- 	.cfq_empty_fn = cfq_cgroup_queue_empty,
- 	.cfq_active_check_fn = cfq_cgroup_active_data_check,
-+	.cfq_add_cfqq_opt_fn =  cfq_cgroup_add_cfqd_rr,
-+	.cfq_del_cfqq_opt_fn =  cfq_cgroup_del_cfqd_rr,
- };
-diff --git a/block/cfq-iosched.c b/block/cfq-iosched.c
-index 505e425..8f5227f 100644
---- a/block/cfq-iosched.c
-+++ b/block/cfq-iosched.c
-@@ -492,6 +492,9 @@ static void cfq_add_cfqq_rr(struct cfq_data *cfqd, struct cfq_queue *cfqq)
- 	cfqd->busy_queues++;
- 
- 	cfq_resort_rr_list(cfqd, cfqq);
-+
-+	if (opt.cfq_add_cfqq_opt_fn)
-+		opt.cfq_add_cfqq_opt_fn(cfqd);
- }
- 
- /*
-@@ -508,6 +511,9 @@ static void cfq_del_cfqq_rr(struct cfq_data *cfqd, struct cfq_queue *cfqq)
- 
- 	BUG_ON(!cfqd->busy_queues);
- 	cfqd->busy_queues--;
-+
-+	if (opt.cfq_del_cfqq_opt_fn)
-+		opt.cfq_del_cfqq_opt_fn(cfqd);
- }
- 
- /*
-diff --git a/include/linux/cfq-iosched.h b/include/linux/cfq-iosched.h
-index 63d2545..ed35050 100644
---- a/include/linux/cfq-iosched.h
-+++ b/include/linux/cfq-iosched.h
-@@ -161,6 +161,8 @@ typedef int (cfq_dispatch_requests_fn)(struct cfq_data *, int);
- typedef int (cfq_completed_request_after_fn)(struct cfq_data *);
- typedef int (cfq_active_check_fn)(struct cfq_data *);
- typedef int (cfq_empty_fn)(struct cfq_data *);
-+typedef void (cfq_add_cfqq_opt_fn)(struct cfq_data *);
-+typedef void (cfq_del_cfqq_opt_fn)(struct cfq_data *);
- 
- struct cfq_ops
- {
-@@ -171,6 +173,8 @@ struct cfq_ops
- 	cfq_completed_request_after_fn *cfq_completed_request_after_fn;
- 	cfq_active_check_fn *cfq_active_check_fn;
- 	cfq_empty_fn *cfq_empty_fn;
-+	cfq_add_cfqq_opt_fn *cfq_add_cfqq_opt_fn;
-+	cfq_del_cfqq_opt_fn *cfq_del_cfqq_opt_fn;
- };
- 
- extern struct cfq_ops opt;
--- 
-1.5.4.1
+And I don't like "+" for hash. how about
+==
+	for (i = 0; i < CGROUP_SUBSYS_COUNT; i++)
+	unsigned long x;
+	x = (unsigned long)css[i];
+	tmp = (x >> 16) ^ (x & 0xffff)
+==
+or some func, which uses full bits.
+
+
+> +	index = hash_long(tmp, CSS_SET_HASH_BITS);
+> +
+> +	return &css_set_table[index];
+> +}
+> +
+>  /* We don't maintain the lists running through each css_set to its
+>   * task until after the first call to cgroup_iter_start(). This
+>   * reduces the fork()/exit() overhead for people who have cgroups
+> @@ -219,6 +240,7 @@ static int use_task_css_set_links;
+>  static void unlink_css_set(struct css_set *cg)
+>  {
+>  	write_lock(&css_set_lock);
+> +	hlist_del(&cg->hlist);
+>  	list_del(&cg->list);
+>  	css_set_count--;
+
+This css_set_lock is worth to be rwlock ?
+how about per hashline spinlock ? (but per-hashline seems overkill..)
+
+Thanks,
+-Kame
