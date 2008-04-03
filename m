@@ -1,7 +1,7 @@
 From: "Satoshi UCHIDA" <s-uchida-LYU95VJlayp8UrSeD/g0lQ@public.gmane.org>
-Subject: [RFC][patch 3/12][CFQ-cgroup] Introduce cgroup subsystem
-Date: Thu, 3 Apr 2008 16:12:54 +0900
-Message-ID: <006001c8955a$23267fa0$69737ee0$__4888.53237261555$1207206890$gmane$org@jp.nec.com>
+Subject: [PATCH] [RFC][patch 4/12][CFQ-cgroup] Add ioprio entry
+Date: Thu, 3 Apr 2008 16:13:21 +0900
+Message-ID: <006101c8955a$332f43f0$998dcbd0$__12740.7170403332$1207206906$gmane$org@jp.nec.com>
 References: <007801c893d9$d89726f0$89c574d0$@jp.nec.com>		<008001c893db$4e2eccf0$ea8c66d0$@jp.nec.com>	<6599ad830804021541s3c1e3197y77d87f63bf47e4b3@mail.gmail.com>
 	<005d01c89559$9e538200$dafa8600$@jp.nec.com>
 Mime-Version: 1.0
@@ -23,106 +23,141 @@ To: 'Satoshi UCHIDA' <s-uchida-LYU95VJlayp8UrSeD/g0lQ@public.gmane.org>, 'Paul M
 Cc: axboe-tSWWG44O7X1aa/9Udqfwiw@public.gmane.org, tom-sugawara-LYU95VJlayp8UrSeD/g0lQ@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-This patch introduces a simple cgroup subsystem.
-New cgroup subsystem is called cfq_cgroup.
+This patch add "ioprio" entry in cfq_cgroup.
+The "ioprio" entry shows I/O priority of group.
+When you would change priority, write this entry.
 
-   Signed-off-by: Satoshi UCHIDA <uchida-LYU95VJlayp8UrSeD/g0lQ@public.gmane.org>
+      Signed-off-by: Satoshi UCHIDA <uchida-LYU95VJlayp8UrSeD/g0lQ@public.gmane.org>
 
 ---
- block/Makefile                |    1 +
- block/cfq-cgroup.c            |   57 +++++++++++++++++++++++++++++++++++++++++
- include/linux/cgroup_subsys.h |    6 ++++
- 3 files changed, 64 insertions(+), 0 deletions(-)
- create mode 100644 block/cfq-cgroup.c
+ block/cfq-cgroup.c |   96 ++++++++++++++++++++++++++++++++++++++++++++++++++++
+ 1 files changed, 96 insertions(+), 0 deletions(-)
 
-diff --git a/block/Makefile b/block/Makefile
-index 5a43c7d..ea07b46 100644
---- a/block/Makefile
-+++ b/block/Makefile
-@@ -11,6 +11,7 @@ obj-$(CONFIG_IOSCHED_NOOP)	+= noop-iosched.o
- obj-$(CONFIG_IOSCHED_AS)	+= as-iosched.o
- obj-$(CONFIG_IOSCHED_DEADLINE)	+= deadline-iosched.o
- obj-$(CONFIG_IOSCHED_CFQ)	+= cfq-iosched.o
-+obj-$(CONFIG_CGROUP_CFQ)	+= cfq-cgroup.o
- 
- obj-$(CONFIG_BLK_DEV_IO_TRACE)	+= blktrace.o
- obj-$(CONFIG_BLOCK_COMPAT)	+= compat_ioctl.o
 diff --git a/block/cfq-cgroup.c b/block/cfq-cgroup.c
-new file mode 100644
-index 0000000..de00a0d
---- /dev/null
+index de00a0d..378a23d 100644
+--- a/block/cfq-cgroup.c
 +++ b/block/cfq-cgroup.c
-@@ -0,0 +1,57 @@
-+/*
-+ *  CFQ CGROUP disk scheduler.
-+ *
-+ *     This program is a wrapper program that is
-+ *     extend CFQ disk scheduler for handling
-+ *     cgroup subsystem. 
-+ *
-+ *     This program is based on original CFQ code.
-+ * 
-+ *  Copyright (C) 2008 Satoshi UCHIDA <s-uchida-LYU95VJlayp8UrSeD/g0lQ@public.gmane.org>
-+ *   and NEC Corp.
-+ */
+@@ -15,8 +15,12 @@
+ #include <linux/cgroup.h>
+ #include <linux/cfq-iosched.h>
+ 
++#define CFQ_CGROUP_SLICE_SCALE		(5)
++#define CFQ_CGROUP_MAX_IOPRIO		(8)
 +
-+#include <linux/blkdev.h>
-+#include <linux/cgroup.h>
-+#include <linux/cfq-iosched.h>
+ struct cfq_cgroup {
+ 	struct cgroup_subsys_state css;
++	unsigned int ioprio;
+ };
+ 
+ 
+@@ -41,6 +45,8 @@ cfq_cgroup_create(struct cgroup_subsys *ss, struct cgroup *cont)
+ 	if (unlikely(!cfqc))
+ 		return ERR_PTR(-ENOMEM);
+ 
++	cfqc->ioprio = 3;
 +
-+struct cfq_cgroup {
-+	struct cgroup_subsys_state css;
-+};
-+
-+
-+static inline struct cfq_cgroup *cgroup_to_cfq_cgroup(struct cgroup *cont)
-+{
-+	return container_of(cgroup_subsys_state(cont, cfq_subsys_id),
-+			    struct cfq_cgroup, css);
-+}
-+
-+static struct cgroup_subsys_state *
-+cfq_cgroup_create(struct cgroup_subsys *ss, struct cgroup *cont)
+ 	return &cfqc->css;	
+ }
+ 
+@@ -49,9 +55,99 @@ static void cfq_cgroup_destroy(struct cgroup_subsys *ss, struct cgroup *cont)
+ 	kfree(cgroup_to_cfq_cgroup(cont));
+ }
+ 
++static ssize_t cfq_cgroup_read(struct cgroup *cont, struct cftype *cft,
++			       struct file *file, char __user *userbuf,
++			       size_t nbytes, loff_t *ppos)
 +{
 +	struct cfq_cgroup *cfqc;
++	char *page;
++	ssize_t ret;
 +
-+	if (!capable(CAP_SYS_ADMIN))
-+		return ERR_PTR(-EPERM);
++	page = (char *)__get_free_page(GFP_TEMPORARY);
++	if (!page)
++		return -ENOMEM;
 +
-+	if (!cgroup_is_descendant(cont))
-+		return ERR_PTR(-EPERM);
++	cgroup_lock();
++	if (cgroup_is_removed(cont)) {
++		cgroup_unlock();
++		ret = -ENODEV;
++		goto out;
++	}
 +
-+	cfqc = kzalloc(sizeof(struct cfq_cgroup), GFP_KERNEL);
-+	if (unlikely(!cfqc))
-+		return ERR_PTR(-ENOMEM);
++	cfqc = cgroup_to_cfq_cgroup(cont);
 +
-+	return &cfqc->css;	
++	cgroup_unlock();
++
++	/* print priority */
++	ret = sprintf(page, " priority: %d \n", cfqc->ioprio);
++
++	ret = simple_read_from_buffer(userbuf, nbytes, ppos, page, ret);
++
++out:
++	free_page((unsigned long)page);
++	return ret;
 +}
 +
-+static void cfq_cgroup_destroy(struct cgroup_subsys *ss, struct cgroup *cont)
++static ssize_t cfq_cgroup_write(struct cgroup *cont, struct cftype *cft,
++				struct file *file, const char __user *userbuf,
++				size_t nbytes, loff_t *ppos)
 +{
-+	kfree(cgroup_to_cfq_cgroup(cont));
++	struct cfq_cgroup *cfqc;
++	ssize_t ret;
++	int new_prio;
++	char *buffer = NULL;
++
++	cgroup_lock();
++	if (cgroup_is_removed(cont)) {
++		cgroup_unlock();
++		ret = -ENODEV;
++		goto out;
++	}
++
++	cfqc = cgroup_to_cfq_cgroup(cont);
++	cgroup_unlock();
++
++	/* set priority */
++	if ((buffer = kmalloc(nbytes + 1, GFP_KERNEL)) == 0)
++		return -ENOMEM;
++	
++	if (copy_from_user(buffer, userbuf, nbytes)) {
++		ret = -EFAULT;
++		goto out;
++	}
++	buffer[nbytes]=0;
++
++	new_prio = simple_strtoul(buffer, NULL, 10);
++	if ((new_prio < 0) || (new_prio > CFQ_CGROUP_MAX_IOPRIO)) {
++		ret = -EINVAL;
++		goto out;
++	}
++
++	cfqc->ioprio = new_prio;
++	ret = nbytes;
++	
++out:
++	kfree(buffer);
++	return ret;
 +}
 +
-+struct cgroup_subsys cfq_subsys = {
-+	.name = "cfq",
-+	.create = cfq_cgroup_create,
-+	.destroy = cfq_cgroup_destroy,
-+	.subsys_id = cfq_subsys_id,
++static struct cftype files[] = {
++	{
++		.name = "ioprio",
++		.read = cfq_cgroup_read,
++		.write = cfq_cgroup_write,
++	},
 +};
-diff --git a/include/linux/cgroup_subsys.h b/include/linux/cgroup_subsys.h
-index 1ddebfc..217ecb9 100644
---- a/include/linux/cgroup_subsys.h
-+++ b/include/linux/cgroup_subsys.h
-@@ -42,3 +42,9 @@ SUBSYS(mem_cgroup)
- #endif
- 
- /* */
 +
-+#ifdef CONFIG_CGROUP_CFQ
-+SUBSYS(cfq)
-+#endif
++static int cfq_cgroup_populate(struct cgroup_subsys *ss, struct cgroup *cont)
++{
++	return cgroup_add_files(cont, ss, files, ARRAY_SIZE(files));
++}
 +
-+/* */
+ struct cgroup_subsys cfq_subsys = {
+ 	.name = "cfq",
+ 	.create = cfq_cgroup_create,
+ 	.destroy = cfq_cgroup_destroy,
+ 	.subsys_id = cfq_subsys_id,
++	.populate = cfq_cgroup_populate,
+ };
 -- 
 1.5.4.1
