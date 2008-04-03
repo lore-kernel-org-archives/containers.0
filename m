@@ -1,15 +1,14 @@
-From: "Satoshi UCHIDA" <s-uchida-LYU95VJlayp8UrSeD/g0lQ@public.gmane.org>
-Subject: [PATCH] [RFC][patch 1/12][CFQ-cgroup] Add Configuration
-Date: Thu, 3 Apr 2008 16:11:34 +0900
-Message-ID: <005e01c89559$f37ef1b0$da7cd510$__49825.8504704156$1207206800$gmane$org@jp.nec.com>
-References: <007801c893d9$d89726f0$89c574d0$@jp.nec.com>		<008001c893db$4e2eccf0$ea8c66d0$@jp.nec.com>	<6599ad830804021541s3c1e3197y77d87f63bf47e4b3@mail.gmail.com>
-	<005d01c89559$9e538200$dafa8600$@jp.nec.com>
+From: sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org
+Subject: [PATCH 5/7][v2]: Implement get_pts_ns() and put_pts_ns()
+Date: Thu, 3 Apr 2008 00:10:24 -0700
+Message-ID: <20080403071024.GE12429@us.ibm.com>
+References: <20080403070233.GA12262@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <005d01c89559$9e538200$dafa8600$@jp.nec.com>
-Content-Language: ja
+Content-Disposition: inline
+In-Reply-To: <20080403070233.GA12262-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,37 +18,61 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: 'Satoshi UCHIDA' <s-uchida-LYU95VJlayp8UrSeD/g0lQ@public.gmane.org>, 'Paul Menage' <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Cc: axboe-tSWWG44O7X1aa/9Udqfwiw@public.gmane.org, tom-sugawara-LYU95VJlayp8UrSeD/g0lQ@public.gmane.org
+To: Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>, serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org, adobriyan-3ImXcnM4P+0@public.gmane.org
+Cc: Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-This patch adds configuration entry into block/Kconfig.iosched.
 
-      Signed-off-by: Satoshi UCHIDA <uchida-LYU95VJlayp8UrSeD/g0lQ@public.gmane.org>
+From: Sukadev Bhattiprolu <sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: [PATCH 5/7][v2]: Implement get_pts_ns() and put_pts_ns()
 
+Implement get_pts_ns() and put_pts_ns() interfaces.
+
+Signed-off-by: Sukadev Bhattiprolu <sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 ---
- block/Kconfig.iosched |    9 +++++++++
- 1 files changed, 9 insertions(+), 0 deletions(-)
+ include/linux/devpts_fs.h |   21 ++++++++++++++++++++-
+ 1 file changed, 20 insertions(+), 1 deletion(-)
 
-diff --git a/block/Kconfig.iosched b/block/Kconfig.iosched
-index 96a01b3..25fa6bb 100644
---- a/block/Kconfig.iosched
-+++ b/block/Kconfig.iosched
-@@ -25,6 +25,15 @@ config IOSCHED_CFQ
+Index: 2.6.25-rc5-mm1/include/linux/devpts_fs.h
+===================================================================
+--- 2.6.25-rc5-mm1.orig/include/linux/devpts_fs.h	2008-04-02 22:35:35.000000000 -0700
++++ 2.6.25-rc5-mm1/include/linux/devpts_fs.h	2008-04-02 22:42:08.000000000 -0700
+@@ -27,13 +27,26 @@ struct pts_namespace {
+ extern struct pts_namespace init_pts_ns;
  
- 	  If unsure, say Y.
+ #ifdef CONFIG_UNIX98_PTYS
+-
+ int devpts_new_index(void);
+ void devpts_kill_index(int idx);
+ int devpts_pty_new(struct tty_struct *tty);      /* mknod in devpts */
+ struct tty_struct *devpts_get_tty(int number);	 /* get tty structure */
+ void devpts_pty_kill(int number);		 /* unlink */
  
-+config CGROUP_CFQ
-+	bool "handling cgroup in CFQ"
-+	default n
-+	depends on IOSCHED_CFQ && CGROUPS
-+	---help---
-+          This option exptends CFQ to handling cgroup.
-+          CFQ is changed into two layler control --
-+          per-cgroup layler and per-task layler --.
-+	
- config IOSCHED_AS
- 	tristate "Anticipatory I/O scheduler"
- 	default y
--- 
-1.5.4.1
++static inline void free_pts_ns(struct kref *ns_kref) { }
++
++static inline struct pts_namespace *get_pts_ns(struct pts_namespace *ns)
++{
++	if (ns && (ns != &init_pts_ns))
++		kref_get(&ns->kref);
++	return ns;
++}
++static inline void put_pts_ns(struct pts_namespace *ns)
++{
++	if (ns && (ns != &init_pts_ns))
++		kref_put(&ns->kref, free_pts_ns);
++}
++
+ #else
+ 
+ /* Dummy stubs in the no-pty case */
+@@ -43,6 +56,12 @@ static inline int devpts_pty_new(struct 
+ static inline struct tty_struct *devpts_get_tty(int number) { return NULL; }
+ static inline void devpts_pty_kill(int number) { }
+ 
++static inline struct pts_namespace *get_pts_ns(struct pts_namespace *ns)
++{
++	return &init_pts_ns;
++}
++
++static inline void put_pts_ns(struct pts_namespace *ns) { }
+ #endif
