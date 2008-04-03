@@ -1,16 +1,14 @@
 From: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Subject: Re: [RFC][patch 3/11][CFQ-cgroup] Introduce cgroup subsystem
-Date: Thu, 03 Apr 2008 10:39:09 +0800
-Message-ID: <47F4434D.9030800__8854.52088336951$1207190598$gmane$org@cn.fujitsu.com>
-References: <007801c893d9$d89726f0$89c574d0$@jp.nec.com>	
-	<008001c893db$4e2eccf0$ea8c66d0$@jp.nec.com>
-	<6599ad830804021541s3c1e3197y77d87f63bf47e4b3@mail.gmail.com>
-	<003001c89532$dae5dd20$90b19760$@jp.nec.com>
+Subject: Re: [PATCH -mm 2/3] cgroup: simplify init_subsys()
+Date: Thu, 03 Apr 2008 12:59:34 +0800
+Message-ID: <47F46436.3060607__16395.0799651959$1207199048$gmane$org@cn.fujitsu.com>
+References: <47F2EC94.8030707@cn.fujitsu.com>
+	<6599ad830804020326o7947e3e5k25249e6b1c00e6b5@mail.gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <003001c89532$dae5dd20$90b19760$@jp.nec.com>
+In-Reply-To: <6599ad830804020326o7947e3e5k25249e6b1c00e6b5-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -20,60 +18,39 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Satoshi UCHIDA <s-uchida-LYU95VJlayp8UrSeD/g0lQ@public.gmane.org>
-Cc: axboe-tSWWG44O7X1aa/9Udqfwiw@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, 'Paul Menage' <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, tom-sugawara-LYU95VJlayp8UrSeD/g0lQ@public.gmane.org
+To: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, LKML <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Satoshi UCHIDA wrote:
-> Thank you for reply.
+Paul Menage wrote:
+> On Tue, Apr 1, 2008 at 7:16 PM, Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org> wrote:
+>>  -
+>>  -       /* If this subsystem requested that it be notified with fork
+>>  -        * events, we should send it one now for every process in the
+>>  -        * system */
+>>  -       if (ss->fork) {
+>>  -               struct task_struct *g, *p;
+>>  -
+>>  -               read_lock(&tasklist_lock);
+>>  -               do_each_thread(g, p) {
+>>  -                       ss->fork(ss, p);
+>>  -               } while_each_thread(g, p);
+>>  -               read_unlock(&tasklist_lock);
+>>  -       }
 > 
->>>  +
->>>  +static struct cgroup_subsys_state *
->>>  +cfq_cgroup_create(struct cgroup_subsys *ss, struct cgroup *cont)
->>>  +{
->>>  +       struct cfq_cgroup *cfqc;
->>>  +
->>>  +       if (!capable(CAP_SYS_ADMIN))
->>>  +               return ERR_PTR(-EPERM);
->>>  +
->>>  +       if (!cgroup_is_descendant(cont))
->>>  +               return ERR_PTR(-EPERM);
->> What are these checks for? Cgroups already provides filesystem
->> permissions to control directory creation, and the "descendant" check
->> looks like it may have been cut/pasted from the nsproxy subsystem.
->>
+> Should we maybe call ss->fork(ss, &init_task) ? Or just document that
+> ss->fork() explicitly doesn't get called for init.
 > 
-> This code was referred one of io-throttle.
-> Is it not necessary these checks?
-> IF not necessary, remove this code.
-> 
->>>   /* */
->>>  +
->>>  +#ifdef CONFIG_CGROUP_CFQ
->>>  +SUBSYS(cfq_cgroup)
->>>  +#endif
->>>  +
->>>  +/* */
->> To fit with the convention for other subsystems, simply "cfq" would be
->> a better name than "cfq_cgroup". (Clearly it's a cgroup subsystem from
->> context).
->>
-> 
-> Ok, I change name.
-> I hesitated whether using "_cgroup".
-> The cpuset and the cpuacct does not use it,
-> but cpu and memory uses it(cpu_cgroup and mem_cgroup).
-> In this patchset, I select the latter case.
+> Maybe also add some BUG()s to confirm that no other tasks have in fact
+> been forked by this point?
 > 
 
-+struct cgroup_subsys cfq_cgroup_subsys = {
-+	.name = "cfq_cgroup",
-+	...
-+};
+At system boot, before all the subsystems have been registered, no processes
+including init has been forked, am I right? So the fork callback will be
+invoked when the init process is forked, so we don't need to call
+ss->fork(ss, &init_task).
 
-but memory controller has the name 'memory', similar for cgroup sched.
+I'll add a BUG_ON(), and update the document about the fork callback.
 
-So we do this:
-	mount -t cgroup -omemory xxx /dev/memcg
-but not:
-	mount -t cgroup -omemory_cgroup xxx /dev/memcg
+Regards,
+Li Zefan
