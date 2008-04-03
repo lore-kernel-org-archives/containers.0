@@ -1,12 +1,14 @@
 From: sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org
-Subject: [PATCH 0/7][v2] Clone PTY namespaces
-Date: Thu, 3 Apr 2008 00:02:33 -0700
-Message-ID: <20080403070233.GA12262@us.ibm.com>
+Subject: [PATCH 1/7][v2]: Propagate error code from devpts_pty_new
+Date: Thu, 3 Apr 2008 00:07:17 -0700
+Message-ID: <20080403070717.GA12429@us.ibm.com>
+References: <20080403070233.GA12262@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
+In-Reply-To: <20080403070233.GA12262-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -20,63 +22,32 @@ To: Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>, serue-r/Jw6
 Cc: Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
+From: Sukadev Bhattiprolu <sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: [PATCH 1/7][v2]: Propagate error code from devpts_pty_new
 
-Devpts namespace patchset
+Have ptmx_open() propagate any error code returned by devpts_pty_new().
 
-In continuation of the implementation of containers in mainline, we need to
-support multiple PTY namespaces so that the PTY index (ie the tty names) in
-one container is independent of the PTY indices of other containers.  For
-instance this would allow each container to have a '/dev/pts/0' PTY and
-refer to different terminals.
+Signed-off-by: Sukadev Bhattiprolu <sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Cc: Cedric Le Goater <clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
+Cc: Dave Hansen <haveblue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Cc: Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
+---
+ drivers/char/tty_io.c |    4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
 
-	[PATCH 1/7]: Propagate error code from devpts_pty_new
-	[PATCH 2/7]: Factor out PTY index allocation
-	[PATCH 3/7]: Enable multiple mounts of /dev/pts
-	[PATCH 4/7]: Allow mknod of ptmx and tty in devpts
-	[PATCH 5/7]: Implement get_pts_ns() and put_pts_ns()
-	[PATCH 6/7]: Determine pts_ns from a pty's inode
-	[PATCH 7/7]: Enable cloning PTY namespaces
-
-Todo:
-	- This patchset depends on availability of additional clone flags.
-	  and relies on on Cedric's clone64 patchset.
-
-	- Needs some cleanup and more testing.
-
-	- Ensure patchset is bisect-safe
-
-Changelog[v2]:
-
-	 (Patches 4 and 6 differ significantly from [v1]. Others are mostly
-	 the same)
-
-	- [Alexey Dobriyan, Pavel Emelyanov] Removed the hack to check for
-	  user-space mount.
-
-	- [Serge Hallyn] Added rcu locking around access to sb->s_fs_info.
-
-	- [Serge Hallyn] Allow creation of /dev/pts/ptmx and /dev/pts/tty
-	  devices to simplify the process of finding the 'owning' pts-ns
-	  of the device (specially when accessed from parent-pts-ns)
-	  See patches 4 and 6 for details.
-
-Changelog[v1]:
-	- Fixed circular reference by not caching the pts_ns in sb->s_fs_info
-	  (without incrementing reference count) and clearing the sb->s_fs_info
-	  when destroying the pts_ns
-
-	- To allow access to a child container's ptys from parent container,
-	  determine the 'pts_ns' of a 'pty' from its inode.
-
-	- Added a check (hack) to ensure user-space mount of /dev/pts is
-	  done before creating PTYs in a new pts-ns.
-
-	- Reorganized the patchset and removed redundant changes.
-	
-	- Ported to work wih Cedric Le Goater's clone64() system call now
-	  that we are out of clone_flags.
-
-Changelog[v0]:
-
-	This patchset is based on earlier versions developed by Serge Hallyn
-	and Matt Helsley.
+Index: 2.6.25-rc5-mm1/drivers/char/tty_io.c
+===================================================================
+--- 2.6.25-rc5-mm1.orig/drivers/char/tty_io.c	2008-03-21 20:13:38.000000000 -0700
++++ 2.6.25-rc5-mm1/drivers/char/tty_io.c	2008-03-24 20:04:07.000000000 -0700
+@@ -2835,8 +2835,8 @@ static int ptmx_open(struct inode *inode
+ 	filp->private_data = tty;
+ 	file_move(filp, &tty->tty_files);
+ 
+-	retval = -ENOMEM;
+-	if (devpts_pty_new(tty->link))
++	retval = devpts_pty_new(tty->link);
++	if (retval)
+ 		goto out1;
+ 
+ 	check_tty_count(tty, "tty_open");
