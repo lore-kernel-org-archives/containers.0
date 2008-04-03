@@ -1,17 +1,14 @@
-From: "Satoshi UCHIDA" <s-uchida-LYU95VJlayp8UrSeD/g0lQ@public.gmane.org>
-Subject: [RFC][v2][patch 0/12][CFQ-cgroup]Yet another I/O bandwidth
-	controlling subsystem for CGroups based on CFQ
-Date: Thu, 3 Apr 2008 16:09:12 +0900
-Message-ID: <005d01c89559$9e538200$dafa8600$__2390.98244715041$1207206665$gmane$org@jp.nec.com>
-References: <007801c893d9$d89726f0$89c574d0$@jp.nec.com>	
-	<008001c893db$4e2eccf0$ea8c66d0$@jp.nec.com>
-	<6599ad830804021541s3c1e3197y77d87f63bf47e4b3@mail.gmail.com>
+From: sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org
+Subject: [PATCH 3/7][v2]: Enable multiple mounts of /dev/pts
+Date: Thu, 3 Apr 2008 00:09:04 -0700
+Message-ID: <20080403070904.GC12429@us.ibm.com>
+References: <20080403070233.GA12262@us.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="iso-2022-jp"
+Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <6599ad830804021541s3c1e3197y77d87f63bf47e4b3-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
-Content-Language: ja
+Content-Disposition: inline
+In-Reply-To: <20080403070233.GA12262-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -21,197 +18,352 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: 'Paul Menage' <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Cc: axboe-tSWWG44O7X1aa/9Udqfwiw@public.gmane.org, tom-sugawara-LYU95VJlayp8UrSeD/g0lQ@public.gmane.org
+To: Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>, serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org, adobriyan-3ImXcnM4P+0@public.gmane.org
+Cc: Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-This patchset modified a name of subsystem (from "cfq_cgroup" to "cfq")
-and a checking in create function.
 
+From: Sukadev Bhattiprolu <sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: [PATCH 3/7][v2]: Enable multiple mounts of /dev/pts
 
-This patchset introduce "Yet Another" I/O bandwidth controlling
-subsystem for cgroups based on CFQ (called 2 layer CFQ).
+To support multiple PTY namespaces, we should be allow multiple
+mounts of /dev/pts, once within each PTY namespace.
 
-The idea of 2 layer CFQ is to build fairness control per group on the top of existing CFQ control.
-We add a new data structure called CFQ meta-data on the top of
-cfqd in order to control I/O bandwidth for cgroups.
-CFQ meta-data control cfq_datas by service tree (rb-tree) and
-CFQ algorithm when synchronous I/O.
-An active cfqd controls queue for cfq by service tree.
-Namely, the CFQ meta-data control traditional CFQ data.
-the CFQ data runs conventionally.
+This patch removes the get_sb_single() in devpts_get_sb() and
+uses test and set sb interfaces to allow remounting /dev/pts.
+The patch also removes the globals, 'devpts_mnt', 'devpts_root'
+and uses a skeletal 'init_pts_ns' to store the vfsmount.
 
-           cfqmd     cfqmd     (cfqmd = cfq meta-data)
-            |          |
-  cfqc  -- cfqd ----- cfqd     (cfqd = cfq data,
-            |          |        cfqc = cfq cgroup data)
-  cfqc  --[cfqd]----- cfqd
-            ↑
-　　　　　conventional control.
+Changelog [v3]:
+	- Removed some unnecessary comments from devpts_set_sb()
 
+Changelog [v2]:
 
-This patchset is gainst 2.6.25-rc2-mm1.
+	- (Pavel Emelianov/Serge Hallyn) Remove reference to pts_ns from
+	  sb->s_fs_info to fix the circular reference (/dev/pts is not
+	  unmounted unless the pts_ns is destroyed, so we don't need a
+	  reference to the pts_ns).
 
+Signed-off-by: Sukadev Bhattiprolu <sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Signed-off-by: Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Signed-off-by: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+---
+ fs/devpts/inode.c         |  151 +++++++++++++++++++++++++++++++++++++---------
+ include/linux/devpts_fs.h |   11 +++
+ 2 files changed, 134 insertions(+), 28 deletions(-)
 
-Last week, we found a patchset from Vasily Tarasov (Open VZ) that
-posted to LKML.
-   [RFC][PATCH 0/9] cgroups: block: cfq: I/O bandwidth controlling subsystem for CGroups based on CFQ
-  http://lwn.net/Articles/274652/
-
-Our subsystem and  Vasily's one are similar on the point of modifying
-the CFQ subsystem, but they are different on the point of the layer of
-implementation. Vasily's subsystem add a new layer for cgroup between
-cfqd and cfqq, but our subsystem add a new layer for cgroup on the top
-of cfqd.
-
-The different of implementation from OpenVZ's one are:
-   * top layer algorithm is also based on service tree, and
-   * top layer program is stored in the different file (block/cfq-cgroup.c).
-
-We hope to discuss not which is better implementation, but what is the
-best way to implement I/O bandwidth control based on CFQ here.
-
-Please give us your comments, questions and suggestions.
-
-
-
-Finally, we introduce a usage of our implementation.
-
-* Preparation for using 2 layer CFQ
-
- 1. Adopt this patchset to kernel 2.6.25-rc2-mm1.
-
- 2. Build kernel with CFQ-CGROUP option.
-
- 3. Restart new kernel.
-
- 4. Mount cfq_cgroup special device to device directory.
-    ex.
-      mkdir /dev/cgroup
-      mount -t cgroup -o cfq cfq /dev/cgroup
-
-
-* Usage of grouping control.
- - Create New group
-      Make new directory under /dev/cgroup.
-      For example, the following command genrerates a 'test1' group.
-          mkdir /dev/cgroup/test1
-
- - Insert task to group
-      Write process id(pid) on "tasks" entry in the corresponding group.
-      For example, the following command sets task with pid 1100 into test1 group.
-         echo 1100 > /dev/cgroup/test1/tasks
-      Child tasks of this tasks is also inserted into test1 group.
-
- - Change I/O priority of group
-     Write priority on "cfq.ioprio" entry in corresponding group.
-     For example, the following command sets priority of rank 2 to 'test1' group.
-         echo 2 > /dev/cgroup/test1/tasks
-     I/O priority for cgroups takes the value from 0 to 7. It is same as
-     existing per-task CFQ.
-
-     
- - Change I/O priority of task
-     Use existing "ionice" command.
-
-
-* Example
- Two I/O load (dd command) runs some conditions.
-  
- - When they are same group and same priority,
-
-   program
-     #!/bin/sh
-     echo $$ > /dev/cgroup/tasks
-     echo $$ > /dev/cgroup/test/tasks
-     ionice -c 2 -n 3 dd if=/internal/data1 of=/dev/null bs=1M count=1K &
-     ionice -c 2 -n 3 dd if=/internal/data2 of=/dev/null bs=1M count=1K &
-     echo $$ > /dev/cgroup/test2/tasks
-     echo $$ > /dev/cgroup/tasks
-    
-   result
-     1024+0 records in
-     1024+0 records out
-     1073741824 bytes (1.1 GB) copied, 27.7676 s, 38.7 MB/s
-     1024+0 records in
-     1024+0 records out
-     1073741824 bytes (1.1 GB) copied, 28.8482 s, 37.2 MB/s
-
-    These tasks was fair, therefore they finished at similar time.
-
-
- - When they are same group and different priorities (0 and 7),
-
-    program
-      #!/bin/sh
-      echo $$ > /dev/cgroup/tasks
-      echo $$ > /dev/cgroup/test/tasks
-      ionice -c 2 -n 0 dd if=/internal/data1 of=/dev/null bs=1M count=1K &
-      ionice -c 2 -n 7 dd if=/internal/data2 of=/dev/null bs=1M count=1K &
-      echo $$ > /dev/cgroup/test2/tasks
-      echo $$ > /dev/cgroup/tasks
-
-    result
-      1024+0 records in
-      1024+0 records out
-      1073741824 bytes (1.1 GB) copied, 18.8373 s, 57.0 MB/s
-      1024+0 records in
-      1024+0 records out
-      1073741824 bytes (1.1 GB) copied, 28.108 s, 38.2 MB/s
-
-
-     The first task (copy data1) had high priority, therefore it finished at fast.
+Index: 2.6.25-rc5-mm1/include/linux/devpts_fs.h
+===================================================================
+--- 2.6.25-rc5-mm1.orig/include/linux/devpts_fs.h	2008-03-24 20:04:26.000000000 -0700
++++ 2.6.25-rc5-mm1/include/linux/devpts_fs.h	2008-04-01 18:08:42.000000000 -0700
+@@ -14,6 +14,17 @@
+ #define _LINUX_DEVPTS_FS_H
  
- - When they are different groups and different priorities (0 and 7),
-
-    program
-      #!/bin/sh
-      echo $$ > /dev/cgroup/tasks
-      echo $$ > /dev/cgroup/test/tasks
-      ionice -c 2 -n 0 dd if=/internal/data1 of=/dev/null bs=1M count=1K 
-      echo $$ > /dev/cgroup/test2/tasks
-      ionice -c 2 -n 7 dd if=/internal/data2 of=/dev/null bs=1M count=1K 
-      echo $$ > /dev/cgroup/tasks
-
-    result
-      1024+0 records in
-      1024+0 records out
-      1073741824 bytes (1.1 GB) copied, 28.1661 s, 38.1 MB/s
-      1024+0 records in
-      1024+0 records out
-      1073741824 bytes (1.1 GB) copied, 28.8486 s, 37.2 MB/s
-
-     The first task (copy data1) had  high priority, but they finished at similar time.
-     Because their groups had same priority.
-
- - When they are different groups with different priorities (7 and 0)
-   and same priority,
-
-    program
-      #!/bin/sh
-      echo $$ > /dev/cgroup/tasks
-      echo 7 > /dev/cgroup/test/cfq.ioprio
-      echo $$ > /dev/cgroup/test/tasks
-      ionice -c 2 -n 0 dd if=/internal/data1 of=/dev/null bs=1M count=1K >& test1.log &
-      echo 0 > /dev/cgroup/test2/cfq.ioprio
-      echo $$ > /dev/cgroup/test2/tasks
-      ionice -c 2 -n 7 dd if=/internal/data2 of=/dev/null bs=1M count=1K >& test2.log &
-      echo $$ > /dev/cgroup/tasks
-
-    result
-      === test1.log ===
-        1024+0 records in
-        1024+0 records out
-        1073741824 bytes (1.1 GB) copied, 27.3971 s, 39.2 MB/s
-      === test2.log ===
-        1024+0 records in
-        1024+0 records out
-        1073741824 bytes (1.1 GB) copied, 17.3837 s, 61.8 MB/s
-
-     This first task (copy data1) had high priority, but they finished at late.
-     Because its group had low priority.
-
-
-=====
- Satoshi UHICDA
-   NEC Corporation.
+ #include <linux/errno.h>
++#include <linux/nsproxy.h>
++#include <linux/kref.h>
++#include <linux/idr.h>
++
++struct pts_namespace {
++	struct kref kref;
++	struct idr allocated_ptys;
++	struct vfsmount *mnt;
++};
++
++extern struct pts_namespace init_pts_ns;
+ 
+ #ifdef CONFIG_UNIX98_PTYS
+ 
+Index: 2.6.25-rc5-mm1/fs/devpts/inode.c
+===================================================================
+--- 2.6.25-rc5-mm1.orig/fs/devpts/inode.c	2008-03-24 20:04:26.000000000 -0700
++++ 2.6.25-rc5-mm1/fs/devpts/inode.c	2008-04-01 18:08:41.000000000 -0700
+@@ -28,12 +28,8 @@
+ #define DEVPTS_DEFAULT_MODE 0600
+ 
+ extern int pty_limit;			/* Config limit on Unix98 ptys */
+-static DEFINE_IDR(allocated_ptys);
+ static DECLARE_MUTEX(allocated_ptys_lock);
+ 
+-static struct vfsmount *devpts_mnt;
+-static struct dentry *devpts_root;
+-
+ static struct {
+ 	int setuid;
+ 	int setgid;
+@@ -54,6 +50,15 @@ static match_table_t tokens = {
+ 	{Opt_err, NULL}
+ };
+ 
++struct pts_namespace init_pts_ns = {
++	.kref = {
++		.refcount = ATOMIC_INIT(2),
++	},
++	.allocated_ptys = IDR_INIT(init_pts_ns.allocated_ptys),
++	.mnt = NULL,
++};
++
++
+ static int devpts_remount(struct super_block *sb, int *flags, char *data)
+ {
+ 	char *p;
+@@ -140,7 +145,7 @@ devpts_fill_super(struct super_block *s,
+ 	inode->i_fop = &simple_dir_operations;
+ 	inode->i_nlink = 2;
+ 
+-	devpts_root = s->s_root = d_alloc_root(inode);
++	s->s_root = d_alloc_root(inode);
+ 	if (s->s_root)
+ 		return 0;
+ 	
+@@ -150,17 +155,73 @@ fail:
+ 	return -ENOMEM;
+ }
+ 
++/*
++ * We use test and set super-block operations to help determine whether we
++ * need a new super-block for this namespace. get_sb() walks the list of
++ * existing devpts supers, comparing them with the @data ptr. Since we
++ * passed 'current's namespace as the @data pointer we can compare the
++ * namespace pointer in the super-block's 's_fs_info'.  If the test is
++ * TRUE then get_sb() returns a new active reference to the super block.
++ * Otherwise, it helps us build an active reference to a new one.
++ */
++
++static int devpts_test_sb(struct super_block *sb, void *data)
++{
++	return sb->s_fs_info == data;
++}
++
++static int devpts_set_sb(struct super_block *sb, void *data)
++{
++	sb->s_fs_info = data;
++	return set_anon_super(sb, NULL);
++}
++
+ static int devpts_get_sb(struct file_system_type *fs_type,
+ 	int flags, const char *dev_name, void *data, struct vfsmount *mnt)
+ {
+-	return get_sb_single(fs_type, flags, data, devpts_fill_super, mnt);
++	struct super_block *sb;
++	struct pts_namespace *ns;
++	int err;
++
++	/* hereafter we're very similar to proc_get_sb */
++	if (flags & MS_KERNMOUNT)
++		ns = data;
++	else
++		ns = &init_pts_ns;
++
++	/* hereafter we're very simlar to get_sb_nodev */
++	sb = sget(fs_type, devpts_test_sb, devpts_set_sb, ns);
++	if (IS_ERR(sb))
++		return PTR_ERR(sb);
++
++	if (sb->s_root)
++		return simple_set_mnt(mnt, sb);
++
++	sb->s_flags = flags;
++	err = devpts_fill_super(sb, data, flags & MS_SILENT ? 1 : 0);
++	if (err) {
++		up_write(&sb->s_umount);
++		deactivate_super(sb);
++		return err;
++	}
++
++	sb->s_flags |= MS_ACTIVE;
++	ns->mnt = mnt;
++
++	return simple_set_mnt(mnt, sb);
++}
++
++static void devpts_kill_sb(struct super_block *sb)
++{
++	sb->s_fs_info = NULL;
++	kill_anon_super(sb);
+ }
+ 
+ static struct file_system_type devpts_fs_type = {
+ 	.owner		= THIS_MODULE,
+ 	.name		= "devpts",
+ 	.get_sb		= devpts_get_sb,
+-	.kill_sb	= kill_anon_super,
++	.kill_sb	= devpts_kill_sb,
+ };
+ 
+ /*
+@@ -168,10 +229,9 @@ static struct file_system_type devpts_fs
+  * to the System V naming convention
+  */
+ 
+-static struct dentry *get_node(int num)
++static struct dentry *get_node(struct dentry *root, int num)
+ {
+ 	char s[12];
+-	struct dentry *root = devpts_root;
+ 	mutex_lock(&root->d_inode->i_mutex);
+ 	return lookup_one_len(s, root, sprintf(s, "%d", num));
+ }
+@@ -180,14 +240,15 @@ int devpts_new_index(void)
+ {
+ 	int index;
+ 	int idr_ret;
++	struct pts_namespace *pts_ns = &init_pts_ns;
+ 
+ retry:
+-	if (!idr_pre_get(&allocated_ptys, GFP_KERNEL)) {
++	if (!idr_pre_get(&pts_ns->allocated_ptys, GFP_KERNEL)) {
+ 		return -ENOMEM;
+ 	}
+ 
+ 	down(&allocated_ptys_lock);
+-	idr_ret = idr_get_new(&allocated_ptys, NULL, &index);
++	idr_ret = idr_get_new(&pts_ns->allocated_ptys, NULL, &index);
+ 	if (idr_ret < 0) {
+ 		up(&allocated_ptys_lock);
+ 		if (idr_ret == -EAGAIN)
+@@ -196,7 +257,7 @@ retry:
+ 	}
+ 
+ 	if (index >= pty_limit) {
+-		idr_remove(&allocated_ptys, index);
++		idr_remove(&pts_ns->allocated_ptys, index);
+ 		up(&allocated_ptys_lock);
+ 		return -EIO;
+ 	}
+@@ -206,8 +267,10 @@ retry:
+ 
+ void devpts_kill_index(int idx)
+ {
++	struct pts_namespace *pts_ns = &init_pts_ns;
++
+ 	down(&allocated_ptys_lock);
+-	idr_remove(&allocated_ptys, idx);
++	idr_remove(&pts_ns->allocated_ptys, idx);
+ 	up(&allocated_ptys_lock);
+ }
+ 
+@@ -217,12 +280,26 @@ int devpts_pty_new(struct tty_struct *tt
+ 	struct tty_driver *driver = tty->driver;
+ 	dev_t device = MKDEV(driver->major, driver->minor_start+number);
+ 	struct dentry *dentry;
+-	struct inode *inode = new_inode(devpts_mnt->mnt_sb);
++	struct dentry *root;
++	struct vfsmount *mnt;
++	struct inode *inode;
++	struct pts_namespace *pts_ns = &init_pts_ns;
+ 
+ 	/* We're supposed to be given the slave end of a pty */
+ 	BUG_ON(driver->type != TTY_DRIVER_TYPE_PTY);
+ 	BUG_ON(driver->subtype != PTY_TYPE_SLAVE);
+ 
++	mnt = pts_ns->mnt;
++	root = mnt->mnt_root;
++
++	mutex_lock(&root->d_inode->i_mutex);
++	inode = idr_find(&pts_ns->allocated_ptys, number);
++	mutex_unlock(&root->d_inode->i_mutex);
++
++	if (inode && !IS_ERR(inode))
++		return -EEXIST;
++
++	inode = new_inode(mnt->mnt_sb);
+ 	if (!inode)
+ 		return -ENOMEM;
+ 
+@@ -232,23 +309,29 @@ int devpts_pty_new(struct tty_struct *tt
+ 	inode->i_mtime = inode->i_atime = inode->i_ctime = CURRENT_TIME;
+ 	init_special_inode(inode, S_IFCHR|config.mode, device);
+ 	inode->i_private = tty;
++	idr_replace(&pts_ns->allocated_ptys, inode, number);
+ 
+-	dentry = get_node(number);
++	dentry = get_node(root, number);
+ 	if (!IS_ERR(dentry) && !dentry->d_inode) {
+ 		d_instantiate(dentry, inode);
+-		fsnotify_create(devpts_root->d_inode, dentry);
++		fsnotify_create(root->d_inode, dentry);
+ 	}
+ 
+-	mutex_unlock(&devpts_root->d_inode->i_mutex);
++	mutex_unlock(&root->d_inode->i_mutex);
+ 
+ 	return 0;
+ }
+ 
+ struct tty_struct *devpts_get_tty(int number)
+ {
+-	struct dentry *dentry = get_node(number);
++	struct vfsmount *mnt;
++	struct dentry *dentry;
+ 	struct tty_struct *tty;
+ 
++	mnt = init_pts_ns.mnt;
++
++	dentry = get_node(mnt->mnt_root, number);
++
+ 	tty = NULL;
+ 	if (!IS_ERR(dentry)) {
+ 		if (dentry->d_inode)
+@@ -256,14 +339,19 @@ struct tty_struct *devpts_get_tty(int nu
+ 		dput(dentry);
+ 	}
+ 
+-	mutex_unlock(&devpts_root->d_inode->i_mutex);
++	mutex_unlock(&mnt->mnt_root->d_inode->i_mutex);
+ 
+ 	return tty;
+ }
+ 
+ void devpts_pty_kill(int number)
+ {
+-	struct dentry *dentry = get_node(number);
++	struct dentry *dentry;
++	struct dentry *root;
++
++	root = init_pts_ns.mnt->mnt_root;
++
++	dentry = get_node(root, number);
+ 
+ 	if (!IS_ERR(dentry)) {
+ 		struct inode *inode = dentry->d_inode;
+@@ -274,24 +362,31 @@ void devpts_pty_kill(int number)
+ 		}
+ 		dput(dentry);
+ 	}
+-	mutex_unlock(&devpts_root->d_inode->i_mutex);
++	mutex_unlock(&root->d_inode->i_mutex);
+ }
+ 
+ static int __init init_devpts_fs(void)
+ {
+-	int err = register_filesystem(&devpts_fs_type);
+-	if (!err) {
+-		devpts_mnt = kern_mount(&devpts_fs_type);
+-		if (IS_ERR(devpts_mnt))
+-			err = PTR_ERR(devpts_mnt);
+-	}
++	struct vfsmount *mnt;
++	int err;
++
++	err = register_filesystem(&devpts_fs_type);
++	if (err)
++		return err;
++
++	mnt = kern_mount_data(&devpts_fs_type, &init_pts_ns);
++	if (IS_ERR(mnt))
++		err = PTR_ERR(mnt);
++	else
++		init_pts_ns.mnt = mnt;
+ 	return err;
+ }
+ 
+ static void __exit exit_devpts_fs(void)
+ {
+ 	unregister_filesystem(&devpts_fs_type);
+-	mntput(devpts_mnt);
++	mntput(init_pts_ns.mnt);
++	init_pts_ns.mnt = NULL;
+ }
+ 
+ module_init(init_devpts_fs)
