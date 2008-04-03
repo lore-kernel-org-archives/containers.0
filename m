@@ -1,132 +1,42 @@
-From: "Denis V. Lunev" <den@openvz.org>
-Subject: Re: [PATCH 0/3 net-2.6.26] Compilation fixes.
-Date: Thu, 03 Apr 2008 18:13:52 +0400
-Message-ID: <1207232032.19874.6.camel@iris.sw.ru>
-References: <1207165579.7118.4.camel@iris.sw.ru>
-	 <20080402.135609.145425148.davem@davemloft.net>
-	 <1207170007.7118.6.camel@iris.sw.ru>
-	 <20080402.140046.192884423.davem@davemloft.net>
+From: "Paul Menage" <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [RFC][patch 3/11][CFQ-cgroup] Introduce cgroup subsystem
+Date: Thu, 3 Apr 2008 08:31:25 -0700
+Message-ID: <6599ad830804030831h12cac799ub4e1c9a169c722da__44238.6794057258$1207236972$gmane$org@mail.gmail.com>
+References: <007801c893d9$d89726f0$89c574d0$@jp.nec.com>
+	<008001c893db$4e2eccf0$ea8c66d0$@jp.nec.com>
+	<6599ad830804021541s3c1e3197y77d87f63bf47e4b3@mail.gmail.com>
+	<003001c89532$dae5dd20$90b19760$@jp.nec.com>
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary="=-2Dg6Z4RP0C9ymXXgep4G"
-Return-path: <netdev-owner@vger.kernel.org>
-In-Reply-To: <20080402.140046.192884423.davem@davemloft.net>
-Sender: netdev-owner@vger.kernel.org
-To: David Miller <davem@davemloft.net>
-Cc: yoshfuji@linux-ipv6.org, netdev@vger.kernel.org, containers@lists.osdl.org
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <003001c89532$dae5dd20$90b19760$@jp.nec.com>
+Content-Disposition: inline
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Satoshi UCHIDA <s-uchida-LYU95VJlayp8UrSeD/g0lQ@public.gmane.org>
+Cc: axboe-tSWWG44O7X1aa/9Udqfwiw@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, tom-sugawara-LYU95VJlayp8UrSeD/g0lQ@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
+On Wed, Apr 2, 2008 at 7:31 PM, Satoshi UCHIDA <s-uchida-LYU95VJlayp8UrSeD/g0lQ@public.gmane.org> wrote:
+>  >
+>  > What are these checks for? Cgroups already provides filesystem
+>  > permissions to control directory creation, and the "descendant" check
+>  > looks like it may have been cut/pasted from the nsproxy subsystem.
+>  >
+>
+>  This code was referred one of io-throttle.
+>  Is it not necessary these checks?
+>  IF not necessary, remove this code.
+>
 
---=-2Dg6Z4RP0C9ymXXgep4G
-Content-Type: text/plain
-Content-Transfer-Encoding: 7bit
+Yes, I think these checks should be removed. Especially the descendant check.
 
-On Wed, 2008-04-02 at 14:00 -0700, David Miller wrote:
-> From: "Denis V. Lunev" <den@openvz.org>
-> Date: Thu, 03 Apr 2008 01:00:07 +0400
-> 
-> > On Wed, 2008-04-02 at 13:56 -0700, David Miller wrote:
-> > > From: "Denis V. Lunev" <den@openvz.org>
-> > > Date: Wed, 02 Apr 2008 23:46:19 +0400
-> > > 
-> > > Could you do such a patch set?  Thanks.
-> > 
-> > Sure, but, unfortunately, only tomorrow morning. It is too late today in
-> > Moscow :)
-> 
-> No problem, there is no rush :-)
-
-pls consider this. I have found only 3 commits related
-
---=-2Dg6Z4RP0C9ymXXgep4G
-Content-Disposition: attachment; filename=diff-netns-compile.txt
-Content-Type: text/plain; name=diff-netns-compile.txt; charset=KOI8-R
-Content-Transfer-Encoding: 7bit
-
-[NETNS]: Declare init_net even without CONFIG_NET defined.
-
-This does not look good, but there is no other choice. The compilation
-without CONFIG_NET is broken and can not be fixed with ease.
-
-After that there is no need for the following commits:
-1567ca7eec7664b8be3b07755ac59dc1b1ec76cb
-3edf8fa5ccf10688a9280b5cbca8ed3947c42866
-2d38f9a4f8d2ebdc799f03eecf82345825495711
-
-Revert them.
-
-Signed-off-by: Denis V. Lunev <den@openvz.org>
-----
-diff --git a/include/linux/netdevice.h b/include/linux/netdevice.h
-index c36c76c..8b17ed4 100644
---- a/include/linux/netdevice.h
-+++ b/include/linux/netdevice.h
-@@ -741,7 +741,6 @@ struct net_device
- #define	NETDEV_ALIGN		32
- #define	NETDEV_ALIGN_CONST	(NETDEV_ALIGN - 1)
- 
--#ifdef CONFIG_NET
- /*
-  * Net namespace inlines
-  */
-@@ -762,7 +761,6 @@ void dev_net_set(struct net_device *dev, struct net *net)
- 	dev->nd_net = net;
- #endif
- }
--#endif
- 
- /**
-  *	netdev_priv - access network device private data
-@@ -827,7 +825,6 @@ struct packet_type {
- extern rwlock_t				dev_base_lock;		/* Device list lock */
- 
- 
--#ifdef CONFIG_NET
- #define for_each_netdev(net, d)		\
- 		list_for_each_entry(d, &(net)->dev_base_head, dev_list)
- #define for_each_netdev_safe(net, d, n)	\
-@@ -851,7 +848,6 @@ static inline struct net_device *first_net_device(struct net *net)
- 	return list_empty(&net->dev_base_head) ? NULL :
- 		net_device_entry(net->dev_base_head.next);
- }
--#endif
- 
- extern int 			netdev_boot_setup_check(struct net_device *dev);
- extern unsigned long		netdev_boot_base(const char *prefix, int unit);
-diff --git a/include/net/net_namespace.h b/include/net/net_namespace.h
-index 6c9a48a..0ab62ed 100644
---- a/include/net/net_namespace.h
-+++ b/include/net/net_namespace.h
-@@ -60,11 +60,12 @@ struct net {
- };
- 
- 
--#ifdef CONFIG_NET
- #include <linux/seq_file_net.h>
- 
- /* Init's network namespace */
- extern struct net init_net;
-+
-+#ifdef CONFIG_NET
- #define INIT_NET_NS(net_ns) .net_ns = &init_net,
- 
- extern struct net *copy_net_ns(unsigned long flags, struct net *net_ns);
-diff --git a/lib/kobject_uevent.c b/lib/kobject_uevent.c
-index 0d56dad..b06185e 100644
---- a/lib/kobject_uevent.c
-+++ b/lib/kobject_uevent.c
-@@ -19,12 +19,10 @@
- #include <linux/kobject.h>
- #include <linux/module.h>
- 
--#ifdef CONFIG_NET
- #include <linux/socket.h>
- #include <linux/skbuff.h>
- #include <linux/netlink.h>
- #include <net/sock.h>
--#endif
- 
- 
- u64 uevent_seqnum;
-
---=-2Dg6Z4RP0C9ymXXgep4G--
-
+Paul
