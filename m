@@ -1,28 +1,38 @@
-From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: reminder about containers mini-summit at ols
-Date: Thu, 3 Apr 2008 13:33:48 -0500
-Message-ID: <20080403183348.GA8446@sergelap.austin.ibm.com>
+From: David Miller <davem@davemloft.net>
+Subject: Re: [PATCH 0/3 net-2.6.26] Compilation fixes.
+Date: Thu, 03 Apr 2008 13:25:55 -0700 (PDT)
+Message-ID: <20080403.132555.47647096.davem@davemloft.net>
+References: <1207170007.7118.6.camel@iris.sw.ru>
+	<20080402.140046.192884423.davem@davemloft.net>
+	<1207232032.19874.6.camel@iris.sw.ru>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
+Content-Type: Text/Plain; charset=us-ascii
 Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
+Return-path: <netdev-owner@vger.kernel.org>
+In-Reply-To: <1207232032.19874.6.camel@iris.sw.ru>
+Sender: netdev-owner@vger.kernel.org
+To: den@openvz.org
+Cc: yoshfuji@linux-ipv6.org, netdev@vger.kernel.org, containers@lists.osdl.org
 List-Id: containers.vger.kernel.org
 
-The friendly OLS folks pointed out that early registration
-ends (has been extended to?) April 15.  So if you're planning
-on attending the containers mini-summit you may want to
-register now to save some money.
+From: "Denis V. Lunev" <den@openvz.org>
+Date: Thu, 03 Apr 2008 18:13:52 +0400
 
-thanks,
--serge
+> On Wed, 2008-04-02 at 14:00 -0700, David Miller wrote:
+> > From: "Denis V. Lunev" <den@openvz.org>
+> > Date: Thu, 03 Apr 2008 01:00:07 +0400
+> > 
+> > > On Wed, 2008-04-02 at 13:56 -0700, David Miller wrote:
+> > > > From: "Denis V. Lunev" <den@openvz.org>
+> > > > Date: Wed, 02 Apr 2008 23:46:19 +0400
+> > > > 
+> > > > Could you do such a patch set?  Thanks.
+> > > 
+> > > Sure, but, unfortunately, only tomorrow morning. It is too late today in
+> > > Moscow :)
+> > 
+> > No problem, there is no rush :-)
+> 
+> pls consider this. I have found only 3 commits related
+
+Applied, thanks a lot for doing this work.
