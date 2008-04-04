@@ -1,18 +1,15 @@
-From: "Satoshi UCHIDA" <s-uchida-LYU95VJlayp8UrSeD/g0lQ@public.gmane.org>
-Subject: RE: [RFC][patch 8/11][CFQ-cgroup] Control cfq_data per cgroup
-Date: Fri, 4 Apr 2008 18:46:53 +0900
-Message-ID: <018c01c89638$d01d3850$7057a8f0$__29277.3636211225$1207302623$gmane$org@jp.nec.com>
-References: <007801c893d9$d89726f0$89c574d0$@jp.nec.com>	
-	<008501c893dc$3206e520$9614af60$@jp.nec.com>	
-	<6599ad830804030835s73392db0v29426425c0ea4381@mail.gmail.com>	
-	<003401c8961c$00eea670$02cbf350$@jp.nec.com>
-	<6599ad830804040200u1ed48f4bxecaa664862cf30a5@mail.gmail.com>
+From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [Devel] [RFC PATCH 0/4] Container Freezer: Reuse Suspend Freezer
+Date: Fri, 4 Apr 2008 09:11:06 -0500
+Message-ID: <20080404141106.GA9977__35822.0890899704$1207318405$gmane$org@sergelap.austin.ibm.com>
+References: <20080403210316.397506379@us.ibm.com>
+	<6599ad830804031649p6bbc60f3s59fb7c25a7260505@mail.gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <6599ad830804040200u1ed48f4bxecaa664862cf30a5-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
-Content-Language: ja
+Content-Disposition: inline
+In-Reply-To: <6599ad830804031649p6bbc60f3s59fb7c25a7260505-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -22,40 +19,61 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: 'Paul Menage' <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
-Cc: axboe-tSWWG44O7X1aa/9Udqfwiw@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, tom-sugawara-LYU95VJlayp8UrSeD/g0lQ@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+Cc: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Linux-Kernel <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Hi,
-
-> 
-> On Thu, Apr 3, 2008 at 11:20 PM, Satoshi UCHIDA <s-uchida-LYU95VJlayp8UrSeD/g0lQ@public.gmane.org>
-> wrote:
+Quoting Paul Menage (menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org):
+> On Thu, Apr 3, 2008 at 2:03 PM,  <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org> wrote:
 > >
-> >  So that you say, root subsystem state maybe keep a reference locally.
-> >  For example, create a variable for root subsystem state and
-> >  store the pointer when making subsystem state first.
-> 
-> Yes, that's what I'm suggesting.
-> 
+> >    * "freezer.kill"
 > >
-> >  However, I think that it is smart to calculate root group of subsystems
-> >  when needing its information.
+> >      writing <n> will send signal number <n> to all tasks
+> >
 > 
-> I don't see why it's better to go through the cgroup subsystem to
-> retrieve the reference.
+> My first thought (not having looked at the code yet) is that sending a
+> signal doesn't really have anything to do with freezing, so it
+> shouldn't be in the same subsystem. Maybe a separate subsystem called
+> "signal"?
 > 
+> And more than that, it's not something that requires any particular
+> per-process state, so there's no reason that the subsystem that
+> provides the "kill" functionality shouldn't be able to be mounted in
+> multiple hierarchies.
+> 
+> How about if I added support for stateless subsystems, that could
+> potentially be mounted in multiple hierarchies at once? They wouldn't
+> need an entry in the css set, since they have no state.
+> 
+> >  * Usage :
+> >
+> >    # mkdir /containers/freezer
+> >    # mount -t container -ofreezer freezer  /containers/freezer
+> >    # mkdir /containers/freezer/0
+> >    # echo $some_pid > /containers/freezer/0/tasks
+> >
+> >  to get status of the freezer subsystem :
+> >
+> >    # cat /containers/freezer/0/freezer.freeze
+> >    RUNNING
+> >
+> >  to freeze all tasks in the container :
+> >
+> >    # echo 1 > /containers/freezer/0/freezer.freeze
+> >    # cat /containers/freezer/0/freezer.freeze
+> >    FREEZING
+> >    # cat /containers/freezer/0/freezer.freeze
+> >    FROZEN
+> 
+> Could we separate this out into two files? One called "freeze" that's
+> a 0/1 for whether we're intending to freeze the subsystem, and one
+> called "frozen" that indicates whether it is frozen? And maybe a
+> "state" file to report the RUNNING/FREEZING/FROZEN distinction in a
+> human-readable way?
 
-If program have temporary data, it may cause inconsistency.
-I think that information should be referred to original(control mechanism).
+One thing Oren had mentioned for checkpoint/restart was having more
+states - i.e. restoring, checkpointing...  So then (assuming we used
+this subsys for that) we'd have more than the two files.  Which is
+probably fine, just wanted to point that out.
 
-Information of cgroup is controlled at cgroup subsystem (and cgroupfs_root).
-So, I think that it's better to query into cgroup subsystem.
-
-Now, cgroup susbsystem would not change root group.
-Therefore, system would also runs by your suggestion.
-
-I will consider this issue.
-
-Thanks,
- Satoshi UCHIDA.
+-serge
