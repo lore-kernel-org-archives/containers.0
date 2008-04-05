@@ -1,113 +1,163 @@
-From: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [Devel] [RFC PATCH 0/4] Container Freezer: Reuse Suspend	Freezer
-Date: Fri, 04 Apr 2008 17:54:03 -0700
-Message-ID: <1207356843.30178.180.camel__17365.8642372631$1207356981$gmane$org@localhost.localdomain>
-References: <20080403210316.397506379@us.ibm.com>
-	<6599ad830804031649p6bbc60f3s59fb7c25a7260505@mail.gmail.com>
-	<1207278180.30178.94.camel@localhost.localdomain>
-	<47F64FBB.2080207@cs.columbia.edu>
-	<1207348060.30178.166.camel@localhost.localdomain>
-	<47F6C829.4010109@cs.columbia.edu>
+From: Balaji Rao <balajirrao@gmail.com>
+Subject: [RFC][-mm] [1/2] Simple stats for cpu resource controller
+Date: Sat, 5 Apr 2008 23:39:46 +0530
+Message-ID: <200804052339.46632.balajirrao@gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
+Content-Type: text/plain;
+  charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <47F6C829.4010109-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Cc: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Cedric Le Goater <clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>, linux-pm-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Linux-Kernel <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1755042AbYDESQa@vger.kernel.org>
+Content-Disposition: inline
+Sender: linux-kernel-owner@vger.kernel.org
+To: linux-kernel@vger.kernel.org
+Cc: containers@lists.osdl.org, dhaval@linux.vnet.ibm.com, menage@google.com, a.p.zijlstra@chello.nl, balbir@in.ibm.com
 List-Id: containers.vger.kernel.org
 
+This patch implements some trivial statistics for the CPU controller.
 
-On Fri, 2008-04-04 at 20:30 -0400, Oren Laadan wrote:
-> 
-> Matt Helsley wrote:
+As per our current requirements, we have decided to keep the stats tick based as opposed to using CFS precise accounting.
 
-<snip>
+Signed-off-by: Balaji Rao <balajirrao@gmail.com>
+CC: Balbir Singh <balbir@linux.vnet.ibm.com>
+CC: Dhaval Giani <dhaval@linux.vnet.ibm.com>
 
-> > 	I don't have an upper limit on how many more states we will need and I
-> > think that number impacts the interface significantly. Can you give us
-> > an estimate?
-> 
-> In Zap there are (using the current terminology):
-> RUNNING - running
-> FREEZING - transition to FROZEN
-> FROZEN - frozen
-> THAWING - transition to RUNNING
-> CKPTING - being checkpointed (needs special semantics* for some ops)
-> RSTRTING - being restarted (may need special semantics* for some ops)
-> ABORTING - transition to DEAD (mainly when aborting a failed restart)
-> DEAD - dead (but not fully cleaned up yet)
-> 
-> There is also "SPECIAL" in which some operations are not allowed;
-> this simplifies dealing with a bunch of races related to checkpoint/
-> restart, but I'm not sure it's a must. If anything, it only stays
-> for very short times (like an uninterruptible sleep) saying "don't
-> mess with this container now, it's busy".
-> 
-> I have very good justifications for almost all the states, a good
-> reasoning for DEAD, and a case for SPECIAL (although there may be
-> a way to do without it).
-> 
-> Despite the "many" states, there are very few transitions: CKPTING
-> can only be reached from- and changed to- FROZEN. A similar rule holds
-> for RSTRTING. ABORTING is reached from RSTRTING, and leads to DEAD.
-> The only one I don't cover is reaching DEAD from any other state
-> (except SPECIAL) but I never saw a reason to explicitly encode that.
-> Something like this (without SPECIAL):
-> 
->           ->  FREEZING  ->          <-> CKPTING
-> RUNNING                    FROZEN
->           <-  THAWING   <-          <-> RSTRTING -> ABORTING -> DEAD
-> 
-> Out of curiosity - why does the number of states impact the interface
-> so much ?
+diff --git a/kernel/sched.c b/kernel/sched.c
+index 8206fda..e2acf06 100644
+--- a/kernel/sched.c
++++ b/kernel/sched.c
+@@ -164,10 +164,38 @@ struct cfs_rq;
+ 
+ static LIST_HEAD(task_groups);
+ 
++#ifdef CONFIG_CGROUP_SCHED
++enum cpu_cgroup_stat_index {
++	CPU_CGROUP_STAT_UTIME, /* Usertime of the task group */
++	CPU_CGROUP_STAT_STIME, /* Kerneltime of the task group */
++
++	CPU_CGROUP_STAT_NSTATS,
++};
++
++struct cpu_cgroup_stat_cpu {
++	s64 count[CPU_CGROUP_STAT_NSTATS];
++} ____cacheline_aligned_in_smp;
++
++struct cpu_cgroup_stat {
++	struct cpu_cgroup_stat_cpu cpustat[NR_CPUS];
++};
++
++/* Called under irq disable. */
++static void __cpu_cgroup_stat_add(struct cpu_cgroup_stat *stat,
++		enum cpu_cgroup_stat_index idx, int val)
++{
++	int cpu = smp_processor_id();
++
++	BUG_ON(!irqs_disabled());
++	stat->cpustat[cpu].count[idx] += val;
++}
++#endif
++
+ /* task group related information */
+ struct task_group {
+ #ifdef CONFIG_CGROUP_SCHED
+ 	struct cgroup_subsys_state css;
++	struct cpu_cgroup_stat stat;
+ #endif
+ 
+ #ifdef CONFIG_FAIR_GROUP_SCHED
+@@ -3733,6 +3761,16 @@ void account_user_time(struct task_struct *p, cputime_t cputime)
+ 		cpustat->nice = cputime64_add(cpustat->nice, tmp);
+ 	else
+ 		cpustat->user = cputime64_add(cpustat->user, tmp);
++
++	/* Charge the task's group */
++#ifdef CONFIG_CGROUP_SCHED
++	{
++	struct task_group *tg;
++	tg = task_group(p);
++	__cpu_cgroup_stat_add(&tg->stat, CPU_CGROUP_STAT_UTIME,
++			cputime_to_msecs(cputime));
++	}
++#endif
+ }
+ 
+ /*
+@@ -3796,6 +3834,15 @@ void account_system_time(struct task_struct *p, int hardirq_offset,
+ 		cpustat->idle = cputime64_add(cpustat->idle, tmp);
+ 	/* Account for system time used */
+ 	acct_update_integrals(p);
++
++#ifdef CONFIG_CGROUP_SCHED
++	{
++	struct task_group *tg;
++	tg = task_group(p);
++	__cpu_cgroup_stat_add(&tg->stat, CPU_CGROUP_STAT_STIME,
++			cputime_to_msecs(cputime));
++	}
++#endif
+ }
+ 
+ /*
+@@ -8004,6 +8051,45 @@ static u64 cpu_shares_read_u64(struct cgroup *cgrp, struct cftype *cft)
+ 
+ 	return (u64) tg->shares;
+ }
++
++static s64 cpu_cgroup_read_stat(struct cpu_cgroup_stat *stat,
++		enum cpu_cgroup_stat_index idx)
++{
++	int cpu;
++	s64 ret = 0;
++	unsigned long flags;
++
++	local_irq_save(flags);
++	for_each_possible_cpu(cpu)
++		ret += stat->cpustat[cpu].count[idx];
++	local_irq_restore(flags);
++
++	return ret;
++}
++
++static const struct cpu_cgroup_stat_desc {
++	const char *msg;
++	u64 unit;
++} cpu_cgroup_stat_desc[] = {
++	[CPU_CGROUP_STAT_UTIME] = { "utime", 1, },
++	[CPU_CGROUP_STAT_STIME] = { "stime", 1, },
++};
++
++static int cpu_cgroup_stats_show(struct cgroup *cgrp, struct cftype *cft,
++				struct cgroup_map_cb *cb)
++{
++	struct task_group *tg = cgroup_tg(cgrp);
++	struct cpu_cgroup_stat *stat = &tg->stat;
++	int i;
++
++	for (i = 0; i < ARRAY_SIZE(stat->cpustat[0].count); i++) {
++		s64 val;
++		val = cpu_cgroup_read_stat(stat, i);
++		val *= cpu_cgroup_stat_desc[i].unit;
++		cb->fill(cb, cpu_cgroup_stat_desc[i].msg, val);
++	}
++	return 0;
++}
+ #endif
+ 
+ #ifdef CONFIG_RT_GROUP_SCHED
+@@ -8026,6 +8112,11 @@ static struct cftype cpu_files[] = {
+ 		.read_u64 = cpu_shares_read_u64,
+ 		.write_u64 = cpu_shares_write_u64,
+ 	},
++
++	{
++		.name = "stat",
++		.read_map = cpu_cgroup_stats_show,
++	},
+ #endif
+ #ifdef CONFIG_RT_GROUP_SCHED
+ 	{
 
-	Only that, if you're trying to keep the interface human readable, then
-having too many names for things (states and transitions) can make the
-interface less than intuitive. Doesn't look like that's an issue for the
-above state machine though so I think you're right -- a single file with
-transitions encoded as states seems best.
-
-> > 
-> >> Second, my gut feeling is that a single, atomic operation to get the
-> >> status is preferred over multiple (non-atomic) operations. In other
-> >> words, I suggest a single state file instead of two. You can encode
-> >> every possible transition in a single state. It's not that the kernel
-> > 
-> > 	If the transitions are to be human-readable and there are more than a
-> > small number of states it may not be desirable to encode transitions as
-> > states. Paul's reason for suggesting the additional file(s), as best I
-> > could tell, was to keep the interface human-readable.
-> 
-> The scheme above has very few transitions. Whatever be the final scheme,
-> I would prefer not to have many possible transition (the full matrix).
-> It probably isn't necessary either.
-> 
-> The main idea behind limiting the transitions above, is that checkpoint
-> requires to first freeze the container to be able to capture a consistent
-> view of the state of its processes; that means, for example, that we also
-> would like to prevent signals from being delivered to tasks in a frozen
-> state (if you do want to signal - thaw it first).
-> 
-> There is also the issue of a pre-checkpoint (a.k.a live migration) where
-> significant state (mainly memory) of the container is recorded while the
-> container is still running, and when it's finally frozen little state
-> remains to be saved, reducing the application downtime. I didn't see a
-> need for a special state for this case; instead Zap uses a status flag
-> that belongs to the container.
-> 
-> Oren.
-
-Thanks for the explanation of the states.
-
-Cheers,
-	-Matt Helsley
+-- 
+regards,
+Balaji Rao
+Dept. of Mechanical Engineering,
+National Institute of Technology Karnataka, India
