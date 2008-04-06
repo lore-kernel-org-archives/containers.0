@@ -1,70 +1,41 @@
 From: Balbir Singh <balbir@linux.vnet.ibm.com>
-Subject: Re: [RFC][-mm] [2/2] Simple stats for memory resource controller
-Date: Sun, 06 Apr 2008 11:53:37 +0530
-Message-ID: <47F86C69.70609@linux.vnet.ibm.com>
-References: <200804052340.02386.balajirrao@gmail.com>
+Subject: Re: [RFC][-mm] [0/2] Basic stats for cgroups V2
+Date: Sun, 06 Apr 2008 11:55:39 +0530
+Message-ID: <47F86CE3.9080705@linux.vnet.ibm.com>
+References: <200804052339.42474.balajirrao@gmail.com>
 Reply-To: balbir@linux.vnet.ibm.com
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1
 Content-Transfer-Encoding: 7bit
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1752675AbYDFGZL@vger.kernel.org>
-In-Reply-To: <200804052340.02386.balajirrao@gmail.com>
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1755227AbYDFG0r@vger.kernel.org>
+In-Reply-To: <200804052339.42474.balajirrao@gmail.com>
 Sender: linux-kernel-owner@vger.kernel.org
 To: Balaji Rao <balajirrao@gmail.com>
-Cc: linux-kernel@vger.kernel.org, containers@lists.osdl.org, menage@google.com, balbir@in.ibm.com, dhaval@linux.vnet.ibm.com
+Cc: linux-kernel@vger.kernel.org, containers@lists.osdl.org, dhaval@linux.vnet.ibm.com, balbir@in.ibm.com, menage@google.com, a.p.zijlstra@chello.nl, Ingo Molnar <mingo@elte.hu>
 List-Id: containers.vger.kernel.org
 
 Balaji Rao wrote:
-> This patch implements trivial statistics for the memory resource controller.
+> V1->V2
+> - Fixed a possible race in cpu_cgroup_read_stat. Thank you Paul for pointing this out.
+> - A few other naming changes.
 > 
-> Signed-off-by: Balaji Rao <balajirrao@gmail.com>
-> CC: Balbir Singh <balbir@linux.vnet.ibm.com>
-> CC: Dhaval Giani <dhaval@linux.vnet.ibm.com>
+> This patchset is a first step towards implementing stats for cgroup 
+> subsystems. Only a few trivial stats for cpu and memory resource controller 
+> have been implemented for now. Please provide comments on the general 
+> direction and any suggestions on how you would like the cgroupstats framework 
+> to be implemented.
 > 
-> diff --git a/mm/memcontrol.c b/mm/memcontrol.c
-> index a860765..ca98b21 100644
-> --- a/mm/memcontrol.c
-> +++ b/mm/memcontrol.c
-> @@ -47,6 +47,8 @@ enum mem_cgroup_stat_index {
->  	 */
->  	MEM_CGROUP_STAT_CACHE, 	   /* # of pages charged as cache */
->  	MEM_CGROUP_STAT_RSS,	   /* # of pages charged as rss */
-> +	MEM_CGROUP_STAT_PGPGIN_COUNT,	/* # of pages paged in */
-> +	MEM_CGROUP_STAT_PGPGOUT_COUNT,	/* # of pages paged out */
-> 
->  	MEM_CGROUP_STAT_NSTATS,
->  };
-> @@ -198,6 +200,13 @@ static void mem_cgroup_charge_statistics(struct mem_cgroup *mem, int flags,
->  		__mem_cgroup_stat_add_safe(stat, MEM_CGROUP_STAT_CACHE, val);
->  	else
->  		__mem_cgroup_stat_add_safe(stat, MEM_CGROUP_STAT_RSS, val);
-> +
-> +	if (charge)
-> +		__mem_cgroup_stat_add_safe(stat,
-> +				MEM_CGROUP_STAT_PGPGIN_COUNT, 1);
-> +	else
-> +		__mem_cgroup_stat_add_safe(stat,
-> +				MEM_CGROUP_STAT_PGPGOUT_COUNT, 1);
->  }
-> 
->  static struct mem_cgroup_per_zone *
-> @@ -897,6 +906,8 @@ static const struct mem_cgroup_stat_desc {
->  } mem_cgroup_stat_desc[] = {
->  	[MEM_CGROUP_STAT_CACHE] = { "cache", PAGE_SIZE, },
->  	[MEM_CGROUP_STAT_RSS] = { "rss", PAGE_SIZE, },
-> +	[MEM_CGROUP_STAT_PGPGIN_COUNT] = {"pgpgin", 1, },
-> +	[MEM_CGROUP_STAT_PGPGOUT_COUNT] = {"pgpgout", 1, },
->  };
-> 
->  static int mem_control_stat_show(struct cgroup *cont, struct cftype *cft,
+> roadmap
+> --------
+> implement a generic statistics framework for cgroups,
+> unification with taskstats/netlink interface,
+> add more statistics
 > 
 
-Looks good to me. I wonder if pgpin/pggout per second will be a useful metric,
-to see how fast things are changing within the cgroup.
+I like the roadmap and the patches. We need these statistics quite urgently. We
+have lot of control and some statistics. We need more statistics to help make
+the decision making (resizing, moving task, etc.) easier
 
-Acked-by: Balbir Singh <balbir@linux.vnet.ibm.com>
-
-Let me test this patch right away.
 
 -- 
 	Warm Regards,
