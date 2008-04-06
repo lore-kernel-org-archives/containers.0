@@ -1,50 +1,70 @@
 From: Balbir Singh <balbir@linux.vnet.ibm.com>
-Subject: Re: [RFC][-mm] [1/2] Simple stats for cpu resource controller
-Date: Sun, 06 Apr 2008 10:42:17 +0530
-Message-ID: <47F85BB1.8010503@linux.vnet.ibm.com>
-References: <200804052339.46632.balajirrao@gmail.com> <200804060201.52726.balajirrao@gmail.com> <20080405205914.GA25009@linux.vnet.ibm.com> <200804060251.51635.balajirrao@gmail.com>
+Subject: Re: [RFC][-mm] [2/2] Simple stats for memory resource controller
+Date: Sun, 06 Apr 2008 11:53:37 +0530
+Message-ID: <47F86C69.70609@linux.vnet.ibm.com>
+References: <200804052340.02386.balajirrao@gmail.com>
 Reply-To: balbir@linux.vnet.ibm.com
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1
 Content-Transfer-Encoding: 7bit
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1756111AbYDFFN1@vger.kernel.org>
-In-Reply-To: <200804060251.51635.balajirrao@gmail.com>
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1752675AbYDFGZL@vger.kernel.org>
+In-Reply-To: <200804052340.02386.balajirrao@gmail.com>
 Sender: linux-kernel-owner@vger.kernel.org
 To: Balaji Rao <balajirrao@gmail.com>
-Cc: Dhaval Giani <dhaval@linux.vnet.ibm.com>, linux-kernel@vger.kernel.org, containers@lists.osdl.org, menage@google.com, a.p.zijlstra@chello.nl, balbir@in.ibm.com, Srivatsa Vaddagiri <vatsa@linux.vnet.ibm.com>
+Cc: linux-kernel@vger.kernel.org, containers@lists.osdl.org, menage@google.com, balbir@in.ibm.com, dhaval@linux.vnet.ibm.com
 List-Id: containers.vger.kernel.org
 
 Balaji Rao wrote:
-> On Sunday 06 April 2008 02:29:14 am Dhaval Giani wrote:
->> On Sun, Apr 06, 2008 at 02:01:52AM +0530, Balaji Rao wrote:
->>> On Sunday 06 April 2008 01:10:41 am Dhaval Giani wrote:
->>>>> +};
->>>>> +
->>>>> +struct cpu_cgroup_stat_cpu {
->>>>> +	s64 count[CPU_CGROUP_STAT_NSTATS];
->>>> u64? time does not go negative :)
->>> Right. But these stats are not only going to measure time. We need the 
-> same 
->>> variables for measuring other stats as well. I'm not sure if we would 
->>> encounter scheduler stats that would count negative.
->>>
->>> Balbir, what do you say ?
->> I would prefer to keep the stats logically separate. So something like
->> struct cpu_cgroup_stat_cpu {
->> 	u64 time[];
->> 	s64 some_other_stat;
->> }
->> and so on. (I am not sure, is there some advantage gained by using
->> structs?) Makes the code more maintainable imho.
->>
-> This would break the generic nature of __cpu_cgroup_stat_add. Its not a nice 
-> thing in my opinion.
+> This patch implements trivial statistics for the memory resource controller.
+> 
+> Signed-off-by: Balaji Rao <balajirrao@gmail.com>
+> CC: Balbir Singh <balbir@linux.vnet.ibm.com>
+> CC: Dhaval Giani <dhaval@linux.vnet.ibm.com>
+> 
+> diff --git a/mm/memcontrol.c b/mm/memcontrol.c
+> index a860765..ca98b21 100644
+> --- a/mm/memcontrol.c
+> +++ b/mm/memcontrol.c
+> @@ -47,6 +47,8 @@ enum mem_cgroup_stat_index {
+>  	 */
+>  	MEM_CGROUP_STAT_CACHE, 	   /* # of pages charged as cache */
+>  	MEM_CGROUP_STAT_RSS,	   /* # of pages charged as rss */
+> +	MEM_CGROUP_STAT_PGPGIN_COUNT,	/* # of pages paged in */
+> +	MEM_CGROUP_STAT_PGPGOUT_COUNT,	/* # of pages paged out */
+> 
+>  	MEM_CGROUP_STAT_NSTATS,
+>  };
+> @@ -198,6 +200,13 @@ static void mem_cgroup_charge_statistics(struct mem_cgroup *mem, int flags,
+>  		__mem_cgroup_stat_add_safe(stat, MEM_CGROUP_STAT_CACHE, val);
+>  	else
+>  		__mem_cgroup_stat_add_safe(stat, MEM_CGROUP_STAT_RSS, val);
+> +
+> +	if (charge)
+> +		__mem_cgroup_stat_add_safe(stat,
+> +				MEM_CGROUP_STAT_PGPGIN_COUNT, 1);
+> +	else
+> +		__mem_cgroup_stat_add_safe(stat,
+> +				MEM_CGROUP_STAT_PGPGOUT_COUNT, 1);
+>  }
+> 
+>  static struct mem_cgroup_per_zone *
+> @@ -897,6 +906,8 @@ static const struct mem_cgroup_stat_desc {
+>  } mem_cgroup_stat_desc[] = {
+>  	[MEM_CGROUP_STAT_CACHE] = { "cache", PAGE_SIZE, },
+>  	[MEM_CGROUP_STAT_RSS] = { "rss", PAGE_SIZE, },
+> +	[MEM_CGROUP_STAT_PGPGIN_COUNT] = {"pgpgin", 1, },
+> +	[MEM_CGROUP_STAT_PGPGOUT_COUNT] = {"pgpgout", 1, },
+>  };
+> 
+>  static int mem_control_stat_show(struct cgroup *cont, struct cftype *cft,
 > 
 
-I prefer keeping stats in the array as Balaji has done, it makes it easier to do
-batch processing on the stats.
+Looks good to me. I wonder if pgpin/pggout per second will be a useful metric,
+to see how fast things are changing within the cgroup.
 
+Acked-by: Balbir Singh <balbir@linux.vnet.ibm.com>
 
+Let me test this patch right away.
 
 -- 
 	Warm Regards,
