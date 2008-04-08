@@ -1,11 +1,11 @@
 From: sukadev@us.ibm.com
-Subject: [RFC][PATCH 7/7]: Enable cloning PTY namespaces
-Date: Tue, 8 Apr 2008 15:00:54 -0700
-Message-ID: <20080408220054.GG9034@us.ibm.com>
+Subject: [RFC][PATCH 6/7]: Determine pts_ns from a pty's inode
+Date: Tue, 8 Apr 2008 15:00:26 -0700
+Message-ID: <20080408220026.GF9034@us.ibm.com>
 References: <20080408215333.GA8799@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1757406AbYDHWCZ@vger.kernel.org>
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1757333AbYDHWBz@vger.kernel.org>
 Content-Disposition: inline
 In-Reply-To: <20080408215333.GA8799@us.ibm.com>
 Sender: linux-kernel-owner@vger.kernel.org
@@ -15,348 +15,411 @@ List-Id: containers.vger.kernel.org
 
 
 From: Sukadev Bhattiprolu <sukadev@us.ibm.com>
-Subject: [RFC][PATCH 7/7]: Enable cloning PTY namespaces
+Subject: [RFC][PATCH 6/7]: Determine pts_ns from a pty's inode.
 
-Enable cloning PTY namespaces.
+The devpts interfaces currently operate on a specific pts namespace
+which they get from the 'current' task.
 
-Note:
-	We are out of clone_flags! This patch depends on Cedric Le Goater's
-	clone64() patchset.
+With implementation of containers and cloning of PTS namespaces, we want
+to be able to access PTYs in a child-pts-ns from a parent-pts-ns. For
+instance we could bind-mount and pivot-root the child container on
+'/vserver/vserver1' and then access the "pts/0" of 'vserver1' using 
 
-Changelog[v2]:
-	[Serge Hallyn]: Use rcu to access sb->s_fs_info.
+	$ echo foo > /vserver/vserver1/dev/pts/0
+	
+The task doing the above 'echo' could be in parent-pts-ns. So we find
+the 'pts-ns' of the above file from the inode representing the device
+rather than from the 'current' task.
+
+Note that we need to find and hold a reference to the pts_ns to prevent
+the pts_ns from being freed while it is being accessed from 'outside'.
+
+This patch implements, 'pts_ns_from_inode()' which returns the pts_ns
+using 'inode->i_sb->s_fs_info'.
+
+Since, the 'inode' information is not visible inside devpts code itself,
+this patch modifies the tty driver code to determine the pts_ns and passes
+it into devpts.
+
+Changelog [v2]:
+	[Serge Hallyn] Use rcu to access sb->s_fs_info.
+
+	[Serge Hallyn] Simplify handling of ptmx and tty devices by expecting
+		user to create them in /dev/pts (see also devpts-mknod patch)
+
 
 Signed-off-by: Sukadev Bhattiprolu <sukadev@us.ibm.com>
-Signed-off-by: Serge Hallyn <serue@us.ibm.com>
-Signed-off-by: Matt Helsley <matthltc@us.ibm.com>
-
 ---
- fs/devpts/inode.c         |   84 ++++++++++++++++++++++++++++++++++++++++++++--
- include/linux/devpts_fs.h |   22 ++++++++++--
- include/linux/init_task.h |    1 
- include/linux/nsproxy.h   |    2 +
- include/linux/sched.h     |    1 
- kernel/fork.c             |    2 -
- kernel/nsproxy.c          |   17 ++++++++-
- 7 files changed, 122 insertions(+), 7 deletions(-)
+ drivers/char/pty.c        |   13 +++++-
+ drivers/char/tty_io.c     |   96 +++++++++++++++++++++++++++++++++++++++-------
+ fs/devpts/inode.c         |   19 +++------
+ include/linux/devpts_fs.h |   38 +++++++++++++++---
+ 4 files changed, 134 insertions(+), 32 deletions(-)
 
-Index: 2.6.25-rc8-mm1/include/linux/sched.h
-===================================================================
---- 2.6.25-rc8-mm1.orig/include/linux/sched.h	2008-04-08 13:38:08.000000000 -0700
-+++ 2.6.25-rc8-mm1/include/linux/sched.h	2008-04-08 14:27:41.000000000 -0700
-@@ -28,6 +28,7 @@
- #define CLONE_NEWPID		0x20000000	/* New pid namespace */
- #define CLONE_NEWNET		0x40000000	/* New network namespace */
- #define CLONE_IO		0x80000000	/* Clone io context */
-+#define CLONE_NEWPTS		0x0000000200000000ULL	/* Clone pts ns */
- 
- /*
-  * Scheduling policies
-Index: 2.6.25-rc8-mm1/include/linux/nsproxy.h
-===================================================================
---- 2.6.25-rc8-mm1.orig/include/linux/nsproxy.h	2008-04-08 13:38:08.000000000 -0700
-+++ 2.6.25-rc8-mm1/include/linux/nsproxy.h	2008-04-08 14:27:41.000000000 -0700
-@@ -8,6 +8,7 @@ struct mnt_namespace;
- struct uts_namespace;
- struct ipc_namespace;
- struct pid_namespace;
-+struct pts_namespace;
- 
- /*
-  * A structure to contain pointers to all per-process
-@@ -29,6 +30,7 @@ struct nsproxy {
- 	struct pid_namespace *pid_ns;
- 	struct user_namespace *user_ns;
- 	struct net 	     *net_ns;
-+	struct pts_namespace *pts_ns;
- };
- extern struct nsproxy init_nsproxy;
- 
-Index: 2.6.25-rc8-mm1/include/linux/init_task.h
-===================================================================
---- 2.6.25-rc8-mm1.orig/include/linux/init_task.h	2008-04-08 13:38:08.000000000 -0700
-+++ 2.6.25-rc8-mm1/include/linux/init_task.h	2008-04-08 14:27:41.000000000 -0700
-@@ -78,6 +78,7 @@ extern struct nsproxy init_nsproxy;
- 	.mnt_ns		= NULL,						\
- 	INIT_NET_NS(net_ns)                                             \
- 	INIT_IPC_NS(ipc_ns)						\
-+	.pts_ns		= &init_pts_ns,					\
- 	.user_ns	= &init_user_ns,				\
- }
- 
 Index: 2.6.25-rc8-mm1/include/linux/devpts_fs.h
 ===================================================================
---- 2.6.25-rc8-mm1.orig/include/linux/devpts_fs.h	2008-04-08 13:38:08.000000000 -0700
-+++ 2.6.25-rc8-mm1/include/linux/devpts_fs.h	2008-04-08 14:27:41.000000000 -0700
-@@ -31,7 +31,7 @@ extern struct pts_namespace init_pts_ns;
+--- 2.6.25-rc8-mm1.orig/include/linux/devpts_fs.h	2008-04-08 13:36:31.000000000 -0700
++++ 2.6.25-rc8-mm1/include/linux/devpts_fs.h	2008-04-08 13:38:08.000000000 -0700
+@@ -17,6 +17,7 @@
+ #include <linux/nsproxy.h>
+ #include <linux/kref.h>
+ #include <linux/idr.h>
++#include <linux/fs.h>
  
- static inline struct pts_namespace *current_pts_ns(void)
- {
--	return &init_pts_ns;
-+	return current->nsproxy->pts_ns;
- }
+ struct pts_namespace {
+ 	struct kref kref;
+@@ -26,12 +27,39 @@ struct pts_namespace {
  
- static inline struct pts_namespace *pts_ns_from_inode(struct inode *inode)
-@@ -61,7 +61,8 @@ struct tty_struct *devpts_get_tty(struct
- /* unlink */
- void devpts_pty_kill(struct pts_namespace *pts_ns, int number);
+ extern struct pts_namespace init_pts_ns;
  
--static inline void free_pts_ns(struct kref *ns_kref) { }
-+extern struct pts_namespace *new_pts_ns(void);
-+extern void free_pts_ns(struct kref *kref);
- 
- static inline struct pts_namespace *get_pts_ns(struct pts_namespace *ns)
- {
-@@ -75,6 +76,15 @@ static inline void put_pts_ns(struct pts
- 		kref_put(&ns->kref, free_pts_ns);
- }
- 
-+static inline struct pts_namespace *copy_pts_ns(u64 flags,
-+              struct pts_namespace *old_ns)
++#define DEVPTS_SUPER_MAGIC 	0x1cd1
++
++static inline struct pts_namespace *current_pts_ns(void)
 +{
-+      if (flags & CLONE_NEWPTS)
-+              return new_pts_ns();
-+      else
-+              return get_pts_ns(old_ns);
++	return &init_pts_ns;
 +}
 +
- #else
++static inline struct pts_namespace *pts_ns_from_inode(struct inode *inode)
++{
++	/*
++	 * If this file exists on devpts, return the pts_ns from the
++	 * devpts super-block. Otherwise just use the pts-ns of the
++	 * calling task.
++	 */
++	if(inode->i_sb->s_magic == DEVPTS_SUPER_MAGIC)
++		return rcu_dereference(inode->i_sb->s_fs_info);
++
++	return current_pts_ns();
++}
++
++
+ #ifdef CONFIG_UNIX98_PTYS
+-int devpts_new_index(void);
+-void devpts_kill_index(int idx);
+-int devpts_pty_new(struct tty_struct *tty);      /* mknod in devpts */
+-struct tty_struct *devpts_get_tty(int number);	 /* get tty structure */
+-void devpts_pty_kill(int number);		 /* unlink */
++int devpts_new_index(struct pts_namespace *pts_ns);
++void devpts_kill_index(struct pts_namespace *pts_ns, int idx);
++
++/* mknod in devpts */
++int devpts_pty_new(struct pts_namespace *pts_ns, struct tty_struct *tty);
++
++/* get tty structure */
++struct tty_struct *devpts_get_tty(struct pts_namespace *pts_ns, int number);
++
++/* unlink */
++void devpts_pty_kill(struct pts_namespace *pts_ns, int number);
  
- /* Dummy stubs in the no-pty case */
-@@ -90,6 +100,14 @@ static inline struct pts_namespace *get_
+ static inline void free_pts_ns(struct kref *ns_kref) { }
+ 
+Index: 2.6.25-rc8-mm1/drivers/char/tty_io.c
+===================================================================
+--- 2.6.25-rc8-mm1.orig/drivers/char/tty_io.c	2008-04-08 09:15:56.000000000 -0700
++++ 2.6.25-rc8-mm1/drivers/char/tty_io.c	2008-04-08 14:25:11.000000000 -0700
+@@ -2064,8 +2064,8 @@ static void tty_line_name(struct tty_dri
+  * relaxed for the (most common) case of reopening a tty.
+  */
+ 
+-static int init_dev(struct tty_driver *driver, int idx,
+-	struct tty_struct **ret_tty)
++static int init_dev(struct tty_driver *driver, struct pts_namespace *pts_ns,
++		int idx, struct tty_struct **ret_tty)
+ {
+ 	struct tty_struct *tty, *o_tty;
+ 	struct ktermios *tp, **tp_loc, *o_tp, **o_tp_loc;
+@@ -2074,7 +2074,11 @@ static int init_dev(struct tty_driver *d
+ 
+ 	/* check whether we're reopening an existing tty */
+ 	if (driver->flags & TTY_DRIVER_DEVPTS_MEM) {
+-		tty = devpts_get_tty(idx);
++		tty = devpts_get_tty(pts_ns, idx);
++		if (IS_ERR(tty)) {
++			retval = PTR_ERR(tty);
++			goto end_init;
++		}
+ 		/*
+ 		 * If we don't have a tty here on a slave open, it's because
+ 		 * the master already started the close process and there's
+@@ -2361,6 +2365,21 @@ static void release_tty(struct tty_struc
  }
  
- static inline void put_pts_ns(struct pts_namespace *ns) { }
-+
-+static inline struct pts_namespace *copy_pts_ns(u64 flags,
-+              struct pts_namespace *old_ns)
+ /*
++ * If the inode belongs to a device in devpts fs, return the pts-namespace
++ * associated with the device. Return NULL otherwise.
++ */
++struct pts_namespace *pty_pts_ns(struct tty_driver *driver, struct inode *inode)
 +{
-+      if (flags & CLONE_NEWPTS)
-+              return ERR_PTR(-EINVAL);
-+      return old_ns;
++	struct pts_namespace *pts_ns;
++
++	pts_ns = NULL;
++	if (driver->flags & TTY_DRIVER_DEVPTS_MEM)
++		pts_ns = pts_ns_from_inode(inode);
++
++	return pts_ns;
 +}
++
++/*
+  * Even releasing the tty structures is a tricky business.. We have
+  * to be very careful that the structures are all released at the
+  * same time, as interrupts might otherwise get the wrong pointers.
+@@ -2376,10 +2395,12 @@ static void release_dev(struct file *fil
+ 	int	idx;
+ 	char	buf[64];
+ 	unsigned long flags;
++	struct pts_namespace *pts_ns;
++	struct inode *inode;
+ 
++	inode = filp->f_path.dentry->d_inode;
+ 	tty = (struct tty_struct *)filp->private_data;
+-	if (tty_paranoia_check(tty, filp->f_path.dentry->d_inode,
+-							"release_dev"))
++	if (tty_paranoia_check(tty, inode, "release_dev"))
+ 		return;
+ 
+ 	check_tty_count(tty, "release_dev");
+@@ -2392,6 +2413,12 @@ static void release_dev(struct file *fil
+ 	devpts = (tty->driver->flags & TTY_DRIVER_DEVPTS_MEM) != 0;
+ 	o_tty = tty->link;
+ 
++	/*
++	 * We already have a reference to pts_ns here, so it cannot
++	 * be going away.
++	 */
++	pts_ns = pty_pts_ns(tty->driver, inode);
++
+ #ifdef TTY_PARANOIA_CHECK
+ 	if (idx < 0 || idx >= tty->driver->num) {
+ 		printk(KERN_DEBUG "release_dev: bad idx when trying to "
+@@ -2569,6 +2596,10 @@ static void release_dev(struct file *fil
+ 
+ 	mutex_unlock(&tty_mutex);
+ 
++	/* drop the reference from ptmx_open/tty_open() */
++	if (devpts)
++		put_pts_ns(pts_ns);
++
+ 	/* check whether both sides are closing ... */
+ 	if (!tty_closing || (o_tty && !o_tty_closing))
+ 		return;
+@@ -2634,7 +2665,7 @@ static void release_dev(struct file *fil
+ 
+ 	/* Make this pty number available for reallocation */
+ 	if (devpts)
+-		devpts_kill_index(idx);
++		devpts_kill_index(pts_ns, idx);
+ }
+ 
+ /**
+@@ -2666,6 +2697,7 @@ static int tty_open(struct inode *inode,
+ 	int index;
+ 	dev_t device = inode->i_rdev;
+ 	unsigned short saved_flags = filp->f_flags;
++	struct pts_namespace *pts_ns;
+ 
+ 	nonseekable_open(inode, filp);
+ 
+@@ -2715,10 +2747,31 @@ retry_open:
+ 		return -ENODEV;
+ 	}
+ got_driver:
+-	retval = init_dev(driver, index, &tty);
++
++	/*
++	 * If this is a pty device, we maybe accessing this device from
++	 * an ancestor pts-namespace. Find the pts-namespace from the
++	 * device's inode and grab a reference.
++	 *
++	 * If pts-namespace is NULL then:
++	 * 	- either this is not a PTY device or
++	 * 	- this open is from an ancestor-pts-ns and the pts-ns has
++	 * 	  just been freed.
++	 *
++	 * If the pts-namespace is NULL for a PTY device (i.e pts-ns has
++	 * been freed), init_dev() will fail the open()).
++	 */
++	rcu_read_lock();
++	pts_ns = pty_pts_ns(driver, inode);
++	get_pts_ns(pts_ns);
++	rcu_read_unlock();
++
++	retval = init_dev(driver, pts_ns, index, &tty);
+ 	mutex_unlock(&tty_mutex);
+-	if (retval)
++	if (retval) {
++		put_pts_ns(pts_ns);
+ 		return retval;
++	}
+ 
+ 	filp->private_data = tty;
+ 	file_move(filp, &tty->tty_files);
+@@ -2790,16 +2843,31 @@ static int ptmx_open(struct inode *inode
+ 	struct tty_struct *tty;
+ 	int retval;
+ 	int index;
++	struct pts_namespace *pts_ns;
+ 
+ 	nonseekable_open(inode, filp);
+ 
++	/*
++	 * We maybe accessing this device from an ancestor pts-namespace.
++	 * Find the pts-namespace from the device's inode and grab a
++	 * reference.
++	 *
++	 * If pts-namespace is NULL, this open is from an ancestor-pts-ns
++	 * and the pts-ns has just been freed and devpts_new_index()
++	 * below will fail the open().
++	 */
++	rcu_read_lock();
++	pts_ns = pts_ns_from_inode(inode);
++	get_pts_ns(pts_ns);
++	rcu_read_unlock();
++
+ 	/* find a device that is not in use. */
+-	index = devpts_new_index();
++	retval = index = devpts_new_index(pts_ns);
+ 	if (index < 0)
+-		return index;
++		goto drop_ns;
+ 
+ 	mutex_lock(&tty_mutex);
+-	retval = init_dev(ptm_driver, index, &tty);
++	retval = init_dev(ptm_driver, pts_ns, index, &tty);
+ 	mutex_unlock(&tty_mutex);
+ 
+ 	if (retval)
+@@ -2809,7 +2877,7 @@ static int ptmx_open(struct inode *inode
+ 	filp->private_data = tty;
+ 	file_move(filp, &tty->tty_files);
+ 
+-	retval = devpts_pty_new(tty->link);
++	retval = devpts_pty_new(pts_ns, tty->link);
+ 	if (retval)
+ 		goto out1;
+ 
+@@ -2821,7 +2889,9 @@ out1:
+ 	release_dev(filp);
+ 	return retval;
+ out:
+-	devpts_kill_index(index);
++	devpts_kill_index(pts_ns, index);
++drop_ns:
++	put_pts_ns(pts_ns);
+ 	return retval;
+ }
  #endif
- 
- 
 Index: 2.6.25-rc8-mm1/fs/devpts/inode.c
 ===================================================================
---- 2.6.25-rc8-mm1.orig/fs/devpts/inode.c	2008-04-08 13:38:08.000000000 -0700
-+++ 2.6.25-rc8-mm1/fs/devpts/inode.c	2008-04-08 14:33:04.000000000 -0700
-@@ -27,6 +27,7 @@
+--- 2.6.25-rc8-mm1.orig/fs/devpts/inode.c	2008-04-08 13:35:43.000000000 -0700
++++ 2.6.25-rc8-mm1/fs/devpts/inode.c	2008-04-08 13:38:08.000000000 -0700
+@@ -23,8 +23,6 @@
+ #include <linux/fsnotify.h>
+ #include <linux/seq_file.h>
+ 
+-#define DEVPTS_SUPER_MAGIC 0x1cd1
+-
+ #define DEVPTS_DEFAULT_MODE 0600
  
  extern int pty_limit;			/* Config limit on Unix98 ptys */
- static DECLARE_MUTEX(allocated_ptys_lock);
-+static struct file_system_type devpts_fs_type;
- 
- static struct {
- 	int setuid;
-@@ -119,6 +120,57 @@ static const struct super_operations dev
- 	.show_options	= devpts_show_options,
- };
- 
-+struct pts_namespace *new_pts_ns(void)
-+{
-+	struct pts_namespace *ns;
-+
-+	ns = kmalloc(sizeof(*ns), GFP_KERNEL);
-+	if (!ns)
-+		return ERR_PTR(-ENOMEM);
-+
-+	kref_init(&ns->kref);
-+
-+	ns->mnt = kern_mount_data(&devpts_fs_type, ns);
-+	if (IS_ERR(ns->mnt)) {
-+		kfree(ns);
-+		return ERR_PTR(PTR_ERR(ns->mnt));
-+	}
-+
-+	idr_init(&ns->allocated_ptys);
-+
-+	printk(KERN_NOTICE "Created pts-ns 0x%p\n", ns);
-+
-+	return ns;
-+}
-+
-+void free_pts_ns(struct kref *ns_kref)
-+{
-+	struct pts_namespace *ns;
-+
-+	ns = container_of(ns_kref, struct pts_namespace, kref);
-+
-+	/*
-+	 * Clear s_fs_info here rather than in ->kill_sb(), since the pts_ns
-+	 * is invalid real soon now, but the ->kill_sb() will not happen
-+	 * until the last mntput(). And if some one is accessing this
-+	 * devpts mount from an ancestor pts ns, we may not be holding
-+	 * the last reference to this mnt.
-+	 *
-+	 * After clearing the pts_ns is NULL here, any acceses from parent
-+	 * will fail.
-+	 */
-+	rcu_assign_pointer(ns->mnt->mnt_sb->s_fs_info, NULL);
-+	mntput(ns->mnt);
-+
-+	/*
-+	 * TODO:
-+	 *      idr_remove_all(&ns->allocated_ptys); introduced in 2.6.23
-+	 */
-+	idr_destroy(&ns->allocated_ptys);
-+	kfree(ns);
-+
-+	printk(KERN_NOTICE "Freed pts-ns 0x%p\n", ns);
-+}
- 
- static int devpts_mknod(struct inode *dir, struct dentry *dentry,
- 			int mode, dev_t rdev)
-@@ -217,7 +269,16 @@ static int devpts_test_sb(struct super_b
- 
- static int devpts_set_sb(struct super_block *sb, void *data)
- {
--	sb->s_fs_info = data;
-+	/*
-+	 * new_pts_ns() mounts the pts namespace and free_pts_ns()
-+	 * drops the reference to the mount. i.e the s_fs_info is
-+	 * cleared and vfsmnt is released _before_ pts_namespace
-+	 * is freed.
-+	 *
-+	 * So we don't need a reference to the pts_namespace here
-+	 * (Getting a reference here will also cause circular reference).
-+	 */
-+	rcu_assign_pointer(sb->s_fs_info, data);
- 	return set_anon_super(sb, NULL);
+@@ -283,11 +281,10 @@ static struct dentry *get_node(struct de
+ 	return lookup_one_len(s, root, sprintf(s, "%d", num));
  }
  
-@@ -232,7 +293,7 @@ static int devpts_get_sb(struct file_sys
- 	if (flags & MS_KERNMOUNT)
- 		ns = data;
- 	else
--		ns = &init_pts_ns;
-+		ns = current_pts_ns();
- 
- 	/* hereafter we're very simlar to get_sb_nodev */
- 	sb = sget(fs_type, devpts_test_sb, devpts_set_sb, ns);
-@@ -286,6 +347,13 @@ int devpts_new_index(struct pts_namespac
+-int devpts_new_index(void)
++int devpts_new_index(struct pts_namespace *pts_ns)
+ {
  	int index;
  	int idr_ret;
+-	struct pts_namespace *pts_ns = &init_pts_ns;
  
-+	/*
-+	 * If pts_ns is NULL, this must be an access from an ancestor-pts-ns
-+	 * which happened just as this pts-ns was freed. Fail the access
-+	 * from parent-pts-ns.
-+	 */
-+	if (!pts_ns)
-+		return -EAGAIN;
  retry:
  	if (!idr_pre_get(&pts_ns->allocated_ptys, GFP_KERNEL)) {
- 		return -ENOMEM;
-@@ -311,6 +379,7 @@ retry:
+@@ -312,16 +309,15 @@ retry:
+ 	return index;
+ }
  
- void devpts_kill_index(struct pts_namespace *pts_ns, int idx)
+-void devpts_kill_index(int idx)
++void devpts_kill_index(struct pts_namespace *pts_ns, int idx)
  {
-+	BUG_ON(pts_ns == NULL);
+-	struct pts_namespace *pts_ns = &init_pts_ns;
  
  	down(&allocated_ptys_lock);
  	idr_remove(&pts_ns->allocated_ptys, idx);
-@@ -330,6 +399,7 @@ int devpts_pty_new( struct pts_namespace
+ 	up(&allocated_ptys_lock);
+ }
+ 
+-int devpts_pty_new(struct tty_struct *tty)
++int devpts_pty_new( struct pts_namespace *pts_ns, struct tty_struct *tty)
+ {
+ 	int number = tty->index; /* tty layer puts index from devpts_new_index() in here */
+ 	struct tty_driver *driver = tty->driver;
+@@ -330,7 +326,6 @@ int devpts_pty_new(struct tty_struct *tt
+ 	struct dentry *root;
+ 	struct vfsmount *mnt;
+ 	struct inode *inode;
+-	struct pts_namespace *pts_ns = &init_pts_ns;
+ 
  	/* We're supposed to be given the slave end of a pty */
  	BUG_ON(driver->type != TTY_DRIVER_TYPE_PTY);
- 	BUG_ON(driver->subtype != PTY_TYPE_SLAVE);
-+	BUG_ON(pts_ns == NULL);
+@@ -369,13 +364,13 @@ int devpts_pty_new(struct tty_struct *tt
+ 	return 0;
+ }
  
- 	mnt = pts_ns->mnt;
- 	root = mnt->mnt_root;
-@@ -370,6 +440,14 @@ struct tty_struct *devpts_get_tty(struct
+-struct tty_struct *devpts_get_tty(int number)
++struct tty_struct *devpts_get_tty(struct pts_namespace *pts_ns, int number)
+ {
+ 	struct vfsmount *mnt;
  	struct dentry *dentry;
  	struct tty_struct *tty;
  
-+	/*
-+	 * If pts_ns is NULL, this must be an access from an ancestor-pts-ns
-+	 * which happened just as this pts-ns was freed. Fail the access
-+	 * from parent-pts-ns.
-+	 */
-+	if (!pts_ns)
-+		return ERR_PTR(-EAGAIN);
-+
- 	mnt = pts_ns->mnt;
+-	mnt = init_pts_ns.mnt;
++	mnt = pts_ns->mnt;
  
  	dentry = get_node(mnt->mnt_root, number);
-@@ -391,6 +469,8 @@ void devpts_pty_kill(struct pts_namespac
+ 
+@@ -391,12 +386,12 @@ struct tty_struct *devpts_get_tty(int nu
+ 	return tty;
+ }
+ 
+-void devpts_pty_kill(int number)
++void devpts_pty_kill(struct pts_namespace *pts_ns, int number)
+ {
  	struct dentry *dentry;
  	struct dentry *root;
  
-+	BUG_ON(pts_ns == NULL);
-+
- 	root = pts_ns->mnt->mnt_root;
+-	root = init_pts_ns.mnt->mnt_root;
++	root = pts_ns->mnt->mnt_root;
  
  	dentry = get_node(root, number);
-Index: 2.6.25-rc8-mm1/kernel/fork.c
+ 
+Index: 2.6.25-rc8-mm1/drivers/char/pty.c
 ===================================================================
---- 2.6.25-rc8-mm1.orig/kernel/fork.c	2008-04-08 13:38:08.000000000 -0700
-+++ 2.6.25-rc8-mm1/kernel/fork.c	2008-04-08 14:27:41.000000000 -0700
-@@ -1714,7 +1714,7 @@ static long do_unshare(u64 unshare_flags
- 	if (unshare_flags & ~(CLONE_THREAD|CLONE_FS|CLONE_NEWNS|CLONE_SIGHAND|
- 				CLONE_VM|CLONE_FILES|CLONE_SYSVSEM|
- 				CLONE_NEWUTS|CLONE_NEWIPC|CLONE_NEWUSER|
--				CLONE_NEWNET))
-+				CLONE_NEWNET|CLONE_NEWPTS))
- 		goto bad_unshare_out;
+--- 2.6.25-rc8-mm1.orig/drivers/char/pty.c	2008-04-08 09:12:54.000000000 -0700
++++ 2.6.25-rc8-mm1/drivers/char/pty.c	2008-04-08 13:37:16.000000000 -0700
+@@ -37,6 +37,9 @@ static struct tty_driver *pts_driver;
  
- 	if ((err = unshare_thread(unshare_flags)))
-Index: 2.6.25-rc8-mm1/kernel/nsproxy.c
-===================================================================
---- 2.6.25-rc8-mm1.orig/kernel/nsproxy.c	2008-04-08 13:38:08.000000000 -0700
-+++ 2.6.25-rc8-mm1/kernel/nsproxy.c	2008-04-08 14:27:41.000000000 -0700
-@@ -21,6 +21,7 @@
- #include <linux/utsname.h>
- #include <linux/pid_namespace.h>
- #include <net/net_namespace.h>
-+#include <linux/devpts_fs.h>
- #include <linux/ipc_namespace.h>
- 
- static struct kmem_cache *nsproxy_cachep;
-@@ -93,8 +94,17 @@ static struct nsproxy *create_new_namesp
- 		goto out_net;
- 	}
- 
-+	new_nsp->pts_ns = copy_pts_ns(flags, tsk->nsproxy->pts_ns);
-+	if (IS_ERR(new_nsp->pts_ns)) {
-+		err = PTR_ERR(new_nsp->pts_ns);
-+		goto out_pts;
-+	}
+ static void pty_close(struct tty_struct * tty, struct file * filp)
+ {
++	struct inode *inode;
++	struct pts_namespace *pts_ns;
 +
- 	return new_nsp;
- 
-+out_pts:
-+	if (new_nsp->net_ns)
-+		put_net(new_nsp->net_ns);
- out_net:
- 	if (new_nsp->user_ns)
- 		put_user_ns(new_nsp->user_ns);
-@@ -131,7 +141,8 @@ int copy_namespaces(u64 flags, struct ta
- 	get_nsproxy(old_ns);
- 
- 	if (!(flags & (CLONE_NEWNS | CLONE_NEWUTS | CLONE_NEWIPC |
--				CLONE_NEWUSER | CLONE_NEWPID | CLONE_NEWNET)))
-+				CLONE_NEWUSER | CLONE_NEWPID | CLONE_NEWNET |
-+				CLONE_NEWPTS)))
- 		return 0;
- 
- 	if (!capable(CAP_SYS_ADMIN)) {
-@@ -170,6 +181,8 @@ void free_nsproxy(struct nsproxy *ns)
- 		put_pid_ns(ns->pid_ns);
- 	if (ns->user_ns)
- 		put_user_ns(ns->user_ns);
-+	if (ns->pts_ns)
-+		put_pts_ns(ns->pts_ns);
- 	put_net(ns->net_ns);
- 	kmem_cache_free(nsproxy_cachep, ns);
- }
-@@ -184,7 +197,7 @@ int unshare_nsproxy_namespaces(u64 unsha
- 	int err = 0;
- 
- 	if (!(unshare_flags & (CLONE_NEWNS | CLONE_NEWUTS | CLONE_NEWIPC |
--			       CLONE_NEWUSER | CLONE_NEWNET)))
-+			       CLONE_NEWUSER | CLONE_NEWNET | CLONE_NEWPTS)))
- 		return 0;
- 
- 	if (!capable(CAP_SYS_ADMIN))
+ 	if (!tty)
+ 		return;
+ 	if (tty->driver->subtype == PTY_TYPE_MASTER) {
+@@ -58,8 +61,14 @@ static void pty_close(struct tty_struct 
+ 	if (tty->driver->subtype == PTY_TYPE_MASTER) {
+ 		set_bit(TTY_OTHER_CLOSED, &tty->flags);
+ #ifdef CONFIG_UNIX98_PTYS
+-		if (tty->driver == ptm_driver)
+-			devpts_pty_kill(tty->index);
++		if (tty->driver == ptm_driver) {
++			inode = filp->f_path.dentry->d_inode;
++			rcu_read_lock();
++			pts_ns = pts_ns_from_inode(inode);
++			rcu_read_unlock();
++
++			devpts_pty_kill(pts_ns, tty->index);
++		}
+ #endif
+ 		tty_vhangup(tty->link);
+ 	}
