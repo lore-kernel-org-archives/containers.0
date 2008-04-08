@@ -1,78 +1,42 @@
 From: sukadev@us.ibm.com
-Subject: [RFC][PATCH 0/7] Clone PTS namespace
-Date: Tue, 8 Apr 2008 14:53:33 -0700
-Message-ID: <20080408215333.GA8799@us.ibm.com>
+Subject: [RFC][PATCH 1/7]: Propagate error code from devpts_pty_new
+Date: Tue, 8 Apr 2008 14:58:18 -0700
+Message-ID: <20080408215818.GA9034@us.ibm.com>
+References: <20080408215333.GA8799@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1756531AbYDHVzF@vger.kernel.org>
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1756237AbYDHV7q@vger.kernel.org>
 Content-Disposition: inline
+In-Reply-To: <20080408215333.GA8799@us.ibm.com>
 Sender: linux-kernel-owner@vger.kernel.org
 To: linux-kernel@vger.kernel.org
-Cc: Containers <containers@lists.osdl.org>, Pavel Emelyanov <xemul@openvz.org>, serue@us.ibm.com, clg@fr.ibm.com
+Cc: Containers <containers@lists.osdl.org>, clg@fr.ibm.com, Pavel Emelyanov <xemul@openvz.org>
 List-Id: containers.vger.kernel.org
 
 
-Devpts namespace patchset
+From: Sukadev Bhattiprolu <sukadev@us.ibm.com>
+Subject: [RFC][PATCH 1/7]: Propagate error code from devpts_pty_new
 
-In continuation of the implementation of containers in mainline, we need to
-support multiple PTY namespaces so that the PTY index (ie the tty names) in
-one container is independent of the PTY indices of other containers.  For
-instance this would allow each container to have a '/dev/pts/0' PTY and
-refer to different terminals.
+Have ptmx_open() propagate any error code returned by devpts_pty_new()
+(which returns either 0 or -ENOMEM anyway).
 
-	[PATCH 1/7]: Propagate error code from devpts_pty_new
-	[PATCH 2/7]: Factor out PTY index allocation
-	[PATCH 3/7]: Enable multiple mounts of /dev/pts
-	[PATCH 4/7]: Allow mknod of ptmx and tty in devpts
-	[PATCH 5/7]: Implement get_pts_ns() and put_pts_ns()
-	[PATCH 6/7]: Determine pts_ns from a pty's inode
-	[PATCH 7/7]: Enable cloning PTY namespaces
-
-Todo:
-	- This patchset depends on availability of additional clone flags.
-	  and relies on on Cedric's clone64 patchset. See
-
-		  http://marc.info/?l=linux-kernel&m=120272411925609&w=2
-	
-	- Needs some cleanup and more testing
-
-	- Ensure patchset is bisect-safe
-
+Signed-off-by: Sukadev Bhattiprolu <sukadev@us.ibm.com>
 ---
-Changelogs from earlier posts to Containers@.
+ drivers/char/tty_io.c |    4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
 
-Changelog[v2]:
-
-	 (Patches 4 and 6 differ significantly from [v1]. Others are mostly
-	 the same)
-
-	- [Alexey Dobriyan, Pavel Emelyanov] Removed the hack to check for
-	  user-space mount.
-
-	- [Serge Hallyn] Added rcu locking around access to sb->s_fs_info.
-
-	- [Serge Hallyn] Allow creation of /dev/pts/ptmx and /dev/pts/tty
-	  devices to simplify the process of finding the 'owning' pts-ns
-	  of the device (specially when accessed from parent-pts-ns)
-	  See patches 4 and 6 for details.
-
-Changelog[v1]:
-	- Fixed circular reference by not caching the pts_ns in sb->s_fs_info
-	  (without incrementing reference count) and clearing the sb->s_fs_info
-	  when destroying the pts_ns
-
-	- To allow access to a child container's ptys from parent container,
-	  determine the 'pts_ns' of a 'pty' from its inode.
-
-	- Added a check (hack) to ensure user-space mount of /dev/pts is
-	  done before creating PTYs in a new pts-ns.
-
-	- Reorganized the patchset and removed redundant changes.
-	
-	- Ported to work wih Cedric Le Goater's clone64() system call now
-	  that we are out of clone_flags.
-
-Changelog[v0]:
-
-	This patchset is based on earlier versions developed by Serge Hallyn
-	and Matt Helsley.
+Index: 2.6.25-rc8-mm1/drivers/char/tty_io.c
+===================================================================
+--- 2.6.25-rc8-mm1.orig/drivers/char/tty_io.c	2008-04-07 14:49:56.000000000 -0700
++++ 2.6.25-rc8-mm1/drivers/char/tty_io.c	2008-04-08 09:12:55.000000000 -0700
+@@ -2835,8 +2835,8 @@ static int ptmx_open(struct inode *inode
+ 	filp->private_data = tty;
+ 	file_move(filp, &tty->tty_files);
+ 
+-	retval = -ENOMEM;
+-	if (devpts_pty_new(tty->link))
++	retval = devpts_pty_new(tty->link);
++	if (retval)
+ 		goto out1;
+ 
+ 	check_tty_count(tty, "tty_open");
