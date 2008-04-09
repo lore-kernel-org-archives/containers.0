@@ -1,66 +1,37 @@
-From: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Subject: Re: [RFC][PATCH 0/7] Clone PTS namespace
-Date: Wed, 09 Apr 2008 15:15:13 -0700
-Message-ID: <1207779313.16926.12.camel@x61.ebiederm.org>
-References: <20080408215333.GA8799@us.ibm.com>  <47FC138B.4070408@zytor.com>
+From: sukadev@us.ibm.com
+Subject: [PATCH 0/3] clone64() and unshare64() system calls
+Date: Wed, 9 Apr 2008 15:26:11 -0700
+Message-ID: <20080409222611.GA28087@us.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <47FC138B.4070408-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "H. Peter Anvin" <hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org>
-Cc: Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+Content-Type: text/plain; charset=us-ascii
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1756103AbYDIW1l@vger.kernel.org>
+Content-Disposition: inline
+Sender: linux-kernel-owner@vger.kernel.org
+To: Andrew Morton <akpm@osdl.org>
+Cc: clg@fr.ibm.com, serue@us.ibm.com, "David C. Hansen" <haveblue@us.ibm.com>, Pavel Emelyanov <xemul@openvz.org>, Containers <containers@lists.osdl.org>, linux-kernel@vger.kernel.org
 List-Id: containers.vger.kernel.org
 
-On Tue, 2008-04-08 at 17:53 -0700, H. Peter Anvin wrote:
-> sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org wrote:
-> > Devpts namespace patchset
-> > 
-> > In continuation of the implementation of containers in mainline, we need to
-> > support multiple PTY namespaces so that the PTY index (ie the tty names) in
-> > one container is independent of the PTY indices of other containers.  For
-> > instance this would allow each container to have a '/dev/pts/0' PTY and
-> > refer to different terminals.
-> > 
-> 
-> Why do we "need" this?  There isn't a fundamental need for this to be a 
-> dense numberspace (in fact, there are substantial reasons why it's a bad 
-> idea; the only reason the namespace is dense at the moment is because of 
-> the hideously bad handing of utmp in glibc.)  Other than indicies, this 
-> seems to be a more special case of device isolation across namespaces, 
-> would that be a more useful problem to solve across the board?
 
-In short application migration.  When you move a running applicaiton
-from one machine to another you want to be able to keep the same pseudo
-devices.
+This is a resend of the patch set Cedric had sent earlier. I ported
+the patch set to 2.6.25-rc8-mm1 and tested on x86 and x86_64.
+---
 
-The isolation that you have noticed is also an important application and
-like the rest of the namespaces if we can solve the duplicate identifier
-problem needed to restore checkpoints we also largely solve the
-isolation problem.
+We have run out of the 32 bits in clone_flags !
 
-This problem is much larger then ptys.  ptys are the really in your face
-aspect of it.  There are a more pseudo devices in the kernel and it is
-the device number to device mapping that we are abstracting.  So this
-really should be done as a device namespace not a pty namespace.
+This patchset introduces 2 new system calls which support 64bit clone-flags.
 
-I would be happy if the first version of the device namespace could not
-map anything but pty's (assuming an incremental implementation path).  I
-really don't think we should do a special case for each kind of device.
+     long sys_clone64(unsigned long flags_high, unsigned long flags_low,
+		unsigned long newsp);
 
-Oh and just skimming the patch summary I'm pretty certain this
-implementation breaks /sys/class/tty/ptyXX/uevent.  Which is another
-reason why it would be good to have a single device namespace.  So we
-only to capture one more namespace and figure out how to deal with it
-when mounting sysfs. 
+     long sys_unshare64(unsigned long flags_high, unsigned long flags_low);
 
-Eric
+The current version of clone64() does not support CLONE_PARENT_SETTID and 
+CLONE_CHILD_CLEARTID because we would exceed the 6 registers limit of some 
+arches. It's possible to get around this limitation but we might not
+need it as we already have clone()
+
+This is work in progress but already includes support for x86, x86_64, 
+x86_64(32), ppc64, ppc64(32), s390x, s390x(31). 
+
+ia64 already supports 64bits clone flags through the clone2() syscall.
+should we harmonize the name to clone2 ?  
