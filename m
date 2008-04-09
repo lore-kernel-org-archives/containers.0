@@ -1,16 +1,14 @@
-From: "Satoshi UCHIDA" <s-uchida-LYU95VJlayp8UrSeD/g0lQ@public.gmane.org>
-Subject: RE: Loadable cgroup subsystems
-Date: Wed, 9 Apr 2008 17:31:58 +0900
-Message-ID: <00f201c89a1c$2d2e4cf0$878ae6d0$@jp.nec.com>
-References: <1207633175.7798.5.camel@nikanth-laptop.blr.novell.com>	
-	<1207647629.7798.40.camel@nikanth-laptop.blr.novell.com>
-	<6599ad830804080241u68d68e2bo8739f907306571bd@mail.gmail.com>
+From: sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org
+Subject: Re: [RFC][PATCH 0/7] Clone PTS namespace
+Date: Wed, 9 Apr 2008 09:23:53 -0700
+Message-ID: <20080409162353.GA14044@us.ibm.com>
+References: <20080408215333.GA8799@us.ibm.com> <47FC138B.4070408@zytor.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="iso-2022-jp"
+Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <6599ad830804080241u68d68e2bo8739f907306571bd-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
-Content-Language: ja
+Content-Disposition: inline
+In-Reply-To: <47FC138B.4070408-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -20,39 +18,41 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: 'Paul Menage' <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, 'Nikanth Karthikesan' <knikanth-l3A5Bk7waGM@public.gmane.org>
-Cc: 'Vasily Tarasov' <vtaras-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: "H. Peter Anvin" <hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org>
+Cc: Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-> >  There were some band-width control patches based on cfq + cgroups, which
-> >  I guess will mandate cfq to be built-in?
-> >
-> 
-> Yes, or else have built-in stubs for the cgroup subsystem that load
-> cfq and the code that uses cfq the first time someone tries to mount
-> that subsystem.
-> 
+H. Peter Anvin [hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org] wrote:
+> sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org wrote:
+>> Devpts namespace patchset
+>> In continuation of the implementation of containers in mainline, we need 
+>> to
+>> support multiple PTY namespaces so that the PTY index (ie the tty names) 
+>> in
+>> one container is independent of the PTY indices of other containers.  For
+>> instance this would allow each container to have a '/dev/pts/0' PTY and
+>> refer to different terminals.
+>
+> Why do we "need" this?  There isn't a fundamental need for this to be a 
+> dense numberspace (in fact, there are substantial reasons why it's a bad 
+> idea; the only reason the namespace is dense at the moment is because of 
+> the hideously bad handing of utmp in glibc.)  Other than indicies, this 
+> seems to be a more special case of device isolation across namespaces, 
+> would that be a more useful problem to solve across the board?
 
-I think that it is too early to decide which band-width control for
-cgroups will　mandate to be built-in.
-Before that, we need more discussion about a band-width control and
-its　implementation.
-I seems that both implementation are still prototype and immature.
-Both implementation would have good points and bad points respectively.
+We want to provide isolation between containers, meaning PTYs in container
+C1 should not be accessible to processes in C2 (unless C2 is an ancestor).
 
+The other reason for this in the longer term is for checkpoint/restart.
+When restarting an application we want to make sure that the PTY indices
+it was using is available and isolated.
 
-If you want to manage these patchset by one source tree, we should
-choice adopting means by a build option.
-So, I think that a build option is the better at present, but I guess
-that it should be better to dynamically load subsystem in future.
+We started out with isolating just the indices but added the special-case
+handling for granting the host visibility into a child-container.
 
-I have idea that handles multiple implementation as provisional solution.
-Now, all bandwidth control expands CFQ original code and is valid by build options.
-It is good to be re-implemented as new I/O scheduler which reuses original code.
-Therefore, it became a selectable such as other I/O scheduler (anticipatory, cfq, noop, etc.)
-User can select a suitable scheduler through "scheduler" entry in sysfs. 
-In addition, it's possible to use a new controller simultaneously with existing I/O scheduler.
-Unfortunately, this idea would require much modification to each patchset.
+A complete device-namespace could solve this, but IIUC, is being planned
+in the longer term. We are hoping this would provide the isolation in the
+near-term without being too intrusive or impeding the implementation of
+the device namespace.
 
------
-Satoshi UCHIDA
+Sukadev
