@@ -1,51 +1,32 @@
-From: "Serge E. Hallyn" <serue@us.ibm.com>
-Subject: Re: [PATCH 1/3] change clone_flags type to u64
-Date: Thu, 10 Apr 2008 12:14:53 -0500
-Message-ID: <20080410171453.GA7023@sergelap.ibm.com>
-References: <20080409222611.GA28087@us.ibm.com> <20080409223231.GA28267@us.ibm.com> <871w5enmk7.fsf@basil.nowhere.org> <47FE073B.3060007@fr.ibm.com> <20080410125205.GG10019@one.firstfloor.org>
+From: "Paul Menage" <menage@google.com>
+Subject: Re: [Devel] [PATCH 1/14][NETNS]: Introduce the net-subsys id generator.
+Date: Thu, 10 Apr 2008 10:37:53 -0700
+Message-ID: <6599ad830804101037m29d59f8dh85e27ceefc76f8f2@mail.gmail.com>
+References: <47FE2AD4.9080609@openvz.org> <47FE2BB5.4070708@openvz.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1757701AbYDJRQm@vger.kernel.org>
+Content-Type: text/plain; charset=ISO-8859-1
+Content-Transfer-Encoding: 7bit
+Return-path: <netdev-owner@vger.kernel.org>
+In-Reply-To: <47FE2BB5.4070708@openvz.org>
 Content-Disposition: inline
-In-Reply-To: <20080410125205.GG10019@one.firstfloor.org>
-Sender: linux-kernel-owner@vger.kernel.org
-To: Andi Kleen <andi@firstfloor.org>
-Cc: Cedric Le Goater <clg@fr.ibm.com>, sukadev@us.ibm.com, Andrew Morton <akpm@osdl.org>, serue@us.ibm.com, "David C. Hansen" <haveblue@us.ibm.com>, Pavel Emelyanov <xemul@openvz.org>, Containers <containers@lists.osdl.org>, linux-kernel@vger.kernel.org
+Sender: netdev-owner@vger.kernel.org
+To: Pavel Emelyanov <xemul@openvz.org>
+Cc: Linux Netdev List <netdev@vger.kernel.org>, Linux Containers <containers@lists.osdl.org>, Denis Lunev <den@openvz.org>, Benjamin Thery <benjamin.thery@bull.net>
 List-Id: containers.vger.kernel.org
 
-Quoting Andi Kleen (andi@firstfloor.org):
-> > I guess that was a development rationale. 
-> 
-> But what rationale? It just doesn't make much sense to me.
-> 
-> > Most of the namespaces are in 
-> > use in the container projects like openvz, vserver and probably others 
-> > and we needed a way to activate the code.
-> 
-> You could just have added it to feature groups over time.
-> 
-> > 
-> > Not perfect I agree.
-> >  
-> > > With your current strategy are you sure that even 64bit will
-> > > be enough in the end? For me it rather looks like you'll
-> > > go through those quickly too as more and more of the kernel
-> > > is namespaced.
-> > 
-> > well, we're reaching the end. I hope ! devpts is in progress and
-> > mq is just waiting for a clone flag.
-> 
-> Are you sure?
+On Thu, Apr 10, 2008 at 8:01 AM, Pavel Emelyanov <xemul@openvz.org> wrote:
+>  +int register_pernet_gen_device(int *id, struct pernet_operations *ops)
+>  +{
+>  +       int error;
+>  +       mutex_lock(&net_mutex);
+>  +again:
+>  +       error = ida_get_new_above(&net_generic_ids, 1, id);
+>  +       if (error) {
+>  +               if (error == -EAGAIN) {
+>  +                       ida_pre_get(&net_generic_ids, GFP_KERNEL);
+>  +                       goto again;
+>  +               }
 
-Well for one thing we can take a somewhat different approach to new
-clone flags.  I.e. we could extend CLONE_NEWIPC to do mq instead of
-introducing a new clone flag.  The name doesn't have 'sysv' in it,
-and globbing all ipc resources together makes some amount of sense.
-Similarly has hpa+eric pointed out earlier, suka could use
-CLONE_NEWDEV for ptys.  If we have net, pid, ipc, devices, that's a
-pretty reasonable split imo.  Perhaps we tie user to devices and get
-rid of CLONE_NEWUSER which I suspect noone is using atm (since only
-Dave has run into the CONFIG_USER_SCHED problem).  Or not.  We could
-roll uts into net, and give CLONE_NEWUTS a deprecation period.
+Shouldn't you handle non-EAGAIN errors here?
 
--serge
+Paul
