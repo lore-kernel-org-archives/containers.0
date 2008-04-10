@@ -1,56 +1,47 @@
-From: sukadev@us.ibm.com
+From: "H. Peter Anvin" <hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org>
 Subject: Re: [PATCH 0/3] clone64() and unshare64() system calls
-Date: Wed, 9 Apr 2008 18:07:17 -0700
-Message-ID: <20080410010717.GA28477@us.ibm.com>
+Date: Wed, 09 Apr 2008 18:10:57 -0700
+Message-ID: <47FD6921.6090408@zytor.com>
 References: <20080409222611.GA28087@us.ibm.com> <47FD5899.2040206@zytor.com>
+	<20080410010717.GA28477@us.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1755801AbYDJBIt@vger.kernel.org>
-Content-Disposition: inline
-In-Reply-To: <47FD5899.2040206@zytor.com>
-Sender: linux-kernel-owner@vger.kernel.org
-To: "H. Peter Anvin" <hpa@zytor.com>
-Cc: Andrew Morton <akpm@osdl.org>, clg@fr.ibm.com, serue@us.ibm.com, "David C. Hansen" <haveblue@us.ibm.com>, Pavel Emelyanov <xemul@openvz.org>, Containers <containers@lists.osdl.org>, linux-kernel@vger.kernel.org
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <20080410010717.GA28477-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org
+Cc: "David C. Hansen" <haveblue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org, Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-H. Peter Anvin [hpa@zytor.com] wrote:
-> sukadev@us.ibm.com wrote:
->> This is a resend of the patch set Cedric had sent earlier. I ported
->> the patch set to 2.6.25-rc8-mm1 and tested on x86 and x86_64.
->> ---
->> We have run out of the 32 bits in clone_flags !
->> This patchset introduces 2 new system calls which support 64bit 
->> clone-flags.
->>      long sys_clone64(unsigned long flags_high, unsigned long flags_low,
->> 		unsigned long newsp);
->>      long sys_unshare64(unsigned long flags_high, unsigned long 
->> flags_low);
->> The current version of clone64() does not support CLONE_PARENT_SETTID and 
->> CLONE_CHILD_CLEARTID because we would exceed the 6 registers limit of some 
->> arches. It's possible to get around this limitation but we might not
->> need it as we already have clone()
->
-> I really dislike this interface.
->
-> If you're going to make it a 64-bit pass it in as a 64-bit number, instead 
-> of breaking it into two numbers.
+sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org wrote:
+>>
+>> If you're going to make it a 64-bit pass it in as a 64-bit number, instead 
+>> of breaking it into two numbers.
+> 
+> Maybe I am missing your point. The glibc interface could take a 64bit
+> parameter, but don't we need to pass 32-bit values into the system call 
+> on 32 bit systems ?
 
-Maybe I am missing your point. The glibc interface could take a 64bit
-parameter, but don't we need to pass 32-bit values into the system call 
-on 32 bit systems ?
+Not as such, no.  The ABI handles that.  To make the ABI clean on some 
+architectures, it's good to consider a 64-bit value only in positions 
+where they map to an even:odd register pair once slotted in.
 
-> Better yet, IMO, would be to pass a pointer to a structure like:
->
-> struct shared {
-> 	unsigned long nwords;
-> 	unsigned long flags[];
-> };
->
-> ... which can be expanded indefinitely.
+> Yes, this was discussed before in the context of Pavel Emelyanov's patch
+> 
+> 	http://lkml.org/lkml/2008/1/16/109
+> 
+> along with sys_indirect().  While there was no consensus, it looked like
+> adding a new system call was better than open ended interfaces.
 
-Yes, this was discussed before in the context of Pavel Emelyanov's patch
+That's not really an open-ended interface, it's just an expandable bitmap.
 
-	http://lkml.org/lkml/2008/1/16/109
-
-along with sys_indirect().  While there was no consensus, it looked like
-adding a new system call was better than open ended interfaces.
+	-hpa
