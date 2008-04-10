@@ -1,71 +1,51 @@
 From: "Serge E. Hallyn" <serue@us.ibm.com>
-Subject: Re: [RFC][PATCH 0/7] Clone PTS namespace
-Date: Thu, 10 Apr 2008 11:44:36 -0500
-Message-ID: <20080410164436.GA6434@sergelap.ibm.com>
-References: <20080408215333.GA8799@us.ibm.com> <47FC138B.4070408@zytor.com> <1207779313.16926.12.camel@x61.ebiederm.org> <20080410015955.GA18227@sergelap.austin.rr.com> <1207812980.7509.25.camel@x61.ebiederm.org>
+Subject: Re: [PATCH 1/3] change clone_flags type to u64
+Date: Thu, 10 Apr 2008 12:14:53 -0500
+Message-ID: <20080410171453.GA7023@sergelap.ibm.com>
+References: <20080409222611.GA28087@us.ibm.com> <20080409223231.GA28267@us.ibm.com> <871w5enmk7.fsf@basil.nowhere.org> <47FE073B.3060007@fr.ibm.com> <20080410125205.GG10019@one.firstfloor.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1757276AbYDJQqb@vger.kernel.org>
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1757701AbYDJRQm@vger.kernel.org>
 Content-Disposition: inline
-In-Reply-To: <1207812980.7509.25.camel@x61.ebiederm.org>
+In-Reply-To: <20080410125205.GG10019@one.firstfloor.org>
 Sender: linux-kernel-owner@vger.kernel.org
-To: "Eric W. Biederman" <ebiederm@xmission.com>
-Cc: "Serge E. Hallyn" <serue@us.ibm.com>, "H. Peter Anvin" <hpa@zytor.com>, Containers <containers@lists.osdl.org>, clg@fr.ibm.com, linux-kernel@vger.kernel.org, Pavel Emelyanov <xemul@openvz.org>
+To: Andi Kleen <andi@firstfloor.org>
+Cc: Cedric Le Goater <clg@fr.ibm.com>, sukadev@us.ibm.com, Andrew Morton <akpm@osdl.org>, serue@us.ibm.com, "David C. Hansen" <haveblue@us.ibm.com>, Pavel Emelyanov <xemul@openvz.org>, Containers <containers@lists.osdl.org>, linux-kernel@vger.kernel.org
 List-Id: containers.vger.kernel.org
 
-Quoting Eric W. Biederman (ebiederm@xmission.com):
-> On Wed, 2008-04-09 at 20:59 -0500, Serge E. Hallyn wrote:
+Quoting Andi Kleen (andi@firstfloor.org):
+> > I guess that was a development rationale. 
 > 
-> > Feh, so of course sysfs would have the most interactions for a device
-> > namespace, but now we have pty, network, and user namespace all needing
-> > some sort of sysfs solution.  For a quickfix for
-> > CONFIG_USER_SCHED+CONFIG_USER_NS, I just moved /sys/kernel/uids/<uid>
-> > to /sys/kernel/uids/<userns_address>/<uid>.  But what would be a *good*
-> > general solution?
+> But what rationale? It just doesn't make much sense to me.
+> 
+> > Most of the namespaces are in 
+> > use in the container projects like openvz, vserver and probably others 
+> > and we needed a way to activate the code.
+> 
+> You could just have added it to feature groups over time.
+> 
 > > 
-> > ln -s /sys /proc/self/sys?
+> > Not perfect I agree.
+> >  
+> > > With your current strategy are you sure that even 64bit will
+> > > be enough in the end? For me it rather looks like you'll
+> > > go through those quickly too as more and more of the kernel
+> > > is namespaced.
+> > 
+> > well, we're reaching the end. I hope ! devpts is in progress and
+> > mq is just waiting for a clone flag.
 > 
-> LOL
-> 
-> In /proc I prefer the /proc/self approach because we can do it and it is
-> just much easier to setup and use.  (Plus we have weird problems if we
-> try and capture more then the pid namespace).
-> 
-> For other filesystems the only really viable option is to capture
-> namespaces at mount time, as we are doing for devpts and proc with
-> respect to the pid namespace.
-> 
-> For the network namespace where it is very much more then a single
-> directory with symlinks from physical devices pointing at logical
-> network interfaces.
-> 
-> My last effort in that area was ok'd by Tejun lightly tested by a few
-> others and misplaced by gregkh so I don't think we have a real problem
-> with resurrecting those patches cleaning them up a bit and merging them.
-> 
-> The biggest gotcha with sysfs is that the VFS locking for the dcache
-> is in the wrong order for distributed filesystems, where we would like
-> to make the change atomically on the server and them make the change in
-> the local cache.  Or in this case the sysfs internal data structures.
-> The truly nasty case is supporting rename (as sysfs does) as the VFS
-> is not at all happy if you just punt and shoot down the dentries and 
-> instantiate new ones.
-> 
-> I'm hoping to be able to get back at this in the week or so as things
-> settle down from my move.  My last patches should be in my proof of
-> concept network namespace tree, if they don't show up elsewhere.
-> 
-> It isn't my perception that we have a design problem rather, we just
-> need to move an important piece of code in a subtle and moderately
-> uninteresting direction for it's primary maintainer.  
-> 
-> Further what I did for the network namespace should easily handle the
-> uid/gid namespace and should be a good starting place for a general
-> device namespace.
+> Are you sure?
 
-Agreed.  What's the git url and which branch do i use for your proof
-of concept tree?  I'll do the userns patch on top of that.  I assume
-Suka will do the same for ptys?
+Well for one thing we can take a somewhat different approach to new
+clone flags.  I.e. we could extend CLONE_NEWIPC to do mq instead of
+introducing a new clone flag.  The name doesn't have 'sysv' in it,
+and globbing all ipc resources together makes some amount of sense.
+Similarly has hpa+eric pointed out earlier, suka could use
+CLONE_NEWDEV for ptys.  If we have net, pid, ipc, devices, that's a
+pretty reasonable split imo.  Perhaps we tie user to devices and get
+rid of CLONE_NEWUSER which I suspect noone is using atm (since only
+Dave has run into the CONFIG_USER_SCHED problem).  Or not.  We could
+roll uts into net, and give CLONE_NEWUTS a deprecation period.
 
-thanks,
 -serge
