@@ -1,17 +1,15 @@
-From: "H. Peter Anvin" <hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org>
-Subject: Re: [PATCH 0/3] clone64() and unshare64() system calls
-Date: Thu, 10 Apr 2008 11:31:41 -0700
-Message-ID: <47FE5D0D.5090404@zytor.com>
-References: <20080409222611.GA28087@us.ibm.com> <47FD5899.2040206@zytor.com>
-	<20080410010717.GA28477@us.ibm.com> <47FD6921.6090408@zytor.com>
-	<20080410023818.GD28477@us.ibm.com>
-	<6599ad830804091943j1f8a4500w5eda7774adfba69f@mail.gmail.com>
-	<20080410182616.GF28477@us.ibm.com>
+From: "Paul Menage" <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [RFC] Control Groups Roadmap ideas
+Date: Thu, 10 Apr 2008 13:10:30 -0700
+Message-ID: <6599ad830804101310p297536aeld5931073598ec7e6@mail.gmail.com>
+References: <6599ad830804081414x7be75d2fte5b500a7f81df40c@mail.gmail.com>
+	<47FC29BF.20701@cn.fujitsu.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20080410182616.GF28477-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <47FC29BF.20701-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+Content-Disposition: inline
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -21,34 +19,97 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org
-Cc: "David C. Hansen" <haveblue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org, Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+To: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+Cc: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, lkml <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org wrote:
-> | 
-> | I thought that the consensus was that adding a new system call was
-> | better than trying to force extensibility on to the existing
-> | non-extensible system call.
-> 
-> There were couple of objections to extensible system calls like
-> sys_indirect() and to Pavel's approach.
-> 
+On Tue, Apr 8, 2008 at 7:28 PM, Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org> wrote:
+>
+>  Sounds good, and I wrote a prototype in a quick:
 
-This is a very different thing, though.  sys_indirect is pretty much a 
-mechanism for having a sideband channel -- a second ABI -- into each and 
-every system call, making it extremely hard to analyze what the full set 
-of impact of a specific system call is.  Worse, as it was being proposed 
-to have been used, it would have set state variables inside the kernel 
-in a very opaque manner.
+Yes, that's pretty much what I was envisaging, thanks.
 
-> | But if we are adding a new system call, why not make the new one
-> | extensible to reduce the need for yet another new call in the future?
-> 
-> hypothetically, can we make a variant of clone() extensible to the point
-> of requiring a copy_from_user() ?
+Paul
 
-The only issue is whether or not it's acceptable from a performance 
-standpoint.  clone() is reasonably expensive, though.
-
-	-hpa
+>
+>  diff --git a/include/linux/cgroup.h b/include/linux/cgroup.h
+>  index a6a6035..091bc21 100644
+>  --- a/include/linux/cgroup.h
+>  +++ b/include/linux/cgroup.h
+>  @@ -254,6 +254,7 @@ struct cgroup_subsys {
+>                         struct cgroup *cgrp);
+>         void (*post_clone)(struct cgroup_subsys *ss, struct cgroup *cgrp);
+>         void (*bind)(struct cgroup_subsys *ss, struct cgroup *root);
+>  +       int (*can_mount)(struct cgroup_subsys *ss, unsigned long subsys_bits);
+>         int subsys_id;
+>         int active;
+>         int disabled;
+>  diff --git a/kernel/cgroup.c b/kernel/cgroup.c
+>  index 62f1a52..3d43ff2 100644
+>  --- a/kernel/cgroup.c
+>  +++ b/kernel/cgroup.c
+>  @@ -824,6 +824,25 @@ static int parse_cgroupfs_options(char *data,
+>         return 0;
+>   }
+>
+>  +static int check_mount(unsigned long subsys_bits)
+>  +{
+>  +       int i;
+>  +       int ret;
+>  +       struct cgroup_subsys *ss;
+>  +
+>  +       for (i = 0; i < CGROUP_SUBSYS_COUNT; i++) {
+>  +               ss = subsys[i];
+>  +
+>  +               if (test_bit(i, &subsys_bits) && ss->can_mount) {
+>  +                       ret = ss->can_mount(ss, subsys_bits);
+>  +                       if (ret)
+>  +                               return ret;
+>  +               }
+>  +       }
+>  +
+>  +       return 0;
+>  +}
+>  +
+>   static int cgroup_remount(struct super_block *sb, int *flags, char *data)
+>   {
+>         int ret = 0;
+>  @@ -839,6 +858,10 @@ static int cgroup_remount(struct super_block *sb, int *flags, char *data)
+>         if (ret)
+>                 goto out_unlock;
+>
+>  +       ret = check_mount(opts.subsys_bits);
+>  +       if (ret)
+>  +               goto out_unlock;
+>  +
+>         /* Don't allow flags to change at remount */
+>         if (opts.flags != root->flags) {
+>                 ret = -EINVAL;
+>  @@ -959,6 +982,13 @@ static int cgroup_get_sb(struct file_system_type *fs_type,
+>                 return ret;
+>         }
+>
+>  +       ret = check_mount(opts.subsys_bits);
+>  +       if (ret) {
+>  +               if (opts.release_agent)
+>  +                       kfree(opts.release_agent);
+>  +               return ret;
+>  +       }
+>  +
+>         root = kzalloc(sizeof(*root), GFP_KERNEL);
+>         if (!root) {
+>                 if (opts.release_agent)
+>  -------
+>
+>  for the example about swap controller and memory controller:
+>
+>  static int swap_cgroup_can_mount(struct cgroup_subsys *ss,
+>                                 unsigned long subsys_bits)
+>  {
+>         if (!test_bit(mem_cgroup_subsys_id, &subsys_bits))
+>                 return -EINVAL;
+>         return 0;
+>  }
+>
+>  'mem_cgroup_subsys_id' is a member of enum cgroup_subsys_id defined in cgroup.h
+>
