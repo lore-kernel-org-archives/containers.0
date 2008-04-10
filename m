@@ -1,7 +1,8 @@
 From: Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
-Subject: [PATCH 2/10] Pidns: use kzalloc to allocate new pid namespace
-Date: Thu, 10 Apr 2008 12:43:18 +0400
-Message-ID: <47FDD326.8070105@openvz.org>
+Subject: [PATCH 3/10] Pidns: add struct bsd_acct_struct *bacct field on
+	pid_namespace
+Date: Thu, 10 Apr 2008 12:44:29 +0400
+Message-ID: <47FDD36D.4070204@openvz.org>
 References: <47FDD267.80700@openvz.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -21,47 +22,36 @@ To: Oleg Nesterov <oleg-6lXkIZvqkOAvJsYlp49lxw@public.gmane.org>, Sukadev Bhatti
 Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Linux Kernel Mailing List <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-It makes many fields initialization implicit, fixes void * = 0
-(the ns->pidmap[i].page = 0) noise and will help in auto-setting 
-to NULL bsd-acct related field.
+It will be NULL automatically for all new namespaces.
 
 Signed-off-by: Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 
 ---
- kernel/pid_namespace.c |    8 ++------
- 1 files changed, 2 insertions(+), 6 deletions(-)
+ include/linux/pid_namespace.h |    5 +++++
+ 1 files changed, 5 insertions(+), 0 deletions(-)
 
-diff --git a/kernel/pid_namespace.c b/kernel/pid_namespace.c
-index cb17497..06331cc 100644
---- a/kernel/pid_namespace.c
-+++ b/kernel/pid_namespace.c
-@@ -71,7 +71,7 @@ static struct pid_namespace *create_pid_namespace(unsigned int level)
- 	struct pid_namespace *ns;
- 	int i;
+diff --git a/include/linux/pid_namespace.h b/include/linux/pid_namespace.h
+index caff528..26e07d1 100644
+--- a/include/linux/pid_namespace.h
++++ b/include/linux/pid_namespace.h
+@@ -14,6 +14,8 @@ struct pidmap {
  
--	ns = kmem_cache_alloc(pid_ns_cachep, GFP_KERNEL);
-+	ns = kmem_cache_zalloc(pid_ns_cachep, GFP_KERNEL);
- 	if (ns == NULL)
- 		goto out;
+ #define PIDMAP_ENTRIES         ((PID_MAX_LIMIT + 8*PAGE_SIZE - 1)/PAGE_SIZE/8)
  
-@@ -84,17 +84,13 @@ static struct pid_namespace *create_pid_namespace(unsigned int level)
- 		goto out_free_map;
++struct bsd_acct_struct;
++
+ struct pid_namespace {
+ 	struct kref kref;
+ 	struct pidmap pidmap[PIDMAP_ENTRIES];
+@@ -25,6 +27,9 @@ struct pid_namespace {
+ #ifdef CONFIG_PROC_FS
+ 	struct vfsmount *proc_mnt;
+ #endif
++#ifdef CONFIG_BSD_PROCESS_ACCT
++	struct bsd_acct_struct *bacct;
++#endif
+ };
  
- 	kref_init(&ns->kref);
--	ns->last_pid = 0;
--	ns->child_reaper = NULL;
- 	ns->level = level;
- 
- 	set_bit(0, ns->pidmap[0].page);
- 	atomic_set(&ns->pidmap[0].nr_free, BITS_PER_PAGE - 1);
- 
--	for (i = 1; i < PIDMAP_ENTRIES; i++) {
--		ns->pidmap[i].page = 0;
-+	for (i = 1; i < PIDMAP_ENTRIES; i++)
- 		atomic_set(&ns->pidmap[i].nr_free, BITS_PER_PAGE);
--	}
- 
- 	return ns;
- 
+ extern struct pid_namespace init_pid_ns;
 -- 
 1.5.3.4
