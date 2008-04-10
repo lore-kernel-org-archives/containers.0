@@ -1,35 +1,70 @@
-From: "H. Peter Anvin" <hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org>
-Subject: Re: [PATCH 0/3] clone64() and unshare64() system calls
-Date: Thu, 10 Apr 2008 09:00:05 -0700
-Message-ID: <47FE3985.2060001@zytor.com>
-References: <20080409222611.GA28087@us.ibm.com> <47FD5899.2040206@zytor.com>
-	<20080410010717.GA28477@us.ibm.com>
-	<47FD6921.6090408@zytor.com> <47FE0906.8080102@fr.ibm.com>
+From: Balaji Rao <balajirrao@gmail.com>
+Subject: Re: [RFC][-mm] [1/2] Simple stats for cpu resource controller
+Date: Thu, 10 Apr 2008 21:39:59 +0530
+Message-ID: <200804102140.00078.balajirrao@gmail.com>
+References: <200804052339.46632.balajirrao@gmail.com> <200804060201.52726.balajirrao@gmail.com> <1207574693.15579.35.camel@twins>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
+Content-Type: text/plain;
+  charset="utf-8"
 Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <47FE0906.8080102-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Cedric Le Goater <clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
-Cc: "David C. Hansen" <haveblue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1758322AbYDJQQr@vger.kernel.org>
+In-Reply-To: <1207574693.15579.35.camel@twins>
+Content-Disposition: inline
+Sender: linux-kernel-owner@vger.kernel.org
+To: Peter Zijlstra <a.p.zijlstra@chello.nl>
+Cc: Dhaval Giani <dhaval@linux.vnet.ibm.com>, linux-kernel@vger.kernel.org, containers@lists.osdl.org, menage@google.com, balbir@in.ibm.com, Srivatsa Vaddagiri <vatsa@linux.vnet.ibm.com>
 List-Id: containers.vger.kernel.org
 
-Cedric Le Goater wrote:
+On Monday 07 April 2008 06:54:53 pm Peter Zijlstra wrote:
+> On Sun, 2008-04-06 at 02:01 +0530, Balaji Rao wrote:
 > 
-> OK. I didn't know that. I took sys_llseek() as an example of an interface 
-> to follow when coded clone64(). 
+> > > > +static s64 cpu_cgroup_read_stat(struct cpu_cgroup_stat *stat,
+> > > > +		enum cpu_cgroup_stat_index idx)
+> > > > +{
+> > > > +	int cpu;
+> > > > +	s64 ret = 0;
+> > > > +	unsigned long flags;
+> > > 
+> > > > +
+> > > > +	local_irq_save(flags);
+> > > 
+> > > I am just wondering. Is local_irq_save() enough?
+> > > 
+> > Hmmm.. You are right.This does not prevent concurrent updates on other 
+CPUs 
+> > from crossing a 32bit boundary. Am not sure how to do this in a safe way. 
+I 
+> > can only think of using atomic64_t now..
+> > 
+> > > > +	for_each_possible_cpu(cpu)
+> > > > +		ret += stat->cpustat[cpu].count[idx];
+> > > > +	local_irq_restore(flags);
+> > > > +
+> > > > +	return ret;
+> > > > +}
+> > > > +
 > 
+> So many stats to steal code from,.. but you didn't :-(
+> 
+> Look at mm/vmstat.c, that is a rather complete example.
+> 
+> The trick to solving the above is to use per cpu deltas instead, the
+> deltas can be machine word size and are thus always read in an atomic
+> manner (provided they are also naturally aligned).
+> 
+> 
+Hi Peter,
 
-llseek() was the first system call that took a doublewidth argument. 
-It's not the one you want to mimic.
+This wont work for time based statistics. At nsec granularity, a word can hold 
+a time value of up to ~4s. 
 
-	-hpa
+I propose to solve this problem by using a lock to protect the statistics, but 
+only on 32bit architectures.
+
+I'm not sure how good a solution this is, but that's the best I can think of 
+ATM. 
+-- 
+regards,
+Balaji Rao
+Dept. of Mechanical Engineering,
+National Institute of Technology Karnataka, India
