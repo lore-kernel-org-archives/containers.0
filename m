@@ -1,33 +1,58 @@
-From: "Paul Menage" <menage@google.com>
-Subject: Re: [PATCH 0/3] clone64() and unshare64() system calls
-Date: Wed, 9 Apr 2008 19:43:30 -0700
-Message-ID: <6599ad830804091943j1f8a4500w5eda7774adfba69f@mail.gmail.com>
-References: <20080409222611.GA28087@us.ibm.com> <47FD5899.2040206@zytor.com>
-	 <20080410010717.GA28477@us.ibm.com> <47FD6921.6090408@zytor.com>
-	 <20080410023818.GD28477@us.ibm.com>
+From: "H. Peter Anvin" <hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org>
+Subject: Re: [PATCH 3/3] add the clone64() and unshare64() syscalls
+Date: Wed, 09 Apr 2008 20:40:07 -0700
+Message-ID: <47FD8C17.6040203@zytor.com>
+References: <20080409222611.GA28087@us.ibm.com>
+	<20080409223459.GC28267@us.ibm.com>
+	<20080409230733.GR20478@devserv.devel.redhat.com>
+	<20080410021523.GB28477@us.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
+Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1756364AbYDJCnv@vger.kernel.org>
-In-Reply-To: <20080410023818.GD28477@us.ibm.com>
-Content-Disposition: inline
-Sender: linux-kernel-owner@vger.kernel.org
-To: sukadev@us.ibm.com
-Cc: "H. Peter Anvin" <hpa@zytor.com>, Andrew Morton <akpm@osdl.org>, clg@fr.ibm.com, serue@us.ibm.com, "David C. Hansen" <haveblue@us.ibm.com>, Pavel Emelyanov <xemul@openvz.org>, Containers <containers@lists.osdl.org>, linux-kernel@vger.kernel.org
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <20080410021523.GB28477-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org
+Cc: Jakub Jelinek <jakub-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, "David C. Hansen" <haveblue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org, Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Wed, Apr 9, 2008 at 7:38 PM,  <sukadev@us.ibm.com> wrote:
->
->  But as Jon Corbet pointed out in the the thread above, it looked like
->  adding a new system call has been the "traditional" way of solving this
->  in Linux so far and there has been no consensus on a newer approach.
->
+sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org wrote:
+> Jakub Jelinek [jakub-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org] wrote:
+> | On Wed, Apr 09, 2008 at 03:34:59PM -0700, sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org wrote:
+> | > From: Cedric Le Goater <clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
+> | > Subject: [PATCH 3/3] add the clone64() and unshare64() syscalls
+> | > 
+> | > This patch adds 2 new syscalls :
+> | > 
+> | >      long sys_clone64(unsigned long flags_high, unsigned long flags_low,
+> | > 		unsigned long newsp);
+> | > 
+> | >      long sys_unshare64(unsigned long flags_high, unsigned long flags_low);
+> | 
+> | Can you explain why are you adding it for 64-bit arches too?  unsigned long
+> | is there already 64-bit, and both sys_clone and sys_unshare have unsigned
+> | long flags, rather than unsigned int.
+> 
+> Hmm,
+> 
+> By simply resuing clone() on 64 bit and adding a new call for 32-bit won't
+> the semantics of clone() differ between the two ?
+> 
+> i.e clone() on 64 bit supports say CLONE_NEWPTS clone() on 32bit does not ?
+> 
+> Wouldn't it be simpler/cleaner if clone() and clone64() behaved the same
+> on both 32 and 64 bit systems ?
+> 
 
-I thought that the consensus was that adding a new system call was
-better than trying to force extensibility on to the existing
-non-extensible system call.
+No, not really.  The way this work on the libc side is pretty much "use 
+clone64 if it exists, otherwise use clone".
 
-But if we are adding a new system call, why not make the new one
-extensible to reduce the need for yet another new call in the future?
-
-Paul
+	-hpa
