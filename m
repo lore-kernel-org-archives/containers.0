@@ -1,58 +1,64 @@
-From: "H. Peter Anvin" <hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org>
-Subject: Re: [PATCH 3/3] add the clone64() and unshare64() syscalls
-Date: Wed, 09 Apr 2008 20:40:07 -0700
-Message-ID: <47FD8C17.6040203@zytor.com>
-References: <20080409222611.GA28087@us.ibm.com>
-	<20080409223459.GC28267@us.ibm.com>
-	<20080409230733.GR20478@devserv.devel.redhat.com>
-	<20080410021523.GB28477@us.ibm.com>
+From: Cedric Le Goater <clg@fr.ibm.com>
+Subject: Re: [PATCH 0/3] clone64() and unshare64() system calls
+Date: Thu, 10 Apr 2008 08:48:50 +0200
+Message-ID: <47FDB852.4070700@fr.ibm.com>
+References: <20080409222611.GA28087@us.ibm.com> <47FD5899.2040206@zytor.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
+Content-Type: text/plain; charset=ISO-8859-1
 Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20080410021523.GB28477-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org
-Cc: Jakub Jelinek <jakub-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, "David C. Hansen" <haveblue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org, Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1755226AbYDJGtI@vger.kernel.org>
+In-Reply-To: <47FD5899.2040206@zytor.com>
+Sender: linux-kernel-owner@vger.kernel.org
+To: "H. Peter Anvin" <hpa@zytor.com>
+Cc: sukadev@us.ibm.com, Andrew Morton <akpm@osdl.org>, serue@us.ibm.com, "David C. Hansen" <haveblue@us.ibm.com>, Pavel Emelyanov <xemul@openvz.org>, Containers <containers@lists.osdl.org>, linux-kernel@vger.kernel.org
 List-Id: containers.vger.kernel.org
 
-sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org wrote:
-> Jakub Jelinek [jakub-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org] wrote:
-> | On Wed, Apr 09, 2008 at 03:34:59PM -0700, sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org wrote:
-> | > From: Cedric Le Goater <clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
-> | > Subject: [PATCH 3/3] add the clone64() and unshare64() syscalls
-> | > 
-> | > This patch adds 2 new syscalls :
-> | > 
-> | >      long sys_clone64(unsigned long flags_high, unsigned long flags_low,
-> | > 		unsigned long newsp);
-> | > 
-> | >      long sys_unshare64(unsigned long flags_high, unsigned long flags_low);
-> | 
-> | Can you explain why are you adding it for 64-bit arches too?  unsigned long
-> | is there already 64-bit, and both sys_clone and sys_unshare have unsigned
-> | long flags, rather than unsigned int.
+H. Peter Anvin wrote:
+> sukadev@us.ibm.com wrote:
+>> This is a resend of the patch set Cedric had sent earlier. I ported
+>> the patch set to 2.6.25-rc8-mm1 and tested on x86 and x86_64.
+>> ---
+>>
+>> We have run out of the 32 bits in clone_flags !
+>>
+>> This patchset introduces 2 new system calls which support 64bit
+>> clone-flags.
+>>
+>>      long sys_clone64(unsigned long flags_high, unsigned long flags_low,
+>>         unsigned long newsp);
+>>
+>>      long sys_unshare64(unsigned long flags_high, unsigned long
+>> flags_low);
+>>
+>> The current version of clone64() does not support CLONE_PARENT_SETTID
+>> and CLONE_CHILD_CLEARTID because we would exceed the 6 registers limit
+>> of some arches. It's possible to get around this limitation but we
+>> might not
+>> need it as we already have clone()
+>>
 > 
-> Hmm,
+> I really dislike this interface.
 > 
-> By simply resuing clone() on 64 bit and adding a new call for 32-bit won't
-> the semantics of clone() differ between the two ?
+> If you're going to make it a 64-bit pass it in as a 64-bit number,
+> instead of breaking it into two numbers.  Better yet, IMO, would be to
+> pass a pointer to a structure like:
 > 
-> i.e clone() on 64 bit supports say CLONE_NEWPTS clone() on 32bit does not ?
+> struct shared {
+>     unsigned long nwords;
+>     unsigned long flags[];
+> };
 > 
-> Wouldn't it be simpler/cleaner if clone() and clone64() behaved the same
-> on both 32 and 64 bit systems ?
-> 
+> ... which can be expanded indefinitely.
 
-No, not really.  The way this work on the libc side is pretty much "use 
-clone64 if it exists, otherwise use clone".
+ok.
 
-	-hpa
+What about the copy_from_user() overhead ? is this something we care 
+about for a clone like syscall ?
+
+If not, this would certainly make our life simpler to extend clone flags.
+I'm ready to implement anything if someone would just tell me in which
+direction.
+
+Thanks !
+
+C. 
