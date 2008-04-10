@@ -1,31 +1,33 @@
-From: sukadev@us.ibm.com
+From: "Paul Menage" <menage@google.com>
 Subject: Re: [PATCH 0/3] clone64() and unshare64() system calls
-Date: Wed, 9 Apr 2008 19:38:18 -0700
-Message-ID: <20080410023818.GD28477@us.ibm.com>
-References: <20080409222611.GA28087@us.ibm.com> <47FD5899.2040206@zytor.com> <20080410010717.GA28477@us.ibm.com> <47FD6921.6090408@zytor.com>
+Date: Wed, 9 Apr 2008 19:43:30 -0700
+Message-ID: <6599ad830804091943j1f8a4500w5eda7774adfba69f@mail.gmail.com>
+References: <20080409222611.GA28087@us.ibm.com> <47FD5899.2040206@zytor.com>
+	 <20080410010717.GA28477@us.ibm.com> <47FD6921.6090408@zytor.com>
+	 <20080410023818.GD28477@us.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1756179AbYDJCjr@vger.kernel.org>
+Content-Type: text/plain; charset=ISO-8859-1
+Content-Transfer-Encoding: 7bit
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1756364AbYDJCnv@vger.kernel.org>
+In-Reply-To: <20080410023818.GD28477@us.ibm.com>
 Content-Disposition: inline
-In-Reply-To: <47FD6921.6090408@zytor.com>
 Sender: linux-kernel-owner@vger.kernel.org
-To: "H. Peter Anvin" <hpa@zytor.com>
-Cc: Andrew Morton <akpm@osdl.org>, clg@fr.ibm.com, serue@us.ibm.com, "David C. Hansen" <haveblue@us.ibm.com>, Pavel Emelyanov <xemul@openvz.org>, Containers <containers@lists.osdl.org>, linux-kernel@vger.kernel.org
+To: sukadev@us.ibm.com
+Cc: "H. Peter Anvin" <hpa@zytor.com>, Andrew Morton <akpm@osdl.org>, clg@fr.ibm.com, serue@us.ibm.com, "David C. Hansen" <haveblue@us.ibm.com>, Pavel Emelyanov <xemul@openvz.org>, Containers <containers@lists.osdl.org>, linux-kernel@vger.kernel.org
 List-Id: containers.vger.kernel.org
 
-H. Peter Anvin [hpa@zytor.com] wrote:
->> Yes, this was discussed before in the context of Pavel Emelyanov's patch
->> 	http://lkml.org/lkml/2008/1/16/109
->> along with sys_indirect().  While there was no consensus, it looked like
->> adding a new system call was better than open ended interfaces.
+On Wed, Apr 9, 2008 at 7:38 PM,  <sukadev@us.ibm.com> wrote:
 >
-> That's not really an open-ended interface, it's just an expandable bitmap.
+>  But as Jon Corbet pointed out in the the thread above, it looked like
+>  adding a new system call has been the "traditional" way of solving this
+>  in Linux so far and there has been no consensus on a newer approach.
+>
 
-Yes, we liked such an approach earlier too and its conceivable that we
-will run out of the 64-bits too :-)
+I thought that the consensus was that adding a new system call was
+better than trying to force extensibility on to the existing
+non-extensible system call.
 
-But as Jon Corbet pointed out in the the thread above, it looked like
-adding a new system call has been the "traditional" way of solving this
-in Linux so far and there has been no consensus on a newer approach.
+But if we are adding a new system call, why not make the new one
+extensible to reduce the need for yet another new call in the future?
 
-Sukadev
+Paul
