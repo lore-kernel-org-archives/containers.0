@@ -1,35 +1,73 @@
-From: Cedric Le Goater <clg@fr.ibm.com>
-Subject: Re: [PATCH 0/3] clone64() and unshare64() system calls
-Date: Thu, 10 Apr 2008 14:33:10 +0200
-Message-ID: <47FE0906.8080102@fr.ibm.com>
-References: <20080409222611.GA28087@us.ibm.com> <47FD5899.2040206@zytor.com> <20080410010717.GA28477@us.ibm.com> <47FD6921.6090408@zytor.com>
+From: Andi Kleen <andi@firstfloor.org>
+Subject: Re: [PATCH 1/3] change clone_flags type to u64
+Date: Thu, 10 Apr 2008 14:52:05 +0200
+Message-ID: <20080410125205.GG10019@one.firstfloor.org>
+References: <20080409222611.GA28087@us.ibm.com> <20080409223231.GA28267@us.ibm.com> <871w5enmk7.fsf@basil.nowhere.org> <47FE073B.3060007@fr.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Content-Transfer-Encoding: 7bit
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1756500AbYDJMd0@vger.kernel.org>
-In-Reply-To: <47FD6921.6090408@zytor.com>
+Content-Type: text/plain; charset=us-ascii
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1757124AbYDJMrm@vger.kernel.org>
+Content-Disposition: inline
+In-Reply-To: <47FE073B.3060007@fr.ibm.com>
 Sender: linux-kernel-owner@vger.kernel.org
-To: "H. Peter Anvin" <hpa@zytor.com>
-Cc: sukadev@us.ibm.com, Andrew Morton <akpm@osdl.org>, serue@us.ibm.com, "David C. Hansen" <haveblue@us.ibm.com>, Pavel Emelyanov <xemul@openvz.org>, Containers <containers@lists.osdl.org>, linux-kernel@vger.kernel.org
+To: Cedric Le Goater <clg@fr.ibm.com>
+Cc: Andi Kleen <andi@firstfloor.org>, sukadev@us.ibm.com, Andrew Morton <akpm@osdl.org>, serue@us.ibm.com, "David C. Hansen" <haveblue@us.ibm.com>, Pavel Emelyanov <xemul@openvz.org>, Containers <containers@lists.osdl.org>, linux-kernel@vger.kernel.org
 List-Id: containers.vger.kernel.org
 
-H. Peter Anvin wrote:
-> sukadev@us.ibm.com wrote:
->>>
->>> If you're going to make it a 64-bit pass it in as a 64-bit number,
->>> instead of breaking it into two numbers.
->>
->> Maybe I am missing your point. The glibc interface could take a 64bit
->> parameter, but don't we need to pass 32-bit values into the system
->> call on 32 bit systems ?
+> I guess that was a development rationale. 
+
+But what rationale? It just doesn't make much sense to me.
+
+> Most of the namespaces are in 
+> use in the container projects like openvz, vserver and probably others 
+> and we needed a way to activate the code.
+
+You could just have added it to feature groups over time.
+
 > 
-> Not as such, no.  The ABI handles that.  To make the ABI clean on some
-> architectures, it's good to consider a 64-bit value only in positions
-> where they map to an even:odd register pair once slotted in.
+> Not perfect I agree.
+>  
+> > With your current strategy are you sure that even 64bit will
+> > be enough in the end? For me it rather looks like you'll
+> > go through those quickly too as more and more of the kernel
+> > is namespaced.
+> 
+> well, we're reaching the end. I hope ! devpts is in progress and
+> mq is just waiting for a clone flag.
 
-OK. I didn't know that. I took sys_llseek() as an example of an interface 
-to follow when coded clone64(). 
+Are you sure?
 
-Thanks,
+>  
+> > Also I think the user interface is very unfriendly. How
+> > is a non kernel hacker supposed to make sense of these 
+> > myriads of flags? You'll be creating another 
+> > CreateProcess123_extra_args_extended() 
+> > in the end I fear.
+> 
+> well, the clone interface is a not friendly interface anyway. glibc wraps 
+> it
 
-C. 
+But only for the stack setup which is just a minor detail. 
+
+The basic clone() flags interface used to be pretty sane and usable 
+before it could overloaded with so many tiny features.
+
+I especially worry on how user land should keep track of changing kernel
+here. If you add new feature flag for lots of kernel features it is
+reasonable to expect that in the future there will be often new features.
+
+Does this mean user land needs to be updated all the time? Will this
+end up like another udev? 
+
+> We will need a user library, like we have a libphtread or a libaio, to
+
+That doesn't make sense. The basic kernel syscalls should be usable,
+not require some magic library that would likely need intimate 
+knowledge of specific kernel versions to do any good.
+
+> but we still need a way to extend the clone flags because none are left.
+
+Can we just take out some again that were added in the .25 cycle and
+readd them once there is a properly thought out interface?  That would
+leave at least one.
+
+-Andi
