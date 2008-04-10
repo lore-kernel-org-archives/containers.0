@@ -1,47 +1,72 @@
-From: "H. Peter Anvin" <hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org>
-Subject: Re: [PATCH 0/3] clone64() and unshare64() system calls
-Date: Wed, 09 Apr 2008 18:10:57 -0700
-Message-ID: <47FD6921.6090408@zytor.com>
-References: <20080409222611.GA28087@us.ibm.com> <47FD5899.2040206@zytor.com>
-	<20080410010717.GA28477@us.ibm.com>
+From: "Serge E. Hallyn" <serue@us.ibm.com>
+Subject: Re: [RFC][PATCH 0/7] Clone PTS namespace
+Date: Wed, 9 Apr 2008 20:59:55 -0500
+Message-ID: <20080410015955.GA18227@sergelap.austin.rr.com>
+References: <20080408215333.GA8799@us.ibm.com> <47FC138B.4070408@zytor.com> <1207779313.16926.12.camel@x61.ebiederm.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20080410010717.GA28477-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org
-Cc: "David C. Hansen" <haveblue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org, Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+Content-Type: text/plain; charset=us-ascii
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1755499AbYDJCAR@vger.kernel.org>
+Content-Disposition: inline
+In-Reply-To: <1207779313.16926.12.camel@x61.ebiederm.org>
+Sender: linux-kernel-owner@vger.kernel.org
+To: "Eric W. Biederman" <ebiederm@xmission.com>
+Cc: "H. Peter Anvin" <hpa@zytor.com>, Containers <containers@lists.osdl.org>, clg@fr.ibm.com, linux-kernel@vger.kernel.org, Pavel Emelyanov <xemul@openvz.org>
 List-Id: containers.vger.kernel.org
 
-sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org wrote:
->>
->> If you're going to make it a 64-bit pass it in as a 64-bit number, instead 
->> of breaking it into two numbers.
+Quoting Eric W. Biederman (ebiederm@xmission.com):
+> On Tue, 2008-04-08 at 17:53 -0700, H. Peter Anvin wrote:
+> > sukadev@us.ibm.com wrote:
+> > > Devpts namespace patchset
+> > > 
+> > > In continuation of the implementation of containers in mainline, we need to
+> > > support multiple PTY namespaces so that the PTY index (ie the tty names) in
+> > > one container is independent of the PTY indices of other containers.  For
+> > > instance this would allow each container to have a '/dev/pts/0' PTY and
+> > > refer to different terminals.
+> > > 
+> > 
+> > Why do we "need" this?  There isn't a fundamental need for this to be a 
+> > dense numberspace (in fact, there are substantial reasons why it's a bad 
+> > idea; the only reason the namespace is dense at the moment is because of 
+> > the hideously bad handing of utmp in glibc.)  Other than indicies, this 
+> > seems to be a more special case of device isolation across namespaces, 
+> > would that be a more useful problem to solve across the board?
 > 
-> Maybe I am missing your point. The glibc interface could take a 64bit
-> parameter, but don't we need to pass 32-bit values into the system call 
-> on 32 bit systems ?
-
-Not as such, no.  The ABI handles that.  To make the ABI clean on some 
-architectures, it's good to consider a 64-bit value only in positions 
-where they map to an even:odd register pair once slotted in.
-
-> Yes, this was discussed before in the context of Pavel Emelyanov's patch
+> In short application migration.  When you move a running applicaiton
+> from one machine to another you want to be able to keep the same pseudo
+> devices.
 > 
-> 	http://lkml.org/lkml/2008/1/16/109
+> The isolation that you have noticed is also an important application and
+> like the rest of the namespaces if we can solve the duplicate identifier
+> problem needed to restore checkpoints we also largely solve the
+> isolation problem.
 > 
-> along with sys_indirect().  While there was no consensus, it looked like
-> adding a new system call was better than open ended interfaces.
+> This problem is much larger then ptys.  ptys are the really in your face
+> aspect of it.  There are a more pseudo devices in the kernel and it is
+> the device number to device mapping that we are abstracting.  So this
+> really should be done as a device namespace not a pty namespace.
+> 
+> I would be happy if the first version of the device namespace could not
+> map anything but pty's (assuming an incremental implementation path).  I
+> really don't think we should do a special case for each kind of device.
 
-That's not really an open-ended interface, it's just an expandable bitmap.
+Sounds like we're all agreed on this and just doing
+s/CLONE_NEWPTS/CLONE_NEWDEV/ on the current patchset suffices for now.
+But,
 
-	-hpa
+> Oh and just skimming the patch summary I'm pretty certain this
+> implementation breaks /sys/class/tty/ptyXX/uevent.  Which is another
+> reason why it would be good to have a single device namespace.  So we
+> only to capture one more namespace and figure out how to deal with it
+> when mounting sysfs. 
+
+Feh, so of course sysfs would have the most interactions for a device
+namespace, but now we have pty, network, and user namespace all needing
+some sort of sysfs solution.  For a quickfix for
+CONFIG_USER_SCHED+CONFIG_USER_NS, I just moved /sys/kernel/uids/<uid>
+to /sys/kernel/uids/<userns_address>/<uid>.  But what would be a *good*
+general solution?
+
+ln -s /sys /proc/self/sys?
+
+-serge
