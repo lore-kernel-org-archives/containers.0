@@ -1,115 +1,197 @@
-From: "Paul Menage" <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [RFC] Control Groups Roadmap ideas
-Date: Thu, 10 Apr 2008 13:10:30 -0700
-Message-ID: <6599ad830804101310p297536aeld5931073598ec7e6@mail.gmail.com>
-References: <6599ad830804081414x7be75d2fte5b500a7f81df40c@mail.gmail.com>
-	<47FC29BF.20701@cn.fujitsu.com>
+From: Daniel Lezcano <dlezcano@fr.ibm.com>
+Subject: Re: [PATCH 1/14][NETNS]: Introduce the net-subsys id generator.
+Date: Thu, 10 Apr 2008 22:52:44 +0200
+Message-ID: <47FE7E1C.50403@fr.ibm.com>
+References: <47FE2AD4.9080609@openvz.org> <47FE2BB5.4070708@openvz.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <47FC29BF.20701-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Content-Disposition: inline
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Cc: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, lkml <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+Content-Type: text/plain; charset=ISO-8859-1;
+	format=flowed
+Content-Transfer-Encoding: QUOTED-PRINTABLE
+Return-path: <netdev-owner@vger.kernel.org>
+In-Reply-To: <47FE2BB5.4070708@openvz.org>
+Sender: netdev-owner@vger.kernel.org
+To: Pavel Emelyanov <xemul@openvz.org>
+Cc: Linux Netdev List <netdev@vger.kernel.org>, Denis Lunev <den@openvz.org>, Linux Containers <containers@lists.osdl.org>, Benjamin Thery <benjamin.thery@bull.net>
 List-Id: containers.vger.kernel.org
 
-On Tue, Apr 8, 2008 at 7:28 PM, Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org> wrote:
->
->  Sounds good, and I wrote a prototype in a quick:
-
-Yes, that's pretty much what I was envisaging, thanks.
-
-Paul
-
->
->  diff --git a/include/linux/cgroup.h b/include/linux/cgroup.h
->  index a6a6035..091bc21 100644
->  --- a/include/linux/cgroup.h
->  +++ b/include/linux/cgroup.h
->  @@ -254,6 +254,7 @@ struct cgroup_subsys {
->                         struct cgroup *cgrp);
->         void (*post_clone)(struct cgroup_subsys *ss, struct cgroup *cgrp);
->         void (*bind)(struct cgroup_subsys *ss, struct cgroup *root);
->  +       int (*can_mount)(struct cgroup_subsys *ss, unsigned long subsys_bits);
->         int subsys_id;
->         int active;
->         int disabled;
->  diff --git a/kernel/cgroup.c b/kernel/cgroup.c
->  index 62f1a52..3d43ff2 100644
->  --- a/kernel/cgroup.c
->  +++ b/kernel/cgroup.c
->  @@ -824,6 +824,25 @@ static int parse_cgroupfs_options(char *data,
->         return 0;
->   }
->
->  +static int check_mount(unsigned long subsys_bits)
->  +{
->  +       int i;
->  +       int ret;
->  +       struct cgroup_subsys *ss;
->  +
->  +       for (i = 0; i < CGROUP_SUBSYS_COUNT; i++) {
->  +               ss = subsys[i];
->  +
->  +               if (test_bit(i, &subsys_bits) && ss->can_mount) {
->  +                       ret = ss->can_mount(ss, subsys_bits);
->  +                       if (ret)
->  +                               return ret;
->  +               }
->  +       }
->  +
->  +       return 0;
->  +}
->  +
->   static int cgroup_remount(struct super_block *sb, int *flags, char *data)
->   {
->         int ret = 0;
->  @@ -839,6 +858,10 @@ static int cgroup_remount(struct super_block *sb, int *flags, char *data)
->         if (ret)
->                 goto out_unlock;
->
->  +       ret = check_mount(opts.subsys_bits);
->  +       if (ret)
->  +               goto out_unlock;
->  +
->         /* Don't allow flags to change at remount */
->         if (opts.flags != root->flags) {
->                 ret = -EINVAL;
->  @@ -959,6 +982,13 @@ static int cgroup_get_sb(struct file_system_type *fs_type,
->                 return ret;
->         }
->
->  +       ret = check_mount(opts.subsys_bits);
->  +       if (ret) {
->  +               if (opts.release_agent)
->  +                       kfree(opts.release_agent);
->  +               return ret;
->  +       }
->  +
->         root = kzalloc(sizeof(*root), GFP_KERNEL);
->         if (!root) {
->                 if (opts.release_agent)
->  -------
->
->  for the example about swap controller and memory controller:
->
->  static int swap_cgroup_can_mount(struct cgroup_subsys *ss,
->                                 unsigned long subsys_bits)
->  {
->         if (!test_bit(mem_cgroup_subsys_id, &subsys_bits))
->                 return -EINVAL;
->         return 0;
+Pavel Emelyanov wrote:
+> To make some per-net generic pointers, we need some way to
+> address them, i.e. - IDs. This is simple IDA-based IDs
+> generator for pernet subsystems. They will be used in the
+> next patches.
+>=20
+> Since it will be used by devices only (tun and vlan), I make
+> it resemble the register_pernet_device functionality.
+>=20
+> The new ids is stored in the *id pointer _before_ calling the
+> init callback to make this id available in this callback.
+>=20
+> Signed-off-by: Pavel Emelyanov <xemul@openvz.org>
+>=20
+> ---
+>  include/net/net_namespace.h |    2 ++
+>  net/core/net_namespace.c    |   36 +++++++++++++++++++++++++++++++++=
++++
+>  2 files changed, 38 insertions(+), 0 deletions(-)
+>=20
+> diff --git a/include/net/net_namespace.h b/include/net/net_namespace.=
+h
+> index 0ab62ed..6971fdb 100644
+> --- a/include/net/net_namespace.h
+> +++ b/include/net/net_namespace.h
+> @@ -181,6 +181,8 @@ extern int register_pernet_subsys(struct pernet_o=
+perations *);
+>  extern void unregister_pernet_subsys(struct pernet_operations *);
+>  extern int register_pernet_device(struct pernet_operations *);
+>  extern void unregister_pernet_device(struct pernet_operations *);
+> +extern int register_pernet_gen_device(int *id, struct pernet_operati=
+ons *);
+> +extern void unregister_pernet_gen_device(int id, struct pernet_opera=
+tions *);
+>=20
+>  struct ctl_path;
+>  struct ctl_table;
+> diff --git a/net/core/net_namespace.c b/net/core/net_namespace.c
+> index 7b66083..7ef3bac 100644
+> --- a/net/core/net_namespace.c
+> +++ b/net/core/net_namespace.c
+> @@ -5,6 +5,7 @@
+>  #include <linux/list.h>
+>  #include <linux/delay.h>
+>  #include <linux/sched.h>
+> +#include <linux/idr.h>
+>  #include <net/net_namespace.h>
+>=20
+>  /*
+> @@ -253,6 +254,8 @@ static void unregister_pernet_operations(struct p=
+ernet_operations *ops)
 >  }
->
->  'mem_cgroup_subsys_id' is a member of enum cgroup_subsys_id defined in cgroup.h
->
+>  #endif
+>=20
+> +static DEFINE_IDA(net_generic_ids);
+> +
+>  /**
+>   *      register_pernet_subsys - register a network namespace subsys=
+tem
+>   *	@ops:  pernet operations structure for the subsystem
+> @@ -330,6 +333,28 @@ int register_pernet_device(struct pernet_operati=
+ons *ops)
+>  }
+>  EXPORT_SYMBOL_GPL(register_pernet_device);
+>=20
+> +int register_pernet_gen_device(int *id, struct pernet_operations *op=
+s)
+> +{
+> +	int error;
+> +	mutex_lock(&net_mutex);
+> +again:
+> +	error =3D ida_get_new_above(&net_generic_ids, 1, id);
+> +	if (error) {
+> +		if (error =3D=3D -EAGAIN) {
+> +			ida_pre_get(&net_generic_ids, GFP_KERNEL);
+> +			goto again;
+> +		}
+
+		goto out;
+
+> +	}
+> +	error =3D register_pernet_operations(first_device, ops);
+> +	if (error)
+> +		ida_remove(&net_generic_ids, *id);
+> +	else if (first_device =3D=3D &pernet_list)
+> +		first_device =3D &ops->list;
+
+out:
+
+> +	mutex_unlock(&net_mutex);
+> +	return error;
+> +}
+> +EXPORT_SYMBOL_GPL(register_pernet_gen_device);
+> +
+>  /**
+>   *      unregister_pernet_device - unregister a network namespace ne=
+tdevice
+>   *	@ops: pernet operations structure to manipulate
+> @@ -348,3 +373,14 @@ void unregister_pernet_device(struct pernet_oper=
+ations *ops)
+>  	mutex_unlock(&net_mutex);
+>  }
+>  EXPORT_SYMBOL_GPL(unregister_pernet_device);
+> +
+> +void unregister_pernet_gen_device(int id, struct pernet_operations *=
+ops)
+> +{
+> +	mutex_lock(&net_mutex);
+> +	if (&ops->list =3D=3D first_device)
+> +		first_device =3D first_device->next;
+> +	unregister_pernet_operations(ops);
+> +	ida_remove(&net_generic_ids, id);
+> +	mutex_unlock(&net_mutex);
+> +}
+> +EXPORT_SYMBOL_GPL(unregister_pernet_gen_device);
+
+
+--=20
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sauf indication contraire ci-dessus:
+Compagnie IBM France
+Si=E8ge Social : Tour Descartes, 2, avenue Gambetta, La D=E9fense 5, 92=
+400
+Courbevoie
+RCS Nanterre 552 118 465
+=46orme Sociale : S.A.S.
+Capital Social : 542.737.118 ?
+SIREN/SIRET : 552 118 465 02430
