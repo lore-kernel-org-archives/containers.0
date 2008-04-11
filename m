@@ -1,65 +1,138 @@
-From: "Serge E. Hallyn" <serue@us.ibm.com>
-Subject: Re: [PATCH 1/3] change clone_flags type to u64
-Date: Thu, 10 Apr 2008 17:49:47 -0500
-Message-ID: <20080410224947.GA8346@sergelap.austin.ibm.com>
-References: <20080409222611.GA28087@us.ibm.com> <20080409223231.GA28267@us.ibm.com> <871w5enmk7.fsf@basil.nowhere.org> <47FE073B.3060007@fr.ibm.com> <20080410125205.GG10019@one.firstfloor.org> <20080410171453.GA7023@sergelap.ibm.com> <49365.192.168.101.12.1207865580.squirrel@intranet>
+From: "Paul E. McKenney" <paulmck@linux.vnet.ibm.com>
+Subject: Re: [PATCH 3/14][TUN]: Introduce the tun_net structure.
+Date: Thu, 10 Apr 2008 18:01:42 -0700
+Message-ID: <20080411010142.GA16878@linux.vnet.ibm.com>
+References: <47FE2AD4.9080609@openvz.org> <47FE2CF0.6080100@openvz.org>
+Reply-To: paulmck@linux.vnet.ibm.com
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1759598AbYDJWuW@vger.kernel.org>
+Return-path: <netdev-owner@vger.kernel.org>
 Content-Disposition: inline
-In-Reply-To: <49365.192.168.101.12.1207865580.squirrel@intranet>
-Sender: linux-kernel-owner@vger.kernel.org
-To: Daniel Hokka Zakrisson <daniel@hozac.com>
-Cc: "Serge E. Hallyn" <serue@us.ibm.com>, Andi Kleen <andi@firstfloor.org>, "David C. Hansen" <haveblue@us.ibm.com>, linux-kernel@vger.kernel.org, Cedric Le Goater <clg@fr.ibm.com>, Containers <containers@lists.osdl.org>, Pavel Emelyanov <xemul@openvz.org>
+In-Reply-To: <47FE2CF0.6080100@openvz.org>
+Sender: netdev-owner@vger.kernel.org
+To: Pavel Emelyanov <xemul@openvz.org>
+Cc: Linux Netdev List <netdev@vger.kernel.org>, Daniel Lezcano <dlezcano@fr.ibm.com>, Denis Lunev <den@openvz.org>, Linux Containers <containers@lists.osdl.org>, Benjamin Thery <benjamin.thery@bull.net>
 List-Id: containers.vger.kernel.org
 
-Quoting Daniel Hokka Zakrisson (daniel@hozac.com):
-> Serge E. Hallyn wrote:
-> > Quoting Andi Kleen (andi@firstfloor.org):
-> >> > I guess that was a development rationale.
-> >>
-> >> But what rationale? It just doesn't make much sense to me.
-> >>
-> >> > Most of the namespaces are in
-> >> > use in the container projects like openvz, vserver and probably others
-> >> > and we needed a way to activate the code.
-> >>
-> >> You could just have added it to feature groups over time.
-> >>
-> >> >
-> >> > Not perfect I agree.
-> >> >
-> >> > > With your current strategy are you sure that even 64bit will
-> >> > > be enough in the end? For me it rather looks like you'll
-> >> > > go through those quickly too as more and more of the kernel
-> >> > > is namespaced.
-> >> >
-> >> > well, we're reaching the end. I hope ! devpts is in progress and
-> >> > mq is just waiting for a clone flag.
-> >>
-> >> Are you sure?
-> >
-> > Well for one thing we can take a somewhat different approach to new
-> > clone flags.  I.e. we could extend CLONE_NEWIPC to do mq instead of
-> > introducing a new clone flag.  The name doesn't have 'sysv' in it,
-> > and globbing all ipc resources together makes some amount of sense.
-> > Similarly has hpa+eric pointed out earlier, suka could use
-> > CLONE_NEWDEV for ptys.  If we have net, pid, ipc, devices, that's a
-> > pretty reasonable split imo.  Perhaps we tie user to devices and get
-> > rid of CLONE_NEWUSER which I suspect noone is using atm (since only
-> > Dave has run into the CONFIG_USER_SCHED problem).  Or not.  We could
-> > roll uts into net, and give CLONE_NEWUTS a deprecation period.
+On Thu, Apr 10, 2008 at 07:06:24PM +0400, Pavel Emelyanov wrote:
+> This is the first step in making tuntap devices work in net 
+> namespaces. The structure mentioned is pointed by generic
+> net pointer with tun_net_id id, and tun driver fills one on 
+> its load. It will contain only the tun devices list.
 > 
-> Please don't. Then we'd need to re-add it in Linux-VServer to support
-> guests where network namespaces aren't used...
+> So declare this structure and introduce net init and exit hooks.
 
-So these are networked vservers with a different hostname?  Just
-curious, what would be a typical use for these?
+OK, I have to ask...  What prevents someone else from invoking
+net_generic() concurrently with a call to tun_exit_net(), potentially
+obtaining a pointer to the structure that tun_exit_net() is about
+to kfree()?
 
-Anyway then I guess we won't :)  Do you have other suggestions for
-ns clone flags which ought to be combined?  Do the rest of what I
-listed make sense to you?  (If not, then I guess I'll step out of the
-way and let you and Andi fight it out :)
+						Thanx, Paul
 
-thanks,
--serge
+> Signed-off-by: Pavel Emelyanov <xemul@openvz.org>
+> 
+> ---
+>  drivers/net/tun.c |   53 ++++++++++++++++++++++++++++++++++++++++++++++++++++-
+>  1 files changed, 52 insertions(+), 1 deletions(-)
+> 
+> diff --git a/drivers/net/tun.c b/drivers/net/tun.c
+> index 7b816a0..9bfba02 100644
+> --- a/drivers/net/tun.c
+> +++ b/drivers/net/tun.c
+> @@ -63,6 +63,7 @@
+>  #include <linux/if_tun.h>
+>  #include <linux/crc32.h>
+>  #include <net/net_namespace.h>
+> +#include <net/netns/generic.h>
+> 
+>  #include <asm/system.h>
+>  #include <asm/uaccess.h>
+> @@ -73,6 +74,11 @@ static int debug;
+> 
+>  /* Network device part of the driver */
+> 
+> +static unsigned int tun_net_id;
+> +struct tun_net {
+> +	struct list_head dev_list;
+> +};
+> +
+>  static LIST_HEAD(tun_dev_list);
+>  static const struct ethtool_ops tun_ethtool_ops;
+> 
+> @@ -873,6 +879,37 @@ static const struct ethtool_ops tun_ethtool_ops = {
+>  	.set_rx_csum	= tun_set_rx_csum
+>  };
+> 
+> +static int tun_init_net(struct net *net)
+> +{
+> +	struct tun_net *tn;
+> +
+> +	tn = kmalloc(sizeof(*tn), GFP_KERNEL);
+> +	if (tn == NULL)
+> +		return -ENOMEM;
+> +
+> +	INIT_LIST_HEAD(&tn->dev_list);
+> +
+> +	if (net_assign_generic(net, tun_net_id, tn)) {
+> +		kfree(tn);
+> +		return -ENOMEM;
+> +	}
+> +
+> +	return 0;
+> +}
+> +
+> +static void tun_exit_net(struct net *net)
+> +{
+> +	struct tun_net *tn;
+> +
+> +	tn = net_generic(net, tun_net_id);
+> +	kfree(tn);
+> +}
+> +
+> +static struct pernet_operations tun_net_ops = {
+> +	.init = tun_init_net,
+> +	.exit = tun_exit_net,
+> +};
+> +
+>  static int __init tun_init(void)
+>  {
+>  	int ret = 0;
+> @@ -880,9 +917,22 @@ static int __init tun_init(void)
+>  	printk(KERN_INFO "tun: %s, %s\n", DRV_DESCRIPTION, DRV_VERSION);
+>  	printk(KERN_INFO "tun: %s\n", DRV_COPYRIGHT);
+> 
+> +	ret = register_pernet_gen_device(&tun_net_id, &tun_net_ops);
+> +	if (ret) {
+> +		printk(KERN_ERR "tun: Can't register pernet ops\n");
+> +		goto err_pernet;
+> +	}
+> +
+>  	ret = misc_register(&tun_miscdev);
+> -	if (ret)
+> +	if (ret) {
+>  		printk(KERN_ERR "tun: Can't register misc device %d\n", TUN_MINOR);
+> +		goto err_misc;
+> +	}
+> +	return 0;
+> +
+> +err_misc:
+> +	unregister_pernet_gen_device(tun_net_id, &tun_net_ops);
+> +err_pernet:
+>  	return ret;
+>  }
+> 
+> @@ -899,6 +949,7 @@ static void tun_cleanup(void)
+>  	}
+>  	rtnl_unlock();
+> 
+> +	unregister_pernet_gen_device(tun_net_id, &tun_net_ops);
+>  }
+> 
+>  module_init(tun_init);
+> -- 
+> 1.5.3.4
+> 
+> --
+> To unsubscribe from this list: send the line "unsubscribe netdev" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
