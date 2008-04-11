@@ -1,44 +1,36 @@
-From: Pavel Machek <pavel-+ZI9xUNit7I@public.gmane.org>
-Subject: Re: [RFC PATCH 1/4] Container Freezer: Add TIF_FREEZE flag to all
-	architectures
-Date: Fri, 11 Apr 2008 13:49:30 +0200
-Message-ID: <20080411114930.GB1740__14426.4618088075$1207914737$gmane$org@elf.ucw.cz>
-References: <20080403210316.397506379@us.ibm.com>
-	<20080403210316.659937801@us.ibm.com>
+From: Patrick McHardy <kaber@trash.net>
+Subject: Re: [PATCH 6/14][RTNL]: Introduce the rtnl_kill_links call.
+Date: Fri, 11 Apr 2008 14:48:39 +0200
+Message-ID: <47FF5E27.3020209@trash.net>
+References: <47FE2AD4.9080609@openvz.org> <47FE2E01.6030000@openvz.org> <37533.192.168.101.12.1207865395.squirrel@intranet> <47FF1ADB.1090805@openvz.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
+Content-Type: text/plain; charset=ISO-8859-15; format=flowed
 Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <20080403210316.659937801-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org
-Cc: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Cedric Le Goater <clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>, Linux-Kernel <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, linux-pm-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Return-path: <netdev-owner@vger.kernel.org>
+In-Reply-To: <47FF1ADB.1090805@openvz.org>
+Sender: netdev-owner@vger.kernel.org
+To: Pavel Emelyanov <xemul@openvz.org>
+Cc: Daniel Hokka Zakrisson <daniel@hozac.com>, Linux Netdev List <netdev@vger.kernel.org>, Linux Containers <containers@lists.osdl.org>, Denis Lunev <den@openvz.org>, Benjamin Thery <benjamin.thery@bull.net>
 List-Id: containers.vger.kernel.org
 
-On Thu 2008-04-03 14:03:17, matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org wrote:
-> This patch is the first step in making the refrigerator() available 
-> to all architectures, even for those without power management. 
+Pavel Emelyanov wrote:
+>>>  	for_each_net(net) {
+>>> -restart:
+>>> -		for_each_netdev_safe(net, dev, n) {
+>>> -			if (dev->rtnl_link_ops == ops) {
+>>> -				ops->dellink(dev);
+>>> -				goto restart;
+>>> -			}
+>>> -		}
+>>> +		__rtnl_kill_links(net, ops);
+>> This was _safe, and now it's not. Is that intentional?
 > 
-> The purpose of such a change is to be able to use the refrigerator() 
-> in a new control group subsystem which will implement a control group
-> freezer.
+> Yup - we goto restart in case we del some link, so there's no need
+> in _safe iteration. 
 > 
-> Signed-off-by: Cedric Le Goater <clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
-> Signed-off-by: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-> Tested-by: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-> Cc: linux-pm-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+> This goto was added by Partick (commit 68365458 [NET]: rtnl_link: 
+> fix use-after-free) and I suspect he simply forgot to remove the 
+> _safe iterator (I put him in Cc to correct me if I'm wrong).
 
-ACK.
-									Pavel
--- 
-(english) http://www.livejournal.com/~pavelmachek
-(cesky, pictures) http://atrey.karlin.mff.cuni.cz/~pavel/picture/horses/blog.html
+
+No, that was an oversight, it should be safe to remove.
