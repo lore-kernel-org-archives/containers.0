@@ -1,134 +1,115 @@
-From: sukadev@us.ibm.com
-Subject: [PATCH 4/4]: Enable multiple mounts of /dev/pts
-Date: Sat, 12 Apr 2008 10:34:28 -0700
-Message-ID: <20080412173428.GD19449@us.ibm.com>
+From: "Subrata Modak" <tosubrata-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Subject: Re: [PATCH 0/4] Helper patches for PTY namespaces
+Date: Sat, 12 Apr 2008 23:09:50 +0530
+Message-ID: <bb33bcf20804121039u409ae37q2dead849ca24dfa@mail.gmail.com>
 References: <20080412172933.GA19295@us.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1755319AbYDLRgJ@vger.kernel.org>
-Content-Disposition: inline
-In-Reply-To: <20080412172933.GA19295@us.ibm.com>
-Sender: linux-kernel-owner@vger.kernel.org
-To: Andrew Morton <akpm@osdl.org>
-Cc: serue@us.ibm.com, matthltc@us.ibm.com, "Eric W. Biederman" <ebiederm@xmission.com>, hpa@zytor.com, Pavel Emelyanov <xemul@openvz.org>, Containers <containers@lists.osdl.org>, linux-kernel@vger.kernel.org
+Content-Type: multipart/mixed; boundary="===============2126432814=="
+Return-path: <ltp-list-bounces-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org>
+In-Reply-To: <20080412172933.GA19295-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+List-Unsubscribe: <https://lists.sourceforge.net/lists/listinfo/ltp-list>,
+	<mailto:ltp-list-request-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://sourceforge.net/mailarchive/forum.php?forum_name=ltp-list>
+List-Post: <mailto:ltp-list-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org>
+List-Help: <mailto:ltp-list-request-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.sourceforge.net/lists/listinfo/ltp-list>,
+	<mailto:ltp-list-request-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org?subject=subscribe>
+Sender: ltp-list-bounces-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org
+Errors-To: ltp-list-bounces-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org
+To: sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org
+Cc: Andrew Morton <akpm-3NddpPZAyC0@public.gmane.org>, ltp-list <ltp-list-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, risrajak-xthvdsQ13ZrQT0dZR+AlfA@public.gmane.org, matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org, hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org, Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-From: Sukadev Bhattiprolu <sukadev@us.ibm.com>
-Subject:[PATCH 4/4]: Enable multiple mounts of /dev/pts
+--===============2126432814==
+Content-Type: multipart/alternative;
+	boundary="----=_Part_12360_30741121.1208021990130"
 
-To support multiple PTY namespaces, allow multiple mounts of /dev/pts, once
-within each PTY namespace.
+------=_Part_12360_30741121.1208021990130
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 7bit
+Content-Disposition: inline
 
-This patch removes the get_sb_single() in devpts_get_sb() and uses test and
-set sb interfaces to allow remounting /dev/pts.
+Sukadev,
 
-Changelog [v4]:
-	- Split-off the simpler changes of moving global=variables into
-	  'pts_namespace' to previous patch.
+Any corresponding test cases for LTP. We just have UTS, PID & SYSVIPC
+Namespace till now.
 
-Changelog [v3]:
-	- Removed some unnecessary comments from devpts_set_sb()
+Regards--
+Subrata
 
-Changelog [v2]:
+On Sat, Apr 12, 2008 at 10:59 PM, <sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org> wrote:
 
-	- (Pavel Emelianov/Serge Hallyn) Remove reference to pts_ns from
-	  sb->s_fs_info to fix the circular reference (/dev/pts is not
-	  unmounted unless the pts_ns is destroyed, so we don't need a
-	  reference to the pts_ns).
+>
+> Some simple helper patches to enable implementation of multiple PTY
+> (or device) namespaces.
+>
+>        [PATCH 1/4]: Propagate error code from devpts_pty_new
+>        [PATCH 2/4]: Factor out PTY index allocation
+>        [PATCH 3/4]: Move devpts globals into init_pts_ns
+>        [PATCH 3/4]: Enable multiple mounts of /dev/pts
+>
+> This patchset is based on earlier versions developed by Serge Hallyn
+> and Matt Helsley.
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-kernel" in
+> the body of a message to majordomo-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> Please read the FAQ at  http://www.tux.org/lkml/
+>
 
-Signed-off-by: Sukadev Bhattiprolu <sukadev@us.ibm.com>
-Signed-off-by: Serge Hallyn <serue@us.ibm.com>
-Signed-off-by: Matt Helsley <matthltc@us.ibm.com>
----
- fs/devpts/inode.c |   62 +++++++++++++++++++++++++++++++++++++++++++++++++++---
- 1 file changed, 59 insertions(+), 3 deletions(-)
 
-Index: 2.6.25-rc8-mm1/fs/devpts/inode.c
-===================================================================
---- 2.6.25-rc8-mm1.orig/fs/devpts/inode.c	2008-04-12 10:10:33.000000000 -0700
-+++ 2.6.25-rc8-mm1/fs/devpts/inode.c	2008-04-12 10:10:38.000000000 -0700
-@@ -154,17 +154,73 @@ fail:
- 	return -ENOMEM;
- }
- 
-+/*
-+ * We use test and set super-block operations to help determine whether we
-+ * need a new super-block for this namespace. get_sb() walks the list of
-+ * existing devpts supers, comparing them with the @data ptr. Since we
-+ * passed 'current's namespace as the @data pointer we can compare the
-+ * namespace pointer in the super-block's 's_fs_info'.  If the test is
-+ * TRUE then get_sb() returns a new active reference to the super block.
-+ * Otherwise, it helps us build an active reference to a new one.
-+ */
-+
-+static int devpts_test_sb(struct super_block *sb, void *data)
-+{
-+	return sb->s_fs_info == data;
-+}
-+
-+static int devpts_set_sb(struct super_block *sb, void *data)
-+{
-+	sb->s_fs_info = data;
-+	return set_anon_super(sb, NULL);
-+}
-+
- static int devpts_get_sb(struct file_system_type *fs_type,
- 	int flags, const char *dev_name, void *data, struct vfsmount *mnt)
- {
--	return get_sb_single(fs_type, flags, data, devpts_fill_super, mnt);
-+	struct super_block *sb;
-+	struct pts_namespace *ns;
-+	int err;
-+
-+	/* hereafter we're very similar to proc_get_sb */
-+	if (flags & MS_KERNMOUNT)
-+		ns = data;
-+	else
-+		ns = &init_pts_ns;
-+
-+	/* hereafter we're very simlar to get_sb_nodev */
-+	sb = sget(fs_type, devpts_test_sb, devpts_set_sb, ns);
-+	if (IS_ERR(sb))
-+		return PTR_ERR(sb);
-+
-+	if (sb->s_root)
-+		return simple_set_mnt(mnt, sb);
-+
-+	sb->s_flags = flags;
-+	err = devpts_fill_super(sb, data, flags & MS_SILENT ? 1 : 0);
-+	if (err) {
-+		up_write(&sb->s_umount);
-+		deactivate_super(sb);
-+		return err;
-+	}
-+
-+	sb->s_flags |= MS_ACTIVE;
-+	ns->mnt = mnt;
-+
-+	return simple_set_mnt(mnt, sb);
-+}
-+
-+static void devpts_kill_sb(struct super_block *sb)
-+{
-+	sb->s_fs_info = NULL;
-+	kill_anon_super(sb);
- }
- 
- static struct file_system_type devpts_fs_type = {
- 	.owner		= THIS_MODULE,
- 	.name		= "devpts",
- 	.get_sb		= devpts_get_sb,
--	.kill_sb	= kill_anon_super,
-+	.kill_sb	= devpts_kill_sb,
- };
- 
- /*
-@@ -315,7 +371,7 @@ static int __init init_devpts_fs(void)
- 
- 	err = register_filesystem(&devpts_fs_type);
- 	if (!err) {
--		mnt = kern_mount(&devpts_fs_type);
-+		mnt = kern_mount_data(&devpts_fs_type, &init_pts_ns);
- 		if (IS_ERR(mnt))
- 			err = PTR_ERR(mnt);
- 		else
+
+-- 
+Regards & Thanks--
+Subrata
+
+------=_Part_12360_30741121.1208021990130
+Content-Type: text/html; charset=UTF-8
+Content-Transfer-Encoding: 7bit
+Content-Disposition: inline
+
+Sukadev,<br><br>Any corresponding test cases for LTP. We just have UTS, PID &amp; SYSVIPC Namespace till now.<br><br>Regards--<br>Subrata<br><br><div class="gmail_quote">On Sat, Apr 12, 2008 at 10:59 PM,  &lt;<a href="mailto:sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org">sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org</a>&gt; wrote:<br>
+<blockquote class="gmail_quote" style="border-left: 1px solid rgb(204, 204, 204); margin: 0pt 0pt 0pt 0.8ex; padding-left: 1ex;"><br>
+Some simple helper patches to enable implementation of multiple PTY<br>
+(or device) namespaces.<br>
+<br>
+ &nbsp; &nbsp; &nbsp; &nbsp;[PATCH 1/4]: Propagate error code from devpts_pty_new<br>
+ &nbsp; &nbsp; &nbsp; &nbsp;[PATCH 2/4]: Factor out PTY index allocation<br>
+ &nbsp; &nbsp; &nbsp; &nbsp;[PATCH 3/4]: Move devpts globals into init_pts_ns<br>
+ &nbsp; &nbsp; &nbsp; &nbsp;[PATCH 3/4]: Enable multiple mounts of /dev/pts<br>
+<br>
+This patchset is based on earlier versions developed by Serge Hallyn<br>
+and Matt Helsley.<br>
+<font color="#888888">--<br>
+To unsubscribe from this list: send the line &quot;unsubscribe linux-kernel&quot; in<br>
+the body of a message to <a href="mailto:majordomo-u79uwXL29TY76Z2rM5mHXA@public.gmane.org">majordomo-u79uwXL29TY76Z2rM5mHXA@public.gmane.org</a><br>
+More majordomo info at &nbsp;<a href="http://vger.kernel.org/majordomo-info.html" target="_blank">http://vger.kernel.org/majordomo-info.html</a><br>
+Please read the FAQ at &nbsp;<a href="http://www.tux.org/lkml/" target="_blank">http://www.tux.org/lkml/</a><br>
+</font></blockquote></div><br><br clear="all"><br>-- <br>Regards &amp; Thanks--<br>Subrata
+
+------=_Part_12360_30741121.1208021990130--
+
+
+--===============2126432814==
+Content-Type: text/plain; charset="us-ascii"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+Content-Disposition: inline
+
+-------------------------------------------------------------------------
+This SF.net email is sponsored by the 2008 JavaOne(SM) Conference 
+Don't miss this year's exciting event. There's still time to save $100. 
+Use priority code J8TL2D2. 
+http://ad.doubleclick.net/clk;198757673;13503038;p?http://java.sun.com/javaone
+--===============2126432814==
+Content-Type: text/plain; charset="us-ascii"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+Content-Disposition: inline
+
+_______________________________________________
+Ltp-list mailing list
+Ltp-list-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org
+https://lists.sourceforge.net/lists/listinfo/ltp-list
+
+--===============2126432814==--
