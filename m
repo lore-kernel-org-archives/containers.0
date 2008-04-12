@@ -1,62 +1,45 @@
 From: "Eric W. Biederman" <ebiederm@xmission.com>
-Subject: Re: [PATCH 0/4] Helper patches for PTY namespaces
-Date: Sat, 12 Apr 2008 12:06:55 -0700
-Message-ID: <1208027215.28187.17.camel@x61.ebiederm.org>
+Subject: Re: Multiple instances of devpts
+Date: Sat, 12 Apr 2008 12:15:57 -0700
+Message-ID: <1208027757.28187.25.camel@x61.ebiederm.org>
 References: <20080412172933.GA19295@us.ibm.com>
+	 <20080412183514.GO9785@ZenIV.linux.org.uk>  <48010583.3020403@zytor.com>
 Mime-Version: 1.0
 Content-Type: text/plain
 Content-Transfer-Encoding: 7bit
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1757896AbYDLTH1@vger.kernel.org>
-In-Reply-To: <20080412172933.GA19295@us.ibm.com>
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1758016AbYDLTQR@vger.kernel.org>
+In-Reply-To: <48010583.3020403@zytor.com>
 Sender: linux-kernel-owner@vger.kernel.org
-To: sukadev@us.ibm.com
-Cc: Andrew Morton <akpm@osdl.org>, serue@us.ibm.com, matthltc@us.ibm.com, hpa@zytor.com, Pavel Emelyanov <xemul@openvz.org>, Containers <containers@lists.osdl.org>, linux-kernel@vger.kernel.org
+To: "H. Peter Anvin" <hpa@zytor.com>
+Cc: Al Viro <viro@ZenIV.linux.org.uk>, sukadev@us.ibm.com, Andrew Morton <akpm@osdl.org>, serue@us.ibm.com, matthltc@us.ibm.com, Pavel Emelyanov <xemul@openvz.org>, Containers <containers@lists.osdl.org>, linux-kernel@vger.kernel.org, Linus Torvalds <torvalds@linux-foundation.org>
 List-Id: containers.vger.kernel.org
 
-On Sat, 2008-04-12 at 10:29 -0700, sukadev@us.ibm.com wrote:
-> Some simple helper patches to enable implementation of multiple PTY
-> (or device) namespaces.
+
+On Sat, 2008-04-12 at 11:54 -0700, H. Peter Anvin wrote:
+> Al Viro wrote:
+> > 
+> > Why not simply allow independent instances of devpts and be done with that?
 > 
-> 	[PATCH 1/4]: Propagate error code from devpts_pty_new
-> 	[PATCH 2/4]: Factor out PTY index allocation
-> 	[PATCH 3/4]: Move devpts globals into init_pts_ns
-> 	[PATCH 3/4]: Enable multiple mounts of /dev/pts
+> In particular:
 > 
-> This patchset is based on earlier versions developed by Serge Hallyn
-> and Matt Helsley.
+> /dev/ptmx can be a symlink ptmx -> pts/ptmx, and we add a ptmx instance 
+> inside the devpts filesystem.  Each devpts filesystem is responsible for 
+> its own pool of ptys, with own numbering, etc.
+> 
+> This does mean that entries in /dev/pts are more than just plain device 
+> nodes, which they are now (you can cp -a a device node from /dev/pts 
+> into another filesystem and it will still "just work"), but I doubt this 
+> actually matters to anyone.  If anyone cares, now I guess would be a 
+> good time to speak up.
 
-Suka Stop.
+Agreed.   That is another legitimate path.  And if all you care about is
+isolation and not dealing with the general class of problems with the
+global device number to device mapping that is sane.  I know we have
+several other virtual devices that we tend to care about but ptys are
+the real world pain point.
 
-The first two patches appear to just be cleanups and as such should be
-able to stand on their own.  Mentioning that you found these
-opportunities while working on your pts namespace is fine.  Justifying
-the cleanups this way is not.
-
-When you mentioned you intended to just resend the cleanups this is not
-at all what I thought you were about.  So please just get the first two
-patches in a form that stands by themselves.
-
-The pts namespace as designed is not acceptable.
-
-The problem you are trying to solve with the pts namespace is real.
-
-So what we need is a device namespace and possibly and incremental path
-to get there.  A device namespace would abstract the device number to
-device mapping for all devices.  A safe incremental path would disable
-all device number to device mappings for process in that namespace.  So
-all functionality would be gone, then it would enable certain mappings
-and certain pieces of the functionality if the code in the kernel is not
-clean enough that we can do it all in one go.
-
-We need to see that path.  Only then can we take patches that add
-namespace specific goo.  The pattern I am proposing has worked quite
-well for the network namespace.  Meanwhile the uid namespace which
-follows the pattern you seem to be following now seems does not look to
-be completed any time soon.
-
-So send your clean up patches and then let's architect this thing so we
-are really talking about a namespace.  Then we can update devpts to
-capture the device namespace on mount and do it's work in a namespace
-specific manner.
+Further I don't see any conflict with the generalizing devpts in this
+manner (so you only see a subset of the ptys) and then later adding a
+namespace that deals with the whole device number to device mapping.
 
 Eric
