@@ -1,41 +1,73 @@
-From: "H. Peter Anvin" <hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org>
-Subject: Re: Multiple instances of devpts
-Date: Sat, 12 Apr 2008 12:30:05 -0700
-Message-ID: <48010DBD.6010903@zytor.com>
-References: <20080412172933.GA19295@us.ibm.com>	
-	<20080412183514.GO9785@ZenIV.linux.org.uk>
-	<48010583.3020403@zytor.com>
-	<1208027757.28187.25.camel@x61.ebiederm.org>
-	<48010C70.2030902@zytor.com>
+From: "Serge E. Hallyn" <serue@us.ibm.com>
+Subject: Re: [PATCH 0/4] Helper patches for PTY namespaces
+Date: Sat, 12 Apr 2008 19:59:36 -0500
+Message-ID: <20080413005936.GA21021@sergelap.austin.ibm.com>
+References: <20080412172933.GA19295@us.ibm.com> <1208027215.28187.17.camel@x61.ebiederm.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <48010C70.2030902-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Cc: linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Al Viro <viro-3bDd1+5oDREiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Linus Torvalds <torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+Content-Type: text/plain; charset=us-ascii
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1756995AbYDMBAT@vger.kernel.org>
+Content-Disposition: inline
+In-Reply-To: <1208027215.28187.17.camel@x61.ebiederm.org>
+Sender: linux-kernel-owner@vger.kernel.org
+To: "Eric W. Biederman" <ebiederm@xmission.com>
+Cc: sukadev@us.ibm.com, Andrew Morton <akpm@osdl.org>, serue@us.ibm.com, matthltc@us.ibm.com, hpa@zytor.com, Pavel Emelyanov <xemul@openvz.org>, Containers <containers@lists.osdl.org>, linux-kernel@vger.kernel.org
 List-Id: containers.vger.kernel.org
 
-H. Peter Anvin wrote:
+Quoting Eric W. Biederman (ebiederm@xmission.com):
+> On Sat, 2008-04-12 at 10:29 -0700, sukadev@us.ibm.com wrote:
+> > Some simple helper patches to enable implementation of multiple PTY
+> > (or device) namespaces.
+> > 
+> > 	[PATCH 1/4]: Propagate error code from devpts_pty_new
+> > 	[PATCH 2/4]: Factor out PTY index allocation
+> > 	[PATCH 3/4]: Move devpts globals into init_pts_ns
+> > 	[PATCH 3/4]: Enable multiple mounts of /dev/pts
+> > 
+> > This patchset is based on earlier versions developed by Serge Hallyn
+> > and Matt Helsley.
 > 
-> Thinking about it further, allowing this restriction would also allow a 
-> whole lot of cleanups inside the pty setup, since it would eliminate the 
-> need to do a separate lookup to find the corresponding devpts entry in 
-> pty_open().  The benefit here comes from the closer coupling between the 
-> pty and the devpts filesystem and isn't at all related to namespaces, 
-> but it's a very nice side benefit.
+> Suka Stop.
 > 
+> The first two patches appear to just be cleanups and as such should be
+> able to stand on their own.  Mentioning that you found these
+> opportunities while working on your pts namespace is fine.  Justifying
+> the cleanups this way is not.
+> 
+> When you mentioned you intended to just resend the cleanups this is not
+> at all what I thought you were about.  So please just get the first two
+> patches in a form that stands by themselves.
 
-Minor correction: the lookup is actually in init_dev() in tty_io.c; I'm 
-specifically referring to devpts_get_tty().
+It took me a minute to figure out what you were offended by, but I see,
+the patches still introduce a "pts ns", which shouldn't exist at all.
 
-	-hpa
+> The pts namespace as designed is not acceptable.
+> 
+> The problem you are trying to solve with the pts namespace is real.
+> 
+> So what we need is a device namespace and possibly and incremental path
+> to get there.  A device namespace would abstract the device number to
+> device mapping for all devices.  A safe incremental path would disable
+> all device number to device mappings for process in that namespace.  So
+> all functionality would be gone, then it would enable certain mappings
+> and certain pieces of the functionality if the code in the kernel is not
+> clean enough that we can do it all in one go.
+> 
+> We need to see that path.  Only then can we take patches that add
+> namespace specific goo.  The pattern I am proposing has worked quite
+> well for the network namespace.  Meanwhile the uid namespace which
+> follows the pattern you seem to be following now seems does not look to
+> be completed any time soon.
+
+(you know perfectly well that we're holding off on any further real
+uidns work until netns is complete and you have time to partake in the
+design - it wouldn't be any fun without you :)
+
+> So send your clean up patches and then let's architect this thing so we
+> are really talking about a namespace.  Then we can update devpts to
+> capture the device namespace on mount and do it's work in a namespace
+> specific manner.
+
+Sounds reasonable to me.
+
+thanks,
+-serge
