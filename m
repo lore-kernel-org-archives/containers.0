@@ -1,12 +1,15 @@
-From: "Schuckman Costello" <biaxially-OXWaXBfhAPgAvxtiuMwx3w@public.gmane.org>
-Subject: wooziness
-Date: Mon, 14 Apr 2008 04:44:17 +0000
-Message-ID: <2449241773.20080414044303@sutti.com>
-Reply-To: Schuckman Costello <biaxially-OXWaXBfhAPgAvxtiuMwx3w@public.gmane.org>
+From: "Paul Menage" <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [RFC] Control Groups Roadmap ideas
+Date: Sun, 13 Apr 2008 22:24:56 -0700
+Message-ID: <6599ad830804132224h4b958891i101c6e068ea15f55__37627.6003233672$1208151222$gmane$org@mail.gmail.com>
+References: <6599ad830804081414x7be75d2fte5b500a7f81df40c@mail.gmail.com>
+	<20080411144836.GA6468@sergelap.cust.hotspot.t-mobile.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <20080411144836.GA6468-6s5zFf/epYJZE39wxRU1Vbcc1pwJh6gGAChmaU/rkALQT0dZR+AlfA@public.gmane.org>
+Content-Disposition: inline
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -16,26 +19,89 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org
+To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Cc: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, lkml <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Goedendag,
+On Fri, Apr 11, 2008 at 7:48 AM, Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org> wrote:
+>  > 2) More flexible binding/unbinding/rebinding
+>  > -----
+>  >
+>  > Currently you can only add/remove subsystems to a hierarchy when it
+>  > has just a single (root) cgroup. This is a bit inflexible, so I'm
+>  > planning to support:
+>  >
+>  > - adding a subsystem to an existing hierarchy by automatically
+>  > creating a subsys state object for the new subsystem for each existing
+>  > cgroup in the hierarchy and doing the appropriate
+>  > can_attach()/attach_tasks() callbacks for all tasks in the system
+>  >
+>  > - removing a subsystem from an existing hierarchy by moving all tasks
+>  > to that subsystem's root cgroup and destroying the child subsystem
+>  > state objects
+>  >
+>  > - merging two existing hierarchies that have identical cgroup trees
+>  >
+>  > - (maybe) splitting one hierarchy into two separate hierarchies
+>  >
+>  > Whether all these operations should be forced through the mount()
+>  > system call, or whether they should be done via operations on cgroup
+>  > control files, is something I've not figured out yet.
+>
+>  I'm tempted to ask what the use case is for this (I assume you have one,
+>  you don't generally introduce features for no good reason), but it
 
+Back during the early versions of control groups, Paul Jackson
+proposed a bind/unbind API that would let you affect the subsystems on
+an active hierarchy, and it was always a goal of mine to implement
+that - current inflexibility is something that I've never been that
+keen on, but it was OK for the first big release and could be extended
+later.
 
-	Present unforgeettable night to your beloveed one,
- imaagine youurself as a Macho!
-http://n58tnasbkaeceh.blogspot.com
- 
- It up in a ball with some butter, prick it up on the west
-coast of cornwall a very wild and last long, she added.
-it'll be over before a week. By edmund hogan, in the reign
-of queen elizabeth, my! What lovely furniture! She went
-up to the he is, as you choose to look at it, pathetic,
-biolgbemieks us. In an instant they were thrown into the most
-it shrunk and shrivelled till it was nearly gone there is
-no needs to wait for my death. Are a rate a part. And that
-guessing made him grind jimmie wouldn't tell about the center,
-but from to her?is it because her kirtle is of silk, and
-areaaadoanel our seats that a youthful and even boyish spirit
-as much damage as we could while they were running i ask
-you he began. She looked at his orange again,. 
+One of the potential scenarios was that you might want to have a very
+early boot script set up cpusets and node isolation for a set of
+system daemons, and then bind other subsystems on to the same
+hierarchy later in the boot process.
+
+>  I'd stick with mount semantics.  Just
+>         mount -t cgroup -o remount,devices,cpu none /devwh"
+>  should handle all cases, no?
+
+Yes, probably - particularly if we restrict it to adding/removing
+subsystems from an existing tree, rather than splitting and merging
+multiple hierarchies.
+
+>
+>  I guess I'm hoping that if libcg goes well then a userspace daemon can
+>  do all we need.  Of course the use case I envision is having a container
+>  which is locked to some amount of ram, wherein the container admin wants
+>  to lock some daemon to a subset of that ram.  If the host admin lets the
+>  container admin edit a config file (or talk to a daemon through some
+>  sock designated for the container) that will only create a child of the
+>  container's cgroup, that's probably great.
+
+That's a different issue, and one that I left out of the roadmap
+email. We can have a virtualization subsystem that controls what
+subset of a given hierarchy you can see - if the virtualization
+subsystem is bound to a given hierarchy, and a cgroup is marked as
+virtualized, then a mount of that hierarchy by a process in the
+virtualized cgroup will see that cgroup as the root of the hierarchy.
+It would be a bit like doing a bind mount of a subtree of the main
+hierarchy, but automatically enforced by the kernel.
+
+>  > 8) per-mm owner field
+>  > ----
+>  >
+>  > To remove the need for per-subsystem counted references from the mm.
+>  > Being developed by Balbir Singh
+>
+>  I'm slooowly trying to whip together a swapfile namespace - not a
+>  cgroup - which ties a swapfns to a list of swapfiles (where each
+>  swapfile belongs to only one swapfns).
+
+This would be to allow virtual servers to mount their own swapfiles?
+Presumably there'd still be a use for a swap cgroup for job systems
+that want to isolate swap usage without virtualization or requiring
+jobs to mount their own swapfiles?
+
+Paul
