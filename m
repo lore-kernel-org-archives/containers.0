@@ -1,81 +1,46 @@
-From: Balbir Singh <balbir@linux.vnet.ibm.com>
-Subject: Re: [RFC][-mm] [2/2] Simple stats for memory resource controller
-Date: Mon, 14 Apr 2008 20:10:52 +0530
-Message-ID: <48036CF4.7050008@linux.vnet.ibm.com>
-References: <200804052340.02386.balajirrao@gmail.com> <48036CB4.5050700@linux.vnet.ibm.com>
-Reply-To: balbir@linux.vnet.ibm.com
+From: "Paul Menage" <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [RFC] Control Groups Roadmap ideas
+Date: Mon, 14 Apr 2008 08:03:57 -0700
+Message-ID: <6599ad830804140803p2a97c96mbc24f73e1a687aee@mail.gmail.com>
+References: <6599ad830804081414x7be75d2fte5b500a7f81df40c@mail.gmail.com>
+	<20080411144836.GA6468@sergelap.cust.hotspot.t-mobile.com>
+	<6599ad830804132224h4b958891i101c6e068ea15f55@mail.gmail.com>
+	<20080414141119.GA11019@sergelap.austin.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
+Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1761453AbYDNOni@vger.kernel.org>
-In-Reply-To: <48036CB4.5050700@linux.vnet.ibm.com>
-Sender: linux-kernel-owner@vger.kernel.org
-To: Andrew Morton <akpm@linux-foundation.org>
-Cc: Balaji Rao <balajirrao@gmail.com>, linux-kernel@vger.kernel.org, containers@lists.osdl.org, menage@google.com, balbir@in.ibm.com, dhaval@linux.vnet.ibm.com
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <20080414141119.GA11019-6s5zFf/epYLPQpwDFJZrxKsjOiXwFzmk@public.gmane.org>
+Content-Disposition: inline
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Cc: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, lkml <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Balbir Singh wrote:
-> Balaji Rao wrote:
->> This patch implements trivial statistics for the memory resource controller.
->>
->> Signed-off-by: Balaji Rao <balajirrao@gmail.com>
->> CC: Balbir Singh <balbir@linux.vnet.ibm.com>
->> CC: Dhaval Giani <dhaval@linux.vnet.ibm.com>
->>
->> diff --git a/mm/memcontrol.c b/mm/memcontrol.c
->> index a860765..ca98b21 100644
->> --- a/mm/memcontrol.c
->> +++ b/mm/memcontrol.c
->> @@ -47,6 +47,8 @@ enum mem_cgroup_stat_index {
->>  	 */
->>  	MEM_CGROUP_STAT_CACHE, 	   /* # of pages charged as cache */
->>  	MEM_CGROUP_STAT_RSS,	   /* # of pages charged as rss */
->> +	MEM_CGROUP_STAT_PGPGIN_COUNT,	/* # of pages paged in */
->> +	MEM_CGROUP_STAT_PGPGOUT_COUNT,	/* # of pages paged out */
->>
->>  	MEM_CGROUP_STAT_NSTATS,
->>  };
->> @@ -198,6 +200,13 @@ static void mem_cgroup_charge_statistics(struct mem_cgroup *mem, int flags,
->>  		__mem_cgroup_stat_add_safe(stat, MEM_CGROUP_STAT_CACHE, val);
->>  	else
->>  		__mem_cgroup_stat_add_safe(stat, MEM_CGROUP_STAT_RSS, val);
->> +
->> +	if (charge)
->> +		__mem_cgroup_stat_add_safe(stat,
->> +				MEM_CGROUP_STAT_PGPGIN_COUNT, 1);
->> +	else
->> +		__mem_cgroup_stat_add_safe(stat,
->> +				MEM_CGROUP_STAT_PGPGOUT_COUNT, 1);
->>  }
->>
->>  static struct mem_cgroup_per_zone *
->> @@ -897,6 +906,8 @@ static const struct mem_cgroup_stat_desc {
->>  } mem_cgroup_stat_desc[] = {
->>  	[MEM_CGROUP_STAT_CACHE] = { "cache", PAGE_SIZE, },
->>  	[MEM_CGROUP_STAT_RSS] = { "rss", PAGE_SIZE, },
->> +	[MEM_CGROUP_STAT_PGPGIN_COUNT] = {"pgpgin", 1, },
->> +	[MEM_CGROUP_STAT_PGPGOUT_COUNT] = {"pgpgout", 1, },
->>  };
->>
->>  static int mem_control_stat_show(struct cgroup *cont, struct cftype *cft,
->>
-> 
-> Acked-by: Balbir Singh <balbir@linux.vnet.ibm.com>
-> 
-> Hi, Andrew,
-> 
-> Could you please include these statistics in -mm.
-> 
-> Balbir
-> 
-> 
+On Mon, Apr 14, 2008 at 7:11 AM, Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org> wrote:
+>
+>  then all tasks are mapped under /containers.  If login does a
+>  clone(CLONE_NEWNS) for hallyn's login to give him a private /tmp,
+>  then hallyn ends up under /containers/node_xyz, but we don't want him
+>  to be virtualized under there.  So I assume we'd want a virt.lock file
+>  or something like that so, that when I create a container, my
+>  start_container script can echo 1 > /containers/node_abc/virt.lock
 
-Andrew,
+Yes, something like that.
 
-This should have been addressed to you in the first place. Resending.
+>
+>  I assume the container will also have to remount a fresh copy of the
+>  cgroup composition so it can have the dentry for /containers/node_abc
+>  as the root dentry for /containers?
 
--- 
-	Warm Regards,
-	Balbir Singh
-	Linux Technology Center
-	IBM, ISTL
+Yes.
+
+Paul
