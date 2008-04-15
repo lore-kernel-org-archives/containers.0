@@ -1,17 +1,14 @@
-From: "Paul Menage" <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [RFC] Control Groups Roadmap ideas
-Date: Mon, 14 Apr 2008 08:03:57 -0700
-Message-ID: <6599ad830804140803p2a97c96mbc24f73e1a687aee@mail.gmail.com>
-References: <6599ad830804081414x7be75d2fte5b500a7f81df40c@mail.gmail.com>
-	<20080411144836.GA6468@sergelap.cust.hotspot.t-mobile.com>
-	<6599ad830804132224h4b958891i101c6e068ea15f55@mail.gmail.com>
-	<20080414141119.GA11019@sergelap.austin.ibm.com>
+From: Nick Andrew <nick-dnCCA748QAperShJXdIFYw@public.gmane.org>
+Subject: Re: [RFC][PATCH 0/4] Object creation with a specified id
+Date: Tue, 15 Apr 2008 13:06:23 +1000
+Message-ID: <20080415030623.GA8171__43802.9629215181$1208228998$gmane$org@tull.net>
+References: <20080404145129.637145000@bull.net>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20080414141119.GA11019-6s5zFf/epYLPQpwDFJZrxKsjOiXwFzmk@public.gmane.org>
 Content-Disposition: inline
+In-Reply-To: <20080404145129.637145000-6ktuUTfB/bM@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -21,26 +18,23 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Cc: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, lkml <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+To: Nadia.Derbey-6ktuUTfB/bM@public.gmane.org
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Mon, Apr 14, 2008 at 7:11 AM, Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org> wrote:
->
->  then all tasks are mapped under /containers.  If login does a
->  clone(CLONE_NEWNS) for hallyn's login to give him a private /tmp,
->  then hallyn ends up under /containers/node_xyz, but we don't want him
->  to be virtualized under there.  So I assume we'd want a virt.lock file
->  or something like that so, that when I create a container, my
->  start_container script can echo 1 > /containers/node_abc/virt.lock
+On Fri, Apr 04, 2008 at 04:51:29PM +0200, Nadia.Derbey-6ktuUTfB/bM@public.gmane.org wrote:
+>    . echo "LONG XX" > /proc/self/next_id
+>      next object to be created will have an id set to XX
+>    . echo "LONG<n> X0 ... X<n-1>" > /proc/self/next_id
+>      next object to be created will have its ids set to XX0, ... X<n-1>
+>      This is particularly useful for processes that may have several ids if
+>      they belong to nested namespaces.
 
-Yes, something like that.
+How do you handle race conditions, i.e. you specify the ID for the
+next object to be created, and then some other thread goes and creates
+an object before your thread creates one?
 
->
->  I assume the container will also have to remount a fresh copy of the
->  cgroup composition so it can have the dentry for /containers/node_abc
->  as the root dentry for /containers?
-
-Yes.
-
-Paul
+Nick.
+-- 
+PGP Key ID = 0x418487E7                      http://www.nick-andrew.net/
+PGP Key fingerprint = B3ED 6894 8E49 1770 C24A  67E3 6266 6EB9 4184 87E7
