@@ -1,7 +1,7 @@
 From: "Denis V. Lunev" <den@openvz.org>
-Subject: [PATCH 3/8 net-2.6.26] [NETNS]: Add netns refcnt debug for timewait buckets.
-Date: Tue, 15 Apr 2008 16:37:50 +0400
-Message-ID: <1208263075-28016-3-git-send-email-den@openvz.org>
+Subject: [PATCH 2/8 net-2.6.26] [NETNS]: Add netns refcnt debug for kernel sockets.
+Date: Tue, 15 Apr 2008 16:37:49 +0400
+Message-ID: <1208263075-28016-2-git-send-email-den@openvz.org>
 References: <1208262959.21529.32.camel@iris.sw.ru>
 Return-path: <netdev-owner@vger.kernel.org>
 In-Reply-To: <1208262959.21529.32.camel@iris.sw.ru>
@@ -10,32 +10,41 @@ To: davem@davemloft.net
 Cc: netdev@vger.kernel.org, containers@lists.osdl.org, dlezcano@fr.ibm.com, "Denis V. Lunev" <den@openvz.org>
 List-Id: containers.vger.kernel.org
 
+Protocol control sockets and netlink kernel sockets should not prevent the
+namespace stop request. They are initialized and disposed in a special way by
+sk_change_net/sk_release_kernel.
+
 Signed-off-by: Denis V. Lunev <den@openvz.org>
 ---
- net/ipv4/inet_timewait_sock.c |    3 ++-
- 1 files changed, 2 insertions(+), 1 deletions(-)
+ include/net/sock.h |    2 +-
+ net/core/sock.c    |    1 +
+ 2 files changed, 2 insertions(+), 1 deletions(-)
 
-diff --git a/net/ipv4/inet_timewait_sock.c b/net/ipv4/inet_timewait_sock.c
-index a741378..ce16e9a 100644
---- a/net/ipv4/inet_timewait_sock.c
-+++ b/net/ipv4/inet_timewait_sock.c
-@@ -57,6 +57,7 @@ void inet_twsk_put(struct inet_timewait_sock *tw)
- 		printk(KERN_DEBUG "%s timewait_sock %p released\n",
- 		       tw->tw_prot->name, tw);
- #endif
-+		release_net(twsk_net(tw));
- 		kmem_cache_free(tw->tw_prot->twsk_prot->twsk_slab, tw);
- 		module_put(owner);
- 	}
-@@ -124,7 +125,7 @@ struct inet_timewait_sock *inet_twsk_alloc(const struct sock *sk, const int stat
- 		tw->tw_hash	    = sk->sk_hash;
- 		tw->tw_ipv6only	    = 0;
- 		tw->tw_prot	    = sk->sk_prot_creator;
--		twsk_net_set(tw, sock_net(sk));
-+		twsk_net_set(tw, hold_net(sock_net(sk)));
- 		atomic_set(&tw->tw_refcnt, 1);
- 		inet_twsk_dead_node_init(tw);
- 		__module_get(tw->tw_prot->owner);
+diff --git a/include/net/sock.h b/include/net/sock.h
+index 09255ea..dc42b44 100644
+--- a/include/net/sock.h
++++ b/include/net/sock.h
+@@ -1314,7 +1314,7 @@ void sock_net_set(struct sock *sk, struct net *net)
+ static inline void sk_change_net(struct sock *sk, struct net *net)
+ {
+ 	put_net(sock_net(sk));
+-	sock_net_set(sk, net);
++	sock_net_set(sk, hold_net(net));
+ }
+ 
+ extern void sock_enable_timestamp(struct sock *sk);
+diff --git a/net/core/sock.c b/net/core/sock.c
+index f2ccb16..015ec69 100644
+--- a/net/core/sock.c
++++ b/net/core/sock.c
+@@ -1001,6 +1001,7 @@ void sk_release_kernel(struct sock *sk)
+ 
+ 	sock_hold(sk);
+ 	sock_release(sk->sk_socket);
++	release_net(sock_net(sk));
+ 	sock_net_set(sk, get_net(&init_net));
+ 	sock_put(sk);
+ }
 -- 
 1.5.3.rc5
 
