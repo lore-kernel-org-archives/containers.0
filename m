@@ -1,37 +1,47 @@
 From: David Miller <davem@davemloft.net>
-Subject: Re: [PATCH 1/8 net-2.6.26] [NETNS]: Make netns refconting debug
- like a socket one.
-Date: Wed, 16 Apr 2008 01:58:29 -0700 (PDT)
-Message-ID: <20080416.015829.254939858.davem@davemloft.net>
+Subject: Re: [PATCH 0/8 net-2.6.26] [NETNS]: namespace refcounting cleanup
+Date: Wed, 16 Apr 2008 02:07:54 -0700 (PDT)
+Message-ID: <20080416.020754.130255465.davem@davemloft.net>
 References: <1208262959.21529.32.camel@iris.sw.ru>
-	<1208263075-28016-1-git-send-email-den@openvz.org>
-	<4804C1D8.7000803@hp.com>
 Mime-Version: 1.0
 Content-Type: Text/Plain; charset=us-ascii
 Content-Transfer-Encoding: 7bit
 Return-path: <netdev-owner@vger.kernel.org>
-In-Reply-To: <4804C1D8.7000803@hp.com>
+In-Reply-To: <1208262959.21529.32.camel@iris.sw.ru>
 Sender: netdev-owner@vger.kernel.org
-To: brian.haley@hp.com
-Cc: den@openvz.org, netdev@vger.kernel.org, containers@lists.osdl.org, dlezcano@fr.ibm.com
+To: den@openvz.org
+Cc: netdev@vger.kernel.org, containers@lists.osdl.org, dlezcano@fr.ibm.com
 List-Id: containers.vger.kernel.org
 
-From: Brian Haley <brian.haley@hp.com>
-Date: Tue, 15 Apr 2008 10:55:20 -0400
+From: "Denis V. Lunev" <den@openvz.org>
+Date: Tue, 15 Apr 2008 16:35:59 +0400
 
-> Denis V. Lunev wrote:
-> > +#ifdef NETNS_REFCNT_DEBUG
-> >  static inline struct net *hold_net(struct net *net)
-> >  {
-> > +	if (net == NULL)
-> > +		return NULL;
-> > +	atomic_inc(&net->use_count);
-> >  	return net;
-> >  }
+> Network namespace has two referrence counters:
+> - count
+> - use_count.
+> The namespace is scheduled to destruction automatically when the count
+> becomes 0.
 > 
-> This could be shrunk to:
- ...
-> This one too:
+> There are several SLAB objects with a pointer to a namespace on them.
+> These objects are cleaned up during namespace stop. Some of them
+> increment use_count, some don't. This set fixes this discrepancy,
+> i.e. now all such objects increment the use_count.
+> 
+> Though, the use_count itself is used in a very debug manner and checked
+> only during namespace stop. So, I have placed it under
+> NETNS_REFCNT_DEBUG definition exactly like this is done for socket
+> refcounting code to remove extra atomic from any possible fast paths.
+> 
+> Signed-off-by: Denis V. Lunev <den@openvz.org>
 
-I've checked in Denis's patch with those simplifications added.
-Thanks everyone.
+This is a notification that the Linux NETDEV Patch Robot has used all
+automated tools known to man to validate your patches, and has decided
+to apply then to the net-2.6.26 GIT tree.
+
+*beep* *beep*
+
+You may continue hacking.
+
+*beep* *beep*
+
+Have a pleasant day.
