@@ -1,63 +1,63 @@
-From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: selinux mini-summit sub-policy topic
-Date: Thu, 17 Apr 2008 12:55:30 -0500
-Message-ID: <20080417175530.GA21302@sergelap.austin.ibm.com>
+From: Jiri Slaby <jirislaby@gmail.com>
+Subject: Re: [PATCH]: Factor out PTY index allocation
+Date: Thu, 17 Apr 2008 23:08:17 +0200
+Message-ID: <4807BC41.50406@gmail.com>
+References: <20080416221723.GB7112@us.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
+Content-Type: text/plain; charset=us-ascii; format=flowed
 Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: fmac-discuss-xZgeD5Kw2fzokhkdeNNY6A@public.gmane.org, fedora-selinux-list-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
-Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, SELinux <selinux-+05T5uksL2qpZYMLLGbcSA@public.gmane.org>
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1755659AbYDQVIl@vger.kernel.org>
+In-Reply-To: <20080416221723.GB7112@us.ibm.com>
+Sender: linux-kernel-owner@vger.kernel.org
+To: sukadev@us.ibm.com
+Cc: Andrew Morton <akpm@osdl.org>, serue@us.ibm.com, "Eric W. Biederman" <ebiederm@xmission.com>, hpa@zytor.com, Containers <containers@lists.osdl.org>, linux-kernel@vger.kernel.org
 List-Id: containers.vger.kernel.org
 
-Hi,
+On 04/17/2008 12:17 AM, sukadev@us.ibm.com wrote:
+> We noticed this while working on pts namespaces and believe this might
+> be an useful change even as we rework our pts/device namespace approach.
+> 
+> ---
+> 
+> From: Sukadev Bhattiprolu <sukadev@us.ibm.com>
+> Subject: [PATCH]: Factor out PTY index allocation
+> 
+> Factor out the code used to allocate/free a pts index into new interfaces,
+> devpts_new_index() and devpts_kill_index().  This localizes the external
+> data structures used in managing the pts indices.
+> 
+> Signed-off-by: Sukadev Bhattiprolu <sukadev@us.ibm.com>
+> Signed-off-by: Serge Hallyn<serue@us.ibm.com>
+> Signed-off-by: Matt Helsley<matthltc@us.ibm.com>
+> 
+> ---
+>  drivers/char/tty_io.c     |   40 ++++++----------------------------------
+>  fs/devpts/inode.c         |   42 +++++++++++++++++++++++++++++++++++++++++-
+>  include/linux/devpts_fs.h |    4 ++++
+>  3 files changed, 51 insertions(+), 35 deletions(-)
+[...]
+> Index: 2.6.25-rc8-mm2/drivers/char/tty_io.c
+> ===================================================================
+> --- 2.6.25-rc8-mm2.orig/drivers/char/tty_io.c	2008-04-16 09:51:11.000000000 -0700
+> +++ 2.6.25-rc8-mm2/drivers/char/tty_io.c	2008-04-16 09:51:15.000000000 -0700
+> @@ -137,9 +136,6 @@ EXPORT_SYMBOL(tty_mutex);
+>  
+>  #ifdef CONFIG_UNIX98_PTYS
+>  extern struct tty_driver *ptm_driver;	/* Unix98 pty masters; for /dev/ptmx */
+> -extern int pty_limit;			/* Config limit on Unix98 ptys */
+> -static DEFINE_IDR(allocated_ptys);
+> -static DEFINE_MUTEX(allocated_ptys_lock);
+[...]
+> Index: 2.6.25-rc8-mm2/fs/devpts/inode.c
+> ===================================================================
+> --- 2.6.25-rc8-mm2.orig/fs/devpts/inode.c	2008-02-27 15:17:59.000000000 -0800
+> +++ 2.6.25-rc8-mm2/fs/devpts/inode.c	2008-04-16 09:51:15.000000000 -0700
+> @@ -26,6 +27,10 @@
+>  
+>  #define DEVPTS_DEFAULT_MODE 0600
+>  
+> +extern int pty_limit;			/* Config limit on Unix98 ptys */
+> +static DEFINE_IDR(allocated_ptys);
+> +static DECLARE_MUTEX(allocated_ptys_lock);
 
-It appears many of us have a related policy issue.
-
-The Fedora folks want to be able to create distro images under a chroot
-or namespace with selinux enforcing, but with the distro images having
-different policy from the host.  I don't know whether they want to be
-able to run tests under that image, or only be able to write down
-potentially unknown labels so as to be able to lay the image down on
-disk.
-
-The fmac (opensolaris) folks may want to be able to load different
-policies in different zones.
-
-The linux containers folks (and I) want basically the same thing as
-zones folks, that, is to support container administrators loading their
-own policy.  My plan had been to pull together what I can to propose a
-LISA paper, so I was hoping to really get geared up this week after
-finishing other papers.  (This is free time stuff, and has been on
-the back burner for a year now.)  In the containers case, I am
-starting to use the type namespace (container1.subtype1) to confine
-a container policy, where subtype1 in container1 is known to the
-host as container1.subtype1.  This leaves MLS and MCS unsupported ATM.
-
-Dan Walsh is working policy for xen/qemu images, however that is
-not really related as the vm has its own OS.  I'm mentioning it here
-in case I'm wrong.
-
-Are there other projects needing similar support?  There used to be
-a problem with rpms being able to create files with not-yet-defined
-types, which may be more similar to the fedora problem above, and I
-have no idea whether/how that ended up being resolved.
-
-Is it worth proposing a joint topic for discussion at the selinux
-mini-summit?  It could take several formats, from a meeting amongst
-ourselves followd by a panel discussion, to a set of lightning talks, to
-a 30 minute joint presentation where we present what we talk about in
-emails before OLS.
-
-thanks,
--serge
+Ugh, why mutex->semaphore conversion?
