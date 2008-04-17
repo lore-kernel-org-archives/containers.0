@@ -1,156 +1,63 @@
-From: "Serge E. Hallyn" <serue@us.ibm.com>
-Subject: Re: [PATCH] eCryptfs: Fix refs to pid and user_ns
-Date: Thu, 17 Apr 2008 12:41:48 -0500
-Message-ID: <20080417174148.GA19334@sergelap.austin.ibm.com>
-References: <20080415202313.GM4627@localhost.austin.ibm.com> <20080415140453.a45a15b4.akpm@linux-foundation.org> <20080415213402.GA6446@sergelap.austin.ibm.com> <20080416192417.GQ4627@localhost.austin.ibm.com> <20080417153406.GA14215@sergelap.austin.ibm.com> <20080417170331.GV4627@localhost.austin.ibm.com>
+From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: selinux mini-summit sub-policy topic
+Date: Thu, 17 Apr 2008 12:55:30 -0500
+Message-ID: <20080417175530.GA21302@sergelap.austin.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Return-path: <linux-fsdevel-owner@vger.kernel.org>
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <20080417170331.GV4627@localhost.austin.ibm.com>
-Sender: linux-fsdevel-owner@vger.kernel.org
-To: Michael Halcrow <mhalcrow@us.ibm.com>
-Cc: Andrew Morton <akpm@linux-foundation.org>, "Serge E. Hallyn" <serue@us.ibm.com>, linux-fsdevel@vger.kernel.org, containers@lists.osdl.org, linux-kernel@vger.kernel.org, ecryptfs-devel@lists.sourceforge.net
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: fmac-discuss-xZgeD5Kw2fzokhkdeNNY6A@public.gmane.org, fedora-selinux-list-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
+Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, SELinux <selinux-+05T5uksL2qpZYMLLGbcSA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Quoting Michael Halcrow (mhalcrow@us.ibm.com):
-> On Thu, Apr 17, 2008 at 10:34:06AM -0500, Serge E. Hallyn wrote:
-> > Quoting Michael Halcrow (mhalcrow@us.ibm.com):
-> > > @@ -206,6 +210,7 @@ ecryptfs_spawn_daemon(struct ecryptfs_daemon **daemon, uid_t euid, pid_t pid)
-> > >  		goto out;
-> > >  	}
-> > >  	(*daemon)->euid = euid;
-> > > +	(*daemon)->user_ns = user_ns;
-> > >  	(*daemon)->pid = pid;
-> > 
-> > You'll want to do a get_pid() here, no?
-> > 
-> > And get_user_ns().
-> > 
-> 
-> > It's not because you particulary need them to stick around, but just
-> > to ensure no wraparound causes another daemon with the same struct
-> > pid or user_namespace to be spawned.  Pretty gosh-darned unlikely,
-> > but still...
-> > ...
-> > > @@ -372,12 +383,24 @@ int ecryptfs_process_response(struct ecryptfs_message *msg, uid_t euid,
-> > >  	msg_ctx = &ecryptfs_msg_ctx_arr[msg->index];
-> > >  	mutex_lock(&msg_ctx->mux);
-> > >  	mutex_lock(&ecryptfs_daemon_hash_mux);
-> > > -	rc = ecryptfs_find_daemon_by_euid(&daemon, msg_ctx->task->euid);
-> > > +	rcu_read_lock();
-> > > +	nsproxy = task_nsproxy(msg_ctx->task);
-> > > +	if (nsproxy == NULL) {
-> > > +		rc = -EBADMSG;
-> > > +		printk(KERN_ERR "%s: Receiving process is a zombie. Dropping "
-> > > +		       "message.\n", __func__);
-> > > +		rcu_read_unlock();
-> > > +		mutex_unlock(&ecryptfs_daemon_hash_mux);
-> > > +		goto wake_up;
-> > > +	}
-> > > +	rc = ecryptfs_find_daemon_by_euid(&daemon, msg_ctx->task->euid,
-> > > +					  nsproxy->user_ns);
-> > > +	rcu_read_unlock();
-> > >  	mutex_unlock(&ecryptfs_daemon_hash_mux);
-> > >  	if (rc) {
-> > >  		rc = -EBADMSG;
-> > >  		printk(KERN_WARNING "%s: User [%d] received a "
-> > > -		       "message response from process [%d] but does "
-> > > +		       "message response from process [0x%p] but does "
-> > >  		       "not have a registered daemon\n", __func__,
-> > >  		       msg_ctx->task->euid, pid);
-> > >  		goto wake_up;
-> > > @@ -389,10 +412,17 @@ int ecryptfs_process_response(struct ecryptfs_message *msg, uid_t euid,
-> > >  		       euid, msg_ctx->task->euid);
-> > >  		goto unlock;
-> > >  	}
-> > > +	if (nsproxy->user_ns != user_ns) {
-> > 
-> > Since you didn't grab a ref to the nsproxy, it's possible that it
-> > will have been freed before this, right?  So you probably just want
-> > to grab a copy of nsproxy->user_ns while under the rcu_read_lock,
-> > where you can be sure it's still around.
-> 
-> Have eCryptfs properly reference the pid and user_ns objects. Copy
-> user_ns out of nsproxy in case nsproxy goes away after we drop the
-> lock.
-> 
-> Signed-off-by: Michael Halcrow <mhalcrow@us.ibm.com>
+Hi,
 
-Looks good.  Thanks, Mike.
+It appears many of us have a related policy issue.
 
-Acked-by: Serge Hallyn <serue@us.ibm.com>
+The Fedora folks want to be able to create distro images under a chroot
+or namespace with selinux enforcing, but with the distro images having
+different policy from the host.  I don't know whether they want to be
+able to run tests under that image, or only be able to write down
+potentially unknown labels so as to be able to lay the image down on
+disk.
 
-for both.
+The fmac (opensolaris) folks may want to be able to load different
+policies in different zones.
 
+The linux containers folks (and I) want basically the same thing as
+zones folks, that, is to support container administrators loading their
+own policy.  My plan had been to pull together what I can to propose a
+LISA paper, so I was hoping to really get geared up this week after
+finishing other papers.  (This is free time stuff, and has been on
+the back burner for a year now.)  In the containers case, I am
+starting to use the type namespace (container1.subtype1) to confine
+a container policy, where subtype1 in container1 is known to the
+host as container1.subtype1.  This leaves MLS and MCS unsupported ATM.
+
+Dan Walsh is working policy for xen/qemu images, however that is
+not really related as the vm has its own OS.  I'm mentioning it here
+in case I'm wrong.
+
+Are there other projects needing similar support?  There used to be
+a problem with rpms being able to create files with not-yet-defined
+types, which may be more similar to the fedora problem above, and I
+have no idea whether/how that ended up being resolved.
+
+Is it worth proposing a joint topic for discussion at the selinux
+mini-summit?  It could take several formats, from a meeting amongst
+ourselves followd by a panel discussion, to a set of lightning talks, to
+a 30 minute joint presentation where we present what we talk about in
+emails before OLS.
+
+thanks,
 -serge
-
-> ---
->  fs/ecryptfs/messaging.c |   16 ++++++++++++----
->  1 files changed, 12 insertions(+), 4 deletions(-)
-> 
-> diff --git a/fs/ecryptfs/messaging.c b/fs/ecryptfs/messaging.c
-> index f0d74b8..61506e5 100644
-> --- a/fs/ecryptfs/messaging.c
-> +++ b/fs/ecryptfs/messaging.c
-> @@ -20,6 +20,8 @@
->   * 02111-1307, USA.
->   */
->  #include <linux/sched.h>
-> +#include <linux/user_namespace.h>
-> +#include <linux/nsproxy.h>
->  #include "ecryptfs_kernel.h"
-> 
->  static LIST_HEAD(ecryptfs_msg_ctx_free_list);
-> @@ -208,8 +210,8 @@ ecryptfs_spawn_daemon(struct ecryptfs_daemon **daemon, uid_t euid,
->  		goto out;
->  	}
->  	(*daemon)->euid = euid;
-> -	(*daemon)->user_ns = user_ns;
-> -	(*daemon)->pid = pid;
-> +	(*daemon)->user_ns = get_user_ns(user_ns);
-> +	(*daemon)->pid = get_pid(pid);
->  	(*daemon)->task = current;
->  	mutex_init(&(*daemon)->mux);
->  	INIT_LIST_HEAD(&(*daemon)->msg_ctx_out_queue);
-> @@ -298,6 +300,10 @@ int ecryptfs_exorcise_daemon(struct ecryptfs_daemon *daemon)
->  	hlist_del(&daemon->euid_chain);
->  	if (daemon->task)
->  		wake_up_process(daemon->task);
-> +	if (daemon->pid)
-> +		put_pid(daemon->pid);
-> +	if (daemon->user_ns)
-> +		put_user_ns(daemon->user_ns);
->  	mutex_unlock(&daemon->mux);
->  	memset(daemon, 0, sizeof(*daemon));
->  	kfree(daemon);
-> @@ -368,6 +374,7 @@ int ecryptfs_process_response(struct ecryptfs_message *msg, uid_t euid,
->  	struct ecryptfs_msg_ctx *msg_ctx;
->  	size_t msg_size;
->  	struct nsproxy *nsproxy;
-> +	struct user_namespace *current_user_ns;
->  	int rc;
-> 
->  	if (msg->index >= ecryptfs_message_buf_len) {
-> @@ -391,8 +398,9 @@ int ecryptfs_process_response(struct ecryptfs_message *msg, uid_t euid,
->  		mutex_unlock(&ecryptfs_daemon_hash_mux);
->  		goto wake_up;
->  	}
-> +	current_user_ns = nsproxy->user_ns;
->  	rc = ecryptfs_find_daemon_by_euid(&daemon, msg_ctx->task->euid,
-> -					  nsproxy->user_ns);
-> +					  current_user_ns);
->  	rcu_read_unlock();
->  	mutex_unlock(&ecryptfs_daemon_hash_mux);
->  	if (rc) {
-> @@ -410,7 +418,7 @@ int ecryptfs_process_response(struct ecryptfs_message *msg, uid_t euid,
->  		       euid, msg_ctx->task->euid);
->  		goto unlock;
->  	}
-> -	if (nsproxy->user_ns != user_ns) {
-> +	if (current_user_ns != user_ns) {
->  		rc = -EBADMSG;
->  		printk(KERN_WARNING "%s: Received message from user_ns "
->  		       "[0x%p]; expected message from user_ns [0x%p]\n",
-> -- 
-> 1.5.1.6
