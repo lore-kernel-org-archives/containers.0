@@ -1,15 +1,15 @@
-From: "Paul Menage" <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+From: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
 Subject: Re: [PATCH] cgroup: fix a race condition in manipulating tsk->cg_list
-Date: Wed, 16 Apr 2008 21:28:33 -0700
-Message-ID: <6599ad830804162128g3d383bc6v606fcd14964bd21e__37860.2006276653$1208406631$gmane$org@mail.gmail.com>
+Date: Wed, 16 Apr 2008 21:59:07 -0700
+Message-ID: <20080416215907.63d71409.akpm__29602.5498690598$1208408577$gmane$org@linux-foundation.org>
 References: <4806C5EB.3040102@cn.fujitsu.com>
-	<6599ad830804162118g6b24d8ebq26b0d72133b0e19e@mail.gmail.com>
+	<20080416211144.a38f6fc0.akpm@linux-foundation.org>
+	<6599ad830804162117w14364b7cg20d3694ffdfeb867@mail.gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <6599ad830804162118g6b24d8ebq26b0d72133b0e19e-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
-Content-Disposition: inline
+In-Reply-To: <6599ad830804162117w14364b7cg20d3694ffdfeb867-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,34 +19,41 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Cc: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, LKML <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Linus Torvalds <torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+To: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+Cc: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>, LKML <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Linus Torvalds <torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Wed, Apr 16, 2008 at 9:18 PM, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org> wrote:
->
->  My only thought about the downside of this is that an exiting task
->  that gets stuck somewhere  between setting PF_EXITING and calling
->  cgroup_exit() won't show up in its cgroup's tasks file, since we'll
->  enable cgroup links but skip it. I guess that's not a big deal.
->
+On Wed, 16 Apr 2008 21:17:34 -0700 "Paul Menage" <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org> wrote:
 
-How about this as an alternative approach? We can take advantage of
-the indirection in tsk->cgroups to create an additional distinguished
-css_set that indicates the task has passed the point of checking
-tsk->cg_list:
+> On Wed, Apr 16, 2008 at 9:11 PM, Andrew Morton
+> <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org> wrote:
+> >
+> >  I don't fully understand the race.  Both paths hold css_set_lock.
+> >
+> >  Can you describe it in more detail please?
+> 
+> Task A starts exiting, passes the check for unlinking current->cg_list.
 
-- create a new css_set, called exit_css_set; it has the same cgroup
-pointer set as init_css_set.
+So cgroup_exit() sees !list_empty(tsk->cg_list)
 
-- in cgroup_exit(), set current->cgroups to &exit_css_set rather than
-&init_css_set
+And the list_del() sets tsk->cg_list to LIST_POISON[12], which still means
+!list_empty().  Or we remove that debugging code and avoid writing to
+tsk->cg_list, and it _still_ is !list_empty().
 
-- in cgroup_enable_task_cg_list(), ignore any task where p->cgroups ==
-&exit_css_set
+> Before it completely exits task B does the very first
+> cgroup_iter_begin() call (via reading a cgroups tasks file) which
+> links all tasks in to their css_set objects via tsk->cg_list.
 
-That way we're synchronizing directly with the task_lock()-protected
-section in cgroup_exit(), rather than with the setting of PF_EXITING
-at the beginning of do_exit().
+But it won't link this task, because it's !list_empty().
 
-Paul
+> Then task A finishes exiting and is freed, but doesn't unlink from the cg_list.
+> 
+> >
+> >  afacit the task at *p could set PF_EXITING immediately after this code has
+> >  tested PF_EXITING and then the task at *p could proceed until we hit the
+> >  same race (whatever that is).
+> 
+> The important fact there is that the task sets PF_EXITING *before* it
+> checks whether it needs to unlink from current->cg_list.
+> 
+> Paul
