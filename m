@@ -1,63 +1,94 @@
-From: Jiri Slaby <jirislaby@gmail.com>
+From: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
 Subject: Re: [PATCH]: Factor out PTY index allocation
-Date: Thu, 17 Apr 2008 23:08:17 +0200
-Message-ID: <4807BC41.50406@gmail.com>
+Date: Thu, 17 Apr 2008 14:17:25 -0700
+Message-ID: <20080417141725.7cd8e50e.akpm@linux-foundation.org>
 References: <20080416221723.GB7112@us.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii; format=flowed
+Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1755659AbYDQVIl@vger.kernel.org>
-In-Reply-To: <20080416221723.GB7112@us.ibm.com>
-Sender: linux-kernel-owner@vger.kernel.org
-To: sukadev@us.ibm.com
-Cc: Andrew Morton <akpm@osdl.org>, serue@us.ibm.com, "Eric W. Biederman" <ebiederm@xmission.com>, hpa@zytor.com, Containers <containers@lists.osdl.org>, linux-kernel@vger.kernel.org
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <20080416221723.GB7112-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org
+Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On 04/17/2008 12:17 AM, sukadev@us.ibm.com wrote:
-> We noticed this while working on pts namespaces and believe this might
-> be an useful change even as we rework our pts/device namespace approach.
-> 
-> ---
-> 
-> From: Sukadev Bhattiprolu <sukadev@us.ibm.com>
-> Subject: [PATCH]: Factor out PTY index allocation
-> 
+On Wed, 16 Apr 2008 15:17:23 -0700
+sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org wrote:
+
 > Factor out the code used to allocate/free a pts index into new interfaces,
 > devpts_new_index() and devpts_kill_index().  This localizes the external
 > data structures used in managing the pts indices.
-> 
-> Signed-off-by: Sukadev Bhattiprolu <sukadev@us.ibm.com>
-> Signed-off-by: Serge Hallyn<serue@us.ibm.com>
-> Signed-off-by: Matt Helsley<matthltc@us.ibm.com>
-> 
-> ---
->  drivers/char/tty_io.c     |   40 ++++++----------------------------------
->  fs/devpts/inode.c         |   42 +++++++++++++++++++++++++++++++++++++++++-
->  include/linux/devpts_fs.h |    4 ++++
->  3 files changed, 51 insertions(+), 35 deletions(-)
-[...]
-> Index: 2.6.25-rc8-mm2/drivers/char/tty_io.c
-> ===================================================================
-> --- 2.6.25-rc8-mm2.orig/drivers/char/tty_io.c	2008-04-16 09:51:11.000000000 -0700
-> +++ 2.6.25-rc8-mm2/drivers/char/tty_io.c	2008-04-16 09:51:15.000000000 -0700
-> @@ -137,9 +136,6 @@ EXPORT_SYMBOL(tty_mutex);
->  
->  #ifdef CONFIG_UNIX98_PTYS
->  extern struct tty_driver *ptm_driver;	/* Unix98 pty masters; for /dev/ptmx */
-> -extern int pty_limit;			/* Config limit on Unix98 ptys */
-> -static DEFINE_IDR(allocated_ptys);
-> -static DEFINE_MUTEX(allocated_ptys_lock);
-[...]
-> Index: 2.6.25-rc8-mm2/fs/devpts/inode.c
-> ===================================================================
-> --- 2.6.25-rc8-mm2.orig/fs/devpts/inode.c	2008-02-27 15:17:59.000000000 -0800
-> +++ 2.6.25-rc8-mm2/fs/devpts/inode.c	2008-04-16 09:51:15.000000000 -0700
-> @@ -26,6 +27,10 @@
->  
->  #define DEVPTS_DEFAULT_MODE 0600
->  
-> +extern int pty_limit;			/* Config limit on Unix98 ptys */
-> +static DEFINE_IDR(allocated_ptys);
-> +static DECLARE_MUTEX(allocated_ptys_lock);
 
-Ugh, why mutex->semaphore conversion?
+err...
+
+> -	mutex_lock(&allocated_ptys_lock);
+> +	down(&allocated_ptys_lock);
+
+Why the mutex-to-semaphore conversion?
+
+
+--- a/fs/devpts/inode.c~devpts-factor-out-pty-index-allocation-fix
++++ a/fs/devpts/inode.c
+@@ -17,6 +17,7 @@
+ #include <linux/namei.h>
+ #include <linux/mount.h>
+ #include <linux/tty.h>
++#include <linux/mutex.h>
+ #include <linux/idr.h>
+ #include <linux/devpts_fs.h>
+ #include <linux/parser.h>
+@@ -29,7 +30,7 @@
+ 
+ extern int pty_limit;			/* Config limit on Unix98 ptys */
+ static DEFINE_IDR(allocated_ptys);
+-static DECLARE_MUTEX(allocated_ptys_lock);
++static DEFINE_MUTEX(allocated_ptys_lock);
+ 
+ static struct vfsmount *devpts_mnt;
+ static struct dentry *devpts_root;
+@@ -186,10 +187,10 @@ retry:
+ 		return -ENOMEM;
+ 	}
+ 
+-	down(&allocated_ptys_lock);
++	mutex_lock(&allocated_ptys_lock);
+ 	idr_ret = idr_get_new(&allocated_ptys, NULL, &index);
+ 	if (idr_ret < 0) {
+-		up(&allocated_ptys_lock);
++		mutex_unlock(&allocated_ptys_lock);
+ 		if (idr_ret == -EAGAIN)
+ 			goto retry;
+ 		return -EIO;
+@@ -197,18 +198,18 @@ retry:
+ 
+ 	if (index >= pty_limit) {
+ 		idr_remove(&allocated_ptys, index);
+-		up(&allocated_ptys_lock);
++		mutex_unlock(&allocated_ptys_lock);
+ 		return -EIO;
+ 	}
+-	up(&allocated_ptys_lock);
++	mutex_unlock(&allocated_ptys_lock);
+ 	return index;
+ }
+ 
+ void devpts_kill_index(int idx)
+ {
+-	down(&allocated_ptys_lock);
++	mutex_lock(&allocated_ptys_lock);
+ 	idr_remove(&allocated_ptys, idx);
+-	up(&allocated_ptys_lock);
++	mutex_unlock(&allocated_ptys_lock);
+ }
+ 
+ int devpts_pty_new(struct tty_struct *tty)
+_
