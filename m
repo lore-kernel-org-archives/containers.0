@@ -1,14 +1,14 @@
-From: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Subject: Re: [PATCH] cgroup: fix a race condition in manipulating tsk->cg_list
-Date: Thu, 17 Apr 2008 13:10:33 +0800
-Message-ID: <4806DBC9.3090607__39438.4763123982$1208414077$gmane$org@cn.fujitsu.com>
-References: <4806C5EB.3040102@cn.fujitsu.com>	<20080416211144.a38f6fc0.akpm@linux-foundation.org>	<6599ad830804162117w14364b7cg20d3694ffdfeb867@mail.gmail.com>
-	<20080416215907.63d71409.akpm@linux-foundation.org>
+From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH]: Factor out PTY index allocation
+Date: Thu, 17 Apr 2008 10:42:41 -0500
+Message-ID: <20080417154241.GC14215@sergelap.austin.ibm.com>
+References: <20080416221723.GB7112@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20080416215907.63d71409.akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <20080416221723.GB7112-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,45 +18,211 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
-Cc: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, LKML <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Linus Torvalds <torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+To: sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org
+Cc: linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org, Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Andrew Morton wrote:
-> On Wed, 16 Apr 2008 21:17:34 -0700 "Paul Menage" <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org> wrote:
+Quoting sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org (sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org):
+> We noticed this while working on pts namespaces and believe this might
+> be an useful change even as we rework our pts/device namespace approach.
 > 
->> On Wed, Apr 16, 2008 at 9:11 PM, Andrew Morton
->> <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org> wrote:
->>>  I don't fully understand the race.  Both paths hold css_set_lock.
->>>
->>>  Can you describe it in more detail please?
->> Task A starts exiting, passes the check for unlinking current->cg_list.
+> ---
 > 
-> So cgroup_exit() sees !list_empty(tsk->cg_list)
+> From: Sukadev Bhattiprolu <sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+> Subject: [PATCH]: Factor out PTY index allocation
 > 
+> Factor out the code used to allocate/free a pts index into new interfaces,
+> devpts_new_index() and devpts_kill_index().  This localizes the external
+> data structures used in managing the pts indices.
+> 
+> Signed-off-by: Sukadev Bhattiprolu <sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+> Signed-off-by: Serge Hallyn<serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+> Signed-off-by: Matt Helsley<matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 
-cgroup_exit() sees list_empty(tsk->cg_list), then cgroup_enable_task_cg_list()
-links the task to the list, and then the task exited, so the list entry won't
-get deleted.
+No traces of devpts namespaces here, so I assume this should be
+non-offensive and fine for inclusion.
 
-> And the list_del() sets tsk->cg_list to LIST_POISON[12], which still means
-> !list_empty().  Or we remove that debugging code and avoid writing to
-> tsk->cg_list, and it _still_ is !list_empty().
+thanks,
+-serge
+
+> ---
+>  drivers/char/tty_io.c     |   40 ++++++----------------------------------
+>  fs/devpts/inode.c         |   42 +++++++++++++++++++++++++++++++++++++++++-
+>  include/linux/devpts_fs.h |    4 ++++
+>  3 files changed, 51 insertions(+), 35 deletions(-)
 > 
->> Before it completely exits task B does the very first
->> cgroup_iter_begin() call (via reading a cgroups tasks file) which
->> links all tasks in to their css_set objects via tsk->cg_list.
+> Index: 2.6.25-rc8-mm2/include/linux/devpts_fs.h
+> ===================================================================
+> --- 2.6.25-rc8-mm2.orig/include/linux/devpts_fs.h	2008-01-26 09:49:16.000000000 -0800
+> +++ 2.6.25-rc8-mm2/include/linux/devpts_fs.h	2008-04-16 09:51:15.000000000 -0700
+> @@ -17,6 +17,8 @@
 > 
-> But it won't link this task, because it's !list_empty().
+>  #ifdef CONFIG_UNIX98_PTYS
 > 
->> Then task A finishes exiting and is freed, but doesn't unlink from the cg_list.
->>
->>>  afacit the task at *p could set PF_EXITING immediately after this code has
->>>  tested PF_EXITING and then the task at *p could proceed until we hit the
->>>  same race (whatever that is).
->> The important fact there is that the task sets PF_EXITING *before* it
->> checks whether it needs to unlink from current->cg_list.
->>
->> Paul
+> +int devpts_new_index(void);
+> +void devpts_kill_index(int idx);
+>  int devpts_pty_new(struct tty_struct *tty);      /* mknod in devpts */
+>  struct tty_struct *devpts_get_tty(int number);	 /* get tty structure */
+>  void devpts_pty_kill(int number);		 /* unlink */
+> @@ -24,6 +26,8 @@ void devpts_pty_kill(int number);		 /* u
+>  #else
 > 
+>  /* Dummy stubs in the no-pty case */
+> +static inline int devpts_new_index(void) { return -EINVAL; }
+> +static inline void devpts_kill_index(int idx) { }
+>  static inline int devpts_pty_new(struct tty_struct *tty) { return -EINVAL; }
+>  static inline struct tty_struct *devpts_get_tty(int number) { return NULL; }
+>  static inline void devpts_pty_kill(int number) { }
+> Index: 2.6.25-rc8-mm2/drivers/char/tty_io.c
+> ===================================================================
+> --- 2.6.25-rc8-mm2.orig/drivers/char/tty_io.c	2008-04-16 09:51:11.000000000 -0700
+> +++ 2.6.25-rc8-mm2/drivers/char/tty_io.c	2008-04-16 09:51:15.000000000 -0700
+> @@ -91,7 +91,6 @@
+>  #include <linux/module.h>
+>  #include <linux/smp_lock.h>
+>  #include <linux/device.h>
+> -#include <linux/idr.h>
+>  #include <linux/wait.h>
+>  #include <linux/bitops.h>
+>  #include <linux/delay.h>
+> @@ -137,9 +136,6 @@ EXPORT_SYMBOL(tty_mutex);
 > 
+>  #ifdef CONFIG_UNIX98_PTYS
+>  extern struct tty_driver *ptm_driver;	/* Unix98 pty masters; for /dev/ptmx */
+> -extern int pty_limit;			/* Config limit on Unix98 ptys */
+> -static DEFINE_IDR(allocated_ptys);
+> -static DEFINE_MUTEX(allocated_ptys_lock);
+>  static int ptmx_open(struct inode *, struct file *);
+>  #endif
+> 
+> @@ -2636,15 +2632,9 @@ static void release_dev(struct file *fil
+>  	 */
+>  	release_tty(tty, idx);
+> 
+> -#ifdef CONFIG_UNIX98_PTYS
+>  	/* Make this pty number available for reallocation */
+> -	if (devpts) {
+> -		mutex_lock(&allocated_ptys_lock);
+> -		idr_remove(&allocated_ptys, idx);
+> -		mutex_unlock(&allocated_ptys_lock);
+> -	}
+> -#endif
+> -
+> +	if (devpts)
+> +		devpts_kill_index(idx);
+>  }
+> 
+>  /**
+> @@ -2800,29 +2790,13 @@ static int ptmx_open(struct inode *inode
+>  	struct tty_struct *tty;
+>  	int retval;
+>  	int index;
+> -	int idr_ret;
+> 
+>  	nonseekable_open(inode, filp);
+> 
+>  	/* find a device that is not in use. */
+> -	mutex_lock(&allocated_ptys_lock);
+> -	if (!idr_pre_get(&allocated_ptys, GFP_KERNEL)) {
+> -		mutex_unlock(&allocated_ptys_lock);
+> -		return -ENOMEM;
+> -	}
+> -	idr_ret = idr_get_new(&allocated_ptys, NULL, &index);
+> -	if (idr_ret < 0) {
+> -		mutex_unlock(&allocated_ptys_lock);
+> -		if (idr_ret == -EAGAIN)
+> -			return -ENOMEM;
+> -		return -EIO;
+> -	}
+> -	if (index >= pty_limit) {
+> -		idr_remove(&allocated_ptys, index);
+> -		mutex_unlock(&allocated_ptys_lock);
+> -		return -EIO;
+> -	}
+> -	mutex_unlock(&allocated_ptys_lock);
+> +	index = devpts_new_index();
+> +	if (index < 0)
+> +		return index;
+> 
+>  	mutex_lock(&tty_mutex);
+>  	retval = init_dev(ptm_driver, index, &tty);
+> @@ -2847,9 +2821,7 @@ out1:
+>  	release_dev(filp);
+>  	return retval;
+>  out:
+> -	mutex_lock(&allocated_ptys_lock);
+> -	idr_remove(&allocated_ptys, index);
+> -	mutex_unlock(&allocated_ptys_lock);
+> +	devpts_kill_index(index);
+>  	return retval;
+>  }
+>  #endif
+> Index: 2.6.25-rc8-mm2/fs/devpts/inode.c
+> ===================================================================
+> --- 2.6.25-rc8-mm2.orig/fs/devpts/inode.c	2008-02-27 15:17:59.000000000 -0800
+> +++ 2.6.25-rc8-mm2/fs/devpts/inode.c	2008-04-16 09:51:15.000000000 -0700
+> @@ -17,6 +17,7 @@
+>  #include <linux/namei.h>
+>  #include <linux/mount.h>
+>  #include <linux/tty.h>
+> +#include <linux/idr.h>
+>  #include <linux/devpts_fs.h>
+>  #include <linux/parser.h>
+>  #include <linux/fsnotify.h>
+> @@ -26,6 +27,10 @@
+> 
+>  #define DEVPTS_DEFAULT_MODE 0600
+> 
+> +extern int pty_limit;			/* Config limit on Unix98 ptys */
+> +static DEFINE_IDR(allocated_ptys);
+> +static DECLARE_MUTEX(allocated_ptys_lock);
+> +
+>  static struct vfsmount *devpts_mnt;
+>  static struct dentry *devpts_root;
+> 
+> @@ -171,9 +176,44 @@ static struct dentry *get_node(int num)
+>  	return lookup_one_len(s, root, sprintf(s, "%d", num));
+>  }
+> 
+> +int devpts_new_index(void)
+> +{
+> +	int index;
+> +	int idr_ret;
+> +
+> +retry:
+> +	if (!idr_pre_get(&allocated_ptys, GFP_KERNEL)) {
+> +		return -ENOMEM;
+> +	}
+> +
+> +	down(&allocated_ptys_lock);
+> +	idr_ret = idr_get_new(&allocated_ptys, NULL, &index);
+> +	if (idr_ret < 0) {
+> +		up(&allocated_ptys_lock);
+> +		if (idr_ret == -EAGAIN)
+> +			goto retry;
+> +		return -EIO;
+> +	}
+> +
+> +	if (index >= pty_limit) {
+> +		idr_remove(&allocated_ptys, index);
+> +		up(&allocated_ptys_lock);
+> +		return -EIO;
+> +	}
+> +	up(&allocated_ptys_lock);
+> +	return index;
+> +}
+> +
+> +void devpts_kill_index(int idx)
+> +{
+> +	down(&allocated_ptys_lock);
+> +	idr_remove(&allocated_ptys, idx);
+> +	up(&allocated_ptys_lock);
+> +}
+> +
+>  int devpts_pty_new(struct tty_struct *tty)
+>  {
+> -	int number = tty->index;
+> +	int number = tty->index; /* tty layer puts index from devpts_new_index() in here */
+>  	struct tty_driver *driver = tty->driver;
+>  	dev_t device = MKDEV(driver->major, driver->minor_start+number);
+>  	struct dentry *dentry;
