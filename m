@@ -1,102 +1,47 @@
-From: Matthew Helsley <matthltc@us.ibm.com>
-Subject: Re: [PATCH]: Factor out PTY index allocation
-Date: Thu, 17 Apr 2008 16:53:49 -0700
-Message-ID: <1208476430.5134.9.camel@localhost.localdomain>
-References: <20080416221723.GB7112@us.ibm.com>
-	 <20080417141725.7cd8e50e.akpm@linux-foundation.org>
+From: Nadia Derbey <Nadia.Derbey-6ktuUTfB/bM@public.gmane.org>
+Subject: Re: [RFC][PATCH 0/4] Object creation with a specified id
+Date: Fri, 18 Apr 2008 07:46:29 +0200
+Message-ID: <480835B5.1090500__49371.0559829653$1208497706$gmane$org@bull.net>
+References: <20080404145129.637145000@bull.net>
+	<20080415030623.GA8171@tull.net>
 Mime-Version: 1.0
-Content-Type: text/plain
+Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1756703AbYDQXyU@vger.kernel.org>
-In-Reply-To: <20080417141725.7cd8e50e.akpm@linux-foundation.org>
-Sender: linux-kernel-owner@vger.kernel.org
-To: Andrew Morton <akpm@linux-foundation.org>
-Cc: sukadev@us.ibm.com, serue@us.ibm.com, ebiederm@xmission.com, hpa@zytor.com, containers@lists.osdl.org, linux-kernel@vger.kernel.org
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <20080415030623.GA8171-ZRFfYzONFVA@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Nick Andrew <nick-dnCCA748QAperShJXdIFYw@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
+Nick Andrew wrote:
+> On Fri, Apr 04, 2008 at 04:51:29PM +0200, Nadia.Derbey-6ktuUTfB/bM@public.gmane.org wrote:
+> 
+>>   . echo "LONG XX" > /proc/self/next_id
+>>     next object to be created will have an id set to XX
+>>   . echo "LONG<n> X0 ... X<n-1>" > /proc/self/next_id
+>>     next object to be created will have its ids set to XX0, ... X<n-1>
+>>     This is particularly useful for processes that may have several ids if
+>>     they belong to nested namespaces.
+> 
+> 
+> How do you handle race conditions, i.e. you specify the ID for the
+> next object to be created, and then some other thread goes and creates
+> an object before your thread creates one?
+> 
+> Nick.
 
-On Thu, 2008-04-17 at 14:17 -0700, Andrew Morton wrote:
-> On Wed, 16 Apr 2008 15:17:23 -0700
-> sukadev@us.ibm.com wrote:
-> 
-> > Factor out the code used to allocate/free a pts index into new interfaces,
-> > devpts_new_index() and devpts_kill_index().  This localizes the external
-> > data structures used in managing the pts indices.
-> 
-> err...
-> 
-> > -	mutex_lock(&allocated_ptys_lock);
-> > +	down(&allocated_ptys_lock);
-> 
-> Why the mutex-to-semaphore conversion?
+OK, race problem between threads is fixed. Thanks for finding the issue!
 
-The patch series was originally developed for 2.6.22 -- prior to the
-semaphore -> mutex migration. This appears to be a mistake in
-forward-porting the series.
+The new patch series is coming next.
 
-Acked-by: Matt Helsley <matthltc@us.ibm.com>
-
-> 
-> --- a/fs/devpts/inode.c~devpts-factor-out-pty-index-allocation-fix
-> +++ a/fs/devpts/inode.c
-> @@ -17,6 +17,7 @@
->  #include <linux/namei.h>
->  #include <linux/mount.h>
->  #include <linux/tty.h>
-> +#include <linux/mutex.h>
->  #include <linux/idr.h>
->  #include <linux/devpts_fs.h>
->  #include <linux/parser.h>
-> @@ -29,7 +30,7 @@
-> 
->  extern int pty_limit;			/* Config limit on Unix98 ptys */
->  static DEFINE_IDR(allocated_ptys);
-> -static DECLARE_MUTEX(allocated_ptys_lock);
-> +static DEFINE_MUTEX(allocated_ptys_lock);
-> 
->  static struct vfsmount *devpts_mnt;
->  static struct dentry *devpts_root;
-> @@ -186,10 +187,10 @@ retry:
->  		return -ENOMEM;
->  	}
-> 
-> -	down(&allocated_ptys_lock);
-> +	mutex_lock(&allocated_ptys_lock);
->  	idr_ret = idr_get_new(&allocated_ptys, NULL, &index);
->  	if (idr_ret < 0) {
-> -		up(&allocated_ptys_lock);
-> +		mutex_unlock(&allocated_ptys_lock);
->  		if (idr_ret == -EAGAIN)
->  			goto retry;
->  		return -EIO;
-> @@ -197,18 +198,18 @@ retry:
-> 
->  	if (index >= pty_limit) {
->  		idr_remove(&allocated_ptys, index);
-> -		up(&allocated_ptys_lock);
-> +		mutex_unlock(&allocated_ptys_lock);
->  		return -EIO;
->  	}
-> -	up(&allocated_ptys_lock);
-> +	mutex_unlock(&allocated_ptys_lock);
->  	return index;
->  }
-> 
->  void devpts_kill_index(int idx)
->  {
-> -	down(&allocated_ptys_lock);
-> +	mutex_lock(&allocated_ptys_lock);
->  	idr_remove(&allocated_ptys, idx);
-> -	up(&allocated_ptys_lock);
-> +	mutex_unlock(&allocated_ptys_lock);
->  }
-> 
->  int devpts_pty_new(struct tty_struct *tty)
-> _
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-kernel" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> Please read the FAQ at  http://www.tux.org/lkml/
-> 
+Regards,
+Nadia
