@@ -1,63 +1,77 @@
-From: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: Re: [PATCH 0/4] - v2 -  Object creation with a specified id
-Date: Fri, 18 Apr 2008 10:07:07 -0700
-Message-ID: <1208538427.25363.40.camel@nimitz.home.sr71.net>
-References: <20080418054459.891481000@bull.net>
+From: yamamoto@valinux.co.jp (YAMAMOTO Takashi)
+Subject: Re: [RFC][-mm] Memory controller hierarchy support (v1)
+Date: Sat, 19 Apr 2008 15:56:24 +0900 (JST)
+Message-ID: <20080419065624.9837E5A15@siro.lan>
+References: <20080419053551.10501.44302.sendpatchset@localhost.localdomain>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20080418054459.891481000-6ktuUTfB/bM@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Nadia.Derbey-6ktuUTfB/bM@public.gmane.org
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, nick-dnCCA748QAperShJXdIFYw@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Content-Type: Text/Plain; charset=us-ascii
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1759035AbYDSG4i@vger.kernel.org>
+In-Reply-To: Your message of "Sat, 19 Apr 2008 11:05:51 +0530"
+	<20080419053551.10501.44302.sendpatchset@localhost.localdomain>
+Sender: linux-kernel-owner@vger.kernel.org
+To: balbir@linux.vnet.ibm.com
+Cc: menage@google.com, xemul@openvz.org, linux-kernel@vger.kernel.org, linux-mm@kvack.org, containers@lists.osdl.org
 List-Id: containers.vger.kernel.org
 
-On Fri, 2008-04-18 at 07:44 +0200, Nadia.Derbey-6ktuUTfB/bM@public.gmane.org wrote:
-> The syntax is one of:
->    . echo "LONG XX" > /proc/self/task/<my_tid>/next_id
->      next object to be created will have an id set to XX
->    . echo "LONG<n> X0 ... X<n-1>" > /proc/self/task/<my_tid>/next_id
->      next object to be created will have its ids set to XX0, ... X<n-1>
->      This is particularly useful for processes that may have several ids if
->      they belong to nested namespaces.
+> -int res_counter_charge(struct res_counter *counter, unsigned long val)
+> +int res_counter_charge(struct res_counter *counter, unsigned long val,
+> +			struct res_counter **limit_exceeded_at)
+>  {
+>  	int ret;
+>  	unsigned long flags;
+> +	struct res_counter *c, *unroll_c;
+>  
+> -	spin_lock_irqsave(&counter->lock, flags);
+> -	ret = res_counter_charge_locked(counter, val);
+> -	spin_unlock_irqrestore(&counter->lock, flags);
+> +	*limit_exceeded_at = NULL;
+> +	local_irq_save(flags);
+> +	for (c = counter; c != NULL; c = c->parent) {
+> +		spin_lock(&c->lock);
+> +		ret = res_counter_charge_locked(c, val);
+> +		spin_unlock(&c->lock);
+> +		if (ret < 0) {
+> +			*limit_exceeded_at = c;
+> +			goto unroll;
+> +		}
+> +	}
+> +	local_irq_restore(flags);
+> +	return 0;
+> +
+> +unroll:
+> +	for (unroll_c = counter; unroll_c != c; unroll_c = unroll_c->parent) {
+> +		spin_lock(&unroll_c->lock);
+> +		res_counter_uncharge_locked(unroll_c, val);
+> +		spin_unlock(&unroll_c->lock);
+> +	}
+> +	local_irq_restore(flags);
+>  	return ret;
+>  }
 
-I still think, in its current form, this is pretty dangerous.  
+i wonder how much performance impacts this involves.
 
-It might be nice to have a central place to set ids, but there's no real
-safety here for when we get a mishmash of 50 of these things.  We have a
-queue and we fix the order in which things are inserted, but how do we
-control the order in which the kernel extracts them?  Can we 100%
-conform to that order in the future and be consistent?  Won't that also
-be dictated by the way userspace behaves?
+it increases the number of atomic ops per charge/uncharge and
+makes the common case (success) of every charge/uncharge in a system
+touch a global (ie. root cgroup's) cachelines.
 
-If we're going to go this route, I think we need to do a few things.
-First, these need to be more "type safe".  That means that sticking an
-ids in here that you mean to go to an IPC should never, ever, ever be
-able to get interpreted as a PID or as an inode number or anything else.
+> +		/*
+> +		 * Ideally we need to hold cgroup_mutex here
+> +		 */
+> +		list_for_each_entry_safe_from(cgroup, cgrp,
+> +				&curr_cgroup->children, sibling) {
+> +			struct mem_cgroup *mem_child;
+> +
+> +			mem_child = mem_cgroup_from_cont(cgroup);
+> +			ret = try_to_free_mem_cgroup_pages(mem_child,
+> +								gfp_mask);
+> +			mem->last_scanned_child = mem_child;
+> +			if (ret == 0)
+> +				break;
+> +		}
 
-	echo "IPC_SEM_ID NN" > /proc/self/task/<my_tid>/next_id
-	echo "PID MM" > /proc/self/task/<my_tid>/next_id
+if i read it correctly, it makes us hit the last child again and again.
 
-Maybe we should include the types in there as well, but those are kinda
-implied by the kind of id you're setting.  Have you thought about 32-bit
-userspace with 64-bit kernels?  Does that cause any issues?
+i think you want to reclaim from all cgroups under the curr_cgroup
+including eg. children's children.
 
-I also feel like we should have the kernel able to enumerate which
-things in a process *are* settable.  What are the valid values for that
-first word being echoed in the file?
-
-Does anyone have a list of these ids that we're going to want to set
-like this?  Oren?  I'm a bit worried that we might want to set things
-other than ids with an interface like this and that it won't transition
-well.
-
--- Dave
+YAMAMOTO Takashi
