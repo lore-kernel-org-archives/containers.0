@@ -1,69 +1,34 @@
-From: KAMEZAWA Hiroyuki <kamezawa.hiroyu@jp.fujitsu.com>
+From: Paul Jackson <pj@sgi.com>
 Subject: Re: [RFC][-mm] Memory controller hierarchy support (v1)
-Date: Mon, 21 Apr 2008 09:41:43 +0900
-Message-ID: <20080421094143.bfd27db3.kamezawa.hiroyu@jp.fujitsu.com>
+Date: Mon, 21 Apr 2008 01:33:25 -0500
+Message-ID: <20080421013325.03cdd1a8.pj@sgi.com>
 References: <20080419053551.10501.44302.sendpatchset@localhost.localdomain>
-	<20080419065624.9837E5A15@siro.lan>
-	<4809AE78.9030000@linux.vnet.ibm.com>
+	<6599ad830804190849u31f13191m4dcca4e471493c2b@mail.gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=US-ASCII
 Content-Transfer-Encoding: 7bit
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1757267AbYDUAhB@vger.kernel.org>
-In-Reply-To: <4809AE78.9030000@linux.vnet.ibm.com>
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1756137AbYDUGdj@vger.kernel.org>
+In-Reply-To: <6599ad830804190849u31f13191m4dcca4e471493c2b@mail.gmail.com>
 Sender: linux-kernel-owner@vger.kernel.org
-To: balbir@linux.vnet.ibm.com
-Cc: YAMAMOTO Takashi <yamamoto@valinux.co.jp>, menage@google.com, xemul@openvz.org, linux-kernel@vger.kernel.org, linux-mm@kvack.org, containers@lists.osdl.org
+To: Paul Menage <menage@google.com>
+Cc: balbir@linux.vnet.ibm.com, xemul@openvz.org, yamamoto@valinux.co.jp, linux-kernel@vger.kernel.org, linux-mm@kvack.org, containers@lists.osdl.org, kamezawa.hiroyu@jp.fujitsu.com
 List-Id: containers.vger.kernel.org
 
-On Sat, 19 Apr 2008 14:04:00 +0530
-Balbir Singh <balbir@linux.vnet.ibm.com> wrote:
+Paul M wrote:
+> Cpusets could make use of this too, since
+> it has to traverse hierarchies sometimes.
 
-> YAMAMOTO Takashi wrote:
-> >> -	spin_lock_irqsave(&counter->lock, flags);
-> >> -	ret = res_counter_charge_locked(counter, val);
-> >> -	spin_unlock_irqrestore(&counter->lock, flags);
-> >> +	*limit_exceeded_at = NULL;
-> >> +	local_irq_save(flags);
-> >> +	for (c = counter; c != NULL; c = c->parent) {
-> >> +		spin_lock(&c->lock);
-> >> +		ret = res_counter_charge_locked(c, val);
-> >> +		spin_unlock(&c->lock);
-> >> +		if (ret < 0) {
-> >> +			*limit_exceeded_at = c;
-> >> +			goto unroll;
-> >> +		}
-> >> +	}
-> >> +	local_irq_restore(flags);
-> >> +	return 0;
-> >> +
-> >> +unroll:
-> >> +	for (unroll_c = counter; unroll_c != c; unroll_c = unroll_c->parent) {
-> >> +		spin_lock(&unroll_c->lock);
-> >> +		res_counter_uncharge_locked(unroll_c, val);
-> >> +		spin_unlock(&unroll_c->lock);
-> >> +	}
-> >> +	local_irq_restore(flags);
-> >>  	return ret;
-> >>  }
-> > 
-> > i wonder how much performance impacts this involves.
-> > 
-> > it increases the number of atomic ops per charge/uncharge and
-> > makes the common case (success) of every charge/uncharge in a system
-> > touch a global (ie. root cgroup's) cachelines.
-> > 
-> 
-> Yes, it does. I'll run some tests to see what the overhead looks like. The
-> multi-hierarchy feature is very useful though and one of the TODOs is to make
-> the feature user selectable (possibly at run-time)
-> 
-I think multilevel cgroup is useful but this routines handling of hierarchy
-seems never good. An easy idea to aginst this is making a child borrow some
-amount of charge from its parent for reducing checks.
-If you go this way, please show possibility to reducing overhead in your plan.
+Yeah - I suppose cpusets could use it, though
+it's not critical.  A fair bit of work already
+went into cpusets so that it would not need to
+traverse this hierarchy on any critical code path,
+or while holding inconvenient locks.
 
-BTW, do you have ideas of attributes for children<->parent other than 'limit' ?
-For example, 'priority' between childlen.
+So cpusets shouldn't be the driving motivation
+for this, but it will likely be happy to go along
+for the ride.
 
-Thanks,
--Kame
+-- 
+                  I won't rest till it's the best ...
+                  Programmer, Linux Scalability
+                  Paul Jackson <pj@sgi.com> 1.940.382.4214
