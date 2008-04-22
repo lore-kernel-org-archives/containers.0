@@ -1,59 +1,80 @@
-From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 0/4] Helper patches for PTY namespaces
-Date: Tue, 22 Apr 2008 07:25:30 -0500
-Message-ID: <20080422122530.GB8331@sergelap.austin.ibm.com>
-References: <20080412172933.GA19295@us.ibm.com>
-	<bb33bcf20804121039u409ae37q2dead849ca24dfa@mail.gmail.com>
-	<20080412180533.GE19449@us.ibm.com>
-	<1208172006.5762.21.camel@subratamodak.linux.ibm.com>
-	<OF766ECBB8.8B7DAFCE-ON6525742B.00437346-6525742B.0043FD8A@in.ibm.com>
-	<1208176260.5762.36.camel@subratamodak.linux.ibm.com>
-	<1208848319.4847.16.camel@subratamodak.linux.ibm.com>
+From: "Serge E. Hallyn" <serue@us.ibm.com>
+Subject: Re: [RFC][PATCH 0/7] Clone PTS namespace
+Date: Tue, 22 Apr 2008 09:25:39 -0500
+Message-ID: <20080422142539.GA12623@sergelap.austin.ibm.com>
+References: <20080408215333.GA8799@us.ibm.com> <47FC138B.4070408@zytor.com> <1207779313.16926.12.camel@x61.ebiederm.org> <20080410015955.GA18227@sergelap.austin.rr.com> <1207812980.7509.25.camel@x61.ebiederm.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-Return-path: <ltp-list-bounces-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org>
+Content-Type: text/plain; charset=us-ascii
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1758951AbYDVOZ6@vger.kernel.org>
 Content-Disposition: inline
-In-Reply-To: <1208848319.4847.16.camel-NRFfyExJdYpgXGGE5LP+UZlqa2bBAFbm0E9HWUfgJXw@public.gmane.org>
-List-Unsubscribe: <https://lists.sourceforge.net/lists/listinfo/ltp-list>,
-	<mailto:ltp-list-request-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://sourceforge.net/mailarchive/forum.php?forum_name=ltp-list>
-List-Post: <mailto:ltp-list-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org>
-List-Help: <mailto:ltp-list-request-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.sourceforge.net/lists/listinfo/ltp-list>,
-	<mailto:ltp-list-request-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org?subject=subscribe>
-Sender: ltp-list-bounces-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org
-Errors-To: ltp-list-bounces-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org
-To: Subrata Modak <subrata-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Cc: ltp-list <ltp-list-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org>, Veerendra Chandrappa <vechandr-xthvdsQ13ZrQT0dZR+AlfA@public.gmane.org>, Rishikesh K Rajak <risrajak-xthvdsQ13ZrQT0dZR+AlfA@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org, Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+In-Reply-To: <1207812980.7509.25.camel@x61.ebiederm.org>
+Sender: linux-kernel-owner@vger.kernel.org
+To: "Eric W. Biederman" <ebiederm@xmission.com>
+Cc: "Serge E. Hallyn" <serue@us.ibm.com>, "H. Peter Anvin" <hpa@zytor.com>, Containers <containers@lists.osdl.org>, clg@fr.ibm.com, linux-kernel@vger.kernel.org, Pavel Emelyanov <xemul@openvz.org>
 List-Id: containers.vger.kernel.org
 
-Quoting Subrata Modak (subrata-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org):
-> On Mon, 2008-04-14 at 18:01 +0530, Subrata Modak wrote:
-> > On Mon, 2008-04-14 at 18:01 +0530, Veerendra Chandrappa wrote:
-> > > Hi Sukadev,
-> > > 
-> > >       That sounds nice, I will integrate them with the LTP.
-> > > Of course it depends on the order of priority, and as I am learning the
-> > > tricks of container/ltp .
+Quoting Eric W. Biederman (ebiederm@xmission.com):
+> On Wed, 2008-04-09 at 20:59 -0500, Serge E. Hallyn wrote:
+> 
+> > Feh, so of course sysfs would have the most interactions for a device
+> > namespace, but now we have pty, network, and user namespace all needing
+> > some sort of sysfs solution.  For a quickfix for
+> > CONFIG_USER_SCHED+CONFIG_USER_NS, I just moved /sys/kernel/uids/<uid>
+> > to /sys/kernel/uids/<userns_address>/<uid>.  But what would be a *good*
+> > general solution?
 > > 
-> > That is cool Veerandra. Now, for this to move forward, Suka needs to
-> > hand over those test cases to you ;-)
+> > ln -s /sys /proc/self/sys?
 > 
-> Veerandra,
+> LOL
 > 
-> Have you already received those test cases from Suka ?
+> In /proc I prefer the /proc/self approach because we can do it and it is
+> just much easier to setup and use.  (Plus we have weird problems if we
+> try and capture more then the pid namespace).
+> 
+> For other filesystems the only really viable option is to capture
+> namespaces at mount time, as we are doing for devpts and proc with
+> respect to the pid namespace.
+> 
+> For the network namespace where it is very much more then a single
+> directory with symlinks from physical devices pointing at logical
+> network interfaces.
+> 
+> My last effort in that area was ok'd by Tejun lightly tested by a few
+> others and misplaced by gregkh so I don't think we have a real problem
+> with resurrecting those patches cleaning them up a bit and merging them.
+> 
+> The biggest gotcha with sysfs is that the VFS locking for the dcache
+> is in the wrong order for distributed filesystems, where we would like
+> to make the change atomically on the server and them make the change in
+> the local cache.  Or in this case the sysfs internal data structures.
+> The truly nasty case is supporting rename (as sysfs does) as the VFS
+> is not at all happy if you just punt and shoot down the dentries and 
+> instantiate new ones.
+> 
+> I'm hoping to be able to get back at this in the week or so as things
+> settle down from my move.  My last patches should be in my proof of
+> concept network namespace tree, if they don't show up elsewhere.
 
-Subrata,
+Is that the tree I'd get from
 
-pty namespaces as such are not going to happen.  We'll be pursuing
-full-scale device namespaces instead.
+git-fetch
+git://git.kernel.org/pub/scm/linux/kernel/git/ebiederm/linux-2.6-netns.git
+master:ebieder.master
+
+?  So I'd add a user_ns to the struct sysfs_tag_info?
+
+If so I'll give it a whirl.
 
 thanks,
 -serge
 
--------------------------------------------------------------------------
-This SF.net email is sponsored by the 2008 JavaOne(SM) Conference 
-Don't miss this year's exciting event. There's still time to save $100. 
-Use priority code J8TL2D2. 
-http://ad.doubleclick.net/clk;198757673;13503038;p?http://java.sun.com/javaone
+> It isn't my perception that we have a design problem rather, we just
+> need to move an important piece of code in a subtle and moderately
+> uninteresting direction for it's primary maintainer.  
+> 
+> Further what I did for the network namespace should easily handle the
+> uid/gid namespace and should be a good starting place for a general
+> device namespace.
+> 
+> Eric
+> 
