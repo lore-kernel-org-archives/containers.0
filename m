@@ -1,8 +1,8 @@
-From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+From: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 Subject: Re: Checkpoint/restart (was Re: [PATCH 0/4] - v2 -  Object
 	creation with a specified id)
-Date: Tue, 22 Apr 2008 14:51:42 -0500
-Message-ID: <20080422195142.GA22145@sergelap.austin.ibm.com>
+Date: Wed, 23 Apr 2008 01:01:30 +0400
+Message-ID: <20080422210130.GA15937__43364.679782144$1208894973$gmane$org@martell.zuzino.mipt.ru>
 References: <20080418054459.891481000@bull.net>
 	<20080422193612.GA15835@martell.zuzino.mipt.ru>
 	<1208890580.17117.14.camel@nimitz.home.sr71.net>
@@ -22,10 +22,10 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Cc: linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, nick-dnCCA748QAperShJXdIFYw@public.gmane.org, Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Nadia.Derbey-6ktuUTfB/bM@public.gmane.org
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, nick-dnCCA748QAperShJXdIFYw@public.gmane.org, Nadia.Derbey-6ktuUTfB/bM@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Quoting Dave Hansen (dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org):
+On Tue, Apr 22, 2008 at 11:56:20AM -0700, Dave Hansen wrote:
 > On Tue, 2008-04-22 at 23:36 +0400, Alexey Dobriyan wrote:
 > > On Fri, Apr 18, 2008 at 07:44:59AM +0200, Nadia.Derbey-6ktuUTfB/bM@public.gmane.org wrote:
 > > >    . echo "LONG XX" > /proc/self/task/<my_tid>/next_id
@@ -43,24 +43,30 @@ Quoting Dave Hansen (dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org):
 > > Until agreement will be "yes/from userspace" such patches don't make
 > > sense in mainline.
 > 
-> What do you mean by "from kernel" or "from userspace"?  Userspace has to
-> be involved somewhere, right?  It at least need to open() the checkpoint
-> file and pass it into the kernel.  		
+> What do you mean by "from kernel" or "from userspace"?
 
-Well let's start by answering a) :
+By "from userspace" I mean proposed interfaces and similar: usespace by
+special system calls puts some state of future object and then does
+normal system call which creates aforementioned object.
 
-	I vote yes  :-)
+This can be used for PIDs, OK.
 
-As for b), good question.  Except as Dave points out I think it's pretty
-unlikely that we'll end up with "sys_checkpoint(checkpoint_dirnam)"
-and "sys_restart(checkpointed_dirnam)".  Anything more user-space
-driven will likely require userspace to set ids on resources, right?
+This can be used for SystemV shmem ids. But SystemV shmem also has
+(let's choose) uid/gid, atimes and actual content. How would restoration
+look like?
 
-But yes, we have to completely answer b) before this patch goes in, no
-doubt about that.
+How to restore struct task_struct::did_exec ? Do execve(2)?
 
-Alexey, are you advocating for a completely kernel-driven approach, or
-just making sure we come to a decision?
+A was ptracing B at checkpoint moment...
 
-thanks,
--serge
+Netdevices: stats, name, all sorts of flags, hw addresses, MTU
+
+iptables rules.
+
+These next ids are suitable, well, only for ids which is very, very small
+part of kernel state needed to restore group of processes.
+
+> Userspace has to be involved somewhere, right?  It at least need to open()
+> the checkpoint file and pass it into the kernel.  		
+
+Sure, but opening dumpfile is not an interesting part.
