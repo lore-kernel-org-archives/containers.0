@@ -1,21 +1,15 @@
-From: Subrata Modak <subrata-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: Re: [LTP] [PATCH 0/4] Helper patches for PTY namespaces
-Date: Tue, 22 Apr 2008 20:38:09 +0530
-Message-ID: <1208876889.4847.38.camel@subratamodak.linux.ibm.com>
-References: <20080412172933.GA19295@us.ibm.com>
-	<bb33bcf20804121039u409ae37q2dead849ca24dfa@mail.gmail.com>
-	<20080412180533.GE19449@us.ibm.com>
-	<1208172006.5762.21.camel@subratamodak.linux.ibm.com>
-	<OF766ECBB8.8B7DAFCE-ON6525742B.00437346-6525742B.0043FD8A@in.ibm.com>
-	<1208176260.5762.36.camel@subratamodak.linux.ibm.com>
-	<1208848319.4847.16.camel@subratamodak.linux.ibm.com>
-	<20080422122530.GB8331@sergelap.austin.ibm.com>
-Reply-To: subrata-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
+From: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Subject: Checkpoint/restart (was Re: [PATCH 0/4] - v2 -  Object creation
+	with a specified id)
+Date: Tue, 22 Apr 2008 23:36:12 +0400
+Message-ID: <20080422193612.GA15835__39847.4130234264$1208889907$gmane$org@martell.zuzino.mipt.ru>
+References: <20080418054459.891481000@bull.net>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20080422122530.GB8331-6s5zFf/epYLPQpwDFJZrxKsjOiXwFzmk@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <20080418054459.891481000-6ktuUTfB/bM@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -25,39 +19,22 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Cc: ltp-list <ltp-list-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org>, Veerendra Chandrappa <vechandr-xthvdsQ13ZrQT0dZR+AlfA@public.gmane.org>, Rishikesh K Rajak <risrajak-xthvdsQ13ZrQT0dZR+AlfA@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org, Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+To: Nadia.Derbey-6ktuUTfB/bM@public.gmane.org
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, nick-dnCCA748QAperShJXdIFYw@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Tue, 2008-04-22 at 07:25 -0500, Serge E. Hallyn wrote:
-> Quoting Subrata Modak (subrata-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org):
-> > On Mon, 2008-04-14 at 18:01 +0530, Subrata Modak wrote:
-> > > On Mon, 2008-04-14 at 18:01 +0530, Veerendra Chandrappa wrote:
-> > > > Hi Sukadev,
-> > > > 
-> > > >       That sounds nice, I will integrate them with the LTP.
-> > > > Of course it depends on the order of priority, and as I am learning the
-> > > > tricks of container/ltp .
-> > > 
-> > > That is cool Veerandra. Now, for this to move forward, Suka needs to
-> > > hand over those test cases to you ;-)
-> > 
-> > Veerandra,
-> > 
-> > Have you already received those test cases from Suka ?
-> 
-> Subrata,
-> 
-> pty namespaces as such are not going to happen.  We'll be pursuing
-> full-scale device namespaces instead.
-> 
+On Fri, Apr 18, 2008 at 07:44:59AM +0200, Nadia.Derbey-6ktuUTfB/bM@public.gmane.org wrote:
+>    . echo "LONG XX" > /proc/self/task/<my_tid>/next_id
+>      next object to be created will have an id set to XX
+>    . echo "LONG<n> X0 ... X<n-1>" > /proc/self/task/<my_tid>/next_id
+>      next object to be created will have its ids set to XX0, ... X<n-1>
+>      This is particularly useful for processes that may have several ids if
+>      they belong to nested namespaces.
 
-Oops.
+Can we answer the following questions before merging this patch:
 
-device namespaces test cases are also welcome in future.
+a) should mainline kernel have checkpoint/restart feature at all
+b) if yes, should it be done from kernel- or userspace?
 
-Regards--
-Subrata
-
-> thanks,
-> -serge
+Until agreement will be "yes/from userspace" such patches don't make
+sense in mainline.
