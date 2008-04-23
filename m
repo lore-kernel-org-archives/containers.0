@@ -1,14 +1,14 @@
-From: Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: Re: [PATCH] cgroup: use read lock to guard find_existing_css_set()
-Date: Wed, 23 Apr 2008 12:18:50 +0530
-Message-ID: <480EDBD2.2060709__28929.623150225$1208933798$gmane$org@linux.vnet.ibm.com>
-References: <480EA744.2050300@cn.fujitsu.com>
-Reply-To: balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
+From: Pavel Machek <pavel-+ZI9xUNit7I@public.gmane.org>
+Subject: Re: [PATCH 0/4] - v2 -  Object creation with a specified id
+Date: Wed, 23 Apr 2008 16:23:51 +0200
+Message-ID: <20080423142350.GA9228__4912.89914721182$1208960797$gmane$org@ucw.cz>
+References: <20080418054459.891481000@bull.net>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <480EA744.2050300-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <20080418054459.891481000-6ktuUTfB/bM@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,44 +18,49 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Cc: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, LKML <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+To: Nadia.Derbey-6ktuUTfB/bM@public.gmane.org
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, nick-dnCCA748QAperShJXdIFYw@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Li Zefan wrote:
-> The function does not modify anything (except the temporary
-> css template), so it's sufficient to hold read lock.
-> 
-> Signed-off-by: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-> ---
->  kernel/cgroup.c |    4 ++--
->  1 files changed, 2 insertions(+), 2 deletions(-)
-> 
-> diff --git a/kernel/cgroup.c b/kernel/cgroup.c
-> index 2727f92..e9eb5da 100644
-> --- a/kernel/cgroup.c
-> +++ b/kernel/cgroup.c
-> @@ -406,11 +406,11 @@ static struct css_set *find_css_set(
-> 
->  	/* First see if we already have a cgroup group that matches
->  	 * the desired set */
-> -	write_lock(&css_set_lock);
-> +	read_lock(&css_set_lock);
->  	res = find_existing_css_set(oldcg, cgrp, template);
->  	if (res)
->  		get_css_set(res);
-> -	write_unlock(&css_set_lock);
-> +	read_unlock(&css_set_lock);
-> 
->  	if (res)
->  		return res;
+Hi!
 
-Looks good to me. Did you run lockdep?
+> When restarting a process that has been previously checkpointed, that process
+> should keep on using some of its ids (such as its process id, or sysV ipc ids).
+> 
+> This patch provides a feature that can help ensuring this saved state reuse:
+> it makes it possible to create an object with a pre-defined id.
+> 
+> A first implementation had been proposed 2 months ago. It consisted in
+> changing an object's id after it had been created.
+> 
+> Here is a second implementation based on Oren Ladaan's idea: Oren's suggestion
+> was to force an object's id during its creation, rather than 1. create it,
+> 2. change its id.
+> 
+> A new file is created in procfs: /proc/self/task/<my_tid>/next_id.
+> This makes it possible to avoid races between several threads belonging to
+> the same process.
 
+Ugly...
 
+> When this file is filled with an id value, a structure pointed to by the
+> calling task_struct is filled with that id.
+> 
+> Then, when an object supporting this feature is created, the id present in
+> that new structure is used, instead of the default one.
+> 
+> The syntax is one of:
+>    . echo "LONG XX" > /proc/self/task/<my_tid>/next_id
+>      next object to be created will have an id set to XX
+>    . echo "LONG<n> X0 ... X<n-1>" > /proc/self/task/<my_tid>/next_id
+>      next object to be created will have its ids set to XX0, ... X<n-1>
+>      This is particularly useful for processes that may have several ids if
+>      they belong to nested namespaces.
 
+So ugly it is not even funny.
+
+Create fork_with_pid(int pid) and corresponding ipc primitives, if
+you have to...
 -- 
-	Warm Regards,
-	Balbir Singh
-	Linux Technology Center
-	IBM, ISTL
+(english) http://www.livejournal.com/~pavelmachek
+(cesky, pictures) http://atrey.karlin.mff.cuni.cz/~pavel/picture/horses/blog.html
