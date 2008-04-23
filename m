@@ -1,56 +1,57 @@
-From: "Paul Menage" <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [RFC PATCH 5/5] Add a Signal Control Group Subsystem
-Date: Wed, 23 Apr 2008 08:37:45 -0700
-Message-ID: <6599ad830804230837x48860632m7c41e425458ba6b3__27489.645072683$1208965188$gmane$org@mail.gmail.com>
-References: <20080423142517.062433911@us.ibm.com>
-	<20080423142518.703428301@us.ibm.com> <480F5321.9030008@fr.ibm.com>
+From: "Serge E. Hallyn" <serue@us.ibm.com>
+Subject: Re: [RFC][PATCH 0/7] Clone PTS namespace
+Date: Wed, 23 Apr 2008 12:57:49 -0500
+Message-ID: <20080423175749.GA17618@sergelap.austin.ibm.com>
+References: <20080408215333.GA8799@us.ibm.com> <47FC138B.4070408@zytor.com> <1207779313.16926.12.camel@x61.ebiederm.org> <20080410015955.GA18227@sergelap.austin.rr.com> <1207812980.7509.25.camel@x61.ebiederm.org> <20080422142539.GA12623@sergelap.austin.ibm.com> <m1hcdtsovg.fsf@frodo.ebiederm.org> <20080423143610.GA13718@sergelap.austin.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <480F5321.9030008-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
+Content-Type: text/plain; charset=us-ascii
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1755892AbYDWR6G@vger.kernel.org>
 Content-Disposition: inline
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Cedric Le Goater <clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
-Cc: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Linux-Kernel <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Pavel Machek <pavel-+ZI9xUNit7I@public.gmane.org>, linux-pm-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Linus Torvalds <torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
+In-Reply-To: <20080423143610.GA13718@sergelap.austin.ibm.com>
+Sender: linux-kernel-owner@vger.kernel.org
+To: "Serge E. Hallyn" <serue@us.ibm.com>
+Cc: "Eric W. Biederman" <ebiederm@xmission.com>, "H. Peter Anvin" <hpa@zytor.com>, Containers <containers@lists.osdl.org>, clg@fr.ibm.com, linux-kernel@vger.kernel.org, Pavel Emelyanov <xemul@openvz.org>
 List-Id: containers.vger.kernel.org
 
-On Wed, Apr 23, 2008 at 8:17 AM, Cedric Le Goater <clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org> wrote:
-> Hello Matt !
->
->  > Add a signal control group subsystem that allows us to send signals to all tasks
->  > in the control group by writing the desired signal(7) number to the kill file.
->  >
->  > NOTE: We don't really need per-cgroup state, but control groups doesn't support
->  > stateless subsystems yet.
->  >
->  > Signed-off-by: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
->  > ---
->  >  include/linux/cgroup_signal.h |   28 +++++++++
->  >  include/linux/cgroup_subsys.h |    6 +
->  >  init/Kconfig                  |    6 +
->  >  kernel/Makefile               |    1
->  >  kernel/cgroup_signal.c        |  129 ++++++++++++++++++++++++++++++++++++++++++
->  >  5 files changed, 170 insertions(+)
->
->
->  I think there is a small race with new tasks entering the cgroup
->  while it's beeing killed, and a _fork ops would handle that. nop ?
->
+Quoting Serge E. Hallyn (serue@us.ibm.com):
+> Quoting Eric W. Biederman (ebiederm@xmission.com):
+> > "Serge E. Hallyn" <serue@us.ibm.com> writes:
+> > >> 
+> > >> I'm hoping to be able to get back at this in the week or so as things
+> > >> settle down from my move.  My last patches should be in my proof of
+> > >> concept network namespace tree, if they don't show up elsewhere.
+> > >
+> > > Is that the tree I'd get from
+> > >
+> > > git-fetch
+> > > git://git.kernel.org/pub/scm/linux/kernel/git/ebiederm/linux-2.6-netns.git
+> > > master:ebieder.master
+> > 
+> > Yes.
+> > 
+> > > ?  So I'd add a user_ns to the struct sysfs_tag_info?
+> > >
+> > > If so I'll give it a whirl.
+> > 
+> > Sounds good.  My apologies I keep being almost on the verge
+> > of getting someplace.
+> 
+> Ok I've got the sysfs relevant patches ported to 2.6.25, and am looking
+> at how to extend it to handle /sys/kernel/uids.  You have tagging tied
+> intimately to struct class.  So the question is should I generalize the
+> taggint to deal with kobjects instead, or create a struct class user
+> and make /sys/kernel/uids a symlink to /sys/class/user/uids?
 
-I never saw the actual patch (what lists did it go out to?) but I
-suspect that this is one of those operations that's just going to be
-inherently racy, and that the API should guarantee to affect all tasks
-that are members of the group for the entirety of the operation, but
-with no guarantees about what happens to tasks that enter or leave in
-the meantime.
+Heh, never mind, I was thinking class was a kobject class, not a device
+class  :)  So I'll just have to generalize tagging.
 
-Paul
+thanks,
+-serge
+
+> Opinions?
+> 
+> thanks,
+> -serge
+> 
+> PS: If you want me to post the patchset before handling userns I can do
+> that, otherwise I was just going to wait until I'm done with userns.
