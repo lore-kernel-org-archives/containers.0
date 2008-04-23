@@ -1,14 +1,19 @@
-From: Cedric Le Goater <clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [RFC PATCH 5/5] Add a Signal Control Group Subsystem
-Date: Wed, 23 Apr 2008 17:17:53 +0200
-Message-ID: <480F5321.9030008__38977.5354219184$1208964362$gmane$org@fr.ibm.com>
-References: <20080423142517.062433911@us.ibm.com>
-	<20080423142518.703428301@us.ibm.com>
+From: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Subject: Re: Checkpoint/restart (was Re: [PATCH 0/4] - v2 -  Object
+	creation with a specified id)
+Date: Wed, 23 Apr 2008 08:33:18 -0700
+Message-ID: <1208964798.17117.72.camel__44725.8655600764$1208965018$gmane$org@nimitz.home.sr71.net>
+References: <20080418054459.891481000@bull.net>
+	<20080422193612.GA15835@martell.zuzino.mipt.ru>
+	<1208890580.17117.14.camel@nimitz.home.sr71.net>
+	<20080422210130.GA15937@martell.zuzino.mipt.ru>
+	<1208904967.17117.51.camel@nimitz.home.sr71.net>
+	<480ED9D5.1010906@parallels.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20080423142518.703428301-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <480ED9D5.1010906-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,31 +23,18 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Cc: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Linux-Kernel <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Pavel Machek <pavel-+ZI9xUNit7I@public.gmane.org>, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Linus Torvalds <torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, linux-pm-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Kirill Korotaev <dev-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Nadia.Derbey-6ktuUTfB/bM@public.gmane.org, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, nick-dnCCA748QAperShJXdIFYw@public.gmane.org, Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Hello Matt !
-
-> Add a signal control group subsystem that allows us to send signals to all tasks
-> in the control group by writing the desired signal(7) number to the kill file.
+On Wed, 2008-04-23 at 10:40 +0400, Kirill Korotaev wrote:
+> Having all this functionality in a signle syscall we specifically CLAIM a black box,
+> and that no one can use this interfaces for something different from checkpoint/restore.
 > 
-> NOTE: We don't really need per-cgroup state, but control groups doesn't support
-> stateless subsystems yet.
-> 
-> Signed-off-by: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-> ---
->  include/linux/cgroup_signal.h |   28 +++++++++
->  include/linux/cgroup_subsys.h |    6 +
->  init/Kconfig                  |    6 +
->  kernel/Makefile               |    1 
->  kernel/cgroup_signal.c        |  129 ++++++++++++++++++++++++++++++++++++++++++
->  5 files changed, 170 insertions(+)
+> So I think we have to know what other maintainers think before we can go.
 
+I completely agree.
 
-I think there is a small race with new tasks entering the cgroup
-while it's beeing killed, and a _fork ops would handle that. nop ? 
+Have you asked any particular maintainers what they think?
 
-Thanks,
-
-C. 
+-- Dave
