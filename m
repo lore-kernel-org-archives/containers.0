@@ -1,14 +1,15 @@
-From: Paul Jackson <pj-sJ/iWh9BUns@public.gmane.org>
-Subject: Re: [RFC][PATCH 5/5] Add a Signal Control Group Subsystem
-Date: Thu, 24 Apr 2008 14:30:32 -0500
-Message-ID: <20080424143032.7e659522.pj__265.859140972857$1209065647$gmane$org@sgi.com>
-References: <20080424064756.643890130@us.ibm.com>
-	<20080424064758.113999091@us.ibm.com>
+From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Subject: Re: Checkpoint/restart (was Re: [PATCH 0/4] - v2 -  Object	creation
+	with a specified id)
+Date: Thu, 24 Apr 2008 19:13:01 -0400
+Message-ID: <481113FD.3010905@cs.columbia.edu>
+References: <20080418054459.891481000@bull.net>	<20080422193612.GA15835@martell.zuzino.mipt.ru>	<1208890580.17117.14.camel@nimitz.home.sr71.net>	<20080422210130.GA15937@martell.zuzino.mipt.ru>	<1208904967.17117.51.camel@nimitz.home.sr71.net>	<480ED9D5.1010906@parallels.com>	<1208964798.17117.72.camel@nimitz.home.sr71.net>	<48103002.5090806@parallels.com>
+	<1209061809.12718.36.camel@nimitz.home.sr71.net>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20080424064758.113999091-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <1209061809.12718.36.camel-FpcvD5N4B9G9xGwK5P7XA+TW4wlIGRCZ@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,22 +19,42 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org, pavel-+ZI9xUNit7I@public.gmane.org, menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, linux-pm-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Cc: Kirill Korotaev <dev-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, nick-dnCCA748QAperShJXdIFYw@public.gmane.org, Nadia.Derbey-6ktuUTfB/bM@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-> +static struct cftype kill_file = {
-> +	.name = "kill",
 
-The name "kill" seems ambiguous to me.  It suggests that any write
-will send some default signal (TERM or KILL?) to all tasks in the
-cgroup, rather like the 'killall' command.
 
-I'm guessing that more people, on seeing this file in a cgroup
-directory, will guess correctly what it does if it were named
-"signal" or "send_signal" or some such.
+Dave Hansen wrote:
+> On Thu, 2008-04-24 at 11:00 +0400, Kirill Korotaev wrote:
+>> Yeah... we talked with Andrew yesterday. He mostly agrees with a black
+>> box.
+>> He also said an interesting idea, that if you need compatibility
+>> between the kernels (like we for example, support for migration from
+>> 2.6.9 to 2.6.18 in OpenVZ)
+>> you can do image conversion in user-space...
+> 
+> That sounds compelling to me.  I'm definitely willing to explore it.
 
--- 
-                  I won't rest till it's the best ...
-                  Programmer, Linux Scalability
-                  Paul Jackson <pj-sJ/iWh9BUns@public.gmane.org> 1.940.382.4214
+Filtering/converting in user-space has long been part of zap: used to
+be able to migrate between both minor and major versions of the kernel
+(always upwards, of course).
+
+In fact, I already proposed it as part of the original thread that led
+eventually to the patch in question:
+https://lists.linux-foundation.org/pipermail/containers/2008-February/009849.html
+
+The need to be able to specify a desired ID (from user-space and/or from
+in-kernel) remains.
+
+Oren.
+
+> Any thoughts on what we should start with?  What can we get merged, most
+> easily?
+> 
+> -- Dave
+> 
+> _______________________________________________
+> Containers mailing list
+> Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+> https://lists.linux-foundation.org/mailman/listinfo/containers
