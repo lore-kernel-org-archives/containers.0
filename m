@@ -1,11 +1,21 @@
-From: KAIZUKA Hiroyuki <kaizuka-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
-Subject: Utility tool for dm-ioband.
-Date: Thu, 24 Apr 2008 20:55:27 +0900
-Message-ID: <4810752F.30205__32569.4814594046$1209038364$gmane$org@valinux.co.jp>
+From: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Subject: Re: Checkpoint/restart (was Re: [PATCH 0/4] - v2 -  Object
+	creation with a specified id)
+Date: Thu, 24 Apr 2008 11:30:09 -0700
+Message-ID: <1209061809.12718.36.camel__28360.6174438775$1209061963$gmane$org@nimitz.home.sr71.net>
+References: <20080418054459.891481000@bull.net>
+	<20080422193612.GA15835@martell.zuzino.mipt.ru>
+	<1208890580.17117.14.camel@nimitz.home.sr71.net>
+	<20080422210130.GA15937@martell.zuzino.mipt.ru>
+	<1208904967.17117.51.camel@nimitz.home.sr71.net>
+	<480ED9D5.1010906@parallels.com>
+	<1208964798.17117.72.camel@nimitz.home.sr71.net>
+	<48103002.5090806@parallels.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <48103002.5090806-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -15,27 +25,21 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, virtualization-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, dm-devel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, xen-devel-GuqFBffKawuULHF6PoxzQEEOCMrvLtNR@public.gmane.org
-Cc: agk-9JcytcrH/bA+uJoB2kUjGw@public.gmane.org
+To: Kirill Korotaev <dev-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Nadia.Derbey-6ktuUTfB/bM@public.gmane.org, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, nick-dnCCA748QAperShJXdIFYw@public.gmane.org, Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Hi everyone,
+On Thu, 2008-04-24 at 11:00 +0400, Kirill Korotaev wrote:
+> Yeah... we talked with Andrew yesterday. He mostly agrees with a black
+> box.
+> He also said an interesting idea, that if you need compatibility
+> between the kernels (like we for example, support for migration from
+> 2.6.9 to 2.6.18 in OpenVZ)
+> you can do image conversion in user-space...
 
-I made a utility tool for dm-ioband version 0.0.4, named iobandctl.
+That sounds compelling to me.  I'm definitely willing to explore it.
 
-It enables you to easily apply I/O bandwidth control to an entire disk,
-and manage it. It helps you set the percentage of bandwidth
-to give each partition, and each user, process, group, or cgroup.
-(You are not able to use cgroup support yet, because the dm-ioband
-patch to enable cgroup support (http://lwn.net/Articles/273802/)
-is not ported to linux-2.6.25, but it will be soon.)
+Any thoughts on what we should start with?  What can we get merged, most
+easily?
 
-You can download it and find the manual at
-http://people.valinux.co.jp/~kaizuka/dm-ioband/iobandctl/
-
-This is a prototype code.
-So, I'd like to hear your requests.
-Feature fixed, it is going to be re-written in C.
-
-Thanks,
-KAIZUKA Hiroyuki
+-- Dave
