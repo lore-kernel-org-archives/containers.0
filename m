@@ -1,15 +1,16 @@
-From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: Re: Checkpoint/restart (was Re: [PATCH 0/4] - v2 -  Object	creation
-	with a specified id)
-Date: Thu, 24 Apr 2008 19:13:01 -0400
-Message-ID: <481113FD.3010905@cs.columbia.edu>
-References: <20080418054459.891481000@bull.net>	<20080422193612.GA15835@martell.zuzino.mipt.ru>	<1208890580.17117.14.camel@nimitz.home.sr71.net>	<20080422210130.GA15937@martell.zuzino.mipt.ru>	<1208904967.17117.51.camel@nimitz.home.sr71.net>	<480ED9D5.1010906@parallels.com>	<1208964798.17117.72.camel@nimitz.home.sr71.net>	<48103002.5090806@parallels.com>
-	<1209061809.12718.36.camel@nimitz.home.sr71.net>
+From: "Paul Menage" <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [RFC][PATCH 3/5] Container Freezer: Implement freezer cgroup
+	subsystem
+Date: Thu, 24 Apr 2008 22:51:57 -0700
+Message-ID: <6599ad830804242251w439dd712tc1919b489535c74c__18183.0196096145$1209102864$gmane$org@mail.gmail.com>
+References: <20080424064756.643890130@us.ibm.com>
+	<20080424064757.526468716@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1209061809.12718.36.camel-FpcvD5N4B9G9xGwK5P7XA+TW4wlIGRCZ@public.gmane.org>
+In-Reply-To: <20080424064757.526468716-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Content-Disposition: inline
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,42 +20,97 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Cc: Kirill Korotaev <dev-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, nick-dnCCA748QAperShJXdIFYw@public.gmane.org, Nadia.Derbey-6ktuUTfB/bM@public.gmane.org
+To: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Cc: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Linux-Kernel <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Cedric Le Goater <clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>, Pavel Machek <pavel-+ZI9xUNit7I@public.gmane.org>, linux-pm-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Linus Torvalds <torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
+>+static const char *freezer_state_strs[] = {
+>+	"RUNNING\n",
+>+	"FREEZING\n" ,
+>+	"FROZEN\n"
+>+};
 
+I think it might be cleaner to not include the \n characters in this array.
 
-Dave Hansen wrote:
-> On Thu, 2008-04-24 at 11:00 +0400, Kirill Korotaev wrote:
->> Yeah... we talked with Andrew yesterday. He mostly agrees with a black
->> box.
->> He also said an interesting idea, that if you need compatibility
->> between the kernels (like we for example, support for migration from
->> 2.6.9 to 2.6.18 in OpenVZ)
->> you can do image conversion in user-space...
-> 
-> That sounds compelling to me.  I'm definitely willing to explore it.
+>+static inline int cgroup_frozen(struct task_struct *task)
+>+{
+>+	struct cgroup *cgroup = task_cgroup(task, freezer_subsys_id);
+>+	struct freezer *freezer = cgroup_freezer(cgroup);
+>+	enum freezer_state state;
+>+
+>+	spin_lock(&freezer->lock);
+>+	state = freezer->state;
+>+	spin_unlock(&freezer->lock);
+>+
+>+	return (state == STATE_FROZEN);
+>+}
 
-Filtering/converting in user-space has long been part of zap: used to
-be able to migrate between both minor and major versions of the kernel
-(always upwards, of course).
+You need to be in an RCU critical section or else hold task_lock() in
+order to dereference the cgroup returned from task_cgroup()
 
-In fact, I already proposed it as part of the original thread that led
-eventually to the patch in question:
-https://lists.linux-foundation.org/pipermail/containers/2008-February/009849.html
+I'm not sure that you need to take freezer->lock here - you're just
+reading a single word.
 
-The need to be able to specify a desired ID (from user-space and/or from
-in-kernel) remains.
+>+
+>+	if (!capable(CAP_SYS_ADMIN))
+>+		return ERR_PTR(-EPERM);
+>+
 
-Oren.
+Why does everyone keep throwing calls to check CAP_SYS_ADMIN into
+their cgroup create callbacks? You have to be root in order to mount a
+cgroups hierarchy in the first place, and filesystem permissions will
+control who can create new cgroups.
 
-> Any thoughts on what we should start with?  What can we get merged, most
-> easily?
-> 
-> -- Dave
-> 
-> _______________________________________________
-> Containers mailing list
-> Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-> https://lists.linux-foundation.org/mailman/listinfo/containers
+>+static int freezer_can_attach(struct cgroup_subsys *ss,
+>+			      struct cgroup *new_cgroup,
+>+			      struct task_struct *task)
+>+{
+>+	struct freezer *freezer = cgroup_freezer(new_cgroup);
+>+	int retval = 0;
+>+
+>+	if (freezer->state == STATE_FROZEN)
+>+		retval = -EBUSY;
+>+
+>+	return retval;
+>+}
+
+You should comment here that the call to cgroup_lock() in the
+freezer.state write method prevents a write to that file racing
+against an attach, and hence the can_attach() result will remain valid
+until the attach completes.
+
+>+static ssize_t freezer_write(struct cgroup *cgroup,
+>+			     struct cftype *cft,
+>+			     struct file *file,
+>+			     const char __user *userbuf,
+>+			     size_t nbytes, loff_t *unused_ppos)
+>+{
+>+	char *buffer;
+>+	int retval = 0;
+>+	enum freezer_state goal_state;
+>+
+>+	if (nbytes >= PATH_MAX)
+>+		return -E2BIG;
+>+
+>+	/* +1 for nul-terminator */
+>+	buffer = kmalloc(nbytes + 1, GFP_KERNEL);
+>+	if (buffer == NULL)
+>+		return -ENOMEM;
+
+Given that you're copying a string whose maximum valid length is
+"FREEZING" you don't really need to use a dynamically-allocated
+buffer.
+
+But I really ought to provide a write_string() method that handles
+this kind of copying on behalf of cgroup subsystems, the way it
+already does for 64-bit ints.
+
+>+	if (strcmp(buffer, "RUNNING") == 0)
+>+		goal_state = STATE_RUNNING;
+>+	else if (strcmp(buffer, "FROZEN") == 0)
+>+		goal_state = STATE_FROZEN;
+
+Would it make sense to compare against the strings you already have in
+the array earlier in the file?
+
+Paul
