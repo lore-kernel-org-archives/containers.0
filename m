@@ -1,56 +1,74 @@
-From: "Rafael J. Wysocki" <rjw-KKrjLPT3xs0@public.gmane.org>
-Subject: Re: [RFC][PATCH 2/5] Container Freezer: Make refrigerator always
-	available
-Date: Sat, 26 Apr 2008 15:02:36 +0200
-Message-ID: <200804261502.37413.rjw__27469.1951148727$1209215040$gmane$org@sisk.pl>
-References: <20080424064756.643890130@us.ibm.com>
-	<20080425110456.GF14903@elf.ucw.cz> <4811C978.6010508@fr.ibm.com>
+From: "Serge E. Hallyn" <serue@us.ibm.com>
+Subject: Re: [RFC][PATCH 0/7] Clone PTS namespace
+Date: Sat, 26 Apr 2008 08:02:43 -0500
+Message-ID: <20080426130243.GA8591@sergelap.austin.ibm.com>
+References: <1207779313.16926.12.camel@x61.ebiederm.org> <20080410015955.GA18227@sergelap.austin.rr.com> <1207812980.7509.25.camel@x61.ebiederm.org> <20080422142539.GA12623@sergelap.austin.ibm.com> <m1hcdtsovg.fsf@frodo.ebiederm.org> <20080423143610.GA13718@sergelap.austin.ibm.com> <20080423175749.GA17618@sergelap.austin.ibm.com> <m1tzhsmmo5.fsf@frodo.ebiederm.org> <20080425192102.GA17896@sergelap.austin.ibm.com> <m1lk314sz4.fsf@frodo.ebiederm.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <4811C978.6010508-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
+Content-Type: text/plain; charset=us-ascii
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1756589AbYDZNDR@vger.kernel.org>
 Content-Disposition: inline
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Cedric Le Goater <clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
-Cc: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Linux-Kernel <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Pavel Machek <pavel-+ZI9xUNit7I@public.gmane.org>, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Linus Torvalds <torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, linux-pm-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+In-Reply-To: <m1lk314sz4.fsf@frodo.ebiederm.org>
+Sender: linux-kernel-owner@vger.kernel.org
+To: "Eric W. Biederman" <ebiederm@xmission.com>
+Cc: "Serge E. Hallyn" <serue@us.ibm.com>, "H. Peter Anvin" <hpa@zytor.com>, Containers <containers@lists.osdl.org>, clg@fr.ibm.com, linux-kernel@vger.kernel.org, Pavel Emelyanov <xemul@openvz.org>, Benjamin Thery <benjamin.thery@bull.net>
 List-Id: containers.vger.kernel.org
 
-On Friday, 25 of April 2008, Cedric Le Goater wrote:
-> Pavel Machek wrote:
-> > Hi!
-> > 
-> >> Now that the TIF_FREEZE flag is available in all architectures,
-> >> extract the refrigerator() and freeze_task() from kernel/power/process.c
-> >> and make it available to all.
-> >>
-> >> The refrigerator() can now be used in a control group subsystem 
-> >> implementing a control group freezer.
-> >>
-> >> Signed-off-by: Cedric Le Goater <clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
-> >> Signed-off-by: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-> >> Tested-by: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-> > 
-> > There's no problem with doing this... but you should get some debate
-> > (with Linus?) whether using freezer for cgroups is sane. 
+Quoting Eric W. Biederman (ebiederm@xmission.com):
+> "Serge E. Hallyn" <serue@us.ibm.com> writes:
 > 
-> Yes that's what we are trying to know, is the fake signal mechanism 
-> used by the freezer something we can build upon ? 
+> 
+> > Heh, well I tried several approaches - adding tag_ops to kset, to ktype,
+> > etc.  Finally ended up just calling sysfs_enable_tagging on
+> > /sys/kernel/uids when that is created.  It's now working perfectly.
+> 
+> Sounds good.
+> 
+> >> I suspect since you are working on this and I seem to be stuck
+> >> in molasses at the moment it makes sense to figure out what it
+> >> will take to handle the uid namespace before pushing these
+> >> patches again.
+> >
+> > I had ported your patches to 2.6.25, but Benjamin in the meantime ported
+> > them to 2.6.25-mm1.  Since that's closer to the -net tree it's a more
+> > useful port, so I'll let him post his patchset.  Then I'll send the
+> > userns patch on top of that.  While I'm not actually able to send
+> > network traffic over a veth dev (I probably am still not setting it up
+> > right), I am able to pass veth devices into network namespaces, and the
+> > user namespaces are properly handled.
+> >
+> > I believe Benjamin did notice a problem with some symlinks not existing,
+> > and I think we want one more patch on top of yours removing the
+> > hold_net() from sysfs_mount, which I don't think was what you really
+> > wanted to do.  By simply removing that, if all tasks in a netns go away,
+> > the netns actually goes away and a lookup under a bind-mounted copy of
+> > its /sys/class/net is empty.
+> 
+> I will have to look, I need to refresh myself on where all of this code is.
+> I think hold_net was what I wanted.  A record that there is a user
+> but not something that will keep the network namespace from going away.
+> 
+> Essentially hold_net should be a debugging check rather then a
+> real limitation.
 
-Well, currently, the freezer doesn't send fake signals to kernel threads which
-turns out to be problematic, becase some kernel threads behave very much like
-user space processes (basically, the threads related to NFS and CIFS).
+Ah, I see, I assumed it actually pinned it.  Sorry, never mind then  :)
 
-I have an idea how to fix this issue, but I'm not sure if it's acceptable
-overall.  I'll try to prepare a patch later today or tomorrow.
+-serge
 
-Thanks,
-Rafael
+> > Anyway the patches should be hitting the list next week.
+> 
+> Cool.  We can figure out what we need to do to merge them from
+> there.
+> 
+> >> Taking a quick look and having a clue what we will need to
+> >> do for a theoretical device namespace is also a possibility.
+> >
+> > I'm not sure I'm familiar enough with the kobject/class/sysfs/device
+> > relationships yet to comment on that.  It doesn't look like it should
+> > really be a problem, though simply adding tags to every directory
+> > under /sys/class (/sys/class/tty, /sys/class/usb_device, etc) doesn't
+> > seem like necessarily the nicest way to go...
+> 
+> True.  And the goal is something maintainable.  There are still a lot
+> of implications of a device namespace left unexamined so we shall see.
+> 
+> Eric
