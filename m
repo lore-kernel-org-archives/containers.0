@@ -1,18 +1,16 @@
-From: Florian Westphal <fw-HFFVJYpyMKqzQB+pC5nmwQ@public.gmane.org>
-Subject: Re: [Devel] Re: [RFC][v2][patch 0/12][CFQ-cgroup]Yet another I/O
-	bandwidth controlling subsystem for CGroups based on CFQ
-Date: Fri, 25 Apr 2008 23:37:02 +0200
-Message-ID: <20080425213702.GL19845__7027.26088134131$1209159595$gmane$org@Chamillionaire.breakpoint.cc>
-References: <008001c893db$4e2eccf0$ea8c66d0$@jp.nec.com>
-	<6599ad830804021541s3c1e3197y77d87f63bf47e4b3@mail.gmail.com>
-	<005d01c89559$9e538200$dafa8600$@jp.nec.com>
-	<20080425.185444.115924172.ryov@valinux.co.jp>
+From: "Rafael J. Wysocki" <rjw-KKrjLPT3xs0@public.gmane.org>
+Subject: Re: [RFC][PATCH 2/5] Container Freezer: Make refrigerator always
+	available
+Date: Sat, 26 Apr 2008 15:02:36 +0200
+Message-ID: <200804261502.37413.rjw__27469.1951148727$1209215040$gmane$org@sisk.pl>
+References: <20080424064756.643890130@us.ibm.com>
+	<20080425110456.GF14903@elf.ucw.cz> <4811C978.6010508@fr.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <4811C978.6010508-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <20080425.185444.115924172.ryov-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -22,63 +20,37 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Ryo Tsuruta <ryov-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
-Cc: axboe-tSWWG44O7X1aa/9Udqfwiw@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, vtaras-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org, tom-sugawara-LYU95VJlayp8UrSeD/g0lQ@public.gmane.org
+To: Cedric Le Goater <clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
+Cc: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Linux-Kernel <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Pavel Machek <pavel-+ZI9xUNit7I@public.gmane.org>, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Linus Torvalds <torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, linux-pm-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Ryo Tsuruta <ryov-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org> wrote:
-[..]
-> I'd like to see other benchmark results if anyone has.
+On Friday, 25 of April 2008, Cedric Le Goater wrote:
+> Pavel Machek wrote:
+> > Hi!
+> > 
+> >> Now that the TIF_FREEZE flag is available in all architectures,
+> >> extract the refrigerator() and freeze_task() from kernel/power/process.c
+> >> and make it available to all.
+> >>
+> >> The refrigerator() can now be used in a control group subsystem 
+> >> implementing a control group freezer.
+> >>
+> >> Signed-off-by: Cedric Le Goater <clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
+> >> Signed-off-by: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+> >> Tested-by: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+> > 
+> > There's no problem with doing this... but you should get some debate
+> > (with Linus?) whether using freezer for cgroups is sane. 
+> 
+> Yes that's what we are trying to know, is the fake signal mechanism 
+> used by the freezer something we can build upon ? 
 
-Here are a few results. IO is issued in 4k chunks,
-using O_DIRECT. Each process issues both reads
-and writes. There are 60 such processes in each cgroup (except
-where noted). Numbers given show the total count of io requests
-(read and write) completed in 60 seconds. All processes use
-the same partition, fs is ext3.
+Well, currently, the freezer doesn't send fake signals to kernel threads which
+turns out to be problematic, becase some kernel threads behave very much like
+user space processes (basically, the threads related to NFS and CIFS).
 
-Vasily's scheduler:
-------------------------------------------------------
-| cgroup | s0                 | s1             |total |
-|priority|  4                 |  4             |I/Os  |
-------------------------------------------------------
-|        | 24953              | 24062          | 49015|
-|        | 29558(60 processes)| 14639 (30 proc)| 44197|
--------------------------------------------------------
-|priority|    0               |  4             |      |
-|        | 24221              | 24047          | 48268|
-|priority|    1               |  4             |      |
-|        | 24897              | 24509          | 49406|
-|priority|    2               |  4             |      |
-|        | 23295              | 23622          | 46917|
-|priority|    0               |  7             |      |
-|        | 22301              | 23373          | 45674|
--------------------------------------------------------
+I have an idea how to fix this issue, but I'm not sure if it's acceptable
+overall.  I'll try to prepare a patch later today or tomorrow.
 
-Satoshi's scheduler:
--------------------------------------------------------
-| cgroup | s0                 | s1             |total |
-|priority|  3                 |  3             |I/Os  |
-|        | 25175              | 26463          | 51638|
-|        | 26944 (60)         | 26698 (30)     | 53642|
--------------------------------------------------------
-|priority|   0                |  3             |      |
-|        | 60821              | 19846          | 80667|
-|priority|   1                |  3             |      |
-|        | 50608              | 25994          | 76602|
-|priority|   2                |  3             |      |
-|        | 32132              | 26641          | 58773|
-|priority|   7                |  0             |      |
-|        | 91387              | 12547          |103934|
-------------------------------------------------------
-
-So in short, i can't see any effect when i use Vasily's
-i/o scheduler. Setting
-echo 10 > /sys/block/hda/queue/iosched/cgrp_slice
-did at least show different results in the 'prio 7 vs. prio 0 case'
-(~29000 (prio 7) vs. 20000 (prio 0)).
-
-What i found surprising is that Satoshis scheduler has
-about twice of the io count...
-
-Thanks, Florian
+Thanks,
+Rafael
