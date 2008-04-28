@@ -1,17 +1,15 @@
-From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [RFC][PATCH 3/5] Container Freezer: Implement freezer cgroup
-	subsystem
-Date: Sun, 27 Apr 2008 23:03:58 -0500
-Message-ID: <20080428040358.GA5867__15837.0549128906$1209355619$gmane$org@sergelap.austin.ibm.com>
-References: <20080424064756.643890130@us.ibm.com>
-	<20080424064757.526468716@us.ibm.com>
-	<6599ad830804242251w439dd712tc1919b489535c74c@mail.gmail.com>
+From: Hirokazu Takahashi <taka-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
+Subject: Re: [PATCH 2/2] dm-ioband: I/O bandwidth controller v0.0.4: Document
+Date: Mon, 28 Apr 2008 15:49:15 +0900 (JST)
+Message-ID: <20080428.154915.10236691.taka__40358.2520936199$1209365540$gmane$org@valinux.co.jp>
+References: <20080424.201857.183035295.ryov@valinux.co.jp>
+	<20080424.202219.59667073.ryov@valinux.co.jp>
+	<20080426114535.e19283be.akpm@linux-foundation.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <6599ad830804242251w439dd712tc1919b489535c74c-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
+In-Reply-To: <20080426114535.e19283be.akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -21,109 +19,52 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
-Cc: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Linux-Kernel <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Cedric Le Goater <clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>, Pavel Machek <pavel-+ZI9xUNit7I@public.gmane.org>, linux-pm-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Linus Torvalds <torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
+To: akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org
+Cc: xen-devel-GuqFBffKawuULHF6PoxzQEEOCMrvLtNR@public.gmane.org, sergk-4fxBgsLEJ9cH6wp9xFTt+g@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, virtualization-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, dm-devel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, agk-9JcytcrH/bA+uJoB2kUjGw@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Quoting Paul Menage (menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org):
-> >+static const char *freezer_state_strs[] = {
-> >+	"RUNNING\n",
-> >+	"FREEZING\n" ,
-> >+	"FROZEN\n"
-> >+};
-> 
-> I think it might be cleaner to not include the \n characters in this array.
-> 
-> >+static inline int cgroup_frozen(struct task_struct *task)
-> >+{
-> >+	struct cgroup *cgroup = task_cgroup(task, freezer_subsys_id);
-> >+	struct freezer *freezer = cgroup_freezer(cgroup);
-> >+	enum freezer_state state;
-> >+
-> >+	spin_lock(&freezer->lock);
-> >+	state = freezer->state;
-> >+	spin_unlock(&freezer->lock);
-> >+
-> >+	return (state == STATE_FROZEN);
-> >+}
-> 
-> You need to be in an RCU critical section or else hold task_lock() in
-> order to dereference the cgroup returned from task_cgroup()
-> 
-> I'm not sure that you need to take freezer->lock here - you're just
-> reading a single word.
-> 
-> >+
-> >+	if (!capable(CAP_SYS_ADMIN))
-> >+		return ERR_PTR(-EPERM);
-> >+
-> 
-> Why does everyone keep throwing calls to check CAP_SYS_ADMIN into
-> their cgroup create callbacks? You have to be root in order to mount a
-> cgroups hierarchy in the first place, and filesystem permissions will
-> control who can create new cgroups.
+Hi,
 
-The scourge of cut-n-paste :)  Except I'm thinking that the check should
-be taken out of even kernel/ns_cgroup.c:ns_create(), which I think is
-where that all began.
+> > +What's dm-ioband all about?
+> > +
+> > +     dm-ioband is an I/O bandwidth controller implemented as a device-mapper
+> > +   driver. Several jobs using the same physical device have to share the
+> > +   bandwidth of the device. dm-ioband gives bandwidth to each job according
+> > +   to its weight, which each job can set its own value to.
+> > +
+> > +     At this time, a job is a group of processes with the same pid or pgrp or
+> > +   uid. There is also a plan to make it support cgroup. A job can also be a
+> > +   virtual machine such as KVM or Xen.
+> 
+> Most writes are performed by pdflush, kswapd, etc.  This will lead to large
+> inaccuracy.
+> 
+> It isn't trivial to fix.  We'd need deep, long tracking of ownership
+> probably all the way up to the pagecache page.  The same infrastructure
+> would be needed to make Sergey's "BSD acct: disk I/O accounting" vaguely
+> accurate.  Other proposals need it, but I forget what they are.
 
-The reason why tossing these in is bad is that it requires us to give
-*away* extra privilege.
+I'm working on this topic and I've posted patches once.
+http://lwn.net/Articles/273802/
 
-> >+static int freezer_can_attach(struct cgroup_subsys *ss,
-> >+			      struct cgroup *new_cgroup,
-> >+			      struct task_struct *task)
-> >+{
-> >+	struct freezer *freezer = cgroup_freezer(new_cgroup);
-> >+	int retval = 0;
-> >+
-> >+	if (freezer->state == STATE_FROZEN)
-> >+		retval = -EBUSY;
-> >+
-> >+	return retval;
-> >+}
-> 
-> You should comment here that the call to cgroup_lock() in the
-> freezer.state write method prevents a write to that file racing
-> against an attach, and hence the can_attach() result will remain valid
-> until the attach completes.
-> 
-> >+static ssize_t freezer_write(struct cgroup *cgroup,
-> >+			     struct cftype *cft,
-> >+			     struct file *file,
-> >+			     const char __user *userbuf,
-> >+			     size_t nbytes, loff_t *unused_ppos)
-> >+{
-> >+	char *buffer;
-> >+	int retval = 0;
-> >+	enum freezer_state goal_state;
-> >+
-> >+	if (nbytes >= PATH_MAX)
-> >+		return -E2BIG;
-> >+
-> >+	/* +1 for nul-terminator */
-> >+	buffer = kmalloc(nbytes + 1, GFP_KERNEL);
-> >+	if (buffer == NULL)
-> >+		return -ENOMEM;
-> 
-> Given that you're copying a string whose maximum valid length is
-> "FREEZING" you don't really need to use a dynamically-allocated
-> buffer.
-> 
-> But I really ought to provide a write_string() method that handles
-> this kind of copying on behalf of cgroup subsystems, the way it
-> already does for 64-bit ints.
-> 
-> >+	if (strcmp(buffer, "RUNNING") == 0)
-> >+		goal_state = STATE_RUNNING;
-> >+	else if (strcmp(buffer, "FROZEN") == 0)
-> >+		goal_state = STATE_FROZEN;
-> 
-> Would it make sense to compare against the strings you already have in
-> the array earlier in the file?
-> 
-> Paul
-> _______________________________________________
-> Containers mailing list
-> Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-> https://lists.linux-foundation.org/mailman/listinfo/containers
+The current linux kernel already has the memory subsystem of cgroup.
+You can determine which page is owned by which cgroup with it.
+I realized we could easily implement "tracking mechanism of block I/O"
+on the feature of this memory subsystem. 
+
+When you have an I/O request, it requires data transfer between a certain
+page and certain sectors in a disk. This means every I/O requests has
+a target page, so you can find out the owner of the page using this
+feature. I think it will be okay to assume that the owner of the page
+is the owner of the I/O request to the page.
+
+I have a plan on porting the patch to the latest version of linux.
+I'm going to make it general, so not only dm-ioband but also OpenVz
+team and the NEC team, which are is working on having the CFQ scheduler
+control the bandwidth, will be able to make use of this feature.
+
+But it will take some time to port it since the code of the memory
+subsystem has been being modified a lot recently.
+
+Thank you,
+Hirokazu Takahashi.
