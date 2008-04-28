@@ -1,15 +1,13 @@
-From: Ryo Tsuruta <ryov-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
-Subject: Re: [PATCH 2/2] dm-ioband: I/O bandwidth controller v0.0.4: Document
-Date: Mon, 28 Apr 2008 17:06:27 +0900 (JST)
-Message-ID: <20080428.170627.59682428.ryov__29749.8150649064$1209370203$gmane$org@valinux.co.jp>
-References: <20080424.201857.183035295.ryov@valinux.co.jp>
-	<20080424.202219.59667073.ryov@valinux.co.jp>
-	<20080426114535.e19283be.akpm@linux-foundation.org>
+From: Cedric Le Goater <clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
+Subject: Re: Userspace checkpoint/restart hack: cryo
+Date: Mon, 28 Apr 2008 11:47:09 +0200
+Message-ID: <48159D1D.3050302@fr.ibm.com>
+References: <1209144259.12718.46.camel@nimitz.home.sr71.net>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20080426114535.e19283be.akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
+In-Reply-To: <1209144259.12718.46.camel-FpcvD5N4B9G9xGwK5P7XA+TW4wlIGRCZ@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,46 +17,65 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org
-Cc: xen-devel-GuqFBffKawuULHF6PoxzQEEOCMrvLtNR@public.gmane.org, sergk-4fxBgsLEJ9cH6wp9xFTt+g@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, virtualization-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, dm-devel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, agk-9JcytcrH/bA+uJoB2kUjGw@public.gmane.org
+To: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Cc: Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Hi,
+Dave Hansen wrote:
+> A guy named Marc Vertes wrote this as a little demonstration of
+> checkpoint/restart.  I've been using it to experiment with
+> checkpoint/restart.  I thought it might be of some use as we move
+> subsystems to being helped by the kernel to checkpoint and restart.
+> 
+> It's ptrace-based, and stuck on i386 for now.  It can probably be ported
+> elsewhere without too much trouble.    It doesn't support *anything
+> fancy like multuiple tasks :).  It has the advantage of being very
+> feature-bare, and I think it is pretty easy to hack on.  Whatever c/r
+> support we add to the kernel could easily be added on and tested.
+> 
+> http://userweb.kernel.org/~daveh/cryo/cryo-001.tar.gz
+> 
+> Usage:
+> 	cr -p `pidof task` > checkpoint.cryo 
+> 	cr -r < checkpoint.cryo
+> 
+> If anyone else has something simpler or easier to hack on, I'm all ears.
 
-> Most writes are performed by pdflush, kswapd, etc.  This will lead to large
-> inaccuracy.
->
-> It isn't trivial to fix.  We'd need deep, long tracking of ownership
-> probably all the way up to the pagecache page.  The same infrastructure
-> would be needed to make Sergey's "BSD acct: disk I/O accounting" vaguely
-> accurate.  Other proposals need it, but I forget what they are.
+Indeed. It looks simple enough.
 
-I also realize that some kernel threads such as pdflush perform actual
-writes instead of tasks which originally issued write requests.
-So, taka is developing a blocking I/O tacking down mechanism which is
-based on cgroup memory controller and posted it to LKML:
-http://lwn.net/Articles/273802/
+do you have some kernel requirement ? I run Fedora 8
 
-However, the current implementation works well with Xen virtual
-machines, because virtual machine's I/Os are issued from its own kernel
-thread and can be tracked down. Please see a benchmark result of Xen
-virtual machine:
-http://people.valinux.co.jp/~ryov/dm-ioband/benchmark/xen-blktap.html
+Here's my first try on a program calculating decimal of PI : 
 
-As for KVM, dm-ioband was also able to track down block I/Os as I
-expected. When dm-ioband is used in virtual machine environment,
-I think even the current implementation will work fairly.
+	$ ./cr -p `pidof pi1` > pi1.cryo
+	attaching to pid: 11082
+	[11087 cr.c:243 getfdinfo()] n : 0
+	WARNING (sci.c:242) unexpected signal for 11082: 11
+	[11087 sci.c:228 ptrace_waitsyscall()] WTERMSIG(status) : 11
+	ERROR (sci.c:383) ptrace_getregs(11082, 0xbfe4a3d0) errno=3: No such process
+	./cr[0x8051f10]
+	./cr[0x8049ce9]
+	./cr[0x804b7d2]
+	./cr[0x804f75b]
+	***STOP***
 
-But unfortunately I found KVM still had a performance problem that
-it couldn't handle I/Os efficiently yet, which should be improved.
-I already posted this problem to kvm-devel list:
-http://sourceforge.net/mailarchive/forum.php?thread_name=20080229.210531.226799765.ryov%40valinux.co.jp&forum_name=kvm-devel
+other terminal :
+
+	$ pi1 20000
+	pi1 - 20000 digits, 78.1 kbytes
+	Segmentation fault (core dumped)
+
+Thanks,
+
+C.
+
+Signed-off-by: Cedric Le Goater <clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
+--- Makefile~   2008-04-25 19:05:57.000000000 +0200
++++ Makefile    2008-04-28 09:02:50.000000000 +0200
+@@ -7,6 +7,3 @@ all : $(BIN) $(MAN1)
  
-> Much more minor points: when merge-time comes, the patches should have the
-> LINUX_VERSION_CODE stuff removed.  And probably all of the many `inline's
-> should be removed.
-
-Thank you for your advice. I'll have these fixes included in the next
-release.
-
-Ryo Tsuruta
+ #cr: cr.o utils.o list_hash.o ptrace_linux_x86.o
+ cr: cr.o utils.o list_hash.o sci.o injlib.o
+-
+-include ../version.mk
+-include ../c.mk
