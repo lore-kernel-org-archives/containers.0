@@ -1,7 +1,7 @@
-From: Hirokazu Takahashi <taka-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
+From: Ryo Tsuruta <ryov-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
 Subject: Re: [PATCH 2/2] dm-ioband: I/O bandwidth controller v0.0.4: Document
-Date: Mon, 28 Apr 2008 15:49:15 +0900 (JST)
-Message-ID: <20080428.154915.10236691.taka__40358.2520936199$1209365540$gmane$org@valinux.co.jp>
+Date: Mon, 28 Apr 2008 17:06:27 +0900 (JST)
+Message-ID: <20080428.170627.59682428.ryov__29749.8150649064$1209370203$gmane$org@valinux.co.jp>
 References: <20080424.201857.183035295.ryov@valinux.co.jp>
 	<20080424.202219.59667073.ryov@valinux.co.jp>
 	<20080426114535.e19283be.akpm@linux-foundation.org>
@@ -25,46 +25,40 @@ List-Id: containers.vger.kernel.org
 
 Hi,
 
-> > +What's dm-ioband all about?
-> > +
-> > +     dm-ioband is an I/O bandwidth controller implemented as a device-mapper
-> > +   driver. Several jobs using the same physical device have to share the
-> > +   bandwidth of the device. dm-ioband gives bandwidth to each job according
-> > +   to its weight, which each job can set its own value to.
-> > +
-> > +     At this time, a job is a group of processes with the same pid or pgrp or
-> > +   uid. There is also a plan to make it support cgroup. A job can also be a
-> > +   virtual machine such as KVM or Xen.
-> 
 > Most writes are performed by pdflush, kswapd, etc.  This will lead to large
 > inaccuracy.
-> 
+>
 > It isn't trivial to fix.  We'd need deep, long tracking of ownership
 > probably all the way up to the pagecache page.  The same infrastructure
 > would be needed to make Sergey's "BSD acct: disk I/O accounting" vaguely
 > accurate.  Other proposals need it, but I forget what they are.
 
-I'm working on this topic and I've posted patches once.
+I also realize that some kernel threads such as pdflush perform actual
+writes instead of tasks which originally issued write requests.
+So, taka is developing a blocking I/O tacking down mechanism which is
+based on cgroup memory controller and posted it to LKML:
 http://lwn.net/Articles/273802/
 
-The current linux kernel already has the memory subsystem of cgroup.
-You can determine which page is owned by which cgroup with it.
-I realized we could easily implement "tracking mechanism of block I/O"
-on the feature of this memory subsystem. 
+However, the current implementation works well with Xen virtual
+machines, because virtual machine's I/Os are issued from its own kernel
+thread and can be tracked down. Please see a benchmark result of Xen
+virtual machine:
+http://people.valinux.co.jp/~ryov/dm-ioband/benchmark/xen-blktap.html
 
-When you have an I/O request, it requires data transfer between a certain
-page and certain sectors in a disk. This means every I/O requests has
-a target page, so you can find out the owner of the page using this
-feature. I think it will be okay to assume that the owner of the page
-is the owner of the I/O request to the page.
+As for KVM, dm-ioband was also able to track down block I/Os as I
+expected. When dm-ioband is used in virtual machine environment,
+I think even the current implementation will work fairly.
 
-I have a plan on porting the patch to the latest version of linux.
-I'm going to make it general, so not only dm-ioband but also OpenVz
-team and the NEC team, which are is working on having the CFQ scheduler
-control the bandwidth, will be able to make use of this feature.
+But unfortunately I found KVM still had a performance problem that
+it couldn't handle I/Os efficiently yet, which should be improved.
+I already posted this problem to kvm-devel list:
+http://sourceforge.net/mailarchive/forum.php?thread_name=20080229.210531.226799765.ryov%40valinux.co.jp&forum_name=kvm-devel
+ 
+> Much more minor points: when merge-time comes, the patches should have the
+> LINUX_VERSION_CODE stuff removed.  And probably all of the many `inline's
+> should be removed.
 
-But it will take some time to port it since the code of the memory
-subsystem has been being modified a lot recently.
+Thank you for your advice. I'll have these fixes included in the next
+release.
 
-Thank you,
-Hirokazu Takahashi.
+Ryo Tsuruta
