@@ -1,68 +1,40 @@
-From: Ryo Tsuruta <ryov-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
-Subject: Re: [Devel] Re: [RFC][v2][patch 0/12][CFQ-cgroup]Yet another I/O
-	bandwidth controlling subsystem for CGroups based on CFQ
-Date: Tue, 29 Apr 2008 09:44:38 +0900 (JST)
-Message-ID: <20080429.094438.48502686.ryov__36020.3455704779$1209430012$gmane$org@valinux.co.jp>
-References: <005d01c89559$9e538200$dafa8600$@jp.nec.com>
-	<20080425.185444.115924172.ryov@valinux.co.jp>
-	<20080425213702.GL19845@Chamillionaire.breakpoint.cc>
+From: KAMEZAWA Hiroyuki <kamezawa.hiroyu@jp.fujitsu.com>
+Subject: Re: [RFC][-mm] [2/2] Simple stats for memory resource controller
+Date: Tue, 29 Apr 2008 14:42:08 +0900
+Message-ID: <20080429144208.396a8075.kamezawa.hiroyu@jp.fujitsu.com>
+References: <200804052340.02386.balajirrao@gmail.com>
+	<48036CB4.5050700@linux.vnet.ibm.com>
+	<200804282130.30188.balajirrao@gmail.com>
+	<20080428094026.bc78ccc7.akpm@linux-foundation.org>
+	<48161159.6010802@linux.vnet.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
+Content-Type: text/plain; charset=US-ASCII
 Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20080425213702.GL19845-N26foeg2n7CSQxDm3FYtNwe+0vtP5+jfMa5aj3AfGnc@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: fw-HFFVJYpyMKqzQB+pC5nmwQ@public.gmane.org
-Cc: axboe-tSWWG44O7X1aa/9Udqfwiw@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, vtaras-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org, tom-sugawara-LYU95VJlayp8UrSeD/g0lQ@public.gmane.org
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1757130AbYD2Fhn@vger.kernel.org>
+In-Reply-To: <48161159.6010802@linux.vnet.ibm.com>
+Sender: linux-kernel-owner@vger.kernel.org
+To: balbir@linux.vnet.ibm.com
+Cc: Andrew Morton <akpm@linux-foundation.org>, dhaval@linux.vnet.ibm.com, linux-kernel@vger.kernel.org, containers@lists.osdl.org, menage@google.com, Balaji Rao <balajirrao@gmail.com>
 List-Id: containers.vger.kernel.org
 
-Hi Florian,
+On Mon, 28 Apr 2008 23:33:05 +0530
+Balbir Singh <balbir@linux.vnet.ibm.com> wrote:
 
-> Here are a few results.
+> The statistics was added as a part of git commit
+> d52aa412d43827033a8e2ce4415ef6e8f8d53635. I'll go ahead and try to document
+> them. These patches piggy back on the statistics patches and add pagein/pageout
+> counts, which is a useful statistic for the memory controller.
+> 
+I'm sorry for lack of documentation.
+BTW, when you adds documentation on this pagein/pageout, please make it clear
 
-Thank you very much.
+1. pagein means a new page is newly acconted to this cgrop, doesn't means
+   a page is read from disk.
+2. pageout means a page is dropped from this cgroup, doesn't means a page
+   is written into disk.
 
-> What i found surprising is that Satoshis scheduler has
-> about twice of the io count...
+So, pagein/pageout is a bit ambiguous. I'm happy if you find better names.
 
-Of my previous results, Satoshi's scheduler has about twice of the io
-count on the write test, but both io counts on the read test are
-nearly the same.
-
-Here are another results. The test procedure is as follows:
-  o Prepare 3 partitions sdc2, sdc3 and sdc4.
-  o Run 50 processes for sdc2, 100 processes for sdc3 and 150 processes
-    for sdc4. Apply I/O loads in inverse to the priority level.
-  o Each process issuing random read/write direct I/O with 4KB data.
-  o Count up the number of I/Os which have done in 60 seconds.
-
-               The number of I/Os (percentage to total I/Os)
-   -------------------------------------------------------------------
-  | partition       |    sdc2     |    sdc3     |    sdc4     | total |
-  | processes       |     50      |    100      |    150      |  I/Os |
-  |-----------------+-------------+-------------+-------------|-------|
-  | Normal          |  2281(18%)  |  4287(34%)  |  6005(48%)  | 12573 |
-  |-----------------+-------------+-------------+-------------+-------|
-  | Vasily's sched. |             |             |             |       |
-  | cgroup priority |  7(highest) |     4       |  0(lowest)  |       |
-  |                 |  3713(24%)  |  6587(42%)  |  5354(34%)  | 15654 |
-  |-----------------+-------------+-------------+-------------+-------|
-  | Satoshi's sched.|             |             |             |       |
-  | cgroup priority |  0(highest) |     4       |  7(lowest)  |       |
-  |                 |  5399(42%)  |  6506(50%)  |  1034( 8%)  | 12939 |
-   -------------------------------------------------------------------
-
-Satoshi's scheduler suppressed the I/O to the lowest priority
-partition better than Vasily's one, but Vasily's scheduler got the
-highest total I/Os.
 
 Thanks,
-Ryo Tsuruta
+-Kame
