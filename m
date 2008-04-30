@@ -1,16 +1,10 @@
-From: Paul Jackson <pj-sJ/iWh9BUns@public.gmane.org>
-Subject: Re: [RFC][PATCH 5/5] Add a Signal Control Group Subsystem
-Date: Wed, 30 Apr 2008 03:18:57 -0500
-Message-ID: <20080430031857.cda5d105.pj__44864.0023744248$1209543739$gmane$org@sgi.com>
-References: <20080424064756.643890130@us.ibm.com>
-	<20080424064758.113999091@us.ibm.com>
-	<20080424143032.7e659522.pj@sgi.com>
-	<1209541714.6095.72.camel@localhost.localdomain>
+From: "SUPPORT" <email.wiyo-gM/Ye1E23mwN+BqQ9rBEUg@public.gmane.org>
+Subject: kostenloser Testzugang
+Date: Wed, 30 Apr 2008 15:23:10 +0700
+Message-ID: <5A707B03.EAB70A2C@googlemail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: multipart/mixed; boundary="===============3355984412277059833=="
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1209541714.6095.72.camel-bi+AKbBUZKY6gyzm1THtWbp2dZbC/Bob@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,19 +12,116 @@ List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
 List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Mime-version: 1.0
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org, pavel-+ZI9xUNit7I@public.gmane.org, menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, linux-pm-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Amateure <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Matt wrote:
-> OK, I renamed it signal.send
+--===============3355984412277059833==
+Content-Type: text/plain;
+	charset="us-ascii"
+Content-Transfer-Encoding: quoted-printable
+X-MIME-Autoconverted: from 8bit to quoted-printable by smtp1.linux-foundation.org id m3U8S44F018411
 
-I'm not familiar with the cgroup subsystem naming conventions,
-but modulo that, this looks good to me - thanks!
+pxe zzxe yt kdxkh xso yxzhbuv ky gkfueywl
+---
 
--- 
-                  I won't rest till it's the best ...
-                  Programmer, Linux Scalability
-                  Paul Jackson <pj-sJ/iWh9BUns@public.gmane.org> 1.940.382.4214
+Hallo!
+
+Wolltest Du nicht schon immer einmal kostenlos in die gr=F6sste
+deutschsprachige Bizarrseite reinschnuppern?
+
+Einfach nur aus Neugier, was das so abgeht?
+
+- Millionen Bilder
+- Tausende Videos
+- LiveCams
+- und vieles mehr
+
+Du hast jetzt die einmalige Gelegenheit diese ganze Dinge volle 3 Tage
+KOSTENLOS zu nutzen, indem du sofort dein pers=F6nlichen Testzugang
+anforderst. Das ist genauso einfach wie ein Probeabo einer Tageszeitung ;=
+-)
+
+Sollte dir diese Bizarrseite genauso gut gefallen wie mir, dann brauchst =
+du
+nichts zu tun und dein Testzugang wird zu einer regul=E4ren Mitgliedschaf=
+t.
+Falls Dir diese genaiale Seite nicht gef=E4llt (was ich mir eigentlich ni=
+cht
+vorstellen kann), dann k=FCndigst du einfach nach 3 Tagen dein Zugang wie=
+der
+;-)
+
+Also, verpasse diese einmalige Gelegenheit auf keinen Fall und fordere
+jetzt KOSTENLOS deine Zugangsdaten f=FCr den Teszugang an:
+
+http://www.3-tage-probezugang-bizarr.de.vu
+
+
+Viel Spass w=FCnscht
+
+Mone
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Hier k=F6nnen Sie sich aus dem Verteiler austragen:
+http://www.profiletter.de/RWCode/subscribe.asp?SID=3D10&SiteID=3D3664&Ema=
+il=3D&Hi
+tID=3D1207984903000
+
+
+---
+gyz ixsb pq afbnl dmy berkhoe jh lejywony
+
+
+
+
+
+
+
+
+
+
+
+--===============3355984412277059833==
+Content-Type: text/plain; charset="us-ascii"
+MIME-Version: 1.0
+Content-Disposition: inline
+Content-Transfer-Encoding: 7bit
+
+_______________________________________________
+Containers mailing list
+Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+https://lists.linux-foundation.org/mailman/listinfo/containers
+--===============3355984412277059833==--
