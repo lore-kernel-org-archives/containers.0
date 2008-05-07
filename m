@@ -1,11 +1,20 @@
-From: "max" <max-S0/GAf8tV78@public.gmane.org>
-Subject: Questler.de - Du hast es Dir verdient!
-Date: Wed, 7 May 2008 14:56:03 +0200
-Message-ID: <200805071256.m47CuDwC030093@smtp1.linux-foundation.org>
+From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH 1/8] Scaling msgmni to the amount of lowmem
+Date: Wed, 7 May 2008 08:17:12 -0500
+Message-ID: <20080507131712.GA8580__22760.2085601122$1210166350$gmane$org@sergelap.austin.ibm.com>
+References: <20080211141646.948191000@bull.net>
+	<20080211141813.354484000@bull.net>
+	<12c511ca0804291328v2f0b87csd0f2cf3accc6ad00@mail.gmail.com>
+	<481EC917.6070808@bull.net>
+	<1FE6DD409037234FAB833C420AA843EC014392F9@orsmsx424.amr.corp.intel.com>
+	<20080506180527.GA8315@sergelap.austin.ibm.com>
+	<48214007.7050800@bull.net>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: base64
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <48214007.7050800-6ktuUTfB/bM@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -15,49 +24,52 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Containers <Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+To: Nadia Derbey <Nadia.Derbey-6ktuUTfB/bM@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, cmm-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-IApIb21lRm9ydW1BR0IgLyBGQVFNZWRpYWRhdGVuQmxvZ0tvbnRha3RJbXByZXNzdW0KCjQsMTg4
-NSBFVVIgKyAxLDMzIEVVUgozNjMgUXVlc3RsZXIgIAoKIEVpbnN0ZWxsdW5nZW4KIFByb2ZpbAog
-U3RhdGlzdGlrCiBUcmFuc2FrdGlvbmVuCiBSZWZlcnJhbHMKIEd1dHNjaGVpbmUKIFF1ZXN0bGVy
-LVNIT1AKIEF1c3phaGx1bmcKCiBNYWlsLUhpc3RvcnkKIFBhaWRiYW5uZXIKCiBsb2dvdXQKIEFj
-Y291bnQgbNGGc2NoZW4KCgoKClNwb25zb3Jlbi1Mb2dpbgpTcG9uc29yLUlEOiAKClBhc3N3b3J0
-OiAKCiAKIFBhc3N3b3J0PyAgQW5tZWxkZW4hCiBQcmVpc2UgCgoKCgoKCnd3dy5jaWFvLmRlSGVy
-emxpY2ggd2lsbGtvbW1lbiBhdWYgUXVlc3RsZXIuZGUhCgoKCgpRdWVzdGxlci5kZSBpc3QgZWlu
-IFBhaWRtYWlsZXIsIGRlciBzZWluZW4gU3BvbnNvcmVuIGRpZSBN0YZnbGljaGtlaXQgYmlldGV0
-LCBkZW0gVXNlciBiZWkgZGVyIFBhaWRtYWlsIGVpbmUgRnJhZ2UgenUgc2VpbmVtIEFuZ2Vib3Qg
-enUgc3RlbGxlbi4gVXNlciBlcmhhbHRlbiBiZWkga29ycmVrdGVyIEJlYW50d29ydHVuZyBhdHRy
-YWt0aXZlIFp1c2F0enZlcmfRjHR1bmdlbiB1bmQgU3BvbnNvcmVuIGRpZSBHYXJhbnRpZSwgZGFz
-cyBzaWNoIGRlciBVc2VyIG1pdCBkZXIgYmV3b3JiZW5lbiBTZWl0ZSBhdXNlaW5hbmRlcmdlc2V0
-enQgaGF0LgoKV2VpdGVyaGluIGhhYmVuIFVzZXIgZGllIE3RhmdsaWNoa2VpdCwgZHVyY2ggdmll
-bGUgQm9udXNha3Rpb25lbiB6dXPQtHR6bGljaCB2aWVsIEdlbGQgenUgdmVyZGllbmVuISAKCgoK
-CgpBbGxlIFZvcnRlaWxlIHZvbiBRdWVzdGxlciBhdWYgZWluZW4gQmxpY2s6CiBFaW5tYWxpZ2Vz
-IFNjcmlwdCBhdXMgZWlnZW5lciBIYW5kIQogSG9oZSBWZXJn0Yx0dW5nZW4KIEF1c3phaGx1bmcg
-aS5kLlIuIGlubmVyaGFsYiB2b24gMS0zIFRhZ2VuIGJlaSBQYXlwYWwgdW5kIEtsYW1tLUxvc2Ug
-dW5kIDcgVGFnZSBiZWkgQmFua9GMYmVyd2Vpc3VuZ2VuCiBBdXN6YWhsdW5nIGJlcmVpdHMgYWIg
-MTDQgiAo0KxiZXJ3ZWlzdW5nKSwgNdCCIChQYXlwYWwpIGJ6dy4gNTAwMDAwMCBLbGFtbS1Mb3Nl
-bgogMyBSZWYtRWJlbmVuICg3JSwgMyUsIDElKQogUmVmLUJhY2sgZtGMciBkaWUgMS4gRWJlbmUh
-CiB1LnYubS4KR2xlaWNoIGFubWVsZGVuIAoKClZvcnRlaWxlIGbRjHIgU3BvbnNvcmVuOgogUmlj
-aHRlbiBTaWUgZGllIEF1Zm1lcmtzYW1rZWl0IGRlcyBCZXN1Y2hlcnMgYXVmIGVpbiBiZXN0aW1t
-dGVzIFByb2R1a3Qgb2RlciBGZWF0dXJlCiBH0Yxuc3RpZyBXZXJiZW4KIEdlbmF1ZSB1bmQgYXVz
-ZtGMaHJsaWNoZSBTdGF0aXN0aWtlbgogVmVyc2NoaWVkZW5lIFBhaWRtYWlsYXJ0ZW4gYnVjaGJh
-cgogR3V0aGFiZW5zYWJ6dWcgbnVyIGJlaSBrb3JyZWt0IGJlYW50d29ydGV0ZW4gRnJhZ2VuCiBT
-Y2hyZWliZW4gU2llIHp1IGplZGVyIFplaXQgYWxsZSBuZXVlbiBVc2VyIGFuIQogUmVzdC1HdXRo
-YWJlbiB3aXJkIHp1IDEwMCUgZ3V0Z2VzY2hyaWViZW4hIChuaWNodCBiZXN00LR0aWd0ZSBNYWls
-cyB1bmQgRnJhZ2VuKQogdS52Lm0uCkdsZWljaCBhbm1lbGRlbgoKCkFubWVsZGVuIGxvaG50IHNp
-Y2ghIEhpZXIgdW5zZXJlIGxldHp0ZW4gTWFpbHM6Ck1haWwgdm9tIDA3LjA1LjA4LCAxMDozOSBV
-SFI6IDI1LjIgQ2VudCAoRW1wZtC0bmdlcjogMjU5MDApCk1haWwgdm9tIDA3LjA1LjA4LCAxMDoy
-MyBVSFI6IDM1LjI1IENlbnQgKEVtcGbQtG5nZXI6IDI1ODk5KQpNYWlsIHZvbSAwNy4wNS4wOCwg
-MTA6MjMgVUhSOiAxIENlbnQgKEVtcGbQtG5nZXI6IDI2MCkKTWFpbCB2b20gMDcuMDUuMDgsIDEw
-OjIwIFVIUjogMzAuMiBDZW50IChFbXBm0LRuZ2VyOiAyNTg5OSkKTWFpbCB2b20gMDcuMDUuMDgs
-IDEwOjEzIFVIUjogMTIuMiBDZW50IChFbXBm0LRuZ2VyOiAyNTg5NykKTWFpbCB2b20gMDcuMDUu
-MDgsIDEwOjEyIFVIUjogMTUuMiBDZW50IChFbXBm0LRuZ2VyOiAyNTg5NykKTWFpbCB2b20gMDcu
-MDUuMDgsIDEwOjEwIFVIUjogMzAuMiBDZW50IChFbXBm0LRuZ2VyOiAyNTg5NykKTWFpbCB2b20g
-MDYuMDUuMDgsIDE1OjU2IFVIUjogMi41IENlbnQgKEVtcGbQtG5nZXI6IDI1MCkKTWFpbCB2b20g
-MDYuMDUuMDgsIDE6MTIgVUhSOiAyMC4yIENlbnQgKEVtcGbQtG5nZXI6IDI1ODI2KQpNYWlsIHZv
-bSAwNi4wNS4wOCwgMToxMiBVSFI6IDIwLjIgQ2VudCAoRW1wZtC0bmdlcjogMjU4MjYpCgoKwqkg
-YnkgUXVlc3RsZXIuZGUgQ2hyaXN0aWFuIEhhbW0gfCBJbXByZXNzdW0gfCB3d3c0IApfX19fX19f
-X19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fXwpDb250YWluZXJzIG1haWxp
-bmcgbGlzdApDb250YWluZXJzQGxpc3RzLmxpbnV4LWZvdW5kYXRpb24ub3JnCmh0dHBzOi8vbGlz
-dHMubGludXgtZm91bmRhdGlvbi5vcmcvbWFpbG1hbi9saXN0aW5mby9jb250YWluZXJz
+Quoting Nadia Derbey (Nadia.Derbey-6ktuUTfB/bM@public.gmane.org):
+> Serge E. Hallyn wrote:
+>> Quoting Luck, Tony (tony.luck-ral2JQCrhuEAvxtiuMwx3w@public.gmane.org):
+>>>> Well, this printk had been suggested by somebody (sorry I don't remember 
+>>>> who) when I first submitted the patch. Actually I think it might be 
+>>>> useful for a sysadmin to be aware of a change in the msgmni value: we 
+>>>> have the message not only at boot time, but also each time msgmni is 
+>>>> recomputed because of a change in the amount of memory.
+>>>
+>>> If the message is directed at the system administrator, then it would
+>>> be nice if there were some more meaningful way to show the namespace
+>>> that is affected than just printing the hex address of the kernel 
+>>> structure.
+>>>
+>>> As the sysadmin for my test systems, printing the hex address is mildly
+>>> annoying ... I now have to add a new case to my scripts that look at
+>>> dmesg output for unusual activity.
+>>>
+>>> Is there some better "name for a namespace" than the address? Perhaps
+>>> the process id of the process that instantiated the namespace???
+>> I agree with Tony here.  Aside from the nuisance it is to see that
+>> message on console every time I unshare a namespace, a printk doesn't
+>> seem like the right way to output the info.
+>
+> But you agree that this is happening only because you're doing tests 
+> related to namespaces, right?
+
+Yup :)
+
+> I don't think that in a "standard" configuration this will happen very 
+> frequently, but may be I'm wrong.
+>
+>>  At most I'd say an audit
+>> message.
+>
+> That's a good idea. Thanks, Serge. I'll do that.
+
+It'll probably still end up a printk for me, but it'll be my own fault
+for not setting up audit.
+
+> Regards,
+> Nadia
+
+thanks,
+-serge
