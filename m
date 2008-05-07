@@ -1,14 +1,11 @@
-From: yamamoto-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org (YAMAMOTO Takashi)
-Subject: Re: [RFC][PATCH] another swap controller for cgroup
-Date: Wed,  7 May 2008 14:50:44 +0900 (JST)
-Message-ID: <20080507055045.4ACBD5A0A@siro.lan>
-References: <20080505061142.GA13834@balbir.in.ibm.com>
+From: "max" <max-S0/GAf8tV78@public.gmane.org>
+Subject: Questler.de - Du hast es Dir verdient!
+Date: Wed, 7 May 2008 14:56:03 +0200
+Message-ID: <200805071256.m47CuDwC030093@smtp1.linux-foundation.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: Your message of "Mon, 5 May 2008 11:41:42 +0530"
-	<20080505061142.GA13834-SINUvgVNF2CyUtPGxGje5AC/G2K4zDHf@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,165 +15,49 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
-Cc: minoura-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org, nishimura-YQH0OdQVrdy45+QrQBaojngSJqDPrsil@public.gmane.org, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, hugh-DTz5qymZ9yRBDgjK7y7TUQ@public.gmane.org
+To: Containers <Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-hi,
-
-> Hi, Thanks for the patches and your patience. I've just applied your
-> patches on top of 2.6.25-mm1 (it had a minor reject, that I've fixed).
-> I am building and testing the patches along with KAMEZAWA-San's low
-> overhead patches.
-
-thanks.
-
-> > +#include <linux/err.h>
-> > +#include <linux/cgroup.h>
-> > +#include <linux/hugetlb.h>
-> 
-> My powerpc build fails, we need to move hugetlb.h down to the bottom
-
-what's the error message?
-
-> > +struct swap_cgroup {
-> > +	struct cgroup_subsys_state scg_css;
-> 
-> Can't we call this just css. Since the structure is swap_cgroup it
-> already has the required namespace required to distinguish it from
-> other css's. Please see page 4 of "The practice of programming", be
-> consistent. The same comment applies to all members below.
-
-i don't have the book.
-i like this kind of prefixes as it's grep-friendly.
-
-> > +#define	task_to_css(task) task_subsys_state((task), swap_cgroup_subsys_id)
-> > +#define	css_to_scg(css)	container_of((css), struct swap_cgroup, scg_css)
-> > +#define	cg_to_css(cg)	cgroup_subsys_state((cg), swap_cgroup_subsys_id)
-> > +#define	cg_to_scg(cg)	css_to_scg(cg_to_css(cg))
-> 
-> Aren't static inline better than macros? I would suggest moving to
-> them.
-
-sounds like a matter of preference.
-either ok for me.
-
-> > +static struct swap_cgroup *
-> > +swap_cgroup_prepare_ptp(struct page *ptp, struct mm_struct *mm)
-> > +{
-> > +	struct swap_cgroup *scg = ptp->ptp_swap_cgroup;
-> > +
-> 
-> Is this routine safe w.r.t. concurrent operations, modifications to
-> ptp_swap_cgroup?
-
-it's always accessed with the page table locked.
-
-> > +	BUG_ON(mm == NULL);
-> > +	BUG_ON(mm->swap_cgroup == NULL);
-> > +	if (scg == NULL) {
-> > +		/*
-> > +		 * see swap_cgroup_attach.
-> > +		 */
-> > +		smp_rmb();
-> > +		scg = mm->swap_cgroup;
-> 
-> With the mm->owner patches, we need not maintain a separate
-> mm->swap_cgroup.
-
-i don't think the mm->owner patch, at least with the current form,
-can replace it.
-
-> > +	/*
-> > +	 * swap_cgroup_attach is in progress.
-> > +	 */
-> > +
-> > +	res_counter_charge_force(&newscg->scg_counter, PAGE_CACHE_SIZE);
-> 
-> So, we force the counter to go over limit?
-
-yes.
-
-as newscg != oldscg here means the task is being moved between cgroups,
-this instance of res_counter_charge_force should not matter much.
-
-> > +static int
-> > +swap_cgroup_write_u64(struct cgroup *cg, struct cftype *cft, u64 val)
-> > +{
-> > +	struct res_counter *counter = &cg_to_scg(cg)->scg_counter;
-> > +	unsigned long flags;
-> > +
-> > +	/* XXX res_counter_write_u64 */
-> > +	BUG_ON(cft->private != RES_LIMIT);
-> > +	spin_lock_irqsave(&counter->lock, flags);
-> > +	counter->limit = val;
-> > +	spin_unlock_irqrestore(&counter->lock, flags);
-> > +	return 0;
-> > +}
-> > +
-> 
-> We need to write actual numbers here? Can't we keep the write
-> interface consistent with the memory controller?
-
-i'm not sure what you mean here.  can you explain a bit more?
-do you mean K, M, etc?
-
-> > +static void
-> > +swap_cgroup_destroy(struct cgroup_subsys *ss, struct cgroup *cg)
-> > +{
-> > +	struct swap_cgroup *oldscg = cg_to_scg(cg);
-> > +	struct swap_cgroup *newscg;
-> > +	struct list_head *pos;
-> > +	struct list_head *next;
-> > +
-> > +	/*
-> > +	 * move our anonymous objects to init_mm's group.
-> > +	 */
-> 
-> Is this good design, should be allow a swap_cgroup to be destroyed,
-> even though pages are allocated to it?
-
-first of all, i'm not quite happy with this design. :)
-having said that, what else can we do?
-i tend to think that trying to swap-in these pages is too much effort
-for little benefit.
-
-> Is moving to init_mm (root
-> cgroup) a good idea? Ideally with support for hierarchies, if we ever
-> do move things, it should be to the parent cgroup.
-
-i chose init_mm because there seemed to be no consensus about
-cgroup hierarchy semantics.
-
-> > +		info->swap_cgroup = newscg;
-> > +		res_counter_uncharge(&oldscg->scg_counter, bytes);
-> > +		res_counter_charge_force(&newscg->scg_counter, bytes);
-> 
-> I don't like the excessive use of res_counter_charge_force(), it seems
-> like we might end up bypassing the controller all together. I would
-> rather fail the destroy operation if the charge fails.
-
-> > +	bytes = swslots * PAGE_CACHE_SIZE;
-> > +	res_counter_uncharge(&oldscg->scg_counter, bytes);
-> > +	/*
-> > +	 * XXX ignore newscg's limit because cgroup ->attach method can't fail.
-> > +	 */
-> > +	res_counter_charge_force(&newscg->scg_counter, bytes);
-> 
-> But in the future, we could plan on making attach fail (I have a
-> requirement for it). Again, I don't like the _force operation
-
-allowing these operations fail implies to have code to back out
-partial operations.  i'm afraid that it will be too complex.
-
-> > +static void
-> > +swap_cgroup_attach_mm(struct mm_struct *mm, struct swap_cgroup *oldscg,
-> > +    struct swap_cgroup *newscg)
-> 
-> We need comments about the function, why do we attach an mm?
-
-instead of a task, you mean?
-because we count the number of ptes which points to swap
-and ptes belong to an mm, not a task.
-
-YAMAMOTO Takashi
+IApIb21lRm9ydW1BR0IgLyBGQVFNZWRpYWRhdGVuQmxvZ0tvbnRha3RJbXByZXNzdW0KCjQsMTg4
+NSBFVVIgKyAxLDMzIEVVUgozNjMgUXVlc3RsZXIgIAoKIEVpbnN0ZWxsdW5nZW4KIFByb2ZpbAog
+U3RhdGlzdGlrCiBUcmFuc2FrdGlvbmVuCiBSZWZlcnJhbHMKIEd1dHNjaGVpbmUKIFF1ZXN0bGVy
+LVNIT1AKIEF1c3phaGx1bmcKCiBNYWlsLUhpc3RvcnkKIFBhaWRiYW5uZXIKCiBsb2dvdXQKIEFj
+Y291bnQgbNGGc2NoZW4KCgoKClNwb25zb3Jlbi1Mb2dpbgpTcG9uc29yLUlEOiAKClBhc3N3b3J0
+OiAKCiAKIFBhc3N3b3J0PyAgQW5tZWxkZW4hCiBQcmVpc2UgCgoKCgoKCnd3dy5jaWFvLmRlSGVy
+emxpY2ggd2lsbGtvbW1lbiBhdWYgUXVlc3RsZXIuZGUhCgoKCgpRdWVzdGxlci5kZSBpc3QgZWlu
+IFBhaWRtYWlsZXIsIGRlciBzZWluZW4gU3BvbnNvcmVuIGRpZSBN0YZnbGljaGtlaXQgYmlldGV0
+LCBkZW0gVXNlciBiZWkgZGVyIFBhaWRtYWlsIGVpbmUgRnJhZ2UgenUgc2VpbmVtIEFuZ2Vib3Qg
+enUgc3RlbGxlbi4gVXNlciBlcmhhbHRlbiBiZWkga29ycmVrdGVyIEJlYW50d29ydHVuZyBhdHRy
+YWt0aXZlIFp1c2F0enZlcmfRjHR1bmdlbiB1bmQgU3BvbnNvcmVuIGRpZSBHYXJhbnRpZSwgZGFz
+cyBzaWNoIGRlciBVc2VyIG1pdCBkZXIgYmV3b3JiZW5lbiBTZWl0ZSBhdXNlaW5hbmRlcmdlc2V0
+enQgaGF0LgoKV2VpdGVyaGluIGhhYmVuIFVzZXIgZGllIE3RhmdsaWNoa2VpdCwgZHVyY2ggdmll
+bGUgQm9udXNha3Rpb25lbiB6dXPQtHR6bGljaCB2aWVsIEdlbGQgenUgdmVyZGllbmVuISAKCgoK
+CgpBbGxlIFZvcnRlaWxlIHZvbiBRdWVzdGxlciBhdWYgZWluZW4gQmxpY2s6CiBFaW5tYWxpZ2Vz
+IFNjcmlwdCBhdXMgZWlnZW5lciBIYW5kIQogSG9oZSBWZXJn0Yx0dW5nZW4KIEF1c3phaGx1bmcg
+aS5kLlIuIGlubmVyaGFsYiB2b24gMS0zIFRhZ2VuIGJlaSBQYXlwYWwgdW5kIEtsYW1tLUxvc2Ug
+dW5kIDcgVGFnZSBiZWkgQmFua9GMYmVyd2Vpc3VuZ2VuCiBBdXN6YWhsdW5nIGJlcmVpdHMgYWIg
+MTDQgiAo0KxiZXJ3ZWlzdW5nKSwgNdCCIChQYXlwYWwpIGJ6dy4gNTAwMDAwMCBLbGFtbS1Mb3Nl
+bgogMyBSZWYtRWJlbmVuICg3JSwgMyUsIDElKQogUmVmLUJhY2sgZtGMciBkaWUgMS4gRWJlbmUh
+CiB1LnYubS4KR2xlaWNoIGFubWVsZGVuIAoKClZvcnRlaWxlIGbRjHIgU3BvbnNvcmVuOgogUmlj
+aHRlbiBTaWUgZGllIEF1Zm1lcmtzYW1rZWl0IGRlcyBCZXN1Y2hlcnMgYXVmIGVpbiBiZXN0aW1t
+dGVzIFByb2R1a3Qgb2RlciBGZWF0dXJlCiBH0Yxuc3RpZyBXZXJiZW4KIEdlbmF1ZSB1bmQgYXVz
+ZtGMaHJsaWNoZSBTdGF0aXN0aWtlbgogVmVyc2NoaWVkZW5lIFBhaWRtYWlsYXJ0ZW4gYnVjaGJh
+cgogR3V0aGFiZW5zYWJ6dWcgbnVyIGJlaSBrb3JyZWt0IGJlYW50d29ydGV0ZW4gRnJhZ2VuCiBT
+Y2hyZWliZW4gU2llIHp1IGplZGVyIFplaXQgYWxsZSBuZXVlbiBVc2VyIGFuIQogUmVzdC1HdXRo
+YWJlbiB3aXJkIHp1IDEwMCUgZ3V0Z2VzY2hyaWViZW4hIChuaWNodCBiZXN00LR0aWd0ZSBNYWls
+cyB1bmQgRnJhZ2VuKQogdS52Lm0uCkdsZWljaCBhbm1lbGRlbgoKCkFubWVsZGVuIGxvaG50IHNp
+Y2ghIEhpZXIgdW5zZXJlIGxldHp0ZW4gTWFpbHM6Ck1haWwgdm9tIDA3LjA1LjA4LCAxMDozOSBV
+SFI6IDI1LjIgQ2VudCAoRW1wZtC0bmdlcjogMjU5MDApCk1haWwgdm9tIDA3LjA1LjA4LCAxMDoy
+MyBVSFI6IDM1LjI1IENlbnQgKEVtcGbQtG5nZXI6IDI1ODk5KQpNYWlsIHZvbSAwNy4wNS4wOCwg
+MTA6MjMgVUhSOiAxIENlbnQgKEVtcGbQtG5nZXI6IDI2MCkKTWFpbCB2b20gMDcuMDUuMDgsIDEw
+OjIwIFVIUjogMzAuMiBDZW50IChFbXBm0LRuZ2VyOiAyNTg5OSkKTWFpbCB2b20gMDcuMDUuMDgs
+IDEwOjEzIFVIUjogMTIuMiBDZW50IChFbXBm0LRuZ2VyOiAyNTg5NykKTWFpbCB2b20gMDcuMDUu
+MDgsIDEwOjEyIFVIUjogMTUuMiBDZW50IChFbXBm0LRuZ2VyOiAyNTg5NykKTWFpbCB2b20gMDcu
+MDUuMDgsIDEwOjEwIFVIUjogMzAuMiBDZW50IChFbXBm0LRuZ2VyOiAyNTg5NykKTWFpbCB2b20g
+MDYuMDUuMDgsIDE1OjU2IFVIUjogMi41IENlbnQgKEVtcGbQtG5nZXI6IDI1MCkKTWFpbCB2b20g
+MDYuMDUuMDgsIDE6MTIgVUhSOiAyMC4yIENlbnQgKEVtcGbQtG5nZXI6IDI1ODI2KQpNYWlsIHZv
+bSAwNi4wNS4wOCwgMToxMiBVSFI6IDIwLjIgQ2VudCAoRW1wZtC0bmdlcjogMjU4MjYpCgoKwqkg
+YnkgUXVlc3RsZXIuZGUgQ2hyaXN0aWFuIEhhbW0gfCBJbXByZXNzdW0gfCB3d3c0IApfX19fX19f
+X19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fXwpDb250YWluZXJzIG1haWxp
+bmcgbGlzdApDb250YWluZXJzQGxpc3RzLmxpbnV4LWZvdW5kYXRpb24ub3JnCmh0dHBzOi8vbGlz
+dHMubGludXgtZm91bmRhdGlvbi5vcmcvbWFpbG1hbi9saXN0aW5mby9jb250YWluZXJz
