@@ -1,15 +1,16 @@
-From: Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: Re: [RFC][PATCH] another swap controller for cgroup
-Date: Thu, 08 May 2008 21:13:50 +0530
-Message-ID: <48231FB6.7000206@linux.vnet.ibm.com>
-References: <20080505061142.GA13834@balbir.in.ibm.com>
-	<20080507055045.4ACBD5A0A@siro.lan>
-Reply-To: balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
+From: "Satoshi UCHIDA" <s-uchida-LYU95VJlayp8UrSeD/g0lQ@public.gmane.org>
+Subject: RE: [RFC][v2][patch 0/12][CFQ-cgroup]Yet another I/O bandwidth
+	controlling subsystem for CGroups based on CFQ
+Date: Fri, 9 May 2008 19:17:44 +0900
+Message-ID: <004901c8b1bd$ec22fb70$c468f250$__45104.4918773279$1210328510$gmane$org@jp.nec.com>
+References: <008001c893db$4e2eccf0$ea8c66d0$@jp.nec.com>	<6599ad830804021541s3c1e3197y77d87f63bf47e4b3@mail.gmail.com>	<005d01c89559$9e538200$dafa8600$@jp.nec.com>
+	<20080425.185444.115924172.ryov@valinux.co.jp>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20080507055045.4ACBD5A0A-Pcsii4f/SVk@public.gmane.org>
+In-Reply-To: <20080425.185444.115924172.ryov-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
+Content-Language: ja
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,191 +20,124 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: YAMAMOTO Takashi <yamamoto-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
-Cc: minoura-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org, nishimura-YQH0OdQVrdy45+QrQBaojngSJqDPrsil@public.gmane.org, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, hugh-DTz5qymZ9yRBDgjK7y7TUQ@public.gmane.org
+To: 'Ryo Tsuruta' <ryov-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>, vtaras-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org
+Cc: axboe-tSWWG44O7X1aa/9Udqfwiw@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, tom-sugawara-LYU95VJlayp8UrSeD/g0lQ@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-YAMAMOTO Takashi wrote:
-> hi,
-> 
->> Hi, Thanks for the patches and your patience. I've just applied your
->> patches on top of 2.6.25-mm1 (it had a minor reject, that I've fixed).
->> I am building and testing the patches along with KAMEZAWA-San's low
->> overhead patches.
-> 
-> thanks.
-> 
->>> +#include <linux/err.h>
->>> +#include <linux/cgroup.h>
->>> +#include <linux/hugetlb.h>
->> My powerpc build fails, we need to move hugetlb.h down to the bottom
-> 
-> what's the error message?
-> 
+Hi, Ryo-San.
+Thank you for your test results.
 
-It's unable to find the hugetlb call, I think is_hugetlb_vma() or so.
+In the test #2 and #3, did you use direct write?
+I guess you have used the non-direct write I/O (using cache).
 
->>> +struct swap_cgroup {
->>> +	struct cgroup_subsys_state scg_css;
->> Can't we call this just css. Since the structure is swap_cgroup it
->> already has the required namespace required to distinguish it from
->> other css's. Please see page 4 of "The practice of programming", be
->> consistent. The same comment applies to all members below.
-> 
-> i don't have the book.
-> i like this kind of prefixes as it's grep-friendly.
-> 
->>> +#define	task_to_css(task) task_subsys_state((task), swap_cgroup_subsys_id)
->>> +#define	css_to_scg(css)	container_of((css), struct swap_cgroup, scg_css)
->>> +#define	cg_to_css(cg)	cgroup_subsys_state((cg), swap_cgroup_subsys_id)
->>> +#define	cg_to_scg(cg)	css_to_scg(cg_to_css(cg))
->> Aren't static inline better than macros? I would suggest moving to
->> them.
-> 
-> sounds like a matter of preference.
-> either ok for me.
-> 
+CFQ I/O scheduler was extended in my and Vasily's controllers so that both controllers inherit the features of CFQ.
 
-There are other advantages, like better type checking of the arguments. The
-compiler might even determine that it's better of making a function call instead
-of inlining it (rare, but possible).
+The current CFQ I/O scheduler cannot control non-direct write I/Os.
+This main cause is a cache system.
+Bio data is created by special daemon process, such as pdflush or kswapd, for the write I/O using cache.
+Therefore, many non-direct write I/Os will belong to one of cgroup (perhaps, root of cgroup).
 
->>> +static struct swap_cgroup *
->>> +swap_cgroup_prepare_ptp(struct page *ptp, struct mm_struct *mm)
->>> +{
->>> +	struct swap_cgroup *scg = ptp->ptp_swap_cgroup;
->>> +
->> Is this routine safe w.r.t. concurrent operations, modifications to
->> ptp_swap_cgroup?
-> 
-> it's always accessed with the page table locked.
-> 
->>> +	BUG_ON(mm == NULL);
->>> +	BUG_ON(mm->swap_cgroup == NULL);
->>> +	if (scg == NULL) {
->>> +		/*
->>> +		 * see swap_cgroup_attach.
->>> +		 */
->>> +		smp_rmb();
->>> +		scg = mm->swap_cgroup;
->> With the mm->owner patches, we need not maintain a separate
->> mm->swap_cgroup.
-> 
-> i don't think the mm->owner patch, at least with the current form,
-> can replace it.
-> 
+We consider that this problem should be resolved by fixing cache system.
+Specifically, I/Os created by collection of cache pages belong to I/O-context for task which wrote data to cache.
+This resolution has a problem.
+ * Who is the owner of cache page?
+     Cache is reused by many tasks.
+     Therefore, it is difficult to decide owner.
 
-Could you please mention what the limitations are? We could get those fixed or
-take another serious look at the mm->owner patches.
+In the test #3, It seems that system could control I/Os only among read (sdc2 and sdc3).
+Therefore, your test shows that our controller can control I/O without above problem.
 
->>> +	/*
->>> +	 * swap_cgroup_attach is in progress.
->>> +	 */
->>> +
->>> +	res_counter_charge_force(&newscg->scg_counter, PAGE_CACHE_SIZE);
->> So, we force the counter to go over limit?
-> 
-> yes.
-> 
-> as newscg != oldscg here means the task is being moved between cgroups,
-> this instance of res_counter_charge_force should not matter much.
-> 
 
-Isn't it bad to force a group to go over it's limit due to migration?
+Meanwhile, I'm very interested in the result of your test #2.
+In the non-direct write I/O, performance will be influenced to task scheduling and sequence of output pages.
+Therefore, non-direct write I/O will be fair in the current default task scheduler.
+However, your result shows almost fair in Vasilly's controller, whereas non fair in ours. 
+I'm just wondering if this is an accidental result or an usual result.
 
->>> +static int
->>> +swap_cgroup_write_u64(struct cgroup *cg, struct cftype *cft, u64 val)
->>> +{
->>> +	struct res_counter *counter = &cg_to_scg(cg)->scg_counter;
->>> +	unsigned long flags;
->>> +
->>> +	/* XXX res_counter_write_u64 */
->>> +	BUG_ON(cft->private != RES_LIMIT);
->>> +	spin_lock_irqsave(&counter->lock, flags);
->>> +	counter->limit = val;
->>> +	spin_unlock_irqrestore(&counter->lock, flags);
->>> +	return 0;
->>> +}
->>> +
->> We need to write actual numbers here? Can't we keep the write
->> interface consistent with the memory controller?
-> 
-> i'm not sure what you mean here.  can you explain a bit more?
-> do you mean K, M, etc?
-> 
 
-Yes, I mean the same format that memparse() uses.
+Thanks,
+   Satoshi UCHIDA.
 
->>> +static void
->>> +swap_cgroup_destroy(struct cgroup_subsys *ss, struct cgroup *cg)
->>> +{
->>> +	struct swap_cgroup *oldscg = cg_to_scg(cg);
->>> +	struct swap_cgroup *newscg;
->>> +	struct list_head *pos;
->>> +	struct list_head *next;
->>> +
->>> +	/*
->>> +	 * move our anonymous objects to init_mm's group.
->>> +	 */
->> Is this good design, should be allow a swap_cgroup to be destroyed,
->> even though pages are allocated to it?
-> 
-> first of all, i'm not quite happy with this design. :)
-> having said that, what else can we do?
-> i tend to think that trying to swap-in these pages is too much effort
-> for little benefit.
-> 
 
-Just fail the destroy operation, in this case.
-
->> Is moving to init_mm (root
->> cgroup) a good idea? Ideally with support for hierarchies, if we ever
->> do move things, it should be to the parent cgroup.
+> -----Original Message-----
+> From: Ryo Tsuruta [mailto:ryov-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org]
+> Sent: Friday, April 25, 2008 6:55 PM
+> To: s-uchida-LYU95VJlayp8UrSeD/g0lQ@public.gmane.org; vtaras-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org
+> Cc: linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org;
+> containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org; axboe-tSWWG44O7X1aa/9Udqfwiw@public.gmane.org;
+> tom-sugawara-LYU95VJlayp8UrSeD/g0lQ@public.gmane.org; m-takahashi-kvZsz0w9TrB8UrSeD/g0lQ@public.gmane.org; devel-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org
+> Subject: Re: [RFC][v2][patch 0/12][CFQ-cgroup]Yet another I/O bandwidth
+> controlling subsystem for CGroups based on CFQ
 > 
-> i chose init_mm because there seemed to be no consensus about
-> cgroup hierarchy semantics.
+> Hi,
 > 
-
-I would suggest that we fail deletion of a group for now. I have a set of
-patches for the cgroup hierarchy semantics. I think the parent is the best place
-to move it.
-
->>> +		info->swap_cgroup = newscg;
->>> +		res_counter_uncharge(&oldscg->scg_counter, bytes);
->>> +		res_counter_charge_force(&newscg->scg_counter, bytes);
->> I don't like the excessive use of res_counter_charge_force(), it seems
->> like we might end up bypassing the controller all together. I would
->> rather fail the destroy operation if the charge fails.
+> I report benchmark results of the following I/O bandwidth controllers.
 > 
->>> +	bytes = swslots * PAGE_CACHE_SIZE;
->>> +	res_counter_uncharge(&oldscg->scg_counter, bytes);
->>> +	/*
->>> +	 * XXX ignore newscg's limit because cgroup ->attach method can't fail.
->>> +	 */
->>> +	res_counter_charge_force(&newscg->scg_counter, bytes);
->> But in the future, we could plan on making attach fail (I have a
->> requirement for it). Again, I don't like the _force operation
+>   From:	Vasily Tarasov <vtaras-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+>   Subject: [RFC][PATCH 0/9] cgroups: block: cfq: I/O bandwidth
+>            controlling subsystem for CGroups based on CFQ
+>   Date: Fri, 15 Feb 2008 01:53:34 -0500
 > 
-> allowing these operations fail implies to have code to back out
-> partial operations.  i'm afraid that it will be too complex.
+>   From: "Satoshi UCHIDA" <s-uchida-LYU95VJlayp8UrSeD/g0lQ@public.gmane.org>
+>   Subject: [RFC][v2][patch 0/12][CFQ-cgroup]Yet another I/O bandwidth
+>            controlling subsystem for CGroups based on CFQ
+>   Date: Thu, 3 Apr 2008 16:09:12 +0900
 > 
-
-OK, we need to find out a way to fix that then.
-
->>> +static void
->>> +swap_cgroup_attach_mm(struct mm_struct *mm, struct swap_cgroup *oldscg,
->>> +    struct swap_cgroup *newscg)
->> We need comments about the function, why do we attach an mm?
+> The test procedure is as follows:
+>   o Prepare 3 partitions sdc2, sdc3 and sdc4.
+>   o Run 100 processes issuing random direct I/O with 4KB data on each
+>     partitions.
+>   o Run 3 tests:
+>     #1 issuing read I/O only.
+>     #2 issuing write I/O only.
+>     #3 sdc2 and sdc3 are read, sdc4 is write.
+>   o Count up the number of I/Os which have done in 60 seconds.
 > 
-> instead of a task, you mean?
-> because we count the number of ptes which points to swap
-> and ptes belong to an mm, not a task.
+> Unfortunately, both bandwidth controllers didn't work as I expected,
+> On the test #3, the write I/O ate up the bandwidth regardless of the
+> specified priority level.
 > 
-
-OK
-
--- 
-	Warm Regards,
-	Balbir Singh
-	Linux Technology Center
-	IBM, ISTL
+>                           Vasily's scheduler
+>                The number of I/Os (percentage to total I/Os)
+> 
+> ---------------------------------------------------------------------
+>   | partition     |     sdc2     |     sdc3     |     sdc4     | total
+> |
+>   | priority      |  7(highest)  |      4       |  0(lowest)   |  I/Os
+> |
+> 
+> |---------------+--------------+--------------+--------------|--------
+> |
+>   | #1 read       |  3620(35.6%) |  3474(34.2%) |  3065(30.2%) |  10159
+> |
+>   | #2 write      | 21985(36.6%) | 19274(32.1%) | 18856(31.4%) |  60115
+> |
+>   | #3 read&write |  5571( 7.5%) |  3253( 4.4%) | 64977(88.0%) |  73801
+> |
+> 
+> ---------------------------------------------------------------------
+> 
+>                           Satoshi's scheduler
+>                The number of I/Os (percentage to total I/O)
+> 
+> ---------------------------------------------------------------------
+>   | partition     |     sdc2     |     sdc3     |     sdc4     | total
+> |
+>   | priority      |  0(highest)  |      4       |  7(lowest)   |  I/Os
+> |
+> 
+> |---------------+--------------+--------------+--------------|--------
+> |
+>   | #1 read       |  4523(47.8%) |  3733(39.5%) |  1204(12.7%) |   9460
+> |
+>   | #2 write      | 65202(59.0%) | 35603(32.2%) |  9673( 8.8%) | 110478
+> |
+>   | #3 read&write |  5328(23.0%) |  4153(17.9%) | 13694(59.1%) |  23175
+> |
+> 
+> ---------------------------------------------------------------------
+> 
+> I'd like to see other benchmark results if anyone has.
+> 
+> Thanks,
+> Ryo Tsuruta
