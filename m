@@ -1,14 +1,14 @@
 From: menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org
-Subject: [RFC/PATCH 8/8]: CGroup Files: Convert res_counter_write() to be a
-	cgroups write_string() handler
-Date: Mon, 12 May 2008 23:37:15 -0700
-Message-ID: <20080513071523.324419000@menage.corp.google.com>
+Subject: [RFC/PATCH 1/8]: CGroup Files: Add locking mode to cgroups control
+	files
+Date: Mon, 12 May 2008 23:37:08 -0700
+Message-ID: <20080513071522.133586000@menage.corp.google.com>
 References: <20080513063707.049448000@menage.corp.google.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline; filename=res_counter_write.patch
+Content-Disposition: inline; filename=cgroup_lockmode.patch
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -22,126 +22,374 @@ To: pj-sJ/iWh9BUns@public.gmane.org, xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.o
 Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Currently read_counter_write() is a raw file handler even though it's
-ultimately taking a number, since in some cases it wants to
-pre-process the string when converting it to a number.
+Different cgroup files have different stability requirements of the
+cgroups framework while the handler is running; currently most
+subsystems that don't have their own internal synchronization just
+call cgroup_lock()/cgroup_unlock(), which takes the global cgroup_mutex.
 
-This patch converts res_counter_write() from a raw file handler to a
-write_string() handler; this allows some of the boilerplate
-copying/locking/checking to be removed, and simplies the cleanup path,
-since these functions are now performed by the cgroups framework.
+This patch introduces a range of locking modes that can be requested
+by a control file; currently these are all implemented internally by
+taking cgroup_mutex, but expressing the intention will make it simpler
+to move to a finer-grained locking scheme in the future.
 
-Signed-off-by: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+Signed-off-by: Paul Menage<menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
 
 ---
- include/linux/res_counter.h |    4 ++--
- kernel/res_counter.c        |   36 +++++++++---------------------------
- mm/memcontrol.c             |   11 +++++------
- 3 files changed, 16 insertions(+), 35 deletions(-)
+ include/linux/cgroup.h |   76 +++++++++++++++++++
+ kernel/cgroup.c        |  192 ++++++++++++++++++++++++++++++++++---------------
+ 2 files changed, 212 insertions(+), 56 deletions(-)
 
-Index: cgroup-2.6.25-mm1/include/linux/res_counter.h
+Index: cgroup-2.6.25-mm1/include/linux/cgroup.h
 ===================================================================
---- cgroup-2.6.25-mm1.orig/include/linux/res_counter.h
-+++ cgroup-2.6.25-mm1/include/linux/res_counter.h
-@@ -63,8 +63,8 @@ u64 res_counter_read_u64(struct res_coun
- ssize_t res_counter_read(struct res_counter *counter, int member,
- 		const char __user *buf, size_t nbytes, loff_t *pos,
- 		int (*read_strategy)(unsigned long long val, char *s));
--ssize_t res_counter_write(struct res_counter *counter, int member,
--		const char __user *buf, size_t nbytes, loff_t *pos,
-+int res_counter_write(struct res_counter *counter, int member,
-+		char *buffer,
- 		int (*write_strategy)(char *buf, unsigned long long *val));
+--- cgroup-2.6.25-mm1.orig/include/linux/cgroup.h
++++ cgroup-2.6.25-mm1/include/linux/cgroup.h
+@@ -200,11 +200,87 @@ struct cgroup_map_cb {
+  */
+ 
+ #define MAX_CFTYPE_NAME 64
++
++/* locking modes for control files.
++ *
++ * These determine what level of guarantee the file handler wishes
++ * cgroups to provide about the stability of control group entities
++ * for the duration of the handler callback.
++ *
++ * The minimum guarantee is that the subsystem state for this
++ * subsystem will not be freed (via a call to the subsystem's
++ * destroy() callback) until after the control file handler
++ * returns. This guarantee is provided by the fact that the open
++ * dentry for the control file keeps its parent (cgroup) dentry alive,
++ * which in turn keeps the cgroup object from being actually freed
++ * (although it can be moved into the removed state in the
++ * meantime). This is suitable for subsystems that completely control
++ * their own synchronization.
++ *
++ * Other possible guarantees are given below.
++ *
++ * XXX_READ bits are used for a read operation on the control file,
++ * XXX_WRITE bits are used for a write operation on the control file
++ */
++
++/*
++ * CFT_LOCK_ATTACH_(READ|WRITE): This operation will not run
++ * concurrently with a task movement into or out of this cgroup.
++ */
++#define CFT_LOCK_ATTACH_READ 1
++#define CFT_LOCK_ATTACH_WRITE 2
++#define CFT_LOCK_ATTACH (CFT_LOCK_ATTACH_READ | CFT_LOCK_ATTACH_WRITE)
++
++/*
++ * CFT_LOCK_RMDIR_(READ|WRITE): This operation will not run
++ * concurrently with the removal of the affected cgroup.
++ */
++#define CFT_LOCK_RMDIR_READ 4
++#define CFT_LOCK_RMDIR_WRITE 8
++#define CFT_LOCK_RMDIR (CFT_LOCK_RMDIR_READ | CFT_LOCK_RMDIR_WRITE)
++
++/*
++ * CFT_LOCK_HIERARCHY_(READ|WRITE): This operation will not run
++ * concurrently with a cgroup creation or removal in this hierarchy,
++ * or a bind/move/unbind for this subsystem.
++ */
++#define CFT_LOCK_HIERARCHY_READ 16
++#define CFT_LOCK_HIERARCHY_WRITE 32
++#define CFT_LOCK_HIERARCHY (CFT_LOCK_HIERARCHY_READ | CFT_LOCK_HIERARCHY_WRITE)
++
++/*
++ * CFT_LOCK_CGL_(READ|WRITE): This operation is called with
++ * cgroup_lock() held; it will not run concurrently with any of the
++ * above operations in any cgroup/hierarchy. This should be considered
++ * to be the BKL of cgroups - it should be avoided if you can use
++ * finer-grained locking
++ */
++#define CFT_LOCK_CGL_READ 64
++#define CFT_LOCK_CGL_WRITE 128
++#define CFT_LOCK_CGL (CFT_LOCK_CGL_READ | CFT_LOCK_CGL_WRITE)
++
++#define CFT_LOCK_FOR_READ (CFT_LOCK_ATTACH_READ |		\
++			   CFT_LOCK_RMDIR_READ |		\
++			   CFT_LOCK_HIERARCHY_READ |		\
++			   CFT_LOCK_CGL_READ)
++
++#define CFT_LOCK_FOR_WRITE (CFT_LOCK_ATTACH_WRITE |	\
++			    CFT_LOCK_RMDIR_WRITE |	\
++			    CFT_LOCK_HIERARCHY_WRITE |	\
++			    CFT_LOCK_CGL_WRITE)
++
+ struct cftype {
+ 	/* By convention, the name should begin with the name of the
+ 	 * subsystem, followed by a period */
+ 	char name[MAX_CFTYPE_NAME];
+ 	int private;
++
++	/*
++	 * Determine what locks (if any) are held across calls to
++	 * read_X/write_X callback. See lockmode definitions above
++	 */
++	int lockmode;
++
+ 	int (*open) (struct inode *inode, struct file *file);
+ 	ssize_t (*read) (struct cgroup *cgrp, struct cftype *cft,
+ 			 struct file *file,
+Index: cgroup-2.6.25-mm1/kernel/cgroup.c
+===================================================================
+--- cgroup-2.6.25-mm1.orig/kernel/cgroup.c
++++ cgroup-2.6.25-mm1/kernel/cgroup.c
+@@ -1327,38 +1327,65 @@ enum cgroup_filetype {
+ 	FILE_RELEASE_AGENT,
+ };
+ 
+-static ssize_t cgroup_write_X64(struct cgroup *cgrp, struct cftype *cft,
+-				struct file *file,
+-				const char __user *userbuf,
+-				size_t nbytes, loff_t *unused_ppos)
++
++
++/**
++ * cgroup_file_lock(). Helper for cgroup read/write methods.
++ * @cgrp:  the cgroup being acted on
++ * @cft:   the control file being written to or read from
++ * *write: true if the access is a write access.
++ *
++ * Takes any necessary locks as requested by the control file's
++ * 'lockmode' field; checks (after locking if necessary) that the
++ * control group is not in the process of being destroyed.
++ *
++ * Currently all the locking options are implemented in the same way,
++ * by taking cgroup_mutex. Future patches will add finer-grained
++ * locking.
++ *
++ * Calls to cgroup_file_lock() should always be paired with calls to
++ * cgroup_file_unlock(), even if cgroup_file_lock() returns an error.
++ */
++
++static int cgroup_file_lock(struct cgroup *cgrp, struct cftype *cft, int write)
+ {
+-	char buffer[64];
+-	int retval = 0;
+-	char *end;
++	int mask = write ? CFT_LOCK_FOR_WRITE : CFT_LOCK_FOR_READ;
++	BUILD_BUG_ON(CFT_LOCK_FOR_READ != (CFT_LOCK_FOR_WRITE >> 1));
+ 
+-	if (!nbytes)
+-		return -EINVAL;
+-	if (nbytes >= sizeof(buffer))
+-		return -E2BIG;
+-	if (copy_from_user(buffer, userbuf, nbytes))
+-		return -EFAULT;
++	if (cft->lockmode & mask)
++		mutex_lock(&cgroup_mutex);
++	if (cgroup_is_removed(cgrp))
++		return -ENODEV;
++	return 0;
++}
++
++/**
++ * cgroup_file_unlock(): undoes the effect of cgroup_file_lock()
++ */
++
++static void cgroup_file_unlock(struct cgroup *cgrp, struct cftype *cft,
++			      int write)
++{
++	int mask = write ? CFT_LOCK_FOR_WRITE : CFT_LOCK_FOR_READ;
++	if (cft->lockmode & mask)
++		mutex_unlock(&cgroup_mutex);
++}
+ 
+-	buffer[nbytes] = 0;     /* nul-terminate */
+-	strstrip(buffer);
++static ssize_t cgroup_write_X64(struct cgroup *cgrp, struct cftype *cft,
++				const char *buffer)
++{
++	char *end;
+ 	if (cft->write_u64) {
+ 		u64 val = simple_strtoull(buffer, &end, 0);
+ 		if (*end)
+ 			return -EINVAL;
+-		retval = cft->write_u64(cgrp, cft, val);
++		return cft->write_u64(cgrp, cft, val);
+ 	} else {
+ 		s64 val = simple_strtoll(buffer, &end, 0);
+ 		if (*end)
+ 			return -EINVAL;
+-		retval = cft->write_s64(cgrp, cft, val);
++		return cft->write_s64(cgrp, cft, val);
+ 	}
+-	if (!retval)
+-		retval = nbytes;
+-	return retval;
+ }
+ 
+ static ssize_t cgroup_common_file_write(struct cgroup *cgrp,
+@@ -1426,47 +1453,82 @@ out1:
+ 	return retval;
+ }
+ 
+-static ssize_t cgroup_file_write(struct file *file, const char __user *buf,
++static ssize_t cgroup_file_write(struct file *file, const char __user *userbuf,
+ 						size_t nbytes, loff_t *ppos)
+ {
+ 	struct cftype *cft = __d_cft(file->f_dentry);
+ 	struct cgroup *cgrp = __d_cgrp(file->f_dentry->d_parent);
+-
+-	if (!cft || cgroup_is_removed(cgrp))
+-		return -ENODEV;
+-	if (cft->write)
+-		return cft->write(cgrp, cft, file, buf, nbytes, ppos);
+-	if (cft->write_u64 || cft->write_s64)
+-		return cgroup_write_X64(cgrp, cft, file, buf, nbytes, ppos);
+-	if (cft->trigger) {
+-		int ret = cft->trigger(cgrp, (unsigned int)cft->private);
+-		return ret ? ret : nbytes;
++	ssize_t retval;
++	char static_buffer[64];
++	char *buffer = static_buffer;
++	ssize_t max_bytes = sizeof(static_buffer) - 1;
++	if (!cft->write && !cft->trigger) {
++		if (!nbytes)
++			return -EINVAL;
++		if (nbytes >= max_bytes)
++			return -E2BIG;
++		if (nbytes >= sizeof(static_buffer)) {
++			/* +1 for nul-terminator */
++			buffer = kmalloc(nbytes + 1, GFP_KERNEL);
++			if (buffer == NULL)
++				return -ENOMEM;
++		}
++		if (copy_from_user(buffer, userbuf, nbytes)) {
++			retval = -EFAULT;
++			goto out_free;
++		}
++		buffer[nbytes] = 0;	/* nul-terminate */
++		strstrip(buffer);	/* strip -just- trailing whitespace */
+ 	}
+-	return -EINVAL;
+-}
+ 
+-static ssize_t cgroup_read_u64(struct cgroup *cgrp, struct cftype *cft,
+-			       struct file *file,
+-			       char __user *buf, size_t nbytes,
+-			       loff_t *ppos)
+-{
+-	char tmp[64];
+-	u64 val = cft->read_u64(cgrp, cft);
+-	int len = sprintf(tmp, "%llu\n", (unsigned long long) val);
++	retval = cgroup_file_lock(cgrp, cft, 1);
++	if (retval)
++		goto out_unlock;
+ 
+-	return simple_read_from_buffer(buf, nbytes, ppos, tmp, len);
++	if (cft->write)
++		retval = cft->write(cgrp, cft, file, userbuf, nbytes, ppos);
++	else if (cft->write_u64 || cft->write_s64)
++		retval = cgroup_write_X64(cgrp, cft, buffer);
++	else if (cft->trigger)
++		retval = cft->trigger(cgrp, (unsigned int)cft->private);
++	else
++		retval = -EINVAL;
++	if (retval == 0)
++		retval = nbytes;
++ out_unlock:
++	cgroup_file_unlock(cgrp, cft, 1);
++ out_free:
++	if (buffer != static_buffer)
++		kfree(buffer);
++	return retval;
+ }
+ 
+-static ssize_t cgroup_read_s64(struct cgroup *cgrp, struct cftype *cft,
++static ssize_t cgroup_read_X64(struct cgroup *cgrp, struct cftype *cft,
+ 			       struct file *file,
+ 			       char __user *buf, size_t nbytes,
+ 			       loff_t *ppos)
+ {
+ 	char tmp[64];
+-	s64 val = cft->read_s64(cgrp, cft);
+-	int len = sprintf(tmp, "%lld\n", (long long) val);
++	ssize_t retval = 0;
++	int len = 0;
++
++	retval = cgroup_file_lock(cgrp, cft, 0);
++	if (retval)
++		goto out_unlock;
++
++	if (cft->read_u64) {
++		u64 val = cft->read_u64(cgrp, cft);
++		len = sprintf(tmp, "%llu\n", (unsigned long long) val);
++	} else {
++		s64 val = cft->read_s64(cgrp, cft);
++		len = sprintf(tmp, "%lld\n", (long long) val);
++	}
+ 
+-	return simple_read_from_buffer(buf, nbytes, ppos, tmp, len);
++ out_unlock:
++	cgroup_file_unlock(cgrp, cft, 0);
++	if (!retval)
++		retval = simple_read_from_buffer(buf, nbytes, ppos, tmp, len);
++	return retval;
+ }
+ 
+ static ssize_t cgroup_common_file_read(struct cgroup *cgrp,
+@@ -1518,16 +1580,21 @@ static ssize_t cgroup_file_read(struct f
+ 	struct cftype *cft = __d_cft(file->f_dentry);
+ 	struct cgroup *cgrp = __d_cgrp(file->f_dentry->d_parent);
+ 
+-	if (!cft || cgroup_is_removed(cgrp))
++	if (cgroup_is_removed(cgrp))
+ 		return -ENODEV;
+ 
+-	if (cft->read)
+-		return cft->read(cgrp, cft, file, buf, nbytes, ppos);
+-	if (cft->read_u64)
+-		return cgroup_read_u64(cgrp, cft, file, buf, nbytes, ppos);
+-	if (cft->read_s64)
+-		return cgroup_read_s64(cgrp, cft, file, buf, nbytes, ppos);
+-	return -EINVAL;
++	if (cft->read) {
++		/* Raw read function - no extra processing by cgroups */
++		ssize_t retval = cgroup_file_lock(cgrp, cft, 0);
++		if (!retval)
++			retval = cft->read(cgrp, cft, file, buf, nbytes, ppos);
++		cgroup_file_unlock(cgrp, cft, 0);
++		return retval;
++	}
++	if (cft->read_u64 || cft->read_s64)
++		return cgroup_read_X64(cgrp, cft, file, buf, nbytes, ppos);
++	else
++		return -EINVAL;
+ }
  
  /*
-Index: cgroup-2.6.25-mm1/kernel/res_counter.c
-===================================================================
---- cgroup-2.6.25-mm1.orig/kernel/res_counter.c
-+++ cgroup-2.6.25-mm1/kernel/res_counter.c
-@@ -102,44 +102,26 @@ u64 res_counter_read_u64(struct res_coun
- 	return *res_counter_member(counter, member);
- }
- 
--ssize_t res_counter_write(struct res_counter *counter, int member,
--		const char __user *userbuf, size_t nbytes, loff_t *pos,
--		int (*write_strategy)(char *st_buf, unsigned long long *val))
-+int res_counter_write(
-+	struct res_counter *counter, int member,
-+	char *buf,
-+	int (*write_strategy)(char *st_buf, unsigned long long *val))
+@@ -1549,15 +1616,28 @@ static int cgroup_map_add(struct cgroup_
+ static int cgroup_seqfile_show(struct seq_file *m, void *arg)
  {
--	int ret;
--	char *buf, *end;
-+	char *end;
- 	unsigned long flags;
- 	unsigned long long tmp, *val;
- 
--	buf = kmalloc(nbytes + 1, GFP_KERNEL);
--	ret = -ENOMEM;
--	if (buf == NULL)
--		goto out;
--
--	buf[nbytes] = '\0';
--	ret = -EFAULT;
--	if (copy_from_user(buf, userbuf, nbytes))
--		goto out_free;
--
--	ret = -EINVAL;
--
--	strstrip(buf);
- 	if (write_strategy) {
--		if (write_strategy(buf, &tmp)) {
--			goto out_free;
--		}
-+		if (write_strategy(buf, &tmp))
-+			return -EINVAL;
- 	} else {
- 		tmp = simple_strtoull(buf, &end, 10);
- 		if (*end != '\0')
--			goto out_free;
-+			return -EINVAL;
+ 	struct cgroup_seqfile_state *state = m->private;
++	struct cgroup *cgrp = state->cgroup;
+ 	struct cftype *cft = state->cft;
++	int retval;
++
++	retval = cgroup_file_lock(cgrp, cft, 0);
++	if (retval)
++		goto out_unlock;
++
+ 	if (cft->read_map) {
+ 		struct cgroup_map_cb cb = {
+ 			.fill = cgroup_map_add,
+ 			.state = m,
+ 		};
+-		return cft->read_map(state->cgroup, cft, &cb);
++		retval = cft->read_map(cgrp, cft, &cb);
++	} else if (cft->read_seq_string) {
++		retval = cft->read_seq_string(cgrp, cft, m);
++	} else {
++		retval = -EINVAL;
  	}
- 	spin_lock_irqsave(&counter->lock, flags);
- 	val = res_counter_member(counter, member);
- 	*val = tmp;
- 	spin_unlock_irqrestore(&counter->lock, flags);
--	ret = nbytes;
--out_free:
--	kfree(buf);
--out:
--	return ret;
-+	return 0;
- }
-Index: cgroup-2.6.25-mm1/mm/memcontrol.c
-===================================================================
---- cgroup-2.6.25-mm1.orig/mm/memcontrol.c
-+++ cgroup-2.6.25-mm1/mm/memcontrol.c
-@@ -848,13 +848,12 @@ static u64 mem_cgroup_read(struct cgroup
- 				    cft->private);
+-	return cft->read_seq_string(state->cgroup, cft, m);
++ out_unlock:
++	cgroup_file_unlock(cgrp, cft, 0);
++	return retval;
  }
  
--static ssize_t mem_cgroup_write(struct cgroup *cont, struct cftype *cft,
--				struct file *file, const char __user *userbuf,
--				size_t nbytes, loff_t *ppos)
-+static int mem_cgroup_write(struct cgroup *cont, struct cftype *cft,
-+			    char *buffer)
- {
- 	return res_counter_write(&mem_cgroup_from_cont(cont)->res,
--				cft->private, userbuf, nbytes, ppos,
--				mem_cgroup_write_strategy);
-+				 cft->private, buffer,
-+				 mem_cgroup_write_strategy);
- }
- 
- static int mem_cgroup_reset(struct cgroup *cont, unsigned int event)
-@@ -929,7 +928,7 @@ static struct cftype mem_cgroup_files[] 
- 	{
- 		.name = "limit_in_bytes",
- 		.private = RES_LIMIT,
--		.write = mem_cgroup_write,
-+		.write_string = mem_cgroup_write,
- 		.read_u64 = mem_cgroup_read,
- 	},
- 	{
+ int cgroup_seqfile_release(struct inode *inode, struct file *file)
 
 --
