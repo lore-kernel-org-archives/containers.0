@@ -1,11 +1,17 @@
-From: "Rita Wagner" <SnellAlfred-NTfdTXgZ1mgAvxtiuMwx3w@public.gmane.org>
-Subject: Physician List
-Date: Wed, 14 May 2008 04:08:53 +0600
-Message-ID: <46159.5193286941$1210714483@news.gmane.org>
+From: "Paul Menage" <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [RFC/PATCH 3/8]: CGroup Files: Move the release_agent file to use
+	typed handlers
+Date: Tue, 13 May 2008 14:32:57 -0700
+Message-ID: <6599ad830805131432h6ea6b962v2405421c61fe88e5__49018.8226722696$1210714535$gmane$org@mail.gmail.com>
+References: <20080513063707.049448000@menage.corp.google.com>
+	<20080513071522.470099000@menage.corp.google.com>
+	<20080513130833.cc03caea.akpm@linux-foundation.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <20080513130833.cc03caea.akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
+Content-Disposition: inline
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -15,42 +21,23 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: investment-KUP2NeDS2H3zs492ZWNkEA@public.gmane.org
-Cc: info-TYXPvgbMR4z1j0hnmNrsIg@public.gmane.org, ipixwxbgtp-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, adalton-ZCNwHF9ErpZ2icitjWtXSw@public.gmane.org, miclemen-YO4/3uWtd4aL22F2QQHOCA@public.gmane.org, d58p_test632-YDxpq3io04c@public.gmane.org, roland-rdc5FV7LBygPGFelY5Zqew@public.gmane.org, containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, yoyo-1kXtHpul8t0phpqALD0G3g@public.gmane.org
+To: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org
 List-Id: containers.vger.kernel.org
 
+On Tue, May 13, 2008 at 1:08 PM, Andrew Morton
+<akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org> wrote:
+> On Mon, 12 May 2008 23:37:10 -0700
+>  menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org wrote:
+>
+>  > +             agentbuf = kmalloc(PATH_MAX, GFP_KERNEL);
+>  > +             if (!agentbuf)
+>  > +                     goto continue_free;
+>  > +             strcpy(agentbuf, cgrp->root->release_agent_path);
+>
+>  Did we need to allocate all that memory, or would kstrdup() suffice?
+>
 
+kstrdup() would be fine. Fixed.
 
-
-Here's what we're offering for this week:
-
-Currently Practicing Physicians in the US 
-
-788,132 in total * 17,302 emails
-
-Physician in over 34 specialties
-
-Can easily be sorted by 16 different fields
-
-
-US Pharmaceutical Company Executives Database
-47,000 personal emails and names of decision makers
-
-Complete Directory of Hospitals in the US
-Full data for all the major positions in more than 7k facilities
-
-Complete and Accurate Contact List for Dental Service Providers
-597,000 dentists and dental services ( a $350 value!) 
-
-Chiropractors in the USA
-Over than 100k chiropractors practicing in the United States
-
-
-Price for new customers -  
-$397 for all above data
-
-Email us at:      brian_dean.md-PkbjNfxxIARBDgjK7y7TUQ@public.gmane.org
-
-  
-
-good until May 17
+Paul
