@@ -1,57 +1,97 @@
-From: Cedric Le Goater <clg@fr.ibm.com>
-Subject: Re: [PATCH -mm] remove node_ prefix_from ns subsystem
-Date: Thu, 22 May 2008 11:21:21 +0200
-Message-ID: <48353B11.5060904@fr.ibm.com>
-References: <48344409.9090903@fr.ibm.com> <20080521220657.12e8e8c9.akpm@linux-foundation.org> <6599ad830805220011u77313ed7s2c0c9d4a658133cc@mail.gmail.com> <20080522003213.d677ba30.akpm@linux-foundation.org> <48352277.4010703@fr.ibm.com> <20080522011053.680f7f65.akpm@linux-foundation.org> <6599ad830805220123t7a3848eeg244393723d5fd08d@mail.gmail.com> <20080522013612.cb196653.akpm@linux-foundation.org>
+From: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+Subject: Re: [PATCH 2/4] swapcgroup: add member to swap_info_struct for cgroup
+Date: Thu, 22 May 2008 18:35:14 +0900
+Message-ID: <20080522183514.e8b99dc3.kamezawa.hiroyu@jp.fujitsu.com>
+References: <48350F15.9070007@mxp.nes.nec.co.jp>
+	<4835104B.4040405@mxp.nes.nec.co.jp>
+	<20080522162312.a60d914b.kamezawa.hiroyu@jp.fujitsu.com>
+	<483532FE.9080707@mxp.nes.nec.co.jp>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
+Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S935552AbYEVJVh@vger.kernel.org>
-In-Reply-To: <20080522013612.cb196653.akpm@linux-foundation.org>
-Sender: linux-kernel-owner@vger.kernel.org
-To: Andrew Morton <akpm@linux-foundation.org>
-Cc: Paul Menage <menage@google.com>, "Serge E. Hallyn" <serue@us.ibm.com>, Linux Kernel Mailing List <linux-kernel@vger.kernel.org>, Linux Containers <containers@lists.osdl.org>, stable@kernel.org
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <483532FE.9080707-YQH0OdQVrdy45+QrQBaojngSJqDPrsil@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Daisuke Nishimura <nishimura-YQH0OdQVrdy45+QrQBaojngSJqDPrsil@public.gmane.org>
+Cc: YAMAMOTO Takashi <yamamoto-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>, Linux MM <linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org>, Pavel-FOgKQjlUJ6BQetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Hugh Dickins <hugh-DTz5qymZ9yRBDgjK7y7TUQ@public.gmane.org>, Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Andrew Morton wrote:
-> On Thu, 22 May 2008 01:23:35 -0700 "Paul Menage" <menage@google.com> wrote:
+On Thu, 22 May 2008 17:46:54 +0900
+Daisuke Nishimura <nishimura-YQH0OdQVrdy45+QrQBaojngSJqDPrsil@public.gmane.org> wrote:
+
+> > ==
+> > #ifdef CONFIG_CGROUP_SWAP_RES_CTR
+> >   void  swap_cgroup_init_memcg(p, memcg)
+> >   {
+> >     do something.
+> >   }
+> > #else
+> >    void  swap_cgroup_init_memcg(p, memcg)
+> >   {
+> >   }
+> > #endif
+> > ==
+> > 
+> I think swap_cgroup_init_memcg should return old value
+> of p->memcg, and I would like to name it swap_cgroup_clear_memcg,
+> because it is called by sys_swapoff, so "clear" rather than "init"
+> would be better.
 > 
->> Hi Andrew,
->>
->> On Thu, May 22, 2008 at 1:10 AM, Andrew Morton
->> <akpm@linux-foundation.org> wrote:
->>> What the change is, why it is being made, what the user-visible
->>> presentation is, what the impact upon users is, why we think it won't
->>> be a problem, etc?  The stuff which should have been right there from
->>> day one, before the code change was even made?
->> The change is that previously when cgroup_clone() was called
->> (currently only from the unshare path in ns_proxy cgroup, you'd get a
->> new group named "node_$pid" whereas now you'll get a group named after
->> just your pid.)
->>
->> The only users who would notice it are those who are using the
->> ns_proxy cgroup subsystem to auto-create cgroups when namespaces are
->> unshared - something of an experimental feature, which I think really
->> needs more complete container/namespace support in order to be useful.
->> I suspect the only users are Cedric and Serge, or maybe a few others
->> on containers@lists.linux-foundation.org. And in fact it would only be
->> noticed by the users who make the assumption about how the name is
->> generated, rather than getting it from the /proc/<pid>/cgroups file
->> for the process in question.
->>
->> Whether the change is actually needed or not I'm fairly agnostic on,
->> but I guess it is more elegant to just use the pid as the new group
->> name rather than adding a fairly arbitrary "node_" prefix on the
->> front.
+> How about something like this?
+> 
+> struct mem_cgroup **swap_cgroup_clear_memcg(p, memcg)
+> {
+> 	struct mem_cgroup **mem;
+> 
+> 	mem = p->memcg;
+> 	p->memcg = NULL;
+> 
+> 	return mem;
+> }
+> 
+> and at sys_swapoff():
+> 
+> struct mem_cgroup **memcg;
+>  :
+> memcg = swap_cgroup_clear_memcg(p, memcg);
+>  :
+> if (memcg)
+> 	vfree(memcg);
+> 
+seems good.
 
-Thanks Paul.
 
-> Well I suppose that as a non-back-compatible change we should feed it
-> into 2.6.25.x as well.  It's a bit unusual, but so doing will reduce the
-> number of hey-where-did-my-file-go discoveries.
+> >> +#ifdef CONFIG_CGROUP_SWAP_RES_CTLR
+> >> +		p->memcg = vmalloc(maxpages * sizeof(struct mem_cgroup *));
+> >> +		if (!p->memcg) {
+> >> +			error = -ENOMEM;
+> >> +			goto bad_swap;
+> >> +		}
+> >> +		memset(p->memcg, 0, maxpages * sizeof(struct mem_cgroup *));
+> >> +#endif
+> > void alloc_swap_ctlr_memcg(p)
+> > 
+> OK.
+> I'll implement swap_cgroup_alloc_memcg.
+> 
+> > But this implies swapon will fail at memory shortage. Is it good ?
+> > 
+> Hum.
+> Would it be better to just disabling this feature?
+> 
+I have no good idea. IMHO, adding printk() to show 'fatal status of
+not-enough-memory-for-vmalloc' will be first step.
 
-Thanks andrew. I have being keeping that patch for so long that I didn't
-realize that the ns cgroup subsystem had been already merged. sorry for 
-the noise.
+I believe vmalloc() tend not to fail on 64bit machine, but on i386,
+vmalloc area is not enough.
 
-C. 
+Thanks,
+-Kame
