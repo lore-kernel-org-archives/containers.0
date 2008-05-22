@@ -1,47 +1,64 @@
-From: Cedric Le Goater <clg@fr.ibm.com>
-Subject: Re: [PATCH -mm] remove node_ prefix_from ns subsystem
-Date: Thu, 22 May 2008 09:36:23 +0200
-Message-ID: <48352277.4010703@fr.ibm.com>
-References: <48344409.9090903@fr.ibm.com> <20080521220657.12e8e8c9.akpm@linux-foundation.org> <6599ad830805220011u77313ed7s2c0c9d4a658133cc@mail.gmail.com> <20080522003213.d677ba30.akpm@linux-foundation.org>
+From: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+Subject: Re: [PATCH 0/4] swapcgroup(v2)
+Date: Thu, 22 May 2008 16:44:21 +0900
+Message-ID: <20080522164421.84849565.kamezawa.hiroyu@jp.fujitsu.com>
+References: <48350F15.9070007@mxp.nes.nec.co.jp>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
+Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S933981AbYEVHgo@vger.kernel.org>
-In-Reply-To: <20080522003213.d677ba30.akpm@linux-foundation.org>
-Sender: linux-kernel-owner@vger.kernel.org
-To: Andrew Morton <akpm@linux-foundation.org>
-Cc: Paul Menage <menage@google.com>, "Serge E. Hallyn" <serue@us.ibm.com>, Linux Kernel Mailing List <linux-kernel@vger.kernel.org>, Linux Containers <containers@lists.osdl.org>
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <48350F15.9070007-YQH0OdQVrdy45+QrQBaojngSJqDPrsil@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Daisuke Nishimura <nishimura-YQH0OdQVrdy45+QrQBaojngSJqDPrsil@public.gmane.org>
+Cc: YAMAMOTO Takashi <yamamoto-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>, Linux MM <linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org>, Pavel-FOgKQjlUJ6BQetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Hugh Dickins <hugh-DTz5qymZ9yRBDgjK7y7TUQ@public.gmane.org>, Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Andrew Morton wrote:
-> On Thu, 22 May 2008 00:11:56 -0700 "Paul Menage" <menage@google.com> wrote:
+On Thu, 22 May 2008 15:13:41 +0900
+Daisuke Nishimura <nishimura-YQH0OdQVrdy45+QrQBaojngSJqDPrsil@public.gmane.org> wrote:
+
+> Hi.
 > 
->> On Wed, May 21, 2008 at 10:06 PM, Andrew Morton
->> <akpm@linux-foundation.org> wrote:
->>>> --- 2.6.26-rc2-mm1.orig/kernel/cgroup.c
->>>> +++ 2.6.26-rc2-mm1/kernel/cgroup.c
->>>> @@ -2903,7 +2903,7 @@ int cgroup_clone(struct task_struct *tsk
->>>>       cg = tsk->cgroups;
->>>>       parent = task_cgroup(tsk, subsys->subsys_id);
->>>>
->>>> -     snprintf(nodename, MAX_CGROUP_TYPE_NAMELEN, "node_%d", tsk->pid);
->>>> +     snprintf(nodename, MAX_CGROUP_TYPE_NAMELEN, "%d", tsk->pid);
->>>>
->>>>       /* Pin the hierarchy */
->>>>       atomic_inc(&parent->root->sb->s_active);
->>> This is user-visible, isn't it?  Been there since October.  How can we
->>> safely change it now?
->> It is user-visible, but I'd be extremely surprised if anyone was
->> depending on it or even using it at this point.
+> I updated my swapcgroup patch.
 > 
-> After six months?
+seems good in general.
 
-yes that's what we believe also.
 
-> Oh well, I guess the number is small, and they'll know how to fix it.
+> Major changes from previous version(*1):
+> - Rebased on 2.6.26-rc2-mm1 + KAMEZAWA-san's performance
+>   improvement patchset v4.
+> - Implemented as a add-on to memory cgroup.
+>   So, there is no need to add a new member to page_cgroup now.
+> - (NEW)Modified vm_swap_full() to calculate the rate of
+>   swap usage per cgroup.
 > 
-> What is the reason for making this change?
+> Patchs:
+> - [1/4] add cgroup files
+> - [2/4] add member to swap_info_struct for cgroup
+> - [3/4] implement charge/uncharge
+> - [4/4] modify vm_swap_full for cgroup
+> 
+> ToDo:
+> - handle force_empty.
 
-the 'node_' prefix really is superfluous and misleading. what's a node ?
+Without this, we can do rmdir() against cgroup with swap. right ?
 
-C.
+> - make it possible for users to select if they use
+>   this feature or not, and avoid overhead for users
+>   not using this feature.
+> - move charges along with task move between cgroups.
+> 
+I think memory-controller's anon pages should also do this....
+But how do you think about shared entries ?
+
+
+
+Thanks,
+-Kame
