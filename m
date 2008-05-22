@@ -1,45 +1,52 @@
-From: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
+From: "Paul Menage" <menage@google.com>
 Subject: Re: [PATCH -mm] remove node_ prefix_from ns subsystem
-Date: Thu, 22 May 2008 01:10:53 -0700
-Message-ID: <20080522011053.680f7f65.akpm@linux-foundation.org>
+Date: Thu, 22 May 2008 01:23:35 -0700
+Message-ID: <6599ad830805220123t7a3848eeg244393723d5fd08d@mail.gmail.com>
 References: <48344409.9090903@fr.ibm.com>
-	<20080521220657.12e8e8c9.akpm@linux-foundation.org>
-	<6599ad830805220011u77313ed7s2c0c9d4a658133cc@mail.gmail.com>
-	<20080522003213.d677ba30.akpm@linux-foundation.org>
-	<48352277.4010703@fr.ibm.com>
+	 <20080521220657.12e8e8c9.akpm@linux-foundation.org>
+	 <6599ad830805220011u77313ed7s2c0c9d4a658133cc@mail.gmail.com>
+	 <20080522003213.d677ba30.akpm@linux-foundation.org>
+	 <48352277.4010703@fr.ibm.com>
+	 <20080522011053.680f7f65.akpm@linux-foundation.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
+Content-Type: text/plain; charset=ISO-8859-1
 Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <48352277.4010703-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Cedric Le Goater <clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
-Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Linux Kernel Mailing List <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S935042AbYEVIYQ@vger.kernel.org>
+In-Reply-To: <20080522011053.680f7f65.akpm@linux-foundation.org>
+Content-Disposition: inline
+Sender: linux-kernel-owner@vger.kernel.org
+To: Andrew Morton <akpm@linux-foundation.org>
+Cc: Cedric Le Goater <clg@fr.ibm.com>, "Serge E. Hallyn" <serue@us.ibm.com>, Linux Kernel Mailing List <linux-kernel@vger.kernel.org>, Linux Containers <containers@lists.osdl.org>
 List-Id: containers.vger.kernel.org
 
-On Thu, 22 May 2008 09:36:23 +0200 Cedric Le Goater <clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org> wrote:
+Hi Andrew,
 
-> > What is the reason for making this change?
-> 
-> the 'node_' prefix really is superfluous and misleading. what's a node ?
+On Thu, May 22, 2008 at 1:10 AM, Andrew Morton
+<akpm@linux-foundation.org> wrote:
+>
+> What the change is, why it is being made, what the user-visible
+> presentation is, what the impact upon users is, why we think it won't
+> be a problem, etc?  The stuff which should have been right there from
+> day one, before the code change was even made?
 
-For gawd's sake guys.  I've asked three times and now I'm getting
-rhetorical questions for answers.  It's like drawing teeth.
+The change is that previously when cgroup_clone() was called
+(currently only from the unshare path in ns_proxy cgroup, you'd get a
+new group named "node_$pid" whereas now you'll get a group named after
+just your pid.)
 
-Will someone please write a halfway decent description of this change? 
-One which (at least) covers all the questions I've been asking?
+The only users who would notice it are those who are using the
+ns_proxy cgroup subsystem to auto-create cgroups when namespaces are
+unshared - something of an experimental feature, which I think really
+needs more complete container/namespace support in order to be useful.
+I suspect the only users are Cedric and Serge, or maybe a few others
+on containers@lists.linux-foundation.org. And in fact it would only be
+noticed by the users who make the assumption about how the name is
+generated, rather than getting it from the /proc/<pid>/cgroups file
+for the process in question.
 
-What the change is, why it is being made, what the user-visible
-presentation is, what the impact upon users is, why we think it won't
-be a problem, etc?  The stuff which should have been right there from
-day one, before the code change was even made?
+Whether the change is actually needed or not I'm fairly agnostic on,
+but I guess it is more elegant to just use the pid as the new group
+name rather than adding a fairly arbitrary "node_" prefix on the
+front.
 
-Thanks.
+Paul
