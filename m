@@ -1,13 +1,11 @@
-From: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
-Subject: Re: [PATCH -mm] remove node_ prefix_from ns subsystem
-Date: Wed, 21 May 2008 22:06:57 -0700
-Message-ID: <20080521220657.12e8e8c9.akpm@linux-foundation.org>
-References: <48344409.9090903@fr.ibm.com>
+From: Daisuke Nishimura <nishimura-YQH0OdQVrdy45+QrQBaojngSJqDPrsil@public.gmane.org>
+Subject: [PATCH 0/4] swapcgroup(v2)
+Date: Thu, 22 May 2008 15:13:41 +0900
+Message-ID: <48350F15.9070007@mxp.nes.nec.co.jp>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <48344409.9090903-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -17,36 +15,38 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Cedric Le Goater <clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
-Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Linux Kernel Mailing List <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+To: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Linux MM <linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org>
+Cc: YAMAMOTO Takashi <yamamoto-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>, Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, Hugh Dickins <hugh-DTz5qymZ9yRBDgjK7y7TUQ@public.gmane.org>, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Wed, 21 May 2008 17:47:21 +0200 Cedric Le Goater <clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org> wrote:
+Hi.
 
-> From: Cedric Le Goater <clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
-> 
-> This is a slight change in the namespace cgroup subsystem api.
-> 
+I updated my swapcgroup patch.
 
-What are the reasons for making this change?
+Major changes from previous version(*1):
+- Rebased on 2.6.26-rc2-mm1 + KAMEZAWA-san's performance
+  improvement patchset v4.
+- Implemented as a add-on to memory cgroup.
+  So, there is no need to add a new member to page_cgroup now.
+- (NEW)Modified vm_swap_full() to calculate the rate of
+  swap usage per cgroup.
 
-> ---
->  kernel/cgroup.c |    2 +-
->  1 file changed, 1 insertion(+), 1 deletion(-)
-> 
-> Index: 2.6.26-rc2-mm1/kernel/cgroup.c
-> ===================================================================
-> --- 2.6.26-rc2-mm1.orig/kernel/cgroup.c
-> +++ 2.6.26-rc2-mm1/kernel/cgroup.c
-> @@ -2903,7 +2903,7 @@ int cgroup_clone(struct task_struct *tsk
->  	cg = tsk->cgroups;
->  	parent = task_cgroup(tsk, subsys->subsys_id);
->  
-> -	snprintf(nodename, MAX_CGROUP_TYPE_NAMELEN, "node_%d", tsk->pid);
-> +	snprintf(nodename, MAX_CGROUP_TYPE_NAMELEN, "%d", tsk->pid);
->  
->  	/* Pin the hierarchy */
->  	atomic_inc(&parent->root->sb->s_active);
+Patchs:
+- [1/4] add cgroup files
+- [2/4] add member to swap_info_struct for cgroup
+- [3/4] implement charge/uncharge
+- [4/4] modify vm_swap_full for cgroup
 
-This is user-visible, isn't it?  Been there since October.  How can we
-safely change it now?
+ToDo:
+- handle force_empty.
+- make it possible for users to select if they use
+  this feature or not, and avoid overhead for users
+  not using this feature.
+- move charges along with task move between cgroups.
+
+*1
+https://lists.linux-foundation.org/pipermail/containers/2008-March/010216.html
+
+
+Thanks,
+Daisuke Nishimura.
