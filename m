@@ -1,14 +1,15 @@
-From: yamamoto-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org (YAMAMOTO Takashi)
-Subject: Re: [PATCH 4/4] swapcgroup: modify vm_swap_full for cgroup
-Date: Thu, 22 May 2008 15:45:07 +0900 (JST)
-Message-ID: <20080522064507.AB6A35A0A@siro.lan>
-References: <48351120.6000800@mxp.nes.nec.co.jp>
+From: "Paul Menage" <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH -mm] remove node_ prefix_from ns subsystem
+Date: Thu, 22 May 2008 00:11:56 -0700
+Message-ID: <6599ad830805220011u77313ed7s2c0c9d4a658133cc@mail.gmail.com>
+References: <48344409.9090903@fr.ibm.com>
+	<20080521220657.12e8e8c9.akpm@linux-foundation.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: Your message of "Thu, 22 May 2008 15:22:24 +0900"
-	<48351120.6000800-YQH0OdQVrdy45+QrQBaojngSJqDPrsil@public.gmane.org>
+In-Reply-To: <20080521220657.12e8e8c9.akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
+Content-Disposition: inline
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,48 +19,28 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: nishimura-YQH0OdQVrdy45+QrQBaojngSJqDPrsil@public.gmane.org
-Cc: Lee.Schermerhorn-VXdhtT5mjnY@public.gmane.org, riel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, kosaki.motohiro-+CUm20s59erQFUHtdCDX3A@public.gmane.org, containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, hugh-DTz5qymZ9yRBDgjK7y7TUQ@public.gmane.org, xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
+To: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
+Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Cedric Le Goater <clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>, Linux Kernel Mailing List <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-> @@ -1892,3 +1892,36 @@ int valid_swaphandles(swp_entry_t entry, unsigned long *offset)
->  	*offset = ++toff;
->  	return nr_pages? ++nr_pages: 0;
->  }
-> +
-> +#ifdef CONFIG_CGROUP_SWAP_RES_CTLR
-> +int swap_cgroup_vm_swap_full(struct page *page)
-> +{
-> +	int ret;
-> +	struct swap_info_struct *p;
-> +	struct mem_cgroup *mem;
-> +	u64 usage;
-> +	u64 limit;
-> +	swp_entry_t entry;
-> +
-> +	VM_BUG_ON(!PageLocked(page));
-> +	VM_BUG_ON(!PageSwapCache(page));
-> +
-> +	ret = 0;
-> +	entry.val = page_private(page);
-> +	p = swap_info_get(entry);
-> +	if (!p)
-> +		goto out;
-> +
-> +	mem = p->memcg[swp_offset(entry)];
-> +	usage = swap_cgroup_read_usage(mem) / PAGE_SIZE;
-> +	limit = swap_cgroup_read_limit(mem) / PAGE_SIZE;
-> +	limit = (limit < total_swap_pages) ? limit : total_swap_pages;
-> +
-> +	ret = usage * 2 > limit;
-> +
-> +	spin_unlock(&swap_lock);
-> +
-> +out:
-> +	return ret;
-> +}
-> +#endif
+On Wed, May 21, 2008 at 10:06 PM, Andrew Morton
+<akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org> wrote:
+>> --- 2.6.26-rc2-mm1.orig/kernel/cgroup.c
+>> +++ 2.6.26-rc2-mm1/kernel/cgroup.c
+>> @@ -2903,7 +2903,7 @@ int cgroup_clone(struct task_struct *tsk
+>>       cg = tsk->cgroups;
+>>       parent = task_cgroup(tsk, subsys->subsys_id);
+>>
+>> -     snprintf(nodename, MAX_CGROUP_TYPE_NAMELEN, "node_%d", tsk->pid);
+>> +     snprintf(nodename, MAX_CGROUP_TYPE_NAMELEN, "%d", tsk->pid);
+>>
+>>       /* Pin the hierarchy */
+>>       atomic_inc(&parent->root->sb->s_active);
+>
+> This is user-visible, isn't it?  Been there since October.  How can we
+> safely change it now?
 
-shouldn't it check the global usage (nr_swap_pages) as well?
+It is user-visible, but I'd be extremely surprised if anyone was
+depending on it or even using it at this point.
 
-YAMAMOTO Takashi
+Paul
