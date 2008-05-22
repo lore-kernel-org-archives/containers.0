@@ -1,43 +1,32 @@
-From: "Serge E. Hallyn" <serue@us.ibm.com>
-Subject: Re: [PATCH -mm] remove node_ prefix_from ns subsystem
-Date: Wed, 21 May 2008 15:03:47 -0500
-Message-ID: <20080521200347.GA25307@sergelap.austin.ibm.com>
-References: <48344409.9090903@fr.ibm.com>
+From: yamamoto-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org (YAMAMOTO Takashi)
+Subject: Re: [RFC][PATCH] another swap controller for cgroup
+Date: Thu, 22 May 2008 13:46:56 +0900 (JST)
+Message-ID: <20080522044656.2FB695A0A@siro.lan>
+References: <4817F108.40806@mxp.nes.nec.co.jp>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S932964AbYEUUEc@vger.kernel.org>
-Content-Disposition: inline
-In-Reply-To: <48344409.9090903@fr.ibm.com>
-Sender: linux-kernel-owner@vger.kernel.org
-To: Cedric Le Goater <clg@fr.ibm.com>
-Cc: Andrew Morton <akpm@linux-foundation.org>, "Serge E. Hallyn" <serue@us.ibm.com>, Paul Menage <menage@google.com>, Linux Kernel Mailing List <linux-kernel@vger.kernel.org>, Linux Containers <containers@lists.osdl.org>
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: Your message of "Wed, 30 Apr 2008 13:09:44 +0900"
+	<4817F108.40806-YQH0OdQVrdy45+QrQBaojngSJqDPrsil@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: nishimura-YQH0OdQVrdy45+QrQBaojngSJqDPrsil@public.gmane.org
+Cc: minoura-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, hugh-DTz5qymZ9yRBDgjK7y7TUQ@public.gmane.org, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Quoting Cedric Le Goater (clg@fr.ibm.com):
-> From: Cedric Le Goater <clg@fr.ibm.com>
-> 
-> This is a slight change in the namespace cgroup subsystem api.
-> 
-> Signed-off-by: Cedric Le Goater <clg@fr.ibm.com>
+> BTW, I'm just trying to make my swapcontroller patch
+> that is rebased on recent kernel and implemented
+> as part of memory controller.
+> I'm going to submit it by the middle of May.
 
-I agree that is preferable.
+what's the status of this?
 
-Acked-by: Serge Hallyn <serue@us.ibm.com>
-
-> ---
->  kernel/cgroup.c |    2 +-
->  1 file changed, 1 insertion(+), 1 deletion(-)
-> 
-> Index: 2.6.26-rc2-mm1/kernel/cgroup.c
-> ===================================================================
-> --- 2.6.26-rc2-mm1.orig/kernel/cgroup.c
-> +++ 2.6.26-rc2-mm1/kernel/cgroup.c
-> @@ -2903,7 +2903,7 @@ int cgroup_clone(struct task_struct *tsk
->  	cg = tsk->cgroups;
->  	parent = task_cgroup(tsk, subsys->subsys_id);
-> 
-> -	snprintf(nodename, MAX_CGROUP_TYPE_NAMELEN, "node_%d", tsk->pid);
-> +	snprintf(nodename, MAX_CGROUP_TYPE_NAMELEN, "%d", tsk->pid);
-> 
->  	/* Pin the hierarchy */
->  	atomic_inc(&parent->root->sb->s_active);
+YAMAMOTO Takashi
