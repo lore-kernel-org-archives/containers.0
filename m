@@ -1,16 +1,15 @@
-From: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
-Subject: Re: [PATCH 2/4] swapcgroup: add member to swap_info_struct for cgroup
-Date: Thu, 22 May 2008 18:35:14 +0900
-Message-ID: <20080522183514.e8b99dc3.kamezawa.hiroyu@jp.fujitsu.com>
+From: Daisuke Nishimura <nishimura-YQH0OdQVrdy45+QrQBaojngSJqDPrsil@public.gmane.org>
+Subject: Re: [PATCH 4/4] swapcgroup: modify vm_swap_full for cgroup
+Date: Thu, 22 May 2008 21:22:05 +0900
+Message-ID: <4835656D.4020706@mxp.nes.nec.co.jp>
 References: <48350F15.9070007@mxp.nes.nec.co.jp>
-	<4835104B.4040405@mxp.nes.nec.co.jp>
-	<20080522162312.a60d914b.kamezawa.hiroyu@jp.fujitsu.com>
-	<483532FE.9080707@mxp.nes.nec.co.jp>
+	<48351120.6000800@mxp.nes.nec.co.jp>
+	<20080522165322.F516.KOSAKI.MOTOHIRO@jp.fujitsu.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <483532FE.9080707-YQH0OdQVrdy45+QrQBaojngSJqDPrsil@public.gmane.org>
+In-Reply-To: <20080522165322.F516.KOSAKI.MOTOHIRO-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -20,78 +19,49 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Daisuke Nishimura <nishimura-YQH0OdQVrdy45+QrQBaojngSJqDPrsil@public.gmane.org>
-Cc: YAMAMOTO Takashi <yamamoto-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>, Linux MM <linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org>, Pavel-FOgKQjlUJ6BQetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Hugh Dickins <hugh-DTz5qymZ9yRBDgjK7y7TUQ@public.gmane.org>, Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+To: KOSAKI Motohiro <kosaki.motohiro-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+Cc: Lee Schermerhorn <Lee.Schermerhorn-VXdhtT5mjnY@public.gmane.org>, Rik van Riel <riel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, YAMAMOTO Takashi <yamamoto-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>, Linux MM <linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org>, Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Hugh Dickins <hugh-DTz5qymZ9yRBDgjK7y7TUQ@public.gmane.org>, Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Thu, 22 May 2008 17:46:54 +0900
-Daisuke Nishimura <nishimura-YQH0OdQVrdy45+QrQBaojngSJqDPrsil@public.gmane.org> wrote:
+Hi,
 
-> > ==
-> > #ifdef CONFIG_CGROUP_SWAP_RES_CTR
-> >   void  swap_cgroup_init_memcg(p, memcg)
-> >   {
-> >     do something.
-> >   }
-> > #else
-> >    void  swap_cgroup_init_memcg(p, memcg)
-> >   {
-> >   }
-> > #endif
-> > ==
-> > 
-> I think swap_cgroup_init_memcg should return old value
-> of p->memcg, and I would like to name it swap_cgroup_clear_memcg,
-> because it is called by sys_swapoff, so "clear" rather than "init"
-> would be better.
+On 2008/05/22 17:00 +0900, KOSAKI Motohiro wrote:
+> Hi,
 > 
-> How about something like this?
+>> +#ifndef CONFIG_CGROUP_SWAP_RES_CTLR
+>>  /* Swap 50% full? Release swapcache more aggressively.. */
+>> -#define vm_swap_full() (nr_swap_pages*2 < total_swap_pages)
+>> +#define vm_swap_full(page) (nr_swap_pages*2 < total_swap_pages)
+>> +#else
+>> +#define vm_swap_full(page) swap_cgroup_vm_swap_full(page)
+>> +#endif
 > 
-> struct mem_cgroup **swap_cgroup_clear_memcg(p, memcg)
-> {
-> 	struct mem_cgroup **mem;
+> I'd prefer #ifdef rather than #ifndef.
 > 
-> 	mem = p->memcg;
-> 	p->memcg = NULL;
+> so...
 > 
-> 	return mem;
-> }
+> #ifdef CONFIG_CGROUP_SWAP_RES_CTLR
+>   your definition
+> #else
+>   original definition
+> #endif
 > 
-> and at sys_swapoff():
-> 
-> struct mem_cgroup **memcg;
->  :
-> memcg = swap_cgroup_clear_memcg(p, memcg);
->  :
-> if (memcg)
-> 	vfree(memcg);
-> 
-seems good.
+OK.
+I'll change it.
 
-
-> >> +#ifdef CONFIG_CGROUP_SWAP_RES_CTLR
-> >> +		p->memcg = vmalloc(maxpages * sizeof(struct mem_cgroup *));
-> >> +		if (!p->memcg) {
-> >> +			error = -ENOMEM;
-> >> +			goto bad_swap;
-> >> +		}
-> >> +		memset(p->memcg, 0, maxpages * sizeof(struct mem_cgroup *));
-> >> +#endif
-> > void alloc_swap_ctlr_memcg(p)
-> > 
-> OK.
-> I'll implement swap_cgroup_alloc_memcg.
+> and vm_swap_full() isn't page granularity operation.
+> this is memory(or swap) cgroup operation.
 > 
-> > But this implies swapon will fail at memory shortage. Is it good ?
-> > 
-> Hum.
-> Would it be better to just disabling this feature?
+> this argument is slightly odd.
 > 
-I have no good idea. IMHO, adding printk() to show 'fatal status of
-not-enough-memory-for-vmalloc' will be first step.
+But what callers of vm_swap_full() know is page,
+not mem_cgroup.
+I don't want to add to callers something like:
 
-I believe vmalloc() tend not to fail on 64bit machine, but on i386,
-vmalloc area is not enough.
+  pc = get_page_cgroup(page);
+  mem = pc->mem_cgroup;
+  vm_swap_full(mem);
+
 
 Thanks,
--Kame
+Daisuke Nishimura.
