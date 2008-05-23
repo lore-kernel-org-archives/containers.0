@@ -1,15 +1,14 @@
-From: Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: Re: [PATCH 0/4] swapcgroup(v2)
-Date: Fri, 23 May 2008 12:15:15 +0530
-Message-ID: <483667FB.1030702@linux.vnet.ibm.com>
-References: <48364D38.7000304@linux.vnet.ibm.com> <4836563B.4060603@anu.edu.au>
-	<20080523145947.84F4.KOSAKI.MOTOHIRO@jp.fujitsu.com>
-Reply-To: balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
+From: Daisuke Nishimura <nishimura-YQH0OdQVrdy45+QrQBaojngSJqDPrsil@public.gmane.org>
+Subject: Re: [PATCH 3/4] swapcgroup: implement charge/uncharge
+Date: Fri, 23 May 2008 20:52:29 +0900
+Message-ID: <4836AFFD.3060605@mxp.nes.nec.co.jp>
+References: <48350F15.9070007@mxp.nes.nec.co.jp>	<48351095.3040009@mxp.nes.nec.co.jp>
+	<20080522163748.74e9bd4f.kamezawa.hiroyu@jp.fujitsu.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20080523145947.84F4.KOSAKI.MOTOHIRO-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+In-Reply-To: <20080522163748.74e9bd4f.kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,36 +18,63 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: KOSAKI Motohiro <kosaki.motohiro-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
-Cc: Rik van Riel <riel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, David.Singleton-FCV4sgi5zeUQrrorzV6ljw@public.gmane.org, YAMAMOTO Takashi <yamamoto-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>, Daisuke Nishimura <nishimura-YQH0OdQVrdy45+QrQBaojngSJqDPrsil@public.gmane.org>, Linux MM <linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org>, Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Hugh Dickins <hugh-DTz5qymZ9yRBDgjK7y7TUQ@public.gmane.org>, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+To: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+Cc: YAMAMOTO Takashi <yamamoto-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>, Linux MM <linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org>, Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Hugh Dickins <hugh-DTz5qymZ9yRBDgjK7y7TUQ@public.gmane.org>, Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-KOSAKI Motohiro wrote:
->>> Have you seen any real world example of this? 
->> At the unsophisticated end, there are lots of (Fortran) HPC applications
->> with very large static array declarations but only "use" a small fraction
->> of that.  Those users know they only need a small fraction and are happy
->> to volunteer small physical memory limits that we (admins/queuing
->> systems) can apply.
->>
->> At the sophisticated end, the use of numerous large memory maps in
->> parallel HPC applications to gain visibility into other processes is
->> growing.  We have processes with VSZ > 400GB just because they have
->> 4GB maps into 127 other processes.  Their physical page use is of
->> the order 2GB.
+On 2008/05/22 16:37 +0900, KAMEZAWA Hiroyuki wrote:
+> On Thu, 22 May 2008 15:20:05 +0900
+> Daisuke Nishimura <nishimura-YQH0OdQVrdy45+QrQBaojngSJqDPrsil@public.gmane.org> wrote:
 > 
-> Ah, agreed.
-> Fujitsu HPC user said similar things ago.
+>> +#ifdef CONFIG_CGROUP_SWAP_RES_CTLR
+>> +int swap_cgroup_charge(struct page *page,
+>> +			struct swap_info_struct *si,
+>> +			unsigned long offset)
+>> +{
+>> +	int ret;
+>> +	struct page_cgroup *pc;
+>> +	struct mem_cgroup *mem;
+>> +
+>> +	lock_page_cgroup(page);
+>> +	pc = page_get_page_cgroup(page);
+>> +	if (unlikely(!pc))
+>> +		mem = &init_mem_cgroup;
+>> +	else
+>> +		mem = pc->mem_cgroup;
+>> +	unlock_page_cgroup(page);
+> 
+> If !pc, the page is used before memory controller is available. But is it
+> good to be charged to init_mem_cgroup() ?
+I'm sorry, but I can't understand this situation.
+memory controller is initialized at kernel initialization,
+so aren't processes created after it is initialized?
 
-OK, so this use case is HPC specific. I am not against the swap controller, but
-overcommit can lead to problems if not controlled - such as OOM kill. The
-virtual address space limit helps applications fail gracefully rather than swap
-out excessively or OOM.
+> How about returning 'failure' in this case ? I think returning 'failure' here
+> is not so bad.
+> 
+> 
+Which of below do you mean by 'failure'?
 
-I suspect there'll be applications that swing both ways.
+A. make it fail to get swap entry, so the page cannot be swapped out.
+B. don't charge this swap entry to any cgroup, but the page
+   would be swapped out.
 
--- 
-	Warm Regards,
-	Balbir Singh
-	Linux Technology Center
-	IBM, ISTL
+I don't want to do B, because I don't want to make such
+not-charged-to-anywhere entries.
+And I've seen several times this condition(!pc) becomes true,
+so I charged to init_mem_cgroup.
+
+
+BTW, I noticed that almost all of functions I added by this patch set
+should check "mem_cgroup_subsys.disabled" first because it depend on
+memory cgroup.
+
+>> +
+>> +	css_get(&mem->css);
+> 
+> move this css_get() before unlock_page_cgroup() is safer.
+> 
+OK, thanks.
+
+
+Daisuke Nishimura.
