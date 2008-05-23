@@ -1,16 +1,14 @@
-From: Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+From: Daisuke Nishimura <nishimura-YQH0OdQVrdy45+QrQBaojngSJqDPrsil@public.gmane.org>
 Subject: Re: [PATCH 0/4] swapcgroup(v2)
-Date: Fri, 23 May 2008 09:29:23 +0530
-Message-ID: <4836411B.2030601@linux.vnet.ibm.com>
+Date: Fri, 23 May 2008 13:27:23 +0900
+Message-ID: <483647AB.8090104@mxp.nes.nec.co.jp>
 References: <48350F15.9070007@mxp.nes.nec.co.jp>
-	<20080522222655.166657da@bree.surriel.com>
-	<20080523121027.b0eecfa0.kamezawa.hiroyu@jp.fujitsu.com>
-Reply-To: balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
+	<4835E55A.1000308@linux.vnet.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20080523121027.b0eecfa0.kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+In-Reply-To: <4835E55A.1000308-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -20,86 +18,46 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
-Cc: Rik van Riel <riel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, YAMAMOTO Takashi <yamamoto-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>, Daisuke Nishimura <nishimura-YQH0OdQVrdy45+QrQBaojngSJqDPrsil@public.gmane.org>, Linux MM <linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org>, Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Hugh Dickins <hugh-DTz5qymZ9yRBDgjK7y7TUQ@public.gmane.org>, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+To: balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
+Cc: YAMAMOTO Takashi <yamamoto-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>, Linux MM <linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org>, Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Hugh Dickins <hugh-DTz5qymZ9yRBDgjK7y7TUQ@public.gmane.org>, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-KAMEZAWA Hiroyuki wrote:
-> On Thu, 22 May 2008 22:26:55 -0400
-> Rik van Riel <riel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org> wrote:
-> 
->> Even worse is that a cgroup has NO CONTROL over how much
->> of its memory is kept in RAM and how much is swapped out.
+Hi.
 
-We used to have a control on the swap cache pages as well, but their
-implementation needed more thought
-
-> Could you explain "NO CONTROL" ? cgroup has LRU....
-> 'how mucch memory should be swapped out from memory' is well controlled
-> in the VM besides LRU logic ?
-> 
->> This kind of decision is made on a system-wide basis by
->> the kernel, dependent on what other processes in the system
->> are doing. There also is no easy way for a cgroup to reduce
->> its swap use, unlike with other resources.
+On 2008/05/23 6:27 +0900, Balbir Singh wrote:
+> Daisuke Nishimura wrote:
+>> Hi.
 >>
-
-One option is to limit the virtual address space usage of the cgroup to ensure
-that swap usage of a cgroup will *not* exceed the specified limit. Along with a
-good swap controller, it should provide good control over the cgroup's memory usage.
-
-> 
->> In what scenario would you use a resource controller that
->> rewards a group for reaching its limit?
+>> I updated my swapcgroup patch.
 >>
->> How can the cgroup swap space controller help sysadmins
->> achieve performance or fairness goals on a system? 
+>> Major changes from previous version(*1):
+>> - Rebased on 2.6.26-rc2-mm1 + KAMEZAWA-san's performance
+>>   improvement patchset v4.
+>> - Implemented as a add-on to memory cgroup.
+>>   So, there is no need to add a new member to page_cgroup now.
+>> - (NEW)Modified vm_swap_full() to calculate the rate of
+>>   swap usage per cgroup.
 >>
-> Perforamnce is not the first goal of this swap controller, I think.
-> This is for resouce isolation/overcommiting. 
+>> Patchs:
+>> - [1/4] add cgroup files
+>> - [2/4] add member to swap_info_struct for cgroup
+>> - [3/4] implement charge/uncharge
+>> - [4/4] modify vm_swap_full for cgroup
+>>
+>> ToDo:
+>> - handle force_empty.
+>> - make it possible for users to select if they use
+>>   this feature or not, and avoid overhead for users
+>>   not using this feature.
+>> - move charges along with task move between cgroups.
+>>
 > 
-> 1. Some _crazy_ people considers swap as very-slow-memory resource ;)
->    I don't think so but I know there are tons of people....
+> Thanks for looking into this. Yamamoto-San is also looking into a swap
+> controller. Is there a consensus on the approach?
 > 
-> 2. Resource Isolation.
->    When a cgroup has memory limitation, it can create tons of swap.
->    For example, limit a cgroup's memory to be 128M and malloc 3G bytes.
->    2.8Gbytes of swap will be used _easily_. A process can use up all swap. 
->    In that case, other process can't use swap.
-> 
-> IIRC, a man shown his motivation to controll swap in OLS2007/BOF as following.
-> ==
-> Consider following system. (and there is no swap controller.) 
-> Memory 4G. Swap 1G. with 2 cgroups A, B.
-> 
-> state 1) swap is not used.
->   A....memory limit to be 1G  no swap usage memory_usage=0M
->   B....memory limit to be 1G  no swap usage memory_usage=0M
-> 
-> state 2) Run a big program on A.
->   A....memory limit to be 1G and try to use 1.7G. uses 700MBytes of swap.
->        memory_usage=1G swap_usage=700M
->   B....memory_usage=0M
-> 
-> state 3) A some of programs ends in 'A'
->   A....memory_usage=500M swap_usage=700M
->   B....memory_usage=0M.
-> 
-> state 4) Run a big program on B.
->   A...memory_usage=500M swap_usage=700M.
->   B...memory_usage=1G   swap_usage=300M
-> 
-> Group B can only use 1.3G because of unfair swap use of group A.
-> But users think why A uses 700M of swap with 500M of free memory....
-> 
-> If we don't have limitation to swap, we'll have to innovate a way to move swap
-> to memory in some reasonable logic.
-> 
-> Thanks,
-> -Kame
+Not yet, but I think we should have some consensus each other
+before going further.
 
--- 
-	Warm Regards,
-	Balbir Singh
-	Linux Technology Center
-	IBM, ISTL
+
+Thanks,
+Daisuke Nishimura.
