@@ -1,56 +1,42 @@
-From: "miscellany" <Blevins_Colin-LIaQ4erpuTN+XZJcv9eMoEEOCMrvLtNR@public.gmane.org>
-Subject: MD Contact List
-Date: Sat, 24 May 2008 09:15:43 -0400
-Message-ID: <19521.9847294085$1211644936@news.gmane.org>
+From: Balbir Singh <balbir@linux.vnet.ibm.com>
+Subject: Re: [PATCH 0/3] cgroup: block device i/o bandwidth controller
+Date: Sat, 24 May 2008 23:52:50 +0530
+Message-ID: <48385CFA.7010201@linux.vnet.ibm.com>
+References: <> <1211648217-13361-1-git-send-email-righi.andrea@gmail.com>
+Reply-To: balbir@linux.vnet.ibm.com
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
+Content-Type: text/plain; charset=ISO-8859-1
 Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: xzem-PkbjNfxxIARBDgjK7y7TUQ@public.gmane.org
-Cc: containers-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, dean277-PkbjNfxxIARBDgjK7y7TUQ@public.gmane.org, dart-pol-q4nz1LJO/70gbZ1banK5DA@public.gmane.org, sadc-reec-QZr2bbWUuUFS6g3Q2OMWOg@public.gmane.org, tom-QGXECbqIdgTAYiG3zqykz2Mtj0u8SJ7q@public.gmane.org
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1761480AbYEXSY5@vger.kernel.org>
+In-Reply-To: <1211648217-13361-1-git-send-email-righi.andrea@gmail.com>
+Sender: linux-kernel-owner@vger.kernel.org
+To: Andrea Righi <righi.andrea@gmail.com>
+Cc: menage@google.com, matt@bluehost.com, roberto@unbit.it, linux-kernel@vger.kernel.org, Linux Containers <containers@lists.osdl.org>
 List-Id: containers.vger.kernel.org
 
+Andrea Righi wrote:
+> I'm resending an updated version of the cgroup I/O bandwidth controller
+> that I wrote some months ago (http://lwn.net/Articles/265944), since
+> someone asked me recently.
+> 
+> The goal of this patchset is to implement a block device I/O bandwidth
+> controller using cgroups.
+> 
+> Detailed informations about design, its goal and usage are described in
+> the documentation.
+> 
+> Review, comments and feedbacks are welcome.
+> 
 
+Hi, Andrea,
 
+There are several parallel efforts for the IO controller? Could you
+describe/compare them with yours? Is any consensus building taking place?
 
-Here's what we're offering for this week:
+CC'ing containers mailing list.
 
-Licensed MDs in the US 
-
-788,581 in total * 17,879 emails
-
-34 primary and secondary specialties
-
-16 different sortable fields
-
-
-US Pharmaceutical Company Executives Directory
-Names and email addresses of 47,000 employees in high-ranking positions
-
-Database of US Hospitals
-more than 23k hospital administrators in over 7k hospitals [worth over $300 alone)
-
-Extensive Database of Dentists in the US
-Practically every dentist in the US is listed here
-
-Chiropractors in the USA
-Complete data for all chiropractors in America (a $250 value)
-
-
-Now priced at: 
-$397 for everything
-
-Email us at:      anna_md.2008-EMRzualFZlQ@public.gmane.org
-
-  
-
-good until May 30
+-- 
+	Warm Regards,
+	Balbir Singh
+	Linux Technology Center
+	IBM, ISTL
