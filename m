@@ -1,7 +1,7 @@
 From: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
-Subject: [RFC 2/4] memcg: high-low watermark
-Date: Tue, 27 May 2008 14:07:03 +0900
-Message-ID: <20080527140703.97b69ed3.kamezawa.hiroyu@jp.fujitsu.com>
+Subject: [RFC 4/4] memcg: NUMA background reclaim
+Date: Tue, 27 May 2008 14:10:19 +0900
+Message-ID: <20080527141019.f1d15b95.kamezawa.hiroyu@jp.fujitsu.com>
 References: <20080527140116.fb04b06b.kamezawa.hiroyu@jp.fujitsu.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -21,235 +21,172 @@ To: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
 Cc: "yamamoto-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org" <yamamoto-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>, "lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org" <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>, "linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org" <linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org>, "containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org" <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, "balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org" <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, "xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org" <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
+One aspect of difference in reclaim logic between global lru and memcg is 
+ * global LRU triggers memory reclaim at memory shortage.
+ * memcg LRU triggers memory reclaim at excess of usage.
 
-Add high/low watermarks to res_counter.
-*This patch itself has no behavior changes to memory resource controller.
+Then, global LRU _know_ which node we should start reclaim from.
+ * start from a node at memory shortage or
+ * start from a node where memory allocation is waiting
 
-Changelog: very old one -> this one (v1)
- - watarmark_state is removed and all state check is done under lock.
- - changed res_counter_charge() interface. The only user is memory
-   resource controller. Anyway, returning -ENOMEM here is a bit starnge.
- - Added watermark enable/disable flag for someone don't want watermarks.
- - Restarted against 2.6.25-mm1.
- - some subsystem which doesn't want high-low watermark can work withou it.
+WRT memcg, it's difficult to find where we should start because
+there is no memory shortage and LRU is splitted.
+(But per-zone-LRU is definitely necessary for scalability.)
 
-Signed-off-by: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
-From: YAMAMOTO Takashi <yamamoto-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
+This patch tries to deteremine a node for starting recalim by checking
+ratio of inactive pages/active pages in a node. And trying to avoid starting
+from a node with relatively small usage.
+Better algorithm is welcome.
 
----
- include/linux/res_counter.h |   41 ++++++++++++++++++++++++---
- kernel/res_counter.c        |   66 ++++++++++++++++++++++++++++++++++++++++----
- mm/memcontrol.c             |    2 -
- 3 files changed, 99 insertions(+), 10 deletions(-)
+Singed-off-by: KAMEZAWA Hiruyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
 
-Index: mm-2.6.26-rc2-mm1/include/linux/res_counter.h
-===================================================================
---- mm-2.6.26-rc2-mm1.orig/include/linux/res_counter.h
-+++ mm-2.6.26-rc2-mm1/include/linux/res_counter.h
-@@ -16,6 +16,16 @@
- #include <linux/cgroup.h>
- 
- /*
-+ * status of resource coutner's usage.
-+ */
-+enum res_state {
-+	RES_BELOW_LOW,	/* usage < lwmark */
-+	RES_BELOW_HIGH,	/* lwmark < usage < hwmark */
-+	RES_BELOW_LIMIT,	/* hwmark < usage < limit. */
-+	RES_OVER_LIMIT,		/* only used at chage. */
-+};
-+
-+/*
-  * The core object. the cgroup that wishes to account for some
-  * resource may include this counter into its structures and use
-  * the helpers described beyond
-@@ -39,6 +49,12 @@ struct res_counter {
- 	 */
- 	unsigned long long failcnt;
- 	/*
-+	 * watermarks. needs to keep lwmark <= hwmark <= limit.
-+	 */
-+	unsigned long long hwmark;
-+	unsigned long long lwmark;
-+	int		   use_watermark;
-+	/*
- 	 * the lock to protect all of the above.
- 	 * the routines below consider this to be IRQ-safe
- 	 */
-@@ -76,13 +92,18 @@ enum {
- 	RES_MAX_USAGE,
- 	RES_LIMIT,
- 	RES_FAILCNT,
-+	RES_HWMARK,
-+	RES_LWMARK,
- };
- 
- /*
-  * helpers for accounting
-+ * res_counter_init() ... initialize counter and disable watermarks.
-+ * res_counter_init_wmark() ... initialize counter and enable watermarks.
-  */
- 
- void res_counter_init(struct res_counter *counter);
-+void res_counter_init_wmark(struct res_counter *counter);
- 
- /*
-  * charge - try to consume more resource.
-@@ -93,11 +114,21 @@ void res_counter_init(struct res_counter
-  *
-  * returns 0 on success and <0 if the counter->usage will exceed the
-  * counter->limit _locked call expects the counter->lock to be taken
-+ * return values:
-+ * If watermark is disabled,
-+ * RES_BELOW_LIMIT  --  usage is smaller than limt, success.
-+ * RES_OVER_LIMIT   --  usage is bigger than limit, failed.
-+ *
-+ * If watermark is enabled,
-+ * RES_BELOW_LOW    -- usage is smaller than low watermark, success
-+ * RES_BELOW_HIGH   -- usage is smaller than high watermark, success.
-+ * RES_BELOW_LIMIT  -- usage is smaller than limt, success.
-+ * RES_OVER_LIMIT   -- usage is bigger than limit, failed.
-  */
- 
--int __must_check res_counter_charge_locked(struct res_counter *counter,
--		unsigned long val);
--int __must_check res_counter_charge(struct res_counter *counter,
-+enum res_state __must_check
-+res_counter_charge_locked(struct res_counter *counter, unsigned long val);
-+enum res_state __must_check res_counter_charge(struct res_counter *counter,
- 		unsigned long val);
- 
- /*
-@@ -164,4 +195,7 @@ static inline int res_counter_empty(stru
- 	spin_unlock_irqrestore(&cnt->lock, flags);
- 	return ret;
- }
-+
-+enum res_state res_counter_state(struct res_counter *counter);
-+
- #endif
-Index: mm-2.6.26-rc2-mm1/kernel/res_counter.c
-===================================================================
---- mm-2.6.26-rc2-mm1.orig/kernel/res_counter.c
-+++ mm-2.6.26-rc2-mm1/kernel/res_counter.c
-@@ -18,22 +18,40 @@ void res_counter_init(struct res_counter
- {
- 	spin_lock_init(&counter->lock);
- 	counter->limit = (unsigned long long)LLONG_MAX;
-+	counter->use_watermark = 0;
- }
- 
--int res_counter_charge_locked(struct res_counter *counter, unsigned long val)
-+void res_counter_init_wmark(struct res_counter *counter)
-+{
-+	spin_lock_init(&counter->lock);
-+	counter->limit = (unsigned long long)LLONG_MAX;
-+	counter->hwmark = (unsigned long long)LLONG_MAX;
-+	counter->lwmark = (unsigned long long)LLONG_MAX;
-+	counter->use_watermark = 1;
-+}
-+
-+enum res_state
-+res_counter_charge_locked(struct res_counter *counter, unsigned long val)
- {
- 	if (counter->usage + val > counter->limit) {
- 		counter->failcnt++;
--		return -ENOMEM;
-+		return RES_OVER_LIMIT;
- 	}
- 
- 	counter->usage += val;
- 	if (counter->usage > counter->max_usage)
- 		counter->max_usage = counter->usage;
--	return 0;
-+	if (counter->use_watermark) {
-+		if (counter->usage <= counter->lwmark)
-+			return RES_BELOW_LOW;
-+		if (counter->usage <= counter->hwmark)
-+			return RES_BELOW_HIGH;
-+	}
-+	return RES_BELOW_LIMIT;
- }
- 
--int res_counter_charge(struct res_counter *counter, unsigned long val)
-+enum res_state
-+res_counter_charge(struct res_counter *counter, unsigned long val)
- {
- 	int ret;
- 	unsigned long flags;
-@@ -44,6 +62,23 @@ int res_counter_charge(struct res_counte
- 	return ret;
- }
- 
-+enum res_state res_counter_state(struct res_counter *counter)
-+{
-+	unsigned long flags;
-+	enum res_state ret = RES_BELOW_LIMIT;
-+
-+	spin_lock_irqsave(&counter->lock, flags);
-+	if (counter->use_watermark) {
-+		if (counter->usage <= counter->lwmark)
-+			ret = RES_BELOW_LOW;
-+		else if (counter->usage <= counter->hwmark)
-+			ret = RES_BELOW_HIGH;
-+	}
-+	spin_unlock_irqrestore(&counter->lock, flags);
-+	return ret;
-+}
-+
-+
- void res_counter_uncharge_locked(struct res_counter *counter, unsigned long val)
- {
- 	if (WARN_ON(counter->usage < val))
-@@ -74,6 +109,10 @@ res_counter_member(struct res_counter *c
- 		return &counter->limit;
- 	case RES_FAILCNT:
- 		return &counter->failcnt;
-+	case RES_HWMARK:
-+		return &counter->hwmark;
-+	case RES_LWMARK:
-+		return &counter->lwmark;
- 	};
- 
- 	BUG();
-@@ -134,10 +173,27 @@ ssize_t res_counter_write(struct res_cou
- 			goto out_free;
- 	}
- 	spin_lock_irqsave(&counter->lock, flags);
-+	switch (member) {
-+		case RES_LIMIT:
-+			if (counter->use_watermark && counter->hwmark > tmp)
-+				goto unlock_free;
-+			break;
-+		case RES_HWMARK:
-+			if (tmp < counter->lwmark  || tmp > counter->limit)
-+				goto unlock_free;
-+			break;
-+		case RES_LWMARK:
-+			if (tmp > counter->hwmark)
-+				goto unlock_free;
-+			break;
-+		default:
-+			break;
-+	}
- 	val = res_counter_member(counter, member);
- 	*val = tmp;
--	spin_unlock_irqrestore(&counter->lock, flags);
- 	ret = nbytes;
-+unlock_free:
-+	spin_unlock_irqrestore(&counter->lock, flags);
- out_free:
- 	kfree(buf);
- out:
 Index: mm-2.6.26-rc2-mm1/mm/memcontrol.c
 ===================================================================
 --- mm-2.6.26-rc2-mm1.orig/mm/memcontrol.c
 +++ mm-2.6.26-rc2-mm1/mm/memcontrol.c
-@@ -559,7 +559,7 @@ static int mem_cgroup_charge_common(stru
- 		css_get(&memcg->css);
- 	}
- 
--	while (res_counter_charge(&mem->res, PAGE_SIZE)) {
-+	while (res_counter_charge(&mem->res, PAGE_SIZE) == RES_OVER_LIMIT) {
+@@ -578,7 +578,7 @@ retry:
+ 	if (state == RES_OVER_LIMIT) {
  		if (!(gfp_mask & __GFP_WAIT))
  			goto out;
+-		if (try_to_free_mem_cgroup_pages(mem, gfp_mask))
++		if (try_to_free_mem_cgroup_pages(mem, -1, gfp_mask))
+ 			goto retry;
+ 		/*
+ 		 * try_to_free_mem_cgroup_pages() might not give us a
+@@ -801,7 +801,7 @@ int mem_cgroup_shrink_usage(struct mm_st
+ 	rcu_read_unlock();
+ 
+ 	do {
+-		progress = try_to_free_mem_cgroup_pages(mem, gfp_mask);
++		progress = try_to_free_mem_cgroup_pages(mem, -1, gfp_mask);
+ 	} while (!progress && --retry);
+ 
+ 	if (!retry)
+@@ -814,7 +814,7 @@ static void mem_cgroup_drop_all_pages(st
+ {
+ 	int progress;
+ 	while (!res_counter_empty(&mem->res)) {
+-		progress = try_to_free_mem_cgroup_pages(mem,
++		progress = try_to_free_mem_cgroup_pages(mem, -1,
+ 					GFP_HIGHUSER_MOVABLE);
+ 		if (!progress) /* we did as much as possible */
+ 			break;
+@@ -912,6 +912,62 @@ out:
+ /*
+  * background reclaim daemon.
+  */
++
++#ifdef CONFIG_NUMA
++/*
++ * Because memory controller's memory reclaim doesn't come from memory shortage,
++ * we cannot know which node should be reclaimed in an easy way.
++ * This routine select a node with inactive pages to be a node for starting
++ * scanning.
++ */
++int __select_best_node(struct mem_cgroup *mem)
++{
++	int nid;
++	int best_node = -1;
++	unsigned long highest_inactive_ratio = 0;
++	unsigned long active, inactive, inactive_ratio, total, threshold, flags;
++	struct mem_cgroup_per_zone *mz;
++	int zid;
++
++	/*
++	 * When a node's memory usage is smaller than 
++  	 * total_usage/num_of_node * 75%, we don't select the node
++	 */
++	total = mem->res.usage >> PAGE_SHIFT;
++	threshold = (total / num_node_state(N_HIGH_MEMORY)) * 3 / 4;
++
++	/*
++	 * See nodemask.h, N_HIGH_MEMORY means that a node has memory
++	 * can be used for user's memory.(i.e. not means HIGHMEM).
++	 */
++	for_each_node_state(nid, N_HIGH_MEMORY) {
++		active = 0;
++		inactive = 0;
++
++		for (zid = 0; zid < MAX_NR_ZONES; zid++) {
++			mz = mem_cgroup_zoneinfo(mem, nid, zid);
++			spin_lock_irqsave(&mz->lru_lock, flags);
++			active += MEM_CGROUP_ZSTAT(mz, MEM_CGROUP_ZSTAT_ACTIVE);
++			inactive +=
++				MEM_CGROUP_ZSTAT(mz, MEM_CGROUP_ZSTAT_INACTIVE);
++			spin_unlock_irqrestore(&mz->lru_lock, flags);
++		}
++
++		if (active + inactive < threshold)
++			continue;
++		inactive_ratio = (inactive * 100) / (active + 1);
++		if (inactive_ratio > highest_inactive_ratio)
++			best_node = nid;
++	}
++	return best_node;
++}
++#else
++int __select_best_node(struct mem_cgroup *mem)
++{
++	return 0;
++}
++#endif
++
+ static int mem_cgroup_reclaim_daemon(void *data)
+ {
+ 	DEFINE_WAIT(wait);
+@@ -935,13 +991,9 @@ static int mem_cgroup_reclaim_daemon(voi
+ 			continue;
+ 		}
+ 		finish_wait(&mem->daemon.waitq, &wait);
+-		/*
+-		 * memory resource controller doesn't see NUMA memory usage
+-		 * balancing, becasue we cannot know what balancing is good.
+-		 * TODO: some annotation or heuristics to detect which node
+-		 * we should start reclaim from.
+-		 */
+-		ret = try_to_free_mem_cgroup_pages(mem, GFP_HIGHUSER_MOVABLE);
++
++		ret = try_to_free_mem_cgroup_pages(mem,
++				__select_best_node(mem), GFP_HIGHUSER_MOVABLE);
+ 
+ 		yield();
+ 	}
+Index: mm-2.6.26-rc2-mm1/mm/vmscan.c
+===================================================================
+--- mm-2.6.26-rc2-mm1.orig/mm/vmscan.c
++++ mm-2.6.26-rc2-mm1/mm/vmscan.c
+@@ -1429,7 +1429,7 @@ unsigned long try_to_free_pages(struct z
+ #ifdef CONFIG_CGROUP_MEM_RES_CTLR
+ 
+ unsigned long try_to_free_mem_cgroup_pages(struct mem_cgroup *mem_cont,
+-						gfp_t gfp_mask)
++					   int nid, gfp_t gfp_mask)
+ {
+ 	struct scan_control sc = {
+ 		.may_writepage = !laptop_mode,
+@@ -1442,9 +1442,11 @@ unsigned long try_to_free_mem_cgroup_pag
+ 	};
+ 	struct zonelist *zonelist;
+ 
++	if (nid == -1)
++		nid = numa_node_id();
+ 	sc.gfp_mask = (gfp_mask & GFP_RECLAIM_MASK) |
+ 			(GFP_HIGHUSER_MOVABLE & ~GFP_RECLAIM_MASK);
+-	zonelist = NODE_DATA(numa_node_id())->node_zonelists;
++	zonelist = NODE_DATA(nid)->node_zonelists;
+ 	return do_try_to_free_pages(zonelist, &sc);
+ }
+ #endif
+Index: mm-2.6.26-rc2-mm1/include/linux/swap.h
+===================================================================
+--- mm-2.6.26-rc2-mm1.orig/include/linux/swap.h
++++ mm-2.6.26-rc2-mm1/include/linux/swap.h
+@@ -184,7 +184,7 @@ extern void swap_setup(void);
+ extern unsigned long try_to_free_pages(struct zonelist *zonelist, int order,
+ 					gfp_t gfp_mask);
+ extern unsigned long try_to_free_mem_cgroup_pages(struct mem_cgroup *mem,
+-							gfp_t gfp_mask);
++						int nid, gfp_t gfp_mask);
+ extern int __isolate_lru_page(struct page *page, int mode);
+ extern unsigned long shrink_all_memory(unsigned long nr_pages);
+ extern int vm_swappiness;
