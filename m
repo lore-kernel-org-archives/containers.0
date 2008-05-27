@@ -1,15 +1,15 @@
-From: Daisuke Nishimura <nishimura-YQH0OdQVrdy45+QrQBaojngSJqDPrsil@public.gmane.org>
-Subject: Re: [PATCH 0/4] swapcgroup(v2)
-Date: Tue, 27 May 2008 17:30:08 +0900
-Message-ID: <483BC690.6010206@mxp.nes.nec.co.jp>
-References: <483647AB.8090104@mxp.nes.nec.co.jp>
-	<20080527073118.0D92B5A0E@siro.lan>
-	<483BBB4C.3040501@linux.vnet.ibm.com>
+From: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+Subject: Re: [RFC 2/4] memcg: high-low watermark
+Date: Tue, 27 May 2008 18:42:15 +0900
+Message-ID: <20080527184215.dfc1bf37.kamezawa.hiroyu@jp.fujitsu.com>
+References: <20080527140116.fb04b06b.kamezawa.hiroyu@jp.fujitsu.com>
+	<20080527140703.97b69ed3.kamezawa.hiroyu@jp.fujitsu.com>
+	<483BBD8C.3040803@cn.fujitsu.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <483BBB4C.3040501-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+In-Reply-To: <483BBD8C.3040803-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,44 +19,58 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, YAMAMOTO Takashi <yamamoto-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
-Cc: linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, hugh-DTz5qymZ9yRBDgjK7y7TUQ@public.gmane.org, xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org
+To: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+Cc: "containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org" <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, "linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org" <linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org>, "yamamoto-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org" <yamamoto-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>, "xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org" <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>, "balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org" <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On 2008/05/27 16:42 +0900, Balbir Singh wrote:
-> YAMAMOTO Takashi wrote:
->> hi,
->>
->>>> Thanks for looking into this. Yamamoto-San is also looking into a swap
->>>> controller. Is there a consensus on the approach?
->>>>
->>> Not yet, but I think we should have some consensus each other
->>> before going further.
->>>
->>>
->>> Thanks,
->>> Daisuke Nishimura.
->> while nishimura-san's one still seems to have a lot of todo,
->> it seems good enough as a start point to me.
->> so i'd like to withdraw mine.
->>
->> nishimura-san, is it ok for you?
->>
-Of cource.
-I'll work hard to make it better.
+On Tue, 27 May 2008 15:51:40 +0800
+Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org> wrote:
 
+> KAMEZAWA Hiroyuki wrote:
+> > Add high/low watermarks to res_counter.
+> > *This patch itself has no behavior changes to memory resource controller.
+> > 
+> > Changelog: very old one -> this one (v1)
+> >  - watarmark_state is removed and all state check is done under lock.
+> >  - changed res_counter_charge() interface. The only user is memory
+> >    resource controller. Anyway, returning -ENOMEM here is a bit starnge.
+> >  - Added watermark enable/disable flag for someone don't want watermarks.
+> >  - Restarted against 2.6.25-mm1.
+> >  - some subsystem which doesn't want high-low watermark can work withou it.
+> > 
+> > Signed-off-by: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+> > From: YAMAMOTO Takashi <yamamoto-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
+> > 
+> > ---
+> >  include/linux/res_counter.h |   41 ++++++++++++++++++++++++---
+> >  kernel/res_counter.c        |   66 ++++++++++++++++++++++++++++++++++++++++----
+> >  mm/memcontrol.c             |    2 -
+> >  3 files changed, 99 insertions(+), 10 deletions(-)
+> > 
+> > Index: mm-2.6.26-rc2-mm1/include/linux/res_counter.h
+> > ===================================================================
+> > --- mm-2.6.26-rc2-mm1.orig/include/linux/res_counter.h
+> > +++ mm-2.6.26-rc2-mm1/include/linux/res_counter.h
+> > @@ -16,6 +16,16 @@
+> >  #include <linux/cgroup.h>
+> >  
+> >  /*
+> > + * status of resource coutner's usage.
+> > + */
+> > +enum res_state {
+> > +	RES_BELOW_LOW,	/* usage < lwmark */
 > 
-> I would suggest that me merge the good parts from both into the swap controller.
-> Having said that I'll let the two of you decide on what the good aspects of both
-> are. I cannot see any immediate overlap, but there might be some w.r.t.
-> infrastructure used.
+> It seems it's 'usage <= lwmark'
 > 
-Well, you mean you'll make another patch based on yamamoto-san's
-and mine?
+> > +	RES_BELOW_HIGH,	/* lwmark < usage < hwmark */
+> 
+> and 'lwmark < usage <= hwmark'
+> 
+> > +	RES_BELOW_LIMIT,	/* hwmark < usage < limit. */
+> 
+> and 'hwmark < usage <= limit'
+> 
 
-Basically, I think it's difficult to merge
-because we charge different objects.
+Thank you. I'll fix.
 
-
-Thanks,
-Daisuke Nishimura.
+-Kame
