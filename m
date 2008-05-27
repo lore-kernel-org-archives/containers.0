@@ -1,19 +1,15 @@
-From: Daisuke Nishimura <nishimura-YQH0OdQVrdy45+QrQBaojngSJqDPrsil@public.gmane.org>
-Subject: Re: [PATCH 0/4] swapcgroup(v2)
-Date: Tue, 27 May 2008 23:00:43 +0900
-Message-ID: <483C140B.8050605@mxp.nes.nec.co.jp>
-References: <483647AB.8090104@mxp.nes.nec.co.jp>
-	<20080527073118.0D92B5A0E@siro.lan>
-	<483BBB4C.3040501@linux.vnet.ibm.com>
-	<483BC690.6010206@mxp.nes.nec.co.jp>
-	<483C0A0D.50909@linux.vnet.ibm.com>
-	<483C0FB2.7080706@mxp.nes.nec.co.jp>
-	<483C10C0.7040503@linux.vnet.ibm.com>
+From: Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Subject: Re: [RFC 1/4] memcg: drop pages at rmdir (v1)
+Date: Tue, 27 May 2008 21:41:26 +0530
+Message-ID: <483C32AE.1020908@linux.vnet.ibm.com>
+References: <20080527140116.fb04b06b.kamezawa.hiroyu@jp.fujitsu.com>
+	<20080527140533.b4b6f73f.kamezawa.hiroyu@jp.fujitsu.com>
+Reply-To: balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <483C10C0.7040503-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+In-Reply-To: <20080527140533.b4b6f73f.kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -23,66 +19,105 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
-Cc: YAMAMOTO Takashi <yamamoto-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, hugh-DTz5qymZ9yRBDgjK7y7TUQ@public.gmane.org, xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org
+To: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+Cc: "containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org" <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, "linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org" <linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org>, "yamamoto-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org" <yamamoto-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>, "lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org" <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>, "xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org" <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On 2008/05/27 22:46 +0900, Balbir Singh wrote:
-> Daisuke Nishimura wrote:
->> On 2008/05/27 22:18 +0900, Balbir Singh wrote:
->>> Daisuke Nishimura wrote:
->>>> On 2008/05/27 16:42 +0900, Balbir Singh wrote:
->>>>> YAMAMOTO Takashi wrote:
->>>>>> hi,
->>>>>>
->>>>>>>> Thanks for looking into this. Yamamoto-San is also looking into a swap
->>>>>>>> controller. Is there a consensus on the approach?
->>>>>>>>
->>>>>>> Not yet, but I think we should have some consensus each other
->>>>>>> before going further.
->>>>>>>
->>>>>>>
->>>>>>> Thanks,
->>>>>>> Daisuke Nishimura.
->>>>>> while nishimura-san's one still seems to have a lot of todo,
->>>>>> it seems good enough as a start point to me.
->>>>>> so i'd like to withdraw mine.
->>>>>>
->>>>>> nishimura-san, is it ok for you?
->>>>>>
->>>> Of cource.
->>>> I'll work hard to make it better.
->>>>
->>>>> I would suggest that me merge the good parts from both into the swap controller.
->>>>> Having said that I'll let the two of you decide on what the good aspects of both
->>>>> are. I cannot see any immediate overlap, but there might be some w.r.t.
->>>>> infrastructure used.
->>>>>
->>>> Well, you mean you'll make another patch based on yamamoto-san's
->>>> and mine?
->>>>
->>>> Basically, I think it's difficult to merge
->>>> because we charge different objects.
->>>>
->>> Yes, I know - that's why I said infrastructure, to see the grouping and common
->>> data structure aspects. I'll try and review the code.
->>>
->> OK.
->>
->> I'll wait for your patch.
+KAMEZAWA Hiroyuki wrote:
+> Now, when we remove memcg, we call force_empty().
+> This call drops all page_cgroup accounting in this mem_cgroup but doesn't
+> drop pages. So, some page caches can be remaind as "not accounted" memory
+> while they are alive. (because it's accounted only when add_to_page_cache())
+> If they are not used by other memcg, global LRU will drop them.
 > 
-> Hi, Daisuke-San
-> 
-> I am not sending out any patch (sorry for the confusion, if I caused it). I am
-> going to review the swapcgroup patchset.
+> This patch tries to drop pages at removing memcg. Other memcg will
+> reload and re-account page caches. (but this will increase page-in
+> after rmdir().)
 > 
 
-No problem :-)
+The approach seems fair, but I am not sure about the overhead of flushing out
+cached pages. Might well be worth it.
 
-I would very appreciate it if you review swap cgroup patches.
+> Consideration: should we recharge all pages to the parent at last ?
+>                But it's not precise logic.
+> 
 
-I'll update my patches based on your and others' comments.
+We should look into this - I should send out the multi-hierarchy patches soon.
+We should discuss this after that.
+
+> Changelog v1->v2
+>  - renamed res_counter_empty().
+> 
+> Signed-off-by: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+> 
+> ---
+>  include/linux/res_counter.h |   11 +++++++++++
+>  mm/memcontrol.c             |   19 +++++++++++++++++++
+>  2 files changed, 30 insertions(+)
+> 
+> Index: mm-2.6.26-rc2-mm1/mm/memcontrol.c
+> ===================================================================
+> --- mm-2.6.26-rc2-mm1.orig/mm/memcontrol.c
+> +++ mm-2.6.26-rc2-mm1/mm/memcontrol.c
+> @@ -791,6 +791,20 @@ int mem_cgroup_shrink_usage(struct mm_st
+>  	return 0;
+>  }
+> 
+> +
+> +static void mem_cgroup_drop_all_pages(struct mem_cgroup *mem)
+> +{
+> +	int progress;
+> +	while (!res_counter_empty(&mem->res)) {
+> +		progress = try_to_free_mem_cgroup_pages(mem,
+> +					GFP_HIGHUSER_MOVABLE);
+> +		if (!progress) /* we did as much as possible */
+> +			break;
+> +		cond_resched();
+> +	}
+> +	return;
+> +}
+> +
+>  /*
+>   * This routine traverse page_cgroup in given list and drop them all.
+>   * *And* this routine doesn't reclaim page itself, just removes page_cgroup.
+> @@ -848,7 +862,12 @@ static int mem_cgroup_force_empty(struct
+>  	if (mem_cgroup_subsys.disabled)
+>  		return 0;
+> 
+> +	if (atomic_read(&mem->css.cgroup->count) > 0)
+> +		goto out;
+> +
+>  	css_get(&mem->css);
+> +	/* drop pages as much as possible */
+> +	mem_cgroup_drop_all_pages(mem);
+>  	/*
+>  	 * page reclaim code (kswapd etc..) will move pages between
+>  	 * active_list <-> inactive_list while we don't take a lock.
+> Index: mm-2.6.26-rc2-mm1/include/linux/res_counter.h
+> ===================================================================
+> --- mm-2.6.26-rc2-mm1.orig/include/linux/res_counter.h
+> +++ mm-2.6.26-rc2-mm1/include/linux/res_counter.h
+> @@ -153,4 +153,15 @@ static inline void res_counter_reset_fai
+>  	cnt->failcnt = 0;
+>  	spin_unlock_irqrestore(&cnt->lock, flags);
+>  }
+> +/* returns 0 if usage is 0. */
+> +static inline int res_counter_empty(struct res_counter *cnt)
+> +{
+> +	unsigned long flags;
+> +	int ret;
+> +
+> +	spin_lock_irqsave(&cnt->lock, flags);
+> +	ret = (cnt->usage == 0) ? 0 : 1;
+> +	spin_unlock_irqrestore(&cnt->lock, flags);
+> +	return ret;
+> +}
+>  #endif
+> 
 
 
-Thanks,
-Daisuke Nishimura.
+-- 
+	Warm Regards,
+	Balbir Singh
+	Linux Technology Center
+	IBM, ISTL
