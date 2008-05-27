@@ -1,7 +1,7 @@
-From: "Ritchey Dickinson" <lyam-hhdkPssC4U+Wd6l5hS35sQ@public.gmane.org>
-Subject: ~In Design CS 3~
-Date: Tue, 27 May 2008 12:40:41 +0900
-Message-ID: <000301c8bfaa$d6412c00$0100007f@vcuohtf>
+From: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+Subject: [RFC 0/4] memcg: background reclaim (v1)
+Date: Tue, 27 May 2008 14:01:16 +0900
+Message-ID: <20080527140116.fb04b06b.kamezawa.hiroyu@jp.fujitsu.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -15,48 +15,31 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: "linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org" <linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org>
+Cc: "containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org" <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, "yamamoto-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org" <yamamoto-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>, "xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org" <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>, "lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org" <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>, "balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org" <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-~ Adobe CS3 Master Collection for PC or MAC includes:
-~ InDesign CS3
-~ Photoshop CS3
-~ Illustrator CS3
-~ Acrobat 8 Professional
-~ Flash CS3 Professional
-~ Dreamweaver CS3
-~ Fireworks CS3
-~ Contribute CS3
-~ After Effects CS3 Professional
-~ Premiere Pro CS3
-~ Encore DVD CS3
-~ Soundbooth CS3
+This is my current set of add-on patches for memory resource controller.
+This works well but not well tested and not for usual people.
+i.e..request for comments at early stage before being more complicated.
 
-~ xpwebspot .com in Internet Explorer
+This set inculdes an implementation of background reclaim to memory resource
+controller. I expect this helps I/O under memory resource controller very much.
+(some good result with "dd")
 
-~ System Requirements
+pathces are based on 2.6.26-rc2-mm1 + remove_refcnt patch set (in mm queue)
+So, I don't ask you "pleaset test" ;)
+plz tell me if you don't like the concept or you have better idea.
 
-~ For PC:
-~ Intel Pentium 4 (1.4GHz processor for DV; 3.4GHz processor for HDV), Intel Centrino, Intel Xeon, (dual 2.8GHz processors for HD), or Intel Core
-~ Duo (or compatible) processor; SSE2-enabled processor required for AMD systems
-~ Microsoft Windows XP with Service Pack 2 or Microsoft Windows Vista Home Premium, Business, Ultimate, or Enterprise (certified for 32-bit editions)
-~ 1GB of RAM for DV; 2GB of RAM for HDV and HD; more RAM recommended when running multiple components
-~ 38GB of available hard-disk space (additional free space required during installation)
-~ Dedicated 7,200 RPM hard drive for DV and HDV editing; striped disk array storage (RAID 0) for HD; SCSI disk subsystem preferred
-~ Microsoft DirectX compatible sound card (multichannel ASIO-compatible sound card recommended)
-~ 1,280x1,024 monitor resolution with 32-bit color adapter
-~ DVD-ROM drive
+[1/4] freeing all at force_empty.
+[2/4] high-low watermark to resource counter.
+[3/4] background reclaim for memcg.
+[4/4] background reclaim for memcg, NUMA extension.
 
-~ For MAC:
-~ PowerPC G4 or G5 or multicore Intel processor (Adobe Premiere Pro, Encore, and Soundbooth require a multicore Intel processor; Adobe OnLocation CS3 is a Windows application and may be used with Boot Camp)
-~ Mac OS X v.10.4.9; Java Runtime Environment 1.5 required for Adobe Version Cue CS3 Server
-~ 1GB of RAM for DV; 2GB of RAM for HDV and HD; more RAM recommended when running multiple components
-~ 36GB of available hard-disk space (additional free space required during installation)
-~ Dedicated 7,200 RPM hard drive for DV and HDV editing; striped disk array storage (RAID 0) for HD; SCSI disk subsystem preferred
-~ Core Audio compatible sound card
-~ 1,280x1,024 monitor resolution with 32-bit color adapter
-~ DVD-ROM drive~ DVD+-R burner required for DVD creation
+Consideration:
+One problem of background reclaim is that it uses CPU. I think it's necessary
+to make them more moderate. But what can I do against kthread rather than
+nice() ?
 
-China Quake Relief Effort Switches Gears
-
-Western Sichuan province sits at the intersection of diverse ethnic cultures. One people particularly hard hit by the earthquake is the ancient Qiang minority, in the mountains of Beichuan. They practice an animist religion; many speak a Tibetan-Burmese language.
+Thanks,
+-Kame
