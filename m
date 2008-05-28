@@ -1,15 +1,15 @@
 From: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
-Subject: Re: [RFC 1/4] memcg: drop pages at rmdir (v1)
-Date: Wed, 28 May 2008 09:12:37 +0900
-Message-ID: <20080528091237.f6bf2745.kamezawa.hiroyu@jp.fujitsu.com>
+Subject: Re: [RFC 4/4] memcg: NUMA background reclaim
+Date: Wed, 28 May 2008 09:46:45 +0900
+Message-ID: <20080528094645.faf13535.kamezawa.hiroyu@jp.fujitsu.com>
 References: <20080527140116.fb04b06b.kamezawa.hiroyu@jp.fujitsu.com>
-	<20080527140533.b4b6f73f.kamezawa.hiroyu@jp.fujitsu.com>
-	<483C32AE.1020908@linux.vnet.ibm.com>
+	<20080527141019.f1d15b95.kamezawa.hiroyu@jp.fujitsu.com>
+	<483C4453.5040800@linux.vnet.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <483C32AE.1020908-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+In-Reply-To: <483C4453.5040800-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -23,34 +23,114 @@ To: balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
 Cc: "containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org" <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, "linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org" <linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org>, "yamamoto-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org" <yamamoto-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>, "lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org" <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>, "xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org" <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Tue, 27 May 2008 21:41:26 +0530
+On Tue, 27 May 2008 22:56:43 +0530
 Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org> wrote:
 
 > KAMEZAWA Hiroyuki wrote:
-> > Now, when we remove memcg, we call force_empty().
-> > This call drops all page_cgroup accounting in this mem_cgroup but doesn't
-> > drop pages. So, some page caches can be remaind as "not accounted" memory
-> > while they are alive. (because it's accounted only when add_to_page_cache())
-> > If they are not used by other memcg, global LRU will drop them.
+> > One aspect of difference in reclaim logic between global lru and memcg is 
+> >  * global LRU triggers memory reclaim at memory shortage.
+> >  * memcg LRU triggers memory reclaim at excess of usage.
 > > 
-> > This patch tries to drop pages at removing memcg. Other memcg will
-> > reload and re-account page caches. (but this will increase page-in
-> > after rmdir().)
+> > Then, global LRU _know_ which node we should start reclaim from.
+> >  * start from a node at memory shortage or
+> >  * start from a node where memory allocation is waiting
 > > 
-> 
-> The approach seems fair, but I am not sure about the overhead of flushing out
-> cached pages. Might well be worth it.
-> 
-> > Consideration: should we recharge all pages to the parent at last ?
-> >                But it's not precise logic.
+> > WRT memcg, it's difficult to find where we should start because
+> > there is no memory shortage and LRU is splitted.
+> > (But per-zone-LRU is definitely necessary for scalability.)
 > > 
+> > This patch tries to deteremine a node for starting recalim by checking
+> > ratio of inactive pages/active pages in a node. And trying to avoid starting
+> > from a node with relatively small usage.
+> > Better algorithm is welcome.
+> > 
+> > Singed-off-by: KAMEZAWA Hiruyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+> > 
+> > Index: mm-2.6.26-rc2-mm1/mm/memcontrol.c
+> > ===================================================================
+> > --- mm-2.6.26-rc2-mm1.orig/mm/memcontrol.c
+> > +++ mm-2.6.26-rc2-mm1/mm/memcontrol.c
+> > @@ -578,7 +578,7 @@ retry:
+> >  	if (state == RES_OVER_LIMIT) {
+> >  		if (!(gfp_mask & __GFP_WAIT))
+> >  			goto out;
+> > -		if (try_to_free_mem_cgroup_pages(mem, gfp_mask))
+> > +		if (try_to_free_mem_cgroup_pages(mem, -1, gfp_mask))
+> >  			goto retry;
+> >  		/*
+> >  		 * try_to_free_mem_cgroup_pages() might not give us a
+> > @@ -801,7 +801,7 @@ int mem_cgroup_shrink_usage(struct mm_st
+> >  	rcu_read_unlock();
+> > 
+> >  	do {
+> > -		progress = try_to_free_mem_cgroup_pages(mem, gfp_mask);
+> > +		progress = try_to_free_mem_cgroup_pages(mem, -1, gfp_mask);
+> >  	} while (!progress && --retry);
+> > 
+> >  	if (!retry)
+> > @@ -814,7 +814,7 @@ static void mem_cgroup_drop_all_pages(st
+> >  {
+> >  	int progress;
+> >  	while (!res_counter_empty(&mem->res)) {
+> > -		progress = try_to_free_mem_cgroup_pages(mem,
+> > +		progress = try_to_free_mem_cgroup_pages(mem, -1,
+> >  					GFP_HIGHUSER_MOVABLE);
+> >  		if (!progress) /* we did as much as possible */
+> >  			break;
+> > @@ -912,6 +912,62 @@ out:
+> >  /*
+> >   * background reclaim daemon.
+> >   */
+> > +
+> > +#ifdef CONFIG_NUMA
+> > +/*
+> > + * Because memory controller's memory reclaim doesn't come from memory shortage,
+> > + * we cannot know which node should be reclaimed in an easy way.
+> > + * This routine select a node with inactive pages to be a node for starting
+> > + * scanning.
+> > + */
+> > +int __select_best_node(struct mem_cgroup *mem)
+> > +{
+> > +	int nid;
+> > +	int best_node = -1;
+> > +	unsigned long highest_inactive_ratio = 0;
+> > +	unsigned long active, inactive, inactive_ratio, total, threshold, flags;
+> > +	struct mem_cgroup_per_zone *mz;
+> > +	int zid;
+> > +
+> > +	/*
+> > +	 * When a node's memory usage is smaller than 
+> > +  	 * total_usage/num_of_node * 75%, we don't select the node
+> > +	 */
+> > +	total = mem->res.usage >> PAGE_SHIFT;
+> > +	threshold = (total / num_node_state(N_HIGH_MEMORY)) * 3 / 4;
+> > +
+> > +	/*
+> > +	 * See nodemask.h, N_HIGH_MEMORY means that a node has memory
+> > +	 * can be used for user's memory.(i.e. not means HIGHMEM).
+> > +	 */
+> > +	for_each_node_state(nid, N_HIGH_MEMORY) {
+> > +		active = 0;
+> > +		inactive = 0;
+> > +
+> > +		for (zid = 0; zid < MAX_NR_ZONES; zid++) {
+> > +			mz = mem_cgroup_zoneinfo(mem, nid, zid);
+> > +			spin_lock_irqsave(&mz->lru_lock, flags);
+> > +			active += MEM_CGROUP_ZSTAT(mz, MEM_CGROUP_ZSTAT_ACTIVE);
+> > +			inactive +=
+> > +				MEM_CGROUP_ZSTAT(mz, MEM_CGROUP_ZSTAT_INACTIVE);
+> > +			spin_unlock_irqrestore(&mz->lru_lock, flags);
+> > +		}
+> > +
+> > +		if (active + inactive < threshold)
+> > +			continue;
+> > +		inactive_ratio = (inactive * 100) / (active + 1);
+> > +		if (inactive_ratio > highest_inactive_ratio)
+> > +			best_node = nid;
 > 
-> We should look into this - I should send out the multi-hierarchy patches soon.
-Yes. I'll write my version (if I can). please pick it up if you like it.
-
-> We should discuss this after that.
->
-ok. I'd like to forget this patch for a while.
+> Shouldn't we update highest_inactive_ration here?
+> 
+AH, yes. blame me :( Thanks!
 
 Thanks,
--Kame 
+-Kame
