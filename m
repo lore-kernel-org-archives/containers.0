@@ -1,15 +1,15 @@
-From: Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: Re: [RFC 4/4] memcg: NUMA background reclaim
-Date: Tue, 27 May 2008 22:56:43 +0530
-Message-ID: <483C4453.5040800@linux.vnet.ibm.com>
+From: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+Subject: Re: [RFC 2/4] memcg: high-low watermark
+Date: Wed, 28 May 2008 09:15:29 +0900
+Message-ID: <20080528091529.946550ed.kamezawa.hiroyu@jp.fujitsu.com>
 References: <20080527140116.fb04b06b.kamezawa.hiroyu@jp.fujitsu.com>
-	<20080527141019.f1d15b95.kamezawa.hiroyu@jp.fujitsu.com>
-Reply-To: balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
+	<20080527140703.97b69ed3.kamezawa.hiroyu@jp.fujitsu.com>
+	<483C3629.4080209@linux.vnet.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20080527141019.f1d15b95.kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+In-Reply-To: <483C3629.4080209-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,188 +19,116 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+To: balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
 Cc: "containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org" <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, "linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org" <linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org>, "yamamoto-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org" <yamamoto-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>, "lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org" <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>, "xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org" <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-KAMEZAWA Hiroyuki wrote:
-> One aspect of difference in reclaim logic between global lru and memcg is 
->  * global LRU triggers memory reclaim at memory shortage.
->  * memcg LRU triggers memory reclaim at excess of usage.
-> 
-> Then, global LRU _know_ which node we should start reclaim from.
->  * start from a node at memory shortage or
->  * start from a node where memory allocation is waiting
-> 
-> WRT memcg, it's difficult to find where we should start because
-> there is no memory shortage and LRU is splitted.
-> (But per-zone-LRU is definitely necessary for scalability.)
-> 
-> This patch tries to deteremine a node for starting recalim by checking
-> ratio of inactive pages/active pages in a node. And trying to avoid starting
-> from a node with relatively small usage.
-> Better algorithm is welcome.
-> 
-> Singed-off-by: KAMEZAWA Hiruyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
-> 
-> Index: mm-2.6.26-rc2-mm1/mm/memcontrol.c
-> ===================================================================
-> --- mm-2.6.26-rc2-mm1.orig/mm/memcontrol.c
-> +++ mm-2.6.26-rc2-mm1/mm/memcontrol.c
-> @@ -578,7 +578,7 @@ retry:
->  	if (state == RES_OVER_LIMIT) {
->  		if (!(gfp_mask & __GFP_WAIT))
->  			goto out;
-> -		if (try_to_free_mem_cgroup_pages(mem, gfp_mask))
-> +		if (try_to_free_mem_cgroup_pages(mem, -1, gfp_mask))
->  			goto retry;
->  		/*
->  		 * try_to_free_mem_cgroup_pages() might not give us a
-> @@ -801,7 +801,7 @@ int mem_cgroup_shrink_usage(struct mm_st
->  	rcu_read_unlock();
-> 
->  	do {
-> -		progress = try_to_free_mem_cgroup_pages(mem, gfp_mask);
-> +		progress = try_to_free_mem_cgroup_pages(mem, -1, gfp_mask);
->  	} while (!progress && --retry);
-> 
->  	if (!retry)
-> @@ -814,7 +814,7 @@ static void mem_cgroup_drop_all_pages(st
->  {
->  	int progress;
->  	while (!res_counter_empty(&mem->res)) {
-> -		progress = try_to_free_mem_cgroup_pages(mem,
-> +		progress = try_to_free_mem_cgroup_pages(mem, -1,
->  					GFP_HIGHUSER_MOVABLE);
->  		if (!progress) /* we did as much as possible */
->  			break;
-> @@ -912,6 +912,62 @@ out:
->  /*
->   * background reclaim daemon.
->   */
-> +
-> +#ifdef CONFIG_NUMA
-> +/*
-> + * Because memory controller's memory reclaim doesn't come from memory shortage,
-> + * we cannot know which node should be reclaimed in an easy way.
-> + * This routine select a node with inactive pages to be a node for starting
-> + * scanning.
-> + */
-> +int __select_best_node(struct mem_cgroup *mem)
-> +{
-> +	int nid;
-> +	int best_node = -1;
-> +	unsigned long highest_inactive_ratio = 0;
-> +	unsigned long active, inactive, inactive_ratio, total, threshold, flags;
-> +	struct mem_cgroup_per_zone *mz;
-> +	int zid;
-> +
-> +	/*
-> +	 * When a node's memory usage is smaller than 
-> +  	 * total_usage/num_of_node * 75%, we don't select the node
-> +	 */
-> +	total = mem->res.usage >> PAGE_SHIFT;
-> +	threshold = (total / num_node_state(N_HIGH_MEMORY)) * 3 / 4;
-> +
-> +	/*
-> +	 * See nodemask.h, N_HIGH_MEMORY means that a node has memory
-> +	 * can be used for user's memory.(i.e. not means HIGHMEM).
-> +	 */
-> +	for_each_node_state(nid, N_HIGH_MEMORY) {
-> +		active = 0;
-> +		inactive = 0;
-> +
-> +		for (zid = 0; zid < MAX_NR_ZONES; zid++) {
-> +			mz = mem_cgroup_zoneinfo(mem, nid, zid);
-> +			spin_lock_irqsave(&mz->lru_lock, flags);
-> +			active += MEM_CGROUP_ZSTAT(mz, MEM_CGROUP_ZSTAT_ACTIVE);
-> +			inactive +=
-> +				MEM_CGROUP_ZSTAT(mz, MEM_CGROUP_ZSTAT_INACTIVE);
-> +			spin_unlock_irqrestore(&mz->lru_lock, flags);
-> +		}
-> +
-> +		if (active + inactive < threshold)
-> +			continue;
-> +		inactive_ratio = (inactive * 100) / (active + 1);
-> +		if (inactive_ratio > highest_inactive_ratio)
-> +			best_node = nid;
+On Tue, 27 May 2008 21:56:17 +0530
+Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org> wrote:
 
-Shouldn't we update highest_inactive_ration here?
+> KAMEZAWA Hiroyuki wrote:
+> > Add high/low watermarks to res_counter.
+> > *This patch itself has no behavior changes to memory resource controller.
+> > 
+> > Changelog: very old one -> this one (v1)
+> >  - watarmark_state is removed and all state check is done under lock.
+> >  - changed res_counter_charge() interface. The only user is memory
+> >    resource controller. Anyway, returning -ENOMEM here is a bit starnge.
+> >  - Added watermark enable/disable flag for someone don't want watermarks.
+> >  - Restarted against 2.6.25-mm1.
+> >  - some subsystem which doesn't want high-low watermark can work withou it.
+> > 
+> > Signed-off-by: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+> > From: YAMAMOTO Takashi <yamamoto-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
+> > 
+> 
+> The From: line should be the first line IIRC.
+> 
+ok.
 
-> +	}
-> +	return best_node;
-> +}
-> +#else
-> +int __select_best_node(struct mem_cgroup *mem)
-> +{
-> +	return 0;
-> +}
-> +#endif
-> +
->  static int mem_cgroup_reclaim_daemon(void *data)
->  {
->  	DEFINE_WAIT(wait);
-> @@ -935,13 +991,9 @@ static int mem_cgroup_reclaim_daemon(voi
->  			continue;
->  		}
->  		finish_wait(&mem->daemon.waitq, &wait);
-> -		/*
-> -		 * memory resource controller doesn't see NUMA memory usage
-> -		 * balancing, becasue we cannot know what balancing is good.
-> -		 * TODO: some annotation or heuristics to detect which node
-> -		 * we should start reclaim from.
-> -		 */
-> -		ret = try_to_free_mem_cgroup_pages(mem, GFP_HIGHUSER_MOVABLE);
-> +
-> +		ret = try_to_free_mem_cgroup_pages(mem,
-> +				__select_best_node(mem), GFP_HIGHUSER_MOVABLE);
+>
+> >  	/*
+> > +	 * watermarks. needs to keep lwmark <= hwmark <= limit.
+> > +	 */
+> > +	unsigned long long hwmark;
+> > +	unsigned long long lwmark;
+> > +	int		   use_watermark;
 > 
->  		yield();
->  	}
-> Index: mm-2.6.26-rc2-mm1/mm/vmscan.c
-> ===================================================================
-> --- mm-2.6.26-rc2-mm1.orig/mm/vmscan.c
-> +++ mm-2.6.26-rc2-mm1/mm/vmscan.c
-> @@ -1429,7 +1429,7 @@ unsigned long try_to_free_pages(struct z
->  #ifdef CONFIG_CGROUP_MEM_RES_CTLR
+> Is it routine to comment this way? I prefer not to have spaces in the type and
+> the member, makes it easier for my eyes.
 > 
->  unsigned long try_to_free_mem_cgroup_pages(struct mem_cgroup *mem_cont,
-> -						gfp_t gfp_mask)
-> +					   int nid, gfp_t gfp_mask)
->  {
->  	struct scan_control sc = {
->  		.may_writepage = !laptop_mode,
-> @@ -1442,9 +1442,11 @@ unsigned long try_to_free_mem_cgroup_pag
->  	};
->  	struct zonelist *zonelist;
-> 
-> +	if (nid == -1)
-> +		nid = numa_node_id();
->  	sc.gfp_mask = (gfp_mask & GFP_RECLAIM_MASK) |
->  			(GFP_HIGHUSER_MOVABLE & ~GFP_RECLAIM_MASK);
-> -	zonelist = NODE_DATA(numa_node_id())->node_zonelists;
-> +	zonelist = NODE_DATA(nid)->node_zonelists;
->  	return do_try_to_free_pages(zonelist, &sc);
->  }
->  #endif
-> Index: mm-2.6.26-rc2-mm1/include/linux/swap.h
-> ===================================================================
-> --- mm-2.6.26-rc2-mm1.orig/include/linux/swap.h
-> +++ mm-2.6.26-rc2-mm1/include/linux/swap.h
-> @@ -184,7 +184,7 @@ extern void swap_setup(void);
->  extern unsigned long try_to_free_pages(struct zonelist *zonelist, int order,
->  					gfp_t gfp_mask);
->  extern unsigned long try_to_free_mem_cgroup_pages(struct mem_cgroup *mem,
-> -							gfp_t gfp_mask);
-> +						int nid, gfp_t gfp_mask);
->  extern int __isolate_lru_page(struct page *page, int mode);
->  extern unsigned long shrink_all_memory(unsigned long nr_pages);
->  extern int vm_swappiness;
-> 
+Hmm. will fix.
 
 
--- 
-	Warm Regards,
-	Balbir Singh
-	Linux Technology Center
-	IBM, ISTL
+
+
+> > + * RES_BELOW_LIMIT  --  usage is smaller than limt, success.
+> 
+> 						^^^^ typo
+> 
+sure, will fix.
+
+
+
+> > +	spin_unlock_irqrestore(&counter->lock, flags);
+> > +	return ret;
+> > +}
+> > +
+> 
+> When do we return RES_OVER_LIMIT? Are we missing that here?
+> 
+It's Bug. Yamamoto-san pointed out and I'm now fixing.
+
+
+> >  	spin_lock_irqsave(&counter->lock, flags);
+> > +	switch (member) {
+> > +		case RES_LIMIT:
+> > +			if (counter->use_watermark && counter->hwmark > tmp)
+> > +				goto unlock_free;
+> 
+> We need to document such API changes in the Documentation/controllers/memory.txt
+> file.
+> 
+ok, I'll add patch for documentation. to memory.txt and res_counter.txt.
+
+
+> > +			break;
+> > +		case RES_HWMARK:
+> > +			if (tmp < counter->lwmark  || tmp > counter->limit)
+> > +				goto unlock_free;
+> > +			break;
+> > +		case RES_LWMARK:
+> > +			if (tmp > counter->hwmark)
+> > +				goto unlock_free;
+> > +			break;
+> > +		default:
+> > +			break;
+> > +	}
+> >  	val = res_counter_member(counter, member);
+> >  	*val = tmp;
+> > -	spin_unlock_irqrestore(&counter->lock, flags);
+> >  	ret = nbytes;
+> > +unlock_free:
+> > +	spin_unlock_irqrestore(&counter->lock, flags);
+> >  out_free:
+> >  	kfree(buf);
+> >  out:
+> > Index: mm-2.6.26-rc2-mm1/mm/memcontrol.c
+> > ===================================================================
+> > --- mm-2.6.26-rc2-mm1.orig/mm/memcontrol.c
+> > +++ mm-2.6.26-rc2-mm1/mm/memcontrol.c
+> > @@ -559,7 +559,7 @@ static int mem_cgroup_charge_common(stru
+> >  		css_get(&memcg->css);
+> >  	}
+> > 
+> > -	while (res_counter_charge(&mem->res, PAGE_SIZE)) {
+> > +	while (res_counter_charge(&mem->res, PAGE_SIZE) == RES_OVER_LIMIT) {
+> >  		if (!(gfp_mask & __GFP_WAIT))
+> >  			goto out;
+> > 
+> 
+> Otherwise looks good so far. Need to look at the background reclaim code.
+> 
+
+Thanks,
+-Kame
