@@ -1,7 +1,7 @@
-From: "Maynard L Snyder" <1-suppressible-Kizeva5kv0RWk0Htik3J/w@public.gmane.org>
-Subject: Doctor List
-Date: Sat, 31 May 2008 14:54:52 +0200
-Message-ID: <45764.1380410225$1212243675@news.gmane.org>
+From: "Juliet Hayes" <vaticinate-XbTfzJzFqwJWk0Htik3J/w@public.gmane.org>
+Subject: -Fire works CS 3-
+Date: Sun, 01 Jun 2008 09:22:08 +0100
+Message-ID: <000601c8c3bf$f49a9380$0100007f@puedyd>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -15,44 +15,48 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: info-Q6TvvugBQ0ne5aOfsHch1g@public.gmane.org, xmlitenews-/h9+hhArsHjQT0dZR+AlfA@public.gmane.org, containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, info-bt/SG6uUeOIKnZLEzsZAOUB+6BGkLq7r@public.gmane.org, daryl.r.gulotta-L1sWUJ7vY7tzKuDIQf60CzTfuBKgPvFT@public.gmane.org, archjob1-VNVjZQShnK1eoWH0uzbU5w@public.gmane.org, toyhound@hotmai
+To: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
 List-Id: containers.vger.kernel.org
 
+- Adobe CS3 Master Collection for PC or MAC includes:
+- InDesign CS3
+- Photoshop CS3
+- Illustrator CS3
+- Acrobat 8 Professional
+- Flash CS3 Professional
+- Dreamweaver CS3
+- Fireworks CS3
+- Contribute CS3
+- After Effects CS3 Professional
+- Premiere Pro CS3
+- Encore DVD CS3
+- Soundbooth CS3
 
+- getsoftadobe . com in Internet Explorer
 
+- System Requirements
 
+- For PC:
+- Intel Pentium 4 (1.4GHz processor for DV; 3.4GHz processor for HDV), Intel Centrino, Intel Xeon, (dual 2.8GHz processors for HD), or Intel Core
+- Duo (or compatible) processor; SSE2-enabled processor required for AMD systems
+- Microsoft Windows XP with Service Pack 2 or Microsoft Windows Vista Home Premium, Business, Ultimate, or Enterprise (certified for 32-bit editions)
+- 1GB of RAM for DV; 2GB of RAM for HDV and HD; more RAM recommended when running multiple components
+- 38GB of available hard-disk space (additional free space required during installation)
+- Dedicated 7,200 RPM hard drive for DV and HDV editing; striped disk array storage (RAID 0) for HD; SCSI disk subsystem preferred
+- Microsoft DirectX compatible sound card (multichannel ASIO-compatible sound card recommended)
+- 1,280x1,024 monitor resolution with 32-bit color adapter
+- DVD-ROM drive
 
+- For MAC:
+- PowerPC G4 or G5 or multicore Intel processor (Adobe Premiere Pro, Encore, and Soundbooth require a multicore Intel processor; Adobe OnLocation CS3 is a Windows application and may be used with Boot Camp)
+- Mac OS X v.10.4.9; Java Runtime Environment 1.5 required for Adobe Version Cue CS3 Server
+- 1GB of RAM for DV; 2GB of RAM for HDV and HD; more RAM recommended when running multiple components
+- 36GB of available hard-disk space (additional free space required during installation)
+- Dedicated 7,200 RPM hard drive for DV and HDV editing; striped disk array storage (RAID 0) for HD; SCSI disk subsystem preferred
+- Core Audio compatible sound card
+- 1,280x1,024 monitor resolution with 32-bit color adapter
+- DVD-ROM drive- DVD+-R burner required for DVD creation
 
-Certified Doctors in the US 
+Isolated in France During '68 Student Protests
 
-788,792 in total <> 17,292 emails
-
-Lots of Doctors in specialties like Orthopedics, Surgery, Radiology, Dermatology, Neurology, General Practice etc..
-
-Sort by over a dozen different fields
-
-Now priced at: $393
-
-
-!!!!!!! IF YOU ORDER THIS WEEK YOU GET THESE AS A BO NUS !!!!!!!
-
-<> Listing of US Pharma Companies
-  Names and email addresses of 47,000 employees in high-ranking positions
-
-<> American Hospitals
-  complete contact information for CEO's, CFO's, Directors and more - over 23,000 listings in total for more than 7,000 hospitals in the USA
-
-<> American Dentists
-  More than half a million listings [worth $499 alone!]
-
-<> Chiropractors in the USA
-  100k Chiropractors offices with full contact data including email, postal address, phone and fax
-
-email to:      monika.cameron_marcu-EMRzualFZlQ@public.gmane.org
-
-  
-
-good until June 07
-
-
-for stopping this email in future send us an email with 476 in the subject
+In May of 1968, leftist students in Paris began strikes that nearly led to another French Revolution &mdash; or so everyone thought at the time. Reporter Alice Furlaud was visiting France that month and had a different perspective on the scene.
