@@ -1,138 +1,181 @@
 From: Benjamin Thery <benjamin.thery@bull.net>
-Subject: [PATCH 00/11] sysfs tagged directories V5
-Date: Fri, 06 Jun 2008 17:46:54 +0200
-Message-ID: <20080606154654.356185262@theryb.frec.bull.fr>
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1759446AbYFFPrs@vger.kernel.org>
+Subject: [PATCH 01/11] sysfs: Support for preventing unmounts.
+Date: Fri, 06 Jun 2008 17:47:04 +0200
+Message-ID: <20080606154654.520564618@theryb.frec.bull.fr>
+References: <20080606154654.356185262@theryb.frec.bull.fr>
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1760921AbYFFPsL@vger.kernel.org>
 Sender: linux-kernel-owner@vger.kernel.org
 To: Greg Kroah-Hartman <gregkh@suse.de>
 Cc: Andrew Morton <akpm@linux-foundation.org>, Eric Biederman <ebiederm@xmission.com>, Serge Hallyn <serue@us.ibm.com>, linux-kernel@vger.kernel.org, Tejun Heo <htejun@gmail.com>, Al Viro <viro@ftp.linux.org.uk>, Linux Containers <containers@lists.osdl.org>, Benjamin Thery <benjamin.thery@bull.net>
 List-Id: containers.vger.kernel.org
 
-Greg,
+sysfs: Support for preventing unmounts.
 
-Here is an updated version of the sysfs tagged directories that improves
-a bit the situation over the previous one. 
+To support mounting multiple instances of sysfs occassionally I
+need to walk through all of the currently present sysfs super blocks.
 
-I've modified the patch 09 ("Enable tagging for net_class directories in 
-sysfs") to be a bit less intrusive in sysfs core. I removed the #ifdef'd
-parts you didn't like in fs/sysfs/mount.c, and replaced it by a generic 
-routine sysfs_ns_exit() that is called, if needed, by the namespace when
-it exits. This routine goes through every sysfs super blocks and calls 
-the callback passed by the namespace to clean its tag.
+To allow this iteration this patch adds sysfs_grab_supers
+and sysfs_release_supers.  While a piece of code is in
+a section surrounded by these no more sysfs super blocks
+will be either created or destroyed.
 
-The patch is now splitted in two: 
-* 09/11: the generic routine,
-* 10/11: the remaining network parts.
+Signed-off-by: Eric W. Biederman <ebiederm@xmission.com>
+Signed-off-by: Benjamin Thery <benjamin.thery@bull.net>
+---
+ fs/sysfs/mount.c |   79 +++++++++++++++++++++++++++++++++++++++++++++++++------
+ fs/sysfs/sysfs.h |   10 ++++++
+ 2 files changed, 81 insertions(+), 8 deletions(-)
 
-The generic part can be merge with patch 05 ("sysfs: Implement sysfs 
-tagged directory support.") but I left it separate for now to ease 
-reviews.
-
-Serge's patch for user namespace is modified to use this new service too.
-No more #ifdef CONFIG_NET or #ifdef CONFIG_USER_NS in fs/sysfs/mount.c 
-now.
-
-
-But, currently, a new namespace that wants to add its tag to sysfs dirs
-still need to modify fs/sysfs/mount.c in a few routines to manage the
-new tag member added in struct sysfs_tag_info: sysfs_fill_super(), 
-sysfs_test_super(), sysfs_kill_sb() (see the last two patches).
-These changes are only the initialization and a bunch of comparisons.
-
-If we really want to go further, to get rid of these, I've thought 
-about:
-
-* Extending sysfs_tagged_dir_operations with super blocks operations: 
-  - fill_sb_tag, test_sb_tag, kill_sb_tag
-
-* Add routines in sysfs to allow registration/unregistration of these 
-  operations structs in a list:
-  - sysfs_register_tagged_dir_ops()...
-
-* Each subsystem concerned implements and registers its operations at 
-  boot.
-
-* In sysfs_fill_super(), sysfs_test_super() and sysfs_kill_sb(), add 
-  loops to go through all registered operations structs and calls the 
-  corresponding operations if it's present.
-
-But... I thought it was a bit overkill for the few namespaces that will 
-actually need sysfs tagged directories.
-
-
-(Below you'll find the traditional introduction for sysfs tagged dirs 
-and the updated changelog)
-
-Thanks,
-Benjamin
-
---
-Here is an updated version of Eric Biederman's patchset to implement
-tagged directories in sysfs ported on top of 2.6.26-rc2-mm1.
-
-With the introduction of network namespaces, there can be duplicate 
-network interface names on the same machine. Indeed, two network 
-interfaces can have the same name if they reside in different network
-namespaces. 
-
-* Network interfaces names show up in sysfs.
-* Today there is nothing in sysfs that is currently per namespace.
-* Therefore we need to support multiple mounts of sysfs each showing a 
-  different network namespace.
-
-We introduce tagged directories in sysfs for this purpose.
-
-Of course the usefulness of this feature is not limited to network stuff:
-Serge Hallyn wrote a patch to fix a similar issue with user namespaces based 
-on this patchset. His patch is included at the end of the patchset.
-
-Tested with and without SYSFS_DEPRECATED. No regression found so far.
-
-Changelog
----------
-* V5:
-  - Make namespace tags a bit less intrusive in sysfs core:
-    - New patch 09: Added a generic sysfs_ns_exit routine called by 
-      exiting namespaces. A callback is passed to this routine to 
-      execute the subsystem specific code.
-    - Modified patches 09 and 10 (now 10 and 11) ("netns tagging" and 
-      "userns tagging") to use this new routine instead of adding 
-      #ifdef'd code in fs/sysfs/mount.c.
-  - Added missing -ENOMEM in fs/sysfs/dir.c:prep_rename() (Roel Kluin)
-* V4:
-  - Ported to 2.6.26-rc2-mm1
-  - Updated patch for user namespace by Serge Hallyn (patch 10).
-* V3:
-  - Removed patch 10 ("avoid kobject name conflict with different 
-    namespaces"), a better one was provided by Eric.
-  - Removed patch 11 ("sysfs: user namespaces: add ns to user_struct"),
-    Serge needs to rework some parts of it.
-  - Change Acked-by: to Signed-off-by:, someone told me it is more 
-    appropriate (as I'm in the delivery path).
-
-
-Here is the announcement Eric wrote back in December to introduce his 
-patchset:
-
-"
-Now that we have network namespace support merged it is time to
-revisit the sysfs support so we can remove the dependency on !SYSFS.
-[...]
-The bulk of the patches are the changes to allow multiple sysfs
-superblocks.
-
-Then comes the tagged directory sysfs support which uses information
-captured at mount time to decide which object with which tag will
-appear in a directory.
-
-Then the support for renaming and deleting objects where the source
-may be ambiguous because of tagging.
-
-Then finally the network namespace support so it is clear how all
-of this tied together.
-"
-
-Regards,
-Benjamin
+Index: linux-mm/fs/sysfs/mount.c
+===================================================================
+--- linux-mm.orig/fs/sysfs/mount.c
++++ linux-mm/fs/sysfs/mount.c
+@@ -41,47 +41,110 @@ struct sysfs_dirent sysfs_root = {
+ 
+ static int sysfs_fill_super(struct super_block *sb, void *data, int silent)
+ {
+-	struct inode *inode;
+-	struct dentry *root;
++	struct sysfs_super_info *info = NULL;
++	struct inode *inode = NULL;
++	struct dentry *root = NULL;
++	int error;
+ 
+ 	sb->s_blocksize = PAGE_CACHE_SIZE;
+ 	sb->s_blocksize_bits = PAGE_CACHE_SHIFT;
+ 	sb->s_magic = SYSFS_MAGIC;
+ 	sb->s_op = &sysfs_ops;
+ 	sb->s_time_gran = 1;
+-	sysfs_sb = sb;
++	if (!sysfs_sb)
++		sysfs_sb = sb;
++
++	error = -ENOMEM;
++	info = kzalloc(sizeof(*info), GFP_KERNEL);
++	if (!info)
++		goto out_err;
+ 
+ 	/* get root inode, initialize and unlock it */
++	error = -ENOMEM;
+ 	inode = sysfs_get_inode(&sysfs_root);
+ 	if (!inode) {
+ 		pr_debug("sysfs: could not get root inode\n");
+-		return -ENOMEM;
++		goto out_err;
+ 	}
+ 
+ 	/* instantiate and link root dentry */
++	error = -ENOMEM;
+ 	root = d_alloc_root(inode);
+ 	if (!root) {
+ 		pr_debug("%s: could not get root dentry!\n",__func__);
+-		iput(inode);
+-		return -ENOMEM;
++		goto out_err;
+ 	}
+ 	root->d_fsdata = &sysfs_root;
+ 	sb->s_root = root;
++	sb->s_fs_info = info;
+ 	return 0;
++
++out_err:
++	dput(root);
++	iput(inode);
++	kfree(info);
++	if (sysfs_sb == sb)
++		sysfs_sb = NULL;
++	return error;
+ }
+ 
+ static int sysfs_get_sb(struct file_system_type *fs_type,
+ 	int flags, const char *dev_name, void *data, struct vfsmount *mnt)
+ {
+-	return get_sb_single(fs_type, flags, data, sysfs_fill_super, mnt);
++	int rc;
++	mutex_lock(&sysfs_rename_mutex);
++	rc = get_sb_single(fs_type, flags, data, sysfs_fill_super, mnt);
++	mutex_unlock(&sysfs_rename_mutex);
++	return rc;
+ }
+ 
+-static struct file_system_type sysfs_fs_type = {
++struct file_system_type sysfs_fs_type = {
+ 	.name		= "sysfs",
+ 	.get_sb		= sysfs_get_sb,
+ 	.kill_sb	= kill_anon_super,
+ };
+ 
++void sysfs_grab_supers(void)
++{
++	/* must hold sysfs_rename_mutex */
++	struct super_block *sb;
++	/* Loop until I have taken s_umount on all sysfs superblocks */
++restart:
++	spin_lock(&sb_lock);
++	list_for_each_entry(sb, &sysfs_fs_type.fs_supers, s_instances) {
++		if (sysfs_info(sb)->grabbed)
++			continue;
++		/* Wait for unmount activity to complete. */
++		if (sb->s_count < S_BIAS) {
++			sb->s_count += 1;
++			spin_unlock(&sb_lock);
++			down_read(&sb->s_umount);
++			drop_super(sb);
++			goto restart;
++		}
++		atomic_inc(&sb->s_active);
++		sysfs_info(sb)->grabbed = 1;
++	}
++	spin_unlock(&sb_lock);
++}
++
++void sysfs_release_supers(void)
++{
++	/* must hold sysfs_rename_mutex */
++	struct super_block *sb;
++restart:
++	spin_lock(&sb_lock);
++	list_for_each_entry(sb, &sysfs_fs_type.fs_supers, s_instances) {
++		if (!sysfs_info(sb)->grabbed)
++			continue;
++		sysfs_info(sb)->grabbed = 0;
++		spin_unlock(&sb_lock);
++		deactivate_super(sb);
++		goto restart;
++	}
++	spin_unlock(&sb_lock);
++}
++
+ int __init sysfs_init(void)
+ {
+ 	int err = -ENOMEM;
+Index: linux-mm/fs/sysfs/sysfs.h
+===================================================================
+--- linux-mm.orig/fs/sysfs/sysfs.h
++++ linux-mm/fs/sysfs/sysfs.h
+@@ -85,6 +85,12 @@ struct sysfs_addrm_cxt {
+ 	int			cnt;
+ };
+ 
++struct sysfs_super_info {
++	int	grabbed;
++};
++
++#define sysfs_info(SB) ((struct sysfs_super_info *)(SB)->s_fs_info)
++
+ /*
+  * mount.c
+  */
+@@ -92,6 +98,10 @@ extern struct sysfs_dirent sysfs_root;
+ extern struct super_block *sysfs_sb;
+ extern struct kmem_cache *sysfs_dir_cachep;
+ extern struct vfsmount *sysfs_mount;
++extern struct file_system_type sysfs_fs_type;
++
++void sysfs_grab_supers(void);
++void sysfs_release_supers(void);
+ 
+ /*
+  * dir.c
 
 -- 
