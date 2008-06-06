@@ -1,181 +1,105 @@
 From: Benjamin Thery <benjamin.thery@bull.net>
-Subject: [PATCH 01/11] sysfs: Support for preventing unmounts.
-Date: Fri, 06 Jun 2008 17:47:04 +0200
-Message-ID: <20080606154654.520564618@theryb.frec.bull.fr>
+Subject: [PATCH 02/11] sysfs: sysfs_get_dentry add a sb parameter
+Date: Fri, 06 Jun 2008 17:47:14 +0200
+Message-ID: <20080606154654.667494697@theryb.frec.bull.fr>
 References: <20080606154654.356185262@theryb.frec.bull.fr>
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1760921AbYFFPsL@vger.kernel.org>
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1759768AbYFFPsa@vger.kernel.org>
 Sender: linux-kernel-owner@vger.kernel.org
 To: Greg Kroah-Hartman <gregkh@suse.de>
 Cc: Andrew Morton <akpm@linux-foundation.org>, Eric Biederman <ebiederm@xmission.com>, Serge Hallyn <serue@us.ibm.com>, linux-kernel@vger.kernel.org, Tejun Heo <htejun@gmail.com>, Al Viro <viro@ftp.linux.org.uk>, Linux Containers <containers@lists.osdl.org>, Benjamin Thery <benjamin.thery@bull.net>
 List-Id: containers.vger.kernel.org
 
-sysfs: Support for preventing unmounts.
+sysfs: sysfs_get_dentry add a sb parameter
 
-To support mounting multiple instances of sysfs occassionally I
-need to walk through all of the currently present sysfs super blocks.
-
-To allow this iteration this patch adds sysfs_grab_supers
-and sysfs_release_supers.  While a piece of code is in
-a section surrounded by these no more sysfs super blocks
-will be either created or destroyed.
+In preparation for multiple mounts of sysfs add a superblock parameter to
+sysfs_get_dentry.
 
 Signed-off-by: Eric W. Biederman <ebiederm@xmission.com>
 Signed-off-by: Benjamin Thery <benjamin.thery@bull.net>
 ---
- fs/sysfs/mount.c |   79 +++++++++++++++++++++++++++++++++++++++++++++++++------
- fs/sysfs/sysfs.h |   10 ++++++
- 2 files changed, 81 insertions(+), 8 deletions(-)
+ fs/sysfs/dir.c   |   12 +++++++-----
+ fs/sysfs/file.c  |    2 +-
+ fs/sysfs/sysfs.h |    3 ++-
+ 3 files changed, 10 insertions(+), 7 deletions(-)
 
-Index: linux-mm/fs/sysfs/mount.c
+Index: linux-mm/fs/sysfs/dir.c
 ===================================================================
---- linux-mm.orig/fs/sysfs/mount.c
-+++ linux-mm/fs/sysfs/mount.c
-@@ -41,47 +41,110 @@ struct sysfs_dirent sysfs_root = {
+--- linux-mm.orig/fs/sysfs/dir.c
++++ linux-mm/fs/sysfs/dir.c
+@@ -87,6 +87,7 @@ static void sysfs_unlink_sibling(struct 
  
- static int sysfs_fill_super(struct super_block *sb, void *data, int silent)
+ /**
+  *	sysfs_get_dentry - get dentry for the given sysfs_dirent
++ *	@sb: superblock of the dentry to return
+  *	@sd: sysfs_dirent of interest
+  *
+  *	Get dentry for @sd.  Dentry is looked up if currently not
+@@ -99,9 +100,10 @@ static void sysfs_unlink_sibling(struct 
+  *	RETURNS:
+  *	Pointer to found dentry on success, ERR_PTR() value on error.
+  */
+-struct dentry *sysfs_get_dentry(struct sysfs_dirent *sd)
++struct dentry *sysfs_get_dentry(struct super_block *sb,
++				struct sysfs_dirent *sd)
  {
--	struct inode *inode;
--	struct dentry *root;
-+	struct sysfs_super_info *info = NULL;
-+	struct inode *inode = NULL;
-+	struct dentry *root = NULL;
-+	int error;
+-	struct dentry *dentry = dget(sysfs_sb->s_root);
++	struct dentry *dentry = dget(sb->s_root);
  
- 	sb->s_blocksize = PAGE_CACHE_SIZE;
- 	sb->s_blocksize_bits = PAGE_CACHE_SHIFT;
- 	sb->s_magic = SYSFS_MAGIC;
- 	sb->s_op = &sysfs_ops;
- 	sb->s_time_gran = 1;
--	sysfs_sb = sb;
-+	if (!sysfs_sb)
-+		sysfs_sb = sb;
-+
-+	error = -ENOMEM;
-+	info = kzalloc(sizeof(*info), GFP_KERNEL);
-+	if (!info)
-+		goto out_err;
+ 	while (dentry->d_fsdata != sd) {
+ 		struct sysfs_dirent *cur;
+@@ -790,7 +792,7 @@ int sysfs_rename_dir(struct kobject * ko
+ 		goto out;	/* nothing to rename */
  
- 	/* get root inode, initialize and unlock it */
-+	error = -ENOMEM;
- 	inode = sysfs_get_inode(&sysfs_root);
- 	if (!inode) {
- 		pr_debug("sysfs: could not get root inode\n");
--		return -ENOMEM;
-+		goto out_err;
+ 	/* get the original dentry */
+-	old_dentry = sysfs_get_dentry(sd);
++	old_dentry = sysfs_get_dentry(sysfs_sb, sd);
+ 	if (IS_ERR(old_dentry)) {
+ 		error = PTR_ERR(old_dentry);
+ 		old_dentry = NULL;
+@@ -858,7 +860,7 @@ int sysfs_move_dir(struct kobject *kobj,
+ 		goto out;	/* nothing to move */
+ 
+ 	/* get dentries */
+-	old_dentry = sysfs_get_dentry(sd);
++	old_dentry = sysfs_get_dentry(sysfs_sb, sd);
+ 	if (IS_ERR(old_dentry)) {
+ 		error = PTR_ERR(old_dentry);
+ 		old_dentry = NULL;
+@@ -866,7 +868,7 @@ int sysfs_move_dir(struct kobject *kobj,
  	}
+ 	old_parent = old_dentry->d_parent;
  
- 	/* instantiate and link root dentry */
-+	error = -ENOMEM;
- 	root = d_alloc_root(inode);
- 	if (!root) {
- 		pr_debug("%s: could not get root dentry!\n",__func__);
--		iput(inode);
--		return -ENOMEM;
-+		goto out_err;
- 	}
- 	root->d_fsdata = &sysfs_root;
- 	sb->s_root = root;
-+	sb->s_fs_info = info;
- 	return 0;
-+
-+out_err:
-+	dput(root);
-+	iput(inode);
-+	kfree(info);
-+	if (sysfs_sb == sb)
-+		sysfs_sb = NULL;
-+	return error;
- }
+-	new_parent = sysfs_get_dentry(new_parent_sd);
++	new_parent = sysfs_get_dentry(sysfs_sb, new_parent_sd);
+ 	if (IS_ERR(new_parent)) {
+ 		error = PTR_ERR(new_parent);
+ 		new_parent = NULL;
+Index: linux-mm/fs/sysfs/file.c
+===================================================================
+--- linux-mm.orig/fs/sysfs/file.c
++++ linux-mm/fs/sysfs/file.c
+@@ -584,7 +584,7 @@ int sysfs_chmod_file(struct kobject *kob
+ 		goto out;
  
- static int sysfs_get_sb(struct file_system_type *fs_type,
- 	int flags, const char *dev_name, void *data, struct vfsmount *mnt)
- {
--	return get_sb_single(fs_type, flags, data, sysfs_fill_super, mnt);
-+	int rc;
-+	mutex_lock(&sysfs_rename_mutex);
-+	rc = get_sb_single(fs_type, flags, data, sysfs_fill_super, mnt);
-+	mutex_unlock(&sysfs_rename_mutex);
-+	return rc;
- }
- 
--static struct file_system_type sysfs_fs_type = {
-+struct file_system_type sysfs_fs_type = {
- 	.name		= "sysfs",
- 	.get_sb		= sysfs_get_sb,
- 	.kill_sb	= kill_anon_super,
- };
- 
-+void sysfs_grab_supers(void)
-+{
-+	/* must hold sysfs_rename_mutex */
-+	struct super_block *sb;
-+	/* Loop until I have taken s_umount on all sysfs superblocks */
-+restart:
-+	spin_lock(&sb_lock);
-+	list_for_each_entry(sb, &sysfs_fs_type.fs_supers, s_instances) {
-+		if (sysfs_info(sb)->grabbed)
-+			continue;
-+		/* Wait for unmount activity to complete. */
-+		if (sb->s_count < S_BIAS) {
-+			sb->s_count += 1;
-+			spin_unlock(&sb_lock);
-+			down_read(&sb->s_umount);
-+			drop_super(sb);
-+			goto restart;
-+		}
-+		atomic_inc(&sb->s_active);
-+		sysfs_info(sb)->grabbed = 1;
-+	}
-+	spin_unlock(&sb_lock);
-+}
-+
-+void sysfs_release_supers(void)
-+{
-+	/* must hold sysfs_rename_mutex */
-+	struct super_block *sb;
-+restart:
-+	spin_lock(&sb_lock);
-+	list_for_each_entry(sb, &sysfs_fs_type.fs_supers, s_instances) {
-+		if (!sysfs_info(sb)->grabbed)
-+			continue;
-+		sysfs_info(sb)->grabbed = 0;
-+		spin_unlock(&sb_lock);
-+		deactivate_super(sb);
-+		goto restart;
-+	}
-+	spin_unlock(&sb_lock);
-+}
-+
- int __init sysfs_init(void)
- {
- 	int err = -ENOMEM;
+ 	mutex_lock(&sysfs_rename_mutex);
+-	victim = sysfs_get_dentry(victim_sd);
++	victim = sysfs_get_dentry(sysfs_sb, victim_sd);
+ 	mutex_unlock(&sysfs_rename_mutex);
+ 	if (IS_ERR(victim)) {
+ 		rc = PTR_ERR(victim);
 Index: linux-mm/fs/sysfs/sysfs.h
 ===================================================================
 --- linux-mm.orig/fs/sysfs/sysfs.h
 +++ linux-mm/fs/sysfs/sysfs.h
-@@ -85,6 +85,12 @@ struct sysfs_addrm_cxt {
- 	int			cnt;
- };
+@@ -113,7 +113,8 @@ extern spinlock_t sysfs_assoc_lock;
+ extern const struct file_operations sysfs_dir_operations;
+ extern const struct inode_operations sysfs_dir_inode_operations;
  
-+struct sysfs_super_info {
-+	int	grabbed;
-+};
-+
-+#define sysfs_info(SB) ((struct sysfs_super_info *)(SB)->s_fs_info)
-+
- /*
-  * mount.c
-  */
-@@ -92,6 +98,10 @@ extern struct sysfs_dirent sysfs_root;
- extern struct super_block *sysfs_sb;
- extern struct kmem_cache *sysfs_dir_cachep;
- extern struct vfsmount *sysfs_mount;
-+extern struct file_system_type sysfs_fs_type;
-+
-+void sysfs_grab_supers(void);
-+void sysfs_release_supers(void);
- 
- /*
-  * dir.c
+-struct dentry *sysfs_get_dentry(struct sysfs_dirent *sd);
++struct dentry *sysfs_get_dentry(struct super_block *sb,
++				struct sysfs_dirent *sd);
+ struct sysfs_dirent *sysfs_get_active_two(struct sysfs_dirent *sd);
+ void sysfs_put_active_two(struct sysfs_dirent *sd);
+ void sysfs_addrm_start(struct sysfs_addrm_cxt *acxt,
 
 -- 
