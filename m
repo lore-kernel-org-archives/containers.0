@@ -1,56 +1,51 @@
-From: KOSAKI Motohiro <kosaki.motohiro-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
-Subject: Re: [RFC][PATCH] introduce task cgroup (#task restrictioon for
-	prevent fork bomb by cgroup)
-Date: Sat, 07 Jun 2008 16:41:02 +0900
-Message-ID: <20080607160455.9C6C.KOSAKI.MOTOHIRO@jp.fujitsu.com>
+From: "Paul Menage" <menage@google.com>
+Subject: Re: [RFC][PATCH] introduce task cgroup (#task restrictioon for prevent fork bomb by cgroup)
+Date: Sat, 7 Jun 2008 02:12:49 -0700
+Message-ID: <6599ad830806070212u13ea2c3fy931d37f2c9eab2a2@mail.gmail.com>
 References: <20080605132512.9C31.KOSAKI.MOTOHIRO@jp.fujitsu.com>
-	<41480.192.168.101.12.1212702756.squirrel@intranet>
+	 <41480.192.168.101.12.1212702756.squirrel@intranet>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
+Content-Type: text/plain; charset=ISO-8859-1
 Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1757422AbYFGJNQ@vger.kernel.org>
 In-Reply-To: <41480.192.168.101.12.1212702756.squirrel@intranet>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Daniel Hokka Zakrisson <daniel-nym3zxDgnZcAvxtiuMwx3w@public.gmane.org>
-Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>, LKML <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, kosaki.motohiro-+CUm20s59erQFUHtdCDX3A@public.gmane.org
+Content-Disposition: inline
+Sender: linux-kernel-owner@vger.kernel.org
+To: Daniel Hokka Zakrisson <daniel@hozac.com>
+Cc: KOSAKI Motohiro <kosaki.motohiro@jp.fujitsu.com>, containers@lists.osdl.org, LKML <linux-kernel@vger.kernel.org>, Li Zefan <lizf@cn.fujitsu.com>
 List-Id: containers.vger.kernel.org
 
-> > I create new cgroup of number task restriction.
-> > Please any comments!
-> 
+On Thu, Jun 5, 2008 at 2:52 PM, Daniel Hokka Zakrisson <daniel@hozac.com> wrote:
 > Would it make more sense to implement this as part of an rlimit subsystem,
 > which also supports limiting e.g. address space, CPU time, number of open
 > files, etc.? If we create one subsystem per resource, I'm afraid we're
 > going to see quite some time spent in all those loops, and the options for
 > cgroupfs is going to become pretty long if you want to exclude just one or
 > two of the subsystems for one particular mount point.
+>
 
-Good quistion.
-task cgroup often different scope against memory, cputime, etc..
+In general, most of the cgroup loops that depend on the number of
+available subsystems are control path (fork/exit/task move) rather
+than data path.
 
-example.
-	(<> mean cgroup name)
+If these loops ever did become an issue it wouldn't be hard to cache
+which subsystems had callbacks of a given type, and thus make the loop
+overheap be linear in the number of subsystems actually using a given
+callback, rather than the number of registered subsystems. I've not
+done this yet since it didn't seem worth the complexity, but if the
+number of subsystems grows from what we have now it might be
+worthwhile.
 
-   +-----------------------------------------------------+
-   | <interactive>  |         <service>                  |
-   |   #task = 1000 |            #task = 5000            |
-   +----------------+------------------+-----------------+
-                    |  <serviceA>      |  <serviceB>     |
-                    |    vaddr = 100GB |    vaddr = 200B |
-                    +------------------+-----------------+
+Having a single rlimit subsystem seems a bit inflexible, since it
+would require anyone that wanted to track one resource to have to pay
+the overhead of tracking all resources. By splitting into separate
+subsystems, it would be possible to just pay the overhead for the
+resource tracking that you actually care about.
 
-tus, we have 2 choice.
+You mention that you think it makes the set of mount arguments more
+complex, but if you have middleware that can limit resource X, adding
+X to the list of subsystems at the point when a cgroupfs is mounted
+seems simple compared to the rest of the structure required to actual
+set limits and monitor usage for X.
 
-1. separate 2 cgroup.
-2. implement hierarchy.
-
-I afraid to 2 cause perfomance degression.
-tus, I choiced 1.
+Paul
