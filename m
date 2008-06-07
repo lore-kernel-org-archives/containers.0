@@ -1,73 +1,56 @@
-From: KOSAKI Motohiro <kosaki.motohiro@jp.fujitsu.com>
-Subject: Re: [RFC][PATCH] introduce task cgroup (#task restrictioon for prevent fork bomb by cgroup)
-Date: Sat, 07 Jun 2008 15:46:56 +0900
-Message-ID: <20080607154449.9C64.KOSAKI.MOTOHIRO@jp.fujitsu.com>
-References: <20080605132512.9C31.KOSAKI.MOTOHIRO@jp.fujitsu.com> <6599ad830806051504t52398ed1ya742f0145067ffa@mail.gmail.com>
+From: KOSAKI Motohiro <kosaki.motohiro-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+Subject: Re: [RFC][PATCH] introduce task cgroup (#task restrictioon for
+	prevent fork bomb by cgroup)
+Date: Sat, 07 Jun 2008 16:41:02 +0900
+Message-ID: <20080607160455.9C6C.KOSAKI.MOTOHIRO@jp.fujitsu.com>
+References: <20080605132512.9C31.KOSAKI.MOTOHIRO@jp.fujitsu.com>
+	<41480.192.168.101.12.1212702756.squirrel@intranet>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="US-ASCII"
+Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S932267AbYFGGrO@vger.kernel.org>
-In-Reply-To: <6599ad830806051504t52398ed1ya742f0145067ffa@mail.gmail.com>
-Sender: linux-kernel-owner@vger.kernel.org
-To: Paul Menage <menage@google.com>
-Cc: kosaki.motohiro@jp.fujitsu.com, containers@lists.osdl.org, LKML <linux-kernel@vger.kernel.org>, Li Zefan <lizf@cn.fujitsu.com>
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <41480.192.168.101.12.1212702756.squirrel@intranet>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Daniel Hokka Zakrisson <daniel-nym3zxDgnZcAvxtiuMwx3w@public.gmane.org>
+Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>, LKML <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, kosaki.motohiro-+CUm20s59erQFUHtdCDX3A@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Hi
-
-> Hi Kosaki,
+> > I create new cgroup of number task restriction.
+> > Please any comments!
 > 
-> The basic idea of a task-limiting subsystem is good, thanks.
+> Would it make more sense to implement this as part of an rlimit subsystem,
+> which also supports limiting e.g. address space, CPU time, number of open
+> files, etc.? If we create one subsystem per resource, I'm afraid we're
+> going to see quite some time spent in all those loops, and the options for
+> cgroupfs is going to become pretty long if you want to exclude just one or
+> two of the subsystems for one particular mount point.
 
-Thanks.
+Good quistion.
+task cgroup often different scope against memory, cputime, etc..
 
+example.
+	(<> mean cgroup name)
 
-> > -void cgroup_fork(struct task_struct *child)
-> > +int cgroup_fork(struct task_struct *child)
-> >  {
-> > +       int i;
-> > +       int ret;
-> > +
-> > +       for (i = 0; i < CGROUP_SUBSYS_COUNT; i++) {
-> > +               struct cgroup_subsys *ss = subsys[i];
-> > +               if (ss->can_fork) {
-> > +                       ret = ss->can_fork(ss, child);
-> > +                       if (ret)
-> > +                               return ret;
-> > +               }
-> > +       }
-> > +
-> >        task_lock(current);
-> >        child->cgroups = current->cgroups;
-> >        get_css_set(child->cgroups);
-> >        task_unlock(current);
-> >        INIT_LIST_HEAD(&child->cg_list);
-> > +
-> > +       return 0;
-> >  }
-> 
-> I don't think this is the right way to handle this check. This isn't a
-> generic control groups callback, it's one that specific for a
-> particular subsystem. So the right way to handle it is to call
-> task_cgroup_can_fork() from the same place that the RLIM_NPROC limit
-> is checked.
-> 
-> If it later turned out that multiple cgroup subsystems wanted to be
-> able to prevent forking, then it might make sense to have a generic
-> cgroup callback, but for just one subsystem it's cleaner to call
-> directly.
+   +-----------------------------------------------------+
+   | <interactive>  |         <service>                  |
+   |   #task = 1000 |            #task = 5000            |
+   +----------------+------------------+-----------------+
+                    |  <serviceA>      |  <serviceB>     |
+                    |    vaddr = 100GB |    vaddr = 200B |
+                    +------------------+-----------------+
 
-OK.
+tus, we have 2 choice.
 
+1. separate 2 cgroup.
+2. implement hierarchy.
 
-> > +static int task_cgroup_populate(struct cgroup_subsys *ss,
-> > +                               struct cgroup *cgrp)
-> > +{
-> > +       if (task_cgroup_subsys.disabled)
-> > +               return 0;
-> 
-> I don't think you should need this check - if the subsystem is
-> disabled, it'll never be mounted in the first place.
-
-to be honest, I did copy&past it from memcontrol.c ;)
-Thanks good opinion.
+I afraid to 2 cause perfomance degression.
+tus, I choiced 1.
