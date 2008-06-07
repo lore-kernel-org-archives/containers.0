@@ -1,425 +1,89 @@
-From: KOSAKI Motohiro <kosaki.motohiro@jp.fujitsu.com>
-Subject: [PATCH] introduce task cgroup v2
-Date: Sat, 07 Jun 2008 20:00:00 +0900
-Message-ID: <20080607195733.9C77.KOSAKI.MOTOHIRO@jp.fujitsu.com>
+From: "HOYU USA INC" <kishijima-iVX72re7JJ/k1uMJSBkQmQ@public.gmane.org>
+Subject: =?iso-2022-jp?B?GyRCO0gkJDxOJEYlJCVzJS8lKyE8JUglaiVDJTgbKEI=?=
+	=?iso-2022-jp?B?SUMbJEI9aTR8Mj06RkA4TXhNUUshGyhC?=
+Date: Sat, 7 Jun 2008 09:07:07 -0700
+Message-ID: <06f301c8c8b8$8de916e0$9600a8c0@5a4ibi3mpfqplm8>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="US-ASCII"
+Content-Type: text/plain; charset="iso-2022-jp"
 Content-Transfer-Encoding: 7bit
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1760012AbYFGLB2@vger.kernel.org>
-Sender: linux-kernel-owner@vger.kernel.org
-To: containers@lists.osdl.org, LKML <linux-kernel@vger.kernel.org>, Li Zefan <lizf@cn.fujitsu.com>, Paul Menage <menage@google.com>, Andrew Morton <akpm@linux-foundation.org>
-Cc: kosaki.motohiro@jp.fujitsu.com
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: stephan.gauch-l+9DIogs3enSyEMIgutvibNAH6kLmebB@public.gmane.org
+Cc: 4b2b4c417991364996f035e1ee39e2e102215c40-FLDXDozgfvqMZIKBs2XnfA@public.gmane.org, hokuchu-MjPevVvgk2YTBYAz+LHnZg@public.gmane.org, morioka-vxLKL6c/TkdBDgjK7y7TUQ@public.gmane.org, tlb-hjQfYgtH1/LQT0dZR+AlfA@public.gmane.org, 3c6.0.0.22.2.20040722220905.035fb710-NBVEfBwI8WKMZIKBs2XnfA@public.gmane.org, 3c703342462.1115141052280.javamail.jira-mFcXy3MtvisPKjDvHGQMeg@public.gmane.org, gamato-Rn4VEauK+AKRv+LV9MX5uipxlwaOVQ5f@public.gmane.org, grd1711-6tv/79AfAIvPDbFq/vQRIQ@public.gmane.org, ylli.kullashi-GANU6spQydw@public.gmane.org, m.mort-gOcplodjWkZ4oUbgFh0ZNQ@public.gmane.org, ulf.mellstrom-eaFVbRYfB0I@public.gmane.org, ditesh-VLOFT83ZsgtAfugRpC6u6w@public.gmane.org, 44bcff0c.7040808-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, 3c4b2b4c417991364996f035e1ee39e2e1017f59f0-FLDXDozgfvqJNCc+xKUrQYH6Mc4MB0Vx@public.gmane.org, pm-bxjLCLrIAb1eoWH0uzbU5w@public.gmane.org, sruff-PjAqaU27lzQ@public.gmane.org, suzuki-MLfqJZE+GIghZAcrxQZzcg@public.gmane.org, jeff-o2qLIJkoznsdnm+yROfE0A@public.gmane.org, 3c4c2f1577f2ef2840a9ae9ec61860c8810129595b-q/XIuwGaGWSJNCc+xKUrQYH6Mc4MB0Vx@public.gmane.org, jdunn-JN5fZfbfKAtWk0Htik3J/w@public.gmane.org, tomodawa-/E1597aS9LR3+QwDJ9on6Q@public.gmane.org, 3c512746474.1137010221932.javamail.jira-mFcXy3MtvisPKjDvHGQMeg@public.gmane.org, mokuhanga-AMKyqfQazxM@public.gmane.org, info-X61GnPpOkfTHPfgNcTxviA@public.gmane.org, 3cecaa4efd0511070826i24aa2d3am653bf9e8261eb60a@mai
 List-Id: containers.vger.kernel.org
 
 
-ChangeLog
-========================================
-v1 -> v2
-  o implement can_attach() and attach() method.
-  o remvoe can_fork member from cgroup_subsys.
-    instead, copy_process() call task_cgroup_can_fork() directly.
-  o fixed dead lock bug.
-  o add Documentation/contoroller/task.txt
+おしらせ
+
+未承認広告　（画期的な方法を公開！）
 
 
-benefit
-========================================
-1. prevent fork bomb.
+HOYU USA INC:  送信者：石島一幸(アメリカ)　　：　rishijima-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org
+<mailto:rishijima-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 
-We already have "/prox/sys/kernel/threads-max".
-but it isn't perfect solution.
-because threads-max prevent any process creation.
-then, System-administrator can't login and restore trouble.
+プリンタ・インクジェットのカートリッジ・インク代を1/10以下に！！(簡単に
+お金を節約できます)
 
-task limit cgroup is better solution.
-it can prevent fork by network service daemon, but allow fork by interactive process.
+１回限りの使い捨てカートリッジって、環境は汚すし、お金の無駄使いですよ
+ね？カートリッジについているICを初期化して、何度も自分でインクを補充でき
+たら、1年間で、何万円も節約して、ハワイ旅行だって可能ですよね！
 
+このカー使い捨てインクカートリッジIC初期化再生利用法
 
-2. help implement batch processing
+トリッジ再生器はエプソン用のインクカートリッジICを簡単に初期化再生しま
+す。大型プリンター用もあります。
 
-in general, batch processing environment need support #task limit.
-this patch help implement it.
+アメリカからの声:「私の会社では、EPSONやCANONのプリンターICを再生
 
+器を使って、初期化して、インクを補充して何度も再生利用しています。再生
 
-usage
-========================================
+器についているピンを使用済みのカートリッジICに押し当てLEDが点滅して、
 
-# mount -t cgroup -o task none /dev/cgroup
-# mkdir /dev/cgroup/foo
-# cd /dev/cgroup/foo
-# ls 
-notify_on_release  task.max_tasks  task.nr_tasks  tasks
-# echo 100 > task.max_tasks
-# echo $$ > tasks
-# fork_bomb 1000 &  <- try create 1000 process
-# pgrep fork_bomb | wc -l
-98
+初期化完了。後は、手でインクを補充するだけ。この作業を繰り返すだけで、
+
+何度でも、インク・カートリッジが再生可能。簡単で、事務費用を節約。
+
+（Ｊｏｈｎ　Ｈａｌｌ，　ＣＡＬＩＦＯＲＮＩＡ）
 
 
-Signed-off-by: KOSAKI Motohiro <kosaki.motohiro@jp.fujitsu.com>
-CC: Li Zefan <lizf@cn.fujitsu.com>
-CC: Paul Menage <menage@google.com>
 
----
- Documentation/controllers/task.txt |   18 +++
- include/linux/cgroup_subsys.h      |    4 
- include/linux/cgroup_task.h        |   33 +++++
- init/Kconfig                       |   10 +
- kernel/Makefile                    |    1 
- kernel/cgroup_task.c               |  213 +++++++++++++++++++++++++++++++++++++
- kernel/fork.c                      |    4 
- 7 files changed, 283 insertions(+)
+インク・カートリッジIC再生器A型
 
-Index: b/init/Kconfig
-===================================================================
---- a/init/Kconfig
-+++ b/init/Kconfig
-@@ -289,6 +289,16 @@ config CGROUP_DEBUG
- 
- 	  Say N if unsure
- 
-+config CGROUP_TASK
-+	bool "Simple number of task accounting cgroup subsystem"
-+	depends on CGROUPS && EXPERIMENTAL
-+	default n
-+	help
-+          Provides a simple number of task accounting cgroup subsystem for
-+	  prevent fork bomb.
-+
-+	  Say N if unsure
-+
- config CGROUP_NS
-         bool "Namespace cgroup subsystem"
-         depends on CGROUPS
-Index: b/kernel/Makefile
-===================================================================
---- a/kernel/Makefile
-+++ b/kernel/Makefile
-@@ -46,6 +46,7 @@ obj-$(CONFIG_KEXEC) += kexec.o
- obj-$(CONFIG_COMPAT) += compat.o
- obj-$(CONFIG_CGROUPS) += cgroup.o
- obj-$(CONFIG_CGROUP_DEBUG) += cgroup_debug.o
-+obj-$(CONFIG_CGROUP_TASK) += cgroup_task.o
- obj-$(CONFIG_CPUSETS) += cpuset.o
- obj-$(CONFIG_CGROUP_NS) += ns_cgroup.o
- obj-$(CONFIG_UTS_NS) += utsname.o
-Index: b/kernel/cgroup_task.c
-===================================================================
---- /dev/null
-+++ b/kernel/cgroup_task.c
-@@ -0,0 +1,213 @@
-+/* cgroup_task.c - #task control group
-+ *
-+ * Copyright (C) 2008 KOSAKI Motohiro <kosaki.motohiro@jp.fujitsu.com>
-+ *
-+ * This program is free software; you can redistribute it and/or modify
-+ * it under the terms of the GNU General Public License as published by
-+ * the Free Software Foundation; either version 2 of the License, or
-+ * (at your option) any later version.
-+ *
-+ * This program is distributed in the hope that it will be useful,
-+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
-+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-+ * GNU General Public License for more details.
-+ */
-+
-+#include <linux/cgroup.h>
-+#include <linux/err.h>
-+#include <linux/cgroup_task.h>
-+
-+struct task_cgroup {
-+	struct cgroup_subsys_state css;
-+	/*
-+	 * the counter to account for number of thread.
-+	 */
-+	int max_tasks;
-+	int nr_tasks;
-+
-+	spinlock_t lock;
-+};
-+
-+struct cgroup_subsys task_cgroup_subsys __read_mostly;
-+
-+static inline struct task_cgroup *task_cgroup_from_task(struct task_struct *p)
-+{
-+	return container_of(task_subsys_state(p, task_cgroup_subsys_id),
-+				struct task_cgroup, css);
-+}
-+
-+static struct task_cgroup *task_cgroup_from_cgrp(struct cgroup *cgrp)
-+{
-+	return container_of(cgroup_subsys_state(cgrp,
-+				task_cgroup_subsys_id), struct task_cgroup,
-+				css);
-+}
-+
-+static int task_cgroup_max_tasks_write(struct cgroup *cgrp,
-+				       struct cftype *cftype,
-+				       s64 new_max_tasks)
-+{
-+	struct task_cgroup *taskcg;
-+	int ret = -EBUSY;
-+
-+	if ((new_max_tasks > INT_MAX) ||
-+	    (new_max_tasks < -1))
-+		return -EINVAL;
-+
-+	taskcg = task_cgroup_from_cgrp(cgrp);
-+
-+	spin_lock(&taskcg->lock);
-+	if (taskcg->nr_tasks <= new_max_tasks) {
-+		taskcg->max_tasks = new_max_tasks;
-+		ret = 0;
-+	}
-+	spin_unlock(&taskcg->lock);
-+
-+	return ret;
-+}
-+
-+static s64 task_cgroup_max_tasks_read(struct cgroup *cgrp, struct cftype *cft)
-+{
-+	s64 max_tasks;
-+	struct task_cgroup *taskcg = task_cgroup_from_cgrp(cgrp);
-+
-+	spin_lock(&taskcg->lock);
-+	max_tasks = taskcg->max_tasks;
-+	spin_unlock(&taskcg->lock);
-+
-+	return max_tasks;
-+}
-+
-+static s64 task_cgroup_nr_tasks_read(struct cgroup *cgrp, struct cftype *cft)
-+{
-+	s64 nr_tasks;
-+	struct task_cgroup *taskcg = task_cgroup_from_cgrp(cgrp);
-+
-+	spin_lock(&taskcg->lock);
-+	nr_tasks = taskcg->nr_tasks;
-+	spin_unlock(&taskcg->lock);
-+
-+	return nr_tasks;
-+}
-+
-+static struct cftype task_cgroup_files[] =  {
-+	{
-+		.name = "max_tasks",
-+		.write_s64 = task_cgroup_max_tasks_write,
-+		.read_s64  = task_cgroup_max_tasks_read,
-+	},
-+	{
-+		.name = "nr_tasks",
-+		.read_s64  = task_cgroup_nr_tasks_read,
-+	},
-+};
-+
-+static struct cgroup_subsys_state *task_cgroup_create(struct cgroup_subsys *ss,
-+						   struct cgroup *cgrp)
-+{
-+	struct task_cgroup *taskcg;
-+
-+	taskcg = kzalloc(sizeof(struct task_cgroup), GFP_KERNEL);
-+	if (!taskcg)
-+		return ERR_PTR(-ENOMEM);
-+
-+	taskcg->max_tasks = -1;   /* infinite */
-+	spin_lock_init(&taskcg->lock);
-+
-+	return &taskcg->css;
-+}
-+
-+static void task_cgroup_destroy(struct cgroup_subsys *ss, struct cgroup *cgrp)
-+{
-+	kfree(cgrp->subsys[task_cgroup_subsys_id]);
-+}
-+
-+
-+static int task_cgroup_can_attach(struct cgroup_subsys *ss,
-+				  struct cgroup *cgrp, struct task_struct *tsk)
-+{
-+	struct task_cgroup *taskcg = task_cgroup_from_cgrp(cgrp);
-+	int ret = 0;
-+
-+	spin_lock(&taskcg->lock);
-+	if (taskcg->nr_tasks == taskcg->max_tasks)
-+		ret = -EBUSY;
-+	spin_unlock(&taskcg->lock);
-+
-+	return ret;
-+}
-+
-+static void task_cgroup_attach(struct cgroup_subsys *ss, struct cgroup *cgrp,
-+			       struct cgroup *old_cgrp, struct task_struct *tsk)
-+{
-+	struct task_cgroup *old_taskcg = task_cgroup_from_cgrp(old_cgrp);
-+	struct task_cgroup *new_taskcg = task_cgroup_from_cgrp(cgrp);
-+
-+	spin_lock(&old_taskcg->lock);
-+	old_taskcg->nr_tasks--;
-+	spin_unlock(&old_taskcg->lock);
-+
-+	spin_lock(&new_taskcg->lock);
-+	new_taskcg->nr_tasks++;
-+	spin_unlock(&new_taskcg->lock);
-+}
-+
-+
-+static int task_cgroup_populate(struct cgroup_subsys *ss,
-+				struct cgroup *cgrp)
-+{
-+	return cgroup_add_files(cgrp, ss, task_cgroup_files,
-+				ARRAY_SIZE(task_cgroup_files));
-+}
-+
-+int task_cgroup_can_fork(struct task_struct *task)
-+{
-+	struct task_cgroup *taskcg;
-+	int max_tasks;
-+	int ret = 0;
-+
-+	if (task_cgroup_subsys.disabled)
-+		return 0;
-+
-+	taskcg = task_cgroup_from_task(task);
-+
-+	spin_lock(&taskcg->lock);
-+	max_tasks = taskcg->max_tasks;
-+
-+	if ((max_tasks >= 0) &&
-+	    (taskcg->nr_tasks >= max_tasks))
-+		ret = -EAGAIN;
-+	else
-+		taskcg->nr_tasks++;
-+	spin_unlock(&taskcg->lock);
-+
-+	return ret;
-+}
-+
-+static void task_cgroup_exit(struct cgroup_subsys *ss, struct task_struct *task)
-+{
-+	struct task_cgroup *taskcg;
-+
-+	if (task_cgroup_subsys.disabled)
-+		return;
-+
-+	taskcg = task_cgroup_from_task(task);
-+
-+	spin_lock(&taskcg->lock);
-+	taskcg->nr_tasks--;
-+	spin_unlock(&taskcg->lock);
-+}
-+
-+
-+struct cgroup_subsys task_cgroup_subsys = {
-+	.name = "task",
-+	.subsys_id = task_cgroup_subsys_id,
-+	.create = task_cgroup_create,
-+	.destroy = task_cgroup_destroy,
-+	.can_attach = task_cgroup_can_attach,
-+	.attach = task_cgroup_attach,
-+	.populate = task_cgroup_populate,
-+	.exit = task_cgroup_exit,
-+	.early_init = 0,
-+};
-+
-Index: b/kernel/fork.c
-===================================================================
---- a/kernel/fork.c
-+++ b/kernel/fork.c
-@@ -54,6 +54,7 @@
- #include <linux/tty.h>
- #include <linux/proc_fs.h>
- #include <linux/blkdev.h>
-+#include <linux/cgroup_task.h>
- 
- #include <asm/pgtable.h>
- #include <asm/pgalloc.h>
-@@ -920,6 +921,8 @@ static struct task_struct *copy_process(
- 		    p->user != current->nsproxy->user_ns->root_user)
- 			goto bad_fork_free;
- 	}
-+	if (task_cgroup_can_fork(p))
-+		goto bad_fork_free;
- 
- 	atomic_inc(&p->user->__count);
- 	atomic_inc(&p->user->processes);
-@@ -994,6 +997,7 @@ static struct task_struct *copy_process(
- 	p->io_context = NULL;
- 	p->audit_context = NULL;
- 	cgroup_fork(p);
-+
- #ifdef CONFIG_NUMA
- 	p->mempolicy = mpol_dup(p->mempolicy);
-  	if (IS_ERR(p->mempolicy)) {
-Index: b/include/linux/cgroup_subsys.h
-===================================================================
---- a/include/linux/cgroup_subsys.h
-+++ b/include/linux/cgroup_subsys.h
-@@ -48,3 +48,7 @@ SUBSYS(devices)
- #endif
- 
- /* */
-+
-+#ifdef CONFIG_CGROUP_TASK
-+SUBSYS(task_cgroup)
-+#endif
-Index: b/include/linux/cgroup_task.h
-===================================================================
---- /dev/null
-+++ b/include/linux/cgroup_task.h
-@@ -0,0 +1,33 @@
-+/* cgroup_task.h - #task control group
-+ *
-+ * Copyright (C) 2008 KOSAKI Motohiro <kosaki.motohiro@jp.fujitsu.com>
-+ *
-+ * This program is free software; you can redistribute it and/or modify
-+ * it under the terms of the GNU General Public License as published by
-+ * the Free Software Foundation; either version 2 of the License, or
-+ * (at your option) any later version.
-+ *
-+ * This program is distributed in the hope that it will be useful,
-+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
-+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-+ * GNU General Public License for more details.
-+ */
-+
-+#ifndef _LINUX_CGROUP_TASK_H
-+#define _LINUX_CGROUP_TASK_H
-+
-+#ifdef CONFIG_CGROUP_TASK
-+int task_cgroup_can_fork(struct task_struct *task);
-+
-+#else /*CONFIG_CGROUP_TASK*/
-+
-+static inline int task_cgroup_can_fork(struct task_struct *task)
-+{
-+	return 0;
-+}
-+
-+#endif
-+
-+
-+#endif
-+
-Index: b/Documentation/controllers/task.txt
-===================================================================
---- /dev/null
-+++ b/Documentation/controllers/task.txt
-@@ -0,0 +1,18 @@
-+Task limit Controller
-+
-+1. Description
-+
-+Implement a cgroup to track number of tasks (process and thread).
-+this feature is useful for prevent fork bomb attack.
-+
-+
-+2. User Interface
-+
-+ristrict number of tasks to 100.
-+
-+	# echo 100 > /cgroups/foo/task.max_tasks
-+
-+
-+display current number of tasks.
-+
-+        # cat > /cgroups/foo/task.nr_tasks
+6月末日迄：1個3,900円、又は、2個で6,800円(輸送費込み)
+
+全ての5pin, 7pin型の エプソンプリンタのICに適合します。
+
+
+
+大型用Printer: インク・カートリッジIC再生器B型
+
+６月末日迄：1個7,800円、　2個で13,000円（輸送費込み）
+
+適合モデル：Stylus Pro　10600/Color Proofer 10600/Stylus Pro10000/　
+Color Proofer 10000 /　Stylus Pro 10000cf/　Stylus Pro 9600/　Color
+Proofer 9600/　Stylus Pro 7600/Color Proofer 7600/ Stylus Pro4000/ 4400/
+4800/ 7800/ 9800/ 7400/ 9400 ： PX-6000/7000/9000/7500/9500 etc.
+
+
+
+CANONカートリッジIC再生器：１個8500円（輸送費込み）
+
+
+
+資料請求、購入申し込みは：saiseikiusa-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org
+
+HOYU  USA  INC
+
+20806 Rocky Point Lane, Walnut, CA  91789  USA
+
+(日本から) 0111-909-720-3280 ／　011-909-468-3000
+
+fax: 0111-895-7472  担当者：いしじま
