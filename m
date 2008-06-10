@@ -1,51 +1,35 @@
-From: Greg KH <gregkh@suse.de>
-Subject: Re: [PATCH 00/11] sysfs tagged directories V5
-Date: Tue, 10 Jun 2008 16:00:58 -0700
-Message-ID: <20080610230058.GA25072@suse.de>
-References: <20080606154654.356185262@theryb.frec.bull.fr> <20080610225024.GB22478@us.ibm.com>
+From: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Subject: [GIT PATCH] actually check va randomization
+Date: Tue, 10 Jun 2008 16:51:59 -0700
+Message-ID: <1213141919.7261.21.camel@nimitz>
+References: <1209144259.12718.46.camel@nimitz.home.sr71.net>
+	<48159D1D.3050302@fr.ibm.com> <481735A6.8070800@bull.net>
+	<48173CE1.7050503@fr.ibm.com> <481ECA42.5060603@bull.net>
+	<20080609130429.GA16297@us.ibm.com> <484D4612.9000901@bull.net>
+	<20080609152336.GA27878@us.ibm.com> <484E1BD3.40401@ozlabs.au.ibm.com>
+	<20080610181756.GB13817@us.ibm.com>
+	<484F0DC7.5080209@ozlabs.au.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1758907AbYFJXG7@vger.kernel.org>
-Content-Disposition: inline
-In-Reply-To: <20080610225024.GB22478@us.ibm.com>
-Sender: linux-kernel-owner@vger.kernel.org
-To: "Serge E. Hallyn" <serue@us.ibm.com>
-Cc: Benjamin Thery <benjamin.thery@bull.net>, Andrew Morton <akpm@linux-foundation.org>, Eric Biederman <ebiederm@xmission.com>, linux-kernel@vger.kernel.org, Tejun Heo <htejun@gmail.com>, Al Viro <viro@ftp.linux.org.uk>, Linux Containers <containers@lists.osdl.org>
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <484F0DC7.5080209-QcUrd9fbWu1x7SfHBjqd8AC/G2K4zDHf@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: kathys <kathys-QcUrd9fbWu1x7SfHBjqd8AC/G2K4zDHf@public.gmane.org>
+Cc: Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Cedric Le Goater <clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>, Nadia Derbey <Nadia.Derbey-6ktuUTfB/bM@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Tue, Jun 10, 2008 at 05:50:24PM -0500, Serge E. Hallyn wrote:
-> Quoting Benjamin Thery (benjamin.thery@bull.net):
-> > Greg,
-> > 
-> > Here is an updated version of the sysfs tagged directories that improves
-> > a bit the situation over the previous one. 
-> > 
-> > I've modified the patch 09 ("Enable tagging for net_class directories in 
-> > sysfs") to be a bit less intrusive in sysfs core. I removed the #ifdef'd
-> > parts you didn't like in fs/sysfs/mount.c, and replaced it by a generic 
-> > routine sysfs_ns_exit() that is called, if needed, by the namespace when
-> > it exits. This routine goes through every sysfs super blocks and calls 
-> > the callback passed by the namespace to clean its tag.
-> > 
-> > The patch is now splitted in two: 
-> > * 09/11: the generic routine,
-> > * 10/11: the remaining network parts.
-> > 
-> > The generic part can be merge with patch 05 ("sysfs: Implement sysfs 
-> > tagged directory support.") but I left it separate for now to ease 
-> > reviews.
-> 
-> Thanks.  Not nearly as radical as I'd feared.
-> 
-> Greg, does this address your concern?  It stops the need to put any
-> non-braindead code (i.e. the _exit notifier stuff) in fs/sysfs/mount.c for
-> any new namespaces needing sysfs tagging, leaving only simple
-> comparison/assignments.
+Rather than just documenting this in the readme, actually spit
+out a warning on it.
 
-Sorry, I've been swamped with other things this week and haven't gotten
-a chance to look this over.  Hopefully by the end of the week...  It's
-in my queue though, don't worry it will not get lost.
+You can pull from: git://git.sr71.net/~dave/cryo-forhallyn.git/
 
-thanks,
-
-greg k-h
+-- Dave
