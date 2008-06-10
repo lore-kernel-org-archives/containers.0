@@ -1,146 +1,52 @@
-From: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
-Subject: Re: [RFD][PATCH] memcg: Move Usage at Task Move
-Date: Tue, 10 Jun 2008 17:26:37 +0900
-Message-ID: <20080610172637.39ffff5c.kamezawa.hiroyu@jp.fujitsu.com>
-References: <20080606105235.3c94daaf.kamezawa.hiroyu@jp.fujitsu.com>
-	<20080610163550.65c97f6a.nishimura@mxp.nes.nec.co.jp>
+From: Andrea Righi <righi.andrea@gmail.com>
+Subject: Re: [RFC PATCH 0/5] memcg: VM overcommit accounting and handling
+Date: Tue, 10 Jun 2008 10:30:29 +0200 (MEST)
+Message-ID: <484E3BA4.3000606@gmail.com>
+References: <1213054383-18137-1-git-send-email-righi.andrea@gmail.com> <20080610091439.04061da9.kamezawa.hiroyu@jp.fujitsu.com> <484E0D73.6010609@linux.vnet.ibm.com> <484E32B9.4020606@openvz.org>
+Reply-To: righi.andrea@gmail.com
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20080610163550.65c97f6a.nishimura-YQH0OdQVrdy45+QrQBaojngSJqDPrsil@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Daisuke Nishimura <nishimura-YQH0OdQVrdy45+QrQBaojngSJqDPrsil@public.gmane.org>
-Cc: "yamamoto-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org" <yamamoto-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>, "linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org" <linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org>, "containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org" <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, "menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org" <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, "balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org" <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, "xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org" <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1758636AbYFJIax@vger.kernel.org>
+In-Reply-To: <484E32B9.4020606@openvz.org>
+Sender: linux-kernel-owner@vger.kernel.org
+To: Pavel Emelyanov <xemul@openvz.org>, balbir@linux.vnet.ibm.com, KAMEZAWA Hiroyuki <kamezawa.hiroyu@jp.fujitsu.com>
+Cc: menage@google.com, kosaki.motohiro@jp.fujitsu.com, linux-kernel@vger.kernel.org, containers@lists.osdl.org
 List-Id: containers.vger.kernel.org
 
-On Tue, 10 Jun 2008 16:35:50 +0900
-Daisuke Nishimura <nishimura-YQH0OdQVrdy45+QrQBaojngSJqDPrsil@public.gmane.org> wrote:
-
-> Hi, Kamezawa-san.
+Pavel Emelyanov wrote:
+> Balbir Singh wrote:
+>> KAMEZAWA Hiroyuki wrote:
+>>> On Tue, 10 Jun 2008 01:32:58 +0200
+>>> Andrea Righi <righi.andrea@gmail.com> wrote:
+>>>
+>>>> Provide distinct cgroup VM overcommit accounting and handling using the memory
+>>>> resource controller.
+>>>>
+>>> Could you explain the benefits of this even when we have memrlimit controller ?
+>>> (If unsure, see 2.6.26-rc5-mm1 and search memrlimit controller.)
+>>>
+>>> And this kind of virtual-address-handling things should be implemented on
+>>> memrlimit controller (means not on memory-resource-controller.).
+>>> It seems this patch doesn't need to handle page_group.
+>>>
+>>> Considering hierarchy, putting several kinds of features on one controller is
+>>> not good, I think. Balbir, how do you think ?
+>>>
+>> I would tend to agree. With the memrlimit controller, can't we do this in user
+>> space now? Figure out the overcommit value and based on that setup the memrlimit?
 > 
-> Sorry for late reply.
-> 
-> On Fri, 6 Jun 2008 10:52:35 +0900, KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org> wrote:
-> > Move Usage at Task Move (just an experimantal for discussion)
-> > I tested this but don't think bug-free.
-> > 
-> > In current memcg, when task moves to a new cg, the usage remains in the old cg.
-> > This is considered to be not good.
-> > 
-> I agree.
-> 
-> > This is a trial to move "usage" from old cg to new cg at task move.
-> > Finally, you'll see the problems we have to handle are failure and rollback.
-> > 
-> > This one's Basic algorithm is
-> > 
-> >      0. can_attach() is called.
-> >      1. count movable pages by scanning page table. isolate all pages from LRU.
-> >      2. try to create enough room in new memory cgroup
-> >      3. start moving page accouing
-> >      4. putback pages to LRU.
-> >      5. can_attach() for other cgroups are called.
-> > 
-> You isolate pages and move charges of them by can_attach(),
-> but it means that pages that are allocated between page isolation
-> and moving tsk->cgroups remains charged to old group, right?
-yes.
-
-> 
-> I think it would be better if possible to move charges by attach()
-> as cpuset migrates pages by cpuset_attach().
-> But one of the problem of it is that attch() does not return
-> any value, so there is no way to notify failure...
-> 
-yes, here again. it makes roll-back more difficult.
-
-> > A case study.
-> > 
-> >   group_A -> limit=1G, task_X's usage= 800M.
-> >   group_B -> limit=1G, usage=500M.
-> > 
-> > For moving task_X from group_A to group_B.
-> >   - group_B  should be reclaimed or have enough room.
-> > 
-> > While moving task_X from group_A to group_B.
-> >   - group_B's memory usage can be changed
-> >   - group_A's memory usage can be changed
-> > 
-> >   We accounts the resouce based on pages. Then, we can't move all resource
-> >   usage at once.
-> > 
-> >   If group_B has no more room when we've moved 700M of task_X to group_B,
-> >   we have to move 700M of task_X back to group_A. So I implemented roll-back.
-> >   But other process may use up group_A's available resource at that point.
-> >   
-> >   For avoiding that, preserve 800M in group_B before moving task_X means that
-> >   task_X can occupy 1600M of resource at moving. (So I don't do in this patch.)
-> > 
-> >   This patch uses Best-Effort rollback. Failure in rollback is ignored and
-> >   the usage is just leaked.
-> > 
-> If implement rollback in kernel, I think it must not fail to prevent
-> leak of usage.
-> How about using "charge_force" for rollbak?
-> 
-means allowing to exceed limit ?
-
-> Or, instead of implementing rollback in kernel,
-> how about making user(or middle ware?) re-echo pid to rollbak
-> on failure?
+> I also agree with Balbir and Kamezawa. Separate controller for VM (i.e. vma-s
+> lengths) is more preferable, rather than yet another fancy feature on top of 
+> the existing rss one.
 > 
 
-"If the users does well, the system works in better way" is O.K.
-"If the users doesn't well, the system works in broken way" is very bad.
+Yep! it seems I totally miss the memrlimit controller. I was trying to
+implement pretty the same functionalities, using a different approach.
+However, I agree that a separate controller seems to be a better
+solution.
 
-This is an issue that the kernel should handle by itself.
-So this is annoying me.
-But we can choice our policy of this task_move. The problem depends
-on the policy we establish. So, there will be a good way.
-What is "broken" depends on the definition. But usage > limit case
-is tend to be considered to be broken.
+Thank you all for pointing in the right direction. I'll test memrlimit
+controller and give a feedback.
 
-
-> > Roll-back can happen when
-> >     (a) in phase 3. cannot move a page to new cgroup because of limit.
-> >     (b) in phase 5. other cgourp subsys returns error in can_attach().
-> > 
-> Isn't rollbak needed on failure between can_attach and attach(e.g. failure
-> on find_css_set, ...)?
-> 
-Yes, my mistake.
-
-But...maybe failure after can_attach() is not good...(for me.)
-Paul, how do you think ? 
-ss->attach() should return a value and fail ? 
-
-
-
-> > +int mem_cgroup_recharge_task(struct mem_cgroup *newcg,
-> > +				struct task_struct *task)
-> > +{
-> (snip)
-> > +	/* create enough room before move */
-> > +	necessary = info.count * PAGE_SIZE;
-> > +
-> > +	do {
-> > +		spin_lock(&newcg->res.lock);
-> > +		if (newcg->res.limit > necessary)
-> > +			rc = -ENOMEM;
-> I think it should be (newcg->res.limit < necessary).
-> 
-Ah, you're right. should be fixed.
-
-Anyway I'll rewrite the whole considering opions from others.
-
-Thanks,
--Kame
+-Andrea
