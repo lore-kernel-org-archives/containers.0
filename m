@@ -1,19 +1,14 @@
-From: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: [GIT PATCH] actually check va randomization
-Date: Tue, 10 Jun 2008 16:51:59 -0700
-Message-ID: <1213141919.7261.21.camel@nimitz>
-References: <1209144259.12718.46.camel@nimitz.home.sr71.net>
-	<48159D1D.3050302@fr.ibm.com> <481735A6.8070800@bull.net>
-	<48173CE1.7050503@fr.ibm.com> <481ECA42.5060603@bull.net>
-	<20080609130429.GA16297@us.ibm.com> <484D4612.9000901@bull.net>
-	<20080609152336.GA27878@us.ibm.com> <484E1BD3.40401@ozlabs.au.ibm.com>
-	<20080610181756.GB13817@us.ibm.com>
-	<484F0DC7.5080209@ozlabs.au.ibm.com>
+From: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+Subject: Re: [RFD][PATCH] memcg: Move Usage at Task Move
+Date: Wed, 11 Jun 2008 11:02:16 +0900
+Message-ID: <20080611110216.504faf15.kamezawa.hiroyu@jp.fujitsu.com>
+References: <20080610171348.fb7aa360.kamezawa.hiroyu@jp.fujitsu.com>
+	<20080610125703.9E6CE5A11@siro.lan>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <484F0DC7.5080209-QcUrd9fbWu1x7SfHBjqd8AC/G2K4zDHf@public.gmane.org>
+In-Reply-To: <20080610125703.9E6CE5A11-Pcsii4f/SVk@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -23,13 +18,74 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: kathys <kathys-QcUrd9fbWu1x7SfHBjqd8AC/G2K4zDHf@public.gmane.org>
-Cc: Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Cedric Le Goater <clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>, Nadia Derbey <Nadia.Derbey-6ktuUTfB/bM@public.gmane.org>
+To: YAMAMOTO Takashi <yamamoto-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
+Cc: nishimura-YQH0OdQVrdy45+QrQBaojngSJqDPrsil@public.gmane.org, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Rather than just documenting this in the readme, actually spit
-out a warning on it.
+On Tue, 10 Jun 2008 21:57:03 +0900 (JST)
+yamamoto-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org (YAMAMOTO Takashi) wrote:
+> > > 5. try to move charges as your patch does.
+> > >    if the target cgroup's usage is going to exceed the limit,
+> > >    try to shrink it.  if it failed, just leave it exceeded.
+> > >    (ie. no rollback)
+> > >    for the memory subsystem, which can use its OOM killer,
+> > >    the failure should be rare.
+> > > 
+> > 
+> > Hmm, allowing exceed and cause OOM kill ?
+> > 
+> > One difficult point is that the users cannot know they can move task
+> > without any risk. How to handle the risk can be a point. 
+> > I don't like that approarch in general because I don't like "exceed"
+> > status. But implementation will be easy.
+> 
+> regardless of how to handle task moves,
+> it's important to provide information to help users
+> to avoid unreasonable cgroup/task placement.
+> otherwise, they will be surprised by OOM-killer etc anyway.
+> 
+yes.
 
-You can pull from: git://git.sr71.net/~dave/cryo-forhallyn.git/
+> having said that, if you decide to put too large tasks into
+> a cgroup with too small limit, i don't think that there are
+> many choices besides OOM-kill and allowing "exceed".
+> 
+IMHO, allowing exceed is harmfull without changing the definition of "limit".
+"limit" is hard-limit, now, not soft-limit. Changing the defintion just for
+this is not acceptable for me. 
+Maybe "move" under limit itself is crazy ops....Hmm...
 
--- Dave
+Should we allow task move when the destination cgroup is unlimited ?
+Isn't it useful ?
+
+
+
+> actually, i think that #3 and #5 are somewhat similar.
+> a big difference is that, while #5 shrinks the cgroup immediately,
+> #3 does it later.  in case we need to do OOM-kill, i prefer to do it
+> sooner than later.
+> 
+#3 will not cause OOM-killer, I hope...A user can notice memory shortage.
+
+
+
+> > > > After writing this patch, for me, "3" is attractive. now.
+> > > > (or using Lazy manner and allow moving of usage instead of freeing it.)
+> > > > 
+> > > > One reasone is that I think a typical usage of memory controller is
+> > > > fork()->move->exec(). (by libcg ?) and exec() will flush the all usage.
+> > > 
+> > > i guess that moving long-running applications can be desirable
+> > > esp. for not so well-designed systems.
+> > > 
+> > 
+> > hmm, for not so well-designed systems....true.
+> > But "5" has the same kind of risks for not so well-desgined systems ;)
+> 
+> i don't claim that #5 is a perfect solution for everyone. :)
+> 
+
+Maybe there will no perfect solution ;)
+
+Thanks,
+-Kame
