@@ -1,20 +1,16 @@
-From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [GIT PATCH] actually check va randomization
-Date: Tue, 10 Jun 2008 22:07:58 -0500
-Message-ID: <20080611030758.GA10772@us.ibm.com>
-References: <481735A6.8070800@bull.net> <48173CE1.7050503@fr.ibm.com>
-	<481ECA42.5060603@bull.net> <20080609130429.GA16297@us.ibm.com>
-	<484D4612.9000901@bull.net> <20080609152336.GA27878@us.ibm.com>
-	<484E1BD3.40401@ozlabs.au.ibm.com>
-	<20080610181756.GB13817@us.ibm.com>
-	<484F0DC7.5080209@ozlabs.au.ibm.com>
-	<1213141919.7261.21.camel@nimitz>
+From: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+Subject: Re: [RFD][PATCH] memcg: Move Usage at Task Move
+Date: Wed, 11 Jun 2008 12:25:00 +0900
+Message-ID: <20080611122500.677757c6.kamezawa.hiroyu@jp.fujitsu.com>
+References: <20080606105235.3c94daaf.kamezawa.hiroyu@jp.fujitsu.com>
+	<20080610163550.65c97f6a.nishimura@mxp.nes.nec.co.jp>
+	<20080610172637.39ffff5c.kamezawa.hiroyu@jp.fujitsu.com>
+	<20080611120345.07ddadc6.nishimura@mxp.nes.nec.co.jp>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <1213141919.7261.21.camel@nimitz>
+In-Reply-To: <20080611120345.07ddadc6.nishimura-YQH0OdQVrdy45+QrQBaojngSJqDPrsil@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -24,18 +20,60 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Cc: kathys <kathys-QcUrd9fbWu1x7SfHBjqd8AC/G2K4zDHf@public.gmane.org>, Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Cedric Le Goater <clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>, Nadia Derbey <Nadia.Derbey-6ktuUTfB/bM@public.gmane.org>
+To: Daisuke Nishimura <nishimura-YQH0OdQVrdy45+QrQBaojngSJqDPrsil@public.gmane.org>
+Cc: "yamamoto-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org" <yamamoto-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>, "linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org" <linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org>, "containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org" <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, "menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org" <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, "balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org" <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, "xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org" <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Quoting Dave Hansen (dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org):
-> Rather than just documenting this in the readme, actually spit
-> out a warning on it.
+On Wed, 11 Jun 2008 12:03:45 +0900
+Daisuke Nishimura <nishimura-YQH0OdQVrdy45+QrQBaojngSJqDPrsil@public.gmane.org> wrote:
+> > > Or, instead of implementing rollback in kernel,
+> > > how about making user(or middle ware?) re-echo pid to rollbak
+> > > on failure?
+> > > 
+> > 
+> > "If the users does well, the system works in better way" is O.K.
+> > "If the users doesn't well, the system works in broken way" is very bad.
+> > 
+> Hum...
 > 
-> You can pull from: git://git.sr71.net/~dave/cryo-forhallyn.git/
+> I think users must know what they are doing.
 > 
-> -- Dave
+yes. but it's a different problem,
+ - "a user must know what they does."
+ - "a system works without BUG even if the user is crazy."
 
-Thanks, merged.
 
--serge
+> They must know that moving a process to another group
+> that doesn't have enough room for it may fail with half state,
+> if it is the behavior of kernel.
+> And they should handle the error by themselves, IMHO.
+> 
+
+I'm now considering following logic. How do you think ?
+
+Assume: move TASK from group:CURR to group:DEST.
+
+== move_task(TASK, CURR, DEST)
+
+if (DEST's limit is unlimited)
+	moving TASK
+	return success.
+
+usage = check_usage_of_task(TASK).
+
+/* try to reserve enough room in destionation */
+if (try_to_reserve_enough_room(DEST, usage)) {
+	move TASK to DEST and move pages AMAP.
+	/* usage_of_task(TASK) can be changed while we do this.
+	   Then, we move AMAP. */
+	return success;
+}
+return failure.
+==
+
+The difficult point will be reservation but can be implemented without
+complexity.
+
+
+Thanks,
+-Kame
