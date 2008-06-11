@@ -1,55 +1,40 @@
-From: Masahiko Takahashi <m-takahashi-kvZsz0w9TrB8UrSeD/g0lQ@public.gmane.org>
-Subject: Re: mini-summit agenda
-Date: Wed, 11 Jun 2008 18:37:33 +0900
-Message-ID: <1213177053.5932.12.camel@noir.spf.cl.nec.co.jp>
-References: <20080421142524.GA13322@sergelap.austin.ibm.com>
-	<4848E0DF.5000904@fr.ibm.com>  <20080606133140.GB10546@us.ibm.com>
+From: Andrea Righi <righi.andrea@gmail.com>
+Subject: Re: [RFC PATCH 5/5] refresh VM committed space after a task migration
+Date: Wed, 11 Jun 2008 12:37:57 +0200 (MEST)
+Message-ID: <484FAB04.2010800@gmail.com>
+References: <>  <1213054383-18137-6-git-send-email-righi.andrea@gmail.com> <1213119688.13882.13.camel@nimitz>
+Reply-To: righi.andrea@gmail.com
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20080606133140.GB10546-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Cedric Le Goater <clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1755167AbYFKKjA@vger.kernel.org>
+In-Reply-To: <1213119688.13882.13.camel@nimitz>
+Sender: linux-kernel-owner@vger.kernel.org
+To: Dave Hansen <dave@linux.vnet.ibm.com>
+Cc: balbir@linux.vnet.ibm.com, linux-kernel@vger.kernel.org, kosaki.motohiro@jp.fujitsu.com, containers@lists.osdl.org, menage@google.com, xemul@openvz.org
 List-Id: containers.vger.kernel.org
 
-Hi Serge,
-
-On 2008-06-06 at 08:31 -0500, Serge E. Hallyn wrote:
-> Quoting Cedric Le Goater (clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org):
-> > Hello !
-> > 
-> > Serge E. Hallyn wrote:
-> > > Hi,
-> > > 
-> > > the proposed agenda for the mini-summit is up (and editable)
-> > > at http://wiki.openvz.org/Containers/Mini-summit_2008.  Please
-> > > take a look and edit or email the list with any suggested updates.
-> > 
-> > Unfortunately, I can not attend. Daniel Lezcano will replace me.
+Dave Hansen wrote:
+> On Tue, 2008-06-10 at 01:33 +0200, Andrea Righi wrote:
+>> +       preempt_disable();
+>> +       committed = atomic_long_read(&p->vm_committed_space);
+>> +       atomic_long_sub(committed, &old_mem->vmacct.vm_committed_space);
+>> +       atomic_long_add(committed, &mem->vmacct.vm_committed_space);
+>> +       preempt_enable();
+>>  out:
+>>         mmput(mm);
+>>  }
 > 
-> Sorry to hear that, Cedric.  So far I'm pretty sure we'll have Dave
-> Hansen, Oren Laadan, Daniel, and myself.  22 people put their names
-> down on the wiki list, but I wonder how many ended up able to travel?
+> Why bother with the preempt stuff here?  What does the actually protect
+> against?  I assume that you're trying to keep other tasks that might run
+> on this CPU from seeing weird, inconsistent numbers in here.  Is there
+> some other looks that keeps *other* cpus from seeing this?
+> 
+> In any case, I think it needs a big, fat comment.
 
-I and Satoshi Uchida are gonna join!
-Satoshi would be happy if there will be a little bit chance to
-discuss about disk I/O bandwidth control in the resource management
-session.
+Yes, true, mem_cgroup_move_task() is called after the task->cgroups
+pointer has been changed. So, even if task changes its committed space
+between the atomic_long_sub() and atomic_long_add() it will be correctly
+accounted in the new cgroup.
 
-
-Thanks,
-
-Masahiko.
-
----
-Masahiko Takahashi // m-takahashi-kvZsz0w9TrB8UrSeD/g0lQ@public.gmane.org
+-Andrea
