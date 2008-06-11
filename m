@@ -1,79 +1,60 @@
-From: Balbir Singh <balbir@linux.vnet.ibm.com>
-Subject: Re: [-mm] CPU controller statistics (v5)
-Date: Wed, 11 Jun 2008 14:10:28 +0530
-Message-ID: <484F8F7C.8040009@linux.vnet.ibm.com>
-References: <20080603200515.GA25753@balbir.in.ibm.com> <6599ad830806110132j1b3f899bx57fd3c894fd0c1c6@mail.gmail.com>
-Reply-To: balbir@linux.vnet.ibm.com
+From: "Paul Menage" <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [RFD][PATCH] memcg: Move Usage at Task Move
+Date: Wed, 11 Jun 2008 01:48:20 -0700
+Message-ID: <6599ad830806110148v65df67f8ge0ccdd56c21c89e0@mail.gmail.com>
+References: <20080606105235.3c94daaf.kamezawa.hiroyu@jp.fujitsu.com>
+	<6599ad830806110017t5ebeda78id1914d179a018422@mail.gmail.com>
+	<20080611164544.94047336.kamezawa.hiroyu@jp.fujitsu.com>
+	<6599ad830806110104n99cdc7h80063e91d16bf0a5@mail.gmail.com>
+	<20080611172714.018aa68c.kamezawa.hiroyu@jp.fujitsu.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
+Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1756865AbYFKIk5@vger.kernel.org>
-In-Reply-To: <6599ad830806110132j1b3f899bx57fd3c894fd0c1c6@mail.gmail.com>
-Sender: linux-kernel-owner@vger.kernel.org
-To: Paul Menage <menage@google.com>
-Cc: Andrew Morton <akpm@linux-foundation.org>, Dhaval Giani <dhaval@linux.vnet.ibm.com>, linux-kernel@vger.kernel.org, Balaji Rao <balajirrao@gmail.com>, containers@lists.osdl.org, vatsa@linux.vnet.ibm.com, a.p.zijlstra@chello.nl
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <20080611172714.018aa68c.kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+Content-Disposition: inline
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+Cc: "yamamoto-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org" <yamamoto-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>, "nishimura-YQH0OdQVrdy45+QrQBaojngSJqDPrsil@public.gmane.org" <nishimura-YQH0OdQVrdy45+QrQBaojngSJqDPrsil@public.gmane.org>, "linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org" <linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org>, "containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org" <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, "balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org" <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, "xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org" <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Paul Menage wrote:
-> On Tue, Jun 3, 2008 at 1:05 PM, Balbir Singh <balbir@linux.vnet.ibm.com> wrote:
->> diff --git a/include/linux/cgroup.h b/include/linux/cgroup.h
->> index e155aa7..60a25cb 100644
->> --- a/include/linux/cgroup.h
->> +++ b/include/linux/cgroup.h
->> @@ -293,6 +293,7 @@ int cgroup_is_descendant(const struct cgroup *cgrp);
->>  struct cgroup_subsys {
->>        struct cgroup_subsys_state *(*create)(struct cgroup_subsys *ss,
->>                                                  struct cgroup *cgrp);
->> +       void (*initialize)(int early);
->>        void (*pre_destroy)(struct cgroup_subsys *ss, struct cgroup *cgrp);
->>        void (*destroy)(struct cgroup_subsys *ss, struct cgroup *cgrp);
->>        int (*can_attach)(struct cgroup_subsys *ss,
->> diff --git a/kernel/cgroup.c b/kernel/cgroup.c
->> index 15ac0e1..77569d7 100644
->> --- a/kernel/cgroup.c
->> +++ b/kernel/cgroup.c
->> @@ -2553,6 +2553,9 @@ int __init cgroup_init_early(void)
+On Wed, Jun 11, 2008 at 1:27 AM, KAMEZAWA Hiroyuki
+<kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org> wrote:
+> Sorry. try another sentense..
+>
+> I think cgroup itself is designed to be able to be used without middleware.
+
+True, but it shouldn't be hostile to middleware, since I think that
+automated use will be much more common. (And certainly if you count
+the number of servers :-) )
+
+> IOW, whether using middleware or not is the matter of users not of developpers.
+> There will be a system that system admin controlles all and move tasks by hand.
+> ex)...personal notebooks etc..
+>
+
+You think so? I think that at the very least users will be using tools
+based around config scripts, rule engines and libcgroup, if not a
+persistent daemon.
+
+>> If the common mode for middleware starting a new cgroup is fork() /
+>> move / exec() then after the fork(), the child will be sharing pages
+>> with the main daemon process. So the move will pull all the daemon's
+>> memory into the new cgroup
 >>
->>                if (ss->early_init)
->>                        cgroup_init_subsys(ss);
->> +
->> +               if (ss->initialize)
->> +                       ss->initialize(1);
->>        }
->>        return 0;
->>  }
->> @@ -2577,6 +2580,9 @@ int __init cgroup_init(void)
->>                struct cgroup_subsys *ss = subsys[i];
->>                if (!ss->early_init)
->>                        cgroup_init_subsys(ss);
->> +
->> +               if (ss->initialize)
->> +                       ss->initialize(0);
->>        }
-> 
-> This seems a little weird - even if the subsystem didn't want early
-> initialization, we call its initialize() during early setup?
-> 
-> I assume the idea is to move away from the current model where the
-> subsystem is expected to initialize itself during the first call to
-> its create() method, when it gets passed a cgroup with a NULL parent?
-> I agree that was a bit icky. How about we call ss->initialize() from
-> cgroup_init_subsys()? Then we wouldn't need the "early" parameter,
-> since it would be implicit based on whether the subsystem wanted early
-> initialization or not.
-> 
+> My patch (this patch) just moves Private Anon page to new cgroup. (of mapcount=1)
 
-The motivation was to ensure that kmalloc* calls are available at the time of
-ss_initialize
+OK, well that makes it more reasonable regarding the above problem.
+But I can still see problems if, say, a single thread moves into a new
+cgroup, you move the entire memory. Perhaps you should only do so if
+the mm->owner changes task?
 
-> Also, if you're adding a new subsystem method, you should document it
-> in Documentation/cgroups.txt
-
-Thanks for the comments. There were some more things that are wrong with this
-patch and Andrew pointed them out. We'll work on a newer vesion.
-
--- 
-	Warm Regards,
-	Balbir Singh
-	Linux Technology Center
-	IBM, ISTL
+Paul
