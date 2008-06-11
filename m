@@ -1,11 +1,16 @@
-From: "Ritalynne Robinson" <technicians-j4wBtrbECqQAvxtiuMwx3w@public.gmane.org>
-Subject: "EncoreDVD CS 3"
-Date: Wed, 11 Jun 2008 22:16:00 +0900
-Message-ID: <000701c8cbc4$49aa8680$0100007f@xwipsp>
+From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: Re: mini-summit agenda
+Date: Wed, 11 Jun 2008 08:47:59 -0500
+Message-ID: <20080611134759.GA9374@us.ibm.com>
+References: <20080421142524.GA13322@sergelap.austin.ibm.com>
+	<4848E0DF.5000904@fr.ibm.com> <20080606133140.GB10546@us.ibm.com>
+	<1213177053.5932.12.camel@noir.spf.cl.nec.co.jp>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <1213177053.5932.12.camel-eKIOortEDzKlX1Gi5MogR0v2NXO6HgA6@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -15,48 +20,38 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
+To: Masahiko Takahashi <m-takahashi-kvZsz0w9TrB8UrSeD/g0lQ@public.gmane.org>
+Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Cedric Le Goater <clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-" Adobe CS3 Master Collection for PC or MAC includes:
-" InDesign CS3
-" Photoshop CS3
-" Illustrator CS3
-" Acrobat 8 Professional
-" Flash CS3 Professional
-" Dreamweaver CS3
-" Fireworks CS3
-" Contribute CS3
-" After Effects CS3 Professional
-" Premiere Pro CS3
-" Encore DVD CS3
-" Soundbooth CS3
+Quoting Masahiko Takahashi (m-takahashi-kvZsz0w9TrB8UrSeD/g0lQ@public.gmane.org):
+> Hi Serge,
+> 
+> On 2008-06-06 at 08:31 -0500, Serge E. Hallyn wrote:
+> > Quoting Cedric Le Goater (clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org):
+> > > Hello !
+> > > 
+> > > Serge E. Hallyn wrote:
+> > > > Hi,
+> > > > 
+> > > > the proposed agenda for the mini-summit is up (and editable)
+> > > > at http://wiki.openvz.org/Containers/Mini-summit_2008.  Please
+> > > > take a look and edit or email the list with any suggested updates.
+> > > 
+> > > Unfortunately, I can not attend. Daniel Lezcano will replace me.
+> > 
+> > Sorry to hear that, Cedric.  So far I'm pretty sure we'll have Dave
+> > Hansen, Oren Laadan, Daniel, and myself.  22 people put their names
+> > down on the wiki list, but I wonder how many ended up able to travel?
+> 
+> I and Satoshi Uchida are gonna join!
+> Satoshi would be happy if there will be a little bit chance to
+> discuss about disk I/O bandwidth control in the resource management
+> session.
 
-" getsoftoem .com in Web Browser
+Excellent.  Paul and Balbir will be moderating the cgroup and resource
+management section, but I'd be surprised if they refused to talk about
+it :)
 
-" System Requirements
-
-" For PC:
-" Intel Pentium 4 (1.4GHz processor for DV; 3.4GHz processor for HDV), Intel Centrino, Intel Xeon, (dual 2.8GHz processors for HD), or Intel Core
-" Duo (or compatible) processor; SSE2-enabled processor required for AMD systems
-" Microsoft Windows XP with Service Pack 2 or Microsoft Windows Vista Home Premium, Business, Ultimate, or Enterprise (certified for 32-bit editions)
-" 1GB of RAM for DV; 2GB of RAM for HDV and HD; more RAM recommended when running multiple components
-" 38GB of available hard-disk space (additional free space required during installation)
-" Dedicated 7,200 RPM hard drive for DV and HDV editing; striped disk array storage (RAID 0) for HD; SCSI disk subsystem preferred
-" Microsoft DirectX compatible sound card (multichannel ASIO-compatible sound card recommended)
-" 1,280x1,024 monitor resolution with 32-bit color adapter
-" DVD-ROM drive
-
-" For MAC:
-" PowerPC G4 or G5 or multicore Intel processor (Adobe Premiere Pro, Encore, and Soundbooth require a multicore Intel processor; Adobe OnLocation CS3 is a Windows application and may be used with Boot Camp)
-" Mac OS X v.10.4.9; Java Runtime Environment 1.5 required for Adobe Version Cue CS3 Server
-" 1GB of RAM for DV; 2GB of RAM for HDV and HD; more RAM recommended when running multiple components
-" 36GB of available hard-disk space (additional free space required during installation)
-" Dedicated 7,200 RPM hard drive for DV and HDV editing; striped disk array storage (RAID 0) for HD; SCSI disk subsystem preferred
-" Core Audio compatible sound card
-" 1,280x1,024 monitor resolution with 32-bit color adapter
-" DVD-ROM drive" DVD+-R burner required for DVD creation
-
-Steve Inskeep reported last week from Karachi &mdash; one of the world's largest cities &mdash; as part of our Urban Frontier series.
-
-In Iraq, there is increasing opposition to a security agreement being negotiated with the United States. U.S. negotiators say a deal can be reached by the July 31 deadline. But Iraqi lawmakers who must approve the "Status of Forces" pact aren't so sure. The deal would provide a legal framework for the continued presence of U.S. troops in Iraq.
+thanks,
+-serge
