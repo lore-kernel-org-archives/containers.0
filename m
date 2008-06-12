@@ -1,65 +1,52 @@
-From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [GIT PATCH] actually check va randomization
-Date: Wed, 11 Jun 2008 14:52:19 -0500
-Message-ID: <20080611195219.GB14392@us.ibm.com>
-References: <48173CE1.7050503@fr.ibm.com> <481ECA42.5060603@bull.net>
-	<20080609130429.GA16297@us.ibm.com> <484D4612.9000901@bull.net>
-	<20080609152336.GA27878@us.ibm.com>
-	<484E1BD3.40401@ozlabs.au.ibm.com>
-	<20080610181756.GB13817@us.ibm.com>
-	<484F0DC7.5080209@ozlabs.au.ibm.com>
-	<1213141919.7261.21.camel@nimitz>
-	<20080611183551.GA32012@us.ibm.com>
+From: "Serge E. Hallyn" <serue@us.ibm.com>
+Subject: Re: [PATCH RFC] cgroup_clone: use pid of newly created task for
+	new cgroup
+Date: Wed, 11 Jun 2008 19:37:42 -0500
+Message-ID: <20080612003742.GA14545@us.ibm.com>
+References: <20080610212302.GA1946@us.ibm.com> <6599ad830806110024i495c5e65u82828b7237434052@mail.gmail.com> <20080611154606.GA23134@us.ibm.com> <6599ad830806110859j46d51444t27f60a75e9981968@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Content-Type: text/plain; charset=us-ascii
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1756913AbYFLAiU@vger.kernel.org>
 Content-Disposition: inline
-In-Reply-To: <20080611183551.GA32012-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org
-Cc: kathys <kathys-QcUrd9fbWu1x7SfHBjqd8AC/G2K4zDHf@public.gmane.org>, Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Cedric Le Goater <clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>, Nadia Derbey <Nadia.Derbey-6ktuUTfB/bM@public.gmane.org>, Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+In-Reply-To: <6599ad830806110859j46d51444t27f60a75e9981968@mail.gmail.com>
+Sender: linux-kernel-owner@vger.kernel.org
+To: Paul Menage <menage@google.com>
+Cc: "Serge E. Hallyn" <serue@us.ibm.com>, Dan Smith <danms@us.ibm.com>, Linux Containers <containers@lists.osdl.org>, lkml <linux-kernel@vger.kernel.org>
 List-Id: containers.vger.kernel.org
 
-Quoting sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org (sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org):
-> Dave Hansen [dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org] wrote:
-> | Rather than just documenting this in the readme, actually spit
-> | out a warning on it.
-> 
-> Why not just bail out ?  Its mostly unreliable at that point anyway.
-> Besides, the warning can get buried in lot of other output.
-> ---
-> >From 84d005031a8a17bdca62dc541c296a3bea74658c Mon Sep 17 00:00:00 2001
-> From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-> Date: Wed, 11 Jun 2008 11:22:17 -0700
-> Subject: [PATCH] cryo currently requires randomize_va_space to be 0. Fail if it is not.
-> 
-> ---
->  cr.c |    1 +
->  1 files changed, 1 insertions(+), 0 deletions(-)
-> 
-> diff --git a/cr.c b/cr.c
-> index db3ada0..217c5e7 100644
-> --- a/cr.c
-> +++ b/cr.c
-> @@ -1464,6 +1464,7 @@ void check_for_va_randomize(void)
->  		return;
->  	fprintf(stderr, "WARNING: %s is set to: %d\n", VA_RANDOM_FILE, enabled);
->  	fprintf(stderr, "         Please set to 0 to make cryo more reliable\n");
-> +	exit(1);
->  }
-> 
->  void usage(void)
+Quoting Paul Menage (menage@google.com):
+> On Wed, Jun 11, 2008 at 8:46 AM, Serge E. Hallyn <serue@us.ibm.com> wrote:
+> >
+> > From f0635c20e9e9643fa9a90dd7e29b7855ff32ad40 Mon Sep 17 00:00:00 2001
+> > From: Serge Hallyn <serge@us.ibm.com>
+> > Date: Wed, 11 Jun 2008 10:41:37 -0500
+> > Subject: [PATCH 1/1] cgroup_clone: use pid of newly created task for new cgroup
+> >
+> > cgroup_clone creates a new cgroup with the pid of the task.  This works
+> > correctly for unshare, but for clone cgroup_clone is called from
+> > copy_namespaces inside copy_process, which happens before the new pid
+> > is created.  As a result, the new cgroup was created with current's pid.
+> > This patch:
+> >
+> >        1. Moves the call inside copy_process to after the new pid
+> >           is created
+> >        2. Passes the struct pid into ns_cgroup_clone (as it is not
+> >           yet attached to the task)
+> >        3. Passes a name from ns_cgroup_clone() into cgroup_clone()
+> >           so as to keep cgroup_clone() itself simpler
+> >        4. Uses pid_vnr() to get the process id value, so that the
+> >           pid used to name the new cgroup is always the pid as it
+> >           would be known to the task which did the cloning or
+> >           unsharing.  I think that is the most intuitive thing to
+> >           do.  This way, task t1 does clone(CLONE_NEWPID) to get
+> >           t2, which does clone(CLONE_NEWPID) to get t3, then the
+> >           cgroup for t3 will be named for the pid by which t2 knows
+> >           t3.
+> >
+> > (Thanks to Dan Smith for finding the main bug)
 
-Oh...  Thanks, Suka, I'd just done the same thing using an ERROR().
+Seems this bug was also reported on May 21 by Daniel Lezcano.  I'm going
+to have to blame an over-active left middle finger for hitting the d key
+without reading it...
 
-thanks,
 -serge
