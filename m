@@ -1,56 +1,41 @@
-From: Midori Sugaya <doly-uo9agqpHHEbPUJYwFPjUlCGn5s73+xxf@public.gmane.org>
-Subject: Re: mini-summit agenda
-Date: Mon, 16 Jun 2008 10:49:34 +0900
-Message-ID: <20080616054702.F50F.DOLY@dcl.info.waseda.ac.jp>
-References: <20080615214743.845F.DOLY@dcl.info.waseda.ac.jp>
-	<20080615155044.GA4427@linux.vnet.ibm.com>
-Reply-To: doly-uo9agqpHHEbPUJYwFPjUlCGn5s73+xxf@public.gmane.org
+From: KOSAKI Motohiro <kosaki.motohiro@jp.fujitsu.com>
+Subject: Re: [PATCH] introduce task cgroup v2
+Date: Mon, 16 Jun 2008 11:07:39 +0900
+Message-ID: <20080616110609.7893.KOSAKI.MOTOHIRO@jp.fujitsu.com>
+References: <20080607195733.9C77.KOSAKI.MOTOHIRO@jp.fujitsu.com> <20080613214626.9afc892f.randy.dunlap@oracle.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
+Content-Type: text/plain; charset="US-ASCII"
 Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20080615155044.GA4427-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Dhaval Giani <dhaval-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1757596AbYFPCJB@vger.kernel.org>
+In-Reply-To: <20080613214626.9afc892f.randy.dunlap@oracle.com>
+Sender: linux-kernel-owner@vger.kernel.org
+To: Randy Dunlap <randy.dunlap@oracle.com>
+Cc: kosaki.motohiro@jp.fujitsu.com, containers@lists.osdl.org, LKML <linux-kernel@vger.kernel.org>, Li Zefan <lizf@cn.fujitsu.com>, Paul Menage <menage@google.com>, Andrew Morton <akpm@linux-foundation.org>
 List-Id: containers.vger.kernel.org
 
-Hi Dhaval,
- 
-> There already is a CPU and a memory resource management based on top of
-> cgroups in mainline. How is your implementation different from the one
-> already in mainline?
+Hi Randy,
 
-Basic idea is similar as the cpusets that it will set caps for processes.
-In our system, user set the period and maximum execution time for the
-group of processes through the cgroup filesystem.
+sorry for so late responce.
+REALLY REALLY Thank you for your professional review!
 
-The different is that our implementation uses hrtimer (kernel timer) 
-functions to measure the time of execution for each process. It makes
-our system independent from the scheduler. 
-I think the point is different from the mainline cpusets implementation.
-Memory management is a simple mechanism to hook the pagefault function
-to track the quantum of using pages for group of processes. 
- 
-Our implementation is focus on the embedded system which is the demand 
-to control the task with absolute period and execution time and low overhead.
- 
-> > I hear cgroup meetnig will be held in Otawa Linux kernel symposium, and
-> > I would like to attend this meeting for sharing latest informations and
-> > future roadmap of cgroups.
-> > Could I attend the meeting?
-> > 
+I'll merge it.
+
+> > Index: b/init/Kconfig
+> > ===================================================================
+> > --- a/init/Kconfig
+> > +++ b/init/Kconfig
+> > @@ -289,6 +289,16 @@ config CGROUP_DEBUG
+> >  
+> >  	  Say N if unsure
+> >  
+> > +config CGROUP_TASK
+> > +	bool "Simple number of task accounting cgroup subsystem"
+> > +	depends on CGROUPS && EXPERIMENTAL
+> > +	default n
+> > +	help
+> > +          Provides a simple number of task accounting cgroup subsystem for
 > 
-> Sure, it is open for all.
+> Indent help test one tab + 2 spaces, please.
+> s/for/to/
 
-Thanks. I'm looking forward to joinig you.
-
-Midori
+(snip)
