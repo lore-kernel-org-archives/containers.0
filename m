@@ -1,45 +1,44 @@
-From: Peter Zijlstra <peterz@infradead.org>
+From: KOSAKI Motohiro <kosaki.motohiro@jp.fujitsu.com>
 Subject: Re: [PATCH] introduce task cgroup v2
-Date: Mon, 16 Jun 2008 09:04:42 +0200
-Message-ID: <1213599882.16944.90.camel@twins>
-References: <20080607195733.9C77.KOSAKI.MOTOHIRO@jp.fujitsu.com>
-	 <1213598394.16944.85.camel@twins>
-	 <20080616155630.78A9.KOSAKI.MOTOHIRO@jp.fujitsu.com>
+Date: Mon, 16 Jun 2008 16:06:34 +0900
+Message-ID: <20080616160520.78AC.KOSAKI.MOTOHIRO@jp.fujitsu.com>
+References: <20080616111410.7896.KOSAKI.MOTOHIRO@jp.fujitsu.com> <48560FDB.9070206@cn.fujitsu.com>
 Mime-Version: 1.0
-Content-Type: text/plain
+Content-Type: text/plain; charset="US-ASCII"
 Content-Transfer-Encoding: 7bit
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1760159AbYFPHEy@vger.kernel.org>
-In-Reply-To: <20080616155630.78A9.KOSAKI.MOTOHIRO@jp.fujitsu.com>
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1760477AbYFPHIU@vger.kernel.org>
+In-Reply-To: <48560FDB.9070206@cn.fujitsu.com>
 Sender: linux-kernel-owner@vger.kernel.org
-To: KOSAKI Motohiro <kosaki.motohiro@jp.fujitsu.com>
-Cc: containers@lists.osdl.org, LKML <linux-kernel@vger.kernel.org>, Li Zefan <lizf@cn.fujitsu.com>, Paul Menage <menage@google.com>, Andrew Morton <akpm@linux-foundation.org>
+To: Li Zefan <lizf@cn.fujitsu.com>
+Cc: kosaki.motohiro@jp.fujitsu.com, containers@lists.osdl.org, LKML <linux-kernel@vger.kernel.org>, Paul Menage <menage@google.com>, Andrew Morton <akpm@linux-foundation.org>
 List-Id: containers.vger.kernel.org
 
-On Mon, 2008-06-16 at 15:59 +0900, KOSAKI Motohiro wrote:
-> Hi Peter,
-> 
-> > > # mount -t cgroup -o task none /dev/cgroup
-> > > # mkdir /dev/cgroup/foo
-> > > # cd /dev/cgroup/foo
-> > > # ls 
-> > > notify_on_release  task.max_tasks  task.nr_tasks  tasks
-> > > # echo 100 > task.max_tasks
-> > > # echo $$ > tasks
-> > > # fork_bomb 1000 &  <- try create 1000 process
-> > > # pgrep fork_bomb | wc -l
-> > > 98
+> I guess you didn't notice this comment ? :)
+
+Agghhh, you are right.
+sorry.
+
+> >> --- a/kernel/fork.c
+> >> > +++ b/kernel/fork.c
+> >> > @@ -54,6 +54,7 @@
+> >> >  #include <linux/tty.h>
+> >> >  #include <linux/proc_fs.h>
+> >> >  #include <linux/blkdev.h>
+> >> > +#include <linux/cgroup_task.h>
+> >> >  
+> >> >  #include <asm/pgtable.h>
+> >> >  #include <asm/pgalloc.h>
+> >> > @@ -920,6 +921,8 @@ static struct task_struct *copy_process(
+> >> >  		    p->user != current->nsproxy->user_ns->root_user)
+> >> >  			goto bad_fork_free;
+> >> >  	}
+> >> > +	if (task_cgroup_can_fork(p))
+> >> > +		goto bad_fork_free;
 > > 
-> > fwiw I think the name sucks!
-> > cgroups are about grouping tasks, so what's a task cgroup?
-> 
-> Sorry, my english skill is very low.
-> I hope restrict number of tasks.
-> 
-> Do you have any name idea?
+> > If task_cgroup_can_fork() returns 0, but copy_process() fails afterwords,
+> > taskcg->nr_tasks will be in a wrong state.
 
-Sadly I suck at naming too ;-(
+Sure.
+I'll fix it, of cource.
 
-perhaps task_limit controller, or nr_tasks controller.
-
-We should preferably pick one that transfers to most other rlimit like
-controls.
+Thanks!
