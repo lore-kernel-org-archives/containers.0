@@ -1,33 +1,37 @@
 From: KOSAKI Motohiro <kosaki.motohiro@jp.fujitsu.com>
 Subject: Re: [PATCH] introduce task cgroup v2
-Date: Mon, 16 Jun 2008 11:07:39 +0900
-Message-ID: <20080616110609.7893.KOSAKI.MOTOHIRO@jp.fujitsu.com>
-References: <20080607195733.9C77.KOSAKI.MOTOHIRO@jp.fujitsu.com> <20080613214626.9afc892f.randy.dunlap@oracle.com>
+Date: Mon, 16 Jun 2008 11:16:54 +0900
+Message-ID: <20080616111410.7896.KOSAKI.MOTOHIRO@jp.fujitsu.com>
+References: <20080607195733.9C77.KOSAKI.MOTOHIRO@jp.fujitsu.com> <484E0F7F.3000606@cn.fujitsu.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="US-ASCII"
 Content-Transfer-Encoding: 7bit
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1757596AbYFPCJB@vger.kernel.org>
-In-Reply-To: <20080613214626.9afc892f.randy.dunlap@oracle.com>
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1757942AbYFPCR1@vger.kernel.org>
+In-Reply-To: <484E0F7F.3000606@cn.fujitsu.com>
 Sender: linux-kernel-owner@vger.kernel.org
-To: Randy Dunlap <randy.dunlap@oracle.com>
-Cc: kosaki.motohiro@jp.fujitsu.com, containers@lists.osdl.org, LKML <linux-kernel@vger.kernel.org>, Li Zefan <lizf@cn.fujitsu.com>, Paul Menage <menage@google.com>, Andrew Morton <akpm@linux-foundation.org>
+To: Li Zefan <lizf@cn.fujitsu.com>
+Cc: kosaki.motohiro@jp.fujitsu.com, containers@lists.osdl.org, LKML <linux-kernel@vger.kernel.org>, Paul Menage <menage@google.com>, Andrew Morton <akpm@linux-foundation.org>
 List-Id: containers.vger.kernel.org
 
-Hi Randy,
+Hi
 
-sorry for so late responce.
-REALLY REALLY Thank you for your professional review!
+> > v1 -> v2
+> >   o implement can_attach() and attach() method.
+> >   o remvoe can_fork member from cgroup_subsys.
+> >     instead, copy_process() call task_cgroup_can_fork() directly.
+> >   o fixed dead lock bug.
+> >   o add Documentation/contoroller/task.txt
+> > 
+> 
+> I think Documentation/kernel-parameters.txt should also be updated.
+> 
+> 	cgroup_disable= [KNL] Disable a particular controller
+> 			Format: {name of the controller(s) to disable}
+> 				{Currently supported controllers - "memory"}
 
-I'll merge it.
+Yup, You are right.
+I'll fix it.
 
-> > Index: b/init/Kconfig
-> > ===================================================================
-> > --- a/init/Kconfig
-> > +++ b/init/Kconfig
-> > @@ -289,6 +289,16 @@ config CGROUP_DEBUG
-> >  
-> >  	  Say N if unsure
-> >  
 > > +config CGROUP_TASK
 > > +	bool "Simple number of task accounting cgroup subsystem"
 > > +	depends on CGROUPS && EXPERIMENTAL
@@ -35,7 +39,18 @@ I'll merge it.
 > > +	help
 > > +          Provides a simple number of task accounting cgroup subsystem for
 > 
-> Indent help test one tab + 2 spaces, please.
-> s/for/to/
+> should use TAB
 
-(snip)
+Ah, Thanks.
+
+
+> > +static void task_cgroup_destroy(struct cgroup_subsys *ss, struct cgroup *cgrp)
+> > +{
+> > +	kfree(cgrp->subsys[task_cgroup_subsys_id]);
+> 
+> You should kfree task_cgroup* instead of cgroup_subsys_state*.
+
+There point to the same address.
+but, your opinion has better code clearness, of cource.
+
+Thanks.
