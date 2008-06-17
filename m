@@ -1,19 +1,11 @@
-From: kathys <kathys-8fk3Idey6ehBDgjK7y7TUQ@public.gmane.org>
-Subject: Re: Userspace checkpoint/restart hack: cryo
-Date: Tue, 17 Jun 2008 15:48:27 +1000
-Message-ID: <4857502B.2040002@au1.ibm.com>
-References: <1209144259.12718.46.camel@nimitz.home.sr71.net>
-	<48159D1D.3050302@fr.ibm.com> <481735A6.8070800@bull.net>
-	<48173CE1.7050503@fr.ibm.com> <481ECA42.5060603@bull.net>
-	<20080609130429.GA16297@us.ibm.com> <484D4612.9000901@bull.net>
-	<20080609152336.GA27878@us.ibm.com>
-	<484E1BD3.40401@ozlabs.au.ibm.com>
-	<20080610181756.GB13817@us.ibm.com>
+From: Benjamin Thery <benjamin.thery-6ktuUTfB/bM@public.gmane.org>
+Subject: [PATCH] cryo: Improve socket support: add UDP and IPv6 - V2
+Date: Tue, 17 Jun 2008 13:24:14 +0200
+Message-ID: <20080617112410.254205151@theryb.frec.bull.fr>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20080610181756.GB13817-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -24,163 +16,199 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Cc: kathys <kathys-QcUrd9fbWu1x7SfHBjqd8AC/G2K4zDHf@public.gmane.org>, Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Cedric Le Goater <clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>, Nadia Derbey <Nadia.Derbey-6ktuUTfB/bM@public.gmane.org>, Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Cc: Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Benjamin Thery <benjamin.thery-6ktuUTfB/bM@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Serge E. Hallyn wrote:
-> Quoting kathys (kathys-QcUrd9fbWu1x7SfHBjqd8AC/G2K4zDHf@public.gmane.org):
->   
->> Serge E. Hallyn wrote:
->>     
->>> Quoting Nadia Derbey (Nadia.Derbey-6ktuUTfB/bM@public.gmane.org):
->>>   
->>>       
->>>> Serge E. Hallyn wrote:
->>>>     
->>>>         
->>>>> Quoting Nadia Derbey (Nadia.Derbey-6ktuUTfB/bM@public.gmane.org):
->>>>>
->>>>>       
->>>>>           
->>>>>> Cedric Le Goater wrote:
->>>>>>
->>>>>>         
->>>>>>             
->>>>>>>           
->>>>>>>               
->>>>>>>> Looks like it has worked for me (msg1 creates 1000 msg queues, sleeps
->>>>>>>> for a while and then removes the msg queues).
->>>>>>>>             
->>>>>>>>                 
->>>>>>> cool. which kernel are you using ? 
->>>>>>>
->>>>>>> C.
->>>>>>>
->>>>>>>
->>>>>>>           
->>>>>>>               
->>>>>> 2.6.25-mm1 (sorry for the late answer - plenty of days off in 
->>>>>> France in May).
->>>>>>
->>>>>> Regards,
->>>>>> Nadia
->>>>>>         
->>>>>>             
->>>>> I'm playing with features in cryo, and keeping a git tree at:
->>>>>
->>>>> git://git.sr71.net/~hallyn/cryodev.git
->>>>>
->>>>> It's meant to exploit the extras which are in the -lxc kernel at
->>>>> lxc.sf.net.  Current latest kernel patch is at
->>>>> http://lxc.sourceforge.net/patches/2.6.26/2.6.26-rc2-mm1-lxc4/ This -lxc
->>>>> tree contains, for instance, Nadia's next_id patches, exploitation for
->>>>> setting ids for sysvipc and for tasks at fork, and updated ipc_setall
->>>>> patches (also using next_id).  The version of cryo in my git tree
->>>>> exploits these.  If you're root when you restart a task, it will clone a
->>>>> new set of namespaces and recreate your sysvipc objects, and it will
->>>>> reset your pids (even if you're not root if the pids are available).
->>>>>       
->>>>>           
->>>> Serge,
->>>>
->>>> I noticed that the sys_hijack() has disappeared from the lxc dev 
->>>> tree:  would you mind putting it back. I think it might be useful if 
->>>> we want to  start a task in a newly defined cgroup, checkpoint it and 
->>>> then try to  restart it. We will need to 'join' the restarted 
->>>> container to check if  everything has correctly be restarted. Or may 
->>>> be is there another way to  do that?
->>>>     
->>>>         
->>> Well it *could* be done similar to how cryo itself works, by ptracing
->>> the destination task and making it fork a task which execve()s a process
->>> to do the querying.  But yuck.
->>>
->>> Kathy, I'm sorry, I know I asked you to take sys_hijack() out.  Could
->>> you please put it back in?  Preferably at the end of the queue, as I don't
->>> want other patches having to be ported on top of it since its future is
->>> very suspect...  Let me know if you have trouble porting it, but it
->>> should be pretty simple.
->>>   
->>>       
->> I added sys_hijack() (namespaces-introduce-sys_hijack.patch) back, with  
->> a little bit of massaging to get it to port properly (as Cedrics  
->> clone64-change-clone_flag-type-to-u64.patch changes unsigned long to  
->> u64) but was unable to compile. I received the following errors:
->>
->> /scratch/kathys/containers/kernel_trees/upstream/kernel/fork.c: In  
->> function 'do_fork_task':
->> /scratch/kathys/containers/kernel_trees/upstream/kernel/fork.c:1342:  
->> warning: format '%1lx' expects type 'long unsigned int', but argument 3  
->> has type 'u64'
->> /scratch/kathys/containers/kernel_trees/upstream/kernel/fork.c: At top  
->> level:
->> /scratch/kathys/containers/kernel_trees/upstream/kernel/fork.c:1416:  
->> error: conflicting types for 'do_fork'
->>     
->  
->   
->> /scratch/kathys/containers/kernel_trees/upstream/include/linux/sched.h:1868: 
->> error: previous declaration of 'do_fork' was here
->>     
->
-> Did you change the do_fork definition in sched.h?
->
-> -serge
->
->   
-I changed definition in sched.h to match do_fork in fork.c
->> I changed the patch as follows so it would apply properly, but I can't  
->> work out why it breaks now, but not previously:
->>
->> Original patch from 2.6.26-rc2-mm1-lxc3:
->> @@ -1307,13 +1313,8 @@ static int fork_traceflag(unsigned clone
->> return 0;
->> }
->>
->> -/*
->> - * Ok, this is the main fork-routine.
->> - *
->> - * It copies the process, and if successful kick-starts
->> - * it and waits for it to finish using the VM if required.
->> - */
->> -long do_fork(unsigned long clone_flags,
->> +long do_fork_task(struct cgroup *cgroup,
->> + unsigned long clone_flags,
->> unsigned long stack_start,
->> struct pt_regs *regs,
->> unsigned long stack_size,
->>
->>
->> Changed to:
->>
->> @@ -1308,13 +1314,8 @@ static int fork_traceflag(u64 clone_flag
->> return 0;
->> }
->>
->> -/*
->> - * Ok, this is the main fork-routine.
->> - *
->> - * It copies the process, and if successful kick-starts
->> - * it and waits for it to finish using the VM if required.
->> - */
->> -long do_fork(u64 clone_flags,
->> +long do_fork_task(struct cgroup *cgroup,
->> + u64 clone_flags,
->> unsigned long stack_start,
->> struct pt_regs *regs,
->> unsigned long stack_size,
->>
->>
->>
->>     
->>> thanks,
->>> -serge
->>> _______________________________________________
->>> Containers mailing list
->>> Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
->>> https://lists.linux-foundation.org/mailman/listinfo/containers
->>>
->>>   
->>>       
->
->   
+I played a bit with inet sockets and cryo. With few modifications I 
+managed to "checkpoint-restart" programs that use UDP sockets to listen
+and send data.
+
+This patch improves socket checkpointing in cryo:
+* Save/restore socket family: we can checkpoint IPv6 sockets now.
+* Save/restore socket type: we can checkpoint UDP sockets too.
+
+Changelog:
+----------
+* V2:
+    - Add helper issockbound() to improve readability of getsockinfo() 
+    - Cleaned up a bunch of unneeded casts in getsockinfo()
+    - Move socket binding code from restore_sock() to bind_sock()
+* V1:
+    - Initial version
+
+Simple test programs for UDP sockets available upon request :)
+
+Regards,
+Benjamin
+
+Signed-off-by: Benjamin Thery <benjamin.thery-6ktuUTfB/bM@public.gmane.org>
+---
+ cr.c |   93 ++++++++++++++++++++++++++++++++++++++++++++++++++++---------------
+ 1 file changed, 73 insertions(+), 20 deletions(-)
+
+Index: cryodev/cr.c
+===================================================================
+--- cryodev.orig/cr.c
++++ cryodev/cr.c
+@@ -67,11 +67,15 @@ int pagesize = 0;
+ 
+ typedef struct isockinfo_t {
+ 	int fdnum;
+-	int type;			/* socket type: UDP, TCP */
++	int type;			/* socket type: SOCK_STREAM, SOCK_DGRAM */
++	int family;			/* socket family: AF_INET, AF_INET6 */
+ 	int mode;			/* bind, listen, connect */
+ 	int opt;			/* various sockopt */
+ 	int backlog;			/* for listen(2) */
+-	struct sockaddr_in locaddr;	/* for bind(2) */
++	union {
++		struct sockaddr_in  saddr4;
++		struct sockaddr_in6 saddr6;
++	} locaddr;			/* for bind(2) */
+ 	char tcpstate[TPI_LEN];
+ } isockinfo_t;
+ 
+@@ -177,9 +181,25 @@ int getmaps(pid_t pid, memseg_t **p)
+ 	return nseg;
+ }
+ 
++static int issockbound(struct sockaddr *sa)
++{
++	if (sa->sa_family == AF_INET) {
++		struct sockaddr_in *sin = (struct sockaddr_in *) sa;
++		if (sin->sin_addr.s_addr != INADDR_ANY ||
++		    sin->sin_port != 0)
++			return 1;
++	} else if (sa->sa_family == AF_INET6) {
++		struct sockaddr_in6 *sin6 = (struct sockaddr_in6 *) sa;
++		if (memcmp(&sin6->sin6_addr, &in6addr_any, 16) != 0 ||
++		    sin6->sin6_port != 0)
++			return 1;
++	}
++	return 0;
++}
++
+ int getsockinfo(pid_t pid, pinfo_t *pi, int num)
+ {
+-	struct sockaddr name;
++	struct sockaddr_storage name;
+ 	int namelen = (int)sizeof(name), ret = 0;
+ 	int tpi_len = TPI_LEN;
+ 	int flag, flaglen;
+@@ -188,35 +208,46 @@ int getsockinfo(pid_t pid, pinfo_t *pi, 
+ 	/* get socketname and see if it is an unix or an inet socket */
+ 	memset(&name, 0, sizeof(name));
+ 	PT_GETSOCKNAME(pid, num, &name, &namelen);
+-	t_d(name.sa_family);
++	t_d(name.ss_family);
+ 
+-	if (name.sa_family != (sa_family_t)AF_INET) return ret;
++	if (name.ss_family != (sa_family_t)AF_INET &&
++	    name.ss_family != (sa_family_t)AF_INET6)
++		return ret;
+ 		
+ 	if (! (pi->si = (isockinfo_t *)realloc(pi->si, sizeof(isockinfo_t) * (pi->ns+1)))) return -1;
+ 	psi = &pi->si[pi->ns];
+-	memset((void *)psi, 0, sizeof(*psi));
++	memset(psi, 0, sizeof(*psi));
+ 
+ 	//pi->si[pi->ns].fdnum = num;
+ 	psi->fdnum = num;
++	psi->family = name.ss_family;
+ 
+ 	psi->mode = ISOCK_UNKNOWN;
+-	memcpy((void *)&psi->locaddr, (void *)&name, sizeof(name));
+-	if (psi->locaddr.sin_addr.s_addr != 0 || psi->locaddr.sin_port != 0) psi->mode |= ISOCK_BIND;
+-	
++	memcpy(&psi->locaddr, &name, namelen);
++
++	if (issockbound((struct sockaddr *)&psi->locaddr))
++		psi->mode |= ISOCK_BIND;
++
++	flag = 0;
++	flaglen = sizeof(flag);
++	PT_GETSOCKOPT(pid, num, SOL_SOCKET, SO_TYPE, &flag, &flaglen);
++	if (flag)
++		psi->type = flag;
++
+ 	flag = 0;
+-	flaglen = (int)sizeof(flag);
++	flaglen = sizeof(flag);
+ 	PT_GETSOCKOPT(pid, num, SOL_SOCKET, SO_REUSEADDR, &flag, &flaglen);
+ 	if (flag) psi->opt |= ISOCK_REUSEADDR; 
+ 
+ 	flag = 0;
+-	flaglen = (int)sizeof(flag);
++	flaglen = sizeof(flag);
+ 	PT_GETSOCKOPT(pid, num, SOL_SOCKET, SO_ACCEPTCONN, &flag, &flaglen);
+ 	if (flag) {
+ 		psi->mode |= ISOCK_LISTEN;
+ 		//t_d(PT_GETSOCKOPT(pid, num, SOL_TCP, TPI_INFO, &tpi_info, &tpi_info_len));
+ 	}
+ 
+-	namelen = (int)sizeof(name);
++	namelen = sizeof(name);
+ 	if (PT_GETPEERNAME(pid, num, &name, &namelen) == 0) {
+ 		t_d(psi->mode |= ISOCK_CONNECT);
+ 		t_d(PT_GETSOCKOPT(pid, num, SOL_TCP, TPI_TCP_STATE, pi->si[pi->ns].tcpstate, &tpi_len));
+@@ -859,6 +890,31 @@ error:
+ 	return -1;
+ }
+ 
++static void bind_sock(pid_t pid, isockinfo_t *isockinfo)
++{
++	int len;
++	struct sockaddr *sa;
++	struct sockaddr_in sin;
++	struct sockaddr_in6 sin6;
++
++	if (isockinfo->family == AF_INET) {
++		len = sizeof(sin);
++		memcpy(&sin, &isockinfo->locaddr.saddr4, len);
++		if (isockinfo->mode & ISOCK_CONNECT)
++			sin6.sin6_port = htons(0);
++		sa = (struct sockaddr *) &sin;
++	} else if (isockinfo->family == AF_INET6) {
++		len = sizeof(sin6);
++		memcpy(&sin6, &isockinfo->locaddr.saddr6, len);
++		if (isockinfo->mode & ISOCK_CONNECT)
++			sin.sin_port = htons(0);
++		sa = (struct sockaddr *) &sin6;
++	} else
++		ERROR("Unsupported socket family: %d\n",
++		      isockinfo->family);
++	t_d(PT_BIND(pid, isockinfo->fdnum, sa, len));
++}
++
+ int restore_sock(int fd, pid_t pid)
+ {
+ 	char item[64];
+@@ -873,21 +929,18 @@ int restore_sock(int fd, pid_t pid)
+ 		else ITEM_SET(isockinfo, isockinfo_t);
+ 		else break;	// unknown item
+ 
+-		t_d(sock = PT_SOCKET(pid, AF_INET, SOCK_STREAM, 0));
++		t_d(sock = PT_SOCKET(pid, isockinfo->family, isockinfo->type, 0));
+ 		if (sock < 0) {
+ 			ERROR("PT_SOCKET(%d, %d, %d, %d) errno=%d: %s",
+-				pid, AF_INET, SOCK_STREAM, 0, sock, strerror(-sock)); 
++			      pid, isockinfo->family, isockinfo->type, 0,
++			      sock, strerror(-sock));
+ 		}
+ 		t_d(PT_DUP2(pid, sock, isockinfo->fdnum));
+ 		if (sock != isockinfo->fdnum) t_d(PT_CLOSE(pid, sock));
+ 		
+-		if (isockinfo->mode & ISOCK_BIND) {
+-			struct sockaddr_in sin;
++		if (isockinfo->mode & ISOCK_BIND)
++			bind_sock(pid, isockinfo);
+ 
+-			memcpy((void *)&sin, (void *)&isockinfo->locaddr, sizeof(sin));
+-			if (isockinfo->mode & ISOCK_CONNECT) sin.sin_port = htons(0);
+-			t_d(PT_BIND(pid, isockinfo->fdnum, &sin, sizeof(sin)));
+-		}
+ 		if (isockinfo->mode & ISOCK_LISTEN) {
+ 			t_d(PT_LISTEN(pid, isockinfo->fdnum, 64));	//FIXME: get backlog from TPI_INFO
+ 		}
+
+-- 
