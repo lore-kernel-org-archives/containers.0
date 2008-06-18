@@ -1,105 +1,137 @@
-From: "Paul Menage" <menage@google.com>
-Subject: Re: [PATCH] cgroup: support checking of subsystem dependencies
-Date: Wed, 18 Jun 2008 14:13:58 -0700
-Message-ID: <6599ad830806181413y5d0ef1bfyfc54c17ee904d744@mail.gmail.com>
-References: <4858C0ED.2080905@cn.fujitsu.com>
+From: sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org
+Subject: Re: [RFC][PATCH][cryo] Save/restore state of unnamed pipes
+Date: Wed, 18 Jun 2008 14:56:12 -0700
+Message-ID: <20080618215612.GA27603@us.ibm.com>
+References: <20080617212950.GB11826@us.ibm.com>
+	<20080617223039.GB26942@us.ibm.com>
+	<1213745472.16057.37.camel@localhost.localdomain>
+	<20080618003214.GA14699@us.ibm.com>
+	<1213754646.16057.107.camel@localhost.localdomain>
+	<20080618180025.GA25261@us.ibm.com>
+	<1213819055.28482.50.camel@localhost.localdomain>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
+Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1754916AbYFRVOX@vger.kernel.org>
-In-Reply-To: <4858C0ED.2080905@cn.fujitsu.com>
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-Sender: linux-kernel-owner@vger.kernel.org
-To: Li Zefan <lizf@cn.fujitsu.com>
-Cc: Andrew Morton <akpm@linux-foundation.org>, LKML <linux-kernel@vger.kernel.org>, "containers@lists.osdl.org" <containers@lists.osdl.org>, Balbir Singh <balbir@linux.vnet.ibm.com>, KAMEZAWA Hiroyuki <kamezawa.hiroyu@jp.fujitsu.com>, Paul Jackson <pj@sgi.com>
+In-Reply-To: <1213819055.28482.50.camel-bi+AKbBUZKY6gyzm1THtWbp2dZbC/Bob@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Cc: Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Wed, Jun 18, 2008 at 1:01 AM, Li Zefan <lizf@cn.fujitsu.com> wrote:
-> This allows one subsystem to require that it only be mounted when some
-> other subsystems are also present in the proposed hierarchy.
->
-> For example if subsystem foo depends on bar, the following will fail:
->  # mount -t cgroup -ofoo xxx /dev/cgroup
->
-> You should mount with both subsystems:
->  # mount -t cgroup -ofoo,bar xxx /dev/cgroup
->
-> Signed-off-by: Li Zefan <lizf@cn.fujitsu.com>
-> ---
->  Documentation/cgroups.txt |    6 ++++++
->  include/linux/cgroup.h    |    2 ++
->  kernel/cgroup.c           |   30 ++++++++++++++++++++++++++++++
->  3 files changed, 38 insertions(+), 0 deletions(-)
->
-> diff --git a/Documentation/cgroups.txt b/Documentation/cgroups.txt
-> index 824fc02..8252f5b 100644
-> --- a/Documentation/cgroups.txt
-> +++ b/Documentation/cgroups.txt
-> @@ -530,6 +530,12 @@ and root cgroup. Currently this will only involve movement between
->  the default hierarchy (which never has sub-cgroups) and a hierarchy
->  that is being created/destroyed (and hence has no sub-cgroups).
->
-> +int subsys_depend(struct cgroup_subsys *ss, unsigned long subsys_bits)
-> +
-> +Called when a cgroup subsystem wants to check if some other subsystems
-> +are also present in the proposed hierarchy. If this method returns error,
-> +the mount of the cgroup filesystem will fail.
-> +
->  4. Questions
->  ============
->
-> diff --git a/include/linux/cgroup.h b/include/linux/cgroup.h
-> index e155aa7..fc99ba4 100644
-> --- a/include/linux/cgroup.h
-> +++ b/include/linux/cgroup.h
-> @@ -305,6 +305,8 @@ struct cgroup_subsys {
->                        struct cgroup *cgrp);
->        void (*post_clone)(struct cgroup_subsys *ss, struct cgroup *cgrp);
->        void (*bind)(struct cgroup_subsys *ss, struct cgroup *root);
-> +       int (*subsys_depend)(struct cgroup_subsys *ss,
-> +                             unsigned long subsys_bits);
->        /*
->         * This routine is called with the task_lock of mm->owner held
->         */
-> diff --git a/kernel/cgroup.c b/kernel/cgroup.c
-> index 15ac0e1..a4c8671 100644
-> --- a/kernel/cgroup.c
-> +++ b/kernel/cgroup.c
-> @@ -837,6 +837,25 @@ static int parse_cgroupfs_options(char *data,
->        return 0;
->  }
->
-> +static int check_subsys_dependency(unsigned long subsys_bits)
-> +{
-> +       int i;
-> +       int ret;
-> +       struct cgroup_subsys *ss;
-> +
-> +       for (i = 0; i < CGROUP_SUBSYS_COUNT; i++) {
-> +               ss = subsys[i];
-> +
-> +               if (test_bit(i, &subsys_bits) && ss->subsys_depend) {
-> +                       ret = ss->subsys_depend(ss, subsys_bits);
-> +                       if (ret)
-> +                               return ret;
-> +               }
-> +       }
-> +
-> +       return 0;
-> +}
-> +
->  static int cgroup_remount(struct super_block *sb, int *flags, char *data)
->  {
->        int ret = 0;
-> @@ -852,6 +871,10 @@ static int cgroup_remount(struct super_block *sb, int *flags, char *data)
->        if (ret)
->                goto out_unlock;
->
-> +       ret = check_subsys_dependency(opts.subsys_bits);
-> +       if (ret)
-> +               goto out_unlock;
-> +
+Matt Helsley [matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org] wrote:
+| 
+| > So let me rephrase the problem.
+| > 
+| > Suppose the checkpointed application was using fds in following
+| > "orig-fd-set"
+| > 
+| > 	{ [0..10], 18, 27 }
+| > 
+| > where 18 and 27 are part of a pipe. For simplicity lets assume that
+| > 18 is the read-side-fd.
+| 
+| so orig_pipefd[0] == 18
+| and orig_pipefd[1] == 27
+| 
+| > We checkpointed this application and are now trying to restart it.
+| > 
+| > In the restarted application, we would call
+| > 
+| > 	dup2(fd1, fd2),
+| > 
+| > where 'fd1' is some new, random fd and 'fd2' is an fd in 'orig-fd-set'
+|                            ^^^^^^  Even if they were truly random, this
+| does not preclude fd1 from having the same value as an fd in the
+| remaining orig-fd-set -- such as one of the two we're about to try and
+| restart with pipe().
 
-Can we just call this from one place, in parse_cgroupfs_options() ?
+I agree. fd1 could be an hither-to-unseen fd from the 'orig-fd-set'.
 
-Paul
+| 
+| > (say fd2 = 18).
+| 
+| fd1 = restarted_pipefd[0]
+| fd2 = restarted_pipefd[1]
+| 
+| In my example fd1 == 27 and fd2 == 18
+| 
+| > IIUC, there is a risk here of 'fd2' being closed accidentally while
+| > it is in use.
+| 
+| 	Yes, that's the risk.
+| 
+| > But, the only way I can see 'fd2' being in use in the restarted process
+| > is if _cryo_ opened some file _during_ restart and did not close. I ran
+| 
+| 	Both file descriptors returned from pipe() are in use during restart
+| and closing one of them would not be proper. Cryo hasn't "forgotten" to
+| close one of them -- cryo needs to dup2() both of them to their
+| "destination" fds. But if they have been swapped or if just one is the
+| "destination" of the other then you could end up with a broken pipe.
+
+Ok I see what you are saying. 
+
+The assumption I have is that we would process the fds from 'orig-fd-set'
+in ascending order. Its good to confirm that assumption now :-)
+
+proc_readfd_common() seems to return the fds in ascending order (so
+readdir() of "/proc/pid/fd/" would get them in ascending order - no ?)
+
+If we process 'orig-fd-set' in order and suppose we create the pipe for
+the smaller of the two fds (could be the write-side). Then the other side
+of the pipe would either not collide with an existing fd or that
+fd would not be in the 'orig-fd-set' (in the latter case it would
+be safe for dup2() to close).
+
+| 
+| > into this early on with the randomize_va_space file (which was easily
+| > fixed).
+| 
+| 	This logic only works if cryo only has one new fd at a time. However
+| that's not possible with pipe(). Or socketpair(). In those cases one of
+| the two new fds could be the "destination" fd for the other. In that
+| case dup2() will kindly close it for you and break your new
+| pipe/socketpair! :)
+| 
+| 	That's why I asked if POSIX guarantees the read side file descriptor is
+| always less than the write side. If it does then the numbers can't be
+| swapped and maybe using your assumption that we don't have any other fds
+| accidentally left open ensures dup2() will be safe.
+
+I don't think POSIX guarantees, but will double check.
+
+| 
+| > Would cryo need to keep one or more temporary/debug files open in the
+| > restarted process (i.e files that are not in the 'orig-fd-set').
+| 
+| 	There's no need to keep temporary/debug files open that I can see. Just
+| a need to be careful when more than one new file descriptor has been
+| created before doing a dup2().
+| 
+| > If cryo does, then maybe it could open such files:
+| > 
+| > 	- after clone() (so files are not open in restarted process), or
+| > 
+| > 	- find the last_fd used and dup2() to that fd, leaving the
+| > 	  'orig-fd-set' all open/available for restarted process 
+| > 
+| > For debug, before each 'dup2(fd1, fd2)' we could 'fstat(fd2, &buf)'
+| > to ensure 'fd2' is not in use and error out if it is.
+| 
+| fstat() could certainly be useful for debugging dup2(). However it still
+| doesn't nicely show us whether there are any fds we've leaked that we
+| forgot about unless we fstat() all possible fds and then compare the set
+| of existing fds to the orig-fd-set.
+
+Yes, was suggesting fstat() only to detect collisions, but yes, to
+detect leaks, we have to do more.
