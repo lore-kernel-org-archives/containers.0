@@ -1,123 +1,175 @@
 From: Benjamin Thery <benjamin.thery@bull.net>
-Subject: [PATCH 07/11] sysfs: Implement sysfs_delete_link and
- sysfs_rename_link
-Date: Wed, 18 Jun 2008 19:08:39 +0200
-Message-ID: <20080618170731.153832341@theryb.frec.bull.fr>
+Subject: [PATCH 08/11] driver core: Implement tagged directory support for
+ device classes.
+Date: Wed, 18 Jun 2008 19:08:49 +0200
+Message-ID: <20080618170731.302573128@theryb.frec.bull.fr>
 References: <20080618170729.808539948@theryb.frec.bull.fr>
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1756767AbYFRRLj@vger.kernel.org>
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1756234AbYFRRLw@vger.kernel.org>
 Sender: linux-kernel-owner@vger.kernel.org
 To: Greg Kroah-Hartman <gregkh@suse.de>, Andrew Morton <akpm@linux-foundation.org>
 Cc: Eric Biederman <ebiederm@xmission.com>, Daniel Lezcano <dlezcano@fr.ibm.com>, Serge Hallyn <serue@us.ibm.com>, linux-kernel@vger.kernel.org, Tejun Heo <htejun@gmail.com>, Al Viro <viro@ftp.linux.org.uk>, Linux Containers <containers@lists.osdl.org>, Benjamin Thery <benjamin.thery@bull.net>
 List-Id: containers.vger.kernel.org
 
-sysfs: Implement sysfs_delete_link and sysfs_rename_link
+driver core: Implement tagged directory support for device classes.
 
-When removing a symlink sysfs_remove_link does not provide
-enough information to figure out which tagged directory the symlink
-falls in.  So I need sysfs_delete_link which is passed the target
-of the symlink to delete.
+This patch enables tagging on every class directory if struct class
+has tag_ops.
 
-Further half the time when we are removing a symlink the code is
-actually renaming the symlink but not doing so explicitly because
-we don't have a symlink rename method. So I have added sysfs_rename_link
-as well.
-
-Both of these functions now have enough information to find a symlink
-in a tagged directory.  The only restriction is that they must be called
-before the target kobject is renamed or deleted.  If they are called
-later I loose track of which tag the target kobject was marked with
-and can no longer find the old symlink to remove it.
+In addition device_del and device_rename were modified to use
+sysfs_delete_link and sysfs_rename_link respectively to ensure
+when these operations happen on devices whose classes have
+tag_ops that they work properly.
 
 Signed-off-by: Eric W. Biederman <ebiederm@xmission.com>
 Signed-off-by: Benjamin Thery <benjamin.thery@bull.net>
 ---
- fs/sysfs/symlink.c    |   31 +++++++++++++++++++++++++++++++
- include/linux/sysfs.h |   17 +++++++++++++++++
- 2 files changed, 48 insertions(+)
+ drivers/base/class.c   |   30 ++++++++++++++++++++++++++----
+ drivers/base/core.c    |   41 +++++++++++++++++++++++------------------
+ include/linux/device.h |    2 ++
+ 3 files changed, 51 insertions(+), 22 deletions(-)
 
-Index: linux-mm/fs/sysfs/symlink.c
+Index: linux-mm/drivers/base/class.c
 ===================================================================
---- linux-mm.orig/fs/sysfs/symlink.c
-+++ linux-mm/fs/sysfs/symlink.c
-@@ -80,6 +80,21 @@ int sysfs_create_link(struct kobject * k
+--- linux-mm.orig/drivers/base/class.c
++++ linux-mm/drivers/base/class.c
+@@ -135,6 +135,17 @@ static void remove_class_attrs(struct cl
+ 	}
  }
  
- /**
-+ *	sysfs_delete_link - remove symlink in object's directory.
-+ *	@kobj:	object we're acting for.
-+ *	@targ:	object we're pointing to.
-+ *	@name:	name of the symlink to remove.
-+ *
-+ *	Unlike sysfs_remove_link sysfs_delete_link has enough information
-+ *	to successfully delete symlinks in tagged directories.
-+ */
-+void sysfs_delete_link(struct kobject *kobj, struct kobject *targ,
-+			const char *name)
++static int class_setup_tagging(struct class *cls)
 +{
-+	sysfs_hash_and_remove(targ, kobj->sd, name);
++	const struct sysfs_tagged_dir_operations *tag_ops;
++
++	tag_ops = cls->tag_ops;
++	if (!tag_ops)
++		return 0;
++
++	return sysfs_enable_tagging(&cls->p->class_subsys.kobj, tag_ops);
 +}
 +
-+/**
-  *	sysfs_remove_link - remove symlink in object's directory.
-  *	@kobj:	object we're acting for.
-  *	@name:	name of the symlink to remove.
-@@ -97,6 +112,22 @@ void sysfs_remove_link(struct kobject * 
- 	sysfs_hash_and_remove(kobj, parent_sd, name);
- }
- 
-+/**
-+ *	sysfs_rename_link - rename symlink in object's directory.
-+ *	@kobj:	object we're acting for.
-+ *	@targ:	object we're pointing to.
-+ *	@old:	previous name of the symlink.
-+ *	@new:	new name of the symlink.
-+ *
-+ *	A helper function for the common rename symlink idiom.
-+ */
-+int sysfs_rename_link(struct kobject *kobj, struct kobject *targ,
-+			const char *old, const char *new)
-+{
-+	sysfs_delete_link(kobj, targ, old);
-+	return sysfs_create_link(kobj, targ, new);
-+}
-+
- static int sysfs_get_target_path(struct sysfs_dirent *parent_sd,
- 				 struct sysfs_dirent *target_sd, char *path)
+ int __class_register(struct class *cls, struct lock_class_key *key)
  {
-Index: linux-mm/include/linux/sysfs.h
+ 	struct class_private *cp;
+@@ -171,13 +182,24 @@ int __class_register(struct class *cls, 
+ 	cls->p = cp;
+ 
+ 	error = kset_register(&cp->class_subsys);
+-	if (error) {
+-		kfree(cp);
+-		return error;
+-	}
++	if (error)
++		goto out_free_cp;
++
++	error = class_setup_tagging(cls);
++	if (error)
++		goto out_unregister;
++
+ 	error = add_class_attrs(class_get(cls));
+ 	class_put(cls);
++	if (error)
++		goto out_unregister;
++out:
+ 	return error;
++out_unregister:
++	kset_unregister(&cp->class_subsys);
++out_free_cp:
++	kfree(cp);
++	goto out;
+ }
+ EXPORT_SYMBOL_GPL(__class_register);
+ 
+Index: linux-mm/drivers/base/core.c
 ===================================================================
---- linux-mm.orig/include/linux/sysfs.h
-+++ linux-mm/include/linux/sysfs.h
-@@ -113,6 +113,12 @@ int __must_check sysfs_create_link(struc
- 				   const char *name);
- void sysfs_remove_link(struct kobject *kobj, const char *name);
+--- linux-mm.orig/drivers/base/core.c
++++ linux-mm/drivers/base/core.c
+@@ -618,6 +618,10 @@ static struct kobject *get_device_parent
+ 			kobject_put(k);
+ 			return NULL;
+ 		}
++		/* If we created a new class-directory setup tagging */
++		if (dev->class->tag_ops)
++			sysfs_enable_tagging(k, dev->class->tag_ops);
++
+ 		/* do not emit an uevent for this simple "glue" directory */
+ 		return k;
+ 	}
+@@ -754,13 +758,14 @@ static void device_remove_class_symlinks
  
-+int sysfs_rename_link(struct kobject *kobj, struct kobject *target,
-+			const char *old_name, const char *new_name);
-+
-+void sysfs_delete_link(struct kobject *dir, struct kobject *targ,
-+			const char *name);
-+
- int __must_check sysfs_create_group(struct kobject *kobj,
- 				    const struct attribute_group *grp);
- int sysfs_update_group(struct kobject *kobj,
-@@ -194,6 +200,17 @@ static inline void sysfs_remove_link(str
- {
- }
+ 	if (dev->kobj.parent != &dev->class->p->class_subsys.kobj &&
+ 	    device_is_not_partition(dev))
+-		sysfs_remove_link(&dev->class->p->class_subsys.kobj,
++		sysfs_delete_link(&dev->class->p->class_subsys.kobj, &dev->kobj,
+ 				  dev_name(dev));
+ #else
+ 	if (dev->parent && device_is_not_partition(dev))
+ 		sysfs_remove_link(&dev->kobj, "device");
  
-+static inline int sysfs_rename_link(struct kobject *k, struct kobject *t,
-+				    const char *old_name, const char *new_name)
-+{
-+	return 0;
-+}
+-	sysfs_remove_link(&dev->class->p->class_subsys.kobj, dev_name(dev));
++	sysfs_delete_link(&dev->class->p->class_subsys.kobj, &dev->kobj,
++			  dev_name(dev));
+ #endif
+ 
+ 	sysfs_remove_link(&dev->kobj, "subsystem");
+@@ -1349,6 +1354,16 @@ int device_rename(struct device *dev, ch
+ 	strlcpy(old_device_name, dev_name(dev), BUS_ID_SIZE);
+ 	strlcpy(dev->bus_id, new_name, BUS_ID_SIZE);
+ 
++#ifndef CONFIG_SYSFS_DEPRECATED
++	if (dev->class &&
++	    (dev->kobj.parent != &dev->class->p->class_subsys.kobj)) {
++		error = sysfs_rename_link(&dev->class->p->class_subsys.kobj,
++			&dev->kobj, old_device_name, new_name);
++		if (error)
++			goto out;
++	}
++#endif
 +
-+static inline void sysfs_delete_link(struct kobject *k, struct kobject *t,
-+				     const char *name)
-+{
-+}
+ 	error = kobject_rename(&dev->kobj, new_name);
+ 	if (error) {
+ 		strlcpy(dev->bus_id, old_device_name, BUS_ID_SIZE);
+@@ -1357,23 +1372,13 @@ int device_rename(struct device *dev, ch
+ 
+ #ifdef CONFIG_SYSFS_DEPRECATED
+ 	if (old_class_name) {
++		error = -ENOMEM;
+ 		new_class_name = make_class_name(dev->class->name, &dev->kobj);
+-		if (new_class_name) {
+-			error = sysfs_create_link(&dev->parent->kobj,
+-						  &dev->kobj, new_class_name);
+-			if (error)
+-				goto out;
+-			sysfs_remove_link(&dev->parent->kobj, old_class_name);
+-		}
+-	}
+-#else
+-	if (dev->class) {
+-		error = sysfs_create_link(&dev->class->p->class_subsys.kobj,
+-					  &dev->kobj, dev_name(dev));
+-		if (error)
+-			goto out;
+-		sysfs_remove_link(&dev->class->p->class_subsys.kobj,
+-				  old_device_name);
++		if (new_class_name)
++			error = sysfs_rename_link(&dev->parent->kobj,
++						  &dev->kobj,
++						  old_class_name,
++						  new_class_name);
+ 	}
+ #endif
+ 
+Index: linux-mm/include/linux/device.h
+===================================================================
+--- linux-mm.orig/include/linux/device.h
++++ linux-mm/include/linux/device.h
+@@ -195,6 +195,8 @@ struct class {
+ 	int (*suspend)(struct device *dev, pm_message_t state);
+ 	int (*resume)(struct device *dev);
+ 
++	const struct sysfs_tagged_dir_operations *tag_ops;
 +
- static inline int sysfs_create_group(struct kobject *kobj,
- 				     const struct attribute_group *grp)
- {
+ 	struct pm_ops *pm;
+ 	struct class_private *p;
+ };
 
 -- 
