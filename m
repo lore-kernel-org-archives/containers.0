@@ -1,68 +1,84 @@
-From: Benjamin Thery <benjamin.thery@bull.net>
-Subject: Re: [PATCH 01/11] sysfs: Support for preventing unmounts.
-Date: Thu, 19 Jun 2008 10:54:49 +0200
-Message-ID: <485A1ED9.5040704@bull.net>
-References: <20080618170729.808539948@theryb.frec.bull.fr>	<20080618170730.256129077@theryb.frec.bull.fr>	<1213811063.7922.39.camel@nimitz> <m18wx2o638.fsf@frodo.ebiederm.org>
+From: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+Subject: Re: Question : memrlimit cgroup's task_move (2.6.26-rc5-mm3)
+Date: Thu, 19 Jun 2008 19:22:27 +0900
+Message-ID: <20080619192227.972ded64.kamezawa.hiroyu@jp.fujitsu.com>
+References: <20080619121435.f868c110.kamezawa.hiroyu@jp.fujitsu.com>
+	<4859CEE7.9030505@linux.vnet.ibm.com>
+	<20080619122429.138a1d32.kamezawa.hiroyu@jp.fujitsu.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1754898AbYFSI7y@vger.kernel.org>
-In-Reply-To: <m18wx2o638.fsf@frodo.ebiederm.org>
-Sender: linux-kernel-owner@vger.kernel.org
-To: "Eric W. Biederman" <ebiederm@xmission.com>
-Cc: Dave Hansen <dave@linux.vnet.ibm.com>, Greg Kroah-Hartman <gregkh@suse.de>, Andrew Morton <akpm@linux-foundation.org>, Tejun Heo <htejun@gmail.com>, linux-kernel@vger.kernel.org, Al Viro <viro@ftp.linux.org.uk>, Linux Containers <containers@lists.osdl.org>, "Serge E. Hallyn" <serue@us.ibm.com>, Daniel Lezcano <dlezcano@fr.ibm.com>
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <20080619122429.138a1d32.kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+Cc: "containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org" <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, "linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org" <linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org>, "menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org" <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Eric W. Biederman wrote:
-> Dave Hansen <dave@linux.vnet.ibm.com> writes:
-> 
->> On Wed, 2008-06-18 at 19:07 +0200, Benjamin Thery wrote:
->>> To support mounting multiple instances of sysfs occassionally I
->>> need to walk through all of the currently present sysfs super blocks.
->> I know you may have addressed this before, but I forgot and it didn't
->> make it into the changelogs.
->>
->> Why are you doing this again?  It seems like an awfully blunt
->> instrument.  
-> 
-> So the fundamentals.
-> - The data in sysfs fundamentally changes behind the back of the
->   VFS and we need to keep the VFS in sync.  Essentially this is the
->   distributed filesystem problem.
-> 
-> - In particular for sysfs_rename and sysfs_move_dir we need to support finding
->   the dcache entries and calling d_move.  So that the dcache does not
->   get into an inconsistent state.  Timeouts and invalidates like NFS
->   uses are to be  avoided if at all possible.
-> 
-> - Coming through the vfs we are guaranteed that the filesystem will
->   not be unmounted while we have a reference on a dentry, and with
->   multiple mounts we do not get that guarantee.  Therefore to get that
->   guarantee for all of the superblocks we need the blunt instrument.
-> 
-> - Since mount/unmount are rare blocking them is no big deal.
-> 
-> I believe any distributed filesystem that is together enough to tell
-> us about renames (so we can update the dcache) instead of doing the
-> NFS timeout will need the ability to block mount/unmount while it is
-> executing d_move.
-> 
-> Currently sysfs does not need to block mounts only because we perform
-> an internal mount and then never unmount sysfs.
+On Thu, 19 Jun 2008 12:24:29 +0900
+KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org> wrote:
 
-Thanks Eric for detailing this.
-I think you explained it in much better way than I could do.
-You're the author of the patch after all ;-)
-
-  Benjamin
-
+> On Thu, 19 Jun 2008 08:43:43 +0530
+> Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org> wrote:
 > 
-> Eric
+> >
+> > > I think the charge of the new group goes to minus. right ?
+> > > (and old group's charge never goes down.)
+> > > I don't think this is "no problem".
+> > > 
+> > > What kind of patch is necessary to fix this ?
+> > > task_attach() should be able to fail in future ?
+> > > 
+> > > I'm sorry if I misunderstand something or this is already in TODO list.
+> > > 
+> > 
+> > It's already on the TODO list. Thanks for keeping me reminded about it.
+> > 
+> Okay, I'm looking foward to see how can_attach and roll-back(if necessary)
+> is implemnted.
+> As you know, I'm interested in how to handle failure of task move.
 > 
-> 
+One more thing...
+Now, charge is done at
 
+ - vm is inserted (special case?)
+ - vm is expanded (mmap is called, stack growth...)
 
--- 
-B e n j a m i n   T h e r y  - BULL/DT/Open Software R&D
+And uncharge is done at
+ - vm is removed (success of munmap)
+ - exit_mm is called (exit of process)
 
-    http://www.bull.com
+But it seems charging at may_expand_vm() is not good.
+The mmap can fail after may_expand_vm() because of various reason,
+but charge is already done at may_expand_vm()....and no roll-back.
+
+== an easy example of leak in stack growth handling ==
+[root@iridium kamezawa]# cat /opt/cgroup/test/memrlimit.usage_in_bytes
+71921664
+[root@iridium kamezawa]# ulimit -s 3
+[root@iridium kamezawa]# ls
+Killed
+[root@iridium kamezawa]# ls
+Killed
+[root@iridium kamezawa]# ls
+Killed
+[root@iridium kamezawa]# ls
+Killed
+[root@iridium kamezawa]# ls
+Killed
+[root@iridium kamezawa]# ulimit -s unlimited
+[root@iridium kamezawa]# cat /opt/cgroup/test/memrlimit.usage_in_bytes
+72368128
+[root@iridium kamezawa]#
+==
+
+Thanks,
+-Kame
