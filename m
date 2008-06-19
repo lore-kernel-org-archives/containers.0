@@ -1,14 +1,14 @@
-From: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Subject: Re: [RFC] [PATCH] cgroup: add "procs" control file
-Date: Thu, 19 Jun 2008 11:07:14 +0800
-Message-ID: <4859CD62.8090402__42429.2138116018$1213845179$gmane$org@cn.fujitsu.com>
-References: <4858C111.8050806@cn.fujitsu.com>
-	<20080619091436.0a441351.kamezawa.hiroyu@jp.fujitsu.com>
+From: Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Subject: Re: Question : memrlimit cgroup's task_move (2.6.26-rc5-mm3)
+Date: Thu, 19 Jun 2008 08:43:43 +0530
+Message-ID: <4859CEE7.9030505@linux.vnet.ibm.com>
+References: <20080619121435.f868c110.kamezawa.hiroyu@jp.fujitsu.com>
+Reply-To: balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20080619091436.0a441351.kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+In-Reply-To: <20080619121435.f868c110.kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,59 +19,61 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
-Cc: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, LKML <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Cc: "containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org" <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, "linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org" <linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org>, "menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org" <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
 KAMEZAWA Hiroyuki wrote:
-> On Wed, 18 Jun 2008 16:02:25 +0800
-> Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org> wrote:
+> I used memrlimit cgroup at the first time.
 > 
->> This control file is the equivalent of the "tasks" control file, but
->> acting/reporting on entire thread groups.
->>
->> For example, we have a process with pid 1000 and its sub-thread with
->> tid 1001, to attach them into a cgroup:
->>  # echo 1000 > procs
->> Then show the process list and the task list respectively:
->>  # cat procs
->>  1000
->>  # cat tasks
->>  1000
->>  1001
->>
->> Questions:
->> - What to do if the attaching of a thread failed? continue to attach
->>   other threads, or stop and return error?
->> - When a sub-thread of a process is in the cgroup, but not its thread
->>   cgroup leader, what to do when 'cat procs'? just skip those threads?
->>
-> I think this feature make sense. But not meets a theory that cgroup handles
-> a thread not a process. So, how about changing the definition of this interface
-> from
->   - showing procs
-> to
->   - showing threads which is thread-group-leader.
+> May I ask a question about memrlimit cgroup ?
 > 
-> One possible problem is a case that thread-group-leader exits while other
-> members are alive. In such case, thread-group-leader calls cgroup_exit()
-> but will be still alive until all sub-threads exit. So, this interface
-> cannot show correct information. 
-> (right ??? please point out if I miss something)
+> In following 
+> ==
+> static void memrlimit_cgroup_move_task(struct cgroup_subsys *ss,
+>                                         struct cgroup *cgrp,
+>                                         struct cgroup *old_cgrp,
+>                                         struct task_struct *p)
+> {
+>         struct mm_struct *mm;
+>         struct memrlimit_cgroup *memrcg, *old_memrcg;
 > 
-> So, how about this kind of interface ? showing both of TID and PID.
+> <snip>
+>         if (res_counter_charge(&memrcg->as_res, (mm->total_vm << PAGE_SHIFT)))
+>                 goto out;
+>         res_counter_uncharge(&old_memrcg->as_res, (mm->total_vm << PAGE_SHIFT));
+> ==
+> This is a callback for task_attach(). and this never fails.
 > 
-> %/cat/procs
-> TID  PID
-> 1001 1001
-> 1234 1001
-> 3856 1001
-> 728  728
-> ....
-> ....
-> 
-> nonsense ?
+> What happens when the moved task, which move-of-charge fails, exits ?
 > 
 
-Then the left column is exactly the same with the contents of `cat tasks`, so IMO
-it won't be useful. Besides, the tasks of pids listed in the right column may not
-all belongs to that group, so how we can make use of this column?
+Good question - I am working on this, some of the logic should move to
+can_attach(). I'll try and experiment with it and send out a fix.
+
+> ==
+> % mkdir /dev/cgroup/memrlimit/group_01
+> % mkdir /dev/cgroup/memrlimit/group_02
+> % echo 1G > /dev/cgroup/memrlimit/group_01/memrlimit.limit_in_bytes
+> % echo 0 >  /dev/cgroup/memrlimit/group_02/memrlimit.limit_in_bytes
+> % echo $$ > /dev/cgroup/memrlimit/group_01/tasks
+> % echo $$ > /dev/cgroup/memrlimit/group_02/tasks
+> % exit
+> == you'll see WARNING ==
+> 
+> I think the charge of the new group goes to minus. right ?
+> (and old group's charge never goes down.)
+> I don't think this is "no problem".
+> 
+> What kind of patch is necessary to fix this ?
+> task_attach() should be able to fail in future ?
+> 
+> I'm sorry if I misunderstand something or this is already in TODO list.
+> 
+
+It's already on the TODO list. Thanks for keeping me reminded about it.
+
+-- 
+	Warm Regards,
+	Balbir Singh
+	Linux Technology Center
+	IBM, ISTL
