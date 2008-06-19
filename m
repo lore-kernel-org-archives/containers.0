@@ -1,55 +1,47 @@
-From: "Benjamin Thery " <Benjamin.Thery@bull.net>
-Subject: Re: [PATCH 01/11] sysfs: Support for preventing unmounts.
-Date: Thu, 19 Jun 2008 22:19:41 +0200
-Message-ID: <20080619221941.588r3j9ascw0oco4@intran0x.frec.bull.fr>
-References: <20080618170729.808539948@theryb.frec.bull.fr>
-	<20080618170730.256129077@theryb.frec.bull.fr>
-	<1213811063.7922.39.camel@nimitz> <m18wx2o638.fsf@frodo.ebiederm.org>
-	<1213893131.7922.67.camel@nimitz>
+From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH] cryo: test program for udp sockets
+Date: Thu, 19 Jun 2008 17:19:22 -0500
+Message-ID: <20080619221922.GA9485@us.ibm.com>
+References: <20080619161743.125447871@theryb.frec.bull.fr>
+	<20080619161748.311591836@theryb.frec.bull.fr>
 Mime-Version: 1.0
-Content-Type: text/plain;
-	charset=ISO-8859-1;
-	DelSp="Yes";
-	format="flowed"
+Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1753192AbYFSUTW@vger.kernel.org>
-In-Reply-To: <1213893131.7922.67.camel@nimitz>
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-Sender: linux-kernel-owner@vger.kernel.org
-To: Dave Hansen <dave@linux.vnet.ibm.com>
-Cc: "Eric W. Biederman" <ebiederm@xmission.com>, Tejun Heo <htejun@gmail.com>, Greg Kroah-Hartman <gregkh@suse.de>, linux-kernel@vger.kernel.org, Al Viro <viro@ftp.linux.org.uk>, Linux Containers <containers@lists.osdl.org>, Andrew Morton <akpm@linux-foundation.org>
+In-Reply-To: <20080619161748.311591836-4vkkeT0zb4ZEtYaxpPmRp1aPQRlvutdw@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Benjamin Thery <benjamin.thery-6ktuUTfB/bM@public.gmane.org>
+Cc: Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Quoting Dave Hansen <dave@linux.vnet.ibm.com>:
+Quoting Benjamin Thery (benjamin.thery-6ktuUTfB/bM@public.gmane.org):
+> Here is the small test program I use to test checkpoint/restart of UDP
+> sockets with cryo. 
+> This program can be called either as a server listening on a given port 
+> on a given adresse, or a client sending message to a given address on a
+> given port. The client sends integer and the server sums them.
+> 
+> Run two instances of sockudp, one server and one client. 
+> Checkpoint the server.
+> Stop both instances.
+> Restart server. He will wait for more messages.
+> Run a new client. The server will continue to sum the data it receives!
+> 
+> Signed-off-by: Benjamin Thery <benjamin.thery-6ktuUTfB/bM@public.gmane.org>
 
-> On Wed, 2008-06-18 at 13:12 -0700, Eric W. Biederman wrote:
->>
->> - The data in sysfs fundamentally changes behind the back of the
->>   VFS and we need to keep the VFS in sync.  Essentially this is the
->>   distributed filesystem problem.
->>
->> - In particular for sysfs_rename and sysfs_move_dir we need to support
->> finding
->>   the dcache entries and calling d_move.  So that the dcache does not
->>   get into an inconsistent state.  Timeouts and invalidates like NFS
->>   uses are to be  avoided if at all possible.
->
-> Much clearer now, thanks!
->
-> Can we get this description into the changelog, pretty please?
+Hey that works beautifully.  Checkpointed both the client and server
+played with killing and restarting them both.
 
-Yes sure.
-I'll add it to the patch introduction.
+Applied to git tree.
 
-Benjamin
-
->
-> -- Dave
->
->
->
-
-
-
-----------------------------------------------------------------
-This message was sent using IMP, the Internet Messaging Program.
+thanks,
+-serge
