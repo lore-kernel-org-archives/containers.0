@@ -1,16 +1,17 @@
 From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 Subject: Re: design of user namespaces
-Date: Fri, 20 Jun 2008 15:55:08 -0500
-Message-ID: <20080620205508.GA8429@us.ibm.com>
+Date: Fri, 20 Jun 2008 16:47:46 -0500
+Message-ID: <20080620214746.GA13123@us.ibm.com>
 References: <m1zlpg27bv.fsf@frodo.ebiederm.org>
 	<20080620140510.GA21720@us.ibm.com>
 	<m1ve04q686.fsf@frodo.ebiederm.org>
+	<20080620205508.GA8429@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <m1ve04q686.fsf-B27657KtZYmhTnVgQlOflh2eb7JE58TQ@public.gmane.org>
+In-Reply-To: <20080620205508.GA8429-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -20,161 +21,244 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
+To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Quoting Eric W. Biederman (ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org):
-> "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org> writes:
-> >
-> > Hi Eric,
-> >
-> > glad you're giving this some thought.  Did you ever read over the
-> > approach which I outlined in May (see
-> > http://forum.openvz.org/index.php?t=msg&goto=30223&)?  We agree on many
-> > points.  I think we basically solve the suid problem the same way.
+Quoting Serge E. Hallyn (serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org):
+> > Just skimming through your patch I don't expect we will need the list
+> > of children, and not having should reduct our locking burden.
 > 
-> I hadn't read that post although I saw a part of it in your paper.
-> Solving that problem so unprivileged users can use a user namespace
-> seems to be the key to making namespaces more widely usable, and
-> recursive.  Plus I really like the idea of a super nobody user.
-> 
-> > But I've moved away from a uid-to-uid mapping.  Instead,
-> > I expand on the relation you also describe: the user who creates a user
-> > namespace owns the user namespace and introduce a persistant
-> > namespace ID.
-> 
-> I think there are management issues with a persistent namespace ID.
+> Hmm, that's true.  I can't see a reason for that.  Thanks!
 
-There are.  But one key point is that the namespace ids are not
-cryptographic keys.  They don't need to be globally unique, or even 100%
-unique on one system (though that gets too subtle).
+BTW here is the new, slightly smaller patch:
 
-I was wanting to keep them tiny - or at least variably sized - so they
-could be stored with each inode.
+From d17fbd87d97f64a0e879a7efbe5e1835fc573eae Mon Sep 17 00:00:00 2001
+From: Serge Hallyn <serge-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Date: Thu, 19 Jun 2008 20:18:17 -0500
+Subject: [PATCH 1/1] user namespaces: introduce user_struct->user_namespace relationship
 
-> In particular:  Is this user allowed to use this ID?
+When a task does clone(CLONE_NEWNS), the task's user is the 'creator' of the
+new user_namespace, and the user_namespace is tacked onto a list of those
+created by this user.
 
-One way to address that is actually by having a system-wide tool with
-CAP_SET_USERNS=fp which enforces a userid-to-unsid mapping.  The host
-sysadmin creates a table, say, 500:0 may use unsid 10-15.  500:0 (let's
-call him hallyn) doesn't have CAP_SET_USERNS permissions himself, but
-can run /bin/set_unsid, which runs with CAP_SET_USERNS and ensures that
-hallyn uses only unsids 10-15.
+When we create or put a user in a namespace, we also do so for all creator
+users up the creator chain.
 
-It's not ideal.  I'd rather have some sort of fancy collision-proof
-global persistant id system, but again I think it's important that if
-500:0 creates userns 1 and 400:1 creates userns 2, and 0:2 creates a
-file, that the file be persistantly marked as belonging to
-(500:0,400:1,0:2), distinct from another file created by
-(500:0,400:1,1000:2).  Which means these things have to be stored
-per-inode, meaning they can't be too large.
+Changelog:
+	Jun 20: Eric Biederman pointed out the sibling/child_user_ns
+		list is unnecessary!
 
-> That is the reason I want to avoid having a generic persistent
-> namespace ID.  Implementing a common library and then modifying the
-> filesystems to use it on a case by case basis sounds much more
-> maintainable.  Then picking the wrong direction does not bind us for
-> all time and eternity.
-> 
-> > I understand that you may reflexively balk at introducing a new global
-> > persistant ID when we're focusing on turning everything into a
-> > namespace, but I think that would be a misguided reflex (like the
-> > ioctl->netlinke one of a few years ago).  In particular, in your
-> > approach the identifier is the combination of the uid-to-uid mapping and
-> > the uids stored on the original filesystem.
-> 
-> Not at all.  I thought I had mentioned the xattr thing as one of the
-> possibilities.  I forgot the proper term so I probably said acls.  The
-> practical problem is that you then have to rev your quota support.  To
-> also support the xattr separation.  In addition not every filesystem
-> supports xattrs.  Although the common ones do.
+Signed-off-by: Serge Hallyn <serge-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+---
+ include/linux/sched.h          |    1 +
+ include/linux/user_namespace.h |    1 +
+ kernel/user.c                  |   66 +++++++++++++++++++++++++++++++++++++++-
+ kernel/user_namespace.c        |   15 +++------
+ 4 files changed, 72 insertions(+), 11 deletions(-)
 
-Again each fs could do whatever it wanted, and perhaps reiser would not
-use xattrs but some funky reiserfs-ish thing :)  I'm just talking about
-xattrs bc that's what I'd use, on top of ext2/3, in any prototype.
-
-Also, I think we're all agreed that for some filesystems, the semantics
-of:
-
-	1. filesystem is owned by current->user->user_ns who mounted it
-		(complicated by mounts propagation the same way as it
-		was with user mounts)
-	2. access by user in another namespace == access by user nobody
-
-make sense.
-
-For quota support, I see where we'll have to check quota for each user
-in the creator chain to which the task belongs - is that what you're
-referring to?
-
-> > I do think the particular form of the ID I suggest will be unsuitable
-> > and we'll want something more flexible.  Perhaps stick with the unsid
-> > for the legacy filesystems with xattr-unsid support, and let advanced
-> > filesystems like nfsv4, 9p, and smb use their own domain
-> > identifiers.
-> 
-> Which is why I said make it filesystem specific with support from a
-> generic library.  No prctl just a mount option.
-
-Now when you say a generic library, are you referring to a userspace
-daemon, queried by the kernel, which does uid translation?  Do you have
-a particular api in mind?  What sort of commands and queries would the
-kernel send to that daemon?
-
-> > But since we seem to agree on the first part - introducing a hierarchy
-> > between users and the namespaces they create - it sounds like the
-> > following patch would suit both of us.  (I just started implementing my
-> > approach this past week in my free time).  I'm not sending this as any
-> > sort of request for inclusion, just bc it's sitting around...
-> 
-> Yes.  At least a loose hierarchy.
-> 
-> It just occurred to me that with unix domain sockets, some signals, /proc
-> we have user namespace crossing (child to parent) where we need to
-> report the uid.  In that case the simple solution appears to be to use
-> the overflowuid and overflowgid that were defined as part of the 16bit
-> to 32bit transition.  Otherwise it would require mapping all of the
-> child uids into the parent like we do with pids except using an upcall
-> to userspace.
-
-Again, in my proposal, each child user is also owned by the parent
-user, so it should be possible to send the uid at the right user
-namespace level the way we do with find_task_by_vpid() for pid
-namespaces.
-
-I know, there are still places in the signal code where we
-fire-and-forget before we know the target, so those would be a problem.
-The whole issue of putting a uid in a siginfo, when we don't know the
-target and don't have a lifecycle on a siginfo, is a problem I've been
-dreading for a long time now.
-
-> Making capabilities user namespace specific if we can.
-> 
-> Did you have any problems with adding a user_namespace argument to 
-> capable?
-
-I had started that in a much earlier patchset a year or two ago.  Calls
-to capable(CAP_KILL) and capable(CAP_DAC_OVERRIDE) needed to be changed
-to new functions accepting a target file/task.  I don't recall it being
-a big deal actually.  Far more interesting is what to do with the
-other capabilities, like CAP_NET_ADMIN.
-
-As for bounding sets, imo we don't bother the user namespace code with
-capabilities at all.  We just let the admin specify bounding sets for
-containers.  For starters we recommend always pulling out things like
-CAP_NET_ADMIN, then we can take our time discussing their safety.  (i.e.
-even if I don't have CAP_NET_ADMIN, if I clone(CLONE_NEWNET), is there
-any reason not to give me CAP_NET_ADMIN in the result?  After all I need
-a capable parent in another namespace to either pass me a device or tie
-any veth devices I create into a bridge before I can do any damage...)
-
-> Just skimming through your patch I don't expect we will need the list
-> of children, and not having should reduct our locking burden.
-
-Hmm, that's true.  I can't see a reason for that.  Thanks!
-
-So can you send some more info on the API you envision for the
-library/daemon?
-
-thanks,
--serge
+diff --git a/include/linux/sched.h b/include/linux/sched.h
+index 799bbdd..da1bcc6 100644
+--- a/include/linux/sched.h
++++ b/include/linux/sched.h
+@@ -604,6 +604,7 @@ struct user_struct {
+ 	/* Hash table maintenance information */
+ 	struct hlist_node uidhash_node;
+ 	uid_t uid;
++	struct user_namespace *user_namespace;
+ 
+ #ifdef CONFIG_USER_SCHED
+ 	struct task_group *tg;
+diff --git a/include/linux/user_namespace.h b/include/linux/user_namespace.h
+index b5f41d4..f9477c3 100644
+--- a/include/linux/user_namespace.h
++++ b/include/linux/user_namespace.h
+@@ -13,6 +13,7 @@ struct user_namespace {
+ 	struct kref		kref;
+ 	struct hlist_head	uidhash_table[UIDHASH_SZ];
+ 	struct user_struct	*root_user;
++	struct user_struct	*creator;
+ };
+ 
+ extern struct user_namespace init_user_ns;
+diff --git a/kernel/user.c b/kernel/user.c
+index 865ecf5..e583be4 100644
+--- a/kernel/user.c
++++ b/kernel/user.c
+@@ -21,6 +21,7 @@ struct user_namespace init_user_ns = {
+ 	.kref = {
+ 		.refcount	= ATOMIC_INIT(2),
+ 	},
++	.creator = &root_user,
+ 	.root_user = &root_user,
+ };
+ EXPORT_SYMBOL_GPL(init_user_ns);
+@@ -53,6 +54,7 @@ struct user_struct root_user = {
+ 	.files		= ATOMIC_INIT(0),
+ 	.sigpending	= ATOMIC_INIT(0),
+ 	.locked_shm     = 0,
++	.user_namespace	= &init_user_ns,
+ #ifdef CONFIG_USER_SCHED
+ 	.tg		= &init_task_group,
+ #endif
+@@ -71,6 +73,18 @@ static void uid_hash_remove(struct user_struct *up)
+ 	hlist_del_init(&up->uidhash_node);
+ }
+ 
++void inc_user_and_creators(struct user_struct *user)
++{
++	struct user_namespace *ns = user->user_namespace;
++	while (user) {
++		atomic_inc(&user->__count);
++		if (ns == ns->creator->user_namespace)
++			return;
++		user = ns->creator;
++		ns = user->user_namespace;
++	}
++}
++
+ static struct user_struct *uid_hash_find(uid_t uid, struct hlist_head *hashent)
+ {
+ 	struct user_struct *user;
+@@ -78,7 +92,7 @@ static struct user_struct *uid_hash_find(uid_t uid, struct hlist_head *hashent)
+ 
+ 	hlist_for_each_entry(user, h, hashent, uidhash_node) {
+ 		if (user->uid == uid) {
+-			atomic_inc(&user->__count);
++			inc_user_and_creators(user);
+ 			return user;
+ 		}
+ 	}
+@@ -315,12 +329,30 @@ done:
+ 	uids_mutex_unlock();
+ }
+ 
++/*
++ * Decrement use counts for all namespace ancestors of the user
++ * being freed.  The user itself has already been dec'ed, so
++ * we only start at its creator.
++ */
++void dec_creators(struct user_struct *user)
++{
++	struct user_namespace *ns = user->user_namespace;
++	while (ns != ns->creator->user_namespace) {
++		user = ns->creator;
++		atomic_dec(&user->__count);
++		ns = user->user_namespace;
++	}
++}
++
+ /* IRQs are disabled and uidhash_lock is held upon function entry.
+  * IRQ state (as stored in flags) is restored and uidhash_lock released
+  * upon function exit.
+  */
+ static inline void free_user(struct user_struct *up, unsigned long flags)
+ {
++	/* decrement all creator counts */
++	dec_creators(up);
++
+ 	/* restore back the count */
+ 	atomic_inc(&up->__count);
+ 	spin_unlock_irqrestore(&uidhash_lock, flags);
+@@ -409,6 +441,8 @@ struct user_struct *alloc_uid(struct user_namespace *ns, uid_t uid)
+ 		if (sched_create_user(new) < 0)
+ 			goto out_free_user;
+ 
++		new->user_namespace = ns;
++
+ 		if (uids_user_create(new))
+ 			goto out_destoy_sched;
+ 
+@@ -429,6 +463,7 @@ struct user_struct *alloc_uid(struct user_namespace *ns, uid_t uid)
+ 			kmem_cache_free(uid_cachep, new);
+ 		} else {
+ 			uid_hash_insert(new, hashent);
++			inc_user_and_creators(new);
+ 			up = new;
+ 		}
+ 		spin_unlock_irq(&uidhash_lock);
+@@ -448,6 +483,35 @@ out_unlock:
+ 	return NULL;
+ }
+ 
++/*
++ * After doing clone(CLONE_NEWUSER), the new task continues to hold
++ * a refcount on ancestor users, but just switches to the new
++ * root user in the child namespace
++ */
++void switch_uid_for_created_root(struct user_struct *new_user)
++{
++	struct user_struct *old_user;
++
++	old_user = current->user;
++	atomic_inc(&new_user->processes);
++	switch_uid_keyring(new_user);
++	current->user = new_user;
++	sched_switch_user(current);
++
++	/*
++	 * We need to synchronize with __sigqueue_alloc()
++	 * doing a get_uid(p->user).. If that saw the old
++	 * user value, we need to wait until it has exited
++	 * its critical region before we can free the old
++	 * structure.
++	 */
++	smp_mb();
++	spin_unlock_wait(&current->sighand->siglock);
++
++	free_uid(old_user);
++	suid_keys(current);
++}
++
+ void switch_uid(struct user_struct *new_user)
+ {
+ 	struct user_struct *old_user;
+diff --git a/kernel/user_namespace.c b/kernel/user_namespace.c
+index a9ab059..45ba675 100644
+--- a/kernel/user_namespace.c
++++ b/kernel/user_namespace.c
+@@ -11,6 +11,7 @@
+ #include <linux/slab.h>
+ #include <linux/user_namespace.h>
+ 
++extern void switch_uid_for_created_root(struct user_struct *new_user);
+ /*
+  * Clone a new ns copying an original user ns, setting refcount to 1
+  * @old_ns: namespace to clone
+@@ -19,7 +20,6 @@
+ static struct user_namespace *clone_user_ns(struct user_namespace *old_ns)
+ {
+ 	struct user_namespace *ns;
+-	struct user_struct *new_user;
+ 	int n;
+ 
+ 	ns = kmalloc(sizeof(struct user_namespace), GFP_KERNEL);
+@@ -31,6 +31,9 @@ static struct user_namespace *clone_user_ns(struct user_namespace *old_ns)
+ 	for (n = 0; n < UIDHASH_SZ; ++n)
+ 		INIT_HLIST_HEAD(ns->uidhash_table + n);
+ 
++	/* set up owner/parent relationship */
++	ns->creator = current->user;
++
+ 	/* Insert new root user.  */
+ 	ns->root_user = alloc_uid(ns, 0);
+ 	if (!ns->root_user) {
+@@ -38,15 +41,7 @@ static struct user_namespace *clone_user_ns(struct user_namespace *old_ns)
+ 		return ERR_PTR(-ENOMEM);
+ 	}
+ 
+-	/* Reset current->user with a new one */
+-	new_user = alloc_uid(ns, current->uid);
+-	if (!new_user) {
+-		free_uid(ns->root_user);
+-		kfree(ns);
+-		return ERR_PTR(-ENOMEM);
+-	}
+-
+-	switch_uid(new_user);
++	switch_uid_for_created_root(ns->root_user);
+ 	return ns;
+ }
+ 
+-- 
+1.5.4.3
