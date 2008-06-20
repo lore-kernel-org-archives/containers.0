@@ -1,61 +1,54 @@
-From: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [RFC][PATCH][cryo] Save/restore state of unnamed pipes
-Date: Thu, 19 Jun 2008 19:48:19 -0700
-Message-ID: <1213930099.28482.418.camel@localhost.localdomain>
-References: <20080617212950.GB11826@us.ibm.com>
-	<20080617223039.GB26942@us.ibm.com>
-	<1213745472.16057.37.camel@localhost.localdomain>
-	<20080618003214.GA14699@us.ibm.com>
-	<1213754646.16057.107.camel@localhost.localdomain>
-	<20080619075953.GA4295@us.ibm.com>
-	<1213919160.28482.279.camel@localhost.localdomain>
-	<20080620015410.GA13775@us.ibm.com>
+From: ebiederm@xmission.com (Eric W. Biederman)
+Subject: Re: [patch -mm 0/4] mqueue namespace
+Date: Thu, 19 Jun 2008 20:00:51 -0700
+Message-ID: <m11w2syfmk.fsf@frodo.ebiederm.org>
+References: <20071128163728.177495768@fr.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20080620015410.GA13775-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org
-Cc: Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
+Content-Type: text/plain; charset=us-ascii
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1755137AbYFTDLg@vger.kernel.org>
+In-Reply-To: <20071128163728.177495768@fr.ibm.com>> (Cedric Le Goater's
+	message of "Wed, 28 Nov 2007 17:37:28 +0100")
+Sender: linux-kernel-owner@vger.kernel.org
+To: Cedric Le Goater <clg@fr.ibm.com>
+Cc: Andrew Morton <akpm@linux-foundation.org>, Linux Containers <containers@lists.osdl.org>, Linux Kernel Mailing List <linux-kernel@vger.kernel.org>, Pavel Emelianov <xemul@openvz.org>
 List-Id: containers.vger.kernel.org
 
+Cedric Le Goater <clg@fr.ibm.com> writes:
 
-On Thu, 2008-06-19 at 18:54 -0700, sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org wrote:
-> Matt Helsley [matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org] wrote:
+> Hello ! 
+>
+> Here's a small patchset introducing a new namespace for POSIX
+> message queues. 
+>
+> Nothing really complex a part from the mqueue filesystem which 
+> needed some special care
 
-<snip>
+This looks stalled.  I have a brainstorm that might takes a totally
+different perspective on things.
 
-> | 	if (pipefds[0] != restarted_read_fd) {
-> | 	        dup2(pipefds[1], restarted_write_fd);
-> | 		close(pipefds[1]);
-> | 	}
-> 
-> Shouldn't the last if be
-> 
-> 	if (pipefds[1] != restarted_wrte_fd) ?
-> 
-> (otherwise it would break if pipefds[0] = 11 and pipefds[1] = 200)
+The only reason we don't just allow multiple mounts of mqueuefs to
+solve this problem is because there is a kernel syscall on the path.
 
-Argh, copy-paste error. You are correct.
+If we just hard coded a mount point into the kernel and required user
+space to always mount mqueuefs there the problem would be solved.
 
-> I came up with something similar, but with an extra close(). And
-> in my code, I had restarted_* names referring to pipefds[] making
-> it a bit confusing initially.
-> 
-> How about using actual_fds[] (instead of pipefds) and expected_fds[]
-> instead of (restart_*) ? 
+hard coding a mount point is unfortunately violates the unix rule
+of separating mechanism and policy.
 
-I like actual_fds[] instead of pipefds[] but still prefer the restart_*
-names over expected_fds[].
+One way to fix that is to add a hidden directory to the mnt namespace.
+Where magic in kernel filesystems can be mounted.  Only visible
+with a magic openat flag.  Then:
 
-Cheers,
-	-Matt
+fd = openat(AT_FDKERN, ".", O_DIRECTORY)
+fchdir(fd);
+umount("./mqueue", MNT_DETACH);
+mount(("none", "./mqueue", "mqueue", 0, NULL);
+
+Would unshare the mqueue namespace.
+
+Implemented for plan9 this would solve a problem of how do you get
+access to all of it's special filesystems.  As only bind mounts
+and remote filesystem mounts are available.  For linux thinking about
+it might shake the conversation up a bit.
+
+Eric
