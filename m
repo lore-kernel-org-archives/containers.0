@@ -1,17 +1,14 @@
-From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
-Subject: Re: design of user namespaces
-Date: Fri, 20 Jun 2008 16:07:45 -0700
-Message-ID: <m1wskjemda.fsf@frodo.ebiederm.org>
-References: <m1zlpg27bv.fsf@frodo.ebiederm.org>
-	<20080620140510.GA21720@us.ibm.com>
-	<m1ve04q686.fsf@frodo.ebiederm.org> <20080620205508.GA8429@us.ibm.com>
-	<20080620214746.GA13123@us.ibm.com>
+From: menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org
+Subject: [PATCH 4/8] CGroup Files: Move notify_on_release file to separate
+	write handler
+Date: Fri, 20 Jun 2008 16:44:02 -0700
+Message-ID: <20080621000730.444845000__11311.3350737423$1214007017$gmane$org@menage.corp.google.com>
+References: <20080620234358.182933000@menage.corp.google.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20080620214746.GA13123-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org> (Serge E. Hallyn's message of
-	"Fri, 20 Jun 2008 16:47:46 -0500")
+Content-Disposition: inline; filename=cgroup_notify_on_release_file.patch
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -21,110 +18,65 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
+To: pj-sJ/iWh9BUns@public.gmane.org, xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org, balbir-xthvdsQ13ZrQT0dZR+AlfA@public.gmane.org, serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-"Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org> writes:
+This patch moves the write handler for the cgroups notify_on_release
+file into a separate handler. This handler requires no cgroups locking
+since it relies on atomic bitops for synchronization.
 
-> Quoting Serge E. Hallyn (serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org):
->> > Just skimming through your patch I don't expect we will need the list
->> > of children, and not having should reduct our locking burden.
->> 
->> Hmm, that's true.  I can't see a reason for that.  Thanks!
->
-> BTW here is the new, slightly smaller patch:
->
->>From d17fbd87d97f64a0e879a7efbe5e1835fc573eae Mon Sep 17 00:00:00 2001
-> From: Serge Hallyn <serge-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-> Date: Thu, 19 Jun 2008 20:18:17 -0500
-> Subject: [PATCH 1/1] user namespaces: introduce user_struct->user_namespace
-> relationship
->
-> When a task does clone(CLONE_NEWNS), the task's user is the 'creator' of the
-> new user_namespace, and the user_namespace is tacked onto a list of those
-> created by this user.
->
-> When we create or put a user in a namespace, we also do so for all creator
-> users up the creator chain.
->
-> Changelog:
-> 	Jun 20: Eric Biederman pointed out the sibling/child_user_ns
-> 		list is unnecessary!
->
-> Signed-off-by: Serge Hallyn <serge-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-> ---
->  include/linux/sched.h          |    1 +
->  include/linux/user_namespace.h |    1 +
->  kernel/user.c                  |   66 +++++++++++++++++++++++++++++++++++++++-
->  kernel/user_namespace.c        |   15 +++------
->  4 files changed, 72 insertions(+), 11 deletions(-)
->
-> diff --git a/include/linux/sched.h b/include/linux/sched.h
-> index 799bbdd..da1bcc6 100644
-> --- a/include/linux/sched.h
-> +++ b/include/linux/sched.h
-> @@ -604,6 +604,7 @@ struct user_struct {
->  	/* Hash table maintenance information */
->  	struct hlist_node uidhash_node;
->  	uid_t uid;
-> +	struct user_namespace *user_namespace;
->  
->  #ifdef CONFIG_USER_SCHED
->  	struct task_group *tg;
-> diff --git a/include/linux/user_namespace.h b/include/linux/user_namespace.h
-> index b5f41d4..f9477c3 100644
-> --- a/include/linux/user_namespace.h
-> +++ b/include/linux/user_namespace.h
-> @@ -13,6 +13,7 @@ struct user_namespace {
->  	struct kref		kref;
->  	struct hlist_head	uidhash_table[UIDHASH_SZ];
->  	struct user_struct	*root_user;
-> +	struct user_struct	*creator;
->  };
->  
->  extern struct user_namespace init_user_ns;
-> diff --git a/kernel/user.c b/kernel/user.c
-> index 865ecf5..e583be4 100644
-> --- a/kernel/user.c
-> +++ b/kernel/user.c
-> @@ -21,6 +21,7 @@ struct user_namespace init_user_ns = {
->  	.kref = {
->  		.refcount	= ATOMIC_INIT(2),
->  	},
-> +	.creator = &root_user,
->  	.root_user = &root_user,
->  };
->  EXPORT_SYMBOL_GPL(init_user_ns);
-> @@ -53,6 +54,7 @@ struct user_struct root_user = {
->  	.files		= ATOMIC_INIT(0),
->  	.sigpending	= ATOMIC_INIT(0),
->  	.locked_shm     = 0,
-> +	.user_namespace	= &init_user_ns,
->  #ifdef CONFIG_USER_SCHED
->  	.tg		= &init_task_group,
->  #endif
-> @@ -71,6 +73,18 @@ static void uid_hash_remove(struct user_struct *up)
->  	hlist_del_init(&up->uidhash_node);
->  }
->  
-> +void inc_user_and_creators(struct user_struct *user)
-> +{
-> +	struct user_namespace *ns = user->user_namespace;
-> +	while (user) {
-> +		atomic_inc(&user->__count);
-> +		if (ns == ns->creator->user_namespace)
-> +			return;
-> +		user = ns->creator;
-> +		ns = user->user_namespace;
-> +	}
-> +}
-> +
+Signed-off-by: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
 
-This functionality appears unnecessary.  Holding a count on the user
-and the user holding a count on it's user_namespace and the user_namespace
-holding a count on it's creator should be sufficient.
+---
+ kernel/cgroup.c |   21 +++++++++++++--------
+ 1 file changed, 13 insertions(+), 8 deletions(-)
 
-Or am I missing something?
+Index: cws-2.6.26-rc5-mm3/kernel/cgroup.c
+===================================================================
+--- cws-2.6.26-rc5-mm3.orig/kernel/cgroup.c
++++ cws-2.6.26-rc5-mm3/kernel/cgroup.c
+@@ -1471,13 +1471,6 @@ static ssize_t cgroup_common_file_write(
+ 	case FILE_TASKLIST:
+ 		retval = attach_task_by_pid(cgrp, buffer);
+ 		break;
+-	case FILE_NOTIFY_ON_RELEASE:
+-		clear_bit(CGRP_RELEASABLE, &cgrp->flags);
+-		if (simple_strtoul(buffer, NULL, 10) != 0)
+-			set_bit(CGRP_NOTIFY_ON_RELEASE, &cgrp->flags);
+-		else
+-			clear_bit(CGRP_NOTIFY_ON_RELEASE, &cgrp->flags);
+-		break;
+ 	default:
+ 		retval = -EINVAL;
+ 		goto out2;
+@@ -2248,6 +2241,18 @@ static u64 cgroup_read_notify_on_release
+ 	return notify_on_release(cgrp);
+ }
+ 
++static int cgroup_write_notify_on_release(struct cgroup *cgrp,
++					  struct cftype *cft,
++					  u64 val)
++{
++	clear_bit(CGRP_RELEASABLE, &cgrp->flags);
++	if (val)
++		set_bit(CGRP_NOTIFY_ON_RELEASE, &cgrp->flags);
++	else
++		clear_bit(CGRP_NOTIFY_ON_RELEASE, &cgrp->flags);
++	return 0;
++}
++
+ /*
+  * for the common functions, 'private' gives the type of file
+  */
+@@ -2264,7 +2269,7 @@ static struct cftype files[] = {
+ 	{
+ 		.name = "notify_on_release",
+ 		.read_u64 = cgroup_read_notify_on_release,
+-		.write = cgroup_common_file_write,
++		.write_u64 = cgroup_write_notify_on_release,
+ 		.private = FILE_NOTIFY_ON_RELEASE,
+ 	},
+ };
 
-Eric
+--
