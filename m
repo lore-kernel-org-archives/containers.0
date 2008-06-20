@@ -1,14 +1,13 @@
 From: menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org
-Subject: [PATCH 5/8] CGroup Files: Turn attach_task_by_pid directly into a
-	cgroup write handler
-Date: Fri, 20 Jun 2008 16:44:03 -0700
-Message-ID: <20080621000730.656730000__4496.95743523097$1214007584$gmane$org@menage.corp.google.com>
+Subject: [PATCH 2/8] CGroup Files: Add write_string cgroup control file method
+Date: Fri, 20 Jun 2008 16:44:00 -0700
+Message-ID: <20080621000730.052131000__22096.0720129826$1214007585$gmane$org@menage.corp.google.com>
 References: <20080620234358.182933000@menage.corp.google.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline; filename=cgroup_tasks_file.patch
+Content-Disposition: inline; filename=cgroup-write-string.patch
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -22,139 +21,105 @@ To: pj-sJ/iWh9BUns@public.gmane.org, xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.o
 Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-This patch changes attach_task_by_pid() to take a u64 rather than a
-string; as a result it can be called directly as a control groups
-write_u64 handler, and cgroup_common_file_write() can be removed.
+This patch adds a write_string() method for cgroups control files. The
+semantics are that a buffer is copied from userspace to kernelspace
+and the handler function invoked on that buffer.  The buffer is
+guaranteed to be nul-terminated, and no longer than max_write_len
+(defaulting to 64 bytes if unspecified). Later patches will convert
+existing raw file write handlers in control group subsystems to use
+this method.
 
 Signed-off-by: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
 
 ---
- kernel/cgroup.c |   80 +++++++++-----------------------------------------------
- 1 file changed, 14 insertions(+), 66 deletions(-)
+ include/linux/cgroup.h |   14 ++++++++++++++
+ kernel/cgroup.c        |   35 +++++++++++++++++++++++++++++++++++
+ 2 files changed, 49 insertions(+)
 
+Index: cws-2.6.26-rc5-mm3/include/linux/cgroup.h
+===================================================================
+--- cws-2.6.26-rc5-mm3.orig/include/linux/cgroup.h
++++ cws-2.6.26-rc5-mm3/include/linux/cgroup.h
+@@ -205,6 +205,13 @@ struct cftype {
+ 	 * subsystem, followed by a period */
+ 	char name[MAX_CFTYPE_NAME];
+ 	int private;
++
++	/*
++	 * If non-zero, defines the maximum length of string that can
++	 * be passed to write_string; defaults to 64
++	 */
++	size_t max_write_len;
++
+ 	int (*open)(struct inode *inode, struct file *file);
+ 	ssize_t (*read)(struct cgroup *cgrp, struct cftype *cft,
+ 			struct file *file,
+@@ -249,6 +256,13 @@ struct cftype {
+ 	int (*write_s64)(struct cgroup *cgrp, struct cftype *cft, s64 val);
+ 
+ 	/*
++	 * write_string() is passed a nul-terminated kernelspace
++	 * buffer of maximum length determined by max_write_len.
++	 * Returns 0 or -ve error code.
++	 */
++	int (*write_string)(struct cgroup *cgrp, struct cftype *cft,
++			    const char *buffer);
++	/*
+ 	 * trigger() callback can be used to get some kick from the
+ 	 * userspace, when the actual string written is not important
+ 	 * at all. The private field can be used to determine the
 Index: cws-2.6.26-rc5-mm3/kernel/cgroup.c
 ===================================================================
 --- cws-2.6.26-rc5-mm3.orig/kernel/cgroup.c
 +++ cws-2.6.26-rc5-mm3/kernel/cgroup.c
-@@ -504,10 +504,6 @@ static struct css_set *find_css_set(
-  * knows that the cgroup won't be removed, as cgroup_rmdir()
-  * needs that mutex.
-  *
-- * The cgroup_common_file_write handler for operations that modify
-- * the cgroup hierarchy holds cgroup_mutex across the entire operation,
-- * single threading all such cgroup modifications across the system.
-- *
-  * The fork and exit callbacks cgroup_fork() and cgroup_exit(), don't
-  * (usually) take cgroup_mutex.  These are the two most performance
-  * critical pieces of code here.  The exception occurs on cgroup_exit(),
-@@ -1279,18 +1275,14 @@ int cgroup_attach_task(struct cgroup *cg
- }
- 
- /*
-- * Attach task with pid 'pid' to cgroup 'cgrp'. Call with
-- * cgroup_mutex, may take task_lock of task
-+ * Attach task with pid 'pid' to cgroup 'cgrp'. Call with cgroup_mutex
-+ * held. May take task_lock of task
-  */
--static int attach_task_by_pid(struct cgroup *cgrp, char *pidbuf)
-+static int attach_task_by_pid(struct cgroup *cgrp, u64 pid)
- {
--	pid_t pid;
- 	struct task_struct *tsk;
- 	int ret;
- 
--	if (sscanf(pidbuf, "%d", &pid) != 1)
--		return -EIO;
--
- 	if (pid) {
- 		rcu_read_lock();
- 		tsk = find_task_by_vpid(pid);
-@@ -1316,6 +1308,16 @@ static int attach_task_by_pid(struct cgr
- 	return ret;
- }
- 
-+static int cgroup_tasks_write(struct cgroup *cgrp, struct cftype *cft, u64 pid)
-+{
-+	int ret;
-+	if (!cgroup_lock_live_group(cgrp))
-+		return -ENODEV;
-+	ret = attach_task_by_pid(cgrp, pid);
-+	cgroup_unlock();
-+	return ret;
-+}
-+
- /* The various types of files and directories in a cgroup file system */
- enum cgroup_filetype {
- 	FILE_ROOT,
-@@ -1431,60 +1433,6 @@ static ssize_t cgroup_write_string(struc
+@@ -1363,6 +1363,39 @@ static ssize_t cgroup_write_X64(struct c
  	return retval;
  }
  
--static ssize_t cgroup_common_file_write(struct cgroup *cgrp,
--					   struct cftype *cft,
--					   struct file *file,
--					   const char __user *userbuf,
--					   size_t nbytes, loff_t *unused_ppos)
--{
--	enum cgroup_filetype type = cft->private;
--	char *buffer;
--	int retval = 0;
--
--	if (nbytes >= PATH_MAX)
--		return -E2BIG;
--
--	/* +1 for nul-terminator */
--	buffer = kmalloc(nbytes + 1, GFP_KERNEL);
--	if (buffer == NULL)
--		return -ENOMEM;
--
--	if (copy_from_user(buffer, userbuf, nbytes)) {
--		retval = -EFAULT;
--		goto out1;
--	}
--	buffer[nbytes] = 0;	/* nul-terminate */
--	strstrip(buffer);	/* strip -just- trailing whitespace */
--
--	mutex_lock(&cgroup_mutex);
--
--	/*
--	 * This was already checked for in cgroup_file_write(), but
--	 * check again now we're holding cgroup_mutex.
--	 */
--	if (cgroup_is_removed(cgrp)) {
--		retval = -ENODEV;
--		goto out2;
--	}
--
--	switch (type) {
--	case FILE_TASKLIST:
--		retval = attach_task_by_pid(cgrp, buffer);
--		break;
--	default:
--		retval = -EINVAL;
--		goto out2;
--	}
--
--	if (retval == 0)
--		retval = nbytes;
--out2:
--	mutex_unlock(&cgroup_mutex);
--out1:
--	kfree(buffer);
--	return retval;
--}
--
- static ssize_t cgroup_file_write(struct file *file, const char __user *buf,
- 						size_t nbytes, loff_t *ppos)
- {
-@@ -2262,7 +2210,7 @@ static struct cftype files[] = {
- 		.name = "tasks",
- 		.open = cgroup_tasks_open,
- 		.read = cgroup_tasks_read,
--		.write = cgroup_common_file_write,
-+		.write_u64 = cgroup_tasks_write,
- 		.release = cgroup_tasks_release,
- 		.private = FILE_TASKLIST,
- 	},
++static ssize_t cgroup_write_string(struct cgroup *cgrp, struct cftype *cft,
++				   struct file *file,
++				   const char __user *userbuf,
++				   size_t nbytes, loff_t *unused_ppos)
++{
++	char local_buffer[64];
++	int retval = 0;
++	size_t max_bytes = cft->max_write_len;
++	char *buffer = local_buffer;
++
++	if (!max_bytes)
++		max_bytes = sizeof(local_buffer) - 1;
++	if (nbytes >= max_bytes)
++		return -E2BIG;
++	/* Allocate a dynamic buffer if we need one */
++	if (nbytes >= sizeof(local_buffer)) {
++		buffer = kmalloc(nbytes + 1, GFP_KERNEL);
++		if (buffer == NULL)
++			return -ENOMEM;
++	}
++	if (nbytes && copy_from_user(buffer, userbuf, nbytes))
++		return -EFAULT;
++
++	buffer[nbytes] = 0;     /* nul-terminate */
++	strstrip(buffer);
++	retval = cft->write_string(cgrp, cft, buffer);
++	if (!retval)
++		retval = nbytes;
++	if (buffer != local_buffer)
++		kfree(buffer);
++	return retval;
++}
++
+ static ssize_t cgroup_common_file_write(struct cgroup *cgrp,
+ 					   struct cftype *cft,
+ 					   struct file *file,
+@@ -1440,6 +1473,8 @@ static ssize_t cgroup_file_write(struct 
+ 		return cft->write(cgrp, cft, file, buf, nbytes, ppos);
+ 	if (cft->write_u64 || cft->write_s64)
+ 		return cgroup_write_X64(cgrp, cft, file, buf, nbytes, ppos);
++	if (cft->write_string)
++		return cgroup_write_string(cgrp, cft, file, buf, nbytes, ppos);
+ 	if (cft->trigger) {
+ 		int ret = cft->trigger(cgrp, (unsigned int)cft->private);
+ 		return ret ? ret : nbytes;
 
 --
