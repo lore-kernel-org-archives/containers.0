@@ -1,14 +1,20 @@
-From: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
-Subject: Re: Question : memrlimit cgroup's task_move (2.6.26-rc5-mm3)
-Date: Fri, 20 Jun 2008 09:13:16 +0900
-Message-ID: <20080620091316.80771d14.kamezawa.hiroyu@jp.fujitsu.com>
-References: <20080619121435.f868c110.kamezawa.hiroyu@jp.fujitsu.com>
-	<20080619182556.GA10461@balbir.in.ibm.com>
+From: sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org
+Subject: Re: [RFC][PATCH][cryo] Save/restore state of unnamed pipes
+Date: Thu, 19 Jun 2008 18:54:10 -0700
+Message-ID: <20080620015410.GA13775@us.ibm.com>
+References: <20080617212950.GB11826@us.ibm.com>
+	<20080617223039.GB26942@us.ibm.com>
+	<1213745472.16057.37.camel@localhost.localdomain>
+	<20080618003214.GA14699@us.ibm.com>
+	<1213754646.16057.107.camel@localhost.localdomain>
+	<20080619075953.GA4295@us.ibm.com>
+	<1213919160.28482.279.camel@localhost.localdomain>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20080619182556.GA10461-SINUvgVNF2CyUtPGxGje5AC/G2K4zDHf@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <1213919160.28482.279.camel-bi+AKbBUZKY6gyzm1THtWbp2dZbC/Bob@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,56 +24,66 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
-Cc: "containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org" <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, "linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org" <linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org>, "menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org" <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+To: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Cc: Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Thu, 19 Jun 2008 23:55:56 +0530
-Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org> wrote:
+Matt Helsley [matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org] wrote:
+| 
+| Yes, I think that's sufficient:
+| 
+|         int pipefds[2];
+| 
+| 	...
+| 
+| 	restarted_read_fd = 11;
+| 	restarted_write_fd = 12;
+| 
+| 	...
+| 
+|         pipe(pipefds);
+| 
+| 	/* 
+| 	 * pipe() may have returned one (or both) of the restarted fds
+| 	 * at the wrong end of the pipe. This could cause dup2() to
+| 	 * accidentaly close the pipe. Avoid that with an extra dup().
+| 	 */
+|         if (pipefds[1] == restarted_read_fd) {
+| 		dup2(pipefds[1], last_fd + 1);
+| 		pipefds[1] = last_fd + 1;
+| 	}
+| 
+| 	if (pipefds[0] != restarted_read_fd) {
+| 		dup2(pipefds[0], restarted_read_fd);
+| 		close(pipefds[0]);
+| 	}
+| 
+| 	if (pipefds[0] != restarted_read_fd) {
+| 	        dup2(pipefds[1], restarted_write_fd);
+| 		close(pipefds[1]);
+| 	}
 
-> * KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org> [2008-06-19 12:14:35]:
-> 
-> > I used memrlimit cgroup at the first time.
-> > 
-> > May I ask a question about memrlimit cgroup ?
-> >
-> 
-> Hi, Kamezawa-San,
-> 
-> Could you please review/test the patch below to see if it solves your
-> problem? If it does, I'll push it up to Andrew
-> 
+Shouldn't the last if be
 
-At quick glance,
-> +	/*
-> +	 * NOTE: Even though we do the necessary checks in can_attach(),
-> +	 * by the time we come here, there is a chance that we still
-> +	 * fail (the memrlimit cgroup has grown its usage, and the
-> +	 * addition of total_vm will no longer fit into its limit)
-> +	 */
-I don't like this kind of holes. Considering tests which are usually done
-by developpers, the problem seems not to be mentioned as "rare"..
-It seems we can easily cause Warning. right ?
+	if (pipefds[1] != restarted_wrte_fd) ?
 
-Even if you don't want to handle this case now, please mention as "TBD" 
-rather than as "NOTE".
+(otherwise it would break if pipefds[0] = 11 and pipefds[1] = 200)
 
+I came up with something similar, but with an extra close(). And
+in my code, I had restarted_* names referring to pipefds[] making
+it a bit confusing initially.
 
-> +
-> +/*
-> + * Add the value val to the resource counter and check if we are
-> + * still under the limit.
-> + */
-> +static inline bool res_counter_add_check(struct res_counter *cnt,
-> +						unsigned long val)
-> +{
-> +	bool ret = false;
-> +	unsigned long flags;
-> +
-> +	spin_lock_irqsave(&cnt->lock, flags);
-> +	if (cnt->usage + val < cnt->limit)
-> +		ret = true;
-cnt->usage + val <= cnt->limit.
+How about using actual_fds[] (instead of pipefds) and expected_fds[]
+instead of (restart_*) ? 
 
 Thanks,
--Kame
+
+Suka
+
+| 
+| I think this code does the minimal number of operations needed in the
+| restarted application too -- it counts on the second dup2() closing one
+| of the fds if pipefds[1] == restarted_read_fd.
+| 
+| Cheers,
+| 	-Matt
