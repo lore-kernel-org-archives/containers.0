@@ -1,50 +1,43 @@
-From: Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: Re: [PATCH] Priority heap infrastructure enhancements
-Date: Sat, 21 Jun 2008 14:24:07 +0530
-Message-ID: <485CC1AF.5060901__44551.2387007058$1214038710$gmane$org@linux.vnet.ibm.com>
-References: <1213796886-24863-1-git-send-email-balbir@linux.vnet.ibm.com>
-	<6599ad830806210029x2a020e1ava6b646be9913fcdf@mail.gmail.com>
-	<485CB652.90801@linux.vnet.ibm.com>
-	<6599ad830806210111o41ad8526j8490662ddf35f299@mail.gmail.com>
-Reply-To: balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
+From: Balbir Singh <balbir@linux.vnet.ibm.com>
+Subject: Re: [PATCH] introduce task cgroup v2
+Date: Sat, 21 Jun 2008 14:26:53 +0530
+Message-ID: <485CC255.9010504@linux.vnet.ibm.com>
+References: <20080607195733.9C77.KOSAKI.MOTOHIRO@jp.fujitsu.com> <6599ad830806110045n6aec52ddkfb4be91b685357fe@mail.gmail.com> <20080616103035.788A.KOSAKI.MOTOHIRO@jp.fujitsu.com> <6599ad830806210056n44c7ff37g7cd643f95aef4aa0@mail.gmail.com>
+Reply-To: balbir@linux.vnet.ibm.com
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
+Content-Type: text/plain; charset=ISO-8859-1
 Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <6599ad830806210111o41ad8526j8490662ddf35f299-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
-Cc: akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1756322AbYFUI5V@vger.kernel.org>
+In-Reply-To: <6599ad830806210056n44c7ff37g7cd643f95aef4aa0@mail.gmail.com>
+Sender: linux-kernel-owner@vger.kernel.org
+To: Paul Menage <menage@google.com>
+Cc: KOSAKI Motohiro <kosaki.motohiro@jp.fujitsu.com>, Pavel Emelianov <xemul@openvz.org>, containers@lists.osdl.org, LKML <linux-kernel@vger.kernel.org>, Li Zefan <lizf@cn.fujitsu.com>, Andrew Morton <akpm@linux-foundation.org>
 List-Id: containers.vger.kernel.org
 
 Paul Menage wrote:
-> On Sat, Jun 21, 2008 at 1:05 AM, Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org> wrote:
->> I would like to be able to drop the smallest value. Since we cannot drop the
->> smallest value, dropping a leaf (heap->size) should be sufficiently good enough.
->> I want a max heap and losing the root of the heap does not work for me.
->>
+> On Sun, Jun 15, 2008 at 6:32 PM, KOSAKI Motohiro
+> <kosaki.motohiro@jp.fujitsu.com> wrote:
+>> honestly, I used res_counter on early version.
+>> but I got bad performance.
 > 
-> What are you actually trying to do? Can you get round this by just
-> inverting your "gt" operator? i.e. provide one that actually
-> implements "less-than"?
+> Bad performance on the charge/uncharge?
+> 
+> The only difference I can see is that res_counter uses
+> spin_lock_irqsave()/spin_unlock_irqrestore(), and you're using plain
+> spin_lock()/spin_unlock().
+> 
+> Is the overhead of a pushf/cli/popf really going to matter compared
+> with the overhead of forking/exiting a task?
+> 
+> Or approaching this from the other side, does res_counter really need
+> irq-safe locking, or is it just being cautious?
 
-Paul,
+We really need irq-safe locking. We can end up uncharging from reclaim context
+(called under zone->lru_lock and mem->zone->lru_lock - held with interrupts
+disabled)
 
-That would convert the entire heap to a min-heap. With my soft limit patches,
-that I am working on for the memory controller; I want the controller that has
-exceeded it's soft limit by the maximum amount to be picked off the heap, so
-that we can reclaim from it on memory contention.
-
-Ideally, I would also like to be able to find an existing node in the heap, but
-that is hard. I can work around that problem for now.
+I am going to convert the spin lock to a reader writers lock, so that reads from
+user space do not cause contention. I'll experiment and look at the overhead.
 
 -- 
 	Warm Regards,
