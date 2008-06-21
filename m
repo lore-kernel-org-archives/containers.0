@@ -1,12 +1,19 @@
-From: Vegard Nossum <vegard.nossum-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: v2.6.26-rc7/cgroups: circular locking dependency
-Date: Sat, 21 Jun 2008 19:38:59 +0200
-Message-ID: <20080621173859.GA6846__25947.7467312992$1214070059$gmane$org@damson.getinternet.no>
+From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: Re: design of user namespaces
+Date: Sat, 21 Jun 2008 14:05:32 -0500
+Message-ID: <20080621190532.GA9577@us.ibm.com>
+References: <m1zlpg27bv.fsf@frodo.ebiederm.org>
+	<20080620140510.GA21720@us.ibm.com>
+	<m1ve04q686.fsf@frodo.ebiederm.org>
+	<20080620205508.GA8429@us.ibm.com>
+	<20080620214746.GA13123@us.ibm.com>
+	<m1wskjemda.fsf@frodo.ebiederm.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
+In-Reply-To: <m1wskjemda.fsf-B27657KtZYmhTnVgQlOflh2eb7JE58TQ@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -16,101 +23,115 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Cc: linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Hi,
+Quoting Eric W. Biederman (ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org):
+> "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org> writes:
+> 
+> > Quoting Serge E. Hallyn (serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org):
+> >> > Just skimming through your patch I don't expect we will need the list
+> >> > of children, and not having should reduct our locking burden.
+> >> 
+> >> Hmm, that's true.  I can't see a reason for that.  Thanks!
+> >
+> > BTW here is the new, slightly smaller patch:
+> >
+> >>From d17fbd87d97f64a0e879a7efbe5e1835fc573eae Mon Sep 17 00:00:00 2001
+> > From: Serge Hallyn <serge-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+> > Date: Thu, 19 Jun 2008 20:18:17 -0500
+> > Subject: [PATCH 1/1] user namespaces: introduce user_struct->user_namespace
+> > relationship
+> >
+> > When a task does clone(CLONE_NEWNS), the task's user is the 'creator' of the
+> > new user_namespace, and the user_namespace is tacked onto a list of those
+> > created by this user.
+> >
+> > When we create or put a user in a namespace, we also do so for all creator
+> > users up the creator chain.
+> >
+> > Changelog:
+> > 	Jun 20: Eric Biederman pointed out the sibling/child_user_ns
+> > 		list is unnecessary!
+> >
+> > Signed-off-by: Serge Hallyn <serge-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+> > ---
+> >  include/linux/sched.h          |    1 +
+> >  include/linux/user_namespace.h |    1 +
+> >  kernel/user.c                  |   66 +++++++++++++++++++++++++++++++++++++++-
+> >  kernel/user_namespace.c        |   15 +++------
+> >  4 files changed, 72 insertions(+), 11 deletions(-)
+> >
+> > diff --git a/include/linux/sched.h b/include/linux/sched.h
+> > index 799bbdd..da1bcc6 100644
+> > --- a/include/linux/sched.h
+> > +++ b/include/linux/sched.h
+> > @@ -604,6 +604,7 @@ struct user_struct {
+> >  	/* Hash table maintenance information */
+> >  	struct hlist_node uidhash_node;
+> >  	uid_t uid;
+> > +	struct user_namespace *user_namespace;
+> >  
+> >  #ifdef CONFIG_USER_SCHED
+> >  	struct task_group *tg;
+> > diff --git a/include/linux/user_namespace.h b/include/linux/user_namespace.h
+> > index b5f41d4..f9477c3 100644
+> > --- a/include/linux/user_namespace.h
+> > +++ b/include/linux/user_namespace.h
+> > @@ -13,6 +13,7 @@ struct user_namespace {
+> >  	struct kref		kref;
+> >  	struct hlist_head	uidhash_table[UIDHASH_SZ];
+> >  	struct user_struct	*root_user;
+> > +	struct user_struct	*creator;
+> >  };
+> >  
+> >  extern struct user_namespace init_user_ns;
+> > diff --git a/kernel/user.c b/kernel/user.c
+> > index 865ecf5..e583be4 100644
+> > --- a/kernel/user.c
+> > +++ b/kernel/user.c
+> > @@ -21,6 +21,7 @@ struct user_namespace init_user_ns = {
+> >  	.kref = {
+> >  		.refcount	= ATOMIC_INIT(2),
+> >  	},
+> > +	.creator = &root_user,
+> >  	.root_user = &root_user,
+> >  };
+> >  EXPORT_SYMBOL_GPL(init_user_ns);
+> > @@ -53,6 +54,7 @@ struct user_struct root_user = {
+> >  	.files		= ATOMIC_INIT(0),
+> >  	.sigpending	= ATOMIC_INIT(0),
+> >  	.locked_shm     = 0,
+> > +	.user_namespace	= &init_user_ns,
+> >  #ifdef CONFIG_USER_SCHED
+> >  	.tg		= &init_task_group,
+> >  #endif
+> > @@ -71,6 +73,18 @@ static void uid_hash_remove(struct user_struct *up)
+> >  	hlist_del_init(&up->uidhash_node);
+> >  }
+> >  
+> > +void inc_user_and_creators(struct user_struct *user)
+> > +{
+> > +	struct user_namespace *ns = user->user_namespace;
+> > +	while (user) {
+> > +		atomic_inc(&user->__count);
+> > +		if (ns == ns->creator->user_namespace)
+> > +			return;
+> > +		user = ns->creator;
+> > +		ns = user->user_namespace;
+> > +	}
+> > +}
+> > +
+> 
+> This functionality appears unnecessary.  Holding a count on the user
+> and the user holding a count on it's user_namespace and the user_namespace
+> holding a count on it's creator should be sufficient.
+> 
+> Or am I missing something?
 
-I decided to see what cgroups is all about, and followed the instructions
-in Documentation/cgroups.txt :-) It happened when I did this:
+Argh.  No I don't think you're missing anything.  You're absolutely
+right.
 
-    [root@damson /dev/cgroup/Vegard 0]
-    # echo 1 > cpuset.cpus
-
-I can also provide the kernel config if necessary.
-
-
-Vegard
-
- 
- =======================================================
- [ INFO: possible circular locking dependency detected ]
- 2.6.26-rc7 #25
- -------------------------------------------------------
- bash/10032 is trying to acquire lock:
-  (&cpu_hotplug.lock){--..}, at: [<c015efbc>] get_online_cpus+0x2c/0x40
- 
- but task is already holding lock:
-  (cgroup_mutex){--..}, at: [<c0160e6f>] cgroup_lock+0xf/0x20
- 
- which lock already depends on the new lock.
- 
- 
- the existing dependency chain (in reverse order) is:
- 
- -> #1 (cgroup_mutex){--..}:
-        [<c015a435>] __lock_acquire+0xf45/0x1040
-        [<c015a5c8>] lock_acquire+0x98/0xd0
-        [<c05416d1>] mutex_lock_nested+0xb1/0x300
-        [<c0160e6f>] cgroup_lock+0xf/0x20
-        [<c0164750>] cpuset_handle_cpuhp+0x20/0x180
-        [<c014ea77>] notifier_call_chain+0x37/0x70
-        [<c014eae9>] __raw_notifier_call_chain+0x19/0x20
-        [<c051f8c8>] _cpu_down+0x78/0x240
-        [<c051fabb>] cpu_down+0x2b/0x40
-        [<c0520cd9>] store_online+0x39/0x80
-        [<c02f627b>] sysdev_store+0x2b/0x40
-        [<c01d3372>] sysfs_write_file+0xa2/0x100
-        [<c0195486>] vfs_write+0x96/0x130
-        [<c0195b4d>] sys_write+0x3d/0x70
-        [<c010831b>] sysenter_past_esp+0x78/0xd1
-        [<ffffffff>] 0xffffffff
- 
- -> #0 (&cpu_hotplug.lock){--..}:
-        [<c0159fe5>] __lock_acquire+0xaf5/0x1040
-        [<c015a5c8>] lock_acquire+0x98/0xd0
-        [<c05416d1>] mutex_lock_nested+0xb1/0x300
-        [<c015efbc>] get_online_cpus+0x2c/0x40
-        [<c0163e6d>] rebuild_sched_domains+0x7d/0x3a0
-        [<c01653a4>] cpuset_common_file_write+0x204/0x440
-        [<c0162bc7>] cgroup_file_write+0x67/0x130
-        [<c0195486>] vfs_write+0x96/0x130
-        [<c0195b4d>] sys_write+0x3d/0x70
-        [<c010831b>] sysenter_past_esp+0x78/0xd1
-        [<ffffffff>] 0xffffffff
- 
- other info that might help us debug this:
- 
- 1 lock held by bash/10032:
-  #0:  (cgroup_mutex){--..}, at: [<c0160e6f>] cgroup_lock+0xf/0x20
- 
- stack backtrace:
- Pid: 10032, comm: bash Not tainted 2.6.26-rc7 #25
-  [<c0157ae7>] print_circular_bug_tail+0x77/0x90
-  [<c0159fe5>] __lock_acquire+0xaf5/0x1040
-  [<c015a5c8>] lock_acquire+0x98/0xd0
-  [<c015efbc>] ? get_online_cpus+0x2c/0x40
-  [<c05416d1>] mutex_lock_nested+0xb1/0x300
-  [<c015efbc>] ? get_online_cpus+0x2c/0x40
-  [<c015efbc>] ? get_online_cpus+0x2c/0x40
-  [<c015efbc>] get_online_cpus+0x2c/0x40
-  [<c0163e6d>] rebuild_sched_domains+0x7d/0x3a0
-  [<c0158e65>] ? mark_held_locks+0x65/0x80
-  [<c0190ac5>] ? kfree+0xb5/0x120
-  [<c027736a>] ? heap_free+0xa/0x10
-  [<c027736a>] ? heap_free+0xa/0x10
-  [<c01653a4>] cpuset_common_file_write+0x204/0x440
-  [<c0163c30>] ? started_after+0x0/0x70
-  [<c010e585>] ? native_sched_clock+0xb5/0x110
-  [<c0162e10>] ? started_after+0x0/0x70
-  [<c0164c80>] ? cpuset_test_cpumask+0x0/0x20
-  [<c0164ca0>] ? cpuset_change_cpumask+0x0/0x20
-  [<c0162bc7>] cgroup_file_write+0x67/0x130
-  [<c01651a0>] ? cpuset_common_file_write+0x0/0x440
-  [<c010e585>] ? native_sched_clock+0xb5/0x110
-  [<c0195486>] vfs_write+0x96/0x130
-  [<c0162b60>] ? cgroup_file_write+0x0/0x130
-  [<c0195b4d>] sys_write+0x3d/0x70
-  [<c010831b>] sysenter_past_esp+0x78/0xd1
-  =======================
+thanks,
+-serge
