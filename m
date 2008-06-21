@@ -1,14 +1,14 @@
-From: menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org
-Subject: [PATCH 3/8] CGroup Files: Move the release_agent file to use typed
-	handlers
-Date: Fri, 20 Jun 2008 16:44:01 -0700
-Message-ID: <20080621000730.255258000__14287.7100538046$1214007590$gmane$org@menage.corp.google.com>
-References: <20080620234358.182933000@menage.corp.google.com>
+From: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+Subject: Re: [RFC] [PATCH] cgroup: add "procs" control file
+Date: Sat, 21 Jun 2008 14:20:16 +0800
+Message-ID: <485C9DA0.9080803__46638.16270554$1214029452$gmane$org@cn.fujitsu.com>
+References: <4858C111.8050806@cn.fujitsu.com>
+	<6599ad830806192237y8b10c4ao923375074aff56c5@mail.gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline; filename=cgroup_release_agent_file.patch
+In-Reply-To: <6599ad830806192237y8b10c4ao923375074aff56c5-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,231 +18,88 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: pj-sJ/iWh9BUns@public.gmane.org, xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org, balbir-xthvdsQ13ZrQT0dZR+AlfA@public.gmane.org, serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+Cc: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, LKML <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Adds cgroup_release_agent_write() and cgroup_release_agent_show()
-methods to handle writing/reading the path to a cgroup hierarchy's
-release agent. As a result, cgroup_common_file_read() is now unnecessary.
+Paul Menage wrote:
+> On Wed, Jun 18, 2008 at 1:02 AM, Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org> wrote:
+>> - What to do if the attaching of a thread failed? continue to attach
+>>  other threads, or stop and return error?
+> 
+> I think this is something that will have to be handled in the design
+> of transactional cgroup attach.
+> 
 
-As part of the change, a previously-tolerated race in
-cgroup_release_agent() is avoided by copying the current
-release_agent_path prior to calling call_usermode_helper().
+Is the following proposal feasable?
+- call can_attach() for each thread before attaching them into the new group.
+  This works for cpuset, doesn't it?
+- the above may not always reasonable, for example for Kosaki-san's task cgroup.
+  in this case, we require the subsystem to provide a can_attach_thread_group(),
+  like:
 
-Signed-off-by: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+static int task_cgroup_can_attach_group(struct cgroup_subsys *ss,
+				  struct cgroup *cgrp, struct task_struct *tsk)
+{
+	struct task_cgroup *taskcg = task_cgroup_from_cgrp(cgrp);
+	struct task_struct *t;
+	int ret = 0;
+	int nr_threads = 1;
 
----
- include/linux/cgroup.h |    2 
- kernel/cgroup.c        |  125 ++++++++++++++++++++++---------------------------
- 2 files changed, 59 insertions(+), 68 deletions(-)
+	for (t = next_thread(tsk); t != tsk; t = next_thread(t)
+		nr_threads++;
 
-Index: cws-2.6.26-rc5-mm3/kernel/cgroup.c
-===================================================================
---- cws-2.6.26-rc5-mm3.orig/kernel/cgroup.c
-+++ cws-2.6.26-rc5-mm3/kernel/cgroup.c
-@@ -89,11 +89,7 @@ struct cgroupfs_root {
- 	/* Hierarchy-specific flags */
- 	unsigned long flags;
- 
--	/* The path to use for release notifications. No locking
--	 * between setting and use - so if userspace updates this
--	 * while child cgroups exist, you could miss a
--	 * notification. We ensure that it's always a valid
--	 * NUL-terminated string */
-+	/* The path to use for release notifications. */
- 	char release_agent_path[PATH_MAX];
- };
- 
-@@ -1329,6 +1325,45 @@ enum cgroup_filetype {
- 	FILE_RELEASE_AGENT,
- };
- 
-+/**
-+ * cgroup_lock_live_group - take cgroup_mutex and check that cgrp is alive.
-+ * @cgrp: the cgroup to be checked for liveness
-+ *
-+ * Returns true (with lock held) on success, or false (with no lock
-+ * held) on failure.
-+ */
-+int cgroup_lock_live_group(struct cgroup *cgrp)
-+{
-+	mutex_lock(&cgroup_mutex);
-+	if (cgroup_is_removed(cgrp)) {
-+		mutex_unlock(&cgroup_mutex);
-+		return false;
-+	}
-+	return true;
-+}
-+
-+static int cgroup_release_agent_write(struct cgroup *cgrp, struct cftype *cft,
-+				      const char *buffer)
-+{
-+	BUILD_BUG_ON(sizeof(cgrp->root->release_agent_path) < PATH_MAX);
-+	if (!cgroup_lock_live_group(cgrp))
-+		return -ENODEV;
-+	strcpy(cgrp->root->release_agent_path, buffer);
-+	mutex_unlock(&cgroup_mutex);
-+	return 0;
-+}
-+
-+static int cgroup_release_agent_show(struct cgroup *cgrp, struct cftype *cft,
-+				     struct seq_file *seq)
-+{
-+	if (!cgroup_lock_live_group(cgrp))
-+		return -ENODEV;
-+	seq_puts(seq, cgrp->root->release_agent_path);
-+	seq_putc(seq, '\n');
-+	mutex_unlock(&cgroup_mutex);
-+	return 0;
-+}
-+
- static ssize_t cgroup_write_X64(struct cgroup *cgrp, struct cftype *cft,
- 				struct file *file,
- 				const char __user *userbuf,
-@@ -1443,10 +1478,6 @@ static ssize_t cgroup_common_file_write(
- 		else
- 			clear_bit(CGRP_NOTIFY_ON_RELEASE, &cgrp->flags);
- 		break;
--	case FILE_RELEASE_AGENT:
--		BUILD_BUG_ON(sizeof(cgrp->root->release_agent_path) < PATH_MAX);
--		strcpy(cgrp->root->release_agent_path, buffer);
--		break;
- 	default:
- 		retval = -EINVAL;
- 		goto out2;
-@@ -1506,49 +1537,6 @@ static ssize_t cgroup_read_s64(struct cg
- 	return simple_read_from_buffer(buf, nbytes, ppos, tmp, len);
- }
- 
--static ssize_t cgroup_common_file_read(struct cgroup *cgrp,
--					  struct cftype *cft,
--					  struct file *file,
--					  char __user *buf,
--					  size_t nbytes, loff_t *ppos)
--{
--	enum cgroup_filetype type = cft->private;
--	char *page;
--	ssize_t retval = 0;
--	char *s;
--
--	if (!(page = (char *)__get_free_page(GFP_KERNEL)))
--		return -ENOMEM;
--
--	s = page;
--
--	switch (type) {
--	case FILE_RELEASE_AGENT:
--	{
--		struct cgroupfs_root *root;
--		size_t n;
--		mutex_lock(&cgroup_mutex);
--		root = cgrp->root;
--		n = strnlen(root->release_agent_path,
--			    sizeof(root->release_agent_path));
--		n = min(n, (size_t) PAGE_SIZE);
--		strncpy(s, root->release_agent_path, n);
--		mutex_unlock(&cgroup_mutex);
--		s += n;
--		break;
--	}
--	default:
--		retval = -EINVAL;
--		goto out;
--	}
--	*s++ = '\n';
--
--	retval = simple_read_from_buffer(buf, nbytes, ppos, page, s - page);
--out:
--	free_page((unsigned long)page);
--	return retval;
--}
--
- static ssize_t cgroup_file_read(struct file *file, char __user *buf,
- 				   size_t nbytes, loff_t *ppos)
- {
-@@ -1606,6 +1594,7 @@ static int cgroup_seqfile_release(struct
- 
- static struct file_operations cgroup_seqfile_operations = {
- 	.read = seq_read,
-+	.write = cgroup_file_write,
- 	.llseek = seq_lseek,
- 	.release = cgroup_seqfile_release,
- };
-@@ -2283,8 +2272,9 @@ static struct cftype files[] = {
- 
- static struct cftype cft_release_agent = {
- 	.name = "release_agent",
--	.read = cgroup_common_file_read,
--	.write = cgroup_common_file_write,
-+	.read_seq_string = cgroup_release_agent_show,
-+	.write_string = cgroup_release_agent_write,
-+	.max_write_len = PATH_MAX,
- 	.private = FILE_RELEASE_AGENT,
- };
- 
-@@ -3113,27 +3103,24 @@ static void cgroup_release_agent(struct 
- 	while (!list_empty(&release_list)) {
- 		char *argv[3], *envp[3];
- 		int i;
--		char *pathbuf;
-+		char *pathbuf = NULL, *agentbuf = NULL;
- 		struct cgroup *cgrp = list_entry(release_list.next,
- 						    struct cgroup,
- 						    release_list);
- 		list_del_init(&cgrp->release_list);
- 		spin_unlock(&release_list_lock);
- 		pathbuf = kmalloc(PAGE_SIZE, GFP_KERNEL);
--		if (!pathbuf) {
--			spin_lock(&release_list_lock);
--			continue;
--		}
--
--		if (cgroup_path(cgrp, pathbuf, PAGE_SIZE) < 0) {
--			kfree(pathbuf);
--			spin_lock(&release_list_lock);
--			continue;
--		}
-+		if (!pathbuf)
-+			goto continue_free;
-+		if (cgroup_path(cgrp, pathbuf, PAGE_SIZE) < 0)
-+			goto continue_free;
-+		agentbuf = kstrdup(cgrp->root->release_agent_path, GFP_KERNEL);
-+		if (!agentbuf)
-+			goto continue_free;
- 
- 		i = 0;
--		argv[i++] = cgrp->root->release_agent_path;
--		argv[i++] = (char *)pathbuf;
-+		argv[i++] = agentbuf;
-+		argv[i++] = pathbuf;
- 		argv[i] = NULL;
- 
- 		i = 0;
-@@ -3147,8 +3134,10 @@ static void cgroup_release_agent(struct 
- 		 * be a slow process */
- 		mutex_unlock(&cgroup_mutex);
- 		call_usermodehelper(argv[0], argv, envp, UMH_WAIT_EXEC);
--		kfree(pathbuf);
- 		mutex_lock(&cgroup_mutex);
-+ continue_free:
-+		kfree(pathbuf);
-+		kfree(agentbuf);
- 		spin_lock(&release_list_lock);
- 	}
- 	spin_unlock(&release_list_lock);
-Index: cws-2.6.26-rc5-mm3/include/linux/cgroup.h
-===================================================================
---- cws-2.6.26-rc5-mm3.orig/include/linux/cgroup.h
-+++ cws-2.6.26-rc5-mm3/include/linux/cgroup.h
-@@ -295,6 +295,8 @@ int cgroup_add_files(struct cgroup *cgrp
- 
- int cgroup_is_removed(const struct cgroup *cgrp);
- 
-+int cgroup_lock_live_group(struct cgroup *cgrp);
-+
- int cgroup_path(const struct cgroup *cgrp, char *buf, int buflen);
- 
- int cgroup_task_count(const struct cgroup *cgrp);
+	spin_lock(&taskcg->lock);
+	if (taskcg->nr_tasks + nr_threads > taskcg->max_tasks)
+		ret = -EBUSY;
+	spin_unlock(&taskcg->lock);
 
---
+	return ret;
+}
+
+>> - When a sub-thread of a process is in the cgroup, but not its thread
+>>  cgroup leader, what to do when 'cat procs'? just skip those threads?
+> 
+> Sounds reasonable. I think that in general the procs file is more
+> useful as a write API than a read API anyway, for the reasons you
+> indicate there.
+> 
+> 
+>> +       tsk = attach_get_task(cgrp, pidbuf);
+>> +       if (IS_ERR(tsk))
+>> +               return PTR_ERR(tsk);
+>> +
+>> +       /* attach thread group leader */
+> 
+> Should we check that this is in fact a thread group leader?
+> 
+
+No need actually, I added this check originally and then removed it, but
+forgot to remove the comment.
+
+>> +
+>> +       /* attach all sub-threads */
+>> +       rcu_read_lock();
+> 
+> cgroup_attach_task() calls synchronize_rcu(), so it doesn't seem
+> likely that rcu_read_lock() is useful here, and might even deadlock?
+> 
+> What are you trying to protect against with the RCU lock?
+> 
+
+Ah yes, bad here. I am trying to protect the thread list.
+
+>>        {
+>> +               .name = "procs",
+> 
+> Maybe call it "cgroup.procs" to avoid name clashes in future? We had a
+> debate a while back where I tried to get the cgroup files like "tasks"
+> and "notify_on_release" prefixed with "cgroup." , which were argued
+> against on grounds of backwards compatibility. But there's no
+> compatibility issue here. The only question is whether it's too ugly
+> to have the legacy filenames without a prefix and the new ones with a
+> prefix.
+> 
+
+Yes it's ugly.. Is possible name clash of "procs" a kind of breaking
+compatibility that should be avoid in any case?
