@@ -1,14 +1,14 @@
-From: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Subject: Re: [RFC] [PATCH] cgroup: add "procs" control file
-Date: Sat, 21 Jun 2008 14:20:16 +0800
-Message-ID: <485C9DA0.9080803__46638.16270554$1214029452$gmane$org@cn.fujitsu.com>
-References: <4858C111.8050806@cn.fujitsu.com>
-	<6599ad830806192237y8b10c4ao923375074aff56c5@mail.gmail.com>
+From: "Paul Menage" <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH] Priority heap infrastructure enhancements
+Date: Sat, 21 Jun 2008 00:29:41 -0700
+Message-ID: <6599ad830806210029x2a020e1ava6b646be9913fcdf@mail.gmail.com>
+References: <1213796886-24863-1-git-send-email-balbir@linux.vnet.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <6599ad830806192237y8b10c4ao923375074aff56c5-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
+In-Reply-To: <1213796886-24863-1-git-send-email-balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Content-Disposition: inline
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,88 +18,35 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
-Cc: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, LKML <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+To: Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Cc: akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Paul Menage wrote:
-> On Wed, Jun 18, 2008 at 1:02 AM, Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org> wrote:
->> - What to do if the attaching of a thread failed? continue to attach
->>  other threads, or stop and return error?
-> 
-> I think this is something that will have to be handled in the design
-> of transactional cgroup attach.
-> 
+On Wed, Jun 18, 2008 at 6:48 AM, Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org> wrote:
+>
+> Some of the common code has been factored into heap_adjust() a.k.a heapify
+> in data structures terminology.
+>
+> I am sending out this  patch indepedent of the memory controller changes as
+> they deserve to be reviewed independently.
+>
+> One limitation of the current heap_insert() routine is that it does not
+> insert an element which is greater than the root, when the heap slots
+> are fully used. I'll work on and review that interface and find a suitable
+> way to address that issue
 
-Is the following proposal feasable?
-- call can_attach() for each thread before attaching them into the new group.
-  This works for cpuset, doesn't it?
-- the above may not always reasonable, for example for Kosaki-san's task cgroup.
-  in this case, we require the subsystem to provide a can_attach_thread_group(),
-  like:
+How else would you want it to behave? If you have a fixed size heap
+and it's full, then you have to drop the largest value. (Well, you
+could in theory drop the smallest value, but there's no quick way to
+find that.)
 
-static int task_cgroup_can_attach_group(struct cgroup_subsys *ss,
-				  struct cgroup *cgrp, struct task_struct *tsk)
-{
-	struct task_cgroup *taskcg = task_cgroup_from_cgrp(cgrp);
-	struct task_struct *t;
-	int ret = 0;
-	int nr_threads = 1;
+>
+> Comments, Flames? Please do review closely!
+>
+> Signed-off-by: Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 
-	for (t = next_thread(tsk); t != tsk; t = next_thread(t)
-		nr_threads++;
+Looks fine.
 
-	spin_lock(&taskcg->lock);
-	if (taskcg->nr_tasks + nr_threads > taskcg->max_tasks)
-		ret = -EBUSY;
-	spin_unlock(&taskcg->lock);
+Reviewed-by: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
 
-	return ret;
-}
-
->> - When a sub-thread of a process is in the cgroup, but not its thread
->>  cgroup leader, what to do when 'cat procs'? just skip those threads?
-> 
-> Sounds reasonable. I think that in general the procs file is more
-> useful as a write API than a read API anyway, for the reasons you
-> indicate there.
-> 
-> 
->> +       tsk = attach_get_task(cgrp, pidbuf);
->> +       if (IS_ERR(tsk))
->> +               return PTR_ERR(tsk);
->> +
->> +       /* attach thread group leader */
-> 
-> Should we check that this is in fact a thread group leader?
-> 
-
-No need actually, I added this check originally and then removed it, but
-forgot to remove the comment.
-
->> +
->> +       /* attach all sub-threads */
->> +       rcu_read_lock();
-> 
-> cgroup_attach_task() calls synchronize_rcu(), so it doesn't seem
-> likely that rcu_read_lock() is useful here, and might even deadlock?
-> 
-> What are you trying to protect against with the RCU lock?
-> 
-
-Ah yes, bad here. I am trying to protect the thread list.
-
->>        {
->> +               .name = "procs",
-> 
-> Maybe call it "cgroup.procs" to avoid name clashes in future? We had a
-> debate a while back where I tried to get the cgroup files like "tasks"
-> and "notify_on_release" prefixed with "cgroup." , which were argued
-> against on grounds of backwards compatibility. But there's no
-> compatibility issue here. The only question is whether it's too ugly
-> to have the legacy filenames without a prefix and the new ones with a
-> prefix.
-> 
-
-Yes it's ugly.. Is possible name clash of "procs" a kind of breaking
-compatibility that should be avoid in any case?
+Paul
