@@ -1,47 +1,55 @@
-From: "Paul Menage" <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH] Priority heap infrastructure enhancements
-Date: Sat, 21 Jun 2008 09:03:44 -0700
-Message-ID: <6599ad830806210903p396bb856q16143f5f28a9f6f2__37905.4404017099$1214064401$gmane$org@mail.gmail.com>
-References: <1213796886-24863-1-git-send-email-balbir@linux.vnet.ibm.com>
-	<6599ad830806210029x2a020e1ava6b646be9913fcdf@mail.gmail.com>
-	<485CB652.90801@linux.vnet.ibm.com>
+From: "KOSAKI Motohiro" <kosaki.motohiro@jp.fujitsu.com>
+Subject: Re: [PATCH] introduce task cgroup v2
+Date: Sun, 22 Jun 2008 02:01:12 +0900
+Message-ID: <2f11576a0806211001w375d440dua42b56edce25bfda@mail.gmail.com>
+References: <6599ad830806210056n44c7ff37g7cd643f95aef4aa0@mail.gmail.com>
+	 <485CC255.9010504@linux.vnet.ibm.com>
+	 <20080621180530.E82D.KOSAKI.MOTOHIRO@jp.fujitsu.com>
+	 <6599ad830806210848q1a1538bcw79c2f3217dd49303@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
+Content-Type: text/plain; charset=ISO-8859-1
 Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <485CB652.90801-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1753406AbYFURB1@vger.kernel.org>
+In-Reply-To: <6599ad830806210848q1a1538bcw79c2f3217dd49303@mail.gmail.com>
 Content-Disposition: inline
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
-Cc: akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Sender: linux-kernel-owner@vger.kernel.org
+To: Paul Menage <menage@google.com>
+Cc: balbir@linux.vnet.ibm.com, Pavel Emelianov <xemul@openvz.org>, containers@lists.osdl.org, LKML <linux-kernel@vger.kernel.org>, Li Zefan <lizf@cn.fujitsu.com>, Andrew Morton <akpm@linux-foundation.org>
 List-Id: containers.vger.kernel.org
 
-On Sat, Jun 21, 2008 at 1:05 AM, Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org> wrote:
+>> I am going to convert spinlock in task limit cgroup to atomic_t.
+>> task limit cgroup has following caractatics.
+>>        - many write (fork, exit)
+>>        - few read
+>>        - fork() is performance sensitive systemcall.
 >
-> I would like to be able to drop the smallest value. Since we cannot drop the
-> smallest value, dropping a leaf (heap->size) should be sufficiently good enough.
-> I want a max heap and losing the root of the heap does not work for me.
+> This is true, but I don't see how it can be more performance-sensitive
+> than the overhead of allocating/freeing a page.
+>
+> What kinds of performance regressions did you see?
 
-Dropping the last element will give you an "approximate-max" heap -
-once you've finished building the heap, for a heap depth of N I think
-the first N-1 calls to heap_delete_max() will give correct results,
-but any time after that you could be missing things that were dropped
-incorrectly during the building phase.
+I ran spawn test of unix bench, thus
 
-If this is OK for what you're trying to do, then either:
+implement way                   performance degression
+-------------------------------------------------------------------------
+use res_counter                  15-20%
+use spin_lock()                    nealy 10%
+use atomic_t                       nealy 5%
 
-- adding a adding a heap_insert_drop_leaf_on_overflow() function, or
+Yes, this is really roughly number.
+Of cource, I'll post more detail result at next week.
 
-- adding a flag to the heap structure indicating what to do on overflow
+>>          if increase fork overhead, system total performance cause degression.
+>
+> What kind of overhead were you seeing? How about if you delay doing
+> any task accounting until the task_limit subsystem is bound to a
+> hierarchy? That way there's no noticeable overhead for people who
+> aren't using your subsystem.
 
-sounds fine.
+honestly, I am seeing it on micro-benchmark only.
+but, I'm afraid to performance degression because many people check
+performance regression periodically.
+So if my implement cause performance regression, they never used mine.
 
-Paul
+Or, if you strongly want to task_limit subsystem use res_counter,
+I can be working on improve to res_counter performance instead.
