@@ -1,16 +1,11 @@
-From: Randy Dunlap <randy.dunlap-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 1/3] i/o bandwidth controller documentation
-Date: Sun, 22 Jun 2008 11:03:43 -0500 (CDT)
-Message-ID: <17241648.1214150623059.JavaMail.oracle__19167.8838724785$1214150798$gmane$org@acsmt302.oracle.com>
-References: <1213956335-29866-2-git-send-email-righi.andrea@gmail.com>
-	<20080620100825.eff22c44.randy.dunlap@oracle.com>
-	<485CD956.3070209@gmail.com>
+From: "Charles Peterson" <cornucopian-jOgLiKzZKa4qDJ6do+/SaQ@public.gmane.org>
+Subject: ^Photo shop CS 3^
+Date: Sun, 22 Jun 2008 13:12:49 -0300
+Message-ID: <000901c8d482$c1a96400$0100007f@ihqnc>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <485CD956.3070209-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Content-Language: en-US
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -20,28 +15,48 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org
-Cc: axboe-tSWWG44O7X1aa/9Udqfwiw@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Carl Henrik Lunde <chlunde-om2ZC0WAoZIXWF+eFR7m5Q@public.gmane.org>, Divyesh Shah <dpshah-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, matt-cT2on/YLNlBWk0Htik3J/w@public.gmane.org, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, roberto-5KDOxZqKugI@public.gmane.org, Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+To: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
 List-Id: containers.vger.kernel.org
 
---- Original Message ---
-> Thanks Randy, I've applied all your fixes to my local
-> documentation,
-> next patchset version will include them. A few small comments
-> below.
-> 
-> >> +WARNING: per-block device limiting rules always refer to the dev_t device
-> >> +number. If a block device is unplugged (i.e. a USB device) the limiting rules
-> >> +associated to that device persist and they are still valid if a new device is
-> > 
-> > associated with (?)
-> 
-> what about:
-> 
-> ...the limiting rules defined for that device...
+^ Adobe CS3 Master Collection for PC or MAC includes:
+^ InDesign CS3
+^ Photoshop CS3
+^ Illustrator CS3
+^ Acrobat 8 Professional
+^ Flash CS3 Professional
+^ Dreamweaver CS3
+^ Fireworks CS3
+^ Contribute CS3
+^ After Effects CS3 Professional
+^ Premiere Pro CS3
+^ Encore DVD CS3
+^ Soundbooth CS3
 
-Hi Andrea,
+^ blogsoftoem .com in Internet Exp|orer
 
-Yes, that's fine.
+^ System Requirements
 
-Thanks.
+^ For PC:
+^ Intel Pentium 4 (1.4GHz processor for DV; 3.4GHz processor for HDV), Intel Centrino, Intel Xeon, (dual 2.8GHz processors for HD), or Intel Core
+^ Duo (or compatible) processor; SSE2-enabled processor required for AMD systems
+^ Microsoft Windows XP with Service Pack 2 or Microsoft Windows Vista Home Premium, Business, Ultimate, or Enterprise (certified for 32-bit editions)
+^ 1GB of RAM for DV; 2GB of RAM for HDV and HD; more RAM recommended when running multiple components
+^ 38GB of available hard-disk space (additional free space required during installation)
+^ Dedicated 7,200 RPM hard drive for DV and HDV editing; striped disk array storage (RAID 0) for HD; SCSI disk subsystem preferred
+^ Microsoft DirectX compatible sound card (multichannel ASIO-compatible sound card recommended)
+^ 1,280x1,024 monitor resolution with 32-bit color adapter
+^ DVD-ROM drive
+
+^ For MAC:
+^ PowerPC G4 or G5 or multicore Intel processor (Adobe Premiere Pro, Encore, and Soundbooth require a multicore Intel processor; Adobe OnLocation CS3 is a Windows application and may be used with Boot Camp)
+^ Mac OS X v.10.4.9; Java Runtime Environment 1.5 required for Adobe Version Cue CS3 Server
+^ 1GB of RAM for DV; 2GB of RAM for HDV and HD; more RAM recommended when running multiple components
+^ 36GB of available hard-disk space (additional free space required during installation)
+^ Dedicated 7,200 RPM hard drive for DV and HDV editing; striped disk array storage (RAID 0) for HD; SCSI disk subsystem preferred
+^ Core Audio compatible sound card
+^ 1,280x1,024 monitor resolution with 32-bit color adapter
+^ DVD-ROM drive^ DVD+-R burner required for DVD creation
+
+Economic Boom Makes Some Vietnamese Uneasy
+
+The nuclear programs in India, Pakistan, and Iran have all been in the news lately.  To parse out the latest developments in nuclear proliferation, Host Liane Hansen speaks with Michael Krepon, of the Henry L. Stimson Center and George Perkovich, of the Carnegie Endowment for International Peace.
