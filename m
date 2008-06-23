@@ -1,11 +1,15 @@
-From: "Bert Harris" <personeity-rrSICsPUWOXaCxkrFeeTpNBPR1lH4CV8@public.gmane.org>
-Subject: =Dream weaver CS 3=
-Date: Mon, 23 Jun 2008 15:43:26 +0500
-Message-ID: <000201c8d504$8f404b00$0100007f@reaynqy>
+From: Paul Jackson <pj-sJ/iWh9BUns@public.gmane.org>
+Subject: Re: v2.6.26-rc7/cgroups: circular locking dependency
+Date: Mon, 23 Jun 2008 07:02:23 -0500
+Message-ID: <20080623070223.eaa8e130.pj__19543.803871102$1214222833$gmane$org@sgi.com>
+References: <20080621173859.GA6846@damson.getinternet.no>
+	<2f11576a0806220834m3572ee80i72229cb9a1613558@mail.gmail.com>
+	<1214149823.3223.313.camel@lappy.programming.kicks-ass.net>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <1214149823.3223.313.camel-N9Ixq/CQ5vKdTX5a5knrm8zTDFooKrT+cvkQGrU6aU0@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -15,48 +19,59 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
+To: Peter Zijlstra <a.p.zijlstra-/NLkJaSkS4VmR6Xm/wNWPw@public.gmane.org>, Gautham R Shenoy <ego-xthvdsQ13ZrQT0dZR+AlfA@public.gmane.org>
+Cc: kosaki.motohiro-+CUm20s59erQFUHtdCDX3A@public.gmane.org, vegard.nossum-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, maxk-zC7DfRvBq/JWk0Htik3J/w@public.gmane.org, menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-= Adobe CS3 Master Collection for PC or MAC includes:
-= InDesign CS3
-= Photoshop CS3
-= Illustrator CS3
-= Acrobat 8 Professional
-= Flash CS3 Professional
-= Dreamweaver CS3
-= Fireworks CS3
-= Contribute CS3
-= After Effects CS3 Professional
-= Premiere Pro CS3
-= Encore DVD CS3
-= Soundbooth CS3
+CC'd Gautham R Shenoy <ego-xthvdsQ13ZrQT0dZR+AlfA@public.gmane.org>.
 
-= esoftcheap . com in your Internet ExpIorer
+I believe that we had the locking relation between what had been
+cgroup_lock (global cgroup lock which can be held over large stretches
+of non-performance critical code) and callback_mutex (global cpuset
+specific lock which is held over shorter stretches of more performance
+critical code - though still not on really hot code paths.)  One can
+nest callback_mutex inside cgroup_lock, but not vice versa.
 
-= System Requirements
+The callback_mutex guarded some CPU masks and Node masks, which might
+be multi-word and hence don't change atomically.  Any low level code
+that needs to read these these cpuset CPU and Node masks, needs to
+hold callback_mutex briefly, to keep that mask from changing while
+being read.
 
-= For PC:
-= Intel Pentium 4 (1.4GHz processor for DV; 3.4GHz processor for HDV), Intel Centrino, Intel Xeon, (dual 2.8GHz processors for HD), or Intel Core
-= Duo (or compatible) processor; SSE2-enabled processor required for AMD systems
-= Microsoft Windows XP with Service Pack 2 or Microsoft Windows Vista Home Premium, Business, Ultimate, or Enterprise (certified for 32-bit editions)
-= 1GB of RAM for DV; 2GB of RAM for HDV and HD; more RAM recommended when running multiple components
-= 38GB of available hard-disk space (additional free space required during installation)
-= Dedicated 7,200 RPM hard drive for DV and HDV editing; striped disk array storage (RAID 0) for HD; SCSI disk subsystem preferred
-= Microsoft DirectX compatible sound card (multichannel ASIO-compatible sound card recommended)
-= 1,280x1,024 monitor resolution with 32-bit color adapter
-= DVD-ROM drive
+There is even a comment in kernel/cpuset.c, explaining how an ABBA
+deadlock must be avoided when calling rebuild_sched_domains():
 
-= For MAC:
-= PowerPC G4 or G5 or multicore Intel processor (Adobe Premiere Pro, Encore, and Soundbooth require a multicore Intel processor; Adobe OnLocation CS3 is a Windows application and may be used with Boot Camp)
-= Mac OS X v.10.4.9; Java Runtime Environment 1.5 required for Adobe Version Cue CS3 Server
-= 1GB of RAM for DV; 2GB of RAM for HDV and HD; more RAM recommended when running multiple components
-= 36GB of available hard-disk space (additional free space required during installation)
-= Dedicated 7,200 RPM hard drive for DV and HDV editing; striped disk array storage (RAID 0) for HD; SCSI disk subsystem preferred
-= Core Audio compatible sound card
-= 1,280x1,024 monitor resolution with 32-bit color adapter
-= DVD-ROM drive= DVD+-R burner required for DVD creation
+/*
+ * rebuild_sched_domains()
+ *
+ * ...
+ *
+ * Call with cgroup_mutex held.  May take callback_mutex during
+ * call due to the kfifo_alloc() and kmalloc() calls.  May nest
+ * a call to the get_online_cpus()/put_online_cpus() pair.
+ * Must not be called holding callback_mutex, because we must not
+ * call get_online_cpus() while holding callback_mutex.  Elsewhere
+ * the kernel nests callback_mutex inside get_online_cpus() calls.
+ * So the reverse nesting would risk an ABBA deadlock.
 
-Zimbabwe's Opposition Leader Pulls Out of Election
+This went into the kernel sometime around 2.6.18.
 
-Charting China's Intellectual Development
+Then in October and November of 2007, Gautham R Shenoy submitted
+"Refcount Based Cpu Hotplug" (http://lkml.org/lkml/2007/11/15/239)
+
+This added cpu_hotplug.lock, which at first glance seems to fit into
+the locking hierarchy about where callback_mutex did before, such as
+being invocable from rebuild_sched_domains().
+
+However ... the kernel/cpuset.c comments were not updated to describe
+the intended locking hierarchy as it relates to cpu_hotplug.lock, and
+it looks as if cpu_hotplug.lock can also be taken while invoking the
+hotplug callbacks, such as the one here that is handling a CPU down
+event for cpusets.
+
+Gautham ... you there?
+
+-- 
+                  I won't rest till it's the best ...
+                  Programmer, Linux Scalability
+                  Paul Jackson <pj-sJ/iWh9BUns@public.gmane.org> 1.940.382.4214
