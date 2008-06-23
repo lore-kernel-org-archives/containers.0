@@ -1,42 +1,62 @@
-From: Tejun Heo <htejun@gmail.com>
-Subject: Re: [PATCH 11/11] sysfs: user namespaces: fix bug with clone(CLONE_NEWUSER)
- with fairsched
-Date: Mon, 23 Jun 2008 11:18:58 +0900
-Message-ID: <485F0812.4090903@gmail.com>
-References: <20080618170729.808539948@theryb.frec.bull.fr> <20080618170731.746054454@theryb.frec.bull.fr>
+From: "Bert Harris" <personeity-rrSICsPUWOXaCxkrFeeTpNBPR1lH4CV8@public.gmane.org>
+Subject: =Dream weaver CS 3=
+Date: Mon, 23 Jun 2008 15:43:26 +0500
+Message-ID: <000201c8d504$8f404b00$0100007f@reaynqy>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
+Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1756454AbYFWCTU@vger.kernel.org>
-In-Reply-To: <20080618170731.746054454@theryb.frec.bull.fr>
-Sender: linux-kernel-owner@vger.kernel.org
-To: Benjamin Thery <benjamin.thery@bull.net>
-Cc: Greg Kroah-Hartman <gregkh@suse.de>, Andrew Morton <akpm@linux-foundation.org>, Eric Biederman <ebiederm@xmission.com>, Daniel Lezcano <dlezcano@fr.ibm.com>, Serge Hallyn <serue@us.ibm.com>, linux-kernel@vger.kernel.org, Al Viro <viro@ftp.linux.org.uk>, Linux Containers <containers@lists.osdl.org>
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Benjamin Thery wrote:
-> Mark the /sys/kernel/uids directory to be tagged so that processes in
-> different user namespaces can remount /sys and see their own uid
-> listings.
-> 
-> Without this patch, having CONFIG_FAIR_SCHED=y makes user namespaces
-> unusable, because when you 
->   clone(CLONE_NEWUSER)
-> it will auto-create the root userid and try to create
-> /sys/kernel/uids/0.  Since that already exists from the parent user
-> namespace, the create fails, and the clone misleadingly ends up
-> returning -ENOMEM.
-> 
-> This patch fixes the issue by allowing each user namespace to remount
-> /sys, and having /sys filter the /sys/kernel/uid/ entries by user
-> namespace.
-> 
-> Signed-off-by: Serge Hallyn <serue@us.ibm.com>
-> Signed-off-by: Benjamin Thery <benjamin.thery@bull.net>
+= Adobe CS3 Master Collection for PC or MAC includes:
+= InDesign CS3
+= Photoshop CS3
+= Illustrator CS3
+= Acrobat 8 Professional
+= Flash CS3 Professional
+= Dreamweaver CS3
+= Fireworks CS3
+= Contribute CS3
+= After Effects CS3 Professional
+= Premiere Pro CS3
+= Encore DVD CS3
+= Soundbooth CS3
 
-Ditto as patch #10.
+= esoftcheap . com in your Internet ExpIorer
 
-Thanks.
+= System Requirements
 
--- 
-tejun
+= For PC:
+= Intel Pentium 4 (1.4GHz processor for DV; 3.4GHz processor for HDV), Intel Centrino, Intel Xeon, (dual 2.8GHz processors for HD), or Intel Core
+= Duo (or compatible) processor; SSE2-enabled processor required for AMD systems
+= Microsoft Windows XP with Service Pack 2 or Microsoft Windows Vista Home Premium, Business, Ultimate, or Enterprise (certified for 32-bit editions)
+= 1GB of RAM for DV; 2GB of RAM for HDV and HD; more RAM recommended when running multiple components
+= 38GB of available hard-disk space (additional free space required during installation)
+= Dedicated 7,200 RPM hard drive for DV and HDV editing; striped disk array storage (RAID 0) for HD; SCSI disk subsystem preferred
+= Microsoft DirectX compatible sound card (multichannel ASIO-compatible sound card recommended)
+= 1,280x1,024 monitor resolution with 32-bit color adapter
+= DVD-ROM drive
+
+= For MAC:
+= PowerPC G4 or G5 or multicore Intel processor (Adobe Premiere Pro, Encore, and Soundbooth require a multicore Intel processor; Adobe OnLocation CS3 is a Windows application and may be used with Boot Camp)
+= Mac OS X v.10.4.9; Java Runtime Environment 1.5 required for Adobe Version Cue CS3 Server
+= 1GB of RAM for DV; 2GB of RAM for HDV and HD; more RAM recommended when running multiple components
+= 36GB of available hard-disk space (additional free space required during installation)
+= Dedicated 7,200 RPM hard drive for DV and HDV editing; striped disk array storage (RAID 0) for HD; SCSI disk subsystem preferred
+= Core Audio compatible sound card
+= 1,280x1,024 monitor resolution with 32-bit color adapter
+= DVD-ROM drive= DVD+-R burner required for DVD creation
+
+Zimbabwe's Opposition Leader Pulls Out of Election
+
+Charting China's Intellectual Development
