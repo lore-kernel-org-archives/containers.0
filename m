@@ -1,15 +1,15 @@
 From: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
-Subject: Re: [PATCH 2/8] CGroup Files: Add write_string cgroup control file
-	method
-Date: Tue, 24 Jun 2008 16:19:23 -0700
-Message-ID: <20080624161923.449ecea4.akpm__1815.03428980267$1214349686$gmane$org@linux-foundation.org>
+Subject: Re: [PATCH 3/8] CGroup Files: Move the release_agent file to use
+	typed handlers
+Date: Tue, 24 Jun 2008 16:23:25 -0700
+Message-ID: <20080624162325.005c87e0.akpm@linux-foundation.org>
 References: <20080620234358.182933000@menage.corp.google.com>
-	<20080621000730.052131000@menage.corp.google.com>
+	<20080621000730.255258000@menage.corp.google.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20080621000730.052131000-B63HFAS8fGlSzHKm+aFRNNkmqwFzkYv6@public.gmane.org>
+In-Reply-To: <20080621000730.255258000-B63HFAS8fGlSzHKm+aFRNNkmqwFzkYv6@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -23,112 +23,88 @@ To: menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org
 Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Fri, 20 Jun 2008 16:44:00 -0700
+On Fri, 20 Jun 2008 16:44:01 -0700
 menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org wrote:
 
-> This patch adds a write_string() method for cgroups control files. The
-> semantics are that a buffer is copied from userspace to kernelspace
-> and the handler function invoked on that buffer.  The buffer is
-> guaranteed to be nul-terminated, and no longer than max_write_len
-> (defaulting to 64 bytes if unspecified). Later patches will convert
-> existing raw file write handlers in control group subsystems to use
-> this method.
+> Adds cgroup_release_agent_write() and cgroup_release_agent_show()
+> methods to handle writing/reading the path to a cgroup hierarchy's
+> release agent. As a result, cgroup_common_file_read() is now unnecessary.
+> 
+> As part of the change, a previously-tolerated race in
+> cgroup_release_agent() is avoided by copying the current
+> release_agent_path prior to calling call_usermode_helper().
 > 
 > Signed-off-by: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
 > 
 > ---
->  include/linux/cgroup.h |   14 ++++++++++++++
->  kernel/cgroup.c        |   35 +++++++++++++++++++++++++++++++++++
->  2 files changed, 49 insertions(+)
+>  include/linux/cgroup.h |    2 
+>  kernel/cgroup.c        |  125 ++++++++++++++++++++++---------------------------
+>  2 files changed, 59 insertions(+), 68 deletions(-)
 > 
-> Index: cws-2.6.26-rc5-mm3/include/linux/cgroup.h
-> ===================================================================
-> --- cws-2.6.26-rc5-mm3.orig/include/linux/cgroup.h
-> +++ cws-2.6.26-rc5-mm3/include/linux/cgroup.h
-> @@ -205,6 +205,13 @@ struct cftype {
->  	 * subsystem, followed by a period */
->  	char name[MAX_CFTYPE_NAME];
->  	int private;
-> +
-> +	/*
-> +	 * If non-zero, defines the maximum length of string that can
-> +	 * be passed to write_string; defaults to 64
-> +	 */
-> +	size_t max_write_len;
-> +
->  	int (*open)(struct inode *inode, struct file *file);
->  	ssize_t (*read)(struct cgroup *cgrp, struct cftype *cft,
->  			struct file *file,
-> @@ -249,6 +256,13 @@ struct cftype {
->  	int (*write_s64)(struct cgroup *cgrp, struct cftype *cft, s64 val);
->  
->  	/*
-> +	 * write_string() is passed a nul-terminated kernelspace
-> +	 * buffer of maximum length determined by max_write_len.
-> +	 * Returns 0 or -ve error code.
-> +	 */
-> +	int (*write_string)(struct cgroup *cgrp, struct cftype *cft,
-> +			    const char *buffer);
-
-Everything seems to use size_t (or ssize_t?) except for the ->write_string
-return value.  Can any of this be improved?
-
-> +	/*
->  	 * trigger() callback can be used to get some kick from the
->  	 * userspace, when the actual string written is not important
->  	 * at all. The private field can be used to determine the
 > Index: cws-2.6.26-rc5-mm3/kernel/cgroup.c
 > ===================================================================
 > --- cws-2.6.26-rc5-mm3.orig/kernel/cgroup.c
 > +++ cws-2.6.26-rc5-mm3/kernel/cgroup.c
-> @@ -1363,6 +1363,39 @@ static ssize_t cgroup_write_X64(struct c
->  	return retval;
->  }
+> @@ -89,11 +89,7 @@ struct cgroupfs_root {
+>  	/* Hierarchy-specific flags */
+>  	unsigned long flags;
 >  
-> +static ssize_t cgroup_write_string(struct cgroup *cgrp, struct cftype *cft,
-> +				   struct file *file,
-> +				   const char __user *userbuf,
-> +				   size_t nbytes, loff_t *unused_ppos)
+> -	/* The path to use for release notifications. No locking
+> -	 * between setting and use - so if userspace updates this
+> -	 * while child cgroups exist, you could miss a
+> -	 * notification. We ensure that it's always a valid
+> -	 * NUL-terminated string */
+> +	/* The path to use for release notifications. */
+>  	char release_agent_path[PATH_MAX];
+>  };
+>  
+> @@ -1329,6 +1325,45 @@ enum cgroup_filetype {
+>  	FILE_RELEASE_AGENT,
+>  };
+>  
+> +/**
+> + * cgroup_lock_live_group - take cgroup_mutex and check that cgrp is alive.
+> + * @cgrp: the cgroup to be checked for liveness
+> + *
+> + * Returns true (with lock held) on success, or false (with no lock
+> + * held) on failure.
+> + */
+> +int cgroup_lock_live_group(struct cgroup *cgrp)
 > +{
-> +	char local_buffer[64];
-> +	int retval = 0;
-> +	size_t max_bytes = cft->max_write_len;
-> +	char *buffer = local_buffer;
-> +
-> +	if (!max_bytes)
-> +		max_bytes = sizeof(local_buffer) - 1;
-> +	if (nbytes >= max_bytes)
-> +		return -E2BIG;
-> +	/* Allocate a dynamic buffer if we need one */
-> +	if (nbytes >= sizeof(local_buffer)) {
-> +		buffer = kmalloc(nbytes + 1, GFP_KERNEL);
-> +		if (buffer == NULL)
-> +			return -ENOMEM;
+> +	mutex_lock(&cgroup_mutex);
+> +	if (cgroup_is_removed(cgrp)) {
+> +		mutex_unlock(&cgroup_mutex);
+> +		return false;
 > +	}
-> +	if (nbytes && copy_from_user(buffer, userbuf, nbytes))
-> +		return -EFAULT;
-> +
-> +	buffer[nbytes] = 0;     /* nul-terminate */
-> +	strstrip(buffer);
-> +	retval = cft->write_string(cgrp, cft, buffer);
-> +	if (!retval)
-> +		retval = nbytes;
-> +	if (buffer != local_buffer)
-> +		kfree(buffer);
-> +	return retval;
+> +	return true;
 > +}
+
+I think that if we're going to do this it would be nice to add a
+symmetrical cgroup_unlock_live_group()?
+
+Because code like this:
+
+> +	if (!cgroup_lock_live_group(cgrp))
+> +		return -ENODEV;
+> +	strcpy(cgrp->root->release_agent_path, buffer);
+> +	mutex_unlock(&cgroup_mutex);
+
+is a bit WTFish, no?  it forces each caller of cgroup_lock_live_group()
+to know about cgroup_lock_live_group() internals.
+
+That would be kind of OKayish if this code was closely localised, but...
+
+> --- cws-2.6.26-rc5-mm3.orig/include/linux/cgroup.h
+> +++ cws-2.6.26-rc5-mm3/include/linux/cgroup.h
+> @@ -295,6 +295,8 @@ int cgroup_add_files(struct cgroup *cgrp
+>  
+>  int cgroup_is_removed(const struct cgroup *cgrp);
+>  
+> +int cgroup_lock_live_group(struct cgroup *cgrp);
 > +
->  static ssize_t cgroup_common_file_write(struct cgroup *cgrp,
->  					   struct cftype *cft,
->  					   struct file *file,
-> @@ -1440,6 +1473,8 @@ static ssize_t cgroup_file_write(struct 
->  		return cft->write(cgrp, cft, file, buf, nbytes, ppos);
->  	if (cft->write_u64 || cft->write_s64)
->  		return cgroup_write_X64(cgrp, cft, file, buf, nbytes, ppos);
-> +	if (cft->write_string)
-> +		return cgroup_write_string(cgrp, cft, file, buf, nbytes, ppos);
->  	if (cft->trigger) {
->  		int ret = cft->trigger(cgrp, (unsigned int)cft->private);
->  		return ret ? ret : nbytes;
+>  int cgroup_path(const struct cgroup *cgrp, char *buf, int buflen);
+>  
+>  int cgroup_task_count(const struct cgroup *cgrp);
 > 
-> --
+
+I assume this gets used in another .c file in a  later patch.
