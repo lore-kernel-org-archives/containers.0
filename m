@@ -1,11 +1,15 @@
-From: "Sundar Frost" <squamellate-dX9tC88A/RHR7s880joybQ@public.gmane.org>
-Subject: :Sound booth CS 3:
-Date: Mon, 23 Jun 2008 22:51:00 -0900
-Message-ID: <000601c8d5be$23221d80$0100007f@uykkdui>
+From: Max Krasnyansky <maxk-zC7DfRvBq/JWk0Htik3J/w@public.gmane.org>
+Subject: Re: v2.6.26-rc7/cgroups: circular locking dependency
+Date: Mon, 23 Jun 2008 23:29:21 -0700
+Message-ID: <48609441.2030901__102.646955247288$1214289076$gmane$org@qualcomm.com>
+References: <20080621173859.GA6846@damson.getinternet.no>	
+	<2f11576a0806220834m3572ee80i72229cb9a1613558@mail.gmail.com>
+	<1214149823.3223.313.camel@lappy.programming.kicks-ass.net>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <1214149823.3223.313.camel-N9Ixq/CQ5vKdTX5a5knrm8zTDFooKrT+cvkQGrU6aU0@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -15,48 +19,36 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
+To: Peter Zijlstra <a.p.zijlstra-/NLkJaSkS4VmR6Xm/wNWPw@public.gmane.org>
+Cc: Vegard Nossum <vegard.nossum-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, KOSAKI Motohiro <kosaki.motohiro-+CUm20s59erQFUHtdCDX3A@public.gmane.org>, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-: Adobe CS3 Master Collection for PC or MAC includes:
-: InDesign CS3
-: Photoshop CS3
-: Illustrator CS3
-: Acrobat 8 Professional
-: Flash CS3 Professional
-: Dreamweaver CS3
-: Fireworks CS3
-: Contribute CS3
-: After Effects CS3 Professional
-: Premiere Pro CS3
-: Encore DVD CS3
-: Soundbooth CS3
+Peter Zijlstra wrote:
+> On Mon, 2008-06-23 at 00:34 +0900, KOSAKI Motohiro wrote:
+>> CC'ed Paul Jackson
+>>
+>> it seems typical ABBA deadlock.
+>> I think cpuset use cgrou_lock() by mistake.
+>>
+>> IMHO, cpuset_handle_cpuhp() sholdn't use cgroup_lock() and
+>> shouldn't call rebuild_sched_domains().
+> 
+> Looks like Max forgot to test with lockdep enabled... 
+Hmm, I don't think I actually changed any lock nesting/dependencies. Did I ?
+Oh, I see rebuild_sched_domains() is now called from cpuset hotplug handler.
+I just looked at the comment for rebuild_sched_domains() and it says
+" * Call with cgroup_mutex held. ..." that's why I thought it's safe and it
+worked on the test stations.
 
-: esoftnew. com in Internet Explorer
+Anyway, we need definitely need to make rebuild_sched_domains() work from the
+hotplug handler.
 
-: System Requirements
+> Well, someone should when you change the online map.
+> 
+> Max, Paul, can we handle this in update_sched_domains() instead?
 
-: For PC:
-: Intel Pentium 4 (1.4GHz processor for DV; 3.4GHz processor for HDV), Intel Centrino, Intel Xeon, (dual 2.8GHz processors for HD), or Intel Core
-: Duo (or compatible) processor; SSE2-enabled processor required for AMD systems
-: Microsoft Windows XP with Service Pack 2 or Microsoft Windows Vista Home Premium, Business, Ultimate, or Enterprise (certified for 32-bit editions)
-: 1GB of RAM for DV; 2GB of RAM for HDV and HD; more RAM recommended when running multiple components
-: 38GB of available hard-disk space (additional free space required during installation)
-: Dedicated 7,200 RPM hard drive for DV and HDV editing; striped disk array storage (RAID 0) for HD; SCSI disk subsystem preferred
-: Microsoft DirectX compatible sound card (multichannel ASIO-compatible sound card recommended)
-: 1,280x1,024 monitor resolution with 32-bit color adapter
-: DVD-ROM drive
+That'd be exactly the same as calling rebuild_sched_domains() outside of the
+cgroup_lock(). So I do not think it'll help. Paul has more info in his reply
+so I'll reply to his email.
 
-: For MAC:
-: PowerPC G4 or G5 or multicore Intel processor (Adobe Premiere Pro, Encore, and Soundbooth require a multicore Intel processor; Adobe OnLocation CS3 is a Windows application and may be used with Boot Camp)
-: Mac OS X v.10.4.9; Java Runtime Environment 1.5 required for Adobe Version Cue CS3 Server
-: 1GB of RAM for DV; 2GB of RAM for HDV and HD; more RAM recommended when running multiple components
-: 36GB of available hard-disk space (additional free space required during installation)
-: Dedicated 7,200 RPM hard drive for DV and HDV editing; striped disk array storage (RAID 0) for HD; SCSI disk subsystem preferred
-: Core Audio compatible sound card
-: 1,280x1,024 monitor resolution with 32-bit color adapter
-: DVD-ROM drive: DVD+-R burner required for DVD creation
-
-U.S. soldiers toiled like moles underground, but the massive intelligence feat was undone by another kind of mole.
-
-U.S. Blasts Mugabe on Zimbabwe Violence
+Max
