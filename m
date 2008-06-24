@@ -1,102 +1,49 @@
-From: sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org
-Subject: [PATCH 4/4][cryo]: Test 5: Read/write using dup() of pipe fds
-Date: Mon, 23 Jun 2008 20:34:54 -0700
-Message-ID: <20080624033454.GD27709@us.ibm.com>
-References: <20080624033133.GA27649@us.ibm.com>
+From: Tejun Heo <htejun@gmail.com>
+Subject: Re: [PATCH 05/11] sysfs: sysfs_chmod_file handle multiple superblocks
+Date: Tue, 24 Jun 2008 13:45:27 +0900
+Message-ID: <48607BE7.2060203@gmail.com>
+References: <20080618170729.808539948@theryb.frec.bull.fr> <20080618170730.853353875@theryb.frec.bull.fr> <485DD93A.6020600@gmail.com> <486018CB.80005@fr.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
+Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <20080624033133.GA27649-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org
-Cc: Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1753795AbYFXEpw@vger.kernel.org>
+In-Reply-To: <486018CB.80005@fr.ibm.com>
+Sender: linux-kernel-owner@vger.kernel.org
+To: Daniel Lezcano <dlezcano@fr.ibm.com>
+Cc: Benjamin Thery <benjamin.thery@bull.net>, Greg Kroah-Hartman <gregkh@suse.de>, Andrew Morton <akpm@linux-foundation.org>, Eric Biederman <ebiederm@xmission.com>, Serge Hallyn <serue@us.ibm.com>, linux-kernel@vger.kernel.org, Al Viro <viro@ftp.linux.org.uk>, Linux Containers <containers@lists.osdl.org>
 List-Id: containers.vger.kernel.org
 
-From 121c33ebe1ae201d5bb051f9c76e3eaae29329bb Mon Sep 17 00:00:00 2001
-From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Date: Sun, 22 Jun 2008 23:33:24 -0700
-Subject: [PATCH] Test 5: Read/write using dup() of pipe fds
+Hello,
 
----
- tests/pipe.c |   19 ++++++++++++++-----
- 1 files changed, 14 insertions(+), 5 deletions(-)
+Daniel Lezcano wrote:
+>> I think it would be great if sysfs_chmod_file can do all-or-nothing
+>> instead of failing half way through but given the interface of
+>> notify_change(), it could be difficult to implement.  Any ideas?
+> 
+> Is it acceptable to queue the notifications in a list until we are in
+> the loop and loop again to notify when exiting the first loop without
+> error ?
 
-diff --git a/tests/pipe.c b/tests/pipe.c
-index 5b04f46..47f5da6 100644
---- a/tests/pipe.c
-+++ b/tests/pipe.c
-@@ -16,12 +16,13 @@ char *test_descriptions[] = {
- 	"Test continous reads/writes from pipe",
- 	"Test non-consecutive pipe-fds",
- 	"Test with read-fd > write-fd",
-+	"Test with dup of pipe fds around"
- 	"Test with read-fd/write-fd swapped",
- 	"Test with all-fds in use",
- 	"Test with all-fds in use for pipes",
- };
- 
--static int last_num = 4;
-+static int last_num = 5;
- usage(char *argv[])
- {
- 	int i;
-@@ -145,13 +146,13 @@ int read_write_pipe(int *testfdsp, int close_unused)
- 		exit(1);
- 	}
- 
-+	read_fd = tmpfds[0];
-+	write_fd = tmpfds[1];
- 	if (testfdsp) {
- 		reset_pipe_fds(tmpfds, testfdsp, close_unused);
-+		/* read from dup'd fds even if main ones are open */
- 		read_fd = testfdsp[0];
- 		write_fd = testfdsp[1];
--	} else {
--		read_fd = tmpfds[0];
--		write_fd = tmpfds[1];
- 	}
- 
- 	printf("read_fd %d, write_fd %d\n", read_fd, write_fd);
-@@ -193,7 +194,7 @@ int read_write_pipe(int *testfdsp, int close_unused)
- 		}
- 	}
- 
--	if (strncmp(wbuf, rbuf, strlen(wbufp))) {
-+	if (strncmp(wbuf, rbuf, strlen(wbuf))) {
- 		printf("Wrote: %s\n", wbuf);
- 		printf("Read : %s\n", rbuf);
- 		printf("Test FAILED\n");
-@@ -214,6 +215,13 @@ static void test4()
- 	read_write_pipe(tmpfds, 1);
- }
- 
-+static void test5()
-+{
-+	int tmpfds[2] = { 172, 101 };
-+
-+	read_write_pipe(tmpfds, 0);
-+}
-+
- int
- main(int argc, char *argv[])
- {
-@@ -238,6 +246,7 @@ main(int argc, char *argv[])
- 	case 2: test2(); break;
- 	case 3: test3(); break;
- 	case 4: test4(); break;
-+	case 5: test5(); break;
- 	default:
- 		printf("Unsupported test case %d\n", tc_num);
- 		usage(argv);
+Can you please take a look at the following patch?
+
+http://article.gmane.org/gmane.linux.file-systems/24484
+
+Which replaces notify_change() call to two calls to sysfs_setattr() and
+fsnotify_change().  The latter never fails and the former should always
+succeed if inode_change_ok() succeeds (inode_setattr() never fails
+unless the size is changing), so I think the correct thing to do is...
+
+* Separate out sysfs_do_setattr() which doesn't do inode_change_ok() and
+just sets the attributes.  Making it a void function which triggers
+WARN_ON() when inode_setattr() fails would be a good idea.
+
+* Implement sysfs_chmod_file() in similar way rename/move are
+implemented - allocate all resources and check conditions and then iff
+everything looks okay commit the operation by calling sysfs_do_setattr().
+
+How does that sound?
+
+Thanks.
+
 -- 
-1.5.2.5
+tejun
