@@ -1,8 +1,7 @@
 From: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: [patch 1/4] Container Freezer: Add TIF_FREEZE flag to all
-	architectures
-Date: Tue, 24 Jun 2008 06:58:24 -0700
-Message-ID: <20080624135823.747587186__33047.2201495015$1214316131$gmane$org@us.ibm.com>
+Subject: [patch 3/4] Container Freezer: Implement freezer cgroup subsystem
+Date: Tue, 24 Jun 2008 06:58:26 -0700
+Message-ID: <20080624135824.420875709__21493.2617768229$1214316183$gmane$org@us.ibm.com>
 References: <20080624135823.417569216@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -22,318 +21,515 @@ Cc: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@pub
 List-Id: containers.vger.kernel.org
 
 From: Cedric Le Goater <clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
-Subject: [patch 1/4] Container Freezer: Add TIF_FREEZE flag to all architectures
+Subject: [patch 3/4] Container Freezer: Implement freezer cgroup subsystem
 
-This patch is the first step in making the refrigerator() available 
-to all architectures, even for those without power management. 
+This patch implements a new freezer subsystem for Paul Menage's 
+control groups framework. It provides a way to stop and resume 
+execution of all tasks in a cgroup by writing in the cgroup 
+filesystem.
 
-The purpose of such a change is to be able to use the refrigerator() 
-in a new control group subsystem which will implement a control group
-freezer.
+This is the basic mechanism which should do the right thing for 
+user space tasks in a simple scenario. This will require more work 
+to get the freezing right (cf. try_to_freeze_tasks()) for ptraced
+tasks.
+
+It's important to note that freezing can be incomplete. In that case we return
+EBUSY. This means that some tasks in the cgroup are busy doing something that
+prevents us from completely freezing the cgroup at this time. After EBUSY,
+the cgroup will remain partially frozen -- reflected by freezer.state reporting
+"FREEZING" when read. The state will remain "FREEZING" until one of these
+things happens:
+
+	1) Userspace cancels the freezing operation by writing "RUNNING" to
+		the freezer.state file
+	2) Userspace retries the freezing operation by writing "FROZEN" to
+		the freezer.state file (writing "FREEZING" is not legal
+		and returns EIO)
+	3) The tasks that blocked the cgroup from entering the "FROZEN"
+		state disappear from the cgroup's set of tasks.
 
 Signed-off-by: Cedric Le Goater <clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
 Signed-off-by: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 Tested-by: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 ---
- include/asm-alpha/thread_info.h     |    2 ++
- include/asm-avr32/thread_info.h     |    2 ++
- include/asm-cris/thread_info.h      |    2 ++
- include/asm-h8300/thread_info.h     |    2 ++
- include/asm-m68k/thread_info.h      |    1 +
- include/asm-m68knommu/thread_info.h |    2 ++
- include/asm-parisc/thread_info.h    |    2 ++
- include/asm-s390/thread_info.h      |    2 ++
- include/asm-sparc/thread_info.h     |    2 ++
- include/asm-sparc64/thread_info.h   |    2 ++
- include/asm-um/thread_info.h        |    2 ++
- include/asm-xtensa/thread_info.h    |    2 ++
- 12 files changed, 23 insertions(+)
+TODO:
+	Check that we handle ptrace'd and vfork-ing tasks correctly.
 
-Index: linux-2.6.26-rc5-mm2/include/asm-alpha/thread_info.h
+Changelog:
+v2:
+	Moved the "kill" file into a separate cgroup subsystem (signal) and
+		it's own patch.
+	Changed the name of the file from freezer.freeze to freezer.state.
+	Switched from taking 1 and 0 as input to the strings "FROZEN" and 
+		"RUNNING", respectively. This helps keep the interface
+		human-usable if/when we need to more states.
+	Checked that stopped or interrupted is "frozen enough"
+		Since try_to_freeze() is called upon wakeup of these tasks
+		this should be fine. This idea comes from recent changes to
+		the freezer.
+	Checked that if (task == current) whilst freezing cgroup we're ok
+	Fixed bug where -EBUSY would always be returned when freezing
+	Added code to handle userspace retries for any remaining -EBUSY
+
+ include/linux/cgroup_freezer.h |   73 +++++++++
+ include/linux/cgroup_subsys.h  |    6 
+ init/Kconfig                   |    7 
+ kernel/Makefile                |    1 
+ kernel/cgroup_freezer.c        |  316 +++++++++++++++++++++++++++++++++++++++++
+ 5 files changed, 403 insertions(+)
+
+Index: linux-2.6.26-rc5-mm2/include/linux/cgroup_freezer.h
 ===================================================================
---- linux-2.6.26-rc5-mm2.orig/include/asm-alpha/thread_info.h
-+++ linux-2.6.26-rc5-mm2/include/asm-alpha/thread_info.h
-@@ -72,16 +72,18 @@ register struct thread_info *__current_t
- #define TIF_UAC_NOPRINT		5	/* see sysinfo.h */
- #define TIF_UAC_NOFIX		6
- #define TIF_UAC_SIGBUS		7
- #define TIF_MEMDIE		8
- #define TIF_RESTORE_SIGMASK	9	/* restore signal mask in do_signal */
-+#define TIF_FREEZE		19	/* is freezing for suspend */
- 
- #define _TIF_SYSCALL_TRACE	(1<<TIF_SYSCALL_TRACE)
- #define _TIF_SIGPENDING		(1<<TIF_SIGPENDING)
- #define _TIF_NEED_RESCHED	(1<<TIF_NEED_RESCHED)
- #define _TIF_POLLING_NRFLAG	(1<<TIF_POLLING_NRFLAG)
- #define _TIF_RESTORE_SIGMASK	(1<<TIF_RESTORE_SIGMASK)
-+#define _TIF_FREEZE		(1<<TIF_FREEZE)
- 
- /* Work to do on interrupt/exception return.  */
- #define _TIF_WORK_MASK		(_TIF_SIGPENDING | _TIF_NEED_RESCHED)
- 
- /* Work to do on any return to userspace.  */
-Index: linux-2.6.26-rc5-mm2/include/asm-avr32/thread_info.h
+--- /dev/null
++++ linux-2.6.26-rc5-mm2/include/linux/cgroup_freezer.h
+@@ -0,0 +1,73 @@
++#ifndef _LINUX_CGROUP_FREEZER_H
++#define _LINUX_CGROUP_FREEZER_H
++/*
++ * cgroup_freezer.h -  control group freezer subsystem interface
++ *
++ * Copyright IBM Corporation, 2007
++ *
++ * Author : Cedric Le Goater <clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
++ *
++ * This program is free software; you can redistribute it and/or modify it
++ * under the terms of version 2.1 of the GNU Lesser General Public License
++ * as published by the Free Software Foundation.
++ *
++ * This program is distributed in the hope that it would be useful, but
++ * WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
++ */
++
++#include <linux/cgroup.h>
++
++#ifdef CONFIG_CGROUP_FREEZER
++
++enum freezer_state {
++	STATE_RUNNING = 0,
++	STATE_FREEZING,
++	STATE_FROZEN,
++};
++
++struct freezer {
++	struct cgroup_subsys_state css;
++	enum freezer_state state;
++	spinlock_t lock; /* protects writes to state -- reads are RCU protected
++			    because that also helps us when we need to call
++			    task_cgroup() */
++};
++
++static inline struct freezer *cgroup_freezer(
++		struct cgroup *cgroup)
++{
++	return container_of(
++		cgroup_subsys_state(cgroup, freezer_subsys_id),
++		struct freezer, css);
++}
++
++static inline struct freezer *task_freezer(struct task_struct *task)
++{
++	return container_of(task_subsys_state(task, freezer_subsys_id),
++			    struct freezer, css);
++}
++
++static inline int cgroup_frozen(struct task_struct *task)
++{
++	struct freezer *freezer;
++	enum freezer_state state;
++
++	rcu_read_lock(); /* protects use of task's cgroup ptr */
++	freezer = task_freezer(task);
++	state = freezer->state;
++	rcu_read_unlock();
++
++	return state == STATE_FROZEN;
++}
++
++#else /* !CONFIG_CGROUP_FREEZER */
++
++static inline int cgroup_frozen(struct task_struct *task)
++{
++	return 0;
++}
++
++#endif /* !CONFIG_CGROUP_FREEZER */
++
++#endif /* _LINUX_CGROUP_FREEZER_H */
+Index: linux-2.6.26-rc5-mm2/include/linux/cgroup_subsys.h
 ===================================================================
---- linux-2.6.26-rc5-mm2.orig/include/asm-avr32/thread_info.h
-+++ linux-2.6.26-rc5-mm2/include/asm-avr32/thread_info.h
-@@ -82,10 +82,11 @@ static inline struct thread_info *curren
- #define TIF_BREAKPOINT		4	/* enter monitor mode on return */
- #define TIF_SINGLE_STEP		5	/* single step in progress */
- #define TIF_MEMDIE		6
- #define TIF_RESTORE_SIGMASK	7	/* restore signal mask in do_signal */
- #define TIF_CPU_GOING_TO_SLEEP	8	/* CPU is entering sleep 0 mode */
-+#define TIF_FREEZE		19	/* is freezing for suspend */
- #define TIF_DEBUG		30	/* debugging enabled */
- #define TIF_USERSPACE		31      /* true if FS sets userspace */
- 
- #define _TIF_SYSCALL_TRACE	(1 << TIF_SYSCALL_TRACE)
- #define _TIF_SIGPENDING		(1 << TIF_SIGPENDING)
-@@ -93,10 +94,11 @@ static inline struct thread_info *curren
- #define _TIF_POLLING_NRFLAG	(1 << TIF_POLLING_NRFLAG)
- #define _TIF_SINGLE_STEP	(1 << TIF_SINGLE_STEP)
- #define _TIF_MEMDIE		(1 << TIF_MEMDIE)
- #define _TIF_RESTORE_SIGMASK	(1 << TIF_RESTORE_SIGMASK)
- #define _TIF_CPU_GOING_TO_SLEEP (1 << TIF_CPU_GOING_TO_SLEEP)
-+#define _TIF_FREEZE		(1 << TIF_FREEZE)
- 
- /* Note: The masks below must never span more than 16 bits! */
- 
- /* work to do on interrupt/exception return */
- #define _TIF_WORK_MASK				\
-Index: linux-2.6.26-rc5-mm2/include/asm-cris/thread_info.h
-===================================================================
---- linux-2.6.26-rc5-mm2.orig/include/asm-cris/thread_info.h
-+++ linux-2.6.26-rc5-mm2/include/asm-cris/thread_info.h
-@@ -86,17 +86,19 @@ struct thread_info {
- #define TIF_SIGPENDING		2	/* signal pending */
- #define TIF_NEED_RESCHED	3	/* rescheduling necessary */
- #define TIF_RESTORE_SIGMASK	9	/* restore signal mask in do_signal() */
- #define TIF_POLLING_NRFLAG	16	/* true if poll_idle() is polling TIF_NEED_RESCHED */
- #define TIF_MEMDIE		17
-+#define TIF_FREEZE		19	/* is freezing for suspend */
- 
- #define _TIF_SYSCALL_TRACE	(1<<TIF_SYSCALL_TRACE)
- #define _TIF_NOTIFY_RESUME	(1<<TIF_NOTIFY_RESUME)
- #define _TIF_SIGPENDING		(1<<TIF_SIGPENDING)
- #define _TIF_NEED_RESCHED	(1<<TIF_NEED_RESCHED)
- #define _TIF_RESTORE_SIGMASK	(1<<TIF_RESTORE_SIGMASK)
- #define _TIF_POLLING_NRFLAG	(1<<TIF_POLLING_NRFLAG)
-+#define _TIF_FREEZE		(1<<TIF_FREEZE)
- 
- #define _TIF_WORK_MASK		0x0000FFFE	/* work to do on interrupt/exception return */
- #define _TIF_ALLWORK_MASK	0x0000FFFF	/* work to do on any return to u-space */
- 
- #endif /* __KERNEL__ */
-Index: linux-2.6.26-rc5-mm2/include/asm-h8300/thread_info.h
-===================================================================
---- linux-2.6.26-rc5-mm2.orig/include/asm-h8300/thread_info.h
-+++ linux-2.6.26-rc5-mm2/include/asm-h8300/thread_info.h
-@@ -87,17 +87,19 @@ static inline struct thread_info *curren
- #define TIF_NEED_RESCHED	2	/* rescheduling necessary */
- #define TIF_POLLING_NRFLAG	3	/* true if poll_idle() is polling
- 					   TIF_NEED_RESCHED */
- #define TIF_MEMDIE		4
- #define TIF_RESTORE_SIGMASK	5	/* restore signal mask in do_signal() */
-+#define TIF_FREEZE		19	/* is freezing for suspend */
- 
- /* as above, but as bit values */
- #define _TIF_SYSCALL_TRACE	(1<<TIF_SYSCALL_TRACE)
- #define _TIF_SIGPENDING		(1<<TIF_SIGPENDING)
- #define _TIF_NEED_RESCHED	(1<<TIF_NEED_RESCHED)
- #define _TIF_POLLING_NRFLAG	(1<<TIF_POLLING_NRFLAG)
- #define _TIF_RESTORE_SIGMASK	(1<<TIF_RESTORE_SIGMASK)
-+#define _TIF_FREEZE		(1<<TIF_FREEZE)
- 
- #define _TIF_WORK_MASK		0x0000FFFE	/* work to do on interrupt/exception return */
- 
- #endif /* __KERNEL__ */
- 
-Index: linux-2.6.26-rc5-mm2/include/asm-m68k/thread_info.h
-===================================================================
---- linux-2.6.26-rc5-mm2.orig/include/asm-m68k/thread_info.h
-+++ linux-2.6.26-rc5-mm2/include/asm-m68k/thread_info.h
-@@ -50,7 +50,8 @@ struct thread_info {
- #define TIF_SIGPENDING		6	/* signal pending */
- #define TIF_NEED_RESCHED	7	/* rescheduling necessary */
- #define TIF_DELAYED_TRACE	14	/* single step a syscall */
- #define TIF_SYSCALL_TRACE	15	/* syscall trace active */
- #define TIF_MEMDIE		16
-+#define TIF_FREEZE		19	/* thread is freezing for suspend */
- 
- #endif	/* _ASM_M68K_THREAD_INFO_H */
-Index: linux-2.6.26-rc5-mm2/include/asm-m68knommu/thread_info.h
-===================================================================
---- linux-2.6.26-rc5-mm2.orig/include/asm-m68knommu/thread_info.h
-+++ linux-2.6.26-rc5-mm2/include/asm-m68knommu/thread_info.h
-@@ -82,16 +82,18 @@ static inline struct thread_info *curren
- #define TIF_SIGPENDING		1	/* signal pending */
- #define TIF_NEED_RESCHED	2	/* rescheduling necessary */
- #define TIF_POLLING_NRFLAG	3	/* true if poll_idle() is polling
- 					   TIF_NEED_RESCHED */
- #define TIF_MEMDIE		4
-+#define TIF_FREEZE		19	/* is freezing for suspend */
- 
- /* as above, but as bit values */
- #define _TIF_SYSCALL_TRACE	(1<<TIF_SYSCALL_TRACE)
- #define _TIF_SIGPENDING		(1<<TIF_SIGPENDING)
- #define _TIF_NEED_RESCHED	(1<<TIF_NEED_RESCHED)
- #define _TIF_POLLING_NRFLAG	(1<<TIF_POLLING_NRFLAG)
-+#define _TIF_FREEZE		(1<<TIF_FREEZE)
- 
- #define _TIF_WORK_MASK		0x0000FFFE	/* work to do on interrupt/exception return */
- 
- #endif /* __KERNEL__ */
- 
-Index: linux-2.6.26-rc5-mm2/include/asm-parisc/thread_info.h
-===================================================================
---- linux-2.6.26-rc5-mm2.orig/include/asm-parisc/thread_info.h
-+++ linux-2.6.26-rc5-mm2/include/asm-parisc/thread_info.h
-@@ -56,17 +56,19 @@ struct thread_info {
- #define TIF_NEED_RESCHED	2	/* rescheduling necessary */
- #define TIF_POLLING_NRFLAG	3	/* true if poll_idle() is polling TIF_NEED_RESCHED */
- #define TIF_32BIT               4       /* 32 bit binary */
- #define TIF_MEMDIE		5
- #define TIF_RESTORE_SIGMASK	6	/* restore saved signal mask */
-+#define TIF_FREEZE		19	/* is freezing for suspend */
- 
- #define _TIF_SYSCALL_TRACE	(1 << TIF_SYSCALL_TRACE)
- #define _TIF_SIGPENDING		(1 << TIF_SIGPENDING)
- #define _TIF_NEED_RESCHED	(1 << TIF_NEED_RESCHED)
- #define _TIF_POLLING_NRFLAG	(1 << TIF_POLLING_NRFLAG)
- #define _TIF_32BIT		(1 << TIF_32BIT)
- #define _TIF_RESTORE_SIGMASK	(1 << TIF_RESTORE_SIGMASK)
-+#define _TIF_FREEZE		(1 << TIF_FREEZE)
- 
- #define _TIF_USER_WORK_MASK     (_TIF_SIGPENDING | \
-                                  _TIF_NEED_RESCHED | _TIF_RESTORE_SIGMASK)
- 
- #endif /* __KERNEL__ */
-Index: linux-2.6.26-rc5-mm2/include/asm-s390/thread_info.h
-===================================================================
---- linux-2.6.26-rc5-mm2.orig/include/asm-s390/thread_info.h
-+++ linux-2.6.26-rc5-mm2/include/asm-s390/thread_info.h
-@@ -96,10 +96,11 @@ static inline struct thread_info *curren
- #define TIF_POLLING_NRFLAG	17	/* true if poll_idle() is polling 
- 					   TIF_NEED_RESCHED */
- #define TIF_31BIT		18	/* 32bit process */ 
- #define TIF_MEMDIE		19
- #define TIF_RESTORE_SIGMASK	20	/* restore signal mask in do_signal() */
-+#define TIF_FREEZE		21	/* thread is freezing for suspend */
- 
- #define _TIF_SYSCALL_TRACE	(1<<TIF_SYSCALL_TRACE)
- #define _TIF_RESTORE_SIGMASK	(1<<TIF_RESTORE_SIGMASK)
- #define _TIF_SIGPENDING		(1<<TIF_SIGPENDING)
- #define _TIF_NEED_RESCHED	(1<<TIF_NEED_RESCHED)
-@@ -108,10 +109,11 @@ static inline struct thread_info *curren
- #define _TIF_SINGLE_STEP	(1<<TIF_SINGLE_STEP)
- #define _TIF_MCCK_PENDING	(1<<TIF_MCCK_PENDING)
- #define _TIF_USEDFPU		(1<<TIF_USEDFPU)
- #define _TIF_POLLING_NRFLAG	(1<<TIF_POLLING_NRFLAG)
- #define _TIF_31BIT		(1<<TIF_31BIT)
-+#define _TIF_FREEZE		(1<<TIF_FREEZE)
- 
- #endif /* __KERNEL__ */
- 
- #define PREEMPT_ACTIVE		0x4000000
- 
-Index: linux-2.6.26-rc5-mm2/include/asm-sparc/thread_info.h
-===================================================================
---- linux-2.6.26-rc5-mm2.orig/include/asm-sparc/thread_info.h
-+++ linux-2.6.26-rc5-mm2/include/asm-sparc/thread_info.h
-@@ -137,17 +137,19 @@ BTFIXUPDEF_CALL(void, free_thread_info, 
- #define TIF_USEDFPU		8	/* FPU was used by this task
- 					 * this quantum (SMP) */
- #define TIF_POLLING_NRFLAG	9	/* true if poll_idle() is polling
- 					 * TIF_NEED_RESCHED */
- #define TIF_MEMDIE		10
-+#define TIF_FREEZE		19	/* is freezing for suspend */
- 
- /* as above, but as bit values */
- #define _TIF_SYSCALL_TRACE	(1<<TIF_SYSCALL_TRACE)
- #define _TIF_SIGPENDING		(1<<TIF_SIGPENDING)
- #define _TIF_NEED_RESCHED	(1<<TIF_NEED_RESCHED)
- #define _TIF_RESTORE_SIGMASK	(1<<TIF_RESTORE_SIGMASK)
- #define _TIF_USEDFPU		(1<<TIF_USEDFPU)
- #define _TIF_POLLING_NRFLAG	(1<<TIF_POLLING_NRFLAG)
-+#define _TIF_FREEZE		(1<<TIF_FREEZE)
- 
- #endif /* __KERNEL__ */
- 
- #endif /* _ASM_THREAD_INFO_H */
-Index: linux-2.6.26-rc5-mm2/include/asm-sparc64/thread_info.h
-===================================================================
---- linux-2.6.26-rc5-mm2.orig/include/asm-sparc64/thread_info.h
-+++ linux-2.6.26-rc5-mm2/include/asm-sparc64/thread_info.h
-@@ -214,10 +214,11 @@ register struct thread_info *current_thr
-  *       an immediate value in instructions such as andcc.
-  */
- #define TIF_ABI_PENDING		12
- #define TIF_MEMDIE		13
- #define TIF_POLLING_NRFLAG	14
-+#define TIF_FREEZE		19	/* is freezing for suspend */
- 
- #define _TIF_SYSCALL_TRACE	(1<<TIF_SYSCALL_TRACE)
- #define _TIF_SIGPENDING		(1<<TIF_SIGPENDING)
- #define _TIF_NEED_RESCHED	(1<<TIF_NEED_RESCHED)
- #define _TIF_PERFCTR		(1<<TIF_PERFCTR)
-@@ -225,10 +226,11 @@ register struct thread_info *current_thr
- #define _TIF_32BIT		(1<<TIF_32BIT)
- #define _TIF_SECCOMP		(1<<TIF_SECCOMP)
- #define _TIF_SYSCALL_AUDIT	(1<<TIF_SYSCALL_AUDIT)
- #define _TIF_ABI_PENDING	(1<<TIF_ABI_PENDING)
- #define _TIF_POLLING_NRFLAG	(1<<TIF_POLLING_NRFLAG)
-+#define _TIF_FREEZE		(1<<TIF_FREEZE)
- 
- #define _TIF_USER_WORK_MASK	((0xff << TI_FLAG_WSAVED_SHIFT) | \
- 				 (_TIF_SIGPENDING | \
- 				  _TIF_NEED_RESCHED | _TIF_PERFCTR))
- 
-Index: linux-2.6.26-rc5-mm2/include/asm-um/thread_info.h
-===================================================================
---- linux-2.6.26-rc5-mm2.orig/include/asm-um/thread_info.h
-+++ linux-2.6.26-rc5-mm2/include/asm-um/thread_info.h
-@@ -67,15 +67,17 @@ static inline struct thread_info *curren
- 					 */
- #define TIF_RESTART_BLOCK 	4
- #define TIF_MEMDIE	 	5
- #define TIF_SYSCALL_AUDIT	6
- #define TIF_RESTORE_SIGMASK	7
-+#define TIF_FREEZE		19	/* is freezing for suspend */
- 
- #define _TIF_SYSCALL_TRACE	(1 << TIF_SYSCALL_TRACE)
- #define _TIF_SIGPENDING		(1 << TIF_SIGPENDING)
- #define _TIF_NEED_RESCHED	(1 << TIF_NEED_RESCHED)
- #define _TIF_POLLING_NRFLAG     (1 << TIF_POLLING_NRFLAG)
- #define _TIF_MEMDIE		(1 << TIF_MEMDIE)
- #define _TIF_SYSCALL_AUDIT	(1 << TIF_SYSCALL_AUDIT)
- #define _TIF_RESTORE_SIGMASK	(1 << TIF_RESTORE_SIGMASK)
-+#define _TIF_FREEZE		(1 << TIF_FREEZE)
- 
+--- linux-2.6.26-rc5-mm2.orig/include/linux/cgroup_subsys.h
++++ linux-2.6.26-rc5-mm2/include/linux/cgroup_subsys.h
+@@ -50,5 +50,11 @@ SUBSYS(devices)
+ #ifdef CONFIG_CGROUP_MEMRLIMIT_CTLR
+ SUBSYS(memrlimit_cgroup)
  #endif
-Index: linux-2.6.26-rc5-mm2/include/asm-xtensa/thread_info.h
+ 
+ /* */
++
++#ifdef CONFIG_CGROUP_FREEZER
++SUBSYS(freezer)
++#endif
++
++/* */
+Index: linux-2.6.26-rc5-mm2/init/Kconfig
 ===================================================================
---- linux-2.6.26-rc5-mm2.orig/include/asm-xtensa/thread_info.h
-+++ linux-2.6.26-rc5-mm2/include/asm-xtensa/thread_info.h
-@@ -132,18 +132,20 @@ static inline struct thread_info *curren
- #define TIF_SINGLESTEP		3	/* restore singlestep on return to user mode */
- #define TIF_IRET		4	/* return with iret */
- #define TIF_MEMDIE		5
- #define TIF_RESTORE_SIGMASK	6	/* restore signal mask in do_signal() */
- #define TIF_POLLING_NRFLAG	16	/* true if poll_idle() is polling TIF_NEED_RESCHED */
-+#define TIF_FREEZE		19	/* is freezing for suspend */
+--- linux-2.6.26-rc5-mm2.orig/init/Kconfig
++++ linux-2.6.26-rc5-mm2/init/Kconfig
+@@ -329,10 +329,17 @@ config GROUP_SCHED
+ 	default n
+ 	help
+ 	  This feature lets CPU scheduler recognize task groups and control CPU
+ 	  bandwidth allocation to such task groups.
  
- #define _TIF_SYSCALL_TRACE	(1<<TIF_SYSCALL_TRACE)
- #define _TIF_SIGPENDING		(1<<TIF_SIGPENDING)
- #define _TIF_NEED_RESCHED	(1<<TIF_NEED_RESCHED)
- #define _TIF_SINGLESTEP		(1<<TIF_SINGLESTEP)
- #define _TIF_IRET		(1<<TIF_IRET)
- #define _TIF_POLLING_NRFLAG	(1<<TIF_POLLING_NRFLAG)
- #define _TIF_RESTORE_SIGMASK	(1<<TIF_RESTORE_SIGMASK)
-+#define _TIF_FREEZE		(1<<TIF_FREEZE)
++config CGROUP_FREEZER
++        bool "control group freezer subsystem"
++        depends on CGROUPS
++        help
++          Provides a way to freeze and unfreeze all tasks in a
++	  cgroup
++
+ config FAIR_GROUP_SCHED
+ 	bool "Group scheduling for SCHED_OTHER"
+ 	depends on GROUP_SCHED
+ 	default GROUP_SCHED
  
- #define _TIF_WORK_MASK		0x0000FFFE	/* work to do on interrupt/exception return */
- #define _TIF_ALLWORK_MASK	0x0000FFFF	/* work to do on any return to u-space */
- 
- /*
+Index: linux-2.6.26-rc5-mm2/kernel/Makefile
+===================================================================
+--- linux-2.6.26-rc5-mm2.orig/kernel/Makefile
++++ linux-2.6.26-rc5-mm2/kernel/Makefile
+@@ -49,10 +49,11 @@ obj-$(CONFIG_PM) += power/
+ obj-$(CONFIG_BSD_PROCESS_ACCT) += acct.o
+ obj-$(CONFIG_KEXEC) += kexec.o
+ obj-$(CONFIG_COMPAT) += compat.o
+ obj-$(CONFIG_CGROUPS) += cgroup.o
+ obj-$(CONFIG_CGROUP_DEBUG) += cgroup_debug.o
++obj-$(CONFIG_CGROUP_FREEZER) += cgroup_freezer.o
+ obj-$(CONFIG_CPUSETS) += cpuset.o
+ obj-$(CONFIG_CGROUP_NS) += ns_cgroup.o
+ obj-$(CONFIG_UTS_NS) += utsname.o
+ obj-$(CONFIG_USER_NS) += user_namespace.o
+ obj-$(CONFIG_PID_NS) += pid_namespace.o
+Index: linux-2.6.26-rc5-mm2/kernel/cgroup_freezer.c
+===================================================================
+--- /dev/null
++++ linux-2.6.26-rc5-mm2/kernel/cgroup_freezer.c
+@@ -0,0 +1,316 @@
++/*
++ * cgroup_freezer.c -  control group freezer subsystem
++ *
++ * Copyright IBM Corporation, 2007
++ *
++ * Author : Cedric Le Goater <clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
++ *
++ * This program is free software; you can redistribute it and/or modify it
++ * under the terms of version 2.1 of the GNU Lesser General Public License
++ * as published by the Free Software Foundation.
++ *
++ * This program is distributed in the hope that it would be useful, but
++ * WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
++ */
++
++#include <linux/module.h>
++#include <linux/cgroup.h>
++#include <linux/fs.h>
++#include <linux/uaccess.h>
++#include <linux/freezer.h>
++#include <linux/cgroup_freezer.h>
++
++static const char *freezer_state_strs[] = {
++	"RUNNING",
++	"FREEZING",
++	"FROZEN",
++};
++
++/* Check and update whenever adding new freezer states. Currently is:
++   strlen("FREEZING") */
++#define STATE_MAX_STRLEN 8
++
++
++struct cgroup_subsys freezer_subsys;
++
++/* Locking and lock ordering:
++ *
++ * can_attach(), cgroup_frozen():
++ * rcu (task->cgroup, freezer->state)
++ *
++ * freezer_fork():
++ * rcu (task->cgroup, freezer->state)
++ *  freezer->lock
++ *   task_lock
++ *    sighand->siglock
++ *
++ * freezer_read():
++ * rcu (freezer->state)
++ *  freezer->lock (upgrade to write)
++ *   read_lock css_set_lock
++ *
++ * freezer_write()
++ * cgroup_lock
++ *  rcu
++ *   freezer->lock
++ *    read_lock css_set_lock
++ *     task_lock
++ *      sighand->siglock
++ *
++ * freezer_create(), freezer_destroy():
++ * cgroup_lock [ by cgroup core ]
++ */
++static struct cgroup_subsys_state *freezer_create(
++	struct cgroup_subsys *ss, struct cgroup *cgroup)
++{
++	struct freezer *freezer;
++
++	freezer = kzalloc(sizeof(struct freezer), GFP_KERNEL);
++	if (!freezer)
++		return ERR_PTR(-ENOMEM);
++
++	spin_lock_init(&freezer->lock);
++	freezer->state = STATE_RUNNING;
++	return  &freezer->css;
++}
++
++static void freezer_destroy(struct cgroup_subsys *ss,
++			    struct cgroup *cgroup)
++{
++	kfree(cgroup_freezer(cgroup));
++}
++
++
++static int freezer_can_attach(struct cgroup_subsys *ss,
++			      struct cgroup *new_cgroup,
++			      struct task_struct *task)
++{
++	struct freezer *freezer;
++	int retval = 0;
++
++	/*
++	 * The call to cgroup_lock() in the freezer.state write method prevents
++	 * a write to that file racing against an attach, and hence the
++	 * can_attach() result will remain valid until the attach completes.
++	 */
++	rcu_read_lock();
++	freezer = cgroup_freezer(new_cgroup);
++	if (freezer->state == STATE_FROZEN)
++		retval = -EBUSY;
++	rcu_read_unlock();
++
++	return retval;
++}
++
++static void freezer_fork(struct cgroup_subsys *ss, struct task_struct *task)
++{
++	struct freezer *freezer;
++
++	rcu_read_lock(); /* needed to fetch task's cgroup
++			    can't use task_lock() here because
++			    freeze_task() grabs that */
++	freezer = task_freezer(task);
++	if (freezer->state == STATE_FREEZING)
++		freeze_task(task, 1);
++	rcu_read_unlock();
++}
++
++static int freezer_check_if_frozen(struct cgroup *cgroup)
++{
++	struct cgroup_iter it;
++	struct task_struct *task;
++	unsigned int nfrozen = 0, ntotal = 0;
++
++	cgroup_iter_start(cgroup, &it);
++
++	while ((task = cgroup_iter_next(cgroup, &it))) {
++		ntotal++;
++		if (frozen(task))
++			nfrozen++;
++	}
++	cgroup_iter_end(cgroup, &it);
++
++	return nfrozen == ntotal;
++}
++
++static ssize_t freezer_read(struct cgroup *cgroup,
++			    struct cftype *cft,
++			    struct file *file, char __user *buf,
++			    size_t nbytes, loff_t *ppos)
++{
++	struct freezer *freezer;
++	enum freezer_state state;
++
++	rcu_read_lock();
++	freezer = cgroup_freezer(cgroup);
++	state = freezer->state;
++	if (state == STATE_FREEZING) {
++		/* We change from FREEZING to FROZEN lazily if the cgroup was
++		 * only partially frozen when we exitted write. */
++		spin_lock_irq(&freezer->lock);
++		if (freezer_check_if_frozen(cgroup)) {
++			freezer->state = STATE_FROZEN;
++			state = STATE_FROZEN;
++		}
++		spin_unlock_irq(&freezer->lock);
++	}
++	rcu_read_unlock();
++
++	return simple_read_from_buffer(buf, nbytes, ppos,
++				       freezer_state_strs[state],
++				       strlen(freezer_state_strs[state]));
++}
++
++static int freezer_freeze_tasks(struct cgroup *cgroup)
++{
++	struct cgroup_iter it;
++	struct task_struct *task;
++	unsigned int num_cant_freeze_now = 0;
++
++	cgroup_iter_start(cgroup, &it);
++	while ((task = cgroup_iter_next(cgroup, &it))) {
++		if (!freeze_task(task, 1))
++			continue;
++		if (task_is_stopped_or_traced(task) && freezing(task))
++			/*
++			 * The freeze flag is set so these tasks will
++			 * immediately go into the fridge upon waking.
++			 */
++			continue;
++		if (!freezing(task) && !freezer_should_skip(task))
++			num_cant_freeze_now++;
++	}
++	cgroup_iter_end(cgroup, &it);
++
++	return num_cant_freeze_now ? -EBUSY : 0;
++}
++
++static int freezer_unfreeze_tasks(struct cgroup *cgroup)
++{
++	struct cgroup_iter it;
++	struct task_struct *task;
++
++	cgroup_iter_start(cgroup, &it);
++	while ((task = cgroup_iter_next(cgroup, &it)))
++		thaw_process(task);
++
++	cgroup_iter_end(cgroup, &it);
++	return 0;
++}
++
++static int freezer_freeze(struct cgroup *cgroup, enum freezer_state goal_state)
++{
++	struct freezer *freezer;
++	int retval = 0;
++
++	rcu_read_lock();
++	freezer = cgroup_freezer(cgroup);
++retry:
++	if (goal_state == freezer->state)
++		goto unlock;
++	spin_lock_irq(&freezer->lock);
++	switch (freezer->state) {
++	case STATE_RUNNING:
++		if (goal_state == STATE_FROZEN) {
++			freezer->state = STATE_FREEZING;
++			retval = freezer_freeze_tasks(cgroup);
++			if (retval == 0)
++				freezer->state = STATE_FROZEN;
++		}
++		break;
++	case STATE_FREEZING:
++		if (freezer_check_if_frozen(cgroup)) {
++			freezer->state = STATE_FROZEN;
++			spin_unlock_irq(&freezer->lock);
++			goto retry;
++		}
++
++		if (goal_state == STATE_FROZEN) {
++			/* Userspace is retrying after
++			 * "/bin/echo FROZEN > freezer.state" returned -EBUSY */
++			retval = freezer_freeze_tasks(cgroup);
++			if (retval == 0)
++				freezer->state = STATE_FROZEN;
++			break;
++		}
++		/* state == FREEZING and goal_state == RUNNING, so unfreeze */
++	case STATE_FROZEN:
++		if (goal_state == STATE_RUNNING) {
++			freezer->state = STATE_RUNNING;
++			retval = freezer_unfreeze_tasks(cgroup);
++		}
++		break;
++	default:
++		break;
++	}
++	spin_unlock_irq(&freezer->lock);
++unlock:
++	rcu_read_unlock();
++
++	return retval;
++}
++
++static ssize_t freezer_write(struct cgroup *cgroup,
++			     struct cftype *cft,
++			     struct file *file,
++			     const char __user *userbuf,
++			     size_t nbytes, loff_t *unused_ppos)
++{
++	char buffer[STATE_MAX_STRLEN + 1];
++	int retval = 0;
++	enum freezer_state goal_state;
++
++	if (nbytes >= PATH_MAX)
++		return -E2BIG;
++	nbytes = min(sizeof(buffer) - 1, nbytes);
++	if (copy_from_user(buffer, userbuf, nbytes))
++		return -EFAULT;
++	buffer[nbytes + 1] = 0; /* nul-terminate */
++	strstrip(buffer); /* remove any trailing whitespace */
++	if (strcmp(buffer, freezer_state_strs[STATE_RUNNING]) == 0)
++		goal_state = STATE_RUNNING;
++	else if (strcmp(buffer, freezer_state_strs[STATE_FROZEN]) == 0)
++		goal_state = STATE_FROZEN;
++	else
++		return -EIO;
++
++	cgroup_lock();
++
++	if (cgroup_is_removed(cgroup)) {
++		retval = -ENODEV;
++		goto unlock;
++	}
++
++	retval = freezer_freeze(cgroup, goal_state);
++	if (retval == 0)
++		retval = nbytes;
++unlock:
++	cgroup_unlock();
++	return retval;
++}
++
++static struct cftype files[] = {
++	{
++		.name = "state",
++		.read = freezer_read,
++		.write = freezer_write,
++	},
++};
++
++static int freezer_populate(struct cgroup_subsys *ss, struct cgroup *cgroup)
++{
++	return cgroup_add_files(cgroup, ss, files, ARRAY_SIZE(files));
++}
++
++struct cgroup_subsys freezer_subsys = {
++	.name		= "freezer",
++	.create		= freezer_create,
++	.destroy	= freezer_destroy,
++	.populate	= freezer_populate,
++	.subsys_id	= freezer_subsys_id,
++	.can_attach	= freezer_can_attach,
++	.attach		= NULL,
++	.fork		= freezer_fork,
++	.exit		= NULL,
++};
 
 -- 
