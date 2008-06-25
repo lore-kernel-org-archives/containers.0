@@ -1,55 +1,73 @@
-From: Tejun Heo <htejun@gmail.com>
-Subject: Re: [PATCH 05/11] sysfs: sysfs_chmod_file handle multiple superblocks
-Date: Wed, 25 Jun 2008 21:31:49 +0900
-Message-ID: <48623AB5.9000603@gmail.com>
-References: <20080618170729.808539948@theryb.frec.bull.fr> <20080618170730.853353875@theryb.frec.bull.fr> <485DD93A.6020600@gmail.com> <486018CB.80005@fr.ibm.com> <48607BE7.2060203@gmail.com> <4860F88B.6090909@fr.ibm.com>
+From: Subrata Modak <subrata-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Subject: Re: [LTP] [PATCH 0/3] cgroup: block device i/o bandwidth
+	controller (v3)
+Date: Wed, 25 Jun 2008 18:51:05 +0530
+Message-ID: <1214400066.10818.27.camel__22406.6064031378$1214400240$gmane$org@subratamodak.linux.ibm.com>
+References: <1213956335-29866-1-git-send-email-righi.andrea@gmail.com>
+	<bb33bcf20806200739v46b97cb2wcaa34182bc0356d3@mail.gmail.com>
+	<485CD97C.7020904@gmail.com>
+	<bb33bcf20806210816m41f005f7y95031337371d408d@mail.gmail.com>
+Reply-To: subrata-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-Content-Transfer-Encoding: 7bit
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1756270AbYFYMcd@vger.kernel.org>
-In-Reply-To: <4860F88B.6090909@fr.ibm.com>
-Sender: linux-kernel-owner@vger.kernel.org
-To: Daniel Lezcano <dlezcano@fr.ibm.com>
-Cc: Benjamin Thery <benjamin.thery@bull.net>, Greg Kroah-Hartman <gregkh@suse.de>, Andrew Morton <akpm@linux-foundation.org>, Eric Biederman <ebiederm@xmission.com>, Serge Hallyn <serue@us.ibm.com>, linux-kernel@vger.kernel.org, Al Viro <viro@ftp.linux.org.uk>, Linux Containers <containers@lists.osdl.org>
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <bb33bcf20806210816m41f005f7y95031337371d408d-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org
+Cc: axboe-tSWWG44O7X1aa/9Udqfwiw@public.gmane.org, randy.dunlap-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org, ltp-list <ltp-list-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, roberto-5KDOxZqKugI@public.gmane.org, Carl Henrik Lunde <chlunde-om2ZC0WAoZIXWF+eFR7m5Q@public.gmane.org>, Divyesh Shah <dpshah-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, matt-cT2on/YLNlBWk0Htik3J/w@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Daniel Lezcano wrote:
-> Tejun Heo wrote:
->> Hello,
->>
->> Daniel Lezcano wrote:
->>>> I think it would be great if sysfs_chmod_file can do all-or-nothing
->>>> instead of failing half way through but given the interface of
->>>> notify_change(), it could be difficult to implement.  Any ideas?
->>> Is it acceptable to queue the notifications in a list until we are in
->>> the loop and loop again to notify when exiting the first loop without
->>> error ?
->>
->> Can you please take a look at the following patch?
->>
->> http://article.gmane.org/gmane.linux.file-systems/24484
->>
->> Which replaces notify_change() call to two calls to sysfs_setattr() and
->> fsnotify_change().  The latter never fails and the former should always
->> succeed if inode_change_ok() succeeds (inode_setattr() never fails
->> unless the size is changing), so I think the correct thing to do is...
->>
->> * Separate out sysfs_do_setattr() which doesn't do inode_change_ok() and
->> just sets the attributes.  Making it a void function which triggers
->> WARN_ON() when inode_setattr() fails would be a good idea.
->>
->> * Implement sysfs_chmod_file() in similar way rename/move are
->> implemented - allocate all resources and check conditions and then iff
->> everything looks okay commit the operation by calling sysfs_do_setattr().
->>
->> How does that sound?
-> 
-> Does this patch looks like what you are describing ?
-
-Yeah, something like that.  With looping for all the inodes added, it
-looks like it will work fine.
-
-Thanks.
-
--- 
-tejun
+T24gU2F0LCAyMDA4LTA2LTIxIGF0IDIwOjQ2ICswNTMwLCBTdWJyYXRhIE1vZGFrIHdyb3RlOgo+
+IE9uIFNhdCwgSnVuIDIxLCAyMDA4IGF0IDQ6MDUgUE0sIEFuZHJlYSBSaWdoaSA8cmlnaGkuYW5k
+cmVhQGdtYWlsLmNvbT4KPiB3cm90ZToKPiAgICAgICAgIFN1YnJhdGEgTW9kYWsgd3JvdGU6Cj4g
+ICAgICAgICAgICAgICAgIERlYXIgQW5kcmVhLAo+ICAgICAgICAgICAgICAgICAKPiAgICAgICAg
+ICAgICAgICAgV2UgaGF2ZSBiZWVuIHRyYWNraW5nIENvbnRyb2xsZXJzIGRldmVsb3BlbWVudCBm
+b3IKPiAgICAgICAgICAgICAgICAgcXVpdGUgc29tZSB0aW1lLCBhbmQgaW4gb3JkZXIgdG8gbWFr
+ZSB0aGVtIHdvcmsKPiAgICAgICAgICAgICAgICAgYmV0dGVyLCB3ZSBoYXZlIGZvbGxvd2VkIHRl
+c3QtZHJpdmVuIGRldmVsb3BtZW50IGZvcgo+ICAgICAgICAgICAgICAgICBib3RoIENQVSBhbmQg
+TWVtb3J5IENvbnRyb2xsZXJzLiBXZSBhbHJlYWR5IGhhdmUgbXVjaAo+ICAgICAgICAgICAgICAg
+ICBvZiB0aGUgQ1BVIGNvbnRyb2xsZXJzIGFuZCBmZXcgTWVtb3J5IGNvbnRyb2xsZXJzCj4gICAg
+ICAgICAgICAgICAgIHRlc3RjYXNlcyBpbiBMVFAKPiAgICAgICAgICAgICAgICAgKGh0dHA6Ly9s
+dHAuY3ZzLnNvdXJjZWZvcmdlLm5ldC9sdHAvbHRwL3Rlc3RjYXNlcy9rZXJuZWwvY29udHJvbGxl
+cnMvKS4KPiAgICAgICAgICAgICAgICAgCj4gICAgICAgICAgICAgICAgIFRlc3QgY2FzZXMgZm9y
+IE1lbW9yeSBjb250cm9sbGVycywgd2hpY2ggYXJlIGluCj4gICAgICAgICAgICAgICAgIDIuNi4y
+Ni1tbSogdHJlZShzKSwgYXJlIGFsc28gYmVpbmcgcmVhZGllZC4gSW4gdGhlCj4gICAgICAgICAg
+ICAgICAgIGJhY2tkcm9wIG9mIHRoaXMgZGV2ZWxvcG1lbnQsIGkgd291bGQgbGlrZSB0byBrbm93
+IGlmCj4gICAgICAgICAgICAgICAgIHlvdSBjYW4gY29udHJpYnV0ZSB0byBMVFAgdGVzdCBjYXNl
+cyB1bmRlciBHUEx2MiBmb3IKPiAgICAgICAgICAgICAgICAgdGhlIGkvbyBiYW5kd2lkdGggY29u
+dHJvbGxlciwgdGhhdCB5b3UgYXJlIHByb3Bvc2luZwo+ICAgICAgICAgICAgICAgICBhbmQgYW55
+IHN1Y2ggZnV0dXJlIHdvcmsgaW4geW91ciBwaXBlbGluZS4gV2Ugd291bGQKPiAgICAgICAgICAg
+ICAgICAgYWxzbyBiZSBoYXBweSBpZiB5b3UgY2FuIGxvb2sgaW4gdG8gdGhlIGV4aXN0aW5nCj4g
+ICAgICAgICAgICAgICAgIGNvbnRyb2xsZXJzIHRlc3QgY2FzZXMsIGFuZCBnaXZlIHVzIG1vcmUg
+ZmVlZGJhY2sgb24KPiAgICAgICAgICAgICAgICAgdGhlIHNhbWUuIEV4cGVjdGluZyB0byBoZWFy
+IGZyb20geW91Lgo+ICAgICAgICAgCj4gICAgICAgICAKPiAgICAgICAgIFN1cmUsIEkgd2lsbCBk
+by4gSSB0aGluayBzb21lIHNtYWxsIGJlbmNobWFya3MgSSB3cm90ZSB0byB0ZXN0Cj4gICAgICAg
+ICB0aGUgaS9vCj4gICAgICAgICBiYW5kd2lkdGggY29udHJvbGxlciBjb3VsZCBiZSBlYXNpbHkg
+aW5jbHVkZWQuIEp1c3QgY2hlY2tpbmcKPiAgICAgICAgIG91dCB0aGUgbHRwCj4gICAgICAgICBj
+b2RlIGZyb20gY3ZzIHJpZ2h0IG5vdy4KCkhpIEFuZHJlYSwKCkNhbiB5b3Uga2luZGx5IHNoYXJl
+IHRob3NlIHRlc3QgY2FzZXMgd2l0aCB1cyB3aXRoIGEgRENPIHNpZ25vZmYsIHNvCnRoYXQgaSBj
+YW4gc3RhcnQgd29ya2luZyBvbiBpbnRlZ3JhdGluZyB0aGVtIHdpdGggTFRQIGZvciB0aGUgbmV4
+dCBtb250aArCtHMgcmVsZWFzZS4KClJlZ2FyZHMtLQpTdWJyYXRhCgo+IAo+IFRoYXQgd2lsbCBi
+ZSByZWFsbHkgZ3JlYXQuIFdlIGNhbiBzdGFydCBvZmYgd2l0aCBzb21lIG9mIHRob3NlIGFscmVh
+ZHkKPiBhdmFpbGFibGUuCj4gCj4gUmVnYXJkcy0tCj4gU3VicmF0YQo+IAo+IAo+ICAgICAgICAg
+Cj4gICAgICAgICAKPiAgICAgICAgIFJlZ2FyZHMsCj4gICAgICAgICAtQW5kcmVhCj4gCj4gCj4g
+Cj4gLS0gCj4gUmVnYXJkcyAmIFRoYW5rcy0tCj4gU3VicmF0YSAKPiAtLS0tLS0tLS0tLS0tLS0t
+LS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0t
+Cj4gQ2hlY2sgb3V0IHRoZSBuZXcgU291cmNlRm9yZ2UubmV0IE1hcmtldHBsYWNlLgo+IEl0J3Mg
+dGhlIGJlc3QgcGxhY2UgdG8gYnV5IG9yIHNlbGwgc2VydmljZXMgZm9yCj4ganVzdCBhYm91dCBh
+bnl0aGluZyBPcGVuIFNvdXJjZS4KPiBodHRwOi8vc291cmNlZm9yZ2UubmV0L3NlcnZpY2VzL2J1
+eS9pbmRleC5waHAKPiBfX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19f
+X19fXyBMdHAtbGlzdCBtYWlsaW5nIGxpc3QgTHRwLWxpc3RAbGlzdHMuc291cmNlZm9yZ2UubmV0
+IGh0dHBzOi8vbGlzdHMuc291cmNlZm9yZ2UubmV0L2xpc3RzL2xpc3RpbmZvL2x0cC1saXN0Cgpf
+X19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fXwpDb250YWluZXJz
+IG1haWxpbmcgbGlzdApDb250YWluZXJzQGxpc3RzLmxpbnV4LWZvdW5kYXRpb24ub3JnCmh0dHBz
+Oi8vbGlzdHMubGludXgtZm91bmRhdGlvbi5vcmcvbWFpbG1hbi9saXN0aW5mby9jb250YWluZXJz
