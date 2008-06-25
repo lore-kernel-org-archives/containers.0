@@ -1,62 +1,55 @@
-From: "Francisco Hayes" <xanthotic-kzBex0ECOkYd6bWqNyUe3NBPR1lH4CV8@public.gmane.org>
-Subject: :Flash CS 3 Pro:
-Date: Tue, 24 Jun 2008 21:15:19 -0300
-Message-ID: <000301c8d658$692bbf80$0100007f@nymukes>
+From: Tejun Heo <htejun@gmail.com>
+Subject: Re: [PATCH 05/11] sysfs: sysfs_chmod_file handle multiple superblocks
+Date: Wed, 25 Jun 2008 21:31:49 +0900
+Message-ID: <48623AB5.9000603@gmail.com>
+References: <20080618170729.808539948@theryb.frec.bull.fr> <20080618170730.853353875@theryb.frec.bull.fr> <485DD93A.6020600@gmail.com> <486018CB.80005@fr.ibm.com> <48607BE7.2060203@gmail.com> <4860F88B.6090909@fr.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
+Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1756270AbYFYMcd@vger.kernel.org>
+In-Reply-To: <4860F88B.6090909@fr.ibm.com>
+Sender: linux-kernel-owner@vger.kernel.org
+To: Daniel Lezcano <dlezcano@fr.ibm.com>
+Cc: Benjamin Thery <benjamin.thery@bull.net>, Greg Kroah-Hartman <gregkh@suse.de>, Andrew Morton <akpm@linux-foundation.org>, Eric Biederman <ebiederm@xmission.com>, Serge Hallyn <serue@us.ibm.com>, linux-kernel@vger.kernel.org, Al Viro <viro@ftp.linux.org.uk>, Linux Containers <containers@lists.osdl.org>
 List-Id: containers.vger.kernel.org
 
-: Adobe CS3 Master Collection for PC or MAC includes:
-: InDesign CS3
-: Photoshop CS3
-: Illustrator CS3
-: Acrobat 8 Professional
-: Flash CS3 Professional
-: Dreamweaver CS3
-: Fireworks CS3
-: Contribute CS3
-: After Effects CS3 Professional
-: Premiere Pro CS3
-: Encore DVD CS3
-: Soundbooth CS3
+Daniel Lezcano wrote:
+> Tejun Heo wrote:
+>> Hello,
+>>
+>> Daniel Lezcano wrote:
+>>>> I think it would be great if sysfs_chmod_file can do all-or-nothing
+>>>> instead of failing half way through but given the interface of
+>>>> notify_change(), it could be difficult to implement.  Any ideas?
+>>> Is it acceptable to queue the notifications in a list until we are in
+>>> the loop and loop again to notify when exiting the first loop without
+>>> error ?
+>>
+>> Can you please take a look at the following patch?
+>>
+>> http://article.gmane.org/gmane.linux.file-systems/24484
+>>
+>> Which replaces notify_change() call to two calls to sysfs_setattr() and
+>> fsnotify_change().  The latter never fails and the former should always
+>> succeed if inode_change_ok() succeeds (inode_setattr() never fails
+>> unless the size is changing), so I think the correct thing to do is...
+>>
+>> * Separate out sysfs_do_setattr() which doesn't do inode_change_ok() and
+>> just sets the attributes.  Making it a void function which triggers
+>> WARN_ON() when inode_setattr() fails would be a good idea.
+>>
+>> * Implement sysfs_chmod_file() in similar way rename/move are
+>> implemented - allocate all resources and check conditions and then iff
+>> everything looks okay commit the operation by calling sysfs_do_setattr().
+>>
+>> How does that sound?
+> 
+> Does this patch looks like what you are describing ?
 
-: esoftcheap .com in your Internet Exp1orer
+Yeah, something like that.  With looping for all the inodes added, it
+looks like it will work fine.
 
-: System Requirements
+Thanks.
 
-: For PC:
-: Intel Pentium 4 (1.4GHz processor for DV; 3.4GHz processor for HDV), Intel Centrino, Intel Xeon, (dual 2.8GHz processors for HD), or Intel Core
-: Duo (or compatible) processor; SSE2-enabled processor required for AMD systems
-: Microsoft Windows XP with Service Pack 2 or Microsoft Windows Vista Home Premium, Business, Ultimate, or Enterprise (certified for 32-bit editions)
-: 1GB of RAM for DV; 2GB of RAM for HDV and HD; more RAM recommended when running multiple components
-: 38GB of available hard-disk space (additional free space required during installation)
-: Dedicated 7,200 RPM hard drive for DV and HDV editing; striped disk array storage (RAID 0) for HD; SCSI disk subsystem preferred
-: Microsoft DirectX compatible sound card (multichannel ASIO-compatible sound card recommended)
-: 1,280x1,024 monitor resolution with 32-bit color adapter
-: DVD-ROM drive
-
-: For MAC:
-: PowerPC G4 or G5 or multicore Intel processor (Adobe Premiere Pro, Encore, and Soundbooth require a multicore Intel processor; Adobe OnLocation CS3 is a Windows application and may be used with Boot Camp)
-: Mac OS X v.10.4.9; Java Runtime Environment 1.5 required for Adobe Version Cue CS3 Server
-: 1GB of RAM for DV; 2GB of RAM for HDV and HD; more RAM recommended when running multiple components
-: 36GB of available hard-disk space (additional free space required during installation)
-: Dedicated 7,200 RPM hard drive for DV and HDV editing; striped disk array storage (RAID 0) for HD; SCSI disk subsystem preferred
-: Core Audio compatible sound card
-: 1,280x1,024 monitor resolution with 32-bit color adapter
-: DVD-ROM drive: DVD+-R burner required for DVD creation
-
-Can the International Community Tame Unrest in Zimbabwe?
-
-China Revamps Paralympics Guidebook
+-- 
+tejun
