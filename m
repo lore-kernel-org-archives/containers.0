@@ -1,17 +1,11 @@
-From: "Mukesh G" <mukgbv-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: Re: Obtaining the latest kernel to test out the latest on the
-	containers
-Date: Wed, 25 Jun 2008 05:24:33 +0530
-Message-ID: <c7704c490806241654t56ccfe74k5711dfd81779ae1f@mail.gmail.com>
-References: <c7704c490806241353s53493204g5db4ad45e77d238c@mail.gmail.com>
-	<20080624222618.GA16783@us.ibm.com>
-	<c7704c490806241652wb8862b2k9643fd902f4b9505@mail.gmail.com>
+From: "Francisco Hayes" <xanthotic-kzBex0ECOkYd6bWqNyUe3NBPR1lH4CV8@public.gmane.org>
+Subject: :Flash CS 3 Pro:
+Date: Tue, 24 Jun 2008 21:15:19 -0300
+Message-ID: <000301c8d658$692bbf80$0100007f@nymukes>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <c7704c490806241652wb8862b2k9643fd902f4b9505-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
-Content-Disposition: inline
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -21,48 +15,48 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Forget my question.... I found the answer...
+: Adobe CS3 Master Collection for PC or MAC includes:
+: InDesign CS3
+: Photoshop CS3
+: Illustrator CS3
+: Acrobat 8 Professional
+: Flash CS3 Professional
+: Dreamweaver CS3
+: Fireworks CS3
+: Contribute CS3
+: After Effects CS3 Professional
+: Premiere Pro CS3
+: Encore DVD CS3
+: Soundbooth CS3
 
-Thanks
+: esoftcheap .com in your Internet Exp1orer
 
+: System Requirements
 
+: For PC:
+: Intel Pentium 4 (1.4GHz processor for DV; 3.4GHz processor for HDV), Intel Centrino, Intel Xeon, (dual 2.8GHz processors for HD), or Intel Core
+: Duo (or compatible) processor; SSE2-enabled processor required for AMD systems
+: Microsoft Windows XP with Service Pack 2 or Microsoft Windows Vista Home Premium, Business, Ultimate, or Enterprise (certified for 32-bit editions)
+: 1GB of RAM for DV; 2GB of RAM for HDV and HD; more RAM recommended when running multiple components
+: 38GB of available hard-disk space (additional free space required during installation)
+: Dedicated 7,200 RPM hard drive for DV and HDV editing; striped disk array storage (RAID 0) for HD; SCSI disk subsystem preferred
+: Microsoft DirectX compatible sound card (multichannel ASIO-compatible sound card recommended)
+: 1,280x1,024 monitor resolution with 32-bit color adapter
+: DVD-ROM drive
 
-On Wed, Jun 25, 2008 at 5:22 AM, Mukesh G <mukgbv-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org> wrote:
+: For MAC:
+: PowerPC G4 or G5 or multicore Intel processor (Adobe Premiere Pro, Encore, and Soundbooth require a multicore Intel processor; Adobe OnLocation CS3 is a Windows application and may be used with Boot Camp)
+: Mac OS X v.10.4.9; Java Runtime Environment 1.5 required for Adobe Version Cue CS3 Server
+: 1GB of RAM for DV; 2GB of RAM for HDV and HD; more RAM recommended when running multiple components
+: 36GB of available hard-disk space (additional free space required during installation)
+: Dedicated 7,200 RPM hard drive for DV and HDV editing; striped disk array storage (RAID 0) for HD; SCSI disk subsystem preferred
+: Core Audio compatible sound card
+: 1,280x1,024 monitor resolution with 32-bit color adapter
+: DVD-ROM drive: DVD+-R burner required for DVD creation
 
-> Another dumb question...
->
-> Should I apply the patch against vanilla 2.6.26 kernel or apply it to the
-> mm branch?
->
-> Thanks in advance
->
->
->
-> On Wed, Jun 25, 2008 at 3:56 AM, Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org> wrote:
->
->> Quoting Mukesh G (mukgbv-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org):
->> > Hi,
->> >
->> >     Where do I get the latest kernel sources to test out the latest on
->> the
->> > containers?
->>
->> Hi,
->>
->> generally go to lxc.sf.net and click on 'Patches'.  Currently the latest
->> patchset is at:
->>
->>        http://lxc.sourceforge.net/patches/2.6.26/2.6.26-rc5-mm3-lxc1/
->>
->> Download the patch or the broken-out patchset, and apply on top of
->> 2.6.26-rc5-mm3.  And please let us know how it goes!
->>
->> thanks,
->> -serge
->>
->
->
+Can the International Community Tame Unrest in Zimbabwe?
+
+China Revamps Paralympics Guidebook
