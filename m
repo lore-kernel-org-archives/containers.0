@@ -1,13 +1,14 @@
 From: Nadia.Derbey-6ktuUTfB/bM@public.gmane.org
-Subject: [RFC PATCH 5/6] IPC/sem: .show operation for /proc/pid/semundo
-Date: Wed, 25 Jun 2008 15:49:15 +0200
-Message-ID: <20080625135539.893049000@bull.net>
+Subject: [RFC PATCH 3/6] IPC/sem: start/stop operations for /proc/pid/semundo
+Date: Wed, 25 Jun 2008 15:49:13 +0200
+Message-ID: <20080625135539.139605000@bull.net>
 References: <20080625134910.487216000@bull.net>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline; filename=ipc_procfs_semundo_show_seqop.patch
+Content-Disposition: inline;
+	filename=ipc_procfs_semundo_start_stop_seqops.patch
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -21,56 +22,78 @@ To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Cc: Pierre Peiffer <pierre.peiffer-6ktuUTfB/bM@public.gmane.org>, Nadia Derbey <Nadia.Derbey-6ktuUTfB/bM@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-PATCH [05/06]
+PATCH [03/06]
 
-This patch introduces the .show seq operation for /proc/pid/semundo.
-
+This patch introduces the .start and .stop seq operations for
+/proc/pid/semundo.
 
 Signed-off-by: Pierre Peiffer <pierre.peiffer-6ktuUTfB/bM@public.gmane.org>
 Signed-off-by: Nadia Derbey <Nadia.Derbey-6ktuUTfB/bM@public.gmane.org>
 
 ---
- ipc/sem.c |   28 ++++++++++++++++++++++++++++
- 1 file changed, 28 insertions(+)
+ ipc/sem.c |   43 +++++++++++++++++++++++++++++++++++++++++--
+ 1 file changed, 41 insertions(+), 2 deletions(-)
 
 Index: linux-2.6.26-rc5-mm3/ipc/sem.c
 ===================================================================
---- linux-2.6.26-rc5-mm3.orig/ipc/sem.c	2008-06-24 12:54:40.000000000 +0200
-+++ linux-2.6.26-rc5-mm3/ipc/sem.c	2008-06-24 12:59:15.000000000 +0200
-@@ -1475,6 +1475,34 @@ static void semundo_stop(struct seq_file
- 
- static int semundo_show(struct seq_file *m, void *v)
+--- linux-2.6.26-rc5-mm3.orig/ipc/sem.c	2008-06-24 10:59:46.000000000 +0200
++++ linux-2.6.26-rc5-mm3/ipc/sem.c	2008-06-24 12:32:36.000000000 +0200
+@@ -1400,7 +1400,42 @@ struct undo_list_data {
+ /* iterator */
+ static void *semundo_start(struct seq_file *m, loff_t *ppos)
  {
+-	return NULL;
 +	struct undo_list_data *data = m->private;
-+	struct ipc_namespace *ns = data->ipc_ns;
-+	struct sem_undo	*u = v;
-+	int nsems, i;
-+	struct sem_array *sma;
++	struct sem_undo_list *ulp = data->undo_list;
++	struct sem_undo	*undo;
++	loff_t pos = *ppos;
 +
-+	/*
-+	 * This semid has been deleted, ignore it.
-+	 * Even if we skipped all sem_undo belonging to deleted semid
-+	 * in semundo_next(), some more deletions may have happened.
++	if (!ulp)
++		return NULL;
++
++	if (pos < 0)
++		return NULL;
++
++	/* If ulp is not NULL, it means that we've successfully grabbed
++	 * a refcnt in semundo_open. That prevents the undo_list from being
++	 * freed.
++	 *
++	 * Note:
++	 * 1) the sem_undo structure is RCU-protected. So take the rcu read
++	 *    lock and only release it during the .stop operation.
++	 * 2) we accept to release the undo_list lock (i.e. we allow the list
++	 *    to change) between each iteration, instead of taking that lock
++	 *    during the .start and releasing it during the .stop operation.
++	 *    This is to reduce the performance impact on the access to the
++	 *    undo_list.
 +	 */
-+	if (u->semid == -1)
-+		return 0;
++	rcu_read_lock();
++	spin_lock(&ulp->lock);
++	list_for_each_entry_rcu(undo, &ulp->list_proc, list_proc) {
++		if ((undo->semid != -1) && !(pos--))
++			break;
++	}
++	spin_unlock(&ulp->lock);
 +
-+	seq_printf(m, "%10d", u->semid);
++	if (&undo->list_proc == &ulp->list_proc)
++		return NULL;
 +
-+	sma = sem_lock(ns, u->semid);
-+	if (IS_ERR(sma))
-+		goto out;
-+
-+	nsems = sma->sem_nsems;
-+	sem_unlock(sma);
-+
-+	for (i = 0; i < nsems; i++)
-+		seq_printf(m, " %6d", u->semadj[i]);
-+
-+out:
-+	seq_putc(m, '\n');
- 	return 0;
++	return undo;
  }
  
+ static void *semundo_next(struct seq_file *m, void *v, loff_t *ppos)
+@@ -1410,7 +1445,11 @@ static void *semundo_next(struct seq_fil
+ 
+ static void semundo_stop(struct seq_file *m, void *v)
+ {
+-	return;
++	struct undo_list_data *data = m->private;
++	struct sem_undo_list *ulp = data->undo_list;
++
++	if (ulp)
++		rcu_read_unlock();
+ }
+ 
+ static int semundo_show(struct seq_file *m, void *v)
 
 --
