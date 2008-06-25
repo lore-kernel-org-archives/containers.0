@@ -1,15 +1,15 @@
 From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [RFC PATCH 1/6] IPC/sem: RCU-protect the process semundo list
-Date: Wed, 25 Jun 2008 15:33:19 -0500
-Message-ID: <20080625203319.GA16374@us.ibm.com>
+Subject: Re: [RFC PATCH 2/6] IPC/sem: per <pid> semundo file in procfs
+Date: Wed, 25 Jun 2008 15:33:37 -0500
+Message-ID: <20080625203337.GB16374@us.ibm.com>
 References: <20080625134910.487216000@bull.net>
-	<20080625135538.385496000@bull.net>
+	<20080625135538.762662000@bull.net>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <20080625135538.385496000-6ktuUTfB/bM@public.gmane.org>
+In-Reply-To: <20080625135538.762662000-6ktuUTfB/bM@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -24,132 +24,224 @@ Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Pie
 List-Id: containers.vger.kernel.org
 
 Quoting Nadia.Derbey-6ktuUTfB/bM@public.gmane.org (Nadia.Derbey-6ktuUTfB/bM@public.gmane.org):
-> PATCH [01/06]
+> PATCH [02/06]
 > 
-> Today, 'current' has an exclusive access to its sem_undo_list (anchored at
-> current->sysvsem.undo_list):
->   . it is created during a semop() if the SEMUNDO flag is specified for one
->     of the semaphores.
->   . it can also be created during a copy_process() operation if the
->     CLONE_SYSVSEM flag is specified (in that case the undo_list is created/
->     copied from 'current' into the target task but that target task is not
->     running yet).
->   . it is freed during an unshare() or an exit() operation, if the caller
->     (current) is the last task using it.
+> This patch adds a new procfs interface to display the per-process semundo
+> data. 
 > 
+> A new per-PID file is added, called "semundo".
+> It contains one line per semaphore IPC where there is something to undo for
+> this process.
+> Then, each line contains the semid followed by each undo value
+> corresponding to each semaphores of the semaphores array.
 > 
-> In order to allow a third party process to read a process' undo list, without
-> a too big performance impact on the existing operations, this patch proposes
-> to make the sem_undo_list structures rcu protected.
+> This interface will be particularly useful to allow a user access
+> these data, for example for checkpointing a process
 > 
-> They can then be safely accessed by any task inside read critical section,
-> this way:
-> 
->         struct sem_undo_list *undo_list;
->         int ret;
->         ...
->         rcu_read_lock();
->         undo_list = rcu_dereference(task->sysvsem.undo_list);
->         if (undo_list)   
->                 ret = atomic_inc_not_zero(&undo_list->refcnt);
->         rcu_read_unlock();
->         ...
->         if (undo_list && ret) {
->                 /* section where undo_list can be used quietly */
->                 ...
->         }
->         ...
+> With this patch, the semundo file can only be accessed in read mode.
+> When this file is opened, if an undo_list exists for the target process, it
+> is accessed in an rcu read section, and its refcount is incremented, avoiding
+> that it be freed.
+> The reverse is done during the release operation, and the undo_list is
+> freed if the process reading the file was the last process accessing that
+> list.
 > 
 > Signed-off-by: Pierre Peiffer <pierre.peiffer-6ktuUTfB/bM@public.gmane.org>
 > Signed-off-by: Nadia Derbey <Nadia.Derbey-6ktuUTfB/bM@public.gmane.org>
 
 Acked-by: Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 
-thanks,
 -serge
 
 > 
 > ---
->  include/linux/sem.h |    4 +++-
->  ipc/sem.c           |   22 ++++++++++++++++++----
->  2 files changed, 21 insertions(+), 5 deletions(-)
+>  fs/proc/base.c     |    3 +
+>  fs/proc/internal.h |    1 
+>  ipc/sem.c          |  127 +++++++++++++++++++++++++++++++++++++++++++++++++++--
+>  3 files changed, 128 insertions(+), 3 deletions(-)
 > 
-> Index: linux-2.6.26-rc5-mm3/include/linux/sem.h
+> Index: linux-2.6.26-rc5-mm3/fs/proc/base.c
 > ===================================================================
-> --- linux-2.6.26-rc5-mm3.orig/include/linux/sem.h	2008-06-24 09:04:21.000000000 +0200
-> +++ linux-2.6.26-rc5-mm3/include/linux/sem.h	2008-06-24 10:01:50.000000000 +0200
-> @@ -112,7 +112,8 @@ struct sem_queue {
+> --- linux-2.6.26-rc5-mm3.orig/fs/proc/base.c	2008-06-24 09:05:09.000000000 +0200
+> +++ linux-2.6.26-rc5-mm3/fs/proc/base.c	2008-06-24 10:03:33.000000000 +0200
+> @@ -2525,6 +2525,9 @@ static const struct pid_entry tgid_base_
+>  #ifdef CONFIG_TASK_IO_ACCOUNTING
+>  	INF("io",	S_IRUGO, tgid_io_accounting),
+>  #endif
+> +#ifdef CONFIG_SYSVIPC
+> +	REG("semundo",  S_IRUGO, semundo),
+> +#endif
 >  };
 > 
->  /* Each task has a list of undo requests. They are executed automatically
-> - * when the process exits.
-> + * when the last refcnt of sem_undo_list is released (ie when the process
-> + * exits in the general case).
->   */
->  struct sem_undo {
->  	struct list_head	list_proc;	/* per-process list: all undos from one process. */
-> @@ -131,6 +132,7 @@ struct sem_undo_list {
->  	atomic_t		refcnt;
->  	spinlock_t		lock;
->  	struct list_head	list_proc;
-> +	struct rcu_head		rcu;
->  };
+>  static int proc_tgid_base_readdir(struct file * filp,
+> Index: linux-2.6.26-rc5-mm3/fs/proc/internal.h
+> ===================================================================
+> --- linux-2.6.26-rc5-mm3.orig/fs/proc/internal.h	2008-06-24 09:05:09.000000000 +0200
+> +++ linux-2.6.26-rc5-mm3/fs/proc/internal.h	2008-06-24 10:04:19.000000000 +0200
+> @@ -65,6 +65,7 @@ extern const struct file_operations proc
+>  extern const struct file_operations proc_net_operations;
+>  extern const struct file_operations proc_kmsg_operations;
+>  extern const struct inode_operations proc_net_inode_operations;
+> +extern const struct file_operations proc_semundo_operations;
 > 
->  struct sysv_sem {
+>  void free_proc_entry(struct proc_dir_entry *de);
+> 
 > Index: linux-2.6.26-rc5-mm3/ipc/sem.c
 > ===================================================================
-> --- linux-2.6.26-rc5-mm3.orig/ipc/sem.c	2008-06-24 09:05:03.000000000 +0200
-> +++ linux-2.6.26-rc5-mm3/ipc/sem.c	2008-06-24 09:37:33.000000000 +0200
-> @@ -939,6 +939,10 @@ static inline int get_undo_list(struct s
->  {
->  	struct sem_undo_list *undo_list;
+> --- linux-2.6.26-rc5-mm3.orig/ipc/sem.c	2008-06-24 09:37:33.000000000 +0200
+> +++ linux-2.6.26-rc5-mm3/ipc/sem.c	2008-06-24 10:59:46.000000000 +0200
+> @@ -97,6 +97,7 @@ static void freeary(struct ipc_namespace
+>  #ifdef CONFIG_PROC_FS
+>  static int sysvipc_sem_proc_show(struct seq_file *s, void *it);
+>  #endif
+> +static void free_semundo_list(struct sem_undo_list *, struct ipc_namespace *);
 > 
-> +	/*
-> +	 * No need to have a rcu read critical section here: no one but
-> +	 * current is accessing the undo_list.
-> +	 */
->  	undo_list = current->sysvsem.undo_list;
->  	if (!undo_list) {
->  		undo_list = kzalloc(sizeof(*undo_list), GFP_KERNEL);
-> @@ -948,7 +952,7 @@ static inline int get_undo_list(struct s
->  		atomic_set(&undo_list->refcnt, 1);
->  		INIT_LIST_HEAD(&undo_list->list_proc);
+>  #define SEMMSL_FAST	256 /* 512 bytes on stack */
+>  #define SEMOPM_FAST	64  /* ~ 372 bytes on stack */
+> @@ -1282,8 +1283,14 @@ void exit_sem(struct task_struct *tsk)
+>  	rcu_assign_pointer(tsk->sysvsem.undo_list, NULL);
+>  	synchronize_rcu();
 > 
-> -		current->sysvsem.undo_list = undo_list;
-> +		rcu_assign_pointer(current->sysvsem.undo_list, undo_list);
->  	}
->  	*undo_listp = undo_list;
->  	return 0;
-> @@ -1268,10 +1272,15 @@ void exit_sem(struct task_struct *tsk)
->  {
->  	struct sem_undo_list *ulp;
+> -	if (!atomic_dec_and_test(&ulp->refcnt))
+> -		return;
+> +	if (atomic_dec_and_test(&ulp->refcnt))
+> +		free_semundo_list(ulp, tsk->nsproxy->ipc_ns);
+> +}
+> +
+> +static void free_semundo_list(struct sem_undo_list *ulp,
+> +				struct ipc_namespace *ipc_ns)
+> +{
+> +	BUG_ON(atomic_read(&ulp->refcnt));
 > 
-> -	ulp = tsk->sysvsem.undo_list;
-> -	if (!ulp)
+>  	for (;;) {
+>  		struct sem_array *sma;
+> @@ -1303,7 +1310,7 @@ void exit_sem(struct task_struct *tsk)
+>  		if (semid == -1)
+>  			break;
+> 
+> -		sma = sem_lock_check(tsk->nsproxy->ipc_ns, un->semid);
+> +		sma = sem_lock_check(ipc_ns, un->semid);
+> 
+>  		/* exit_sem raced with IPC_RMID, nothing to do */
+>  		if (IS_ERR(sma))
+> @@ -1384,4 +1391,118 @@ static int sysvipc_sem_proc_show(struct 
+>  			  sma->sem_otime,
+>  			  sma->sem_ctime);
+>  }
+> +
+> +struct undo_list_data {
+> +	struct sem_undo_list *undo_list;
+> +	struct ipc_namespace *ipc_ns;
+> +};
+> +
+> +/* iterator */
+> +static void *semundo_start(struct seq_file *m, loff_t *ppos)
+> +{
+> +	return NULL;
+> +}
+> +
+> +static void *semundo_next(struct seq_file *m, void *v, loff_t *ppos)
+> +{
+> +	return NULL;
+> +}
+> +
+> +static void semundo_stop(struct seq_file *m, void *v)
+> +{
+> +	return;
+> +}
+> +
+> +static int semundo_show(struct seq_file *m, void *v)
+> +{
+> +	return 0;
+> +}
+> +
+> +static struct seq_operations semundo_op = {
+> +	.start	= semundo_start,
+> +	.next	= semundo_next,
+> +	.stop	= semundo_stop,
+> +	.show	= semundo_show
+> +};
+> +
+> +static struct sem_undo_list *get_proc_ulp(struct task_struct *tsk)
+> +{
+> +	struct sem_undo_list *ulp;
+> +
 > +	rcu_read_lock();
 > +	ulp = rcu_dereference(tsk->sysvsem.undo_list);
-> +	if (!ulp) {
-> +		rcu_read_unlock();
->  		return;
-> -	tsk->sysvsem.undo_list = NULL;
-> +	}
+> +	if (ulp)
+> +		if (!atomic_inc_not_zero(&ulp->refcnt))
+> +			ulp = NULL;
 > +	rcu_read_unlock();
-> +	rcu_assign_pointer(tsk->sysvsem.undo_list, NULL);
-> +	synchronize_rcu();
-> 
->  	if (!atomic_dec_and_test(&ulp->refcnt))
->  		return;
-> @@ -1349,6 +1358,11 @@ void exit_sem(struct task_struct *tsk)
-> 
->  		call_rcu(&un->rcu, free_un);
->  	}
-> +	/*
-> +	 * No need to call synchronize_rcu() here: we come here if the refcnt
-> +	 * is 0 and this has been done into exit_sem after synchronizing. So
-> +	 * nobody else can be referencing to the undo_list.
-> +	 */
->  	kfree(ulp);
->  }
-> 
+> +	return ulp;
+> +}
+> +
+> +static void put_proc_ulp(struct sem_undo_list *ulp,
+> +					struct ipc_namespace *ns)
+> +{
+> +	if (ulp && atomic_dec_and_test(&ulp->refcnt))
+> +		free_semundo_list(ulp, ns);
+> +}
+> +
+> +/*
+> + * semundo_open: open operation for /proc/<PID>/semundo file
+> + */
+> +static int semundo_open(struct inode *inode, struct file *file)
+> +{
+> +	struct task_struct *task;
+> +	struct sem_undo_list *ulp;
+> +	struct undo_list_data *data;
+> +	struct ipc_namespace *ns;
+> +	int ret = 0;
+> +
+> +	data = kzalloc(sizeof(*data), GFP_KERNEL);
+> +	if (!data)
+> +		return -ENOMEM;
+> +
+> +	task = get_pid_task(PROC_I(inode)->pid, PIDTYPE_PID);
+> +	if (!task) {
+> +		ret = -EINVAL;
+> +		goto out_err;
+> +	}
+> +
+> +	ulp = get_proc_ulp(task);
+> +	ns = get_ipc_ns(task->nsproxy->ipc_ns);
+> +	put_task_struct(task);
+> +
+> +	ret = seq_open(file, &semundo_op);
+> +	if (!ret) {
+> +		struct seq_file *m = file->private_data;
+> +		data->undo_list = ulp;
+> +		data->ipc_ns = ns;
+> +		m->private = data;
+> +		return 0;
+> +	}
+> +
+> +	put_proc_ulp(ulp, ns);
+> +	put_ipc_ns(ns);
+> +out_err:
+> +	kfree(data);
+> +	return ret;
+> +}
+> +
+> +static int semundo_release(struct inode *inode, struct file *file)
+> +{
+> +	struct seq_file *m = file->private_data;
+> +	struct undo_list_data *data = m->private;
+> +	struct sem_undo_list *ulp = data->undo_list;
+> +	struct ipc_namespace *ns = data->ipc_ns;
+> +
+> +	put_proc_ulp(ulp, ns);
+> +	put_ipc_ns(ns);
+> +	kfree(data);
+> +	return seq_release(inode, file);
+> +}
+> +
+> +const struct file_operations proc_semundo_operations = {
+> +	.open		= semundo_open,
+> +	.read		= seq_read,
+> +	.llseek		= seq_lseek,
+> +	.release	= semundo_release,
+> +};
+>  #endif
 > 
 > --
