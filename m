@@ -1,16 +1,15 @@
 From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [RFC PATCH 3/6] IPC/sem: start/stop operations for
-	/proc/pid/semundo
-Date: Wed, 25 Jun 2008 15:39:50 -0500
-Message-ID: <20080625203950.GC16374@us.ibm.com>
+Subject: Re: [RFC PATCH 4/6] IPC/sem: next operations for /proc/pid/semundo
+Date: Wed, 25 Jun 2008 15:57:19 -0500
+Message-ID: <20080625205719.GD16374@us.ibm.com>
 References: <20080625134910.487216000@bull.net>
-	<20080625135539.139605000@bull.net>
+	<20080625135539.519489000@bull.net>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <20080625135539.139605000-6ktuUTfB/bM@public.gmane.org>
+In-Reply-To: <20080625135539.519489000-6ktuUTfB/bM@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -25,80 +24,68 @@ Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Pie
 List-Id: containers.vger.kernel.org
 
 Quoting Nadia.Derbey-6ktuUTfB/bM@public.gmane.org (Nadia.Derbey-6ktuUTfB/bM@public.gmane.org):
-> PATCH [03/06]
+> PATCH [04/06]
 > 
-> This patch introduces the .start and .stop seq operations for
-> /proc/pid/semundo.
+> This patch introduces the .next seq operation for /proc/pid/semundo.
+> 
+> What should be mentioned here is that the undo_list lock is released between
+> between each iteration.
+> Doing this, we only guarantee to access some valid data during the .show,
+
+Ok so you count on an item sticking around for the duration of the
+rcu_read_cycle().  exit_sem() is therefore not an issue.  The other
+possible racer is freeary() as called from IPC_RMID, but while that
+could remove this entry from the undo_list->list_proc, it will wait
+an rcu cycle before it actually frees it.
+
+Am I reading that all right?  If so, then:
+
+> not to have a full coherent view of the whole list. But, oth, this reduces the
+> the performance impact on the access to the undo_list.
 > 
 > Signed-off-by: Pierre Peiffer <pierre.peiffer-6ktuUTfB/bM@public.gmane.org>
 > Signed-off-by: Nadia Derbey <Nadia.Derbey-6ktuUTfB/bM@public.gmane.org>
 
 Acked-by: Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 
+> 
 > ---
->  ipc/sem.c |   43 +++++++++++++++++++++++++++++++++++++++++--
->  1 file changed, 41 insertions(+), 2 deletions(-)
+>  ipc/sem.c |   23 ++++++++++++++++++++++-
+>  1 file changed, 22 insertions(+), 1 deletion(-)
 > 
 > Index: linux-2.6.26-rc5-mm3/ipc/sem.c
 > ===================================================================
-> --- linux-2.6.26-rc5-mm3.orig/ipc/sem.c	2008-06-24 10:59:46.000000000 +0200
-> +++ linux-2.6.26-rc5-mm3/ipc/sem.c	2008-06-24 12:32:36.000000000 +0200
-> @@ -1400,7 +1400,42 @@ struct undo_list_data {
->  /* iterator */
->  static void *semundo_start(struct seq_file *m, loff_t *ppos)
+> --- linux-2.6.26-rc5-mm3.orig/ipc/sem.c	2008-06-24 12:32:36.000000000 +0200
+> +++ linux-2.6.26-rc5-mm3/ipc/sem.c	2008-06-24 12:54:40.000000000 +0200
+> @@ -1440,7 +1440,28 @@ static void *semundo_start(struct seq_fi
+> 
+>  static void *semundo_next(struct seq_file *m, void *v, loff_t *ppos)
 >  {
 > -	return NULL;
+> +	struct sem_undo	*undo = v;
 > +	struct undo_list_data *data = m->private;
 > +	struct sem_undo_list *ulp = data->undo_list;
-> +	struct sem_undo	*undo;
-> +	loff_t pos = *ppos;
 > +
-> +	if (!ulp)
-> +		return NULL;
-> +
-> +	if (pos < 0)
-> +		return NULL;
-> +
-> +	/* If ulp is not NULL, it means that we've successfully grabbed
-> +	 * a refcnt in semundo_open. That prevents the undo_list from being
-> +	 * freed.
-> +	 *
-> +	 * Note:
-> +	 * 1) the sem_undo structure is RCU-protected. So take the rcu read
-> +	 *    lock and only release it during the .stop operation.
-> +	 * 2) we accept to release the undo_list lock (i.e. we allow the list
-> +	 *    to change) between each iteration, instead of taking that lock
-> +	 *    during the .start and releasing it during the .stop operation.
-> +	 *    This is to reduce the performance impact on the access to the
-> +	 *    undo_list.
+> +	/*
+> +	 * No need to protect against ulp being NULL, if we are here,
+> +	 * it can't be NULL.
 > +	 */
-> +	rcu_read_lock();
 > +	spin_lock(&ulp->lock);
-> +	list_for_each_entry_rcu(undo, &ulp->list_proc, list_proc) {
-> +		if ((undo->semid != -1) && !(pos--))
-> +			break;
-> +	}
+> +
+> +	do {
+> +		undo = list_entry(rcu_dereference(undo->list_proc.next),
+> +				struct sem_undo, list_proc);
+> +
+> +	} while (&undo->list_proc != &ulp->list_proc && undo->semid == -1);
+> +
+> +	++*ppos;
 > +	spin_unlock(&ulp->lock);
 > +
 > +	if (&undo->list_proc == &ulp->list_proc)
 > +		return NULL;
-> +
 > +	return undo;
 >  }
 > 
->  static void *semundo_next(struct seq_file *m, void *v, loff_t *ppos)
-> @@ -1410,7 +1445,11 @@ static void *semundo_next(struct seq_fil
-> 
 >  static void semundo_stop(struct seq_file *m, void *v)
->  {
-> -	return;
-> +	struct undo_list_data *data = m->private;
-> +	struct sem_undo_list *ulp = data->undo_list;
-> +
-> +	if (ulp)
-> +		rcu_read_unlock();
->  }
-> 
->  static int semundo_show(struct seq_file *m, void *v)
 > 
 > --
