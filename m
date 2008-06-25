@@ -1,14 +1,12 @@
 From: Nadia.Derbey-6ktuUTfB/bM@public.gmane.org
-Subject: [RFC PATCH 3/6] IPC/sem: start/stop operations for /proc/pid/semundo
-Date: Wed, 25 Jun 2008 15:49:13 +0200
-Message-ID: <20080625135539.139605000@bull.net>
-References: <20080625134910.487216000@bull.net>
+Subject: [RFC PATCH 0/6] SYSVIPC/semaphores - allow saving/restoring a
+	process' semundo_list
+Date: Wed, 25 Jun 2008 15:49:10 +0200
+Message-ID: <20080625134910.487216000@bull.net>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline;
-	filename=ipc_procfs_semundo_start_stop_seqops.patch
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,81 +17,65 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Cc: Pierre Peiffer <pierre.peiffer-6ktuUTfB/bM@public.gmane.org>, Nadia Derbey <Nadia.Derbey-6ktuUTfB/bM@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-PATCH [03/06]
 
-This patch introduces the .start and .stop seq operations for
-/proc/pid/semundo.
+This patchset is a part of an effort to make sysv ipc objects
+read/writable from userspace for checkpoint / restart.
 
-Signed-off-by: Pierre Peiffer <pierre.peiffer-6ktuUTfB/bM@public.gmane.org>
-Signed-off-by: Nadia Derbey <Nadia.Derbey-6ktuUTfB/bM@public.gmane.org>
+System V ipc's are objects that are global to a system and can thus be
+checkpointed and restarted on a container basis. But some parts of the ipc
+structures are process related and, as such should be checkpointed / restarted
+on a process basis.
 
----
- ipc/sem.c |   43 +++++++++++++++++++++++++++++++++++++++++--
- 1 file changed, 41 insertions(+), 2 deletions(-)
+Message queues needn't and thus cannot be reached from a task structure
+(only the other direction is possible: a task can be reached by a msg receiver
+or sender structure if it is sleeping).
 
-Index: linux-2.6.26-rc5-mm3/ipc/sem.c
-===================================================================
---- linux-2.6.26-rc5-mm3.orig/ipc/sem.c	2008-06-24 10:59:46.000000000 +0200
-+++ linux-2.6.26-rc5-mm3/ipc/sem.c	2008-06-24 12:32:36.000000000 +0200
-@@ -1400,7 +1400,42 @@ struct undo_list_data {
- /* iterator */
- static void *semundo_start(struct seq_file *m, loff_t *ppos)
- {
--	return NULL;
-+	struct undo_list_data *data = m->private;
-+	struct sem_undo_list *ulp = data->undo_list;
-+	struct sem_undo	*undo;
-+	loff_t pos = *ppos;
-+
-+	if (!ulp)
-+		return NULL;
-+
-+	if (pos < 0)
-+		return NULL;
-+
-+	/* If ulp is not NULL, it means that we've successfully grabbed
-+	 * a refcnt in semundo_open. That prevents the undo_list from being
-+	 * freed.
-+	 *
-+	 * Note:
-+	 * 1) the sem_undo structure is RCU-protected. So take the rcu read
-+	 *    lock and only release it during the .stop operation.
-+	 * 2) we accept to release the undo_list lock (i.e. we allow the list
-+	 *    to change) between each iteration, instead of taking that lock
-+	 *    during the .start and releasing it during the .stop operation.
-+	 *    This is to reduce the performance impact on the access to the
-+	 *    undo_list.
-+	 */
-+	rcu_read_lock();
-+	spin_lock(&ulp->lock);
-+	list_for_each_entry_rcu(undo, &ulp->list_proc, list_proc) {
-+		if ((undo->semid != -1) && !(pos--))
-+			break;
-+	}
-+	spin_unlock(&ulp->lock);
-+
-+	if (&undo->list_proc == &ulp->list_proc)
-+		return NULL;
-+
-+	return undo;
- }
- 
- static void *semundo_next(struct seq_file *m, void *v, loff_t *ppos)
-@@ -1410,7 +1445,11 @@ static void *semundo_next(struct seq_fil
- 
- static void semundo_stop(struct seq_file *m, void *v)
- {
--	return;
-+	struct undo_list_data *data = m->private;
-+	struct sem_undo_list *ulp = data->undo_list;
-+
-+	if (ulp)
-+		rcu_read_unlock();
- }
- 
- static int semundo_show(struct seq_file *m, void *v)
+Shared memories are accessible from a task structure through that task's
+memory mapping (/proc/<pid>/maps shows a process' memory maps).
+
+Semaphores are kind of accessible from a task structure too: the task
+structure's sysvsem field makes it possible to walk through all the semaphores
+operations to undo when a process is exiting.
+This list, that need to be saved and restored during a process' c/r,
+cannot yet be accessed from user space.
+
+This is a feature that will be needed if ever we take the direction of driving
+checkpoint / restart from user space, though the read part of it could be used
+even from now on.
+
+Since this undo_list is, again, on a thread basis, we propose to externalize
+it via a new proc file: /proc/<pid>/semundo.
+
+Actually, Pierre Pieffer has already done the proposal in threads
+https://lists.linux-foundation.org/pipermail/containers/2008-January/thread.html#9756
+up to #9759
+
+I've ported them to 2.6.26-rc5-mm3, and I'm now coming back with a
+simpler implementation: the write operation is now only allowed into
+/proc/self/semundo, which simplifies the locking strategy.
+
+
+These patches should be applied to 2.6.26-rc5-mm3, in the following order:
+[ PATCH 1/6] : ipc_rcu_protect_access_to_undo_list.patch
+               Makes the process' undo_list rcu protected in order to enable
+               safely reading it.
+[ PATCH 2/6] : ipc_procfs_semundo_file.patch
+               Introduces the semundo proc file (the seq operations are still
+               empty).
+[ PATCH 3/6] : ipc_procfs_semundo_start_stop_seqops.patch
+               Introduces the .start and .stop seq operations.
+[ PATCH 4/6] : ipc_procfs_semundo_next_seqop.patch
+               Introduces the .next seq operation.
+[ PATCH 5/6] : ipc_procfs_semundo_show_seqop.patch
+               Introduces the .show seq operation.
+[ PATCH 6/6] : ipc_procfs_semundo_write.patch
+               The semundo proc file becomes writable.
+
+Comments are welcome!
+
+Regards,
+Nadia
 
 --
