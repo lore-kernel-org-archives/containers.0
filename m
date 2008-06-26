@@ -1,14 +1,18 @@
-From: Nadia.Derbey-6ktuUTfB/bM@public.gmane.org
-Subject: [RFC PATCH 1/1] SYSVIPC/semaphores: document the new per <pid>
-	semundo proc file
-Date: Thu, 26 Jun 2008 13:34:58 +0200
-Message-ID: <20080626113609.262996000@bull.net>
-References: <20080626113457.255055000@bull.net>
+From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH 11/11] sysfs: user namespaces: fix bug with
+	clone(CLONE_NEWUSER) with fairsched
+Date: Thu, 26 Jun 2008 08:07:52 -0500
+Message-ID: <20080626130752.GA11002@us.ibm.com>
+References: <20080618170729.808539948@theryb.frec.bull.fr>
+	<20080618170731.746054454@theryb.frec.bull.fr>
+	<485F0812.4090903@gmail.com> <20080625184409.GA8353@us.ibm.com>
+	<m1wskd43uc.fsf@frodo.ebiederm.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline; filename=ipc_procfs_semundo_doc.patch
+Content-Disposition: inline
+In-Reply-To: <m1wskd43uc.fsf-B27657KtZYmhTnVgQlOflh2eb7JE58TQ@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,102 +22,37 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Cc: mtk.manpages-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, Nadia Derbey <Nadia.Derbey-6ktuUTfB/bM@public.gmane.org>
+To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+Cc: Tejun Heo <htejun-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Greg Kroah-Hartman <gregkh-l3A5Bk7waGM@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Al Viro <viro-rfM+Q5joDG/XmaaqVzeoHQ@public.gmane.org>, Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>, Benjamin Thery <benjamin.thery-6ktuUTfB/bM@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-PATCH [01/01]
+Quoting Eric W. Biederman (ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org):
+> "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org> writes:
+> 
+> > Except the sysfs mount holds no refcount on the userns.  So as long as we
+> > do the ida tagging as you suggested in your response to patch 6, there
+> > should be no reference to the user_ns left in sysfs code.
+> >
+> > The extra reference in patch #9 is for a light ref on the network
+> > namespace.  I'm still not sure that needs to be there, since if the
+> > network namespace goes away, it will properly unregister its sysfs
+> > mounts.  Eric, Benjamin, I really don't see any use for the hold_net()
+> > from sysfs.  What is it doing?
+> 
+> Mostly just being a sanity check.  We can remove that if it easier.
+> 
+> Eric
 
-This patch completes the patch series I've sent yesterday to introduce the new
-per process semundo proc file.
-(see https://lists.linux-foundation.org/pipermail/containers/2008-June/011502.html)
+In itself it seems an ok check (temporarily) to make sure that the
+net_ns hook to unset the tag.netns at netns release is properly working,
+but given that it's only checking for net_ns coding errors, and Tejun
+wants a whole generic hooking infrastructure for net_ns to register with
+so as to keep mention of net_ns out of sysfs code, yeah I think the sane
+thing is to just remove it.
 
-It updates Documentation/filesystems/proc.txt with that file's description.
+But the first thing (after Daniel is finished with the patch 5 fallout)
+is to address the patch 6 comments about using ida.  At first I didn't
+like it (seemed like too much bookkeeping) but I think it'll actually
+work out very nicely.
 
-Please, tell me if I need to resend the complete series.
-
-Regards,
-Nadia
-
-Signed-off-by: Nadia Derbey <Nadia.Derbey-6ktuUTfB/bM@public.gmane.org>
-
----
- Documentation/filesystems/proc.txt |   56 +++++++++++++++++++++++++++++++++++--
- 1 file changed, 54 insertions(+), 2 deletions(-)
-
-Index: linux-2.6.26-rc5-mm3.4.semundo/Documentation/filesystems/proc.txt
-===================================================================
---- linux-2.6.26-rc5-mm3.4.semundo.orig/Documentation/filesystems/proc.txt	2008-06-24 09:05:00.000000000 +0200
-+++ linux-2.6.26-rc5-mm3.4.semundo/Documentation/filesystems/proc.txt	2008-06-26 14:35:27.000000000 +0200
-@@ -44,7 +44,8 @@ Table of Contents
-   2.14	/proc/<pid>/io - Display the IO accounting fields
-   2.15	/proc/<pid>/coredump_filter - Core dump filtering settings
-   2.16	/proc/<pid>/mountinfo - Information about mounts
--  2.17	/proc/sys/fs/types - File system type specific parameters
-+  2.17	/proc/<pid>/semundo - Information sysv semaphores undo list
-+  2.18	/proc/sys/fs/types - File system type specific parameters
- 
- ------------------------------------------------------------------------------
- Preface
-@@ -2453,7 +2454,58 @@ For more information on mount propagatio
- 
-   Documentation/filesystems/sharedsubtree.txt
- 
--2.17 /proc/sys/fs/types/ - File system type specific parameters
-+2.17 /proc/<pid>/semundo - Information about sysv semaphores undo list
-+----------------------------------------------------------------------
-+
-+This file contains lines of the form:
-+
-+294914      1     -1      1      1      1      1      1      1      1
-+  (1)                    (i)
-+
-+(1) semaphore id: semaphore set identifier as returned by a semget()
-+(i) adj value: undo count for the i-th semaphore in the semaphore set.
-+               This is the value that will be added to the i-th semaphore when
-+               the process <pid> exits.
-+
-+Ex: when the process owning the semundo procfs file given above exits, the
-+semaphore set whose id is 294914 will have its semaphores values updated as
-+follows:
-+   . semaphore # 0 will have its value incremented by 1
-+   . semaphore # 1 will have its value decremented by 1
-+   . semaphore # 2 will have its value incremented by 1, etc.
-+
-+This file is particularly useful if one wants to take a snapshot of a process'
-+state in terms of sysv ipc's, during a checkpoint phase, for example.
-+
-+This file can be open for reading by any process.
-+It can also be open for writing, but the write operation is only allowed into
-+/proc/self/semundo.
-+
-+The write syntax is the following:
-+<semaphore set id> <VAL0> ... <VALi> ... <VALn>
-+
-+with <VALi> = new undo value for semaphore # <i> in the semaphore set.
-+
-+Note that the number of values given after the semaphore id should be
-+identical to the number of semaphores in the set (i.e. to the nsems parameter
-+given in the semget() syscall).
-+
-+Writing to the semundo file has the following effect:
-+  . if the owning process already had an undo list, each semaphore in the set
-+    will have its undo count set to the corresponding value in the input line.
-+  . if the process didn't have an undo list, one will be created for it, and
-+    updated according to the input line.
-+
-+Writing to this file is particularly useful if one wants to restore a process'
-+state in terms of sysv ipc's, during a restart phase, for example.
-+
-+NOTE:
-+The access flags used to open the semundo file are very important:
-+opening the file in rd/wr mode will be considered as as "open for write".
-+This means that a process opening another process' semundo file in rd/wr mode
-+will see a failure, even if that process only wanted to read the file.
-+
-+2.18 /proc/sys/fs/types/ - File system type specific parameters
- ----------------------------------------------------------------
- 
- There's a separate directory /proc/sys/fs/types/<type>/ for each
-
---
+-serge
