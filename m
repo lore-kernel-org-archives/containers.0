@@ -1,15 +1,15 @@
 From: Nadia Derbey <Nadia.Derbey-6ktuUTfB/bM@public.gmane.org>
-Subject: Re: [RFC PATCH 6/6] IPC/sem: .write operation for	/proc/<self>/semundo
-Date: Thu, 26 Jun 2008 07:44:25 +0200
-Message-ID: <48632CB9.30808@bull.net>
-References: <20080625134910.487216000@bull.net>
-	<20080625135540.271934000@bull.net>
-	<20080625210937.GF16374@us.ibm.com>
+Subject: Re: [RFC PATCH 2/6] IPC/sem: per <pid> semundo file in procfs
+Date: Thu, 26 Jun 2008 08:07:45 +0200
+Message-ID: <48633231.5090703@bull.net>
+References: <20080625134910.487216000@bull.net>	
+	<20080625135538.762662000@bull.net>
+	<517f3f820806252208m1f5b91dfm38b8babff73adf72@mail.gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20080625210937.GF16374-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <517f3f820806252208m1f5b91dfm38b8babff73adf72-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,348 +19,270 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+To: Michael Kerrisk <mtk.manpages-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Serge E. Hallyn wrote:
-> Quoting Nadia.Derbey-6ktuUTfB/bM@public.gmane.org (Nadia.Derbey-6ktuUTfB/bM@public.gmane.org):
+Michael Kerrisk wrote:
+> On 6/25/08, Nadia.Derbey-6ktuUTfB/bM@public.gmane.org <Nadia.Derbey-6ktuUTfB/bM@public.gmane.org> wrote:
 > 
->>PATCH [06/06]
+>>PATCH [02/06]
 >>
->>This patch introduces the .write seq operation for /proc/pid/semundo.
+>> This patch adds a new procfs interface to display the per-process semundo
+>> data.
 >>
->>In order to simplify the locking strategy, the write operation is only allowed
->>to 'current'.
+>> A new per-PID file is added, called "semundo".
+>> It contains one line per semaphore IPC where there is something to undo for
+>> this process.
+>> Then, each line contains the semid followed by each undo value
+>> corresponding to each semaphores of the semaphores array.
+>>
+>> This interface will be particularly useful to allow a user access
+>> these data, for example for checkpointing a process
+>>
+>> With this patch, the semundo file can only be accessed in read mode.
+>> When this file is opened, if an undo_list exists for the target process, it
+>> is accessed in an rcu read section, and its refcount is incremented, avoiding
+>> that it be freed.
+>> The reverse is done during the release operation, and the undo_list is
+>> freed if the process reading the file was the last process accessing that
+>> list.
+>>
+>> Signed-off-by: Pierre Peiffer <pierre.peiffer-6ktuUTfB/bM@public.gmane.org>
+>> Signed-off-by: Nadia Derbey <Nadia.Derbey-6ktuUTfB/bM@public.gmane.org>
 > 
 > 
-> There should also be a patch against Documentation/filesystems/proc.txt
+> Nadia,
 > 
+> This is a kernel-userland interface change, please do CC me, so that I
+> can change the man pages if needed.
 
-Ok, will do that.
+So sorry Michael, but looks like I forgot the complete documentation 
+part: I also have an issue from Serge about a missing documentation in 
+the Documentation directory.
+Will fix that and take that opportunity to put you in the loop.
 
-> 
->>Signed-off-by: Nadia Derbey <Nadia.Derbey-6ktuUTfB/bM@public.gmane.org>
->>
->>---
->> fs/proc/base.c |    2 
->> ipc/sem.c      |  250 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++-
->> 2 files changed, 250 insertions(+), 2 deletions(-)
->>
->>Index: linux-2.6.26-rc5-mm3/fs/proc/base.c
->>===================================================================
->>--- linux-2.6.26-rc5-mm3.orig/fs/proc/base.c	2008-06-24 10:03:33.000000000 +0200
->>+++ linux-2.6.26-rc5-mm3/fs/proc/base.c	2008-06-24 13:21:44.000000000 +0200
->>@@ -2526,7 +2526,7 @@ static const struct pid_entry tgid_base_
->> 	INF("io",	S_IRUGO, tgid_io_accounting),
->> #endif
->> #ifdef CONFIG_SYSVIPC
->>-	REG("semundo",  S_IRUGO, semundo),
->>+	REG("semundo",  S_IWUSR|S_IRUGO, semundo),
->> #endif
->> };
->>
->>Index: linux-2.6.26-rc5-mm3/ipc/sem.c
->>===================================================================
->>--- linux-2.6.26-rc5-mm3.orig/ipc/sem.c	2008-06-24 12:59:15.000000000 +0200
->>+++ linux-2.6.26-rc5-mm3/ipc/sem.c	2008-06-25 08:56:07.000000000 +0200
->>@@ -1554,7 +1554,27 @@ static int semundo_open(struct inode *in
->> 		goto out_err;
->> 	}
->>
->>-	ulp = get_proc_ulp(task);
->>+	if (file->f_flags & O_WRONLY || file->f_flags & O_RDWR) {
->>+		/*
->>+		 * Writing is only allowed to current
->>+		 */
->>+		if (task != current) {
->>+			put_task_struct(task);
->>+			ret = -EPERM;
->>+			goto out_err;
->>+		}
->>+		/*
->>+		 * No need to increment the undo_list's refcnt: only current
->>+		 * can be freeing it through exit, and we are current.
->>+		 * Only signal through the ulp NULL pointer that it won't be
->>+		 * necessary to decrement the refcnt during release.
->>+		 * Actually, in this path the undo_list will be gotten during
->>+		 * the write operation.
->>+		 */
-> 
-> 
-> (I'll probably regret asking this when I turn out to be obviously wrong,
-> but:)
-> 
-> What if I'm opening the file O_RDWR and first read the file?  You'll end
-> up showing no entries, right?
-
-Yes, exactly. I know this is weird, and I 1st thought of delaying the 
-check on task = current until the actual .write operation. But it would 
-have made things a bit more complicated:
-. add the task pointer to the private data
-. delay the put_task_struct
+Regards,
+Nadia
 
 > 
-> Which may be ok, so long as it's properly documented in proc.txt...
+> Cheers,
+> 
+> Michael
+> 
+> 
+> 
+> 
+>> ---
+>>  fs/proc/base.c     |    3 +
+>>  fs/proc/internal.h |    1
+>>  ipc/sem.c          |  127 +++++++++++++++++++++++++++++++++++++++++++++++++++--
+>>  3 files changed, 128 insertions(+), 3 deletions(-)
+>>
+>> Index: linux-2.6.26-rc5-mm3/fs/proc/base.c
+>> ===================================================================
+>> --- linux-2.6.26-rc5-mm3.orig/fs/proc/base.c    2008-06-24 09:05:09.000000000 +0200
+>> +++ linux-2.6.26-rc5-mm3/fs/proc/base.c 2008-06-24 10:03:33.000000000 +0200
+>> @@ -2525,6 +2525,9 @@ static const struct pid_entry tgid_base_
+>>  #ifdef CONFIG_TASK_IO_ACCOUNTING
+>>        INF("io",       S_IRUGO, tgid_io_accounting),
+>>  #endif
+>> +#ifdef CONFIG_SYSVIPC
+>> +       REG("semundo",  S_IRUGO, semundo),
+>> +#endif
+>>  };
+>>
+>>  static int proc_tgid_base_readdir(struct file * filp,
+>> Index: linux-2.6.26-rc5-mm3/fs/proc/internal.h
+>> ===================================================================
+>> --- linux-2.6.26-rc5-mm3.orig/fs/proc/internal.h        2008-06-24 09:05:09.000000000 +0200
+>> +++ linux-2.6.26-rc5-mm3/fs/proc/internal.h     2008-06-24 10:04:19.000000000 +0200
+>> @@ -65,6 +65,7 @@ extern const struct file_operations proc
+>>  extern const struct file_operations proc_net_operations;
+>>  extern const struct file_operations proc_kmsg_operations;
+>>  extern const struct inode_operations proc_net_inode_operations;
+>> +extern const struct file_operations proc_semundo_operations;
+>>
+>>  void free_proc_entry(struct proc_dir_entry *de);
+>>
+>> Index: linux-2.6.26-rc5-mm3/ipc/sem.c
+>> ===================================================================
+>> --- linux-2.6.26-rc5-mm3.orig/ipc/sem.c 2008-06-24 09:37:33.000000000 +0200
+>> +++ linux-2.6.26-rc5-mm3/ipc/sem.c      2008-06-24 10:59:46.000000000 +0200
+>> @@ -97,6 +97,7 @@ static void freeary(struct ipc_namespace
+>>  #ifdef CONFIG_PROC_FS
+>>  static int sysvipc_sem_proc_show(struct seq_file *s, void *it);
+>>  #endif
+>> +static void free_semundo_list(struct sem_undo_list *, struct ipc_namespace *);
+>>
+>>  #define SEMMSL_FAST    256 /* 512 bytes on stack */
+>>  #define SEMOPM_FAST    64  /* ~ 372 bytes on stack */
+>> @@ -1282,8 +1283,14 @@ void exit_sem(struct task_struct *tsk)
+>>        rcu_assign_pointer(tsk->sysvsem.undo_list, NULL);
+>>        synchronize_rcu();
+>>
+>> -       if (!atomic_dec_and_test(&ulp->refcnt))
+>> -               return;
+>> +       if (atomic_dec_and_test(&ulp->refcnt))
+>> +               free_semundo_list(ulp, tsk->nsproxy->ipc_ns);
+>> +}
+>> +
+>> +static void free_semundo_list(struct sem_undo_list *ulp,
+>> +                               struct ipc_namespace *ipc_ns)
+>> +{
+>> +       BUG_ON(atomic_read(&ulp->refcnt));
+>>
+>>        for (;;) {
+>>                struct sem_array *sma;
+>> @@ -1303,7 +1310,7 @@ void exit_sem(struct task_struct *tsk)
+>>                if (semid == -1)
+>>                        break;
+>>
+>> -               sma = sem_lock_check(tsk->nsproxy->ipc_ns, un->semid);
+>> +               sma = sem_lock_check(ipc_ns, un->semid);
+>>
+>>                /* exit_sem raced with IPC_RMID, nothing to do */
+>>                if (IS_ERR(sma))
+>> @@ -1384,4 +1391,118 @@ static int sysvipc_sem_proc_show(struct
+>>                          sma->sem_otime,
+>>                          sma->sem_ctime);
+>>  }
+>> +
+>> +struct undo_list_data {
+>> +       struct sem_undo_list *undo_list;
+>> +       struct ipc_namespace *ipc_ns;
+>> +};
+>> +
+>> +/* iterator */
+>> +static void *semundo_start(struct seq_file *m, loff_t *ppos)
+>> +{
+>> +       return NULL;
+>> +}
+>> +
+>> +static void *semundo_next(struct seq_file *m, void *v, loff_t *ppos)
+>> +{
+>> +       return NULL;
+>> +}
+>> +
+>> +static void semundo_stop(struct seq_file *m, void *v)
+>> +{
+>> +       return;
+>> +}
+>> +
+>> +static int semundo_show(struct seq_file *m, void *v)
+>> +{
+>> +       return 0;
+>> +}
+>> +
+>> +static struct seq_operations semundo_op = {
+>> +       .start  = semundo_start,
+>> +       .next   = semundo_next,
+>> +       .stop   = semundo_stop,
+>> +       .show   = semundo_show
+>> +};
+>> +
+>> +static struct sem_undo_list *get_proc_ulp(struct task_struct *tsk)
+>> +{
+>> +       struct sem_undo_list *ulp;
+>> +
+>> +       rcu_read_lock();
+>> +       ulp = rcu_dereference(tsk->sysvsem.undo_list);
+>> +       if (ulp)
+>> +               if (!atomic_inc_not_zero(&ulp->refcnt))
+>> +                       ulp = NULL;
+>> +       rcu_read_unlock();
+>> +       return ulp;
+>> +}
+>> +
+>> +static void put_proc_ulp(struct sem_undo_list *ulp,
+>> +                                       struct ipc_namespace *ns)
+>> +{
+>> +       if (ulp && atomic_dec_and_test(&ulp->refcnt))
+>> +               free_semundo_list(ulp, ns);
+>> +}
+>> +
+>> +/*
+>> + * semundo_open: open operation for /proc/<PID>/semundo file
+>> + */
+>> +static int semundo_open(struct inode *inode, struct file *file)
+>> +{
+>> +       struct task_struct *task;
+>> +       struct sem_undo_list *ulp;
+>> +       struct undo_list_data *data;
+>> +       struct ipc_namespace *ns;
+>> +       int ret = 0;
+>> +
+>> +       data = kzalloc(sizeof(*data), GFP_KERNEL);
+>> +       if (!data)
+>> +               return -ENOMEM;
+>> +
+>> +       task = get_pid_task(PROC_I(inode)->pid, PIDTYPE_PID);
+>> +       if (!task) {
+>> +               ret = -EINVAL;
+>> +               goto out_err;
+>> +       }
+>> +
+>> +       ulp = get_proc_ulp(task);
+>> +       ns = get_ipc_ns(task->nsproxy->ipc_ns);
+>> +       put_task_struct(task);
+>> +
+>> +       ret = seq_open(file, &semundo_op);
+>> +       if (!ret) {
+>> +               struct seq_file *m = file->private_data;
+>> +               data->undo_list = ulp;
+>> +               data->ipc_ns = ns;
+>> +               m->private = data;
+>> +               return 0;
+>> +       }
+>> +
+>> +       put_proc_ulp(ulp, ns);
+>> +       put_ipc_ns(ns);
+>> +out_err:
+>> +       kfree(data);
+>> +       return ret;
+>> +}
+>> +
+>> +static int semundo_release(struct inode *inode, struct file *file)
+>> +{
+>> +       struct seq_file *m = file->private_data;
+>> +       struct undo_list_data *data = m->private;
+>> +       struct sem_undo_list *ulp = data->undo_list;
+>> +       struct ipc_namespace *ns = data->ipc_ns;
+>> +
+>> +       put_proc_ulp(ulp, ns);
+>> +       put_ipc_ns(ns);
+>> +       kfree(data);
+>> +       return seq_release(inode, file);
+>> +}
+>> +
+>> +const struct file_operations proc_semundo_operations = {
+>> +       .open           = semundo_open,
+>> +       .read           = seq_read,
+>> +       .llseek         = seq_lseek,
+>> +       .release        = semundo_release,
+>> +};
+>>  #endif
+>>
+>>
+>> --
+>> _______________________________________________
+>> Containers mailing list
+>> Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+>> https://lists.linux-foundation.org/mailman/listinfo/containers
+>>
+> 
+> 
+> 
 
-Ok, will do that
 
-> 
-> thanks,
-> -serge
-> 
-> 
->>+		ulp = NULL;
->>+	} else
->>+		ulp = get_proc_ulp(task);
->>+
->> 	ns = get_ipc_ns(task->nsproxy->ipc_ns);
->> 	put_task_struct(task);
->>
->>@@ -1574,6 +1594,233 @@ out_err:
->> 	return ret;
->> }
->>
->>+/* Skip all spaces at the beginning of the buffer */
->>+static inline int skip_space(const char __user **buf, size_t *len)
->>+{
->>+	char c = 0;
->>+	while (*len) {
->>+		if (get_user(c, *buf))
->>+			return -EFAULT;
->>+		if (c != '\t' && c != ' ')
->>+			break;
->>+		--*len;
->>+		++*buf;
->>+	}
->>+	return c;
->>+}
->>+
->>+/* Retrieve the first numerical value contained in the string.
->>+ * Note: The value is supposed to be a 32-bit integer.
->>+ */
->>+static inline int get_next_value(const char __user **buf, size_t *len, int *val)
->>+{
->>+#define BUFLEN 11
->>+	int err, neg = 0, left;
->>+	char s[BUFLEN], *p;
->>+
->>+	err = skip_space(buf, len);
->>+	if (err < 0)
->>+		return err;
->>+	if (!*len)
->>+		return INT_MAX;
->>+	if (err == '\n') {
->>+		++*buf;
->>+		--*len;
->>+		return INT_MAX;
->>+	}
->>+	if (err == '-') {
->>+		++*buf;
->>+		--*len;
->>+		neg = 1;
->>+	}
->>+
->>+	left = *len;
->>+	if (left > sizeof(s) - 1)
->>+		left = sizeof(s) - 1;
->>+	if (copy_from_user(s, *buf, left))
->>+		return -EFAULT;
->>+
->>+	s[left] = 0;
->>+	p = s;
->>+	if (*p < '0' || *p > '9')
->>+		return -EINVAL;
->>+
->>+	*val = simple_strtoul(p, &p, 0);
->>+	if (neg)
->>+		*val = -(*val);
->>+
->>+	left = p-s;
->>+	(*len) -= left;
->>+	(*buf) += left;
->>+
->>+	return 0;
->>+#undef BUFLEN
->>+}
->>+
->>+/*
->>+ * Reads a line from /proc/self/semundo.
->>+ * Returns the number of undo values read (or errcode upon failure).
->>+ * @id: pointer to the semid (filled in with 1st field in the line)
->>+ * @array: semundo values (filled in iwth remaining fields in the line).
->>+ * @array_len: max # of expected semundo values
->>+ */
->>+static inline int semundo_readline(const char __user **buf, size_t *left,
->>+				   int *id, short *array, int array_len)
->>+{
->>+	int i, val, err;
->>+
->>+	/* Read semid */
->>+	err = get_next_value(buf, left, id);
->>+	if (err)
->>+		return err;
->>+
->>+	/* Read all (semundo-) values of a full line */
->>+	for (i = 0; ; i++) {
->>+		err = get_next_value(buf, left, &val);
->>+		if (err < 0)
->>+			return err;
->>+		/* reached end of line or end of buffer */
->>+		if (err == INT_MAX)
->>+			break;
->>+		/* Return an error if we get more values than expected */
->>+		if (i < array_len)
->>+			array[i] = val;
->>+		else
->>+			return -EINVAL;
->>+	}
->>+	return i;
->>+}
->>+
->>+/*
->>+ * sets or updates the undo values for the undo_list of a given semaphore id.
->>+ * This is exactly the same code sequence as sys_semtimedop if we have undos.
->>+ */
->>+static inline int semundo_update(struct ipc_namespace *ns, int semid,
->>+				short *array, int size)
->>+{
->>+	struct sem_undo *un;
->>+	struct sem_array *sma;
->>+	int ret = 0;
->>+
->>+	un = find_alloc_undo(ns, semid);
->>+	if (IS_ERR(un)) {
->>+		ret = PTR_ERR(un);
->>+		goto out;
->>+	}
->>+
->>+	/* lookup the sem_array */
->>+	sma = sem_lock(ns, semid);
->>+	if (IS_ERR(sma)) {
->>+		ret = PTR_ERR(sma);
->>+		rcu_read_unlock();
->>+		goto out;
->>+	}
->>+
->>+	/*
->>+	 * find_alloc_undo opened an rcu read section to protect un.
->>+	 * Releasing it here is safe:
->>+	 *    . sem_lock is held, so we are protected against IPC_RMID
->>+	 *    . the refcnt won't fall to 0 since exit_sem only operates on
->>+	 *      current and we are the current.
->>+	 */
->>+	rcu_read_unlock();
->>+
->>+	/*
->>+	 * semid identifiers are not unique - find_alloc_undo() may have
->>+	 * allocated an undo structure, it was invalidated by an RMID and now
->>+	 * a new array received the same id.
->>+	 * Check and fail.
->>+	 * This case can be detected checking un->semid. The existance of
->>+	 * "un" itself is guaranteed by rcu.
->>+	 */
->>+	if (un->semid == -1) {
->>+		ret = -EIDRM;
->>+		goto out_unlock;
->>+	}
->>+
->>+	/*
->>+	 * If the number of values given does not match the number of
->>+	 * semaphores in the array, consider this as an error.
->>+	 */
->>+	if (size != sma->sem_nsems) {
->>+		ret = -EINVAL;
->>+		goto out_unlock;
->>+	}
->>+
->>+	/* update the undo values */
->>+	while (--size >= 0)
->>+		un->semadj[size] = array[size];
->>+
->>+	/* maybe some queued-up processes were waiting for this */
->>+	update_queue(sma);
->>+
->>+out_unlock:
->>+	sem_unlock(sma);
->>+out:
->>+	return ret;
->>+}
->>+
->>+/*
->>+ * write operation for /proc/self/semundo file
->>+ *
->>+ * Only current is allowed to write to its semundo file.
->>+ *
->>+ * The expected string format is:
->>+ * "<semID> <val1> <val2> ... <valN>"
->>+ *
->>+ * It sets (or updates) the sem_undo list for 'current' and the target
->>+ * <semID>, to the given 'undo' values.
->>+ *
->>+ * <semID> must match an existing semaphore array.
->>+ * The number of values following <semID> must match the number of semaphores
->>+ * in the corresponding array.
->>+ *
->>+ * Multiple semID's can be passed simultaneously: newline ('\n') is considered
->>+ * as a separator in that case.
->>+ *
->>+ * Note: it is not allowed to set the sem_undo list for a given semID using
->>+ *       mutliple write calls.
->>+ */
->>+static ssize_t semundo_write(struct file *file, const char __user *buf,
->>+			     size_t count, loff_t *ppos)
->>+{
->>+	struct seq_file *m = file->private_data;
->>+	short *array;
->>+	int err, max_sem, semid = 0;
->>+	size_t left = count;
->>+	struct undo_list_data *data = m->private;
->>+	struct ipc_namespace *ns = data->ipc_ns;
->>+
->>+	if (data->undo_list)
->>+		/* Should never happen */
->>+		return -EINVAL;
->>+
->>+	max_sem = ns->sc_semmsl;
->>+
->>+	array = kmalloc(sizeof(short)*max_sem, GFP_KERNEL);
->>+	if (array == NULL)
->>+		return -ENOMEM;
->>+
->>+	while (left) {
->>+		int nval;
->>+
->>+		nval = semundo_readline(&buf, &left, &semid, array, max_sem);
->>+		if (nval < 0) {
->>+			err = nval;
->>+			goto out;
->>+		}
->>+
->>+		err = semundo_update(ns, semid, array, nval);
->>+		if (err)
->>+			goto out;
->>+	}
->>+	err = count - left;
->>+
->>+out:
->>+	kfree(array);
->>+	return err;
->>+}
->>+
->> static int semundo_release(struct inode *inode, struct file *file)
->> {
->> 	struct seq_file *m = file->private_data;
->>@@ -1590,6 +1837,7 @@ static int semundo_release(struct inode 
->> const struct file_operations proc_semundo_operations = {
->> 	.open		= semundo_open,
->> 	.read		= seq_read,
->>+	.write		= semundo_write,
->> 	.llseek		= seq_lseek,
->> 	.release	= semundo_release,
->> };
->>
->>--
-> 
-> 
-> 
+-- 
+===============================================================
+Name.......... Nadia DERBEY
+Organization.. BULL/DT/OSwR&D/Linux
+---------------------------------------------------------------
+Email......... mailto:Nadia.Derbey-6ktuUTfB/bM@public.gmane.org
+Address....... BULL, B.P. 208, 38432 Echirolles Cedex, France
+Tel........... (33) 76 29 77 62 [Internal Bull: (229) 77 62]
+Telex,Fax..... 980648 F - (33) 76 29 76 00
+Internal Bull. Mail: FREC-B1208
+===============================================================
