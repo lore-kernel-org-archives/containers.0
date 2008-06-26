@@ -1,13 +1,16 @@
-From: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
-Subject: Re: [PATCH 3/3] i/o accounting and control
-Date: Wed, 25 Jun 2008 17:41:08 -0700
-Message-ID: <20080625174108.66a34327.akpm@linux-foundation.org>
-References: <1213956335-29866-4-git-send-email-righi.andrea@gmail.com>
+From: "Satoshi UCHIDA" <s-uchida-LYU95VJlayp8UrSeD/g0lQ@public.gmane.org>
+Subject: RE: [RFC][v2][patch 0/12][CFQ-cgroup]Yet another I/O bandwidth
+	controlling subsystem for CGroups based on CFQ
+Date: Thu, 26 Jun 2008 13:49:20 +0900
+Message-ID: <002001c8d747$ffe5a8b0$ffb0fa10$__14445.1612759896$1214456209$gmane$org@jp.nec.com>
+References: <003701c8bc80$3a5f9ec0$af1edc40$@jp.nec.com>	<20080526.114627.104044752.ryov@valinux.co.jp>	<004f01c8bfed$640fa380$2c2eea80$@jp.nec.com>
+	<20080603.171535.246514860.ryov@valinux.co.jp>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1213956335-29866-4-git-send-email-righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+In-Reply-To: <20080603.171535.246514860.ryov-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
+Content-language: ja
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -17,215 +20,114 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Cc: axboe-tSWWG44O7X1aa/9Udqfwiw@public.gmane.org, randy.dunlap-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, chlunde-om2ZC0WAoZIXWF+eFR7m5Q@public.gmane.org, dpshah-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, matt-cT2on/YLNlBWk0Htik3J/w@public.gmane.org, menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, roberto-5KDOxZqKugI@public.gmane.org, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
+To: 'Ryo Tsuruta' <ryov-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
+Cc: axboe-tSWWG44O7X1aa/9Udqfwiw@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, vtaras-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org, tom-sugawara-LYU95VJlayp8UrSeD/g0lQ@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Fri, 20 Jun 2008 12:05:35 +0200
-Andrea Righi <righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org> wrote:
+Hi, Tsuruta.
 
-> Apply the io-throttle controller to the opportune kernel functions. Both
-> accounting and throttling functionalities are performed by
-> cgroup_io_throttle().
+> In addition, I got the following message during test #2. Program
+> "ioload", our benchmark program, was blocked more than 120 seconds.
+> Do you see any problems?
+
+No.
+I tried to test in  environment which runs from 1 to 200 processes
+per group.
+However, such message was not output.
+
+> The result of test #1 is close to your estimation, but the result
+> of test #2 is not, the gap between the estimation and the result
+> increased.
+
+In the above my test, the gap between the estimation and the result
+is increasing as a process increases.
+
+And, in native CFQ with ionice command, this situation is a similar.
+These circumstances are shown in the case of more than processes of total 200.
+
+I'll investigate this problem continuously.
+
+
+Thanks,
+  Satoshi Uchida.
+
+> -----Original Message-----
+> From: Ryo Tsuruta [mailto:ryov-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org]
+> Sent: Tuesday, June 03, 2008 5:16 PM
+> To: s-uchida-LYU95VJlayp8UrSeD/g0lQ@public.gmane.org
+> Cc: axboe-tSWWG44O7X1aa/9Udqfwiw@public.gmane.org; vtaras-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org;
+> containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org; tom-sugawara-LYU95VJlayp8UrSeD/g0lQ@public.gmane.org;
+> linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+> Subject: Re: [RFC][v2][patch 0/12][CFQ-cgroup]Yet another I/O bandwidth
+> controlling subsystem for CGroups based on CFQ
 > 
-> Signed-off-by: Andrea Righi <righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-> ---
->  block/blk-core.c    |    2 ++
->  fs/buffer.c         |   10 ++++++++++
->  fs/direct-io.c      |    3 +++
->  mm/page-writeback.c |    9 +++++++++
->  mm/readahead.c      |    5 +++++
->  5 files changed, 29 insertions(+), 0 deletions(-)
+> Hi Uchida-san,
 > 
-> diff --git a/block/blk-core.c b/block/blk-core.c
-> index 1905aab..8eddef5 100644
-> --- a/block/blk-core.c
-> +++ b/block/blk-core.c
-> @@ -26,6 +26,7 @@
->  #include <linux/swap.h>
->  #include <linux/writeback.h>
->  #include <linux/task_io_accounting_ops.h>
-> +#include <linux/blk-io-throttle.h>
->  #include <linux/interrupt.h>
->  #include <linux/cpu.h>
->  #include <linux/blktrace_api.h>
-> @@ -1482,6 +1483,7 @@ void submit_bio(int rw, struct bio *bio)
->  			count_vm_events(PGPGOUT, count);
->  		} else {
->  			task_io_account_read(bio->bi_size);
-> +			cgroup_io_throttle(bio->bi_bdev, bio->bi_size);
-
-We do this on every submit_bio(READ)?  Ow.
-
-I guess it's not _hugely_ expensive, but the lengthy pointer hop in
-task_subsys_state() is going to cost.
-
-All this could be made cheaper if we were to reduce the sampling rate:
-only call cgroup_io_throttle() on each megabyte of IO (for example).
-
-	current->amount_of_io += bio->bi_size;
-	if (current->amount_of_io > 1024*1024) {
-		cgroup_io_throttle(bio->bi_bdev, bio->bi_size);
-		current->amount_of_io -= 1024 * 1024;
-	}
-
-but perhaps that has the potential to fail to throttle correctly when
-accessing multiple devices, dunno.
-
-
-Bear in mind that tasks such as pdflush and kswapd will do reads when
-performing writeout (indirect blocks).
-
->  			count_vm_events(PGPGIN, count);
->  		}
->  
-> diff --git a/fs/buffer.c b/fs/buffer.c
-> index a073f3f..c63dfe7 100644
-> --- a/fs/buffer.c
-> +++ b/fs/buffer.c
-> @@ -35,6 +35,7 @@
->  #include <linux/suspend.h>
->  #include <linux/buffer_head.h>
->  #include <linux/task_io_accounting_ops.h>
-> +#include <linux/blk-io-throttle.h>
->  #include <linux/bio.h>
->  #include <linux/notifier.h>
->  #include <linux/cpu.h>
-> @@ -700,6 +701,9 @@ EXPORT_SYMBOL(mark_buffer_dirty_inode);
->  static int __set_page_dirty(struct page *page,
->  		struct address_space *mapping, int warn)
->  {
-> +	struct block_device *bdev = NULL;
-> +	size_t cgroup_io_acct = 0;
-> +
->  	if (unlikely(!mapping))
->  		return !TestSetPageDirty(page);
->  
-> @@ -711,16 +715,22 @@ static int __set_page_dirty(struct page *page,
->  		WARN_ON_ONCE(warn && !PageUptodate(page));
->  
->  		if (mapping_cap_account_dirty(mapping)) {
-> +			bdev = (mapping->host &&
-> +				mapping->host->i_sb->s_bdev) ?
-> +				mapping->host->i_sb->s_bdev : NULL;
-> +
->  			__inc_zone_page_state(page, NR_FILE_DIRTY);
->  			__inc_bdi_stat(mapping->backing_dev_info,
->  					BDI_RECLAIMABLE);
->  			task_io_account_write(PAGE_CACHE_SIZE);
-> +			cgroup_io_acct = PAGE_CACHE_SIZE;
->  		}
->  		radix_tree_tag_set(&mapping->page_tree,
->  				page_index(page), PAGECACHE_TAG_DIRTY);
->  	}
->  	write_unlock_irq(&mapping->tree_lock);
->  	__mark_inode_dirty(mapping->host, I_DIRTY_PAGES);
-> +	cgroup_io_throttle(bdev, cgroup_io_acct);
-
-Ah, and here we see the reason for the __cant_sleep() hack.
-
-It doesn't work, sorry.  in_atomic() will return false when called
-under spinlock when CONFIG_PREEMPT=n.  Your code will call
-schedule_timeout_killable() under spinlock and is deadlockable.
-
-We need to think of something smarter here.  This problem has already
-been largely solved at the balance_dirty_pages() level.  Perhaps that
-is where the io-throttling should be cutting in?
-
->  	return 1;
->  }
-> diff --git a/fs/direct-io.c b/fs/direct-io.c
-> index 9e81add..fe991ac 100644
-> --- a/fs/direct-io.c
-> +++ b/fs/direct-io.c
-> @@ -35,6 +35,7 @@
->  #include <linux/buffer_head.h>
->  #include <linux/rwsem.h>
->  #include <linux/uio.h>
-> +#include <linux/blk-io-throttle.h>
->  #include <asm/atomic.h>
->  
->  /*
-> @@ -666,6 +667,8 @@ submit_page_section(struct dio *dio, struct page *page,
->  		/*
->  		 * Read accounting is performed in submit_bio()
->  		 */
-> +		struct block_device *bdev = dio->bio ? dio->bio->bi_bdev : NULL;
-> +		cgroup_io_throttle(bdev, len);
->  		task_io_account_write(len);
->  	}
->  
-> diff --git a/mm/page-writeback.c b/mm/page-writeback.c
-> index 789b6ad..a2b820d 100644
-> --- a/mm/page-writeback.c
-> +++ b/mm/page-writeback.c
-> @@ -23,6 +23,7 @@
->  #include <linux/init.h>
->  #include <linux/backing-dev.h>
->  #include <linux/task_io_accounting_ops.h>
-> +#include <linux/blk-io-throttle.h>
->  #include <linux/blkdev.h>
->  #include <linux/mpage.h>
->  #include <linux/rmap.h>
-> @@ -1077,6 +1078,8 @@ int __set_page_dirty_nobuffers(struct page *page)
->  	if (!TestSetPageDirty(page)) {
->  		struct address_space *mapping = page_mapping(page);
->  		struct address_space *mapping2;
-> +		struct block_device *bdev = NULL;
-> +		size_t cgroup_io_acct = 0;
->  
->  		if (!mapping)
->  			return 1;
-> @@ -1087,10 +1090,15 @@ int __set_page_dirty_nobuffers(struct page *page)
->  			BUG_ON(mapping2 != mapping);
->  			WARN_ON_ONCE(!PagePrivate(page) && !PageUptodate(page));
->  			if (mapping_cap_account_dirty(mapping)) {
-> +				bdev = (mapping->host &&
-> +					mapping->host->i_sb->s_bdev) ?
-> +					mapping->host->i_sb->s_bdev : NULL;
-> +
->  				__inc_zone_page_state(page, NR_FILE_DIRTY);
->  				__inc_bdi_stat(mapping->backing_dev_info,
->  						BDI_RECLAIMABLE);
->  				task_io_account_write(PAGE_CACHE_SIZE);
-> +				cgroup_io_acct = PAGE_CACHE_SIZE;
->  			}
->  			radix_tree_tag_set(&mapping->page_tree,
->  				page_index(page), PAGECACHE_TAG_DIRTY);
-> @@ -1100,6 +1108,7 @@ int __set_page_dirty_nobuffers(struct page *page)
->  			/* !PageAnon && !swapper_space */
->  			__mark_inode_dirty(mapping->host, I_DIRTY_PAGES);
->  		}
-> +		cgroup_io_throttle(bdev, cgroup_io_acct);
->  		return 1;
->  	}
->  	return 0;
-> diff --git a/mm/readahead.c b/mm/readahead.c
-> index d8723a5..dff6b02 100644
-> --- a/mm/readahead.c
-> +++ b/mm/readahead.c
-> @@ -14,6 +14,7 @@
->  #include <linux/blkdev.h>
->  #include <linux/backing-dev.h>
->  #include <linux/task_io_accounting_ops.h>
-> +#include <linux/blk-io-throttle.h>
->  #include <linux/pagevec.h>
->  #include <linux/pagemap.h>
->  
-> @@ -58,6 +59,9 @@ int read_cache_pages(struct address_space *mapping, struct list_head *pages,
->  			int (*filler)(void *, struct page *), void *data)
->  {
->  	struct page *page;
-> +	struct block_device *bdev =
-> +		(mapping->host && mapping->host->i_sb->s_bdev) ?
-> +		mapping->host->i_sb->s_bdev : NULL;
->  	int ret = 0;
->  
->  	while (!list_empty(pages)) {
-> @@ -76,6 +80,7 @@ int read_cache_pages(struct address_space *mapping, struct list_head *pages,
->  			break;
->  		}
->  		task_io_account_read(PAGE_CACHE_SIZE);
-> +		cgroup_io_throttle(bdev, PAGE_CACHE_SIZE);
->  	}
->  	return ret;
->  }
+> > I report my tests.
+> 
+> I did a similar test to yours. I increased the number of I/Os
+> which are issued simultaneously up to 100 per cgroup.
+> 
+>   Procedures:
+>     o Prepare 300 files which size is 250MB on 1 partition sdb3
+>     o Create three groups with priority 0, 4 and 7.
+>     o Run many processes issuing random direct I/O with 4KB data on each
+>       files in three groups.
+>           #1 Run  25 processes issuing read I/O only per group.
+>           #2 Run 100 processes issuing read I/O only per group.
+>     o Count up the number of I/Os which have done in 10 minutes.
+> 
+>                The number of I/Os (percentage to total I/O)
+>      --------------------------------------------------------------
+>     | group       |  group 1   |  group 2   |  group 3   |  total  |
+>     | priority    | 0(highest) |     4      |  7(lowest) |  I/Os   |
+>     |-------------+------------+------------+------------+---------|
+>     | Estimate    |            |            |            |         |
+>     | Performance |    61.5%   |    30.8%   |    7.7%    |         |
+>     |-------------+------------+------------+------------|---------|
+>     | #1  25procs | 52763(57%) | 30811(33%) |  9575(10%) |  93149  |
+>     | #2 100procs | 24949(40%) | 21325(34%) | 16508(26%) |  62782  |
+>      --------------------------------------------------------------
+> 
+> The result of test #1 is close to your estimation, but the result
+> of test #2 is not, the gap between the estimation and the result
+> increased.
+> 
+> In addition, I got the following message during test #2. Program
+> "ioload", our benchmark program, was blocked more than 120 seconds.
+> Do you see any problems?
+> 
+> INFO: task ioload:8456 blocked for more than 120 seconds.
+> "echo 0 > /proc/sys/kernel/hung_task_timeout_secs" disables this message.
+> ioload        D 00000008  2772  8456   8419
+>        f72eb740 00200082 c34862c0 00000008 c3565170 c35653c0 c2009d80
+>        00000001
+>        c1d1bea0 00200046 ffffffff f6ee039c 00000000 00000000 00000000
+>        c2009d80
+>        018db000 00000000 f71a6a00 c0604fb6 00000000 f71a6bc8 c04876a4
+>        00000000
+> Call Trace:
+>  [<c0604fb6>] io_schedule+0x4a/0x81
+>  [<c04876a4>] __blockdev_direct_IO+0xa04/0xb54
+>  [<c04a3aa2>] ext2_direct_IO+0x35/0x3a
+>  [<c04a4757>] ext2_get_block+0x0/0x603
+>  [<c044ab81>] generic_file_direct_IO+0x103/0x118
+>  [<c044abe6>] generic_file_direct_write+0x50/0x13d
+>  [<c044b59e>] __generic_file_aio_write_nolock+0x375/0x4c3
+>  [<c046e571>] link_path_walk+0x86/0x8f
+>  [<c044a1e8>] find_lock_page+0x19/0x6d
+>  [<c044b73e>] generic_file_aio_write+0x52/0xa9
+>  [<c0466256>] do_sync_write+0xbf/0x100
+>  [<c042ca44>] autoremove_wake_function+0x0/0x2d
+>  [<c0413366>] update_curr+0x83/0x116
+>  [<c0605280>] mutex_lock+0xb/0x1a
+>  [<c04b653b>] security_file_permission+0xc/0xd
+>  [<c0466197>] do_sync_write+0x0/0x100
+>  [<c046695d>] vfs_write+0x83/0xf6
+>  [<c0466ea9>] sys_write+0x3c/0x63
+>  [<c04038de>] syscall_call+0x7/0xb
+>  [<c0600000>] print_cpu_info+0x27/0x92
+>  =======================
+> 
+> Thanks,
+> Ryo Tsuruta
