@@ -1,16 +1,15 @@
-From: "Satoshi UCHIDA" <s-uchida-LYU95VJlayp8UrSeD/g0lQ@public.gmane.org>
-Subject: RE: [RFC][v2][patch 0/12][CFQ-cgroup]Yet another I/O bandwidth
-	controlling subsystem for CGroups based on CFQ
-Date: Thu, 26 Jun 2008 13:49:20 +0900
-Message-ID: <002001c8d747$ffe5a8b0$ffb0fa10$__14445.1612759896$1214456209$gmane$org@jp.nec.com>
-References: <003701c8bc80$3a5f9ec0$af1edc40$@jp.nec.com>	<20080526.114627.104044752.ryov@valinux.co.jp>	<004f01c8bfed$640fa380$2c2eea80$@jp.nec.com>
-	<20080603.171535.246514860.ryov@valinux.co.jp>
+From: "Michael Kerrisk" <mtk.manpages-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Subject: Re: [RFC PATCH 2/6] IPC/sem: per <pid> semundo file in procfs
+Date: Thu, 26 Jun 2008 07:08:14 +0200
+Message-ID: <517f3f820806252208m1f5b91dfm38b8babff73adf72@mail.gmail.com>
+References: <20080625134910.487216000@bull.net>
+	<20080625135538.762662000@bull.net>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20080603.171535.246514860.ryov-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
-Content-language: ja
+In-Reply-To: <20080625135538.762662000-6ktuUTfB/bM@public.gmane.org>
+Content-Disposition: inline
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -20,114 +19,247 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: 'Ryo Tsuruta' <ryov-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
-Cc: axboe-tSWWG44O7X1aa/9Udqfwiw@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, vtaras-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org, tom-sugawara-LYU95VJlayp8UrSeD/g0lQ@public.gmane.org
+To: "Nadia.Derbey-6ktuUTfB/bM@public.gmane.org" <Nadia.Derbey-6ktuUTfB/bM@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Pierre Peiffer <pierre.peiffer-6ktuUTfB/bM@public.gmane.org>, Michael Kerrisk <mtk.manpages-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Hi, Tsuruta.
+On 6/25/08, Nadia.Derbey-6ktuUTfB/bM@public.gmane.org <Nadia.Derbey-6ktuUTfB/bM@public.gmane.org> wrote:
+> PATCH [02/06]
+>
+>  This patch adds a new procfs interface to display the per-process semundo
+>  data.
+>
+>  A new per-PID file is added, called "semundo".
+>  It contains one line per semaphore IPC where there is something to undo for
+>  this process.
+>  Then, each line contains the semid followed by each undo value
+>  corresponding to each semaphores of the semaphores array.
+>
+>  This interface will be particularly useful to allow a user access
+>  these data, for example for checkpointing a process
+>
+>  With this patch, the semundo file can only be accessed in read mode.
+>  When this file is opened, if an undo_list exists for the target process, it
+>  is accessed in an rcu read section, and its refcount is incremented, avoiding
+>  that it be freed.
+>  The reverse is done during the release operation, and the undo_list is
+>  freed if the process reading the file was the last process accessing that
+>  list.
+>
+>  Signed-off-by: Pierre Peiffer <pierre.peiffer-6ktuUTfB/bM@public.gmane.org>
+>  Signed-off-by: Nadia Derbey <Nadia.Derbey-6ktuUTfB/bM@public.gmane.org>
 
-> In addition, I got the following message during test #2. Program
-> "ioload", our benchmark program, was blocked more than 120 seconds.
-> Do you see any problems?
+Nadia,
 
-No.
-I tried to test in  environment which runs from 1 to 200 processes
-per group.
-However, such message was not output.
+This is a kernel-userland interface change, please do CC me, so that I
+can change the man pages if needed.
 
-> The result of test #1 is close to your estimation, but the result
-> of test #2 is not, the gap between the estimation and the result
-> increased.
+Cheers,
 
-In the above my test, the gap between the estimation and the result
-is increasing as a process increases.
-
-And, in native CFQ with ionice command, this situation is a similar.
-These circumstances are shown in the case of more than processes of total 200.
-
-I'll investigate this problem continuously.
+Michael
 
 
-Thanks,
-  Satoshi Uchida.
 
-> -----Original Message-----
-> From: Ryo Tsuruta [mailto:ryov-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org]
-> Sent: Tuesday, June 03, 2008 5:16 PM
-> To: s-uchida-LYU95VJlayp8UrSeD/g0lQ@public.gmane.org
-> Cc: axboe-tSWWG44O7X1aa/9Udqfwiw@public.gmane.org; vtaras-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org;
-> containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org; tom-sugawara-LYU95VJlayp8UrSeD/g0lQ@public.gmane.org;
-> linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-> Subject: Re: [RFC][v2][patch 0/12][CFQ-cgroup]Yet another I/O bandwidth
-> controlling subsystem for CGroups based on CFQ
-> 
-> Hi Uchida-san,
-> 
-> > I report my tests.
-> 
-> I did a similar test to yours. I increased the number of I/Os
-> which are issued simultaneously up to 100 per cgroup.
-> 
->   Procedures:
->     o Prepare 300 files which size is 250MB on 1 partition sdb3
->     o Create three groups with priority 0, 4 and 7.
->     o Run many processes issuing random direct I/O with 4KB data on each
->       files in three groups.
->           #1 Run  25 processes issuing read I/O only per group.
->           #2 Run 100 processes issuing read I/O only per group.
->     o Count up the number of I/Os which have done in 10 minutes.
-> 
->                The number of I/Os (percentage to total I/O)
->      --------------------------------------------------------------
->     | group       |  group 1   |  group 2   |  group 3   |  total  |
->     | priority    | 0(highest) |     4      |  7(lowest) |  I/Os   |
->     |-------------+------------+------------+------------+---------|
->     | Estimate    |            |            |            |         |
->     | Performance |    61.5%   |    30.8%   |    7.7%    |         |
->     |-------------+------------+------------+------------|---------|
->     | #1  25procs | 52763(57%) | 30811(33%) |  9575(10%) |  93149  |
->     | #2 100procs | 24949(40%) | 21325(34%) | 16508(26%) |  62782  |
->      --------------------------------------------------------------
-> 
-> The result of test #1 is close to your estimation, but the result
-> of test #2 is not, the gap between the estimation and the result
-> increased.
-> 
-> In addition, I got the following message during test #2. Program
-> "ioload", our benchmark program, was blocked more than 120 seconds.
-> Do you see any problems?
-> 
-> INFO: task ioload:8456 blocked for more than 120 seconds.
-> "echo 0 > /proc/sys/kernel/hung_task_timeout_secs" disables this message.
-> ioload        D 00000008  2772  8456   8419
->        f72eb740 00200082 c34862c0 00000008 c3565170 c35653c0 c2009d80
->        00000001
->        c1d1bea0 00200046 ffffffff f6ee039c 00000000 00000000 00000000
->        c2009d80
->        018db000 00000000 f71a6a00 c0604fb6 00000000 f71a6bc8 c04876a4
->        00000000
-> Call Trace:
->  [<c0604fb6>] io_schedule+0x4a/0x81
->  [<c04876a4>] __blockdev_direct_IO+0xa04/0xb54
->  [<c04a3aa2>] ext2_direct_IO+0x35/0x3a
->  [<c04a4757>] ext2_get_block+0x0/0x603
->  [<c044ab81>] generic_file_direct_IO+0x103/0x118
->  [<c044abe6>] generic_file_direct_write+0x50/0x13d
->  [<c044b59e>] __generic_file_aio_write_nolock+0x375/0x4c3
->  [<c046e571>] link_path_walk+0x86/0x8f
->  [<c044a1e8>] find_lock_page+0x19/0x6d
->  [<c044b73e>] generic_file_aio_write+0x52/0xa9
->  [<c0466256>] do_sync_write+0xbf/0x100
->  [<c042ca44>] autoremove_wake_function+0x0/0x2d
->  [<c0413366>] update_curr+0x83/0x116
->  [<c0605280>] mutex_lock+0xb/0x1a
->  [<c04b653b>] security_file_permission+0xc/0xd
->  [<c0466197>] do_sync_write+0x0/0x100
->  [<c046695d>] vfs_write+0x83/0xf6
->  [<c0466ea9>] sys_write+0x3c/0x63
->  [<c04038de>] syscall_call+0x7/0xb
->  [<c0600000>] print_cpu_info+0x27/0x92
->  =======================
-> 
-> Thanks,
-> Ryo Tsuruta
+>  ---
+>   fs/proc/base.c     |    3 +
+>   fs/proc/internal.h |    1
+>   ipc/sem.c          |  127 +++++++++++++++++++++++++++++++++++++++++++++++++++--
+>   3 files changed, 128 insertions(+), 3 deletions(-)
+>
+>  Index: linux-2.6.26-rc5-mm3/fs/proc/base.c
+>  ===================================================================
+>  --- linux-2.6.26-rc5-mm3.orig/fs/proc/base.c    2008-06-24 09:05:09.000000000 +0200
+>  +++ linux-2.6.26-rc5-mm3/fs/proc/base.c 2008-06-24 10:03:33.000000000 +0200
+>  @@ -2525,6 +2525,9 @@ static const struct pid_entry tgid_base_
+>   #ifdef CONFIG_TASK_IO_ACCOUNTING
+>         INF("io",       S_IRUGO, tgid_io_accounting),
+>   #endif
+>  +#ifdef CONFIG_SYSVIPC
+>  +       REG("semundo",  S_IRUGO, semundo),
+>  +#endif
+>   };
+>
+>   static int proc_tgid_base_readdir(struct file * filp,
+>  Index: linux-2.6.26-rc5-mm3/fs/proc/internal.h
+>  ===================================================================
+>  --- linux-2.6.26-rc5-mm3.orig/fs/proc/internal.h        2008-06-24 09:05:09.000000000 +0200
+>  +++ linux-2.6.26-rc5-mm3/fs/proc/internal.h     2008-06-24 10:04:19.000000000 +0200
+>  @@ -65,6 +65,7 @@ extern const struct file_operations proc
+>   extern const struct file_operations proc_net_operations;
+>   extern const struct file_operations proc_kmsg_operations;
+>   extern const struct inode_operations proc_net_inode_operations;
+>  +extern const struct file_operations proc_semundo_operations;
+>
+>   void free_proc_entry(struct proc_dir_entry *de);
+>
+>  Index: linux-2.6.26-rc5-mm3/ipc/sem.c
+>  ===================================================================
+>  --- linux-2.6.26-rc5-mm3.orig/ipc/sem.c 2008-06-24 09:37:33.000000000 +0200
+>  +++ linux-2.6.26-rc5-mm3/ipc/sem.c      2008-06-24 10:59:46.000000000 +0200
+>  @@ -97,6 +97,7 @@ static void freeary(struct ipc_namespace
+>   #ifdef CONFIG_PROC_FS
+>   static int sysvipc_sem_proc_show(struct seq_file *s, void *it);
+>   #endif
+>  +static void free_semundo_list(struct sem_undo_list *, struct ipc_namespace *);
+>
+>   #define SEMMSL_FAST    256 /* 512 bytes on stack */
+>   #define SEMOPM_FAST    64  /* ~ 372 bytes on stack */
+>  @@ -1282,8 +1283,14 @@ void exit_sem(struct task_struct *tsk)
+>         rcu_assign_pointer(tsk->sysvsem.undo_list, NULL);
+>         synchronize_rcu();
+>
+>  -       if (!atomic_dec_and_test(&ulp->refcnt))
+>  -               return;
+>  +       if (atomic_dec_and_test(&ulp->refcnt))
+>  +               free_semundo_list(ulp, tsk->nsproxy->ipc_ns);
+>  +}
+>  +
+>  +static void free_semundo_list(struct sem_undo_list *ulp,
+>  +                               struct ipc_namespace *ipc_ns)
+>  +{
+>  +       BUG_ON(atomic_read(&ulp->refcnt));
+>
+>         for (;;) {
+>                 struct sem_array *sma;
+>  @@ -1303,7 +1310,7 @@ void exit_sem(struct task_struct *tsk)
+>                 if (semid == -1)
+>                         break;
+>
+>  -               sma = sem_lock_check(tsk->nsproxy->ipc_ns, un->semid);
+>  +               sma = sem_lock_check(ipc_ns, un->semid);
+>
+>                 /* exit_sem raced with IPC_RMID, nothing to do */
+>                 if (IS_ERR(sma))
+>  @@ -1384,4 +1391,118 @@ static int sysvipc_sem_proc_show(struct
+>                           sma->sem_otime,
+>                           sma->sem_ctime);
+>   }
+>  +
+>  +struct undo_list_data {
+>  +       struct sem_undo_list *undo_list;
+>  +       struct ipc_namespace *ipc_ns;
+>  +};
+>  +
+>  +/* iterator */
+>  +static void *semundo_start(struct seq_file *m, loff_t *ppos)
+>  +{
+>  +       return NULL;
+>  +}
+>  +
+>  +static void *semundo_next(struct seq_file *m, void *v, loff_t *ppos)
+>  +{
+>  +       return NULL;
+>  +}
+>  +
+>  +static void semundo_stop(struct seq_file *m, void *v)
+>  +{
+>  +       return;
+>  +}
+>  +
+>  +static int semundo_show(struct seq_file *m, void *v)
+>  +{
+>  +       return 0;
+>  +}
+>  +
+>  +static struct seq_operations semundo_op = {
+>  +       .start  = semundo_start,
+>  +       .next   = semundo_next,
+>  +       .stop   = semundo_stop,
+>  +       .show   = semundo_show
+>  +};
+>  +
+>  +static struct sem_undo_list *get_proc_ulp(struct task_struct *tsk)
+>  +{
+>  +       struct sem_undo_list *ulp;
+>  +
+>  +       rcu_read_lock();
+>  +       ulp = rcu_dereference(tsk->sysvsem.undo_list);
+>  +       if (ulp)
+>  +               if (!atomic_inc_not_zero(&ulp->refcnt))
+>  +                       ulp = NULL;
+>  +       rcu_read_unlock();
+>  +       return ulp;
+>  +}
+>  +
+>  +static void put_proc_ulp(struct sem_undo_list *ulp,
+>  +                                       struct ipc_namespace *ns)
+>  +{
+>  +       if (ulp && atomic_dec_and_test(&ulp->refcnt))
+>  +               free_semundo_list(ulp, ns);
+>  +}
+>  +
+>  +/*
+>  + * semundo_open: open operation for /proc/<PID>/semundo file
+>  + */
+>  +static int semundo_open(struct inode *inode, struct file *file)
+>  +{
+>  +       struct task_struct *task;
+>  +       struct sem_undo_list *ulp;
+>  +       struct undo_list_data *data;
+>  +       struct ipc_namespace *ns;
+>  +       int ret = 0;
+>  +
+>  +       data = kzalloc(sizeof(*data), GFP_KERNEL);
+>  +       if (!data)
+>  +               return -ENOMEM;
+>  +
+>  +       task = get_pid_task(PROC_I(inode)->pid, PIDTYPE_PID);
+>  +       if (!task) {
+>  +               ret = -EINVAL;
+>  +               goto out_err;
+>  +       }
+>  +
+>  +       ulp = get_proc_ulp(task);
+>  +       ns = get_ipc_ns(task->nsproxy->ipc_ns);
+>  +       put_task_struct(task);
+>  +
+>  +       ret = seq_open(file, &semundo_op);
+>  +       if (!ret) {
+>  +               struct seq_file *m = file->private_data;
+>  +               data->undo_list = ulp;
+>  +               data->ipc_ns = ns;
+>  +               m->private = data;
+>  +               return 0;
+>  +       }
+>  +
+>  +       put_proc_ulp(ulp, ns);
+>  +       put_ipc_ns(ns);
+>  +out_err:
+>  +       kfree(data);
+>  +       return ret;
+>  +}
+>  +
+>  +static int semundo_release(struct inode *inode, struct file *file)
+>  +{
+>  +       struct seq_file *m = file->private_data;
+>  +       struct undo_list_data *data = m->private;
+>  +       struct sem_undo_list *ulp = data->undo_list;
+>  +       struct ipc_namespace *ns = data->ipc_ns;
+>  +
+>  +       put_proc_ulp(ulp, ns);
+>  +       put_ipc_ns(ns);
+>  +       kfree(data);
+>  +       return seq_release(inode, file);
+>  +}
+>  +
+>  +const struct file_operations proc_semundo_operations = {
+>  +       .open           = semundo_open,
+>  +       .read           = seq_read,
+>  +       .llseek         = seq_lseek,
+>  +       .release        = semundo_release,
+>  +};
+>   #endif
+>
+>
+>  --
+>  _______________________________________________
+>  Containers mailing list
+>  Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+>  https://lists.linux-foundation.org/mailman/listinfo/containers
+>
+
+
+-- 
+Michael Kerrisk
+Linux man-pages maintainer; http://www.kernel.org/doc/man-pages/
+Found a bug? http://www.kernel.org/doc/man-pages/reporting_bugs.html
