@@ -1,18 +1,17 @@
-From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 11/11] sysfs: user namespaces: fix bug with
-	clone(CLONE_NEWUSER) with fairsched
-Date: Thu, 26 Jun 2008 08:07:52 -0500
-Message-ID: <20080626130752.GA11002@us.ibm.com>
-References: <20080618170729.808539948@theryb.frec.bull.fr>
-	<20080618170731.746054454@theryb.frec.bull.fr>
-	<485F0812.4090903@gmail.com> <20080625184409.GA8353@us.ibm.com>
-	<m1wskd43uc.fsf@frodo.ebiederm.org>
+From: Max Krasnyansky <maxk-zC7DfRvBq/JWk0Htik3J/w@public.gmane.org>
+Subject: Re: v2.6.26-rc7/cgroups: circular locking dependency
+Date: Thu, 26 Jun 2008 10:45:02 -0700
+Message-ID: <4863D59E.3070604__5196.60987561128$1214502440$gmane$org@qualcomm.com>
+References: <20080621173859.GA6846@damson.getinternet.no>	
+	<2f11576a0806220834m3572ee80i72229cb9a1613558@mail.gmail.com>	
+	<1214149823.3223.313.camel@lappy.programming.kicks-ass.net>	
+	<48609441.2030901@qualcomm.com>
+	<6599ad830806260025u27458a47j47175ad778ca48a9@mail.gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <m1wskd43uc.fsf-B27657KtZYmhTnVgQlOflh2eb7JE58TQ@public.gmane.org>
+In-Reply-To: <6599ad830806260025u27458a47j47175ad778ca48a9-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -22,37 +21,19 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Cc: Tejun Heo <htejun-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Greg Kroah-Hartman <gregkh-l3A5Bk7waGM@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Al Viro <viro-rfM+Q5joDG/XmaaqVzeoHQ@public.gmane.org>, Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>, Benjamin Thery <benjamin.thery-6ktuUTfB/bM@public.gmane.org>
+To: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+Cc: Peter Zijlstra <a.p.zijlstra-/NLkJaSkS4VmR6Xm/wNWPw@public.gmane.org>, Vegard Nossum <vegard.nossum-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, KOSAKI Motohiro <kosaki.motohiro-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Quoting Eric W. Biederman (ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org):
-> "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org> writes:
-> 
-> > Except the sysfs mount holds no refcount on the userns.  So as long as we
-> > do the ida tagging as you suggested in your response to patch 6, there
-> > should be no reference to the user_ns left in sysfs code.
-> >
-> > The extra reference in patch #9 is for a light ref on the network
-> > namespace.  I'm still not sure that needs to be there, since if the
-> > network namespace goes away, it will properly unregister its sysfs
-> > mounts.  Eric, Benjamin, I really don't see any use for the hold_net()
-> > from sysfs.  What is it doing?
-> 
-> Mostly just being a sanity check.  We can remove that if it easier.
-> 
-> Eric
+Paul Menage wrote:
+> Second idea - can we just punt the call to rebuild_sched_domains() to
+> a workqueue thread if it's due to a flag or cpumask change? Does it
+> matter if the call doesn't happen synchronously? The work handler
+> could easily nest the cgroup_lock() call inside get_online_cpus() and
+> then call rebuild_sched_domains()
 
-In itself it seems an ok check (temporarily) to make sure that the
-net_ns hook to unset the tag.netns at netns release is properly working,
-but given that it's only checking for net_ns coding errors, and Tejun
-wants a whole generic hooking infrastructure for net_ns to register with
-so as to keep mention of net_ns out of sysfs code, yeah I think the sane
-thing is to just remove it.
+I was thinking about exactly the same thing. I kind of don't like async 
+nature of it. Maybe it's ok but there might be some interesting races 
+with async domain updates.
 
-But the first thing (after Daniel is finished with the patch 5 fallout)
-is to address the patch 6 comments about using ida.  At first I didn't
-like it (seemed like too much bookkeeping) but I think it'll actually
-work out very nicely.
-
--serge
+Max
