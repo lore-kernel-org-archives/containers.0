@@ -1,27 +1,54 @@
-From: ebiederm@xmission.com (Eric W. Biederman)
-Subject: Re: [PATCH 07/11] sysfs: Implement sysfs_delete_link and sysfs_rename_link
-Date: Sun, 29 Jun 2008 20:02:22 -0700
-Message-ID: <m18wwnvd4x.fsf@frodo.ebiederm.org>
-References: <20080618170729.808539948@theryb.frec.bull.fr>
-	<20080618170731.153832341@theryb.frec.bull.fr>
-	<485F06B8.6090902@gmail.com> <m1od5ovt9s.fsf@frodo.ebiederm.org>
-	<48670308.5020301@gmail.com>
+From: Nadia Derbey <Nadia.Derbey-6ktuUTfB/bM@public.gmane.org>
+Subject: Re: [RFC PATCH 6/6] IPC/sem: .write operation for /proc/<self>/semundo
+Date: Mon, 30 Jun 2008 10:37:24 +0200
+Message-ID: <48689B44.3060706@bull.net>
+References: <20080625134910.487216000@bull.net>	<20080625135540.271934000@bull.net>
+	<20080627140607.GA20581@us.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1755824AbYF3DLp@vger.kernel.org>
-In-Reply-To: <48670308.5020301@gmail.com> (Tejun Heo's message of "Sun, 29 Jun
-	2008 12:35:36 +0900")
-Sender: linux-kernel-owner@vger.kernel.org
-To: Tejun Heo <htejun@gmail.com>
-Cc: Benjamin Thery <benjamin.thery@bull.net>, Greg Kroah-Hartman <gregkh@suse.de>, Andrew Morton <akpm@linux-foundation.org>, Daniel Lezcano <dlezcano@fr.ibm.com>, Serge Hallyn <serue@us.ibm.com>, linux-kernel@vger.kernel.org, Al Viro <viro@ftp.linux.org.uk>, Linux Containers <containers@lists.osdl.org>
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <20080627140607.GA20581-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Tejun Heo <htejun@gmail.com> writes:
->
-> I think the current one should do for now.  Changing to managed links
-> requires pervasive changes to locking and stuff.  I'll clean them up
-> when I refresh the patches I posted a while back.
+Serge E. Hallyn wrote:
+> Quoting Nadia.Derbey-6ktuUTfB/bM@public.gmane.org (Nadia.Derbey-6ktuUTfB/bM@public.gmane.org):
+> 
+>>PATCH [06/06]
+>>
+>>This patch introduces the .write seq operation for /proc/pid/semundo.
+>>
+>>In order to simplify the locking strategy, the write operation is only allowed
+>>to 'current'.
+>>
+>>
+>>Signed-off-by: Nadia Derbey <Nadia.Derbey-6ktuUTfB/bM@public.gmane.org>
+> 
+> 
+> Acked-by: Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+> 
+> Have you written a patch to cryo in light of the new (target==current)
+> restriction?
+> 
 
-Sounds good.
+Serge,
 
-Eric
+Finally, after having a look at cryo code, it appeared that the semundo 
+proc file was already recreated in "injection mode" for current task.
+So, nothing to be changed... except that I found a bug at the end of the 
+  undo list restoring phase.
+Sending the patch right now.
+
+Regards,
+Nadia
