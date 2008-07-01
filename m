@@ -1,63 +1,78 @@
-From: "Beverly Ellis" <aquaplaned-Io/1DefMu4rNTfkII96cyg@public.gmane.org>
-Subject: ^Contrlbute CS 3^
-Date: Tue, 1 Jul 2008 09:31:24 +0000 (UTC)
-Message-ID: <000a01c8db5b$9d711580$0100007f__5194.58903368122$1214904736$gmane$org@fbycko>
+From: Dhaval Giani <dhaval@linux.vnet.ibm.com>
+Subject: Re: Attaching PID 0 to a cgroup
+Date: Tue, 1 Jul 2008 15:17:34 +0530
+Message-ID: <20080701094734.GE3925@linux.vnet.ibm.com>
+References: <20080701094545.GD3925@linux.vnet.ibm.com>
+Reply-To: Dhaval Giani <dhaval@linux.vnet.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Date: Wed, 02 Jul 2008 04:25:51 -0900
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Content-Type: text/plain; charset=us-ascii
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1756500AbYGAJsU@vger.kernel.org>
+Content-Disposition: inline
+In-Reply-To: <20080701094545.GD3925@linux.vnet.ibm.com>
+Sender: linux-kernel-owner@vger.kernel.org
+To: Paul Menage <menage@google.com>
+Cc: Andrew Morton <akpm@linux-foundation.org>, Balbir Singh <balbir@in.ibm.com>, Sudhir Kumar <skumar@linux.vnet.ibm.com>, lkml <linux-kernel@vger.kernel.org>, containers@lists.osdl.org
 List-Id: containers.vger.kernel.org
 
-^ Adobe CS3 Master Collection for PC or MAC includes:
-^ InDesign CS3
-^ Photoshop CS3
-^ Illustrator CS3
-^ Acrobat 8 Professional
-^ Flash CS3 Professional
-^ Dreamweaver CS3
-^ Fireworks CS3
-^ Contribute CS3
-^ After Effects CS3 Professional
-^ Premiere Pro CS3
-^ Encore DVD CS3
-^ Soundbooth CS3
+[put in the wrong alias for containers list correcting it.]
 
-^ blogsoftxp. com in Internet browser
+On Tue, Jul 01, 2008 at 03:15:45PM +0530, Dhaval Giani wrote:
+> Hi Paul,
+> 
+> Attaching PID 0 to a cgroup caused the current task to be attached to
+> the cgroup. Looking at the code,
+> 
+>         if (pid) {
+>                 rcu_read_lock();
+>                 tsk = find_task_by_vpid(pid);
+>                 if (!tsk || tsk->flags & PF_EXITING) {
+>                         rcu_read_unlock();
+>                         return -ESRCH;
+>                 }
+>                 get_task_struct(tsk);
+>                 rcu_read_unlock();
+> 
+>                 if ((current->euid) && (current->euid != tsk->uid)
+>                     && (current->euid != tsk->suid)) {
+>                         put_task_struct(tsk);
+>                         return -EACCES;
+>                 }
+>         } else {
+>                 tsk = current;
+>                 get_task_struct(tsk);
+>         }
+> 
+> I was wondering, why this was done. It seems to be unexpected behavior.
+> Wouldn't something like the following be a better response? (I've used
+> EINVAL, but I can change it to ESRCH if that is better.)
+> 
+> ---
+> cgroups: Don't allow PID 0 to be attached to a group
+> 
+> Currently when one trys to attach PID 0 to a cgroup, it attaches
+> the current task. That is not expected behavior. It should return
+> an error instead.
+> 
+> Signed-off-by: Dhaval Giani <dhaval@linux.vnet.ibm.com>
+> 
+> Index: linux-2.6/kernel/cgroup.c
+> ===================================================================
+> --- linux-2.6.orig/kernel/cgroup.c
+> +++ linux-2.6/kernel/cgroup.c
+> @@ -1309,8 +1309,7 @@ static int attach_task_by_pid(struct cgr
+>  			return -EACCES;
+>  		}
+>  	} else {
+> -		tsk = current;
+> -		get_task_struct(tsk);
+> +			return -EINVAL;
+>  	}
+>  
+>  	ret = cgroup_attach_task(cgrp, tsk);
+> -- 
+> regards,
+> Dhaval
 
-^ System Requirements
-
-^ For PC:
-^ Intel Pentium 4 (1.4GHz processor for DV; 3.4GHz processor for HDV), Intel Centrino, Intel Xeon, (dual 2.8GHz processors for HD), or Intel Core
-^ Duo (or compatible) processor; SSE2-enabled processor required for AMD systems
-^ Microsoft Windows XP with Service Pack 2 or Microsoft Windows Vista Home Premium, Business, Ultimate, or Enterprise (certified for 32-bit editions)
-^ 1GB of RAM for DV; 2GB of RAM for HDV and HD; more RAM recommended when running multiple components
-^ 38GB of available hard-disk space (additional free space required during installation)
-^ Dedicated 7,200 RPM hard drive for DV and HDV editing; striped disk array storage (RAID 0) for HD; SCSI disk subsystem preferred
-^ Microsoft DirectX compatible sound card (multichannel ASIO-compatible sound card recommended)
-^ 1,280x1,024 monitor resolution with 32-bit color adapter
-^ DVD-ROM drive
-
-^ For MAC:
-^ PowerPC G4 or G5 or multicore Intel processor (Adobe Premiere Pro, Encore, and Soundbooth require a multicore Intel processor; Adobe OnLocation CS3 is a Windows application and may be used with Boot Camp)
-^ Mac OS X v.10.4.9; Java Runtime Environment 1.5 required for Adobe Version Cue CS3 Server
-^ 1GB of RAM for DV; 2GB of RAM for HDV and HD; more RAM recommended when running multiple components
-^ 36GB of available hard-disk space (additional free space required during installation)
-^ Dedicated 7,200 RPM hard drive for DV and HDV editing; striped disk array storage (RAID 0) for HD; SCSI disk subsystem preferred
-^ Core Audio compatible sound card
-^ 1,280x1,024 monitor resolution with 32-bit color adapter
-^ DVD-ROM drive^ DVD+-R burner required for DVD creation
-
-Indian Cities See First Ever Gay Pride Parades
-
-Pakistan's security forces have been attacking militant positions in the Northwest Frontier Province. Now, the top Taliban commander in Pakistan says they'll strike back and suspend peace talks with the government.
+-- 
+regards,
+Dhaval
