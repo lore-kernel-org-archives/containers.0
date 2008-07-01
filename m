@@ -1,100 +1,63 @@
-From: ebiederm@xmission.com (Eric W. Biederman)
-Subject: Re: [PATCH 06/11] sysfs: Implement sysfs tagged directory support.
-Date: Tue, 01 Jul 2008 02:20:20 -0700
-Message-ID: <m1ej6enep7.fsf@frodo.ebiederm.org>
-References: <20080618170729.808539948@theryb.frec.bull.fr>
-	<20080618170731.002784342@theryb.frec.bull.fr>
-	<485F04E1.70204@gmail.com> <m1y74svtff.fsf@frodo.ebiederm.org>
-	<486706C9.9040303@gmail.com> <m18wwmsqdv.fsf@frodo.ebiederm.org>
-	<4869D314.5030403@gmail.com>
+From: "Tolerant Thompson" <methylglycine-iTGB4ic38Rn7I1uYL0mFpNBPR1lH4CV8@public.gmane.org>
+Subject: ^Contrlbute CS 3^
+Date: Tue, 1 Jul 2008 09:27:34 +0000 (UTC)
+Message-ID: <000a01c8db5b$9d711580$0100007f@fbycko>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1756322AbYGAJVx@vger.kernel.org>
-In-Reply-To: <4869D314.5030403@gmail.com> (Tejun Heo's message of "Tue, 01 Jul
-	2008 15:47:48 +0900")
-Sender: linux-kernel-owner@vger.kernel.org
-To: Tejun Heo <htejun@gmail.com>
-Cc: Benjamin Thery <benjamin.thery@bull.net>, Greg Kroah-Hartman <gregkh@suse.de>, Andrew Morton <akpm@linux-foundation.org>, Daniel Lezcano <dlezcano@fr.ibm.com>, Serge Hallyn <serue@us.ibm.com>, linux-kernel@vger.kernel.org, Al Viro <viro@ftp.linux.org.uk>, Linux Containers <containers@lists.osdl.org>
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Date: Wed, 02 Jul 2008 04:25:51 -0900
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Tejun Heo <htejun@gmail.com> writes:
+^ Adobe CS3 Master Collection for PC or MAC includes:
+^ InDesign CS3
+^ Photoshop CS3
+^ Illustrator CS3
+^ Acrobat 8 Professional
+^ Flash CS3 Professional
+^ Dreamweaver CS3
+^ Fireworks CS3
+^ Contribute CS3
+^ After Effects CS3 Professional
+^ Premiere Pro CS3
+^ Encore DVD CS3
+^ Soundbooth CS3
 
-> Hello, Eric.
->
-> Eric W. Biederman wrote:
->>> It's still dynamic from sysfs's POV and I think that will make
->>> maintenance more difficult.
->> 
->> Potentially.  I have no problem make it clear that things are more static.
->
-> Great. :-)
->
+^ blogsoftxp. com in Internet browser
 
-> Having enumed tag types limits that a sb can have map to only one tag
-> but it doesn't really prevent multiple possibly visible entries which is
-> the real unnecessary degrees of freedom.  That said, I don't really
-> think it's an issue.
+^ System Requirements
 
-Having a single tag type per directory and thus a single tag visible per
-directory does prevent multiple possible visible entries.
+^ For PC:
+^ Intel Pentium 4 (1.4GHz processor for DV; 3.4GHz processor for HDV), Intel Centrino, Intel Xeon, (dual 2.8GHz processors for HD), or Intel Core
+^ Duo (or compatible) processor; SSE2-enabled processor required for AMD systems
+^ Microsoft Windows XP with Service Pack 2 or Microsoft Windows Vista Home Premium, Business, Ultimate, or Enterprise (certified for 32-bit editions)
+^ 1GB of RAM for DV; 2GB of RAM for HDV and HD; more RAM recommended when running multiple components
+^ 38GB of available hard-disk space (additional free space required during installation)
+^ Dedicated 7,200 RPM hard drive for DV and HDV editing; striped disk array storage (RAID 0) for HD; SCSI disk subsystem preferred
+^ Microsoft DirectX compatible sound card (multichannel ASIO-compatible sound card recommended)
+^ 1,280x1,024 monitor resolution with 32-bit color adapter
+^ DVD-ROM drive
 
-That is we can check when we add the sd if there will be a conflict in
-the directory.
+^ For MAC:
+^ PowerPC G4 or G5 or multicore Intel processor (Adobe Premiere Pro, Encore, and Soundbooth require a multicore Intel processor; Adobe OnLocation CS3 is a Windows application and may be used with Boot Camp)
+^ Mac OS X v.10.4.9; Java Runtime Environment 1.5 required for Adobe Version Cue CS3 Server
+^ 1GB of RAM for DV; 2GB of RAM for HDV and HD; more RAM recommended when running multiple components
+^ 36GB of available hard-disk space (additional free space required during installation)
+^ Dedicated 7,200 RPM hard drive for DV and HDV editing; striped disk array storage (RAID 0) for HD; SCSI disk subsystem preferred
+^ Core Audio compatible sound card
+^ 1,280x1,024 monitor resolution with 32-bit color adapter
+^ DVD-ROM drive^ DVD+-R burner required for DVD creation
 
->> The number of tag types will be low as it is the number of subsystems
->> that use the feature.  Simple enough that I expect statically allocating
->> the tag types in an enumeration is a safe and sane way to operate.
->> i.e.
->> 
->> enum sysfs_tag_types {
->> 	SYSFS_TAG_NETNS,
->> 	SYSFS_TAG_USERNS,
->>         SYSFS_TAG_MAX
->> };
->
-> I still would prefer something which is more generic.  The abstraction
-> is clearer too.  A sb shows untagged and a set of tags.  A sd can either
-> be untagged or tagged (a single tag).
+Indian Cities See First Ever Gay Pride Parades
 
-That is the abstraction now.
-
-The only difference is how we represent the set of tags.
-I use and array of the valid tags.
-You use a bitmap.
-
-And array allows the lookup of the tag I am looking for before
-I search for the sd.  An bitmap requires me to compare each entry.
-
-For me that is a deal breaker.  Currently in certain pathological
-cases we have scaling issues with sysctl and sysfs that we can
-have enormous directories that start running slowly.  To fix
-lookup performance requires that we know the full name before
-we do the directory search which is the name string and the
-tag.
-
-So I having a type of tag as being of fundamental importance in
-the interface now so we don't need to refactor all of the users
-later.  In addition to the fact that we need the type to know
-how to set the tags when mounting a superblock and when
-given a new kobject to create an sd for.
-
-We could make the types dynamic rather then a static enumeration but
-that seems needless complexity for now.
-
-> Using ida (or idr if a pointer for private data is necessary) is really
-> easy.  It'll probably take a few tens of lines of code.  That said, I
-> don't think I have enough rationale to nack what you described.  So, as
-> long as the tags are made static, I won't object.
-
-Sounds good.  The only justification I can think of for ida tags is that
-they are smaller, and so can keep the sysfs_dirents smaller.    Which
-occasionally is a significant concern.  Still that should be an optimization
-that we can apply later, as it is not a structural difference in the code.
-
-Just to confirm.  Do you the two operations:
-  mount_tag - called only when the sb is mounted 
-  kobject_tag - called when we create new sd or rename an sd
-
-Cause you to view an the tags as dynamic?
-
-Eric
+Pakistan's security forces have been attacking militant positions in the Northwest Frontier Province. Now, the top Taliban commander in Pakistan says they'll strike back and suspend peace talks with the government.
