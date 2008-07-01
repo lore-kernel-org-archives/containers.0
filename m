@@ -1,62 +1,32 @@
-From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
-Subject: Re: design of user namespaces
-Date: Tue, 01 Jul 2008 00:35:33 -0700
-Message-ID: <m1od5iqcoq.fsf@frodo.ebiederm.org>
-References: <m1zlpg27bv.fsf@frodo.ebiederm.org>
-	<20080620140510.GA21720@us.ibm.com>
-	<m1ve04q686.fsf@frodo.ebiederm.org> <20080620205508.GA8429@us.ibm.com>
-	<m1d4mbg1ab.fsf@frodo.ebiederm.org>
-	<20080630211325.GA27738@us.ibm.com>
+From: ebiederm@xmission.com (Eric W. Biederman)
+Subject: Re: [PATCH 06/11] sysfs: Implement sysfs tagged directory support.
+Date: Tue, 01 Jul 2008 00:50:04 -0700
+Message-ID: <m1bq1iqc0j.fsf@frodo.ebiederm.org>
+References: <20080618170729.808539948@theryb.frec.bull.fr>
+	<20080618170731.002784342@theryb.frec.bull.fr>
+	<485F04E1.70204@gmail.com> <m1y74svtff.fsf@frodo.ebiederm.org>
+	<486706C9.9040303@gmail.com> <m18wwmsqdv.fsf@frodo.ebiederm.org>
+	<20080630214421.GA29605@us.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20080630211325.GA27738-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org> (Serge E. Hallyn's message of
-	"Mon, 30 Jun 2008 16:13:25 -0500")
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
+Content-Type: text/plain; charset=us-ascii
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1756013AbYGAHvr@vger.kernel.org>
+In-Reply-To: <20080630214421.GA29605@us.ibm.com> (Serge E. Hallyn's message of
+	"Mon, 30 Jun 2008 16:44:23 -0500")
+Sender: linux-kernel-owner@vger.kernel.org
+To: "Serge E. Hallyn" <serue@us.ibm.com>
+Cc: Tejun Heo <htejun@gmail.com>, Benjamin Thery <benjamin.thery@bull.net>, Greg Kroah-Hartman <gregkh@suse.de>, Andrew Morton <akpm@linux-foundation.org>, Daniel Lezcano <dlezcano@fr.ibm.com>, linux-kernel@vger.kernel.org, Al Viro <viro@ftp.linux.org.uk>, Linux Containers <containers@lists.osdl.org>
 List-Id: containers.vger.kernel.org
 
-"Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org> writes:
+"Serge E. Hallyn" <serue@us.ibm.com> writes:
 
-> Quoting Eric W. Biederman (ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org):
->> 
->> The very important points are that it is a remount of an existing mount
->> so that we don't have to worry about corrupted filesystem attacks, and
->> that authentication is performed at mount time.
->
-> Conceptually that (making corrupted fs attacks a non-issue) is
-> wonderful.  Practically, I may be missing something:  When you say
-> remount, it seems you must either mean a bind mount or a remount.  If
-> remount, then that will want to change superblock flags.  If the
-> child userns(+child mntns) does a real remount, then that will change
-> the flags for the parent ns as well, right?
->
-> If instead we do a bind mount we don't have that problem, but then the
-> fs can't be the one doing the user namespace work.
->
-> I'm probably missing something.
+> Now that the iproute2 patch is upstream, this patchset really is the
+> only thing keeping us from using network namespaces.  Given that the
+> details of the tagging are trivially changeable with no abi changes, I'd
+> personally much rather see the patches go in as is, with whatever new
+> tagging patches Benjamin whips up, using ida or some new idea, being
+> applied later if we feel the need.
 
-Essentially I am creating a new mount operation that is a
-cousin of a remount.
-
-Unlike a real remount you can't change the super flags.
-Unlike a bind mount you get the fs involved, and you pass in a string of flags
-that the fs can interpret in a standard way.
-
-I expect the flags you pass in would be a subset of what is allowed
-in a normal remount. 
-
-Which is why I was calling it nativemount.  Although usernsmount
-may be better.
+My point exactly.  No one seems to contest the userspace semantics so
+as long as we don't put ourselves into a real mess we should be fine.
 
 Eric
