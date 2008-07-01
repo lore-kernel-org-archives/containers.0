@@ -1,78 +1,65 @@
-From: Dhaval Giani <dhaval@linux.vnet.ibm.com>
+From: Li Zefan <lizf@cn.fujitsu.com>
 Subject: Re: Attaching PID 0 to a cgroup
-Date: Tue, 1 Jul 2008 15:17:34 +0530
-Message-ID: <20080701094734.GE3925@linux.vnet.ibm.com>
-References: <20080701094545.GD3925@linux.vnet.ibm.com>
-Reply-To: Dhaval Giani <dhaval@linux.vnet.ibm.com>
+Date: Tue, 01 Jul 2008 18:28:07 +0800
+Message-ID: <486A06B7.7020906@cn.fujitsu.com>
+References: <20080701094545.GD3925@linux.vnet.ibm.com> <20080701094734.GE3925@linux.vnet.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1756500AbYGAJsU@vger.kernel.org>
-Content-Disposition: inline
-In-Reply-To: <20080701094545.GD3925@linux.vnet.ibm.com>
+Content-Type: text/plain; charset=ISO-8859-1
+Content-Transfer-Encoding: 7bit
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1755511AbYGAKaJ@vger.kernel.org>
+In-Reply-To: <20080701094734.GE3925@linux.vnet.ibm.com>
 Sender: linux-kernel-owner@vger.kernel.org
-To: Paul Menage <menage@google.com>
-Cc: Andrew Morton <akpm@linux-foundation.org>, Balbir Singh <balbir@in.ibm.com>, Sudhir Kumar <skumar@linux.vnet.ibm.com>, lkml <linux-kernel@vger.kernel.org>, containers@lists.osdl.org
+To: Dhaval Giani <dhaval@linux.vnet.ibm.com>
+Cc: Paul Menage <menage@google.com>, Andrew Morton <akpm@linux-foundation.org>, Balbir Singh <balbir@in.ibm.com>, Sudhir Kumar <skumar@linux.vnet.ibm.com>, lkml <linux-kernel@vger.kernel.org>, containers@lists.osdl.org, Paul Jackson <pj@sgi.com>
 List-Id: containers.vger.kernel.org
 
-[put in the wrong alias for containers list correcting it.]
+CC: Paul Jackson <pj@sgi.com>
 
-On Tue, Jul 01, 2008 at 03:15:45PM +0530, Dhaval Giani wrote:
-> Hi Paul,
+Dhaval Giani wrote:
+> [put in the wrong alias for containers list correcting it.]
 > 
-> Attaching PID 0 to a cgroup caused the current task to be attached to
-> the cgroup. Looking at the code,
-> 
->         if (pid) {
->                 rcu_read_lock();
->                 tsk = find_task_by_vpid(pid);
->                 if (!tsk || tsk->flags & PF_EXITING) {
->                         rcu_read_unlock();
->                         return -ESRCH;
->                 }
->                 get_task_struct(tsk);
->                 rcu_read_unlock();
-> 
->                 if ((current->euid) && (current->euid != tsk->uid)
->                     && (current->euid != tsk->suid)) {
->                         put_task_struct(tsk);
->                         return -EACCES;
->                 }
->         } else {
->                 tsk = current;
->                 get_task_struct(tsk);
->         }
-> 
-> I was wondering, why this was done. It seems to be unexpected behavior.
-> Wouldn't something like the following be a better response? (I've used
-> EINVAL, but I can change it to ESRCH if that is better.)
-> 
-> ---
-> cgroups: Don't allow PID 0 to be attached to a group
-> 
-> Currently when one trys to attach PID 0 to a cgroup, it attaches
-> the current task. That is not expected behavior. It should return
-> an error instead.
-> 
-> Signed-off-by: Dhaval Giani <dhaval@linux.vnet.ibm.com>
-> 
-> Index: linux-2.6/kernel/cgroup.c
-> ===================================================================
-> --- linux-2.6.orig/kernel/cgroup.c
-> +++ linux-2.6/kernel/cgroup.c
-> @@ -1309,8 +1309,7 @@ static int attach_task_by_pid(struct cgr
->  			return -EACCES;
->  		}
->  	} else {
-> -		tsk = current;
-> -		get_task_struct(tsk);
-> +			return -EINVAL;
->  	}
->  
->  	ret = cgroup_attach_task(cgrp, tsk);
-> -- 
-> regards,
-> Dhaval
+> On Tue, Jul 01, 2008 at 03:15:45PM +0530, Dhaval Giani wrote:
+>> Hi Paul,
+>>
+>> Attaching PID 0 to a cgroup caused the current task to be attached to
+>> the cgroup. Looking at the code,
+>>
 
--- 
-regards,
-Dhaval
+[...]
+
+>>
+>> I was wondering, why this was done. It seems to be unexpected behavior.
+>> Wouldn't something like the following be a better response? (I've used
+>> EINVAL, but I can change it to ESRCH if that is better.)
+>>
+
+Why is it unexpected? it follows the behavior of cpuset, so this patch will
+break backward compatibility of cpuset.
+
+But it's better to document this.
+
+-----------------------------------------
+
+Document the following cgroup usage:
+ # echo 0 > /dev/cgroup/tasks
+
+Signed-off-by: Li Zefan <lizf@cn.fujitsu.com>
+---
+ cgroups.txt |    4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/Documentation/cgroups.txt b/Documentation/cgroups.txt
+index 824fc02..213f533 100644
+--- a/Documentation/cgroups.txt
++++ b/Documentation/cgroups.txt
+@@ -390,6 +390,10 @@ If you have several tasks to attach, you have to do it one after another:
+ 	...
+ # /bin/echo PIDn > tasks
+ 
++You can attach the current task by echoing 0:
++
++# /bin/echo 0 > tasks
++
+ 3. Kernel API
+ =============
+ 
