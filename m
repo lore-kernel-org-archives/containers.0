@@ -1,104 +1,81 @@
-From: Tejun Heo <htejun@gmail.com>
-Subject: Re: [PATCH 06/11] sysfs: Implement sysfs tagged directory support.
-Date: Tue, 01 Jul 2008 19:30:41 +0900
-Message-ID: <486A0751.9080602@gmail.com>
-References: <20080618170729.808539948@theryb.frec.bull.fr>	<20080618170731.002784342@theryb.frec.bull.fr>	<485F04E1.70204@gmail.com> <m1y74svtff.fsf@frodo.ebiederm.org>	<486706C9.9040303@gmail.com> <m18wwmsqdv.fsf@frodo.ebiederm.org>	<4869D314.5030403@gmail.com> <m1ej6enep7.fsf@frodo.ebiederm.org>
+From: Dhaval Giani <dhaval@linux.vnet.ibm.com>
+Subject: Re: Attaching PID 0 to a cgroup
+Date: Tue, 1 Jul 2008 16:21:26 +0530
+Message-ID: <20080701105126.GA10403@linux.vnet.ibm.com>
+References: <20080701094545.GD3925@linux.vnet.ibm.com> <20080701094734.GE3925@linux.vnet.ibm.com> <486A06B7.7020906@cn.fujitsu.com>
+Reply-To: Dhaval Giani <dhaval@linux.vnet.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Content-Transfer-Encoding: 7bit
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1756070AbYGAKbY@vger.kernel.org>
-In-Reply-To: <m1ej6enep7.fsf@frodo.ebiederm.org>
+Content-Type: text/plain; charset=us-ascii
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1755193AbYGAKvz@vger.kernel.org>
+Content-Disposition: inline
+In-Reply-To: <486A06B7.7020906@cn.fujitsu.com>
 Sender: linux-kernel-owner@vger.kernel.org
-To: "Eric W. Biederman" <ebiederm@xmission.com>
-Cc: Benjamin Thery <benjamin.thery@bull.net>, Greg Kroah-Hartman <gregkh@suse.de>, Andrew Morton <akpm@linux-foundation.org>, Daniel Lezcano <dlezcano@fr.ibm.com>, Serge Hallyn <serue@us.ibm.com>, linux-kernel@vger.kernel.org, Al Viro <viro@ftp.linux.org.uk>, Linux Containers <containers@lists.osdl.org>
+To: Li Zefan <lizf@cn.fujitsu.com>
+Cc: Paul Menage <menage@google.com>, Andrew Morton <akpm@linux-foundation.org>, Balbir Singh <balbir@in.ibm.com>, Sudhir Kumar <skumar@linux.vnet.ibm.com>, lkml <linux-kernel@vger.kernel.org>, containers@lists.osdl.org, Paul Jackson <pj@sgi.com>
 List-Id: containers.vger.kernel.org
 
-Hello,
-
-Eric W. Biederman wrote:
->> Having enumed tag types limits that a sb can have map to only one tag
->> but it doesn't really prevent multiple possibly visible entries which is
->> the real unnecessary degrees of freedom.  That said, I don't really
->> think it's an issue.
+On Tue, Jul 01, 2008 at 06:28:07PM +0800, Li Zefan wrote:
+> CC: Paul Jackson <pj@sgi.com>
 > 
-> Having a single tag type per directory and thus a single tag visible per
-> directory does prevent multiple possible visible entries.
+> Dhaval Giani wrote:
+> > [put in the wrong alias for containers list correcting it.]
+> > 
+> > On Tue, Jul 01, 2008 at 03:15:45PM +0530, Dhaval Giani wrote:
+> >> Hi Paul,
+> >>
+> >> Attaching PID 0 to a cgroup caused the current task to be attached to
+> >> the cgroup. Looking at the code,
+> >>
 > 
-> That is we can check when we add the sd if there will be a conflict in
-> the directory.
-
-Yeap, that we can do.
-
->> I still would prefer something which is more generic.  The abstraction
->> is clearer too.  A sb shows untagged and a set of tags.  A sd can either
->> be untagged or tagged (a single tag).
+> [...]
 > 
-> That is the abstraction now.
+> >>
+> >> I was wondering, why this was done. It seems to be unexpected behavior.
+> >> Wouldn't something like the following be a better response? (I've used
+> >> EINVAL, but I can change it to ESRCH if that is better.)
+> >>
 > 
-> The only difference is how we represent the set of tags.
-> I use and array of the valid tags.
-> You use a bitmap.
+> Why is it unexpected? it follows the behavior of cpuset, so this patch will
+> break backward compatibility of cpuset.
+
+Ah, I was not aware of that. Thanks!
+
 > 
-> And array allows the lookup of the tag I am looking for before
-> I search for the sd.  An bitmap requires me to compare each entry.
-
-How so?  sysfs_sb->bitmap which contains enough bits for all the defined
-tags and determining whether a sd should be shown or not is as simple as
-single test_bit.
-
-> For me that is a deal breaker.  Currently in certain pathological
-> cases we have scaling issues with sysctl and sysfs that we can
-> have enormous directories that start running slowly.  To fix
-> lookup performance requires that we know the full name before
-> we do the directory search which is the name string and the
-> tag.
+> But it's better to document this.
 > 
-> So I having a type of tag as being of fundamental importance in
-> the interface now so we don't need to refactor all of the users
-> later.  In addition to the fact that we need the type to know
-> how to set the tags when mounting a superblock and when
-> given a new kobject to create an sd for.
+
+Yes please.
+
+> -----------------------------------------
 > 
-> We could make the types dynamic rather then a static enumeration but
-> that seems needless complexity for now.
-
-What I'm feeling unease about is the extra level of abstraction added by
-tag types.  A sd is given a tag.  A sb shows a set of tags.  The most
-straight forward to implement that is to give sd a tag and test the tag
-against sb's set of tags.  The type is added because pointer tag
-requires sequential matching which is usually best to avoid.  It's
-nothing fundamental.  It's an extra baggage.
-
->> Using ida (or idr if a pointer for private data is necessary) is really
->> easy.  It'll probably take a few tens of lines of code.  That said, I
->> don't think I have enough rationale to nack what you described.  So, as
->> long as the tags are made static, I won't object.
+> Document the following cgroup usage:
+>  # echo 0 > /dev/cgroup/tasks
 > 
-> Sounds good.  The only justification I can think of for ida tags is that
-> they are smaller, and so can keep the sysfs_dirents smaller.    Which
-> occasionally is a significant concern.  Still that should be an optimization
-> that we can apply later, as it is not a structural difference in the code.
+> Signed-off-by: Li Zefan <lizf@cn.fujitsu.com>
+
+Acked-by: Dhaval Giani <dhaval@linux.vnet.ibm.com>
+
+> ---
+>  cgroups.txt |    4 ++++
+>  1 file changed, 4 insertions(+)
 > 
-> Just to confirm.  Do you the two operations:
->   mount_tag - called only when the sb is mounted 
->   kobject_tag - called when we create new sd or rename an sd
+> diff --git a/Documentation/cgroups.txt b/Documentation/cgroups.txt
+> index 824fc02..213f533 100644
+> --- a/Documentation/cgroups.txt
+> +++ b/Documentation/cgroups.txt
+> @@ -390,6 +390,10 @@ If you have several tasks to attach, you have to do it one after another:
+>  	...
+>  # /bin/echo PIDn > tasks
 > 
-> Cause you to view an the tags as dynamic?
-
-The thing is that I don't really see why there's tagged_dir_ops at all.
- What's needed is tagged sd's and sb's which can show subset of those
-tags, so adding callback ops for tags just doesn't make much sense to
-me.  The interface should ideally be...
-
-1. alloc/release tag
-2. set / change / remove tag on sd
-3. enable / disable tag on a sb
-
-This has been my opinion from the beginning.  Unless the tags need to be
-changed dynamically on demand (which I hope is not the case), there just
-is plainly no reason to have callbacks for tags.
-
-Thanks.
+> +You can attach the current task by echoing 0:
+> +
+> +# /bin/echo 0 > tasks
+> +
+>  3. Kernel API
+>  =============
+> 
+> 
 
 -- 
-tejun
+regards,
+Dhaval
