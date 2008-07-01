@@ -1,7 +1,7 @@
-From: "Tolerant Thompson" <methylglycine-iTGB4ic38Rn7I1uYL0mFpNBPR1lH4CV8@public.gmane.org>
+From: "Beverly Ellis" <aquaplaned-Io/1DefMu4rNTfkII96cyg@public.gmane.org>
 Subject: ^Contrlbute CS 3^
-Date: Tue, 1 Jul 2008 09:27:34 +0000 (UTC)
-Message-ID: <000a01c8db5b$9d711580$0100007f@fbycko>
+Date: Tue, 1 Jul 2008 09:31:24 +0000 (UTC)
+Message-ID: <000a01c8db5b$9d711580$0100007f__5194.58903368122$1214904736$gmane$org@fbycko>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -16,7 +16,7 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
+To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
 ^ Adobe CS3 Master Collection for PC or MAC includes:
