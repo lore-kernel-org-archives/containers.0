@@ -1,14 +1,12 @@
-From: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Subject: Re: [PATCH -mmotm] res_counter: fix building failure
-Date: Wed, 02 Jul 2008 14:49:49 +0800
-Message-ID: <486B250D.3090605@cn.fujitsu.com>
-References: <486B1D3D.5070805@cn.fujitsu.com>
-	<6599ad830807012345r4f02f9acq3c8e9be633e109e8@mail.gmail.com>
+From: Andreas B Aaen <andreas.aaen-546VmZ+UeKYX2WXlbB3fKg@public.gmane.org>
+Subject: Network namespaces without isolation
+Date: Wed, 2 Jul 2008 09:18:50 +0200
+Message-ID: <200807020918.50997.andreas.aaen@tietoenator.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <6599ad830807012345r4f02f9acq3c8e9be633e109e8-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
+Content-Disposition: inline
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,47 +16,45 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
-Cc: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, LKML <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, Pavel Emelianov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Paul Menage wrote:
-> On Tue, Jul 1, 2008 at 11:16 PM, Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org> wrote:
->> kernel/res_counter.c: In function 'res_counter_memparse_write_strategy':
->> kernel/res_counter.c:115: error: implicit declaration of function 'PAGE_ALIGN'
->>
->> Signed-off-by: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-> 
-> Acked-by: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
-> 
-> Thanks - what architecture did it break on?
-> 
+Hi,
 
-On my x86_32.
+I am looking into the network namespace implementation because I need an IP 
+stack that is capable of talking with a number of separate IP nets with 
+possible overlapping IP adresses. My connection to each separate IP-net is 
+through a tunnel e.g. a VLAN interface.
 
-I guess this break has something to do with:
+A special application will then be able to listen to traffic on all the nets 
+through a socket option SO_NS that sets the namespace to talk/listen to for a 
+particular socket. For this to work network namespaces needs to be indexed.
+It would also be very handy if the configuration can be made without a clone() 
+call.
+Something like:
 
-http://marc.info/?l=linux-mm&m=121389282702302&w=2
-([PATCH -mm] PAGE_ALIGN(): correctly handle 64-bit values on 32-bit)
+ip ns add ns 1
+ip link set eth0.42 ns 1
+ip addr add 192.168.50.4/24 dev eth0.42 ns 1
 
-You tested the patch before that patch was accepted by Andrew.
+It would be fairly ok if this possibility to set up interfaces on other 
+namespaces only is possible from the default namespace.
 
-> Paul
-> 
->> ---
->>
->> should follow cgroup-files-convert-res_counter_write-to-be-a-cgroups-write_string-handler.patch
->>
->> --- linux-mm/kernel/res_counter.c.bak   2008-07-02 14:05:37.000000000 +0800
->> +++ linux-mm/kernel/res_counter.c       2008-07-02 14:07:36.000000000 +0800
->> @@ -13,6 +13,7 @@
->>  #include <linux/slab.h>
->>  #include <linux/res_counter.h>
->>  #include <linux/uaccess.h>
->> +#include <linux/mm.h>
->>
->>  void res_counter_init(struct res_counter *counter)
->>  {
->>
-> 
->
+It would also be nice to be able to see the network statistics from all the 
+namespaces through the proc filesystem at least in an uncloned (isolated) 
+namespace.
+
+So you would be able to see the network statistics in /proc/net/ns/<index>/
+
+It should be said that we have an implementation of all this already, but NOT 
+based on network namespaces and for elder kernels. We don't want to forward 
+port this, put instead add a few features to the network namespace 
+implementation to be able to fullfill the requirement of our application: 
+talk to a number of IP networks with possible overlapping IP addresses.
+
+Regards,
+-- 
+Andreas Bach Aaen              System Developer, M. Sc. 
+Tieto Enator A/S               tel: +45 89 38 51 00
+Skanderborgvej 232             fax: +45 89 38 51 01
+8260 Viby J      Denmark       andreas.aaen-546VmZ+UeKYX2WXlbB3fKg@public.gmane.org
