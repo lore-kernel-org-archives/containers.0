@@ -1,44 +1,57 @@
-From: Andreas B Aaen <andreas.aaen-546VmZ+UeKYX2WXlbB3fKg@public.gmane.org>
+From: ebiederm@xmission.com (Eric W. Biederman)
 Subject: Re: [PATCH 06/11] sysfs: Implement sysfs tagged directory support.
-Date: Wed, 2 Jul 2008 09:18:53 +0200
-Message-ID: <200807020918.53142.andreas.aaen@tietoenator.com>
+Date: Wed, 02 Jul 2008 09:49:33 -0700
+Message-ID: <m14p78s02q.fsf@frodo.ebiederm.org>
 References: <20080618170729.808539948@theryb.frec.bull.fr>
-	<m1ej6d9c2r.fsf@frodo.ebiederm.org> <486B060C.7030607@gmail.com>
+	<20080618170731.002784342@theryb.frec.bull.fr>
+	<485F04E1.70204@gmail.com> <m1y74svtff.fsf@frodo.ebiederm.org>
+	<486706C9.9040303@gmail.com> <m18wwmsqdv.fsf@frodo.ebiederm.org>
+	<4869D314.5030403@gmail.com> <m1ej6enep7.fsf@frodo.ebiederm.org>
+	<486A0751.9080602@gmail.com> <m1wsk5hjm0.fsf@frodo.ebiederm.org>
+	<486AF4FA.8020805@gmail.com> <m1ej6d9c2r.fsf@frodo.ebiederm.org>
+	<486B060C.7030607@gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <486B060C.7030607-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Content-Disposition: inline
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Content-Type: text/plain; charset=us-ascii
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1754845AbYGBQvu@vger.kernel.org>
+In-Reply-To: <486B060C.7030607@gmail.com> (Tejun Heo's message of "Wed, 02 Jul
+	2008 13:37:32 +0900")
+Sender: linux-kernel-owner@vger.kernel.org
+To: Tejun Heo <htejun@gmail.com>
+Cc: Benjamin Thery <benjamin.thery@bull.net>, Greg Kroah-Hartman <gregkh@suse.de>, Andrew Morton <akpm@linux-foundation.org>, Daniel Lezcano <dlezcano@fr.ibm.com>, Serge Hallyn <serue@us.ibm.com>, linux-kernel@vger.kernel.org, Al Viro <viro@ftp.linux.org.uk>, Linux Containers <containers@lists.osdl.org>
 List-Id: containers.vger.kernel.org
 
-On Wednesday 02 July 2008 06:37, Tejun Heo wrote:
-> I was imagining something like...
+Tejun Heo <htejun@gmail.com> writes:
+
+> Is it difficult to just export it via kobject and device layer?
+
+Well gregkh thought it wasn't a good idea last time I tried exploring
+that.
+
+> If
+> changing the default function is too much of a hassle (and I'm sure it
+> would be), just add an extended version which takes @tag.  The current
+> implementation feels like it tried too hard to not add intermediate
+> interfaces and ended up shooting outside from the innermost layer.
+
+It tried for something that was simple to use and that worked.
+
+Also the way things work.  I have to use all of the intermediate layers
+and their calls to various functions.  So just passing a parameter through
+doesn't work to well.
+
+It looks to me like the clean solution is move kobject_tag into
+kobj_type, and have it call some higher level function.
+
+We also need to remove the maintenance disaster that is
+kobject_set_name from sysfs_rename_dir.  And push it into
+kobject_rename instead.  The error handling is harder in
+that case but otherwise we should be in good shape.
+
+>> On the other side I can't pass a tag through from the device layer to
+>> the kobject layer.  It isn't a concept the kobject layer supports.
 >
-> 	mount -t sysfs -o ns=0,4,5 /my/sys
->
-> And let the userland control which ns's are visible in the particular
-> mount.  I'm not sure how useful that will be tho.
+> I think it's best to make kobject layer support it.
 
-Useful. However I didn't know that an indexnumber was associated with the 
-network namespaces.
+Assuming Greg will accept it when he sees reasonable patches.
 
-Especially if you want to use network namespaces for scaleability and not 
-isolation purposes.
-
-Regards,
--- 
-Andreas Bach Aaen              System Developer, M. Sc. 
-Tieto Enator A/S               tel: +45 89 38 51 00
-Skanderborgvej 232             fax: +45 89 38 51 01
-8260 Viby J      Denmark       andreas.aaen-546VmZ+UeKYX2WXlbB3fKg@public.gmane.org
+Eric
