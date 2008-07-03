@@ -1,22 +1,11 @@
-From: Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 06/11] sysfs: Implement sysfs tagged directory support.
-Date: Thu, 03 Jul 2008 14:55:38 +0200
-Message-ID: <486CCC4A.8050909@fr.ibm.com>
-References: <20080618170729.808539948@theryb.frec.bull.fr>
-	<20080618170731.002784342@theryb.frec.bull.fr>
-	<485F04E1.70204@gmail.com> <m1y74svtff.fsf@frodo.ebiederm.org>
-	<486706C9.9040303@gmail.com> <m18wwmsqdv.fsf@frodo.ebiederm.org>
-	<4869D314.5030403@gmail.com> <m1ej6enep7.fsf@frodo.ebiederm.org>
-	<486A0751.9080602@gmail.com> <m1wsk5hjm0.fsf@frodo.ebiederm.org>
-	<486AF4FA.8020805@gmail.com> <m1ej6d9c2r.fsf@frodo.ebiederm.org>
-	<486B060C.7030607@gmail.com> <m14p78s02q.fsf@frodo.ebiederm.org>
-	<486C4515.1070007@gmail.com> <m1hcb7o8lv.fsf@frodo.ebiederm.org>
-	<486CB051.5000507@fr.ibm.com> <m14p77m9uy.fsf@frodo.ebiederm.org>
+From: Nadia.Derbey-6ktuUTfB/bM@public.gmane.org
+Subject: [RFC PATCH 0/5] Resend - Use procfs to change a syscall behavior
+Date: Thu, 03 Jul 2008 16:40:13 +0200
+Message-ID: <20080703144013.737951000@bull.net>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <m14p77m9uy.fsf-B27657KtZYmhTnVgQlOflh2eb7JE58TQ@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -26,36 +15,104 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Cc: Tejun Heo <htejun-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Greg Kroah-Hartman <gregkh-l3A5Bk7waGM@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Al Viro <viro-rfM+Q5joDG/XmaaqVzeoHQ@public.gmane.org>, Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Benjamin Thery <benjamin.thery-6ktuUTfB/bM@public.gmane.org>
+To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Cc: pavel-+ZI9xUNit7I@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Eric W. Biederman wrote:
-> Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org> writes:
-> 
->> The kobject events are sent through a netlink message which is not currently per
->> network namespace. Shouldn't be useful to have a way to retrieve from the
->> kobject the network namespace or the uevent socket associated with it ? IMHO
->> having idr in the kobject + netns pointer associated may help to handle the
->> sysfs isolation and makes the uevent per namespace trivial, no ?
-> 
-> Grumble.  I have been conveniently been forgetting about that socket.
-> Similarly we have the user mode helpers to deal with.
-> 
-> For this conversation there is a simple answer.  All of that is in the
-> kobject layer, and works even when you compile sysfs out of your kernel.
-> Therefore it is a separate problem.  And sysfs idr tags have nothing
-> to do with it.
 
-Ah Ok, I am not really familiar with kobject/sysfs so I thought there 
-was a proposition to store the id in the kobject instead of using the 
-tag callbacks, so I figured, perhaps, the idr could have been used in 
-the kobject layer and the sysfs being built upon that.
+This patchset is a part of an effort to change some syscalls behavior for
+checkpoint restart.
 
-> It is most definitely something we need to come back to.  I bet there
-> are some interesting interactions when you have multiple network devices
-> with the same name generating events.
+When restarting an object that has previously been checkpointed, its state
+should be unchanged compared to the checkpointed image.
+For example, a restarted process should have the same upid nr as the one it
+used to have when being checkpointed; an ipc object should have the same id
+as the one it had when the checkpoint occured.
+Also, talking about system V ipcs, they should be restored with the same
+state (e.g. in terms of pid of last operation).
 
-Yes as mentionned Benjamin, we have the eth0 in the init_net which is 
-shut down when a network namespace with a netdev with the same name 
-exits. There is a udev rule which ifdown eth0 :)
+This means that several syscalls should not behave in a default mode when
+they are called during a restart phase.
+
+One solution consists in defining a new syscall for each syscall that is
+called during restart:
+ . sys_fork_with_id() would fork a process with a predefined id.
+ . sys_msgget_with_id() would create a msg queue with a predefined id
+ . sys_semget_with_id() would create a semaphore set with a predefined id
+ . etc,
+
+This solution requires defining a new syscall each time we need an existing
+syscall to behave in a non-default way.
+
+An alternative to this solution consists in defining a new field in the
+task structure (let's call it next_syscall_data) that, if set, would change
+the behavior of next syscall to be called. The sys_fork_with_id() previously
+cited can be replaced by
+ 1) set next_syscall_data to a target upid nr
+ 2) call fork().
+
+This patch series implements the 2nd solution. Actually I've already sent it
+some times ago, and things ended up with Pavel complaining about the "ugly
+interface" (see
+https://lists.linux-foundation.org/pipermail/containers/2008-April/010909.html).
+
+Now, I'm resending the series because this 2nd solution has the advantage of
+being easily reusable for many subsystems: the only thing needed is just
+to set a field in the task structure and rewrite the code portion that is
+sensitive to this field being set (it's successfully being used in cryo code -
+git tree at git://git.sr71.net/~hallyn/cryodev.git).
+
+The patches have been ported to 2.6.26-rc5-mm3 and the open() syscall in now
+covered.
+
+A new file is created in procfs: /proc/self/task/<my_tid>/next_syscall_data.
+This makes it possible to avoid races between several threads belonging to
+the same process.
+
+Setting a value into this file fills in the next_syscall_data in the task
+structure.
+
+The following subsystems have been changed to take this value into account:
+1) sysvipc:
+   . if there's a value in next_syscall_data when msgget() is called, msgget()
+     creates a msg queue with that value as an id
+   . this applies to semget() and shmget().
+   . if next_syscall_data is set to 1 when msgctl(IPC_SET) is called, msgctl()
+     sets more that the usual permission fields for the target msg queue (it
+     sets the time fields, and the pid of last operation fields).
+   . this applies to semctl() and shmctl().
+2) process creation:
+   . if there's a value in next_syscall_data when fork() is called, fork()
+     creates a process with that value as a pid.
+   . this applies to vfork() and clone().
+3) file descriptors:
+   . if there's a value in next_syscall_data when open() is called, open()
+     uses that value as the file descriptor for the open file
+
+The syntax is:
+# echo "LONG1 XX" > /proc/self/task/<my_tid>/next_syscall_data
+     next object to be created will have an id set to XX
+
+Today, the ids are specified as long, but having a type string specified in
+the next_syscall_data file makes it possible to cover more types in the future,
+if needed.
+Also, only a single value can be set. But the number that immediatly follows
+the type string makes it possible to specify more values in the future, if
+needed. This can be applied, e.g. to predefine all the upid nrs for a process
+that belongs to nested namespaces, if needed in the future.
+
+These patches should be applied to 2.6.25-rc3-mm2, in the following order:
+
+[PATCH 1/5] : next_syscall_data_proc_file.patch
+[PATCH 2/5] : ipccreate_use_next_syscall_data.patch
+[PATCH 3/5] : proccreate_use_next_syscall_data.patch
+[PATCH 4/5] : ipcset_use_next_syscall_data.patch
+[PATCH 5/5] : fileopen_use_next_syscall_data.patch
+
+Any comment and/or suggestions are welcome.
+
+
+Regards,
+Nadia
+
+--
