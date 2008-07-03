@@ -1,14 +1,14 @@
 From: Nadia.Derbey-6ktuUTfB/bM@public.gmane.org
-Subject: [RFC PATCH 4/5] use next syscall data to change the behavior of
-	IPC_SET
-Date: Thu, 03 Jul 2008 16:40:17 +0200
-Message-ID: <20080703144225.761481000@bull.net>
+Subject: [RFC PATCH 5/5] use next syscall data to predefine the file
+	descriptor value
+Date: Thu, 03 Jul 2008 16:40:18 +0200
+Message-ID: <20080703144226.157406000@bull.net>
 References: <20080703144013.737951000@bull.net>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline; filename=ipcset_use_next_syscall_data.patch
+Content-Disposition: inline; filename=fileopen_use_next_syscall_data.patch
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -22,155 +22,100 @@ To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Cc: Nadia Derbey <Nadia.Derbey-6ktuUTfB/bM@public.gmane.org>, pavel-+ZI9xUNit7I@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-[PATCH 04/05]
+[PATCH 05/05]
 
 This patch uses the value written into the next_syscall_data proc file
-as a flag to change the way msgctl(IPC_SET), semctl(IPC_SET) and
-shmctl(IPC_SET) behave.
+as a target file descriptor for the next file to be opened.
 
-When "LONG1 1" is echoed to this file, xxxctl(IPC_SET) will set the time
-fields and the pid fields according to what is specified in the input
-parameter (while currently only the permission fields are allowed to be set).
-The following syscalls are impacted:
-. msgctl(IPC_SET)
-. semctl(IPC_SET)
-. shmctl(IPC_SET)
+This makes it easy to restart a process with the same fds as the ones it was
+using during the checkpoint phase, instead of 1. opening the file, 2. dup2'ing
+the open file descriptor.
 
-This makes it easy to restart an ipc object exactly is it was during the
-checkpoint phase.
+The following syscalls are impacted if next_syscall_data is set:
+. open()
+. openat()
 
 Signed-off-by: Nadia Derbey <Nadia.Derbey-6ktuUTfB/bM@public.gmane.org>
 
 ---
- include/linux/next_syscall_data.h |   12 +++++++++++-
- ipc/msg.c                         |   19 ++++++++++++++++++-
- ipc/sem.c                         |   16 +++++++++++++++-
- ipc/shm.c                         |   19 ++++++++++++++++++-
- 4 files changed, 62 insertions(+), 4 deletions(-)
+ fs/open.c |   58 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++-
+ 1 file changed, 57 insertions(+), 1 deletion(-)
 
-Index: linux-2.6.26-rc5-mm3/include/linux/next_syscall_data.h
+Index: linux-2.6.26-rc5-mm3/fs/open.c
 ===================================================================
---- linux-2.6.26-rc5-mm3.orig/include/linux/next_syscall_data.h	2008-07-01 12:07:46.000000000 +0200
-+++ linux-2.6.26-rc5-mm3/include/linux/next_syscall_data.h	2008-07-01 12:07:50.000000000 +0200
-@@ -6,7 +6,7 @@
-  *    . object creation with a predefined id
-  *         . for a sysv ipc object
-  *         . for a process
-- *
-+ *    . set more than the usual ipc_perm fields during and IPC_SET operation.
-  */
+--- linux-2.6.26-rc5-mm3.orig/fs/open.c	2008-06-25 17:11:06.000000000 +0200
++++ linux-2.6.26-rc5-mm3/fs/open.c	2008-07-01 17:51:53.000000000 +0200
+@@ -967,6 +967,55 @@ struct file *dentry_open(struct dentry *
+ EXPORT_SYMBOL(dentry_open);
  
- #ifndef _LINUX_NEXT_SYSCALL_DATA_H
-@@ -21,6 +21,10 @@
-  * by next syscall. The following syscalls support this feature:
-  *    . msgget(), semget(), shmget()
-  *    . fork(), vfork(), clone()
+ /*
++ * Marks a given file descriptor entry as busy (should not be busy when this
++ * routine is called.
 + *
-+ * If it is set to a non null value before a call to:
-+ *    . msgctl(IPC_SET), semctl(IPC_SET), shmctl(IPC_SET),
-+ * this means that we are going to set more than the usual ipc_perms fields.
-  */
- struct next_syscall_data {
- 	int ndata;
-@@ -36,6 +40,12 @@ struct next_syscall_data {
- 
- #define get_next_data(tsk)	((tsk)->nsd->data[0])
- 
-+/*
-+ * Returns true if next call to xxxctl(IPC_SET) should have a non-default
-+ * behavior.
++ * files->next_fd is not updated: this lets the potentially created hole be
++ * filled up on next calls to get_unused_fd_flags.
++ *
++ * Returns the specified fd if successful, -errno else.
 + */
-+#define ipc_set_all(tsk)	(next_data_set(tsk) ? get_next_data(tsk) : 0)
++static int get_predefined_fd_flags(int fd, int flags)
++{
++	struct files_struct *files = current->files;
++	int error;
++	struct fdtable *fdt;
 +
- 
- 
- extern ssize_t get_next_syscall_data(struct task_struct *, char *, size_t);
-Index: linux-2.6.26-rc5-mm3/ipc/msg.c
-===================================================================
---- linux-2.6.26-rc5-mm3.orig/ipc/msg.c	2008-07-01 11:09:35.000000000 +0200
-+++ linux-2.6.26-rc5-mm3/ipc/msg.c	2008-07-01 12:07:50.000000000 +0200
-@@ -446,7 +446,24 @@ static int msgctl_down(struct ipc_namesp
- 		msq->q_qbytes = msqid64.msg_qbytes;
- 
- 		ipc_update_perm(&msqid64.msg_perm, ipcp);
--		msq->q_ctime = get_seconds();
-+		if (ipc_set_all(current)) {
-+			/*
-+			 * If this field is set in the task struct, this
-+			 * means that we want to set more than the usual
-+			 * fields. Particularly useful to restart a msgq
-+			 * in the same state as it was before being
-+			 * checkpointed.
-+			 */
-+			msq->q_stime = msqid64.msg_stime;
-+			msq->q_rtime = msqid64.msg_rtime;
-+			msq->q_ctime = msqid64.msg_ctime;
-+			msq->q_lspid = msqid64.msg_lspid;
-+			msq->q_lrpid = msqid64.msg_lrpid;
++	error = -EINVAL;
++	if (fd < 0)
++		goto out;
 +
++	error = -EMFILE;
++	if (fd >= current->signal->rlim[RLIMIT_NOFILE].rlim_cur)
++		goto out;
++
++	spin_lock(&files->file_lock);
++	fdt = files_fdtable(files);
++
++	error = expand_files(files, fd);
++	if (error < 0)
++		goto out_unlock;
++
++	error = -EBUSY;
++	if (FD_ISSET(fd, fdt->open_fds))
++		goto out_unlock;
++
++	FD_SET(fd, fdt->open_fds);
++	if (flags & O_CLOEXEC)
++		FD_SET(fd, fdt->close_on_exec);
++	else
++		FD_CLR(fd, fdt->close_on_exec);
++
++	BUG_ON(fdt->fd[fd] != NULL);
++
++	error = fd;
++out_unlock:
++	spin_unlock(&files->file_lock);
++out:
++	return error;
++}
++
++/*
+  * Find an empty file descriptor entry, and mark it busy.
+  */
+ int get_unused_fd_flags(int flags)
+@@ -1081,7 +1130,14 @@ long do_sys_open(int dfd, const char __u
+ 	int fd = PTR_ERR(tmp);
+ 
+ 	if (!IS_ERR(tmp)) {
+-		fd = get_unused_fd_flags(flags);
++		if (next_data_set(current)) {
++			int next_fd = get_next_data(current);
++
++			fd = get_predefined_fd_flags(next_fd, flags);
 +			reset_next_syscall_data(current);
 +		} else
-+			msq->q_ctime = get_seconds();
++			fd = get_unused_fd_flags(flags);
 +
- 		/* sleeping receivers might be excluded by
- 		 * stricter permissions.
- 		 */
-Index: linux-2.6.26-rc5-mm3/ipc/sem.c
-===================================================================
---- linux-2.6.26-rc5-mm3.orig/ipc/sem.c	2008-07-01 11:09:35.000000000 +0200
-+++ linux-2.6.26-rc5-mm3/ipc/sem.c	2008-07-01 12:07:50.000000000 +0200
-@@ -874,7 +874,21 @@ static int semctl_down(struct ipc_namesp
- 		goto out_up;
- 	case IPC_SET:
- 		ipc_update_perm(&semid64.sem_perm, ipcp);
--		sma->sem_ctime = get_seconds();
-+
-+		if (ipc_set_all(current)) {
-+			/*
-+			 * If this field is set in the task struct, this
-+			 * means that we want to set more than the usual
-+			 * fields. Particularly useful to restart a semaphore
-+			 * in the same state as it was before being
-+			 * checkpointed.
-+			 */
-+			sma->sem_ctime = semid64.sem_ctime;
-+			sma->sem_otime = semid64.sem_otime;
-+
-+			reset_next_syscall_data(current);
-+		} else
-+			sma->sem_ctime = get_seconds();
- 		break;
- 	default:
- 		err = -EINVAL;
-Index: linux-2.6.26-rc5-mm3/ipc/shm.c
-===================================================================
---- linux-2.6.26-rc5-mm3.orig/ipc/shm.c	2008-07-01 11:09:35.000000000 +0200
-+++ linux-2.6.26-rc5-mm3/ipc/shm.c	2008-07-01 12:07:50.000000000 +0200
-@@ -609,7 +609,24 @@ static int shmctl_down(struct ipc_namesp
- 		goto out_up;
- 	case IPC_SET:
- 		ipc_update_perm(&shmid64.shm_perm, ipcp);
--		shp->shm_ctim = get_seconds();
-+
-+		if (ipc_set_all(current)) {
-+			/*
-+			 * If this field is set in the task struct, this
-+			 * means that we want to set more than the usual
-+			 * fields. Particularly useful to restart a shm seg
-+			 * in the same state as it was before being
-+			 * checkpointed.
-+			 */
-+			shp->shm_atim = shmid64.shm_atime;
-+			shp->shm_dtim = shmid64.shm_dtime;
-+			shp->shm_ctim = shmid64.shm_ctime;
-+			shp->shm_cprid = shmid64.shm_cpid;
-+			shp->shm_lprid = shmid64.shm_lpid;
-+
-+			reset_next_syscall_data(current);
-+		} else
-+			shp->shm_ctim = get_seconds();
- 		break;
- 	default:
- 		err = -EINVAL;
+ 		if (fd >= 0) {
+ 			struct file *f = do_filp_open(dfd, tmp, flags, mode);
+ 			if (IS_ERR(f)) {
 
 --
