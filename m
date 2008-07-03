@@ -1,11 +1,16 @@
-From: "Ed White" <pture-6c9eN7o8ep3QT0dZR+AlfA@public.gmane.org>
-Subject: -After Effects CS 3 Pro-
-Date: Thu, 03 Jul 2008 16:15:43 -0600
-Message-ID: <000301c8dd48$f356e080$0100007f@spbpdft>
+From: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: Re: Attaching PID 0 to a cgroup
+Date: Thu, 03 Jul 2008 14:59:35 -0700
+Message-ID: <1215122375.14808.180.camel@localhost.localdomain>
+References: <20080701094545.GD3925@linux.vnet.ibm.com>
+	<20080701094734.GE3925@linux.vnet.ibm.com>
+	<486A06B7.7020906@cn.fujitsu.com> <486AA62F.40503@gmail.com>
+	<20080701215448.GD5893@linux.vnet.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <20080701215448.GD5893-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -15,48 +20,94 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
+To: Dhaval Giani <dhaval-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Cc: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>, lkml <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Sudhir Kumar <skumar-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Andrea Righi <righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-- Adobe CS3 Master Collection for PC or MAC includes:
-- InDesign CS3
-- Photoshop CS3
-- Illustrator CS3
-- Acrobat 8 Professional
-- Flash CS3 Professional
-- Dreamweaver CS3
-- Fireworks CS3
-- Contribute CS3
-- After Effects CS3 Professional
-- Premiere Pro CS3
-- Encore DVD CS3
-- Soundbooth CS3
 
-- esoftnew. com in Internet Exp!orer
+On Wed, 2008-07-02 at 03:24 +0530, Dhaval Giani wrote:
+> On Tue, Jul 01, 2008 at 11:48:31PM +0200, Andrea Righi wrote:
+> > Li Zefan wrote:
+> >> CC: Paul Jackson <pj-sJ/iWh9BUns@public.gmane.org>
+> >>
+> >> Dhaval Giani wrote:
+> >>> [put in the wrong alias for containers list correcting it.]
+> >>>
+> >>> On Tue, Jul 01, 2008 at 03:15:45PM +0530, Dhaval Giani wrote:
+> >>>> Hi Paul,
+> >>>>
+> >>>> Attaching PID 0 to a cgroup caused the current task to be attached to
+> >>>> the cgroup. Looking at the code,
+> >>>>
+> >>
+> >> [...]
+> >>
+> >>>> I was wondering, why this was done. It seems to be unexpected behavior.
+> >>>> Wouldn't something like the following be a better response? (I've used
+> >>>> EINVAL, but I can change it to ESRCH if that is better.)
+> >>>>
+> >>
+> >> Why is it unexpected? it follows the behavior of cpuset, so this patch will
+> >> break backward compatibility of cpuset.
+> >>
+> >> But it's better to document this.
+> >>
+> >> -----------------------------------------
+> >>
+> >> Document the following cgroup usage:
+> >>  # echo 0 > /dev/cgroup/tasks
+> >>
+> >> Signed-off-by: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+> >> ---
+> >>  cgroups.txt |    4 ++++
+> >>  1 file changed, 4 insertions(+)
+> >>
+> >> diff --git a/Documentation/cgroups.txt b/Documentation/cgroups.txt
+> >> index 824fc02..213f533 100644
+> >> --- a/Documentation/cgroups.txt
+> >> +++ b/Documentation/cgroups.txt
+> >> @@ -390,6 +390,10 @@ If you have several tasks to attach, you have to do it one after another:
+> >>  	...
+> >>  # /bin/echo PIDn > tasks
+> >>  +You can attach the current task by echoing 0:
+> >> +
+> >> +# /bin/echo 0 > tasks
+> >> +
+> >>  3. Kernel API
+> >>  =============
+> >
+> > Wouldn't be more meaningful to specify the bash's builtin echo here
+> > even if it doesn't opportunely handle write() errors?
+> >
+> > Using /bin/echo would attach /bin/echo itself to the cgroup, that just
+> > exists, so it seems like a kind of noop, isn't it?
+> >
+> 
+> Yes, you are right. this example should use bash's builtin echo.
 
-- System Requirements
+	IMHO you need to include this point in the docs verbosely rather than
+just switching the docs to bash's builin-in echo. Otherwise it doesn't
+fully resolve the fundamental confusion you correctly identified.
 
-- For PC:
-- Intel Pentium 4 (1.4GHz processor for DV; 3.4GHz processor for HDV), Intel Centrino, Intel Xeon, (dual 2.8GHz processors for HD), or Intel Core
-- Duo (or compatible) processor; SSE2-enabled processor required for AMD systems
-- Microsoft Windows XP with Service Pack 2 or Microsoft Windows Vista Home Premium, Business, Ultimate, or Enterprise (certified for 32-bit editions)
-- 1GB of RAM for DV; 2GB of RAM for HDV and HD; more RAM recommended when running multiple components
-- 38GB of available hard-disk space (additional free space required during installation)
-- Dedicated 7,200 RPM hard drive for DV and HDV editing; striped disk array storage (RAID 0) for HD; SCSI disk subsystem preferred
-- Microsoft DirectX compatible sound card (multichannel ASIO-compatible sound card recommended)
-- 1,280x1,024 monitor resolution with 32-bit color adapter
-- DVD-ROM drive
+Or perhaps a snippet of simplified C code will make it clear:
+------------
+	char buffer[16];
+	int fd;
 
-- For MAC:
-- PowerPC G4 or G5 or multicore Intel processor (Adobe Premiere Pro, Encore, and Soundbooth require a multicore Intel processor; Adobe OnLocation CS3 is a Windows application and may be used with Boot Camp)
-- Mac OS X v.10.4.9; Java Runtime Environment 1.5 required for Adobe Version Cue CS3 Server
-- 1GB of RAM for DV; 2GB of RAM for HDV and HD; more RAM recommended when running multiple components
-- 36GB of available hard-disk space (additional free space required during installation)
-- Dedicated 7,200 RPM hard drive for DV and HDV editing; striped disk array storage (RAID 0) for HD; SCSI disk subsystem preferred
-- Core Audio compatible sound card
-- 1,280x1,024 monitor resolution with 32-bit color adapter
-- DVD-ROM drive- DVD+-R burner required for DVD creation
+	fd = open("/some/cgroup/tasks", O_WRONLY);
 
-The Colombian government completed a daring hostage rescue right out of a Tom Clancy novel Wednesday. Undercover agents freed 15 captives of the FARC rebel group, without negotiating or firing a shot. How did they do it?
+	/* 
+	 * These two writes produce the same effect: adding this process
+	 * to /some/cgroup.
+	 */
+	if (the_slightly_shorter_way)
+		write(fd, "0", 2);
+	else {
+		/* The slightly-less-short way */
+		snprintf(buffer, 16, "%u", getpid());
+		write(fd, buffer, strlen(buffer));
+	}
+------------
 
-Analysis: Hostage Rescue Is Latest Blow To FARC
+Cheers,
+	-Matt Helsley
