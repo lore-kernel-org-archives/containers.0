@@ -1,121 +1,46 @@
-From: Nadia.Derbey-6ktuUTfB/bM@public.gmane.org
-Subject: [RFC PATCH 5/5] use next syscall data to predefine the file
-	descriptor value
-Date: Thu, 03 Jul 2008 16:40:18 +0200
-Message-ID: <20080703144226.157406000@bull.net>
-References: <20080703144013.737951000@bull.net>
+From: Tejun Heo <htejun@gmail.com>
+Subject: Re: [PATCH 06/11] sysfs: Implement sysfs tagged directory support.
+Date: Fri, 04 Jul 2008 00:58:23 +0900
+Message-ID: <486CF71F.5090405@gmail.com>
+References: <20080618170729.808539948@theryb.frec.bull.fr>	<20080618170731.002784342@theryb.frec.bull.fr>	<485F04E1.70204@gmail.com> <m1y74svtff.fsf@frodo.ebiederm.org>	<486706C9.9040303@gmail.com> <m18wwmsqdv.fsf@frodo.ebiederm.org>	<4869D314.5030403@gmail.com> <m1ej6enep7.fsf@frodo.ebiederm.org>	<486A0751.9080602@gmail.com> <m1wsk5hjm0.fsf@frodo.ebiederm.org>	<486AF4FA.8020805@gmail.com> <m1ej6d9c2r.fsf@frodo.ebiederm.org>	<486B060C.7030607@gmail.com> <m14p78s02q.fsf@frodo.ebiederm.org>	<486C4515.1070007@gmail.com> <m1hcb7o8lv.fsf@frodo.ebiederm.org>	<486CB051.5000507@fr.ibm.com> <m14p77m9uy.fsf@frodo.ebiederm.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
+Content-Type: text/plain; charset=ISO-8859-1
 Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline; filename=fileopen_use_next_syscall_data.patch
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Cc: Nadia Derbey <Nadia.Derbey-6ktuUTfB/bM@public.gmane.org>, pavel-+ZI9xUNit7I@public.gmane.org
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1754970AbYGCP7a@vger.kernel.org>
+In-Reply-To: <m14p77m9uy.fsf@frodo.ebiederm.org>
+Sender: linux-kernel-owner@vger.kernel.org
+To: "Eric W. Biederman" <ebiederm@xmission.com>
+Cc: Daniel Lezcano <dlezcano@fr.ibm.com>, Greg Kroah-Hartman <gregkh@suse.de>, linux-kernel@vger.kernel.org, Al Viro <viro@ftp.linux.org.uk>, Linux Containers <containers@lists.osdl.org>, Andrew Morton <akpm@linux-foundation.org>, Benjamin Thery <benjamin.thery@bull.net>
 List-Id: containers.vger.kernel.org
 
-[PATCH 05/05]
+Hello,
 
-This patch uses the value written into the next_syscall_data proc file
-as a target file descriptor for the next file to be opened.
+Eric W. Biederman wrote:
+> Daniel Lezcano <dlezcano@fr.ibm.com> writes:
+> 
+>> The kobject events are sent through a netlink message which is not currently per
+>> network namespace. Shouldn't be useful to have a way to retrieve from the
+>> kobject the network namespace or the uevent socket associated with it ? IMHO
+>> having idr in the kobject + netns pointer associated may help to handle the
+>> sysfs isolation and makes the uevent per namespace trivial, no ?
+> 
+> Grumble.  I have been conveniently been forgetting about that socket.
+> Similarly we have the user mode helpers to deal with.
+> 
+> For this conversation there is a simple answer.  All of that is in the
+> kobject layer, and works even when you compile sysfs out of your kernel.
+> Therefore it is a separate problem.  And sysfs idr tags have nothing
+> to do with it.
+> 
+> It is most definitely something we need to come back to.  I bet there
+> are some interesting interactions when you have multiple network devices
+> with the same name generating events.
 
-This makes it easy to restart a process with the same fds as the ones it was
-using during the checkpoint phase, instead of 1. opening the file, 2. dup2'ing
-the open file descriptor.
+Related delta: I've been thinking that uevents should be part of sysfs
+not kobject as that's what the userland is gonna associate the event
+with.  Would that solve the problem you're thinking about?
 
-The following syscalls are impacted if next_syscall_data is set:
-. open()
-. openat()
+Thanks.
 
-Signed-off-by: Nadia Derbey <Nadia.Derbey-6ktuUTfB/bM@public.gmane.org>
-
----
- fs/open.c |   58 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++-
- 1 file changed, 57 insertions(+), 1 deletion(-)
-
-Index: linux-2.6.26-rc5-mm3/fs/open.c
-===================================================================
---- linux-2.6.26-rc5-mm3.orig/fs/open.c	2008-06-25 17:11:06.000000000 +0200
-+++ linux-2.6.26-rc5-mm3/fs/open.c	2008-07-01 17:51:53.000000000 +0200
-@@ -967,6 +967,55 @@ struct file *dentry_open(struct dentry *
- EXPORT_SYMBOL(dentry_open);
- 
- /*
-+ * Marks a given file descriptor entry as busy (should not be busy when this
-+ * routine is called.
-+ *
-+ * files->next_fd is not updated: this lets the potentially created hole be
-+ * filled up on next calls to get_unused_fd_flags.
-+ *
-+ * Returns the specified fd if successful, -errno else.
-+ */
-+static int get_predefined_fd_flags(int fd, int flags)
-+{
-+	struct files_struct *files = current->files;
-+	int error;
-+	struct fdtable *fdt;
-+
-+	error = -EINVAL;
-+	if (fd < 0)
-+		goto out;
-+
-+	error = -EMFILE;
-+	if (fd >= current->signal->rlim[RLIMIT_NOFILE].rlim_cur)
-+		goto out;
-+
-+	spin_lock(&files->file_lock);
-+	fdt = files_fdtable(files);
-+
-+	error = expand_files(files, fd);
-+	if (error < 0)
-+		goto out_unlock;
-+
-+	error = -EBUSY;
-+	if (FD_ISSET(fd, fdt->open_fds))
-+		goto out_unlock;
-+
-+	FD_SET(fd, fdt->open_fds);
-+	if (flags & O_CLOEXEC)
-+		FD_SET(fd, fdt->close_on_exec);
-+	else
-+		FD_CLR(fd, fdt->close_on_exec);
-+
-+	BUG_ON(fdt->fd[fd] != NULL);
-+
-+	error = fd;
-+out_unlock:
-+	spin_unlock(&files->file_lock);
-+out:
-+	return error;
-+}
-+
-+/*
-  * Find an empty file descriptor entry, and mark it busy.
-  */
- int get_unused_fd_flags(int flags)
-@@ -1081,7 +1130,14 @@ long do_sys_open(int dfd, const char __u
- 	int fd = PTR_ERR(tmp);
- 
- 	if (!IS_ERR(tmp)) {
--		fd = get_unused_fd_flags(flags);
-+		if (next_data_set(current)) {
-+			int next_fd = get_next_data(current);
-+
-+			fd = get_predefined_fd_flags(next_fd, flags);
-+			reset_next_syscall_data(current);
-+		} else
-+			fd = get_unused_fd_flags(flags);
-+
- 		if (fd >= 0) {
- 			struct file *f = do_filp_open(dfd, tmp, flags, mode);
- 			if (IS_ERR(f)) {
-
---
+-- 
+tejun
