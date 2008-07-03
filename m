@@ -1,7 +1,7 @@
 From: ebiederm@xmission.com (Eric W. Biederman)
 Subject: Re: [PATCH 06/11] sysfs: Implement sysfs tagged directory support.
-Date: Thu, 03 Jul 2008 12:57:14 -0700
-Message-ID: <m1od5elp0l.fsf@frodo.ebiederm.org>
+Date: Thu, 03 Jul 2008 13:08:52 -0700
+Message-ID: <m13amqloh7.fsf@frodo.ebiederm.org>
 References: <20080618170729.808539948@theryb.frec.bull.fr>
 	<20080618170731.002784342@theryb.frec.bull.fr>
 	<485F04E1.70204@gmail.com> <m1y74svtff.fsf@frodo.ebiederm.org>
@@ -12,26 +12,34 @@ References: <20080618170729.808539948@theryb.frec.bull.fr>
 	<486B060C.7030607@gmail.com> <m14p78s02q.fsf@frodo.ebiederm.org>
 	<486C4515.1070007@gmail.com> <m1hcb7o8lv.fsf@frodo.ebiederm.org>
 	<486CB051.5000507@fr.ibm.com> <m14p77m9uy.fsf@frodo.ebiederm.org>
-	<486CC81D.9010003@bull.net>
+	<486CF71F.5090405@gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1755711AbYGCUBy@vger.kernel.org>
-In-Reply-To: <486CC81D.9010003@bull.net> (Benjamin Thery's message of "Thu, 03
-	Jul 2008 14:37:49 +0200")
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1755888AbYGCULt@vger.kernel.org>
+In-Reply-To: <486CF71F.5090405@gmail.com> (Tejun Heo's message of "Fri, 04 Jul
+	2008 00:58:23 +0900")
 Sender: linux-kernel-owner@vger.kernel.org
-To: Benjamin Thery <benjamin.thery@bull.net>
-Cc: Daniel Lezcano <dlezcano@fr.ibm.com>, Tejun Heo <htejun@gmail.com>, Greg Kroah-Hartman <gregkh@suse.de>, linux-kernel@vger.kernel.org, Al Viro <viro@ftp.linux.org.uk>, Linux Containers <containers@lists.osdl.org>, Andrew Morton <akpm@linux-foundation.org>
+To: Tejun Heo <htejun@gmail.com>
+Cc: Daniel Lezcano <dlezcano@fr.ibm.com>, Greg Kroah-Hartman <gregkh@suse.de>, linux-kernel@vger.kernel.org, Al Viro <viro@ftp.linux.org.uk>, Linux Containers <containers@lists.osdl.org>, Andrew Morton <akpm@linux-foundation.org>, Benjamin Thery <benjamin.thery@bull.net>
 List-Id: containers.vger.kernel.org
 
-Benjamin Thery <benjamin.thery@bull.net> writes:
+Tejun Heo <htejun@gmail.com> writes:
 
-> Indeed, we observed some fun things with one distro (which defines some
-> particular udev rules) when a device called eth0 in a namespace comes back to
-> init net :)
+> Related delta: I've been thinking that uevents should be part of sysfs
+> not kobject as that's what the userland is gonna associate the event
+> with.  Would that solve the problem you're thinking about?
 
-Speaking of.  Don't let me forget but I have a patch I need to send out
-that deletes pseudo devices instead of sending them back to eth0.   We can't
-do that for real hardware obviously but for things like veth and macvlan
-devices it greatly simplifies the cleanup.
+The good news is that uevent_sock is currently restricted to just
+the initial network namespace (so the functionality completely
+disappears in the other namespaces), and that it is broadcast only.
+
+So it should be possible to look at who the client is and by some
+magic criterian decide if it should receive the broadcast message.
+
+The call to the user mode helper is trickier.  How do we setup the
+proper user space context.
+
+None of this is fundamentally hard just different work, for a different
+day.
 
 Eric
