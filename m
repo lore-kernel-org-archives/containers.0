@@ -1,14 +1,13 @@
-From: Daisuke Nishimura <nishimura-YQH0OdQVrdy45+QrQBaojngSJqDPrsil@public.gmane.org>
-Subject: Re: [PATCH -mm 5/5] swapcgroup (v3): implement force_empty
-Date: Fri, 4 Jul 2008 16:56:05 +0900
-Message-ID: <20080704165605.ca69850b.nishimura@mxp.nes.nec.co.jp>
-References: <20080704162629.b06b6810.nishimura@mxp.nes.nec.co.jp>
-	<20080704074828.330DC5A19@siro.lan>
+From: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+Subject: Re: [PATCH -mm 0/5] swapcgroup (v3)
+Date: Fri, 4 Jul 2008 18:40:33 +0900
+Message-ID: <20080704184033.7cac4b69.kamezawa.hiroyu@jp.fujitsu.com>
+References: <20080704151536.e5384231.nishimura@mxp.nes.nec.co.jp>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20080704074828.330DC5A19-Pcsii4f/SVk@public.gmane.org>
+In-Reply-To: <20080704151536.e5384231.nishimura-YQH0OdQVrdy45+QrQBaojngSJqDPrsil@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,60 +17,58 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: YAMAMOTO Takashi <yamamoto-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
-Cc: nishimura-YQH0OdQVrdy45+QrQBaojngSJqDPrsil@public.gmane.org, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, kosaki.motohiro-+CUm20s59erQFUHtdCDX3A@public.gmane.org, containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, hugh-DTz5qymZ9yRBDgjK7y7TUQ@public.gmane.org, xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
+To: Daisuke Nishimura <nishimura-YQH0OdQVrdy45+QrQBaojngSJqDPrsil@public.gmane.org>
+Cc: YAMAMOTO Takashi <yamamoto-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>, Linux MM <linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org>, KOSAKI Motohiro <kosaki.motohiro-+CUm20s59erQFUHtdCDX3A@public.gmane.org>, Pavel-FOgKQjlUJ6BQetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Hugh Dickins <hugh-DTz5qymZ9yRBDgjK7y7TUQ@public.gmane.org>, Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Fri,  4 Jul 2008 16:48:28 +0900 (JST), yamamoto-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org (YAMAMOTO Takashi) wrote:
-> > Hi, Yamamoto-san.
-> > 
-> > Thank you for your comment.
-> > 
-> > On Fri,  4 Jul 2008 15:54:31 +0900 (JST), yamamoto-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org (YAMAMOTO Takashi) wrote:
-> > > hi,
-> > > 
-> > > > +/*
-> > > > + * uncharge all the entries that are charged to the group.
-> > > > + */
-> > > > +void __swap_cgroup_force_empty(struct mem_cgroup *mem)
-> > > > +{
-> > > > +	struct swap_info_struct *p;
-> > > > +	int type;
-> > > > +
-> > > > +	spin_lock(&swap_lock);
-> > > > +	for (type = swap_list.head; type >= 0; type = swap_info[type].next) {
-> > > > +		p = swap_info + type;
-> > > > +
-> > > > +		if ((p->flags & SWP_ACTIVE) == SWP_ACTIVE) {
-> > > > +			unsigned int i = 0;
-> > > > +
-> > > > +			spin_unlock(&swap_lock);
-> > > 
-> > > what prevents the device from being swapoff'ed while you drop swap_lock?
-> > > 
-> > Nothing.
-> > 
-> > After searching the entry to be uncharged(find_next_to_unuse below),
-> > I recheck under swap_lock whether the entry is charged to the group.
-> > Even if the device is swapoff'ed, swap_off must have uncharged the entry,
-> > so I don't think it's needed anyway.
-> > 
-> > > YAMAMOTO Takashi
-> > > 
-> > > > +			while ((i = find_next_to_unuse(p, i, mem)) != 0) {
-> > > > +				spin_lock(&swap_lock);
-> > > > +				if (p->swap_map[i] && p->memcg[i] == mem)
-> > Ah, I think it should be added !p->swap_map to check the device has not
-> > been swapoff'ed.
-> 
-> find_next_to_unuse seems to have fragile assumptions and
-> can dereference p->swap_map as well.
-> 
-You're right.
-Thank you for pointing it out!
+On Fri, 4 Jul 2008 15:15:36 +0900
+Daisuke Nishimura <nishimura-YQH0OdQVrdy45+QrQBaojngSJqDPrsil@public.gmane.org> wrote:
 
-I'll consider more.
+> Hi.
+> 
+> This is new version of swapcgroup.
+> 
+> Major changes from previous version
+> - Rebased on 2.6.26-rc5-mm3.
+>   The new -mm has been released, but these patches
+>   can be applied on 2.6.26-rc8-mm1 too with only some offset warnings.
+>   I tested these patches on 2.6.26-rc5-mm3 with some fixes about memory,
+>   and it seems to work fine.
+> - (NEW) Implemented force_empty.
+>   Currently, it simply uncharges all the charges from the group.
+> 
+> Patches
+> - [1/5] add cgroup files
+> - [2/5] add a member to swap_info_struct
+> - [3/5] implement charge and uncharge
+> - [4/5] modify vm_swap_full() 
+> - [5/5] implement force_empty
+> 
+> ToDo(in my thought. Feel free to add some others here.)
+> - need some documentation
+>   Add to memory.txt? or create a new documentation file?
+> 
+Maybe new documentation file is better. 
+
+> - add option to disable only this feature
+>   I'm wondering if this option is needed.
+>   memcg has already the boot option to disable it.
+>   Is there any case where memory should be accounted but swap should not?
+
+On x86-32, area for vmalloc() is very small and array of swap_info_struct[]
+will use much amount of it. If vmalloc() area is too small, the kernel cannot
+load modules.
 
 
 Thanks,
-Daisuke Nishimura.
+-Kame
+
+
+> - hierarchy support
+> - move charges along with task
+>   Both of them need more discussion.
+> 
+> 
+> Thanks,
+> Daisuke Nishimura.
+> 
