@@ -1,14 +1,14 @@
-From: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
-Subject: Re: [PATCH -mm 4/5] swapcgroup (v3): modify vm_swap_full()
-Date: Fri, 4 Jul 2008 18:58:45 +0900
-Message-ID: <20080704185845.0baaca76.kamezawa.hiroyu@jp.fujitsu.com>
-References: <20080704151536.e5384231.nishimura@mxp.nes.nec.co.jp>
-	<20080704152244.7fc2ccd1.nishimura@mxp.nes.nec.co.jp>
+From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
+Subject: Re: Network namespaces without isolation
+Date: Fri, 04 Jul 2008 02:52:08 -0700
+Message-ID: <m1zloydliv.fsf@frodo.ebiederm.org>
+References: <200807020918.50997.andreas.aaen@tietoenator.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20080704152244.7fc2ccd1.nishimura-YQH0OdQVrdy45+QrQBaojngSJqDPrsil@public.gmane.org>
+In-Reply-To: <200807020918.50997.andreas.aaen-546VmZ+UeKYX2WXlbB3fKg@public.gmane.org> (Andreas
+	B. Aaen's message of "Wed, 2 Jul 2008 09:18:50 +0200")
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,208 +18,63 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Daisuke Nishimura <nishimura-YQH0OdQVrdy45+QrQBaojngSJqDPrsil@public.gmane.org>
-Cc: Lee Schermerhorn <Lee.Schermerhorn-VXdhtT5mjnY@public.gmane.org>, Rik van Riel <riel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, YAMAMOTO Takashi <yamamoto-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>, Linux MM <linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org>, KOSAKI Motohiro <kosaki.motohiro-+CUm20s59erQFUHtdCDX3A@public.gmane.org>, Pavel-FOgKQjlUJ6BQetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Hugh Dickins <hugh-DTz5qymZ9yRBDgjK7y7TUQ@public.gmane.org>, Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+To: Andreas B Aaen <andreas.aaen-546VmZ+UeKYX2WXlbB3fKg@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Fri, 4 Jul 2008 15:22:44 +0900
-Daisuke Nishimura <nishimura-YQH0OdQVrdy45+QrQBaojngSJqDPrsil@public.gmane.org> wrote:
+Andreas B Aaen <andreas.aaen-546VmZ+UeKYX2WXlbB3fKg@public.gmane.org> writes:
 
->  /* Swap 50% full? Release swapcache more aggressively.. */
-> -#define vm_swap_full() (nr_swap_pages*2 < total_swap_pages)
-> +#define vm_swap_full(memcg) ((nr_swap_pages*2 < total_swap_pages) \
-> +				|| swap_cgroup_vm_swap_full(memcg))
-> +
->  
-Maybe nitpick but I like 
-==
-  vm_swap_full(page)	((nr_swap_pages *2 < total_swap_pages)
-				|| swap_cgroup_vm_swap_full_page(page))
-==
-rather than vm_swap_full(memcg)
+> Hi,
+>
+> I am looking into the network namespace implementation because I need an IP 
+> stack that is capable of talking with a number of separate IP nets with 
+> possible overlapping IP adresses. My connection to each separate IP-net is 
+> through a tunnel e.g. a VLAN interface.
+>
+> A special application will then be able to listen to traffic on all the nets 
+> through a socket option SO_NS that sets the namespace to talk/listen to for a 
+> particular socket. For this to work network namespaces needs to be indexed.
 
-And could you change this to inline funcition ?
+Answering part of your question.  As currently designed you can use multiple
+network namespaces in a single task, and you can place each vlan interface
+in different network namespace.  However the current model is most cumbersome
+for doing so.
 
->  /* linux/mm/page_alloc.c */
->  extern unsigned long totalram_pages;
-> diff --git a/mm/memcontrol.c b/mm/memcontrol.c
-> index d16d0a5..160fca1 100644
-> --- a/mm/memcontrol.c
-> +++ b/mm/memcontrol.c
-> @@ -1296,5 +1296,23 @@ void swap_cgroup_uncharge(struct swap_info_struct *si,
->  		css_put(&mem->css);
->  	}
->  }
-> +
-> +int swap_cgroup_vm_swap_full(struct mem_cgroup *memcg)
-> +{
-> +	u64 usage;
-> +	u64 limit;
-> +
-> +	if (memcg)
-> +		css_get(&memcg->css);
-> +	else
-> +		return 0;
-> +
-> +	usage = res_counter_read_u64(&memcg->swap_res, RES_USAGE);
-> +	limit = res_counter_read_u64(&memcg->swap_res, RES_LIMIT);
-> +
-> +	css_put(&memcg->css);
-> +
-> +	return usage * 2 > limit;
-> +}
->  #endif
->  
+You can use unshare instead of clone which is a little easier.
 
-How about this under above my changes ?
-==
-int memcg_swap_full(struct mem_cgroup *mem)
-{
-	if (!mem)
-		return 0;
-	usage = res_counter_read_u64(&memcg->swap_res, RES_USAGE);
-	limit = res_counter_read_u64(&memcg->swap_res, RES_LIMIT);
-	
-	return (usage *2 > limit);
-}
+A socket option sounds like a nice idea.
 
-int swap_cgroup_vm_swap_full_page(struct page *page)
-{
-	struct page_cgroup *pc;
-	int ret = 0;
+The two challenges are what names to use to refer to network namespaces
+and how to get network namespaces to persist.
 
-	if (mem_cgroup_subsys.disabled)
-		return 0;
+There have been a number of discussions about identifiers none of which
+have led to any sort of agreement.  One of the goals in the design is
+that we don't introduce new global identifiers allowing us to ultimately
+have nested containers.
 
-	if (!PageSwapCache(page))
-		return 0;
+So far we have been referring to namespaces indirectly by the pids of the
+processes which are using them.
 
-	entry.val = page_private(page);
-	p = swap_info_get(entry);
-	if (!p)
-		goto out;
-	
-	mem = p->memcg[swp_offset(entry)];
-	/* becasue we get swap_lock here, access to memcg is safe.*/
-	ret = memcg_swap_full(mem);
-	spin_unlock(&swap_lock);
-out:
-	return ret;
-} 
-==
+> It would also be nice to be able to see the network statistics from all the 
+> namespaces through the proc filesystem at least in an uncloned (isolated) 
+> namespace.
 
-Thanks,
--Kame
+Currently this is possible by looking at /proc/<pid>/net.
 
+> So you would be able to see the network statistics in /proc/net/ns/<index>/
 
+One of the things we have tried to do is to keep the number of new interfaces
+to a minimum.
 
-> diff --git a/mm/memory.c b/mm/memory.c
-> index 536d748..afcf737 100644
-> --- a/mm/memory.c
-> +++ b/mm/memory.c
-> @@ -2230,7 +2230,9 @@ static int do_swap_page(struct mm_struct *mm, struct vm_area_struct *vma,
->  	page_add_anon_rmap(page, vma, address);
->  
->  	swap_free(entry);
-> -	if (vm_swap_full() || (vma->vm_flags & VM_LOCKED) || PageMlocked(page))
-> +	if (vm_swap_full(page_to_memcg(page))
-> +		|| (vma->vm_flags & VM_LOCKED)
-> +		|| PageMlocked(page))
->  		remove_exclusive_swap_page(page);
->  	unlock_page(page);
->  
-> diff --git a/mm/swapfile.c b/mm/swapfile.c
-> index 57798c5..6a863bc 100644
-> --- a/mm/swapfile.c
-> +++ b/mm/swapfile.c
-> @@ -28,6 +28,7 @@
->  #include <linux/capability.h>
->  #include <linux/syscalls.h>
->  #include <linux/memcontrol.h>
-> +#include <linux/cgroup.h>
->  
->  #include <asm/pgtable.h>
->  #include <asm/tlbflush.h>
-> @@ -447,7 +448,8 @@ void free_swap_and_cache(swp_entry_t entry)
->  		/* Only cache user (+us), or swap space full? Free it! */
->  		/* Also recheck PageSwapCache after page is locked (above) */
->  		if (PageSwapCache(page) && !PageWriteback(page) &&
-> -					(one_user || vm_swap_full())) {
-> +					(one_user
-> +					|| vm_swap_full(page_to_memcg(page)))) {
->  			delete_from_swap_cache(page);
->  			SetPageDirty(page);
->  		}
-> @@ -1889,3 +1891,37 @@ int valid_swaphandles(swp_entry_t entry, unsigned long *offset)
->  	*offset = ++toff;
->  	return nr_pages? ++nr_pages: 0;
->  }
-> +
-> +#ifdef CONFIG_CGROUP_SWAP_RES_CTLR
-> +/*
-> + * returns mem_cgroup to which the swap cache page is charged as swap.
-> + * should be called with the page locked.
-> + */
-> +struct mem_cgroup *page_to_memcg(struct page *page)
-> +{
-> +	struct swap_info_struct *p;
-> +	struct mem_cgroup *mem = NULL;
-> +	swp_entry_t entry;
-> +
-> +	BUG_ON(!PageLocked(page));
-> +
-> +	if (mem_cgroup_subsys.disabled)
-> +		goto out;
-> +
-> +	if (!PageSwapCache(page))
-> +		goto out;
-> +
-> +	entry.val = page_private(page);
-> +	p = swap_info_get(entry);
-> +	if (!p)
-> +		goto out;
-> +
-> +	mem = p->memcg[swp_offset(entry)];
-> +
-> +	spin_unlock(&swap_lock);
-> +
-> +out:
-> +	return mem;
-> +}
+> It should be said that we have an implementation of all this already, but NOT 
+> based on network namespaces and for elder kernels. We don't want to forward 
+> port this, put instead add a few features to the network namespace 
+> implementation to be able to fullfill the requirement of our application: 
+> talk to a number of IP networks with possible overlapping IP addresses.
 
+If we can work out the details on how to do that cleanly it seems totally
+reasonable to enhance network namespaces in that direction.  You are not
+the first to express those kind of requirements, and probably won't be the
+last.
 
-
-> +#endif
-> +
-> diff --git a/mm/vmscan.c b/mm/vmscan.c
-> index 9a5e423..ac45993 100644
-> --- a/mm/vmscan.c
-> +++ b/mm/vmscan.c
-> @@ -752,7 +752,7 @@ cull_mlocked:
->  
->  activate_locked:
->  		/* Not a candidate for swapping, so reclaim swap space. */
-> -		if (PageSwapCache(page) && vm_swap_full())
-> +		if (PageSwapCache(page) && vm_swap_full(page_to_memcg(page)))
->  			remove_exclusive_swap_page_ref(page);
->  		VM_BUG_ON(PageActive(page));
->  		SetPageActive(page);
-> @@ -1317,7 +1317,7 @@ static void shrink_active_list(unsigned long nr_pages, struct zone *zone,
->  			__mod_zone_page_state(zone, NR_LRU_BASE + lru, pgmoved);
->  			pgmoved = 0;
->  			spin_unlock_irq(&zone->lru_lock);
-> -			if (vm_swap_full())
-> +			if (vm_swap_full(sc->mem_cgroup))
->  				pagevec_swap_free(&pvec);
->  			__pagevec_release(&pvec);
->  			spin_lock_irq(&zone->lru_lock);
-> @@ -1328,7 +1328,7 @@ static void shrink_active_list(unsigned long nr_pages, struct zone *zone,
->  	__count_zone_vm_events(PGREFILL, zone, pgscanned);
->  	__count_vm_events(PGDEACTIVATE, pgdeactivate);
->  	spin_unlock_irq(&zone->lru_lock);
-> -	if (vm_swap_full())
-> +	if (vm_swap_full(sc->mem_cgroup))
->  		pagevec_swap_free(&pvec);
->  
->  	pagevec_release(&pvec);
-> 
+Eric
