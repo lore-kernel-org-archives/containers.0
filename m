@@ -1,7 +1,7 @@
 From: Andrea Righi <righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: [PATCH 1/3] i/o bandwidth controller documentation
-Date: Fri,  4 Jul 2008 15:58:46 +0200
-Message-ID: <1215179928-9767-2-git-send-email-righi.andrea__33446.8599678532$1215180058$gmane$org@gmail.com>
+Subject: [PATCH 2/3] i/o bandwidth controller infrastructure
+Date: Fri,  4 Jul 2008 15:58:47 +0200
+Message-ID: <1215179928-9767-3-git-send-email-righi.andrea@gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -21,285 +21,620 @@ To: Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, Pau
 Cc: axboe-tSWWG44O7X1aa/9Udqfwiw@public.gmane.org, randy.dunlap-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Carl Henrik Lunde <chlunde-om2ZC0WAoZIXWF+eFR7m5Q@public.gmane.org>, Divyesh Shah <dpshah-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, matt-cT2on/YLNlBWk0Htik3J/w@public.gmane.org, roberto-5KDOxZqKugI@public.gmane.org, subrata-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, eric.rannaud-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, Andrea Righi <righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Documentation of the block device I/O bandwidth controller: description, usage,
-advantages and design.
+This is the core io-throttle kernel infrastructure. It creates the basic
+interfaces to cgroups and implements the I/O measurement and throttling
+functions.
 
 Signed-off-by: Andrea Righi <righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 ---
- Documentation/controllers/io-throttle.txt |  265 +++++++++++++++++++++++++++++
- 1 files changed, 265 insertions(+), 0 deletions(-)
- create mode 100644 Documentation/controllers/io-throttle.txt
+ block/Makefile                  |    2 +
+ block/blk-io-throttle.c         |  529 +++++++++++++++++++++++++++++++++++++++
+ include/linux/blk-io-throttle.h |   14 +
+ include/linux/cgroup_subsys.h   |    6 +
+ init/Kconfig                    |   10 +
+ 5 files changed, 561 insertions(+), 0 deletions(-)
+ create mode 100644 block/blk-io-throttle.c
+ create mode 100644 include/linux/blk-io-throttle.h
 
-diff --git a/Documentation/controllers/io-throttle.txt b/Documentation/controllers/io-throttle.txt
+diff --git a/block/Makefile b/block/Makefile
+index 5a43c7d..8dec69b 100644
+--- a/block/Makefile
++++ b/block/Makefile
+@@ -14,3 +14,5 @@ obj-$(CONFIG_IOSCHED_CFQ)	+= cfq-iosched.o
+ 
+ obj-$(CONFIG_BLK_DEV_IO_TRACE)	+= blktrace.o
+ obj-$(CONFIG_BLOCK_COMPAT)	+= compat_ioctl.o
++
++obj-$(CONFIG_CGROUP_IO_THROTTLE)	+= blk-io-throttle.o
+diff --git a/block/blk-io-throttle.c b/block/blk-io-throttle.c
 new file mode 100644
-index 0000000..578d78e
+index 0000000..caf740a
 --- /dev/null
-+++ b/Documentation/controllers/io-throttle.txt
-@@ -0,0 +1,265 @@
++++ b/block/blk-io-throttle.c
+@@ -0,0 +1,529 @@
++/*
++ * blk-io-throttle.c
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public
++ * License as published by the Free Software Foundation; either
++ * version 2 of the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++ * General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public
++ * License along with this program; if not, write to the
++ * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
++ * Boston, MA 021110-1307, USA.
++ *
++ * Copyright (C) 2008 Andrea Righi <righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
++ */
 +
-+               Block device I/O bandwidth controller
++#include <linux/init.h>
++#include <linux/module.h>
++#include <linux/cgroup.h>
++#include <linux/slab.h>
++#include <linux/gfp.h>
++#include <linux/err.h>
++#include <linux/sched.h>
++#include <linux/genhd.h>
++#include <linux/fs.h>
++#include <linux/jiffies.h>
++#include <linux/hardirq.h>
++#include <linux/list.h>
++#include <linux/spinlock.h>
++#include <linux/uaccess.h>
++#include <linux/blk-io-throttle.h>
 +
-+1. Description
++/**
++ * struct iothrottle_node - throttling rule of a single block device
++ * @node: list of per block device throttling rules
++ * @dev: block device number, used as key in the list
++ * @iorate: max i/o bandwidth (in bytes/s)
++ * @strategy: throttling strategy (0 = leaky bucket, 1 = token bucket)
++ * @timestamp: timestamp of the last I/O request (in jiffies)
++ * @stat: i/o activity counter (leaky bucket only)
++ * @bucket_size: bucket size in bytes (token bucket only)
++ * @token: token counter (token bucket only)
++ *
++ * Define a i/o throttling rule for a single block device.
++ *
++ * NOTE: limiting rules always refer to dev_t; if a block device is unplugged
++ * the limiting rules defined for that device persist and they are still valid
++ * if a new device is plugged and it uses the same dev_t number.
++ */
++struct iothrottle_node {
++	struct list_head node;
++	dev_t dev;
++	u64 iorate;
++	long strategy;
++	unsigned long timestamp;
++	atomic_long_t stat;
++	s64 bucket_size;
++	atomic_long_t token;
++};
 +
-+This controller allows to limit the I/O bandwidth of specific block devices for
-+specific process containers (cgroups) imposing additional delays on I/O
-+requests for those processes that exceed the limits defined in the control
-+group filesystem.
++/**
++ * struct iothrottle - throttling rules for a cgroup
++ * @css: pointer to the cgroup state
++ * @lock: spinlock used to protect write operations in the list
++ * @list: list of iothrottle_node elements
++ *
++ * Define multiple per-block device i/o throttling rules.
++ * Note: the list of the throttling rules is protected by RCU locking.
++ */
++struct iothrottle {
++	struct cgroup_subsys_state css;
++	spinlock_t lock;
++	struct list_head list;
++};
 +
-+Bandwidth limiting rules offer better control over QoS with respect to priority
-+or weight-based solutions that only give information about applications'
-+relative performance requirements. Nevertheless, priority based solutions are
-+affected by performance bursts, when only low-priority requests are submitted
-+to a general purpose resource dispatcher.
++static inline struct iothrottle *cgroup_to_iothrottle(struct cgroup *cont)
++{
++	return container_of(cgroup_subsys_state(cont, iothrottle_subsys_id),
++			    struct iothrottle, css);
++}
 +
-+The goal of the I/O bandwidth controller is to improve performance
-+predictability and provide performance isolation of different control groups
-+sharing the same block devices.
++static inline struct iothrottle *task_to_iothrottle(struct task_struct *task)
++{
++	return container_of(task_subsys_state(task, iothrottle_subsys_id),
++			    struct iothrottle, css);
++}
 +
-+NOTE #1: If you're looking for a way to improve the overall throughput of the
-+system probably you should use a different solution.
++/*
++ * Note: called with rcu_read_lock() held.
++ */
++static struct iothrottle_node *
++iothrottle_search_node(const struct iothrottle *iot, dev_t dev)
++{
++	struct iothrottle_node *n;
 +
-+NOTE #2: The current implementation does not guarantee minimum bandwidth
-+levels, the QoS is implemented only slowing down I/O "traffic" that exceeds the
-+limits specified by the user; minimum I/O rate thresholds are supposed to be
-+guaranteed if the user configures a proper I/O bandwidth partitioning of the
-+block devices shared among the different cgroups (theoretically if the sum of
-+all the single limits defined for a block device doesn't exceed the total I/O
-+bandwidth of that device).
++	list_for_each_entry_rcu(n, &iot->list, node)
++		if (n->dev == dev)
++			return n;
++	return NULL;
++}
 +
-+2. User Interface
++/*
++ * Note: called with iot->lock held.
++ */
++static inline void iothrottle_insert_node(struct iothrottle *iot,
++						struct iothrottle_node *n)
++{
++	list_add_rcu(&n->node, &iot->list);
++}
 +
-+A new I/O bandwidth limitation rule is described using the file
-+blockio.bandwidth.
++/*
++ * Note: called with iot->lock held.
++ */
++static inline struct iothrottle_node *
++iothrottle_replace_node(struct iothrottle *iot, struct iothrottle_node *old,
++			struct iothrottle_node *new)
++{
++	list_replace_rcu(&old->node, &new->node);
++	return old;
++}
 +
-+The same file can be used to set multiple rules for different block devices
-+relative to the same cgroup.
++/*
++ * Note: called with iot->lock held.
++ */
++static struct iothrottle_node *
++iothrottle_delete_node(struct iothrottle *iot, dev_t dev)
++{
++	struct iothrottle_node *n;
 +
-+The syntax to configure a limiting rule is the following:
++	list_for_each_entry_rcu(n, &iot->list, node)
++		if (n->dev == dev) {
++			list_del_rcu(&n->node);
++			return n;
++		}
++	return NULL;
++}
 +
-+# /bin/echo DEV:BW:STRATEGY:BUCKET_SIZE > CGROUP/blockio.bandwidth
++/*
++ * Note: called from kernel/cgroup.c with cgroup_lock() held.
++ */
++static struct cgroup_subsys_state *
++iothrottle_create(struct cgroup_subsys *ss, struct cgroup *cont)
++{
++	struct iothrottle *iot;
 +
-+- DEV is the name of the device the limiting rule is applied to.
++	iot = kmalloc(sizeof(*iot), GFP_KERNEL);
++	if (unlikely(!iot))
++		return ERR_PTR(-ENOMEM);
 +
-+- BW is the maximum I/O bandwidth on DEVICE allowed by CGROUP; bandwidth must
-+  be expressed in bytes/s.
++	INIT_LIST_HEAD(&iot->list);
++	spin_lock_init(&iot->lock);
 +
-+- STRATEGY is the throttling strategy used to throttle the applications' I/O
-+  requests from/to device DEV. At the moment two different strategies can be
-+  used:
++	return &iot->css;
++}
 +
-+  0 = leaky bucket: the controller accepts at most B bytes (B = BW * time);
-+		    further I/O requests are delayed scheduling a timeout for
-+                    the tasks that made those requests.
++/*
++ * Note: called from kernel/cgroup.c with cgroup_lock() held.
++ */
++static void iothrottle_destroy(struct cgroup_subsys *ss, struct cgroup *cont)
++{
++	struct iothrottle_node *n, *p;
++	struct iothrottle *iot = cgroup_to_iothrottle(cont);
 +
-+            Different I/O flow
-+               | | |
-+               | v |
-+               |   v
-+               v
-+              .......
-+              \     /
-+               \   /  leaky-bucket
-+                ---
-+                |||
-+                vvv
-+             Smoothed I/O flow
++	/*
++	 * don't worry about locking here, at this point there must be not any
++	 * reference to the list.
++	 */
++	list_for_each_entry_safe(n, p, &iot->list, node)
++		kfree(n);
++	kfree(iot);
++}
 +
-+  1 = token bucket: BW tokens are added to the bucket every seconds; the bucket
-+		    can hold at the most BUCKET_SIZE tokens; I/O requests are
-+		    accepted if there are available tokens in the bucket; when
-+		    a request of N bytes arrives N tokens are removed from the
-+		    bucket; if fewer than N tokens are available the request is
-+		    delayed until a sufficient amount of token is available in
-+                    the bucket.
++static ssize_t iothrottle_read(struct cgroup *cont, struct cftype *cft,
++				struct file *file, char __user *userbuf,
++				size_t nbytes, loff_t *ppos)
++{
++	struct iothrottle *iot;
++	char *buffer;
++	int s = 0;
++	struct iothrottle_node *n;
++	ssize_t ret;
 +
-+            Tokens (I/O rate)
-+                o
-+                o
-+                o
-+              ....... <--.
-+              \     /    | Bucket size (burst limit)
-+               \ooo/     |
-+                ---   <--'
-+                 |ooo
-+    Incoming --->|---> Conforming
-+    I/O          |oo   I/O
-+    requests  -->|-->  requests
-+                 |
-+            ---->|
++	buffer = kmalloc(nbytes + 1, GFP_KERNEL);
++	if (!buffer)
++		return -ENOMEM;
 +
-+  Leaky bucket is more precise than token bucket to respect the bandwidth
-+  limits, because bursty workloads are always smoothed. Token bucket, instead,
-+  allows a small irregularity degree in the I/O flows (burst limit), and, for
-+  this, it is better in terms of efficiency (bursty workloads are not smoothed
-+  when there are sufficient tokens in the bucket).
++	cgroup_lock();
++	if (cgroup_is_removed(cont)) {
++		ret = -ENODEV;
++		goto out;
++	}
 +
-+- BUCKET_SIZE is used only with token bucket (STRATEGY == 1) and defines the
-+  size of the bucket in bytes.
++	iot = cgroup_to_iothrottle(cont);
++	rcu_read_lock();
++	list_for_each_entry_rcu(n, &iot->list, node) {
++		unsigned long delta;
 +
-+- CGROUP is the name of the limited process container.
++		BUG_ON(!n->dev);
++		delta = jiffies_to_msecs((long)jiffies - (long)n->timestamp);
++		s += scnprintf(buffer + s, nbytes - s,
++				"%u %u %llu %li %li %lli %li %lu\n",
++				MAJOR(n->dev), MINOR(n->dev), n->iorate,
++				n->strategy, atomic_long_read(&n->stat),
++				n->bucket_size, atomic_long_read(&n->token),
++				delta);
++	}
++	rcu_read_unlock();
++	ret = simple_read_from_buffer(userbuf, nbytes, ppos, buffer, s);
++out:
++	cgroup_unlock();
++	kfree(buffer);
++	return ret;
++}
 +
-+All the defined rules and statistics for a specific cgroup can be shown reading
-+the file blockio.bandwidth. The following syntax is used:
++static dev_t devname2dev_t(const char *buf)
++{
++	struct block_device *bdev;
++	dev_t dev = 0;
++	struct gendisk *disk;
++	int part;
 +
-+$ cat CGROUP/blockio.bandwidth
-+MAJOR MINOR BW STRATEGY LEAKY_STAT BUCKET_SIZE BUCKET_FILL TIME_DELTA
++	/* use a lookup to validate the block device */
++	bdev = lookup_bdev(buf);
++	if (IS_ERR(bdev))
++		return 0;
 +
-+- MAJOR is the major device number of DEV (defined above)
++	/* only entire devices are allowed, not single partitions */
++	disk = get_gendisk(bdev->bd_dev, &part);
++	if (disk && !part) {
++		BUG_ON(!bdev->bd_inode);
++		dev = bdev->bd_inode->i_rdev;
++	}
++	bdput(bdev);
 +
-+- MINOR is the minor device number of DEV (defined above)
++	return dev;
++}
 +
-+- BW, STRATEGY and BUCKET_SIZE are the same parameters defined above
++/*
++ * The userspace input string must use the following syntax:
++ *
++ * device:bw-limit:strategy:bucket-size
++ */
++static int iothrottle_parse_args(char *buf, size_t nbytes,
++					dev_t *dev, u64 *iorate,
++					long *strategy, s64 *bucket_size)
++{
++	char *ioratep, *strategyp, *bucket_sizep;
++	int ret;
 +
-+- LEAKY_STAT is the amount of bytes currently allowed by the I/O bandwidth
-+  controller (only used with leaky bucket strategy - STRATEGY == 0)
++	ioratep = memchr(buf, ':', nbytes);
++	if (!ioratep)
++		return -EINVAL;
++	*ioratep++ = '\0';
 +
-+- BUCKET_FILL represents the amount of tokens present in the bucket (only used
-+  with token bucket strategy - STRATEGY == 1)
++	strategyp = memchr(ioratep, ':', buf + nbytes - ioratep);
++	if (!strategyp)
++		return -EINVAL;
++	*strategyp++ = '\0';
 +
-+- TIME_DELTA can be one of the following:
-+  - the amount of jiffies elapsed from the last I/O request (token bucket)
-+  - the amount of jiffies during which the bytes given by LEAKY_STAT have been
-+    accumulated (leaky bucket)
++	bucket_sizep = memchr(strategyp, ':', buf + nbytes - strategyp);
++	if (!bucket_sizep)
++		return -EINVAL;
++	*bucket_sizep++ = '\0';
 +
-+Multiple per-block device rules are reported in multiple rows
-+(DEVi, i = 1 ..  n):
++	/* i/o bandwidth limit (0 to delete a limiting rule) */
++	ret = strict_strtoull(ioratep, 10, iorate);
++	if (ret < 0)
++		return ret;
++	*iorate = ALIGN(*iorate, 1024);
 +
-+$ cat CGROUP/blockio.bandwidth
-+MAJOR1 MINOR1 BW1 STRATEGY1 LEAKY_STAT1 BUCKET_SIZE1 BUCKET_FILL1 TIME_DELTA1
-+MAJOR1 MINOR1 BW2 STRATEGY2 LEAKY_STAT2 BUCKET_SIZE2 BUCKET_FILL2 TIME_DELTA2
-+...
-+MAJORn MINORn BWn STRATEGYn LEAKY_STATn BUCKET_SIZEn BUCKET_FILLn TIME_DELTAn
++	/* throttling strategy */
++	ret = strict_strtol(strategyp, 10, strategy);
++	if (ret < 0)
++		return ret;
 +
-+I/O bandwidth limiting rules can be removed setting the BW value to 0.
++	/* bucket size */
++	ret = strict_strtoll(bucket_sizep, 10, bucket_size);
++	if (ret < 0)
++		return ret;
++	if (*bucket_size < 0)
++		return -EINVAL;
++	*bucket_size = ALIGN(*bucket_size, 1024);
 +
-+Examples:
++	/* block device number */
++	*dev = devname2dev_t(buf);
++	if (!*dev)
++		return -EINVAL;
 +
-+* Mount the cgroup filesystem (blockio subsystem):
-+  # mkdir /mnt/cgroup
-+  # mount -t cgroup -oblockio blockio /mnt/cgroup
++	return 0;
++}
 +
-+* Instantiate the new cgroup "foo":
-+  # mkdir /mnt/cgroup/foo
-+  --> the cgroup foo has been created
++static ssize_t iothrottle_write(struct cgroup *cont, struct cftype *cft,
++				struct file *file, const char __user *userbuf,
++				size_t nbytes, loff_t *ppos)
++{
++	struct iothrottle *iot;
++	struct iothrottle_node *n, *newn = NULL;
++	char *buffer, *s;
++	dev_t dev;
++	u64 iorate;
++	long strategy;
++	s64 bucket_size;
++	int ret;
 +
-+* Add the current shell process to the cgroup "foo":
-+  # /bin/echo $$ > /mnt/cgroup/foo/tasks
-+  --> the current shell has been added to the cgroup "foo"
++	if (!nbytes)
++		return -EINVAL;
 +
-+* Give maximum 1MiB/s of I/O bandwidth on /dev/sda for the cgroup "foo", using
-+  leaky bucket throttling strategy:
-+  # /bin/echo /dev/sda:$((1024 * 1024)):0:0 > \
-+  > /mnt/cgroup/foo/blockio.bandwidth
-+  # sh
-+  --> the subshell 'sh' is running in cgroup "foo" and it can use a maximum I/O
-+      bandwidth of 1MiB/s on /dev/sda
++	/* Upper limit on largest io-throttle rule string user might write. */
++	if (nbytes > 1024)
++		return -E2BIG;
 +
-+* Give maximum 8MiB/s of I/O bandwidth on /dev/sdb for the cgroup "foo", using
-+  token bucket throttling strategy, bucket size = 8MB:
-+  # /bin/echo /dev/sdb:$((8 * 1024 * 1024)):1:$((8 * 1024 * 1024)) > \
-+  > /mnt/cgroup/foo/blockio.bandwidth
-+  # sh
-+  --> the subshell 'sh' is running in cgroup "foo" and it can use a maximum I/O
-+      bandwidth of 1MiB/s on /dev/sda (controlled by leaky bucket throttling)
-+      and 8MiB/s on /dev/sdb (controlled by token bucket throttling)
++	buffer = kmalloc(nbytes + 1, GFP_KERNEL);
++	if (!buffer)
++		return -ENOMEM;
 +
-+* Run a benchmark doing I/O on /dev/sda and /dev/sdb; I/O limits and usage
-+  defined for cgroup "foo" can be shown as following:
-+  # cat /mnt/cgroup/foo/blockio.bandwidth
-+  8 16 8388608 1 0 8388608 -522560 48
-+  8 0 1048576 0 737280 0 0 216
++	ret = strncpy_from_user(buffer, userbuf, nbytes);
++	if (ret < 0)
++		goto out1;
++	buffer[nbytes] = '\0';
++	s = strstrip(buffer);
 +
-+* Extend the maximum I/O bandwidth for the cgroup "foo" to 16MiB/s on /dev/sda:
-+  # /bin/echo /dev/sda:$((16 * 1024 * 1024)):0:0 > \
-+  > /mnt/cgroup/foo/blockio.bandwidth
-+  # cat /mnt/cgroup/foo/blockio.bandwidth
-+  8 16 8388608 1 0 8388608 -84432 206436
-+  8 0 16777216 0 0 0 0 15212
++	ret = iothrottle_parse_args(s, nbytes, &dev, &iorate,
++					&strategy, &bucket_size);
++	if (ret)
++		goto out1;
 +
-+* Remove limiting rule on /dev/sdb for cgroup "foo":
-+  # /bin/echo /dev/sdb:0:0:0 > /mnt/cgroup/foo/blockio.bandwidth
-+  # cat /mnt/cgroup/foo/blockio.bandwidth
-+  8 0 16777216 0 0 0 0 110388
++	if (iorate) {
++		newn = kmalloc(sizeof(*newn), GFP_KERNEL);
++		if (!newn) {
++			ret = -ENOMEM;
++			goto out1;
++		}
++		newn->dev = dev;
++		newn->iorate = iorate;
++		newn->strategy = strategy;
++		newn->bucket_size = bucket_size;
++		newn->timestamp = jiffies;
++		atomic_long_set(&newn->stat, 0);
++		atomic_long_set(&newn->token, 0);
++	}
 +
-+3. Advantages of providing this feature
++	cgroup_lock();
++	if (cgroup_is_removed(cont)) {
++		ret = -ENODEV;
++		goto out2;
++	}
 +
-+* Allow I/O traffic shaping for block device shared among different cgroups
-+* Improve I/O performance predictability on block devices shared between
-+  different cgroups
-+* Limiting rules do not depend of the particular I/O scheduler (anticipatory,
-+  deadline, CFQ, noop) and/or the type of the underlying block devices
-+* The bandwidth limitations are guaranteed both for synchronous and
-+  asynchronous operations, even the I/O passing through the page cache or
-+  buffers and not only direct I/O (see below for details)
-+* It is possible to implement a simple user-space application to dynamically
-+  adjust the I/O workload of different process containers at run-time,
-+  according to the particular users' requirements and applications' performance
-+  constraints
-+* It is even possible to implement event-based performance throttling
-+  mechanisms; for example the same user-space application could actively
-+  throttle the I/O bandwidth to reduce power consumption when the battery of a
-+  mobile device is running low (power throttling) or when the temperature of a
-+  hardware component is too high (thermal throttling)
-+* Provides zero overhead for non block device I/O bandwidth controller users
++	iot = cgroup_to_iothrottle(cont);
++	spin_lock(&iot->lock);
++	if (!iorate) {
++		/* Delete a block device limiting rule */
++		n = iothrottle_delete_node(iot, dev);
++		goto out3;
++	}
++	n = iothrottle_search_node(iot, dev);
++	if (n) {
++		/* Update a block device limiting rule */
++		iothrottle_replace_node(iot, n, newn);
++		goto out3;
++	}
++	/* Add a new block device limiting rule */
++	iothrottle_insert_node(iot, newn);
++out3:
++	ret = nbytes;
++	spin_unlock(&iot->lock);
++	if (n) {
++		synchronize_rcu();
++		kfree(n);
++	}
++out2:
++	cgroup_unlock();
++out1:
++	kfree(buffer);
++	return ret;
++}
 +
-+4. Design
++static struct cftype files[] = {
++	{
++		.name = "bandwidth",
++		.read = iothrottle_read,
++		.write = iothrottle_write,
++	},
++};
 +
-+The I/O throttling is performed imposing an explicit timeout, via
-+schedule_timeout_killable() on the processes that exceed the I/O bandwidth
-+dedicated to the cgroup they belong to. I/O accounting happens per cgroup.
++static int iothrottle_populate(struct cgroup_subsys *ss, struct cgroup *cont)
++{
++	return cgroup_add_files(cont, ss, files, ARRAY_SIZE(files));
++}
 +
-+It just works as expected for read operations: the real I/O activity is reduced
-+synchronously according to the defined limitations.
++struct cgroup_subsys iothrottle_subsys = {
++	.name = "blockio",
++	.create = iothrottle_create,
++	.destroy = iothrottle_destroy,
++	.populate = iothrottle_populate,
++	.subsys_id = iothrottle_subsys_id,
++};
 +
-+Write operations, instead, are modeled depending of the dirty pages ratio
-+(write throttling in memory), since the writes to the real block devices are
-+processed asynchronously by different kernel threads (pdflush). However, the
-+dirty pages ratio is directly proportional to the actual I/O that will be
-+performed on the real block device. So, due to the asynchronous transfers
-+through the page cache, the I/O throttling in memory can be considered a form
-+of anticipatory throttling to the underlying block devices.
++/*
++ * Note: called with rcu_read_lock() held.
++ */
++static unsigned long leaky_bucket(struct iothrottle_node *n, size_t bytes)
++{
++	unsigned long delta, t;
++	long sleep;
 +
-+Multiple re-writes in already dirtied page cache areas are not considered for
-+accounting the I/O activity. This is valid for multiple re-reads of pages
-+already present in the page cache as well.
++	/* Account the i/o activity */
++	atomic_long_add(bytes, &n->stat);
 +
-+This means that a process that re-writes and/or re-reads multiple times the
-+same blocks in a file (without re-creating it by truncate(), ftrunctate(),
-+creat(), etc.) is affected by the I/O limitations only for the actual I/O
-+performed to (or from) the underlying block devices.
++	/* Evaluate if we need to throttle the current process */
++	delta = (long)jiffies - (long)n->timestamp;
++	if (!delta)
++		return 0;
 +
-+Multiple rules for different block devices are stored in a linked list, using
-+the dev_t number of each block device as key to uniquely identify each element
-+of the list. RCU synchronization is used to protect the whole list structure,
-+since the elements in the list are not supposed to change frequently (they
-+change only when a new rule is defined or an old rule is removed or updated),
-+while the reads in the list occur at each operation that generates I/O. This
-+allows to provide zero overhead for cgroups that do not use any limitation.
++	/*
++	 * NOTE: n->iorate cannot be set to zero here, iorate can only change
++	 * via the userspace->kernel interface that in case of update fully
++	 * replaces the iothrottle_node pointer in the list, using the RCU way.
++	 */
++	t = usecs_to_jiffies(atomic_long_read(&n->stat)
++				* USEC_PER_SEC / n->iorate);
++	if (!t)
++		return 0;
 +
-+WARNING: per-block device limiting rules always refer to the dev_t device
-+number. If a block device is unplugged (i.e. a USB device) the limiting rules
-+defined for that device persist and they are still valid if a new device is
-+plugged in the system and it uses the same major and minor numbers.
++	sleep = t - delta;
++	if (unlikely(sleep > 0))
++		return sleep;
 +
-+5. Todo
++	/* Reset i/o statistics */
++	atomic_long_set(&n->stat, 0);
++	/*
++	 * NOTE: be sure i/o statistics have been resetted before updating the
++	 * timestamp, otherwise a very small time delta may possibly be read by
++	 * another CPU w.r.t. accounted i/o statistics, generating unnecessary
++	 * long sleeps.
++	 */
++	smp_wmb();
++	n->timestamp = jiffies;
++	return 0;
++}
 +
-+* Think an alternative design for general purpose usage; special purpose usage
-+  right now is restricted to improve I/O performance predictability and
-+  evaluate more precise response timings for applications doing I/O. To a large
-+  degree the block I/O bandwidth controller should implement a more complex
-+  logic to better evaluate real I/O operations cost, depending also on the
-+  particular block device profile (i.e. USB stick, optical drive, hard disk,
-+  etc.). This would also allow to appropriately account I/O cost for seeky
-+  workloads, respect to large stream workloads. Instead of looking at the
-+  request stream and try to predict how expensive the I/O cost will be, a
-+  totally different approach could be to collect request timings (start time /
-+  elapsed time) and based on collected informations, try to estimate the I/O
-+  cost and usage (idea proposed by Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>).
++/*
++ * Note: called with rcu_read_lock() held.
++ * XXX: need locking in order to evaluate a consistent sleep???
++ */
++static unsigned long token_bucket(struct iothrottle_node *n, size_t bytes)
++{
++	unsigned long iorate = n->iorate / MSEC_PER_SEC;
++	unsigned long delta;
++	long tok;
 +
-+* Correcly handle AIO: at the moment the approach is to make a task sleep also
-+  when doing asynchronous I/O. A more reasonable behaviour would be to return
-+  EAGAIN from aio_write()/aio_read()
-+  (reported by Eric Rannaud <eric.rannaud-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>).
++	BUG_ON(!iorate);
++
++	atomic_long_sub(bytes, &n->token);
++	delta = jiffies_to_msecs((long)jiffies - (long)n->timestamp);
++	n->timestamp = jiffies;
++	tok = atomic_long_read(&n->token);
++	if (delta && tok < n->bucket_size) {
++		tok += delta * iorate;
++		pr_debug("io-throttle: adding %lu tokens\n", delta * iorate);
++		if (tok > n->bucket_size)
++			tok = n->bucket_size;
++		atomic_long_set(&n->token, tok);
++	}
++	atomic_long_set(&n->token, tok);
++
++	return (tok < 0) ? msecs_to_jiffies(-tok / iorate) : 0;
++}
++
++/**
++ * cgroup_io_throttle() - account and throttle i/o activity
++ * @bdev:	block device involved for the i/o.
++ * @bytes:	size in bytes of the i/o operation.
++ * @can_sleep:	used to set to 1 if we're in a sleep()able context, 0
++ *		otherwise; into a non-sleep()able context we only account the
++ *		i/o activity without applying any throttling sleep.
++ *
++ * This is the core of the block device i/o bandwidth controller. This function
++ * must be called by any function that generates i/o activity (directly or
++ * indirectly). It provides both i/o accounting and throttling functionalities;
++ * throttling is disabled if @can_sleep is set to 0.
++ **/
++void cgroup_io_throttle(struct block_device *bdev, size_t bytes, int can_sleep)
++{
++	struct iothrottle *iot;
++	struct iothrottle_node *n;
++	dev_t dev;
++	unsigned long sleep;
++
++	if (unlikely(!bdev))
++		return;
++
++	iot = task_to_iothrottle(current);
++	if (unlikely(!iot))
++		return;
++
++	BUG_ON(!bdev->bd_inode || !bdev->bd_disk);
++	dev = MKDEV(MAJOR(bdev->bd_inode->i_rdev), bdev->bd_disk->first_minor);
++
++	rcu_read_lock();
++	n = iothrottle_search_node(iot, dev);
++	if (!n || !n->iorate) {
++		rcu_read_unlock();
++		return;
++	}
++	switch (n->strategy) {
++	case 0:
++		sleep = leaky_bucket(n, bytes);
++		break;
++	case 1:
++		sleep = token_bucket(n, bytes);
++		break;
++	default:
++		sleep = 0;
++	}
++	if (unlikely(can_sleep && sleep)) {
++		rcu_read_unlock();
++		pr_debug("io-throttle: task %p (%s) must sleep %lu jiffies\n",
++			 current, current->comm, sleep);
++		schedule_timeout_killable(sleep);
++		return;
++	}
++	rcu_read_unlock();
++}
++EXPORT_SYMBOL(cgroup_io_throttle);
+diff --git a/include/linux/blk-io-throttle.h b/include/linux/blk-io-throttle.h
+new file mode 100644
+index 0000000..0fe7430
+--- /dev/null
++++ b/include/linux/blk-io-throttle.h
+@@ -0,0 +1,14 @@
++#ifndef BLK_IO_THROTTLE_H
++#define BLK_IO_THROTTLE_H
++
++#ifdef CONFIG_CGROUP_IO_THROTTLE
++extern void
++cgroup_io_throttle(struct block_device *bdev, size_t bytes, int can_sleep);
++#else
++static inline void
++cgroup_io_throttle(struct block_device *bdev, size_t bytes, int can_sleep)
++{
++}
++#endif /* CONFIG_CGROUP_IO_THROTTLE */
++
++#endif /* BLK_IO_THROTTLE_H */
+diff --git a/include/linux/cgroup_subsys.h b/include/linux/cgroup_subsys.h
+index e287745..0caf3c2 100644
+--- a/include/linux/cgroup_subsys.h
++++ b/include/linux/cgroup_subsys.h
+@@ -48,3 +48,9 @@ SUBSYS(devices)
+ #endif
+ 
+ /* */
++
++#ifdef CONFIG_CGROUP_IO_THROTTLE
++SUBSYS(iothrottle)
++#endif
++
++/* */
+diff --git a/init/Kconfig b/init/Kconfig
+index 6199d11..3117d99 100644
+--- a/init/Kconfig
++++ b/init/Kconfig
+@@ -306,6 +306,16 @@ config CGROUP_DEVICE
+ 	  Provides a cgroup implementing whitelists for devices which
+ 	  a process in the cgroup can mknod or open.
+ 
++config CGROUP_IO_THROTTLE
++	bool "Enable cgroup I/O throttling (EXPERIMENTAL)"
++	depends on CGROUPS && EXPERIMENTAL
++	help
++	  This allows to limit the maximum I/O bandwidth for specific
++	  cgroup(s).
++	  See Documentation/controllers/io-throttle.txt for more information.
++
++	  If unsure, say N.
++
+ config CPUSETS
+ 	bool "Cpuset support"
+ 	depends on SMP && CGROUPS
 -- 
 1.5.4.3
