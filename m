@@ -1,58 +1,62 @@
-From: Tejun Heo <htejun@gmail.com>
-Subject: Re: [PATCH 12/15] driver core: Implement tagged directory support
- for device classes.
-Date: Fri, 04 Jul 2008 22:57:15 +0900
-Message-ID: <486E2C3B.6020603@gmail.com>
-References: <20080618170729.808539948@theryb.frec.bull.fr>	<m14p78s02q.fsf@frodo.ebiederm.org> <486C4515.1070007@gmail.com>	<m1hcb7o8lv.fsf@frodo.ebiederm.org> <486CB051.5000507@fr.ibm.com>	<m14p77m9uy.fsf@frodo.ebiederm.org> <486CF71F.5090405@gmail.com>	<m1y74iiidz.fsf_-_@frodo.ebiederm.org>	<m1tzf6ihlz.fsf_-_@frodo.ebiederm.org>	<m1prpuihjb.fsf_-_@frodo.ebiederm.org>	<m1lk0iihhp.fsf_-_@frodo.ebiederm.org>	<m1hcb6ihfz.fsf_-_@frodo.ebiederm.org>	<m1d4luihea.fsf_-_@frodo.ebiederm.org>	<m18wwiihbn.fsf_-_@frodo.ebiederm.org>	<m14p76ih9a.fsf_-_@frodo.ebiederm.org>	<m1zloyh2mb.fsf_-_@frodo.ebiederm.org>	<m1vdzmh2jr.fsf_-_@frodo.ebiederm.org>	<m1r6aah2hh.fsf_-_@frodo.ebiederm.org>	<m1mykyh2fu.fsf_-_@frodo.ebiederm.org>	<m1hcb6h2d2.fsf_-_@frodo.ebiederm.org> <486DD650.3000804@gmail.com> <m1tzf593
- ny.fsf@frodo.ebiederm.org>
+From: Andrea Righi <righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Subject: [PATCH 0/3] cgroup: block device i/o bandwidth controller (v4)
+Date: Fri,  4 Jul 2008 15:58:45 +0200
+Message-ID: <1215179928-9767-1-git-send-email-righi.andrea@gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
+Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-Return-path: <netdev-owner@vger.kernel.org>
-In-Reply-To: <m1tzf593ny.fsf@frodo.ebiederm.org>
-Sender: netdev-owner@vger.kernel.org
-To: "Eric W. Biederman" <ebiederm@xmission.com>
-Cc: Greg Kroah-Hartman <gregkh@suse.de>, Andrew Morton <akpm@linux-foundation.org>, Daniel Lezcano <dlezcano@fr.ibm.com>, linux-kernel@vger.kernel.org, Al Viro <viro@ftp.linux.org.uk>, Linux Containers <containers@lists.osdl.org>, Benjamin Thery <benjamin.thery@bull.net>, netdev@vger.kernel.org
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <>
+References: <>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+Cc: axboe-tSWWG44O7X1aa/9Udqfwiw@public.gmane.org, randy.dunlap-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Carl Henrik Lunde <chlunde-om2ZC0WAoZIXWF+eFR7m5Q@public.gmane.org>, Divyesh Shah <dpshah-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, matt-cT2on/YLNlBWk0Htik3J/w@public.gmane.org, roberto-5KDOxZqKugI@public.gmane.org, subrata-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, eric.rannaud-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Hello, Eric.
 
-Eric W. Biederman wrote:
-> Thank you for your opinion.
-> 
-> Incremental patches to make things more beautiful are welcome.
-> 
-> Please remember we are not building lisp.  The goal is code that works today.
-> 
-> Since we are not talking about correctness of the code.  Since we are not
-> talking about interfaces with user space.  Since we are talking something
-> that is currently about 100 lines of code, and so will be easy to change
-> even after it is merged.   I don't understand how discussing this further
-> is useful.  Especially when I get a NAK  based on the feel that the code
-> is ugly.
+The objective of the i/o bandwidth controller is to improve i/o performance
+predictability of different cgroups sharing the same block devices.
 
-I'm sorry if I gave you the impression of being draconian.  Explanations
-below.
+Respect to other priority/weight-based solutions the approach used by this
+controller is to explicitly choke applications' requests that directly (or
+indirectly) generate i/o activity in the system.
 
-> As for your main objection.  Adding a accessor method to an object versus
-> adding a data field that contain the same thing.  The two are effectively
-> identical.  With the practical difference in my eyes that an accessor method
-> prevents data duplication which reduces maintenance and reduces skew problems,
-> and it keeps the size of struct kobject small.  Since you think methods are
-> horrible I must respectfully disagree with you.
+The direct bandwidth limiting method has the advantage of improving the
+performance predictability at the cost of reducing, in general, the overall
+performance of the system (in terms of throughput).
 
-Yeah, it seems we should agree to disagree here.  I think using callback
-for static values is a really bad idea.  It obfuscates the code and
-opens up a big hole for awful misuses.  Greg, what do you think?
+Detailed informations about design, its goal and usage are described in the
+documentation.
 
-As we're very close to rc1 window, I think we can work out a solution
-here.  The reason why I nack'd was because the change wouldn't take too
-much effort and I thought it could be done before -rc1.  Unless you
-disagree with making tags static values, I'll try to write up a patch to
-do so.  If you (and Greg) think the callback interface is better, we can
-merge the code as-is and update (or not) later.
+Tested against latest git (2.6.26-rc8).
 
-Thanks.
+The all-in-one patch (and previous versions) can be found at:
+http://download.systemimager.org/~arighi/linux/patches/io-throttle/
 
--- 
-tejun
+Most of the changes in v4 are based on the Andrew Morton's review of patchset
+v3. Thanks Andrew.
+
+Changelog: (v3 -> v4)
+  - avoid potential deadlock in __set_page_dirty() with CONFIG_PREEMPT=n
+  - do not treat partitions as separate block devices: only entire block
+    devices are allowed to define i/o throttling rules; moreover, i/o activity
+    on partitions is accounted to opportune entire block device they belong to.
+  - reworked userspace<->kernel interface: accept and store all values in
+    bytes/sec (a userspace front-end application will take care of properly
+    showing and accepting values in human-readable format)
+  - uninlined a lot of functions
+  - code formatting fixes
+  - more documentation
+
+Todo:
+  - see documentation
+
+-Andrea
