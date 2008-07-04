@@ -1,14 +1,15 @@
-From: Pavel Machek <pavel-+ZI9xUNit7I@public.gmane.org>
-Subject: Re: [RFC PATCH 0/5] Resend - Use procfs to change a syscall behavior
-Date: Fri, 4 Jul 2008 12:27:02 +0200
-Message-ID: <20080704102702.GB4531@elf.ucw.cz>
-References: <20080703144013.737951000@bull.net>
+From: Daisuke Nishimura <nishimura-YQH0OdQVrdy45+QrQBaojngSJqDPrsil@public.gmane.org>
+Subject: Re: [PATCH -mm 4/5] swapcgroup (v3): modify vm_swap_full()
+Date: Fri, 4 Jul 2008 19:40:59 +0900
+Message-ID: <20080704194059.efa7d0ed.nishimura@mxp.nes.nec.co.jp>
+References: <20080704151536.e5384231.nishimura@mxp.nes.nec.co.jp>
+	<20080704152244.7fc2ccd1.nishimura@mxp.nes.nec.co.jp>
+	<20080704185845.0baaca76.kamezawa.hiroyu@jp.fujitsu.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <20080703144013.737951000-6ktuUTfB/bM@public.gmane.org>
+In-Reply-To: <20080704185845.0baaca76.kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,56 +19,62 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Nadia.Derbey-6ktuUTfB/bM@public.gmane.org
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+Cc: Lee Schermerhorn <Lee.Schermerhorn-VXdhtT5mjnY@public.gmane.org>, Rik van Riel <riel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, YAMAMOTO Takashi <yamamoto-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>, nishimura-YQH0OdQVrdy45+QrQBaojngSJqDPrsil@public.gmane.org, Linux MM <linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org>, KOSAKI Motohiro <kosaki.motohiro-+CUm20s59erQFUHtdCDX3A@public.gmane.org>, Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Hugh Dickins <hugh-DTz5qymZ9yRBDgjK7y7TUQ@public.gmane.org>, Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Hi!
+Hi, Kamezawa-san.
 
-> This patchset is a part of an effort to change some syscalls behavior for
-> checkpoint restart.
+On Fri, 4 Jul 2008 18:58:45 +0900, KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org> wrote:
+> On Fri, 4 Jul 2008 15:22:44 +0900
+> Daisuke Nishimura <nishimura-YQH0OdQVrdy45+QrQBaojngSJqDPrsil@public.gmane.org> wrote:
 > 
-> When restarting an object that has previously been checkpointed, its state
-> should be unchanged compared to the checkpointed image.
-> For example, a restarted process should have the same upid nr as the one it
-> used to have when being checkpointed; an ipc object should have the same id
-> as the one it had when the checkpoint occured.
-> Also, talking about system V ipcs, they should be restored with the same
-> state (e.g. in terms of pid of last operation).
+> >  /* Swap 50% full? Release swapcache more aggressively.. */
+> > -#define vm_swap_full() (nr_swap_pages*2 < total_swap_pages)
+> > +#define vm_swap_full(memcg) ((nr_swap_pages*2 < total_swap_pages) \
+> > +				|| swap_cgroup_vm_swap_full(memcg))
+> > +
+> >  
+> Maybe nitpick but I like 
+> ==
+>   vm_swap_full(page)	((nr_swap_pages *2 < total_swap_pages)
+> 				|| swap_cgroup_vm_swap_full_page(page))
+> ==
+> rather than vm_swap_full(memcg)
 > 
-> This means that several syscalls should not behave in a default mode when
-> they are called during a restart phase.
+Well, I used "page" in v2, but Kosaki-san said vm_swap_full()
+is not page-granularity operation so it should be changed.
+ 
+And more,
+
+> > @@ -1317,7 +1317,7 @@ static void shrink_active_list(unsigned long nr_pages, struct zone *zone,
+> >  			__mod_zone_page_state(zone, NR_LRU_BASE + lru, pgmoved);
+> >  			pgmoved = 0;
+> >  			spin_unlock_irq(&zone->lru_lock);
+> > -			if (vm_swap_full())
+> > +			if (vm_swap_full(sc->mem_cgroup))
+> >  				pagevec_swap_free(&pvec);
+> >  			__pagevec_release(&pvec);
+> >  			spin_lock_irq(&zone->lru_lock);
+> > @@ -1328,7 +1328,7 @@ static void shrink_active_list(unsigned long nr_pages, struct zone *zone,
+> >  	__count_zone_vm_events(PGREFILL, zone, pgscanned);
+> >  	__count_vm_events(PGDEACTIVATE, pgdeactivate);
+> >  	spin_unlock_irq(&zone->lru_lock);
+> > -	if (vm_swap_full())
+> > +	if (vm_swap_full(sc->mem_cgroup))
+> >  		pagevec_swap_free(&pvec);
+> >  
+> >  	pagevec_release(&pvec);
+
+"page" cannot be determined in those places.
+I don't want to change pagevec_swap_free(), so I changed
+the argument of vm_swap_full().
+
+> And could you change this to inline funcition ?
 > 
-> One solution consists in defining a new syscall for each syscall that is
-> called during restart:
->  . sys_fork_with_id() would fork a process with a predefined id.
->  . sys_msgget_with_id() would create a msg queue with a predefined id
->  . sys_semget_with_id() would create a semaphore set with a predefined id
->  . etc,
-> 
-> This solution requires defining a new syscall each time we need an existing
-> syscall to behave in a non-default way.
+Of course.
+I think it would be better.
 
-Yes, and I believe that's better than...
 
-> An alternative to this solution consists in defining a new field in the
-> task structure (let's call it next_syscall_data) that, if set, would change
-> the behavior of next syscall to be called. The sys_fork_with_id() previously
-> cited can be replaced by
->  1) set next_syscall_data to a target upid nr
->  2) call fork().
-
-...bloat task struct and
-
-> A new file is created in procfs: /proc/self/task/<my_tid>/next_syscall_data.
-> This makes it possible to avoid races between several threads belonging to
-> the same process.
-
-...introducing this kind of uglyness.
-
-Actually, there were proposals for sys_indirect(), which is slightly
-less ugly, but IIRC we ended up with adding syscalls, too.
-									Pavel
--- 
-(english) http://www.livejournal.com/~pavelmachek
-(cesky, pictures) http://atrey.karlin.mff.cuni.cz/~pavel/picture/horses/blog.html
+Thanks,
+Daisuke Nishimura.
