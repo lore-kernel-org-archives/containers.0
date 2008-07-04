@@ -1,14 +1,14 @@
-From: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
-Subject: Re: [PATCH -mm 5/5] swapcgroup (v3): implement force_empty
-Date: Fri, 4 Jul 2008 19:16:38 +0900
-Message-ID: <20080704191638.b63892f5.kamezawa.hiroyu@jp.fujitsu.com>
-References: <20080704151536.e5384231.nishimura@mxp.nes.nec.co.jp>
-	<20080704152423.f65932b3.nishimura@mxp.nes.nec.co.jp>
+From: Pavel Machek <pavel-+ZI9xUNit7I@public.gmane.org>
+Subject: Re: [RFC PATCH 0/5] Resend - Use procfs to change a syscall behavior
+Date: Fri, 4 Jul 2008 12:27:02 +0200
+Message-ID: <20080704102702.GB4531@elf.ucw.cz>
+References: <20080703144013.737951000@bull.net>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20080704152423.f65932b3.nishimura-YQH0OdQVrdy45+QrQBaojngSJqDPrsil@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <20080703144013.737951000-6ktuUTfB/bM@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,252 +18,56 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Daisuke Nishimura <nishimura-YQH0OdQVrdy45+QrQBaojngSJqDPrsil@public.gmane.org>
-Cc: YAMAMOTO Takashi <yamamoto-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>, Linux MM <linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org>, KOSAKI Motohiro <kosaki.motohiro-+CUm20s59erQFUHtdCDX3A@public.gmane.org>, Pavel-FOgKQjlUJ6BQetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Hugh Dickins <hugh-DTz5qymZ9yRBDgjK7y7TUQ@public.gmane.org>, Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+To: Nadia.Derbey-6ktuUTfB/bM@public.gmane.org
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Fri, 4 Jul 2008 15:24:23 +0900
-Daisuke Nishimura <nishimura-YQH0OdQVrdy45+QrQBaojngSJqDPrsil@public.gmane.org> wrote:
+Hi!
 
-> This patch implements force_empty of swapcgroup.
+> This patchset is a part of an effort to change some syscalls behavior for
+> checkpoint restart.
 > 
-> Currently, it simply uncharges all the charges from the group.
+> When restarting an object that has previously been checkpointed, its state
+> should be unchanged compared to the checkpointed image.
+> For example, a restarted process should have the same upid nr as the one it
+> used to have when being checkpointed; an ipc object should have the same id
+> as the one it had when the checkpoint occured.
+> Also, talking about system V ipcs, they should be restored with the same
+> state (e.g. in terms of pid of last operation).
 > 
-> I think there can be other implementations.
+> This means that several syscalls should not behave in a default mode when
+> they are called during a restart phase.
 > 
-> What I thought are:
-> - move all the charges to its parent.
-> - unuse(swap in) all the swap charged to the group.
+> One solution consists in defining a new syscall for each syscall that is
+> called during restart:
+>  . sys_fork_with_id() would fork a process with a predefined id.
+>  . sys_msgget_with_id() would create a msg queue with a predefined id
+>  . sys_semget_with_id() would create a semaphore set with a predefined id
+>  . etc,
 > 
-3. move all swap back to memory (see swapoff.)
+> This solution requires defining a new syscall each time we need an existing
+> syscall to behave in a non-default way.
 
+Yes, and I believe that's better than...
 
-> But in any case, I think before implementing this way,
-> hierarchy and move charges support are needed.
-> 
-> So I think this is enough for the first step.
-> 
+> An alternative to this solution consists in defining a new field in the
+> task structure (let's call it next_syscall_data) that, if set, would change
+> the behavior of next syscall to be called. The sys_fork_with_id() previously
+> cited can be replaced by
+>  1) set next_syscall_data to a target upid nr
+>  2) call fork().
 
-I don't think hierarchy/automatic-load-balancer for swap cg is necessary.
-Hmm...but handling limit_change (at least, returns -EBUSY) will be necessary.
-Do you consider a some magical way to move pages in swap back to memory ?
+...bloat task struct and
 
+> A new file is created in procfs: /proc/self/task/<my_tid>/next_syscall_data.
+> This makes it possible to avoid races between several threads belonging to
+> the same process.
 
-In general, I like this set but we can't change the limit on demand. (maybe)
-(just putting it to TO-DO-List is okay to me.)
+...introducing this kind of uglyness.
 
-Thanks,
--Kame
-
-
-> 
-> Change log
-> v2->v3
-> - new patch
-> 
-> 
-> Signed-off-by: Daisuke Nishimura <nishimura-YQH0OdQVrdy45+QrQBaojngSJqDPrsil@public.gmane.org>
-> 
-> ---
->  include/linux/memcontrol.h |    5 ++++
->  mm/memcontrol.c            |   47 +++++++++++++++++++++++++++++++--------
->  mm/swapfile.c              |   52 +++++++++++++++++++++++++++++++++++++++++--
->  3 files changed, 91 insertions(+), 13 deletions(-)
-> 
-> diff --git a/include/linux/memcontrol.h b/include/linux/memcontrol.h
-> index 1e6eb0c..8c4bad0 100644
-> --- a/include/linux/memcontrol.h
-> +++ b/include/linux/memcontrol.h
-> @@ -177,6 +177,7 @@ extern void swap_cgroup_uncharge(struct swap_info_struct *si,
->  				unsigned long offset);
->  extern struct mem_cgroup *page_to_memcg(struct page *page);
->  extern int swap_cgroup_vm_swap_full(struct mem_cgroup *memcg);
-> +extern void __swap_cgroup_force_empty(struct mem_cgroup *mem);
->  #else
->  static inline
->  struct mem_cgroup **swap_info_clear_memcg(struct swap_info_struct *p)
-> @@ -211,6 +212,10 @@ static inline int swap_cgroup_vm_swap_full(struct mem_cgroup *memcg)
->  {
->  	return 0;
->  }
-> +
-> +static inline void __swap_cgroup_force_empty(struct mem_cgroup *mem)
-> +{
-> +}
->  #endif
->  
->  #endif /* _LINUX_MEMCONTROL_H */
-> diff --git a/mm/memcontrol.c b/mm/memcontrol.c
-> index 160fca1..f93907c 100644
-> --- a/mm/memcontrol.c
-> +++ b/mm/memcontrol.c
-> @@ -826,6 +826,34 @@ static void mem_cgroup_force_empty_list(struct mem_cgroup *mem,
->  	spin_unlock_irqrestore(&mz->lru_lock, flags);
->  }
->  
-> +static inline int mem_cgroup_in_use(struct mem_cgroup *mem)
-> +{
-> +	return mem->res.usage > 0;
-> +}
-> +
-> +static inline int swap_cgroup_in_use(struct mem_cgroup *mem)
-> +{
-> +#ifdef CONFIG_CGROUP_SWAP_RES_CTLR
-> +	return mem->swap_res.usage > 0;
-> +#else
-> +	return 0;
-> +#endif
-> +}
-> +
-> +static void __mem_cgroup_force_empty(struct mem_cgroup *mem)
-> +{
-> +	int node, zid;
-> +
-> +	for_each_node_state(node, N_POSSIBLE)
-> +		for (zid = 0; zid < MAX_NR_ZONES; zid++) {
-> +			struct mem_cgroup_per_zone *mz;
-> +			enum lru_list l;
-> +			mz = mem_cgroup_zoneinfo(mem, node, zid);
-> +			for_each_lru(l)
-> +				mem_cgroup_force_empty_list(mem, mz, l);
-> +		}
-> +}
-> +
->  /*
->   * make mem_cgroup's charge to be 0 if there is no task.
->   * This enables deleting this mem_cgroup.
-> @@ -833,7 +861,6 @@ static void mem_cgroup_force_empty_list(struct mem_cgroup *mem,
->  static int mem_cgroup_force_empty(struct mem_cgroup *mem)
->  {
->  	int ret = -EBUSY;
-> -	int node, zid;
->  
->  	css_get(&mem->css);
->  	/*
-> @@ -841,18 +868,17 @@ static int mem_cgroup_force_empty(struct mem_cgroup *mem)
->  	 * active_list <-> inactive_list while we don't take a lock.
->  	 * So, we have to do loop here until all lists are empty.
->  	 */
-> -	while (mem->res.usage > 0) {
-> +	while (mem_cgroup_in_use(mem) || swap_cgroup_in_use(mem)) {
->  		if (atomic_read(&mem->css.cgroup->count) > 0)
->  			goto out;
-> -		for_each_node_state(node, N_POSSIBLE)
-> -			for (zid = 0; zid < MAX_NR_ZONES; zid++) {
-> -				struct mem_cgroup_per_zone *mz;
-> -				enum lru_list l;
-> -				mz = mem_cgroup_zoneinfo(mem, node, zid);
-> -				for_each_lru(l)
-> -					mem_cgroup_force_empty_list(mem, mz, l);
-> -			}
-> +
-> +		if (mem_cgroup_in_use(mem))
-> +			__mem_cgroup_force_empty(mem);
-> +
-> +		if (swap_cgroup_in_use(mem))
-> +			__swap_cgroup_force_empty(mem);
->  	}
-> +
->  	ret = 0;
->  out:
->  	css_put(&mem->css);
-> @@ -1289,6 +1315,7 @@ void swap_cgroup_uncharge(struct swap_info_struct *si,
->  	 *    and called swap_entry_free().
->  	 * 2. when this swap entry had been assigned by
->  	 *    get_swap_page_of_type() (via SWSUSP?).
-> +	 * 3. force empty can make such entries.
->  	 */
->  	if (mem) {
->  		res_counter_uncharge(&mem->swap_res, PAGE_SIZE);
-> diff --git a/mm/swapfile.c b/mm/swapfile.c
-> index 6a863bc..2263ae8 100644
-> --- a/mm/swapfile.c
-> +++ b/mm/swapfile.c
-> @@ -704,15 +704,30 @@ static int unuse_mm(struct mm_struct *mm,
->  }
->  
->  /*
-> + * return the mem_cgroup to which a entry is charged
-> + */
-> +static inline struct mem_cgroup *entry_to_memcg(swp_entry_t entry)
-> +{
-> +#ifdef CONFIG_CGROUP_SWAP_RES_CTLR
-> +	return swap_info[swp_type(entry)].memcg[swp_offset(entry)];
-> +#else
-> +	return NULL;
-> +#endif
-> +}
-> +
-> +/*
->   * Scan swap_map from current position to next entry still in use.
-> + * If mem is specified, the entry should be charged to it.
->   * Recycle to start on reaching the end, returning 0 when empty.
->   */
->  static unsigned int find_next_to_unuse(struct swap_info_struct *si,
-> -					unsigned int prev)
-> +					unsigned int prev,
-> +					struct mem_cgroup *mem)
->  {
->  	unsigned int max = si->max;
->  	unsigned int i = prev;
->  	int count;
-> +	int type = si - swap_info;
->  
->  	/*
->  	 * No need for swap_lock here: we're just looking
-> @@ -735,7 +750,8 @@ static unsigned int find_next_to_unuse(struct swap_info_struct *si,
->  			i = 1;
->  		}
->  		count = si->swap_map[i];
-> -		if (count && count != SWAP_MAP_BAD)
-> +		if (count && count != SWAP_MAP_BAD
-> +			&& (!mem || mem == entry_to_memcg(swp_entry(type, i))))
->  			break;
->  	}
->  	return i;
-> @@ -782,7 +798,7 @@ static int try_to_unuse(unsigned int type)
->  	 * one pass through swap_map is enough, but not necessarily:
->  	 * there are races when an instance of an entry might be missed.
->  	 */
-> -	while ((i = find_next_to_unuse(si, i)) != 0) {
-> +	while ((i = find_next_to_unuse(si, i, NULL)) != 0) {
->  		if (signal_pending(current)) {
->  			retval = -EINTR;
->  			break;
-> @@ -1923,5 +1939,35 @@ struct mem_cgroup *page_to_memcg(struct page *page)
->  out:
->  	return mem;
->  }
-> +
-> +/*
-> + * uncharge all the entries that are charged to the group.
-> + */
-> +void __swap_cgroup_force_empty(struct mem_cgroup *mem)
-> +{
-> +	struct swap_info_struct *p;
-> +	int type;
-> +
-> +	spin_lock(&swap_lock);
-> +	for (type = swap_list.head; type >= 0; type = swap_info[type].next) {
-> +		p = swap_info + type;
-> +
-> +		if ((p->flags & SWP_ACTIVE) == SWP_ACTIVE) {
-> +			unsigned int i = 0;
-> +
-> +			spin_unlock(&swap_lock);
-> +			while ((i = find_next_to_unuse(p, i, mem)) != 0) {
-> +				spin_lock(&swap_lock);
-> +				if (p->swap_map[i] && p->memcg[i] == mem)
-> +					swap_cgroup_uncharge(p, i);
-> +				spin_unlock(&swap_lock);
-> +			}
-> +			spin_lock(&swap_lock);
-> +		}
-> +	}
-> +	spin_unlock(&swap_lock);
-> +
-> +	return;
-> +}
->  #endif
->  
-> 
+Actually, there were proposals for sys_indirect(), which is slightly
+less ugly, but IIRC we ended up with adding syscalls, too.
+									Pavel
+-- 
+(english) http://www.livejournal.com/~pavelmachek
+(cesky, pictures) http://atrey.karlin.mff.cuni.cz/~pavel/picture/horses/blog.html
