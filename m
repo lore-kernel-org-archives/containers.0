@@ -1,166 +1,49 @@
-From: ebiederm@xmission.com (Eric W. Biederman)
-Subject: [PATCH 15/15] sysfs: user namespaces: fix bug with clone(CLONE_NEWUSER) with fairsched
-Date: Thu, 03 Jul 2008 18:23:35 -0700
-Message-ID: <m14p76h27c.fsf_-_@frodo.ebiederm.org>
-References: <20080618170729.808539948@theryb.frec.bull.fr>
-	<486C4515.1070007@gmail.com> <m1hcb7o8lv.fsf@frodo.ebiederm.org>
-	<486CB051.5000507@fr.ibm.com> <m14p77m9uy.fsf@frodo.ebiederm.org>
-	<486CF71F.5090405@gmail.com> <m1y74iiidz.fsf_-_@frodo.ebiederm.org>
-	<m1tzf6ihlz.fsf_-_@frodo.ebiederm.org>
-	<m1prpuihjb.fsf_-_@frodo.ebiederm.org>
-	<m1lk0iihhp.fsf_-_@frodo.ebiederm.org>
-	<m1hcb6ihfz.fsf_-_@frodo.ebiederm.org>
-	<m1d4luihea.fsf_-_@frodo.ebiederm.org>
-	<m18wwiihbn.fsf_-_@frodo.ebiederm.org>
-	<m14p76ih9a.fsf_-_@frodo.ebiederm.org>
-	<m1zloyh2mb.fsf_-_@frodo.ebiederm.org>
-	<m1vdzmh2jr.fsf_-_@frodo.ebiederm.org>
-	<m1r6aah2hh.fsf_-_@frodo.ebiederm.org>
-	<m1mykyh2fu.fsf_-_@frodo.ebiederm.org>
-	<m1hcb6h2d2.fsf_-_@frodo.ebiederm.org>
-	<m1d4luh2av.fsf_-_@frodo.ebiederm.org>
-	<m18wwih290.fsf_-_@frodo.ebiederm.org>
+From: Ryo Tsuruta <ryov-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
+Subject: [PATCH 0/2] dm-ioband: I/O bandwidth controller v1.2.0: Introduction
+Date: Fri, 04 Jul 2008 12:40:38 +0900 (JST)
+Message-ID: <20080704.124038.193696173.ryov__35898.2722428211$1215142970$gmane$org@valinux.co.jp>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Return-path: <netdev-owner@vger.kernel.org>
-In-Reply-To: <m18wwih290.fsf_-_@frodo.ebiederm.org> (Eric W. Biederman's
-	message of "Thu, 03 Jul 2008 18:22:35 -0700")
-Sender: netdev-owner@vger.kernel.org
-To: Greg Kroah-Hartman <gregkh@suse.de>, Andrew Morton <akpm@linux-foundation.org>
-Cc: Tejun Heo <htejun@gmail.com>, Daniel Lezcano <dlezcano@fr.ibm.com>, linux-kernel@vger.kernel.org, Al Viro <viro@ftp.linux.org.uk>, Linux Containers <containers@lists.osdl.org>, Benjamin Thery <benjamin.thery@bull.net>, netdev@vger.kernel.org
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, dm-devel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, virtualization-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, xen-devel-GuqFBffKawuULHF6PoxzQEEOCMrvLtNR@public.gmane.org
+Cc: agk-9JcytcrH/bA+uJoB2kUjGw@public.gmane.org
 List-Id: containers.vger.kernel.org
 
+Hi everyone,
 
-Mark the /sys/kernel/uids directory to be tagged so that processes in
-different user namespaces can remount /sys and see their own uid
-listings.
+This is the dm-ioband version 1.2.0 release.
 
-Without this patch, having CONFIG_FAIR_SCHED=y makes user namespaces
-unusable, because when you
-  clone(CLONE_NEWUSER)
-it will auto-create the root userid and try to create
-/sys/kernel/uids/0.  Since that already exists from the parent user
-namespace, the create fails, and the clone misleadingly ends up
-returning -ENOMEM.
+Dm-ioband is an I/O bandwidth controller implemented as a device-mapper
+driver, which gives specified bandwidth to each job running on the same
+physical device.
 
-This patch fixes the issue by allowing each user namespace to remount
-/sys, and having /sys filter the /sys/kernel/uid/ entries by user
-namespace.
+- Can be applied to the kernel 2.6.26-rc5-mm3.
+- Changes from 1.1.0 (posted on June 2, 2008):
+  - Dynamic policy switching
+    A user can change the bandwidth control policy while the dm-ioband
+    device is active. It is useful when the dm-ioband device is used
+    as a root device.
+  - I/O smoothing take #1
+    This feature makes I/O requests of each group issued smoothly.
+    Once a certain group has used up its tokens, all I/O requests to
+    the group will be blocked until all the other groups used up theirs.
+    This feature is to minimize this blocking time.
+    We are now testing on the 2nd step and we will release it soon,
+    which will improve the smoothness significantly.
+  - Replace simple_strtol() with strict_strtol().
+  - Fix I/O errors encountered after "dmsetup resume."
 
-Changelong:
-v2 - Reworked for the updated sysfs api
-
-Signed-off-by: Serge Hallyn <serue@us.ibm.com>
-Signed-off-by: Benjamin Thery <benjamin.thery@bull.net>
-Signed-off-by: Daniel Lezcano <dlezcano@fr.ibm.com>
-Signed-off-by: Eric W. Biederman <ebiederm@xmission.com>
----
- include/linux/sched.h   |    1 +
- include/linux/sysfs.h   |    1 +
- kernel/user.c           |   22 ++++++++++++++++++++++
- kernel/user_namespace.c |    1 +
- 4 files changed, 25 insertions(+), 0 deletions(-)
-
-diff --git a/include/linux/sched.h b/include/linux/sched.h
-index c5d3f84..d2be6a5 100644
---- a/include/linux/sched.h
-+++ b/include/linux/sched.h
-@@ -598,6 +598,7 @@ struct user_struct {
- 	/* Hash table maintenance information */
- 	struct hlist_node uidhash_node;
- 	uid_t uid;
-+	struct user_namespace *user_ns;
- 
- #ifdef CONFIG_USER_SCHED
- 	struct task_group *tg;
-diff --git a/include/linux/sysfs.h b/include/linux/sysfs.h
-index 1ed31bb..ecb942c 100644
---- a/include/linux/sysfs.h
-+++ b/include/linux/sysfs.h
-@@ -81,6 +81,7 @@ struct sysfs_ops {
- enum sysfs_tag_type {
- 	SYSFS_TAG_TYPE_NONE = 0,
- 	SYSFS_TAG_TYPE_NETNS,
-+	SYSFS_TAG_TYPE_USERNS,
- 	SYSFS_TAG_TYPES
- };
- 
-diff --git a/kernel/user.c b/kernel/user.c
-index 865ecf5..ca29fbc 100644
---- a/kernel/user.c
-+++ b/kernel/user.c
-@@ -53,6 +53,7 @@ struct user_struct root_user = {
- 	.files		= ATOMIC_INIT(0),
- 	.sigpending	= ATOMIC_INIT(0),
- 	.locked_shm     = 0,
-+	.user_ns	= &init_user_ns,
- #ifdef CONFIG_USER_SCHED
- 	.tg		= &init_task_group,
- #endif
-@@ -230,16 +231,33 @@ static struct attribute *uids_attributes[] = {
- 	NULL
- };
- 
-+static const void *uids_mount_tag(void)
-+{
-+	return current->nsproxy->user_ns;
-+}
-+
-+static struct sysfs_tag_type_operations uids_tag_type_operations = {
-+	.mount_tag = uids_mount_tag,
-+};
-+
- /* the lifetime of user_struct is not managed by the core (now) */
- static void uids_release(struct kobject *kobj)
- {
- 	return;
- }
- 
-+static const void *uids_sysfs_tag(struct kobject *kobj)
-+{
-+	struct user_struct *up;
-+	up = container_of(kobj, struct user_struct, kobj);
-+	return up->user_ns;
-+}
-+
- static struct kobj_type uids_ktype = {
- 	.sysfs_ops = &kobj_sysfs_ops,
- 	.default_attrs = uids_attributes,
- 	.release = uids_release,
-+	.sysfs_tag = uids_sysfs_tag,
- };
- 
- /* create /sys/kernel/uids/<uid>/cpu_share file for this user */
-@@ -272,6 +290,9 @@ int __init uids_sysfs_init(void)
- 	if (!uids_kset)
- 		return -ENOMEM;
- 
-+	sysfs_register_tag_type(SYSFS_TAG_TYPE_USERNS, &uids_tag_type_operations);
-+	sysfs_make_tagged_dir(&uids_kset->kobj, SYSFS_TAG_TYPE_USERNS);
-+
- 	return uids_user_create(&root_user);
- }
- 
-@@ -405,6 +426,7 @@ struct user_struct *alloc_uid(struct user_namespace *ns, uid_t uid)
- 
- 		new->uid = uid;
- 		atomic_set(&new->__count, 1);
-+		new->user_ns = ns;
- 
- 		if (sched_create_user(new) < 0)
- 			goto out_free_user;
-diff --git a/kernel/user_namespace.c b/kernel/user_namespace.c
-index a9ab059..f67bbe0 100644
---- a/kernel/user_namespace.c
-+++ b/kernel/user_namespace.c
-@@ -71,6 +71,7 @@ void free_user_ns(struct kref *kref)
- 	struct user_namespace *ns;
- 
- 	ns = container_of(kref, struct user_namespace, kref);
-+	sysfs_exit_tag(SYSFS_TAG_TYPE_USERNS, ns);
- 	release_uids(ns);
- 	kfree(ns);
- }
--- 
-1.5.3.rc6.17.g1911
-
+Thanks,
+Ryo Tsuruta
+Linux Block I/O Bandwidth Control Project
+http://people.valinux.co.jp/~ryov/bwctl/
