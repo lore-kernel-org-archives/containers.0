@@ -1,53 +1,77 @@
-From: Tejun Heo <htejun@gmail.com>
-Subject: Re: [PATCH 12/15] driver core: Implement tagged directory support
- for device classes.
-Date: Fri, 04 Jul 2008 16:50:40 +0900
-Message-ID: <486DD650.3000804@gmail.com>
-References: <20080618170729.808539948@theryb.frec.bull.fr>	<m1ej6d9c2r.fsf@frodo.ebiederm.org> <486B060C.7030607@gmail.com>	<m14p78s02q.fsf@frodo.ebiederm.org> <486C4515.1070007@gmail.com>	<m1hcb7o8lv.fsf@frodo.ebiederm.org> <486CB051.5000507@fr.ibm.com>	<m14p77m9uy.fsf@frodo.ebiederm.org> <486CF71F.5090405@gmail.com>	<m1y74iiidz.fsf_-_@frodo.ebiederm.org>	<m1tzf6ihlz.fsf_-_@frodo.ebiederm.org>	<m1prpuihjb.fsf_-_@frodo.ebiederm.org>	<m1lk0iihhp.fsf_-_@frodo.ebiederm.org>	<m1hcb6ihfz.fsf_-_@frodo.ebiederm.org>	<m1d4luihea.fsf_-_@frodo.ebiederm.org>	<m18wwiihbn.fsf_-_@frodo.ebiederm.org>	<m14p76ih9a.fsf_-_@frodo.ebiederm.org>	<m1zloyh2mb.fsf_-_@frodo.ebiederm.org>	<m1vdzmh2jr.fsf_-_@frodo.ebiederm.org>	<m1r6aah2hh.fsf_-_@frodo.ebiederm.org>	<m1mykyh2fu.fsf_-_@frodo.ebiederm.org> <m1hcb6h2d2.
- fsf_-_@frodo.ebiederm.org>
+From: Daisuke Nishimura <nishimura-YQH0OdQVrdy45+QrQBaojngSJqDPrsil@public.gmane.org>
+Subject: Re: [PATCH -mm 5/5] swapcgroup (v3): implement force_empty
+Date: Fri, 4 Jul 2008 16:56:05 +0900
+Message-ID: <20080704165605.ca69850b.nishimura@mxp.nes.nec.co.jp>
+References: <20080704162629.b06b6810.nishimura@mxp.nes.nec.co.jp>
+	<20080704074828.330DC5A19@siro.lan>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
+Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-Return-path: <netdev-owner@vger.kernel.org>
-In-Reply-To: <m1hcb6h2d2.fsf_-_@frodo.ebiederm.org>
-Sender: netdev-owner@vger.kernel.org
-To: "Eric W. Biederman" <ebiederm@xmission.com>
-Cc: Greg Kroah-Hartman <gregkh@suse.de>, Andrew Morton <akpm@linux-foundation.org>, Daniel Lezcano <dlezcano@fr.ibm.com>, linux-kernel@vger.kernel.org, Al Viro <viro@ftp.linux.org.uk>, Linux Containers <containers@lists.osdl.org>, Benjamin Thery <benjamin.thery@bull.net>, netdev@vger.kernel.org
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <20080704074828.330DC5A19-Pcsii4f/SVk@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: YAMAMOTO Takashi <yamamoto-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
+Cc: nishimura-YQH0OdQVrdy45+QrQBaojngSJqDPrsil@public.gmane.org, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, kosaki.motohiro-+CUm20s59erQFUHtdCDX3A@public.gmane.org, containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, hugh-DTz5qymZ9yRBDgjK7y7TUQ@public.gmane.org, xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Eric W. Biederman wrote:
-> This patch enables tagging on every class directory if struct class
-> has a tag_type.
+On Fri,  4 Jul 2008 16:48:28 +0900 (JST), yamamoto-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org (YAMAMOTO Takashi) wrote:
+> > Hi, Yamamoto-san.
+> > 
+> > Thank you for your comment.
+> > 
+> > On Fri,  4 Jul 2008 15:54:31 +0900 (JST), yamamoto-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org (YAMAMOTO Takashi) wrote:
+> > > hi,
+> > > 
+> > > > +/*
+> > > > + * uncharge all the entries that are charged to the group.
+> > > > + */
+> > > > +void __swap_cgroup_force_empty(struct mem_cgroup *mem)
+> > > > +{
+> > > > +	struct swap_info_struct *p;
+> > > > +	int type;
+> > > > +
+> > > > +	spin_lock(&swap_lock);
+> > > > +	for (type = swap_list.head; type >= 0; type = swap_info[type].next) {
+> > > > +		p = swap_info + type;
+> > > > +
+> > > > +		if ((p->flags & SWP_ACTIVE) == SWP_ACTIVE) {
+> > > > +			unsigned int i = 0;
+> > > > +
+> > > > +			spin_unlock(&swap_lock);
+> > > 
+> > > what prevents the device from being swapoff'ed while you drop swap_lock?
+> > > 
+> > Nothing.
+> > 
+> > After searching the entry to be uncharged(find_next_to_unuse below),
+> > I recheck under swap_lock whether the entry is charged to the group.
+> > Even if the device is swapoff'ed, swap_off must have uncharged the entry,
+> > so I don't think it's needed anyway.
+> > 
+> > > YAMAMOTO Takashi
+> > > 
+> > > > +			while ((i = find_next_to_unuse(p, i, mem)) != 0) {
+> > > > +				spin_lock(&swap_lock);
+> > > > +				if (p->swap_map[i] && p->memcg[i] == mem)
+> > Ah, I think it should be added !p->swap_map to check the device has not
+> > been swapoff'ed.
 > 
-> In addition device_del and device_rename were modified to uses
-> sysfs_delete_link and sysfs_rename_link respectively to ensure
-> when these operations happen on devices whose classes have
-> tag_ops that they work properly.
+> find_next_to_unuse seems to have fragile assumptions and
+> can dereference p->swap_map as well.
 > 
-> Signed-off-by: Eric W. Biederman <ebiederm@xmission.com>
-> Signed-off-by: Benjamin Thery <benjamin.thery@bull.net>
+You're right.
+Thank you for pointing it out!
 
-Okay, I went through the users this time but I still think
-determine-tags-by-callbacks is a bad idea.  Please just add const void
-*tag to kobject and set it during initialization.  If you want to move a
-device from one tag to another, implement kobject_rename_tagged(kobj,
-new_name, new_tag).
+I'll consider more.
 
-The determine-tag-by-callback basically multiplexes basic functions to
-do tag-specific things which are determined by ktype callback called
-back from down the layer.  It's simply a bad interface.  Those
-operations become something else depending on how those callbacks
-behave.  That's unnecessarily subtle.  Advertising what it's gonna do in
-the function name and as arguments is way more straight forward and it's
-not like determining or renaming tags should be done asynchronously.
 
-I personally think it would be better to make tags explicit in the mount
-interface too but if extracting ns information from the mounting process
-is what's currently being done, well...
-
-I'm sorry but Nacked-by: Tejun Heo <tj@kernel.org>
-
-Thanks.
-
--- 
-tejun
+Thanks,
+Daisuke Nishimura.
