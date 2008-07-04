@@ -1,113 +1,53 @@
-From: "Denis V. Lunev" <den@openvz.org>
-Subject: [PATCH net-next 5/9] netns: make rt_secret_rebuild timer per namespace
-Date: Fri,  4 Jul 2008 17:17:08 +0400
-Message-ID: <1215177432-25934-5-git-send-email-den@openvz.org>
-References: <1215177360.27873.50.camel@iris.sw.ru>
+From: ebiederm@xmission.com (Eric W. Biederman)
+Subject: Re: [PATCH 12/15] driver core: Implement tagged directory support for device classes.
+Date: Fri, 04 Jul 2008 06:31:29 -0700
+Message-ID: <m1tzf593ny.fsf@frodo.ebiederm.org>
+References: <20080618170729.808539948@theryb.frec.bull.fr>
+	<m14p78s02q.fsf@frodo.ebiederm.org> <486C4515.1070007@gmail.com>
+	<m1hcb7o8lv.fsf@frodo.ebiederm.org> <486CB051.5000507@fr.ibm.com>
+	<m14p77m9uy.fsf@frodo.ebiederm.org> <486CF71F.5090405@gmail.com>
+	<m1y74iiidz.fsf_-_@frodo.ebiederm.org>
+	<m1tzf6ihlz.fsf_-_@frodo.ebiederm.org>
+	<m1prpuihjb.fsf_-_@frodo.ebiederm.org>
+	<m1lk0iihhp.fsf_-_@frodo.ebiederm.org>
+	<m1hcb6ihfz.fsf_-_@frodo.ebiederm.org>
+	<m1d4luihea.fsf_-_@frodo.ebiederm.org>
+	<m18wwiihbn.fsf_-_@frodo.ebiederm.org>
+	<m14p76ih9a.fsf_-_@frodo.ebiederm.org>
+	<m1zloyh2mb.fsf_-_@frodo.ebiederm.org>
+	<m1vdzmh2jr.fsf_-_@frodo.ebiederm.org>
+	<m1r6aah2hh.fsf_-_@frodo.ebiederm.org>
+	<m1mykyh2fu.fsf_-_@frodo.ebiederm.org>
+	<m1hcb6h2d2.fsf_-_@frodo.ebiederm.org> <486DD650.3000804@gmail.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
 Return-path: <netdev-owner@vger.kernel.org>
-In-Reply-To: <1215177360.27873.50.camel@iris.sw.ru>
+In-Reply-To: <486DD650.3000804@gmail.com> (Tejun Heo's message of "Fri, 04 Jul
+	2008 16:50:40 +0900")
 Sender: netdev-owner@vger.kernel.org
-To: davem@davemloft.net
-Cc: netdev@vger.kernel.org, containers@lists.osdl.org, "Denis V. Lunev" <den@openvz.org>
+To: Tejun Heo <htejun@gmail.com>
+Cc: Greg Kroah-Hartman <gregkh@suse.de>, Andrew Morton <akpm@linux-foundation.org>, Daniel Lezcano <dlezcano@fr.ibm.com>, linux-kernel@vger.kernel.org, Al Viro <viro@ftp.linux.org.uk>, Linux Containers <containers@lists.osdl.org>, Benjamin Thery <benjamin.thery@bull.net>, netdev@vger.kernel.org
 List-Id: containers.vger.kernel.org
 
-Signed-off-by: Denis V. Lunev <den@openvz.org>
----
- include/net/netns/ipv4.h |    2 ++
- net/ipv4/route.c         |   40 ++++++++++++++++++++++++++++++----------
- 2 files changed, 32 insertions(+), 10 deletions(-)
 
-diff --git a/include/net/netns/ipv4.h b/include/net/netns/ipv4.h
-index a29adf1..356617f 100644
---- a/include/net/netns/ipv4.h
-+++ b/include/net/netns/ipv4.h
-@@ -46,5 +46,7 @@ struct netns_ipv4 {
- 	int sysctl_icmp_ratelimit;
- 	int sysctl_icmp_ratemask;
- 	int sysctl_icmp_errors_use_inbound_ifaddr;
-+
-+	struct timer_list rt_secret_timer;
- };
- #endif
-diff --git a/net/ipv4/route.c b/net/ipv4/route.c
-index 6fe799d..f99d9db 100644
---- a/net/ipv4/route.c
-+++ b/net/ipv4/route.c
-@@ -132,7 +132,6 @@ static int ip_rt_secret_interval __read_mostly	= 10 * 60 * HZ;
- 
- static void rt_worker_func(struct work_struct *work);
- static DECLARE_DELAYED_WORK(expires_work, rt_worker_func);
--static struct timer_list rt_secret_timer;
- 
- /*
-  *	Interface to generic destination cache.
-@@ -801,10 +800,11 @@ void rt_cache_flush(struct net *net, int delay)
- /*
-  * We change rt_genid and let gc do the cleanup
-  */
--static void rt_secret_rebuild(unsigned long dummy)
-+static void rt_secret_rebuild(unsigned long __net)
- {
-+	struct net *net = (struct net *)__net;
- 	rt_cache_invalidate();
--	mod_timer(&rt_secret_timer, jiffies + ip_rt_secret_interval);
-+	mod_timer(&net->ipv4.rt_secret_timer, jiffies + ip_rt_secret_interval);
- }
- 
- /*
-@@ -3072,6 +3072,31 @@ static __net_initdata struct pernet_operations sysctl_route_ops = {
- };
- #endif
- 
-+
-+static __net_init int rt_secret_timer_init(struct net *net)
-+{
-+	net->ipv4.rt_secret_timer.function = rt_secret_rebuild;
-+	net->ipv4.rt_secret_timer.data = (unsigned long)net;
-+	init_timer_deferrable(&net->ipv4.rt_secret_timer);
-+
-+	net->ipv4.rt_secret_timer.expires =
-+		jiffies + net_random() % ip_rt_secret_interval +
-+		ip_rt_secret_interval;
-+	add_timer(&net->ipv4.rt_secret_timer);
-+	return 0;
-+}
-+
-+static __net_exit void rt_secret_timer_exit(struct net *net)
-+{
-+	del_timer_sync(&net->ipv4.rt_secret_timer);
-+}
-+
-+static __net_initdata struct pernet_operations rt_secret_timer_ops = {
-+	.init = rt_secret_timer_init,
-+	.exit = rt_secret_timer_exit,
-+};
-+
-+
- #ifdef CONFIG_NET_CLS_ROUTE
- struct ip_rt_acct *ip_rt_acct __read_mostly;
- #endif /* CONFIG_NET_CLS_ROUTE */
-@@ -3124,19 +3149,14 @@ int __init ip_rt_init(void)
- 	devinet_init();
- 	ip_fib_init();
- 
--	rt_secret_timer.function = rt_secret_rebuild;
--	rt_secret_timer.data = 0;
--	init_timer_deferrable(&rt_secret_timer);
--
- 	/* All the timers, started at system startup tend
- 	   to synchronize. Perturb it a bit.
- 	 */
- 	schedule_delayed_work(&expires_work,
- 		net_random() % ip_rt_gc_interval + ip_rt_gc_interval);
- 
--	rt_secret_timer.expires = jiffies + net_random() % ip_rt_secret_interval +
--		ip_rt_secret_interval;
--	add_timer(&rt_secret_timer);
-+	if (register_pernet_subsys(&rt_secret_timer_ops))
-+		printk(KERN_ERR "Unable to setup rt_secret_timer\n");
- 
- 	if (ip_rt_proc_init())
- 		printk(KERN_ERR "Unable to create route proc files\n");
--- 
-1.5.3.rc5
+Thank you for your opinion.
 
+Incremental patches to make things more beautiful are welcome.
+
+Please remember we are not building lisp.  The goal is code that works today.
+
+Since we are not talking about correctness of the code.  Since we are not
+talking about interfaces with user space.  Since we are talking something
+that is currently about 100 lines of code, and so will be easy to change
+even after it is merged.   I don't understand how discussing this further
+is useful.  Especially when I get a NAK  based on the feel that the code
+is ugly.
+
+As for your main objection.  Adding a accessor method to an object versus
+adding a data field that contain the same thing.  The two are effectively
+identical.  With the practical difference in my eyes that an accessor method
+prevents data duplication which reduces maintenance and reduces skew problems,
+and it keeps the size of struct kobject small.  Since you think methods are
+horrible I must respectfully disagree with you.
+
+Eric
