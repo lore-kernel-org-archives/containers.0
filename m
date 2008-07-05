@@ -1,16 +1,13 @@
-From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
-Subject: Re: Network namespaces without isolation
-Date: Fri, 04 Jul 2008 15:45:38 -0700
-Message-ID: <m1hcb546b1.fsf@frodo.ebiederm.org>
-References: <200807020918.50997.andreas.aaen@tietoenator.com>
-	<m1zloydliv.fsf@frodo.ebiederm.org>
-	<200807041707.28865.andreas.aaen@tietoenator.com>
+From: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+Subject: Re: [PATCH 2/3] i/o bandwidth controller infrastructure
+Date: Sat, 05 Jul 2008 10:07:35 +0800
+Message-ID: <486ED767.2030304__2518.35225285522$1215223912$gmane$org@cn.fujitsu.com>
+References: <> <1215179928-9767-3-git-send-email-righi.andrea@gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <200807041707.28865.andreas.aaen-546VmZ+UeKYX2WXlbB3fKg@public.gmane.org> (Andreas
-	B. Aaen's message of "Fri, 4 Jul 2008 17:07:28 +0200")
+In-Reply-To: <1215179928-9767-3-git-send-email-righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -20,94 +17,375 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Andreas B Aaen <andreas.aaen-546VmZ+UeKYX2WXlbB3fKg@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Andrea Righi <righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Cc: axboe-tSWWG44O7X1aa/9Udqfwiw@public.gmane.org, randy.dunlap-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Carl Henrik Lunde <chlunde-om2ZC0WAoZIXWF+eFR7m5Q@public.gmane.org>, eric.rannaud-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, Divyesh Shah <dpshah-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, matt-cT2on/YLNlBWk0Htik3J/w@public.gmane.org, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, subrata-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, roberto-5KDOxZqKugI@public.gmane.org, Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Andreas B Aaen <andreas.aaen-546VmZ+UeKYX2WXlbB3fKg@public.gmane.org> writes:
->
-> How do you actually use multiple name spaces in the current implementation in 
-> the same task if you refer to them indirectly through pids?
-> So if I need 500 network namespaces then I need to fork 500 processes.
+> +/**
+> + * struct iothrottle_node - throttling rule of a single block device
+> + * @node: list of per block device throttling rules
+> + * @dev: block device number, used as key in the list
+> + * @iorate: max i/o bandwidth (in bytes/s)
+> + * @strategy: throttling strategy (0 = leaky bucket, 1 = token bucket)
 
-Currently sockets are explicitly tagged with the namespace they are in.
-And you can pass sockets between processes.  The only case we have where
-we need to refer to a namespace other then our current one is when
-passing network devices between namespaces.
+use enum or define
 
-ip link set eth0 netns <pid>.
+> + * @timestamp: timestamp of the last I/O request (in jiffies)
+> + * @stat: i/o activity counter (leaky bucket only)
+> + * @bucket_size: bucket size in bytes (token bucket only)
+> + * @token: token counter (token bucket only)
+> + *
+> + * Define a i/o throttling rule for a single block device.
+> + *
+> + * NOTE: limiting rules always refer to dev_t; if a block device is unplugged
+> + * the limiting rules defined for that device persist and they are still valid
+> + * if a new device is plugged and it uses the same dev_t number.
+> + */
+> +struct iothrottle_node {
+> +	struct list_head node;
+> +	dev_t dev;
+> +	u64 iorate;
+> +	long strategy;
+> +	unsigned long timestamp;
+> +	atomic_long_t stat;
+> +	s64 bucket_size;
+> +	atomic_long_t token;
+> +};
+> +
+> +/**
+> + * struct iothrottle - throttling rules for a cgroup
+> + * @css: pointer to the cgroup state
+> + * @lock: spinlock used to protect write operations in the list
+> + * @list: list of iothrottle_node elements
+> + *
+> + * Define multiple per-block device i/o throttling rules.
+> + * Note: the list of the throttling rules is protected by RCU locking.
+> + */
+> +struct iothrottle {
+> +	struct cgroup_subsys_state css;
+> +	spinlock_t lock;
+> +	struct list_head list;
+> +};
+> +
+> +static inline struct iothrottle *cgroup_to_iothrottle(struct cgroup *cont)
+> +{
 
->> A socket option sounds like a nice idea.
->
-> And quite easy to implement except  for the handling of which network 
-> namespaces you should be allowed to talk to.
+cgrp is a preferable name to cont
 
-Yes.
+> +	return container_of(cgroup_subsys_state(cont, iothrottle_subsys_id),
+> +			    struct iothrottle, css);
+> +}
+> +
+> +static inline struct iothrottle *task_to_iothrottle(struct task_struct *task)
+> +{
+> +	return container_of(task_subsys_state(task, iothrottle_subsys_id),
+> +			    struct iothrottle, css);
+> +}
+> +
+> +/*
+> + * Note: called with rcu_read_lock() held.
+> + */
+> +static struct iothrottle_node *
+> +iothrottle_search_node(const struct iothrottle *iot, dev_t dev)
+> +{
+> +	struct iothrottle_node *n;
+> +
+> +	list_for_each_entry_rcu(n, &iot->list, node)
+> +		if (n->dev == dev)
+> +			return n;
+> +	return NULL;
+> +}
+> +
+> +/*
+> + * Note: called with iot->lock held.
+> + */
+> +static inline void iothrottle_insert_node(struct iothrottle *iot,
+> +						struct iothrottle_node *n)
+> +{
+> +	list_add_rcu(&n->node, &iot->list);
+> +}
+> +
+> +/*
+> + * Note: called with iot->lock held.
+> + */
+> +static inline struct iothrottle_node *
+> +iothrottle_replace_node(struct iothrottle *iot, struct iothrottle_node *old,
+> +			struct iothrottle_node *new)
+> +{
+> +	list_replace_rcu(&old->node, &new->node);
+> +	return old;
 
->> There have been a number of discussions about identifiers none of which
->> have led to any sort of agreement.  One of the goals in the design is
->> that we don't introduce new global identifiers allowing us to ultimately
->> have nested containers.
->
-> In this case this means that the index' should be a namespace of itself just 
-> like pids. It seems to be overkill. At lest for my purpose.
+you just return back 'old', so the return value is useless
 
-Well the index should be in a namespace and hopefully an existing namespace.
+> +}
+> +
+> +/*
+> + * Note: called with iot->lock held.
+> + */
+> +static struct iothrottle_node *
+> +iothrottle_delete_node(struct iothrottle *iot, dev_t dev)
+> +{
+> +	struct iothrottle_node *n;
+> +
+> +	list_for_each_entry_rcu(n, &iot->list, node)
 
->> So far we have been referring to namespaces indirectly by the pids of the
->> processes which are using them.
->
-> Right. And with namespaces into namespaces and usage of pid namespaces you 
-> could have two different namespaces named with the same numerical value of 
-> pid.
+list_for_each_entry()
 
-I each pid namespaces the pid values are unique, and since the pid namespace
-is hierarchical with all pids showing up in the initial pid namespace.
+> +		if (n->dev == dev) {
+> +			list_del_rcu(&n->node);
+> +			return n;
+> +		}
+> +	return NULL;
+> +}
+> +
+> +/*
+> + * Note: called from kernel/cgroup.c with cgroup_lock() held.
+> + */
+> +static struct cgroup_subsys_state *
+> +iothrottle_create(struct cgroup_subsys *ss, struct cgroup *cont)
+> +{
+> +	struct iothrottle *iot;
+> +
+> +	iot = kmalloc(sizeof(*iot), GFP_KERNEL);
+> +	if (unlikely(!iot))
+> +		return ERR_PTR(-ENOMEM);
+> +
+> +	INIT_LIST_HEAD(&iot->list);
+> +	spin_lock_init(&iot->lock);
+> +
+> +	return &iot->css;
+> +}
+> +
+> +/*
+> + * Note: called from kernel/cgroup.c with cgroup_lock() held.
+> + */
+> +static void iothrottle_destroy(struct cgroup_subsys *ss, struct cgroup *cont)
+> +{
+> +	struct iothrottle_node *n, *p;
+> +	struct iothrottle *iot = cgroup_to_iothrottle(cont);
+> +
+> +	/*
+> +	 * don't worry about locking here, at this point there must be not any
+> +	 * reference to the list.
+> +	 */
+> +	list_for_each_entry_safe(n, p, &iot->list, node)
+> +		kfree(n);
+> +	kfree(iot);
+> +}
+> +
+> +static ssize_t iothrottle_read(struct cgroup *cont, struct cftype *cft,
+> +				struct file *file, char __user *userbuf,
+> +				size_t nbytes, loff_t *ppos)
 
->> > It would also be nice to be able to see the network statistics from all
->> > the namespaces through the proc filesystem at least in an uncloned
->> > (isolated) namespace.
->>
->> Currently this is possible by looking at /proc/<pid>/net.
->
-> Which was what lead me to the question of how you can have more name spaces in 
-> a single task with the current implementation.
+use read_seq_string can simplify this function:
+	.read_seq_string = iothrottle_read
 
-Well you can't look at them very well.
+> +{
+> +	struct iothrottle *iot;
+> +	char *buffer;
+> +	int s = 0;
+> +	struct iothrottle_node *n;
+> +	ssize_t ret;
+> +
+> +	buffer = kmalloc(nbytes + 1, GFP_KERNEL);
+> +	if (!buffer)
+> +		return -ENOMEM;
+> +
+> +	cgroup_lock();
+> +	if (cgroup_is_removed(cont)) {
+> +		ret = -ENODEV;
+> +		goto out;
+> +	}
+> +
+> +	iot = cgroup_to_iothrottle(cont);
+> +	rcu_read_lock();
+> +	list_for_each_entry_rcu(n, &iot->list, node) {
+> +		unsigned long delta;
+> +
+> +		BUG_ON(!n->dev);
+> +		delta = jiffies_to_msecs((long)jiffies - (long)n->timestamp);
+> +		s += scnprintf(buffer + s, nbytes - s,
+> +				"%u %u %llu %li %li %lli %li %lu\n",
+> +				MAJOR(n->dev), MINOR(n->dev), n->iorate,
+> +				n->strategy, atomic_long_read(&n->stat),
+> +				n->bucket_size, atomic_long_read(&n->token),
+> +				delta);
+> +	}
+> +	rcu_read_unlock();
+> +	ret = simple_read_from_buffer(userbuf, nbytes, ppos, buffer, s);
+> +out:
+> +	cgroup_unlock();
+> +	kfree(buffer);
+> +	return ret;
+> +}
+> +
+> +static dev_t devname2dev_t(const char *buf)
+> +{
+> +	struct block_device *bdev;
+> +	dev_t dev = 0;
+> +	struct gendisk *disk;
+> +	int part;
+> +
+> +	/* use a lookup to validate the block device */
+> +	bdev = lookup_bdev(buf);
+> +	if (IS_ERR(bdev))
+> +		return 0;
+> +
+> +	/* only entire devices are allowed, not single partitions */
+> +	disk = get_gendisk(bdev->bd_dev, &part);
+> +	if (disk && !part) {
+> +		BUG_ON(!bdev->bd_inode);
+> +		dev = bdev->bd_inode->i_rdev;
+> +	}
+> +	bdput(bdev);
+> +
+> +	return dev;
+> +}
+> +
+> +/*
+> + * The userspace input string must use the following syntax:
+> + *
+> + * device:bw-limit:strategy:bucket-size
+> + */
 
->> > So you would be able to see the network statistics in
->> > /proc/net/ns/<index>/
->
-> Or maybe this should have been /proc/<pid>/net/<index>/ ?
+why not support these syntax:
+device:0
+device:bw-limit:0
 
-I'm not certain.  If I can figure out how to break /proc/net into it's own filesystem
-it gets easier to manage.  Despite being possible I haven't figured out how to
-do that cleanly yet.
+> +static int iothrottle_parse_args(char *buf, size_t nbytes,
+> +					dev_t *dev, u64 *iorate,
+> +					long *strategy, s64 *bucket_size)
+> +{
+> +	char *ioratep, *strategyp, *bucket_sizep;
+> +	int ret;
+> +
+> +	ioratep = memchr(buf, ':', nbytes);
+> +	if (!ioratep)
+> +		return -EINVAL;
+> +	*ioratep++ = '\0';
+> +
+> +	strategyp = memchr(ioratep, ':', buf + nbytes - ioratep);
+> +	if (!strategyp)
+> +		return -EINVAL;
+> +	*strategyp++ = '\0';
+> +
+> +	bucket_sizep = memchr(strategyp, ':', buf + nbytes - strategyp);
+> +	if (!bucket_sizep)
+> +		return -EINVAL;
+> +	*bucket_sizep++ = '\0';
+> +
+> +	/* i/o bandwidth limit (0 to delete a limiting rule) */
+> +	ret = strict_strtoull(ioratep, 10, iorate);
+> +	if (ret < 0)
+> +		return ret;
+> +	*iorate = ALIGN(*iorate, 1024);
+> +
+> +	/* throttling strategy */
+> +	ret = strict_strtol(strategyp, 10, strategy);
+> +	if (ret < 0)
+> +		return ret;
+> +
+> +	/* bucket size */
+> +	ret = strict_strtoll(bucket_sizep, 10, bucket_size);
+> +	if (ret < 0)
+> +		return ret;
+> +	if (*bucket_size < 0)
+> +		return -EINVAL;
+> +	*bucket_size = ALIGN(*bucket_size, 1024);
+> +
+> +	/* block device number */
+> +	*dev = devname2dev_t(buf);
+> +	if (!*dev)
+> +		return -EINVAL;
+> +
+> +	return 0;
+> +}
+> +
+> +static ssize_t iothrottle_write(struct cgroup *cont, struct cftype *cft,
+> +				struct file *file, const char __user *userbuf,
+> +				size_t nbytes, loff_t *ppos)
+> +{
 
->> If we can work out the details on how to do that cleanly it seems totally
->> reasonable to enhance network namespaces in that direction.  You are not
->> the first to express those kind of requirements, and probably won't be the
->> last.
->
-> So it seems that we need to restart the naming discussion.
+you can use write_string (currently in -mm) to simplify this funciton:
+	.write_string = iothrottle_write
 
-I had the clear realization a while back that if we had done this cleanly everything
-would have been in the mount namespace from the start.
-
-Since we have the problem of when to free a network namespace as well as how to
-open a socket I have relatively simple suggestion.  Create a netnsfs.  By default
-have that filesystem refer to the mounters current network namespace or if passed
--o create generate a new one.
-
-Opening a socket is a bit trickier to map because sockets have the triple of
-options.  But I expect you could open a socket like:
-open("/path/to/netnsfs/mount/inet;stream;tcp", O_RDWR | O_CREAT,  0777);
-
-I suppose a socket option that takes the path to the mount point might also work.  Just
-generating the socket cleanly the first time seems better though.
-
-With a netnsfs you could make the lifetime of the namespace the lifetime of the mount.
-Which you could make automatically reap when you process or set of processes go away
-by using a new mount namespace to hold it all in.
-
-Eric
+> +	struct iothrottle *iot;
+> +	struct iothrottle_node *n, *newn = NULL;
+> +	char *buffer, *s;
+> +	dev_t dev;
+> +	u64 iorate;
+> +	long strategy;
+> +	s64 bucket_size;
+> +	int ret;
+> +
+> +	if (!nbytes)
+> +		return -EINVAL;
+> +
+> +	/* Upper limit on largest io-throttle rule string user might write. */
+> +	if (nbytes > 1024)
+> +		return -E2BIG;
+> +
+> +	buffer = kmalloc(nbytes + 1, GFP_KERNEL);
+> +	if (!buffer)
+> +		return -ENOMEM;
+> +
+> +	ret = strncpy_from_user(buffer, userbuf, nbytes);
+> +	if (ret < 0)
+> +		goto out1;
+> +	buffer[nbytes] = '\0';
+> +	s = strstrip(buffer);
+> +
+> +	ret = iothrottle_parse_args(s, nbytes, &dev, &iorate,
+> +					&strategy, &bucket_size);
+> +	if (ret)
+> +		goto out1;
+> +
+> +	if (iorate) {
+> +		newn = kmalloc(sizeof(*newn), GFP_KERNEL);
+> +		if (!newn) {
+> +			ret = -ENOMEM;
+> +			goto out1;
+> +		}
+> +		newn->dev = dev;
+> +		newn->iorate = iorate;
+> +		newn->strategy = strategy;
+> +		newn->bucket_size = bucket_size;
+> +		newn->timestamp = jiffies;
+> +		atomic_long_set(&newn->stat, 0);
+> +		atomic_long_set(&newn->token, 0);
+> +	}
+> +
+> +	cgroup_lock();
+> +	if (cgroup_is_removed(cont)) {
+> +		ret = -ENODEV;
+> +		goto out2;
+> +	}
+> +
+> +	iot = cgroup_to_iothrottle(cont);
+> +	spin_lock(&iot->lock);
+> +	if (!iorate) {
+> +		/* Delete a block device limiting rule */
+> +		n = iothrottle_delete_node(iot, dev);
+> +		goto out3;
+> +	}
+> +	n = iothrottle_search_node(iot, dev);
+> +	if (n) {
+> +		/* Update a block device limiting rule */
+> +		iothrottle_replace_node(iot, n, newn);
+> +		goto out3;
+> +	}
+> +	/* Add a new block device limiting rule */
+> +	iothrottle_insert_node(iot, newn);
+> +out3:
+> +	ret = nbytes;
+> +	spin_unlock(&iot->lock);
+> +	if (n) {
+> +		synchronize_rcu();
+> +		kfree(n);
+> +	}
+> +out2:
+> +	cgroup_unlock();
+> +out1:
+> +	kfree(buffer);
+> +	return ret;
+> +}
