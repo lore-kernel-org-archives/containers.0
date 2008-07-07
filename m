@@ -1,32 +1,82 @@
-From: ebiederm@xmission.com (Eric W. Biederman)
-Subject: Re: [PATCH net-next 3/9] ipv4: remove static flush_delay variable
-Date: Mon, 07 Jul 2008 01:43:06 -0700
-Message-ID: <m1k5fyytid.fsf@frodo.ebiederm.org>
-References: <1215177360.27873.50.camel@iris.sw.ru>
-	<1215177432-25934-3-git-send-email-den@openvz.org>
+From: Daniel Lezcano <dlezcano@fr.ibm.com>
+Subject: Re: [PATCH 0/4] MIB: add struct net to UDP accounting macros
+Date: Mon, 07 Jul 2008 12:19:03 +0200
+Message-ID: <4871ED97.70806@fr.ibm.com>
+References: <486E1074.7040702@openvz.org> <20080705.212138.06508305.davem@davemloft.net> <4871D027.4070504@openvz.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+Content-Transfer-Encoding: 7bit
 Return-path: <netdev-owner@vger.kernel.org>
-In-Reply-To: <1215177432-25934-3-git-send-email-den@openvz.org> (Denis
-	V. Lunev's message of "Fri, 4 Jul 2008 17:17:06 +0400")
+In-Reply-To: <4871D027.4070504@openvz.org>
 Sender: netdev-owner@vger.kernel.org
-To: "Denis V. Lunev" <den@openvz.org>
-Cc: davem@davemloft.net, containers@lists.osdl.org, netdev@vger.kernel.org
+To: Pavel Emelyanov <xemul@openvz.org>
+Cc: David Miller <davem@davemloft.net>, netdev@vger.kernel.org, den@openvz.org, "Eric W. Biederman" <ebiederm@xmission.com>, Linux Containers <containers@lists.osdl.org>
 List-Id: containers.vger.kernel.org
 
-"Denis V. Lunev" <den@openvz.org> writes:
+Pavel Emelyanov wrote:
+> David Miller wrote:
+>> From: Pavel Emelyanov <xemul@openvz.org>
+>> Date: Fri, 04 Jul 2008 15:58:44 +0400
+>>
+>>> This is the first small set of MIB statistics netnsization. The easiest
+>>> case is UDP stats, so I started with this one. If this set is accepted,
+>>> I will go on step-by-step with adding struct net to all the other stats' 
+>>> accounting macros, then SNMP_XXX ones and finish with a set than will put 
+>>> the stats on the struct net and fix appropriate proc files.
+>>>
+>>> Signed-off-by: Pavel Emelyanov <xemul@openvz.org>
+>>> Acked-by: Denis V. Lunev <den@openvz.org>
+>> Applied, thanks Pavel.
+>>
+>> Are we going to provide some way for an administrator to fetch
+>> stats from the perspective of all namespaces?  I know the idea
+>> is seperation with this stuff, but admins are going to want
+>> something like that.
+> 
+> Well, if we want to get the stats for each namespace separately, then
+> this ability is already present. Since this statistics is shown via the
+> /proc/net files and the /proc/net itself is seen via the /proc/<pid>/net,
+> then we can walk the init-s of all the containers in the system and dump
+> this info.
+> 
+> The problem that is to be solved with this approach is how to get these
+> init-s :) But since finding any namespace by some task living in it is a
+> common practice now (netdev moving, sys_hijack) this one will be solved.
+> 
+> BTW, are there some plans about implementing some netlink-based fetcher
+> of this statistics? If so, then I think it's worth making this engine
+> namespaces aware from the very beginning.
 
-> flush delay is used as an external storage for net.ipv4.route.flush sysctl
-> entry. It is write-only.
->
-> The ctl_table->data for this entry is used once. Fix this case to point
-> to the stack to remove global variable. Do this to avoid additional
-> variable on struct net in the next patch.
->
-> Possible race (as it was before) accessing this local variable is removed
-> using flush_mutex.
 
-FYI.  You can avoid the locking entirely by defining a local struct ctl_table variable
-on the stack.
+Shouldn't be interesting to handle the network namespaces directly with 
+the iproute command ?
 
-Eric
+  * ip netns add <name>
+  * ip netns del <name>
+  * ip netns <oldname> set name <newname>
+  * ip netns show
+
+When a network namespace is created via clone|unshare, the name is 
+automatically the pid of the creator.
+
+In order to track the namespace, we can add an entry in /proc/net (aka 
+/proc/<pid>/net) named "name" which contains the name of the namespace.
+I heard Eric is thinking about a netnsfs.
+
+ From a larger perspective, the iproute command with a new "netns" 
+subcommand can be enhanced to have more features, for example the freeze 
+and resume for the network.
+
+  * ip netns set down <name>
+  * ip netns set up <name>
+
+So having the netns binded, we can plug the known subcommand (link, ip, 
+...) with the netns features. For examples:
+
+  * ip addr add 1.2.3.4/24 dev eth0 netns foo
+
+
+
+
+
+
