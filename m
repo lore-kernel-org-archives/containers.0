@@ -1,7 +1,7 @@
 From: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH 2/4] Container Freezer: Make refrigerator always available
-Date: Mon, 07 Jul 2008 15:58:25 -0700
-Message-ID: <20080707225824.144962278__25798.3800759122$1215471703$gmane$org@us.ibm.com>
+Subject: [PATCH 3/4] Container Freezer: Implement freezer cgroup subsystem
+Date: Mon, 07 Jul 2008 15:58:26 -0700
+Message-ID: <20080707225824.459565561__29329.8296085142$1215471721$gmane$org@us.ibm.com>
 References: <20080707225823.502032693@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -21,391 +21,552 @@ Cc: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@pub
 List-Id: containers.vger.kernel.org
 
 From: Cedric Le Goater <clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH 2/4] Container Freezer: Make refrigerator always available
+Subject: [PATCH 3/4] Container Freezer: Implement freezer cgroup subsystem
 
-Now that the TIF_FREEZE flag is available in all architectures,
-extract the refrigerator() and freeze_task() from kernel/power/process.c
-and make it available to all.
+This patch implements a new freezer subsystem in the control groups framework.
+It provides a way to stop and resume execution of all tasks in a cgroup by
+writing in the cgroup filesystem.
 
-The refrigerator() can now be used in a control group subsystem 
-implementing a control group freezer.
+This is the basic mechanism which should do the right thing for user space task
+in a simple scenario.
+
+It's important to note that freezing can be incomplete. In that case we return
+EBUSY. This means that some tasks in the cgroup are busy doing something that
+prevents us from completely freezing the cgroup at this time. After EBUSY,
+the cgroup will remain partially frozen -- reflected by freezer.state reporting
+"FREEZING" when read. The state will remain "FREEZING" until one of these
+things happens:
+
+	1) Userspace cancels the freezing operation by writing "RUNNING" to
+		the freezer.state file
+	2) Userspace retries the freezing operation by writing "FROZEN" to
+		the freezer.state file (writing "FREEZING" is not legal
+		and returns EIO)
+	3) The tasks that blocked the cgroup from entering the "FROZEN"
+		state disappear from the cgroup's set of tasks.
 
 Signed-off-by: Cedric Le Goater <clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
 Signed-off-by: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 Tested-by: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 ---
- include/linux/freezer.h |   24 +++++----
- kernel/Makefile         |    2 
- kernel/freezer.c        |  122 ++++++++++++++++++++++++++++++++++++++++++++++++
- kernel/power/process.c  |  116 ---------------------------------------------
- 4 files changed, 136 insertions(+), 128 deletions(-)
+Changelog:
+v2:
+	Moved the "kill" file into a separate cgroup subsystem (signal) and
+		it's own patch.
+	Changed the name of the file from freezer.freeze to freezer.state.
+	Switched from taking 1 and 0 as input to the strings "FROZEN" and 
+		"RUNNING", respectively. This helps keep the interface
+		human-usable if/when we need to more states.
+	Checked that stopped or interrupted is "frozen enough"
+		Since try_to_freeze() is called upon wakeup of these tasks
+		this should be fine. This idea comes from recent changes to
+		the freezer.
+	Checked that if (task == current) whilst freezing cgroup we're ok
+	Fixed bug where -EBUSY would always be returned when freezing
+	Added code to handle userspace retries for any remaining -EBUSY
 
+ include/linux/cgroup_freezer.h |   71 +++++++++
+ include/linux/cgroup_subsys.h  |    6 
+ include/linux/freezer.h        |   16 +-
+ init/Kconfig                   |    7 
+ kernel/Makefile                |    1 
+ kernel/cgroup_freezer.c        |  317 +++++++++++++++++++++++++++++++++++++++++
+ 6 files changed, 414 insertions(+), 4 deletions(-)
+
+Index: linux-2.6.26-rc5-mm2/include/linux/cgroup_freezer.h
+===================================================================
+--- /dev/null
++++ linux-2.6.26-rc5-mm2/include/linux/cgroup_freezer.h
+@@ -0,0 +1,71 @@
++#ifndef _LINUX_CGROUP_FREEZER_H
++#define _LINUX_CGROUP_FREEZER_H
++/*
++ * cgroup_freezer.h -  control group freezer subsystem interface
++ *
++ * Copyright IBM Corporation, 2007
++ *
++ * Author : Cedric Le Goater <clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
++ *
++ * This program is free software; you can redistribute it and/or modify it
++ * under the terms of version 2.1 of the GNU Lesser General Public License
++ * as published by the Free Software Foundation.
++ *
++ * This program is distributed in the hope that it would be useful, but
++ * WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
++ */
++
++#include <linux/cgroup.h>
++
++#ifdef CONFIG_CGROUP_FREEZER
++
++enum freezer_state {
++	STATE_RUNNING = 0,
++	STATE_FREEZING,
++	STATE_FROZEN,
++};
++
++struct freezer {
++	struct cgroup_subsys_state css;
++	enum freezer_state state;
++	spinlock_t lock; /* protects _writes_ to state */
++};
++
++static inline struct freezer *cgroup_freezer(
++		struct cgroup *cgroup)
++{
++	return container_of(
++		cgroup_subsys_state(cgroup, freezer_subsys_id),
++		struct freezer, css);
++}
++
++static inline struct freezer *task_freezer(struct task_struct *task)
++{
++	return container_of(task_subsys_state(task, freezer_subsys_id),
++			    struct freezer, css);
++}
++
++static inline int cgroup_frozen(struct task_struct *task)
++{
++	struct freezer *freezer;
++	enum freezer_state state;
++
++	task_lock(task);
++	freezer = task_freezer(task);
++	state = freezer->state;
++	task_unlock(task);
++
++	return state == STATE_FROZEN;
++}
++
++#else /* !CONFIG_CGROUP_FREEZER */
++
++static inline int cgroup_frozen(struct task_struct *task)
++{
++	return 0;
++}
++
++#endif /* !CONFIG_CGROUP_FREEZER */
++
++#endif /* _LINUX_CGROUP_FREEZER_H */
+Index: linux-2.6.26-rc5-mm2/include/linux/cgroup_subsys.h
+===================================================================
+--- linux-2.6.26-rc5-mm2.orig/include/linux/cgroup_subsys.h
++++ linux-2.6.26-rc5-mm2/include/linux/cgroup_subsys.h
+@@ -50,5 +50,11 @@ SUBSYS(devices)
+ #ifdef CONFIG_CGROUP_MEMRLIMIT_CTLR
+ SUBSYS(memrlimit_cgroup)
+ #endif
+ 
+ /* */
++
++#ifdef CONFIG_CGROUP_FREEZER
++SUBSYS(freezer)
++#endif
++
++/* */
+Index: linux-2.6.26-rc5-mm2/init/Kconfig
+===================================================================
+--- linux-2.6.26-rc5-mm2.orig/init/Kconfig
++++ linux-2.6.26-rc5-mm2/init/Kconfig
+@@ -329,10 +329,17 @@ config GROUP_SCHED
+ 	default n
+ 	help
+ 	  This feature lets CPU scheduler recognize task groups and control CPU
+ 	  bandwidth allocation to such task groups.
+ 
++config CGROUP_FREEZER
++        bool "control group freezer subsystem"
++        depends on CGROUPS
++        help
++          Provides a way to freeze and unfreeze all tasks in a
++	  cgroup
++
+ config FAIR_GROUP_SCHED
+ 	bool "Group scheduling for SCHED_OTHER"
+ 	depends on GROUP_SCHED
+ 	default GROUP_SCHED
+ 
+Index: linux-2.6.26-rc5-mm2/kernel/Makefile
+===================================================================
+--- linux-2.6.26-rc5-mm2.orig/kernel/Makefile
++++ linux-2.6.26-rc5-mm2/kernel/Makefile
+@@ -49,10 +49,11 @@ obj-$(CONFIG_PM) += power/
+ obj-$(CONFIG_BSD_PROCESS_ACCT) += acct.o
+ obj-$(CONFIG_KEXEC) += kexec.o
+ obj-$(CONFIG_COMPAT) += compat.o
+ obj-$(CONFIG_CGROUPS) += cgroup.o
+ obj-$(CONFIG_CGROUP_DEBUG) += cgroup_debug.o
++obj-$(CONFIG_CGROUP_FREEZER) += cgroup_freezer.o
+ obj-$(CONFIG_CPUSETS) += cpuset.o
+ obj-$(CONFIG_CGROUP_NS) += ns_cgroup.o
+ obj-$(CONFIG_UTS_NS) += utsname.o
+ obj-$(CONFIG_USER_NS) += user_namespace.o
+ obj-$(CONFIG_PID_NS) += pid_namespace.o
+Index: linux-2.6.26-rc5-mm2/kernel/cgroup_freezer.c
+===================================================================
+--- /dev/null
++++ linux-2.6.26-rc5-mm2/kernel/cgroup_freezer.c
+@@ -0,0 +1,317 @@
++/*
++ * cgroup_freezer.c -  control group freezer subsystem
++ *
++ * Copyright IBM Corporation, 2007
++ *
++ * Author : Cedric Le Goater <clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
++ *
++ * This program is free software; you can redistribute it and/or modify it
++ * under the terms of version 2.1 of the GNU Lesser General Public License
++ * as published by the Free Software Foundation.
++ *
++ * This program is distributed in the hope that it would be useful, but
++ * WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
++ */
++
++#include <linux/module.h>
++#include <linux/cgroup.h>
++#include <linux/fs.h>
++#include <linux/uaccess.h>
++#include <linux/freezer.h>
++#include <linux/cgroup_freezer.h>
++#include <linux/seq_file.h>
++
++/*
++ * Buffer size for freezer state is limited by cgroups write_string()
++ * interface. See cgroups code for the current size.
++ */
++static const char *freezer_state_strs[] = {
++	"RUNNING",
++	"FREEZING",
++	"FROZEN",
++};
++
++/*
++ * State diagram (transition labels in parenthesis):
++ *
++ *  RUNNING -(FROZEN)-> FREEZING -(FROZEN)-> FROZEN
++ *    ^ ^                  |                   |
++ *    | |____(RUNNING)_____|                   |
++ *    |___________________________(RUNNING)____|
++ */
++
++struct cgroup_subsys freezer_subsys;
++
++/* Locks taken and their ordering:
++ *
++ * freezer_create(), freezer_destroy():
++ * cgroup_lock [ by cgroup core ]
++ *
++ * can_attach():
++ * cgroup_lock
++ *
++ * cgroup_frozen():
++ * task_lock
++ *
++ * freezer_fork():
++ * task_lock
++ *  freezer->lock
++ *   sighand->siglock
++ *
++ * freezer_read():
++ * cgroup_lock
++ *  freezer->lock
++ *   read_lock css_set_lock
++ *
++ * freezer_write():
++ * cgroup_lock
++ *   freezer->lock
++ *    read_lock css_set_lock
++ *     [unfreeze: task_lock (reaquire freezer->lock)]
++ *      sighand->siglock
++ */
++static struct cgroup_subsys_state *freezer_create(struct cgroup_subsys *ss,
++						  struct cgroup *cgroup)
++{
++	struct freezer *freezer;
++
++	freezer = kzalloc(sizeof(struct freezer), GFP_KERNEL);
++	if (!freezer)
++		return ERR_PTR(-ENOMEM);
++
++	spin_lock_init(&freezer->lock);
++	freezer->state = STATE_RUNNING;
++	return &freezer->css;
++}
++
++static void freezer_destroy(struct cgroup_subsys *ss,
++			    struct cgroup *cgroup)
++{
++	kfree(cgroup_freezer(cgroup));
++}
++
++
++static int freezer_can_attach(struct cgroup_subsys *ss,
++			      struct cgroup *new_cgroup,
++			      struct task_struct *task)
++{
++	struct freezer *freezer;
++	int retval = 0;
++
++	/*
++	 * The call to cgroup_lock() in the freezer.state write method prevents
++	 * a write to that file racing against an attach, and hence the
++	 * can_attach() result will remain valid until the attach completes.
++	 */
++	freezer = cgroup_freezer(new_cgroup);
++	if (freezer->state == STATE_FROZEN)
++		retval = -EBUSY;
++	return retval;
++}
++
++static void freezer_fork(struct cgroup_subsys *ss, struct task_struct *task)
++{
++	struct freezer *freezer;
++
++	task_lock(task);
++	freezer = task_freezer(task);
++
++	BUG_ON(freezer->state == STATE_FROZEN);
++
++	/* Locking avoids race with FREEZING -> RUNNING transitions. */
++	spin_lock_irq(&freezer->lock);
++	if (freezer->state == STATE_FREEZING)
++		freeze_task(task, true);
++	spin_unlock_irq(&freezer->lock);
++
++	task_unlock(task);
++}
++
++/*
++ * caller must hold freezer->lock
++ */
++static void check_if_frozen(struct cgroup *cgroup,
++	 		    struct freezer *freezer)
++{
++	struct cgroup_iter it;
++	struct task_struct *task;
++	unsigned int nfrozen = 0, ntotal = 0;
++
++	cgroup_iter_start(cgroup, &it);
++	while ((task = cgroup_iter_next(cgroup, &it))) {
++		ntotal++;
++		/*
++		 * Task is frozen or will freeze immediately when next it gets
++		 * woken
++		 */
++		if (frozen(task) ||
++		    (task_is_stopped_or_traced(task) && freezing(task)))
++			nfrozen++;
++	}
++
++	/*
++	 * Transition to FROZEN when no new tasks can be added ensures
++	 * that we never exist in the FROZEN state while there are unfrozen
++	 * tasks.
++	 */
++	if (nfrozen == ntotal)
++		freezer->state = STATE_FROZEN;
++	cgroup_iter_end(cgroup, &it);
++}
++
++static ssize_t freezer_read(struct cgroup *cgroup, struct cftype *cft,
++			    struct seq_file *m)
++{
++	struct freezer *freezer;
++	enum freezer_state state;
++
++	if (!cgroup_lock_live_group(cgroup))
++		return -ENODEV;
++
++	freezer = cgroup_freezer(cgroup);
++	spin_lock_irq(&freezer->lock);
++	state = freezer->state;
++	if (state == STATE_FREEZING) {
++		/* We change from FREEZING to FROZEN lazily if the cgroup was
++		 * only partially frozen when we exitted write. */
++		check_if_frozen(cgroup, freezer);
++		state = freezer->state;
++	}
++	spin_unlock_irq(&freezer->lock);
++	cgroup_unlock();
++
++	seq_puts(m, freezer_state_strs[state]);
++	seq_putc(m, '\n');
++	return 0;
++}
++
++static int try_to_freeze_cgroup(struct cgroup *cgroup, struct freezer *freezer)
++{
++	struct cgroup_iter it;
++	struct task_struct *task;
++	unsigned int num_cant_freeze_now = 0;
++
++	freezer->state = STATE_FREEZING;
++	cgroup_iter_start(cgroup, &it);
++	while ((task = cgroup_iter_next(cgroup, &it))) {
++		if (!freeze_task(task, true))
++			continue;
++		if (task_is_stopped_or_traced(task) && freezing(task))
++			/*
++			 * The freeze flag is set so these tasks will
++			 * immediately go into the fridge upon waking.
++			 */
++			continue;
++		if (!freezing(task) && !freezer_should_skip(task))
++			num_cant_freeze_now++;
++	}
++	cgroup_iter_end(cgroup, &it);
++
++	return num_cant_freeze_now ? -EBUSY : 0;
++}
++
++static int unfreeze_cgroup(struct cgroup *cgroup, struct freezer *freezer)
++{
++	struct cgroup_iter it;
++	struct task_struct *task;
++
++	cgroup_iter_start(cgroup, &it);
++	while ((task = cgroup_iter_next(cgroup, &it))) {
++		int do_wake;
++
++		/* Drop freezer->lock to fix lock ordering (see freezer_fork) */
++		spin_unlock_irq(&freezer->lock);
++		task_lock(task);
++		spin_lock_irq(&freezer->lock);
++		do_wake = __thaw_process(task);
++		task_unlock(task);
++		if (do_wake)
++			wake_up_process(task);
++	}
++	cgroup_iter_end(cgroup, &it);
++	freezer->state = STATE_RUNNING;
++
++	return 0;
++}
++
++static int freezer_change_state(struct cgroup *cgroup,
++				enum freezer_state goal_state)
++{
++	struct freezer *freezer;
++	int retval = 0;
++
++	freezer = cgroup_freezer(cgroup);
++	spin_lock_irq(&freezer->lock);
++	check_if_frozen(cgroup, freezer); /* may update freezer->state */
++	if (goal_state == freezer->state)
++		goto out;
++	switch (freezer->state) {
++	case STATE_RUNNING:
++		retval = try_to_freeze_cgroup(cgroup, freezer);
++		break;
++	case STATE_FREEZING:
++		if (goal_state == STATE_FROZEN) {
++			/* Userspace is retrying after
++			 * "/bin/echo FROZEN > freezer.state" returned -EBUSY */
++			retval = try_to_freeze_cgroup(cgroup, freezer);
++			break;
++		}
++		/* state == FREEZING and goal_state == RUNNING, so unfreeze */
++	case STATE_FROZEN:
++		retval = unfreeze_cgroup(cgroup, freezer);
++		break;
++	default:
++		break;
++	}
++out:
++	spin_unlock_irq(&freezer->lock);
++
++	return retval;
++}
++
++static int freezer_write(struct cgroup *cgroup,
++	    		 struct cftype *cft,
++    			 const char *buffer)
++{
++	int retval;
++	enum freezer_state goal_state;
++
++	if (strcmp(buffer, freezer_state_strs[STATE_RUNNING]) == 0)
++		goal_state = STATE_RUNNING;
++	else if (strcmp(buffer, freezer_state_strs[STATE_FROZEN]) == 0)
++		goal_state = STATE_FROZEN;
++	else
++		return -EIO;
++
++	if (!cgroup_lock_live_group(cgroup))
++		return -ENODEV;
++	retval = freezer_change_state(cgroup, goal_state);
++	cgroup_unlock();
++	return retval;
++}
++
++static struct cftype files[] = {
++	{
++		.name = "state",
++		.read_seq_string = freezer_read,
++		.write_string = freezer_write,
++	},
++};
++
++static int freezer_populate(struct cgroup_subsys *ss, struct cgroup *cgroup)
++{
++	return cgroup_add_files(cgroup, ss, files, ARRAY_SIZE(files));
++}
++
++struct cgroup_subsys freezer_subsys = {
++	.name		= "freezer",
++	.create		= freezer_create,
++	.destroy	= freezer_destroy,
++	.populate	= freezer_populate,
++	.subsys_id	= freezer_subsys_id,
++	.can_attach	= freezer_can_attach,
++	.attach		= NULL,
++	.fork		= freezer_fork,
++	.exit		= NULL,
++};
 Index: linux-2.6.26-rc5-mm2/include/linux/freezer.h
 ===================================================================
 --- linux-2.6.26-rc5-mm2.orig/include/linux/freezer.h
 +++ linux-2.6.26-rc5-mm2/include/linux/freezer.h
-@@ -4,11 +4,10 @@
- #define FREEZER_H_INCLUDED
- 
- #include <linux/sched.h>
- #include <linux/wait.h>
- 
--#ifdef CONFIG_PM_SLEEP
- /*
-  * Check if a process has been frozen
-  */
- static inline int frozen(struct task_struct *p)
- {
-@@ -37,10 +36,15 @@ static inline void set_freeze_flag(struc
- static inline void clear_freeze_flag(struct task_struct *p)
- {
- 	clear_tsk_thread_flag(p, TIF_FREEZE);
+@@ -44,26 +44,34 @@ static inline bool should_send_signal(st
  }
  
-+static inline bool should_send_signal(struct task_struct *p)
-+{
-+	return !(p->flags & PF_FREEZER_NOSIG);
-+}
-+
  /*
   * Wake up a frozen process
   *
-  * task_lock() is taken to prevent the race with refrigerator() which may
+- * task_lock() is taken to prevent the race with refrigerator() which may
++ * task_lock() is needed to prevent the race with refrigerator() which may
   * occur if the freezing of tasks fails.  Namely, without the lock, if the
-@@ -61,22 +65,28 @@ static inline int thaw_process(struct ta
+  * freezing of tasks failed, thaw_tasks() might have run before a task in
+  * refrigerator() could call frozen_process(), in which case the task would be
+  * frozen and no one would thaw it.
+  */
+-static inline int thaw_process(struct task_struct *p)
++static inline int __thaw_process(struct task_struct *p)
+ {
+-	task_lock(p);
+ 	if (frozen(p)) {
+ 		p->flags &= ~PF_FROZEN;
++		return 1;
++	}
++	clear_freeze_flag(p);
++	return 0;
++}
++
++static inline int thaw_process(struct task_struct *p)
++{
++	task_lock(p);
++	if (__thaw_process(p) == 1) {
+ 		task_unlock(p);
+ 		wake_up_process(p);
+ 		return 1;
+ 	}
+-	clear_freeze_flag(p);
  	task_unlock(p);
  	return 0;
  }
  
  extern void refrigerator(void);
--extern int freeze_processes(void);
--extern void thaw_processes(void);
- 
- static inline int try_to_freeze(void)
- {
- 	if (freezing(current)) {
- 		refrigerator();
- 		return 1;
- 	} else
- 		return 0;
- }
- 
-+extern bool freeze_task(struct task_struct *p, bool sig_only);
-+extern void cancel_freezing(struct task_struct *p);
-+
-+#ifdef CONFIG_PM_SLEEP
-+
-+extern int freeze_processes(void);
-+extern void thaw_processes(void);
-+
- /*
-  * The PF_FREEZER_SKIP flag should be set by a vfork parent right before it
-  * calls wait_for_completion(&vfork) and reset right after it returns from this
-  * function.  Next, the parent should call try_to_freeze() to freeze itself
-  * appropriately in case the child has exited before the freezing of tasks is
-@@ -165,22 +175,14 @@ static inline void set_freezable_with_si
- 				__retval); 				\
- 	} while (try_to_freeze());					\
- 	__retval;							\
- })
- #else /* !CONFIG_PM_SLEEP */
--static inline int frozen(struct task_struct *p) { return 0; }
--static inline int freezing(struct task_struct *p) { return 0; }
--static inline void set_freeze_flag(struct task_struct *p) {}
--static inline void clear_freeze_flag(struct task_struct *p) {}
--static inline int thaw_process(struct task_struct *p) { return 1; }
- 
--static inline void refrigerator(void) {}
- static inline int freeze_processes(void) { BUG(); return 0; }
- static inline void thaw_processes(void) {}
- 
--static inline int try_to_freeze(void) { return 0; }
--
- static inline void freezer_do_not_count(void) {}
- static inline void freezer_count(void) {}
- static inline int freezer_should_skip(struct task_struct *p) { return 0; }
- static inline void set_freezable(void) {}
- static inline void set_freezable_with_signal(void) {}
-Index: linux-2.6.26-rc5-mm2/kernel/Makefile
-===================================================================
---- linux-2.6.26-rc5-mm2.orig/kernel/Makefile
-+++ linux-2.6.26-rc5-mm2/kernel/Makefile
-@@ -3,11 +3,11 @@
- #
- 
- obj-y     = sched.o fork.o exec_domain.o panic.o printk.o \
- 	    exit.o itimer.o time.o softirq.o resource.o \
- 	    sysctl.o capability.o ptrace.o timer.o user.o \
--	    signal.o sys.o kmod.o workqueue.o pid.o \
-+	    signal.o sys.o kmod.o workqueue.o pid.o freezer.o \
- 	    rcupdate.o extable.o params.o posix-timers.o \
- 	    kthread.o wait.o kfifo.o sys_ni.o posix-cpu-timers.o mutex.o \
- 	    hrtimer.o rwsem.o nsproxy.o srcu.o semaphore.o \
- 	    notifier.o ksysfs.o pm_qos_params.o sched_clock.o
- 
-Index: linux-2.6.26-rc5-mm2/kernel/freezer.c
-===================================================================
---- /dev/null
-+++ linux-2.6.26-rc5-mm2/kernel/freezer.c
-@@ -0,0 +1,122 @@
-+/*
-+ * kernel/freezer.c - Function to freeze a process
-+ *
-+ * Originally from kernel/power/process.c
-+ */
-+
-+#include <linux/interrupt.h>
-+#include <linux/suspend.h>
-+#include <linux/module.h>
-+#include <linux/syscalls.h>
-+#include <linux/freezer.h>
-+
-+/*
-+ * freezing is complete, mark current process as frozen
-+ */
-+static inline void frozen_process(void)
-+{
-+	if (!unlikely(current->flags & PF_NOFREEZE)) {
-+		current->flags |= PF_FROZEN;
-+		wmb();
-+	}
-+	clear_freeze_flag(current);
-+}
-+
-+/* Refrigerator is place where frozen processes are stored :-). */
-+void refrigerator(void)
-+{
-+	/* Hmm, should we be allowed to suspend when there are realtime
-+	   processes around? */
-+	long save;
-+
-+	task_lock(current);
-+	if (freezing(current)) {
-+		frozen_process();
-+		task_unlock(current);
-+	} else {
-+		task_unlock(current);
-+		return;
-+	}
-+	save = current->state;
-+	pr_debug("%s entered refrigerator\n", current->comm);
-+
-+	spin_lock_irq(&current->sighand->siglock);
-+	recalc_sigpending(); /* We sent fake signal, clean it up */
-+	spin_unlock_irq(&current->sighand->siglock);
-+
-+	for (;;) {
-+		set_current_state(TASK_UNINTERRUPTIBLE);
-+		if (!frozen(current))
-+			break;
-+		schedule();
-+	}
-+	pr_debug("%s left refrigerator\n", current->comm);
-+	__set_current_state(save);
-+}
-+EXPORT_SYMBOL(refrigerator);
-+
-+static void fake_signal_wake_up(struct task_struct *p)
-+{
-+	unsigned long flags;
-+
-+	spin_lock_irqsave(&p->sighand->siglock, flags);
-+	signal_wake_up(p, 0);
-+	spin_unlock_irqrestore(&p->sighand->siglock, flags);
-+}
-+
-+/**
-+ *	freeze_task - send a freeze request to given task
-+ *	@p: task to send the request to
-+ *	@sig_only: if set, the request will only be sent if the task has the
-+ *		PF_FREEZER_NOSIG flag unset
-+ *	Return value: 'false', if @sig_only is set and the task has
-+ *		PF_FREEZER_NOSIG set or the task is frozen, 'true', otherwise
-+ *
-+ *	The freeze request is sent by setting the tasks's TIF_FREEZE flag and
-+ *	either sending a fake signal to it or waking it up, depending on whether
-+ *	or not it has PF_FREEZER_NOSIG set.  If @sig_only is set and the task
-+ *	has PF_FREEZER_NOSIG set (ie. it is a typical kernel thread), its
-+ *	TIF_FREEZE flag will not be set.
-+ */
-+bool freeze_task(struct task_struct *p, bool sig_only)
-+{
-+	/*
-+	 * We first check if the task is freezing and next if it has already
-+	 * been frozen to avoid the race with frozen_process() which first marks
-+	 * the task as frozen and next clears its TIF_FREEZE.
-+	 */
-+	if (!freezing(p)) {
-+		rmb();
-+		if (frozen(p))
-+			return false;
-+
-+		if (!sig_only || should_send_signal(p))
-+			set_freeze_flag(p);
-+		else
-+			return false;
-+	}
-+
-+	if (should_send_signal(p)) {
-+		if (!signal_pending(p))
-+			fake_signal_wake_up(p);
-+	} else if (sig_only) {
-+		return false;
-+	} else {
-+		wake_up_state(p, TASK_INTERRUPTIBLE);
-+	}
-+
-+	return true;
-+}
-+
-+void cancel_freezing(struct task_struct *p)
-+{
-+	unsigned long flags;
-+
-+	if (freezing(p)) {
-+		pr_debug("  clean up: %s\n", p->comm);
-+		clear_freeze_flag(p);
-+		spin_lock_irqsave(&p->sighand->siglock, flags);
-+		recalc_sigpending_and_wake(p);
-+		spin_unlock_irqrestore(&p->sighand->siglock, flags);
-+	}
-+}
-Index: linux-2.6.26-rc5-mm2/kernel/power/process.c
-===================================================================
---- linux-2.6.26-rc5-mm2.orig/kernel/power/process.c
-+++ linux-2.6.26-rc5-mm2/kernel/power/process.c
-@@ -26,125 +26,10 @@ static inline int freezeable(struct task
- 	    (p->exit_state != 0))
- 		return 0;
- 	return 1;
- }
- 
--/*
-- * freezing is complete, mark current process as frozen
-- */
--static inline void frozen_process(void)
--{
--	if (!unlikely(current->flags & PF_NOFREEZE)) {
--		current->flags |= PF_FROZEN;
--		wmb();
--	}
--	clear_freeze_flag(current);
--}
--
--/* Refrigerator is place where frozen processes are stored :-). */
--void refrigerator(void)
--{
--	/* Hmm, should we be allowed to suspend when there are realtime
--	   processes around? */
--	long save;
--
--	task_lock(current);
--	if (freezing(current)) {
--		frozen_process();
--		task_unlock(current);
--	} else {
--		task_unlock(current);
--		return;
--	}
--	save = current->state;
--	pr_debug("%s entered refrigerator\n", current->comm);
--
--	spin_lock_irq(&current->sighand->siglock);
--	recalc_sigpending(); /* We sent fake signal, clean it up */
--	spin_unlock_irq(&current->sighand->siglock);
--
--	for (;;) {
--		set_current_state(TASK_UNINTERRUPTIBLE);
--		if (!frozen(current))
--			break;
--		schedule();
--	}
--	pr_debug("%s left refrigerator\n", current->comm);
--	__set_current_state(save);
--}
--
--static void fake_signal_wake_up(struct task_struct *p)
--{
--	unsigned long flags;
--
--	spin_lock_irqsave(&p->sighand->siglock, flags);
--	signal_wake_up(p, 0);
--	spin_unlock_irqrestore(&p->sighand->siglock, flags);
--}
--
--static inline bool should_send_signal(struct task_struct *p)
--{
--	return !(p->flags & PF_FREEZER_NOSIG);
--}
--
--/**
-- *	freeze_task - send a freeze request to given task
-- *	@p: task to send the request to
-- *	@sig_only: if set, the request will only be sent if the task has the
-- *		PF_FREEZER_NOSIG flag unset
-- *	Return value: 'false', if @sig_only is set and the task has
-- *		PF_FREEZER_NOSIG set or the task is frozen, 'true', otherwise
-- *
-- *	The freeze request is sent by setting the tasks's TIF_FREEZE flag and
-- *	either sending a fake signal to it or waking it up, depending on whether
-- *	or not it has PF_FREEZER_NOSIG set.  If @sig_only is set and the task
-- *	has PF_FREEZER_NOSIG set (ie. it is a typical kernel thread), its
-- *	TIF_FREEZE flag will not be set.
-- */
--static bool freeze_task(struct task_struct *p, bool sig_only)
--{
--	/*
--	 * We first check if the task is freezing and next if it has already
--	 * been frozen to avoid the race with frozen_process() which first marks
--	 * the task as frozen and next clears its TIF_FREEZE.
--	 */
--	if (!freezing(p)) {
--		rmb();
--		if (frozen(p))
--			return false;
--
--		if (!sig_only || should_send_signal(p))
--			set_freeze_flag(p);
--		else
--			return false;
--	}
--
--	if (should_send_signal(p)) {
--		if (!signal_pending(p))
--			fake_signal_wake_up(p);
--	} else if (sig_only) {
--		return false;
--	} else {
--		wake_up_state(p, TASK_INTERRUPTIBLE);
--	}
--
--	return true;
--}
--
--static void cancel_freezing(struct task_struct *p)
--{
--	unsigned long flags;
--
--	if (freezing(p)) {
--		pr_debug("  clean up: %s\n", p->comm);
--		clear_freeze_flag(p);
--		spin_lock_irqsave(&p->sighand->siglock, flags);
--		recalc_sigpending_and_wake(p);
--		spin_unlock_irqrestore(&p->sighand->siglock, flags);
--	}
--}
--
- static int try_to_freeze_tasks(bool sig_only)
- {
- 	struct task_struct *g, *p;
- 	unsigned long end_time;
- 	unsigned int todo;
-@@ -262,6 +147,5 @@ void thaw_processes(void)
- 	thaw_tasks(false);
- 	schedule();
- 	printk("done.\n");
- }
- 
--EXPORT_SYMBOL(refrigerator);
 
 -- 
