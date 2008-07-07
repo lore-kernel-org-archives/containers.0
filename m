@@ -1,98 +1,77 @@
-From: "Denis V. Lunev" <den@openvz.org>
-Subject: Re: [PATCH net-next 3/9] ipv4: remove static flush_delay variable
-Date: Mon, 07 Jul 2008 15:26:14 +0400
-Message-ID: <1215429974.29879.84.camel@iris.sw.ru>
-References: <1215177360.27873.50.camel@iris.sw.ru>
-	 <1215177432-25934-3-git-send-email-den@openvz.org>
-	 <m1k5fyytid.fsf@frodo.ebiederm.org>
+From: Cornelia Huck <cornelia.huck@de.ibm.com>
+Subject: Re: [PATCH 00/15] sysfs support for namespaces
+Date: Mon, 7 Jul 2008 13:41:01 +0200
+Message-ID: <20080707134101.518734a9@gondolin.boeblingen.de.ibm.com>
+References: <20080618170729.808539948@theryb.frec.bull.fr>
+	<20080618170731.002784342@theryb.frec.bull.fr>
+	<485F04E1.70204@gmail.com>
+	<m1y74svtff.fsf@frodo.ebiederm.org>
+	<486706C9.9040303@gmail.com>
+	<m18wwmsqdv.fsf@frodo.ebiederm.org>
+	<4869D314.5030403@gmail.com>
+	<m1ej6enep7.fsf@frodo.ebiederm.org>
+	<486A0751.9080602@gmail.com>
+	<m1wsk5hjm0.fsf@frodo.ebiederm.org>
+	<486AF4FA.8020805@gmail.com>
+	<m1ej6d9c2r.fsf@frodo.ebiederm.org>
+	<486B060C.7030607@gmail.com>
+	<m14p78s02q.fsf@frodo.ebiederm.org>
+	<486C4515.1070007@gmail.com>
+	<m1hcb7o8lv.fsf@frodo.ebiederm.org>
+	<486CB051.5000507@fr.ibm.com>
+	<m14p77m9uy.fsf@frodo.ebiederm.org>
+	<486CF71F.5090405@gmail.com>
+	<m1y74iiidz.fsf_-_@frodo.ebiederm.org>
+	<m1tzf339ny.fsf@frodo.ebiederm.org>
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary="=-BY8IV6h+nQazIbo4f0we"
+Content-Type: text/plain; charset=US-ASCII
+Content-Transfer-Encoding: 7bit
 Return-path: <netdev-owner@vger.kernel.org>
-In-Reply-To: <m1k5fyytid.fsf@frodo.ebiederm.org>
+In-Reply-To: <m1tzf339ny.fsf@frodo.ebiederm.org>
 Sender: netdev-owner@vger.kernel.org
-To: David Miller <davem@davemloft.net>
-Cc: containers@lists.osdl.org, netdev@vger.kernel.org, "Eric W. Biederman" <ebiederm@xmission.com>
+To: "Eric W. Biederman" <ebiederm@xmission.com>
+Cc: Greg Kroah-Hartman <gregkh@suse.de>, Andrew Morton <akpm@linux-foundation.org>, Tejun Heo <htejun@gmail.com>, Daniel Lezcano <dlezcano@fr.ibm.com>, linux-kernel@vger.kernel.org, Al Viro <viro@ftp.linux.org.uk>, Linux Containers <containers@lists.osdl.org>, Benjamin Thery <benjamin.thery@bull.net>, netdev@vger.kernel.org
 List-Id: containers.vger.kernel.org
 
+On Sat, 05 Jul 2008 21:42:57 -0700,
+ebiederm@xmission.com (Eric W. Biederman) wrote:
 
---=-BY8IV6h+nQazIbo4f0we
-Content-Type: text/plain
-Content-Transfer-Encoding: 7bit
-
-On Mon, 2008-07-07 at 01:43 -0700, Eric W. Biederman wrote:
-> "Denis V. Lunev" <den@openvz.org> writes:
 > 
-> > flush delay is used as an external storage for net.ipv4.route.flush sysctl
-> > entry. It is write-only.
-> >
-> > The ctl_table->data for this entry is used once. Fix this case to point
-> > to the stack to remove global variable. Do this to avoid additional
-> > variable on struct net in the next patch.
-> >
-> > Possible race (as it was before) accessing this local variable is removed
-> > using flush_mutex.
+> > These patches are based off of 2.6.26-rc8 + the -gregkh tree from
+> > last night.  Hopefully that means they apply -mm -gregkh and
+> > -linux-next.
 > 
-> FYI.  You can avoid the locking entirely by defining a local struct ctl_table variable
-> on the stack.
+> A quick update.   My patchset conflicts with the recently added
+>   driver-core-suppress-sysfs-warnings-for-device_rename.patch
+> 
+> > driver core: Suppress sysfs warnings for device_rename().
+> > 
+> > Renaming network devices to an already existing name is not
+> > something we want sysfs to print a scary warning for, since the
+> > callers can deal with this correctly. So let's introduce
+> > sysfs_create_link_nowarn() which gets rid of the common warning.
+> 
+> This patch is unnecessary as that path is never exercised anymore.
+> as: dev_change_name returns early in the case of a noop rename.
 
-Dave, could you consider the patch attached?
+My impression was that the networking folks didn't want any warnings for
+renaming failures, not just not for renaming a device to the same name.
 
---=-BY8IV6h+nQazIbo4f0we
-Content-Disposition: attachment; filename*0=0001-ipv4-remove-flush_mutex-from-ipv4_sysctl_rtcache_fl.patc; filename*1=h
-Content-Type: application/mbox; name=0001-ipv4-remove-flush_mutex-from-ipv4_sysctl_rtcache_fl.patch
-Content-Transfer-Encoding: 7bit
+> 
+> In addition my introduction sysfs_rename_link handles this case
+> cleanly by first removing the old link and then creating the new
+> link.  Preventing false positives when the link names are the same.
 
-From 4a2fe8cb052d25218df712a779523d43c284190c Mon Sep 17 00:00:00 2001
-From: Denis V. Lunev <den@openvz.org>
-Date: Mon, 7 Jul 2008 19:17:56 +0400
-Subject: [PATCH net-next 1/1] ipv4: remove flush_mutex from ipv4_sysctl_rtcache_flush
+sysfs_rename_link() looks cleaner, I agree.
 
-It is possible to avoid locking at all in ipv4_sysctl_rtcache_flush by
-defining local ctl_table on the stack.
+> 
+> So it should be safe to drop Cornelia patch without a reoccurance
+> of scary errors.
 
-The patch is based on the suggestion from Eric W. Biederman.
-
-Signed-off-by: Denis V. Lunev <den@openvz.org>
----
- net/ipv4/route.c |   14 ++++++--------
- 1 files changed, 6 insertions(+), 8 deletions(-)
-
-diff --git a/net/ipv4/route.c b/net/ipv4/route.c
-index 113cd25..79c1e74 100644
---- a/net/ipv4/route.c
-+++ b/net/ipv4/route.c
-@@ -2873,22 +2873,20 @@ void ip_rt_multicast_event(struct in_device *in_dev)
- }
- 
- #ifdef CONFIG_SYSCTL
--static int ipv4_sysctl_rtcache_flush(ctl_table *ctl, int write,
-+static int ipv4_sysctl_rtcache_flush(ctl_table *__ctl, int write,
- 					struct file *filp, void __user *buffer,
- 					size_t *lenp, loff_t *ppos)
- {
- 	if (write) {
- 		int flush_delay;
-+		ctl_table ctl;
- 		struct net *net;
--		static DEFINE_MUTEX(flush_mutex);
- 
--		mutex_lock(&flush_mutex);
--		ctl->data = &flush_delay;
--		proc_dointvec(ctl, write, filp, buffer, lenp, ppos);
--		ctl->data = NULL;
--		mutex_unlock(&flush_mutex);
-+		memcpy(&ctl, __ctl, sizeof(ctl));
-+		ctl.data = &flush_delay;
-+		proc_dointvec(&ctl, write, filp, buffer, lenp, ppos);
- 
--		net = (struct net *)ctl->extra1;
-+		net = (struct net *)__ctl->extra1;
- 		rt_cache_flush(net, flush_delay);
- 		return 0;
- 	}
--- 
-1.5.3.rc5
-
-
---=-BY8IV6h+nQazIbo4f0we--
-
+Hm, the description looks badly worded - I unfortunately left the old
+text unchanged when I respun the patch :( The patch re-introduces the
+warning in sysfs_add_one() which had been removed in the meanwhile and
+makes device_rename() use a non-warning version. I still think we want
+a warning for the general case since this is usually caused be some
+problems in the calling code (and the alternative would be to add
+checks to all callers.)
