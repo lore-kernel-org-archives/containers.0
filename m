@@ -1,77 +1,56 @@
 From: ebiederm@xmission.com (Eric W. Biederman)
-Subject: Global namespace naming, and monitoring.
-Date: Mon, 07 Jul 2008 04:54:26 -0700
-Message-ID: <m1tzf1yknh.fsf_-_@frodo.ebiederm.org>
-References: <486E1074.7040702@openvz.org>
-	<20080705.212138.06508305.davem@davemloft.net>
-	<4871D027.4070504@openvz.org> <4871ED97.70806@fr.ibm.com>
+Subject: Re: [PATCH 00/15] sysfs support for namespaces
+Date: Mon, 07 Jul 2008 05:22:43 -0700
+Message-ID: <m1od59yjcc.fsf@frodo.ebiederm.org>
+References: <20080618170729.808539948@theryb.frec.bull.fr>
+	<485F04E1.70204@gmail.com> <m1y74svtff.fsf@frodo.ebiederm.org>
+	<486706C9.9040303@gmail.com> <m18wwmsqdv.fsf@frodo.ebiederm.org>
+	<4869D314.5030403@gmail.com> <m1ej6enep7.fsf@frodo.ebiederm.org>
+	<486A0751.9080602@gmail.com> <m1wsk5hjm0.fsf@frodo.ebiederm.org>
+	<486AF4FA.8020805@gmail.com> <m1ej6d9c2r.fsf@frodo.ebiederm.org>
+	<486B060C.7030607@gmail.com> <m14p78s02q.fsf@frodo.ebiederm.org>
+	<486C4515.1070007@gmail.com> <m1hcb7o8lv.fsf@frodo.ebiederm.org>
+	<486CB051.5000507@fr.ibm.com> <m14p77m9uy.fsf@frodo.ebiederm.org>
+	<486CF71F.5090405@gmail.com> <m1y74iiidz.fsf_-_@frodo.ebiederm.org>
+	<m1tzf339ny.fsf@frodo.ebiederm.org>
+	<20080707134101.518734a9@gondolin.boeblingen.de.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Return-path: <netdev-owner@vger.kernel.org>
-In-Reply-To: <4871ED97.70806@fr.ibm.com> (Daniel Lezcano's message of "Mon, 07
-	Jul 2008 12:19:03 +0200")
+In-Reply-To: <20080707134101.518734a9@gondolin.boeblingen.de.ibm.com>
+	(Cornelia Huck's message of "Mon, 7 Jul 2008 13:41:01 +0200")
 Sender: netdev-owner@vger.kernel.org
-To: Daniel Lezcano <dlezcano@fr.ibm.com>
-Cc: Pavel Emelyanov <xemul@openvz.org>, David Miller <davem@davemloft.net>, netdev@vger.kernel.org, den@openvz.org, Linux Containers <containers@lists.osdl.org>, Serge Hallyn <serue@us.ibm.com>
+To: Cornelia Huck <cornelia.huck@de.ibm.com>
+Cc: Greg Kroah-Hartman <gregkh@suse.de>, Andrew Morton <akpm@linux-foundation.org>, Tejun Heo <htejun@gmail.com>, Daniel Lezcano <dlezcano@fr.ibm.com>, linux-kernel@vger.kernel.org, Al Viro <viro@ftp.linux.org.uk>, Linux Containers <containers@lists.osdl.org>, Benjamin Thery <benjamin.thery@bull.net>, netdev@vger.kernel.org
 List-Id: containers.vger.kernel.org
 
-Daniel Lezcano <dlezcano@fr.ibm.com> writes:
+Cornelia Huck <cornelia.huck@de.ibm.com> writes:
 
->> Well, if we want to get the stats for each namespace separately, then
->> this ability is already present. Since this statistics is shown via the
->> /proc/net files and the /proc/net itself is seen via the /proc/<pid>/net,
->> then we can walk the init-s of all the containers in the system and dump
->> this info.
->>
->> The problem that is to be solved with this approach is how to get these
->> init-s :) But since finding any namespace by some task living in it is a
->> common practice now (netdev moving, sys_hijack) this one will be solved.
+> My impression was that the networking folks didn't want any warnings for
+> renaming failures, not just not for renaming a device to the same name.
 
-Yes.  Finding the which the a single process in each namespace to look
-at (the init-s) is something we have yet to refine.
+Which would be reasonable.  Because all of the checks have been done
+before sysfs is called so if sysfs sees a problem it is a sysfs bug.
 
-The model for multiple namespace monitoring is definitely having
-filesystems mounted that we can look at to get all of the information
-we care about.  /proc does a lot of this today, and with some cleanups
-it should be able to display per namespace sysctls and a few other
-goodies. 
-
-...
-
-There is one class of user that we have yet to find a good solution for.
-The people who want to use isolated network stacks within a single application.
-Usually because there are duplicate routes between the stacks.  In that case
-indirect through processes falls down, as does being able to create a socket in
-one namespace.
-
-My latest brainstorm comes from asking how the problem would have been
-solved in plan9.  The idea is to create a filesystem we can mount that
-holds a reference to a netns (netnsfs).  Using a mounted filesystem
-like that is a bit heavy weight, but just referring to it's the root
-directory is enough to give us a name in the mount namespace.  The
-auto unmount and consequent release of the network namespace when the
-mount namespace goes away is attractive.
-
-> Shouldn't be interesting to handle the network namespaces directly with the
-> iproute command ?
-> 
->  * ip netns add <name>
->  * ip netns del <name>
->  * ip netns <oldname> set name <newname>
->  * ip netns show
-
-Ugh.  You have to be really careful with proposal like this to ensure that
-they wind up in some namespace.  Otherwise you have created a new global
-namespace, and have made nesting of containers much harder to implement.
-
-> So having the netns binded, we can plug the known subcommand (link, ip, ...)
-> with the netns features. For examples:
+>> In addition my introduction sysfs_rename_link handles this case
+>> cleanly by first removing the old link and then creating the new
+>> link.  Preventing false positives when the link names are the same.
 >
->  * ip addr add 1.2.3.4/24 dev eth0 netns foo
+> sysfs_rename_link() looks cleaner, I agree.
+>
+>> 
+>> So it should be safe to drop Cornelia patch without a reoccurance
+>> of scary errors.
+>
+> Hm, the description looks badly worded - I unfortunately left the old
+> text unchanged when I respun the patch :( The patch re-introduces the
+> warning in sysfs_add_one() which had been removed in the meanwhile and
+> makes device_rename() use a non-warning version. I still think we want
+> a warning for the general case since this is usually caused be some
+> problems in the calling code (and the alternative would be to add
+> checks to all callers.)
 
-The only thing limiting that today is that we need someway to get a netlink
-socket on the namespace in question.  Get me in a perverse mood and I will
-grab the netlink socket from one of the init-s with ptrace.
+Right.  We just need to get the sysfs paths clean enough that we don't
+emit false positives.  I think I have accomplished that for rename.
 
 Eric
-
