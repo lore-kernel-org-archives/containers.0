@@ -1,8 +1,7 @@
 From: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH 1/4] Container Freezer: Add TIF_FREEZE flag to all
-	architectures
-Date: Mon, 07 Jul 2008 15:58:24 -0700
-Message-ID: <20080707225823.805730143__36997.0227977776$1215471699$gmane$org@us.ibm.com>
+Subject: [PATCH 2/4] Container Freezer: Make refrigerator always available
+Date: Mon, 07 Jul 2008 15:58:25 -0700
+Message-ID: <20080707225824.144962278__25798.3800759122$1215471703$gmane$org@us.ibm.com>
 References: <20080707225823.502032693@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -22,318 +21,391 @@ Cc: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@pub
 List-Id: containers.vger.kernel.org
 
 From: Cedric Le Goater <clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH 1/4] Container Freezer: Add TIF_FREEZE flag to all architectures
+Subject: [PATCH 2/4] Container Freezer: Make refrigerator always available
 
-This patch is the first step in making the refrigerator() available 
-to all architectures, even for those without power management. 
+Now that the TIF_FREEZE flag is available in all architectures,
+extract the refrigerator() and freeze_task() from kernel/power/process.c
+and make it available to all.
 
-The purpose of such a change is to be able to use the refrigerator() 
-in a new control group subsystem which will implement a control group
-freezer.
+The refrigerator() can now be used in a control group subsystem 
+implementing a control group freezer.
 
 Signed-off-by: Cedric Le Goater <clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
 Signed-off-by: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 Tested-by: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 ---
- include/asm-alpha/thread_info.h     |    2 ++
- include/asm-avr32/thread_info.h     |    2 ++
- include/asm-cris/thread_info.h      |    2 ++
- include/asm-h8300/thread_info.h     |    2 ++
- include/asm-m68k/thread_info.h      |    1 +
- include/asm-m68knommu/thread_info.h |    2 ++
- include/asm-parisc/thread_info.h    |    2 ++
- include/asm-s390/thread_info.h      |    2 ++
- include/asm-sparc/thread_info.h     |    2 ++
- include/asm-sparc64/thread_info.h   |    2 ++
- include/asm-um/thread_info.h        |    2 ++
- include/asm-xtensa/thread_info.h    |    2 ++
- 12 files changed, 23 insertions(+)
+ include/linux/freezer.h |   24 +++++----
+ kernel/Makefile         |    2 
+ kernel/freezer.c        |  122 ++++++++++++++++++++++++++++++++++++++++++++++++
+ kernel/power/process.c  |  116 ---------------------------------------------
+ 4 files changed, 136 insertions(+), 128 deletions(-)
 
-Index: linux-2.6.26-rc5-mm2/include/asm-alpha/thread_info.h
+Index: linux-2.6.26-rc5-mm2/include/linux/freezer.h
 ===================================================================
---- linux-2.6.26-rc5-mm2.orig/include/asm-alpha/thread_info.h
-+++ linux-2.6.26-rc5-mm2/include/asm-alpha/thread_info.h
-@@ -72,16 +72,18 @@ register struct thread_info *__current_t
- #define TIF_UAC_NOPRINT		5	/* see sysinfo.h */
- #define TIF_UAC_NOFIX		6
- #define TIF_UAC_SIGBUS		7
- #define TIF_MEMDIE		8
- #define TIF_RESTORE_SIGMASK	9	/* restore signal mask in do_signal */
-+#define TIF_FREEZE		19	/* is freezing for suspend */
+--- linux-2.6.26-rc5-mm2.orig/include/linux/freezer.h
++++ linux-2.6.26-rc5-mm2/include/linux/freezer.h
+@@ -4,11 +4,10 @@
+ #define FREEZER_H_INCLUDED
  
- #define _TIF_SYSCALL_TRACE	(1<<TIF_SYSCALL_TRACE)
- #define _TIF_SIGPENDING		(1<<TIF_SIGPENDING)
- #define _TIF_NEED_RESCHED	(1<<TIF_NEED_RESCHED)
- #define _TIF_POLLING_NRFLAG	(1<<TIF_POLLING_NRFLAG)
- #define _TIF_RESTORE_SIGMASK	(1<<TIF_RESTORE_SIGMASK)
-+#define _TIF_FREEZE		(1<<TIF_FREEZE)
+ #include <linux/sched.h>
+ #include <linux/wait.h>
  
- /* Work to do on interrupt/exception return.  */
- #define _TIF_WORK_MASK		(_TIF_SIGPENDING | _TIF_NEED_RESCHED)
- 
- /* Work to do on any return to userspace.  */
-Index: linux-2.6.26-rc5-mm2/include/asm-avr32/thread_info.h
-===================================================================
---- linux-2.6.26-rc5-mm2.orig/include/asm-avr32/thread_info.h
-+++ linux-2.6.26-rc5-mm2/include/asm-avr32/thread_info.h
-@@ -82,10 +82,11 @@ static inline struct thread_info *curren
- #define TIF_BREAKPOINT		4	/* enter monitor mode on return */
- #define TIF_SINGLE_STEP		5	/* single step in progress */
- #define TIF_MEMDIE		6
- #define TIF_RESTORE_SIGMASK	7	/* restore signal mask in do_signal */
- #define TIF_CPU_GOING_TO_SLEEP	8	/* CPU is entering sleep 0 mode */
-+#define TIF_FREEZE		19	/* is freezing for suspend */
- #define TIF_DEBUG		30	/* debugging enabled */
- #define TIF_USERSPACE		31      /* true if FS sets userspace */
- 
- #define _TIF_SYSCALL_TRACE	(1 << TIF_SYSCALL_TRACE)
- #define _TIF_SIGPENDING		(1 << TIF_SIGPENDING)
-@@ -93,10 +94,11 @@ static inline struct thread_info *curren
- #define _TIF_POLLING_NRFLAG	(1 << TIF_POLLING_NRFLAG)
- #define _TIF_SINGLE_STEP	(1 << TIF_SINGLE_STEP)
- #define _TIF_MEMDIE		(1 << TIF_MEMDIE)
- #define _TIF_RESTORE_SIGMASK	(1 << TIF_RESTORE_SIGMASK)
- #define _TIF_CPU_GOING_TO_SLEEP (1 << TIF_CPU_GOING_TO_SLEEP)
-+#define _TIF_FREEZE		(1 << TIF_FREEZE)
- 
- /* Note: The masks below must never span more than 16 bits! */
- 
- /* work to do on interrupt/exception return */
- #define _TIF_WORK_MASK				\
-Index: linux-2.6.26-rc5-mm2/include/asm-cris/thread_info.h
-===================================================================
---- linux-2.6.26-rc5-mm2.orig/include/asm-cris/thread_info.h
-+++ linux-2.6.26-rc5-mm2/include/asm-cris/thread_info.h
-@@ -86,17 +86,19 @@ struct thread_info {
- #define TIF_SIGPENDING		2	/* signal pending */
- #define TIF_NEED_RESCHED	3	/* rescheduling necessary */
- #define TIF_RESTORE_SIGMASK	9	/* restore signal mask in do_signal() */
- #define TIF_POLLING_NRFLAG	16	/* true if poll_idle() is polling TIF_NEED_RESCHED */
- #define TIF_MEMDIE		17
-+#define TIF_FREEZE		19	/* is freezing for suspend */
- 
- #define _TIF_SYSCALL_TRACE	(1<<TIF_SYSCALL_TRACE)
- #define _TIF_NOTIFY_RESUME	(1<<TIF_NOTIFY_RESUME)
- #define _TIF_SIGPENDING		(1<<TIF_SIGPENDING)
- #define _TIF_NEED_RESCHED	(1<<TIF_NEED_RESCHED)
- #define _TIF_RESTORE_SIGMASK	(1<<TIF_RESTORE_SIGMASK)
- #define _TIF_POLLING_NRFLAG	(1<<TIF_POLLING_NRFLAG)
-+#define _TIF_FREEZE		(1<<TIF_FREEZE)
- 
- #define _TIF_WORK_MASK		0x0000FFFE	/* work to do on interrupt/exception return */
- #define _TIF_ALLWORK_MASK	0x0000FFFF	/* work to do on any return to u-space */
- 
- #endif /* __KERNEL__ */
-Index: linux-2.6.26-rc5-mm2/include/asm-h8300/thread_info.h
-===================================================================
---- linux-2.6.26-rc5-mm2.orig/include/asm-h8300/thread_info.h
-+++ linux-2.6.26-rc5-mm2/include/asm-h8300/thread_info.h
-@@ -87,17 +87,19 @@ static inline struct thread_info *curren
- #define TIF_NEED_RESCHED	2	/* rescheduling necessary */
- #define TIF_POLLING_NRFLAG	3	/* true if poll_idle() is polling
- 					   TIF_NEED_RESCHED */
- #define TIF_MEMDIE		4
- #define TIF_RESTORE_SIGMASK	5	/* restore signal mask in do_signal() */
-+#define TIF_FREEZE		19	/* is freezing for suspend */
- 
- /* as above, but as bit values */
- #define _TIF_SYSCALL_TRACE	(1<<TIF_SYSCALL_TRACE)
- #define _TIF_SIGPENDING		(1<<TIF_SIGPENDING)
- #define _TIF_NEED_RESCHED	(1<<TIF_NEED_RESCHED)
- #define _TIF_POLLING_NRFLAG	(1<<TIF_POLLING_NRFLAG)
- #define _TIF_RESTORE_SIGMASK	(1<<TIF_RESTORE_SIGMASK)
-+#define _TIF_FREEZE		(1<<TIF_FREEZE)
- 
- #define _TIF_WORK_MASK		0x0000FFFE	/* work to do on interrupt/exception return */
- 
- #endif /* __KERNEL__ */
- 
-Index: linux-2.6.26-rc5-mm2/include/asm-m68k/thread_info.h
-===================================================================
---- linux-2.6.26-rc5-mm2.orig/include/asm-m68k/thread_info.h
-+++ linux-2.6.26-rc5-mm2/include/asm-m68k/thread_info.h
-@@ -50,7 +50,8 @@ struct thread_info {
- #define TIF_SIGPENDING		6	/* signal pending */
- #define TIF_NEED_RESCHED	7	/* rescheduling necessary */
- #define TIF_DELAYED_TRACE	14	/* single step a syscall */
- #define TIF_SYSCALL_TRACE	15	/* syscall trace active */
- #define TIF_MEMDIE		16
-+#define TIF_FREEZE		19	/* thread is freezing for suspend */
- 
- #endif	/* _ASM_M68K_THREAD_INFO_H */
-Index: linux-2.6.26-rc5-mm2/include/asm-m68knommu/thread_info.h
-===================================================================
---- linux-2.6.26-rc5-mm2.orig/include/asm-m68knommu/thread_info.h
-+++ linux-2.6.26-rc5-mm2/include/asm-m68knommu/thread_info.h
-@@ -82,16 +82,18 @@ static inline struct thread_info *curren
- #define TIF_SIGPENDING		1	/* signal pending */
- #define TIF_NEED_RESCHED	2	/* rescheduling necessary */
- #define TIF_POLLING_NRFLAG	3	/* true if poll_idle() is polling
- 					   TIF_NEED_RESCHED */
- #define TIF_MEMDIE		4
-+#define TIF_FREEZE		19	/* is freezing for suspend */
- 
- /* as above, but as bit values */
- #define _TIF_SYSCALL_TRACE	(1<<TIF_SYSCALL_TRACE)
- #define _TIF_SIGPENDING		(1<<TIF_SIGPENDING)
- #define _TIF_NEED_RESCHED	(1<<TIF_NEED_RESCHED)
- #define _TIF_POLLING_NRFLAG	(1<<TIF_POLLING_NRFLAG)
-+#define _TIF_FREEZE		(1<<TIF_FREEZE)
- 
- #define _TIF_WORK_MASK		0x0000FFFE	/* work to do on interrupt/exception return */
- 
- #endif /* __KERNEL__ */
- 
-Index: linux-2.6.26-rc5-mm2/include/asm-parisc/thread_info.h
-===================================================================
---- linux-2.6.26-rc5-mm2.orig/include/asm-parisc/thread_info.h
-+++ linux-2.6.26-rc5-mm2/include/asm-parisc/thread_info.h
-@@ -56,17 +56,19 @@ struct thread_info {
- #define TIF_NEED_RESCHED	2	/* rescheduling necessary */
- #define TIF_POLLING_NRFLAG	3	/* true if poll_idle() is polling TIF_NEED_RESCHED */
- #define TIF_32BIT               4       /* 32 bit binary */
- #define TIF_MEMDIE		5
- #define TIF_RESTORE_SIGMASK	6	/* restore saved signal mask */
-+#define TIF_FREEZE		19	/* is freezing for suspend */
- 
- #define _TIF_SYSCALL_TRACE	(1 << TIF_SYSCALL_TRACE)
- #define _TIF_SIGPENDING		(1 << TIF_SIGPENDING)
- #define _TIF_NEED_RESCHED	(1 << TIF_NEED_RESCHED)
- #define _TIF_POLLING_NRFLAG	(1 << TIF_POLLING_NRFLAG)
- #define _TIF_32BIT		(1 << TIF_32BIT)
- #define _TIF_RESTORE_SIGMASK	(1 << TIF_RESTORE_SIGMASK)
-+#define _TIF_FREEZE		(1 << TIF_FREEZE)
- 
- #define _TIF_USER_WORK_MASK     (_TIF_SIGPENDING | \
-                                  _TIF_NEED_RESCHED | _TIF_RESTORE_SIGMASK)
- 
- #endif /* __KERNEL__ */
-Index: linux-2.6.26-rc5-mm2/include/asm-s390/thread_info.h
-===================================================================
---- linux-2.6.26-rc5-mm2.orig/include/asm-s390/thread_info.h
-+++ linux-2.6.26-rc5-mm2/include/asm-s390/thread_info.h
-@@ -96,10 +96,11 @@ static inline struct thread_info *curren
- #define TIF_POLLING_NRFLAG	17	/* true if poll_idle() is polling 
- 					   TIF_NEED_RESCHED */
- #define TIF_31BIT		18	/* 32bit process */ 
- #define TIF_MEMDIE		19
- #define TIF_RESTORE_SIGMASK	20	/* restore signal mask in do_signal() */
-+#define TIF_FREEZE		21	/* thread is freezing for suspend */
- 
- #define _TIF_SYSCALL_TRACE	(1<<TIF_SYSCALL_TRACE)
- #define _TIF_RESTORE_SIGMASK	(1<<TIF_RESTORE_SIGMASK)
- #define _TIF_SIGPENDING		(1<<TIF_SIGPENDING)
- #define _TIF_NEED_RESCHED	(1<<TIF_NEED_RESCHED)
-@@ -108,10 +109,11 @@ static inline struct thread_info *curren
- #define _TIF_SINGLE_STEP	(1<<TIF_SINGLE_STEP)
- #define _TIF_MCCK_PENDING	(1<<TIF_MCCK_PENDING)
- #define _TIF_USEDFPU		(1<<TIF_USEDFPU)
- #define _TIF_POLLING_NRFLAG	(1<<TIF_POLLING_NRFLAG)
- #define _TIF_31BIT		(1<<TIF_31BIT)
-+#define _TIF_FREEZE		(1<<TIF_FREEZE)
- 
- #endif /* __KERNEL__ */
- 
- #define PREEMPT_ACTIVE		0x4000000
- 
-Index: linux-2.6.26-rc5-mm2/include/asm-sparc/thread_info.h
-===================================================================
---- linux-2.6.26-rc5-mm2.orig/include/asm-sparc/thread_info.h
-+++ linux-2.6.26-rc5-mm2/include/asm-sparc/thread_info.h
-@@ -137,17 +137,19 @@ BTFIXUPDEF_CALL(void, free_thread_info, 
- #define TIF_USEDFPU		8	/* FPU was used by this task
- 					 * this quantum (SMP) */
- #define TIF_POLLING_NRFLAG	9	/* true if poll_idle() is polling
- 					 * TIF_NEED_RESCHED */
- #define TIF_MEMDIE		10
-+#define TIF_FREEZE		19	/* is freezing for suspend */
- 
- /* as above, but as bit values */
- #define _TIF_SYSCALL_TRACE	(1<<TIF_SYSCALL_TRACE)
- #define _TIF_SIGPENDING		(1<<TIF_SIGPENDING)
- #define _TIF_NEED_RESCHED	(1<<TIF_NEED_RESCHED)
- #define _TIF_RESTORE_SIGMASK	(1<<TIF_RESTORE_SIGMASK)
- #define _TIF_USEDFPU		(1<<TIF_USEDFPU)
- #define _TIF_POLLING_NRFLAG	(1<<TIF_POLLING_NRFLAG)
-+#define _TIF_FREEZE		(1<<TIF_FREEZE)
- 
- #endif /* __KERNEL__ */
- 
- #endif /* _ASM_THREAD_INFO_H */
-Index: linux-2.6.26-rc5-mm2/include/asm-sparc64/thread_info.h
-===================================================================
---- linux-2.6.26-rc5-mm2.orig/include/asm-sparc64/thread_info.h
-+++ linux-2.6.26-rc5-mm2/include/asm-sparc64/thread_info.h
-@@ -214,10 +214,11 @@ register struct thread_info *current_thr
-  *       an immediate value in instructions such as andcc.
-  */
- #define TIF_ABI_PENDING		12
- #define TIF_MEMDIE		13
- #define TIF_POLLING_NRFLAG	14
-+#define TIF_FREEZE		19	/* is freezing for suspend */
- 
- #define _TIF_SYSCALL_TRACE	(1<<TIF_SYSCALL_TRACE)
- #define _TIF_SIGPENDING		(1<<TIF_SIGPENDING)
- #define _TIF_NEED_RESCHED	(1<<TIF_NEED_RESCHED)
- #define _TIF_PERFCTR		(1<<TIF_PERFCTR)
-@@ -225,10 +226,11 @@ register struct thread_info *current_thr
- #define _TIF_32BIT		(1<<TIF_32BIT)
- #define _TIF_SECCOMP		(1<<TIF_SECCOMP)
- #define _TIF_SYSCALL_AUDIT	(1<<TIF_SYSCALL_AUDIT)
- #define _TIF_ABI_PENDING	(1<<TIF_ABI_PENDING)
- #define _TIF_POLLING_NRFLAG	(1<<TIF_POLLING_NRFLAG)
-+#define _TIF_FREEZE		(1<<TIF_FREEZE)
- 
- #define _TIF_USER_WORK_MASK	((0xff << TI_FLAG_WSAVED_SHIFT) | \
- 				 (_TIF_SIGPENDING | \
- 				  _TIF_NEED_RESCHED | _TIF_PERFCTR))
- 
-Index: linux-2.6.26-rc5-mm2/include/asm-um/thread_info.h
-===================================================================
---- linux-2.6.26-rc5-mm2.orig/include/asm-um/thread_info.h
-+++ linux-2.6.26-rc5-mm2/include/asm-um/thread_info.h
-@@ -67,15 +67,17 @@ static inline struct thread_info *curren
- 					 */
- #define TIF_RESTART_BLOCK 	4
- #define TIF_MEMDIE	 	5
- #define TIF_SYSCALL_AUDIT	6
- #define TIF_RESTORE_SIGMASK	7
-+#define TIF_FREEZE		19	/* is freezing for suspend */
- 
- #define _TIF_SYSCALL_TRACE	(1 << TIF_SYSCALL_TRACE)
- #define _TIF_SIGPENDING		(1 << TIF_SIGPENDING)
- #define _TIF_NEED_RESCHED	(1 << TIF_NEED_RESCHED)
- #define _TIF_POLLING_NRFLAG     (1 << TIF_POLLING_NRFLAG)
- #define _TIF_MEMDIE		(1 << TIF_MEMDIE)
- #define _TIF_SYSCALL_AUDIT	(1 << TIF_SYSCALL_AUDIT)
- #define _TIF_RESTORE_SIGMASK	(1 << TIF_RESTORE_SIGMASK)
-+#define _TIF_FREEZE		(1 << TIF_FREEZE)
- 
- #endif
-Index: linux-2.6.26-rc5-mm2/include/asm-xtensa/thread_info.h
-===================================================================
---- linux-2.6.26-rc5-mm2.orig/include/asm-xtensa/thread_info.h
-+++ linux-2.6.26-rc5-mm2/include/asm-xtensa/thread_info.h
-@@ -132,18 +132,20 @@ static inline struct thread_info *curren
- #define TIF_SINGLESTEP		3	/* restore singlestep on return to user mode */
- #define TIF_IRET		4	/* return with iret */
- #define TIF_MEMDIE		5
- #define TIF_RESTORE_SIGMASK	6	/* restore signal mask in do_signal() */
- #define TIF_POLLING_NRFLAG	16	/* true if poll_idle() is polling TIF_NEED_RESCHED */
-+#define TIF_FREEZE		19	/* is freezing for suspend */
- 
- #define _TIF_SYSCALL_TRACE	(1<<TIF_SYSCALL_TRACE)
- #define _TIF_SIGPENDING		(1<<TIF_SIGPENDING)
- #define _TIF_NEED_RESCHED	(1<<TIF_NEED_RESCHED)
- #define _TIF_SINGLESTEP		(1<<TIF_SINGLESTEP)
- #define _TIF_IRET		(1<<TIF_IRET)
- #define _TIF_POLLING_NRFLAG	(1<<TIF_POLLING_NRFLAG)
- #define _TIF_RESTORE_SIGMASK	(1<<TIF_RESTORE_SIGMASK)
-+#define _TIF_FREEZE		(1<<TIF_FREEZE)
- 
- #define _TIF_WORK_MASK		0x0000FFFE	/* work to do on interrupt/exception return */
- #define _TIF_ALLWORK_MASK	0x0000FFFF	/* work to do on any return to u-space */
- 
+-#ifdef CONFIG_PM_SLEEP
  /*
+  * Check if a process has been frozen
+  */
+ static inline int frozen(struct task_struct *p)
+ {
+@@ -37,10 +36,15 @@ static inline void set_freeze_flag(struc
+ static inline void clear_freeze_flag(struct task_struct *p)
+ {
+ 	clear_tsk_thread_flag(p, TIF_FREEZE);
+ }
+ 
++static inline bool should_send_signal(struct task_struct *p)
++{
++	return !(p->flags & PF_FREEZER_NOSIG);
++}
++
+ /*
+  * Wake up a frozen process
+  *
+  * task_lock() is taken to prevent the race with refrigerator() which may
+  * occur if the freezing of tasks fails.  Namely, without the lock, if the
+@@ -61,22 +65,28 @@ static inline int thaw_process(struct ta
+ 	task_unlock(p);
+ 	return 0;
+ }
+ 
+ extern void refrigerator(void);
+-extern int freeze_processes(void);
+-extern void thaw_processes(void);
+ 
+ static inline int try_to_freeze(void)
+ {
+ 	if (freezing(current)) {
+ 		refrigerator();
+ 		return 1;
+ 	} else
+ 		return 0;
+ }
+ 
++extern bool freeze_task(struct task_struct *p, bool sig_only);
++extern void cancel_freezing(struct task_struct *p);
++
++#ifdef CONFIG_PM_SLEEP
++
++extern int freeze_processes(void);
++extern void thaw_processes(void);
++
+ /*
+  * The PF_FREEZER_SKIP flag should be set by a vfork parent right before it
+  * calls wait_for_completion(&vfork) and reset right after it returns from this
+  * function.  Next, the parent should call try_to_freeze() to freeze itself
+  * appropriately in case the child has exited before the freezing of tasks is
+@@ -165,22 +175,14 @@ static inline void set_freezable_with_si
+ 				__retval); 				\
+ 	} while (try_to_freeze());					\
+ 	__retval;							\
+ })
+ #else /* !CONFIG_PM_SLEEP */
+-static inline int frozen(struct task_struct *p) { return 0; }
+-static inline int freezing(struct task_struct *p) { return 0; }
+-static inline void set_freeze_flag(struct task_struct *p) {}
+-static inline void clear_freeze_flag(struct task_struct *p) {}
+-static inline int thaw_process(struct task_struct *p) { return 1; }
+ 
+-static inline void refrigerator(void) {}
+ static inline int freeze_processes(void) { BUG(); return 0; }
+ static inline void thaw_processes(void) {}
+ 
+-static inline int try_to_freeze(void) { return 0; }
+-
+ static inline void freezer_do_not_count(void) {}
+ static inline void freezer_count(void) {}
+ static inline int freezer_should_skip(struct task_struct *p) { return 0; }
+ static inline void set_freezable(void) {}
+ static inline void set_freezable_with_signal(void) {}
+Index: linux-2.6.26-rc5-mm2/kernel/Makefile
+===================================================================
+--- linux-2.6.26-rc5-mm2.orig/kernel/Makefile
++++ linux-2.6.26-rc5-mm2/kernel/Makefile
+@@ -3,11 +3,11 @@
+ #
+ 
+ obj-y     = sched.o fork.o exec_domain.o panic.o printk.o \
+ 	    exit.o itimer.o time.o softirq.o resource.o \
+ 	    sysctl.o capability.o ptrace.o timer.o user.o \
+-	    signal.o sys.o kmod.o workqueue.o pid.o \
++	    signal.o sys.o kmod.o workqueue.o pid.o freezer.o \
+ 	    rcupdate.o extable.o params.o posix-timers.o \
+ 	    kthread.o wait.o kfifo.o sys_ni.o posix-cpu-timers.o mutex.o \
+ 	    hrtimer.o rwsem.o nsproxy.o srcu.o semaphore.o \
+ 	    notifier.o ksysfs.o pm_qos_params.o sched_clock.o
+ 
+Index: linux-2.6.26-rc5-mm2/kernel/freezer.c
+===================================================================
+--- /dev/null
++++ linux-2.6.26-rc5-mm2/kernel/freezer.c
+@@ -0,0 +1,122 @@
++/*
++ * kernel/freezer.c - Function to freeze a process
++ *
++ * Originally from kernel/power/process.c
++ */
++
++#include <linux/interrupt.h>
++#include <linux/suspend.h>
++#include <linux/module.h>
++#include <linux/syscalls.h>
++#include <linux/freezer.h>
++
++/*
++ * freezing is complete, mark current process as frozen
++ */
++static inline void frozen_process(void)
++{
++	if (!unlikely(current->flags & PF_NOFREEZE)) {
++		current->flags |= PF_FROZEN;
++		wmb();
++	}
++	clear_freeze_flag(current);
++}
++
++/* Refrigerator is place where frozen processes are stored :-). */
++void refrigerator(void)
++{
++	/* Hmm, should we be allowed to suspend when there are realtime
++	   processes around? */
++	long save;
++
++	task_lock(current);
++	if (freezing(current)) {
++		frozen_process();
++		task_unlock(current);
++	} else {
++		task_unlock(current);
++		return;
++	}
++	save = current->state;
++	pr_debug("%s entered refrigerator\n", current->comm);
++
++	spin_lock_irq(&current->sighand->siglock);
++	recalc_sigpending(); /* We sent fake signal, clean it up */
++	spin_unlock_irq(&current->sighand->siglock);
++
++	for (;;) {
++		set_current_state(TASK_UNINTERRUPTIBLE);
++		if (!frozen(current))
++			break;
++		schedule();
++	}
++	pr_debug("%s left refrigerator\n", current->comm);
++	__set_current_state(save);
++}
++EXPORT_SYMBOL(refrigerator);
++
++static void fake_signal_wake_up(struct task_struct *p)
++{
++	unsigned long flags;
++
++	spin_lock_irqsave(&p->sighand->siglock, flags);
++	signal_wake_up(p, 0);
++	spin_unlock_irqrestore(&p->sighand->siglock, flags);
++}
++
++/**
++ *	freeze_task - send a freeze request to given task
++ *	@p: task to send the request to
++ *	@sig_only: if set, the request will only be sent if the task has the
++ *		PF_FREEZER_NOSIG flag unset
++ *	Return value: 'false', if @sig_only is set and the task has
++ *		PF_FREEZER_NOSIG set or the task is frozen, 'true', otherwise
++ *
++ *	The freeze request is sent by setting the tasks's TIF_FREEZE flag and
++ *	either sending a fake signal to it or waking it up, depending on whether
++ *	or not it has PF_FREEZER_NOSIG set.  If @sig_only is set and the task
++ *	has PF_FREEZER_NOSIG set (ie. it is a typical kernel thread), its
++ *	TIF_FREEZE flag will not be set.
++ */
++bool freeze_task(struct task_struct *p, bool sig_only)
++{
++	/*
++	 * We first check if the task is freezing and next if it has already
++	 * been frozen to avoid the race with frozen_process() which first marks
++	 * the task as frozen and next clears its TIF_FREEZE.
++	 */
++	if (!freezing(p)) {
++		rmb();
++		if (frozen(p))
++			return false;
++
++		if (!sig_only || should_send_signal(p))
++			set_freeze_flag(p);
++		else
++			return false;
++	}
++
++	if (should_send_signal(p)) {
++		if (!signal_pending(p))
++			fake_signal_wake_up(p);
++	} else if (sig_only) {
++		return false;
++	} else {
++		wake_up_state(p, TASK_INTERRUPTIBLE);
++	}
++
++	return true;
++}
++
++void cancel_freezing(struct task_struct *p)
++{
++	unsigned long flags;
++
++	if (freezing(p)) {
++		pr_debug("  clean up: %s\n", p->comm);
++		clear_freeze_flag(p);
++		spin_lock_irqsave(&p->sighand->siglock, flags);
++		recalc_sigpending_and_wake(p);
++		spin_unlock_irqrestore(&p->sighand->siglock, flags);
++	}
++}
+Index: linux-2.6.26-rc5-mm2/kernel/power/process.c
+===================================================================
+--- linux-2.6.26-rc5-mm2.orig/kernel/power/process.c
++++ linux-2.6.26-rc5-mm2/kernel/power/process.c
+@@ -26,125 +26,10 @@ static inline int freezeable(struct task
+ 	    (p->exit_state != 0))
+ 		return 0;
+ 	return 1;
+ }
+ 
+-/*
+- * freezing is complete, mark current process as frozen
+- */
+-static inline void frozen_process(void)
+-{
+-	if (!unlikely(current->flags & PF_NOFREEZE)) {
+-		current->flags |= PF_FROZEN;
+-		wmb();
+-	}
+-	clear_freeze_flag(current);
+-}
+-
+-/* Refrigerator is place where frozen processes are stored :-). */
+-void refrigerator(void)
+-{
+-	/* Hmm, should we be allowed to suspend when there are realtime
+-	   processes around? */
+-	long save;
+-
+-	task_lock(current);
+-	if (freezing(current)) {
+-		frozen_process();
+-		task_unlock(current);
+-	} else {
+-		task_unlock(current);
+-		return;
+-	}
+-	save = current->state;
+-	pr_debug("%s entered refrigerator\n", current->comm);
+-
+-	spin_lock_irq(&current->sighand->siglock);
+-	recalc_sigpending(); /* We sent fake signal, clean it up */
+-	spin_unlock_irq(&current->sighand->siglock);
+-
+-	for (;;) {
+-		set_current_state(TASK_UNINTERRUPTIBLE);
+-		if (!frozen(current))
+-			break;
+-		schedule();
+-	}
+-	pr_debug("%s left refrigerator\n", current->comm);
+-	__set_current_state(save);
+-}
+-
+-static void fake_signal_wake_up(struct task_struct *p)
+-{
+-	unsigned long flags;
+-
+-	spin_lock_irqsave(&p->sighand->siglock, flags);
+-	signal_wake_up(p, 0);
+-	spin_unlock_irqrestore(&p->sighand->siglock, flags);
+-}
+-
+-static inline bool should_send_signal(struct task_struct *p)
+-{
+-	return !(p->flags & PF_FREEZER_NOSIG);
+-}
+-
+-/**
+- *	freeze_task - send a freeze request to given task
+- *	@p: task to send the request to
+- *	@sig_only: if set, the request will only be sent if the task has the
+- *		PF_FREEZER_NOSIG flag unset
+- *	Return value: 'false', if @sig_only is set and the task has
+- *		PF_FREEZER_NOSIG set or the task is frozen, 'true', otherwise
+- *
+- *	The freeze request is sent by setting the tasks's TIF_FREEZE flag and
+- *	either sending a fake signal to it or waking it up, depending on whether
+- *	or not it has PF_FREEZER_NOSIG set.  If @sig_only is set and the task
+- *	has PF_FREEZER_NOSIG set (ie. it is a typical kernel thread), its
+- *	TIF_FREEZE flag will not be set.
+- */
+-static bool freeze_task(struct task_struct *p, bool sig_only)
+-{
+-	/*
+-	 * We first check if the task is freezing and next if it has already
+-	 * been frozen to avoid the race with frozen_process() which first marks
+-	 * the task as frozen and next clears its TIF_FREEZE.
+-	 */
+-	if (!freezing(p)) {
+-		rmb();
+-		if (frozen(p))
+-			return false;
+-
+-		if (!sig_only || should_send_signal(p))
+-			set_freeze_flag(p);
+-		else
+-			return false;
+-	}
+-
+-	if (should_send_signal(p)) {
+-		if (!signal_pending(p))
+-			fake_signal_wake_up(p);
+-	} else if (sig_only) {
+-		return false;
+-	} else {
+-		wake_up_state(p, TASK_INTERRUPTIBLE);
+-	}
+-
+-	return true;
+-}
+-
+-static void cancel_freezing(struct task_struct *p)
+-{
+-	unsigned long flags;
+-
+-	if (freezing(p)) {
+-		pr_debug("  clean up: %s\n", p->comm);
+-		clear_freeze_flag(p);
+-		spin_lock_irqsave(&p->sighand->siglock, flags);
+-		recalc_sigpending_and_wake(p);
+-		spin_unlock_irqrestore(&p->sighand->siglock, flags);
+-	}
+-}
+-
+ static int try_to_freeze_tasks(bool sig_only)
+ {
+ 	struct task_struct *g, *p;
+ 	unsigned long end_time;
+ 	unsigned int todo;
+@@ -262,6 +147,5 @@ void thaw_processes(void)
+ 	thaw_tasks(false);
+ 	schedule();
+ 	printk("done.\n");
+ }
+ 
+-EXPORT_SYMBOL(refrigerator);
 
 -- 
