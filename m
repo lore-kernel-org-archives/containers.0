@@ -1,56 +1,82 @@
-From: ebiederm@xmission.com (Eric W. Biederman)
-Subject: Re: [PATCH 00/15] sysfs support for namespaces
-Date: Mon, 07 Jul 2008 05:22:43 -0700
-Message-ID: <m1od59yjcc.fsf@frodo.ebiederm.org>
-References: <20080618170729.808539948@theryb.frec.bull.fr>
-	<485F04E1.70204@gmail.com> <m1y74svtff.fsf@frodo.ebiederm.org>
-	<486706C9.9040303@gmail.com> <m18wwmsqdv.fsf@frodo.ebiederm.org>
-	<4869D314.5030403@gmail.com> <m1ej6enep7.fsf@frodo.ebiederm.org>
-	<486A0751.9080602@gmail.com> <m1wsk5hjm0.fsf@frodo.ebiederm.org>
-	<486AF4FA.8020805@gmail.com> <m1ej6d9c2r.fsf@frodo.ebiederm.org>
-	<486B060C.7030607@gmail.com> <m14p78s02q.fsf@frodo.ebiederm.org>
-	<486C4515.1070007@gmail.com> <m1hcb7o8lv.fsf@frodo.ebiederm.org>
-	<486CB051.5000507@fr.ibm.com> <m14p77m9uy.fsf@frodo.ebiederm.org>
-	<486CF71F.5090405@gmail.com> <m1y74iiidz.fsf_-_@frodo.ebiederm.org>
-	<m1tzf339ny.fsf@frodo.ebiederm.org>
-	<20080707134101.518734a9@gondolin.boeblingen.de.ibm.com>
+From: Andrea Righi <righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Subject: Re: [PATCH] ltp controllers: block device i/o bandwidth
+ controller testcase
+Date: Mon, 07 Jul 2008 15:43:57 +0200
+Message-ID: <48721D9D.30006@gmail.com>
+References: <1213956335-29866-1-git-send-email-righi.andrea@gmail.com>	
+	<bb33bcf20806200739v46b97cb2wcaa34182bc0356d3@mail.gmail.com>	
+	<485CD97C.7020904@gmail.com>	
+	<bb33bcf20806210816m41f005f7y95031337371d408d@mail.gmail.com>	
+	<1214400066.10818.27.camel@subratamodak.linux.ibm.com>	
+	<1215090141.26546.17.camel@subratamodak.linux.ibm.com>	
+	<486CDBFB.7050706@gmail.com>	
+	<1215150659.6333.3.camel@subratamodak.linux.ibm.com>	
+	<4871EA52.9000601@gmail.com>
+	<1215426277.4764.13.camel@subratamodak.linux.ibm.com>
+Reply-To: righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Return-path: <netdev-owner@vger.kernel.org>
-In-Reply-To: <20080707134101.518734a9@gondolin.boeblingen.de.ibm.com>
-	(Cornelia Huck's message of "Mon, 7 Jul 2008 13:41:01 +0200")
-Sender: netdev-owner@vger.kernel.org
-To: Cornelia Huck <cornelia.huck@de.ibm.com>
-Cc: Greg Kroah-Hartman <gregkh@suse.de>, Andrew Morton <akpm@linux-foundation.org>, Tejun Heo <htejun@gmail.com>, Daniel Lezcano <dlezcano@fr.ibm.com>, linux-kernel@vger.kernel.org, Al Viro <viro@ftp.linux.org.uk>, Linux Containers <containers@lists.osdl.org>, Benjamin Thery <benjamin.thery@bull.net>, netdev@vger.kernel.org
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+Return-path: <ltp-list-bounces-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org>
+In-Reply-To: <1215426277.4764.13.camel-NRFfyExJdYpgXGGE5LP+UZlqa2bBAFbm0E9HWUfgJXw@public.gmane.org>
+List-Unsubscribe: <https://lists.sourceforge.net/lists/listinfo/ltp-list>,
+	<mailto:ltp-list-request-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://sourceforge.net/mailarchive/forum.php?forum_name=ltp-list>
+List-Post: <mailto:ltp-list-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org>
+List-Help: <mailto:ltp-list-request-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.sourceforge.net/lists/listinfo/ltp-list>,
+	<mailto:ltp-list-request-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org?subject=subscribe>
+Sender: ltp-list-bounces-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org
+Errors-To: ltp-list-bounces-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org
+To: subrata-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
+Cc: "poornima.nayak" <poornima.nayak-xthvdsQ13ZrQT0dZR+AlfA@public.gmane.org>, ltp-list <ltp-list-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org>, sudhirkumarmalik <sudhirkumarmalik-xthvdsQ13ZrQT0dZR+AlfA@public.gmane.org>, Dhaval Giani <dhaval-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, balbir <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Cornelia Huck <cornelia.huck@de.ibm.com> writes:
+Subrata Modak wrote:
+> Thanks Andrea for contributing these tests to LTP. I will take some time
+> before testing this and coming back to you. Give me some time. Meanwhile
+> it would be great if Balbir/Dhaval/others can provide some review
+> comments as well.
+> 
+> Regards--
+> Subrata
+> 
+> On Mon, 2008-07-07 at 12:05 +0200, Andrea Righi wrote:
+>> Add the block device I/O bandwidth controller (io-throttle) testcase.
+>>
+>> See testcase documentation for design and implementation details.
+>> See also: http://lkml.org/lkml/2008/7/4/143
+>>
+>> Signed-off-by: Andrea Righi <righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+>> ---
+...
+>> diff --exclude CVS -urpN ltp/testcases/kernel/controllers.orig/Makefile ltp/testcases/kernel/controllers/Makefile
+>> --- ltp/testcases/kernel/controllers.orig/Makefile	2008-04-30 09:19:29.000000000 +0200
+>> +++ ltp/testcases/kernel/controllers/Makefile	2008-07-07 11:43:07.000000000 +0200
+>> @@ -1,6 +1,7 @@
+>>  SUBDIRS = libcontrollers cpuctl memctl
 
-> My impression was that the networking folks didn't want any warnings for
-> renaming failures, not just not for renaming a device to the same name.
+yep! it seems I missed the target to build the whole thing.
 
-Which would be reasonable.  Because all of the checks have been done
-before sysfs is called so if sysfs sees a problem it is a sysfs bug.
+Fix missing build targer for block device I/O bandwidth controller.
+Patch to be applied on top of the previous one.
 
->> In addition my introduction sysfs_rename_link handles this case
->> cleanly by first removing the old link and then creating the new
->> link.  Preventing false positives when the link names are the same.
->
-> sysfs_rename_link() looks cleaner, I agree.
->
->> 
->> So it should be safe to drop Cornelia patch without a reoccurance
->> of scary errors.
->
-> Hm, the description looks badly worded - I unfortunately left the old
-> text unchanged when I respun the patch :( The patch re-introduces the
-> warning in sysfs_add_one() which had been removed in the meanwhile and
-> makes device_rename() use a non-warning version. I still think we want
-> a warning for the general case since this is usually caused be some
-> problems in the calling code (and the alternative would be to add
-> checks to all callers.)
+Both patches are also available here:
+http://download.systemimager.org/~arighi/ltp/
 
-Right.  We just need to get the sysfs paths clean enough that we don't
-emit false positives.  I think I have accomplished that for rename.
+Signed-off-by: Andrea Righi <righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+---
+--- ltp/testcases/kernel/controllers/Makefile.orig	2008-07-07 15:21:42.000000000 +0200
++++ ltp/testcases/kernel/controllers/Makefile	2008-07-07 12:25:50.000000000 +0200
+@@ -1,4 +1,4 @@
+-SUBDIRS = libcontrollers cpuctl memctl
++SUBDIRS = libcontrollers cpuctl memctl io-throttle
+ CHECK_CPUCTL = $(shell grep -w cpu /proc/cgroups|cut -f1)
+ CHECK_MEMCTL = $(shell grep -w memory /proc/cgroups|cut -f1)
+ CHECK_BLOCKIOCTL= $(shell grep -w blockio /proc/cgroups|cut -f1)
 
-Eric
+-------------------------------------------------------------------------
+Sponsored by: SourceForge.net Community Choice Awards: VOTE NOW!
+Studies have shown that voting for your favorite open source project,
+along with a healthy diet, reduces your potential for chronic lameness
+and boredom. Vote Now at http://www.sourceforge.net/community/cca08
