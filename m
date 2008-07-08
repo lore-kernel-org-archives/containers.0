@@ -1,16 +1,16 @@
-From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [RFC PATCH 5/5] use next syscall data to predefine the file
-	descriptor value
-Date: Tue, 8 Jul 2008 15:14:52 -0500
-Message-ID: <20080708201452.GE22904@us.ibm.com>
-References: <20080708112422.164370000@bull.net>
-	<20080708112459.632357000@bull.net>
+From: Pavel Machek <pavel-+ZI9xUNit7I@public.gmane.org>
+Subject: Re: [RFC PATCH 0/5] Resend - Use procfs to change a syscall behavior
+Date: Tue, 8 Jul 2008 12:52:28 +0200
+Message-ID: <20080708105228.GB15311@elf.ucw.cz>
+References: <20080703144013.737951000@bull.net>
+	<20080704102702.GB4531@elf.ucw.cz>
+	<20080707190119.GB25934@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <20080708112459.632357000-6ktuUTfB/bM@public.gmane.org>
+In-Reply-To: <20080707190119.GB25934-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -20,129 +20,74 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Nadia.Derbey-6ktuUTfB/bM@public.gmane.org, Kathy Staples <kathys-QcUrd9fbWu1x7SfHBjqd8AC/G2K4zDHf@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Nadia.Derbey-6ktuUTfB/bM@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Quoting Nadia.Derbey-6ktuUTfB/bM@public.gmane.org (Nadia.Derbey-6ktuUTfB/bM@public.gmane.org):
-> [PATCH 05/05]
+On Mon 2008-07-07 14:01:19, Serge E. Hallyn wrote:
+> Quoting Pavel Machek (pavel-+ZI9xUNit7I@public.gmane.org):
+> > Hi!
+> > 
+> > > This patchset is a part of an effort to change some syscalls behavior for
+> > > checkpoint restart.
+> > > 
+> > > When restarting an object that has previously been checkpointed, its state
+> > > should be unchanged compared to the checkpointed image.
+> > > For example, a restarted process should have the same upid nr as the one it
+> > > used to have when being checkpointed; an ipc object should have the same id
+> > > as the one it had when the checkpoint occured.
+> > > Also, talking about system V ipcs, they should be restored with the same
+> > > state (e.g. in terms of pid of last operation).
+> > > 
+> > > This means that several syscalls should not behave in a default mode when
+> > > they are called during a restart phase.
+> > > 
+> > > One solution consists in defining a new syscall for each syscall that is
+> > > called during restart:
+> > >  . sys_fork_with_id() would fork a process with a predefined id.
+> > >  . sys_msgget_with_id() would create a msg queue with a predefined id
+> > >  . sys_semget_with_id() would create a semaphore set with a predefined id
+> > >  . etc,
+> > > 
+> > > This solution requires defining a new syscall each time we need an existing
+> > > syscall to behave in a non-default way.
+> > 
+> > Yes, and I believe that's better than...
+> > 
+> > > An alternative to this solution consists in defining a new field in the
+> > > task structure (let's call it next_syscall_data) that, if set, would change
+> > > the behavior of next syscall to be called. The sys_fork_with_id() previously
+> > > cited can be replaced by
+> > >  1) set next_syscall_data to a target upid nr
+> > >  2) call fork().
+> > 
+> > ...bloat task struct and
+> > 
+> > > A new file is created in procfs: /proc/self/task/<my_tid>/next_syscall_data.
+> > > This makes it possible to avoid races between several threads belonging to
+> > > the same process.
+> > 
+> > ...introducing this kind of uglyness.
+> > 
+> > Actually, there were proposals for sys_indirect(), which is slightly
+> > less ugly, but IIRC we ended up with adding syscalls, too.
 > 
-> This patch uses the value written into the next_syscall_data proc file
-> as a target file descriptor for the next file to be opened.
+> Silly question...
 > 
-> This makes it easy to restart a process with the same fds as the ones it was
-> using during the checkpoint phase, instead of 1. opening the file, 2. dup2'ing
-> the open file descriptor.
+> Oren, would you object to defining sys_fork_with_id(),
+> sys_msgget_with_id(), and sys_semget_with_id()?
 > 
-> The following syscalls are impacted if next_syscall_data is set:
-> . open()
-> . openat()
-
-Oh, neat, I somehow missed the fact that you had this in your previous
-posting  :)
-
-> Signed-off-by: Nadia Derbey <Nadia.Derbey-6ktuUTfB/bM@public.gmane.org>
-
-It'd be nice if the get_predefined_fd_flags() could share a helper
-with get_unused_fd_flags() (in particular because the "/* snaity check */
-at the end is between a '#if 1' which sounds like it may one day be
-removed), but I'm not sure offhand the best way to do that.  So for now
-
-Acked-by: Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-
-Thanks, Nadia.
-
-Kathy, I'd love to see a -lxc release with this patchset so we can test
-it with cryo.
-
-Suka, the open with specified id here might help your simplify your pipe
-c/r patches for cryo?
-
--serge
-
-> ---
->  fs/open.c |   62 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++-
->  1 file changed, 61 insertions(+), 1 deletion(-)
+> Eric, Pavel (Emelyanov), Dave, do you have preferences?
 > 
-> Index: linux-2.6.26-rc8-mm1/fs/open.c
-> ===================================================================
-> --- linux-2.6.26-rc8-mm1.orig/fs/open.c	2008-07-08 12:12:34.000000000 +0200
-> +++ linux-2.6.26-rc8-mm1/fs/open.c	2008-07-08 13:23:03.000000000 +0200
-> @@ -974,6 +974,59 @@ struct file *dentry_open(struct dentry *
->  EXPORT_SYMBOL(dentry_open);
-> 
->  /*
-> + * Marks a given file descriptor entry as busy (should not be busy when this
-> + * routine is called.
-> + *
-> + * files->next_fd is not updated: this lets the potentially created hole be
-> + * filled up on next calls to get_unused_fd_flags.
-> + *
-> + * Returns the specified fd if successful, -errno else.
-> + */
-> +static int get_predefined_fd_flags(int fd, int flags)
-> +{
-> +	struct files_struct *files = current->files;
-> +	int error;
-> +	struct fdtable *fdt;
-> +
-> +	error = -EINVAL;
-> +	if (fd < 0)
-> +		goto out;
-> +
-> +	error = -EMFILE;
-> +	if (fd >= current->signal->rlim[RLIMIT_NOFILE].rlim_cur)
-> +		goto out;
-> +
-> +	spin_lock(&files->file_lock);
-> +	fdt = files_fdtable(files);
-> +
-> +	error = expand_files(files, fd);
-> +	if (error < 0)
-> +		goto out_unlock;
-> +
-> +	error = -EBUSY;
-> +	if (FD_ISSET(fd, fdt->open_fds))
-> +		goto out_unlock;
-> +
-> +	FD_SET(fd, fdt->open_fds);
-> +	if (flags & O_CLOEXEC)
-> +		FD_SET(fd, fdt->close_on_exec);
-> +	else
-> +		FD_CLR(fd, fdt->close_on_exec);
-> +
-> +	/* Sanity check */
-> +	if (fdt->fd[fd] != NULL) {
-> +		printk(KERN_WARNING "get_unused_fd: slot %d not NULL!\n", fd);
-> +		fdt->fd[fd] = NULL;
-> +	}
-> +
-> +	error = fd;
-> +out_unlock:
-> +	spin_unlock(&files->file_lock);
-> +out:
-> +	return error;
-> +}
-> +
-> +/*
->   * Find an empty file descriptor entry, and mark it busy.
->   */
->  int get_unused_fd_flags(int flags)
-> @@ -1088,7 +1141,14 @@ long do_sys_open(int dfd, const char __u
->  	int fd = PTR_ERR(tmp);
-> 
->  	if (!IS_ERR(tmp)) {
-> -		fd = get_unused_fd_flags(flags);
-> +		if (unlikely(next_data_set(current))) {
-> +			int next_fd = get_next_data(current);
-> +
-> +			fd = get_predefined_fd_flags(next_fd, flags);
-> +			reset_next_syscall_data(current);
-> +		} else
-> +			fd = get_unused_fd_flags(flags);
-> +
->  		if (fd >= 0) {
->  			struct file *f = do_filp_open(dfd, tmp, flags, mode);
->  			if (IS_ERR(f)) {
-> 
-> --
+> For the cases Nadia has implemented here I'd be tempted to side with
+> Pavel Machek, but once we get to things like open() and socket(), (a)
+> the # new syscalls starts to jump, and (b) the per-syscall api starts to
+> seem a lot more cumbersome.
+
+You should not need to modify open/socket. You can already select fd
+by creatively using open/dup/close...
+									Pavel
+
+-- 
+(english) http://www.livejournal.com/~pavelmachek
+(cesky, pictures) http://atrey.karlin.mff.cuni.cz/~pavel/picture/horses/blog.html
