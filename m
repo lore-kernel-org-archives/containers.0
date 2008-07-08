@@ -1,16 +1,14 @@
-From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [RFC PATCH 4/5] use next syscall data to change the behavior
-	of IPC_SET
-Date: Tue, 8 Jul 2008 14:56:18 -0500
-Message-ID: <20080708195618.GD22904@us.ibm.com>
-References: <20080708112422.164370000@bull.net>
-	<20080708112459.231249000@bull.net>
+From: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH 0/4] Container Freezer: Reuse Suspend Freezer
+Date: Tue, 08 Jul 2008 12:39:14 -0700
+Message-ID: <1215545954.9023.120.camel__7671.5778363452$1215547189$gmane$org@localhost.localdomain>
+References: <20080707225823.502032693@us.ibm.com>
+	<20080708123150.3034d83f.kamezawa.hiroyu@jp.fujitsu.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <20080708112459.231249000-6ktuUTfB/bM@public.gmane.org>
+In-Reply-To: <20080708123150.3034d83f.kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -20,165 +18,80 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Nadia.Derbey-6ktuUTfB/bM@public.gmane.org
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+Cc: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Linux-Kernel <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, "Rafael J. Wysocki" <rjw-KKrjLPT3xs0@public.gmane.org>, Cedric Le Goater <clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>, Pavel Machek <pavel-+ZI9xUNit7I@public.gmane.org>, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, linux-pm-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Quoting Nadia.Derbey-6ktuUTfB/bM@public.gmane.org (Nadia.Derbey-6ktuUTfB/bM@public.gmane.org):
-> [PATCH 04/05]
-> 
-> This patch uses the value written into the next_syscall_data proc file
-> as a flag to change the way msgctl(IPC_SET), semctl(IPC_SET) and
-> shmctl(IPC_SET) behave.
-> 
-> When "LONG1 1" is echoed to this file, xxxctl(IPC_SET) will set the time
-> fields and the pid fields according to what is specified in the input
-> parameter (while currently only the permission fields are allowed to be set).
-> The following syscalls are impacted:
-> . msgctl(IPC_SET)
-> . semctl(IPC_SET)
-> . shmctl(IPC_SET)
-> 
-> This makes it easy to restart an ipc object exactly is it was during the
-> checkpoint phase.
-> 
-> Signed-off-by: Nadia Derbey <Nadia.Derbey-6ktuUTfB/bM@public.gmane.org>
 
-Acked-by: Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Cedric was accidentally not Cc'd on the introduction (PATCH 0). Adding
+him.
 
-thanks,
--serge
+On Tue, 2008-07-08 at 12:31 +0900, KAMEZAWA Hiroyuki wrote:
+> Hi, could I make brief questions ?
+> 
+> On Mon, 07 Jul 2008 15:58:23 -0700
+> Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org> wrote:
+> > to get status of the freezer subsystem :
+> > 
+> >    # cat /containers/0/freezer.state
+> >    RUNNING
+> > 
+> > to freeze all tasks in the container :
+> > 
+> >    # echo FROZEN > /containers/0/freezer.state
+> >    # cat /containers/0/freezer.state
+> >    FREEZING
+> >    # cat /containers/0/freezer.state
+> >    FROZEN
+> > 
+> I'm just curious.
+> 
+> 1. When we see FREEZING and have to retry ?
 
-> ---
->  include/linux/next_syscall_data.h |   12 ++++++++++++
->  ipc/msg.c                         |   19 ++++++++++++++++++-
->  ipc/sem.c                         |   16 +++++++++++++++-
->  ipc/shm.c                         |   19 ++++++++++++++++++-
->  4 files changed, 63 insertions(+), 3 deletions(-)
-> 
-> Index: linux-2.6.26-rc8-mm1/include/linux/next_syscall_data.h
-> ===================================================================
-> --- linux-2.6.26-rc8-mm1.orig/include/linux/next_syscall_data.h	2008-07-08 12:22:47.000000000 +0200
-> +++ linux-2.6.26-rc8-mm1/include/linux/next_syscall_data.h	2008-07-08 12:24:29.000000000 +0200
-> @@ -6,6 +6,7 @@
->   *    . object creation with a predefined id
->   *         . for a sysv ipc object
->   *         . for a process
-> + *    . set more than the usual ipc_perm fields during and IPC_SET operation.
->   */
-> 
->  #ifndef _LINUX_NEXT_SYSCALL_DATA_H
-> @@ -20,6 +21,10 @@
->   * by next syscall. The following syscalls support this feature:
->   *    . msgget(), semget(), shmget()
->   *    . fork(), vfork(), clone()
-> + *
-> + * If it is set to a non null value before a call to:
-> + *    . msgctl(IPC_SET), semctl(IPC_SET), shmctl(IPC_SET),
-> + * this means that we are going to set more than the usual ipc_perms fields.
->   */
->  struct next_syscall_data {
->  	int ndata;
-> @@ -35,6 +40,13 @@ struct next_syscall_data {
-> 
->  #define get_next_data(tsk)	((tsk)->nsd->data[0])
-> 
-> +/*
-> + * Returns true if next call to xxxctl(IPC_SET) should have a non-default
-> + * behavior.
-> + */
-> +#define ipc_set_all(tsk)	(next_data_set(tsk) ? get_next_data(tsk) : 0)
-> +
-> +
->  extern ssize_t get_next_syscall_data(struct task_struct *, char *, size_t);
->  extern int set_next_syscall_data(struct task_struct *, char *);
->  extern void reset_next_syscall_data(struct task_struct *);
-> Index: linux-2.6.26-rc8-mm1/ipc/msg.c
-> ===================================================================
-> --- linux-2.6.26-rc8-mm1.orig/ipc/msg.c	2008-07-08 12:12:36.000000000 +0200
-> +++ linux-2.6.26-rc8-mm1/ipc/msg.c	2008-07-08 12:26:03.000000000 +0200
-> @@ -446,7 +446,24 @@ static int msgctl_down(struct ipc_namesp
->  		msq->q_qbytes = msqid64.msg_qbytes;
-> 
->  		ipc_update_perm(&msqid64.msg_perm, ipcp);
-> -		msq->q_ctime = get_seconds();
-> +		if (unlikely(ipc_set_all(current))) {
-> +			/*
-> +			 * If this field is set in the task struct, this
-> +			 * means that we want to set more than the usual
-> +			 * fields. Particularly useful to restart a msgq
-> +			 * in the same state as it was before being
-> +			 * checkpointed.
-> +			 */
-> +			msq->q_stime = msqid64.msg_stime;
-> +			msq->q_rtime = msqid64.msg_rtime;
-> +			msq->q_ctime = msqid64.msg_ctime;
-> +			msq->q_lspid = msqid64.msg_lspid;
-> +			msq->q_lrpid = msqid64.msg_lrpid;
-> +
-> +			reset_next_syscall_data(current);
-> +		} else
-> +			msq->q_ctime = get_seconds();
-> +
->  		/* sleeping receivers might be excluded by
->  		 * stricter permissions.
->  		 */
-> Index: linux-2.6.26-rc8-mm1/ipc/sem.c
-> ===================================================================
-> --- linux-2.6.26-rc8-mm1.orig/ipc/sem.c	2008-07-08 12:12:36.000000000 +0200
-> +++ linux-2.6.26-rc8-mm1/ipc/sem.c	2008-07-08 12:27:06.000000000 +0200
-> @@ -874,7 +874,21 @@ static int semctl_down(struct ipc_namesp
->  		goto out_up;
->  	case IPC_SET:
->  		ipc_update_perm(&semid64.sem_perm, ipcp);
-> -		sma->sem_ctime = get_seconds();
-> +
-> +		if (unlikely(ipc_set_all(current))) {
-> +			/*
-> +			 * If this field is set in the task struct, this
-> +			 * means that we want to set more than the usual
-> +			 * fields. Particularly useful to restart a semaphore
-> +			 * in the same state as it was before being
-> +			 * checkpointed.
-> +			 */
-> +			sma->sem_ctime = semid64.sem_ctime;
-> +			sma->sem_otime = semid64.sem_otime;
-> +
-> +			reset_next_syscall_data(current);
-> +		} else
-> +			sma->sem_ctime = get_seconds();
->  		break;
->  	default:
->  		err = -EINVAL;
-> Index: linux-2.6.26-rc8-mm1/ipc/shm.c
-> ===================================================================
-> --- linux-2.6.26-rc8-mm1.orig/ipc/shm.c	2008-07-08 12:12:36.000000000 +0200
-> +++ linux-2.6.26-rc8-mm1/ipc/shm.c	2008-07-08 12:27:32.000000000 +0200
-> @@ -609,7 +609,24 @@ static int shmctl_down(struct ipc_namesp
->  		goto out_up;
->  	case IPC_SET:
->  		ipc_update_perm(&shmid64.shm_perm, ipcp);
-> -		shp->shm_ctim = get_seconds();
-> +
-> +		if (unlikely(ipc_set_all(current))) {
-> +			/*
-> +			 * If this field is set in the task struct, this
-> +			 * means that we want to set more than the usual
-> +			 * fields. Particularly useful to restart a shm seg
-> +			 * in the same state as it was before being
-> +			 * checkpointed.
-> +			 */
-> +			shp->shm_atim = shmid64.shm_atime;
-> +			shp->shm_dtim = shmid64.shm_dtime;
-> +			shp->shm_ctim = shmid64.shm_ctime;
-> +			shp->shm_cprid = shmid64.shm_cpid;
-> +			shp->shm_lprid = shmid64.shm_lpid;
-> +
-> +			reset_next_syscall_data(current);
-> +		} else
-> +			shp->shm_ctim = get_seconds();
->  		break;
->  	default:
->  		err = -EINVAL;
-> 
-> --
+One example is when some processes are in the a specific portion of
+vfork() you might see FREEZING and have to retry.
+
+>    While there are some threads which wait for some event ?
+
+Depending on which kind of "wait" they are performing, yes. If it's
+uninterruptible sleep and the PF_FROZEN flag is not set then you might
+see FREEZING.
+
+> 2. What happens when FROZEN threads are moved to other group ?
+>    Can we move them ?
+
+If the destination cgroup is not FROZEN, yes.
+
+If the destination cgroup is FREEZING this works as expected.
+
+If the destination cgroup is RUNNING you'd have a problem unfreezing the
+task. This happends because the cgroup has a state inconsistent with the
+task's state. To unfreeze the task you'd have to try to freeze and then
+unfreeze the destination cgroup. 
+
+There are several ways I could change this.
+
+One is to try and disallow users from moving frozen tasks. That doesn't
+seem like a good approach since it would require a new cgroups interface
+"can_detach()". 
+
+However we can prevent attach so I could add checks that look at the
+attaching tasks's state and refuse the attach when the task's state
+(unfrozen, frozen) is inconsistent with the cgroup state (RUNNING,
+FREEZING, FROZEN). I'll send a fifth patch on top of this series showing
+this idea.
+
+Rather than refuse to allow attach we could change the destination
+cgroup's state during attach so that the two states are consistent.
+However, this introduces more ugly cases for userspace to be aware of.
+
+>    Can we wake them up (if it can be moved) ?
+
+You can't wake them until you've unfrozen them.
+
+>    What operations are allowed to frozen threads ?
+
+Any operation that doesn't require the threads to run.
+
+Cheers,
+	-Matt Helsley
