@@ -1,17 +1,15 @@
-From: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 0/4] Container Freezer: Reuse Suspend Freezer
-Date: Wed, 09 Jul 2008 14:58:43 -0700
-Message-ID: <1215640723.7149.35.camel__26351.7492138364$1215640854$gmane$org@localhost.localdomain>
-References: <20080707225823.502032693@us.ibm.com>
-	<20080708123150.3034d83f.kamezawa.hiroyu@jp.fujitsu.com>
-	<1215545954.9023.120.camel@localhost.localdomain>
-	<6599ad830807081306l61622eadk215a25d02ee94b00@mail.gmail.com>
-	<6599ad830807081307j811689aldf0f6cb38579c450@mail.gmail.com>
+From: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Subject: Re: [Devel] [RFC PATCH 0/5] Resend -v2 - Use procfs to change a
+	syscall behavior
+Date: Thu, 10 Jul 2008 02:10:28 +0400
+Message-ID: <20080709221028.GA4926@martell.zuzino.mipt.ru>
+References: <20080708112422.164370000@bull.net>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <6599ad830807081307j811689aldf0f6cb38579c450-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <20080708112422.164370000-6ktuUTfB/bM@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -21,33 +19,19 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
-Cc: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Linux-Kernel <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, "Rafael J. Wysocki" <rjw-KKrjLPT3xs0@public.gmane.org>, Cedric Le Goater <clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>, Pavel Machek <pavel-+ZI9xUNit7I@public.gmane.org>, linux-pm-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Nadia.Derbey-6ktuUTfB/bM@public.gmane.org
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
+On Tue, Jul 08, 2008 at 01:24:22PM +0200, Nadia.Derbey-6ktuUTfB/bM@public.gmane.org wrote:
+> # echo "LONG1 XX" > /proc/self/task/<my_tid>/next_syscall_data
 
-On Tue, 2008-07-08 at 13:07 -0700, Paul Menage wrote:
-> On Tue, Jul 8, 2008 at 1:06 PM, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org> wrote:
-> > On Tue, Jul 8, 2008 at 12:39 PM, Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org> wrote:
-> >>
-> >> One is to try and disallow users from moving frozen tasks. That doesn't
-> >> seem like a good approach since it would require a new cgroups interface
-> >> "can_detach()".
-> >
-> > Detaching from the old cgroup happens at the same time as attaching to
-> > the new cgroup, so can_attach() would work here.
+Same stuff.
 
-Update: I've made a patch implementing this. However it might be better
-to just modify attach() to thaw the moving task rather than disallow
-moving the frozen task. Serge, Cedric, Kame-san, do you have any
-thoughts on which is more useful and/or intuitive?
+There is struct task_struct::did_exec , what about it?
 
-> And the whole can_attach()/attach() protocol needs reworking anyway,
-> see my email (hopefully) later today.
-> 
-> Paul
+Also, patches are about de-serializing, how serializing from userspace looks like?
+You freezed group of processes, then what?
 
-Interesting. I look forward to seeing this.
-
-Cheers,
-	-Matt
+How, for example, dump all VMAs correctly?
+[prepares counter-example]
