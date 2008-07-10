@@ -1,15 +1,20 @@
 From: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: Re: [Devel] [RFC PATCH 0/5] Resend -v2 - Use procfs to change a
-	syscall behavior
-Date: Thu, 10 Jul 2008 09:01:42 -0700
-Message-ID: <1215705702.9398.4.camel@nimitz>
-References: <20080708112422.164370000@bull.net>
-	<20080709221028.GA4926@martell.zuzino.mipt.ru>
+Subject: Re: Checkpoint/restart (was Re: [PATCH 0/4] - v2 - Object creation
+	with a specified id)
+Date: Thu, 10 Jul 2008 10:12:29 -0700
+Message-ID: <1215709949.9398.15.camel__29673.9366408021$1215710159$gmane$org@nimitz>
+References: <20080418054459.891481000@bull.net>
+	<20080422193612.GA15835@martell.zuzino.mipt.ru>
+	<1208890580.17117.14.camel@nimitz.home.sr71.net>
+	<20080422210130.GA15937@martell.zuzino.mipt.ru>
+	<1208904967.17117.51.camel@nimitz.home.sr71.net>
+	<480ED9D5.1010906@parallels.com> <480FE037.2010302@cs.columbia.edu>
+	<m1y74a7b4w.fsf@frodo.ebiederm.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20080709221028.GA4926-QDJVlCTZ4KWTKS93B3g+7KFoa47nwP16@public.gmane.org>
+In-Reply-To: <m1y74a7b4w.fsf-B27657KtZYmhTnVgQlOflh2eb7JE58TQ@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,16 +24,23 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Nadia.Derbey-6ktuUTfB/bM@public.gmane.org
+To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+Cc: Kirill Korotaev <dev-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, nick-dnCCA748QAperShJXdIFYw@public.gmane.org, Nadia.Derbey-6ktuUTfB/bM@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Thu, 2008-07-10 at 02:10 +0400, Alexey Dobriyan wrote:
-> How, for example, dump all VMAs correctly?
-> [prepares counter-example]
+On Wed, 2008-07-09 at 18:58 -0700, Eric W. Biederman wrote:
+> In the worst case today we can restore a checkpoint by replaying all of
+> the user space actions that took us to get there.  That is a tedious
+> and slow approach.
 
-Are there some particular pitfalls that you'd like to share?  I'd love
-to hear some of the issues the you've run into with Virtuozzo as its
-implementation was created.
+Yes, tedious and slow, *and* minimally invasive in the kernel.  Once we
+have a tedious and slow process, we'll have some really good points when
+we try to push the next set of patches to make it less slow and tedious.
+We'll be able to describe an _actual_ set of problems to our fellow
+kernel hackers.
+
+So, the checkpoint-as-a-corefile idea sounds good to me, but it
+definitely leaves a lot of questions about exactly how we'll need to do
+the restore.
 
 -- Dave
