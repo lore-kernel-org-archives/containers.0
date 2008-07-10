@@ -1,20 +1,18 @@
-From: "Paul Menage" <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [Devel] Re: [RFC PATCH 0/5] Resend - Use procfs to change a
-	syscall behavior
-Date: Thu, 10 Jul 2008 02:30:26 -0700
-Message-ID: <6599ad830807100230k2f3f3551sa4b804f4c20b43fe@mail.gmail.com>
-References: <20080703144013.737951000@bull.net>
-	<20080704102702.GB4531@elf.ucw.cz> <486E1276.2080605@bull.net>
-	<20080708105143.GA15311@elf.ucw.cz> <20080708214721.GA1972@us.ibm.com>
-	<20080708215315.GD17083@elf.ucw.cz> <4875B212.5030604@bull.net>
-	<6599ad830807100001j3f3a6cf2y7a19dda9382edb2c@mail.gmail.com>
-	<4875D2EA.4010407@bull.net>
+From: Nadia Derbey <Nadia.Derbey-6ktuUTfB/bM@public.gmane.org>
+Subject: Re: [Devel] Re: [RFC PATCH 0/5] Resend - Use procfs to change
+	a	syscall behavior
+Date: Thu, 10 Jul 2008 11:38:45 +0200
+Message-ID: <4875D8A5.2040201@bull.net>
+References: <20080703144013.737951000@bull.net>	<20080704102702.GB4531@elf.ucw.cz>
+	<20080707190119.GB25934@us.ibm.com>	<20080708105228.GB15311@elf.ucw.cz>
+	<20080708215034.GB2179@us.ibm.com>	<20080708215821.GE17083@elf.ucw.cz>	<20080709022035.GA21249@us.ibm.com>
+	<4875C138.5060506@bull.net>
+	<6599ad830807100134l362ab98bt868e078eeb17b838@mail.gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <4875D2EA.4010407-6ktuUTfB/bM@public.gmane.org>
-Content-Disposition: inline
+In-Reply-To: <6599ad830807100134l362ab98bt868e078eeb17b838-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -24,20 +22,25 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Nadia Derbey <Nadia.Derbey-6ktuUTfB/bM@public.gmane.org>
+To: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
 Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Pavel Machek <pavel-+ZI9xUNit7I@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Thu, Jul 10, 2008 at 2:14 AM, Nadia Derbey <Nadia.Derbey-6ktuUTfB/bM@public.gmane.org> wrote:
-> But I think that both ways of doing are not exactly the same in case of
-> failure:
-> open + dup2 will close newfd if it is already busy.
-> while
-> next-syscall_data + open will fail if the target fd is already busy. And
-> that's the functionality we need during restart, isn't it?
+Paul Menage wrote:
+> On Thu, Jul 10, 2008 at 12:58 AM, Nadia Derbey <Nadia.Derbey-6ktuUTfB/bM@public.gmane.org> wrote:
+> 
+>>Actually, what I've started working on these days is replace the proc
+>>interface by a syscall to set the next_syscall_data field: I think this
+>>might help us avoid defining a precise list of the new syscalls we need?
+> 
+> 
+> Isn't that just sys_indirect(), but split into two syscall invocations
+> rather than one?
+> 
 
-No, I don't think so. The cryo restart code should be aware of exactly
-which fds it has open and which it needs to open, and can shuffle them
-around as necessary via dup2() to get them into the right places.
+Yes, from what I've read about the sys_indirect(), it is.
+Unfortunalty, I hadn't followed the thread, so except because of its 
+"ugliness" (again ;-) ) I don't exactly know why the idea has been given up.
 
-Paul
+Regards,
+Nadia
