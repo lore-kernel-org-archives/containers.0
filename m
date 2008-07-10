@@ -1,22 +1,14 @@
 From: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: Re: Checkpoint/restart (was Re: [PATCH 0/4] - v2 - Object creation
-	with a specified id)
-Date: Thu, 10 Jul 2008 12:47:32 -0700
-Message-ID: <1215719252.9398.53.camel__6867.86255469105$1215719468$gmane$org@nimitz>
-References: <20080418054459.891481000@bull.net>
-	<20080422193612.GA15835@martell.zuzino.mipt.ru>
-	<1208890580.17117.14.camel@nimitz.home.sr71.net>
-	<20080422210130.GA15937@martell.zuzino.mipt.ru>
-	<1208904967.17117.51.camel@nimitz.home.sr71.net>
-	<480ED9D5.1010906@parallels.com> <480FE037.2010302@cs.columbia.edu>
-	<m1y74a7b4w.fsf@frodo.ebiederm.org> <1215709949.9398.15.camel@nimitz>
-	<20080710173246.GA1857@us.ibm.com> <m163rd1sd5.fsf@frodo.ebiederm.org>
-	<1215716794.9398.41.camel@nimitz> <m14p6xy27s.fsf@frodo.ebiederm.org>
+Subject: Re: [PATCH -mm 1/5] swapcgroup (v3): add cgroup files
+Date: Thu, 10 Jul 2008 13:35:36 -0700
+Message-ID: <1215722136.9398.59.camel@nimitz>
+References: <20080704151536.e5384231.nishimura@mxp.nes.nec.co.jp>
+	<20080704151747.470d62a3.nishimura@mxp.nes.nec.co.jp>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <m14p6xy27s.fsf-B27657KtZYmhTnVgQlOflh2eb7JE58TQ@public.gmane.org>
+In-Reply-To: <20080704151747.470d62a3.nishimura-YQH0OdQVrdy45+QrQBaojngSJqDPrsil@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -26,36 +18,20 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Cc: Kirill Korotaev <dev-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, nick-dnCCA748QAperShJXdIFYw@public.gmane.org, Nadia.Derbey-6ktuUTfB/bM@public.gmane.org
+To: Daisuke Nishimura <nishimura-YQH0OdQVrdy45+QrQBaojngSJqDPrsil@public.gmane.org>
+Cc: YAMAMOTO Takashi <yamamoto-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>, Linux MM <linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org>, KOSAKI Motohiro <kosaki.motohiro-+CUm20s59erQFUHtdCDX3A@public.gmane.org>, Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Hugh Dickins <hugh-DTz5qymZ9yRBDgjK7y7TUQ@public.gmane.org>, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>, Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Thu, 2008-07-10 at 12:21 -0700, Eric W. Biederman wrote:
-> > Are we talking about the VMA itself, or the memory backing the VMA?
-> 
-> The memory backing the VMA.  We need to store the page protections
-> that the memory was mapped with as well now that you point it out.  A
-> VMA is not user space visible, which is why we can arbitrarily split
-> and merge VMAs.
+On Fri, 2008-07-04 at 15:17 +0900, Daisuke Nishimura wrote:
+> +config CGROUP_SWAP_RES_CTLR
+> +       bool "Swap Resource Controller for Control Groups"
+> +       depends on CGROUP_MEM_RES_CTLR && SWAP
+> +       help
+> +         Provides a swap resource controller that manages and limits swap usage.
+> +         Implemented as a add-on to Memory Resource Controller.
 
-It is visible with /proc/$pid/{maps,smaps,numamaps?}.  That's the only
-efficient way I know of from userspace to figure out where userspace's
-memory is and if it *is* file backed, and what the permissions are.
-
-We also can't truly split them arbitrarily because the memory cost of
-the VMAs themselves might become too heavy (the remap_file_pages()
-problem).
-
-It gets trickier when things are also private mappings in addition to
-being in a file-backed VMA.  We *do* need to checkpoint those, but only
-the pages to which there was a write.
-
-There's also the problem of restoring things read-only, but VM_MAYWRITE.
-If there's a high level of (non-COW'd) sharing of these anonymous areas,
-we may not be able to even restore the set of processes unless we can
-replicate the sharing.  We might run out of memory if the sharing isn't
-replicated.
-
-Memory is fun! :)
+Could you make this just plain depend on 'CGROUP_MEM_RES_CTLR && SWAP'
+and not make it configurable?  I don't think the resource usage really
+justifies yet another .config knob to tune and break. :)
 
 -- Dave
