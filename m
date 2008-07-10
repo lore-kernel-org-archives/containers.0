@@ -1,15 +1,20 @@
-From: Nadia Derbey <Nadia.Derbey-6ktuUTfB/bM@public.gmane.org>
-Subject: Re: [RFC PATCH 0/5] Resend - Use procfs to change a syscall behavior
-Date: Thu, 10 Jul 2008 11:29:45 +0200
-Message-ID: <4875D689.70606@bull.net>
-References: <20080703144013.737951000@bull.net>	<20080704102702.GB4531@elf.ucw.cz>
-	<486E1276.2080605@bull.net>	<20080708105143.GA15311@elf.ucw.cz>
-	<4875BD4B.2070402@bull.net> <20080710085406.GA13258@elf.ucw.cz>
+From: "Paul Menage" <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [Devel] Re: [RFC PATCH 0/5] Resend - Use procfs to change a
+	syscall behavior
+Date: Thu, 10 Jul 2008 02:30:26 -0700
+Message-ID: <6599ad830807100230k2f3f3551sa4b804f4c20b43fe@mail.gmail.com>
+References: <20080703144013.737951000@bull.net>
+	<20080704102702.GB4531@elf.ucw.cz> <486E1276.2080605@bull.net>
+	<20080708105143.GA15311@elf.ucw.cz> <20080708214721.GA1972@us.ibm.com>
+	<20080708215315.GD17083@elf.ucw.cz> <4875B212.5030604@bull.net>
+	<6599ad830807100001j3f3a6cf2y7a19dda9382edb2c@mail.gmail.com>
+	<4875D2EA.4010407@bull.net>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20080710085406.GA13258-I/5MKhXcvmPrBKCeMvbIDA@public.gmane.org>
+In-Reply-To: <4875D2EA.4010407-6ktuUTfB/bM@public.gmane.org>
+Content-Disposition: inline
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,106 +24,20 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Pavel Machek <pavel-+ZI9xUNit7I@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Nadia Derbey <Nadia.Derbey-6ktuUTfB/bM@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Pavel Machek <pavel-+ZI9xUNit7I@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Pavel Machek wrote:
-> On Thu 2008-07-10 09:42:03, Nadia Derbey wrote:
-> 
->>Pavel Machek wrote:
->>
->>>Hi!
->>>
->>>
->>>
->>>>>>An alternative to this solution consists in defining a new field in the
->>>>>>task structure (let's call it next_syscall_data) that, if set, would change
->>>>>>the behavior of next syscall to be called. The sys_fork_with_id() previously
->>>>>>cited can be replaced by
->>>>>>1) set next_syscall_data to a target upid nr
->>>>>>2) call fork().
->>>>>
->>>>>
->>>>>...bloat task struct and
->>>>>
->>>>>
->>>>>
->>>>>
->>>>>>A new file is created in procfs: /proc/self/task/<my_tid>/next_syscall_data.
->>>>>>This makes it possible to avoid races between several threads belonging to
->>>>>>the same process.
->>>>>
->>>>>
->>>>>...introducing this kind of uglyness.
->>>>>
->>>>>Actually, there were proposals for sys_indirect(), which is slightly
->>>>>less ugly, but IIRC we ended up with adding syscalls, too.
->>>
->>>
->>>>I had a look at the lwn.net article that describes the sys_indirect() 
->>>>interface.
->>>>It does exactly what we need here, so I do like it, but it has the same 
->>>>drawbacks as the one you're complaining about:
->>>>. a new field is needed in the task structure
->>>>. looks like many people found it ugly...
->>>
->>>
->>>>Now, coming back to what I'm proposing: what we need is actually to 
->>>>change the behavior of *existing* syscalls, since we are in a very 
->>>>particular context (restarting an application).
->>>
->>>
->>>Changing existing syscalls is _bad_: for backwards compatibility
->>>reasons.
->>
->>I'm sorry but I don't see a backward compatibility problem: same interface, 
->>same functionality provided. The only change is in the way ids are 
->>assigned.
-> 
-> 
-> If you don't see a backward compatibility problem here, perhaps you
-> should not be hacking kernel...? 
+On Thu, Jul 10, 2008 at 2:14 AM, Nadia Derbey <Nadia.Derbey-6ktuUTfB/bM@public.gmane.org> wrote:
+> But I think that both ways of doing are not exactly the same in case of
+> failure:
+> open + dup2 will close newfd if it is already busy.
+> while
+> next-syscall_data + open will fail if the target fd is already busy. And
+> that's the functionality we need during restart, isn't it?
 
-Thx for the advice, will try think about it...
+No, I don't think so. The cryo restart code should be aware of exactly
+which fds it has open and which it needs to open, and can shuffle them
+around as necessary via dup2() to get them into the right places.
 
-> The way ids are assigned is certainly
-> part of syscall semantics (applications rely on), at least for open.
-> 
-> If you want to claim that your solution is better than adding milion
-> of syscalls, I guess you need to list the milion of syscalls, so we
-> can compare.
-> 
-
-I'm not claiming anything: just trying to see what actually are the 
-pro's and con's for any proposed solution.
-
-Regards,
-Nadia
-
-> 
->>Actually, one drawback I'm seeing is that we are adding a test to the 
->>classical syscall path (the test on the current->next_syscall_data being 
->>set or not).
->>
->>
->>>strace will be very confusing to read, etc...
->>
->>We'll have the 3 following lines added to an strace output each time we 
->>fill the proc file:
->>
->>open("/proc/15084/task/15084/next_syscall_data", O_RDWR) = 4
->>write(4, "LONG1 100", 9)                = 9
->>close(4)                                = 0
->>
->>I don't see anthing confusing here ;-)
-> 
-> 
-> No, that part is just very very ugly.
-> 
-> close(5)
-> close(6)
-> open("foo") = 6
-> 
-> _is_ confusing to me.
-> 									Pavel
+Paul
