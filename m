@@ -1,14 +1,15 @@
-From: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
-Subject: Re: [PATCH][RFC] dirty balancing for cgroups
-Date: Fri, 11 Jul 2008 17:52:13 +0900
-Message-ID: <20080711175213.dc69f068.kamezawa.hiroyu__12848.7074668103$1215766142$gmane$org@jp.fujitsu.com>
-References: <20080711161349.c5831081.kamezawa.hiroyu@jp.fujitsu.com>
-	<20080711083446.AC5425A22@siro.lan>
+From: Daisuke Nishimura <nishimura-YQH0OdQVrdy45+QrQBaojngSJqDPrsil@public.gmane.org>
+Subject: Re: [PATCH -mm 1/5] swapcgroup (v3): add cgroup files
+Date: Fri, 11 Jul 2008 20:02:28 +0900
+Message-ID: <20080711200228.6eb145ca.nishimura@mxp.nes.nec.co.jp>
+References: <20080704151536.e5384231.nishimura@mxp.nes.nec.co.jp>
+	<20080704151747.470d62a3.nishimura@mxp.nes.nec.co.jp>
+	<1215722136.9398.59.camel@nimitz>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20080711083446.AC5425A22-Pcsii4f/SVk@public.gmane.org>
+In-Reply-To: <1215722136.9398.59.camel@nimitz>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,31 +19,32 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: YAMAMOTO Takashi <yamamoto-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
-Cc: linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, a.p.zijlstra-/NLkJaSkS4VmR6Xm/wNWPw@public.gmane.org
+To: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Cc: YAMAMOTO Takashi <yamamoto-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>, nishimura-YQH0OdQVrdy45+QrQBaojngSJqDPrsil@public.gmane.org, Linux MM <linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org>, KOSAKI Motohiro <kosaki.motohiro-+CUm20s59erQFUHtdCDX3A@public.gmane.org>, Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Hugh Dickins <hugh-DTz5qymZ9yRBDgjK7y7TUQ@public.gmane.org>, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>, Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Fri, 11 Jul 2008 17:34:46 +0900 (JST)
-yamamoto-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org (YAMAMOTO Takashi) wrote:
+Hi, Dave-san.
 
-> hi,
+On Thu, 10 Jul 2008 13:35:36 -0700, Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org> wrote:
+> On Fri, 2008-07-04 at 15:17 +0900, Daisuke Nishimura wrote:
+> > +config CGROUP_SWAP_RES_CTLR
+> > +       bool "Swap Resource Controller for Control Groups"
+> > +       depends on CGROUP_MEM_RES_CTLR && SWAP
+> > +       help
+> > +         Provides a swap resource controller that manages and limits swap usage.
+> > +         Implemented as a add-on to Memory Resource Controller.
 > 
-> > > my patch penalizes heavy-writer cgroups as task_dirty_limit does
-> > > for heavy-writer tasks.  i don't think that it's necessary to be
-> > > tied to the memory subsystem because i merely want to group writers.
-> > > 
-> > Hmm, maybe what I need is different from this ;)
-> > Does not seem to be a help for memory reclaim under memcg.
+> Could you make this just plain depend on 'CGROUP_MEM_RES_CTLR && SWAP'
+> and not make it configurable?  I don't think the resource usage really
+> justifies yet another .config knob to tune and break. :)
 > 
-> to implement what you need, i think that we need to keep track of
-> the numbers of dirty-pages in each memory cgroups as a first step.
-> do you agree?
-> 
-yes, I think so, now.
 
-may be not difficult but will add extra overhead ;( Sigh..
+I don't stick to using kernel config option.
 
+As I said in my ToDo, I'm going to implement another method
+(boot option or something) to disable(or enable?) this feature,
+so I can make this config not configurable after it.
 
 
 Thanks,
--Kame
+Daisuke Nishimura.
