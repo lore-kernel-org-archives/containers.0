@@ -1,48 +1,81 @@
-From: ebiederm@xmission.com (Eric W. Biederman)
-Subject: [PATCH] netns:  Delete virtual interfaces during namespace cleanup
-Date: Fri, 11 Jul 2008 13:07:11 -0700
-Message-ID: <m1iqvcdw28.fsf@frodo.ebiederm.org>
+From: "Paul Menage" <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [RFC] Transactional CGroup task attachment
+Date: Fri, 11 Jul 2008 13:41:34 -0700
+Message-ID: <6599ad830807111341x7cbe91c0k777e72840fe969a1@mail.gmail.com>
+References: <6599ad830807092346j1fdb2ef9l2ca2b52e2e68096a@mail.gmail.com>
+	<48778677.3040308@linux.vnet.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Return-path: <netdev-owner@vger.kernel.org>
-Sender: netdev-owner@vger.kernel.org
-To: David Miller <davem@davemloft.net>
-Cc: netdev@vger.kernel.org, Linux Containers <containers@lists.osdl.org>
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <48778677.3040308-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Content-Disposition: inline
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
+Cc: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, "\"Daisuke Miyakawa (?? ??)\"" <dmiyakawa-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Peter Zijlstra <a.p.zijlstra-/NLkJaSkS4VmR6Xm/wNWPw@public.gmane.org>, Pavel Emelianov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
+On Fri, Jul 11, 2008 at 9:12 AM, Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org> wrote:
+>
+> This would ideally be recursive mutexes, Linus does not like recursive mutexes.
 
-When physical devices are inside of network namespace and that network
-namespace terminates we have to keep them and moving them to the
-initial network namespace is the best we can do.
+But we already have them in function, if not in name, with things like
+cpu_hotplug.lock, which is an open-coded reader-writer mutex with
+recursion.
 
-For virtual devices left in a network namespace that is exiting
-we have no need to preserve them and we now have the infrastructure
-that allows us to delete them.  So delete virtual devices when we
-exit a network namespace.  Keeping the necessary user space clean up
-after a network namespace exits much more tractable.
+>>
+>> int prepare_attach_sleep(struct cgroup_attach_state *state);
+>>
+>
+> Is _sleep really required to be specfied? The function name sounds as if the
+> callback processor will sleep.
 
-Signed-off-by: Eric W. Biederman <ebiederm@xmission.com>
----
- net/core/dev.c |    6 ++++++
- 1 files changed, 6 insertions(+), 0 deletions(-)
+I wasn't quite sure about the name of that method either. We could
+call it prepare_attach_maysleep(); just prepare_attach() seems a
+little under-descriptive.
 
-diff --git a/net/core/dev.c b/net/core/dev.c
-index ea480a4..670abad 100644
---- a/net/core/dev.c
-+++ b/net/core/dev.c
-@@ -4492,6 +4492,12 @@ static void __net_exit default_device_exit(struct net *net)
- 		if (dev->features & NETIF_F_NETNS_LOCAL)
- 			continue;
- 
-+		/* Delete virtual devices */
-+		if (dev->rtnl_link_ops && dev->rtnl_link_ops->dellink) {
-+			dev->rtnl_link_ops->dellink(dev);
-+			continue;
-+		}
-+
- 		/* Push remaing network devices to init_net */
- 		snprintf(fb_name, IFNAMSIZ, "dev%d", dev->ifindex);
- 		err = dev_change_net_namespace(dev, &init_net, fb_name);
--- 
-1.5.3.rc6.17.g1911
+>> Called with group_mutex (which prevents any other task movement
+>> between cgroups) held plus any mutexes/semaphores taken by earlier
+>> subsystems's callbacks.
+>>
+>
+> This sounds almost like the BKL for cgroups :)
 
+Yes, cgroup_mutex is indeed currently the BKL for cgroups. I'm working
+separately to reduce that with things like the per-subsystem
+hierarchy_mutex, which will also protect against task movements.
+
+>
+> 1. Prepare_attach() the subsystem does it's or fails
+
+Did you miss a word here?
+
+> 2. If someone failed, send out failed notifications to successfull callbacks
+> 3. On receiving a failed notification (due to a different cgroup failure),
+> clients undo their operation (done in prepare_attach())
+> 4. If all was successful, move the task and call attached() after the task is
+> attached.
+
+That's pretty much what we have - except that I've got two
+prepare_attach() methods to handle the case that some subsystems might
+need mutexes and others might need spinlocks in order to handle
+synchronization between the move and their resource charge/uncharge
+mechanisms - because any mutexes (and memory allocations) need to be
+handled before spinlocks.
+
+>
+> I read through the rest of it. The sleep/nosleep might make sense (to help the
+> task acquire the type of lock it wants to acquire), but isn't sleep a generic
+> case for nosleep as well?
+
+Can you clarify what you mean by that?
+
+Paul
