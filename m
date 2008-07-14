@@ -1,11 +1,16 @@
-From: "mantic" <Estes_Carl-bTQkdIJrLO8l7RjggEeJDw@public.gmane.org>
-Subject: Listing of anesthesiologists and dozens more specialties
-Date: Mon, 14 Jul 2008 17:57:56 -0100
-Message-ID: <1295.82233862511$1216058970@news.gmane.org>
+From: "Paul Menage" <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [RFC] Transactional CGroup task attachment
+Date: Mon, 14 Jul 2008 12:16:08 -0700
+Message-ID: <6599ad830807141216i45cfcb1eg4853971c2f515357@mail.gmail.com>
+References: <6599ad830807092346j1fdb2ef9l2ca2b52e2e68096a@mail.gmail.com>
+	<20080711092058.754ad72e.kamezawa.hiroyu@jp.fujitsu.com>
+	<20080714152822.c795f321.nishimura@mxp.nes.nec.co.jp>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <20080714152822.c795f321.nishimura-YQH0OdQVrdy45+QrQBaojngSJqDPrsil@public.gmane.org>
+Content-Disposition: inline
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -15,42 +20,20 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
-Cc: j-kopp-stache-t/9kahPp1Zsb1SvskN2V4Q@public.gmane.org, jim.rennard-UG4ukjNop7o@public.gmane.org, fpferdt-rkVqq1kWhfAbFoVRYvo4fw@public.gmane.org, wam-e9UnSwTowMhwFqzsTH5u/w@public.gmane.org, mtvcharles-omAz+zUYVYxWk0Htik3J/w@public.gmane.org, 348822.3887051-ysVA32CysAVWk0Htik3J/w@public.gmane.org, info-BYtqQQQZdASM5M9VCngaXkB+6BGkLq7r@public.gmane.org
+To: Daisuke Nishimura <nishimura-YQH0OdQVrdy45+QrQBaojngSJqDPrsil@public.gmane.org>
+Cc: =?BIG5?B?IkRhaXN1a2UgTWl5YWthd2EgKK5jpHQgpGq7siki?= <dmiyakawa-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Peter Zijlstra <a.p.zijlstra-/NLkJaSkS4VmR6Xm/wNWPw@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, "balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org" <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, Pavel Emelianov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
+On Sun, Jul 13, 2008 at 11:28 PM, Daisuke Nishimura
+<nishimura-YQH0OdQVrdy45+QrQBaojngSJqDPrsil@public.gmane.org> wrote:
+>
+> - I think page reclaiming code decreases the memory charge
+>  without holding mmap_sem(e.g. try_to_unmap(), __remove_mapping()).
+>  Shouldn't we handle these cases?
 
+The prepare_attach_nosleep() call could take the res_counter's
+spinlock, which would lock out all other charges and uncharges until
+the transaction was completed; that might be enough for what you want.
+We'd need to export lock/unlock functions from res_counter.
 
-
-Special Package for this week
-
-Fully Licensed Physicians in the USA 
-
-788,228 in total * 17,374 emails
-
-Physician in over 34 specialties
-
-Over a dozen sortable fields
-
-
-American Pharmaceutical Company Database
-Names and email addresses of 47,000 employees in high-ranking positions
-
-American Hospitals
-23,000 Admins in more than 7,000 hospitals {a $399 value]
-
-Extensive List of Dentists in America
-More than half a million listings [worth $499 alone!]
-
-American Chiropractors List
-100,000 Chiropractors in the USA (worth $250 alone)
-
-
-Cost just slashed -  
-$399 for all above data
-
-reply to:      kevin.holmes-PkbjNfxxIARBDgjK7y7TUQ@public.gmane.org
-
-  
-
-valid until  July 18
+Paul
