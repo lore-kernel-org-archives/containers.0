@@ -1,16 +1,14 @@
-From: kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org
-Subject: Re: Re: [PATCH][RFC] dirty balancing for cgroups
-Date: Mon, 14 Jul 2008 23:38:24 +0900 (JST)
-Message-ID: <23745889.1216046304861.kamezawa.hiroyu__18179.3763222688$1216046621$gmane$org@jp.fujitsu.com>
-References: <1216043344.12595.89.camel@twins>
-	<20080711141511.515e69a5.kamezawa.hiroyu@jp.fujitsu.com>
-	<20080711055926.9AF4F5A03@siro.lan>
-	<20080711161349.c5831081.kamezawa.hiroyu@jp.fujitsu.com>
+From: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: Re: mini-summit conf#
+Date: Mon, 14 Jul 2008 10:52:05 -0400
+Message-ID: <20080714145205.GI16673@redhat.com>
+References: <20080709155710.GA22426@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1216043344.12595.89.camel@twins>
+Content-Disposition: inline
+In-Reply-To: <20080709155710.GA22426-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -20,155 +18,27 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Peter Zijlstra <a.p.zijlstra-/NLkJaSkS4VmR6Xm/wNWPw@public.gmane.org>
-Cc: YAMAMOTO Takashi <yamamoto-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
------ Original Message -----
->> See comments in fs/page-writeback.c:: determin_dirtyable_memory()
->> ==
->> /*
->>  * Work out the current dirty-memory clamping and background writeout
->>  * thresholds.
->>  *
->>  * The main aim here is to lower them aggressively if there is a lot of map
-ped
->>  * memory around.  To avoid stressing page reclaim with lots of unreclaimab
-le
->>  * pages.  It is better to clamp down on writers than to start swapping, an
-d
->>  * performing lots of scanning.
->>  *
->>  * We only allow 1/2 of the currently-unmapped memory to be dirtied.
->>  *
->>  * We don't permit the clamping level to fall below 5% - that is getting ra
-ther
->>  * excessive.
->>  *
->>  * We make sure that the background writeout level is below the adjusted
->>  * clamping level.
->> ==
->> 
->> "To avoid stressing page reclaim with lots of unreclaimable pages"
->> 
->> Then, I think memcg should support this for helping relcaim under memcg.
->
->That comment is unclear at best.
->
->The dirty page limit avoids deadlocks under certain situations, the per
->BDI dirty limit avoids even mode deadlocks by providing isolation
->between BDIs.
->
->
->The fundamental deadlock solved by the dirty page limit is the typical
->reclaim deadlock - needing memory to free memory. It does this by
->ensuring only some part of the total memory used for the page-cache can
->be dirty, thus we always have clean pages around that can be reclaimed
->so we can launder the dirty pages.
->
->This on its own generates a new deadlock for stacked devices, imagine
->device A on top of B. When A generates loads of dirty pages it will
->eventually hit the dirty limit and we'd start to launder them. However
->in order to launder A's dirty pages we'd need to dirty pages for B, but
->we can't since we're at the global limit.
->
->This problem is solved by introducing a per BDI dirty limit, by
->assigning each BDI an individual dirty limit (whoes sum is the total
->dirty limit) we avoid that deadlock. Take the previous example; A would
->start laundering its pages when it hits its own limit, B's operation
->isn't hampered by that.
->
->[ even when B's limit is 0 we're able to make progress, since we'll only
->  wait for B's dirty page count to decrease - effectively reducing to
->  sync writes. ]
->
->Of course this raises the question how to assign the various dirty
->limits - any fixed distribution is hard to maintain and suboptimial for
->most workloads.
->
->We solve this by assigning each BDI a fraction proportional to its
->current launder speed. That is to say, if A launders pages twice as fast
->as B does, then A will get 2/3-rd of the total dirty page limit, versus
->1/3-rd for B.
->
->
->Then there is the task dirty stuff - this is basically a 'fix' for the
->problem where a slow writer gets starved by a fast reader. Imagine two
->tasks competing for bandwidth, 1 the fast writer and 2 the slow writer.
->
->1 will dirty loads of pages but all things being equal 2 will have to
->wait for 1's dirty pages.
->
->So what we do is lower the dirty limit for fast writers - so these get
->to wait sooner and slow writers have a little room to make progress
->before they too have to wait.
->
->To properly solve this we'd need to track p_{bdi,task}. However that's
->intracktable. Therefore we approximate that with p_bdi * p_task. This
->approximation looses detail.
->
->Imagine two tasks: 1 and 2, and two BDIs A and B (independent this
->time). If 1 is a (fast) writer to A and 2 is a (slow) writer to B, we
->need not throttle 2 sooner as there is no actual competition.
->
->The full proportional tensor p_{bdi,task} can express this, but the
->simple approximation p_bdi * p_task can not.
->
->The approximation will reduce 1's bandwidth a little even though there
->is no actual competition.
->
->
->Now the problem this patch tries to address...
->
->As you can see you'd need p_{bdi,cgroup,task} for it to work, and the
->obvious approximation p_bdi * p_cgroup * p_task will get even more
->coarse.
->
->You could possibly attempt to do p_{bdi,cgroup} * p_task since the bdi
->and cgroup set are pretty static, but still that would be painful.
->
->So, could you please give some more justification for this work, I'm not
->seeing the value in complicating all this just yet.
->
->
->Thanks for reading this far,
->
-Thank you for explanation. Maybe I misunderstood something.
+On Wed, Jul 09, 2008 at 10:57:10AM -0500, Serge E. Hallyn wrote:
+> Before I forget,
+> 
+> we're planning on having a call-in for the containers mini-summit.  The
+> phone number is:
+> 	US toll: 1-770-615-1382
+> 	US toll-free: 1-877-421-0023
+> 
+> When asked, the passcode is: 499229
+> 
 
-What I thought was to keep some amount of clean pages under memcg
-for smooth reclaiming. But after reading your explanation, I'm now
-considering again...
+I was interested in joining the discussion regarding cgroup/libcg,
+especially participate in discussion on how to go about automatic
+placement of tasks in right cgroups based on defined rules.
 
-about DEADLOCK:
+Is there any plans to discuss above topic? If yes, can I join in over
+phone? Do I have to register for OLS if I want to join-in over phone?
 
-memory cgroup's reclaim path is working as following now.
-==
-mem_cgroup_charge() or others.
-  -> try_to_free_mem_cgroup_pages()
-      -> shrink_zone()...
-          -> subsystem may call alloc_pages()
-               -> ....(*)
-
-Unlike global LRU, memory_cgroup does not affect (*) because add_tp_page_cache
-() is called here and maybe no deadlock.
-
-about Memory Reclaim's  health:
-
-It doesn't seem good to allow users to make all pages under memcg
-to be dirty without penalty(throttling).
- 
-Dirty/Written-backed pages are not to be reclaimed by first lru scan because
-it has to be written out (and rolated to the tail of LRU.) and clean pages,
-which are easy to be dropped, are dropped soon.
-
-Under following situation
- - large file copy under memcg.
- - big coredump under memcg.
-
-I think too much (clean) pages are swapped out by memcg's LRU because
-of tons of dirty pages. (but I don't have enough data now. just my concern.)
-
-What can I do against this ? Could you give me a hint ?
-
-Thanks,
--Kame
+Thanks
+Vivek
