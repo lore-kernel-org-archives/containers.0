@@ -1,7 +1,7 @@
 From: Andrea Righi <righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: [PATCH -mm 1/3] i/o bandwidth controller documentation
-Date: Tue, 15 Jul 2008 22:40:47 +0200
-Message-ID: <1216154449-29742-2-git-send-email-righi.andrea__49727.9467680075$1216154811$gmane$org@gmail.com>
+Subject: [PATCH -mm 3/3] i/o accounting and control
+Date: Tue, 15 Jul 2008 22:40:49 +0200
+Message-ID: <1216154449-29742-4-git-send-email-righi.andrea__7148.19012578136$1216154816$gmane$org@gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -21,302 +21,406 @@ To: Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, Pau
 Cc: axboe-tSWWG44O7X1aa/9Udqfwiw@public.gmane.org, randy.dunlap-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org, Marco Innocenti <m.innocenti-qooieK91W7JeoWH0uzbU5w@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Carl Henrik Lunde <chlunde-om2ZC0WAoZIXWF+eFR7m5Q@public.gmane.org>, Divyesh Shah <dpshah-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, matt-cT2on/YLNlBWk0Htik3J/w@public.gmane.org, roberto-5KDOxZqKugI@public.gmane.org, subrata-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, eric.rannaud-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, Andrea Righi <righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Documentation of the block device I/O bandwidth controller: description, usage,
-advantages and design.
+Apply the io-throttle controller to the opportune kernel functions. Both
+accounting and throttling functionalities are performed by
+cgroup_io_throttle().
 
 Signed-off-by: Andrea Righi <righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 ---
- Documentation/controllers/io-throttle.txt |  282 +++++++++++++++++++++++++++++
- 1 files changed, 282 insertions(+), 0 deletions(-)
- create mode 100644 Documentation/controllers/io-throttle.txt
+ block/blk-core.c      |    9 +++++++++
+ fs/aio.c              |   31 ++++++++++++++++++++++++++++++-
+ fs/buffer.c           |   20 +++++++++++++++++---
+ fs/direct-io.c        |    4 ++++
+ include/linux/sched.h |    3 +++
+ kernel/fork.c         |    3 +++
+ mm/filemap.c          |   18 +++++++++++++++++-
+ mm/page-writeback.c   |   30 +++++++++++++++++++++++++++---
+ mm/readahead.c        |    5 +++++
+ 9 files changed, 115 insertions(+), 8 deletions(-)
 
-diff --git a/Documentation/controllers/io-throttle.txt b/Documentation/controllers/io-throttle.txt
-new file mode 100644
-index 0000000..9c53f6c
---- /dev/null
-+++ b/Documentation/controllers/io-throttle.txt
-@@ -0,0 +1,282 @@
+diff --git a/block/blk-core.c b/block/blk-core.c
+index 4c222ba..431294f 100644
+--- a/block/blk-core.c
++++ b/block/blk-core.c
+@@ -26,6 +26,7 @@
+ #include <linux/swap.h>
+ #include <linux/writeback.h>
+ #include <linux/task_io_accounting_ops.h>
++#include <linux/blk-io-throttle.h>
+ #include <linux/interrupt.h>
+ #include <linux/cpu.h>
+ #include <linux/blktrace_api.h>
+@@ -1482,7 +1483,15 @@ void submit_bio(int rw, struct bio *bio)
+ 		if (rw & WRITE) {
+ 			count_vm_events(PGPGOUT, count);
+ 		} else {
++			struct page *page = bio_iovec_idx(bio, 0)->bv_page;
 +
-+               Block device I/O bandwidth controller
+ 			task_io_account_read(bio->bi_size);
++			/*
++			 * Do not throttle page requests that need to be
++			 * urgently reclaimed.
++			 */
++			cgroup_io_throttle(bio->bi_bdev, bio->bi_size,
++				!(PageReclaim(page) || PageSwapCache(page)));
+ 			count_vm_events(PGPGIN, count);
+ 		}
+ 
+diff --git a/fs/aio.c b/fs/aio.c
+index 0051fd9..1f3abb3 100644
+--- a/fs/aio.c
++++ b/fs/aio.c
+@@ -22,6 +22,7 @@
+ #include <linux/sched.h>
+ #include <linux/fs.h>
+ #include <linux/file.h>
++#include <linux/blk-io-throttle.h>
+ #include <linux/mm.h>
+ #include <linux/mman.h>
+ #include <linux/slab.h>
+@@ -1558,6 +1559,8 @@ static int io_submit_one(struct kioctx *ctx, struct iocb __user *user_iocb,
+ {
+ 	struct kiocb *req;
+ 	struct file *file;
++	struct block_device *bdev;
++	struct inode *inode;
+ 	ssize_t ret;
+ 
+ 	/* enforce forwards compatibility on users */
+@@ -1580,10 +1583,26 @@ static int io_submit_one(struct kioctx *ctx, struct iocb __user *user_iocb,
+ 	if (unlikely(!file))
+ 		return -EBADF;
+ 
++	/*
++	 * Pre-account AIO activity: we over-account *all* the bytes here;
++	 * bytes read from the page cache and bytes written in already dirtied
++	 * pages (that do not generate real i/o on block devices) will be
++	 * subtracted later, following the path of aio_run_iocb().
++	 */
++	inode = file->f_mapping->host;
++	bdev = inode->i_sb->s_bdev;
++	ret = cgroup_io_throttle(bdev, iocb->aio_nbytes, 0);
++	if (unlikely(ret)) {
++		fput(file);
++		ret = -EAGAIN;
++		goto out_cgroup_io_throttle;
++	}
 +
-+1. Description
+ 	req = aio_get_req(ctx);		/* returns with 2 references to req */
+ 	if (unlikely(!req)) {
+ 		fput(file);
+-		return -EAGAIN;
++		ret = -EAGAIN;
++		goto out_cgroup_io_throttle;
+ 	}
+ 	req->ki_filp = file;
+ 	if (iocb->aio_flags & IOCB_FLAG_RESFD) {
+@@ -1622,12 +1641,14 @@ static int io_submit_one(struct kioctx *ctx, struct iocb __user *user_iocb,
+ 		goto out_put_req;
+ 
+ 	spin_lock_irq(&ctx->ctx_lock);
++	set_in_aio();
+ 	aio_run_iocb(req);
+ 	if (!list_empty(&ctx->run_list)) {
+ 		/* drain the run list */
+ 		while (__aio_run_iocbs(ctx))
+ 			;
+ 	}
++	unset_in_aio();
+ 	spin_unlock_irq(&ctx->ctx_lock);
+ 	aio_put_req(req);	/* drop extra ref to req */
+ 	return 0;
+@@ -1635,6 +1656,8 @@ static int io_submit_one(struct kioctx *ctx, struct iocb __user *user_iocb,
+ out_put_req:
+ 	aio_put_req(req);	/* drop extra ref to req */
+ 	aio_put_req(req);	/* drop i/o ref to req */
++out_cgroup_io_throttle:
++	cgroup_io_throttle(bdev, -iocb->aio_nbytes, 0);
+ 	return ret;
+ }
+ 
+@@ -1746,6 +1769,12 @@ asmlinkage long sys_io_cancel(aio_context_t ctx_id, struct iocb __user *iocb,
+ 	ret = -EAGAIN;
+ 	kiocb = lookup_kiocb(ctx, iocb, key);
+ 	if (kiocb && kiocb->ki_cancel) {
++		struct block_device *bdev;
++		struct inode *inode = kiocb->ki_filp->f_mapping->host;
 +
-+This controller allows to limit the I/O bandwidth of specific block devices for
-+specific process containers (cgroups) imposing additional delays on I/O
-+requests for those processes that exceed the limits defined in the control
-+group filesystem.
++		bdev = inode->i_sb->s_bdev;
++		cgroup_io_throttle(bdev, -kiocb->ki_nbytes, 0);
 +
-+Bandwidth limiting rules offer better control over QoS with respect to priority
-+or weight-based solutions that only give information about applications'
-+relative performance requirements. Nevertheless, priority based solutions are
-+affected by performance bursts, when only low-priority requests are submitted
-+to a general purpose resource dispatcher.
+ 		cancel = kiocb->ki_cancel;
+ 		kiocb->ki_users ++;
+ 		kiocbSetCancelled(kiocb);
+diff --git a/fs/buffer.c b/fs/buffer.c
+index 4ffb5bb..89808b1 100644
+--- a/fs/buffer.c
++++ b/fs/buffer.c
+@@ -35,6 +35,7 @@
+ #include <linux/suspend.h>
+ #include <linux/buffer_head.h>
+ #include <linux/task_io_accounting_ops.h>
++#include <linux/blk-io-throttle.h>
+ #include <linux/bio.h>
+ #include <linux/notifier.h>
+ #include <linux/cpu.h>
+@@ -708,11 +709,14 @@ EXPORT_SYMBOL(mark_buffer_dirty_inode);
+ static int __set_page_dirty(struct page *page,
+ 		struct address_space *mapping, int warn)
+ {
++	ssize_t cgroup_io_acct = 0;
++	int ret = 0;
 +
-+The goal of the I/O bandwidth controller is to improve performance
-+predictability and provide performance isolation of different control groups
-+sharing the same block devices.
+ 	if (unlikely(!mapping))
+ 		return !TestSetPageDirty(page);
+ 
+ 	if (TestSetPageDirty(page))
+-		return 0;
++		goto out;
+ 
+ 	spin_lock_irq(&mapping->tree_lock);
+ 	if (page->mapping) {	/* Race with truncate? */
+@@ -723,14 +727,24 @@ static int __set_page_dirty(struct page *page,
+ 			__inc_bdi_stat(mapping->backing_dev_info,
+ 					BDI_RECLAIMABLE);
+ 			task_io_account_write(PAGE_CACHE_SIZE);
++			cgroup_io_acct = PAGE_CACHE_SIZE;
+ 		}
+ 		radix_tree_tag_set(&mapping->page_tree,
+ 				page_index(page), PAGECACHE_TAG_DIRTY);
+ 	}
+ 	spin_unlock_irq(&mapping->tree_lock);
+ 	__mark_inode_dirty(mapping->host, I_DIRTY_PAGES);
+-
+-	return 1;
++	ret = 1;
++out:
++	if (is_in_aio() && !cgroup_io_acct)
++		cgroup_io_acct = -PAGE_CACHE_SIZE;
++	if (cgroup_io_acct) {
++		struct block_device *bdev = (mapping->host &&
++		mapping->host->i_sb->s_bdev) ?
++		mapping->host->i_sb->s_bdev : NULL;
++		cgroup_io_throttle(bdev, cgroup_io_acct, 0);
++	}
++	return ret;
+ }
+ 
+ /*
+diff --git a/fs/direct-io.c b/fs/direct-io.c
+index 9606ee8..f5dcb91 100644
+--- a/fs/direct-io.c
++++ b/fs/direct-io.c
+@@ -35,6 +35,7 @@
+ #include <linux/buffer_head.h>
+ #include <linux/rwsem.h>
+ #include <linux/uio.h>
++#include <linux/blk-io-throttle.h>
+ #include <asm/atomic.h>
+ 
+ /*
+@@ -660,6 +661,9 @@ submit_page_section(struct dio *dio, struct page *page,
+ 		/*
+ 		 * Read accounting is performed in submit_bio()
+ 		 */
++		struct block_device *bdev = dio->bio ?
++					dio->bio->bi_bdev : NULL;
++		cgroup_io_throttle(bdev, len, 1);
+ 		task_io_account_write(len);
+ 	}
+ 
+diff --git a/include/linux/sched.h b/include/linux/sched.h
+index ba43675..9d4c755 100644
+--- a/include/linux/sched.h
++++ b/include/linux/sched.h
+@@ -1250,6 +1250,9 @@ struct task_struct {
+ 	u64 rchar, wchar, syscr, syscw;
+ #endif
+ 	struct task_io_accounting ioac;
++#ifdef CONFIG_CGROUP_IO_THROTTLE
++	atomic_t in_aio;
++#endif
+ #if defined(CONFIG_TASK_XACCT)
+ 	u64 acct_rss_mem1;	/* accumulated rss usage */
+ 	u64 acct_vm_mem1;	/* accumulated virtual memory usage */
+diff --git a/kernel/fork.c b/kernel/fork.c
+index aed1ff7..f8cf5da 100644
+--- a/kernel/fork.c
++++ b/kernel/fork.c
+@@ -1029,6 +1029,9 @@ static struct task_struct *copy_process(unsigned long clone_flags,
+ 	task_io_accounting_init(p);
+ 	acct_clear_integrals(p);
+ 
++#ifdef CONFIG_CGROUP_IO_THROTTLE
++	atomic_set(&p->in_aio, 0);
++#endif
+ 	p->it_virt_expires = cputime_zero;
+ 	p->it_prof_expires = cputime_zero;
+ 	p->it_sched_expires = 0;
+diff --git a/mm/filemap.c b/mm/filemap.c
+index 7567d86..bb80789 100644
+--- a/mm/filemap.c
++++ b/mm/filemap.c
+@@ -13,6 +13,7 @@
+ #include <linux/slab.h>
+ #include <linux/compiler.h>
+ #include <linux/fs.h>
++#include <linux/blk-io-throttle.h>
+ #include <linux/uaccess.h>
+ #include <linux/aio.h>
+ #include <linux/capability.h>
+@@ -1011,6 +1012,7 @@ static void do_generic_file_read(struct file *filp, loff_t *ppos,
+ 	pgoff_t prev_index;
+ 	unsigned long offset;      /* offset into pagecache page */
+ 	unsigned int prev_offset;
++	int was_page_ok = 0;
+ 	int error;
+ 
+ 	index = *ppos >> PAGE_CACHE_SHIFT;
+@@ -1023,7 +1025,8 @@ static void do_generic_file_read(struct file *filp, loff_t *ppos,
+ 		struct page *page;
+ 		pgoff_t end_index;
+ 		loff_t isize;
+-		unsigned long nr, ret;
++		ssize_t nr;
++		unsigned long ret;
+ 
+ 		cond_resched();
+ find_page:
+@@ -1051,6 +1054,8 @@ find_page:
+ 								desc, offset))
+ 				goto page_not_up_to_date_locked;
+ 			unlock_page(page);
++		} else {
++			was_page_ok = 1;
+ 		}
+ page_ok:
+ 		/*
+@@ -1080,6 +1085,17 @@ page_ok:
+ 		}
+ 		nr = nr - offset;
+ 
++		/*
++		 * De-account i/o in case of AIO read from the page cache.
++		 * AIO accounting was performed in io_submit_one().
++		 */
++		if (is_in_aio() && was_page_ok) {
++			struct block_device *bdev = (inode &&
++						inode->i_sb->s_bdev) ?
++						inode->i_sb->s_bdev : NULL;
++			cgroup_io_throttle(bdev, -nr, 0);
++		}
 +
-+NOTE #1: If you're looking for a way to improve the overall throughput of the
-+system probably you should use a different solution.
+ 		/* If users can be writing to this page using arbitrary
+ 		 * virtual addresses, take care about potential aliasing
+ 		 * before reading the page on the kernel side.
+diff --git a/mm/page-writeback.c b/mm/page-writeback.c
+index 29b1d1e..c6207de 100644
+--- a/mm/page-writeback.c
++++ b/mm/page-writeback.c
+@@ -23,6 +23,7 @@
+ #include <linux/init.h>
+ #include <linux/backing-dev.h>
+ #include <linux/task_io_accounting_ops.h>
++#include <linux/blk-io-throttle.h>
+ #include <linux/blkdev.h>
+ #include <linux/mpage.h>
+ #include <linux/rmap.h>
+@@ -430,6 +431,9 @@ static void balance_dirty_pages(struct address_space *mapping)
+ 	unsigned long write_chunk = sync_writeback_pages();
+ 
+ 	struct backing_dev_info *bdi = mapping->backing_dev_info;
++	struct block_device *bdev = (mapping->host &&
++					mapping->host->i_sb->s_bdev) ?
++					mapping->host->i_sb->s_bdev : NULL;
+ 
+ 	for (;;) {
+ 		struct writeback_control wbc = {
+@@ -512,6 +516,14 @@ static void balance_dirty_pages(struct address_space *mapping)
+ 		return;		/* pdflush is already working this queue */
+ 
+ 	/*
++	 * Apply the cgroup i/o throttling limitations. The accounting of write
++	 * activity in page cache is performed in __set_page_dirty(), but since
++	 * we cannot sleep there, 0 bytes are accounted here and the function
++	 * is invoked only for throttling purpose.
++	 */
++	cgroup_io_throttle(bdev, 0, 1);
 +
-+NOTE #2: The current implementation does not guarantee minimum bandwidth
-+levels, the QoS is implemented only slowing down I/O "traffic" that exceeds the
-+limits specified by the user; minimum I/O rate thresholds are supposed to be
-+guaranteed if the user configures a proper I/O bandwidth partitioning of the
-+block devices shared among the different cgroups (theoretically if the sum of
-+all the single limits defined for a block device doesn't exceed the total I/O
-+bandwidth of that device).
++	/*
+ 	 * In laptop mode, we wait until hitting the higher threshold before
+ 	 * starting background writeout, and then write out all the way down
+ 	 * to the lower threshold.  So slow writers cause minimal disk activity.
+@@ -1074,8 +1086,11 @@ int __set_page_dirty_no_writeback(struct page *page)
+  */
+ int __set_page_dirty_nobuffers(struct page *page)
+ {
++	struct address_space *mapping = page_mapping(page);
++	ssize_t cgroup_io_acct = 0;
++	int ret = 0;
 +
-+2. User Interface
-+
-+A new I/O bandwidth limitation rule is described using the file
-+blockio.bandwidth.
-+
-+The same file can be used to set multiple rules for different block devices
-+relative to the same cgroup.
-+
-+2.1. Configure I/O limiting rules
-+
-+The syntax to configure a limiting rule is the following:
-+
-+# /bin/echo DEV:BW:STRATEGY:BUCKET_SIZE > CGROUP/blockio.bandwidth
-+
-+- DEV is the name of the device the limiting rule is applied to.
-+
-+- BW is the maximum I/O bandwidth on DEVICE allowed by CGROUP; bandwidth must
-+  be expressed in bytes/s. A generic I/O bandwidth limiting rule for a block
-+  device DEV can be removed setting the BW value to 0.
-+
-+- STRATEGY is the throttling strategy used to throttle the applications' I/O
-+  requests from/to device DEV. At the moment two different strategies can be
-+  used:
-+
-+  0 = leaky bucket: the controller accepts at most B bytes (B = BW * time);
-+		    further I/O requests are delayed scheduling a timeout for
-+                    the tasks that made those requests.
-+
-+            Different I/O flow
-+               | | |
-+               | v |
-+               |   v
-+               v
-+              .......
-+              \     /
-+               \   /  leaky-bucket
-+                ---
-+                |||
-+                vvv
-+             Smoothed I/O flow
-+
-+  1 = token bucket: BW tokens are added to the bucket every seconds; the bucket
-+		    can hold at the most BUCKET_SIZE tokens; I/O requests are
-+		    accepted if there are available tokens in the bucket; when
-+		    a request of N bytes arrives N tokens are removed from the
-+		    bucket; if fewer than N tokens are available the request is
-+		    delayed until a sufficient amount of token is available in
-+                    the bucket.
-+
-+            Tokens (I/O rate)
-+                o
-+                o
-+                o
-+              ....... <--.
-+              \     /    | Bucket size (burst limit)
-+               \ooo/     |
-+                ---   <--'
-+                 |ooo
-+    Incoming --->|---> Conforming
-+    I/O          |oo   I/O
-+    requests  -->|-->  requests
-+                 |
-+            ---->|
-+
-+  Leaky bucket is more precise than token bucket to respect the bandwidth
-+  limits, because bursty workloads are always smoothed. Token bucket, instead,
-+  allows a small irregularity degree in the I/O flows (burst limit), and, for
-+  this, it is better in terms of efficiency (bursty workloads are not smoothed
-+  when there are sufficient tokens in the bucket).
-+
-+- BUCKET_SIZE is used only with token bucket (STRATEGY == 1) and defines the
-+  size of the bucket in bytes.
-+
-+- CGROUP is the name of the limited process container.
-+
-+Also the following syntaxes are allowed:
-+
-+- remove an I/O bandwidth limiting rule
-+# /bin/echo DEV:0 > CGROUP/blockio.bandwidth
-+
-+- configure a limiting rule using leaky bucket throttling (ignore bucket size):
-+# /bin/echo DEV:BW:0 > CGROUP/blockio.bandwidth
-+
-+2.2. Show I/O limiting rules
-+
-+All the defined rules and statistics for a specific cgroup can be shown reading
-+the file blockio.bandwidth. The following syntax is used:
-+
-+$ cat CGROUP/blockio.bandwidth
-+MAJOR MINOR BW STRATEGY LEAKY_STAT BUCKET_SIZE BUCKET_FILL TIME_DELTA
-+
-+- MAJOR is the major device number of DEV (defined above)
-+
-+- MINOR is the minor device number of DEV (defined above)
-+
-+- BW, STRATEGY and BUCKET_SIZE are the same parameters defined above
-+
-+- LEAKY_STAT is the amount of bytes currently allowed by the I/O bandwidth
-+  controller (only used with leaky bucket strategy - STRATEGY == 0)
-+
-+- BUCKET_FILL represents the amount of tokens present in the bucket (only used
-+  with token bucket strategy - STRATEGY == 1)
-+
-+- TIME_DELTA can be one of the following:
-+  - the amount of jiffies elapsed from the last I/O request (token bucket)
-+  - the amount of jiffies during which the bytes given by LEAKY_STAT have been
-+    accumulated (leaky bucket)
-+
-+Multiple per-block device rules are reported in multiple rows
-+(DEVi, i = 1 ..  n):
-+
-+$ cat CGROUP/blockio.bandwidth
-+MAJOR1 MINOR1 BW1 STRATEGY1 LEAKY_STAT1 BUCKET_SIZE1 BUCKET_FILL1 TIME_DELTA1
-+MAJOR1 MINOR1 BW2 STRATEGY2 LEAKY_STAT2 BUCKET_SIZE2 BUCKET_FILL2 TIME_DELTA2
-+...
-+MAJORn MINORn BWn STRATEGYn LEAKY_STATn BUCKET_SIZEn BUCKET_FILLn TIME_DELTAn
-+
-+2.3. Examples
-+
-+* Mount the cgroup filesystem (blockio subsystem):
-+  # mkdir /mnt/cgroup
-+  # mount -t cgroup -oblockio blockio /mnt/cgroup
-+
-+* Instantiate the new cgroup "foo":
-+  # mkdir /mnt/cgroup/foo
-+  --> the cgroup foo has been created
-+
-+* Add the current shell process to the cgroup "foo":
-+  # /bin/echo $$ > /mnt/cgroup/foo/tasks
-+  --> the current shell has been added to the cgroup "foo"
-+
-+* Give maximum 1MiB/s of I/O bandwidth on /dev/sda for the cgroup "foo", using
-+  leaky bucket throttling strategy:
-+  # /bin/echo /dev/sda:$((1024 * 1024)):0:0 > \
-+  > /mnt/cgroup/foo/blockio.bandwidth
-+  # sh
-+  --> the subshell 'sh' is running in cgroup "foo" and it can use a maximum I/O
-+      bandwidth of 1MiB/s on /dev/sda
-+
-+* Give maximum 8MiB/s of I/O bandwidth on /dev/sdb for the cgroup "foo", using
-+  token bucket throttling strategy, bucket size = 8MiB:
-+  # /bin/echo /dev/sdb:$((8 * 1024 * 1024)):1:$((8 * 1024 * 1024)) > \
-+  > /mnt/cgroup/foo/blockio.bandwidth
-+  # sh
-+  --> the subshell 'sh' is running in cgroup "foo" and it can use a maximum I/O
-+      bandwidth of 1MiB/s on /dev/sda (controlled by leaky bucket throttling)
-+      and 8MiB/s on /dev/sdb (controlled by token bucket throttling)
-+
-+* Run a benchmark doing I/O on /dev/sda and /dev/sdb; I/O limits and usage
-+  defined for cgroup "foo" can be shown as following:
-+  # cat /mnt/cgroup/foo/blockio.bandwidth
-+  8 16 8388608 1 0 8388608 -522560 48
-+  8 0 1048576 0 737280 0 0 216
-+
-+* Extend the maximum I/O bandwidth for the cgroup "foo" to 16MiB/s on /dev/sda:
-+  # /bin/echo /dev/sda:$((16 * 1024 * 1024)):0:0 > \
-+  > /mnt/cgroup/foo/blockio.bandwidth
-+  # cat /mnt/cgroup/foo/blockio.bandwidth
-+  8 16 8388608 1 0 8388608 -84432 206436
-+  8 0 16777216 0 0 0 0 15212
-+
-+* Remove limiting rule on /dev/sdb for cgroup "foo":
-+  # /bin/echo /dev/sdb:0:0:0 > /mnt/cgroup/foo/blockio.bandwidth
-+  # cat /mnt/cgroup/foo/blockio.bandwidth
-+  8 0 16777216 0 0 0 0 110388
-+
-+3. Advantages of providing this feature
-+
-+* Allow I/O traffic shaping for block device shared among different cgroups
-+* Improve I/O performance predictability on block devices shared between
-+  different cgroups
-+* Limiting rules do not depend of the particular I/O scheduler (anticipatory,
-+  deadline, CFQ, noop) and/or the type of the underlying block devices
-+* The bandwidth limitations are guaranteed both for synchronous and
-+  asynchronous operations, even the I/O passing through the page cache or
-+  buffers and not only direct I/O (see below for details)
-+* It is possible to implement a simple user-space application to dynamically
-+  adjust the I/O workload of different process containers at run-time,
-+  according to the particular users' requirements and applications' performance
-+  constraints
-+* It is even possible to implement event-based performance throttling
-+  mechanisms; for example the same user-space application could actively
-+  throttle the I/O bandwidth to reduce power consumption when the battery of a
-+  mobile device is running low (power throttling) or when the temperature of a
-+  hardware component is too high (thermal throttling)
-+
-+4. Design
-+
-+The I/O throttling is performed imposing an explicit timeout, via
-+schedule_timeout_killable() on the processes that exceed the I/O bandwidth
-+dedicated to the cgroup they belong to. I/O accounting happens per cgroup.
-+
-+It just works as expected for read operations: the real I/O activity is reduced
-+synchronously according to the defined limitations.
-+
-+Write operations, instead, are modeled depending of the dirty pages ratio
-+(write throttling in memory), since the writes to the real block devices are
-+processed asynchronously by different kernel threads (pdflush). However, the
-+dirty pages ratio is directly proportional to the actual I/O that will be
-+performed on the real block device. So, due to the asynchronous transfers
-+through the page cache, the I/O throttling in memory can be considered a form
-+of anticipatory throttling to the underlying block devices.
-+
-+Multiple re-writes in already dirtied page cache areas are not considered for
-+accounting the I/O activity. This is valid for multiple re-reads of pages
-+already present in the page cache as well.
-+
-+This means that a process that re-writes and/or re-reads multiple times the
-+same blocks in a file (without re-creating it by truncate(), ftrunctate(),
-+creat(), etc.) is affected by the I/O limitations only for the actual I/O
-+performed to (or from) the underlying block devices.
-+
-+Multiple rules for different block devices are stored in a linked list, using
-+the dev_t number of each block device as key to uniquely identify each element
-+of the list. RCU synchronization is used to protect the whole list structure,
-+since the elements in the list are not supposed to change frequently (they
-+change only when a new rule is defined or an old rule is removed or updated),
-+while the reads in the list occur at each operation that generates I/O. This
-+allows to provide zero overhead for cgroups that do not use any limitation.
-+
-+WARNING: per-block device limiting rules always refer to the dev_t device
-+number. If a block device is unplugged (i.e. a USB device) the limiting rules
-+defined for that device persist and they are still valid if a new device is
-+plugged in the system and it uses the same major and minor numbers.
-+
-+NOTE: explicit sleeps are *not* imposed on tasks doing asynchronous I/O (AIO)
-+operations; AIO throttling is performed returning -EAGAIN from sys_io_submit().
-+Userspace applications must be able to handle this error code opportunely.
-+
-+5. Todo
-+
-+* Try to reduce the cost of calling cgroup_io_throttle() on every
-+  submit_bio(READ, ...); this is not too much expensive, but the call of
-+  task_subsys_state() has surely a cost. A possible solution could be to
-+  temporarily account I/O in the current task_struct and call
-+  cgroup_io_throttle() only on each X MB of I/O. Or on each Y number of I/O
-+  requests as well. Better if both X and/or Y can be tuned at runtime by a
-+  userspace tool.
-+
-+* Think an alternative design for general purpose usage; special purpose usage
-+  right now is restricted to improve I/O performance predictability and
-+  evaluate more precise response timings for applications doing I/O. To a large
-+  degree the block I/O bandwidth controller should implement a more complex
-+  logic to better evaluate real I/O operations cost, depending also on the
-+  particular block device profile (i.e. USB stick, optical drive, hard disk,
-+  etc.). This would also allow to appropriately account I/O cost for seeky
-+  workloads, respect to large stream workloads. Instead of looking at the
-+  request stream and try to predict how expensive the I/O cost will be, a
-+  totally different approach could be to collect request timings (start time /
-+  elapsed time) and based on collected informations, try to estimate the I/O
-+  cost and usage (idea proposed by Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>).
+ 	if (!TestSetPageDirty(page)) {
+-		struct address_space *mapping = page_mapping(page);
+ 		struct address_space *mapping2;
+ 
+ 		if (!mapping)
+@@ -1091,6 +1106,7 @@ int __set_page_dirty_nobuffers(struct page *page)
+ 				__inc_bdi_stat(mapping->backing_dev_info,
+ 						BDI_RECLAIMABLE);
+ 				task_io_account_write(PAGE_CACHE_SIZE);
++				cgroup_io_acct = PAGE_CACHE_SIZE;
+ 			}
+ 			radix_tree_tag_set(&mapping->page_tree,
+ 				page_index(page), PAGECACHE_TAG_DIRTY);
+@@ -1100,9 +1116,17 @@ int __set_page_dirty_nobuffers(struct page *page)
+ 			/* !PageAnon && !swapper_space */
+ 			__mark_inode_dirty(mapping->host, I_DIRTY_PAGES);
+ 		}
+-		return 1;
++		ret = 1;
+ 	}
+-	return 0;
++	if (is_in_aio() && !cgroup_io_acct)
++		cgroup_io_acct = -PAGE_CACHE_SIZE;
++	if (cgroup_io_acct) {
++		struct block_device *bdev = (mapping->host &&
++					mapping->host->i_sb->s_bdev) ?
++					mapping->host->i_sb->s_bdev : NULL;
++		cgroup_io_throttle(bdev, cgroup_io_acct, 0);
++	}
++	return ret;
+ }
+ EXPORT_SYMBOL(__set_page_dirty_nobuffers);
+ 
+diff --git a/mm/readahead.c b/mm/readahead.c
+index 137bc56..448f065 100644
+--- a/mm/readahead.c
++++ b/mm/readahead.c
+@@ -14,6 +14,7 @@
+ #include <linux/blkdev.h>
+ #include <linux/backing-dev.h>
+ #include <linux/task_io_accounting_ops.h>
++#include <linux/blk-io-throttle.h>
+ #include <linux/pagevec.h>
+ #include <linux/pagemap.h>
+ 
+@@ -58,6 +59,9 @@ int read_cache_pages(struct address_space *mapping, struct list_head *pages,
+ 			int (*filler)(void *, struct page *), void *data)
+ {
+ 	struct page *page;
++	struct block_device *bdev =
++		(mapping->host && mapping->host->i_sb->s_bdev) ?
++		mapping->host->i_sb->s_bdev : NULL;
+ 	int ret = 0;
+ 
+ 	while (!list_empty(pages)) {
+@@ -76,6 +80,7 @@ int read_cache_pages(struct address_space *mapping, struct list_head *pages,
+ 			break;
+ 		}
+ 		task_io_account_read(PAGE_CACHE_SIZE);
++		cgroup_io_throttle(bdev, PAGE_CACHE_SIZE, 1);
+ 	}
+ 	return ret;
+ }
 -- 
 1.5.4.3
