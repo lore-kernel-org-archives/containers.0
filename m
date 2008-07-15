@@ -1,18 +1,14 @@
 From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
-Subject: Re: [Devel] [RFC PATCH 0/5] Resend -v2 - Use procfs to change a
-	syscall behavior
-Date: Tue, 15 Jul 2008 11:18:29 -0700
-Message-ID: <m1skubdn9m.fsf@frodo.ebiederm.org>
-References: <20080708112422.164370000@bull.net>
-	<20080709221028.GA4926@martell.zuzino.mipt.ru>
-	<m1tzeyd0x3.fsf@frodo.ebiederm.org>
-	<20080710013915.GB8327@martell.zuzino.mipt.ru>
+Subject: Re: Checkpoint/Restart mini-summit
+Date: Tue, 15 Jul 2008 11:44:40 -0700
+Message-ID: <m1prpfc7hj.fsf@frodo.ebiederm.org>
+References: <487C80C9.2040105@fr.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20080710013915.GB8327-QDJVlCTZ4KWTKS93B3g+7KFoa47nwP16@public.gmane.org> (Alexey Dobriyan's
-	message of "Thu, 10 Jul 2008 05:39:15 +0400")
+In-Reply-To: <487C80C9.2040105-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org> (Daniel Lezcano's message of "Tue,
+	15 Jul 2008 12:49:45 +0200")
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -22,21 +18,66 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Nadia.Derbey-6ktuUTfB/bM@public.gmane.org
+To: Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
+Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org> writes:
+Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org> writes:
 
-> This is all said in assumption that serializing kernel-internal data for
-> checkpoint/restart to userspace is acceptable for mainline.
-> I don't think it is.
+> Hi all,
+>
+> Here is a proposition a more detailed agenda for the checkpoint/restart 
+> mini-summit. If everybody is ok with it, I will update the wiki.
+>
+> Comments are welcome :)
 
-Just a quick comment here.  We mentioned checkpoint/restart is where
-we were going last kernel summit, and no one was opposed.
+A reading list is useful, even to help get some ideas circulating
+before we get there.
 
-So while I expect technical objects if we are not careful, I believe
-a well chosen checkpoint/restart framework has every chance of being
-merged into mainline.
+Ultimately the technical details will need to be resolve by
+people discussing things and sending patches back and forth
+on the mailing lists.
+
+I don't think a detailed agenda is going to get us anywhere.
+Especially not one focused on the implementation details.
+
+I think we need to start by seeing what we can agree on.  Certainly we
+agree that checkpoint/restart needs to be part of the picture.  What
+are the problems that the linux community can solve with
+checkpoint/restart.
+
+Then we need to talk about what kind of implementation we want to
+merge into mainline.  How do we sell it, and how do we implement
+it without affecting long term maintainability.
+
+I think the granularity of our operations, and what state we
+save is important.  I don't think how we save it is important
+unless it affects one of our requirements.
+
+As for the posix draft and the historical Cray & SGI implementations.
+They were on the wrong track.  The did not have namespace support
+so they could not in general restore their checkpoints.
+
+There are also a lot of things you have failed to touch on, that
+I'm not going to go into now.
+
+With any luck the mini-summit before OLS will be the start of a
+conversation that will go on all week, and continue on the mailing
+lists.
+
+The real question is how do we coordinate our efforts to build a good
+linux checkpoint/restart implementation.
+
+> * Documentation
+>    * Zap : www.ncl.cs.columbia.edu/publications/usenix2007_fordist.pdf
+>    * Metacluster : lxc.sourceforge.net/doc/ols2006/lxc-ols2006.pdf
+>    * OpenVZ : http://wiki.openvz.org/Checkpointing_and_live_migration
+>    * Checkpoint/Restart technology : 
+> http://en.wikipedia.org/wiki/Application_checkpointing
+>    * Virtual Servers and Checkpoint/Restart in Mainstream Linux : Sigops 
+> document
+
+There is also the classic emacs undump.
+The very simple vmadump from bproc.
 
 Eric
