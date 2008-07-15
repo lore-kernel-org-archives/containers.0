@@ -1,14 +1,15 @@
-From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
-Subject: Re: Checkpoint/Restart mini-summit
-Date: Tue, 15 Jul 2008 11:54:15 -0700
-Message-ID: <m1lk03c71k.fsf@frodo.ebiederm.org>
-References: <487C80C9.2040105@fr.ibm.com>
+From: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Subject: Re: Feeding containers patches into linux-next
+Date: Tue, 15 Jul 2008 12:07:52 -0700
+Message-ID: <1216148872.25942.13.camel@nimitz>
+References: <1216133004.8856.53.camel@nimitz>
+	<20080715152933.GA12061@us.ibm.com> <m1d4lff355.fsf@frodo.ebiederm.org>
+	<1216144516.9459.7.camel@nimitz>  <m1fxqbc6y2.fsf@frodo.ebiederm.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <487C80C9.2040105-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org> (Daniel Lezcano's message of "Tue,
-	15 Jul 2008 12:49:45 +0200")
+In-Reply-To: <m1fxqbc6y2.fsf-B27657KtZYmhTnVgQlOflh2eb7JE58TQ@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,21 +19,25 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
-Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
+To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+Cc: Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org> writes:
+On Tue, 2008-07-15 at 11:56 -0700, Eric W. Biederman wrote:
+> Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org> writes:
+> > On Tue, 2008-07-15 at 10:50 -0700, Eric W. Biederman wrote:
+> >> The classic challenge is that we really need most of the patches to go
+> >> through other maintainers because they are not for subsystems we
+> >> maintain.  So I am fairly certain things like our network namespace
+> >> work will show up in linux-next because they show up in net-next-2.6.
+> >
+> > But, there are things like the mqueue patches that are against areas
+> > that really have no maintainers.  Do you think there will be many more
+> > like that?  
+> 
+> Probably.  We are touching parts of the kernel that rarely change.
 
-> * Documentation
->    * Zap : www.ncl.cs.columbia.edu/publications/usenix2007_fordist.pdf
->    * Metacluster : lxc.sourceforge.net/doc/ols2006/lxc-ols2006.pdf
->    * OpenVZ : http://wiki.openvz.org/Checkpointing_and_live_migration
->    * Checkpoint/Restart technology : 
-> http://en.wikipedia.org/wiki/Application_checkpointing
->    * Virtual Servers and Checkpoint/Restart in Mainstream Linux : Sigops 
-> document
+Would having something that feeds into linux-next help make some of this
+easier?
 
-And of course remote fork is a fun related concept.
-
-Eric
+-- Dave
