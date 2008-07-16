@@ -1,14 +1,12 @@
-From: Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
-Subject: Re: Checkpoint/Restart mini-summit
-Date: Wed, 16 Jul 2008 17:26:17 +0200
-Message-ID: <487E1319.1050302@fr.ibm.com>
-References: <487C80C9.2040105@fr.ibm.com> <m1lk03c71k.fsf@frodo.ebiederm.org>
-	<20080716151707.GB26496@us.ibm.com>
+From: sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org
+Subject: [BUG][cryo] Create file on restart ?
+Date: Wed, 16 Jul 2008 11:50:27 -0700
+Message-ID: <20080716185027.GA1335@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20080716151707.GB26496-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Content-Disposition: inline
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,25 +16,54 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+To: Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Serge E. Hallyn wrote:
-> Quoting Eric W. Biederman (ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org):
->> Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org> writes:
->>
->>> * Documentation
->>>    * Zap : www.ncl.cs.columbia.edu/publications/usenix2007_fordist.pdf
->>>    * Metacluster : lxc.sourceforge.net/doc/ols2006/lxc-ols2006.pdf
->>>    * OpenVZ : http://wiki.openvz.org/Checkpointing_and_live_migration
->>>    * Checkpoint/Restart technology : 
->>> http://en.wikipedia.org/wiki/Application_checkpointing
->>>    * Virtual Servers and Checkpoint/Restart in Mainstream Linux : Sigops 
->>> document
->> And of course remote fork is a fun related concept.
-> 
-> So Daniel, can you add the reading list to the wiki (including Eric's
-> suggestions), maybe above the agenda?
 
-Sure.
+cryo does not (cannot ?) recreate files if the application created
+a file before checkpoint and the file does not exist at the time
+of restart.
+
+Note that the 'flags' field in '/proc/$pid/fdinfo/$fd' will not
+have the O_CREAT (or O_TRUNC, O_EXCL, O_NOCTTY) flags. These
+are cleared in __dentry_open()).
+
+At the time of restart, is there a way for cryo to know that the
+file must be created ?
+
+To reproduce:
+	- run following program, 
+	- checkpoint after the first printf
+	- rm /tmp/foo1
+	- restart	# fails to open file during restart
+
+---
+#include <stdio.h>
+#include <unistd.h>
+#include <errno.h>
+#include <sys/fcntl.h>
+
+main()
+{
+	int fd;
+	int i;
+	char *buf = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
+
+	fd = open("/tmp/foo1", O_RDWR|O_CREAT|O_TRUNC, 0666);
+
+	if (fd < 0) {
+		perror("open");
+		exit(1);
+	}
+	printf("%d: Opened '/tmp/foo1', fd %d\n", getpid(), fd);
+	
+	for (i = 0; i < strlen(buf); i++) {
+		if (write(fd, &buf[i], 1) < 0) {
+			printf("Error %d writing %c to file, i %d\n",
+					errno, buf[i], i);
+			exit(1);
+		}
+		printf("%d: i %d, wrote %c\n", getpid(), i, buf[i]);
+		sleep(2);
+	}
+}
