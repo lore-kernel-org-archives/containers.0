@@ -1,11 +1,14 @@
-From: "Nichael Oconnor" <analogicalness-w4qoYQPY3q1BDgjK7y7TUQ@public.gmane.org>
-Subject: #Fire works CS 3#
-Date: Wed, 16 Jul 2008 11:30:26 +0300
-Message-ID: <000501c8e71d$3cca0700$0100007f@yfctax>
+From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: Re: Checkpoint/Restart mini-summit
+Date: Wed, 16 Jul 2008 10:15:30 -0500
+Message-ID: <20080716151530.GA26496@us.ibm.com>
+References: <487C80C9.2040105@fr.ibm.com> <m1prpfc7hj.fsf@frodo.ebiederm.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <m1prpfc7hj.fsf-B27657KtZYmhTnVgQlOflh2eb7JE58TQ@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -15,48 +18,88 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-# Adobe CS3 Master Collection for PC or MAC includes:
-# InDesign CS3
-# Photoshop CS3
-# Illustrator CS3
-# Acrobat 8 Professional
-# Flash CS3 Professional
-# Dreamweaver CS3
-# Fireworks CS3
-# Contribute CS3
-# After Effects CS3 Professional
-# Premiere Pro CS3
-# Encore DVD CS3
-# Soundbooth CS3
+Quoting Eric W. Biederman (ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org):
+> Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org> writes:
+> 
+> > Hi all,
+> >
+> > Here is a proposition a more detailed agenda for the checkpoint/restart 
+> > mini-summit. If everybody is ok with it, I will update the wiki.
+> >
+> > Comments are welcome :)
+> 
+> A reading list is useful, even to help get some ideas circulating
+> before we get there.
+> 
+> Ultimately the technical details will need to be resolve by
+> people discussing things and sending patches back and forth
+> on the mailing lists.
+> 
+> I don't think a detailed agenda is going to get us anywhere.
+> Especially not one focused on the implementation details.
 
-# esoftnew .com in Internet Exp!orer
+Right, the whole point of Daniel including a 'reading list' was just so
+that we can avoid wasting time discussing existing implementations.  So
+he wasn't suggesting that we would be discussing those in detail, in
+fact quite the opposite.
 
-# System Requirements
+> I think we need to start by seeing what we can agree on.  Certainly we
+> agree that checkpoint/restart needs to be part of the picture.  What
+> are the problems that the linux community can solve with
+> checkpoint/restart.
+> 
+> Then we need to talk about what kind of implementation we want to
+> merge into mainline.  How do we sell it, and how do we implement
+> it without affecting long term maintainability.
+> 
+> I think the granularity of our operations, and what state we
+> save is important.  I don't think how we save it is important
+> unless it affects one of our requirements.
+> 
+> As for the posix draft and the historical Cray & SGI implementations.
+> They were on the wrong track.  The did not have namespace support
+> so they could not in general restore their checkpoints.
+> 
+> There are also a lot of things you have failed to touch on, that
+> I'm not going to go into now.
+>
+> With any luck the mini-summit before OLS will be the start of a
+> conversation that will go on all week, and continue on the mailing
+> lists.
 
-# For PC:
-# Intel Pentium 4 (1.4GHz processor for DV; 3.4GHz processor for HDV), Intel Centrino, Intel Xeon, (dual 2.8GHz processors for HD), or Intel Core
-# Duo (or compatible) processor; SSE2-enabled processor required for AMD systems
-# Microsoft Windows XP with Service Pack 2 or Microsoft Windows Vista Home Premium, Business, Ultimate, or Enterprise (certified for 32-bit editions)
-# 1GB of RAM for DV; 2GB of RAM for HDV and HD; more RAM recommended when running multiple components
-# 38GB of available hard-disk space (additional free space required during installation)
-# Dedicated 7,200 RPM hard drive for DV and HDV editing; striped disk array storage (RAID 0) for HD; SCSI disk subsystem preferred
-# Microsoft DirectX compatible sound card (multichannel ASIO-compatible sound card recommended)
-# 1,280x1,024 monitor resolution with 32-bit color adapter
-# DVD-ROM drive
+Agreed.
 
-# For MAC:
-# PowerPC G4 or G5 or multicore Intel processor (Adobe Premiere Pro, Encore, and Soundbooth require a multicore Intel processor; Adobe OnLocation CS3 is a Windows application and may be used with Boot Camp)
-# Mac OS X v.10.4.9; Java Runtime Environment 1.5 required for Adobe Version Cue CS3 Server
-# 1GB of RAM for DV; 2GB of RAM for HDV and HD; more RAM recommended when running multiple components
-# 36GB of available hard-disk space (additional free space required during installation)
-# Dedicated 7,200 RPM hard drive for DV and HDV editing; striped disk array storage (RAID 0) for HD; SCSI disk subsystem preferred
-# Core Audio compatible sound card
-# 1,280x1,024 monitor resolution with 32-bit color adapter
-# DVD-ROM drive# DVD+-R burner required for DVD creation
+This could be tough to pull off, but if we can walk out of there with a
+short focused list of coding todos with the intent of pumping out
+patches by the end of OLS, turning OLS into a bit of a hack-fest, that
+would imo be great.
 
-On today's Africa Update: The president of Sudan is accused of masterminding genocide and war crimes in Darfur. Plus, is East Africa the next hot bed of terrorism? For analysis, Farai talks with Roxanne Lawson, Director of Africa Policy for TransAfrica Forum.
+(But then that's precisely what I like to do at conferences - sit by
+some wall and pick something completely new to code, while once in
+awhile getting up to chat or see a talk.  Does that make me
+anti-social?)
 
-It remains to be seen whether Russia's new president, Dmitry Medvedev, will be an innovator, or merely a puppet of his immediate predecessor, Vladimir Putin. On issues of security and diplomacy, he has stuck with Putin's line.
+> The real question is how do we coordinate our efforts to build a good
+> linux checkpoint/restart implementation.
+> 
+> > * Documentation
+> >    * Zap : www.ncl.cs.columbia.edu/publications/usenix2007_fordist.pdf
+> >    * Metacluster : lxc.sourceforge.net/doc/ols2006/lxc-ols2006.pdf
+> >    * OpenVZ : http://wiki.openvz.org/Checkpointing_and_live_migration
+> >    * Checkpoint/Restart technology : 
+> > http://en.wikipedia.org/wiki/Application_checkpointing
+> >    * Virtual Servers and Checkpoint/Restart in Mainstream Linux : Sigops 
+> > document
+> 
+> There is also the classic emacs undump.
+> The very simple vmadump from bproc.
+> 
+> Eric
+> _______________________________________________
+> Containers mailing list
+> Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+> https://lists.linux-foundation.org/mailman/listinfo/containers
