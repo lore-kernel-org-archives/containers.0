@@ -1,14 +1,16 @@
 From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [BUG][cryo] Create file on restart ?
-Date: Wed, 16 Jul 2008 14:26:04 -0500
-Message-ID: <20080716192604.GA27454@us.ibm.com>
-References: <20080716185027.GA1335@us.ibm.com>
+Subject: Re: Checkpoint/Restart mini-summit
+Date: Wed, 16 Jul 2008 14:35:38 -0500
+Message-ID: <20080716193538.GA28393@us.ibm.com>
+References: <487C80C9.2040105@fr.ibm.com> <m1prpfc7hj.fsf@frodo.ebiederm.org>
+	<20080716151530.GA26496@us.ibm.com>
+	<m18ww14pm7.fsf@frodo.ebiederm.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <20080716185027.GA1335-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <m18ww14pm7.fsf-B27657KtZYmhTnVgQlOflh2eb7JE58TQ@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,70 +20,53 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org
-Cc: Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
+To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Quoting sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org (sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org):
+Quoting Eric W. Biederman (ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org):
+> "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org> writes:
 > 
-> cryo does not (cannot ?) recreate files if the application created
+> > Right, the whole point of Daniel including a 'reading list' was just so
+> > that we can avoid wasting time discussing existing implementations.  So
+> > he wasn't suggesting that we would be discussing those in detail, in
+> > fact quite the opposite.
+> 
+> Right however he was suggesting we discuss how to implement it without
+> agreeing on basic principles.  Maybe I'm wrong and all of the different
+> development groups have a common idea of what needs to be done but
+> I would be surprised if that were the case.
 
-I think that's for the best.
+IMO recent threads have clearly proven that you're right about basic
+principles.  Question is what is the right level to start at first, and
+how do we go about reaching concensus?  I.e. is the first question
+whether we should do a fully in-kernel checkpoint and restart vs
+entirely userspace vs a mix, or is there another place we should start?
 
-Don't you?
+It sounds like you have some good ideas in any case on where to start so
+I'm glad you'll be there :)
 
-The most we should do is make sure cryo has a clear enough error
-message.
-
+thanks,
 -serge
 
-> a file before checkpoint and the file does not exist at the time
-> of restart.
+> >> With any luck the mini-summit before OLS will be the start of a
+> >> conversation that will go on all week, and continue on the mailing
+> >> lists.
+> >
+> > Agreed.
+> >
+> > This could be tough to pull off, but if we can walk out of there with a
+> > short focused list of coding todos with the intent of pumping out
+> > patches by the end of OLS, turning OLS into a bit of a hack-fest, that
+> > would imo be great.
 > 
-> Note that the 'flags' field in '/proc/$pid/fdinfo/$fd' will not
-> have the O_CREAT (or O_TRUNC, O_EXCL, O_NOCTTY) flags. These
-> are cleared in __dentry_open()).
+> I totally agree.
 > 
-> At the time of restart, is there a way for cryo to know that the
-> file must be created ?
+> > (But then that's precisely what I like to do at conferences - sit by
+> > some wall and pick something completely new to code, while once in
+> > awhile getting up to chat or see a talk.  Does that make me
+> > anti-social?)
 > 
-> To reproduce:
-> 	- run following program, 
-> 	- checkpoint after the first printf
-> 	- rm /tmp/foo1
-> 	- restart	# fails to open file during restart
+> It means you like to code!
 > 
-> ---
-> #include <stdio.h>
-> #include <unistd.h>
-> #include <errno.h>
-> #include <sys/fcntl.h>
-> 
-> main()
-> {
-> 	int fd;
-> 	int i;
-> 	char *buf = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
-> 
-> 	fd = open("/tmp/foo1", O_RDWR|O_CREAT|O_TRUNC, 0666);
-> 
-> 	if (fd < 0) {
-> 		perror("open");
-> 		exit(1);
-> 	}
-> 	printf("%d: Opened '/tmp/foo1', fd %d\n", getpid(), fd);
-> 	
-> 	for (i = 0; i < strlen(buf); i++) {
-> 		if (write(fd, &buf[i], 1) < 0) {
-> 			printf("Error %d writing %c to file, i %d\n",
-> 					errno, buf[i], i);
-> 			exit(1);
-> 		}
-> 		printf("%d: i %d, wrote %c\n", getpid(), i, buf[i]);
-> 		sleep(2);
-> 	}
-> }
-> _______________________________________________
-> Containers mailing list
-> Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-> https://lists.linux-foundation.org/mailman/listinfo/containers
+> Eric
