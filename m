@@ -1,50 +1,62 @@
-From: Tejun Heo <teheo@suse.de>
-Subject: Re: [PATCH 12/15] driver core: Implement tagged directory support
- for device classes.
-Date: Wed, 16 Jul 2008 16:02:36 +0900
-Message-ID: <487D9D0C.3060105@suse.de>
-References: <m18wwiihbn.fsf_-_@frodo.ebiederm.org>	<m14p76ih9a.fsf_-_@frodo.ebiederm.org>	<m1zloyh2mb.fsf_-_@frodo.ebiederm.org>	<m1vdzmh2jr.fsf_-_@frodo.ebiederm.org>	<m1r6aah2hh.fsf_-_@frodo.ebiederm.org>	<m1mykyh2fu.fsf_-_@frodo.ebiederm.org>	<m1hcb6h2d2.fsf_-_@frodo.ebiederm.org> <486DD650.3000804@gmail.com>	<m1tzf593ny.fsf@frodo.ebiederm.org> <486E2C3B.6020603@gmail.com>	<20080704161200.GA1440@suse.de> <m1lk052ptp.fsf@frodo.ebiederm.org>	<487D6A24.9070001@gmail.com> <m17ibmbd39.fsf@frodo.ebiederm.org>	<487D8C0A.9060100@gmail.com> <m11w1u9w5j.fsf@frodo.ebiederm.org> <487D99C7.708@gmail.com>
+From: "Nichael Oconnor" <analogicalness-w4qoYQPY3q1BDgjK7y7TUQ@public.gmane.org>
+Subject: #Fire works CS 3#
+Date: Wed, 16 Jul 2008 11:30:26 +0300
+Message-ID: <000501c8e71d$3cca0700$0100007f@yfctax>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
+Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-Return-path: <netdev-owner@vger.kernel.org>
-In-Reply-To: <487D99C7.708@gmail.com>
-Sender: netdev-owner@vger.kernel.org
-To: "Eric W. Biederman" <ebiederm@xmission.com>
-Cc: Greg KH <gregkh@suse.de>, Andrew Morton <akpm@linux-foundation.org>, Daniel Lezcano <dlezcano@fr.ibm.com>, linux-kernel@vger.kernel.org, Al Viro <viro@ftp.linux.org.uk>, Linux Containers <containers@lists.osdl.org>, Benjamin Thery <benjamin.thery@bull.net>, netdev@vger.kernel.org
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Tejun Heo wrote:
-> Hello, Eric.
-> 
-> Eric W. Biederman wrote:
->> Tejun Heo <htejun@gmail.com> writes:
->>
->>> It's a bit scary tho.  Working inode->i_dentry or dentry->d_alias
->>> crosses multiple sb's.  sysfs isn't too greedy about dcache/icache.
->>> Only open files and directories hold them and only single copy of
->>> sysfs_dirent is there for most nodes.  Wouldn't it be better to stay on
->>> the safer side and use separate inode hierarchy?
->> To do that I believe we would need to ensure sysfs does not use 
->> the inode->i_mutex lock except to keep the VFS layer out.  Allowing us
->> to safely change the directory structure, without holding it.
-> 
-> I don't think sysfs is depending on i_mutex anymore but I need to go
-> through the code to make sure.
-> 
->> You raise a good point about inode->i_dentry and dentry->d_alias.
->> Generally they are used by fat like filesystems but I am starting to
->> see uses in generic pieces of code.  I don't see any problems today
->> but yes it would be good to do the refactoring to allow us to duplicate
->> the inodes. 
-> 
-> Yeah, I can't spot any place which can cause actual problem yet but it's
-> still scary as we're breaking a vfs assumption and even if it's not a
-> problem now, future seemingly unrelated changes can break things subtly.
+# Adobe CS3 Master Collection for PC or MAC includes:
+# InDesign CS3
+# Photoshop CS3
+# Illustrator CS3
+# Acrobat 8 Professional
+# Flash CS3 Professional
+# Dreamweaver CS3
+# Fireworks CS3
+# Contribute CS3
+# After Effects CS3 Professional
+# Premiere Pro CS3
+# Encore DVD CS3
+# Soundbooth CS3
 
-Okay, one small problem spotted.  It seems invalidate_inodes() can fail
-which will make generic_shutdown_super() complain.  It's not a fatal
-failure tho.
+# esoftnew .com in Internet Exp!orer
 
--- 
-tejun
+# System Requirements
+
+# For PC:
+# Intel Pentium 4 (1.4GHz processor for DV; 3.4GHz processor for HDV), Intel Centrino, Intel Xeon, (dual 2.8GHz processors for HD), or Intel Core
+# Duo (or compatible) processor; SSE2-enabled processor required for AMD systems
+# Microsoft Windows XP with Service Pack 2 or Microsoft Windows Vista Home Premium, Business, Ultimate, or Enterprise (certified for 32-bit editions)
+# 1GB of RAM for DV; 2GB of RAM for HDV and HD; more RAM recommended when running multiple components
+# 38GB of available hard-disk space (additional free space required during installation)
+# Dedicated 7,200 RPM hard drive for DV and HDV editing; striped disk array storage (RAID 0) for HD; SCSI disk subsystem preferred
+# Microsoft DirectX compatible sound card (multichannel ASIO-compatible sound card recommended)
+# 1,280x1,024 monitor resolution with 32-bit color adapter
+# DVD-ROM drive
+
+# For MAC:
+# PowerPC G4 or G5 or multicore Intel processor (Adobe Premiere Pro, Encore, and Soundbooth require a multicore Intel processor; Adobe OnLocation CS3 is a Windows application and may be used with Boot Camp)
+# Mac OS X v.10.4.9; Java Runtime Environment 1.5 required for Adobe Version Cue CS3 Server
+# 1GB of RAM for DV; 2GB of RAM for HDV and HD; more RAM recommended when running multiple components
+# 36GB of available hard-disk space (additional free space required during installation)
+# Dedicated 7,200 RPM hard drive for DV and HDV editing; striped disk array storage (RAID 0) for HD; SCSI disk subsystem preferred
+# Core Audio compatible sound card
+# 1,280x1,024 monitor resolution with 32-bit color adapter
+# DVD-ROM drive# DVD+-R burner required for DVD creation
+
+On today's Africa Update: The president of Sudan is accused of masterminding genocide and war crimes in Darfur. Plus, is East Africa the next hot bed of terrorism? For analysis, Farai talks with Roxanne Lawson, Director of Africa Policy for TransAfrica Forum.
+
+It remains to be seen whether Russia's new president, Dmitry Medvedev, will be an innovator, or merely a puppet of his immediate predecessor, Vladimir Putin. On issues of security and diplomacy, he has stuck with Putin's line.
