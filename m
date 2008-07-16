@@ -1,17 +1,15 @@
-From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
-Subject: Re: Checkpoint/Restart mini-summit
-Date: Wed, 16 Jul 2008 14:27:59 -0700
-Message-ID: <m1sku9zfhc.fsf@frodo.ebiederm.org>
-References: <487C80C9.2040105@fr.ibm.com> <m1prpfc7hj.fsf@frodo.ebiederm.org>
-	<20080716151530.GA26496@us.ibm.com>
-	<m18ww14pm7.fsf@frodo.ebiederm.org>
-	<20080716193538.GA28393@us.ibm.com>
+From: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [BUG][cryo] Create file on restart ?
+Date: Wed, 16 Jul 2008 15:31:00 -0700
+Message-ID: <1216247460.4844.177.camel@localhost.localdomain>
+References: <20080716185027.GA1335@us.ibm.com>
+	<20080716192604.GA27454@us.ibm.com> <20080716204529.GA4278@us.ibm.com>
+	<20080716205737.GA2082@us.ibm.com> <20080716212609.GB4278@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20080716193538.GA28393-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org> (Serge E. Hallyn's message of
-	"Wed, 16 Jul 2008 14:35:38 -0500")
+In-Reply-To: <20080716212609.GB4278-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -21,46 +19,56 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
+To: sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org
+Cc: Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-"Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org> writes:
 
-> Quoting Eric W. Biederman (ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org):
->> "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org> writes:
->> 
->> > Right, the whole point of Daniel including a 'reading list' was just so
->> > that we can avoid wasting time discussing existing implementations.  So
->> > he wasn't suggesting that we would be discussing those in detail, in
->> > fact quite the opposite.
->> 
->> Right however he was suggesting we discuss how to implement it without
->> agreeing on basic principles.  Maybe I'm wrong and all of the different
->> development groups have a common idea of what needs to be done but
->> I would be surprised if that were the case.
->
-> IMO recent threads have clearly proven that you're right about basic
-> principles.  Question is what is the right level to start at first, and
-> how do we go about reaching concensus?  I.e. is the first question
-> whether we should do a fully in-kernel checkpoint and restart vs
-> entirely userspace vs a mix, or is there another place we should start?
+On Wed, 2008-07-16 at 14:26 -0700, sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org wrote:
+> Serge E. Hallyn [serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org] wrote:
+> | Quoting sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org (sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org):
+> | > Serge E. Hallyn [serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org] wrote:
+> | > | Quoting sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org (sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org):
+> | > | > 
+> | > | > cryo does not (cannot ?) recreate files if the application created
+> | > | 
+> | > | I think that's for the best.
+> | > | 
+> | > | Don't you?
+> | > 
+> | > I can understand that configuration or data files should exist, but
+> | > not sure about temporary or log files that an application created
+> | > upon start-up and expects to be present. Should the admin find
+> | > out about them and create them by hand before restart ?
+> | 
+> | I think the admin should have set the destination environment such that
+> | the task is restarted in the same network fs in the same directory, with
+> | no files having been deleted.
 
-Where all good kernel features start.  With the necessary mechanisms in
-the kernel and the policy in user space.
+[Assuming Serge meant: s/network fs/network, fs,/]
 
-If we want to replay all of the user space actions to create the
-environment at the time of the checkpoint we already have all of the
-kernel support we need as the applications go to their current state
-using current system calls.
+> or new files created ? For instance if the application was checkpointed
+> before it created a temporary file with O_EXCL flag, that temporary
+> file must not exist when restarting ?
 
-I think we want something a bit more efficient.
+	I think that's not a problem given my assumptions above. The filesystem
+that the application restarts in would be the same because the admin
+should have set up the restart environment as Serge suggested. The admin
+can't rely on restart in an alternate environment. However, given
+knowledge of the application and environment, using an alternate
+environment may be a risk the admin is willing to take.
 
-> It sounds like you have some good ideas in any case on where to start so
-> I'm glad you'll be there :)
+> | 
+> | Am I wrong?
+> 
+> So we take a snapshot of the FS and checkpoint the application. Do they
+> need to be atomic ?
 
+	If all the applications in a container are frozen then I think we can
+get fs snapshots consistent with checkpointed applications.
+Otherwise, yes, I think we'd be gambling that the checkpointed
+application isn't interacting with another, running, application via an
+intermittently-shared file.
 
-Will we have a white board or a large piece paper or something we can draw
-on and talk about?
-
-Eric
+Cheers,
+	-Matt
