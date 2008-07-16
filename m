@@ -1,81 +1,40 @@
-From: sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org
-Subject: Re: cryo and mm->arg_start
-Date: Tue, 15 Jul 2008 14:40:50 -0700
-Message-ID: <20080715214050.GA29648@us.ibm.com>
-References: <20080711131345.GA18870@us.ibm.com>
-	<1215794310.9139.6.camel@nimitz>
-	<1215813673.5456.284.camel@localhost.localdomain>
-	<20080713210846.GD8186@us.ibm.com>
+From: Tejun Heo <htejun@gmail.com>
+Subject: Re: [PATCH 12/15] driver core: Implement tagged directory support
+ for device classes.
+Date: Wed, 16 Jul 2008 12:25:24 +0900
+Message-ID: <487D6A24.9070001@gmail.com>
+References: <m18wwiihbn.fsf_-_@frodo.ebiederm.org>	<m14p76ih9a.fsf_-_@frodo.ebiederm.org>	<m1zloyh2mb.fsf_-_@frodo.ebiederm.org>	<m1vdzmh2jr.fsf_-_@frodo.ebiederm.org>	<m1r6aah2hh.fsf_-_@frodo.ebiederm.org>	<m1mykyh2fu.fsf_-_@frodo.ebiederm.org>	<m1hcb6h2d2.fsf_-_@frodo.ebiederm.org> <486DD650.3000804@gmail.com>	<m1tzf593ny.fsf@frodo.ebiederm.org> <486E2C3B.6020603@gmail.com>	<20080704161200.GA1440@suse.de> <m1lk052ptp.fsf@frodo.ebiederm.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
+Content-Type: text/plain; charset=ISO-8859-1
 Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <20080713210846.GD8186-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Return-path: <netdev-owner@vger.kernel.org>
+In-Reply-To: <m1lk052ptp.fsf@frodo.ebiederm.org>
+Sender: netdev-owner@vger.kernel.org
+To: "Eric W. Biederman" <ebiederm@xmission.com>
+Cc: Greg KH <gregkh@suse.de>, Andrew Morton <akpm@linux-foundation.org>, Daniel Lezcano <dlezcano@fr.ibm.com>, linux-kernel@vger.kernel.org, Al Viro <viro@ftp.linux.org.uk>, Linux Containers <containers@lists.osdl.org>, Benjamin Thery <benjamin.thery@bull.net>, netdev@vger.kernel.org
 List-Id: containers.vger.kernel.org
 
-Serge E. Hallyn [serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org] wrote:
-| Quoting Matt Helsley (matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org):
-| > 
-| > On Fri, 2008-07-11 at 09:38 -0700, Dave Hansen wrote:
-| > > On Fri, 2008-07-11 at 08:13 -0500, Serge E. Hallyn wrote:
-| > > > 
-| > > > One thing we could do here is to start extending the cryo approach
-| > > > with Eric's checkpoint-as-a-coredump (caac?).  We generate the
-| > > > tiniest of coredumps which, at first, contains nothing but
-| > > > mm->arg_start and maybe a process id.  It would be simplest if
-| > > > it also contained a filename for the real executable,
-| > > 
-| > > The exec model sounds reasonable to me.
-| > >
-| > > But, I think the filename of the exe is going to have to be in the
-| > > checkpoint *already*.  It is mapped by at least one of the VMAs, and
-| > > will probably be dumped as a normal file-backed area.  
-| > 
-| > 	Yes, the file that backed the exec will be there. Note that thanks to
-| > "stacking" filesystems the path to the file backing the exe is not
-| > _always_ going to be the same as the path to the file which userspace
-| > exec'd in the first place. You can see this by comparing
-| > the /proc/<pid>/exe symlink with the file backing the VMA.
-| > 
-| > 	This is important to any program which checks the /proc/self/exe
-| > symlink to find out where it's installed (Java does this, for example).
-| > I think it's possible to do this with a binfmt -- it's just one more
-| > detail to remember.
-| > 
-| > Cheers,
-| > 	-Matt
-| 
-| Let's say that before starting my checkpointable job, I did
-| 
-| 	mount -t ecryptfs /home/hallyn /home/hallyn
-| 
-| Now if the checkpointable job is /home/hallyn/somelongjob, then I think
-| it's fair to say that restart can fail if /home/hallyn at the restart
-| machine isn't ecryptfs-mounted.
-| 
-| In that case, would you still think there is a problem?
-| 
-| On the other hand, if the checkpointable job did the ecryptfs mount
-| itself, then it would be expected that at restart the ecryptfs mount
-| would be remounted.  How that would be done I have no idea offhand.
+Eric W. Biederman wrote:
+> Greg KH <gregkh@suse.de> writes:
+>> Sorry, Greg is walking out the door in 30 minutes for a much needed week
+>> long vacation and can't look into this right now :(
+>>
+>> I'll be able to review it next weekend, sorry for the delay.
+> 
+> Any progress in reviewing these changes, and seeing if you can stand
+> to merge them?
 
-Hmm, wonder if the new /proc/pid/mountinfo with its mount-ids would
-enable us to identify the filesystems that a given process expects.
+Greg, please disregard my earlier NACKs and commit the patches if you're
+okay with them.  I'm working on cleaning it up but I don't think I'll be
+able to make it in time for merge window and as Eric said getting the
+functionality in place is more important at this point as it doesn't
+affect user visible interface.
 
-Which brings up another question. If two processes in the same container
-have different mount namespaces and mount points, we would need to
-reestablish the mounts during restart right ?
+Eric, with the multiple superblocks, sysfs now uses inode from the
+default sysfs_sb with dentries from other sb's.  Is this okay?  Are
+there any other filesystems which do this?
 
-Suka
+Thanks.
+
+-- 
+tejun
