@@ -1,15 +1,12 @@
-From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
-Subject: Re: Checkpoint/Restart mini-summit
-Date: Wed, 16 Jul 2008 12:04:48 -0700
-Message-ID: <m18ww14pm7.fsf@frodo.ebiederm.org>
-References: <487C80C9.2040105@fr.ibm.com> <m1prpfc7hj.fsf@frodo.ebiederm.org>
-	<20080716151530.GA26496@us.ibm.com>
+From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: [ccr-Gr7syQlKEaBFgBK04Mzu/R2eb7JE58TQ@public.gmane.org: LS Mini Summit: Schedule Update & Info]
+Date: Wed, 16 Jul 2008 14:18:17 -0500
+Message-ID: <20080716191817.GA26001@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20080716151530.GA26496-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org> (Serge E. Hallyn's message of
-	"Wed, 16 Jul 2008 10:15:30 -0500")
+Content-Disposition: inline
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,40 +16,105 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
+To: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-"Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org> writes:
+The containers mini-summit is happening at the Novotel Hotel.
 
-> Right, the whole point of Daniel including a 'reading list' was just so
-> that we can avoid wasting time discussing existing implementations.  So
-> he wasn't suggesting that we would be discussing those in detail, in
-> fact quite the opposite.
+Note that our breaks don't correspond to the break times given by
+facilities.  I intend to ignore that - we can break for 5 mins to
+collect coffee whenever - but if someone wants to update the times on
+our agenda to better match these breaks that's fine.
 
-Right however he was suggesting we discuss how to implement it without
-agreeing on basic principles.  Maybe I'm wrong and all of the different
-development groups have a common idea of what needs to be done but
-I would be surprised if that were the case.
+I did however move the first two segments back by 30 minutes so that
+we start at 8:30am.  Please note the time change!
 
->> With any luck the mini-summit before OLS will be the start of a
->> conversation that will go on all week, and continue on the mailing
->> lists.
+-serge
+
+----- Forwarded message from "C. Craig Ross" <ccr-Gr7syQlKEaBFgBK04Mzu/R2eb7JE58TQ@public.gmane.org> -----
+
+Date: Tue, 15 Jul 2008 17:01:19 -0400
+From: "C. Craig Ross" <ccr-Gr7syQlKEaBFgBK04Mzu/R2eb7JE58TQ@public.gmane.org>
+To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>,
+	"Adams, Aland (OSLO R&D)" <aland.adams-VXdhtT5mjnY@public.gmane.org>,
+	"Brown, Len" <len.brown-ral2JQCrhuEAvxtiuMwx3w@public.gmane.org>,
+	"John W. Linville" <linville-2XuSBdqkA4R54TAoqtyWWQ@public.gmane.org>,
+	Paul Moore <paul.moore-VXdhtT5mjnY@public.gmane.org>
+Subject: LS Mini Summit: Schedule Update & Info
+
+Hi,
+
+Here is the latest update.
+
+Location
+------------
+Les Suites Hotel
+1. Virtualization (Garden Suite Room) - Theatre Style Seating (35)
+2. Linux Power Management (Rideau Suite) - U-Shape (20)
+3. Linux Wireless LAN (Byward Suite) - U-Shape (25)
+
+Novotel Hotel
+1. Containers (Albion A) - U-Shape (35)
+2. SE Linux (Albion B) - Theatre (45)
+
+Schedule
+-------------
+08h30 - 16h30
+With breaks at 10h00 - 10h30 and 15h30 - 16h00 and lunch at 12h30 - 13h30.
+If the
+breaks don't fit *exactly* with your schedule it should be ok since things
+like coffee/snacks
+shouldn't go back if you are 15 minutes early/late.
+
+Registration
+-----------------
+Please send us your registration lists by Monday, July 21st (at the latest).
+We are still trying to decide if we will be holding registration on Tuesday
+or if we are just going to confirm your list against our registration list
+so
+that your attendees don't have to walk to the Congress Centre then walk
+back.
+
+We will provide specifics about room locations/access before the weekend.
+Contact me directly if you have any questions but I think we're getting
+there. :)
+
+Cheers,
+
+C.
+
+On Tue, Jul 15, 2008 at 10:37 AM, C. Craig Ross <ccr-Gr7syQlKEaBFgBK04Mzu/R2eb7JE58TQ@public.gmane.org>
+wrote:
+
+> Hi,
 >
-> Agreed.
+> Here are our attendance estimates, please confirm...
 >
-> This could be tough to pull off, but if we can walk out of there with a
-> short focused list of coding todos with the intent of pumping out
-> patches by the end of OLS, turning OLS into a bit of a hack-fest, that
-> would imo be great.
+> Virtualization - 20
+> Containers - 20
+> SE Linux - 40
+> Linux Power Management - 20
+> Linux Wireless LAN - ... :-)
+>
+> We will be hosting the Mini Summits at Les Suites Hotel
+> and most likely the Novotel Hotel (we will confirm soon).
+> The rooms will be set up in theatre style seating
+> unless you aren't doing formal presentations at which point
+> a hollow square shape might be more beneficial.
+>
+> We also require confirmation for those of you who require
+> projectors and screens or just flip charts and paper boards.
+>
+> Coffee breaks and lunches will be provided for all Mini Summits
+> as they have generously been sponsored by HP. :-)
+>
+> Thank you.
+>
+> Cheers,
+>
+> C.
+>
+> P.S. You can just reply directly to me.
+>
 
-I totally agree.
-
-> (But then that's precisely what I like to do at conferences - sit by
-> some wall and pick something completely new to code, while once in
-> awhile getting up to chat or see a talk.  Does that make me
-> anti-social?)
-
-It means you like to code!
-
-Eric
+----- End forwarded message -----
