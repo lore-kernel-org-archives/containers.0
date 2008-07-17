@@ -1,19 +1,15 @@
 From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: Re: [RFC PATCH 0/5] Resend - Use procfs to change a syscall	behavior
-Date: Thu, 17 Jul 2008 18:26:43 -0400
-Message-ID: <487FC723.3070901@cs.columbia.edu>
-References: <20080703144013.737951000@bull.net>
-	<20080704102702.GB4531@elf.ucw.cz>
-	<20080707190119.GB25934@us.ibm.com>
-	<20080708105228.GB15311@elf.ucw.cz>
-	<20080708215034.GB2179@us.ibm.com>
-	<20080708215821.GE17083@elf.ucw.cz>
-	<20080709022035.GA21249@us.ibm.com>
+Subject: Re: [Devel] [RFC PATCH 0/5] Resend -v2 - Use procfs to change
+	a	syscall behavior
+Date: Thu, 17 Jul 2008 18:42:56 -0400
+Message-ID: <487FCAF0.70607@cs.columbia.edu>
+References: <20080708112422.164370000@bull.net>	<20080709221028.GA4926@martell.zuzino.mipt.ru>
+	<m1tzeyd0x3.fsf@frodo.ebiederm.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20080709022035.GA21249-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <m1tzeyd0x3.fsf-B27657KtZYmhTnVgQlOflh2eb7JE58TQ@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -23,90 +19,84 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Nadia.Derbey-6ktuUTfB/bM@public.gmane.org, Pavel Machek <pavel-+ZI9xUNit7I@public.gmane.org>
+To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Nadia.Derbey-6ktuUTfB/bM@public.gmane.org
 List-Id: containers.vger.kernel.org
 
 
-Wow ... the volume of messages in this thread is overwhelming.
-I guess it had to happen when I was off a month long vacation !
 
-Ok .. lemme see if I can catch up:
+Eric W. Biederman wrote:
+> Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org> writes:
 
-Serge E. Hallyn wrote:
-> Quoting Pavel Machek (pavel-+ZI9xUNit7I@public.gmane.org):
->>>>>>> An alternative to this solution consists in defining a new field in the
->>>>>>> task structure (let's call it next_syscall_data) that, if set, would change
->>>>>>> the behavior of next syscall to be called. The sys_fork_with_id() previously
->>>>>>> cited can be replaced by
->>>>>>>  1) set next_syscall_data to a target upid nr
->>>>>>>  2) call fork().
->>>>>> ...bloat task struct and
->>>>>>
->>>>>>> A new file is created in procfs: /proc/self/task/<my_tid>/next_syscall_data.
->>>>>>> This makes it possible to avoid races between several threads belonging to
->>>>>>> the same process.
->>>>>> ...introducing this kind of uglyness.
->>>>>>
->>>>>> Actually, there were proposals for sys_indirect(), which is slightly
->>>>>> less ugly, but IIRC we ended up with adding syscalls, too.
->>>>> Silly question...
->>>>>
->>>>> Oren, would you object to defining sys_fork_with_id(),
->>>>> sys_msgget_with_id(), and sys_semget_with_id()?
+I seem to not have received any of Alexey's emails... ?
 
-I don't object, in particular given the backward-compatibility issue
-that was discussed later in this thread. However, see more below.
-
->>>>>
->>>>> Eric, Pavel (Emelyanov), Dave, do you have preferences?
->>>>>
->>>>> For the cases Nadia has implemented here I'd be tempted to side with
->>>>> Pavel Machek, but once we get to things like open() and socket(), (a)
->>>>> the # new syscalls starts to jump, and (b) the per-syscall api starts to
->>>>> seem a lot more cumbersome.
->>>> You should not need to modify open/socket. You can already select fd
->>>> by creatively using open/dup/close...
->>> That's what we do right now in cryo.  And if we end up patching up every
->>> API with separate syscalls, then we wouldn't create open_with_id().  But
->>> so long as the next_id were to exist, exploiting it in open is nigh on
->>> trivial and much nicer.
->> Ok, so ignore previous email. You know how unix works.
+> 
+>> On Tue, Jul 08, 2008 at 01:24:22PM +0200, Nadia.Derbey-6ktuUTfB/bM@public.gmane.org wrote:
+>>> # echo "LONG1 XX" > /proc/self/task/<my_tid>/next_syscall_data
+>> Same stuff.
 >>
->> I believe you should just introduce syscalls you need. Yes,
->> introducing new syscalls is hard/expensive, but changing existing
->> syscalls is simply bad idea.
+>> There is struct task_struct::did_exec , what about it?
+>>
+>> Also, patches are about de-serializing, how serializing from userspace looks
+>> like?
+>> You freezed group of processes, then what?
+>>
+>> How, for example, dump all VMAs correctly?
+>> [prepares counter-example]
 > 
-> Ok, thanks, Pavel.  I'm really far more inclined to agree with you than
-> it probably sounds like.  I'll go ahead and implement a clone_with_id()
-> syscall for starters later this week just as a comparison.
+> Alexey userspace vs a kernel space implementation is the wrong argument.
 > 
-> Unless, Nadia, you have already started that?
+> It is clearly established that the current user space interfaces are
+> insufficient to do the job.  So we need to implement something in the kernel.
 > 
->> So what new syscalls do you _really_ need? Not open_this_fd, nor
->> socket_this_fd.
-> 
-> Oren, do you have a list of the syscalls which were modified to use the
-> next_id in zap?
+> Further I have heard of no one suggesting running a single kernel on multiple
+> machines.  Therefore there no one seems to be doing this entirely in the kernel
+> and so we need a user space component.
 
-Good question :)
+I'm not sure I understand this argument ?
 
-In zap, all of the checkpoint, and most of the restart is performed in
-kernel space. The user space component of the restart takes care of the
-creation of the process tree correctly with the desired SID for each
-process. Thus, the _only_ syscall that requires this hack from userland
-is clone(). I'm ok with adding a new syscall to do this job.
+In a kernel implementation, the component will merely open a file descriptor
+(to which the data will be streamed), freeze the container and invoke a
+system call. In a userland implementation, the component will do most of
+the work by continuously probing the kernel for information about the
+processes that are being checkpointed.
 
-Everything else is created from within the kernel, usually by invoking
-the appropriate syscall inside. I use a similar trick (but in this case,
-only visible from within the kernel, not settable from user space, so
-there is never an issue with backward compatibility) for SysV IPC (select
-virtual ID) and PTY (select slave number when opening /dev/ptmx).
+So, of course we need a "component" - but what does that component do ?
 
-As mentioned by others, FD's are adjusted with dup2() if necessary.
+> So the question should not be user space vs. kernel space but can we build clean
+> interfaces for checkpoint/restart?  What will those interfaces be?
 
-Lastly, I can envision a need for a similar trick with certain devices
-if they are to be supported (e.g., if /dev/rtc is modified to work per
-namespace etc). But I wouldn't bother about that now.
+My question is why build a set of interfaces to export this and that from
+the kernel to user space ?  if a kernel implementation (with minimal user
+space support) is chosen, then information extraction (and restoration) is
+straightforward and we don't get ourselves tied until the end of times to
+API exported to userland.
+
+The output of the module will be a binary (like a core dump) that can be
+used by the same module to restart. User utilities will be available to
+inspect the contents (for whatever reason - like a debugger can inspect a
+core dump), and moreover to convert between old and new formats when moving
+from older to newer kernels.
+
+By doing so, we avoid many API issues - design, complexity, contents, and
+the amount of interfaces to be added.
+
+By doing so, we also gain much in terms of atomicity, possibility to add
+optimizations and improve performance, as well as add features as we wish,
+without the burden of commitments to userspace.
+
+I think the kernel space vs. user space must be the first issue on our
+table to solve, as it has a wide impact on the rest of the work.
 
 Oren.
+
+> 
+> Although I think it is good that we are seeing more people play with this as
+> that should mean that our pool of people for doing code review on the implementation
+> should be reasonable.
+> 
+> Eric
+> _______________________________________________
+> Containers mailing list
+> Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+> https://lists.linux-foundation.org/mailman/listinfo/containers
