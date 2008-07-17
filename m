@@ -1,17 +1,16 @@
 From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
 Subject: Re: [PATCH 1/2] signals: kill(-1) should only signal processes in the
 	same namespace
-Date: Thu, 17 Jul 2008 10:50:56 -0700
-Message-ID: <m1mykgv1q7.fsf__34845.8121218302$1216317317$gmane$org@frodo.ebiederm.org>
+Date: Thu, 17 Jul 2008 10:45:13 -0700
+Message-ID: <m13am8wgk6.fsf__30247.3157215447$1216317438$gmane$org@frodo.ebiederm.org>
 References: <487F5D6B.1090007@hozac.com> <487F5EDB.1000008@openvz.org>
 	<43011.192.168.102.6.1216308280.squirrel@intranet>
-	<487F6B2E.40101@openvz.org> <20080717173254.GA20948@tv-sign.ru>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20080717173254.GA20948-6lXkIZvqkOAvJsYlp49lxw@public.gmane.org> (Oleg Nesterov's message of
-	"Thu, 17 Jul 2008 21:32:54 +0400")
+In-Reply-To: <43011.192.168.102.6.1216308280.squirrel@intranet> (Daniel Hokka
+	Zakrisson's message of "Thu, 17 Jul 2008 17:24:40 +0200 (CEST)")
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -21,22 +20,56 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Oleg Nesterov <oleg-6lXkIZvqkOAvJsYlp49lxw@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+To: Daniel Hokka Zakrisson <daniel-nym3zxDgnZcAvxtiuMwx3w@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, oleg-6lXkIZvqkOAvJsYlp49lxw@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Oleg Nesterov <oleg-6lXkIZvqkOAvJsYlp49lxw@public.gmane.org> writes:
+"Daniel Hokka Zakrisson" <daniel-nym3zxDgnZcAvxtiuMwx3w@public.gmane.org> writes:
 
-> kill_something_info() can't walk threads, think about the realtime signals.
+> Pavel Emelyanov wrote:
+>> Daniel Hokka Zakrisson wrote:
+>>> While moving Linux-VServer to using pid namespaces, I noticed that
+>>> kill(-1) from inside a pid namespace is currently signalling every
+>>> process in the entire system, including processes that are otherwise
+>>> unreachable from the current process.
+>>
+>> This is not a "news" actually, buy anyway - thanks :)
+>
+> And yet nobody's fixed it... Kind of a critical thing, if you actually
+> want to use them, since most distribution's rc-scripts do a kill(-1,
+> SIGTERM), followed by kill(-1, SIGKILL) when halting (which, needless to
+> say, would be very bad).
+>
+>>> This patch fixes it by making sure that only processes which are in
+>>> the same pid namespace as current get signalled.
+>>
+>> This is to be done, indeed, but I do not like the proposed implementation,
+>> since you have to walk all the tasks in the system (under tasklist_lock,
+>> by the way) to search for a couple of interesting ones. Better look at how
+>> zap_pid_ns_processes works (by the way - I saw some patch doing so some
+>> time ago).
+>
+> The way zap_pid_ns_processes does it is worse, since it signals every
+> thread in the namespace rather than every thread group. So either we walk
+> the global tasklist, or we create a per-namespace one. Is that what we
+> want?
 
-walking threads is fine delivering signals to non thread group leaders is
-a problem.
+Can you please introduce kill_pidns_info and have both
+kill_something_info and zap_pid_ns_processes call this common
+function?
 
-> Anyway, I think we should change kill_something_info(-1) to use rcu_read_lock()
-> instead of tasklist.
+We want to walk the set of all pids in a pid namespace.  /proc does
+this and it is the recommended idiom.  If walking all of the pids in a
+pid namespace is not fast enough we can accelerate that.
 
-Being dense I think the locking implications of a correct implementation are more
-then we are ready to deal with to fix this bug.  Although I remember discussing
-it and seeing something reasonable.
+You are correct signalling every thread in a namespace is worse, in
+fact it is semantically incorrect.  zap_pid_ns_processes gets away
+with it because it is sending SIGKILL.   Therefore kill_pidns_info 
+should skip sending a signal to every task that is not the
+thread_group_leader.
+
+We need to hold the tasklist_lock to prevent new processes from
+joining the list of all processes.  Otherwise we could run the code
+under the rcu_read_lock.
 
 Eric
