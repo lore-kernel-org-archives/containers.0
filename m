@@ -1,15 +1,13 @@
-From: Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
-Subject: Re: [PATCH 1/2] signals: kill(-1) should only signal processes in
-	the same namespace
-Date: Thu, 17 Jul 2008 19:54:22 +0400
-Message-ID: <487F6B2E.40101__26520.3344439671$1216310210$gmane$org@openvz.org>
-References: <487F5D6B.1090007@hozac.com> <487F5EDB.1000008@openvz.org>
-	<43011.192.168.102.6.1216308280.squirrel@intranet>
+From: Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
+Subject: Re: Checkpoint/Restart mini-summit
+Date: Thu, 17 Jul 2008 18:15:39 +0200
+Message-ID: <487F702B.4070706@fr.ibm.com>
+References: <487C80C9.2040105@fr.ibm.com> <m1prpfc7hj.fsf@frodo.ebiederm.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <43011.192.168.102.6.1216308280.squirrel@intranet>
+In-Reply-To: <m1prpfc7hj.fsf-B27657KtZYmhTnVgQlOflh2eb7JE58TQ@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,135 +17,72 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Daniel Hokka Zakrisson <daniel-nym3zxDgnZcAvxtiuMwx3w@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, oleg-6lXkIZvqkOAvJsYlp49lxw@public.gmane.org
+To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Daniel Hokka Zakrisson wrote:
-> Pavel Emelyanov wrote:
->> Daniel Hokka Zakrisson wrote:
->>> While moving Linux-VServer to using pid namespaces, I noticed that
->>> kill(-1) from inside a pid namespace is currently signalling every
->>> process in the entire system, including processes that are otherwise
->>> unreachable from the current process.
->> This is not a "news" actually, buy anyway - thanks :)
+Eric W. Biederman wrote:
+> Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org> writes:
 > 
-> And yet nobody's fixed it... Kind of a critical thing, if you actually
-> want to use them, since most distribution's rc-scripts do a kill(-1,
-> SIGTERM), followed by kill(-1, SIGKILL) when halting (which, needless to
-> say, would be very bad).
+>> Hi all,
+>>
+>> Here is a proposition a more detailed agenda for the checkpoint/restart 
+>> mini-summit. If everybody is ok with it, I will update the wiki.
+>>
+>> Comments are welcome :)
 > 
->>> This patch fixes it by making sure that only processes which are in
->>> the same pid namespace as current get signalled.
->> This is to be done, indeed, but I do not like the proposed implementation,
->> since you have to walk all the tasks in the system (under tasklist_lock,
->> by the way) to search for a couple of interesting ones. Better look at how
->> zap_pid_ns_processes works (by the way - I saw some patch doing so some
->> time ago).
+> A reading list is useful, even to help get some ideas circulating
+> before we get there.
 > 
-> The way zap_pid_ns_processes does it is worse, since it signals every
-> thread in the namespace rather than every thread group. So either we walk
-
-It's questionable whether there are more "threads in a pid namespace" than
-"processes in a system".
-
-E.g. on my notebook there are ~110 processes and ~150 threads. So having 
-this setup launched in 10 containers you'll have to walk 1100 tasks, while
-zap_pid_ns_processes only 150 ;)
-
-Some real-life example with containers: on one of our servers with 10 
-containers serving as git repo, bulding system and some other stuff there 
-are ~200 process totally and ~20 threads in each container. See?
-
-I tend to believe that walking threads in a container is cheaper then
-walking processes in a system...
-
-> the global tasklist, or we create a per-namespace one. Is that what we
-> want?
-
-We want to kill all tasks in current pid namespace. There are variants of 
-how to do this. You particular implementation of handling this case seems
-poor to me for the reasons described above.
-
->>> Signed-off-by: Daniel Hokka Zakrisson <daniel-nym3zxDgnZcAvxtiuMwx3w@public.gmane.org>
->>>
->>> diff --git a/include/linux/pid_namespace.h
->>> b/include/linux/pid_namespace.h
->>> index caff528..4cf41bd 100644
->>> --- a/include/linux/pid_namespace.h
->>> +++ b/include/linux/pid_namespace.h
->>> @@ -40,6 +40,8 @@ static inline struct pid_namespace *get_pid_ns(struct
->>> pid_namespace *ns)
->>>   extern struct pid_namespace *copy_pid_ns(unsigned long flags, struct
->>> pid_namespace *ns);
->>>   extern void free_pid_ns(struct kref *kref);
->>>   extern void zap_pid_ns_processes(struct pid_namespace *pid_ns);
->>> +extern int task_in_pid_ns(struct task_struct *tsk,
->>> +			  struct pid_namespace *pid_ns);
->>>
->>>   static inline void put_pid_ns(struct pid_namespace *ns)
->>>   {
->>> @@ -72,6 +74,12 @@ static inline void zap_pid_ns_processes(struct
->>> pid_namespace *ns)
->>>   {
->>>   	BUG();
->>>   }
->>> +
->>> +static inline int task_in_pid_ns(struct task_struct *tsk,
->>> +				  struct pid_namespace *ns)
->>> +{
->>> +	return 1;
->>> +}
->>>   #endif /* CONFIG_PID_NS */
->>>
->>>   static inline struct pid_namespace *task_active_pid_ns(struct
->>> task_struct *tsk)
->>> diff --git a/kernel/pid_namespace.c b/kernel/pid_namespace.c
->>> index 98702b4..3e71011 100644
->>> --- a/kernel/pid_namespace.c
->>> +++ b/kernel/pid_namespace.c
->>> @@ -188,6 +188,26 @@ void zap_pid_ns_processes(struct pid_namespace
->>> *pid_ns)
->>>   	return;
->>>   }
->>>
->>> +/*
->>> + * Checks whether tsk has a pid in the pid namespace ns.
->>> + * Must be called with tasklist_lock read-locked or under
->>> rcu_read_lock()
->>> + */
->>> +int task_in_pid_ns(struct task_struct *tsk, struct pid_namespace *ns)
->>> +{
->>> +	struct pid *pid = task_pid(tsk);
->>> +
->>> +	if (!pid)
->>> +		return 0;
->>> +
->>> +	if (pid->level < ns->level)
->>> +		return 0;
->>> +
->>> +	if (pid->numbers[ns->level].ns != ns)
->>> +		return 0;
->>> +
->>> +	return 1;
->>> +}
->>> +
->>>   static __init int pid_namespaces_init(void)
->>>   {
->>>   	pid_ns_cachep = KMEM_CACHE(pid_namespace, SLAB_PANIC);
->>> diff --git a/kernel/signal.c b/kernel/signal.c
->>> index 6c0958e..93713a5 100644
->>> --- a/kernel/signal.c
->>> +++ b/kernel/signal.c
->>> @@ -1145,7 +1145,8 @@ static int kill_something_info(int sig, struct
->>> siginfo *info, int pid)
->>>   		struct task_struct * p;
->>>
->>>   		for_each_process(p) {
->>> -			if (p->pid > 1 && !same_thread_group(p, current)) {
->>> +			if (p->pid > 1 && !same_thread_group(p, current) &&
->>> +			    task_in_pid_ns(p, current->nsproxy->pid_ns)) {
->>>   				int err = group_send_sig_info(sig, info, p);
->>>   				++count;
->>>   				if (err != -EPERM)
+> Ultimately the technical details will need to be resolve by
+> people discussing things and sending patches back and forth
+> on the mailing lists.
 > 
+> I don't think a detailed agenda is going to get us anywhere.
+> Especially not one focused on the implementation details.
+> 
+> I think we need to start by seeing what we can agree on.  Certainly we
+> agree that checkpoint/restart needs to be part of the picture.  What
+> are the problems that the linux community can solve with
+> checkpoint/restart.
+> 
+> Then we need to talk about what kind of implementation we want to
+> merge into mainline.  How do we sell it, and how do we implement
+> it without affecting long term maintainability.
+> 
+> I think the granularity of our operations, and what state we
+> save is important.  I don't think how we save it is important
+> unless it affects one of our requirements.
+> 
+> As for the posix draft and the historical Cray & SGI implementations.
+> They were on the wrong track.  The did not have namespace support
+> so they could not in general restore their checkpoints.
+> 
+> There are also a lot of things you have failed to touch on, that
+> I'm not going to go into now.
+> 
+> With any luck the mini-summit before OLS will be the start of a
+> conversation that will go on all week, and continue on the mailing
+> lists.
+> 
+> The real question is how do we coordinate our efforts to build a good
+> linux checkpoint/restart implementation.
+> 
+>> * Documentation
+>>    * Zap : www.ncl.cs.columbia.edu/publications/usenix2007_fordist.pdf
+>>    * Metacluster : lxc.sourceforge.net/doc/ols2006/lxc-ols2006.pdf
+>>    * OpenVZ : http://wiki.openvz.org/Checkpointing_and_live_migration
+>>    * Checkpoint/Restart technology : 
+>> http://en.wikipedia.org/wiki/Application_checkpointing
+>>    * Virtual Servers and Checkpoint/Restart in Mainstream Linux : Sigops 
+>> document
+> 
+> There is also the classic emacs undump.
+> The very simple vmadump from bproc.
+
+Thanks Eric for all your comments. I agree the agenda is a little big, I 
+will reduce it and I will add the points you raised. I have other points 
+from by Oren I will add too, perhaps that will cover more aspect of the 
+discussion.
+
+   -- Daniel
