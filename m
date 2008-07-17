@@ -1,27 +1,14 @@
 From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: Re: Checkpoint/restart (was Re: [PATCH 0/4] - v2 - Object creation
-	with a specified id)
-Date: Thu, 17 Jul 2008 19:19:51 -0400
-Message-ID: <487FD397.5040905__36508.3841993057$1216337105$gmane$org@cs.columbia.edu>
-References: <20080418054459.891481000@bull.net>	
-	<20080422193612.GA15835@martell.zuzino.mipt.ru>	
-	<1208890580.17117.14.camel@nimitz.home.sr71.net>	
-	<20080422210130.GA15937@martell.zuzino.mipt.ru>	
-	<1208904967.17117.51.camel@nimitz.home.sr71.net>	
-	<480ED9D5.1010906@parallels.com>
-	<480FE037.2010302@cs.columbia.edu>	
-	<m1y74a7b4w.fsf@frodo.ebiederm.org>
-	<1215709949.9398.15.camel@nimitz>	
-	<20080710173246.GA1857@us.ibm.com>
-	<m163rd1sd5.fsf@frodo.ebiederm.org>	
-	<1215716794.9398.41.camel@nimitz>
-	<m14p6xy27s.fsf@frodo.ebiederm.org>
-	<1215719252.9398.53.camel@nimitz>
+Subject: Re: [BUG][cryo] Create file on restart ?
+Date: Thu, 17 Jul 2008 19:22:52 -0400
+Message-ID: <487FD44C.7040806@cs.columbia.edu>
+References: <20080716185027.GA1335@us.ibm.com>	<20080716192604.GA27454@us.ibm.com>	<20080716204529.GA4278@us.ibm.com>	<20080716205737.GA2082@us.ibm.com>
+	<20080716212609.GB4278@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1215719252.9398.53.camel@nimitz>
+In-Reply-To: <20080716212609.GB4278-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -31,46 +18,51 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Cc: Kirill Korotaev <dev-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, nick-dnCCA748QAperShJXdIFYw@public.gmane.org, Nadia.Derbey-6ktuUTfB/bM@public.gmane.org
+To: sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org
+Cc: Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
 
 
-Dave Hansen wrote:
-> On Thu, 2008-07-10 at 12:21 -0700, Eric W. Biederman wrote:
->>> Are we talking about the VMA itself, or the memory backing the VMA?
->> The memory backing the VMA.  We need to store the page protections
->> that the memory was mapped with as well now that you point it out.  A
->> VMA is not user space visible, which is why we can arbitrarily split
->> and merge VMAs.
+sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org wrote:
+> Serge E. Hallyn [serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org] wrote:
+> | Quoting sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org (sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org):
+> | > Serge E. Hallyn [serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org] wrote:
+> | > | Quoting sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org (sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org):
+> | > | > 
+> | > | > cryo does not (cannot ?) recreate files if the application created
+> | > | 
+> | > | I think that's for the best.
+> | > | 
+> | > | Don't you?
+> | > 
+> | > I can understand that configuration or data files should exist, but
+> | > not sure about temporary or log files that an application created
+> | > upon start-up and expects to be present. Should the admin find
+> | > out about them and create them by hand before restart ?
+> | 
+> | I think the admin should have set the destination environment such that
+> | the task is restarted in the same network fs in the same directory, with
+> | no files having been deleted.
 > 
-> It is visible with /proc/$pid/{maps,smaps,numamaps?}.  That's the only
-> efficient way I know of from userspace to figure out where userspace's
-> memory is and if it *is* file backed, and what the permissions are.
+> or new files created ? For instance if the application was checkpointed
+> before it created a temporary file with O_EXCL flag, that temporary
+> file must not exist when restarting ?
 > 
-> We also can't truly split them arbitrarily because the memory cost of
-> the VMAs themselves might become too heavy (the remap_file_pages()
-> problem).
+> | 
+> | Am I wrong?
 > 
-> It gets trickier when things are also private mappings in addition to
-> being in a file-backed VMA.  We *do* need to checkpoint those, but only
-> the pages to which there was a write.
-> 
-> There's also the problem of restoring things read-only, but VM_MAYWRITE.
-> If there's a high level of (non-COW'd) sharing of these anonymous areas,
-> we may not be able to even restore the set of processes unless we can
-> replicate the sharing.  We might run out of memory if the sharing isn't
-> replicated.
-> 
-> Memory is fun! :)
+> So we take a snapshot of the FS and checkpoint the application. Do they
+> need to be atomic ? 
 
-Heh .. and it can get much worse.  By all means, the functions that analyze
-and save the VMAs during checkpoint and later reconstruct them during restart
-are the most complicated logic. The good news, however, is that it works :)
+Yes they do, in the sense that the FS must be snapshotted when the
+container is quiescent to ensure consistency.
 
 Oren.
 
 > 
-> -- Dave
-> 
+> Eitherway, I withdraw the bug :-)
+> _______________________________________________
+> Containers mailing list
+> Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+> https://lists.linux-foundation.org/mailman/listinfo/containers
