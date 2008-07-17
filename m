@@ -1,13 +1,17 @@
-From: Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
-Subject: Re: Checkpoint/Restart mini-summit
-Date: Thu, 17 Jul 2008 18:15:39 +0200
-Message-ID: <487F702B.4070706@fr.ibm.com>
-References: <487C80C9.2040105@fr.ibm.com> <m1prpfc7hj.fsf@frodo.ebiederm.org>
+From: Oleg Nesterov <oleg-6lXkIZvqkOAvJsYlp49lxw@public.gmane.org>
+Subject: Re: [PATCH 1/2] signals: kill(-1) should only signal processes in the
+	same namespace
+Date: Thu, 17 Jul 2008 21:32:54 +0400
+Message-ID: <20080717173254.GA20948__14111.6685736508$1216315907$gmane$org@tv-sign.ru>
+References: <487F5D6B.1090007@hozac.com> <487F5EDB.1000008@openvz.org>
+	<43011.192.168.102.6.1216308280.squirrel@intranet>
+	<487F6B2E.40101@openvz.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <m1prpfc7hj.fsf-B27657KtZYmhTnVgQlOflh2eb7JE58TQ@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <487F6B2E.40101-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -17,72 +21,34 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
+To: Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Eric W. Biederman wrote:
-> Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org> writes:
+On 07/17, Pavel Emelyanov wrote:
+>
+> Daniel Hokka Zakrisson wrote:
+> > 
+> > The way zap_pid_ns_processes does it is worse, since it signals every
+> > thread in the namespace rather than every thread group. So either we walk
 > 
->> Hi all,
->>
->> Here is a proposition a more detailed agenda for the checkpoint/restart 
->> mini-summit. If everybody is ok with it, I will update the wiki.
->>
->> Comments are welcome :)
+> It's questionable whether there are more "threads in a pid namespace" than
+> "processes in a system".
 > 
-> A reading list is useful, even to help get some ideas circulating
-> before we get there.
+> E.g. on my notebook there are ~110 processes and ~150 threads. So having 
+> this setup launched in 10 containers you'll have to walk 1100 tasks, while
+> zap_pid_ns_processes only 150 ;)
 > 
-> Ultimately the technical details will need to be resolve by
-> people discussing things and sending patches back and forth
-> on the mailing lists.
+> Some real-life example with containers: on one of our servers with 10 
+> containers serving as git repo, bulding system and some other stuff there 
+> are ~200 process totally and ~20 threads in each container. See?
 > 
-> I don't think a detailed agenda is going to get us anywhere.
-> Especially not one focused on the implementation details.
-> 
-> I think we need to start by seeing what we can agree on.  Certainly we
-> agree that checkpoint/restart needs to be part of the picture.  What
-> are the problems that the linux community can solve with
-> checkpoint/restart.
-> 
-> Then we need to talk about what kind of implementation we want to
-> merge into mainline.  How do we sell it, and how do we implement
-> it without affecting long term maintainability.
-> 
-> I think the granularity of our operations, and what state we
-> save is important.  I don't think how we save it is important
-> unless it affects one of our requirements.
-> 
-> As for the posix draft and the historical Cray & SGI implementations.
-> They were on the wrong track.  The did not have namespace support
-> so they could not in general restore their checkpoints.
-> 
-> There are also a lot of things you have failed to touch on, that
-> I'm not going to go into now.
-> 
-> With any luck the mini-summit before OLS will be the start of a
-> conversation that will go on all week, and continue on the mailing
-> lists.
-> 
-> The real question is how do we coordinate our efforts to build a good
-> linux checkpoint/restart implementation.
-> 
->> * Documentation
->>    * Zap : www.ncl.cs.columbia.edu/publications/usenix2007_fordist.pdf
->>    * Metacluster : lxc.sourceforge.net/doc/ols2006/lxc-ols2006.pdf
->>    * OpenVZ : http://wiki.openvz.org/Checkpointing_and_live_migration
->>    * Checkpoint/Restart technology : 
->> http://en.wikipedia.org/wiki/Application_checkpointing
->>    * Virtual Servers and Checkpoint/Restart in Mainstream Linux : Sigops 
->> document
-> 
-> There is also the classic emacs undump.
-> The very simple vmadump from bproc.
+> I tend to believe that walking threads in a container is cheaper then
+> walking processes in a system...
 
-Thanks Eric for all your comments. I agree the agenda is a little big, I 
-will reduce it and I will add the points you raised. I have other points 
-from by Oren I will add too, perhaps that will cover more aspect of the 
-discussion.
+kill_something_info() can't walk threads, think about the realtime signals.
 
-   -- Daniel
+Anyway, I think we should change kill_something_info(-1) to use rcu_read_lock()
+instead of tasklist.
+
+Oleg.
