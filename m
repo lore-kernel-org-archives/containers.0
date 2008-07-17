@@ -1,38 +1,59 @@
-From: Greg KH <gregkh@suse.de>
-Subject: Re: [PATCH 12/15] driver core: Implement tagged directory support
-	for device classes.
-Date: Thu, 17 Jul 2008 16:08:57 -0700
-Message-ID: <20080717230857.GB28377@suse.de>
-References: <m1vdzmh2jr.fsf_-_@frodo.ebiederm.org> <m1r6aah2hh.fsf_-_@frodo.ebiederm.org> <m1mykyh2fu.fsf_-_@frodo.ebiederm.org> <m1hcb6h2d2.fsf_-_@frodo.ebiederm.org> <486DD650.3000804@gmail.com> <m1tzf593ny.fsf@frodo.ebiederm.org> <486E2C3B.6020603@gmail.com> <20080704161200.GA1440@suse.de> <m1lk052ptp.fsf@frodo.ebiederm.org> <487D6A24.9070001@gmail.com>
+From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Subject: Re: Checkpoint/restart (was Re: [PATCH 0/4] - v2 - Object creation
+	with a specified id)
+Date: Thu, 17 Jul 2008 19:14:25 -0400
+Message-ID: <487FD251.9090204@cs.columbia.edu>
+References: <20080418054459.891481000@bull.net>	
+	<20080422193612.GA15835@martell.zuzino.mipt.ru>	
+	<1208890580.17117.14.camel@nimitz.home.sr71.net>	
+	<20080422210130.GA15937@martell.zuzino.mipt.ru>	
+	<1208904967.17117.51.camel@nimitz.home.sr71.net>	
+	<480ED9D5.1010906@parallels.com>
+	<480FE037.2010302@cs.columbia.edu>	
+	<m1y74a7b4w.fsf@frodo.ebiederm.org>
+	<1215709949.9398.15.camel@nimitz>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Return-path: <netdev-owner@vger.kernel.org>
-Content-Disposition: inline
-In-Reply-To: <487D6A24.9070001@gmail.com>
-Sender: netdev-owner@vger.kernel.org
-To: Tejun Heo <htejun@gmail.com>
-Cc: "Eric W. Biederman" <ebiederm@xmission.com>, Andrew Morton <akpm@linux-foundation.org>, Daniel Lezcano <dlezcano@fr.ibm.com>, linux-kernel@vger.kernel.org, Al Viro <viro@ftp.linux.org.uk>, Linux Containers <containers@lists.osdl.org>, Benjamin Thery <benjamin.thery@bull.net>, netdev@vger.kernel.org
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <1215709949.9398.15.camel@nimitz>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Cc: Kirill Korotaev <dev-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, nick-dnCCA748QAperShJXdIFYw@public.gmane.org, Nadia.Derbey-6ktuUTfB/bM@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Wed, Jul 16, 2008 at 12:25:24PM +0900, Tejun Heo wrote:
-> Eric W. Biederman wrote:
-> > Greg KH <gregkh@suse.de> writes:
-> >> Sorry, Greg is walking out the door in 30 minutes for a much needed week
-> >> long vacation and can't look into this right now :(
-> >>
-> >> I'll be able to review it next weekend, sorry for the delay.
-> > 
-> > Any progress in reviewing these changes, and seeing if you can stand
-> > to merge them?
+
+
+Dave Hansen wrote:
+> On Wed, 2008-07-09 at 18:58 -0700, Eric W. Biederman wrote:
+>> In the worst case today we can restore a checkpoint by replaying all of
+>> the user space actions that took us to get there.  That is a tedious
+>> and slow approach.
 > 
-> Greg, please disregard my earlier NACKs and commit the patches if you're
-> okay with them.  I'm working on cleaning it up but I don't think I'll be
-> able to make it in time for merge window and as Eric said getting the
-> functionality in place is more important at this point as it doesn't
-> affect user visible interface.
+> Yes, tedious and slow, *and* minimally invasive in the kernel.  Once we
+> have a tedious and slow process, we'll have some really good points when
 
-Ok, I'll work to get these in where applicable.
+"Replaying all of the user space actions that took us to get there" -
+this task is not even always possible without deterministic log/replay
+mechanism :(
 
-thanks,
+Oren.
 
-greg k-h
+> we try to push the next set of patches to make it less slow and tedious.
+> We'll be able to describe an _actual_ set of problems to our fellow
+> kernel hackers.
+> 
+> So, the checkpoint-as-a-corefile idea sounds good to me, but it
+> definitely leaves a lot of questions about exactly how we'll need to do
+> the restore.
+> 
+> -- Dave
+> 
