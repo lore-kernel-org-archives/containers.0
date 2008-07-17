@@ -1,14 +1,18 @@
-From: yamamoto-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org (YAMAMOTO Takashi)
-Subject: Re: [PATCH][RFC] dirty balancing for cgroups
-Date: Thu, 17 Jul 2008 10:43:35 +0900 (JST)
-Message-ID: <20080717014335.ED78A5A22__42675.3861400813$1216259147$gmane$org@siro.lan>
-References: <1216043344.12595.89.camel@twins>
+From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [BUG][cryo] Create file on restart ?
+Date: Wed, 16 Jul 2008 21:18:34 -0500
+Message-ID: <20080717021834.GA21726@us.ibm.com>
+References: <20080716185027.GA1335@us.ibm.com>
+	<20080716192604.GA27454@us.ibm.com>
+	<20080716204529.GA4278@us.ibm.com>
+	<20080716205737.GA2082@us.ibm.com>
+	<20080716212609.GB4278@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: Your message of "Mon, 14 Jul 2008 15:49:04 +0200"
-	<1216043344.12595.89.camel@twins>
+Content-Disposition: inline
+In-Reply-To: <20080716212609.GB4278-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,29 +22,47 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: a.p.zijlstra-/NLkJaSkS4VmR6Xm/wNWPw@public.gmane.org
-Cc: linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org
+Cc: Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-hi,
-
-> Now the problem this patch tries to address...
+Quoting sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org (sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org):
+> Serge E. Hallyn [serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org] wrote:
+> | Quoting sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org (sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org):
+> | > Serge E. Hallyn [serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org] wrote:
+> | > | Quoting sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org (sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org):
+> | > | > 
+> | > | > cryo does not (cannot ?) recreate files if the application created
+> | > | 
+> | > | I think that's for the best.
+> | > | 
+> | > | Don't you?
+> | > 
+> | > I can understand that configuration or data files should exist, but
+> | > not sure about temporary or log files that an application created
+> | > upon start-up and expects to be present. Should the admin find
+> | > out about them and create them by hand before restart ?
+> | 
+> | I think the admin should have set the destination environment such that
+> | the task is restarted in the same network fs in the same directory, with
+> | no files having been deleted.
 > 
-> As you can see you'd need p_{bdi,cgroup,task} for it to work, and the
-> obvious approximation p_bdi * p_cgroup * p_task will get even more
-> coarse.
+> or new files created ? For instance if the application was checkpointed
+> before it created a temporary file with O_EXCL flag, that temporary
+> file must not exist when restarting ?
 > 
-> You could possibly attempt to do p_{bdi,cgroup} * p_task since the bdi
-> and cgroup set are pretty static, but still that would be painful.
+> | 
+> | Am I wrong?
+> 
+> So we take a snapshot of the FS and checkpoint the application. Do they
+> need to be atomic ? 
+> 
+> Eitherway, I withdraw the bug :-)
 
-i chose min(p_bdi * p_cgroup, p_bdi * p_task) because i couldn't imagine
-a case where p_bdi * p_cgroup * p_task is better.
+Well it's certainly beyond the scope of cryo.  I'd prefer if we didn't
+have to snapshot the fs at each checkpoint (!) and I think any many or
+most cases (think one long-running scientific app or seti@home that just
+occasionally gets migrated or stopped for a reboot) it won't be an
+issue.  But your point seems valid.
 
-> So, could you please give some more justification for this work, I'm not
-> seeing the value in complicating all this just yet.
-
-a simple example for which my patch can make some sense is:
-
-	while :;do dd if=/dev/zero of=file conv=notrunc bs=4096 count=1;done
-
-YAMAMOTO Takashi
+-serge
