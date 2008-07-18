@@ -1,16 +1,17 @@
-From: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [Devel] [RFC PATCH 0/5] Resend -v2 - Use procfs to change a
-	syscall behavior
-Date: Thu, 17 Jul 2008 18:09:25 -0700
-Message-ID: <1216343365.4844.308.camel@localhost.localdomain>
+From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
+Subject: Re: [Devel] [RFC PATCH 0/5] Resend -v2 - Use procfs to change
+	a	syscall behavior
+Date: Thu, 17 Jul 2008 19:40:45 -0700
+Message-ID: <m1hcanoqxe.fsf@frodo.ebiederm.org>
 References: <20080708112422.164370000@bull.net>
 	<20080709221028.GA4926@martell.zuzino.mipt.ru>
-	<m1tzeyd0x3.fsf@frodo.ebiederm.org>  <487FCAF0.70607@cs.columbia.edu>
+	<m1tzeyd0x3.fsf@frodo.ebiederm.org> <487FCAF0.70607@cs.columbia.edu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <487FCAF0.70607-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+In-Reply-To: <487FCAF0.70607-eQaUEPhvms7ENvBUuze7eA@public.gmane.org> (Oren Laadan's message of "Thu,
+	17 Jul 2008 18:42:56 -0400")
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -21,80 +22,55 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Nadia.Derbey-6ktuUTfB/bM@public.gmane.org, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Nadia.Derbey-6ktuUTfB/bM@public.gmane.org
 List-Id: containers.vger.kernel.org
 
+Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org> writes:
 
-On Thu, 2008-07-17 at 18:42 -0400, Oren Laadan wrote:
-> 
-> Eric W. Biederman wrote:
-> > Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org> writes:
-> 
-> I seem to not have received any of Alexey's emails... ?
-> 
-> > 
-> >> On Tue, Jul 08, 2008 at 01:24:22PM +0200, Nadia.Derbey-6ktuUTfB/bM@public.gmane.org wrote:
-> >>> # echo "LONG1 XX" > /proc/self/task/<my_tid>/next_syscall_data
-> >> Same stuff.
-> >>
-> >> There is struct task_struct::did_exec , what about it?
-> >>
-> >> Also, patches are about de-serializing, how serializing from userspace looks
-> >> like?
-> >> You freezed group of processes, then what?
-> >>
-> >> How, for example, dump all VMAs correctly?
-> >> [prepares counter-example]
-> > 
-> > Alexey userspace vs a kernel space implementation is the wrong argument.
-> > 
-> > It is clearly established that the current user space interfaces are
-> > insufficient to do the job.  So we need to implement something in the kernel.
-> > 
-> > Further I have heard of no one suggesting running a single kernel on multiple
-> > machines.  Therefore there no one seems to be doing this entirely in the kernel
-> > and so we need a user space component.
-> 
-> I'm not sure I understand this argument ?
-> 
-> In a kernel implementation, the component will merely open a file descriptor
-> (to which the data will be streamed), freeze the container and invoke a
-> system call. In a userland implementation, the component will do most of
-> the work by continuously probing the kernel for information about the
-> processes that are being checkpointed.
-> 
-> So, of course we need a "component" - but what does that component do ?
-> 
-> > So the question should not be user space vs. kernel space but can we build clean
-> > interfaces for checkpoint/restart?  What will those interfaces be?
-> 
-> My question is why build a set of interfaces to export this and that from
-> the kernel to user space ?  if a kernel implementation (with minimal user
-> space support) is chosen, then information extraction (and restoration) is
-> straightforward and we don't get ourselves tied until the end of times to
-> API exported to userland.
+> I think the kernel space vs. user space must be the first issue on our
+> table to solve, as it has a wide impact on the rest of the work.
 
-	That still seems like an API exported to userland. It just combines the
-data into one block rather than distributing it amongst a bunch of
-pseudo-filesystems. Does this form of API really free us from always
-supporting it in the future?
+We first need to talk about what kinds of problems we are trying to
+solve.  If we don't agree what the problem is I expect we will have a
+hard time agreeing on a solution.
 
-> The output of the module will be a binary (like a core dump) that can be
-> used by the same module to restart. User utilities will be available to
-> inspect the contents (for whatever reason - like a debugger can inspect a
-> core dump), and moreover to convert between old and new formats when moving
-> from older to newer kernels.
->
-> By doing so, we avoid many API issues - design, complexity, contents, and
-> the amount of interfaces to be added.
+For example we are using namespaces now instead of the potentially
+simpler isolation mechanism of Vserver because checkpoint/restart
+could not be done with the Vserver approach.
 
-	Userspace is expected to inspect or convert the binary data. How does
-that truly avoid many of the API issues mentioned above? If it's really
-supposed to be a minimal API then the binary should be considered opaque
-and userspace tools which inspect or convert these binaries should be
-considered unreliable hacks at best. Otherwise it seems to me that it
-has most of the familiar problems associated with a kernel/userspace API
--- including an obligation to support it.
+The use case that I expect we all have in common is migrating
+an isolated container from one machine to another transparent
+to applications.  Except those that directly access the hardware
+at which point we can treat it as a hotplug event from the
+perspective of userspace.
 
-Cheers,
-	-Matt Helsley
+There are several other interesting use cases that I think we
+should solve if possible.
+- Live/Incremental migration.  
+- Remote fork.  Which can be seen as an extreme case of migrating
+  only a partial container.
+- A checkpoint that can be restarted multiple times and work properly.
+  Which means you need to include the state of the filesystem.
+- A distributed checkpoint of multiple containers at the same time.
+
+Given how brutally hard and inefficient it is to restore a checkpoint
+using the existing system calls even with namespaces in the kernel.  We
+can pretty much rule that implementation out as it does not match
+our efficiency criteria, and likely isn't especially maintainble either.
+
+On the maintenance side we can generally rule out an out of tree module.
+As that does not afford visible to people changing a subsystem that the
+checkpoint/restart code needs to change as well.
+
+I believe the live migration will have the most stringent performance
+requirements and at the same time be one of the most useful features,
+as it immediately improve maintenance of clusters.
+
+In the extreme case of a distributed checkpoint the kernel simply does
+not have enough state so we need user space code coordinating all of
+the pieces.
+
+For a multi-start checkpoint I expect userspace will be coordinating
+filesystem snapshots and checkpoints.
+
+Eric
