@@ -1,91 +1,40 @@
-From: "Paul Menage" <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [Devel] [ccr-Gr7syQlKEaBFgBK04Mzu/R2eb7JE58TQ@public.gmane.org: LS Mini Summit Update (18/07/08)]
-Date: Fri, 18 Jul 2008 11:48:05 -0700
-Message-ID: <6599ad830807181148x400b5f3u4f4869c83debf374@mail.gmail.com>
-References: <20080718181922.GA31475@us.ibm.com>
+From: Greg KH <gregkh@suse.de>
+Subject: Re: [PATCH 12/15] driver core: Implement tagged directory support
+	for device classes.
+Date: Fri, 18 Jul 2008 11:49:36 -0700
+Message-ID: <20080718184936.GA21343@suse.de>
+References: <m1mykyh2fu.fsf_-_@frodo.ebiederm.org> <m1hcb6h2d2.fsf_-_@frodo.ebiederm.org> <486DD650.3000804@gmail.com> <m1tzf593ny.fsf@frodo.ebiederm.org> <486E2C3B.6020603@gmail.com> <20080704161200.GA1440@suse.de> <m1lk052ptp.fsf@frodo.ebiederm.org> <487D6A24.9070001@gmail.com> <20080717230857.GB28377@suse.de> <48808F79.7080607@gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20080718181922.GA31475-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Content-Type: text/plain; charset=us-ascii
+Return-path: <netdev-owner@vger.kernel.org>
 Content-Disposition: inline
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
+In-Reply-To: <48808F79.7080607@gmail.com>
+Sender: netdev-owner@vger.kernel.org
+To: Tejun Heo <htejun@gmail.com>
+Cc: "Eric W. Biederman" <ebiederm@xmission.com>, Andrew Morton <akpm@linux-foundation.org>, Daniel Lezcano <dlezcano@fr.ibm.com>, linux-kernel@vger.kernel.org, Al Viro <viro@ftp.linux.org.uk>, Linux Containers <containers@lists.osdl.org>, Benjamin Thery <benjamin.thery@bull.net>, netdev@vger.kernel.org
 List-Id: containers.vger.kernel.org
 
-On Fri, Jul 18, 2008 at 11:19 AM, Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org> wrote:
-> I wasn't planning on taking a long lunch at the mini-summit.
->
-> But if a bunch of people attending reply to this email saying we should
-> go, it would be a nice chance to meet the attendents of the other
-> mini-summits (http://www.linuxsymposium.org/2008/minisummits.php)
+On Fri, Jul 18, 2008 at 09:41:29PM +0900, Tejun Heo wrote:
+> Greg KH wrote:
+> > Ok, I'll work to get these in where applicable.
+> 
+> Did this get into 2.6.27?  Or will this have to wait till .28?
 
-My feeling is that we have way too much to get through even with just
-a 30-minute lunch. Assuming that most of those people are also going
-to be at OLS, we should have plenty of chances to socialize with them
-later.
+I haven't sent any patches to Linus yet for 2.6.27, so it hasn't gotten
+there yet.
 
-BTW, I added a bunch more detail to the cgroups section of the
-mini-summit agenda.
+And due to the intrusiveness, and the fact that this hasn't been tested
+at all in any build tree yet, I can't in good concious submit this for
+.27 either.
 
-Paul
+Part of this is my fault, I know, due to vacation and work, but also
+lots is due to the fact that the code showed up so late in the
+development cycle.
 
->
-> -serge
->
-> ----- Forwarded message from "C. Craig Ross" <ccr-Gr7syQlKEaBFgBK04Mzu/R2eb7JE58TQ@public.gmane.org> -----
->
-> Date: Fri, 18 Jul 2008 12:46:48 -0400
-> From: "C. Craig Ross" <ccr-Gr7syQlKEaBFgBK04Mzu/R2eb7JE58TQ@public.gmane.org>
-> To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>,
->        "Adams, Aland (OSLO R&D)" <aland.adams-VXdhtT5mjnY@public.gmane.org>,
->        "Brown, Len" <len.brown-ral2JQCrhuEAvxtiuMwx3w@public.gmane.org>,
->        "John W. Linville" <linville-2XuSBdqkA4R54TAoqtyWWQ@public.gmane.org>,
->        Paul Moore <paul.moore-VXdhtT5mjnY@public.gmane.org>
-> Subject: LS Mini Summit Update (18/07/08)
->
-> Hi,
->
-> We are going to be doing a group lunch at a restaurant that
-> is approx. 10 minutes walk from the mini summit venues.  What
-> we would like to do is extend lunch to 1.5hrs just to allow for people
-> to get to and from the location. So lunch will be from 12h30 - 14h00.
-> We have extended the rooms until 19h00 so hopefully this doesn't
-> impact anyone's schedule.
->
-> If you could please email your registered attendees and get 100%
-> confirmation
-> from them it would be greatly appreciated so that we can plan everything
-> accordingly.  It can be Monday AM EST at the absolute latest but this
-> weekend would be fantastic.  If it is easier, just have them email me
-> directly
-> with their confirmation and which mini summit they are attending since I
-> am sure that most of you don't want to spend the weekend going through
-> emails. :-)
->
-> If you have any questions please don't hesitate to contact me.
->
-> Cheers,
->
-> C.
->
-> ----- End forwarded message -----
-> _______________________________________________
-> Containers mailing list
-> Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-> https://lists.linux-foundation.org/mailman/listinfo/containers
->
-> _______________________________________________
-> Devel mailing list
-> Devel-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org
-> https://openvz.org/mailman/listinfo/devel
->
+I'll add it to my tree, and get it some testing in the next cycle of
+linux-next until 2.6.27 is out, and then if it's still looking good, go
+into .28.
+
+Hope this helps,
+
+greg k-h
