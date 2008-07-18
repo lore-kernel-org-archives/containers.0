@@ -1,14 +1,16 @@
-From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: Re: [BUG][cryo] Create file on restart ?
-Date: Thu, 17 Jul 2008 19:35:19 -0400
-Message-ID: <487FD737.3020109@cs.columbia.edu>
-References: <20080716185027.GA1335@us.ibm.com>	<20080716192604.GA27454@us.ibm.com>	<20080716204529.GA4278@us.ibm.com>	<20080716205737.GA2082@us.ibm.com>	<20080716212609.GB4278@us.ibm.com>	<1216247460.4844.177.camel@localhost.localdomain>
-	<20080717022134.GB21726@us.ibm.com>
+From: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [Devel] [RFC PATCH 0/5] Resend -v2 - Use procfs to change a
+	syscall behavior
+Date: Thu, 17 Jul 2008 18:09:25 -0700
+Message-ID: <1216343365.4844.308.camel@localhost.localdomain>
+References: <20080708112422.164370000@bull.net>
+	<20080709221028.GA4926@martell.zuzino.mipt.ru>
+	<m1tzeyd0x3.fsf@frodo.ebiederm.org>  <487FCAF0.70607@cs.columbia.edu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20080717022134.GB21726-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <487FCAF0.70607-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,86 +20,81 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Cc: Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
+To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Nadia.Derbey-6ktuUTfB/bM@public.gmane.org, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
 
-
-Serge E. Hallyn wrote:
-> Quoting Matt Helsley (matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org):
->> On Wed, 2008-07-16 at 14:26 -0700, sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org wrote:
->>> Serge E. Hallyn [serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org] wrote:
->>> | Quoting sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org (sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org):
->>> | > Serge E. Hallyn [serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org] wrote:
->>> | > | Quoting sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org (sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org):
->>> | > | > 
->>> | > | > cryo does not (cannot ?) recreate files if the application created
->>> | > | 
->>> | > | I think that's for the best.
->>> | > | 
->>> | > | Don't you?
->>> | > 
->>> | > I can understand that configuration or data files should exist, but
->>> | > not sure about temporary or log files that an application created
->>> | > upon start-up and expects to be present. Should the admin find
->>> | > out about them and create them by hand before restart ?
->>> | 
->>> | I think the admin should have set the destination environment such that
->>> | the task is restarted in the same network fs in the same directory, with
->>> | no files having been deleted.
->> [Assuming Serge meant: s/network fs/network, fs,/]
+On Thu, 2008-07-17 at 18:42 -0400, Oren Laadan wrote:
 > 
-> Well no I meant a network filesystem - at least if you're migrating apps
-> around a cluster.
+> Eric W. Biederman wrote:
+> > Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org> writes:
 > 
->>> or new files created ? For instance if the application was checkpointed
->>> before it created a temporary file with O_EXCL flag, that temporary
->>> file must not exist when restarting ?
->> 	I think that's not a problem given my assumptions above. The filesystem
->> that the application restarts in would be the same because the admin
->> should have set up the restart environment as Serge suggested. The admin
->> can't rely on restart in an alternate environment. However, given
->> knowledge of the application and environment, using an alternate
->> environment may be a risk the admin is willing to take.
+> I seem to not have received any of Alexey's emails... ?
 > 
-> Yup.  But Suka is right that in the case of the checkpointed app
-> continuing to run for a bit before being killed and restarted, it could
-> get out of whack with respect to the file system.
+> > 
+> >> On Tue, Jul 08, 2008 at 01:24:22PM +0200, Nadia.Derbey-6ktuUTfB/bM@public.gmane.org wrote:
+> >>> # echo "LONG1 XX" > /proc/self/task/<my_tid>/next_syscall_data
+> >> Same stuff.
+> >>
+> >> There is struct task_struct::did_exec , what about it?
+> >>
+> >> Also, patches are about de-serializing, how serializing from userspace looks
+> >> like?
+> >> You freezed group of processes, then what?
+> >>
+> >> How, for example, dump all VMAs correctly?
+> >> [prepares counter-example]
+> > 
+> > Alexey userspace vs a kernel space implementation is the wrong argument.
+> > 
+> > It is clearly established that the current user space interfaces are
+> > insufficient to do the job.  So we need to implement something in the kernel.
+> > 
+> > Further I have heard of no one suggesting running a single kernel on multiple
+> > machines.  Therefore there no one seems to be doing this entirely in the kernel
+> > and so we need a user space component.
 > 
->>> | Am I wrong?
->>>
->>> So we take a snapshot of the FS and checkpoint the application. Do they
->>> need to be atomic ?
->> 	If all the applications in a container are frozen then I think we can
->> get fs snapshots consistent with checkpointed applications.
->> Otherwise, yes, I think we'd be gambling that the checkpointed
->> application isn't interacting with another, running, application via an
->> intermittently-shared file.
+> I'm not sure I understand this argument ?
 > 
-> What fun :)
+> In a kernel implementation, the component will merely open a file descriptor
+> (to which the data will be streamed), freeze the container and invoke a
+> system call. In a userland implementation, the component will do most of
+> the work by continuously probing the kernel for information about the
+> processes that are being checkpointed.
 > 
-> I wonder whether the experience of users of c/r on sgi and cray could
-> teach us anything here.
-
-if you are checkpointing to migrate the application - you need not worry
-about the file system, as it may not change while you migrate.
-
-if you are checkpointing to be able to be able to recover from an error
-later, you need to snapshot the file system, but you may get away with
-it in some cases.
-
-if you are checkpointing to be able to travel back in time (return to
-older than last checkpoint), you certainly need to snapshot the file system.
-
-in any event, I think this is something we may want to discuss in the
-mini-summit.
-
-Oren.
-
+> So, of course we need a "component" - but what does that component do ?
 > 
-> -serge
-> _______________________________________________
-> Containers mailing list
-> Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-> https://lists.linux-foundation.org/mailman/listinfo/containers
+> > So the question should not be user space vs. kernel space but can we build clean
+> > interfaces for checkpoint/restart?  What will those interfaces be?
+> 
+> My question is why build a set of interfaces to export this and that from
+> the kernel to user space ?  if a kernel implementation (with minimal user
+> space support) is chosen, then information extraction (and restoration) is
+> straightforward and we don't get ourselves tied until the end of times to
+> API exported to userland.
+
+	That still seems like an API exported to userland. It just combines the
+data into one block rather than distributing it amongst a bunch of
+pseudo-filesystems. Does this form of API really free us from always
+supporting it in the future?
+
+> The output of the module will be a binary (like a core dump) that can be
+> used by the same module to restart. User utilities will be available to
+> inspect the contents (for whatever reason - like a debugger can inspect a
+> core dump), and moreover to convert between old and new formats when moving
+> from older to newer kernels.
+>
+> By doing so, we avoid many API issues - design, complexity, contents, and
+> the amount of interfaces to be added.
+
+	Userspace is expected to inspect or convert the binary data. How does
+that truly avoid many of the API issues mentioned above? If it's really
+supposed to be a minimal API then the binary should be considered opaque
+and userspace tools which inspect or convert these binaries should be
+considered unreliable hacks at best. Otherwise it seems to me that it
+has most of the familiar problems associated with a kernel/userspace API
+-- including an obligation to support it.
+
+Cheers,
+	-Matt Helsley
