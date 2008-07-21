@@ -1,14 +1,14 @@
 From: Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
-Subject: Re: [RFC][PATCH 1/4] res_counter set_limit and -EBUSY.
-Date: Mon, 21 Jul 2008 21:32:10 +0400
-Message-ID: <4884C81A.8090006@openvz.org>
+Subject: Re: [RFC][PATCH 2/4] res_counter check usage under val
+Date: Mon, 21 Jul 2008 21:41:35 +0400
+Message-ID: <4884CA4F.9060003@openvz.org>
 References: <20080718193123.cf74b574.kamezawa.hiroyu@jp.fujitsu.com>
-	<20080718193437.ae79478a.kamezawa.hiroyu@jp.fujitsu.com>
+	<20080718193530.578fb1e3.kamezawa.hiroyu@jp.fujitsu.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20080718193437.ae79478a.kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+In-Reply-To: <20080718193530.578fb1e3.kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -23,46 +23,36 @@ Cc: "yamamoto-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org" <yamamoto-jCdQPDEk3idL9jV
 List-Id: containers.vger.kernel.org
 
 KAMEZAWA Hiroyuki wrote:
-> Add an interface to set limit. This is necessary to memory resource controller
-> because it shrinks usage at set limit.
-> 
-> (*) Other controller may not need this interface to shrink usage because
->     shrinking is not necessary or impossible.
-> 
-> This is an enhancement.
-> named as res_counter-limit-change-ebusy.patch
-> 
-> Changelog v1->v2
->   - fixed white space bug.
+> Add an interface to check usage is below "val"
 > 
 > Signed-off-by: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
-
-Acked-by: Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
-
 > 
->  include/linux/res_counter.h |   15 +++++++++++++++
->  1 file changed, 15 insertions(+)
+>  include/linux/res_counter.h |   13 +++++++++++++
+>  1 file changed, 13 insertions(+)
 > 
-> Index: linux-2.6.26-rc8-mm1/include/linux/res_counter.h
+> Index: mmtom-stamp-2008-07-15-15-39/include/linux/res_counter.h
 > ===================================================================
-> --- linux-2.6.26-rc8-mm1.orig/include/linux/res_counter.h
-> +++ linux-2.6.26-rc8-mm1/include/linux/res_counter.h
-> @@ -176,4 +176,19 @@ static inline bool res_counter_can_add(s
+> --- mmtom-stamp-2008-07-15-15-39.orig/include/linux/res_counter.h
+> +++ mmtom-stamp-2008-07-15-15-39/include/linux/res_counter.h
+> @@ -191,4 +191,17 @@ static inline int res_counter_set_limit(
 >  	return ret;
 >  }
 >  
-> +static inline int res_counter_set_limit(struct res_counter *cnt,
-> +	unsigned long long limit)
+> +static inline int res_counter_check_under_val(struct res_counter *cnt,
+> +	unsigned long long val)
 > +{
 > +	unsigned long flags;
-> +	int ret = -EBUSY;
+> +	int ret = 0;
 > +
-> +	spin_lock_irqsave(&cnt->lock, flags);
-> +	if (cnt->usage < limit) {
-> +		cnt->limit = limit;
-> +		ret = 0;
-> +	}
-> +	spin_unlock_irqrestore(&cnt->lock, flags);
+> +	spin_lock_irqsave(&cnt->flags, flags);
+
+Is this spilock protection *really* required? As far as I see
+from its usage it is racy itself wrt to res_counter update, so 
+this locking looks superfluous.
+
+> +	if (cnt->usage < val)
+> +		ret = 1;
+> +	spin_unlock_irqrestore(&cnt->flags, flags);
 > +	return ret;
 > +}
 > +
