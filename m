@@ -1,11 +1,13 @@
-From: "Duane Simpson" <trigoneutic-jJnelo03C+348q9Kxb9HqgC/G2K4zDHf@public.gmane.org>
-Subject: Office 2007 Ultimate
-Date: Sat, 19 Jul 2008 20:00:24 -0300
-Message-ID: <000301c8e9f3$04634b00$0100007f@hpfmyak>
+From: "Peter Dolding" <oiaohm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Subject: Roadmap for features planed for containers where and Some future
+	features ideas.
+Date: Mon, 21 Jul 2008 21:03:47 +1000
+Message-ID: <e7d8f83e0807210403g12b980e8jad4fa7e10d8b410e@mail.gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Content-Disposition: inline
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -15,36 +17,31 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
+To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-:The following titles and more are now available for pcs and macs:
+http://opensolaris.org/os/community/brandz/  I would like to see if
+something equal to this is on the roadmap in particular.   Being able
+to run solaris and aix closed source binaries contained would be
+useful.
 
-Creative Suite Master Collection
-Office 2007 Ultimate
-CyberLink PowerDVD ULTRA EDITION v8
-Office 2007 Ultimate
-FruityLoops Studio 8 XXL Edition
-FruityLoops Studio 8 XXL Edition
+Other useful feature is some way to share a single process between PID
+containers as like a container bridge.  For containers used for
+desktop applications not having a single X11 server  interfacing with
+video card is a issue.
 
-: saveonadobetoday . com :
+These container bridges avoid having to go threw network cards and
+other means to share data between containers.  A user space solution.
 
-System Requirements
-: For PC:
-: Intel Pentium 4 (1.4GHz processor), Intel Centrino, Intel Xeon FruityLoops Studio 8 XXL Edition or Intel Core Duo (or FruityLoops Studio 8 XXL Edition) processor; SSE2-enabled processor required for AMD systems & Microsoft Windows XP with Service Pack 2 or Microsoft Windows Vista Home Premium, Business, Ultimate, or Enterprise (certified for 32-bit editions)
-: 512MB of RAM or more
-: 1GB of available hard-disk space (additional free space FruityLoops Studio 8 XXL Edition)
-: Microsoft compatible sound card (multichannel ASIO-compatible sound card recommended)
-: 1,024x768 monitor resolution with 32-bit color adapter recommended
-: CD-R or DVD-ROM drive
+I know this reduces secuirty but when you need a application form X
+distrobuton and you have Y distribution and its opengl heavy you are
+kinda stuffed at moment.
 
-: For MAC:
-: PowerPC G4 or G5 or multicore Intel processor
-: Mac OS X or similar
-: 512MB of RAM or more
-: 1GB of available hard-disk space
-: Core Audio compatible sound card
-: 1,024x768 monitor resolution with 32-bit color adapter
-: DVD-ROM drive: DVD+-R burner required for DVD creation
+Final one is some form of LSM processing different.  Lot of the Linux
+Secuirty channel talk about containers as light weight virtualisation
+so will never need to run a OS inside with a different LSM profile to
+the master OS.   If containers plan to go after brandz like containers
+this needs to be made clear that LSM different processing will be
+required.
 
-Multilateral talks aimed at curbing Iran's uranium enrichment program began Saturday in Geneva. But any hope that the Bush administration's decision to send a high-ranking envoy to the talks will change Iran's position faded when an Iranian official said Iran would not stop enriching uranium.
+Peter Dolding
