@@ -1,15 +1,16 @@
-From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
+From: "Peter Dolding" <oiaohm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 Subject: Re: Roadmap for features planed for containers where and Some future
 	features ideas.
-Date: Mon, 21 Jul 2008 05:13:27 -0700
-Message-ID: <m1k5ffmo48.fsf@frodo.ebiederm.org>
+Date: Mon, 21 Jul 2008 23:21:35 +1000
+Message-ID: <e7d8f83e0807210621y74ef1307x1c0ecbfb33182e85@mail.gmail.com>
 References: <e7d8f83e0807210403g12b980e8jad4fa7e10d8b410e@mail.gmail.com>
+	<m1k5ffmo48.fsf@frodo.ebiederm.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <e7d8f83e0807210403g12b980e8jad4fa7e10d8b410e-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
-	(Peter Dolding's message of "Mon, 21 Jul 2008 21:03:47 +1000")
+In-Reply-To: <m1k5ffmo48.fsf-B27657KtZYmhTnVgQlOflh2eb7JE58TQ@public.gmane.org>
+Content-Disposition: inline
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,49 +20,64 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Peter Dolding <oiaohm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-"Peter Dolding" <oiaohm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org> writes:
-
-> http://opensolaris.org/os/community/brandz/  I would like to see if
-> something equal to this is on the roadmap in particular.   Being able
-> to run solaris and aix closed source binaries contained would be
-> useful.
-
-There have been projects to do this at various times on linux.  Having
-a namespace dedicated to a certain kind of application is no big deal.
-Someone would need to care enough to test and implement it though.
-
-> Other useful feature is some way to share a single process between PID
-> containers as like a container bridge.  For containers used for
-> desktop applications not having a single X11 server  interfacing with
-> video card is a issue.
-
-X allows network connections, and I think unix domain sockets will work.
-The latter I need to check on.
-
-The pid namespace is well defined and no a task will not be able
-to change it's pid namespace while running.  That is nasty.
-
-> These container bridges avoid having to go threw network cards and
-> other means to share data between containers.  A user space solution.
-
-There are lots of opportunities for user space solutions.
-
-> I know this reduces secuirty but when you need a application form X
-> distrobuton and you have Y distribution and its opengl heavy you are
-> kinda stuffed at moment.
+On Mon, Jul 21, 2008 at 10:13 PM, Eric W. Biederman
+<ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org> wrote:
+> "Peter Dolding" <oiaohm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org> writes:
 >
-> Final one is some form of LSM processing different.  Lot of the Linux
-> Secuirty channel talk about containers as light weight virtualisation
-> so will never need to run a OS inside with a different LSM profile to
-> the master OS.   If containers plan to go after brandz like containers
-> this needs to be made clear that LSM different processing will be
-> required.
+>> http://opensolaris.org/os/community/brandz/  I would like to see if
+>> something equal to this is on the roadmap in particular.   Being able
+>> to run solaris and aix closed source binaries contained would be
+>> useful.
+>
+> There have been projects to do this at various times on linux.  Having
+> a namespace dedicated to a certain kind of application is no big deal.
+> Someone would need to care enough to test and implement it though.
+>
+>> Other useful feature is some way to share a single process between PID
+>> containers as like a container bridge.  For containers used for
+>> desktop applications not having a single X11 server  interfacing with
+>> video card is a issue.
+>
+> X allows network connections, and I think unix domain sockets will work.
+> The latter I need to check on.
 
-We have had that discussion mostly this appears to be a measure of
-matureness.
+Does to a point until you see that local X11 is using shared memory
+for speed.   Hardest issue is getting GLX working.
 
-Eric
+> The pid namespace is well defined and no a task will not be able
+> to change it's pid namespace while running.  That is nasty.
+Ok if that is imposable to extremely risky.
+
+What about a form of a proxy pid in the pid namespace proxying
+application chatter between 1 name space to another.  Applications
+being the bridge if its not possible to do it invisible to application
+could be made aware of it.   So they can provide shared memory and the
+like across pid namespaces. But only where they have a activated proxy
+to do there bidding.  This also allows applications to maintain there
+own internal secuirty between namespaces.
+
+Ie application is 1 pid number in its source container and virtual pid
+numbers in the following containers.  Symbolic linking at task level
+yes a little warped.  Yes this will annoying mean a special set of
+syscalls and a special set of capabilities and restrictions.  Like PID
+containers starting up forbidding proxy pid's or allowing them.
+
+If I am thinking right that avoids not be able to change it's pid.
+Instead sending and receiving the messages you need in the other name
+space threw a small proxy.   Yes I know that will cost some
+performance.
+
+Basically want to setup a neat universal container way of handling
+stuff like http://www.cs.toronto.edu/~andreslc/xen-gl/ without having
+to go network and hopefully in a way that limitations don't have to
+exist since messages are really only be sent threw 1 X11 server to 1
+driver system.  Only thing is really sending the correct messages to
+the correct place.   There will most likely be other services were a
+single entity at times is preferred.   Worst out come is if proxying
+.so is required.
+
+Peter Dolding
