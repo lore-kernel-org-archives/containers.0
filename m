@@ -1,13 +1,12 @@
-From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+From: Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
 Subject: Re: C/R minisummit notes
-Date: Wed, 23 Jul 2008 15:18:33 -0500
-Message-ID: <20080723201833.GA9771@us.ibm.com>
+Date: Wed, 23 Jul 2008 22:24:52 +0200
+Message-ID: <48879394.8040602@fr.ibm.com>
 References: <4887163F.5090801@fr.ibm.com> <48877EA7.1050206@cs.columbia.edu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
 In-Reply-To: <48877EA7.1050206-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
@@ -19,10 +18,10 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
+Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Quoting Oren Laadan (orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org):
+Oren Laadan wrote:
 > Hi,
 > 
 > I've placed a somewhat more detailed summary on the wiki:
@@ -38,11 +37,9 @@ Quoting Oren Laadan (orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org):
 > 
 > Please confirm your participation.
 
-Hey,
+Benjamin, Dave and I, we will come.
+Pavel, Denis and Andrey will come too.
 
-I've committed to dinner with another group.  I'm definately up for
-breakfast.  So I'll be at 3d floor congress center at mall entrance at
-8:30am.
+I am looking for the Kerrighed guys to come too.
 
-thanks,
--serge
+We meet in the hall of the congress at 7:00pm
