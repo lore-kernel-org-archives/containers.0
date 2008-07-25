@@ -1,15 +1,15 @@
 From: Hugh Dickins <hugh-DTz5qymZ9yRBDgjK7y7TUQ@public.gmane.org>
 Subject: Re: memrlimit controller merge to mainline
-Date: Fri, 25 Jul 2008 17:46:45 +0100 (BST)
-Message-ID: <Pine.LNX.4.64.0807251715070.12089@blonde.site>
+Date: Fri, 25 Jul 2008 18:38:49 +0100 (BST)
+Message-ID: <Pine.LNX.4.64.0807251820440.20617@blonde.site>
 References: <6599ad830807250114h7ab0fdb1u98c0968961647642@mail.gmail.com>
 	<Pine.LNX.4.64.0807251004570.31120@blonde.site>
-	<6599ad830807250706t23e483b5j18d683c0470d1d22@mail.gmail.com>
+	<4889D5EE.4010601@linux.vnet.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <6599ad830807250706t23e483b5j18d683c0470d1d22-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
+In-Reply-To: <4889D5EE.4010601-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,55 +19,31 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
-Cc: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Rik van Riel <riel-ebMLmSuQjDVBDgjK7y7TUQ@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+To: Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Cc: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Fri, 25 Jul 2008, Paul Menage wrote:
-> On Fri, Jul 25, 2008 at 5:06 AM, Hugh Dickins <hugh-DTz5qymZ9yRBDgjK7y7TUQ@public.gmane.org> wrote:
-> >
-> > (Different topic, but one day I ought to get around to saying again
-> > how absurd I think a swap controller; whereas a mem+swap controller
-> > makes plenty of sense.  I think Rik and others said the same.)
+On Fri, 25 Jul 2008, Balbir Singh wrote:
 > 
-> Agreed that a swap controller without a memory controller doesn't make
-> much sense, but a memory controller without a swap controller can make
-> sense on machines that don't intend to use swap.
-
-I agree that a memory controller without a swap controller can
-make sense: I hope so, anyway, since that's what's in mainline.
-Even if swap is used, memory is a more precious resource than swap,
-and you were right to go about controlling memory first.
-
+> I'll try and recreate the problem and fix it. If memrlimit_cgroup_uncharge_as()
+> created the problem, it's most likely related to mm->owner not being correct and
+> we are dereferencing the wrong memory.
 > 
-> So if they were separate controllers, we'd use the proposed cgroup
-> dependency features to make the swap controller depend on the memory
-> controller - in which case you'd only be able to mount the swap
-> controller on a hierarchy that also had the memory controller, and the
-> swap controller would be able to make use of the page ownership
-> information.
-> 
-> It's more of a modularity issue than a functionality issue, I think -
-> the swap controller and memory controller are tracking fundamentally
-> different things (space on disk versus pages in memory), and the only
-> dependency between them is the "memory controller" tracking the
-> ownership of a page and providing it to the "swap controller".
+> Thanks for the bug report, I'll look further.
 
-It sounds as if you're interpreting my "mem+swap controller" as a
-mem controller and a swap controller and the swap controller makes
-use of some of the mem controller infrastructure.
+Good luck!  I have only seen it once, on a dual-core laptop; though
+I don't remember to try swapoff while busy as often as I should (be
+sure to alternate between a couple or more of swapareas, so you can
+swap a new one on just before swapping an old one off, to be pretty
+sure of success).
 
-No, I'm trying to say something stronger than that.  I'm saying,
-as I've said before, that I cannot imagine why anyone would want
-to control swap itself - what they want to control is the total
-of mem+swap.  Swap is a second-class citizen, nobody wants swap
-if they can have mem, so why control it separately?
+May be easier to find in the source: my suspicion is that a bad
+mm_users assumption will come into it.  But I realize now that it
+could be entirely unrelated to memrlimit, just that uncharge_as
+was the one to get hit by bad refcounting elsewhere.
 
-IIRC Rik expressed the same by pointing out that a cgroup at its
-swap limit would then be forced to grow in mem (until it hits its
-mem limit): so controlling the less precious resource would increase
-pressure on the more precious resource.  (Actually, that probably
-bears little relation to what he said - sorry, Rik!)  I don't recall
-what answer he got, perhaps I'd be persuaded if I heard it again.
+Oh, that reminds me, I never reported back on my res_counter warnings
+at shutdown: never saw them again, once I added in the set of changes
+you came up with shortly after that - thanks.
 
 Hugh
