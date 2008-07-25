@@ -1,14 +1,17 @@
-From: Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
-Subject: Re: C/R minisummit notes (namespace naming)
-Date: Fri, 25 Jul 2008 21:26:28 +0200
-Message-ID: <488A28E4.6080902@fr.ibm.com>
-References: <4887163F.5090801@fr.ibm.com> <m1zlo7a9nq.fsf@frodo.ebiederm.org>
-	<20080725191356.GE28136@us.ibm.com>
+From: Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Subject: Re: memrlimit controller merge to mainline
+Date: Fri, 25 Jul 2008 15:28:11 -0400
+Message-ID: <488A294B.4090609@linux.vnet.ibm.com>
+References: <6599ad830807250114h7ab0fdb1u98c0968961647642@mail.gmail.com>
+	<Pine.LNX.4.64.0807251004570.31120@blonde.site>
+	<6599ad830807250706t23e483b5j18d683c0470d1d22@mail.gmail.com>
+	<Pine.LNX.4.64.0807251715070.12089@blonde.site>
+Reply-To: balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20080725191356.GE28136-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <Pine.LNX.4.64.0807251715070.12089-popGQ1T0qN76K7/ahGyk6A@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,56 +21,68 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+To: Hugh Dickins <hugh-DTz5qymZ9yRBDgjK7y7TUQ@public.gmane.org>
+Cc: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Rik van Riel <riel-ebMLmSuQjDVBDgjK7y7TUQ@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Serge E. Hallyn wrote:
-> Quoting Eric W. Biederman (ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org):
->> Currently we have three possibilities on how to name pid namespaces.
->> - indirect via processes
->> - pids
->> - names in the filesystem
->>
->> We discussed this a bit in the hallway track and pids are look like the way
->> to go. Pavel has a patch in progress to help sort this out.
->>
->> The practical problem we have today is that we need a way to wait for the network
->> namespace in particular and namespaces in general to exit.
->>
->> At a first glance waitid(P_NS, <pid>,....) looks like a useful way to achieve
->> this.  After looking at wait a bit more it really is fundamentally just an exit
->> status reaper of zombies, that has the option of blocking when the zombies
->> do not yet exist.  In any kind of event loop you would wait for SIGCHLD either
->> as a signal or with signalfd.
->>
->> So how shall we wait for a namespace to exit?  My brainstorm tonight suggests
->> inotify_add_watch(ifd, "/proc/ns/<pid>", IN_DELETE);
->>
->> Eric
+Hugh Dickins wrote:
+> On Fri, 25 Jul 2008, Paul Menage wrote:
+>> On Fri, Jul 25, 2008 at 5:06 AM, Hugh Dickins <hugh-DTz5qymZ9yRBDgjK7y7TUQ@public.gmane.org> wrote:
+>>> (Different topic, but one day I ought to get around to saying again
+>>> how absurd I think a swap controller; whereas a mem+swap controller
+>>> makes plenty of sense.  I think Rik and others said the same.)
+>> Agreed that a swap controller without a memory controller doesn't make
+>> much sense, but a memory controller without a swap controller can make
+>> sense on machines that don't intend to use swap.
 > 
-> I'm sorry, I'm still not quite clear on...
+> I agree that a memory controller without a swap controller can
+> make sense: I hope so, anyway, since that's what's in mainline.
+> Even if swap is used, memory is a more precious resource than swap,
+> and you were right to go about controlling memory first.
 > 
-> Why?
-> 
-> You care about when the tasks exit, and you care about when network
-> devices, for instance, need to be deleted (which you can presumably
-> get uevents for, when they get moved back into init_net_ns).
-> 
-> Why do you care when the struct net actually gets deleted?
 
-IMO, if we consider a container being an aggregation of different 
-namespaces, we should consider the container dies when all the 
-namespaces are dead.
+Yes, I agree.
 
-One good example is an application ran inside a container and doing a 
-bulk data writing over the network. When the application finish its last 
-  call to "send" it will exits. At this point, there is no more 
-processes running inside the container but we can not consider the 
-container is dead because there are still some pending datas in the 
-socket to be delivered to the peer.
+>> So if they were separate controllers, we'd use the proposed cgroup
+>> dependency features to make the swap controller depend on the memory
+>> controller - in which case you'd only be able to mount the swap
+>> controller on a hierarchy that also had the memory controller, and the
+>> swap controller would be able to make use of the page ownership
+>> information.
+>>
+>> It's more of a modularity issue than a functionality issue, I think -
+>> the swap controller and memory controller are tracking fundamentally
+>> different things (space on disk versus pages in memory), and the only
+>> dependency between them is the "memory controller" tracking the
+>> ownership of a page and providing it to the "swap controller".
+> 
+> It sounds as if you're interpreting my "mem+swap controller" as a
+> mem controller and a swap controller and the swap controller makes
+> use of some of the mem controller infrastructure.
+> 
+> No, I'm trying to say something stronger than that.  I'm saying,
+> as I've said before, that I cannot imagine why anyone would want
+> to control swap itself - what they want to control is the total
+> of mem+swap.  Swap is a second-class citizen, nobody wants swap
+> if they can have mem, so why control it separately?
+> 
+> IIRC Rik expressed the same by pointing out that a cgroup at its
+> swap limit would then be forced to grow in mem (until it hits its
+> mem limit): so controlling the less precious resource would increase
+> pressure on the more precious resource.  (Actually, that probably
+> bears little relation to what he said - sorry, Rik!)  I don't recall
+> what answer he got, perhaps I'd be persuaded if I heard it again.
+> 
 
-Eric will post a patch to automatically destroy the virtual devices when 
-the netns is destroyed, so there is no way to know if a network 
-namespace is dead or not as the uevent socket will not deliver an event 
-outside of the container.
+I see what your saying. When you look at Linux right now, we control swap
+independent of memory, so I am not totally opposed to setting swap, instead of
+swap+mem. I might not want to swap from a particular cgroup, in which case, I
+set swap to 0 and risk OOMing, which might be an acceptable trade-off depending
+on my setup. I could easily change this policy on demand and add swap if OOMing
+was no longer OK.
+
+-- 
+	Warm Regards,
+	Balbir Singh
+	Linux Technology Center
+	IBM, ISTL
