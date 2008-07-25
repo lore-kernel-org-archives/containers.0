@@ -1,7 +1,7 @@
 From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH 1/2] introduce sys_restore
-Date: Fri, 25 Jul 2008 17:58:49 -0500
-Message-ID: <20080725225849.GA28764@us.ibm.com>
+Subject: [PATCH 2/2] sys_restore: set the pid number
+Date: Fri, 25 Jul 2008 17:59:35 -0500
+Message-ID: <20080725225935.GB28764@us.ibm.com>
 References: <20080725225655.GA28276@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -21,102 +21,67 @@ Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 To: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Create a useless (?) sys_restore system call.  All it does
-is read a "checkpoint file" :) for a pid number and a file
-to execute.
+Set the pid number for a restored task.  This is purely a toy, as it
+only sets the pidnr in the lowest level pid namespace.
 
-Since we don't take things like argv and envp and registers
-from the checkpoint file, in order to make this easily
-testable, we take those things as arguments.
-Signed-off-by: Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org> 
-Signed-off-by: Dave Hansen <dave-gkUM19QKKo4@public.gmane.org>
+Signed-off-by: Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 ---
- arch/x86/kernel/process_32.c       |   10 ++++++++
- arch/x86/kernel/syscall_table_32.S |    2 +
- kernel/fork.c                      |   43 ++++++++++++++++++++++++++++++++++++
- 3 files changed, 55 insertions(+), 0 deletions(-)
+ kernel/fork.c |    5 +++++
+ kernel/pid.c  |   19 +++++++++++++++++++
+ 2 files changed, 24 insertions(+), 0 deletions(-)
 
-diff --git a/arch/x86/kernel/process_32.c b/arch/x86/kernel/process_32.c
-index 0c3927a..e11627d 100644
---- a/arch/x86/kernel/process_32.c
-+++ b/arch/x86/kernel/process_32.c
-@@ -688,6 +688,16 @@ out:
- 	return error;
- }
- 
-+long do_restore(unsigned int fd,
-+		char __user * __user *argv,
-+                char __user * __user *envp,
-+		struct pt_regs *regs);
-+
-+asmlinkage long sys_restore(struct pt_regs regs)
-+{
-+	return do_restore(regs.bx, regs.cx, regs.dx, &regs);
-+}
-+
- #define top_esp                (THREAD_SIZE - sizeof(unsigned long))
- #define top_ebp                (THREAD_SIZE - 2*sizeof(unsigned long))
- 
-diff --git a/arch/x86/kernel/syscall_table_32.S b/arch/x86/kernel/syscall_table_32.S
-index adff556..019a8e4 100644
---- a/arch/x86/kernel/syscall_table_32.S
-+++ b/arch/x86/kernel/syscall_table_32.S
-@@ -326,3 +326,5 @@ ENTRY(sys_call_table)
- 	.long sys_fallocate
- 	.long sys_timerfd_settime	/* 325 */
- 	.long sys_timerfd_gettime
-+	.long sys_restore
-+	
 diff --git a/kernel/fork.c b/kernel/fork.c
-index adefc11..0e43f69 100644
+index 0e43f69..41c46d2 100644
 --- a/kernel/fork.c
 +++ b/kernel/fork.c
-@@ -1679,3 +1679,46 @@ int unshare_files(struct files_struct **displaced)
- 	task_unlock(task);
- 	return 0;
+@@ -1685,6 +1685,8 @@ int unshare_files(struct files_struct **displaced)
+ char buf[CKPT_SIZE];
+ char exe_filename[PAGE_SIZE];
+ 
++extern int choose_pidmap(struct pid *pid, int new);
++
+ /*
+  * userspace will already have made us a new pidns
+  */
+@@ -1717,6 +1719,9 @@ long do_restore(unsigned int fd,
+ 	if (nr_scanned != 2)
+ 		return -EINVAL;
+ 
++	ret = choose_pidmap(task_pid(current), pid);
++	if (!ret)
++		return -EAGAIN;
+ 
+ 	ret = do_execve(exe_filename, argv, envp, regs);
+ out:
+diff --git a/kernel/pid.c b/kernel/pid.c
+index 30bd5d4..88a5e2a 100644
+--- a/kernel/pid.c
++++ b/kernel/pid.c
+@@ -122,6 +122,25 @@ static void free_pidmap(struct upid *upid)
+ 	atomic_inc(&map->nr_free);
  }
-+
-+
-+#define CKPT_SIZE (PAGE_SIZE*4)
-+char buf[CKPT_SIZE];
-+char exe_filename[PAGE_SIZE];
-+
-+/*
-+ * userspace will already have made us a new pidns
-+ */
-+long do_restore(unsigned int fd,
-+		char __user * __user *argv,
-+                char __user * __user *envp,
-+		struct pt_regs *regs)
+ 
++int choose_pidmap(struct pid *pid, int new)
 +{
-+	int nr_scanned;
-+        struct file *file;
-+        long ret = -EBADF;
-+        int fput_needed;
-+	int pid;
++	struct pidmap *map;
++	int level = pid->level;
++	struct upid *upid = &pid->numbers[level];
++	struct pid_namespace *pid_ns = upid->ns;
++	int old = upid->nr;
 +
-+	if (!is_container_init(current)) {
-+		printk("I am not init\n");
-+		return -EPERM;
++	map = &pid_ns->pidmap[new/BITS_PER_PAGE];
++	if (!test_and_set_bit(new, map->page)) {
++		map = &pid_ns->pidmap[old/BITS_PER_PAGE];
++		clear_bit(old, map->page);
++		upid->nr = new;
++		return 1;
 +	}
 +
-+        file = fget_light(fd, &fput_needed);
-+	if (!file)
-+		goto out;
-+	ret = kernel_read(file, 0, buf, CKPT_SIZE);
-+	fput_light(file, fput_needed);
-+	if (ret <= 0)
-+		goto out;
-+	
-+	nr_scanned = sscanf(buf, "%d %s", &pid, exe_filename);
-+
-+	if (nr_scanned != 2)
-+		return -EINVAL;
-+
-+
-+	ret = do_execve(exe_filename, argv, envp, regs);
-+out:
-+        return ret;
++	return 0;
 +}
++
+ static int alloc_pidmap(struct pid_namespace *pid_ns)
+ {
+ 	int i, offset, max_scan, pid, last = pid_ns->last_pid;
 -- 
 1.5.4.3
