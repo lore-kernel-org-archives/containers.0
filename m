@@ -1,17 +1,14 @@
-From: "Paul Menage" <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
-Subject: Re: memrlimit controller merge to mainline
-Date: Fri, 25 Jul 2008 15:24:09 -0400
-Message-ID: <6599ad830807251224g218e17faj5c8224ba398a51c8@mail.gmail.com>
-References: <6599ad830807250114h7ab0fdb1u98c0968961647642@mail.gmail.com>
-	<Pine.LNX.4.64.0807251004570.31120@blonde.site>
-	<6599ad830807250706t23e483b5j18d683c0470d1d22@mail.gmail.com>
-	<Pine.LNX.4.64.0807251715070.12089@blonde.site>
+From: Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
+Subject: Re: C/R minisummit notes (namespace naming)
+Date: Fri, 25 Jul 2008 21:26:28 +0200
+Message-ID: <488A28E4.6080902@fr.ibm.com>
+References: <4887163F.5090801@fr.ibm.com> <m1zlo7a9nq.fsf@frodo.ebiederm.org>
+	<20080725191356.GE28136@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <Pine.LNX.4.64.0807251715070.12089-popGQ1T0qN76K7/ahGyk6A@public.gmane.org>
-Content-Disposition: inline
+In-Reply-To: <20080725191356.GE28136-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -21,36 +18,56 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Hugh Dickins <hugh-DTz5qymZ9yRBDgjK7y7TUQ@public.gmane.org>
-Cc: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Rik van Riel <riel-ebMLmSuQjDVBDgjK7y7TUQ@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Fri, Jul 25, 2008 at 12:46 PM, Hugh Dickins <hugh-DTz5qymZ9yRBDgjK7y7TUQ@public.gmane.org> wrote:
-> No, I'm trying to say something stronger than that.  I'm saying,
-> as I've said before, that I cannot imagine why anyone would want
-> to control swap itself - what they want to control is the total
-> of mem+swap.  Swap is a second-class citizen, nobody wants swap
-> if they can have mem, so why control it separately?
+Serge E. Hallyn wrote:
+> Quoting Eric W. Biederman (ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org):
+>> Currently we have three possibilities on how to name pid namespaces.
+>> - indirect via processes
+>> - pids
+>> - names in the filesystem
+>>
+>> We discussed this a bit in the hallway track and pids are look like the way
+>> to go. Pavel has a patch in progress to help sort this out.
+>>
+>> The practical problem we have today is that we need a way to wait for the network
+>> namespace in particular and namespaces in general to exit.
+>>
+>> At a first glance waitid(P_NS, <pid>,....) looks like a useful way to achieve
+>> this.  After looking at wait a bit more it really is fundamentally just an exit
+>> status reaper of zombies, that has the option of blocking when the zombies
+>> do not yet exist.  In any kind of event loop you would wait for SIGCHLD either
+>> as a signal or with signalfd.
+>>
+>> So how shall we wait for a namespace to exit?  My brainstorm tonight suggests
+>> inotify_add_watch(ifd, "/proc/ns/<pid>", IN_DELETE);
+>>
+>> Eric
+> 
+> I'm sorry, I'm still not quite clear on...
+> 
+> Why?
+> 
+> You care about when the tasks exit, and you care about when network
+> devices, for instance, need to be deleted (which you can presumably
+> get uevents for, when they get moved back into init_net_ns).
+> 
+> Why do you care when the struct net actually gets deleted?
 
-Scheduling jobs on to machines is much more straightforward when they
-request xGB of memory and yGB of swap rather than just (x+y)GB of
-(memory+swap). We want to be able to guarantee to jobs that they will
-be able to use xGB of real memory.
+IMO, if we consider a container being an aggregation of different 
+namespaces, we should consider the container dies when all the 
+namespaces are dead.
 
-Actually my preferred approach to swap controlling would be something like:
+One good example is an application ran inside a container and doing a 
+bulk data writing over the network. When the application finish its last 
+  call to "send" it will exits. At this point, there is no more 
+processes running inside the container but we can not consider the 
+container is dead because there are still some pending datas in the 
+socket to be delivered to the peer.
 
-- allow malloc to support mmaping pages from a temporary file rather
-than mmapping anonymous memory
-
-- add an fcntl/ioctl that marks a file as skipping dirty background
-write, i.e. only write out dirty pages from this file when we find
-them in reclaim rather than generally in the background. This makes
-them act more like anonymous pages in terms of write-out.
-
-- don't allow these jobs to use real swap
-
-That way you don't need to track swap space at all, assuming you're
-tracking disk space usage, memory and I/O - the app gets to do its own
-swapping. But I realise this might not work in a general environment.
-
-Paul
+Eric will post a patch to automatically destroy the virtual devices when 
+the netns is destroyed, so there is no way to know if a network 
+namespace is dead or not as the uevent socket will not deliver an event 
+outside of the container.
