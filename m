@@ -1,8 +1,9 @@
-From: Hugh Dickins <hugh-DTz5qymZ9yRBDgjK7y7TUQ@public.gmane.org>
+From: Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 Subject: Re: memrlimit controller merge to mainline
-Date: Fri, 25 Jul 2008 10:06:14 +0100 (BST)
-Message-ID: <Pine.LNX.4.64.0807251004570.31120@blonde.site>
+Date: Fri, 25 Jul 2008 08:30:55 -0400
+Message-ID: <4889C77F.5090909@linux.vnet.ibm.com>
 References: <6599ad830807250114h7ab0fdb1u98c0968961647642@mail.gmail.com>
+Reply-To: balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -18,63 +19,51 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
-Cc: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Cc: "hugh-DTz5qymZ9yRBDgjK7y7TUQ@public.gmane.org" <hugh-DTz5qymZ9yRBDgjK7y7TUQ@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Fri, 25 Jul 2008, Paul Menage wrote:
+Paul Menage wrote:
+> Hi Balbir,
 > 
+> Andrew included the memrlimit controller in his latest set of patches
+> to Linus for mainline.
+> 
+> Although the memrlimit controller basically works as intended, my
+> impression from the mini-summit on Tuesday is that our consensus is
+> that this still doesn't have concrete practical use-cases yet:
+> 
+> - avoiding swap over-use is better handled by the forthcoming swap controller
+> 
+> - applications that can usefully handle mmap() returning NULL don't
+> really exist yet (and since the system as a whole allows address space
+> overcommit limits, if it was practical/useful to write such apps then
+> presumably they would already exist)
+> 
+
+There are applications that can/need to handle overcommit, just that we are not
+aware of them fully. Immediately after our meeting, I was pointed to
+http://www.linuxfoundation.org/en/Carrier_Grade_Linux/Requirements_Alpha1#AVL.4.1_VM_Strict_Over-Commit
+
 > So I think we'd be complicating some of the vm paths in mainline with
 > a feature that isn't likely to get a lot of real use.
 > 
+
+I did disagree in the meeting and there is also the use case of the feature
+forming the infrastructure for other rlimit controllers.
+
 > What do you (and others on the containers list) think? Should we ask
 > Andrew/Linus to hold off on this for now? My preference would be to do
 > that until we have someone who can stand up with a concrete scenario
 > where they want to use this in a real environment.
 
-I see Andrew has already acted, so it's now moot.  But I'd like to
-say that I do agree with you and the conclusion to hold off for now.
+While we can argue about use cases, the feature needs more testing and I am OK
+holding off/reverting the merge to make it more stable and that would give us
+more time to argue on its usefulness. To say that overcommit handling is not
+useful is wrong. Meanwhile, I'll go back and look at the bug report that Hugh
+has posted and also look at building an mlock controller on top of memrlimits.
 
-I was a bit alarmed earlier to see those patches sailing on through;
-but realized that I'd done very little to substantiate my "hatred of
-the whole thing", and decided that I didn't feel strongly enough to
-stand in the way now.  But I am glad you've stepped in, thank you.
-
-(Different topic, but one day I ought to get around to saying again
-how absurd I think a swap controller; whereas a mem+swap controller
-makes plenty of sense.  I think Rik and others said the same.)
-
-By the way, here's a BUG I got from CONFIG_CGROUP_MEMRLIMIT_CTLR=y
-but no use of it, when doing swapoff a week ago.  Not investigated
-at all, I'm afraid, but at a guess it might come from memrlimit work
-placing too much faith in the mm_users count - swapoff is only one
-of several places which have to inc/dec mm_users for some reason.
-
-BUG: unable to handle kernel paging request at 6b6b6b8b
-IP: [<7817078f>] memrlimit_cgroup_uncharge_as+0x18/0x29
-*pde = 00000000 
-Oops: 0000 [#1] PREEMPT SMP 
-last sysfs file: /sys/devices/system/cpu/cpu1/cache/index2/shared_cpu_map
-Modules linked in: acpi_cpufreq snd_pcm_oss snd_mixer_oss snd_seq snd_seq_device thermal ac battery button
-
-Pid: 22500, comm: swapoff Not tainted (2.6.26-rc8-mm1 #7)
-EIP: 0060:[<7817078f>] EFLAGS: 00010206 CPU: 0
-EIP is at memrlimit_cgroup_uncharge_as+0x18/0x29
-EAX: 6b6b6b6b EBX: 7963215c ECX: 7c032000 EDX: 0025e000
-ESI: 96902518 EDI: 9fbb1aa0 EBP: 7c033e9c ESP: 7c033e9c
- DS: 007b ES: 007b FS: 00d8 GS: 0033 SS: 0068
-Process swapoff (pid: 22500, ti=7c032000 task=907e2b70 task.ti=7c032000)
-Stack: 7c033edc 78161323 9fbb1aa0 0000025e ffffff77 7c033ecc 96902518 00000000 
-       ffffffff 7c033ec8 00000000 00000089 7963215c 9fbb1aa0 9fbb1b28 a272f040 
-       7c033ef4 781226b1 9fbb1aa0 9fbb1aa0 790fa884 a272f0c8 7c033f80 78165ce3 
-Call Trace:
- [<78161323>] ? exit_mmap+0xaf/0x133
- [<781226b1>] ? mmput+0x4c/0xba
- [<78165ce3>] ? try_to_unuse+0x20b/0x3f5
- [<78371534>] ? _spin_unlock+0x22/0x3c
- [<7816636a>] ? sys_swapoff+0x17b/0x37c
- [<78102d95>] ? sysenter_past_esp+0x6a/0xa5
- =======================
-Code: 24 0c 00 00 8b 40 20 52 83 c0 0c 50 e8 ad a6 fd ff c9 c3 55 89 e5 8b 45 08 8b 55 0c 8b 80 30 02 00 00 c1 e2 0c 8b 80 24 0c 00 00 <8b> 40 20 52 83 c0 0c 50 e8 e6 a6 fd ff 58 5a c9 c3 55 89 e5 8b 
-EIP: [<7817078f>] memrlimit_cgroup_uncharge_as+0x18/0x29 SS:ESP 0068:7c033e9c
-
-Hugh
+-- 
+	Warm Regards,
+	Balbir Singh
+	Linux Technology Center
+	IBM, ISTL
