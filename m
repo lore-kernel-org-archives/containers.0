@@ -1,10 +1,10 @@
-From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+From: Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
 Subject: Re: C/R minisummit notes (namespace naming)
-Date: Fri, 25 Jul 2008 15:52:56 -0400
-Message-ID: <488A2F18.9030503@cs.columbia.edu>
-References: <4887163F.5090801@fr.ibm.com>
-	<m1zlo7a9nq.fsf@frodo.ebiederm.org>	<20080725191356.GE28136@us.ibm.com>
-	<488A28E4.6080902@fr.ibm.com> <20080725193458.GA12356@us.ibm.com>
+Date: Fri, 25 Jul 2008 22:09:32 +0200
+Message-ID: <488A32FC.7020803@fr.ibm.com>
+References: <4887163F.5090801@fr.ibm.com> <m1zlo7a9nq.fsf@frodo.ebiederm.org>
+	<20080725191356.GE28136@us.ibm.com> <488A28E4.6080902@fr.ibm.com>
+	<20080725193458.GA12356@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -20,10 +20,8 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 List-Id: containers.vger.kernel.org
-
-
 
 Serge E. Hallyn wrote:
 > Quoting Daniel Lezcano (dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org):
@@ -76,17 +74,9 @@ Serge E. Hallyn wrote:
 >> outside of the container.
 > 
 > My question remains: who cares?
-> 
 
-In the context of CR, you'd care if you migrate a container including its
-network stack. In that case, you wanna make sure that:
-(1) you save sockets that have data in their (send) queue but otherwise
-not attached to any specific process, and
-(2) you disable these sockets at the source machine as soon as you enable
-the container on the target machine.
-
-Rethinking this, Serge is probably right because one you migrate the network
-to the target node, you disable the network (of that container) on the source
-node, so you don't care about #2 there anymore...
-
-Oren.
+The container implementation in userspace. Let's imagine it sets some 
+routes outside of the container to route the traffic to the container. 
+It should remove these routes when the container dies. And the container 
+should be considered as dead when the network has died and not when the 
+last process of the container exits.
