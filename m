@@ -1,7 +1,7 @@
 From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH 5/6] user namespaces: refuse create in other user_ns
-Date: Fri, 25 Jul 2008 19:28:01 -0500
-Message-ID: <20080726002801.GE29874@us.ibm.com>
+Subject: [PATCH 6/6] user_namespace: move put_user_ns outside lock
+Date: Fri, 25 Jul 2008 19:28:57 -0500
+Message-ID: <20080726002857.GF29874@us.ibm.com>
 References: <20080726002700.GA29686@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -21,41 +21,40 @@ Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 To: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-From 4d2c23452a67e25856893ab16fefd0f6e5aa58df Mon Sep 17 00:00:00 2001
+Oops, this one was supposed to get folded into the first patch,
+obviously.  Sorry.
+
+-serge
+
+From daa76939c72adf146ded8a39e0211886e2bc943a Mon Sep 17 00:00:00 2001
 From: Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Date: Thu, 24 Jul 2008 06:37:43 -0500
-Subject: [PATCH 5/6] user namespaces: refuse create in other user_ns
+Date: Fri, 25 Jul 2008 14:24:32 -0500
+Subject: [PATCH 6/6] user_namespace: move put_user_ns outside lock
 
-Refuse writing to a directory in another user_ns.  We can't
-support file creation because we wouldn't know who should own
-the file.  This refuses file deletion as well - which I think
-is the sensible thing to do.
-
-File writing is still allowed if the 'user other' permissions
-include write.  That again probably makes sense for logging
-and such.
+Since put_user_ns calls free_user on the creator, we shouldn't
+call it from inside the lock in free_user.
 
 Signed-off-by: Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 ---
- fs/namei.c |    6 ++++++
- 1 files changed, 6 insertions(+), 0 deletions(-)
+ kernel/user.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
 
-diff --git a/fs/namei.c b/fs/namei.c
-index adf5f1b..b39a990 100644
---- a/fs/namei.c
-+++ b/fs/namei.c
-@@ -213,6 +213,12 @@ int generic_permission(struct inode *inode, int mask,
+diff --git a/kernel/user.c b/kernel/user.c
+index 034dae5..d3dd353 100644
+--- a/kernel/user.c
++++ b/kernel/user.c
+@@ -323,11 +323,11 @@ done:
+  */
+ static inline void free_user(struct user_struct *up, unsigned long flags)
+ {
+-	put_user_ns(up->user_ns);
+ 	/* restore back the count */
+ 	atomic_inc(&up->__count);
+ 	spin_unlock_irqrestore(&uidhash_lock, flags);
  
- check:
- 	/*
-+	 * Can't write to a directory in another user_ns
-+	 * We wouldn't know who to make the owner!
-+	 */
-+	if (!same_userns && S_ISDIR(inode->i_mode) && (mask&MAY_WRITE))
-+		return -EACCES;
-+	/*
- 	 * If the DACs are ok we don't need any capability check.
- 	 */
- 	if (((mode & mask & (MAY_READ|MAY_WRITE|MAY_EXEC)) == mask))
++	put_user_ns(up->user_ns);
+ 	INIT_WORK(&up->work, remove_user_sysfs_dir);
+ 	schedule_work(&up->work);
+ }
 -- 
 1.5.4.3
