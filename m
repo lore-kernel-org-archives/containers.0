@@ -1,8 +1,7 @@
 From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH 1/6] user namespaces: introduce user_struct->user_namespace
-	relationship
-Date: Fri, 25 Jul 2008 19:27:25 -0500
-Message-ID: <20080726002725.GA29874@us.ibm.com>
+Subject: [PATCH 4/6] user namespaces: add user_ns to super block
+Date: Fri, 25 Jul 2008 19:27:54 -0500
+Message-ID: <20080726002754.GD29874@us.ibm.com>
 References: <20080726002700.GA29686@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -22,145 +21,91 @@ Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 To: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-From 9382f22a6c751e90baa4e7f3ba24c509e50a47a8 Mon Sep 17 00:00:00 2001
+From 420d6e81ce29d7a6fe3ab7b43c1171e105f8b697 Mon Sep 17 00:00:00 2001
 From: Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Date: Tue, 22 Jul 2008 13:31:37 -0500
-Subject: [PATCH 1/6] user namespaces: introduce user_struct->user_namespace relationship
+Date: Thu, 24 Jul 2008 18:00:54 -0500
+Subject: [PATCH 4/6] user namespaces: add user_ns to super block
 
-When a task does clone(CLONE_NEWNS), the task's user is the 'creator' of the
-new user_namespace, and the user_namespace is tacked onto a list of those
-created by this user.
+Add a user_ns to the super_block, and set it to the user_ns of
+the process which mounted the fs.
+
+In generic_permission() compare the current user_ns to that
+of the user_ns which mounted the inode's filesystem.
 
 Signed-off-by: Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 ---
- include/linux/sched.h          |    1 +
- include/linux/user_namespace.h |    1 +
- kernel/user.c                  |    7 +++++++
- kernel/user_namespace.c        |   20 +++++++++++---------
- 4 files changed, 20 insertions(+), 9 deletions(-)
+ fs/namei.c         |    6 ++++--
+ fs/super.c         |    3 +++
+ include/linux/fs.h |    5 +++++
+ 3 files changed, 12 insertions(+), 2 deletions(-)
 
-diff --git a/include/linux/sched.h b/include/linux/sched.h
-index dc7e592..cf36e14 100644
---- a/include/linux/sched.h
-+++ b/include/linux/sched.h
-@@ -600,6 +600,7 @@ struct user_struct {
- 	/* Hash table maintenance information */
- 	struct hlist_node uidhash_node;
- 	uid_t uid;
-+	struct user_namespace *user_namespace;
- 
- #ifdef CONFIG_USER_SCHED
- 	struct task_group *tg;
-diff --git a/include/linux/user_namespace.h b/include/linux/user_namespace.h
-index b5f41d4..f9477c3 100644
---- a/include/linux/user_namespace.h
-+++ b/include/linux/user_namespace.h
-@@ -13,6 +13,7 @@ struct user_namespace {
- 	struct kref		kref;
- 	struct hlist_head	uidhash_table[UIDHASH_SZ];
- 	struct user_struct	*root_user;
-+	struct user_struct	*creator;
- };
- 
- extern struct user_namespace init_user_ns;
-diff --git a/kernel/user.c b/kernel/user.c
-index 865ecf5..cfe8309 100644
---- a/kernel/user.c
-+++ b/kernel/user.c
-@@ -22,6 +22,7 @@ struct user_namespace init_user_ns = {
- 		.refcount	= ATOMIC_INIT(2),
- 	},
- 	.root_user = &root_user,
-+	.creator = &root_user,
- };
- EXPORT_SYMBOL_GPL(init_user_ns);
- 
-@@ -53,6 +54,7 @@ struct user_struct root_user = {
- 	.files		= ATOMIC_INIT(0),
- 	.sigpending	= ATOMIC_INIT(0),
- 	.locked_shm     = 0,
-+	.user_namespace	= &init_user_ns,
- #ifdef CONFIG_USER_SCHED
- 	.tg		= &init_task_group,
+diff --git a/fs/namei.c b/fs/namei.c
+index d5336fd..adf5f1b 100644
+--- a/fs/namei.c
++++ b/fs/namei.c
+@@ -169,7 +169,6 @@ void putname(const char *name)
+ EXPORT_SYMBOL(putname);
  #endif
-@@ -321,6 +323,7 @@ done:
-  */
- static inline void free_user(struct user_struct *up, unsigned long flags)
+ 
+-extern struct user_namespace init_user_ns;
+ /**
+  * generic_permission  -  check for access rights on a Posix-like filesystem
+  * @inode:	inode to check access rights for
+@@ -185,7 +184,10 @@ int generic_permission(struct inode *inode, int mask,
+ 		int (*check_acl)(struct inode *inode, int mask))
  {
-+	put_user_ns(up->user_namespace);
- 	/* restore back the count */
- 	atomic_inc(&up->__count);
- 	spin_unlock_irqrestore(&uidhash_lock, flags);
-@@ -347,6 +350,7 @@ static inline void free_user(struct user_struct *up, unsigned long flags)
- 	sched_destroy_user(up);
- 	key_put(up->uid_keyring);
- 	key_put(up->session_keyring);
-+	put_user_ns(up->user_namespace);
- 	kmem_cache_free(uid_cachep, up);
+ 	umode_t			mode = inode->i_mode;
+-	int same_userns = (current->user->user_ns == &init_user_ns);
++	int same_userns = 1;
++
++	if (current->user->user_ns != inode->i_sb->user_ns)
++		same_userns = 0;
+ 
+ 	/*
+ 	 * If we're not in the inode's user namespace, we get
+diff --git a/fs/super.c b/fs/super.c
+index 453877c..12865ac 100644
+--- a/fs/super.c
++++ b/fs/super.c
+@@ -39,6 +39,7 @@
+ #include <linux/mutex.h>
+ #include <linux/file.h>
+ #include <asm/uaccess.h>
++#include <linux/user_namespace.h>
+ #include "internal.h"
+ 
+ 
+@@ -92,6 +93,7 @@ static struct super_block *alloc_super(struct file_system_type *type)
+ 		s->s_qcop = sb_quotactl_ops;
+ 		s->s_op = &default_op;
+ 		s->s_time_gran = 1000000000;
++		s->user_ns = get_user_ns(current->user->user_ns);
+ 	}
+ out:
+ 	return s;
+@@ -108,6 +110,7 @@ static inline void destroy_super(struct super_block *s)
+ 	security_sb_free(s);
+ 	kfree(s->s_subtype);
+ 	kfree(s->s_options);
++	put_user_ns(s->user_ns);
+ 	kfree(s);
  }
  
-@@ -409,6 +413,8 @@ struct user_struct *alloc_uid(struct user_namespace *ns, uid_t uid)
- 		if (sched_create_user(new) < 0)
- 			goto out_free_user;
- 
-+		new->user_namespace = get_user_ns(ns);
-+
- 		if (uids_user_create(new))
- 			goto out_destoy_sched;
- 
-@@ -441,6 +447,7 @@ struct user_struct *alloc_uid(struct user_namespace *ns, uid_t uid)
- 
- out_destoy_sched:
- 	sched_destroy_user(new);
-+	put_user_ns(new->user_namespace);
- out_free_user:
- 	kmem_cache_free(uid_cachep, new);
- out_unlock:
-diff --git a/kernel/user_namespace.c b/kernel/user_namespace.c
-index a9ab059..e8db443 100644
---- a/kernel/user_namespace.c
-+++ b/kernel/user_namespace.c
-@@ -19,7 +19,6 @@
- static struct user_namespace *clone_user_ns(struct user_namespace *old_ns)
- {
- 	struct user_namespace *ns;
--	struct user_struct *new_user;
- 	int n;
- 
- 	ns = kmalloc(sizeof(struct user_namespace), GFP_KERNEL);
-@@ -38,15 +37,17 @@ static struct user_namespace *clone_user_ns(struct user_namespace *old_ns)
- 		return ERR_PTR(-ENOMEM);
- 	}
- 
--	/* Reset current->user with a new one */
--	new_user = alloc_uid(ns, current->uid);
--	if (!new_user) {
--		free_uid(ns->root_user);
--		kfree(ns);
--		return ERR_PTR(-ENOMEM);
--	}
-+	/* pin the creating user */
-+	ns->creator = current->user;
-+	atomic_inc(&ns->creator->__count);
+diff --git a/include/linux/fs.h b/include/linux/fs.h
+index 9c2ac5c..68066a4 100644
+--- a/include/linux/fs.h
++++ b/include/linux/fs.h
+@@ -1092,6 +1092,11 @@ struct super_block {
+ 	 * generic_show_options()
+ 	 */
+ 	char *s_options;
 +
 +	/*
-+	 * The alloc_uid() incremented the userns refcount,
-+	 * so drop it again 
++	 * namespace of the user which mounted the sb
 +	 */
-+	put_user_ns(ns);
++	struct user_namespace *user_ns;
+ };
  
--	switch_uid(new_user);
-+	switch_uid(ns->root_user);
- 	return ns;
- }
- 
-@@ -72,6 +73,7 @@ void free_user_ns(struct kref *kref)
- 
- 	ns = container_of(kref, struct user_namespace, kref);
- 	release_uids(ns);
-+	free_uid(ns->creator);
- 	kfree(ns);
- }
- EXPORT_SYMBOL(free_user_ns);
+ extern struct timespec current_fs_time(struct super_block *sb);
 -- 
 1.5.4.3
