@@ -1,15 +1,14 @@
 From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
-Subject: Re: [PATCH 4/6] user namespaces: add user_ns to super block
-Date: Mon, 28 Jul 2008 14:53:00 -0700
-Message-ID: <m13altislf.fsf@frodo.ebiederm.org>
-References: <20080726002700.GA29686@us.ibm.com>
-	<20080726002754.GD29874@us.ibm.com>
+Subject: Re: [PATCH 0/2] sys_restore prototype
+Date: Mon, 28 Jul 2008 15:00:08 -0700
+Message-ID: <m1sktthdp3.fsf@frodo.ebiederm.org>
+References: <20080725225655.GA28276@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20080726002754.GD29874-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org> (Serge E. Hallyn's message of
-	"Fri, 25 Jul 2008 19:27:54 -0500")
+In-Reply-To: <20080725225655.GA28276-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org> (Serge E. Hallyn's message of
+	"Fri, 25 Jul 2008 17:56:56 -0500")
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -25,27 +24,31 @@ List-Id: containers.vger.kernel.org
 
 "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org> writes:
 
->>From 420d6e81ce29d7a6fe3ab7b43c1171e105f8b697 Mon Sep 17 00:00:00 2001
-> From: Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-> Date: Thu, 24 Jul 2008 18:00:54 -0500
-> Subject: [PATCH 4/6] user namespaces: add user_ns to super block
+> We were talking this morning about what trivial patchset to begin
+> with to get a start on checkpoint and restart.  We thought that
+> rather than start with checkpoint, maybe we should start with
+> something that reads a "checkpoint file" and "restarts" a single
+> task.  In this case, restart means it sets the process id and
+> executes the file which are found in the checkpoint file.
 >
-> Add a user_ns to the super_block, and set it to the user_ns of
-> the process which mounted the fs.
+> So here's what we whipped up for a half hour this morning,
+> and during some of Mark's talk this afternoon.
 >
-> In generic_permission() compare the current user_ns to that
-> of the user_ns which mounted the inode's filesystem.
+> It refuses to run if it isn't the container init, so you must
+> unshare your pidns before calling sys_restore().
 
-I don't think this is the right approach.
+A reasonable approximation. 
 
-When we had the conversation earlier this was conceptually rejected
-as it prevents nfs superblock unification.
+Dave Hansen made a good point when he asked how do we graft a restored
+checkpoint into the rest of the system.  Requiring us to unshare
+everything we intend to unshare before restore achieves this easily,
+and you are following in that model.
 
-We really want to store this in the vfsmount and pass the user namespace down
-from there to where we are going to use it if at all possible.
+That leads to an interesting implication.  We don't need to set the pid
+of the first process.  At most we can verify that the pid is the same.
+If we have unshared the pid namespace the pid will be 1 and the needed
+pid of the first process will be 1.
 
-The vfsmount also appears necessary if we are ever going to support multiple
-user namespaces per filesystem as the filesystem still need to know which 
-user namespace to interpret it's data in.
+More later.
 
 Eric
