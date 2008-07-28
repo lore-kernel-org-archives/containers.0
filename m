@@ -1,16 +1,15 @@
 From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
-Subject: Re: [PATCH 2/6] user namespaces: move user_ns from nsproxy into user
-	struct
-Date: Mon, 28 Jul 2008 14:41:33 -0700
-Message-ID: <m1k5f5it4i.fsf@frodo.ebiederm.org>
+Subject: Re: [PATCH 4/6] user namespaces: add user_ns to super block
+Date: Mon, 28 Jul 2008 14:53:00 -0700
+Message-ID: <m13altislf.fsf@frodo.ebiederm.org>
 References: <20080726002700.GA29686@us.ibm.com>
-	<20080726002735.GB29874@us.ibm.com>
+	<20080726002754.GD29874@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20080726002735.GB29874-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org> (Serge E. Hallyn's message of
-	"Fri, 25 Jul 2008 19:27:35 -0500")
+In-Reply-To: <20080726002754.GD29874-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org> (Serge E. Hallyn's message of
+	"Fri, 25 Jul 2008 19:27:54 -0500")
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -26,30 +25,27 @@ List-Id: containers.vger.kernel.org
 
 "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org> writes:
 
->>From ec5f54faf5afd16cb6cef40ebaaf3da25989d185 Mon Sep 17 00:00:00 2001
+>>From 420d6e81ce29d7a6fe3ab7b43c1171e105f8b697 Mon Sep 17 00:00:00 2001
 > From: Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-> Date: Thu, 24 Jul 2008 17:52:41 -0500
-> Subject: [PATCH 2/6] user namespaces: move user_ns from nsproxy into user struct
+> Date: Thu, 24 Jul 2008 18:00:54 -0500
+> Subject: [PATCH 4/6] user namespaces: add user_ns to super block
 >
-> When we get the sysfs support needed to support fair user scheduling
-> along with user namespaces, then we will need to be able to get the
-> user namespace from the user struct.
+> Add a user_ns to the super_block, and set it to the user_ns of
+> the process which mounted the fs.
 >
-> So we need the user_ns to be a part of struct user.  Once we can
-> access it from tsk->user, we no longer have a use for
-> tsk->nsproxy->user_ns.
+> In generic_permission() compare the current user_ns to that
+> of the user_ns which mounted the inode's filesystem.
 
-Is this true?  Even in the general case of supporting setuid and setgid
-and everything else that potentially is in the user namespace?
+I don't think this is the right approach.
 
-I certainly support the cleanups you have made for the reasons you describe.
-I think however that there is there are no technical reasons not to have
- nsproxy->user_ns after the changes have been made.  I also agree that
-there are no technical reasons for keeping nsproxy->user_ns at the moment.
+When we had the conversation earlier this was conceptually rejected
+as it prevents nfs superblock unification.
 
-> When a user_namespace is created, the user which created it is
-> marked as its 'creator'.  The user_namespace pins the creator.
-> Each userid in a user_ns pins the user_ns.  This keeps refcounting
-> nice and simple.
+We really want to store this in the vfsmount and pass the user namespace down
+from there to where we are going to use it if at all possible.
+
+The vfsmount also appears necessary if we are ever going to support multiple
+user namespaces per filesystem as the filesystem still need to know which 
+user namespace to interpret it's data in.
 
 Eric
