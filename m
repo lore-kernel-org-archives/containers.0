@@ -1,11 +1,16 @@
-From: "Jacobson Edwards" <stereostatic-/BnUm+doPTx+kJTeVDPgHg@public.gmane.org>
-Subject: Windows Home Server
-Date: Mon, 28 Jul 2008 11:46:42 -0700
-Message-ID: <000801c8f0d1$00a98580$0100007f@vpmbr>
+From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
+Subject: Re: [PATCH 2/6] user namespaces: move user_ns from nsproxy into user
+	struct
+Date: Mon, 28 Jul 2008 14:41:33 -0700
+Message-ID: <m1k5f5it4i.fsf@frodo.ebiederm.org>
+References: <20080726002700.GA29686@us.ibm.com>
+	<20080726002735.GB29874@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <20080726002735.GB29874-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org> (Serge E. Hallyn's message of
+	"Fri, 25 Jul 2008 19:27:35 -0500")
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -15,36 +20,36 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-:The following titles and more are now available for pcs and macs+
+"Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org> writes:
 
-CyberLink PowerDVD ULTRA EDITION v8
-Traktor DJ Studio
-Apple Quicktime Pro
-Windows Home Server
-Windows Home Server
-Office 2007 Ultimate
+>>From ec5f54faf5afd16cb6cef40ebaaf3da25989d185 Mon Sep 17 00:00:00 2001
+> From: Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+> Date: Thu, 24 Jul 2008 17:52:41 -0500
+> Subject: [PATCH 2/6] user namespaces: move user_ns from nsproxy into user struct
+>
+> When we get the sysfs support needed to support fair user scheduling
+> along with user namespaces, then we will need to be able to get the
+> user namespace from the user struct.
+>
+> So we need the user_ns to be a part of struct user.  Once we can
+> access it from tsk->user, we no longer have a use for
+> tsk->nsproxy->user_ns.
 
-: saveonxp . com +
+Is this true?  Even in the general case of supporting setuid and setgid
+and everything else that potentially is in the user namespace?
 
-System Requirements
-+ For PC:
-+ Intel Pentium 4 (1.4GHz processor), Intel Centrino, Intel Xeon Windows Home Server or Intel Core Duo (or Windows Home Server) processor; SSE2-enabled processor required for AMD systems & Microsoft Windows XP with Service Pack 2 or Microsoft Windows Vista Home Premium, Business, Ultimate, or Enterprise (certified for 32-bit editions)
-+ 512MB of RAM or more
-+ 1GB of available hard-disk space (additional free space Windows Home Server)
-+ Microsoft compatible sound card (multichannel ASIO-compatible sound card recommended)
-+ 1,024x768 monitor resolution with 32-bit color adapter recommended
-+ CD-R or DVD-ROM drive
+I certainly support the cleanups you have made for the reasons you describe.
+I think however that there is there are no technical reasons not to have
+ nsproxy->user_ns after the changes have been made.  I also agree that
+there are no technical reasons for keeping nsproxy->user_ns at the moment.
 
-: For MAC:
-: PowerPC G4 or G5 or multicore Intel processor
-: Mac OS X or similar
-: 512MB of RAM or more
-: 1GB of available hard-disk space
-: Core Audio compatible sound card
-: 1,024x768 monitor resolution with 32-bit color adapter
-: DVD-ROM drive+ DVD+-R burner required for DVD creation
+> When a user_namespace is created, the user which created it is
+> marked as its 'creator'.  The user_namespace pins the creator.
+> Each userid in a user_ns pins the user_ns.  This keeps refcounting
+> nice and simple.
 
-Series Overview: China's Rising Power in Africa
+Eric
