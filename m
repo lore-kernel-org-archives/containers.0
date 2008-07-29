@@ -1,18 +1,15 @@
 From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 4/6] user namespaces: add user_ns to super block
-Date: Tue, 29 Jul 2008 13:09:13 -0500
-Message-ID: <20080729180913.GC365@us.ibm.com>
-References: <20080726002700.GA29686@us.ibm.com>
-	<20080726002754.GD29874@us.ibm.com>
-	<m13altislf.fsf@frodo.ebiederm.org>
-	<1217285230.25300.19.camel@localhost.localdomain>
-	<m1skttehm6.fsf@frodo.ebiederm.org>
+Subject: Re: [PATCH 0/2] sys_restore prototype
+Date: Tue, 29 Jul 2008 13:27:46 -0500
+Message-ID: <20080729182746.GA14456@us.ibm.com>
+References: <20080725225655.GA28276@us.ibm.com>
+	<m1sktthdp3.fsf@frodo.ebiederm.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <m1skttehm6.fsf-B27657KtZYmhTnVgQlOflh2eb7JE58TQ@public.gmane.org>
+In-Reply-To: <m1sktthdp3.fsf-B27657KtZYmhTnVgQlOflh2eb7JE58TQ@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -27,45 +24,36 @@ Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
 Quoting Eric W. Biederman (ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org):
-> Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org> writes:
+> "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org> writes:
 > 
-> > 	Would this require passing the vfsmount to the filesystems themselves,
-> > or would they be within the VFS code only? 
+> > We were talking this morning about what trivial patchset to begin
+> > with to get a start on checkpoint and restart.  We thought that
+> > rather than start with checkpoint, maybe we should start with
+> > something that reads a "checkpoint file" and "restarts" a single
+> > task.  In this case, restart means it sets the process id and
+> > executes the file which are found in the checkpoint file.
+> >
+> > So here's what we whipped up for a half hour this morning,
+> > and during some of Mark's talk this afternoon.
+> >
+> > It refuses to run if it isn't the container init, so you must
+> > unshare your pidns before calling sys_restore().
 > 
-> The interesting bit is the user_namespace contained in the vfsmount.  We
-> can pass that down.  I think semantically it makes sense for a filesystem
-> mount to only operate in a single mount namespace.
+> A reasonable approximation. 
 > 
-> > If not wholly within the VFS
-> > I wonder if Al Viro would object to this. He's resisted past attempts to
-> > pass the vfsmount structs into more filesystem code paths and I'm
-> > guessing that could affect whether or not this approach can be
-> > implemented.
+> Dave Hansen made a good point when he asked how do we graft a restored
+> checkpoint into the rest of the system.  Requiring us to unshare
+> everything we intend to unshare before restore achieves this easily,
+> and you are following in that model.
 > 
-> Dave Hansen raised that concern when we were talking about it earlier.  Since
-> we just care about a property of the mount it isn't a big deal.
+> That leads to an interesting implication.  We don't need to set the pid
+> of the first process.  At most we can verify that the pid is the same.
+> If we have unshared the pid namespace the pid will be 1 and the needed
+> pid of the first process will be 1.
 > 
-> Actually thinking about this a little farther it may be simplest to have the
-> mnt_namespace capture the user_namespace, although that doesn't seem to map
-> semantically very well with cloning of the filesystem.
+> More later.
 
-Interesting idea.  I'm going to pursue that.
+Good point.  Sounds like our trivial prototype was still way
+over-featureful :)
 
-So at a do_new_mount(), mnt->user_ns = current->user_ns.  At
-do_loopback(), we ask the fs whether the new_mnt->user_ns can be set to
-current->user_ns.  If not, it keeps the original, meaning that current
-will always receive user nobody access to the fs.  Otherwise, the
-fs is saying that it knows how to properly convert userids from
-current->user->user_ns to ones which make sense in the
-original_mnt->user_ns.
-
-> This is very much a question of how do we map the uid/gids store in the filesystem
-> into the uids/gids in the kernel.  Which user namespace do they belong in.
-> 
-> Especially in the case of read only mounts we can safely share a filesystem between
-> user_namespaces with no changes to the filesystem.    Which I suspect is the
-> first case we want to allow as that is a tremendous savings in space if you have
-> lots of instances of the same distro, and people have been doing it with /usr
-> for years.
-> 
-> Eric
+-serge
