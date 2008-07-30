@@ -1,13 +1,22 @@
-From: KOSAKI Motohiro <kosaki.motohiro-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
-Subject: Re: [RFC][PATCH 2/2] CR: handle a single task with private memory maps
-Date: Wed, 30 Jul 2008 13:51:49 +0900
-Message-ID: <20080730132257.9DF2.KOSAKI.MOTOHIRO@jp.fujitsu.com>
-References: <Pine.LNX.4.64.0807292325290.9868@takamine.ncl.cs.columbia.edu>
+From: Daisuke Nishimura <nishimura-YQH0OdQVrdy45+QrQBaojngSJqDPrsil@public.gmane.org>
+Subject: Re: memrlimit controller merge to mainline
+Date: Wed, 30 Jul 2008 13:58:03 +0900
+Message-ID: <20080730135803.a7750e21.nishimura@mxp.nes.nec.co.jp>
+References: <6599ad830807250114h7ab0fdb1u98c0968961647642@mail.gmail.com>
+	<Pine.LNX.4.64.0807251004570.31120@blonde.site>
+	<6599ad830807250706t23e483b5j18d683c0470d1d22@mail.gmail.com>
+	<Pine.LNX.4.64.0807251715070.12089@blonde.site>
+	<20080729150111.f879c989.kamezawa.hiroyu@jp.fujitsu.com>
+	<Pine.LNX.4.64.0807300113200.14699@blonde.site>
+	<20080730101719.5eb18635.kamezawa.hiroyu@jp.fujitsu.com>
+	<20080730115226.3fec2540.kamezawa.hiroyu@jp.fujitsu.com>
+	<20080730121115.b1e3a7be.kamezawa.hiroyu@jp.fujitsu.com>
+	<20080730131407.526d323b.kamezawa.hiroyu@jp.fujitsu.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <Pine.LNX.4.64.0807292325290.9868-CXF6herHY6ykSYb+qCZC/1i27PF6R63G9nwVQlTi/Pw@public.gmane.org>
+In-Reply-To: <20080730131407.526d323b.kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -17,24 +26,57 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Cc: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+To: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+Cc: Rik van Riel <riel-ebMLmSuQjDVBDgjK7y7TUQ@public.gmane.org>, Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, nishimura-YQH0OdQVrdy45+QrQBaojngSJqDPrsil@public.gmane.org, Hugh Dickins <hugh-DTz5qymZ9yRBDgjK7y7TUQ@public.gmane.org>, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Hi
-
-> Expand the template sys_checkpoint and sys_restart to be able to dump
-> and restore a single task. The task's address space may consist of only
-> private, simple vma's - anonymous or file-mapped.
+On Wed, 30 Jul 2008 13:14:07 +0900, KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org> wrote:
+> On Wed, 30 Jul 2008 12:11:15 +0900
+> KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org> wrote:
 > 
-> This big patch adds a mechanism to transfer data between kernel or user
-> space to and from the file given by the caller (sys.c), alloc/setup/free
-> of the checkpoint/restart context (sys.c), output wrappers and basic
-> checkpoint handling (checkpoint.c), memory dump (ckpt_mem.c), input
-> wrappers and basic restart handling (restart.c), and finally the memory
-> restore (rstr_mem.c).
-> 
-> Signed-off-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+> > On Wed, 30 Jul 2008 11:52:26 +0900
+> > KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org> wrote:
+> > > mem+swap controller means a shrink to memory resource controller 
+> > > (try_to_free_mem_cgroup_pages()) should drop only file caches.
+> > > (Because kick-out-to-swap will never changes the usage.)
+> > > 
+> > > right ? only global-lru can make a swap.
+> > > maybe I can add optimization to do this. Hmm. I should see how OOM works
+> > > under some situation.
+> > > 
+I'm thinking mem+swap controller in a different way: an add-on to
+mem controller, just as current swap controller.
+I mean adding "memory.(mem+swap)_limit".
 
-please write a documentation of describe memory dump file format,
-and split save and restore to two patches.
+> > (I'm sorry that I'm not a good writer of e-mail.)
+> > 
+> > A brief summary about changes to mem controller.
+> > 
+> >  - mem+swap controller which limits the # sum of pages and swap_entries.
+> >  - mem+swap controller just drops file caches when it reaches limit.
+> >  - under mem+swap controller, recaliming Anon pages make no sense.
+> >    Then,
+> >       - LRU for Anon is not necessary.
+> >       - LRU for tmpfs/shmem is not necessary.
+> >       just showing account is better.
+> >  - we should see try_to_free_mem_cgroup() again to avoid too much OOM.
+> >    Maybe Retries=5 is too small because we never do swap under us.
+> >    a problem like struck-into-ext3-journal can easily make file-cache reclaim
+> >    difficult.
+> >  - need some changes to documentation.
+> >  - Should we have on/off switch of taking swap into account ?
+> >    or should we implement mem+swap contoller in different name than
+> >    "memory" controller ?
+> >    If swap is not accounted, we need to do swap-out in memory reclaiming path,
+> >    again.
+> >    
+> Then, mem+swap controller finally means
+>  - under mem+swap controller, program works with no swap. Only global LRU
+>    may make pages swapped-out.
+>  - If swap-accounting-mode is off, swap can be used unlimitedly.
+> 
+> Hmm, sounds a bit differenct from what I want. How about others ?
+> 
+
+Thanks,
+Daisuke Nishimura.
