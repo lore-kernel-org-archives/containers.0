@@ -1,7 +1,7 @@
 From: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: [PATCH 5/9] netns ebtables: netns-aware broute table
-Date: Fri, 1 Aug 2008 05:35:07 +0400
-Message-ID: <20080801013507.GF26761@martell.zuzino.mipt.ru>
+Subject: [PATCH 6/9] netns ebtables: netns-aware filter table
+Date: Fri, 1 Aug 2008 05:35:40 +0400
+Message-ID: <20080801013540.GG26761@martell.zuzino.mipt.ru>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -23,88 +23,122 @@ Signed-off-by: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.or
 ---
 
  include/net/netns/bridge.h            |    1 
- net/bridge/netfilter/ebtable_broute.c |   35 ++++++++++++++++++++++++++--------
- 2 files changed, 28 insertions(+), 8 deletions(-)
+ net/bridge/netfilter/ebtable_filter.c |   50 +++++++++++++++++++++++++---------
+ 2 files changed, 38 insertions(+), 13 deletions(-)
 
 --- a/include/net/netns/bridge.h
 +++ b/include/net/netns/bridge.h
-@@ -5,5 +5,6 @@
- 
+@@ -6,5 +6,6 @@
  struct netns_br {
  	struct list_head	ebt_tables;
-+	struct ebt_table *broute_table;
+ 	struct ebt_table *broute_table;
++	struct ebt_table *frame_filter;
  };
  #endif
---- a/net/bridge/netfilter/ebtable_broute.c
-+++ b/net/bridge/netfilter/ebtable_broute.c
-@@ -41,33 +41,52 @@ static int check(const struct ebt_table_info *info, unsigned int valid_hooks)
+--- a/net/bridge/netfilter/ebtable_filter.c
++++ b/net/bridge/netfilter/ebtable_filter.c
+@@ -50,41 +50,47 @@ static int check(const struct ebt_table_info *info, unsigned int valid_hooks)
  	return 0;
  }
  
--static struct ebt_table __broute_table =
-+static struct ebt_table broute_table =
+-static struct ebt_table __frame_filter =
++static struct ebt_table frame_filter =
  {
- 	.name		= "broute",
+ 	.name		= "filter",
  	.table		= &initial_table,
- 	.valid_hooks	= 1 << NF_BR_BROUTING,
--	.lock		= __RW_LOCK_UNLOCKED(__broute_table.lock),
-+	.lock		= __RW_LOCK_UNLOCKED(broute_table.lock),
+ 	.valid_hooks	= FILTER_VALID_HOOKS,
+-	.lock		= __RW_LOCK_UNLOCKED(__frame_filter.lock),
++	.lock		= __RW_LOCK_UNLOCKED(frame_filter.lock),
  	.check		= check,
  	.me		= THIS_MODULE,
  };
--static struct ebt_table *broute_table;
+-static struct ebt_table *frame_filter;
  
- static int ebt_broute(struct sk_buff *skb)
+ static unsigned int
+-ebt_hook(unsigned int hook, struct sk_buff *skb, const struct net_device *in,
++ebt_in_hook(unsigned int hook, struct sk_buff *skb, const struct net_device *in,
+    const struct net_device *out, int (*okfn)(struct sk_buff *))
  {
- 	int ret;
- 
- 	ret = ebt_do_table(NF_BR_BROUTING, skb, skb->dev, NULL,
--	   broute_table);
-+			   dev_net(skb->dev)->br.broute_table);
- 	if (ret == NF_DROP)
- 		return 1; /* route it */
- 	return 0; /* bridge it */
+-	return ebt_do_table(hook, skb, in, out, frame_filter);
++	return ebt_do_table(hook, skb, in, out, dev_net(in)->br.frame_filter);
++}
++
++static unsigned int
++ebt_out_hook(unsigned int hook, struct sk_buff *skb, const struct net_device *in,
++   const struct net_device *out, int (*okfn)(struct sk_buff *))
++{
++	return ebt_do_table(hook, skb, in, out, dev_net(out)->br.frame_filter);
  }
  
-+static int ebtable_broute_net_init(struct net *net)
+ static struct nf_hook_ops ebt_ops_filter[] __read_mostly = {
+ 	{
+-		.hook		= ebt_hook,
++		.hook		= ebt_in_hook,
+ 		.owner		= THIS_MODULE,
+ 		.pf		= PF_BRIDGE,
+ 		.hooknum	= NF_BR_LOCAL_IN,
+ 		.priority	= NF_BR_PRI_FILTER_BRIDGED,
+ 	},
+ 	{
+-		.hook		= ebt_hook,
++		.hook		= ebt_in_hook,
+ 		.owner		= THIS_MODULE,
+ 		.pf		= PF_BRIDGE,
+ 		.hooknum	= NF_BR_FORWARD,
+ 		.priority	= NF_BR_PRI_FILTER_BRIDGED,
+ 	},
+ 	{
+-		.hook		= ebt_hook,
++		.hook		= ebt_out_hook,
+ 		.owner		= THIS_MODULE,
+ 		.pf		= PF_BRIDGE,
+ 		.hooknum	= NF_BR_LOCAL_OUT,
+@@ -92,23 +98,41 @@ static struct nf_hook_ops ebt_ops_filter[] __read_mostly = {
+ 	},
+ };
+ 
++static int frame_filter_net_init(struct net *net)
 +{
-+	net->br.broute_table = ebt_register_table(net, &broute_table);
-+	if (IS_ERR(net->br.broute_table))
-+		return PTR_ERR(net->br.broute_table);
++	net->br.frame_filter = ebt_register_table(net, &frame_filter);
++	if (IS_ERR(net->br.frame_filter))
++		return PTR_ERR(net->br.frame_filter);
 +	return 0;
 +}
 +
-+static void ebtable_broute_net_exit(struct net *net)
++static void frame_filter_net_exit(struct net *net)
 +{
-+	ebt_unregister_table(net->br.broute_table);
++	ebt_unregister_table(net->br.frame_filter);
 +}
 +
-+static struct pernet_operations ebtable_broute_net_ops = {
-+	.init = ebtable_broute_net_init,
-+	.exit = ebtable_broute_net_exit,
++static struct pernet_operations frame_filter_net_ops = {
++	.init = frame_filter_net_init,
++	.exit = frame_filter_net_exit,
 +};
 +
- static int __init ebtable_broute_init(void)
+ static int __init ebtable_filter_init(void)
  {
--	broute_table = ebt_register_table(&init_net, &__broute_table);
--	if (IS_ERR(broute_table))
--		return PTR_ERR(broute_table);
-+	int ret;
-+
-+	ret = register_pernet_subsys(&ebtable_broute_net_ops);
+ 	int ret;
+ 
+-	frame_filter = ebt_register_table(&init_net, &__frame_filter);
+-	if (IS_ERR(frame_filter))
+-		return PTR_ERR(frame_filter);
++	ret = register_pernet_subsys(&frame_filter_net_ops);
 +	if (ret < 0)
 +		return ret;
- 	/* see br_input.c */
- 	rcu_assign_pointer(br_should_route_hook, ebt_broute);
- 	return 0;
-@@ -77,7 +96,7 @@ static void __exit ebtable_broute_fini(void)
- {
- 	rcu_assign_pointer(br_should_route_hook, NULL);
- 	synchronize_net();
--	ebt_unregister_table(broute_table);
-+	unregister_pernet_subsys(&ebtable_broute_net_ops);
+ 	ret = nf_register_hooks(ebt_ops_filter, ARRAY_SIZE(ebt_ops_filter));
+ 	if (ret < 0)
+-		ebt_unregister_table(frame_filter);
++		unregister_pernet_subsys(&frame_filter_net_ops);
+ 	return ret;
  }
  
- module_init(ebtable_broute_init);
+ static void __exit ebtable_filter_fini(void)
+ {
+ 	nf_unregister_hooks(ebt_ops_filter, ARRAY_SIZE(ebt_ops_filter));
+-	ebt_unregister_table(frame_filter);
++	unregister_pernet_subsys(&frame_filter_net_ops);
+ }
+ 
+ module_init(ebtable_filter_init);
 -- 
 1.5.4.5
