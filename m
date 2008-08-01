@@ -1,13 +1,16 @@
-From: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 0/6] Container Freezer: Reuse Suspend Freezer
-Date: Thu, 31 Jul 2008 22:16:56 -0700
-Message-ID: <1217567816.25300.197.camel__10593.7116350562$1217568573$gmane$org@localhost.localdomain>
-References: <20080801050659.924495279@us.ibm.com>
+From: Andrey Mirkin <major-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+Subject: Re: [Devel] [RFC][PATCH 0/2] CR: save/restore a single, simple task
+Date: Fri, 1 Aug 2008 09:28:20 +0400
+Message-ID: <200808010928.21220.major@openvz.org>
+References: <Pine.LNX.4.64.0807292306570.9868@takamine.ncl.cs.columbia.edu>
+	<200807310511.11648.major@openvz.org>
+	<20080731212810.GB7858@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20080801050659.924495279-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <20080731212810.GB7858-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Content-Disposition: inline
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -17,27 +20,22 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
-Cc: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Linux-Kernel <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, "Rafael J. Wysocki" <rjw-KKrjLPT3xs0@public.gmane.org>, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, linux-pm-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Cc: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
+On Friday 01 August 2008 01:28 Serge E. Hallyn wrote:
+> Quoting Andrey Mirkin (major-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org):
+> > Hello Oren,
+> >
+> > That is great, that you have proposed your version of
+> > checkpointing/restart. In a few days I will send a patchset with OpenVZ
+> > checkpointing/restart. So, we will be able to compare our approaches and
+> > take the best parts from both.
+>
+> Excellent, looking forward to it!  Are you going to stick to the same
+> limitations as Oren did?  (I think it would be best)
+Yes, I'll send patches which are able to checkpoint/restart just a single, 
+simple process.
 
-On Thu, 2008-07-31 at 22:06 -0700, Matt Helsley wrote:
-> This patch series introduces a cgroup subsystem that utilizes the swsusp
-> freezer to freeze a group of tasks. It's immediately useful for batch job
-> management scripts. It should also be useful in the future for implementing
-> container checkpoint/restart.
-
-<snip>
-
-> Andrew, since I hear Rafael doesn't have time to review these (again) at this
-> time, please consider these patches for -mm.
-
-	Argh -- that "(again)" is ripe for misinterpretation! Rafael has
-reviewed and commented on these patches often in the past but, from what
-I hear, lacks the time to do so now. Hence I'm sending these to -mm.
-
-	Sorry about the wording Rafael.
-
-Cheers,
-	-Matt Helsley
+Andrey
