@@ -1,7 +1,7 @@
 From: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: [PATCH 0/9] Bridging and ebtables in netns!
-Date: Fri, 1 Aug 2008 05:23:36 +0400
-Message-ID: <20080801012336.GA26761@martell.zuzino.mipt.ru>
+Subject: [PATCH 1/9] netns bridge: netdevice part
+Date: Fri, 1 Aug 2008 05:27:01 +0400
+Message-ID: <20080801012701.GB26761@martell.zuzino.mipt.ru>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -19,44 +19,253 @@ Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 To: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Hi, I'm going to send this once networking people will start accepting
-new stuff.
+Allow creation of bridges in netns.
 
-Please, try and test on your favourite bridging setup, I'm currently
-very limited in this.
+Bridge netdevice doesn't cross netns boundaries.
+Additions and deletions are done with netdevices in the same netns.
 
-To try ebtables, apply this patch first:
+Process notifications in netns, too.
 
+Signed-off-by: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+---
 
-diff --git a/net/netfilter/core.c b/net/netfilter/core.c
-index 292fa28..c4065b8 100644
---- a/net/netfilter/core.c
-+++ b/net/netfilter/core.c
-@@ -165,14 +165,6 @@ int nf_hook_slow(int pf, unsigned int hook, struct sk_buff *skb,
- 	unsigned int verdict;
+ net/bridge/br_device.c   |    3 ++-
+ net/bridge/br_if.c       |   11 ++++++-----
+ net/bridge/br_ioctl.c    |   20 ++++++++++----------
+ net/bridge/br_netlink.c  |   15 +++++----------
+ net/bridge/br_notify.c   |    3 ---
+ net/bridge/br_private.h  |    4 ++--
+ net/bridge/br_stp_bpdu.c |    3 ---
+ 7 files changed, 25 insertions(+), 34 deletions(-)
+
+--- a/net/bridge/br_device.c
++++ b/net/bridge/br_device.c
+@@ -166,5 +166,6 @@ void br_dev_setup(struct net_device *dev)
+ 	dev->priv_flags = IFF_EBRIDGE;
+ 
+ 	dev->features = NETIF_F_SG | NETIF_F_FRAGLIST | NETIF_F_HIGHDMA |
+-			NETIF_F_GSO_MASK | NETIF_F_NO_CSUM | NETIF_F_LLTX;
++			NETIF_F_GSO_MASK | NETIF_F_NO_CSUM | NETIF_F_LLTX |
++			NETIF_F_NETNS_LOCAL;
+ }
+--- a/net/bridge/br_if.c
++++ b/net/bridge/br_if.c
+@@ -168,7 +168,7 @@ static void del_br(struct net_bridge *br)
+ 	unregister_netdevice(br->dev);
+ }
+ 
+-static struct net_device *new_bridge_dev(const char *name)
++static struct net_device *new_bridge_dev(struct net *net, const char *name)
+ {
+ 	struct net_bridge *br;
+ 	struct net_device *dev;
+@@ -178,6 +178,7 @@ static struct net_device *new_bridge_dev(const char *name)
+ 
+ 	if (!dev)
+ 		return NULL;
++	dev_net_set(dev, net);
+ 
+ 	br = netdev_priv(dev);
+ 	br->dev = dev;
+@@ -259,12 +260,12 @@ static struct net_bridge_port *new_nbp(struct net_bridge *br,
+ 	return p;
+ }
+ 
+-int br_add_bridge(const char *name)
++int br_add_bridge(struct net *net, const char *name)
+ {
+ 	struct net_device *dev;
+ 	int ret;
+ 
+-	dev = new_bridge_dev(name);
++	dev = new_bridge_dev(net, name);
+ 	if (!dev)
+ 		return -ENOMEM;
+ 
+@@ -291,13 +292,13 @@ out_free:
+ 	goto out;
+ }
+ 
+-int br_del_bridge(const char *name)
++int br_del_bridge(struct net *net, const char *name)
+ {
+ 	struct net_device *dev;
  	int ret = 0;
  
--#ifdef CONFIG_NET_NS
--	struct net *net;
--
--	net = indev == NULL ? dev_net(outdev) : dev_net(indev);
--	if (net != &init_net)
--		return 1;
--#endif
--
- 	/* We may already have this, but read-locks nest anyway */
- 	rcu_read_lock();
+ 	rtnl_lock();
+-	dev = __dev_get_by_name(&init_net, name);
++	dev = __dev_get_by_name(net, name);
+ 	if (dev == NULL)
+ 		ret =  -ENXIO; 	/* Could not find device */
  
-diff --git a/net/netfilter/nf_sockopt.c b/net/netfilter/nf_sockopt.c
-index 0148968..aa01c54 100644
---- a/net/netfilter/nf_sockopt.c
-+++ b/net/netfilter/nf_sockopt.c
-@@ -65,9 +65,6 @@ static struct nf_sockopt_ops *nf_sockopt_find(struct sock *sk, int pf,
+--- a/net/bridge/br_ioctl.c
++++ b/net/bridge/br_ioctl.c
+@@ -21,12 +21,12 @@
+ #include "br_private.h"
+ 
+ /* called with RTNL */
+-static int get_bridge_ifindices(int *indices, int num)
++static int get_bridge_ifindices(struct net *net, int *indices, int num)
  {
- 	struct nf_sockopt_ops *ops;
+ 	struct net_device *dev;
+ 	int i = 0;
  
--	if (!net_eq(sock_net(sk), &init_net))
--		return ERR_PTR(-ENOPROTOOPT);
+-	for_each_netdev(&init_net, dev) {
++	for_each_netdev(net, dev) {
+ 		if (i >= num)
+ 			break;
+ 		if (dev->priv_flags & IFF_EBRIDGE)
+@@ -89,7 +89,7 @@ static int add_del_if(struct net_bridge *br, int ifindex, int isadd)
+ 	if (!capable(CAP_NET_ADMIN))
+ 		return -EPERM;
+ 
+-	dev = dev_get_by_index(&init_net, ifindex);
++	dev = dev_get_by_index(dev_net(br->dev), ifindex);
+ 	if (dev == NULL)
+ 		return -EINVAL;
+ 
+@@ -309,7 +309,7 @@ static int old_dev_ioctl(struct net_device *dev, struct ifreq *rq, int cmd)
+ 	return -EOPNOTSUPP;
+ }
+ 
+-static int old_deviceless(void __user *uarg)
++static int old_deviceless(struct net *net, void __user *uarg)
+ {
+ 	unsigned long args[3];
+ 
+@@ -331,7 +331,7 @@ static int old_deviceless(void __user *uarg)
+ 		if (indices == NULL)
+ 			return -ENOMEM;
+ 
+-		args[2] = get_bridge_ifindices(indices, args[2]);
++		args[2] = get_bridge_ifindices(net, indices, args[2]);
+ 
+ 		ret = copy_to_user((void __user *)args[1], indices, args[2]*sizeof(int))
+ 			? -EFAULT : args[2];
+@@ -354,9 +354,9 @@ static int old_deviceless(void __user *uarg)
+ 		buf[IFNAMSIZ-1] = 0;
+ 
+ 		if (args[0] == BRCTL_ADD_BRIDGE)
+-			return br_add_bridge(buf);
++			return br_add_bridge(net, buf);
+ 
+-		return br_del_bridge(buf);
++		return br_del_bridge(net, buf);
+ 	}
+ 	}
+ 
+@@ -368,7 +368,7 @@ int br_ioctl_deviceless_stub(struct net *net, unsigned int cmd, void __user *uar
+ 	switch (cmd) {
+ 	case SIOCGIFBR:
+ 	case SIOCSIFBR:
+-		return old_deviceless(uarg);
++		return old_deviceless(net, uarg);
+ 
+ 	case SIOCBRADDBR:
+ 	case SIOCBRDELBR:
+@@ -383,9 +383,9 @@ int br_ioctl_deviceless_stub(struct net *net, unsigned int cmd, void __user *uar
+ 
+ 		buf[IFNAMSIZ-1] = 0;
+ 		if (cmd == SIOCBRADDBR)
+-			return br_add_bridge(buf);
++			return br_add_bridge(net, buf);
+ 
+-		return br_del_bridge(buf);
++		return br_del_bridge(net, buf);
+ 	}
+ 	}
+ 	return -EOPNOTSUPP;
+--- a/net/bridge/br_netlink.c
++++ b/net/bridge/br_netlink.c
+@@ -82,6 +82,7 @@ nla_put_failure:
+  */
+ void br_ifinfo_notify(int event, struct net_bridge_port *port)
+ {
++	struct net *net = dev_net(port->dev);
+ 	struct sk_buff *skb;
+ 	int err = -ENOBUFS;
+ 
+@@ -97,10 +98,10 @@ void br_ifinfo_notify(int event, struct net_bridge_port *port)
+ 		kfree_skb(skb);
+ 		goto errout;
+ 	}
+-	err = rtnl_notify(skb, &init_net,0, RTNLGRP_LINK, NULL, GFP_ATOMIC);
++	err = rtnl_notify(skb, net, 0, RTNLGRP_LINK, NULL, GFP_ATOMIC);
+ errout:
+ 	if (err < 0)
+-		rtnl_set_sk_err(&init_net, RTNLGRP_LINK, err);
++		rtnl_set_sk_err(net, RTNLGRP_LINK, err);
+ }
+ 
+ /*
+@@ -112,11 +113,8 @@ static int br_dump_ifinfo(struct sk_buff *skb, struct netlink_callback *cb)
+ 	struct net_device *dev;
+ 	int idx;
+ 
+-	if (net != &init_net)
+-		return 0;
 -
- 	if (mutex_lock_interruptible(&nf_sockopt_mutex) != 0)
- 		return ERR_PTR(-EINTR);
+ 	idx = 0;
+-	for_each_netdev(&init_net, dev) {
++	for_each_netdev(net, dev) {
+ 		/* not a bridge port */
+ 		if (dev->br_port == NULL || idx < cb->args[0])
+ 			goto skip;
+@@ -147,9 +145,6 @@ static int br_rtm_setlink(struct sk_buff *skb,  struct nlmsghdr *nlh, void *arg)
+ 	struct net_bridge_port *p;
+ 	u8 new_state;
+ 
+-	if (net != &init_net)
+-		return -EINVAL;
+-
+ 	if (nlmsg_len(nlh) < sizeof(*ifm))
+ 		return -EINVAL;
+ 
+@@ -165,7 +160,7 @@ static int br_rtm_setlink(struct sk_buff *skb,  struct nlmsghdr *nlh, void *arg)
+ 	if (new_state > BR_STATE_BLOCKING)
+ 		return -EINVAL;
+ 
+-	dev = __dev_get_by_index(&init_net, ifm->ifi_index);
++	dev = __dev_get_by_index(net, ifm->ifi_index);
+ 	if (!dev)
+ 		return -ENODEV;
+ 
+--- a/net/bridge/br_notify.c
++++ b/net/bridge/br_notify.c
+@@ -35,9 +35,6 @@ static int br_device_event(struct notifier_block *unused, unsigned long event, v
+ 	struct net_bridge_port *p = dev->br_port;
+ 	struct net_bridge *br;
+ 
+-	if (!net_eq(dev_net(dev), &init_net))
+-		return NOTIFY_DONE;
+-
+ 	/* not a port of a bridge */
+ 	if (p == NULL)
+ 		return NOTIFY_DONE;
+--- a/net/bridge/br_private.h
++++ b/net/bridge/br_private.h
+@@ -174,8 +174,8 @@ extern void br_flood_forward(struct net_bridge *br, struct sk_buff *skb);
+ 
+ /* br_if.c */
+ extern void br_port_carrier_check(struct net_bridge_port *p);
+-extern int br_add_bridge(const char *name);
+-extern int br_del_bridge(const char *name);
++extern int br_add_bridge(struct net *net, const char *name);
++extern int br_del_bridge(struct net *net, const char *name);
+ extern void br_cleanup_bridges(void);
+ extern int br_add_if(struct net_bridge *br,
+ 	      struct net_device *dev);
+--- a/net/bridge/br_stp_bpdu.c
++++ b/net/bridge/br_stp_bpdu.c
+@@ -140,9 +140,6 @@ void br_stp_rcv(const struct stp_proto *proto, struct sk_buff *skb,
+ 	struct net_bridge *br;
+ 	const unsigned char *buf;
+ 
+-	if (!net_eq(dev_net(dev), &init_net))
+-		goto err;
+-
+ 	if (!p)
+ 		goto err;
+ 
+-- 
+1.5.4.5
