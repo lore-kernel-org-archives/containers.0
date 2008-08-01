@@ -1,15 +1,14 @@
-From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 1/1] namespaces: introduce sys_hijack (v11)
-Date: Fri, 1 Aug 2008 09:22:06 -0500
-Message-ID: <20080801142206.GB11553@us.ibm.com>
-References: <20080731183213.GA12033@us.ibm.com>
-	<20080801172811.FEC3.KOSAKI.MOTOHIRO@jp.fujitsu.com>
+From: Thomas Petazzoni <thomas.petazzoni-wi1+55ScJUtKEb57/3fJTNBPR1lH4CV8@public.gmane.org>
+Subject: Re: [PATCH 2/6] Container Freezer: Make refrigerator always available
+Date: Fri, 1 Aug 2008 16:27:12 +0200
+Message-ID: <20080801162712.63721e8c__46046.5509714142$1217604894$gmane$org@surf>
+References: <20080801050659.924495279@us.ibm.com>
+	<20080801050700.528446138@us.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <20080801172811.FEC3.KOSAKI.MOTOHIRO-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+In-Reply-To: <20080801050700.528446138-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,58 +18,27 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: KOSAKI Motohiro <kosaki.motohiro-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
-Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+To: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Cc: linux-embedded-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Michael Opdenacker <michael-wi1+55ScJUtKEb57/3fJTNBPR1lH4CV8@public.gmane.org>, Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Linux-Kernel <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, "Rafael J. Wysocki" <rjw-KKrjLPT3xs0@public.gmane.org>, Cedric Le Goater <clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>, Linux-FOgKQjlUJ6BQetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, linux-pm-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Quoting KOSAKI Motohiro (kosaki.motohiro-+CUm20s59erQFUHtdCDX3A@public.gmane.org):
-> Hi
-> 
-> fork() is very important for system performance.
-> I worry about performance regression if this feature isn't used.
-> 
-> Could you mesure spawn benchmark in unixbench?
-
-Yes, I will do that.  I'll send the results next week.
-
-Some context and history about this patch:
-
-	1. Originally the 'enter a namespace' functionality was
-	   implemented (in vserver and in -lxc, maybe also in
-	   openvz) by specifying an integer id for a container
-	   to enter.  See for instance the patches under
-	   http://lxc.sourceforge.net/patches/2.6.25/2.6.25-rc8-mm2-lxc1/broken-out/bind_ns/
-
-	2. At one point I started extending the ns_cgroup to
-	   allow namespace entering by attaching to an ns_cgroup.
-	   So 'echo $$ > /containers/5487/tasks' would switch
-	   your nsproxy.  People didn't like that much in part
-	   because switching the namespaces while a task is
-	   executing seems frought with potential dangers,
-	   though those remain unexplored.
-
-	3. Eric suggested that namespace entering should just
-	   be done by ptracing a process in a container and
-	   bending it to our will.  The hijack patchset was
-	   sort of a response to that.  Strictly using ptrace
-	   seemed to me to leave to leave us too much at the
-	   mercy of the target's context.
-	   For instance, if using selinux, when you ptrace a
-	   target you are subject to the target's permissions.
-	   With hijack, you'll continue with your own,
-	   presumably administrator-level, privilege level.
-
-	4. We stopped posting this patch some time ago because
-	   it seems worth seeing just how far we can go in
-	   terms of analyzing and configuring containers by
-	   properly setting up namespaces (i.e. hierarchical
-	   pid and user namespaces) and using filesystems
-	   (in conjunction with mounts propagation) to do the
-	   configuration.
-	   But at the mini-summit last week it was mentioned
-	   that OpenVZ still wants namespace entering, and
-	   there seemed to be no real opposition, so we told
-	   Pavel we would repost this patchset.
-
-thanks,
--serge
+SGksCgpMZSBUaHUsIDMxIEp1bCAyMDA4IDIyOjA3OjAxIC0wNzAwLApNYXR0IEhlbHNsZXkgPG1h
+dHRobHRjQHVzLmlibS5jb20+IGEgw6ljcml0IDoKCj4gLS0tIGEva2VybmVsL01ha2VmaWxlCj4g
+KysrIGIva2VybmVsL01ha2VmaWxlCj4gQEAgLTUsNyArNSw3IEBACj4gIG9iai15ICAgICA9IHNj
+aGVkLm8gZm9yay5vIGV4ZWNfZG9tYWluLm8gcGFuaWMubyBwcmludGsubyBcCj4gIAkgICAgY3B1
+Lm8gZXhpdC5vIGl0aW1lci5vIHRpbWUubyBzb2Z0aXJxLm8gcmVzb3VyY2UubyBcCj4gIAkgICAg
+c3lzY3RsLm8gY2FwYWJpbGl0eS5vIHB0cmFjZS5vIHRpbWVyLm8gdXNlci5vIFwKPiAtCSAgICBz
+aWduYWwubyBzeXMubyBrbW9kLm8gd29ya3F1ZXVlLm8gcGlkLm8gXAo+ICsJICAgIHNpZ25hbC5v
+IHN5cy5vIGttb2QubyB3b3JrcXVldWUubyBwaWQubyBmcmVlemVyLm8gXAoKSSBoYXZlIHRoZSBp
+bXByZXNzaW9uIHRoYXQgdGhlIGNvZGUgaW4ga2VybmVsL3Bvd2VyL3Byb2Nlc3MuYyB3YXMKY29t
+cGlsZWQgb25seSBpZiBDT05GSUdfUE1fU0xFRVAgd2FzIHNldC4gTm93IHRoYXQgdGhlIGNvZGUg
+aGFzIGJlZW4KbW92ZWQgdG8ga2VybmVsL2ZyZWV6ZXIuYywgaXQgaXMgdW5jb25kaXRpb25uYWx5
+IGNvbXBpbGVkIGluIGV2ZXJ5Cmtlcm5lbC4gSXMgdGhhdCBjb3JyZWN0ID8KCklmIHNvLCBpcyBp
+dCBwb3NzaWJsZSB0byBwdXQgdGhpcyBuZXcgZmVhdHVyZSB1bmRlciBzb21lCkNPTkZJR19TT01F
+VEhJTkcgb3B0aW9uLCBmb3IgcGVvcGxlIHdobyBjYXJlIGFib3V0IHRoZSBrZXJuZWwgc2l6ZSA/
+CgpUaGFua3MsCgpUaG9tYXMKLS0gClRob21hcyBQZXRhenpvbmksIEZyZWUgRWxlY3Ryb25zCktl
+cm5lbCwgZHJpdmVycyBhbmQgZW1iZWRkZWQgTGludXggZGV2ZWxvcG1lbnQsCmNvbnN1bHRpbmcs
+IHRyYWluaW5nIGFuZCBzdXBwb3J0LgpodHRwOi8vZnJlZS1lbGVjdHJvbnMuY29tCl9fX19fX19f
+X19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fCkNvbnRhaW5lcnMgbWFpbGlu
+ZyBsaXN0CkNvbnRhaW5lcnNAbGlzdHMubGludXgtZm91bmRhdGlvbi5vcmcKaHR0cHM6Ly9saXN0
+cy5saW51eC1mb3VuZGF0aW9uLm9yZy9tYWlsbWFuL2xpc3RpbmZvL2NvbnRhaW5lcnM=
