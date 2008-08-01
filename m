@@ -1,16 +1,12 @@
-From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [RFC][PATCH 2/2] CR: handle a single task with private memory maps
-Date: Thu, 31 Jul 2008 16:25:35 -0500
-Message-ID: <20080731212534.GA7858@us.ibm.com>
-References: <Pine.LNX.4.64.0807292325290.9868@takamine.ncl.cs.columbia.edu>
-	<20080730220752.GA3518@us.ibm.com>
-	<4890E930.9090204@cs.columbia.edu>
+From: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Subject: [PATCH 0/9] Bridging and ebtables in netns!
+Date: Fri, 1 Aug 2008 05:23:36 +0400
+Message-ID: <20080801012336.GA26761@martell.zuzino.mipt.ru>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <4890E930.9090204-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -20,80 +16,47 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Cc: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+To: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Quoting Oren Laadan (orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org):
->
->
-> Serge E. Hallyn wrote:
->> Quoting Oren Laadan (orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org):
->>> +int do_checkpoint(struct cr_ctx *ctx)
->>> +{
->>> +	int ret;
->>> +
->>> +	/* FIX: need to test whether container is checkpointable */
->>> +
->>> +	ret = cr_write_hdr(ctx);
->>> +	if (!ret)
->>> +		ret = cr_write_task(ctx, current);
->>> +	if (!ret)
->>> +		ret = cr_write_tail(ctx);
->>> +
->>> +	/* on success, return (unique) checkpoint identifier */
->>> +	if (!ret)
->>> +		ret = ctx->crid;
->>
->> Does this crid have a purpose?
->
-> yes, at least three; both are for the future, but important to set the
-> meaning of the return value of the syscall already now. The "crid" is
-> the CR-identifier that identifies the checkpoint. Every checkpoint is
-> assigned a unique number (using an atomic counter).
->
-> 1) if a checkpoint is taken and kept in memory (instead of to a file) then
-> this will be the identifier with which the restart (or cleanup) would refer
-> to the (in memory) checkpoint image
->
-> 2) to reduce downtime of the checkpoint, data will be aggregated on the
-> checkpoint context, as well as referenced to (cow-ed) pages. This data can
-> persist between calls to sys_checkpoint(), and the 'crid', again, will be
-> used to identify the (in-memory-to-be-dumped-to-storage) context.
->
-> 3) for incremental checkpoint (where a successive checkpoint will only
-> save what has changed since the previous checkpoint) there will be a need
-> to identify the previous checkpoints (to be able to know where to take
-> data from during restart). Again, a 'crid' is handy.
->
-> [in fact, for the 3rd use, it will make sense to write that number as
-> part of the checkpoint image header]
->
-> Note that by doing so, a process that checkpoints itself (in its own
-> context), can use code that is similar to the logic of fork():
->
-> 	...
-> 	crid = checkpoint(...);
-> 	switch (crid) {
-> 	case -1:
-> 		perror("checkpoint failed");
-> 		break;
-> 	default:
-> 		fprintf(stderr, "checkpoint succeeded, CRID=%d\n", ret);
-> 		/* proceed with execution after checkpoint */
-> 		...
-> 		break;
-> 	case 0:
-> 		fprintf(stderr, "returned after restart\n");
-> 		/* proceed with action required following a restart */
-> 		...
-> 		break;
-> 	}
-> 	...
+Hi, I'm going to send this once networking people will start accepting
+new stuff.
 
-Thanks - for this and the later explanations in replies to Louis.
+Please, try and test on your favourite bridging setup, I'm currently
+very limited in this.
 
-Really I had no doubt it had a purpose :)  but wasn't sure what it was.
-Quite clear now.  Thanks.
+To try ebtables, apply this patch first:
 
--serge
+
+diff --git a/net/netfilter/core.c b/net/netfilter/core.c
+index 292fa28..c4065b8 100644
+--- a/net/netfilter/core.c
++++ b/net/netfilter/core.c
+@@ -165,14 +165,6 @@ int nf_hook_slow(int pf, unsigned int hook, struct sk_buff *skb,
+ 	unsigned int verdict;
+ 	int ret = 0;
+ 
+-#ifdef CONFIG_NET_NS
+-	struct net *net;
+-
+-	net = indev == NULL ? dev_net(outdev) : dev_net(indev);
+-	if (net != &init_net)
+-		return 1;
+-#endif
+-
+ 	/* We may already have this, but read-locks nest anyway */
+ 	rcu_read_lock();
+ 
+diff --git a/net/netfilter/nf_sockopt.c b/net/netfilter/nf_sockopt.c
+index 0148968..aa01c54 100644
+--- a/net/netfilter/nf_sockopt.c
++++ b/net/netfilter/nf_sockopt.c
+@@ -65,9 +65,6 @@ static struct nf_sockopt_ops *nf_sockopt_find(struct sock *sk, int pf,
+ {
+ 	struct nf_sockopt_ops *ops;
+ 
+-	if (!net_eq(sock_net(sk), &init_net))
+-		return ERR_PTR(-ENOPROTOOPT);
+-
+ 	if (mutex_lock_interruptible(&nf_sockopt_mutex) != 0)
+ 		return ERR_PTR(-EINTR);
