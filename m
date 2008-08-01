@@ -1,7 +1,7 @@
 From: Bastian Blank <bastian-yyjItF7Rl6lg9hUCZPvPmw@public.gmane.org>
 Subject: Re: [PATCH 1/1] namespaces: introduce sys_hijack (v11)
-Date: Fri, 1 Aug 2008 19:19:51 +0200
-Message-ID: <20080801171951.GA23754@wavehammer.waldi.eu.org>
+Date: Fri, 1 Aug 2008 19:22:01 +0200
+Message-ID: <20080801172201.GA24628@wavehammer.waldi.eu.org>
 References: <20080731183213.GA12033@us.ibm.com>
 	<20080801092318.GA2002@wavehammer.waldi.eu.org>
 	<20080801141152.GA11553@us.ibm.com>
@@ -22,8 +22,11 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>, PavelEmelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
 List-Id: containers.vger.kernel.org
+
+Resend: Removed some recipients by accident.
 
 On Fri, Aug 01, 2008 at 11:39:05AM -0500, Serge E. Hallyn wrote:
 > Quoting Bastian Blank (bastian-yyjItF7Rl6lg9hUCZPvPmw@public.gmane.org):
