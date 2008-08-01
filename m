@@ -1,12 +1,11 @@
-From: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: [PATCH 9/9] ebtables: cleanup table entries during table unregister
-Date: Fri, 1 Aug 2008 05:42:30 +0400
-Message-ID: <20080801014230.GJ26761@martell.zuzino.mipt.ru>
+From: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: [PATCH 0/6] Container Freezer: Reuse Suspend Freezer
+Date: Thu, 31 Jul 2008 22:06:59 -0700
+Message-ID: <20080801050659.924495279@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -16,32 +15,101 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
+To: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
+Cc: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Linux-Kernel <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, "Rafael J. Wysocki" <rjw-KKrjLPT3xs0@public.gmane.org>, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, linux-pm-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-So far table could be unregistered only during module unload.
-Which didn't happen, because depending on table entries, module was
-pinned enough times to prevent unload at all.
+This patch series introduces a cgroup subsystem that utilizes the swsusp
+freezer to freeze a group of tasks. It's immediately useful for batch job
+management scripts. It should also be useful in the future for implementing
+container checkpoint/restart.
 
-Now table will be unregistered during netns stop, so prevent module
-refcount leaks by cleaning up table entries at table unregister time.
+The freezer subsystem in the container filesystem defines a cgroup file named
+freezer.state. Reading freezer.state will return the current state of the
+cgroup.  Writing "FROZEN" to the state file will freeze all tasks in the
+cgroup. Subsequently writing "RUNNING" will unfreeze the tasks in the cgroup. 
 
-Signed-off-by: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
----
+* Examples of usage :
 
- net/bridge/netfilter/ebtables.c |    2 ++
- 1 file changed, 2 insertions(+)
+   # mkdir /containers/freezer
+   # mount -t cgroup -ofreezer freezer  /containers
+   # mkdir /containers/0
+   # echo $some_pid > /containers/0/tasks
 
---- a/net/bridge/netfilter/ebtables.c
-+++ b/net/bridge/netfilter/ebtables.c
-@@ -1262,6 +1262,8 @@ void ebt_unregister_table(struct ebt_table *table)
- 	mutex_lock(&ebt_mutex);
- 	list_del(&table->list);
- 	mutex_unlock(&ebt_mutex);
-+	EBT_ENTRY_ITERATE(table->private->entries, table->private->entries_size,
-+			  ebt_cleanup_entry, NULL);
- 	vfree(table->private->entries);
- 	if (table->private->chainstack) {
- 		for_each_possible_cpu(i)
+to get status of the freezer subsystem :
+
+   # cat /containers/0/freezer.state
+   RUNNING
+
+to freeze all tasks in the container :
+
+   # echo FROZEN > /containers/0/freezer.state
+   # cat /containers/0/freezer.state
+   FREEZING
+   # cat /containers/0/freezer.state
+   FROZEN
+
+to unfreeze all tasks in the container :
+
+   # echo RUNNING > /containers/0/freezer.state
+   # cat /containers/0/freezer.state
+   RUNNING
+
+Andrew, since I hear Rafael doesn't have time to review these (again) at this
+time, please consider these patches for -mm.
+
+Cheers,
+	-Matt Helsley
+
+Changes since v4:
+v5:
+	Split out write_string as a separate patch for easier merging
+		with trees lacking certain cgroup patches at the time.
+	Checked use of task alloc lock for races with swsusp freeze/thaw --
+		looks safe because there are explicit barriers to handle
+		freeze/thaw races for individual tasks, we explicitly
+		handle partial group freezing, and partial group thawing
+		should be resolved without changing swsusp's loop.
+	Updated the patches to Linus' git tree as of approximately
+		7/31/2008.
+	Added Pavel and Serge's Acked-by lines to Acked patches
+
+v4 (Almost all of these changes are confined to patch 3):
+	Reworked the series to use task_lock() instead of RCU.
+	Reworked the series to use write_string() and read_seq_string()
+		cgroup methods.
+	Fixed the race Paul Menage identified.
+	Fixed up check_if_frozen() to do more than just test the FROZEN
+		flag. In some cases tasks could be stopped (T) and marked
+		FREEZING. When that happens we can safely assume that it
+		will be frozen immediately upon waking up in the kernel.
+		Waiting for it to get marked with PF_FROZEN in order to
+		transition to the FROZEN state would block unnecessarily.
+	Removed freezer_ prefix from static functions in cgroup_freezer.c.
+	Simplified STATE_ switch.
+	Updated the locking comments.
+
+v3:
+	Ported to 2.6.26-rc5-mm2 with Rafael's freezer patches
+	Tested on 24 combinations of 3 architectures (x86, x86_64, ppc64)
+		with 8 different kernel configs varying power management
+		and cgroup config variables. Each patch builds and boots
+		in these 24 combinations.
+	Passes functional testing.
+
+v2 (roughly patches 3 and 5):
+	Moved the "kill" file into a separate cgroup subsystem (signal) and
+		it's own patch.
+	Changed the name of the file from freezer.freeze to freezer.state.
+	Switched from taking 1 and 0 as input to the strings "FROZEN" and 
+		"RUNNING", respectively. This helps keep the interface
+		human-usable if/when we need to more states.
+	Checked that stopped or interrupted is "frozen enough"
+		Since try_to_freeze() is called upon wakeup of these tasks
+		this should be fine. This idea comes from recent changes to
+		the freezer.
+	Checked that if (task == current) whilst freezing cgroup we're ok
+	Fixed bug where -EBUSY would always be returned when freezing
+	Added code to handle userspace retries for any remaining -EBUSY
+
 -- 
-1.5.4.5
