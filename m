@@ -1,14 +1,16 @@
-From: Thomas Petazzoni <thomas.petazzoni-wi1+55ScJUtKEb57/3fJTNBPR1lH4CV8@public.gmane.org>
-Subject: Re: [PATCH 2/6] Container Freezer: Make refrigerator always available
-Date: Fri, 1 Aug 2008 16:27:12 +0200
-Message-ID: <20080801162712.63721e8c__46046.5509714142$1217604894$gmane$org@surf>
-References: <20080801050659.924495279@us.ibm.com>
-	<20080801050700.528446138@us.ibm.com>
+From: Bastian Blank <bastian-yyjItF7Rl6lg9hUCZPvPmw@public.gmane.org>
+Subject: Re: [PATCH 1/1] namespaces: introduce sys_hijack (v11)
+Date: Fri, 1 Aug 2008 17:51:48 +0200
+Message-ID: <20080801155148.GA16760@wavehammer.waldi.eu.org>
+References: <20080731183213.GA12033@us.ibm.com>
+	<20080801092318.GA2002@wavehammer.waldi.eu.org>
+	<20080801141152.GA11553@us.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: base64
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20080801050700.528446138-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <20080801141152.GA11553-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,27 +20,59 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Cc: linux-embedded-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Michael Opdenacker <michael-wi1+55ScJUtKEb57/3fJTNBPR1lH4CV8@public.gmane.org>, Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Linux-Kernel <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, "Rafael J. Wysocki" <rjw-KKrjLPT3xs0@public.gmane.org>, Cedric Le Goater <clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>, Linux-FOgKQjlUJ6BQetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, linux-pm-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-SGksCgpMZSBUaHUsIDMxIEp1bCAyMDA4IDIyOjA3OjAxIC0wNzAwLApNYXR0IEhlbHNsZXkgPG1h
-dHRobHRjQHVzLmlibS5jb20+IGEgw6ljcml0IDoKCj4gLS0tIGEva2VybmVsL01ha2VmaWxlCj4g
-KysrIGIva2VybmVsL01ha2VmaWxlCj4gQEAgLTUsNyArNSw3IEBACj4gIG9iai15ICAgICA9IHNj
-aGVkLm8gZm9yay5vIGV4ZWNfZG9tYWluLm8gcGFuaWMubyBwcmludGsubyBcCj4gIAkgICAgY3B1
-Lm8gZXhpdC5vIGl0aW1lci5vIHRpbWUubyBzb2Z0aXJxLm8gcmVzb3VyY2UubyBcCj4gIAkgICAg
-c3lzY3RsLm8gY2FwYWJpbGl0eS5vIHB0cmFjZS5vIHRpbWVyLm8gdXNlci5vIFwKPiAtCSAgICBz
-aWduYWwubyBzeXMubyBrbW9kLm8gd29ya3F1ZXVlLm8gcGlkLm8gXAo+ICsJICAgIHNpZ25hbC5v
-IHN5cy5vIGttb2QubyB3b3JrcXVldWUubyBwaWQubyBmcmVlemVyLm8gXAoKSSBoYXZlIHRoZSBp
-bXByZXNzaW9uIHRoYXQgdGhlIGNvZGUgaW4ga2VybmVsL3Bvd2VyL3Byb2Nlc3MuYyB3YXMKY29t
-cGlsZWQgb25seSBpZiBDT05GSUdfUE1fU0xFRVAgd2FzIHNldC4gTm93IHRoYXQgdGhlIGNvZGUg
-aGFzIGJlZW4KbW92ZWQgdG8ga2VybmVsL2ZyZWV6ZXIuYywgaXQgaXMgdW5jb25kaXRpb25uYWx5
-IGNvbXBpbGVkIGluIGV2ZXJ5Cmtlcm5lbC4gSXMgdGhhdCBjb3JyZWN0ID8KCklmIHNvLCBpcyBp
-dCBwb3NzaWJsZSB0byBwdXQgdGhpcyBuZXcgZmVhdHVyZSB1bmRlciBzb21lCkNPTkZJR19TT01F
-VEhJTkcgb3B0aW9uLCBmb3IgcGVvcGxlIHdobyBjYXJlIGFib3V0IHRoZSBrZXJuZWwgc2l6ZSA/
-CgpUaGFua3MsCgpUaG9tYXMKLS0gClRob21hcyBQZXRhenpvbmksIEZyZWUgRWxlY3Ryb25zCktl
-cm5lbCwgZHJpdmVycyBhbmQgZW1iZWRkZWQgTGludXggZGV2ZWxvcG1lbnQsCmNvbnN1bHRpbmcs
-IHRyYWluaW5nIGFuZCBzdXBwb3J0LgpodHRwOi8vZnJlZS1lbGVjdHJvbnMuY29tCl9fX19fX19f
-X19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fCkNvbnRhaW5lcnMgbWFpbGlu
-ZyBsaXN0CkNvbnRhaW5lcnNAbGlzdHMubGludXgtZm91bmRhdGlvbi5vcmcKaHR0cHM6Ly9saXN0
-cy5saW51eC1mb3VuZGF0aW9uLm9yZy9tYWlsbWFuL2xpc3RpbmZvL2NvbnRhaW5lcnM=
+On Fri, Aug 01, 2008 at 09:11:53AM -0500, Serge E. Hallyn wrote:
+> Quoting Bastian Blank (bastian-yyjItF7Rl6lg9hUCZPvPmw@public.gmane.org):
+> > On Thu, Jul 31, 2008 at 01:32:13PM -0500, Serge E. Hallyn wrote:
+> > > The effect is a sort of namespace enter.  The following program
+> > > uses sys_hijack to 'enter' all namespaces of the specified
+> > > cgroup.
+> > 
+> > I currently fail to see what the differences to a normal cgroup attach
+> > is.
+> 
+> A normal cgroup attach doesn't switch a task's root and nsproxies.
+
+> Current functionality doesn't suffice because namespaces and
+> fs_struct are not switched with cgroup attach.  Cgroup attach is
+> just about tracking tasks, and keeping stats and enforcing limits or
+> guarantees on the groups.
+
+If you apply a nsproxy to a cgroup, it is part of its limits.
+
+> The problem with implementing this feature using the attach
+> semantics is that it would move an existing task into the new
+> cgroup.  That would get much more complicated, especially when
+> you consider pid namespaces, where we explicitly refuse to
+> unshare for the same reason.
+
+Okay, this is a reason. But I think it should disallow attach after the
+nsproxy is set, otherwise you can use attach and hijack for the same
+cgroup and produce different behaviour. The description of the
+can_attach method does not mention such a test, but it seems to do one.
+
+Why is it not enough to use the pid of the ns creator? The ns cgroups
+are created including the pid in the name. And it would avoid using that
+weird interface with fd of a cgroups file.
+
+> That is why, with hijack, we clone a new task which is started
+> afresh in the new namespaces.
+
+Why did you name it "hijack"? If I had not read the mail, I'd no idea
+what this is about. It does not take away the information from something
+else, it overrides the information (nsprox, fs) on the new task.
+
+But I think I have a different problem. Currently, namespaces are
+destructed if the last process using them exits. You change that, they
+will survive until the cgroup dies. Or is that cgroup destructed when
+there are no longer processes using the nsproxy? As the commit message
+speaks about "pid wraparound" as problem, I doubt that.
+
+Bastian
+
+-- 
+To live is always desirable.
+		-- Eleen the Capellan, "Friday's Child", stardate 3498.9
