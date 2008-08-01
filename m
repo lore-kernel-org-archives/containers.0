@@ -1,12 +1,13 @@
-From: KOSAKI Motohiro <kosaki.motohiro-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+From: Bastian Blank <bastian-yyjItF7Rl6lg9hUCZPvPmw@public.gmane.org>
 Subject: Re: [PATCH 1/1] namespaces: introduce sys_hijack (v11)
-Date: Fri, 01 Aug 2008 17:30:19 +0900
-Message-ID: <20080801172811.FEC3.KOSAKI.MOTOHIRO@jp.fujitsu.com>
+Date: Fri, 1 Aug 2008 11:23:18 +0200
+Message-ID: <20080801092318.GA2002@wavehammer.waldi.eu.org>
 References: <20080731183213.GA12033@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Content-Disposition: inline
 In-Reply-To: <20080731183213.GA12033-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
@@ -21,22 +22,49 @@ To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Hi
+On Thu, Jul 31, 2008 at 01:32:13PM -0500, Serge E. Hallyn wrote:
+> Introduce sys_hijack (for i386 and s390 only so far).  An open
+> fd for a cgroup 'tasks' file is specified.  The main purpose
+> is to allow entering an empty cgroup without having to keep a
+> task alive in the target cgroup.
 
-fork() is very important for system performance.
-I worry about performance regression if this feature isn't used.
+What is the problem if no task is alive in the target?
 
-Could you mesure spawn benchmark in unixbench?
+> The effect is a sort of namespace enter.  The following program
+> uses sys_hijack to 'enter' all namespaces of the specified
+> cgroup.
 
+I currently fail to see what the differences to a normal cgroup attach
+is.
 
-
-> Hi Pavel,
+>         For instance in one terminal, do
 > 
-> Here is the 'hijack' patch that was mentioned during the namespaces
-> part of the containers mini-summit.  It's a proposed way of entering
-> namespaces.
+> 	mount -t cgroup -ons cgroup /cgroup
+> 	hostname
+> 	  qemu
+> 	ns_exec -u /bin/sh
+> 	  hostname serge
+>           echo $$
+>             2996
+> 	  cat /proc/$$/cgroup
+> 	    ns:/node_2996
 > 
-> It's been rotting for awhile as you can see by the changelog, but
-> hopefully I updated it sufficiently and correctly.
+> In another terminal then do
 > 
-> -serge
+> 	hostname
+> 	  qemu
+> 	cat /proc/$$/cgroup
+> 	  ns:/
+> 	hijack /cgroup/node_2996/tasks
+
+Why can't this be done by a echo $$ >> /cgroup/node_2996/attach?
+
+> 	  hostname
+> 	    serge
+> 	  cat /proc/$$/cgroup
+> 	    ns:/node_2996
+
+Bastian
+
+-- 
+Star Trek Lives!
