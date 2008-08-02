@@ -1,14 +1,16 @@
 From: "Rafael J. Wysocki" <rjw-KKrjLPT3xs0@public.gmane.org>
-Subject: Re: [PATCH 2/6] Container Freezer: Make refrigerator always available
-Date: Sat, 2 Aug 2008 16:34:45 +0200
-Message-ID: <200808021634.46459.rjw__12879.1547184393$1217687657$gmane$org@sisk.pl>
+Subject: Re: [PATCH 3/6] Container Freezer: Implement freezer cgroup subsystem
+Date: Sat, 2 Aug 2008 16:37:21 +0200
+Message-ID: <200808021637.22831.rjw__43784.0271428742$1217687872$gmane$org@sisk.pl>
 References: <20080801050659.924495279@us.ibm.com>
-	<200808020053.18638.rjw@sisk.pl>
-	<1217633074.25300.281.camel@localhost.localdomain>
+	<1217635891.25300.292.camel@localhost.localdomain>
+	<48940F0F.4050604@fr.ibm.com>
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary="===============1547854923688344726=="
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1217633074.25300.281.camel-bi+AKbBUZKY6gyzm1THtWbp2dZbC/Bob@public.gmane.org>
+In-Reply-To: <48940F0F.4050604-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
+Content-Disposition: inline
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -16,166 +18,207 @@ List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
 List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Mime-version: 1.0
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Cc: Thomas Petazzoni <thomas.petazzoni-wi1+55ScJUtKEb57/3fJTNBPR1lH4CV8@public.gmane.org>, linux-embedded-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Michael Opdenacker <michael-wi1+55ScJUtKEb57/3fJTNBPR1lH4CV8@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Linux-Kernel <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Cedric Le Goater <clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>, linux-pm-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+To: Cedric Le Goater <clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
+Cc: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Linux-Kernel <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, linux-pm-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
---===============1547854923688344726==
-Content-Type: text/plain;
-  charset="utf-7"
-Content-Transfer-Encoding: base64
-Content-Disposition: inline
+On Saturday, 2 of August 2008, Cedric Le Goater wrote:
+> Matt Helsley wrote:
+> > On Sat, 2008-08-02 at 00:58 +0200, Rafael J. Wysocki wrote:
+> >> On Friday, 1 of August 2008, Matt Helsley wrote:
+> >>> This patch implements a new freezer subsystem in the control groups framework.
+> >>> It provides a way to stop and resume execution of all tasks in a cgroup by
+> >>> writing in the cgroup filesystem.
+> >>>
+> >>> The freezer subsystem in the container filesystem defines a file named
+> >>> freezer.state. Writing "FROZEN" to the state file will freeze all tasks in the
+> >>> cgroup. Subsequently writing "RUNNING" will unfreeze the tasks in the cgroup.
+> >>> Reading will return the current state.
+> >>>
+> >>> * Examples of usage :
+> >>>
+> >>>    # mkdir /containers/freezer
+> >>>    # mount -t cgroup -ofreezer freezer  /containers
+> >>>    # mkdir /containers/0
+> >>>    # echo $some_pid > /containers/0/tasks
+> >>>
+> >>> to get status of the freezer subsystem :
+> >>>
+> >>>    # cat /containers/0/freezer.state
+> >>>    RUNNING
+> >>>
+> >>> to freeze all tasks in the container :
+> >>>
+> >>>    # echo FROZEN > /containers/0/freezer.state
+> >>>    # cat /containers/0/freezer.state
+> >>>    FREEZING
+> >>>    # cat /containers/0/freezer.state
+> >>>    FROZEN
+> >>>
+> >>> to unfreeze all tasks in the container :
+> >>>
+> >>>    # echo RUNNING > /containers/0/freezer.state
+> >>>    # cat /containers/0/freezer.state
+> >>>    RUNNING
+> >>>
+> >>> This is the basic mechanism which should do the right thing for user space task
+> >>> in a simple scenario.
+> >>>
+> >>> It's important to note that freezing can be incomplete. In that case we return
+> >>> EBUSY. This means that some tasks in the cgroup are busy doing something that
+> >>> prevents us from completely freezing the cgroup at this time. After EBUSY,
+> >>> the cgroup will remain partially frozen -- reflected by freezer.state reporting
+> >>> "FREEZING" when read. The state will remain "FREEZING" until one of these
+> >>> things happens:
+> >>>
+> >>> 	1) Userspace cancels the freezing operation by writing "RUNNING" to
+> >>> 		the freezer.state file
+> >>> 	2) Userspace retries the freezing operation by writing "FROZEN" to
+> >>> 		the freezer.state file (writing "FREEZING" is not legal
+> >>> 		and returns EIO)
+> >>> 	3) The tasks that blocked the cgroup from entering the "FROZEN"
+> >>> 		state disappear from the cgroup's set of tasks.
+> >>>
+> >>> Signed-off-by: Cedric Le Goater <clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
+> >>> Signed-off-by: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+> >>> Acked-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+> >>> Tested-by: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+> >>> ---
+> >>>  include/linux/cgroup_freezer.h |   71 ++++++++
+> >>>  include/linux/cgroup_subsys.h  |    6 
+> >>>  include/linux/freezer.h        |   16 +-
+> >>>  init/Kconfig                   |    7 
+> >>>  kernel/Makefile                |    1 
+> >>>  kernel/cgroup_freezer.c        |  328 +++++++++++++++++++++++++++++++++++++++++
+> >>>  6 files changed, 425 insertions(+), 4 deletions(-)
+> >>>  create mode 100644 include/linux/cgroup_freezer.h
+> >>>  create mode 100644 kernel/cgroup_freezer.c
+> >>>
+> >>> Index: linux-2.6.27-rc1-mm1/include/linux/cgroup_freezer.h
+> >>> ===================================================================
+> >>> --- /dev/null
+> >>> +++ linux-2.6.27-rc1-mm1/include/linux/cgroup_freezer.h
+> >>> @@ -0,0 +1,71 @@
+> >>> +#ifndef _LINUX_CGROUP_FREEZER_H
+> >>> +#define _LINUX_CGROUP_FREEZER_H
+> >>> +/*
+> >>> + * cgroup_freezer.h -  control group freezer subsystem interface
+> >>> + *
+> >>> + * Copyright IBM Corporation, 2007
+> >>> + *
+> >>> + * Author : Cedric Le Goater <clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
+> >>> + *
+> >>> + * This program is free software; you can redistribute it and/or modify it
+> >>> + * under the terms of version 2.1 of the GNU Lesser General Public License
+> >>> + * as published by the Free Software Foundation.
+> >>> + *
+> >>> + * This program is distributed in the hope that it would be useful, but
+> >>> + * WITHOUT ANY WARRANTY; without even the implied warranty of
+> >>> + * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+> >>> + */
+> >>> +
+> >>> +#include <linux/cgroup.h>
+> >>> +
+> >>> +#ifdef CONFIG_CGROUP_FREEZER
+> >>> +
+> >>> +enum freezer_state {
+> >>> +	STATE_RUNNING = 0,
+> >>> +	STATE_FREEZING,
+> >>> +	STATE_FROZEN,
+> >>> +};
+> >>> +
+> >>> +struct freezer {
+> >>> +	struct cgroup_subsys_state css;
+> >>> +	enum freezer_state state;
+> >>> +	spinlock_t lock; /* protects _writes_ to state */
+> >>> +};
+> >>> +
+> >>> +static inline struct freezer *cgroup_freezer(
+> >>> +		struct cgroup *cgroup)
+> >>> +{
+> >>> +	return container_of(
+> >>> +		cgroup_subsys_state(cgroup, freezer_subsys_id),
+> >>> +		struct freezer, css);
+> >>> +}
+> >>> +
+> >>> +static inline struct freezer *task_freezer(struct task_struct *task)
+> >>> +{
+> >>> +	return container_of(task_subsys_state(task, freezer_subsys_id),
+> >>> +			    struct freezer, css);
+> >>> +}
+> >>> +
+> >>> +static inline int cgroup_frozen(struct task_struct *task)
+> >>> +{
+> >>> +	struct freezer *freezer;
+> >>> +	enum freezer_state state;
+> >>> +
+> >>> +	task_lock(task);
+> >>> +	freezer = task_freezer(task);
+> >>> +	state = freezer->state;
+> >>> +	task_unlock(task);
+> >>> +
+> >>> +	return state == STATE_FROZEN;
+> >>> +}
+> >>> +
+> >>> +#else /* !CONFIG_CGROUP_FREEZER */
+> >>> +
+> >>> +static inline int cgroup_frozen(struct task_struct *task)
+> >>> +{
+> >>> +	return 0;
+> >>> +}
+> >>> +
+> >>> +#endif /* !CONFIG_CGROUP_FREEZER */
+> >>> +
+> >>> +#endif /* _LINUX_CGROUP_FREEZER_H */
+> >> Hmm.  I wonder if we really need a separate file for this.  I'd prefer it to be
+> >> in freezer.h, unless there's a good reason not to place it in there.
+> > 
+> > 	Yeah, it's a pretty small header so combining it with another header
+> > would be nice. However if we combine it with freezer.h we'd be including
+> > cgroup.h in unrelated filesystem code. An alternative might be to put it
+> > into a cgroup header for "small" subsystems (which might just be
+> > cgroup.h for now..).
+> > 
+> > Thanks for the review!
+> 
+> I'm not sure the inline is really useful. In that case, we could probably do 
+> something like the following : 
+> 
+> include/linux/freezer.h :
+> 
+> 	#ifdef CONFIG_CGROUP_FREEZER
+> 
+> 	extern int cgroup_frozen(struct task_struct *task);
+> 
+> 	#else /* !CONFIG_CGROUP_FREEZER */
+> 
+> 	static inline int cgroup_frozen(struct task_struct *task)
+> 	{
+> 		return 0;
+> 	}
+> 
+> 	#endif /* !CONFIG_CGROUP_FREEZER */
+> 
+> and in kernel/cgroup_freezer.c:
+> 
+> 	int cgroup_frozen(struct task_struct *task)
+> 	{
+> 		struct freezer *freezer;
+> 		enum freezer_state state;
+> 
+> 		task_lock(task);
+> 		freezer = task_freezer(task);
+> 		state = freezer->state;
+> 		task_unlock(task);
+> 
+> 		return state == STATE_FROZEN;
+> 	}
+> 
+> and kill include/linux/cgroup_freezer.h ? 
 
-T24gU2F0dXJkYXksIDIgb2YgQXVndXN0IDIwMDgsIE1hdHQgSGVsc2xleSB3cm90ZToKPiAKPiBP
-biBTYXQsIDIwMDgtMDgtMDIgYXQgMDA6NTMgKy0wMjAwLCBSYWZhZWwgSi4gV3lzb2NraSB3cm90
-ZToKPiA+IE9uIEZyaWRheSwgMSBvZiBBdWd1c3QgMjAwOCwgTWF0dCBIZWxzbGV5IHdyb3RlOgo+
-ID4gPiAKPiA+ID4gT24gRnJpLCAyMDA4LTA4LTAxIGF0IDE2OjI3ICstMDIwMCwgVGhvbWFzIFBl
-dGF6em9uaSB3cm90ZToKPiA+ID4gPiBIaSwKPiA+ID4gPiAKPiA+ID4gPiBMZSBUaHUsIDMxIEp1
-bCAyMDA4IDIyOjA3OjAxIC0wNzAwLAo+ID4gPiA+IE1hdHQgSGVsc2xleSA8bWF0dGhsdGNAdXMu
-aWJtLmNvbT4gYSArQU9rLWNyaXQgOgo+ID4gPiA+IAo+ID4gPiA+ID4gLS0tIGEva2VybmVsL01h
-a2VmaWxlCj4gPiA+ID4gPiArLSstKy0gYi9rZXJuZWwvTWFrZWZpbGUKPiA+ID4gPiA+IEBAIC01
-LDcgKy01LDcgQEAKPiA+ID4gPiA+ICBvYmoteSAgICAgPSBzY2hlZC5vIGZvcmsubyBleGVjX2Rv
-bWFpbi5vIHBhbmljLm8gcHJpbnRrLm8gK0FGdwo+ID4gPiA+ID4gIAkgICAgY3B1Lm8gZXhpdC5v
-IGl0aW1lci5vIHRpbWUubyBzb2Z0aXJxLm8gcmVzb3VyY2UubyArQUZ3Cj4gPiA+ID4gPiAgCSAg
-ICBzeXNjdGwubyBjYXBhYmlsaXR5Lm8gcHRyYWNlLm8gdGltZXIubyB1c2VyLm8gK0FGdwo+ID4g
-PiA+ID4gLQkgICAgc2lnbmFsLm8gc3lzLm8ga21vZC5vIHdvcmtxdWV1ZS5vIHBpZC5vICtBRncK
-PiA+ID4gPiA+ICstCSAgICBzaWduYWwubyBzeXMubyBrbW9kLm8gd29ya3F1ZXVlLm8gcGlkLm8g
-ZnJlZXplci5vICtBRncKPiA+ID4gPiAKPiA+ID4gPiBJIGhhdmUgdGhlIGltcHJlc3Npb24gdGhh
-dCB0aGUgY29kZSBpbiBrZXJuZWwvcG93ZXIvcHJvY2Vzcy5jIHdhcwo+ID4gPiA+IGNvbXBpbGVk
-IG9ubHkgaWYgQ09ORklHX1BNX1NMRUVQIHdhcyBzZXQuIE5vdyB0aGF0IHRoZSBjb2RlIGhhcyBi
-ZWVuCj4gPiA+ID4gbW92ZWQgdG8ga2VybmVsL2ZyZWV6ZXIuYywgaXQgaXMgdW5jb25kaXRpb25u
-YWx5IGNvbXBpbGVkIGluIGV2ZXJ5Cj4gPiA+ID4ga2VybmVsLiBJcyB0aGF0IGNvcnJlY3QgPwo+
-ID4gPiA+Cj4gPiA+ID4gSWYgc28sIGlzIGl0IHBvc3NpYmxlIHRvIHB1dCB0aGlzIG5ldyBmZWF0
-dXJlIHVuZGVyIHNvbWUKPiA+ID4gPiBDT05GSUdfU09NRVRISU5HIG9wdGlvbiwgZm9yIHBlb3Bs
-ZSB3aG8gY2FyZSBhYm91dCB0aGUga2VybmVsIHNpemUgPwo+ID4gPiAKPiA+ID4gCUhvdyBhYm91
-dCBtYWtpbmcgaXQgZGVwZW5kIG9uIGEgY29tYmluYXRpb24gb2YgQ09ORklHIHZhcmlhYmxlcz8K
-PiA+ID4gSGVyZSdzIGFuIFJGQyBQQVRDSC4gQ29tcGxldGVseSB1bnRlc3RlZC4KPiA+ID4gCj4g
-PiA+IFNpZ25lZC1vZmYtYnk6IE1hdHQgSGVsc2xleSA8bWF0dGhsdGNAdXMuaWJtLmNvbT4KPiA+
-IAo+ID4gQ2FuIHlvdSBwbGVhc2UgYWxzbyBtYWtlIHRoZSBjb250ZW50cyBvZiBpbmNsdWRlL2xp
-bnV4L2ZyZWV6ZXIuaCBkZXBlbmQgb24KPiA+IENPTkZJR19GUkVFWkVSIGluc3RlYWQgb2YgQ09O
-RklHX1BNX1NMRUVQPwo+IAo+IEdvb2QgcG9pbnQgLS0gSSdsbCBhZGQgdGhhdCB0byB0aGlzIHBh
-dGNoIGFuZCByZXBvc3QuCj4gCj4gPiBBbHNvLCBJJ20gbm90IHJlYWxseSBzdXJlIGlmIGtlcm5l
-bC9wb3dlci9LY29uZmlnIGlzIHRoZSByaWdodCBwbGFjZSB0byBkZWZpbmUKPiA+IENPTkZJR19G
-UkVFWkVSLgo+IAo+IAlUaGVyZSdzIG5vIG5pY2UgcGxhY2UgdG8gcHV0IGl0IHNpbmNlIHdlJ3Jl
-IGRlYWxpbmcgd2l0aCBDT05GSUdfCj4gdmFyaWFibGVzIGluIHR3byBkaWZmZXJlbnQgS2NvbmZp
-ZyBmaWxlcy4gSSBwdXQgaXQgaW4KPiBrZXJuZWwvcG93ZXIvS2NvbmZpZyBiZWNhdXNlIEkgd2Fz
-bid0IGNlcnRhaW4gS2J1aWxkIHdvdWxkIGRvIHRoZSByaWdodAo+IHRoaW5nIGlmIEkgcmVmZXJl
-bmNlZCBQTV9TTEVFUCBmcm9tIGluaXQvS2NvbmZpZy4KPiAKPiA+IFBlcmhhcHMgd2Ugc2hvdWxk
-IGV2ZW4gbW92ZSBmcmVlemVyLmMgZnJvbSBrZXJuZWwvcG93ZXIgdG8ga2VybmVsCj4gCj4gSXQn
-cyBhbHJlYWR5IHRoZXJlLgoKWWVzLCBzb3JyeS4KCj4gUGVyaGFwcyB5b3UgbWVhbnQgc29tZXRo
-aW5nIGVsc2UgKGtlcm5lbC9wb3dlci9wcm9jZXNzLmM/KT8KCldlbGwsIEknbGwgaGF2ZSB0byBh
-Y3R1YWxseSBhcHBseSB0aGUgcGF0Y2hlcyBhbmQgbG9vayBhdCB0aGUgbW9kaWZpZWQgY29kZS4K
-Cj4gPiBhbmQgZGVmaW5lIENPTkZJR19GUkVFWkVSIGluIEtjb25maWcgaW4gdGhlcmUuICBBbmRy
-ZXcsIHdoYXQgZG8geW91IHRoaW5rPwo+IAo+IFRoZSBLY29uZmlnIGZpbGVzIGluIGtlcm5lbC8g
-YXJlIEtjb25maWcuaHogYW5kIEtjb25maWcucHJlZW10IHdoaWNoCj4gZG9uJ3Qgc2VlbSBhcHBy
-b3ByaWF0ZS4gSSBzdXBwb3NlIHdlIGNvdWxkIGFkZCBhbm90aGVyIChwZXJoYXBzCj4gS2NvbmZp
-Zy5jZ3JvdXApLgoKRWl0aGVyIHRoYXQsIG9yIEtjb25maWcuZnJlZXplciBtYXliZT8gIEFmdGVy
-IGFsbCwgaXQgd2lsbCBhbHNvIGJlIHVzZWQgZm9yClBNX1NMRUVQLCBhdCBsZWFzdCBmb3Igc29t
-ZSB0aW1lLgoKPiBUaGFua3MgZm9yIHRoZSByZXZpZXchCgpZb3UncmUgd2VsY29tZS4KClRoYW5r
-cywKUmFmYWVsCgA3bU7zfwAAkPluAAAAAADQN21O838AAHA0bwAAAAAAAAAAAAAAAAAwvmcAAAAA
-AEEVAAAAAAAAcOCdAQAAAADAqZpN838AAAAAAAAAAAAAAAAAAAAAAADQN21O838AACA1bwAAAAAA
-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
-X28AAAAAAAAAAAAAAA==
+I'd prefer this.
 
---===============1547854923688344726==
-Content-Type: text/plain; charset="us-ascii"
-MIME-Version: 1.0
-Content-Transfer-Encoding: 7bit
-Content-Disposition: inline
-
-_______________________________________________
-Containers mailing list
-Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-https://lists.linux-foundation.org/mailman/listinfo/containers
---===============1547854923688344726==--
+Thanks,
+Rafael
