@@ -1,246 +1,100 @@
-From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH 3/3] user namespaces: enforce user namespaces for file
-	permission
-Date: Fri, 1 Aug 2008 19:54:43 -0500
-Message-ID: <20080802005443.GB1560@us.ibm.com>
-References: <20080802005405.GA1269@us.ibm.com>
+From: Balbir Singh <balbir@linux.vnet.ibm.com>
+Subject: Control groups and Resource Management notes (part II)
+Date: Sat, 02 Aug 2008 06:40:45 +0530
+Message-ID: <4893B415.9070906@linux.vnet.ibm.com>
+References: <489315B2.2080506@linux.vnet.ibm.com>
+Reply-To: balbir@linux.vnet.ibm.com
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
+Content-Type: text/plain; charset=ISO-8859-1
 Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <20080802005405.GA1269-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1755151AbYHBBK7@vger.kernel.org>
+In-Reply-To: <489315B2.2080506@linux.vnet.ibm.com>
+Sender: linux-kernel-owner@vger.kernel.org
+To: Linux Containers <containers@lists.osdl.org>
+Cc: linux kernel mailing list <linux-kernel@vger.kernel.org>, libcg-devel <libcg-devel@lists.sourceforge.net>
 List-Id: containers.vger.kernel.org
 
-Add a user_ns to the sb.  It is always set to the user_ns of the task which
-mounted the sb.
+Here's part II (part I can be found at
+(https://lists.linux-foundation.org/pipermail/containers/2008-August/012128.html)
 
-Define 3 new super_operations.  convert_uid() and convert_gid() take a uid
-or gid from an inode on the sb's fs, and attempt to convert them into ids
-meaningful in the user namespace passed in, which presumably is current's.
-is_capable() checks whether current has the requested capability with respect
-to the sb's fs, which is dependent upon the relationship between current's
-user_ns and those which the sb knows about.
+Resource management (cont'd)
+============================
+7. Disk IO controller - There was a general discussion on the various disk IO
+controllers
+	a. DM - IOBand
+	b. IO throttle
+	c. Anticipatory
+	d. CFQ
 
-If the sb isn't user ns aware - which none are right now - then the new
-super_operations won't be defined.  If in that case current and sb have
-different user namespaces, then the userids can't be compared.
+It was decided that it would be best for all the stake holders to work together
+and let Jens Axboe and the block layer experts figure out what would be right
+for the Linux kernel
 
-If current's and sb's userids can't be compared, then current will get
-'user other' (we usually say 'nobody') permissions to the inode.
+8. Network traffic control - Paul discussed network traffic control and the
+approach followed by Google. The existing classifier mechanism can be easily
+extended by adding a classifier id (based on the control group). This is used in
+combination with netfilters. Balbir mentioned that Thomas Graf was also looking
+at something similar and raised the issue of input bandwidth control. Balbir
+also pointed people to CKRM where the solution has been implemented. The OpenVZ
+and Google team will post their patches
 
-Signed-off-by: Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
----
- fs/namei.c         |   33 ++++++++++++++++++++++---
- fs/super.c         |    3 ++
- include/linux/fs.h |   68 ++++++++++++++++++++++++++++++++++++++++++++++++++++
- 3 files changed, 100 insertions(+), 4 deletions(-)
+9. Network permissions - There was a recommendation to use security hooks for
+network permissions. Paul explained what they use permissions with
+	a. connect
+	b. bind
+	c. accept
 
-diff --git a/fs/namei.c b/fs/namei.c
-index 4ea63ed..e17bc96 100644
---- a/fs/namei.c
-+++ b/fs/namei.c
-@@ -183,10 +183,32 @@ int generic_permission(struct inode *inode, int mask,
- 		int (*check_acl)(struct inode *inode, int mask))
- {
- 	umode_t			mode = inode->i_mode;
-+	uid_t			iuid;
-+	gid_t			igid;
-+	int			ret;
-+	int			good_userns = 1;
-+	struct			super_block *sb = inode->i_sb;
-+
-+	ret = s_convert_uid(sb, current->user->user_ns,
-+						inode->i_uid, &iuid);
-+	if (!ret)
-+		good_userns = 0;
-+	ret = s_convert_gid(sb, current->user->user_ns,
-+						inode->i_gid, &igid);
-+	if (!ret)
-+		good_userns = 0;
- 
- 	mask &= MAY_READ | MAY_WRITE | MAY_EXEC;
- 
--	if (current->fsuid == inode->i_uid)
-+	/*
-+	 * If we're not in the inode's user namespace, we get
-+	 * user nobody permissions, and we ignore acls
-+	 * (bc serge doesn't know how to handle acls in this case)
-+	 */
-+	if (!good_userns)
-+		goto check;
-+
-+	if (current->fsuid == iuid)
- 		mode >>= 6;
- 	else {
- 		if (IS_POSIXACL(inode) && (mode & S_IRWXG) && check_acl) {
-@@ -197,15 +219,18 @@ int generic_permission(struct inode *inode, int mask,
- 				return error;
- 		}
- 
--		if (in_group_p(inode->i_gid))
-+		if (in_group_p(igid))
- 			mode >>= 3;
- 	}
- 
-+check:
- 	/*
- 	 * If the DACs are ok we don't need any capability check.
- 	 */
- 	if ((mask & ~mode) == 0)
- 		return 0;
-+	if (!good_userns)
-+		return -EACCES;
- 
-  check_capabilities:
- 	/*
-@@ -214,14 +239,14 @@ int generic_permission(struct inode *inode, int mask,
- 	 */
- 	if (!(mask & MAY_EXEC) ||
- 	    (inode->i_mode & S_IXUGO) || S_ISDIR(inode->i_mode))
--		if (capable(CAP_DAC_OVERRIDE))
-+		if (s_is_capable(sb, current->user->user_ns, CAP_DAC_OVERRIDE))
- 			return 0;
- 
- 	/*
- 	 * Searching includes executable on directories, else just read.
- 	 */
- 	if (mask == MAY_READ || (S_ISDIR(inode->i_mode) && !(mask & MAY_WRITE)))
--		if (capable(CAP_DAC_READ_SEARCH))
-+		if (s_is_capable(sb, current->user->user_ns, CAP_DAC_READ_SEARCH))
- 			return 0;
- 
- 	return -EACCES;
-diff --git a/fs/super.c b/fs/super.c
-index e931ae9..3559637 100644
---- a/fs/super.c
-+++ b/fs/super.c
-@@ -38,6 +38,7 @@
- #include <linux/kobject.h>
- #include <linux/mutex.h>
- #include <linux/file.h>
-+#include <linux/user_namespace.h>
- #include <asm/uaccess.h>
- #include "internal.h"
- 
-@@ -93,6 +94,7 @@ static struct super_block *alloc_super(struct file_system_type *type)
- 		s->s_qcop = sb_quotactl_ops;
- 		s->s_op = &default_op;
- 		s->s_time_gran = 1000000000;
-+		s->user_ns = get_user_ns(current->user->user_ns);
- 	}
- out:
- 	return s;
-@@ -109,6 +111,7 @@ static inline void destroy_super(struct super_block *s)
- 	security_sb_free(s);
- 	kfree(s->s_subtype);
- 	kfree(s->s_options);
-+	put_user_ns(s->user_ns);
- 	kfree(s);
- }
- 
-diff --git a/include/linux/fs.h b/include/linux/fs.h
-index 580b513..a7cbcea 100644
---- a/include/linux/fs.h
-+++ b/include/linux/fs.h
-@@ -1128,6 +1128,11 @@ struct super_block {
- 	 * generic_show_options()
- 	 */
- 	char *s_options;
-+
-+	/*
-+	 * namespace of the user which mounted the sb
-+	 */
-+	struct user_namespace *user_ns;
- };
- 
- extern struct timespec current_fs_time(struct super_block *sb);
-@@ -1320,6 +1325,9 @@ struct super_operations {
- 	int (*remount_fs) (struct super_block *, int *, char *);
- 	void (*clear_inode) (struct inode *);
- 	void (*umount_begin) (struct super_block *);
-+	int (*is_capable) (struct user_namespace *, int);
-+	uid_t (*convert_uid)(struct user_namespace *, uid_t, uid_t *);
-+	gid_t (*convert_gid)(struct user_namespace *, gid_t, gid_t *);
- 
- 	int (*show_options)(struct seq_file *, struct vfsmount *);
- 	int (*show_stats)(struct seq_file *, struct vfsmount *);
-@@ -1330,6 +1338,66 @@ struct super_operations {
- };
- 
- /*
-+ * In the next 3, i'm passing the user_ns in so that I don't need
-+ * to know how to dereference struct user her (which would require
-+ * #including sched.h).
-+ * Note in particular that for instance in s_convert_uid, the uid is the
-+ * inode->i_uid, while user_ns is current->user->user_ns.
-+ */
-+
-+/*
-+ * s_convert_uid: attempt to translate the inode's stored
-+ * uid to a uid meaningful in user_ns passed in
-+ * If possible, store the result in reuid and return 1
-+ * Otherwise, return 0, meaningful the uid cannot be translated
-+ */
-+static inline int s_convert_uid(struct super_block *sb,
-+		struct user_namespace *user_ns, uid_t uid, uid_t *retuid)
-+{
-+	if (sb->user_ns == user_ns) {
-+		*retuid = uid;
-+		return 1;
-+	}
-+	if (sb->s_op->convert_uid)
-+		return sb->s_op->convert_uid(user_ns, uid, retuid);
-+	return 0;
-+}
-+
-+/*
-+ * s_convert_gid: attempt to translate the inode's stored
-+ * gid to a gid meaningful in user_ns passed in
-+ * If possible, store the result in regid and return 1
-+ * Otherwise, return 0, meaningful the gid cannot be translated
-+ */
-+static inline int s_convert_gid(struct super_block *sb,
-+		struct user_namespace *user_ns, gid_t gid, gid_t *retgid)
-+{
-+	if (sb->user_ns == user_ns) {
-+		*retgid = gid;
-+		return 1;
-+	}
-+	if (sb->s_op->convert_gid)
-+		return sb->s_op->convert_gid(user_ns, gid, retgid);
-+	return 0;
-+}
-+
-+/*
-+ * s_is_capable: check whether current is capable with respect
-+ * to the filesystem represented by sb.
-+ *
-+ * return 0 if false, 1 if true
-+ */
-+static inline int s_is_capable(struct super_block *sb,
-+		struct user_namespace *user_ns, int cap)
-+{
-+	if (sb->user_ns == user_ns)
-+		return capable(cap);
-+	if (sb->s_op->is_capable)
-+		return sb->s_op->is_capable(user_ns, cap);
-+	return 0;
-+}
-+
-+/*
-  * Inode state bits.  Protected by inode_lock.
-  *
-  * Three bits determine the dirty state of the inode, I_DIRTY_SYNC,
+The issue of using netlabels was brought up.
+
+10. Freezer subsystem - The freezer system was discussed briefly. Serge
+mentioned the patches and wanted to collect feedback (if any) on them.
+
+11. OOM Handler - The OOM handler was discussed in detail. Balbir mentioned
+certain short comings of the OOM handler
+	a. Logic - it is based on total_vm, is that the correct metric for
+                   OOMing?
+	b. Concurrency - it kills several tasks at once
+
+There was a discussion on moving the policy for OOM handling to user space. Paul
+described how the OOM handler has been modified at google to notify user space
+when a CPUSet runs out of memory. Balbir asked if OOMing on reaching limits is a
+good idea, it was generally discussed that it might not be such a good idea.
+
+Control group library
+=====================
+Dhaval and Balbir introduced libcgroups and the purpose of the library and the
+goals. Balbir described on paper what the current design looks like, it consists of
+
+	1. API
+	2. Test framework
+	3. A configuration subsystem
+
+Dhaval discussed configuration syntax of XML versus home made. The issue of
+classification of tasks was brought up. The reason that we want to classify
+tasks is that we want them to move at fork/exec time to the correct cgroup so that
+
+1. They don't consume resources in the parents group
+2. The movement is automatic
+
+It was generally agreed upon that the classification should take place in user
+space. Eric and others suggested having a wrapper to start the application in
+the correct cgroup (wrapper around fork/exec). Dave suggested that one might
+even go the extent of hacking, such that a process is ptraced after fork/exec,
+moved to the correct group and resumed. Using SELinux contexts was also recommended.
+
+Vivek brought up using PAM plugins to do classifications, this suggestion was
+nicely received. The decision was to do classification in user space and then
+think of kernel space if it cannot be done in user space. Denis suggested that
+classification is useful. In OpenVZ they classify all apache children to a
+different group. Balbir asked Denis to post their classification infrastructure
+as RFC.
+
+Balbir asked for contributions to libcgroup. Libcgroup will effect system design
+ and both administrators and application administrators. Now is a good time to
+get *involved*.
+
 -- 
-1.5.4.3
+	Warm Regards,
+	Balbir Singh
+	Linux Technology Center
+	IBM, ISTL
