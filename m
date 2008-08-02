@@ -1,14 +1,13 @@
-From: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 3/6] Container Freezer: Implement freezer cgroup subsystem
-Date: Fri, 01 Aug 2008 17:11:31 -0700
-Message-ID: <1217635891.25300.292.camel__4678.81167210198$1217636015$gmane$org@localhost.localdomain>
-References: <20080801050659.924495279@us.ibm.com>
-	<20080801050700.797996261@us.ibm.com> <200808020058.37407.rjw@sisk.pl>
+From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: [PATCH 1/3] user namespaces: introduce user_struct->user_namespace
+	relationship
+Date: Fri, 1 Aug 2008 19:54:05 -0500
+Message-ID: <20080802005405.GA1269@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <200808020058.37407.rjw-KKrjLPT3xs0@public.gmane.org>
+Content-Disposition: inline
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,168 +17,165 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Rafael J. Wysocki" <rjw-KKrjLPT3xs0@public.gmane.org>
-Cc: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Linux-Kernel <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Cedric Le Goater <clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>, linux-pm-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+To: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
+Here's just a repost given some of the feedback from the last round.
 
-On Sat, 2008-08-02 at 00:58 +0200, Rafael J. Wysocki wrote:
-> On Friday, 1 of August 2008, Matt Helsley wrote:
-> > This patch implements a new freezer subsystem in the control groups framework.
-> > It provides a way to stop and resume execution of all tasks in a cgroup by
-> > writing in the cgroup filesystem.
-> > 
-> > The freezer subsystem in the container filesystem defines a file named
-> > freezer.state. Writing "FROZEN" to the state file will freeze all tasks in the
-> > cgroup. Subsequently writing "RUNNING" will unfreeze the tasks in the cgroup.
-> > Reading will return the current state.
-> > 
-> > * Examples of usage :
-> > 
-> >    # mkdir /containers/freezer
-> >    # mount -t cgroup -ofreezer freezer  /containers
-> >    # mkdir /containers/0
-> >    # echo $some_pid > /containers/0/tasks
-> > 
-> > to get status of the freezer subsystem :
-> > 
-> >    # cat /containers/0/freezer.state
-> >    RUNNING
-> > 
-> > to freeze all tasks in the container :
-> > 
-> >    # echo FROZEN > /containers/0/freezer.state
-> >    # cat /containers/0/freezer.state
-> >    FREEZING
-> >    # cat /containers/0/freezer.state
-> >    FROZEN
-> > 
-> > to unfreeze all tasks in the container :
-> > 
-> >    # echo RUNNING > /containers/0/freezer.state
-> >    # cat /containers/0/freezer.state
-> >    RUNNING
-> > 
-> > This is the basic mechanism which should do the right thing for user space task
-> > in a simple scenario.
-> > 
-> > It's important to note that freezing can be incomplete. In that case we return
-> > EBUSY. This means that some tasks in the cgroup are busy doing something that
-> > prevents us from completely freezing the cgroup at this time. After EBUSY,
-> > the cgroup will remain partially frozen -- reflected by freezer.state reporting
-> > "FREEZING" when read. The state will remain "FREEZING" until one of these
-> > things happens:
-> > 
-> > 	1) Userspace cancels the freezing operation by writing "RUNNING" to
-> > 		the freezer.state file
-> > 	2) Userspace retries the freezing operation by writing "FROZEN" to
-> > 		the freezer.state file (writing "FREEZING" is not legal
-> > 		and returns EIO)
-> > 	3) The tasks that blocked the cgroup from entering the "FROZEN"
-> > 		state disappear from the cgroup's set of tasks.
-> > 
-> > Signed-off-by: Cedric Le Goater <clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
-> > Signed-off-by: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-> > Acked-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-> > Tested-by: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-> > ---
-> >  include/linux/cgroup_freezer.h |   71 ++++++++
-> >  include/linux/cgroup_subsys.h  |    6 
-> >  include/linux/freezer.h        |   16 +-
-> >  init/Kconfig                   |    7 
-> >  kernel/Makefile                |    1 
-> >  kernel/cgroup_freezer.c        |  328 +++++++++++++++++++++++++++++++++++++++++
-> >  6 files changed, 425 insertions(+), 4 deletions(-)
-> >  create mode 100644 include/linux/cgroup_freezer.h
-> >  create mode 100644 kernel/cgroup_freezer.c
-> > 
-> > Index: linux-2.6.27-rc1-mm1/include/linux/cgroup_freezer.h
-> > ===================================================================
-> > --- /dev/null
-> > +++ linux-2.6.27-rc1-mm1/include/linux/cgroup_freezer.h
-> > @@ -0,0 +1,71 @@
-> > +#ifndef _LINUX_CGROUP_FREEZER_H
-> > +#define _LINUX_CGROUP_FREEZER_H
-> > +/*
-> > + * cgroup_freezer.h -  control group freezer subsystem interface
-> > + *
-> > + * Copyright IBM Corporation, 2007
-> > + *
-> > + * Author : Cedric Le Goater <clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
-> > + *
-> > + * This program is free software; you can redistribute it and/or modify it
-> > + * under the terms of version 2.1 of the GNU Lesser General Public License
-> > + * as published by the Free Software Foundation.
-> > + *
-> > + * This program is distributed in the hope that it would be useful, but
-> > + * WITHOUT ANY WARRANTY; without even the implied warranty of
-> > + * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
-> > + */
-> > +
-> > +#include <linux/cgroup.h>
-> > +
-> > +#ifdef CONFIG_CGROUP_FREEZER
-> > +
-> > +enum freezer_state {
-> > +	STATE_RUNNING = 0,
-> > +	STATE_FREEZING,
-> > +	STATE_FROZEN,
-> > +};
-> > +
-> > +struct freezer {
-> > +	struct cgroup_subsys_state css;
-> > +	enum freezer_state state;
-> > +	spinlock_t lock; /* protects _writes_ to state */
-> > +};
-> > +
-> > +static inline struct freezer *cgroup_freezer(
-> > +		struct cgroup *cgroup)
-> > +{
-> > +	return container_of(
-> > +		cgroup_subsys_state(cgroup, freezer_subsys_id),
-> > +		struct freezer, css);
-> > +}
-> > +
-> > +static inline struct freezer *task_freezer(struct task_struct *task)
-> > +{
-> > +	return container_of(task_subsys_state(task, freezer_subsys_id),
-> > +			    struct freezer, css);
-> > +}
-> > +
-> > +static inline int cgroup_frozen(struct task_struct *task)
-> > +{
-> > +	struct freezer *freezer;
-> > +	enum freezer_state state;
-> > +
-> > +	task_lock(task);
-> > +	freezer = task_freezer(task);
-> > +	state = freezer->state;
-> > +	task_unlock(task);
-> > +
-> > +	return state == STATE_FROZEN;
-> > +}
-> > +
-> > +#else /* !CONFIG_CGROUP_FREEZER */
-> > +
-> > +static inline int cgroup_frozen(struct task_struct *task)
-> > +{
-> > +	return 0;
-> > +}
-> > +
-> > +#endif /* !CONFIG_CGROUP_FREEZER */
-> > +
-> > +#endif /* _LINUX_CGROUP_FREEZER_H */
-> 
-> Hmm.  I wonder if we really need a separate file for this.  I'd prefer it to be
-> in freezer.h, unless there's a good reason not to place it in there.
+Question: do we really want a patch renaming kernel/user_namespace.c,
+include/linux/user_namespace.c, and struct user_namespace all to
+user_ns?  I'm fine with it if we are, but it'll be a pretty big 
+patch with no other effect.
 
-	Yeah, it's a pretty small header so combining it with another header
-would be nice. However if we combine it with freezer.h we'd be including
-cgroup.h in unrelated filesystem code. An alternative might be to put it
-into a cgroup header for "small" subsystems (which might just be
-cgroup.h for now..).
+-serge
 
-Thanks for the review!
+From aa31de8d2e62d1903f8dfaa97e71cca7560632ce Mon Sep 17 00:00:00 2001
+From: Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Date: Tue, 22 Jul 2008 13:31:37 -0500
+Subject: [PATCH 1/3] user namespaces: introduce user_struct->user_namespace relationship
 
-Cheers,
-	-Matt
+When a task does clone(CLONE_NEWNS), the task's user is the 'creator' of the
+new user_namespace, and the user_namespace is tacked onto a list of those
+created by this user.
+
+Changelog:
+	Aug 1: renamed user->user_namespace to user_ns, as the next
+		patch did anyway.
+	Aug 1: move put_user_ns call in one free_user() definition
+		to move it outside the lock in free_user.  put_user_ns
+		calls free_user on the user_ns->creator, which in
+		turn would grab the lock again.
+
+Signed-off-by: Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+---
+ include/linux/sched.h          |    1 +
+ include/linux/user_namespace.h |    1 +
+ kernel/user.c                  |    7 +++++++
+ kernel/user_namespace.c        |   20 +++++++++++---------
+ 4 files changed, 20 insertions(+), 9 deletions(-)
+
+diff --git a/include/linux/sched.h b/include/linux/sched.h
+index 5270d44..0149e77 100644
+--- a/include/linux/sched.h
++++ b/include/linux/sched.h
+@@ -600,6 +600,7 @@ struct user_struct {
+ 	/* Hash table maintenance information */
+ 	struct hlist_node uidhash_node;
+ 	uid_t uid;
++	struct user_namespace *user_ns;
+ 
+ #ifdef CONFIG_USER_SCHED
+ 	struct task_group *tg;
+diff --git a/include/linux/user_namespace.h b/include/linux/user_namespace.h
+index b5f41d4..f9477c3 100644
+--- a/include/linux/user_namespace.h
++++ b/include/linux/user_namespace.h
+@@ -13,6 +13,7 @@ struct user_namespace {
+ 	struct kref		kref;
+ 	struct hlist_head	uidhash_table[UIDHASH_SZ];
+ 	struct user_struct	*root_user;
++	struct user_struct	*creator;
+ };
+ 
+ extern struct user_namespace init_user_ns;
+diff --git a/kernel/user.c b/kernel/user.c
+index 865ecf5..aedb3a1 100644
+--- a/kernel/user.c
++++ b/kernel/user.c
+@@ -22,6 +22,7 @@ struct user_namespace init_user_ns = {
+ 		.refcount	= ATOMIC_INIT(2),
+ 	},
+ 	.root_user = &root_user,
++	.creator = &root_user,
+ };
+ EXPORT_SYMBOL_GPL(init_user_ns);
+ 
+@@ -53,6 +54,7 @@ struct user_struct root_user = {
+ 	.files		= ATOMIC_INIT(0),
+ 	.sigpending	= ATOMIC_INIT(0),
+ 	.locked_shm     = 0,
++	.user_ns	= &init_user_ns,
+ #ifdef CONFIG_USER_SCHED
+ 	.tg		= &init_task_group,
+ #endif
+@@ -325,6 +327,7 @@ static inline void free_user(struct user_struct *up, unsigned long flags)
+ 	atomic_inc(&up->__count);
+ 	spin_unlock_irqrestore(&uidhash_lock, flags);
+ 
++	put_user_ns(up->user_ns);
+ 	INIT_WORK(&up->work, remove_user_sysfs_dir);
+ 	schedule_work(&up->work);
+ }
+@@ -347,6 +350,7 @@ static inline void free_user(struct user_struct *up, unsigned long flags)
+ 	sched_destroy_user(up);
+ 	key_put(up->uid_keyring);
+ 	key_put(up->session_keyring);
++	put_user_ns(up->user_ns);
+ 	kmem_cache_free(uid_cachep, up);
+ }
+ 
+@@ -409,6 +413,8 @@ struct user_struct *alloc_uid(struct user_namespace *ns, uid_t uid)
+ 		if (sched_create_user(new) < 0)
+ 			goto out_free_user;
+ 
++		new->user_ns = get_user_ns(ns);
++
+ 		if (uids_user_create(new))
+ 			goto out_destoy_sched;
+ 
+@@ -441,6 +447,7 @@ struct user_struct *alloc_uid(struct user_namespace *ns, uid_t uid)
+ 
+ out_destoy_sched:
+ 	sched_destroy_user(new);
++	put_user_ns(new->user_ns);
+ out_free_user:
+ 	kmem_cache_free(uid_cachep, new);
+ out_unlock:
+diff --git a/kernel/user_namespace.c b/kernel/user_namespace.c
+index a9ab059..e8db443 100644
+--- a/kernel/user_namespace.c
++++ b/kernel/user_namespace.c
+@@ -19,7 +19,6 @@
+ static struct user_namespace *clone_user_ns(struct user_namespace *old_ns)
+ {
+ 	struct user_namespace *ns;
+-	struct user_struct *new_user;
+ 	int n;
+ 
+ 	ns = kmalloc(sizeof(struct user_namespace), GFP_KERNEL);
+@@ -38,15 +37,17 @@ static struct user_namespace *clone_user_ns(struct user_namespace *old_ns)
+ 		return ERR_PTR(-ENOMEM);
+ 	}
+ 
+-	/* Reset current->user with a new one */
+-	new_user = alloc_uid(ns, current->uid);
+-	if (!new_user) {
+-		free_uid(ns->root_user);
+-		kfree(ns);
+-		return ERR_PTR(-ENOMEM);
+-	}
++	/* pin the creating user */
++	ns->creator = current->user;
++	atomic_inc(&ns->creator->__count);
++
++	/*
++	 * The alloc_uid() incremented the userns refcount,
++	 * so drop it again 
++	 */
++	put_user_ns(ns);
+ 
+-	switch_uid(new_user);
++	switch_uid(ns->root_user);
+ 	return ns;
+ }
+ 
+@@ -72,6 +73,7 @@ void free_user_ns(struct kref *kref)
+ 
+ 	ns = container_of(kref, struct user_namespace, kref);
+ 	release_uids(ns);
++	free_uid(ns->creator);
+ 	kfree(ns);
+ }
+ EXPORT_SYMBOL(free_user_ns);
+-- 
+1.5.4.3
