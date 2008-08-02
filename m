@@ -1,15 +1,15 @@
-From: Hugh Dickins <hugh-DTz5qymZ9yRBDgjK7y7TUQ@public.gmane.org>
-Subject: Re: memrlimit controller merge to mainline
-Date: Mon, 4 Aug 2008 22:52:36 +0100 (BST)
-Message-ID: <Pine.LNX.4.64.0808042226430.4300@blonde.site>
-References: <6599ad830807250114h7ab0fdb1u98c0968961647642@mail.gmail.com>
-	<Pine.LNX.4.64.0807251004570.31120@blonde.site>
-	<489752AA.9060500@linux.vnet.ibm.com>
+From: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH 2/6] Container Freezer: Make refrigerator always available
+Date: Fri, 01 Aug 2008 19:30:26 -0700
+Message-ID: <1217644226.25300.296.camel__7892.14430046758$1217888008$gmane$org@localhost.localdomain>
+References: <20080801050659.924495279@us.ibm.com>
+	<20080801162712.63721e8c@surf>
+	<1217617689.25300.213.camel@localhost.localdomain>
+	<200808020053.18638.rjw@sisk.pl>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: multipart/mixed; boundary="===============0348127020915439426=="
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <489752AA.9060500-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+In-Reply-To: <200808020053.18638.rjw-KKrjLPT3xs0@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -17,69 +17,76 @@ List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
 List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Mime-version: 1.0
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Cc: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
+To: "Rafael J. Wysocki" <rjw-KKrjLPT3xs0@public.gmane.org>
+Cc: Thomas Petazzoni <thomas.petazzoni-wi1+55ScJUtKEb57/3fJTNBPR1lH4CV8@public.gmane.org>, linux-embedded-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Michael Opdenacker <michael-wi1+55ScJUtKEb57/3fJTNBPR1lH4CV8@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Linux-Kernel <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Cedric Le Goater <clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>, linux-pm-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Tue, 5 Aug 2008, Balbir Singh wrote:
-> Hugh Dickins wrote:
-> [snip]
-> > 
-> > BUG: unable to handle kernel paging request at 6b6b6b8b
-> > IP: [<7817078f>] memrlimit_cgroup_uncharge_as+0x18/0x29
-> > Pid: 22500, comm: swapoff Not tainted (2.6.26-rc8-mm1 #7)
-> >  [<78161323>] ? exit_mmap+0xaf/0x133
-> >  [<781226b1>] ? mmput+0x4c/0xba
-> >  [<78165ce3>] ? try_to_unuse+0x20b/0x3f5
-> >  [<78371534>] ? _spin_unlock+0x22/0x3c
-> >  [<7816636a>] ? sys_swapoff+0x17b/0x37c
-> >  [<78102d95>] ? sysenter_past_esp+0x6a/0xa5
-> 
-> I am unable to reproduce the problem,
+--===============0348127020915439426==
+Content-Type: text/plain; charset=UTF-7
+Content-Transfer-Encoding: 7bit
 
-Me neither, I've spent many hours trying 2.6.27-rc1-mm1 and then
-back to 2.6.26-rc8-mm1.  But I've been SO stupid: saw it originally
-on one machine with SLAB_DEBUG=y, have been trying since mostly on
-another with SLUB_DEBUG=y, but never thought to boot with
-slub_debug=P,task_struct until now.
 
-> but I do have an initial hypothesis
-> 
-> CPU0					CPU1
-> 					try_to_unuse
-> task 1 stars exiting			look at mm = task1->mm
-> ..					increment mm_users
-> task 1 exits
-> mm->owner needs to be updated, but
-> no new owner is found
-> (mm_users > 1, but no other task
-> has task->mm = task1->mm)
-> mm_update_next_owner() leaves
-> 
-> grace period
-> 					user count drops, call mmput(mm)
-> task 1 freed
-> 					dereferencing mm->owner fails
+On Sat, 2008-08-02 at 00:53 +-0200, Rafael J. Wysocki wrote:
++AD4 On Friday, 1 of August 2008, Matt Helsley wrote:
++AD4 +AD4 
++AD4 +AD4 On Fri, 2008-08-01 at 16:27 +-0200, Thomas Petazzoni wrote:
++AD4 +AD4 +AD4 Hi,
++AD4 +AD4 +AD4 
++AD4 +AD4 +AD4 Le Thu, 31 Jul 2008 22:07:01 -0700,
++AD4 +AD4 +AD4 Matt Helsley +ADw-matthltc+AEA-us.ibm.com+AD4 a +AOk-crit :
++AD4 +AD4 +AD4 
++AD4 +AD4 +AD4 +AD4 --- a/kernel/Makefile
++AD4 +AD4 +AD4 +AD4 +-+-+- b/kernel/Makefile
++AD4 +AD4 +AD4 +AD4 +AEAAQA -5,7 +-5,7 +AEAAQA
++AD4 +AD4 +AD4 +AD4  obj-y     +AD0 sched.o fork.o exec+AF8-domain.o panic.o printk.o +AFw
++AD4 +AD4 +AD4 +AD4  	    cpu.o exit.o itimer.o time.o softirq.o resource.o +AFw
++AD4 +AD4 +AD4 +AD4  	    sysctl.o capability.o ptrace.o timer.o user.o +AFw
++AD4 +AD4 +AD4 +AD4 -	    signal.o sys.o kmod.o workqueue.o pid.o +AFw
++AD4 +AD4 +AD4 +AD4 +-	    signal.o sys.o kmod.o workqueue.o pid.o freezer.o +AFw
++AD4 +AD4 +AD4 
++AD4 +AD4 +AD4 I have the impression that the code in kernel/power/process.c was
++AD4 +AD4 +AD4 compiled only if CONFIG+AF8-PM+AF8-SLEEP was set. Now that the code has been
++AD4 +AD4 +AD4 moved to kernel/freezer.c, it is unconditionnaly compiled in every
++AD4 +AD4 +AD4 kernel. Is that correct ?
++AD4 +AD4 +AD4
++AD4 +AD4 +AD4 If so, is it possible to put this new feature under some
++AD4 +AD4 +AD4 CONFIG+AF8-SOMETHING option, for people who care about the kernel size ?
++AD4 +AD4 
++AD4 +AD4 	How about making it depend on a combination of CONFIG variables?
++AD4 +AD4 Here's an RFC PATCH. Completely untested.
++AD4 +AD4 
++AD4 +AD4 Signed-off-by: Matt Helsley +ADw-matthltc+AEA-us.ibm.com+AD4
++AD4 
++AD4 Can you please also make the contents of include/linux/freezer.h depend on
++AD4 CONFIG+AF8-FREEZER instead of CONFIG+AF8-PM+AF8-SLEEP?
 
-Yes, that looks right to me: seems obvious now.  I don't think your
-careful alternation of CPU0/1 events at the end matters: the swapoff
-CPU simply dereferences mm->owner after that task has gone.
+Done.
 
-(That's a shame, I'd always hoped that mm->owner->comm was going to
-be good for use in mm messages, even when tearing down the mm.)
++AD4 Also, I'm not really sure if kernel/power/Kconfig is the right place to define
++AD4 CONFIG+AF8-FREEZER.
++AD4 
++AD4 Perhaps we should even move freezer.c from kernel/power to kernel
++AD4 and define CONFIG+AF8-FREEZER in Kconfig in there.  Andrew, what do you think?
 
-> I do have a potential solution in mind, but I want to make sure my
-> hypothesis is correct.
+	I'll check this weekend for replies and repost the RFC PATCH on Monday
+if I don't hear anything. In the meantime I'll be doing some config
+build testing with the above changes to make sure it's correct.
 
-It seems wrong that memrlimit_cgroup_uncharge_as should be called
-after mm->owner may have been changed, even if it's to something safe.
-But I forget the mm/task exit details, surely they're tricky.
+Cheers,
+	-Matt
 
-By the way, is the ordering in mm_update_next_owner the best?
-Would there be less movement if it searched amongst siblings before
-it searched amongst children?  Ought it to make a first pass trying
-to stay within the same cgroup?
 
-Hugh
+--===============0348127020915439426==
+Content-Type: text/plain; charset="us-ascii"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+Content-Disposition: inline
+
+_______________________________________________
+Containers mailing list
+Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+https://lists.linux-foundation.org/mailman/listinfo/containers
+--===============0348127020915439426==--
