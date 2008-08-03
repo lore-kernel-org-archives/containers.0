@@ -1,33 +1,33 @@
-From: ebiederm@xmission.com (Eric W. Biederman)
-Subject: Re: [PATCH 12/15] driver core: Implement tagged directory support for device classes.
-Date: Sat, 02 Aug 2008 23:59:07 -0700
-Message-ID: <m1zlnu60uc.fsf@frodo.ebiederm.org>
-References: <m1mykyh2fu.fsf_-_@frodo.ebiederm.org>
-	<m1hcb6h2d2.fsf_-_@frodo.ebiederm.org> <486DD650.3000804@gmail.com>
-	<m1tzf593ny.fsf@frodo.ebiederm.org> <486E2C3B.6020603@gmail.com>
-	<20080704161200.GA1440@suse.de> <m1lk052ptp.fsf@frodo.ebiederm.org>
-	<487D6A24.9070001@gmail.com> <20080717230857.GB28377@suse.de>
-	<48808F79.7080607@gmail.com> <20080718184936.GA21343@suse.de>
+From: "H. Peter Anvin" <hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org>
+Subject: Re: Per-instance devpts
+Date: Sun, 03 Aug 2008 04:31:59 -0700
+Message-ID: <4895972F.5020008@zytor.com>
+References: <20080412172933.GA19295@us.ibm.com>
+	<1208027215.28187.17.camel@x61.ebiederm.org>
+	<48935205.3090807@zytor.com> <20080803050800.GA4322@us.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1756526AbYHCHDY@vger.kernel.org>
-In-Reply-To: <20080718184936.GA21343@suse.de> (Greg KH's message of "Fri, 18
-	Jul 2008 11:49:36 -0700")
-Sender: linux-kernel-owner@vger.kernel.org
-To: Greg KH <gregkh@suse.de>
-Cc: Tejun Heo <htejun@gmail.com>, Andrew Morton <akpm@linux-foundation.org>, Daniel Lezcano <dlezcano@fr.ibm.com>, linux-kernel@vger.kernel.org, Al Viro <viro@ftp.linux.org.uk>, Linux Containers <containers@lists.osdl.org>, Benjamin Thery <benjamin.thery@bull.net>, netdev@vger.kernel.org
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <20080803050800.GA4322-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org
+Cc: Greg KH <greg-U8xfFu+wG4EAvxtiuMwx3w@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Alan Cox <alan-qBU/x9rampVanCEyBjwyrvXRex20P6io@public.gmane.org>, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Greg KH <gregkh@suse.de> writes:
+sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org wrote:
+> 
+> IIRC, /dev/tty also needs a similar symlink.
+> 
 
-> I'll add it to my tree, and get it some testing in the next cycle of
-> linux-next until 2.6.27 is out, and then if it's still looking good, go
-> into .28.
+Why?  I do not believe that is correct.
 
-Greg.  Where are we at with this?
-
-I just looked at your tree and I don't perhaps I'm blind but I don't see
-this patches, and it looks like you at least refreshed your patches
-a day or two ago.
-
-Eric
+	-hpa
