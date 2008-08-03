@@ -1,56 +1,50 @@
-From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 4/6] user namespaces: add user_ns to super block
-Date: Sat, 2 Aug 2008 19:37:13 -0500
-Message-ID: <20080803003713.GA13842@us.ibm.com>
-References: <20080726002700.GA29686@us.ibm.com>
-	<20080726002754.GD29874@us.ibm.com>
-	<m13altislf.fsf@frodo.ebiederm.org>
-	<1217285230.25300.19.camel@localhost.localdomain>
-	<20080729180515.GB365@us.ibm.com>
-	<m13alscx7e.fsf@frodo.ebiederm.org>
-	<20080802000609.GA10211@us.ibm.com>
-	<m1wsj0i3td.fsf@frodo.ebiederm.org>
+From: sukadev@us.ibm.com
+Subject: Re: Per-instance devpts
+Date: Sat, 2 Aug 2008 22:08:00 -0700
+Message-ID: <20080803050800.GA4322@us.ibm.com>
+References: <20080412172933.GA19295@us.ibm.com> <1208027215.28187.17.camel@x61.ebiederm.org> <48935205.3090807@zytor.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Content-Type: text/plain; charset=us-ascii
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1755685AbYHCFK0@vger.kernel.org>
 Content-Disposition: inline
-In-Reply-To: <m1wsj0i3td.fsf-B27657KtZYmhTnVgQlOflh2eb7JE58TQ@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
+In-Reply-To: <48935205.3090807@zytor.com>
+Sender: linux-kernel-owner@vger.kernel.org
+To: "H. Peter Anvin" <hpa@zytor.com>
+Cc: "Eric W. Biederman" <ebiederm@xmission.com>, Andrew Morton <akpm@osdl.org>, serue@us.ibm.com, matthltc@us.ibm.com, Pavel Emelyanov <xemul@openvz.org>, Containers <containers@lists.osdl.org>, linux-kernel@vger.kernel.org, Alan Cox <alan@lxorguk.ukuu.org.uk>, Greg KH <greg@kroah.com>, sukadev@us.ibm.com
 List-Id: containers.vger.kernel.org
 
-Quoting Eric W. Biederman (ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org):
-> "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org> writes:
-> 
-> > Ok I wasn't thinking right.  We still can't get to a user_ns from
-> > an inode *.
-> >
-> > So playing with this a bit tonight, it seems like the best way
-> > to pass the user_namespace up to the fs is just to define new
-> > super_operations which handle the conversions.  Something like
-> > the following.
-> 
-> I'm pretty certain you want to pass in the entire inode instead
-> of just inode->i_uid.  That would allow you to pass one less argument
-> and give the filesystems more information to work with.
-> 
-> Eric
+H. Peter Anvin [hpa@zytor.com] wrote:
+> Since the issue of PTY namespaces came up (and was rejected) back in April, 
+> I have thought a little bit about changing ptys to be tied directly into a 
+> devpts instance.  devpts would then be a "normal" filesystem, which can be 
+> mounted multiple times (or not at all).  pty's would then become private to 
+> a devpts instance.
 
-Oh yes of course, the fs will want the whole inode.  Will change that.
+Sorry, I thought we were going with a complete device namespace - since that
+would address other devices as well and would avoid the following user-space
+issue. 
 
-And I suppose in that case I may as well have just one function
-to convert both uid and gid.
+I guess this issue came up in OLS recently and have been looking into this
+again.  I have some helper patches to explore multiple mounts of devpts
+without namespace stuff and can send them out in a couple of days.
 
-Thanks.
+>
+> This is what it would appear would have to change, and I'd like to get 
+> people's feeing for the user-space impact:
+>
+> 1. /dev/ptmx would have to change to a symlink, ptmx -> pts/ptmx.
 
--serge
+IIRC, /dev/tty also needs a similar symlink.
+
+> 2. Permissions on /dev/ptmx would not be persistent, and would have to
+>    be set via devpts mount options (unless they're 0666 root.tty, which
+>    would presumably be the default.)
+> 3. The /proc/sys/kernel/pty limit would be global; a per-filesystem
+>    limit could be added on top or instead (presumably via a filesystem
+>    mount options.)
+>
+> I worry #1 would have substantial user-space impact, but I don't see a way 
+> around it, since there would be no obvious way to associate /dev/ptmx with 
+> a filesystem.
+
+Sukadev
