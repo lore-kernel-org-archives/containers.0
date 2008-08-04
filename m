@@ -1,14 +1,15 @@
-From: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: Re: Too many I/O controller patches
-Date: Mon, 04 Aug 2008 12:02:01 -0700
-Message-ID: <1217876521.20260.123.camel__973.521130117838$1217876673$gmane$org@nimitz>
-References: <20080804.175126.193692178.ryov@valinux.co.jp>
-	<1217870433.20260.101.camel@nimitz>  <489748E6.5080106@gmail.com>
+From: Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Subject: Re: memrlimit controller merge to mainline
+Date: Tue, 05 Aug 2008 00:34:10 +0530
+Message-ID: <489752AA.9060500@linux.vnet.ibm.com>
+References: <6599ad830807250114h7ab0fdb1u98c0968961647642@mail.gmail.com>
+	<Pine.LNX.4.64.0807251004570.31120@blonde.site>
+Reply-To: balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <489748E6.5080106-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+In-Reply-To: <Pine.LNX.4.64.0807251004570.31120-popGQ1T0qN76K7/ahGyk6A@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,32 +19,70 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org
-Cc: xen-devel-GuqFBffKawuULHF6PoxzQEEOCMrvLtNR@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, virtualization-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, dm-devel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, agk-9JcytcrH/bA+uJoB2kUjGw@public.gmane.org
+To: Hugh Dickins <hugh-DTz5qymZ9yRBDgjK7y7TUQ@public.gmane.org>
+Cc: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Mon, 2008-08-04 at 20:22 +0200, Andrea Righi wrote:
-> But I'm not yet convinced that limiting the IO writes at the device
-> mapper layer is the best solution. IMHO it would be better to throttle
-> applications' writes when they're dirtying pages in the page cache (the
-> io-throttle way), because when the IO requests arrive to the device
-> mapper it's too late (we would only have a lot of dirty pages that are
-> waiting to be flushed to the limited block devices, and maybe this could
-> lead to OOM conditions). IOW dm-ioband is doing this at the wrong level
-> (at least for my requirements). Ryo, correct me if I'm wrong or if I've
-> not understood the dm-ioband approach.
+Hugh Dickins wrote:
+[snip]
+> 
+> BUG: unable to handle kernel paging request at 6b6b6b8b
+> IP: [<7817078f>] memrlimit_cgroup_uncharge_as+0x18/0x29
+> *pde = 00000000 
+> Oops: 0000 [#1] PREEMPT SMP 
+> last sysfs file: /sys/devices/system/cpu/cpu1/cache/index2/shared_cpu_map
+> Modules linked in: acpi_cpufreq snd_pcm_oss snd_mixer_oss snd_seq snd_seq_device thermal ac battery button
+> 
+> Pid: 22500, comm: swapoff Not tainted (2.6.26-rc8-mm1 #7)
+> EIP: 0060:[<7817078f>] EFLAGS: 00010206 CPU: 0
+> EIP is at memrlimit_cgroup_uncharge_as+0x18/0x29
+> EAX: 6b6b6b6b EBX: 7963215c ECX: 7c032000 EDX: 0025e000
+> ESI: 96902518 EDI: 9fbb1aa0 EBP: 7c033e9c ESP: 7c033e9c
+>  DS: 007b ES: 007b FS: 00d8 GS: 0033 SS: 0068
+> Process swapoff (pid: 22500, ti=7c032000 task=907e2b70 task.ti=7c032000)
+> Stack: 7c033edc 78161323 9fbb1aa0 0000025e ffffff77 7c033ecc 96902518 00000000 
+>        ffffffff 7c033ec8 00000000 00000089 7963215c 9fbb1aa0 9fbb1b28 a272f040 
+>        7c033ef4 781226b1 9fbb1aa0 9fbb1aa0 790fa884 a272f0c8 7c033f80 78165ce3 
+> Call Trace:
+>  [<78161323>] ? exit_mmap+0xaf/0x133
+>  [<781226b1>] ? mmput+0x4c/0xba
+>  [<78165ce3>] ? try_to_unuse+0x20b/0x3f5
+>  [<78371534>] ? _spin_unlock+0x22/0x3c
+>  [<7816636a>] ? sys_swapoff+0x17b/0x37c
+>  [<78102d95>] ? sysenter_past_esp+0x6a/0xa5
+>  =======================
+> Code: 24 0c 00 00 8b 40 20 52 83 c0 0c 50 e8 ad a6 fd ff c9 c3 55 89 e5 8b 45 08 8b 55 0c 8b 80 30 02 00 00 c1 e2 0c 8b 80 24 0c 00 00 <8b> 40 20 52 83 c0 0c 50 e8 e6 a6 fd ff 58 5a c9 c3 55 89 e5 8b 
+> EIP: [<7817078f>] memrlimit_cgroup_uncharge_as+0x18/0x29 SS:ESP 0068:7c033e9c
 
-The avoid-lots-of-page-dirtying problem sounds like a hard one.  But, if
-you look at this in combination with the memory controller, they would
-make a great team.
+Hi, Hugh,
 
-The memory controller keeps you from dirtying more than your limit of
-pages (and pinning too much memory) even if the dm layer is doing the
-throttling and itself can't throttle the memory usage.
+I am unable to reproduce the problem, but I do have an initial hypothesis
 
-I also don't think this is any different from the problems we have in
-the regular VM these days.  Right now, people can dirty lots of pages on
-devices that are slow.  The only thing dm-ioband would be added would be
-changing how those devices *got* slow. :)
+CPU0					CPU1
+					try_to_unuse
+task 1 stars exiting			look at mm = task1->mm
+..					increment mm_users
+task 1 exits
+mm->owner needs to be updated, but
+no new owner is found
+(mm_users > 1, but no other task
+has task->mm = task1->mm)
+mm_update_next_owner() leaves
 
--- Dave
+grace period
+					user count drops, call mmput(mm)
+task 1 freed
+					dereferencing mm->owner fails
+
+
+
+I do have a potential solution in mind, but I want to make sure my hypothesis is
+correct.
+
+
+
+-- 
+	Warm Regards,
+	Balbir Singh
+	Linux Technology Center
+	IBM, ISTL
