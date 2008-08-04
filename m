@@ -1,15 +1,15 @@
-From: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: Re: Too many I/O controller patches
-Date: Mon, 04 Aug 2008 13:50:36 -0700
-Message-ID: <1217883036.20260.137.camel__29438.0187908702$1217883396$gmane$org@nimitz>
-References: <20080804.175126.193692178.ryov@valinux.co.jp>
-	<1217870433.20260.101.camel@nimitz>  <489748E6.5080106@gmail.com>
-	<1217876521.20260.123.camel@nimitz>  <48976A2A.9060600@gmail.com>
+From: Hugh Dickins <hugh-DTz5qymZ9yRBDgjK7y7TUQ@public.gmane.org>
+Subject: Re: memrlimit controller merge to mainline
+Date: Mon, 4 Aug 2008 22:52:36 +0100 (BST)
+Message-ID: <Pine.LNX.4.64.0808042226430.4300@blonde.site>
+References: <6599ad830807250114h7ab0fdb1u98c0968961647642@mail.gmail.com>
+	<Pine.LNX.4.64.0807251004570.31120@blonde.site>
+	<489752AA.9060500@linux.vnet.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <48976A2A.9060600-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+In-Reply-To: <489752AA.9060500-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,44 +19,67 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org
-Cc: xen-devel-GuqFBffKawuULHF6PoxzQEEOCMrvLtNR@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, virtualization-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, dm-devel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, agk-9JcytcrH/bA+uJoB2kUjGw@public.gmane.org
+To: Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Cc: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Mon, 2008-08-04 at 22:44 +0200, Andrea Righi wrote:
-> Dave Hansen wrote:
-> > On Mon, 2008-08-04 at 20:22 +0200, Andrea Righi wrote:
-> >> But I'm not yet convinced that limiting the IO writes at the device
-> >> mapper layer is the best solution. IMHO it would be better to throttle
-> >> applications' writes when they're dirtying pages in the page cache (the
-> >> io-throttle way), because when the IO requests arrive to the device
-> >> mapper it's too late (we would only have a lot of dirty pages that are
-> >> waiting to be flushed to the limited block devices, and maybe this could
-> >> lead to OOM conditions). IOW dm-ioband is doing this at the wrong level
-> >> (at least for my requirements). Ryo, correct me if I'm wrong or if I've
-> >> not understood the dm-ioband approach.
+On Tue, 5 Aug 2008, Balbir Singh wrote:
+> Hugh Dickins wrote:
+> [snip]
 > > 
-> > The avoid-lots-of-page-dirtying problem sounds like a hard one.  But, if
-> > you look at this in combination with the memory controller, they would
-> > make a great team.
-> > 
-> > The memory controller keeps you from dirtying more than your limit of
-> > pages (and pinning too much memory) even if the dm layer is doing the
-> > throttling and itself can't throttle the memory usage.
+> > BUG: unable to handle kernel paging request at 6b6b6b8b
+> > IP: [<7817078f>] memrlimit_cgroup_uncharge_as+0x18/0x29
+> > Pid: 22500, comm: swapoff Not tainted (2.6.26-rc8-mm1 #7)
+> >  [<78161323>] ? exit_mmap+0xaf/0x133
+> >  [<781226b1>] ? mmput+0x4c/0xba
+> >  [<78165ce3>] ? try_to_unuse+0x20b/0x3f5
+> >  [<78371534>] ? _spin_unlock+0x22/0x3c
+> >  [<7816636a>] ? sys_swapoff+0x17b/0x37c
+> >  [<78102d95>] ? sysenter_past_esp+0x6a/0xa5
 > 
-> mmh... but in this way we would just move the OOM inside the cgroup,
-> that is a nice improvement, but the main problem is not resolved...
+> I am unable to reproduce the problem,
+
+Me neither, I've spent many hours trying 2.6.27-rc1-mm1 and then
+back to 2.6.26-rc8-mm1.  But I've been SO stupid: saw it originally
+on one machine with SLAB_DEBUG=y, have been trying since mostly on
+another with SLUB_DEBUG=y, but never thought to boot with
+slub_debug=P,task_struct until now.
+
+> but I do have an initial hypothesis
 > 
-> A safer approach IMHO is to force the tasks to wait synchronously on
-> each operation that directly or indirectly generates i/o.
+> CPU0					CPU1
+> 					try_to_unuse
+> task 1 stars exiting			look at mm = task1->mm
+> ..					increment mm_users
+> task 1 exits
+> mm->owner needs to be updated, but
+> no new owner is found
+> (mm_users > 1, but no other task
+> has task->mm = task1->mm)
+> mm_update_next_owner() leaves
+> 
+> grace period
+> 					user count drops, call mmput(mm)
+> task 1 freed
+> 					dereferencing mm->owner fails
 
-Fine in theory, hard in practice. :)
+Yes, that looks right to me: seems obvious now.  I don't think your
+careful alternation of CPU0/1 events at the end matters: the swapoff
+CPU simply dereferences mm->owner after that task has gone.
 
-I think the best we can hope for is to keep parity with what happens in
-the rest of the kernel.  We already have a problem today with people
-mmap()'ing lots of memory and dirtying it all at once.  Adding a i/o
-bandwidth controller or a memory controller isn't really going to fix
-that.  I think it is outside the scope of the i/o (and memory)
-controllers until we solve it generically, first.
+(That's a shame, I'd always hoped that mm->owner->comm was going to
+be good for use in mm messages, even when tearing down the mm.)
 
--- Dave
+> I do have a potential solution in mind, but I want to make sure my
+> hypothesis is correct.
+
+It seems wrong that memrlimit_cgroup_uncharge_as should be called
+after mm->owner may have been changed, even if it's to something safe.
+But I forget the mm/task exit details, surely they're tricky.
+
+By the way, is the ordering in mm_update_next_owner the best?
+Would there be less movement if it searched amongst siblings before
+it searched amongst children?  Ought it to make a first pass trying
+to stay within the same cgroup?
+
+Hugh
