@@ -1,15 +1,11 @@
-From: Andrea Righi <righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: Re: [PATCH -mm 2/3] i/o controller infrastructure
-Date: Mon, 04 Aug 2008 08:31:46 +0200
-Message-ID: <4896A252.3000907__29682.6241341934$1217831650$gmane$org@gmail.com>
-References: <> <1217801698-13438-3-git-send-email-righi.andrea@gmail.com>
-	<489651E6.90001@cn.fujitsu.com>
-Reply-To: righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org
+From: Ryo Tsuruta <ryov-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
+Subject: [PATCH 0/7] I/O bandwidth controller and BIO tracking
+Date: Mon, 04 Aug 2008 17:51:26 +0900 (JST)
+Message-ID: <20080804.175126.193692178.ryov__42874.091040767$1217840034$gmane$org@valinux.co.jp>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <489651E6.90001-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,49 +15,47 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Cc: axboe-tSWWG44O7X1aa/9Udqfwiw@public.gmane.org, randy.dunlap-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org, Marco Innocenti <m.innocenti-qooieK91W7JeoWH0uzbU5w@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, roberto-5KDOxZqKugI@public.gmane.org, Carl Henrik Lunde <chlunde-om2ZC0WAoZIXWF+eFR7m5Q@public.gmane.org>, eric.rannaud-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, Divyesh Shah <dpshah-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, matt-cT2on/YLNlBWk0Htik3J/w@public.gmane.org, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, subrata-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+To: linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, dm-devel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, virtualization-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, xen-devel-GuqFBffKawuULHF6PoxzQEEOCMrvLtNR@public.gmane.org
+Cc: agk-9JcytcrH/bA+uJoB2kUjGw@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Li Zefan wrote:
-> Andrea Righi wrote:
->> This is the core io-throttle kernel infrastructure. It creates the basic
->> interfaces to cgroups and implements the I/O measurement and throttling
->> functions.
->>
->> Signed-off-by: Andrea Righi <righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
->> ---
->>  block/Makefile                |    2 ++
->>  include/linux/cgroup_subsys.h |    6 ++++++
->>  init/Kconfig                  |   10 ++++++++++
->>  3 files changed, 18 insertions(+), 0 deletions(-)
->>
-> 
-> where is block/blk-io-throttle.c and include/linux/blk-io-throttle.h?
-> 
+Hi everyone,
 
-mmmh.. they should have been here, I mean, in patch 2/3 but it seems
-they're gone in patch 1/3 (subject: i/o controller documentation):
+This series of patches of dm-ioband now includes "The bio tracking mechanism,"
+which has been posted individually to this mailing list.
+This makes it easy for anybody to control the I/O bandwidth even when
+the I/O is one of delayed-write requests.
+Have fun!
 
-Documentation of the block device I/O controller: description, usage,
-advantages and design.
+This series of patches consists of two parts:
+  1. dm-ioband
+    Dm-ioband is an I/O bandwidth controller implemented as a
+    device-mapper driver, which gives specified bandwidth to each job
+    running on the same physical device. A job is a group of processes
+    with the same pid or pgrp or uid or a virtual machine such as KVM
+    or Xen. A job can also be a cgroup by applying the bio-cgroup patch.
+  2. bio-cgroup
+    Bio-cgroup is a BIO tracking mechanism, which is implemented on
+    the cgroup memory subsystem. With the mechanism, it is able to
+    determine which cgroup each of bio belongs to, even when the bio
+    is one of delayed-write requests issued from a kernel thread
+    such as pdflush.
 
-Signed-off-by: Andrea Righi <righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
----
- Documentation/controllers/io-throttle.txt |  312 +++++++++++++
- block/blk-io-throttle.c                   |  719 +++++++++++++++++++++++++++++
- include/linux/blk-io-throttle.h           |   41 ++
- 3 files changed, 1072 insertions(+), 0 deletions(-)
- create mode 100644 Documentation/controllers/io-throttle.txt
- create mode 100644 block/blk-io-throttle.c
- create mode 100644 include/linux/blk-io-throttle.h
-...
+The above two parts have been posted individually to this mailing list
+until now, but after this time we would release them all together.
 
-I'm pretty sure I did a:
-git-commit -s Documentation/controllers/io-throttle.txt
-in my local branch (history confirms this), but, anyway, if you think
-it's worth it I can fix it and post the patchset again, just let me
-know.
+  [PATCH 1/7] dm-ioband: Patch of device-mapper driver
+  [PATCH 2/7] dm-ioband: Documentation of design overview, installation,
+                         command reference and examples.
+  [PATCH 3/7] bio-cgroup: Introduction
+  [PATCH 4/7] bio-cgroup: Split the cgroup memory subsystem into two parts
+  [PATCH 5/7] bio-cgroup: Remove a lot of "#ifdef"s
+  [PATCH 6/7] bio-cgroup: Implement the bio-cgroup
+  [PATCH 7/7] bio-cgroup: Add a cgroup support to dm-ioband
 
-Thanks for looking at it!
--Andrea
+Please see the following site for more information:
+  Linux Block I/O Bandwidth Control Project
+  http://people.valinux.co.jp/~ryov/bwctl/
+
+Thanks,
+Ryo Tsuruta
