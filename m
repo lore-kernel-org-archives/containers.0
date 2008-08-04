@@ -1,10 +1,10 @@
-From: "kub.hur-ral2JQCrhuEAvxtiuMwx3w@public.gmane.org" <kub.hur-ral2JQCrhuEAvxtiuMwx3w@public.gmane.org>
-Subject: =?GB2312?B?0NDV/rmk1/fNs7PvudzA7bjfvLbR0NDesOA=?=
-Date: Mon, 4 Aug 2008 19:14:34 +0800
-Message-ID: <200808041114.m74BELWL019179@smtp1.linux-foundation.org>
+From: "Robert P. J. Day" <rpjday-L09J2beyid0N/H6P543EQg@public.gmane.org>
+Subject: [PATCH] CGROUPS:  Group the CGROUPS Kconfig entries to be consecutive.
+Date: Mon, 4 Aug 2008 12:16:05 -0400 (EDT)
+Message-ID: <alpine.LFD.1.10.0808041213540.2600@localhost.localdomain>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="gb2312"
-Content-Transfer-Encoding: base64
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
@@ -18,85 +18,110 @@ Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-CgogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgILm5vai6zdCzyee74aOsxOPO0sbrxuuy
-ztPro6EKCj09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09
-PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT0KCiAgICAgICAgICAg
-ICAgICAgICAgICAgICAgICAgICAg0NDV/rmk1/fNs7PvudzA7bjfvLbR0NDesOAKCj09PT09PT09
-PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09
-PT09PT09PT09PT09PT09PT09PT09PT09PT09PT0KyKu5+s2z0ru3/s7xtee7sKO6o7SjsKOwo62j
-uKO4o7mjuaO2o7KjuAoKyc+6o7XYx/jXqM/fo7qjsKOyo7GjraO1o7GjsKO5o7mjtKO3o7UKCrnj
-tqu12Mf416jP36O6o7CjsqOwo62js6Ozo7mjt6Oyo7KjsaO2CgqxqC7D+y7B9y6zzDrAtLXn18nR
-r6H6sajD+7Htofq72LSrsajD+7Htofq3orP2ss6808i3yM+6r6H6s9bIt8jPuq+yzrzTCgrKsbzk
-0+u12LXjo7oKMjAwOMTqONTCMjItMjPI1SAgIFvJ7tvaXQoyMDA4xOo51MIxNy0xOMjVICAgW7nj
-1t1dCjIwMDjE6jnUwjI3LTI4yNUgICBbsbG+qV0KMjAwOMTqMTDUwjE2LTE3yNUgICjL1dbdKSAg
-CjIwMDjE6jEw1MIxOC0xOcjVICAoyc+6oykgCj09PT09PT09PT09PT09PT09PT09PT09PT09PT09
-PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09
-PT09PT09PT0Kv84ts8wtsbMtvrA6Ci0tyOe5+8T6ysfSu867xvPStbncwO3V36Osw7vT0Neo0rWz
-37bIyOe6zrriwb/Q0NX+uaTQp6O/Ci0tyOe5+8T6ysfSu8670NDV/ri61PDIy6Osx7fIsdeo0rW5
-pL7fyOe6ztfU0MXD5rbU1LG5pKO/Ci0tyOe5+8T6ysfSu867zsTD2Lmk1/fV36OstO25/deo0rXW
-uLW81PXE3LvxtcPWsLOhvfrJ/aO/CiAgICCxvr/Os8y9q86qxPrM4bmptNPA7cTutb28vMTctcTI
-q8Pm0bXBt6OssO/W+sT6zOG439DQ1f7Ns7PvudzA7bXE16jStby8xNyjrNb3tq/Vxs7VuaTX973a
-1+CjrArT0NCnv9jWxtDQ1f6zybG+o6y3wLe20NDV/rmk1/ehsLratrShsaOhv86zzL2r0tS5+rzK
-zajTw7XE1rDStbHq17zOqrv5tKGjrL3hus/Az8qmtuDE6rqjzeLB9NGnoaIKtNPStbXEvq3R6aOs
-vNPWrsbktsC1vb6rye61xL2yveKzys/Wus3RtcG3tePGwLXE16jStcq1waajrLbUxvPStdDQ1f65
-3MDtyMvUsb340NC/xtGnoaLXqNK1oaLPyAq9+LXEz7XNs7uv0bXBt6GjCgqyzi280y221C3P86O6
-CiDQ0NX+19y84KOs0NDV/r6twO2jrLDsuavK0tb3yM6jrNDQ1f7OxNSxCsXgLdG1LdDOLcq9o7og
-Csq1stm9sr3iLcnutsi94s72Lcq11b231s/tLcfpvrPEo8TiLbbgw73M5dW5yr4KPT09PT09PT09
-PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09
-PT09PT09PT09PT09PT09PT09PT09PT09PT09PQrSu6Giz9a0+sbz0rXW0NDQ1f653MDttcS2qM67
-CjGhos/WtPrG89K11MvQ0MSj0M0gICAgICAgICAgCjKhotDQ1f653MDtuaTX97XEvKjQp7zb1rUK
-M6Gi0NDV/rncwO3Iy9SxtcTL2NbKzNi14yAgICAKNKGi0NDV/rncwO3WxrbItcS/8rzcveG5uQrR
-3cG3o7q5pNf3wqm2tL6/vrmz9tTaxMTA76O/Cgq2/qGi0NDV/tb3udy1xNfUztK53MDtCjGhotaw
-0rW55re20qq149PrxsC5wLHq17wKMqGiyMu8yrnYz7W0psDttcTXvNTy0+u4w9ei0uK1xKGxz92+
-rqGxCjOhotaw0rXTxcrGsaOz1rXE0qq14wrR3cG3o7rI57rOy7W3/sTjtcTJz8u+CgrI/aGi0NDV
-/rK/w8W1xMTasr+53MDtCjGhosewzKjOxNSxudzA7QoyoaLD2Mrpo6jB7LW8w9jK6aOpudzA7Qoz
-oaLQ0NX+uaTX98jL1LG53MDtCjShosu+u/qhorGjsLKhosflveC5pLncwO0KNaGi0NDV/srCzvHQ
-1Lmk1/e1xMTasr+31rmkCjahose/u6/Q0NX+uaTX99a00NC7+tbGCjehorPKz9bNu7P20NDV/rmk
-1/fStbyoICAgICAgCtHdwbejutX7us/XytS0LbfWuaTQrdf3LbTvs8nEv7HqCgrLxKGivq3R6bv9
-wNvT69aqyra0tNDCudzA7QoxoaK5q87EtKbA7dPrudzA7QoyoaK74dLps8m5+7XEzOHBttPrt9bP
-7QozoaK5pNf3tLTQwrncwO3T69Om08MKCs7loaLQ0NX+zbOz77ncwO252Lz8ysLO77/Y1sYKMS4g
-vK/NxbXnu7C53MDtIAoyLiC8r83FtcS4tNOhu/q53MDtCjMuILyvzcW1xLO1wb653MDtsrvNrLe9
-yr0KNC4gyrPMw7ncwO21xM3isPzB97PMCjUuINSxuaS1xNOmvLGwssirsaPVzwo2LiCw7LmrytKy
-vL7WudzA7Qo3LiCw7LmrytKw4bzSudzA7Qo4LiDT687v0rW1xLnYz7XSqrXjIAo5LiC21MqpuaS3
-vbXEudzA7dKqteMKMTAuILmry77XpNTatdi1xMnnx/i52M+1CjExLiC5q7myudjPtbncwO0KMTIu
-IM6ju/q0psDtCgrB+aGi0NDV/r6tt9G53MDt0+u/2NbGCjGhosjnus60psDtusPI/dbWudjPtdPr
-yP3P7tSt1PIKMqGi0NDV/tK1zvG30dPDudzA7QozoaLQ0NX+s8mxvr/Y1sa1xNbY0qrCt762IAo0
-oaKw7Lmrs8mxvr/Y1sa1xM7ez+7UrdTyCjWhotTL08OhsLDXvfC0pbXjobHUrcDtvdrKodDQ1f6+
-rbfRCgrG36Gi0NDV/s2zs++x2LG4tcS5tc2ovLzHyQoxoaLKqdW5yMu8ytOwz+y94r72udzA7bPl
-zbsKMqGiuNDV2cv7yMu1xDS088jIvPwKM6Gise3R76GixfrGwDWyvbeoCjShosHuyMvQxLf+v9q3
-/rXEt723qArR3cG3o7rOqrrOt9HBprK7zNa6w6Oho78KCrDLoaK74dLp1+nWr9Pru+62r7ncwO0K
-MaGis8m5prvh0um1xNe8sbi5pNf3o7q74cewoaK74dbQoaK74brzICAKMqGiyOe6ztb3s9a74dLp
-0+u5q8u+u+62rwozoaK439Cnwsq74dLptcTKtdPDuaS+3woKvsWhor3TtP25pNf30+vWsNK1wPHS
-xwoxoaK907T9uaTX99bQtcTKrrTzvfu8ycLbCjKhotDQ1f7Iy9SxtcTXxdewoaLSx7HtoaLT79HU
-CjOhosq508O157uwoaLK1rv6oaJFLW1haWy1xMDx0se55re2CjShotHnx+uhorLOuduhosLD0861
-xMDx0se55re2CgrKrqGi0NDV/rncwO3Iy9SxtcTWsNK1uea7rgoxoaLQ0NX+udzA7daw0rW1xNaw
-s6G918zdCjKhotaw0rXJ+tHEuea7rtbQtcTO5bj20ru5pLPMCjOhorTT08XQ47W917/UvaOstNO8
-vMr1tb3S1cr1CrHP0rXR3cG3o7qwy7fW1tPJ6LzG1rCzobDLxOqjoQo9PT09PT09PT09PT09PT09
-PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09
-PT09PT09PT09PT09PT09PT09PT09Cr2yLcqmLb3pLcncOiDB9bTzuqM6CiAgICDFt9HHyMvBptfK
-1LS3otW5warDy9bQufrH+MrXz6/XydGvyqYs0cfW3tfJ0a/F4NG10+u3otW50K274cPYyumzpKGj
-MjAwMcTqv6rKvNeo1rC008rC09rF4NG1CiDT69fJ0a+5pNf3o6zS1LfDzsrRp9Xfye233bbgtM6z
-9rfDuf23qLn6oaK1wrn6oaLI8Mq/tci5+taqw/u089Gnus2089DNxvPStaOs1NrG89K11tC437Lj
-vq3A7cjLCiDB7LW8y9jWyszhyf2hosbz0rXQ0NX+zOXPtbm5vai8sM2o08O53MDtwezT8rXIt73D
-5tO109DB7M/ItcTK073Hus234brxtcTKtbz5vq3R6aGjxuTK2r/OzNjJq8rHCiC007n6xNrG89K1
-y/nD5sHZtcTKtbzKzsrM4rP2t6KjrM2ouf2499bWteTQzbC4wP21xL2yveK6zbfWzvajrNLUvLDE
-o8Tiz9bKtbu3vrO1xLLZ1/fR3cG3o6zPtc2zCiDM4cn9xvPStb3ivvbOyszitcTE3MGmus3Ktcqp
-stnX98uuxr2howogICAgINa4tby5/bXExvPStbWrsrvP3tPaIKO6sLLA+6Oo1tC5+qOpoaKw2bbI
-oaK6o7b7vK/NxaGiw8C1xLyvzcWhosGqz+u8r83FoaLJ7rei1bmhorart+fI1bL6oaIKIMnPuqOx
-yNHHtc+hosnu29rSxravoaK549bd0sa2r6Gi1tDJvdLGtq+hotbQv8bWx7WjsaO8r83FoaK6vczs
-v8a5pLyvzcWhornjtqu6y7XnvK/NxaGiu6rHyLPHzu8KINK1oaKzpLPHzu/StaGisbG+qdDFzf7N
-qNG2oaLPw8PFw/vXy7yvzcWhosnu29rIy7GjssbP1aGiye7b2szsuufJzLOhoaLJ7tvaytC+rc6z
-v8a8vNPQz965q8u+oaIKINbQufrIy7LFyMjP36Gizveyv8jLwabXytS0ytCzoaGizKmwurXn19Oh
-orOsu6q159fToaLButfTyrHXsLXIsNnT4LzS1tDN4sbz0rWhoyAgIAo9PT09PT09PT09PT09PT09
-PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09
-PT09PT09PT09PT09PT09PT09PT09CrvhLc7xLdfpLdavo7pNIE0gQyC53CDA7SDRpyDUuiAKCsir
-ufrNs9K7t/7O8bXnu7CjuqO0o7CjsKOto7ijuKO5o7mjtqOyo7gKCsnPuqO12Mf416jP36O6o7Cj
-sqOxo62jtaOxo7CjuaO5o7Sjt6O1Cgq547artdjH+Neoz9+juqOwo7KjsKOto7Ojs6O5o7ejsqOy
-o7GjtgoKsaguw/suwfcus8w6wLS159fJ0a+h+rGow/ux7aH6u9i0q7Gow/ux7aH6t6Kz9rLOvNPI
-t8jPuq+h+rPWyLfIz7qvss680woKt9E9PT0908OjuqOyo7WjsKOw1KovyMsgo6iw/MCoxeDRtbfR
-o6/XysHPt9Gjr87nss230aOv1Oe147LoteOjr8uwt9G1yKOpCj09PT09PT09PT09PT09PT09PT09
-PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09
-PT09PT09PT09PT09PT09PT0KX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19f
-X19fX19fX18KQ29udGFpbmVycyBtYWlsaW5nIGxpc3QKQ29udGFpbmVyc0BsaXN0cy5saW51eC1m
-b3VuZGF0aW9uLm9yZwpodHRwczovL2xpc3RzLmxpbnV4LWZvdW5kYXRpb24ub3JnL21haWxtYW4v
-bGlzdGluZm8vY29udGFpbmVycw==
+
+Move a few CGROUPS-related Kconfig entries so that they appear
+consecutively when running "make menuconfig."  This shouldn't affect
+the functionality.
+
+Signed-off-by: Robert P. J. Day <rpjday-L09J2beyid0N/H6P543EQg@public.gmane.org>
+
+---
+
+diff --git a/init/Kconfig b/init/Kconfig
+index 7e6dae1..b51c133 100644
+--- a/init/Kconfig
++++ b/init/Kconfig
+@@ -317,6 +317,42 @@ config CPUSETS
+
+ 	  Say N if unsure.
+
++config CGROUP_CPUACCT
++	bool "Simple CPU accounting cgroup subsystem"
++	depends on CGROUPS
++	help
++	  Provides a simple Resource Controller for monitoring the
++	  total CPU consumed by the tasks in a cgroup
++
++config RESOURCE_COUNTERS
++	bool "Resource counters"
++	help
++	  This option enables controller independent resource accounting
++          infrastructure that works with cgroups
++	depends on CGROUPS
++
++config CGROUP_MEM_RES_CTLR
++	bool "Memory Resource Controller for Control Groups"
++	depends on CGROUPS && RESOURCE_COUNTERS
++	select MM_OWNER
++	help
++	  Provides a memory resource controller that manages both page cache and
++	  RSS memory.
++
++	  Note that setting this option increases fixed memory overhead
++	  associated with each page of memory in the system by 4/8 bytes
++	  and also increases cache misses because struct page on many 64bit
++	  systems will not fit into a single cache line anymore.
++
++	  Only enable when you're ok with these trade offs and really
++	  sure you need the memory resource controller.
++
++	  This config option also selects MM_OWNER config option, which
++	  could in turn add some fork/exit overhead.
++
++config MM_OWNER
++	bool
++
+ #
+ # Architectures with an unreliable sched_clock() should select this:
+ #
+@@ -372,42 +408,6 @@ config CGROUP_SCHED
+
+ endchoice
+
+-config CGROUP_CPUACCT
+-	bool "Simple CPU accounting cgroup subsystem"
+-	depends on CGROUPS
+-	help
+-	  Provides a simple Resource Controller for monitoring the
+-	  total CPU consumed by the tasks in a cgroup
+-
+-config RESOURCE_COUNTERS
+-	bool "Resource counters"
+-	help
+-	  This option enables controller independent resource accounting
+-          infrastructure that works with cgroups
+-	depends on CGROUPS
+-
+-config MM_OWNER
+-	bool
+-
+-config CGROUP_MEM_RES_CTLR
+-	bool "Memory Resource Controller for Control Groups"
+-	depends on CGROUPS && RESOURCE_COUNTERS
+-	select MM_OWNER
+-	help
+-	  Provides a memory resource controller that manages both page cache and
+-	  RSS memory.
+-
+-	  Note that setting this option increases fixed memory overhead
+-	  associated with each page of memory in the system by 4/8 bytes
+-	  and also increases cache misses because struct page on many 64bit
+-	  systems will not fit into a single cache line anymore.
+-
+-	  Only enable when you're ok with these trade offs and really
+-	  sure you need the memory resource controller.
+-
+-	  This config option also selects MM_OWNER config option, which
+-	  could in turn add some fork/exit overhead.
+-
+ config SYSFS_DEPRECATED
+ 	bool
+
+
+========================================================================
+Robert P. J. Day
+Linux Consulting, Training and Annoying Kernel Pedantry:
+    Have classroom, will lecture.
+
+http://crashcourse.ca                          Waterloo, Ontario, CANADA
+========================================================================
