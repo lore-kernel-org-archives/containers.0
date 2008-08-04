@@ -1,12 +1,15 @@
-From: "Robert P. J. Day" <rpjday-L09J2beyid0N/H6P543EQg@public.gmane.org>
-Subject: [PATCH] (Revised) CGROUPS:  Collect CGROUPS-related Kconfig entries
-	together.
-Date: Mon, 4 Aug 2008 13:20:11 -0400 (EDT)
-Message-ID: <alpine.LFD.1.10.0808041316130.5120@localhost.localdomain>
+From: Andrea Righi <righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Subject: Re: Too many I/O controller patches
+Date: Mon, 04 Aug 2008 20:22:30 +0200
+Message-ID: <489748E6.5080106__10834.4633634717$1217874374$gmane$org@gmail.com>
+References: <20080804.175126.193692178.ryov@valinux.co.jp>
+	<1217870433.20260.101.camel@nimitz>
+Reply-To: righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <1217870433.20260.101.camel@nimitz>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -16,165 +19,61 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Cc: xen-devel-GuqFBffKawuULHF6PoxzQEEOCMrvLtNR@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, virtualization-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, dm-devel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, agk-9JcytcrH/bA+uJoB2kUjGw@public.gmane.org
 List-Id: containers.vger.kernel.org
 
+Dave Hansen wrote:
+> On Mon, 2008-08-04 at 17:51 +0900, Ryo Tsuruta wrote:
+>> This series of patches of dm-ioband now includes "The bio tracking mechanism,"
+>> which has been posted individually to this mailing list.
+>> This makes it easy for anybody to control the I/O bandwidth even when
+>> the I/O is one of delayed-write requests.
+> 
+> During the Containers mini-summit at OLS, it was mentioned that there
+> are at least *FOUR* of these I/O controllers floating around.  Have you
+> talked to the other authors?  (I've cc'd at least one of them).
+> 
+> We obviously can't come to any kind of real consensus with people just
+> tossing the same patches back and forth.
+> 
+> -- Dave
+> 
 
-Rearrange the CGROUPS-related Kconfig entries in init/Kconfig so that
-they're consecutive, and simplify the dependencies by using a
-"menuconfig" directive.  This shouldn't affect the underlying
-functionality.
+Dave,
 
-Signed-off-by: Robert P. J. Day <rpjday-L09J2beyid0N/H6P543EQg@public.gmane.org>
+thanks for this email first of all. I've talked with Satoshi (cc-ed)
+about his solution "Yet another I/O bandwidth controlling subsystem for
+CGroups based on CFQ".
 
----
+I did some experiments trying to implement minimum bandwidth requirements
+for my io-throttle controller, mapping the requirements to CFQ prio and
+using the Satoshi's controller. But this needs additional work and
+testing right now, so I've not posted anything yet, just informed
+Satoshi about this.
 
-  sorry, i just realized that it would be even cleaner to use a
-"menuconfig" directive to reduce the number of repetitive
-dependencies.
+Unfortunately I've not talked to Ryo yet. I've continued my work using a
+quite different approach, because the dm-ioband solution didn't work
+with delayed-write requests. Now the bio tracking feature seems really
+prosiming and I would like to do some tests ASAP, and review the patch
+as well.
 
-diff --git a/init/Kconfig b/init/Kconfig
-index 7e6dae1..5fe5baf 100644
---- a/init/Kconfig
-+++ b/init/Kconfig
-@@ -271,7 +271,7 @@ config LOG_BUF_SHIFT
- 		     13 =>  8 KB
- 		     12 =>  4 KB
+But I'm not yet convinced that limiting the IO writes at the device
+mapper layer is the best solution. IMHO it would be better to throttle
+applications' writes when they're dirtying pages in the page cache (the
+io-throttle way), because when the IO requests arrive to the device
+mapper it's too late (we would only have a lot of dirty pages that are
+waiting to be flushed to the limited block devices, and maybe this could
+lead to OOM conditions). IOW dm-ioband is doing this at the wrong level
+(at least for my requirements). Ryo, correct me if I'm wrong or if I've
+not understood the dm-ioband approach.
 
--config CGROUPS
-+menuconfig CGROUPS
- 	bool "Control Group support"
- 	help
- 	  This option will let you use process cgroup subsystems
-@@ -279,9 +279,10 @@ config CGROUPS
+Another thing I prefer is to directly define bandwidth limiting rules,
+instead of using priorities/weights (i.e. 10MiB/s for /dev/sda), but
+this seems to be in the dm-ioband TODO list, so maybe we can merge the
+work I did in io-throttle to define such rules.
 
- 	  Say N if unsure.
+Anyway, I still need to look at the dm-ioband and bio-cgroup code in
+details, so probably all I said above is totally wrong...
 
-+if CGROUPS
-+
- config CGROUP_DEBUG
- 	bool "Example debug cgroup subsystem"
--	depends on CGROUPS
- 	default n
- 	help
- 	  This option enables a simple cgroup subsystem that
-@@ -292,7 +293,6 @@ config CGROUP_DEBUG
-
- config CGROUP_NS
-         bool "Namespace cgroup subsystem"
--        depends on CGROUPS
-         help
-           Provides a simple namespace cgroup subsystem to
-           provide hierarchical naming of sets of namespaces,
-@@ -301,14 +301,14 @@ config CGROUP_NS
-
- config CGROUP_DEVICE
- 	bool "Device controller for cgroups"
--	depends on CGROUPS && EXPERIMENTAL
-+	depends on EXPERIMENTAL
- 	help
- 	  Provides a cgroup implementing whitelists for devices which
- 	  a process in the cgroup can mknod or open.
-
- config CPUSETS
- 	bool "Cpuset support"
--	depends on SMP && CGROUPS
-+	depends on SMP
- 	help
- 	  This option will let you create and manage CPUSETs which
- 	  allow dynamically partitioning a system into sets of CPUs and
-@@ -317,6 +317,42 @@ config CPUSETS
-
- 	  Say N if unsure.
-
-+config CGROUP_CPUACCT
-+	bool "Simple CPU accounting cgroup subsystem"
-+	help
-+	  Provides a simple Resource Controller for monitoring the
-+	  total CPU consumed by the tasks in a cgroup
-+
-+config RESOURCE_COUNTERS
-+	bool "Resource counters"
-+	help
-+	  This option enables controller independent resource accounting
-+          infrastructure that works with cgroups
-+
-+config CGROUP_MEM_RES_CTLR
-+	bool "Memory Resource Controller for Control Groups"
-+	depends on RESOURCE_COUNTERS
-+	select MM_OWNER
-+	help
-+	  Provides a memory resource controller that manages both page cache and
-+	  RSS memory.
-+
-+	  Note that setting this option increases fixed memory overhead
-+	  associated with each page of memory in the system by 4/8 bytes
-+	  and also increases cache misses because struct page on many 64bit
-+	  systems will not fit into a single cache line anymore.
-+
-+	  Only enable when you're ok with these trade offs and really
-+	  sure you need the memory resource controller.
-+
-+	  This config option also selects MM_OWNER config option, which
-+	  could in turn add some fork/exit overhead.
-+
-+config MM_OWNER
-+	bool
-+
-+endif # CGROUPS
-+
- #
- # Architectures with an unreliable sched_clock() should select this:
- #
-@@ -372,42 +408,6 @@ config CGROUP_SCHED
-
- endchoice
-
--config CGROUP_CPUACCT
--	bool "Simple CPU accounting cgroup subsystem"
--	depends on CGROUPS
--	help
--	  Provides a simple Resource Controller for monitoring the
--	  total CPU consumed by the tasks in a cgroup
--
--config RESOURCE_COUNTERS
--	bool "Resource counters"
--	help
--	  This option enables controller independent resource accounting
--          infrastructure that works with cgroups
--	depends on CGROUPS
--
--config MM_OWNER
--	bool
--
--config CGROUP_MEM_RES_CTLR
--	bool "Memory Resource Controller for Control Groups"
--	depends on CGROUPS && RESOURCE_COUNTERS
--	select MM_OWNER
--	help
--	  Provides a memory resource controller that manages both page cache and
--	  RSS memory.
--
--	  Note that setting this option increases fixed memory overhead
--	  associated with each page of memory in the system by 4/8 bytes
--	  and also increases cache misses because struct page on many 64bit
--	  systems will not fit into a single cache line anymore.
--
--	  Only enable when you're ok with these trade offs and really
--	  sure you need the memory resource controller.
--
--	  This config option also selects MM_OWNER config option, which
--	  could in turn add some fork/exit overhead.
--
- config SYSFS_DEPRECATED
- 	bool
-
-
-
-========================================================================
-Robert P. J. Day
-Linux Consulting, Training and Annoying Kernel Pedantry:
-    Have classroom, will lecture.
-
-http://crashcourse.ca                          Waterloo, Ontario, CANADA
-========================================================================
+-Andrea
