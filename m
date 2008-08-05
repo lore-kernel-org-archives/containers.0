@@ -1,14 +1,13 @@
-From: Hirokazu Takahashi <taka-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
-Subject: Re: Too many I/O controller patches
-Date: Tue, 05 Aug 2008 15:28:16 +0900 (JST)
-Message-ID: <20080805.152816.105502343.taka__40269.6498240859$1217917815$gmane$org@valinux.co.jp>
-References: <1217876521.20260.123.camel@nimitz> <48976A2A.9060600@gmail.com>
-	<1217883036.20260.137.camel@nimitz>
+From: KOSAKI Motohiro <kosaki.motohiro-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+Subject: Re: Control groups and Resource Management notes (part I)
+Date: Tue, 05 Aug 2008 16:06:17 +0900
+Message-ID: <20080805152612.A888.KOSAKI.MOTOHIRO@jp.fujitsu.com>
+References: <489315B2.2080506@linux.vnet.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1217883036.20260.137.camel@nimitz>
+In-Reply-To: <489315B2.2080506-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,50 +17,112 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
-Cc: xen-devel-GuqFBffKawuULHF6PoxzQEEOCMrvLtNR@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, virtualization-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, dm-devel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, agk-9JcytcrH/bA+uJoB2kUjGw@public.gmane.org, righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org
+To: balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
+Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Hi,
+Hi
 
-> > >> But I'm not yet convinced that limiting the IO writes at the device
-> > >> mapper layer is the best solution. IMHO it would be better to throttle
-> > >> applications' writes when they're dirtying pages in the page cache (the
-> > >> io-throttle way), because when the IO requests arrive to the device
-> > >> mapper it's too late (we would only have a lot of dirty pages that are
-> > >> waiting to be flushed to the limited block devices, and maybe this could
-> > >> lead to OOM conditions). IOW dm-ioband is doing this at the wrong level
-> > >> (at least for my requirements). Ryo, correct me if I'm wrong or if I've
-> > >> not understood the dm-ioband approach.
-> > > 
-> > > The avoid-lots-of-page-dirtying problem sounds like a hard one.  But, if
-> > > you look at this in combination with the memory controller, they would
-> > > make a great team.
-> > > 
-> > > The memory controller keeps you from dirtying more than your limit of
-> > > pages (and pinning too much memory) even if the dm layer is doing the
-> > > throttling and itself can't throttle the memory usage.
-> > 
-> > mmh... but in this way we would just move the OOM inside the cgroup,
-> > that is a nice improvement, but the main problem is not resolved...
-> > 
-> > A safer approach IMHO is to force the tasks to wait synchronously on
-> > each operation that directly or indirectly generates i/o.
+nice minutes!
+below is just my note.
+
+> Control Groups
+> ==============
 > 
-> Fine in theory, hard in practice. :)
+> 1. Multiphase locking - Paul brought up his multi phase locking design and
+> suggested approaches to implementing them. The problem with control groups
+> currently is that transactions cannot be atomically committed. If some
+> transactions fail (can_attach() callback fails or returns error), then there is
+> no notification sent out to groups that already committed the transaction
 > 
-> I think the best we can hope for is to keep parity with what happens in
-> the rest of the kernel.  We already have a problem today with people
-> mmap()'ing lots of memory and dirtying it all at once.  Adding a i/o
-> bandwidth controller or a memory controller isn't really going to fix
-> that.  I think it is outside the scope of the i/o (and memory)
-> controllers until we solve it generically, first.
+> The suggested design includes
+> 	- Acquiring locks across callbacks - Balbir opposed this approach
+>           stating that this would make it easier for subsystems to deadlock.
+>           Balbir instead suggested that each callback hold it's own lock and
+>           add an undo operation that cannot fail (returns void), since
+>           uncharging usually succeeds. Dave suggested doing undo without holding
+>           any locks.
 
-Yes, that's right. This should be solved.
+task_limit cgroup has one problem with atomic related things.
+task_limit check number of tasks when can_attach() called and increment number of tasks
+when attach() called.
+thus, it has race. if two attch processing run parallel, number of tasks exceed task limit.
 
-But there is a good thing when you use a memory controller.
-A problem occurred in a certain cgroup will be confined in its cgroup.
-I think this is a great point, don't you think?
 
-Thank you,
-Hirokazu Takahashi.
+> 4. Binary statistics - The question about binary statistics was raised. Since
+> control groups don't enforce any particular kind of API, is there a way to
+> generically handle control files and their parameters in the library? Paul
+> suggested his binary API approach, where every control group and it's API is
+> documented in an api file. Eric suggested using an ASCII interface (since that
+> is very generic) and using one file per API. Balbir mentioned that this will
+> lead to too many dentries and issues related to having extensive number of dentries.
+
+if too many dentries come trouble, we should attach it?
+I feel binary interface is detour solution.
+
+but if any cgroup need any atomic operation and its implementation is 
+difficult on sysfs like inteface, I'll advocate binary api.
+
+
+> 5. User space notifications - Kamezawa had requested for user space notification
+> (through inotify) when a control group reaches it's memory limit for example.
+> The questions that were asked were, what happens if no one is listening in on
+> notifications? Denis suggested using a FIFO mechanism. Balbir suggested using
+> netlinks and building stuff on top of cgroupstats. With netlink we can pass
+> type, value and length of arguments, making it more suitable for this kind of
+> information exchange. The only concern with netlink is that it can lose
+> messages. The general consensus was to add one FIFO per control group and use
+> that for all notifications related to the control group.
+
+At least, HPC like batch system need some notification (e.g. elaps time,
+cpu time, memory consumption exceed)
+
+In addition, some embedded people want userland oom-manager.
+it get notification when system memory shortage, and shrink properly
+process memory.
+because kernel can't know how much droppable cache user process has.
+(e.g. browser cache, free list in malloc, GUI bitmap cache)
+
+if we think system memory shortage, FIFO is not so good idea.
+it accelerate to memory stavation more.
+and netlink use some kmalloc, then it doesn't works properly 
+on memory stavation state.
+
+but We should be thought it?
+
+
+btw, I guess Peter Zijlstra's memory resavation framework can solve 
+above netlink issue. but I'm not sure it.
+
+
+> 4. CPU controller - There was a request for hard limit feature. Peter opposed
+> the approach stating that anyone wanting hard limits should use the real time
+> group scheduler and a new EDF scheduler is being implemented. Denis mentioned
+> that without hard limits it is not possible for a service provider to
+> decide/plan how much capacity a single CPU can provide. Balbir mentioned that
+> with hard limits and SLA's the service provider could on reaching the hard limit
+> can save power by hard limiting execution on a CPU that is meeting its SLA
+> requirements. Peter mentioned that hard limits would make the group scheduler,
+> non work conserving.
+
+What's SLA?
+
+
+> 5. Kernel memory controller - The kernel memory controller was discussed
+> briefly. Pavel has not been actively working on it. Denis mentioned that it
+> would be nice to have a network buffer controller as well. Questions were asked
+> if the kernel memory controller should be merged with the existing memory
+> controller?
+
+I don't hope merge it.
+I think network buffer control is useful, but kernel memory controller is not.
+because it require administrator know kernel implementation.
+but it is too difficult.
+
+Swiss army knife like approach press down every trouble to administrator.
+
+
+I know embedded people like kernel memory controller, 
+because they know the kernel internal very well and 
+they don't want create custom kernel.
+but it is general assumption?
