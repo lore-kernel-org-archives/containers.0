@@ -1,15 +1,17 @@
-From: Ryo Tsuruta <ryov-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
-Subject: Re: Too many I/O controller patches
-Date: Tue, 05 Aug 2008 22:17:17 +0900 (JST)
-Message-ID: <20080805.221717.112609710.ryov__7505.8157126934$1217942370$gmane$org@valinux.co.jp>
-References: <489748E6.5080106@gmail.com>
-	<000901c8f6a5$fe64ba30$fb2e2e90$@jp.nec.com>
-	<48981D3B.2020701@gmail.com>
+From: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [Libcg-devel] Control groups and Resource Management notes
+	(part II)
+Date: Tue, 5 Aug 2008 09:30:07 -0400
+Message-ID: <20080805133007.GC15193@redhat.com>
+References: <489315B2.2080506@linux.vnet.ibm.com>
+	<4893B415.9070906@linux.vnet.ibm.com>
+	<20080805160709.A88B.KOSAKI.MOTOHIRO@jp.fujitsu.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <48981D3B.2020701-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <20080805160709.A88B.KOSAKI.MOTOHIRO-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,55 +21,115 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org
-Cc: xen-devel-GuqFBffKawuULHF6PoxzQEEOCMrvLtNR@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, vtaras-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org, dm-devel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, agk-9JcytcrH/bA+uJoB2kUjGw@public.gmane.org, virtualization-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, ngupta-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org
+To: KOSAKI Motohiro <kosaki.motohiro-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, libcg-devel <libcg-devel-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org>, linux kernel mailing list <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Hi Andrea, Satoshi and all,
+On Tue, Aug 05, 2008 at 04:45:30PM +0900, KOSAKI Motohiro wrote:
+> Hi balbir-san,
+> 
+> Thank you for nice minutes.
+> it is very helpful for non invited people (include me).
+> 
+> 
+> > 10. Freezer subsystem - The freezer system was discussed briefly. Serge
+> > mentioned the patches and wanted to collect feedback (if any) on them.
+> 
+> Who use it?
+> 
+> AFAIK the freezer is used by HPC guys in general.
+> but they think MPI process must be freezed.
+> 
+> Unfortunately, Opensource MPI implementation use various inter-process
+> communication method (e.g. SYSV IPC, socket, ptrace)
+> 
+> then, general freezer implementaion is very difficult.
+> 
+> 
+> > 11. OOM Handler - The OOM handler was discussed in detail. Balbir mentioned
+> > certain short comings of the OOM handler
+> > 	a. Logic - it is based on total_vm, is that the correct metric for
+> >                    OOMing?
+> > 	b. Concurrency - it kills several tasks at once
+> > 
+> > There was a discussion on moving the policy for OOM handling to user space. Paul
+> > described how the OOM handler has been modified at google to notify user space
+> > when a CPUSet runs out of memory. Balbir asked if OOMing on reaching limits is a
+> > good idea, it was generally discussed that it might not be such a good idea.
+> 
+> CPUSET based limitation is not easy to use (slightly).
+> memcgroup based is better.
+> 
+> In addition, notification on reaching limit can be very generic.
+> 
+> various limit (e.g. cpu time, memory usage), various notification
+> (e.g. kill process, send signal, inotify), various target
+> (each process on the cgroup or manager process) can be tought.
+> 
+> 
+> 
+> > Control group library
+> > =====================
+> > Dhaval and Balbir introduced libcgroups and the purpose of the library and the
+> > goals. Balbir described on paper what the current design looks like, it consists of
+> > 
+> > 	1. API
+> > 	2. Test framework
+> > 	3. A configuration subsystem
+> > 
+> > Dhaval discussed configuration syntax of XML versus home made. The issue of
+> > classification of tasks was brought up. The reason that we want to classify
+> > tasks is that we want them to move at fork/exec time to the correct cgroup so that
+> 
+> I don't recommend XML, because XML is tree based syntax but we want more fulexible
+> classification. then I guess XML reduce human readability.
+> 
+> 
+> > 1. They don't consume resources in the parents group
+> > 2. The movement is automatic
+> > 
+> > It was generally agreed upon that the classification should take place in user
+> > space. Eric and others suggested having a wrapper to start the application in
+> > the correct cgroup (wrapper around fork/exec). Dave suggested that one might
+> > even go the extent of hacking, such that a process is ptraced after fork/exec,
+> > moved to the correct group and resumed. Using SELinux contexts was also recommended.
+> > 
+> > Vivek brought up using PAM plugins to do classifications, this suggestion was
+> > nicely received. The decision was to do classification in user space and then
+> > think of kernel space if it cannot be done in user space. Denis suggested that
+> > classification is useful. In OpenVZ they classify all apache children to a
+> > different group. Balbir asked Denis to post their classification infrastructure
+> > as RFC.
+> 
+> I'm not sure about this issue.
+> but I like PAM approach.
+> 
 
-Thanks for giving a chance to discuss.
+Thanks balbir for nice summary.
 
-> Mr. Andrew gave a advice "Should discuss about design more and more"
-> to me.
-> And, in Containers Mini-summit (and Linux Symposium 2008 in Ottawa),
-> Paul said that a necessary to us is to decide a requirement first.
-> So, we must discuss requirement and design.
+Well, it was Rik Van Riel's idea to use PAM plugins so that processes
+are put into right user cgroups upon login.
 
-We've implemented dm-ioband and bio-cgroup to meet the following requirements:
-    * Assign some bandwidth to each group on the same device.
-      A group is a set of processes, which may be a cgroup.
-    * Assign some bandwidth to each partition on the same device.
-      It can work with the process group based bandwidth control.
-        ex) With this feature, you can assign 40% of the bandwidth of a
-	    disk to /root and 60% of them to /usr.
-    * It can work with virtual machines such as Xen and KVM.
-      I/O requests issued from virtual machines have to be controlled.
-    * It should work any type of I/O scheduler, including ones which
-      will be released in the future.
-    * Support multiple devices which share the same bandwidth such as
-      raid disks and LVM.   
-    * Handle asynchronous I/O requests such as AIO request and delayed 
-      write requests.
-        - This can be done with bio-cgroup, which uses the page-tracking
-	  mechanism the cgroup memory controller has.
-    * Control dirty page ratio.
-        - This can be done with the cgroup memory controller in the near
-	  feature. It would be great that you can also use other features
-	  the memory controller is going to have with dm-ioband.
-    * Make it easy to enhance.
-        - The current implementation of dm-ioband has an interface to
-	  add a new policy to control I/O requests. You can easily add
-	  I/O throttling policy if you want.
-    * Fine grained bandwidth control.
-    * Keep I/O throughput.
-    * Make it scalable.
-    * It should work correctly if the I/O load is quite high,
-      even when the io-request queue of a certain disk is overflowed.
+Is pam based classification alone is sufficient? I noticed couple of
+instances which will avoid pam. For example.
 
-> Ryo, do you have other documentation besides the info reported in the
-> dm-ioband website?
+- If one starts apache "service httpd start", then httpd threads change
+  their uid/gid to "apache/apache". But these threads will continue to
+  run in the cgroup belonging to root and will not go into apache cgroup.
 
-I don't have any documentation besides in the website.
+- apache also offers "suexec" tool which execs a CGI script under a 
+  different user than the user who has launched web server. I quickly
+  grepped for source code of suexec and it does not seem to be using
+  pam. That means CGI scripts running under some other user name will
+  continue to run in cgroup where apache is running.
 
-Thanks,
-Ryo Tsuruta
+I am not sure how many more such corner cases are there. These cases can
+either be covered by modification of application or using some kind of
+wrapper around application or by writing classification daemon.
+
+Do we really need classification daemon to cover such cases or wrapper
+approach is sufficient? I remember somebody in minisummit was mentioning
+that it should work without any apache modifications.
+
+Thanks
+Vivek
