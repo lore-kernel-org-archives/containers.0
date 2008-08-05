@@ -1,7 +1,7 @@
 From: sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org
-Subject: [RFC][PATCH 5/6] Allow multiple mounts of devpts
-Date: Mon, 4 Aug 2008 18:24:20 -0700
-Message-ID: <20080805012420.GE15360@us.ibm.com>
+Subject: [RFC][PATCH 6/6]: /dev/tty tweak in init_dev()
+Date: Mon, 4 Aug 2008 18:26:37 -0700
+Message-ID: <20080805012637.GF15360@us.ibm.com>
 References: <20080805011844.GA14940@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -24,26 +24,34 @@ List-Id: containers.vger.kernel.org
 
 
 From: Sukadev Bhattiprolu <sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: [RFC][PATCH 5/6] Allow multiple mounts of devpts
+Subject: [RFC][PATCH 6/6]: /dev/tty tweak in init_dev()
 
-Can we simply enable multiple mounts using get_sb_nodev(), now that we
-don't have any pts_namespace/'data' to be saved ?
+When opening /dev/tty, __tty_open() finds the tty using get_current_tty().
+When __tty_open() calls init_dev(), init_dev() tries to 'find' the tty
+again from devpts.  Is that really necessary ?
 
-(quick/dirty - does not prevent multiple mounts of devpts within
-a single 'container')
+The problem with asking devpts again is that with multiple mounts, devpts
+cannot find the tty without knowing the specific mount instance. We can't
+find the mount instance of devpts, since the inode of /dev/tty is in a
+different filesystem.
 
 ---
- fs/devpts/inode.c |    2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ drivers/char/tty_io.c |    5 ++++-
+ 1 file changed, 4 insertions(+), 1 deletion(-)
 
-Index: linux-2.6.26-rc8-mm1/fs/devpts/inode.c
+Index: linux-2.6.26-rc8-mm1/drivers/char/tty_io.c
 ===================================================================
---- linux-2.6.26-rc8-mm1.orig/fs/devpts/inode.c	2008-08-04 17:26:26.000000000 -0700
-+++ linux-2.6.26-rc8-mm1/fs/devpts/inode.c	2008-08-04 17:26:31.000000000 -0700
-@@ -234,7 +234,7 @@ fail:
- static int devpts_get_sb(struct file_system_type *fs_type,
- 	int flags, const char *dev_name, void *data, struct vfsmount *mnt)
- {
--	return get_sb_single(fs_type, flags, data, devpts_fill_super, mnt);
-+	return get_sb_nodev(fs_type, flags, data, devpts_fill_super, mnt);
- }
+--- linux-2.6.26-rc8-mm1.orig/drivers/char/tty_io.c	2008-08-04 17:25:20.000000000 -0700
++++ linux-2.6.26-rc8-mm1/drivers/char/tty_io.c	2008-08-04 17:26:34.000000000 -0700
+@@ -2066,7 +2066,10 @@ static int init_dev(struct tty_driver *d
+ 
+ 	/* check whether we're reopening an existing tty */
+ 	if (driver->flags & TTY_DRIVER_DEVPTS_MEM) {
+-		tty = devpts_get_tty(inode, idx);
++		if (inode->i_rdev == MKDEV(TTYAUX_MAJOR, 0))
++			tty = *ret_tty;
++		else
++			tty = devpts_get_tty(inode, idx);
+ 		/*
+ 		 * If we don't have a tty here on a slave open, it's because
+ 		 * the master already started the close process and there's
