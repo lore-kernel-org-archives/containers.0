@@ -1,7 +1,7 @@
 From: "H. Peter Anvin" <hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org>
 Subject: Re: [RFC][PATCH 0/6] Enable multiple mounts of devpts
-Date: Mon, 04 Aug 2008 18:37:18 -0700
-Message-ID: <4897AECE.9060307@zytor.com>
+Date: Mon, 04 Aug 2008 18:55:46 -0700
+Message-ID: <4897B322.3030807@zytor.com>
 References: <20080805011844.GA14940@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -23,26 +23,29 @@ List-Id: containers.vger.kernel.org
 
 sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org wrote:
 > 
-> If devpts is mounted more than once, then '/dev/ptmx' must be a symlink
-> to '/dev/pts/ptmx' and in each new devpts mount we must create the
-> device node '/dev/pts/ptmx' [c, 5;2] by hand.
-> 
-
-This should be auto-created.  That also eliminates any need to support 
-the mknod system call.
-
 > Appreciate comments on overall approach of my mapping from the inode
 > to sb->s_fs_info to allocated_ptys and the hacky use of get_sb_nodev(),
 > and also on the tweak to init_dev() (patch 6).
 > 
-> Todo:
-> 	User-space impact of /dev/ptmx symlink - Options are being
-> 	discussed on mailing list (new mount option and config token,
-> 	new fs name, etc)
-> 
-> 	Remove even initial kernel mount of devpts ?
 
-The initial kernel mount of devpts should be removed, since that 
-instance will never be accessible.
+First of all, thanks for taking this on :)  It's always delightful to 
+spout some ideas and have patches appear as a result :)
+
+Once you have the notion of the device nodes tied to a specific devpts 
+filesystem, a lot of the operations can be trivialized; for example, the 
+whole devpts_get_tty() mechanism can be reduced to:
+
+	if (inode->i_sb->sb_magic != DEVPTS_SUPER_MAGIC) {
+		/* do cleanup */
+		return -ENXIO;
+	}
+	tty = inode->i_private;
+
+This is part of what makes this whole approach so desirable: it actually 
+allows for some dramatic simplifications of the existing code.
+
+One can even bind special operations to both the ptmx node and slave 
+nodes, to bypass most of the character device and tty dispatch.  That 
+might require too much hacking at the tty core to be worth it, though.
 
 	-hpa
