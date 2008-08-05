@@ -1,7 +1,7 @@
 From: sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org
-Subject: [RFC][PATCH 4/6]: Allow mknod of ptmx in devpts
-Date: Mon, 4 Aug 2008 18:23:53 -0700
-Message-ID: <20080805012353.GD15360@us.ibm.com>
+Subject: [RFC][PATCH 3/6] Move 'allocated_ptys' to sb->s_s_fs_info
+Date: Mon, 4 Aug 2008 18:23:27 -0700
+Message-ID: <20080805012327.GC15360@us.ibm.com>
 References: <20080805011844.GA14940@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -24,124 +24,140 @@ List-Id: containers.vger.kernel.org
 
 
 From: Sukadev Bhattiprolu <sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: [RFC][PATCH 4/6]: Allow mknod of ptmx in devpts
+Subject: [RFC][PATCH 3/6] Move 'allocated_ptys' to sb->s_s_fs_info
 
-/dev/ptmx is closely tied to the devpts filesystem. An open of /dev/ptmx,
-allocates the next pty index and the associated device shows up in the
-devpts fs as /dev/pts/n.
-
-Wih multiple mounts of devpts filesystem, an open of /dev/ptmx would be
-unable to determine which instance of the devpts is being accessed.
-
-One solution for this would be to create make /dev/ptmx a symlink to
-/dev/pts/ptmx and create the device node, ptmx, in each instance of
-devpts.  When /dev/ptmx is opened, we can use the inode of /dev/pts/ptmx
-to identify the specific devpts instance.
-
-(This solution has an impact on the 'startup scripts', and that is 
-being discussed separately).
-
-This patch merely enables creating the [c, 5:2] (ptmx) device in devpts
-filesystem.
-
-TODO:
-	- Ability to unlink the /dev/pts/ptmx
-	- Remove traces of '/dev/pts/tty' node
-
-Changelog:
-	- Earlier version of this patch enabled creating /dev/pts/tty
-	  as well. As pointed out by Al Viro and H. Peter Anvin, that
-	  is not really necessary.
+To enable multiple mounts of devpts, 'allocated_ptys' must be a per-mount
+variable rather than a global variable.  This patch moves 'allocated_ptys'
+into the super_block's s_fs_info.
 
 ---
- fs/devpts/inode.c |   56 +++++++++++++++++++++++++++++++++++++++++++++++++++---
- 1 file changed, 53 insertions(+), 3 deletions(-)
+ fs/devpts/inode.c |   53 ++++++++++++++++++++++++++++++++++++++++++++++-------
+ 1 file changed, 46 insertions(+), 7 deletions(-)
 
 Index: linux-2.6.26-rc8-mm1/fs/devpts/inode.c
 ===================================================================
---- linux-2.6.26-rc8-mm1.orig/fs/devpts/inode.c	2008-08-04 02:08:50.000000000 -0700
-+++ linux-2.6.26-rc8-mm1/fs/devpts/inode.c	2008-08-04 17:26:26.000000000 -0700
-@@ -141,6 +141,56 @@ static void *new_pts_fs_info(void)
- }
+--- linux-2.6.26-rc8-mm1.orig/fs/devpts/inode.c	2008-08-04 02:08:43.000000000 -0700
++++ linux-2.6.26-rc8-mm1/fs/devpts/inode.c	2008-08-04 02:08:50.000000000 -0700
+@@ -28,8 +28,11 @@
  
+ #define DEVPTS_DEFAULT_MODE 0600
  
++struct pts_fs_info {
++	struct idr allocated_ptys;
++};
 +
-+static int devpts_mknod(struct inode *dir, struct dentry *dentry,
-+			int mode, dev_t rdev)
+ extern int pty_limit;			/* Config limit on Unix98 ptys */
+-static DEFINE_IDR(allocated_ptys);
+ static DEFINE_MUTEX(allocated_ptys_lock);
+ 
+ static struct vfsmount *devpts_mnt;
+@@ -125,6 +128,19 @@ static const struct super_operations dev
+ 	.show_options	= devpts_show_options,
+ };
+ 
++static void *new_pts_fs_info(void)
 +{
-+	int inum;
-+	struct inode *inode;
-+	struct super_block *sb = dir->i_sb;
++	struct pts_fs_info *fsi;
 +
-+	if (dentry->d_inode)
-+		return -EEXIST;
-+
-+	if (!S_ISCHR(mode))
-+		return -EPERM;
-+
-+	if (rdev == MKDEV(TTYAUX_MAJOR, 2))
-+		inum = 2;
-+#if 0
-+	else if (rdev == MKDEV(TTYAUX_MAJOR, 0))
-+		inum = 3;
-+#endif
-+	else
-+		return -EPERM;
-+
-+	inode = new_inode(sb);
-+	if (!inode)
-+		return -ENOMEM;
-+
-+	inode->i_ino = inum;
-+	inode->i_uid = inode->i_gid = 0;
-+	inode->i_blocks = 0;
-+	inode->i_mtime = inode->i_atime = inode->i_ctime = CURRENT_TIME;
-+
-+	init_special_inode(inode, mode, rdev);
-+
-+	d_instantiate(dentry, inode);
-+	/*
-+	 * Get a reference to the dentry so the device-nodes persist
-+	 * even when there are no active references to them. We use
-+	 * kill_litter_super() to remove this entry when unmounting
-+	 * devpts.
-+	 */
-+	dget(dentry);
-+	return 0;
++	fsi = kmalloc(sizeof(struct pts_fs_info), GFP_KERNEL);
++	if (fsi) {
++		idr_init(&fsi->allocated_ptys);
++	}
++	printk(KERN_ERR "new_pts_fs_info(): Returning fsi %p\n", fsi);
++	return fsi;
 +}
 +
-+const struct inode_operations devpts_dir_inode_operations = {
-+	.lookup         = simple_lookup,
-+	.mknod		= devpts_mknod,
-+};
 +
  static int
  devpts_fill_super(struct super_block *s, void *data, int silent)
  {
-@@ -164,7 +214,7 @@ devpts_fill_super(struct super_block *s,
+@@ -135,10 +151,14 @@ devpts_fill_super(struct super_block *s,
+ 	s->s_magic = DEVPTS_SUPER_MAGIC;
+ 	s->s_op = &devpts_sops;
+ 	s->s_time_gran = 1;
++	s->s_fs_info = new_pts_fs_info();
++
++	if (!s->s_fs_info)
++		goto fail;
+ 
+ 	inode = new_inode(s);
+ 	if (!inode)
+-		goto fail;
++		goto free_fsi;
+ 	inode->i_ino = 1;
+ 	inode->i_mtime = inode->i_atime = inode->i_ctime = CURRENT_TIME;
  	inode->i_blocks = 0;
- 	inode->i_uid = inode->i_gid = 0;
- 	inode->i_mode = S_IFDIR | S_IRUGO | S_IXUGO | S_IWUSR;
--	inode->i_op = &simple_dir_inode_operations;
-+	inode->i_op = &devpts_dir_inode_operations;
- 	inode->i_fop = &simple_dir_operations;
- 	inode->i_nlink = 2;
- 
-@@ -195,7 +245,7 @@ static void devpts_kill_sb(struct super_
- 	//idr_destroy(&fsi->allocated_ptys);
- 	kfree(fsi);
- 
--	kill_anon_super(sb);
-+	kill_litter_super(sb);
+@@ -154,6 +174,9 @@ devpts_fill_super(struct super_block *s,
+ 	
+ 	printk("devpts: get root dentry failed\n");
+ 	iput(inode);
++
++free_fsi:
++	kfree(s->s_fs_info);
+ fail:
+ 	return -ENOMEM;
+ }
+@@ -164,11 +187,22 @@ static int devpts_get_sb(struct file_sys
+ 	return get_sb_single(fs_type, flags, data, devpts_fill_super, mnt);
  }
  
++
++static void devpts_kill_sb(struct super_block *sb)
++{
++	struct pts_fs_info *fsi = sb->s_fs_info;	// rcu ?
++
++	//idr_destroy(&fsi->allocated_ptys);
++	kfree(fsi);
++
++	kill_anon_super(sb);
++}
++
  static struct file_system_type devpts_fs_type = {
-@@ -274,7 +324,7 @@ int devpts_pty_new(struct inode *ptmx_in
- 	if (!inode)
- 		return -ENOMEM;
+ 	.owner		= THIS_MODULE,
+ 	.name		= "devpts",
+ 	.get_sb		= devpts_get_sb,
+-	.kill_sb	= kill_anon_super,
++	.kill_sb	= devpts_kill_sb,
+ };
  
--	inode->i_ino = number+2;
-+	inode->i_ino = number+4;
- 	inode->i_uid = config.setuid ? config.uid : current->fsuid;
- 	inode->i_gid = config.setgid ? config.gid : current->fsgid;
- 	inode->i_mtime = inode->i_atime = inode->i_ctime = CURRENT_TIME;
+ /*
+@@ -187,14 +221,16 @@ int devpts_new_index(struct inode *inode
+ {
+ 	int index;
+ 	int idr_ret;
++	struct super_block *sb = pts_sb_from_inode(inode);
++	struct pts_fs_info *fsi = sb->s_fs_info; 	// need rcu ?
+ 
+ retry:
+-	if (!idr_pre_get(&allocated_ptys, GFP_KERNEL)) {
++	if (!idr_pre_get(&fsi->allocated_ptys, GFP_KERNEL)) {
+ 		return -ENOMEM;
+ 	}
+ 
+ 	mutex_lock(&allocated_ptys_lock);
+-	idr_ret = idr_get_new(&allocated_ptys, NULL, &index);
++	idr_ret = idr_get_new(&fsi->allocated_ptys, NULL, &index);
+ 	if (idr_ret < 0) {
+ 		mutex_unlock(&allocated_ptys_lock);
+ 		if (idr_ret == -EAGAIN)
+@@ -203,7 +239,7 @@ retry:
+ 	}
+ 
+ 	if (index >= pty_limit) {
+-		idr_remove(&allocated_ptys, index);
++		idr_remove(&fsi->allocated_ptys, index);
+ 		mutex_unlock(&allocated_ptys_lock);
+ 		return -EIO;
+ 	}
+@@ -213,8 +249,11 @@ retry:
+ 
+ void devpts_kill_index(struct inode *inode, int idx)
+ {
++	struct super_block *sb = pts_sb_from_inode(inode);
++	struct pts_fs_info *fsi = sb->s_fs_info; 	// need rcu ?
++
+ 	mutex_lock(&allocated_ptys_lock);
+-	idr_remove(&allocated_ptys, idx);
++	idr_remove(&fsi->allocated_ptys, idx);
+ 	mutex_unlock(&allocated_ptys_lock);
+ }
