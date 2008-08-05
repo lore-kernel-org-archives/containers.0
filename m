@@ -1,16 +1,15 @@
 From: Andrea Righi <righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 Subject: Re: Too many I/O controller patches
-Date: Tue,  5 Aug 2008 11:28:27 +0200 (MEST)
-Message-ID: <48981D3B.2020701__10436.8662498475$1217928662$gmane$org@gmail.com>
-References: <20080804.175126.193692178.ryov@valinux.co.jp>
-	<1217870433.20260.101.camel@nimitz> <489748E6.5080106@gmail.com>
-	<000901c8f6a5$fe64ba30$fb2e2e90$@jp.nec.com>
+Date: Tue,  5 Aug 2008 11:31:47 +0200 (MEST)
+Message-ID: <48981E03.5020406@gmail.com>
+References: <489748E6.5080106@gmail.com>	<1217876521.20260.123.camel@nimitz>	<48976A2A.9060600@gmail.com>
+	<20080805.151642.31467169.taka@valinux.co.jp>
 Reply-To: righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <000901c8f6a5$fe64ba30$fb2e2e90$@jp.nec.com>
+In-Reply-To: <20080805.151642.31467169.taka-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -20,44 +19,43 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Satoshi UCHIDA <s-uchida-LYU95VJlayp8UrSeD/g0lQ@public.gmane.org>
-Cc: xen-devel-GuqFBffKawuULHF6PoxzQEEOCMrvLtNR@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, 'Dave Hansen' <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, vtaras-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org, dm-devel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, agk-9JcytcrH/bA+uJoB2kUjGw@public.gmane.org, virtualization-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, ngupta-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org
+To: Hirokazu Takahashi <taka-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
+Cc: xen-devel-GuqFBffKawuULHF6PoxzQEEOCMrvLtNR@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, virtualization-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, dm-devel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, agk-9JcytcrH/bA+uJoB2kUjGw@public.gmane.org, dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Satoshi UCHIDA wrote:
->  Andrea's requirement is
->    * to be able to set and control by absolute(direct) performance.
-
-     * improve IO performance predictability of each cgroup
-       (try to guarantee more precise IO performance values)
-
-> And, he gave a advice "Can't a framework which organized each way,
-> such as I/O elevator, be made?".
-> I try to consider such framework (in elevator layer or block layer).
-
-It would be probably the best place to evaluate the "cost" of each
-IO operation.
-
-> I think that OOM problems caused by memory/cache systems.
-> So, it will be better that I/O controller created out of these problems
-> first, although a lateness of the I/O device would be related.
-> If these problem can be resolved, its technique should be applied into 
-> normal I/O control as well as cgroups.
+Hirokazu Takahashi wrote:
+> Hi, Andrea,
 > 
-> Buffered write I/O is also related with cache system.
-> We must consider this problem as I/O control.
-
-Agree. At least, maybe we should consider if an IO controller could be
-a valid solution also for these problems.
-
->> I did some experiments trying to implement minimum bandwidth requirements
->> for my io-throttle controller, mapping the requirements to CFQ prio and
->> using the Satoshi's controller. But this needs additional work and
->> testing right now, so I've not posted anything yet, just informed
->> Satoshi about this.
+> I'm working with Ryo on dm-ioband and other stuff.
 > 
-> I'm very interested in this results.
+>>> On Mon, 2008-08-04 at 20:22 +0200, Andrea Righi wrote:
+>>>> But I'm not yet convinced that limiting the IO writes at the device
+>>>> mapper layer is the best solution. IMHO it would be better to throttle
+>>>> applications' writes when they're dirtying pages in the page cache (the
+>>>> io-throttle way), because when the IO requests arrive to the device
+>>>> mapper it's too late (we would only have a lot of dirty pages that are
+>>>> waiting to be flushed to the limited block devices, and maybe this could
+>>>> lead to OOM conditions). IOW dm-ioband is doing this at the wrong level
+>>>> (at least for my requirements). Ryo, correct me if I'm wrong or if I've
+>>>> not understood the dm-ioband approach.
+>>> The avoid-lots-of-page-dirtying problem sounds like a hard one.  But, if
+>>> you look at this in combination with the memory controller, they would
+>>> make a great team.
+>>>
+>>> The memory controller keeps you from dirtying more than your limit of
+>>> pages (and pinning too much memory) even if the dm layer is doing the
+>>> throttling and itself can't throttle the memory usage.
+>> mmh... but in this way we would just move the OOM inside the cgroup,
+>> that is a nice improvement, but the main problem is not resolved...
+> 
+> The concept of dm-ioband includes it should be used with cgroup memory
+> controller as well as the bio cgroup. The memory controller is supposed
+> to control memory allocation and dirty-page ratio inside each cgroup.
+> 
+> Some guys of cgroup memory controller team just started to implement
+> the latter mechanism. They try to make each cgroup have a threshold
+> to limit the number of dirty pages in the group.
 
-I'll collect some numbers and keep you informed.
+Interesting, they also post a patch or RFC?
 
 -Andrea
