@@ -1,15 +1,24 @@
-From: Andrea Righi <righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: Re: Too many I/O controller patches
-Date: Tue,  5 Aug 2008 11:31:47 +0200 (MEST)
-Message-ID: <48981E03.5020406@gmail.com>
-References: <489748E6.5080106@gmail.com>	<1217876521.20260.123.camel@nimitz>	<48976A2A.9060600@gmail.com>
-	<20080805.151642.31467169.taka@valinux.co.jp>
-Reply-To: righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org
+From: Louis Rilling <Louis.Rilling-aw0BnHfMbSpBDgjK7y7TUQ@public.gmane.org>
+Subject: Re: [RFC][PATCH 2/2] CR: handle a single task with private memory maps
+Date: Tue, 5 Aug 2008 11:32:38 +0200
+Message-ID: <20080805093237.GB5027@localdomain>
+References: <20080731155856.GH22403@hawkmoon.kerlabs.com>
+	<4891E849.1050701@cs.columbia.edu>
+	<20080731175058.GI22403@hawkmoon.kerlabs.com>
+	<48920EA0.1060608@cs.columbia.edu>
+	<20080801102600.GJ22403@hawkmoon.kerlabs.com>
+	<48931A7E.1040302@cs.columbia.edu>
+	<20080801180038.GL22403@hawkmoon.kerlabs.com>
+	<48935B4D.7070302@cs.columbia.edu>
+	<20080804101608.GA4081@localdomain>
+	<4897BCE0.1080508@cs.columbia.edu>
+Reply-To: Louis.Rilling-aw0BnHfMbSpBDgjK7y7TUQ@public.gmane.org
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20080805.151642.31467169.taka-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <4897BCE0.1080508-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,43 +28,65 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Hirokazu Takahashi <taka-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
-Cc: xen-devel-GuqFBffKawuULHF6PoxzQEEOCMrvLtNR@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, virtualization-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, dm-devel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, agk-9JcytcrH/bA+uJoB2kUjGw@public.gmane.org, dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
+To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Cc: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Hirokazu Takahashi wrote:
-> Hi, Andrea,
-> 
-> I'm working with Ryo on dm-ioband and other stuff.
-> 
->>> On Mon, 2008-08-04 at 20:22 +0200, Andrea Righi wrote:
->>>> But I'm not yet convinced that limiting the IO writes at the device
->>>> mapper layer is the best solution. IMHO it would be better to throttle
->>>> applications' writes when they're dirtying pages in the page cache (the
->>>> io-throttle way), because when the IO requests arrive to the device
->>>> mapper it's too late (we would only have a lot of dirty pages that are
->>>> waiting to be flushed to the limited block devices, and maybe this could
->>>> lead to OOM conditions). IOW dm-ioband is doing this at the wrong level
->>>> (at least for my requirements). Ryo, correct me if I'm wrong or if I've
->>>> not understood the dm-ioband approach.
->>> The avoid-lots-of-page-dirtying problem sounds like a hard one.  But, if
->>> you look at this in combination with the memory controller, they would
->>> make a great team.
->>>
->>> The memory controller keeps you from dirtying more than your limit of
->>> pages (and pinning too much memory) even if the dm layer is doing the
->>> throttling and itself can't throttle the memory usage.
->> mmh... but in this way we would just move the OOM inside the cgroup,
->> that is a nice improvement, but the main problem is not resolved...
-> 
-> The concept of dm-ioband includes it should be used with cgroup memory
-> controller as well as the bio cgroup. The memory controller is supposed
-> to control memory allocation and dirty-page ratio inside each cgroup.
-> 
-> Some guys of cgroup memory controller team just started to implement
-> the latter mechanism. They try to make each cgroup have a threshold
-> to limit the number of dirty pages in the group.
+On Mon, Aug 04, 2008 at 10:37:20PM -0400, Oren Laadan wrote:
+> Louis Rilling wrote:
+>> On Fri, Aug 01, 2008 at 02:51:57PM -0400, Oren Laadan wrote:
+>>> Louis Rilling wrote:
+>>>> On Fri, Aug 01, 2008 at 10:15:26AM -0400, Oren Laadan wrote:
+>>> I actually wasn't thinking of streaming a series of incremental checkpoints
+>>> (from base and on) to implement migration... I simply didn't have a use-case
+>>> for that :)
+>>
+>> This could be useful however. Since incremental checkpoint is faster
+>> this could reduce down-time.
+>
+> Naturally incremental checkpoint reduces downtime; however since each checkpoint
+> is taken at a different time, they can be streamed -- transferred over the
+> network -- as they are taken. This gives more flexibility and can still, if
+> you wish, can easily be transformed to a single long stream.
+>
+> Actually, this is a good argument in favor of using multiple files: they are a
+> more flexible approach and can always be easily transformed to a single long
+> stream, while the reverse isn't so.
 
-Interesting, they also post a patch or RFC?
+Yes the reverse is as easy: rebuilding a full checkpoint of a given id
+#id consists simply in removing the records that are tagged as invalid as
+from checkpoints having ids <= #id. This is actually what restart should
+do :)
 
--Andrea
+>>>> The point is that you need previous data when building an incremental
+>>>> checkpoint, so you will read it at least. And since it was previously stored (in
+>>> The scheme that I described above and is implemented in Zap does not require
+>>> access to previous checkpoints when building a new incremental checkpoint.
+>>> Instead, you keep some data structure in the kernel that describes the pieces
+>>> that you need to carry with you (what pages were saved, and where; when a task
+>>> exits, the data describing its mm will be discarded, of course, and so on).
+>>
+>> This is because you probably decided that a mechanism in the kernel that saves
+>> storage space was not interesting if it does not improve speed. As a
+>> consequence you need to keep metadata in kernel memory in order to do
+>> incremental checkpoint. Maybe saving storage space without considering
+>> speed could equally be done from userspace with sort of checkpoint diff
+>> tools that would create an incremental checkpoint 2' from two full
+>> checkpoints 1 and 2.
+>
+> Good point. In fact, the meta data is not only kept in memory, but also saved
+> with each incremental checkpoint (well, its version at checkpoint time), so
+> that restart would know where to find older data. So it is already transfered
+> to user space; we may as well provide the option to keep it only in user space.
+
+That is userspace should give it back to the kernel before doing the
+next incremental checkpoint?
+
+Louis
+
+-- 
+Dr Louis Rilling			Kerlabs - IRISA
+Skype: louis.rilling			Campus Universitaire de Beaulieu
+Phone: (+33|0) 2 99 84 71 52		Avenue du General Leclerc
+Fax: (+33|0) 2 99 84 71 71		35042 Rennes CEDEX - France
+http://www.kerlabs.com/
