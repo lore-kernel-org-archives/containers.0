@@ -1,15 +1,16 @@
-From: Hirokazu Takahashi <taka-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
-Subject: Re: Too many I/O controller patches
-Date: Tue, 05 Aug 2008 19:01:13 +0900 (JST)
-Message-ID: <20080805.190113.83913354.taka__2707.79707138917$1217930710$gmane$org@valinux.co.jp>
-References: <48976A2A.9060600@gmail.com>
-	<20080805.151642.31467169.taka@valinux.co.jp>
-	<48981E03.5020406@gmail.com>
+From: Andrea Righi <righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Subject: Re: [PATCH 4/7] bio-cgroup: Split the cgroup memory subsystem into
+	two parts
+Date: Tue,  5 Aug 2008 12:25:33 +0200 (MEST)
+Message-ID: <48982A9D.2000803@gmail.com>
+References: <20080804.175214.226796876.ryov@valinux.co.jp>	<20080804.175254.71094191.ryov@valinux.co.jp>	<20080804.175707.104036289.ryov@valinux.co.jp>
+	<20080804.175748.189722512.ryov@valinux.co.jp>
+Reply-To: righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <48981E03.5020406-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+In-Reply-To: <20080804.175748.189722512.ryov-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,52 +20,112 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org
-Cc: xen-devel-GuqFBffKawuULHF6PoxzQEEOCMrvLtNR@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, virtualization-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, dm-devel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, agk-9JcytcrH/bA+uJoB2kUjGw@public.gmane.org, dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
+To: Ryo Tsuruta <ryov-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
+Cc: xen-devel-GuqFBffKawuULHF6PoxzQEEOCMrvLtNR@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, virtualization-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, dm-devel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, agk-9JcytcrH/bA+uJoB2kUjGw@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Hi,
+Ryo Tsuruta wrote:
+> +static int mem_cgroup_charge_common(struct page *page, struct mm_struct *mm,
+> +				gfp_t gfp_mask, enum charge_type ctype,
+> +				struct mem_cgroup *memcg)
+> +{
+> +	struct page_cgroup *pc;
+> +#ifdef CONFIG_CGROUP_MEM_RES_CTLR
+> +	struct mem_cgroup *mem;
+> +	unsigned long flags;
+> +	unsigned long nr_retries = MEM_CGROUP_RECLAIM_RETRIES;
+> +	struct mem_cgroup_per_zone *mz;
+> +#endif /* CONFIG_CGROUP_MEM_RES_CTLR */
+> +
+> +	pc = kmem_cache_alloc(page_cgroup_cache, gfp_mask);
+> +	if (unlikely(pc == NULL))
+> +		goto err;
+> +
+> +	/*
+> +	 * We always charge the cgroup the mm_struct belongs to.
+> +	 * The mm_struct's mem_cgroup changes on task migration if the
+> +	 * thread group leader migrates. It's possible that mm is not
+> +	 * set, if so charge the init_mm (happens for pagecache usage).
+> +	 */
+> +	if (likely(!memcg)) {
+> +		rcu_read_lock();
+> +#ifdef CONFIG_CGROUP_MEM_RES_CTLR
+> +		mem = mem_cgroup_from_task(rcu_dereference(mm->owner));
+> +		/*
+> +		 * For every charge from the cgroup, increment reference count
+> +		 */
+> +		css_get(&mem->css);
+> +#endif /* CONFIG_CGROUP_MEM_RES_CTLR */
+> +		rcu_read_unlock();
+> +	} else {
+> +#ifdef CONFIG_CGROUP_MEM_RES_CTLR
+> +		mem = memcg;
+> +		css_get(&memcg->css);
+> +#endif /* CONFIG_CGROUP_MEM_RES_CTLR */
+> +	}
+> +
+> +#ifdef CONFIG_CGROUP_MEM_RES_CTLR
+> +	while (res_counter_charge(&mem->res, PAGE_SIZE)) {
+> +		if (!(gfp_mask & __GFP_WAIT))
+> +			goto out;
+> +
+> +		if (try_to_free_mem_cgroup_pages(mem, gfp_mask))
+> +			continue;
+> +
+> +		/*
+> +		 * try_to_free_mem_cgroup_pages() might not give us a full
+> +		 * picture of reclaim. Some pages are reclaimed and might be
+> +		 * moved to swap cache or just unmapped from the cgroup.
+> +		 * Check the limit again to see if the reclaim reduced the
+> +		 * current usage of the cgroup before giving up
+> +		 */
+> +		if (res_counter_check_under_limit(&mem->res))
+> +			continue;
+> +
+> +		if (!nr_retries--) {
+> +			mem_cgroup_out_of_memory(mem, gfp_mask);
+> +			goto out;
+> +		}
+> +	}
+> +	pc->mem_cgroup = mem;
+> +#endif /* CONFIG_CGROUP_MEM_RES_CTLR */
 
-> > Hi, Andrea,
-> > 
-> > I'm working with Ryo on dm-ioband and other stuff.
-> > 
-> >>> On Mon, 2008-08-04 at 20:22 +0200, Andrea Righi wrote:
-> >>>> But I'm not yet convinced that limiting the IO writes at the device
-> >>>> mapper layer is the best solution. IMHO it would be better to throttle
-> >>>> applications' writes when they're dirtying pages in the page cache (the
-> >>>> io-throttle way), because when the IO requests arrive to the device
-> >>>> mapper it's too late (we would only have a lot of dirty pages that are
-> >>>> waiting to be flushed to the limited block devices, and maybe this could
-> >>>> lead to OOM conditions). IOW dm-ioband is doing this at the wrong level
-> >>>> (at least for my requirements). Ryo, correct me if I'm wrong or if I've
-> >>>> not understood the dm-ioband approach.
-> >>> The avoid-lots-of-page-dirtying problem sounds like a hard one.  But, if
-> >>> you look at this in combination with the memory controller, they would
-> >>> make a great team.
-> >>>
-> >>> The memory controller keeps you from dirtying more than your limit of
-> >>> pages (and pinning too much memory) even if the dm layer is doing the
-> >>> throttling and itself can't throttle the memory usage.
-> >> mmh... but in this way we would just move the OOM inside the cgroup,
-> >> that is a nice improvement, but the main problem is not resolved...
-> > 
-> > The concept of dm-ioband includes it should be used with cgroup memory
-> > controller as well as the bio cgroup. The memory controller is supposed
-> > to control memory allocation and dirty-page ratio inside each cgroup.
-> > 
-> > Some guys of cgroup memory controller team just started to implement
-> > the latter mechanism. They try to make each cgroup have a threshold
-> > to limit the number of dirty pages in the group.
-> 
-> Interesting, they also post a patch or RFC?
+you can remove some ifdefs doing:
 
-You can take a look at the thread start from
-http://www.ussg.iu.edu/hypermail/linux/kernel/0807.1/0472.html,
-whose subject is "[PATCH][RFC] dirty balancing for cgroups."
+#ifdef CONFIG_CGROUP_MEM_RES_CTLR
+	if (likely(!memcg)) {
+		rcu_read_lock();
+		mem = mem_cgroup_from_task(rcu_dereference(mm->owner));
+		/*
+		 * For every charge from the cgroup, increment reference count
+		 */
+		css_get(&mem->css);
+		rcu_read_unlock();
+	} else {
+		mem = memcg;
+		css_get(&memcg->css);
+	}
+	while (res_counter_charge(&mem->res, PAGE_SIZE)) {
+		if (!(gfp_mask & __GFP_WAIT))
+			goto out;
 
-This project has just started, so it would be a good time to
-discuss it with them.
+		if (try_to_free_mem_cgroup_pages(mem, gfp_mask))
+			continue;
 
-Thanks,
-Hirokazu Takahashi.
+		/*
+		 * try_to_free_mem_cgroup_pages() might not give us a full
+		 * picture of reclaim. Some pages are reclaimed and might be
+		 * moved to swap cache or just unmapped from the cgroup.
+		 * Check the limit again to see if the reclaim reduced the
+		 * current usage of the cgroup before giving up
+		 */
+		if (res_counter_check_under_limit(&mem->res))
+			continue;
+
+		if (!nr_retries--) {
+			mem_cgroup_out_of_memory(mem, gfp_mask);
+			goto out;
+		}
+	}
+	pc->mem_cgroup = mem;
+#endif /* CONFIG_CGROUP_MEM_RES_CTLR */
