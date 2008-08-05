@@ -1,7 +1,7 @@
 From: sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org
-Subject: [RFC][PATCH 2/6] Remove 'devpts_root' global
-Date: Mon, 4 Aug 2008 18:22:53 -0700
-Message-ID: <20080805012253.GB15360@us.ibm.com>
+Subject: [RFC][PATCH 4/6]: Allow mknod of ptmx in devpts
+Date: Mon, 4 Aug 2008 18:23:53 -0700
+Message-ID: <20080805012353.GD15360@us.ibm.com>
 References: <20080805011844.GA14940@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -24,120 +24,124 @@ List-Id: containers.vger.kernel.org
 
 
 From: Sukadev Bhattiprolu <sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: [RFC][PATCH 2/6] Remove 'devpts_root' global
+Subject: [RFC][PATCH 4/6]: Allow mknod of ptmx in devpts
 
-Remove the 'devpts_root' global variable and find the root dentry using
-the super_block. The super-block itself is found from the device inode,
-using a new wrapper, pts_sb_from_inode().
+/dev/ptmx is closely tied to the devpts filesystem. An open of /dev/ptmx,
+allocates the next pty index and the associated device shows up in the
+devpts fs as /dev/pts/n.
+
+Wih multiple mounts of devpts filesystem, an open of /dev/ptmx would be
+unable to determine which instance of the devpts is being accessed.
+
+One solution for this would be to create make /dev/ptmx a symlink to
+/dev/pts/ptmx and create the device node, ptmx, in each instance of
+devpts.  When /dev/ptmx is opened, we can use the inode of /dev/pts/ptmx
+to identify the specific devpts instance.
+
+(This solution has an impact on the 'startup scripts', and that is 
+being discussed separately).
+
+This patch merely enables creating the [c, 5:2] (ptmx) device in devpts
+filesystem.
+
+TODO:
+	- Ability to unlink the /dev/pts/ptmx
+	- Remove traces of '/dev/pts/tty' node
+
+Changelog:
+	- Earlier version of this patch enabled creating /dev/pts/tty
+	  as well. As pointed out by Al Viro and H. Peter Anvin, that
+	  is not really necessary.
 
 ---
- fs/devpts/inode.c |   36 ++++++++++++++++++++++++------------
- 1 file changed, 24 insertions(+), 12 deletions(-)
+ fs/devpts/inode.c |   56 +++++++++++++++++++++++++++++++++++++++++++++++++++---
+ 1 file changed, 53 insertions(+), 3 deletions(-)
 
 Index: linux-2.6.26-rc8-mm1/fs/devpts/inode.c
 ===================================================================
---- linux-2.6.26-rc8-mm1.orig/fs/devpts/inode.c	2008-08-04 02:08:15.000000000 -0700
-+++ linux-2.6.26-rc8-mm1/fs/devpts/inode.c	2008-08-04 02:08:43.000000000 -0700
-@@ -33,7 +33,14 @@ static DEFINE_IDR(allocated_ptys);
- static DEFINE_MUTEX(allocated_ptys_lock);
+--- linux-2.6.26-rc8-mm1.orig/fs/devpts/inode.c	2008-08-04 02:08:50.000000000 -0700
++++ linux-2.6.26-rc8-mm1/fs/devpts/inode.c	2008-08-04 17:26:26.000000000 -0700
+@@ -141,6 +141,56 @@ static void *new_pts_fs_info(void)
+ }
  
- static struct vfsmount *devpts_mnt;
--static struct dentry *devpts_root;
+ 
 +
-+static inline struct super_block *pts_sb_from_inode(struct inode *inode)
++static int devpts_mknod(struct inode *dir, struct dentry *dentry,
++			int mode, dev_t rdev)
 +{
-+	if (inode->i_sb->s_magic == DEVPTS_SUPER_MAGIC)
-+		return inode->i_sb;
++	int inum;
++	struct inode *inode;
++	struct super_block *sb = dir->i_sb;
 +
-+	return devpts_mnt->mnt_sb;
++	if (dentry->d_inode)
++		return -EEXIST;
++
++	if (!S_ISCHR(mode))
++		return -EPERM;
++
++	if (rdev == MKDEV(TTYAUX_MAJOR, 2))
++		inum = 2;
++#if 0
++	else if (rdev == MKDEV(TTYAUX_MAJOR, 0))
++		inum = 3;
++#endif
++	else
++		return -EPERM;
++
++	inode = new_inode(sb);
++	if (!inode)
++		return -ENOMEM;
++
++	inode->i_ino = inum;
++	inode->i_uid = inode->i_gid = 0;
++	inode->i_blocks = 0;
++	inode->i_mtime = inode->i_atime = inode->i_ctime = CURRENT_TIME;
++
++	init_special_inode(inode, mode, rdev);
++
++	d_instantiate(dentry, inode);
++	/*
++	 * Get a reference to the dentry so the device-nodes persist
++	 * even when there are no active references to them. We use
++	 * kill_litter_super() to remove this entry when unmounting
++	 * devpts.
++	 */
++	dget(dentry);
++	return 0;
 +}
- 
- static struct {
- 	int setuid;
-@@ -141,7 +148,7 @@ devpts_fill_super(struct super_block *s,
++
++const struct inode_operations devpts_dir_inode_operations = {
++	.lookup         = simple_lookup,
++	.mknod		= devpts_mknod,
++};
++
+ static int
+ devpts_fill_super(struct super_block *s, void *data, int silent)
+ {
+@@ -164,7 +214,7 @@ devpts_fill_super(struct super_block *s,
+ 	inode->i_blocks = 0;
+ 	inode->i_uid = inode->i_gid = 0;
+ 	inode->i_mode = S_IFDIR | S_IRUGO | S_IXUGO | S_IWUSR;
+-	inode->i_op = &simple_dir_inode_operations;
++	inode->i_op = &devpts_dir_inode_operations;
  	inode->i_fop = &simple_dir_operations;
  	inode->i_nlink = 2;
  
--	devpts_root = s->s_root = d_alloc_root(inode);
-+	s->s_root = d_alloc_root(inode);
- 	if (s->s_root)
- 		return 0;
- 	
-@@ -169,10 +176,9 @@ static struct file_system_type devpts_fs
-  * to the System V naming convention
-  */
+@@ -195,7 +245,7 @@ static void devpts_kill_sb(struct super_
+ 	//idr_destroy(&fsi->allocated_ptys);
+ 	kfree(fsi);
  
--static struct dentry *get_node(int num)
-+static struct dentry *get_node(struct dentry *root, int num)
- {
- 	char s[12];
--	struct dentry *root = devpts_root;
- 	mutex_lock(&root->d_inode->i_mutex);
- 	return lookup_one_len(s, root, sprintf(s, "%d", num));
- }
-@@ -218,7 +224,9 @@ int devpts_pty_new(struct inode *ptmx_in
- 	struct tty_driver *driver = tty->driver;
- 	dev_t device = MKDEV(driver->major, driver->minor_start+number);
- 	struct dentry *dentry;
--	struct inode *inode = new_inode(devpts_mnt->mnt_sb);
-+	struct super_block *sb = pts_sb_from_inode(ptmx_inode);
-+	struct inode *inode = new_inode(sb);
-+	struct dentry *root = sb->s_root;
- 
- 	/* We're supposed to be given the slave end of a pty */
- 	BUG_ON(driver->type != TTY_DRIVER_TYPE_PTY);
-@@ -234,20 +242,22 @@ int devpts_pty_new(struct inode *ptmx_in
- 	init_special_inode(inode, S_IFCHR|config.mode, device);
- 	inode->i_private = tty;
- 
--	dentry = get_node(number);
-+	dentry = get_node(root, number);
- 	if (!IS_ERR(dentry) && !dentry->d_inode) {
- 		d_instantiate(dentry, inode);
--		fsnotify_create(devpts_root->d_inode, dentry);
-+		fsnotify_create(root->d_inode, dentry);
- 	}
- 
--	mutex_unlock(&devpts_root->d_inode->i_mutex);
-+	mutex_unlock(&root->d_inode->i_mutex);
- 
- 	return 0;
+-	kill_anon_super(sb);
++	kill_litter_super(sb);
  }
  
- struct tty_struct *devpts_get_tty(struct inode *inode, int number)
- {
--	struct dentry *dentry = get_node(number);
-+	struct super_block *sb = pts_sb_from_inode(inode);
-+	struct dentry *root = sb->s_root;
-+	struct dentry *dentry = get_node(root, number);
- 	struct tty_struct *tty;
+ static struct file_system_type devpts_fs_type = {
+@@ -274,7 +324,7 @@ int devpts_pty_new(struct inode *ptmx_in
+ 	if (!inode)
+ 		return -ENOMEM;
  
- 	tty = NULL;
-@@ -257,14 +267,16 @@ struct tty_struct *devpts_get_tty(struct
- 		dput(dentry);
- 	}
- 
--	mutex_unlock(&devpts_root->d_inode->i_mutex);
-+	mutex_unlock(&root->d_inode->i_mutex);
- 
- 	return tty;
- }
- 
- void devpts_pty_kill(struct inode *inode, int number)
- {
--	struct dentry *dentry = get_node(number);
-+	struct super_block *sb = pts_sb_from_inode(inode);
-+	struct dentry *root = sb->s_root;
-+	struct dentry *dentry = get_node(root, number);
- 
- 	if (!IS_ERR(dentry)) {
- 		struct inode *inode = dentry->d_inode;
-@@ -275,7 +287,7 @@ void devpts_pty_kill(struct inode *inode
- 		}
- 		dput(dentry);
- 	}
--	mutex_unlock(&devpts_root->d_inode->i_mutex);
-+	mutex_unlock(&root->d_inode->i_mutex);
- }
- 
- static int __init init_devpts_fs(void)
+-	inode->i_ino = number+2;
++	inode->i_ino = number+4;
+ 	inode->i_uid = config.setuid ? config.uid : current->fsuid;
+ 	inode->i_gid = config.setgid ? config.gid : current->fsgid;
+ 	inode->i_mtime = inode->i_atime = inode->i_ctime = CURRENT_TIME;
