@@ -1,12 +1,14 @@
 From: sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org
-Subject: [RFC][PATCH 0/6] Enable multiple mounts of devpts
-Date: Mon, 4 Aug 2008 18:18:44 -0700
-Message-ID: <20080805011844.GA14940@us.ibm.com>
+Subject: [RFC][PATCH 1/6] Pass-in 'struct inode' to devpts interfaces
+Date: Mon, 4 Aug 2008 18:22:17 -0700
+Message-ID: <20080805012217.GA15360@us.ibm.com>
+References: <20080805011844.GA14940@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
+In-Reply-To: <20080805011844.GA14940-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -20,45 +22,214 @@ To: hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org, alan-qBU/x9rampVanCEyBjwyrvXRex
 Cc: "David C. Hansen" <haveblue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org, containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org
 List-Id: containers.vger.kernel.org
 
+From: Sukadev Bhattiprolu <sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: [RFC][PATCH 1/6] Pass-in 'struct inode' to devpts interfaces
 
-I thought I will send out the patches I mentioned to H. Peter Anvin
-recently to get some feedback on the general direction. This version
-of the patchset ducks the user-space issue, for now.
+Pass-in an 'inode' parameter to devpts interfaces.  The parameter
+itself will be used in subsequent patches to identify the instance
+of devpts mounted.
 
 ---
+ drivers/char/pty.c        |    3 ++-
+ drivers/char/tty_io.c     |   21 +++++++++++----------
+ fs/devpts/inode.c         |   10 +++++-----
+ include/linux/devpts_fs.h |   34 ++++++++++++++++++++++++----------
+ 4 files changed, 42 insertions(+), 26 deletions(-)
 
-Enable multiple mounts of devpts filesystem so each container can
-allocate ptys independently.
-
-To enable multiple mounts (most) devpts interfaces need to know which
-instance of devpts is being accessed. This patchset uses the 'struct
-inode' of the device being accessed to identify the appropriate devpts
-instance. It then uses get_sb_nodev() instead of get_sb_single() to
-allow multiple mounts
-
-	PATCH 1/6	Pass-in 'struct inode' to devpts interfaces
-	PATCH 2/6	Remove 'devpts_root' global
-	PATCH 3/6	Move 'allocated_ptys' to sb->s_s_fs_info
-	PATCH 4/6	Allow mknod of ptmx and tty devices
-	PATCH 5/6	Allow multiple mounts of devpts
-	PATCH 6/6	Tweak in init_dev() /dev/tty
-
-If devpts is mounted just once, this patchset should not change any behavior.
-
-If devpts is mounted more than once, then '/dev/ptmx' must be a symlink
-to '/dev/pts/ptmx' and in each new devpts mount we must create the
-device node '/dev/pts/ptmx' [c, 5;2] by hand.
-
-Have only done some basic testing with multiple mounts and sshd. May not
-be bisect-safe.
-
-Appreciate comments on overall approach of my mapping from the inode
-to sb->s_fs_info to allocated_ptys and the hacky use of get_sb_nodev(),
-and also on the tweak to init_dev() (patch 6).
-
-Todo:
-	User-space impact of /dev/ptmx symlink - Options are being
-	discussed on mailing list (new mount option and config token,
-	new fs name, etc)
-
-	Remove even initial kernel mount of devpts ?
+Index: linux-2.6.26-rc8-mm1/fs/devpts/inode.c
+===================================================================
+--- linux-2.6.26-rc8-mm1.orig/fs/devpts/inode.c	2008-08-04 02:07:25.000000000 -0700
++++ linux-2.6.26-rc8-mm1/fs/devpts/inode.c	2008-08-04 02:08:15.000000000 -0700
+@@ -177,7 +177,7 @@ static struct dentry *get_node(int num)
+ 	return lookup_one_len(s, root, sprintf(s, "%d", num));
+ }
+ 
+-int devpts_new_index(void)
++int devpts_new_index(struct inode *inode)
+ {
+ 	int index;
+ 	int idr_ret;
+@@ -205,14 +205,14 @@ retry:
+ 	return index;
+ }
+ 
+-void devpts_kill_index(int idx)
++void devpts_kill_index(struct inode *inode, int idx)
+ {
+ 	mutex_lock(&allocated_ptys_lock);
+ 	idr_remove(&allocated_ptys, idx);
+ 	mutex_unlock(&allocated_ptys_lock);
+ }
+ 
+-int devpts_pty_new(struct tty_struct *tty)
++int devpts_pty_new(struct inode *ptmx_inode, struct tty_struct *tty)
+ {
+ 	int number = tty->index; /* tty layer puts index from devpts_new_index() in here */
+ 	struct tty_driver *driver = tty->driver;
+@@ -245,7 +245,7 @@ int devpts_pty_new(struct tty_struct *tt
+ 	return 0;
+ }
+ 
+-struct tty_struct *devpts_get_tty(int number)
++struct tty_struct *devpts_get_tty(struct inode *inode, int number)
+ {
+ 	struct dentry *dentry = get_node(number);
+ 	struct tty_struct *tty;
+@@ -262,7 +262,7 @@ struct tty_struct *devpts_get_tty(int nu
+ 	return tty;
+ }
+ 
+-void devpts_pty_kill(int number)
++void devpts_pty_kill(struct inode *inode, int number)
+ {
+ 	struct dentry *dentry = get_node(number);
+ 
+Index: linux-2.6.26-rc8-mm1/include/linux/devpts_fs.h
+===================================================================
+--- linux-2.6.26-rc8-mm1.orig/include/linux/devpts_fs.h	2008-08-04 02:07:24.000000000 -0700
++++ linux-2.6.26-rc8-mm1/include/linux/devpts_fs.h	2008-08-04 02:07:27.000000000 -0700
+@@ -17,20 +17,34 @@
+ 
+ #ifdef CONFIG_UNIX98_PTYS
+ 
+-int devpts_new_index(void);
+-void devpts_kill_index(int idx);
+-int devpts_pty_new(struct tty_struct *tty);      /* mknod in devpts */
+-struct tty_struct *devpts_get_tty(int number);	 /* get tty structure */
+-void devpts_pty_kill(int number);		 /* unlink */
++int devpts_new_index(struct inode *inode);
++void devpts_kill_index(struct inode *inode, int idx);
++
++/* mknod in devpts */
++int devpts_pty_new(struct inode *inode, struct tty_struct *tty);
++
++/* get tty structure */
++struct tty_struct *devpts_get_tty(struct inode *inode, int number);
++
++/* unlink */
++void devpts_pty_kill(struct inode *inode, int number);
+ 
+ #else
+ 
+ /* Dummy stubs in the no-pty case */
+-static inline int devpts_new_index(void) { return -EINVAL; }
+-static inline void devpts_kill_index(int idx) { }
+-static inline int devpts_pty_new(struct tty_struct *tty) { return -EINVAL; }
+-static inline struct tty_struct *devpts_get_tty(int number) { return NULL; }
+-static inline void devpts_pty_kill(int number) { }
++static inline int devpts_new_index(struct inode *inode) { return -EINVAL; }
++static inline void devpts_kill_index(struct inode *inode, int idx) { }
++
++static inline int devpts_pty_new(struc inode *inode, struct tty_struct *tty)
++{
++	return -EINVAL;
++}
++
++static inline struct tty_struct *devpts_get_tty(struct inode *inode, int number)
++{
++	return NULL;
++}
++static inline void devpts_pty_kill(struc inode *inode, int number) { }
+ 
+ #endif
+ 
+Index: linux-2.6.26-rc8-mm1/drivers/char/pty.c
+===================================================================
+--- linux-2.6.26-rc8-mm1.orig/drivers/char/pty.c	2008-08-04 02:07:24.000000000 -0700
++++ linux-2.6.26-rc8-mm1/drivers/char/pty.c	2008-08-04 02:07:27.000000000 -0700
+@@ -59,7 +59,8 @@ static void pty_close(struct tty_struct 
+ 		set_bit(TTY_OTHER_CLOSED, &tty->flags);
+ #ifdef CONFIG_UNIX98_PTYS
+ 		if (tty->driver == ptm_driver)
+-			devpts_pty_kill(tty->index);
++			devpts_pty_kill(filp->f_path.dentry->d_inode,
++					tty->index);
+ #endif
+ 		tty_vhangup(tty->link);
+ 	}
+Index: linux-2.6.26-rc8-mm1/drivers/char/tty_io.c
+===================================================================
+--- linux-2.6.26-rc8-mm1.orig/drivers/char/tty_io.c	2008-08-04 02:07:24.000000000 -0700
++++ linux-2.6.26-rc8-mm1/drivers/char/tty_io.c	2008-08-04 02:07:55.000000000 -0700
+@@ -2056,7 +2056,7 @@ static void tty_line_name(struct tty_dri
+  * relaxed for the (most common) case of reopening a tty.
+  */
+ 
+-static int init_dev(struct tty_driver *driver, int idx,
++static int init_dev(struct tty_driver *driver, struct inode *inode,  int idx,
+ 	struct tty_struct **ret_tty)
+ {
+ 	struct tty_struct *tty, *o_tty;
+@@ -2066,7 +2066,7 @@ static int init_dev(struct tty_driver *d
+ 
+ 	/* check whether we're reopening an existing tty */
+ 	if (driver->flags & TTY_DRIVER_DEVPTS_MEM) {
+-		tty = devpts_get_tty(idx);
++		tty = devpts_get_tty(inode, idx);
+ 		/*
+ 		 * If we don't have a tty here on a slave open, it's because
+ 		 * the master already started the close process and there's
+@@ -2370,10 +2370,11 @@ static void release_dev(struct file *fil
+ 	int	idx;
+ 	char	buf[64];
+ 	unsigned long flags;
++	struct inode *inode;
+ 
++	inode = filp->f_path.dentry->d_inode;
+ 	tty = (struct tty_struct *)filp->private_data;
+-	if (tty_paranoia_check(tty, filp->f_path.dentry->d_inode,
+-							"release_dev"))
++	if (tty_paranoia_check(tty, inode, "release_dev"))
+ 		return;
+ 
+ 	check_tty_count(tty, "release_dev");
+@@ -2628,7 +2629,7 @@ static void release_dev(struct file *fil
+ 
+ 	/* Make this pty number available for reallocation */
+ 	if (devpts)
+-		devpts_kill_index(idx);
++		devpts_kill_index(inode, idx);
+ }
+ 
+ /**
+@@ -2709,7 +2710,7 @@ retry_open:
+ 		return -ENODEV;
+ 	}
+ got_driver:
+-	retval = init_dev(driver, index, &tty);
++	retval = init_dev(driver, inode, index, &tty);
+ 	mutex_unlock(&tty_mutex);
+ 	if (retval)
+ 		return retval;
+@@ -2801,12 +2802,12 @@ static int __ptmx_open(struct inode *ino
+ 	nonseekable_open(inode, filp);
+ 
+ 	/* find a device that is not in use. */
+-	index = devpts_new_index();
++	index = devpts_new_index(inode);
+ 	if (index < 0)
+ 		return index;
+ 
+ 	mutex_lock(&tty_mutex);
+-	retval = init_dev(ptm_driver, index, &tty);
++	retval = init_dev(ptm_driver, inode, index, &tty);
+ 	mutex_unlock(&tty_mutex);
+ 
+ 	if (retval)
+@@ -2816,7 +2817,7 @@ static int __ptmx_open(struct inode *ino
+ 	filp->private_data = tty;
+ 	file_move(filp, &tty->tty_files);
+ 
+-	retval = devpts_pty_new(tty->link);
++	retval = devpts_pty_new(inode, tty->link);
+ 	if (retval)
+ 		goto out1;
+ 
+@@ -2828,7 +2829,7 @@ out1:
+ 	release_dev(filp);
+ 	return retval;
+ out:
+-	devpts_kill_index(index);
++	devpts_kill_index(inode, index);
+ 	return retval;
+ }
