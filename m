@@ -1,15 +1,17 @@
-From: "Caitlin Bestler" <Caitlin.Bestler-W81pkbvmjbRWk0Htik3J/w@public.gmane.org>
-Subject: RE: I/O bandwidth controller (was Re: Too many I/O controllerpatches)
-Date: Wed, 6 Aug 2008 14:01:13 -0400
-Message-ID: <78C9135A3D2ECE4B8162EBDCE82CAD77040420E7__26070.7663059749$1218045894$gmane$org@nekter>
-References: <20080804.175126.193692178.ryov@valinux.co.jp><1217870433.20260.101.camel@nimitz>
+From: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Subject: Re: RFC: I/O bandwidth controller (was Re: Too many I/O controller
+	patches)
+Date: Wed, 06 Aug 2008 11:00:44 -0700
+Message-ID: <1218045644.10907.93.camel__719.665984115814$1218046259$gmane$org@nimitz>
+References: <20080804.175126.193692178.ryov@valinux.co.jp>
+	<1217870433.20260.101.camel@nimitz>
 	<1217985189.3154.57.camel@sebastian.kern.oss.ntt.co.jp>
+	<4899D464.1070506@linux.vnet.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: base64
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-class: urn:content-classes:message
-In-Reply-To: <1217985189.3154.57.camel-xpvPi5bcW5X5OjGIXfuPlhrrLbDL3r4M6qtp775pBPw@public.gmane.org>
+In-Reply-To: <4899D464.1070506-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,66 +21,36 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: =?UTF-8?B?RmVybmFuZG8gTHVpcyBWw6F6cXVleiBDYW8=?= <fernando-gVGce1chcLdL9jVzuh4AOg@public.gmane.org>, Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Cc: xen-devel-GuqFBffKawuULHF6PoxzQEEOCMrvLtNR@public.gmane.org, uchida-LYU95VJlayp8UrSeD/g0lQ@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, virtualization-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, agk-9JcytcrH/bA+uJoB2kUjGw@public.gmane.org, ngupta-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, Andrea Righi <righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+To: balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
+Cc: xen-devel-GuqFBffKawuULHF6PoxzQEEOCMrvLtNR@public.gmane.org, uchida-LYU95VJlayp8UrSeD/g0lQ@public.gmane.org, Fernando Luis =?ISO-8859-1?Q?V=E1zquez?= Cao <fernando-gVGce1chcLdL9jVzuh4AOg@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, virtualization-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, dm-devel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, agk-9JcytcrH/bA+uJoB2kUjGw@public.gmane.org, ngupta-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Andrea Righi <righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-RmVybmFuZG8gTHVpcyBWw6F6cXVleiBDYW8gd3JvdGU6DQoNCj4gDQo+ICoqKiBHb2Fscw0KPiAg
-IDEuIENncm91cHMtYXdhcmUgSS9PIHNjaGVkdWxpbmcgKGJlaW5nIGFibGUgdG8gZGVmaW5lIGFy
-Yml0cmFyeQ0KPiBncm91cGluZ3Mgb2YgcHJvY2Vzc2VzIGFuZCB0cmVhdCBlYWNoIGdyb3VwIGFz
-IGEgc2luZ2xlIHNjaGVkdWxpbmcNCj4gZW50aXR5KS4NCj4gICAyLiBCZWluZyBhYmxlIHRvIHBl
-cmZvcm0gSS9PIGJhbmR3aWR0aCBjb250cm9sIGluZGVwZW5kZW50bHkgb24gZWFjaA0KPiBkZXZp
-Y2UuDQo+ICAgMy4gSS9PIGJhbmR3aWR0aCBzaGFwaW5nLg0KPiAgIDQuIFNjaGVkdWxlci1pbmRl
-cGVuZGVudCBJL08gYmFuZHdpZHRoIGNvbnRyb2wuDQo+ICAgNS4gVXNhYmxlIHdpdGggc3RhY2tp
-bmcgZGV2aWNlcyAobWQsIGRtIGFuZCBvdGhlciBkZXZpY2VzIG9mIHRoYXQNCj4gaWxrKS4NCj4g
-ICA2LiBJL08gdHJhY2tpbmcgKGhhbmRsZSBidWZmZXJlZCBhbmQgYXN5bmNocm9ub3VzIEkvTyBw
-cm9wZXJseSkuDQo+IA0KPiBUaGUgbGlzdCBvZiBnb2FscyBhYm92ZSBpcyBub3QgZXhoYXVzdGl2
-ZSBhbmQgaXQgaXMgYWxzbyBsaWtlbHkgdG8NCj4gY29udGFpbiBzb21lIG5vdC1zby1uaWNlLXRv
-LWhhdmUgZmVhdHVyZXMgc28geW91ciBmZWVkYmFjayB3b3VsZCBiZQ0KPiBhcHByZWNpYXRlZC4N
-Cj4gDQoNCkknbSBmb2xsb3dpbmcgdGhpcyBkaXNjdXNzaW9uIG9uIHRoZSB2aXJ0dWFsaXphdGlv
-biBtYWlsaW5nIGxpc3QsDQphbmQgSSdtIGxpbWl0aW5nIG15IHJlcGx5IHRvIHZpcnR1YWxpemF0
-aW9uLXJlbGF0ZWQgbWFpbGluZyBsaXN0cy4NCg0KV2hhdCBzdHJpa2VzIG1lIGFib3V0IEZlcm5h
-bmRvJ3MgUkZDIGlzIHRoYXQgaXQgaXMgcXVpdGUgcmVhZGFibGUuDQpTbyBtdWNoIHNvIHRoYXQg
-SSB1bmRlcnN0b29kIG1vc3Qgb2YgaXQsIGFuZCBJIHJlYWxseSBzaG91bGRuJ3QgaGF2ZS4NClRo
-YXQgaXMgYmVjYXVzZSBpdCBpcyBtb3N0bHkgYXQgdGhlIHNjb3BlIG9mIGEga2VybmVsIHNjaGVk
-dWxlciwNCnNvbWV0aGluZyBJIGhhdmUgbm8gcmVhc29uIHRvIGJlIGludm9sdmVkIHdpdGguDQoN
-CldoYXQgaXMgbWlzc2luZyBmcm9tIHRoZSBkaXNjdXNzaW9uIGlzIGFueXRoaW5nIG9uIGhvdyBJ
-TyBiYW5kd2lkdGgNCmNvdWxkIGJlIHJlZ3VsYXRlZCBpbiBhIHZpcnR1YWxpemVkIGVudmlyb25t
-ZW50LCBvdGhlciB0aGFuIHRoZSBvYmplY3RpdmUNCnRoYXQgY2dyb3VwcyBzaG91bGQgYmUgYWJs
-ZSB0byBiZSBzZXQgYXQgdGhlIHNjb3BlIG9mIGEgY29udGFpbmVyLg0KDQpGb3IgYSB2aXJ0dWFs
-aXplZCBlbnZpcm9ubWVudCwgaXQgc3RyaWtlcyBtZSB0aGF0IHRoZXJlIGFyZSBhIG51bWJlcg0K
-b2YgYWRkaXRpb25hbCBvYmplY3RpdmVzIHRoYXQgbmVlZCB0byBiZSBjb25zaWRlcmVkOg0KDQot
-IEEgQmFja2VuZCAoRG9tMC9Eb21EL3doYXRldmVyKSB0aGF0IGlzIHByb3ZpZGluZyBibG9jayBz
-dG9yYWdlDQogIHNlcnZpY2VzIHRvIEd1ZXN0cyBuZWVkcyB0byBiZSBhYmxlIHRvIHByb3ZpZGUg
-UW9TIGNvbnRyb2xzIHdpdGgNCiAgb3Igd2l0aG91dCB0aGUgY28tb3BlcmF0aW9uIG9mIHRoZSBH
-dWVzdCBrZXJuZWxzLiBIb3dldmVyIEdPUw0KICBpbnZvbHZlbWVudCBpcyB2YWx1YWJsZSwgYmVj
-YXVzZSB0aGUgYmFja2VuZCBvbiBpdHMgb3duIHdvdWxkIHRyZWF0DQogIGFsbCBJTyBmcm9tIGEg
-Z2l2ZW4gZ3Vlc3QgYXMgYW4gdW5kaWZmZXJlbnRpYXRlZCBnbG9wLiBQYXJ0aWN1bGFybHksDQog
-IHRvIHRoZSBleHRlbnQgdGhhdCB0aGUgaW1wcm92ZWQgYWxnb3JpdGhtcyB1bmRlciBkaXNjdXNz
-aW9uIGluIHRoZQ0KICBSRkMgYXJlIGltcGxlbWVudGVkIGluIHRoZSBMaW51eCBrZXJuZWwsIGhv
-dyBkbyB0aGV5IGJlY29tZSBoaW50cw0KICB3aGVuIHBhc3NlZCB0byB0aGUgYmFja2VuZD8NCi0g
-SW4gdmlydHVhbGl6ZWQgZW52aXJvbm1lbnRzIGl0IGlzICptb3JlKiBsaWtlbHkgdGhhdCB0aGUg
-dW5kZXJseWluZw0KICBzdG9yYWdlIGlzIG5ldHdvcmtlZC4gVGhpcyBtZWFucyB0aGF0IHRoZSBi
-YWNrZW5kIHNjaGVkdWxlciBwcm9iYWJseQ0KICBvbmx5IGhhcyBjcnVkZSBjb250cm9sIG92ZXIg
-d2hlbiBJL08gaXMgYWN0dWFsbHkgZG9uZS4gSXQgY2FuIG9ubHkNCiAgY29udHJvbCB3aGVuIHJl
-cXVlc3RzIGFyZSBpc3N1ZWQuIFRoZSB0YXJnZXQgaGFzIG1vcmUgY29udHJvbCBvdmVyDQogIHdo
-ZW4gdGhlIEkvTyBhY3R1YWxseSBvY2N1cnMsIGVzcGVjaWFsbHkgZm9yIHdyaXRlcy4NCi0gV2hl
-biB0aGUgc3RvcmFnZSBpcyBuZXR3b3JrZWQgaXQgYWxzbyBtZWFucyB0aGF0IHRoZSBzY2hlZHVs
-aW5nIHdpbGwNCiAgYWxzbyBiZSBRb1MgcmVndWxhdGVkIGF0IHRoZSBuZXR3b3JrIHRyYWZmaWMg
-bGF5ZXIuIFRoZSB0d28gUW9TDQogIHNjaGVkdWxpbmcgYWxnb3JpdGhtcyBzaG91bGQgbm90IHdv
-cmsgYWNyb3NzIHB1cnBvc2VzLCBub3Igc2hvdWxkDQogIHN5c3RlbSBhZG1pbmlzdHJhdG9ycyBi
-ZSBmb3JjZWQgdG8gY29uZmlndXJlIHR3byBzZXRzIG9mIHBvbGljaWVzDQogIHRvIGFjaGlldmUg
-YSBzaW5nbGUgcmVzdWx0Lg0KLSBEb2VzIGl0IG1ha2Ugc2Vuc2UgdG8gZXh0ZW5kIHN0b3JhZ2Ut
-cmVsYXRlZCBuZXR3b3JrIGJhbmR3aWR0aCBjb250cm9scw0KICB0byBkZWFsIHdpdGggc3ViLWRp
-dmlzaW9uIGJ5IGRldmljZSBvciBHdWVzdD8gTmV0d29yayBiYW5kd2lkdGggY29udHJvbA0KICBp
-cyBsaWtlbHkgdG8gZ2l2ZSBhIHJhdGUvcXVvdGEgZm9yIG5ldHdvcmtlZCBzdG9yYWdlIHRyYWZm
-aWMuIFdvdWxkIGl0DQogIG1ha2Ugc2Vuc2UgdG8gc3ViLWRpdmlkZSB0aGF0IGNvbnRyb2wgYmFz
-ZWQgb24gY2dyb3Vwcy93aGF0ZXZlcj8NCi0gU2hvdWxkIHRoZSBHdWVzdCBJL08gc2NoZWR1bGVy
-IGJlIGdpdmVuIGEgaGludCB0aGF0IGFsdGhvdWdoIGl0ICpsb29rcyoNCiAgbGlrZSBhIFNDU0kg
-ZGV2aWNlIHRoYXQgaXQgcmVhbGx5IGlzIGEgdmlydHVhbGl6ZWQgc3RvcmFnZSBkZXZpY2UgYW5k
-DQogIHRoYXQgdGhlcmVmb3JlIHRoZSBHdWVzdCBwcm9iYWJseSBzaG91bGQgbm90IHNwZW5kIHRo
-YXQgbWFueSBDUFUgY3ljbGVzDQogIHRyeWluZyB0byBvcHRpbWl6ZSB0aGUgbW92ZW1lbnRzIG9m
-IGEgaGVhZCB0aGF0IGRvZXMgbm90IHJlYWxseSBleGlzdD8NCg0KX19fX19fX19fX19fX19fX19f
-X19fX19fX19fX19fX19fX19fX19fX19fX19fX18KQ29udGFpbmVycyBtYWlsaW5nIGxpc3QKQ29u
-dGFpbmVyc0BsaXN0cy5saW51eC1mb3VuZGF0aW9uLm9yZwpodHRwczovL2xpc3RzLmxpbnV4LWZv
-dW5kYXRpb24ub3JnL21haWxtYW4vbGlzdGluZm8vY29udGFpbmVycw==
+On Wed, 2008-08-06 at 22:12 +0530, Balbir Singh wrote:
+> Would you like to split up IO into read and write IO. We know that read can be
+> very latency sensitive when compared to writes. Should we consider them
+> separately in the RFC?
+
+I'd just suggest doing what is simplest and can be done in the smallest
+amount of code.  As long as it is functional in some way and can be
+extended to cover the end goal, I say keep it tiny.
+
+> > Even in the non-hotplug case it would be nice if we could treat each
+> > block I/O device as an independent resource, which means we could do
+> > things like allocating I/O bandwidth on a per-device basis. As long as
+> > performance is not compromised too much, adding some kind of basic
+> > hotplug support to cgroups is probably worth it.
+> 
+> Won't that get too complex. What if the user has thousands of disks with several
+> partitions on each?
+
+I think what Fernando is suggesting is that we *allow* each disk to be
+treated separately, not that we actually separate them out.  I agree
+that with large disk count systems, it would get a bit nutty to deal
+with I/O limits on each of them.  It would also probably be nutty for
+some dude with two disks in his system to have to set (or care about)
+individual limits.
+
+I guess I'm just arguing that we should allow pretty arbitrary grouping
+of block devices into these resource pools.
+
+-- Dave
