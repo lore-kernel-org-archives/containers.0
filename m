@@ -1,87 +1,107 @@
-From: Hirokazu Takahashi <taka-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
-Subject: Re: [PATCH 4/7] bio-cgroup: Split the cgroup memory subsystem into
-	two parts
-Date: Wed, 06 Aug 2008 20:43:39 +0900 (JST)
-Message-ID: <20080806.204339.76736223.taka__4245.20203746415$1218023230$gmane$org@valinux.co.jp>
-References: <20080804.175707.104036289.ryov@valinux.co.jp>
-	<20080804.175748.189722512.ryov@valinux.co.jp>
-	<20080806165421.f76edd47.kamezawa.hiroyu@jp.fujitsu.com>
+From: Vivek Goyal <vgoyal@redhat.com>
+Subject: Re: [Libcg-devel] Control groups and Resource Management notes
+	(part II)
+Date: Wed, 6 Aug 2008 09:00:34 -0400
+Message-ID: <20080806130034.GA22461@redhat.com>
+References: <489315B2.2080506@linux.vnet.ibm.com> <4893B415.9070906@linux.vnet.ibm.com> <20080805160709.A88B.KOSAKI.MOTOHIRO@jp.fujitsu.com> <20080805133007.GC15193@redhat.com> <20080806100500.19f08444.kamezawa.hiroyu@jp.fujitsu.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20080806165421.f76edd47.kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org
-Cc: xen-devel-GuqFBffKawuULHF6PoxzQEEOCMrvLtNR@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, virtualization-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, dm-devel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, agk-9JcytcrH/bA+uJoB2kUjGw@public.gmane.org
+Content-Type: text/plain; charset=us-ascii
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1753916AbYHFNGU@vger.kernel.org>
+Content-Disposition: inline
+In-Reply-To: <20080806100500.19f08444.kamezawa.hiroyu@jp.fujitsu.com>
+Sender: linux-kernel-owner@vger.kernel.org
+To: KAMEZAWA Hiroyuki <kamezawa.hiroyu@jp.fujitsu.com>
+Cc: KOSAKI Motohiro <kosaki.motohiro@jp.fujitsu.com>, Linux Containers <containers@lists.osdl.org>, libcg-devel <libcg-devel@lists.sourceforge.net>, linux kernel mailing list <linux-kernel@vger.kernel.org>, balbir@linux.vnet.ibm.com
 List-Id: containers.vger.kernel.org
 
-Hi,
+On Wed, Aug 06, 2008 at 10:05:00AM +0900, KAMEZAWA Hiroyuki wrote:
 
-> > This patch splits the cgroup memory subsystem into two parts.
-> > One is for tracking pages to find out the owners. The other is
-> > for controlling how much amount of memory should be assigned to
-> > each cgroup.
+[..]
+> > > > Vivek brought up using PAM plugins to do classifications, this suggestion was
+> > > > nicely received. The decision was to do classification in user space and then
+> > > > think of kernel space if it cannot be done in user space. Denis suggested that
+> > > > classification is useful. In OpenVZ they classify all apache children to a
+> > > > different group. Balbir asked Denis to post their classification infrastructure
+> > > > as RFC.
+> > > 
+> > > I'm not sure about this issue.
+> > > but I like PAM approach.
+> > > 
 > > 
-> > With this patch, you can use the page tracking mechanism even if
-> > the memory subsystem is off.
+> > Thanks balbir for nice summary.
 > > 
-> > Based on 2.6.27-rc1-mm1
-> > Signed-off-by: Ryo Tsuruta <ryov-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
-> > Signed-off-by: Hirokazu Takahashi <taka-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
+> Thanks, too.
+> 
+> > Well, it was Rik Van Riel's idea to use PAM plugins so that processes
+> > are put into right user cgroups upon login.
+> > 
+> > Is pam based classification alone is sufficient? I noticed couple of
+> > instances which will avoid pam. For example.
+> > 
+> > - If one starts apache "service httpd start", then httpd threads change
+> >   their uid/gid to "apache/apache". But these threads will continue to
+> >   run in the cgroup belonging to root and will not go into apache cgroup.
+> > 
+> > - apache also offers "suexec" tool which execs a CGI script under a 
+> >   different user than the user who has launched web server. I quickly
+> >   grepped for source code of suexec and it does not seem to be using
+> >   pam. That means CGI scripts running under some other user name will
+> >   continue to run in cgroup where apache is running.
+> > 
+> > I am not sure how many more such corner cases are there. These cases can
+> > either be covered by modification of application or using some kind of
+> > wrapper around application or by writing classification daemon.
+> > 
+> > Do we really need classification daemon to cover such cases or wrapper
+> > approach is sufficient? I remember somebody in minisummit was mentioning
+> > that it should work without any apache modifications.
 > > 
 > 
-> Plese CC me or Balbir or Pavel (See Maintainer list) when you try this ;)
+> We can go ahead step by step. I think PAM support is the first step.
+> The daemon is the second.
 > 
-> After this patch, the total structure is
+> 1. PAM
+> 2. A daemon for task placement (via netlink ?)
 > 
->  page <-> page_cgroup <-> bio_cgroup.
->  (multiple bio_cgroup can be attached to page_cgroup)
->
-> Does this pointer chain will add
->   - significant performance regression or
->   - new race condtions 
-> ?
+> I think developping "a daemon for task placement" is important.
+> but cannot be perfect solution for any situations.
+> 
+> The third step is
+> 
+> 3. Modify applications (in newer version of them.)
+> 
+> "should work without any apache modifications" is (maybe) necessary. But for 
+> perfect control, it's not enough. We should support a method to modify
+> applications easily in library. 
+> 
+> I think develpment cost for "2" is bigger than "1" and "3". If "2" is hard,
+> starting from "1" and support funcs for "3" is a choice.
+> If support for "3" is ready, someone may start implementation of "2" in easier
+> way.
+> 
 
-I don't think it will cause significant performance loss, because
-the link between a page and a page_cgroup has already existed, which
-the memory resource controller prepared. Bio_cgroup uses this as it is,
-and does nothing about this.
+Phase wise approach makes sense. I already have working patches for
+following things.
 
-And the link between page_cgroup and bio_cgroup isn't protected
-by any additional spin-locks, since the associated bio_cgroup is
-guaranteed to exist as long as the bio_cgroup owns pages.
+1. PAM module for placement of tasks
+2. Modification of init scripts and a tool "cgclassify" so that at boot up
+   time "init" and other system services are moved to "admin"'s group.
+3. libcgroup API so that application can use these to place forked children
+   in right cgroup before doing exec.
+4. A command line tool "execcg" which helps a user launch application in
+   specific "cgroup".
 
-I've just noticed that most of overhead comes from the spin-locks
-when reclaiming the pages inside mem_cgroups and the spin-locks to
-protect the links between pages and page_cgroups.
-The latter overhead comes from the policy your team has chosen
-that page_cgroup structures are allocated on demand. I still feel
-this approach doesn't make any sense because linux kernel tries to
-make use of most of the pages as far as it can, so most of them
-have to be assigned its related page_cgroup. It would make us happy
-if page_cgroups are allocated at the booting time.
+5. A classification daemon (based on netlink as of today. Should move to
+  cgroup fs based notification mechanism probably.)   
 
-> For example, adding a simple function.
-> ==
-> int get_page_io_id(struct page *)
->  - returns a I/O cgroup ID for this page. If ID is not found, -1 is returned.
->    ID is not guaranteed to be valid value. (ID can be obsolete)
-> ==
-> And just storing cgroup ID to page_cgroup at page allocation.
-> Then, making bio_cgroup independent from page_cgroup and 
-> get ID if avialble and avoid too much pointer walking.
+I think in phase1, we can get first 4 items merged and stablized and then
+work on daemon in phase2 (if need be).
 
-I don't think there are any diffrences between a poiter and ID.
-I think this ID is just a encoded version of the pointer.
+One issue with daemon was raised with respect to containers. It will
+interfere with placement of container threads also and this is not
+desired.
 
-> Thanks,
-> -Kame
+This will have to be worked out.
+
+Thanks
+Vivek
