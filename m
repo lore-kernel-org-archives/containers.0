@@ -1,14 +1,15 @@
-From: yamamoto-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org (YAMAMOTO Takashi)
-Subject: Re: [PATCH][RFC] dirty balancing for cgroups
-Date: Wed,  6 Aug 2008 18:10:05 +0900 (JST)
-Message-ID: <20080806091005.B883A5A7B@siro.lan>
-References: <20080806175352.6330c00a.kamezawa.hiroyu@jp.fujitsu.com>
+From: "Robert P. J. Day" <rpjday-L09J2beyid0N/H6P543EQg@public.gmane.org>
+Subject: Re: [PATCH] CGROUPS:  Group the CGROUPS Kconfig entries to be
+	consecutive.
+Date: Wed, 6 Aug 2008 07:10:51 -0400 (EDT)
+Message-ID: <alpine.LFD.1.10.0808060708450.25391@localhost.localdomain>
+References: <alpine.LFD.1.10.0808041213540.2600@localhost.localdomain>
+	<20080806130112.82c04664.kamezawa.hiroyu@jp.fujitsu.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: Your message of "Wed, 6 Aug 2008 17:53:52 +0900"
-	<20080806175352.6330c00a.kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+In-Reply-To: <20080806130112.82c04664.kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,85 +19,52 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org
-Cc: a.p.zijlstra-/NLkJaSkS4VmR6Xm/wNWPw@public.gmane.org, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, "menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org" <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, "balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org" <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-hi,
+On Wed, 6 Aug 2008, KAMEZAWA Hiroyuki wrote:
 
-> On Wed,  6 Aug 2008 17:20:46 +0900 (JST)
-> yamamoto-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org (YAMAMOTO Takashi) wrote:
-> 
-> > hi,
-> > 
-> > > On Fri, 11 Jul 2008 17:34:46 +0900 (JST)
-> > > yamamoto-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org (YAMAMOTO Takashi) wrote:
-> > > 
-> > > > hi,
-> > > > 
-> > > > > > my patch penalizes heavy-writer cgroups as task_dirty_limit does
-> > > > > > for heavy-writer tasks.  i don't think that it's necessary to be
-> > > > > > tied to the memory subsystem because i merely want to group writers.
-> > > > > > 
-> > > > > Hmm, maybe what I need is different from this ;)
-> > > > > Does not seem to be a help for memory reclaim under memcg.
-> > > > 
-> > > > to implement what you need, i think that we need to keep track of
-> > > > the numbers of dirty-pages in each memory cgroups as a first step.
-> > > > do you agree?
-> > > > 
-> > > yes, I think so, now.
-> > > 
-> > > may be not difficult but will add extra overhead ;( Sigh..
-> > 
-> > the following is a patch to add the overhead. :)
-> > any comments?
-> > 
-> Do you have some numbers ? ;) 
+> On Mon, 4 Aug 2008 12:16:05 -0400 (EDT)
+> "Robert P. J. Day" <rpjday-L09J2beyid0N/H6P543EQg@public.gmane.org> wrote:
+>
+> >
+> > Move a few CGROUPS-related Kconfig entries so that they appear
+> > consecutively when running "make menuconfig."  This shouldn't affect
+> > the functionality.
+> >
+> > Signed-off-by: Robert P. J. Day <rpjday-L09J2beyid0N/H6P543EQg@public.gmane.org>
+> >
+> Seems nice look. (Below is an menuconfig image, I modified a bit for -mm)
+>
+>     lqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqk x
+>   x x    --- Control Group support                                        x x
+>   x x    [ ]   Example debug cgroup subsystem                             x x
+>   x x    [*]   Namespace cgroup subsystem                                 x x
+>   x x    [ ]   Device controller for cgroups                              x x
+>   x x    [*]   Cpuset support                                             x x
+>   x x    [*]   Simple CPU accounting cgroup subsystem                     x x
+>   x x    [*]   Resource counters                                          x x
+>   x x    [*]     Memory Resource Controller for Control Groups            x x
+>   x x    [ ]   Memory resource limit controls for cgroups                 x x
+>
+> How do you think Paul ?
+>
+> Off-topic: to Balbir.
+>
+> How about "Aggregated Memory rlimit controls for cgroup" instead of
+> "Memory resource limit controls for cgroups" ?
 
-not yet.
+  ok, i'll leave this with you and you can tweak and apply whatever
+suits you.
 
-> I like this because this seems very straightforward. thank you.
+rday
+--
 
-good to hear.
+========================================================================
+Robert P. J. Day
+Linux Consulting, Training and Annoying Kernel Pedantry:
+    Have classroom, will lecture.
 
-> How about changing these to be
-> 
-> ==
-> void mem_cgroup_test_set_page_dirty()
-> {
-> 	if (try_lock_page_cgroup(pg)) {
-> 		pc = page_get_page_cgroup(pg);
-> 		if (pc ......) {
-> 		}
-> 		unlock_page_cgroup(pg)
-> 	}
-> }
-> ==
-
-i'm not sure how many opportunities to update statistics
-we would lose for the trylock failure.
-although the statistics don't need to be too precise,
-its error should have a reasonable upper-limit to be useful.
-
-> Off-topic: I wonder we can delete this "lock" in future.
-> 
-> Because page->page_cgroup is
->  1. attached at first use.(Obiously no race with set_dirty)
->  2. deleted at removal. (force_empty is problematic here..)
-
-i hope it's possible. :)
-
-YAMAMOTO Takashi
-
-> 
-> But, now, we need this lock.
-> 
-> Thanks,
-> -Kame
-> 
-> --
-> To unsubscribe, send a message with 'unsubscribe linux-mm' in
-> the body to majordomo-Bw31MaZKKs0EbZ0PF+XxCw@public.gmane.org  For more info on Linux MM,
-> see: http://www.linux-mm.org/ .
-> Don't email: <a href=mailto:"dont-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org"> email-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org </a>
+http://crashcourse.ca                          Waterloo, Ontario, CANADA
+========================================================================
