@@ -1,14 +1,15 @@
-From: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
-Subject: Re: [PATCH] CGROUPS:  Group the CGROUPS Kconfig entries to be
-	consecutive.
-Date: Wed, 6 Aug 2008 13:01:12 +0900
-Message-ID: <20080806130112.82c04664.kamezawa.hiroyu@jp.fujitsu.com>
-References: <alpine.LFD.1.10.0808041213540.2600@localhost.localdomain>
+From: Ryo Tsuruta <ryov-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
+Subject: Re: RFC: I/O bandwidth controller
+Date: Wed, 06 Aug 2008 15:18:24 +0900 (JST)
+Message-ID: <20080806.151824.104049463.ryov__11510.5609329932$1218003730$gmane$org@valinux.co.jp>
+References: <20080804.175126.193692178.ryov@valinux.co.jp>
+	<1217870433.20260.101.camel@nimitz>
+	<1217985189.3154.57.camel@sebastian.kern.oss.ntt.co.jp>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <alpine.LFD.1.10.0808041213540.2600-bi+AKbBUZKY6gyzm1THtWbp2dZbC/Bob@public.gmane.org>
+In-Reply-To: <1217985189.3154.57.camel-xpvPi5bcW5X5OjGIXfuPlhrrLbDL3r4M6qtp775pBPw@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,145 +19,67 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Robert P. J. Day" <rpjday-L09J2beyid0N/H6P543EQg@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, "menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org" <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, "balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org" <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+To: fernando-gVGce1chcLdL9jVzuh4AOg@public.gmane.org
+Cc: xen-devel-GuqFBffKawuULHF6PoxzQEEOCMrvLtNR@public.gmane.org, uchida-LYU95VJlayp8UrSeD/g0lQ@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, dm-devel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, agk-9JcytcrH/bA+uJoB2kUjGw@public.gmane.org, virtualization-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, ngupta-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Mon, 4 Aug 2008 12:16:05 -0400 (EDT)
-"Robert P. J. Day" <rpjday-L09J2beyid0N/H6P543EQg@public.gmane.org> wrote:
+Hi Fernando,
 
+> This RFC ended up being a bit longer than I had originally intended, but
+> hopefully it will serve as the start of a fruitful discussion.
+
+Thanks a lot for posting the RFC.
+
+> *** Goals
+>   1. Cgroups-aware I/O scheduling (being able to define arbitrary
+> groupings of processes and treat each group as a single scheduling
+> entity).
+>   2. Being able to perform I/O bandwidth control independently on each
+> device.
+>   3. I/O bandwidth shaping.
+>   4. Scheduler-independent I/O bandwidth control.
+>   5. Usable with stacking devices (md, dm and other devices of that
+> ilk).
+>   6. I/O tracking (handle buffered and asynchronous I/O properly).
+>
+> The list of goals above is not exhaustive and it is also likely to
+> contain some not-so-nice-to-have features so your feedback would be
+> appreciated.
+
+I'd like to add the following item to the goals.
+
+  7. Selectable from multiple bandwidth control policy (proportion,
+     maximum rate limiting, ...) like I/O scheduler.
+
+> *** How to move on
 > 
-> Move a few CGROUPS-related Kconfig entries so that they appear
-> consecutively when running "make menuconfig."  This shouldn't affect
-> the functionality.
+> As discussed before, it probably makes sense to have both a block layer
+> I/O controller and a elevator-based one, and they could certainly
+> cohabitate. As discussed before, all of them need I/O tracking
+> capabilities so I would like to suggest the plan below to get things
+> started:
 > 
-> Signed-off-by: Robert P. J. Day <rpjday-L09J2beyid0N/H6P543EQg@public.gmane.org>
-> 
-Seems nice look. (Below is an menuconfig image, I modified a bit for -mm)
+>   - Improve the I/O tracking patches (see (6) above) until they are in
+> mergeable shape.
+>   - Fix CFQ and AS to use the new I/O tracking functionality to show its
+> benefits. If the performance impact is acceptable this should suffice to
+> convince the respective maintainer and get the I/O tracking patches
+> merged.
+>   - Implement a block layer resource controller. dm-ioband is a working
+> solution and feature rich but its dependency on the dm infrastructure is
+> likely to find opposition (the dm layer does not handle barriers
+> properly and the maximum size of I/O requests can be limited in some
+> cases). In such a case, we could either try to build a standalone
+> resource controller based on dm-ioband (which would probably hook into
+> generic_make_request) or try to come up with something new.
+>   - If the I/O tracking patches make it into the kernel we could move on
+> and try to get the Cgroup extensions to CFQ and AS mentioned before (see
+> (1), (2), and (3) above for details) merged.
+>   - Delegate the task of controlling the rate at which a task can
+> generate dirty pages to the memory controller.
 
-    lqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqk x
-  x x    --- Control Group support                                        x x
-  x x    [ ]   Example debug cgroup subsystem                             x x
-  x x    [*]   Namespace cgroup subsystem                                 x x
-  x x    [ ]   Device controller for cgroups                              x x
-  x x    [*]   Cpuset support                                             x x
-  x x    [*]   Simple CPU accounting cgroup subsystem                     x x
-  x x    [*]   Resource counters                                          x x
-  x x    [*]     Memory Resource Controller for Control Groups            x x
-  x x    [ ]   Memory resource limit controls for cgroups                 x x
-
-How do you think Paul ?
-
-Off-topic: to Balbir.
-
-How about "Aggregated Memory rlimit controls for cgroup" instead of
-"Memory resource limit controls for cgroups" ?
-
+I agree with your plan.
+We keep bio-cgroup improving and porting to the latest kernel.
 
 Thanks,
--Kame
-> ---
-> 
-> diff --git a/init/Kconfig b/init/Kconfig
-> index 7e6dae1..b51c133 100644
-> --- a/init/Kconfig
-> +++ b/init/Kconfig
-> @@ -317,6 +317,42 @@ config CPUSETS
-> 
->  	  Say N if unsure.
-> 
-> +config CGROUP_CPUACCT
-> +	bool "Simple CPU accounting cgroup subsystem"
-> +	depends on CGROUPS
-> +	help
-> +	  Provides a simple Resource Controller for monitoring the
-> +	  total CPU consumed by the tasks in a cgroup
-> +
-> +config RESOURCE_COUNTERS
-> +	bool "Resource counters"
-> +	help
-> +	  This option enables controller independent resource accounting
-> +          infrastructure that works with cgroups
-> +	depends on CGROUPS
-> +
-> +config CGROUP_MEM_RES_CTLR
-> +	bool "Memory Resource Controller for Control Groups"
-> +	depends on CGROUPS && RESOURCE_COUNTERS
-> +	select MM_OWNER
-> +	help
-> +	  Provides a memory resource controller that manages both page cache and
-> +	  RSS memory.
-> +
-> +	  Note that setting this option increases fixed memory overhead
-> +	  associated with each page of memory in the system by 4/8 bytes
-> +	  and also increases cache misses because struct page on many 64bit
-> +	  systems will not fit into a single cache line anymore.
-> +
-> +	  Only enable when you're ok with these trade offs and really
-> +	  sure you need the memory resource controller.
-> +
-> +	  This config option also selects MM_OWNER config option, which
-> +	  could in turn add some fork/exit overhead.
-> +
-> +config MM_OWNER
-> +	bool
-> +
->  #
->  # Architectures with an unreliable sched_clock() should select this:
->  #
-> @@ -372,42 +408,6 @@ config CGROUP_SCHED
-> 
->  endchoice
-> 
-> -config CGROUP_CPUACCT
-> -	bool "Simple CPU accounting cgroup subsystem"
-> -	depends on CGROUPS
-> -	help
-> -	  Provides a simple Resource Controller for monitoring the
-> -	  total CPU consumed by the tasks in a cgroup
-> -
-> -config RESOURCE_COUNTERS
-> -	bool "Resource counters"
-> -	help
-> -	  This option enables controller independent resource accounting
-> -          infrastructure that works with cgroups
-> -	depends on CGROUPS
-> -
-> -config MM_OWNER
-> -	bool
-> -
-> -config CGROUP_MEM_RES_CTLR
-> -	bool "Memory Resource Controller for Control Groups"
-> -	depends on CGROUPS && RESOURCE_COUNTERS
-> -	select MM_OWNER
-> -	help
-> -	  Provides a memory resource controller that manages both page cache and
-> -	  RSS memory.
-> -
-> -	  Note that setting this option increases fixed memory overhead
-> -	  associated with each page of memory in the system by 4/8 bytes
-> -	  and also increases cache misses because struct page on many 64bit
-> -	  systems will not fit into a single cache line anymore.
-> -
-> -	  Only enable when you're ok with these trade offs and really
-> -	  sure you need the memory resource controller.
-> -
-> -	  This config option also selects MM_OWNER config option, which
-> -	  could in turn add some fork/exit overhead.
-> -
->  config SYSFS_DEPRECATED
->  	bool
-> 
-> 
-> ========================================================================
-> Robert P. J. Day
-> Linux Consulting, Training and Annoying Kernel Pedantry:
->     Have classroom, will lecture.
-> 
-> http://crashcourse.ca                          Waterloo, Ontario, CANADA
-> ========================================================================
-> _______________________________________________
-> Containers mailing list
-> Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-> https://lists.linux-foundation.org/mailman/listinfo/containers
-> 
+Ryo Tsuruta
