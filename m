@@ -1,17 +1,24 @@
-From: kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org
-Subject: Re: Re: [PATCH 4/7] bio-cgroup: Split the cgroup memory subsystem
-	into two parts
-Date: Wed, 6 Aug 2008 22:45:43 +0900 (JST)
-Message-ID: <16255819.1218030343593.kamezawa.hiroyu__39725.0874586918$1218030765$gmane$org@jp.fujitsu.com>
-References: <20080806.204339.76736223.taka@valinux.co.jp>
-	<20080804.175707.104036289.ryov@valinux.co.jp>
-	<20080804.175748.189722512.ryov@valinux.co.jp>
-	<20080806165421.f76edd47.kamezawa.hiroyu@jp.fujitsu.com>
-Mime-Version: 1.0
+From: Joseph Ruscio <jruscio-ccALPSaRSA5Wk0Htik3J/w@public.gmane.org>
+Subject: Re: [RFC][PATCH 2/2] CR: handle a single task with private memory maps
+Date: Wed, 6 Aug 2008 08:41:10 -0700
+Message-ID: <3A99F254-E9B3-484B-85B0-29023ADA04C4@evergrid.com>
+References: <4891E849.1050701@cs.columbia.edu>
+	<20080731175058.GI22403@hawkmoon.kerlabs.com>
+	<48920EA0.1060608@cs.columbia.edu>
+	<20080801102600.GJ22403@hawkmoon.kerlabs.com>
+	<48931A7E.1040302@cs.columbia.edu>
+	<20080801180038.GL22403@hawkmoon.kerlabs.com>
+	<48935B4D.7070302@cs.columbia.edu>
+	<20080804101608.GA4081@localdomain>
+	<4897BCE0.1080508@cs.columbia.edu>
+	<1FA56146-7C30-4C36-982D-A50AA8BC8392@evergrid.com>
+	<20080805091955.GA5027@localdomain>
+	<48987DE7.3060408@cs.columbia.edu>
+Mime-Version: 1.0 (Apple Message framework v926)
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20080806.204339.76736223.taka-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
+In-Reply-To: <48987DE7.3060408-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -21,95 +28,118 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Hirokazu Takahashi <taka-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
-Cc: xen-devel-GuqFBffKawuULHF6PoxzQEEOCMrvLtNR@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, virtualization-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, dm-devel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, agk-9JcytcrH/bA+uJoB2kUjGw@public.gmane.org
+To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Cc: Louis.Rilling-aw0BnHfMbSpBDgjK7y7TUQ@public.gmane.org, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
------ Original Message -----
->> > This patch splits the cgroup memory subsystem into two parts.
->> > One is for tracking pages to find out the owners. The other is
->> > for controlling how much amount of memory should be assigned to
->> > each cgroup.
->> > 
->> > With this patch, you can use the page tracking mechanism even if
->> > the memory subsystem is off.
->> > 
->> > Based on 2.6.27-rc1-mm1
->> > Signed-off-by: Ryo Tsuruta <ryov-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
->> > Signed-off-by: Hirokazu Takahashi <taka-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
->> > 
->> 
->> Plese CC me or Balbir or Pavel (See Maintainer list) when you try this ;)
->> 
->> After this patch, the total structure is
->> 
->>  page <-> page_cgroup <-> bio_cgroup.
->>  (multiple bio_cgroup can be attached to page_cgroup)
+
+On Aug 5, 2008, at 9:20 AM, Oren Laadan wrote:
+
+>
+>
+> Louis Rilling wrote:
+>> On Mon, Aug 04, 2008 at 08:51:37PM -0700, Joseph Ruscio wrote:
+>>> As somewhat of a tangent to this discussion, I've been giving some
+>>> thought to the general strategy we talked about during the summit.  
+>>> The
+>>> checkpointing solution we built at Evergrid sits completely in  
+>>> userspace
+>>> and is soley focused on checkpointing parallel codes (e.g. MPI).  
+>>> That
+>>> approach required us to virtualize a whole slew of resources (e.g.  
+>>> PIDs)
+>>> that will be far better supported in the kernel through this  
+>>> effort. On
+>>> the other hand, there isn't anything inherent to checkpointing the  
+>>> memory
+>>> in a process that requires it to be in a kernel. During a restart,  
+>>> you
+>>> can map and load the memory from the checkpoint file in userspace as
+>>> easily as in the kernel. Since the cost of checkpointing HPC codes  
+>>> is
 >>
->> Does this pointer chain will add
->>   - significant performance regression or
->>   - new race condtions 
->> ?
+>> Hmm, for unusual mappings this may be not so easy to reproduce from
+>> userspace if binaries are statically linked. I agree that with
+>> dynamically linked applications, LD_PRELOAD allows one to record the
+>> actual memory mappings and restore them at restart.
 >
->I don't think it will cause significant performance loss, because
->the link between a page and a page_cgroup has already existed, which
->the memory resource controller prepared. Bio_cgroup uses this as it is,
->and does nothing about this.
+> I second that: unusual mapping can be hard to reproduce.
 >
->And the link between page_cgroup and bio_cgroup isn't protected
->by any additional spin-locks, since the associated bio_cgroup is
->guaranteed to exist as long as the bio_cgroup owns pages.
+> Besides, several important optimization are difficult to do in user- 
+> space,
+> if at all possible:
 >
-Hmm, I think page_cgroup's cost is visible when
-1. a page is changed to be in-use state. (fault or radixt-tree-insert)
-2. a page is changed to be out-of-use state (fault or radixt-tree-removal)
-3. memcg hit its limit or global LRU reclaim runs.
-
-"1" and "2" can be catched as 5% loss of exec throuput. 
-"3" is not measured (because LRU walk itself is heavy.)
-
-What new chances to access page_cgroup you'll add ?
-I'll have to take into account them.
-
->I've just noticed that most of overhead comes from the spin-locks
->when reclaiming the pages inside mem_cgroups and the spin-locks to
->protect the links between pages and page_cgroups.
-Overhead between page <-> page_cgroup lock is cannot be catched by
-lock_stat now.Do you have numbers ?
-But ok, there are too many locks ;(
-
->The latter overhead comes from the policy your team has chosen
->that page_cgroup structures are allocated on demand. I still feel
->this approach doesn't make any sense because linux kernel tries to
->make use of most of the pages as far as it can, so most of them
->have to be assigned its related page_cgroup. It would make us happy
->if page_cgroups are allocated at the booting time.
+> * detecting sharing (unless the application itself gives the OS an  
+> advice -
+> more on this below); In the kernel, this is detected easily using  
+> the inode
+> that represents a shared memory region in SHMFS
 >
-Now, multi-sizer-page-cache is discussed for a long time. If it's our
-direction, on-demand page_cgroup make sense.
-
-
->> For example, adding a simple function.
->> ==
->> int get_page_io_id(struct page *)
->>  - returns a I/O cgroup ID for this page. If ID is not found, -1 is returne
-d.
->>    ID is not guaranteed to be valid value. (ID can be obsolete)
->> ==
->> And just storing cgroup ID to page_cgroup at page allocation.
->> Then, making bio_cgroup independent from page_cgroup and 
->> get ID if avialble and avoid too much pointer walking.
 >
->I don't think there are any diffrences between a poiter and ID.
->I think this ID is just a encoded version of the pointer.
->
-ID can be obsolete, pointer is not. memory cgroup has to take care of
-bio cgroup's race condition ? (About race conditions, it's already complicated
-enough)
+> * detecting (and restoring) COW sharing: process A forks process B,  
+> so at
+> least initially the private memory of both is the same via COW; this  
+> can be
+> optimized to save the memory of only one instead of both, and  
+> restore this
+> COW relationship on restart.
 
-To be honest, I think adding a new (4 or 8 bytes) page struct and record infor
-mation of bio-control is more straightforward approach. Buy as you might
-think, "there is no room"
+Both of these are possible from userspace, but agreeably more  
+complicated. Also agree that statically linked binaries are not really  
+feasible in user-space.
 
-Thanks,
--Kame
+
+> * reducing checkpoint downtime using the COW technique that I  
+> described at
+> the summit: when processes are frozen, mark all dirty pages COW and  
+> keep a
+> reference, and write-back the contents only after the container is  
+> unfrozen.
+
+Our user-space implementation already has a complete concurrent (i.e.  
+COW) checkpointing implementation where the "freeze" period lasts only  
+the length of time it takes to mprotect() the allocated memory  
+regions. So I don't necessarily agree that these optimizations require  
+kernel access.
+
+> Eh... and, yes, live migration :)
+
+  User-space live migration of a "batch" process e.g. one taking place  
+in an MPI job is quite trivial. User-space live migration of something  
+like a database is not that hard assuming you have a cooperative load  
+balancer or proxy on the front end.
+
+I'm not advocating for implementing this in user-space. I am in  
+complete agreement that this effort should result in code that  
+completely checkpoints a Container in the kernel. My question was  
+whether there are situations where it would be advantageous for user- 
+space to have the option of instructing/hinting the kernel to ignore  
+certain resources that it would handle itself. Most of the use-cases  
+I'm thinking of come from the different styles of implementations I've  
+seen in the HPC space, where our implementation (and a lot of others)  
+are focused.
+
+MPI codes require coordination between all the different processes  
+taking part to ensure that the checkpoints are globally consistent.  
+MPI implementations that run on hardware such as Infiniband would most  
+likely want the container checkpointing to ignore all of the pinned  
+memory associated with the RDMA operations so that the coordination  
+and recreation of MPI communicator state could be handled in user- 
+space. When working with inflexible process checkpointers, MPI  
+coordination routines often must completely teardown all communicator  
+state prior to invoking the checkpoint, and then recreate all the  
+communicators after the checkpoint. On very large scale jobs, this is  
+expensive.
+
+As another example HPC applications can create local scratch files of  
+several GB in /tmp. It may not be necessary to migrate these files,  
+but if user-space has no way to mark a particular file, "local files",  
+or files in general as being ignored, then we'll have to copy these  
+during a migration or a checkpoint.
+
+I don't suppose anyone is attending Linuxworld in San Francisco this  
+week? I'd be more then happy to grab a coffee and talk about some of  
+this. I stopped by the OpenVZ booth but none of the devs are around.
+
+thanks,
+Joe
