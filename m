@@ -1,14 +1,17 @@
-From: Peter Zijlstra <a.p.zijlstra-/NLkJaSkS4VmR6Xm/wNWPw@public.gmane.org>
-Subject: Re: [PATCH][RFC] dirty balancing for cgroups
-Date: Thu, 07 Aug 2008 15:36:08 +0200
-Message-ID: <1218116168.8625.38.camel__3035.60677352852$1218116309$gmane$org@twins>
-References: <20080711175213.dc69f068.kamezawa.hiroyu@jp.fujitsu.com>
-	<20080806082046.349BE5A5F@siro.lan>
+From: Fernando Luis =?ISO-8859-1?Q?V=E1zquez?= Cao <fernando-gVGce1chcLdL9jVzuh4AOg@public.gmane.org>
+Subject: Re: RFC: I/O bandwidth controller (was Re: Too many I/O controller
+	patches)
+Date: Thu, 07 Aug 2008 22:59:38 +0900
+Message-ID: <1218117578.11703.81.camel__39289.4932920628$1218117724$gmane$org@sebastian.kern.oss.ntt.co.jp>
+References: <20080804.175126.193692178.ryov@valinux.co.jp>
+	<1217870433.20260.101.camel@nimitz>
+	<1217985189.3154.57.camel@sebastian.kern.oss.ntt.co.jp>
+	<489AA83F.1040306@gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20080806082046.349BE5A5F-Pcsii4f/SVk@public.gmane.org>
+In-Reply-To: <489AA83F.1040306-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,100 +21,121 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: YAMAMOTO Takashi <yamamoto-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
-Cc: linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org
+Cc: xen-devel-GuqFBffKawuULHF6PoxzQEEOCMrvLtNR@public.gmane.org, uchida-LYU95VJlayp8UrSeD/g0lQ@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, dm-devel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, agk-9JcytcrH/bA+uJoB2kUjGw@public.gmane.org, virtualization-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, ngupta-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Wed, 2008-08-06 at 17:20 +0900, YAMAMOTO Takashi wrote:
-> hi,
-> 
-> > On Fri, 11 Jul 2008 17:34:46 +0900 (JST)
-> > yamamoto-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org (YAMAMOTO Takashi) wrote:
-> > 
-> > > hi,
-> > > 
-> > > > > my patch penalizes heavy-writer cgroups as task_dirty_limit does
-> > > > > for heavy-writer tasks.  i don't think that it's necessary to be
-> > > > > tied to the memory subsystem because i merely want to group writers.
-> > > > > 
-> > > > Hmm, maybe what I need is different from this ;)
-> > > > Does not seem to be a help for memory reclaim under memcg.
-> > > 
-> > > to implement what you need, i think that we need to keep track of
-> > > the numbers of dirty-pages in each memory cgroups as a first step.
-> > > do you agree?
-> > > 
-> > yes, I think so, now.
-> > 
-> > may be not difficult but will add extra overhead ;( Sigh..
-> 
-> the following is a patch to add the overhead. :)
-> any comments?
-> 
-> YAMAMOTO Takashi
-
-It _might_ (depends on the uglyness of the result) make sense to try and
-stick the mem_cgroup_*_page_dirty() stuff into the *PageDirty() macros.
-
-
-> @@ -485,7 +502,10 @@ unsigned long mem_cgroup_isolate_pages(unsigned long nr_to_scan,
->  		if (PageUnevictable(page) ||
->  		    (PageActive(page) && !active) ||
->  		    (!PageActive(page) && active)) {
-> -			__mem_cgroup_move_lists(pc, page_lru(page));
-> +			if (try_lock_page_cgroup(page)) {
-> +				__mem_cgroup_move_lists(pc, page_lru(page));
-> +				unlock_page_cgroup(page);
-> +			}
->  			continue;
->  		}
-
-This chunk seems unrelated and lost....
-
-
-> @@ -772,6 +792,38 @@ void mem_cgroup_end_migration(struct page *newpage)
->  		mem_cgroup_uncharge_page(newpage);
->  }
->  
-> +void mem_cgroup_set_page_dirty(struct page *pg)
-> +{
-> +	struct page_cgroup *pc;
-> +
-> +	lock_page_cgroup(pg);
-> +	pc = page_get_page_cgroup(pg);
-> +	if (pc != NULL && (pc->flags & PAGE_CGROUP_FLAG_DIRTY) == 0) {
-> +		struct mem_cgroup *mem = pc->mem_cgroup;
-> +		struct mem_cgroup_stat *stat = &mem->stat;
-> +
-> +		pc->flags |= PAGE_CGROUP_FLAG_DIRTY;
-> +		__mem_cgroup_stat_add(stat, MEM_CGROUP_STAT_DIRTY, 1);
-> +	}
-> +	unlock_page_cgroup(pg);
-> +}
-> +
-> +void mem_cgroup_clear_page_dirty(struct page *pg)
-> +{
-> +	struct page_cgroup *pc;
-> +
-> +	lock_page_cgroup(pg);
-> +	pc = page_get_page_cgroup(pg);
-> +	if (pc != NULL && (pc->flags & PAGE_CGROUP_FLAG_DIRTY) != 0) {
-> +		struct mem_cgroup *mem = pc->mem_cgroup;
-> +		struct mem_cgroup_stat *stat = &mem->stat;
-> +
-> +		pc->flags &= ~PAGE_CGROUP_FLAG_DIRTY;
-> +		__mem_cgroup_stat_add(stat, MEM_CGROUP_STAT_DIRTY, -1);
-> +	}
-> +	unlock_page_cgroup(pg);
-> +}
-> +
->  /*
->   * A call to try to shrink memory usage under specified resource controller.
->   * This is typically used for page reclaiming for shmem for reducing side
-
-
-I presonally dislike the != 0, == 0 comparisons for bitmask operations,
-they seem to make it harder to read somewhow. I prefer to write !(flags
-& mask) and (flags & mask), instead.
-
-I guess taste differs,...
+SGkgQW5kcmVhIQoKT24gVGh1LCAyMDA4LTA4LTA3IGF0IDA5OjQ2ICswMjAwLCBBbmRyZWEgUmln
+aGkgd3JvdGU6IAo+IEZlcm5hbmRvIEx1aXMgVsOhenF1ZXogQ2FvIHdyb3RlOgo+ID4gVGhpcyBS
+RkMgZW5kZWQgdXAgYmVpbmcgYSBiaXQgbG9uZ2VyIHRoYW4gSSBoYWQgb3JpZ2luYWxseSBpbnRl
+bmRlZCwgYnV0Cj4gPiBob3BlZnVsbHkgaXQgd2lsbCBzZXJ2ZSBhcyB0aGUgc3RhcnQgb2YgYSBm
+cnVpdGZ1bCBkaXNjdXNzaW9uLgo+IAo+IFRoYW5rcyBmb3IgcG9zdGluZyB0aGlzIGRldGFpbGVk
+IFJGQyEgQSBmZXcgY29tbWVudHMgYmVsb3cuCj4gCj4gPiBBcyB5b3UgcG9pbnRlZCBvdXQsIGl0
+IHNlZW1zIHRoYXQgdGhlcmUgaXMgbm90IG11Y2ggY29uc2Vuc3VzIGJ1aWxkaW5nCj4gPiBnb2lu
+ZyBvbiwgYnV0IHRoYXQgZG9lcyBub3QgbWVhbiB0aGVyZSBpcyBhIGxhY2sgb2YgaW50ZXJlc3Qu
+IFRvIGdldCB0aGUKPiA+IGJhbGwgcm9sbGluZyBpdCBpcyBwcm9iYWJseSBhIGdvb2QgaWRlYSB0
+byBjbGFyaWZ5IHRoZSBzdGF0ZSBvZiB0aGluZ3MKPiA+IGFuZCB0cnkgdG8gZXN0YWJsaXNoIHdo
+YXQgd2UgYXJlIHRyeWluZyB0byBhY2NvbXBsaXNoLgo+ID4gCj4gPiAqKiogU3RhdGUgb2YgdGhp
+bmdzIGluIHRoZSBtYWluc3RyZWFtIGtlcm5lbDxCUj4KPiA+IFRoZSBrZXJuZWwgaGFzIGhhZCBz
+b21ld2hhdCBhZGF2YW5jZWQgSS9PIGNvbnRyb2wgY2FwYWJpbGl0aWVzIGZvciBxdWl0ZQo+ID4g
+c29tZSB0aW1lIG5vdzogQ0ZRLiBCdXQgdGhlIGN1cnJlbnQgQ0ZRIGhhcyBzb21lIHByb2JsZW1z
+Ogo+ID4gICAtIEkvTyBwcmlvcml0eSBjYW4gYmUgc2V0IGJ5IFBJRCwgUEdSUCwgb3IgVUlELCBi
+dXQuLi4KPiA+ICAgLSAuLi5hbGwgdGhlIHByb2Nlc3NlcyB0aGF0IGZhbGwgd2l0aGluIHRoZSBz
+YW1lIGNsYXNzL3ByaW9yaXR5IGFyZQo+ID4gc2NoZWR1bGVkIHRvZ2V0aGVyIGFuZCBhcmJpdHJh
+cnkgZ3JvdXBpbmcgYXJlIG5vdCBwb3NzaWJsZS4KPiA+ICAgLSBCdWZmZXJlZCBJL08gaXMgbm90
+IGhhbmRsZWQgcHJvcGVybHkuCj4gPiAgIC0gQ0ZRJ3MgSU8gcHJpb3JpdHkgaXMgYW4gYXR0cmli
+dXRlIG9mIGEgcHJvY2VzcyB0aGF0IGFmZmVjdHMgYWxsCj4gPiBkZXZpY2VzIGl0IHNlbmRzIEkv
+TyByZXF1ZXN0cyB0by4gSW4gb3RoZXIgd29yZHMsIHdpdGggdGhlIGN1cnJlbnQKPiA+IGltcGxl
+bWVudGF0aW9uIGl0IGlzIG5vdCBwb3NzaWJsZSB0byBhc3NpZ24gcGVyLWRldmljZSBJTyBwcmlv
+cml0aWVzIHRvCj4gPiBhIHRhc2suCj4gPiAKPiA+ICoqKiBHb2Fscwo+ID4gICAxLiBDZ3JvdXBz
+LWF3YXJlIEkvTyBzY2hlZHVsaW5nIChiZWluZyBhYmxlIHRvIGRlZmluZSBhcmJpdHJhcnkKPiA+
+IGdyb3VwaW5ncyBvZiBwcm9jZXNzZXMgYW5kIHRyZWF0IGVhY2ggZ3JvdXAgYXMgYSBzaW5nbGUg
+c2NoZWR1bGluZwo+ID4gZW50aXR5KS4KPiA+ICAgMi4gQmVpbmcgYWJsZSB0byBwZXJmb3JtIEkv
+TyBiYW5kd2lkdGggY29udHJvbCBpbmRlcGVuZGVudGx5IG9uIGVhY2gKPiA+IGRldmljZS4KPiA+
+ICAgMy4gSS9PIGJhbmR3aWR0aCBzaGFwaW5nLgo+ID4gICA0LiBTY2hlZHVsZXItaW5kZXBlbmRl
+bnQgSS9PIGJhbmR3aWR0aCBjb250cm9sLgo+ID4gICA1LiBVc2FibGUgd2l0aCBzdGFja2luZyBk
+ZXZpY2VzIChtZCwgZG0gYW5kIG90aGVyIGRldmljZXMgb2YgdGhhdAo+ID4gaWxrKS4KPiA+ICAg
+Ni4gSS9PIHRyYWNraW5nIChoYW5kbGUgYnVmZmVyZWQgYW5kIGFzeW5jaHJvbm91cyBJL08gcHJv
+cGVybHkpLgo+IAo+IFRoZSBzYW1lIGFib3ZlIGFsc28gZm9yIElPIG9wZXJhdGlvbnMvc2VjIChi
+YW5kd2lkdGggaW50ZW5kZWQgbm90IG9ubHkKPiBpbiB0ZXJtcyBvZiBieXRlcy9zZWMpLCBwbHVz
+Ogo+IAo+IDcuIE9wdGltYWwgYmFuZHdpZHRoIHVzYWdlOiBhbGxvdyB0byBleGNlZWQgdGhlIElP
+IGxpbWl0cyB0byB0YWtlCj4gYWR2YW50YWdlIG9mIGZyZWUvdW51c2VkIElPIHJlc291cmNlcyAo
+aS5lLiBhbGxvdyAiYnVyc3RzIiB3aGVuIHRoZQo+IHdob2xlIHBoeXNpY2FsIGJhbmR3aWR0aCBm
+b3IgYSBibG9jayBkZXZpY2UgaXMgbm90IGZ1bGx5IHVzZWQgYW5kIHRoZW4KPiAidGhyb3R0bGUi
+IGFnYWluIHdoZW4gSU8gZnJvbSB1bmxpbWl0ZWQgY2dyb3VwcyBjb21lcyBpbnRvIHBsYWNlKQo+
+IAo+IDguICJmYWlyIHRocm90dGxpbmciOiBhdm9pZCB0byB0aHJvdHRsZSBhbHdheXMgdGhlIHNh
+bWUgdGFzayB3aXRoaW4gYQo+IGNncm91cCwgYnV0IHRyeSB0byBkaXN0cmlidXRlIHRoZSB0aHJv
+dHRsaW5nIGFtb25nIGFsbCB0aGUgdGFza3MKPiBiZWxvbmdpbmcgdG8gdGhlIHRocm90dGxlIGNn
+cm91cAoKVGhhbmsgeW91IGZvciB0aGUgaWRlYXMhCgpCeSB0aGUgd2F5LCBwb2ludCAiMy4iIGFi
+b3ZlIChJL08gYmFuZHdpZHRoIHNoYXBpbmcpIHJlZmVycyB0byBJTwpzY2hlZHVsaW5nIGFsZ29y
+aXRobXMgaW4gZ2VuZXJhbC4gV2hlbiBJIHdyb3RlIHRoZSBSRkMgSSB0aG91Z2h0IHRoYXQKb25j
+ZSB3ZSBoYXZlIHRoZSBJTyB0cmFja2luZyBhbmQgYWNjb3VudGluZyBtZWNoYW5pc21zIGluIHBs
+YWNlIGNob29zaW5nCmFuZCBpbXBsZW1lbnRpbmcgYW4gYWxnb3JpdGhtIChmYWlyIHRocm90dGxp
+bmcsIHByb3BvcnRpb25hbCBiYW5kd2lkdGgKc2NoZWR1bGluZywgZXRjKSB3b3VsZCBiZSBlYXN5
+IGluIGNvbXBhcmlzb24sIGFuZCB0aGF0IGlzIHRoZSByZWFzb24gYQpsaXN0IHdhcyBub3QgaW5j
+bHVkZWQuCgpPbmNlIEkgZ2V0IG1vcmUgZmVlZGJhY2sgZnJvbSBhbGwgb2YgeW91IEkgd2lsbCBy
+ZXNlbmQgYSBtb3JlIGRldGFpbGVkClJGQyB0aGF0IHdpbGwgaW5jbHVkZSB5b3VyIHN1Z2dlc3Rp
+b25zLgoKPiA+IDEuICYgMi4tIENncm91cHMtYXdhcmUgSS9PIHNjaGVkdWxpbmcgKGJlaW5nIGFi
+bGUgdG8gZGVmaW5lIGFyYml0cmFyeQo+ID4gZ3JvdXBpbmdzIG9mIHByb2Nlc3NlcyBhbmQgdHJl
+YXQgZWFjaCBncm91cCBhcyBhIHNpbmdsZSBzY2hlZHVsaW5nCj4gPiBpZGVudGl0eSkKPiA+IAo+
+ID4gV2Ugb2J2aW91c2x5IG5lZWQgdGhpcyBiZWNhdXNlIG91ciBmaW5hbCBnb2FsIGlzIHRvIGJl
+IGFibGUgdG8gY29udHJvbAo+ID4gdGhlIElPIGdlbmVyYXRlZCBieSBhIExpbnV4IGNvbnRhaW5l
+ci4gVGhlIGdvb2QgbmV3cyBpcyB0aGF0IHdlIGFscmVhZHkKPiA+IGhhdmUgdGhlIGNncm91cHMg
+aW5mcmFzdHJ1Y3R1cmUgc28sIHJlZ2FyZGluZyB0aGlzIHByb2JsZW0sIHdlIHdvdWxkCj4gPiBq
+dXN0IGhhdmUgdG8gdHJhbnNmb3JtIG91ciBJL08gYmFuZHdpZHRoIGNvbnRyb2xsZXIgaW50byBh
+IGNncm91cAo+ID4gc3Vic3lzdGVtLgo+ID4gCj4gPiBUaGlzIHNlZW1zIHRvIGJlIHRoZSBlYXNp
+ZXN0IHBhcnQsIGJ1dCB0aGUgY3VycmVudCBjZ3JvdXBzCj4gPiBpbmZyYXN0cnVjdHVyZSBoYXMg
+c29tZSBsaW1pdGF0aW9ucyB3aGVuIGl0IGNvbWVzIHRvIGRlYWxpbmcgd2l0aCBibG9jawo+ID4g
+ZGV2aWNlczogaW1wb3NzaWJpbGl0eSBvZiBjcmVhdGluZy9yZW1vdmluZyBjZXJ0YWluIGNvbnRy
+b2wgc3RydWN0dXJlcwo+ID4gZHluYW1pY2FsbHkgYW5kIGhhcmRjb2Rpbmcgb2Ygc3Vic3lzdGVt
+cyAoaS5lLiByZXNvdXJjZSBjb250cm9sbGVycykuCj4gPiBUaGlzIG1ha2VzIGl0IGRpZmZpY3Vs
+dCB0byBoYW5kbGUgYmxvY2sgZGV2aWNlcyB0aGF0IGNhbiBiZSBob3RwbHVnZ2VkCj4gPiBhbmQg
+Z28gYXdheSBhdCBhbnkgdGltZSAodGhpcyBhcHBsaWVzIG5vdCBvbmx5IHRvIHVzYiBzdG9yYWdl
+IGJ1dCBhbHNvCj4gPiB0byBzb21lIFNBVEEgYW5kIFNDU0kgZGV2aWNlcykuIFRvIGNvcGUgd2l0
+aCB0aGlzIHNpdHVhdGlvbiBwcm9wZXJseSB3ZQo+ID4gd291bGQgbmVlZCBob3RwbHVnIHN1cHBv
+cnQgaW4gY2dyb3VwcywgYnV0LCBhcyBzdWdnZXN0ZWQgYmVmb3JlIGFuZAo+ID4gZGlzY3Vzc2Vk
+IGluIHRoZSBwYXN0IChzZWUgKDApIGJlbG93KSwgdGhlcmUgYXJlIHNvbWUgbGltaXRhdGlvbnMu
+Cj4gPiAKPiA+IEV2ZW4gaW4gdGhlIG5vbi1ob3RwbHVnIGNhc2UgaXQgd291bGQgYmUgbmljZSBp
+ZiB3ZSBjb3VsZCB0cmVhdCBlYWNoCj4gPiBibG9jayBJL08gZGV2aWNlIGFzIGFuIGluZGVwZW5k
+ZW50IHJlc291cmNlLCB3aGljaCBtZWFucyB3ZSBjb3VsZCBkbwo+ID4gdGhpbmdzIGxpa2UgYWxs
+b2NhdGluZyBJL08gYmFuZHdpZHRoIG9uIGEgcGVyLWRldmljZSBiYXNpcy4gQXMgbG9uZyBhcwo+
+ID4gcGVyZm9ybWFuY2UgaXMgbm90IGNvbXByb21pc2VkIHRvbyBtdWNoLCBhZGRpbmcgc29tZSBr
+aW5kIG9mIGJhc2ljCj4gPiBob3RwbHVnIHN1cHBvcnQgdG8gY2dyb3VwcyBpcyBwcm9iYWJseSB3
+b3J0aCBpdC4KPiA+Cj4gPiAoMCkgaHR0cDovL2xrbWwub3JnL2xrbWwvMjAwOC81LzIxLzEyCj4g
+Cj4gV2hhdCBhYm91dCB1c2luZyBtYWpvcixtaW5vciBudW1iZXJzIHRvIGlkZW50aWZ5IGVhY2gg
+ZGV2aWNlIGFuZCBhY2NvdW50Cj4gSU8gc3RhdGlzdGljcz8gSWYgYSBkZXZpY2UgaXMgdW5wbHVn
+Z2VkIHdlIGNvdWxkIHJlc2V0IElPIHN0YXRpc3RpY3MKPiBhbmQvb3IgcmVtb3ZlIElPIGxpbWl0
+YXRpb25zIGZvciB0aGF0IGRldmljZSBmcm9tIHVzZXJzcGFjZSAoaS5lLiBieSBhCj4gZGVhbW9u
+KSwgYnV0IHBsdWdnaW4vdW5wbHVnZ2luZyB0aGUgZGV2aWNlIHdvdWxkIG5vdCBiZSBibG9ja2Vk
+L2FmZmVjdGVkCj4gaW4gYW55IGNhc2UuIE9yIGFtIEkgb3ZlcnNpbXBsaWZ5aW5nIHRoZSBwcm9i
+bGVtPwpJZiBhIHJlc291cmNlIHdlIHdhbnQgdG8gY29udHJvbCAoYSBibG9jayBkZXZpY2UgaW4g
+dGhpcyBjYXNlKSBpcwpob3QtcGx1Z2dlZC91bnBsdWdnZWQgdGhlIGNvcnJlc3BvbmRpbmcgY2dy
+b3VwLXJlbGF0ZWQgc3RydWN0dXJlcyBpbnNpZGUKdGhlIGtlcm5lbCBuZWVkIHRvIGJlIGFsbG9j
+YXRlZC9mcmVlZCBkeW5hbWljYWxseSwgcmVzcGVjdGl2ZWx5LiBUaGUKcHJvYmxlbSBpcyB0aGF0
+IHRoaXMgaXMgbm90IGFsd2F5cyBwb3NzaWJsZS4gRm9yIGV4YW1wbGUsIHdpdGggdGhlCmN1cnJl
+bnQgaW1wbGVtZW50YXRpb24gb2YgY2dyb3VwcyBpdCBpcyBub3QgcG9zc2libGUgdG8gdHJlYXQg
+ZWFjaCBibG9jawpkZXZpY2UgYXMgYSBkaWZmZXJlbnQgY2dyb3VwIHN1YnN5dGVtL3Jlc291cmNl
+IGNvbnRyb2xsZWQsIGJlY2F1c2UKc3Vic3lzdGVtcyBhcmUgY3JlYXRlZCBhdCBjb21waWxlIHRp
+bWUuCgo+ID4gMy4gJiA0LiAmIDUuIC0gSS9PIGJhbmR3aWR0aCBzaGFwaW5nICYgR2VuZXJhbCBk
+ZXNpZ24gYXNwZWN0cwo+ID4gCj4gPiBUaGUgaW1wbGVtZW50YXRpb24gb2YgYW4gSS9PIHNjaGVk
+dWxpbmcgYWxnb3JpdGhtIGlzIHRvIGEgY2VydGFpbiBleHRlbnQKPiA+IGluZmx1ZW5jZWQgYnkg
+d2hhdCB3ZSBhcmUgdHJ5aW5nIHRvIGFjaGlldmUgaW4gdGVybXMgb2YgSS9PIGJhbmR3aWR0aAo+
+ID4gc2hhcGluZywgYnV0LCBhcyBkaXNjdXNzZWQgYmVsb3csIHRoZSByZXF1aXJlZCBhY2N1cmFj
+eSBjYW4gZGV0ZXJtaW5lCj4gPiB0aGUgbGF5ZXIgd2hlcmUgdGhlIEkvTyBjb250cm9sbGVyIGhh
+cyB0byByZXNpZGUuIE9mZiB0aGUgdG9wIG9mIG15Cj4gPiBoZWFkLCB0aGVyZSBhcmUgdGhyZWUg
+YmFzaWMgb3BlcmF0aW9ucyB3ZSBtYXkgd2FudCBwZXJmb3JtOgo+ID4gICAtIEkvTyBuaWNlIHBy
+aW9yaXRpemF0aW9uOiBpb25pY2UtbGlrZSBhcHByb2FjaC4KPiA+ICAgLSBQcm9wb3J0aW9uYWwg
+YmFuZHdpZHRoIHNjaGVkdWxpbmc6IGVhY2ggcHJvY2Vzcy9ncm91cCBvZiBwcm9jZXNzZXMKPiA+
+IGhhcyBhIHdlaWdodCB0aGF0IGRldGVybWluZXMgdGhlIHNoYXJlIG9mIGJhbmR3aWR0aCB0aGV5
+IHJlY2VpdmUuCj4gPiAgIC0gSS9PIGxpbWl0aW5nOiBzZXQgYW4gdXBwZXIgbGltaXQgdG8gdGhl
+IGJhbmR3aWR0aCBhIGdyb3VwIG9mIHRhc2tzCj4gPiBjYW4gdXNlLgo+IAo+IFVzZSBhIGRlYWRs
+aW5lLWJhc2VkIElPIHNjaGVkdWxpbmcgY291bGQgYmUgYW4gaW50ZXJlc3RpbmcgcGF0aCB0byBi
+ZQo+IGV4cGxvcmVkIGFzIHdlbGwsIElNSE8sIHRvIHRyeSB0byBndWFyYW50ZWUgcGVyLWNncm91
+cCBtaW5pbXVtIGJhbmR3aWR0aAo+IHJlcXVpcmVtZW50cy4KUGxlYXNlIG5vdGUgdGhhdCB0aGUg
+b25seSB0aGluZyB3ZSBjYW4gZG8gaXMgdG8gZ3VhcmFudGVlIG1pbmltdW0KYmFuZHdpZHRoIHJl
+cXVpcmVtZW50IHdoZW4gdGhlcmUgaXMgY29udGVudGlvbiBmb3IgYW4gSU8gcmVzb3VyY2UsIHdo
+aWNoCmlzIHByZWNpc2VseSB3aGF0IGEgcHJvcG9ydGlvbmFsIGJhbmR3aWR0aCBzY2hlZHVsZXIg
+ZG9lcy4gQW4gSSBtaXNzaW5nCnNvbWV0aGluZz8KCl9fX19fX19fX19fX19fX19fX19fX19fX19f
+X19fX19fX19fX19fX19fX19fX19fCkNvbnRhaW5lcnMgbWFpbGluZyBsaXN0CkNvbnRhaW5lcnNA
+bGlzdHMubGludXgtZm91bmRhdGlvbi5vcmcKaHR0cHM6Ly9saXN0cy5saW51eC1mb3VuZGF0aW9u
+Lm9yZy9tYWlsbWFuL2xpc3RpbmZvL2NvbnRhaW5lcnM=
