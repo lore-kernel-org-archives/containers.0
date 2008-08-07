@@ -1,17 +1,14 @@
-From: Fernando Luis =?ISO-8859-1?Q?V=E1zquez?= Cao <fernando-gVGce1chcLdL9jVzuh4AOg@public.gmane.org>
-Subject: Re: RFC: I/O bandwidth controller (was Re: Too many I/O controller
-	patches)
-Date: Thu, 07 Aug 2008 22:17:08 +0900
-Message-ID: <1218115028.8460.353.camel__39848.1175107465$1218115174$gmane$org@sebastian.kern.oss.ntt.co.jp>
-References: <20080804.175126.193692178.ryov@valinux.co.jp>
-	<1217870433.20260.101.camel@nimitz>
-	<1217985189.3154.57.camel@sebastian.kern.oss.ntt.co.jp>
-	<2846be6b0808061237o6667c609l21bdb5a765469e95@mail.gmail.com>
+From: Peter Zijlstra <a.p.zijlstra-/NLkJaSkS4VmR6Xm/wNWPw@public.gmane.org>
+Subject: Re: [PATCH][RFC] dirty balancing for cgroups
+Date: Thu, 07 Aug 2008 15:36:08 +0200
+Message-ID: <1218116168.8625.38.camel__3035.60677352852$1218116309$gmane$org@twins>
+References: <20080711175213.dc69f068.kamezawa.hiroyu@jp.fujitsu.com>
+	<20080806082046.349BE5A5F@siro.lan>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: base64
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <2846be6b0808061237o6667c609l21bdb5a765469e95-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
+In-Reply-To: <20080806082046.349BE5A5F-Pcsii4f/SVk@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -21,152 +18,100 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Naveen Gupta <ngupta-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
-Cc: xen-devel-GuqFBffKawuULHF6PoxzQEEOCMrvLtNR@public.gmane.org, uchida-LYU95VJlayp8UrSeD/g0lQ@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, dm-devel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, agk-9JcytcrH/bA+uJoB2kUjGw@public.gmane.org, virtualization-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Andrea Righi <righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+To: YAMAMOTO Takashi <yamamoto-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
+Cc: linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-SGkgTmF2ZWVuLAoKT24gV2VkLCAyMDA4LTA4LTA2IGF0IDEyOjM3IC0wNzAwLCBOYXZlZW4gR3Vw
-dGEgd3JvdGU6IAo+ID4gMy4gJiA0LiAmIDUuIC0gSS9PIGJhbmR3aWR0aCBzaGFwaW5nICYgR2Vu
-ZXJhbCBkZXNpZ24gYXNwZWN0cwo+ID4KPiA+IFRoZSBpbXBsZW1lbnRhdGlvbiBvZiBhbiBJL08g
-c2NoZWR1bGluZyBhbGdvcml0aG0gaXMgdG8gYSBjZXJ0YWluIGV4dGVudAo+ID4gaW5mbHVlbmNl
-ZCBieSB3aGF0IHdlIGFyZSB0cnlpbmcgdG8gYWNoaWV2ZSBpbiB0ZXJtcyBvZiBJL08gYmFuZHdp
-ZHRoCj4gPiBzaGFwaW5nLCBidXQsIGFzIGRpc2N1c3NlZCBiZWxvdywgdGhlIHJlcXVpcmVkIGFj
-Y3VyYWN5IGNhbiBkZXRlcm1pbmUKPiA+IHRoZSBsYXllciB3aGVyZSB0aGUgSS9PIGNvbnRyb2xs
-ZXIgaGFzIHRvIHJlc2lkZS4gT2ZmIHRoZSB0b3Agb2YgbXkKPiA+IGhlYWQsIHRoZXJlIGFyZSB0
-aHJlZSBiYXNpYyBvcGVyYXRpb25zIHdlIG1heSB3YW50IHBlcmZvcm06Cj4gPiAgLSBJL08gbmlj
-ZSBwcmlvcml0aXphdGlvbjogaW9uaWNlLWxpa2UgYXBwcm9hY2guCj4gPiAgLSBQcm9wb3J0aW9u
-YWwgYmFuZHdpZHRoIHNjaGVkdWxpbmc6IGVhY2ggcHJvY2Vzcy9ncm91cCBvZiBwcm9jZXNzZXMK
-PiA+IGhhcyBhIHdlaWdodCB0aGF0IGRldGVybWluZXMgdGhlIHNoYXJlIG9mIGJhbmR3aWR0aCB0
-aGV5IHJlY2VpdmUuCj4gPiAgLSBJL08gbGltaXRpbmc6IHNldCBhbiB1cHBlciBsaW1pdCB0byB0
-aGUgYmFuZHdpZHRoIGEgZ3JvdXAgb2YgdGFza3MKPiA+IGNhbiB1c2UuCj4gCj4gSS9PIGxpbWl0
-aW5nIGNhbiBiZSBhIHNwZWNpYWwgY2FzZSBvZiBwcm9wb3J0aW9uYWwgYmFuZHdpZHRoCj4gc2No
-ZWR1bGluZy4gQSBwcm9jZXNzL3Byb2Nlc3MgZ3JvdXAgY2FuIHVzZSB1c2UgaXQncyBzaGFyZSBv
-Zgo+IGJhbmR3aWR0aCBhbmQgaWYgdGhlcmUgaXMgc3BhcmUgYmFuZHdpZHRoIGl0IGJlIGFsbG93
-ZWQgdG8gdXNlIGl0LiBBbmQKPiBpZiB3ZSB3YW50IHRvIGFic29sdXRlbHkgcmVzdHJpY3QgaXQg
-d2UgYWRkIGFub3RoZXIgZmxhZyB3aGljaAo+IHNwZWNpZmllcyB0aGF0IHRoZSBzcGVjaWZpZWQg
-cHJvcG9ydGlvbiBpcyBleGFjdCBhbmQgaGFzIGFuIHVwcGVyCj4gYm91bmQuCj4gCj4gTGV0J3Mg
-c2F5IHRoZSBpZGVhbCBiL3cgZm9yIGEgZGV2aWNlIGlzIDEwME1CL3MKPiAKPiBBbmQgcHJvY2Vz
-cyAxIGlzIGFzc2lnbmVkIGIvdyBvZiAyMCUuIFdoZW4gd2Ugc2F5IHRoYXQgdGhlIHByb3BvcnRp
-b24KPiBpcyBzdHJpY3QsIHRoZSBiL3cgZm9yIHByb2Nlc3MgMSB3aWxsIGJlIDIwJSBvZiB0aGUg
-bWF4IGIvdyAod2hpY2ggbWF5Cj4gYmUgbGVzcyB0aGFuIDEwME1CL3MpIHN1YmplY3QgdG8gYSBt
-YXggb2YgMjBNQi9zLgpJIGVzc2VudGlhbGx5IGFncmVlIHdpdGggeW91LiBUaGUgbmljZSB0aGlu
-ZyBhYm91dCBwcm9wb3J0aW9uYWwKYmFuZHdpZHRoIHNjaGVkdWxpbmcgaXMgdGhhdCB3ZSBnZXQg
-YmFuZHdpZHRoIGd1YXJhbnRlZXMgd2hlbiB0aGVyZSBpcwpjb250ZW50aW9uIGZvciB0aGUgYmxv
-Y2sgZGV2aWNlLCBidXQgc3RpbGwgZ2V0IHRoZSBiZW5lZml0cyBvZgpzdGF0aXN0aWNhbCBtdWx0
-aXBsZXhpbmcgaW4gdGhlIG5vbi1jb250ZW5kZWQgY2FzZS4gV2l0aCBzdHJpY3QgSU8KbGltaXRp
-bmcgd2UgcmlzayB1bmRlcnVzaW5nIHRoZSBibG9jayBkZXZpY2VzLgoKPiA+IElmIHdlIGFyZSBw
-dXJzdWluZyBhIEkvTyBwcmlvcml0aXphdGlvbiBtb2RlbCDDoCBsYSBDRlEgdGhlIHRlbXB0YXRp
-b24gaXMKPiA+IHRvIGltcGxlbWVudCBpdCBhdCB0aGUgZWxldmF0b3IgbGF5ZXIgb3IgZXh0ZW5k
-IGFueSBvZiB0aGUgZXhpc3RpbmcgSS9PCj4gPiBzY2hlZHVsZXJzLgo+ID4KPiA+IFRoZXJlIGhh
-dmUgYmVlbiBzZXZlcmFsIHByb3Bvc2FscyB0aGF0IGV4dGVuZCBlaXRoZXIgdGhlIENGUSBzY2hl
-ZHVsZXIKPiA+IChzZWUgKDEpLCAoMikgYmVsb3cpIG9yIHRoZSBBUyBzY2hlZHVsZXIgKHNlZSAo
-MykgYmVsb3cpLiBUaGUgcHJvYmxlbQo+ID4gd2l0aCB0aGVzZSBjb250cm9sbGVycyBpcyB0aGF0
-IHRoZXkgYXJlIHNjaGVkdWxlciBkZXBlbmRlbnQsIHdoaWNoIG1lYW5zCj4gPiB0aGF0IHRoZXkg
-YmVjb21lIHVudXNhYmxlIHdoZW4gd2UgY2hhbmdlIHRoZSBzY2hlZHVsZXIgb3Igd2hlbiB3ZSB3
-YW50Cj4gPiB0byBjb250cm9sIHN0YWNraW5nIGRldmljZXMgd2hpY2ggZGVmaW5lIHRoZWlyIG93
-biBtYWtlX3JlcXVlc3RfZm4KPiA+IGZ1bmN0aW9uIChtZCBhbmQgZG0gY29tZSB0byBtaW5kKS4g
-SXQgY291bGQgYmUgYXJndWVkIHRoYXQgdGhlIHBoeXNpY2FsCj4gPiBkZXZpY2VzIGNvbnRyb2xs
-ZWQgYnkgYSBkbSBvciBtZCBkcml2ZXIgYXJlIGxpa2VseSB0byBiZSBmZWQgYnkKPiA+IHRyYWRp
-dGlvbmFsIEkvTyBzY2hlZHVsZXJzIHN1Y2ggYXMgQ0ZRLCBidXQgdGhlc2UgSS9PIHNjaGVkdWxl
-cnMgd291bGQKPiA+IGJlIHJ1bm5pbmcgaW5kZXBlbmRlbnRseSBmcm9tIGVhY2ggb3RoZXIsIGVh
-Y2ggb25lIGNvbnRyb2xsaW5nIGl0cyBvd24KPiA+IGRldmljZSBpZ25vcmluZyB0aGUgZmFjdCB0
-aGF0IHRoZXkgcGFydCBvZiBhIHN0YWNraW5nIGRldmljZS4gVGhpcyBsYWNrCj4gPiBvZiBpbmZv
-cm1hdGlvbiBhdCB0aGUgZWxldmF0b3IgbGF5ZXIgbWFrZXMgaXQgcHJldHR5IGRpZmZpY3VsdCB0
-byBvYnRhaW4KPiA+IGFjY3VyYXRlIHJlc3VsdHMgd2hlbiB1c2luZyBzdGFja2luZyBkZXZpY2Vz
-LiBJdCBzZWVtcyB0aGF0IHVubGVzcyB3ZQo+ID4gY2FuIG1ha2UgdGhlIGVsZXZhdG9yIGxheWVy
-IGF3YXJlIG9mIHRoZSB0b3BvbG9neSBvZiBzdGFja2luZyBkZXZpY2VzCj4gPiAocG9zc2libHkg
-YnkgZXh0ZW5kaW5nIHRoZSBlbGV2YXRvciBBUEk/KSBldmVsYXRvci1iYXNlZCBhcHByb2FjaGVz
-IGRvCj4gPiBub3QgY29uc3RpdHV0ZSBhIGdlbmVyaWMgc29sdXRpb24uIEhlcmUgb253YXJkcywg
-Zm9yIGRpc2N1c3Npb24KPiA+IHB1cnBvc2VzLCBJIHdpbGwgcmVmZXIgdG8gdGhpcyB0eXBlIG9m
-IEkvTyBiYW5kd2lkdGggY29udHJvbGxlcnMgYXMKPiA+IGVsZXZhdG9yLWJhc2VkIEkvTyBjb250
-cm9sbGVycy4KPiAKPiBJdCBjYW4gYmUgYXJndWVkIHRoYXQgYW55IHNjaGVkdWxpbmcgZGVjaXNp
-b24gd3J0IHRvIGkvbyBiZWxvbmdzIHRvCj4gZWxldmF0b3JzLiBUaWxsIG5vdyB0aGV5IGhhdmUg
-YmVlbiB1c2VkIHRvIGltcHJvdmUgcGVyZm9ybWFuY2UuIEJ1dAo+IHdpdGggbmV3IHJlcXVpcmVt
-ZW50cyB0byBpc29sYXRlIGkvbyBiYXNlZCBvbiBwcm9jZXNzIG9yIGNncm91cCwgd2UKPiBuZWVk
-IHRvIGNoYW5nZSB0aGUgZWxldmF0b3JzLgpJIGhhdmUgdGhlIGltcHJlc3Npb24gdGhlcmUgaXMg
-YSB0ZW5kZW5jeSB0byBjb25mbGF0ZSB0d28gZGlmZmVyZW50Cmlzc3VlcyB3aGVuIGRpc2N1c3Np
-bmcgSS9PIHNjaGVkdWxlcnMgYW5kIHJlc291cmNlIGNvbnRyb2xsZXJzLCBzbyBsZXQKbWUgZWxh
-Ym9yYXRlIG9uIHRoaXMgcG9pbnQuCgpPbiB0aGUgb25lIGhhbmQsIHdlIGhhdmUgdGhlIHByb2Js
-ZW0gb2YgZmVlZGluZyBwaHlzaWNhbCBkZXZpY2VzIHdpdGggSU8KcmVxdWVzdHMgaW4gc3VjaCBh
-IHdheSB0aGF0IHdlIHNxdWVlemUgdGhlIG1heGltdW0gcGVyZm9ybWFuY2Ugb3V0IG9mCnRoZW0u
-IE9mIGNvdXJzZSBpbiBzb21lIGNhc2VzIHdlIG1heSB3YW50IHRvIHByaW9yaXRpemUgcmVzcG9u
-c2l2ZW5lc3MKb3ZlciB0aHJvdWdocHV0LiBJbiBlaXRoZXIgY2FzZSB0aGUga2VybmVsIGhhcyB0
-byBwZXJmb3JtIHRoZSBzYW1lIGJhc2ljCm9wZXJhdGlvbnM6IG1lcmdpbmcgYW5kIGRpc3BhdGNo
-aW5nIElPIHJlcXVlc3RzLiBUaGVyZSBpcyBubyBkaXNjdXNzaW9uCnRoaXMgaXMgdGhlIGVsZXZh
-dG9yJ3Mgam9iIGFuZCB0aGUgZWxldmF0b3Igc2hvdWxkIHRha2UgaW50byBhY2NvdW50IHRoZQpw
-aHlzaWNhbCBjaGFyYWN0ZXJpc3RpY3Mgb2YgdGhlIGRldmljZS4KCk9uIHRoZSBvdGhlciBoYW5k
-LCB0aGVyZSBpcyB0aGUgcHJvYmxlbSBvZiBzaGFyaW5nIGFuIElPIHJlc291cmNlLCBpLmUuCmJs
-b2NrIGRldmljZSwgYmV0d2VlbiBtdWx0aXBsZSB0YXNrcyBvciBncm91cHMgb2YgdGFza3MuIFRo
-ZXJlIGFyZSBtYW55CndheXMgb2Ygc2hhcmluZyBhbiBJTyByZXNvdXJjZSBkZXBlbmRpbmcgb24g
-d2hhdCB3ZSBhcmUgdHJ5aW5nIHRvCmFjY29tcGxpc2g6IHByb3BvcnRpb25hbCBiYW5kd2lkdGgg
-c2NoZWR1bGluZywgcHJpb3JpdHktYmFzZWQKc2NoZWR1bGluZywgZXRjLiBCdXQgdG8gaW1wbGVt
-ZW50IHRoaXMgc2hhcmluZyBhbGdvcml0aG1zIHRoZSBrZXJuZWwgaGFzCnRvIGRldGVybWluZSB0
-aGUgdGFzayB3aG9zZSBJTyB3aWxsIGJlIHN1Ym1pdHRlZC4gSW4gYSBzZW5zZSwgd2UgYXJlCnNj
-aGVkdWxpbmcgdGFza3MgKGFuZCBncm91cHMgb2YgdGFza3MpIG5vdCBJTyByZXF1ZXN0cyAod2hp
-Y2ggaGFzIG11Y2gKaW4gY29tbW9uIHdpdGggQ1BVIHNjaGVkdWxpbmcpLiBCZXNpZGVzLCB0aGUg
-c2hhcmluZyBwcm9ibGVtIGlzIG5vdApkaXJlY3RseSByZWxhdGVkIHRvIHRoZSBjaGFyYWN0ZXJp
-c3RpY3Mgb2YgdGhlIHVuZGVybHlpbmcgZGV2aWNlLCB3aGljaAptZWFucyBpdCBkb2VzIG5vdCBu
-ZWVkIHRvIGJlIGltcGxlbWVudGVkIGF0IHRoZSBlbGV2YXRvciBsYXllci4KClRyYWRpdGlvbmFs
-IGVsZXZhdG9ycyBsaW1pdCB0aGVtc2VsdmVzIHRvIHNjaGVkdWxlIElPIHJlcXVlc3RzIHRvIGRp
-c2sKd2l0aCBubyByZWdhcmQgdG8gd2hlcmUgaXQgY2FtZSBmcm9tLiBIb3dldmVyLCBuZXcgSU8g
-c2NoZWR1bGVycyBzdWNoIGFzCkNGUSBjb21iaW5lIHRoaXMgd2l0aCBJTyBwcmlvcml0aXphdGlv
-biBjYXBhYmlsaXRpZXMuIFRoaXMgbWVhbnMgdGhhdAp0aGUgZWxldmF0b3IgZGVjaWRlcyB0aGUg
-YXBwbGljYXRpb24gd2hvc2UgSU8gd2lsbCBiZSBkaXNwYXRjaGVkIG5leHQuClRoZSBwcm9ibGVt
-IGlzIHRoYXQgYXQgdGhpcyBsYXllciB0aGVyZSBpcyBub3QgZW5vdWdoIGluZm9ybWF0aW9uIHRv
-Cm1ha2Ugc3VjaCBkZWNpc2lvbnMgaW4gYW4gYWNjdXJhdGUgd2F5LCBiZWNhdXNlLCBhcyBtZW50
-aW9uZWQgaW4gdGhlClJGQywgdGhlIGVsZXZhdG9yIGhhcyBub3Qgd2F5IHRvIGtub3cgdGhlIGJs
-b2NrIElPIHRvcG9sb2d5LiBUaGUKaW1wbGljYXRpb24gb2YgdGhpcyBpcyB0aGF0IHRoZSBlbGV2
-YXRvciBkb2VzIG5vdCBrbm93IHRoZSBpbXBhY3QgYQpwYXJ0aWN1bGFyIHNjaGVkdWxpbmcgZGVj
-aXNpb24gd2lsbCBtYWtlIGluIHRoZSBJTyB0aHJvdWdocHV0IHNlZW4gYnkKYXBwbGljYXRpb25z
-LCB3aGljaCBpcyB3aGF0IHVzZXJzIGNhcmUgYWJvdXQuCgpGb3IgYWxsIHRoZXNlIHJlYXNvbnMs
-IEkgdGhpbmsgdGhlIGVsZXZhdG9yIHNob3VsZCB0YWtlIGNhcmUgb2YKb3B0aW1pemluZyB0aGUg
-bGFzdCBzdHJldGNoIG9mIHRoZSBJTyBwYXRoIChnZW5lcmljIGJsb2NrIGxheWVyIC0+IGJsb2Nr
-CmRldmljZSkgZm9yIHBlcmZvcm1hbmNlL3Jlc3BvbnNpdmVuZXNzLCBhbmQgbGVhdmUgdGhlIGpv
-YiBvZiBlbnN1cmluZwp0aGF0IGVhY2ggdGFzayBpcyBndWFyYW50ZWVkIGEgZmFpciBzaGFyZSBv
-ZiB0aGUga2VybmVsJ3MgSU8gcmVzb3VyY2VzCnRvIHRoZSB1cHBlciBsYXllcnMgKGZvciBleGFt
-cGxlIGEgYmxvY2sgbGF5ZXIgcmVzb3VyY2UgY29udHJvbGxlcikuCgpJIHJlY29nbml6ZSB0aGF0
-IGluIHNvbWUgY2FzZXMgZ2xvYmFsIHBlcmZvcm1hbmNlIGNvdWxkIGJlIGltcHJvdmVkIGlmCnRo
-ZSBibG9jayBsYXllciBoYWQgYWNjZXNzIHRvIGluZm9ybWF0aW9uIGZyb20gdGhlIGVsZXZhdG9y
-LCBhbmQgdGhhdCBpcwp3aHkgSSBtZW50aW9uZWQgaW4gdGhlIFJGQyB0aGF0IGluIHNvbWUgY2Fz
-ZXMgaXQgbWlnaHQgbWFrZSBzZW5zZSB0bwpjb21iaW5lIGEgYmxvY2sgbGF5ZXIgcmVzb3VyY2Ug
-Y29udHJvbGxlciBhbmQgYSBlbGV2YXRvciBsYXllciBvbmUgKHdlCmp1c3Qgd291bGQgbmVlZCB0
-byBmaWd1cmUgb3V0IGEgd2F5IGZvciB0aGUgdG8gY29tbXVuaWNhdGUgd2l0aCBlYWNoCm90aGVy
-IGFuZCB3b3JrIHdlbGwgaW4gdGFuZGVtKS4KCj4gSWYgd2UgYWRkIGFub3RoZXIgbGF5ZXIgb2Yg
-aS9vIHNjaGVkdWxpbmcgKGJsb2NrIGxheWVyIEkvTyBjb250cm9sbGVyKQo+IGFib3ZlIGVsZXZh
-dG9ycwo+IDEpIEl0IGJ1aWxkcyBhbm90aGVyIGxheWVyIG9mIGkvbyBzY2hlZHVsaW5nIChiYW5k
-d2lkdGggb3IgcHJpb3JpdHkpCkFzIEkgbWVudGlvbmVkIGJlZm9yZSB3ZSBhcmUgdHJ5aW5nIHRv
-IGFjaGlldmUgdHdvIHRoaW5nczogbWFraW5nIHRoZQpiZXN0IHVzZSBvZiBibG9jayBkZXZpY2Vz
-LCBhbmQgc2hhcmluZyB0aG9zZSBJTyByZXNvdXJjZXMgYmV0d2VlbiB0YXNrcwpvciBncm91cHMg
-b2YgdGFza3MuIFRoZXJlIGFyZSB0d28gcG9zc2libGUgYXBwcm9hY2hlcyBoZXJlOiBpbXBsZW1l
-bnQKZXZlcnl0aGluZyBpbiB0aGUgZWxldmF0b3Igb3IgbW92ZSB0aGUgc2hhcmluZyBiaXRzIHNv
-bWV3aGVyZSBhYm92ZSB0aGUKZWxldmF0b3IgbGF5ZXIuIEluIGVpdGhlciBjYXNlIHdlIGhhdmUg
-dG8gY2Fycnkgb3V0IHRoZSBzYW1lIHRhc2tzIHNvCnRoZSBpbXBhY3Qgb2YgZGVsZWdhdGluZyBw
-YXJ0IG9mIHRoZSB3b3JrIHRvIGEgbmV3IGxheWVyIHNob3VsZCBub3QgYmUKdGhhdCBiaWcsIGFu
-ZCwgaG9wZWZ1bGx5LCB3aWxsIGltcHJvdmUgbWFpbnRhaW5hYmlsaXR5LgoKPiAyKSBUaGlzIG5l
-dyBsYXllciBjYW4gaGF2ZSBkZWNpc2lvbnMgZm9yIGkvbyBzY2hlZHVsaW5nIHdoaWNoIGNvbmZs
-aWN0Cj4gd2l0aCB1bmRlcmx5aW5nIGVsZXZhdG9yLiBlLmcuIElmIHdlIGRlY2lkZSB0byBkbyBi
-L3cgc2NoZWR1bGluZyBpbgo+IHRoaXMgbmV3IGxheWVyLCB0aGVyZSBpcyBubyB3YXkgYSBwcmlv
-cml0eSBiYXNlZCBlbGV2YXRvciBjb3VsZCB3b3JrCj4gdW5kZXJuZWF0aCBpdC4KVGhlIHByaW9y
-aXR5IHN5c3RlbSBjb3VsZCBiZSBpbXBsZW1lbnRlZCBhYm92ZSB0aGUgZWxldmF0b3IgbGF5ZXIg
-aW4gdGhlCmJsb2NrIGxheWVyIHJlc291cmNlIGNvbnRyb2xsZXIsIHdoaWNoIG1lYW5zIHRoYXQg
-dGhlIGVsZXZhdG9yIHdvdWxkCm9ubHkgaGF2ZSB0byB3b3JyeSBhYm91dCBzY2hlZHVsaW5nIHRo
-ZSByZXF1ZXN0cyBpdCByZWNlaXZlcyBmcm9tIHRoZQpibG9jayBsYXllciBhbmQgZGlzcGF0Y2hp
-bmcgdGhlbSB0byBkaXNrIGluIHRoZSBiZXN0IHBvc3NpYmxlIHdheS4KCkFuIGFsdGVybmF0aXZl
-IHdvdWxkIGJlIHVzaW5nIGEgYmxvY2sgbGF5ZXIgcmVzb3VyY2UgY29udHJvbGxlciBhbmQgYQpl
-bGF2YXRvci1iYXNlZCByZXNvdXJjZSBjb250cm9sbGVyIGluIHRhbmRlbS4KCj4gSWYgYSBjdXN0
-b20gbWFrZV9yZXF1ZXN0X2ZuIGlzIGRlZmluZWQgKHdoaWNoIG1lYW5zIHRoZSBzYWlkIGRldmlj
-ZSBpcwo+IG5vdCB1c2luZyBleGlzdGluZyBlbGV2YXRvciksClBsZWFzZSBub3RlIHRoYXQgZWFj
-aCBvZiB0aGUgYmxvY2sgZGV2aWNlcyB0aGF0IGNvbnN0aXR1dGUgYSBzdGFja2luZwpkZXZpY2Ug
-Y291bGQgaGF2ZSBpdHMgb3duIGVsZXZhdG9yLgoKPiBpdCBjb3VsZCBidWlsZCBpdCdzIG93biBz
-Y2hlZHVsaW5nCj4gcmF0aGVyIHRoYW4gYXNraW5nIGtlcm5lbCB0byBhZGQgYW5vdGhlciBsYXll
-ciBhdCB0aGUgdGltZSBvZiBpL28KPiBzdWJtaXNzaW9uLiBTaW5jZSBpdCBoYXMgY29tcGxldGUg
-Y29udHJvbCBvZiBpL28uCkkgdGhpbmsgdGhhdCBpcyBzb21ldGhpbmcgd2Ugc2hvdWxkIGF2b2lk
-LiBUaGUgSU8gc2NoZWR1bGluZyBiZWhhdmlvcgp0aGF0IHRoZSB1c2VyIHNlZXMgc2hvdWxkIG5v
-dCBkZXBlbmQgb24gdGhlIHRvcG9sb2d5IG9mIHRoZSBzeXN0ZW0uIFdlCmNlcnRhaW5seSBkbyBu
-b3Qgd2FudCB0byByZWltcGxlbWVudCB0aGUgc2FtZSBzY2hlZHVsaW5nIGFsZ29yaXRobSBmb3IK
-ZXZlcnkgUkFJRCBkcml2ZXIuIEkgYW0gb2YgdGhlIG9waW5pb24gdGhhdCB3aGF0ZXZlciBJTyBz
-Y2hlZHVsaW5nCmFsZ29yaXRobSB3ZSBjaG9vc2Ugc2hvdWxkIGJlIGltcGxlbWVudGVkIGp1c3Qg
-b25jZSBhbmQgdXNhYmxlIHVuZGVyIGFueQpJTyBjb25maWd1cmF0aW9uLgoKX19fX19fX19fX19f
-X19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX18KQ29udGFpbmVycyBtYWlsaW5nIGxp
-c3QKQ29udGFpbmVyc0BsaXN0cy5saW51eC1mb3VuZGF0aW9uLm9yZwpodHRwczovL2xpc3RzLmxp
-bnV4LWZvdW5kYXRpb24ub3JnL21haWxtYW4vbGlzdGluZm8vY29udGFpbmVycw==
+On Wed, 2008-08-06 at 17:20 +0900, YAMAMOTO Takashi wrote:
+> hi,
+> 
+> > On Fri, 11 Jul 2008 17:34:46 +0900 (JST)
+> > yamamoto-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org (YAMAMOTO Takashi) wrote:
+> > 
+> > > hi,
+> > > 
+> > > > > my patch penalizes heavy-writer cgroups as task_dirty_limit does
+> > > > > for heavy-writer tasks.  i don't think that it's necessary to be
+> > > > > tied to the memory subsystem because i merely want to group writers.
+> > > > > 
+> > > > Hmm, maybe what I need is different from this ;)
+> > > > Does not seem to be a help for memory reclaim under memcg.
+> > > 
+> > > to implement what you need, i think that we need to keep track of
+> > > the numbers of dirty-pages in each memory cgroups as a first step.
+> > > do you agree?
+> > > 
+> > yes, I think so, now.
+> > 
+> > may be not difficult but will add extra overhead ;( Sigh..
+> 
+> the following is a patch to add the overhead. :)
+> any comments?
+> 
+> YAMAMOTO Takashi
+
+It _might_ (depends on the uglyness of the result) make sense to try and
+stick the mem_cgroup_*_page_dirty() stuff into the *PageDirty() macros.
+
+
+> @@ -485,7 +502,10 @@ unsigned long mem_cgroup_isolate_pages(unsigned long nr_to_scan,
+>  		if (PageUnevictable(page) ||
+>  		    (PageActive(page) && !active) ||
+>  		    (!PageActive(page) && active)) {
+> -			__mem_cgroup_move_lists(pc, page_lru(page));
+> +			if (try_lock_page_cgroup(page)) {
+> +				__mem_cgroup_move_lists(pc, page_lru(page));
+> +				unlock_page_cgroup(page);
+> +			}
+>  			continue;
+>  		}
+
+This chunk seems unrelated and lost....
+
+
+> @@ -772,6 +792,38 @@ void mem_cgroup_end_migration(struct page *newpage)
+>  		mem_cgroup_uncharge_page(newpage);
+>  }
+>  
+> +void mem_cgroup_set_page_dirty(struct page *pg)
+> +{
+> +	struct page_cgroup *pc;
+> +
+> +	lock_page_cgroup(pg);
+> +	pc = page_get_page_cgroup(pg);
+> +	if (pc != NULL && (pc->flags & PAGE_CGROUP_FLAG_DIRTY) == 0) {
+> +		struct mem_cgroup *mem = pc->mem_cgroup;
+> +		struct mem_cgroup_stat *stat = &mem->stat;
+> +
+> +		pc->flags |= PAGE_CGROUP_FLAG_DIRTY;
+> +		__mem_cgroup_stat_add(stat, MEM_CGROUP_STAT_DIRTY, 1);
+> +	}
+> +	unlock_page_cgroup(pg);
+> +}
+> +
+> +void mem_cgroup_clear_page_dirty(struct page *pg)
+> +{
+> +	struct page_cgroup *pc;
+> +
+> +	lock_page_cgroup(pg);
+> +	pc = page_get_page_cgroup(pg);
+> +	if (pc != NULL && (pc->flags & PAGE_CGROUP_FLAG_DIRTY) != 0) {
+> +		struct mem_cgroup *mem = pc->mem_cgroup;
+> +		struct mem_cgroup_stat *stat = &mem->stat;
+> +
+> +		pc->flags &= ~PAGE_CGROUP_FLAG_DIRTY;
+> +		__mem_cgroup_stat_add(stat, MEM_CGROUP_STAT_DIRTY, -1);
+> +	}
+> +	unlock_page_cgroup(pg);
+> +}
+> +
+>  /*
+>   * A call to try to shrink memory usage under specified resource controller.
+>   * This is typically used for page reclaiming for shmem for reducing side
+
+
+I presonally dislike the != 0, == 0 comparisons for bitmask operations,
+they seem to make it harder to read somewhow. I prefer to write !(flags
+& mask) and (flags & mask), instead.
+
+I guess taste differs,...
