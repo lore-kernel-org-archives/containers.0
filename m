@@ -1,7 +1,7 @@
 From: "Serge E. Hallyn" <serue@us.ibm.com>
 Subject: Re: [PATCH 2/4] autofs4 - track uid and gid of last mount requester
-Date: Thu, 7 Aug 2008 17:12:42 -0500
-Message-ID: <20080807221242.GA27032@us.ibm.com>
+Date: Thu, 7 Aug 2008 17:15:58 -0500
+Message-ID: <20080807221558.GA27863@us.ibm.com>
 References: <20080807114002.4142.30417.stgit@web.messagingengine.com> <20080807114012.4142.83607.stgit@web.messagingengine.com> <20080807134650.a6a51f7d.akpm@linux-foundation.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
@@ -80,6 +80,17 @@ Quoting Andrew Morton (akpm@linux-foundation.org):
 > > +	 * to existing, active, autofs mounts. The uid and gid (and
 > > +	 * related string values) may be used for macro substitution
 > > +	 * in autofs mount maps.
+
+Hi Ian,
+
+could you say just a few more words on these macro substitution?
+
+I think your use of uids can completely ignore user namespaces, but it
+depends on who does the macro substitutions and how...
+
+thanks,
+-serge
+
 > > +	 */
 > > +	if (!status) {
 > > +		struct autofs_info *ino;
@@ -110,25 +121,7 @@ Quoting Andrew Morton (akpm@linux-foundation.org):
 > Please remind me again why autofs's use of current->uid and
 > current->gid is not busted in the presence of PID namespaces, where
 > these things are no longer system-wide unique?
-
-I actually don't see what the autofs4_waitq->pid is used for.  It's
-copied from current into wq->pid at autofs4_wait, and into a packet to
-send to userspace (I assume) at autofs4_notify_daemon.
-
-So as long as a daemon can serve multiple pid namespaces (which
-doubtless it can), the pid could be confusing (or erroneous) for the
-daemon.
-
-If I'm remotely right about how the pid is being used, then the thing to
-do would be to 
-	1. store the daemon's pid namespace  (would that belong in
-	the autofs_sb_info?)
-	2. store the task_pid(current) in the waitqueue
-	3. retrieve the pid_t for the waiting task in the daemon's
-	pid namespace, and put that into the packet at
-	autofs4_notify_daemon.
-
-I realize this patch was about the *uids*, but the pids seem more
-urgent.
-
--serge
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-fsdevel" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
