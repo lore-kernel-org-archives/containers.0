@@ -1,17 +1,14 @@
-From: Fernando Luis =?ISO-8859-1?Q?V=E1zquez?= Cao <fernando-gVGce1chcLdL9jVzuh4AOg@public.gmane.org>
-Subject: Re: RFC: I/O bandwidth controller (was Re: Too many I/O controller
-	patches)
-Date: Thu, 07 Aug 2008 22:59:38 +0900
-Message-ID: <1218117578.11703.81.camel__39289.4932920628$1218117724$gmane$org@sebastian.kern.oss.ntt.co.jp>
-References: <20080804.175126.193692178.ryov@valinux.co.jp>
-	<1217870433.20260.101.camel@nimitz>
-	<1217985189.3154.57.camel@sebastian.kern.oss.ntt.co.jp>
-	<489AA83F.1040306@gmail.com>
+From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH 1/1] namespaces: introduce sys_hijack (v11)
+Date: Thu, 7 Aug 2008 14:23:38 -0500
+Message-ID: <20080807192338.GA2050@us.ibm.com>
+References: <20080731183213.GA12033@us.ibm.com>
+	<20080801172811.FEC3.KOSAKI.MOTOHIRO@jp.fujitsu.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: base64
+Content-Type: multipart/mixed; boundary="0OAP2g/MAC+5xKAE"
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <489AA83F.1040306-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <20080801172811.FEC3.KOSAKI.MOTOHIRO-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -21,121 +18,219 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org
-Cc: xen-devel-GuqFBffKawuULHF6PoxzQEEOCMrvLtNR@public.gmane.org, uchida-LYU95VJlayp8UrSeD/g0lQ@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, dm-devel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, agk-9JcytcrH/bA+uJoB2kUjGw@public.gmane.org, virtualization-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, ngupta-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org
+To: KOSAKI Motohiro <kosaki.motohiro-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-SGkgQW5kcmVhIQoKT24gVGh1LCAyMDA4LTA4LTA3IGF0IDA5OjQ2ICswMjAwLCBBbmRyZWEgUmln
-aGkgd3JvdGU6IAo+IEZlcm5hbmRvIEx1aXMgVsOhenF1ZXogQ2FvIHdyb3RlOgo+ID4gVGhpcyBS
-RkMgZW5kZWQgdXAgYmVpbmcgYSBiaXQgbG9uZ2VyIHRoYW4gSSBoYWQgb3JpZ2luYWxseSBpbnRl
-bmRlZCwgYnV0Cj4gPiBob3BlZnVsbHkgaXQgd2lsbCBzZXJ2ZSBhcyB0aGUgc3RhcnQgb2YgYSBm
-cnVpdGZ1bCBkaXNjdXNzaW9uLgo+IAo+IFRoYW5rcyBmb3IgcG9zdGluZyB0aGlzIGRldGFpbGVk
-IFJGQyEgQSBmZXcgY29tbWVudHMgYmVsb3cuCj4gCj4gPiBBcyB5b3UgcG9pbnRlZCBvdXQsIGl0
-IHNlZW1zIHRoYXQgdGhlcmUgaXMgbm90IG11Y2ggY29uc2Vuc3VzIGJ1aWxkaW5nCj4gPiBnb2lu
-ZyBvbiwgYnV0IHRoYXQgZG9lcyBub3QgbWVhbiB0aGVyZSBpcyBhIGxhY2sgb2YgaW50ZXJlc3Qu
-IFRvIGdldCB0aGUKPiA+IGJhbGwgcm9sbGluZyBpdCBpcyBwcm9iYWJseSBhIGdvb2QgaWRlYSB0
-byBjbGFyaWZ5IHRoZSBzdGF0ZSBvZiB0aGluZ3MKPiA+IGFuZCB0cnkgdG8gZXN0YWJsaXNoIHdo
-YXQgd2UgYXJlIHRyeWluZyB0byBhY2NvbXBsaXNoLgo+ID4gCj4gPiAqKiogU3RhdGUgb2YgdGhp
-bmdzIGluIHRoZSBtYWluc3RyZWFtIGtlcm5lbDxCUj4KPiA+IFRoZSBrZXJuZWwgaGFzIGhhZCBz
-b21ld2hhdCBhZGF2YW5jZWQgSS9PIGNvbnRyb2wgY2FwYWJpbGl0aWVzIGZvciBxdWl0ZQo+ID4g
-c29tZSB0aW1lIG5vdzogQ0ZRLiBCdXQgdGhlIGN1cnJlbnQgQ0ZRIGhhcyBzb21lIHByb2JsZW1z
-Ogo+ID4gICAtIEkvTyBwcmlvcml0eSBjYW4gYmUgc2V0IGJ5IFBJRCwgUEdSUCwgb3IgVUlELCBi
-dXQuLi4KPiA+ICAgLSAuLi5hbGwgdGhlIHByb2Nlc3NlcyB0aGF0IGZhbGwgd2l0aGluIHRoZSBz
-YW1lIGNsYXNzL3ByaW9yaXR5IGFyZQo+ID4gc2NoZWR1bGVkIHRvZ2V0aGVyIGFuZCBhcmJpdHJh
-cnkgZ3JvdXBpbmcgYXJlIG5vdCBwb3NzaWJsZS4KPiA+ICAgLSBCdWZmZXJlZCBJL08gaXMgbm90
-IGhhbmRsZWQgcHJvcGVybHkuCj4gPiAgIC0gQ0ZRJ3MgSU8gcHJpb3JpdHkgaXMgYW4gYXR0cmli
-dXRlIG9mIGEgcHJvY2VzcyB0aGF0IGFmZmVjdHMgYWxsCj4gPiBkZXZpY2VzIGl0IHNlbmRzIEkv
-TyByZXF1ZXN0cyB0by4gSW4gb3RoZXIgd29yZHMsIHdpdGggdGhlIGN1cnJlbnQKPiA+IGltcGxl
-bWVudGF0aW9uIGl0IGlzIG5vdCBwb3NzaWJsZSB0byBhc3NpZ24gcGVyLWRldmljZSBJTyBwcmlv
-cml0aWVzIHRvCj4gPiBhIHRhc2suCj4gPiAKPiA+ICoqKiBHb2Fscwo+ID4gICAxLiBDZ3JvdXBz
-LWF3YXJlIEkvTyBzY2hlZHVsaW5nIChiZWluZyBhYmxlIHRvIGRlZmluZSBhcmJpdHJhcnkKPiA+
-IGdyb3VwaW5ncyBvZiBwcm9jZXNzZXMgYW5kIHRyZWF0IGVhY2ggZ3JvdXAgYXMgYSBzaW5nbGUg
-c2NoZWR1bGluZwo+ID4gZW50aXR5KS4KPiA+ICAgMi4gQmVpbmcgYWJsZSB0byBwZXJmb3JtIEkv
-TyBiYW5kd2lkdGggY29udHJvbCBpbmRlcGVuZGVudGx5IG9uIGVhY2gKPiA+IGRldmljZS4KPiA+
-ICAgMy4gSS9PIGJhbmR3aWR0aCBzaGFwaW5nLgo+ID4gICA0LiBTY2hlZHVsZXItaW5kZXBlbmRl
-bnQgSS9PIGJhbmR3aWR0aCBjb250cm9sLgo+ID4gICA1LiBVc2FibGUgd2l0aCBzdGFja2luZyBk
-ZXZpY2VzIChtZCwgZG0gYW5kIG90aGVyIGRldmljZXMgb2YgdGhhdAo+ID4gaWxrKS4KPiA+ICAg
-Ni4gSS9PIHRyYWNraW5nIChoYW5kbGUgYnVmZmVyZWQgYW5kIGFzeW5jaHJvbm91cyBJL08gcHJv
-cGVybHkpLgo+IAo+IFRoZSBzYW1lIGFib3ZlIGFsc28gZm9yIElPIG9wZXJhdGlvbnMvc2VjIChi
-YW5kd2lkdGggaW50ZW5kZWQgbm90IG9ubHkKPiBpbiB0ZXJtcyBvZiBieXRlcy9zZWMpLCBwbHVz
-Ogo+IAo+IDcuIE9wdGltYWwgYmFuZHdpZHRoIHVzYWdlOiBhbGxvdyB0byBleGNlZWQgdGhlIElP
-IGxpbWl0cyB0byB0YWtlCj4gYWR2YW50YWdlIG9mIGZyZWUvdW51c2VkIElPIHJlc291cmNlcyAo
-aS5lLiBhbGxvdyAiYnVyc3RzIiB3aGVuIHRoZQo+IHdob2xlIHBoeXNpY2FsIGJhbmR3aWR0aCBm
-b3IgYSBibG9jayBkZXZpY2UgaXMgbm90IGZ1bGx5IHVzZWQgYW5kIHRoZW4KPiAidGhyb3R0bGUi
-IGFnYWluIHdoZW4gSU8gZnJvbSB1bmxpbWl0ZWQgY2dyb3VwcyBjb21lcyBpbnRvIHBsYWNlKQo+
-IAo+IDguICJmYWlyIHRocm90dGxpbmciOiBhdm9pZCB0byB0aHJvdHRsZSBhbHdheXMgdGhlIHNh
-bWUgdGFzayB3aXRoaW4gYQo+IGNncm91cCwgYnV0IHRyeSB0byBkaXN0cmlidXRlIHRoZSB0aHJv
-dHRsaW5nIGFtb25nIGFsbCB0aGUgdGFza3MKPiBiZWxvbmdpbmcgdG8gdGhlIHRocm90dGxlIGNn
-cm91cAoKVGhhbmsgeW91IGZvciB0aGUgaWRlYXMhCgpCeSB0aGUgd2F5LCBwb2ludCAiMy4iIGFi
-b3ZlIChJL08gYmFuZHdpZHRoIHNoYXBpbmcpIHJlZmVycyB0byBJTwpzY2hlZHVsaW5nIGFsZ29y
-aXRobXMgaW4gZ2VuZXJhbC4gV2hlbiBJIHdyb3RlIHRoZSBSRkMgSSB0aG91Z2h0IHRoYXQKb25j
-ZSB3ZSBoYXZlIHRoZSBJTyB0cmFja2luZyBhbmQgYWNjb3VudGluZyBtZWNoYW5pc21zIGluIHBs
-YWNlIGNob29zaW5nCmFuZCBpbXBsZW1lbnRpbmcgYW4gYWxnb3JpdGhtIChmYWlyIHRocm90dGxp
-bmcsIHByb3BvcnRpb25hbCBiYW5kd2lkdGgKc2NoZWR1bGluZywgZXRjKSB3b3VsZCBiZSBlYXN5
-IGluIGNvbXBhcmlzb24sIGFuZCB0aGF0IGlzIHRoZSByZWFzb24gYQpsaXN0IHdhcyBub3QgaW5j
-bHVkZWQuCgpPbmNlIEkgZ2V0IG1vcmUgZmVlZGJhY2sgZnJvbSBhbGwgb2YgeW91IEkgd2lsbCBy
-ZXNlbmQgYSBtb3JlIGRldGFpbGVkClJGQyB0aGF0IHdpbGwgaW5jbHVkZSB5b3VyIHN1Z2dlc3Rp
-b25zLgoKPiA+IDEuICYgMi4tIENncm91cHMtYXdhcmUgSS9PIHNjaGVkdWxpbmcgKGJlaW5nIGFi
-bGUgdG8gZGVmaW5lIGFyYml0cmFyeQo+ID4gZ3JvdXBpbmdzIG9mIHByb2Nlc3NlcyBhbmQgdHJl
-YXQgZWFjaCBncm91cCBhcyBhIHNpbmdsZSBzY2hlZHVsaW5nCj4gPiBpZGVudGl0eSkKPiA+IAo+
-ID4gV2Ugb2J2aW91c2x5IG5lZWQgdGhpcyBiZWNhdXNlIG91ciBmaW5hbCBnb2FsIGlzIHRvIGJl
-IGFibGUgdG8gY29udHJvbAo+ID4gdGhlIElPIGdlbmVyYXRlZCBieSBhIExpbnV4IGNvbnRhaW5l
-ci4gVGhlIGdvb2QgbmV3cyBpcyB0aGF0IHdlIGFscmVhZHkKPiA+IGhhdmUgdGhlIGNncm91cHMg
-aW5mcmFzdHJ1Y3R1cmUgc28sIHJlZ2FyZGluZyB0aGlzIHByb2JsZW0sIHdlIHdvdWxkCj4gPiBq
-dXN0IGhhdmUgdG8gdHJhbnNmb3JtIG91ciBJL08gYmFuZHdpZHRoIGNvbnRyb2xsZXIgaW50byBh
-IGNncm91cAo+ID4gc3Vic3lzdGVtLgo+ID4gCj4gPiBUaGlzIHNlZW1zIHRvIGJlIHRoZSBlYXNp
-ZXN0IHBhcnQsIGJ1dCB0aGUgY3VycmVudCBjZ3JvdXBzCj4gPiBpbmZyYXN0cnVjdHVyZSBoYXMg
-c29tZSBsaW1pdGF0aW9ucyB3aGVuIGl0IGNvbWVzIHRvIGRlYWxpbmcgd2l0aCBibG9jawo+ID4g
-ZGV2aWNlczogaW1wb3NzaWJpbGl0eSBvZiBjcmVhdGluZy9yZW1vdmluZyBjZXJ0YWluIGNvbnRy
-b2wgc3RydWN0dXJlcwo+ID4gZHluYW1pY2FsbHkgYW5kIGhhcmRjb2Rpbmcgb2Ygc3Vic3lzdGVt
-cyAoaS5lLiByZXNvdXJjZSBjb250cm9sbGVycykuCj4gPiBUaGlzIG1ha2VzIGl0IGRpZmZpY3Vs
-dCB0byBoYW5kbGUgYmxvY2sgZGV2aWNlcyB0aGF0IGNhbiBiZSBob3RwbHVnZ2VkCj4gPiBhbmQg
-Z28gYXdheSBhdCBhbnkgdGltZSAodGhpcyBhcHBsaWVzIG5vdCBvbmx5IHRvIHVzYiBzdG9yYWdl
-IGJ1dCBhbHNvCj4gPiB0byBzb21lIFNBVEEgYW5kIFNDU0kgZGV2aWNlcykuIFRvIGNvcGUgd2l0
-aCB0aGlzIHNpdHVhdGlvbiBwcm9wZXJseSB3ZQo+ID4gd291bGQgbmVlZCBob3RwbHVnIHN1cHBv
-cnQgaW4gY2dyb3VwcywgYnV0LCBhcyBzdWdnZXN0ZWQgYmVmb3JlIGFuZAo+ID4gZGlzY3Vzc2Vk
-IGluIHRoZSBwYXN0IChzZWUgKDApIGJlbG93KSwgdGhlcmUgYXJlIHNvbWUgbGltaXRhdGlvbnMu
-Cj4gPiAKPiA+IEV2ZW4gaW4gdGhlIG5vbi1ob3RwbHVnIGNhc2UgaXQgd291bGQgYmUgbmljZSBp
-ZiB3ZSBjb3VsZCB0cmVhdCBlYWNoCj4gPiBibG9jayBJL08gZGV2aWNlIGFzIGFuIGluZGVwZW5k
-ZW50IHJlc291cmNlLCB3aGljaCBtZWFucyB3ZSBjb3VsZCBkbwo+ID4gdGhpbmdzIGxpa2UgYWxs
-b2NhdGluZyBJL08gYmFuZHdpZHRoIG9uIGEgcGVyLWRldmljZSBiYXNpcy4gQXMgbG9uZyBhcwo+
-ID4gcGVyZm9ybWFuY2UgaXMgbm90IGNvbXByb21pc2VkIHRvbyBtdWNoLCBhZGRpbmcgc29tZSBr
-aW5kIG9mIGJhc2ljCj4gPiBob3RwbHVnIHN1cHBvcnQgdG8gY2dyb3VwcyBpcyBwcm9iYWJseSB3
-b3J0aCBpdC4KPiA+Cj4gPiAoMCkgaHR0cDovL2xrbWwub3JnL2xrbWwvMjAwOC81LzIxLzEyCj4g
-Cj4gV2hhdCBhYm91dCB1c2luZyBtYWpvcixtaW5vciBudW1iZXJzIHRvIGlkZW50aWZ5IGVhY2gg
-ZGV2aWNlIGFuZCBhY2NvdW50Cj4gSU8gc3RhdGlzdGljcz8gSWYgYSBkZXZpY2UgaXMgdW5wbHVn
-Z2VkIHdlIGNvdWxkIHJlc2V0IElPIHN0YXRpc3RpY3MKPiBhbmQvb3IgcmVtb3ZlIElPIGxpbWl0
-YXRpb25zIGZvciB0aGF0IGRldmljZSBmcm9tIHVzZXJzcGFjZSAoaS5lLiBieSBhCj4gZGVhbW9u
-KSwgYnV0IHBsdWdnaW4vdW5wbHVnZ2luZyB0aGUgZGV2aWNlIHdvdWxkIG5vdCBiZSBibG9ja2Vk
-L2FmZmVjdGVkCj4gaW4gYW55IGNhc2UuIE9yIGFtIEkgb3ZlcnNpbXBsaWZ5aW5nIHRoZSBwcm9i
-bGVtPwpJZiBhIHJlc291cmNlIHdlIHdhbnQgdG8gY29udHJvbCAoYSBibG9jayBkZXZpY2UgaW4g
-dGhpcyBjYXNlKSBpcwpob3QtcGx1Z2dlZC91bnBsdWdnZWQgdGhlIGNvcnJlc3BvbmRpbmcgY2dy
-b3VwLXJlbGF0ZWQgc3RydWN0dXJlcyBpbnNpZGUKdGhlIGtlcm5lbCBuZWVkIHRvIGJlIGFsbG9j
-YXRlZC9mcmVlZCBkeW5hbWljYWxseSwgcmVzcGVjdGl2ZWx5LiBUaGUKcHJvYmxlbSBpcyB0aGF0
-IHRoaXMgaXMgbm90IGFsd2F5cyBwb3NzaWJsZS4gRm9yIGV4YW1wbGUsIHdpdGggdGhlCmN1cnJl
-bnQgaW1wbGVtZW50YXRpb24gb2YgY2dyb3VwcyBpdCBpcyBub3QgcG9zc2libGUgdG8gdHJlYXQg
-ZWFjaCBibG9jawpkZXZpY2UgYXMgYSBkaWZmZXJlbnQgY2dyb3VwIHN1YnN5dGVtL3Jlc291cmNl
-IGNvbnRyb2xsZWQsIGJlY2F1c2UKc3Vic3lzdGVtcyBhcmUgY3JlYXRlZCBhdCBjb21waWxlIHRp
-bWUuCgo+ID4gMy4gJiA0LiAmIDUuIC0gSS9PIGJhbmR3aWR0aCBzaGFwaW5nICYgR2VuZXJhbCBk
-ZXNpZ24gYXNwZWN0cwo+ID4gCj4gPiBUaGUgaW1wbGVtZW50YXRpb24gb2YgYW4gSS9PIHNjaGVk
-dWxpbmcgYWxnb3JpdGhtIGlzIHRvIGEgY2VydGFpbiBleHRlbnQKPiA+IGluZmx1ZW5jZWQgYnkg
-d2hhdCB3ZSBhcmUgdHJ5aW5nIHRvIGFjaGlldmUgaW4gdGVybXMgb2YgSS9PIGJhbmR3aWR0aAo+
-ID4gc2hhcGluZywgYnV0LCBhcyBkaXNjdXNzZWQgYmVsb3csIHRoZSByZXF1aXJlZCBhY2N1cmFj
-eSBjYW4gZGV0ZXJtaW5lCj4gPiB0aGUgbGF5ZXIgd2hlcmUgdGhlIEkvTyBjb250cm9sbGVyIGhh
-cyB0byByZXNpZGUuIE9mZiB0aGUgdG9wIG9mIG15Cj4gPiBoZWFkLCB0aGVyZSBhcmUgdGhyZWUg
-YmFzaWMgb3BlcmF0aW9ucyB3ZSBtYXkgd2FudCBwZXJmb3JtOgo+ID4gICAtIEkvTyBuaWNlIHBy
-aW9yaXRpemF0aW9uOiBpb25pY2UtbGlrZSBhcHByb2FjaC4KPiA+ICAgLSBQcm9wb3J0aW9uYWwg
-YmFuZHdpZHRoIHNjaGVkdWxpbmc6IGVhY2ggcHJvY2Vzcy9ncm91cCBvZiBwcm9jZXNzZXMKPiA+
-IGhhcyBhIHdlaWdodCB0aGF0IGRldGVybWluZXMgdGhlIHNoYXJlIG9mIGJhbmR3aWR0aCB0aGV5
-IHJlY2VpdmUuCj4gPiAgIC0gSS9PIGxpbWl0aW5nOiBzZXQgYW4gdXBwZXIgbGltaXQgdG8gdGhl
-IGJhbmR3aWR0aCBhIGdyb3VwIG9mIHRhc2tzCj4gPiBjYW4gdXNlLgo+IAo+IFVzZSBhIGRlYWRs
-aW5lLWJhc2VkIElPIHNjaGVkdWxpbmcgY291bGQgYmUgYW4gaW50ZXJlc3RpbmcgcGF0aCB0byBi
-ZQo+IGV4cGxvcmVkIGFzIHdlbGwsIElNSE8sIHRvIHRyeSB0byBndWFyYW50ZWUgcGVyLWNncm91
-cCBtaW5pbXVtIGJhbmR3aWR0aAo+IHJlcXVpcmVtZW50cy4KUGxlYXNlIG5vdGUgdGhhdCB0aGUg
-b25seSB0aGluZyB3ZSBjYW4gZG8gaXMgdG8gZ3VhcmFudGVlIG1pbmltdW0KYmFuZHdpZHRoIHJl
-cXVpcmVtZW50IHdoZW4gdGhlcmUgaXMgY29udGVudGlvbiBmb3IgYW4gSU8gcmVzb3VyY2UsIHdo
-aWNoCmlzIHByZWNpc2VseSB3aGF0IGEgcHJvcG9ydGlvbmFsIGJhbmR3aWR0aCBzY2hlZHVsZXIg
-ZG9lcy4gQW4gSSBtaXNzaW5nCnNvbWV0aGluZz8KCl9fX19fX19fX19fX19fX19fX19fX19fX19f
-X19fX19fX19fX19fX19fX19fX19fCkNvbnRhaW5lcnMgbWFpbGluZyBsaXN0CkNvbnRhaW5lcnNA
-bGlzdHMubGludXgtZm91bmRhdGlvbi5vcmcKaHR0cHM6Ly9saXN0cy5saW51eC1mb3VuZGF0aW9u
-Lm9yZy9tYWlsbWFuL2xpc3RpbmZvL2NvbnRhaW5lcnM=
+
+--0OAP2g/MAC+5xKAE
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+
+Quoting KOSAKI Motohiro (kosaki.motohiro-+CUm20s59erQFUHtdCDX3A@public.gmane.org):
+> Hi
+> 
+> fork() is very important for system performance.
+> I worry about performance regression if this feature isn't used.
+> 
+> Could you mesure spawn benchmark in unixbench?
+
+Sigh, well I did run some benchmarks on a machine on our grid, but none
+seem to be giving useful or consistent results.  Unixbench results are
+attached in the following files:
+
+unixbench results:
+	elm3b165.nohijack.1: result of './Run 1' on plain 2.6.27-rc1
+	elm3b165.nohijack.4: result of './Run 4' on plain 2.6.27-rc1
+	elm3b165.withhijack.1: result of './Run 1' on 2.6.27-rc1 with hijack patch
+	elm3b165.withhijack.4: result of './Run 4' on 2.6.27-rc1 with hijack patch
+
+I suppose I could have automated these to get more runs, but as it is
+the results seem meaningless to me.
+
+I also ran dbench and tbench.  All tbench instances were with
+5 clients, all dbench with 4 clients.  I ran both dbench and tbench 10
+times on each kernel, and here are the mean throughput +/- 95% confidence
+interval:
+
+Plain 2.6.27-rc1 kernel:
+tbench: 520.355900 +/- 17.104307
+dbench: 671.337900 +/- 146.785891
+
+2.6.27-rc1 with hijack:
+tbench: 523.213300 +/- 19.726943
+dbench: 437.324400 +/- 169.086289
+
+The tbench ones are solidly within the confidence bounds.  The dbench
+results aren't really believable.  Cron wasn't running on the machine,
+and nothing else *should* have been, but alas I don't own the machine
+so don't know what could have been running.
+
+thanks,
+-serge
+
+--0OAP2g/MAC+5xKAE
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: attachment; filename="elm3b165.nohijack.1"
+
+                     INDEX VALUES            
+TEST                                        BASELINE     RESULT      INDEX
+
+Dhrystone 2 using register variables        376783.7  8167048.5      216.8
+Double-Precision Whetstone                      83.1     1199.0      144.3
+Execl Throughput                               188.3     6777.2      359.9
+File Copy 1024 bufsize 2000 maxblocks         2672.0   113916.0      426.3
+File Copy 256 bufsize 500 maxblocks           1077.0    36714.0      340.9
+File Read 4096 bufsize 8000 maxblocks        15382.0   718796.0      467.3
+Pipe Throughput                             111814.6  1425864.8      127.5
+Pipe-based Context Switching                 15448.6   394297.5      255.2
+Process Creation                               569.3    18977.8      333.4
+Shell Scripts (8 concurrent)                    44.8     1217.8      271.8
+System Call Overhead                        114433.5  2858840.5      249.8
+                                                                 =========
+     FINAL SCORE                                                     270.3
+
+                     INDEX VALUES            
+TEST                                        BASELINE     RESULT      INDEX
+
+Dhrystone 2 using register variables        376783.7  8362581.0      221.9
+Double-Precision Whetstone                      83.1     1203.5      144.8
+Execl Throughput                               188.3     6715.0      356.6
+File Copy 1024 bufsize 2000 maxblocks         2672.0   107020.0      400.5
+File Copy 256 bufsize 500 maxblocks           1077.0    32403.0      300.9
+File Read 4096 bufsize 8000 maxblocks        15382.0   678707.0      441.2
+Pipe Throughput                             111814.6  1385493.0      123.9
+Pipe-based Context Switching                 15448.6   372454.9      241.1
+Process Creation                               569.3    18607.9      326.9
+Shell Scripts (8 concurrent)                    44.8     1208.8      269.8
+System Call Overhead                        114433.5  2691682.8      235.2
+                                                                 =========
+     FINAL SCORE                                                     260.7
+
+
+--0OAP2g/MAC+5xKAE
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: attachment; filename="elm3b165.nohijack.4"
+
+                     INDEX VALUES            
+TEST                                        BASELINE     RESULT      INDEX
+
+Dhrystone 2 using register variables        376783.7  8232510.9      218.5
+Double-Precision Whetstone                      83.1     1202.4      144.7
+Execl Throughput                               188.3     6739.0      357.9
+File Copy 1024 bufsize 2000 maxblocks         2672.0   104621.0      391.5
+File Copy 256 bufsize 500 maxblocks           1077.0    33092.0      307.3
+File Read 4096 bufsize 8000 maxblocks        15382.0   684132.0      444.8
+Pipe Throughput                             111814.6  1344322.6      120.2
+Pipe-based Context Switching                 15448.6   385326.1      249.4
+Process Creation                               569.3    18701.0      328.5
+Shell Scripts (8 concurrent)                    44.8     1211.8      270.5
+System Call Overhead                        114433.5  2910270.2      254.3
+                                                                 =========
+     FINAL SCORE                                                     262.6
+
+                     INDEX VALUES            
+TEST                                        BASELINE     RESULT      INDEX
+
+Dhrystone 2 using register variables        376783.7  8247240.2      218.9
+Double-Precision Whetstone                      83.1     1198.4      144.2
+Execl Throughput                               188.3     6540.9      347.4
+File Copy 1024 bufsize 2000 maxblocks         2672.0    97453.0      364.7
+File Copy 256 bufsize 500 maxblocks           1077.0    31134.0      289.1
+File Read 4096 bufsize 8000 maxblocks        15382.0   781214.0      507.9
+Pipe Throughput                             111814.6  1408780.0      126.0
+Pipe-based Context Switching                 15448.6   351906.0      227.8
+Process Creation                               569.3    18638.3      327.4
+Shell Scripts (8 concurrent)                    44.8     1211.8      270.5
+System Call Overhead                        114433.5  2737286.8      239.2
+                                                                 =========
+     FINAL SCORE                                                     259.3
+
+--0OAP2g/MAC+5xKAE
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: attachment; filename="elm3b165.withhijack.1"
+
+                     INDEX VALUES            
+TEST                                        BASELINE     RESULT      INDEX
+
+Dhrystone 2 using register variables        376783.7  8899355.0      236.2
+Double-Precision Whetstone                      83.1     1204.8      145.0
+Execl Throughput                               188.3     6626.6      351.9
+File Copy 1024 bufsize 2000 maxblocks         2672.0   109426.0      409.5
+File Copy 256 bufsize 500 maxblocks           1077.0    34428.0      319.7
+File Read 4096 bufsize 8000 maxblocks        15382.0   625814.0      406.8
+Pipe Throughput                             111814.6  1296658.5      116.0
+Pipe-based Context Switching                 15448.6   359970.6      233.0
+Process Creation                               569.3    18747.0      329.3
+Shell Scripts (8 concurrent)                    44.8     1210.8      270.3
+System Call Overhead                        114433.5  2745197.3      239.9
+                                                                 =========
+     FINAL SCORE                                                     260.2
+
+                     INDEX VALUES            
+TEST                                        BASELINE     RESULT      INDEX
+
+Dhrystone 2 using register variables        376783.7  8823465.9      234.2
+Double-Precision Whetstone                      83.1     1205.6      145.1
+Execl Throughput                               188.3     6603.0      350.7
+File Copy 1024 bufsize 2000 maxblocks         2672.0   104783.0      392.2
+File Copy 256 bufsize 500 maxblocks           1077.0    32153.0      298.5
+File Read 4096 bufsize 8000 maxblocks        15382.0   859178.0      558.6
+Pipe Throughput                             111814.6  1185154.3      106.0
+Pipe-based Context Switching                 15448.6   344165.8      222.8
+Process Creation                               569.3    18397.4      323.2
+Shell Scripts (8 concurrent)                    44.8     1207.6      269.6
+System Call Overhead                        114433.5  2654906.5      232.0
+                                                                 =========
+     FINAL SCORE                                                     260.3
+
+
+--0OAP2g/MAC+5xKAE
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: attachment; filename="elm3b165.withhijack.4"
+
+                     INDEX VALUES            
+TEST                                        BASELINE     RESULT      INDEX
+
+Dhrystone 2 using register variables        376783.7  8844791.9      234.7
+Double-Precision Whetstone                      83.1     1206.1      145.1
+Execl Throughput                               188.3     6700.7      355.9
+File Copy 1024 bufsize 2000 maxblocks         2672.0   102895.0      385.1
+File Copy 256 bufsize 500 maxblocks           1077.0    30585.0      284.0
+File Read 4096 bufsize 8000 maxblocks        15382.0   877998.0      570.8
+Pipe Throughput                             111814.6  1146617.1      102.5
+Pipe-based Context Switching                 15448.6   355382.2      230.0
+Process Creation                               569.3    18548.7      325.8
+Shell Scripts (8 concurrent)                    44.8     1208.8      269.8
+System Call Overhead                        114433.5  2815676.2      246.1
+                                                                 =========
+     FINAL SCORE                                                     261.2
+
+                     INDEX VALUES            
+TEST                                        BASELINE     RESULT      INDEX
+
+Dhrystone 2 using register variables        376783.7  8884179.7      235.8
+Double-Precision Whetstone                      83.1     1202.7      144.7
+Execl Throughput                               188.3     6543.5      347.5
+File Copy 1024 bufsize 2000 maxblocks         2672.0   103051.0      385.7
+File Copy 256 bufsize 500 maxblocks           1077.0    32475.0      301.5
+File Read 4096 bufsize 8000 maxblocks        15382.0   668682.0      434.7
+Pipe Throughput                             111814.6  1269063.8      113.5
+Pipe-based Context Switching                 15448.6   357748.7      231.6
+Process Creation                               569.3    18862.8      331.3
+Shell Scripts (8 concurrent)                    44.8     1206.8      269.4
+System Call Overhead                        114433.5  2754854.2      240.7
+                                                                 =========
+     FINAL SCORE                                                     258.1
+
+--0OAP2g/MAC+5xKAE
+Content-Type: text/plain; charset="us-ascii"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+Content-Disposition: inline
+
+_______________________________________________
+Containers mailing list
+Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+https://lists.linux-foundation.org/mailman/listinfo/containers
+--0OAP2g/MAC+5xKAE--
