@@ -1,13 +1,13 @@
 From: Arnd Bergmann <arnd-r2nGTMty4D4@public.gmane.org>
-Subject: Re: [RFC][PATCH 2/4] checkpoint/restart: x86 support
-Date: Fri, 8 Aug 2008 14:09:29 +0200
-Message-ID: <200808081409.30591.arnd__13287.943081423$1218197504$gmane$org@arndb.de>
-References: <20080807224033.FFB3A2C1@kernel> <20080807224035.E56663BF@kernel>
+Subject: Re: [RFC][PATCH 3/4] checkpoint/restart: memory management
+Date: Fri, 8 Aug 2008 14:12:17 +0200
+Message-ID: <200808081412.18268.arnd@arndb.de>
+References: <20080807224033.FFB3A2C1@kernel> <20080807224037.44DA0DB8@kernel>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20080807224035.E56663BF@kernel>
+In-Reply-To: <20080807224037.44DA0DB8@kernel>
 Content-Disposition: inline
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
@@ -22,52 +22,50 @@ To: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Theodore Tso <tytso-3s7WtUTddSA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-
-
-> diff -puN /dev/null include/asm-x86/ckpt.h
-> --- /dev/null	2007-04-11 11:48:27.000000000 -0700
-> +++ linux-2.6.git-dave/include/asm-x86/ckpt.h	2008-08-04 13:29:59.000000000 -0700
-> @@ -0,0 +1,46 @@
-
+On Friday 08 August 2008, Dave Hansen wrote:
+> 
+> diff -puN ckpt/ckpt_hdr.h~memory_part ckpt/ckpt_hdr.h
+> --- linux-2.6.git/ckpt/ckpt_hdr.h~memory_part	2008-08-05 08:37:29.000000000 -0700
+> +++ linux-2.6.git-dave/ckpt/ckpt_hdr.h	2008-08-05 08:37:29.000000000 -0700
+> @@ -67,3 +67,24 @@ struct cr_hdr_task {
+>  };
+>  
+>  
 > +
-> +struct cr_hdr_cpu {
-> +        __u64 bx;
-> +        __u64 cx;
-> +        __u64 dx;
-> +        __u64 si;
-> +        __u64 di;
-> +        __u64 bp;
-> +        __u64 ax;
-> +        __u64 ds;
-> +        __u64 es;
-> +        __u64 orig_ax;
-> +        __u64 ip;
-> +        __u64 cs;
-> +        __u64 flags;
-> +        __u64 sp;
-> +        __u64 ss;
-> +        __u64 fs;
-> +        __u64 gs;
-> +
-> +	__u64 debugreg0;
-> +	__u64 debugreg1;
-> +	__u64 debugreg2;
-> +	__u64 debugreg3;
-> +	__u64 debugreg6;
-> +	__u64 debugreg7;
-> +
-> +	__u8 uses_debug;
-> +
-> +	__u8 used_math;
-> +	__u8 has_fxsr;
-> +	union thread_xstate xstate;	/* i387 */
+> +struct cr_hdr_mm {
+> +	__u32 tag;	/* sharing identifier */
+> +	__u64 start_code, end_code, start_data, end_data;
+> +	__u64 start_brk, brk, start_stack;
+> +	__u64 arg_start, arg_end, env_start, env_end;
+> +	__s16 map_count;
 > +};
 
-It seems weird that you use __u64 members for the registers, but don't
-include r8..r15 in the list. As a consequence, this structure does not
-seem well suited for either x86-32 or x86-64.
+Another structure that is not 32/64 bit ABI safe on x86. It would be safe
+if you reorder the members as
 
-I would suggest either using struct pt_regs by reference, or defining
-it so that you can use the same structure for both 32 and 64 bit x86.
+struct cr_hdr_mm {
+	__u32 tag;	/* sharing identifier */
+	__s16 map_count;
+	__u16 pad; /* not actually needed, but better to make it explicit */
+	__u64 start_code, end_code, start_data, end_data;
+	__u64 start_brk, brk, start_stack;
+	__u64 arg_start, arg_end, env_start, env_end;
+};
+
+> +struct cr_hdr_vma {
+> +	__u32 how;
+> +
+> +	__u64 vm_start;
+> +	__u64 vm_end;
+> +	__u64 vm_page_prot;
+> +	__u64 vm_flags;
+> +	__u64 vm_pgoff;
+> +
+> +	__s16 npages;
+> +	__s16 namelen;
+> +};
+
+same here.
+
 
 	Arnd <><
