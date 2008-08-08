@@ -1,13 +1,13 @@
 From: Arnd Bergmann <arnd-r2nGTMty4D4@public.gmane.org>
-Subject: Re: [RFC][PATCH 3/4] checkpoint/restart: memory management
-Date: Fri, 8 Aug 2008 14:12:17 +0200
-Message-ID: <200808081412.18268.arnd@arndb.de>
-References: <20080807224033.FFB3A2C1@kernel> <20080807224037.44DA0DB8@kernel>
+Subject: Re: [RFC][PATCH 4/4] introduce sys_checkpoint and sys_restore
+Date: Fri, 8 Aug 2008 14:15:18 +0200
+Message-ID: <200808081415.19179.arnd__23492.9072241814$1218198030$gmane$org@arndb.de>
+References: <20080807224033.FFB3A2C1@kernel> <20080807224038.0B03CEEF@kernel>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20080807224037.44DA0DB8@kernel>
+In-Reply-To: <20080807224038.0B03CEEF@kernel>
 Content-Disposition: inline
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
@@ -23,49 +23,15 @@ Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, The
 List-Id: containers.vger.kernel.org
 
 On Friday 08 August 2008, Dave Hansen wrote:
-> 
-> diff -puN ckpt/ckpt_hdr.h~memory_part ckpt/ckpt_hdr.h
-> --- linux-2.6.git/ckpt/ckpt_hdr.h~memory_part	2008-08-05 08:37:29.000000000 -0700
-> +++ linux-2.6.git-dave/ckpt/ckpt_hdr.h	2008-08-05 08:37:29.000000000 -0700
-> @@ -67,3 +67,24 @@ struct cr_hdr_task {
->  };
->  
->  
-> +
-> +struct cr_hdr_mm {
-> +	__u32 tag;	/* sharing identifier */
-> +	__u64 start_code, end_code, start_data, end_data;
-> +	__u64 start_brk, brk, start_stack;
-> +	__u64 arg_start, arg_end, env_start, env_end;
-> +	__s16 map_count;
-> +};
+>
+>  linux-2.6.git-dave/arch/x86/kernel/syscall_table_32.S |    2 ++
+>  linux-2.6.git-dave/include/asm-x86/unistd_32.h        |    2 ++
+>  2 files changed, 4 insertions(+)
 
-Another structure that is not 32/64 bit ABI safe on x86. It would be safe
-if you reorder the members as
+System calls should also be declared in include/linux/syscalls.h.
 
-struct cr_hdr_mm {
-	__u32 tag;	/* sharing identifier */
-	__s16 map_count;
-	__u16 pad; /* not actually needed, but better to make it explicit */
-	__u64 start_code, end_code, start_data, end_data;
-	__u64 start_brk, brk, start_stack;
-	__u64 arg_start, arg_end, env_start, env_end;
-};
-
-> +struct cr_hdr_vma {
-> +	__u32 how;
-> +
-> +	__u64 vm_start;
-> +	__u64 vm_end;
-> +	__u64 vm_page_prot;
-> +	__u64 vm_flags;
-> +	__u64 vm_pgoff;
-> +
-> +	__s16 npages;
-> +	__s16 namelen;
-> +};
-
-same here.
-
+I guess you are aware that this implementation is not enough to
+support 32 bit tasks on x86_64. In addition to the native 64-bit
+code, you would also need the 32-bit compat code here.
 
 	Arnd <><
