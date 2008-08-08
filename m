@@ -1,13 +1,13 @@
 From: "Serge E. Hallyn" <serue@us.ibm.com>
 Subject: Re: [PATCH 2/4] autofs4 - track uid and gid of last mount requester
-Date: Fri, 8 Aug 2008 09:58:24 -0500
-Message-ID: <20080808145824.GB10179@us.ibm.com>
-References: <20080807114002.4142.30417.stgit@web.messagingengine.com> <20080807114012.4142.83607.stgit@web.messagingengine.com> <20080807134650.a6a51f7d.akpm@linux-foundation.org> <20080807221242.GA27032@us.ibm.com> <1218167314.17093.79.camel@raven.themaw.net> <1218170643.17093.88.camel@raven.themaw.net>
+Date: Fri, 8 Aug 2008 10:23:22 -0500
+Message-ID: <20080808152322.GA16816@us.ibm.com>
+References: <20080807114002.4142.30417.stgit@web.messagingengine.com> <20080807114012.4142.83607.stgit@web.messagingengine.com> <20080807134650.a6a51f7d.akpm@linux-foundation.org> <20080807221558.GA27863@us.ibm.com> <1218165228.17093.48.camel@raven.themaw.net>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Return-path: <linux-fsdevel-owner@vger.kernel.org>
 Content-Disposition: inline
-In-Reply-To: <1218170643.17093.88.camel@raven.themaw.net>
+In-Reply-To: <1218165228.17093.48.camel@raven.themaw.net>
 Sender: linux-fsdevel-owner@vger.kernel.org
 To: Ian Kent <raven@themaw.net>
 Cc: Andrew Morton <akpm@linux-foundation.org>, autofs@linux.kernel.org, linux-kernel@vger.kernel.org, linux-fsdevel@vger.kernel.org, containers@lists.osdl.org
@@ -15,114 +15,139 @@ List-Id: containers.vger.kernel.org
 
 Quoting Ian Kent (raven@themaw.net):
 > 
-> On Fri, 2008-08-08 at 11:48 +0800, Ian Kent wrote:
+> On Thu, 2008-08-07 at 17:15 -0500, Serge E. Hallyn wrote:
+> > Quoting Andrew Morton (akpm@linux-foundation.org):
+> > > On Thu, 07 Aug 2008 19:40:14 +0800
+> > > Ian Kent <raven@themaw.net> wrote:
+> > > 
+> > > > Patch to track the uid and gid of the last process to request a mount
+> > > > for on an autofs dentry.
+> > > 
+> > > pet peeve: changelog should not tell the reader that this is a "patch".
+> > > Because when someone is reading the changelog in the git repository,
+> > > they hopefully already know that.
+> > > 
+> > > > Signed-off-by: Ian Kent <raven@themaw.net>
 > > > > 
-> > > > Please remind me again why autofs's use of current->uid and
-> > > > current->gid is not busted in the presence of PID namespaces, where
-> > > > these things are no longer system-wide unique?
+> > > > ---
+> > > > 
+> > > >  fs/autofs4/autofs_i.h |    3 +++
+> > > >  fs/autofs4/inode.c    |    2 ++
+> > > >  fs/autofs4/waitq.c    |   34 ++++++++++++++++++++++++++++++++++
+> > > >  3 files changed, 39 insertions(+), 0 deletions(-)
+> > > > 
+> > > > 
+> > > > diff --git a/fs/autofs4/autofs_i.h b/fs/autofs4/autofs_i.h
+> > > > index ea024d8..fa76d18 100644
+> > > > --- a/fs/autofs4/autofs_i.h
+> > > > +++ b/fs/autofs4/autofs_i.h
+> > > > @@ -63,6 +63,9 @@ struct autofs_info {
+> > > >  	unsigned long last_used;
+> > > >  	atomic_t count;
+> > > >  
+> > > > +	uid_t uid;
+> > > > +	gid_t gid;
+> > > > +
+> > > >  	mode_t	mode;
+> > > >  	size_t	size;
+> > > >  
+> > > > diff --git a/fs/autofs4/inode.c b/fs/autofs4/inode.c
+> > > > index 9ca2d07..9408507 100644
+> > > > --- a/fs/autofs4/inode.c
+> > > > +++ b/fs/autofs4/inode.c
+> > > > @@ -53,6 +53,8 @@ struct autofs_info *autofs4_init_ino(struct autofs_info *ino,
+> > > >  		atomic_set(&ino->count, 0);
+> > > >  	}
+> > > >  
+> > > > +	ino->uid = 0;
+> > > > +	ino->gid = 0;
+> > > >  	ino->mode = mode;
+> > > >  	ino->last_used = jiffies;
+> > > >  
+> > > > diff --git a/fs/autofs4/waitq.c b/fs/autofs4/waitq.c
+> > > > index 6d87bb1..7c60c0b 100644
+> > > > --- a/fs/autofs4/waitq.c
+> > > > +++ b/fs/autofs4/waitq.c
+> > > > @@ -457,6 +457,40 @@ int autofs4_wait(struct autofs_sb_info *sbi, struct dentry *dentry,
+> > > >  
+> > > >  	status = wq->status;
+> > > >  
+> > > > +	/*
+> > > > +	 * For direct and offset mounts we need to track the requestrer
 > > > 
-> > > I actually don't see what the autofs4_waitq->pid is used for.  It's
-> > > copied from current into wq->pid at autofs4_wait, and into a packet to
-> > > send to userspace (I assume) at autofs4_notify_daemon.
+> > > typo which I'll fix.
 > > > 
-> > > So as long as a daemon can serve multiple pid namespaces (which
-> > > doubtless it can), the pid could be confusing (or erroneous) for the
-> > > daemon.
+> > > > +	 * uid and gid in the dentry info struct. This is so it can be
+> > > > +	 * supplied, on request, by the misc device ioctl interface.
+> > > > +	 * This is needed during daemon resatart when reconnecting
+> > > > +	 * to existing, active, autofs mounts. The uid and gid (and
+> > > > +	 * related string values) may be used for macro substitution
+> > > > +	 * in autofs mount maps.
 > > 
-> > Your point is well taken.
+> > Hi Ian,
 > > 
-> > The pid is used purely for logging purposes to aid in debugging in user
-> > space. I'm not sure it is worth worrying about it too much as the daemon
-> > has no business interfering with user space processes it is not the
-> > owner of.
+> > could you say just a few more words on these macro substitution?
 > > 
-> > > 
-> > > If I'm remotely right about how the pid is being used, then the thing to
-> > > do would be to 
-> > > 	1. store the daemon's pid namespace  (would that belong in
-> > > 	the autofs_sb_info?)
-> >  
-> > Yep.
-> > 
-> > > 	2. store the task_pid(current) in the waitqueue
-> > > 	3. retrieve the pid_t for the waiting task in the daemon's
-> > > 	pid namespace, and put that into the packet at
-> > > 	autofs4_notify_daemon.
-> > > 
-> > > I realize this patch was about the *uids*, but the pids seem more
-> > > urgent.
-> > 
-> > OK, I get it.
-> > I'll have a go at doing this for completeness.
+> > I think your use of uids can completely ignore user namespaces, but it
+> > depends on who does the macro substitutions and how...
 > 
-> On second thoughts I'm not sure about this.
+> Suppose we have an autofs map entry in /etc/auto.master:
+> /test   /etc/auto.test
 > 
-> The pid that is logged needs to relate to a process in the name space of
-> the one that caused the mount to be done.
+> and in /etc/auto.test
 > 
-> For example, suppose a GUI user finds mounts never expiring, then we get
-> a debug log to try and identify the culprit. So the pid should
-> correspond to a process that the user sees (So I guess in the namespace
-> of that user).
+> im1  /om1 server:/dir1 \
+>      /om2/$USER server2:/dir2
 > 
-> This is the only reason I added the pid to the request packet in the
-> first place.
-> 
-> Please correct me if my understanding of this is not right.
+> Then if this is automounted and the daemon is sent a SIGKILL and started
+> again we need the uid number that was used when this was mounted to
+> re-construct the offsets (/om2/$USER in this case needs the
+> substitution). The uid is used to lookup the user name.
 
-It's not wrong, but we just have to think through which value is the
-most useful.
+Based on that I can't quite tell whether there is any security property
+that could be violated by uid 500 'tricking' the autofs daemon into
+doing something for uid 0.  It sounds like it could be annoying but
+not a security violation?
 
-Any process executing clone(CLONE_NEWPID) (with CAP_SYS_ADMIN) can start
-an application in a new pid namespace.  So imagine the user at the
-desktop clicking some button which runs an application in a new pid
-namespace.  Now if the user starts an xterm and runs ps -ef, the pid
-values he'll see for the tasks in that new namespace will not be the
-same as those which the application sees for itself, and not the same as
-those which, right now, autofs would report.
+> Can you point me in the right direction wrt. to namespaces on this
+> please Serge? We didn't really get to the bottom of it last time I
+> think.
 
-For instance, if I start a shell in a new pid namespace, then within the
-new pid namespace ps -ef gives me:
+Well user namespaces are still being implemented, in fact at some level
+still being designed.  So it doesn't hurt to consider the right thing
+to do right off the bat, but unlike the pid namespaces this really shouldn't
+be hurting anyone right now.
 
-sh-3.2# ps -ef
-UID        PID  PPID  C STIME TTY          TIME CMD
-root         1     0  0 10:54 pts/1    00:00:00 /bin/sh
-root         5     1  0 10:54 pts/1    00:00:00 /bin/sleep 100
-root         6     1  0 10:54 pts/1    00:00:00 ps -ef
+User namespaces will be hierarchical - like pid namespaces, except
+somewhat differently.  If user 500 in userns 0 creates a new user
+namespace, then each userid in the new user namespace is also
+'owned' by (500,0).  Our hope is that we can make the userns
+core such that unprivileged users can safely unshare a new pid
+namespace.  So for that reason, I suspect we'll want to handle
+user namespace much like I just suggested handling pid namespaces.
 
-but from another shell as the same user, partial output of ps -ef
-gives me:
+1. For each 'system container', that is, a process set with its
+own network stack, its own devices, etc, we'll want separate
+autofs daemons.  That's simple enough - apart from determining
+what qualifies as a 'system container'.  Here I think that will
+depend on how autofs talks to the userspace daemon, and what
+needs to be isolated in order to prevent a surreptitious admin
+in one system container from having its autofs daemon talk to
+another.
 
-root      2877  2876  0 10:54 pts/1    00:00:00 /bin/sh
-root      2881  2877  0 10:54 pts/1    00:00:00 /bin/sleep 100
+2. Within a system container, I think we'll want the autofs
+daemon to store a pointer to its user namespace.  When an
+autofs4_wait happens, the wq uses the full current->user
+to look up the task's uid within the autofs daemon's own user
+namespace, and it uses for macro expansions.
 
-And so what we're trying to decide is whether autofs should send
-pid 5 or pid 2881 for a message about the "/bin/sleep 100" task.
+That prevents unprivileged user hallyn from creating a new
+user namespace and trying to fool autofs into expanding
+macros for uid 0.
 
-In fact, if the user clicks that button twice, chances are both
-instances of the application will have the same pid values for each
-process in the application.  So now if autofs sends a message to the
-user about the application, the user cannot tell which process is at
-fault.
-
-Autofs will be sending the user some message about 'process 5'.  The
-user won't know whether it means "the real" pid 5, [watchdog/0],
-pid 5 in the first instance of the application, or pid 5 in the
-second instance.
-
-Now it's true that the user's xterm may still be in a different
-(descendent) pidns of the autofs daemon.  But we can't expect
-the autofs daemon to do pid_t translation for the user, so I
-think what we have to aim for is making sure that the values
-reported are unique within the pidns of the autofs daemon.  And
-that means sending back either the pid values in the autofs
-daemon's pid namespace, or using the top-level pid_ts, that is,
-the pid values in the init namespace, which will be unique
-on the whole system.
-
-Sorry this turned out long-winded, I hope it makes sense.
-And if I'm just showing a misunderstanding of what you're doing,
-please do correct me :)
+Note that certainly for now and probably a long time coming,
+you do need privilege to clone(CLONE_NEWUSER) so this isn't
+urgent.
 
 thanks,
 -serge
