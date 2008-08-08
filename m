@@ -1,15 +1,15 @@
-From: Arnd Bergmann <arnd-r2nGTMty4D4@public.gmane.org>
-Subject: Re: [RFC][PATCH 1/4] checkpoint-restart: general infrastructure
-Date: Sat, 9 Aug 2008 00:39:19 +0200
-Message-ID: <200808090039.20289.arnd__27729.3486557484$1218235329$gmane$org@arndb.de>
-References: <20080807224033.FFB3A2C1@kernel> <200808090013.41999.arnd@arndb.de>
-	<1218234411.19082.58.camel@nimitz>
+From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Subject: Re: [RFC][PATCH 2/4] checkpoint/restart: x86 support
+Date: Fri, 08 Aug 2008 19:04:25 -0400
+Message-ID: <489CD0F9.9060603__28074.7801218697$1218237270$gmane$org@cs.columbia.edu>
+References: <20080807224033.FFB3A2C1@kernel> <200808081409.30591.arnd@arndb.de>
+	<489CAC70.7090809@cs.columbia.edu>
+	<200808090029.28286.arnd@arndb.de>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-15"
-Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1218234411.19082.58.camel@nimitz>
-Content-Disposition: inline
+In-Reply-To: <200808090029.28286.arnd-r2nGTMty4D4@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,35 +19,57 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Theodore Tso <tytso-3s7WtUTddSA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: Arnd Bergmann <arnd-r2nGTMty4D4@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Theodore Tso <tytso-3s7WtUTddSA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Saturday 09 August 2008, Dave Hansen wrote:
-> On Sat, 2008-08-09 at 00:13 +0200, Arnd Bergmann wrote:
 
-> > Maybe you can invert the logic and let the new syscalls create a file
-> > descriptor, and then have user space read or splice the checkpoint
-> > data from it, and restore it by writing to the file descriptor.
-> > It's probably easy to do using anon_inode_getfd() and would solve this
-> > problem, but at the same time make checkpointing the current thread
-> > hard if not impossible.
-> =
 
-> Yeah, it does seem kinda backwards. =A0But, instead of even having to
-> worry about the anon_inode stuff, why don't we just put it in a fs like
-> everything else? =A0checkpointfs!
+Arnd Bergmann wrote:
+> On Friday 08 August 2008, Oren Laadan wrote:
+> 
+>>> It seems weird that you use __u64 members for the registers, but don't
+>>> include r8..r15 in the list. As a consequence, this structure does not
+>>> seem well suited for either x86-32 or x86-64.
+>> In the context of CR, x86-32 and x86-64 are distinct architectures because
+>> you cannot always migrate from one to the other (though 32->64 is sometimes
+>> possible). Therefore, each architecture can have a separate checkpoint file
+>> format (eg r8..r15 only for x86-64).
+> 
+> So why do you use __u64 members for your 32 bit registers?
 
-Well, anon_inodes are really easy to use and have replaced some of the
-simple non-mountable file systems in the kernel.
+The idea was that x86-32 checkpoints can be restarted on a x86-64 node in
+32 bit mode. Clearly it needed more thought...
 
-checkpointfs sounds interesting and I guess in a plan9 world of fairies
-and fantasy, you should be able to create a checkpoint of your system using
-'tar czf - /proc/', but I'm not sure it helps here.
+> 
+>> Except for this special case (32 bit running 64 bit), simple conversion can
+>> be done in the kernel if needed, but most conversion between kernel the
+>> format for different kernel versions (should it change) can be done in
+>> user space (eg. with a filter).
+> 
+> The 32bit on 64bit case is quite common on non-x86 architectures, e.g.
+> powerpc or sparc, where 64 bit kernels typically run 32 bit user space.
+> 
+> A particularly interesting case is mixing 32 and 64 bit tasks in a container
+> that you are checkpointing. This is a very realistic scenario, so there
+> may be good arguments for keeping the format identical between the variations
+> of each architecture.
+> 
+>>> I would suggest either using struct pt_regs by reference, or defining
+>>> it so that you can use the same structure for both 32 and 64 bit x86.
+>> We prefer not to use the kernel structure directly, but an intermediate
+>> structure that can help mitigate subtle incompatibilities issues (between
+>> kernel configurations, versions, and even compiler versions).
+>>
+>> Anyway, either a single structure for both 32 and 64 bit x86, or separate
+>> "struct cr_hdr_cpu{_32,_64}", one for each architecture.
+> 
+> struct pt_regs is part of the kernel ABI, it will not change.
 
-The main problem I see with that would be atomicity: If you want multiple
-processes to keep interacting with each other, you need to save them at
-the same point in time, which gets harder as you split your interface into
-more than a single file descriptor.
+I'm in favor about keeping the format identical between the variations of
+each architecture. Note, however, that "struct pt_regs" won't do because it
+may change with these variations.
 
-	Arnd <><
+So we'll take care of the padding and add r8..r15 in the next version.
+
+Oren.
