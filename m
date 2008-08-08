@@ -1,15 +1,15 @@
-From: Arnd Bergmann <arnd-r2nGTMty4D4@public.gmane.org>
+From: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 Subject: Re: [RFC][PATCH 1/4] checkpoint-restart: general infrastructure
-Date: Sat, 9 Aug 2008 00:23:51 +0200
-Message-ID: <200808090023.51891.arnd__29025.8122179241$1218234382$gmane$org@arndb.de>
-References: <20080807224033.FFB3A2C1@kernel> <1218221451.19082.36.camel@nimitz>
-	<489CB3CA.6050304@cs.columbia.edu>
+Date: Fri, 08 Aug 2008 15:26:51 -0700
+Message-ID: <1218234411.19082.58.camel__37656.7324776717$1218234543$gmane$org@nimitz>
+References: <20080807224033.FFB3A2C1@kernel>
+	<200808081146.54834.arnd@arndb.de> <1218221451.19082.36.camel@nimitz>
+	<200808090013.41999.arnd@arndb.de>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <489CB3CA.6050304-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Content-Disposition: inline
+In-Reply-To: <200808090013.41999.arnd-r2nGTMty4D4@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,60 +19,31 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Theodore Tso <tytso-3s7WtUTddSA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+To: Arnd Bergmann <arnd-r2nGTMty4D4@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Theodore Tso <tytso-3s7WtUTddSA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Friday 08 August 2008, Oren Laadan wrote:
-
-> > Yeah, this is very true.  My guess is that we'll need something like
-> > what we do with modversions. 
-> 
-> Exactly. The header should eventually contain sufficient information
-> to describe the kernel version, configuration, compiler, cpu (arch and
-> capabilities), and checkpoint code version.
-> 
-> How would you suggest to identify the origin tree with an identifier
-> (or a text field) in the header ?
-
-Including struct utsname in the header covers most of this. I supposed
-you can't do it entirely safe, and you always need to be prepared for
-malicious input data, so there probably isn't much point in getting
-too fancy beyond what you need to do to prevent user errors.
-
-> If it is preferred, we can change this to write a kernel message and
-> return a special error telling that a logical error has occurred.
-
-My recommendation in general is to make kernel code crash loudly if
-there is a bug in the kernel itself. Returning error codes makes most
-sense if they get sent back to the user, which then can make sense of
-it, as documented in the man page of the syscall.
-
-> > Yes, eventually.  I think one good point is that we should probably
-> > remove this now so that we *have* to think about security implications
-> > as we add each individual patch.  For instance, what kind of checking do
-> > we do when we restore an mlock()'d VMA?
+On Sat, 2008-08-09 at 00:13 +0200, Arnd Bergmann wrote:
+> > I have to wonder if this is just a symptom of us trying to do this the
+> > wrong way.  We're trying to talk the kernel into writing internal gunk
+> > into a FD.  You're right, it is like a splice where one end of the pipe
+> > is in the kernel.
 > > 
-> > I'll pull this check out so it causes pain. (the good kind)
+> > Any thoughts on a better way to do this?  
 > 
-> Hmmm... even if not strictly now, we *will* need admin privileges for
-> the CR operations, for the following reasons:
-> 
-> checkpoint: we save the entire state of a set of processes to a file - so
-> we must have privileges to do so, at least within (or with respect to) the
-> said container. Even if we are the user who owns the container, we'll need
-> root access within that container.
-> 
-> restart: we restore the entire set of a set of processes, which may require
-> some privileged operations (again, at least within or with respect to the
-> said container). Otherwise any user could inject any restart data into the
-> kernel and create any set of processes with arbitrary permissions.
-> 
-> In a sense, we need something similar to granting ptrace access.
+> Maybe you can invert the logic and let the new syscalls create a file
+> descriptor, and then have user space read or splice the checkpoint
+> data from it, and restore it by writing to the file descriptor.
+> It's probably easy to do using anon_inode_getfd() and would solve this
+> problem, but at the same time make checkpointing the current thread
+> hard if not impossible.
 
-Exactly. There was a project that implemented checkpoint/restart through
-ptrace (don't remember what it was called), so with certain limitations
-it should also be possible to implement the syscalls so that any user that
-can ptrace the tasks can also checkpoint them.
+Yeah, it does seem kinda backwards.  But, instead of even having to
+worry about the anon_inode stuff, why don't we just put it in a fs like
+everything else?  checkpointfs!
 
-	Arnd <><
+I'm also really not convinced that putting the entire checkpoint in one
+glob is really the solution, either.  I mean, is system call overhead
+really a problem here?
+
+-- Dave
