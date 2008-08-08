@@ -1,16 +1,15 @@
-From: Fernando Luis =?ISO-8859-1?Q?V=E1zquez?= Cao <fernando-gVGce1chcLdL9jVzuh4AOg@public.gmane.org>
-Subject: Re: RFC: I/O bandwidth controller
-Date: Fri, 08 Aug 2008 17:10:56 +0900
-Message-ID: <1218183056.17648.6.camel__11735.1586501629$1218183345$gmane$org@sebastian.kern.oss.ntt.co.jp>
-References: <1217870433.20260.101.camel@nimitz>
-	<1217985189.3154.57.camel@sebastian.kern.oss.ntt.co.jp>
-	<20080808.152119.43521725.taka@valinux.co.jp>
-	<20080808.162024.189720323.ryov@valinux.co.jp>
+From: Ryo Tsuruta <ryov-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
+Subject: Re: [PATCH 6/7] bio-cgroup: Implement the bio-cgroup
+Date: Fri, 08 Aug 2008 17:30:45 +0900 (JST)
+Message-ID: <20080808.173045.112614776.ryov__29071.5877119966$1218184462$gmane$org@valinux.co.jp>
+References: <20080804.175934.112619046.ryov@valinux.co.jp>
+	<20080804.180022.183027902.ryov@valinux.co.jp>
+	<489BF14D.6050009@oss.ntt.co.jp>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20080808.162024.189720323.ryov-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
+In-Reply-To: <489BF14D.6050009-gVGce1chcLdL9jVzuh4AOg@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -20,41 +19,43 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Ryo Tsuruta <ryov-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
-Cc: xen-devel-GuqFBffKawuULHF6PoxzQEEOCMrvLtNR@public.gmane.org, uchida-LYU95VJlayp8UrSeD/g0lQ@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, dm-devel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, agk-9JcytcrH/bA+uJoB2kUjGw@public.gmane.org, virtualization-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, ngupta-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org
+To: yoshikawa.takuya-gVGce1chcLdL9jVzuh4AOg@public.gmane.org
+Cc: xen-devel-GuqFBffKawuULHF6PoxzQEEOCMrvLtNR@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, virtualization-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, dm-devel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, agk-9JcytcrH/bA+uJoB2kUjGw@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Fri, 2008-08-08 at 16:20 +0900, Ryo Tsuruta wrote:
-> > >   - Implement a block layer resource controller. dm-ioband is a working
-> > > solution and feature rich but its dependency on the dm infrastructure is
-> > > likely to find opposition (the dm layer does not handle barriers
-> > > properly and the maximum size of I/O requests can be limited in some
-> > > cases). In such a case, we could either try to build a standalone
-> > > resource controller based on dm-ioband (which would probably hook into
-> > > generic_make_request) or try to come up with something new.
-> > 
-> > I doubt about the maximum size of I/O requests problem. You can't avoid
-> > this problem as far as you use device mapper modules with such a bad
-> > manner, even if the controller is implemented as a stand-alone controller.
-> > There is no limitation if you only use dm-ioband without any other device
-> > mapper modules.
-> 
-> The following is a part of source code where the limitation comes from.
-> 
-> dm-table.c: dm_set_device_limits()
->         /*
->          * Check if merge fn is supported.
->          * If not we'll force DM to use PAGE_SIZE or
->          * smaller I/O, just to be safe.
->          */
-> 
->         if (q->merge_bvec_fn && !ti->type->merge)
->                 rs->max_sectors =
->                         min_not_zero(rs->max_sectors,
->                                      (unsigned int) (PAGE_SIZE >> 9));
-> 
-> As far as I can find, In 2.6.27-rc1-mm1, Only some software RAID
-> drivers and pktcdvd driver define merge_bvec_fn().
+Hi Yoshikawa-san,
 
-Yup, exactly. The implication of this is that we may see a drop in
-performance in some RAID configurations.
+> > +static void bio_cgroup_move_task(struct cgroup_subsys *ss,
+> > +				struct cgroup *cont,
+> > +				struct cgroup *old_cont,
+> > +				struct task_struct *p)
+> > +{
+> > +	struct mm_struct *mm;
+> > +	struct bio_cgroup *biog, *old_biog;
+> > +
+> > +	if (bio_cgroup_disabled())
+> > +		return;
+> > +
+> > +	mm = get_task_mm(p);
+> > +	if (mm == NULL)
+> > +		return;
+> > +
+> > +	biog = cgroup_bio(cont);
+> > +	old_biog = cgroup_bio(old_cont);
+> > +
+> > +	mmput(mm);
+> > +	return;
+> > +}
+> 
+> Is this function fully implemented?
+
+This function can be more simplified, there is some unnecessary code 
+from old version.
+
+> I tried to put a process into a group by writing to
+> "/cgroup/bio/BGROUP/tasks" but failed.
+
+Could you tell me what you actually did? I will try the same thing.
+
+--
+Ryo Tsuruta <ryov-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
