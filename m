@@ -1,13 +1,14 @@
 From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: Re: [RFC][PATCH 0/4] kernel-based checkpoint restart
-Date: Fri, 08 Aug 2008 15:44:26 -0400
-Message-ID: <489CA21A.4060009@cs.columbia.edu>
-References: <20080807224033.FFB3A2C1@kernel> <200808081125.12706.arnd@arndb.de>
+Subject: Re: [RFC][PATCH 2/4] checkpoint/restart: x86 support
+Date: Fri, 08 Aug 2008 16:28:32 -0400
+Message-ID: <489CAC70.7090809@cs.columbia.edu>
+References: <20080807224033.FFB3A2C1@kernel> <20080807224035.E56663BF@kernel>
+	<200808081409.30591.arnd@arndb.de>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <200808081125.12706.arnd-r2nGTMty4D4@public.gmane.org>
+In-Reply-To: <200808081409.30591.arnd-r2nGTMty4D4@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -23,75 +24,84 @@ List-Id: containers.vger.kernel.org
 
 Hi,
 
+Thanks for the feedback.
+
+The proof-of-concept is written for x86 32 bits, keeping in mind that
+we'll need support for 64 bits support. My goal is to leverage feedback
+and contributions to have support for 64 bits and other architectures
+as well.
+
 Arnd Bergmann wrote:
-> On Friday 08 August 2008, Dave Hansen wrote:
->> These patches are from Oren Laaden.  I've refactored them
->> a bit to make them a wee bit more reviewable.  I think this
->> separates out the per-arch bits pretty well.  It should also
->> be at least build-bisetable.
 > 
-> Cool stuff
+>> diff -puN /dev/null include/asm-x86/ckpt.h
+>> --- /dev/null	2007-04-11 11:48:27.000000000 -0700
+>> +++ linux-2.6.git-dave/include/asm-x86/ckpt.h	2008-08-04 13:29:59.000000000 -0700
+>> @@ -0,0 +1,46 @@
 > 
-
-Thanks. This is a proof of concept so all sorts of feedback are
-definitely welcome. Some of the ideas and discussions are found
-around:
-   http://wiki.openvz.org/Containers/Mini-summit_2008
-and the notes:
-   http://wiki.openvz.org/Containers/Mini-summit_2008_notes
-and the archives of the linux containers mailing list:
-   https://lists.linux-foundation.org/pipermail/containers/
-(August and July).
-
-Several aspects of the implementation are still experimental and
-I expect them to evolve with the feedback. In particular, expect
-the specific user interface (syscalls) and the checkpoint image
-format to be moving targets.
-
->> ============================== ckpt.c ================================
->>
->> #define _GNU_SOURCE        /* or _BSD_SOURCE or _SVID_SOURCE */
->>
->> #include <stdio.h>
->> #include <stdlib.h>
->> #include <errno.h>
->> #include <fcntl.h>
->> #include <unistd.h>
->> #include <asm/unistd_32.h>
->> #include <sys/syscall.h>
+>> +
+>> +struct cr_hdr_cpu {
+>> +        __u64 bx;
+>> +        __u64 cx;
+>> +        __u64 dx;
+>> +        __u64 si;
+>> +        __u64 di;
+>> +        __u64 bp;
+>> +        __u64 ax;
+>> +        __u64 ds;
+>> +        __u64 es;
+>> +        __u64 orig_ax;
+>> +        __u64 ip;
+>> +        __u64 cs;
+>> +        __u64 flags;
+>> +        __u64 sp;
+>> +        __u64 ss;
+>> +        __u64 fs;
+>> +        __u64 gs;
+>> +
+>> +	__u64 debugreg0;
+>> +	__u64 debugreg1;
+>> +	__u64 debugreg2;
+>> +	__u64 debugreg3;
+>> +	__u64 debugreg6;
+>> +	__u64 debugreg7;
+>> +
+>> +	__u8 uses_debug;
+>> +
+>> +	__u8 used_math;
+>> +	__u8 has_fxsr;
+>> +	union thread_xstate xstate;	/* i387 */
+>> +};
 > 
-> Note that asm/unistd_32.h is not portable, you should use asm/unistd.h
-> in the example.
+> It seems weird that you use __u64 members for the registers, but don't
+> include r8..r15 in the list. As a consequence, this structure does not
+> seem well suited for either x86-32 or x86-64.
+
+In the context of CR, x86-32 and x86-64 are distinct architectures because
+you cannot always migrate from one to the other (though 32->64 is sometimes
+possible). Therefore, each architecture can have a separate checkpoint file
+format (eg r8..r15 only for x86-64).
+
+The information about the kernel configuration, version and cpu settings
+will appear on the header; so the restart code will know the architecture
+on which the checkpoint had been taken.
+
+So if we want to restart a task checkpointed on x86-32 on a x86-64 machine
+(in 32 bit mode), the code will know to not expect that data (r8..r15).
+
+Except for this special case (32 bit running 64 bit), simple conversion can
+be done in the kernel if needed, but most conversion between kernel the
+format for different kernel versions (should it change) can be done in
+user space (eg. with a filter).
+
 > 
->>         pid_t pid = getpid();
->>         int ret;
->>
->>         ret = syscall(__NR_checkpoint, pid, STDOUT_FILENO, 0);
-> 
-> Interface-wise, I would consider checkpointing yourself signficantly
-> different from checkpointing some other thread. If checkpointing
-> yourself is the common case, it probably makes sense to allow passing
-> of pid=0 for this.
-> 
+> I would suggest either using struct pt_regs by reference, or defining
+> it so that you can use the same structure for both 32 and 64 bit x86.
 
-The checkpoint/restart code is meant to checkpoint a whole container,
-that is be able to save the state of multiple other tasks. The same
-code can also be used to checkpoint yourself fairly easily with minimal
-changes (see comments in the code about "in context" checkpoint/restart
-that take care of this).
+We prefer not to use the kernel structure directly, but an intermediate
+structure that can help mitigate subtle incompatibilities issues (between
+kernel configurations, versions, and even compiler versions).
 
-I suggest to keep the interface as is in the sense that the pid will
-identify the target container (e.g. the pid of the init process of that
-container).
-
-Then, pid=0 would mean "the container to which I belong" if
-you are inside a container (and therefore don't know the pid of the
-init process there).
-
-Finally, to checkpoint yourself, you would set the a bit in the flags
-argument to something like CR_CKPT_MYSELF. Such a flag will be needed
-internally anyway to special-case self checkpoint where appropriate.
-
-Comments are welcome.
+Anyway, either a single structure for both 32 and 64 bit x86, or separate
+"struct cr_hdr_cpu{_32,_64}", one for each architecture.
 
 Oren.
