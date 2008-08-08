@@ -1,15 +1,17 @@
 From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: Re: [RFC][PATCH 2/4] checkpoint/restart: x86 support
-Date: Fri, 08 Aug 2008 19:04:25 -0400
-Message-ID: <489CD0F9.9060603__28074.7801218697$1218237270$gmane$org@cs.columbia.edu>
-References: <20080807224033.FFB3A2C1@kernel> <200808081409.30591.arnd@arndb.de>
-	<489CAC70.7090809@cs.columbia.edu>
-	<200808090029.28286.arnd@arndb.de>
+Subject: Re: [RFC][PATCH 1/4] checkpoint-restart: general infrastructure
+Date: Fri, 08 Aug 2008 19:27:09 -0400
+Message-ID: <489CD64D.7030500__42402.9327500195$1218238322$gmane$org@cs.columbia.edu>
+References: <20080807224033.FFB3A2C1@kernel>	 <20080807224034.735B1F84@kernel>
+	<200808081146.54834.arnd@arndb.de>	
+	<1218221451.19082.36.camel@nimitz>
+	<489CB3CA.6050304@cs.columbia.edu>
+	<1218233855.19082.52.camel@nimitz>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <200808090029.28286.arnd-r2nGTMty4D4@public.gmane.org>
+In-Reply-To: <1218233855.19082.52.camel@nimitz>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,57 +21,39 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Arnd Bergmann <arnd-r2nGTMty4D4@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Theodore Tso <tytso-3s7WtUTddSA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+To: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Theodore Tso <tytso-3s7WtUTddSA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Arnd Bergmann <arnd-r2nGTMty4D4@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
 
+Dave Hansen wrote:
+> On Fri, 2008-08-08 at 16:59 -0400, Oren Laadan wrote:
+>> To avoid repetitive malloc/free, ctx->hbuf is a buffer to host headers
+>> as they are read;
+> 
+> kmalloc/kfree() area really, really fast.  I wonder if the code gets
+> easier or harder to read if we just alloc/free as we need to.
 
-Arnd Bergmann wrote:
-> On Friday 08 August 2008, Oren Laadan wrote:
-> 
->>> It seems weird that you use __u64 members for the registers, but don't
->>> include r8..r15 in the list. As a consequence, this structure does not
->>> seem well suited for either x86-32 or x86-64.
->> In the context of CR, x86-32 and x86-64 are distinct architectures because
->> you cannot always migrate from one to the other (though 32->64 is sometimes
->> possible). Therefore, each architecture can have a separate checkpoint file
->> format (eg r8..r15 only for x86-64).
-> 
-> So why do you use __u64 members for your 32 bit registers?
+The ctx->hbuf interface is a pair of cr_hbuf_get(ctx, length) and a
+matching cr_hbuf_put(ctx, length), almost like using kmalloc/kfree().
+The main difference is that cleanup in error paths is implicit (the
+whole buffer is freed when the ctx is deallocated).
 
-The idea was that x86-32 checkpoints can be restarted on a x86-64 node in
-32 bit mode. Clearly it needed more thought...
+> How large are these allocations, usually?  Will stack allocation work in
+> most cases?
 
-> 
->> Except for this special case (32 bit running 64 bit), simple conversion can
->> be done in the kernel if needed, but most conversion between kernel the
->> format for different kernel versions (should it change) can be done in
->> user space (eg. with a filter).
-> 
-> The 32bit on 64bit case is quite common on non-x86 architectures, e.g.
-> powerpc or sparc, where 64 bit kernels typically run 32 bit user space.
-> 
-> A particularly interesting case is mixing 32 and 64 bit tasks in a container
-> that you are checkpointing. This is a very realistic scenario, so there
-> may be good arguments for keeping the format identical between the variations
-> of each architecture.
-> 
->>> I would suggest either using struct pt_regs by reference, or defining
->>> it so that you can use the same structure for both 32 and 64 bit x86.
->> We prefer not to use the kernel structure directly, but an intermediate
->> structure that can help mitigate subtle incompatibilities issues (between
->> kernel configurations, versions, and even compiler versions).
->>
->> Anyway, either a single structure for both 32 and 64 bit x86, or separate
->> "struct cr_hdr_cpu{_32,_64}", one for each architecture.
-> 
-> struct pt_regs is part of the kernel ABI, it will not change.
+That depends on how we construct the headers. In Zap there are some
+headers that use relatively long structures to be put on the stack,
+and it wouldn't make much sense to divide them into smaller headers
+artificially.
 
-I'm in favor about keeping the format identical between the variations of
-each architecture. Note, however, that "struct pt_regs" won't do because it
-may change with these variations.
-
-So we'll take care of the padding and add r8..r15 in the next version.
+However, I forgot to mention earlier that an important reason to use
+this construct is actually in anticipation for a future optimization:
+during application downtime the checkpoint state will be aggregated
+into an in-memory buffer, and only after the application is allowed
+to continue execution (unfrozen) the buffer will be written-back to
+the FD. In that scenario, we will allocate a larger buffer in the ctx
+(eg based on some heuristics) and cr_hbuf_get() will return the next
+location in that buffer, while cr_hbuf_put() will do nothing.
 
 Oren.
