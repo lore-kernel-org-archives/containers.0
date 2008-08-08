@@ -1,79 +1,128 @@
-From: Hirokazu Takahashi <taka-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
-Subject: Re: RFC: I/O bandwidth controller
-Date: Fri, 08 Aug 2008 23:31:50 +0900 (JST)
-Message-ID: <20080808.233150.02266833.taka__18460.6443079703$1218206052$gmane$org@valinux.co.jp>
-References: <1217870433.20260.101.camel@nimitz>
-	<1217985189.3154.57.camel@sebastian.kern.oss.ntt.co.jp>
-	<20080808.152119.43521725.taka@valinux.co.jp>
+From: "Serge E. Hallyn" <serue@us.ibm.com>
+Subject: Re: [PATCH 2/4] autofs4 - track uid and gid of last mount requester
+Date: Fri, 8 Aug 2008 09:58:24 -0500
+Message-ID: <20080808145824.GB10179@us.ibm.com>
+References: <20080807114002.4142.30417.stgit@web.messagingengine.com> <20080807114012.4142.83607.stgit@web.messagingengine.com> <20080807134650.a6a51f7d.akpm@linux-foundation.org> <20080807221242.GA27032@us.ibm.com> <1218167314.17093.79.camel@raven.themaw.net> <1218170643.17093.88.camel@raven.themaw.net>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20080808.152119.43521725.taka-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: fernando-gVGce1chcLdL9jVzuh4AOg@public.gmane.org
-Cc: xen-devel-GuqFBffKawuULHF6PoxzQEEOCMrvLtNR@public.gmane.org, uchida-LYU95VJlayp8UrSeD/g0lQ@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, dm-devel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, agk-9JcytcrH/bA+uJoB2kUjGw@public.gmane.org, virtualization-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, ngupta-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org
+Content-Type: text/plain; charset=us-ascii
+Return-path: <linux-fsdevel-owner@vger.kernel.org>
+Content-Disposition: inline
+In-Reply-To: <1218170643.17093.88.camel@raven.themaw.net>
+Sender: linux-fsdevel-owner@vger.kernel.org
+To: Ian Kent <raven@themaw.net>
+Cc: Andrew Morton <akpm@linux-foundation.org>, autofs@linux.kernel.org, linux-kernel@vger.kernel.org, linux-fsdevel@vger.kernel.org, containers@lists.osdl.org
 List-Id: containers.vger.kernel.org
 
-Hi, Fernando,
-
-> >   - Implement a block layer resource controller. dm-ioband is a working
-> > solution and feature rich but its dependency on the dm infrastructure is
-> > likely to find opposition (the dm layer does not handle barriers
-> > properly and the maximum size of I/O requests can be limited in some
-> > cases). In such a case, we could either try to build a standalone
-> > resource controller based on dm-ioband (which would probably hook into
-> > generic_make_request) or try to come up with something new.
+Quoting Ian Kent (raven@themaw.net):
 > 
-> I doubt about the maximum size of I/O requests problem. You can't avoid
-> this problem as far as you use device mapper modules with such a bad
-> manner, even if the controller is implemented as a stand-alone controller.
-> There is no limitation if you only use dm-ioband without any other device
-> mapper modules.
-
-Ryo told me this isn't true anymore. The dm infrastructure introduced
-a new feature to support multiple page-sized I/O requests, that was
-just merged to the current linux tree. So you and me don't need to
-worry about this stuff anymore.
-
-Ryo said he was going to make dm-ioband support this new feature and
-post the patches soon.
-
-> And I think the device mapper team just started designing barriers support.
-> I guess it won't take long. Right, Alasdair?
-> We should know it is logically impossible to support barriers on some
-> types of device mapper modules such as LVM. You can't avoid the barrier
-> problem when you use this kind of multiple devices even if you implement
-> the controller in the block layer.
+> On Fri, 2008-08-08 at 11:48 +0800, Ian Kent wrote:
+> > > > 
+> > > > Please remind me again why autofs's use of current->uid and
+> > > > current->gid is not busted in the presence of PID namespaces, where
+> > > > these things are no longer system-wide unique?
+> > > 
+> > > I actually don't see what the autofs4_waitq->pid is used for.  It's
+> > > copied from current into wq->pid at autofs4_wait, and into a packet to
+> > > send to userspace (I assume) at autofs4_notify_daemon.
+> > > 
+> > > So as long as a daemon can serve multiple pid namespaces (which
+> > > doubtless it can), the pid could be confusing (or erroneous) for the
+> > > daemon.
+> > 
+> > Your point is well taken.
+> > 
+> > The pid is used purely for logging purposes to aid in debugging in user
+> > space. I'm not sure it is worth worrying about it too much as the daemon
+> > has no business interfering with user space processes it is not the
+> > owner of.
+> > 
+> > > 
+> > > If I'm remotely right about how the pid is being used, then the thing to
+> > > do would be to 
+> > > 	1. store the daemon's pid namespace  (would that belong in
+> > > 	the autofs_sb_info?)
+> >  
+> > Yep.
+> > 
+> > > 	2. store the task_pid(current) in the waitqueue
+> > > 	3. retrieve the pid_t for the waiting task in the daemon's
+> > > 	pid namespace, and put that into the packet at
+> > > 	autofs4_notify_daemon.
+> > > 
+> > > I realize this patch was about the *uids*, but the pids seem more
+> > > urgent.
+> > 
+> > OK, I get it.
+> > I'll have a go at doing this for completeness.
 > 
-> But I think a stand-alone implementation will have a merit that it
-> makes it easier to setup the configuration rather than dm-ioband.
-> From this point of view, it would be good that you move the algorithm
-> of dm-ioband into the block layer.
-> On the other hand, we should know it will make it impossible to use
-> the dm infrastructure from the controller, though it isn't so rich.
+> On second thoughts I'm not sure about this.
 > 
-> >   - If the I/O tracking patches make it into the kernel we could move on
-> > and try to get the Cgroup extensions to CFQ and AS mentioned before (see
-> > (1), (2), and (3) above for details) merged.
-> >   - Delegate the task of controlling the rate at which a task can
-> > generate dirty pages to the memory controller.
-> > 
-> > This RFC is somewhat vague but my feeling is that we build some
-> > consensus on the goals and basic design aspects before delving into
-> > implementation details.
-> > 
-> > I would appreciate your comments and feedback.
-> > 
-> > - Fernando
+> The pid that is logged needs to relate to a process in the name space of
+> the one that caused the mount to be done.
+> 
+> For example, suppose a GUI user finds mounts never expiring, then we get
+> a debug log to try and identify the culprit. So the pid should
+> correspond to a process that the user sees (So I guess in the namespace
+> of that user).
+> 
+> This is the only reason I added the pid to the request packet in the
+> first place.
+> 
+> Please correct me if my understanding of this is not right.
 
-Thanks,
-Hirokazu Takahashi.
+It's not wrong, but we just have to think through which value is the
+most useful.
+
+Any process executing clone(CLONE_NEWPID) (with CAP_SYS_ADMIN) can start
+an application in a new pid namespace.  So imagine the user at the
+desktop clicking some button which runs an application in a new pid
+namespace.  Now if the user starts an xterm and runs ps -ef, the pid
+values he'll see for the tasks in that new namespace will not be the
+same as those which the application sees for itself, and not the same as
+those which, right now, autofs would report.
+
+For instance, if I start a shell in a new pid namespace, then within the
+new pid namespace ps -ef gives me:
+
+sh-3.2# ps -ef
+UID        PID  PPID  C STIME TTY          TIME CMD
+root         1     0  0 10:54 pts/1    00:00:00 /bin/sh
+root         5     1  0 10:54 pts/1    00:00:00 /bin/sleep 100
+root         6     1  0 10:54 pts/1    00:00:00 ps -ef
+
+but from another shell as the same user, partial output of ps -ef
+gives me:
+
+root      2877  2876  0 10:54 pts/1    00:00:00 /bin/sh
+root      2881  2877  0 10:54 pts/1    00:00:00 /bin/sleep 100
+
+And so what we're trying to decide is whether autofs should send
+pid 5 or pid 2881 for a message about the "/bin/sleep 100" task.
+
+In fact, if the user clicks that button twice, chances are both
+instances of the application will have the same pid values for each
+process in the application.  So now if autofs sends a message to the
+user about the application, the user cannot tell which process is at
+fault.
+
+Autofs will be sending the user some message about 'process 5'.  The
+user won't know whether it means "the real" pid 5, [watchdog/0],
+pid 5 in the first instance of the application, or pid 5 in the
+second instance.
+
+Now it's true that the user's xterm may still be in a different
+(descendent) pidns of the autofs daemon.  But we can't expect
+the autofs daemon to do pid_t translation for the user, so I
+think what we have to aim for is making sure that the values
+reported are unique within the pidns of the autofs daemon.  And
+that means sending back either the pid values in the autofs
+daemon's pid namespace, or using the top-level pid_ts, that is,
+the pid values in the init namespace, which will be unique
+on the whole system.
+
+Sorry this turned out long-winded, I hope it makes sense.
+And if I'm just showing a misunderstanding of what you're doing,
+please do correct me :)
+
+thanks,
+-serge
