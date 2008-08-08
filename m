@@ -1,14 +1,14 @@
-From: Arnd Bergmann <arnd-r2nGTMty4D4@public.gmane.org>
-Subject: Re: [RFC][PATCH 0/4] kernel-based checkpoint restart
-Date: Fri, 8 Aug 2008 11:25:12 +0200
-Message-ID: <200808081125.12706.arnd@arndb.de>
-References: <20080807224033.FFB3A2C1@kernel>
+From: Takuya Yoshikawa <yoshikawa.takuya-gVGce1chcLdL9jVzuh4AOg@public.gmane.org>
+Subject: Re: [PATCH 6/7] bio-cgroup: Implement the bio-cgroup
+Date: Fri, 08 Aug 2008 18:42:36 +0900
+Message-ID: <489C150C.5040700__28876.6827238307$1218188690$gmane$org@oss.ntt.co.jp>
+References: <20080804.175934.112619046.ryov@valinux.co.jp>	<20080804.180022.183027902.ryov@valinux.co.jp>	<489BF14D.6050009@oss.ntt.co.jp>
+	<20080808.173045.112614776.ryov@valinux.co.jp>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20080807224033.FFB3A2C1@kernel>
-Content-Disposition: inline
+In-Reply-To: <20080808.173045.112614776.ryov-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,41 +18,70 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Theodore Tso <tytso-3s7WtUTddSA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: Ryo Tsuruta <ryov-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
+Cc: xen-devel-GuqFBffKawuULHF6PoxzQEEOCMrvLtNR@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, virtualization-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, dm-devel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, agk-9JcytcrH/bA+uJoB2kUjGw@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Friday 08 August 2008, Dave Hansen wrote:
-> These patches are from Oren Laaden.  I've refactored them
-> a bit to make them a wee bit more reviewable.  I think this
-> separates out the per-arch bits pretty well.  It should also
-> be at least build-bisetable.
+Hi Tsuruta-san,
 
-Cool stuff
-
-> ============================== ckpt.c ================================
+Ryo Tsuruta wrote:
+> Hi Yoshikawa-san,
 > 
-> #define _GNU_SOURCE        /* or _BSD_SOURCE or _SVID_SOURCE */
+>>> +static void bio_cgroup_move_task(struct cgroup_subsys *ss,
+>>> +				struct cgroup *cont,
+>>> +				struct cgroup *old_cont,
+>>> +				struct task_struct *p)
+>>> +{
+>>> +	struct mm_struct *mm;
+>>> +	struct bio_cgroup *biog, *old_biog;
+>>> +
+>>> +	if (bio_cgroup_disabled())
+>>> +		return;
+>>> +
+>>> +	mm = get_task_mm(p);
+>>> +	if (mm == NULL)
+>>> +		return;
+>>> +
+>>> +	biog = cgroup_bio(cont);
+>>> +	old_biog = cgroup_bio(old_cont);
+>>> +
+>>> +	mmput(mm);
+>>> +	return;
+>>> +}
+>> Is this function fully implemented?
 > 
-> #include <stdio.h>
-> #include <stdlib.h>
-> #include <errno.h>
-> #include <fcntl.h>
-> #include <unistd.h>
-> #include <asm/unistd_32.h>
-> #include <sys/syscall.h>
+> This function can be more simplified, there is some unnecessary code 
+> from old version.
+> 
 
-Note that asm/unistd_32.h is not portable, you should use asm/unistd.h
-in the example.
+I think it is neccessary to attach the task p to new biog.
 
->         pid_t pid = getpid();
->         int ret;
->
->         ret = syscall(__NR_checkpoint, pid, STDOUT_FILENO, 0);
+>> I tried to put a process into a group by writing to
+>> "/cgroup/bio/BGROUP/tasks" but failed.
+> 
+> Could you tell me what you actually did? I will try the same thing.
+> 
+> --
+> Ryo Tsuruta <ryov-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
+> 
 
-Interface-wise, I would consider checkpointing yourself signficantly
-different from checkpointing some other thread. If checkpointing
-yourself is the common case, it probably makes sense to allow passing
-of pid=0 for this.
+I wanted to test my own scheduler which uses bio tracking information.
+SO I tried your patch, especially, get_bio_cgroup_iocontext(), to get
+the io_context from bio.
 
-	Arnd <><
+In my test, I made some threads with certain iopriorities run 
+concurrently. To schedule these threads based on their iopriorities,
+I made BGROUP directories for each iopriorities.
+e.g. /cgroup/bio/be0 ... /cgroup/bio/be7
+Then, I tried to attach the processes to the appropriate groups.
+
+But the processes stayed in the original group(id=0).
+...
+
+I am sorry but I have to leave now and I cannot come here next week.
+--> I will take summer holidays.
+
+I will reply to you later.
+
+Thanks,
+- Takuya Yoshikawa
