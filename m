@@ -1,15 +1,16 @@
-From: Arnd Bergmann <arnd-r2nGTMty4D4@public.gmane.org>
-Subject: Re: [RFC][PATCH 1/4] checkpoint-restart: general infrastructure
-Date: Mon, 11 Aug 2008 17:25:13 +0200
-Message-ID: <200808111725.13635.arnd__28670.3896047131$1218468717$gmane$org@arndb.de>
-References: <20080807224033.FFB3A2C1@kernel> <1218234411.19082.58.camel@nimitz>
-	<20080811150703.GA25930@us.ibm.com>
+From: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Subject: Re: [RFC][PATCH 2/4] checkpoint/restart: x86 support
+Date: Mon, 11 Aug 2008 08:36:04 -0700
+Message-ID: <1218468964.5598.3.camel__43073.6314192929$1218469106$gmane$org@nimitz>
+References: <20080807224033.FFB3A2C1@kernel>
+	<200808081409.30591.arnd@arndb.de> <489CAC70.7090809@cs.columbia.edu>
+	<200808090029.28286.arnd@arndb.de> <489CD0F9.9060603@cs.columbia.edu>
+	<1218242286.19082.62.camel@nimitz>  <489F015E.9080704@goop.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20080811150703.GA25930-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Content-Disposition: inline
+In-Reply-To: <489F015E.9080704-TSDbQ3PG+2Y@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,27 +20,22 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Theodore Tso <tytso-3s7WtUTddSA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+To: Jeremy Fitzhardinge <jeremy-TSDbQ3PG+2Y@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Theodore Tso <tytso-3s7WtUTddSA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Arnd Bergmann <arnd-r2nGTMty4D4@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Monday 11 August 2008, Serge E. Hallyn wrote:
-> One reason is that I suspect that stops us from being able to send that
-> data straight to a pipe to compress and/or send on the network, without
-> hitting local disk. =A0Though if the checkpointfs was ram-based maybe not?
-> =
+On Sun, 2008-08-10 at 07:55 -0700, Jeremy Fitzhardinge wrote:
+> Struct pt_regs is not ABI, and can (and has) changed on x86.   It's not 
+> suitable for a checkpoint structure because it only contains the 
+> registers that the kernel trashes, not all usermode registers (on i386, 
+> it leaves out %gs, for example).  asm-x86/ptrace-abi.h does define stuff 
+> that's fixed in stone; it expresses it in terms of a register array, 
+> with constants defining what element is which register.
 
-> As Oren has pointed out before, passing in an fd means we can pass a
-> socket into the syscall.
-> =
+Thanks for the explanation.
 
-> Using the anon_inodes would also prevent that, but if it makes for a
-> cleaner overall solution then I'm not against considering either one
-> of course.
-> =
+I just want to reduce the coding and maintenance burden here.  Xen must
+do this for partition mobility, right?  Does it define all its own
+stuff?
 
-
-With anon_inodes, you can still implement splice_read/splice_write,
-so you can splice it into a socket.
-
-	Arnd <><
+-- Dave
