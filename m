@@ -1,19 +1,14 @@
-From: "Naveen Gupta" <ngupta-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
-Subject: Re: RFC: I/O bandwidth controller (was Re: Too many I/O controller
-	patches)
-Date: Mon, 11 Aug 2008 11:18:51 -0700
-Message-ID: <2846be6b0808111118q14995d84xdb9e6de500e415e2__32379.4848904528$1218478898$gmane$org@mail.gmail.com>
-References: <20080804.175126.193692178.ryov@valinux.co.jp>
-	<1217870433.20260.101.camel@nimitz>
-	<1217985189.3154.57.camel@sebastian.kern.oss.ntt.co.jp>
-	<2846be6b0808061237o6667c609l21bdb5a765469e95@mail.gmail.com>
-	<1218115028.8460.353.camel@sebastian.kern.oss.ntt.co.jp>
+From: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Subject: Re: [RFC][PATCH 1/4] checkpoint-restart: general infrastructure
+Date: Mon, 11 Aug 2008 11:38:41 -0700
+Message-ID: <1218479921.5598.35.camel__28247.2516563304$1218480056$gmane$org@nimitz>
+References: <20080807224033.FFB3A2C1@kernel>
+	<20080807224034.735B1F84@kernel> <20080811120315.4b3ba2c8@bike.lwn.net>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1218115028.8460.353.camel-xpvPi5bcW5X5OjGIXfuPlhrrLbDL3r4M6qtp775pBPw@public.gmane.org>
-Content-Disposition: inline
+In-Reply-To: <20080811120315.4b3ba2c8-vw3g6Xz/EtPk1uMJSBkQmQ@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -23,192 +18,104 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: =?ISO-8859-1?Q?Fernando_Luis_V=E1zquez_Cao?= <fernando-gVGce1chcLdL9jVzuh4AOg@public.gmane.org>
-Cc: xen-devel-GuqFBffKawuULHF6PoxzQEEOCMrvLtNR@public.gmane.org, uchida-LYU95VJlayp8UrSeD/g0lQ@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, dm-devel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, agk-9JcytcrH/bA+uJoB2kUjGw@public.gmane.org, virtualization-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Andrea Righi <righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+To: Jonathan Corbet <corbet-T1hC0tSOHrs@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Theodore Tso <tytso-3s7WtUTddSA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Hello Fernando
-
-
-2008/8/7 Fernando Luis V=E1zquez Cao <fernando-gVGce1chcLdL9jVzuh4AOg@public.gmane.org>:
-> Hi Naveen,
->
-> On Wed, 2008-08-06 at 12:37 -0700, Naveen Gupta wrote:
->> > 3. & 4. & 5. - I/O bandwidth shaping & General design aspects
->> >
->> > The implementation of an I/O scheduling algorithm is to a certain exte=
-nt
->> > influenced by what we are trying to achieve in terms of I/O bandwidth
->> > shaping, but, as discussed below, the required accuracy can determine
->> > the layer where the I/O controller has to reside. Off the top of my
->> > head, there are three basic operations we may want perform:
->> >  - I/O nice prioritization: ionice-like approach.
->> >  - Proportional bandwidth scheduling: each process/group of processes
->> > has a weight that determines the share of bandwidth they receive.
->> >  - I/O limiting: set an upper limit to the bandwidth a group of tasks
->> > can use.
->>
->> I/O limiting can be a special case of proportional bandwidth
->> scheduling. A process/process group can use use it's share of
->> bandwidth and if there is spare bandwidth it be allowed to use it. And
->> if we want to absolutely restrict it we add another flag which
->> specifies that the specified proportion is exact and has an upper
->> bound.
->>
->> Let's say the ideal b/w for a device is 100MB/s
->>
->> And process 1 is assigned b/w of 20%. When we say that the proportion
->> is strict, the b/w for process 1 will be 20% of the max b/w (which may
->> be less than 100MB/s) subject to a max of 20MB/s.
-> I essentially agree with you. The nice thing about proportional
-> bandwidth scheduling is that we get bandwidth guarantees when there is
-> contention for the block device, but still get the benefits of
-> statistical multiplexing in the non-contended case. With strict IO
-> limiting we risk underusing the block devices.
->
->> > If we are pursuing a I/O prioritization model =E0 la CFQ the temptatio=
-n is
->> > to implement it at the elevator layer or extend any of the existing I/O
->> > schedulers.
->> >
->> > There have been several proposals that extend either the CFQ scheduler
->> > (see (1), (2) below) or the AS scheduler (see (3) below). The problem
->> > with these controllers is that they are scheduler dependent, which mea=
-ns
->> > that they become unusable when we change the scheduler or when we want
->> > to control stacking devices which define their own make_request_fn
->> > function (md and dm come to mind). It could be argued that the physical
->> > devices controlled by a dm or md driver are likely to be fed by
->> > traditional I/O schedulers such as CFQ, but these I/O schedulers would
->> > be running independently from each other, each one controlling its own
->> > device ignoring the fact that they part of a stacking device. This lack
->> > of information at the elevator layer makes it pretty difficult to obta=
-in
->> > accurate results when using stacking devices. It seems that unless we
->> > can make the elevator layer aware of the topology of stacking devices
->> > (possibly by extending the elevator API?) evelator-based approaches do
->> > not constitute a generic solution. Here onwards, for discussion
->> > purposes, I will refer to this type of I/O bandwidth controllers as
->> > elevator-based I/O controllers.
->>
->> It can be argued that any scheduling decision wrt to i/o belongs to
->> elevators. Till now they have been used to improve performance. But
->> with new requirements to isolate i/o based on process or cgroup, we
->> need to change the elevators.
-> I have the impression there is a tendency to conflate two different
-> issues when discussing I/O schedulers and resource controllers, so let
-> me elaborate on this point.
->
-> On the one hand, we have the problem of feeding physical devices with IO
-> requests in such a way that we squeeze the maximum performance out of
-> them. Of course in some cases we may want to prioritize responsiveness
-> over throughput. In either case the kernel has to perform the same basic
-> operations: merging and dispatching IO requests. There is no discussion
-> this is the elevator's job and the elevator should take into account the
-> physical characteristics of the device.
->
-> On the other hand, there is the problem of sharing an IO resource, i.e.
-> block device, between multiple tasks or groups of tasks. There are many
-> ways of sharing an IO resource depending on what we are trying to
-> accomplish: proportional bandwidth scheduling, priority-based
-> scheduling, etc. But to implement this sharing algorithms the kernel has
-> to determine the task whose IO will be submitted. In a sense, we are
-> scheduling tasks (and groups of tasks) not IO requests (which has much
-> in common with CPU scheduling). Besides, the sharing problem is not
-> directly related to the characteristics of the underlying device, which
-> means it does not need to be implemented at the elevator layer.
-
-What if we pass the task specific information to the elevator. We do
-this for CFQ (where we pass the priority). And if we need any
-additional information to be passed we could add that in a similar
-manner.
-
-I really liked your initial suggestion where step 1 would be to add
-I/O tracking patches. And then use this in CFQ and AS to do resource
-sharing. And if we see any shortcoming with this approach. Let's see
-what the best place is to solve remaining problems.
-
-
->
-> Traditional elevators limit themselves to schedule IO requests to disk
-> with no regard to where it came from. However, new IO schedulers such as
-> CFQ combine this with IO prioritization capabilities. This means that
-> the elevator decides the application whose IO will be dispatched next.
-> The problem is that at this layer there is not enough information to
-> make such decisions in an accurate way, because, as mentioned in the
-> RFC, the elevator has not way to know the block IO topology. The
-> implication of this is that the elevator does not know the impact a
-> particular scheduling decision will make in the IO throughput seen by
-> applications, which is what users care about.
-
-Is it possible to send the topology information to the elevators. And
-then they can make global as well as local decisions.
-
->
-> For all these reasons, I think the elevator should take care of
-> optimizing the last stretch of the IO path (generic block layer -> block
-> device) for performance/responsiveness, and leave the job of ensuring
-> that each task is guaranteed a fair share of the kernel's IO resources
-> to the upper layers (for example a block layer resource controller).
->
-> I recognize that in some cases global performance could be improved if
-> the block layer had access to information from the elevator, and that is
-> why I mentioned in the RFC that in some cases it might make sense to
-> combine a block layer resource controller and a elevator layer one (we
-> just would need to figure out a way for the to communicate with each
-> other and work well in tandem).
->
->> If we add another layer of i/o scheduling (block layer I/O controller)
->> above elevators
->> 1) It builds another layer of i/o scheduling (bandwidth or priority)
-> As I mentioned before we are trying to achieve two things: making the
-> best use of block devices, and sharing those IO resources between tasks
-> or groups of tasks. There are two possible approaches here: implement
-> everything in the elevator or move the sharing bits somewhere above the
-> elevator layer. In either case we have to carry out the same tasks so
-> the impact of delegating part of the work to a new layer should not be
-> that big, and, hopefully, will improve maintainability.
->
->> 2) This new layer can have decisions for i/o scheduling which conflict
->> with underlying elevator. e.g. If we decide to do b/w scheduling in
->> this new layer, there is no way a priority based elevator could work
->> underneath it.
-> The priority system could be implemented above the elevator layer in the
-> block layer resource controller, which means that the elevator would
-> only have to worry about scheduling the requests it receives from the
-> block layer and dispatching them to disk in the best possible way.
->
-> An alternative would be using a block layer resource controller and a
-> elavator-based resource controller in tandem.
->
->> If a custom make_request_fn is defined (which means the said device is
->> not using existing elevator),
-> Please note that each of the block devices that constitute a stacking
-> device could have its own elevator.
-
-Another possible approach, if the top layer cannot pass topology info
-to the underling block device elevators. We could use FIFO for the
-underlying block devices, effectively disabling them. The Top layer
-will make it's scheduling decision in custom __make_request and the
-layers below will just forward. And we can easily avoid any conflict.
-
->
->> it could build it's own scheduling
->> rather than asking kernel to add another layer at the time of i/o
->> submission. Since it has complete control of i/o.
-> I think that is something we should avoid. The IO scheduling behavior
-> that the user sees should not depend on the topology of the system. We
-> certainly do not want to reimplement the same scheduling algorithm for
-> every RAID driver. I am of the opinion that whatever IO scheduling
-> algorithm we choose should be implemented just once and usable under any
-> IO configuration.
->
-I agree that we shouldn't be reinventing things for every RAID driver.
-We could have a generic algorithm which everyone plugs into. If not
-that is not possible, we always have the option to create one in
-custom __make_request.
-
->
-
-
--Naveen
+T24gTW9uLCAyMDA4LTA4LTExIGF0IDEyOjAzIC0wNjAwLCBKb25hdGhhbiBDb3JiZXQgd3JvdGU6
+Cj4gSSdtIHRyeWluZyB0byBmaWd1cmUgb3V0IHRoaXMgcGF0Y2ggc2V0Li4uaGVyZSdzIGEgZmV3
+IHRoaW5ncyB3aGljaAo+IGhhdmUgY2F1Z2h0IG15IGV5ZSBpbiBwYXNzaW5nLgo+IAo+ID4gKy8q
+Kgo+ID4gKyAqIGNyX2dldF9mbmFtZSAtIHJldHVybiBwYXRobmFtZSBvZiBhIGdpdmVuIGZpbGUK
+PiA+ICsgKiBAZmlsZTogZmlsZSBwb2ludGVyCj4gPiArICogQGJ1ZjogYnVmZmVyIGZvciBwYXRo
+bmFtZQo+ID4gKyAqIEBuOiBidWZmZXIgbGVuZ3RoIChpbikgYW5kIHBhdGhuYW1lIGxlbmd0aCAo
+b3V0KQo+ID4gKyAqCj4gPiArICogaWYgdGhlIGJ1ZmZlciBwcm92aXZkZWQgYnkgdGhlIGNhbGxl
+ciBpcyB0b28gc21hbGwsIGFsbG9jYXRlIGEgbmV3Cj4gPiArICogYnVmZmVyOyBjYWxsZXIgc2hv
+dWxkIGNhbGwgY3JfcHV0X3BhdGhuYW1lKCkgZm9yIGNsZWFudXAKPiA+ICsgKi8KPiA+ICtjaGFy
+ICpjcl9nZXRfZm5hbWUoc3RydWN0IHBhdGggKnBhdGgsIHN0cnVjdCBwYXRoICpyb290LCBjaGFy
+ICpidWYsCj4gPiBpbnQgKm4pICt7Cj4gPiArCWNoYXIgKmZuYW1lOwo+ID4gKwo+ID4gKwlmbmFt
+ZSA9IF9fZF9wYXRoKHBhdGgsIHJvb3QsIGJ1ZiwgKm4pOwo+ID4gKwo+ID4gKwlpZiAoSVNfRVJS
+KGZuYW1lKSAmJiBQVFJfRVJSKGZuYW1lKSA9PSAtRU5BTUVUT09MT05HKSB7Cj4gPiArCQkgaWYg
+KCEoYnVmID0gKGNoYXIgKikgX19nZXRfZnJlZV9wYWdlcyhHRlBfS0VSTkVMLCAwKSkpCj4gCj4g
+VGhpcyBzZWVtcyBsaWtlIGEgY2x1bmt5IGFuZCBlcnJvci1wcm9uZSBpbnRlcmZhY2UgLSB3aHkg
+bm90IGp1c3QgaGF2ZSBpdAo+IGFsbG9jYXRlIHRoZSBtZW1vcnkgYWx3YXlzPyAgQnV0LCBpbiB0
+aGlzIGNhc2UsIGNyX2dldF9mbmFtZSgpIGFsd2F5cyBzZWVtcwo+IHRvIGJlIGNhbGxlZCB3aXRo
+IGN0eC0+dGJ1Ziwgd2hpY2gsIGluIHR1cm4sIGlzIGFuIG9yZGVyLTEgYWxsb2NhdGlvbi4KPiBI
+ZXJlIHlvdSdyZSBzYXlpbmcgdGhhdCBpZiBpdCdzIHRvbyBzbWFsbCwgeW91J2xsIHRyeSByZXBs
+YWNpbmcgaXQgd2l0aCBhbgo+IG9yZGVyLTAgYWxsb2NhdGlvbiBpbnN0ZWFkLiAgSSByYXRoZXIg
+c3VzcGVjdCB0aGF0J3Mgbm90IGdvaW5nIHRvIGhlbHAuCgpZZWFoLCBpdCBkb2Vzbid0IG1ha2Ug
+bXVjaCBzZW5zZSBvbiB0aGUgc3VyZmFjZS4gIEkgd291bGQgaW1hZ2luZSB0aGF0CnRoaXMgaGFz
+IHNvbWUgdXNlIGZvciB3aGVuIHdlJ3JlIHN0YWNraW5nIHRoaW5ncyB1cCBpbiB0aGUgY3R4LT5o
+YnVmCnJhdGhlciB0aGFuIGp1c3QgdXNpbmcgaXQgYXMgYSBjb21wbGV0ZWx5IHRlbXBvcmFyeSBi
+dWZmZXIuICBCdXQsIGluIGFueQpjYXNlLCBpdCBkb2Vzbid0IG1ha2Ugc2Vuc2UgYXMgaXQgc3Rh
+bmRzIG5vdywgc28gSSB0aGluayBpdCBuZWVkcyB0byBiZQpyZXdvcmtlZC4KCj4gPiArLyogd3Jp
+dGUgdGhlIGNoZWNrcG9pbnQgaGVhZGVyICovCj4gPiArc3RhdGljIGludCBjcl93cml0ZV9oZHIo
+c3RydWN0IGNyX2N0eCAqY3R4KQo+ID4gK3sKPiA+ICsJc3RydWN0IGNyX2hkciBoOwo+ID4gKwlz
+dHJ1Y3QgY3JfaGRyX2hlYWQgKmhoID0gY3R4LT50YnVmOwo+ID4gKwlzdHJ1Y3QgdGltZXZhbCBr
+dHY7Cj4gPiArCj4gPiArCWgudHlwZSA9IENSX0hEUl9IRUFEOwo+ID4gKwloLmxlbiA9IHNpemVv
+ZigqaGgpOwo+ID4gKwloLmlkID0gMDsKPiA+ICsKPiA+ICsJZG9fZ2V0dGltZW9mZGF5KCZrdHYp
+Owo+ID4gKwo+ID4gKwloaC0+bWFnaWMgPSAweDAwYTJkMjAwOwo+IAo+IFRoaXMgbWFnaWMgbnVt
+YmVyIGlzIGhhcmQtY29kZWQgaW4gYSBudW1iZXIgb2YgcGxhY2VzLiAgQ291bGQgaXQgbWF5YmUK
+PiBiZW5lZml0IGZyb20gYSBtYWNybywgd2hpY2gsIGluIHR1cm4sIGNvdWxkIG1heWJlIGVuZCB1
+cCBpbiBsaW51eC9tYWdpYy5oPwo+IAo+ID4gKy8qIGR1bXAgdGhlIHRhc2tfc3RydWN0IG9mIGEg
+Z2l2ZW4gdGFzayAqLwo+ID4gK3N0YXRpYyBpbnQgY3Jfd3JpdGVfdGFza19zdHJ1Y3Qoc3RydWN0
+IGNyX2N0eCAqY3R4LCBzdHJ1Y3QgdGFza19zdHJ1Y3QgKnQpCj4gCj4gVGhpcyBmdW5jdGlvbiBp
+cyBnb2luZyB0byBicmVhayBldmVyeSB0aW1lIHNvbWVib2R5IGNoYW5nZXMgc3RydWN0Cj4gdGFz
+a19zdHJ1Y3QuICBJJ20gbm90IHF1aXRlIHN1cmUgaG93IHRvIHByZXZlbnQgdGhhdC4gIEkgd29u
+ZGVyIGlmIHRoZQo+IG1vZHZlcnNpb25zIHN0dWZmIGNvdWxkIHNvbWVob3cgYmUgZW1wbG95ZWQg
+dG8gZGV0ZWN0IGNoYW5nZXMgYW5kIG1ha2UgdGhlCj4gYnVpbGQgZmFpbD8KCkluIGdlbmVyYWws
+IEkgdGhpbmsgYW55IHRpbWUgdGhhdCB3ZSBhcmUgY2hlY2twb2ludGluZyAkVEhJTkcgYW5kICRU
+SElORwpjaGFuZ2VzLCB0aGUgY2hlY2twb2ludCB3aWxsIGJyZWFrLiAgSXQganVzdCBzbyBoYXBw
+ZW5zIHRoYXQgYWxsIHdlJ3JlCmNoZWNrcG9pbnRpbmcgaGVyZSBpcyB0aGUgdGFza19zdHJ1Y3Qs
+IHNvICRUSElORyA9PSB0YXNrX3N0cnVjdCBmb3IKbm93LiA6KQoKVGhlIHRoaW5ncyB0aGF0ICpy
+ZWFsbHkqIHdvcnJ5IG1lIGFyZSB0aGluZ3MgbGlrZSB3aGVuIGZsYWdzIGNoYW5nZQpzZW1hbnRp
+Y3Mgc3VidGx5LiAgT3IsIGxldCdzIHNheSBhIGZsYWcgaXMgdXNlZCBmb3IgdHdvIGRpZmZlcmVu
+dCB0aGluZ3MKaW4gMi42LjI2LjQgdnMg77u/Mi42LjI3LiAgSSdtIG5vdCBzdXJlIHdlJ3JlIGV2
+ZXIgZ29pbmcgdG8gYmUgaW4gYQpwb3NpdGlvbiB0byBmaW5kIGFuZCBmaXggdXAgc3R1ZmYgbGlr
+ZSB0aGF0LgoKVGhhdCdzIG9uZSByZWFzb24gSSBoYXZlIGJlZW4gYWR2b2NhdGluZyBkb2luZyBj
+aGVja3BvaW50L3Jlc3RhcnQgaW4KbXVjaCB0aW5pZXIgYml0cyBzbyB0aGF0IHdlIGNhbiB1bmRl
+cnN0YW5kIGVhY2ggb2YgdGhlbSBhcyB3ZSBnbyBhbG9uZy4KSSBhbHNvIHRoaW5rIHRoYXQgdGhl
+ICpsZXNzKiB3ZSBleHBvc2UgdG8gdXNlcnNwYWNlLCB0aGUgYmV0dGVyLgoKPiA+ICsvKioKPiA+
+ICsgKiBzeXNfY2hlY2twb2ludCAtIGNoZWNrcG9pbnQgYSBjb250YWluZXIKPiA+ICsgKiBAcGlk
+OiBwaWQgb2YgdGhlIGNvbnRhaW5lciBpbml0KDEpIHByb2Nlc3MKPiA+ICsgKiBAZmQ6IGZpbGUg
+dG8gd2hpY2ggZHVtcCB0aGUgY2hlY2twb2ludCBpbWFnZQo+ID4gKyAqIEBmbGFnczogY2hlY2tw
+b2ludCBvcGVyYXRpb24gZmxhZ3MKPiA+ICsgKi8KPiA+ICthc21saW5rYWdlIGxvbmcgc3lzX2No
+ZWNrcG9pbnQocGlkX3QgcGlkLCBpbnQgZmQsIHVuc2lnbmVkIGxvbmcKPiA+IGZsYWdzKSArewo+
+ID4gKwlzdHJ1Y3QgY3JfY3R4ICpjdHg7Cj4gPiArCXN0cnVjdCBmaWxlICpmaWxlOwo+ID4gKwlp
+bnQgZnB1dF9uZWVkZWQ7Cj4gPiArCWludCByZXQ7Cj4gPiArCj4gPiArCWlmICghY2FwYWJsZShD
+QVBfU1lTX0FETUlOKSkKPiA+ICsJCXJldHVybiAtRVBFUk07Cj4gCj4gTGlrZSBvdGhlcnMsIEkg
+d29uZGVyZWQgd2h5IENBUF9TWVNfQURNSU4gd2FzIHJlcXVpcmVkIGhlcmUuICBJICpzdGlsbCoK
+PiB3b25kZXIsIHRob3VnaCwgaG93IHlvdSdsbCBldmVyIGJlIGFibGUgdG8gZG8gcmVzdGFydCB3
+aXRob3V0IGEgcHJpdmlsZWdlCj4gY2hlY2suICBUaGVyZSBtdXN0IGJlIGEgdGhvdXNhbmQgd2F5
+cyB0byBjb21wcm9taXNlIGEgc3lzdGVtIGJ5IG1lc3NpbmcKPiB3aXRoIHRoZSBjaGVja3BvaW50
+IGZpbGUuCgpBcyB3aXRoIGV2ZXJ5dGhpbmcgZWxzZSBjb21pbmcgZnJvbSB1c2Vyc3BhY2UsIHRo
+ZSBjaGVja3BvaW50IGZpbGUKc2hvdWxkIGJlIGNvbXBsZXRlbHkgdW50cnVzdGVkLiAgSSBkbyB0
+aGluaywgdGhvdWdoLCB0aGF0IHRoZSBwdHJhY2UKYW5hbG9neSB0aGF0IFNlcmdlPz8gbWFkZSBp
+cyBhIGdvb2Qgb25lLgoKPiA+ICsJZmlsZSA9IGZnZXRfbGlnaHQoZmQsICZmcHV0X25lZWRlZCk7
+Cj4gPiArCWlmICghZmlsZSkKPiA+ICsJCXJldHVybiAtRUJBREY7Cj4gCj4gU2hvdWxkIHlvdSBt
+YXliZSBjaGVjayBmb3Igd3JpdGUgYWNjZXNzPyAgQW4gYXR0ZW1wdCB0byBvdmVyd3JpdGUgYQo+
+IHJlYWQtb25seSBmaWxlIHdvbid0IHN1Y2NlZWQsIGJ1dCB5b3UgY291bGQgc2F2ZSBhIGxvdCBv
+ZiB3b3JrIGJ5IGp1c3QKPiBmYWlsaW5nIGl0IHdpdGggYSBjbGVhciBjb2RlIGhlcmUuICAKClRo
+YXQncyB0cnVlLiAgSSdsbCB0YWtlIGEgbG9vayBhbmQgc2VlLgoKVGhpcyBwYXRjaCBkb2VzIHJl
+YWNoIGRvd24gYW5kIHVzZSB2ZnNfd3JpdGUoKSBhdCBzb21lIHBvaW50LiAgVGhlcmUKcmVhbGx5
+IGFyZW4ndCBhbnkgb3RoZXIgaW4ta2VybmVsIHVzZXJzIHRoYXQgZG8gdGhpcyAoc2hvcnQgb2Yg
+ZWNyeXB0ZnMKYW5kIHBsYW45ZnMpLiAgVGhhdCBtYWtlcyBtZSBkb3VidCB0aGF0IHdlJ3JlIGV2
+ZW4gdXNpbmcgYSBnb29kIGFwcHJvYWNoCmhlcmUuCgo+IFdoYXQgYWJvdXQgdGhlIGZpbGUgcG9z
+aXRpb24/ICBQZXJoYXBzIHRoZXJlIGNvdWxkIGJlIGEgZ29vZCByZWFzb24gdG8KPiBjaGVja3Bv
+aW50IGEgcHJvY2VzcyBpbnRvIHRoZSBtaWRkbGUgb2YgYSBmaWxlLCBkb24ndCBrbm93LgoKSSB0
+aGluayB0aGlzIGlzIGEgZ29vZCBleGFtcGxlIG9mIGEgcGxhY2Ugd2hlcmUgdGhlIGtlcm5lbCBj
+YW4gbGV0CnVzZXJzcGFjZSBzaG9vdCBpdHNlbGYgaW4gaXRzIGZvb3QgaWYgaXQgd2FudHMuICBX
+ZSBtaWdodCBhbHNvIHdhbnQgdG8KYWxsb3cgdGhpbmdzIHRvIGJlIHNlbnQgb3ZlciBmZHMgdGhh
+dCBkb24ndCBuZWNlc3NhcmlseSBoYXZlIHBvc2l0aW9ucywKbGlrZSBzb2NrZXRzIG9yIHBpcGVz
+LgoKPiBJbiBnZW5lcmFsLCBJIGRvbid0IHNlZSBhIHdob2xlIGxvdCBvZiBsb2NraW5nIGdvaW5n
+IG9uLiAgSXMgaXQgcmVhbGx5Cj4gcG9zc2libGUgdG8gc2F2ZSBhbmQgcmVzdG9yZSBtZW1vcnkg
+d2l0aG91dCBldmVyIGhvbGRpbmcgbW1hcF9zZW0/CgpJIHBlcnNvbmFsbHkgaGF2ZW4ndCBhdWRp
+dGVkIHRoZSBsb2NraW5nLCB5ZXQuICBJdCBpcyBnb2luZyB0byBiZSBmdW4hCgpCdXQsIHRha2Ug
+YSBsb29rIGluIHBhdGNoIDMvNDoKCisgICAgICAgLyogd3JpdGUgdGhlIHZtYSdzICovCisgICAg
+ICAgZG93bl9yZWFkKCZtbS0+bW1hcF9zZW0pOworICAgICAgIGZvciAodm1hID0gbW0tPm1tYXA7
+IHZtYTsgdm1hID0gdm1hLT52bV9uZXh0KSB7CisgICAgICAgICAgICAgICBpZiAoKHJldCA9IGNy
+X3dyaXRlX3ZtYShjdHgsIHZtYSkpIDwgMCkKKyAgICAgICAgICAgICAgICAgICAgICAgYnJlYWs7
+CisgICAgICAgfQorICAgICAgIHVwX3JlYWQoJm1tLT5tbWFwX3NlbSk7CgpUaGFua3MgZm9yIHRo
+ZSByZXZpZXcsIEpvbmF0aGFuIQoKLS0gRGF2ZQoKX19fX19fX19fX19fX19fX19fX19fX19fX19f
+X19fX19fX19fX19fX19fX19fX18KQ29udGFpbmVycyBtYWlsaW5nIGxpc3QKQ29udGFpbmVyc0Bs
+aXN0cy5saW51eC1mb3VuZGF0aW9uLm9yZwpodHRwczovL2xpc3RzLmxpbnV4LWZvdW5kYXRpb24u
+b3JnL21haWxtYW4vbGlzdGluZm8vY29udGFpbmVycw==
