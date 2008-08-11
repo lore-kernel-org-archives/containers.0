@@ -1,9 +1,7 @@
 From: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH 1/5] Container Freezer: Add TIF_FREEZE flag to all
-	architectures
-Date: Mon, 11 Aug 2008 16:53:24 -0700
-Message-ID: <20080811235324.279345521__15072.6512926214$1218499025$gmane$org@us.ibm.com>
-References: <20080811235323.872291138@us.ibm.com>
+Subject: [PATCH 0/5] Container Freezer v6: Reuse Suspend Freezer
+Date: Mon, 11 Aug 2008 16:53:23 -0700
+Message-ID: <20080811235323.872291138__46103.5229768187$1218499258$gmane$org@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -18,257 +16,112 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
-Cc: Nigel Cunningham <nigel-jrkICu/7yk3k1uMJSBkQmQ@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Linux-Kernel <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, "Rafael J. Wysocki" <rjw-KKrjLPT3xs0@public.gmane.org>, Pavel Machek <pavel-AlSwsSmVLrQ@public.gmane.org>, Cedric Le Goater <clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, linux-pm-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Cc: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Linux-Kernel <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, "Rafael J. Wysocki" <rjw-KKrjLPT3xs0@public.gmane.org>, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, linux-pm-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-This patch is the first step in making the refrigerator() available
-to all architectures, even for those without power management.
+This patch series introduces a cgroup subsystem that utilizes the swsusp
+freezer to freeze a group of tasks. It's immediately useful for batch job
+management scripts. It should also be useful in the future for implementing
+container checkpoint/restart.
 
-The purpose of such a change is to be able to use the refrigerator()
-in a new control group subsystem which will implement a control group
-freezer.
+The freezer subsystem in the container filesystem defines a cgroup file named
+freezer.state. Reading freezer.state will return the current state of the
+cgroup.  Writing "FROZEN" to the state file will freeze all tasks in the
+cgroup. Subsequently writing "RUNNING" will unfreeze the tasks in the cgroup. 
 
-Signed-off-by: Cedric Le Goater <clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
-Signed-off-by: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Acked-by: Pavel Machek <pavel-AlSwsSmVLrQ@public.gmane.org>
-Acked-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Acked-by: Rafael J. Wysocki <rjw-KKrjLPT3xs0@public.gmane.org>
-Acked-by: Nigel Cunningham <nigel-jrkICu/7yk3k1uMJSBkQmQ@public.gmane.org>
-Tested-by: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
----
- arch/parisc/include/asm/thread_info.h   |    2 ++
- arch/sparc/include/asm/thread_info_32.h |    2 ++
- arch/sparc/include/asm/thread_info_64.h |    2 ++
- include/asm-alpha/thread_info.h         |    2 ++
- include/asm-avr32/thread_info.h         |    1 +
- include/asm-cris/thread_info.h          |    2 ++
- include/asm-h8300/thread_info.h         |    2 ++
- include/asm-m68k/thread_info.h          |    1 +
- include/asm-m68knommu/thread_info.h     |    2 ++
- include/asm-s390/thread_info.h          |    2 ++
- include/asm-um/thread_info.h            |    2 ++
- include/asm-xtensa/thread_info.h        |    2 ++
- 12 files changed, 22 insertions(+)
+* Examples of usage :
 
-Index: linux-2.6.27-rc1-mm1/arch/sparc/include/asm/thread_info_32.h
-===================================================================
---- linux-2.6.27-rc1-mm1.orig/arch/sparc/include/asm/thread_info_32.h
-+++ linux-2.6.27-rc1-mm1/arch/sparc/include/asm/thread_info_32.h
-@@ -139,6 +139,7 @@ BTFIXUPDEF_CALL(void, free_thread_info, 
- #define TIF_POLLING_NRFLAG	9	/* true if poll_idle() is polling
- 					 * TIF_NEED_RESCHED */
- #define TIF_MEMDIE		10
-+#define TIF_FREEZE		11	/* is freezing for suspend */
- 
- /* as above, but as bit values */
- #define _TIF_SYSCALL_TRACE	(1<<TIF_SYSCALL_TRACE)
-@@ -152,6 +153,7 @@ BTFIXUPDEF_CALL(void, free_thread_info, 
- #define _TIF_DO_NOTIFY_RESUME_MASK	(_TIF_NOTIFY_RESUME | \
- 					 _TIF_SIGPENDING | \
- 					 _TIF_RESTORE_SIGMASK)
-+#define TIF_FREEZE		(1<<TIF_FREEZE)
- 
- #endif /* __KERNEL__ */
- 
-Index: linux-2.6.27-rc1-mm1/arch/sparc/include/asm/thread_info_64.h
-===================================================================
---- linux-2.6.27-rc1-mm1.orig/arch/sparc/include/asm/thread_info_64.h
-+++ linux-2.6.27-rc1-mm1/arch/sparc/include/asm/thread_info_64.h
-@@ -237,6 +237,7 @@ register struct thread_info *current_thr
- #define TIF_ABI_PENDING		12
- #define TIF_MEMDIE		13
- #define TIF_POLLING_NRFLAG	14
-+#define TIF_FREEZE		15	/* is freezing for suspend */
- 
- #define _TIF_SYSCALL_TRACE	(1<<TIF_SYSCALL_TRACE)
- #define _TIF_NOTIFY_RESUME	(1<<TIF_NOTIFY_RESUME)
-@@ -249,6 +250,7 @@ register struct thread_info *current_thr
- #define _TIF_SYSCALL_AUDIT	(1<<TIF_SYSCALL_AUDIT)
- #define _TIF_ABI_PENDING	(1<<TIF_ABI_PENDING)
- #define _TIF_POLLING_NRFLAG	(1<<TIF_POLLING_NRFLAG)
-+#define _TIF_FREEZE		(1<<TIF_FREEZE)
- 
- #define _TIF_USER_WORK_MASK	((0xff << TI_FLAG_WSAVED_SHIFT) | \
- 				 _TIF_DO_NOTIFY_RESUME_MASK | \
-Index: linux-2.6.27-rc1-mm1/include/asm-alpha/thread_info.h
-===================================================================
---- linux-2.6.27-rc1-mm1.orig/include/asm-alpha/thread_info.h
-+++ linux-2.6.27-rc1-mm1/include/asm-alpha/thread_info.h
-@@ -74,12 +74,14 @@ register struct thread_info *__current_t
- #define TIF_UAC_SIGBUS		7
- #define TIF_MEMDIE		8
- #define TIF_RESTORE_SIGMASK	9	/* restore signal mask in do_signal */
-+#define TIF_FREEZE		16	/* is freezing for suspend */
- 
- #define _TIF_SYSCALL_TRACE	(1<<TIF_SYSCALL_TRACE)
- #define _TIF_SIGPENDING		(1<<TIF_SIGPENDING)
- #define _TIF_NEED_RESCHED	(1<<TIF_NEED_RESCHED)
- #define _TIF_POLLING_NRFLAG	(1<<TIF_POLLING_NRFLAG)
- #define _TIF_RESTORE_SIGMASK	(1<<TIF_RESTORE_SIGMASK)
-+#define _TIF_FREEZE		(1<<TIF_FREEZE)
- 
- /* Work to do on interrupt/exception return.  */
- #define _TIF_WORK_MASK		(_TIF_SIGPENDING | _TIF_NEED_RESCHED)
-Index: linux-2.6.27-rc1-mm1/include/asm-avr32/thread_info.h
-===================================================================
---- linux-2.6.27-rc1-mm1.orig/include/asm-avr32/thread_info.h
-+++ linux-2.6.27-rc1-mm1/include/asm-avr32/thread_info.h
-@@ -96,6 +96,7 @@ static inline struct thread_info *curren
- #define _TIF_MEMDIE		(1 << TIF_MEMDIE)
- #define _TIF_RESTORE_SIGMASK	(1 << TIF_RESTORE_SIGMASK)
- #define _TIF_CPU_GOING_TO_SLEEP (1 << TIF_CPU_GOING_TO_SLEEP)
-+#define _TIF_FREEZE		(1 << TIF_FREEZE)
- 
- /* Note: The masks below must never span more than 16 bits! */
- 
-Index: linux-2.6.27-rc1-mm1/include/asm-cris/thread_info.h
-===================================================================
---- linux-2.6.27-rc1-mm1.orig/include/asm-cris/thread_info.h
-+++ linux-2.6.27-rc1-mm1/include/asm-cris/thread_info.h
-@@ -88,6 +88,7 @@ struct thread_info {
- #define TIF_RESTORE_SIGMASK	9	/* restore signal mask in do_signal() */
- #define TIF_POLLING_NRFLAG	16	/* true if poll_idle() is polling TIF_NEED_RESCHED */
- #define TIF_MEMDIE		17
-+#define TIF_FREEZE		18	/* is freezing for suspend */
- 
- #define _TIF_SYSCALL_TRACE	(1<<TIF_SYSCALL_TRACE)
- #define _TIF_NOTIFY_RESUME	(1<<TIF_NOTIFY_RESUME)
-@@ -95,6 +96,7 @@ struct thread_info {
- #define _TIF_NEED_RESCHED	(1<<TIF_NEED_RESCHED)
- #define _TIF_RESTORE_SIGMASK	(1<<TIF_RESTORE_SIGMASK)
- #define _TIF_POLLING_NRFLAG	(1<<TIF_POLLING_NRFLAG)
-+#define _TIF_FREEZE		(1<<TIF_FREEZE)
- 
- #define _TIF_WORK_MASK		0x0000FFFE	/* work to do on interrupt/exception return */
- #define _TIF_ALLWORK_MASK	0x0000FFFF	/* work to do on any return to u-space */
-Index: linux-2.6.27-rc1-mm1/include/asm-h8300/thread_info.h
-===================================================================
---- linux-2.6.27-rc1-mm1.orig/include/asm-h8300/thread_info.h
-+++ linux-2.6.27-rc1-mm1/include/asm-h8300/thread_info.h
-@@ -89,6 +89,7 @@ static inline struct thread_info *curren
- 					   TIF_NEED_RESCHED */
- #define TIF_MEMDIE		4
- #define TIF_RESTORE_SIGMASK	5	/* restore signal mask in do_signal() */
-+#define TIF_FREEZE		16	/* is freezing for suspend */
- 
- /* as above, but as bit values */
- #define _TIF_SYSCALL_TRACE	(1<<TIF_SYSCALL_TRACE)
-@@ -96,6 +97,7 @@ static inline struct thread_info *curren
- #define _TIF_NEED_RESCHED	(1<<TIF_NEED_RESCHED)
- #define _TIF_POLLING_NRFLAG	(1<<TIF_POLLING_NRFLAG)
- #define _TIF_RESTORE_SIGMASK	(1<<TIF_RESTORE_SIGMASK)
-+#define _TIF_FREEZE		(1<<TIF_FREEZE)
- 
- #define _TIF_WORK_MASK		0x0000FFFE	/* work to do on interrupt/exception return */
- 
-Index: linux-2.6.27-rc1-mm1/include/asm-m68k/thread_info.h
-===================================================================
---- linux-2.6.27-rc1-mm1.orig/include/asm-m68k/thread_info.h
-+++ linux-2.6.27-rc1-mm1/include/asm-m68k/thread_info.h
-@@ -52,5 +52,6 @@ struct thread_info {
- #define TIF_DELAYED_TRACE	14	/* single step a syscall */
- #define TIF_SYSCALL_TRACE	15	/* syscall trace active */
- #define TIF_MEMDIE		16
-+#define TIF_FREEZE		17	/* thread is freezing for suspend */
- 
- #endif	/* _ASM_M68K_THREAD_INFO_H */
-Index: linux-2.6.27-rc1-mm1/include/asm-m68knommu/thread_info.h
-===================================================================
---- linux-2.6.27-rc1-mm1.orig/include/asm-m68knommu/thread_info.h
-+++ linux-2.6.27-rc1-mm1/include/asm-m68knommu/thread_info.h
-@@ -84,12 +84,14 @@ static inline struct thread_info *curren
- #define TIF_POLLING_NRFLAG	3	/* true if poll_idle() is polling
- 					   TIF_NEED_RESCHED */
- #define TIF_MEMDIE		4
-+#define TIF_FREEZE		16	/* is freezing for suspend */
- 
- /* as above, but as bit values */
- #define _TIF_SYSCALL_TRACE	(1<<TIF_SYSCALL_TRACE)
- #define _TIF_SIGPENDING		(1<<TIF_SIGPENDING)
- #define _TIF_NEED_RESCHED	(1<<TIF_NEED_RESCHED)
- #define _TIF_POLLING_NRFLAG	(1<<TIF_POLLING_NRFLAG)
-+#define _TIF_FREEZE		(1<<TIF_FREEZE)
- 
- #define _TIF_WORK_MASK		0x0000FFFE	/* work to do on interrupt/exception return */
- 
-Index: linux-2.6.27-rc1-mm1/include/asm-s390/thread_info.h
-===================================================================
---- linux-2.6.27-rc1-mm1.orig/include/asm-s390/thread_info.h
-+++ linux-2.6.27-rc1-mm1/include/asm-s390/thread_info.h
-@@ -98,6 +98,7 @@ static inline struct thread_info *curren
- #define TIF_31BIT		18	/* 32bit process */ 
- #define TIF_MEMDIE		19
- #define TIF_RESTORE_SIGMASK	20	/* restore signal mask in do_signal() */
-+#define TIF_FREEZE		21	/* thread is freezing for suspend */
- 
- #define _TIF_SYSCALL_TRACE	(1<<TIF_SYSCALL_TRACE)
- #define _TIF_RESTORE_SIGMASK	(1<<TIF_RESTORE_SIGMASK)
-@@ -110,6 +111,7 @@ static inline struct thread_info *curren
- #define _TIF_USEDFPU		(1<<TIF_USEDFPU)
- #define _TIF_POLLING_NRFLAG	(1<<TIF_POLLING_NRFLAG)
- #define _TIF_31BIT		(1<<TIF_31BIT)
-+#define _TIF_FREEZE		(1<<TIF_FREEZE)
- 
- #endif /* __KERNEL__ */
- 
-Index: linux-2.6.27-rc1-mm1/include/asm-um/thread_info.h
-===================================================================
---- linux-2.6.27-rc1-mm1.orig/include/asm-um/thread_info.h
-+++ linux-2.6.27-rc1-mm1/include/asm-um/thread_info.h
-@@ -69,6 +69,7 @@ static inline struct thread_info *curren
- #define TIF_MEMDIE	 	5
- #define TIF_SYSCALL_AUDIT	6
- #define TIF_RESTORE_SIGMASK	7
-+#define TIF_FREEZE		16	/* is freezing for suspend */
- 
- #define _TIF_SYSCALL_TRACE	(1 << TIF_SYSCALL_TRACE)
- #define _TIF_SIGPENDING		(1 << TIF_SIGPENDING)
-@@ -77,5 +78,6 @@ static inline struct thread_info *curren
- #define _TIF_MEMDIE		(1 << TIF_MEMDIE)
- #define _TIF_SYSCALL_AUDIT	(1 << TIF_SYSCALL_AUDIT)
- #define _TIF_RESTORE_SIGMASK	(1 << TIF_RESTORE_SIGMASK)
-+#define _TIF_FREEZE		(1 << TIF_FREEZE)
- 
- #endif
-Index: linux-2.6.27-rc1-mm1/include/asm-xtensa/thread_info.h
-===================================================================
---- linux-2.6.27-rc1-mm1.orig/include/asm-xtensa/thread_info.h
-+++ linux-2.6.27-rc1-mm1/include/asm-xtensa/thread_info.h
-@@ -134,6 +134,7 @@ static inline struct thread_info *curren
- #define TIF_MEMDIE		5
- #define TIF_RESTORE_SIGMASK	6	/* restore signal mask in do_signal() */
- #define TIF_POLLING_NRFLAG	16	/* true if poll_idle() is polling TIF_NEED_RESCHED */
-+#define TIF_FREEZE		17	/* is freezing for suspend */
- 
- #define _TIF_SYSCALL_TRACE	(1<<TIF_SYSCALL_TRACE)
- #define _TIF_SIGPENDING		(1<<TIF_SIGPENDING)
-@@ -142,6 +143,7 @@ static inline struct thread_info *curren
- #define _TIF_IRET		(1<<TIF_IRET)
- #define _TIF_POLLING_NRFLAG	(1<<TIF_POLLING_NRFLAG)
- #define _TIF_RESTORE_SIGMASK	(1<<TIF_RESTORE_SIGMASK)
-+#define _TIF_FREEZE		(1<<TIF_FREEZE)
- 
- #define _TIF_WORK_MASK		0x0000FFFE	/* work to do on interrupt/exception return */
- #define _TIF_ALLWORK_MASK	0x0000FFFF	/* work to do on any return to u-space */
-Index: linux-2.6.27-rc1-mm1/arch/parisc/include/asm/thread_info.h
-===================================================================
---- linux-2.6.27-rc1-mm1.orig/arch/parisc/include/asm/thread_info.h
-+++ linux-2.6.27-rc1-mm1/arch/parisc/include/asm/thread_info.h
-@@ -58,6 +58,7 @@ struct thread_info {
- #define TIF_32BIT               4       /* 32 bit binary */
- #define TIF_MEMDIE		5
- #define TIF_RESTORE_SIGMASK	6	/* restore saved signal mask */
-+#define TIF_FREEZE		7	/* is freezing for suspend */
- 
- #define _TIF_SYSCALL_TRACE	(1 << TIF_SYSCALL_TRACE)
- #define _TIF_SIGPENDING		(1 << TIF_SIGPENDING)
-@@ -65,6 +66,7 @@ struct thread_info {
- #define _TIF_POLLING_NRFLAG	(1 << TIF_POLLING_NRFLAG)
- #define _TIF_32BIT		(1 << TIF_32BIT)
- #define _TIF_RESTORE_SIGMASK	(1 << TIF_RESTORE_SIGMASK)
-+#define _TIF_FREEZE		(1 << TIF_FREEZE)
- 
- #define _TIF_USER_WORK_MASK     (_TIF_SIGPENDING | \
-                                  _TIF_NEED_RESCHED | _TIF_RESTORE_SIGMASK)
+   # mkdir /containers/freezer
+   # mount -t cgroup -ofreezer freezer  /containers
+   # mkdir /containers/0
+   # echo $some_pid > /containers/0/tasks
+
+to get status of the freezer subsystem :
+
+   # cat /containers/0/freezer.state
+   RUNNING
+
+to freeze all tasks in the container :
+
+   # echo FROZEN > /containers/0/freezer.state
+   # cat /containers/0/freezer.state
+   FREEZING
+   # cat /containers/0/freezer.state
+   FROZEN
+
+to unfreeze all tasks in the container :
+
+   # echo RUNNING > /containers/0/freezer.state
+   # cat /containers/0/freezer.state
+   RUNNING
+
+Andrew, please consider these patches for -mm.
+
+Cheers,
+	-Matt Helsley
+
+Changes since v5:
+v6:
+	Merged the patch using the cgroups write_string() method since Linus
+		has merged the patch supporting it.
+	Moved header file modifications to in patch 1 to
+		arch/$ARCH/include/asm/thread_info.h where appropriate.
+	Moved cgroup_freezer.h contents into cgroups_freezer.c and freezer.h
+	Added CONFIG_FREEZER to help conditionally build the freezer code.
+		This required some simplifications of the second patch.
+	Fix a lock ordering problem with the freezer->lock reacquire code
+		Required order: freezer->lock, css_set_lock, task->alloc_lock
+		Reacquiring: css_set_lock, task->alloc_lock, freezer->lock
+		Solution: change freezer_fork() to not require any ordering
+			between task->alloc_lock and freezer->lock
+v5:
+	Split out write_string as a separate patch for easier merging
+		with trees lacking certain cgroup patches at the time.
+	Checked use of task alloc lock for races with swsusp freeze/thaw --
+		looks safe because there are explicit barriers to handle
+		freeze/thaw races for individual tasks, we explicitly
+		handle partial group freezing, and partial group thawing
+		should be resolved without changing swsusp's loop.
+	Updated the patches to Linus' git tree as of approximately
+		7/31/2008.
+	Added Pavel and Serge's Acked-by lines to Acked patches
+
+v4 (Almost all of these changes are confined to patch 3):
+	Reworked the series to use task_lock() instead of RCU.
+	Reworked the series to use write_string() and read_seq_string()
+		cgroup methods.
+	Fixed the race Paul Menage identified.
+	Fixed up check_if_frozen() to do more than just test the FROZEN
+		flag. In some cases tasks could be stopped (T) and marked
+		FREEZING. When that happens we can safely assume that it
+		will be frozen immediately upon waking up in the kernel.
+		Waiting for it to get marked with PF_FROZEN in order to
+		transition to the FROZEN state would block unnecessarily.
+	Removed freezer_ prefix from static functions in cgroup_freezer.c.
+	Simplified STATE_ switch.
+	Updated the locking comments.
+
+v3:
+	Ported to 2.6.26-rc5-mm2 with Rafael's freezer patches
+	Tested on 24 combinations of 3 architectures (x86, x86_64, ppc64)
+		with 8 different kernel configs varying power management
+		and cgroup config variables. Each patch builds and boots
+		in these 24 combinations.
+	Passes functional testing.
+
+v2 (roughly patches 3 and 5):
+	Moved the "kill" file into a separate cgroup subsystem (signal) and
+		it's own patch.
+	Changed the name of the file from freezer.freeze to freezer.state.
+	Switched from taking 1 and 0 as input to the strings "FROZEN" and 
+		"RUNNING", respectively. This helps keep the interface
+		human-usable if/when we need to more states.
+	Checked that stopped or interrupted is "frozen enough"
+		Since try_to_freeze() is called upon wakeup of these tasks
+		this should be fine. This idea comes from recent changes to
+		the freezer.
+	Checked that if (task == current) whilst freezing cgroup we're ok
+	Fixed bug where -EBUSY would always be returned when freezing
+	Added code to handle userspace retries for any remaining -EBUSY
 
 -- 
