@@ -1,19 +1,15 @@
-From: Andrea Righi <righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: Re: RFC: I/O bandwidth controller (was Re: Too many I/O controller
-	patches)
-Date: Mon, 11 Aug 2008 22:52:25 +0200
-Message-ID: <48A0A689.40908__35896.9973204241$1218488354$gmane$org@gmail.com>
-References: <20080804.175126.193692178.ryov@valinux.co.jp>	
-	<1217870433.20260.101.camel@nimitz>	
-	<1217985189.3154.57.camel@sebastian.kern.oss.ntt.co.jp>	
-	<489AA83F.1040306@gmail.com>
-	<1218117578.11703.81.camel@sebastian.kern.oss.ntt.co.jp>
-Reply-To: righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org
+From: Arnd Bergmann <arnd-r2nGTMty4D4@public.gmane.org>
+Subject: Re: checkpoint/restart ABI
+Date: Mon, 11 Aug 2008 23:47:49 +0200
+Message-ID: <200808112347.50245.arnd__34357.7446336441$1218491830$gmane$org@arndb.de>
+References: <20080807224033.FFB3A2C1@kernel> <200808111853.13854.arnd@arndb.de>
+	<1218484114.5598.43.camel@nimitz>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: base64
+Content-Type: text/plain; charset="iso-8859-15"
+Content-Transfer-Encoding: quoted-printable
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1218117578.11703.81.camel-xpvPi5bcW5X5OjGIXfuPlhrrLbDL3r4M6qtp775pBPw@public.gmane.org>
+In-Reply-To: <1218484114.5598.43.camel@nimitz>
+Content-Disposition: inline
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -23,83 +19,61 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: =?UTF-8?B?RmVybmFuZG8gTHVpcyBWw6F6cXVleiBDYW8=?= <fernando-gVGce1chcLdL9jVzuh4AOg@public.gmane.org>
-Cc: xen-devel-GuqFBffKawuULHF6PoxzQEEOCMrvLtNR@public.gmane.org, uchida-LYU95VJlayp8UrSeD/g0lQ@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, dm-devel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, agk-9JcytcrH/bA+uJoB2kUjGw@public.gmane.org, virtualization-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, ngupta-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org
+To: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Theodore Tso <tytso-3s7WtUTddSA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-RmVybmFuZG8gTHVpcyBWw6F6cXVleiBDYW8gd3JvdGU6Cj4+PiBUaGlzIHNlZW1zIHRvIGJlIHRo
-ZSBlYXNpZXN0IHBhcnQsIGJ1dCB0aGUgY3VycmVudCBjZ3JvdXBzCj4+PiBpbmZyYXN0cnVjdHVy
-ZSBoYXMgc29tZSBsaW1pdGF0aW9ucyB3aGVuIGl0IGNvbWVzIHRvIGRlYWxpbmcgd2l0aCBibG9j
-awo+Pj4gZGV2aWNlczogaW1wb3NzaWJpbGl0eSBvZiBjcmVhdGluZy9yZW1vdmluZyBjZXJ0YWlu
-IGNvbnRyb2wgc3RydWN0dXJlcwo+Pj4gZHluYW1pY2FsbHkgYW5kIGhhcmRjb2Rpbmcgb2Ygc3Vi
-c3lzdGVtcyAoaS5lLiByZXNvdXJjZSBjb250cm9sbGVycykuCj4+PiBUaGlzIG1ha2VzIGl0IGRp
-ZmZpY3VsdCB0byBoYW5kbGUgYmxvY2sgZGV2aWNlcyB0aGF0IGNhbiBiZSBob3RwbHVnZ2VkCj4+
-PiBhbmQgZ28gYXdheSBhdCBhbnkgdGltZSAodGhpcyBhcHBsaWVzIG5vdCBvbmx5IHRvIHVzYiBz
-dG9yYWdlIGJ1dCBhbHNvCj4+PiB0byBzb21lIFNBVEEgYW5kIFNDU0kgZGV2aWNlcykuIFRvIGNv
-cGUgd2l0aCB0aGlzIHNpdHVhdGlvbiBwcm9wZXJseSB3ZQo+Pj4gd291bGQgbmVlZCBob3RwbHVn
-IHN1cHBvcnQgaW4gY2dyb3VwcywgYnV0LCBhcyBzdWdnZXN0ZWQgYmVmb3JlIGFuZAo+Pj4gZGlz
-Y3Vzc2VkIGluIHRoZSBwYXN0IChzZWUgKDApIGJlbG93KSwgdGhlcmUgYXJlIHNvbWUgbGltaXRh
-dGlvbnMuCj4+Pgo+Pj4gRXZlbiBpbiB0aGUgbm9uLWhvdHBsdWcgY2FzZSBpdCB3b3VsZCBiZSBu
-aWNlIGlmIHdlIGNvdWxkIHRyZWF0IGVhY2gKPj4+IGJsb2NrIEkvTyBkZXZpY2UgYXMgYW4gaW5k
-ZXBlbmRlbnQgcmVzb3VyY2UsIHdoaWNoIG1lYW5zIHdlIGNvdWxkIGRvCj4+PiB0aGluZ3MgbGlr
-ZSBhbGxvY2F0aW5nIEkvTyBiYW5kd2lkdGggb24gYSBwZXItZGV2aWNlIGJhc2lzLiBBcyBsb25n
-IGFzCj4+PiBwZXJmb3JtYW5jZSBpcyBub3QgY29tcHJvbWlzZWQgdG9vIG11Y2gsIGFkZGluZyBz
-b21lIGtpbmQgb2YgYmFzaWMKPj4+IGhvdHBsdWcgc3VwcG9ydCB0byBjZ3JvdXBzIGlzIHByb2Jh
-Ymx5IHdvcnRoIGl0Lgo+Pj4KPj4+ICgwKSBodHRwOi8vbGttbC5vcmcvbGttbC8yMDA4LzUvMjEv
-MTIKPj4gV2hhdCBhYm91dCB1c2luZyBtYWpvcixtaW5vciBudW1iZXJzIHRvIGlkZW50aWZ5IGVh
-Y2ggZGV2aWNlIGFuZCBhY2NvdW50Cj4+IElPIHN0YXRpc3RpY3M/IElmIGEgZGV2aWNlIGlzIHVu
-cGx1Z2dlZCB3ZSBjb3VsZCByZXNldCBJTyBzdGF0aXN0aWNzCj4+IGFuZC9vciByZW1vdmUgSU8g
-bGltaXRhdGlvbnMgZm9yIHRoYXQgZGV2aWNlIGZyb20gdXNlcnNwYWNlIChpLmUuIGJ5IGEKPj4g
-ZGVhbW9uKSwgYnV0IHBsdWdnaW4vdW5wbHVnZ2luZyB0aGUgZGV2aWNlIHdvdWxkIG5vdCBiZSBi
-bG9ja2VkL2FmZmVjdGVkCj4+IGluIGFueSBjYXNlLiBPciBhbSBJIG92ZXJzaW1wbGlmeWluZyB0
-aGUgcHJvYmxlbT8KPiBJZiBhIHJlc291cmNlIHdlIHdhbnQgdG8gY29udHJvbCAoYSBibG9jayBk
-ZXZpY2UgaW4gdGhpcyBjYXNlKSBpcwo+IGhvdC1wbHVnZ2VkL3VucGx1Z2dlZCB0aGUgY29ycmVz
-cG9uZGluZyBjZ3JvdXAtcmVsYXRlZCBzdHJ1Y3R1cmVzIGluc2lkZQo+IHRoZSBrZXJuZWwgbmVl
-ZCB0byBiZSBhbGxvY2F0ZWQvZnJlZWQgZHluYW1pY2FsbHksIHJlc3BlY3RpdmVseS4gVGhlCj4g
-cHJvYmxlbSBpcyB0aGF0IHRoaXMgaXMgbm90IGFsd2F5cyBwb3NzaWJsZS4gRm9yIGV4YW1wbGUs
-IHdpdGggdGhlCj4gY3VycmVudCBpbXBsZW1lbnRhdGlvbiBvZiBjZ3JvdXBzIGl0IGlzIG5vdCBw
-b3NzaWJsZSB0byB0cmVhdCBlYWNoIGJsb2NrCj4gZGV2aWNlIGFzIGEgZGlmZmVyZW50IGNncm91
-cCBzdWJzeXRlbS9yZXNvdXJjZSBjb250cm9sbGVkLCBiZWNhdXNlCj4gc3Vic3lzdGVtcyBhcmUg
-Y3JlYXRlZCBhdCBjb21waWxlIHRpbWUuCgpUaGUgd2hvbGUgc3Vic3lzdGVtIGlzIGNyZWF0ZWQg
-YXQgY29tcGlsZSB0aW1lLCBidXQgY29udHJvbGxlciBkYXRhCnN0cnVjdHVyZXMgYXJlIGFsbG9j
-YXRlZCBkeW5hbWljYWxseSAoaS5lLiBzZWUgc3RydWN0IG1lbV9jZ3JvdXAgZm9yCm1lbW9yeSBj
-b250cm9sbGVyKS4gU28sIGlkZW50aWZ5aW5nIGVhY2ggZGV2aWNlIHdpdGggYSBuYW1lLCBvciBh
-IGtleQpsaWtlIG1ham9yLG1pbm9yLCBpbnN0ZWFkIG9mIGEgcmVmZXJlbmNlL3BvaW50ZXIgdG8g
-YSBzdHJ1Y3QgY291bGQgaGVscAp0byBoYW5kbGUgdGhpcyBpbiB1c2Vyc3BhY2UuIEkgbWVhbiwg
-aWYgYSBkZXZpY2UgaXMgdW5wbHVnZ2VkIGEKdXNlcnNwYWNlIGRhZW1vbiBjYW4ganVzdCBoYW5k
-bGUgdGhlIGV2ZW50IGFuZCBkZWxldGUgdGhlIGNvbnRyb2xsZXIKZGF0YSBzdHJ1Y3R1cmVzIGFs
-bG9jYXRlZCBmb3IgdGhpcyBkZXZpY2UsIGFzeW5jaHJvbm91c2x5LCB2aWEKdXNlcnNwYWNlLT5r
-ZXJuZWwgaW50ZXJmYWNlLiBBbmQgd2l0aG91dCBob2xkaW5nIGEgcmVmZXJlbmNlIHRvIHRoYXQK
-cGFydGljdWxhciBibG9jayBkZXZpY2UgaW4gdGhlIGtlcm5lbC4gQW55d2F5LCBpbXBsZW1lbnRp
-bmcgYSBnZW5lcmljCmludGVyZmFjZSB0aGF0IHdvdWxkIGFsbG93IHRvIGRlZmluZSBob29rcyBm
-b3IgaG90LXBsdWdnYWJsZSBkZXZpY2VzIChvcgpzaW1pbGFyIGV2ZW50cykgaW4gY2dyb3VwcyB3
-b3VsZCBiZSBpbnRlcmVzdGluZy4KCj4+PiAzLiAmIDQuICYgNS4gLSBJL08gYmFuZHdpZHRoIHNo
-YXBpbmcgJiBHZW5lcmFsIGRlc2lnbiBhc3BlY3RzCj4+Pgo+Pj4gVGhlIGltcGxlbWVudGF0aW9u
-IG9mIGFuIEkvTyBzY2hlZHVsaW5nIGFsZ29yaXRobSBpcyB0byBhIGNlcnRhaW4gZXh0ZW50Cj4+
-PiBpbmZsdWVuY2VkIGJ5IHdoYXQgd2UgYXJlIHRyeWluZyB0byBhY2hpZXZlIGluIHRlcm1zIG9m
-IEkvTyBiYW5kd2lkdGgKPj4+IHNoYXBpbmcsIGJ1dCwgYXMgZGlzY3Vzc2VkIGJlbG93LCB0aGUg
-cmVxdWlyZWQgYWNjdXJhY3kgY2FuIGRldGVybWluZQo+Pj4gdGhlIGxheWVyIHdoZXJlIHRoZSBJ
-L08gY29udHJvbGxlciBoYXMgdG8gcmVzaWRlLiBPZmYgdGhlIHRvcCBvZiBteQo+Pj4gaGVhZCwg
-dGhlcmUgYXJlIHRocmVlIGJhc2ljIG9wZXJhdGlvbnMgd2UgbWF5IHdhbnQgcGVyZm9ybToKPj4+
-ICAgLSBJL08gbmljZSBwcmlvcml0aXphdGlvbjogaW9uaWNlLWxpa2UgYXBwcm9hY2guCj4+PiAg
-IC0gUHJvcG9ydGlvbmFsIGJhbmR3aWR0aCBzY2hlZHVsaW5nOiBlYWNoIHByb2Nlc3MvZ3JvdXAg
-b2YgcHJvY2Vzc2VzCj4+PiBoYXMgYSB3ZWlnaHQgdGhhdCBkZXRlcm1pbmVzIHRoZSBzaGFyZSBv
-ZiBiYW5kd2lkdGggdGhleSByZWNlaXZlLgo+Pj4gICAtIEkvTyBsaW1pdGluZzogc2V0IGFuIHVw
-cGVyIGxpbWl0IHRvIHRoZSBiYW5kd2lkdGggYSBncm91cCBvZiB0YXNrcwo+Pj4gY2FuIHVzZS4K
-Pj4gVXNlIGEgZGVhZGxpbmUtYmFzZWQgSU8gc2NoZWR1bGluZyBjb3VsZCBiZSBhbiBpbnRlcmVz
-dGluZyBwYXRoIHRvIGJlCj4+IGV4cGxvcmVkIGFzIHdlbGwsIElNSE8sIHRvIHRyeSB0byBndWFy
-YW50ZWUgcGVyLWNncm91cCBtaW5pbXVtIGJhbmR3aWR0aAo+PiByZXF1aXJlbWVudHMuCj4gUGxl
-YXNlIG5vdGUgdGhhdCB0aGUgb25seSB0aGluZyB3ZSBjYW4gZG8gaXMgdG8gZ3VhcmFudGVlIG1p
-bmltdW0KPiBiYW5kd2lkdGggcmVxdWlyZW1lbnQgd2hlbiB0aGVyZSBpcyBjb250ZW50aW9uIGZv
-ciBhbiBJTyByZXNvdXJjZSwgd2hpY2gKPiBpcyBwcmVjaXNlbHkgd2hhdCBhIHByb3BvcnRpb25h
-bCBiYW5kd2lkdGggc2NoZWR1bGVyIGRvZXMuIEFuIEkgbWlzc2luZwo+IHNvbWV0aGluZz8KCkNv
-cnJlY3QuIFByb3BvcnRpb25hbCBiYW5kd2lkdGggYXV0b21hdGljYWxseSBhbGxvd3MgdG8gZ3Vh
-cmFudGVlIG1pbgpyZXF1aXJlbWVudHMgKGluc3RlYWQgb2YgSU8gbGltaXRpbmcgYXBwcm9hY2gs
-IHRoYXQgbmVlZHMgYWRkaXRpb25hbAptZWNoYW5pc21zIHRvIGFjaGl2ZSB0aGlzKS4KCkluIGFu
-eSBjYXNlIHRoZXJlJ3Mgbm8gZ3VhcmFudGVlIGZvciBhIGNncm91cC9hcHBsaWNhdGlvbiB0byBz
-dXN0YWluCmkuZS4gMTBNQi9zIG9uIGEgY2VydGFpbiBkZXZpY2UsIGJ1dCB0aGlzIGlzIGEgaGFy
-ZCBwcm9ibGVtIGFueXdheSwgYW5kCnRoZSBiZXN0IHdlIGNhbiBkbyBpcyB0byB0cnkgdG8gc2F0
-aXNmeSAic29mdCIgY29uc3RyYWludHMuCgotQW5kcmVhCl9fX19fX19fX19fX19fX19fX19fX19f
-X19fX19fX19fX19fX19fX19fX19fX19fCkNvbnRhaW5lcnMgbWFpbGluZyBsaXN0CkNvbnRhaW5l
-cnNAbGlzdHMubGludXgtZm91bmRhdGlvbi5vcmcKaHR0cHM6Ly9saXN0cy5saW51eC1mb3VuZGF0
-aW9uLm9yZy9tYWlsbWFuL2xpc3RpbmZvL2NvbnRhaW5lcnM=
+On Monday 11 August 2008, Dave Hansen wrote:
+> Thanks for all of the very interesting comments about the ABI. =A0
+> =
+
+> Considering that we're still *really* early in getting this concept
+> merged up into mainline, what do you all think we should do now?
+
+I think the two most important aspects here need to be security and
+simplicity. If you have to choose between the two, it probably makes
+sense to put security first, because loading untrusted data into
+the kernel puts you at a significant risk to start with. If you
+can show a restart interface that lets regular users restart their
+tasks in a way anyone can verify to be secure, that will be a
+good indication that you're on the right track.
+
+The other problem that you really need to solve is interface
+stability. What you are creating is a binary representation
+of many kernel internal data structures, so in our common
+rules, you have to make sure that you remain forward and
+backward compatible. Simply saying that you need to run
+an identical kernel when restarting from a checkpoint is not
+enough IMHO.
+
+
+Some more words on specific interfaces that we have discussed:
+
+The single-file-descriptor approach has the big advantage of
+keeping the complexity in one place (the kernel). To be consistent
+with other kernel interfaces, I would make the kernel hand out a
+file descriptor, not let the user open a file and pass that into
+the kernel as you do now.
+
+A new file system is a good idea for many complex interfaces that
+make their way into the kernel, but I don't think it will help
+in this case.
+
+For checkpointing a single task, or even a task with its children,
+a different interface I could imagine would be to have a new
+file in procfs per pid that you can read as a pipe giving our
+the same data that you currently save in the checkpoint file
+descriptor. It does mean that you won't be able to pass flags
+down easily (you could write to the pipe before you start reading,
+but that's not too nice).
+
+On the restart side, I think the most consistent interface would
+be a new binfmt_chkpt implementation that you can use to execve
+a checkpoint, just like you execute an ELF file today. The binfmt
+can be a module (unlike a syscall), so an administrator that is
+afraid of the security implications can just disable it by not
+loading the module. In an execve model, the parent process can
+set up anything related to credentials as good as it's allowed
+to and then let the kernel do the rest.
+
+	Arnd <><
