@@ -1,17 +1,16 @@
-From: Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: Re: memrlimit controller merge to mainline
-Date: Sun, 10 Aug 2008 22:34:54 +0530
-Message-ID: <489F1FB6.9070503@linux.vnet.ibm.com>
-References: <6599ad830807250114h7ab0fdb1u98c0968961647642@mail.gmail.com>
-	<Pine.LNX.4.64.0807251004570.31120@blonde.site>
-	<489752AA.9060500@linux.vnet.ibm.com>
-	<Pine.LNX.4.64.0808042226430.4300@blonde.site>
-Reply-To: balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
+From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [RFC][PATCH 1/4] checkpoint-restart: general infrastructure
+Date: Mon, 11 Aug 2008 10:22:01 -0500
+Message-ID: <20080811152201.GB25930__39105.9107649655$1218468326$gmane$org@us.ibm.com>
+References: <20080807224033.FFB3A2C1@kernel> <200808081146.54834.arnd@arndb.de>
+	<1218221451.19082.36.camel@nimitz>
+	<200808090013.41999.arnd@arndb.de>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <Pine.LNX.4.64.0808042226430.4300-popGQ1T0qN76K7/ahGyk6A@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <200808090013.41999.arnd-r2nGTMty4D4@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -21,116 +20,81 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Hugh Dickins <hugh-DTz5qymZ9yRBDgjK7y7TUQ@public.gmane.org>
-Cc: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
+To: Arnd Bergmann <arnd-r2nGTMty4D4@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Theodore Tso <tytso-3s7WtUTddSA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Hugh Dickins wrote:
->> but I do have an initial hypothesis
->>
->> CPU0					CPU1
->> 					try_to_unuse
->> task 1 stars exiting			look at mm = task1->mm
->> ..					increment mm_users
->> task 1 exits
->> mm->owner needs to be updated, but
->> no new owner is found
->> (mm_users > 1, but no other task
->> has task->mm = task1->mm)
->> mm_update_next_owner() leaves
->>
->> grace period
->> 					user count drops, call mmput(mm)
->> task 1 freed
->> 					dereferencing mm->owner fails
+Quoting Arnd Bergmann (arnd-r2nGTMty4D4@public.gmane.org):
+> On Friday 08 August 2008, Dave Hansen wrote:
+> > On Fri, 2008-08-08 at 11:46 +0200, Arnd Bergmann wrote:
 > 
-> Yes, that looks right to me: seems obvious now.  I don't think your
-> careful alternation of CPU0/1 events at the end matters: the swapoff
-> CPU simply dereferences mm->owner after that task has gone.
+> > > > +struct cr_hdr_tail {
+> > > > +	__u32 magic;
+> > > > +	__u32 cksum[2];
+> > > > +};
+> > > 
+> > > This structure has an odd multiple of 32-bit members, which means
+> > > that if you put it into a larger structure that also contains
+> > > 64-bit members, the larger structure may get different alignment
+> > > on x86-32 and x86-64, which you might want to avoid.
+> > > I can't tell if this is an actual problem here.
+> > 
+> > Can't we just declare all these things __packed__ and stop worrying
+> > about aligning them all manually?
 > 
-> (That's a shame, I'd always hoped that mm->owner->comm was going to
-> be good for use in mm messages, even when tearing down the mm.)
+> I personally dislike __packed__ because it makes it very easy to get
+> suboptimal object code. If you either pad every structure to a multiple
+> of 64 bits or avoid __u64 members, you don't have a problem. Also,
+> I think avoiding implicit padding inside of data structures is very
+> helpful for user interfaces, if necessary you can always add explicit
+> padding.
 > 
+> > > get_fs()/set_fs() always feels a bit ouch, and this way you have
+> > > to use __force to avoid the warnings about __user pointer casts
+> > > in sparse.
+> > > I wonder if you can use splice_read/splice_write to get around
+> > > this problem.
+> > 
+> > I have to wonder if this is just a symptom of us trying to do this the
+> > wrong way.  We're trying to talk the kernel into writing internal gunk
+> > into a FD.  You're right, it is like a splice where one end of the pipe
+> > is in the kernel.
+> > 
+> > Any thoughts on a better way to do this?  
+> 
+> Maybe you can invert the logic and let the new syscalls create a file
+> descriptor, and then have user space read or splice the checkpoint
+> data from it, and restore it by writing to the file descriptor.
+> It's probably easy to do using anon_inode_getfd() and would solve this
+> problem, but at the same time make checkpointing the current thread
+> hard if not impossible.
+> 
+> > Yes, eventually.  I think one good point is that we should probably
+> > remove this now so that we *have* to think about security implications
+> > as we add each individual patch.  For instance, what kind of checking do
+> > we do when we restore an mlock()'d VMA?
+> 
+> I think the question can be generalized further: How do you deal with
+> saved tasks that have more priviledges than the task doing the restore?
+> 
+> There are probably more, but what I can think of right now includes:
+> * anything you can set using ulimit
+> * capabilities
+> * threads running as another user/group
+> * open files that have had their permissions changed after the open
 
-Hi, Hugh,
+At the checkpoint end, the ptrace checks seem apporpriate:  If you're
+allowed to stop and manipulate the process, then you may as well be
+allowed to checkpoint and see/tweak its memory that way.
 
-I do have fixes for the problem above, but I've run into something strange. I
-see that when I create a new cgroup and set 500M as it's limit and run kernbench
-under it, I see a strange problem
+At the restart end, every resource which was checkpointed will have to
+be re-created, and permissions checked against the privilege of the
+task which did the restart.  We may end up having to make use of the new
+credentials for this.
 
-1. memrlimit determines that limit is exceeded and fails the fork of the new process
-2. The process that failed to fork, encounters a page fault and faults in find_vma
+This could become unpleasant: if an unprivileged task asked a privileged
+helper to create something for the unprivileged task to use (i.e. a
+raw socket), then the user needs to be privileged to re-created the
+resource.  But it's necessary.
 
-I tried chasing the problem, but I am lost wondering how a page fault
-(do_page_fault) can occur in a process that has not yet been created and is
-going to fail with -ENOMEM. The interesting thing is that the OOPS occurs in
-find_vma
-
-My trace so far
-----------------
-
-limit exceeded
-Pid: 3695, comm: sh Not tainted 2.6.27-rc1-mm1 #12
-
-Call Trace:
- [<ffffffff802b0473>] memrlimit_cgroup_charge_as+0x3a/0x3c
- [<ffffffff8023a82f>] dup_mm+0xea/0x410
- [<ffffffff8023b648>] copy_process+0xabe/0x12ef
- [<ffffffff8023c0df>] do_fork+0x114/0x2d2
- [<ffffffff8025b42c>] ? trace_hardirqs_on_caller+0xf9/0x124
- [<ffffffff8025b464>] ? trace_hardirqs_on+0xd/0xf
- [<ffffffff805bda1f>] ? _spin_unlock_irq+0x2b/0x30
- [<ffffffff805bd24e>] ? trace_hardirqs_on_thunk+0x3a/0x3f
- [<ffffffff8020bf4b>] ? system_call_fastpath+0x16/0x1b
- [<ffffffff8020a44a>] sys_clone+0x23/0x25
- [<ffffffff8020c2c7>] ptregscall_common+0x67/0xb0
-
-putting mm ffff88003d931400 3695 sh
-copy_mm, retval -12
-copy_process returning -12
-copy_process returned fffffffffffffff4 -12
-fork failed -12
-general protection fault: 0000 [1] copy_process returned ffff880037a11600 -13194
-0462029312
-SMP
-last sysfs file: /sys/block/sda/size
-CPU 2
-Modules linked in: coretemp hwmon kvm_intel kvm rtc_cmos rtc_core rtc_lib mptsas
- mptscsih mptbase scsi_transport_sas uhci_hcd ohci_hcd ehci_hcd
-Pid: 3695, comm: sh Not tainted 2.6.27-rc1-mm1 #12
-RIP: 0010:[<ffffffff802954f8>]  [<ffffffff802954f8>] find_vma+0x2f/0x62
-RSP: 0000:ffff88003544bee8  EFLAGS: 00010202
-RAX: 6b6b6b6b6b6b6b6b RBX: 0000000000000000 RCX: ffff8800399e34d8
-RDX: ffff8800399e34d8 RSI: 0000003a2729ad22 RDI: ffff88003e5c8500
-RBP: ffff88003544bee8 R08: 0000000000000000 R09: 0000000000000000
-R10: ffff88003e5c8568 R11: 0000000000000246 R12: 0000003a2729ad22
-R13: 0000000000000014 R14: ffff88003544bf58 R15: ffff88003e8bac00
-FS:  00002b3b978f3f50(0000) GS:ffff8800bfd954b0(0000) knlGS:0000000000000000
-CS:  0010 DS: 0000 ES: 0000 CR0: 000000008005003b
-CR2: 0000003a2729ad22 CR3: 000000003549f000 CR4: 00000000000026e0
-DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
-DR3: 0000000000000000 DR6: 00000000ffff0ff0 DR7: 0000000000000400
-Process sh (pid: 3695, threadinfo ffff88003544a000, task ffff88003e8bac00)
-Stack:  ffff88003544bf48 ffffffff805bfec0 00000000ffffffff 00000000008cae50
- ffff88003e5c8560 ffff88003e5c8500 0003000100000000 0000000000000000
- 00007fff131e72c0 00000000ffffffff 00000000008cae50 0000000000000000
-Call Trace:
- [<ffffffff805bfec0>] do_page_fault+0x36f/0x7ad
- [<ffffffff805bdd4d>] error_exit+0x0/0xa9
-
-
-Code: 85 ff 48 89 e5 74 55 eb 05 48 89 ca eb 47 48 8b 47 10 48 85 c0 74 0c 48 39
- 70 10 76 06 48 39 70 08 76 39 48 8b 47 08 31 d2 eb 1d <48> 39 70 e0 48 8d 48 d0
- 76 0f 48 39 70 d8 76 ce 48 8b 40 10 48
-RIP  [<ffffffff802954f8>] find_vma+0x2f/0x62
- RSP <ffff88003544bee8>
-
----[ end trace 89156336afdfaec3 ]---
-
-I hope that I'll be able to think more clearly on Monday, but it's hard to say :)
-
--- 
-	Warm Regards,
-	Balbir Singh
-	Linux Technology Center
-	IBM, ISTL
+-serge
