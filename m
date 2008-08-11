@@ -1,17 +1,19 @@
-From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [RFC][PATCH 1/4] checkpoint-restart: general infrastructure
-Date: Mon, 11 Aug 2008 10:07:03 -0500
-Message-ID: <20080811150703.GA25930__47842.9169081666$1218470084$gmane$org@us.ibm.com>
-References: <20080807224033.FFB3A2C1@kernel> <200808081146.54834.arnd@arndb.de>
-	<1218221451.19082.36.camel@nimitz>
-	<200808090013.41999.arnd@arndb.de>
-	<1218234411.19082.58.camel@nimitz>
+From: Jeremy Fitzhardinge <jeremy-TSDbQ3PG+2Y@public.gmane.org>
+Subject: Re: [RFC][PATCH 2/4] checkpoint/restart: x86 support
+Date: Mon, 11 Aug 2008 09:07:35 -0700
+Message-ID: <48A063C7.3080504__35756.0615441345$1218471079$gmane$org@goop.org>
+References: <20080807224033.FFB3A2C1@kernel>	
+	<200808081409.30591.arnd@arndb.de>
+	<489CAC70.7090809@cs.columbia.edu>	
+	<200808090029.28286.arnd@arndb.de>
+	<489CD0F9.9060603@cs.columbia.edu>	
+	<1218242286.19082.62.camel@nimitz> <489F015E.9080704@goop.org>
+	<1218468964.5598.3.camel@nimitz>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <1218234411.19082.58.camel@nimitz>
+In-Reply-To: <1218468964.5598.3.camel@nimitz>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -25,44 +27,26 @@ To: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Theodore Tso <tytso-3s7WtUTddSA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Arnd Bergmann <arnd-r2nGTMty4D4@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Quoting Dave Hansen (dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org):
-> On Sat, 2008-08-09 at 00:13 +0200, Arnd Bergmann wrote:
-> > > I have to wonder if this is just a symptom of us trying to do this the
-> > > wrong way.  We're trying to talk the kernel into writing internal gunk
-> > > into a FD.  You're right, it is like a splice where one end of the pipe
-> > > is in the kernel.
-> > > 
-> > > Any thoughts on a better way to do this?  
-> > 
-> > Maybe you can invert the logic and let the new syscalls create a file
-> > descriptor, and then have user space read or splice the checkpoint
-> > data from it, and restore it by writing to the file descriptor.
-> > It's probably easy to do using anon_inode_getfd() and would solve this
-> > problem, but at the same time make checkpointing the current thread
-> > hard if not impossible.
-> 
-> Yeah, it does seem kinda backwards.  But, instead of even having to
-> worry about the anon_inode stuff, why don't we just put it in a fs like
-> everything else?  checkpointfs!
+Dave Hansen wrote:
+> On Sun, 2008-08-10 at 07:55 -0700, Jeremy Fitzhardinge wrote:
+>   
+>> Struct pt_regs is not ABI, and can (and has) changed on x86.   It's not 
+>> suitable for a checkpoint structure because it only contains the 
+>> registers that the kernel trashes, not all usermode registers (on i386, 
+>> it leaves out %gs, for example).  asm-x86/ptrace-abi.h does define stuff 
+>> that's fixed in stone; it expresses it in terms of a register array, 
+>> with constants defining what element is which register.
+>>     
+>
+> Thanks for the explanation.
+>
+> I just want to reduce the coding and maintenance burden here.  Xen must
+> do this for partition mobility, right?  Does it define all its own
+> stuff?
+>   
 
-One reason is that I suspect that stops us from being able to send that
-data straight to a pipe to compress and/or send on the network, without
-hitting local disk.  Though if the checkpointfs was ram-based maybe not?
+You mean save/restore/migrate?  Yes, it defines all its own stuff.  
+Checkpoint-resume on a whole VM is a rather simpler operation than a 
+subset of processes.
 
-As Oren has pointed out before, passing in an fd means we can pass a
-socket into the syscall.
-
-Using the anon_inodes would also prevent that, but if it makes for a
-cleaner overall solution then I'm not against considering either one
-of course.
-
-> I'm also really not convinced that putting the entire checkpoint in one
-> glob is really the solution, either.  I mean, is system call overhead
-> really a problem here?
-> 
-> -- Dave
-> 
-> _______________________________________________
-> Containers mailing list
-> Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-> https://lists.linux-foundation.org/mailman/listinfo/containers
+    J
