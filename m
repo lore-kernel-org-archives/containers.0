@@ -1,16 +1,18 @@
-From: Fernando Luis =?ISO-8859-1?Q?V=E1zquez?= Cao <fernando-gVGce1chcLdL9jVzuh4AOg@public.gmane.org>
-Subject: Re: RFC: I/O bandwidth controller
-Date: Tue, 12 Aug 2008 22:54:36 +0900
-Message-ID: <1218549276.4456.100.camel__26050.0488723212$1218549408$gmane$org@sebastian.kern.oss.ntt.co.jp>
-References: <1218117578.11703.81.camel@sebastian.kern.oss.ntt.co.jp>
-	<48A0A689.40908@gmail.com>	<loom.20080812T071504-212@post.gmane.org>
-	<20080812.201025.57762305.taka@valinux.co.jp>
-	<48A18854.9020000@gmail.com> <48A18B1F.6080000@gmail.com>
+From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: Re: checkpoint/restart ABI
+Date: Tue, 12 Aug 2008 09:49:05 -0500
+Message-ID: <20080812144905.GA16016__47445.070758886$1218552777$gmane$org@us.ibm.com>
+References: <20080807224033.FFB3A2C1@kernel> <200808090013.41999.arnd@arndb.de>
+	<20080811152201.GB25930@us.ibm.com>
+	<200808111853.13854.arnd@arndb.de>
+	<1218484114.5598.43.camel@nimitz> <48A0CD86.6030704@goop.org>
+	<87d4kfds5i.wl%peterc@chubb.wattle.id.au>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: base64
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <48A18B1F.6080000-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <87d4kfds5i.wl%peterc-LkDQP0DxSMGxwJ88Py/mJxCuuivNXqWP@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -20,109 +22,68 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org
-Cc: xen-devel-GuqFBffKawuULHF6PoxzQEEOCMrvLtNR@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, virtualization-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, dm-devel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, agk-9JcytcrH/bA+uJoB2kUjGw@public.gmane.org, dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, ngupta-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
+To: Peter Chubb <peterc-M3ycANVxPotyL3EAZA59ERCuuivNXqWP@public.gmane.org>
+Cc: Jeremy Fitzhardinge <jeremy-TSDbQ3PG+2Y@public.gmane.org>, Theodore Tso <tytso-3s7WtUTddSA@public.gmane.org>, Arnd Bergmann <arnd-r2nGTMty4D4@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-T24gVHVlLCAyMDA4LTA4LTEyIGF0IDIyOjI5ICswOTAwLCBBbmRyZWEgUmlnaGkgd3JvdGU6Cj4g
-QW5kcmVhIFJpZ2hpIHdyb3RlOgo+ID4gSGlyb2thenUgVGFrYWhhc2hpIHdyb3RlOgo+ID4+Pj4+
-Pj4gMy4gJiA0LiAmIDUuIC0gSS9PIGJhbmR3aWR0aCBzaGFwaW5nICYgR2VuZXJhbCBkZXNpZ24g
-YXNwZWN0cwo+ID4+Pj4+Pj4KPiA+Pj4+Pj4+IFRoZSBpbXBsZW1lbnRhdGlvbiBvZiBhbiBJL08g
-c2NoZWR1bGluZyBhbGdvcml0aG0gaXMgdG8gYSBjZXJ0YWluIGV4dGVudAo+ID4+Pj4+Pj4gaW5m
-bHVlbmNlZCBieSB3aGF0IHdlIGFyZSB0cnlpbmcgdG8gYWNoaWV2ZSBpbiB0ZXJtcyBvZiBJL08g
-YmFuZHdpZHRoCj4gPj4+Pj4+PiBzaGFwaW5nLCBidXQsIGFzIGRpc2N1c3NlZCBiZWxvdywgdGhl
-IHJlcXVpcmVkIGFjY3VyYWN5IGNhbiBkZXRlcm1pbmUKPiA+Pj4+Pj4+IHRoZSBsYXllciB3aGVy
-ZSB0aGUgSS9PIGNvbnRyb2xsZXIgaGFzIHRvIHJlc2lkZS4gT2ZmIHRoZSB0b3Agb2YgbXkKPiA+
-Pj4+Pj4+IGhlYWQsIHRoZXJlIGFyZSB0aHJlZSBiYXNpYyBvcGVyYXRpb25zIHdlIG1heSB3YW50
-IHBlcmZvcm06Cj4gPj4+Pj4+PiAgIC0gSS9PIG5pY2UgcHJpb3JpdGl6YXRpb246IGlvbmljZS1s
-aWtlIGFwcHJvYWNoLgo+ID4+Pj4+Pj4gICAtIFByb3BvcnRpb25hbCBiYW5kd2lkdGggc2NoZWR1
-bGluZzogZWFjaCBwcm9jZXNzL2dyb3VwIG9mIHByb2Nlc3Nlcwo+ID4+Pj4+Pj4gaGFzIGEgd2Vp
-Z2h0IHRoYXQgZGV0ZXJtaW5lcyB0aGUgc2hhcmUgb2YgYmFuZHdpZHRoIHRoZXkgcmVjZWl2ZS4K
-PiA+Pj4+Pj4+ICAgLSBJL08gbGltaXRpbmc6IHNldCBhbiB1cHBlciBsaW1pdCB0byB0aGUgYmFu
-ZHdpZHRoIGEgZ3JvdXAgb2YgdGFza3MKPiA+Pj4+Pj4+IGNhbiB1c2UuCj4gPj4+Pj4+IFVzZSBh
-IGRlYWRsaW5lLWJhc2VkIElPIHNjaGVkdWxpbmcgY291bGQgYmUgYW4gaW50ZXJlc3RpbmcgcGF0
-aCB0byBiZQo+ID4+Pj4+PiBleHBsb3JlZCBhcyB3ZWxsLCBJTUhPLCB0byB0cnkgdG8gZ3VhcmFu
-dGVlIHBlci1jZ3JvdXAgbWluaW11bSBiYW5kd2lkdGgKPiA+Pj4+Pj4gcmVxdWlyZW1lbnRzLgo+
-ID4+Pj4+IFBsZWFzZSBub3RlIHRoYXQgdGhlIG9ubHkgdGhpbmcgd2UgY2FuIGRvIGlzIHRvIGd1
-YXJhbnRlZSBtaW5pbXVtCj4gPj4+Pj4gYmFuZHdpZHRoIHJlcXVpcmVtZW50IHdoZW4gdGhlcmUg
-aXMgY29udGVudGlvbiBmb3IgYW4gSU8gcmVzb3VyY2UsIHdoaWNoCj4gPj4+Pj4gaXMgcHJlY2lz
-ZWx5IHdoYXQgYSBwcm9wb3J0aW9uYWwgYmFuZHdpZHRoIHNjaGVkdWxlciBkb2VzLiBBbiBJIG1p
-c3NpbmcKPiA+Pj4+PiBzb21ldGhpbmc/Cj4gPj4+PiBDb3JyZWN0LiBQcm9wb3J0aW9uYWwgYmFu
-ZHdpZHRoIGF1dG9tYXRpY2FsbHkgYWxsb3dzIHRvIGd1YXJhbnRlZSBtaW4KPiA+Pj4+IHJlcXVp
-cmVtZW50cyAoaW5zdGVhZCBvZiBJTyBsaW1pdGluZyBhcHByb2FjaCwgdGhhdCBuZWVkcyBhZGRp
-dGlvbmFsCj4gPj4+PiBtZWNoYW5pc21zIHRvIGFjaGl2ZSB0aGlzKS4KPiA+Pj4+Cj4gPj4+PiBJ
-biBhbnkgY2FzZSB0aGVyZSdzIG5vIGd1YXJhbnRlZSBmb3IgYSBjZ3JvdXAvYXBwbGljYXRpb24g
-dG8gc3VzdGFpbgo+ID4+Pj4gaS5lLiAxME1CL3Mgb24gYSBjZXJ0YWluIGRldmljZSwgYnV0IHRo
-aXMgaXMgYSBoYXJkIHByb2JsZW0gYW55d2F5LCBhbmQKPiA+Pj4+IHRoZSBiZXN0IHdlIGNhbiBk
-byBpcyB0byB0cnkgdG8gc2F0aXNmeSAic29mdCIgY29uc3RyYWludHMuCj4gPj4+IEkgdGhpbmsg
-Z3VhcmFudGVlaW5nIHRoZSBtaW5pbXVtIEkvTyBiYW5kd2lkdGggaXMgdmVyeSBpbXBvcnRhbnQu
-IEluIHRoZSAKPiA+Pj4gYnVzaW5lc3Mgc2l0ZSwgZXNwZWNpYWxseSBpbiBzdHJlYW1pbmcgc2Vy
-dmljZSBzeXN0ZW0sIGFkbWluaXN0cmF0b3IgcmVxdWlyZXMgCj4gPj4+IHRoZSBmdW5jdGlvbmFs
-aXR5IHRvIHNhdGlzZnkgUW9TIG9yIHBlcmZvcm1hbmNlIG9mIHRoZWlyIHNlcnZpY2UuIAo+ID4+
-PiBPZiBjb3Vyc2UsIElPIHRocm90dGxpbmcgaXMgaW1wb3J0YW50LCBidXQsIHBlcnNvbmFsbHks
-IEkgdGhpbmsgZ3VhcmFudGVlaW5nIAo+ID4+PiB0aGUgbWluaW11bSBiYW5kd2lkdGggaXMgbW9y
-ZSBpbXBvcnRhbnQgdGhhbiBsaW1pdGF0aW9uIG9mIG1heGltdW0gYmFuZHdpZHRoIAo+ID4+PiB0
-byBzYXRpc2Z5IHRoZSByZXF1aXJlbWVudCBpbiByZWFsIGJ1c2luZXNzIHNpdGVzLgo+ID4+PiBB
-bmQgSSBrbm93IEFuZHJlYeKAmXMgaW8tdGhyb3R0bGUgcGF0Y2ggc3VwcG9ydHMgdGhlIGxhdHRl
-ciBjYXNlIHdlbGwgYW5kIGl0IGlzIAo+ID4+PiB2ZXJ5IHN0YWJsZS4gCj4gPj4+IEJ1dCwgdGhl
-IGZpcnN0IGNhc2UoZ3VhcmFudGVlIHRoZSBtaW5pbXVtIGJhbmR3aWR0aCkgaXMgbm90IHN1cHBv
-cnRlZCBpbiBhbnkgCj4gPj4+IHBhdGNoZXMuCj4gPj4+IElzIHRoZXJlIGFueSBwbGFucyB0byBz
-dXBwb3J0IGl0PyBhbmQgSXMgdGhlcmUgYW55IHByb2JsZW1zIGluIGltcGxlbWVudGluZyBpdD8K
-PiA+Pj4gSSB0aGluayBpZiBJTyBjb250cm9sbGVyIGNhbiBzdXBwb3J0IGd1YXJhbnRlZWluZyB0
-aGUgbWluaW11bSBiYW5kd2lkdGggYW5kIAo+ID4+PiB3b3JrLWNvbnNlcnZpbmcgbW9kZSBzaW11
-bHRhbmVvdXNseSwgaXQgbW9yZSBlYXNpbHkgc2F0aXNmaWVzIHRoZSByZXF1aXJlbWVudCAKPiA+
-Pj4gb2YgdGhlIGJ1c2luZXNzIHNpdGVzLgo+ID4+PiBBZGRpdGlvbmFsbHksIEkgZGlkbuKAmXQg
-dW5kZXJzdGFuZCDigJxQcm9wb3J0aW9uYWwgYmFuZHdpZHRoIGF1dG9tYXRpY2FsbHkgYWxsb3dz
-IAo+ID4+PiB0byBndWFyYW50ZWUgbWluCj4gPj4+IHJlcXVpcmVtZW50c+KAnSBhbmQg4oCcc29m
-dCBjb25zdHJhaW50c+KAnS4KPiA+Pj4gQ2FuIHlvdSBnaXZlIG1lIGEgYWR2aWNlIGFib3V0IHRo
-aXMgPyAKPiA+Pj4gVGhhbmtzIGluIGFkdmFuY2UuCj4gPj4+Cj4gPj4+IERvbmctSmFlIEthbmcK
-PiA+PiBJIHRoaW5rIHRoaXMgaXMgd2hhdCBkbS1pb2JhbmQgZG9lcy4KPiA+Pgo+ID4+IExldCdz
-IHNheSB5b3UgbWFrZSB0d28gZ3JvdXBzIHNoYXJlIHRoZSBzYW1lIGRpc2ssIGFuZCBnaXZlIHRo
-ZW0KPiA+PiA3MCUgb2YgdGhlIGJhbmR3aWR0aCB0aGUgZGlzayBwaHlzaWNhbGx5IGhhcyBhbmQg
-MzAlIHJlc3BlY3RpdmVseS4KPiA+PiBUaGlzIG1lYW5zIHRoZSBmb3JtZXIgZ3JvdXAgaXMgYWxt
-b3N0IGd1YXJhbnRlZWQgdG8gYmUgYWJsZSB0byB1c2UKPiA+PiA3MCUgb2YgdGhlIGJhbmR3aWR0
-aCBldmVuIHdoZW4gdGhlIGxhdHRlciBvbmUgaXMgaXNzdWluZyBxdWl0ZQo+ID4+IGEgbG90IG9m
-IEkvTyByZXF1ZXN0cy4KPiA+Pgo+ID4+IFllcywgSSBrbm93IHRoZXJlIGV4aXN0IGhlYWQgc2Vl
-ayBsYWdzIHdpdGggdHJhZGl0aW9uYWwgbWFnbmV0aWMgZGlza3MsCj4gPj4gc28gaXQncyBpbXBv
-cnRhbnQgdG8gaW1wcm92ZSB0aGUgYWxnb3JpdGhtIHRvIHJlZHVjZSB0aGlzIG92ZXJoZWFkLgo+
-ID4+Cj4gPj4gQW5kIEkgdGhpbmsgaXQgaXMgYWxzbyBwb3NzaWJsZSB0byBhZGQgYSBuZXcgc2No
-ZWR1bGluZyBwb2xpY3kgdG8KPiA+PiBndWFyYW50ZWUgdGhlIG1pbmltdW0gYmFuZHdpZHRoLiBJ
-dCBtaWdodCBiZSBjb29sIGlmIHNvbWUgZ3JvdXAgY2FuCj4gPj4gdXNlIGd1cmFudGVlZCBiYW5k
-d2lkdGhzIGFuZCB0aGUgb3RoZXIgc2hhcmUgdGhlIHJlc3Qgb24gcHJvcG9ydGlvbmFsCj4gPj4g
-YmFuZHdpZHRoIHBvbGljeS4KPiA+Pgo+ID4+IFRoYW5rcywKPiA+PiBIaXJva2F6dSBUYWthaGFz
-aGkuCj4gPiAKPiA+IFdpdGggSU8gbGltaXRpbmcgYXBwcm9hY2ggbWluaW11bSByZXF1aXJlbWVu
-dHMgYXJlIHN1cHBvc2VkIHRvIGJlCj4gPiBndWFyYW50ZWVkIGlmIHRoZSB1c2VyIGNvbmZpZ3Vy
-ZXMgYSBnZW5lcmljIGJsb2NrIGRldmljZSBzbyB0aGF0IHRoZSBzdW0KPiA+IG9mIHRoZSBsaW1p
-dHMgZG9lc24ndCBleGNlZWQgdGhlIHRvdGFsIElPIGJhbmR3aWR0aCBvZiB0aGF0IGRldmljZS4g
-QnV0LAo+ID4gaW4gcHJpbmNpcGxlLCB0aGVyZSdzIG5vdGhpbmcgaW4gInRocm90dGxpbmciIHRo
-YXQgZ3VhcmFudGVlcyAiZmFpcm5lc3MiCj4gPiBhbW9uZyBkaWZmZXJlbnQgY2dyb3VwcyBkb2lu
-ZyBJTyBvbiB0aGUgc2FtZSBibG9jayBkZXZpY2VzLCB0aGF0IG1lYW5zCj4gPiB0aGVyZSdzIG5v
-dGhpbmcgdG8gZ3VhcmFudGVlIG1pbmltdW0gcmVxdWlyZW1lbnRzIChhbmQgdGhpcyBpcyB0aGUK
-PiA+IHJlYXNvbiBiZWNhdXNlIEkgbGlrZWQgdGhlIFNhdG9zaGkncyBDRlEtY2dyb3VwIGFwcHJv
-YWNoIHRvZ2V0aGVyIHdpdGgKPiA+IGlvLXRocm90dGxlKS4KPiA+IAo+ID4gQSBtb3JlIGNvbXBs
-aWNhdGVkIGlzc3VlIGlzIGhvdyB0byBldmFsdWF0ZSB0aGUgdG90YWwgSU8gYmFuZHdpZHRoIG9m
-IGEKPiA+IGdlbmVyaWMgZGV2aWNlLiBXZSBjYW4gdXNlIHNvbWUga2luZCBvZiBhdmVyYWdpbmcv
-cHJlZGljdGlvbiwgYnV0Cj4gPiBiYXNpY2FsbHkgaXQgd291bGQgYmUgaW5hY2N1cmF0ZSBkdWUg
-dG8gdGhlIG1lY2hhbmljIG9mIGRpc2tzIChoZWFkCj4gPiBzZWVrcywgYnV0IGFsc28gY2FjaGlu
-ZywgYnVmZmVyaW5nIG1lY2hhbmlzbXMgaW1wbGVtZW50ZWQgZGlyZWN0bHkgaW50bwo+ID4gdGhl
-IGRldmljZSwgZXRjLikuIEl0J3MgYSBoYXJkIHByb2JsZW0uIEFuZCB0aGUgc2FtZSBwcm9ibGVt
-IGV4aXN0cyBhbHNvCj4gPiBmb3IgcHJvcG9ydGlvbmFsIGJhbmR3aWR0aCBhcyB3ZWxsLCBpbiB0
-ZXJtcyBvZiBJTyByYXRlIHByZWRpY3RhYmlsaXR5IEkKPiA+IG1lYW4uCj4gCj4gQlRXIGFzIEkg
-c2FpZCBpbiBhIHByZXZpb3VzIGVtYWlsLCBhbiBpbnRlcmVzdGluZyBwYXRoIHRvIGJlIGV4cGxv
-cmVkCj4gSU1ITyBjb3VsZCBiZSB0byB0aGluayBpbiB0ZXJtcyBvZiBJTyB0aW1lLiBTbywgbG9v
-ayBhdCB0aGUgdGltZSBhbiBJTwo+IHJlcXVlc3QgaXMgaXNzdWVkIHRvIHRoZSBkcml2ZSwgbG9v
-ayBhdCB0aGUgdGltZSB0aGUgcmVxdWVzdCBpcyBzZXJ2ZWQsCj4gZXZhbHVhdGUgdGhlIGRpZmZl
-cmVuY2UgYW5kIGNoYXJnZSB0aGUgY29uc3VtZWQgSU8gdGltZSB0byB0aGUKPiBhcHByb3ByaWF0
-ZSBjZ3JvdXAuIFRoZW4gZGlzcGF0Y2ggSU8gcmVxdWVzdHMgaW4gZnVuY3Rpb24gb2YgdGhlCj4g
-Y29uc3VtZWQgSU8gdGltZSBkZWJ0cyAvIGNyZWRpdHMsIHVzaW5nIGZvciBleGFtcGxlIGEgdG9r
-ZW4tYnVja2V0Cj4gc3RyYXRlZ3kuIEFuZCBwcm9iYWJseSB0aGUgYmVzdCBwbGFjZSB0byBpbXBs
-ZW1lbnQgdGhlIElPIHRpbWUKPiBhY2NvdW50aW5nIGlzIHRoZSBlbGV2YXRvci4KUGxlYXNlIG5v
-dGUgdGhhdCB0aGUgc2VlayB0aW1lIGZvciBhIHNwZWNpZmljIElPIHJlcXVlc3QgaXMgc3Ryb25n
-bHkKY29ycmVsYXRlZCB3aXRoIHRoZSBJTyByZXF1ZXN0cyB0aGF0IHByZWNlZGVkIGl0LCB3aGlj
-aCBtZWFucyB0aGF0IHRoZQpvd25lciBvZiB0aGF0IHJlcXVlc3QgaXMgbm90IHRoZSBvbmx5IG9u
-ZSB0byBibGFtZSBpZiBpdCB0YWtlcyB0b28gbG9uZwp0byBwcm9jZXNzIGl0LiBJbiBvdGhlciB3
-b3Jkcywgd2l0aCB0aGUgYWxnb3JpdGhtIHlvdSBwcm9wb3NlIHdlIG1heSBlbmQKdXAgY2hhcmdp
-bmcgdGhlIHdyb25nIGd1eS4KCl9fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19f
-X19fX19fX19fCkNvbnRhaW5lcnMgbWFpbGluZyBsaXN0CkNvbnRhaW5lcnNAbGlzdHMubGludXgt
-Zm91bmRhdGlvbi5vcmcKaHR0cHM6Ly9saXN0cy5saW51eC1mb3VuZGF0aW9uLm9yZy9tYWlsbWFu
-L2xpc3RpbmZvL2NvbnRhaW5lcnM=
+Quoting Peter Chubb (peterc-M3ycANVxPotyL3EAZA59ERCuuivNXqWP@public.gmane.org):
+> >>>>> "Jeremy" == Jeremy Fitzhardinge <jeremy-TSDbQ3PG+2Y@public.gmane.org> writes:
+> 
+> Jeremy> Dave Hansen wrote:
+> >> Arnd, Jeremy and Oren,
+> >> 
+> 
+> 
+> Jeremy>    * multiple processes * pipes * UNIX domain sockets * INET
+> Jeremy> sockets (both inter and intra machine) * unlinked open files *
+> Jeremy> checkpointing file content * closed files (ie, files which
+> Jeremy> aren't currently open, but will be soon, esp tmp files) *
+> Jeremy> shared memory * (Peter, what have I forgotten?)
+> 
+> File sharing; multiple threads with wierd sharing arrangements (think:
+> clone with various parameters, followed by exec in some of the threads
+> but not others); MERT/system-V shared memory, semaphores and message
+> queues; devices (audio, framebuffer, etc), HugeTLBFS, numa issues
+> (pinning, memory layout), processes being debugged (so,
+> checkpoint.restart a gdb/target pair), futexes, etc., etc.  Linux
+> process state keeps expanding.
+> 
+> Jeremy> Having gone through this before, I don't think an all-kernel
+> Jeremy> solution can work except for the most simple cases.
+> 
+> I agree ... it's better to put mechanisms into the kernel that can
+> then be used by a user-space programme to actually do the
+> checkpointing and restarting.
+> 
+> Beefing up ptrace or fixing /proc to be a real debugging interface
+> would be a start ... when you can get at *all* the info you need,
+
+Except we don't really want to export all the info you need for a
+complete restartable checkpoint.  And especially not make it
+generally writable.
+
+We have also started down that path using ptrace (see cryo, at
+git://git.sr71.net/~hallyn/cryodev.git).
+
+Right before the containers mini-summit, where the general agreement was
+that a complete in-kernel solution ought to be pursued, I had tried
+a restart using a binary format that read a checkpoint file and used
+cryo (userspace using ptrace) for the rest of the restart, only
+because there was no other reasonable way to set tsk->did_exec on
+restart.
+
+> quickly and easily, the userspace checkpoint falls out fairly
+> naturally.  You still have to work out an extensible file format to
+> store stuff, and how to restore all that state you've so lovingly
+> collected.
+> 
+> Jeremy> Lightweight filesystem checkpointing, such as btrfs provides,
+> Jeremy> would seem like a powerful mechanism for handling a lot of the
+> Jeremy> filesystem state problems.  It would have been useful when we
+> Jeremy> did this...
+> 
+> And how!  saving bits of files was very timeconsuming.
+
+Yes, we're looking forward to using btrfs' snapshots :)
+
+-serge
