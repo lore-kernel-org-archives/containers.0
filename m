@@ -1,16 +1,13 @@
-From: "Rafael J. Wysocki" <rjw-KKrjLPT3xs0@public.gmane.org>
-Subject: Re: [PATCH 4/5] Container Freezer: Skip frozen cgroups during power
-	management resume
-Date: Tue, 12 Aug 2008 22:50:08 +0200
-Message-ID: <200808122250.08699.rjw__28024.2524845109$1218576254$gmane$org@sisk.pl>
+From: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
+Subject: Re: [PATCH 0/5] Container Freezer v6: Reuse Suspend Freezer
+Date: Tue, 12 Aug 2008 15:44:29 -0700
+Message-ID: <20080812154429.c5377bd0.akpm__15789.5941556946$1218581439$gmane$org@linux-foundation.org>
 References: <20080811235323.872291138@us.ibm.com>
-	<20080811235325.485466148@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20080811235325.485466148-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Content-Disposition: inline
+In-Reply-To: <20080811235323.872291138-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -21,39 +18,26 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Cc: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Linux-Kernel <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Cedric Le Goater <clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>, linux-pm-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, rjw-KKrjLPT3xs0@public.gmane.org, menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, linux-pm-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Tuesday, 12 of August 2008, Matt Helsley wrote:
-> When a system is resumed after a suspend, it will also unfreeze
-> frozen cgroups.
-> 
-> This patchs modifies the resume sequence to skip the tasks which
-> are part of a frozen control group.
-> 
-> Signed-off-by: Cedric Le Goater <clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
-> Signed-off-by: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-> Acked-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-> Tested-by: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+On Mon, 11 Aug 2008 16:53:23 -0700
+Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org> wrote:
 
-Acked-by: Rafael J. Wysocki <rjw-KKrjLPT3xs0@public.gmane.org>
+> This patch series introduces a cgroup subsystem that utilizes the swsusp
+> freezer to freeze a group of tasks. It's immediately useful for batch job
+> management scripts. It should also be useful in the future for implementing
+> container checkpoint/restart.
 
-> ---
->  kernel/power/process.c |    3 +++
->  1 file changed, 3 insertions(+)
-> 
-> Index: linux-2.6.27-rc1-mm1/kernel/power/process.c
-> ===================================================================
-> --- linux-2.6.27-rc1-mm1.orig/kernel/power/process.c
-> +++ linux-2.6.27-rc1-mm1/kernel/power/process.c
-> @@ -135,6 +135,9 @@ static void thaw_tasks(bool nosig_only)
->  		if (nosig_only && should_send_signal(p))
->  			continue;
->  
-> +		if (cgroup_frozen(p))
-> +			continue;
-> +
->  		thaw_process(p);
->  	} while_each_thread(g, p);
->  	read_unlock(&tasklist_lock);
-> 
+I don't think that this provides anything like sufficient detail to justify
+merging a whole bunch of stuff into Linux.
+
+What does "It's immediately useful for batch job management scripts."
+mean?  How is it useful?  Examples?  Why would an operator want this
+feature, and how would it be used?  _much_ more information is needed!
+
+Once we've actually found out what this work is useful for, we can move
+onto identification of and discussion of alternatives.  One would be "why not
+use plain old SIGSTOP?"  Another alternative is, of course "that's not useful
+enough to justify merging the code".  But we don't know yet, coz you didn't
+tell us.
