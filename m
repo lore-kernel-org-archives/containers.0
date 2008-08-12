@@ -1,13 +1,15 @@
-From: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH 5/5] Container Freezer: Prevent frozen tasks or cgroups from
-	changing
-Date: Mon, 11 Aug 2008 16:53:28 -0700
-Message-ID: <20080811235325.917183517__5864.18859097666$1218500335$gmane$org@us.ibm.com>
-References: <20080811235323.872291138@us.ibm.com>
+From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Subject: Re: [RFC][PATCH 1/4] checkpoint-restart: general infrastructure
+Date: Mon, 11 Aug 2008 23:44:46 -0400
+Message-ID: <48A1072E.6010200@cs.columbia.edu>
+References: <20080807224033.FFB3A2C1@kernel>	 <20080807224034.735B1F84@kernel>
+	<20080811120315.4b3ba2c8@bike.lwn.net>
+	<1218479921.5598.35.camel@nimitz>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <1218479921.5598.35.camel@nimitz>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -17,108 +19,118 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
-Cc: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Linux-Kernel <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, "Rafael J. Wysocki" <rjw-KKrjLPT3xs0@public.gmane.org>, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, linux-pm-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Theodore Tso <tytso-3s7WtUTddSA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Jonathan Corbet <corbet-T1hC0tSOHrs@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Don't let frozen tasks or cgroups change. This means frozen tasks can't
-leave their current cgroup for another cgroup. It also means that tasks
-cannot be added to or removed from a cgroup in the FROZEN state. We
-enforce these rules by checking for frozen tasks and cgroups in the
-can_attach() function.
-
-Signed-off-by: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
----
-Changes since v4:
-v5:
-	Checked use of task alloc lock for races with swsusp freeze/thaw --
-		looks safe because there are explicit barriers to handle
-		freeze/thaw races for individual tasks, we explicitly
-		handle partial group freezing, and partial group thawing
-		should be resolved without changing swsusp's loop. This should
-		answer Li Zefan's last comment re: races between freeze and
-		thaw.
-
- kernel/cgroup_freezer.c |   43 ++++++++++++++++++++++++++-----------------
- 1 file changed, 26 insertions(+), 17 deletions(-)
-
-Index: linux-2.6.27-rc1-mm1/kernel/cgroup_freezer.c
-===================================================================
---- linux-2.6.27-rc1-mm1.orig/kernel/cgroup_freezer.c
-+++ linux-2.6.27-rc1-mm1/kernel/cgroup_freezer.c
-@@ -145,22 +145,40 @@ static void freezer_destroy(struct cgrou
- 	kfree(cgroup_freezer(cgroup));
- }
- 
-+/* Task is frozen or will freeze immediately when next it gets woken */
-+static bool is_task_frozen_enough(struct task_struct *task)
-+{
-+	return frozen(task) ||
-+		(task_is_stopped_or_traced(task) && freezing(task));
-+}
- 
-+/*
-+ * The call to cgroup_lock() in the freezer.state write method prevents
-+ * a write to that file racing against an attach, and hence the
-+ * can_attach() result will remain valid until the attach completes.
-+ */
- static int freezer_can_attach(struct cgroup_subsys *ss,
- 			      struct cgroup *new_cgroup,
- 			      struct task_struct *task)
- {
- 	struct freezer *freezer;
--	int retval = 0;
-+	int retval;
-+
-+	/* Anything frozen can't move or be moved to/from */
-+
-+	if (is_task_frozen_enough(task))
-+		return -EBUSY;
- 
--	/*
--	 * The call to cgroup_lock() in the freezer.state write method prevents
--	 * a write to that file racing against an attach, and hence the
--	 * can_attach() result will remain valid until the attach completes.
--	 */
- 	freezer = cgroup_freezer(new_cgroup);
- 	if (freezer->state == STATE_FROZEN)
-+		return -EBUSY;
-+
-+	retval = 0;
-+	task_lock(task);
-+	freezer = task_freezer(task);
-+	if (freezer->state == STATE_FROZEN)
- 		retval = -EBUSY;
-+	task_unlock(task);
- 	return retval;
- }
- 
-@@ -193,12 +211,7 @@ static void check_if_frozen(struct cgrou
- 	cgroup_iter_start(cgroup, &it);
- 	while ((task = cgroup_iter_next(cgroup, &it))) {
- 		ntotal++;
--		/*
--		 * Task is frozen or will freeze immediately when next it gets
--		 * woken
--		 */
--		if (frozen(task) ||
--		    (task_is_stopped_or_traced(task) && freezing(task)))
-+		if (is_task_frozen_enough(task))
- 			nfrozen++;
- 	}
- 
-@@ -249,11 +262,7 @@ static int try_to_freeze_cgroup(struct c
- 	while ((task = cgroup_iter_next(cgroup, &it))) {
- 		if (!freeze_task(task, true))
- 			continue;
--		if (task_is_stopped_or_traced(task) && freezing(task))
--			/*
--			 * The freeze flag is set so these tasks will
--			 * immediately go into the fridge upon waking.
--			 */
-+		if (is_task_frozen_enough(task))
- 			continue;
- 		if (!freezing(task) && !freezer_should_skip(task))
- 			num_cant_freeze_now++;
-
--- 
+CgpEYXZlIEhhbnNlbiB3cm90ZToKPiBPbiBNb24sIDIwMDgtMDgtMTEgYXQgMTI6MDMgLTA2MDAs
+IEpvbmF0aGFuIENvcmJldCB3cm90ZToKPj4gSSdtIHRyeWluZyB0byBmaWd1cmUgb3V0IHRoaXMg
+cGF0Y2ggc2V0Li4uaGVyZSdzIGEgZmV3IHRoaW5ncyB3aGljaAo+PiBoYXZlIGNhdWdodCBteSBl
+eWUgaW4gcGFzc2luZy4KPj4KPj4+ICsvKioKPj4+ICsgKiBjcl9nZXRfZm5hbWUgLSByZXR1cm4g
+cGF0aG5hbWUgb2YgYSBnaXZlbiBmaWxlCj4+PiArICogQGZpbGU6IGZpbGUgcG9pbnRlcgo+Pj4g
+KyAqIEBidWY6IGJ1ZmZlciBmb3IgcGF0aG5hbWUKPj4+ICsgKiBAbjogYnVmZmVyIGxlbmd0aCAo
+aW4pIGFuZCBwYXRobmFtZSBsZW5ndGggKG91dCkKPj4+ICsgKgo+Pj4gKyAqIGlmIHRoZSBidWZm
+ZXIgcHJvdml2ZGVkIGJ5IHRoZSBjYWxsZXIgaXMgdG9vIHNtYWxsLCBhbGxvY2F0ZSBhIG5ldwo+
+Pj4gKyAqIGJ1ZmZlcjsgY2FsbGVyIHNob3VsZCBjYWxsIGNyX3B1dF9wYXRobmFtZSgpIGZvciBj
+bGVhbnVwCj4+PiArICovCj4+PiArY2hhciAqY3JfZ2V0X2ZuYW1lKHN0cnVjdCBwYXRoICpwYXRo
+LCBzdHJ1Y3QgcGF0aCAqcm9vdCwgY2hhciAqYnVmLAo+Pj4gaW50ICpuKSArewo+Pj4gKwljaGFy
+ICpmbmFtZTsKPj4+ICsKPj4+ICsJZm5hbWUgPSBfX2RfcGF0aChwYXRoLCByb290LCBidWYsICpu
+KTsKPj4+ICsKPj4+ICsJaWYgKElTX0VSUihmbmFtZSkgJiYgUFRSX0VSUihmbmFtZSkgPT0gLUVO
+QU1FVE9PTE9ORykgewo+Pj4gKwkJIGlmICghKGJ1ZiA9IChjaGFyICopIF9fZ2V0X2ZyZWVfcGFn
+ZXMoR0ZQX0tFUk5FTCwgMCkpKQo+PiBUaGlzIHNlZW1zIGxpa2UgYSBjbHVua3kgYW5kIGVycm9y
+LXByb25lIGludGVyZmFjZSAtIHdoeSBub3QganVzdCBoYXZlIGl0Cj4+IGFsbG9jYXRlIHRoZSBt
+ZW1vcnkgYWx3YXlzPyAgQnV0LCBpbiB0aGlzIGNhc2UsIGNyX2dldF9mbmFtZSgpIGFsd2F5cyBz
+ZWVtcwo+PiB0byBiZSBjYWxsZWQgd2l0aCBjdHgtPnRidWYsIHdoaWNoLCBpbiB0dXJuLCBpcyBh
+biBvcmRlci0xIGFsbG9jYXRpb24uCj4+IEhlcmUgeW91J3JlIHNheWluZyB0aGF0IGlmIGl0J3Mg
+dG9vIHNtYWxsLCB5b3UnbGwgdHJ5IHJlcGxhY2luZyBpdCB3aXRoIGFuCj4+IG9yZGVyLTAgYWxs
+b2NhdGlvbiBpbnN0ZWFkLiAgSSByYXRoZXIgc3VzcGVjdCB0aGF0J3Mgbm90IGdvaW5nIHRvIGhl
+bHAuCj4gCj4gWWVhaCwgaXQgZG9lc24ndCBtYWtlIG11Y2ggc2Vuc2Ugb24gdGhlIHN1cmZhY2Uu
+ICBJIHdvdWxkIGltYWdpbmUgdGhhdAo+IHRoaXMgaGFzIHNvbWUgdXNlIGZvciB3aGVuIHdlJ3Jl
+IHN0YWNraW5nIHRoaW5ncyB1cCBpbiB0aGUgY3R4LT5oYnVmCj4gcmF0aGVyIHRoYW4ganVzdCB1
+c2luZyBpdCBhcyBhIGNvbXBsZXRlbHkgdGVtcG9yYXJ5IGJ1ZmZlci4gIEJ1dCwgaW4gYW55Cj4g
+Y2FzZSwgaXQgZG9lc24ndCBtYWtlIHNlbnNlIGFzIGl0IHN0YW5kcyBub3csIHNvIEkgdGhpbmsg
+aXQgbmVlZHMgdG8gYmUKPiByZXdvcmtlZC4KCkRhdmUgaXMgcmlnaHQgb24gdGhlIG1vbmV5OiBp
+biBaYXAgKHRoZSBlcXVpdmFsZW50IG9mKSBjcl9nZXRfZm5hbWUoKQptYXkgYmUgY2FsbGVkIHdp
+dGggYSBidWZmZXIgc21hbGxlciB0aGFuIFBBVEhfTUFYIChvbmUgcGFnZSkgYW5kIGhlbmNlCnRo
+ZSBuZWVkIHRvIGFsbG9jYXRlIGFkLWhvYy4gSW5kZWVkIGluIHRoZSBjdXJyZW50IGNvZGUgdGhp
+cyBpcyBub3QgdGhlCmNhc2UgKHlldD8pIHNvIEknbGwgZ28gYWhlYWQgYW5kIHNpbXBsaWZ5IGl0
+LgoKPiAKPj4+ICsvKiB3cml0ZSB0aGUgY2hlY2twb2ludCBoZWFkZXIgKi8KPj4+ICtzdGF0aWMg
+aW50IGNyX3dyaXRlX2hkcihzdHJ1Y3QgY3JfY3R4ICpjdHgpCj4+PiArewo+Pj4gKwlzdHJ1Y3Qg
+Y3JfaGRyIGg7Cj4+PiArCXN0cnVjdCBjcl9oZHJfaGVhZCAqaGggPSBjdHgtPnRidWY7Cj4+PiAr
+CXN0cnVjdCB0aW1ldmFsIGt0djsKPj4+ICsKPj4+ICsJaC50eXBlID0gQ1JfSERSX0hFQUQ7Cj4+
+PiArCWgubGVuID0gc2l6ZW9mKCpoaCk7Cj4+PiArCWguaWQgPSAwOwo+Pj4gKwo+Pj4gKwlkb19n
+ZXR0aW1lb2ZkYXkoJmt0dik7Cj4+PiArCj4+PiArCWhoLT5tYWdpYyA9IDB4MDBhMmQyMDA7Cj4+
+IFRoaXMgbWFnaWMgbnVtYmVyIGlzIGhhcmQtY29kZWQgaW4gYSBudW1iZXIgb2YgcGxhY2VzLiAg
+Q291bGQgaXQgbWF5YmUKPj4gYmVuZWZpdCBmcm9tIGEgbWFjcm8sIHdoaWNoLCBpbiB0dXJuLCBj
+b3VsZCBtYXliZSBlbmQgdXAgaW4gbGludXgvbWFnaWMuaD8KPj4KPj4+ICsvKiBkdW1wIHRoZSB0
+YXNrX3N0cnVjdCBvZiBhIGdpdmVuIHRhc2sgKi8KPj4+ICtzdGF0aWMgaW50IGNyX3dyaXRlX3Rh
+c2tfc3RydWN0KHN0cnVjdCBjcl9jdHggKmN0eCwgc3RydWN0IHRhc2tfc3RydWN0ICp0KQo+PiBU
+aGlzIGZ1bmN0aW9uIGlzIGdvaW5nIHRvIGJyZWFrIGV2ZXJ5IHRpbWUgc29tZWJvZHkgY2hhbmdl
+cyBzdHJ1Y3QKPj4gdGFza19zdHJ1Y3QuICBJJ20gbm90IHF1aXRlIHN1cmUgaG93IHRvIHByZXZl
+bnQgdGhhdC4gIEkgd29uZGVyIGlmIHRoZQo+PiBtb2R2ZXJzaW9ucyBzdHVmZiBjb3VsZCBzb21l
+aG93IGJlIGVtcGxveWVkIHRvIGRldGVjdCBjaGFuZ2VzIGFuZCBtYWtlIHRoZQo+PiBidWlsZCBm
+YWlsPwo+IAo+IEluIGdlbmVyYWwsIEkgdGhpbmsgYW55IHRpbWUgdGhhdCB3ZSBhcmUgY2hlY2tw
+b2ludGluZyAkVEhJTkcgYW5kICRUSElORwo+IGNoYW5nZXMsIHRoZSBjaGVja3BvaW50IHdpbGwg
+YnJlYWsuICBJdCBqdXN0IHNvIGhhcHBlbnMgdGhhdCBhbGwgd2UncmUKPiBjaGVja3BvaW50aW5n
+IGhlcmUgaXMgdGhlIHRhc2tfc3RydWN0LCBzbyAkVEhJTkcgPT0gdGFza19zdHJ1Y3QgZm9yCj4g
+bm93LiA6KQo+IAo+IFRoZSB0aGluZ3MgdGhhdCAqcmVhbGx5KiB3b3JyeSBtZSBhcmUgdGhpbmdz
+IGxpa2Ugd2hlbiBmbGFncyBjaGFuZ2UKPiBzZW1hbnRpY3Mgc3VidGx5LiAgT3IsIGxldCdzIHNh
+eSBhIGZsYWcgaXMgdXNlZCBmb3IgdHdvIGRpZmZlcmVudCB0aGluZ3MKPiBpbiAyLjYuMjYuNCB2
+cyDvu78yLjYuMjcuICBJJ20gbm90IHN1cmUgd2UncmUgZXZlciBnb2luZyB0byBiZSBpbiBhCj4g
+cG9zaXRpb24gdG8gZmluZCBhbmQgZml4IHVwIHN0dWZmIGxpa2UgdGhhdC4KCk9uZSB3YXkgdG8g
+cmVkdWNlIHRoZSByaXNrIGlzIHRvIHVzZSBhbiBpbnRlcm1lZGlhdGUgcmVwcmVzZW50YXRpb24g
+dG8Ka2VybmVsIG5hdGl2ZSBkYXRhIGFuZCBwcm9wZXJ0aWVzIChlLmcuIGNsYXNzaWZ5IFZNQXMg
+ZHVyaW5nIGNoZWNrcG9pbnQKaW5zdGVhZCBvZiByZWx5aW5nIGJsaW5kbHkgb24gdGhlIGZsYWdz
+KS4KClRoZSBwcm9ibGVtIGlzIG5vdCBzbyBtdWNoIGluIHJlc3RhcnRpbmcgYSBjaGVja3BvaW50
+IGltYWdlIGZyb20gb2xkCmtlcm5lbCBvbiBhIG5ldyBrZXJuZWwgLSB0aGF0IGNhbiBiZSBoYW5k
+bGVkIGJ5IGNvbnZlcnNpb24gaW4gdXNlciBzcGFjZS4KClRyYWNraW5nIGNoYW5nZXMgYWZmZWN0
+aW5nIHRoZSBjaGVja3BvaW50L3Jlc3RhcnQgbG9naWMgLSB3ZWxsLCBpZgpldmVudHVhbGx5IGNo
+ZWNrcG9pbnQvcmVzdGFydCBnZXRzIHRvIGJlY29tZXMgbWFpbi1zdHJlYW0gZW5vdWdoIHRoYXQK
+ZGV2ZWxvcGVycyB3aWxsIGJlIGF3YXJlIG9mIGl0LgoKPiAKPiBUaGF0J3Mgb25lIHJlYXNvbiBJ
+IGhhdmUgYmVlbiBhZHZvY2F0aW5nIGRvaW5nIGNoZWNrcG9pbnQvcmVzdGFydCBpbgo+IG11Y2gg
+dGluaWVyIGJpdHMgc28gdGhhdCB3ZSBjYW4gdW5kZXJzdGFuZCBlYWNoIG9mIHRoZW0gYXMgd2Ug
+Z28gYWxvbmcuCj4gSSBhbHNvIHRoaW5rIHRoYXQgdGhlICpsZXNzKiB3ZSBleHBvc2UgdG8gdXNl
+cnNwYWNlLCB0aGUgYmV0dGVyLgo+IAo+Pj4gKy8qKgo+Pj4gKyAqIHN5c19jaGVja3BvaW50IC0g
+Y2hlY2twb2ludCBhIGNvbnRhaW5lcgo+Pj4gKyAqIEBwaWQ6IHBpZCBvZiB0aGUgY29udGFpbmVy
+IGluaXQoMSkgcHJvY2Vzcwo+Pj4gKyAqIEBmZDogZmlsZSB0byB3aGljaCBkdW1wIHRoZSBjaGVj
+a3BvaW50IGltYWdlCj4+PiArICogQGZsYWdzOiBjaGVja3BvaW50IG9wZXJhdGlvbiBmbGFncwo+
+Pj4gKyAqLwo+Pj4gK2FzbWxpbmthZ2UgbG9uZyBzeXNfY2hlY2twb2ludChwaWRfdCBwaWQsIGlu
+dCBmZCwgdW5zaWduZWQgbG9uZwo+Pj4gZmxhZ3MpICt7Cj4+PiArCXN0cnVjdCBjcl9jdHggKmN0
+eDsKPj4+ICsJc3RydWN0IGZpbGUgKmZpbGU7Cj4+PiArCWludCBmcHV0X25lZWRlZDsKPj4+ICsJ
+aW50IHJldDsKPj4+ICsKPj4+ICsJaWYgKCFjYXBhYmxlKENBUF9TWVNfQURNSU4pKQo+Pj4gKwkJ
+cmV0dXJuIC1FUEVSTTsKPj4gTGlrZSBvdGhlcnMsIEkgd29uZGVyZWQgd2h5IENBUF9TWVNfQURN
+SU4gd2FzIHJlcXVpcmVkIGhlcmUuICBJICpzdGlsbCoKPj4gd29uZGVyLCB0aG91Z2gsIGhvdyB5
+b3UnbGwgZXZlciBiZSBhYmxlIHRvIGRvIHJlc3RhcnQgd2l0aG91dCBhIHByaXZpbGVnZQo+PiBj
+aGVjay4gIFRoZXJlIG11c3QgYmUgYSB0aG91c2FuZCB3YXlzIHRvIGNvbXByb21pc2UgYSBzeXN0
+ZW0gYnkgbWVzc2luZwo+PiB3aXRoIHRoZSBjaGVja3BvaW50IGZpbGUuCj4gCj4gQXMgd2l0aCBl
+dmVyeXRoaW5nIGVsc2UgY29taW5nIGZyb20gdXNlcnNwYWNlLCB0aGUgY2hlY2twb2ludCBmaWxl
+Cj4gc2hvdWxkIGJlIGNvbXBsZXRlbHkgdW50cnVzdGVkLiAgSSBkbyB0aGluaywgdGhvdWdoLCB0
+aGF0IHRoZSBwdHJhY2UKPiBhbmFsb2d5IHRoYXQgU2VyZ2U/PyBtYWRlIGlzIGEgZ29vZCBvbmUu
+CgpUaGUgb25seSByZWFzb24gSSBtYWRlIHRoZSBhbmFsb2d5IHdpdGhvdXQgYWN0dWFsbHkgaW1w
+bGVtZW50aW5nIGl0IGlzIGxhY2sKb2YgdGltZSBhbmQgZmFtaWxpYXJpdHkgd2l0aCB0aGUgcHRy
+YWNlIHBlcm1pc3Npb24gd29ybGQuCgo+IAo+Pj4gKwlmaWxlID0gZmdldF9saWdodChmZCwgJmZw
+dXRfbmVlZGVkKTsKPj4+ICsJaWYgKCFmaWxlKQo+Pj4gKwkJcmV0dXJuIC1FQkFERjsKPj4gU2hv
+dWxkIHlvdSBtYXliZSBjaGVjayBmb3Igd3JpdGUgYWNjZXNzPyAgQW4gYXR0ZW1wdCB0byBvdmVy
+d3JpdGUgYQo+PiByZWFkLW9ubHkgZmlsZSB3b24ndCBzdWNjZWVkLCBidXQgeW91IGNvdWxkIHNh
+dmUgYSBsb3Qgb2Ygd29yayBieSBqdXN0Cj4+IGZhaWxpbmcgaXQgd2l0aCBhIGNsZWFyIGNvZGUg
+aGVyZS4gIAo+IAo+IFRoYXQncyB0cnVlLiAgSSdsbCB0YWtlIGEgbG9vayBhbmQgc2VlLgo+IAo+
+IFRoaXMgcGF0Y2ggZG9lcyByZWFjaCBkb3duIGFuZCB1c2UgdmZzX3dyaXRlKCkgYXQgc29tZSBw
+b2ludC4gIFRoZXJlCj4gcmVhbGx5IGFyZW4ndCBhbnkgb3RoZXIgaW4ta2VybmVsIHVzZXJzIHRo
+YXQgZG8gdGhpcyAoc2hvcnQgb2YgZWNyeXB0ZnMKPiBhbmQgcGxhbjlmcykuICBUaGF0IG1ha2Vz
+IG1lIGRvdWJ0IHRoYXQgd2UncmUgZXZlbiB1c2luZyBhIGdvb2QgYXBwcm9hY2gKPiBoZXJlLgo+
+IAo+PiBXaGF0IGFib3V0IHRoZSBmaWxlIHBvc2l0aW9uPyAgUGVyaGFwcyB0aGVyZSBjb3VsZCBi
+ZSBhIGdvb2QgcmVhc29uIHRvCj4+IGNoZWNrcG9pbnQgYSBwcm9jZXNzIGludG8gdGhlIG1pZGRs
+ZSBvZiBhIGZpbGUsIGRvbid0IGtub3cuCj4gCj4gSSB0aGluayB0aGlzIGlzIGEgZ29vZCBleGFt
+cGxlIG9mIGEgcGxhY2Ugd2hlcmUgdGhlIGtlcm5lbCBjYW4gbGV0Cj4gdXNlcnNwYWNlIHNob290
+IGl0c2VsZiBpbiBpdHMgZm9vdCBpZiBpdCB3YW50cy4gIFdlIG1pZ2h0IGFsc28gd2FudCB0bwo+
+IGFsbG93IHRoaW5ncyB0byBiZSBzZW50IG92ZXIgZmRzIHRoYXQgZG9uJ3QgbmVjZXNzYXJpbHkg
+aGF2ZSBwb3NpdGlvbnMsCj4gbGlrZSBzb2NrZXRzIG9yIHBpcGVzLgo+IAo+PiBJbiBnZW5lcmFs
+LCBJIGRvbid0IHNlZSBhIHdob2xlIGxvdCBvZiBsb2NraW5nIGdvaW5nIG9uLiAgSXMgaXQgcmVh
+bGx5Cj4+IHBvc3NpYmxlIHRvIHNhdmUgYW5kIHJlc3RvcmUgbWVtb3J5IHdpdGhvdXQgZXZlciBo
+b2xkaW5nIG1tYXBfc2VtPwo+IAo+IEkgcGVyc29uYWxseSBoYXZlbid0IGF1ZGl0ZWQgdGhlIGxv
+Y2tpbmcsIHlldC4gIEl0IGlzIGdvaW5nIHRvIGJlIGZ1biEKClRoZXJlIGlzIHNvbWUgb3B0aW1p
+c3RpYyBsb2NraW5nIChtbWFwX3NlbSksIGltcHJvdmVkIGluIHRoZSBuZXh0IHZlcnNpb24uCgpU
+aGFua3MsCgpPcmVuLgoKX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19f
+X19fX18KQ29udGFpbmVycyBtYWlsaW5nIGxpc3QKQ29udGFpbmVyc0BsaXN0cy5saW51eC1mb3Vu
+ZGF0aW9uLm9yZwpodHRwczovL2xpc3RzLmxpbnV4LWZvdW5kYXRpb24ub3JnL21haWxtYW4vbGlz
+dGluZm8vY29udGFpbmVycw==
