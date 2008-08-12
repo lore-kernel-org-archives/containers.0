@@ -1,16 +1,15 @@
 From: Ryo Tsuruta <ryov-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
-Subject: [PATCH 4/7] bio-cgroup: Split the cgroup memory subsystem into two
-	parts
-Date: Tue, 12 Aug 2008 21:35:33 +0900 (JST)
-Message-ID: <20080812.213533.189720227.ryov__20029.9821365208$1218545317$gmane$org@valinux.co.jp>
-References: <20080812.213305.226795261.ryov@valinux.co.jp>
-	<20080812.213409.71095400.ryov@valinux.co.jp>
-	<20080812.213449.104039151.ryov@valinux.co.jp>
+Subject: [PATCH 6/7] bio-cgroup: Implement the bio-cgroup
+Date: Tue, 12 Aug 2008 21:36:40 +0900 (JST)
+Message-ID: <20080812.213640.183031086.ryov__4841.99653515152$1218545340$gmane$org@valinux.co.jp>
+References: <20080812.213449.104039151.ryov@valinux.co.jp>
+	<20080812.213533.189720227.ryov@valinux.co.jp>
+	<20080812.213604.112616601.ryov@valinux.co.jp>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20080812.213449.104039151.ryov-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
+In-Reply-To: <20080812.213604.112616601.ryov-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -24,990 +23,671 @@ To: linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, dm-devel-H+wXaHxf7aLQT
 Cc: fernando-gVGce1chcLdL9jVzuh4AOg@public.gmane.org, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org, agk-9JcytcrH/bA+uJoB2kUjGw@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-This patch splits the cgroup memory subsystem into two parts.
-One is for tracking pages to find out the owners. The other is
-for controlling how much amount of memory should be assigned to
-each cgroup.
-
-With this patch, you can use the page tracking mechanism even if
-the memory subsystem is off.
+This patch implements the bio cgroup on the memory cgroup.
 
 Based on 2.6.27-rc1-mm1
 Signed-off-by: Ryo Tsuruta <ryov-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
 Signed-off-by: Hirokazu Takahashi <taka-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
 
-diff -Ndupr linux-2.6.27-rc1-mm1.ioband/include/linux/memcontrol.h linux-2.6.27-rc1-mm1.cg0/include/linux/memcontrol.h
---- linux-2.6.27-rc1-mm1.ioband/include/linux/memcontrol.h	2008-08-12 14:30:19.000000000 +0900
-+++ linux-2.6.27-rc1-mm1.cg0/include/linux/memcontrol.h	2008-08-12 14:47:11.000000000 +0900
-@@ -20,12 +20,62 @@
- #ifndef _LINUX_MEMCONTROL_H
- #define _LINUX_MEMCONTROL_H
+diff -Ndupr linux-2.6.27-rc1-mm1.cg1/block/blk-ioc.c linux-2.6.27-rc1-mm1.cg2/block/blk-ioc.c
+--- linux-2.6.27-rc1-mm1.cg1/block/blk-ioc.c	2008-07-29 11:40:31.000000000 +0900
++++ linux-2.6.27-rc1-mm1.cg2/block/blk-ioc.c	2008-08-12 14:47:59.000000000 +0900
+@@ -84,24 +84,28 @@ void exit_io_context(void)
+ 	}
+ }
  
-+#include <linux/rcupdate.h>
++void init_io_context(struct io_context *ioc)
++{
++	atomic_set(&ioc->refcount, 1);
++	atomic_set(&ioc->nr_tasks, 1);
++	spin_lock_init(&ioc->lock);
++	ioc->ioprio_changed = 0;
++	ioc->ioprio = 0;
++	ioc->last_waited = jiffies; /* doesn't matter... */
++	ioc->nr_batch_requests = 0; /* because this is 0 */
++	ioc->aic = NULL;
++	INIT_RADIX_TREE(&ioc->radix_root, GFP_ATOMIC | __GFP_HIGH);
++	INIT_HLIST_HEAD(&ioc->cic_list);
++	ioc->ioc_data = NULL;
++}
++
+ struct io_context *alloc_io_context(gfp_t gfp_flags, int node)
+ {
+ 	struct io_context *ret;
+ 
+ 	ret = kmem_cache_alloc_node(iocontext_cachep, gfp_flags, node);
+-	if (ret) {
+-		atomic_set(&ret->refcount, 1);
+-		atomic_set(&ret->nr_tasks, 1);
+-		spin_lock_init(&ret->lock);
+-		ret->ioprio_changed = 0;
+-		ret->ioprio = 0;
+-		ret->last_waited = jiffies; /* doesn't matter... */
+-		ret->nr_batch_requests = 0; /* because this is 0 */
+-		ret->aic = NULL;
+-		INIT_RADIX_TREE(&ret->radix_root, GFP_ATOMIC | __GFP_HIGH);
+-		INIT_HLIST_HEAD(&ret->cic_list);
+-		ret->ioc_data = NULL;
+-	}
++	if (ret)
++		init_io_context(ret);
+ 
+ 	return ret;
+ }
+diff -Ndupr linux-2.6.27-rc1-mm1.cg1/include/linux/biocontrol.h linux-2.6.27-rc1-mm1.cg2/include/linux/biocontrol.h
+--- linux-2.6.27-rc1-mm1.cg1/include/linux/biocontrol.h	1970-01-01 09:00:00.000000000 +0900
++++ linux-2.6.27-rc1-mm1.cg2/include/linux/biocontrol.h	2008-08-12 14:48:00.000000000 +0900
+@@ -0,0 +1,159 @@
++#include <linux/cgroup.h>
 +#include <linux/mm.h>
-+#include <linux/smp.h>
-+#include <linux/bit_spinlock.h>
++#include <linux/memcontrol.h>
 +
- struct mem_cgroup;
- struct page_cgroup;
- struct page;
- struct mm_struct;
- 
-+#ifdef CONFIG_CGROUP_PAGE
-+/*
-+ * We use the lower bit of the page->page_cgroup pointer as a bit spin
-+ * lock.  We need to ensure that page->page_cgroup is at least two
-+ * byte aligned (based on comments from Nick Piggin).  But since
-+ * bit_spin_lock doesn't actually set that lock bit in a non-debug
-+ * uniprocessor kernel, we should avoid setting it here too.
-+ */
-+#define PAGE_CGROUP_LOCK_BIT    0x0
-+#if defined(CONFIG_SMP) || defined(CONFIG_DEBUG_SPINLOCK)
-+#define PAGE_CGROUP_LOCK        (1 << PAGE_CGROUP_LOCK_BIT)
-+#else
-+#define PAGE_CGROUP_LOCK        0x0
-+#endif
++#ifndef _LINUX_BIOCONTROL_H
++#define _LINUX_BIOCONTROL_H
 +
-+/*
-+ * A page_cgroup page is associated with every page descriptor. The
-+ * page_cgroup helps us identify information about the cgroup
-+ */
-+struct page_cgroup {
- #ifdef CONFIG_CGROUP_MEM_RES_CTLR
-+	struct list_head lru;		/* per cgroup LRU list */
-+	struct mem_cgroup *mem_cgroup;
-+#endif /* CONFIG_CGROUP_MEM_RES_CTLR */
-+	struct page *page;
-+	int flags;
-+};
-+#define PAGE_CGROUP_FLAG_CACHE	(0x1)	/* charged as cache */
-+#define PAGE_CGROUP_FLAG_ACTIVE	(0x2)	/* page is active in this cgroup */
-+#define PAGE_CGROUP_FLAG_FILE	(0x4)	/* page is file system backed */
-+#define PAGE_CGROUP_FLAG_UNEVICTABLE (0x8)	/* page is unevictableable */
++#ifdef	CONFIG_CGROUP_BIO
 +
-+static inline void lock_page_cgroup(struct page *page)
-+{
-+	bit_spin_lock(PAGE_CGROUP_LOCK_BIT, &page->page_cgroup);
-+}
++struct io_context;
++struct block_device;
 +
-+static inline int try_lock_page_cgroup(struct page *page)
-+{
-+	return bit_spin_trylock(PAGE_CGROUP_LOCK_BIT, &page->page_cgroup);
-+}
-+
-+static inline void unlock_page_cgroup(struct page *page)
-+{
-+	bit_spin_unlock(PAGE_CGROUP_LOCK_BIT, &page->page_cgroup);
-+}
- 
- #define page_reset_bad_cgroup(page)	((page)->page_cgroup = 0)
- 
-@@ -34,45 +84,15 @@ extern int mem_cgroup_charge(struct page
- 				gfp_t gfp_mask);
- extern int mem_cgroup_cache_charge(struct page *page, struct mm_struct *mm,
- 					gfp_t gfp_mask);
--extern void mem_cgroup_move_lists(struct page *page, enum lru_list lru);
- extern void mem_cgroup_uncharge_page(struct page *page);
- extern void mem_cgroup_uncharge_cache_page(struct page *page);
--extern int mem_cgroup_shrink_usage(struct mm_struct *mm, gfp_t gfp_mask);
--
--extern unsigned long mem_cgroup_isolate_pages(unsigned long nr_to_scan,
--					struct list_head *dst,
--					unsigned long *scanned, int order,
--					int mode, struct zone *z,
--					struct mem_cgroup *mem_cont,
--					int active, int file);
--extern void mem_cgroup_out_of_memory(struct mem_cgroup *mem, gfp_t gfp_mask);
--int task_in_mem_cgroup(struct task_struct *task, const struct mem_cgroup *mem);
--
--extern struct mem_cgroup *mem_cgroup_from_task(struct task_struct *p);
--
--#define mm_match_cgroup(mm, cgroup)	\
--	((cgroup) == mem_cgroup_from_task((mm)->owner))
- 
- extern int
- mem_cgroup_prepare_migration(struct page *page, struct page *newpage);
- extern void mem_cgroup_end_migration(struct page *page);
-+extern void page_cgroup_init(void);
- 
--/*
-- * For memory reclaim.
-- */
--extern int mem_cgroup_calc_mapped_ratio(struct mem_cgroup *mem);
--extern long mem_cgroup_reclaim_imbalance(struct mem_cgroup *mem);
--
--extern int mem_cgroup_get_reclaim_priority(struct mem_cgroup *mem);
--extern void mem_cgroup_note_reclaim_priority(struct mem_cgroup *mem,
--							int priority);
--extern void mem_cgroup_record_reclaim_priority(struct mem_cgroup *mem,
--							int priority);
--
--extern long mem_cgroup_calc_reclaim(struct mem_cgroup *mem, struct zone *zone,
--					int priority, enum lru_list lru);
--
--#else /* CONFIG_CGROUP_MEM_RES_CTLR */
-+#else /* CONFIG_CGROUP_PAGE */
- static inline void page_reset_bad_cgroup(struct page *page)
- {
- }
-@@ -102,6 +122,53 @@ static inline void mem_cgroup_uncharge_c
- {
- }
- 
-+static inline int
-+mem_cgroup_prepare_migration(struct page *page, struct page *newpage)
-+{
-+	return 0;
-+}
-+
-+static inline void mem_cgroup_end_migration(struct page *page)
-+{
-+}
-+#endif /* CONFIG_CGROUP_PAGE */
-+
-+#ifdef CONFIG_CGROUP_MEM_RES_CTLR
-+
-+extern void mem_cgroup_move_lists(struct page *page, enum lru_list lru);
-+extern int mem_cgroup_shrink_usage(struct mm_struct *mm, gfp_t gfp_mask);
-+
-+extern unsigned long mem_cgroup_isolate_pages(unsigned long nr_to_scan,
-+					struct list_head *dst,
-+					unsigned long *scanned, int order,
-+					int mode, struct zone *z,
-+					struct mem_cgroup *mem_cont,
-+					int active, int file);
-+extern void mem_cgroup_out_of_memory(struct mem_cgroup *mem, gfp_t gfp_mask);
-+int task_in_mem_cgroup(struct task_struct *task, const struct mem_cgroup *mem);
-+
-+extern struct mem_cgroup *mem_cgroup_from_task(struct task_struct *p);
-+
-+#define mm_match_cgroup(mm, cgroup)	\
-+	((cgroup) == mem_cgroup_from_task((mm)->owner))
-+
-+/*
-+ * For memory reclaim.
-+ */
-+extern int mem_cgroup_calc_mapped_ratio(struct mem_cgroup *mem);
-+extern long mem_cgroup_reclaim_imbalance(struct mem_cgroup *mem);
-+
-+extern int mem_cgroup_get_reclaim_priority(struct mem_cgroup *mem);
-+extern void mem_cgroup_note_reclaim_priority(struct mem_cgroup *mem,
-+							int priority);
-+extern void mem_cgroup_record_reclaim_priority(struct mem_cgroup *mem,
-+							int priority);
-+
-+extern long mem_cgroup_calc_reclaim(struct mem_cgroup *mem, struct zone *zone,
-+					int priority, enum lru_list lru);
-+
-+#else /* CONFIG_CGROUP_MEM_RES_CTLR */
-+
- static inline int mem_cgroup_shrink_usage(struct mm_struct *mm, gfp_t gfp_mask)
- {
- 	return 0;
-@@ -122,16 +189,6 @@ static inline int task_in_mem_cgroup(str
- 	return 1;
- }
- 
--static inline int
--mem_cgroup_prepare_migration(struct page *page, struct page *newpage)
--{
--	return 0;
--}
--
--static inline void mem_cgroup_end_migration(struct page *page)
--{
--}
--
- static inline int mem_cgroup_calc_mapped_ratio(struct mem_cgroup *mem)
- {
- 	return 0;
-@@ -163,7 +220,8 @@ static inline long mem_cgroup_calc_recla
- {
- 	return 0;
- }
--#endif /* CONFIG_CGROUP_MEM_CONT */
-+
-+#endif /* CONFIG_CGROUP_MEM_RES_CTLR */
- 
- #endif /* _LINUX_MEMCONTROL_H */
- 
-diff -Ndupr linux-2.6.27-rc1-mm1.ioband/include/linux/mm_types.h linux-2.6.27-rc1-mm1.cg0/include/linux/mm_types.h
---- linux-2.6.27-rc1-mm1.ioband/include/linux/mm_types.h	2008-08-12 14:30:19.000000000 +0900
-+++ linux-2.6.27-rc1-mm1.cg0/include/linux/mm_types.h	2008-08-12 14:47:11.000000000 +0900
-@@ -92,7 +92,7 @@ struct page {
- 	void *virtual;			/* Kernel virtual address (NULL if
- 					   not kmapped, ie. highmem) */
- #endif /* WANT_PAGE_VIRTUAL */
--#ifdef CONFIG_CGROUP_MEM_RES_CTLR
-+#ifdef CONFIG_CGROUP_PAGE
- 	unsigned long page_cgroup;
- #endif
- 
-diff -Ndupr linux-2.6.27-rc1-mm1.ioband/init/Kconfig linux-2.6.27-rc1-mm1.cg0/init/Kconfig
---- linux-2.6.27-rc1-mm1.ioband/init/Kconfig	2008-08-12 14:30:19.000000000 +0900
-+++ linux-2.6.27-rc1-mm1.cg0/init/Kconfig	2008-08-12 14:47:11.000000000 +0900
-@@ -418,6 +418,10 @@ config CGROUP_MEMRLIMIT_CTLR
- 	  memory RSS and Page Cache control. Virtual address space control
- 	  is provided by this controller.
- 
-+config CGROUP_PAGE
-+	def_bool y
-+	depends on CGROUP_MEM_RES_CTLR
-+
- config SYSFS_DEPRECATED
- 	bool
- 
-diff -Ndupr linux-2.6.27-rc1-mm1.ioband/mm/Makefile linux-2.6.27-rc1-mm1.cg0/mm/Makefile
---- linux-2.6.27-rc1-mm1.ioband/mm/Makefile	2008-08-12 14:30:19.000000000 +0900
-+++ linux-2.6.27-rc1-mm1.cg0/mm/Makefile	2008-08-12 14:47:11.000000000 +0900
-@@ -34,5 +34,5 @@ obj-$(CONFIG_FS_XIP) += filemap_xip.o
- obj-$(CONFIG_MIGRATION) += migrate.o
- obj-$(CONFIG_SMP) += allocpercpu.o
- obj-$(CONFIG_QUICKLIST) += quicklist.o
--obj-$(CONFIG_CGROUP_MEM_RES_CTLR) += memcontrol.o
-+obj-$(CONFIG_CGROUP_PAGE) += memcontrol.o
- obj-$(CONFIG_CGROUP_MEMRLIMIT_CTLR) += memrlimitcgroup.o
-diff -Ndupr linux-2.6.27-rc1-mm1.ioband/mm/memcontrol.c linux-2.6.27-rc1-mm1.cg0/mm/memcontrol.c
---- linux-2.6.27-rc1-mm1.ioband/mm/memcontrol.c	2008-08-12 14:30:19.000000000 +0900
-+++ linux-2.6.27-rc1-mm1.cg0/mm/memcontrol.c	2008-08-12 14:47:11.000000000 +0900
-@@ -36,10 +36,25 @@
- 
- #include <asm/uaccess.h>
- 
--struct cgroup_subsys mem_cgroup_subsys __read_mostly;
-+enum charge_type {
-+	MEM_CGROUP_CHARGE_TYPE_CACHE = 0,
-+	MEM_CGROUP_CHARGE_TYPE_MAPPED,
-+	MEM_CGROUP_CHARGE_TYPE_FORCE,	/* used by force_empty */
++struct bio_cgroup {
++	struct cgroup_subsys_state css;
++	int id;
++	struct io_context *io_context;	/* default io_context */
++/*	struct radix_tree_root io_context_root; per device io_context */
++	spinlock_t		page_list_lock;
++	struct list_head	page_list;
 +};
 +
-+static void __mem_cgroup_uncharge_common(struct page *, enum charge_type);
-+
- static struct kmem_cache *page_cgroup_cache __read_mostly;
-+
-+#ifdef CONFIG_CGROUP_MEM_RES_CTLR
-+struct cgroup_subsys mem_cgroup_subsys __read_mostly;
- #define MEM_CGROUP_RECLAIM_RETRIES	5
- 
-+static inline int mem_cgroup_disabled(void)
++static inline int bio_cgroup_disabled(void)
 +{
-+	return mem_cgroup_subsys.disabled;
++	return bio_cgroup_subsys.disabled;
 +}
 +
- /*
-  * Statistics for memory cgroup.
-  */
-@@ -136,35 +151,6 @@ struct mem_cgroup {
- };
- static struct mem_cgroup init_mem_cgroup;
- 
--/*
-- * We use the lower bit of the page->page_cgroup pointer as a bit spin
-- * lock.  We need to ensure that page->page_cgroup is at least two
-- * byte aligned (based on comments from Nick Piggin).  But since
-- * bit_spin_lock doesn't actually set that lock bit in a non-debug
-- * uniprocessor kernel, we should avoid setting it here too.
-- */
--#define PAGE_CGROUP_LOCK_BIT 	0x0
--#if defined(CONFIG_SMP) || defined(CONFIG_DEBUG_SPINLOCK)
--#define PAGE_CGROUP_LOCK 	(1 << PAGE_CGROUP_LOCK_BIT)
--#else
--#define PAGE_CGROUP_LOCK	0x0
--#endif
--
--/*
-- * A page_cgroup page is associated with every page descriptor. The
-- * page_cgroup helps us identify information about the cgroup
-- */
--struct page_cgroup {
--	struct list_head lru;		/* per cgroup LRU list */
--	struct page *page;
--	struct mem_cgroup *mem_cgroup;
--	int flags;
--};
--#define PAGE_CGROUP_FLAG_CACHE	   (0x1)	/* charged as cache */
--#define PAGE_CGROUP_FLAG_ACTIVE    (0x2)	/* page is active in this cgroup */
--#define PAGE_CGROUP_FLAG_FILE	   (0x4)	/* page is file system backed */
--#define PAGE_CGROUP_FLAG_UNEVICTABLE (0x8)	/* page is unevictableable */
--
- static int page_cgroup_nid(struct page_cgroup *pc)
- {
- 	return page_to_nid(pc->page);
-@@ -175,12 +161,6 @@ static enum zone_type page_cgroup_zid(st
- 	return page_zonenum(pc->page);
- }
- 
--enum charge_type {
--	MEM_CGROUP_CHARGE_TYPE_CACHE = 0,
--	MEM_CGROUP_CHARGE_TYPE_MAPPED,
--	MEM_CGROUP_CHARGE_TYPE_FORCE,	/* used by force_empty */
--};
--
- /*
-  * Always modified under lru lock. Then, not necessary to preempt_disable()
-  */
-@@ -248,37 +228,6 @@ struct mem_cgroup *mem_cgroup_from_task(
- 				struct mem_cgroup, css);
- }
- 
--static inline int page_cgroup_locked(struct page *page)
--{
--	return bit_spin_is_locked(PAGE_CGROUP_LOCK_BIT, &page->page_cgroup);
--}
--
--static void page_assign_page_cgroup(struct page *page, struct page_cgroup *pc)
--{
--	VM_BUG_ON(!page_cgroup_locked(page));
--	page->page_cgroup = ((unsigned long)pc | PAGE_CGROUP_LOCK);
--}
--
--struct page_cgroup *page_get_page_cgroup(struct page *page)
--{
--	return (struct page_cgroup *) (page->page_cgroup & ~PAGE_CGROUP_LOCK);
--}
--
--static void lock_page_cgroup(struct page *page)
--{
--	bit_spin_lock(PAGE_CGROUP_LOCK_BIT, &page->page_cgroup);
--}
--
--static int try_lock_page_cgroup(struct page *page)
--{
--	return bit_spin_trylock(PAGE_CGROUP_LOCK_BIT, &page->page_cgroup);
--}
--
--static void unlock_page_cgroup(struct page *page)
--{
--	bit_spin_unlock(PAGE_CGROUP_LOCK_BIT, &page->page_cgroup);
--}
--
- static void __mem_cgroup_remove_list(struct mem_cgroup_per_zone *mz,
- 			struct page_cgroup *pc)
- {
-@@ -367,7 +316,7 @@ void mem_cgroup_move_lists(struct page *
- 	struct mem_cgroup_per_zone *mz;
- 	unsigned long flags;
- 
--	if (mem_cgroup_subsys.disabled)
-+	if (mem_cgroup_disabled())
- 		return;
- 
- 	/*
-@@ -506,273 +455,6 @@ unsigned long mem_cgroup_isolate_pages(u
- }
- 
- /*
-- * Charge the memory controller for page usage.
-- * Return
-- * 0 if the charge was successful
-- * < 0 if the cgroup is over its limit
-- */
--static int mem_cgroup_charge_common(struct page *page, struct mm_struct *mm,
--				gfp_t gfp_mask, enum charge_type ctype,
--				struct mem_cgroup *memcg)
--{
--	struct mem_cgroup *mem;
--	struct page_cgroup *pc;
--	unsigned long flags;
--	unsigned long nr_retries = MEM_CGROUP_RECLAIM_RETRIES;
--	struct mem_cgroup_per_zone *mz;
--
--	pc = kmem_cache_alloc(page_cgroup_cache, gfp_mask);
--	if (unlikely(pc == NULL))
--		goto err;
--
--	/*
--	 * We always charge the cgroup the mm_struct belongs to.
--	 * The mm_struct's mem_cgroup changes on task migration if the
--	 * thread group leader migrates. It's possible that mm is not
--	 * set, if so charge the init_mm (happens for pagecache usage).
--	 */
--	if (likely(!memcg)) {
--		rcu_read_lock();
--		mem = mem_cgroup_from_task(rcu_dereference(mm->owner));
--		/*
--		 * For every charge from the cgroup, increment reference count
--		 */
--		css_get(&mem->css);
--		rcu_read_unlock();
--	} else {
--		mem = memcg;
--		css_get(&memcg->css);
--	}
--
--	while (res_counter_charge(&mem->res, PAGE_SIZE)) {
--		if (!(gfp_mask & __GFP_WAIT))
--			goto out;
--
--		if (try_to_free_mem_cgroup_pages(mem, gfp_mask))
--			continue;
--
--		/*
--		 * try_to_free_mem_cgroup_pages() might not give us a full
--		 * picture of reclaim. Some pages are reclaimed and might be
--		 * moved to swap cache or just unmapped from the cgroup.
--		 * Check the limit again to see if the reclaim reduced the
--		 * current usage of the cgroup before giving up
--		 */
--		if (res_counter_check_under_limit(&mem->res))
--			continue;
--
--		if (!nr_retries--) {
--			mem_cgroup_out_of_memory(mem, gfp_mask);
--			goto out;
--		}
--	}
--
--	pc->mem_cgroup = mem;
--	pc->page = page;
--	/*
--	 * If a page is accounted as a page cache, insert to inactive list.
--	 * If anon, insert to active list.
--	 */
--	if (ctype == MEM_CGROUP_CHARGE_TYPE_CACHE) {
--		pc->flags = PAGE_CGROUP_FLAG_CACHE;
--		if (page_is_file_cache(page))
--			pc->flags |= PAGE_CGROUP_FLAG_FILE;
--		else
--			pc->flags |= PAGE_CGROUP_FLAG_ACTIVE;
--	} else
--		pc->flags = PAGE_CGROUP_FLAG_ACTIVE;
--
--	lock_page_cgroup(page);
--	if (unlikely(page_get_page_cgroup(page))) {
--		unlock_page_cgroup(page);
--		res_counter_uncharge(&mem->res, PAGE_SIZE);
--		css_put(&mem->css);
--		kmem_cache_free(page_cgroup_cache, pc);
--		goto done;
--	}
--	page_assign_page_cgroup(page, pc);
--
--	mz = page_cgroup_zoneinfo(pc);
--	spin_lock_irqsave(&mz->lru_lock, flags);
--	__mem_cgroup_add_list(mz, pc);
--	spin_unlock_irqrestore(&mz->lru_lock, flags);
--
--	unlock_page_cgroup(page);
--done:
--	return 0;
--out:
--	css_put(&mem->css);
--	kmem_cache_free(page_cgroup_cache, pc);
--err:
--	return -ENOMEM;
--}
--
--int mem_cgroup_charge(struct page *page, struct mm_struct *mm, gfp_t gfp_mask)
--{
--	if (mem_cgroup_subsys.disabled)
--		return 0;
--
--	/*
--	 * If already mapped, we don't have to account.
--	 * If page cache, page->mapping has address_space.
--	 * But page->mapping may have out-of-use anon_vma pointer,
--	 * detecit it by PageAnon() check. newly-mapped-anon's page->mapping
--	 * is NULL.
--  	 */
--	if (page_mapped(page) || (page->mapping && !PageAnon(page)))
--		return 0;
--	if (unlikely(!mm))
--		mm = &init_mm;
--	return mem_cgroup_charge_common(page, mm, gfp_mask,
--				MEM_CGROUP_CHARGE_TYPE_MAPPED, NULL);
--}
--
--int mem_cgroup_cache_charge(struct page *page, struct mm_struct *mm,
--				gfp_t gfp_mask)
--{
--	if (mem_cgroup_subsys.disabled)
--		return 0;
--
--	/*
--	 * Corner case handling. This is called from add_to_page_cache()
--	 * in usual. But some FS (shmem) precharges this page before calling it
--	 * and call add_to_page_cache() with GFP_NOWAIT.
--	 *
--	 * For GFP_NOWAIT case, the page may be pre-charged before calling
--	 * add_to_page_cache(). (See shmem.c) check it here and avoid to call
--	 * charge twice. (It works but has to pay a bit larger cost.)
--	 */
--	if (!(gfp_mask & __GFP_WAIT)) {
--		struct page_cgroup *pc;
--
--		lock_page_cgroup(page);
--		pc = page_get_page_cgroup(page);
--		if (pc) {
--			VM_BUG_ON(pc->page != page);
--			VM_BUG_ON(!pc->mem_cgroup);
--			unlock_page_cgroup(page);
--			return 0;
--		}
--		unlock_page_cgroup(page);
--	}
--
--	if (unlikely(!mm))
--		mm = &init_mm;
--
--	return mem_cgroup_charge_common(page, mm, gfp_mask,
--				MEM_CGROUP_CHARGE_TYPE_CACHE, NULL);
--}
--
--/*
-- * uncharge if !page_mapped(page)
-- */
--static void
--__mem_cgroup_uncharge_common(struct page *page, enum charge_type ctype)
--{
--	struct page_cgroup *pc;
--	struct mem_cgroup *mem;
--	struct mem_cgroup_per_zone *mz;
--	unsigned long flags;
--
--	if (mem_cgroup_subsys.disabled)
--		return;
--
--	/*
--	 * Check if our page_cgroup is valid
--	 */
--	lock_page_cgroup(page);
--	pc = page_get_page_cgroup(page);
--	if (unlikely(!pc))
--		goto unlock;
--
--	VM_BUG_ON(pc->page != page);
--
--	if ((ctype == MEM_CGROUP_CHARGE_TYPE_MAPPED)
--	    && ((pc->flags & PAGE_CGROUP_FLAG_CACHE)
--		|| page_mapped(page)))
--		goto unlock;
--
--	mz = page_cgroup_zoneinfo(pc);
--	spin_lock_irqsave(&mz->lru_lock, flags);
--	__mem_cgroup_remove_list(mz, pc);
--	spin_unlock_irqrestore(&mz->lru_lock, flags);
--
--	page_assign_page_cgroup(page, NULL);
--	unlock_page_cgroup(page);
--
--	mem = pc->mem_cgroup;
--	res_counter_uncharge(&mem->res, PAGE_SIZE);
--	css_put(&mem->css);
--
--	kmem_cache_free(page_cgroup_cache, pc);
--	return;
--unlock:
--	unlock_page_cgroup(page);
--}
--
--void mem_cgroup_uncharge_page(struct page *page)
--{
--	__mem_cgroup_uncharge_common(page, MEM_CGROUP_CHARGE_TYPE_MAPPED);
--}
--
--void mem_cgroup_uncharge_cache_page(struct page *page)
--{
--	VM_BUG_ON(page_mapped(page));
--	__mem_cgroup_uncharge_common(page, MEM_CGROUP_CHARGE_TYPE_CACHE);
--}
--
--/*
-- * Before starting migration, account against new page.
-- */
--int mem_cgroup_prepare_migration(struct page *page, struct page *newpage)
--{
--	struct page_cgroup *pc;
--	struct mem_cgroup *mem = NULL;
--	enum charge_type ctype = MEM_CGROUP_CHARGE_TYPE_MAPPED;
--	int ret = 0;
--
--	if (mem_cgroup_subsys.disabled)
--		return 0;
--
--	lock_page_cgroup(page);
--	pc = page_get_page_cgroup(page);
--	if (pc) {
--		mem = pc->mem_cgroup;
--		css_get(&mem->css);
--		if (pc->flags & PAGE_CGROUP_FLAG_CACHE)
--			ctype = MEM_CGROUP_CHARGE_TYPE_CACHE;
--	}
--	unlock_page_cgroup(page);
--	if (mem) {
--		ret = mem_cgroup_charge_common(newpage, NULL, GFP_KERNEL,
--			ctype, mem);
--		css_put(&mem->css);
--	}
--	return ret;
--}
--
--/* remove redundant charge if migration failed*/
--void mem_cgroup_end_migration(struct page *newpage)
--{
--	/*
--	 * At success, page->mapping is not NULL.
--	 * special rollback care is necessary when
--	 * 1. at migration failure. (newpage->mapping is cleared in this case)
--	 * 2. the newpage was moved but not remapped again because the task
--	 *    exits and the newpage is obsolete. In this case, the new page
--	 *    may be a swapcache. So, we just call mem_cgroup_uncharge_page()
--	 *    always for avoiding mess. The  page_cgroup will be removed if
--	 *    unnecessary. File cache pages is still on radix-tree. Don't
--	 *    care it.
--	 */
--	if (!newpage->mapping)
--		__mem_cgroup_uncharge_common(newpage,
--					 MEM_CGROUP_CHARGE_TYPE_FORCE);
--	else if (PageAnon(newpage))
--		mem_cgroup_uncharge_page(newpage);
--}
--
--/*
-  * A call to try to shrink memory usage under specified resource controller.
-  * This is typically used for page reclaiming for shmem for reducing side
-  * effect of page allocation from shmem, which is used by some mem_cgroup.
-@@ -783,7 +465,7 @@ int mem_cgroup_shrink_usage(struct mm_st
- 	int progress = 0;
- 	int retry = MEM_CGROUP_RECLAIM_RETRIES;
- 
--	if (mem_cgroup_subsys.disabled)
-+	if (mem_cgroup_disabled())
- 		return 0;
- 
- 	rcu_read_lock();
-@@ -1104,7 +786,7 @@ mem_cgroup_create(struct cgroup_subsys *
- 
- 	if (unlikely((cont->parent) == NULL)) {
- 		mem = &init_mem_cgroup;
--		page_cgroup_cache = KMEM_CACHE(page_cgroup, SLAB_PANIC);
-+		page_cgroup_init();
- 	} else {
- 		mem = mem_cgroup_alloc();
- 		if (!mem)
-@@ -1188,3 +870,325 @@ struct cgroup_subsys mem_cgroup_subsys =
- 	.attach = mem_cgroup_move_task,
- 	.early_init = 0,
- };
++static inline struct bio_cgroup *bio_cgroup_from_task(struct task_struct *p)
++{
++	return container_of(task_subsys_state(p, bio_cgroup_subsys_id),
++				struct bio_cgroup, css);
++}
 +
-+#else /* CONFIG_CGROUP_MEM_RES_CTLR */
++static inline void __bio_cgroup_add_page(struct page_cgroup *pc)
++{
++	struct bio_cgroup *biog = pc->bio_cgroup;
++	list_add(&pc->blist, &biog->page_list);
++}
 +
-+static inline int mem_cgroup_disabled(void)
++static inline void bio_cgroup_add_page(struct page_cgroup *pc)
++{
++	struct bio_cgroup *biog = pc->bio_cgroup;
++	unsigned long flags;
++	spin_lock_irqsave(&biog->page_list_lock, flags);
++	__bio_cgroup_add_page(pc);
++	spin_unlock_irqrestore(&biog->page_list_lock, flags);
++}
++
++static inline void __bio_cgroup_remove_page(struct page_cgroup *pc)
++{
++	list_del_init(&pc->blist);
++}
++
++static inline void bio_cgroup_remove_page(struct page_cgroup *pc)
++{
++	struct bio_cgroup *biog = pc->bio_cgroup;
++	unsigned long flags;
++	spin_lock_irqsave(&biog->page_list_lock, flags);
++	__bio_cgroup_remove_page(pc);
++	spin_unlock_irqrestore(&biog->page_list_lock, flags);
++}
++
++static inline void get_bio_cgroup(struct bio_cgroup *biog)
++{
++	css_get(&biog->css);
++}
++
++static inline void put_bio_cgroup(struct bio_cgroup *biog)
++{
++	css_put(&biog->css);
++}
++
++static inline void set_bio_cgroup(struct page_cgroup *pc,
++					struct bio_cgroup *biog)
++{
++	pc->bio_cgroup = biog;
++}
++
++static inline void clear_bio_cgroup(struct page_cgroup *pc)
++{
++	struct bio_cgroup *biog = pc->bio_cgroup;
++	pc->bio_cgroup = NULL;
++	put_bio_cgroup(biog);
++}
++
++static inline struct bio_cgroup *get_bio_page_cgroup(struct page_cgroup *pc)
++{
++	struct bio_cgroup *biog = pc->bio_cgroup;
++	css_get(&biog->css);
++	return biog;
++}
++
++/* This sould be called in an RCU-protected section. */
++static inline struct bio_cgroup *mm_get_bio_cgroup(struct mm_struct *mm)
++{
++	struct bio_cgroup *biog;
++	biog = bio_cgroup_from_task(rcu_dereference(mm->owner));
++	get_bio_cgroup(biog);
++	return biog;
++}
++
++extern struct io_context *get_bio_cgroup_iocontext(struct bio *bio);
++
++#else	/* CONFIG_CGROUP_BIO */
++
++struct bio_cgroup;
++
++static inline int bio_cgroup_disabled(void)
 +{
 +	return 1;
 +}
-+#endif /* CONFIG_CGROUP_MEM_RES_CTLR */
 +
-+static inline int page_cgroup_locked(struct page *page)
++static inline void bio_cgroup_add_page(struct page_cgroup *pc)
 +{
-+	return bit_spin_is_locked(PAGE_CGROUP_LOCK_BIT, &page->page_cgroup);
 +}
 +
-+static void page_assign_page_cgroup(struct page *page, struct page_cgroup *pc)
++static inline void bio_cgroup_remove_page(struct page_cgroup *pc)
 +{
-+	VM_BUG_ON(!page_cgroup_locked(page));
-+	page->page_cgroup = ((unsigned long)pc | PAGE_CGROUP_LOCK);
 +}
 +
-+struct page_cgroup *page_get_page_cgroup(struct page *page)
++static inline void get_bio_cgroup(struct bio_cgroup *biog)
 +{
-+	return (struct page_cgroup *) (page->page_cgroup & ~PAGE_CGROUP_LOCK);
 +}
 +
-+/*
-+ * Charge the memory controller for page usage.
-+ * Return
-+ * 0 if the charge was successful
-+ * < 0 if the cgroup is over its limit
-+ */
-+static int mem_cgroup_charge_common(struct page *page, struct mm_struct *mm,
-+				gfp_t gfp_mask, enum charge_type ctype,
-+				struct mem_cgroup *memcg)
++static inline void put_bio_cgroup(struct bio_cgroup *biog)
 +{
-+	struct page_cgroup *pc;
-+#ifdef CONFIG_CGROUP_MEM_RES_CTLR
-+	struct mem_cgroup *mem;
-+	unsigned long flags;
-+	unsigned long nr_retries = MEM_CGROUP_RECLAIM_RETRIES;
-+	struct mem_cgroup_per_zone *mz;
-+#endif /* CONFIG_CGROUP_MEM_RES_CTLR */
++}
 +
-+	pc = kmem_cache_alloc(page_cgroup_cache, gfp_mask);
-+	if (unlikely(pc == NULL))
-+		goto err;
++static inline void set_bio_cgroup(struct page_cgroup *pc,
++					struct bio_cgroup *biog)
++{
++}
 +
-+	/*
-+	 * We always charge the cgroup the mm_struct belongs to.
-+	 * The mm_struct's mem_cgroup changes on task migration if the
-+	 * thread group leader migrates. It's possible that mm is not
-+	 * set, if so charge the init_mm (happens for pagecache usage).
-+	 */
-+	if (likely(!memcg)) {
-+		rcu_read_lock();
-+#ifdef CONFIG_CGROUP_MEM_RES_CTLR
-+		mem = mem_cgroup_from_task(rcu_dereference(mm->owner));
-+		/*
-+		 * For every charge from the cgroup, increment reference count
-+		 */
-+		css_get(&mem->css);
-+#endif /* CONFIG_CGROUP_MEM_RES_CTLR */
-+		rcu_read_unlock();
-+	} else {
-+#ifdef CONFIG_CGROUP_MEM_RES_CTLR
-+		mem = memcg;
-+		css_get(&memcg->css);
-+#endif /* CONFIG_CGROUP_MEM_RES_CTLR */
-+	}
++static inline void clear_bio_cgroup(struct page_cgroup *pc)
++{
++}
 +
-+#ifdef CONFIG_CGROUP_MEM_RES_CTLR
-+	while (res_counter_charge(&mem->res, PAGE_SIZE)) {
-+		if (!(gfp_mask & __GFP_WAIT))
-+			goto out;
++static inline struct bio_cgroup *get_bio_page_cgroup(struct page_cgroup *pc)
++{
++	return NULL;
++}
 +
-+		if (try_to_free_mem_cgroup_pages(mem, gfp_mask))
-+			continue;
++static inline struct bio_cgroup *mm_get_bio_cgroup(struct mm_struct *mm)
++{
++	return NULL;
++}
 +
-+		/*
-+		 * try_to_free_mem_cgroup_pages() might not give us a full
-+		 * picture of reclaim. Some pages are reclaimed and might be
-+		 * moved to swap cache or just unmapped from the cgroup.
-+		 * Check the limit again to see if the reclaim reduced the
-+		 * current usage of the cgroup before giving up
-+		 */
-+		if (res_counter_check_under_limit(&mem->res))
-+			continue;
-+
-+		if (!nr_retries--) {
-+			mem_cgroup_out_of_memory(mem, gfp_mask);
-+			goto out;
-+		}
-+	}
-+	pc->mem_cgroup = mem;
-+#endif /* CONFIG_CGROUP_MEM_RES_CTLR */
-+
-+	pc->page = page;
-+	/*
-+	 * If a page is accounted as a page cache, insert to inactive list.
-+	 * If anon, insert to active list.
-+	 */
-+	if (ctype == MEM_CGROUP_CHARGE_TYPE_CACHE) {
-+		pc->flags = PAGE_CGROUP_FLAG_CACHE;
-+		if (page_is_file_cache(page))
-+			pc->flags |= PAGE_CGROUP_FLAG_FILE;
-+		else
-+			pc->flags |= PAGE_CGROUP_FLAG_ACTIVE;
-+	} else
-+		pc->flags = PAGE_CGROUP_FLAG_ACTIVE;
-+
-+	lock_page_cgroup(page);
-+	if (unlikely(page_get_page_cgroup(page))) {
-+		unlock_page_cgroup(page);
-+#ifdef CONFIG_CGROUP_MEM_RES_CTLR
-+		res_counter_uncharge(&mem->res, PAGE_SIZE);
-+		css_put(&mem->css);
-+#endif /* CONFIG_CGROUP_MEM_RES_CTLR */
-+		kmem_cache_free(page_cgroup_cache, pc);
-+		goto done;
-+	}
-+	page_assign_page_cgroup(page, pc);
-+
-+#ifdef CONFIG_CGROUP_MEM_RES_CTLR
-+	mz = page_cgroup_zoneinfo(pc);
-+	spin_lock_irqsave(&mz->lru_lock, flags);
-+	__mem_cgroup_add_list(mz, pc);
-+	spin_unlock_irqrestore(&mz->lru_lock, flags);
-+#endif /* CONFIG_CGROUP_MEM_RES_CTLR */
-+
-+	unlock_page_cgroup(page);
-+done:
++static inline int get_bio_cgroup_id(struct page *page)
++{
 +	return 0;
-+out:
-+#ifdef CONFIG_CGROUP_MEM_RES_CTLR
-+	css_put(&mem->css);
-+#endif /* CONFIG_CGROUP_MEM_RES_CTLR */
-+	kmem_cache_free(page_cgroup_cache, pc);
-+err:
-+	return -ENOMEM;
 +}
 +
-+int mem_cgroup_charge(struct page *page, struct mm_struct *mm, gfp_t gfp_mask)
++static inline struct io_context *get_bio_cgroup_iocontext(struct bio *bio)
 +{
-+	if (mem_cgroup_disabled())
-+		return 0;
-+
-+	/*
-+	 * If already mapped, we don't have to account.
-+	 * If page cache, page->mapping has address_space.
-+	 * But page->mapping may have out-of-use anon_vma pointer,
-+	 * detecit it by PageAnon() check. newly-mapped-anon's page->mapping
-+	 * is NULL.
-+	 */
-+	if (page_mapped(page) || (page->mapping && !PageAnon(page)))
-+		return 0;
-+	if (unlikely(!mm))
-+		mm = &init_mm;
-+	return mem_cgroup_charge_common(page, mm, gfp_mask,
-+				MEM_CGROUP_CHARGE_TYPE_MAPPED, NULL);
++	return NULL;
 +}
 +
-+int mem_cgroup_cache_charge(struct page *page, struct mm_struct *mm,
-+				gfp_t gfp_mask)
++#endif	/* CONFIG_CGROUP_BIO */
++
++#endif /* _LINUX_BIOCONTROL_H */
+diff -Ndupr linux-2.6.27-rc1-mm1.cg1/include/linux/cgroup_subsys.h linux-2.6.27-rc1-mm1.cg2/include/linux/cgroup_subsys.h
+--- linux-2.6.27-rc1-mm1.cg1/include/linux/cgroup_subsys.h	2008-08-12 14:30:19.000000000 +0900
++++ linux-2.6.27-rc1-mm1.cg2/include/linux/cgroup_subsys.h	2008-08-12 14:48:00.000000000 +0900
+@@ -43,6 +43,12 @@ SUBSYS(mem_cgroup)
+ 
+ /* */
+ 
++#ifdef CONFIG_CGROUP_BIO
++SUBSYS(bio_cgroup)
++#endif
++
++/* */
++
+ #ifdef CONFIG_CGROUP_DEVICE
+ SUBSYS(devices)
+ #endif
+diff -Ndupr linux-2.6.27-rc1-mm1.cg1/include/linux/iocontext.h linux-2.6.27-rc1-mm1.cg2/include/linux/iocontext.h
+--- linux-2.6.27-rc1-mm1.cg1/include/linux/iocontext.h	2008-07-29 11:40:31.000000000 +0900
++++ linux-2.6.27-rc1-mm1.cg2/include/linux/iocontext.h	2008-08-12 14:48:00.000000000 +0900
+@@ -83,6 +83,8 @@ struct io_context {
+ 	struct radix_tree_root radix_root;
+ 	struct hlist_head cic_list;
+ 	void *ioc_data;
++
++	int id;		/* cgroup ID */
+ };
+ 
+ static inline struct io_context *ioc_task_link(struct io_context *ioc)
+@@ -104,6 +106,7 @@ int put_io_context(struct io_context *io
+ void exit_io_context(void);
+ struct io_context *get_io_context(gfp_t gfp_flags, int node);
+ struct io_context *alloc_io_context(gfp_t gfp_flags, int node);
++void init_io_context(struct io_context *ioc);
+ void copy_io_context(struct io_context **pdst, struct io_context **psrc);
+ #else
+ static inline void exit_io_context(void)
+diff -Ndupr linux-2.6.27-rc1-mm1.cg1/include/linux/memcontrol.h linux-2.6.27-rc1-mm1.cg2/include/linux/memcontrol.h
+--- linux-2.6.27-rc1-mm1.cg1/include/linux/memcontrol.h	2008-08-12 14:47:22.000000000 +0900
++++ linux-2.6.27-rc1-mm1.cg2/include/linux/memcontrol.h	2008-08-12 14:48:00.000000000 +0900
+@@ -54,6 +54,10 @@ struct page_cgroup {
+ 	struct list_head lru;		/* per cgroup LRU list */
+ 	struct mem_cgroup *mem_cgroup;
+ #endif /* CONFIG_CGROUP_MEM_RES_CTLR */
++#ifdef CONFIG_CGROUP_BIO
++	struct list_head blist;		/* for bio_cgroup page list */
++	struct bio_cgroup *bio_cgroup;
++#endif
+ 	struct page *page;
+ 	int flags;
+ };
+diff -Ndupr linux-2.6.27-rc1-mm1.cg1/init/Kconfig linux-2.6.27-rc1-mm1.cg2/init/Kconfig
+--- linux-2.6.27-rc1-mm1.cg1/init/Kconfig	2008-08-12 14:47:22.000000000 +0900
++++ linux-2.6.27-rc1-mm1.cg2/init/Kconfig	2008-08-12 14:48:00.000000000 +0900
+@@ -418,9 +418,20 @@ config CGROUP_MEMRLIMIT_CTLR
+ 	  memory RSS and Page Cache control. Virtual address space control
+ 	  is provided by this controller.
+ 
++config CGROUP_BIO
++	bool "Block I/O cgroup subsystem"
++	depends on CGROUPS
++	select MM_OWNER
++	help
++	  Provides a Resource Controller which enables to track the onwner
++	  of every Block I/O.
++	  The information this subsystem provides can be used from any
++	  kind of module such as dm-ioband device mapper modules or
++	  the cfq-scheduler.
++
+ config CGROUP_PAGE
+ 	def_bool y
+-	depends on CGROUP_MEM_RES_CTLR
++	depends on CGROUP_MEM_RES_CTLR || CGROUP_BIO
+ 
+ config SYSFS_DEPRECATED
+ 	bool
+diff -Ndupr linux-2.6.27-rc1-mm1.cg1/mm/Makefile linux-2.6.27-rc1-mm1.cg2/mm/Makefile
+--- linux-2.6.27-rc1-mm1.cg1/mm/Makefile	2008-08-12 14:47:22.000000000 +0900
++++ linux-2.6.27-rc1-mm1.cg2/mm/Makefile	2008-08-12 14:48:00.000000000 +0900
+@@ -35,4 +35,5 @@ obj-$(CONFIG_MIGRATION) += migrate.o
+ obj-$(CONFIG_SMP) += allocpercpu.o
+ obj-$(CONFIG_QUICKLIST) += quicklist.o
+ obj-$(CONFIG_CGROUP_PAGE) += memcontrol.o
++obj-$(CONFIG_CGROUP_BIO) += biocontrol.o
+ obj-$(CONFIG_CGROUP_MEMRLIMIT_CTLR) += memrlimitcgroup.o
+diff -Ndupr linux-2.6.27-rc1-mm1.cg1/mm/biocontrol.c linux-2.6.27-rc1-mm1.cg2/mm/biocontrol.c
+--- linux-2.6.27-rc1-mm1.cg1/mm/biocontrol.c	1970-01-01 09:00:00.000000000 +0900
++++ linux-2.6.27-rc1-mm1.cg2/mm/biocontrol.c	2008-08-12 15:06:12.000000000 +0900
+@@ -0,0 +1,219 @@
++/* biocontrol.c - Block I/O Controller
++ *
++ * Copyright IBM Corporation, 2007
++ * Author Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
++ *
++ * Copyright 2007 OpenVZ SWsoft Inc
++ * Author: Pavel Emelianov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
++ *
++ * Copyright VA Linux Systems Japan, 2008
++ * Author Hirokazu Takahashi <taka-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation; either version 2 of the License, or
++ * (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ */
++
++#include <linux/module.h>
++#include <linux/cgroup.h>
++#include <linux/mm.h>
++#include <linux/blkdev.h>
++#include <linux/smp.h>
++#include <linux/bit_spinlock.h>
++#include <linux/idr.h>
++#include <linux/err.h>
++#include <linux/biocontrol.h>
++
++/* return corresponding bio_cgroup object of a cgroup */
++static inline struct bio_cgroup *cgroup_bio(struct cgroup *cgrp)
 +{
-+	if (mem_cgroup_disabled())
-+		return 0;
++	return container_of(cgroup_subsys_state(cgrp, bio_cgroup_subsys_id),
++			    struct bio_cgroup, css);
++}
 +
-+	/*
-+	 * Corner case handling. This is called from add_to_page_cache()
-+	 * in usual. But some FS (shmem) precharges this page before calling it
-+	 * and call add_to_page_cache() with GFP_NOWAIT.
-+	 *
-+	 * For GFP_NOWAIT case, the page may be pre-charged before calling
-+	 * add_to_page_cache(). (See shmem.c) check it here and avoid to call
-+	 * charge twice. (It works but has to pay a bit larger cost.)
-+	 */
-+	if (!(gfp_mask & __GFP_WAIT)) {
-+		struct page_cgroup *pc;
++static struct idr bio_cgroup_id;
++static DEFINE_SPINLOCK(bio_cgroup_idr_lock);
 +
-+		lock_page_cgroup(page);
-+		pc = page_get_page_cgroup(page);
-+		if (pc) {
-+			VM_BUG_ON(pc->page != page);
-+			VM_BUG_ON(!pc->mem_cgroup);
-+			unlock_page_cgroup(page);
-+			return 0;
++static struct cgroup_subsys_state *
++bio_cgroup_create(struct cgroup_subsys *ss, struct cgroup *cgrp)
++{
++	struct bio_cgroup *biog;
++	struct io_context *ioc;
++	int error;
++
++	if (!cgrp->parent) {
++		static struct bio_cgroup default_bio_cgroup;
++		static struct io_context default_bio_io_context;
++
++		biog = &default_bio_cgroup;
++		ioc = &default_bio_io_context;
++		init_io_context(ioc);
++
++		idr_init(&bio_cgroup_id);
++		biog->id = 0;
++
++		page_cgroup_init();
++	} else {
++		biog = kzalloc(sizeof(*biog), GFP_KERNEL);
++		ioc = alloc_io_context(GFP_KERNEL, -1);
++		if (!ioc || !biog) {
++			error = -ENOMEM;
++			goto out;
 +		}
-+		unlock_page_cgroup(page);
++retry:
++		if (unlikely(!idr_pre_get(&bio_cgroup_id, GFP_KERNEL))) {
++			error = -EAGAIN;
++			goto out;
++		}
++		spin_lock_irq(&bio_cgroup_idr_lock);
++		error = idr_get_new_above(&bio_cgroup_id,
++						(void *)biog, 1, &biog->id);
++		spin_unlock_irq(&bio_cgroup_idr_lock);
++		if (error == -EAGAIN)
++			goto retry;
++		else if (error)
++			goto out;
 +	}
 +
-+	if (unlikely(!mm))
-+		mm = &init_mm;
++	ioc->id = biog->id;
++	biog->io_context = ioc;
 +
-+	return mem_cgroup_charge_common(page, mm, gfp_mask,
-+				MEM_CGROUP_CHARGE_TYPE_CACHE, NULL);
++	INIT_LIST_HEAD(&biog->page_list);
++	spin_lock_init(&biog->page_list_lock);
++
++	/* Bind the cgroup to bio_cgroup object we just created */
++	biog->css.cgroup = cgrp;
++
++	return &biog->css;
++out:
++	if (ioc)
++		put_io_context(ioc);
++	kfree(biog);
++	return ERR_PTR(error);
 +}
 +
-+/*
-+ * uncharge if !page_mapped(page)
-+ */
-+static void
-+__mem_cgroup_uncharge_common(struct page *page, enum charge_type ctype)
++#define FORCE_UNCHARGE_BATCH	(128)
++static void bio_cgroup_force_empty(struct bio_cgroup *biog)
 +{
 +	struct page_cgroup *pc;
-+#ifdef CONFIG_CGROUP_MEM_RES_CTLR
-+	struct mem_cgroup *mem;
-+	struct mem_cgroup_per_zone *mz;
++	struct page *page;
++	int count = FORCE_UNCHARGE_BATCH;
++	struct list_head *list = &biog->page_list;
 +	unsigned long flags;
-+#endif /* CONFIG_CGROUP_MEM_RES_CTLR */
 +
-+	if (mem_cgroup_disabled())
-+		return;
-+
-+	/*
-+	 * Check if our page_cgroup is valid
-+	 */
-+	lock_page_cgroup(page);
-+	pc = page_get_page_cgroup(page);
-+	if (unlikely(!pc))
-+		goto unlock;
-+
-+	VM_BUG_ON(pc->page != page);
-+
-+	if ((ctype == MEM_CGROUP_CHARGE_TYPE_MAPPED)
-+	    && ((pc->flags & PAGE_CGROUP_FLAG_CACHE)
-+		|| page_mapped(page)
-+		|| PageSwapCache(page)))
-+		goto unlock;
-+
-+#ifdef CONFIG_CGROUP_MEM_RES_CTLR
-+	mz = page_cgroup_zoneinfo(pc);
-+	spin_lock_irqsave(&mz->lru_lock, flags);
-+	__mem_cgroup_remove_list(mz, pc);
-+	spin_unlock_irqrestore(&mz->lru_lock, flags);
-+#endif /* CONFIG_CGROUP_MEM_RES_CTLR */
-+
-+	page_assign_page_cgroup(page, NULL);
-+	unlock_page_cgroup(page);
-+
-+#ifdef CONFIG_CGROUP_MEM_RES_CTLR
-+	mem = pc->mem_cgroup;
-+	res_counter_uncharge(&mem->res, PAGE_SIZE);
-+	css_put(&mem->css);
-+#endif /* CONFIG_CGROUP_MEM_RES_CTLR */
-+
-+	kmem_cache_free(page_cgroup_cache, pc);
++	spin_lock_irqsave(&biog->page_list_lock, flags);
++	while (!list_empty(list)) {
++		pc = list_entry(list->prev, struct page_cgroup, blist);
++		page = pc->page;
++		get_page(page);
++		spin_unlock_irqrestore(&biog->page_list_lock, flags);
++		mem_cgroup_uncharge_page(page);
++		put_page(page);
++		if (--count <= 0) {
++			count = FORCE_UNCHARGE_BATCH;
++			cond_resched();
++		}
++		spin_lock_irqsave(&biog->page_list_lock, flags);
++	}
++	spin_unlock_irqrestore(&biog->page_list_lock, flags);
 +	return;
-+unlock:
-+	unlock_page_cgroup(page);
 +}
 +
-+void mem_cgroup_uncharge_page(struct page *page)
++static void bio_cgroup_pre_destroy(struct cgroup_subsys *ss,
++							struct cgroup *cgrp)
 +{
-+	__mem_cgroup_uncharge_common(page, MEM_CGROUP_CHARGE_TYPE_MAPPED);
++	struct bio_cgroup *biog = cgroup_bio(cgrp);
++	bio_cgroup_force_empty(biog);
 +}
 +
-+void mem_cgroup_uncharge_cache_page(struct page *page)
++static void bio_cgroup_destroy(struct cgroup_subsys *ss, struct cgroup *cgrp)
 +{
-+	VM_BUG_ON(page_mapped(page));
-+	__mem_cgroup_uncharge_common(page, MEM_CGROUP_CHARGE_TYPE_CACHE);
++	struct bio_cgroup *biog = cgroup_bio(cgrp);
++
++	put_io_context(biog->io_context);
++
++	spin_lock_irq(&bio_cgroup_idr_lock);
++	idr_remove(&bio_cgroup_id, biog->id);
++	spin_unlock_irq(&bio_cgroup_idr_lock);
++
++	kfree(biog);
 +}
 +
-+/*
-+ * Before starting migration, account against new page.
-+ */
-+int mem_cgroup_prepare_migration(struct page *page, struct page *newpage)
++struct bio_cgroup *find_bio_cgroup(int id)
 +{
++	struct bio_cgroup *biog;
++	spin_lock_irq(&bio_cgroup_idr_lock);
++	biog = (struct bio_cgroup *)
++	idr_find(&bio_cgroup_id, id);
++	spin_unlock_irq(&bio_cgroup_idr_lock);
++	get_bio_cgroup(biog);
++	return biog;
++}
++
++struct io_context *get_bio_cgroup_iocontext(struct bio *bio)
++{
++	struct io_context *ioc;
 +	struct page_cgroup *pc;
-+	struct mem_cgroup *mem = NULL;
-+	enum charge_type ctype = MEM_CGROUP_CHARGE_TYPE_MAPPED;
-+	int ret = 0;
-+
-+	if (mem_cgroup_disabled())
-+		return 0;
++	struct bio_cgroup *biog;
++	struct page *page = bio_iovec_idx(bio, 0)->bv_page;
 +
 +	lock_page_cgroup(page);
 +	pc = page_get_page_cgroup(page);
-+	if (pc) {
-+#ifdef CONFIG_CGROUP_MEM_RES_CTLR
-+		mem = pc->mem_cgroup;
-+		css_get(&mem->css);
-+#endif /* CONFIG_CGROUP_MEM_RES_CTLR */
-+		if (pc->flags & PAGE_CGROUP_FLAG_CACHE)
-+			ctype = MEM_CGROUP_CHARGE_TYPE_CACHE;
-+	}
++	if (pc)
++		biog = pc->bio_cgroup;
++	else
++		biog = bio_cgroup_from_task(rcu_dereference(init_mm.owner));
++	ioc = biog->io_context;	/* default io_context for this cgroup */
++	atomic_inc(&ioc->refcount);
 +	unlock_page_cgroup(page);
-+	if (mem) {
-+		ret = mem_cgroup_charge_common(newpage, NULL, GFP_KERNEL,
-+			ctype, mem);
-+#ifdef CONFIG_CGROUP_MEM_RES_CTLR
-+		css_put(&mem->css);
-+#endif /* CONFIG_CGROUP_MEM_RES_CTLR */
-+	}
-+	return ret;
++	return ioc;
++}
++EXPORT_SYMBOL(get_bio_cgroup_iocontext);
++
++static u64 bio_id_read(struct cgroup *cgrp, struct cftype *cft)
++{
++	struct bio_cgroup *biog = cgroup_bio(cgrp);
++
++	return (u64) biog->id;
 +}
 +
-+/* remove redundant charge if migration failed*/
-+void mem_cgroup_end_migration(struct page *newpage)
++
++static struct cftype bio_files[] = {
++	{
++		.name = "id",
++		.read_u64 = bio_id_read,
++	},
++};
++
++static int bio_cgroup_populate(struct cgroup_subsys *ss, struct cgroup *cont)
 +{
-+	/*
-+	 * At success, page->mapping is not NULL.
-+	 * special rollback care is necessary when
-+	 * 1. at migration failure. (newpage->mapping is cleared in this case)
-+	 * 2. the newpage was moved but not remapped again because the task
-+	 *    exits and the newpage is obsolete. In this case, the new page
-+	 *    may be a swapcache. So, we just call mem_cgroup_uncharge_page()
-+	 *    always for avoiding mess. The  page_cgroup will be removed if
-+	 *    unnecessary. File cache pages is still on radix-tree. Don't
-+	 *    care it.
-+	 */
-+	if (!newpage->mapping)
-+		__mem_cgroup_uncharge_common(newpage,
-+					 MEM_CGROUP_CHARGE_TYPE_FORCE);
-+	else if (PageAnon(newpage))
-+		mem_cgroup_uncharge_page(newpage);
++	if (bio_cgroup_disabled())
++		return 0;
++	return cgroup_add_files(cont, ss, bio_files, ARRAY_SIZE(bio_files));
 +}
 +
-+void page_cgroup_init()
++static void bio_cgroup_move_task(struct cgroup_subsys *ss,
++				struct cgroup *cont,
++				struct cgroup *old_cont,
++				struct task_struct *p)
 +{
-+	if (!page_cgroup_cache)
-+		page_cgroup_cache = KMEM_CACHE(page_cgroup, SLAB_PANIC);
++	/* do nothing */
 +}
++
++
++struct cgroup_subsys bio_cgroup_subsys = {
++	.name           = "bio",
++	.subsys_id      = bio_cgroup_subsys_id,
++	.create         = bio_cgroup_create,
++	.destroy        = bio_cgroup_destroy,
++	.pre_destroy	= bio_cgroup_pre_destroy,
++	.populate       = bio_cgroup_populate,
++	.attach		= bio_cgroup_move_task,
++	.early_init	= 0,
++};
+diff -Ndupr linux-2.6.27-rc1-mm1.cg1/mm/memcontrol.c linux-2.6.27-rc1-mm1.cg2/mm/memcontrol.c
+--- linux-2.6.27-rc1-mm1.cg1/mm/memcontrol.c	2008-08-12 14:47:40.000000000 +0900
++++ linux-2.6.27-rc1-mm1.cg2/mm/memcontrol.c	2008-08-12 14:48:00.000000000 +0900
+@@ -20,6 +20,7 @@
+ #include <linux/res_counter.h>
+ #include <linux/memcontrol.h>
+ #include <linux/cgroup.h>
++#include <linux/biocontrol.h>
+ #include <linux/mm.h>
+ #include <linux/smp.h>
+ #include <linux/page-flags.h>
+@@ -1019,11 +1020,12 @@ struct page_cgroup *page_get_page_cgroup
+  * < 0 if the cgroup is over its limit
+  */
+ static int mem_cgroup_charge_common(struct page *page, struct mm_struct *mm,
+-				gfp_t gfp_mask, enum charge_type ctype,
+-				struct mem_cgroup *memcg)
++			gfp_t gfp_mask, enum charge_type ctype,
++			struct mem_cgroup *memcg, struct bio_cgroup *biocg)
+ {
+ 	struct page_cgroup *pc;
+ 	struct mem_cgroup *mem;
++	struct bio_cgroup *biog;
+ 
+ 	pc = kmem_cache_alloc(page_cgroup_cache, gfp_mask);
+ 	if (unlikely(pc == NULL))
+@@ -1035,18 +1037,15 @@ static int mem_cgroup_charge_common(stru
+ 	 * thread group leader migrates. It's possible that mm is not
+ 	 * set, if so charge the init_mm (happens for pagecache usage).
+ 	 */
+-	if (likely(!memcg)) {
+-		rcu_read_lock();
+-		mem = mm_get_mem_cgroup(mm);
+-		rcu_read_unlock();
+-	} else {
+-		mem = memcg;
+-		get_mem_cgroup(mem);
+-	}
++	rcu_read_lock();
++	mem = memcg ? memcg : mm_get_mem_cgroup(mm);
++	biog = biocg ? biocg : mm_get_bio_cgroup(mm);
++	rcu_read_unlock();
+ 
+ 	if (mem_cgroup_try_to_allocate(mem, gfp_mask) < 0)
+ 		goto out;
+ 	set_mem_cgroup(pc, mem);
++	set_bio_cgroup(pc, biog);
+ 	pc->page = page;
+ 	/*
+ 	 * If a page is accounted as a page cache, insert to inactive list.
+@@ -1065,18 +1064,21 @@ static int mem_cgroup_charge_common(stru
+ 	if (unlikely(page_get_page_cgroup(page))) {
+ 		unlock_page_cgroup(page);
+ 		clear_mem_cgroup(pc);
++		clear_bio_cgroup(pc);
+ 		kmem_cache_free(page_cgroup_cache, pc);
+ 		goto done;
+ 	}
+ 	page_assign_page_cgroup(page, pc);
+ 
+ 	mem_cgroup_add_page(pc);
++	bio_cgroup_add_page(pc);
+ 
+ 	unlock_page_cgroup(page);
+ done:
+ 	return 0;
+ out:
+ 	put_mem_cgroup(mem);
++	put_bio_cgroup(biog);
+ 	kmem_cache_free(page_cgroup_cache, pc);
+ err:
+ 	return -ENOMEM;
+@@ -1099,7 +1101,7 @@ int mem_cgroup_charge(struct page *page,
+ 	if (unlikely(!mm))
+ 		mm = &init_mm;
+ 	return mem_cgroup_charge_common(page, mm, gfp_mask,
+-				MEM_CGROUP_CHARGE_TYPE_MAPPED, NULL);
++				MEM_CGROUP_CHARGE_TYPE_MAPPED, NULL, NULL);
+ }
+ 
+ int mem_cgroup_cache_charge(struct page *page, struct mm_struct *mm,
+@@ -1135,7 +1137,7 @@ int mem_cgroup_cache_charge(struct page 
+ 		mm = &init_mm;
+ 
+ 	return mem_cgroup_charge_common(page, mm, gfp_mask,
+-				MEM_CGROUP_CHARGE_TYPE_CACHE, NULL);
++				MEM_CGROUP_CHARGE_TYPE_CACHE, NULL, NULL);
+ }
+ 
+ /*
+@@ -1146,7 +1148,7 @@ __mem_cgroup_uncharge_common(struct page
+ {
+ 	struct page_cgroup *pc;
+ 
+-	if (mem_cgroup_disabled())
++	if (mem_cgroup_disabled() && bio_cgroup_disabled())
+ 		return;
+ 
+ 	/*
+@@ -1166,11 +1168,13 @@ __mem_cgroup_uncharge_common(struct page
+ 		goto unlock;
+ 
+ 	mem_cgroup_remove_page(pc);
++	bio_cgroup_remove_page(pc);
+ 
+ 	page_assign_page_cgroup(page, NULL);
+ 	unlock_page_cgroup(page);
+ 
+ 	clear_mem_cgroup(pc);
++	clear_bio_cgroup(pc);
+ 
+ 	kmem_cache_free(page_cgroup_cache, pc);
+ 	return;
+@@ -1196,24 +1200,29 @@ int mem_cgroup_prepare_migration(struct 
+ {
+ 	struct page_cgroup *pc;
+ 	struct mem_cgroup *mem = NULL;
++	struct bio_cgroup *biog = NULL;
+ 	enum charge_type ctype = MEM_CGROUP_CHARGE_TYPE_MAPPED;
+ 	int ret = 0;
+ 
+-	if (mem_cgroup_disabled())
++	if (mem_cgroup_disabled() && bio_cgroup_disabled())
+ 		return 0;
+ 
+ 	lock_page_cgroup(page);
+ 	pc = page_get_page_cgroup(page);
+ 	if (pc) {
+ 		mem = get_mem_page_cgroup(pc);
++		biog = get_bio_page_cgroup(pc);
+ 		if (pc->flags & PAGE_CGROUP_FLAG_CACHE)
+ 			ctype = MEM_CGROUP_CHARGE_TYPE_CACHE;
+ 	}
+ 	unlock_page_cgroup(page);
+-	if (mem) {
++	if (pc) {
+ 		ret = mem_cgroup_charge_common(newpage, NULL, GFP_KERNEL,
+-			ctype, mem);
+-		put_mem_cgroup(mem);
++			ctype, mem, biog);
++		if (mem)
++			put_mem_cgroup(mem);
++		if (biog)
++			put_bio_cgroup(biog);
+ 	}
+ 	return ret;
+ }
