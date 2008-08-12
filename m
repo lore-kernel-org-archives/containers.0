@@ -1,15 +1,15 @@
-From: Ryo Tsuruta <ryov-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
-Subject: [PATCH 7/7] bio-cgroup: Add a cgroup support to dm-ioband
-Date: Tue, 12 Aug 2008 21:37:08 +0900 (JST)
-Message-ID: <20080812.213708.39164284.ryov__17844.5044010461$1218545351$gmane$org@valinux.co.jp>
-References: <20080812.213533.189720227.ryov@valinux.co.jp>
-	<20080812.213604.112616601.ryov@valinux.co.jp>
-	<20080812.213640.183031086.ryov@valinux.co.jp>
+From: Andrea Righi <righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Subject: Re: RFC: I/O bandwidth controller
+Date: Tue, 12 Aug 2008 14:55:48 +0200 (MEST)
+Message-ID: <48A18854.9020000__842.001222963695$1218545910$gmane$org@gmail.com>
+References: <1218117578.11703.81.camel@sebastian.kern.oss.ntt.co.jp>	<48A0A689.40908@gmail.com>	<loom.20080812T071504-212@post.gmane.org>
+	<20080812.201025.57762305.taka@valinux.co.jp>
+Reply-To: righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20080812.213640.183031086.ryov-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
+In-Reply-To: <20080812.201025.57762305.taka-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,45 +19,97 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, dm-devel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, virtualization-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, xen-devel-GuqFBffKawuULHF6PoxzQEEOCMrvLtNR@public.gmane.org
-Cc: fernando-gVGce1chcLdL9jVzuh4AOg@public.gmane.org, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org, agk-9JcytcrH/bA+uJoB2kUjGw@public.gmane.org
+To: Hirokazu Takahashi <taka-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
+Cc: xen-devel-GuqFBffKawuULHF6PoxzQEEOCMrvLtNR@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, virtualization-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, dm-devel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, agk-9JcytcrH/bA+uJoB2kUjGw@public.gmane.org, dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, ngupta-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-With this patch, dm-ioband can work with the bio cgroup.
-
-Based on 2.6.27-rc1-mm1
-Signed-off-by: Ryo Tsuruta <ryov-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
-Signed-off-by: Hirokazu Takahashi <taka-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
-
-diff -Ndupr linux-2.6.27-rc1-mm1.cg2/drivers/md/dm-ioband-type.c linux-2.6.27-rc1-mm1.cg3/drivers/md/dm-ioband-type.c
---- linux-2.6.27-rc1-mm1.cg2/drivers/md/dm-ioband-type.c	2008-08-12 14:45:59.000000000 +0900
-+++ linux-2.6.27-rc1-mm1.cg3/drivers/md/dm-ioband-type.c	2008-08-12 15:07:03.000000000 +0900
-@@ -6,6 +6,7 @@
-  * This file is released under the GPL.
-  */
- #include <linux/bio.h>
-+#include <linux/biocontrol.h>
- #include "dm.h"
- #include "dm-bio-list.h"
- #include "dm-ioband.h"
-@@ -53,13 +54,13 @@ static int ioband_node(struct bio *bio)
- 
- static int ioband_cgroup(struct bio *bio)
- {
--  /*
--   * This function should return the ID of the cgroup which issued "bio".
--   * The ID of the cgroup which the current process belongs to won't be
--   * suitable ID for this purpose, since some BIOs will be handled by kernel
--   * threads like aio or pdflush on behalf of the process requesting the BIOs.
--   */
--	return 0;	/* not implemented yet */
-+	struct io_context *ioc = get_bio_cgroup_iocontext(bio);
-+	int id = 0;
-+	if (ioc) {
-+		id = ioc->id;
-+		put_io_context(ioc);
-+	}
-+	return id;
- }
- 
- struct group_type dm_ioband_group_type[] = {
+SGlyb2thenUgVGFrYWhhc2hpIHdyb3RlOgo+Pj4+Pj4gMy4gJiA0LiAmIDUuIC0gSS9PIGJhbmR3
+aWR0aCBzaGFwaW5nICYgR2VuZXJhbCBkZXNpZ24gYXNwZWN0cwo+Pj4+Pj4KPj4+Pj4+IFRoZSBp
+bXBsZW1lbnRhdGlvbiBvZiBhbiBJL08gc2NoZWR1bGluZyBhbGdvcml0aG0gaXMgdG8gYSBjZXJ0
+YWluIGV4dGVudAo+Pj4+Pj4gaW5mbHVlbmNlZCBieSB3aGF0IHdlIGFyZSB0cnlpbmcgdG8gYWNo
+aWV2ZSBpbiB0ZXJtcyBvZiBJL08gYmFuZHdpZHRoCj4+Pj4+PiBzaGFwaW5nLCBidXQsIGFzIGRp
+c2N1c3NlZCBiZWxvdywgdGhlIHJlcXVpcmVkIGFjY3VyYWN5IGNhbiBkZXRlcm1pbmUKPj4+Pj4+
+IHRoZSBsYXllciB3aGVyZSB0aGUgSS9PIGNvbnRyb2xsZXIgaGFzIHRvIHJlc2lkZS4gT2ZmIHRo
+ZSB0b3Agb2YgbXkKPj4+Pj4+IGhlYWQsIHRoZXJlIGFyZSB0aHJlZSBiYXNpYyBvcGVyYXRpb25z
+IHdlIG1heSB3YW50IHBlcmZvcm06Cj4+Pj4+PiAgIC0gSS9PIG5pY2UgcHJpb3JpdGl6YXRpb246
+IGlvbmljZS1saWtlIGFwcHJvYWNoLgo+Pj4+Pj4gICAtIFByb3BvcnRpb25hbCBiYW5kd2lkdGgg
+c2NoZWR1bGluZzogZWFjaCBwcm9jZXNzL2dyb3VwIG9mIHByb2Nlc3Nlcwo+Pj4+Pj4gaGFzIGEg
+d2VpZ2h0IHRoYXQgZGV0ZXJtaW5lcyB0aGUgc2hhcmUgb2YgYmFuZHdpZHRoIHRoZXkgcmVjZWl2
+ZS4KPj4+Pj4+ICAgLSBJL08gbGltaXRpbmc6IHNldCBhbiB1cHBlciBsaW1pdCB0byB0aGUgYmFu
+ZHdpZHRoIGEgZ3JvdXAgb2YgdGFza3MKPj4+Pj4+IGNhbiB1c2UuCj4+Pj4+IFVzZSBhIGRlYWRs
+aW5lLWJhc2VkIElPIHNjaGVkdWxpbmcgY291bGQgYmUgYW4gaW50ZXJlc3RpbmcgcGF0aCB0byBi
+ZQo+Pj4+PiBleHBsb3JlZCBhcyB3ZWxsLCBJTUhPLCB0byB0cnkgdG8gZ3VhcmFudGVlIHBlci1j
+Z3JvdXAgbWluaW11bSBiYW5kd2lkdGgKPj4+Pj4gcmVxdWlyZW1lbnRzLgo+Pj4+IFBsZWFzZSBu
+b3RlIHRoYXQgdGhlIG9ubHkgdGhpbmcgd2UgY2FuIGRvIGlzIHRvIGd1YXJhbnRlZSBtaW5pbXVt
+Cj4+Pj4gYmFuZHdpZHRoIHJlcXVpcmVtZW50IHdoZW4gdGhlcmUgaXMgY29udGVudGlvbiBmb3Ig
+YW4gSU8gcmVzb3VyY2UsIHdoaWNoCj4+Pj4gaXMgcHJlY2lzZWx5IHdoYXQgYSBwcm9wb3J0aW9u
+YWwgYmFuZHdpZHRoIHNjaGVkdWxlciBkb2VzLiBBbiBJIG1pc3NpbmcKPj4+PiBzb21ldGhpbmc/
+Cj4+PiBDb3JyZWN0LiBQcm9wb3J0aW9uYWwgYmFuZHdpZHRoIGF1dG9tYXRpY2FsbHkgYWxsb3dz
+IHRvIGd1YXJhbnRlZSBtaW4KPj4+IHJlcXVpcmVtZW50cyAoaW5zdGVhZCBvZiBJTyBsaW1pdGlu
+ZyBhcHByb2FjaCwgdGhhdCBuZWVkcyBhZGRpdGlvbmFsCj4+PiBtZWNoYW5pc21zIHRvIGFjaGl2
+ZSB0aGlzKS4KPj4+Cj4+PiBJbiBhbnkgY2FzZSB0aGVyZSdzIG5vIGd1YXJhbnRlZSBmb3IgYSBj
+Z3JvdXAvYXBwbGljYXRpb24gdG8gc3VzdGFpbgo+Pj4gaS5lLiAxME1CL3Mgb24gYSBjZXJ0YWlu
+IGRldmljZSwgYnV0IHRoaXMgaXMgYSBoYXJkIHByb2JsZW0gYW55d2F5LCBhbmQKPj4+IHRoZSBi
+ZXN0IHdlIGNhbiBkbyBpcyB0byB0cnkgdG8gc2F0aXNmeSAic29mdCIgY29uc3RyYWludHMuCj4+
+IEkgdGhpbmsgZ3VhcmFudGVlaW5nIHRoZSBtaW5pbXVtIEkvTyBiYW5kd2lkdGggaXMgdmVyeSBp
+bXBvcnRhbnQuIEluIHRoZSAKPj4gYnVzaW5lc3Mgc2l0ZSwgZXNwZWNpYWxseSBpbiBzdHJlYW1p
+bmcgc2VydmljZSBzeXN0ZW0sIGFkbWluaXN0cmF0b3IgcmVxdWlyZXMgCj4+IHRoZSBmdW5jdGlv
+bmFsaXR5IHRvIHNhdGlzZnkgUW9TIG9yIHBlcmZvcm1hbmNlIG9mIHRoZWlyIHNlcnZpY2UuIAo+
+PiBPZiBjb3Vyc2UsIElPIHRocm90dGxpbmcgaXMgaW1wb3J0YW50LCBidXQsIHBlcnNvbmFsbHks
+IEkgdGhpbmsgZ3VhcmFudGVlaW5nIAo+PiB0aGUgbWluaW11bSBiYW5kd2lkdGggaXMgbW9yZSBp
+bXBvcnRhbnQgdGhhbiBsaW1pdGF0aW9uIG9mIG1heGltdW0gYmFuZHdpZHRoIAo+PiB0byBzYXRp
+c2Z5IHRoZSByZXF1aXJlbWVudCBpbiByZWFsIGJ1c2luZXNzIHNpdGVzLgo+PiBBbmQgSSBrbm93
+IEFuZHJlYeKAmXMgaW8tdGhyb3R0bGUgcGF0Y2ggc3VwcG9ydHMgdGhlIGxhdHRlciBjYXNlIHdl
+bGwgYW5kIGl0IGlzIAo+PiB2ZXJ5IHN0YWJsZS4gCj4+IEJ1dCwgdGhlIGZpcnN0IGNhc2UoZ3Vh
+cmFudGVlIHRoZSBtaW5pbXVtIGJhbmR3aWR0aCkgaXMgbm90IHN1cHBvcnRlZCBpbiBhbnkgCj4+
+IHBhdGNoZXMuCj4+IElzIHRoZXJlIGFueSBwbGFucyB0byBzdXBwb3J0IGl0PyBhbmQgSXMgdGhl
+cmUgYW55IHByb2JsZW1zIGluIGltcGxlbWVudGluZyBpdD8KPj4gSSB0aGluayBpZiBJTyBjb250
+cm9sbGVyIGNhbiBzdXBwb3J0IGd1YXJhbnRlZWluZyB0aGUgbWluaW11bSBiYW5kd2lkdGggYW5k
+IAo+PiB3b3JrLWNvbnNlcnZpbmcgbW9kZSBzaW11bHRhbmVvdXNseSwgaXQgbW9yZSBlYXNpbHkg
+c2F0aXNmaWVzIHRoZSByZXF1aXJlbWVudCAKPj4gb2YgdGhlIGJ1c2luZXNzIHNpdGVzLgo+PiBB
+ZGRpdGlvbmFsbHksIEkgZGlkbuKAmXQgdW5kZXJzdGFuZCDigJxQcm9wb3J0aW9uYWwgYmFuZHdp
+ZHRoIGF1dG9tYXRpY2FsbHkgYWxsb3dzIAo+PiB0byBndWFyYW50ZWUgbWluCj4+IHJlcXVpcmVt
+ZW50c+KAnSBhbmQg4oCcc29mdCBjb25zdHJhaW50c+KAnS4KPj4gQ2FuIHlvdSBnaXZlIG1lIGEg
+YWR2aWNlIGFib3V0IHRoaXMgPyAKPj4gVGhhbmtzIGluIGFkdmFuY2UuCj4+Cj4+IERvbmctSmFl
+IEthbmcKPiAKPiBJIHRoaW5rIHRoaXMgaXMgd2hhdCBkbS1pb2JhbmQgZG9lcy4KPiAKPiBMZXQn
+cyBzYXkgeW91IG1ha2UgdHdvIGdyb3VwcyBzaGFyZSB0aGUgc2FtZSBkaXNrLCBhbmQgZ2l2ZSB0
+aGVtCj4gNzAlIG9mIHRoZSBiYW5kd2lkdGggdGhlIGRpc2sgcGh5c2ljYWxseSBoYXMgYW5kIDMw
+JSByZXNwZWN0aXZlbHkuCj4gVGhpcyBtZWFucyB0aGUgZm9ybWVyIGdyb3VwIGlzIGFsbW9zdCBn
+dWFyYW50ZWVkIHRvIGJlIGFibGUgdG8gdXNlCj4gNzAlIG9mIHRoZSBiYW5kd2lkdGggZXZlbiB3
+aGVuIHRoZSBsYXR0ZXIgb25lIGlzIGlzc3VpbmcgcXVpdGUKPiBhIGxvdCBvZiBJL08gcmVxdWVz
+dHMuCj4gCj4gWWVzLCBJIGtub3cgdGhlcmUgZXhpc3QgaGVhZCBzZWVrIGxhZ3Mgd2l0aCB0cmFk
+aXRpb25hbCBtYWduZXRpYyBkaXNrcywKPiBzbyBpdCdzIGltcG9ydGFudCB0byBpbXByb3ZlIHRo
+ZSBhbGdvcml0aG0gdG8gcmVkdWNlIHRoaXMgb3ZlcmhlYWQuCj4gCj4gQW5kIEkgdGhpbmsgaXQg
+aXMgYWxzbyBwb3NzaWJsZSB0byBhZGQgYSBuZXcgc2NoZWR1bGluZyBwb2xpY3kgdG8KPiBndWFy
+YW50ZWUgdGhlIG1pbmltdW0gYmFuZHdpZHRoLiBJdCBtaWdodCBiZSBjb29sIGlmIHNvbWUgZ3Jv
+dXAgY2FuCj4gdXNlIGd1cmFudGVlZCBiYW5kd2lkdGhzIGFuZCB0aGUgb3RoZXIgc2hhcmUgdGhl
+IHJlc3Qgb24gcHJvcG9ydGlvbmFsCj4gYmFuZHdpZHRoIHBvbGljeS4KPiAKPiBUaGFua3MsCj4g
+SGlyb2thenUgVGFrYWhhc2hpLgoKV2l0aCBJTyBsaW1pdGluZyBhcHByb2FjaCBtaW5pbXVtIHJl
+cXVpcmVtZW50cyBhcmUgc3VwcG9zZWQgdG8gYmUKZ3VhcmFudGVlZCBpZiB0aGUgdXNlciBjb25m
+aWd1cmVzIGEgZ2VuZXJpYyBibG9jayBkZXZpY2Ugc28gdGhhdCB0aGUgc3VtCm9mIHRoZSBsaW1p
+dHMgZG9lc24ndCBleGNlZWQgdGhlIHRvdGFsIElPIGJhbmR3aWR0aCBvZiB0aGF0IGRldmljZS4g
+QnV0LAppbiBwcmluY2lwbGUsIHRoZXJlJ3Mgbm90aGluZyBpbiAidGhyb3R0bGluZyIgdGhhdCBn
+dWFyYW50ZWVzICJmYWlybmVzcyIKYW1vbmcgZGlmZmVyZW50IGNncm91cHMgZG9pbmcgSU8gb24g
+dGhlIHNhbWUgYmxvY2sgZGV2aWNlcywgdGhhdCBtZWFucwp0aGVyZSdzIG5vdGhpbmcgdG8gZ3Vh
+cmFudGVlIG1pbmltdW0gcmVxdWlyZW1lbnRzIChhbmQgdGhpcyBpcyB0aGUKcmVhc29uIGJlY2F1
+c2UgSSBsaWtlZCB0aGUgU2F0b3NoaSdzIENGUS1jZ3JvdXAgYXBwcm9hY2ggdG9nZXRoZXIgd2l0
+aAppby10aHJvdHRsZSkuCgpBIG1vcmUgY29tcGxpY2F0ZWQgaXNzdWUgaXMgaG93IHRvIGV2YWx1
+YXRlIHRoZSB0b3RhbCBJTyBiYW5kd2lkdGggb2YgYQpnZW5lcmljIGRldmljZS4gV2UgY2FuIHVz
+ZSBzb21lIGtpbmQgb2YgYXZlcmFnaW5nL3ByZWRpY3Rpb24sIGJ1dApiYXNpY2FsbHkgaXQgd291
+bGQgYmUgaW5hY2N1cmF0ZSBkdWUgdG8gdGhlIG1lY2hhbmljIG9mIGRpc2tzIChoZWFkCnNlZWtz
+LCBidXQgYWxzbyBjYWNoaW5nLCBidWZmZXJpbmcgbWVjaGFuaXNtcyBpbXBsZW1lbnRlZCBkaXJl
+Y3RseSBpbnRvCnRoZSBkZXZpY2UsIGV0Yy4pLiBJdCdzIGEgaGFyZCBwcm9ibGVtLiBBbmQgdGhl
+IHNhbWUgcHJvYmxlbSBleGlzdHMgYWxzbwpmb3IgcHJvcG9ydGlvbmFsIGJhbmR3aWR0aCBhcyB3
+ZWxsLCBpbiB0ZXJtcyBvZiBJTyByYXRlIHByZWRpY3RhYmlsaXR5IEkKbWVhbi4KClRoZSBvbmx5
+IGRpZmZlcmVuY2UgaXMgdGhhdCB3aXRoIHByb3BvcnRpb25hbCBiYW5kd2lkdGggeW91IGtub3cg
+dGhhdAoodGFraW5nIHRoZSBzYW1lIGV4YW1wbGUgcmVwb3J0ZWQgYnkgSGlyb2thenUpIHdpdGgg
+aS5lLiAxMCBzaW1pbGFyIElPCnJlcXVlc3RzLCA3IHdpbGwgYmUgZGlzcGF0Y2hlZCB0byB0aGUg
+Zmlyc3QgY2dyb3VwIGFuZCAzIHRvIHRoZSBvdGhlcgpjZ3JvdXAuIFNvLCB5b3UgZG9uJ3QgbmVl
+ZCBhbnl0aGluZyB0byBndWFyYW50ZWUgImZhaXJuZXNzIiwgYnV0IGl0J3MKaGFyZCBhbHNvIGZv
+ciB0aGlzIGNhc2UgdG8gZXZhbHVhdGUgdGhlIGNvc3Qgb2YgdGhlIDcgSU8gcmVxdWVzdHMKcmVz
+cGVjdCB0byB0aGUgY29zdCBvZiB0aGUgb3RoZXIgMyBJTyByZXF1ZXN0cyBhcyBzZWVuIGJ5IHVz
+ZXIKYXBwbGljYXRpb25zLCB0aGF0IGlzIHRoZSBjb3N0IHRoZSB1c2VycyBjYXJlIGFib3V0LgoK
+LUFuZHJlYQpfX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fXwpD
+b250YWluZXJzIG1haWxpbmcgbGlzdApDb250YWluZXJzQGxpc3RzLmxpbnV4LWZvdW5kYXRpb24u
+b3JnCmh0dHBzOi8vbGlzdHMubGludXgtZm91bmRhdGlvbi5vcmcvbWFpbG1hbi9saXN0aW5mby9j
+b250YWluZXJz
