@@ -1,17 +1,18 @@
-From: "Paul Menage" <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH][RFC] dirty balancing for cgroups
-Date: Thu, 14 Aug 2008 01:38:17 -0700
-Message-ID: <6599ad830808140138u15f516fdpace0ba455406efd4__41814.1261594885$1218703246$gmane$org@mail.gmail.com>
-References: <20080711141511.515e69a5.kamezawa.hiroyu@jp.fujitsu.com>
-	<20080711055926.9AF4F5A03@siro.lan>
-	<20080711161349.c5831081.kamezawa.hiroyu@jp.fujitsu.com>
-	<1216043344.12595.89.camel@twins>
+From: Pavel Machek <pavel-AlSwsSmVLrQ@public.gmane.org>
+Subject: Re: [RFC][PATCH 1/4] checkpoint-restart: general infrastructure
+Date: Thu, 14 Aug 2008 07:53:02 +0200
+Message-ID: <20080814055301.GH6995__24881.0576544658$1218712459$gmane$org@ucw.cz>
+References: <20080807224033.FFB3A2C1@kernel> <200808081146.54834.arnd@arndb.de>
+	<1218221451.19082.36.camel@nimitz>
+	<200808090013.41999.arnd@arndb.de>
+	<1218234411.19082.58.camel@nimitz>
+	<20080811150703.GA25930@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1216043344.12595.89.camel@twins>
 Content-Disposition: inline
+In-Reply-To: <20080811150703.GA25930-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -21,23 +22,41 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Peter Zijlstra <a.p.zijlstra-/NLkJaSkS4VmR6Xm/wNWPw@public.gmane.org>
-Cc: linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, YAMAMOTO Takashi <yamamoto-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Theodore Tso <tytso-3s7WtUTddSA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Arnd Bergmann <arnd-r2nGTMty4D4@public.gmane.org>, Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Mon, Jul 14, 2008 at 6:49 AM, Peter Zijlstra <a.p.zijlstra-/NLkJaSkS4VmR6Xm/wNWPw@public.gmane.org> wrote:
->
-> The dirty page limit avoids deadlocks under certain situations, the per
-> BDI dirty limit avoids even mode deadlocks by providing isolation
-> between BDIs.
->
+Hi!
 
-As well as deadlocks, in the case of cgroups a big advantage of dirty
-limits is that it makes it easier to "loan" memory to groups above and
-beyond what they have been guaranteed. As long as we limit the
-dirty/locked memory for a cgroup to its guarantee, and require any
-extra memory to be clean and unlocked, then we can reclaim it in a
-hurry if another cgroup (that had been guaranteed that memory) needs
-it.
+> > > > I have to wonder if this is just a symptom of us trying to do this the
+> > > > wrong way.  We're trying to talk the kernel into writing internal gunk
+> > > > into a FD.  You're right, it is like a splice where one end of the pipe
+> > > > is in the kernel.
+> > > > 
+> > > > Any thoughts on a better way to do this?  
+> > > 
+> > > Maybe you can invert the logic and let the new syscalls create a file
+> > > descriptor, and then have user space read or splice the checkpoint
+> > > data from it, and restore it by writing to the file descriptor.
+> > > It's probably easy to do using anon_inode_getfd() and would solve this
+> > > problem, but at the same time make checkpointing the current thread
+> > > hard if not impossible.
+> > 
+> > Yeah, it does seem kinda backwards.  But, instead of even having to
+> > worry about the anon_inode stuff, why don't we just put it in a fs like
+> > everything else?  checkpointfs!
+> 
+> One reason is that I suspect that stops us from being able to send that
+> data straight to a pipe to compress and/or send on the network, without
+> hitting local disk.  Though if the checkpointfs was ram-based maybe not?
+> 
+> As Oren has pointed out before, passing in an fd means we can pass a
+> socket into the syscall.
 
-Paul
+If you do pass a socket, will it handle blocking correctly? Getting
+deadlocked task would be bad. What happens if I try to snapshot into
+/proc/self/fd/0 ? Or maybe restore from /proc/cmdline?
+
+-- 
+(english) http://www.livejournal.com/~pavelmachek
+(cesky, pictures) http://atrey.karlin.mff.cuni.cz/~pavel/picture/horses/blog.html
