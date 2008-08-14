@@ -1,46 +1,30 @@
-From: Brian Haley <brian.haley@hp.com>
-Subject: Re: [PATCH 2/2] netns: Add network namespace argument in rt6_fill_node()
- and ipv6_dev_get_saddr()
-Date: Thu, 14 Aug 2008 16:16:56 -0400
-Message-ID: <48A492B8.8010109@hp.com>
-References: <48A48722.3050509@hp.com> <48A48FC9.4020805@hp.com>
+From: Vlad Yasevich <vladislav.yasevich@hp.com>
+Subject: Re: [PATCH 0/2] netns: fix for NULL-dereference in ipv6 code
+Date: Thu, 14 Aug 2008 16:17:07 -0400
+Message-ID: <48A492C3.7080502@hp.com>
+References: <48A48717.4020609@hp.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+Content-Type: text/plain; charset=ISO-8859-1
 Content-Transfer-Encoding: 7bit
 Return-path: <netdev-owner@vger.kernel.org>
-In-Reply-To: <48A48FC9.4020805@hp.com>
+In-Reply-To: <48A48717.4020609@hp.com>
 Sender: netdev-owner@vger.kernel.org
-To: Vlad Yasevich <vladislav.yasevich@hp.com>
-Cc: David Miller <davem@davemloft.net>, netdev@vger.kernel.org, containers <containers@lists.osdl.org>, linux-sctp@vger.kernel.org
+To: Brian Haley <brian.haley@hp.com>
+Cc: David Miller <davem@davemloft.net>, netdev@vger.kernel.org, containers <containers@lists.osdl.org>
 List-Id: containers.vger.kernel.org
 
-Hi Vlad,
-
-Vlad Yasevich wrote:
-> Hi Brian
+Brian Haley wrote:
+> Hi,
 > 
-> Brian Haley wrote:
->> ---
->>
->> diff --git a/net/sctp/ipv6.c b/net/sctp/ipv6.c
->> index 483a01d..e0945d4 100644
->> --- a/net/sctp/ipv6.c
->> +++ b/net/sctp/ipv6.c
->> @@ -319,7 +319,8 @@ static void sctp_v6_get_saddr(struct sctp_sock *sk,
->>  			  __func__, asoc, dst, NIP6(daddr->v6.sin6_addr));
->>  
->>  	if (!asoc) {
->> -		ipv6_dev_get_saddr(dst ? ip6_dst_idev(dst)->dev : NULL,
->> +		ipv6_dev_get_saddr(NULL,
->> +				   dst ? ip6_dst_idev(dst)->dev : NULL,
->>  				   &daddr->v6.sin6_addr,
->>  				   inet6_sk(&sk->inet.sk)->srcprefs,
->>  				   &saddr->v6.sin6_addr);
-> 
-> 
-> I think this needs to use sock_net(sctp_opt2s(sk)) instead of NULL.
+> When fixing the NULL-dereference of the idev in rt6_fill_node(), I
+> noticed that dev_net() doesn't handle a NULL argument either.  These two
+> patches fix that, as well as add a network namespace argument to
+> rt6_fill_node() and ipv6_dev_get_saddr().
 
-Thanks Vlad, I didn't see that.  I noticed the xfrm code could pass 
-non-NULL has well, I'll respin.
+Brian
 
--Brian
+What is the reason that dev_net() would need to handle a NULL arg?
+
+I think a NULL pointer in dev_net is a bug if Network Namespaces are used.
+
+-vlad
