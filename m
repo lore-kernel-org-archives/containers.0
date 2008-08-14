@@ -1,17 +1,17 @@
-From: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: Re: [Devel] Re: [RFC][PATCH 1/4] checkpoint-restart:
-	general	infrastructure
-Date: Thu, 14 Aug 2008 08:16:17 -0700
-Message-ID: <1218726977.23641.6.camel__33709.5530624085$1218727125$gmane$org@nimitz>
-References: <20080807224033.FFB3A2C1@kernel>
-	<20080807224034.735B1F84@kernel>	<200808081146.54834.arnd@arndb.de>
-	<1218221451.19082.36.camel@nimitz> <489CB3CA.6050304@cs.columbia.edu>
-	<48A3E81C.6010008@openvz.org>
+From: David Collier-Brown <davecb-xsfywfwIY+M@public.gmane.org>
+Subject: Re: RFC: I/O bandwidth controller
+Date: Thu, 14 Aug 2008 07:18:13 -0400
+Message-ID: <48A41475.4070108__32902.5685591207$1218727394$gmane$org@sun.com>
+References: <1218117578.11703.81.camel@sebastian.kern.oss.ntt.co.jp>
+	<48A0A689.40908@gmail.com> <loom.20080812T071504-212@post.gmane.org>
+	<20080812.201025.57762305.taka@valinux.co.jp>
+	<48A18854.9020000@gmail.com>
+Reply-To: davecb-xsfywfwIY+M@public.gmane.org
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <48A3E81C.6010008-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+In-reply-to: <48A18854.9020000-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -21,26 +21,41 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Theodore Tso <tytso-3s7WtUTddSA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Arnd Bergmann <arnd-r2nGTMty4D4@public.gmane.org>
+To: righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org
+Cc: xen-devel-GuqFBffKawuULHF6PoxzQEEOCMrvLtNR@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, virtualization-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, dm-devel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, agk-9JcytcrH/bA+uJoB2kUjGw@public.gmane.org, dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, ngupta-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Thu, 2008-08-14 at 12:09 +0400, Pavel Emelyanov wrote:
-> E.g. consider we are saving a container image on ipv6 node and trying 
-> to restore from it on the one without the ipv6. In that case we *may*
-> have some object of for example CKPT_IPV6_IFA type of CLPT_IPV6_SOCK_INFO
-> and fail the restoration process when finding such in an input file. But 
-> what we should *not* do is to write any information about whether we had
-> the CONFIG_IPV6 turned on on the dumping side and check for this on the
-> restoring side.
+Andrea Righi wrote:
+> A more complicated issue is how to evaluate the total IO bandwidth of a
+> generic device. We can use some kind of averaging/prediction, but
+> basically it would be inaccurate due to the mechanic of disks (head
+> seeks, but also caching, buffering mechanisms implemented directly into
+> the device, etc.). It's a hard problem. And the same problem exists also
+> for proportional bandwidth as well, in terms of IO rate predictability I
+> mean.
 
-The only problem I can see with this is that you lose efficiency,
-especially when you have to build your checkpoint image with lots of
-things that are config-specific.
+  Actually it's a little-known easy problem.
 
-The approach sounds like a good one in theory, but I'm a bit skeptical
-that we could stick to it in practice, in a mainline kernel where there
-are billions of config options.  It is definitely something to strive
-for, though.  Good point!
+  The capacity planning community does it all the time, but then describes
+it in terms that are only interesting (intelligible?) to an enthusiastic
+amateur mathematician (;-))
 
--- Dave
+  One finds the point, called N*, at which the throughput flattens
+out and and the response time starts to grow without bounds, and
+calls that level the maximum.
+
+  In practice, one does an easier variant.  One sets a response-time 
+limit and throttles *everyone* proportionally when th disk starts to 
+regularly degrade beyond the limit.  Interestingly, because we're 
+slowing the application to prevent slowing the disks, the value we 
+pick needn't be terribly precise.  It also doesn't require any pre-
+knowledge about the disks.
+
+  Send me a note if you want to discuss this in more detail.
+
+--dave
+-- 
+David Collier-Brown            | Always do right. This will gratify
+Sun Microsystems, Toronto      | some people and astonish the rest
+davecb-xsfywfwIY+M@public.gmane.org                 |                      -- Mark Twain
+cell: (647) 833-9377, bridge: (877) 385-4099 code: 506 9191#
