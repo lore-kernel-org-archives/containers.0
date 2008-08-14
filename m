@@ -1,46 +1,37 @@
-From: Vlad Yasevich <vladislav.yasevich@hp.com>
-Subject: Re: [PATCH 2/2] netns: Add network namespace argument in rt6_fill_node()
- and ipv6_dev_get_saddr()
-Date: Thu, 14 Aug 2008 16:29:24 -0400
-Message-ID: <48A495A4.2010109@hp.com>
-References: <48A48722.3050509@hp.com> <48A48FC9.4020805@hp.com> <48A492B8.8010109@hp.com>
+From: Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Subject: Re: [PATCH 1/1] mm_owner: fix cgroup null dereference
+Date: Fri, 15 Aug 2008 02:28:32 +0530
+Message-ID: <48A49C78.7070100__19234.7521464855$1218748244$gmane$org@linux.vnet.ibm.com>
+References: <1218745013-9537-1-git-send-email-jirislaby@gmail.com>
+Reply-To: balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
+Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-Return-path: <netdev-owner@vger.kernel.org>
-In-Reply-To: <48A492B8.8010109@hp.com>
-Sender: netdev-owner@vger.kernel.org
-To: Brian Haley <brian.haley@hp.com>
-Cc: David Miller <davem@davemloft.net>, netdev@vger.kernel.org, containers <containers@lists.osdl.org>, linux-sctp@vger.kernel.org
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <1218745013-9537-1-git-send-email-jirislaby-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Jiri Slaby <jirislaby-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Cc: linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Brian Haley wrote:
-> Hi Vlad,
+Jiri Slaby wrote:
+> Hi,
 > 
-> Vlad Yasevich wrote:
->> Hi Brian
->>
->> Brian Haley wrote:
->>> ---
->>>
->>> diff --git a/net/sctp/ipv6.c b/net/sctp/ipv6.c
->>> index 483a01d..e0945d4 100644
->>> --- a/net/sctp/ipv6.c
->>> +++ b/net/sctp/ipv6.c
->>> @@ -319,7 +319,8 @@ static void sctp_v6_get_saddr(struct sctp_sock *sk,
->>>                __func__, asoc, dst, NIP6(daddr->v6.sin6_addr));
->>>  
->>>      if (!asoc) {
->>> -        ipv6_dev_get_saddr(dst ? ip6_dst_idev(dst)->dev : NULL,
->>> +        ipv6_dev_get_saddr(NULL,
->>> +                   dst ? ip6_dst_idev(dst)->dev : NULL,
->>>                     &daddr->v6.sin6_addr,
->>>                     inet6_sk(&sk->inet.sk)->srcprefs,
->>>                     &saddr->v6.sin6_addr);
->>
->>
->> I think this needs to use sock_net(sctp_opt2s(sk)) instead of NULL.
+> found this in mmotm, a fix for
+> mm-owner-fix-race-between-swap-and-exit.patch
+> 
 
-that was supposed to read: sock_net(sctp_opt2sk(sk)
+Thanks for catching this
 
--vlad
+Acked-by: Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+
+-- 
+	Balbir
