@@ -1,39 +1,35 @@
-From: Brian Haley <brian.haley-VXdhtT5mjnY@public.gmane.org>
+From: Brian Haley <brian.haley@hp.com>
 Subject: [PATCH v2] netns: Add network namespace argument to rt6_fill_node()
-	and ipv6_dev_get_saddr()
-Date: Thu, 14 Aug 2008 17:23:59 -0400
-Message-ID: <48A4A26F.1010302@hp.com>
+ and ipv6_dev_get_saddr()
+Date: Thu, 14 Aug 2008 17:38:12 -0400
+Message-ID: <48A4A5C4.4080109@hp.com>
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary="------------070606000600070101070202"
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: David Miller <davem-fT/PcQaiUtIeIZ0/mPfg9Q@public.gmane.org>
-Cc: YOSHIFUJI Hideaki <yoshfuji-VfPWfsRibaP+Ru+s062T9g@public.gmane.org>, containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, linux-sctp-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Content-Type: multipart/mixed;
+ boundary="------------050908000604000606070108"
+Return-path: <netdev-owner@vger.kernel.org>
+Sender: netdev-owner@vger.kernel.org
+To: David Miller <davem@davemloft.net>, YOSHIFUJI Hideaki <yoshfuji@linux-ipv6.org>
+Cc: containers <containers@lists.osdl.org>, linux-sctp@vger.kernel.org, netdev@vger.kernel.org
 List-Id: containers.vger.kernel.org
 
 This is a multi-part message in MIME format.
---------------070606000600070101070202
+--------------050908000604000606070108
 Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 Content-Transfer-Encoding: 7bit
 
-ipv6_dev_get_saddr() blindly de-references dst_dev to get the network 
-namespace, but some callers might pass NULL.  Change callers to pass a 
+Sorry for the resend, forgot netdev the first time.
+
+ipv6_dev_get_saddr() blindly de-references dst_dev to get the network
+namespace, but some callers might pass NULL.  Change callers to pass a
 namespace pointer instead.
 
 -Brian
 
-Signed-off-by: Brian Haley <brian.haley-VXdhtT5mjnY@public.gmane.org>
+Signed-off-by: Brian Haley <brian.haley@hp.com>
 ---
 
---------------070606000600070101070202
+
+--------------050908000604000606070108
 Content-Type: text/x-patch;
  name="netns.patch"
 Content-Transfer-Encoding: 7bit
@@ -223,14 +219,5 @@ index 483a01d..47f91af 100644
  				   inet6_sk(&sk->inet.sk)->srcprefs,
  				   &saddr->v6.sin6_addr);
 
---------------070606000600070101070202
-Content-Type: text/plain; charset="us-ascii"
-MIME-Version: 1.0
-Content-Transfer-Encoding: 7bit
-Content-Disposition: inline
 
-_______________________________________________
-Containers mailing list
-Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-https://lists.linux-foundation.org/mailman/listinfo/containers
---------------070606000600070101070202--
+--------------050908000604000606070108--
