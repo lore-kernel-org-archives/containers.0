@@ -1,17 +1,16 @@
-From: "Rafael J. Wysocki" <rjw-KKrjLPT3xs0@public.gmane.org>
-Subject: Re: [ProbableSpam]Re: [PATCH 2/5] Container Freezer: Make
-	refrigerator always available
-Date: Wed, 13 Aug 2008 16:31:48 +0200
-Message-ID: <200808131631.49889.rjw__45989.307788159$1218652888$gmane$org@sisk.pl>
-References: <20080811235323.872291138@us.ibm.com>
-	<200808122249.27553.rjw@sisk.pl>
-	<1218589300.19008.135.camel@localhost.localdomain>
+From: Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+Subject: Re: [Devel] Re: [RFC][PATCH 1/4] checkpoint-restart:
+	general	infrastructure
+Date: Thu, 14 Aug 2008 12:09:00 +0400
+Message-ID: <48A3E81C.6010008__34091.2484717139$1218701672$gmane$org@openvz.org>
+References: <20080807224033.FFB3A2C1@kernel>	
+	<20080807224034.735B1F84@kernel>	<200808081146.54834.arnd@arndb.de>	<1218221451.19082.36.camel@nimitz>
+	<489CB3CA.6050304@cs.columbia.edu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1218589300.19008.135.camel-bi+AKbBUZKY6gyzm1THtWbp2dZbC/Bob@public.gmane.org>
-Content-Disposition: inline
+In-Reply-To: <489CB3CA.6050304-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -21,65 +20,56 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Cc: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Linux-Kernel <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Cedric Le Goater <clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>, linux-pm-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Theodore Tso <tytso-3s7WtUTddSA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Arnd Bergmann <arnd-r2nGTMty4D4@public.gmane.org>, Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Wednesday, 13 of August 2008, Matt Helsley wrote:
+Oren Laadan wrote:
 > 
-> On Tue, 2008-08-12 at 22:49 +0200, Rafael J. Wysocki wrote:
-> > On Tuesday, 12 of August 2008, Matt Helsley wrote:
-> > > Now that the TIF_FREEZE flag is available in all architectures,
-> > > extract the refrigerator() and freeze_task() from kernel/power/process.c
-> > > and make it available to all.
-> > > 
-> > > The refrigerator() can now be used in a control group subsystem
-> > > implementing a control group freezer.
-> > > 
-> > > Signed-off-by: Cedric Le Goater <clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
-> > > Signed-off-by: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-> > > Acked-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-> > > Tested-by: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-> > 
-> > Your Signed-off-by implies your Tested-by (at least it should ;-)).
+> Dave Hansen wrote:
+>> On Fri, 2008-08-08 at 11:46 +0200, Arnd Bergmann wrote:
+>>> On Friday 08 August 2008, Dave Hansen wrote:
+>>>> +	hh->magic = 0x00a2d200;
+>>>> +	hh->major = (LINUX_VERSION_CODE >> 16) & 0xff;
+>>>> +	hh->minor = (LINUX_VERSION_CODE >> 8) & 0xff;
+>>>> +	hh->patch = (LINUX_VERSION_CODE) & 0xff;
+>> ...
+>>>> +}
+>>> Do you rely on the kernel version in order to determine the format
+>>> of the binary data, or is it just informational?
+>>>
+>>> If you think the format can change in incompatible ways, you
+>>> probably need something more specific than the version number
+>>> these days, because there are just so many different trees with
+>>> the same numbers.
+>> Yeah, this is very true.  My guess is that we'll need something like
+>> what we do with modversions. 
 > 
-> I wasn't sure that was always true so I added it just in case. I'll take
-> it out of any future postings.
-> 
-> > > ---
-> > [--snip--]
-> > > Index: linux-2.6.27-rc1-mm1/kernel/power/Kconfig
-> > > ===================================================================
-> > > --- linux-2.6.27-rc1-mm1.orig/kernel/power/Kconfig
-> > > +++ linux-2.6.27-rc1-mm1/kernel/power/Kconfig
-> > > @@ -85,6 +85,9 @@ config PM_SLEEP
-> > >  	depends on SUSPEND || HIBERNATION || XEN_SAVE_RESTORE
-> > >  	default y
-> > >  
-> > > +config FREEZER
-> > > +	def_bool PM_SLEEP
-> > > +
-> > 
-> > I'd still prefer this to go into a Kconfig in the parent directory (ie. where
-> > freezer.c and the Makefile building it are located).  Otherwise it's guaranteed
-> > to confuse someone.
-> 
-> 	I'm thinking of making a patch moving the cgroups config variables into
-> a kernel/Kconfig.cgroups file. Would moving config FREEZER to such a
-> file be satisfactory? Paul, what do you think?
+> Exactly. The header should eventually contain sufficient information
+> to describe the kernel version, configuration, compiler, cpu (arch and
+> capabilities), and checkpoint code version.
 
-Well, in fact FREEZER is not directly dependent on cgroups, as it can also
-depend on PM_SLEEP, even if cgroups are not used at all.
+Sorry for late response - I was on vacation till Wednesday.
 
-I would just add 'Kconfig.freezer' to 'kernel', put 'config FREEZER' in there
-and make it depend on whatever needs it.  Of course,
-'source "kernel/Kconfig.freezer"' would have to be added to top-level
-Kconfigs for all architectures, but please note that only a few architectures
-include 'kernel/power/Kconfig', so you'd have to change the top-level
-Kconfigs anyway.
+I am opposed against having *explicit* information about the kernel
+configuration inside the image.
 
-Alternatively, you can just add 'config FREEZER' directly to the top-level
-Kconfigs.
+I see this like we store object images in a file, and these images do 
+*not* change depending on the .config. But instead of this, at the time 
+of restore we may *only* detect whether we can restore this type of
+object or not.
 
-Thanks,
-Rafael
+E.g. consider we are saving a container image on ipv6 node and trying 
+to restore from it on the one without the ipv6. In that case we *may*
+have some object of for example CKPT_IPV6_IFA type of CLPT_IPV6_SOCK_INFO
+and fail the restoration process when finding such in an input file. But 
+what we should *not* do is to write any information about whether we had
+the CONFIG_IPV6 turned on on the dumping side and check for this on the
+restoring side.
+
+(Sorry, if this question is already settled, but the discussion thread
+ built by my mailer is a bit messy, so I suspect I could miss some part
+ of the threads)
+
+> How would you suggest to identify the origin tree with an identifier
+> (or a text field) in the header ?
