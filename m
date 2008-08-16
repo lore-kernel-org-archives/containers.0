@@ -1,67 +1,40 @@
-From: "IKEDA, Munehiro" <m-ikeda-MDRzhb/z0dd8UrSeD/g0lQ@public.gmane.org>
-Subject: [PATCH] cgroup: memory.force_empty can make system slowdown
-Date: Fri, 15 Aug 2008 22:26:25 -0400
-Message-ID: <48A63AD1.3010907__15601.2101019316$1218854073$gmane$org@ds.jp.nec.com>
+From: Daniel Lezcano <dlezcano@fr.ibm.com>
+Subject: Re: [PATCH 1/2] netns: fix NULL-dereference in dev_net()
+Date: Sat, 16 Aug 2008 23:30:09 +0200
+Message-ID: <48A746E1.90703@fr.ibm.com>
+References: <48A4871D.1030708@hp.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
-Cc: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Return-path: <netdev-owner@vger.kernel.org>
+In-Reply-To: <48A4871D.1030708@hp.com>
+Sender: netdev-owner@vger.kernel.org
+To: Brian Haley <brian.haley@hp.com>
+Cc: David Miller <davem@davemloft.net>, containers <containers@lists.osdl.org>, netdev@vger.kernel.org
 List-Id: containers.vger.kernel.org
 
-Cgroup's memory controller has a control file "memory.force_empty"
-to reset usage account charged to a cgroup.  The account shouldn't
-be reset if one or more processes are attached to the cgroup (at
-least for memory controller, IMHO).  So mem_cgroup_force_empty()
-is implemented to return -EBUSY and do nothing if so.
-However, cgroup on hierarchy root faultily might be a exception.
-Even if processes are attached to root cgroup (which is a "default"
-cgroup for processes), forcing-empty can run by writing something to
-memory.force_empty and it'll never end.
+Brian Haley wrote:
+> Change dev_net() to handle a NULL argument - return &init_net instead.
+> 
+> -Brian
+> 
+> Signed-off-by: Brian Haley <brian.haley@hp.com>
 
-Following patch prevents this issue.
+Did you fall into the case where the argument was NULL ?
 
-This patch is for cgroup infrastructure code.  The issue can be
-measured by modifying memory controller code also, namely to change
-mem_cgroup_force_empty() to see CSS_ROOT bit of css->flags.
-I believe cgroup->count approach like the patch below is rather
-generic and reasonable, how does that sound?
+If it is the case, I think it is not the proper way to handle that. 
+IMHO, this is the symptom the code which calls this function has a 
+problem with the network namespace and it should be changed to be 
+correct. eg, the code is assuming the network device is never null and 
+so the network namespace can be retrieved from it, a correct fix may be 
+to pass the network namespace as parameter of the function.
 
-Paul, Balbir?
+Returning &init_net if the network device is null will gracefully avoid 
+the kernel oopsing but will lead to some inconsistent behaviour and 
+confusion with what is happening with the namespace.
 
+IMO, we should be radical and let the kernel oopsing, giving us only one 
+action which is to fix asap the bug correctly.
 
-
-Signed-off-by: Munehiro "Muuhh" Ikeda <m-ikeda-MDRzhb/z0dd8UrSeD/g0lQ@public.gmane.org>
-
-diff -uNrp linux-2.6.27-rc3.orig/kernel/cgroup.c linux-2.6.27-rc3/kernel/cgroup.c
---- linux-2.6.27-rc3.orig/kernel/cgroup.c	2008-08-12 21:55:39.000000000 -0400
-+++ linux-2.6.27-rc3/kernel/cgroup.c	2008-08-15 20:52:52.000000000 -0400
-@@ -2264,8 +2264,10 @@ static void init_cgroup_css(struct cgrou
- 	css->cgroup = cgrp;
- 	atomic_set(&css->refcnt, 0);
- 	css->flags = 0;
--	if (cgrp == dummytop)
-+	if (cgrp == dummytop) {
- 		set_bit(CSS_ROOT, &css->flags);
-+		atomic_set(&css->cgroup->count, 1);
-+	}
- 	BUG_ON(cgrp->subsys[ss->subsys_id]);
- 	cgrp->subsys[ss->subsys_id] = css;
- }
-
-
-
--- 
-IKEDA, Munehiro
-  NEC Corporation of America
-    m-ikeda-MDRzhb/z0dd8UrSeD/g0lQ@public.gmane.org
+Thanks.
+   -- Daniel
