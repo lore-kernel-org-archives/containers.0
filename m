@@ -1,14 +1,14 @@
-From: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
-Subject: Re: [PATCH][RFC] dirty balancing for cgroups
-Date: Mon, 18 Aug 2008 16:58:56 +0900
-Message-ID: <20080818165856.0faeb0bb.kamezawa.hiroyu__410.783364395861$1219046101$gmane$org@jp.fujitsu.com>
-References: <1218116168.8625.38.camel@twins>
-	<20080813071505.930965A75@siro.lan>
+From: Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+Subject: Re: [Devel] [RFC][PATCH 1/4] checkpoint-restart: general
+	infrastructure
+Date: Mon, 18 Aug 2008 13:26:57 +0400
+Message-ID: <48A94061.8040206@openvz.org>
+References: <20080807224033.FFB3A2C1@kernel> <20080807224034.735B1F84@kernel>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20080813071505.930965A75-Pcsii4f/SVk@public.gmane.org>
+In-Reply-To: <20080807224034.735B1F84@kernel>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,37 +18,39 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: YAMAMOTO Takashi <yamamoto-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
-Cc: linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, a.p.zijlstra-/NLkJaSkS4VmR6Xm/wNWPw@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Theodore Tso <tytso-3s7WtUTddSA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Arnd Bergmann <arnd-r2nGTMty4D4@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Wed, 13 Aug 2008 16:15:05 +0900 (JST)
-yamamoto-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org (YAMAMOTO Takashi) wrote:
+> diff -puN /dev/null ckpt/ckpt_hdr.h
+> --- /dev/null	2007-04-11 11:48:27.000000000 -0700
+> +++ linux-2.6.git-dave/ckpt/ckpt_hdr.h	2008-08-07 15:37:22.000000000 -0700
+> @@ -0,0 +1,69 @@
+> +/*
+> + *  Generic container checkpoint-restart
+> + *
+> + *  Copyright (C) 2008 Oren Laadan
+> + *
+> + *  This file is subject to the terms and conditions of the GNU General Public
+> + *  License.  See the file COPYING in the main directory of the Linux
+> + *  distribution for more details.
+> + */
+> +
+> +#include <linux/types.h>
+> +
+> +struct cr_hdr {
+> +	__s16 type;
+> +	__s16 len;
+> +	__u32 id;
+> +};
 
-> hi,
-> 
-> > > @@ -485,7 +502,10 @@ unsigned long mem_cgroup_isolate_pages(unsigned long nr_to_scan,
-> > >  		if (PageUnevictable(page) ||
-> > >  		    (PageActive(page) && !active) ||
-> > >  		    (!PageActive(page) && active)) {
-> > > -			__mem_cgroup_move_lists(pc, page_lru(page));
-> > > +			if (try_lock_page_cgroup(page)) {
-> > > +				__mem_cgroup_move_lists(pc, page_lru(page));
-> > > +				unlock_page_cgroup(page);
-> > > +			}
-> > >  			continue;
-> > >  		}
-> > 
-> > This chunk seems unrelated and lost....
-> 
-> it's necessary to protect from mem_cgroup_{set,clear}_dirty
-> which modify pc->flags without holding mz->lru_lock.
-> 
+Sorry for probably being out-of-date again, but isn't it better to
+put these headers in the include/linux and export them to the user
+space?
 
-I'm now writing a patch to make page_cgroup->flags to be atomic_ops.
-Don't worry about this.
-(With remove-page-lock-cgroup patch, atomic_ops patch's performace is
- quite well.)
+Why? Because we'll need some image-dumping tool (let alone the
+image converting one for compatibility purposes) and these tools
+would require to know how the image looks like.
 
 Thanks,
--Kame
+Pavel
