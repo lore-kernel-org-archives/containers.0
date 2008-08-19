@@ -1,16 +1,11 @@
-From: Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: Re: [PATCH 1/1] mm_owner: fix cgroup null dereference
-Date: Tue, 19 Aug 2008 16:06:07 +0530
-Message-ID: <48AAA217.8040307__41929.2490966201$1219142428$gmane$org@linux.vnet.ibm.com>
-References: <1218745013-9537-1-git-send-email-jirislaby@gmail.com>
-	<48A49C78.7070100@linux.vnet.ibm.com> <48A9E82E.3060009@gmail.com>
-	<48AA4003.5080300@linux.vnet.ibm.com> <48AA970D.5050403@gmail.com>
-Reply-To: balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
+From: Takuya Yoshikawa <yoshikawa.takuya-gVGce1chcLdL9jVzuh4AOg@public.gmane.org>
+Subject: RFC: Attaching threads to cgroups is OK?
+Date: Tue, 19 Aug 2008 19:38:14 +0900
+Message-ID: <48AAA296.8050802@oss.ntt.co.jp>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <48AA970D.5050403-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -20,23 +15,39 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Jiri Slaby <jirislaby-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Cc: linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, virtualization-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Cc: =?ISO-8859-1?Q?zquez_Cao?= <fernando-gVGce1chcLdL9jVzuh4AOg@public.gmane.org>, =?ISO-8859-1?Q?Fernando_Luis_V=E1?=@smtp1.linux-foundation.org
 List-Id: containers.vger.kernel.org
 
-Jiri Slaby wrote:
-> On 08/19/2008 05:37 AM, Balbir Singh wrote:
->> Could you please help me with the steps to reproduce the problem.  I don't seem
->> to be hitting the mm->owner changed callback. I did have a test case for it when
->> I developed mm->owner functionality, but it does not trigger an oops for me.
-> 
-> I have no idea. My config is at:
-> http://decibel.fi.muni.cz/~xslaby/config-memrlimit-oops
-> I don't play with cgroups or anything, I just work on the system. Do you need a
-> test case, it's obvious from the code as far as I can see?
+Hi everyone,
 
-Yes, the problem is obvious, but I usually use small test cases or test
-scenarios to verify that the problem is fixed.
+I have a question about cgroup's policy concerning the treatment of 
+threads. Please consider that we want to attach an application which has 
+some threads already to a certain cgroup. If we echo the pid of this 
+application to the "tasks" file connected to this cgroup the threads 
+belonging to this application will NOT be moved to the new group. Is it 
+right? If so, is it OK?
 
--- 
-	Balbir
+I mean, in the current implementation, threads created before the 
+attachement of the parent process are not treated eaqually to those 
+created after.
+
+Could you tell me if you know something about the rules of attachement 
+of pid, or tid, to cgroups? -- what ID is OK to write to "tasks" file 
+and what we can expect as a result?
+
+
+Tsuruta-san, how about your bio-cgroup's tracking concerning this?
+If we want to use your tracking functions for each threads seperately, 
+there seems to be a problem.
+===cf. mm_get_bio_cgroup()===================
+           owner
+mm_struct ----> task_struct ----> bio_cgroup
+=============================================
+In my understanding, the mm_struct of a thread is same as its parent's.
+So, even if we attach the TIDs of some threads to different cgroups the 
+tracking always returns the same bio_cgroup -- its parent's group.
+Do you have some policy about in which case we can use your tracking?
+
+Thanks,
+-- Takuya Yoshikawa
