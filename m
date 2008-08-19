@@ -1,7 +1,7 @@
 From: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH 2/6] Container Freezer: uninline thaw_process()
-Date: Tue, 19 Aug 2008 16:22:34 -0700
-Message-ID: <20080819232233.732140572__13906.0438414619$1219188698$gmane$org@us.ibm.com>
+Subject: [PATCH 4/6] Container Freezer: Cleanup comment.
+Date: Tue, 19 Aug 2008 16:22:36 -0700
+Message-ID: <20080819232234.563323820__23558.22931645$1219188863$gmane$org@us.ibm.com>
 References: <20080819232232.432973784@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -20,104 +20,31 @@ To: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
 Cc: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Linux-Kernel <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, "Rafael J. Wysocki" <rjw-KKrjLPT3xs0@public.gmane.org>, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, linux-pm-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Now that the cgroup freezer system also calls thaw_process() inlining these
-functions uses more space. Uninlining returns some space:
-
-Before:
-	text	data	bss	dec	hex	filename
-	4260872	275532	290816	4827220 49a854	vmlinux
-After:
-	text	data	bss	dec	hex	filename
-	4260852	275532	290816	4827200	49a840	vmlinux
+Make this comment clearer.
 
 Signed-off-by: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 Cc: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
-Cc: Rafael J. Wysocki <rjw-KKrjLPT3xs0@public.gmane.org>
 ---
- include/linux/freezer.h |	29 +++--------------------------
- kernel/freezer.c        |	31 +++++++++++++++++++++++++++++++
- 2 files changed, 34 insertions(+), 26 deletions(-)
+Andrew was wondering if the comment was in the right place. I think it is but
+suspect it could stand to be clarified.
 
-Index: linux-2.6.27-rc1-mm1/include/linux/freezer.h
+ kernel/cgroup_freezer.c |    4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+Index: linux-2.6.27-rc1-mm1/kernel/cgroup_freezer.c
 ===================================================================
---- linux-2.6.27-rc1-mm1.orig/include/linux/freezer.h
-+++ linux-2.6.27-rc1-mm1/include/linux/freezer.h
-@@ -46,34 +46,11 @@ static inline bool should_send_signal(st
+--- linux-2.6.27-rc1-mm1.orig/kernel/cgroup_freezer.c
++++ linux-2.6.27-rc1-mm1/kernel/cgroup_freezer.c
+@@ -61,8 +61,8 @@ int cgroup_frozen(struct task_struct *ta
+ }
  
  /*
-  * Wake up a frozen process
-- *
-- * task_lock() is needed to prevent the race with refrigerator() which may
-- * occur if the freezing of tasks fails.  Namely, without the lock, if the
-- * freezing of tasks failed, thaw_tasks() might have run before a task in
-- * refrigerator() could call frozen_process(), in which case the task would be
-- * frozen and no one would thaw it.
+- * Buffer size for freezer state is limited by cgroups write_string()
+- * interface. See cgroups code for the current size.
++ * cgroups_write_string() limits the size of freezer state strings to
++ * CGROUP_LOCAL_BUFFER_SIZE
   */
--static inline int __thaw_process(struct task_struct *p)
--{
--	if (frozen(p)) {
--		p->flags &= ~PF_FROZEN;
--		return 1;
--	}
--	clear_freeze_flag(p);
--	return 0;
--}
-+extern int __thaw_process(struct task_struct *p);
- 
--static inline int thaw_process(struct task_struct *p)
--{
--	task_lock(p);
--	if (__thaw_process(p) == 1) {
--		task_unlock(p);
--		wake_up_process(p);
--		return 1;
--	}
--	task_unlock(p);
--	return 0;
--}
-+/* Takes and releases task alloc lock using task_lock() */
-+extern int thaw_process(struct task_struct *p);
- 
- extern void refrigerator(void);
- extern int freeze_processes(void);
-Index: linux-2.6.27-rc1-mm1/kernel/freezer.c
-===================================================================
---- linux-2.6.27-rc1-mm1.orig/kernel/freezer.c
-+++ linux-2.6.27-rc1-mm1/kernel/freezer.c
-@@ -120,3 +120,34 @@ void cancel_freezing(struct task_struct 
- 		spin_unlock_irqrestore(&p->sighand->siglock, flags);
- 	}
- }
-+
-+/*
-+ * Wake up a frozen process
-+ *
-+ * task_lock() is needed to prevent the race with refrigerator() which may
-+ * occur if the freezing of tasks fails.  Namely, without the lock, if the
-+ * freezing of tasks failed, thaw_tasks() might have run before a task in
-+ * refrigerator() could call frozen_process(), in which case the task would be
-+ * frozen and no one would thaw it.
-+ */
-+int __thaw_process(struct task_struct *p)
-+{
-+	if (frozen(p)) {
-+		p->flags &= ~PF_FROZEN;
-+		return 1;
-+	}
-+	clear_freeze_flag(p);
-+	return 0;
-+}
-+
-+int thaw_process(struct task_struct *p)
-+{
-+	task_lock(p);
-+	if (__thaw_process(p) == 1) {
-+		task_unlock(p);
-+		wake_up_process(p);
-+		return 1;
-+	}
-+	task_unlock(p);
-+	return 0;
-+}
+ static const char *freezer_state_strs[] = {
+ 	"THAWED",
 
 -- 
