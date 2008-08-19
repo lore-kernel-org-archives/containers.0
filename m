@@ -1,11 +1,16 @@
-From: "dh.jya-ral2JQCrhuEAvxtiuMwx3w@public.gmane.org" <dh.jya-ral2JQCrhuEAvxtiuMwx3w@public.gmane.org>
-Subject: =?GB2312?B?MjAwONbQufq9qNb+17DKzr270te74Q==?=
-Date: Wed, 20 Aug 2008 06:21:44 +0800
-Message-ID: <200808182222.m7IMMcbI011342@smtp1.linux-foundation.org>
+From: Ryo Tsuruta <ryov-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
+Subject: Re: [PATCH 4/7] bio-cgroup: Split the cgroup memory subsystem into
+	two parts
+Date: Tue, 19 Aug 2008 12:28:11 +0900 (JST)
+Message-ID: <20080819.122811.59660409.ryov__933.994170236652$1219116718$gmane$org@valinux.co.jp>
+References: <20080812.213449.104039151.ryov@valinux.co.jp>
+	<20080812.213533.189720227.ryov@valinux.co.jp>
+	<20080818103938.8b4e8bfa.kamezawa.hiroyu@jp.fujitsu.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="gb2312"
-Content-Transfer-Encoding: base64
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <20080818103938.8b4e8bfa.kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -15,72 +20,20 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org
+Cc: xen-devel-GuqFBffKawuULHF6PoxzQEEOCMrvLtNR@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, virtualization-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, dm-devel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, agk-9JcytcrH/bA+uJoB2kUjGw@public.gmane.org, xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org, fernando-gVGce1chcLdL9jVzuh4AOg@public.gmane.org, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-CgogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAyMDA4INbQILn6IL2oINb+INewIMrOIL27
-INLXILvhCgogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgKNPrueO9u7vhzazG2r7Z0NCj
-rL27u9TP4NOzKQoKPT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09
-PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PQogICAgMjAw
-ONbQufq9qNb+17DKzr270te74b2r09oyMDA4xOoxMNTCMTjI1dbBMjHI1dTauePW3czl0/253dPr
-ueO9u7vhzazG2r7Z0NCjrMrSxNrN4tW5s/bD5rv9CrTvtb01zfLGvbe9w9ejrLmyyejVuc671Lwx
-NTAwuPajrNSkvMayztW5xvPStb2rs6y5/TgwMNPgvNKho9bQufq9qNb+17DKzr270te9q9PaMjAw
-OMTq063AtL/n1L0Kyr23otW5o6zVubvhvOGz1qGw0tS9+LP2v9rOqrW8z/KhsbXE19zM5baozruj
-rLKivNO087bUufrE2srQs6G1xLnY16LBprbIo6zHv8GmtPLU7M7SufrWqsP7tcS5+gq8yr2o1v7X
-sMrOvbvS18qiu+GhozIwMDjW0Ln6vajW/tewys69u9LXu+G9q9LU0ru49tW40MK1xMPmw7LTrb3T
-ufrE2s3iwLSx9qGjICAgICAgzqrF5LrPobC/59S9Csq9obG3otW5tcTQ6NKqo6zW97Dst729q9fp
-1q+24Le9zruhos+1zbO7r7XEzca547vutq+jrNbG1OzHv7TztcTQ+7SruaXKxqGjsPzAqNaxvdPR
-+8fruPe5+sP7wdAKx7DDqbXEvq3P+snMoaLDs9LXycy1vbvho7u31r3Xts7V2b+q0MLOxbeisry7
-4aOs0K3NrLn6xNrN4s/gudjQrbvhoaK5pMnMzcXM5bywufrN4teky+u7+rm5ubLNrArV0MnMo7vT
-67qjxNrN4ry4yq680teo0rWxqL+voaLU09a+oaLN+NW+tcjDvczlvajBornjt7q2+L30w9y1xLrP
-1/ejrNPQvMa7rrXYzba3xbTzuebEo7njuObQ+7SrCrrN1bm74bavzKy1yKOsyLexo9W5u+G1xMLy
-vNK55sSjoaMKICAgINbQufq9qNb+17DKzr270te74b2r0v3B7NHH1t69qNew0MKzscH3o6y54bO5
-obDOqsLyvNLM4bmp0ru49s3q1fu1xLLJubrGvcyoo6zOqrLO1bnJzLS01Oy4/Aq24L34yOu5+rzK
-us25+sTat9bP+srQs6G7+rvhobG1xLDs1bnA7cTuo6yyu7bPzOG439W5u+HGt9bKo6yyu7bPz/Kh
-sM7SufrX7r7f07DP7MGmtcS9qNb+17DKztDQCtK1yqK74aGxtcTEv7HqtvjC9b34oaMgCgqh9CDX
-6davu/q5uaO6CsX617y1pc67o7q5+rzSuaTJzNDQ1f653MDt19y+1grW97DstaXOu6O61tC5+re/
-tdiy+tK10K274Qqz0LDstaXOu6O6uePW3bq6zqzVucDA09DP3rmry74K1qez1rWlzrujurj3yqHK
-0NPQudi9qMnozPyhor2ozq+hore/svq53MDtvta1yCAK0K2w7LWlzrujugq498qhytDT0LnY17DK
-ztDQ0rXQrbvhCsPA0ce3v7XYsvrQrbvho6jDwLn6o6kK0N3LubbZt7+12LL60K274aOow8C5+gq1
-wrn6vajW/tDQ0rXQrbvhCtHH1t69qNb+yqbQrbvhCsW31t7EvtK10K274Qq808TDtPPEvtK10K27
-4QoKvbvS17vhyKu5+s2z0ru3/s7xtee7sKO6CjAyMC0yODY4MDUwMiAg0e7Qob3jCkUtbWFpbDpi
-dWlsZGZhaXJAMTI2LmNvbSAgCsaqt/nL+c/eo6zI59Doz+rPuLLO1bnJzNfKwc8sx+u158/y1+nO
-r7vhy/fIoaOs0LvQu6OhIAo9PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09
-PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09Cgqh
-9CCyztW5z7jU8joKCtW5u+HD+7PGo7oyMDA41tC5+r2o1v7XsMrOvbvS17vhCtW5s/a12LXjo7q5
-49bdzOXT/bnd1bnAwNbQ0MQKsrzVucqxvOSjujIwMDjE6jEw1MIxNsjV1sExMNTCMTfI1QrVubP2
-yrG85KO6MjAwOMTqMTDUwjE4yNXWwTEw1MIyMcjVCrO31bnKsbzko7oyMDA4xOoxMNTCMjHI1QrX
-qNK1udvW2qO6MjAwOMTqMTDUwjE4yNXWwTIxyNXJz87nOaO6MzDWwc/Czuc0o7ozMArVubvhuebE
-o6O61bm53cTazeK5stPQNc3yxr23vcPXo6gxNTAwuPbVuc67o6kKCtW5x/i7rrfWvLCyztW5t7bO
-p6O6CgrW0Ln6zsDUoS+z+Le/1bnH+CAgCtX7zOXUocrSoaLUobjXwOChosHc1KHA4KGi1/mx48b3
-oaLMqMXooaLUocrSzuW98C/F5Lz+wOChos7A1KG+taGi076z2MnoyqmhosjIy67G96GiyKHFr8b3
-oaLUocrSCrnxoaKz97nxoaKz+Le/1O6+36Giz7TO77LboaLNz7DRs9ihorP4t7+50rz+oaK85Lj0
-IAoK1tC5+r2o1v7XsMrOzuW98NW5x/ggCr2o1v7O5b3woaLXsMrOzuW98KOoy/ihosCtytajqaGi
-zPrS1dbGxrehos7lvfDF5Lz+oaLO5b3wuaS+36GizuW98MSjvt+hos7lvfDW/dTsIAoK1tC5+tfU
-tq/Dxbyww8W/2M7lvfDVucf4ICAKuPfA4NfUtq/DxaGiw8W/2M7lvfDPtc2zvLDF5Lz+oaLDxb37
-tefX08+1zbO1yCAKCtbQufrDxaGitLDVucf4IArEvsPFoaLL3LjWL8LBus+98C+41sPFoaK0sCAK
-CtbQufqyo8Gn1bnH+Aq9qNb+L9ewys6yo8GnoaLS1cr1sqPBp6GisqPBp9bGxrcgCgrW0Ln6zOy7
-qKGixLvHvaGix73WvbywytLE2tewys7Vucf4IArM7Luoo6zHvda9o6zCwbDlL8emsOUvtePKvS+1
-pdSqL73wyvTEu8e9oaLEu8e9xeS8/rywvNO5pMnosbijrNH0ueKw5aGiyq+44NbGxrehorjWveG5
-uSAKCtbQufrNv8HPoaK7r9GnvaiyxNW5x/ggCse9w+Yvt8DLri+12Ma6zb/Bz6Gizb/Bz9b6vMGh
-os2/wc+w/NewssTBz6O7uMm328mwvayju9Wzus+8waGizeK807zBoaLW+rzBoaK9qNb+vbqhor26
-tPihoszut+y8wQqhorfA0OKyxMHPoaK9qNb+t8DLrrLEwc+horfAy67M7bzTvMGhorfAyfjCqbLE
-wc+horfAy668vMr1vLDP4LnYyeixuKO7zb/LotPDvt8gCgrW0Ln6zNW0yaGiyq+yxNSw0tXVucf4
-IArM1bTJoaLKr8HPo6i7qLja0dKhorTzwO3Kr6GisOXR0qGiybDR0qGiyq/TosqvoaLC0cqvoaLI
-y9Tsyq+1yKOpoaLKr7XxvLDKr9bGxrehotLs0M3Kr7LEoaLKr7LEyfoKsvrJ6LG4oaLUsNLVzsS7
-r8qvCgrW0Ln6wqXM3dW5x/ggCsS+wqXM3aGixuTL/MKlzN28sM/gudjF5Lz+IArW0Ln6xuTL+7zS
-vtMg17DKztW5x/gKyOvHvbnxoaLSxsPFoaK49LbPoaK+xrXq17DKzqGisOy5q9ewys6horXnuaS1
-58b4tcgKCqH0INW5u+G77ravOgoK1bm74bvutq/A+sC0ysexvrvhtcTSu7TzwcG146OsxuSy47TO
-1q6436Osyea8sMPmueO3uqOsye7K3LnjtPOyztW5ycy6zbLJubrJzLXEusPGwKOsxL/HsNW5u+G7
-7ravCtX91Nq99MLgw9y5xLXYst+7rtbQo6zS0bP1sr3It7aotcS77rav09DS1M/CvLi49re9w+aj
-qL7fzOW77ravsLLFxbywyrG85M7Sw8e9q8nUuvPNqNaqo6mjuiAKMS7QwrLEwc+hotDCvLzK9aGi
-0MKy+sa3zca96bvhIAoyLrnj1t23v7XYsvq5pLPMz+7Ev7eisry74SAgCjMu1tC5+rn6vMqyybm6
-warDyyAgCjQuyfrMrLu3vrO9qLLE0+vCzMmrvajW/tGhssTC28yzIAo1Lr2o1v7Ptc2zveK+9re9
-sLjXqMzi0dDM1rvhICAKNi7Iq7n6saPVz9DN16HVrMnovMa437flwtvMswoKvbvS17vhyKu5+s2z
-0ru3/s7xtee7sKO6CjAyMC0yODY4MDUwMiAg0e7Qob3jCkUtbWFpbDpidWlsZGZhaXJAMTI2LmNv
-bSAgCsaqt/nL+c/eo6zI59Doz+rPuLLO1bnJzNfKwc8sx+u158/y1+nOr7vhy/fIoaOs0LvQu6Oh
-IAo9PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09
-PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09Cl9fX19fX19fX19fX19fX19f
-X19fX19fX19fX19fX19fX19fX19fX19fX19fX19fCkNvbnRhaW5lcnMgbWFpbGluZyBsaXN0CkNv
-bnRhaW5lcnNAbGlzdHMubGludXgtZm91bmRhdGlvbi5vcmcKaHR0cHM6Ly9saXN0cy5saW51eC1m
-b3VuZGF0aW9uLm9yZy9tYWlsbWFuL2xpc3RpbmZvL2NvbnRhaW5lcnM=
+Hi Kamezawa-san,
+
+> I'm now writing remove-lock-page-cgroup patches. it works well.
+> please wait for a while...
+
+I'm looking forward to those patches.
+
+By the way, I'm glad if memory-cgroup has a feature which can make a
+page_cgroup move between cgroups with small overhead. It makes
+bio-cgroup improve the accuracy of tracking down pages.
+
+Thanks,
+Ryo Tsuruta
