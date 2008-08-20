@@ -1,60 +1,28 @@
-From: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: Re: [Devel] [RFC][PATCH 1/4] checkpoint-restart: general
-	infrastructure
-Date: Wed, 20 Aug 2008 12:10:45 -0700
-Message-ID: <1219259445.8960.45.camel__39234.9448790357$1219259740$gmane$org@nimitz>
-References: <20080807224033.FFB3A2C1@kernel>
-	<20080807224034.735B1F84@kernel>  <48A94061.8040206@openvz.org>
+From: Alan Cox <alan@lxorguk.ukuu.org.uk>
+Subject: Re: [Bugme-new] [Bug 11381] New: default shmmax
+Date: Wed, 20 Aug 2008 19:55:09 +0100
+Message-ID: <20080820195509.00994d51@lxorguk.ukuu.org.uk>
+References: <bug-11381-10286@http.bugzilla.kernel.org/>
+	<20080820120043.e6e7e436.akpm@linux-foundation.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
+Content-Type: text/plain; charset=US-ASCII
 Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <48A94061.8040206-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Theodore Tso <tytso-3s7WtUTddSA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Arnd Bergmann <arnd-r2nGTMty4D4@public.gmane.org>
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1756330AbYHTTP3@vger.kernel.org>
+In-Reply-To: <20080820120043.e6e7e436.akpm@linux-foundation.org>
+Sender: linux-kernel-owner@vger.kernel.org
+To: Andrew Morton <akpm@linux-foundation.org>
+Cc: peter_e@gmx.net, bugme-daemon@bugzilla.kernel.org, linux-kernel@vger.kernel.org, Nadia Derbey <Nadia.Derbey@bull.net>, Solofo Ramangalahy <Solofo.Ramangalahy@bull.net>, Manfred Spraul <manfred@colorfullife.com>, Pierre Peiffer <peifferp@gmail.com>, containers@lists.osdl.org
 List-Id: containers.vger.kernel.org
 
-On Mon, 2008-08-18 at 13:26 +0400, Pavel Emelyanov wrote: 
-> > diff -puN /dev/null ckpt/ckpt_hdr.h
-> > --- /dev/null	2007-04-11 11:48:27.000000000 -0700
-> > +++ linux-2.6.git-dave/ckpt/ckpt_hdr.h	2008-08-07 15:37:22.000000000 -0700
-> > @@ -0,0 +1,69 @@
-> > +/*
-> > + *  Generic container checkpoint-restart
-> > + *
-> > + *  Copyright (C) 2008 Oren Laadan
-> > + *
-> > + *  This file is subject to the terms and conditions of the GNU General Public
-> > + *  License.  See the file COPYING in the main directory of the Linux
-> > + *  distribution for more details.
-> > + */
-> > +
-> > +#include <linux/types.h>
-> > +
-> > +struct cr_hdr {
-> > +	__s16 type;
-> > +	__s16 len;
-> > +	__u32 id;
-> > +};
-> 
-> Sorry for probably being out-of-date again, but isn't it better to
-> put these headers in the include/linux and export them to the user
-> space?
-> 
-> Why? Because we'll need some image-dumping tool (let alone the
-> image converting one for compatibility purposes) and these tools
-> would require to know how the image looks like.
+> It would be useful to get distro input on this.  Do they override the
+> kernel default at boot time?  If so, what do they do?
 
-What's the deal with headers being exported these days?  Don't we always
-have to sanitize them before we ship them over to userspace anyway?
+Red Hat provide a sysctl tuning config file and I believe things like the
+Oracle install docs cover this.
 
--- Dave
+There is btw no earthly reason why a postgres package can't include a
+tool to do this or postgres can't check and update it as part of its
+own set up and config file options
+
+
+Alan
