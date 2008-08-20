@@ -1,16 +1,15 @@
-From: Hirokazu Takahashi <taka-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
-Subject: Re: [PATCH 4/7] bio-cgroup: Split the cgroup memory subsystem into
-	two parts
-Date: Wed, 20 Aug 2008 14:47:36 +0900 (JST)
-Message-ID: <20080820.144736.16128062.taka__46060.4396452711$1219211383$gmane$org@valinux.co.jp>
-References: <48AA4594.1000908@linux.vnet.ibm.com>
-	<20080819.214635.70071441.taka@valinux.co.jp>
-	<48AACF41.5090905@linux.vnet.ibm.com>
+From: Takuya Yoshikawa <yoshikawa.takuya-gVGce1chcLdL9jVzuh4AOg@public.gmane.org>
+Subject: Re: RFC: Attaching threads to cgroups is OK?
+Date: Wed, 20 Aug 2008 14:52:38 +0900
+Message-ID: <48ABB126.8000606@oss.ntt.co.jp>
+References: <48AAA296.8050802@oss.ntt.co.jp>
+	<20080819202237.edd75933.kamezawa.hiroyu@jp.fujitsu.com>
+	<48AABC31.7070207@linux.vnet.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <48AACF41.5090905-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+In-Reply-To: <48AABC31.7070207-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -21,40 +20,67 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
-Cc: xen-devel-GuqFBffKawuULHF6PoxzQEEOCMrvLtNR@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, virtualization-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, dm-devel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, agk-9JcytcrH/bA+uJoB2kUjGw@public.gmane.org, fernando-gVGce1chcLdL9jVzuh4AOg@public.gmane.org, xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org
+Cc: "menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org" <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, fernando-gVGce1chcLdL9jVzuh4AOg@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, virtualization-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Hi,
+Thank you for comments and links!
 
-> >>>> I'm now writing remove-lock-page-cgroup patches. it works well.
-> >>>> please wait for a while...
-> >>> I'm looking forward to those patches.
-> >>>
-> >>> By the way, I'm glad if memory-cgroup has a feature which can make a
-> >>> page_cgroup move between cgroups with small overhead. It makes
-> >>> bio-cgroup improve the accuracy of tracking down pages.
-> >> Page movement can be a very expensive operation and is proportional to the size
-> >> of the control group. I think movement should be an optional feature, if we ever
-> >> add it.
-> > 
-> > Yes, we should avoid moving pages as far as it is balanced fairly well
-> > between groups.
-> > 
-> > But I want to move pages between bio-cgoups in case it started charging
-> > quite a few I/O requests to a wrong bio-cgroup. I think it will be okay
-> > if pages moves between bio-cgroups, but they don't need to move between
-> > memory cgroups. I know the latter is really heavy and the effect seems
-> > to be so limited.
+Balbir Singh wrote:
+> KAMEZAWA Hiroyuki wrote:
+>>> I mean, in the current implementation, threads created before the 
+>>> attachement of the parent process are not treated eaqually to those 
+>>> created after.
+>>>
+>>> Could you tell me if you know something about the rules of attachement 
+>>> of pid, or tid, to cgroups? -- what ID is OK to write to "tasks" file 
+>>> and what we can expect as a result?
+>>>
+>> Any PID is ok for "tasks". IIRC, Paul proposed "procs" file, which support
+>> moving all threads of the same PIDs.
+>> This mail from Paul explains some : http://lwn.net/Articles/289930/
+>>
 > 
-> I was under the impression that you wanted memory-cgroup to provide the page
-> movement feature. That is not on the TODO list for us now.
+> Yes, this was also discussed at the containers mini-summit
+> 
+> Please see
+> http://groups.google.com/group/fa.linux.kernel/browse_thread/thread/ccb5e818209af143
+> 
 
-I think it's practically enough to implement this feature only on
-bio-cgroup side and leave the memory controller untouched.
-This kind of requests will happen only when making pages dirty.
+I read the discussions and understood the reasons.
 
-Of cousrse I'd be happier if you put it on your list to implement
-this as a generic feature.
+>>> Tsuruta-san, how about your bio-cgroup's tracking concerning this?
+>>> If we want to use your tracking functions for each threads seperately, 
+>>> there seems to be a problem.
+>>> ===cf. mm_get_bio_cgroup()===================
+>>>            owner
+>>> mm_struct ----> task_struct ----> bio_cgroup
+>>> =============================================
+>>> In my understanding, the mm_struct of a thread is same as its parent's.
+>>> So, even if we attach the TIDs of some threads to different cgroups the 
+>>> tracking always returns the same bio_cgroup -- its parent's group.
+>>> Do you have some policy about in which case we can use your tracking?
+>>>
+>> It's will be resitriction when io-controller reuse information of the owner
+>> of memory. But if it's very clear who issues I/O (by tracking read/write
+>> syscall), we may have chance to record the issuer of I/O to page_cgroup
+>> struct. 
+> 
+> We already do some tracking (at dirty time, IIRC) for task IO accounting. For
+> the memory controller, tasks are virtually grouped by the mm_struct.
+> 
 
-Thanks,
-Hirokazu Takahsahi.
+I understand that controlling threads with their parent through the 
+common mm_struct is useful and in some sense reasonable. But the 
+following situation seems to me little bit confusing.
+
+TWO POSSIBLE WAYS OF CONTROL -- after the parent process was moved
+===================================================================
+NEW group: [parent process]----> COMMON mm_struct
+                              |
+OLD group: [threads]---------+
+
+Threads can be
+1. grouped by OLD group
+2. (virtually) grouped by mm_struct
+    --> same as grouped by NEW group
+===================================================================
