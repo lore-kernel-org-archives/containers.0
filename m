@@ -1,8 +1,7 @@
 From: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: [RFC v2][PATCH 5/9] Create trivial sys_checkpoint and sys_restore
-	system calls
-Date: Wed, 20 Aug 2008 12:26:03 -0700
-Message-ID: <20080820192603.AE9E8048@nimitz>
+Subject: [RFC v2][PATCH 9/9] remove ->cksum field
+Date: Wed, 20 Aug 2008 12:26:08 -0700
+Message-ID: <20080820192608.CEBC256B__48707.910886924$1219260615$gmane$org@nimitz>
 References: <20080820192557.98788FAB@nimitz>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -23,55 +22,49 @@ Cc: jeremy-TSDbQ3PG+2Y@public.gmane.org, Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfK
 List-Id: containers.vger.kernel.org
 
 
-From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+This is unused so far.  We'll add it back later.
 
-Create trivial sys_checkpoint and sys_restore system calls. They will
-enable to checkpoint and restart an entire container, to and from a
-checkpoint image file.
-
-First create a template for both syscalls: they take a file descriptor
-(for the image file) and flags as arguments. For sys_checkpoint the
-first argument identifies the target container; for sys_restart it will
-identify the checkpoint image.
-
-Signed-off-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 ---
 
- oren-cr.git-dave/arch/x86/kernel/syscall_table_32.S |    2 ++
- oren-cr.git-dave/include/asm-x86/unistd_32.h        |    2 ++
- oren-cr.git-dave/include/linux/syscalls.h           |    3 +++
- 3 files changed, 7 insertions(+)
+ oren-cr.git-dave/checkpoint/checkpoint.c |    2 --
+ oren-cr.git-dave/checkpoint/ckpt_hdr.h   |    1 -
+ oren-cr.git-dave/checkpoint/restart.c    |    3 +--
+ 3 files changed, 1 insertion(+), 5 deletions(-)
 
-diff -puN arch/x86/kernel/syscall_table_32.S~0006-Create-trivial-sys_checkpoint-and-sys_restore-system arch/x86/kernel/syscall_table_32.S
---- oren-cr.git/arch/x86/kernel/syscall_table_32.S~0006-Create-trivial-sys_checkpoint-and-sys_restore-system	2008-08-20 12:12:50.000000000 -0700
-+++ oren-cr.git-dave/arch/x86/kernel/syscall_table_32.S	2008-08-20 12:12:50.000000000 -0700
-@@ -332,3 +332,5 @@ ENTRY(sys_call_table)
- 	.long sys_dup3			/* 330 */
- 	.long sys_pipe2
- 	.long sys_inotify_init1
-+ 	.long sys_checkpoint
-+ 	.long sys_restart
-diff -puN include/asm-x86/unistd_32.h~0006-Create-trivial-sys_checkpoint-and-sys_restore-system include/asm-x86/unistd_32.h
---- oren-cr.git/include/asm-x86/unistd_32.h~0006-Create-trivial-sys_checkpoint-and-sys_restore-system	2008-08-20 12:12:50.000000000 -0700
-+++ oren-cr.git-dave/include/asm-x86/unistd_32.h	2008-08-20 12:12:50.000000000 -0700
-@@ -338,6 +338,8 @@
- #define __NR_dup3		330
- #define __NR_pipe2		331
- #define __NR_inotify_init1	332
-+#define __NR_checkpoint		333
-+#define __NR_restart		334
+diff -puN checkpoint/checkpoint.c~remove-unused-cksum checkpoint/checkpoint.c
+--- oren-cr.git/checkpoint/checkpoint.c~remove-unused-cksum	2008-08-20 12:12:51.000000000 -0700
++++ oren-cr.git-dave/checkpoint/checkpoint.c	2008-08-20 12:12:51.000000000 -0700
+@@ -125,8 +125,6 @@ static int cr_write_tail(struct cr_ctx *
+ 	h.id = 0;
  
- #ifdef __KERNEL__
+ 	hh->magic = CR_HEADER_MAGIC;
+-	hh->cksum[0] = 1;
+-       	hh->cksum[1] = 1;	/* TBD ... */
  
-diff -puN include/linux/syscalls.h~0006-Create-trivial-sys_checkpoint-and-sys_restore-system include/linux/syscalls.h
---- oren-cr.git/include/linux/syscalls.h~0006-Create-trivial-sys_checkpoint-and-sys_restore-system	2008-08-20 12:12:50.000000000 -0700
-+++ oren-cr.git-dave/include/linux/syscalls.h	2008-08-20 12:12:50.000000000 -0700
-@@ -625,4 +625,7 @@ asmlinkage long sys_fallocate(int fd, in
+ 	ret = cr_write_obj(ctx, &h, hh);
+ 	kfree(hh);
+diff -puN checkpoint/ckpt_hdr.h~remove-unused-cksum checkpoint/ckpt_hdr.h
+--- oren-cr.git/checkpoint/ckpt_hdr.h~remove-unused-cksum	2008-08-20 12:12:51.000000000 -0700
++++ oren-cr.git-dave/checkpoint/ckpt_hdr.h	2008-08-20 12:12:51.000000000 -0700
+@@ -43,7 +43,6 @@ struct cr_hdr_head {
  
- int kernel_execve(const char *filename, char *const argv[], char *const envp[]);
+ struct cr_hdr_tail {
+ 	__u32 magic;
+-	__u32 cksum[2];
+ };
  
-+asmlinkage long sys_checkpoint(pid_t pid, int fd, unsigned long flags);
-+asmlinkage long sys_restart(int crid, int fd, unsigned long flags);
-+
- #endif
+ struct cr_hdr_task {
+diff -puN checkpoint/restart.c~remove-unused-cksum checkpoint/restart.c
+--- oren-cr.git/checkpoint/restart.c~remove-unused-cksum	2008-08-20 12:12:51.000000000 -0700
++++ oren-cr.git-dave/checkpoint/restart.c	2008-08-20 12:12:51.000000000 -0700
+@@ -113,8 +113,7 @@ static int cr_read_tail(struct cr_ctx *c
+ 	if (ret < 0)
+ 		return ret;
+ 
+-	if (hh->magic != CR_HEADER_MAGIC ||
+-	    hh->cksum[0] != 1 || hh->cksum[1] != 1)
++	if (hh->magic != CR_HEADER_MAGIC)
+ 		return -EINVAL;
+ 
+ 	kfree(hh);
 _
