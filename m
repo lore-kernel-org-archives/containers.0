@@ -1,15 +1,15 @@
-From: Takuya Yoshikawa <yoshikawa.takuya-gVGce1chcLdL9jVzuh4AOg@public.gmane.org>
-Subject: Re: RFC: Attaching threads to cgroups is OK?
-Date: Wed, 20 Aug 2008 14:52:38 +0900
-Message-ID: <48ABB126.8000606@oss.ntt.co.jp>
-References: <48AAA296.8050802@oss.ntt.co.jp>
-	<20080819202237.edd75933.kamezawa.hiroyu@jp.fujitsu.com>
-	<48AABC31.7070207@linux.vnet.ibm.com>
+From: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+Subject: Re: [PATCH 1/1] mm_owner: fix cgroup null dereference
+Date: Wed, 20 Aug 2008 15:59:09 +0900
+Message-ID: <20080820155909.cf3f73bc.kamezawa.hiroyu__44174.3570533164$1219215320$gmane$org@jp.fujitsu.com>
+References: <1218745013-9537-1-git-send-email-jirislaby@gmail.com>
+	<20080819141344.GF25239@balbir.in.ibm.com>
+	<48ABA9A8.1060806@cn.fujitsu.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <48AABC31.7070207-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+In-Reply-To: <48ABA9A8.1060806-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,68 +19,137 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
-Cc: "menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org" <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, fernando-gVGce1chcLdL9jVzuh4AOg@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, virtualization-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+Cc: linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Jiri Slaby <jirislaby-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Thank you for comments and links!
+On Wed, 20 Aug 2008 13:20:40 +0800
+Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org> wrote:
 
-Balbir Singh wrote:
-> KAMEZAWA Hiroyuki wrote:
->>> I mean, in the current implementation, threads created before the 
->>> attachement of the parent process are not treated eaqually to those 
->>> created after.
->>>
->>> Could you tell me if you know something about the rules of attachement 
->>> of pid, or tid, to cgroups? -- what ID is OK to write to "tasks" file 
->>> and what we can expect as a result?
->>>
->> Any PID is ok for "tasks". IIRC, Paul proposed "procs" file, which support
->> moving all threads of the same PIDs.
->> This mail from Paul explains some : http://lwn.net/Articles/289930/
->>
+> Balbir Singh wote:
+> > * Jiri Slaby <jirislaby-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org> [2008-08-14 22:16:53]:
+> > 
+> >> Hi,
+> >>
+> >> found this in mmotm, a fix for
+> >> mm-owner-fix-race-between-swap-and-exit.patch
+> >>
+> > 
+> > Does the patch below fix your problem, it's against mmotm 19th August
+> > 2008.
+> > 
 > 
-> Yes, this was also discussed at the containers mini-summit
+> I just triggered this bug. I think you also need the following change:
 > 
-> Please see
-> http://groups.google.com/group/fa.linux.kernel/browse_thread/thread/ccb5e818209af143
+> make memrlimit_cgroup_mm_owner_changed() aware that old_cgrp can be NULL,
+> and note we can't call memrlimit_cgroup_from_cgrp() with NULL argument.
 > 
-
-I read the discussions and understood the reasons.
-
->>> Tsuruta-san, how about your bio-cgroup's tracking concerning this?
->>> If we want to use your tracking functions for each threads seperately, 
->>> there seems to be a problem.
->>> ===cf. mm_get_bio_cgroup()===================
->>>            owner
->>> mm_struct ----> task_struct ----> bio_cgroup
->>> =============================================
->>> In my understanding, the mm_struct of a thread is same as its parent's.
->>> So, even if we attach the TIDs of some threads to different cgroups the 
->>> tracking always returns the same bio_cgroup -- its parent's group.
->>> Do you have some policy about in which case we can use your tracking?
->>>
->> It's will be resitriction when io-controller reuse information of the owner
->> of memory. But if it's very clear who issues I/O (by tracking read/write
->> syscall), we may have chance to record the issuer of I/O to page_cgroup
->> struct. 
-> 
-> We already do some tracking (at dirty time, IIRC) for task IO accounting. For
-> the memory controller, tasks are virtually grouped by the mm_struct.
+> Signed-off-by: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
 > 
 
-I understand that controlling threads with their parent through the 
-common mm_struct is useful and in some sense reasonable. But the 
-following situation seems to me little bit confusing.
+Thank you, it seems you fixed a problem which I met in my test.
 
-TWO POSSIBLE WAYS OF CONTROL -- after the parent process was moved
-===================================================================
-NEW group: [parent process]----> COMMON mm_struct
-                              |
-OLD group: [threads]---------+
+(*) When I migrate task under cpuset repeatedly, I can see Oops easily.
 
-Threads can be
-1. grouped by OLD group
-2. (virtually) grouped by mm_struct
-    --> same as grouped by NEW group
-===================================================================
+Tested-by: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+
+
+
+
+
+> diff --git a/mm/memrlimitcgroup.c.orig b/mm/memrlimitcgroup.c
+> index f7536dc..6559470 100644
+> --- a/mm/memrlimitcgroup.c.orig
+> +++ b/mm/memrlimitcgroup.c
+> @@ -249,17 +249,23 @@ static void memrlimit_cgroup_mm_owner_changed(struct cgroup_subsys *ss,
+>  	struct mm_struct *mm = get_task_mm(p);
+>  
+>  	BUG_ON(!mm);
+> -	memrcg = memrlimit_cgroup_from_cgrp(cgrp);
+> -	old_memrcg = memrlimit_cgroup_from_cgrp(old_cgrp);
+>  
+>  	/*
+>  	 * If we don't have a new cgroup, we just uncharge from the old one.
+>  	 * It means that the task is going away
+>  	 */
+> -	if (memrcg &&
+> -	    res_counter_charge(&memrcg->as_res, (mm->total_vm << PAGE_SHIFT)))
+> -		goto out;
+> -	res_counter_uncharge(&old_memrcg->as_res, (mm->total_vm << PAGE_SHIFT));
+> +	if (cgrp) {
+> +		memrcg = memrlimit_cgroup_from_cgrp(cgrp);
+> +		if (res_counter_charge(&memrcg->as_res,
+> +				       mm->total_vm << PAGE_SHIFT))
+> +			goto out;
+> +	}
+> +
+> +	if (old_cgrp) {
+> +		old_memrcg = memrlimit_cgroup_from_cgrp(old_cgrp);
+> +		res_counter_uncharge(&old_memrcg->as_res,
+> +				     mm->total_vm <<PAGE_SHIFT);
+> +	}
+>  out:
+>  	mmput(mm);
+>  }
+> 
+> 
+> >  
+> > Reported-by: jirislaby-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org
+> > 
+> > Jiri reported a problem and saw an oops when the memrlimit-fix-race-with-swap
+> > patch is applied. He sent his patch on top to fix the problem, but ran into
+> > another issue. The root cause of the problem is that we are not suppose
+> > to call task_cgroup on NULL tasks. This patch reverts Jiri's patch and
+> > does not call task_cgroup if the passed task_struct (old) is NULL.
+> > 
+> > 
+> > Signed-off-by: Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+> > ---
+> > 
+> >  kernel/cgroup.c |    5 +++--
+> >  kernel/exit.c   |    2 +-
+> >  2 files changed, 4 insertions(+), 3 deletions(-)
+> > 
+> > diff -puN kernel/exit.c~memrlimit-fix-race-with-swap-oops kernel/exit.c
+> > --- linux-2.6.27-rc3/kernel/exit.c~memrlimit-fix-race-with-swap-oops	2008-08-19 18:50:39.000000000 +0530
+> > +++ linux-2.6.27-rc3-balbir/kernel/exit.c	2008-08-19 18:51:05.000000000 +0530
+> > @@ -641,8 +641,8 @@ retry:
+> >  	 * the callback and take action
+> >  	 */
+> >  	down_write(&mm->mmap_sem);
+> > -	cgroup_mm_owner_callbacks(mm->owner, NULL);
+> >  	mm->owner = NULL;
+> > +	cgroup_mm_owner_callbacks(mm->owner, NULL);
+> >  	up_write(&mm->mmap_sem);
+> >  	return;
+> >  
+> > diff -puN kernel/cgroup.c~memrlimit-fix-race-with-swap-oops kernel/cgroup.c
+> > --- linux-2.6.27-rc3/kernel/cgroup.c~memrlimit-fix-race-with-swap-oops	2008-08-19 18:50:39.000000000 +0530
+> > +++ linux-2.6.27-rc3-balbir/kernel/cgroup.c	2008-08-19 18:55:38.000000000 +0530
+> > @@ -2743,13 +2743,14 @@ void cgroup_fork_callbacks(struct task_s
+> >   */
+> >  void cgroup_mm_owner_callbacks(struct task_struct *old, struct task_struct *new)
+> >  {
+> > -	struct cgroup *oldcgrp, *newcgrp = NULL;
+> > +	struct cgroup *oldcgrp = NULL, *newcgrp = NULL;
+> >  
+> >  	if (need_mm_owner_callback) {
+> >  		int i;
+> >  		for (i = 0; i < CGROUP_SUBSYS_COUNT; i++) {
+> >  			struct cgroup_subsys *ss = subsys[i];
+> > -			oldcgrp = task_cgroup(old, ss->subsys_id);
+> > +			if (old)
+> > +				oldcgrp = task_cgroup(old, ss->subsys_id);
+> >  			if (new)
+> >  				newcgrp = task_cgroup(new, ss->subsys_id);
+> >  			if (oldcgrp == newcgrp)
+> > diff -puN mm/memrlimitcgroup.c~memrlimit-fix-race-with-swap-oops mm/memrlimitcgroup.c
+> > _
+> > 
+> 
+> --
+> To unsubscribe, send a message with 'unsubscribe linux-mm' in
+> the body to majordomo-Bw31MaZKKs0EbZ0PF+XxCw@public.gmane.org  For more info on Linux MM,
+> see: http://www.linux-mm.org/ .
+> Don't email: <a href=mailto:"dont-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org"> email-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org </a>
+> 
