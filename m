@@ -1,17 +1,13 @@
-From: Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: Re: RFC: Attaching threads to cgroups is OK?
-Date: Thu, 21 Aug 2008 09:02:04 +0530
-Message-ID: <48ACE1B4.8010000@linux.vnet.ibm.com>
-References: <48AAA296.8050802@oss.ntt.co.jp>
-	<20080819202237.edd75933.kamezawa.hiroyu@jp.fujitsu.com>
-	<20080820.204832.131207708.taka@valinux.co.jp>
-	<1219288081.28324.30.camel@sebastian.kern.oss.ntt.co.jp>
-Reply-To: balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
+From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Subject: Re: [RFC v2][PATCH 1/9] kernel based checkpoint-restart
+Date: Thu, 21 Aug 2008 01:15:20 -0400
+Message-ID: <48ACF9E8.6020203__49746.4510765441$1219296021$gmane$org@cs.columbia.edu>
+References: <Pine.LNX.4.64.0808202251500.17436@takamine.ncl.cs.columbia.edu>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1219288081.28324.30.camel-xpvPi5bcW5X5OjGIXfuPlhrrLbDL3r4M6qtp775pBPw@public.gmane.org>
+In-Reply-To: <Pine.LNX.4.64.0808202251500.17436-CXF6herHY6ykSYb+qCZC/1i27PF6R63G9nwVQlTi/Pw@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -21,75 +17,57 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: =?ISO-8859-1?Q?Fernando_Luis_V=E1zquez_Cao?= <fernando-gVGce1chcLdL9jVzuh4AOg@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, virtualization-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, jeremy-TSDbQ3PG+2Y@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, arnd-r2nGTMty4D4@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Fernando Luis V=E1zquez Cao wrote:
-> On Wed, 2008-08-20 at 20:48 +0900, Hirokazu Takahashi wrote:
->> Hi,
->>
->>>> Tsuruta-san, how about your bio-cgroup's tracking concerning this?
->>>> If we want to use your tracking functions for each threads seperately, =
 
->>>> there seems to be a problem.
->>>> =3D=3D=3Dcf. mm_get_bio_cgroup()=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=
-=3D=3D=3D=3D=3D=3D=3D
->>>>            owner
->>>> mm_struct ----> task_struct ----> bio_cgroup
->>>> =3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=
-=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D
->>>> In my understanding, the mm_struct of a thread is same as its parent's.
->>>> So, even if we attach the TIDs of some threads to different cgroups th=
-e =
+Subject line should have been 's/PATCH 1/PATCH 0/' ...
 
->>>> tracking always returns the same bio_cgroup -- its parent's group.
->>>> Do you have some policy about in which case we can use your tracking?
->>>>
->>> It's will be resitriction when io-controller reuse information of the o=
-wner
->>> of memory. But if it's very clear who issues I/O (by tracking read/write
->>> syscall), we may have chance to record the issuer of I/O to page_cgroup
->>> struct. =
+I left cr_debug() in for now to provide more info than pr_debug();
+eventually that will be changed back to pr_debug()
 
->> This might be slightly different topic though,
->> I've been thinking where we should add hooks to track I/O reqeust.
->> I think the following set of hooks is enough whether we are going to
->> support thread based cgroup or not.
->>
->>   Hook-1: called when allocating a page, where the memory controller
->> 	  already have a hoook.
->>   Hook-2: called when making a page in page-cache dirty.
->>
->> For anonymous pages, Hook-1 is enough to track any type of I/O request.
->> For pages in page-cache, Hook-1 is also enough for read I/O because
->> the I/O is issued just once right after allocting the page.
->> For write I/O requests to pages in page-cache, Hook-1 will be okay
->> in most cases but sometimes process in another cgroup may write
->> the pages. In this case, Hook-2 is needed to keep accurate to track
->> I/O requests.
-> =
+In the mini-conference we considered doing CR in a kernel module,
+but decided against because we needed a system call. It is still
+possible to put the bulk of the code in a module. This is useful,
+besides reducing debug time (recompile, unload, reload), to reduce
+the kernel memory footprint. Also, an administrator can load/unload
+the module to enable/disable this feature. Any thoughts ?
 
-> This relative simplicity is what prompted me to say that we probably
-> should try to disentangle the io tracking functionality from the memory
-> controller a bit more (of course we still should reuse as much as we can
-> from it). The rationale for this is that the existing I/O scheduler
-> would benefit from proper io tracking capabilities too, so it'd be nice
-> if we could have them even in non-cgroup-capable kernels.
-> =
+Oren.
 
-
-Hook 2 referred to in the mail above exist today in the form of task IO acc=
-ounting.
-
-> As an aside, when the IO context of a certain IO operation is known
-> (synchronous IO comes to mind) I think it should be cashed in the
-> resulting bio so that we can do without the expensive accesses to
-> bio_cgroup once it enters the block layer.
-
-Will this give you everything you need for accounting and control (from the
-block layer?)
-
--- =
-
-	Balbir
+Oren Laadan wrote:
+> 
+> These patches implement checkpoint-restart [CR v2]. This version adds
+> save and restore of open files state (regular files and directories)
+> which makes it more usable. Other changes address the feedback given
+> for the previous version. It is also refactored (along Dave's posting)
+> for easier reviewing.
+> 
+> Todo:
+> - Add support for x86-64 and improve ABI
+> - Refine or change syscall interface
+> - Extend to handle (multiple) tasks in a container
+> - Security (without CAPS_SYS_ADMIN files restore may fail)
+> 
+> Changelog:
+> 
+> [2008-Aug-20] v2:
+>   - Added dump and restore of open files (regular and directories);
+>     see the changes in the test program (ckpt.c)
+>   - Added basic handling of shared objects, and use 'parent tag'
+>   - Added documentation
+>   - Improved ABI, add 64bit padding for image data
+>   - Improved locking when saving/restoring memory
+>   - Added UTS information to header (release, version, machine)
+>   - Cleanup extraction of filename from a file pointer
+>   - Refactor to allow easier reviewing
+>   - Remove requirement for CAPS_SYS_ADMIN until we come up with a
+>     security policy (this means that file restore may fail)
+>   - Other cleanup in response to comments for v1
+> 
+> [2008-Jul-29] v1:
+>   - Initial version: support a single task with address space of only
+>     private anonymous or file-mapped VMAs; syscalls ignore pid/crid
+>     argument and act on current process.
+> 
