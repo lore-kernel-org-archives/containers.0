@@ -1,15 +1,17 @@
-From: "H. Peter Anvin" <hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org>
-Subject: Re: [RFC][PATCH 7/8]: Auto-create ptmx node when mounting devpts
-Date: Thu, 21 Aug 2008 10:50:26 -0700
-Message-ID: <48ADAAE2.6040700@zytor.com>
-References: <20080821022126.GA29449@us.ibm.com>	<20080821022908.GG29658@us.ibm.com>	<20080821102139.43c44f67@lxorguk.ukuu.org.uk>	<48AD932F.8090908@zytor.com>	<20080821172700.781b0011@lxorguk.ukuu.org.uk>	<48AD9C93.6080302@zytor.com>
-	<20080821172342.GA8059@us.ibm.com>
-	<m18wuqtgj7.fsf@frodo.ebiederm.org>
+From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
+Subject: Re: [RFC][PATCH 0/8][v2]: Enable multiple mounts of devpts
+Date: Thu, 21 Aug 2008 10:45:07 -0700
+Message-ID: <m1fxoys1ng.fsf@frodo.ebiederm.org>
+References: <20080821022126.GA29449@us.ibm.com> <48ACD6CB.5030706@zytor.com>
+	<20080821031028.GB30205@us.ibm.com> <48ACDDC7.3000704@zytor.com>
+	<48AD991F.9010906@fr.ibm.com> <48AD9A97.6000807@zytor.com>
+	<48AD9DCD.3060306@fr.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <m18wuqtgj7.fsf-B27657KtZYmhTnVgQlOflh2eb7JE58TQ@public.gmane.org>
+In-Reply-To: <48AD9DCD.3060306-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org> (Cedric Le Goater's message of
+	"Thu, 21 Aug 2008 18:54:37 +0200")
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,25 +21,35 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Cc: kyle-hoO6YkzgTuCM0SS3m2neIg@public.gmane.org, bastian-yyjItF7Rl6lg9hUCZPvPmw@public.gmane.org, containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, Alan Cox <alan-qBU/x9rampVanCEyBjwyrvXRex20P6io@public.gmane.org>, xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org
+To: Cedric Le Goater <clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
+Cc: kyle-hoO6YkzgTuCM0SS3m2neIg@public.gmane.org, bastian-yyjItF7Rl6lg9hUCZPvPmw@public.gmane.org, "H. Peter Anvin" <hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org>, containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, alan-qBU/x9rampVanCEyBjwyrvXRex20P6io@public.gmane.org, xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Eric W. Biederman wrote:
->> I had the new ptmx node only in 'multi-mount' mode initially. But if users
->> want the multi-mount semantics, /dev/ptmx must be a symlink. If its a symlink,
->> we break in the single-mount case (which does not have the ptmx node and
->> we don't support mknod in pts).
-> 
-> Then have user space make it a file bind mount instead of symlink.
-> That should address all of the backwards compatibility concerns, and
-> allow us to only create it when open.
+Cedric Le Goater <clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org> writes:
 
-The right thing is that, if you want to support back-and-forth flipping, 
-to introduce a udev rule which looks for pts/ptmx, links to it if 
-present, and otherwise creates the ptmx device node.
+> H. Peter Anvin wrote:
+>> Cedric Le Goater wrote:
+>>>>>
+>>>> I suggest "newinstance", but "newns" works, too.
+>>>
+>>> Could we also use this mount option to 'unshare' a new posix message
+>>> queue namespace ?
+>> 
+>> Sorry, I fail to see the connection with devpts here?  Are you
+>> suggesting using the same option for another filesystem (if so, which)?
+>
+> yes. the posix message queues are also using a single superblock filesystem. 
+>
+> If we want isolate them (for container needs for example), we also need to 
+> create a new sb. The patchset I have uses a clone flag but using a mount 
+> 'newns' really sounds like a better idea.
 
-This is *only* required to support back-and-forth, and can be introduced 
-at any time after this patch is in the kernel -- or even before.
+Let's call it newinstance if we are going to use the same option for devpts.
 
-	-hpa
+We can update "current->nsproxy->mqueuens" when the newinstance flag is passed
+and otherwise we can mount whatever is the current mqueue filesystem for
+the process.
+
+That should be simple and just work.
+
+Eric
