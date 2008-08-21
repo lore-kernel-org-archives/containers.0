@@ -1,7 +1,7 @@
 From: adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org
-Subject: [PATCH 15/38] netns ct: per-netns /proc/net/nf_conntrack_expect
-Date: Fri, 22 Aug 2008 02:02:46 +0400
-Message-ID: <20080821220246.GO31136__26571.5956724764$1219356837$gmane$org@x200.localdomain>
+Subject: [PATCH 18/38] netns ct: unregister helper in every netns
+Date: Fri, 22 Aug 2008 02:03:54 +0400
+Message-ID: <20080821220354.GR31136__34374.5655417026$1219356878$gmane$org@x200.localdomain>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -22,105 +22,77 @@ List-Id: containers.vger.kernel.org
 Signed-off-by: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 ---
 
- net/netfilter/nf_conntrack_expect.c |   24 +++++++++++++-----------
- 1 file changed, 13 insertions(+), 11 deletions(-)
+ net/netfilter/nf_conntrack_helper.c |   41 +++++++++++++++++++++---------------
+ 1 file changed, 24 insertions(+), 17 deletions(-)
 
---- a/net/netfilter/nf_conntrack_expect.c
-+++ b/net/netfilter/nf_conntrack_expect.c
-@@ -423,16 +423,18 @@ EXPORT_SYMBOL_GPL(nf_ct_expect_related);
+--- a/net/netfilter/nf_conntrack_helper.c
++++ b/net/netfilter/nf_conntrack_helper.c
+@@ -123,29 +123,18 @@ int nf_conntrack_helper_register(struct nf_conntrack_helper *me)
+ }
+ EXPORT_SYMBOL_GPL(nf_conntrack_helper_register);
  
- #ifdef CONFIG_PROC_FS
- struct ct_expect_iter_state {
-+	struct seq_net_private p;
- 	unsigned int bucket;
- };
- 
- static struct hlist_node *ct_expect_get_first(struct seq_file *seq)
+-void nf_conntrack_helper_unregister(struct nf_conntrack_helper *me)
++static void __nf_conntrack_helper_unregister(struct nf_conntrack_helper *me,
++					     struct net *net)
  {
-+	struct net *net = seq_file_net(seq);
- 	struct ct_expect_iter_state *st = seq->private;
- 	struct hlist_node *n;
+ 	struct nf_conntrack_tuple_hash *h;
+ 	struct nf_conntrack_expect *exp;
+ 	const struct hlist_node *n, *next;
+ 	unsigned int i;
  
- 	for (st->bucket = 0; st->bucket < nf_ct_expect_hsize; st->bucket++) {
--		n = rcu_dereference(init_net.ct.expect_hash[st->bucket].first);
-+		n = rcu_dereference(net->ct.expect_hash[st->bucket].first);
- 		if (n)
- 			return n;
+-	mutex_lock(&nf_ct_helper_mutex);
+-	hlist_del_rcu(&me->hnode);
+-	nf_ct_helper_count--;
+-	mutex_unlock(&nf_ct_helper_mutex);
+-
+-	/* Make sure every nothing is still using the helper unless its a
+-	 * connection in the hash.
+-	 */
+-	synchronize_rcu();
+-
+-	spin_lock_bh(&nf_conntrack_lock);
+-
+ 	/* Get rid of expectations */
+ 	for (i = 0; i < nf_ct_expect_hsize; i++) {
+ 		hlist_for_each_entry_safe(exp, n, next,
+-					  &init_net.ct.expect_hash[i], hnode) {
++					  &net->ct.expect_hash[i], hnode) {
+ 			struct nf_conn_help *help = nfct_help(exp->master);
+ 			if ((help->helper == me || exp->helper == me) &&
+ 			    del_timer(&exp->timeout)) {
+@@ -156,12 +145,31 @@ void nf_conntrack_helper_unregister(struct nf_conntrack_helper *me)
  	}
-@@ -442,13 +444,14 @@ static struct hlist_node *ct_expect_get_first(struct seq_file *seq)
- static struct hlist_node *ct_expect_get_next(struct seq_file *seq,
- 					     struct hlist_node *head)
- {
-+	struct net *net = seq_file_net(seq);
- 	struct ct_expect_iter_state *st = seq->private;
  
- 	head = rcu_dereference(head->next);
- 	while (head == NULL) {
- 		if (++st->bucket >= nf_ct_expect_hsize)
- 			return NULL;
--		head = rcu_dereference(init_net.ct.expect_hash[st->bucket].first);
-+		head = rcu_dereference(net->ct.expect_hash[st->bucket].first);
+ 	/* Get rid of expecteds, set helpers to NULL. */
+-	hlist_for_each_entry(h, n, &init_net.ct.unconfirmed, hnode)
++	hlist_for_each_entry(h, n, &net->ct.unconfirmed, hnode)
+ 		unhelp(h, me);
+ 	for (i = 0; i < nf_conntrack_htable_size; i++) {
+-		hlist_for_each_entry(h, n, &init_net.ct.hash[i], hnode)
++		hlist_for_each_entry(h, n, &net->ct.hash[i], hnode)
+ 			unhelp(h, me);
  	}
- 	return head;
++}
++
++void nf_conntrack_helper_unregister(struct nf_conntrack_helper *me)
++{
++	struct net *net;
++
++	mutex_lock(&nf_ct_helper_mutex);
++	hlist_del_rcu(&me->hnode);
++	nf_ct_helper_count--;
++	mutex_unlock(&nf_ct_helper_mutex);
++
++	/* Make sure every nothing is still using the helper unless its a
++	 * connection in the hash.
++	 */
++	synchronize_rcu();
++
++	spin_lock_bh(&nf_conntrack_lock);
++	for_each_net(net)
++		__nf_conntrack_helper_unregister(me, net);
+ 	spin_unlock_bh(&nf_conntrack_lock);
  }
-@@ -522,7 +525,7 @@ static const struct seq_operations exp_seq_ops = {
- 
- static int exp_open(struct inode *inode, struct file *file)
- {
--	return seq_open_private(file, &exp_seq_ops,
-+	return seq_open_net(inode, file, &exp_seq_ops,
- 			sizeof(struct ct_expect_iter_state));
- }
- 
-@@ -531,26 +534,26 @@ static const struct file_operations exp_file_ops = {
- 	.open    = exp_open,
- 	.read    = seq_read,
- 	.llseek  = seq_lseek,
--	.release = seq_release_private,
-+	.release = seq_release_net,
- };
- #endif /* CONFIG_PROC_FS */
- 
--static int exp_proc_init(void)
-+static int exp_proc_init(struct net *net)
- {
- #ifdef CONFIG_PROC_FS
- 	struct proc_dir_entry *proc;
- 
--	proc = proc_net_fops_create(&init_net, "nf_conntrack_expect", 0440, &exp_file_ops);
-+	proc = proc_net_fops_create(net, "nf_conntrack_expect", 0440, &exp_file_ops);
- 	if (!proc)
- 		return -ENOMEM;
- #endif /* CONFIG_PROC_FS */
- 	return 0;
- }
- 
--static void exp_proc_remove(void)
-+static void exp_proc_remove(struct net *net)
- {
- #ifdef CONFIG_PROC_FS
--	proc_net_remove(&init_net, "nf_conntrack_expect");
-+	proc_net_remove(net, "nf_conntrack_expect");
- #endif /* CONFIG_PROC_FS */
- }
- 
-@@ -579,7 +582,7 @@ int nf_conntrack_expect_init(struct net *net)
- 	if (!nf_ct_expect_cachep)
- 		goto err2;
- 
--	err = exp_proc_init();
-+	err = exp_proc_init(net);
- 	if (err < 0)
- 		goto err3;
- 
-@@ -596,7 +599,7 @@ err1:
- 
- void nf_conntrack_expect_fini(struct net *net)
- {
--	exp_proc_remove();
-+	exp_proc_remove(net);
- 	kmem_cache_destroy(nf_ct_expect_cachep);
- 	nf_ct_free_hashtable(net->ct.expect_hash, net->ct.expect_vmalloc,
- 			     nf_ct_expect_hsize);
+ EXPORT_SYMBOL_GPL(nf_conntrack_helper_unregister);
 -- 
 1.5.6.3
