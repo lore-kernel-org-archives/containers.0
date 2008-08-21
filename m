@@ -1,7 +1,7 @@
 From: adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org
-Subject: [PATCH 38/38] netns nat: PPTP NAT in netns
-Date: Fri, 22 Aug 2008 02:10:57 +0400
-Message-ID: <20080821221057.GL31136__5815.93249594352$1219356941$gmane$org@x200.localdomain>
+Subject: [PATCH 36/38] netns nat: skip every NOTRACKed connection
+Date: Fri, 22 Aug 2008 02:10:25 +0400
+Message-ID: <20080821221025.GJ31136__27652.6266978637$1219356945$gmane$org@x200.localdomain>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -22,19 +22,31 @@ List-Id: containers.vger.kernel.org
 Signed-off-by: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 ---
 
- net/ipv4/netfilter/nf_nat_pptp.c |    3 +--
- 1 file changed, 1 insertion(+), 2 deletions(-)
+ net/ipv4/netfilter/nf_nat_core.c |    8 ++++----
+ 1 file changed, 4 insertions(+), 4 deletions(-)
 
---- a/net/ipv4/netfilter/nf_nat_pptp.c
-+++ b/net/ipv4/netfilter/nf_nat_pptp.c
-@@ -73,7 +73,7 @@ static void pptp_nat_expected(struct nf_conn *ct,
+--- a/net/ipv4/netfilter/nf_nat_core.c
++++ b/net/ipv4/netfilter/nf_nat_core.c
+@@ -588,6 +588,10 @@ static int __net_init nf_nat_net_init(struct net *net)
+ 						      &net->ipv4.nat_vmalloced);
+ 	if (!net->ipv4.nat_bysource)
+ 		return -ENOMEM;
++
++	/* Initialize fake conntrack so that NAT will skip it */
++	net->ct.untracked.status |= IPS_NAT_DONE_MASK;
++
+ 	return 0;
+ }
  
- 	pr_debug("trying to unexpect other dir: ");
- 	nf_ct_dump_tuple_ip(&t);
--	other_exp = nf_ct_expect_find_get(&init_net, &t);
-+	other_exp = nf_ct_expect_find_get(nf_ct_net(ct), &t);
- 	if (other_exp) {
- 		nf_ct_unexpect_related(other_exp);
- 		nf_ct_expect_put(other_exp);
+@@ -645,9 +649,6 @@ static int __init nf_nat_init(void)
+ 	rcu_assign_pointer(nf_nat_protos[IPPROTO_ICMP], &nf_nat_protocol_icmp);
+ 	spin_unlock_bh(&nf_nat_lock);
+ 
+-	/* Initialize fake conntrack so that NAT will skip it */
+-	init_net.ct.untracked.status |= IPS_NAT_DONE_MASK;
+-
+ 	l3proto = nf_ct_l3proto_find_get((u_int16_t)AF_INET);
+ 
+ 	BUG_ON(nf_nat_seq_adjust_hook != NULL);
 -- 
 1.5.6.3
