@@ -1,58 +1,32 @@
-From: "Justin P. Mattock" <justinmattock-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: Re: [RFC v2][PATCH 4/9] Memory management - dump state
-Date: Thu, 21 Aug 2008 01:01:21 -0700
-Message-ID: <257F964F-8ECA-4792-9CE6-D081E5E2DE06__34196.4934756563$1219306080$gmane$org@gmail.com>
-References: <Pine.LNX.4.64.0808202251500.17436@takamine.ncl.cs.columbia.edu>
-	<Pine.LNX.4.64.0808202304490.17436@takamine.ncl.cs.columbia.edu>
-	<20080821073020.GA28386@elte.hu>
-Mime-Version: 1.0 (iPhone Mail 5C1)
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20080821073020.GA28386-X9Un+BFzKDI@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>
-Cc: "jeremy-TSDbQ3PG+2Y@public.gmane.org" <jeremy-TSDbQ3PG+2Y@public.gmane.org>, "arnd-r2nGTMty4D4@public.gmane.org" <arnd-r2nGTMty4D4@public.gmane.org>, "containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org" <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Linux Kernel Mailing List <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, "dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org" <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+From: Peter Eisentraut <peter_e@gmx.net>
+Subject: Re: [Bugme-new] [Bug 11381] New: default shmmax
+Date: Thu, 21 Aug 2008 11:19:14 +0300
+Message-ID: <200808211119.15788.peter_e@gmx.net>
+References: <bug-11381-10286@http.bugzilla.kernel.org/> <20080820120043.e6e7e436.akpm@linux-foundation.org>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=iso-8859-1
+Content-Transfer-Encoding: QUOTED-PRINTABLE
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1753306AbYHUITU@vger.kernel.org>
+In-Reply-To: <20080820120043.e6e7e436.akpm@linux-foundation.org>
+Content-Disposition: inline
+Sender: linux-kernel-owner@vger.kernel.org
+To: Andrew Morton <akpm@linux-foundation.org>
+Cc: bugme-daemon@bugzilla.kernel.org, linux-kernel@vger.kernel.org, Nadia Derbey <Nadia.Derbey@bull.net>, Solofo Ramangalahy <Solofo.Ramangalahy@bull.net>, Manfred Spraul <manfred@colorfullife.com>, Pierre Peiffer <peifferp@gmail.com>, containers@lists.osdl.org
 List-Id: containers.vger.kernel.org
 
-CONFIG_INGO=Y
-(sorry saw andrew Morton do that
-Couldn't resist);
+Andrew Morton wrote:
+> It would be useful to get distro input on this. =A0Do they override t=
+he
+> kernel default at boot time? =A0If so, what do they do?
 
-justin P. Mattock
+Debian and Ubuntu have a sysctl.conf that is processed at boot time, bu=
+t it=20
+does not contain anything related to shm* by default.
 
-
-
-On Aug 21, 2008, at 12:30 AM, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org> wrote:
-
->
-> * Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org> wrote:
->
->> checkpoint/ckpt_x86.c   |   28 ++++
->> checkpoint/rstr_x86.c   |    2 +
->
-> please move these into arch/x86/mm/checkpoint.c and
-> arch/x86/mm/restore.c. (also, please dont try to abbreviate too much  
-> in
-> filenames, makes it harder to follow changes later on, etc.)
->
-> Cool stuff btw! Any ETA on when more complex apps can be
-> checkpointed/restored? Also, shouldnt at least part of this effort be
-> joined with the live migration efforts of openvz? (or do you see
-> fundamental, unsolvable differences?)
->
->    Ingo
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux- 
-> kernel" in
-> the body of a message to majordomo-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> Please read the FAQ at  http://www.tux.org/lkml/
+Suse has a sysctl.conf, but it is not processed at boot by default.  Yo=
+u have=20
+to activate a special boot service in the runlevel system to make it ac=
+tually=20
+run at boot.  (Try explaining that to a PostgreSQL user.)  There is not=
+hing=20
+related to shm* in the default configuration.
