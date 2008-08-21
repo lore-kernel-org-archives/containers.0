@@ -1,17 +1,20 @@
-From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
-Subject: Re: [RFC][PATCH 0/8][v2]: Enable multiple mounts of devpts
-Date: Thu, 21 Aug 2008 10:45:07 -0700
-Message-ID: <m1fxoys1ng.fsf@frodo.ebiederm.org>
-References: <20080821022126.GA29449@us.ibm.com> <48ACD6CB.5030706@zytor.com>
-	<20080821031028.GB30205@us.ibm.com> <48ACDDC7.3000704@zytor.com>
-	<48AD991F.9010906@fr.ibm.com> <48AD9A97.6000807@zytor.com>
-	<48AD9DCD.3060306@fr.ibm.com>
+From: sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org
+Subject: Re: [RFC][PATCH 7/8]: Auto-create ptmx node when mounting devpts
+Date: Thu, 21 Aug 2008 11:11:34 -0700
+Message-ID: <20080821181133.GB8059@us.ibm.com>
+References: <20080821022126.GA29449@us.ibm.com>
+	<20080821022908.GG29658@us.ibm.com>
+	<20080821102139.43c44f67@lxorguk.ukuu.org.uk>
+	<48AD932F.8090908@zytor.com>
+	<20080821172700.781b0011@lxorguk.ukuu.org.uk>
+	<48AD9C93.6080302@zytor.com> <20080821172342.GA8059@us.ibm.com>
+	<48ADA890.4060309@zytor.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <48AD9DCD.3060306-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org> (Cedric Le Goater's message of
-	"Thu, 21 Aug 2008 18:54:37 +0200")
+Content-Disposition: inline
+In-Reply-To: <48ADA890.4060309-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -21,35 +24,46 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Cedric Le Goater <clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
-Cc: kyle-hoO6YkzgTuCM0SS3m2neIg@public.gmane.org, bastian-yyjItF7Rl6lg9hUCZPvPmw@public.gmane.org, "H. Peter Anvin" <hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org>, containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, alan-qBU/x9rampVanCEyBjwyrvXRex20P6io@public.gmane.org, xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org
+To: "H. Peter Anvin" <hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org>
+Cc: kyle-hoO6YkzgTuCM0SS3m2neIg@public.gmane.org, bastian-yyjItF7Rl6lg9hUCZPvPmw@public.gmane.org, containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org, Alan Cox <alan-qBU/x9rampVanCEyBjwyrvXRex20P6io@public.gmane.org>, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Cedric Le Goater <clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org> writes:
-
-> H. Peter Anvin wrote:
->> Cedric Le Goater wrote:
->>>>>
->>>> I suggest "newinstance", but "newns" works, too.
->>>
->>> Could we also use this mount option to 'unshare' a new posix message
->>> queue namespace ?
->> 
->> Sorry, I fail to see the connection with devpts here?  Are you
->> suggesting using the same option for another filesystem (if so, which)?
+H. Peter Anvin [hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org] wrote:
+> sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org wrote:
+>> I had the new ptmx node only in 'multi-mount' mode initially. But if users
+>> want the multi-mount semantics, /dev/ptmx must be a symlink. If its a 
+>> symlink,
+>> we break in the single-mount case (which does not have the ptmx node and
+>> we don't support mknod in pts).
 >
-> yes. the posix message queues are also using a single superblock filesystem. 
+> True, but changing that is still a configuration change (adding newns to 
+> the fstab); it's not that much more work to change whatever else needs to 
+> change.
+
+Hmm, so, single and multi-mount don't coexist ? i.e some are multi-mounts
+while others are single-mounts.
+
+The way I looked at is that even if a distro has not yet updated the
+startup script (fstab), we could use the multi-mount. Maybe a container
+startup script could change /dev/ptmx to symlink and both types of
+mounts can work simultaneously.
+
+Would that be unnecessary ?
+
 >
-> If we want isolate them (for container needs for example), we also need to 
-> create a new sb. The patchset I have uses a clone flag but using a mount 
-> 'newns' really sounds like a better idea.
+> I personally don't expect a whole lot of back-and-forth; I suspect people 
+> will switch from the legacy model to the newns model mostly as part of a 
+> distro upgrade.
+>
+>>>> I'm open to being convinced and the
+>>>> other problems with that code are more pressing.
+>> Yes, I will look at the latest in linux-next and the ->driver_data
+>> approach.
+>> But just to confirm, we do want try and keep single-mount semantics.
+>
+> Certainly for several years at least.
 
-Let's call it newinstance if we are going to use the same option for devpts.
+Ok.
 
-We can update "current->nsproxy->mqueuens" when the newinstance flag is passed
-and otherwise we can mount whatever is the current mqueue filesystem for
-the process.
-
-That should be simple and just work.
-
-Eric
+>
+> 	-hpa
