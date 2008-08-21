@@ -1,15 +1,15 @@
 From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: Re: [RFC v2][PATCH 1/9] Create trivial sys_checkpoint/sys_restart
-	syscalls
-Date: Thu, 21 Aug 2008 01:17:29 -0400
-Message-ID: <48ACFA69.7070300__9413.69412835247$1219296752$gmane$org@cs.columbia.edu>
-References: <Pine.LNX.4.64.0808202251500.17436@takamine.ncl.cs.columbia.edu>
-	<Pine.LNX.4.64.0808202302510.17436@takamine.ncl.cs.columbia.edu>
+Subject: Re: checkpoint/restart ABI
+Date: Thu, 21 Aug 2008 01:56:09 -0400
+Message-ID: <48AD0379.9030705@cs.columbia.edu>
+References: <20080807224033.FFB3A2C1@kernel>
+	<200808111853.13854.arnd@arndb.de>	<1218484114.5598.43.camel@nimitz>
+	<200808112347.50245.arnd@arndb.de>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <Pine.LNX.4.64.0808202302510.17436-CXF6herHY6ykSYb+qCZC/1i27PF6R63G9nwVQlTi/Pw@public.gmane.org>
+In-Reply-To: <200808112347.50245.arnd-r2nGTMty4D4@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,63 +19,104 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, jeremy-TSDbQ3PG+2Y@public.gmane.org, arnd-r2nGTMty4D4@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: Arnd Bergmann <arnd-r2nGTMty4D4@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Theodore Tso <tytso-3s7WtUTddSA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
 
-this, of course, should be the last patch, not the first.
 
-Oren Laadan wrote:
-> Create trivial sys_checkpoint and sys_restore system calls. They will
-> enable to checkpoint and restart an entire container, to and from a
-> checkpoint image file.
+Arnd Bergmann wrote:
+> On Monday 11 August 2008, Dave Hansen wrote:
+>> Thanks for all of the very interesting comments about the ABI.  
+>>
+>> Considering that we're still *really* early in getting this concept
+>> merged up into mainline, what do you all think we should do now?
 > 
-> First create a template for both syscalls: they take a file descriptor
-> (for the image file) and flags as arguments. For sys_checkpoint the
-> first argument identifies the target container; for sys_restart it will
-> identify the checkpoint image.
+> I think the two most important aspects here need to be security and
+> simplicity. If you have to choose between the two, it probably makes
+> sense to put security first, because loading untrusted data into
+> the kernel puts you at a significant risk to start with. If you
+> can show a restart interface that lets regular users restart their
+> tasks in a way anyone can verify to be secure, that will be a
+> good indication that you're on the right track.
 > 
-> Signed-off-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-> ---
->   arch/x86/kernel/syscall_table_32.S |    2 ++
->   include/asm-x86/unistd_32.h        |    2 ++
->   include/linux/syscalls.h           |    2 ++
->   3 files changed, 6 insertions(+), 0 deletions(-)
+> The other problem that you really need to solve is interface
+> stability. What you are creating is a binary representation
+> of many kernel internal data structures, so in our common
+> rules, you have to make sure that you remain forward and
+> backward compatible. Simply saying that you need to run
+> an identical kernel when restarting from a checkpoint is not
+> enough IMHO.
 > 
-> diff --git a/arch/x86/kernel/syscall_table_32.S b/arch/x86/kernel/syscall_table_32.S
-> index d44395f..5543136 100644
-> --- a/arch/x86/kernel/syscall_table_32.S
-> +++ b/arch/x86/kernel/syscall_table_32.S
-> @@ -332,3 +332,5 @@ ENTRY(sys_call_table)
->   	.long sys_dup3			/* 330 */
->   	.long sys_pipe2
->   	.long sys_inotify_init1
-> +	.long sys_checkpoint
-> +	.long sys_restart
-> diff --git a/include/asm-x86/unistd_32.h b/include/asm-x86/unistd_32.h
-> index d739467..88bdec4 100644
-> --- a/include/asm-x86/unistd_32.h
-> +++ b/include/asm-x86/unistd_32.h
-> @@ -338,6 +338,8 @@
->   #define __NR_dup3		330
->   #define __NR_pipe2		331
->   #define __NR_inotify_init1	332
-> +#define __NR_checkpoint		333
-> +#define __NR_restart		334
+
+quoting:
+
+ > There could be a case for viewing sys_restore() as being a lot like
+ > sys_init_module() - a view into kernel internals that goes beyond the
+ > normal user-space ABI, and beyond the stability guarantee.  It might be
+ > possible to create a certain amount of version portability with a
+ > modversions-like mechanism, but it sure seems hard to do better than
+ > that.
+ >
+ > jon
+
+Extending this view in the context of security - we can require sysadmin
+privilege to restart, and then sysadmin is responsible for the contents
+of the file. The kernel will ensure the the data isn't corrupted. Much
+like with loading a kenrel module - the admin may load any sort of crap.
+Then, sysadmin may, for instance, add a signature on a checkpointed file
+to verify it's integrity.
+
+(Well, one problem with this scheme in the context of self-checkpoint
+would be - who can be trusted to generate the signature in that case).
+
+> Some more words on specific interfaces that we have discussed:
 > 
->   #ifdef __KERNEL__
+> The single-file-descriptor approach has the big advantage of
+> keeping the complexity in one place (the kernel). To be consistent
+> with other kernel interfaces, I would make the kernel hand out a
+> file descriptor, not let the user open a file and pass that into
+> the kernel as you do now.
 > 
-> diff --git a/include/linux/syscalls.h b/include/linux/syscalls.h
-> index d6ff145..edc218b 100644
-> --- a/include/linux/syscalls.h
-> +++ b/include/linux/syscalls.h
-> @@ -622,6 +622,8 @@ asmlinkage long sys_timerfd_gettime(int ufd, struct itimerspec __user *otmr);
->   asmlinkage long sys_eventfd(unsigned int count);
->   asmlinkage long sys_eventfd2(unsigned int count, int flags);
->   asmlinkage long sys_fallocate(int fd, int mode, loff_t offset, loff_t len);
-> +asmlinkage long sys_checkpoint(pid_t pid, int fd, unsigned long flags);
-> +asmlinkage long sys_restart(int crid, int fd, unsigned long flags);
+> A new file system is a good idea for many complex interfaces that
+> make their way into the kernel, but I don't think it will help
+> in this case.
 > 
->   int kernel_execve(const char *filename, char *const argv[], char *const envp[]);
+> For checkpointing a single task, or even a task with its children,
+> a different interface I could imagine would be to have a new
+> file in procfs per pid that you can read as a pipe giving our
+> the same data that you currently save in the checkpoint file
+> descriptor. It does mean that you won't be able to pass flags
+> down easily (you could write to the pipe before you start reading,
+> but that's not too nice).
+
+Using a single handle (crid or a special file descriptor) to identify
+the whole checkpoint is very useful - to be able to stream it (eg. over
+the network, or through filters). It is also very important for future
+features and optimizations. For example, to reduce downtime of the
+application during checkpoint, one can use COW for dirty pages, and
+only write-back the entire data after the application resumes execution.
+Or imagine a use-case where one would like to keep the entire checkpoint
+in memory. These are pretty hard to do if you split the handling between
+multiple files or handles.
+
 > 
+> On the restart side, I think the most consistent interface would
+> be a new binfmt_chkpt implementation that you can use to execve
+> a checkpoint, just like you execute an ELF file today. The binfmt
+> can be a module (unlike a syscall), so an administrator that is
+> afraid of the security implications can just disable it by not
+> loading the module. In an execve model, the parent process can
+> set up anything related to credentials as good as it's allowed
+> to and then let the kernel do the rest.
+
+This is an interesting idea but not without its problems. In particular,
+a successful execve() by one thread destroys all the others. Also, it
+isn't clear how this can work with pre-copying and live-migration; And
+finally, I'm not sure how to handle shared objects in this manner.
+
+As for kernel module - it is easy to implement most of the checkpoint
+restart functionality in a kernel module, leaving only the syscall stubs
+in the kernel.
+
+Oren.
