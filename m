@@ -1,14 +1,15 @@
 From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: Re: [RFC v2][PATCH 9/9] File descriprtors (restore)
-Date: Thu, 21 Aug 2008 01:26:33 -0400 (EDT)
-Message-ID: <Pine.LNX.4.64.0808210122510.4445__29658.9304031388$1219296592$gmane$org@takamine.ncl.cs.columbia.edu>
+Subject: Re: [RFC v2][PATCH 1/9] Create trivial sys_checkpoint/sys_restart
+	syscalls
+Date: Thu, 21 Aug 2008 01:17:29 -0400
+Message-ID: <48ACFA69.7070300__9413.69412835247$1219296752$gmane$org@cs.columbia.edu>
 References: <Pine.LNX.4.64.0808202251500.17436@takamine.ncl.cs.columbia.edu>
-	<Pine.LNX.4.64.0808202307270.17436@takamine.ncl.cs.columbia.edu>
+	<Pine.LNX.4.64.0808202302510.17436@takamine.ncl.cs.columbia.edu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <Pine.LNX.4.64.0808202307270.17436-CXF6herHY6ykSYb+qCZC/1i27PF6R63G9nwVQlTi/Pw@public.gmane.org>
+In-Reply-To: <Pine.LNX.4.64.0808202302510.17436-CXF6herHY6ykSYb+qCZC/1i27PF6R63G9nwVQlTi/Pw@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -23,62 +24,58 @@ Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, jer
 List-Id: containers.vger.kernel.org
 
 
->
-> Restore open file descriptors: for each FD read 'struct cr_hdr_fd_ent'
-> and lookup tag in the hash table; if not found (first occurence), read
-> in 'struct cr_hdr_fd_data', create a new FD and register in the hash.
-> Otherwise attach the file pointer from the hash as an FD.
->
-> This patch only handles basic FDs - regular files, directories and also
-> symbolic links.
->
+this, of course, should be the last patch, not the first.
+
+Oren Laadan wrote:
+> Create trivial sys_checkpoint and sys_restore system calls. They will
+> enable to checkpoint and restart an entire container, to and from a
+> checkpoint image file.
+> 
+> First create a template for both syscalls: they take a file descriptor
+> (for the image file) and flags as arguments. For sys_checkpoint the
+> first argument identifies the target container; for sys_restart it will
+> identify the checkpoint image.
+> 
 > Signed-off-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 > ---
->  checkpoint/Makefile     |    2 +-
->  checkpoint/checkpoint.c |    3 +
->  checkpoint/ckpt.h       |    6 +-
->  checkpoint/restart.c    |    3 +
->  checkpoint/rstr_file.c  |  202 +++++++++++++++++++++++++++++++++++++++++++++++
->  5 files changed, 213 insertions(+), 3 deletions(-)
->  create mode 100644 checkpoint/rstr_file.c
->
-
-To restore the open files, cr_read_files() first closes all the
-existing FDs of the current process. This breaks the assumption
-underlying the use of fget_light/fput_light in sys_restart(), so
-use fget/fput instead.
-
-
-diff --git a/checkpoint/sys.c b/checkpoint/sys.c
-index 7b2670a..ec1609b 100644
---- a/checkpoint/sys.c
-+++ b/checkpoint/sys.c
-@@ -210,10 +210,9 @@ asmlinkage long sys_restart(int crid, int fd, unsigned long flags)
-  {
-  	struct cr_ctx *ctx;
-  	struct file *file;
--	int fput_needed;
-  	int ret;
-
--	file = fget_light(fd, &fput_needed);
-+	file = fget(fd);
-  	if (!file)
-  		return -EBADF;
-
-@@ -223,14 +222,14 @@ asmlinkage long sys_restart(int crid, int fd, unsigned long flags)
-
-  	ctx = cr_ctx_alloc(crid, file, flags | CR_CTX_RSTR);
-  	if (!ctx) {
--		fput_light(file, fput_needed);
-+		fput(file);
-  		return -ENOMEM;
-  	}
-
-  	ret = do_restart(ctx);
-
-  	cr_ctx_free(ctx);
--	fput_light(file, fput_needed);
-+	fput(file);
-
-  	return ret;
-  }
+>   arch/x86/kernel/syscall_table_32.S |    2 ++
+>   include/asm-x86/unistd_32.h        |    2 ++
+>   include/linux/syscalls.h           |    2 ++
+>   3 files changed, 6 insertions(+), 0 deletions(-)
+> 
+> diff --git a/arch/x86/kernel/syscall_table_32.S b/arch/x86/kernel/syscall_table_32.S
+> index d44395f..5543136 100644
+> --- a/arch/x86/kernel/syscall_table_32.S
+> +++ b/arch/x86/kernel/syscall_table_32.S
+> @@ -332,3 +332,5 @@ ENTRY(sys_call_table)
+>   	.long sys_dup3			/* 330 */
+>   	.long sys_pipe2
+>   	.long sys_inotify_init1
+> +	.long sys_checkpoint
+> +	.long sys_restart
+> diff --git a/include/asm-x86/unistd_32.h b/include/asm-x86/unistd_32.h
+> index d739467..88bdec4 100644
+> --- a/include/asm-x86/unistd_32.h
+> +++ b/include/asm-x86/unistd_32.h
+> @@ -338,6 +338,8 @@
+>   #define __NR_dup3		330
+>   #define __NR_pipe2		331
+>   #define __NR_inotify_init1	332
+> +#define __NR_checkpoint		333
+> +#define __NR_restart		334
+> 
+>   #ifdef __KERNEL__
+> 
+> diff --git a/include/linux/syscalls.h b/include/linux/syscalls.h
+> index d6ff145..edc218b 100644
+> --- a/include/linux/syscalls.h
+> +++ b/include/linux/syscalls.h
+> @@ -622,6 +622,8 @@ asmlinkage long sys_timerfd_gettime(int ufd, struct itimerspec __user *otmr);
+>   asmlinkage long sys_eventfd(unsigned int count);
+>   asmlinkage long sys_eventfd2(unsigned int count, int flags);
+>   asmlinkage long sys_fallocate(int fd, int mode, loff_t offset, loff_t len);
+> +asmlinkage long sys_checkpoint(pid_t pid, int fd, unsigned long flags);
+> +asmlinkage long sys_restart(int crid, int fd, unsigned long flags);
+> 
+>   int kernel_execve(const char *filename, char *const argv[], char *const envp[]);
+> 
