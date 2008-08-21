@@ -1,19 +1,14 @@
-From: Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: Re: RFC: Attaching threads to cgroups is OK?
-Date: Thu, 21 Aug 2008 15:58:55 +0530
-Message-ID: <48AD4367.9000409@linux.vnet.ibm.com>
-References: <48AAA296.8050802@oss.ntt.co.jp>
-	<20080819202237.edd75933.kamezawa.hiroyu@jp.fujitsu.com>
-	<20080820.204832.131207708.taka@valinux.co.jp>
-	<1219288081.28324.30.camel@sebastian.kern.oss.ntt.co.jp>
-	<48ACE1B4.8010000@linux.vnet.ibm.com>
-	<1219296306.28324.82.camel@sebastian.kern.oss.ntt.co.jp>
-Reply-To: balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
+From: Louis Rilling <Louis.Rilling-aw0BnHfMbSpBDgjK7y7TUQ@public.gmane.org>
+Subject: Re: [RFC v2][PATCH 7/9] Infrastructure for shared objects
+Date: Thu, 21 Aug 2008 12:40:16 +0200
+Message-ID: <20080821104016.GJ581__1572.42844948104$1219315342$gmane$org@hawkmoon.kerlabs.com>
+References: <Pine.LNX.4.64.0808202251500.17436@takamine.ncl.cs.columbia.edu>
+	<Pine.LNX.4.64.0808202306170.17436@takamine.ncl.cs.columbia.edu>
+Reply-To: Louis.Rilling-aw0BnHfMbSpBDgjK7y7TUQ@public.gmane.org
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: base64
+Content-Type: multipart/mixed; boundary="===============6030994871713734708=="
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1219296306.28324.82.camel-xpvPi5bcW5X5OjGIXfuPlhrrLbDL3r4M6qtp775pBPw@public.gmane.org>
+In-Reply-To: <Pine.LNX.4.64.0808202306170.17436-CXF6herHY6ykSYb+qCZC/1i27PF6R63G9nwVQlTi/Pw@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -21,84 +16,168 @@ List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
 List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Mime-version: 1.0
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: =?UTF-8?B?RmVybmFuZG8gTHVpcyBWw6F6cXVleiBDYW8=?= <fernando-gVGce1chcLdL9jVzuh4AOg@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, virtualization-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, jeremy-TSDbQ3PG+2Y@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, arnd-r2nGTMty4D4@public.gmane.org, dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-RmVybmFuZG8gTHVpcyBWw6F6cXVleiBDYW8gd3JvdGU6Cj4gSGkgQmFsYmlyLAo+IAo+IE9uIFRo
-dSwgMjAwOC0wOC0yMSBhdCAwOTowMiArMDUzMCwgQmFsYmlyIFNpbmdoIHdyb3RlOgo+PiBGZXJu
-YW5kbyBMdWlzIFbDoXpxdWV6IENhbyB3cm90ZToKPj4+IE9uIFdlZCwgMjAwOC0wOC0yMCBhdCAy
-MDo0OCArMDkwMCwgSGlyb2thenUgVGFrYWhhc2hpIHdyb3RlOgo+Pj4+IEhpLAo+Pj4+Cj4+Pj4+
-PiBUc3VydXRhLXNhbiwgaG93IGFib3V0IHlvdXIgYmlvLWNncm91cCdzIHRyYWNraW5nIGNvbmNl
-cm5pbmcgdGhpcz8KPj4+Pj4+IElmIHdlIHdhbnQgdG8gdXNlIHlvdXIgdHJhY2tpbmcgZnVuY3Rp
-b25zIGZvciBlYWNoIHRocmVhZHMgc2VwZXJhdGVseSwgCj4+Pj4+PiB0aGVyZSBzZWVtcyB0byBi
-ZSBhIHByb2JsZW0uCj4+Pj4+PiA9PT1jZi4gbW1fZ2V0X2Jpb19jZ3JvdXAoKT09PT09PT09PT09
-PT09PT09PT0KPj4+Pj4+ICAgICAgICAgICAgb3duZXIKPj4+Pj4+IG1tX3N0cnVjdCAtLS0tPiB0
-YXNrX3N0cnVjdCAtLS0tPiBiaW9fY2dyb3VwCj4+Pj4+PiA9PT09PT09PT09PT09PT09PT09PT09
-PT09PT09PT09PT09PT09PT09PT09PT0KPj4+Pj4+IEluIG15IHVuZGVyc3RhbmRpbmcsIHRoZSBt
-bV9zdHJ1Y3Qgb2YgYSB0aHJlYWQgaXMgc2FtZSBhcyBpdHMgcGFyZW50J3MuCj4+Pj4+PiBTbywg
-ZXZlbiBpZiB3ZSBhdHRhY2ggdGhlIFRJRHMgb2Ygc29tZSB0aHJlYWRzIHRvIGRpZmZlcmVudCBj
-Z3JvdXBzIHRoZSAKPj4+Pj4+IHRyYWNraW5nIGFsd2F5cyByZXR1cm5zIHRoZSBzYW1lIGJpb19j
-Z3JvdXAgLS0gaXRzIHBhcmVudCdzIGdyb3VwLgo+Pj4+Pj4gRG8geW91IGhhdmUgc29tZSBwb2xp
-Y3kgYWJvdXQgaW4gd2hpY2ggY2FzZSB3ZSBjYW4gdXNlIHlvdXIgdHJhY2tpbmc/Cj4+Pj4+Pgo+
-Pj4+PiBJdCdzIHdpbGwgYmUgcmVzaXRyaWN0aW9uIHdoZW4gaW8tY29udHJvbGxlciByZXVzZSBp
-bmZvcm1hdGlvbiBvZiB0aGUgb3duZXIKPj4+Pj4gb2YgbWVtb3J5LiBCdXQgaWYgaXQncyB2ZXJ5
-IGNsZWFyIHdobyBpc3N1ZXMgSS9PIChieSB0cmFja2luZyByZWFkL3dyaXRlCj4+Pj4+IHN5c2Nh
-bGwpLCB3ZSBtYXkgaGF2ZSBjaGFuY2UgdG8gcmVjb3JkIHRoZSBpc3N1ZXIgb2YgSS9PIHRvIHBh
-Z2VfY2dyb3VwCj4+Pj4+IHN0cnVjdC4gCj4+Pj4gVGhpcyBtaWdodCBiZSBzbGlnaHRseSBkaWZm
-ZXJlbnQgdG9waWMgdGhvdWdoLAo+Pj4+IEkndmUgYmVlbiB0aGlua2luZyB3aGVyZSB3ZSBzaG91
-bGQgYWRkIGhvb2tzIHRvIHRyYWNrIEkvTyByZXFldXN0Lgo+Pj4+IEkgdGhpbmsgdGhlIGZvbGxv
-d2luZyBzZXQgb2YgaG9va3MgaXMgZW5vdWdoIHdoZXRoZXIgd2UgYXJlIGdvaW5nIHRvCj4+Pj4g
-c3VwcG9ydCB0aHJlYWQgYmFzZWQgY2dyb3VwIG9yIG5vdC4KPj4+Pgo+Pj4+ICAgSG9vay0xOiBj
-YWxsZWQgd2hlbiBhbGxvY2F0aW5nIGEgcGFnZSwgd2hlcmUgdGhlIG1lbW9yeSBjb250cm9sbGVy
-Cj4+Pj4gCSAgYWxyZWFkeSBoYXZlIGEgaG9vb2suCj4+Pj4gICBIb29rLTI6IGNhbGxlZCB3aGVu
-IG1ha2luZyBhIHBhZ2UgaW4gcGFnZS1jYWNoZSBkaXJ0eS4KPj4+Pgo+Pj4+IEZvciBhbm9ueW1v
-dXMgcGFnZXMsIEhvb2stMSBpcyBlbm91Z2ggdG8gdHJhY2sgYW55IHR5cGUgb2YgSS9PIHJlcXVl
-c3QuCj4+Pj4gRm9yIHBhZ2VzIGluIHBhZ2UtY2FjaGUsIEhvb2stMSBpcyBhbHNvIGVub3VnaCBm
-b3IgcmVhZCBJL08gYmVjYXVzZQo+Pj4+IHRoZSBJL08gaXMgaXNzdWVkIGp1c3Qgb25jZSByaWdo
-dCBhZnRlciBhbGxvY3RpbmcgdGhlIHBhZ2UuCj4+Pj4gRm9yIHdyaXRlIEkvTyByZXF1ZXN0cyB0
-byBwYWdlcyBpbiBwYWdlLWNhY2hlLCBIb29rLTEgd2lsbCBiZSBva2F5Cj4+Pj4gaW4gbW9zdCBj
-YXNlcyBidXQgc29tZXRpbWVzIHByb2Nlc3MgaW4gYW5vdGhlciBjZ3JvdXAgbWF5IHdyaXRlCj4+
-Pj4gdGhlIHBhZ2VzLiBJbiB0aGlzIGNhc2UsIEhvb2stMiBpcyBuZWVkZWQgdG8ga2VlcCBhY2N1
-cmF0ZSB0byB0cmFjawo+Pj4+IEkvTyByZXF1ZXN0cy4KPj4+IFRoaXMgcmVsYXRpdmUgc2ltcGxp
-Y2l0eSBpcyB3aGF0IHByb21wdGVkIG1lIHRvIHNheSB0aGF0IHdlIHByb2JhYmx5Cj4+PiBzaG91
-bGQgdHJ5IHRvIGRpc2VudGFuZ2xlIHRoZSBpbyB0cmFja2luZyBmdW5jdGlvbmFsaXR5IGZyb20g
-dGhlIG1lbW9yeQo+Pj4gY29udHJvbGxlciBhIGJpdCBtb3JlIChvZiBjb3Vyc2Ugd2Ugc3RpbGwg
-c2hvdWxkIHJldXNlIGFzIG11Y2ggYXMgd2UgY2FuCj4+PiBmcm9tIGl0KS4gVGhlIHJhdGlvbmFs
-ZSBmb3IgdGhpcyBpcyB0aGF0IHRoZSBleGlzdGluZyBJL08gc2NoZWR1bGVyCj4+PiB3b3VsZCBi
-ZW5lZml0IGZyb20gcHJvcGVyIGlvIHRyYWNraW5nIGNhcGFiaWxpdGllcyB0b28sIHNvIGl0J2Qg
-YmUgbmljZQo+Pj4gaWYgd2UgY291bGQgaGF2ZSB0aGVtIGV2ZW4gaW4gbm9uLWNncm91cC1jYXBh
-YmxlIGtlcm5lbHMuCj4+Pgo+PiBIb29rIDIgcmVmZXJyZWQgdG8gaW4gdGhlIG1haWwgYWJvdmUg
-ZXhpc3QgdG9kYXkgaW4gdGhlIGZvcm0gb2YgdGFzayBJTyBhY2NvdW50aW5nLgo+IFl1cC4KPiAK
-Pj4+IEFzIGFuIGFzaWRlLCB3aGVuIHRoZSBJTyBjb250ZXh0IG9mIGEgY2VydGFpbiBJTyBvcGVy
-YXRpb24gaXMga25vd24KPj4+IChzeW5jaHJvbm91cyBJTyBjb21lcyB0byBtaW5kKSBJIHRoaW5r
-IGl0IHNob3VsZCBiZSBjYXNoZWQgaW4gdGhlCj4+PiByZXN1bHRpbmcgYmlvIHNvIHRoYXQgd2Ug
-Y2FuIGRvIHdpdGhvdXQgdGhlIGV4cGVuc2l2ZSBhY2Nlc3NlcyB0bwo+Pj4gYmlvX2Nncm91cCBv
-bmNlIGl0IGVudGVycyB0aGUgYmxvY2sgbGF5ZXIuCj4+IFdpbGwgdGhpcyBnaXZlIHlvdSBldmVy
-eXRoaW5nIHlvdSBuZWVkIGZvciBhY2NvdW50aW5nIGFuZCBjb250cm9sIChmcm9tIHRoZQo+PiBi
-bG9jayBsYXllcj8pCj4gCj4gV2VsbCwgaXQgZGVwZW5kcyBvbiB3aGF0IHlvdSBhcmUgdHJ5aW5n
-IHRvIGFjaGlldmUuCj4gCj4gQ3VycmVudCBJTyBzY2hlZHVsZXJzIHN1Y2ggYXMgQ0ZRIG9ubHkg
-Y2FyZSBhYm91dCB0aGUgaW9fY29udGV4dCB3aGVuCj4gc2NoZWR1bGluZyByZXF1ZXN0cy4gV2hl
-biBhIG5ldyByZXF1ZXN0IGNvbWVzIGluIENGUSBhc3N1bWVzIHRoYXQgaXQgd2FzCj4gb3JpZ2lu
-YXRlZCBpbiB0aGUgY29udGV4dCBvZiB0aGUgY3VycmVudCB0YXNrLCB3aGljaCBvYnZpb3VzbHkg
-ZG9lcyBub3QKPiBob2xkIHRydWUgZm9yIGJ1ZmZlcmVkIElPIGFuZCBhaW8uIFRoaXMgcHJvYmxl
-bSBjb3VsZCBiZSBzb2x2ZWQgYnkgdXNpbmcKPiBiaW8tY2dyb3VwIGZvciBJTyB0cmFja2luZywg
-YnV0IGFjY2Vzc2luZyB0aGUgaW8gY29udGV4dCBpbmZvcm1hdGlvbiBpcwo+IHNvbWV3aGF0IGV4
-cGVuc2l2ZTogCj4gCj4gcGFnZS0+cGFnZV9jZ3JvdXAtPmJpb19jZ3JvdXAtPmlvX2NvbnRleHQu
-Cj4gCj4gSWYgYXQgdGhlIHRpbWUgb2YgYnVpbGRpbmcgYSBiaW8gd2Uga25vdyBpdHMgaW8gY29u
-dGV4dCAoaS5lLiB0aGUKPiBjb250ZXh0IG9mIHRoZSB0YXNrIG9yIGNncm91cCB0aGF0IGdlbmVy
-YXRlZCB0aGF0IGJpbykgSSB0aGluayB3ZSBzaG91bGQKPiBzdG9yZSBpdCBpbiB0aGUgYmlvIGl0
-c2VsZiwgdG9vLiBXaXRoIHRoaXMgc2NoZW1lLCB3aGVuZXZlciB0aGUga2VybmVsCj4gbmVlZHMg
-dG8ga25vdyB0aGUgaW9fY29udGV4dCBvZiBhIHBhcnRpY3VsYXIgYmxvY2sgSU8gb3BlcmF0aW9u
-IHRoZQo+IGtlcm5lbCB3b3VsZCBmaXJzdCB0cnkgdG8gcmV0cmlldmUgaXRzIGlvX2NvbnRleHQg
-ZGlyZWN0bHkgZnJvbSB0aGUgYmlvLAo+IGFuZCwgaWYgbm90IGF2YWlsYWJsZSB0aGVyZSwgd291
-bGQgcmVzb3J0IHRvIHRoZSBzbG93IHBhdGggKGFjY2Vzc2luZyBpdAo+IHRocm91Z2ggYmlvX2Nn
-cm91cCkuIE15IGd1dCBmZWVsaW5nIGlzIHRoYXQgZWxldmF0b3ItYmFzZWQgSU8gcmVzb3VyY2UK
-PiBjb250cm9sbGVycyB3b3VsZCBiZW5lZml0IGZyb20gc3VjaCBhbiBhcHByb2FjaCwgdG9vLgo+
-IAo+IC0gRmVybmFuZG8KCk9LLCB0aGF0IHNlZW1zIHRvIG1ha2Ugc2Vuc2UuIFRoYW5rcyBmb3Ig
-ZXhwbGFpbmluZy4KCi0tIAoJQmFsYmlyCgpfX19fX19fX19fX19fX19fX19fX19fX19fX19fX19f
-X19fX19fX19fX19fX19fXwpDb250YWluZXJzIG1haWxpbmcgbGlzdApDb250YWluZXJzQGxpc3Rz
-LmxpbnV4LWZvdW5kYXRpb24ub3JnCmh0dHBzOi8vbGlzdHMubGludXgtZm91bmRhdGlvbi5vcmcv
-bWFpbG1hbi9saXN0aW5mby9jb250YWluZXJz
+This is a MIME-formatted message.  If you see this text it means that your
+E-mail software does not support MIME-formatted messages.
+
+--===============6030994871713734708==
+Content-Type: multipart/signed; micalg=pgp-sha1; protocol="application/pgp-signature"; boundary="=_bohort-10627-1219315086-0001-2"
+Content-Disposition: inline
+
+This is a MIME-formatted message.  If you see this text it means that your
+E-mail software does not support MIME-formatted messages.
+
+--=_bohort-10627-1219315086-0001-2
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
+
+On Wed, Aug 20, 2008 at 11:06:50PM -0400, Oren Laadan wrote:
+>
+> Infrastructure to handle objects that may be shared and referenced by
+> multiple tasks or other objects, e..g open files, memory address space
+> etc.
+>
+> The state of shared objects is saved once. On the first encounter, the
+> state is dumped and the object is assigned a unique identifier and also
+> stored in a hash table (indexed by its physical kenrel address). From
+> then on the object will be found in the hash and only its identifier is
+> saved.
+>
+> On restart the identifier is looked up in the hash table; if not found
+> then the state is read, the object is created, and added to the hash
+> table (this time indexed by its identifier). Otherwise, the object in
+> the hash table is used.
+
+[...]
+
+> diff --git a/checkpoint/ckpt.h b/checkpoint/ckpt.h
+> index 0addb63..8b02c4c 100644
+> --- a/checkpoint/ckpt.h
+> +++ b/checkpoint/ckpt.h
+> @@ -29,6 +29,8 @@ struct cr_ctx {
+>  	void *hbuf;		/* header: to avoid many alloc/dealloc */
+>  	int hpos;
+>
+> +	struct cr_objhash *objhash;
+> +
+>  	struct cr_pgarr *pgarr;
+>  	struct cr_pgarr *pgcur;
+>
+> @@ -56,6 +58,22 @@ int cr_kread(struct cr_ctx *ctx, void *buf, int count);
+>  void *cr_hbuf_get(struct cr_ctx *ctx, int n);
+>  void cr_hbuf_put(struct cr_ctx *ctx, int n);
+>
+> +/* shared objects handling */
+> +
+> +enum {
+> +	CR_OBJ_FILE =3D 1,
+> +	CR_OBJ_MAX
+> +};
+> + +void cr_objhash_free(struct cr_ctx *ctx);
+    ^
+    |
+      Strange, isn't it?
+
+> +int cr_objhash_alloc(struct cr_ctx *ctx);
+> +void *cr_obj_get_by_tag(struct cr_ctx *ctx, int tag, unsigned short type=
+);
+> +int cr_obj_get_by_ptr(struct cr_ctx *ctx, void *ptr, unsigned short type=
+);
+> +int cr_obj_add_ptr(struct cr_ctx *ctx, void *ptr, int *tag,
+> +		   unsigned short type, unsigned short flags);
+> +int cr_obj_add_tag(struct cr_ctx *ctx, void *ptr, int tag,
+> +		   unsigned short type, unsigned short flags);
+> +
+>  struct cr_hdr;
+>
+>  int cr_write_obj(struct cr_ctx *ctx, struct cr_hdr *h, void *buf);
+> diff --git a/checkpoint/objhash.c b/checkpoint/objhash.c
+> new file mode 100644
+> index 0000000..aca32c6
+> --- /dev/null
+> +++ b/checkpoint/objhash.c
+> @@ -0,0 +1,193 @@
+> +/*
+> + *  Checkpoint-restart - object hash infrastructure to manage shared=20
+> objects + *
+> + *  Copyright (C) 2008 Oren Laadan
+> + *
+> + *  This file is subject to the terms and conditions of the GNU General =
+Public
+> + *  License.  See the file COPYING in the main directory of the Linux
+> + *  distribution for more details.
+> + */
+> +
+> +#include <linux/kernel.h>
+> +#include <linux/file.h>
+> +#include <linux/hash.h>
+> +
+> +#include "ckpt.h"
+> +
+> +struct cr_obj {
+> +	int tag;
+> +	void *ptr;
+> +	unsigned short type;
+> +	unsigned short flags;
+> +	struct cr_obj *next;
+> +};
+> +
+> +struct cr_objhash {
+> +	struct cr_obj **hash;
+> +	int next_tag;
+> +};
+> +
+> +#define CR_OBJHASH_NBITS  10	/* 10 bits =3D 1K buckets */
+> +#define CR_OBJHASH_ORDER  0	/* 1K buckets * 4 bytes/bucket =3D 1 page */
+
+Only true when PAGE_SIZE =3D=3D 4K and in 32bits. Perhaps like below?
+
+#define CR_OBJHASH_BUCKET_NBITS (BITS_PER_LONG =3D=3D 64 ? 3 : 2)
+#define CR_MIN_OBJHASH_NBITS ((PAGE_SHIFT - CR_OBJHASH_BUCKET_NBITS)
+#define CR_OBJHASH_NBITS (CR_MIN_OBJHASH_NBITS >=3D 10 ? CR_MIN_OBJHASH_NBI=
+TS : 10)
+#define CR_OBJHASH_ORDER (CR_OBJHASH_NBITS + CR_OBJHASH_BUCKET_NBITS - PAGE=
+_SHIFT)
+
+Louis
+
+--=20
+Dr Louis Rilling			Kerlabs
+Skype: louis.rilling			Batiment Germanium
+Phone: (+33|0) 6 80 89 08 23		80 avenue des Buttes de Coesmes
+http://www.kerlabs.com/			35700 Rennes
+
+--=_bohort-10627-1219315086-0001-2
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Transfer-Encoding: 7bit
+Content-Description: Digital signature
+Content-Disposition: inline
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.6 (GNU/Linux)
+
+iD8DBQFIrUYQVKcRuvQ9Q1QRAmSJAJ90Ulu7lEVbhJmBnikR3wDQdg7DdgCgzKOX
++lMFTaVjHJwo4PEi9F/hAl0=
+=+vf6
+-----END PGP SIGNATURE-----
+
+--=_bohort-10627-1219315086-0001-2--
+
+--===============6030994871713734708==
+Content-Type: text/plain; charset="us-ascii"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+Content-Disposition: inline
+
+_______________________________________________
+Containers mailing list
+Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+https://lists.linux-foundation.org/mailman/listinfo/containers
+--===============6030994871713734708==--
