@@ -1,7 +1,7 @@
 From: sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org
-Subject: [RFC][PATCH 7/8]: Auto-create ptmx node when mounting devpts
-Date: Wed, 20 Aug 2008 19:29:08 -0700
-Message-ID: <20080821022908.GG29658@us.ibm.com>
+Subject: [RFC][PATCH 8/8]: Enable multiple mounts of devpts
+Date: Wed, 20 Aug 2008 19:29:32 -0700
+Message-ID: <20080821022932.GH29658@us.ibm.com>
 References: <20080821022126.GA29449@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -24,190 +24,227 @@ List-Id: containers.vger.kernel.org
 
 
 From: Sukadev Bhattiprolu <sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: [RFC][PATCH 7/8]: Auto-create ptmx node when mounting devpts
+Subject: [RFC][PATCH 8/8]: Enable multiple mounts of devpts
 
-/dev/ptmx is closely tied to the devpts filesystem. An open of /dev/ptmx,
-allocates the next pty index and the associated device shows up in the
-devpts fs as /dev/pts/n.
+To support containers, allow multiple instances of devpts filesystem.
 
-Wih multiple mounts of devpts filesystem, an open of /dev/ptmx would be
-unable to determine which instance of the devpts is being accessed.
+But to preserve backward compatibility, provide this support for
+multiple-mounts under the new mount option, '-o newmnt'.
 
-One solution for this would be to create make /dev/ptmx a symlink to
-/dev/pts/ptmx and create the device node, ptmx, in each instance of
-devpts. When /dev/ptmx is opened, we can use the inode of /dev/pts/ptmx
-to identify the specific devpts instance.
+IOW, devpts must support both single-mount and multiple-mount semantics.
+If the filesystem is mounted without the 'newmnt' option (as in current
+start-up scripts) the new mount simply binds to the initial kernel mount
+of devpts and thus current behavior is preserved.
 
-This patch has the kernel internally create the [ptmx, c, 5:2] device
-when mounting devpts filesystem. The permissions for the device node
-can be specified by the '-o ptmx_mode=0666' option. The default mode
-is 0666.
+If the 'newmnt' option is specified (by new container-startup scripts) a
+new instance of the devpts fs is created and any ptys created in this
+instance are independent of the ptys in other mounts of devpts.
 
-USER-SPACE IMPACT:
-	
-	This patch has an user-space impact in that the permissions for
-      	the device node are specified at mount time. Default mode of 0666
-      	matches current defaults on Ubuntu, Redhat,
-	
-	Hopefully, presence of the 'ptmx' node in /dev/pts does not surprise
-	user space.
+(Hmm would 'private-mount' be a better name as in MAP_PRIVATE) ?
+
+Eg: A container startup script could do the following:
+
+	$ ns_exec -cm /bin/bash
+	$ umount /dev/pts
+	$ mount -t devpts -o newmnt lxcpts /dev/pts
+	$ sshd -p 6710
+
+where 'ns_exec -cm /bin/bash' is calls clone() with CLONE_NEWNS flag
+and execs /bin/bash in the child process.  A pty created by the sshd
+is not visible in the original mount of /dev/pts.
+
+USER-SPACE-IMPACT:
+
+	The -onewmnt option is meant to minimize userspace impact. Following
+	are known impacts.
+
+	1. /dev/ptmx symlink to pts/ptmx. This is optional if only single-
+	   mount semantics is desired but is required if multi-mount semantics.
+
+	2. /dev/pts fs has a new entry (ptmx device node) that is created/
+	   destroyed automatically.
+
+	TODO: Others impacts ?
+
+Implementation note:
+
+	See comments in new get_sb_ref() function in fs/super.c
+	(yes fs/super.c !) on why get_sb_single() cannot be
+	directly used.
+
 
 Changelog[v2]:
-	- [H. Peter Anvin] Remove mknod() system call support and create the
-	  ptmx node internally.
-
-Changelog[v1]:
-	- Earlier version of this patch enabled creating /dev/pts/tty as
-	  well. As pointed out by Al Viro and H. Peter Anvin, that is not
-	  really necessary.
+	Support both single-mount and multiple-mount semantics and
+	provide '-onewmnt' option to select the semantics.
 
 ---
- fs/devpts/inode.c |   80 +++++++++++++++++++++++++++++++++++++++++++++++++++---
- 1 file changed, 77 insertions(+), 3 deletions(-)
+ fs/devpts/inode.c  |   43 +++++++++++++++++++++++++++++++++++++++++--
+ fs/super.c         |   44 ++++++++++++++++++++++++++++++++++++++++++++
+ include/linux/fs.h |    2 ++
+ 3 files changed, 87 insertions(+), 2 deletions(-)
 
 Index: linux-2.6.26-rc8-mm1/fs/devpts/inode.c
 ===================================================================
---- linux-2.6.26-rc8-mm1.orig/fs/devpts/inode.c	2008-08-20 14:28:39.000000000 -0700
-+++ linux-2.6.26-rc8-mm1/fs/devpts/inode.c	2008-08-20 17:44:29.000000000 -0700
-@@ -27,6 +27,7 @@
- #define DEVPTS_SUPER_MAGIC 0x1cd1
- 
- #define DEVPTS_DEFAULT_MODE 0600
-+#define DEVPTS_DEFAULT_PTMX_MODE 0666
- 
- extern int pty_limit;			/* Config limit on Unix98 ptys */
- static DEFINE_MUTEX(allocated_ptys_lock);
-@@ -39,10 +40,11 @@ struct pts_mount_opts {
- 	uid_t   uid;
+--- linux-2.6.26-rc8-mm1.orig/fs/devpts/inode.c	2008-08-20 17:44:29.000000000 -0700
++++ linux-2.6.26-rc8-mm1/fs/devpts/inode.c	2008-08-20 17:50:42.000000000 -0700
+@@ -41,10 +41,11 @@ struct pts_mount_opts {
  	gid_t   gid;
  	umode_t mode;
-+	umode_t ptmx_mode;
+ 	umode_t ptmx_mode;
++	int newmnt;
  };
  
  enum {
--	Opt_uid, Opt_gid, Opt_mode,
-+	Opt_uid, Opt_gid, Opt_mode, Opt_ptmx_mode,
+-	Opt_uid, Opt_gid, Opt_mode, Opt_ptmx_mode,
++	Opt_uid, Opt_gid, Opt_mode, Opt_ptmx_mode, Opt_newmnt,
  	Opt_err
  };
  
-@@ -50,6 +52,7 @@ static match_table_t tokens = {
- 	{Opt_uid, "uid=%u"},
+@@ -53,6 +54,7 @@ static match_table_t tokens = {
  	{Opt_gid, "gid=%u"},
  	{Opt_mode, "mode=%o"},
-+	{Opt_ptmx_mode, "ptmx_mode=%o"},
+ 	{Opt_ptmx_mode, "ptmx_mode=%o"},
++	{ Opt_newmnt, "newmnt" },
  	{Opt_err, NULL}
  };
  
-@@ -80,6 +83,7 @@ static int parse_mount_options(char *dat
- 	opts->uid     = 0;
+@@ -84,6 +86,7 @@ static int parse_mount_options(char *dat
  	opts->gid     = 0;
  	opts->mode    = DEVPTS_DEFAULT_MODE;
-+	opts->ptmx_mode = DEVPTS_DEFAULT_PTMX_MODE;
+ 	opts->ptmx_mode = DEVPTS_DEFAULT_PTMX_MODE;
++	opts->newmnt = 0;
  
  	while ((p = strsep(&data, ",")) != NULL) {
  		substring_t args[MAX_OPT_ARGS];
-@@ -108,6 +112,11 @@ static int parse_mount_options(char *dat
+@@ -117,6 +120,9 @@ static int parse_mount_options(char *dat
  				return -EINVAL;
- 			opts->mode = option & S_IALLUGO;
+ 			opts->ptmx_mode = option & S_IALLUGO;
  			break;
-+		case Opt_ptmx_mode:
-+			if (match_octal(&args[0], &option))
-+				return -EINVAL;
-+			opts->ptmx_mode = option & S_IALLUGO;
++		case Opt_newmnt:
++			opts->newmnt = 1;
 +			break;
  		default:
  			printk(KERN_ERR "devpts: called with bogus options\n");
  			return -EINVAL;
-@@ -135,6 +144,7 @@ static int devpts_show_options(struct se
- 	if (opts->setgid)
+@@ -145,6 +151,8 @@ static int devpts_show_options(struct se
  		seq_printf(seq, ",gid=%u", opts->gid);
  	seq_printf(seq, ",mode=%03o", opts->mode);
-+	seq_printf(seq, ",ptmx_mode=%03o", opts->ptmx_mode);
+ 	seq_printf(seq, ",ptmx_mode=%03o", opts->ptmx_mode);
++	if (opts->newmnt)
++		seq_printf(seq, ",newmnt");
  
  	return 0;
  }
-@@ -199,10 +209,74 @@ fail:
- 	return -ENOMEM;
+@@ -256,12 +264,43 @@ int mknod_ptmx(struct super_block *sb)
+ 	return 0;
  }
  
-+int mknod_ptmx(struct super_block *sb)
++static int mount_init_pts(struct file_system_type *fs_type, int flags,
++		void *data, struct vfsmount *mnt)
 +{
-+	struct dentry *root;
-+	struct dentry *dentry;
-+	struct inode *inode;
-+	struct pts_fs_info *fsi = DEVPTS_SB(sb);
-+	struct pts_mount_opts *opts = &fsi->mount_opts;
-+	int mode;
++	int err;
 +
-+	root = sb->s_root;
-+	dentry = lookup_one_len("ptmx", root, 4);
-+	if (IS_ERR(dentry)) {
-+		printk(KERN_ERR "Unable to alloc dentry for ptmx node\n");
-+		return -ENOMEM;
++	if (!devpts_mnt) {
++		err = get_sb_single(fs_type, flags, data, devpts_fill_super,
++			mnt);
++		if (!err)
++			devpts_mnt = mnt;
++		return err;
 +	}
 +
-+	if (dentry->d_inode) {
-+		printk(KERN_ERR "'ptmx' (ino %lu) exists in this devpts\n",
-+				dentry->d_inode->i_ino);
-+		return 0;
-+	}
++	err = get_sb_ref(devpts_mnt->mnt_sb, flags, data, mnt);
 +
-+	/*
-+	 * Create a new 'ptmx' node in this mount of devpts.
-+	 */
-+	inode = new_inode(sb);
-+	if (!inode) {
-+		printk(KERN_ERR "Unable to alloc inode for ptmx node\n");
-+		dput(dentry);
-+		return -ENOMEM;
-+	}
-+
-+	inode->i_uid = inode->i_gid = 0;
-+	inode->i_blocks = 0;
-+	inode->i_mtime = inode->i_atime = inode->i_ctime = CURRENT_TIME;
-+
-+	mode = S_IFCHR|opts->ptmx_mode;
-+	init_special_inode(inode, mode, MKDEV(TTYAUX_MAJOR, 2));
-+
-+	d_add(dentry, inode);	// d_instantiate() should be enough ?
-+
-+	printk(KERN_DEBUG "Created ptmx node in devpts ino %lu\n",
-+			inode->i_ino);
-+
-+	return 0;
++	printk(KERN_ERR "mount_init_pts(): returning %d\n", err);
++	return err;
 +}
 +
  static int devpts_get_sb(struct file_system_type *fs_type,
  	int flags, const char *dev_name, void *data, struct vfsmount *mnt)
  {
--	return get_sb_single(fs_type, flags, data, devpts_fill_super, mnt);
+ 	int err;
++	struct pts_mount_opts opts;
++
++	if (parse_mount_options((char *)data, &opts))
++		return -EINVAL;
++
++	printk(KERN_ERR "devpts_get_sb(): newmnt option is %d\n", opts.newmnt);
++
++	if (opts.newmnt) {
++		err = get_sb_nodev(fs_type, flags, data, devpts_fill_super,
++				mnt);
++	} else {
++		err = mount_init_pts(fs_type, flags, data, mnt);
++	}
+ 
+-	err = get_sb_single(fs_type, flags, data, devpts_fill_super, mnt);
+ 	if (err)
+ 		return err;
+ 
+Index: linux-2.6.26-rc8-mm1/fs/super.c
+===================================================================
+--- linux-2.6.26-rc8-mm1.orig/fs/super.c	2008-08-20 17:44:29.000000000 -0700
++++ linux-2.6.26-rc8-mm1/fs/super.c	2008-08-20 18:07:38.000000000 -0700
+@@ -883,6 +883,50 @@ int get_sb_single(struct file_system_typ
+ 
+ EXPORT_SYMBOL(get_sb_single);
+ 
++int get_sb_ref(struct super_block *sb, int flags, void *data,
++		struct vfsmount *mnt)
++{
 +	int err;
 +
-+	err = get_sb_single(fs_type, flags, data, devpts_fill_super, mnt);
-+	if (err)
-+		return err;
-+
 +	/*
-+	 * Create the 'ptmx' device in the root of the new mount.
-+	 * Do this even for the 'single-mount' case so users can choose
-+	 * to leave /dev/ptmx -> pts/ptmx symlink as they switch between
-+	 * old and new kernels.
++	 * UGLY:
++	 *
++	 * This is needed to support multiple mounts in devpts while
++	 * preserving backward compatibility of the current 'single-mount'
++	 * semantics.
++	 *
++	 * devpts cannot simply use get_sb_single(), bc get_sb_single() or
++	 * more specifically, sget() finds the most recent mount of devpts.
++	 * But that recent mount may not the be initial kernel mount (user
++	 * may mounted with the '-onewmnt' option since the initial mount
++	 * and get_sb_single() would pick that super-block).
++	 *
++	 * Caller is responsible to ensure that 'sb' is valid initialized.
++	 * So armed with that fact, unroll essentials of get_sb_single()
++	 * here.
 +	 */
-+	err = mknod_ptmx(mnt->mnt_sb);
-+	if (err) {
-+		dput(mnt->mnt_sb->s_root);
-+		deactivate_super(mnt->mnt_sb);
++	spin_lock(&sb_lock);
++
++	if (!grab_super(sb)) {
++		/*
++		 * TODO: anymore cleanup ?
++		 */
++		return -EAGAIN;
 +	}
-+	return err;
- }
- 
- 
-@@ -213,7 +287,7 @@ static void devpts_kill_sb(struct super_
- 	//idr_destroy(&fsi->allocated_ptys);
- 	kfree(fsi);
- 
--	kill_anon_super(sb);
-+	kill_litter_super(sb);
- }
- 
- static struct file_system_type devpts_fs_type = {
++
++	err = do_remount_sb(sb, flags, data, 0);
++	if (err) {
++		/*
++		 * (don't deactivate_super() here - its from initial pts mount)
++		 *
++		 * TODO: anymore cleanup ?
++		 */
++		up_write(&sb->s_umount);
++		return err;
++	}
++	return simple_set_mnt(mnt, sb);
++}
++
+ struct vfsmount *
+ vfs_kern_mount(struct file_system_type *type, int flags, const char *name, void *data)
+ {
+Index: linux-2.6.26-rc8-mm1/include/linux/fs.h
+===================================================================
+--- linux-2.6.26-rc8-mm1.orig/include/linux/fs.h	2008-08-20 17:46:27.000000000 -0700
++++ linux-2.6.26-rc8-mm1/include/linux/fs.h	2008-08-20 17:47:04.000000000 -0700
+@@ -1522,6 +1522,8 @@ extern int get_sb_nodev(struct file_syst
+ 	int flags, void *data,
+ 	int (*fill_super)(struct super_block *, void *, int),
+ 	struct vfsmount *mnt);
++extern int get_sb_ref(struct super_block *sb, int flags, void *data,
++	struct vfsmount *mnt);
+ void generic_shutdown_super(struct super_block *sb);
+ void kill_block_super(struct super_block *sb);
+ void kill_anon_super(struct super_block *sb);
