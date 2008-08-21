@@ -1,21 +1,12 @@
-From: sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org
-Subject: Re: [RFC][PATCH 7/8]: Auto-create ptmx node when mounting devpts
-Date: Thu, 21 Aug 2008 15:16:18 -0700
-Message-ID: <20080821221618.GA12991@us.ibm.com>
-References: <20080821022126.GA29449@us.ibm.com>
-	<20080821022908.GG29658@us.ibm.com>
-	<20080821102139.43c44f67@lxorguk.ukuu.org.uk>
-	<48AD932F.8090908@zytor.com>
-	<20080821172700.781b0011@lxorguk.ukuu.org.uk>
-	<48AD9C93.6080302@zytor.com> <20080821172342.GA8059@us.ibm.com>
-	<48ADA890.4060309@zytor.com> <20080821181133.GB8059@us.ibm.com>
-	<20080821210040.GA14532@us.ibm.com>
+From: adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org
+Subject: [PATCH 3/6] netns brnetfilter: per-netns broute table
+Date: Fri, 22 Aug 2008 02:21:47 +0400
+Message-ID: <20080821222147.GQ31136__34339.8065808744$1219357598$gmane$org@x200.localdomain>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <20080821210040.GA14532-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -25,11 +16,95 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Cc: kyle-hoO6YkzgTuCM0SS3m2neIg@public.gmane.org, bastian-yyjItF7Rl6lg9hUCZPvPmw@public.gmane.org, "H. Peter Anvin" <hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org>, containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org, Alan Cox <alan-qBU/x9rampVanCEyBjwyrvXRex20P6io@public.gmane.org>, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org
+To: shemminger-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, kaber-dcUjhNyLwpNeoWH0uzbU5w@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Serge E. Hallyn [serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org] wrote:
-| Suka, I think you are missing Eric's point.
+Signed-off-by: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+---
 
-Yes, sorry I missed it. The bind mount should work. Thanks.
+ include/net/netns/bridge.h            |    1 
+ net/bridge/netfilter/ebtable_broute.c |   36 +++++++++++++++++++++++++---------
+ 2 files changed, 28 insertions(+), 9 deletions(-)
+
+--- a/include/net/netns/bridge.h
++++ b/include/net/netns/bridge.h
+@@ -5,5 +5,6 @@
+ 
+ struct netns_br {
+ 	struct list_head	ebt_tables;
++	struct ebt_table	*broute_table;
+ };
+ #endif
+--- a/net/bridge/netfilter/ebtable_broute.c
++++ b/net/bridge/netfilter/ebtable_broute.c
+@@ -41,33 +41,52 @@ static int check(const struct ebt_table_info *info, unsigned int valid_hooks)
+ 	return 0;
+ }
+ 
+-static struct ebt_table __broute_table =
++static struct ebt_table broute_table =
+ {
+ 	.name		= "broute",
+ 	.table		= &initial_table,
+ 	.valid_hooks	= 1 << NF_BR_BROUTING,
+-	.lock		= __RW_LOCK_UNLOCKED(__broute_table.lock),
++	.lock		= __RW_LOCK_UNLOCKED(broute_table.lock),
+ 	.check		= check,
+ 	.me		= THIS_MODULE,
+ };
+-static struct ebt_table *broute_table;
+ 
+ static int ebt_broute(struct sk_buff *skb)
+ {
+ 	int ret;
+ 
+ 	ret = ebt_do_table(NF_BR_BROUTING, skb, skb->dev, NULL,
+-	   broute_table);
++			   dev_net(skb->dev)->br.broute_table);
+ 	if (ret == NF_DROP)
+ 		return 1; /* route it */
+ 	return 0; /* bridge it */
+ }
+ 
++static int ebtable_broute_net_init(struct net *net)
++{
++	net->br.broute_table = ebt_register_table(net, &broute_table);
++	if (IS_ERR(net->br.broute_table))
++		return PTR_ERR(net->br.broute_table);
++	return 0;
++}
++
++static void ebtable_broute_net_exit(struct net *net)
++{
++	ebt_unregister_table(net->br.broute_table);
++}
++
++static struct pernet_operations ebtable_broute_net_ops = {
++	.init = ebtable_broute_net_init,
++	.exit = ebtable_broute_net_exit,
++};
++
+ static int __init ebtable_broute_init(void)
+ {
+-	broute_table = ebt_register_table(&init_net, &__broute_table);
+-	if (IS_ERR(broute_table))
+-		return PTR_ERR(broute_table);
++	int ret;
++
++	ret = register_pernet_subsys(&ebtable_broute_net_ops);
++	if (ret < 0)
++		return ret;
+ 	/* see br_input.c */
+ 	rcu_assign_pointer(br_should_route_hook, ebt_broute);
+ 	return 0;
+@@ -77,7 +96,7 @@ static void __exit ebtable_broute_fini(void)
+ {
+ 	rcu_assign_pointer(br_should_route_hook, NULL);
+ 	synchronize_net();
+-	ebt_unregister_table(broute_table);
++	unregister_pernet_subsys(&ebtable_broute_net_ops);
+ }
+ 
+ module_init(ebtable_broute_init);
+-- 
+1.5.6.3
