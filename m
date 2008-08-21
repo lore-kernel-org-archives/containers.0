@@ -1,7 +1,7 @@
 From: adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org
-Subject: [PATCH 24/38] netns ct: per-netns statistics in proc
-Date: Fri, 22 Aug 2008 02:07:04 +0400
-Message-ID: <20080821220704.GX31136__34593.4146469974$1219356904$gmane$org@x200.localdomain>
+Subject: [PATCH 26/38] netns ct: per-netns net.netfilter.nf_conntrack_checksum
+Date: Fri, 22 Aug 2008 02:07:36 +0400
+Message-ID: <20080821220736.GZ31136__48166.040905244$1219356907$gmane$org@x200.localdomain>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -22,137 +22,151 @@ List-Id: containers.vger.kernel.org
 Signed-off-by: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 ---
 
- net/ipv4/netfilter/nf_conntrack_l3proto_ipv4_compat.c |   14 +++++++++-----
- net/netfilter/nf_conntrack_standalone.c               |   15 +++++++++------
- 2 files changed, 18 insertions(+), 11 deletions(-)
+ include/net/netfilter/nf_conntrack.h           |    1 -
+ include/net/netns/conntrack.h                  |    1 +
+ net/ipv4/netfilter/nf_conntrack_l3proto_ipv4.c |    2 +-
+ net/ipv4/netfilter/nf_conntrack_proto_icmp.c   |    2 +-
+ net/ipv6/netfilter/nf_conntrack_proto_icmpv6.c |    2 +-
+ net/netfilter/nf_conntrack_proto_dccp.c        |    2 +-
+ net/netfilter/nf_conntrack_proto_tcp.c         |    2 +-
+ net/netfilter/nf_conntrack_proto_udp.c         |    2 +-
+ net/netfilter/nf_conntrack_proto_udplite.c     |    2 +-
+ net/netfilter/nf_conntrack_standalone.c        |    8 +++-----
+ 10 files changed, 11 insertions(+), 13 deletions(-)
 
---- a/net/ipv4/netfilter/nf_conntrack_l3proto_ipv4_compat.c
-+++ b/net/ipv4/netfilter/nf_conntrack_l3proto_ipv4_compat.c
-@@ -285,6 +285,7 @@ static const struct file_operations ip_exp_file_ops = {
+--- a/include/net/netfilter/nf_conntrack.h
++++ b/include/net/netfilter/nf_conntrack.h
+@@ -282,7 +282,6 @@ static inline int nf_ct_is_dying(struct nf_conn *ct)
  
- static void *ct_cpu_seq_start(struct seq_file *seq, loff_t *pos)
- {
-+	struct net *net = seq_file_net(seq);
- 	int cpu;
+ extern int nf_conntrack_set_hashsize(const char *val, struct kernel_param *kp);
+ extern unsigned int nf_conntrack_htable_size;
+-extern int nf_conntrack_checksum;
+ extern int nf_conntrack_max;
  
- 	if (*pos == 0)
-@@ -294,7 +295,7 @@ static void *ct_cpu_seq_start(struct seq_file *seq, loff_t *pos)
- 		if (!cpu_possible(cpu))
- 			continue;
- 		*pos = cpu+1;
--		return per_cpu_ptr(init_net.ct.stat, cpu);
-+		return per_cpu_ptr(net->ct.stat, cpu);
+ #define NF_CT_STAT_INC(net, count)	\
+--- a/include/net/netns/conntrack.h
++++ b/include/net/netns/conntrack.h
+@@ -22,6 +22,7 @@ struct netns_ct {
+ #ifdef CONFIG_NF_CONNTRACK_EVENTS
+ 	struct nf_conntrack_ecache *ecache;
+ #endif
++	int			sysctl_checksum;
+ #ifdef CONFIG_SYSCTL
+ 	struct ctl_table_header	*sysctl_header;
+ #endif
+--- a/net/ipv4/netfilter/nf_conntrack_l3proto_ipv4.c
++++ b/net/ipv4/netfilter/nf_conntrack_l3proto_ipv4.c
+@@ -270,7 +270,7 @@ static ctl_table ip_ct_sysctl_table[] = {
+ 	{
+ 		.ctl_name	= NET_IPV4_NF_CONNTRACK_CHECKSUM,
+ 		.procname	= "ip_conntrack_checksum",
+-		.data		= &nf_conntrack_checksum,
++		.data		= &init_net.ct.sysctl_checksum,
+ 		.maxlen		= sizeof(int),
+ 		.mode		= 0644,
+ 		.proc_handler	= &proc_dointvec,
+--- a/net/ipv4/netfilter/nf_conntrack_proto_icmp.c
++++ b/net/ipv4/netfilter/nf_conntrack_proto_icmp.c
+@@ -190,7 +190,7 @@ icmp_error(struct net *net, struct sk_buff *skb, unsigned int dataoff,
  	}
  
- 	return NULL;
-@@ -302,13 +303,14 @@ static void *ct_cpu_seq_start(struct seq_file *seq, loff_t *pos)
- 
- static void *ct_cpu_seq_next(struct seq_file *seq, void *v, loff_t *pos)
- {
-+	struct net *net = seq_file_net(seq);
- 	int cpu;
- 
- 	for (cpu = *pos; cpu < NR_CPUS; ++cpu) {
- 		if (!cpu_possible(cpu))
- 			continue;
- 		*pos = cpu+1;
--		return per_cpu_ptr(init_net.ct.stat, cpu);
-+		return per_cpu_ptr(net->ct.stat, cpu);
+ 	/* See ip_conntrack_proto_tcp.c */
+-	if (nf_conntrack_checksum && hooknum == NF_INET_PRE_ROUTING &&
++	if (net->ct.sysctl_checksum && hooknum == NF_INET_PRE_ROUTING &&
+ 	    nf_ip_checksum(skb, hooknum, dataoff, 0)) {
+ 		if (LOG_INVALID(IPPROTO_ICMP))
+ 			nf_log_packet(PF_INET, 0, skb, NULL, NULL, NULL,
+--- a/net/ipv6/netfilter/nf_conntrack_proto_icmpv6.c
++++ b/net/ipv6/netfilter/nf_conntrack_proto_icmpv6.c
+@@ -188,7 +188,7 @@ icmpv6_error(struct net *net, struct sk_buff *skb, unsigned int dataoff,
+ 		return -NF_ACCEPT;
  	}
  
- 	return NULL;
-@@ -320,7 +322,8 @@ static void ct_cpu_seq_stop(struct seq_file *seq, void *v)
+-	if (nf_conntrack_checksum && hooknum == NF_INET_PRE_ROUTING &&
++	if (net->ct.sysctl_checksum && hooknum == NF_INET_PRE_ROUTING &&
+ 	    nf_ip6_checksum(skb, hooknum, dataoff, IPPROTO_ICMPV6)) {
+ 		nf_log_packet(PF_INET6, 0, skb, NULL, NULL, NULL,
+ 			      "nf_ct_icmpv6: ICMPv6 checksum failed\n");
+--- a/net/netfilter/nf_conntrack_proto_dccp.c
++++ b/net/netfilter/nf_conntrack_proto_dccp.c
+@@ -575,7 +575,7 @@ static int dccp_error(struct net *net, struct sk_buff *skb,
+ 		}
+ 	}
  
- static int ct_cpu_seq_show(struct seq_file *seq, void *v)
- {
--	unsigned int nr_conntracks = atomic_read(&init_net.ct.count);
-+	struct net *net = seq_file_net(seq);
-+	unsigned int nr_conntracks = atomic_read(&net->ct.count);
- 	const struct ip_conntrack_stat *st = v;
+-	if (nf_conntrack_checksum && hooknum == NF_INET_PRE_ROUTING &&
++	if (net->ct.sysctl_checksum && hooknum == NF_INET_PRE_ROUTING &&
+ 	    nf_checksum_partial(skb, hooknum, dataoff, cscov, IPPROTO_DCCP,
+ 				pf)) {
+ 		msg = "nf_ct_dccp: bad checksum ";
+--- a/net/netfilter/nf_conntrack_proto_tcp.c
++++ b/net/netfilter/nf_conntrack_proto_tcp.c
+@@ -779,7 +779,7 @@ static int tcp_error(struct net *net, struct sk_buff *skb,
+ 	 * because the checksum is assumed to be correct.
+ 	 */
+ 	/* FIXME: Source route IP option packets --RR */
+-	if (nf_conntrack_checksum && hooknum == NF_INET_PRE_ROUTING &&
++	if (net->ct.sysctl_checksum && hooknum == NF_INET_PRE_ROUTING &&
+ 	    nf_checksum(skb, hooknum, dataoff, IPPROTO_TCP, pf)) {
+ 		if (LOG_INVALID(IPPROTO_TCP))
+ 			nf_log_packet(pf, 0, skb, NULL, NULL, NULL,
+--- a/net/netfilter/nf_conntrack_proto_udp.c
++++ b/net/netfilter/nf_conntrack_proto_udp.c
+@@ -125,7 +125,7 @@ static int udp_error(struct net *net, struct sk_buff *skb, unsigned int dataoff,
+ 	 * We skip checking packets on the outgoing path
+ 	 * because the checksum is assumed to be correct.
+ 	 * FIXME: Source route IP option packets --RR */
+-	if (nf_conntrack_checksum && hooknum == NF_INET_PRE_ROUTING &&
++	if (net->ct.sysctl_checksum && hooknum == NF_INET_PRE_ROUTING &&
+ 	    nf_checksum(skb, hooknum, dataoff, IPPROTO_UDP, pf)) {
+ 		if (LOG_INVALID(IPPROTO_UDP))
+ 			nf_log_packet(pf, 0, skb, NULL, NULL, NULL,
+--- a/net/netfilter/nf_conntrack_proto_udplite.c
++++ b/net/netfilter/nf_conntrack_proto_udplite.c
+@@ -130,7 +130,7 @@ static int udplite_error(struct net *net, struct sk_buff *skb,
+ 	}
  
- 	if (v == SEQ_START_TOKEN) {
-@@ -360,7 +363,8 @@ static const struct seq_operations ct_cpu_seq_ops = {
- 
- static int ct_cpu_seq_open(struct inode *inode, struct file *file)
- {
--	return seq_open(file, &ct_cpu_seq_ops);
-+	return seq_open_net(inode, file, &ct_cpu_seq_ops,
-+			    sizeof(struct seq_net_private));
- }
- 
- static const struct file_operations ct_cpu_seq_fops = {
-@@ -368,7 +372,7 @@ static const struct file_operations ct_cpu_seq_fops = {
- 	.open    = ct_cpu_seq_open,
- 	.read    = seq_read,
- 	.llseek  = seq_lseek,
--	.release = seq_release,
-+	.release = seq_release_net,
- };
- 
- static int __net_init ip_conntrack_net_init(struct net *net)
+ 	/* Checksum invalid? Ignore. */
+-	if (nf_conntrack_checksum && hooknum == NF_INET_PRE_ROUTING &&
++	if (net->ct.sysctl_checksum && hooknum == NF_INET_PRE_ROUTING &&
+ 	    nf_checksum_partial(skb, hooknum, dataoff, cscov, IPPROTO_UDP,
+ 	    			pf)) {
+ 		if (LOG_INVALID(IPPROTO_UDPLITE))
 --- a/net/netfilter/nf_conntrack_standalone.c
 +++ b/net/netfilter/nf_conntrack_standalone.c
-@@ -194,6 +194,7 @@ static const struct file_operations ct_file_ops = {
+@@ -322,9 +322,6 @@ static void nf_conntrack_standalone_fini_proc(struct net *net)
  
- static void *ct_cpu_seq_start(struct seq_file *seq, loff_t *pos)
- {
-+	struct net *net = seq_file_net(seq);
- 	int cpu;
+ /* Sysctl support */
  
- 	if (*pos == 0)
-@@ -203,7 +204,7 @@ static void *ct_cpu_seq_start(struct seq_file *seq, loff_t *pos)
- 		if (!cpu_possible(cpu))
- 			continue;
- 		*pos = cpu + 1;
--		return per_cpu_ptr(init_net.ct.stat, cpu);
-+		return per_cpu_ptr(net->ct.stat, cpu);
- 	}
+-int nf_conntrack_checksum __read_mostly = 1;
+-EXPORT_SYMBOL_GPL(nf_conntrack_checksum);
+-
+ #ifdef CONFIG_SYSCTL
+ /* Log invalid packets of a given protocol */
+ static int log_invalid_proto_min = 0;
+@@ -360,7 +357,7 @@ static ctl_table nf_ct_sysctl_table[] = {
+ 	{
+ 		.ctl_name	= NET_NF_CONNTRACK_CHECKSUM,
+ 		.procname	= "nf_conntrack_checksum",
+-		.data		= &nf_conntrack_checksum,
++		.data		= &init_net.ct.sysctl_checksum,
+ 		.maxlen		= sizeof(unsigned int),
+ 		.mode		= 0644,
+ 		.proc_handler	= &proc_dointvec,
+@@ -424,6 +421,7 @@ static int nf_conntrack_standalone_init_sysctl(struct net *net)
+ 		goto out_kmemdup;
  
- 	return NULL;
-@@ -211,13 +212,14 @@ static void *ct_cpu_seq_start(struct seq_file *seq, loff_t *pos)
+ 	table[1].data = &net->ct.count;
++	table[3].data = &net->ct.sysctl_checksum;
  
- static void *ct_cpu_seq_next(struct seq_file *seq, void *v, loff_t *pos)
- {
-+	struct net *net = seq_file_net(seq);
- 	int cpu;
- 
- 	for (cpu = *pos; cpu < NR_CPUS; ++cpu) {
- 		if (!cpu_possible(cpu))
- 			continue;
- 		*pos = cpu + 1;
--		return per_cpu_ptr(init_net.ct.stat, cpu);
-+		return per_cpu_ptr(net->ct.stat, cpu);
- 	}
- 
- 	return NULL;
-@@ -229,7 +231,8 @@ static void ct_cpu_seq_stop(struct seq_file *seq, void *v)
- 
- static int ct_cpu_seq_show(struct seq_file *seq, void *v)
- {
--	unsigned int nr_conntracks = atomic_read(&init_net.ct.count);
-+	struct net *net = seq_file_net(seq);
-+	unsigned int nr_conntracks = atomic_read(&net->ct.count);
- 	const struct ip_conntrack_stat *st = v;
- 
- 	if (v == SEQ_START_TOKEN) {
-@@ -269,7 +272,8 @@ static const struct seq_operations ct_cpu_seq_ops = {
- 
- static int ct_cpu_seq_open(struct inode *inode, struct file *file)
- {
--	return seq_open(file, &ct_cpu_seq_ops);
-+	return seq_open_net(inode, file, &ct_cpu_seq_ops,
-+			    sizeof(struct seq_net_private));
- }
- 
- static const struct file_operations ct_cpu_seq_fops = {
-@@ -277,7 +281,7 @@ static const struct file_operations ct_cpu_seq_fops = {
- 	.open	 = ct_cpu_seq_open,
- 	.read	 = seq_read,
- 	.llseek	 = seq_lseek,
--	.release = seq_release,
-+	.release = seq_release_net,
- };
- 
- static int nf_conntrack_standalone_init_proc(struct net *net)
+ 	net->ct.sysctl_header = register_net_sysctl_table(net,
+ 					nf_net_netfilter_sysctl_path, table);
+@@ -473,6 +471,7 @@ static int nf_conntrack_net_init(struct net *net)
+ 	ret = nf_conntrack_standalone_init_proc(net);
+ 	if (ret < 0)
+ 		goto out_proc;
++	net->ct.sysctl_checksum = 1;
+ 	ret = nf_conntrack_standalone_init_sysctl(net);
+ 	if (ret < 0)
+ 		goto out_sysctl;
 -- 
 1.5.6.3
