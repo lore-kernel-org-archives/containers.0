@@ -1,7 +1,7 @@
 From: adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org
-Subject: [PATCH 29/38] netns ct: SIP conntracking in netns
-Date: Fri, 22 Aug 2008 02:08:31 +0400
-Message-ID: <20080821220831.GC31136__29511.1917694614$1219356928$gmane$org@x200.localdomain>
+Subject: [PATCH 33/38] netns nat: fix ipt_MASQUERADE in netns
+Date: Fri, 22 Aug 2008 02:09:32 +0400
+Message-ID: <20080821220932.GG31136__25092.1048493639$1219356932$gmane$org@x200.localdomain>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -22,19 +22,28 @@ List-Id: containers.vger.kernel.org
 Signed-off-by: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 ---
 
- net/netfilter/nf_conntrack_sip.c |    3 +--
- 1 file changed, 1 insertion(+), 2 deletions(-)
+ net/ipv4/netfilter/ipt_MASQUERADE.c |    6 +-----
+ 1 file changed, 1 insertion(+), 5 deletions(-)
 
---- a/net/netfilter/nf_conntrack_sip.c
-+++ b/net/netfilter/nf_conntrack_sip.c
-@@ -775,7 +775,7 @@ static int set_expected_rtp_rtcp(struct sk_buff *skb,
+--- a/net/ipv4/netfilter/ipt_MASQUERADE.c
++++ b/net/ipv4/netfilter/ipt_MASQUERADE.c
+@@ -120,16 +120,13 @@ static int masq_device_event(struct notifier_block *this,
+ {
+ 	const struct net_device *dev = ptr;
  
- 	rcu_read_lock();
- 	do {
--		exp = __nf_ct_expect_find(&init_net, &tuple);
-+		exp = __nf_ct_expect_find(nf_ct_net(ct), &tuple);
+-	if (!net_eq(dev_net(dev), &init_net))
+-		return NOTIFY_DONE;
+-
+ 	if (event == NETDEV_DOWN) {
+ 		/* Device was downed.  Search entire table for
+ 		   conntracks which were associated with that device,
+ 		   and forget them. */
+ 		NF_CT_ASSERT(dev->ifindex != 0);
  
- 		if (!exp || exp->master == ct ||
- 		    nfct_help(exp->master)->helper != nfct_help(ct)->helper ||
+-		nf_ct_iterate_cleanup(&init_net, device_cmp, (void *)(long)dev->ifindex);
++		nf_ct_iterate_cleanup(dev_net(dev), device_cmp, (void *)(long)dev->ifindex);
+ 	}
+ 
+ 	return NOTIFY_DONE;
 -- 
 1.5.6.3
