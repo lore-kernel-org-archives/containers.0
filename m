@@ -1,14 +1,14 @@
 From: Louis Rilling <Louis.Rilling-aw0BnHfMbSpBDgjK7y7TUQ@public.gmane.org>
-Subject: Re: [RFC v2][PATCH 7/9] Infrastructure for shared objects
-Date: Thu, 21 Aug 2008 12:40:16 +0200
-Message-ID: <20080821104016.GJ581__1572.42844948104$1219315342$gmane$org@hawkmoon.kerlabs.com>
+Subject: Re: [RFC v2][PATCH 8/9] File descriprtors - dump state
+Date: Thu, 21 Aug 2008 13:06:14 +0200
+Message-ID: <20080821110614.GK581__15515.2509142228$1219316911$gmane$org@hawkmoon.kerlabs.com>
 References: <Pine.LNX.4.64.0808202251500.17436@takamine.ncl.cs.columbia.edu>
-	<Pine.LNX.4.64.0808202306170.17436@takamine.ncl.cs.columbia.edu>
+	<Pine.LNX.4.64.0808202306530.17436@takamine.ncl.cs.columbia.edu>
 Reply-To: Louis.Rilling-aw0BnHfMbSpBDgjK7y7TUQ@public.gmane.org
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary="===============6030994871713734708=="
+Content-Type: multipart/mixed; boundary="===============7343426473350272654=="
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <Pine.LNX.4.64.0808202306170.17436-CXF6herHY6ykSYb+qCZC/1i27PF6R63G9nwVQlTi/Pw@public.gmane.org>
+In-Reply-To: <Pine.LNX.4.64.0808202306530.17436-CXF6herHY6ykSYb+qCZC/1i27PF6R63G9nwVQlTi/Pw@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -26,87 +26,43 @@ List-Id: containers.vger.kernel.org
 This is a MIME-formatted message.  If you see this text it means that your
 E-mail software does not support MIME-formatted messages.
 
---===============6030994871713734708==
-Content-Type: multipart/signed; micalg=pgp-sha1; protocol="application/pgp-signature"; boundary="=_bohort-10627-1219315086-0001-2"
+--===============7343426473350272654==
+Content-Type: multipart/signed; micalg=pgp-sha1; protocol="application/pgp-signature"; boundary="=_bohort-11042-1219316645-0001-2"
 Content-Disposition: inline
 
 This is a MIME-formatted message.  If you see this text it means that your
 E-mail software does not support MIME-formatted messages.
 
---=_bohort-10627-1219315086-0001-2
+--=_bohort-11042-1219316645-0001-2
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
 Content-Transfer-Encoding: quoted-printable
 
-On Wed, Aug 20, 2008 at 11:06:50PM -0400, Oren Laadan wrote:
+On Wed, Aug 20, 2008 at 11:07:16PM -0400, Oren Laadan wrote:
 >
-> Infrastructure to handle objects that may be shared and referenced by
-> multiple tasks or other objects, e..g open files, memory address space
-> etc.
+> Dump the files_struct of a task with 'struct cr_hdr_files', followed by
+> all open file descriptors. Since FDs can be shared, they are assigned a
+> tag and registered in the object hash.
 >
-> The state of shared objects is saved once. On the first encounter, the
-> state is dumped and the object is assigned a unique identifier and also
-> stored in a hash table (indexed by its physical kenrel address). From
-> then on the object will be found in the hash and only its identifier is
-> saved.
+> For each open FD there is a 'struct cr_hdr_fd_ent' with the FD, its tag
+> and its close-on-exec property. If the FD is to be saved (first time)
+> then this is followed by a 'struct cr_hdr_fd_data' with the FD state.
+> Then will come the next FD and so on.
 >
-> On restart the identifier is looked up in the hash table; if not found
-> then the state is read, the object is created, and added to the hash
-> table (this time indexed by its identifier). Otherwise, the object in
-> the hash table is used.
+> This patch only handles basic FDs - regular files, directories and also
+> symbolic links.
 
 [...]
 
-> diff --git a/checkpoint/ckpt.h b/checkpoint/ckpt.h
-> index 0addb63..8b02c4c 100644
-> --- a/checkpoint/ckpt.h
-> +++ b/checkpoint/ckpt.h
-> @@ -29,6 +29,8 @@ struct cr_ctx {
->  	void *hbuf;		/* header: to avoid many alloc/dealloc */
->  	int hpos;
->
-> +	struct cr_objhash *objhash;
-> +
->  	struct cr_pgarr *pgarr;
->  	struct cr_pgarr *pgcur;
->
-> @@ -56,6 +58,22 @@ int cr_kread(struct cr_ctx *ctx, void *buf, int count);
->  void *cr_hbuf_get(struct cr_ctx *ctx, int n);
->  void cr_hbuf_put(struct cr_ctx *ctx, int n);
->
-> +/* shared objects handling */
-> +
-> +enum {
-> +	CR_OBJ_FILE =3D 1,
-> +	CR_OBJ_MAX
-> +};
-> + +void cr_objhash_free(struct cr_ctx *ctx);
-    ^
-    |
-      Strange, isn't it?
-
-> +int cr_objhash_alloc(struct cr_ctx *ctx);
-> +void *cr_obj_get_by_tag(struct cr_ctx *ctx, int tag, unsigned short type=
-);
-> +int cr_obj_get_by_ptr(struct cr_ctx *ctx, void *ptr, unsigned short type=
-);
-> +int cr_obj_add_ptr(struct cr_ctx *ctx, void *ptr, int *tag,
-> +		   unsigned short type, unsigned short flags);
-> +int cr_obj_add_tag(struct cr_ctx *ctx, void *ptr, int tag,
-> +		   unsigned short type, unsigned short flags);
-> +
->  struct cr_hdr;
->
->  int cr_write_obj(struct cr_ctx *ctx, struct cr_hdr *h, void *buf);
-> diff --git a/checkpoint/objhash.c b/checkpoint/objhash.c
+> diff --git a/checkpoint/ckpt_file.c b/checkpoint/ckpt_file.c
 > new file mode 100644
-> index 0000000..aca32c6
+> index 0000000..18faaf1
 > --- /dev/null
-> +++ b/checkpoint/objhash.c
-> @@ -0,0 +1,193 @@
+> +++ b/checkpoint/ckpt_file.c
+> @@ -0,0 +1,234 @@
 > +/*
-> + *  Checkpoint-restart - object hash infrastructure to manage shared=20
-> objects + *
+> + *  Checkpoint file descriptors
+> + *
 > + *  Copyright (C) 2008 Oren Laadan
 > + *
 > + *  This file is subject to the terms and conditions of the GNU General =
@@ -116,37 +72,292 @@ Public
 > + */
 > +
 > +#include <linux/kernel.h>
+> +#include <linux/sched.h>
 > +#include <linux/file.h>
-> +#include <linux/hash.h>
+> +#include <linux/fdtable.h>
 > +
 > +#include "ckpt.h"
+> +#include "ckpt_hdr.h"
+> +#include "ckpt_file.h"
 > +
-> +struct cr_obj {
-> +	int tag;
-> +	void *ptr;
-> +	unsigned short type;
-> +	unsigned short flags;
-> +	struct cr_obj *next;
-> +};
+> +#define CR_DEFAULT_FDTABLE  128
 > +
-> +struct cr_objhash {
-> +	struct cr_obj **hash;
-> +	int next_tag;
-> +};
+> +/**
+> + * cr_scan_fds - scan file table and construct array of open fds
+> + * @files: files_struct pointer
+> + * @fdtable: (output) array of open fds
+> + * @return: the number of open fds found
+> + *
+> + * Allocates the file descriptors array (*fdtable), caller should free
+> + */
+> +int cr_scan_fds(struct files_struct *files, int **fdtable)
+> +{
+> +	int i, j, n, max;
+> +	struct fdtable *fdt;
+> +	int *fdlist;
 > +
-> +#define CR_OBJHASH_NBITS  10	/* 10 bits =3D 1K buckets */
-> +#define CR_OBJHASH_ORDER  0	/* 1K buckets * 4 bytes/bucket =3D 1 page */
+> +	max =3D CR_DEFAULT_FDTABLE;
+> +
+> + repeat:
+> +	fdlist =3D kmalloc(max * sizeof(*fdlist), GFP_KERNEL);
+> +	if (!fdlist)
+> +		return -ENOMEM;
+> +
+> +	j =3D 0;
+> +	n =3D 0;
+> +
+> +	spin_lock(&files->file_lock);
+> +	fdt =3D files_fdtable(files);
+> +	for (;;) {
+> +		unsigned long set;
+> +		i =3D j * __NFDBITS;
+> +		if (i >=3D fdt->max_fds)
+> +			break;
+> +		set =3D fdt->open_fds->fds_bits[j++];
 
-Only true when PAGE_SIZE =3D=3D 4K and in 32bits. Perhaps like below?
+Why not simply use fcheck_files(files, n) and check if the result is not NU=
+LL?
 
-#define CR_OBJHASH_BUCKET_NBITS (BITS_PER_LONG =3D=3D 64 ? 3 : 2)
-#define CR_MIN_OBJHASH_NBITS ((PAGE_SHIFT - CR_OBJHASH_BUCKET_NBITS)
-#define CR_OBJHASH_NBITS (CR_MIN_OBJHASH_NBITS >=3D 10 ? CR_MIN_OBJHASH_NBI=
-TS : 10)
-#define CR_OBJHASH_ORDER (CR_OBJHASH_NBITS + CR_OBJHASH_BUCKET_NBITS - PAGE=
-_SHIFT)
+> +		while (set) {
+> +			if (set & 1) {
+> +				if (unlikely(n =3D=3D max)) {
+> +					spin_unlock(&files->file_lock);
+> +					kfree(fdlist);
+> +					max *=3D 2;
+> +					if (max < 0)	/* overflow ? */
+> +						return -EMFILE;
+> +					goto repeat;
+> +				}
+> +				fdlist[n++] =3D i;
+> +			}
+> +			i++;
+> +			set >>=3D 1;
+> +		}
+> +	}
+> +	spin_unlock(&files->file_lock);
+> +
+> +	*fdtable =3D fdlist;
+> +	return n;
+> +}
+> +
+> +/* cr_write_fd_data - dump the state of a given file pointer */
+> +static int cr_write_fd_data(struct cr_ctx *ctx, struct file *file, int p=
+tag)
+> +{
+> +	struct cr_hdr h;
+> +	struct cr_hdr_fd_data *hh =3D ctx->hbuf;
+> +	struct dentry *dent =3D file->f_dentry;
+> +	struct inode *inode =3D dent->d_inode;
+> +	char *fname;
+> +	int flen, how, ret;
+> +
+> +	h.type =3D CR_HDR_FD_DATA;
+> +	h.len =3D sizeof(*hh);
+> +	h.ptag =3D ptag;
+> +
+> +	BUG_ON(!inode);
+> +
+> +	flen =3D PAGE_SIZE;
+> +	fname =3D cr_fill_fname(&file->f_path, ctx->vfsroot, ctx->tbuf, &flen);
+> +	if (IS_ERR(fname))
+> +		return PTR_ERR(fname);
+> +
+> +	hh->f_flags =3D file->f_flags;
+> +	hh->f_mode =3D file->f_mode;
+> +	hh->f_pos =3D file->f_pos;
+> +	hh->f_uid =3D file->f_uid;
+> +	hh->f_gid =3D file->f_gid;
+> +	hh->f_version =3D file->f_version;
+> +	/* FIX: need also file->f_owner */
+> +
+> +	switch(inode->i_mode & S_IFMT) {
+> +	case S_IFREG:
+> +		how =3D CR_FD_FILE;
+> +		break;
+> +	case S_IFDIR:
+> +		how =3D CR_FD_DIR;
+> +		break;
+> +	case S_IFLNK:
+> +		how =3D CR_FD_LINK;
+> +		break;
+> +	default:
+> +		return -EBADF;
+> +	}
+> +
+> +	/* FIX: check if the file/dir/link is unlinked */
+> +
+> +	BUG_ON(!flen);
+> +
+> +	ret =3D cr_write_obj(ctx, &h, hh);
+> +	if (!ret && flen)
+> +		ret =3D cr_write_str(ctx, fname, flen);
+> +
+> +	return ret;
+> +}
+> +
+> +/**
+> + * cr_write_fd_ent - dump the state of a given file descriptor
+> + * @ctx: checkpoint context
+> + * @files: files_struct pointer
+> + * @fd: file descriptor
+> + * + * Save the state of the file descriptor; look up the actual file=20
+> pointer
+> + * in the hash table, and if found save the matching tag, otherwise call
+> + * cr_write_fd_data to dump the file pointer too.
+> + */
+> +static int
+> +cr_write_fd_ent(struct cr_ctx *ctx, struct files_struct *files, int fd)
+> +{
+> +	struct cr_hdr h;
+> +	struct cr_hdr_fd_ent *hh =3D ctx->hbuf;
+> +	struct file *file =3D NULL;
+> +	struct fdtable *fdt;
+> +	int coe, tag, ret;
+> +
+> +	/* make sure hh->fd (that is of type __u16) doesn't overflow */
+> +	if (fd > USHORT_MAX) {
+> +		pr_warning("CR: open files table too big (%d)\n", USHORT_MAX);
+> +		return -EMFILE;
+> +	}
+> +
+> +	rcu_read_lock();
+> +	fdt =3D files_fdtable(files);
+> +	if (fd < fdt->max_fds)
+> +		file =3D rcu_dereference(fdt->fd[fd]);
 
-Louis
+You should probably use fcheck_files() instead of copying its code here. I =
+agree
+that this means dereferencing files->fdt a second time below, but is it so
+performance critical?
+
+> +	if (file) {
+> +		coe =3D FD_ISSET(fd, fdt->close_on_exec);
+> +		get_file(file);
+> +	}
+> +	rcu_read_unlock();
+> +
+> +	/* sanity check (although this shouldn't happen) */
+> +	if (unlikely(!file))
+> +		return -EBADF;
+> +
+> +	ret =3D cr_obj_add_ptr(ctx, (void *) file, &tag, CR_OBJ_FILE, 0);
+> +	cr_debug("fd %d tag %d file %p c-o-e %d)\n", fd, tag, file, coe);
+> +
+> +	if (ret >=3D 0) {
+> +		int new =3D ret;
+> +
+> +		h.type =3D CR_HDR_FD_ENT;
+> +		h.len =3D sizeof(*hh);
+> +		h.ptag =3D 0;
+> + +		hh->tag =3D tag;
+    ^
+    |
+
+> +		hh->fd =3D fd;
+> +		hh->close_on_exec =3D coe;
+> +
+> +		ret =3D cr_write_obj(ctx, &h, hh);
+> +
+> +		/* new=3D=3D1 if-and-only-if file was new and added to hash */
+> +		if (!ret && new)
+> +			ret =3D cr_write_fd_data(ctx, file, tag);
+> +	}
+> +
+> +	fput(file);
+> +	return ret;
+> +}
+> +
+> +int cr_write_files(struct cr_ctx *ctx, struct task_struct *t)
+> +{
+> +	struct cr_hdr h;
+> +	struct cr_hdr_files *hh =3D ctx->hbuf;
+> +	struct files_struct *files;
+> +	int *fdtable;
+> +	int nfds, n, ret;
+> +
+> +	h.type =3D CR_HDR_FILES;
+> +	h.len =3D sizeof(*hh);
+> +	h.ptag =3D task_pid_vnr(t);
+> +
+> +	files =3D get_files_struct(t);
+> +
+> +	nfds =3D cr_scan_fds(files, &fdtable);
+> +	if (nfds < 0) {
+> +		ret =3D nfds;
+> +		goto out;
+> +	}
+> + +	hh->tag =3D 0;
+    ^
+    |
+
+> +	hh->nfds =3D nfds;
+> +
+> +	ret =3D cr_write_obj(ctx, &h, hh);
+> +	if (ret < 0)
+> +		goto clean;
+> +
+> +	cr_debug("nfds %d\n", nfds);
+> +	for (n =3D 0; n < nfds; n++) {
+> +		ret =3D cr_write_fd_ent(ctx, files, n);
+> +		if (ret < 0)
+> +			break;
+> +	}
+> +
+> + clean:
+> +	kfree(fdtable);
+> + out:
+> +	put_files_struct(files);
+> +
+> +	return ret;
+> +}
+
+[...]
+
+> diff --git a/checkpoint/ckpt_hdr.h b/checkpoint/ckpt_hdr.h
+> index a3919cf..a8a37db 100644
+> --- a/checkpoint/ckpt_hdr.h
+> +++ b/checkpoint/ckpt_hdr.h
+
+[...]
+
+> @@ -114,4 +125,24 @@ struct cr_hdr_vma {
+>
+>  } __attribute__ ((aligned (8)));
+>
+> +struct cr_hdr_files {
+> +	__u32 tag;	/* sharing identifier */
+> +	__u32 nfds;
+> +} __attribute__ ((aligned (8)));
+> +
+> +struct cr_hdr_fd_ent {
+> +	__u32 tag;
+> +	__u16 fd;
+> +	__u16 close_on_exec;
+> +} __attribute__ ((aligned (8)));
+> +
+> +struct cr_hdr_fd_data {
+> +	__u16 how;
+> +	__u16 f_mode;
+> +	__u32 f_flags;
+> +	__u32 f_uid, f_gid;
+
+We are not at a 64bits boundary here. Should add one __32 padding or reorde=
+r the
+fields.
+
+> +	__u64 f_pos;
+> +	__u64 f_version;
+> +} __attribute__ ((aligned (8)));
+> +
+>  #endif /* _CHECKPOINT_CKPT_HDR_H_ */
+> --=20
+> 1.5.4.3
+>
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-kernel" in
+> the body of a message to majordomo-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> Please read the FAQ at  http://www.tux.org/lkml/
 
 --=20
 Dr Louis Rilling			Kerlabs
@@ -154,7 +365,7 @@ Skype: louis.rilling			Batiment Germanium
 Phone: (+33|0) 6 80 89 08 23		80 avenue des Buttes de Coesmes
 http://www.kerlabs.com/			35700 Rennes
 
---=_bohort-10627-1219315086-0001-2
+--=_bohort-11042-1219316645-0001-2
 Content-Type: application/pgp-signature; name="signature.asc"
 Content-Transfer-Encoding: 7bit
 Content-Description: Digital signature
@@ -163,14 +374,14 @@ Content-Disposition: inline
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFIrUYQVKcRuvQ9Q1QRAmSJAJ90Ulu7lEVbhJmBnikR3wDQdg7DdgCgzKOX
-+lMFTaVjHJwo4PEi9F/hAl0=
-=+vf6
+iD8DBQFIrUwmVKcRuvQ9Q1QRAu3xAKCM17+uzP2G7m6281nU58UIN2Ez1gCgyTJw
+TN/e/FlYW22yi8mrCuiYczs=
+=0w81
 -----END PGP SIGNATURE-----
 
---=_bohort-10627-1219315086-0001-2--
+--=_bohort-11042-1219316645-0001-2--
 
---===============6030994871713734708==
+--===============7343426473350272654==
 Content-Type: text/plain; charset="us-ascii"
 MIME-Version: 1.0
 Content-Transfer-Encoding: 7bit
@@ -180,4 +391,4 @@ _______________________________________________
 Containers mailing list
 Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 https://lists.linux-foundation.org/mailman/listinfo/containers
---===============6030994871713734708==--
+--===============7343426473350272654==--
