@@ -1,50 +1,41 @@
-From: David Miller <davem@davemloft.net>
-Subject: Re: [PATCH 6/8] Revert "netns: Fix device renaming for sysfs"
-Date: Wed, 20 Aug 2008 23:47:08 -0700 (PDT)
-Message-ID: <20080820.234708.193699562.davem@davemloft.net>
-References: <m18wuq27uj.fsf_-_@frodo.ebiederm.org>
-	<m14p5e27tb.fsf_-_@frodo.ebiederm.org>
-	<m1vdxuzxco.fsf_-_@frodo.ebiederm.org>
+From: Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>
+Subject: Re: [RFC v2][PATCH 4/9] Memory management - dump state
+Date: Thu, 21 Aug 2008 09:30:20 +0200
+Message-ID: <20080821073020.GA28386__14876.0224147283$1219303979$gmane$org@elte.hu>
+References: <Pine.LNX.4.64.0808202251500.17436@takamine.ncl.cs.columbia.edu>
+	<Pine.LNX.4.64.0808202304490.17436@takamine.ncl.cs.columbia.edu>
 Mime-Version: 1.0
-Content-Type: Text/Plain; charset=us-ascii
+Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-Return-path: <netdev-owner@vger.kernel.org>
-In-Reply-To: <m1vdxuzxco.fsf_-_@frodo.ebiederm.org>
-Sender: netdev-owner@vger.kernel.org
-To: ebiederm@xmission.com
-Cc: greg@kroah.com, gregkh@suse.de, akpm@linux-foundation.org, htejun@gmail.com, dlezcano@fr.ibm.com, linux-kernel@vger.kernel.org, viro@ftp.linux.org.uk, containers@lists.osdl.org, benjamin.thery@bull.net, netdev@vger.kernel.org
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <Pine.LNX.4.64.0808202304490.17436-CXF6herHY6ykSYb+qCZC/1i27PF6R63G9nwVQlTi/Pw@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, jeremy-TSDbQ3PG+2Y@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, arnd-r2nGTMty4D4@public.gmane.org, dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-From: ebiederm@xmission.com (Eric W. Biederman)
-Date: Wed, 20 Aug 2008 23:38:31 -0700
 
-> 
-> This reverts commit aaf8cdc34ddba08122f02217d9d684e2f9f5d575.
-> 
-> Drivers like the ipw2100 call device_create_group when they
-> are initialized and device_remove_group when they are shutdown.
-> Moving them between namespaces deletes their sysfs groups early.
-> 
-> In particular the following call chain results.
-> netdev_unregister_kobject -> device_del -> kobject_del -> sysfs_remove_dir
-> With sysfs_remove_dir recursively deleting all of it's subdirectories,
-> and nothing adding them back.
-> 
-> Ouch!
-> 
-> Therefore we need to call something that ultimate calls sysfs_mv_dir
-> as that sysfs function can move sysfs directories between namespaces
-> without deleting their subdirectories or their contents.   Allowing
-> us to avoid placing extra boiler plate into every driver that does
-> something interesting with sysfs.
-> 
-> Currently the function that provides that capability is device_rename.
-> That is the code works without nasty side effects as originally written.
-> 
-> So remove the misguided fix for moving devices between namespaces.  The
-> bug in the kobject layer that inspired it has now been recognized and
-> fixed.
-> 
-> Signed-off-by: Eric W. Biederman <ebiederm@xmission.com>
+* Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org> wrote:
 
-Acked-by: David S. Miller <davem@davemloft.net>
+>  checkpoint/ckpt_x86.c   |   28 ++++
+>  checkpoint/rstr_x86.c   |    2 +
+
+please move these into arch/x86/mm/checkpoint.c and 
+arch/x86/mm/restore.c. (also, please dont try to abbreviate too much in 
+filenames, makes it harder to follow changes later on, etc.)
+
+Cool stuff btw! Any ETA on when more complex apps can be 
+checkpointed/restored? Also, shouldnt at least part of this effort be 
+joined with the live migration efforts of openvz? (or do you see 
+fundamental, unsolvable differences?)
+
+	Ingo
