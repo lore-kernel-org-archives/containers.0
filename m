@@ -1,7 +1,7 @@
 From: adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org
-Subject: [PATCH 37/38] netns nat: fixup DNAT in netns
-Date: Fri, 22 Aug 2008 02:10:40 +0400
-Message-ID: <20080821221040.GK31136__9145.928573753$1219356935$gmane$org@x200.localdomain>
+Subject: [PATCH 32/38] netns ct: PPTP conntracking in netns
+Date: Fri, 22 Aug 2008 02:09:16 +0400
+Message-ID: <20080821220916.GF31136__40246.9891858802$1219356939$gmane$org@x200.localdomain>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -22,35 +22,107 @@ List-Id: containers.vger.kernel.org
 Signed-off-by: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 ---
 
- net/ipv4/netfilter/nf_nat_rule.c |    7 +++----
- 1 file changed, 3 insertions(+), 4 deletions(-)
+ net/netfilter/nf_conntrack_pptp.c |   35 ++++++++++++++++++++++++++---------
+ 1 file changed, 26 insertions(+), 9 deletions(-)
 
---- a/net/ipv4/netfilter/nf_nat_rule.c
-+++ b/net/ipv4/netfilter/nf_nat_rule.c
-@@ -91,13 +91,13 @@ static unsigned int ipt_snat_target(struct sk_buff *skb,
+--- a/net/netfilter/nf_conntrack_pptp.c
++++ b/net/netfilter/nf_conntrack_pptp.c
+@@ -121,7 +121,7 @@ static void pptp_expectfn(struct nf_conn *ct,
+ 		pr_debug("trying to unexpect other dir: ");
+ 		nf_ct_dump_tuple(&inv_t);
+ 
+-		exp_other = nf_ct_expect_find_get(&init_net, &inv_t);
++		exp_other = nf_ct_expect_find_get(nf_ct_net(ct), &inv_t);
+ 		if (exp_other) {
+ 			/* delete other expectation.  */
+ 			pr_debug("found\n");
+@@ -134,7 +134,7 @@ static void pptp_expectfn(struct nf_conn *ct,
+ 	rcu_read_unlock();
  }
  
- /* Before 2.6.11 we did implicit source NAT if required. Warn about change. */
--static void warn_if_extra_mangle(__be32 dstip, __be32 srcip)
-+static void warn_if_extra_mangle(struct net *net, __be32 dstip, __be32 srcip)
+-static int destroy_sibling_or_exp(const struct nf_conntrack_tuple *t)
++static int destroy_sibling_or_exp(struct net *net, const struct nf_conntrack_tuple *t)
  {
- 	static int warned = 0;
- 	struct flowi fl = { .nl_u = { .ip4_u = { .daddr = dstip } } };
- 	struct rtable *rt;
+ 	const struct nf_conntrack_tuple_hash *h;
+ 	struct nf_conntrack_expect *exp;
+@@ -143,7 +143,7 @@ static int destroy_sibling_or_exp(const struct nf_conntrack_tuple *t)
+ 	pr_debug("trying to timeout ct or exp for tuple ");
+ 	nf_ct_dump_tuple(t);
  
--	if (ip_route_output_key(&init_net, &rt, &fl) != 0)
-+	if (ip_route_output_key(net, &rt, &fl) != 0)
- 		return;
+-	h = nf_conntrack_find_get(&init_net, t);
++	h = nf_conntrack_find_get(net, t);
+ 	if (h)  {
+ 		sibling = nf_ct_tuplehash_to_ctrack(h);
+ 		pr_debug("setting timeout of conntrack %p to 0\n", sibling);
+@@ -154,7 +154,7 @@ static int destroy_sibling_or_exp(const struct nf_conntrack_tuple *t)
+ 		nf_ct_put(sibling);
+ 		return 1;
+ 	} else {
+-		exp = nf_ct_expect_find_get(&init_net, t);
++		exp = nf_ct_expect_find_get(net, t);
+ 		if (exp) {
+ 			pr_debug("unexpect_related of expect %p\n", exp);
+ 			nf_ct_unexpect_related(exp);
+@@ -168,6 +168,7 @@ static int destroy_sibling_or_exp(const struct nf_conntrack_tuple *t)
+ /* timeout GRE data connections */
+ static void pptp_destroy_siblings(struct nf_conn *ct)
+ {
++	struct net *net = nf_ct_net(ct);
+ 	const struct nf_conn_help *help = nfct_help(ct);
+ 	struct nf_conntrack_tuple t;
  
- 	if (rt->rt_src != srcip && !warned) {
-@@ -130,7 +130,7 @@ static unsigned int ipt_dnat_target(struct sk_buff *skb,
+@@ -178,7 +179,7 @@ static void pptp_destroy_siblings(struct nf_conn *ct)
+ 	t.dst.protonum = IPPROTO_GRE;
+ 	t.src.u.gre.key = help->help.ct_pptp_info.pns_call_id;
+ 	t.dst.u.gre.key = help->help.ct_pptp_info.pac_call_id;
+-	if (!destroy_sibling_or_exp(&t))
++	if (!destroy_sibling_or_exp(net, &t))
+ 		pr_debug("failed to timeout original pns->pac ct/exp\n");
  
- 	if (hooknum == NF_INET_LOCAL_OUT &&
- 	    mr->range[0].flags & IP_NAT_RANGE_MAP_IPS)
--		warn_if_extra_mangle(ip_hdr(skb)->daddr,
-+		warn_if_extra_mangle(dev_net(out), ip_hdr(skb)->daddr,
- 				     mr->range[0].min_ip);
+ 	/* try reply (pac->pns) tuple */
+@@ -186,7 +187,7 @@ static void pptp_destroy_siblings(struct nf_conn *ct)
+ 	t.dst.protonum = IPPROTO_GRE;
+ 	t.src.u.gre.key = help->help.ct_pptp_info.pac_call_id;
+ 	t.dst.u.gre.key = help->help.ct_pptp_info.pns_call_id;
+-	if (!destroy_sibling_or_exp(&t))
++	if (!destroy_sibling_or_exp(net, &t))
+ 		pr_debug("failed to timeout reply pac->pns ct/exp\n");
+ }
  
- 	return nf_nat_setup_info(ct, &mr->range[0], IP_NAT_MANIP_DST);
+@@ -594,15 +595,32 @@ static struct nf_conntrack_helper pptp __read_mostly = {
+ 	.expect_policy		= &pptp_exp_policy,
+ };
+ 
++static void nf_conntrack_pptp_net_exit(struct net *net)
++{
++	nf_ct_gre_keymap_flush(net);
++}
++
++static struct pernet_operations nf_conntrack_pptp_net_ops = {
++	.exit = nf_conntrack_pptp_net_exit,
++};
++
+ static int __init nf_conntrack_pptp_init(void)
+ {
+-	return nf_conntrack_helper_register(&pptp);
++	int rv;
++
++	rv = nf_conntrack_helper_register(&pptp);
++	if (rv < 0)
++		return rv;
++	rv = register_pernet_subsys(&nf_conntrack_pptp_net_ops);
++	if (rv < 0)
++		nf_conntrack_helper_unregister(&pptp);
++	return rv;
+ }
+ 
+ static void __exit nf_conntrack_pptp_fini(void)
+ {
+ 	nf_conntrack_helper_unregister(&pptp);
+-	nf_ct_gre_keymap_flush(&init_net);
++	unregister_pernet_subsys(&nf_conntrack_pptp_net_ops);
+ }
+ 
+ module_init(nf_conntrack_pptp_init);
 -- 
 1.5.6.3
