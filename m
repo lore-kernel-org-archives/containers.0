@@ -1,7 +1,7 @@
 From: sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org
-Subject: [RFC][PATCH 2/8]: Add inode parameter devpts interfaces
-Date: Wed, 20 Aug 2008 19:26:44 -0700
-Message-ID: <20080821022644.GB29658@us.ibm.com>
+Subject: [RFC][PATCH 3/8]: Remove devpts_root global
+Date: Wed, 20 Aug 2008 19:27:19 -0700
+Message-ID: <20080821022719.GC29658@us.ibm.com>
 References: <20080821022126.GA29449@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -24,213 +24,127 @@ List-Id: containers.vger.kernel.org
 
 
 From: Sukadev Bhattiprolu <sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: [RFC][PATCH 2/8]: Add inode parameter devpts interfaces
+Subject: [RFC][PATCH 3/8]: Remove devpts_root global
 
-Pass-in an 'inode' parameter to devpts interfaces.  The parameter
-itself will be used in subsequent patches to identify the instance
-of devpts mounted.
+Remove the 'devpts_root' global variable and find the root dentry using
+the super_block. The super-block can be found from the device inode, using
+the new wrapper, pts_sb_from_inode().
 
 ---
- drivers/char/pty.c        |    3 ++-
- drivers/char/tty_io.c     |   21 +++++++++++----------
- fs/devpts/inode.c         |   10 +++++-----
- include/linux/devpts_fs.h |   34 ++++++++++++++++++++++++----------
- 4 files changed, 42 insertions(+), 26 deletions(-)
+ fs/devpts/inode.c |   36 ++++++++++++++++++++++++------------
+ 1 file changed, 24 insertions(+), 12 deletions(-)
 
 Index: linux-2.6.26-rc8-mm1/fs/devpts/inode.c
 ===================================================================
---- linux-2.6.26-rc8-mm1.orig/fs/devpts/inode.c	2008-08-20 12:33:21.000000000 -0700
-+++ linux-2.6.26-rc8-mm1/fs/devpts/inode.c	2008-08-20 12:34:38.000000000 -0700
-@@ -177,7 +177,7 @@ static struct dentry *get_node(int num)
+--- linux-2.6.26-rc8-mm1.orig/fs/devpts/inode.c	2008-08-20 12:58:30.000000000 -0700
++++ linux-2.6.26-rc8-mm1/fs/devpts/inode.c	2008-08-20 13:16:47.000000000 -0700
+@@ -33,7 +33,6 @@ static DEFINE_IDR(allocated_ptys);
+ static DEFINE_MUTEX(allocated_ptys_lock);
+ 
+ static struct vfsmount *devpts_mnt;
+-static struct dentry *devpts_root;
+ 
+ static struct {
+ 	int setuid;
+@@ -55,6 +54,14 @@ static match_table_t tokens = {
+ 	{Opt_err, NULL}
+ };
+ 
++static inline struct super_block *pts_sb_from_inode(struct inode *inode)
++{
++	if (inode->i_sb->s_magic == DEVPTS_SUPER_MAGIC)
++		return inode->i_sb;
++
++	return devpts_mnt->mnt_sb;
++}
++
+ static int devpts_remount(struct super_block *sb, int *flags, char *data)
+ {
+ 	char *p;
+@@ -141,7 +148,7 @@ devpts_fill_super(struct super_block *s,
+ 	inode->i_fop = &simple_dir_operations;
+ 	inode->i_nlink = 2;
+ 
+-	devpts_root = s->s_root = d_alloc_root(inode);
++	s->s_root = d_alloc_root(inode);
+ 	if (s->s_root)
+ 		return 0;
+ 	
+@@ -169,10 +176,9 @@ static struct file_system_type devpts_fs
+  * to the System V naming convention
+  */
+ 
+-static struct dentry *get_node(int num)
++static struct dentry *get_node(struct dentry *root, int num)
+ {
+ 	char s[12];
+-	struct dentry *root = devpts_root;
+ 	mutex_lock(&root->d_inode->i_mutex);
  	return lookup_one_len(s, root, sprintf(s, "%d", num));
  }
- 
--int devpts_new_index(void)
-+int devpts_new_index(struct inode *inode)
- {
- 	int index;
- 	int idr_ret;
-@@ -205,14 +205,14 @@ retry:
- 	return index;
- }
- 
--void devpts_kill_index(int idx)
-+void devpts_kill_index(struct inode *inode, int idx)
- {
- 	mutex_lock(&allocated_ptys_lock);
- 	idr_remove(&allocated_ptys, idx);
- 	mutex_unlock(&allocated_ptys_lock);
- }
- 
--int devpts_pty_new(struct tty_struct *tty)
-+int devpts_pty_new(struct inode *ptmx_inode, struct tty_struct *tty)
- {
- 	int number = tty->index; /* tty layer puts index from devpts_new_index() in here */
+@@ -218,7 +224,9 @@ int devpts_pty_new(struct inode *ptmx_in
  	struct tty_driver *driver = tty->driver;
-@@ -245,7 +245,7 @@ int devpts_pty_new(struct tty_struct *tt
+ 	dev_t device = MKDEV(driver->major, driver->minor_start+number);
+ 	struct dentry *dentry;
+-	struct inode *inode = new_inode(devpts_mnt->mnt_sb);
++	struct super_block *sb = pts_sb_from_inode(ptmx_inode);
++	struct inode *inode = new_inode(sb);
++	struct dentry *root = sb->s_root;
+ 
+ 	/* We're supposed to be given the slave end of a pty */
+ 	BUG_ON(driver->type != TTY_DRIVER_TYPE_PTY);
+@@ -234,20 +242,22 @@ int devpts_pty_new(struct inode *ptmx_in
+ 	init_special_inode(inode, S_IFCHR|config.mode, device);
+ 	inode->i_private = tty;
+ 
+-	dentry = get_node(number);
++	dentry = get_node(root, number);
+ 	if (!IS_ERR(dentry) && !dentry->d_inode) {
+ 		d_instantiate(dentry, inode);
+-		fsnotify_create(devpts_root->d_inode, dentry);
++		fsnotify_create(root->d_inode, dentry);
+ 	}
+ 
+-	mutex_unlock(&devpts_root->d_inode->i_mutex);
++	mutex_unlock(&root->d_inode->i_mutex);
+ 
  	return 0;
  }
  
--struct tty_struct *devpts_get_tty(int number)
-+struct tty_struct *devpts_get_tty(struct inode *inode, int number)
+ struct tty_struct *devpts_get_tty(struct inode *inode, int number)
  {
- 	struct dentry *dentry = get_node(number);
+-	struct dentry *dentry = get_node(number);
++	struct super_block *sb = pts_sb_from_inode(inode);
++	struct dentry *root = sb->s_root;
++	struct dentry *dentry = get_node(root, number);
  	struct tty_struct *tty;
-@@ -262,7 +262,7 @@ struct tty_struct *devpts_get_tty(int nu
+ 
+ 	tty = NULL;
+@@ -257,14 +267,16 @@ struct tty_struct *devpts_get_tty(struct
+ 		dput(dentry);
+ 	}
+ 
+-	mutex_unlock(&devpts_root->d_inode->i_mutex);
++	mutex_unlock(&root->d_inode->i_mutex);
+ 
  	return tty;
  }
  
--void devpts_pty_kill(int number)
-+void devpts_pty_kill(struct inode *inode, int number)
+ void devpts_pty_kill(struct inode *inode, int number)
  {
- 	struct dentry *dentry = get_node(number);
+-	struct dentry *dentry = get_node(number);
++	struct super_block *sb = pts_sb_from_inode(inode);
++	struct dentry *root = sb->s_root;
++	struct dentry *dentry = get_node(root, number);
  
-Index: linux-2.6.26-rc8-mm1/include/linux/devpts_fs.h
-===================================================================
---- linux-2.6.26-rc8-mm1.orig/include/linux/devpts_fs.h	2008-08-20 12:33:21.000000000 -0700
-+++ linux-2.6.26-rc8-mm1/include/linux/devpts_fs.h	2008-08-20 12:34:38.000000000 -0700
-@@ -17,20 +17,34 @@
- 
- #ifdef CONFIG_UNIX98_PTYS
- 
--int devpts_new_index(void);
--void devpts_kill_index(int idx);
--int devpts_pty_new(struct tty_struct *tty);      /* mknod in devpts */
--struct tty_struct *devpts_get_tty(int number);	 /* get tty structure */
--void devpts_pty_kill(int number);		 /* unlink */
-+int devpts_new_index(struct inode *inode);
-+void devpts_kill_index(struct inode *inode, int idx);
-+
-+/* mknod in devpts */
-+int devpts_pty_new(struct inode *inode, struct tty_struct *tty);
-+
-+/* get tty structure */
-+struct tty_struct *devpts_get_tty(struct inode *inode, int number);
-+
-+/* unlink */
-+void devpts_pty_kill(struct inode *inode, int number);
- 
- #else
- 
- /* Dummy stubs in the no-pty case */
--static inline int devpts_new_index(void) { return -EINVAL; }
--static inline void devpts_kill_index(int idx) { }
--static inline int devpts_pty_new(struct tty_struct *tty) { return -EINVAL; }
--static inline struct tty_struct *devpts_get_tty(int number) { return NULL; }
--static inline void devpts_pty_kill(int number) { }
-+static inline int devpts_new_index(struct inode *inode) { return -EINVAL; }
-+static inline void devpts_kill_index(struct inode *inode, int idx) { }
-+
-+static inline int devpts_pty_new(struc inode *inode, struct tty_struct *tty)
-+{
-+	return -EINVAL;
-+}
-+
-+static inline struct tty_struct *devpts_get_tty(struct inode *inode, int number)
-+{
-+	return NULL;
-+}
-+static inline void devpts_pty_kill(struc inode *inode, int number) { }
- 
- #endif
- 
-Index: linux-2.6.26-rc8-mm1/drivers/char/pty.c
-===================================================================
---- linux-2.6.26-rc8-mm1.orig/drivers/char/pty.c	2008-08-20 12:33:21.000000000 -0700
-+++ linux-2.6.26-rc8-mm1/drivers/char/pty.c	2008-08-20 12:34:38.000000000 -0700
-@@ -59,7 +59,8 @@ static void pty_close(struct tty_struct 
- 		set_bit(TTY_OTHER_CLOSED, &tty->flags);
- #ifdef CONFIG_UNIX98_PTYS
- 		if (tty->driver == ptm_driver)
--			devpts_pty_kill(tty->index);
-+			devpts_pty_kill(filp->f_path.dentry->d_inode,
-+					tty->index);
- #endif
- 		tty_vhangup(tty->link);
+ 	if (!IS_ERR(dentry)) {
+ 		struct inode *inode = dentry->d_inode;
+@@ -275,7 +287,7 @@ void devpts_pty_kill(struct inode *inode
+ 		}
+ 		dput(dentry);
  	}
-Index: linux-2.6.26-rc8-mm1/drivers/char/tty_io.c
-===================================================================
---- linux-2.6.26-rc8-mm1.orig/drivers/char/tty_io.c	2008-08-20 12:34:36.000000000 -0700
-+++ linux-2.6.26-rc8-mm1/drivers/char/tty_io.c	2008-08-20 12:34:38.000000000 -0700
-@@ -2056,7 +2056,7 @@ static void tty_line_name(struct tty_dri
-  * relaxed for the (most common) case of reopening a tty.
-  */
- 
--static int init_dev(struct tty_driver *driver, int idx,
-+static int init_dev(struct tty_driver *driver, struct inode *inode,  int idx,
- 	struct tty_struct **ret_tty)
- {
- 	struct tty_struct *tty, *o_tty;
-@@ -2076,7 +2076,7 @@ static int init_dev(struct tty_driver *d
- 		 if (inode->i_rdev == MKDEV(TTYAUX_MAJOR, 0))
- 			tty = *ret_tty;
- 		else
--			tty = devpts_get_tty(idx);
-+			tty = devpts_get_tty(inode, idx);
- 		/*
- 		 * If we don't have a tty here on a slave open, it's because
- 		 * the master already started the close process and there's
-@@ -2380,10 +2380,11 @@ static void release_dev(struct file *fil
- 	int	idx;
- 	char	buf[64];
- 	unsigned long flags;
-+	struct inode *inode;
- 
-+	inode = filp->f_path.dentry->d_inode;
- 	tty = (struct tty_struct *)filp->private_data;
--	if (tty_paranoia_check(tty, filp->f_path.dentry->d_inode,
--							"release_dev"))
-+	if (tty_paranoia_check(tty, inode, "release_dev"))
- 		return;
- 
- 	check_tty_count(tty, "release_dev");
-@@ -2638,7 +2639,7 @@ static void release_dev(struct file *fil
- 
- 	/* Make this pty number available for reallocation */
- 	if (devpts)
--		devpts_kill_index(idx);
-+		devpts_kill_index(inode, idx);
+-	mutex_unlock(&devpts_root->d_inode->i_mutex);
++	mutex_unlock(&root->d_inode->i_mutex);
  }
  
- /**
-@@ -2719,7 +2720,7 @@ retry_open:
- 		return -ENODEV;
- 	}
- got_driver:
--	retval = init_dev(driver, index, &tty);
-+	retval = init_dev(driver, inode, index, &tty);
- 	mutex_unlock(&tty_mutex);
- 	if (retval)
- 		return retval;
-@@ -2811,12 +2812,12 @@ static int __ptmx_open(struct inode *ino
- 	nonseekable_open(inode, filp);
- 
- 	/* find a device that is not in use. */
--	index = devpts_new_index();
-+	index = devpts_new_index(inode);
- 	if (index < 0)
- 		return index;
- 
- 	mutex_lock(&tty_mutex);
--	retval = init_dev(ptm_driver, index, &tty);
-+	retval = init_dev(ptm_driver, inode, index, &tty);
- 	mutex_unlock(&tty_mutex);
- 
- 	if (retval)
-@@ -2826,7 +2827,7 @@ static int __ptmx_open(struct inode *ino
- 	filp->private_data = tty;
- 	file_move(filp, &tty->tty_files);
- 
--	retval = devpts_pty_new(tty->link);
-+	retval = devpts_pty_new(inode, tty->link);
- 	if (retval)
- 		goto out1;
- 
-@@ -2838,7 +2839,7 @@ out1:
- 	release_dev(filp);
- 	return retval;
- out:
--	devpts_kill_index(index);
-+	devpts_kill_index(inode, index);
- 	return retval;
- }
+ static int __init init_devpts_fs(void)
