@@ -1,16 +1,19 @@
 From: Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: Re: [RFC v2][PATCH 4/9] Memory management - dump state
-Date: Thu, 21 Aug 2008 15:58:14 +0530
-Message-ID: <48AD433E.7010905__5253.76960072226$1219314626$gmane$org@linux.vnet.ibm.com>
-References: <Pine.LNX.4.64.0808202251500.17436@takamine.ncl.cs.columbia.edu>
-	<Pine.LNX.4.64.0808202304490.17436@takamine.ncl.cs.columbia.edu>
-	<20080821073020.GA28386@elte.hu>
+Subject: Re: RFC: Attaching threads to cgroups is OK?
+Date: Thu, 21 Aug 2008 15:58:55 +0530
+Message-ID: <48AD4367.9000409@linux.vnet.ibm.com>
+References: <48AAA296.8050802@oss.ntt.co.jp>
+	<20080819202237.edd75933.kamezawa.hiroyu@jp.fujitsu.com>
+	<20080820.204832.131207708.taka@valinux.co.jp>
+	<1219288081.28324.30.camel@sebastian.kern.oss.ntt.co.jp>
+	<48ACE1B4.8010000@linux.vnet.ibm.com>
+	<1219296306.28324.82.camel@sebastian.kern.oss.ntt.co.jp>
 Reply-To: balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20080821073020.GA28386-X9Un+BFzKDI@public.gmane.org>
+In-Reply-To: <1219296306.28324.82.camel-xpvPi5bcW5X5OjGIXfuPlhrrLbDL3r4M6qtp775pBPw@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -20,28 +23,82 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>
-Cc: jeremy-TSDbQ3PG+2Y@public.gmane.org, arnd-r2nGTMty4D4@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
+To: =?UTF-8?B?RmVybmFuZG8gTHVpcyBWw6F6cXVleiBDYW8=?= <fernando-gVGce1chcLdL9jVzuh4AOg@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, virtualization-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Ingo Molnar wrote:
-> * Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org> wrote:
-> 
->>  checkpoint/ckpt_x86.c   |   28 ++++
->>  checkpoint/rstr_x86.c   |    2 +
-> 
-> please move these into arch/x86/mm/checkpoint.c and 
-> arch/x86/mm/restore.c. (also, please dont try to abbreviate too much in 
-> filenames, makes it harder to follow changes later on, etc.)
-> 
-> Cool stuff btw! Any ETA on when more complex apps can be 
-> checkpointed/restored? Also, shouldnt at least part of this effort be 
-> joined with the live migration efforts of openvz? (or do you see 
-> fundamental, unsolvable differences?)
-
-My understanding is that this is a result of the joint discussion (with the
-OpenVZ folks present) that happened during the containers min-summit prior to
-OLS this year.
-
--- 
-	Balbir
+RmVybmFuZG8gTHVpcyBWw6F6cXVleiBDYW8gd3JvdGU6Cj4gSGkgQmFsYmlyLAo+IAo+IE9uIFRo
+dSwgMjAwOC0wOC0yMSBhdCAwOTowMiArMDUzMCwgQmFsYmlyIFNpbmdoIHdyb3RlOgo+PiBGZXJu
+YW5kbyBMdWlzIFbDoXpxdWV6IENhbyB3cm90ZToKPj4+IE9uIFdlZCwgMjAwOC0wOC0yMCBhdCAy
+MDo0OCArMDkwMCwgSGlyb2thenUgVGFrYWhhc2hpIHdyb3RlOgo+Pj4+IEhpLAo+Pj4+Cj4+Pj4+
+PiBUc3VydXRhLXNhbiwgaG93IGFib3V0IHlvdXIgYmlvLWNncm91cCdzIHRyYWNraW5nIGNvbmNl
+cm5pbmcgdGhpcz8KPj4+Pj4+IElmIHdlIHdhbnQgdG8gdXNlIHlvdXIgdHJhY2tpbmcgZnVuY3Rp
+b25zIGZvciBlYWNoIHRocmVhZHMgc2VwZXJhdGVseSwgCj4+Pj4+PiB0aGVyZSBzZWVtcyB0byBi
+ZSBhIHByb2JsZW0uCj4+Pj4+PiA9PT1jZi4gbW1fZ2V0X2Jpb19jZ3JvdXAoKT09PT09PT09PT09
+PT09PT09PT0KPj4+Pj4+ICAgICAgICAgICAgb3duZXIKPj4+Pj4+IG1tX3N0cnVjdCAtLS0tPiB0
+YXNrX3N0cnVjdCAtLS0tPiBiaW9fY2dyb3VwCj4+Pj4+PiA9PT09PT09PT09PT09PT09PT09PT09
+PT09PT09PT09PT09PT09PT09PT09PT0KPj4+Pj4+IEluIG15IHVuZGVyc3RhbmRpbmcsIHRoZSBt
+bV9zdHJ1Y3Qgb2YgYSB0aHJlYWQgaXMgc2FtZSBhcyBpdHMgcGFyZW50J3MuCj4+Pj4+PiBTbywg
+ZXZlbiBpZiB3ZSBhdHRhY2ggdGhlIFRJRHMgb2Ygc29tZSB0aHJlYWRzIHRvIGRpZmZlcmVudCBj
+Z3JvdXBzIHRoZSAKPj4+Pj4+IHRyYWNraW5nIGFsd2F5cyByZXR1cm5zIHRoZSBzYW1lIGJpb19j
+Z3JvdXAgLS0gaXRzIHBhcmVudCdzIGdyb3VwLgo+Pj4+Pj4gRG8geW91IGhhdmUgc29tZSBwb2xp
+Y3kgYWJvdXQgaW4gd2hpY2ggY2FzZSB3ZSBjYW4gdXNlIHlvdXIgdHJhY2tpbmc/Cj4+Pj4+Pgo+
+Pj4+PiBJdCdzIHdpbGwgYmUgcmVzaXRyaWN0aW9uIHdoZW4gaW8tY29udHJvbGxlciByZXVzZSBp
+bmZvcm1hdGlvbiBvZiB0aGUgb3duZXIKPj4+Pj4gb2YgbWVtb3J5LiBCdXQgaWYgaXQncyB2ZXJ5
+IGNsZWFyIHdobyBpc3N1ZXMgSS9PIChieSB0cmFja2luZyByZWFkL3dyaXRlCj4+Pj4+IHN5c2Nh
+bGwpLCB3ZSBtYXkgaGF2ZSBjaGFuY2UgdG8gcmVjb3JkIHRoZSBpc3N1ZXIgb2YgSS9PIHRvIHBh
+Z2VfY2dyb3VwCj4+Pj4+IHN0cnVjdC4gCj4+Pj4gVGhpcyBtaWdodCBiZSBzbGlnaHRseSBkaWZm
+ZXJlbnQgdG9waWMgdGhvdWdoLAo+Pj4+IEkndmUgYmVlbiB0aGlua2luZyB3aGVyZSB3ZSBzaG91
+bGQgYWRkIGhvb2tzIHRvIHRyYWNrIEkvTyByZXFldXN0Lgo+Pj4+IEkgdGhpbmsgdGhlIGZvbGxv
+d2luZyBzZXQgb2YgaG9va3MgaXMgZW5vdWdoIHdoZXRoZXIgd2UgYXJlIGdvaW5nIHRvCj4+Pj4g
+c3VwcG9ydCB0aHJlYWQgYmFzZWQgY2dyb3VwIG9yIG5vdC4KPj4+Pgo+Pj4+ICAgSG9vay0xOiBj
+YWxsZWQgd2hlbiBhbGxvY2F0aW5nIGEgcGFnZSwgd2hlcmUgdGhlIG1lbW9yeSBjb250cm9sbGVy
+Cj4+Pj4gCSAgYWxyZWFkeSBoYXZlIGEgaG9vb2suCj4+Pj4gICBIb29rLTI6IGNhbGxlZCB3aGVu
+IG1ha2luZyBhIHBhZ2UgaW4gcGFnZS1jYWNoZSBkaXJ0eS4KPj4+Pgo+Pj4+IEZvciBhbm9ueW1v
+dXMgcGFnZXMsIEhvb2stMSBpcyBlbm91Z2ggdG8gdHJhY2sgYW55IHR5cGUgb2YgSS9PIHJlcXVl
+c3QuCj4+Pj4gRm9yIHBhZ2VzIGluIHBhZ2UtY2FjaGUsIEhvb2stMSBpcyBhbHNvIGVub3VnaCBm
+b3IgcmVhZCBJL08gYmVjYXVzZQo+Pj4+IHRoZSBJL08gaXMgaXNzdWVkIGp1c3Qgb25jZSByaWdo
+dCBhZnRlciBhbGxvY3RpbmcgdGhlIHBhZ2UuCj4+Pj4gRm9yIHdyaXRlIEkvTyByZXF1ZXN0cyB0
+byBwYWdlcyBpbiBwYWdlLWNhY2hlLCBIb29rLTEgd2lsbCBiZSBva2F5Cj4+Pj4gaW4gbW9zdCBj
+YXNlcyBidXQgc29tZXRpbWVzIHByb2Nlc3MgaW4gYW5vdGhlciBjZ3JvdXAgbWF5IHdyaXRlCj4+
+Pj4gdGhlIHBhZ2VzLiBJbiB0aGlzIGNhc2UsIEhvb2stMiBpcyBuZWVkZWQgdG8ga2VlcCBhY2N1
+cmF0ZSB0byB0cmFjawo+Pj4+IEkvTyByZXF1ZXN0cy4KPj4+IFRoaXMgcmVsYXRpdmUgc2ltcGxp
+Y2l0eSBpcyB3aGF0IHByb21wdGVkIG1lIHRvIHNheSB0aGF0IHdlIHByb2JhYmx5Cj4+PiBzaG91
+bGQgdHJ5IHRvIGRpc2VudGFuZ2xlIHRoZSBpbyB0cmFja2luZyBmdW5jdGlvbmFsaXR5IGZyb20g
+dGhlIG1lbW9yeQo+Pj4gY29udHJvbGxlciBhIGJpdCBtb3JlIChvZiBjb3Vyc2Ugd2Ugc3RpbGwg
+c2hvdWxkIHJldXNlIGFzIG11Y2ggYXMgd2UgY2FuCj4+PiBmcm9tIGl0KS4gVGhlIHJhdGlvbmFs
+ZSBmb3IgdGhpcyBpcyB0aGF0IHRoZSBleGlzdGluZyBJL08gc2NoZWR1bGVyCj4+PiB3b3VsZCBi
+ZW5lZml0IGZyb20gcHJvcGVyIGlvIHRyYWNraW5nIGNhcGFiaWxpdGllcyB0b28sIHNvIGl0J2Qg
+YmUgbmljZQo+Pj4gaWYgd2UgY291bGQgaGF2ZSB0aGVtIGV2ZW4gaW4gbm9uLWNncm91cC1jYXBh
+YmxlIGtlcm5lbHMuCj4+Pgo+PiBIb29rIDIgcmVmZXJyZWQgdG8gaW4gdGhlIG1haWwgYWJvdmUg
+ZXhpc3QgdG9kYXkgaW4gdGhlIGZvcm0gb2YgdGFzayBJTyBhY2NvdW50aW5nLgo+IFl1cC4KPiAK
+Pj4+IEFzIGFuIGFzaWRlLCB3aGVuIHRoZSBJTyBjb250ZXh0IG9mIGEgY2VydGFpbiBJTyBvcGVy
+YXRpb24gaXMga25vd24KPj4+IChzeW5jaHJvbm91cyBJTyBjb21lcyB0byBtaW5kKSBJIHRoaW5r
+IGl0IHNob3VsZCBiZSBjYXNoZWQgaW4gdGhlCj4+PiByZXN1bHRpbmcgYmlvIHNvIHRoYXQgd2Ug
+Y2FuIGRvIHdpdGhvdXQgdGhlIGV4cGVuc2l2ZSBhY2Nlc3NlcyB0bwo+Pj4gYmlvX2Nncm91cCBv
+bmNlIGl0IGVudGVycyB0aGUgYmxvY2sgbGF5ZXIuCj4+IFdpbGwgdGhpcyBnaXZlIHlvdSBldmVy
+eXRoaW5nIHlvdSBuZWVkIGZvciBhY2NvdW50aW5nIGFuZCBjb250cm9sIChmcm9tIHRoZQo+PiBi
+bG9jayBsYXllcj8pCj4gCj4gV2VsbCwgaXQgZGVwZW5kcyBvbiB3aGF0IHlvdSBhcmUgdHJ5aW5n
+IHRvIGFjaGlldmUuCj4gCj4gQ3VycmVudCBJTyBzY2hlZHVsZXJzIHN1Y2ggYXMgQ0ZRIG9ubHkg
+Y2FyZSBhYm91dCB0aGUgaW9fY29udGV4dCB3aGVuCj4gc2NoZWR1bGluZyByZXF1ZXN0cy4gV2hl
+biBhIG5ldyByZXF1ZXN0IGNvbWVzIGluIENGUSBhc3N1bWVzIHRoYXQgaXQgd2FzCj4gb3JpZ2lu
+YXRlZCBpbiB0aGUgY29udGV4dCBvZiB0aGUgY3VycmVudCB0YXNrLCB3aGljaCBvYnZpb3VzbHkg
+ZG9lcyBub3QKPiBob2xkIHRydWUgZm9yIGJ1ZmZlcmVkIElPIGFuZCBhaW8uIFRoaXMgcHJvYmxl
+bSBjb3VsZCBiZSBzb2x2ZWQgYnkgdXNpbmcKPiBiaW8tY2dyb3VwIGZvciBJTyB0cmFja2luZywg
+YnV0IGFjY2Vzc2luZyB0aGUgaW8gY29udGV4dCBpbmZvcm1hdGlvbiBpcwo+IHNvbWV3aGF0IGV4
+cGVuc2l2ZTogCj4gCj4gcGFnZS0+cGFnZV9jZ3JvdXAtPmJpb19jZ3JvdXAtPmlvX2NvbnRleHQu
+Cj4gCj4gSWYgYXQgdGhlIHRpbWUgb2YgYnVpbGRpbmcgYSBiaW8gd2Uga25vdyBpdHMgaW8gY29u
+dGV4dCAoaS5lLiB0aGUKPiBjb250ZXh0IG9mIHRoZSB0YXNrIG9yIGNncm91cCB0aGF0IGdlbmVy
+YXRlZCB0aGF0IGJpbykgSSB0aGluayB3ZSBzaG91bGQKPiBzdG9yZSBpdCBpbiB0aGUgYmlvIGl0
+c2VsZiwgdG9vLiBXaXRoIHRoaXMgc2NoZW1lLCB3aGVuZXZlciB0aGUga2VybmVsCj4gbmVlZHMg
+dG8ga25vdyB0aGUgaW9fY29udGV4dCBvZiBhIHBhcnRpY3VsYXIgYmxvY2sgSU8gb3BlcmF0aW9u
+IHRoZQo+IGtlcm5lbCB3b3VsZCBmaXJzdCB0cnkgdG8gcmV0cmlldmUgaXRzIGlvX2NvbnRleHQg
+ZGlyZWN0bHkgZnJvbSB0aGUgYmlvLAo+IGFuZCwgaWYgbm90IGF2YWlsYWJsZSB0aGVyZSwgd291
+bGQgcmVzb3J0IHRvIHRoZSBzbG93IHBhdGggKGFjY2Vzc2luZyBpdAo+IHRocm91Z2ggYmlvX2Nn
+cm91cCkuIE15IGd1dCBmZWVsaW5nIGlzIHRoYXQgZWxldmF0b3ItYmFzZWQgSU8gcmVzb3VyY2UK
+PiBjb250cm9sbGVycyB3b3VsZCBiZW5lZml0IGZyb20gc3VjaCBhbiBhcHByb2FjaCwgdG9vLgo+
+IAo+IC0gRmVybmFuZG8KCk9LLCB0aGF0IHNlZW1zIHRvIG1ha2Ugc2Vuc2UuIFRoYW5rcyBmb3Ig
+ZXhwbGFpbmluZy4KCi0tIAoJQmFsYmlyCgpfX19fX19fX19fX19fX19fX19fX19fX19fX19fX19f
+X19fX19fX19fX19fX19fXwpDb250YWluZXJzIG1haWxpbmcgbGlzdApDb250YWluZXJzQGxpc3Rz
+LmxpbnV4LWZvdW5kYXRpb24ub3JnCmh0dHBzOi8vbGlzdHMubGludXgtZm91bmRhdGlvbi5vcmcv
+bWFpbG1hbi9saXN0aW5mby9jb250YWluZXJz
