@@ -1,8 +1,8 @@
 From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH 03/10] user namespaces: reset task's credentials on
-	CLONE_NEWUSER
-Date: Fri, 22 Aug 2008 14:45:58 -0500
-Message-ID: <20080822194558.GC10360@us.ibm.com>
+Subject: [PATCH 04/10] user namespaces: enforce user namespaces for file
+	permission
+Date: Fri, 22 Aug 2008 14:46:09 -0500
+Message-ID: <20080822194609.GD10360@us.ibm.com>
 References: <20080822194513.GA10262@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -22,60 +22,211 @@ Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Currently, creating a new user namespace does not reset
-the task's uid or gid.  Since generally that is done as
-root because it requires CAP_SYS_ADMIN, and since the
-first uid in the new namespace is 0, one usually doesn't
-notice.  However, if one does
+Add a user_ns to the sb.  It is always set to the user_ns of the task which
+mounted the sb.
 
-	capset cap_sys_admin=ep ns_exec
-	su - hallyn
-	  ns_exec -U /bin/sh
-	  id
+Define 3 new super_operations.  convert_uid() and convert_gid() take a uid
+or gid from an inode on the sb's fs, and attempt to convert them into ids
+meaningful in the user namespace passed in, which presumably is current's.
+is_capable() checks whether current has the requested capability with respect
+to the sb's fs, which is dependent upon the relationship between current's
+user_ns and those which the sb knows about.
 
-then one will see hallyn's userid, and all preexisting
-groups.
+If the sb isn't user ns aware - which none are right now - then the new
+super_operations won't be defined.  If in that case current and sb have
+different user namespaces, then the userids can't be compared.
 
-With this patch, cloning a new user namespace will set
-the task's uid and gid to 0, and reset the group_info to
-the empty set assigned to init.
+If current's and sb's userids can't be compared, then current will get
+'user other' (we usually say 'nobody') permissions to the inode.
 
-Signed-off-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Changelog:
+	Aug 5: send the whole inode to the super_operations.
+
+Signed-off-by: Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 ---
- kernel/user_namespace.c |   14 ++++++++++++++
- 1 files changed, 14 insertions(+), 0 deletions(-)
+ fs/namei.c         |   29 +++++++++++++++++++++++---
+ fs/super.c         |    3 ++
+ include/linux/fs.h |   55 ++++++++++++++++++++++++++++++++++++++++++++++++++++
+ 3 files changed, 83 insertions(+), 4 deletions(-)
 
-diff --git a/kernel/user_namespace.c b/kernel/user_namespace.c
-index 0045dd0..39aea7b 100644
---- a/kernel/user_namespace.c
-+++ b/kernel/user_namespace.c
-@@ -11,6 +11,9 @@
- #include <linux/slab.h>
- #include <linux/user_namespace.h>
- 
-+/* defined in kernel/sys.c */
-+extern struct group_info init_groups;
+diff --git a/fs/namei.c b/fs/namei.c
+index 4ea63ed..6bf5446 100644
+--- a/fs/namei.c
++++ b/fs/namei.c
+@@ -183,10 +183,27 @@ int generic_permission(struct inode *inode, int mask,
+ 		int (*check_acl)(struct inode *inode, int mask))
+ {
+ 	umode_t			mode = inode->i_mode;
++	uid_t			iuid;
++	gid_t			igid;
++	int			ret;
++	int			good_userns = 1;
 +
- /*
-  * Clone a new ns copying an original user ns, setting refcount to 1
-  * @old_ns: namespace to clone
-@@ -48,6 +51,17 @@ int create_new_userns(int flags, struct task_struct *tsk)
- 	put_user_ns(ns);
++	ret = s_convert_uid_gid(inode, current->user->user_ns,
++						&iuid, &igid);
++	if (!ret)
++		good_userns = 0;
  
- 	task_switch_uid(tsk, ns->root_user);
-+	tsk->uid = tsk->euid = tsk->suid = tsk->fsuid = 0;
-+	tsk->gid = tsk->egid = tsk->sgid = tsk->fsgid = 0;
+ 	mask &= MAY_READ | MAY_WRITE | MAY_EXEC;
+ 
+-	if (current->fsuid == inode->i_uid)
++	/*
++	 * If we're not in the inode's user namespace, we get
++	 * user nobody permissions, and we ignore acls
++	 * (bc serge doesn't know how to handle acls in this case)
++	 */
++	if (!good_userns)
++		goto check;
 +
-+	/* this can't be safe for unshare, can it?  it's safe
-+	 * for fork, though.  I'm tempted to limit clone_newuser to
-+	 * fork only */
-+	task_lock(tsk);
-+	put_group_info(tsk->group_info);
-+	tsk->group_info = &init_groups;
-+	get_group_info(tsk->group_info);
-+	task_unlock(tsk);
++	if (current->fsuid == iuid)
+ 		mode >>= 6;
+ 	else {
+ 		if (IS_POSIXACL(inode) && (mode & S_IRWXG) && check_acl) {
+@@ -197,15 +214,18 @@ int generic_permission(struct inode *inode, int mask,
+ 				return error;
+ 		}
  
- 	return 0;
+-		if (in_group_p(inode->i_gid))
++		if (in_group_p(igid))
+ 			mode >>= 3;
+ 	}
+ 
++check:
+ 	/*
+ 	 * If the DACs are ok we don't need any capability check.
+ 	 */
+ 	if ((mask & ~mode) == 0)
+ 		return 0;
++	if (!good_userns)
++		return -EACCES;
+ 
+  check_capabilities:
+ 	/*
+@@ -214,14 +234,15 @@ int generic_permission(struct inode *inode, int mask,
+ 	 */
+ 	if (!(mask & MAY_EXEC) ||
+ 	    (inode->i_mode & S_IXUGO) || S_ISDIR(inode->i_mode))
+-		if (capable(CAP_DAC_OVERRIDE))
++		if (s_is_capable(inode, current->user->user_ns,
++						CAP_DAC_OVERRIDE))
+ 			return 0;
+ 
+ 	/*
+ 	 * Searching includes executable on directories, else just read.
+ 	 */
+ 	if (mask == MAY_READ || (S_ISDIR(inode->i_mode) && !(mask & MAY_WRITE)))
+-		if (capable(CAP_DAC_READ_SEARCH))
++		if (s_is_capable(inode, current->user->user_ns, CAP_DAC_READ_SEARCH))
+ 			return 0;
+ 
+ 	return -EACCES;
+diff --git a/fs/super.c b/fs/super.c
+index e931ae9..3559637 100644
+--- a/fs/super.c
++++ b/fs/super.c
+@@ -38,6 +38,7 @@
+ #include <linux/kobject.h>
+ #include <linux/mutex.h>
+ #include <linux/file.h>
++#include <linux/user_namespace.h>
+ #include <asm/uaccess.h>
+ #include "internal.h"
+ 
+@@ -93,6 +94,7 @@ static struct super_block *alloc_super(struct file_system_type *type)
+ 		s->s_qcop = sb_quotactl_ops;
+ 		s->s_op = &default_op;
+ 		s->s_time_gran = 1000000000;
++		s->user_ns = get_user_ns(current->user->user_ns);
+ 	}
+ out:
+ 	return s;
+@@ -109,6 +111,7 @@ static inline void destroy_super(struct super_block *s)
+ 	security_sb_free(s);
+ 	kfree(s->s_subtype);
+ 	kfree(s->s_options);
++	put_user_ns(s->user_ns);
+ 	kfree(s);
  }
+ 
+diff --git a/include/linux/fs.h b/include/linux/fs.h
+index 580b513..bb58c2e 100644
+--- a/include/linux/fs.h
++++ b/include/linux/fs.h
+@@ -1128,6 +1128,11 @@ struct super_block {
+ 	 * generic_show_options()
+ 	 */
+ 	char *s_options;
++
++	/*
++	 * namespace of the user which mounted the sb
++	 */
++	struct user_namespace *user_ns;
+ };
+ 
+ extern struct timespec current_fs_time(struct super_block *sb);
+@@ -1320,6 +1325,9 @@ struct super_operations {
+ 	int (*remount_fs) (struct super_block *, int *, char *);
+ 	void (*clear_inode) (struct inode *);
+ 	void (*umount_begin) (struct super_block *);
++	int (*is_capable) (struct user_namespace *, struct inode *, int);
++	uid_t (*convert_uid_gid)(struct user_namespace *, struct inode *,
++						uid_t *, gid_t *);
+ 
+ 	int (*show_options)(struct seq_file *, struct vfsmount *);
+ 	int (*show_stats)(struct seq_file *, struct vfsmount *);
+@@ -1330,6 +1338,53 @@ struct super_operations {
+ };
+ 
+ /*
++ * In the next 3, i'm passing the user_ns in so that I don't need
++ * to know how to dereference struct user her (which would require
++ * #including sched.h).
++ * Note in particular that for instance in s_convert_uid, the uid is the
++ * inode->i_uid, while user_ns is current->user->user_ns.
++ */
++
++/*
++ * s_convert_uid: attempt to translate the inode's stored
++ * uid to a uid meaningful in user_ns passed in
++ * If possible, store the result in reuid and return 1
++ * Otherwise, return 0, meaningful the uid cannot be translated
++ */
++static inline int s_convert_uid_gid(struct inode *ino,
++		struct user_namespace *user_ns, uid_t *retuid, gid_t *retgid)
++{
++	struct super_block *sb = ino->i_sb;
++
++	if (sb->user_ns == user_ns) {
++		*retuid = ino->i_uid;
++		*retgid = ino->i_gid;
++		return 1;
++	}
++	if (sb->s_op->convert_uid_gid)
++		return sb->s_op->convert_uid_gid(user_ns, ino, retuid, retgid);
++	return 0;
++}
++
++/*
++ * s_is_capable: check whether current is capable with respect
++ * to the filesystem represented by sb.
++ *
++ * return 0 if false, 1 if true
++ */
++static inline int s_is_capable(struct inode *ino,
++		struct user_namespace *user_ns, int cap)
++{
++	struct super_block *sb = ino->i_sb;
++
++	if (sb->user_ns == user_ns)
++		return capable(cap);
++	if (sb->s_op->is_capable)
++		return sb->s_op->is_capable(user_ns, ino, cap);
++	return 0;
++}
++
++/*
+  * Inode state bits.  Protected by inode_lock.
+  *
+  * Three bits determine the dirty state of the inode, I_DIRTY_SYNC,
 -- 
 1.5.4.3
