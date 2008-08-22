@@ -1,7 +1,8 @@
 From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH 06/10] user namespaces: hook fs/attr.c
-Date: Fri, 22 Aug 2008 14:46:25 -0500
-Message-ID: <20080822194625.GF10360@us.ibm.com>
+Subject: [PATCH 08/10] userns: store child userns uids as xattrs in ext3
+	using lib/fsuserns
+Date: Fri, 22 Aug 2008 14:47:05 -0500
+Message-ID: <20080822194705.GH10360@us.ibm.com>
 References: <20080822194513.GA10262@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -21,103 +22,208 @@ Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Hook fs/attr.c so things like chown are properly handled.  Note this is only
-for permission checks.  We'll need to hook ext3_setattr to get the right
-uids updated.
+userns: store child userns uids as xattrs in ext3 using lib/fsuserns
 
 Signed-off-by: Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 ---
- fs/attr.c             |   28 +++++++++++++++++++---------
- include/linux/sched.h |    1 +
- 2 files changed, 20 insertions(+), 9 deletions(-)
+ fs/ext3/namei.c                |    7 +++-
+ fs/ext3/xattr.c                |   29 +++++++++++++++
+ fs/ext3/xattr.h                |    2 +
+ include/linux/user_namespace.h |    1 +
+ kernel/user_namespace.c        |    1 +
+ lib/fsuserns.c                 |   74 ++++++++++++++++++++++++++++++++++++++++
+ 6 files changed, 113 insertions(+), 1 deletions(-)
 
-diff --git a/fs/attr.c b/fs/attr.c
-index 26c71ba..072d367 100644
---- a/fs/attr.c
-+++ b/fs/attr.c
-@@ -22,6 +22,11 @@ int inode_change_ok(struct inode *inode, struct iattr *attr)
- {
- 	int retval = -EPERM;
- 	unsigned int ia_valid = attr->ia_valid;
-+	uid_t iuid;
-+	gid_t igid;
+diff --git a/fs/ext3/namei.c b/fs/ext3/namei.c
+index de13e91..e5be4bc 100644
+--- a/fs/ext3/namei.c
++++ b/fs/ext3/namei.c
+@@ -1676,6 +1676,9 @@ static int ext3_add_nondir(handle_t *handle,
+ 	return err;
+ }
+ 
++int fsuserns_store_creds(struct inode *inode, struct user_struct *user,
++	int (*)(struct inode *inode, const void *value, size_t value_len));
 +
-+	if (!s_convert_uid_gid(inode, current_userns(), &iuid, &igid))
-+		return -EPERM;
- 
- 	/* If force is set do it anyway. */
- 	if (ia_valid & ATTR_FORCE)
-@@ -29,30 +34,30 @@ int inode_change_ok(struct inode *inode, struct iattr *attr)
- 
- 	/* Make sure a caller can chown. */
- 	if ((ia_valid & ATTR_UID) &&
--	    (current->fsuid != inode->i_uid ||
--	     attr->ia_uid != inode->i_uid) && !capable(CAP_CHOWN))
-+	    (current->fsuid != iuid ||
-+	     attr->ia_uid != iuid) && !s_is_capable(inode, current_userns(), CAP_CHOWN))
- 		goto error;
- 
- 	/* Make sure caller can chgrp. */
- 	if ((ia_valid & ATTR_GID) &&
--	    (current->fsuid != inode->i_uid ||
--	    (!in_group_p(attr->ia_gid) && attr->ia_gid != inode->i_gid)) &&
--	    !capable(CAP_CHOWN))
-+	    (current->fsuid != iuid ||
-+	    (!in_group_p(attr->ia_gid) && attr->ia_gid != igid)) &&
-+	    !s_is_capable(inode, current_userns(), CAP_CHOWN))
- 		goto error;
- 
- 	/* Make sure a caller can chmod. */
- 	if (ia_valid & ATTR_MODE) {
--		if (!is_owner_or_cap(inode))
-+		if (current->fsuid != iuid || !s_is_capable(inode, current_userns(), CAP_FOWNER))
- 			goto error;
- 		/* Also check the setgid bit! */
- 		if (!in_group_p((ia_valid & ATTR_GID) ? attr->ia_gid :
--				inode->i_gid) && !capable(CAP_FSETID))
-+				igid) && !s_is_capable(inode, current_userns(), CAP_FSETID))
- 			attr->ia_mode &= ~S_ISGID;
+ /*
+  * By the time this is called, we already have created
+  * the directory cache entry for the new file, but it
+@@ -1707,7 +1710,9 @@ retry:
+ 		inode->i_op = &ext3_file_inode_operations;
+ 		inode->i_fop = &ext3_file_operations;
+ 		ext3_set_aops(inode);
+-		err = ext3_add_nondir(handle, dentry, inode);
++		err = fsuserns_store_creds(inode, current->user, ext3_xattr_set_userns);
++		if (!err)
++			err = ext3_add_nondir(handle, dentry, inode);
  	}
+ 	ext3_journal_stop(handle);
+ 	if (err == -ENOSPC && ext3_should_retry_alloc(dir->i_sb, &retries))
+diff --git a/fs/ext3/xattr.c b/fs/ext3/xattr.c
+index 175414a..da47c35 100644
+--- a/fs/ext3/xattr.c
++++ b/fs/ext3/xattr.c
+@@ -1070,6 +1070,35 @@ retry:
+ 	return error;
+ }
  
- 	/* Check for setting the inode time. */
- 	if (ia_valid & (ATTR_MTIME_SET | ATTR_ATIME_SET | ATTR_TIMES_SET)) {
--		if (!is_owner_or_cap(inode))
-+		if (current->fsuid != iuid || !s_is_capable(inode, current_userns(), CAP_FOWNER))
- 			goto error;
- 	}
- fine:
-@@ -66,6 +71,11 @@ EXPORT_SYMBOL(inode_change_ok);
- int inode_setattr(struct inode * inode, struct iattr * attr)
- {
- 	unsigned int ia_valid = attr->ia_valid;
-+	uid_t iuid;
-+	gid_t igid;
++int
++ext3_xattr_set_userns(struct inode *inode,
++	       const void *value, size_t value_len)
++{
++	int name_index = EXT3_XATTR_INDEX_SECURITY;
++	handle_t *handle;
++	int error, retries = 0;
++	char *name = "userns";
 +
-+	if (!s_convert_uid_gid(inode, current_userns(), &iuid, &igid))
-+		return -EPERM;
++retry:
++	handle = ext3_journal_start(inode, EXT3_DATA_TRANS_BLOCKS(inode->i_sb));
++	if (IS_ERR(handle)) {
++		error = PTR_ERR(handle);
++	} else {
++		int error2;
++
++		error = ext3_xattr_set_handle(handle, inode, name_index, name,
++					      value, value_len, flags);
++		error2 = ext3_journal_stop(handle);
++		if (error == -ENOSPC &&
++		    ext3_should_retry_alloc(inode->i_sb, &retries))
++			goto retry;
++		if (error == 0)
++			error = error2;
++	}
++
++	return error;
++}
++
+ /*
+  * ext3_xattr_delete_inode()
+  *
+diff --git a/fs/ext3/xattr.h b/fs/ext3/xattr.h
+index 148a4df..8a523de 100644
+--- a/fs/ext3/xattr.h
++++ b/fs/ext3/xattr.h
+@@ -70,6 +70,8 @@ extern int ext3_xattr_get(struct inode *, int, const char *, void *, size_t);
+ extern int ext3_xattr_set(struct inode *, int, const char *, const void *, size_t, int);
+ extern int ext3_xattr_set_handle(handle_t *, struct inode *, int, const char *, const void *, size_t, int);
  
- 	if (ia_valid & ATTR_SIZE &&
- 	    attr->ia_size != i_size_read(inode)) {
-@@ -90,7 +100,7 @@ int inode_setattr(struct inode * inode, struct iattr * attr)
- 	if (ia_valid & ATTR_MODE) {
- 		umode_t mode = attr->ia_mode;
++extern int ext3_xattr_set_userns(struct inode *inode, const void *value, size_t value_len, int flags);
++
+ extern void ext3_xattr_delete_inode(handle_t *, struct inode *);
+ extern void ext3_xattr_put_super(struct super_block *);
  
--		if (!in_group_p(inode->i_gid) && !capable(CAP_FSETID))
-+		if (!in_group_p(igid) && !s_is_capable(inode, current_userns(), CAP_FSETID))
- 			mode &= ~S_ISGID;
- 		inode->i_mode = mode;
- 	}
-diff --git a/include/linux/sched.h b/include/linux/sched.h
-index a2f1356..f557535 100644
---- a/include/linux/sched.h
-+++ b/include/linux/sched.h
-@@ -611,6 +611,7 @@ struct user_struct {
- #endif
+diff --git a/include/linux/user_namespace.h b/include/linux/user_namespace.h
+index 1b4959d..a793263 100644
+--- a/include/linux/user_namespace.h
++++ b/include/linux/user_namespace.h
+@@ -14,6 +14,7 @@ struct user_namespace {
+ 	struct hlist_head	uidhash_table[UIDHASH_SZ];
+ 	struct user_struct	*root_user;
+ 	struct user_struct	*creator;
++	gid_t			creator_grp;
  };
  
-+#define current_userns() (current->user->user_ns)
- extern int uids_sysfs_init(void);
+ extern struct user_namespace init_user_ns;
+diff --git a/kernel/user_namespace.c b/kernel/user_namespace.c
+index 39aea7b..879693a 100644
+--- a/kernel/user_namespace.c
++++ b/kernel/user_namespace.c
+@@ -51,6 +51,7 @@ int create_new_userns(int flags, struct task_struct *tsk)
+ 	put_user_ns(ns);
  
- extern struct user_struct *find_user(uid_t);
+ 	task_switch_uid(tsk, ns->root_user);
++	ns->creator_grp = tsk->gid;
+ 	tsk->uid = tsk->euid = tsk->suid = tsk->fsuid = 0;
+ 	tsk->gid = tsk->egid = tsk->sgid = tsk->fsgid = 0;
+ 
+diff --git a/lib/fsuserns.c b/lib/fsuserns.c
+index c237d1d..db70970 100644
+--- a/lib/fsuserns.c
++++ b/lib/fsuserns.c
+@@ -5,6 +5,7 @@
+ #include <linux/fs.h>
+ #include <linux/user.h>
+ #include <linux/user_namespace.h>
++#include <linux/xattr.h>
+ 
+ /*
+  * Ok, eventually I'll want some policy loaded which looks as follows:
+@@ -233,3 +234,76 @@ convert:
+ 	printk(KERN_NOTICE "%s: oh, but I wasn't capable(%d)\n", __func__, cap);
+ 	return 0;
+ }
++
++/*
++ * when a user_namespace is registered with an fs, we store the
++ * nsid.  This next fn will need to retreive an nsid for a
++ * given fs (inode->i_sb, that is) and user_namespace
++ *
++ * I don't want to do that bookkeeping yet, so i just return 1 :)
++ */
++int find_ns_id(struct inode *inode, struct user_namespace *ns)
++{
++	struct fsuserns_conversion_table *t;
++	struct fsuserns_table_entries *ep;
++
++	t = find_table(inode->i_sb);
++	mutex_lock(&fsuserns_table_mutex);
++	list_for_each_entry(ep, &t->entries, entries) {
++		if (ep->ns == ns)
++			goto found;
++	}
++	ep = NULL;
++found:
++	mutex_unlock(&fsuserns_table_mutex);
++
++	if (!ep)
++		return -1;
++	return ep->userns_id;
++
++
++}
++
++struct unsstore {
++	int ns;
++	uid_t uid;
++};
++
++int fsuserns_store_creds(struct inode *inode, struct user_struct *user,
++	int (*xattrset)(struct inode *inode, const void *value, size_t value_len))
++{
++	struct user_namespace *ns = user->user_ns, *lastns;
++	size_t size;
++	int i, depth, ret;
++	struct unsstore *unsstore;
++	struct user_struct *creator = user;
++	
++	if (ns == &init_user_ns)
++		return 0;
++
++	depth = 0;
++	while (ns != &init_user_ns) {
++		depth++;
++		creator = ns->creator;
++		ns = creator->user_ns;
++	}
++	size = depth * sizeof(struct unsstore);
++	unsstore = kmalloc(size, GFP_KERNEL);
++	ns = user->user_ns;
++	for (i=0; ns != &init_user_ns; i++) {
++		unsstore[i].ns = find_ns_id(inode, ns);
++		unsstore[i].uid = user->uid;
++		printk(KERN_NOTICE "%s: setting xattr with ns=%d,uid=%d\n", __func__,
++				unsstore[i].ns, unsstore[i].uid);
++		user = ns->creator;
++		lastns = ns;
++		ns = user->user_ns;
++	}
++
++	inode->i_uid = creator->uid;
++	inode->i_gid = lastns->creator_grp;
++
++	ret = xattrset(inode, unsstore, size);
++	kfree(unsstore);
++	return ret;
++}
 -- 
 1.5.4.3
