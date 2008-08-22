@@ -1,8 +1,8 @@
 From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH 04/10] user namespaces: enforce user namespaces for file
-	permission
-Date: Fri, 22 Aug 2008 14:46:09 -0500
-Message-ID: <20080822194609.GD10360@us.ibm.com>
+Subject: [PATCH 05/10] user namespaces: Allow registering new
+	usernamespaces using mount
+Date: Fri, 22 Aug 2008 14:46:17 -0500
+Message-ID: <20080822194617.GE10360@us.ibm.com>
 References: <20080822194513.GA10262@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -22,211 +22,387 @@ Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Add a user_ns to the sb.  It is always set to the user_ns of the task which
-mounted the sb.
+Allow registering new user namespaces using mount(MS_ADD_USERNS).
+Define lib/fsuserns.c which will contain functions which filesystems
+can hook into to support user namespaces.
 
-Define 3 new super_operations.  convert_uid() and convert_gid() take a uid
-or gid from an inode on the sb's fs, and attempt to convert them into ids
-meaningful in the user namespace passed in, which presumably is current's.
-is_capable() checks whether current has the requested capability with respect
-to the sb's fs, which is dependent upon the relationship between current's
-user_ns and those which the sb knows about.
+Since fsuserns.c currently supports neither reading policy nor
+storing userns info using xattrs, the support is really bogus
+for now.
 
-If the sb isn't user ns aware - which none are right now - then the new
-super_operations won't be defined.  If in that case current and sb have
-different user namespaces, then the userids can't be compared.
+The following program shows how to use the mount syscall to
+register a new user namespace with a filesystem:
 
-If current's and sb's userids can't be compared, then current will get
-'user other' (we usually say 'nobody') permissions to the inode.
+===================================================================
+ #include <stdio.h>
+ #include <sys/mount.h>
+ #include <errno.h>
 
-Changelog:
-	Aug 5: send the whole inode to the super_operations.
+ #define MS_SET_USERNS   (1<<25) /* Add current's user_ns as valid for sb */
+
+/*
+ * path is a path to be remounted
+ * userid is a string 'user=X' where X is an integer
+ */
+
+int main(int argc, char *argv[])
+{
+        char *path, *userid;
+        int ret;
+
+        path = argv[1];
+        userid = argv[2];
+
+        ret = mount(path, path, NULL, MS_SET_USERNS, userid);
+        if (ret)
+                perror("mount");
+        return ret;
+}
+===================================================================
 
 Signed-off-by: Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 ---
- fs/namei.c         |   29 +++++++++++++++++++++++---
- fs/super.c         |    3 ++
- include/linux/fs.h |   55 ++++++++++++++++++++++++++++++++++++++++++++++++++++
- 3 files changed, 83 insertions(+), 4 deletions(-)
+ fs/ext3/super.c    |   14 +++
+ fs/namespace.c     |   11 +++
+ include/linux/fs.h |    3 +
+ lib/Makefile       |    2 +
+ lib/fsuserns.c     |  226 ++++++++++++++++++++++++++++++++++++++++++++++++++++
+ 5 files changed, 256 insertions(+), 0 deletions(-)
+ create mode 100644 lib/fsuserns.c
 
-diff --git a/fs/namei.c b/fs/namei.c
-index 4ea63ed..6bf5446 100644
---- a/fs/namei.c
-+++ b/fs/namei.c
-@@ -183,10 +183,27 @@ int generic_permission(struct inode *inode, int mask,
- 		int (*check_acl)(struct inode *inode, int mask))
- {
- 	umode_t			mode = inode->i_mode;
-+	uid_t			iuid;
-+	gid_t			igid;
-+	int			ret;
-+	int			good_userns = 1;
+diff --git a/fs/ext3/super.c b/fs/ext3/super.c
+index f38a5af..3458d25 100644
+--- a/fs/ext3/super.c
++++ b/fs/ext3/super.c
+@@ -719,6 +719,15 @@ static struct quotactl_ops ext3_qctl_operations = {
+ };
+ #endif
+ 
++#ifdef CONFIG_USER_NS
++extern int fsuserns_add_userns(struct super_block *sb,
++                struct user *user, void *data);
++extern int fsuserns_convert_uid_gid(struct user_namespace *ns,
++		struct inode *inode, uid_t *retuid, gid_t *retgid);
++extern int fsuserns_is_capable(struct user_namespace *ns,
++		struct inode *inode, int cap);
++#endif
 +
-+	ret = s_convert_uid_gid(inode, current->user->user_ns,
-+						&iuid, &igid);
-+	if (!ret)
-+		good_userns = 0;
- 
- 	mask &= MAY_READ | MAY_WRITE | MAY_EXEC;
- 
--	if (current->fsuid == inode->i_uid)
-+	/*
-+	 * If we're not in the inode's user namespace, we get
-+	 * user nobody permissions, and we ignore acls
-+	 * (bc serge doesn't know how to handle acls in this case)
-+	 */
-+	if (!good_userns)
-+		goto check;
-+
-+	if (current->fsuid == iuid)
- 		mode >>= 6;
- 	else {
- 		if (IS_POSIXACL(inode) && (mode & S_IRWXG) && check_acl) {
-@@ -197,15 +214,18 @@ int generic_permission(struct inode *inode, int mask,
- 				return error;
- 		}
- 
--		if (in_group_p(inode->i_gid))
-+		if (in_group_p(igid))
- 			mode >>= 3;
- 	}
- 
-+check:
- 	/*
- 	 * If the DACs are ok we don't need any capability check.
- 	 */
- 	if ((mask & ~mode) == 0)
- 		return 0;
-+	if (!good_userns)
-+		return -EACCES;
- 
-  check_capabilities:
- 	/*
-@@ -214,14 +234,15 @@ int generic_permission(struct inode *inode, int mask,
- 	 */
- 	if (!(mask & MAY_EXEC) ||
- 	    (inode->i_mode & S_IXUGO) || S_ISDIR(inode->i_mode))
--		if (capable(CAP_DAC_OVERRIDE))
-+		if (s_is_capable(inode, current->user->user_ns,
-+						CAP_DAC_OVERRIDE))
- 			return 0;
- 
- 	/*
- 	 * Searching includes executable on directories, else just read.
- 	 */
- 	if (mask == MAY_READ || (S_ISDIR(inode->i_mode) && !(mask & MAY_WRITE)))
--		if (capable(CAP_DAC_READ_SEARCH))
-+		if (s_is_capable(inode, current->user->user_ns, CAP_DAC_READ_SEARCH))
- 			return 0;
- 
- 	return -EACCES;
-diff --git a/fs/super.c b/fs/super.c
-index e931ae9..3559637 100644
---- a/fs/super.c
-+++ b/fs/super.c
-@@ -38,6 +38,7 @@
- #include <linux/kobject.h>
- #include <linux/mutex.h>
- #include <linux/file.h>
-+#include <linux/user_namespace.h>
- #include <asm/uaccess.h>
- #include "internal.h"
- 
-@@ -93,6 +94,7 @@ static struct super_block *alloc_super(struct file_system_type *type)
- 		s->s_qcop = sb_quotactl_ops;
- 		s->s_op = &default_op;
- 		s->s_time_gran = 1000000000;
-+		s->user_ns = get_user_ns(current->user->user_ns);
- 	}
- out:
- 	return s;
-@@ -109,6 +111,7 @@ static inline void destroy_super(struct super_block *s)
- 	security_sb_free(s);
- 	kfree(s->s_subtype);
- 	kfree(s->s_options);
-+	put_user_ns(s->user_ns);
- 	kfree(s);
- }
- 
-diff --git a/include/linux/fs.h b/include/linux/fs.h
-index 580b513..bb58c2e 100644
---- a/include/linux/fs.h
-+++ b/include/linux/fs.h
-@@ -1128,6 +1128,11 @@ struct super_block {
- 	 * generic_show_options()
- 	 */
- 	char *s_options;
-+
-+	/*
-+	 * namespace of the user which mounted the sb
-+	 */
-+	struct user_namespace *user_ns;
+ static const struct super_operations ext3_sops = {
+ 	.alloc_inode	= ext3_alloc_inode,
+ 	.destroy_inode	= ext3_destroy_inode,
+@@ -738,6 +747,11 @@ static const struct super_operations ext3_sops = {
+ 	.quota_read	= ext3_quota_read,
+ 	.quota_write	= ext3_quota_write,
+ #endif
++#ifdef CONFIG_USER_NS
++	.add_userns	= fsuserns_add_userns,
++	.is_capable	= fsuserns_is_capable,
++	.convert_uid_gid = fsuserns_convert_uid_gid,
++#endif
  };
  
- extern struct timespec current_fs_time(struct super_block *sb);
-@@ -1320,6 +1325,9 @@ struct super_operations {
+ static const struct export_operations ext3_export_ops = {
+diff --git a/fs/namespace.c b/fs/namespace.c
+index 6e283c9..4bb8c61 100644
+--- a/fs/namespace.c
++++ b/fs/namespace.c
+@@ -1885,6 +1885,15 @@ int copy_mount_options(const void __user * data, unsigned long *where)
+ 	return 0;
+ }
+ 
++int do_add_userns(struct nameidata *nd, struct user_struct *user,
++		void *data_page)
++{
++	struct super_block *sb = nd->path.mnt->mnt_sb;
++	if (sb->s_op->add_userns)
++		return sb->s_op->add_userns(sb, user, data_page);
++	return -EINVAL;
++}
++
+ /*
+  * Flags is a 32-bit value that allows up to 31 non-fs dependent flags to
+  * be given to the mount() call (ie: read-only, no-dev, no-suid etc).
+@@ -1958,6 +1967,8 @@ long do_mount(char *dev_name, char *dir_name, char *type_page,
+ 		retval = do_change_type(&nd, flags);
+ 	else if (flags & MS_MOVE)
+ 		retval = do_move_mount(&nd, dev_name);
++	else if (flags & MS_SET_USERNS)
++		retval = do_add_userns(&nd, current->user, data_page);
+ 	else
+ 		retval = do_new_mount(&nd, type_page, flags, mnt_flags,
+ 				      dev_name, data_page);
+diff --git a/include/linux/fs.h b/include/linux/fs.h
+index bb58c2e..492abef 100644
+--- a/include/linux/fs.h
++++ b/include/linux/fs.h
+@@ -128,6 +128,7 @@ extern int dir_notify_enable;
+ #define MS_RELATIME	(1<<21)	/* Update atime relative to mtime/ctime. */
+ #define MS_KERNMOUNT	(1<<22) /* this is a kern_mount call */
+ #define MS_I_VERSION	(1<<23) /* Update inode I_version field */
++#define MS_SET_USERNS	(1<<25) /* Add current's user_ns as valid for sb */
+ #define MS_ACTIVE	(1<<30)
+ #define MS_NOUSER	(1<<31)
+ 
+@@ -1308,6 +1309,7 @@ extern ssize_t vfs_readv(struct file *, const struct iovec __user *,
+ extern ssize_t vfs_writev(struct file *, const struct iovec __user *,
+ 		unsigned long, loff_t *);
+ 
++struct user_struct;
+ struct super_operations {
+    	struct inode *(*alloc_inode)(struct super_block *sb);
+ 	void (*destroy_inode)(struct inode *);
+@@ -1325,6 +1327,7 @@ struct super_operations {
  	int (*remount_fs) (struct super_block *, int *, char *);
  	void (*clear_inode) (struct inode *);
  	void (*umount_begin) (struct super_block *);
-+	int (*is_capable) (struct user_namespace *, struct inode *, int);
-+	uid_t (*convert_uid_gid)(struct user_namespace *, struct inode *,
-+						uid_t *, gid_t *);
++	int (*add_userns) (struct super_block *, struct user_struct *, void *);
+ 	int (*is_capable) (struct user_namespace *, struct inode *, int);
+ 	uid_t (*convert_uid_gid)(struct user_namespace *, struct inode *,
+ 						uid_t *, gid_t *);
+diff --git a/lib/Makefile b/lib/Makefile
+index 3b1f94b..4f80936 100644
+--- a/lib/Makefile
++++ b/lib/Makefile
+@@ -80,6 +80,8 @@ obj-$(CONFIG_HAVE_LMB) += lmb.o
  
- 	int (*show_options)(struct seq_file *, struct vfsmount *);
- 	int (*show_stats)(struct seq_file *, struct vfsmount *);
-@@ -1330,6 +1338,53 @@ struct super_operations {
- };
+ obj-$(CONFIG_HAVE_ARCH_TRACEHOOK) += syscall.o
  
- /*
-+ * In the next 3, i'm passing the user_ns in so that I don't need
-+ * to know how to dereference struct user her (which would require
-+ * #including sched.h).
-+ * Note in particular that for instance in s_convert_uid, the uid is the
-+ * inode->i_uid, while user_ns is current->user->user_ns.
-+ */
++obj-$(CONFIG_USER_NS) += fsuserns.o
++
+ hostprogs-y	:= gen_crc32table
+ clean-files	:= crc32table.h
+ 
+diff --git a/lib/fsuserns.c b/lib/fsuserns.c
+new file mode 100644
+index 0000000..0a9f52d
+--- /dev/null
++++ b/lib/fsuserns.c
+@@ -0,0 +1,226 @@
++#include <linux/err.h>
++#include <linux/list.h>
++#include <linux/types.h>
++#include <linux/sched.h>
++#include <linux/fs.h>
++#include <linux/user.h>
++#include <linux/user_namespace.h>
 +
 +/*
-+ * s_convert_uid: attempt to translate the inode's stored
-+ * uid to a uid meaningful in user_ns passed in
-+ * If possible, store the result in reuid and return 1
-+ * Otherwise, return 0, meaningful the uid cannot be translated
-+ */
-+static inline int s_convert_uid_gid(struct inode *ino,
-+		struct user_namespace *user_ns, uid_t *retuid, gid_t *retgid)
-+{
-+	struct super_block *sb = ino->i_sb;
-+
-+	if (sb->user_ns == user_ns) {
-+		*retuid = ino->i_uid;
-+		*retgid = ino->i_gid;
-+		return 1;
-+	}
-+	if (sb->s_op->convert_uid_gid)
-+		return sb->s_op->convert_uid_gid(user_ns, ino, retuid, retgid);
-+	return 0;
-+}
-+
-+/*
-+ * s_is_capable: check whether current is capable with respect
-+ * to the filesystem represented by sb.
++ * Ok, eventually I'll want some policy loaded which looks as follows:
 + *
-+ * return 0 if false, 1 if true
++ * [domains]
++ * INIT 1
++ * serge 2
++ * vs2 3
++ *
++ * [owners]
++ * serge serge.INIT
++ * vs2 root.INIT
++ *
++ * Meaning root on the host may own domain vs2, which is identified
++ * by id '3'.  user serge on the host may own domain serge, which is
++ * identified by id '2'.  In this case, when userid 40 in domain 'serge'
++ * saves a file, the file will be stored with serge's uid, and an
++ * xattr listing <2,40> meaning the file is owned by userid 40 in domain 2.
++ *
++ * BUT I don't wnat to deal with policy parsing yet, so for now I will
++ * just provide the interface for an fs to use these helpers.
 + */
-+static inline int s_is_capable(struct inode *ino,
-+		struct user_namespace *user_ns, int cap)
-+{
-+	struct super_block *sb = ino->i_sb;
 +
-+	if (sb->user_ns == user_ns)
-+		return capable(cap);
-+	if (sb->s_op->is_capable)
-+		return sb->s_op->is_capable(user_ns, ino, cap);
++/*
++ * 1. When a user passes the MS_NEWUSER flag to mount(2), do_loopback()
++ * will call super_add_userns().  The fs can use fsuserns_add_userns()
++ * which will check whether current->fsuid is allowed to own the id
++ * passed in with 'userns=X' data.
++ * If so, we log the fact that X=get_user_ns(current->user_ns)
++ * and henceforth a task which is in that userns will be allowed to
++ * use the fs.
++ *
++ * 2. The fs will point its super_ops->convert_uid_gid() and
++ * super_ops->is_capable()  to fsuserns_convert_uid_gid() and
++ * fsuserns_is_capable().
++ */
++
++DEFINE_MUTEX(fsuserns_table_mutex);
++
++struct fsuserns_table_entries {
++	struct user_namespace *ns;
++	unsigned int userns_id;
++	struct list_head entries;
++};
++
++struct fsuserns_conversion_table {
++	struct super_block *sb;
++	struct list_head entries;
++	struct list_head tables;
++};
++
++LIST_HEAD(fsuserns_tables);
++
++struct fsuserns_conversion_table *find_table_locked(
++				struct super_block *sb)
++{
++	struct fsuserns_conversion_table *p;
++
++	if (list_empty(&fsuserns_tables))
++		return NULL;
++	list_for_each_entry(p, &fsuserns_tables, tables) {
++		if (p->sb == sb)
++			return p;
++	}
++
++	return NULL;
++}
++
++struct fsuserns_conversion_table *find_table(struct super_block *sb)
++{
++	struct fsuserns_conversion_table *p;
++
++	mutex_lock(&fsuserns_table_mutex);
++	p = find_table_locked(sb);
++	mutex_unlock(&fsuserns_table_mutex);
++
++	return p;
++}
++
++struct fsuserns_conversion_table *find_or_create_table(struct super_block *sb)
++{
++	struct fsuserns_conversion_table *p, *new;
++
++	p = find_table(sb);
++	if (p)
++		return p;
++
++	new = kmalloc(sizeof(*new), GFP_KERNEL);
++	if (!new)
++		return ERR_PTR(-ENOMEM);
++
++	mutex_lock(&fsuserns_table_mutex);
++	p = find_table_locked(sb);
++	if (p)
++		goto out;
++	new->sb = sb;
++	INIT_LIST_HEAD(&new->entries);
++	list_add_tail(&new->tables, &fsuserns_tables);
++	p = new;
++
++out:
++	mutex_unlock(&fsuserns_table_mutex);
++	if (p != new)
++		kfree(new);
++	return p;
++}
++
++int fsuserns_add_userns(struct super_block *sb,
++		struct user_struct *user, void *data)
++{
++	struct user_namespace *user_ns = user->user_ns;
++	struct fsuserns_table_entries *e, *ep;
++	struct fsuserns_conversion_table *t;
++	int ret, newid;
++
++	t = find_or_create_table(sb);
++	if (!t)
++		return -ENOMEM;
++
++	/*
++	 * The creator of current's user namespace must be listed as
++	 * owning 'newid'.  But we don't have such policy yet.  So
++	 * for now, for the POC, we just check whether the creator's
++	 * userns is the sb->user_ns.
++	 * It's a bogus check!  Remove as soon as we have policy.
++	 *
++	 * Note, since unprivileged mounts are not yet allowed, we
++	 * know the owner had CAP_SYS_ADMIN to get here, so we don't
++	 * even bother checking the creator's uid.
++	 */
++	if (user_ns->creator->user_ns != sb->user_ns)
++		return -EPERM;
++	
++	ret = sscanf(data, "nsid=%d", &newid);
++	if (ret != 1)
++		return -EINVAL;
++
++	e = kmalloc(sizeof(*e), GFP_KERNEL);
++	if (!e)
++		return -ENOMEM;
++	mutex_lock(&fsuserns_table_mutex);
++	list_for_each_entry(ep, &t->entries, entries) {
++		if (ep->ns == user_ns && ep->userns_id == newid) {
++			kfree(ep);
++			goto skip;
++		}
++	}
++	e->ns = get_user_ns(user_ns);
++	e->userns_id = newid;
++	list_add_tail(&e->entries, &t->entries);
++skip:
++	mutex_unlock(&fsuserns_table_mutex);
++
 +	return 0;
 +}
 +
 +/*
-  * Inode state bits.  Protected by inode_lock.
-  *
-  * Three bits determine the dirty state of the inode, I_DIRTY_SYNC,
++ * return 1 if we got a translation, 0 otherwise
++ */
++int fsuserns_convert_uid_gid(struct user_namespace *ns, struct inode *inode,
++                                                uid_t *retuid, gid_t *retgid)
++{
++	struct super_block *sb = inode->i_sb;
++	struct fsuserns_conversion_table *t;
++	struct fsuserns_table_entries *ep;
++
++	t = find_table(sb);
++	if (!t)
++		return 0;
++	mutex_lock(&fsuserns_table_mutex);
++	list_for_each_entry(ep, &t->entries, entries) {
++		if (ep->ns == ns)
++			goto convert;
++	}
++	mutex_unlock(&fsuserns_table_mutex);
++
++	return 0;
++convert:
++	mutex_unlock(&fsuserns_table_mutex);
++
++	/*
++	 * ok now we would look through the xattrs for the
++	 * inode to find a stored uid in this namespace.
++	 * But we don't do that yet, so we just claim failure :)
++	 * Don't worry, the is_capable() function can be more
++	 * meaningful.
++	 */
++	return 0;
++}
++
++int fsuserns_is_capable(struct user_namespace *ns, struct inode *inode,
++						int cap)
++{
++	struct super_block *sb = inode->i_sb;
++	struct fsuserns_conversion_table *t;
++	struct fsuserns_table_entries *ep;
++
++	t = find_table(sb);
++	if (!t)
++		return 0;
++	printk(KERN_NOTICE "%s: found a table\n", __func__);
++
++	mutex_lock(&fsuserns_table_mutex);
++	list_for_each_entry(ep, &t->entries, entries) {
++		if (ep->ns == ns)
++			goto convert;
++	}
++	mutex_unlock(&fsuserns_table_mutex);
++
++	return 0;
++convert:
++	mutex_unlock(&fsuserns_table_mutex);
++
++	printk(KERN_NOTICE "%s: found an entry\n", __func__);
++	if (capable(cap))
++		return 1;
++	printk(KERN_NOTICE "%s: oh, but I wasn't capable(%d)\n", __func__, cap);
++	return 0;
++}
 -- 
 1.5.4.3
