@@ -1,13 +1,14 @@
-From: Jan Engelhardt <jengelh-nopoi9nDyk+ELgA04lAiVw@public.gmane.org>
-Subject: Re: [PATCH 20/38] netns ct: NOTRACK in netns
-Date: Thu, 21 Aug 2008 19:06:37 -0400 (EDT)
-Message-ID: <alpine.LNX.1.10.0808211903000.20596__38533.6836953231$1219360215$gmane$org@fbirervta.pbzchgretzou.qr>
-References: <20080821220432.GT31136@x200.localdomain>
+From: Takuya Yoshikawa <yoshikawa.takuya-gVGce1chcLdL9jVzuh4AOg@public.gmane.org>
+Subject: Re: RFC: Attaching threads to cgroups is OK?
+Date: Fri, 22 Aug 2008 10:03:29 +0900
+Message-ID: <48AE1061.3060800@oss.ntt.co.jp>
+References: <20080819202237.edd75933.kamezawa.hiroyu@jp.fujitsu.com>	<48AABC31.7070207@linux.vnet.ibm.com>	<1219150334.14590.12.camel@sebastian.kern.oss.ntt.co.jp>	<20080820.161247.64324924.taka@valinux.co.jp>
+	<20080820174334.a566a775.kamezawa.hiroyu@jp.fujitsu.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20080821220432.GT31136-2ev+ksY9ol182hYKe6nXyg@public.gmane.org>
+In-Reply-To: <20080820174334.a566a775.kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -17,27 +18,40 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org
-Cc: netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, netfilter-devel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, virtualization-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, fernando-gVGce1chcLdL9jVzuh4AOg@public.gmane.org, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
 List-Id: containers.vger.kernel.org
 
+Hi Kamezawa-san,
 
-On Thursday 2008-08-21 18:04, adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org wrote:
+KAMEZAWA Hiroyuki wrote:
+> On Wed, 20 Aug 2008 16:12:47 +0900 (JST)
+> Hirokazu Takahashi <taka-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org> wrote:
+> 
+>>  - I think this kind of thread application should control its I/O requests
+>>    inside of the application. I guess it seems to quite difficult to
+>>    determine which thread is doing what kind of job in the application.
+>>    We can just leave this issue to these type of applications, can we?
+>>    I guess most of this kind of applications must have been well designed
+>>    already.
+>>
+> I agree. (it's better to postpone this.)
+> 
+> But maybe cpuset (HPC) applications uses per-thread cgroup attachment.
+> So, I can't say there is no trouble even if we ignore threads.
+> 
 
->Make untracked conntrack per-netns.
+Thank you for details.
 
-Why? It does not store any useful information per se, it is
-merely used to add a third type of ct, iow:
+I feel that we are near a consensus on this problem. To make clear this 
+not only for developers but also for users what do you think about 
+making documentation and implementing can_attach() to avoid not presumed 
+attachments?
 
-(a) ct==NULL
-(b) ct!=NULL
-(c) ct==&untracked
+For example,
+1. reject attachments of threads by can_attach(),
+2. explain about what will and will not happen if we attach threads,
+...
 
-mmap(2)'s return value for example has something similar:
-
-(a) mmap(...)==NULL
-(b) mmap(...)==MMAP_FAILED
-(c) otherwise
-
-The untracked ct is a singleton, and should stay one, unless
-there are further reasons not to do so.
+Thanks,
+Yoshikawa
