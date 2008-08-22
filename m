@@ -1,14 +1,15 @@
-From: Takuya Yoshikawa <yoshikawa.takuya-gVGce1chcLdL9jVzuh4AOg@public.gmane.org>
-Subject: Re: RFC: Attaching threads to cgroups is OK?
-Date: Fri, 22 Aug 2008 10:03:29 +0900
-Message-ID: <48AE1061.3060800@oss.ntt.co.jp>
-References: <20080819202237.edd75933.kamezawa.hiroyu@jp.fujitsu.com>	<48AABC31.7070207@linux.vnet.ibm.com>	<1219150334.14590.12.camel@sebastian.kern.oss.ntt.co.jp>	<20080820.161247.64324924.taka@valinux.co.jp>
-	<20080820174334.a566a775.kamezawa.hiroyu@jp.fujitsu.com>
+From: robert.rex-GD4dBWQXeU/QT0dZR+AlfA@public.gmane.org
+Subject: Re: [Bugme-new] [Bug 11391] New: Kernel NULL pointer dereference in
+	do_notify_parent()
+Date: Fri, 22 Aug 2008 08:33:52 +0200
+Message-ID: <48AE5DD0.5070904@exasol.com>
+References: <bug-11391-10286@http.bugzilla.kernel.org/>
+	<20080821092322.76621dab.akpm@linux-foundation.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20080820174334.a566a775.kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+In-Reply-To: <20080821092322.76621dab.akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,40 +19,41 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, virtualization-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, fernando-gVGce1chcLdL9jVzuh4AOg@public.gmane.org, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
+To: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
+Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, stable-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org, bugme-daemon-590EEB7GvNiWaY/ihj7yzEB+6BGkLq7r@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Hi Kamezawa-san,
-
-KAMEZAWA Hiroyuki wrote:
-> On Wed, 20 Aug 2008 16:12:47 +0900 (JST)
-> Hirokazu Takahashi <taka-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org> wrote:
-> 
->>  - I think this kind of thread application should control its I/O requests
->>    inside of the application. I guess it seems to quite difficult to
->>    determine which thread is doing what kind of job in the application.
->>    We can just leave this issue to these type of applications, can we?
->>    I guess most of this kind of applications must have been well designed
->>    already.
+Andrew Morton wrote:
+>> http://bugzilla.kernel.org/show_bug.cgi?id=11391
 >>
-> I agree. (it's better to postpone this.)
+>>            Summary: Kernel NULL pointer dereference in do_notify_parent()
+>>            Product: Process Management
+>>            Version: 2.5
+>>      KernelVersion: 2.6.26.3
 > 
-> But maybe cpuset (HPC) applications uses per-thread cgroup attachment.
-> So, I can't say there is no trouble even if we ignore threads.
+> Should have been 2.6.26.4?
 > 
+>> [...]
+>>
+>> Latest working kernel version: 2.6.26.3
+>>
+>> Earliest failing kernel version: 2.6.25.4 (didn't test with former kernels)
+> 
+> Appears to be a regression in -stable.   Did any namespacy things go into
+> 2.6.26.4?
 
-Thank you for details.
+Oops, my mistake. I accidentially marked 2.6.26.3 as the latest working 
+kernel. I didn't mean to do so (I tested 2.6.25.4, 2.6.26.2 and 2.6.26.3 
+and all of these kernels crashed).
 
-I feel that we are near a consensus on this problem. To make clear this 
-not only for developers but also for users what do you think about 
-making documentation and implementing can_attach() to avoid not presumed 
-attachments?
+As far as I understand the problem and the appropriate source code right 
+now, I assume that this problem was introduced with PID namespaces in 
+2.6.24 and did not affect former kernels (because these didn't have this 
+feature).
 
-For example,
-1. reject attachments of threads by can_attach(),
-2. explain about what will and will not happen if we attach threads,
-...
+I'll try Oleg's posted patch as soon as possible and look what happens.
+
+Sorry for that confusion!
 
 Thanks,
-Yoshikawa
+Robert
