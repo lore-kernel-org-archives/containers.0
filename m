@@ -1,18 +1,16 @@
 From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
-Subject: Re: [PATCH 04/10] user namespaces: enforce user namespaces for file
-	permission
-Date: Fri, 22 Aug 2008 19:16:46 -0700
-Message-ID: <m1myj4cw6p.fsf@frodo.ebiederm.org>
+Subject: Re: [0/10] User namespaces: introduction
+Date: Fri, 22 Aug 2008 20:19:23 -0700
+Message-ID: <m1sksw770k.fsf@frodo.ebiederm.org>
 References: <20080822194513.GA10262@us.ibm.com>
-	<20080822194609.GD10360@us.ibm.com>
-	<m1ej4glsen.fsf@frodo.ebiederm.org>
-	<20080823005715.GB21064@us.ibm.com>
+	<m1d4k0ixzp.fsf@frodo.ebiederm.org>
+	<20080823011731.GA22737@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20080823005715.GB21064-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org> (Serge E. Hallyn's message of
-	"Fri, 22 Aug 2008 19:57:15 -0500")
+In-Reply-To: <20080823011731.GA22737-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org> (Serge E. Hallyn's message of
+	"Fri, 22 Aug 2008 20:17:31 -0500")
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -28,38 +26,65 @@ List-Id: containers.vger.kernel.org
 
 "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org> writes:
 
-> That might make sense.  I guess the problem is I started trying to
-> handle generic permission.  But I don't need to...  the fs can
-> provide its own permission, else we do the simple userns check.
+> It definately seems to make sense in terms of the security
+> implications.  And solving this before the filesystem handlers seems
+> to make sense too.  Although I would like to get the first 3 patches upstream
+> pretty soon, as I believe they are proper fixes.
 
-Sounds right.
+Reasonable.  I'm not certain about free_user continuing to be an inline
+function as it seems a bit non-trivial, but otherwise that sounds correct.
 
-We really need that simple starting place where we can turn it all
-on and you aren't allowed to do anything, then we can enable one
-feature at a time from there.
+> But wrt userns:capability, the problem that brings to mind is that of
+> referring to the userns.  Do we use the userspace-exported id, or do we
+> use the actual in-kernel user_ns?  If we use the in-kernel user_ns,
+> then we'd have to take a ref for each cap, yuck.  But you had wanted to
+> use 'mount' to only have filesystems associate userspace ids with the
+> in-kernel struct user_ns, so that complicates the idea of having
+> capabilities refer to those.
 
-Plus I can think of some uses for a user who isn't allowed to do
-anything on a machine. ;)
+I don't think so.  In the standard security model there are only 2
+intersections between the filesystem and the capabilities.
 
-> The user ns comes from the current task.  The fs must decide whether
-> current->user->uid in current->user->user_ns has capabilities over
-> the target file.  Only the fs can erify that the user is really
-> uid=0 or has CAP_DAC_OVERRIDE, for instance, with respect to the file.
+- CAP_DAC_OVERRIDE.
+- The capabilities xattr on a filesystem.
 
-In the general case only the filesystem can make the call about what
-powers we have over a specific file and the filesystem will make that
-call when we pass it our kerberos ticket to the filesystem server, and
-ask the filesystem to perform a specific operation.
+With a filesystem in exactly one user namespace at a time this
+is straight forward.  With a filesystem in user namespaces at
+a time this is slightly more interesting.
 
-In the common case the filesystem is just a reflection of our in memory
-set of namespaces.  Getting the capability rules straight are going
-to be a little interesting.  Essentially however for filesystems
-I believe the rule is if I have CAP_DAC_OVERRIDE in the user namespace
-of a user.  And that user creates a namespace.  Then I should have
-CAP_DAC_OVERRIDE capability over that namespace as well.  Allowing
-me to back up files in the unprivileged users namespace.
+I believe the authentication algorithm becomes:
+Map the credentials on the filesystem inode into (fs_user_ns, fs_uid, fs_gid, fs_mode)
 
-The common case is the only case that needs to be implemented
-in generic kernel code.
+Then to see if we have power over the file we test:
+capable(fs_user_ns, CAP_DAC_OVERRIDE).
+
+Then if current->user->user_ns != fs_user_ns we can do something like:
+uid = 0, gid = 0 mode clear except for the other bits.  We want either
+0 or another uid we have reserved for the purpose.
+
+I don't see why the mapping rules should not be universal so we can probably
+do all of the mapping foreign uid's and gid's in generic code and just
+place a unser_ns pointer into struct inode. 
+
+Which makes things very close to how they are now and it means we can
+do the lookup of the user_ns when we cache the struct inode.
+
+> Anyway I like the overall approach, and will think a bit about
+> any other actual implementation issues.
+
+Thanks.
+
+It adds more complications then I like not having a view of the filesystem
+with a single user_namespace.  However that appears to be necessary to
+deal with Al's inode_permission changes, and it seems to be where we
+are ultimately heading so it seems more honest.  So I guess I have
+to bite the bullet and accept it. ;)
+
+For the case of a shared /usr just having other permission access
+should work fairly well.  I just looked on my ubuntu system and I
+found only 36 suid executables and only one executable (fusermount)
+that was not world executable.  And a shared usr is the only reasonable
+case I could think of where I would want a file to at least appear
+to have multiple owners.
 
 Eric
