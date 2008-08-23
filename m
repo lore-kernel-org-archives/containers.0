@@ -1,17 +1,15 @@
 From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 04/10] user namespaces: enforce user namespaces for
-	file permission
-Date: Fri, 22 Aug 2008 19:57:15 -0500
-Message-ID: <20080823005715.GB21064@us.ibm.com>
+Subject: Re: [0/10] User namespaces: introduction
+Date: Fri, 22 Aug 2008 20:17:31 -0500
+Message-ID: <20080823011731.GA22737@us.ibm.com>
 References: <20080822194513.GA10262@us.ibm.com>
-	<20080822194609.GD10360@us.ibm.com>
-	<m1ej4glsen.fsf@frodo.ebiederm.org>
+	<m1d4k0ixzp.fsf@frodo.ebiederm.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <m1ej4glsen.fsf-B27657KtZYmhTnVgQlOflh2eb7JE58TQ@public.gmane.org>
+In-Reply-To: <m1d4k0ixzp.fsf-B27657KtZYmhTnVgQlOflh2eb7JE58TQ@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -28,215 +26,131 @@ List-Id: containers.vger.kernel.org
 Quoting Eric W. Biederman (ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org):
 > "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org> writes:
 > 
-> > Add a user_ns to the sb.  It is always set to the user_ns of the task which
-> > mounted the sb.
+> > Hi Eric,
 > >
-> > Define 3 new super_operations.  convert_uid() and convert_gid() take a uid
-> > or gid from an inode on the sb's fs, and attempt to convert them into ids
-> > meaningful in the user namespace passed in, which presumably is current's.
-> > is_capable() checks whether current has the requested capability with respect
-> > to the sb's fs, which is dependent upon the relationship between current's
-> > user_ns and those which the sb knows about.
+> > so here is a start to a userns patchset trying to follow your ideas
+> > about how to have user namespaces and filesystems interact.  Ignore
+> > the bookkeeping crap or you'll pull your hair out.  Lots of stuff
+> > remains unimplemented - i.e. chown (setattr) and proper handling of
+> > capabilities.  But you can do some fun things with this patchset.
+> > I.e.
 > >
-> > If the sb isn't user ns aware - which none are right now - then the new
-> > super_operations won't be defined.  If in that case current and sb have
-> > different user namespaces, then the userids can't be compared.
+> > 	(log in as root)
+> > 	setcap cap_sys_admin=ep ns_exec
+> > 	setcap cap_sys_admin=ep usernsmount
+> > 	ns_exec -U /bin/sh
+> > 	ls /root (fails)
+> > 	ls / (succeeds)
+> > 	(log in as hallyn)
+> > 	ns_exec -U /bin/sh
+> > 	id
+> > 		(uid=0, gid=0)
+> > 	ls (fails, can't descend /home/hallyn)
+> > 	usernsmount / nsid=4
+> > 	ls (succeeds)
+> > 	touch ab
+> > 	ls -l ab
+> > 		(ab is owned by root)
+> > 	exit
+> > 	(we're logged in as hallyn in the init_user_ns again)
+> > 	ls -l ab
+> > 		(ab is owned by hallyn)
 > >
-> > If current's and sb's userids can't be compared, then current will get
-> > 'user other' (we usually say 'nobody') permissions to the inode.
+> > The only supported fs is ext3.  Only a few operations are supported.
+> > So if, above, when we are hallyn in the init_user_ns but root in
+> > the child user ns,
+> > 	when we create a file, it is properly handled, so
+> > 		inode->i_uid=500, but an xattr (nsid=4,uid=0) is added
+> > 	when we chown the file to root, it is not properly handled,
+> > 		so inode->i_uid = 0
+> > it's just a matter of hooking all the places at this point.
 > >
-> > Changelog:
-> > 	Aug 5: send the whole inode to the super_operations.
+> > Capabilities remain a problem.  Right now I think capabilities will
+> > need to be split up into system-wide caps, and container-safe caps.
+> > So CAP_NET_ADMIN, CAP_NET_RAW, CAP_DAC_OVERRIDE, those are container-safe.
+> > CAP_REBOOT may become container-safe one day, but for now is very
+> > much system-wide.
 > >
-> > Signed-off-by: Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-> > ---
-> >  fs/namei.c         |   29 +++++++++++++++++++++++---
-> >  fs/super.c         |    3 ++
-> >  include/linux/fs.h |   55 ++++++++++++++++++++++++++++++++++++++++++++++++++++
-> >  3 files changed, 83 insertions(+), 4 deletions(-)
-> >
-> > diff --git a/fs/namei.c b/fs/namei.c
-> > index 4ea63ed..6bf5446 100644
-> > --- a/fs/namei.c
-> > +++ b/fs/namei.c
-> > @@ -183,10 +183,27 @@ int generic_permission(struct inode *inode, int mask,
-> >  		int (*check_acl)(struct inode *inode, int mask))
-> >  {
-> >  	umode_t			mode = inode->i_mode;
-> > +	uid_t			iuid;
-> > +	gid_t			igid;
-> > +	int			ret;
-> > +	int			good_userns = 1;
-> > +
-> > +	ret = s_convert_uid_gid(inode, current->user->user_ns,
-> > +						&iuid, &igid);
-> > +	if (!ret)
-> > +		good_userns = 0;
-> >  
-> >  	mask &= MAY_READ | MAY_WRITE | MAY_EXEC;
-> >  
-> > -	if (current->fsuid == inode->i_uid)
-> > +	/*
-> > +	 * If we're not in the inode's user namespace, we get
-> > +	 * user nobody permissions, and we ignore acls
-> > +	 * (bc serge doesn't know how to handle acls in this case)
-> > +	 */
-> > +	if (!good_userns)
-> > +		goto check;
-> > +
-> > +	if (current->fsuid == iuid)
-> >  		mode >>= 6;
-> >  	else {
-> >  		if (IS_POSIXACL(inode) && (mode & S_IRWXG) && check_acl) {
-> > @@ -197,15 +214,18 @@ int generic_permission(struct inode *inode, int mask,
-> >  				return error;
-> >  		}
-> >  
-> > -		if (in_group_p(inode->i_gid))
-> > +		if (in_group_p(igid))
-> >  			mode >>= 3;
-> >  	}
-> >  
-> > +check:
-> >  	/*
-> >  	 * If the DACs are ok we don't need any capability check.
-> >  	 */
-> >  	if ((mask & ~mode) == 0)
-> >  		return 0;
-> > +	if (!good_userns)
-> > +		return -EACCES;
-> >  
-> >   check_capabilities:
-> >  	/*
-> > @@ -214,14 +234,15 @@ int generic_permission(struct inode *inode, int mask,
-> >  	 */
-> >  	if (!(mask & MAY_EXEC) ||
-> >  	    (inode->i_mode & S_IXUGO) || S_ISDIR(inode->i_mode))
-> > -		if (capable(CAP_DAC_OVERRIDE))
-> > +		if (s_is_capable(inode, current->user->user_ns,
-> > +						CAP_DAC_OVERRIDE))
-> >  			return 0;
-> >  
-> >  	/*
-> >  	 * Searching includes executable on directories, else just read.
-> >  	 */
-> >  	if (mask == MAY_READ || (S_ISDIR(inode->i_mode) && !(mask & MAY_WRITE)))
-> > -		if (capable(CAP_DAC_READ_SEARCH))
-> > + if (s_is_capable(inode, current->user->user_ns, CAP_DAC_READ_SEARCH))
-> >  			return 0;
-> >  
-> >  	return -EACCES;
-> > diff --git a/fs/super.c b/fs/super.c
-> > index e931ae9..3559637 100644
-> > --- a/fs/super.c
-> > +++ b/fs/super.c
-> > @@ -38,6 +38,7 @@
-> >  #include <linux/kobject.h>
-> >  #include <linux/mutex.h>
-> >  #include <linux/file.h>
-> > +#include <linux/user_namespace.h>
-> >  #include <asm/uaccess.h>
-> >  #include "internal.h"
-> >  
-> > @@ -93,6 +94,7 @@ static struct super_block *alloc_super(struct file_system_type
-> > *type)
-> >  		s->s_qcop = sb_quotactl_ops;
-> >  		s->s_op = &default_op;
-> >  		s->s_time_gran = 1000000000;
-> > +		s->user_ns = get_user_ns(current->user->user_ns);
-> >  	}
-> >  out:
-> >  	return s;
-> > @@ -109,6 +111,7 @@ static inline void destroy_super(struct super_block *s)
-> >  	security_sb_free(s);
-> >  	kfree(s->s_subtype);
-> >  	kfree(s->s_options);
-> > +	put_user_ns(s->user_ns);
-> >  	kfree(s);
-> >  }
-> >  
-> > diff --git a/include/linux/fs.h b/include/linux/fs.h
-> > index 580b513..bb58c2e 100644
-> > --- a/include/linux/fs.h
-> > +++ b/include/linux/fs.h
-> > @@ -1128,6 +1128,11 @@ struct super_block {
-> >  	 * generic_show_options()
-> >  	 */
-> >  	char *s_options;
-> > +
-> > +	/*
-> > +	 * namespace of the user which mounted the sb
-> > +	 */
-> > +	struct user_namespace *user_ns;
+> > So if I'm uid 500 on the host and create a user namespace where I'm
+> > uid=0, I should be able to acquire container-safe caps (perhaps
+> > contingent on whether I unshared all other namespaces), but not
+> > system-wide ones.  Or, whether I can acquire them would depend
+> > on whether the suid bit was set in a user_ns or not.  sigh.
 > 
-> We should make it clear that this is a default, and not something
-> a filesystem must use, just something a filesystem may use.
-> >  };
-> >  
-> >  extern struct timespec current_fs_time(struct super_block *sb);
-> > @@ -1320,6 +1325,9 @@ struct super_operations {
-> >  	int (*remount_fs) (struct super_block *, int *, char *);
-> >  	void (*clear_inode) (struct inode *);
-> >  	void (*umount_begin) (struct super_block *);
-> > +	int (*is_capable) (struct user_namespace *, struct inode *, int);
-> > +	uid_t (*convert_uid_gid)(struct user_namespace *, struct inode *,
-> > +						uid_t *, gid_t *);
-> >  
-> I'm not convinced either of those methods makes sense.
-> >  	int (*show_options)(struct seq_file *, struct vfsmount *);
-> >  	int (*show_stats)(struct seq_file *, struct vfsmount *);
-> > @@ -1330,6 +1338,53 @@ struct super_operations {
-> >  };
-> >  
-> >  /*
-> > + * In the next 3, i'm passing the user_ns in so that I don't need
-> > + * to know how to dereference struct user her (which would require
-> > + * #including sched.h).
-> > + * Note in particular that for instance in s_convert_uid, the uid is the
-> > + * inode->i_uid, while user_ns is current->user->user_ns.
-> > + */
-> > +
-> > +/*
-> > + * s_convert_uid: attempt to translate the inode's stored
-> > + * uid to a uid meaningful in user_ns passed in
-> > + * If possible, store the result in reuid and return 1
-> > + * Otherwise, return 0, meaningful the uid cannot be translated
-> > + */
-> > +static inline int s_convert_uid_gid(struct inode *ino,
-> > +		struct user_namespace *user_ns, uid_t *retuid, gid_t *retgid)
-> > +{
-> > +	struct super_block *sb = ino->i_sb;
-> > +
-> > +	if (sb->user_ns == user_ns) {
-> > +		*retuid = ino->i_uid;
-> > +		*retgid = ino->i_gid;
-> > +		return 1;
-> > +	}
-> > +	if (sb->s_op->convert_uid_gid)
-> > +		return sb->s_op->convert_uid_gid(user_ns, ino, retuid, retgid);
+> Serge at first glance this looks like a good start, especially for thinking
+> through how things will work.
 > 
-> We should be able to just use the existing inode->i_op->getattr.
-> Especially as that method will have to be updated anyway..
+> It has just occurred to me that from a dependency point of view it
+> makes an enormous amount of sense to sort out capable with
+> respect to namespaces before we get to the filesystems.
+> 
+> There is no one else working in the area of capabilities so there won't
+> be conflicts, and we need a firm understanding of how capabilities are
+> going to work with respect to namespaces before we start embedding
+> the logic in filesystems.
+> 
+> With respect to your separation of capabilities in namespaces I don't think
+> you have quite grasped the simple idea that is sitting in my head and makes
+> all of this clear.  Let me see if I can explain it better.
+> 
+> A fully qualified capability name would be of the form:
+> userns:capability_name
+> 
+> For each operation we will check for one specific capability.
+> For the network namespace in particular we will check for:
+> userns_of_network_namespace_creator:CAP_NET_ADMIN
+> 
+> The check for a capability will succeed if:
+> - We have the exact fully qualified capability. 
+> - We are outside the user namespace but are the owner of
+>   the user namespace.
+> - We are outside the user namespace but have the appropriate
+>   capability over the owner of the user namespace  CAP_PTRACE?
+> 
+>   This last test would recurses.
+> 
+> I'm less certain than I like about which permissions we allow someone outside
+> of a container to posses and still control the container.
+> 
+> This has two very useful implications.
+> - We can have all capabilities in a new user namespace and be completely
+>   impotent.
+> - Allowing the capabilities of a user namespace to do something useful
+>   can come gradually.
+> 
+> Which means we need to extend the classic capable check to become.
+> capable(userns, capability).  Or possibly we extend the capability
+> parameter to be a structure that can hold both userns and the capability,
+> whichever turns out to be more maintainable.
+> 
+> Once we have done that we can allow something to be under the power
+> of creator_user_ns:capability instead of init_user_ns:capability.
+> 
+> So the CAP_SYS_REBOOT test will be init_user_ns:capability for the 
+> foreseeable future.  While the CAP_NET_ADMIN test will shortly
+> become creator_of_netns:CAP_NET_ADMIN.
+> 
+> Of course none of that will happen until we relax the test to create a
+> new namespace from init_user_ns:CAP_SYS_ADMIN to
+> current_user_ns:CAP_SYS_ADMIN.
+> 
+> Eric
 
-That might make sense.  I guess the problem is I started trying to
-handle generic permission.  But I don't need to...  the fs can
-provide its own permission, else we do the simple userns check.
+It definately seems to make sense in terms of the security
+implications.  And solving this before the filesystem handlers seems
+to make sense too.  Although I would like to get the first 3 patches upstream
+pretty soon, as I believe they are proper fixes.
 
-> > +	return 0;
-> > +}
-> > +
-> > +/*
-> > + * s_is_capable: check whether current is capable with respect
-> > + * to the filesystem represented by sb.
-> > + *
-> > + * return 0 if false, 1 if true
-> > + */
-> ???  Capable should be with respect to a user namespace not with
-> respect to a filesystem.
+But wrt userns:capability, the problem that brings to mind is that of
+referring to the userns.  Do we use the userspace-exported id, or do we
+use the actual in-kernel user_ns?  If we use the in-kernel user_ns,
+then we'd have to take a ref for each cap, yuck.  But you had wanted to
+use 'mount' to only have filesystems associate userspace ids with the
+in-kernel struct user_ns, so that complicates the idea of having
+capabilities refer to those.
 
-The user ns comes from the current task.  The fs must decide whether
-current->user->uid in current->user->user_ns has capabilities over
-the target file.  Only the fs can erify that the user is really
-uid=0 or has CAP_DAC_OVERRIDE, for instance, with respect to the file.
+Anyway I like the overall approach, and will think a bit about
+any other actual implementation issues.
 
+thanks,
 -serge
