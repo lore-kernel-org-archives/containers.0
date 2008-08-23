@@ -1,16 +1,20 @@
 From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
-Subject: Re: [0/10] User namespaces: introduction
-Date: Fri, 22 Aug 2008 20:19:23 -0700
-Message-ID: <m1sksw770k.fsf@frodo.ebiederm.org>
+Subject: Re: [PATCH 04/10] user namespaces: enforce usernamespaces for file
+	permission
+Date: Fri, 22 Aug 2008 20:41:10 -0700
+Message-ID: <m18wuo5rft.fsf@frodo.ebiederm.org>
 References: <20080822194513.GA10262@us.ibm.com>
-	<m1d4k0ixzp.fsf@frodo.ebiederm.org>
-	<20080823011731.GA22737@us.ibm.com>
+	<20080822194609.GD10360@us.ibm.com>
+	<m1bpzkhhy0.fsf@frodo.ebiederm.org>
+	<20080823005304.GA21064@us.ibm.com>
+	<m1r68gebop.fsf@frodo.ebiederm.org>
+	<20080823022210.GA29618@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20080823011731.GA22737-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org> (Serge E. Hallyn's message of
-	"Fri, 22 Aug 2008 20:17:31 -0500")
+In-Reply-To: <20080823022210.GA29618-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org> (Serge E. Hallyn's message of
+	"Fri, 22 Aug 2008 21:22:10 -0500")
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -26,65 +30,67 @@ List-Id: containers.vger.kernel.org
 
 "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org> writes:
 
-> It definately seems to make sense in terms of the security
-> implications.  And solving this before the filesystem handlers seems
-> to make sense too.  Although I would like to get the first 3 patches upstream
-> pretty soon, as I believe they are proper fixes.
+>> There are two questions.
+>> Does this filesystem provide mappings to user namespace X?
+>> What is the mapping from this filesystem to user namespace X?
+>
+> That is where you and I still disagree:  I don't believe that a mapping
+> as such makes sense.
+>
+> A mapping implies "uid 500 becomes uid 0, uid 501 becomes uid 1000",
+> etc.  That simply is not sufficient.  If I am going to be able to create
+> a new userns without privilege, then all files belonging to all uids in
+> the child userns must be owned by uid 500 in my parent uidns.
 
-Reasonable.  I'm not certain about free_user continuing to be an inline
-function as it seems a bit non-trivial, but otherwise that sounds correct.
+> So I do think we will have to have something more of the format "what is
+> the owning uid and gid of this inode, in the context of user namespace X."
+> Which was the s_convert_uid_gid() in my helpers.
 
-> But wrt userns:capability, the problem that brings to mind is that of
-> referring to the userns.  Do we use the userspace-exported id, or do we
-> use the actual in-kernel user_ns?  If we use the in-kernel user_ns,
-> then we'd have to take a ref for each cap, yuck.  But you had wanted to
-> use 'mount' to only have filesystems associate userspace ids with the
-> in-kernel struct user_ns, so that complicates the idea of having
-> capabilities refer to those.
+That is what I meant by mapping.  ;)
 
-I don't think so.  In the standard security model there are only 2
-intersections between the filesystem and the capabilities.
+Given my thought in my last message that we should cache the user_ns
+in the inode along with the rest of the credentials.  Making all of
+the child files appear and act as if they are owned by uid 500 in the
+parent namespace should be straight forward.
 
-- CAP_DAC_OVERRIDE.
-- The capabilities xattr on a filesystem.
+I think we may want a 1-1 mapping onto the filesystem.  However I
+don't care very much how we store uids on the filesystem as long
+as we do something that works.
 
-With a filesystem in exactly one user namespace at a time this
-is straight forward.  With a filesystem in user namespaces at
-a time this is slightly more interesting.
+> If we follow your userns:capability idea and then we probably can get
+> rid of the s_is_capable you hated so much :)
 
-I believe the authentication algorithm becomes:
-Map the credentials on the filesystem inode into (fs_user_ns, fs_uid, fs_gid, fs_mode)
+yep.
 
-Then to see if we have power over the file we test:
-capable(fs_user_ns, CAP_DAC_OVERRIDE).
+> But,
+>
+>> I think we may be able to separate those two questions.
+>> 
+>> The important idea is that we don't need to implement filesystem changes
+>> in the first pass.  Just have the permission check fail unconditionally
+>> if we are not in the init_user_ns.
+>> 
+>> Eric
+>
+> There I definately agree.
+>
+> However, given this general direction, do you feel that marking an sb
+> with a userns the way I'm doing in patch 4/10 makes sense, using it
+> only to facilitate a basic "is this non-userns-aware fs in the same
+> userns as the task attempting to access it" check?  If not, what
+> alternatives do we have, given that marking vfsmounts as we've
+> discussed before won't be feasible?
+>
+> Of course by the time we get capabilities straightened out I
+> suppose tagging vfsmounts might in fact be feasible  :-)
 
-Then if current->user->user_ns != fs_user_ns we can do something like:
-uid = 0, gid = 0 mode clear except for the other bits.  We want either
-0 or another uid we have reserved for the purpose.
+LOL
 
-I don't see why the mapping rules should not be universal so we can probably
-do all of the mapping foreign uid's and gid's in generic code and just
-place a unser_ns pointer into struct inode. 
+Well I tell you what.  Unless we can think of a reason for a
+file to live in more than one leaf user namespace.  We should
+tag the inode with the leaf user namespace.
 
-Which makes things very close to how they are now and it means we can
-do the lookup of the user_ns when we cache the struct inode.
-
-> Anyway I like the overall approach, and will think a bit about
-> any other actual implementation issues.
-
-Thanks.
-
-It adds more complications then I like not having a view of the filesystem
-with a single user_namespace.  However that appears to be necessary to
-deal with Al's inode_permission changes, and it seems to be where we
-are ultimately heading so it seems more honest.  So I guess I have
-to bite the bullet and accept it. ;)
-
-For the case of a shared /usr just having other permission access
-should work fairly well.  I just looked on my ubuntu system and I
-found only 36 suid executables and only one executable (fusermount)
-that was not world executable.  And a shared usr is the only reasonable
-case I could think of where I would want a file to at least appear
-to have multiple owners.
+We could tag the superblock with a default for the inode user
+namespace but that is less interesting.
 
 Eric
