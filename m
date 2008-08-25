@@ -1,16 +1,19 @@
-From: Louis Rilling <Louis.Rilling-aw0BnHfMbSpBDgjK7y7TUQ@public.gmane.org>
-Subject: Re: [RFC v2][PATCH 8/9] File descriprtors - dump state
-Date: Mon, 25 Aug 2008 12:30:37 +0200
-Message-ID: <20080825103037.GB5003__23005.4589723752$1219660378$gmane$org@localdomain>
-References: <Pine.LNX.4.64.0808202251500.17436@takamine.ncl.cs.columbia.edu>
-	<Pine.LNX.4.64.0808202306530.17436@takamine.ncl.cs.columbia.edu>
-	<20080821110614.GK581@hawkmoon.kerlabs.com>
-	<48B226CE.2060700@cs.columbia.edu>
-Reply-To: Louis.Rilling-aw0BnHfMbSpBDgjK7y7TUQ@public.gmane.org
+From: Fernando Luis =?ISO-8859-1?Q?V=E1zquez?= Cao <fernando-gVGce1chcLdL9jVzuh4AOg@public.gmane.org>
+Subject: Re: RFC: Attaching threads to cgroups is OK?
+Date: Mon, 25 Aug 2008 19:36:09 +0900
+Message-ID: <1219660569.16371.161.camel__30788.3929847323$1219660722$gmane$org@sebastian.kern.oss.ntt.co.jp>
+References: <48AAA296.8050802@oss.ntt.co.jp>
+	<20080819202237.edd75933.kamezawa.hiroyu@jp.fujitsu.com>
+	<20080820.204832.131207708.taka@valinux.co.jp>
+	<1219288081.28324.30.camel@sebastian.kern.oss.ntt.co.jp>
+	<48ACE1B4.8010000@linux.vnet.ibm.com>
+	<1219296306.28324.82.camel@sebastian.kern.oss.ntt.co.jp>
+	<20080822185527.GD27964@redhat.com>
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary="===============7295031310747635750=="
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <48B226CE.2060700-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+In-Reply-To: <20080822185527.GD27964-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,113 +21,96 @@ List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
 List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Mime-version: 1.0
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, jeremy-TSDbQ3PG+2Y@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, arnd-r2nGTMty4D4@public.gmane.org, dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
+To: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, virtualization-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-This is a MIME-formatted message.  If you see this text it means that your
-E-mail software does not support MIME-formatted messages.
+On Fri, 2008-08-22 at 14:55 -0400, Vivek Goyal wrote: 
+> > > > As an aside, when the IO context of a certain IO operation is known
+> > > > (synchronous IO comes to mind) I think it should be cashed in the
+> > > > resulting bio so that we can do without the expensive accesses to
+> > > > bio_cgroup once it enters the block layer.
+> > > 
+> > > Will this give you everything you need for accounting and control (from the
+> > > block layer?)
+> > 
+> > Well, it depends on what you are trying to achieve.
+> > 
+> > Current IO schedulers such as CFQ only care about the io_context when
+> > scheduling requests. When a new request comes in CFQ assumes that it was
+> > originated in the context of the current task, which obviously does not
+> > hold true for buffered IO and aio. This problem could be solved by using
+> > bio-cgroup for IO tracking, but accessing the io context information is
+> > somewhat expensive: 
+> > 
+> > page->page_cgroup->bio_cgroup->io_context.
+> > 
+> > If at the time of building a bio we know its io context (i.e. the
+> > context of the task or cgroup that generated that bio) I think we should
+> > store it in the bio itself, too. With this scheme, whenever the kernel
+> > needs to know the io_context of a particular block IO operation the
+> > kernel would first try to retrieve its io_context directly from the bio,
+> > and, if not available there, would resort to the slow path (accessing it
+> > through bio_cgroup). My gut feeling is that elevator-based IO resource
+> > controllers would benefit from such an approach, too.
+> > 
+> 
+> Hi Fernando,
+> 
+> Had a question.
+> 
+> IIUC, at the time of submtting the bio, io_context will be known only for 
+> synchronous request. For asynchronous request it will not be known
+> (ex. writing the dirty pages back to disk) and one shall have to take
+> the longer path (bio-cgroup thing) to ascertain the io_context associated
+> with a request.
+> 
+> If that's the case, than it looks like we shall have to always traverse the
+> longer path in case of asynchronous IO. By putting the io_context pointer
+> in bio, we will just shift the time of pointer traversal. (From CFQ to higher
+> layers).
+> 
+> So probably it is not worth while to put io_context pointer in bio? Am I
+> missing something?
 
---===============7295031310747635750==
-Content-Type: multipart/signed; micalg=pgp-sha1; protocol="application/pgp-signature"; boundary="=_bohort-6405-1219660109-0001-2"
-Content-Disposition: inline
+Hi Vivek!
 
-This is a MIME-formatted message.  If you see this text it means that your
-E-mail software does not support MIME-formatted messages.
+IMHO, optimizing the synchronous path alone would justify the addition
+of io_context in bio. There is more to this though.
 
---=_bohort-6405-1219660109-0001-2
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
+As you point out, it would seem that aio and buffered IO would not
+benefit from caching the io context in the bio itself, but there are
+some subtleties here. Let's consider stacking devices and buffered IO,
+for example. When a bio enters such a device it may get replicated
+several times and, depending on the topology, some other derivative bios
+will be created (RAID1 and parity configurations come to mind,
+respectively). The problem here is that the memory allocated for the
+newly created bios will be owned by the corresponding dm or md kernel
+thread, not the originator of the bio we are replicating or calculating
+the parity bits from.
 
-On Sun, Aug 24, 2008 at 11:28:14PM -0400, Oren Laadan wrote:
->
->
-> Louis Rilling wrote:
->> On Wed, Aug 20, 2008 at 11:07:16PM -0400, Oren Laadan wrote:
->>> Dump the files_struct of a task with 'struct cr_hdr_files', followed by
->>> all open file descriptors. Since FDs can be shared, they are assigned a
->>> tag and registered in the object hash.
->>>
->>> For each open FD there is a 'struct cr_hdr_fd_ent' with the FD, its tag
->>> and its close-on-exec property. If the FD is to be saved (first time)
->>> then this is followed by a 'struct cr_hdr_fd_data' with the FD state.
->>> Then will come the next FD and so on.
->>>
->>> This patch only handles basic FDs - regular files, directories and also
->>> symbolic links.
->>
->> [...]
->
-> [...]
->
->>
->>> @@ -114,4 +125,24 @@ struct cr_hdr_vma {
->>>
->>>  } __attribute__ ((aligned (8)));
->>>
->>> +struct cr_hdr_files {
->>> +	__u32 tag;	/* sharing identifier */
->>> +	__u32 nfds;
->>> +} __attribute__ ((aligned (8)));
->>> +
->>> +struct cr_hdr_fd_ent {
->>> +	__u32 tag;
->>> +	__u16 fd;
->>> +	__u16 close_on_exec;
->>> +} __attribute__ ((aligned (8)));
->>> +
->>> +struct cr_hdr_fd_data {
->>> +	__u16 how;
->>> +	__u16 f_mode;
->>> +	__u32 f_flags;
->>> +	__u32 f_uid, f_gid;
->>
->> We are not at a 64bits boundary here. Should add one __32 padding or reo=
-rder the
->> fields.
->
-> Actually this is ok - note there are two fields on fourth row. I'll
-> change to one field per row so it's easily seen.
+The implication of this is that if we took the longer path (via
+bio_cgroup) to obtain the io_context of those bios we would end up
+charging the wrong guy for that IO: the kernel thread, not the
+perpetrator of the IO.
 
-Have to revise my eyes, really ;) Sorry for the noise!
+A possible solution to this could be to track the original bio inside
+the stacking device so that the io context of derivative bios can be
+obtained from its bio_cgroup. However, I am afraid such an approach
+would be overly complex and slow.
 
-Louis
+My feeling is that storing the io_context also in bios is the right way
+to go: once the bio enters the block layer the kernel we can forget
+about memory-related issues, thus avoiding what is arguably a layering
+violation; io context information is not lost inside stacking devices
+(we just need to make sure that whenever new bios are created the
+io_context is carried over from the original one); and, finally, the
+synchronous path can be easily optimized.
 
---=20
-Dr Louis Rilling			Kerlabs - IRISA
-Skype: louis.rilling			Campus Universitaire de Beaulieu
-Phone: (+33|0) 2 99 84 71 52		Avenue du General Leclerc
-Fax: (+33|0) 2 99 84 71 71		35042 Rennes CEDEX - France
-http://www.kerlabs.com/
+I hope this makes sense.
 
---=_bohort-6405-1219660109-0001-2
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Transfer-Encoding: 7bit
-Content-Description: Digital signature
-Content-Disposition: inline
+Thank you for your comments.
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.6 (GNU/Linux)
-
-iD8DBQFIsonNVKcRuvQ9Q1QRAgtIAJoCcCBbIuHwlVTMq50YVjsunQMcIQCgqNsu
-ik5ppNL6mHmGnmAPo59DobM=
-=IM/E
------END PGP SIGNATURE-----
-
---=_bohort-6405-1219660109-0001-2--
-
---===============7295031310747635750==
-Content-Type: text/plain; charset="us-ascii"
-MIME-Version: 1.0
-Content-Transfer-Encoding: 7bit
-Content-Disposition: inline
-
-_______________________________________________
-Containers mailing list
-Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-https://lists.linux-foundation.org/mailman/listinfo/containers
---===============7295031310747635750==--
+- Fernando
