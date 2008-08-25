@@ -1,14 +1,14 @@
 From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH] devcgroup: use kmemdup()
-Date: Mon, 25 Aug 2008 11:43:26 -0500
-Message-ID: <20080825164326.GB13583__6196.90026292137$1219682886$gmane$org@us.ibm.com>
-References: <48B21756.4020208@cn.fujitsu.com>
+Subject: Re: [PATCH] devcgroup: remove unused variable
+Date: Mon, 25 Aug 2008 11:43:49 -0500
+Message-ID: <20080825164349.GC13583__49177.8609030463$1219682984$gmane$org@us.ibm.com>
+References: <48B2175E.3070407@cn.fujitsu.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <48B21756.4020208-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+In-Reply-To: <48B2175E.3070407-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -23,47 +23,41 @@ Cc: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@pub
 List-Id: containers.vger.kernel.org
 
 Quoting Li Zefan (lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org):
-> This saves 40 bytes on my x86_32 box.
 > 
 > Signed-off-by: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
 
+Yup.
+
 Acked-by: Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 
+thanks,
+-serge
+
 > ---
->  security/device_cgroup.c |    9 ++-------
->  1 files changed, 2 insertions(+), 7 deletions(-)
+>  security/device_cgroup.c |    3 +--
+>  1 files changed, 1 insertions(+), 2 deletions(-)
 > 
 > diff --git a/security/device_cgroup.c b/security/device_cgroup.c
-> index 46f2397..9c625f6 100644
+> index 9c625f6..d5c15a7 100644
 > --- a/security/device_cgroup.c
 > +++ b/security/device_cgroup.c
-> @@ -84,13 +84,9 @@ static int dev_whitelist_copy(struct list_head *dest, struct list_head *orig)
->  	struct dev_whitelist_item *wh, *tmp, *new;
+> @@ -355,7 +355,7 @@ static int devcgroup_update_access(struct dev_cgroup *devcgroup,
+>  	struct dev_cgroup *cur_devcgroup;
+>  	const char *b;
+>  	char *endp;
+> -	int retval = 0, count;
+> +	int count;
+>  	struct dev_whitelist_item wh;
 > 
->  	list_for_each_entry(wh, orig, list) {
-> -		new = kmalloc(sizeof(*wh), GFP_KERNEL);
-> +		new = kmemdup(wh, sizeof(*wh), GFP_KERNEL);
->  		if (!new)
->  			goto free_and_exit;
-> -		new->major = wh->major;
-> -		new->minor = wh->minor;
-> -		new->type = wh->type;
-> -		new->access = wh->access;
->  		list_add_tail(&new->list, dest);
+>  	if (!capable(CAP_SYS_ADMIN))
+> @@ -432,7 +432,6 @@ static int devcgroup_update_access(struct dev_cgroup *devcgroup,
 >  	}
 > 
-> @@ -114,11 +110,10 @@ static int dev_whitelist_add(struct dev_cgroup *dev_cgroup,
->  {
->  	struct dev_whitelist_item *whcopy, *walk;
-> 
-> -	whcopy = kmalloc(sizeof(*whcopy), GFP_KERNEL);
-> +	whcopy = kmemdup(wh, sizeof(*wh), GFP_KERNEL);
->  	if (!whcopy)
->  		return -ENOMEM;
-> 
-> -	memcpy(whcopy, wh, sizeof(*whcopy));
->  	spin_lock(&dev_cgroup->lock);
->  	list_for_each_entry(walk, &dev_cgroup->whitelist, list) {
->  		if (walk->type != wh->type)
+>  handle:
+> -	retval = 0;
+>  	switch (filetype) {
+>  	case DEVCG_ALLOW:
+>  		if (!parent_has_perm(devcgroup, &wh))
 > -- 
 > 1.5.4.rc3
+> 
