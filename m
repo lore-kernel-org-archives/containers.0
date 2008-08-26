@@ -1,14 +1,14 @@
-From: Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+From: Eelco Chaudron <echaudron-SvgryPHmmKB+XZJcv9eMoEEOCMrvLtNR@public.gmane.org>
 Subject: Re: SNMP statistics in namespaces
-Date: Tue, 26 Aug 2008 16:09:56 +0400
-Message-ID: <48B3F294.7030007@openvz.org>
-References: <C4D834D4.E6F9%echaudron@extremenetworks.com>
-	<48B2C351.1090304@fr.ibm.com>
+Date: Tue, 26 Aug 2008 14:30:38 +0200
+Message-ID: <C4D9C40E.E75A%echaudron@extremenetworks.com>
+References: <48B3F294.7030007@openvz.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <48B2C351.1090304-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <48B3F294.7030007-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+Content-Language: en
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,9 +18,18 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
+To: Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>, Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
 Cc: "Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org" <Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 List-Id: containers.vger.kernel.org
+
+Hi Pavel,
+
+Can you let me know where it's fixed? Looking at the 26.0 release I do not see it (is there a patch)...
+
+//Eelco
+
+
+On 8/26/08 2:09 PM, "Pavel Emelyanov" <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org> wrote:
 
 Daniel Lezcano wrote:
 > Eelco Chaudron wrote:
@@ -29,19 +38,19 @@ Daniel Lezcano wrote:
 >> Guess it's useful when you are interested in network statistics per name space. I'm currently evaluating how much of the name space implementation we could use  in one of our projects (see my other email to the group).
 >>
 >> Any idea who might have a complete picture on the network name space project, and the overall status?
-> 
+>
 > There is the overall status at:
-> 
+>
 > http://lxc.sourceforge.net/network/status.php
-> 
-> AFAIR, Pavel Emylianov did some work on SNMP, I don't remember if he 
+>
+> AFAIR, Pavel Emylianov did some work on SNMP, I don't remember if he
 > told me it was finished or not.
 
 SNMP for ipv4 is finished. Either Denis or me will do the same for
 ipv6 in 2.6.28.
 
 > Thanks.
-> 
+>
 >> Thanks,
 >>
 >> Eelco
@@ -75,5 +84,5 @@ ipv6 in 2.6.28.
 >> Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 >> https://lists.linux-foundation.org/mailman/listinfo/containers
 >>
-> 
-> 
+>
+>
