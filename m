@@ -1,14 +1,16 @@
-From: "H. Peter Anvin" <hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org>
-Subject: Re: [RFC][PATCH 1/3] Move parts of init_dev() into new functions
-Date: Tue, 26 Aug 2008 10:40:36 -0700
-Message-ID: <48B44014.2090000@zytor.com>
-References: <20080825201110.GA32440@us.ibm.com>	<20080825211146.70b4af63@lxorguk.ukuu.org.uk>	<20080825220125.GA1084@us.ibm.com>	<48B33072.4080509@zytor.com>	<20080825232003.3574a181@lxorguk.ukuu.org.uk>	<48B34818.2000400@zytor.com>	<20080826104445.06d36dd2@lxorguk.ukuu.org.uk>	<48B431F4.90201@zytor.com>
-	<20080826174921.6bfbf989@lxorguk.ukuu.org.uk>
+From: "Paul Menage" <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH] cgroup(fix critical bug): new handling for tasks file
+Date: Tue, 26 Aug 2008 15:40:48 -0700
+Message-ID: <6599ad830808261540j2b5c46cdsc42e26fa43f3f8d1__42833.5228040398$1219790701$gmane$org@mail.gmail.com>
+References: <48B360CE.2010501@cn.fujitsu.com>
+	<6599ad830808251929p10dfc9d2ub11e4db0cd4f9f3@mail.gmail.com>
+	<48B39319.7070403@cn.fujitsu.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20080826174921.6bfbf989-qBU/x9rampVanCEyBjwyrvXRex20P6io@public.gmane.org>
+In-Reply-To: <48B39319.7070403-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+Content-Disposition: inline
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,27 +20,22 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Alan Cox <alan-qBU/x9rampVanCEyBjwyrvXRex20P6io@public.gmane.org>
-Cc: kyle-hoO6YkzgTuCM0SS3m2neIg@public.gmane.org, bastian-yyjItF7Rl6lg9hUCZPvPmw@public.gmane.org, containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org
+To: Lai Jiangshan <laijs-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+Cc: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Linux Kernel Mailing List <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Alan Cox wrote:
-> On Tue, 26 Aug 2008 09:40:20 -0700
-> "H. Peter Anvin" <hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org> wrote:
-> 
->> Alan Cox wrote:
->>> In the case of the initial open you don't yet know the tty pointer and
->>> may be creating it. SO the tty isn't a reference because it doesn't exist.
->>>
->> Got it.  I was under the (apparently mistaken) notion that only pty tty 
->> structures were created dynamically.
-> 
-> tty is dynamically created and attached to the file handle. The port side
-> structure is currently port specific and does last. Thats what the
-> tty_port stuff is intended to slowly standardise but won't help ptys as
-> they don't have a physical port anyway.
-> 
+On Mon, Aug 25, 2008 at 10:22 PM, Lai Jiangshan <laijs-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org> wrote:
+>> But improving the current code has been on my todo list for a while.
+>> My thought on the best way to fix it is to use a proper seq_file -
+>> that would remove the issues that you have currently with the
+>> "unconsumed" portion of the output.
+>
+> But for my poor knowledge we always have to handle "unconsumed portion"
+> for nonseekable file in all different way. In my binary search based
+> solving, I have to handle unconsumed part for a pid and bring in
+> some complicated. This is really a disadvantage as you pointed out.
 
-Got it, sorry for the confusion.
+I meant that the seq_file code could handle the "unconsumed" portion
+for you, rather than you having to manage it explicitly.
 
-	-hpa
+Paul
