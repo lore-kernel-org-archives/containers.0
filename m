@@ -1,11 +1,14 @@
-From: "Rogue Wright" <schmoozing-bDIFTyiWFosAvxtiuMwx3w@public.gmane.org>
-Subject: CyberLink PowerDVD ULTRA EDITION v8
-Date: Tue, 26 Aug 2008 12:45:28 +0100
-Message-ID: <000701c90770$e666d400$0100007f@jqgfa>
+From: Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+Subject: Re: SNMP statistics in namespaces
+Date: Tue, 26 Aug 2008 16:09:56 +0400
+Message-ID: <48B3F294.7030007@openvz.org>
+References: <C4D834D4.E6F9%echaudron@extremenetworks.com>
+	<48B2C351.1090304@fr.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <48B2C351.1090304-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -15,36 +18,62 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
+To: Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
+Cc: "Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org" <Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-^The following titles and more are now available for pcs and macs:
+Daniel Lezcano wrote:
+> Eelco Chaudron wrote:
+>> Hi Dave,
+>>
+>> Guess it's useful when you are interested in network statistics per name space. I'm currently evaluating how much of the name space implementation we could use  in one of our projects (see my other email to the group).
+>>
+>> Any idea who might have a complete picture on the network name space project, and the overall status?
+> 
+> There is the overall status at:
+> 
+> http://lxc.sourceforge.net/network/status.php
+> 
+> AFAIR, Pavel Emylianov did some work on SNMP, I don't remember if he 
+> told me it was finished or not.
 
-FruityLoops Studio 8 XXL Edition
-CyberLink PowerDVD ULTRA EDITION v8
-Windows Home Server
-CyberLink PowerDVD ULTRA EDITION v8
-Office 2008 Home Student
-Office 2008 Special Media Edition
+SNMP for ipv4 is finished. Either Denis or me will do the same for
+ipv6 in 2.6.28.
 
-^ msxpdeals . com :
-
-System Requirements
-: For PC:
-: Intel Pentium 4 (1.4GHz processor), Intel Centrino, Intel Xeon Office 2008 Home Student or Intel Core Duo (or Office 2008 Home Student) processor; SSE2-enabled processor required for AMD systems & Microsoft Windows XP with Service Pack 2 or Microsoft Windows Vista Home Premium, Business, Ultimate, or Enterprise (certified for 32-bit editions)
-: 512MB of RAM or more
-: 1GB of available hard-disk space (additional free space Office 2008 Home Student)
-: Microsoft compatible sound card (multichannel ASIO-compatible sound card recommended)
-: 1,024x768 monitor resolution with 32-bit color adapter recommended
-: CD-R or DVD-ROM drive
-
-^ For MAC:
-^ PowerPC G4 or G5 or multicore Intel processor
-^ Mac OS X or similar
-^ 512MB of RAM or more
-^ 1GB of available hard-disk space
-^ Core Audio compatible sound card
-^ 1,024x768 monitor resolution with 32-bit color adapter
-^ DVD-ROM drive: DVD+-R burner required for DVD creation
-
-China Celebrates Success Of Olympic Games
+> Thanks.
+> 
+>> Thanks,
+>>
+>> Eelco
+>>
+>> On 8/22/08 5:20 PM, "Dave Hansen" <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org> wrote:
+>>
+>> On Fri, 2008-08-22 at 13:57 +0200, Eelco Chaudron wrote:
+>>> I was looking at the 2.6.26 nw namespace code, and noticed that the
+>>> SNMP counters are still system wide. Looking at the status page there
+>>> is not separate item on SNMP. Was this overlooked, skipped on purpose,
+>>> or is it in the pipeline?
+>>>
+>>> Hope some one can answer this...
+>> I'm an idiot.  I know that SNMP has something to do with network
+>> statistics, and I'm too lazy to google it.
+>>
+>> Could you give us a quick idea why SNMP is important here?  You're
+>> welcome to add it to the list, but it's unlikely to get implemented
+>> until someone thinks it is important.  That said, I'd be happy to help
+>> you put together some patches to implement it.
+>>
+>> -- Dave
+>>
+>>
+>>
+>> ________________________________
+>> DISCLAIMER:
+>> This e-mail and any attachments to it may contain confidential and proprietary material and is solely for the use of the intended recipient. Any review, use, disclosure, distribution or copying of this transmittal is prohibited except by or on behalf of the intended recipient. If you have received this transmittal in error, please notify the sender and destroy this e-mail and any attachments and all copies, whether electronic or printed.
+>> _______________________________________________
+>> Containers mailing list
+>> Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+>> https://lists.linux-foundation.org/mailman/listinfo/containers
+>>
+> 
+> 
