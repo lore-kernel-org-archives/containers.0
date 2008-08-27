@@ -1,526 +1,803 @@
-From: David Howells <dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH 59/59] CRED: Wrap task credential accesses in the core kernel
-Date: Wed, 27 Aug 2008 14:50:47 +0100
-Message-ID: <20080827135046.19980.77189.stgit__37949.4395958774$1219845493$gmane$org@warthog.procyon.org.uk>
-References: <20080827134541.19980.61042.stgit@warthog.procyon.org.uk>
+From: Benjamin Thery <benjamin.thery@bull.net>
+Subject: Re: [PATCH 1/8] sysfs: Implement sysfs tagged directory support.
+Date: Wed, 27 Aug 2008 17:18:48 +0200
+Message-ID: <48B57058.9000101@bull.net>
+References: <m1y74iiidz.fsf_-_@frodo.ebiederm.org>	<m1tzf6ihlz.fsf_-_@frodo.ebiederm.org>	<m1prpuihjb.fsf_-_@frodo.ebiederm.org>	<m1lk0iihhp.fsf_-_@frodo.ebiederm.org>	<m1hcb6ihfz.fsf_-_@frodo.ebiederm.org>	<m1d4luihea.fsf_-_@frodo.ebiederm.org>	<m18wwiihbn.fsf_-_@frodo.ebiederm.org>	<m14p76ih9a.fsf_-_@frodo.ebiederm.org>	<m1zloyh2mb.fsf_-_@frodo.ebiederm.org>	<m1vdzmh2jr.fsf_-_@frodo.ebiederm.org>	<20080820021754.GA25182@kroah.com>	<m1od3m282j.fsf_-_@frodo.ebiederm.org> <m1hc9e27ya.fsf_-_@frodo.ebiederm.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20080827134541.19980.61042.stgit-S6HVgzuS8uM4Awkfq6JHfwNdhmdF6hFW@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, David Howells <dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, linux-security-module-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-audit-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, Al Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1756888AbYH0PTZ@vger.kernel.org>
+In-Reply-To: <m1hc9e27ya.fsf_-_@frodo.ebiederm.org>
+Sender: linux-kernel-owner@vger.kernel.org
+To: "Eric W. Biederman" <ebiederm@xmission.com>
+Cc: Greg KH <greg@kroah.com>, Greg Kroah-Hartman <gregkh@suse.de>, Andrew Morton <akpm@linux-foundation.org>, Tejun Heo <htejun@gmail.com>, Daniel Lezcano <dlezcano@fr.ibm.com>, linux-kernel@vger.kernel.org, Al Viro <viro@ftp.linux.org.uk>, Linux Containers <containers@lists.osdl.org>, netdev@vger.kernel.org
 List-Id: containers.vger.kernel.org
 
-Wrap access to task credentials so that they can be separated more easily from
-the task_struct during the introduction of COW creds.
+Eric W. Biederman wrote:
+> The problem.  When implementing a network namespace I need to be able
+> to have multiple network devices with the same name.  Currently this
+> is a problem for /sys/class/net/*, /sys/devices/virtual/net/*, and
+> potentially a few other directories of the form /sys/ ... /net/*.
+> 
+> What this patch does is to add an additional tag field to the
+> sysfs dirent structure.  For directories that should show different
+> contents depending on the context such as /sys/class/net/, and
+> /sys/devices/virtual/net/ this tag field is used to specify the
+> context in which those directories should be visible.  Effectively
+> this is the same as creating multiple distinct directories with
+> the same name but internally to sysfs the result is nicer.
+> 
+> I am calling the concept of a single directory that looks like multiple
+> directories all at the same path in the filesystem tagged directories.
+> 
+> For the networking namespace the set of directories whose contents I need
+> to filter with tags can depend on the presence or absence of hotplug
+> hardware or which modules are currently loaded.  Which means I need
+> a simple race free way to setup those directories as tagged.
+> 
+> To achieve a reace free design all tagged directories are created
+> and managed by sysfs itself.
+> 
+> Users of this interface:
+> - define a type in the sysfs_tag_type enumeration.
+> - call sysfs_register_tag_types with the type and it's operations
+> - call sysfs_make_tagged_dir with the tag type on directories
+>   to be managed by this tag type
+> - sysfs_exit_tag when an individual tag is no longer valid
+> 
+> - Implement mount_tag() which returns the tag of the calling process
+>   so we can attach it to a sysfs superblock.
+> - Implement ktype.sysfs_tag() which returns the tag of a syfs kobject.
+> 
+> Everything else is left up to sysfs and the driver layer.
+> 
+> For the network namespace mount_tag and sysfs_tag are essentially
+> one line functions, and look to remain that.
+> 
+> Tags are currently represented a const void * pointers as that is
+> both generic, prevides enough information for equality comparisons,
+> and is trivial to create for current users, as it is just the
+> existing namespace pointer.
+> 
+> The work needed in sysfs is more extensive.  At each directory
+> or symlink creating I need to check if the directory it is being
+> created in is a tagged directory and if so generate the appropriate
+> tag to place on the sysfs_dirent.  Likewise at each symlink or
+> directory removal I need to check if the sysfs directory it is
+> being removed from is a tagged directory and if so figure out
+> which tag goes along with the name I am deleting.
+> 
+> Currently only directories which hold kobjects, and
+> symlinks are supported.  There is not enough information
+> in the current file attribute interfaces to give us anything
+> to discriminate on which makes it useless, and there are
+> no potential users which makes it an uninteresting problem
+> to solve.
+> 
+> Signed-off-by: Eric W. Biederman <ebiederm@xmission.com>
+> Signed-off-by: Benjamin Thery <benjamin.thery@bull.net>
+> ---
+>  fs/sysfs/bin.c          |    2 +-
+>  fs/sysfs/dir.c          |  139 ++++++++++++++++++++++++++++++++++++++++++-----
+>  fs/sysfs/file.c         |   11 +++--
+>  fs/sysfs/group.c        |    4 +-
+>  fs/sysfs/inode.c        |    7 ++-
+>  fs/sysfs/mount.c        |  115 +++++++++++++++++++++++++++++++++++++--
+>  fs/sysfs/symlink.c      |    2 +-
+>  fs/sysfs/sysfs.h        |   19 ++++++-
+>  include/linux/kobject.h |    1 +
+>  include/linux/sysfs.h   |   31 +++++++++++
+>  10 files changed, 298 insertions(+), 33 deletions(-)
+> 
+> diff --git a/fs/sysfs/bin.c b/fs/sysfs/bin.c
+> index 006fc64..86e1128 100644
+> --- a/fs/sysfs/bin.c
+> +++ b/fs/sysfs/bin.c
+> @@ -252,7 +252,7 @@ int sysfs_create_bin_file(struct kobject * kobj, struct bin_attribute * attr)
+>  
+>  void sysfs_remove_bin_file(struct kobject * kobj, struct bin_attribute * attr)
+>  {
+> -	sysfs_hash_and_remove(kobj->sd, attr->attr.name);
+> +	sysfs_hash_and_remove(kobj, kobj->sd, attr->attr.name);
+>  }
+>  
+>  EXPORT_SYMBOL_GPL(sysfs_create_bin_file);
+> diff --git a/fs/sysfs/dir.c b/fs/sysfs/dir.c
+> index 4ffcfd2..dec7586 100644
+> --- a/fs/sysfs/dir.c
+> +++ b/fs/sysfs/dir.c
+> @@ -30,6 +30,30 @@ DEFINE_SPINLOCK(sysfs_assoc_lock);
+>  static DEFINE_SPINLOCK(sysfs_ino_lock);
+>  static DEFINE_IDA(sysfs_ino_ida);
+>  
+> +static const void *sysfs_creation_tag(struct sysfs_dirent *parent_sd,
+> +				      struct sysfs_dirent *sd)
+> +{
+> +	const void *tag = NULL;
+> +
+> +	if (sysfs_tag_type(parent_sd)) {
+> +		struct kobject *kobj;
+> +		switch (sysfs_type(sd)) {
+> +		case SYSFS_DIR:
+> +			kobj = sd->s_dir.kobj;
+> +			break;
+> +		case SYSFS_KOBJ_LINK:
+> +			kobj = sd->s_symlink.target_sd->s_dir.kobj;
+> +			break;
+> +		default:
+> +			BUG();
+> +		}
+> +		tag = kobj->ktype->sysfs_tag(kobj);
+> +		/* NULL tags are reserved for internal use */
+> +		BUG_ON(tag == NULL);
+> +	}
+> +	return tag;
+> +}
+> +
+>  /**
+>   *	sysfs_link_sibling - link sysfs_dirent into sibling list
+>   *	@sd: sysfs_dirent of interest
+> @@ -101,8 +125,19 @@ static void sysfs_unlink_sibling(struct sysfs_dirent *sd)
+>  struct dentry *sysfs_get_dentry(struct super_block *sb,
+>  				struct sysfs_dirent *sd)
+>  {
+> -	struct dentry *dentry = dget(sb->s_root);
+> +	struct dentry *dentry;
+> +
+> +	/* Bail if this sd won't show up in this superblock */
+> +	if (sd->s_parent) {
+> +		enum sysfs_tag_type type;
+> +		const void *tag;
+> +		type = sysfs_tag_type(sd->s_parent);
+> +		tag = sysfs_info(sb)->tag[type];
+> +		if (sd->s_tag != tag)
+> +			return ERR_PTR(-EXDEV);
+> +	}
+>  
+> +	dentry = dget(sb->s_root);
+>  	while (dentry->d_fsdata != sd) {
+>  		struct sysfs_dirent *cur;
+>  		struct dentry *parent;
+> @@ -421,10 +456,15 @@ void sysfs_addrm_start(struct sysfs_addrm_cxt *acxt,
+>   */
+>  int __sysfs_add_one(struct sysfs_addrm_cxt *acxt, struct sysfs_dirent *sd)
+>  {
+> -	if (sysfs_find_dirent(acxt->parent_sd, sd->s_name))
+> +	const void *tag = NULL;
+> +
+> +	tag = sysfs_creation_tag(acxt->parent_sd, sd);
+> +
+> +	if (sysfs_find_dirent(acxt->parent_sd, tag, sd->s_name))
+>  		return -EEXIST;
+>  
+>  	sd->s_parent = sysfs_get(acxt->parent_sd);
+> +	sd->s_tag = tag;
+>  
+>  	if (sysfs_type(sd) == SYSFS_DIR && acxt->parent_inode)
+>  		inc_nlink(acxt->parent_inode);
+> @@ -602,13 +642,17 @@ void sysfs_addrm_finish(struct sysfs_addrm_cxt *acxt)
+>   *	Pointer to sysfs_dirent if found, NULL if not.
+>   */
+>  struct sysfs_dirent *sysfs_find_dirent(struct sysfs_dirent *parent_sd,
+> +				       const void *tag,
+>  				       const unsigned char *name)
+>  {
+>  	struct sysfs_dirent *sd;
+>  
+> -	for (sd = parent_sd->s_dir.children; sd; sd = sd->s_sibling)
+> +	for (sd = parent_sd->s_dir.children; sd; sd = sd->s_sibling) {
+> +		if (sd->s_tag != tag)
+> +			continue;
+>  		if (!strcmp(sd->s_name, name))
+>  			return sd;
+> +	}
+>  	return NULL;
+>  }
+>  
+> @@ -632,7 +676,7 @@ struct sysfs_dirent *sysfs_get_dirent(struct sysfs_dirent *parent_sd,
+>  	struct sysfs_dirent *sd;
+>  
+>  	mutex_lock(&sysfs_mutex);
+> -	sd = sysfs_find_dirent(parent_sd, name);
+> +	sd = sysfs_find_dirent(parent_sd, NULL, name);
+>  	sysfs_get(sd);
+>  	mutex_unlock(&sysfs_mutex);
+>  
+> @@ -699,13 +743,18 @@ static struct dentry * sysfs_lookup(struct inode *dir, struct dentry *dentry,
+>  				struct nameidata *nd)
+>  {
+>  	struct dentry *ret = NULL;
+> -	struct sysfs_dirent *parent_sd = dentry->d_parent->d_fsdata;
+> +	struct dentry *parent = dentry->d_parent;
+> +	struct sysfs_dirent *parent_sd = parent->d_fsdata;
+>  	struct sysfs_dirent *sd;
+>  	struct inode *inode;
+> +	enum sysfs_tag_type type;
+> +	const void *tag;
+>  
+>  	mutex_lock(&sysfs_mutex);
+>  
+> -	sd = sysfs_find_dirent(parent_sd, dentry->d_name.name);
+> +	type = sysfs_tag_type(parent_sd);
+> +	tag = sysfs_info(parent->d_sb)->tag[type];
+> +	sd = sysfs_find_dirent(parent_sd, tag, dentry->d_name.name);
+>  
+>  	/* no such entry */
+>  	if (!sd) {
+> @@ -913,19 +962,24 @@ int sysfs_rename_dir(struct kobject * kobj, const char *new_name)
+>  	struct sysfs_rename_struct *srs;
+>  	struct inode *parent_inode = NULL;
+>  	const char *dup_name = NULL;
+> +	const void *old_tag, *tag;
+>  	int error;
+>  
+>  	INIT_LIST_HEAD(&todo);
+>  	mutex_lock(&sysfs_rename_mutex);
+> +	old_tag = sd->s_tag;
+> +	tag = sysfs_creation_tag(sd->s_parent, sd);
+>  
+>  	error = 0;
+> -	if (strcmp(sd->s_name, new_name) == 0)
+> +	if ((old_tag == tag) && (strcmp(sd->s_name, new_name) == 0))
+>  		goto out;	/* nothing to rename */
+>  
+>  	sysfs_grab_supers();
+> -	error = prep_rename(&todo, sd, sd->s_parent, new_name);
+> -	if (error)
+> -		goto out_release;
+> +	if (old_tag == tag) {
+> +		error = prep_rename(&todo, sd, sd->s_parent, new_name);
+> +		if (error)
+> +			goto out_release;
+> +	}
+>  
+>  	error = -ENOMEM;
+>  	mutex_lock(&sysfs_mutex);
+> @@ -938,7 +992,7 @@ int sysfs_rename_dir(struct kobject * kobj, const char *new_name)
+>  	mutex_lock(&sysfs_mutex);
+>  
+>  	error = -EEXIST;
+> -	if (sysfs_find_dirent(sd->s_parent, new_name))
+> +	if (sysfs_find_dirent(sd->s_parent, tag, new_name))
+>  		goto out_unlock;
+>  
+>  	/* rename sysfs_dirent */
+> @@ -949,6 +1003,7 @@ int sysfs_rename_dir(struct kobject * kobj, const char *new_name)
+>  
+>  	dup_name = sd->s_name;
+>  	sd->s_name = new_name;
+> +	sd->s_tag = tag;
+>  
+>  	/* rename */
+>  	list_for_each_entry(srs, &todo, list) {
+> @@ -956,6 +1011,20 @@ int sysfs_rename_dir(struct kobject * kobj, const char *new_name)
+>  		d_move(srs->old_dentry, srs->new_dentry);
+>  	}
+>  
+> +	/* If we are moving across superblocks drop the dcache entries */
+> +	if (old_tag != tag) {
+> +		struct super_block *sb;
+> +		struct dentry *dentry;
+> +		list_for_each_entry(sb, &sysfs_fs_type.fs_supers, s_instances) {
+> +			dentry = __sysfs_get_dentry(sb, sd);
+> +			if (!dentry)
+> +				continue;
+> +			shrink_dcache_parent(dentry);
+> +			d_drop(dentry);
+> +			dput(dentry);
+> +		}
+> +	}
+> +
+>  	error = 0;
+>  out_unlock:
+>  	mutex_unlock(&sysfs_mutex);
+> @@ -978,11 +1047,13 @@ int sysfs_move_dir(struct kobject *kobj, struct kobject *new_parent_kobj)
+>  	struct sysfs_rename_struct *srs;
+>  	struct inode *old_parent_inode = NULL, *new_parent_inode = NULL;
+>  	int error;
+> +	const void *tag;
+>  
+>  	INIT_LIST_HEAD(&todo);
+>  	mutex_lock(&sysfs_rename_mutex);
+>  	BUG_ON(!sd->s_parent);
+>  	new_parent_sd = new_parent_kobj->sd ? new_parent_kobj->sd : &sysfs_root;
+> +	tag = sd->s_tag;
+>  
+>  	error = 0;
+>  	if (sd->s_parent == new_parent_sd)
+> @@ -1016,7 +1087,7 @@ again:
+>  	mutex_lock(&sysfs_mutex);
+>  
+>  	error = -EEXIST;
+> -	if (sysfs_find_dirent(new_parent_sd, sd->s_name))
+> +	if (sysfs_find_dirent(new_parent_sd, tag, sd->s_name))
+>  		goto out_unlock;
+>  
+>  	error = 0;
+> @@ -1055,10 +1126,12 @@ static inline unsigned char dt_type(struct sysfs_dirent *sd)
+>  
+>  static int sysfs_readdir(struct file * filp, void * dirent, filldir_t filldir)
+>  {
+> -	struct dentry *dentry = filp->f_path.dentry;
+> -	struct sysfs_dirent * parent_sd = dentry->d_fsdata;
+> +	struct dentry *parent = filp->f_path.dentry;
+> +	struct sysfs_dirent *parent_sd = parent->d_fsdata;
+>  	struct sysfs_dirent *pos;
+>  	ino_t ino;
+> +	enum sysfs_tag_type type;
+> +	const void *tag;
+>  
+>  	if (filp->f_pos == 0) {
+>  		ino = parent_sd->s_ino;
+> @@ -1076,6 +1149,9 @@ static int sysfs_readdir(struct file * filp, void * dirent, filldir_t filldir)
+>  	if ((filp->f_pos > 1) && (filp->f_pos < INT_MAX)) {
+>  		mutex_lock(&sysfs_mutex);
+>  
+> +		type = sysfs_tag_type(parent_sd);
+> +		tag = sysfs_info(parent->d_sb)->tag[type];
+> +
+>  		/* Skip the dentries we have already reported */
+>  		pos = parent_sd->s_dir.children;
+>  		while (pos && (filp->f_pos > pos->s_ino))
+> @@ -1085,6 +1161,9 @@ static int sysfs_readdir(struct file * filp, void * dirent, filldir_t filldir)
+>  			const char * name;
+>  			int len;
+>  
+> +			if (pos->s_tag != tag)
+> +				continue;
+> +
+>  			name = pos->s_name;
+>  			len = strlen(name);
+>  			filp->f_pos = ino = pos->s_ino;
+> @@ -1105,3 +1184,35 @@ const struct file_operations sysfs_dir_operations = {
+>  	.read		= generic_read_dir,
+>  	.readdir	= sysfs_readdir,
+>  };
+> +
+> +/**
+> + *	sysfs_make_tagged_dir - Require tags of all the entries in a directory.
+> + *	@kobj:	object whose children should be filtered by tags
+> + *
+> + *	Once tagging has been enabled on a directory the contents
+> + *	of the directory become dependent upon context captured when
+> + *	sysfs was mounted.
+> + */
+> +int sysfs_make_tagged_dir(struct kobject *kobj, enum sysfs_tag_type type)
+> +{
+> +	struct sysfs_dirent *sd;
+> +	int err;
+> +
+> +	err = -ENOENT;
+> +	sd = kobj->sd;
+> +
+> +	mutex_lock(&sysfs_mutex);
+> +	err = -EINVAL;
+> +	/* We can only enable tagging when we have a valid tag type
+> +	 * on empty directories where taggint has not already been
+> +	 * enabled.
+> +	 */
+> +	if ((type > SYSFS_TAG_TYPE_NONE) && (type < SYSFS_TAG_TYPES) &&
+> +	    tag_ops[type] && !sysfs_tag_type(sd) &&
+> +	    (sysfs_type(sd) == SYSFS_DIR) && !sd->s_dir.children) {
+> +		err = 0;
+> +		sd->s_flags |= (type << SYSFS_TAG_TYPE_SHIFT);
+> +	}
+> +	mutex_unlock(&sysfs_mutex);
+> +	return err;
+> +}
+> diff --git a/fs/sysfs/file.c b/fs/sysfs/file.c
+> index 61c3476..091c0de 100644
+> --- a/fs/sysfs/file.c
+> +++ b/fs/sysfs/file.c
+> @@ -476,9 +476,12 @@ void sysfs_notify(struct kobject *k, char *dir, char *attr)
+>  	mutex_lock(&sysfs_mutex);
+>  
+>  	if (sd && dir)
+> -		sd = sysfs_find_dirent(sd, dir);
+> +		/* Only directories are tagged, so no need to pass
+> +		 * a tag explicitly.
+> +		 */
+> +		sd = sysfs_find_dirent(sd, NULL, dir);
+>  	if (sd && attr)
+> -		sd = sysfs_find_dirent(sd, attr);
+> +		sd = sysfs_find_dirent(sd, NULL, attr);
+>  	if (sd)
+>  		sysfs_notify_dirent(sd);
+>  
+> @@ -640,7 +643,7 @@ EXPORT_SYMBOL_GPL(sysfs_chmod_file);
+>  
+>  void sysfs_remove_file(struct kobject * kobj, const struct attribute * attr)
+>  {
+> -	sysfs_hash_and_remove(kobj->sd, attr->name);
+> +	sysfs_hash_and_remove(kobj, kobj->sd, attr->name);
+>  }
+>  
+>  
+> @@ -660,7 +663,7 @@ void sysfs_remove_file_from_group(struct kobject *kobj,
+>  	else
+>  		dir_sd = sysfs_get(kobj->sd);
+>  	if (dir_sd) {
+> -		sysfs_hash_and_remove(dir_sd, attr->name);
+> +		sysfs_hash_and_remove(kobj, dir_sd, attr->name);
+>  		sysfs_put(dir_sd);
+>  	}
+>  }
+> diff --git a/fs/sysfs/group.c b/fs/sysfs/group.c
+> index fe61194..5fba6f2 100644
+> --- a/fs/sysfs/group.c
+> +++ b/fs/sysfs/group.c
+> @@ -23,7 +23,7 @@ static void remove_files(struct sysfs_dirent *dir_sd, struct kobject *kobj,
+>  	int i;
+>  
+>  	for (i = 0, attr = grp->attrs; *attr; i++, attr++)
+> -		sysfs_hash_and_remove(dir_sd, (*attr)->name);
+> +		sysfs_hash_and_remove(kobj, dir_sd, (*attr)->name);
+>  }
+>  
+>  static int create_files(struct sysfs_dirent *dir_sd, struct kobject *kobj,
+> @@ -39,7 +39,7 @@ static int create_files(struct sysfs_dirent *dir_sd, struct kobject *kobj,
+>  		 * visibility.  Do this by first removing then
+>  		 * re-adding (if required) the file */
+>  		if (update)
+> -			sysfs_hash_and_remove(dir_sd, (*attr)->name);
+> +			sysfs_hash_and_remove(kobj, dir_sd, (*attr)->name);
+>  		if (grp->is_visible) {
+>  			mode = grp->is_visible(kobj, *attr, i);
+>  			if (!mode)
+> diff --git a/fs/sysfs/inode.c b/fs/sysfs/inode.c
+> index 80f8fd4..b5fc78a 100644
+> --- a/fs/sysfs/inode.c
+> +++ b/fs/sysfs/inode.c
+> @@ -226,17 +226,20 @@ struct inode * sysfs_get_inode(struct sysfs_dirent *sd)
+>  	return inode;
+>  }
+>  
+> -int sysfs_hash_and_remove(struct sysfs_dirent *dir_sd, const char *name)
+> +int sysfs_hash_and_remove(struct kobject *kobj, struct sysfs_dirent *dir_sd,
+> +			  const char *name)
+>  {
+>  	struct sysfs_addrm_cxt acxt;
+>  	struct sysfs_dirent *sd;
+> +	const void *tag;
+>  
+>  	if (!dir_sd)
+>  		return -ENOENT;
+>  
+>  	sysfs_addrm_start(&acxt, dir_sd);
+> +	tag = kobj->sd->s_tag;
+>  
+> -	sd = sysfs_find_dirent(dir_sd, name);
+> +	sd = sysfs_find_dirent(dir_sd, tag, name);
+>  	if (sd)
+>  		sysfs_remove_one(&acxt, sd);
+>  
+> diff --git a/fs/sysfs/mount.c b/fs/sysfs/mount.c
+> index 6ebda1a..8f2237a 100644
+> --- a/fs/sysfs/mount.c
+> +++ b/fs/sysfs/mount.c
+> @@ -35,12 +35,15 @@ static const struct super_operations sysfs_ops = {
+>  struct sysfs_dirent sysfs_root = {
+>  	.s_name		= "",
+>  	.s_count	= ATOMIC_INIT(1),
+> -	.s_flags	= SYSFS_DIR,
+> +	.s_flags	= SYSFS_DIR | (SYSFS_TAG_TYPE_NONE << SYSFS_TAG_TYPE_SHIFT),
+>  	.s_mode		= S_IFDIR | S_IRWXU | S_IRUGO | S_IXUGO,
+>  	.s_ino		= 1,
+>  };
+>  
+> -static int sysfs_fill_super(struct super_block *sb, void *data, int silent)
+> +struct sysfs_tag_type_operations *tag_ops[SYSFS_TAG_TYPES];
+> +
+> +static int sysfs_fill_super(struct super_block *sb, void *data, int silent,
+> +	const void *tags[SYSFS_TAG_TYPES])
+>  {
+>  	struct sysfs_super_info *info = NULL;
+>  	struct inode *inode = NULL;
+> @@ -76,8 +79,10 @@ static int sysfs_fill_super(struct super_block *sb, void *data, int silent)
+>  		goto out_err;
+>  	}
+>  	root->d_fsdata = &sysfs_root;
+> +	root->d_sb = sb;
+>  	sb->s_root = root;
+>  	sb->s_fs_info = info;
+> +	memcpy(info->tag, tags, sizeof(info->tag[0])*SYSFS_TAG_TYPES);
+>  	return 0;
+>  
+>  out_err:
+> @@ -89,20 +94,74 @@ out_err:
+>  	return error;
+>  }
+>  
+> +static int sysfs_test_super(struct super_block *sb, void *ptr)
+> +{
+> +	const void **tag = ptr;
+> +	struct sysfs_super_info *info = sysfs_info(sb);
+> +	enum sysfs_tag_type type;
+> +	int found = 1;
+> +
+> +	for (type = SYSFS_TAG_TYPE_NONE; type < SYSFS_TAG_TYPES; type++) {
+> +		if (info->tag[type] != tag[type]) {
+> +			found = 0;
+> +			break;
+> +		}
+> +	}
+> +
+> +	return found;
+> +}
+> +
+>  static int sysfs_get_sb(struct file_system_type *fs_type,
+>  	int flags, const char *dev_name, void *data, struct vfsmount *mnt)
+>  {
+> -	int rc;
+> +	const void *tag[SYSFS_TAG_TYPES];
+> +	struct super_block *sb;
+> +	int error;
+> +	enum sysfs_tag_type type;
+> +
+> +	for (type = SYSFS_TAG_TYPE_NONE; type < SYSFS_TAG_TYPES; type++) {
+> +		tag[type] = NULL;
+> +		if (!tag_ops[type])
+> +			continue;
+> +		tag[type] = tag_ops[type]->mount_tag();
+> +	}
+> +
+>  	mutex_lock(&sysfs_rename_mutex);
+> -	rc = get_sb_single(fs_type, flags, data, sysfs_fill_super, mnt);
+> +	sb = sget(fs_type, sysfs_test_super, set_anon_super, tag);
+> +	if (IS_ERR(sb)) {
+> +		error = PTR_ERR(sb);
+> +		goto out;
+> +	}
+> +	if (!sb->s_root) {
+> +		sb->s_flags = flags;
+> +		error = sysfs_fill_super(sb, data, flags & MS_SILENT ? 1 : 0,
+> +					tag);
+> +		if (error) {
+> +			up_write(&sb->s_umount);
+> +			deactivate_super(sb);
+> +			goto out;
+> +		}
+> +		sb->s_flags |= MS_ACTIVE;
+> +	}
+> +	do_remount_sb(sb, flags, data, 0);
+> +	error = simple_set_mnt(mnt, sb);
+> +out:
+>  	mutex_unlock(&sysfs_rename_mutex);
+> -	return rc;
+> +	return error;
+> +}
+> +
+> +static void sysfs_kill_sb(struct super_block *sb)
+> +{
+> +	struct sysfs_super_info *info = sysfs_info(sb);
+> +
+> +	kill_anon_super(sb);
+> +	kfree(info);
+>  }
+>  
+>  struct file_system_type sysfs_fs_type = {
+>  	.name		= "sysfs",
+>  	.get_sb		= sysfs_get_sb,
+> -	.kill_sb	= kill_anon_super,
+> +	.kill_sb	= sysfs_kill_sb,
+>  };
+>  
+>  void sysfs_grab_supers(void)
+> @@ -146,6 +205,50 @@ restart:
+>  	spin_unlock(&sb_lock);
+>  }
+>  
+> +int sysfs_register_tag_type(enum sysfs_tag_type type, struct sysfs_tag_type_operations *ops)
+> +{
+> +	int error;
+> +
+> +	mutex_lock(&sysfs_rename_mutex);
+> +
+> +	error = -EINVAL;
+> +	if (type >= SYSFS_TAG_TYPES)
+> +		goto out;
+> +
+> +	error = -EINVAL;
+> +	if (type <= SYSFS_TAG_TYPE_NONE)
+> +		goto out;
+> +
+> +	error = -EBUSY;
+> +	if (tag_ops[type])
+> +		goto out;
+> +
+> +	error = 0;
+> +	tag_ops[type] = ops;
+> +
+> +out:
+> +	mutex_unlock(&sysfs_rename_mutex);
+> +	return error;
+> +}
+> +
+> +void sysfs_exit_tag(enum sysfs_tag_type type, const void *tag)
+> +{
+> +	/* Allow the tag to go away while sysfs is still mounted. */
+> +	struct super_block *sb;
+> +	mutex_lock(&sysfs_rename_mutex);
+> +	sysfs_grab_supers();
+> +	mutex_lock(&sysfs_mutex);
+> +	list_for_each_entry(sb, &sysfs_fs_type.fs_supers, s_instances) {
+> +		struct sysfs_super_info *info = sysfs_info(sb);
+> +		if (info->tag[type] != tag)
+> +			continue;
+> +		info->tag[type] = NULL;
+> +	}
+> +	mutex_unlock(&sysfs_mutex);
+> +	sysfs_release_supers();
+> +	mutex_unlock(&sysfs_rename_mutex);
+> +}
+> +
+>  int __init sysfs_init(void)
+>  {
+>  	int err = -ENOMEM;
+> diff --git a/fs/sysfs/symlink.c b/fs/sysfs/symlink.c
+> index a3ba217..54b2e5f 100644
+> --- a/fs/sysfs/symlink.c
+> +++ b/fs/sysfs/symlink.c
+> @@ -119,7 +119,7 @@ void sysfs_remove_link(struct kobject * kobj, const char * name)
+>  	else
+>  		parent_sd = kobj->sd;
+>  
+> -	sysfs_hash_and_remove(parent_sd, name);
+> +	sysfs_hash_and_remove(kobj, parent_sd, name);
+>  }
+>  
+>  static int sysfs_get_target_path(struct sysfs_dirent *parent_sd,
+> diff --git a/fs/sysfs/sysfs.h b/fs/sysfs/sysfs.h
+> index f0e5ecb..67115ec 100644
+> --- a/fs/sysfs/sysfs.h
+> +++ b/fs/sysfs/sysfs.h
+> @@ -45,6 +45,7 @@ struct sysfs_dirent {
+>  	struct sysfs_dirent	*s_sibling;
+>  	const char		*s_name;
+>  
+> +	const void		*s_tag;
+>  	union {
+>  		struct sysfs_elem_dir		s_dir;
+>  		struct sysfs_elem_symlink	s_symlink;
+> @@ -67,14 +68,22 @@ struct sysfs_dirent {
+>  #define SYSFS_KOBJ_LINK			0x0008
+>  #define SYSFS_COPY_NAME			(SYSFS_DIR | SYSFS_KOBJ_LINK)
+>  
+> -#define SYSFS_FLAG_MASK			~SYSFS_TYPE_MASK
+> -#define SYSFS_FLAG_REMOVED		0x0200
+> +#define SYSFS_TAG_TYPE_MASK		0xff00
+> +#define SYSFS_TAG_TYPE_SHIFT		8
+> +
+> +#define SYSFS_FLAG_MASK			~(SYSFS_TYPE_MASK | SYSFS_TAG_TYPE_MASK)
+> +#define SYSFS_FLAG_REMOVED		0x020000
+>  
+>  static inline unsigned int sysfs_type(struct sysfs_dirent *sd)
+>  {
+>  	return sd->s_flags & SYSFS_TYPE_MASK;
+>  }
+>  
+> +static inline enum sysfs_tag_type sysfs_tag_type(struct sysfs_dirent *sd)
+> +{
+> +	return (sd->s_flags & SYSFS_TAG_TYPE_MASK) >> SYSFS_TAG_TYPE_SHIFT;
+> +}
+> +
+>  /*
+>   * Context structure to be used while adding/removing nodes.
+>   */
+> @@ -87,6 +96,7 @@ struct sysfs_addrm_cxt {
+>  
+>  struct sysfs_super_info {
+>  	int	grabbed;
+> +	const void *tag[SYSFS_TAG_TYPES];
+>  };
+>  
+>  #define sysfs_info(SB) ((struct sysfs_super_info *)(SB)->s_fs_info)
+> @@ -98,6 +108,7 @@ extern struct sysfs_dirent sysfs_root;
+>  extern struct super_block *sysfs_sb;
+>  extern struct kmem_cache *sysfs_dir_cachep;
+>  extern struct file_system_type sysfs_fs_type;
+> +extern struct sysfs_tag_type_operations *tag_ops[SYSFS_TAG_TYPES];
+>  
+>  void sysfs_grab_supers(void);
+>  void sysfs_release_supers(void);
+> @@ -124,6 +135,7 @@ void sysfs_remove_one(struct sysfs_addrm_cxt *acxt, struct sysfs_dirent *sd);
+>  void sysfs_addrm_finish(struct sysfs_addrm_cxt *acxt);
+>  
+>  struct sysfs_dirent *sysfs_find_dirent(struct sysfs_dirent *parent_sd,
+> +				       const void *tag,
+>  				       const unsigned char *name);
+>  struct sysfs_dirent *sysfs_get_dirent(struct sysfs_dirent *parent_sd,
+>  				      const unsigned char *name);
+> @@ -158,7 +170,8 @@ static inline void __sysfs_put(struct sysfs_dirent *sd)
+>  struct inode *sysfs_get_inode(struct sysfs_dirent *sd);
+>  int sysfs_sd_setattr(struct sysfs_dirent *sd, struct inode *inode, struct iattr *iattr);
+>  int sysfs_setattr(struct dentry *dentry, struct iattr *iattr);
+> -int sysfs_hash_and_remove(struct sysfs_dirent *dir_sd, const char *name);
+> +int sysfs_hash_and_remove(struct kobject *kobj, struct sysfs_dirent *dir_sd,
+> +			  const char *name);
+>  int sysfs_inode_init(void);
+>  
+>  /*
+> diff --git a/include/linux/kobject.h b/include/linux/kobject.h
+> index 5437ac0..beb3573 100644
+> --- a/include/linux/kobject.h
+> +++ b/include/linux/kobject.h
+> @@ -105,6 +105,7 @@ struct kobj_type {
+>  	void (*release)(struct kobject *kobj);
+>  	struct sysfs_ops *sysfs_ops;
+>  	struct attribute **default_attrs;
+> +	const void *(*sysfs_tag)(struct kobject *kobj);
+>  };
+>  
+>  struct kobj_uevent_env {
+> diff --git a/include/linux/sysfs.h b/include/linux/sysfs.h
+> index d8e0230..ba68829 100644
+> --- a/include/linux/sysfs.h
+> +++ b/include/linux/sysfs.h
+> @@ -80,6 +80,15 @@ struct sysfs_ops {
+>  
+>  struct sysfs_dirent;
+>  
+> +enum sysfs_tag_type {
+> +	SYSFS_TAG_TYPE_NONE = 0,
+> +	SYSFS_TAG_TYPES
+> +};
+> +
+> +struct sysfs_tag_type_operations {
+> +	const void *(*mount_tag)(void);
+> +};
+> +
+>  #ifdef CONFIG_SYSFS
+>  
+>  int sysfs_schedule_callback(struct kobject *kobj, void (*func)(void *),
+> @@ -126,6 +135,12 @@ struct sysfs_dirent *sysfs_get_dirent(struct sysfs_dirent *parent_sd,
+>  struct sysfs_dirent *sysfs_get(struct sysfs_dirent *sd);
+>  void sysfs_put(struct sysfs_dirent *sd);
+>  void sysfs_printk_last_file(void);
+> +
+> +int sysfs_make_tagged_dir(struct kobject *, enum sysfs_tag_type tag_type);
+> +int sysfs_register_tag_type(enum sysfs_tag_type type,
+> +			    struct sysfs_tag_type_operations *ops);
+> +void sysfs_exit_tag(enum sysfs_tag_type type, const void *tag);
+> +
+>  int __must_check sysfs_init(void);
+>  
+>  #else /* CONFIG_SYSFS */
+> @@ -249,6 +264,22 @@ static inline void sysfs_put(struct sysfs_dirent *sd)
+>  {
+>  }
+>  
+> +staticn inline int sysfs_make_tagged_dir(struct kobject *kobj,
+    ______^
 
-Change most current->(|e|s|fs)[ug]id to current_(|e|s|fs)[ug]id().
+This typo is still present in your patch in the CONFIG_SYSFS=n case.
 
-Change some task->e?[ug]id to task_e?[ug]id().  In some places it makes more
-sense to use RCU directly rather than a convenient wrapper; these will be
-addressed by later patches.
+Otherwise the patchset, combined with the patches Greg has already
+merged in his tree, still works great for me with network namespaces.
 
-Signed-off-by: David Howells <dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Reviewed-by: James Morris <jmorris-gx6/JNMH7DfYtjvyW6yDsg@public.gmane.org>
-Acked-by: Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Cc: Al Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>
-Cc: linux-audit-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Cc: linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org
----
+--Benjamin
 
- kernel/acct.c           |    7 +++----
- kernel/auditsc.c        |    6 ++++--
- kernel/cgroup.c         |    9 +++++----
- kernel/futex.c          |    8 +++++---
- kernel/futex_compat.c   |    3 ++-
- kernel/ptrace.c         |   15 +++++++++------
- kernel/sched.c          |   11 +++++++----
- kernel/signal.c         |   15 +++++++++------
- kernel/sys.c            |   16 ++++++++--------
- kernel/sysctl.c         |    2 +-
- kernel/timer.c          |    8 ++++----
- kernel/user_namespace.c |    2 +-
- mm/mempolicy.c          |    7 +++++--
- mm/migrate.c            |    7 +++++--
- mm/shmem.c              |    8 ++++----
- 15 files changed, 72 insertions(+), 52 deletions(-)
+> +						enum sysfs_tag_type tag_type)
+> +{
+> +	return 0;
+> +}
+> +
+> +static inline int sysfs_register_tag_type(enum sysfs_tag_type type,
+> +					struct sysfs_tag_type_operations *ops)
+> +{
+> +	return 0;
+> +}
+> +
+> +static inline void sysfs_exit_tag(enum sysfs_tag_type type, const void *tag)
+> +{
+> +}
+> +
+>  static inline int __must_check sysfs_init(void)
+>  {
+>  	return 0;
 
 
-diff --git a/kernel/acct.c b/kernel/acct.c
-index f6006a6..d57b7cb 100644
---- a/kernel/acct.c
-+++ b/kernel/acct.c
-@@ -530,15 +530,14 @@ static void do_acct_process(struct bsd_acct_struct *acct,
- 	do_div(elapsed, AHZ);
- 	ac.ac_btime = get_seconds() - elapsed;
- 	/* we really need to bite the bullet and change layout */
--	ac.ac_uid = current->uid;
--	ac.ac_gid = current->gid;
-+	current_uid_gid(&ac.ac_uid, &ac.ac_gid);
- #if ACCT_VERSION==2
- 	ac.ac_ahz = AHZ;
- #endif
- #if ACCT_VERSION==1 || ACCT_VERSION==2
- 	/* backward-compatible 16 bit fields */
--	ac.ac_uid16 = current->uid;
--	ac.ac_gid16 = current->gid;
-+	ac.ac_uid16 = ac.ac_uid;
-+	ac.ac_gid16 = ac.ac_gid;
- #endif
- #if ACCT_VERSION==3
- 	ac.ac_pid = task_tgid_nr_ns(current, ns);
-diff --git a/kernel/auditsc.c b/kernel/auditsc.c
-index cf5bc2f..e7d7061 100644
---- a/kernel/auditsc.c
-+++ b/kernel/auditsc.c
-@@ -2440,7 +2440,8 @@ void audit_core_dumps(long signr)
- {
- 	struct audit_buffer *ab;
- 	u32 sid;
--	uid_t auid = audit_get_loginuid(current);
-+	uid_t auid = audit_get_loginuid(current), uid;
-+	gid_t gid;
- 	unsigned int sessionid = audit_get_sessionid(current);
- 
- 	if (!audit_enabled)
-@@ -2450,8 +2451,9 @@ void audit_core_dumps(long signr)
- 		return;
- 
- 	ab = audit_log_start(NULL, GFP_KERNEL, AUDIT_ANOM_ABEND);
-+	current_uid_gid(&uid, &gid);
- 	audit_log_format(ab, "auid=%u uid=%u gid=%u ses=%u",
--			auid, current->uid, current->gid, sessionid);
-+			 auid, uid, gid, sessionid);
- 	security_task_getsecid(current, &sid);
- 	if (sid) {
- 		char *ctx = NULL;
-diff --git a/kernel/cgroup.c b/kernel/cgroup.c
-index 13932ab..9f5a62a 100644
---- a/kernel/cgroup.c
-+++ b/kernel/cgroup.c
-@@ -573,8 +573,8 @@ static struct inode *cgroup_new_inode(mode_t mode, struct super_block *sb)
- 
- 	if (inode) {
- 		inode->i_mode = mode;
--		inode->i_uid = current->fsuid;
--		inode->i_gid = current->fsgid;
-+		inode->i_uid = current_fsuid();
-+		inode->i_gid = current_fsgid();
- 		inode->i_blocks = 0;
- 		inode->i_atime = inode->i_mtime = inode->i_ctime = CURRENT_TIME;
- 		inode->i_mapping->backing_dev_info = &cgroup_backing_dev_info;
-@@ -1276,6 +1276,7 @@ int cgroup_attach_task(struct cgroup *cgrp, struct task_struct *tsk)
- static int attach_task_by_pid(struct cgroup *cgrp, u64 pid)
- {
- 	struct task_struct *tsk;
-+	uid_t euid;
- 	int ret;
- 
- 	if (pid) {
-@@ -1288,8 +1289,8 @@ static int attach_task_by_pid(struct cgroup *cgrp, u64 pid)
- 		get_task_struct(tsk);
- 		rcu_read_unlock();
- 
--		if ((current->euid) && (current->euid != tsk->uid)
--		    && (current->euid != tsk->suid)) {
-+		euid = current_euid();
-+		if (euid && euid != tsk->uid && euid != tsk->suid) {
- 			put_task_struct(tsk);
- 			return -EACCES;
- 		}
-diff --git a/kernel/futex.c b/kernel/futex.c
-index 7d1136e..a28b82b 100644
---- a/kernel/futex.c
-+++ b/kernel/futex.c
-@@ -439,10 +439,11 @@ static void free_pi_state(struct futex_pi_state *pi_state)
- static struct task_struct * futex_find_get_task(pid_t pid)
- {
- 	struct task_struct *p;
-+	uid_t euid = current_euid();
- 
- 	rcu_read_lock();
- 	p = find_task_by_vpid(pid);
--	if (!p || ((current->euid != p->euid) && (current->euid != p->uid)))
-+	if (!p || (euid != p->euid && euid != p->uid))
- 		p = ERR_PTR(-ESRCH);
- 	else
- 		get_task_struct(p);
-@@ -1826,6 +1827,7 @@ sys_get_robust_list(int pid, struct robust_list_head __user * __user *head_ptr,
- {
- 	struct robust_list_head __user *head;
- 	unsigned long ret;
-+	uid_t euid = current_euid();
- 
- 	if (!futex_cmpxchg_enabled)
- 		return -ENOSYS;
-@@ -1841,8 +1843,8 @@ sys_get_robust_list(int pid, struct robust_list_head __user * __user *head_ptr,
- 		if (!p)
- 			goto err_unlock;
- 		ret = -EPERM;
--		if ((current->euid != p->euid) && (current->euid != p->uid) &&
--				!capable(CAP_SYS_PTRACE))
-+		if (euid != p->euid && euid != p->uid &&
-+		    !capable(CAP_SYS_PTRACE))
- 			goto err_unlock;
- 		head = p->robust_list;
- 		rcu_read_unlock();
-diff --git a/kernel/futex_compat.c b/kernel/futex_compat.c
-index 04ac3a9..3254d4e 100644
---- a/kernel/futex_compat.c
-+++ b/kernel/futex_compat.c
-@@ -135,6 +135,7 @@ compat_sys_get_robust_list(int pid, compat_uptr_t __user *head_ptr,
- {
- 	struct compat_robust_list_head __user *head;
- 	unsigned long ret;
-+	uid_t euid = current_euid();
- 
- 	if (!futex_cmpxchg_enabled)
- 		return -ENOSYS;
-@@ -150,7 +151,7 @@ compat_sys_get_robust_list(int pid, compat_uptr_t __user *head_ptr,
- 		if (!p)
- 			goto err_unlock;
- 		ret = -EPERM;
--		if ((current->euid != p->euid) && (current->euid != p->uid) &&
-+		if (euid != p->euid && euid != p->uid &&
- 				!capable(CAP_SYS_PTRACE))
- 			goto err_unlock;
- 		head = p->compat_robust_list;
-diff --git a/kernel/ptrace.c b/kernel/ptrace.c
-index 356699a..0dafab1 100644
---- a/kernel/ptrace.c
-+++ b/kernel/ptrace.c
-@@ -123,16 +123,19 @@ int __ptrace_may_access(struct task_struct *task, unsigned int mode)
- 	 * because setting up the necessary parent/child relationship
- 	 * or halting the specified task is impossible.
- 	 */
-+	uid_t uid;
-+	gid_t gid;
- 	int dumpable = 0;
- 	/* Don't let security modules deny introspection */
- 	if (task == current)
- 		return 0;
--	if (((current->uid != task->euid) ||
--	     (current->uid != task->suid) ||
--	     (current->uid != task->uid) ||
--	     (current->gid != task->egid) ||
--	     (current->gid != task->sgid) ||
--	     (current->gid != task->gid)) && !capable(CAP_SYS_PTRACE))
-+	current_uid_gid(&uid, &gid);
-+	if ((uid != task->euid ||
-+	     uid != task->suid ||
-+	     uid != task->uid  ||
-+	     gid != task->egid ||
-+	     gid != task->sgid ||
-+	     gid != task->gid) && !capable(CAP_SYS_PTRACE))
- 		return -EPERM;
- 	smp_rmb();
- 	if (task->mm)
-diff --git a/kernel/sched.c b/kernel/sched.c
-index 4a7da9e..58690f3 100644
---- a/kernel/sched.c
-+++ b/kernel/sched.c
-@@ -5008,6 +5008,7 @@ static int __sched_setscheduler(struct task_struct *p, int policy,
- 	unsigned long flags;
- 	const struct sched_class *prev_class = p->sched_class;
- 	struct rq *rq;
-+	uid_t euid;
- 
- 	/* may grab non-irq protected spin_locks */
- 	BUG_ON(in_interrupt());
-@@ -5060,8 +5061,9 @@ recheck:
- 			return -EPERM;
- 
- 		/* can't change other user's priorities */
--		if ((current->euid != p->euid) &&
--		    (current->euid != p->uid))
-+		euid = current_euid();
-+		if (euid != p->euid &&
-+		    euid != p->uid)
- 			return -EPERM;
- 	}
- 
-@@ -5272,6 +5274,7 @@ long sched_setaffinity(pid_t pid, const cpumask_t *in_mask)
- 	cpumask_t cpus_allowed;
- 	cpumask_t new_mask = *in_mask;
- 	struct task_struct *p;
-+	uid_t euid;
- 	int retval;
- 
- 	get_online_cpus();
-@@ -5292,9 +5295,9 @@ long sched_setaffinity(pid_t pid, const cpumask_t *in_mask)
- 	get_task_struct(p);
- 	read_unlock(&tasklist_lock);
- 
-+	euid = current_euid();
- 	retval = -EPERM;
--	if ((current->euid != p->euid) && (current->euid != p->uid) &&
--			!capable(CAP_SYS_NICE))
-+	if (euid != p->euid && euid != p->uid && !capable(CAP_SYS_NICE))
- 		goto out_unlock;
- 
- 	retval = security_task_setscheduler(p, 0, NULL);
-diff --git a/kernel/signal.c b/kernel/signal.c
-index bf40ecc..141d2b9 100644
---- a/kernel/signal.c
-+++ b/kernel/signal.c
-@@ -567,6 +567,7 @@ static int check_kill_permission(int sig, struct siginfo *info,
- 				 struct task_struct *t)
- {
- 	struct pid *sid;
-+	uid_t uid, euid;
- 	int error;
- 
- 	if (!valid_signal(sig))
-@@ -579,8 +580,10 @@ static int check_kill_permission(int sig, struct siginfo *info,
- 	if (error)
- 		return error;
- 
--	if ((current->euid ^ t->suid) && (current->euid ^ t->uid) &&
--	    (current->uid  ^ t->suid) && (current->uid  ^ t->uid) &&
-+	uid = current_uid();
-+	euid = current_euid();
-+	if ((euid ^ t->suid) && (euid ^ t->uid) &&
-+	    (uid  ^ t->suid) && (uid  ^ t->uid) &&
- 	    !capable(CAP_KILL)) {
- 		switch (sig) {
- 		case SIGCONT:
-@@ -844,7 +847,7 @@ static int send_signal(int sig, struct siginfo *info, struct task_struct *t,
- 			q->info.si_errno = 0;
- 			q->info.si_code = SI_USER;
- 			q->info.si_pid = task_pid_vnr(current);
--			q->info.si_uid = current->uid;
-+			q->info.si_uid = current_uid();
- 			break;
- 		case (unsigned long) SEND_SIG_PRIV:
- 			q->info.si_signo = sig;
-@@ -1597,7 +1600,7 @@ void ptrace_notify(int exit_code)
- 	info.si_signo = SIGTRAP;
- 	info.si_code = exit_code;
- 	info.si_pid = task_pid_vnr(current);
--	info.si_uid = current->uid;
-+	info.si_uid = current_uid();
- 
- 	/* Let the debugger run.  */
- 	spin_lock_irq(&current->sighand->siglock);
-@@ -2210,7 +2213,7 @@ sys_kill(pid_t pid, int sig)
- 	info.si_errno = 0;
- 	info.si_code = SI_USER;
- 	info.si_pid = task_tgid_vnr(current);
--	info.si_uid = current->uid;
-+	info.si_uid = current_uid();
- 
- 	return kill_something_info(sig, &info, pid);
- }
-@@ -2227,7 +2230,7 @@ static int do_tkill(pid_t tgid, pid_t pid, int sig)
- 	info.si_errno = 0;
- 	info.si_code = SI_TKILL;
- 	info.si_pid = task_tgid_vnr(current);
--	info.si_uid = current->uid;
-+	info.si_uid = current_uid();
- 
- 	rcu_read_lock();
- 	p = find_task_by_vpid(pid);
-diff --git a/kernel/sys.c b/kernel/sys.c
-index 234d945..f82827d 100644
---- a/kernel/sys.c
-+++ b/kernel/sys.c
-@@ -114,10 +114,10 @@ void (*pm_power_off_prepare)(void);
- 
- static int set_one_prio(struct task_struct *p, int niceval, int error)
- {
-+	uid_t euid = current_euid();
- 	int no_nice;
- 
--	if (p->uid != current->euid &&
--		p->euid != current->euid && !capable(CAP_SYS_NICE)) {
-+	if (p->uid != euid && p->euid != euid && !capable(CAP_SYS_NICE)) {
- 		error = -EPERM;
- 		goto out;
- 	}
-@@ -176,16 +176,16 @@ asmlinkage long sys_setpriority(int which, int who, int niceval)
- 		case PRIO_USER:
- 			user = current->user;
- 			if (!who)
--				who = current->uid;
-+				who = current_uid();
- 			else
--				if ((who != current->uid) && !(user = find_user(who)))
-+				if (who != current_uid() && !(user = find_user(who)))
- 					goto out_unlock;	/* No processes for this user */
- 
- 			do_each_thread(g, p)
- 				if (p->uid == who)
- 					error = set_one_prio(p, niceval, error);
- 			while_each_thread(g, p);
--			if (who != current->uid)
-+			if (who != current_uid())
- 				free_uid(user);		/* For find_user() */
- 			break;
- 	}
-@@ -238,9 +238,9 @@ asmlinkage long sys_getpriority(int which, int who)
- 		case PRIO_USER:
- 			user = current->user;
- 			if (!who)
--				who = current->uid;
-+				who = current_uid();
- 			else
--				if ((who != current->uid) && !(user = find_user(who)))
-+				if (who != current_uid() && !(user = find_user(who)))
- 					goto out_unlock;	/* No processes for this user */
- 
- 			do_each_thread(g, p)
-@@ -250,7 +250,7 @@ asmlinkage long sys_getpriority(int which, int who)
- 						retval = niceval;
- 				}
- 			while_each_thread(g, p);
--			if (who != current->uid)
-+			if (who != current_uid())
- 				free_uid(user);		/* for find_user() */
- 			break;
- 	}
-diff --git a/kernel/sysctl.c b/kernel/sysctl.c
-index deceea0..9e4c8d3 100644
---- a/kernel/sysctl.c
-+++ b/kernel/sysctl.c
-@@ -1667,7 +1667,7 @@ out:
- 
- static int test_perm(int mode, int op)
- {
--	if (!current->euid)
-+	if (!current_euid())
- 		mode >>= 6;
- 	else if (in_egroup_p(0))
- 		mode >>= 3;
-diff --git a/kernel/timer.c b/kernel/timer.c
-index 56becf3..b54e464 100644
---- a/kernel/timer.c
-+++ b/kernel/timer.c
-@@ -1123,25 +1123,25 @@ asmlinkage long sys_getppid(void)
- asmlinkage long sys_getuid(void)
- {
- 	/* Only we change this so SMP safe */
--	return current->uid;
-+	return current_uid();
- }
- 
- asmlinkage long sys_geteuid(void)
- {
- 	/* Only we change this so SMP safe */
--	return current->euid;
-+	return current_euid();
- }
- 
- asmlinkage long sys_getgid(void)
- {
- 	/* Only we change this so SMP safe */
--	return current->gid;
-+	return current_gid();
- }
- 
- asmlinkage long sys_getegid(void)
- {
- 	/* Only we change this so SMP safe */
--	return  current->egid;
-+	return  current_egid();
- }
- 
- #endif
-diff --git a/kernel/user_namespace.c b/kernel/user_namespace.c
-index 532858f..f82730a 100644
---- a/kernel/user_namespace.c
-+++ b/kernel/user_namespace.c
-@@ -38,7 +38,7 @@ static struct user_namespace *clone_user_ns(struct user_namespace *old_ns)
- 	}
- 
- 	/* Reset current->user with a new one */
--	new_user = alloc_uid(ns, current->uid);
-+	new_user = alloc_uid(ns, current_uid());
- 	if (!new_user) {
- 		free_uid(ns->root_user);
- 		kfree(ns);
-diff --git a/mm/mempolicy.c b/mm/mempolicy.c
-index 8336905..27bcf7e 100644
---- a/mm/mempolicy.c
-+++ b/mm/mempolicy.c
-@@ -1110,6 +1110,7 @@ asmlinkage long sys_migrate_pages(pid_t pid, unsigned long maxnode,
- 	nodemask_t old;
- 	nodemask_t new;
- 	nodemask_t task_nodes;
-+	uid_t uid, euid;
- 	int err;
- 
- 	err = get_nodes(&old, old_nodes, maxnode);
-@@ -1139,8 +1140,10 @@ asmlinkage long sys_migrate_pages(pid_t pid, unsigned long maxnode,
- 	 * capabilities, superuser privileges or the same
- 	 * userid as the target process.
- 	 */
--	if ((current->euid != task->suid) && (current->euid != task->uid) &&
--	    (current->uid != task->suid) && (current->uid != task->uid) &&
-+	uid = current_uid();
-+	euid = current_euid();
-+	if (euid != task->suid && euid != task->uid &&
-+	    uid  != task->suid && uid  != task->uid &&
- 	    !capable(CAP_SYS_NICE)) {
- 		err = -EPERM;
- 		goto out;
-diff --git a/mm/migrate.c b/mm/migrate.c
-index f9897ba..e6223d1 100644
---- a/mm/migrate.c
-+++ b/mm/migrate.c
-@@ -990,6 +990,7 @@ asmlinkage long sys_move_pages(pid_t pid, unsigned long nr_pages,
- 	nodemask_t task_nodes;
- 	struct mm_struct *mm;
- 	struct page_to_node *pm = NULL;
-+	uid_t uid, euid;
- 
- 	/* Check flags */
- 	if (flags & ~(MPOL_MF_MOVE|MPOL_MF_MOVE_ALL))
-@@ -1017,8 +1018,10 @@ asmlinkage long sys_move_pages(pid_t pid, unsigned long nr_pages,
- 	 * capabilities, superuser privileges or the same
- 	 * userid as the target process.
- 	 */
--	if ((current->euid != task->suid) && (current->euid != task->uid) &&
--	    (current->uid != task->suid) && (current->uid != task->uid) &&
-+	uid = current_uid();
-+	euid = current_euid();
-+	if (euid != task->suid && euid != task->uid &&
-+	    uid  != task->suid && uid  != task->uid &&
- 	    !capable(CAP_SYS_NICE)) {
- 		err = -EPERM;
- 		goto out2;
-diff --git a/mm/shmem.c b/mm/shmem.c
-index 04fb4f1..c935bb4 100644
---- a/mm/shmem.c
-+++ b/mm/shmem.c
-@@ -1510,8 +1510,8 @@ shmem_get_inode(struct super_block *sb, int mode, dev_t dev)
- 	inode = new_inode(sb);
- 	if (inode) {
- 		inode->i_mode = mode;
--		inode->i_uid = current->fsuid;
--		inode->i_gid = current->fsgid;
-+		inode->i_uid = current_fsuid();
-+		inode->i_gid = current_fsgid();
- 		inode->i_blocks = 0;
- 		inode->i_mapping->backing_dev_info = &shmem_backing_dev_info;
- 		inode->i_atime = inode->i_mtime = inode->i_ctime = CURRENT_TIME;
-@@ -2275,8 +2275,8 @@ static int shmem_fill_super(struct super_block *sb,
- 	sbinfo->max_blocks = 0;
- 	sbinfo->max_inodes = 0;
- 	sbinfo->mode = S_IRWXUGO | S_ISVTX;
--	sbinfo->uid = current->fsuid;
--	sbinfo->gid = current->fsgid;
-+	sbinfo->uid = current_fsuid();
-+	sbinfo->gid = current_fsgid();
- 	sbinfo->mpol = NULL;
- 	sb->s_fs_info = sbinfo;
+-- 
+B e n j a m i n   T h e r y  - BULL/DT/Open Software R&D
+
+    http://www.bull.com
