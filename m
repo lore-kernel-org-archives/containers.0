@@ -1,17 +1,17 @@
 From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: Re: [RFC v2][PATCH 4/9] Memory management - dump state
-Date: Tue, 26 Aug 2008 20:14:25 -0400
-Message-ID: <48B49C61.1040003__25397.067613858$1219796302$gmane$org@cs.columbia.edu>
+Subject: Re: [RFC v2][PATCH 2/9] General infrastructure for checkpoint	restart
+Date: Tue, 26 Aug 2008 20:38:07 -0400
+Message-ID: <48B4A1EF.2090606__45147.3072557293$1219797605$gmane$org@cs.columbia.edu>
 References: <Pine.LNX.4.64.0808202251500.17436@takamine.ncl.cs.columbia.edu>	
-	<Pine.LNX.4.64.0808202304490.17436@takamine.ncl.cs.columbia.edu>	
-	<1219437422.20559.146.camel@nimitz>
-	<48B0F449.2000006@cs.columbia.edu>
-	<1219768406.8680.17.camel@nimitz>
+	<Pine.LNX.4.64.0808202303460.17436@takamine.ncl.cs.columbia.edu>	
+	<1219435302.20559.121.camel@nimitz>
+	<48B21D3C.8090601@cs.columbia.edu>
+	<1219768949.8680.26.camel@nimitz>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1219768406.8680.17.camel@nimitz>
+In-Reply-To: <1219768949.8680.26.camel@nimitz>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -21,156 +21,123 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, jeremy-TSDbQ3PG+2Y@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, arnd-r2nGTMty4D4@public.gmane.org
+To: Dave Hansen <dave-gkUM19QKKo4@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Jeremy Fitzhardinge <jeremy-TSDbQ3PG+2Y@public.gmane.org>, arnd-r2nGTMty4D4@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
 
 
 Dave Hansen wrote:
-> On Sun, 2008-08-24 at 01:40 -0400, Oren Laadan wrote:
->>>> +/* vma subtypes */
->>>> +enum {
->>>> +	CR_VMA_ANON = 1,
->>>> +	CR_VMA_FILE
->>>> +};
->>> Is this really necessary, or can we infer it from the contents of the
->>> VMA?
->> This classification eventually simplifies both dump and restore. For
->> instance, it decides whether a file name follows or not.
->>
->> There will be more, later:  CR_VMA_FILE_UNLINKED (mapped to an unlinked
->> file), CR_VMA_ANON_SHARED (shared anonymous), CR_VMA_ANON_SHARED_SKIP
->> (shared anonymous, had been sent before) and so on.
+> On Sun, 2008-08-24 at 22:47 -0400, Oren Laadan wrote:
+>>> I replaced all of the uses of these with kmalloc()/kfree() and stack
+>>> allocations.  I'm really not sure what these buy us since our allocators
+>>> are already so fast.  tbuf, especially, worries me if it gets used in
+>>> any kind of nested manner we're going to get some really fun bugs.
+>> I disagree with putting some of the cr_hdr_... on the stack: first, if they
+>> grow in size, it's easy to forget to change the allocation to stack.
 > 
-> I still don't see there being a need to explicitly specify the
-> distinction.  Why should a VMA mapping an unlinked file be any different
-> from a linked one?  It should point over to the 'file' checkpoint
-> structure and let the real work be done there.
+> I can buy that. 
 > 
-> There are no truly anonymous shared areas.  They anon ones are still
-> file-backed as far as the kernel is concerned.  If we do the file saving
-> correctly, I think most of these problems just fall out.
-
-The classifications helps to make the code cleaner (and more readable). In
-any case, you need at least to save a classifier that tells whether a shared
-VMA is anonymous, or mapped to a file, or is an IPC shmem segment (and also
-whether that IPC segment has been removed - a la unlinked): you simply don't
-treat them equally; and on the restart side you can't re-test it on the VMA 
-structure itself.
-
-Given that we need a classifier anyway, re-using it to describe all VMAs and
-not only distinguish the above (and maybe more) cases not only enhances the
-readability of the code, but also allows to merge common code paths based on
-the value of the classifier.
-
-Probably you won't be convinced until I add the code to support all types of
-VMAs. As it is, the classifier is harmless, so please bare with it for now.
-
+>> Second,
+>> using a standard code/handling for all cr_hdr_... makes the code more readable
+>> and easier for others to extend by simply following existing code.
 > 
->>>>   struct cr_hdr_head {
->>>>   	__u64 magic;
->>>>
+> It actually makes it harder for others to jump into because they see
+> something which is basically a kmalloc() to the rest of the kernel.  We
+> don't have ext2_alloc() or usb_alloc(), so I'm not sure we should have
+> cr_alloc(), effectively.
 
-[...]
+I disagree. It's more than "allocate memory", it's: "give me some room on
+the buffer". When we don't care about downtime (like now), it's enough to
+kmalloc a temporary buffer and flush (write to the FD) immediately.
 
->>>> +
->>>> +	while (addr < end) {
->>>> +		struct page *page;
->>>> +
->>>> +		/* simplified version of get_user_pages(): already have vma,
->>>> +		* only need FOLL_TOUCH, and (for now) ignore fault stats */
->>>> +
->>>> +		cond_resched();
->>>> +		while (!(page = follow_page(vma, addr, FOLL_TOUCH))) {
->>>> +			ret = handle_mm_fault(vma->vm_mm, vma, addr, 0);
->>>> +			if (ret & VM_FAULT_ERROR) {
->>>> +				if (ret & VM_FAULT_OOM)
->>>> +					ret = -ENOMEM;
->>>> +				else if (ret & VM_FAULT_SIGBUS)
->>>> +					ret = -EFAULT;
->>>> +				else
->>>> +					BUG();
->>>> +				break;
->>>> +			}
->>>> +			cond_resched();
->>>> +		}
->>> At best this needs to get folded back into its own function.  This is
->> This is almost identical to the original - see the preceding comment.
-> 
-> Exactly.  The code is copy-and-pasted.  If there's a bug in the
-> original, who will change this one?  Better to simply consolidate the
-> code into one copy.
-> 
->>> pretty hard to read as-is.  Also, are there truly no in-kernel functions
->>> that can be used for this?
->> Can you suggest one ?
-> 
-> This is where the mentality has to shift.  Instead of thinking "there is
-> no exact in-kernel match for what I want here" we need to consider that
-> we can modify the in-kernel ones.  They can be modified to suit both
-> existing and the new needs that we have.
+But when we will care about downtime, "the buffer" will be memory in kernel
+where the entire checkpoint image data will be kept while the container is
+frozen (memory contents need only be marked copy-on-write, not explicitly
+buffered).
 
-I agree.
+In this setting, cr_kwrite() will not really write the data to the FD, but
+only record somewhere that the data exists. Only after the container resumes
+execution will we eventually write the data to the FD and free the buffer.
 
-However, my main goal now is not to make this patch perfect, but to provide
-a viable proof-of-concept that demonstrates how we want to do things. Unless
-you feel we are near ready to send these for inclusion soon (...), I intend
-to prioritize design and functionality.
+(This is also useful in case you want to keep the checkpoint image entirely
+in memory without flushing to any FD; and yes, there are use-cases for that).
 
-I'll add a FIXME comment there. Of course, should you provide a patch to fix
-this (or any other such issue) I'll merge it in for the next round.
+So for this, instead of using kmalloc() to allocate a temp-buf, fill it with
+data, and then copy that data to the actual (big) buffer, the mechanism
+provides a shortcut to allocate space directly on the buffer, and save the
+copy.
 
 > 
->>>> +	for (pgarr = ctx->pgarr; pgarr; pgarr = pgarr->next) {
->>>> +		struct page **pages = pgarr->pages;
->>>> +		int nr = pgarr->nused;
->>>> +		void *ptr;
->>>> +
->>>> +		while (nr--) {
->>>> +			ptr = kmap(*pages);
->>>> +			ret = cr_kwrite(ctx, ptr, PAGE_SIZE);
->>>> +			kunmap(*pages);
->>> Why not use kmap_atomic() here?
->> It is my understanding that the code must not sleep between kmap_atomic()
->> and kunmap_atomic().
+>> The main argument for ->hbuf is that eventually we would like to buffer
+>> data in the kernel to avoid potentially slow writing/reading when processes
+>> are frozen during checkpoint/restart.
 > 
-> Yes, but you're going to absolutely kill performance on systems which
-> have expensive global TLB flushes.  Frequent kmaps()s should be avoided
-> at all costs.
+> Um, we're writing to a file descriptor and kmap()'ing.  Those can both
+> potentially be very, very slow.  I don't think that a few kmalloc()s
+> thrown in there are going to be noticeable.
+
+But you miss the point: the writing to the file descriptor in the (future)
+optimized version will _not_ happen while the container is frozen. Only
+much later after the container resumes, so at the end it will be:
+(1) freeze container (2) dump data to in-kernel buffer (mark dirty pages
+copy-on-write) (3) unfreeze container (4) write in-kernel buffer to FD.
+
+By deferring step #4 until after the freeze-period, you can save tens and
+hundreds of milliseconds, and seconds. Now the goal is to make step #2 be
+as fast as possible, and every millisecond (and less) counts, e.g. to take
+fast checkpoints of interactive desktops. And my experience is that in
+such "workload" repetitive kmalloc/kfree inside that dump loop has a
+measurable impact on performance (of course, for those objects which are
+abundant).
+
 > 
-> The best way around this would be to change the interface to cr_kwrite()
-> so that it didn't have to use *mapped* kernel memory.  Maybe an
-> interface that takes 'struct page'.  Or, one where we kmap_atomic() the
-> buffer, kunmap_atomic(), copy to a temporary buffer, then cr_kwrite().
+>> By using the simple cr_get_hbuf() and
+>> cr_put_hbuf() we prepare for that: now they just allocate room in ->hbuf,
+>> but later they will provide a pointer directly in the data buffer. Moreover,
+>> it simplifies the error path since cleanup (of ->hbuf) is implicit.
 > 
->>>> +static int cr_write_vma(struct cr_ctx *ctx, struct vm_area_struct *vma)
+> It simplifies *one* error path.  But, it complicates the ctx creation
+> and makes *that* error path more complex.  Pick your poison, I guess.
+
+Actually it simplifies *many* error paths -- in *all* cr_write_...()
+functions - including the future ones (and there are many to come).
+
+> 
+>> Also,
+>> it is designed to allow checkpoint and restart function to be called in a
+>> nested manner, again simplifying the code. Finally, my experience was that
+>> it can impact performance if you are after very short downtimes, especially
+>> for the checkpoint.
+> 
+> Right, but I'm comparing it to kmalloc()  Certainly kmalloc()s can be
+> used in a nested manner.
+> 
+>>>> +/* read the checkpoint header */
+>>>> +static int cr_read_hdr(struct cr_ctx *ctx)
 >>>> +{
->>>> +	struct cr_hdr h;
->>>> +	struct cr_hdr_vma *hh = ctx->hbuf;
->>>> +	char *fname = NULL;
->>>> +	int flen = 0, how, nr, ret;
+>>>> +	struct cr_hdr_head *hh = cr_hbuf_get(ctx, sizeof(*hh));
+>>>> +	int ret;
 >>>> +
->>>> +	h.type = CR_HDR_VMA;
->>>> +	h.len = sizeof(*hh);
->>>> +	h.ptag = 0;
->>>> +
->>>> +	hh->vm_start = vma->vm_start;
->>>> +	hh->vm_end = vma->vm_end;
->>>> +	hh->vm_page_prot = vma->vm_page_prot.pgprot;
->>>> +	hh->vm_flags = vma->vm_flags;
->>>> +	hh->vm_pgoff = vma->vm_pgoff;
->>>> +
->>>> +	if (vma->vm_flags & (VM_SHARED | VM_IO | VM_HUGETLB | VM_NONLINEAR)) {
->>>> +		pr_warning("CR: unknown VMA %#lx\n", vma->vm_flags);
->>>> +		return -ETXTBSY;
->>>> +	}
->>> Hmmm.  Interesting error code for VM_HUGETLB.  :)
->> :)  well, the usual EINVAL didn't seem suitable. Any better suggestions ?
+>>>> +	ret = cr_read_obj_type(ctx, hh, sizeof(*hh), CR_HDR_HEAD);
+>>>> +	if (ret < 0)
+>>>> +		return ret;
+>>>> +	else if (ret != 0)
+>>>> +		return -EINVAL;
+>>> How about just making cr_read_obj_type() stop returning positive values?
+>>> Is it ever valid for it to return >0?
+>> The idea with cr_read_obj_type() is that it returns the 'ptag' - parent tag -
+>> field of the object that it reads in. The 'ptag' is the tag of the parent
+>> object, and is useful in several places. For instance, the 'ptag' of an MM
+>> header identifies (is equal to) the 'tag' of TASK to which it belongs. In
+>> this case, the 'ptag' should be zero because it has no parent object.
+>>
+>> I'll change the variable name from 'ret' to 'ptag' to make it more obvious.
 > 
-> -ENOSUP might be clearest for now.  "Your system call tried to do
-> something unsupported."
+> Since this ptag isn't actually used, I can't really offer a suggestion.
+> I don't see the whole picture.
 
-Are you suggesting adding a new error code ?
+You can see how it's used in the code that dumps files. Or look at the next
+incarnation of the patch.
 
 Oren.
