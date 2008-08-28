@@ -1,18 +1,18 @@
-From: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: Re: [RFC v2][PATCH 4/9] Memory management - dump state
-Date: Wed, 27 Aug 2008 13:56:16 -0700
-Message-ID: <1219870576.8680.96.camel__30139.5923401744$1219870986$gmane$org@nimitz>
-References: <Pine.LNX.4.64.0808202251500.17436@takamine.ncl.cs.columbia.edu>
-	<Pine.LNX.4.64.0808202304490.17436@takamine.ncl.cs.columbia.edu>
-	<1219437422.20559.146.camel@nimitz> <48B0F449.2000006@cs.columbia.edu>
-	<1219768406.8680.17.camel@nimitz> <48B49C61.1040003@cs.columbia.edu>
-	<1219851696.8680.67.camel@nimitz> <20080827203427.GA1158@us.ibm.com>
-	<1219869510.8680.90.camel@nimitz>  <20080827204853.GA4189@us.ibm.com>
+From: Lai Jiangshan <laijs-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+Subject: Re: [PATCH] cgroup(fix critical bug): new handling for tasks file
+Date: Thu, 28 Aug 2008 20:09:38 +0800
+Message-ID: <48B69582.4000208__28828.5936964259$1219925695$gmane$org@cn.fujitsu.com>
+References: <48B360CE.2010501@cn.fujitsu.com>	
+	<6599ad830808251929p10dfc9d2ub11e4db0cd4f9f3@mail.gmail.com>	
+	<48B39319.7070403@cn.fujitsu.com>	
+	<6599ad830808261544w308a850m865ac0c0a1552c77@mail.gmail.com>	
+	<48B4D81D.2040200@cn.fujitsu.com>
+	<6599ad830808270536i353e1807kaac4e9fb74301bb0@mail.gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20080827204853.GA4189-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <6599ad830808270536i353e1807kaac4e9fb74301bb0-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -22,36 +22,30 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, jeremy-TSDbQ3PG+2Y@public.gmane.org, arnd-r2nGTMty4D4@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+Cc: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Linux Kernel Mailing List <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Wed, 2008-08-27 at 15:48 -0500, Serge E. Hallyn wrote:
-> Quoting Dave Hansen (dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org):
-> > On Wed, 2008-08-27 at 15:34 -0500, Serge E. Hallyn wrote:
-> > > (Or, is that too much effort required on your part to try and
-> > > cherrypick bits of Oren's changes back into your tree?)
-> > 
-> > That would probably work as long as Oren is working on top of what I
-> > have.  It's going to be a lot harder if I have to repeat the same
-> > break-out process for each iteration of Oren's patches, though.
-> > 
+Paul Menage wrote:
+> On Tue, Aug 26, 2008 at 9:29 PM, Lai Jiangshan <laijs-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org> wrote:
+>> And vmalloc can malloc larger memory than kmalloc, is vmalloc() enough?
+>> If not, I think using an array of pages is the best choice.
 > 
-> If Oren's purpose is not quite to create a upstreamable patchset,
-> then it would make more sense for him to keep a git tree and
-> put new patches on top of his existing ones (within reaason as he
-> rebases).  Then you'd at least be able to trivially look at the latest
-> deltas.
+> vmalloc would be simpler, certainly, but it has a higher overhead. And
+> since we're dealing with arrays of integers here, it's not too hard to
+> manage multiple arrays. Oh, except for sorting them, which would be
+> more of a pain. So yes, maybe vmalloc() would be a better choice at
+> first.
+> 
+Yep, these are hard. Which method is your favorite?
 
-The trick would be compromising on things that I, for instance, think
-need to be rewritten or removed.
+My original purpose was to fix a bug as I described. 
+This bug and the problem that offering big enough array for a huge
+cgroup are orthogonal!
 
-Oren would have to rebase his work against what I do.  I guess you could
-think about it like me being upstream from Oren.  Anything that I would
-change, Oren would need to rebase on top of.
+Could you consider/test that is it a bug as I described(and is it as
+critical as I described, maybe I was too nervous)?
+And this is also a problem: opening a cgroup.tasks twice or will waste
+a lot of _physical_ memory.
 
-Oren, are you willing to keep a set of patches that add functionality on
-top of a minimal set that I'm keeping?  Mine being the set that we're
-trying to push into mainline as soon as possible.
-
--- Dave
+    Thanks! Lai
