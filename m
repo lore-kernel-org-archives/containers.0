@@ -1,59 +1,37 @@
-From: Cedric Le Goater <clg@fr.ibm.com>
-Subject: Re: [patch -mm 0/4] mqueue namespace
-Date: Fri, 29 Aug 2008 11:46:03 +0200
-Message-ID: <48B7C55B.4090609@fr.ibm.com>
-References: <20071128163728.177495768@fr.ibm.com> <m11w2syfmk.fsf@frodo.ebiederm.org> <m1ve04vkov.fsf@frodo.ebiederm.org>
+From: Alan Cox <alan-qBU/x9rampVanCEyBjwyrvXRex20P6io@public.gmane.org>
+Subject: Re: [RFC][PATCH 1/5]: Move tty lookup/reopen to caller
+Date: Fri, 29 Aug 2008 11:49:46 +0100
+Message-ID: <20080829114946.38963968@lxorguk.ukuu.org.uk>
+References: <20080829070001.GA21286@us.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
+Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1756104AbYH2Jrw@vger.kernel.org>
-In-Reply-To: <m1ve04vkov.fsf@frodo.ebiederm.org>
-Sender: linux-kernel-owner@vger.kernel.org
-To: "Eric W. Biederman" <ebiederm@xmission.com>
-Cc: Andrew Morton <akpm@linux-foundation.org>, Linux Containers <containers@lists.osdl.org>, Linux Kernel Mailing List <linux-kernel@vger.kernel.org>, Pavel Emelianov <xemul@openvz.org>, Serge Hallyn <serue@us.ibm.com>
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <20080829070001.GA21286-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org
+Cc: kyle-hoO6YkzgTuCM0SS3m2neIg@public.gmane.org, sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, bastian-yyjItF7Rl6lg9hUCZPvPmw@public.gmane.org, hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org, containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Eric W. Biederman wrote:
-> ebiederm@xmission.com (Eric W. Biederman) writes:
-> 
->> One way to fix that is to add a hidden directory to the mnt namespace.
->> Where magic in kernel filesystems can be mounted.  Only visible
->> with a magic openat flag.  Then:
->>
->> fd = openat(AT_FDKERN, ".", O_DIRECTORY)
->> fchdir(fd);
->> umount("./mqueue", MNT_DETACH);
->> mount(("none", "./mqueue", "mqueue", 0, NULL);
->>
->> Would unshare the mqueue namespace.
->>
->> Implemented for plan9 this would solve a problem of how do you get
->> access to all of it's special filesystems.  As only bind mounts
->> and remote filesystem mounts are available.  For linux thinking about
->> it might shake the conversation up a bit.
-> 
-> Thinking about this some more.  What is especially attractive if we do
-> all namespaces this way is that it solves two lurking problems.
-> 1) How do you keep a namespace around without a process in it.
-> 2) How do you enter a container.
-> 
-> If we could land the namespaces in the filesystem we could easily
-> persist them past the point where a process is present in one if we so
-> choose.
->
-> Entering a container would be a matter of replacing your current
-> namespaces mounts with namespace mounts take from the filesystem.
-> 
-> I expect performance would degrade in practice, but it is tempting
-> to implement it and run a benchmark and see if we can measure anything.
+On Fri, 29 Aug 2008 00:00:01 -0700
+sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org wrote:
 
-http://wiki.openvz.org/Containers/Mini-summit_2008_notes
+> get_node() cleanup in devpts
+> 
+> This patchset adds inode/tty parameter to devpts interfaces and uses
+> this new parameter to remove the unnecessary get_node() calls in devpts
+> (as pointed out by Peter Anvin).
+> 
+> Alan, if these are getting in your way, I can hold off for now, but
+> just wanted some quick comments from you on patch 1 and from Peter
+> on get_node() cleanup.
 
-you seem to have talked about this idea at the summit but the notes
-are a bit short on the "entering a container" topic. Have you had time to
-work on the POC the notes are talking about ? 
-
-the mqueue namespace (and sysv ipc) is typically one of these namespaces
-with valid objects which can have no processes in it. 
-
-C. 
+These all look good. Added to the ttydev tree stack - will need Sign offs.
