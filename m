@@ -1,17 +1,17 @@
-From: Cedric Le Goater <clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [RFC][PATCH 0/8][v2]: Enable multiple mounts of devpts
-Date: Fri, 29 Aug 2008 11:02:52 +0200
-Message-ID: <48B7BB3C.5080404@fr.ibm.com>
-References: <20080821022126.GA29449@us.ibm.com> <48ACD6CB.5030706@zytor.com>
-	<20080821031028.GB30205@us.ibm.com>
-	<48ACDDC7.3000704@zytor.com> <48AD991F.9010906@fr.ibm.com>
-	<48AD9A97.6000807@zytor.com> <48AD9DCD.3060306@fr.ibm.com>
-	<m1fxoys1ng.fsf@frodo.ebiederm.org> <48ADD7D3.7080400@fr.ibm.com>
+From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
+Subject: Re: [0/10] User namespaces: introduction
+Date: Fri, 29 Aug 2008 02:40:13 -0700
+Message-ID: <m1y72gyxaa.fsf@frodo.ebiederm.org>
+References: <20080822194513.GA10262@us.ibm.com>
+	<m1d4k0ixzp.fsf@frodo.ebiederm.org>
+	<20080823011731.GA22737@us.ibm.com>
+	<m1sksw770k.fsf@frodo.ebiederm.org> <20080825195124.GA9361@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <48ADD7D3.7080400-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <20080825195124.GA9361-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org> (Serge E. Hallyn's message of
+	"Mon, 25 Aug 2008 14:51:24 -0500")
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -21,77 +21,78 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Cedric Le Goater <clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
-Cc: kyle-hoO6YkzgTuCM0SS3m2neIg@public.gmane.org, Dave Hansen <dave-gkUM19QKKo4@public.gmane.org>, bastian-yyjItF7Rl6lg9hUCZPvPmw@public.gmane.org, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, "H. Peter Anvin" <hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org>, containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, alan-qBU/x9rampVanCEyBjwyrvXRex20P6io@public.gmane.org, xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org
+To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Cedric Le Goater wrote:
-> Eric W. Biederman wrote:
->> Cedric Le Goater <clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org> writes:
->>
->>> H. Peter Anvin wrote:
->>>> Cedric Le Goater wrote:
->>>>>> I suggest "newinstance", but "newns" works, too.
->>>>> Could we also use this mount option to 'unshare' a new posix message
->>>>> queue namespace ?
->>>> Sorry, I fail to see the connection with devpts here?  Are you
->>>> suggesting using the same option for another filesystem (if so, which)?
->>> yes. the posix message queues are also using a single superblock filesystem. 
->>>
->>> If we want isolate them (for container needs for example), we also need to 
->>> create a new sb. The patchset I have uses a clone flag but using a mount 
->>> 'newns' really sounds like a better idea.
->> Let's call it newinstance if we are going to use the same option for devpts.
-> 
-> ok.
-> 
->> We can update "current->nsproxy->mqueuens" when the newinstance flag is passed
->> and otherwise we can mount whatever is the current mqueue filesystem for
->> the process.
-> 
-> yes. I'll rebase my previous patchset on this idea.
+"Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org> writes:
 
-Hello Eric,
+> Quoting Eric W. Biederman (ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org):
+>> "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org> writes:
+>> 
+>> > It definately seems to make sense in terms of the security
+>> > implications.  And solving this before the filesystem handlers seems
+>> > to make sense too.  Although I would like to get the first 3 patches
+> upstream
+>> > pretty soon, as I believe they are proper fixes.
+>> 
+>> Reasonable.  I'm not certain about free_user continuing to be an inline
+>> function as it seems a bit non-trivial, but otherwise that sounds correct.
+>
+> Great, I'll fix that and resend and ask for inclusion.
+>
+> So based on your input, here is how I'm seeing the next iteration of
+> usernamespace-filesystem interaction semantics:
+>
+> if
+> 	0=init_user_ns
+> 	(X,Y) = (userns X, uid Y)
+> 	(0,500) creates (1,0) and (1,1000)
+> 	(1,1000) creates a file /foo/bar
+> 	then
+> 		inode->i_uid = 1000
+> 		inode->i_userns = 1  (we use the mount-provided userns, right?)
+> 			i_userns storing is per-fs, but probably uses xattr)
 
-I've spent some time on the code and I'm facing some issues with the nsproxy 
-API if we are to keep the mqueue namespace in nsproxy: 
+However we get that information.  Caching it per inode looks like the right
+way to go.
 
-	int copy_namespaces(unsigned long flags, struct task_struct *tsk);
-	void exit_task_namespaces(struct task_struct *tsk);
-	void switch_task_namespaces(struct task_struct *tsk, struct nsproxy *new);
-	void free_nsproxy(struct nsproxy *ns);
-	int unshare_nsproxy_namespaces(unsigned long, struct nsproxy **,
-		struct fs_struct *);
+> 		the fs stores the fact that (0,500) owns userns 1
+> 			this might be stored just in /etc/userns.conf,
+> 			and parsed at mount time)
 
-nsproxy designed to work closely with the clone flags and it is not well
-suited to be called elsewhere than clone/unshare.
+> 	 when (1,1001) looks up /foo/bar, he sees owner=1000
+> 	 when (0,501) looks up /foo/bar, he sees owner=500
+> 	 when (0,501) creates (2,0) and (2,0) looksup /foo/bar,
+> 		he sees owner=0, mode bits clear except the 'other' bits
 
-So I could either : 
+Sounds right.  Either that or we reserve a different uid for the purpose.
+Still 0 appears to the be the traditional owner of unknown users in 
+tarballs so it should work as long as don't accidentally grant privilege.
 
-(1) make a special case for the mqueue namespace and duplicate some code 
-    to unshare it from ->get_sb() when the option 'newinstance' is used.
+> Put user_ns in struct inode so simple userid mapping can be done
+> in generic code.
 
-(2) to avoid duplicating code, use a clone_flags to unshare the mqueue 
-    namespace from ->get_sb() when the option 'newinstance' is used. that 
-    sounds silly because we might as well use sys_unshare() in that case.
+Yep.
 
-(3) move mq_ns out of nsproxy.  where shall I put it then ? 
+> Here is a weirdness:  If (0,500) creates some files as (1,1000)
+> under /home/hallyn/containers/vs1.  Now the system is rebooted, and the
+> /etc/userns.conf for some reason is not loaded.  Now when hallyn does
+> ls /home/hallyn/containers/vs1, he sees files owned by (0,0), with
+> only the 'other' permissions.  Now he can't make them setuid root so
+> it's no vulnerability.  Just a wart.
 
-    (3.1) task_struct ? 
-    (3.2) mnt namespace maybe ?
+Yep.
 
+> Is that what you had in mind?
 
+Yep.  That sounds right.  I think we have a little ways to go before we
+have the persistence side of things liked but the in kernel side of the
+semantics sounds correct.
 
-BTW, have you taken a look at what dave resent in July ? 
+> But I'll still look at doing capabilities first like you were
+> saying.
 
-	https://lists.linux-foundation.org/pipermail/containers/2008-July/011776.html
+Thanks.  That looks like a lot fewer conflicts.
 
-This is the mqueue namespace patchset using CLONE_NEWIPC to unshare.
- 
-I wonder if there are arguments against that approach. I might have 
-forgotten some of the issues with unshare as I haven't looked at the 
-code for some time.
-
-Thanks !
-
-C.
+Eric
