@@ -1,98 +1,59 @@
-From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
-Subject: Re: [0/10] User namespaces: introduction
-Date: Fri, 29 Aug 2008 02:40:13 -0700
-Message-ID: <m1y72gyxaa.fsf@frodo.ebiederm.org>
-References: <20080822194513.GA10262@us.ibm.com>
-	<m1d4k0ixzp.fsf@frodo.ebiederm.org>
-	<20080823011731.GA22737@us.ibm.com>
-	<m1sksw770k.fsf@frodo.ebiederm.org> <20080825195124.GA9361@us.ibm.com>
+From: Cedric Le Goater <clg@fr.ibm.com>
+Subject: Re: [patch -mm 0/4] mqueue namespace
+Date: Fri, 29 Aug 2008 11:46:03 +0200
+Message-ID: <48B7C55B.4090609@fr.ibm.com>
+References: <20071128163728.177495768@fr.ibm.com> <m11w2syfmk.fsf@frodo.ebiederm.org> <m1ve04vkov.fsf@frodo.ebiederm.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
+Content-Type: text/plain; charset=ISO-8859-1
 Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20080825195124.GA9361-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org> (Serge E. Hallyn's message of
-	"Mon, 25 Aug 2008 14:51:24 -0500")
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1756104AbYH2Jrw@vger.kernel.org>
+In-Reply-To: <m1ve04vkov.fsf@frodo.ebiederm.org>
+Sender: linux-kernel-owner@vger.kernel.org
+To: "Eric W. Biederman" <ebiederm@xmission.com>
+Cc: Andrew Morton <akpm@linux-foundation.org>, Linux Containers <containers@lists.osdl.org>, Linux Kernel Mailing List <linux-kernel@vger.kernel.org>, Pavel Emelianov <xemul@openvz.org>, Serge Hallyn <serue@us.ibm.com>
 List-Id: containers.vger.kernel.org
 
-"Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org> writes:
-
-> Quoting Eric W. Biederman (ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org):
->> "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org> writes:
->> 
->> > It definately seems to make sense in terms of the security
->> > implications.  And solving this before the filesystem handlers seems
->> > to make sense too.  Although I would like to get the first 3 patches
-> upstream
->> > pretty soon, as I believe they are proper fixes.
->> 
->> Reasonable.  I'm not certain about free_user continuing to be an inline
->> function as it seems a bit non-trivial, but otherwise that sounds correct.
+Eric W. Biederman wrote:
+> ebiederm@xmission.com (Eric W. Biederman) writes:
+> 
+>> One way to fix that is to add a hidden directory to the mnt namespace.
+>> Where magic in kernel filesystems can be mounted.  Only visible
+>> with a magic openat flag.  Then:
+>>
+>> fd = openat(AT_FDKERN, ".", O_DIRECTORY)
+>> fchdir(fd);
+>> umount("./mqueue", MNT_DETACH);
+>> mount(("none", "./mqueue", "mqueue", 0, NULL);
+>>
+>> Would unshare the mqueue namespace.
+>>
+>> Implemented for plan9 this would solve a problem of how do you get
+>> access to all of it's special filesystems.  As only bind mounts
+>> and remote filesystem mounts are available.  For linux thinking about
+>> it might shake the conversation up a bit.
+> 
+> Thinking about this some more.  What is especially attractive if we do
+> all namespaces this way is that it solves two lurking problems.
+> 1) How do you keep a namespace around without a process in it.
+> 2) How do you enter a container.
+> 
+> If we could land the namespaces in the filesystem we could easily
+> persist them past the point where a process is present in one if we so
+> choose.
 >
-> Great, I'll fix that and resend and ask for inclusion.
->
-> So based on your input, here is how I'm seeing the next iteration of
-> usernamespace-filesystem interaction semantics:
->
-> if
-> 	0=init_user_ns
-> 	(X,Y) = (userns X, uid Y)
-> 	(0,500) creates (1,0) and (1,1000)
-> 	(1,1000) creates a file /foo/bar
-> 	then
-> 		inode->i_uid = 1000
-> 		inode->i_userns = 1  (we use the mount-provided userns, right?)
-> 			i_userns storing is per-fs, but probably uses xattr)
+> Entering a container would be a matter of replacing your current
+> namespaces mounts with namespace mounts take from the filesystem.
+> 
+> I expect performance would degrade in practice, but it is tempting
+> to implement it and run a benchmark and see if we can measure anything.
 
-However we get that information.  Caching it per inode looks like the right
-way to go.
+http://wiki.openvz.org/Containers/Mini-summit_2008_notes
 
-> 		the fs stores the fact that (0,500) owns userns 1
-> 			this might be stored just in /etc/userns.conf,
-> 			and parsed at mount time)
+you seem to have talked about this idea at the summit but the notes
+are a bit short on the "entering a container" topic. Have you had time to
+work on the POC the notes are talking about ? 
 
-> 	 when (1,1001) looks up /foo/bar, he sees owner=1000
-> 	 when (0,501) looks up /foo/bar, he sees owner=500
-> 	 when (0,501) creates (2,0) and (2,0) looksup /foo/bar,
-> 		he sees owner=0, mode bits clear except the 'other' bits
+the mqueue namespace (and sysv ipc) is typically one of these namespaces
+with valid objects which can have no processes in it. 
 
-Sounds right.  Either that or we reserve a different uid for the purpose.
-Still 0 appears to the be the traditional owner of unknown users in 
-tarballs so it should work as long as don't accidentally grant privilege.
-
-> Put user_ns in struct inode so simple userid mapping can be done
-> in generic code.
-
-Yep.
-
-> Here is a weirdness:  If (0,500) creates some files as (1,1000)
-> under /home/hallyn/containers/vs1.  Now the system is rebooted, and the
-> /etc/userns.conf for some reason is not loaded.  Now when hallyn does
-> ls /home/hallyn/containers/vs1, he sees files owned by (0,0), with
-> only the 'other' permissions.  Now he can't make them setuid root so
-> it's no vulnerability.  Just a wart.
-
-Yep.
-
-> Is that what you had in mind?
-
-Yep.  That sounds right.  I think we have a little ways to go before we
-have the persistence side of things liked but the in kernel side of the
-semantics sounds correct.
-
-> But I'll still look at doing capabilities first like you were
-> saying.
-
-Thanks.  That looks like a lot fewer conflicts.
-
-Eric
+C. 
