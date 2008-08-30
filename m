@@ -1,11 +1,16 @@
-From: "Isabelle Kennedy" <lycopode-OAhaUWqbFdnwW4+ZUUiE8A@public.gmane.org>
-Subject: Native Instruments Absynth 4
-Date: Fri, 29 Aug 2008 13:53:12 +0200
-Message-ID: <000701c909cd$7012dd80$0100007f@pslil>
+From: Subrata Modak <subrata-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Subject: Re: [TESTING] Device whitelist on cgroups
+Date: Sun, 31 Aug 2008 00:15:57 +0530
+Message-ID: <1220121957.5034.9.camel@subratamodak.linux.ibm.com>
+References: <1219699261.5434.22.camel@subratamodak.linux.ibm.com>
+	<20080826133358.GB12266@us.ibm.com> <48B40FC7.2000900@openvz.org>
+	<20080826160003.GA21827@us.ibm.com>
+Reply-To: subrata-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <20080826160003.GA21827-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -15,36 +20,38 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
+To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>, Veerendra <veeren-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Cc: ltp-list <ltp-list-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Veerendra Chandrappa <vechandr-xthvdsQ13ZrQT0dZR+AlfA@public.gmane.org>, Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Serge Hallyn <serue-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-*The following titles and more are now available for pcs and macs=
-
-Windows Vista Business
-Windows Vista Business
-FruityLoops Studio 8 XXL Edition
-Native Instruments Absynth 4
-Office 2007 Ultimate
-Office 2007 Ultimate
-
-* xpsummerdeals . com =
-
-System Requirements
-= For PC:
-= Intel Pentium 4 (1.4GHz processor), Intel Centrino, Intel Xeon Office 2007 Ultimate or Intel Core Duo (or Office 2007 Ultimate) processor; SSE2-enabled processor required for AMD systems & Microsoft Windows XP with Service Pack 2 or Microsoft Windows Vista Home Premium, Business, Ultimate, or Enterprise (certified for 32-bit editions)
-= 512MB of RAM or more
-= 1GB of available hard-disk space (additional free space Office 2007 Ultimate)
-= Microsoft compatible sound card (multichannel ASIO-compatible sound card recommended)
-= 1,024x768 monitor resolution with 32-bit color adapter recommended
-= CD-R or DVD-ROM drive
-
-* For MAC:
-* PowerPC G4 or G5 or multicore Intel processor
-* Mac OS X or similar
-* 512MB of RAM or more
-* 1GB of available hard-disk space
-* Core Audio compatible sound card
-* 1,024x768 monitor resolution with 32-bit color adapter
-* DVD-ROM drive= DVD+-R burner required for DVD creation
-
-Suicide Bombers Hit Pakistani Arms Factory
+Ck9uIFR1ZSwgMjAwOC0wOC0yNiBhdCAxMTowMCAtMDUwMCwgU2VyZ2UgRS4gSGFsbHluIHdyb3Rl
+Ogo+IFF1b3RpbmcgUGF2ZWwgRW1lbHlhbm92ICh4ZW11bEBvcGVudnoub3JnKToKPiA+IFNlcmdl
+IEUuIEhhbGx5biB3cm90ZToKPiA+ID4gUXVvdGluZyBTdWJyYXRhIE1vZGFrIChzdWJyYXRhQGxp
+bnV4LnZuZXQuaWJtLmNvbSk6Cj4gPiA+PiBTZXJnZSwKPiA+ID4+Cj4gPiA+PiBJIGhhdmUgYW5v
+dGhlciBkb3VidC4gQXJlIHdlIGFsc28gaGF2aW5nIHRoZSBwbGFuKHMpIHRvIGFkZCB0ZXN0Y2Fz
+ZXMKPiA+ID4+IGZvciB0ZXN0aW5nIHRoaXMgbmV3IGZlYXR1cmUgKERldmljZSB3aGl0ZWxpc3Qg
+b24gY2dyb3VwcykgYWRkZWQgaW4KPiA+ID4+IDIuNi4yNiB1bmRlciB0aGUgREVWSUNFIE5BTUVT
+UEFDRSBjYXRlZ29yeSAhIQo+ID4gPj4KPiA+ID4+IFJlZ2FyZHMtLQo+ID4gPj4gU3VicmF0YQo+
+ID4gPiAKPiA+ID4gVGhhdCdzIHNvbWV0aGluZyBJIGV4cGVjdCBWZWVyZW5kcmEgd291bGQgZG8g
+bmV4dCB5ZWFyLiAgKFZlZXJlbmRyYSwKPiA+ID4gaWYgeW91IGhhdmUgdGltZSB0aGlzIHllYXIs
+IHBsZWFzZSBsZXQgbWUga25vdykuCj4gPiA+IAo+ID4gPiBJdCBhbHNvIHNlZW1zIGxpa2VseSB0
+aGF0IHRoZSBvcGVudnogZm9sa3MsIHdobyBhcmUgdXNpbmcgdGhpcywKPiA+ID4gaGF2ZSBzb21l
+IHRlc3RjYXNlcyB0aGV5IGNvdWxkIHNoYXJlLiAgUGF2ZWw/Cj4gPiAKPiA+IFdlIGhhdmUgYW5k
+IHdlIGNvdWxkIHNoYXJlIHRoZW0sIGJ1dCB1bmZvcnR1bmF0ZWx5IHRoZWlyIAo+ID4gKmltcGxl
+bWVudGF0aW9uKiBpcyBjb21wbGV0ZWx5IHVzZWxlc3Mgd2l0aG91dCB0aGUgd2hvbGUgCj4gPiB0
+ZXN0aW5nIGluZnJhc3RydWN0dXJlIHdlIHVzZSAod2hpY2ggaXQgdHVybiBpcyB0b28gaGVhdnkK
+PiA+IGFuZCB0b28gVmlydHVvenpvLXNwZWNpZmljIHRvIGJlIHNoYXJlZCkuCj4gPiAKPiA+IEFs
+bCBJIGNhbiBpcyBwcm92aWRlIGEgc2luZ2xlIHRlc3RjYXNlIHdlIHBlcmZvcm06IHNldCBzb21l
+Cj4gPiBwZXJtaXNzaW9ucyBhbmQgY2hlY2sgdGhhdCB0aGUgYWxsb3dlZCBkZXZpY2VzIGFyZSBh
+bGxvd2VkCj4gPiBhbmQgbm90IGFsbG93ZWQgYXJlIG5vdCBhbGxvd2VkIDspCj4gCj4gT2ssIHRo
+YW5rcywgUGF2ZWwuICBTb3VuZHMgbGlrZSBzdGFydGluZyBmcm9tIHNjcmF0Y2ggd291bGQgYmUK
+PiB0aGUgc2ltcGxlc3QgdGhpbmcgaGVyZS4KClBhdmVsLAoKWW91IGNhbiBldmVuIHNoYXJlIHRo
+YXQgc2luZ2xlIHRlc3QgY2FzZSB3aXRoIHVzLiBUaGlzIGNhbiBoZWxwClZlZXJlbmRyYSB0byBn
+ZXQgYSBkaXJlY3Rpb24gd2hlbiBoZSBzdGFydHMgd3JpdGluZyBmb3IgREVWSUNFIE5hbWVzcGFj
+ZQp0ZXN0IGNhc2VzIGVpdGhlciB0aGlzIHllYXIsIG9yLCBuZXh0IHllYXIuIEkgZmVlbCBpdMK0
+cyBhbHdheXMgYmV0dGVyIHRvCmdldCBhIGdvb2Qgc3RhcnQgaWYgd2UgaGF2ZSBzb21lIGRpcmVj
+dGlvbiBpbiBvdXIgaGFuZHMuIFBhdmVsLCBwbGVhc2UKc2hhcmUgdGhlIHNhbWUuCgpSZWdhcmRz
+LS0KU3VicmF0YQoKPiAKPiAtc2VyZ2UKCl9fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19f
+X19fX19fX19fX19fX19fCkNvbnRhaW5lcnMgbWFpbGluZyBsaXN0CkNvbnRhaW5lcnNAbGlzdHMu
+bGludXgtZm91bmRhdGlvbi5vcmcKaHR0cHM6Ly9saXN0cy5saW51eC1mb3VuZGF0aW9uLm9yZy9t
+YWlsbWFuL2xpc3RpbmZvL2NvbnRhaW5lcnM=
