@@ -1,11 +1,14 @@
-From: "lopch-liue-VXdhtT5mjnY@public.gmane.org" <lopch-liue-VXdhtT5mjnY@public.gmane.org>
-Subject: =?GB2312?B?ssm5urHYsbi1xLeowsnWqsq2us26z82sudzA7Q==?=
-Date: Sun, 31 Aug 2008 17:20:13 +0800
-Message-ID: <200808310921.m7V9L0CL020838@smtp1.linux-foundation.org>
+From: Cedric Le Goater <clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [RFC v2][PATCH 4/9] Memory management - dump state
+Date: Sun, 31 Aug 2008 19:34:47 +0200
+Message-ID: <48BAD637.2050505__16891.0896675245$1220204235$gmane$org@fr.ibm.com>
+References: <Pine.LNX.4.64.0808202251500.17436@takamine.ncl.cs.columbia.edu>	<Pine.LNX.4.64.0808202304490.17436@takamine.ncl.cs.columbia.edu>	<1219437422.20559.146.camel@nimitz>	<48B0F449.2000006@cs.columbia.edu>	<1219768406.8680.17.camel@nimitz>	<48B49C61.1040003@cs.columbia.edu>	<1219851696.8680.67.camel@nimitz>	<20080827203427.GA1158@us.ibm.com>	<1219869510.8680.90.camel@nimitz>	<20080827204853.GA4189@us.ibm.com>	<1219870576.8680.96.camel@nimitz>
+	<48BA454F.7050308@cs.columbia.edu>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="gb2312"
-Content-Transfer-Encoding: base64
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <48BA454F.7050308-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -15,76 +18,111 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Cc: linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, jeremy-TSDbQ3PG+2Y@public.gmane.org, arnd-r2nGTMty4D4@public.gmane.org, Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09
-PT09PT09PT09PT09PT09PT09PQogICAgICAgICAgICAgICAgICAgIAoKICAgICAgICAgICAgICAg
-ICAgICAgssm5urHYsbi1xLeowsnWqsq2us26z82sudzA7QoKCsqxvOTT67XYteOjugoyMDA4xOo4
-1MIzMC0zMcjVICDJ7tvaCjIwMDjE6jnUwjI2LTI3yNUgIMnPuqMKPT09PT09PT09PT09PT09PT09
-PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09
-PQq74S3O8S3X6S3Wr6O6TSBNIEMgudwgwO0g0acg1LogCgrIq7n6zbPSu7f+zvG157uwo7qjtKOw
-o7CjraO4o7ijuaO5o7ajsqO4CgrJz7qjtdjH+Neoz9+juqOwo7KjsaOto7WjsaOwo7mjuaO0o7ej
-tQoKueO2q7XYx/jXqM/fo7qjsKOyo7CjraOzo7OjuaO3o7KjsqOxo7YKCrGoLsP7LsH3LrPMOsC0
-tefXydGvofqxqMP7se2h+rvYtKuxqMP7se2h+reis/ayzrzTyLfIz7qvofqz1si3yM+6r7LOvNMK
-CrfRPT09PdPDo7qjsqOyo7CjsNSqL8jLIKOosPzAqMXg0bW30aOv18rBz7fRo6/O57LNt9Gjr9Tn
-teOy6LXjo6/LsLfRtcijqQo9PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09
-PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09CqHxIL/Os8zS4tLlCiAgICDT0Lrc
-tuDIy9LUzqq1o8jO0ru80rmry761xLLJubqyorK7ysfSu7z+uty4tNTTtcS5pNf3o6zK4rK71qq0
-07mp06bJzNGh1PEKtb25qdOmycy53MDto6zG5NbQ1Myy2NfF1u624NGnzsq6zby8yvWho7b4yOe5
-+8T6z6PN+7PJzqrSu867vqvNqLLJubq5pNf3tcTXqArStcjLyr+jrMTHw7SjrMHLveKyybm6us/N
-rLywxuTP4LnYtcS3qMLJ1qrKttKyysfG5NbQ0rvP7tbY0qq1xLy8xNyho8T6yse38cTcCrm7tNPX
-3Mzlyc+w0c7Vus/NrMy4xdC6zbrPzay53MDttcTW2LXjo7/E+srHt/HE3L2rt6jCybHks8mw79b6
-xPq5pNf3tcTSu9bWyrUK08O5pL7fo7/I57n7xPrT0NXi0fm1xMbazfujrMTHw7TP4NDFxPqx2Mi7
-u+HU2tGnz7DN6tXiw8W/zrPM1q6689PQz+C1sbXEytXS5qGjCgqh8SCyzrzTttTP8wogICAgssm5
-ur6twO0sssm5utb3udwsssm5urrPzay53MDt0K2198jL1LEsuLrU8LLJubq6z82szLjF0LXEuaTX
-98jL1LEKPT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09
-PT09PT09PT09PT09PT09PT09PT09PT09PQqh8SDE2sjdtPO42Qq12tK7sr+31qO6ssm5urrPzay1
-xNe8sbgKINK7oaLI57rOttS5qdOmycy21L340NC3qMLJ18q48cnzsumjvwogtv6hosut09DIqLT6
-se3G89K1vfjQ0LrPzazMuMXQo78KICAgICAtLS0ttPrA7dPrytrIqM7KzOIKIMj9oaLXvLG4usPE
-47XEus/NrM7Esb6jus6qxOO1xLrPzazMuMXQu63NvAoKtdq2/rK/t9ajurLJubq6z82stcTMuMXQ
-0+vHqbapCiDSu6Gissm5urrPzazNqLOjsdjQ677fsbjExNCpzPW/7qO/CiC2/qGiveLO9rj3wODQ
-zbXEssm5urrPzazM9b/uCiAgICAgLS0tLbK7zazW1sDgtcSyybm60uLOttfFsrvNrLXEus/NrMy4
-xdDW2LXjCiAgIDGhorfWzvazo7nmzu/Bz7LJubqjur340ruyvcHLveK/8rzcus/NrAogICAyoaK3
-1s720ru0ztDUyeixuLLJuboKICAgM6Git9bO9rf+zvGyybm6CiDI/aGitNO6z82ss8nBorW9us/N
-rMn60KcKICAgMaGius/NrLPJwaKjutKq1LzT67PQxbUKICAgMqGisrvNrMfpv/bPwrXEus/NrMn6
-0KcKIMvEoaKyybm6us/NrMeptqnKsbzktcTIt7aovLCyybm6us/NrMeptqm12LXjtcTRodTxCiAg
-IDGhorrPzay1xMeptqnKsbzkyOe6zsi3tqijvwogICAyoaLI57rOyLe2qLrPzazHqbaptcS12LXj
-o78KICAgM6Gius/NrMeptqm12LXjttS6z82stcTWtNDQtb2119PQyrLDtNOwz+yjvwoKtdrI/bK/
-t9ajurLJubq6z82stcS53MDt0+vWtNDQCiDSu6Gissm5urrPzay53MDttcS3vbeo0+vW2LXjCiC2
-/qGius/NrNa00NAKICAgMaGius/NrNa00NC5/bPM1tDTprDRztW1xNSt1PIKICAgMqGi1rTQ0LrP
-zay1xLn9s8zW0Mjnus62tLLs0+u/2NbGt+fP1aO/CiAgIDOhori2v+7HsLXE1Nm0zsnzsukKCrXa
-y8Syv7fWo7qyybm6us/NrLXEseS4/NPrt6LJ+tX50unKsbXEsrm+yAog0ruhorLJubq6z82sw+bB
-2bHkuPzKsdT1w7Sw7KO/CiAgICAgLS0tLdTZtM606MnM0tSx47rPzazQ3rjECiC2/qGit6LJ+tX5
-0um687XEsrm+yLTryqkKIMj9oaLL38vPL9bZssPB97PMvPK96Qo9PT09PT09PT09PT09PT09PT09
-PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09
-CqHxIL2yyqa96cncCiAgICBTdW5ueSBMSVUgILHP0rXT2tbQufrV/reotPPRp6Osz9bOqsnPuqPK
-wLT6wsnKpsrCzvHL+cLJyqahorrPu+/Iy6GjU3VubnkK1Pi1o8jOtuC80rTz0M28r83FvLC6z9fK
-xvPStbXEt6jCybnLzsqjrLi61PDV4tCpxvPStbXEttTN4s/uxL+6z9f3t6jCycrCzvG8sAq3qMLJ
-zLjF0KO7MjAwNcTqo6xTdW5ueb34yOvIq8fyxeDRtcXFw/u12tK7tcTF4NG1uavLvkNlZ29zo6y1
-o8jOt6jCycXg0bW437y2CrnLzsqjrLbAwaK4utTwuMO5q8u+yKuyv7eowsnF4NG1v86zzLXE0dC3
-oqGi1sbX99PrvbLK2qOsy/2xvsjLv6q3otPrvbLK2rXEt6gKwsm/zrPMuq24x8LywvS6z82sxeDR
-taGiyMvBptfK1LS3qMLJoaLP7sS/us/NrMXg0bWhos7vwfe3qMLJxeDRtbywuavLvreowsm8sArQ
-0NX+yMvUsbeowsm1yKGj1Nq24MTqtcS5pNf31tCjrFN1bm551NrG89K1t6jCydOm08PB7NPyu/3A
-28HLz+C1sbXEvq3R6aOsttQKuavLvtTL1/ehorrPzay53MDtvLDIy8Gm18rUtLeowsnKws7xtci3
-x7OjyuzPpKOssqLU+NOm1f64rqGitPPQzbn609DG89K1us3N4grXysbz0rW1xNKqx/PM4bmpz+C5
-2MXg0bWhowogICBTdW5uebXExeDRtbfnuPHH5dDC19TIu6Oswt+8rcflzvqjrMu8wrfD9L3do6zN
-rMqxo6zL/bXEv86zzNDFz6LBv7Tzo6zHv7X3Csq108PQ1KOszai5/c/Ws6G08NLJoaLS1Lyw0O22
-4Mq1vMrJ+ravtcSwuMD9t9bO9sC0sO/W+rLOvNPV373ivva5pNf3tcTAp7vzo6wKzOG439aw0rW8
-vMTco6zG5L/Os8y++crctb3Rp9SxtcS437bIxsC826GjCiAgICDU+L3Tyty5/VN1bm55z+C52L/O
-s8y1xNb30qrE2tG1v827p9PQo7rTorn6wezKwrndzsS7r7T6se20pqOoQnJpdGlzaCBDb3VuCmNp
-bKOpoaLF07DNtc+jqEJvbWJhcmRpZXKjqaGiyc+6o8jVwaKjqEhpdGFjaGmjqaGit6i5+sW3ydC8
-r83Fo6hBdWNoYW6jqaGixbcKyPC/taOob2VybGlrb26jqaGisNnN/sahvsajqEJ1ZHdlaXNlcqOp
-oaKwzcu5t/KjqEJhc2ajqaGiufrCw9TLzaijqENJVFMgQW1lcmkKY2FuIEV4cHJlc3OjqaGitPPW
-2sb7s7W98Mjao6hWV0ajqbXICiAgICDU+LLOvNO5/VN1bm55z+C52Lmrv6q/zrXE1vfSqr/Ou6fT
-0KO60e/X07DNy7m38qGisabC7aOoQk1Xo6mhotK7xvu34czvo6hUCm95b3Rho6mhor/Vxvi7r7mk
-o6hBaXIgUHJvZHVjdKOpoaLKpbjqsOCjqFNhaW50LUdvYmFpbqOpoaLO98PF19OjqFNpZW1lbnOj
-qaGiCtbQufq6o9Hzyq/TzaOoQ25vb2OjqaGit6i5+rXnwaajqEUuRC5Go6mhore60cew4MTDo6hQ
-YW5hbHBpbmGjqaGitcC077b7yq/TzaOoClRvdGFso6mhorDdtvq7r9Gno6hCYXllcqOpoaLnsdbC
-yrHXsKOoQmVzdHNlbGxlcqOpoaLW0M3i1MujqFNpbm90cmFuc6OpoaKwrsGiCtDFo6hFcmljc3Nv
-bqOpoaLNqNPDtefG+KOoR0WjqaGix7/J+qOoSiZKo6mhosCtt6i7+aOoTGFmYXJnZaOptcihowo9
-PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09
-PT09PT09PT09PT09PT09PT09Cl9fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19f
-X19fX19fX19fCkNvbnRhaW5lcnMgbWFpbGluZyBsaXN0CkNvbnRhaW5lcnNAbGlzdHMubGludXgt
-Zm91bmRhdGlvbi5vcmcKaHR0cHM6Ly9saXN0cy5saW51eC1mb3VuZGF0aW9uLm9yZy9tYWlsbWFu
-L2xpc3RpbmZvL2NvbnRhaW5lcnM=
+Oren Laadan wrote:
+> Dave, Serge:
+> 
+> I'm currently away so I must keep this short. I think we have so far
+> more discussion than an actual problem. I'm happy to coordinate with
+> every interested party to eventually see this work go into main stream.
+
+thanks. We do need a moderator and federator.
+
+> My only concerns are twofold: first, to get more feedback I believe we
+> need to get the code a bit more usable; including FDs is an excellent
+> way to actually do that. That will add significant value to the patch.
+
+hmm, yes and no.
+
+fd's are a must have but I would be more interested to see an external
+checkpoint/restart and signal support first. why ? because it would be 
+already usable for most computational programs in HPC, like this stupid 
+one :
+
+	https://www.ccs.uky.edu/~bmadhu/pi/pi1.c
+
+signals are required because it's how 'load' and/or 'system' managers
+interact with the jobs they spawn. external checkpoint/restart for the
+same reason.
+
+for files, I would first only care about stdios (make sure they're 
+relinked to something safe on restart) and file states of regular files. 
+contents is generally handled externally (deleted files being an annoying 
+exception)
+
+then, support for openmp application is a nice to have, so I'd probably 
+go on with thread support.
+
+> I think it's important to demonstrate how shared resources and multiple
+> processes are handled. FDs demonstrate the former (with a fixed version
+> of the recent patchset - I will post soon).
+
+shared resources are only useful in a multiprocess/multitask context. 
+I'd start working on this first. here we jump directly in the pid namespace
+issues, how we start a set of process in a pidnamespace ? how do we 
+relink it to its parent pidnamespace ? are signals well propagated ? etc. 
+but hey, we'll have to solve it one day.
+
+FD's are shared but have many types which are pain to handle. (it would 
+interesting to see if we can add checkpoint() and restart() operations in 
+fileops) So, for shared resources demonstration, I'd work on sysvipc, 
+there are less types to handle and they force us to think how we are going 
+to merge with the sysvipc namespaces. 
+
+> The latter will increase the size of the patchset significantly, so 
+> perhaps can indeed wait for now.
+
+hmm, that depends how you do it.
+
+If you restart all the hierarchy in the kernel, It will increase for sure 
+the patch footprint. However if you restore the hierarchy from user space 
+and then let each process restore itself from some binary blob, it should
+not. This, of course, means that the binary blob representing the state of 
+the container (we call it statefile) is not totally opaque. It see it a bit 
+like  /proc, a directory containing shared states (all namespaces) and tasks 
+states. That's something to discuss.
+
+I do prefer the second option for many reasons: 
+
+. each process restarts itself from its current context, this makes it easier 
+  to reuse kernel services depending on current. 
+
+. user tools can evaluate more precisely what they are going to restart from 
+  the statefile. see this as a generalised 'readelf' that would be run on 
+  the statefile, like we do on a core file today.
+   
+
+> It should not be hard for me to add functionality on top of a more
+> basic patchset. The question is, what is "basic" ?  Anyway, I will be
+> back towards the end of the week. Let's try to discuss this over IRC
+> then (e.g. Friday afternoon ?).
+
+IHMO, the first one is to support a 'basic' computational program in 
+a real environment (under a load manager HPC). your POC nearly reaches
+it but the user space API (how to launch, checkpoint, restart) needs to 
+be worked on.
+
+
+There are some big steps in the development.
+
+Multi-task is a big step which opens plenty of other big steps with
+shared resources : mem, ipc, fds, etc. Not all have to be solved
+but at least detected if we don't have the support.
+
+Network is another one. This is an interesting step to support 
+distributed application using MPI over TCP. May be a priority.
+
+there are also plenty of funky kernel resources used by misc servers,
+database that will need special attention.
+
+
+
+I'll be happy to start with the basic menu first as I know that it will
+be useful for many applications ! 
+
+Thanks,
+
+C.
