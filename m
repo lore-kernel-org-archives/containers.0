@@ -1,19 +1,15 @@
 From: Cedric Le Goater <clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [RFC][PATCH 0/8][v2]: Enable multiple mounts of devpts
-Date: Wed, 03 Sep 2008 13:43:01 +0200
-Message-ID: <48BE7845.6070500@fr.ibm.com>
-References: <20080821022126.GA29449@us.ibm.com> <48ACD6CB.5030706@zytor.com>
-	<20080821031028.GB30205@us.ibm.com>
-	<48ACDDC7.3000704@zytor.com> <48AD991F.9010906@fr.ibm.com>
-	<48AD9A97.6000807@zytor.com> <48AD9DCD.3060306@fr.ibm.com>
-	<m1fxoys1ng.fsf@frodo.ebiederm.org>
-	<48ADD7D3.7080400@fr.ibm.com> <48B7BB3C.5080404@fr.ibm.com>
-	<20080902030426.GB12277@us.ibm.com>
+Subject: Re: [PATCH 1/9] Introduce trivial sys_checkpoint and sys_restore
+	system	calls
+Date: Wed, 03 Sep 2008 13:44:05 +0200
+Message-ID: <48BE7885.3070609__26520.1780865484$1220442426$gmane$org@fr.ibm.com>
+References: <1220439476-16465-1-git-send-email-major@openvz.org>
+	<1220439476-16465-2-git-send-email-major@openvz.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20080902030426.GB12277-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <1220439476-16465-2-git-send-email-major-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -23,58 +19,58 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Cc: kyle-hoO6YkzgTuCM0SS3m2neIg@public.gmane.org, Dave Hansen <dave-gkUM19QKKo4@public.gmane.org>, bastian-yyjItF7Rl6lg9hUCZPvPmw@public.gmane.org, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, "H. Peter Anvin" <hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org>, containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, alan-qBU/x9rampVanCEyBjwyrvXRex20P6io@public.gmane.org, xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org
+To: Andrey Mirkin <major-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
->>
->> (3) move mq_ns out of nsproxy.  where shall I put it then ? 
->>
->>     (3.1) task_struct ? 
->>     (3.2) mnt namespace maybe ?
+Andrey Mirkin wrote:
+> Right now they just return -ENOSYS. Later they will provide functionality
+> to checkpoint and restart a container.
 > 
-> I think the last one is the way to go.
+> Both syscalls take as arguments a file descriptor and flags.
+> Also sys_checkpoint take as the first argument a PID of container's init
+> (later it will be container ID); sys_restart takes as the first argument
+> a container ID (right now it will not be used).
 > 
-> mnt_namespace points to mq_ns.
+> Signed-off-by: Andrey Mirkin <major-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+> ---
+>  Makefile                           |    2 +-
+>  arch/x86/kernel/syscall_table_32.S |    2 +
+>  cpt/Makefile                       |    1 +
+>  cpt/sys_core.c                     |   38 ++++++++++++++++++++++++++++++++++++
+>  include/asm-x86/unistd_32.h        |    2 +
+>  5 files changed, 44 insertions(+), 1 deletions(-)
+>  create mode 100644 cpt/Makefile
+>  create mode 100644 cpt/sys_core.c
 > 
-> At clone(CLONE_NEWMNT), the new mnt namespace receives a copy of the
-> parent's mq_ns.
+> diff --git a/Makefile b/Makefile
+> index ea413fa..1dee5c0 100644
+> --- a/Makefile
+> +++ b/Makefile
+> @@ -619,7 +619,7 @@ export mod_strip_cmd
+>  
+>  
+>  ifeq ($(KBUILD_EXTMOD),)
+> -core-y		+= kernel/ mm/ fs/ ipc/ security/ crypto/ block/
+> +core-y		+= kernel/ mm/ fs/ ipc/ security/ crypto/ block/ cpt/
+>  
+>  vmlinux-dirs	:= $(patsubst %/,%,$(filter %/, $(init-y) $(init-m) \
+>  		     $(core-y) $(core-m) $(drivers-y) $(drivers-m) \
+> diff --git a/arch/x86/kernel/syscall_table_32.S b/arch/x86/kernel/syscall_table_32.S
+> index fd9d4f4..4a0d7fb 100644
+> --- a/arch/x86/kernel/syscall_table_32.S
+> +++ b/arch/x86/kernel/syscall_table_32.S
+> @@ -333,3 +333,5 @@ ENTRY(sys_call_table)
+>  	.long sys_pipe2
+>  	.long sys_inotify_init1
+>  	.long sys_hijack
+> +	.long sys_checkpoint
+> +	.long sys_restart		/* 335 */
 
-hmm, hmm, hmm, I still thinking about this.
- 
-> If a task does
-> 	mount -o newinstance -t mqueue none /dev/mqueue
-> then its current->nsproxy->mnt_namespace->mqns is switched
-> to point to a new instance of the mq_ns.
-> 
-> mnt_ns->mq_ns has pointers to the sb (and hence root dentry) of the
-> devpts fs.
+this patchset is based on top of :
 
-[trying to understand what you have in mind ]
+git://git.kernel.org/pub/scm/linux/kernel/git/daveh/linux-2.6-lxc.git
 
-why not keep the 'struct vfsmount' in the mq_ns, as the code is doing 
-today ? the vfsmount holds both the root dentry and the superblock.
-
-> When a task does mq_open(name, flag), then name is in the mqueuefs
-> found in current->nsproxy->mnt_namespace->mqns.
-> 
-> But if a task does
-> 
-> 	clone(CLONE_NEWMNT);
-> 	mount --move /dev/mqueue /oldmqueue
-> 	mount -o newinstance -t mqueue none /dev/mqueue
-> 
-> then that task can find files for the old mqueuefs under
-> /oldmqueue, while mq_open() uses /dev/mqueue since that's
-> what it finds through its mnt_namespace.
-
-That I don't like. 
-
-Even though posix mqueue objects can outlive a process, I don't think 
-a process should be able to peek and poke in a message queue namespace 
-other than his. this is the basic principle of the namespaces : 
-isolation. Am I wrong ?
-
-couldn't we just return EACCES ? (not posix) 
+right ?
 
 C.
