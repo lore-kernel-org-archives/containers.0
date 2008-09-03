@@ -1,15 +1,20 @@
-From: Andrey Mirkin <amirkin-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
-Subject: Re: [Devel] Re: [RFC v2][PATCH 4/9] Memory management - dump state
-Date: Wed, 3 Sep 2008 15:43:21 +0400
-Message-ID: <200809031543.24001.amirkin__49297.1782027327$1220442555$gmane$org@parallels.com>
-References: <Pine.LNX.4.64.0808202251500.17436@takamine.ncl.cs.columbia.edu>
-	<48BA454F.7050308@cs.columbia.edu> <48BAD637.2050505@fr.ibm.com>
+From: Cedric Le Goater <clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [RFC][PATCH 0/8][v2]: Enable multiple mounts of devpts
+Date: Wed, 03 Sep 2008 13:47:37 +0200
+Message-ID: <48BE7959.1080109@fr.ibm.com>
+References: <20080821022126.GA29449@us.ibm.com> <48ACD6CB.5030706@zytor.com>
+	<20080821031028.GB30205@us.ibm.com>
+	<48ACDDC7.3000704@zytor.com> <48AD991F.9010906@fr.ibm.com>
+	<48AD9A97.6000807@zytor.com> <48AD9DCD.3060306@fr.ibm.com>
+	<m1fxoys1ng.fsf@frodo.ebiederm.org>
+	<48ADD7D3.7080400@fr.ibm.com> <48B7BB3C.5080404@fr.ibm.com>
+	<20080902030426.GB12277@us.ibm.com>
+	<m1vdxeeuk0.fsf@frodo.ebiederm.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <48BAD637.2050505-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
-Content-Disposition: inline
+In-Reply-To: <m1vdxeeuk0.fsf-B27657KtZYmhTnVgQlOflh2eb7JE58TQ@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,133 +24,75 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: devel-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org
-Cc: jeremy-TSDbQ3PG+2Y@public.gmane.org, arnd-r2nGTMty4D4@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, Cedric Le Goater <clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
+To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+Cc: kyle-hoO6YkzgTuCM0SS3m2neIg@public.gmane.org, Dave Hansen <dave-gkUM19QKKo4@public.gmane.org>, bastian-yyjItF7Rl6lg9hUCZPvPmw@public.gmane.org, "H. Peter Anvin" <hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org>, containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, alan-qBU/x9rampVanCEyBjwyrvXRex20P6io@public.gmane.org, xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Sunday 31 August 2008 21:34 Cedric Le Goater wrote:
-> Oren Laadan wrote:
-> > Dave, Serge:
-> >
-> > I'm currently away so I must keep this short. I think we have so far
-> > more discussion than an actual problem. I'm happy to coordinate with
-> > every interested party to eventually see this work go into main stream.
->
-> thanks. We do need a moderator and federator.
->
-> > My only concerns are twofold: first, to get more feedback I believe we
-> > need to get the code a bit more usable; including FDs is an excellent
-> > way to actually do that. That will add significant value to the patch.
->
-> hmm, yes and no.
->
-> fd's are a must have but I would be more interested to see an external
-> checkpoint/restart and signal support first. why ? because it would be
-> already usable for most computational programs in HPC, like this stupid
-> one :
->
-> 	https://www.ccs.uky.edu/~bmadhu/pi/pi1.c
->
-> signals are required because it's how 'load' and/or 'system' managers
-> interact with the jobs they spawn. external checkpoint/restart for the
-> same reason.
+Eric W. Biederman wrote:
+> "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org> writes:
+> 
+>>>     (3.2) mnt namespace maybe ?
+>> I think the last one is the way to go.
+>>
+>> mnt_namespace points to mq_ns.
+>>
+>> At clone(CLONE_NEWMNT), the new mnt namespace receives a copy of the
+>> parent's mq_ns.
+>>
+>> If a task does
+>> 	mount -o newinstance -t mqueue none /dev/mqueue
+>> then its current->nsproxy->mnt_namespace->mqns is switched
+>> to point to a new instance of the mq_ns.
+>>
+>> mnt_ns->mq_ns has pointers to the sb (and hence root dentry) of the
+>> devpts fs.
+>>
+>> When a task does mq_open(name, flag), then name is in the mqueuefs
+>> found in current->nsproxy->mnt_namespace->mqns.
+>>
+>> But if a task does
+>>
+>> 	clone(CLONE_NEWMNT);
+>> 	mount --move /dev/mqueue /oldmqueue
+>> 	mount -o newinstance -t mqueue none /dev/mqueue
+>>
+>> then that task can find files for the old mqueuefs under
+>> /oldmqueue, while mq_open() uses /dev/mqueue since that's
+>> what it finds through its mnt_namespace.
+> 
+> Serge if we can make the lookup a pure mount namespace operation
+> i.e. a well known path.  Than I don't have any problems with it.
+> Otherwise it looks like abuse of the mount namespace.
+> 
+> In particular.  The best approximation I have is to change the
+> kernel to simply lookup "/dev/mqueue" and if not found fallback
+> to the initial kernel instance.
+> 
+> I'm staring at the code as I really haven't looked at it enough
+> but it sure looks like we can transform it into a proper filesystem
+> with just a touch of backwards compatibility logic.
+> - put the current mq_namespace in the superblock.
 
-I'm sorry for being out of discussion for so long time.
-I've just sent a patchset with external checkpoint/restart as it is 
-implemented in OpenVZ.
-External checkpoint/restart also is very usefull if we will have container's 
-infrastructure in mainstream.
-It won't be very hard to add support for signals in my patchset. I'll wait for 
-some time for comments and will add support for signals in next version.
+ok that is done. using the s_fs_info.
 
-Regards,
-Andrey
+> - Have open/unlink lookup "/dev/mqueue" to find the filesystem
+>   if nothing is found fallback to the internal mount otherwise error.
 
+what do you mean ? loop on the mnt_namespace of current to find a 
+'struct vfsmount' pointing to /dev/mqueue ?
+
+C.
+
+> - Possibly put the tunables in a subdirectory? and 
+>   bind mount that subdirectory on top of /proc/sys/fs/mqueue/
+> 
+>   I'm too thrilled about the tunables but still.
 >
-> for files, I would first only care about stdios (make sure they're
-> relinked to something safe on restart) and file states of regular files.
-> contents is generally handled externally (deleted files being an annoying
-> exception)
->
-> then, support for openmp application is a nice to have, so I'd probably
-> go on with thread support.
->
-> > I think it's important to demonstrate how shared resources and multiple
-> > processes are handled. FDs demonstrate the former (with a fixed version
-> > of the recent patchset - I will post soon).
->
-> shared resources are only useful in a multiprocess/multitask context.
-> I'd start working on this first. here we jump directly in the pid namespace
-> issues, how we start a set of process in a pidnamespace ? how do we
-> relink it to its parent pidnamespace ? are signals well propagated ? etc.
-> but hey, we'll have to solve it one day.
->
-> FD's are shared but have many types which are pain to handle. (it would
-> interesting to see if we can add checkpoint() and restart() operations in
-> fileops) So, for shared resources demonstration, I'd work on sysvipc,
-> there are less types to handle and they force us to think how we are going
-> to merge with the sysvipc namespaces.
->
-> > The latter will increase the size of the patchset significantly, so
-> > perhaps can indeed wait for now.
->
-> hmm, that depends how you do it.
->
-> If you restart all the hierarchy in the kernel, It will increase for sure
-> the patch footprint. However if you restore the hierarchy from user space
-> and then let each process restore itself from some binary blob, it should
-> not. This, of course, means that the binary blob representing the state of
-> the container (we call it statefile) is not totally opaque. It see it a bit
-> like  /proc, a directory containing shared states (all namespaces) and
-> tasks states. That's something to discuss.
->
-> I do prefer the second option for many reasons:
->
-> . each process restarts itself from its current context, this makes it
-> easier to reuse kernel services depending on current.
->
-> . user tools can evaluate more precisely what they are going to restart
-> from the statefile. see this as a generalised 'readelf' that would be run
-> on the statefile, like we do on a core file today.
->
-> > It should not be hard for me to add functionality on top of a more
-> > basic patchset. The question is, what is "basic" ?  Anyway, I will be
-> > back towards the end of the week. Let's try to discuss this over IRC
-> > then (e.g. Friday afternoon ?).
->
-> IHMO, the first one is to support a 'basic' computational program in
-> a real environment (under a load manager HPC). your POC nearly reaches
-> it but the user space API (how to launch, checkpoint, restart) needs to
-> be worked on.
->
->
-> There are some big steps in the development.
->
-> Multi-task is a big step which opens plenty of other big steps with
-> shared resources : mem, ipc, fds, etc. Not all have to be solved
-> but at least detected if we don't have the support.
->
-> Network is another one. This is an interesting step to support
-> distributed application using MPI over TCP. May be a priority.
->
-> there are also plenty of funky kernel resources used by misc servers,
-> database that will need special attention.
->
->
->
-> I'll be happy to start with the basic menu first as I know that it will
-> be useful for many applications !
->
-> Thanks,
->
-> C.
->
-> _______________________________________________
-> Containers mailing list
-> Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-> https://lists.linux-foundation.org/mailman/listinfo/containers
->
-> _______________________________________________
-> Devel mailing list
-> Devel-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org
-> https://openvz.org/mailman/listinfo/devel
+> Are there any security holes or other oddness we would encounter
+> if we did that?
+> 
+> If we can turn the posix mqueue stuff into an honest to goodness
+> filesystem then we completely avoid nsproxy, and have something
+> that is much nicer to deal with long term.
+> 
+> Eric
