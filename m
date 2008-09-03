@@ -1,16 +1,19 @@
-From: Andrey Mirkin <major-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
-Subject: Re: [Devel] Re: [RFC v2][PATCH 4/9] Memory management - dump state
-Date: Wed, 3 Sep 2008 17:29:11 +0400
-Message-ID: <200809031729.14548.major__31937.4209306718$1220449114$gmane$org@openvz.org>
-References: <Pine.LNX.4.64.0808202251500.17436@takamine.ncl.cs.columbia.edu>
-	<200809031543.24001.amirkin@parallels.com>
-	<48BE7FDF.3080202@fr.ibm.com>
+From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [RFC][PATCH 0/8][v2]: Enable multiple mounts of devpts
+Date: Wed, 3 Sep 2008 08:41:59 -0500
+Message-ID: <20080903134159.GC9527@us.ibm.com>
+References: <48AD991F.9010906@fr.ibm.com> <48AD9A97.6000807@zytor.com>
+	<48AD9DCD.3060306@fr.ibm.com> <m1fxoys1ng.fsf@frodo.ebiederm.org>
+	<48ADD7D3.7080400@fr.ibm.com> <48B7BB3C.5080404@fr.ibm.com>
+	<20080902030426.GB12277@us.ibm.com>
+	<m1vdxeeuk0.fsf@frodo.ebiederm.org>
+	<20080902155211.GF8524@us.ibm.com> <48BE7C98.1040004@fr.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <48BE7FDF.3080202-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
 Content-Disposition: inline
+In-Reply-To: <48BE7C98.1040004-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -21,57 +24,90 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: Cedric Le Goater <clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
-Cc: jeremy-TSDbQ3PG+2Y@public.gmane.org, arnd-r2nGTMty4D4@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Cc: kyle-hoO6YkzgTuCM0SS3m2neIg@public.gmane.org, Dave Hansen <dave-gkUM19QKKo4@public.gmane.org>, bastian-yyjItF7Rl6lg9hUCZPvPmw@public.gmane.org, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, "H. Peter Anvin" <hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org>, containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, alan-qBU/x9rampVanCEyBjwyrvXRex20P6io@public.gmane.org, xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Wednesday 03 September 2008 16:15 Cedric Le Goater wrote:
-> Andrey Mirkin wrote:
-> > On Sunday 31 August 2008 21:34 Cedric Le Goater wrote:
-> >> Oren Laadan wrote:
-> >>> Dave, Serge:
+Quoting Cedric Le Goater (clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org):
+> Serge E. Hallyn wrote:
+> > Quoting Eric W. Biederman (ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org):
+> >> "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org> writes:
+> >>
+> >>>>     (3.2) mnt namespace maybe ?
+> >>> I think the last one is the way to go.
 > >>>
-> >>> I'm currently away so I must keep this short. I think we have so far
-> >>> more discussion than an actual problem. I'm happy to coordinate with
-> >>> every interested party to eventually see this work go into main stream.
-> >>
-> >> thanks. We do need a moderator and federator.
-> >>
-> >>> My only concerns are twofold: first, to get more feedback I believe we
-> >>> need to get the code a bit more usable; including FDs is an excellent
-> >>> way to actually do that. That will add significant value to the patch.
-> >>
-> >> hmm, yes and no.
-> >>
-> >> fd's are a must have but I would be more interested to see an external
-> >> checkpoint/restart and signal support first. why ? because it would be
-> >> already usable for most computational programs in HPC, like this stupid
-> >> one :
-> >>
-> >> 	https://www.ccs.uky.edu/~bmadhu/pi/pi1.c
-> >>
-> >> signals are required because it's how 'load' and/or 'system' managers
-> >> interact with the jobs they spawn. external checkpoint/restart for the
-> >> same reason.
-> >
-> > I'm sorry for being out of discussion for so long time.
-> > I've just sent a patchset with external checkpoint/restart as it is
-> > implemented in OpenVZ.
-> > External checkpoint/restart also is very usefull if we will have
-> > container's infrastructure in mainstream.
-> > It won't be very hard to add support for signals in my patchset. I'll
-> > wait for some time for comments and will add support for signals in next
-> > version.
->
-> OK.
->
-> Then, we should be able to have a simple C/R framework (user and kernel) if
-> we integrate your patchset or Oren's with Daniel's user tools :
->
-> 	http://lxc.cvs.sourceforge.net/lxc/
->
-> I was just starting to work on Oren's patchset when you sent yours :)
+> >>> mnt_namespace points to mq_ns.
+> >>>
+> >>> At clone(CLONE_NEWMNT), the new mnt namespace receives a copy of the
+> >>> parent's mq_ns.
+> >>>
+> >>> If a task does
+> >>> 	mount -o newinstance -t mqueue none /dev/mqueue
+> >>> then its current->nsproxy->mnt_namespace->mqns is switched
+> >>> to point to a new instance of the mq_ns.
+> >>>
+> >>> mnt_ns->mq_ns has pointers to the sb (and hence root dentry) of the
+> >>> devpts fs.
+> >>>
+> >>> When a task does mq_open(name, flag), then name is in the mqueuefs
+> >>> found in current->nsproxy->mnt_namespace->mqns.
+> >>>
+> >>> But if a task does
+> >>>
+> >>> 	clone(CLONE_NEWMNT);
+> >>> 	mount --move /dev/mqueue /oldmqueue
+> >>> 	mount -o newinstance -t mqueue none /dev/mqueue
+> >>>
+> >>> then that task can find files for the old mqueuefs under
+> >>> /oldmqueue, while mq_open() uses /dev/mqueue since that's
+> >>> what it finds through its mnt_namespace.
+> >> Serge if we can make the lookup a pure mount namespace operation
+> >> i.e. a well known path.  Than I don't have any problems with it.
+> >> Otherwise it looks like abuse of the mount namespace.
+> > 
+> > Why?
+> > 
+> > Actually it may work to just put mq_ns straight in the nsproxy.
+> 
+> ok. that's the path I was taking.
+> 
+> > So let's see:
+> > 
+> > 	mq_open(name, flag): opens name under the dentry pointed
+> > 		to by current->nsproxy->mq_ns->mq_dentry
+> > 	mount -t mqueue none /dev/mqueue: either returns -EBUSY
+> > 		or just mounts current->nsproxy->mq_ns->mq_sb
+> > 		under /dev/mqueue
+> > 	mount -o newinstance -t mqueue none /dev/mqueue: mounts
+> > 		 a new mq_ns instance under /dev/mqueue
+> > 
+> > While doing
+> > 	mount --make-rshared /vs1
+> > 	mount --bind /dev/mqueue /vs1/dev/mqueue
+> > 	create_a_new_container_chrooted_at(/vs1)
+> > 		mount -o newinstance -t mqueue none /dev/mqueue
+> > would allow the host to see the child's /dev/mqueue under
+> > /vs1/dev/mqueue while having its own mqueuefs continue to be
+> > mounted under /dev/mqueue.
+> 
+> ok. complete isolation would require 2 steps. I guess this is
+> acceptable because mq uses a fs
 
-I will take a look on Daniel's user tools.
+What do you mean, it would require 2 steps?  You mean umount followed
+by a mount?
 
-Thanks,
-Andrey
+Not really, since /dev/mqueue never needed to be bind-mounted under
+/vs1/dev/mqueue to begin with, so all the container has to do is
+mount -o newinstance -t mqueue none /dev/mqueue  (while chrooted under
+/vs1)
+
+IMO two steps means unshare(CLONE_NEWIPC) and mount /dev/mqueue,
+which is what the last patchset required.
+
+> allowing the host to see the child's /dev/mqueue is also 'a nice 
+> to have' feature. unfortunately, we can't do that for all namespaces,
+> for sysvipc for example. So I'm wondering if we should allow it
+> at all ?
+> 
+> Thanks,
+> 
+> C.
