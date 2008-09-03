@@ -1,16 +1,16 @@
 From: Andrey Mirkin <major-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
-Subject: [PATCH 3/9] Introduce context structure needed during
-	checkpointing/restart
-Date: Wed,  3 Sep 2008 14:57:50 +0400
-Message-ID: <1220439476-16465-4-git-send-email-major__14356.1588869945$1220439496$gmane$org@openvz.org>
+Subject: [PATCH 4/9] Introduce container dump function
+Date: Wed,  3 Sep 2008 14:57:51 +0400
+Message-ID: <1220439476-16465-5-git-send-email-major__6646.73290816626$1220439498$gmane$org@openvz.org>
 References: <1220439476-16465-1-git-send-email-major@openvz.org>
 	<1220439476-16465-2-git-send-email-major@openvz.org>
 	<1220439476-16465-3-git-send-email-major@openvz.org>
+	<1220439476-16465-4-git-send-email-major@openvz.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1220439476-16465-3-git-send-email-major-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+In-Reply-To: <1220439476-16465-4-git-send-email-major-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -24,76 +24,35 @@ To: linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Andrey Mirkin <major-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Add functions for context allocation/destroy.
-Introduce functions to read/write image.
-Introduce image header and object header.
+Actually right now we are going to dump only one process.
+Function for dumping head of image file are added.
 
 Signed-off-by: Andrey Mirkin <major-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 ---
- cpt/cpt.h       |   37 ++++++++++++++++
- cpt/cpt_image.h |   63 +++++++++++++++++++++++++++
- cpt/sys.c       |  127 +++++++++++++++++++++++++++++++++++++++++++++++++++++-
- 3 files changed, 224 insertions(+), 3 deletions(-)
- create mode 100644 cpt/cpt_image.h
+ cpt/Makefile     |    2 +-
+ cpt/checkpoint.c |   74 ++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ cpt/cpt.h        |    3 ++
+ cpt/sys.c        |    3 +-
+ kernel/fork.c    |    2 +
+ 5 files changed, 82 insertions(+), 2 deletions(-)
+ create mode 100644 cpt/checkpoint.c
 
-diff --git a/cpt/cpt.h b/cpt/cpt.h
-index 381a9bf..607ac1b 100644
---- a/cpt/cpt.h
-+++ b/cpt/cpt.h
-@@ -10,6 +10,8 @@
-  *
-  */
+diff --git a/cpt/Makefile b/cpt/Makefile
+index bfe75d5..173346b 100644
+--- a/cpt/Makefile
++++ b/cpt/Makefile
+@@ -2,4 +2,4 @@ obj-y += sys_core.o
  
-+#include "cpt_image.h"
-+
- struct cpt_operations
- {
- 	struct module * owner;
-@@ -17,3 +19,38 @@ struct cpt_operations
- 	int (*restart)(int ctid, int fd, unsigned long flags);
- };
- extern struct cpt_operations cpt_ops;
-+
-+#define CPT_CTX_ERROR           -1
-+#define CPT_CTX_IDLE            0
-+#define CPT_CTX_DUMPING         1
-+#define CPT_CTX_UNDUMPING       2
-+
-+typedef struct cpt_context
-+{
-+	pid_t		pid;		/* should be changed to ctid later */
-+	int		ctx_id;		/* context id */
-+	struct list_head ctx_list;
-+	int		refcount;
-+	int		ctx_state;
-+	struct semaphore main_sem;
-+
-+	int		errno;
-+
-+	struct file	*file;
-+	loff_t		current_object;
-+
-+	struct list_head object_array[CPT_OBJ_MAX];
-+
-+	int		(*write)(const void *addr, size_t count, struct cpt_context *ctx);
-+	int		(*read)(void *addr, size_t count, struct cpt_context *ctx);
-+} cpt_context_t;
-+
-+extern int debug_level;
-+
-+#define cpt_printk(lvl, fmt, args...)	do {	\
-+		if (lvl <= debug_level)		\
-+			printk(fmt, ##args);	\
-+	} while (0)
-+
-+#define eprintk(a...) cpt_printk(1, "CPT ERR: " a)
-+#define dprintk(a...) cpt_printk(1, "CPT DBG: " a)
-diff --git a/cpt/cpt_image.h b/cpt/cpt_image.h
+ obj-$(CONFIG_CHECKPOINT) += cptrst.o
+ 
+-cptrst-objs := sys.o
++cptrst-objs := sys.o checkpoint.o
+diff --git a/cpt/checkpoint.c b/cpt/checkpoint.c
 new file mode 100644
-index 0000000..3d26229
+index 0000000..b4d9686
 --- /dev/null
-+++ b/cpt/cpt_image.h
-@@ -0,0 +1,63 @@
++++ b/cpt/checkpoint.c
+@@ -0,0 +1,74 @@
 +/*
 + *  Copyright (C) 2008 Parallels, Inc.
 + *
@@ -106,206 +65,121 @@ index 0000000..3d26229
 + *
 + */
 +
-+#ifndef __CPT_IMAGE_H_
-+#define __CPT_IMAGE_H_ 1
++#include <linux/sched.h>
++#include <linux/fs.h>
++#include <linux/file.h>
++#include <linux/version.h>
 +
-+enum _cpt_object_type
++#include "cpt.h"
++
++static int cpt_write_head(struct cpt_context *ctx)
 +{
-+	CPT_OBJ_TASK = 0,
-+	CPT_OBJ_MAX,
-+	/* The objects above are stored in memory while checkpointing */
++	struct cpt_head hdr;
 +
-+	CPT_OBJ_HEAD = 1024,
-+};
-+
-+enum _cpt_content_type {
-+	CPT_CONTENT_VOID,
-+	CPT_CONTENT_ARRAY,
-+	CPT_CONTENT_DATA,
-+	CPT_CONTENT_NAME,
-+	CPT_CONTENT_REF,
-+	CPT_CONTENT_MAX
-+};
-+
-+#define CPT_SIGNATURE0 0x79
-+#define CPT_SIGNATURE1 0x1c
-+#define CPT_SIGNATURE2 0x01
-+#define CPT_SIGNATURE3 0x63
-+
-+struct cpt_head
-+{
-+	__u8	cpt_signature[4];	/* Magic number */
-+	__u32	cpt_hdrlen;		/* Header length */
-+	__u16	cpt_image_major;	/* Format of this file */
-+	__u16	cpt_image_minor;	/* Format of this file */
-+	__u16	cpt_image_sublevel;	/* Format of this file */
-+	__u16	cpt_image_extra;	/* Format of this file */
-+	__u16	cpt_arch;		/* Architecture */
-+	__u16	cpt_pad1;
-+	__u32	cpt_pad2;
-+#define CPT_ARCH_I386		0
-+	__u64	cpt_time;		/* Time */
-+} __attribute__ ((aligned (8)));
-+
-+/* Common object header. */
-+struct cpt_object_hdr
-+{
-+	__u64	cpt_len;		/* Size of current chunk of data */
-+	__u16	cpt_type;		/* Type of object */
-+	__u32	cpt_hdrlen;		/* Size of header */
-+	__u16	cpt_content;		/* Content type: array, reference... */
-+} __attribute__ ((aligned (8)));
-+
-+#endif /* __CPT_IMAGE_H_ */
-diff --git a/cpt/sys.c b/cpt/sys.c
-index 4051286..8334c4c 100644
---- a/cpt/sys.c
-+++ b/cpt/sys.c
-@@ -13,21 +13,142 @@
- #include <linux/sched.h>
- #include <linux/fs.h>
- #include <linux/file.h>
--#include <linux/notifier.h>
-+#include <linux/uaccess.h>
- #include <linux/module.h>
- 
- #include "cpt.h"
-+#include "cpt_image.h"
- 
- MODULE_LICENSE("GPL");
- 
-+/* Debug level, constant for now */
-+int debug_level = 1;
-+
-+static int file_write(const void *addr, size_t count, struct cpt_context *ctx)
-+{
-+	mm_segment_t oldfs;
-+	ssize_t err = -EBADF;
-+	struct file *file = ctx->file;
-+
-+	oldfs = get_fs(); set_fs(KERNEL_DS);
-+	if (file)
-+		err = file->f_op->write(file, addr, count, &file->f_pos);
-+	set_fs(oldfs);
-+	if (err != count)
-+		return err >= 0 ? -EIO : err;
-+	return 0;
++	memset(&hdr, 0, sizeof(hdr));
++	hdr.cpt_signature[0] = CPT_SIGNATURE0;
++	hdr.cpt_signature[1] = CPT_SIGNATURE1;
++	hdr.cpt_signature[2] = CPT_SIGNATURE2;
++	hdr.cpt_signature[3] = CPT_SIGNATURE3;
++	hdr.cpt_hdrlen = sizeof(hdr);
++	hdr.cpt_image_major = (LINUX_VERSION_CODE >> 16) & 0xff;
++	hdr.cpt_image_minor = (LINUX_VERSION_CODE >> 8) & 0xff;
++	hdr.cpt_image_sublevel = (LINUX_VERSION_CODE) & 0xff;
++	hdr.cpt_image_extra = 0;
++#if defined(CONFIG_X86_32)
++	hdr.cpt_arch = CPT_ARCH_I386;
++#else
++#error  Arch is not supported
++#endif
++	return ctx->write(&hdr, sizeof(hdr), ctx);
 +}
 +
-+static int file_read(void *addr, size_t count, struct cpt_context *ctx)
++int dump_container(struct cpt_context *ctx)
 +{
-+	mm_segment_t oldfs;
-+	ssize_t err = -EBADF;
-+	struct file *file = ctx->file;
++	int err;
++	struct task_struct *root;
 +
-+	oldfs = get_fs(); set_fs(KERNEL_DS);
-+	if (file)
-+		err = file->f_op->read(file, addr, count, &file->f_pos);
-+	set_fs(oldfs);
-+	if (err != count)
-+		return err >= 0 ? -EIO : err;
-+	return 0;
-+}
++	read_lock(&tasklist_lock);
++	root = find_task_by_vpid(ctx->pid);
++	if (root)
++		get_task_struct(root);
++	read_unlock(&tasklist_lock);
 +
-+struct cpt_context * context_alloc(void)
-+{
-+	struct cpt_context *ctx;
-+	int i;
-+
-+	ctx = kzalloc(sizeof(*ctx), GFP_KERNEL);
-+	if (!ctx)
-+		return NULL;
-+
-+	init_MUTEX(&ctx->main_sem);
-+	ctx->refcount = 1;
-+
-+	ctx->current_object = -1;
-+	ctx->write = file_write;
-+	ctx->read = file_read;
-+	for (i = 0; i < CPT_OBJ_MAX; i++) {
-+		INIT_LIST_HEAD(&ctx->object_array[i]);
++	err = -ESRCH;
++	if (!root) {
++		eprintk("can not find root task\n");
++		return err;
++	}
++	ctx->nsproxy = root->nsproxy;
++	if (!ctx->nsproxy) {
++		eprintk("nsproxy is null\n");
++		goto out;
 +	}
 +
-+	return ctx;
-+}
++	err = cpt_write_head(ctx);
++	
++	/* Dump task here */
++	if (!err)
++		err = -ENOSYS;	
 +
-+void context_release(struct cpt_context *ctx)
-+{
-+	ctx->ctx_state = CPT_CTX_ERROR;
-+
-+	if (ctx->file)
-+		fput(ctx->file);
-+	kfree(ctx);
-+}
-+
-+static void context_put(struct cpt_context *ctx)
-+{
-+	if (!--ctx->refcount)
-+		context_release(ctx);
-+}
-+
- static int checkpoint(pid_t pid, int fd, unsigned long flags)
- {
--	return -ENOSYS; 
-+	struct file *file;
-+	struct cpt_context *ctx;
-+	int err;
-+
-+	err = -EBADF;
-+	file = fget(fd);
-+	if (!file)
-+		goto out;
-+
-+	err = -ENOMEM;
-+	ctx = context_alloc();
-+	if (!ctx)
-+		goto out_file;
-+
-+	ctx->file = file;
-+	ctx->ctx_state = CPT_CTX_DUMPING;
-+
-+	/* checkpoint */
-+	err = -ENOSYS;
-+
-+	context_put(ctx);
-+
-+out_file:
-+	fput(file);
 +out:
-+	return err; 
- }
++	ctx->nsproxy = NULL;
++	put_task_struct(root);
++	return err;
++}
+diff --git a/cpt/cpt.h b/cpt/cpt.h
+index 607ac1b..b421a11 100644
+--- a/cpt/cpt.h
++++ b/cpt/cpt.h
+@@ -33,6 +33,7 @@ typedef struct cpt_context
+ 	int		refcount;
+ 	int		ctx_state;
+ 	struct semaphore main_sem;
++	struct nsproxy	*nsproxy;
  
- static int restart(int ctid, int fd, unsigned long flags)
+ 	int		errno;
+ 
+@@ -54,3 +55,5 @@ extern int debug_level;
+ 
+ #define eprintk(a...) cpt_printk(1, "CPT ERR: " a)
+ #define dprintk(a...) cpt_printk(1, "CPT DBG: " a)
++
++int dump_container(struct cpt_context *ctx);
+diff --git a/cpt/sys.c b/cpt/sys.c
+index 8334c4c..6801c22 100644
+--- a/cpt/sys.c
++++ b/cpt/sys.c
+@@ -109,9 +109,10 @@ static int checkpoint(pid_t pid, int fd, unsigned long flags)
+ 
+ 	ctx->file = file;
+ 	ctx->ctx_state = CPT_CTX_DUMPING;
++	ctx->pid = pid;
+ 
+ 	/* checkpoint */
+-	err = -ENOSYS;
++	err = dump_container(ctx);
+ 
+ 	context_put(ctx);
+ 
+diff --git a/kernel/fork.c b/kernel/fork.c
+index 52b5037..f38b43d 100644
+--- a/kernel/fork.c
++++ b/kernel/fork.c
+@@ -77,6 +77,7 @@ int max_threads;		/* tunable limit on nr_threads */
+ DEFINE_PER_CPU(unsigned long, process_counts) = 0;
+ 
+ __cacheline_aligned DEFINE_RWLOCK(tasklist_lock);  /* outer */
++EXPORT_SYMBOL(tasklist_lock);
+ 
+ int nr_processes(void)
  {
--	return -ENOSYS; 
-+	struct file *file;
-+	struct cpt_context *ctx;
-+	int err;
-+
-+	err = -EBADF;
-+	file = fget(fd);
-+	if (!file)
-+		goto out;
-+
-+	err = -ENOMEM;
-+	ctx = context_alloc();
-+	if (!ctx)
-+		goto out_file;
-+
-+	ctx->file = file;
-+	ctx->ctx_state = CPT_CTX_UNDUMPING;
-+
-+	/* restart */
-+	err = -ENOSYS;
-+
-+	context_put(ctx);
-+
-+out_file:
-+	fput(file);
-+out:
-+	return err; 
+@@ -153,6 +154,7 @@ void __put_task_struct(struct task_struct *tsk)
+ 	if (!profile_handoff_task(tsk))
+ 		free_task(tsk);
  }
++EXPORT_SYMBOL(__put_task_struct);
  
- static int __init init_cptrst(void)
+ /*
+  * macro override instead of weak attribute alias, to workaround
 -- 
 1.5.6
