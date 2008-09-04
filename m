@@ -1,14 +1,14 @@
-From: Cedric Le Goater <clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [RFC v3][PATCH 1/9] Create syscalls: sys_checkpoint, sys_restart
-Date: Thu, 04 Sep 2008 10:37:41 +0200
-Message-ID: <48BF9E55.8080509__24326.7913036563$1220517721$gmane$org@fr.ibm.com>
+From: Louis Rilling <Louis.Rilling-aw0BnHfMbSpBDgjK7y7TUQ@public.gmane.org>
+Subject: Re: [RFC v3][PATCH 2/9] General infrastructure for checkpoint restart
+Date: Thu, 4 Sep 2008 11:12:30 +0200
+Message-ID: <20080904091230.GW14473@hawkmoon.kerlabs.com>
 References: <Pine.LNX.4.64.0809040354440.460@takamine.ncl.cs.columbia.edu>
-	<Pine.LNX.4.64.0809040401320.5982@takamine.ncl.cs.columbia.edu>
+	<Pine.LNX.4.64.0809040402170.5982@takamine.ncl.cs.columbia.edu>
+Reply-To: Louis.Rilling-aw0BnHfMbSpBDgjK7y7TUQ@public.gmane.org
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: multipart/mixed; boundary="===============3593648907999082878=="
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <Pine.LNX.4.64.0809040401320.5982-CXF6herHY6ykSYb+qCZC/1i27PF6R63G9nwVQlTi/Pw@public.gmane.org>
+In-Reply-To: <Pine.LNX.4.64.0809040402170.5982-CXF6herHY6ykSYb+qCZC/1i27PF6R63G9nwVQlTi/Pw@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -16,174 +16,174 @@ List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
 List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Mime-version: 1.0
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Cc: linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, jeremy-TSDbQ3PG+2Y@public.gmane.org, arnd-r2nGTMty4D4@public.gmane.org, dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, jeremy-TSDbQ3PG+2Y@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, arnd-r2nGTMty4D4@public.gmane.org, dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Oren Laadan wrote:
-> Create trivial sys_checkpoint and sys_restore system calls. They will
-> enable to checkpoint and restart an entire container, to and from a
-> checkpoint image file descriptor.
-> 
-> The syscalls take a file descriptor (for the image file) and flags as
-> arguments. For sys_checkpoint the first argument identifies the target
-> container; for sys_restart it will identify the checkpoint image.
-> 
-> Signed-off-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-> ---
->   arch/x86/kernel/syscall_table_32.S |    2 ++
->   checkpoint/Kconfig                 |   11 +++++++++++
->   checkpoint/Makefile                |    5 +++++
->   checkpoint/sys.c                   |   35 +++++++++++++++++++++++++++++++++++
->   include/asm-x86/unistd_32.h        |    2 ++
->   include/linux/syscalls.h           |    2 ++
->   init/Kconfig                       |    2 ++
->   kernel/sys_ni.c                    |    4 ++++
->   8 files changed, 63 insertions(+), 0 deletions(-)
->   create mode 100644 checkpoint/Kconfig
->   create mode 100644 checkpoint/Makefile
->   create mode 100644 checkpoint/sys.c
-> 
-> diff --git a/arch/x86/kernel/syscall_table_32.S b/arch/x86/kernel/syscall_table_32.S
-> index d44395f..5543136 100644
-> --- a/arch/x86/kernel/syscall_table_32.S
-> +++ b/arch/x86/kernel/syscall_table_32.S
-> @@ -332,3 +332,5 @@ ENTRY(sys_call_table)
->   	.long sys_dup3			/* 330 */
->   	.long sys_pipe2
->   	.long sys_inotify_init1
+This is a MIME-formatted message.  If you see this text it means that your
+E-mail software does not support MIME-formatted messages.
 
-  ^
-  |
+--===============3593648907999082878==
+Content-Type: multipart/signed; micalg=pgp-sha1; protocol="application/pgp-signature"; boundary="=_bohort-6060-1220519417-0001-2"
+Content-Disposition: inline
 
-there are some spaces at the beginning of this line which makes
-the patch not applicable for me. This needs a fix for v4 I think.
+This is a MIME-formatted message.  If you see this text it means that your
+E-mail software does not support MIME-formatted messages.
 
-Thanks for the pachset. anyhow, I'll play with it. 
+--=_bohort-6060-1220519417-0001-2
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
 
-C.
+On Thu, Sep 04, 2008 at 04:02:38AM -0400, Oren Laadan wrote:
+>
+> Add those interfaces, as well as helpers needed to easily manage the
+> file format. The code is roughly broken out as follows:
+>
+> checkpoint/sys.c - user/kernel data transfer, as well as setup of the
+> checkpoint/restart context (a per-checkpoint data structure for
+> housekeeping)
+>
+> checkpoint/checkpoint.c - output wrappers and basic checkpoint handling
+>
+> checkpoint/restart.c - input wrappers and basic restart handling
+>
+> Patches to add the per-architecture support as well as the actual
+> work to do the memory checkpoint follow in subsequent patches.
+>
 
-> +	.long sys_checkpoint
-> +	.long sys_restart
-> diff --git a/checkpoint/Kconfig b/checkpoint/Kconfig
+[...]
+
+> diff --git a/include/linux/ckpt_hdr.h b/include/linux/ckpt_hdr.h
 > new file mode 100644
-> index 0000000..a9f22ef
+> index 0000000..629ad5a
 > --- /dev/null
-> +++ b/checkpoint/Kconfig
-> @@ -0,0 +1,11 @@
-> +config CHECKPOINT_RESTART
-> +	prompt "Enable checkpoint/restart (EXPERIMENTAL)"
-> +	def_bool y
-> +	depends on X86_32 && EXPERIMENTAL
-> +	help
-> +	  Application checkpoint/restart is the ability to save the
-> +	  state of a running application so that it can later resume
-> +	  its execution from the time at which it was checkpointed.
-> +
-> +	  Turning this option on will enable checkpoint and restart
-> +	  functionality in the kernel.
-> diff --git a/checkpoint/Makefile b/checkpoint/Makefile
-> new file mode 100644
-> index 0000000..07d018b
-> --- /dev/null
-> +++ b/checkpoint/Makefile
-> @@ -0,0 +1,5 @@
-> +#
-> +# Makefile for linux checkpoint/restart.
-> +#
-> +
-> +obj-$(CONFIG_CHECKPOINT_RESTART) += sys.o
-> diff --git a/checkpoint/sys.c b/checkpoint/sys.c
-> new file mode 100644
-> index 0000000..b9018a4
-> --- /dev/null
-> +++ b/checkpoint/sys.c
-> @@ -0,0 +1,35 @@
+> +++ b/include/linux/ckpt_hdr.h
+> @@ -0,0 +1,82 @@
+> +#ifndef _CHECKPOINT_CKPT_HDR_H_
+> +#define _CHECKPOINT_CKPT_HDR_H_
 > +/*
 > + *  Generic container checkpoint-restart
 > + *
 > + *  Copyright (C) 2008 Oren Laadan
 > + *
-> + *  This file is subject to the terms and conditions of the GNU General Public
+> + *  This file is subject to the terms and conditions of the GNU General =
+Public
 > + *  License.  See the file COPYING in the main directory of the Linux
 > + *  distribution for more details.
 > + */
 > +
-> +#include <linux/sched.h>
-> +#include <linux/kernel.h>
+> +#include <linux/types.h>
+> +#include <linux/utsname.h>
 > +
-> +/**
-> + * sys_checkpoint - checkpoint a container
-> + * @pid: pid of the container init(1) process
-> + * @fd: file to which dump the checkpoint image
-> + * @flags: checkpoint operation flags
+> +/*
+> + * To maintain compatibility between 32-bit and 64-bit architecture flav=
+ors,
+> + * keep data 64-bit aligned: use padding for structure members, and use
+> + * __attribute__ ((aligned (8))) for the entire structure.
 > + */
-> +asmlinkage long sys_checkpoint(pid_t pid, int fd, unsigned long flags)
-> +{
-> +	pr_debug("sys_checkpoint not implemented yet\n");
-> +	return -ENOSYS;
-> +}
-> +/**
-> + * sys_restart - restart a container
-> + * @crid: checkpoint image identifier
-> + * @fd: file from which read the checkpoint image
-> + * @flags: restart operation flags
-> + */
-> +asmlinkage long sys_restart(int crid, int fd, unsigned long flags)
-> +{
-> +	pr_debug("sys_restart not implemented yet\n");
-> +	return -ENOSYS;
-> +}
-> diff --git a/include/asm-x86/unistd_32.h b/include/asm-x86/unistd_32.h
-> index d739467..88bdec4 100644
-> --- a/include/asm-x86/unistd_32.h
-> +++ b/include/asm-x86/unistd_32.h
-> @@ -338,6 +338,8 @@
->   #define __NR_dup3		330
->   #define __NR_pipe2		331
->   #define __NR_inotify_init1	332
-> +#define __NR_checkpoint		333
-> +#define __NR_restart		334
-> 
->   #ifdef __KERNEL__
-> 
-> diff --git a/include/linux/syscalls.h b/include/linux/syscalls.h
-> index d6ff145..edc218b 100644
-> --- a/include/linux/syscalls.h
-> +++ b/include/linux/syscalls.h
-> @@ -622,6 +622,8 @@ asmlinkage long sys_timerfd_gettime(int ufd, struct itimerspec __user *otmr);
->   asmlinkage long sys_eventfd(unsigned int count);
->   asmlinkage long sys_eventfd2(unsigned int count, int flags);
->   asmlinkage long sys_fallocate(int fd, int mode, loff_t offset, loff_t len);
-> +asmlinkage long sys_checkpoint(pid_t pid, int fd, unsigned long flags);
-> +asmlinkage long sys_restart(int crid, int fd, unsigned long flags);
-> 
->   int kernel_execve(const char *filename, char *const argv[], char *const envp[]);
-> 
-> diff --git a/init/Kconfig b/init/Kconfig
-> index c11da38..fd5f7bf 100644
-> --- a/init/Kconfig
-> +++ b/init/Kconfig
-> @@ -779,6 +779,8 @@ config MARKERS
-> 
->   source "arch/Kconfig"
-> 
-> +source "checkpoint/Kconfig"
 > +
->   config PROC_PAGE_MONITOR
->    	default y
->   	depends on PROC_FS && MMU
-> diff --git a/kernel/sys_ni.c b/kernel/sys_ni.c
-> index 08d6e1b..ca95c25 100644
-> --- a/kernel/sys_ni.c
-> +++ b/kernel/sys_ni.c
-> @@ -168,3 +168,7 @@ cond_syscall(compat_sys_timerfd_settime);
->   cond_syscall(compat_sys_timerfd_gettime);
->   cond_syscall(sys_eventfd);
->   cond_syscall(sys_eventfd2);
+> +/* records: generic header */
 > +
-> +/* checkpoint/restart */
-> +cond_syscall(sys_checkpoint);
-> +cond_syscall(sys_restart);
+> +struct cr_hdr {
+> +	__s16 type;
+> +	__s16 len;
+> +	__u32 parent;
+> +};
+> +
+> +/* header types */
+> +enum {
+> +	CR_HDR_HEAD =3D 1,
+> +	CR_HDR_STRING,
+> +
+> +	CR_HDR_TASK =3D 101,
+> +	CR_HDR_THREAD,
+> +	CR_HDR_CPU,
+> +
+> +	CR_HDR_MM =3D 201,
+> +	CR_HDR_VMA,
+> +	CR_HDR_MM_CONTEXT,
+> +
+> +	CR_HDR_TAIL =3D 5001
+> +};
+> +
+> +struct cr_hdr_head {
+> +	__u64 magic;
+> +
+> +	__u16 major;
+> +	__u16 minor;
+> +	__u16 patch;
+> +	__u16 rev;
+> +
+> +	__u64 time;	/* when checkpoint taken */
+> +	__u64 flags;	/* checkpoint options */
+> +
+> +	char release[__NEW_UTS_LEN];
+> +	char version[__NEW_UTS_LEN];
+> +	char machine[__NEW_UTS_LEN];
+> +} __attribute__((aligned(8)));
+> +
+> +struct cr_hdr_tail {
+> +	__u64 magic;
+> +} __attribute__((aligned(8)));
+> +
+> +struct cr_hdr_task {
+> +	__u64 state;
+> +	__u32 exit_state;
+> +	__u32 exit_code, exit_signal;
+
+64bits alignment issue?
+I probably missed it in previous versions...
+
+Louis
+
+> +
+> +	__u64 utime, stime, utimescaled, stimescaled;
+> +	__u64 gtime;
+> +	__u64 prev_utime, prev_stime;
+> +	__u64 nvcsw, nivcsw;
+> +	__u64 start_time_sec, start_time_nsec;
+> +	__u64 real_start_time_sec, real_start_time_nsec;
+> +	__u64 min_flt, maj_flt;
+> +
+> +	__s32 task_comm_len;
+> +} __attribute__((aligned(8)));
+> +
+> +#endif /* _CHECKPOINT_CKPT_HDR_H_ */
+
+--=20
+Dr Louis Rilling			Kerlabs
+Skype: louis.rilling			Batiment Germanium
+Phone: (+33|0) 6 80 89 08 23		80 avenue des Buttes de Coesmes
+http://www.kerlabs.com/			35700 Rennes
+
+--=_bohort-6060-1220519417-0001-2
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Transfer-Encoding: 7bit
+Content-Description: Digital signature
+Content-Disposition: inline
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.6 (GNU/Linux)
+
+iD8DBQFIv6Z+VKcRuvQ9Q1QRAhVkAJ9nIWbXFmGlEyDnI2IQGu87lv746gCeIfTw
+/5vn592JmSqbB4bIkeVUkuA=
+=EgkY
+-----END PGP SIGNATURE-----
+
+--=_bohort-6060-1220519417-0001-2--
+
+--===============3593648907999082878==
+Content-Type: text/plain; charset="us-ascii"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+Content-Disposition: inline
+
+_______________________________________________
+Containers mailing list
+Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+https://lists.linux-foundation.org/mailman/listinfo/containers
+--===============3593648907999082878==--
