@@ -1,13 +1,14 @@
-From: Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
-Subject: Re: Network Namespace ARP support
-Date: Thu, 04 Sep 2008 16:50:10 +0200
-Message-ID: <48BFF5A2.2050206@fr.ibm.com>
-References: <C4E59F1D.15C93%echaudron@extremenetworks.com>
+From: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Subject: Re: [RFC v3][PATCH 8/9] File descriprtors (dump)
+Date: Thu, 04 Sep 2008 08:01:44 -0700
+Message-ID: <1220540504.23620.40.camel__47089.952012948$1220540673$gmane$org@nimitz>
+References: <Pine.LNX.4.64.0809040354440.460@takamine.ncl.cs.columbia.edu>
+	<Pine.LNX.4.64.0809040405250.5982@takamine.ncl.cs.columbia.edu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <C4E59F1D.15C93%echaudron-SvgryPHmmKB+XZJcv9eMoEEOCMrvLtNR@public.gmane.org>
+In-Reply-To: <Pine.LNX.4.64.0809040405250.5982-CXF6herHY6ykSYb+qCZC/1i27PF6R63G9nwVQlTi/Pw@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -17,43 +18,27 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Eelco Chaudron <echaudron-SvgryPHmmKB+XZJcv9eMoEEOCMrvLtNR@public.gmane.org>
-Cc: "Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org" <Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, jeremy-TSDbQ3PG+2Y@public.gmane.org, arnd-r2nGTMty4D4@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Eelco Chaudron wrote:
-> Hi All,
+On Thu, 2008-09-04 at 04:05 -0400, Oren Laadan wrote:
 > 
-> I was looking at the network namespaces implementation for ARP, and I
-> was wondering why the struct net abstraction was done in the core
-> neighbour functions, and not at the struct neigh_table arp_tbl level
-> (i.e. one arp_tbl per namespace)?
-> 
-> One problem I could find with the current implementation is that the
-> "struct neigh_statistics *stats" are global for all namespaces,
-> whereas you might want to see these statistics per namespace.
-> 
-> It would be nice if I could get some insight in some of the design
-> decisions, as I'm new to this area...
-> 
-> Thanks,
-> 
+> diff --git a/include/linux/ckpt_hdr.h b/include/linux/ckpt_hdr.h
+> index 322ade5..1ce1dbc 100644
+> --- a/include/linux/ckpt_hdr.h
+> +++ b/include/linux/ckpt_hdr.h
+> @@ -17,7 +17,7 @@
+>   /*
+>    * To maintain compatibility between 32-bit and 64-bit architecture flavors,
+>    * keep data 64-bit aligned: use padding for structure members, and use
+> - * __attribute__ ((aligned (8))) for the entire structure.
+> + * __attribute__((aligned(8))) for the entire structure.
+>    */
 
-Hi Eelco,
+Have you tried emailing these to yourself and trying to apply them?
+That's usually a good way to iron out these whitespace issues.
 
-In order to not waste memory duplicating redundant information with the 
-tables, the neighbour per namespace has be made in the core neighbour 
-functions which is the common code between the different protocols ipv4 
-and ipv6.
+I think this set is still munged.
 
-As you mention, the statistics are in the table and because there is a 
-single table there is a no statistics per namespace. Making this 
-resource per namespace will consist in moving the stats structure to the 
-network namespace structure, I guess, and not creating multiple neigh 
-tables.
-
-This decision has been made for the socket hash tables and for the 
-routing cache table too, AFAIR this is for avoiding memory fragmentation 
-and cache misses.
-
-   -- Daniel
+-- Dave
