@@ -1,7 +1,7 @@
 From: sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org
-Subject: [PATCH 3/11][v3]: Simplify devpts_get_tty()
-Date: Wed, 3 Sep 2008 22:31:32 -0700
-Message-ID: <20080904053132.GD3680@us.ibm.com>
+Subject: [PATCH 4/11][v3]: Simplify devpts_pty_new()
+Date: Wed, 3 Sep 2008 22:32:00 -0700
+Message-ID: <20080904053200.GE3680@us.ibm.com>
 References: <20080904052718.GA3680@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -24,50 +24,43 @@ List-Id: containers.vger.kernel.org
 
 
 From: Sukadev Bhattiprolu <sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH 3/11]: Simplify devpts_get_tty()
+Subject: [PATCH 4/11]: Simplify devpts_pty_new()
 
-As pointed out by H. Peter Anvin, since the inode for the pty is known,
-we don't need to look it up.
+devpts_pty_new() is called when setting up a new pty and would not
+have an existing dentry or inode for the pty. So don't bother looking
+for an existing dentry - just create a new one.
 
 Signed-off-by: Sukadev Bhattiprolu <sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 
 ---
- fs/devpts/inode.c |   17 +++++------------
- 1 file changed, 5 insertions(+), 12 deletions(-)
+ fs/devpts/inode.c |   11 ++++++++---
+ 1 file changed, 8 insertions(+), 3 deletions(-)
 
 Index: linux-2.6.27-rc3-tty/fs/devpts/inode.c
 ===================================================================
---- linux-2.6.27-rc3-tty.orig/fs/devpts/inode.c	2008-08-28 17:59:15.000000000 -0700
-+++ linux-2.6.27-rc3-tty/fs/devpts/inode.c	2008-08-28 18:01:11.000000000 -0700
-@@ -27,6 +27,7 @@
- #define DEVPTS_SUPER_MAGIC 0x1cd1
+--- linux-2.6.27-rc3-tty.orig/fs/devpts/inode.c	2008-08-28 18:01:11.000000000 -0700
++++ linux-2.6.27-rc3-tty/fs/devpts/inode.c	2008-08-28 18:46:55.000000000 -0700
+@@ -220,6 +220,7 @@ int devpts_pty_new(struct inode *ptmx_in
+ 	dev_t device = MKDEV(driver->major, driver->minor_start+number);
+ 	struct dentry *dentry;
+ 	struct inode *inode = new_inode(devpts_mnt->mnt_sb);
++	char s[12];
  
- #define DEVPTS_DEFAULT_MODE 0600
-+#define PTMX_MINOR	2
+ 	/* We're supposed to be given the slave end of a pty */
+ 	BUG_ON(driver->type != TTY_DRIVER_TYPE_PTY);
+@@ -235,9 +236,13 @@ int devpts_pty_new(struct inode *ptmx_in
+ 	init_special_inode(inode, S_IFCHR|config.mode, device);
+ 	inode->i_private = tty;
  
- extern int pty_limit;			/* Config limit on Unix98 ptys */
- static DEFINE_IDA(allocated_ptys);
-@@ -247,19 +248,11 @@ int devpts_pty_new(struct inode *ptmx_in
- 
- struct tty_struct *devpts_get_tty(struct inode *pts_inode, int number)
- {
--	struct dentry *dentry = get_node(number);
--	struct tty_struct *tty;
--
--	tty = NULL;
--	if (!IS_ERR(dentry)) {
--		if (dentry->d_inode)
--			tty = dentry->d_inode->i_private;
--		dput(dentry);
--	}
--
--	mutex_unlock(&devpts_root->d_inode->i_mutex);
-+	BUG_ON(pts_inode->i_rdev == MKDEV(TTYAUX_MAJOR, PTMX_MINOR));
- 
--	return tty;
-+	if (pts_inode->i_sb->s_magic == DEVPTS_SUPER_MAGIC)
-+		return (struct tty_struct *)pts_inode->i_private;
-+	return NULL;
- }
- 
- void devpts_pty_kill(struct tty_struct *tty)
+-	dentry = get_node(number);
+-	if (!IS_ERR(dentry) && !dentry->d_inode) {
+-		d_instantiate(dentry, inode);
++	sprintf(s, "%d", number);
++
++	mutex_lock(&devpts_root->d_inode->i_mutex);
++
++	dentry = d_alloc_name(devpts_root, s);
++	if (!IS_ERR(dentry)) {
++		d_add(dentry, inode);
+ 		fsnotify_create(devpts_root->d_inode, dentry);
+ 	}
