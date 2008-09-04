@@ -1,13 +1,15 @@
-From: Patrick McHardy <kaber-dcUjhNyLwpNeoWH0uzbU5w@public.gmane.org>
-Subject: Re: [PATCH 01/38] netns nf: remove nf_*_net() wrappers
-Date: Thu, 04 Sep 2008 17:56:37 +0200
-Message-ID: <48C00535.60909__29511.7208188914$1220544110$gmane$org@trash.net>
-References: <20080821215657.GA31136@x200.localdomain>
+From: sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org
+Subject: Re: [PATCH 11/11][v3]: Enable multiple instances of devpts
+Date: Thu, 4 Sep 2008 08:54:31 -0700
+Message-ID: <20080904155431.GA11174@us.ibm.com>
+References: <20080904052718.GA3680@us.ibm.com>
+	<20080904053551.GL3680@us.ibm.com> <48BF8283.7040601@zytor.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20080821215657.GA31136-2ev+ksY9ol182hYKe6nXyg@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <48BF8283.7040601-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -17,13 +19,31 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org
-Cc: netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, netfilter-devel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: "H. Peter Anvin" <hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org>
+Cc: kyle-hoO6YkzgTuCM0SS3m2neIg@public.gmane.org, sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, bastian-yyjItF7Rl6lg9hUCZPvPmw@public.gmane.org, containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org, alan-qBU/x9rampVanCEyBjwyrvXRex20P6io@public.gmane.org, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org wrote:
-> Now that dev_net() exists, the usefullness of them is even less. Also they're
-> a big problem in resolving circular header dependencies necessary for
-> NOTRACK-in-netns patch. See below.
+H. Peter Anvin [hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org] wrote:
+> sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org wrote:
+>> 	2. To effectively use the multi-instance mode, applications/libraries
+>> 	    should, open "/dev/pts/ptmx" instead of "/dev/ptmx" but obviously
+>> 	    this would fail in the legacy mode.
+>> 	
+>
+> NOT SO!
+>
+> /dev/ptmx is required by Unix98 (which is arguably obsolete, but still.)  
+> Applications SHOULD NOT try to open /dev/pts/pmtx.  This should be 
+> considered strictly an internal implementation detail.
 
-Applied, thanks.
+Ah, ok.  Well, I will remove that para from the patch description.
+
+If the -o newinstance is NOT followed by the bind mount, ptys won't
+work and would be nice if we can print a useful message when opening
+/dev/ptmx.
+
+>
+> Applications should use posix_openpt(), openpty() or forkpty(); libraries 
+> should use /dev/ptmx.
+>
+> 	-hpa
