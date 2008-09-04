@@ -1,13 +1,14 @@
-From: Patrick McHardy <kaber-dcUjhNyLwpNeoWH0uzbU5w@public.gmane.org>
-Subject: Re: [PATCH 20/38] netns ct: NOTRACK in netns
-Date: Thu, 04 Sep 2008 18:54:16 +0200
-Message-ID: <48C012B8.10606__49152.8200488121$1220547565$gmane$org@trash.net>
-References: <20080821220432.GT31136@x200.localdomain>
+From: "H. Peter Anvin" <hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org>
+Subject: Re: [PATCH 11/11][v3]: Enable multiple instances of devpts
+Date: Thu, 04 Sep 2008 09:48:35 -0700
+Message-ID: <48C01163.1050704@zytor.com>
+References: <20080904052718.GA3680@us.ibm.com>	<20080904053551.GL3680@us.ibm.com>	<48BF8283.7040601@zytor.com>	<20080904155431.GA11174@us.ibm.com>	<48C00698.8050803@zytor.com>
+	<20080904172542.3ad7bb85@lxorguk.ukuu.org.uk>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20080821220432.GT31136-2ev+ksY9ol182hYKe6nXyg@public.gmane.org>
+In-Reply-To: <20080904172542.3ad7bb85-qBU/x9rampVanCEyBjwyrvXRex20P6io@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -17,36 +18,28 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org
-Cc: netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, netfilter-devel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: Alan Cox <alan-qBU/x9rampVanCEyBjwyrvXRex20P6io@public.gmane.org>
+Cc: kyle-hoO6YkzgTuCM0SS3m2neIg@public.gmane.org, sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, bastian-yyjItF7Rl6lg9hUCZPvPmw@public.gmane.org, containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org wrote:
-> Make untracked conntrack per-netns. Compare conntracks with relevant
-> untracked one.
+Alan Cox wrote:
+> O> We can't, really, because it will open the global ptmx.  This is an 
+>> unfortunate side effect of the backwards-compatibility code.
+>>
+>> This is also why I don't like the bind mount; the symlink option has the 
+>> nice property that f*ckups are more obvious.
 > 
-> The following code you'll start laughing at this code:
-> 
-> 	if (ct == ct->ct_net->ct.untracked)
-> 		...
-> 
-> let me remind you that ->ct_net is set in only one place, and never
-> overwritten later.
-> 
-> All of this requires some surgery with headers, otherwise horrible circular
-> dependencies. And we lost nf_ct_is_untracked() as function, it became macro.
+> It's asking for trouble with existing systems and users that
+> upgrade. /dev/ptmx should remain a proper device file for the non
+> container case.
 
-I think you could avoid this mess by using a struct nf_conntrack
-for the untracked conntrack instead of struct nf_conn. It shouldn't
-make any difference since its ignored anyways.
+I did say that as being the desired *eventual* goal.
 
-> 
->  struct netns_ct {
->  	atomic_t		count;
-> @@ -12,5 +13,7 @@ struct netns_ct {
->  	struct hlist_head	*expect_hash;
->  	int			expect_vmalloc;
->  	struct hlist_head	unconfirmed;
-> +	/* Fake conntrack entry for untracked connections */
-> +	struct nf_conn		untracked;
->  };
+> Should /dev/ptmx give you a node in the 'master' pty namespace or a node
+> in your current containers pty namespace ?
+
+Well, since there is no "current containers pty namespace" per se, it 
+will give you a node in the default (initial) pty namespace unless the 
+bind mount is set up.
+
+	-hpa
