@@ -1,41 +1,74 @@
-From: "H. Peter Anvin" <hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org>
-Subject: Re: [PATCH 11/11][v3]: Enable multiple instances of devpts
-Date: Wed, 03 Sep 2008 23:38:59 -0700
-Message-ID: <48BF8283.7040601@zytor.com>
-References: <20080904052718.GA3680@us.ibm.com>
-	<20080904053551.GL3680@us.ibm.com>
+From: Benjamin Thery <benjamin.thery@bull.net>
+Subject: Re: [PATCH 1/8] sysfs: Implement sysfs tagged directory support.
+Date: Thu, 04 Sep 2008 08:44:49 +0200
+Message-ID: <48BF83E1.5040000@bull.net>
+References: <m18wwiihbn.fsf_-_@frodo.ebiederm.org>	 <m1zloyh2mb.fsf_-_@frodo.ebiederm.org>	 <m1vdzmh2jr.fsf_-_@frodo.ebiederm.org>	 <20080820021754.GA25182@kroah.com>	 <m1od3m282j.fsf_-_@frodo.ebiederm.org>	 <m1hc9e27ya.fsf_-_@frodo.ebiederm.org> <48B57058.9000101@bull.net>	 <dac45060809020654g62afb3c9yd104682b93b43bee@mail.gmail.com>	 <48BD47A8.1080909@bull.net> <20080902170148.GA9305@suse.de> <31436f4a0809032233r2c46de8od8a94460ce3b5ed2@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20080904053551.GL3680-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org
-Cc: kyle-hoO6YkzgTuCM0SS3m2neIg@public.gmane.org, sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, bastian-yyjItF7Rl6lg9hUCZPvPmw@public.gmane.org, containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org, alan-qBU/x9rampVanCEyBjwyrvXRex20P6io@public.gmane.org, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org
+Return-path: <netdev-owner@vger.kernel.org>
+In-Reply-To: <31436f4a0809032233r2c46de8od8a94460ce3b5ed2@mail.gmail.com>
+Sender: netdev-owner@vger.kernel.org
+To: David Shwatrz <dshwatrz@gmail.com>
+Cc: Greg KH <gregkh@suse.de>, Greg KH <greg@kroah.com>, Mark Ryden <markryde@gmail.com>, "Eric W. Biederman" <ebiederm@xmission.com>, Andrew Morton <akpm@linux-foundation.org>, Tejun Heo <htejun@gmail.com>, Daniel Lezcano <dlezcano@fr.ibm.com>, linux-kernel@vger.kernel.org, Al Viro <viro@ftp.linux.org.uk>, Linux Containers <containers@lists.osdl.org>, netdev@vger.kernel.org
 List-Id: containers.vger.kernel.org
 
-sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org wrote:
+David Shwatrz wrote:
+> Hi,
+>> go into my tree this week,
 > 
-> 	2. To effectively use the multi-instance mode, applications/libraries
-> 	    should, open "/dev/pts/ptmx" instead of "/dev/ptmx" but obviously
-> 	    this would fail in the legacy mode.
-> 	
+> I am also interested in this patch; may I ask  - what do you mean by
+> "my  tree" ?I am a little newbie in the kernel, as you might understand.
+> I looked into http://www.kernel.org/pub/linux/kernel/people/gregkh/gregkh-2.6/
+> for candidates for this git tree you are talking about.
+> 
+>  May I ask: what is the **exact** URL for this git tree you are talking about ?
 
-NOT SO!
+Greg's tree is there:
+http://git.kernel.org/?p=linux/kernel/git/gregkh/patches.git;a=summary
 
-/dev/ptmx is required by Unix98 (which is arguably obsolete, but still.) 
-  Applications SHOULD NOT try to open /dev/pts/pmtx.  This should be 
-considered strictly an internal implementation detail.
+You can clone it from here:
+git://git.kernel.org/pub/scm/linux/kernel/git/gregkh/patches.git
 
-Applications should use posix_openpt(), openpty() or forkpty(); 
-libraries should use /dev/ptmx.
+It contains the patches serie to be applied on top of
+linux-2.6 (with 'quilt' for example).
 
-	-hpa
+Benjamin
+
+> 
+> Thanks,
+> 
+> Regards,
+> DS
+> 
+> 
+> On Tue, Sep 2, 2008 at 8:01 PM, Greg KH <gregkh@suse.de> wrote:
+>> On Tue, Sep 02, 2008 at 04:03:20PM +0200, Benjamin Thery wrote:
+>>> Mark Ryden wrote:
+>>>> Hello,
+>>>>  I hope that this patch (from 4.7.08) was not forgetten... I don't see
+>>>> it for example in linux-net (I have an up-to-date linux-next git
+>>>> tree).
+>>> I was about to ask the same thing.
+>>>
+>>> Greg, what is the plan with these remaining patches for sysfs tagged
+>>> dirs? Will you have some time to merge them in your tree soon?
+>> Yes, they should go into my tree this week, sorry been busy with 2.6.27
+>> work and Novell's Hackweek.
+>>
+>> thanks,
+>>
+>> greg k-h
+>> --
+>> To unsubscribe from this list: send the line "unsubscribe netdev" in
+>> the body of a message to majordomo@vger.kernel.org
+>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>>
+> 
+> 
+
+
+-- 
+B e n j a m i n   T h e r y  - BULL/DT/Open Software R&D
+
+    http://www.bull.com
