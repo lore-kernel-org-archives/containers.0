@@ -1,14 +1,17 @@
-From: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: Re: [RFC v3][PATCH 8/9] File descriprtors (dump)
-Date: Thu, 04 Sep 2008 11:41:00 -0700
-Message-ID: <1220553660.23386.60.camel@nimitz>
+From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [RFC v3][PATCH 1/9] Create syscalls: sys_checkpoint, sys_restart
+Date: Thu, 4 Sep 2008 15:37:30 -0500
+Message-ID: <20080904203730.GA28313__711.105639538978$1220561775$gmane$org@us.ibm.com>
 References: <Pine.LNX.4.64.0809040354440.460@takamine.ncl.cs.columbia.edu>
-	<Pine.LNX.4.64.0809040405250.5982@takamine.ncl.cs.columbia.edu>
+	<Pine.LNX.4.64.0809040401320.5982@takamine.ncl.cs.columbia.edu>
+	<20080904144223.GA19364@us.ibm.com>
+	<48C01B92.60900@cs.columbia.edu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <Pine.LNX.4.64.0809040405250.5982-CXF6herHY6ykSYb+qCZC/1i27PF6R63G9nwVQlTi/Pw@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <48C01B92.60900-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,215 +22,90 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, jeremy-TSDbQ3PG+2Y@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, arnd-r2nGTMty4D4@public.gmane.org
+Cc: jeremy-TSDbQ3PG+2Y@public.gmane.org, arnd-r2nGTMty4D4@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, Andrey Mirkin <major-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Thu, 2008-09-04 at 04:05 -0400, Oren Laadan wrote:
-> +/**
-> + * cr_scan_fds - scan file table and construct array of open fds
-> + * @files: files_struct pointer
-> + * @fdtable: (output) array of open fds
-> + * @return: the number of open fds found
-> + *
-> + * Allocates the file descriptors array (*fdtable), caller should free
-> + */
-> +int cr_scan_fds(struct files_struct *files, int **fdtable)
-> +{
-> +	struct fdtable *fdt;
-> +	int *fdlist;
-> +	int i, n, max;
-> +
-> +	max = CR_DEFAULT_FDTABLE;
-> +
-> + repeat:
-> +	n = 0;
-> +	fdlist = kmalloc(max * sizeof(*fdlist), GFP_KERNEL);
-> +	if (!fdlist)
-> +		return -ENOMEM;
-> +
-> +	spin_lock(&files->file_lock);
-> +	fdt = files_fdtable(files);
-> +	for (i = 0; i < fdt->max_fds; i++) {
-> +		if (fcheck_files(files, i)) {
-> +			if (n == max) {
-> +				spin_unlock(&files->file_lock);
-> +				kfree(fdlist);
-> +				max *= 2;
-> +				if (max < 0) {	/* overflow ? */
-> +					n = -EMFILE;
-> +					break;
-> +				}
-> +				goto repeat;
-> +			}
-> +			fdlist[n++] = i;
-> +		}
-> +	}
-> +	spin_unlock(&files->file_lock);
-> +
-> +	*fdtable = fdlist;
-> +	return n;
-> +}
+Quoting Oren Laadan (orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org):
+> 
+> 
+> Serge E. Hallyn wrote:
+> > Quoting Oren Laadan (orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org):
+> >> Create trivial sys_checkpoint and sys_restore system calls. They will
+> >> enable to checkpoint and restart an entire container, to and from a
+> >> checkpoint image file descriptor.
+> >>
+> >> The syscalls take a file descriptor (for the image file) and flags as
+> >> arguments. For sys_checkpoint the first argument identifies the target
+> >> container; for sys_restart it will identify the checkpoint image.
+> >>
+> >> Signed-off-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+> >> ---
+> 
+> [...]
+> 
+> >> +/**
+> >> + * sys_checkpoint - checkpoint a container
+> >> + * @pid: pid of the container init(1) process
+> >> + * @fd: file to which dump the checkpoint image
+> >> + * @flags: checkpoint operation flags
+> >> + */
+> >> +asmlinkage long sys_checkpoint(pid_t pid, int fd, unsigned long flags)
+> >> +{
+> >> +	pr_debug("sys_checkpoint not implemented yet\n");
+> >> +	return -ENOSYS;
+> >> +}
+> >> +/**
+> >> + * sys_restart - restart a container
+> >> + * @crid: checkpoint image identifier
+> > 
+> > So can we compare your api to Andrey's?
+> > 
+> > You've explained before that crid is used to tie together multiple
+> > calls to checkpoint, but why do you have to specify it for restart?
+> > Can't it just come from the fd?  Or, the fd will be passed in
+> > seek()d to the right position for the data for this task, so the crid
+> > won't be available there?
+> 
+> I added the 'crid' inside to support a mode of operation in which we
+> would like the checkpoint data to remain in memory across multiple
+> system calls. Here are example scenarios:
+> 
+> 1) We will want to reduce down time by first buffering the checkpoint
+> image in memory, then resuming the container, and only then writing
+> the data back to a (the) file descriptor.
+> So instead of:
+>   freeze -> checkpoint and write back -> unfreeze
+> We want:
+>   freeze -> checkpoint to buffer -> unfreeze -> write back
+> I envision each of these steps to be a separate invocation of a syscall.
+> to the 'crid' returned by the sys_checkpoint() at the 2nd step, will be
+> used to identify that data in the 4th step. (Note, that between the
+> unfreeze and the write-back, another checkpoint may be already taken).
+> 
+> 2) A task may want to take a checkpoint (e.g. of itself, or a whole
+> container) and keep that checkpoint in memory; at a later time it may
+> want to revert to that checkpoint. Moreover, it may keep multiple such
+> checkpoints (to where it may want to return). 'crid' tells sys_restart
+> which one to use.
+> 
+> Note that this 'crid' will in fact be tied to resources that are kept
+> by the kernel - e.g. references to COW pages (when we add that).
+> Louis suggested to use a specialized FD instead of a numeric 'crid'
+> (that is: create a anonymous inode and a struct file that represent
+> that checkpoint in the kernel, and return an FD to it). This approach
+> has pros and cons of 'crid' (see the archives of the containers
+> mailing list). For now I kept 'crid', but I'm definitely open to change
+> it to a FD.
+> 
+> Oren.
 
-That loop needs some love.  At least save us from one level of
-indenting:
+Oh, so the crid identifies one checkpoint inside the file - the single
+file can store multiple checkpoints?
 
-> +	for (i = 0; i < fdt->max_fds; i++) {
-> +		if (!fcheck_files(files, i)
-> 			continue;
-> 		if (n == max) {
-> +			spin_unlock(&files->file_lock);
-> +			kfree(fdlist);
-> +			max *= 2;
-> +			if (max < 0) {	/* overflow ? */
-> +				n = -EMFILE;
-> +				break;
-> +			}
-> +			goto repeat;
-> +		}
-> +		fdlist[n++] = i;
-> +	}
+> > Andrey, how will the 'ctid' in your patchset be used?  It sounds
+> > like it's actually going to set some integer id on the created
+> > container?  We actually don't have container ids (or even
+> > containers) right now, so we probably don't want that in our api,
+> > right?
 
-My gut also says that there has to be a better way to find a good size
-for fdlist() than growing it this way.  
-
-Why do we even have a fixed size for this?
-
-+#define CR_DEFAULT_FDTABLE  256
-
-> +/* cr_write_fd_data - dump the state of a given file pointer */
-> +static int cr_write_fd_data(struct cr_ctx *ctx, struct file *file, int parent)
-> +{
-> +	struct cr_hdr h;
-> +	struct cr_hdr_fd_data *hh = cr_hbuf_get(ctx, sizeof(*hh));
-> +	struct dentry *dent = file->f_dentry;
-> +	struct inode *inode = dent->d_inode;
-> +	enum fd_type fd_type;
-> +	int ret;
-> +
-> +	h.type = CR_HDR_FD_DATA;
-> +	h.len = sizeof(*hh);
-> +	h.parent = parent;
-> +
-> +	BUG_ON(!inode);
-
-Why a BUG_ON()?  We'll deref it in just a sec anyway.  We prefer to just
-get the NULL dereference rather than an explicit BUG_ON().
-
-> +	hh->f_flags = file->f_flags;
-> +	hh->f_mode = file->f_mode;
-> +	hh->f_pos = file->f_pos;
-> +	hh->f_uid = file->f_uid;
-> +	hh->f_gid = file->f_gid;
-
-Is there a plan to save off the 'struct user' here instead?  Nested user
-namespaces in one checkpoint image might get confused otherwise.
-
-> +	hh->f_version = file->f_version;
-> +	/* FIX: need also file->f_owner */
-> +
-> +	switch (inode->i_mode & S_IFMT) {
-> +	case S_IFREG:
-> +		fd_type = CR_FD_FILE;
-> +		break;
-> +	case S_IFDIR:
-> +		fd_type = CR_FD_DIR;
-> +		break;
-> +	case S_IFLNK:
-> +		fd_type = CR_FD_LINK;
-> +		break;
-> +	default:
-> +		return -EBADF;
-> +	}
-
-Why don't we just store (and use) (inode->i_mode & S_IFMT) in fd_type
-instead of making our own types?
-
-> +	/* FIX: check if the file/dir/link is unlinked */
-> +	hh->fd_type = fd_type;
-> +
-> +	ret = cr_write_obj(ctx, &h, hh);
-> +	cr_hbuf_put(ctx, sizeof(*hh));
-> +	if (ret < 0)
-> +		return ret;
-> +
-> +	return cr_write_fname(ctx, &file->f_path, ctx->vfsroot);
-> +}
-> +
-> +/**
-> + * cr_write_fd_ent - dump the state of a given file descriptor
-> + * @ctx: checkpoint context
-> + * @files: files_struct pointer
-> + * @fd: file descriptor
-> + *
-> + * Save the state of the file descriptor; look up the actual file pointer
-> + * in the hash table, and if found save the matching objref, otherwise call
-> + * cr_write_fd_data to dump the file pointer too.
-> + */
-> +static int
-> +cr_write_fd_ent(struct cr_ctx *ctx, struct files_struct *files, int fd)
-> +{
-> +	struct cr_hdr h;
-> +	struct cr_hdr_fd_ent *hh = cr_hbuf_get(ctx, sizeof(*hh));
-> +	struct file *file = NULL;
-> +	struct fdtable *fdt;
-> +	int coe, objref, ret;
-> +
-> +	/* make sure hh->fd (that is of type __u16) doesn't overflow */
-> +	if (fd > USHORT_MAX) {
-> +		pr_warning("CR: open files table too big (%d)\n", USHORT_MAX);
-> +		return -EMFILE;
-> +	}
-
-Since the kernel always seems to make fds integers, it would make sense
-to me to store them as integers in the checkpoint image.  Why bother to
-shrink them down to a 16-bit type?
-
-> +	rcu_read_lock();
-> +	fdt = files_fdtable(files);
-> +	file = fcheck_files(files, fd);
-> +	if (file) {
-> +		coe = FD_ISSET(fd, fdt->close_on_exec);
-> +		get_file(file);
-> +	}
-> +	rcu_read_unlock();
-> +
-> +	/* sanity check (although this shouldn't happen) */
-> +	if (!file)
-> +		return -EBADF;
-> +
-> +	ret = cr_obj_add_ptr(ctx, (void *) file, &objref, CR_OBJ_FILE, 0);
-> +	cr_debug("fd %d objref %d file %p c-o-e %d)\n", fd, objref, file, coe);
-> +
-> +	if (ret >= 0) {
-> +		int new = ret;
-> +
-> +		h.type = CR_HDR_FD_ENT;
-> +		h.len = sizeof(*hh);
-> +		h.parent = 0;
-> +
-> +		hh->objref = objref;
-> +		hh->fd = fd;
-> +		hh->close_on_exec = coe;
-> +
-> +		ret = cr_write_obj(ctx, &h, hh);
-> +		cr_hbuf_put(ctx, sizeof(*hh));
-> +		if (ret < 0)
-> +			return ret;
-> +
-> +		/* new==1 if-and-only-if file was new and added to hash */
-> +		if (new)
-> +			ret = cr_write_fd_data(ctx, file, objref);
-> +	}
-
-This if() block is in the normal flow path of the function and should go
-at the top indentation level.  You can just do this:
-
-	  if (ret < 0)
-		goto out;
-  	  // if block contents here...
-
-   out:
-> +	fput(file);
-> +	return ret;
-> +}
--- Dave
+-serge
