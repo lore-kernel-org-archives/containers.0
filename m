@@ -1,100 +1,63 @@
-From: sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org
-Subject: [PATCH 1/11][v3]: Move tty lookup/reopen to tty_open
-Date: Wed, 3 Sep 2008 22:29:33 -0700
-Message-ID: <20080904052933.GB3680@us.ibm.com>
-References: <20080904052718.GA3680@us.ibm.com>
+From: "David Shwatrz" <dshwatrz@gmail.com>
+Subject: Re: [PATCH 1/8] sysfs: Implement sysfs tagged directory support.
+Date: Thu, 4 Sep 2008 08:33:50 +0300
+Message-ID: <31436f4a0809032233r2c46de8od8a94460ce3b5ed2@mail.gmail.com>
+References: <m18wwiihbn.fsf_-_@frodo.ebiederm.org>
+	 <m1zloyh2mb.fsf_-_@frodo.ebiederm.org>
+	 <m1vdzmh2jr.fsf_-_@frodo.ebiederm.org>
+	 <20080820021754.GA25182@kroah.com>
+	 <m1od3m282j.fsf_-_@frodo.ebiederm.org>
+	 <m1hc9e27ya.fsf_-_@frodo.ebiederm.org> <48B57058.9000101@bull.net>
+	 <dac45060809020654g62afb3c9yd104682b93b43bee@mail.gmail.com>
+	 <48BD47A8.1080909@bull.net> <20080902170148.GA9305@suse.de>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
+Content-Type: text/plain; charset=ISO-8859-1
 Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Return-path: <netdev-owner@vger.kernel.org>
+In-Reply-To: <20080902170148.GA9305@suse.de>
 Content-Disposition: inline
-In-Reply-To: <20080904052718.GA3680-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org, alan-qBU/x9rampVanCEyBjwyrvXRex20P6io@public.gmane.org
-Cc: kyle-hoO6YkzgTuCM0SS3m2neIg@public.gmane.org, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org, bastian-yyjItF7Rl6lg9hUCZPvPmw@public.gmane.org, containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org
+Sender: netdev-owner@vger.kernel.org
+To: Greg KH <gregkh@suse.de>
+Cc: Benjamin Thery <benjamin.thery@bull.net>, Greg KH <greg@kroah.com>, Mark Ryden <markryde@gmail.com>, "Eric W. Biederman" <ebiederm@xmission.com>, Andrew Morton <akpm@linux-foundation.org>, Tejun Heo <htejun@gmail.com>, Daniel Lezcano <dlezcano@fr.ibm.com>, linux-kernel@vger.kernel.org, Al Viro <viro@ftp.linux.org.uk>, Linux Containers <containers@lists.osdl.org>, netdev@vger.kernel.org
 List-Id: containers.vger.kernel.org
 
+Hi,
+>go into my tree this week,
 
-Subject: [PATCH 1/11]: Move tty lookup/reopen to tty_open
+I am also interested in this patch; may I ask  - what do you mean by
+"my  tree" ?I am a little newbie in the kernel, as you might understand.
+I looked into http://www.kernel.org/pub/linux/kernel/people/gregkh/gregkh-2.6/
+for candidates for this git tree you are talking about.
 
-From: Sukadev Bhattiprolu <sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+ May I ask: what is the **exact** URL for this git tree you are talking about ?
 
-Move tty_driver_lookup_tty() and tty_reopen() from tty_init_dev()
-into tty_open() (one of the two callers of tty_init_dev()).  These
-calls are not really required in ptmx_open(), the other caller,
-since ptmx_open() would be setting up a new tty.
+Thanks,
 
-Changelog[v2]:
-	- remove the lookup and reopen calls from ptmx_open
-	- merge with recent changes to ttydev tree
+Regards,
+DS
 
-Signed-off-by: Sukadev Bhattiprolu <sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 
----
- drivers/char/tty_io.c |   31 ++++++++++++++++---------------
- 1 file changed, 16 insertions(+), 15 deletions(-)
-
-Index: linux-2.6.27-rc3-tty/drivers/char/tty_io.c
-===================================================================
---- linux-2.6.27-rc3-tty.orig/drivers/char/tty_io.c	2008-08-28 15:26:34.000000000 -0700
-+++ linux-2.6.27-rc3-tty/drivers/char/tty_io.c	2008-08-28 16:16:29.000000000 -0700
-@@ -1366,19 +1366,6 @@ struct tty_struct *tty_init_dev(struct t
- 	struct tty_struct *tty;
- 	int retval;
- 
--	/* check whether we're reopening an existing tty */
--	tty = tty_driver_lookup_tty(driver, idx);
--
--	if (IS_ERR(tty))
--		return tty;
--
--	if (tty) {
--		retval = tty_reopen(tty);
--		if (retval)
--			return ERR_PTR(retval);
--		return tty;
--	}
--
- 	/* Check if pty master is being opened multiple times */
- 	if (driver->subtype == PTY_TYPE_MASTER &&
- 		(driver->flags & TTY_DRIVER_DEVPTS_MEM) && !first_ok)
-@@ -1780,7 +1767,7 @@ void tty_release_dev(struct file *filp)
- 
- static int __tty_open(struct inode *inode, struct file *filp)
- {
--	struct tty_struct *tty;
-+	struct tty_struct *tty = NULL;
- 	int noctty, retval;
- 	struct tty_driver *driver;
- 	int index;
-@@ -1837,7 +1824,21 @@ retry_open:
- 		return -ENODEV;
- 	}
- got_driver:
--	tty = tty_init_dev(driver, index, 0);
-+	if (!tty) {
-+		/* check whether we're reopening an existing tty */
-+		tty = tty_driver_lookup_tty(driver, index);
-+
-+		if (IS_ERR(tty))
-+			return PTR_ERR(tty);
-+	}
-+
-+	if (tty) {
-+		retval = tty_reopen(tty);
-+		if (retval)
-+			tty = ERR_PTR(retval);
-+	} else
-+		tty = tty_init_dev(driver, index, 0);
-+
- 	mutex_unlock(&tty_mutex);
- 	tty_driver_kref_put(driver);
- 	if (IS_ERR(tty))
+On Tue, Sep 2, 2008 at 8:01 PM, Greg KH <gregkh@suse.de> wrote:
+> On Tue, Sep 02, 2008 at 04:03:20PM +0200, Benjamin Thery wrote:
+>> Mark Ryden wrote:
+>>> Hello,
+>>>  I hope that this patch (from 4.7.08) was not forgetten... I don't see
+>>> it for example in linux-net (I have an up-to-date linux-next git
+>>> tree).
+>>
+>> I was about to ask the same thing.
+>>
+>> Greg, what is the plan with these remaining patches for sysfs tagged
+>> dirs? Will you have some time to merge them in your tree soon?
+>
+> Yes, they should go into my tree this week, sorry been busy with 2.6.27
+> work and Novell's Hackweek.
+>
+> thanks,
+>
+> greg k-h
+> --
+> To unsubscribe from this list: send the line "unsubscribe netdev" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>
