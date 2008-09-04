@@ -1,12 +1,13 @@
-From: Eelco Chaudron <echaudron-SvgryPHmmKB+XZJcv9eMoEEOCMrvLtNR@public.gmane.org>
-Subject: Network Namespace ARP support
-Date: Thu, 4 Sep 2008 14:20:13 +0200
-Message-ID: <C4E59F1D.15C93%echaudron@extremenetworks.com>
+From: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Subject: Re: [PATCH 0/9] OpenVZ kernel based checkpointing/restart
+Date: Thu, 04 Sep 2008 07:05:54 -0700
+Message-ID: <1220537154.23620.34.camel__33009.6408878036$1220537561$gmane$org@nimitz>
+References: <1220439476-16465-1-git-send-email-major@openvz.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Language: en
+In-Reply-To: <1220439476-16465-1-git-send-email-major-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -16,23 +17,17 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org" <Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+To: Andrey Mirkin <major-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Hi All,
+So, just like the I/O controller patches, we surely can't just throw
+patch sets back and forth at each other.  We're also sure to wear out
+any potential reviewers, especially on LKML.
 
-I was looking at the network namespaces implementation for ARP, and I was wondering why the struct net abstraction was done in the core neighbour functions, and not at the struct neigh_table arp_tbl level (i.e. one arp_tbl per namespace)?
+The differences you've described between this and Oren's patches are
+pretty small, all things considered.  Would you be willing to simply
+help with Oren's patches or port things over from this set instead of
+working on a completely disjoint set?
 
-One problem I could find with the current implementation is that the "struct neigh_statistics *stats" are global for all namespaces, whereas you might want to see these statistics per namespace.
-
-It would be nice if I could get some insight in some of the design decisions, as I'm new to this area...
-
-Thanks,
-
-
-Eelco
-
-
-________________________________
-DISCLAIMER:
-This e-mail and any attachments to it may contain confidential and proprietary material and is solely for the use of the intended recipient. Any review, use, disclosure, distribution or copying of this transmittal is prohibited except by or on behalf of the intended recipient. If you have received this transmittal in error, please notify the sender and destroy this e-mail and any attachments and all copies, whether electronic or printed.
+-- Dave
