@@ -1,17 +1,20 @@
-From: Andrea Righi <righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: Re: [RFC][PATCH -mm 0/5] cgroup: block device i/o controller (v9)
-Date: Fri, 05 Sep 2008 19:38:26 +0200
-Message-ID: <48C16E92.5000402__27625.1402953223$1220636533$gmane$org@gmail.com>
-References: <1219853257-11052-1-git-send-email-righi.andrea@gmail.com>
-	<20080902180620.GE15847@redhat.com>
-	<48BDA704.9040000@gmail.com> <20080902214146.GA3382@redhat.com>
-	<20080905155944.GF13742@redhat.com>
-Reply-To: righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org
+From: sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org
+Subject: Re: [PATCH 11/11][v3]: Enable multiple instances of devpts
+Date: Fri, 5 Sep 2008 12:44:50 -0700
+Message-ID: <20080905194450.GA18119@us.ibm.com>
+References: <48BF8283.7040601@zytor.com> <20080904155431.GA11174@us.ibm.com>
+	<48C00698.8050803@zytor.com>
+	<20080904172542.3ad7bb85@lxorguk.ukuu.org.uk>
+	<48C01163.1050704@zytor.com> <20080904171828.GC11174@us.ibm.com>
+	<48C01B58.2040006@zytor.com> <20080905020131.GA17535@us.ibm.com>
+	<20080905132710.50018aef@lxorguk.ukuu.org.uk>
+	<48C16B42.7030103@zytor.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20080905155944.GF13742-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <48C16B42.7030103-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -21,58 +24,36 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Cc: randy.dunlap-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org, axboe-tSWWG44O7X1aa/9Udqfwiw@public.gmane.org, dradford-cT2on/YLNlBWk0Htik3J/w@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, ngupta-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, fernando-gVGce1chcLdL9jVzuh4AOg@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Carl Henrik Lunde <chlunde-om2ZC0WAoZIXWF+eFR7m5Q@public.gmane.org>, dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, matt-cT2on/YLNlBWk0Htik3J/w@public.gmane.org, Divyesh Shah <dpshah-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, roberto-5KDOxZqKugI@public.gmane.org, agk-9JcytcrH/bA+uJoB2kUjGw@public.gmane.org, Marco Innocenti <m.innocenti-qooieK91W7JeoWH0uzbU5w@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, subrata-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, eric.rannaud-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+To: "H. Peter Anvin" <hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org>
+Cc: kyle-hoO6YkzgTuCM0SS3m2neIg@public.gmane.org, sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, bastian-yyjItF7Rl6lg9hUCZPvPmw@public.gmane.org, containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org, Alan Cox <alan-qBU/x9rampVanCEyBjwyrvXRex20P6io@public.gmane.org>, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Vivek Goyal wrote:
-> Ok, to be more specific, I was thinking of following.
-> 
-> Currently, all the requests for a block device go into request queue in
-> a linked list and then associated elevator selects the best request for
-> dispatch based on various policies as dictated by elevator.
-> 
-> Can we maintan an rb-tree per request queue and all the requests being
-> queued on that request queue first will go in this rb-tree. Then based on
-> cgroup grouping and control policy (max bandwidth capping, proportional
-> bandwidth etc), one can pass the requests to elevator associated with the
-> queue (which will do the actual job of merging and other things).
+H. Peter Anvin [hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org] wrote:
+> Alan Cox wrote:
+>>> Does presence of /dev/pts/ptmx in single-instance case break userspace ?
+>> It changes the permssion rules and subverts any permissions and security
+>> labels applied to the current node.
+>> If it was there and defaulted to no permission I doubt anything would
+>> care - ie presence is not the problem, rights management is.
+>
+> It would be easy enough to have it default to mode 000 unless otherwise 
+> specified.  For the default instance it is important that a remount can 
+> update the permissions (since the original mount will be the kernel 
+> version), but that's pretty straightforward.
 
-Could a workqueue like kblockd move requests from rb-tree to the equivalent
-request queue?
+Agree in general. Not sure if you are implying remount is necessary just
+to change permissions of pts/ptmx. Why not "chmod 0666 /dev/pts/ptmx" ?
+The remount changes the 'ptmxmode' setting, but since the node exists,
+the 'ptmxmode' setting is never used again and we need to chmod.
 
-> 
-> So effectively first we provide control at cgroup level and then let
-> elevator take the best decisions with in that.
+> That might be the best option?
 
-I think I've to figure better all the implementation details, but yes,
-sounds good. This seems to be the right approach to provide any kind of
-IO controlling: bandwidth throttling, proportional bandwidth,
-ionice-like approach, etc.
+For containers or multi-instance mode, I agree.
 
-> This should not require creation of any dm-ioband devices to control the
-> devices. Each block device will contain one rb-tree (cgroups hanging) as
-> long has somebody has put a controlling policy on that devices. (We can
-> probably use your interfaces to create policies on devices through cgroup
-> files).
-> 
-> This should not require elevator modifications and should work well with
-> stacked devices. 
-> 
-> I will try to write some prototype patches and see if all the above
-> gibber makes any sense and is workable or not.
+In mixed mode, one observation is if /dev/ptmx is changed to symlink, regular
+(not container) startup scripts must chmod /dev/pts/ptmx on _every_ boot.
 
-That would be great!
+ptmx node in multi-instance mounts continue to get PTMX_DEFAULT_MODE
+permissions (not 000) right ? (unless -o ptmxmode is specified)
 
-> 
-> One limitation in this scheme is that we are providing grouping capability
-> based on cgroups only and it is not as generic what dm-ioband is providing.
-> Do we really require other ways of creating grouping. Creating another device
-> for each device you want to control sounds odd to me.
-
-In any case libcgroup could help here to define any grouping policy
-(uid, gid, pid, ...). So, IMHO the grouping capability provided by
-cgroups is in perspective generic as well as what dm-ioband provides.
-
-Thanks,
--Andrea
+Yes, I think its a good option.
