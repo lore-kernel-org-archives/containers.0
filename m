@@ -1,59 +1,263 @@
-From: sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org
-Subject: Re: [PATCH 11/11][v3]: Enable multiple instances of devpts
-Date: Fri, 5 Sep 2008 12:44:50 -0700
-Message-ID: <20080905194450.GA18119@us.ibm.com>
-References: <48BF8283.7040601@zytor.com> <20080904155431.GA11174@us.ibm.com>
-	<48C00698.8050803@zytor.com>
-	<20080904172542.3ad7bb85@lxorguk.ukuu.org.uk>
-	<48C01163.1050704@zytor.com> <20080904171828.GC11174@us.ibm.com>
-	<48C01B58.2040006@zytor.com> <20080905020131.GA17535@us.ibm.com>
-	<20080905132710.50018aef@lxorguk.ukuu.org.uk>
-	<48C16B42.7030103@zytor.com>
+From: Alexey Dobriyan <adobriyan@gmail.com>
+Subject: [PATCH 1/2] netns bridge: allow bridges in netns!
+Date: Sat, 6 Sep 2008 10:43:05 +0400
+Message-ID: <20080906064304.GA7810@x200.localdomain>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Content-Type: text/plain; charset=us-ascii
+Return-path: <netdev-owner@vger.kernel.org>
 Content-Disposition: inline
-In-Reply-To: <48C16B42.7030103-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "H. Peter Anvin" <hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org>
-Cc: kyle-hoO6YkzgTuCM0SS3m2neIg@public.gmane.org, sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, bastian-yyjItF7Rl6lg9hUCZPvPmw@public.gmane.org, containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org, Alan Cox <alan-qBU/x9rampVanCEyBjwyrvXRex20P6io@public.gmane.org>, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org
+Sender: netdev-owner@vger.kernel.org
+To: davem@davemloft.net, shemminger@linux-foundation.org
+Cc: netdev@vger.kernel.org, containers@osdl.org
 List-Id: containers.vger.kernel.org
 
-H. Peter Anvin [hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org] wrote:
-> Alan Cox wrote:
->>> Does presence of /dev/pts/ptmx in single-instance case break userspace ?
->> It changes the permssion rules and subverts any permissions and security
->> labels applied to the current node.
->> If it was there and defaulted to no permission I doubt anything would
->> care - ie presence is not the problem, rights management is.
->
-> It would be easy enough to have it default to mode 000 unless otherwise 
-> specified.  For the default instance it is important that a remount can 
-> update the permissions (since the original mount will be the kernel 
-> version), but that's pretty straightforward.
+Bridge as netdevice doesn't cross netns boundaries.
 
-Agree in general. Not sure if you are implying remount is necessary just
-to change permissions of pts/ptmx. Why not "chmod 0666 /dev/pts/ptmx" ?
-The remount changes the 'ptmxmode' setting, but since the node exists,
-the 'ptmxmode' setting is never used again and we need to chmod.
+Bridge ports and bridge itself live in same netns.
 
-> That might be the best option?
+Notifiers are fixed.
 
-For containers or multi-instance mode, I agree.
+netns propagated from userspace socket for setup and teardown.
 
-In mixed mode, one observation is if /dev/ptmx is changed to symlink, regular
-(not container) startup scripts must chmod /dev/pts/ptmx on _every_ boot.
+Signed-off-by: Alexey Dobriyan <adobriyan@gmail.com>
+---
 
-ptmx node in multi-instance mounts continue to get PTMX_DEFAULT_MODE
-permissions (not 000) right ? (unless -o ptmxmode is specified)
+ net/bridge/br_device.c   |    3 ++-
+ net/bridge/br_if.c       |   11 ++++++-----
+ net/bridge/br_ioctl.c    |   20 ++++++++++----------
+ net/bridge/br_netlink.c  |   15 +++++----------
+ net/bridge/br_notify.c   |    3 ---
+ net/bridge/br_private.h  |    4 ++--
+ net/bridge/br_stp_bpdu.c |    3 ---
+ 7 files changed, 25 insertions(+), 34 deletions(-)
 
-Yes, I think its a good option.
+--- a/net/bridge/br_device.c
++++ b/net/bridge/br_device.c
+@@ -178,5 +178,6 @@ void br_dev_setup(struct net_device *dev)
+ 	dev->priv_flags = IFF_EBRIDGE;
+ 
+ 	dev->features = NETIF_F_SG | NETIF_F_FRAGLIST | NETIF_F_HIGHDMA |
+-			NETIF_F_GSO_MASK | NETIF_F_NO_CSUM | NETIF_F_LLTX;
++			NETIF_F_GSO_MASK | NETIF_F_NO_CSUM | NETIF_F_LLTX |
++			NETIF_F_NETNS_LOCAL;
+ }
+--- a/net/bridge/br_if.c
++++ b/net/bridge/br_if.c
+@@ -168,7 +168,7 @@ static void del_br(struct net_bridge *br)
+ 	unregister_netdevice(br->dev);
+ }
+ 
+-static struct net_device *new_bridge_dev(const char *name)
++static struct net_device *new_bridge_dev(struct net *net, const char *name)
+ {
+ 	struct net_bridge *br;
+ 	struct net_device *dev;
+@@ -178,6 +178,7 @@ static struct net_device *new_bridge_dev(const char *name)
+ 
+ 	if (!dev)
+ 		return NULL;
++	dev_net_set(dev, net);
+ 
+ 	br = netdev_priv(dev);
+ 	br->dev = dev;
+@@ -262,12 +263,12 @@ static struct net_bridge_port *new_nbp(struct net_bridge *br,
+ 	return p;
+ }
+ 
+-int br_add_bridge(const char *name)
++int br_add_bridge(struct net *net, const char *name)
+ {
+ 	struct net_device *dev;
+ 	int ret;
+ 
+-	dev = new_bridge_dev(name);
++	dev = new_bridge_dev(net, name);
+ 	if (!dev)
+ 		return -ENOMEM;
+ 
+@@ -294,13 +295,13 @@ out_free:
+ 	goto out;
+ }
+ 
+-int br_del_bridge(const char *name)
++int br_del_bridge(struct net *net, const char *name)
+ {
+ 	struct net_device *dev;
+ 	int ret = 0;
+ 
+ 	rtnl_lock();
+-	dev = __dev_get_by_name(&init_net, name);
++	dev = __dev_get_by_name(net, name);
+ 	if (dev == NULL)
+ 		ret =  -ENXIO; 	/* Could not find device */
+ 
+--- a/net/bridge/br_ioctl.c
++++ b/net/bridge/br_ioctl.c
+@@ -21,12 +21,12 @@
+ #include "br_private.h"
+ 
+ /* called with RTNL */
+-static int get_bridge_ifindices(int *indices, int num)
++static int get_bridge_ifindices(struct net *net, int *indices, int num)
+ {
+ 	struct net_device *dev;
+ 	int i = 0;
+ 
+-	for_each_netdev(&init_net, dev) {
++	for_each_netdev(net, dev) {
+ 		if (i >= num)
+ 			break;
+ 		if (dev->priv_flags & IFF_EBRIDGE)
+@@ -89,7 +89,7 @@ static int add_del_if(struct net_bridge *br, int ifindex, int isadd)
+ 	if (!capable(CAP_NET_ADMIN))
+ 		return -EPERM;
+ 
+-	dev = dev_get_by_index(&init_net, ifindex);
++	dev = dev_get_by_index(dev_net(br->dev), ifindex);
+ 	if (dev == NULL)
+ 		return -EINVAL;
+ 
+@@ -309,7 +309,7 @@ static int old_dev_ioctl(struct net_device *dev, struct ifreq *rq, int cmd)
+ 	return -EOPNOTSUPP;
+ }
+ 
+-static int old_deviceless(void __user *uarg)
++static int old_deviceless(struct net *net, void __user *uarg)
+ {
+ 	unsigned long args[3];
+ 
+@@ -331,7 +331,7 @@ static int old_deviceless(void __user *uarg)
+ 		if (indices == NULL)
+ 			return -ENOMEM;
+ 
+-		args[2] = get_bridge_ifindices(indices, args[2]);
++		args[2] = get_bridge_ifindices(net, indices, args[2]);
+ 
+ 		ret = copy_to_user((void __user *)args[1], indices, args[2]*sizeof(int))
+ 			? -EFAULT : args[2];
+@@ -354,9 +354,9 @@ static int old_deviceless(void __user *uarg)
+ 		buf[IFNAMSIZ-1] = 0;
+ 
+ 		if (args[0] == BRCTL_ADD_BRIDGE)
+-			return br_add_bridge(buf);
++			return br_add_bridge(net, buf);
+ 
+-		return br_del_bridge(buf);
++		return br_del_bridge(net, buf);
+ 	}
+ 	}
+ 
+@@ -368,7 +368,7 @@ int br_ioctl_deviceless_stub(struct net *net, unsigned int cmd, void __user *uar
+ 	switch (cmd) {
+ 	case SIOCGIFBR:
+ 	case SIOCSIFBR:
+-		return old_deviceless(uarg);
++		return old_deviceless(net, uarg);
+ 
+ 	case SIOCBRADDBR:
+ 	case SIOCBRDELBR:
+@@ -383,9 +383,9 @@ int br_ioctl_deviceless_stub(struct net *net, unsigned int cmd, void __user *uar
+ 
+ 		buf[IFNAMSIZ-1] = 0;
+ 		if (cmd == SIOCBRADDBR)
+-			return br_add_bridge(buf);
++			return br_add_bridge(net, buf);
+ 
+-		return br_del_bridge(buf);
++		return br_del_bridge(net, buf);
+ 	}
+ 	}
+ 	return -EOPNOTSUPP;
+--- a/net/bridge/br_netlink.c
++++ b/net/bridge/br_netlink.c
+@@ -82,6 +82,7 @@ nla_put_failure:
+  */
+ void br_ifinfo_notify(int event, struct net_bridge_port *port)
+ {
++	struct net *net = dev_net(port->dev);
+ 	struct sk_buff *skb;
+ 	int err = -ENOBUFS;
+ 
+@@ -97,10 +98,10 @@ void br_ifinfo_notify(int event, struct net_bridge_port *port)
+ 		kfree_skb(skb);
+ 		goto errout;
+ 	}
+-	err = rtnl_notify(skb, &init_net,0, RTNLGRP_LINK, NULL, GFP_ATOMIC);
++	err = rtnl_notify(skb, net, 0, RTNLGRP_LINK, NULL, GFP_ATOMIC);
+ errout:
+ 	if (err < 0)
+-		rtnl_set_sk_err(&init_net, RTNLGRP_LINK, err);
++		rtnl_set_sk_err(net, RTNLGRP_LINK, err);
+ }
+ 
+ /*
+@@ -112,11 +113,8 @@ static int br_dump_ifinfo(struct sk_buff *skb, struct netlink_callback *cb)
+ 	struct net_device *dev;
+ 	int idx;
+ 
+-	if (net != &init_net)
+-		return 0;
+-
+ 	idx = 0;
+-	for_each_netdev(&init_net, dev) {
++	for_each_netdev(net, dev) {
+ 		/* not a bridge port */
+ 		if (dev->br_port == NULL || idx < cb->args[0])
+ 			goto skip;
+@@ -147,9 +145,6 @@ static int br_rtm_setlink(struct sk_buff *skb,  struct nlmsghdr *nlh, void *arg)
+ 	struct net_bridge_port *p;
+ 	u8 new_state;
+ 
+-	if (net != &init_net)
+-		return -EINVAL;
+-
+ 	if (nlmsg_len(nlh) < sizeof(*ifm))
+ 		return -EINVAL;
+ 
+@@ -165,7 +160,7 @@ static int br_rtm_setlink(struct sk_buff *skb,  struct nlmsghdr *nlh, void *arg)
+ 	if (new_state > BR_STATE_BLOCKING)
+ 		return -EINVAL;
+ 
+-	dev = __dev_get_by_index(&init_net, ifm->ifi_index);
++	dev = __dev_get_by_index(net, ifm->ifi_index);
+ 	if (!dev)
+ 		return -ENODEV;
+ 
+--- a/net/bridge/br_notify.c
++++ b/net/bridge/br_notify.c
+@@ -35,9 +35,6 @@ static int br_device_event(struct notifier_block *unused, unsigned long event, v
+ 	struct net_bridge_port *p = dev->br_port;
+ 	struct net_bridge *br;
+ 
+-	if (!net_eq(dev_net(dev), &init_net))
+-		return NOTIFY_DONE;
+-
+ 	/* not a port of a bridge */
+ 	if (p == NULL)
+ 		return NOTIFY_DONE;
+--- a/net/bridge/br_private.h
++++ b/net/bridge/br_private.h
+@@ -178,8 +178,8 @@ extern void br_flood_forward(struct net_bridge *br, struct sk_buff *skb);
+ 
+ /* br_if.c */
+ extern void br_port_carrier_check(struct net_bridge_port *p);
+-extern int br_add_bridge(const char *name);
+-extern int br_del_bridge(const char *name);
++extern int br_add_bridge(struct net *net, const char *name);
++extern int br_del_bridge(struct net *net, const char *name);
+ extern void br_cleanup_bridges(void);
+ extern int br_add_if(struct net_bridge *br,
+ 	      struct net_device *dev);
+--- a/net/bridge/br_stp_bpdu.c
++++ b/net/bridge/br_stp_bpdu.c
+@@ -140,9 +140,6 @@ void br_stp_rcv(const struct stp_proto *proto, struct sk_buff *skb,
+ 	struct net_bridge *br;
+ 	const unsigned char *buf;
+ 
+-	if (!net_eq(dev_net(dev), &init_net))
+-		goto err;
+-
+ 	if (!p)
+ 		goto err;
+ 
+
