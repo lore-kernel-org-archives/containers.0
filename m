@@ -1,13 +1,15 @@
-From: Stephen Hemminger <shemminger-ZtmgI6mnKB3QT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 2/2] netns bridge: cleanup bridges during netns stop
-Date: Sat, 6 Sep 2008 18:38:21 -0700
-Message-ID: <20080906183821.1da26204@extreme>
-References: <20080906064408.GB7810@x200.localdomain>
+From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Subject: Re: [RFC v3][PATCH 4/9] Memory management (dump)
+Date: Sat, 06 Sep 2008 21:54:05 -0400
+Message-ID: <48C3343D.9000407@cs.columbia.edu>
+References: <Pine.LNX.4.64.0809040354440.460@takamine.ncl.cs.columbia.edu>	
+	<Pine.LNX.4.64.0809040403120.5982@takamine.ncl.cs.columbia.edu>
+	<1220552725.23386.46.camel@nimitz>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20080906064408.GB7810-2ev+ksY9ol182hYKe6nXyg@public.gmane.org>
+In-Reply-To: <1220552725.23386.46.camel@nimitz>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -17,33 +19,69 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Cc: netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, davem-fT/PcQaiUtIeIZ0/mPfg9Q@public.gmane.org
+To: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, jeremy-TSDbQ3PG+2Y@public.gmane.org, arnd-r2nGTMty4D4@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Sat, 6 Sep 2008 10:44:08 +0400
-Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org> wrote:
 
-> Signed-off-by: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-> ---
+
+Dave Hansen wrote:
+> On Thu, 2008-09-04 at 04:03 -0400, Oren Laadan wrote:
+>> +/* free a chain of page-arrays */
+>> +void cr_pgarr_free(struct cr_ctx *ctx)
+>> +{
+>> +       struct cr_pgarr *pgarr, *pgnxt;
+>> +
+>> +       for (pgarr = ctx->pgarr; pgarr; pgarr = pgnxt) {
+>> +               _cr_pgarr_release(ctx, pgarr);
+>> +               free_pages((unsigned long) ctx->pgarr->addrs, CR_PGARR_ORDER);
+>> +               free_pages((unsigned long) ctx->pgarr->pages, CR_PGARR_ORDER);
+>> +               pgnxt = pgarr->next;
+>> +               kfree(pgarr);
+>> +       }
+>> +}
 > 
->  net/bridge/br.c         |   22 ++++++++++++++++------
->  net/bridge/br_if.c      |    4 ++--
->  net/bridge/br_private.h |    2 +-
->  3 files changed, 19 insertions(+), 9 deletions(-)
+> What we effectively have here is:
 > 
-> --- a/net/bridge/br.c
-> +++ b/net/bridge/br.c
-> @@ -28,6 +28,10 @@ static const struct stp_proto br_stp_proto = {
->  	.rcv	= br_stp_rcv,
->  };
->  
-> +static struct pernet_operations br_net_ops = {
-> +	.exit	= br_net_exit,
-> +};
-> +
+> void *addrs[CR_PGARR_TOTAL];
+> void *pages[CR_PGARR_TOTAL];
+> 
+> right?
+> 
+> Would any of this get simpler if we just had:
+> 
+> struct cr_page {
+> 	struct page *page;
+> 	unsigned long vaddr;
+> };
+> 
+> struct cr_pgarr {
+>        struct cr_page *cr_pages;
+>        struct cr_pgarr *next;
+>        unsigned short nleft;
+>        unsigned short nused;
+> };
 
-Acked-by: Stephen Hemminger <shemminger-ZtmgI6mnKB3QT0dZR+AlfA@public.gmane.org>
+The reason I use separate arrays instead of an array of tuples is that
+the logic is to write all vaddr at once - simply by dumping the array
+of vaddrs.
 
-overall, this is fine, but you might want to think about making
-pernet_operations const if possible in future.
+> 
+> Also, we do have lots of linked list implementations in the kernel.
+> They do lots of fun stuff like poisoning and checking for
+> initialization.  We should use them instead of rolling our own.  It lets
+> us do other fun stuff like list_for_each().
+> 
+> Also, just looking at this structure 'nleft' and 'nused' sound a bit
+> redundant.  I know from looking at the code that this is how many have
+> been filled and read back at restore time, but that is not very obvious
+> looking at the structure.  I think we can do a bit better in the
+> structure itself.
+> 
+> The length of the arrays is fixed at compile-time, right?  Should we
+> just make that explicit as well?  
+
+The length of the array may be tunable, or even adaptive (e.g. based
+on statistics from recent checkpoints), in the future.
+
+Oren.
