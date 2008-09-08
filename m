@@ -1,7 +1,7 @@
 From: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: [PATCH 02/33] nf_conntrack_gre: more locking around keymap list
-Date: Mon,  8 Sep 2008 07:02:39 +0400
-Message-ID: <1220842990-30500-2-git-send-email-adobriyan__2483.6853765466$1220843267$gmane$org@gmail.com>
+Subject: [PATCH 03/33] nf_conntrack_gre: nf_ct_gre_keymap_flush() fixlet
+Date: Mon,  8 Sep 2008 07:02:40 +0400
+Message-ID: <1220842990-30500-3-git-send-email-adobriyan__41710.9049427838$1220843385$gmane$org@gmail.com>
 References: <48C01046.2070704@trash.net>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -21,27 +21,32 @@ To: kaber-dcUjhNyLwpNeoWH0uzbU5w@public.gmane.org
 Cc: netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, netfilter-devel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-gre_keymap_list should be protected in all places.
+It does "kfree(list_head)" which looks wrong because entity that was
+allocated is definitely not list_head.
+
+However, this all works because list_head is first item in
+struct nf_ct_gre_keymap .
 
 Signed-off-by: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 
 diff --git a/net/netfilter/nf_conntrack_proto_gre.c b/net/netfilter/nf_conntrack_proto_gre.c
-index 0e3d124..2752b74 100644
+index 2752b74..c5a7822 100644
 --- a/net/netfilter/nf_conntrack_proto_gre.c
 +++ b/net/netfilter/nf_conntrack_proto_gre.c
-@@ -97,10 +97,14 @@ int nf_ct_gre_keymap_add(struct nf_conn *ct, enum ip_conntrack_dir dir,
- 	kmp = &help->help.ct_pptp_info.keymap[dir];
- 	if (*kmp) {
- 		/* check whether it's a retransmission */
-+		read_lock_bh(&nf_ct_gre_lock);
- 		list_for_each_entry(km, &gre_keymap_list, list) {
--			if (gre_key_cmpfn(km, t) && km == *kmp)
-+			if (gre_key_cmpfn(km, t) && km == *kmp) {
-+				read_unlock_bh(&nf_ct_gre_lock);
- 				return 0;
-+			}
- 		}
-+		read_unlock_bh(&nf_ct_gre_lock);
- 		pr_debug("trying to override keymap_%s for ct %p\n",
- 			 dir == IP_CT_DIR_REPLY ? "reply" : "orig", ct);
- 		return -EEXIST;
+@@ -45,12 +45,12 @@ static LIST_HEAD(gre_keymap_list);
+ 
+ void nf_ct_gre_keymap_flush(void)
+ {
+-	struct list_head *pos, *n;
++	struct nf_ct_gre_keymap *km, *tmp;
+ 
+ 	write_lock_bh(&nf_ct_gre_lock);
+-	list_for_each_safe(pos, n, &gre_keymap_list) {
+-		list_del(pos);
+-		kfree(pos);
++	list_for_each_entry_safe(km, tmp, &gre_keymap_list, list) {
++		list_del(&km->list);
++		kfree(km);
+ 	}
+ 	write_unlock_bh(&nf_ct_gre_lock);
+ }
