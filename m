@@ -1,106 +1,37 @@
-From: "Mark Ryden" <markryde@gmail.com>
-Subject: Re: [PATCH 1/8] sysfs: Implement sysfs tagged directory support.
-Date: Mon, 8 Sep 2008 21:39:06 +0300
-Message-ID: <dac45060809081139u31c1570bm13ff39ac97bef11@mail.gmail.com>
-References: <m18wwiihbn.fsf_-_@frodo.ebiederm.org>
-	 <20080820021754.GA25182@kroah.com>
-	 <m1od3m282j.fsf_-_@frodo.ebiederm.org>
-	 <m1hc9e27ya.fsf_-_@frodo.ebiederm.org> <48B57058.9000101@bull.net>
-	 <dac45060809020654g62afb3c9yd104682b93b43bee@mail.gmail.com>
-	 <48BD47A8.1080909@bull.net> <20080902170148.GA9305@suse.de>
-	 <31436f4a0809032233r2c46de8od8a94460ce3b5ed2@mail.gmail.com>
-	 <48BF83E1.5040000@bull.net>
+From: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
+Subject: Re: [PATCH] cgroup(fix critical bug): new handling for tasks file
+Date: Mon, 8 Sep 2008 14:16:35 -0700
+Message-ID: <20080908141635.3ce77adc.akpm__10356.348710093$1220908793$gmane$org@linux-foundation.org>
+References: <48B360CE.2010501@cn.fujitsu.com>
+	<6599ad830808251929p10dfc9d2ub11e4db0cd4f9f3@mail.gmail.com>
+	<48B39319.7070403@cn.fujitsu.com>
+	<6599ad830808261544w308a850m865ac0c0a1552c77@mail.gmail.com>
+	<48B4D81D.2040200@cn.fujitsu.com>
+	<6599ad830808270536i353e1807kaac4e9fb74301bb0@mail.gmail.com>
+	<48B69582.4000208@cn.fujitsu.com> <48C0C4F7.2080702@google.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
+Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-Return-path: <netdev-owner@vger.kernel.org>
-In-Reply-To: <48BF83E1.5040000@bull.net>
-Content-Disposition: inline
-Sender: netdev-owner@vger.kernel.org
-To: Benjamin Thery <benjamin.thery@bull.net>
-Cc: David Shwatrz <dshwatrz@gmail.com>, Greg KH <gregkh@suse.de>, Greg KH <greg@kroah.com>, "Eric W. Biederman" <ebiederm@xmission.com>, Andrew Morton <akpm@linux-foundation.org>, Tejun Heo <htejun@gmail.com>, Daniel Lezcano <dlezcano@fr.ibm.com>, linux-kernel@vger.kernel.org, Al Viro <viro@ftp.linux.org.uk>, Linux Containers <containers@lists.osdl.org>, netdev@vger.kernel.org
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <48C0C4F7.2080702-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Hi,
-Well, I believe that again it was somehow forgotten or was not applied for
-other reasons, since polling the following URL several times in last
-days did not
-show this patch (url:
-git://git.kernel.org/pub/scm/linux/kernel/git/gregkh/patches.git)
+On Thu, 04 Sep 2008 22:34:47 -0700
+Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org> wrote:
 
-Regards,
-MR
+>  	npids = cgroup_task_count(cgrp);
+> +	pidarray = kmalloc(npids * sizeof(pid_t), GFP_KERNEL);
 
-
-
-
-On Thu, Sep 4, 2008 at 9:44 AM, Benjamin Thery <benjamin.thery@bull.net> wrote:
-> David Shwatrz wrote:
->>
->> Hi,
->>>
->>> go into my tree this week,
->>
->> I am also interested in this patch; may I ask  - what do you mean by
->> "my  tree" ?I am a little newbie in the kernel, as you might understand.
->> I looked into
->> http://www.kernel.org/pub/linux/kernel/people/gregkh/gregkh-2.6/
->> for candidates for this git tree you are talking about.
->>
->>  May I ask: what is the **exact** URL for this git tree you are talking
->> about ?
->
-> Greg's tree is there:
-> http://git.kernel.org/?p=linux/kernel/git/gregkh/patches.git;a=summary
->
-> You can clone it from here:
-> git://git.kernel.org/pub/scm/linux/kernel/git/gregkh/patches.git
->
-> It contains the patches serie to be applied on top of
-> linux-2.6 (with 'quilt' for example).
->
-> Benjamin
->
->>
->> Thanks,
->>
->> Regards,
->> DS
->>
->>
->> On Tue, Sep 2, 2008 at 8:01 PM, Greg KH <gregkh@suse.de> wrote:
->>>
->>> On Tue, Sep 02, 2008 at 04:03:20PM +0200, Benjamin Thery wrote:
->>>>
->>>> Mark Ryden wrote:
->>>>>
->>>>> Hello,
->>>>>  I hope that this patch (from 4.7.08) was not forgetten... I don't see
->>>>> it for example in linux-net (I have an up-to-date linux-next git
->>>>> tree).
->>>>
->>>> I was about to ask the same thing.
->>>>
->>>> Greg, what is the plan with these remaining patches for sysfs tagged
->>>> dirs? Will you have some time to merge them in your tree soon?
->>>
->>> Yes, they should go into my tree this week, sorry been busy with 2.6.27
->>> work and Novell's Hackweek.
->>>
->>> thanks,
->>>
->>> greg k-h
->>> --
->>> To unsubscribe from this list: send the line "unsubscribe netdev" in
->>> the body of a message to majordomo@vger.kernel.org
->>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->>>
->>
->>
->
->
-> --
-> B e n j a m i n   T h e r y  - BULL/DT/Open Software R&D
->
->   http://www.bull.com
->
+kmalloc becomes more unreliable above 32 kbytes and 100% unreliable
+above MAX_ORDER.
