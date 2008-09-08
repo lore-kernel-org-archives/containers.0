@@ -1,14 +1,14 @@
-From: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: [PATCH 08/33] netns ct: pass netns pointer to L4 protocol's ->error
-	hook
-Date: Mon,  8 Sep 2008 07:02:45 +0400
-Message-ID: <1220842990-30500-8-git-send-email-adobriyan__30979.3986067691$1220844135$gmane$org@gmail.com>
-References: <48C01046.2070704@trash.net>
+From: Takuya Yoshikawa <yoshikawa.takuya-gVGce1chcLdL9jVzuh4AOg@public.gmane.org>
+Subject: Re: RFC: Attaching threads to cgroups is OK?
+Date: Mon, 08 Sep 2008 11:58:51 +0900
+Message-ID: <48C494EB.4080502@oss.ntt.co.jp>
+References: <20080822185527.GD27964@redhat.com>	<1219660569.16371.161.camel@sebastian.kern.oss.ntt.co.jp>	<20080905.205016.28412219.taka@valinux.co.jp>	<20080905.210017.44596963.taka@valinux.co.jp>
+	<20080905153832.GE13742@redhat.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <48C01046.2070704-dcUjhNyLwpNeoWH0uzbU5w@public.gmane.org>
+In-Reply-To: <20080905153832.GE13742-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,188 +18,69 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: kaber-dcUjhNyLwpNeoWH0uzbU5w@public.gmane.org
-Cc: netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, netfilter-devel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, virtualization-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, fernando-gVGce1chcLdL9jVzuh4AOg@public.gmane.org, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Again, it's deducible from skb, but we're going to use it for
-nf_conntrack_checksum and statistics, so just pass it from upper layer.
+Hi both,
 
-Signed-off-by: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Fernando is off this week, so may not be able to reply soon, sorry.
 
-diff --git a/include/net/netfilter/nf_conntrack_l4proto.h b/include/net/netfilter/nf_conntrack_l4proto.h
-index d4376e9..97723d3 100644
---- a/include/net/netfilter/nf_conntrack_l4proto.h
-+++ b/include/net/netfilter/nf_conntrack_l4proto.h
-@@ -50,7 +50,7 @@ struct nf_conntrack_l4proto
- 	/* Called when a conntrack entry is destroyed */
- 	void (*destroy)(struct nf_conn *ct);
- 
--	int (*error)(struct sk_buff *skb, unsigned int dataoff,
-+	int (*error)(struct net *net, struct sk_buff *skb, unsigned int dataoff,
- 		     enum ip_conntrack_info *ctinfo,
- 		     u_int8_t pf, unsigned int hooknum);
- 
-diff --git a/net/ipv4/netfilter/nf_conntrack_proto_icmp.c b/net/ipv4/netfilter/nf_conntrack_proto_icmp.c
-index daf3463..8c7ed5b 100644
---- a/net/ipv4/netfilter/nf_conntrack_proto_icmp.c
-+++ b/net/ipv4/netfilter/nf_conntrack_proto_icmp.c
-@@ -123,7 +123,7 @@ static bool icmp_new(struct nf_conn *ct, const struct sk_buff *skb,
- 
- /* Returns conntrack if it dealt with ICMP, and filled in skb fields */
- static int
--icmp_error_message(struct sk_buff *skb,
-+icmp_error_message(struct net *net, struct sk_buff *skb,
- 		 enum ip_conntrack_info *ctinfo,
- 		 unsigned int hooknum)
- {
-@@ -155,7 +155,7 @@ icmp_error_message(struct sk_buff *skb,
- 
- 	*ctinfo = IP_CT_RELATED;
- 
--	h = nf_conntrack_find_get(&init_net, &innertuple);
-+	h = nf_conntrack_find_get(net, &innertuple);
- 	if (!h) {
- 		pr_debug("icmp_error_message: no match\n");
- 		return -NF_ACCEPT;
-@@ -172,7 +172,7 @@ icmp_error_message(struct sk_buff *skb,
- 
- /* Small and modified version of icmp_rcv */
- static int
--icmp_error(struct sk_buff *skb, unsigned int dataoff,
-+icmp_error(struct net *net, struct sk_buff *skb, unsigned int dataoff,
- 	   enum ip_conntrack_info *ctinfo, u_int8_t pf, unsigned int hooknum)
- {
- 	const struct icmphdr *icmph;
-@@ -217,7 +217,7 @@ icmp_error(struct sk_buff *skb, unsigned int dataoff,
- 	    && icmph->type != ICMP_REDIRECT)
- 		return NF_ACCEPT;
- 
--	return icmp_error_message(skb, ctinfo, hooknum);
-+	return icmp_error_message(net, skb, ctinfo, hooknum);
- }
- 
- #if defined(CONFIG_NF_CT_NETLINK) || defined(CONFIG_NF_CT_NETLINK_MODULE)
-diff --git a/net/ipv6/netfilter/nf_conntrack_proto_icmpv6.c b/net/ipv6/netfilter/nf_conntrack_proto_icmpv6.c
-index 548cf4f..aabddfe 100644
---- a/net/ipv6/netfilter/nf_conntrack_proto_icmpv6.c
-+++ b/net/ipv6/netfilter/nf_conntrack_proto_icmpv6.c
-@@ -122,7 +122,8 @@ static bool icmpv6_new(struct nf_conn *ct, const struct sk_buff *skb,
- }
- 
- static int
--icmpv6_error_message(struct sk_buff *skb,
-+icmpv6_error_message(struct net *net,
-+		     struct sk_buff *skb,
- 		     unsigned int icmp6off,
- 		     enum ip_conntrack_info *ctinfo,
- 		     unsigned int hooknum)
-@@ -156,7 +157,7 @@ icmpv6_error_message(struct sk_buff *skb,
- 
- 	*ctinfo = IP_CT_RELATED;
- 
--	h = nf_conntrack_find_get(&init_net, &intuple);
-+	h = nf_conntrack_find_get(net, &intuple);
- 	if (!h) {
- 		pr_debug("icmpv6_error: no match\n");
- 		return -NF_ACCEPT;
-@@ -172,7 +173,7 @@ icmpv6_error_message(struct sk_buff *skb,
- }
- 
- static int
--icmpv6_error(struct sk_buff *skb, unsigned int dataoff,
-+icmpv6_error(struct net *net, struct sk_buff *skb, unsigned int dataoff,
- 	     enum ip_conntrack_info *ctinfo, u_int8_t pf, unsigned int hooknum)
- {
- 	const struct icmp6hdr *icmp6h;
-@@ -197,7 +198,7 @@ icmpv6_error(struct sk_buff *skb, unsigned int dataoff,
- 	if (icmp6h->icmp6_type >= 128)
- 		return NF_ACCEPT;
- 
--	return icmpv6_error_message(skb, dataoff, ctinfo, hooknum);
-+	return icmpv6_error_message(net, skb, dataoff, ctinfo, hooknum);
- }
- 
- #if defined(CONFIG_NF_CT_NETLINK) || defined(CONFIG_NF_CT_NETLINK_MODULE)
-diff --git a/net/netfilter/nf_conntrack_core.c b/net/netfilter/nf_conntrack_core.c
-index 5c96d97..251f020 100644
---- a/net/netfilter/nf_conntrack_core.c
-+++ b/net/netfilter/nf_conntrack_core.c
-@@ -703,11 +703,13 @@ nf_conntrack_in(struct net *net, u_int8_t pf, unsigned int hooknum,
- 	/* It may be an special packet, error, unclean...
- 	 * inverse of the return code tells to the netfilter
- 	 * core what to do with the packet. */
--	if (l4proto->error != NULL &&
--	    (ret = l4proto->error(skb, dataoff, &ctinfo, pf, hooknum)) <= 0) {
--		NF_CT_STAT_INC_ATOMIC(error);
--		NF_CT_STAT_INC_ATOMIC(invalid);
--		return -ret;
-+	if (l4proto->error != NULL) {
-+		ret = l4proto->error(net, skb, dataoff, &ctinfo, pf, hooknum);
-+		if (ret <= 0) {
-+			NF_CT_STAT_INC_ATOMIC(error);
-+			NF_CT_STAT_INC_ATOMIC(invalid);
-+			return -ret;
-+		}
- 	}
- 
- 	ct = resolve_normal_ct(net, skb, dataoff, pf, protonum,
-diff --git a/net/netfilter/nf_conntrack_proto_dccp.c b/net/netfilter/nf_conntrack_proto_dccp.c
-index edc3035..6ead8da 100644
---- a/net/netfilter/nf_conntrack_proto_dccp.c
-+++ b/net/netfilter/nf_conntrack_proto_dccp.c
-@@ -545,9 +545,9 @@ static int dccp_packet(struct nf_conn *ct, const struct sk_buff *skb,
- 	return NF_ACCEPT;
- }
- 
--static int dccp_error(struct sk_buff *skb, unsigned int dataoff,
--		      enum ip_conntrack_info *ctinfo, u_int8_t pf,
--		      unsigned int hooknum)
-+static int dccp_error(struct net *net, struct sk_buff *skb,
-+		      unsigned int dataoff, enum ip_conntrack_info *ctinfo,
-+		      u_int8_t pf, unsigned int hooknum)
- {
- 	struct dccp_hdr _dh, *dh;
- 	unsigned int dccp_len = skb->len - dataoff;
-diff --git a/net/netfilter/nf_conntrack_proto_tcp.c b/net/netfilter/nf_conntrack_proto_tcp.c
-index 539a820..4e71de2 100644
---- a/net/netfilter/nf_conntrack_proto_tcp.c
-+++ b/net/netfilter/nf_conntrack_proto_tcp.c
-@@ -746,7 +746,8 @@ static const u8 tcp_valid_flags[(TH_FIN|TH_SYN|TH_RST|TH_ACK|TH_URG) + 1] =
- };
- 
- /* Protect conntrack agaist broken packets. Code taken from ipt_unclean.c.  */
--static int tcp_error(struct sk_buff *skb,
-+static int tcp_error(struct net *net,
-+		     struct sk_buff *skb,
- 		     unsigned int dataoff,
- 		     enum ip_conntrack_info *ctinfo,
- 		     u_int8_t pf,
-diff --git a/net/netfilter/nf_conntrack_proto_udp.c b/net/netfilter/nf_conntrack_proto_udp.c
-index 2a965c4..8a245be 100644
---- a/net/netfilter/nf_conntrack_proto_udp.c
-+++ b/net/netfilter/nf_conntrack_proto_udp.c
-@@ -89,7 +89,7 @@ static bool udp_new(struct nf_conn *ct, const struct sk_buff *skb,
- 	return true;
- }
- 
--static int udp_error(struct sk_buff *skb, unsigned int dataoff,
-+static int udp_error(struct net *net, struct sk_buff *skb, unsigned int dataoff,
- 		     enum ip_conntrack_info *ctinfo,
- 		     u_int8_t pf,
- 		     unsigned int hooknum)
-diff --git a/net/netfilter/nf_conntrack_proto_udplite.c b/net/netfilter/nf_conntrack_proto_udplite.c
-index 4fb6c8d..9817019 100644
---- a/net/netfilter/nf_conntrack_proto_udplite.c
-+++ b/net/netfilter/nf_conntrack_proto_udplite.c
-@@ -89,7 +89,9 @@ static bool udplite_new(struct nf_conn *ct, const struct sk_buff *skb,
- 	return true;
- }
- 
--static int udplite_error(struct sk_buff *skb, unsigned int dataoff,
-+static int udplite_error(struct net *net,
-+			 struct sk_buff *skb,
-+			 unsigned int dataoff,
- 			 enum ip_conntrack_info *ctinfo,
- 			 u_int8_t pf,
- 			 unsigned int hooknum)
+Vivek Goyal wrote:
+> On Fri, Sep 05, 2008 at 09:00:17PM +0900, Hirokazu Takahashi wrote:
+>> Hi, fernando,
+>>
+>>>> IMHO, optimizing the synchronous path alone would justify the addition
+>>>> of io_context in bio. There is more to this though.
+>>>>
+>>>> As you point out, it would seem that aio and buffered IO would not
+>>>> benefit from caching the io context in the bio itself, but there are
+>>>> some subtleties here. Let's consider stacking devices and buffered IO,
+>>>> for example. When a bio enters such a device it may get replicated
+>>>> several times and, depending on the topology, some other derivative bios
+>>>> will be created (RAID1 and parity configurations come to mind,
+>>>> respectively). The problem here is that the memory allocated for the
+>>>> newly created bios will be owned by the corresponding dm or md kernel
+>>>> thread, not the originator of the bio we are replicating or calculating
+>>>> the parity bits from.
+>>> I've already tried implementing this feature. Will you take a look
+>>> at the thread whose subject is "I/O context inheritance" in
+>>> http://www.uwsg.iu.edu/hypermail/linux/kernel/0804.2/index.html#2857.
+>> When I started to implement this, I would make each bio have two
+>> io_contexts -- per-process io_context which had ionice and
+>> and per-cgroup io_context.
+>>
+
+I am also trying to make bios have pointers to io_contexts and I have a
+question concerning this, very simple one.
+
+Is it OK to think bio->bi_io_context is a cache to find the io_context
+of an appropriate task, an issuer of this bio, which may sometimes not be
+the direct one, e.g. stacking devices case.
+
+If so, is it same if we make bios have pointers to the issuers, tasks or
+cgroups, of them and then find the io_contexts through these?
+
+I sometimes tempted to say "this bio's io_context."
+
+> 
+> Hi Hirokazu,
+> 
+> I had a question. Why are we trying to create another io_context or why
+> are we trying to mix up existing io_context (which is per task or per
+> thread group) with cgroups?
+> 
+> To me we just need to know the "cgroup id" to take a specific action with
+> a bio. We don't need whole io_context strucutre. So can't we just use
+> something like, page->page_cgroup->bio_cgroup->cgrou_id or something like
+> that.
+> 
+> What I mean is that the only thing which we seem to require to differentiate
+> between various bio is cgroup id it belongs to and that can be a single
+> "unsigned long" stored at appropriate place. Why are we looking at
+> creating a full io_context structure and trying to share it among all the
+> members of a cgroup?
+
+> 
+> Thanks
+> Vivek
