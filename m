@@ -1,7 +1,8 @@
 From: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: [PATCH 17/33] netns ct: final init_net tweaks
-Date: Mon,  8 Sep 2008 07:02:54 +0400
-Message-ID: <1220842990-30500-17-git-send-email-adobriyan__34353.1276601881$1220843696$gmane$org@gmail.com>
+Subject: [PATCH 19/33] netns ct: per-netns /proc/net/stat/nf_conntrack,
+	/proc/net/stat/ip_conntrack
+Date: Mon,  8 Sep 2008 07:02:56 +0400
+Message-ID: <1220842990-30500-19-git-send-email-adobriyan__27442.8214099773$1220843809$gmane$org@gmail.com>
 References: <48C01046.2070704@trash.net>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -21,251 +22,139 @@ To: kaber-dcUjhNyLwpNeoWH0uzbU5w@public.gmane.org
 Cc: netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, netfilter-devel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Add checks for init_net to not create kmem caches twice and so on.
+Show correct conntrack count while I'm at it.
 
 Signed-off-by: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 
-diff --git a/net/netfilter/nf_conntrack_core.c b/net/netfilter/nf_conntrack_core.c
-index b55944e..52d0663 100644
---- a/net/netfilter/nf_conntrack_core.c
-+++ b/net/netfilter/nf_conntrack_core.c
-@@ -1016,7 +1016,8 @@ EXPORT_SYMBOL_GPL(nf_conntrack_flush);
-    supposed to kill the mall. */
- void nf_conntrack_cleanup(struct net *net)
+diff --git a/net/ipv4/netfilter/nf_conntrack_l3proto_ipv4_compat.c b/net/ipv4/netfilter/nf_conntrack_l3proto_ipv4_compat.c
+index fdc85b3..313ebf0 100644
+--- a/net/ipv4/netfilter/nf_conntrack_l3proto_ipv4_compat.c
++++ b/net/ipv4/netfilter/nf_conntrack_l3proto_ipv4_compat.c
+@@ -285,6 +285,7 @@ static const struct file_operations ip_exp_file_ops = {
+ 
+ static void *ct_cpu_seq_start(struct seq_file *seq, loff_t *pos)
  {
--	rcu_assign_pointer(ip_ct_attach, NULL);
-+	if (net_eq(net, &init_net))
-+		rcu_assign_pointer(ip_ct_attach, NULL);
++	struct net *net = seq_file_net(seq);
+ 	int cpu;
  
- 	/* This makes sure all current packets have passed through
- 	   netfilter framework.  Roll on, two-stage module
-@@ -1035,16 +1036,21 @@ void nf_conntrack_cleanup(struct net *net)
- 	while (atomic_read(&nf_conntrack_untracked.ct_general.use) > 1)
- 		schedule();
+ 	if (*pos == 0)
+@@ -294,7 +295,7 @@ static void *ct_cpu_seq_start(struct seq_file *seq, loff_t *pos)
+ 		if (!cpu_possible(cpu))
+ 			continue;
+ 		*pos = cpu+1;
+-		return per_cpu_ptr(init_net.ct.stat, cpu);
++		return per_cpu_ptr(net->ct.stat, cpu);
+ 	}
  
--	rcu_assign_pointer(nf_ct_destroy, NULL);
-+	if (net_eq(net, &init_net)) {
-+		rcu_assign_pointer(nf_ct_destroy, NULL);
+ 	return NULL;
+@@ -302,13 +303,14 @@ static void *ct_cpu_seq_start(struct seq_file *seq, loff_t *pos)
  
--	kmem_cache_destroy(nf_conntrack_cachep);
-+		kmem_cache_destroy(nf_conntrack_cachep);
-+	}
- 	nf_ct_free_hashtable(net->ct.hash, net->ct.hash_vmalloc,
- 			     nf_conntrack_htable_size);
+ static void *ct_cpu_seq_next(struct seq_file *seq, void *v, loff_t *pos)
+ {
++	struct net *net = seq_file_net(seq);
+ 	int cpu;
  
--	nf_conntrack_acct_fini();
-+	if (net_eq(net, &init_net))
-+		nf_conntrack_acct_fini();
- 	nf_conntrack_expect_fini(net);
--	nf_conntrack_helper_fini();
--	nf_conntrack_proto_fini();
-+	if (net_eq(net, &init_net)) {
-+		nf_conntrack_helper_fini();
-+		nf_conntrack_proto_fini();
-+	}
+ 	for (cpu = *pos; cpu < NR_CPUS; ++cpu) {
+ 		if (!cpu_possible(cpu))
+ 			continue;
+ 		*pos = cpu+1;
+-		return per_cpu_ptr(init_net.ct.stat, cpu);
++		return per_cpu_ptr(net->ct.stat, cpu);
+ 	}
+ 
+ 	return NULL;
+@@ -320,7 +322,8 @@ static void ct_cpu_seq_stop(struct seq_file *seq, void *v)
+ 
+ static int ct_cpu_seq_show(struct seq_file *seq, void *v)
+ {
+-	unsigned int nr_conntracks = atomic_read(&init_net.ct.count);
++	struct net *net = seq_file_net(seq);
++	unsigned int nr_conntracks = atomic_read(&net->ct.count);
+ 	const struct ip_conntrack_stat *st = v;
+ 
+ 	if (v == SEQ_START_TOKEN) {
+@@ -360,7 +363,8 @@ static const struct seq_operations ct_cpu_seq_ops = {
+ 
+ static int ct_cpu_seq_open(struct inode *inode, struct file *file)
+ {
+-	return seq_open(file, &ct_cpu_seq_ops);
++	return seq_open_net(inode, file, &ct_cpu_seq_ops,
++			    sizeof(struct seq_net_private));
  }
  
- struct hlist_head *nf_ct_alloc_hashtable(unsigned int *sizep, int *vmalloced)
-@@ -1134,22 +1140,28 @@ int nf_conntrack_init(struct net *net)
- 	int max_factor = 8;
- 	int ret;
+ static const struct file_operations ct_cpu_seq_fops = {
+@@ -368,7 +372,7 @@ static const struct file_operations ct_cpu_seq_fops = {
+ 	.open    = ct_cpu_seq_open,
+ 	.read    = seq_read,
+ 	.llseek  = seq_lseek,
+-	.release = seq_release,
++	.release = seq_release_net,
+ };
  
--	/* Idea from tcp.c: use 1/16384 of memory.  On i386: 32MB
--	 * machine has 512 buckets. >= 1GB machines have 16384 buckets. */
--	if (!nf_conntrack_htable_size) {
--		nf_conntrack_htable_size
--			= (((num_physpages << PAGE_SHIFT) / 16384)
--			   / sizeof(struct hlist_head));
--		if (num_physpages > (1024 * 1024 * 1024 / PAGE_SIZE))
--			nf_conntrack_htable_size = 16384;
--		if (nf_conntrack_htable_size < 32)
--			nf_conntrack_htable_size = 32;
--
--		/* Use a max. factor of four by default to get the same max as
--		 * with the old struct list_heads. When a table size is given
--		 * we use the old value of 8 to avoid reducing the max.
--		 * entries. */
--		max_factor = 4;
-+	if (net_eq(net, &init_net)) {
-+		/*
-+		 * Idea from tcp.c: use 1/16384 of memory.  On i386: 32MB
-+		 * machine has 512 buckets. >= 1GB machines have 16384 buckets.
-+		 */
-+		if (!nf_conntrack_htable_size) {
-+			nf_conntrack_htable_size
-+				= (((num_physpages << PAGE_SHIFT) / 16384)
-+						/ sizeof(struct hlist_head));
-+			if (num_physpages > (1024 * 1024 * 1024 / PAGE_SIZE))
-+				nf_conntrack_htable_size = 16384;
-+			if (nf_conntrack_htable_size < 32)
-+				nf_conntrack_htable_size = 32;
-+
-+			/*
-+			 * Use a max. factor of four by default to get the same
-+			 * max as with the old struct list_heads. When a table
-+			 * size is given we use the old value of 8 to avoid
-+			 * reducing the max. entries.
-+			 */
-+			max_factor = 4;
-+		}
- 	}
- 	atomic_set(&net->ct.count, 0);
- 	ret = nf_conntrack_ecache_init(net);
-@@ -1163,59 +1175,66 @@ int nf_conntrack_init(struct net *net)
- 	}
- 	INIT_HLIST_HEAD(&net->ct.unconfirmed);
+ static int __net_init ip_conntrack_net_init(struct net *net)
+diff --git a/net/netfilter/nf_conntrack_standalone.c b/net/netfilter/nf_conntrack_standalone.c
+index a4fdbbf..169760d 100644
+--- a/net/netfilter/nf_conntrack_standalone.c
++++ b/net/netfilter/nf_conntrack_standalone.c
+@@ -194,6 +194,7 @@ static const struct file_operations ct_file_ops = {
  
--	nf_conntrack_max = max_factor * nf_conntrack_htable_size;
-+	if (net_eq(net, &init_net)) {
-+		nf_conntrack_max = max_factor * nf_conntrack_htable_size;
- 
--	printk("nf_conntrack version %s (%u buckets, %d max)\n",
--	       NF_CONNTRACK_VERSION, nf_conntrack_htable_size,
--	       nf_conntrack_max);
-+		printk("nf_conntrack version %s (%u buckets, %d max)\n",
-+			NF_CONNTRACK_VERSION, nf_conntrack_htable_size,
-+			nf_conntrack_max);
- 
--	nf_conntrack_cachep = kmem_cache_create("nf_conntrack",
-+		nf_conntrack_cachep = kmem_cache_create("nf_conntrack",
- 						sizeof(struct nf_conn),
- 						0, 0, NULL);
--	if (!nf_conntrack_cachep) {
--		printk(KERN_ERR "Unable to create nf_conn slab cache\n");
--		goto err_free_hash;
--	}
-+		if (!nf_conntrack_cachep) {
-+			printk(KERN_ERR "Unable to create nf_conn slab cache\n");
-+			goto err_free_hash;
-+		}
- 
--	ret = nf_conntrack_proto_init();
--	if (ret < 0)
--		goto err_free_conntrack_slab;
-+		ret = nf_conntrack_proto_init();
-+		if (ret < 0)
-+			goto err_free_conntrack_slab;
-+	}
- 
- 	ret = nf_conntrack_expect_init(net);
- 	if (ret < 0)
- 		goto out_fini_proto;
- 
--	ret = nf_conntrack_helper_init();
--	if (ret < 0)
--		goto out_fini_expect;
-+	if (net_eq(net, &init_net)) {
-+		ret = nf_conntrack_helper_init();
-+		if (ret < 0)
-+			goto out_fini_expect;
- 
--	ret = nf_conntrack_acct_init();
--	if (ret < 0)
--		goto out_fini_helper;
-+		ret = nf_conntrack_acct_init();
-+		if (ret < 0)
-+			goto out_fini_helper;
- 
--	/* For use by REJECT target */
--	rcu_assign_pointer(ip_ct_attach, nf_conntrack_attach);
--	rcu_assign_pointer(nf_ct_destroy, destroy_conntrack);
-+		/* For use by REJECT target */
-+		rcu_assign_pointer(ip_ct_attach, nf_conntrack_attach);
-+		rcu_assign_pointer(nf_ct_destroy, destroy_conntrack);
- 
--	/* Set up fake conntrack:
--	    - to never be deleted, not in any hashes */
-+		/* Set up fake conntrack:
-+		   - to never be deleted, not in any hashes */
- #ifdef CONFIG_NET_NS
--	nf_conntrack_untracked.ct_net = &init_net;
-+		nf_conntrack_untracked.ct_net = &init_net;
- #endif
--	atomic_set(&nf_conntrack_untracked.ct_general.use, 1);
--	/*  - and look it like as a confirmed connection */
--	set_bit(IPS_CONFIRMED_BIT, &nf_conntrack_untracked.status);
-+		atomic_set(&nf_conntrack_untracked.ct_general.use, 1);
-+		/*  - and look it like as a confirmed connection */
-+		set_bit(IPS_CONFIRMED_BIT, &nf_conntrack_untracked.status);
-+	}
- 
- 	return ret;
- 
- out_fini_helper:
--	nf_conntrack_helper_fini();
-+	if (net_eq(net, &init_net))
-+		nf_conntrack_helper_fini();
- out_fini_expect:
- 	nf_conntrack_expect_fini(net);
- out_fini_proto:
--	nf_conntrack_proto_fini();
-+	if (net_eq(net, &init_net))
-+		nf_conntrack_proto_fini();
- err_free_conntrack_slab:
--	kmem_cache_destroy(nf_conntrack_cachep);
-+	if (net_eq(net, &init_net))
-+		kmem_cache_destroy(nf_conntrack_cachep);
- err_free_hash:
- 	nf_ct_free_hashtable(net->ct.hash, net->ct.hash_vmalloc,
- 			     nf_conntrack_htable_size);
-diff --git a/net/netfilter/nf_conntrack_expect.c b/net/netfilter/nf_conntrack_expect.c
-index 6a09200..be08c87 100644
---- a/net/netfilter/nf_conntrack_expect.c
-+++ b/net/netfilter/nf_conntrack_expect.c
-@@ -563,12 +563,14 @@ int nf_conntrack_expect_init(struct net *net)
+ static void *ct_cpu_seq_start(struct seq_file *seq, loff_t *pos)
  {
- 	int err = -ENOMEM;
++	struct net *net = seq_file_net(seq);
+ 	int cpu;
  
--	if (!nf_ct_expect_hsize) {
--		nf_ct_expect_hsize = nf_conntrack_htable_size / 256;
--		if (!nf_ct_expect_hsize)
--			nf_ct_expect_hsize = 1;
-+	if (net_eq(net, &init_net)) {
-+		if (!nf_ct_expect_hsize) {
-+			nf_ct_expect_hsize = nf_conntrack_htable_size / 256;
-+			if (!nf_ct_expect_hsize)
-+				nf_ct_expect_hsize = 1;
-+		}
-+		nf_ct_expect_max = nf_ct_expect_hsize * 4;
+ 	if (*pos == 0)
+@@ -203,7 +204,7 @@ static void *ct_cpu_seq_start(struct seq_file *seq, loff_t *pos)
+ 		if (!cpu_possible(cpu))
+ 			continue;
+ 		*pos = cpu + 1;
+-		return per_cpu_ptr(init_net.ct.stat, cpu);
++		return per_cpu_ptr(net->ct.stat, cpu);
  	}
--	nf_ct_expect_max = nf_ct_expect_hsize * 4;
  
- 	net->ct.expect_count = 0;
- 	net->ct.expect_hash = nf_ct_alloc_hashtable(&nf_ct_expect_hsize,
-@@ -576,11 +578,13 @@ int nf_conntrack_expect_init(struct net *net)
- 	if (net->ct.expect_hash == NULL)
- 		goto err1;
+ 	return NULL;
+@@ -211,13 +212,14 @@ static void *ct_cpu_seq_start(struct seq_file *seq, loff_t *pos)
  
--	nf_ct_expect_cachep = kmem_cache_create("nf_conntrack_expect",
-+	if (net_eq(net, &init_net)) {
-+		nf_ct_expect_cachep = kmem_cache_create("nf_conntrack_expect",
- 					sizeof(struct nf_conntrack_expect),
- 					0, 0, NULL);
--	if (!nf_ct_expect_cachep)
--		goto err2;
-+		if (!nf_ct_expect_cachep)
-+			goto err2;
-+	}
- 
- 	err = exp_proc_init(net);
- 	if (err < 0)
-@@ -589,7 +593,8 @@ int nf_conntrack_expect_init(struct net *net)
- 	return 0;
- 
- err3:
--	kmem_cache_destroy(nf_ct_expect_cachep);
-+	if (net_eq(net, &init_net))
-+		kmem_cache_destroy(nf_ct_expect_cachep);
- err2:
- 	nf_ct_free_hashtable(net->ct.expect_hash, net->ct.expect_vmalloc,
- 			     nf_ct_expect_hsize);
-@@ -600,7 +605,8 @@ err1:
- void nf_conntrack_expect_fini(struct net *net)
+ static void *ct_cpu_seq_next(struct seq_file *seq, void *v, loff_t *pos)
  {
- 	exp_proc_remove(net);
--	kmem_cache_destroy(nf_ct_expect_cachep);
-+	if (net_eq(net, &init_net))
-+		kmem_cache_destroy(nf_ct_expect_cachep);
- 	nf_ct_free_hashtable(net->ct.expect_hash, net->ct.expect_vmalloc,
- 			     nf_ct_expect_hsize);
++	struct net *net = seq_file_net(seq);
+ 	int cpu;
+ 
+ 	for (cpu = *pos; cpu < NR_CPUS; ++cpu) {
+ 		if (!cpu_possible(cpu))
+ 			continue;
+ 		*pos = cpu + 1;
+-		return per_cpu_ptr(init_net.ct.stat, cpu);
++		return per_cpu_ptr(net->ct.stat, cpu);
+ 	}
+ 
+ 	return NULL;
+@@ -229,7 +231,8 @@ static void ct_cpu_seq_stop(struct seq_file *seq, void *v)
+ 
+ static int ct_cpu_seq_show(struct seq_file *seq, void *v)
+ {
+-	unsigned int nr_conntracks = atomic_read(&init_net.ct.count);
++	struct net *net = seq_file_net(seq);
++	unsigned int nr_conntracks = atomic_read(&net->ct.count);
+ 	const struct ip_conntrack_stat *st = v;
+ 
+ 	if (v == SEQ_START_TOKEN) {
+@@ -269,7 +272,8 @@ static const struct seq_operations ct_cpu_seq_ops = {
+ 
+ static int ct_cpu_seq_open(struct inode *inode, struct file *file)
+ {
+-	return seq_open(file, &ct_cpu_seq_ops);
++	return seq_open_net(inode, file, &ct_cpu_seq_ops,
++			    sizeof(struct seq_net_private));
  }
+ 
+ static const struct file_operations ct_cpu_seq_fops = {
+@@ -277,7 +281,7 @@ static const struct file_operations ct_cpu_seq_fops = {
+ 	.open	 = ct_cpu_seq_open,
+ 	.read	 = seq_read,
+ 	.llseek	 = seq_lseek,
+-	.release = seq_release,
++	.release = seq_release_net,
+ };
+ 
+ static int nf_conntrack_standalone_init_proc(struct net *net)
