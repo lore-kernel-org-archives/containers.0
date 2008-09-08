@@ -1,8 +1,7 @@
 From: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: [PATCH 20/33] netns ct: per-netns net.netfilter.nf_conntrack_count
-	sysctl
-Date: Mon,  8 Sep 2008 07:02:57 +0400
-Message-ID: <1220842990-30500-20-git-send-email-adobriyan__14860.8461524875$1220844130$gmane$org@gmail.com>
+Subject: [PATCH 10/33] netns ct: per-netns /proc/net/nf_conntrack_expect
+Date: Mon,  8 Sep 2008 07:02:47 +0400
+Message-ID: <1220842990-30500-10-git-send-email-adobriyan__43321.4949830019$1220844133$gmane$org@gmail.com>
 References: <48C01046.2070704@trash.net>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -22,165 +21,92 @@ To: kaber-dcUjhNyLwpNeoWH0uzbU5w@public.gmane.org
 Cc: netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, netfilter-devel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Note, sysctl table is always duplicated, this is simpler, less special-cased
-less mistakes (and I did one in first version of this patch)
-
 Signed-off-by: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 
-diff --git a/include/net/netns/conntrack.h b/include/net/netns/conntrack.h
-index fc0a46d..2b50758 100644
---- a/include/net/netns/conntrack.h
-+++ b/include/net/netns/conntrack.h
-@@ -4,6 +4,7 @@
- #include <linux/list.h>
- #include <asm/atomic.h>
+diff --git a/net/netfilter/nf_conntrack_expect.c b/net/netfilter/nf_conntrack_expect.c
+index 5307316..6a09200 100644
+--- a/net/netfilter/nf_conntrack_expect.c
++++ b/net/netfilter/nf_conntrack_expect.c
+@@ -423,12 +423,13 @@ EXPORT_SYMBOL_GPL(nf_ct_expect_related);
  
-+struct ctl_table_header;
- struct nf_conntrack_ecache;
- 
- struct netns_ct {
-@@ -16,6 +17,9 @@ struct netns_ct {
- #ifdef CONFIG_NF_CONNTRACK_EVENTS
- 	struct nf_conntrack_ecache *ecache;
- #endif
-+#ifdef CONFIG_SYSCTL
-+	struct ctl_table_header	*sysctl_header;
-+#endif
- 	int			hash_vmalloc;
- 	int			expect_vmalloc;
+ #ifdef CONFIG_PROC_FS
+ struct ct_expect_iter_state {
++	struct seq_net_private p;
+ 	unsigned int bucket;
  };
-diff --git a/net/netfilter/nf_conntrack_standalone.c b/net/netfilter/nf_conntrack_standalone.c
-index 169760d..64b4f95 100644
---- a/net/netfilter/nf_conntrack_standalone.c
-+++ b/net/netfilter/nf_conntrack_standalone.c
-@@ -330,7 +330,6 @@ EXPORT_SYMBOL_GPL(nf_conntrack_checksum);
- static int log_invalid_proto_min = 0;
- static int log_invalid_proto_max = 255;
  
--static struct ctl_table_header *nf_ct_sysctl_header;
- static struct ctl_table_header *nf_ct_netfilter_header;
- 
- static ctl_table nf_ct_sysctl_table[] = {
-@@ -409,40 +408,58 @@ static struct ctl_path nf_ct_path[] = {
- 
- EXPORT_SYMBOL_GPL(nf_ct_log_invalid);
- 
--static int nf_conntrack_standalone_init_sysctl(void)
-+static int nf_conntrack_standalone_init_sysctl(struct net *net)
+ static struct hlist_node *ct_expect_get_first(struct seq_file *seq)
  {
--	nf_ct_netfilter_header =
--		register_sysctl_paths(nf_ct_path, nf_ct_netfilter_table);
--	if (!nf_ct_netfilter_header)
--		goto out;
--
--	nf_ct_sysctl_header =
--		 register_sysctl_paths(nf_net_netfilter_sysctl_path,
--					nf_ct_sysctl_table);
--	if (!nf_ct_sysctl_header)
-+	struct ctl_table *table;
-+
-+	if (net_eq(net, &init_net)) {
-+		nf_ct_netfilter_header =
-+		       register_sysctl_paths(nf_ct_path, nf_ct_netfilter_table);
-+		if (!nf_ct_netfilter_header)
-+			goto out;
-+	}
-+
-+	table = kmemdup(nf_ct_sysctl_table, sizeof(nf_ct_sysctl_table),
-+			GFP_KERNEL);
-+	if (!table)
-+		goto out_kmemdup;
-+
-+	table[1].data = &net->ct.count;
-+
-+	net->ct.sysctl_header = register_net_sysctl_table(net,
-+					nf_net_netfilter_sysctl_path, table);
-+	if (!net->ct.sysctl_header)
- 		goto out_unregister_netfilter;
+-	struct net *net = &init_net;
++	struct net *net = seq_file_net(seq);
+ 	struct ct_expect_iter_state *st = seq->private;
+ 	struct hlist_node *n;
  
- 	return 0;
+@@ -443,7 +444,7 @@ static struct hlist_node *ct_expect_get_first(struct seq_file *seq)
+ static struct hlist_node *ct_expect_get_next(struct seq_file *seq,
+ 					     struct hlist_node *head)
+ {
+-	struct net *net = &init_net;
++	struct net *net = seq_file_net(seq);
+ 	struct ct_expect_iter_state *st = seq->private;
  
- out_unregister_netfilter:
--	unregister_sysctl_table(nf_ct_netfilter_header);
-+	kfree(table);
-+out_kmemdup:
-+	if (net_eq(net, &init_net))
-+		unregister_sysctl_table(nf_ct_netfilter_header);
- out:
- 	printk("nf_conntrack: can't register to sysctl.\n");
- 	return -ENOMEM;
+ 	head = rcu_dereference(head->next);
+@@ -524,7 +525,7 @@ static const struct seq_operations exp_seq_ops = {
+ 
+ static int exp_open(struct inode *inode, struct file *file)
+ {
+-	return seq_open_private(file, &exp_seq_ops,
++	return seq_open_net(inode, file, &exp_seq_ops,
+ 			sizeof(struct ct_expect_iter_state));
  }
  
--static void nf_conntrack_standalone_fini_sysctl(void)
-+static void nf_conntrack_standalone_fini_sysctl(struct net *net)
+@@ -533,26 +534,26 @@ static const struct file_operations exp_file_ops = {
+ 	.open    = exp_open,
+ 	.read    = seq_read,
+ 	.llseek  = seq_lseek,
+-	.release = seq_release_private,
++	.release = seq_release_net,
+ };
+ #endif /* CONFIG_PROC_FS */
+ 
+-static int exp_proc_init(void)
++static int exp_proc_init(struct net *net)
  {
--	unregister_sysctl_table(nf_ct_netfilter_header);
--	unregister_sysctl_table(nf_ct_sysctl_header);
-+	struct ctl_table *table;
-+
-+	if (net_eq(net, &init_net))
-+		unregister_sysctl_table(nf_ct_netfilter_header);
-+	table = net->ct.sysctl_header->ctl_table_arg;
-+	unregister_net_sysctl_table(net->ct.sysctl_header);
-+	kfree(table);
- }
- #else
--static int nf_conntrack_standalone_init_sysctl(void)
-+static int nf_conntrack_standalone_init_sysctl(struct net *net)
- {
+ #ifdef CONFIG_PROC_FS
+ 	struct proc_dir_entry *proc;
+ 
+-	proc = proc_net_fops_create(&init_net, "nf_conntrack_expect", 0440, &exp_file_ops);
++	proc = proc_net_fops_create(net, "nf_conntrack_expect", 0440, &exp_file_ops);
+ 	if (!proc)
+ 		return -ENOMEM;
+ #endif /* CONFIG_PROC_FS */
  	return 0;
  }
  
--static void nf_conntrack_standalone_fini_sysctl(void)
-+static void nf_conntrack_standalone_fini_sysctl(struct net *net)
+-static void exp_proc_remove(void)
++static void exp_proc_remove(struct net *net)
  {
- }
- #endif /* CONFIG_SYSCTL */
-@@ -457,8 +474,13 @@ static int nf_conntrack_net_init(struct net *net)
- 	ret = nf_conntrack_standalone_init_proc(net);
- 	if (ret < 0)
- 		goto out_proc;
-+	ret = nf_conntrack_standalone_init_sysctl(net);
-+	if (ret < 0)
-+		goto out_sysctl;
- 	return 0;
- 
-+out_sysctl:
-+	nf_conntrack_standalone_fini_proc(net);
- out_proc:
- 	nf_conntrack_cleanup(net);
- out_init:
-@@ -467,6 +489,7 @@ out_init:
- 
- static void nf_conntrack_net_exit(struct net *net)
- {
-+	nf_conntrack_standalone_fini_sysctl(net);
- 	nf_conntrack_standalone_fini_proc(net);
- 	nf_conntrack_cleanup(net);
- }
-@@ -478,25 +501,11 @@ static struct pernet_operations nf_conntrack_net_ops = {
- 
- static int __init nf_conntrack_standalone_init(void)
- {
--	int ret;
--
--	ret = register_pernet_subsys(&nf_conntrack_net_ops);
--	if (ret < 0)
--		goto out;
--	ret = nf_conntrack_standalone_init_sysctl();
--	if (ret < 0)
--		goto out_sysctl;
--	return 0;
--
--out_sysctl:
--	unregister_pernet_subsys(&nf_conntrack_net_ops);
--out:
--	return ret;
-+	return register_pernet_subsys(&nf_conntrack_net_ops);
+ #ifdef CONFIG_PROC_FS
+-	proc_net_remove(&init_net, "nf_conntrack_expect");
++	proc_net_remove(net, "nf_conntrack_expect");
+ #endif /* CONFIG_PROC_FS */
  }
  
- static void __exit nf_conntrack_standalone_fini(void)
+@@ -581,7 +582,7 @@ int nf_conntrack_expect_init(struct net *net)
+ 	if (!nf_ct_expect_cachep)
+ 		goto err2;
+ 
+-	err = exp_proc_init();
++	err = exp_proc_init(net);
+ 	if (err < 0)
+ 		goto err3;
+ 
+@@ -598,7 +599,7 @@ err1:
+ 
+ void nf_conntrack_expect_fini(struct net *net)
  {
--	nf_conntrack_standalone_fini_sysctl();
- 	unregister_pernet_subsys(&nf_conntrack_net_ops);
- }
+-	exp_proc_remove();
++	exp_proc_remove(net);
+ 	kmem_cache_destroy(nf_ct_expect_cachep);
+ 	nf_ct_free_hashtable(net->ct.expect_hash, net->ct.expect_vmalloc,
+ 			     nf_ct_expect_hsize);
