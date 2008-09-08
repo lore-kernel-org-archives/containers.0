@@ -1,7 +1,7 @@
 From: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: [PATCH 29/33] netns nat: per-netns NAT table
-Date: Mon,  8 Sep 2008 07:03:06 +0400
-Message-ID: <1220842990-30500-29-git-send-email-adobriyan__16775.5961920649$1220844120$gmane$org@gmail.com>
+Subject: [PATCH 27/33] netns ct: PPTP conntracking in netns
+Date: Mon,  8 Sep 2008 07:03:04 +0400
+Message-ID: <1220842990-30500-27-git-send-email-adobriyan__42088.8613131412$1220844121$gmane$org@gmail.com>
 References: <48C01046.2070704@trash.net>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -21,115 +21,115 @@ To: kaber-dcUjhNyLwpNeoWH0uzbU5w@public.gmane.org
 Cc: netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, netfilter-devel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Same story as with iptable_filter, iptables_raw tables.
-
 Signed-off-by: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 
-diff --git a/include/net/netns/ipv4.h b/include/net/netns/ipv4.h
-index a6ed838..b286b84 100644
---- a/include/net/netns/ipv4.h
-+++ b/include/net/netns/ipv4.h
-@@ -38,6 +38,7 @@ struct netns_ipv4 {
- 	struct xt_table		*iptable_raw;
- 	struct xt_table		*arptable_filter;
- 	struct xt_table		*iptable_security;
-+	struct xt_table		*nat_table;
- #endif
- 
- 	int sysctl_icmp_echo_ignore_all;
-diff --git a/net/ipv4/netfilter/nf_nat_rule.c b/net/ipv4/netfilter/nf_nat_rule.c
-index e8b4d0d..0a02a8c 100644
---- a/net/ipv4/netfilter/nf_nat_rule.c
-+++ b/net/ipv4/netfilter/nf_nat_rule.c
-@@ -33,7 +33,7 @@ static struct
- 	struct ipt_replace repl;
- 	struct ipt_standard entries[3];
- 	struct ipt_error term;
--} nat_initial_table __initdata = {
-+} nat_initial_table __net_initdata = {
- 	.repl = {
- 		.name = "nat",
- 		.valid_hooks = NAT_VALID_HOOKS,
-@@ -58,14 +58,13 @@ static struct
- 	.term = IPT_ERROR_INIT,			/* ERROR */
- };
- 
--static struct xt_table __nat_table = {
-+static struct xt_table nat_table = {
- 	.name		= "nat",
- 	.valid_hooks	= NAT_VALID_HOOKS,
- 	.lock		= __RW_LOCK_UNLOCKED(__nat_table.lock),
- 	.me		= THIS_MODULE,
- 	.af		= AF_INET,
- };
--static struct xt_table *nat_table;
- 
- /* Source NAT */
- static unsigned int ipt_snat_target(struct sk_buff *skb,
-@@ -194,9 +193,10 @@ int nf_nat_rule_find(struct sk_buff *skb,
- 		     const struct net_device *out,
- 		     struct nf_conn *ct)
+diff --git a/net/netfilter/nf_conntrack_pptp.c b/net/netfilter/nf_conntrack_pptp.c
+index e47d5de..373e51e 100644
+--- a/net/netfilter/nf_conntrack_pptp.c
++++ b/net/netfilter/nf_conntrack_pptp.c
+@@ -98,6 +98,7 @@ EXPORT_SYMBOL(pptp_msg_name);
+ static void pptp_expectfn(struct nf_conn *ct,
+ 			 struct nf_conntrack_expect *exp)
  {
 +	struct net *net = nf_ct_net(ct);
- 	int ret;
+ 	typeof(nf_nat_pptp_hook_expectfn) nf_nat_pptp_expectfn;
+ 	pr_debug("increasing timeouts\n");
  
--	ret = ipt_do_table(skb, hooknum, in, out, nat_table);
-+	ret = ipt_do_table(skb, hooknum, in, out, net->ipv4.nat_table);
+@@ -121,7 +122,7 @@ static void pptp_expectfn(struct nf_conn *ct,
+ 		pr_debug("trying to unexpect other dir: ");
+ 		nf_ct_dump_tuple(&inv_t);
  
- 	if (ret == NF_ACCEPT) {
- 		if (!nf_nat_initialized(ct, HOOK2MANIP(hooknum)))
-@@ -226,14 +226,32 @@ static struct xt_target ipt_dnat_reg __read_mostly = {
- 	.family		= AF_INET,
+-		exp_other = nf_ct_expect_find_get(&init_net, &inv_t);
++		exp_other = nf_ct_expect_find_get(net, &inv_t);
+ 		if (exp_other) {
+ 			/* delete other expectation.  */
+ 			pr_debug("found\n");
+@@ -134,7 +135,8 @@ static void pptp_expectfn(struct nf_conn *ct,
+ 	rcu_read_unlock();
+ }
+ 
+-static int destroy_sibling_or_exp(const struct nf_conntrack_tuple *t)
++static int destroy_sibling_or_exp(struct net *net,
++				  const struct nf_conntrack_tuple *t)
+ {
+ 	const struct nf_conntrack_tuple_hash *h;
+ 	struct nf_conntrack_expect *exp;
+@@ -143,7 +145,7 @@ static int destroy_sibling_or_exp(const struct nf_conntrack_tuple *t)
+ 	pr_debug("trying to timeout ct or exp for tuple ");
+ 	nf_ct_dump_tuple(t);
+ 
+-	h = nf_conntrack_find_get(&init_net, t);
++	h = nf_conntrack_find_get(net, t);
+ 	if (h)  {
+ 		sibling = nf_ct_tuplehash_to_ctrack(h);
+ 		pr_debug("setting timeout of conntrack %p to 0\n", sibling);
+@@ -154,7 +156,7 @@ static int destroy_sibling_or_exp(const struct nf_conntrack_tuple *t)
+ 		nf_ct_put(sibling);
+ 		return 1;
+ 	} else {
+-		exp = nf_ct_expect_find_get(&init_net, t);
++		exp = nf_ct_expect_find_get(net, t);
+ 		if (exp) {
+ 			pr_debug("unexpect_related of expect %p\n", exp);
+ 			nf_ct_unexpect_related(exp);
+@@ -168,6 +170,7 @@ static int destroy_sibling_or_exp(const struct nf_conntrack_tuple *t)
+ /* timeout GRE data connections */
+ static void pptp_destroy_siblings(struct nf_conn *ct)
+ {
++	struct net *net = nf_ct_net(ct);
+ 	const struct nf_conn_help *help = nfct_help(ct);
+ 	struct nf_conntrack_tuple t;
+ 
+@@ -178,7 +181,7 @@ static void pptp_destroy_siblings(struct nf_conn *ct)
+ 	t.dst.protonum = IPPROTO_GRE;
+ 	t.src.u.gre.key = help->help.ct_pptp_info.pns_call_id;
+ 	t.dst.u.gre.key = help->help.ct_pptp_info.pac_call_id;
+-	if (!destroy_sibling_or_exp(&t))
++	if (!destroy_sibling_or_exp(net, &t))
+ 		pr_debug("failed to timeout original pns->pac ct/exp\n");
+ 
+ 	/* try reply (pac->pns) tuple */
+@@ -186,7 +189,7 @@ static void pptp_destroy_siblings(struct nf_conn *ct)
+ 	t.dst.protonum = IPPROTO_GRE;
+ 	t.src.u.gre.key = help->help.ct_pptp_info.pac_call_id;
+ 	t.dst.u.gre.key = help->help.ct_pptp_info.pns_call_id;
+-	if (!destroy_sibling_or_exp(&t))
++	if (!destroy_sibling_or_exp(net, &t))
+ 		pr_debug("failed to timeout reply pac->pns ct/exp\n");
+ }
+ 
+@@ -594,15 +597,32 @@ static struct nf_conntrack_helper pptp __read_mostly = {
+ 	.expect_policy		= &pptp_exp_policy,
  };
  
-+static int __net_init nf_nat_rule_net_init(struct net *net)
++static void nf_conntrack_pptp_net_exit(struct net *net)
 +{
-+	net->ipv4.nat_table = ipt_register_table(net, &nat_table,
-+						 &nat_initial_table.repl);
-+	if (IS_ERR(net->ipv4.nat_table))
-+		return PTR_ERR(net->ipv4.nat_table);
-+	return 0;
++	nf_ct_gre_keymap_flush(net);
 +}
 +
-+static void __net_exit nf_nat_rule_net_exit(struct net *net)
-+{
-+	ipt_unregister_table(net->ipv4.nat_table);
-+}
-+
-+static struct pernet_operations nf_nat_rule_net_ops = {
-+	.init = nf_nat_rule_net_init,
-+	.exit = nf_nat_rule_net_exit,
++static struct pernet_operations nf_conntrack_pptp_net_ops = {
++	.exit = nf_conntrack_pptp_net_exit,
 +};
 +
- int __init nf_nat_rule_init(void)
+ static int __init nf_conntrack_pptp_init(void)
  {
- 	int ret;
- 
--	nat_table = ipt_register_table(&init_net, &__nat_table,
--				       &nat_initial_table.repl);
--	if (IS_ERR(nat_table))
--		return PTR_ERR(nat_table);
-+	ret = register_pernet_subsys(&nf_nat_rule_net_ops);
-+	if (ret != 0)
-+		goto out;
- 	ret = xt_register_target(&ipt_snat_reg);
- 	if (ret != 0)
- 		goto unregister_table;
-@@ -247,8 +265,8 @@ int __init nf_nat_rule_init(void)
-  unregister_snat:
- 	xt_unregister_target(&ipt_snat_reg);
-  unregister_table:
--	ipt_unregister_table(nat_table);
--
-+	unregister_pernet_subsys(&nf_nat_rule_net_ops);
-+ out:
- 	return ret;
+-	return nf_conntrack_helper_register(&pptp);
++	int rv;
++
++	rv = nf_conntrack_helper_register(&pptp);
++	if (rv < 0)
++		return rv;
++	rv = register_pernet_subsys(&nf_conntrack_pptp_net_ops);
++	if (rv < 0)
++		nf_conntrack_helper_unregister(&pptp);
++	return rv;
  }
  
-@@ -256,5 +274,5 @@ void nf_nat_rule_cleanup(void)
+ static void __exit nf_conntrack_pptp_fini(void)
  {
- 	xt_unregister_target(&ipt_dnat_reg);
- 	xt_unregister_target(&ipt_snat_reg);
--	ipt_unregister_table(nat_table);
-+	unregister_pernet_subsys(&nf_nat_rule_net_ops);
+ 	nf_conntrack_helper_unregister(&pptp);
+-	nf_ct_gre_keymap_flush(&init_net);
++	unregister_pernet_subsys(&nf_conntrack_pptp_net_ops);
  }
+ 
+ module_init(nf_conntrack_pptp_init);
