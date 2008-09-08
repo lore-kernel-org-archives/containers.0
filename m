@@ -1,19 +1,13 @@
-From: Lai Jiangshan <laijs-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Subject: Re: Re: [PATCH] cgroup(fix critical bug): new handling for tasks file
-Date: Mon, 08 Sep 2008 16:19:30 +0800
-Message-ID: <48C4E012.4060400__24778.8606597625$1220862319$gmane$org@cn.fujitsu.com>
-References: <48B360CE.2010501@cn.fujitsu.com>	
-	<6599ad830808251929p10dfc9d2ub11e4db0cd4f9f3@mail.gmail.com>	
-	<48B39319.7070403@cn.fujitsu.com>	
-	<6599ad830808261544w308a850m865ac0c0a1552c77@mail.gmail.com>	
-	<48B4D81D.2040200@cn.fujitsu.com>
-	<6599ad830808270536i353e1807kaac4e9fb74301bb0@mail.gmail.com>
-	<48B69582.4000208@cn.fujitsu.com> <48C0C4F7.2080702@google.com>
+From: Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH] igmp: make /proc/net/{igmp,mcfilter} per netns
+Date: Mon, 08 Sep 2008 11:35:02 +0200
+Message-ID: <48C4F1C6.6080605__22446.4360777803$1220866706$gmane$org@fr.ibm.com>
+References: <20080908012855.GC575@x200.localdomain>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <48C0C4F7.2080702-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <20080908012855.GC575-2ev+ksY9ol182hYKe6nXyg@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -23,59 +17,144 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
-Cc: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Linux Kernel Mailing List <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+To: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Cc: netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, davem-fT/PcQaiUtIeIZ0/mPfg9Q@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-It's great, Thanks!
+Alexey Dobriyan wrote:
+> Signed-off-by: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 
-	Lai Jiangshan.
+I have exactly the same patch to be submitted :)
 
+Acked-by: Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
 
-Reviewed-by: Lai Jiangshan <laijs-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+By the way, you are posting patches related to netns. As some of us are 
+working in this area too, do you mind to sync with us for the network 
+items you want to handle to avoid duplicate work ?
 
-Paul Menage wrote:
+We are currently working on mroute[6].
 
-> - allocate an array of single pages rather than a single kmalloc() region
+Thanks.
+   -- Daniel
 
-I will send a patch for it in few days.
-
-> +
-> +static void *cgroup_tasks_start(struct seq_file *s, loff_t *pos)
+> ---
+> 
+>  net/ipv4/igmp.c |   49 ++++++++++++++++++++++++++++++++++++++++---------
+>  1 file changed, 40 insertions(+), 9 deletions(-)
+> 
+> --- a/net/ipv4/igmp.c
+> +++ b/net/ipv4/igmp.c
+> @@ -2272,6 +2272,7 @@ int ip_check_mc(struct in_device *in_dev, __be32 mc_addr, __be32 src_addr, u16 p
+>  
+>  #if defined(CONFIG_PROC_FS)
+>  struct igmp_mc_iter_state {
+> +	struct seq_net_private p;
+>  	struct net_device *dev;
+>  	struct in_device *in_dev;
+>  };
+> @@ -2280,11 +2281,12 @@ struct igmp_mc_iter_state {
+>  
+>  static inline struct ip_mc_list *igmp_mc_get_first(struct seq_file *seq)
 >  {
-> -	int cnt = 0;
-> -	int i;
-> +	/*
-> +	 * Initially we receive a position value that corresponds to
-> +	 * one more than the last pid shown (or 0 on the first call or
-> +	 * after a seek to the start). Use a binary-search to find the
-> +	 * next pid to display, if any
-> +	 */
-> +	struct cgroup *cgrp = s->private;
-> +	int index = 0, pid = *pos;
-> +	int *iter;
-
-use pid_t instead of int (include other functions)
-
+> +	struct net *net = seq_file_net(seq);
+>  	struct ip_mc_list *im = NULL;
+>  	struct igmp_mc_iter_state *state = igmp_mc_seq_private(seq);
+>  
+>  	state->in_dev = NULL;
+> -	for_each_netdev(&init_net, state->dev) {
+> +	for_each_netdev(net, state->dev) {
+>  		struct in_device *in_dev;
+>  		in_dev = in_dev_get(state->dev);
+>  		if (!in_dev)
+> @@ -2405,7 +2407,7 @@ static const struct seq_operations igmp_mc_seq_ops = {
+>  
+>  static int igmp_mc_seq_open(struct inode *inode, struct file *file)
+>  {
+> -	return seq_open_private(file, &igmp_mc_seq_ops,
+> +	return seq_open_net(inode, file, &igmp_mc_seq_ops,
+>  			sizeof(struct igmp_mc_iter_state));
+>  }
+>  
+> @@ -2414,10 +2416,11 @@ static const struct file_operations igmp_mc_seq_fops = {
+>  	.open		=	igmp_mc_seq_open,
+>  	.read		=	seq_read,
+>  	.llseek		=	seq_lseek,
+> -	.release	=	seq_release_private,
+> +	.release	=	seq_release_net,
+>  };
+>  
+>  struct igmp_mcf_iter_state {
+> +	struct seq_net_private p;
+>  	struct net_device *dev;
+>  	struct in_device *idev;
+>  	struct ip_mc_list *im;
+> @@ -2427,13 +2430,14 @@ struct igmp_mcf_iter_state {
+>  
+>  static inline struct ip_sf_list *igmp_mcf_get_first(struct seq_file *seq)
+>  {
+> +	struct net *net = seq_file_net(seq);
+>  	struct ip_sf_list *psf = NULL;
+>  	struct ip_mc_list *im = NULL;
+>  	struct igmp_mcf_iter_state *state = igmp_mcf_seq_private(seq);
+>  
+>  	state->idev = NULL;
+>  	state->im = NULL;
+> -	for_each_netdev(&init_net, state->dev) {
+> +	for_each_netdev(net, state->dev) {
+>  		struct in_device *idev;
+>  		idev = in_dev_get(state->dev);
+>  		if (unlikely(idev == NULL))
+> @@ -2564,7 +2568,7 @@ static const struct seq_operations igmp_mcf_seq_ops = {
+>  
+>  static int igmp_mcf_seq_open(struct inode *inode, struct file *file)
+>  {
+> -	return seq_open_private(file, &igmp_mcf_seq_ops,
+> +	return seq_open_net(inode, file, &igmp_mcf_seq_ops,
+>  			sizeof(struct igmp_mcf_iter_state));
+>  }
+>  
+> @@ -2573,14 +2577,41 @@ static const struct file_operations igmp_mcf_seq_fops = {
+>  	.open		=	igmp_mcf_seq_open,
+>  	.read		=	seq_read,
+>  	.llseek		=	seq_lseek,
+> -	.release	=	seq_release_private,
+> +	.release	=	seq_release_net,
+>  };
+>  
+> -int __init igmp_mc_proc_init(void)
+> +static int igmp_net_init(struct net *net)
+>  {
+> -	proc_net_fops_create(&init_net, "igmp", S_IRUGO, &igmp_mc_seq_fops);
+> -	proc_net_fops_create(&init_net, "mcfilter", S_IRUGO, &igmp_mcf_seq_fops);
+> +	struct proc_dir_entry *pde;
 > +
-> +	down_read(&cgrp->pids_mutex);
-> +	if (pid) {
-> +		int end = cgrp->pids_length;
-> +		int i;
-
-int i; unused.
-
-> +		while (index < end) {
-> +			int mid = (index + end) / 2;
-> +			if (cgrp->tasks_pids[mid] == pid) {
-> +				index = mid;
-> +				break;
-> +			} else if (cgrp->tasks_pids[mid] <= pid)
-
-(cgrp->tasks_pids[mid] <= pid) ===> (cgrp->tasks_pids[mid] < pid)
-
-> +				index = mid + 1;
-> +			else
-> +				end = mid;
-> +		}
-> +	}
+> +	pde = proc_net_fops_create(net, "igmp", S_IRUGO, &igmp_mc_seq_fops);
+> +	if (!pde)
+> +		goto out_igmp;
+> +	pde = proc_net_fops_create(net, "mcfilter", S_IRUGO, &igmp_mcf_seq_fops);
+> +	if (!pde)
+> +		goto out_mcfilter;
+>  	return 0;
+> +
+> +out_mcfilter:
+> +	proc_net_remove(net, "igmp");
+> +out_igmp:
+> +	return -ENOMEM;
+> +}
+> +
+> +static void igmp_net_exit(struct net *net)
+> +{
+> +	proc_net_remove(net, "mcfilter");
+> +	proc_net_remove(net, "igmp");
+> +}
+> +
+> +static struct pernet_operations igmp_net_ops = {
+> +	.init = igmp_net_init,
+> +	.exit = igmp_net_exit,
+> +};
+> +
+> +int __init igmp_mc_proc_init(void)
+> +{
+> +	return register_pernet_subsys(&igmp_net_ops);
+>  }
+>  #endif
