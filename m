@@ -1,11 +1,19 @@
-From: "carry.zm-ral2JQCrhuEAvxtiuMwx3w@public.gmane.org" <carry.zm-ral2JQCrhuEAvxtiuMwx3w@public.gmane.org>
-Subject: =?GB2312?B?1sbU7NDNxvPStbO1vOS53MDtxNzBpszhyf3RtcG3?=
-Date: Mon, 8 Sep 2008 13:03:30 +0800
-Message-ID: <200809080503.m8853FmA017986@smtp1.linux-foundation.org>
+From: Lai Jiangshan <laijs-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+Subject: Re: Re: [PATCH] cgroup(fix critical bug): new handling for tasks file
+Date: Mon, 08 Sep 2008 16:19:30 +0800
+Message-ID: <48C4E012.4060400__24778.8606597625$1220862319$gmane$org@cn.fujitsu.com>
+References: <48B360CE.2010501@cn.fujitsu.com>	
+	<6599ad830808251929p10dfc9d2ub11e4db0cd4f9f3@mail.gmail.com>	
+	<48B39319.7070403@cn.fujitsu.com>	
+	<6599ad830808261544w308a850m865ac0c0a1552c77@mail.gmail.com>	
+	<48B4D81D.2040200@cn.fujitsu.com>
+	<6599ad830808270536i353e1807kaac4e9fb74301bb0@mail.gmail.com>
+	<48B69582.4000208@cn.fujitsu.com> <48C0C4F7.2080702@google.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="gb2312"
-Content-Transfer-Encoding: base64
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <48C0C4F7.2080702-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -15,117 +23,59 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+Cc: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Linux Kernel Mailing List <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-CiAgICAgICAgICAgICAgICAgICCh9KH0ofTWxtTs0M3G89K1s7W85LncwO3E3MGmzOHJ/dG1wbe4
-37y20dDQ3rDgIKH0ofSh9AoKodSh1KHUodSh1KHUodSh1KHUodSh1KHUodSh1KHUodSh1KHUodSh
-1KHUodSh1KHUodSh1KHUodSh1KHUodSh1KHUodSh1KHUodSh1KHUodSh1KHUodSh1AogICAgICAg
-ICAgICAgICAgICChvsqxICC85KG/Mk9POCDE6jnUwjIwLTIxyNWhoaG+tdggILXjob/Jz7qjCgog
-ICAgICAgICAgICAgICAgICChvsqxICC85KG/Mk9POCDE6jnUwjI3LTI4yNWhoaG+tdggILXjob/J
-7tvaCqHUodSh1KHUodSh1KHUodSh1KHUodSh1KHUodSh1KHUodSh1KHUodSh1KHUodSh1KHUodSh
-1KHUodSh1KHUodSh1KHUodSh1KHUodSh1KHUodSh1KHUodQKob7KyrrPttTP86G/xvPStbOns6Sh
-otbG1OzStcn6svrX3LzgoaLJ+rL6vq3A7aGis7W85Nb3yM68sMn6svrWxtTs1ve53Lyw0rvP37jJ
-sr8KCqG+0afPsLfR08OhvzIyMDDUqi/Iyyiw/MCo18rBz6Gizueyzbywyc/Pws7nsui147XIKQoK
-ob7F4NG1t73KvaG/1vfM4r2yveKhorfW1+nM1sLboaK7pbavvczRp6GiwbfPsLXICiAKyKu5+s2z
-0ru3/s7xtee7sKO6o7SjsKOwo62juKO4o7mjuaO2o7KjuAoKyc+6o7XYx/jXqM/fo7qjsKOyo7Gj
-raO1o7GjsKO5o7mjtKO3o7UKCrnjtqu12Mf416jP36O6o7CjsqOwo62js6O0o7WjsqOwo7mjuKOx
-IC8go7Ojs6O2o7ajtaO2o7mjtyAKCrGoLsP7LsH3LrPMOsC0tefXydGvofqxqMP7se2h+rvYtKux
-qMP7se2h+reis/ayzrzTyLfIz7qvofqz1si3yM+6r7LOvNMKodSh1KHUodSh1KHUodSh1KHUodSh
-1KHUodSh1KHUodSh1KHUodSh1KHUodSh1KHUodSh1KHUodSh1KHUodSh1KHUodSh1KHUodSh1KHU
-odSh1KHUodSh1ArOqsqyw7TSqsXg0bWjvwogICAgsvrGt8a31tbUvcC01L224KOssvrGt8n6w/zW
-3Mba1L3AtNS9tsy1xMrQs6G7t76zz8KjrMn6svqyv8n6svrRucGm1L3AtNS9tPOjur/Nu6fSqsfz
-Cr27u/XG2rj8tsyjrLj817zKsaOsx9K827jxuPy1zaOsxrfWyrj8usOho9bG1OzStbXEvrrV+bnp
-uPm94bXXysfJ+rL60KfCyqGis8mxvr/Y1sbT67ncwO0KxNzBprXEvrrV+aGj17/UvaGi09DQp7XE
-yfqy+rncwO3E3MGmLgogICAgs7W85MrH1sbU7NDNxvPStbXE1tDQxKOss7W85LrN1sbU7LK/w8W5
-3MDttcS6w7u1o6zWsb3T07DP7NfFsvrGt6Gw1srBv6Gis8mxvqGivbu79cbaobEKuPfP7ta4seq1
-xM3qs8mjrLDpy+bXxc6iwPvKsbT6tcS1vcC0us3X6davveG5ucf3z/Kx4sa9u6+1xL3xzOyjrLO1
-vOS53MDt1NrG89K11tC9q7Dn0d3T+gq809bY0qq1xL3Hyashs7W85Nb3udy8yNKqtPjB7M3FttPN
-6rPJuPfP7rmk1/fIzs7xo6zT1tKq09DQp7XYudzA7cn6svrP1rOhtcS9+LbIoaLWysG/oaKzyQqx
-vrrNyMvUsaGjyOe6zr340NCztbzkudzA7brNyfqy+rn9s8y/2NbGo6zI57rO0K3NrMbky/uyv8PF
-ubLNrLSmwO3P1rOhtcS499bWzsrM4qGj1eLS0bPJCs6q1tC5+sbz0rWztbzkudzA7cjL1LGx2NDr
-1cbO1brN1tjK07XE1rDStbuvvLzE3KGjysfSu9bWtNO8vMr1tb253MDtyrXP1tK7zOW7r6Giz7XN
-s7uvtcQKt8nUvqGj0qqzyc6q08XQ47XExvPStaOsxvPStcHstbyx2NDr1tjK07O1vOS53MDtyMvU
-sdXiyLqyu7/Ju/LIsbXEyMvBptfK1LSjoQoKtviztbzkudzA7cjL1LGzo7Ojw+bB2aO6Cmyhormk
-1/fX9sHLsrvJ2aOsw7/M7NKyw6bDpsK1wrWjrLncwO26w8/zu7nKx8Dtsruz9s230PejrMjnus7T
-0NCntcTNxr34s7W85LncwO25pNf3o78KMqGi1ve53NKquMTJxqOswM+w5dKqvbWxvqOsyfqy+s/W
-s6HI57rO09DQp7eiz9bOyszio6yz1tD4uMS9+KO/CjOhosa31ta24KOsvMa7rrHku6/Gtbexo6zJ
-+rL6yM7O8br2uN+69rXNo6zI57rOzOG438n6svqztbzkyOHQzaOs09DQp7XEsaPWpMn6svq9+LbI
-o78KNKGiyfqy+rn9s8yyu87ItqijrLv6xve5ytXPus2y+sa31srBv87KzOKzo7Ojt6LJ+qOsyOe6
-ztPQ0Ke1xL/Y1sbM4bjf1srBv7rNzOG438nosbjA+9PDwso/CjWhos/Ws6G63LbgysLH6dDo0qrS
-wL+/z8LK9LrNzay8trK/w8W5ss2sxazBpqOsv8nKx76ts6PKx7P2wcvOysziuvOjrMjLyMvP4Lul
-zcbN0aOsysLH6dK7zvMK1NnO86OsyOe6ztPQ0Ke1xNPry/vIy7m1zai6zdCttfejrMjnus68pLei
-z8LK9LXE1ve2r9DUus3U8MjO0MSjv8TayN3Ptc2zzerV+6Gi16LW2Mq1vMrUy9PDoaIKwb3M7LXE
-vqvQxNHQ0N6jrNPrxPq5ss/ts7W85LncwO21xLDCw9ijoQqh1KHUodSh1KHUodSh1KHUodSh1KHU
-odSh1KHUodSh1KHUodSh1KHUodSh1KHUodSh1KHUodSh1KHUodSh1KHUodSh1KHUodSh1KHUodSh
-1KHUodSh1KHUCqH5ofmh+cXgo72jvaO90bWjvaO9o73K1aO9o72jvdLmo7oKCmyhosP3yLfP1rOh
-uMmyv7XEvcfJq7aozrujrNXGztWztbzkyNWzo8rCzvG53MDtvLDIy9SxudzA7bXEvqvL6AoyoaLV
-xs7VvPK1pbXE1srBv7mkvt+4xL34yfqy+sa31sq1xLe9t6gKM6Gi0afPsNPQ0KfVxs7Vyfqy+r34
-tsijrL/Y1sbWxtTss8mxvrXEt723qAo0oaLRp7vht6LP1rrNzdq+8s7KzOKjrNXGztXTw7zytaW5
-pL7fveK+9rj31taztbzkuLTU087KzOIKNaGixeDR+Mnosbixo9H40uLKtqOs0ae74dTL08NUUE21
-xLe9t6jM4bjfyfqy+sGmCqHUodSh1KHUodSh1KHUodSh1KHUodSh1KHUodSh1KHUodSh1KHUodSh
-1KHUodSh1KHUodSh1KHUodSh1KHUodSh1KHUodSh1KHUodSh1KHUodSh1KHUodQKofmh+aH5xeCj
-vaO9o73RtaO9o72jvczYo72jvaO9yaujugoKbKGiv8my2df30NSjur7bvbnT2s/Ws6G1xMq1vMqy
-2df30bXBt9PryrW8+cTcwabM4cn9CjKhos+1zbPM4bjfo7rL+Laos7W85LncwO3Iy9SxxNzBprXj
-o6zNqLn90bXBt6OsuMSx5LncwO3Q0M6qo6zM4cn9udzA7by8xNwKM6Gi1KK9zNPawbejutaqw/vG
-89K1yrW8yrC4wP231s72o6zE+rXEwKe787TzvNK94rTwo6zE+sv5ss6807XEsrvKx9K7zMO/3dTv
-tcShsMzu0byhsb/Os8wKodSh1KHUodSh1KHUodSh1KHUodSh1KHUodSh1KHUodSh1KHUodSh1KHU
-odSh1KHUodSh1KHUodSh1KHUodSh1KHUodSh1KHUodSh1KHUodSh1KHUodSh1Aqh+aH5ofm/zqO9
-o72jvbPMo72jvaO9xNqjvaO9o73I3aO6CgrSu6Gi1dLXvLO1vOS53MDtyMvUsdaw1PC2qM67Cmyh
-orO1vOS53MDtyMvUsbXE1rDU8NPrvcfJq8jP1qoKMqGiyOe6zr2owaK6w7XEudzA7bXEu/m0oQoz
-oaLI57rOs8nOqrrDtcSztbzkz9azobncwO3Iy9SxCjShorO1vOS53MDtuaTX97XE1tjQxNPr0qq1
-4woKtv6hosjnus7T0NCntcTNxr34s7W85LncwO25pNf3CmyhorO1vOTV+8zluaTX97XEzca9+Mzl
-z7UKMqGis7W85LncwO3P7sS/tcTWuLHqu68KM6GiyOe6zr2rxL+x6tPr1rix6tW5v6rOqr7fzOW1
-xMq1yqm3vbC4CjShosjnus7T0NCntcS31r3is7W85LncwO3Ev7HqCjWhosjnus7NqLn9sai45tPr
-wP274b340NC53MDt17fX2QoKyP2hosjnus7T0NCntcTN2r7ys7W85M7azOIKbKGiuaSzp7OjvPvO
-ysziCjKhosjnus600zRNsum6y7j3uPa7t73atcTOysziCjOhosjnus7RsNXSobDI/bT0obGjrM/7
-s/2hsMj9tPShsQo0oaLI57rOvajBosrK0su1xLHq17yjrNf3zqqxqcK2zsrM4rXE1rjV6woKy8Sh
-osjnus7Uy9PDNVO6zcS/ytO53MDtCmyhos6qyrLDtDVTyse5pLOnudzA7brPwO27r7XEuPmxvgoy
-oaI1U7XEusvQxNPryrXWygozoaK+q9LmxL/K07ncwO0KNKGiVEFLVNDFz6Kw5aGit6KyvNDFz6Kw
-5Qo1oaI1U9DFz6Kw5SxLQU5CQU6/qMasCjahorS0vai6zdOm08Oyu82swODQzbXEytO+9b/Y1sa5
-pL7fCjehojVTtcTQp9PDCjihorC4wP3R0MzWCgrO5aGis7W85LzGu6653MDtus3S7LOjv9jWxgps
-oaLJ+rL61/fStbzGu661xNe319nKtcqpCjKhosjnus6/2NbG1+680bXEyfqy+r3axcSjrLGjs9bT
-0NCnsvqz9gozoaLI57rOvPXJ2dTLyuTKsbzko6zL9bbMvbvG2go0oaLI57rOzOG438n6svq53MDt
-z7XNs7XEyOHQ1Ao1oaLUy9PDVdDNyfqy+s/fsrzWw7e9yr3M4bjfyfqy+s/ftcTI4dDUCjahosjn
-us69tbXNu7vP38qxvOTKytOmyfqy+s/ftcTXqru7Cjehosjnus7A+9PDtuDE3Lmky+bKsbX31fvJ
-+rL6sLLFxQo4oaLI57rOu6+94sa/vrG7t73atcTWxtS8Cjmhosa/vrG53MDtuMXE7gpsT6GiyOe6
-zr3ivvbGv76xCmxsoaLJ+rL6uLq6yca9uuIKbDKhosa/vrG53MDtsLjA/QpsM6GiyOe6zs2ouf2/
-7MvZu7vQzby8yvXKtc/WtuDGt9bWyfqy+tequ7sKbDShor/sy9m7u9DNtcS4xcTuus23vbC4Cmw1
-oaK7u9DNzu/Bz7O10+u7u9DNuaS+37O1tcTKudPDCmw2oaK7u9DNtcS5/bPMt9bO9gpsN6Giv+zL
-2bu70M2wuMD9Cmw4oaLV67bU0KHF+sG/yfqy+rXE1/fStbX3tsjT67zgv9gKbDmhosn6svq197bI
-0+u8tMqxzbO8xre0wKEKMk+hotXrttS24Ma31tbQocX6wb+1xNf30rW8xruut723qAoKwfmhos/W
-s6HWysG/uMS9+ApsoaLI57rOyrax8NbKwb/OysziCjKhosjnus7Uy9PDxre53Mimu+62r7jEvfjW
-ysG/udzQ7QozoaLNxtLGudzA7dPr1KS3wNDUzsrM4reiz9YKNKGi1srBv87KzOK1xLbU06bB97PM
-0+vSqrXjCjWhotbKwb+4xMnGu+62r7XEy8S917bOyq6yvdboCgrG36Giz9azobPJsb6/2NbGoaHG
-89K1yfq05rXEuPmxvgpsoaLTr7/3xr264rXj0afPsMDPsOW1xL6t06q52woyoaLP1rOhs8mxvrnc
-wO21xNb30qrWuLHqCjOhor21tc3WxtTss8mxvrXE1vfSqs2+vrYKNKGivPXJ2c/Ws6HAy7fRtcS7
-7ravt723qAo1oaK3xbTzvrW007rqudu1vc6iudu1xENEuaS+3wo2oaKx6te8s8mxvtPrserXvLmk
-yrG1xLLitqgKN6GiserXvLPJsb4vserXvLmkyrG1xLLu0uy31s72Cgqwy6Giz9azocnosbi53MDt
-VFBNCmyhosnosbi53MDttcSwy7Tz1qfW+QoyoaLK/dfWu6+1xNfbus/Qp8LKudzA7QozoaLJ6LG4
-tcTB+bTzy/DKpwo0oaK4xMnGwv3Q1MvwyqejrM/yweO5ytXPzPTVvaGhCjWhosnosbiz9cbax+XJ
-qNPrwKfE0dS0ttSy3wo2oaLX1Nb3saPR+LXExt+yvdboCgq+xaGis7W85MjL1LG53MDtCmyhotDC
-0M21xMnPz8K8trnYz7UKMqGi19TO0sXg0fjT68Xg0fjPwsr0tcTS4sq2CjOhosjnus7T0NCntcTW
-uLW80+u4qLW8z8LK9Ao0oaLI57rOy9zU7LPW0PjRp8+w0+u4xMnGtcTP1rOht9XOpwo1oaLI57rO
-09DQp7XEz/LJz7y2ubXNqNPru+OxqAo2oaLNrLy2sr/DxdauvOS5tc2o0+u3tMChtcS8vMfJCjeh
-osjLvMq8vMfJ0+u52M+1tKbA7Qo4oaK8pMD4z8LK9LXEvLzHydPrt723qAoKyq6hotfbus+wuMD9
-t9bO9gqh1KHUodSh1KHUodSh1KHUodSh1KHUodSh1KHUodSh1KHUodSh1KHUodSh1KHUodSh1KHU
-odSh1KHUodSh1KHUodSh1KHUodSh1KHUodSh1KHUodSh1KHUCqH5ofmh+b2yo72jvcqmo72jvb3p
-o72jvcnco7oKIAogICAgzNXK98HuIM/Iyfo6zKjN5be2sb6hosyozeXGt9bK0ae74cDtysIv18rJ
-7r2yyqajrNeo16LT2sn6svq53MDtoaLP1rOhudzA7b/Os8y9/MqusMvE6qGiCrfhzO/KvbncwO3R
-0L6/0KHX6ShUUFMp0dC+v9SxLFRRTdCh1/nR0L6/1LGjrEcvUNCh1+nR0L6/1LGhosyozeW5pNK1
-19y74b2yyqahokFUJlTMqM3lx/jQrQrBprOnycxPVETR0M+wu+HIq7PMvbLKpqGi1tDUrbTz0ae5
-pNK1uaSzzNHQvr/L+bywuui6o6OouLvKv7+1o6k2U2lnbWG53MDtsbiwuNfKye65y87KyqahogrM
-qM3luau5srmks8zOr9Sxu+HGt9bK0ae74bG4sLi6z7jxvbLKpqGizKjN5ca31srRp7vhxre53Lmk
-s8zKpihDUUUpLL/Jv7+2yLmks8zKpihDUkUp16jStQrRtcG3vLC8+Laous+48aGj1vez1qGwuKPM
-2KGiv8vAs8u5wNWhos2o08O1yMj9tPPG+7O1uavLvrywu/WztdbG1OzStbXEUVM5MDAwvLBRU0HM
-qM3lytew5gq9zLLEseDS66GxoaLGt7ncyKYoUUNDKbW8yOu8sMjVsb7XodPRvK/NxVFDU3Rvcnm3
-orHtu+Gx4NLroaLRx9beyfqy+sGm1tDQxCzP47jbyKvD5sa31sq53ArA7ShUUU0p0dDM1rvhzKjN
-5bXYx/i0+rHtoaMKodSh1KHUodSh1KHUodSh1KHUodSh1KHUodSh1KHUodSh1KHUodSh1KHUodSh
-1KHUodSh1KHUodSh1KHUodSh1KHUodSh1KHUodSh1KHUodSh1KHUodSh1AoKu+EtzvEt1+kt1q+j
-uk0gTSBDINbGINTsILncIMDtINbQINDEIAoKt9EtLS0t08OjujKjrDIwMNSqIC8gMszsLyDIyyiw
-/MCoxeDRtaGixeDRtb3MssShosG9zOzO57LNoaLS1Lywyc/Pws7nsui147XIKQqh1KHUodSh1KHU
-odSh1KHUodSh1KHUodSh1KHUodSh1KHUodSh1KHUodSh1KHUodSh1KHUodSh1KHUodSh1KHUodSh
-1KHUodSh1KHUodSh1KHUodSh1KHUCl9fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19f
-X19fX19fX19fX19fCkNvbnRhaW5lcnMgbWFpbGluZyBsaXN0CkNvbnRhaW5lcnNAbGlzdHMubGlu
-dXgtZm91bmRhdGlvbi5vcmcKaHR0cHM6Ly9saXN0cy5saW51eC1mb3VuZGF0aW9uLm9yZy9tYWls
-bWFuL2xpc3RpbmZvL2NvbnRhaW5lcnM=
+It's great, Thanks!
+
+	Lai Jiangshan.
+
+
+Reviewed-by: Lai Jiangshan <laijs-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+
+Paul Menage wrote:
+
+> - allocate an array of single pages rather than a single kmalloc() region
+
+I will send a patch for it in few days.
+
+> +
+> +static void *cgroup_tasks_start(struct seq_file *s, loff_t *pos)
+>  {
+> -	int cnt = 0;
+> -	int i;
+> +	/*
+> +	 * Initially we receive a position value that corresponds to
+> +	 * one more than the last pid shown (or 0 on the first call or
+> +	 * after a seek to the start). Use a binary-search to find the
+> +	 * next pid to display, if any
+> +	 */
+> +	struct cgroup *cgrp = s->private;
+> +	int index = 0, pid = *pos;
+> +	int *iter;
+
+use pid_t instead of int (include other functions)
+
+> +
+> +	down_read(&cgrp->pids_mutex);
+> +	if (pid) {
+> +		int end = cgrp->pids_length;
+> +		int i;
+
+int i; unused.
+
+> +		while (index < end) {
+> +			int mid = (index + end) / 2;
+> +			if (cgrp->tasks_pids[mid] == pid) {
+> +				index = mid;
+> +				break;
+> +			} else if (cgrp->tasks_pids[mid] <= pid)
+
+(cgrp->tasks_pids[mid] <= pid) ===> (cgrp->tasks_pids[mid] < pid)
+
+> +				index = mid + 1;
+> +			else
+> +				end = mid;
+> +		}
+> +	}
