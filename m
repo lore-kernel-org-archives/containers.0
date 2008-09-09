@@ -1,15 +1,15 @@
 From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: Re: [RFC v4][PATCH 3/9] x86 support for checkpoint/restart
-Date: Tue, 09 Sep 2008 19:23:19 -0400
-Message-ID: <48C70567.9030705__32565.1119965643$1221002854$gmane$org@cs.columbia.edu>
+Subject: Re: [RFC v4][PATCH 5/9] Memory managemnet (restore)
+Date: Tue, 09 Sep 2008 19:35:06 -0400
+Message-ID: <48C7082A.1050608__37116.7442448952$1221003438$gmane$org@cs.columbia.edu>
 References: <1220946154-15174-1-git-send-email-orenl@cs.columbia.edu>
-	<1220946154-15174-4-git-send-email-orenl@cs.columbia.edu>
-	<20080909081713.GA18946@elte.hu>
+	<1220946154-15174-6-git-send-email-orenl@cs.columbia.edu>
+	<20080909160724.GA23397@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20080909081713.GA18946-X9Un+BFzKDI@public.gmane.org>
+In-Reply-To: <20080909160724.GA23397-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,98 +19,75 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, jeremy-TSDbQ3PG+2Y@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, arnd-r2nGTMty4D4@public.gmane.org, dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
+To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Cc: linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, jeremy-TSDbQ3PG+2Y@public.gmane.org, arnd-r2nGTMty4D4@public.gmane.org, dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
 List-Id: containers.vger.kernel.org
 
 
 
-Ingo Molnar wrote:
-> * Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org> wrote:
-> 
->> +	/* for checkpoint in process context (from within a container)
->> +	   the GS and FS registers should be saved from the hardware;
->> +	   otherwise they are already sabed on the thread structure */
-> 
-> please use the correct comment style consistently throughout your 
-> patches. The correct one is like this one:
-> 
->> +	/*
->> +	 * for checkpoint in process context (from within a container),
->> +	 * the actual syscall is taking place at this very moment; so
->> +	 * we (optimistically) subtitute the future return value (0) of
->> +	 * this syscall into the orig_eax, so that upon restart it will
->> +	 * succeed (or it will endlessly retry checkpoint...)
->> +	 */
-> 
-> incorrect/inconsistent ones are like these:
-> 
->> +		/* normally, no need to unlazy_fpu(), since TS_USEDFPU flag
->> +		 * have been cleared when task was conexted-switched out...
->> +		 * except if we are in process context, in which case we do */
-> 
->> +		/* restore TLS by hand: why convert to struct user_desc if
->> +		 * sys_set_thread_entry() will convert it back ? */
-> 
->> +			/* FIX: add sanity checks (eg. that values makes
->> +			 * sense, that we don't overwrite old values, etc */
-> 
-> (and there's many more examples throughout the series)
-> 
->> +int cr_read_cpu_debug(struct cr_hdr_cpu *hh, struct task_struct *t)
+Serge E. Hallyn wrote:
+> Quoting Oren Laadan (orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org):
+
+[...]
+
+>> +/* change the protection of an address range to be writable/non-writable.
+>> + * this is useful when restoring the memory of a read-only vma */
+>> +static int cr_vma_set_writable(struct mm_struct *mm, unsigned long start,
+>> +			       unsigned long end, int writable)
 >> +{
->> +	/* debug regs */
+>> +	struct vm_area_struct *vma, *prev;
+>> +	unsigned long flags = 0;
+>> +	int ret = -EINVAL;
 >> +
->> +	preempt_disable();
+>> +	cr_debug("vma %#lx-%#lx writable %d\n", start, end, writable);
 >> +
->> +	if (hh->uses_debug) {
->> +		set_debugreg(hh->debugreg0, 0);
->> +		set_debugreg(hh->debugreg1, 1);
->> +		/* ignore 4, 5 */
->> +		set_debugreg(hh->debugreg2, 2);
->> +		set_debugreg(hh->debugreg3, 3);
->> +		set_debugreg(hh->debugreg6, 6);
->> +		set_debugreg(hh->debugreg7, 7);
->> +	}
->> +
->> +	preempt_enable();
->> +
->> +	return 0;
->> +}
+>> +	down_write(&mm->mmap_sem);
+>> +	vma = find_vma_prev(mm, start, &prev);
+>> +	if (!vma || vma->vm_start > end || vma->vm_end < start)
+>> +		goto out;
+>> +	if (writable && !(vma->vm_flags & VM_WRITE))
+>> +		flags = vma->vm_flags | VM_WRITE;
+>> +	else if (!writable && (vma->vm_flags & VM_WRITE))
+>> +		flags = vma->vm_flags & ~VM_WRITE;
+>> +	cr_debug("flags %#lx\n", flags);
+>> +	if (flags)
+>> +		ret = mprotect_fixup(vma, &prev, vma->vm_start,
+>> +				     vma->vm_end, flags);
 > 
-> hm, the preemption disabling seems pointless here. What does it protect 
-> against?
+> As Dave has pointed out, this appears to be a security problem.  I think
 
-This is leftover from recovering; will clean up.
+As I replied to Dave, I don't see why this would be a security problem.
 
-> 
->> +++ b/checkpoint/ckpt_arch.h
->> @@ -0,0 +1,7 @@
->> +#include <linux/ckpt.h>
->> +
->> +int cr_write_thread(struct cr_ctx *ctx, struct task_struct *t);
->> +int cr_write_cpu(struct cr_ctx *ctx, struct task_struct *t);
->> +
->> +int cr_read_thread(struct cr_ctx *ctx);
->> +int cr_read_cpu(struct cr_ctx *ctx);
-> 
-> please add 'extern' to prototypes in include files.
-> 
->> @@ -15,6 +15,8 @@
->>  #include <linux/ckpt.h>
->>  #include <linux/ckpt_hdr.h>
->>  
->> +#include "ckpt_arch.h"
->> +
-> 
-> plsdntuseannyngabbrvtsngnrcd. [1]
-> 
-> "checkpoint_" should be just fine in most cases.
-> 
-> 	Ingo
-> 
-> [1] (please dont use annoying abbreviations in generic code)
+This handles private memory only. In particular, the uncommon case of a
+read-only VMA tha has modified contents. This _cannot_ affect the file
+from which this VMA may have been mapped.
 
-:)
+Shared memory (not file-mapped) will be handled differently: since it is
+always backed up by an inode in shmfs, the restart will populate the
+relevant pages directly. Besides, non-file-mapped shared memory is again
+not a security concern.
+
+Finally, shared memory that maps to a file is simply _not saved_ at all;
+it is part of the file system, and belongs to the (future) file system
+snapshot capability. Since the contents are always available in the file
+system, we don't need to save it (like we don't save shared libraries).
+
+That said, it is necessary that the code ensures that the vm_flags that
+belong to a VMA of a private type, e.g. CR_VMA_ANON/CR_VMA_FILE, indeed
+match it (ie, don't have VM_MAY_SHARE/VM_SHARED). I'll add that.
+
+> what you need to do is create a new helper mprotect_fixup_withchecks(),
+> which does all the DAC+MAC checks which are done in the sys_mprotect()
+> loop starting with "for (nstart = start ; ; ) {...  Otherwise an
+> unprivileged user can create a checkpoint image of a program which has
+> done a ro shared file mmap, edit the checkpoint, then restart it and (i
+> assume) cause the modified contents to be written to the file.  This
+> could violate both DAC checks and selinux checks.
+> 
+> So create that helper which does the security checks, and use it
+> both here and in the sys_mprotect() loop, please.
+> 
+
+[...]
 
 Oren.
