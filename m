@@ -1,11 +1,14 @@
-From: "Tahsin Stone" <unreproducible-DteMiK0OB/CGGiaOOsIlZVaTQe2KTcn/@public.gmane.org>
-Subject: Windows Server 2008
-Date: Mon, 08 Sep 2008 23:35:43 -0600
-Message-ID: <000901c9122c$6b032900$0100007f@obbyni>
+From: Patrick McHardy <kaber-dcUjhNyLwpNeoWH0uzbU5w@public.gmane.org>
+Subject: Re: [PATCH 03/33] nf_conntrack_gre: nf_ct_gre_keymap_flush() fixlet
+Date: Tue, 09 Sep 2008 07:39:59 +0200
+Message-ID: <48C60C2F.8020503__28416.8501654223$1220939021$gmane$org@trash.net>
+References: <48C01046.2070704@trash.net>
+	<1220842990-30500-3-git-send-email-adobriyan@gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <1220842990-30500-3-git-send-email-adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -15,36 +18,15 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Cc: netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, netfilter-devel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-*The following titles and more are now available for pcs and macs`
+Alexey Dobriyan wrote:
+> It does "kfree(list_head)" which looks wrong because entity that was
+> allocated is definitely not list_head.
+> 
+> However, this all works because list_head is first item in
+> struct nf_ct_gre_keymap .
 
-Windows Home Server
-Windows Vista Business
-Acrobat 9 Pro Extended
-Windows Server 2008
-Apple Quicktime Pro
-Neuratron Photoscore Ultimate 5.5
-
-* xpsummer . com `
-
-System Requirements
-` For PC:
-` Intel Pentium 4 (1.4GHz processor), Intel Centrino, Intel Xeon Apple Quicktime Pro or Intel Core Duo (or Apple Quicktime Pro) processor; SSE2-enabled processor required for AMD systems & Microsoft Windows XP with Service Pack 2 or Microsoft Windows Vista Home Premium, Business, Ultimate, or Enterprise (certified for 32-bit editions)
-` 512MB of RAM or more
-` 1GB of available hard-disk space (additional free space Apple Quicktime Pro)
-` Microsoft compatible sound card (multichannel ASIO-compatible sound card recommended)
-` 1,024x768 monitor resolution with 32-bit color adapter recommended
-` CD-R or DVD-ROM drive
-
-* For MAC:
-* PowerPC G4 or G5 or multicore Intel processor
-* Mac OS X or similar
-* 512MB of RAM or more
-* 1GB of available hard-disk space
-* Core Audio compatible sound card
-* 1,024x768 monitor resolution with 32-bit color adapter
-* DVD-ROM drive` DVD+-R burner required for DVD creation
-
-Alitalia is on the verge of liquidation in a few weeks. Now the only hope for Italy's flagship air carrier is a controversial rescue plan proposed by Prime Minister Silvio Berlusconi. But the plan would lay off thousands and could face obstacles in the European Union.
+The first three patches are already in Linus' tree.
