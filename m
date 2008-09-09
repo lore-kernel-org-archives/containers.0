@@ -1,16 +1,16 @@
 From: Patrick McHardy <kaber-dcUjhNyLwpNeoWH0uzbU5w@public.gmane.org>
-Subject: Re: [PATCH 16/33] netns ct: per-netns event cache
-Date: Tue, 09 Sep 2008 09:07:11 +0200
-Message-ID: <48C6209F.6090804__42735.7365414084$1220944154$gmane$org@trash.net>
+Subject: Re: [PATCH 05/33] netns ct: per-netns expectations
+Date: Tue, 09 Sep 2008 09:10:34 +0200
+Message-ID: <48C6216A.6070103__32513.3062237457$1220944361$gmane$org@trash.net>
 References: <48C01046.2070704@trash.net>
-	<1220842990-30500-16-git-send-email-adobriyan@gmail.com>
-	<48C613CB.5000303@trash.net>
-	<20080909070742.GE5786@x200.localdomain>
+	<1220842990-30500-5-git-send-email-adobriyan@gmail.com>
+	<48C60E6E.5080905@trash.net>
+	<20080909070726.GD5786@x200.localdomain>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20080909070742.GE5786-2ev+ksY9ol182hYKe6nXyg@public.gmane.org>
+In-Reply-To: <20080909070726.GD5786-2ev+ksY9ol182hYKe6nXyg@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -25,39 +25,31 @@ Cc: netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy
 List-Id: containers.vger.kernel.org
 
 Alexey Dobriyan wrote:
-> On Tue, Sep 09, 2008 at 08:12:27AM +0200, Patrick McHardy wrote:
->> Alexey Dobriyan wrote:
->>> Heh, last minute proof-reading of this patch made me think,
->>> that this is actually unneeded, simply because "ct" pointers will be
->>> different for different conntracks in different netns, just like they
->>> are different in one netns.
->>>
->>> Not so sure anymore.
->> Its necessary because the cache needs to be flushed on netns exit
->> and this is only allowed while its not in use anymore.
->>
->> I don't see anything in this series actually making sure nothing
->> hits the cache on exit though. Am I missing something?
+> On Tue, Sep 09, 2008 at 07:49:34AM +0200, Patrick McHardy wrote:
+>>> @@ -406,7 +404,7 @@ int nf_ct_expect_related(struct nf_conntrack_expect *expect)
+>>>  		}
+>>>  	}
+>>>  -	if (nf_ct_expect_count >= nf_ct_expect_max) {
+>>> +	if (net->ct.expect_count >= nf_ct_expect_max) {
+>>>  		if (net_ratelimit())
+>>>  			printk(KERN_WARNING
+>>>  			       "nf_conntrack: expectation table full\n");
+>> I assume these message are globally visible even with namespaces?
+>> Can we make this (and the corresponding ct hash message) refer to
+>> the namespace? Otherwise it might be a bit confusing.
 > 
-> When netns refcount hits zero, netdevices in it will start dropping packets.
-> And there is synchronize_net() call before cache flush.
+> This is somewhat peculiar situation.
 > 
-> I think this is enough.
+> netns doesn't have unique ID like, say, ifindex.
+> 
+> The only number related to netns is "struct net *". They can be
+> distinguised by pointer value, but userspace when does clone(CLONE_NEWNET)
+> do not, obviously, control it and after creation doesn't have a way to find
+> it out.
+> 
+> And if we print with "%p, net" kernelspace pointer get exposed which is
+> not nice.
 
-Thanks for the explanation, I have a closer look at this.
-
->> Additionally (I might have missed a following patch moving it
->> out though) this doesn't belong in the netns exit path:
->>
->> void nf_conntrack_cleanup(struct net *net)
->> {
->> 	rcu_assign_pointer(ip_ct_attach, NULL);
->> ...
->> 	rcu_assign_pointer(nf_ct_destroy, NULL);
-> 
-> This is dealt with in 17/33
-> 
-> Have you got 18/33, archives show it's missing?
-
-There are two patches labeled 17/33, I assume the second one is
-actually 18/33.
+No, that also wouldn't solve the confusion. I guess conntrack is not
+the only subsystem which prints netns related messages, so how about
+adding an unique identifier that can be associated by userspace?
