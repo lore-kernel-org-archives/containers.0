@@ -1,65 +1,116 @@
-From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
-Subject: Re: [RFC][PATCH] sunrpc: fix oops in rpc_create() when the mount namespace is unshared
-Date: Tue, 09 Sep 2008 13:08:29 -0700
-Message-ID: <m17i9lm69u.fsf@frodo.ebiederm.org>
-References: <48C52B29.4020204@fr.ibm.com> <20080909124311.GA10053@us.ibm.com>
-	<m18wu1nyon.fsf@frodo.ebiederm.org>
-	<20080909152952.GA21207@us.ibm.com>
-	<DE845309-1684-472A-8269-78AB3A2823A9@oracle.com>
-	<m1fxo9mba5.fsf@frodo.ebiederm.org>
-	<869FF00C-4DAF-4D19-80AF-9230617A9223@oracle.com>
+From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Subject: Re: [RFC v4][PATCH 3/9] x86 support for checkpoint/restart
+Date: Tue, 09 Sep 2008 19:23:19 -0400
+Message-ID: <48C70567.9030705__32565.1119965643$1221002854$gmane$org@cs.columbia.edu>
+References: <1220946154-15174-1-git-send-email-orenl@cs.columbia.edu>
+	<1220946154-15174-4-git-send-email-orenl@cs.columbia.edu>
+	<20080909081713.GA18946@elte.hu>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Return-path: <linux-nfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <869FF00C-4DAF-4D19-80AF-9230617A9223-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org> (Chuck Lever's
-	message of "Tue, 9 Sep 2008 15:00:55 -0400")
-Sender: linux-nfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-To: Chuck Lever <chuck.lever-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org>
-Cc: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>, Cedric Le Goater <clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Trond Myklebust <trond.myklebust-41N18TsMXrtuMpJDpNschA@public.gmane.org>, Linux Kernel Mailing List <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, linux-nfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <20080909081713.GA18946-X9Un+BFzKDI@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, jeremy-TSDbQ3PG+2Y@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, arnd-r2nGTMty4D4@public.gmane.org, dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Chuck Lever <chuck.lever-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org> writes:
 
-> On Sep 9, 2008, at Sep 9, 2008, 2:20 PM, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org wrote:
->> Chuck Lever <chuck.lever-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org> writes:
->>
->>> If the upper layers are responsible for providing the utsname, you will need
->>> to
->>> fix up lockd and the NFS server's callback client too, at  least.
->>
->> Actually looking at the code.  It looks like a proper fix may be even simpler.
->> Why do we have both clnt->cl_server and clnt->cl_nodename?    Or is cl_server
->> the other side of the connection?
->
-> cl_server is the server-side.  cl_nodename is the "machine name" of the client.
 
-Thanks, Darn.  Looks like we need to capture both names at the same or a
-similar point.
+Ingo Molnar wrote:
+> * Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org> wrote:
+> 
+>> +	/* for checkpoint in process context (from within a container)
+>> +	   the GS and FS registers should be saved from the hardware;
+>> +	   otherwise they are already sabed on the thread structure */
+> 
+> please use the correct comment style consistently throughout your 
+> patches. The correct one is like this one:
+> 
+>> +	/*
+>> +	 * for checkpoint in process context (from within a container),
+>> +	 * the actual syscall is taking place at this very moment; so
+>> +	 * we (optimistically) subtitute the future return value (0) of
+>> +	 * this syscall into the orig_eax, so that upon restart it will
+>> +	 * succeed (or it will endlessly retry checkpoint...)
+>> +	 */
+> 
+> incorrect/inconsistent ones are like these:
+> 
+>> +		/* normally, no need to unlazy_fpu(), since TS_USEDFPU flag
+>> +		 * have been cleared when task was conexted-switched out...
+>> +		 * except if we are in process context, in which case we do */
+> 
+>> +		/* restore TLS by hand: why convert to struct user_desc if
+>> +		 * sys_set_thread_entry() will convert it back ? */
+> 
+>> +			/* FIX: add sanity checks (eg. that values makes
+>> +			 * sense, that we don't overwrite old values, etc */
+> 
+> (and there's many more examples throughout the series)
+> 
+>> +int cr_read_cpu_debug(struct cr_hdr_cpu *hh, struct task_struct *t)
+>> +{
+>> +	/* debug regs */
+>> +
+>> +	preempt_disable();
+>> +
+>> +	if (hh->uses_debug) {
+>> +		set_debugreg(hh->debugreg0, 0);
+>> +		set_debugreg(hh->debugreg1, 1);
+>> +		/* ignore 4, 5 */
+>> +		set_debugreg(hh->debugreg2, 2);
+>> +		set_debugreg(hh->debugreg3, 3);
+>> +		set_debugreg(hh->debugreg6, 6);
+>> +		set_debugreg(hh->debugreg7, 7);
+>> +	}
+>> +
+>> +	preempt_enable();
+>> +
+>> +	return 0;
+>> +}
+> 
+> hm, the preemption disabling seems pointless here. What does it protect 
+> against?
 
-I'm wondering if we need to capture a network namespace as well.
+This is leftover from recovering; will clean up.
 
->>> I don't like the idea of an oops in here.  Instead, (for now) it should warn
->>> and
->>> fail to create the client, IMO.
->>
->> Which is interesting when the problem happens during NFS unmount.  Although
->> frankly it could fail anyway.
->>
->> It seems strange that we are creating a client during unmount anyway.
->
-> It's worth investigating.  Just enable RPC tracing (/usr/sbin/rpcdebug -m rpc -s
-> all) before shutting down the client.
->
-> NFS unmounting is historically difficult because during a system shutdown,
-> unmounting is the last thing to occur, and usually happens  after most system
-> services (such as the portmapper service) have become unavailable.  That's fine
-> for local file systems, but it makes  for a rather dodgy situation for NFS.
+> 
+>> +++ b/checkpoint/ckpt_arch.h
+>> @@ -0,0 +1,7 @@
+>> +#include <linux/ckpt.h>
+>> +
+>> +int cr_write_thread(struct cr_ctx *ctx, struct task_struct *t);
+>> +int cr_write_cpu(struct cr_ctx *ctx, struct task_struct *t);
+>> +
+>> +int cr_read_thread(struct cr_ctx *ctx);
+>> +int cr_read_cpu(struct cr_ctx *ctx);
+> 
+> please add 'extern' to prototypes in include files.
+> 
+>> @@ -15,6 +15,8 @@
+>>  #include <linux/ckpt.h>
+>>  #include <linux/ckpt_hdr.h>
+>>  
+>> +#include "ckpt_arch.h"
+>> +
+> 
+> plsdntuseannyngabbrvtsngnrcd. [1]
+> 
+> "checkpoint_" should be just fine in most cases.
+> 
+> 	Ingo
+> 
+> [1] (please dont use annoying abbreviations in generic code)
 
-Interesting.
+:)
 
-Eric
-
---
-To unsubscribe from this list: send the line "unsubscribe linux-nfs" in
-the body of a message to majordomo-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+Oren.
