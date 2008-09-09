@@ -1,100 +1,50 @@
-From: "Vegard Nossum" <vegard.nossum-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: Re: [RFC v4][PATCH 4/9] Memory management (dump)
-Date: Tue, 9 Sep 2008 11:22:07 +0200
-Message-ID: <19f34abd0809090222u68e90c74l514cd0b50a290d4b__35659.8849910826$1220952322$gmane$org@mail.gmail.com>
-References: <1220946154-15174-1-git-send-email-orenl@cs.columbia.edu>
-	<1220946154-15174-5-git-send-email-orenl@cs.columbia.edu>
+From: Cedric Le Goater <clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [RFC][PATCH] sunrpc: fix oops in rpc_create() when the mount
+ namespace is unshared
+Date: Tue, 09 Sep 2008 13:54:39 +0200
+Message-ID: <48C663FF.8020308@fr.ibm.com>
+References: <48C52B29.4020204@fr.ibm.com> <m163p6pqkv.fsf@frodo.ebiederm.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
+Content-Type: text/plain; charset=ISO-8859-1
 Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1220946154-15174-5-git-send-email-orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Content-Disposition: inline
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, jeremy-TSDbQ3PG+2Y@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, arnd-r2nGTMty4D4@public.gmane.org, dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
+Return-path: <linux-nfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+In-Reply-To: <m163p6pqkv.fsf-B27657KtZYmhTnVgQlOflh2eb7JE58TQ@public.gmane.org>
+Sender: linux-nfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+Cc: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>, Trond Myklebust <trond.myklebust-41N18TsMXrtuMpJDpNschA@public.gmane.org>, Chuck Lever <chuck.lever-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org>, Linux Kernel Mailing List <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, linux-nfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Tue, Sep 9, 2008 at 9:42 AM, Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org> wrote:
-> For each VMA, there is a 'struct cr_vma'; if the VMA is file-mapped,
-> it will be followed by the file name.  The cr_vma->npages will tell
-> how many pages were dumped for this VMA.  Then it will be followed
-> by the actual data: first a dump of the addresses of all dumped
-> pages (npages entries) followed by a dump of the contents of all
-> dumped pages (npages pages). Then will come the next VMA and so on.
->
-> Signed-off-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-> ---
->  arch/x86/mm/checkpoint.c   |   30 +++
->  arch/x86/mm/restart.c      |    1 +
->  checkpoint/Makefile        |    3 +-
->  checkpoint/checkpoint.c    |   53 ++++++
->  checkpoint/ckpt_arch.h     |    1 +
->  checkpoint/ckpt_mem.c      |  448 ++++++++++++++++++++++++++++++++++++++++++++
->  checkpoint/ckpt_mem.h      |   35 ++++
->  checkpoint/sys.c           |   23 ++-
->  include/asm-x86/ckpt_hdr.h |    5 +
->  include/linux/ckpt.h       |   12 ++
->  include/linux/ckpt_hdr.h   |   30 +++
->  11 files changed, 635 insertions(+), 6 deletions(-)
->  create mode 100644 checkpoint/ckpt_mem.c
->  create mode 100644 checkpoint/ckpt_mem.h
->
-> diff --git a/arch/x86/mm/checkpoint.c b/arch/x86/mm/checkpoint.c
-> index 71d21e6..50cfd29 100644
-> --- a/arch/x86/mm/checkpoint.c
-> +++ b/arch/x86/mm/checkpoint.c
-> @@ -192,3 +192,33 @@ int cr_write_cpu(struct cr_ctx *ctx, struct task_struct *t)
->        cr_hbuf_put(ctx, sizeof(*hh));
->        return ret;
->  }
-> +
-> +/* dump the mm->context state */
-> +int cr_write_mm_context(struct cr_ctx *ctx, struct mm_struct *mm, int parent)
-> +{
-> +       struct cr_hdr h;
-> +       struct cr_hdr_mm_context *hh = cr_hbuf_get(ctx, sizeof(*hh));
-> +       int ret;
-> +
-> +       h.type = CR_HDR_MM_CONTEXT;
-> +       h.len = sizeof(*hh);
-> +       h.parent = parent;
-> +
-> +       mutex_lock(&mm->context.lock);
-> +
-> +       hh->ldt_entry_size = LDT_ENTRY_SIZE;
-> +       hh->nldt = mm->context.size;
-> +
-> +       cr_debug("nldt %d\n", hh->nldt);
-> +
-> +       ret = cr_write_obj(ctx, &h, hh);
-> +       cr_hbuf_put(ctx, sizeof(*hh));
-> +       if (ret < 0)
-> +               return ret;
+Eric W. Biederman wrote:
+> Cedric Le Goater <clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org> writes:
+> 
+>> On a system with nfs mounts, if a task unshares its mount namespace,
+>> a oops can occur when the system is rebooted if the task is the last
+>> to unreference the nfs mount. It will try to create a rpc request
+>> using utsname() which has been invalidated by free_nsproxy().
+>>
+>> The patch fixes the issue by using the global init_utsname() but at
+>> the same time, it breaks the capability of identifying rpc clients
+>> per uts namespace.
+>>
+>> Any better suggestions ?
+> 
+> Can we push utsname into rpc_create_args and push the access
+> of utsname up the food chain?
 
-mutex_unlock(&mm->context.lock) before return, I think?
+struct rpc_create_args seems to be used only as a stack argument 
+for rpc_create() it's not kept in any nfs or sunrpc objects.
+ 
+> My gut feeling says we should capture the utsname or the
+> uts_ns when we mount the nfs filesystem so we stay in sync
+> for the life of the mount.
 
-> +
-> +       ret = cr_kwrite(ctx, mm->context.ldt, hh->nldt * LDT_ENTRY_SIZE);
-> +
-> +       mutex_unlock(&mm->context.lock);
-> +
-> +       return ret;
-> +}
+I see. It make sense but, looking at the code, the nfs and sunrpc 
+will need some heavy changes ...
 
+Thanks,
 
-Vegard
-
--- 
-"The animistic metaphor of the bug that maliciously sneaked in while
-the programmer was not looking is intellectually dishonest as it
-disguises that the error is the programmer's own creation."
-	-- E. W. Dijkstra, EWD1036
+C.
+--
+To unsubscribe from this list: send the line "unsubscribe linux-nfs" in
+the body of a message to majordomo-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html
