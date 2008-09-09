@@ -1,14 +1,15 @@
 From: Patrick McHardy <kaber-dcUjhNyLwpNeoWH0uzbU5w@public.gmane.org>
-Subject: Re: [PATCH 13/33] netns ct: unregister helper in every netns
-Date: Tue, 09 Sep 2008 08:01:42 +0200
-Message-ID: <48C61146.5050400__40460.5812429965$1220940228$gmane$org@trash.net>
+Subject: Re: [PATCH 14/33] netns ct: cleanup after L3 and L4 proto unregister
+	in every netns
+Date: Tue, 09 Sep 2008 08:03:02 +0200
+Message-ID: <48C61196.2050806__40288.4356481538$1220940568$gmane$org@trash.net>
 References: <48C01046.2070704@trash.net>
-	<1220842990-30500-13-git-send-email-adobriyan@gmail.com>
+	<1220842990-30500-14-git-send-email-adobriyan@gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1220842990-30500-13-git-send-email-adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+In-Reply-To: <1220842990-30500-14-git-send-email-adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -24,4 +25,4 @@ List-Id: containers.vger.kernel.org
 
 Alexey Dobriyan wrote:
 
-Applied, thanks.
+Applthanks.
