@@ -1,108 +1,77 @@
-From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [RFC v4][PATCH 5/9] Memory managemnet (restore)
-Date: Wed, 10 Sep 2008 10:00:19 -0500
-Message-ID: <20080910150019.GA17478__24190.2068759829$1221059255$gmane$org@us.ibm.com>
-References: <1220946154-15174-1-git-send-email-orenl@cs.columbia.edu>
-	<1220946154-15174-6-git-send-email-orenl@cs.columbia.edu>
-	<20080909160724.GA23397@us.ibm.com>
-	<48C7082A.1050608@cs.columbia.edu>
+From: "Chuck Lever" <chuck.lever-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [RFC][PATCH] sunrpc: fix oops in rpc_create() when the mount namespace is unshared
+Date: Wed, 10 Sep 2008 11:12:04 -0400
+Message-ID: <76bd70e30809100812r4a7fa71crfc7196350e3ed1cf@mail.gmail.com>
+References: <48C52B29.4020204@fr.ibm.com> <20080909124311.GA10053@us.ibm.com>
+	 <m18wu1nyon.fsf@frodo.ebiederm.org>
+	 <20080909152952.GA21207@us.ibm.com>
+	 <DE845309-1684-472A-8269-78AB3A2823A9@oracle.com>
+	 <m1fxo9mba5.fsf@frodo.ebiederm.org> <48C791F9.8090606@fr.ibm.com>
+Reply-To: chucklever-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
+Content-Type: text/plain; charset=ISO-8859-1
 Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Return-path: <linux-nfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+In-Reply-To: <48C791F9.8090606-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <48C7082A.1050608-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Cc: linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, jeremy-TSDbQ3PG+2Y@public.gmane.org, arnd-r2nGTMty4D4@public.gmane.org, dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
+Sender: linux-nfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: Cedric Le Goater <clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
+Cc: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Trond Myklebust <trond.myklebust-41N18TsMXrtuMpJDpNschA@public.gmane.org>, Linux Kernel Mailing List <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, linux-nfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Quoting Oren Laadan (orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org):
-> 
-> 
-> Serge E. Hallyn wrote:
-> > Quoting Oren Laadan (orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org):
-> 
-> [...]
-> 
-> >> +/* change the protection of an address range to be writable/non-writable.
-> >> + * this is useful when restoring the memory of a read-only vma */
-> >> +static int cr_vma_set_writable(struct mm_struct *mm, unsigned long start,
-> >> +			       unsigned long end, int writable)
-> >> +{
-> >> +	struct vm_area_struct *vma, *prev;
-> >> +	unsigned long flags = 0;
-> >> +	int ret = -EINVAL;
-> >> +
-> >> +	cr_debug("vma %#lx-%#lx writable %d\n", start, end, writable);
-> >> +
-> >> +	down_write(&mm->mmap_sem);
-> >> +	vma = find_vma_prev(mm, start, &prev);
-> >> +	if (!vma || vma->vm_start > end || vma->vm_end < start)
-> >> +		goto out;
-> >> +	if (writable && !(vma->vm_flags & VM_WRITE))
-> >> +		flags = vma->vm_flags | VM_WRITE;
-> >> +	else if (!writable && (vma->vm_flags & VM_WRITE))
-> >> +		flags = vma->vm_flags & ~VM_WRITE;
-> >> +	cr_debug("flags %#lx\n", flags);
-> >> +	if (flags)
-> >> +		ret = mprotect_fixup(vma, &prev, vma->vm_start,
-> >> +				     vma->vm_end, flags);
-> > 
-> > As Dave has pointed out, this appears to be a security problem.  I think
-> 
-> As I replied to Dave, I don't see why this would be a security problem.
-> 
-> This handles private memory only. In particular, the uncommon case of a
-> read-only VMA tha has modified contents. This _cannot_ affect the file
-> from which this VMA may have been mapped.
-> 
-> Shared memory (not file-mapped) will be handled differently: since it is
-> always backed up by an inode in shmfs, the restart will populate the
-> relevant pages directly. Besides, non-file-mapped shared memory is again
-> not a security concern.
-> 
-> Finally, shared memory that maps to a file is simply _not saved_ at all;
-> it is part of the file system, and belongs to the (future) file system
-> snapshot capability. Since the contents are always available in the file
-> system, we don't need to save it (like we don't save shared libraries).
-> 
-> That said, it is necessary that the code ensures that the vm_flags that
-> belong to a VMA of a private type, e.g. CR_VMA_ANON/CR_VMA_FILE, indeed
-> match it (ie, don't have VM_MAY_SHARE/VM_SHARED). I'll add that.
+On Wed, Sep 10, 2008 at 5:23 AM, Cedric Le Goater <clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org> wrote:
+> Eric W. Biederman wrote:
+>> Chuck Lever <chuck.lever-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org> writes:
+>>
+>>> If the upper layers are responsible for providing the utsname, you will need to
+>>> fix up lockd and the NFS server's callback client too, at  least.
+>>
+>> Actually looking at the code.  It looks like a proper fix may be  even simpler.
+>> Why do we have both clnt->cl_server and clnt->cl_nodename?    Or is cl_server
+>> the other side of the connection?
+>>
+>>>>> What are we trying to achieve by reading utsname?
+>>>> It looks like it gets copied into the sunrpc messages so I assume it is
+>>>> a part of the sunrpc spec?
+>>> It appears to be used only for RPC's AUTH_SYS credentials.  The nodename is used
+>>> to identify the caller's host.  See RFC 1831,  Appendix A:
+>>>
+>>>   http://rfclibrary.hosting.com/rfc/rfc1831/rfc1831-16.asp
+>>
+>> Thanks that helps a lot.
+>>
+>>> I'm not terribly familiar with uts namespaces, though.  Can someone explain why
+>>> we need to distinguish between these for AUTH_SYS if the  caller is on a remote
+>>> system?
+>>
+>> Semantically processes in different uts namespaces are on different machines.
+>>
+>>> I don't like the idea of an oops in here.  Instead, (for now) it should warn and
+>>> fail to create the client, IMO.
+>>
+>> Which is interesting when the problem happens during NFS unmount.  Although
+>> frankly it could fail anyway.
+>>
+>> It seems strange that we are creating a client during unmount anyway.
+>
+> the task exiting brings down the lockd thread and unregisters the lockd service
+> with the portmapper. This is done with a rpc call which creates a client and a
+> request.
 
-Cool.  That sounds good and I'll look for that in the next version.
+That makes sense.
 
-There still may be objections about bypassing selinux execmem/execheap
-permission checks, but I think that's ok for now.  Long-term I expect
-we'll want the security_file_mprotect checks there, and selinux users
-will have to use a policy where restart is started in a privileged
-restart_t domain or somesuch (and eventually transitions back to the
-checkpointed selinux type if possible).
+This is likely coming from lockd_down(), and is almost certainly not
+coming from the same uts namespace as the lockd_up() that did the
+pmap_set, which was done by the first NFS mount done in the first uts
+namespace on the system.  It's just something that the kernel has to
+do for maintenance.
 
-thanks,
--serge
+There is only one lockd() instance that is shared among all the uts
+namespaces, right?  In this case, what is the correct utsname to use?
 
-> > what you need to do is create a new helper mprotect_fixup_withchecks(),
-> > which does all the DAC+MAC checks which are done in the sys_mprotect()
-> > loop starting with "for (nstart = start ; ; ) {...  Otherwise an
-> > unprivileged user can create a checkpoint image of a program which has
-> > done a ro shared file mmap, edit the checkpoint, then restart it and (i
-> > assume) cause the modified contents to be written to the file.  This
-> > could violate both DAC checks and selinux checks.
-> > 
-> > So create that helper which does the security checks, and use it
-> > both here and in the sys_mprotect() loop, please.
-> > 
-> 
-> [...]
-> 
-> Oren.
+-- 
+Chuck Lever
+--
+To unsubscribe from this list: send the line "unsubscribe linux-nfs" in
+the body of a message to majordomo-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html
