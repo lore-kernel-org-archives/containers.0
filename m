@@ -1,16 +1,17 @@
 From: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: Re: [RFC v3][PATCH 5/9] Memory managemnet (restore)
-Date: Wed, 10 Sep 2008 14:42:02 -0700
-Message-ID: <1221082922.6781.62.camel__28560.4381039322$1221083258$gmane$org@nimitz>
+Subject: Cleanups for: [PATCH 5/9] Memory managemnet (restore)
+Date: Wed, 10 Sep 2008 15:00:14 -0700
+Message-ID: <1221084015.6781.66.camel__41942.1038510793$1221084270$gmane$org@nimitz>
 References: <Pine.LNX.4.64.0809040354440.460@takamine.ncl.cs.columbia.edu>
 	<Pine.LNX.4.64.0809040404060.5982@takamine.ncl.cs.columbia.edu>
 	<1220551683.23386.32.camel@nimitz> <48C345D2.1020603@cs.columbia.edu>
 	<1220892596.23386.166.camel@nimitz> <48C6113A.3080804@cs.columbia.edu>
+	<1221082922.6781.62.camel@nimitz>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <48C6113A.3080804-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+In-Reply-To: <1221082922.6781.62.camel@nimitz>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -24,111 +25,119 @@ To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, jeremy-TSDbQ3PG+2Y@public.gmane.org, arnd-r2nGTMty4D4@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Tue, 2008-09-09 at 02:01 -0400, Oren Laadan wrote: 
-> > Have you looked at mprotect_fixup()?  It deals with two things:
-> > 1. altering the commit charge against RSS if the mapping is actually
-> >    writable.
-> > 2. Merging the VMA with an adjacent one if possible
-> > 
-> > We don't want to do either of these two things.  Even if we do merge the
-> > VMA, it will be a waste of time and energy since we'll just re-split it
-> > when we mprotect() again.
-> 
-> Your observation is correct; I chose this interface because it's really
-> simple and handy. I'm not worried about the performance because such VMAs
-> (read only but modified) are really rare, and the code can be optimized
-> later on.
+Here's the restore side of my cleanups on top of the v4 patches and the
+one against 4/9 I just sent.
 
-The worry is that it will never get cleaned up, and it is basically
-cruft as it stands.  People may think that it is here protecting or
-fixing something that it is not.
+This purely makes it compile again.
 
-> >>>> +	/* restore original protection for this vma */
-> >>>> +	if (!(cr_vma->vm_flags & VM_WRITE))
-> >>>> +		ret = cr_vma_writable(mm, cr_vma->vm_start, cr_vma->vm_end, 0);
-> >>>> +
-> >>>> + out:
-> >>>> +	return ret;
-> >>>> +}
-> >>> Ugh.  Is this a security hole?  What if the user was not allowed to
-> >>> write to the file being mmap()'d by this VMA?  Is this a window where
-> >>> someone could come in and (using ptrace or something similar) write to
-> >>> the file?
-> >> Not a security hole: this is only for private memory, so it never
-> >> modifies the underlying file. This is related to what I explained before
-> >> about read-only VMAs that have modified pages.
-> > 
-> > OK, so a shared, read-only mmap() should never get into this code path.
-> > What if an attacker modified the checkpoint file to pretend to have
-> > pages for a read-only, but shared mmap().  Would this code be tricked?
-> 
-> VMAs of shared maps (IPC, anonymous shared) will be treated differently.
-> 
-> VMAs of shared files (mapped shared) are saved without their contents,
-> as the contents remains available on the file system !  (yes, for that
-> we will eventually need file system snapshots).
-> 
-> As for an attack that provides an altered checkpoint image: since we
-> (currently) don't escalate privileges, the attacker will not be able
-> to modify something that it doesn't have access to in the first place.
+---
 
-I bugged Serge about this.  He said that this, at least, bypasses the SE
-Linux checks that are normally done with an mprotect() system call.
-That's a larger design problem that we need to keep in mind: we need to
-be careful to keep existing checks in place.
+ linux-2.6.git-dave/checkpoint/ckpt_mem.c |    2 --
+ linux-2.6.git-dave/checkpoint/ckpt_mem.h |    4 ++++
+ linux-2.6.git-dave/checkpoint/rstr_mem.c |   30 +++++++++++++++++++-----------
+ 3 files changed, 23 insertions(+), 13 deletions(-)
 
-> >> The process is restarting, inside a container that is restarting. All
-> >> tasks inside should be calling sys_restart() (by design) and no other
-> >> process from outside should be allowed to ptrace them at this point.
-> > 
-> > Are there plans to implement this, or is it already in here somehow?
-> 
-> Once we get positive responses about the current patchset, the next
-> step is to handle multiple processes: I plan to extend the freezer
-> with two more state for this purpose (dumping, restarting).
+diff -puN checkpoint/rstr_mem.c~p5-dave checkpoint/rstr_mem.c
+--- linux-2.6.git/checkpoint/rstr_mem.c~p5-dave	2008-09-10 14:51:26.000000000 -0700
++++ linux-2.6.git-dave/checkpoint/rstr_mem.c	2008-09-10 14:58:53.000000000 -0700
+@@ -31,27 +31,35 @@
+  * read in directly to the address space of the current process
+  */
+ 
++static int pgarr_nr_free(struct cr_pgarr *pgarr)
++{
++	return CR_PGARR_TOTAL - pgarr->nr_used;
++}
++
+ /**
+- * cr_vma_read_pages_vaddrs - read addresses of pages to page-array chain
++ * cr_vma_restore_contents - read addresses of pages to page-array chain
+  * @ctx - restart context
+  * @npages - number of pages
+  */
+-static int cr_vma_read_pages_vaddrs(struct cr_ctx *ctx, int npages)
++static int cr_vma_restore_contents(struct cr_ctx *ctx, int pages_to_read)
+ {
+ 	struct cr_pgarr *pgarr;
+ 	int nr, ret;
+ 
+-	while (npages) {
+-		pgarr = cr_pgarr_prep(ctx);
++	while (pages_to_read) {
++		unsigned long *vaddr_position;
++		pgarr = cr_get_empty_pgarr(ctx);
+ 		if (!pgarr)
+ 			return -ENOMEM;
+-		nr = min(npages, (int) pgarr->nr_free);
+-		ret = cr_kread(ctx, pgarr->vaddrs, nr * sizeof(unsigned long));
++		nr = pages_to_read;
++	       	if (nr > pgarr_nr_free(pgarr))
++			nr = pgarr_nr_free(pgarr);
++		vaddr_position = &pgarr->vaddrs[pgarr->nr_used];
++		ret = cr_kread(ctx, vaddr_position, nr * sizeof(unsigned long));
+ 		if (ret < 0)
+ 			return ret;
+-		pgarr->nr_free -= nr;
+ 		pgarr->nr_used += nr;
+-		npages -= nr;
++		pages_to_read -= nr;
+ 	}
+ 	return 0;
+ }
+@@ -67,7 +75,7 @@ static int cr_vma_read_pages_contents(st
+ 	unsigned long *vaddrs;
+ 	int i, ret;
+ 
+-	list_for_each_entry(pgarr, &ctx->pgarr, list) {
++	list_for_each_entry(pgarr, &ctx->pgarr_list, list) {
+ 		vaddrs = pgarr->vaddrs;
+ 		for (i = 0; i < pgarr->nr_used; i++) {
+ 			void *ptr = (void *) vaddrs[i];
+@@ -126,14 +134,14 @@ static int cr_vma_read_pages(struct cr_c
+ 		ret = cr_vma_set_writable(mm, hh->vm_start, hh->vm_end, 1);
+ 	if (ret < 0)
+ 		goto out;
+-	ret = cr_vma_read_pages_vaddrs(ctx, hh->nr_pages);
++	ret = cr_vma_restore_contents(ctx, hh->nr_pages);
+ 	if (ret < 0)
+ 		goto out;
+ 	ret = cr_vma_read_pages_contents(ctx, hh->nr_pages);
+ 	if (ret < 0)
+ 		goto out;
+ 
+-	cr_pgarr_reset(ctx);	/* reset page-array chain */
++	cr_reset_all_pgarrs(ctx);	/* reset page-array chain */
+ 
+ 	/* restore original protection for this vma */
+ 	if (!(hh->vm_flags & VM_WRITE))
+diff -puN checkpoint/ckpt_mem.c~p5-dave checkpoint/ckpt_mem.c
+--- linux-2.6.git/checkpoint/ckpt_mem.c~p5-dave	2008-09-10 14:51:33.000000000 -0700
++++ linux-2.6.git-dave/checkpoint/ckpt_mem.c	2008-09-10 14:51:54.000000000 -0700
+@@ -35,8 +35,6 @@
+  * freed (that is, dereference page pointers).
+  */
+ 
+-#define CR_PGARR_TOTAL  (PAGE_SIZE / sizeof(void *))
+-
+ /* release pages referenced by a page-array */
+ void cr_pgarr_release_pages(struct cr_pgarr *pgarr)
+ {
+diff -puN checkpoint/ckpt_mem.h~p5-dave checkpoint/ckpt_mem.h
+--- linux-2.6.git/checkpoint/ckpt_mem.h~p5-dave	2008-09-10 14:52:17.000000000 -0700
++++ linux-2.6.git-dave/checkpoint/ckpt_mem.h	2008-09-10 14:57:09.000000000 -0700
+@@ -26,7 +26,11 @@ struct cr_pgarr {
+ 	struct list_head list;
+ };
+ 
++#define CR_PGARR_TOTAL  (PAGE_SIZE / sizeof(void *))
++
+ void cr_pgarr_free(struct cr_ctx *ctx);
++void cr_reset_all_pgarrs(struct cr_ctx *ctx);
+ struct cr_pgarr *cr_pgarr_prep(struct cr_ctx *ctx);
++struct cr_pgarr *cr_get_empty_pgarr(struct cr_ctx *ctx);
+ 
+ #endif /* _CHECKPOINT_CKPT_MEM_H_ */
+_
 
-OK, but I just asked you why a ptrace() of a process during this
-elevated privilege operation couldn't potentially do something bad.  You
-responded that, by design, we can't ptrace things.  The design is all
-well and good, but the patch isn't, because it doesn't implement that
-design. :(  Before we get these merged, that needs to get resolved.
-
-> >> (In any case, if some other tasks ptraces this task, it can make it do
-> >> anything anyhow).
-> > 
-> > No.  I'm suggesting that since this lets you effectively write to
-> > something that is not writable, it may be a hole with which to bypass
-> > permissions which were set up at an earlier time.
-> 
-> That's a good comment, but here all we are doing here is to modify a
-> privately mapped/anonymous memory.
-> 
-> > 
-> >>> We copy into the process address space all the time when not in its
-> >>> context explicitly.  
-> >> Huh ?
-> > 
-> > I'm just saying that you don't need to be in a process's context in
-> > order to copy contents into its virtual address space.  Check out
-> > access_process_vm().
-> > 
-> 
-> That would be the other way to implement the restart. But, since restart
-> executes in task's context, it's simpler and more efficient to leverage
-> copy-to-user().
-> In terms of security, both methods brings about the same end results: the
-> memory is modified (perhaps bypassing the read-only property of the VMA)
-
-But copy_to_user() is fundamentally different.  It writes *over*
-contents and in to files.  Simulating a fault fills in those pages, but
-it never writes over things or in to files.   Faulting is fundamentally
-safer.
-
-Faulting today can also handle populating a memory area with pages that
-appear read-only via userspace.  That's exactly what we're doing here as
-well.
-
-Anyway, I don't expect that you'll agree with this.  I'll prototype
-doing it the other way at some point and we can compare how both look.
 
 -- Dave
