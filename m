@@ -1,11 +1,16 @@
-From: "fyh.yhgu-ral2JQCrhuEAvxtiuMwx3w@public.gmane.org" <fyh.ghuu-ral2JQCrhuEAvxtiuMwx3w@public.gmane.org>
-Subject: =?GB2312?B?xeDRtbncwO3M5c+1vajBotPr0OjH88G/u68=?=
-Date: Thu, 11 Sep 2008 07:12:04 +0800
-Message-ID: <200809102312.m8ANC4eo006392@smtp1.linux-foundation.org>
+From: "MinChan Kim" <minchan.kim-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Subject: Re: [RFC v4][PATCH 4/9] Memory management (dump)
+Date: Thu, 11 Sep 2008 08:49:54 +0900
+Message-ID: <28c262360809101649k13080508md990d1ee98684d11__27926.9876111814$1221090735$gmane$org@mail.gmail.com>
+References: <1220946154-15174-1-git-send-email-orenl@cs.columbia.edu>
+	<1220946154-15174-5-git-send-email-orenl@cs.columbia.edu>
+	<28c262360809100051o24e69f1cp45b73201d9c748e9@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="gb2312"
-Content-Transfer-Encoding: base64
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <28c262360809100051o24e69f1cp45b73201d9c748e9-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
+Content-Disposition: inline
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -15,188 +20,866 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, jeremy-TSDbQ3PG+2Y@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, arnd-r2nGTMty4D4@public.gmane.org, dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Cj09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09
-PT09PT09PT09PT09PT09PT09PT0KCiAgICAgICAgICAgIKGhoaGhoaGhoaEKoaGhoaGhoaGhoaGh
-oaGhoaGhoaGhoaGhxeDRtbncwO3M5c+1vajBotPr0OjH88G/u68KCiAgICAgICAgICAgICAgICAg
-ICAgICAgICAgMjAwOMTqOdTCMTYtMTfI1aOoyc+6o6OpCj09PT09PT09PT09PT09PT09PT09PT09
-PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT0Ku+Et
-zvEt1+kt1q+juk0gTSBDILncIMDtINGnINS6IAoKyKu5+s2z0ru3/s7xtee7sKO6o7SjsKOwo62j
-uKO4o7mjuaO2o7KjuAoKyc+6o7XYx/jXqM/fo7qjsKOyo7GjraO1o7GjsKO5o7mjtKO3o7UKCrnj
-tqu12Mf416jP36O6o7CjsqOwo62js6Ozo7mjt6Oyo7KjsaO2CgqxqC7D+y7B9y6zzDrAtLXn18nR
-r6H6sajD+7Htofq72LSrsajD+7Htofq3orP2ss6808i3yM+6r6H6s9bIt8jPuq+yzrzTCgq30T09
-PT3Tw6O6o7OjsqOwo7DUqi/IyyCjqLD8wKjF4NG1t9Gjr9fKwc+30aOvzueyzbfRo6/U57Xjsui1
-46Ovy7C30bXIo6kKCsrc1tq21M/zo7ogCiAgICDF4NG119y84KGivq3A7aGi1ve53KGi16jUsaGi
-xvPStcXg0bXKpqGi16jOqsbz0rW+rcDtoaKyv8PF1ve53KGiyMvBptfKCtS01ve53NLUvLDG89K1
-xeDRtdb3udzIy9Sxv6q3orrNyei8xgo9PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09
-PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09CqHxIL/Os8yxs76wCiAg
-xOPKx7fx0/a1vbn9OgogIKH0IMO/xOrE6rXX1/bN6tDox/O197Lpo6y72MC00ru087bRyv2+3aOs
-xOPO3rTTz8LK1qO/CiAgofQgwM+w5dXSxOPSqtK7uPbF4NG1yv2+3aOstvjE49K7yrHO3reo1dK1
-vaOs0qq807DgvNO147uotPPBv8qxvOTIpdf20rvQqQqxqLHtwLTJ+rPJ1eK49sr9vt2jv8/CtM7A
-z7DluMTSqsHt0ru49sr9vt2jrMTj0qrW2MC00rux6aO/CiAgofQg1NrDv8Tq1sa2qMXg0bXUpMvj
-us28xruuyrHE1NfT0rvGrL/VsNejrNLyzqrIscnZz+DTprXEwb+7r8r9vt3Qxc+io78KICCh9CC1
-scTj0OjSqsSz0rvDxb/OtcTL+dPQ0afUsbe0wKHKsaOsxOPSqtK7uPbSu7j2RXhjZWzOxLz+yKW0
-8r+qsum/tKO/wMsKt9HBy8Tj0O224LGmufO1xMqxvOSjoQogIKH0IMTjuavLvsXg0bW7qMilwcsy
-MDDN8qOstvjE48i0srvWqsv8w8e1vbXXu6i1vcTEyKXBy6O/CiAgofQg1NrX9s3q0rvC1qGwyMvI
-y7n9udihsbXE1f7WztTLtq/QzcXg0bXWrrrzo6y5/cHLsOvE6qOsyMvUsbHkwcu63Lbgo6zExwrQ
-qcO709CyzrzTxeDRtbXEyMu77NTa0tG+rcXg0bW1xMjL1tCjrMTj1dKyu7P2wLSjrLj8srvWqrjD
-yOe6zrSmwO2jvwogIKH0INSxuaTU2sn91rC78rX3tq/HsKOsy/svy/21xMDPsOXV0sTj0qrL+y/L
-/bXExeDRtbXEz+C52LzHwryjrLb4xOOyu9aqyOcKus60psDto78KICCh9CDD5rbU0rvQqcXg0bXK
-9dPvo6zI58jLvvnQ6Mfz0KHKsaOsxeDRtbDZt9axyKOsxeDRtcbVvLDCyqOs0OjH87iyuMfCyqOs
-Cs/U0NSzybG+o6zS/tDUs8mxvqOsxOOyu9aqtcDL/MPHysfTw8C01/bKssO0tcSjv7j8srvWqrXA
-1PXDtMilvMbL46O/Cj09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09
-PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT0KofEgxeCjrdG1ytXS5gogICAgzai5/bG+
-v86zzDPM7LXExeDRtaOsxPq9q8TcubujugrU2sXg0bXM5c+1us255ruut73D5qO6CiBBLiDD6Mr2
-1+mzycXg0bXM5c+1sdjQ67XE0qrL2AogQi4gu/HIob2owaLF4NG1zOXPtcr9vt2/4tfKwc8ovt/M
-5cfltaXI58/CKQogMS7Es7yvzcW5q8u+1tC5+sf4xeDRtdbQxtrEv7HqvLDUpMvjuMXSqgogMi6y
-v8PFvrLMrMXg0bXQ6MfzvPi2qLHtIAogMy7F4NG11MvX98H3s8zNvCiw/MCoOsXg0bXQ6MfztKbA
-7cH3s8zNvFzN4rK/xeDRtbncwO3B97PMzbxcss68083isr+5q7+qsOAKwfezzM28XMXg0bWxqMP7
-wfezzM28XLbUzeLF4NG1yerH68H3s8zNvLXIKQogNC7F4NG11KTL49bG1/fB97PMCiA1LsXg0bW8
-xruu1sbX98H3s8wKIDYuxLO089DNvK/Nxbmry77Es8TqtsjIq8TqxeDRtb/Os8yx7Sy94bm5yKvD
-5i4KIDcuxLO5q8u+xeDRtdbQ0MS/zrPMseDFxbHtCiA4Lr/Os8zJ6NbDw+jK9rHtCiA5LsXg0bXQ
-6MfzuLK4x8LKsai45gogMTAuufqx6sXg0bXUwrbIzbO8xrGouOYKIDExLsSzvK/Nxbmry77F4NG1
-1tDQxMXg0bXT67ei1blQUFS96cncCiAxMi7F4NG1S1BJ1rix6qGtCgrU2sXg0bW1xNTL1/e53MDt
-t73D5qO6CiBBLiDVucq+09DQp7z4tqjF4NG10OjH87XEt723qLywuaS+3wogQi4g0d3KvsG/u6/F
-4NG10OjH87ncwO21xLP1sr28vMfJCiBDLiDWxrao09DQp7XExeDRtdSky+MgCiBELiDWxraoxeDR
-tbnmu668sLzGu64KIEUuIMPoyvbT0NCnudzA7cXg0bW/zrPMtcS3vbeous28vMfJCiBGLiC9qMGi
-sqLT0NCnwPvTw8Xg0bXK/b7dv+IKIEUuIMPoyvbE2rK/xeDRtcqmudzA7bXE09DQp7e9t6gKIEgu
-IMPoyvbT0NCn1efRoc3isr/F4NG1yqa1xLe9t6i6zby8x8kKPT09PT09PT09PT09PT09PT09PT09
-PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PQqh
-8SC/zrPMzNi14wqxvr/Os8zX7rTzzNi14wogMS7KwL3nNTAwx7/X7tDCtcTF4NG1udzA7UtQSbyw
-xuS8xsvjt723qLrNuaS+3wogMi7Bv7uvxeDRtbncwO21xLy8x8m6zbe9t6gKIDMuserXvLuvybW5
-z8q9xeDRtbncwO3B97PMvLC3vbeoCiA0LtPQ0Ke1xMXg0bWxqLHtz7XB0MSjsOajqMPit9HU+cvN
-o6kKIDUu0O3Koruqz8jJ+rbAtLS1xMXg0bXI7bz+o6jEv8ewLCDKwL3nyc+2wNK7zt62/rXEyO28
-/qOpvLDG5Mu8wrcKIDYuzbvGxrSrzbPF4NG1udzA7cDtxO6ho7SrzbO1xMXg0bW53MDt1ru9zMTj
-yOe6zsilubXNqKOsyKXX9tDox/O197LpoaO1q9TaCsq1vMrW0KOsuPeyv8PFvq3A7crVtb3E47XE
-tfey6c7Kvu3WrrrzzfnN+caj09rTpri2o6y6w7K7yN3S18TjytW72MC0o6zD5rbUCsjnyb21xLX3
-sunOyr7to6zE47K71qrI57rOtKbA7cv8w8cKIDcuzOG5qcPit9HJs8XMxKPE4sjtvP6jqMXg0bW5
-3MDtyO28/tHdyr6w5qOpCiA4LtT5y83P4LnYtcTBv7uvse248Qo9PT09PT09PT09PT09PT09PT09
-PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09
-CqHxIL/Os8y087jZCiAgICAgICAgICAgICAgICAgICAgICAgICC12tK71cI6xeDRtczlz7Whornm
-u666zcH3s8y53MDtCrXa0ru92gogMaGiv86zzLzyvekgICAgICAgICAgICAgICAgICAgICAgICAg
-IAogMqGixeDRtbXE1/fTw7ywt9bA4AogM6GivajBotPQ0Ke1xMXg0bW83Lm5zOXPtbyw1MvX98H3
-s8yhowogNKGixeDRtbXE1ri1vMu8z+ujrLe91eu6zbLfwtQKIDWhosXg0bW53MDtzOXPtbXEvajB
-orywxuTUy9f3o6jF4NG1v86zzLXEudzA7aOsyMvUsbXExeTWw6OsvcyyxLncwO2jrNDox/MKudzA
-7aOsyejKqbncwO2jrMXg0bXUpMvjvLDUpMvjv9jWxqOpCsu1ICDD9wogMaGizai5/b2yveK8sMq1
-wP231s72o6zRp9Sxv8nS1MHLveK9qMGi0ru49sXg0bXM5c+1us3F4NG1udzA7czlz7XL+bHY0Oi1
-xArSqsvYus2yvdboCiAyoaLOqsqyw7TG89K1xeDRtdf2tb2688C01LG5pMbVsem74b71tcPDu9PQ
-0MLS4qO/xeDRtbK/w8XI57rOzPiz9qGw1ru74bjjCrjjyOvWsMXg0bWjrMbky/vF4NG10rvHz7K7
-zaihsbXEv7Kjv9XiwO/O0sPHvau4+MTjzOG5qbfHs6O6w7XEt72wuLrNvajS6aOhCiDF4NG1t723
-qKO6vbK94rywsLjA/bfWzvYKCrXatv692gogMaGixeDRtdDox/O8+LaovLDG5MG/u6+1xLe9t6i6
-zby8x8kKIDKhosqyw7TKx76yzKzQ6Mfzus22r8ys0OjH86O/vrLMrLrNtq/MrNDox/O1xLncwO3T
-0Mqyw7TH+LHwo78KIDOhosXg0bXQ6MfztcTBv7uvudzA7aOsvavQ6MfzvfjQ0MG/u6+jrNK7x9DT
-w8r9vt3Ltbuwo6EKy7UgIMP3CiAxoaK63LbgyMvIz86qxeDRtdDox/PKx7K7xNzBv7uvtcSjrLy0
-yrnBv7uvwcvSss7et6i9+NDQudzA7aOs1NrBv7uvudzA7dXiCtK71cK92qOsztLDx72ryMPE49XG
-ztW3x7OjyrW8ytPWt8ezo8q108O1xMXg0bXQ6Mfzwb+7r7ywudzA7be9t6ihowogMqGi0OjH89PJ
-tq/MrNDox/O6zb6yzKzQ6Mfz1q631qOszfnN+brctuDXqNK1yMvKv7a8vavL+8PHu+zOqtK7zLih
-owogM6GiyOe6zrbUsrvNrMDg0M21xMXg0bXQ6MfzvfjQ0MG/u6+53MDto7/U2rG+taXUqrXExeDR
-tdbQxOO9q9XStb3P4NOmtcS08AqwuKOhCiDF4NG1t723qKO6vbK94rywsLjA/bfWzvYKCrXayP29
-2gogMaGivPi2qMXg0bXQ6MfzwbfPsAogMqGixeDRtdSky+O1xNbG1/cKIDOhotbGtqjT0NCntcTF
-4NG1xL+x6gogNKGiyOe6zr2r09DP3rXE1KTL49PrxeDRtdDox/O8sLmry761xMS/seq8sLLfwtS9
-+NDQ09C7+rXEwarPtaGjCiA1oaLExNCpxeDRtbXES1BJ1rix6r/J0tSw79b6uuLBv7yw17fX2cXg
-0bW9+LbIvLDQp7n7Csu1ICDD9wogMaGizai5/cG3z7CjrMTjvavE3M3qyKvVxs7VyOe6ztPQ0Ke8
-+LaoxeDRtdDox/O1xLe9t6i8sLmkvt+jrLKi1cbO1dDox/PBvwq7r7ncwO21xLe9t6i6zby8x8mj
-oQogMqGi0afUsb/J0tTBy73ius3Vxs7VyOe6ztbGtqjC+tfjuavLvrei1bnQ6MfztcTF4NG1uea7
-rryw1KTL4wogM6Gizai5/cjLvvnQ6Mfz0KHKsaOsxeDRtbDZt9axyKOs0OjH87iyuMfCyqOsxeDR
-tcbVvLDCyrywxeDRtbfR08PA4NW8scijrArP1NDUs8mxvqOs0v7Q1LPJsb61yNa4seq31s72o6yw
-79b60afUsc3qyKvVxs7VxeDRtbncwO21xNX7uPa2r8ysuf2zzKGjCiDF4NG1t723qKO6vbK94ryw
-sLjA/bfWzvYKCrXay8S92gogMaGixeDRtdSky+O8sLzGu661xMq1yqm8sCwgv9jWxgogMqGi1sbX
-98Xg0bXUpMvjo6zF4NG1uea7rrywvMa7rsG3z7AKIDOhosG3z7C148bAo6y72LnL19y94QrLtcP3
-CiAxoaLNqLn9wbfPsKOswO294rrN1cbO1c/g06a1xEtQSbXEuqzS5brNvMbL47y8x8mhowogxeDR
-tbe9t6ijurfW1+nBt8+wCgoKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgILXatv7VwqO6
-xeDRtdTL1/e53MDtCgq12tK7vdoKIDGhorvYucu12tK7zOy1xMTayN0KIDKhotbGtqjF4NG1uea7
-rrywvMa7rgogM6Gi1tDG2rei1bm55ruuCiA0oaLE6rbIxeDRtbzGu64KIDWhotTCtsjF4NG1vMa7
-rgogNqGixeDRtbzGu661xMj9tPPA4KO60M7P87mks8zQzaOs1f7WztTLtq/QzbrNz7XNs72oyejQ
-zQrLtSAgw/cKIDGhosXg0bXOqsqyw7TSqtXiw7S24LzGu66jv9TaxvPStcTasr+jrMrcyfqy+rWt
-zfq8vryw1+nWr7Hku6+1xNOwz+yjrMXg0bUKtcTKtcqptObU2rrctPOx5Mr9o6zI57rO06a21NXi
-1tax5Luvo7/V4tK71cK92rXExNrI3b2ruPjE48zhuam3x7OjusO1xLe9sLgKoaMKIDKhosjnus7N
-qLn90OjH87XEwb+7r8r9vt3WuLW8xeDRtbzGu661xNbGtqijv8qyw7TR+bXExeDRtbzGu66yxcrH
-usO1xLzGu64Ko7/Q7cDPyqa1xKGwyP2087mks8yhscDtwtu9q7j4xOO08LC4oaMKIMXg0bW3vbeo
-o7rKtcD9us3Bt8+wCgq12rb+vdoKIDGhosXg0bW/zrPMtcS53MDtCiAyoaLKtcD9t9bO9gogM6Gi
-yei8xsXg0bW/zrPMtcS52Lz8CiA0oaK/zrPMyei8xry8x8m8sLzy0tfEo7DlCiA1oaLKtcD9t9bO
-9grLtSAgw/cKIDGhosnovMa1xMXg0bW/zrPMyOe6zsL61+PRp9Sxus25q8u+tcTQ6NKqo6zT0MTE
-0Km3vbeous28vMfJo78KIMXg0bW3vbeoo7q9sr3io6zKtcD9us3Bt8+wCiAKtdrI/b3aCiAxoaK4
-+b7duavLvrXEzNi148i3tqjW2LXjv86zzAogMqGi1ti147/Os8y1xLzGu66jrMq1yqm8sLj6vfgK
-IDOhosXg0bWxqLHtyrXA/bywxuS31s72CiA0oaLI57rOzai5/cXg0bWxqLHtvOC/2MXg0bW9+NW5
-o78Ky7UgIMP3CiAxoaLBy73i1ti147/Os8y1xNLi0uW8sNf308OjrLKi1cbO1dPruPfP4LnYsr/D
-xb340NC5tc2otcS3vbeovLC5pL7fCiAyoaLNqLn9z+DTprXExeDRtbGose2jrMTjxNzIq8Pm1cbO
-1cXg0bW1xL34tsjK/b7doaPV5tX9yrXP1qGwuf2zzNf2tcO6w6OsCr3hufvX1Mi7usOhsbXE0Ke5
-+6GjCiDF4NG1t723qKO6vbK94rywIMq1wP0KCrXay8S92gogMaGixeDRtbW1sLi1xL2owaK8sNOm
-08MKIDKhosXg0bXGwLnACiAzoaLF4NG1uvPI57rOuPq9+AogNKGizuW8tsXg0bXQp7n7xsC5wLXE
-t723qAogNaGixsC5wLXEx7DM4S253LrDxOO1xMXg0bW5/bPMCiA2oaK497y2xsC5wMq1wP3R3cq+
-CiA3oaLM4bjfxeDRtbXE16q7r9CnwsoKIDihosXg0bW53MDtyO28/rzyvekKIDmhosTasr/F4NG1
-yqa2087ptcS9qMGius253MDtCiAxMKGiyOe6ztXn0aHN4rK/xeDRtcqmo7/V59GhzeKyv8Xg0bXK
-prXE1vfSqrHq17y6zdXn0aG8vMfJoaMKIDExoaLX6davxNrF4NG1t9XOp7XE06rU7AogMTKhosjn
-us7Iw7jfsuO53MDt1d/W2MrTxeDRtaO/CiAxM6GiyOe6zsjD1tCy47ncwO3V38Xkus/F4NG1o78K
-IDE0oaLI57rOyMPUsbmk1LjS4rLOvNPF4NG1o78KIDE1oaLF4NG1zOXPtb2owaLQ0LavvMa7rgog
-MTahorvYucvX3L3hCsu1ICDD9wogMaGixeDRtbncwO3I7bz+tcTTptPDv8nS1LbUxeDRtczlz7W1
-xL2owaKjrNTL1/e8sLei1bm3orvTx7+087XEzca2r7rN1qez1grX99PDoaPNqLn9xeDRtcr9vt2/
-4rXEvajBoqOsxOO/ydLUveK+9tPrxeDRtc+1zbO7r8/gudi1xMv509DOyszioaMKIDKhorG+1cK9
-2ru5vau9q77fzOW96cncxNqyv8Xg0bXKprbTzum1xL2owaK6zbncwO2+rdHpo6zS1LywyOe6ztXn
-0aHN4rK/vbIKyqa1yKOsyMPE49GnvfHM7NGnzerD98zsvs3E3NPDtb25pNf31tDIpaGjCiDF4NG1
-t723qKO6vbK94ryw06bTwwo9PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09
-PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09Csvmv87U+cvNtcS/zrPM18rBz8fl
-taWjqLXn19Ow5re9yr2jqaO6CtfKwc/D+7PGICAgICAgICAgICAgICAgICAgICAgICAgICAgICAg
-ICAgICAgIMu1w/cKMDEgxeDRtb7Y1fPEo7DmICAgICAgICAgICAgICAgIL2owaK+ssys0OjH88Sj
-0M3Kscq508OjrNLUsr/Dxc6qtaXOuwowMiDF4NG1udzA7V9NUlDEo7DmICAgICAgICAgICAgyP3E
-6tbQxtq55ruuo6hNUlCjqdH5sOUKMDMg1KTL49bG1/fB97PMICAgICAgICAgICAgICAgINeo0rW1
-xMXg0bXUpMvj1sbX98H3s8wKMDQgvMa7rtbG1/fB97PMICAgICAgICAgICAgICAgINeo0rW1xMXg
-0bW8xruu1sbX98H3s8wKMDVfxeDRtdSky+O6zbzGu67R+bDlICAgICAgICAgIMSztefM3bmry761
-xMXg0bXUpMvjus28xruuyrXA/QowNiDUwrbIxeDRtbzGu67R+bDlICAgICAgICAgICAg1MK2yMXg
-0bW8xruuyrXA/aOs16LS4rrzw+a1xMG0vdMKMDcgv86zzLTzuNnEo7DmICAgICAgICAgICAgICAg
-IMXg0bW/zrPMtPO42cSjsOa6zcq1wP2jrNei0uLF4NG1xL+x6gowOCDUwrbIxeDRtbGouOZf0OjH
-883qs8nCyiAgICAgxeDRtdTCtsixqLjmyrXA/TEKMDkg1MK2yMXg0bWxqLjmX9bYteO/zrPMICAg
-ICAgIMXg0bXUwrbIsai45sq1wP0yCjEwIMG/u6/F4NG1udzA7dGn1LHBt8+wsuEgICAgICC/zszD
-yc/KudPDtcTBt8+wsuG159fTsOYKMTEgwey1vMGmxKPQzSAgICAgICAgICAgICAgICAgINX91NrN
-6snGuf2zzNbQo6zTw9Pa1ri1vMbz0rXW0LjfsuPF4NG1CjEyILK/w8W96cncxKOw5iAgICAgICAg
-ICAgICAgICDEs8b7s7XWxtTsxvPStcXg0bWyv8PFvenJ3Mq1wP0KMTMgzajTw8Xg0bW/zrPMt9bA
-4MfltaUgICAgICAgILj3uavLvs2o08O/zrPMw/uzxrywxuS31sDgo6yw79b6xPq92sqhtPPBv8qx
-CrzkCjE0IMXg0bW8xruu0Pu0q8rWsuHR+bDlICAgICAgICDF4NG1vMa7rrXE0Pu0q9fKwc8KMTUg
-xeDRtb3MytLQ+7Sr0+/CvLyvICAgICAgICAgINPD09rG88rC0rW1pc67xeDRtdbQ0MS1xLj3wOCx
-6tPvoaK/2rrFCjE2ILXayP28tsXg0bXGwLnAyrXA/SAgICAgICAgICDS1FRUVM6qxKOw5r340NC1
-xLXayP28tsXg0bXGwLnAyrXA/QoxNyDF4NG1udzA7cjtvP5f16jStdHdyr6w5iAgICAgsNq2ycjL
-xeDRtbncwO3I7bz+o6zXqNK10d3KvrDmo6zTw7unv8nX1NDQsLIK17AKICAgICAgICAgICAgICAg
-ICAgICAgICAgICAgICAgINTa19S8urXEtefE1NbQo6y08r+qyrGjrLXHwr20sL/aw9zC686qv9Wj
-qLK7CiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICDQ6NKqyuTI66Os1rG907Xju/fIt7ao
-o6kKMTggxeDRtbncwO3I7bz+X7Tz1trR3cq+sOYgICAgILTz1tqw5tPr16jStbDm1vfSqsf4sfDK
-x6O6tPPW2rDmudzA7cXg0bW8x8K8CiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICChosbA
-ucC6zbGouOajrLb416jStbDm1vfSqsrHtNPQ6Mfzv6rKvLncwO21xAo9PT09PT09PT09PT09PT09
-PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09
-PT09CqHxIL2yyqa96cncCiAgICDQ7cqiu6ogyrXVvcXJxeDRtbncwO3XqLzSLNDtz8jJ+tO109DK
-rrbgxOq5+s3i1vjD+8bz0rW1xMXg0bW8sMjLwabXytS0CrncwO2+rdHpo6zPyLrzyM7A1rDZys+j
-qLTvxNy8r83Fo6nIq7n6xeDRtb6twO2jqDIwMDWjqaGisMS088D70cfG5sqktefG97yvCs3FxeDR
-tb6twO0oMjAwMi0yMDA0KaGit9LAvM2owaa158zd09DP3rmry77F4NG1vq3A7aOoMTk5Ny0yMDAy
-o6myorzmyM7Rx8yrCsXg0bW+rcDto6y4utTwvajBorKizerJxsHLuavLvrXExeDRtbywt6LVuczl
-z7WhozIwMDHE6qOs1/fOqs2owaa5q8u+1NrRx8yrCsf4tcTF4NG1vq3A7aOsxeDRtcHLzajBptTa
-zKjN5aOsz+O426Oswu3AtM730ce1yLXYtcTF4NG1vq3A7bKisO/W+tTatbG12L2oCsGiwcvP4NOm
-tcTF4NG1zOXPtaGjCiAgICAxOTg1xOqxz9K109qxsb6pur2/1bq9zOy089GnoaMxOTkzLTE5OTbE
-6tTat9LAvLrVtvvQwbv5v8a8vLTz0afJ7tTssqK78QrLtsq/0afOu6Gj1Nq0y8bavOSjrMnuyOvR
-0L6/wcuxscW3tPPQzcbz0rXF4NG1vLC3otW5tcTPyL34vq3R6aGjMTk5Ni0gMTk5NwrU2rfSwLy9
-08rcwcvSu8TqtcTF4NG1vLC3otW516jStcDtwtvT68q1vPnF4NG1o6yyor3TytzBy9Oiufq9o8fF
-tPPRp8jLwabXygrUtL2yyqa1xLiotbyho9Tas6TG2rXEuaTX97rNyrW8+dbQo6zVxs7Vwcu34bi7
-tcTKtdW9vq3R6aOs0M6zycHL19S8urbAzNi1xArF4NG1vLC53MDtwezT8rXEvLzHybrNt+e48aOs
-veG6z7n6zeLPyL34tcTIy8Gm18rUtLncwO3A7cTuo6zMvcv3s/bBy9K71fvM1wrE3LDv1vrG89K1
-s9bQ+Lei1bm1xMXg0bW8sLei1bnM5c+1oaMKICAgIMzhuam5/cXg0bW78tfJ0a/Stc7xtcS5q8u+
-o7rW0Ln6tefQxaGi1tC5+tLGtq+hotbQufrBqs2ooaLW0Ln608rV/qGiueMK1t212Mz6oaKwwszd
-y7ktva3Ez7jfy9m158zdoaJCUKGizajBprXnzN2hotG4tO+158zdoaLMqM3luePHxbniteehosDW
-sNnKz6GiCrbFsO65q8u+oaJUQ0y8r83FoaLG5sqktefG96GiuLvKv7+1vK/NxaGiueKxpryvzcWh
-otS2tPO8r83FoaLDwLXEvK/NxaGisbG08wq3vdX9oaK7qs6quavLvqGiyb22q7O/w/m8r83FtcjG
-89K1CiAgICDM2CDV96O6MjDE6rfhuLu1xLmk1/e+rdHpo6zG5NbQMTDE6rTz0M25+rzKv+e5+rmr
-y77F4NG1udzA7bywxeDRtb6t0emjrArHv7TztcS5pL/GsbO+sKOosbG+qbq9v9W6vczstPPRp7G+
-v8ajrLrVtvvQwbv5uaTStbTz0afLtsq/o6mjrMLfvK3Q1Me/o6zJxgrT2tfcveGjrLbA19S/qrei
-tcTF4NG1udzA7cjtvP6jrMrHxL/HsMrAvefJz7bA0rvO3rb+tcTSu8zX16jStcXg0bW53MDtyO28
-/gqjrLfhuLu1xMDtwtvWqsq2sbO+sCzKtdW90NTHvy4KICAgIMD7INLmo7q21MXg0bXT0Mnuv8y1
-xMDtveKjrMTc17zIt7DRztW/zbuntcTQ6Mfzo6zM4bmpwb/J7bao1/a1xMXg0bUvveIKvva3vbC4
-oaPOqs+1zbO7r6GiwfezzLuvus3Bv7uvudzA7bTyz8K84cq1u/m0oaGjxNy4+L/Nu6fM4bmpuPfA
-4M+1zbO7r7rNwb8Ku6+53MDttcS94r72t72wuKGjxNy4+b7d0afUsbXE0OjH87vyu/m0obX31fu/
-zrPMo6zIw9Gn1LHRp7XDx+HLyaOsyN3S16GjzOEKuam55re2u6+1xMXg0bW53MDtt723qLywwfez
-zKOssO/W+sXg0bW+rcDt09DQp7ncwO3F4NG1o6y9q8Xg0bW+rcDttNO3scv2tcQK1NPKwtbQs7m1
-173it8Wz9sC0oaPE3Mzhuam499bWyMvBptfK1LS94r72t72wuKGjyrXVvaOsyrXTw6OsyrXQp8rH
-0O3Az8qmtcQK0ru54bfnuPGjrMjD0afUscnPzufRp83qo6zPws7nvs3E3NPDoaMKPT09PT09PT09
-PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09
-PT09PT09PT09PQpfX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19f
-XwpDb250YWluZXJzIG1haWxpbmcgbGlzdApDb250YWluZXJzQGxpc3RzLmxpbnV4LWZvdW5kYXRp
-b24ub3JnCmh0dHBzOi8vbGlzdHMubGludXgtZm91bmRhdGlvbi5vcmcvbWFpbG1hbi9saXN0aW5m
-by9jb250YWluZXJz
+one more thing.
+
+On Wed, Sep 10, 2008 at 4:51 PM, MinChan Kim <minchan.kim-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org> wrote:
+> On Tue, Sep 9, 2008 at 4:42 PM, Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org> wrote:
+>> For each VMA, there is a 'struct cr_vma'; if the VMA is file-mapped,
+>> it will be followed by the file name.  The cr_vma->npages will tell
+>> how many pages were dumped for this VMA.  Then it will be followed
+>> by the actual data: first a dump of the addresses of all dumped
+>> pages (npages entries) followed by a dump of the contents of all
+>> dumped pages (npages pages). Then will come the next VMA and so on.
+>>
+>> Signed-off-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+>> ---
+>>  arch/x86/mm/checkpoint.c   |   30 +++
+>>  arch/x86/mm/restart.c      |    1 +
+>>  checkpoint/Makefile        |    3 +-
+>>  checkpoint/checkpoint.c    |   53 ++++++
+>>  checkpoint/ckpt_arch.h     |    1 +
+>>  checkpoint/ckpt_mem.c      |  448 ++++++++++++++++++++++++++++++++++++++++++++
+>>  checkpoint/ckpt_mem.h      |   35 ++++
+>>  checkpoint/sys.c           |   23 ++-
+>>  include/asm-x86/ckpt_hdr.h |    5 +
+>>  include/linux/ckpt.h       |   12 ++
+>>  include/linux/ckpt_hdr.h   |   30 +++
+>>  11 files changed, 635 insertions(+), 6 deletions(-)
+>>  create mode 100644 checkpoint/ckpt_mem.c
+>>  create mode 100644 checkpoint/ckpt_mem.h
+>>
+>> diff --git a/arch/x86/mm/checkpoint.c b/arch/x86/mm/checkpoint.c
+>> index 71d21e6..50cfd29 100644
+>> --- a/arch/x86/mm/checkpoint.c
+>> +++ b/arch/x86/mm/checkpoint.c
+>> @@ -192,3 +192,33 @@ int cr_write_cpu(struct cr_ctx *ctx, struct task_struct *t)
+>>        cr_hbuf_put(ctx, sizeof(*hh));
+>>        return ret;
+>>  }
+>> +
+>> +/* dump the mm->context state */
+>> +int cr_write_mm_context(struct cr_ctx *ctx, struct mm_struct *mm, int parent)
+>> +{
+>> +       struct cr_hdr h;
+>> +       struct cr_hdr_mm_context *hh = cr_hbuf_get(ctx, sizeof(*hh));
+>> +       int ret;
+>> +
+>> +       h.type = CR_HDR_MM_CONTEXT;
+>> +       h.len = sizeof(*hh);
+>> +       h.parent = parent;
+>> +
+>> +       mutex_lock(&mm->context.lock);
+>> +
+>> +       hh->ldt_entry_size = LDT_ENTRY_SIZE;
+>> +       hh->nldt = mm->context.size;
+>> +
+>> +       cr_debug("nldt %d\n", hh->nldt);
+>> +
+>> +       ret = cr_write_obj(ctx, &h, hh);
+>> +       cr_hbuf_put(ctx, sizeof(*hh));
+>> +       if (ret < 0)
+>> +               return ret;
+>> +
+>> +       ret = cr_kwrite(ctx, mm->context.ldt, hh->nldt * LDT_ENTRY_SIZE);
+>> +
+>> +       mutex_unlock(&mm->context.lock);
+>> +
+>> +       return ret;
+>> +}
+>> diff --git a/arch/x86/mm/restart.c b/arch/x86/mm/restart.c
+>> index 883a163..d7fb89a 100644
+>> --- a/arch/x86/mm/restart.c
+>> +++ b/arch/x86/mm/restart.c
+>> @@ -8,6 +8,7 @@
+>>  *  distribution for more details.
+>>  */
+>>
+>> +#include <linux/unistd.h>
+>>  #include <asm/desc.h>
+>>  #include <asm/i387.h>
+>>
+>> diff --git a/checkpoint/Makefile b/checkpoint/Makefile
+>> index d2df68c..3a0df6d 100644
+>> --- a/checkpoint/Makefile
+>> +++ b/checkpoint/Makefile
+>> @@ -2,4 +2,5 @@
+>>  # Makefile for linux checkpoint/restart.
+>>  #
+>>
+>> -obj-$(CONFIG_CHECKPOINT_RESTART) += sys.o checkpoint.o restart.o
+>> +obj-$(CONFIG_CHECKPOINT_RESTART) += sys.o checkpoint.o restart.o \
+>> +               ckpt_mem.o
+>> diff --git a/checkpoint/checkpoint.c b/checkpoint/checkpoint.c
+>> index d34a691..4dae775 100644
+>> --- a/checkpoint/checkpoint.c
+>> +++ b/checkpoint/checkpoint.c
+>> @@ -55,6 +55,55 @@ int cr_write_string(struct cr_ctx *ctx, char *str, int len)
+>>        return cr_write_obj(ctx, &h, str);
+>>  }
+>>
+>> +/**
+>> + * cr_fill_fname - return pathname of a given file
+>> + * @path: path name
+>> + * @root: relative root
+>> + * @buf: buffer for pathname
+>> + * @n: buffer length (in) and pathname length (out)
+>> + */
+>> +static char *
+>> +cr_fill_fname(struct path *path, struct path *root, char *buf, int *n)
+>> +{
+>> +       char *fname;
+>> +
+>> +       BUG_ON(!buf);
+>> +       fname = __d_path(path, root, buf, *n);
+>> +       if (!IS_ERR(fname))
+>> +               *n = (buf + (*n) - fname);
+>> +       return fname;
+>> +}
+>> +
+>> +/**
+>> + * cr_write_fname - write a file name
+>> + * @ctx: checkpoint context
+>> + * @path: path name
+>> + * @root: relative root
+>> + */
+>> +int cr_write_fname(struct cr_ctx *ctx, struct path *path, struct path *root)
+>> +{
+>> +       struct cr_hdr h;
+>> +       char *buf, *fname;
+>> +       int ret, flen;
+>> +
+>> +       flen = PATH_MAX;
+>> +       buf = kmalloc(flen, GFP_KERNEL);
+>> +       if (!buf)
+>> +               return -ENOMEM;
+>> +
+>> +       fname = cr_fill_fname(path, root, buf, &flen);
+>> +       if (!IS_ERR(fname)) {
+>> +               h.type = CR_HDR_FNAME;
+>> +               h.len = flen;
+>> +               h.parent = 0;
+>> +               ret = cr_write_obj(ctx, &h, fname);
+>> +       } else
+>> +               ret = PTR_ERR(fname);
+>> +
+>> +       kfree(buf);
+>> +       return ret;
+>> +}
+>> +
+>>  /* write the checkpoint header */
+>>  static int cr_write_head(struct cr_ctx *ctx)
+>>  {
+>> @@ -164,6 +213,10 @@ static int cr_write_task(struct cr_ctx *ctx, struct task_struct *t)
+>>        cr_debug("task_struct: ret %d\n", ret);
+>>        if (ret < 0)
+>>                goto out;
+>> +       ret = cr_write_mm(ctx, t);
+>> +       cr_debug("memory: ret %d\n", ret);
+>> +       if (ret < 0)
+>> +               goto out;
+>>        ret = cr_write_thread(ctx, t);
+>>        cr_debug("thread: ret %d\n", ret);
+>>        if (ret < 0)
+>> diff --git a/checkpoint/ckpt_arch.h b/checkpoint/ckpt_arch.h
+>> index 5bd4703..9bd0ba4 100644
+>> --- a/checkpoint/ckpt_arch.h
+>> +++ b/checkpoint/ckpt_arch.h
+>> @@ -2,6 +2,7 @@
+>>
+>>  int cr_write_thread(struct cr_ctx *ctx, struct task_struct *t);
+>>  int cr_write_cpu(struct cr_ctx *ctx, struct task_struct *t);
+>> +int cr_write_mm_context(struct cr_ctx *ctx, struct mm_struct *mm, int parent);
+>>
+>>  int cr_read_thread(struct cr_ctx *ctx);
+>>  int cr_read_cpu(struct cr_ctx *ctx);
+>> diff --git a/checkpoint/ckpt_mem.c b/checkpoint/ckpt_mem.c
+>> new file mode 100644
+>> index 0000000..2c93447
+>> --- /dev/null
+>> +++ b/checkpoint/ckpt_mem.c
+>> @@ -0,0 +1,448 @@
+>> +/*
+>> + *  Checkpoint memory contents
+>> + *
+>> + *  Copyright (C) 2008 Oren Laadan
+>> + *
+>> + *  This file is subject to the terms and conditions of the GNU General Public
+>> + *  License.  See the file COPYING in the main directory of the Linux
+>> + *  distribution for more details.
+>> + */
+>> +
+>> +#include <linux/kernel.h>
+>> +#include <linux/sched.h>
+>> +#include <linux/slab.h>
+>> +#include <linux/file.h>
+>> +#include <linux/pagemap.h>
+>> +#include <linux/mm_types.h>
+>> +#include <linux/ckpt.h>
+>> +#include <linux/ckpt_hdr.h>
+>> +
+>> +#include "ckpt_arch.h"
+>> +#include "ckpt_mem.h"
+>> +
+>> +/*
+>> + * utilities to alloc, free, and handle 'struct cr_pgarr' (page-arrays)
+>> + * (common to ckpt_mem.c and rstr_mem.c).
+>> + *
+>> + * The checkpoint context structure has two members for page-arrays:
+>> + *   ctx->pgarr: list head of the page-array chain
+>> + *   ctx->pgcur: tracks the "current" position in the chain
+>> + *
+>> + * During checkpoint (and restart) the chain tracks the dirty pages (page
+>> + * pointer and virtual address) of each MM. For a particular MM, these are
+>> + * always added to the "current" page-array (ctx->pgcur). The "current"
+>> + * page-array advances as necessary, and new page-array descriptors are
+>> + * allocated on-demand. Before the next MM, the chain is reset but not
+>> + * freed (that is, dereference page pointers and reset ctx->pgcur).
+>> + */
+>> +
+>> +#define CR_PGARR_ORDER  0
+>> +#define CR_PGARR_TOTAL  ((PAGE_SIZE << CR_PGARR_ORDER) / sizeof(void *))
+>> +
+>> +/* release pages referenced by a page-array */
+>> +void cr_pgarr_unref_pages(struct cr_pgarr *pgarr)
+>> +{
+>> +       int n;
+>> +
+>> +       /* only checkpoint keeps references to pages */
+>> +       if (pgarr->pages) {
+>> +               cr_debug("nr_used %d\n", pgarr->nr_used);
+>> +               for (n = pgarr->nr_used; n--; )
+>> +                       page_cache_release(pgarr->pages[n]);
+>> +       }
+>> +}
+>> +
+>> +/* free a single page-array object */
+>> +static void cr_pgarr_free_one(struct cr_pgarr *pgarr)
+>> +{
+>> +       cr_pgarr_unref_pages(pgarr);
+>> +       if (pgarr->pages)
+>> +               free_pages((unsigned long) pgarr->pages, CR_PGARR_ORDER);
+>> +       if (pgarr->vaddrs)
+>> +               free_pages((unsigned long) pgarr->vaddrs, CR_PGARR_ORDER);
+>> +       kfree(pgarr);
+>> +}
+>> +
+>> +/* free a chain of page-arrays */
+>> +void cr_pgarr_free(struct cr_ctx *ctx)
+>> +{
+>> +       struct cr_pgarr *pgarr, *tmp;
+>> +
+>> +       list_for_each_entry_safe(pgarr, tmp, &ctx->pgarr, list) {
+>> +               list_del(&pgarr->list);
+>> +               cr_pgarr_free_one(pgarr);
+>> +       }
+>> +       ctx->pgcur = NULL;
+>> +}
+>> +
+>> +/* allocate a single page-array object */
+>> +static struct cr_pgarr *cr_pgarr_alloc_one(void)
+>> +{
+>> +       struct cr_pgarr *pgarr;
+>> +
+>> +       pgarr = kzalloc(sizeof(*pgarr), GFP_KERNEL);
+>> +       if (!pgarr)
+>> +               return NULL;
+>> +
+>> +       pgarr->nr_free = CR_PGARR_TOTAL;
+>> +       pgarr->nr_used = 0;
+>> +
+>> +       pgarr->pages = (struct page **)
+>> +               __get_free_pages(GFP_KERNEL, CR_PGARR_ORDER);
+>> +       pgarr->vaddrs = (unsigned long *)
+>> +               __get_free_pages(GFP_KERNEL, CR_PGARR_ORDER);
+>> +       if (!pgarr->pages || !pgarr->vaddrs) {
+>> +               cr_pgarr_free_one(pgarr);
+>> +               return NULL;
+>> +       }
+>> +
+>> +       return pgarr;
+>> +}
+>> +
+>> +/* cr_pgarr_alloc - return the next available pgarr in the page-array chain
+>> + * @ctx: checkpoint context
+>> + *
+>> + * Return the page-array following ctx->pgcur, extending the chain if needed
+>> + */
+>> +struct cr_pgarr *cr_pgarr_alloc(struct cr_ctx *ctx)
+>> +{
+>> +       struct cr_pgarr *pgarr;
+>> +
+>> +       /* can reuse next element after ctx->pgcur ? */
+>> +       pgarr = ctx->pgcur;
+>> +       if (pgarr && !list_is_last(&pgarr->list, &ctx->pgarr)) {
+>> +               pgarr = list_entry(pgarr->list.next, struct cr_pgarr, list);
+>> +               goto out;
+>> +       }
+>> +
+>> +       /* nope, need to extend the page-array chain */
+>> +       pgarr = cr_pgarr_alloc_one();
+>> +       if (!pgarr)
+>> +               return NULL;
+>> +
+>> +       list_add_tail(&pgarr->list, &ctx->pgarr);
+>> + out:
+>> +       ctx->pgcur = pgarr;
+>> +       return pgarr;
+>> +
+>> +}
+>> +
+>> +/* reset the page-array chain (dropping page references if necessary) */
+>> +void cr_pgarr_reset(struct cr_ctx *ctx)
+>> +{
+>> +       struct cr_pgarr *pgarr;
+>> +
+>> +       list_for_each_entry(pgarr, &ctx->pgarr, list) {
+>> +               cr_pgarr_unref_pages(pgarr);
+>> +               pgarr->nr_free = CR_PGARR_TOTAL;
+>> +               pgarr->nr_used = 0;
+>> +       }
+>> +       ctx->pgcur = NULL;
+>> +}
+>> +
+>> +
+>> +/* return current page-array (and allocate if needed) */
+>> +struct cr_pgarr *cr_pgarr_prep(struct cr_ctx *ctx
+>> +)
+>
+> Brace shoudl be located in above line. :)
+>> +{
+>> +       struct cr_pgarr *pgarr = ctx->pgcur;
+>> +
+>> +       if (!pgarr->nr_free)
+
+At first trial, ctx->pgcur is null.
+so, It may happen oops.
+
+>> +               pgarr = cr_pgarr_alloc(ctx);
+>> +       return pgarr;
+>> +}
+>> +
+>> +/*
+>> + * Checkpoint is outside the context of the checkpointee, so one cannot
+>> + * simply read pages from user-space. Instead, we scan the address space
+>> + * of the target to cherry-pick pages of interest. Selected pages are
+>> + * enlisted in a page-array chain (attached to the checkpoint context).
+>> + * To save their contents, each page is mapped to kernel memory and then
+>> + * dumped to the file descriptor.
+>> + */
+>> +
+>> +/**
+>> + * cr_vma_fill_pgarr - fill a page-array with addr/page tuples for a vma
+>> + * @ctx - checkpoint context
+>> + * @pgarr - page-array to fill
+>> + * @vma - vma to scan
+>> + * @start - start address (updated)
+>> + */
+>> +static int cr_vma_fill_pgarr(struct cr_ctx *ctx, struct cr_pgarr *pgarr,
+>> +                            struct vm_area_struct *vma, unsigned long *start)
+>> +{
+>> +       unsigned long end = vma->vm_end;
+>> +       unsigned long addr = *start;
+>> +       struct page **pagep;
+>> +       unsigned long *addrp;
+>> +       int cow, nr, ret = 0;
+>> +
+>> +       nr = pgarr->nr_free;
+>> +       pagep = &pgarr->pages[pgarr->nr_used];
+>> +       addrp = &pgarr->vaddrs[pgarr->nr_used];
+>> +       cow = !!vma->vm_file;
+>> +
+>> +       while (addr < end) {
+>> +               struct page *page;
+>> +
+>> +               /*
+>> +                * simplified version of get_user_pages(): already have vma,
+>> +                * only need FOLL_TOUCH, and (for now) ignore fault stats.
+>> +                *
+>> +                * FIXME: consolidate with get_user_pages()
+>> +                */
+>> +
+>> +               cond_resched();
+>> +               while (!(page = follow_page(vma, addr, FOLL_TOUCH))) {
+>> +                       ret = handle_mm_fault(vma->vm_mm, vma, addr, 0);
+>> +                       if (ret & VM_FAULT_ERROR) {
+>> +                               if (ret & VM_FAULT_OOM)
+>> +                                       ret = -ENOMEM;
+>> +                               else if (ret & VM_FAULT_SIGBUS)
+>> +                                       ret = -EFAULT;
+>> +                               else
+>> +                                       BUG();
+>> +                               break;
+>> +                       }
+>> +                       cond_resched();
+>> +                       ret = 0;
+>> +               }
+>> +
+>> +               if (IS_ERR(page))
+>> +                       ret = PTR_ERR(page);
+>> +
+>> +               if (ret < 0)
+>> +                       break;
+>> +
+>> +               if (page == ZERO_PAGE(0)) {
+>> +                       page = NULL;    /* zero page: ignore */
+>> +               } else if (cow && page_mapping(page) != NULL) {
+>> +                       page = NULL;    /* clean cow: ignore */
+>> +               } else {
+>> +                       get_page(page);
+>> +                       *(addrp++) = addr;
+>> +                       *(pagep++) = page;
+>> +                       if (--nr == 0) {
+>> +                               addr += PAGE_SIZE;
+>> +                               break;
+>> +                       }
+>> +               }
+>> +
+>> +               addr += PAGE_SIZE;
+>> +       }
+>> +
+>> +       if (unlikely(ret < 0)) {
+>> +               nr = pgarr->nr_free - nr;
+>> +               while (nr--)
+>> +                       page_cache_release(*(--pagep));
+>> +               return ret;
+>> +       }
+>> +
+>> +       *start = addr;
+>> +       return pgarr->nr_free - nr;
+>> +}
+>> +
+>> +/**
+>> + * cr_vma_scan_pages - scan vma for pages that will need to be dumped
+>> + * @ctx - checkpoint context
+>> + * @vma - vma to scan
+>> + *
+>> + * lists of page pointes and corresponding virtual addresses are tracked
+>> + * inside ctx->pgarr page-array chain
+>> + */
+>> +static int cr_vma_scan_pages(struct cr_ctx *ctx, struct vm_area_struct *vma)
+>> +{
+>> +       unsigned long addr = vma->vm_start;
+>> +       unsigned long end = vma->vm_end;
+>> +       struct cr_pgarr *pgarr;
+>> +       int nr, total = 0;
+>> +
+>> +       while (addr < end) {
+>> +               pgarr = cr_pgarr_prep(ctx);
+>> +               if (!pgarr)
+>> +                       return -ENOMEM;
+>> +               nr = cr_vma_fill_pgarr(ctx, pgarr, vma, &addr);
+>> +               if (nr < 0)
+>> +                       return nr;
+>> +               pgarr->nr_free -= nr;
+>> +               pgarr->nr_used += nr;
+>> +               total += nr;
+>> +       }
+>> +
+>> +       cr_debug("total %d\n", total);
+>> +       return total;
+>> +}
+>> +
+>> +static int cr_page_write(struct cr_ctx *ctx, struct page *page, char *buf)
+>> +{
+>> +       void *ptr;
+>> +
+>> +       ptr = kmap_atomic(page, KM_USER1);
+>> +       memcpy(buf, ptr, PAGE_SIZE);
+>> +       kunmap_atomic(page, KM_USER1);
+>> +
+>> +       return cr_kwrite(ctx, buf, PAGE_SIZE);
+>> +}
+>> +
+>> +/**
+>> + * cr_vma_dump_pages - dump pages listed in the ctx page-array chain
+>> + * @ctx - checkpoint context
+>> + * @total - total number of pages
+>> + *
+>> + * First dump all virtual addresses, followed by the contents of all pages
+>> + */
+>> +static int cr_vma_dump_pages(struct cr_ctx *ctx, int total)
+>> +{
+>> +       struct cr_pgarr *pgarr;
+>> +       char *buf;
+>> +       int i, ret = 0;
+>> +
+>> +       if (!total)
+>> +               return 0;
+>> +
+>> +       list_for_each_entry(pgarr, &ctx->pgarr, list) {
+>> +               ret = cr_kwrite(ctx, pgarr->vaddrs,
+>> +                               pgarr->nr_used * sizeof(*pgarr->vaddrs));
+>> +               if (ret < 0)
+>> +                       return ret;
+>> +       }
+>> +
+>> +       buf = kmalloc(PAGE_SIZE, GFP_KERNEL);
+>> +       if (!buf)
+>> +               return -ENOMEM;
+>> +
+>> +       list_for_each_entry(pgarr, &ctx->pgarr, list) {
+>> +               for (i = 0; i < pgarr->nr_used; i++) {
+>> +                       ret = cr_page_write(ctx, pgarr->pages[i], buf);
+>> +                       if (ret < 0)
+>> +                               goto out;
+>> +               }
+>> +       }
+>> +
+>> + out:
+>> +       kfree(buf);
+>> +       return ret;
+>> +}
+>> +
+>> +static int cr_write_vma(struct cr_ctx *ctx, struct vm_area_struct *vma)
+>> +{
+>> +       struct cr_hdr h;
+>> +       struct cr_hdr_vma *hh = cr_hbuf_get(ctx, sizeof(*hh));
+>> +       int vma_type, nr, ret;
+>> +
+>> +       h.type = CR_HDR_VMA;
+>> +       h.len = sizeof(*hh);
+>> +       h.parent = 0;
+>> +
+>> +       hh->vm_start = vma->vm_start;
+>> +       hh->vm_end = vma->vm_end;
+>> +       hh->vm_page_prot = vma->vm_page_prot.pgprot;
+>> +       hh->vm_flags = vma->vm_flags;
+>> +       hh->vm_pgoff = vma->vm_pgoff;
+>> +
+>> +       if (vma->vm_flags & (VM_SHARED | VM_IO | VM_HUGETLB | VM_NONLINEAR)) {
+>> +               pr_warning("CR: unsupported VMA %#lx\n", vma->vm_flags);
+>> +               return -ETXTBSY;
+>> +       }
+>> +
+>> +       /* by default assume anon memory */
+>> +       vma_type = CR_VMA_ANON;
+>> +
+>> +       /* if there is a backing file, assume private-mapped */
+>> +       /* (FIX: check if the file is unlinked) */
+>> +       if (vma->vm_file)
+>> +               vma_type = CR_VMA_FILE;
+>> +
+>> +       hh->vma_type = vma_type;
+>> +
+>> +       /*
+>> +        * it seems redundant now, but we do it in 3 steps for because:
+>> +        * first, the logic is simpler when we how many pages before
+>> +        * dumping them; second, a future optimization will defer the
+>> +        * writeout (dump, and free) to a later step; in which case all
+>> +        * the pages to be dumped will be aggregated on the checkpoint ctx
+>> +        */
+>> +
+>> +       /* (1) scan: scan through the PTEs of the vma to count the pages
+>> +        * to dump (and later make those pages COW), and keep the list of
+>> +        * pages (and a reference to each page) on the checkpoint ctx */
+>> +       nr = cr_vma_scan_pages(ctx, vma);
+>> +       if (nr < 0)
+>> +               return nr;
+>> +
+>> +       hh->nr_pages = nr;
+>> +       ret = cr_write_obj(ctx, &h, hh);
+>> +       cr_hbuf_put(ctx, sizeof(*hh));
+>> +       if (ret < 0)
+>> +               return ret;
+>> +       /* save the file name, if relevant */
+>> +       if (vma->vm_file)
+>> +               ret = cr_write_fname(ctx, &vma->vm_file->f_path, ctx->vfsroot);
+>> +
+>> +       if (ret < 0)
+>> +               return ret;
+>> +
+>> +       /* (2) dump: write out the addresses of all pages in the list (on
+>> +        * the checkpoint ctx) followed by the contents of all pages */
+>> +       ret = cr_vma_dump_pages(ctx, nr);
+>> +
+>> +       /* (3) free: release the extra references to the pages in the list */
+>> +       cr_pgarr_reset(ctx);
+>> +
+>> +       return ret;
+>> +}
+>> +
+>> +int cr_write_mm(struct cr_ctx *ctx, struct task_struct *t)
+>> +{
+>> +       struct cr_hdr h;
+>> +       struct cr_hdr_mm *hh = cr_hbuf_get(ctx, sizeof(*hh));
+>> +       struct mm_struct *mm;
+>> +       struct vm_area_struct *vma;
+>> +       int objref, ret;
+>> +
+>> +       h.type = CR_HDR_MM;
+>> +       h.len = sizeof(*hh);
+>> +       h.parent = task_pid_vnr(t);
+>> +
+>> +       mm = get_task_mm(t);
+>> +
+>> +       objref = 0;     /* will be meaningful with multiple processes */
+>> +       hh->objref = objref;
+>> +
+>> +       down_read(&mm->mmap_sem);
+>> +
+>> +       hh->start_code = mm->start_code;
+>> +       hh->end_code = mm->end_code;
+>> +       hh->start_data = mm->start_data;
+>> +       hh->end_data = mm->end_data;
+>> +       hh->start_brk = mm->start_brk;
+>> +       hh->brk = mm->brk;
+>> +       hh->start_stack = mm->start_stack;
+>> +       hh->arg_start = mm->arg_start;
+>> +       hh->arg_end = mm->arg_end;
+>> +       hh->env_start = mm->env_start;
+>> +       hh->env_end = mm->env_end;
+>> +
+>> +       hh->map_count = mm->map_count;
+>> +
+>> +       /* FIX: need also mm->flags */
+>> +
+>> +       ret = cr_write_obj(ctx, &h, hh);
+>> +       cr_hbuf_put(ctx, sizeof(*hh));
+>> +       if (ret < 0)
+>> +               goto out;
+>> +
+>> +       /* write the vma's */
+>> +       for (vma = mm->mmap; vma; vma = vma->vm_next) {
+>> +               ret = cr_write_vma(ctx, vma);
+>> +               if (ret < 0)
+>> +                       goto out;
+>> +       }
+>> +
+>> +       ret = cr_write_mm_context(ctx, mm, objref);
+>> +
+>> + out:
+>> +       up_read(&mm->mmap_sem);
+>> +       mmput(mm);
+>> +       return ret;
+>> +}
+>> diff --git a/checkpoint/ckpt_mem.h b/checkpoint/ckpt_mem.h
+>> new file mode 100644
+>> index 0000000..8ee211d
+>> --- /dev/null
+>> +++ b/checkpoint/ckpt_mem.h
+>> @@ -0,0 +1,35 @@
+>> +#ifndef _CHECKPOINT_CKPT_MEM_H_
+>> +#define _CHECKPOINT_CKPT_MEM_H_
+>> +/*
+>> + *  Generic container checkpoint-restart
+>> + *
+>> + *  Copyright (C) 2008 Oren Laadan
+>> + *
+>> + *  This file is subject to the terms and conditions of the GNU General Public
+>> + *  License.  See the file COPYING in the main directory of the Linux
+>> + *  distribution for more details.
+>> + */
+>> +
+>> +#include <linux/mm_types.h>
+>> +
+>> +/*
+>> + * page-array chains: each cr_pgarr describes a set of <strcut page *,vaddr>
+>> + * tuples (where vaddr is the virtual address of a page in a particular mm).
+>> + * Specifically, we use separate arrays so that all vaddrs can be written
+>> + * and read at once.
+>> + */
+>> +
+>> +struct cr_pgarr {
+>> +       unsigned long *vaddrs;
+>> +       struct page **pages;
+>> +       unsigned int nr_used;   /* how many entries already used */
+>> +       unsigned int nr_free;   /* how many entries still free */
+>> +       struct list_head list;
+>> +};
+>> +
+>> +void cr_pgarr_reset(struct cr_ctx *ctx);
+>> +void cr_pgarr_free(struct cr_ctx *ctx);
+>> +struct cr_pgarr *cr_pgarr_alloc(struct cr_ctx *ctx);
+>> +struct cr_pgarr *cr_pgarr_prep(struct cr_ctx *ctx);
+>> +
+>> +#endif /* _CHECKPOINT_CKPT_MEM_H_ */
+>> diff --git a/checkpoint/sys.c b/checkpoint/sys.c
+>> index 113e0df..8141161 100644
+>> --- a/checkpoint/sys.c
+>> +++ b/checkpoint/sys.c
+>> @@ -16,6 +16,8 @@
+>>  #include <linux/capability.h>
+>>  #include <linux/ckpt.h>
+>>
+>> +#include "ckpt_mem.h"
+>> +
+>>  /*
+>>  * helpers to write/read to/from the image file descriptor
+>>  *
+>> @@ -110,7 +112,6 @@ int cr_kread(struct cr_ctx *ctx, void *buf, int count)
+>>        return ret;
+>>  }
+>>
+>> -
+>>  /*
+>>  * helpers to manage CR contexts: allocated for each checkpoint and/or
+>>  * restart operation, and persists until the operation is completed.
+>> @@ -126,6 +127,11 @@ void cr_ctx_free(struct cr_ctx *ctx)
+>>
+>>        free_pages((unsigned long) ctx->hbuf, CR_HBUF_ORDER);
+>>
+>> +       if (ctx->vfsroot)
+>> +               path_put(ctx->vfsroot);
+>> +
+>> +       cr_pgarr_free(ctx);
+>> +
+>>        kfree(ctx);
+>>  }
+>>
+>> @@ -145,10 +151,13 @@ struct cr_ctx *cr_ctx_alloc(pid_t pid, int fd, unsigned long flags)
+>>        get_file(ctx->file);
+>>
+>>        ctx->hbuf = (void *) __get_free_pages(GFP_KERNEL, CR_HBUF_ORDER);
+>> -       if (!ctx->hbuf) {
+>> -               cr_ctx_free(ctx);
+>> -               return ERR_PTR(-ENOMEM);
+>> -       }
+>> +       if (!ctx->hbuf)
+>> +               goto nomem;
+>> +
+>> +       /* assume checkpointer is in container's root vfs */
+>> +       /* FIXME: this works for now, but will change with real containers */
+>> +       ctx->vfsroot = &current->fs->root;
+>> +       path_get(ctx->vfsroot);
+>>
+>>        ctx->pid = pid;
+>>        ctx->flags = flags;
+>> @@ -156,6 +165,10 @@ struct cr_ctx *cr_ctx_alloc(pid_t pid, int fd, unsigned long flags)
+>>        ctx->crid = atomic_inc_return(&cr_ctx_count);
+>>
+>>        return ctx;
+>> +
+>> + nomem:
+>> +       cr_ctx_free(ctx);
+>> +       return ERR_PTR(-ENOMEM);
+>>  }
+>>
+>>  /*
+>> diff --git a/include/asm-x86/ckpt_hdr.h b/include/asm-x86/ckpt_hdr.h
+>> index 44a903c..6bc61ac 100644
+>> --- a/include/asm-x86/ckpt_hdr.h
+>> +++ b/include/asm-x86/ckpt_hdr.h
+>> @@ -69,4 +69,9 @@ struct cr_hdr_cpu {
+>>
+>>  } __attribute__((aligned(8)));
+>>
+>> +struct cr_hdr_mm_context {
+>> +       __s16 ldt_entry_size;
+>> +       __s16 nldt;
+>> +} __attribute__((aligned(8)));
+>> +
+>>  #endif /* __ASM_X86_CKPT_HDR__H */
+>> diff --git a/include/linux/ckpt.h b/include/linux/ckpt.h
+>> index 91f4998..5c62a90 100644
+>> --- a/include/linux/ckpt.h
+>> +++ b/include/linux/ckpt.h
+>> @@ -10,6 +10,9 @@
+>>  *  distribution for more details.
+>>  */
+>>
+>> +#include <linux/path.h>
+>> +#include <linux/fs.h>
+>> +
+>>  #define CR_VERSION  1
+>>
+>>  struct cr_ctx {
+>> @@ -24,6 +27,11 @@ struct cr_ctx {
+>>
+>>        void *hbuf;             /* temporary buffer for headers */
+>>        int hpos;               /* position in headers buffer */
+>> +
+>> +       struct list_head pgarr; /* page array for dumping VMA contents */
+>> +       struct cr_pgarr *pgcur; /* current position in page array */
+>> +
+>> +       struct path *vfsroot;   /* container root (FIXME) */
+>>  };
+>>
+>>  /* cr_ctx: flags */
+>> @@ -46,11 +54,15 @@ struct cr_hdr;
+>>
+>>  int cr_write_obj(struct cr_ctx *ctx, struct cr_hdr *h, void *buf);
+>>  int cr_write_string(struct cr_ctx *ctx, char *str, int len);
+>> +int cr_write_fname(struct cr_ctx *ctx, struct path *path, struct path *root);
+>>
+>>  int cr_read_obj(struct cr_ctx *ctx, struct cr_hdr *h, void *buf, int n);
+>>  int cr_read_obj_type(struct cr_ctx *ctx, void *buf, int n, int type);
+>>  int cr_read_string(struct cr_ctx *ctx, void *str, int len);
+>>
+>> +int cr_write_mm(struct cr_ctx *ctx, struct task_struct *t);
+>> +int cr_read_mm(struct cr_ctx *ctx);
+>> +
+>>  int do_checkpoint(struct cr_ctx *ctx);
+>>  int do_restart(struct cr_ctx *ctx);
+>>
+>> diff --git a/include/linux/ckpt_hdr.h b/include/linux/ckpt_hdr.h
+>> index e66f322..ac77d7d 100644
+>> --- a/include/linux/ckpt_hdr.h
+>> +++ b/include/linux/ckpt_hdr.h
+>> @@ -32,6 +32,7 @@ struct cr_hdr {
+>>  enum {
+>>        CR_HDR_HEAD = 1,
+>>        CR_HDR_STRING,
+>> +       CR_HDR_FNAME,
+>>
+>>        CR_HDR_TASK = 101,
+>>        CR_HDR_THREAD,
+>> @@ -82,4 +83,33 @@ struct cr_hdr_task {
+>>        __s32 task_comm_len;
+>>  } __attribute__((aligned(8)));
+>>
+>> +struct cr_hdr_mm {
+>> +       __u32 objref;           /* identifier for shared objects */
+>> +       __u32 map_count;
+>> +
+>> +       __u64 start_code, end_code, start_data, end_data;
+>> +       __u64 start_brk, brk, start_stack;
+>> +       __u64 arg_start, arg_end, env_start, env_end;
+>> +
+>> +} __attribute__((aligned(8)));
+>> +
+>> +/* vma subtypes */
+>> +enum vm_type {
+>> +       CR_VMA_ANON = 1,
+>> +       CR_VMA_FILE
+>> +};
+>> +
+>> +struct cr_hdr_vma {
+>> +       __u32 vma_type;
+>> +       __u32 _padding;
+>> +       __s64 nr_pages;
+>> +
+>> +       __u64 vm_start;
+>> +       __u64 vm_end;
+>> +       __u64 vm_page_prot;
+>> +       __u64 vm_flags;
+>> +       __u64 vm_pgoff;
+>> +
+>> +} __attribute__((aligned(8)));
+>> +
+>>  #endif /* _CHECKPOINT_CKPT_HDR_H_ */
+>> --
+>> 1.5.4.3
+>>
+>> --
+>> To unsubscribe from this list: send the line "unsubscribe linux-kernel" in
+>> the body of a message to majordomo-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>> Please read the FAQ at  http://www.tux.org/lkml/
+>>
+>
+>
+>
+> --
+> Kinds regards,
+> MinChan Kim
+>
+
+
+
+-- 
+Kinds regards,
+MinChan Kim
