@@ -1,15 +1,14 @@
 From: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: Re: [RFC v4][PATCH 9/9] File descriprtors (restore)
-Date: Wed, 10 Sep 2008 09:09:29 -0700
-Message-ID: <1221062969.6781.5.camel__23239.7257037976$1221063181$gmane$org@nimitz>
+Subject: Re: [RFC v4][PATCH 4/9] Memory management (dump)
+Date: Wed, 10 Sep 2008 09:55:28 -0700
+Message-ID: <1221065728.6781.19.camel__27321.7449932874$1221066035$gmane$org@nimitz>
 References: <1220946154-15174-1-git-send-email-orenl@cs.columbia.edu>
-	<1220946154-15174-10-git-send-email-orenl@cs.columbia.edu>
-	<1220977581.23386.216.camel@nimitz> <48C727B6.9000700@cs.columbia.edu>
+	<1220946154-15174-5-git-send-email-orenl@cs.columbia.edu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <48C727B6.9000700-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+In-Reply-To: <1220946154-15174-5-git-send-email-orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -23,36 +22,45 @@ To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, jeremy-TSDbQ3PG+2Y@public.gmane.org, arnd-r2nGTMty4D4@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Tue, 2008-09-09 at 21:49 -0400, Oren Laadan wrote:
-> 
-> Dave Hansen wrote:
-> > On Tue, 2008-09-09 at 03:42 -0400, Oren Laadan wrote:
-> >> +static int cr_close_all_fds(struct files_struct *files)
-> >> +{
-> >> +       int *fdtable;
-> >> +       int n;
-> >> +
-> >> +       do {
-> >> +               n = cr_scan_fds(files, &fdtable);
-> >> +               if (n < 0)
-> >> +                       return n;
-> >> +               while (n--)
-> >> +                       sys_close(fdtable[n]);
-> >> +               kfree(fdtable);
-> >> +       } while (n != -1);
-> >> +
-> >> +       return 0;
-> >> +}
-> > 
-> > This needs to use an ERR_PTR().  It will save using the double-pointer.
-> 
-> I suppose you refer to the call to cr_scan_fds(): either 'fdtable'
-> or 'n' will have to pass-by-reference. Is it that you prefer it to be
-> 	fdtable = cr_scan_fds(files, &n);
-> ?
+On Tue, 2008-09-09 at 03:42 -0400, Oren Laadan wrote:
+> +       while (addr < end) {
+> +               struct page *page;
+> +
+> +               /*
+> +                * simplified version of get_user_pages(): already have vma,
+> +                * only need FOLL_TOUCH, and (for now) ignore fault stats.
+> +                *
+> +                * FIXME: consolidate with get_user_pages()
+> +                */
+> +
+> +               cond_resched();
+> +               while (!(page = follow_page(vma, addr, FOLL_TOUCH))) {
+> +                       ret = handle_mm_fault(vma->vm_mm, vma, addr, 0);
+> +                       if (ret & VM_FAULT_ERROR) {
+> +                               if (ret & VM_FAULT_OOM)
+> +                                       ret = -ENOMEM;
+> +                               else if (ret & VM_FAULT_SIGBUS)
+> +                                       ret = -EFAULT;
+> +                               else
+> +                                       BUG();
+> +                               break;
+> +                       }
+> +                       cond_resched();
+> +                       ret = 0;
+> +               }
 
-I was misreading the use of 'n'.  Can you really not use close_files()
-for this operation?  You'd need to add some locking around it, but I
-think it does what you need here.
+get_user_pages() is really the wrong thing to use here.  It makes pages
+*present* so that we can do things like hand them off to a driver.  For
+checkpointing, we really don't care about that.  It's a waste of time,
+for instance to perform faults to fill the mappings up with zero pages
+and page tables.  Just think of what will happen the first time we touch
+a very large, very sparse anonymous area.  We'll probably kill the
+system just allocating page tables.  Take a look at the comment in
+follow_page().  This is a similar operation to core dumping, and we need
+to be careful.
+
+This might be fine for a proof of concept, but it needs to be thought
+out much more thoroughly before getting merged.  I guess I'm
+volunteering to go do that.
 
 -- Dave
