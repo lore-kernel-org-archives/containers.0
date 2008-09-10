@@ -1,101 +1,119 @@
-From: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: Re: [RFC v4][PATCH 5/9] Memory managemnet (restore)
-Date: Wed, 10 Sep 2008 13:49:17 -0700
-Message-ID: <1221079757.6781.54.camel__33276.8156695694$1221079904$gmane$org@nimitz>
-References: <1220946154-15174-1-git-send-email-orenl@cs.columbia.edu>
-	<1220946154-15174-6-git-send-email-orenl@cs.columbia.edu>
-	<1221075083.6781.34.camel@nimitz>  <48C824A2.8050708@cs.columbia.edu>
-Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
+From: Chuck Lever <chuck.lever-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [RFC][PATCH] sunrpc: fix oops in rpc_create() when the mount namespace is unshared
+Date: Wed, 10 Sep 2008 16:54:15 -0400
+Message-ID: <C67C0244-EBA8-4E8C-94D8-E815DC1F979D@oracle.com>
+References: <48C52B29.4020204@fr.ibm.com> <20080909124311.GA10053@us.ibm.com> <m18wu1nyon.fsf@frodo.ebiederm.org> <20080909152952.GA21207@us.ibm.com> <DE845309-1684-472A-8269-78AB3A2823A9@oracle.com> <m1fxo9mba5.fsf@frodo.ebiederm.org> <48C791F9.8090606@fr.ibm.com> <76bd70e30809100812r4a7fa71crfc7196350e3ed1cf@mail.gmail.com> <m1ej3rixbx.fsf@frodo.ebiederm.org>
+Mime-Version: 1.0 (Apple Message framework v928.1)
+Content-Type: text/plain; charset=US-ASCII; format=flowed; delsp=yes
 Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <48C824A2.8050708-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, jeremy-TSDbQ3PG+2Y@public.gmane.org, arnd-r2nGTMty4D4@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Return-path: <linux-nfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+In-Reply-To: <m1ej3rixbx.fsf-B27657KtZYmhTnVgQlOflh2eb7JE58TQ@public.gmane.org>
+Sender: linux-nfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org
+Cc: chucklever-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, Cedric Le Goater <clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>, "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Trond Myklebust <trond.myklebust-41N18TsMXrtuMpJDpNschA@public.gmane.org>, Linux Kernel Mailing List <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, linux-nfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Wed, 2008-09-10 at 15:48 -0400, Oren Laadan wrote:
-> Dave Hansen wrote:
-> > On Tue, 2008-09-09 at 03:42 -0400, Oren Laadan wrote:
-> >> +/**
-> >> + * cr_vma_read_pages_vaddrs - read addresses of pages to page-array chain
-> >> + * @ctx - restart context
-> >> + * @npages - number of pages
-> >> + */
-> >> +static int cr_vma_read_pages_vaddrs(struct cr_ctx *ctx, int npages)
-> >> +{
-> >> +	struct cr_pgarr *pgarr;
-> >> +	int nr, ret;
-> >> +
-> >> +	while (npages) {
-> >> +		pgarr = cr_pgarr_prep(ctx);
-> >> +		if (!pgarr)
-> >> +			return -ENOMEM;
-> >> +		nr = min(npages, (int) pgarr->nr_free);
-> >> +		ret = cr_kread(ctx, pgarr->vaddrs, nr * sizeof(unsigned long));
-> >> +		if (ret < 0)
-> >> +			return ret;
-> >> +		pgarr->nr_free -= nr;
-> >> +		pgarr->nr_used += nr;
-> >> +		npages -= nr;
-> >> +	}
-> >> +	return 0;
-> >> +}
-> > 
-> > cr_pgarr_prep() can return a partially full pgarr, right?  Won't the
-> > cr_kread() always start at the beginning of the pgarr->vaddrs[] array?
-> > Seems to me like it will clobber things from the last call.
-> 
-> Note that 'nr' is either equal to ->nr_free - in which case we consume
-> the entire 'pgarr' vaddr array such that the next call to cr_pgarr_prep()
-> will get a fresh one, or is smaller than ->nr_free - in which case that
-> is the last iteration of the loop anyhow, so it won't be clobbered.
-> 
-> Also, after we return - our caller, cr_vma_read_pages(), resets the state
-> of the page-array chain by calling cr_pgarr_reset().
+On Sep 10, 2008, at Sep 10, 2008, 4:02 PM, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org wrote:
+> "Chuck Lever" <chuck.lever-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org> writes:
+>> That makes sense.
+>>
+>> This is likely coming from lockd_down(), and is almost certainly not
+>> coming from the same uts namespace as the lockd_up() that did the
+>> pmap_set, which was done by the first NFS mount done in the first uts
+>> namespace on the system.  It's just something that the kernel has to
+>> do for maintenance.
+>>
+>> There is only one lockd() instance that is shared among all the uts
+>> namespaces, right?  In this case, what is the correct utsname to use?
+>
+> Interesting.
+>
+> As a general rule I would say we should capture the uts instance
+> in locked_up().  And use the same instance in locked_down().
+>
+> I'm not at all familiar with how locked interacts with nfs mounts
+> in a practical sense.  Is there one locked instance (or at least  
+> context)
+> per nfs mount?
+>
+> The way I would expect things to work is that when we mount an nfs  
+> filesystem
+> from an nfs server.  We would create a locked context for that  
+> server, that
+> additional nfs mounts to the same nfs server could share.
 
-Man, that's awfully subtle for something which is so simple.
+There is one lockd, one statd, and one rpcbind per client.  These are  
+shared between all the NFS mounts on the client.  Likewise, there is  
+one of each of these per server, and they are shared among all exports.
 
-I think it is a waste of memory to have to hold *all* of the vaddrs in
-memory at once.  Is there a real requirement for that somehow?  The code
-would look a lot simpler use less memory if it was done (for instance)
-using a single 'struct pgaddr' at a time.  There are an awful lot of HPC
-apps that have nearly all physical memory in the machine allocated and
-mapped into a single VMA.  This approach could be quite painful there.
+lockd_up() and lockd_down() maintain a count of mounts and exports,  
+and lockd_down() shuts down lockd when the count goes to zero.
 
-I know it's being done this way because that's what the dump format
-looks like.  Would you consider changing the dump format to have blocks
-of pages and vaddrs together?  That should also parallelize a bit more
-naturally.
+statd provides the ability to signal a server when a client reboots  
+(and vice versa). This gives the server an indication of when to free  
+locks for any applications on a rebooting client, and gives the client  
+an indication of when it needs to reclaim locks on a rebooting server.
 
-Anyway, this either needs a big fat comment or something that is
-self-describing like this:
+statd (user space) and lockd (kernel) have to share a cookie  
+(mon_name) which is used to identify the client to servers, and the  
+server to clients, so reboots can be detected.  That cookie would  
+probably need to be the initial utsname.
 
-+       while (npages) {
-+               pgarr = alloc_fresh_pgarr(...)
-+               if (!pgarr)
-+                       return -ENOMEM;
-+               nr = min(npages, (int) pgarr->nr_free);
-+               ret = cr_kread(ctx, pgarr->vaddrs, nr * sizeof(unsigned long));
-+               if (ret < 0)
-+                       return ret;
-+               pgarr->nr_free -= nr;
-+               pgarr->nr_used += nr;
-+               npages -= nr;
-		add_pgarr_to_ctx(ctx, pgarr);
-+       }
-+       return 0;
+> The way I would expect nfs to interact with the namespaces is for  
+> the nfs
+> mount to capture the uts and network namespaces, and use them for all
+> transactions relating to the mount.
 
-When someone is looking at that, it is painfully obvious that they're
-not writing over anyone else's vaddrs since the pgarr is fresh.  
+That works for the main NFS protocol, perhaps, but the auxiliary  
+protocols are another matter.  They operate on behalf of a whole  
+client or server, not on behalf of an individual mount or export.
 
--- Dave
+>  In particular when creating
+> or a locked context the nfs mount would use the uts namespace and the
+> network namespace as discriminators to see if an existing locked  
+> context
+> is the same.
+
+Possible, but I would expect this to be a lot of work for not much  
+gain.  The right answer is likely that you need a lockd and statd  
+instance (virtual or real) for each namespace.  The mounts and exports  
+in each namespace would have their own lockd and statd.
+
+> I don't think nfs has a 1-1 thread to context model which is where  
+> things
+> get really hazy for me.
+
+Users are assigned credentials.  The credentials are passed from  
+client to server, and the server does work on behalf of that  
+credential (user).  lockd uses a credential and a process identifier  
+to find locks on files.
+
+AUTH_SYS credentials (the lowest common denominator) are constructed  
+from the user's UID and GID and the client's utsname.
+
+The kernel, then, will have to construct unique credentials for users  
+in each uts namespace.  This is likely not an NFS mount-time issue,  
+but is instead part of the mechanism of mapping requests from  
+processes to RPC credentials.
+
+> The conservative play is to always force use of the initial namespace
+> and to deny creation of mounts that would use different namespaces.   
+> In part
+> because the initial version of the namespace always exists.  Which  
+> means
+> as relates to Cedrics initial patch we would still need to know which
+> mounts should cause us to use a different uts namespace so we can deny
+> them.
+
+OK.  I think what you are saying is that NFS won't work outside of the  
+initial uts namespace, for now?
+
+Also, how would an automounter fit into this uts namespace scheme?
+
+-- 
+Chuck Lever
+chuck[dot]lever[at]oracle[dot]com
+--
+To unsubscribe from this list: send the line "unsubscribe linux-nfs" in
+the body of a message to majordomo-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html
