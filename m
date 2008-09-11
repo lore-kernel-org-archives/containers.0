@@ -1,48 +1,55 @@
-From: Benjamin Thery <benjamin.thery@bull.net>
-Subject: Re: [PATCH 12/15] driver core: Implement tagged directory support
- for device classes.
-Date: Thu, 11 Sep 2008 15:05:14 +0200
-Message-ID: <48C9178A.4040307@bull.net>
-References: <m1mykyh2fu.fsf_-_@frodo.ebiederm.org>	<m1hcb6h2d2.fsf_-_@frodo.ebiederm.org> <486DD650.3000804@gmail.com>	<m1tzf593ny.fsf@frodo.ebiederm.org>	<486E2C3B.6020603@gmail.com> <20080704161200.GA1440@suse.de>	<m1lk052ptp.fsf@frodo.ebiederm.org> <487D6A24.9070	<m1zlnu60uc.fsf@frodo.ebiederm.org> <48C912CF.7080000@gmail.com>
+From: "Mark Ryden" <markryde-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Subject: sysfs question
+Date: Thu, 11 Sep 2008 17:01:48 +0300
+Message-ID: <dac45060809110701i49acb8e7m7d8e3ccea7c59ab7@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1755491AbYIKNGK@vger.kernel.org>
-In-Reply-To: <48C912CF.7080000@gmail.com>
-Sender: linux-kernel-owner@vger.kernel.org
-To: Jiri Slaby <jirislaby@gmail.com>
-Cc: "Eric W. Biederman" <ebiederm@xmission.com>, Tejun Heo <htejun@gmail.com>, Greg KH <gregkh@suse.de>, linux-kernel@vger.kernel.org, Al Viro <viro@ftp.linux.org.uk>, Linux Containers <containers@lists.osdl.org>, Daniel Lezcano <dlezcano@fr.ibm.com>, Andrew Morton <akpm@linux-foundation.org>
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Content-Disposition: inline
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Jiri Slaby wrote:
-> Any progress here? Nothing seems reached lkml...
-
-Have a look at Greg's tree. :)
-He started to merge the last patches today.
-
-Benjamin
-
-> 
-> Eric W. Biederman napsal(a):
->> Greg KH <gregkh@suse.de> writes:
->>
->>> I'll add it to my tree, and get it some testing in the next cycle of
->>> linux-next until 2.6.27 is out, and then if it's still looking good, go
->>> into .28.
->> Greg.  Where are we at with this?
->>
->> I just looked at your tree and I don't perhaps I'm blind but I don't see
->> this patches, and it looks like you at least refreshed your patches
->> a day or two ago.
-> _______________________________________________
-> Containers mailing list
-> Containers@lists.linux-foundation.org
-> https://lists.linux-foundation.org/mailman/listinfo/containers
-> 
-> 
+Hello,
+I am trying to follow the
+Linux Containers - Network Namespace configuration instructions from
+http://lxc.sourceforge.net/network/configuration.php
 
 
--- 
-B e n j a m i n   T h e r y  - BULL/DT/Open Software R&D
+I had built a kernel with CONFIG_SYS=n and  CONFIG_NET_NS=y
+and CONFIG_VETH=y , etc, according to the instructions.
 
-    http://www.bull.com
+
+Now, the CONFIG_SYSFS help text says:
+
+sysfs is currently used by the block subsystem to mount the root
+partition. If sysfs is disabled you must specify the boot device on
+the kernel boot command line via its major and minor numbers. For
+example, "root=03:01" for /dev/hda1.
+
+
+So I added root=08,02 to my kernel boot parameter line and booted.
+
+
+it starts booting, but then gets:
+switchroot: mount failed: No such file or directory.
+Booting has failed.
+
+8 is the majoror number and 2 is the minor number of /dev/sda2, where I have
+my root partition.
+
+Googling for this found the following, which not helped much:
+http://linux.derkeiler.com/Mailing-Lists/Kernel/2007-11/msg05032.html
+
+Any ideas?
+Regards,
+Mark
