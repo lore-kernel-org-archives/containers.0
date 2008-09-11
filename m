@@ -1,15 +1,13 @@
 From: Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
-Subject: Re: sysfs question
-Date: Thu, 11 Sep 2008 18:40:42 +0200
-Message-ID: <48C94A0A.8010601@fr.ibm.com>
-References: <dac45060809110701i49acb8e7m7d8e3ccea7c59ab7@mail.gmail.com>
-	<200809112226.59518.zxm927@163.com> <48C93B3D.3050303@fr.ibm.com>
-	<200809112353.47144.zxm927@163.com>
+Subject: Re: [PATCH] igmp: make /proc/net/{igmp,mcfilter} per netns
+Date: Thu, 11 Sep 2008 19:15:23 +0200
+Message-ID: <48C9522B.8080002__19178.856656845$1221153663$gmane$org@fr.ibm.com>
+References: <OFAF5F99D2.464B2693-ON882574BE.00630917-882574BE.0064824E@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <200809112353.47144.zxm927-9Onoh4P/yGk@public.gmane.org>
+In-Reply-To: <OFAF5F99D2.464B2693-ON882574BE.00630917-882574BE.0064824E-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,43 +17,102 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "xiaoming.zhang" <zxm927-9Onoh4P/yGk@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, benjamin Thery <benjamin.thery-6ktuUTfB/bM@public.gmane.org>
+To: David Stevens <dlstevens-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Cc: netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, davem-fT/PcQaiUtIeIZ0/mPfg9Q@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-xiaoming.zhang wrote:
-> On Thursday 11 September 2008 11:37:33 pm Daniel Lezcano wrote:
->> xiaoming.zhang wrote:
->>> On Thursday 11 September 2008 10:05:43 pm Mark Ryden wrote:
->>>> In fact, after looking more closely, I see that before that message
->>>> appears: Error: unmouting old /sys
->>>> ERROR unmounting old /sys: Invalid argument.
->>>> forcing unmount of /sys
->>>> switchroot...
->>> My experience is you'd better to find a sysfs patch, since the sysfs
->>> filesystem is required by ramdisk and some system utilities, e.g., system
->>> network configuration scripts.
->>>
->>> Patch for mm-tree can be found here:
->>> 	http://lxc.sourceforge.net/patches/2.6.26/
->>>
->>> This is what I used:
->>> http://lxc.sourceforge.net/patches/2.6.26/2.6.26-rc8-mm1-lxc1/broken-out/
->>> sysfs/
->>>
->>> I merged these 11 patches on Linux-2.6.26.1 though I don't understand
->>> these patches, luckily enough it worked for me.
->> As mentioned Benjamin, it is hard to boot a distro without sysfs. I
->> think it is a good idea to use the lxc patchset.
->>
->> You can use the latest version:
->>
->> http://lxc.sourceforge.net/patches/2.6.27/2.6.27-rc6-lxc1/
->>
-> Thank you very much. And is there any patchset for Linux-2.6.26.* (not the 
-> mm-tree)?
+David Stevens wrote:
+> As I've said before, I really don't like the model you're
+> using for multicasting here (if I understand correctly, and
+> I shamelessly admit I haven't looked at this code in detail).
 
-We worked most of the time sticked with the devel version of the kernel 
-tree. The kernel which is the nearest of the version you are describing 
-is 2.6.27-rc6-lxc1 which is not based on the -mm but on the 2.6.27 
-release candidate. IMO, this is the most stable version of the LXC.
+
+Hi David,
+
+Sorry for the delay.
+
+> As I understand it, you're modelling the multiple virtual interfaces
+> as different pieces of hardware on the same physical network.
+
+Exact. The network namespace acts at the layer 2 level. The network 
+resources are isolated and accessed relatively from the namespace 
+instead of a global static variable. For example, the network device 
+list is per namespace as well as the loopback.
+
+The network devices belong to a specific namespace and can not be used, 
+neither seen from another namespace. How the network namespace is able 
+to discuss with the outside world will depends on the inter container 
+network configuration: a physical device can be assigned to a network 
+namespace, or a system with a bridge + a physical network device + one 
+side of a pair device (having the other side to the namespace), or a 
+macvlan assigned to a namespace, or 'nat' with a pair device, or a 
+tunnel, etc ...
+
+> The implication is that apps joining the same group in multiple
+> containers will result in multiple advertisements for the same
+> group, from each of the multiple instances of IGMP & MLD.
+> In IPv4, that's just ineffecient.
+
+I agree.
+
+ > In IPv6, the question is: do you have
+> multiple link-local addresses-- one for each virtual device?
+> If not, then MLD will be sending multiple copies of everything in
+> violation of the spec (since they'll be from the same source, too).
+
+Yes, each virtual device has its own set of network resources, so when 
+it is activated in the namespace, the link local address is computed, 
+the DAD is invoked and the ip is set on the device.
+
+> I think IGMP and MLD both belong with the physical interface, since
+> they pretty much do exactly what you want already: glom all the
+> different filters and group memberships together into exactly the
+> minimal set of group memberships needed for everyone to hear
+> just the pieces they've requested.
+> If you do that at the interface, then you won't have any duplicated
+> traffic on the physical net and you can separate copies as needed
+> for the different virtual nets on the host. Perfect, and indistinguishable
+> externally from a non-container machine (and the code to do it is
+> already in IGMP and MLD).
+> 
+> If you treat them as separate physical devices all the way to the
+> wire, then you're just needlessly increasing the host processing
+> you need to do, as well as loading the multicast routers and network
+> that are unfortunate enough to be on the same network as you are.
+
+That makes sense, but the containers can be configured to have a network 
+inside the host which acts like a router, a kind of an internal cluster 
+in the host, I want to have each container to send an mcast report to 
+reproduce the real behaviour of a physical network.
+
+> I haven't been paying attention, so I'll be happy if you tell me you've
+> already addressed this. :-) Otherwise, I think it'd be wise to do so
+> before it's released into the wild and can't be easily changed.
+
+No, you are right, I didn't addressed that. I thought we stated that was 
+an optimization which can be done later.
+
+I don't think having for N containers, N reports for joining / leaving a 
+group is something critical at this point, IMHO we can live with that 
+for now.
+
+The critical point is : the protocol must not be violated and AFAICS 
+this is the case, right ?
+
+Your points are totally valid and I agree 100% with you. But as you can 
+see this optimization is not trivial to realize because we have to take 
+into account different use cases of the network namespaces and have the 
+network stack to behave in a clever way depending on the report to be 
+sent internally in the host each time or externally one time.
+
+I will add this optimization to my huge TODO list :) The only question 
+is where should I put it, at the beginning or at the end of the list ?
+If you think I missed something and there is something wrong with the 
+actual approach (expect it can be more efficient) and it is critical for 
+the kernel / the protocol, just let me know and I will go to your 
+suggestion.
+
+
+Thanks for your feedback.
+
+   -- Daniel
