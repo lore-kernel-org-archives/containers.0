@@ -1,13 +1,12 @@
-From: David Stevens <dlstevens-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH] igmp: make /proc/net/{igmp,mcfilter} per netns
-Date: Thu, 11 Sep 2008 12:59:30 -0700
-Message-ID: <OF2D3678ED.2D05BEF6-ON882574C1.006BF3E7-882574C1.006DD1A5__6683.3701487214$1221163325$gmane$org@us.ibm.com>
-References: <48C9522B.8080002@fr.ibm.com>
+From: sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org
+Subject: ptem01 LTP failure in ttydev-0909
+Date: Thu, 11 Sep 2008 13:11:59 -0700
+Message-ID: <20080911201159.GA17071@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <48C9522B.8080002-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
+Content-Disposition: inline
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -17,37 +16,42 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
-Cc: netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, netdev-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, davem-fT/PcQaiUtIeIZ0/mPfg9Q@public.gmane.org
+To: Alan Cox <alan-qBU/x9rampVanCEyBjwyrvXRex20P6io@public.gmane.org>
+Cc: Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Daniel,
-        Thanks for the detailed response.
+Alan,
 
-        As long as you have distinct link-local addresses for
-each advertiser, I don't see any protocol violations here.
+LTP testcases/kernel/pty/ptem01 is failing on ttydev-0909. The test
+passed on ttydev-0828.
 
-        I don't believe it's all that difficult to do-- the main
-thing is simply to push container joins down to the physical
-device-- basically don't do any IGMP or MLD processing
-in the virtual layer and just pass all that to the device. This
-is essentially what is done  already to get multiple sockets
-with distinct joins and filter sets boiled down to the right set
-of listens to satisfy everything requested.
-        Because the link-local addresses are distinct in v6,
-it'll work for now, but be a little harder to do there than blindly
-passing all advertisements to the device. Instead, you'd want
-a shim layer at the device to intercept them and translate them
-into joins for the physcal device, which would itself generate
-the advertisements.
-        Either way you'd want to demultiplex inbound to the
-right container.
-        I'm interested in looking at this, but I don't own my
-time. Feel free to contact me when  you get started and I can
-at least review, if not contribute on it.
+The test changes the window size using the slave-fd and expects that
+it won't affect the window-size on master-fd. With this change, we
+return the slave's window size and test fails.
 
-        I suppose I won't lose sleep at night over it, but
-it does mean use of multicasting in containers won't scale
-very well until it's addressed.
+I suspect that it is due to following change in ttydev.  
 
-                                        +-DLS
+Is the test bogus now ?
+
+Suka
+
+
+commit 4f0fa9c9e6557442b583a687066bebd607246220
+Author: Alan Cox <alan-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Date:   Mon Sep 8 13:49:19 2008 -0700
+
+    tty: Termios locking - sort out real_tty confusions and lock reads
+
+    This moves us towards sanity and should mean our termios locking is now
+    complete and comprehensive.
+
+diff --git a/drivers/char/tty_io.c b/drivers/char/tty_io.c
+index 69b1766..7eabfbb 100644
+--- a/drivers/char/tty_io.c
++++ b/drivers/char/tty_io.c
+@@ -2595,7 +2595,7 @@ long tty_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
+        case TIOCSTI:
+                return tiocsti(tty, p);
+        case TIOCGWINSZ:
+-               return tiocgwinsz(tty, p);
++               return tiocgwinsz(real_tty, p);
