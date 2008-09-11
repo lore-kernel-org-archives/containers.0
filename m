@@ -1,42 +1,30 @@
-From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
-Subject: Re: [RFC][PATCH] sunrpc: fix oops in rpc_create() when the mount namespace is unshared
-Date: Thu, 11 Sep 2008 03:27:29 -0700
-Message-ID: <m1r67rgepa.fsf@frodo.ebiederm.org>
-References: <48C52B29.4020204@fr.ibm.com> <20080909124311.GA10053@us.ibm.com>
-	<m18wu1nyon.fsf@frodo.ebiederm.org>
-	<20080909152952.GA21207@us.ibm.com>
-	<DE845309-1684-472A-8269-78AB3A2823A9@oracle.com>
-	<m1fxo9mba5.fsf@frodo.ebiederm.org> <48C791F9.8090606@fr.ibm.com>
-	<76bd70e30809100812r4a7fa71crfc7196350e3ed1cf@mail.gmail.com>
-	<m1ej3rixbx.fsf@frodo.ebiederm.org> <48C8DEA0.9080905@fr.ibm.com>
+From: Jiri Slaby <jirislaby@gmail.com>
+Subject: Re: [PATCH 12/15] driver core: Implement tagged directory support
+ for device classes.
+Date: Thu, 11 Sep 2008 14:45:03 +0200
+Message-ID: <48C912CF.7080000@gmail.com>
+References: <m1mykyh2fu.fsf_-_@frodo.ebiederm.org> <m1hcb6h2d2.fsf_-_@frodo.ebiederm.org> <486DD650.3000804@gmail.com> <m1tzf593ny.fsf@frodo.ebiederm.org> <486E2C3B.6020603@gmail.com> <20080704161200.GA1440@suse.de> <m1lk052ptp.fsf@frodo.ebiederm.org> <487D6A24.9070 <m1zlnu60uc.fsf@frodo.ebiederm.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Return-path: <linux-nfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
-In-Reply-To: <48C8DEA0.9080905-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org> (Cedric Le Goater's message of
-	"Thu, 11 Sep 2008 11:02:24 +0200")
-Sender: linux-nfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-To: Cedric Le Goater <clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
-Cc: chucklever-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Trond Myklebust <trond.myklebust-41N18TsMXrtuMpJDpNschA@public.gmane.org>, Linux Kernel Mailing List <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, linux-nfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 7bit
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1755014AbYIKMp3@vger.kernel.org>
+In-Reply-To: <m1zlnu60uc.fsf@frodo.ebiederm.org>
+Sender: linux-kernel-owner@vger.kernel.org
+To: "Eric W. Biederman" <ebiederm@xmission.com>
+Cc: Greg KH <gregkh@suse.de>, Tejun Heo <htejun@gmail.com>, Andrew Morton <akpm@linux-foundation.org>, Daniel Lezcano <dlezcano@fr.ibm.com>, linux-kernel@vger.kernel.org, Al Viro <viro@ftp.linux.org.uk>, Linux Containers <containers@lists.osdl.org>
 List-Id: containers.vger.kernel.org
 
-Cedric Le Goater <clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org> writes:
+Any progress here? Nothing seems reached lkml...
 
->> The conservative play is to always force use of the initial namespace
->> and to deny creation of mounts that would use different namespaces.  In part
->> because the initial version of the namespace always exists.  Which means
->> as relates to Cedrics initial patch we would still need to know which
->> mounts should cause us to use a different uts namespace so we can deny
->> them.
->
-> I will send the initial patch which forces use of the initial namespace because
-> it does fix a real oops. 
->
-> Then, I should be able to find some time to work on improving the uts namespace
-> checks when NFS mounts are done.
-
-Thanks.
-Eric
---
-To unsubscribe from this list: send the line "unsubscribe linux-nfs" in
-the body of a message to majordomo-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+Eric W. Biederman napsal(a):
+> Greg KH <gregkh@suse.de> writes:
+> 
+>> I'll add it to my tree, and get it some testing in the next cycle of
+>> linux-next until 2.6.27 is out, and then if it's still looking good, go
+>> into .28.
+> 
+> Greg.  Where are we at with this?
+> 
+> I just looked at your tree and I don't perhaps I'm blind but I don't see
+> this patches, and it looks like you at least refreshed your patches
+> a day or two ago.
