@@ -1,20 +1,15 @@
-From: Chuck Lever <chuck.lever-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [RFC][PATCH] sunrpc: fix oops in rpc_create() when the mount
-	namespace is unshared
-Date: Thu, 11 Sep 2008 12:39:39 -0400
-Message-ID: <02721E5E-6962-4699-86A5-EF5CFC787284@oracle.com>
-References: <48C52B29.4020204@fr.ibm.com> <20080909124311.GA10053@us.ibm.com>
-	<m18wu1nyon.fsf@frodo.ebiederm.org>
-	<20080909152952.GA21207@us.ibm.com>
-	<DE845309-1684-472A-8269-78AB3A2823A9@oracle.com>
-	<m1fxo9mba5.fsf@frodo.ebiederm.org> <48C791F9.8090606@fr.ibm.com>
-	<76bd70e30809100812r4a7fa71crfc7196350e3ed1cf@mail.gmail.com>
-	<m1ej3rixbx.fsf@frodo.ebiederm.org> <48C8DEA0.9080905@fr.ibm.com>
-Mime-Version: 1.0 (Apple Message framework v928.1)
+From: Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
+Subject: Re: sysfs question
+Date: Thu, 11 Sep 2008 18:40:42 +0200
+Message-ID: <48C94A0A.8010601@fr.ibm.com>
+References: <dac45060809110701i49acb8e7m7d8e3ccea7c59ab7@mail.gmail.com>
+	<200809112226.59518.zxm927@163.com> <48C93B3D.3050303@fr.ibm.com>
+	<200809112353.47144.zxm927@163.com>
+Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <48C8DEA0.9080905-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <200809112353.47144.zxm927-9Onoh4P/yGk@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -24,44 +19,43 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Cedric Le Goater <clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
-Cc: Linux NFS Mailing List <linux-nfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Linux Kernel Mailing List <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Trond Myklebust <trond.myklebust-41N18TsMXrtuMpJDpNschA@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
+To: "xiaoming.zhang" <zxm927-9Onoh4P/yGk@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, benjamin Thery <benjamin.thery-6ktuUTfB/bM@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Cedric-
+xiaoming.zhang wrote:
+> On Thursday 11 September 2008 11:37:33 pm Daniel Lezcano wrote:
+>> xiaoming.zhang wrote:
+>>> On Thursday 11 September 2008 10:05:43 pm Mark Ryden wrote:
+>>>> In fact, after looking more closely, I see that before that message
+>>>> appears: Error: unmouting old /sys
+>>>> ERROR unmounting old /sys: Invalid argument.
+>>>> forcing unmount of /sys
+>>>> switchroot...
+>>> My experience is you'd better to find a sysfs patch, since the sysfs
+>>> filesystem is required by ramdisk and some system utilities, e.g., system
+>>> network configuration scripts.
+>>>
+>>> Patch for mm-tree can be found here:
+>>> 	http://lxc.sourceforge.net/patches/2.6.26/
+>>>
+>>> This is what I used:
+>>> http://lxc.sourceforge.net/patches/2.6.26/2.6.26-rc8-mm1-lxc1/broken-out/
+>>> sysfs/
+>>>
+>>> I merged these 11 patches on Linux-2.6.26.1 though I don't understand
+>>> these patches, luckily enough it worked for me.
+>> As mentioned Benjamin, it is hard to boot a distro without sysfs. I
+>> think it is a good idea to use the lxc patchset.
+>>
+>> You can use the latest version:
+>>
+>> http://lxc.sourceforge.net/patches/2.6.27/2.6.27-rc6-lxc1/
+>>
+> Thank you very much. And is there any patchset for Linux-2.6.26.* (not the 
+> mm-tree)?
 
-On Sep 11, 2008, at Sep 11, 2008, 5:02 AM, Cedric Le Goater wrote:
->> The conservative play is to always force use of the initial namespace
->> and to deny creation of mounts that would use different  
->> namespaces.  In part
->> because the initial version of the namespace always exists.  Which  
->> means
->> as relates to Cedrics initial patch we would still need to know which
->> mounts should cause us to use a different uts namespace so we can  
->> deny
->> them.
->
-> I will send the initial patch which forces use of the initial  
-> namespace because
-> it does fix a real oops.
-
-Today's patch looks reasonable to me.  I would add a FIXME comment in  
-net/sunrpc/clnt.c near the site of the fix.
-
-> Then, I should be able to find some time to work on improving the  
-> uts namespace
-> checks when NFS mounts are done.
-
-As a final note, I don't think this is an issue only for NFS mounts.   
-The problem is with how AUTH_SYS RPC credentials are formed.
-
-cl_nodename is a copy of utsname kept in the rpc_clnt structure for  
-efficiency.  I think the auth_unix code has to be more sensitive to  
-which utsname is "in effect" for each RPC request.  We probably can't  
-use the same utsname for all RPC requests for the life of an RPC  
-client.  And since RPC credentials are cached, we should be more  
-careful about which cached credential is selected.
-
--- 
-Chuck Lever
-chuck[dot]lever[at]oracle[dot]com
+We worked most of the time sticked with the devel version of the kernel 
+tree. The kernel which is the nearest of the version you are describing 
+is 2.6.27-rc6-lxc1 which is not based on the -mm but on the 2.6.27 
+release candidate. IMO, this is the most stable version of the LXC.
