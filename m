@@ -1,12 +1,14 @@
 From: sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org
-Subject: [PATCH 0/10][v4]: Enable multiple devpts instances
-Date: Fri, 12 Sep 2008 10:48:45 -0700
-Message-ID: <20080912174845.GA17350@us.ibm.com>
+Subject: [PATCH 01/10] Remove devpts_root global
+Date: Fri, 12 Sep 2008 10:50:57 -0700
+Message-ID: <20080912175057.GB17350@us.ibm.com>
+References: <20080912174845.GA17350@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
+In-Reply-To: <20080912174845.GA17350-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -21,89 +23,113 @@ Cc: kyle-hoO6YkzgTuCM0SS3m2neIg@public.gmane.org, ebiederm-aS9lmoZGLiVWk0Htik3J/
 List-Id: containers.vger.kernel.org
 
 
-Enable multiple instances of devpts filesystem so each container can allocate
-ptys independently.
+From 57b3c2e5e40a63c8de630f88f6862851acb6e6c4 Mon Sep 17 00:00:00 2001
+From: Sukadev Bhattiprolu <sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Date: Tue, 9 Sep 2008 10:21:44 -0700
+Subject: [PATCH 01/10] Remove devpts_root global
 
-User interface:
+Remove the 'devpts_root' global variable and find the root dentry using
+the super_block. The super-block can be found from the device inode, using
+the new wrapper, pts_sb_from_inode().
 
-	Since supporting multiple mounts of devpts can break user-space, this
-	feature is enabled only if:
+Changelog: This patch is based on an earlier patchset from Serge Hallyn
+	   and Matt Helsley.
 
-		- CONFIG_DEVPTS_MULTIPLE_INSTANCES=y (new config token), and
-		- new mount option, -o newinstance is specified
+Signed-off-by: Sukadev Bhattiprolu <sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+---
+ fs/devpts/inode.c |   29 ++++++++++++++++++++---------
+ 1 files changed, 20 insertions(+), 9 deletions(-)
 
-	If CONFIG_DEVPTS_MULTIPLE_INSTANCES=n, there should be no change in
-	behavior.
-
-	See [PATCH 10/10] - Documentation/filesystems/devpts.txt for detailed
-	usage/compatibility information.
-
-		[PATCH 01/10] Remove devpts_root global
-		[PATCH 02/10] Per-mount allocated_ptys
-		[PATCH 03/10] Per-mount 'config' object
-		[PATCH 04/10] Extract option parsing to new function
-		[PATCH 05/10] Add DEVPTS_MULTIPLE_INSTANCES config token
-		[PATCH 06/10] Define mknod_ptmx()
-		[PATCH 07/10] Update ptmx permissions during remount
-		[PATCH 08/10] Define get_sb_ref()
-		[PATCH 09/10] Enable multiple instances of devpts
-		[PATCH 10/10] Document usage of multiple-instances of devpts
-	
-Implementation notes:
-
-	1. To enable multiple mounts of /dev/pts, (most) devpts interfaces
-	   need to know which instance of devpts is being accessed. This
-	   patchset uses the 'struct inode' or 'struct tty_struct' of the
-	   device being accessed to identify the appropriate devpts instance.
-	   Hence the need for the /dev/pts/ptmx bind-mount.
-
-	2. See comments in get_sb_ref() in fs/super.c (could not find
-	   existing interfaces that accomplish it).
-
-	3. Mount options must be parsed twice during mount (once to determine
-	   the mode of mount (single/multi-instance) and once to actually
-	   save the options. There does not seem to be an easy way to parse
-	   once and reuse (See 'safe_process_mount_opts()' in [PATCH 9/10])
-
-
-Changelog [v4]:
-
-	- Port to 2008-09-04 ttydev tree (and drop patches that were merged in)
-	- Add DEVPTS_MULTIPLE_INSTANCES config token (patch 5) and move new
-	  behavior under #ifdef CONFIG_DEVPTS_MULTIPLE_INSTANCES. 
-	- Create ptmx node even in initial mount 
-	- Change default permissions of pts/ptmx node to 0000 (patch 6)
-	- Cache ptmx dentry and use to update permissions of ptmx node on
-	  remount so legacy mode can use the node with a simpler change to
-	  /etc/fstab (patch 7)
-	- Move get_sb_ref() helper code to separate patch (patch 8)
-	- Add Documentation/filesystems/devpts.txt and describe usage info
-	  in that file.
-	  
-Changelog [v3]:
-
-	- Port to 2008-08-28 ttydev tree
-	- Rename new mount options to 'ptmxmode' and 'newinstance'.
-	- [Alan Cox] Use tty driver data to identify devpts (this is used to
-	  cleanup get_node() in devpts_pty_kill()).
-	- [H. Peter Anvin] get_node() cleanup in devpts (which was enabled by
-	  the inode/tty parameter to devpts interfaces)
-	- Bugfix in multi-mount mode (see Patch 11/11).
-	- Executed pty tests in LTP (in both single-instance and multi-instance
-	  mode)
-	- Should be bisect-safe :-)
-
-Changelog [v2]:
-
-	- New mount option '-o newmnt' added (patch 8/8)
-	- Support both single-mount and multi-mount semantics (patch 8/8)
-	- Automatically create ptmx node when devpts is mounted (patch 7/8)
-	- Extract option parsing code to new function (patch 6/8)
-	- Make 'config' params per-mount variables (patch 5/8)
-	- Slightly re-ordered existing patches in set (patches 1/8, 2/8)
-
-TODO:
-	- Do we need a '-o ptmxuid' and '-o ptmxgid' options as well ?
-	- Update mount(8) man page
-	- (Sometime in future) Remove even initial kernel mount of devpts 
-	- Any other good test suites to test this (besides LTP, sshd).
+diff --git a/fs/devpts/inode.c b/fs/devpts/inode.c
+index a70d5d0..ec33833 100644
+--- a/fs/devpts/inode.c
++++ b/fs/devpts/inode.c
+@@ -34,7 +34,6 @@ static DEFINE_IDA(allocated_ptys);
+ static DEFINE_MUTEX(allocated_ptys_lock);
+ 
+ static struct vfsmount *devpts_mnt;
+-static struct dentry *devpts_root;
+ 
+ static struct {
+ 	int setuid;
+@@ -56,6 +55,14 @@ static match_table_t tokens = {
+ 	{Opt_err, NULL}
+ };
+ 
++static inline struct super_block *pts_sb_from_inode(struct inode *inode)
++{
++	if (inode->i_sb->s_magic == DEVPTS_SUPER_MAGIC)
++		return inode->i_sb;
++
++	return devpts_mnt->mnt_sb;
++}
++
+ static int devpts_remount(struct super_block *sb, int *flags, char *data)
+ {
+ 	char *p;
+@@ -142,7 +149,7 @@ devpts_fill_super(struct super_block *s, void *data, int silent)
+ 	inode->i_fop = &simple_dir_operations;
+ 	inode->i_nlink = 2;
+ 
+-	devpts_root = s->s_root = d_alloc_root(inode);
++	s->s_root = d_alloc_root(inode);
+ 	if (s->s_root)
+ 		return 0;
+ 	
+@@ -211,7 +218,9 @@ int devpts_pty_new(struct inode *ptmx_inode, struct tty_struct *tty)
+ 	struct tty_driver *driver = tty->driver;
+ 	dev_t device = MKDEV(driver->major, driver->minor_start+number);
+ 	struct dentry *dentry;
+-	struct inode *inode = new_inode(devpts_mnt->mnt_sb);
++	struct super_block *sb = pts_sb_from_inode(ptmx_inode);
++	struct inode *inode = new_inode(sb);
++	struct dentry *root = sb->s_root;
+ 	char s[12];
+ 
+ 	/* We're supposed to be given the slave end of a pty */
+@@ -231,15 +240,15 @@ int devpts_pty_new(struct inode *ptmx_inode, struct tty_struct *tty)
+ 
+ 	sprintf(s, "%d", number);
+ 
+-	mutex_lock(&devpts_root->d_inode->i_mutex);
++	mutex_lock(&root->d_inode->i_mutex);
+ 
+-	dentry = d_alloc_name(devpts_root, s);
++	dentry = d_alloc_name(root, s);
+ 	if (!IS_ERR(dentry)) {
+ 		d_add(dentry, inode);
+-		fsnotify_create(devpts_root->d_inode, dentry);
++		fsnotify_create(root->d_inode, dentry);
+ 	}
+ 
+-	mutex_unlock(&devpts_root->d_inode->i_mutex);
++	mutex_unlock(&root->d_inode->i_mutex);
+ 
+ 	return 0;
+ }
+@@ -256,11 +265,13 @@ struct tty_struct *devpts_get_tty(struct inode *pts_inode, int number)
+ void devpts_pty_kill(struct tty_struct *tty)
+ {
+ 	struct inode *inode = tty->driver_data;
++	struct super_block *sb = pts_sb_from_inode(inode);
++	struct dentry *root = sb->s_root;
+ 	struct dentry *dentry;
+ 
+ 	BUG_ON(inode->i_rdev == MKDEV(TTYAUX_MAJOR, PTMX_MINOR));
+ 
+-	mutex_lock(&devpts_root->d_inode->i_mutex);
++	mutex_lock(&root->d_inode->i_mutex);
+ 
+ 	dentry = d_find_alias(inode);
+ 	if (dentry && !IS_ERR(dentry)) {
+@@ -269,7 +280,7 @@ void devpts_pty_kill(struct tty_struct *tty)
+ 		dput(dentry);
+ 	}
+ 
+-	mutex_unlock(&devpts_root->d_inode->i_mutex);
++	mutex_unlock(&root->d_inode->i_mutex);
+ }
+ 
+ static int __init init_devpts_fs(void)
+-- 
+1.5.2.5
