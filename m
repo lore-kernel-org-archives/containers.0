@@ -1,7 +1,7 @@
 From: sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org
-Subject: [PATCH 07/10] Update ptmx permissions during remount
-Date: Fri, 12 Sep 2008 10:52:52 -0700
-Message-ID: <20080912175252.GH17350@us.ibm.com>
+Subject: [PATCH 08/10] Define get_sb_ref()
+Date: Fri, 12 Sep 2008 10:53:08 -0700
+Message-ID: <20080912175308.GI17350@us.ibm.com>
 References: <20080912174845.GA17350@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -23,75 +23,81 @@ Cc: kyle-hoO6YkzgTuCM0SS3m2neIg@public.gmane.org, ebiederm-aS9lmoZGLiVWk0Htik3J/
 List-Id: containers.vger.kernel.org
 
 
-From 8c20ae3e9d5e051791a99b9060326069432d7fff Mon Sep 17 00:00:00 2001
+From 8886ef518c1855890be7fbc6bea853ce7feb263e Mon Sep 17 00:00:00 2001
 From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Date: Tue, 9 Sep 2008 18:37:55 -0700
-Subject: [PATCH 07/10] Update ptmx permissions during remount
+Date: Tue, 9 Sep 2008 18:42:44 -0700
+Subject: [PATCH 08/10] Define get_sb_ref()
 
-By default, /dev/pts/ptmx node starts out with 0000 permissions.  While
-user's can chmod /dev/pts/ptmx, it maybe easier for legacy systems to
-update /etc/fstab and change the permissions using ptmxmode option.
-
-This patch caches the dentry for ptmx node and uses it to update permissions
-of ptmx node during remount (code will be enabled in a follow-on patch).
+See comments in fs/super.c (in patch below) for need for this interface.
+This interface will be used in follow-on patch to enable multiple
+instances of devpts.
 
 Signed-off-by: Sukadev Bhattiprolu <sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 ---
- fs/devpts/inode.c |   28 +++++++++++++++++++++++++++-
- 1 files changed, 27 insertions(+), 1 deletions(-)
+ fs/super.c         |   37 +++++++++++++++++++++++++++++++++++++
+ include/linux/fs.h |    2 ++
+ 2 files changed, 39 insertions(+), 0 deletions(-)
 
-diff --git a/fs/devpts/inode.c b/fs/devpts/inode.c
-index 17e14f5..6b56255 100644
---- a/fs/devpts/inode.c
-+++ b/fs/devpts/inode.c
-@@ -68,6 +68,7 @@ static match_table_t tokens = {
- struct pts_fs_info {
- 	struct ida allocated_ptys;
- 	struct pts_mount_opts mount_opts;
-+	struct dentry *ptmx_dentry;
- };
- 
- static inline struct pts_fs_info *DEVPTS_SB(struct super_block *sb)
-@@ -184,14 +185,39 @@ static int mknod_ptmx(struct super_block *sb)
- 
- 	return 0;
- }
-+
-+static void update_ptmx_mode(struct pts_fs_info *fsi)
-+{
-+	struct inode *inode;
-+	if (fsi->ptmx_dentry) {
-+		inode = fsi->ptmx_dentry->d_inode;
-+		inode->i_mode = S_IFCHR|fsi->mount_opts.ptmxmode;
-+	}
-+}
-+#else
-+static inline void update_ptmx_mode(struct pts_fs_info *fsi)
-+{
-+	return;
-+}
- #endif
- 
- static int devpts_remount(struct super_block *sb, int *flags, char *data)
- {
-+	int err;
- 	struct pts_fs_info *fsi = DEVPTS_SB(sb);
- 	struct pts_mount_opts *opts = &fsi->mount_opts;
- 
--	return parse_mount_options(data, opts);
-+	err = parse_mount_options(data, opts);
-+
-+	/*
-+	 * parse_mount_options() restores options to default values
-+	 * before parsing and may have changed ptmxmode. So, update the
-+	 * mode in the inode too. Bogus options don't fail the remount,
-+	 * so do this even on error return.
-+	 */
-+	update_ptmx_mode(fsi);
-+
-+	return err;
+diff --git a/fs/super.c b/fs/super.c
+index e931ae9..ba7059c 100644
+--- a/fs/super.c
++++ b/fs/super.c
+@@ -882,6 +882,43 @@ int get_sb_single(struct file_system_type *fs_type,
  }
  
- static int devpts_show_options(struct seq_file *seq, struct vfsmount *vfs)
+ EXPORT_SYMBOL(get_sb_single);
++/*
++ * int get_sb_ref(struct super_block *sb, int flags, void *data,
++                struct vfsmount *mnt)
++ *
++ * 	This interface is needed to support multiple mounts in devpts while
++ * 	preserving backward compatibility of the current 'single-mount'
++ * 	semantics i.e all mounts of devpts without the 'newinstance' mount
++ * 	option should bind to the initial kernel mount, like get_sb_single().
++ * 	Mounts with 'newinstance' option create a new private namespace.
++ *
++ * 	But for single-mount semantics, devpts cannot use get_sb_single(),
++ * 	because get_sb_single()/sget() find and use the super-block from
++ * 	the most recent mount of devpts. But that recent mount may be a
++ * 	'newinstance' mount and get_sb_single() would pick the newinstance
++ * 	super-block instead of the initial super-block.
++ *
++ * 	This is a simplified version of get_sb_single() and assumes that
++ * 	caller has a properly initialized @sb.
++ */
++int get_sb_ref(struct super_block *sb, int flags, void *data,
++                struct vfsmount *mnt)
++{
++        int err;
++
++        spin_lock(&sb_lock);
++
++        if (!grab_super(sb))
++                return -EAGAIN;
++
++        err = do_remount_sb(sb, flags, data, 0);
++        if (err) {
++                /* Don't deactivate_super() - its from initial pts mount */
++                up_write(&sb->s_umount);
++                return err;
++        }
++        return simple_set_mnt(mnt, sb);
++}
+ 
+ struct vfsmount *
+ vfs_kern_mount(struct file_system_type *type, int flags, const char *name, void *data)
+diff --git a/include/linux/fs.h b/include/linux/fs.h
+index 580b513..3bda46d 100644
+--- a/include/linux/fs.h
++++ b/include/linux/fs.h
+@@ -1512,6 +1512,8 @@ extern int get_sb_single(struct file_system_type *fs_type,
+ 	int flags, void *data,
+ 	int (*fill_super)(struct super_block *, void *, int),
+ 	struct vfsmount *mnt);
++extern int get_sb_ref(struct super_block *sb, int flags, void *data,
++	struct vfsmount *mnt);
+ extern int get_sb_nodev(struct file_system_type *fs_type,
+ 	int flags, void *data,
+ 	int (*fill_super)(struct super_block *, void *, int),
 -- 
 1.5.2.5
