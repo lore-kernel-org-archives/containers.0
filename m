@@ -1,57 +1,27 @@
-From: sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org
-Subject: ptem01 LTP failure in ttydev-0909
-Date: Thu, 11 Sep 2008 13:11:59 -0700
-Message-ID: <20080911201159.GA17071@us.ibm.com>
+From: Jiri Slaby <jirislaby@gmail.com>
+Subject: Re: [PATCH 12/15] driver core: Implement tagged directory support
+ for device classes.
+Date: Fri, 12 Sep 2008 08:32:13 +0200
+Message-ID: <48CA0CED.3000302@gmail.com>
+References: <m1mykyh2fu.fsf_-_@frodo.ebiederm.org>	<m1hcb6h2d2.fsf_-_@frodo.ebiederm.org> <486DD650.3000804@gmail.com>	<m1tzf593ny.fsf@frodo.ebiederm.org>	<486E2C3B.6020603@gmail.com> <20080704161200.GA1440@suse.de>	<m1lk052ptp.fsf@frodo.ebiederm.org> <487D6A24.9070	<m1zlnu60uc.fsf@frodo.ebiederm.org> <48C912CF.7080000@gmail.com> <48C9178A.4040307@bull.net>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
+Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Alan Cox <alan-qBU/x9rampVanCEyBjwyrvXRex20P6io@public.gmane.org>
-Cc: Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1753731AbYILGce@vger.kernel.org>
+In-Reply-To: <48C9178A.4040307@bull.net>
+Sender: linux-kernel-owner@vger.kernel.org
+To: Benjamin Thery <benjamin.thery@bull.net>
+Cc: "Eric W. Biederman" <ebiederm@xmission.com>, Tejun Heo <htejun@gmail.com>, Greg KH <gregkh@suse.de>, linux-kernel@vger.kernel.org, Al Viro <viro@ftp.linux.org.uk>, Linux Containers <containers@lists.osdl.org>, Daniel Lezcano <dlezcano@fr.ibm.com>, Andrew Morton <akpm@linux-foundation.org>
 List-Id: containers.vger.kernel.org
 
-Alan,
+Benjamin Thery napsal(a):
+> Jiri Slaby wrote:
+>> Any progress here? Nothing seems reached lkml...
+> 
+> Have a look at Greg's tree. :)
+> He started to merge the last patches today.
 
-LTP testcases/kernel/pty/ptem01 is failing on ttydev-0909. The test
-passed on ttydev-0828.
+Cool! I pulled it 10 mins before I sent the email and it wasn't there. 5
+mins after it, it was...
 
-The test changes the window size using the slave-fd and expects that
-it won't affect the window-size on master-fd. With this change, we
-return the slave's window size and test fails.
-
-I suspect that it is due to following change in ttydev.  
-
-Is the test bogus now ?
-
-Suka
-
-
-commit 4f0fa9c9e6557442b583a687066bebd607246220
-Author: Alan Cox <alan-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Date:   Mon Sep 8 13:49:19 2008 -0700
-
-    tty: Termios locking - sort out real_tty confusions and lock reads
-
-    This moves us towards sanity and should mean our termios locking is now
-    complete and comprehensive.
-
-diff --git a/drivers/char/tty_io.c b/drivers/char/tty_io.c
-index 69b1766..7eabfbb 100644
---- a/drivers/char/tty_io.c
-+++ b/drivers/char/tty_io.c
-@@ -2595,7 +2595,7 @@ long tty_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
-        case TIOCSTI:
-                return tiocsti(tty, p);
-        case TIOCGWINSZ:
--               return tiocgwinsz(tty, p);
-+               return tiocgwinsz(real_tty, p);
+Thanks.
