@@ -1,14 +1,20 @@
-From: sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org
-Subject: [PATCH 10/10] Document usage of multiple-instances of devpts
-Date: Fri, 12 Sep 2008 10:53:47 -0700
-Message-ID: <20080912175347.GK17350@us.ibm.com>
-References: <20080912174845.GA17350@us.ibm.com>
+From: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: Re: RFC: Attaching threads to cgroups is OK?
+Date: Fri, 12 Sep 2008 14:57:09 -0400
+Message-ID: <20080912185709.GA24801__22500.7199369886$1221246063$gmane$org@redhat.com>
+References: <48AAA296.8050802@oss.ntt.co.jp>
+	<20080819202237.edd75933.kamezawa.hiroyu@jp.fujitsu.com>
+	<20080820.204832.131207708.taka@valinux.co.jp>
+	<1219288081.28324.30.camel@sebastian.kern.oss.ntt.co.jp>
+	<48ACE1B4.8010000@linux.vnet.ibm.com>
+	<1219296306.28324.82.camel@sebastian.kern.oss.ntt.co.jp>
+	<20080822185527.GD27964@redhat.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <20080912174845.GA17350-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <20080822185527.GD27964-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,149 +24,197 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org, alan-qBU/x9rampVanCEyBjwyrvXRex20P6io@public.gmane.org
-Cc: kyle-hoO6YkzgTuCM0SS3m2neIg@public.gmane.org, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org, bastian-yyjItF7Rl6lg9hUCZPvPmw@public.gmane.org, containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org
+To: Fernando Luis =?iso-8859-1?Q?V=E1zquez?= Cao <fernando-gVGce1chcLdL9jVzuh4AOg@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, virtualization-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
 List-Id: containers.vger.kernel.org
 
+On Fri, Aug 22, 2008 at 02:55:27PM -0400, Vivek Goyal wrote:
+> On Thu, Aug 21, 2008 at 02:25:06PM +0900, Fernando Luis V=E1zquez Cao wro=
+te:
+> > Hi Balbir,
+> > =
 
-From 6d2fe9386880157f871667077db3180e9f0083a1 Mon Sep 17 00:00:00 2001
-From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Date: Tue, 9 Sep 2008 10:43:50 -0700
-Subject: [PATCH 10/10] Document usage of multiple-instances of devpts
+> > On Thu, 2008-08-21 at 09:02 +0530, Balbir Singh wrote:
+> > > Fernando Luis V=E1zquez Cao wrote:
+> > > > On Wed, 2008-08-20 at 20:48 +0900, Hirokazu Takahashi wrote:
+> > > >> Hi,
+> > > >>
+> > > >>>> Tsuruta-san, how about your bio-cgroup's tracking concerning thi=
+s?
+> > > >>>> If we want to use your tracking functions for each threads seper=
+ately, =
 
-Signed-off-by: Sukadev Bhattiprolu <sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
----
- Documentation/filesystems/devpts.txt |  122 ++++++++++++++++++++++++++++++++++
- 1 files changed, 122 insertions(+), 0 deletions(-)
- create mode 100644 Documentation/filesystems/devpts.txt
+> > > >>>> there seems to be a problem.
+> > > >>>> =3D=3D=3Dcf. mm_get_bio_cgroup()=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=
+=3D=3D=3D=3D=3D=3D=3D=3D=3D
+> > > >>>>            owner
+> > > >>>> mm_struct ----> task_struct ----> bio_cgroup
+> > > >>>> =3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=
+=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D
+> > > >>>> In my understanding, the mm_struct of a thread is same as its pa=
+rent's.
+> > > >>>> So, even if we attach the TIDs of some threads to different cgro=
+ups the =
 
-diff --git a/Documentation/filesystems/devpts.txt b/Documentation/filesystems/devpts.txt
-new file mode 100644
-index 0000000..93d9d01
---- /dev/null
-+++ b/Documentation/filesystems/devpts.txt
-@@ -0,0 +1,122 @@
-+
-+To support containers, we now allow multiple instances of devpts filesystem,
-+such that indices of ptys allocated in one instance are independent of indices
-+allocated in other instances of devpts.
-+
-+To preserve backward compatibility, this support for multiple instances is
-+enabled only if:
-+
-+	- CONFIG_DEVPTS_MULTIPLE_INSTANCES=y, and
-+	- '-o newinstance' mount option is specified while mounting devpts
-+
-+IOW, devpts now supports both single-instance and multi-instance semantics.
-+
-+If CONFIG_DEVPTS_MULTIPLE_INSTANCES=n, there is no change in behavior and
-+this referred to as the "legacy" mode. In this mode, the new mount options
-+(-o newinstance and -o ptmxmode) will be ignored with a 'bogus option' message
-+on console.
-+
-+If CONFIG_DEVPTS_MULTIPLE_INSTANCES=y and devpts is mounted without the
-+'newinstance' option (as in current start-up scripts) the new mount binds
-+to the initial kernel mount of devpts. This mode is referred to as the
-+'single-instance' mode and the current, single-instance semantics are
-+preserved, i.e PTYs are common across the system.
-+
-+The only difference between this single-instance mode and the legacy mode
-+is the presence of new, '/dev/pts/ptmx' node with permissions 0000, which
-+can safely be ignored.
-+
-+If CONFIG_DEVPTS_MULTIPLE_INSTANCES=y and 'newinstance' option is specified,
-+the mount is considered to be in the multi-instance mode and a new instance
-+of the devpts fs is created. Any ptys created in this instance are independent
-+of ptys in other instances of devpts. Like in the single-instance mode, the
-+/dev/pts/ptmx node is present. To effectively use the multi-instance mode,
-+open of /dev/ptmx must be a redirected to '/dev/pts/ptmx' using a symlink or
-+bind-mount.
-+
-+Eg: A container startup script could do the following:
-+
-+	$ chmod 0666 /dev/pts/ptmx
-+	$ rm /dev/ptmx
-+	$ ln -s pts/ptmx /dev/ptmx
-+	$ ns_exec -cm /bin/bash
-+
-+	# We are now in new container
-+
-+	$ umount /dev/pts
-+	$ mount -t devpts -o newinstance lxcpts /dev/pts
-+	$ sshd -p 1234
-+
-+where 'ns_exec -cm /bin/bash' calls clone() with CLONE_NEWNS flag and execs
-+/bin/bash in the child process.  A pty created by the sshd is not visible in
-+the original mount of /dev/pts.
-+
-+User-space changes
-+------------------
-+
-+In multi-instance mode (i.e '-o newinstance' mount option is specified at least
-+once), following user-space issues should be noted.
-+
-+1. If -o newinstance mount option is never used, /dev/pts/ptmx can be ignored
-+   and no change is needed to system-startup scripts.
-+
-+2. To effectively use multi-instance mode (i.e -o newinstance is specified)
-+   administrators or startup scripts should "redirect" open of /dev/ptmx to
-+   /dev/pts/ptmx using either a bind mount or symlink.
-+
-+	$ mount -t devpts -o newinstance devpts /dev/pts
-+
-+   followed by either
-+
-+	$ rm /dev/ptmx
-+	$ ln -s pts/ptmx /dev/ptmx
-+	$ chmod 666 /dev/pts/ptmx
-+   or
-+	$ mount -o bind /dev/pts/ptmx /dev/ptmx
-+
-+3. The '/dev/ptmx -> pts/ptmx' symlink is the preferred method since it
-+   enables better error-reporting and treats both single-instance and
-+   multi-instance mounts similarly.
-+
-+   But this method requires that system-startup scripts set the mode of
-+   /dev/pts/ptmx correctly (default mode is 0000). The scripts can set the
-+   mode by, either
-+
-+   	- adding ptmxmode mount option to devpts entry in /etc/fstab, or
-+	- using 'chmod 0666 /dev/pts/ptmx'
-+
-+4. If multi-instance mode mount is needed for containers, but the system
-+   startup scripts have not yet been updated, container-startup scripts
-+   should bind mount /dev/ptmx to /dev/pts/ptmx to avoid breaking single-
-+   instance mounts.
-+
-+   Or, in general, container-startup scripts should use:
-+
-+	mount -t devpts -o newinstance -o ptmxmode 0666 devpts /dev/pts
-+	if [ ! -L /dev/ptmx ]; then
-+		mount -o bind /dev/pts/ptmx /dev/ptmx
-+	fi
-+
-+   When all devpts mounts are multi-instance, /dev/ptmx can permanently be
-+   a symlink to pts/ptmx and the bind mount can be ignored.
-+
-+5. A multi-instance mount that is not accompanied by the /dev/ptmx to
-+   /dev/pts/ptmx redirection would result in an unusable/unreachable pty.
-+
-+	mount -t devpts -o newinstance lxcpts /dev/pts
-+
-+   immediately followed by:
-+
-+	open("/dev/ptmx")
-+
-+    would create a pty, say /dev/pts/7, in the initial kernel mount.
-+    But /dev/pts/7 would be invisible in the new mount.
-+
-+6. The permissions for /dev/pts/ptmx node should be specified when mounting
-+   /dev/pts, using the '-o ptmxmode=%o' mount option (default is 0000).
-+
-+	mount -t devpts -o newinstance -o ptmxmode=0644 devpts /dev/pts
-+
-+   The permissions can be later be changed as usual with 'chmod'.
-+
-+	chmod 666 /dev/pts/ptmx
--- 
-1.5.2.5
+> > > >>>> tracking always returns the same bio_cgroup -- its parent's grou=
+p.
+> > > >>>> Do you have some policy about in which case we can use your trac=
+king?
+> > > >>>>
+> > > >>> It's will be resitriction when io-controller reuse information of=
+ the owner
+> > > >>> of memory. But if it's very clear who issues I/O (by tracking rea=
+d/write
+> > > >>> syscall), we may have chance to record the issuer of I/O to page_=
+cgroup
+> > > >>> struct. =
+
+> > > >> This might be slightly different topic though,
+> > > >> I've been thinking where we should add hooks to track I/O reqeust.
+> > > >> I think the following set of hooks is enough whether we are going =
+to
+> > > >> support thread based cgroup or not.
+> > > >>
+> > > >>   Hook-1: called when allocating a page, where the memory controll=
+er
+> > > >> 	  already have a hoook.
+> > > >>   Hook-2: called when making a page in page-cache dirty.
+> > > >>
+> > > >> For anonymous pages, Hook-1 is enough to track any type of I/O req=
+uest.
+> > > >> For pages in page-cache, Hook-1 is also enough for read I/O because
+> > > >> the I/O is issued just once right after allocting the page.
+> > > >> For write I/O requests to pages in page-cache, Hook-1 will be okay
+> > > >> in most cases but sometimes process in another cgroup may write
+> > > >> the pages. In this case, Hook-2 is needed to keep accurate to track
+> > > >> I/O requests.
+> > > > =
+
+> > > > This relative simplicity is what prompted me to say that we probably
+> > > > should try to disentangle the io tracking functionality from the me=
+mory
+> > > > controller a bit more (of course we still should reuse as much as w=
+e can
+> > > > from it). The rationale for this is that the existing I/O scheduler
+> > > > would benefit from proper io tracking capabilities too, so it'd be =
+nice
+> > > > if we could have them even in non-cgroup-capable kernels.
+> > > > =
+
+> > > =
+
+> > > Hook 2 referred to in the mail above exist today in the form of task =
+IO accounting.
+> > Yup.
+> > =
+
+> > > > As an aside, when the IO context of a certain IO operation is known
+> > > > (synchronous IO comes to mind) I think it should be cashed in the
+> > > > resulting bio so that we can do without the expensive accesses to
+> > > > bio_cgroup once it enters the block layer.
+> > > =
+
+> > > Will this give you everything you need for accounting and control (fr=
+om the
+> > > block layer?)
+> > =
+
+> > Well, it depends on what you are trying to achieve.
+> > =
+
+> > Current IO schedulers such as CFQ only care about the io_context when
+> > scheduling requests. When a new request comes in CFQ assumes that it was
+> > originated in the context of the current task, which obviously does not
+> > hold true for buffered IO and aio. This problem could be solved by using
+> > bio-cgroup for IO tracking, but accessing the io context information is
+> > somewhat expensive: =
+
+> > =
+
+> > page->page_cgroup->bio_cgroup->io_context.
+> > =
+
+> > If at the time of building a bio we know its io context (i.e. the
+> > context of the task or cgroup that generated that bio) I think we should
+> > store it in the bio itself, too. With this scheme, whenever the kernel
+> > needs to know the io_context of a particular block IO operation the
+> > kernel would first try to retrieve its io_context directly from the bio,
+> > and, if not available there, would resort to the slow path (accessing it
+> > through bio_cgroup). My gut feeling is that elevator-based IO resource
+> > controllers would benefit from such an approach, too.
+> > =
+
+> =
+
+> Hi Fernando,
+> =
+
+> Had a question.
+> =
+
+> IIUC, at the time of submtting the bio, io_context will be known only for =
+
+> synchronous request. For asynchronous request it will not be known
+> (ex. writing the dirty pages back to disk) and one shall have to take
+> the longer path (bio-cgroup thing) to ascertain the io_context associated
+> with a request.
+> =
+
+> If that's the case, than it looks like we shall have to always traverse t=
+he
+> longer path in case of asynchronous IO. By putting the io_context pointer
+> in bio, we will just shift the time of pointer traversal. (From CFQ to hi=
+gher
+> layers).
+> =
+
+> So probably it is not worth while to put io_context pointer in bio? Am I
+> missing something?
+> =
+
+
+Hi Fernando,
+
+I thought you did not get a chance to reply to this mail until today I found
+your reply on virtualization list archive. (I am not on the virtualization
+list). I am assuming that by mistake you just replied to virutalization list
+or mail got lost somewhere.
+
+https://lists.linux-foundation.org/pipermail/virtualization/2008-August/011=
+588.html
+
+Anyway, now I understand little better the issue at hand. Because cfq
+retrieves the io_context information from the "current" and that can be
+problematic in case of any software entitiy above elevator which buffers
+the bio's and does some processing and then releases it to elevator. Two
+cases come to my mind.
+
+- Any stacked device driver
+- I am also running into issues while I am putting all the requests on =
+
+  an rb-tree (per request queue) before releasing them to elevator. I
+  try to control the requests on this rb-tree based on cgroup weights and
+  then release it to elevator. But I realized that cfq will get the wrong
+  io_context information because of request buffering.
+
+It then probably makes sense to put io_context information in bio and
+let cfq retrieve it from bio instead of current. This way we will be able
+to decouple the assumption that bio belongs to the thread submitting it
+to cfq and will allow us to trap request and do processing and then sumit
+to cfq without loosing io_context information.
+
+Any kind of cgroup mechanism will also need to map a bio to the respective
+cgroup. Because io_context is contained in task_struct, one can retrieve
+bio->io_context and then task_struct from it and then find the cgroup
+information and account the bio appropriately. But this assumes that
+task_struct is still around but that might not be the case..... Any ideas?
+
+Or may be we can go bio->page->pc_page->bio_cgroup->cgroup_id route but
+that would not work very well in the case when stacked devices try to
+replicate the bio. As you said memory of new bio will belong to some
+kernel thread and accounting will not be proper.
+
+That leaves me thinking...
+
+Thanks
+Vivek =
