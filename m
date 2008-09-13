@@ -1,7 +1,7 @@
 From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: [RFC v5][PATCH 7/8] Infrastructure for shared objects
-Date: Sat, 13 Sep 2008 19:06:05 -0400
-Message-ID: <1221347167-9956-8-git-send-email-orenl@cs.columbia.edu>
+Subject: [RFC v5][PATCH 3/8] x86 support for checkpoint/restart
+Date: Sat, 13 Sep 2008 19:06:01 -0400
+Message-ID: <1221347167-9956-4-git-send-email-orenl@cs.columbia.edu>
 References: <1221347167-9956-1-git-send-email-orenl@cs.columbia.edu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -21,99 +21,48 @@ To: dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
 Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, jeremy-TSDbQ3PG+2Y@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, arnd-r2nGTMty4D4@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Infrastructure to handle objects that may be shared and referenced by
-multiple tasks or other objects, e..g open files, memory address space
-etc.
+(Following Dave Hansen's refactoring of the original post)
 
-The state of shared objects is saved once. On the first encounter, the
-state is dumped and the object is assigned a unique identifier (objref)
-and also stored in a hash table (indexed by its physical kenrel address).
-From then on the object will be found in the hash and only its identifier
-is saved.
+Add logic to save and restore architecture specific state, including
+thread-specific state, CPU registers and FPU state.
 
-On restart the identifier is looked up in the hash table; if not found
-then the state is read, the object is created, and added to the hash
-table (this time indexed by its identifier). Otherwise, the object in
-the hash table is used.
+Currently only x86-32 is supported. Compiling on x86-64 will trigger
+an explicit error.
 
 Signed-off-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 ---
- Documentation/checkpoint.txt |   38 +++++++
- checkpoint/Makefile          |    2 +-
- checkpoint/objhash.c         |  237 ++++++++++++++++++++++++++++++++++++++++++
- checkpoint/sys.c             |    4 +
- include/linux/checkpoint.h   |   20 ++++
- 5 files changed, 300 insertions(+), 1 deletions(-)
- create mode 100644 checkpoint/objhash.c
+ arch/x86/mm/Makefile             |    2 +
+ arch/x86/mm/checkpoint.c         |  198 ++++++++++++++++++++++++++++++++++++++
+ arch/x86/mm/restart.c            |  177 ++++++++++++++++++++++++++++++++++
+ checkpoint/checkpoint.c          |   13 +++-
+ checkpoint/checkpoint_arch.h     |    7 ++
+ checkpoint/restart.c             |   13 +++-
+ include/asm-x86/checkpoint_hdr.h |   72 ++++++++++++++
+ include/linux/checkpoint_hdr.h   |    1 +
+ 8 files changed, 481 insertions(+), 2 deletions(-)
+ create mode 100644 arch/x86/mm/checkpoint.c
+ create mode 100644 arch/x86/mm/restart.c
+ create mode 100644 checkpoint/checkpoint_arch.h
+ create mode 100644 include/asm-x86/checkpoint_hdr.h
 
-diff --git a/Documentation/checkpoint.txt b/Documentation/checkpoint.txt
-index 6bf75ce..2929512 100644
---- a/Documentation/checkpoint.txt
-+++ b/Documentation/checkpoint.txt
-@@ -169,6 +169,44 @@ cr_hdr + cr_hdr_task
- cr_hdr + cr_hdr_tail
+diff --git a/arch/x86/mm/Makefile b/arch/x86/mm/Makefile
+index dfb932d..58fe072 100644
+--- a/arch/x86/mm/Makefile
++++ b/arch/x86/mm/Makefile
+@@ -22,3 +22,5 @@ endif
+ obj-$(CONFIG_ACPI_NUMA)		+= srat_$(BITS).o
  
- 
-+=== Shared resources (objects)
+ obj-$(CONFIG_MEMTEST)		+= memtest.o
 +
-+Many resources used by tasks may be shared by more than one task (e.g.
-+file descriptors, memory address space, etc), or even have multiple
-+references from other resources (e.g. a single inode that represents
-+two ends of a pipe).
-+
-+Clearly, the state of shared objects need only be saved once, even if
-+they occur multiple times. We use a hash table (ctx->objhash) to keep
-+track of shared objects in the following manner.
-+
-+On the first encounter, the state is dumped and the object is assigned
-+a unique identifier and also stored in the hash table (indexed by its
-+physical kenrel address). From then on the object will be found in the
-+hash and only its identifier is saved.
-+
-+On restart the identifier is looked up in the hash table; if not found
-+then the state is read, the object is created, and added to the hash
-+table (this time indexed by its identifier). Otherwise, the object in
-+the hash table is used.
-+
-+The interface for the hash table is the following:
-+
-+cr_obj_get_by_ptr - find the unique identifier - object reference (objref)
-+  of the object that is pointer to by ptr (or 0 if not found) [checkpoint]
-+
-+cr_obj_add_ptr - add the object pointed to by ptr to the hash table if
-+  it isn't already there, and fill its unique identifier (objref); will
-+  return 0 if already found in the has, or 1 otherwise [checkpoint]
-+
-+cr_obj_get_by_ref - return the pointer to the object whose unique identifier
-+  is equal to objref [restart]
-+
-+cr_obj_add_ref - add the object with unique identifier objref, pointed to by
-+  ptr to the hash table if it isn't already there; will return 0 if already
-+  found in the has, or 1 otherwise [restart]
-+
-+
- === Changelog
- 
- [2008-Sep-11] v5:
-diff --git a/checkpoint/Makefile b/checkpoint/Makefile
-index ac35033..9843fb9 100644
---- a/checkpoint/Makefile
-+++ b/checkpoint/Makefile
-@@ -2,5 +2,5 @@
- # Makefile for linux checkpoint/restart.
- #
- 
--obj-$(CONFIG_CHECKPOINT_RESTART) += sys.o checkpoint.o restart.o \
-+obj-$(CONFIG_CHECKPOINT_RESTART) += sys.o checkpoint.o restart.o objhash.o \
- 		ckpt_mem.o rstr_mem.o
-diff --git a/checkpoint/objhash.c b/checkpoint/objhash.c
++obj-$(CONFIG_CHECKPOINT_RESTART) += checkpoint.o restart.o
+diff --git a/arch/x86/mm/checkpoint.c b/arch/x86/mm/checkpoint.c
 new file mode 100644
-index 0000000..0862086
+index 0000000..eb60003
 --- /dev/null
-+++ b/checkpoint/objhash.c
-@@ -0,0 +1,237 @@
++++ b/arch/x86/mm/checkpoint.c
+@@ -0,0 +1,198 @@
 +/*
-+ *  Checkpoint-restart - object hash infrastructure to manage shared objects
++ *  Checkpoint/restart - architecture specific support for x86
 + *
 + *  Copyright (C) 2008 Oren Laadan
 + *
@@ -122,292 +71,543 @@ index 0000000..0862086
 + *  distribution for more details.
 + */
 +
-+#include <linux/kernel.h>
-+#include <linux/file.h>
-+#include <linux/hash.h>
++#include <asm/desc.h>
++#include <asm/i387.h>
++
 +#include <linux/checkpoint.h>
++#include <linux/checkpoint_hdr.h>
 +
-+struct cr_objref {
-+	int objref;
-+	void *ptr;
-+	unsigned short type;
-+	unsigned short flags;
-+	struct hlist_node hash;
-+};
-+
-+struct cr_objhash {
-+	struct hlist_head *head;
-+	int objref_index;
-+};
-+
-+#define CR_OBJHASH_NBITS  10
-+#define CR_OBJHASH_TOTAL  (1UL << CR_OBJHASH_NBITS)
-+
-+static void cr_obj_ref_drop(struct cr_objref *obj)
++/* dump the thread_struct of a given task */
++int cr_write_thread(struct cr_ctx *ctx, struct task_struct *t)
 +{
-+	switch (obj->type) {
-+	case CR_OBJ_FILE:
-+		fput((struct file *) obj->ptr);
-+		break;
-+	default:
-+		BUG();
-+	}
-+}
++	struct cr_hdr h;
++	struct cr_hdr_thread *hh = cr_hbuf_get(ctx, sizeof(*hh));
++	struct thread_struct *thread;
++	struct desc_struct *desc;
++	int ntls = 0;
++	int n, ret;
 +
-+static void cr_obj_ref_grab(struct cr_objref *obj)
-+{
-+	switch (obj->type) {
-+	case CR_OBJ_FILE:
-+		get_file((struct file *) obj->ptr);
-+		break;
-+	default:
-+		BUG();
-+	}
-+}
++	h.type = CR_HDR_THREAD;
++	h.len = sizeof(*hh);
++	h.parent = task_pid_vnr(t);
 +
-+static void cr_objhash_clear(struct cr_objhash *objhash)
-+{
-+	struct hlist_head *h = objhash->head;
-+	struct hlist_node *n, *t;
-+	struct cr_objref *obj;
-+	int i;
++	thread = &t->thread;
 +
-+	for (i = 0; i < CR_OBJHASH_TOTAL; i++) {
-+		hlist_for_each_entry_safe(obj, n, t, &h[i], hash) {
-+			cr_obj_ref_drop(obj);
-+			kfree(obj);
-+		}
-+	}
-+}
-+
-+void cr_objhash_free(struct cr_ctx *ctx)
-+{
-+	struct cr_objhash *objhash = ctx->objhash;
-+
-+	if (objhash) {
-+		cr_objhash_clear(objhash);
-+		kfree(objhash->head);
-+		kfree(ctx->objhash);
-+		ctx->objhash = NULL;
-+	}
-+}
-+
-+int cr_objhash_alloc(struct cr_ctx *ctx)
-+{
-+	struct cr_objhash *objhash;
-+	struct hlist_head *head;
-+
-+	objhash = kzalloc(sizeof(*objhash), GFP_KERNEL);
-+	if (!objhash)
-+		return -ENOMEM;
-+	head = kzalloc(CR_OBJHASH_TOTAL * sizeof(*head), GFP_KERNEL);
-+	if (!head) {
-+		kfree(objhash);
-+		return -ENOMEM;
++	/* calculate no. of TLS entries that follow */
++	desc = thread->tls_array;
++	for (n = GDT_ENTRY_TLS_ENTRIES; n > 0; n--, desc++) {
++		if (desc->a || desc->b)
++			ntls++;
 +	}
 +
-+	objhash->head = head;
-+	objhash->objref_index = 1;
++	hh->gdt_entry_tls_entries = GDT_ENTRY_TLS_ENTRIES;
++	hh->sizeof_tls_array = sizeof(thread->tls_array);
++	hh->ntls = ntls;
 +
-+	ctx->objhash = objhash;
-+	return 0;
-+}
++	ret = cr_write_obj(ctx, &h, hh);
++	cr_hbuf_put(ctx, sizeof(*hh));
++	if (ret < 0)
++		return ret;
 +
-+static struct cr_objref *cr_obj_find_by_ptr(struct cr_ctx *ctx, void *ptr)
-+{
-+	struct hlist_head *h;
-+	struct hlist_node *n;
-+	struct cr_objref *obj;
++	/* for simplicity dump the entire array, cherry-pick upon restart */
++	ret = cr_kwrite(ctx, thread->tls_array, sizeof(thread->tls_array));
 +
-+	h = &ctx->objhash->head[hash_ptr(ptr, CR_OBJHASH_NBITS)];
-+	hlist_for_each_entry(obj, n, h, hash)
-+		if (obj->ptr == ptr)
-+			return obj;
-+	return NULL;
-+}
++	cr_debug("ntls %d\n", ntls);
 +
-+static struct cr_objref *cr_obj_find_by_objref(struct cr_ctx *ctx, int objref)
-+{
-+	struct hlist_head *h;
-+	struct hlist_node *n;
-+	struct cr_objref *obj;
++	/* IGNORE RESTART BLOCKS FOR NOW ... */
 +
-+	h = &ctx->objhash->head[hash_ptr((void *) objref, CR_OBJHASH_NBITS)];
-+	hlist_for_each_entry(obj, n, h, hash)
-+		if (obj->objref == objref)
-+			return obj;
-+	return NULL;
-+}
-+
-+static struct cr_objref *cr_obj_new(struct cr_ctx *ctx, void *ptr, int objref,
-+				    unsigned short type, unsigned short flags)
-+{
-+	struct cr_objref *obj;
-+
-+	obj = kmalloc(sizeof(*obj), GFP_KERNEL);
-+	if (obj) {
-+		int i;
-+
-+		obj->ptr = ptr;
-+		obj->type = type;
-+		obj->flags = flags;
-+
-+		if (objref) {
-+			/* use 'objref' to index (restart) */
-+			obj->objref = objref;
-+			i = hash_ptr((void *) objref, CR_OBJHASH_NBITS);
-+		} else {
-+			/* use 'ptr' to index, assign objref (checkpoint) */
-+			obj->objref = ctx->objhash->objref_index++;;
-+			i = hash_ptr(ptr, CR_OBJHASH_NBITS);
-+		}
-+
-+		hlist_add_head(&obj->hash, &ctx->objhash->head[i]);
-+		cr_obj_ref_grab(obj);
-+	}
-+	return obj;
-+}
-+
-+/**
-+ * cr_obj_add_ptr - add an object to the hash table if not already there
-+ * @ctx: checkpoint context
-+ * @ptr: pointer to object
-+ * @objref: unique identifier - object reference [output]
-+ * @type: object type
-+ * @flags: object flags
-+ *
-+ * Fills the unique identifier of the object into @objref
-+ *
-+ * returns 0 if found, 1 if added, < 0 on error
-+ */
-+int cr_obj_add_ptr(struct cr_ctx *ctx, void *ptr, int *objref,
-+		   unsigned short type, unsigned short flags)
-+{
-+	struct cr_objref *obj;
-+	int ret = 0;
-+
-+	obj = cr_obj_find_by_ptr(ctx, ptr);
-+	if (!obj) {
-+		obj = cr_obj_new(ctx, ptr, 0, type, flags);
-+		if (!obj)
-+			return -ENOMEM;
-+		else
-+			ret = 1;
-+	} else if (obj->type != type)	/* sanity check */
-+		return -EINVAL;
-+	*objref = obj->objref;
 +	return ret;
 +}
 +
-+/**
-+ * cr_obj_add_ref - add an object with unique identifer to the hash table
-+ * @ctx: checkpoint context
-+ * @ptr: pointer to object
-+ * @objref: unique identifier - object reference
-+ * @type: object type
-+ * @flags: object flags
-+ */
-+int cr_obj_add_ref(struct cr_ctx *ctx, void *ptr, int objref,
-+		   unsigned short type, unsigned short flags)
-+{
-+	struct cr_objref *obj;
++#ifdef CONFIG_X86_64
 +
-+	obj = cr_obj_new(ctx, ptr, objref, type, flags);
-+	return obj ? 0 : -ENOMEM;
++#error "CONFIG_X86_64 unsupported yet."
++
++#else	/* !CONFIG_X86_64 */
++
++void cr_write_cpu_regs(struct cr_hdr_cpu *hh, struct task_struct *t)
++{
++	struct thread_struct *thread = &t->thread;
++	struct pt_regs *regs = task_pt_regs(t);
++
++	hh->bp = regs->bp;
++	hh->bx = regs->bx;
++	hh->ax = regs->ax;
++	hh->cx = regs->cx;
++	hh->dx = regs->dx;
++	hh->si = regs->si;
++	hh->di = regs->di;
++	hh->orig_ax = regs->orig_ax;
++	hh->ip = regs->ip;
++	hh->cs = regs->cs;
++	hh->flags = regs->flags;
++	hh->sp = regs->sp;
++	hh->ss = regs->ss;
++
++	hh->ds = regs->ds;
++	hh->es = regs->es;
++
++	/*
++	 * for checkpoint in process context (from within a container)
++	 * the GS and FS registers should be saved from the hardware;
++	 * otherwise they are already sabed on the thread structure
++	 */
++	if (t == current) {
++		savesegment(gs, hh->gs);
++		savesegment(fs, hh->fs);
++	} else {
++		hh->gs = thread->gs;
++		hh->fs = thread->fs;
++	}
++
++	/*
++	 * for checkpoint in process context (from within a container),
++	 * the actual syscall is taking place at this very moment; so
++	 * we (optimistically) subtitute the future return value (0) of
++	 * this syscall into the orig_eax, so that upon restart it will
++	 * succeed (or it will endlessly retry checkpoint...)
++	 */
++	if (t == current) {
++		BUG_ON(hh->orig_ax < 0);
++		hh->ax = 0;
++	}
 +}
 +
-+/**
-+ * cr_obj_get_by_ptr - find the unique identifier (objref) of an object
-+ * @ctx: checkpoint context
-+ * @ptr: pointer to object
-+ * @type: object type
-+ */
-+int cr_obj_get_by_ptr(struct cr_ctx *ctx, void *ptr, unsigned short type)
++void cr_write_cpu_debug(struct cr_hdr_cpu *hh, struct task_struct *t)
 +{
-+	struct cr_objref *obj;
++	struct thread_struct *thread = &t->thread;
 +
-+	obj = cr_obj_find_by_ptr(ctx, ptr);
-+	if (obj)
-+		return obj->type == type ? obj->objref : -EINVAL;
-+	else
-+		return -ESRCH;
++	/* debug regs */
++
++	preempt_disable();
++
++	/*
++	 * for checkpoint in process context (from within a container),
++	 * get the actual registers; otherwise get the saved values.
++	 */
++
++	if (t == current) {
++		get_debugreg(hh->debugreg0, 0);
++		get_debugreg(hh->debugreg1, 1);
++		get_debugreg(hh->debugreg2, 2);
++		get_debugreg(hh->debugreg3, 3);
++		get_debugreg(hh->debugreg6, 6);
++		get_debugreg(hh->debugreg7, 7);
++	} else {
++		hh->debugreg0 = thread->debugreg0;
++		hh->debugreg1 = thread->debugreg1;
++		hh->debugreg2 = thread->debugreg2;
++		hh->debugreg3 = thread->debugreg3;
++		hh->debugreg6 = thread->debugreg6;
++		hh->debugreg7 = thread->debugreg7;
++	}
++
++	hh->debugreg4 = 0;
++	hh->debugreg5 = 0;
++
++	hh->uses_debug = !!(task_thread_info(t)->flags & TIF_DEBUG);
++
++	preempt_enable();
 +}
 +
-+/**
-+ * cr_obj_get_by_ref - find an object given its unique identifier (objref)
-+ * @ctx: checkpoint context
-+ * @objref: unique identifier - object reference
-+ * @type: object type
-+ */
-+void *cr_obj_get_by_ref(struct cr_ctx *ctx, int objref, unsigned short type)
++void cr_write_cpu_fpu(struct cr_hdr_cpu *hh, struct task_struct *t)
 +{
-+	struct cr_objref *obj;
++	struct thread_struct *thread = &t->thread;
++	struct thread_info *thread_info = task_thread_info(t);
 +
-+	obj = cr_obj_find_by_objref(ctx, objref);
-+	if (obj)
-+		return obj->type == type ? obj->ptr : ERR_PTR(-EINVAL);
-+	else
-+		return NULL;
++	/* i387 + MMU + SSE logic */
++
++	preempt_disable();
++
++	hh->used_math = tsk_used_math(t) ? 1 : 0;
++	if (hh->used_math) {
++		/*
++		 * normally, no need to unlazy_fpu(), since TS_USEDFPU flag
++		 * have been cleared when task was conexted-switched out...
++		 * except if we are in process context, in which case we do
++		 */
++		if (thread_info->status & TS_USEDFPU)
++			unlazy_fpu(current);
++
++		hh->has_fxsr = cpu_has_fxsr;
++		memcpy(&hh->xstate, &thread->xstate, sizeof(thread->xstate));
++	}
++
++	preempt_enable();
 +}
-diff --git a/checkpoint/sys.c b/checkpoint/sys.c
-index c4ac157..3b17ecc 100644
---- a/checkpoint/sys.c
-+++ b/checkpoint/sys.c
-@@ -132,6 +132,7 @@ void cr_ctx_free(struct cr_ctx *ctx)
- 		path_put(ctx->vfsroot);
++
++#endif	/* CONFIG_X86_64 */
++
++/* dump the cpu state and registers of a given task */
++int cr_write_cpu(struct cr_ctx *ctx, struct task_struct *t)
++{
++	struct cr_hdr h;
++	struct cr_hdr_cpu *hh = cr_hbuf_get(ctx, sizeof(*hh));
++	int ret;
++
++	h.type = CR_HDR_CPU;
++	h.len = sizeof(*hh);
++	h.parent = task_pid_vnr(t);
++
++	cr_write_cpu_regs(hh, t);
++	cr_write_cpu_debug(hh, t);
++	cr_write_cpu_fpu(hh, t);
++
++	cr_debug("math %d debug %d\n", hh->used_math, hh->uses_debug);
++
++	ret = cr_write_obj(ctx, &h, hh);
++	cr_hbuf_put(ctx, sizeof(*hh));
++	return ret;
++}
+diff --git a/arch/x86/mm/restart.c b/arch/x86/mm/restart.c
+new file mode 100644
+index 0000000..0178080
+--- /dev/null
++++ b/arch/x86/mm/restart.c
+@@ -0,0 +1,177 @@
++/*
++ *  Checkpoint/restart - architecture specific support for x86
++ *
++ *  Copyright (C) 2008 Oren Laadan
++ *
++ *  This file is subject to the terms and conditions of the GNU General Public
++ *  License.  See the file COPYING in the main directory of the Linux
++ *  distribution for more details.
++ */
++
++#include <asm/desc.h>
++#include <asm/i387.h>
++
++#include <linux/checkpoint.h>
++#include <linux/checkpoint_hdr.h>
++
++/* read the thread_struct into the current task */
++int cr_read_thread(struct cr_ctx *ctx)
++{
++	struct cr_hdr_thread *hh = cr_hbuf_get(ctx, sizeof(*hh));
++	struct task_struct *t = current;
++	struct thread_struct *thread = &t->thread;
++	int parent;
++
++	parent = cr_read_obj_type(ctx, hh, sizeof(*hh), CR_HDR_THREAD);
++	if (parent < 0)
++		return parent;
++#if 0	/* activate when containers are used */
++	if (parent != task_pid_vnr(t))
++		return -EINVAL;
++#endif
++	cr_debug("ntls %d\n", hh->ntls);
++
++	if (hh->gdt_entry_tls_entries != GDT_ENTRY_TLS_ENTRIES ||
++	    hh->sizeof_tls_array != sizeof(thread->tls_array) ||
++	    hh->ntls < 0 || hh->ntls > GDT_ENTRY_TLS_ENTRIES)
++		return -EINVAL;
++
++	if (hh->ntls > 0) {
++		struct desc_struct *desc;
++		int size, cpu, ret;
++
++		/*
++		 * restore TLS by hand: why convert to struct user_desc if
++		 * sys_set_thread_entry() will convert it back ?
++		 */
++
++		size = sizeof(*desc) * GDT_ENTRY_TLS_ENTRIES;
++		desc = kmalloc(size, GFP_KERNEL);
++		if (!desc)
++			return -ENOMEM;
++
++		ret = cr_kread(ctx, desc, size);
++		if (ret >= 0) {
++			/*
++			 * FIX: add sanity checks (eg. that values makes
++			 * sense, that we don't overwrite old values, etc
++			 */
++			cpu = get_cpu();
++			memcpy(thread->tls_array, desc, size);
++			load_TLS(thread, cpu);
++			put_cpu();
++		}
++		kfree(desc);
++	}
++
++	return 0;
++}
++
++#ifdef CONFIG_X86_64
++
++#error "CONFIG_X86_64 unsupported yet."
++
++#else	/* !CONFIG_X86_64 */
++
++int cr_read_cpu_regs(struct cr_hdr_cpu *hh, struct task_struct *t)
++{
++	struct thread_struct *thread = &t->thread;
++	struct pt_regs *regs = task_pt_regs(t);
++
++	regs->bx = hh->bx;
++	regs->cx = hh->cx;
++	regs->dx = hh->dx;
++	regs->si = hh->si;
++	regs->di = hh->di;
++	regs->bp = hh->bp;
++	regs->ax = hh->ax;
++	regs->ds = hh->ds;
++	regs->es = hh->es;
++	regs->orig_ax = hh->orig_ax;
++	regs->ip = hh->ip;
++	regs->cs = hh->cs;
++	regs->flags = hh->flags;
++	regs->sp = hh->sp;
++	regs->ss = hh->ss;
++
++	thread->gs = hh->gs;
++	thread->fs = hh->fs;
++	loadsegment(gs, hh->gs);
++	loadsegment(fs, hh->fs);
++
++	return 0;
++}
++
++int cr_read_cpu_debug(struct cr_hdr_cpu *hh, struct task_struct *t)
++{
++	/* debug regs */
++
++	if (hh->uses_debug) {
++		set_debugreg(hh->debugreg0, 0);
++		set_debugreg(hh->debugreg1, 1);
++		/* ignore 4, 5 */
++		set_debugreg(hh->debugreg2, 2);
++		set_debugreg(hh->debugreg3, 3);
++		set_debugreg(hh->debugreg6, 6);
++		set_debugreg(hh->debugreg7, 7);
++	}
++
++	return 0;
++}
++
++int cr_read_cpu_fpu(struct cr_hdr_cpu *hh, struct task_struct *t)
++{
++	struct thread_struct *thread = &t->thread;
++
++	/* i387 + MMU + SSE */
++
++	preempt_disable();
++
++	__clear_fpu(t);		/* in case we used FPU in user mode */
++
++	if (!hh->used_math)
++		clear_used_math();
++	else {
++		if (hh->has_fxsr != cpu_has_fxsr) {
++			force_sig(SIGFPE, t);
++			return -EINVAL;
++		}
++		memcpy(&thread->xstate, &hh->xstate, sizeof(thread->xstate));
++		set_used_math();
++	}
++
++	preempt_enable();
++
++	return 0;
++}
++
++#endif	/* CONFIG_X86_64 */
++
++/* read the cpu state and registers for the current task */
++int cr_read_cpu(struct cr_ctx *ctx)
++{
++	struct cr_hdr_cpu *hh = cr_hbuf_get(ctx, sizeof(*hh));
++	struct task_struct *t = current;
++	int parent, ret;
++
++	parent = cr_read_obj_type(ctx, hh, sizeof(*hh), CR_HDR_CPU);
++	if (parent < 0)
++		return parent;
++#if 0	/* activate when containers are used */
++	if (parent != task_pid_vnr(t))
++		return -EINVAL;
++#endif
++	/* FIX: sanity check for sensitive registers (eg. eflags) */
++
++	ret = cr_read_cpu_regs(hh, t);
++	if (ret < 0)
++		goto out;
++	ret = cr_read_cpu_debug(hh, t);
++	if (ret < 0)
++		goto out;
++	ret = cr_read_cpu_fpu(hh, t);
++
++	cr_debug("math %d debug %d\n", hh->used_math, hh->uses_debug);
++ out:
++	return ret;
++}
+diff --git a/checkpoint/checkpoint.c b/checkpoint/checkpoint.c
+index e5e188f..6ca26d0 100644
+--- a/checkpoint/checkpoint.c
++++ b/checkpoint/checkpoint.c
+@@ -20,6 +20,8 @@
+ #include <linux/checkpoint.h>
+ #include <linux/checkpoint_hdr.h>
  
- 	cr_pgarr_free(ctx);
-+	cr_objhash_free(ctx);
++#include "checkpoint_arch.h"
++
+ /**
+  * cr_write_obj - write a record described by a cr_hdr
+  * @ctx: checkpoint context
+@@ -145,8 +147,17 @@ static int cr_write_task(struct cr_ctx *ctx, struct task_struct *t)
+ 	}
  
- 	kfree(ctx);
+ 	ret = cr_write_task_struct(ctx, t);
+-	cr_debug("ret %d\n", ret);
++	cr_debug("task_struct: ret %d\n", ret);
++	if (ret < 0)
++		goto out;
++	ret = cr_write_thread(ctx, t);
++	cr_debug("thread: ret %d\n", ret);
++	if (ret < 0)
++		goto out;
++	ret = cr_write_cpu(ctx, t);
++	cr_debug("cpu: ret %d\n", ret);
+ 
++ out:
+ 	return ret;
  }
-@@ -154,6 +155,9 @@ struct cr_ctx *cr_ctx_alloc(pid_t pid, int fd, unsigned long flags)
- 	if (!ctx->hbuf)
- 		goto nomem;
  
-+	if (cr_objhash_alloc(ctx) < 0)
-+		goto nomem;
+diff --git a/checkpoint/checkpoint_arch.h b/checkpoint/checkpoint_arch.h
+new file mode 100644
+index 0000000..bf2d21e
+--- /dev/null
++++ b/checkpoint/checkpoint_arch.h
+@@ -0,0 +1,7 @@
++#include <linux/checkpoint.h>
 +
- 	/*
- 	 * assume checkpointer is in container's root vfs
- 	 * FIXME: this works for now, but will change with real containers
-diff --git a/include/linux/checkpoint.h b/include/linux/checkpoint.h
-index a9eafac..9990bb1 100644
---- a/include/linux/checkpoint.h
-+++ b/include/linux/checkpoint.h
-@@ -28,6 +28,8 @@ struct cr_ctx {
- 	void *hbuf;		/* temporary buffer for headers */
- 	int hpos;		/* position in headers buffer */
++extern int cr_write_thread(struct cr_ctx *ctx, struct task_struct *t);
++extern int cr_write_cpu(struct cr_ctx *ctx, struct task_struct *t);
++
++extern int cr_read_thread(struct cr_ctx *ctx);
++extern int cr_read_cpu(struct cr_ctx *ctx);
+diff --git a/checkpoint/restart.c b/checkpoint/restart.c
+index ef6bc37..0484de0 100644
+--- a/checkpoint/restart.c
++++ b/checkpoint/restart.c
+@@ -15,6 +15,8 @@
+ #include <linux/checkpoint.h>
+ #include <linux/checkpoint_hdr.h>
  
-+	struct cr_objhash *objhash;	/* hash for shared objects */
++#include "checkpoint_arch.h"
 +
- 	struct list_head pgarr_list;	/* page array to dump VMA contents */
+ /**
+  * cr_read_obj - read a whole record (cr_hdr followed by payload)
+  * @ctx: checkpoint context
+@@ -164,8 +166,17 @@ static int cr_read_task(struct cr_ctx *ctx)
+ 	int ret;
  
- 	struct path *vfsroot;	/* container root (FIXME) */
-@@ -49,6 +51,24 @@ extern int cr_kread(struct cr_ctx *ctx, void *buf, int count);
- extern void *cr_hbuf_get(struct cr_ctx *ctx, int n);
- extern void cr_hbuf_put(struct cr_ctx *ctx, int n);
+ 	ret = cr_read_task_struct(ctx);
+-	cr_debug("ret %d\n", ret);
++	cr_debug("task_struct: ret %d\n", ret);
++	if (ret < 0)
++		goto out;
++	ret = cr_read_thread(ctx);
++	cr_debug("thread: ret %d\n", ret);
++	if (ret < 0)
++		goto out;
++	ret = cr_read_cpu(ctx);
++	cr_debug("cpu: ret %d\n", ret);
  
-+/* shared objects handling */
-+
-+enum {
-+	CR_OBJ_FILE = 1,
-+	CR_OBJ_MAX
-+};
-+
-+extern void cr_objhash_free(struct cr_ctx *ctx);
-+extern int cr_objhash_alloc(struct cr_ctx *ctx);
-+extern void *cr_obj_get_by_ref(struct cr_ctx *ctx,
-+			       int objref, unsigned short type);
-+extern int cr_obj_get_by_ptr(struct cr_ctx *ctx,
-+			     void *ptr, unsigned short type);
-+extern int cr_obj_add_ptr(struct cr_ctx *ctx, void *ptr, int *objref,
-+			  unsigned short type, unsigned short flags);
-+extern int cr_obj_add_ref(struct cr_ctx *ctx, void *ptr, int objref,
-+			  unsigned short type, unsigned short flags);
-+
- struct cr_hdr;
++ out:
+ 	return ret;
+ }
  
- extern int cr_write_obj(struct cr_ctx *ctx, struct cr_hdr *h, void *buf);
+diff --git a/include/asm-x86/checkpoint_hdr.h b/include/asm-x86/checkpoint_hdr.h
+new file mode 100644
+index 0000000..44a903c
+--- /dev/null
++++ b/include/asm-x86/checkpoint_hdr.h
+@@ -0,0 +1,72 @@
++#ifndef __ASM_X86_CKPT_HDR_H
++#define __ASM_X86_CKPT_HDR_H
++/*
++ *  Checkpoint/restart - architecture specific headers x86
++ *
++ *  Copyright (C) 2008 Oren Laadan
++ *
++ *  This file is subject to the terms and conditions of the GNU General Public
++ *  License.  See the file COPYING in the main directory of the Linux
++ *  distribution for more details.
++ */
++
++#include <asm/processor.h>
++
++struct cr_hdr_thread {
++	/* NEED: restart blocks */
++
++	__s16 gdt_entry_tls_entries;
++	__s16 sizeof_tls_array;
++	__s16 ntls;	/* number of TLS entries to follow */
++} __attribute__((aligned(8)));
++
++struct cr_hdr_cpu {
++	/* see struct pt_regs (x86-64) */
++	__u64 r15;
++	__u64 r14;
++	__u64 r13;
++	__u64 r12;
++	__u64 bp;
++	__u64 bx;
++	__u64 r11;
++	__u64 r10;
++	__u64 r9;
++	__u64 r8;
++	__u64 ax;
++	__u64 cx;
++	__u64 dx;
++	__u64 si;
++	__u64 di;
++	__u64 orig_ax;
++	__u64 ip;
++	__u64 cs;
++	__u64 flags;
++	__u64 sp;
++	__u64 ss;
++
++	/* segment registers */
++	__u64 ds;
++	__u64 es;
++	__u64 fs;
++	__u64 gs;
++
++	/* debug registers */
++	__u64 debugreg0;
++	__u64 debugreg1;
++	__u64 debugreg2;
++	__u64 debugreg3;
++	__u64 debugreg4;
++	__u64 debugreg5;
++	__u64 debugreg6;
++	__u64 debugreg7;
++
++	__u16 uses_debug;
++	__u16 used_math;
++	__u16 has_fxsr;
++	__u16 _padding;
++
++	union thread_xstate xstate;	/* i387 */
++
++} __attribute__((aligned(8)));
++
++#endif /* __ASM_X86_CKPT_HDR__H */
+diff --git a/include/linux/checkpoint_hdr.h b/include/linux/checkpoint_hdr.h
+index 79e4df2..03ec72e 100644
+--- a/include/linux/checkpoint_hdr.h
++++ b/include/linux/checkpoint_hdr.h
+@@ -12,6 +12,7 @@
+ 
+ #include <linux/types.h>
+ #include <linux/utsname.h>
++#include <asm/checkpoint_hdr.h>
+ 
+ /*
+  * To maintain compatibility between 32-bit and 64-bit architecture flavors,
 -- 
 1.5.4.3
