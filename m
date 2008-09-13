@@ -1,7 +1,7 @@
 From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 Subject: [RFC v5][PATCH 9/9] Restore open file descriprtors
-Date: Sat, 13 Sep 2008 19:06:07 -0400
-Message-ID: <1221347167-9956-10-git-send-email-orenl__8394.01904163442$1221347683$gmane$org@cs.columbia.edu>
+Date: Sat, 13 Sep 2008 19:22:52 -0400 (EDT)
+Message-ID: <Pine.LNX.4.64.0809131921280.20702__10962.8554819666$1221348313$gmane$org@takamine.ncl.cs.columbia.edu>
 References: <1221347167-9956-1-git-send-email-orenl@cs.columbia.edu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -20,6 +20,7 @@ Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 To: dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
 Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, jeremy-TSDbQ3PG+2Y@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, arnd-r2nGTMty4D4@public.gmane.org
 List-Id: containers.vger.kernel.org
+
 
 Restore open file descriptors: for each FD read 'struct cr_hdr_fd_ent'
 and lookup objref in the hash table; if not found (first occurence), read
