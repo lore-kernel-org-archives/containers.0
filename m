@@ -1,13 +1,11 @@
-From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: [RFC v5][PATCH 9/9] Restore open file descriprtors
-Date: Sat, 13 Sep 2008 19:22:52 -0400 (EDT)
-Message-ID: <Pine.LNX.4.64.0809131921280.20702__10962.8554819666$1221348313$gmane$org@takamine.ncl.cs.columbia.edu>
-References: <1221347167-9956-1-git-send-email-orenl@cs.columbia.edu>
+From: "podi.utom-ral2JQCrhuEAvxtiuMwx3w@public.gmane.org" <podi.utom-ral2JQCrhuEAvxtiuMwx3w@public.gmane.org>
+Subject: =?GB2312?B?ssm5urHYsbi1xLeowsnWqsq2us26z82sudzA7Q==?=
+Date: Sun, 14 Sep 2008 09:47:50 +0800
+Message-ID: <200809140148.m8E1mdCM011574@smtp1.linux-foundation.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="gb2312"
+Content-Transfer-Encoding: base64
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1221347167-9956-1-git-send-email-orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -17,272 +15,75 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, jeremy-TSDbQ3PG+2Y@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, arnd-r2nGTMty4D4@public.gmane.org
+To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-
-Restore open file descriptors: for each FD read 'struct cr_hdr_fd_ent'
-and lookup objref in the hash table; if not found (first occurence), read
-in 'struct cr_hdr_fd_data', create a new FD and register in the hash.
-Otherwise attach the file pointer from the hash as an FD.
-
-This patch only handles basic FDs - regular files, directories and also
-symbolic links.
-
-Signed-off-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
----
- checkpoint/Makefile        |    2 +-
- checkpoint/restart.c       |    4 +
- checkpoint/rstr_file.c     |  202 ++++++++++++++++++++++++++++++++++++++++++++
- include/linux/checkpoint.h |    1 +
- 4 files changed, 208 insertions(+), 1 deletions(-)
- create mode 100644 checkpoint/rstr_file.c
-
-diff --git a/checkpoint/Makefile b/checkpoint/Makefile
-index 7496695..88bbc10 100644
---- a/checkpoint/Makefile
-+++ b/checkpoint/Makefile
-@@ -3,4 +3,4 @@
- #
- 
- obj-$(CONFIG_CHECKPOINT_RESTART) += sys.o checkpoint.o restart.o objhash.o \
--		ckpt_mem.o rstr_mem.o ckpt_file.o
-+		ckpt_mem.o rstr_mem.o ckpt_file.o rstr_file.o
-diff --git a/checkpoint/restart.c b/checkpoint/restart.c
-index a0d5e60..956e274 100644
---- a/checkpoint/restart.c
-+++ b/checkpoint/restart.c
-@@ -212,6 +212,10 @@ static int cr_read_task(struct cr_ctx *ctx)
- 	cr_debug("memory: ret %d\n", ret);
- 	if (ret < 0)
- 		goto out;
-+	ret = cr_read_files(ctx);
-+	cr_debug("files: ret %d\n", ret);
-+	if (ret < 0)
-+		goto out;
- 	ret = cr_read_thread(ctx);
- 	cr_debug("thread: ret %d\n", ret);
- 	if (ret < 0)
-diff --git a/checkpoint/rstr_file.c b/checkpoint/rstr_file.c
-new file mode 100644
-index 0000000..780c0fc
---- /dev/null
-+++ b/checkpoint/rstr_file.c
-@@ -0,0 +1,202 @@
-+/*
-+ *  Checkpoint file descriptors
-+ *
-+ *  Copyright (C) 2008 Oren Laadan
-+ *
-+ *  This file is subject to the terms and conditions of the GNU General Public
-+ *  License.  See the file COPYING in the main directory of the Linux
-+ *  distribution for more details.
-+ */
-+
-+#include <linux/kernel.h>
-+#include <linux/sched.h>
-+#include <linux/fs.h>
-+#include <linux/file.h>
-+#include <linux/fdtable.h>
-+#include <linux/fsnotify.h>
-+#include <linux/syscalls.h>
-+#include <linux/checkpoint.h>
-+#include <linux/checkpoint_hdr.h>
-+
-+#include "checkpoint_file.h"
-+
-+static int cr_close_all_fds(struct files_struct *files)
-+{
-+	int *fdtable;
-+	int nfds;
-+
-+	nfds = cr_scan_fds(files, &fdtable);
-+	if (nfds < 0)
-+		return nfds;
-+	while (nfds--)
-+		sys_close(fdtable[nfds]);
-+	kfree(fdtable);
-+	return 0;
-+}
-+
-+/**
-+ * cr_attach_file - attach a lonely file ptr to a file descriptor
-+ * @file: lonely file pointer
-+ */
-+static int cr_attach_file(struct file *file)
-+{
-+	int fd = get_unused_fd_flags(0);
-+
-+	if (fd >= 0) {
-+		fsnotify_open(file->f_path.dentry);
-+		fd_install(fd, file);
-+	}
-+	return fd;
-+}
-+
-+#define CR_SETFL_MASK (O_APPEND|O_NONBLOCK|O_NDELAY|FASYNC|O_DIRECT|O_NOATIME)
-+
-+/* cr_read_fd_data - restore the state of a given file pointer */
-+static int
-+cr_read_fd_data(struct cr_ctx *ctx, struct files_struct *files, int parent)
-+{
-+	struct cr_hdr_fd_data *hh = cr_hbuf_get(ctx, sizeof(*hh));
-+	struct file *file;
-+	int fd, rparent, ret;
-+
-+	rparent = cr_read_obj_type(ctx, hh, sizeof(*hh), CR_HDR_FD_DATA);
-+	cr_debug("rparent %d parent %d flags %#x mode %#x how %d\n",
-+		 rparent, parent, hh->f_flags, hh->f_mode, hh->fd_type);
-+	if (rparent < 0)
-+		return rparent;
-+	if (rparent != parent)
-+		return -EINVAL;
-+	/* FIX: more sanity checks on f_flags, f_mode etc */
-+
-+	switch (hh->fd_type) {
-+	case CR_FD_FILE:
-+	case CR_FD_DIR:
-+	case CR_FD_LINK:
-+		file = cr_read_open_fname(ctx, hh->f_flags, hh->f_mode);
-+		break;
-+	default:
-+		file = ERR_PTR(-EINVAL);
-+		break;
-+	}
-+
-+	if (IS_ERR(file))
-+		return PTR_ERR(file);
-+
-+	/* FIX: need to restore uid, gid, owner etc */
-+
-+	fd = cr_attach_file(file);	/* no need to cleanup 'file' below */
-+	if (fd < 0) {
-+		filp_close(file, NULL);
-+		return fd;
-+	}
-+
-+	/* register new <objref, file> tuple in hash table */
-+	ret = cr_obj_add_ref(ctx, (void *) file, parent, CR_OBJ_FILE, 0);
-+	if (ret < 0)
-+		goto out;
-+	ret = sys_fcntl(fd, F_SETFL, hh->f_flags & CR_SETFL_MASK);
-+	if (ret < 0)
-+		goto out;
-+	ret = vfs_llseek(file, hh->f_pos, SEEK_SET);
-+	if (ret == -ESPIPE)	/* ignore error on non-seekable files */
-+		ret = 0;
-+
-+ out:
-+	cr_hbuf_put(ctx, sizeof(*hh));
-+	return ret < 0 ? ret : fd;
-+}
-+
-+/**
-+ * cr_read_fd_ent - restore the state of a given file descriptor
-+ * @ctx: checkpoint context
-+ * @files: files_struct pointer
-+ * @parent: parent objref
-+ *
-+ * Restores the state of a file descriptor; looks up the objref (in the
-+ * header) in the hash table, and if found picks the matching file and
-+ * use it; otherwise calls cr_read_fd_data to restore the file too.
-+ */
-+static int
-+cr_read_fd_ent(struct cr_ctx *ctx, struct files_struct *files, int parent)
-+{
-+	struct cr_hdr_fd_ent *hh = cr_hbuf_get(ctx, sizeof(*hh));
-+	struct file *file;
-+	int newfd, rparent;
-+
-+	rparent = cr_read_obj_type(ctx, hh, sizeof(*hh), CR_HDR_FD_ENT);
-+	cr_debug("rparent %d parent %d ref %d\n", rparent, parent, hh->objref);
-+	if (rparent < 0)
-+		return rparent;
-+	if (rparent != parent)
-+		return -EINVAL;
-+	cr_debug("fd %d coe %d\n", hh->fd, hh->close_on_exec);
-+	if (hh->objref <= 0)
-+		return -EINVAL;
-+
-+	file = cr_obj_get_by_ref(ctx, hh->objref, CR_OBJ_FILE);
-+	if (IS_ERR(file))
-+		return PTR_ERR(file);
-+
-+	if (file) {
-+		newfd = cr_attach_file(file);
-+		if (newfd < 0)
-+			return newfd;
-+		get_file(file);
-+	} else {
-+		/* create new file pointer (and register in hash table) */
-+		newfd = cr_read_fd_data(ctx, files, hh->objref);
-+		if (newfd < 0)
-+			return newfd;
-+	}
-+
-+	cr_debug("newfd got %d wanted %d\n", newfd, hh->fd);
-+
-+	/* if newfd isn't desired fd then reposition it */
-+	if (newfd != hh->fd) {
-+		int ret = sys_dup2(newfd, hh->fd);
-+		if (ret < 0)
-+			return ret;
-+		sys_close(newfd);
-+	}
-+
-+	if (hh->close_on_exec)
-+		set_close_on_exec(hh->fd, 1);
-+
-+	cr_hbuf_put(ctx, sizeof(*hh));
-+	return 0;
-+}
-+
-+int cr_read_files(struct cr_ctx *ctx)
-+{
-+	struct cr_hdr_files *hh = cr_hbuf_get(ctx, sizeof(*hh));
-+	struct files_struct *files = current->files;
-+	int i, parent, ret;
-+
-+	parent = cr_read_obj_type(ctx, hh, sizeof(*hh), CR_HDR_FILES);
-+	if (parent < 0)
-+		return parent;
-+#if 0	/* activate when containers are used */
-+	if (parent != task_pid_vnr(current))
-+		return -EINVAL;
-+#endif
-+	cr_debug("objref %d nfds %d\n", hh->objref, hh->nfds);
-+	if (hh->objref < 0 || hh->nfds < 0)
-+		return -EINVAL;
-+
-+	if (hh->nfds > sysctl_nr_open)
-+		return -EMFILE;
-+
-+	/* point of no return -- close all file descriptors */
-+	ret = cr_close_all_fds(files);
-+	if (ret < 0)
-+		return ret;
-+
-+	for (i = 0; i < hh->nfds; i++) {
-+		ret = cr_read_fd_ent(ctx, files, hh->objref);
-+		if (ret < 0)
-+			break;
-+	}
-+
-+	cr_hbuf_put(ctx, sizeof(*hh));
-+	return ret;
-+}
-diff --git a/include/linux/checkpoint.h b/include/linux/checkpoint.h
-index a202c54..fd3baac 100644
---- a/include/linux/checkpoint.h
-+++ b/include/linux/checkpoint.h
-@@ -89,6 +89,7 @@ extern int cr_write_files(struct cr_ctx *ctx, struct task_struct *t);
- 
- extern int do_restart(struct cr_ctx *ctx);
- extern int cr_read_mm(struct cr_ctx *ctx);
-+extern int cr_read_files(struct cr_ctx *ctx);
- 
- #define cr_debug(fmt, args...)  \
- 	pr_debug("[CR:%s] " fmt, __func__, ## args)
--- 
-1.5.4.3
+PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09
+PT09PT09PT09PT09PT09PT0gICAgICAgICAgICAgICAgICAgCgogICAgICAgICAgICAgICAgICAg
+ICCyybm6sdixuLXEt6jCydaqyra6zbrPzay53MDtCgoKyrG85NPrtdi146O6CjIwMDjE6jnUwjI2
+LTI3yNUgIMnPuqMKPT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09
+PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PQq74S3O8S3X6S3Wr6O6TSBNIEMgudwgwO0g
+0acg1LogCgrIq7n6zbPSu7f+zvG157uwo7qjtKOwo7CjraO4o7ijuaO5o7ajsqO4CgrJz7qjtdjH
++Neoz9+juqOwo7KjsaOto7WjsaOwo7mjuaO0o7ejtQoKueO2q7XYx/jXqM/fo7qjsKOyo7CjraOz
+o7OjuaO3o7KjsqOxo7YKCrGoLsP7LsH3LrPMOsC0tefXydGvofqxqMP7se2h+rvYtKuxqMP7se2h
++reis/ayzrzTyLfIz7qvofqz1si3yM+6r7LOvNMKCrfRPT09PdPDo7qjsqOyo7CjsNSqL8jLIKOo
+sPzAqMXg0bW30aOv18rBz7fRo6/O57LNt9Gjr9TnteOy6LXjo6/LsLfRtcijqQo9PT09PT09PT09
+PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09
+PT09PT09PT09CqHxIL/Os8zS4tLlCiAgICDT0LrctuDIy9LUzqq1o8jO0ru80rmry761xLLJubqy
+orK7ysfSu7z+uty4tNTTtcS5pNf3o6zK4rK71qq007mp06bJzNGh1PEKtb25qdOmycy53MDto6zG
+5NbQ1Myy2NfF1u624NGnzsq6zby8yvWho7b4yOe5+8T6z6PN+7PJzqrSu867vqvNqLLJubq5pNf3
+tcTXqArStcjLyr+jrMTHw7SjrMHLveKyybm6us/NrLywxuTP4LnYtcS3qMLJ1qrKttKyysfG5NbQ
+0rvP7tbY0qq1xLy8xNyho8T6yse38cTcCrm7tNPX3Mzlyc+w0c7Vus/NrMy4xdC6zbrPzay53MDt
+tcTW2LXjo7/E+srHt/HE3L2rt6jCybHks8mw79b6xPq5pNf3tcTSu9bWyrUK08O5pL7fo7/I57n7
+xPrT0NXi0fm1xMbazfujrMTHw7TP4NDFxPqx2Mi7u+HU2tGnz7DN6tXiw8W/zrPM1q6689PQz+C1
+sbXEytXS5qGjCgqh8SCyzrzTttTP8wogICAgssm5ur6twO0sssm5utb3udwsssm5urrPzay53MDt
+0K2198jL1LEsuLrU8LLJubq6z82szLjF0LXEuaTX98jL1LEKPT09PT09PT09PT09PT09PT09PT09
+PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PQqh
+8SDE2sjdtPO42Qq12tK7sr+31qO6ssm5urrPzay1xNe8sbgKINK7oaLI57rOttS5qdOmycy21L34
+0NC3qMLJ18q48cnzsumjvwogtv6hosut09DIqLT6se3G89K1vfjQ0LrPzazMuMXQo78KICAgICAt
+LS0ttPrA7dPrytrIqM7KzOIKIMj9oaLXvLG4usPE47XEus/NrM7Esb6jus6qxOO1xLrPzazMuMXQ
+u63NvAoKtdq2/rK/t9ajurLJubq6z82stcTMuMXQ0+vHqbapCiDSu6Gissm5urrPzazNqLOjsdjQ
+677fsbjExNCpzPW/7qO/CiC2/qGiveLO9rj3wODQzbXEssm5urrPzazM9b/uCiAgICAgLS0tLbK7
+zazW1sDgtcSyybm60uLOttfFsrvNrLXEus/NrMy4xdDW2LXjCiAgIDGhorfWzvazo7nmzu/Bz7LJ
+ubqjur340ruyvcHLveK/8rzcus/NrAogICAyoaK31s720ru0ztDUyeixuLLJuboKICAgM6Git9bO
+9rf+zvGyybm6CiDI/aGitNO6z82ss8nBorW9us/NrMn60KcKICAgMaGius/NrLPJwaKjutKq1LzT
+67PQxbUKICAgMqGisrvNrMfpv/bPwrXEus/NrMn60KcKIMvEoaKyybm6us/NrMeptqnKsbzktcTI
+t7aovLCyybm6us/NrMeptqm12LXjtcTRodTxCiAgIDGhorrPzay1xMeptqnKsbzkyOe6zsi3tqij
+vwogICAyoaLI57rOyLe2qLrPzazHqbaptcS12LXjo78KICAgM6Gius/NrMeptqm12LXjttS6z82s
+tcTWtNDQtb2119PQyrLDtNOwz+yjvwoKtdrI/bK/t9ajurLJubq6z82stcS53MDt0+vWtNDQCiDS
+u6Gissm5urrPzay53MDttcS3vbeo0+vW2LXjCiC2/qGius/NrNa00NAKICAgMaGius/NrNa00NC5
+/bPM1tDTprDRztW1xNSt1PIKICAgMqGi1rTQ0LrPzay1xLn9s8zW0Mjnus62tLLs0+u/2NbGt+fP
+1aO/CiAgIDOhori2v+7HsLXE1Nm0zsnzsukKCrXay8Syv7fWo7qyybm6us/NrLXEseS4/NPrt6LJ
++tX50unKsbXEsrm+yAog0ruhorLJubq6z82sw+bB2bHkuPzKsdT1w7Sw7KO/CiAgICAgLS0tLdTZ
+tM606MnM0tSx47rPzazQ3rjECiC2/qGit6LJ+tX50um687XEsrm+yLTryqkKIMj9oaLL38vPL9bZ
+ssPB97PMvPK96Qo9PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09
+PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09CqHxIL2yyqa96cncCiAgICBTdW5ueSBMSVUg
+ILHP0rXT2tbQufrV/reotPPRp6Osz9bOqsnPuqPKwLT6wsnKpsrCzvHL+cLJyqahorrPu+/Iy6Gj
+U3VubnkK1Pi1o8jOtuC80rTz0M28r83FvLC6z9fKxvPStbXEt6jCybnLzsqjrLi61PDV4tCpxvPS
+tbXEttTN4s/uxL+6z9f3t6jCycrCzvG8sAq3qMLJzLjF0KO7MjAwNcTqo6xTdW5ueb34yOvIq8fy
+xeDRtcXFw/u12tK7tcTF4NG1uavLvkNlZ29zo6y1o8jOt6jCycXg0bW437y2CrnLzsqjrLbAwaK4
+utTwuMO5q8u+yKuyv7eowsnF4NG1v86zzLXE0dC3oqGi1sbX99PrvbLK2qOsy/2xvsjLv6q3otPr
+vbLK2rXEt6gKwsm/zrPMuq24x8LywvS6z82sxeDRtaGiyMvBptfK1LS3qMLJoaLP7sS/us/NrMXg
+0bWhos7vwfe3qMLJxeDRtbywuavLvreowsm8sArQ0NX+yMvUsbeowsm1yKGj1Nq24MTqtcS5pNf3
+1tCjrFN1bm551NrG89K1t6jCydOm08PB7NPyu/3A28HLz+C1sbXEvq3R6aOsttQKuavLvtTL1/eh
+orrPzay53MDtvLDIy8Gm18rUtLeowsnKws7xtci3x7OjyuzPpKOssqLU+NOm1f64rqGitPPQzbn6
+09DG89K1us3N4grXysbz0rW1xNKqx/PM4bmpz+C52MXg0bWhowogICBTdW5uebXExeDRtbfnuPHH
+5dDC19TIu6Oswt+8rcflzvqjrMu8wrfD9L3do6zNrMqxo6zL/bXEv86zzNDFz6LBv7Tzo6zHv7X3
+Csq108PQ1KOszai5/c/Ws6G08NLJoaLS1Lyw0O224Mq1vMrJ+ravtcSwuMD9t9bO9sC0sO/W+rLO
+vNPV373ivva5pNf3tcTAp7vzo6wKzOG439aw0rW8vMTco6zG5L/Os8y++crctb3Rp9SxtcS437bI
+xsC826GjCiAgICDU+L3Tyty5/VN1bm55z+C52L/Os8y1xNb30qrE2tG1v827p9PQo7rTorn6wezK
+wrndzsS7r7T6se20pqOoQnJpdGlzaCBDb3VuCmNpbKOpoaLF07DNtc+jqEJvbWJhcmRpZXKjqaGi
+yc+6o8jVwaKjqEhpdGFjaGmjqaGit6i5+sW3ydC8r83Fo6hBdWNoYW6jqaGixbcKyPC/taOob2Vy
+bGlrb26jqaGisNnN/sahvsajqEJ1ZHdlaXNlcqOpoaKwzcu5t/KjqEJhc2ajqaGiufrCw9TLzaij
+qENJVFMgQW1lcmkKY2FuIEV4cHJlc3OjqaGitPPW2sb7s7W98Mjao6hWV0ajqbXICiAgICDU+LLO
+vNO5/VN1bm55z+C52Lmrv6q/zrXE1vfSqr/Ou6fT0KO60e/X07DNy7m38qGisabC7aOoQk1Xo6mh
+otK7xvu34czvo6hUCm95b3Rho6mhor/Vxvi7r7mko6hBaXIgUHJvZHVjdKOpoaLKpbjqsOCjqFNh
+aW50LUdvYmFpbqOpoaLO98PF19OjqFNpZW1lbnOjqaGiCtbQufq6o9Hzyq/TzaOoQ25vb2OjqaGi
+t6i5+rXnwaajqEUuRC5Go6mhore60cew4MTDo6hQYW5hbHBpbmGjqaGitcC077b7yq/TzaOoClRv
+dGFso6mhorDdtvq7r9Gno6hCYXllcqOpoaLnsdbCyrHXsKOoQmVzdHNlbGxlcqOpoaLW0M3i1Muj
+qFNpbm90cmFuc6OpoaKwrsGiCtDFo6hFcmljc3NvbqOpoaLNqNPDtefG+KOoR0WjqaGix7/J+qOo
+SiZKo6mhosCtt6i7+aOoTGFmYXJnZaOptcihowo9PT09PT09PT09PT09PT09PT09PT09PT09PT09
+PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09Cl9fX19fX19f
+X19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fCkNvbnRhaW5lcnMgbWFpbGlu
+ZyBsaXN0CkNvbnRhaW5lcnNAbGlzdHMubGludXgtZm91bmRhdGlvbi5vcmcKaHR0cHM6Ly9saXN0
+cy5saW51eC1mb3VuZGF0aW9uLm9yZy9tYWlsbWFuL2xpc3RpbmZvL2NvbnRhaW5lcnM=
