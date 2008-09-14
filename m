@@ -1,11 +1,15 @@
-From: "podi.utom-ral2JQCrhuEAvxtiuMwx3w@public.gmane.org" <podi.utom-ral2JQCrhuEAvxtiuMwx3w@public.gmane.org>
-Subject: =?GB2312?B?ssm5urHYsbi1xLeowsnWqsq2us26z82sudzA7Q==?=
-Date: Sun, 14 Sep 2008 09:47:50 +0800
-Message-ID: <200809140148.m8E1mdCM011574@smtp1.linux-foundation.org>
+From: Bastian Blank <bastian-yyjItF7Rl6lg9hUCZPvPmw@public.gmane.org>
+Subject: Re: [RFC v5][PATCH 8/8] Dump open file descriptors
+Date: Sun, 14 Sep 2008 11:51:06 +0200
+Message-ID: <20080914095106.GA6300__4158.41291328451$1221386014$gmane$org@wavehammer.waldi.eu.org>
+References: <1221347167-9956-1-git-send-email-orenl@cs.columbia.edu>
+	<1221347167-9956-9-git-send-email-orenl@cs.columbia.edu>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="gb2312"
-Content-Transfer-Encoding: base64
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <1221347167-9956-9-git-send-email-orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -15,75 +19,55 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Cc: linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, jeremy-TSDbQ3PG+2Y@public.gmane.org, arnd-r2nGTMty4D4@public.gmane.org, dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09
-PT09PT09PT09PT09PT09PT0gICAgICAgICAgICAgICAgICAgCgogICAgICAgICAgICAgICAgICAg
-ICCyybm6sdixuLXEt6jCydaqyra6zbrPzay53MDtCgoKyrG85NPrtdi146O6CjIwMDjE6jnUwjI2
-LTI3yNUgIMnPuqMKPT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09
-PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PQq74S3O8S3X6S3Wr6O6TSBNIEMgudwgwO0g
-0acg1LogCgrIq7n6zbPSu7f+zvG157uwo7qjtKOwo7CjraO4o7ijuaO5o7ajsqO4CgrJz7qjtdjH
-+Neoz9+juqOwo7KjsaOto7WjsaOwo7mjuaO0o7ejtQoKueO2q7XYx/jXqM/fo7qjsKOyo7CjraOz
-o7OjuaO3o7KjsqOxo7YKCrGoLsP7LsH3LrPMOsC0tefXydGvofqxqMP7se2h+rvYtKuxqMP7se2h
-+reis/ayzrzTyLfIz7qvofqz1si3yM+6r7LOvNMKCrfRPT09PdPDo7qjsqOyo7CjsNSqL8jLIKOo
-sPzAqMXg0bW30aOv18rBz7fRo6/O57LNt9Gjr9TnteOy6LXjo6/LsLfRtcijqQo9PT09PT09PT09
-PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09
-PT09PT09PT09CqHxIL/Os8zS4tLlCiAgICDT0LrctuDIy9LUzqq1o8jO0ru80rmry761xLLJubqy
-orK7ysfSu7z+uty4tNTTtcS5pNf3o6zK4rK71qq007mp06bJzNGh1PEKtb25qdOmycy53MDto6zG
-5NbQ1Myy2NfF1u624NGnzsq6zby8yvWho7b4yOe5+8T6z6PN+7PJzqrSu867vqvNqLLJubq5pNf3
-tcTXqArStcjLyr+jrMTHw7SjrMHLveKyybm6us/NrLywxuTP4LnYtcS3qMLJ1qrKttKyysfG5NbQ
-0rvP7tbY0qq1xLy8xNyho8T6yse38cTcCrm7tNPX3Mzlyc+w0c7Vus/NrMy4xdC6zbrPzay53MDt
-tcTW2LXjo7/E+srHt/HE3L2rt6jCybHks8mw79b6xPq5pNf3tcTSu9bWyrUK08O5pL7fo7/I57n7
-xPrT0NXi0fm1xMbazfujrMTHw7TP4NDFxPqx2Mi7u+HU2tGnz7DN6tXiw8W/zrPM1q6689PQz+C1
-sbXEytXS5qGjCgqh8SCyzrzTttTP8wogICAgssm5ur6twO0sssm5utb3udwsssm5urrPzay53MDt
-0K2198jL1LEsuLrU8LLJubq6z82szLjF0LXEuaTX98jL1LEKPT09PT09PT09PT09PT09PT09PT09
-PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PQqh
-8SDE2sjdtPO42Qq12tK7sr+31qO6ssm5urrPzay1xNe8sbgKINK7oaLI57rOttS5qdOmycy21L34
-0NC3qMLJ18q48cnzsumjvwogtv6hosut09DIqLT6se3G89K1vfjQ0LrPzazMuMXQo78KICAgICAt
-LS0ttPrA7dPrytrIqM7KzOIKIMj9oaLXvLG4usPE47XEus/NrM7Esb6jus6qxOO1xLrPzazMuMXQ
-u63NvAoKtdq2/rK/t9ajurLJubq6z82stcTMuMXQ0+vHqbapCiDSu6Gissm5urrPzazNqLOjsdjQ
-677fsbjExNCpzPW/7qO/CiC2/qGiveLO9rj3wODQzbXEssm5urrPzazM9b/uCiAgICAgLS0tLbK7
-zazW1sDgtcSyybm60uLOttfFsrvNrLXEus/NrMy4xdDW2LXjCiAgIDGhorfWzvazo7nmzu/Bz7LJ
-ubqjur340ruyvcHLveK/8rzcus/NrAogICAyoaK31s720ru0ztDUyeixuLLJuboKICAgM6Git9bO
-9rf+zvGyybm6CiDI/aGitNO6z82ss8nBorW9us/NrMn60KcKICAgMaGius/NrLPJwaKjutKq1LzT
-67PQxbUKICAgMqGisrvNrMfpv/bPwrXEus/NrMn60KcKIMvEoaKyybm6us/NrMeptqnKsbzktcTI
-t7aovLCyybm6us/NrMeptqm12LXjtcTRodTxCiAgIDGhorrPzay1xMeptqnKsbzkyOe6zsi3tqij
-vwogICAyoaLI57rOyLe2qLrPzazHqbaptcS12LXjo78KICAgM6Gius/NrMeptqm12LXjttS6z82s
-tcTWtNDQtb2119PQyrLDtNOwz+yjvwoKtdrI/bK/t9ajurLJubq6z82stcS53MDt0+vWtNDQCiDS
-u6Gissm5urrPzay53MDttcS3vbeo0+vW2LXjCiC2/qGius/NrNa00NAKICAgMaGius/NrNa00NC5
-/bPM1tDTprDRztW1xNSt1PIKICAgMqGi1rTQ0LrPzay1xLn9s8zW0Mjnus62tLLs0+u/2NbGt+fP
-1aO/CiAgIDOhori2v+7HsLXE1Nm0zsnzsukKCrXay8Syv7fWo7qyybm6us/NrLXEseS4/NPrt6LJ
-+tX50unKsbXEsrm+yAog0ruhorLJubq6z82sw+bB2bHkuPzKsdT1w7Sw7KO/CiAgICAgLS0tLdTZ
-tM606MnM0tSx47rPzazQ3rjECiC2/qGit6LJ+tX50um687XEsrm+yLTryqkKIMj9oaLL38vPL9bZ
-ssPB97PMvPK96Qo9PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09
-PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09CqHxIL2yyqa96cncCiAgICBTdW5ueSBMSVUg
-ILHP0rXT2tbQufrV/reotPPRp6Osz9bOqsnPuqPKwLT6wsnKpsrCzvHL+cLJyqahorrPu+/Iy6Gj
-U3VubnkK1Pi1o8jOtuC80rTz0M28r83FvLC6z9fKxvPStbXEt6jCybnLzsqjrLi61PDV4tCpxvPS
-tbXEttTN4s/uxL+6z9f3t6jCycrCzvG8sAq3qMLJzLjF0KO7MjAwNcTqo6xTdW5ueb34yOvIq8fy
-xeDRtcXFw/u12tK7tcTF4NG1uavLvkNlZ29zo6y1o8jOt6jCycXg0bW437y2CrnLzsqjrLbAwaK4
-utTwuMO5q8u+yKuyv7eowsnF4NG1v86zzLXE0dC3oqGi1sbX99PrvbLK2qOsy/2xvsjLv6q3otPr
-vbLK2rXEt6gKwsm/zrPMuq24x8LywvS6z82sxeDRtaGiyMvBptfK1LS3qMLJoaLP7sS/us/NrMXg
-0bWhos7vwfe3qMLJxeDRtbywuavLvreowsm8sArQ0NX+yMvUsbeowsm1yKGj1Nq24MTqtcS5pNf3
-1tCjrFN1bm551NrG89K1t6jCydOm08PB7NPyu/3A28HLz+C1sbXEvq3R6aOsttQKuavLvtTL1/eh
-orrPzay53MDtvLDIy8Gm18rUtLeowsnKws7xtci3x7OjyuzPpKOssqLU+NOm1f64rqGitPPQzbn6
-09DG89K1us3N4grXysbz0rW1xNKqx/PM4bmpz+C52MXg0bWhowogICBTdW5uebXExeDRtbfnuPHH
-5dDC19TIu6Oswt+8rcflzvqjrMu8wrfD9L3do6zNrMqxo6zL/bXEv86zzNDFz6LBv7Tzo6zHv7X3
-Csq108PQ1KOszai5/c/Ws6G08NLJoaLS1Lyw0O224Mq1vMrJ+ravtcSwuMD9t9bO9sC0sO/W+rLO
-vNPV373ivva5pNf3tcTAp7vzo6wKzOG439aw0rW8vMTco6zG5L/Os8y++crctb3Rp9SxtcS437bI
-xsC826GjCiAgICDU+L3Tyty5/VN1bm55z+C52L/Os8y1xNb30qrE2tG1v827p9PQo7rTorn6wezK
-wrndzsS7r7T6se20pqOoQnJpdGlzaCBDb3VuCmNpbKOpoaLF07DNtc+jqEJvbWJhcmRpZXKjqaGi
-yc+6o8jVwaKjqEhpdGFjaGmjqaGit6i5+sW3ydC8r83Fo6hBdWNoYW6jqaGixbcKyPC/taOob2Vy
-bGlrb26jqaGisNnN/sahvsajqEJ1ZHdlaXNlcqOpoaKwzcu5t/KjqEJhc2ajqaGiufrCw9TLzaij
-qENJVFMgQW1lcmkKY2FuIEV4cHJlc3OjqaGitPPW2sb7s7W98Mjao6hWV0ajqbXICiAgICDU+LLO
-vNO5/VN1bm55z+C52Lmrv6q/zrXE1vfSqr/Ou6fT0KO60e/X07DNy7m38qGisabC7aOoQk1Xo6mh
-otK7xvu34czvo6hUCm95b3Rho6mhor/Vxvi7r7mko6hBaXIgUHJvZHVjdKOpoaLKpbjqsOCjqFNh
-aW50LUdvYmFpbqOpoaLO98PF19OjqFNpZW1lbnOjqaGiCtbQufq6o9Hzyq/TzaOoQ25vb2OjqaGi
-t6i5+rXnwaajqEUuRC5Go6mhore60cew4MTDo6hQYW5hbHBpbmGjqaGitcC077b7yq/TzaOoClRv
-dGFso6mhorDdtvq7r9Gno6hCYXllcqOpoaLnsdbCyrHXsKOoQmVzdHNlbGxlcqOpoaLW0M3i1Muj
-qFNpbm90cmFuc6OpoaKwrsGiCtDFo6hFcmljc3NvbqOpoaLNqNPDtefG+KOoR0WjqaGix7/J+qOo
-SiZKo6mhosCtt6i7+aOoTGFmYXJnZaOptcihowo9PT09PT09PT09PT09PT09PT09PT09PT09PT09
-PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09Cl9fX19fX19f
-X19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fCkNvbnRhaW5lcnMgbWFpbGlu
-ZyBsaXN0CkNvbnRhaW5lcnNAbGlzdHMubGludXgtZm91bmRhdGlvbi5vcmcKaHR0cHM6Ly9saXN0
-cy5saW51eC1mb3VuZGF0aW9uLm9yZy9tYWlsbWFuL2xpc3RpbmZvL2NvbnRhaW5lcnM=
+On Sat, Sep 13, 2008 at 07:06:06PM -0400, Oren Laadan wrote:
+> +int cr_scan_fds(struct files_struct *files, int **fdtable)
+> +{
+> +	struct fdtable *fdt;
+> +	int *fds;
+> +	int i, n, tot;
+> +
+> +	n = 0;
+> +	tot = CR_DEFAULT_FDTABLE;
+
+Why not?
+| int i;
+| int n = 0;
+| int tot = CR_DEFAULT_FDTABLE;
+
+IHMO easier readable.
+
+> +	spin_lock(&files->file_lock);
+> +	fdt = files_fdtable(files);
+> +	for (i = 0; i < fdt->max_fds; i++) {
+
+The process is suspended at this state?
+
+> +		if (n == tot) {
+> +			/*
+> +			 * fcheck_files() is safe with drop/re-acquire
+> +			 * of the lock, because it tests:  fd < max_fds
+> +			 */
+> +			spin_unlock(&files->file_lock);
+> +			tot *= 2;
+> +			if (tot < 0) {		/* overflow ? */
+
+_NO_. tot is signed, this does not have documented overflow behaviour.
+You need to restrict this to a sane number.
+
+> +				kfree(fds);
+> +				return -EMFILE;
+> +			}
+> +			fds = krealloc(fds, tot * sizeof(*fds), GFP_KERNEL);
+> +			if (!fds)
+
+krealloc does not free the memory on error, so this is a leak.
+
+Bastian
+
+-- 
+The more complex the mind, the greater the need for the simplicity of play.
+		-- Kirk, "Shore Leave", stardate 3025.8
