@@ -1,15 +1,14 @@
 From: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: Re: [RFC v5][PATCH 2/8] General infrastructure for checkpoint	restart
-Date: Mon, 15 Sep 2008 12:13:18 -0700
-Message-ID: <1221505998.16561.34.camel__12166.5685940117$1221506145$gmane$org@nimitz>
+Subject: Re: [RFC v5][PATCH 5/8] Restore memory address space
+Date: Mon, 15 Sep 2008 12:14:04 -0700
+Message-ID: <1221506044.16561.37.camel__24038.8442333371$1221506178$gmane$org@nimitz>
 References: <1221347167-9956-1-git-send-email-orenl@cs.columbia.edu>
-	<1221347167-9956-3-git-send-email-orenl@cs.columbia.edu>
-	<1221501750.16561.15.camel@nimitz> <48CEAEF2.1050901@cs.columbia.edu>
+	<1221347167-9956-6-git-send-email-orenl@cs.columbia.edu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <48CEAEF2.1050901-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+In-Reply-To: <1221347167-9956-6-git-send-email-orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -23,46 +22,160 @@ To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, jeremy-TSDbQ3PG+2Y@public.gmane.org, arnd-r2nGTMty4D4@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Mon, 2008-09-15 at 14:52 -0400, Oren Laadan wrote:
-> Dave Hansen wrote:
-> > On Sat, 2008-09-13 at 19:06 -0400, Oren Laadan wrote:
-> >> +void *cr_hbuf_get(struct cr_ctx *ctx, int n)
-> >> +{
-> >> +       void *ptr;
-> >> +
-> >> +       BUG_ON(ctx->hpos + n > CR_HBUF_TOTAL);
-> >> +       ptr = (void *) (((char *) ctx->hbuf) + ctx->hpos);
-> >> +       ctx->hpos += n;
-> >> +       return ptr;
-> >> +}
-...
-> > I really do detest having a memory allocator BUG_ON() when it runs out
-> > of space.  
-> 
-> The BUG_ON() statement asserts that we don't run out of buffer space.
-> Buffer usage is a function of the checkpoint/restart logic, and does
-> not depend on user input, hence not susceptible to DoS.
+On Sat, 2008-09-13 at 19:06 -0400, Oren Laadan wrote:
+> +struct file *cr_read_open_fname(struct cr_ctx *ctx, int flags, int mode)
+> +{
+> +	struct file *file;
+> +	char *fname;
+> +	int flen, ret;
+> +
+> +	flen = PATH_MAX;
+> +	fname = kmalloc(flen, GFP_KERNEL);
+> +	if (!fname)
+> +		return ERR_PTR(-ENOMEM);
+> +
+> +	ret = cr_read_fname(ctx, fname, flen);
+> +	cr_debug("fname '%s' flags %#x mode %#x\n", fname, flags, mode);
+> +	if (ret >= 0)
+> +		file = filp_open(fname, flags, mode);
+> +	else
+> +		file = ERR_PTR(ret);
+> +
+> +	kfree(fname);
+> +	return file;
+> +}
 
-OK, that's fair enough.  But, can we document it as such?  "Only headers
-and things of known, static sizes can go in here.  We don't use
-kmalloc() instead of this because..."
+PATH_MAX is about as short of a global macro name as you're going to
+get.  It should just be used directly.  Please kill 'flen'.
 
-> In other words, if the code is correct, this should never happen (much
-> like a kernel stack overflow), and if it happens it's a kernel bug. I
-> think it was Arnd who recommended with regard to this to crash loudly
-> if there is a bug in the kernel ...
 
-Yes, it does mean that there is a bug because someone either made a
-structure bigger, PAGE_SIZE smaller, or a call path got deeper than we
-expected.  I'm just having visions of the email hitting my inbox in 18
-months. :)
+> +static int cr_read_pages_vaddrs(struct cr_ctx *ctx, unsigned long nr_pages)
+> +{
+> +	struct cr_pgarr *pgarr;
+> +	unsigned long *vaddrp;
+> +	int nr, ret;
+> +
+> +	while (nr_pages) {
+> +		pgarr = cr_pgarr_current(ctx);
+> +		if (!pgarr)
+> +			return -ENOMEM;
+> +		nr = cr_pgarr_nr_free(pgarr);
+> +		if (nr > nr_pages)
+> +			nr = nr_pages;
+> +		vaddrp = &pgarr->vaddrs[pgarr->nr_used];
+> +		ret = cr_kread(ctx, vaddrp, nr * sizeof(unsigned long));
+> +		if (ret < 0)
+> +			return ret;
+> +		pgarr->nr_used += nr;
+> +		nr_pages -= nr;
+> +	}
+> +	return 0;
+> +}
+> +
+> +static int cr_page_read(struct cr_ctx *ctx, struct page *page, char *buf)
+> +{
+> +	void *ptr;
+> +	int ret;
+> +
+> +	ret = cr_kread(ctx, buf, PAGE_SIZE);
+> +	if (ret < 0)
+> +		return ret;
+> +
+> +	ptr = kmap_atomic(page, KM_USER1);
+> +	memcpy(ptr, buf, PAGE_SIZE);
+> +	kunmap_atomic(page, KM_USER1);
+> +
+> +	return 0;
+> +}
+> +
+> +/**
+> + * cr_read_pages_contents - read in data of pages in page-array chain
+> + * @ctx - restart context
+> + */
+> +static int cr_read_pages_contents(struct cr_ctx *ctx)
+> +{
+> +	struct mm_struct *mm = current->mm;
+> +	struct cr_pgarr *pgarr;
+> +	unsigned long *vaddrs;
+> +	char *buf;
+> +	int i, ret = 0;
+> +
+> +	buf = kmalloc(PAGE_SIZE, GFP_KERNEL);
+> +	if (!buf)
+> +		return -ENOMEM;
+> +
+> +	down_read(&mm->mmap_sem);
+> +	list_for_each_entry_reverse(pgarr, &ctx->pgarr_list, list) {
+> +		vaddrs = pgarr->vaddrs;
+> +		for (i = 0; i < pgarr->nr_used; i++) {
+> +			struct page *page;
+> +
+> +			ret = get_user_pages(current, mm, vaddrs[i],
+> +					     1, 1, 1, &page, NULL);
+> +			if (ret < 0)
+> +				goto out;
+> +
+> +			ret = cr_page_read(ctx, page, buf);
+> +			page_cache_release(page);
+> +
+> +			if (ret < 0)
+> +				goto out;
+> +		}
+> +	}
+> +
+> + out:
+> +	up_read(&mm->mmap_sem);
+> +	kfree(buf);
+> +	return 0;
+> +}
+> +
+> +/**
+> + * cr_read_private_vma_contents - restore contents of a VMA with private memory
+> + * @ctx - restart context
+> + *
+> + * Reads a header that specifies how many pages will follow, then reads
+> + * a list of virtual addresses into ctx->pgarr_list page-array chain,
+> + * followed by the actual contents of the corresponding pages. Iterates
+> + * these steps until reaching a header specifying "0" pages, which marks
+> + * the end of the contents.
+> + */
+> +static int cr_read_private_vma_contents(struct cr_ctx *ctx)
+> +{
+> +	struct cr_hdr_pgarr *hh;
+> +	unsigned long nr_pages;
+> +	int parent, ret = 0;
+> +
+> +	while (!ret) {
+> +		hh = cr_hbuf_get(ctx, sizeof(*hh));
+> +		parent = cr_read_obj_type(ctx, hh, sizeof(*hh), CR_HDR_PGARR);
+> +		if (parent < 0)
+> +			return parent;
+> +		else if (parent != 0)
+> +			return -EINVAL;
+> +
+> +		cr_debug("nr_pages %ld\n", (unsigned long) hh->nr_pages);
+> +
+> +		nr_pages = hh->nr_pages;
+> +		cr_hbuf_put(ctx, sizeof(*hh));
+> +
+> +		if (!nr_pages)
+> +			break;
+> +
+> +		ret = cr_read_pages_vaddrs(ctx, nr_pages);
+> +		if (ret < 0)
+> +			break;
+> +		ret = cr_read_pages_contents(ctx);
+> +		if (ret < 0)
+> +			break;
+> +		cr_pgarr_reset_all(ctx);
+> +	}
+> +
+> +	return ret;
+> +}
 
-The structures are sized consistently across all architectures and
-configurations.  However, PAGE_SIZE and the size of that buffer are not.
-The buffer will be 8k on x86, but 128k on most ppc64 configurations.
+That's an interesting loop condition, especially since it will never
+actually get triggered.  while(1) would give the same functionality,
+right?
 
-Can we at least make it sized in numbers of bytes rather than pages?
-Also, please remember that using kmalloc() buys you lots of fun stuff on
-top of get_free_pages(), like redzones and easier debugging.
 
 -- Dave
