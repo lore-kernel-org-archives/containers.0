@@ -1,7 +1,7 @@
 From: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 Subject: Re: [RFC v5][PATCH 2/8] General infrastructure for checkpoint restart
-Date: Mon, 15 Sep 2008 11:00:52 -0700
-Message-ID: <1221501652.16561.12.camel__27459.7803516828$1221502024$gmane$org@nimitz>
+Date: Mon, 15 Sep 2008 11:02:30 -0700
+Message-ID: <1221501750.16561.15.camel__24236.3589037724$1221502029$gmane$org@nimitz>
 References: <1221347167-9956-1-git-send-email-orenl@cs.columbia.edu>
 	<1221347167-9956-3-git-send-email-orenl@cs.columbia.edu>
 Mime-Version: 1.0
@@ -24,27 +24,20 @@ List-Id: containers.vger.kernel.org
 
 On Sat, 2008-09-13 at 19:06 -0400, Oren Laadan wrote:
 > 
-> +
-> +struct cr_ctx *cr_ctx_alloc(pid_t pid, int fd, unsigned long flags)
+> +void *cr_hbuf_get(struct cr_ctx *ctx, int n)
 > +{
-> +       struct cr_ctx *ctx;
+> +       void *ptr;
 > +
-> +       ctx = kzalloc(sizeof(*ctx), GFP_KERNEL);
-> +       if (!ctx)
-> +               return ERR_PTR(-ENOMEM);
-> +
-> +       ctx->file = fget(fd);
-> +       if (!ctx->file) {
-> +               cr_ctx_free(ctx);
-> +               return ERR_PTR(-EBADF);
-> +       }
-> +
-> +       ctx->hbuf = (void *) __get_free_pages(GFP_KERNEL, CR_HBUF_ORDER);
-> +       if (!ctx->hbuf) {
-> +               cr_ctx_free(ctx);
-> +               return ERR_PTR(-ENOMEM);
-> +       }
+> +       BUG_ON(ctx->hpos + n > CR_HBUF_TOTAL);
+> +       ptr = (void *) (((char *) ctx->hbuf) + ctx->hpos);
+> +       ctx->hpos += n;
+> +       return ptr;
+> +}
 
-Could you explain why you're not using the slab here?
+All of the casting here is unnecessary.  'void *' behaves like 'char *'
+when you do arithmetic on it.  
+
+I really do detest having a memory allocator BUG_ON() when it runs out
+of space.  
 
 -- Dave
