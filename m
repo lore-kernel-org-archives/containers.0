@@ -1,7 +1,7 @@
 From: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 Subject: Re: [RFC v5][PATCH 2/8] General infrastructure for checkpoint restart
-Date: Mon, 15 Sep 2008 10:54:20 -0700
-Message-ID: <1221501260.16561.7.camel__34512.9270609052$1221501581$gmane$org@nimitz>
+Date: Mon, 15 Sep 2008 10:59:30 -0700
+Message-ID: <1221501570.16561.9.camel__7425.50809304721$1221501991$gmane$org@nimitz>
 References: <1221347167-9956-1-git-send-email-orenl@cs.columbia.edu>
 	<1221347167-9956-3-git-send-email-orenl@cs.columbia.edu>
 Mime-Version: 1.0
@@ -23,38 +23,20 @@ Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, jer
 List-Id: containers.vger.kernel.org
 
 On Sat, 2008-09-13 at 19:06 -0400, Oren Laadan wrote:
-> 
-> +int cr_read_obj_type(struct cr_ctx *ctx, void *buf, int n, int type)
+> +/*
+> + * FIXME: (temporarily added file_pos_read() and file_pos_write() because
+> + * they are static in fs/read_write.c... should cleanup and remove later)
+> + */
+> +static inline loff_t file_pos_read(struct file *file)
 > +{
-> +       struct cr_hdr h;
-> +       int ret;
+> +       return file->f_pos;
+> +}
 > +
-> +       ret = cr_read_obj(ctx, &h, buf, n);
-> +       if (!ret) {
-> +               if (h.type == type)
-> +                       ret = h.parent;
-> +               else
-> +                       ret = -EINVAL;
-> +       }
-> +       return ret;
+> +static inline void file_pos_write(struct file *file, loff_t pos)
+> +{
+> +       file->f_pos = pos;
 > +}
 
-This one has been bugging me a bit.  This adds one net line of code and
-I think it's much easier to read:
-
-{
-	struct cr_hdr h;
-	int ret;
-
-	ret = cr_read_obj(ctx, &h, buf, n);
-	if (ret)
-		return ret;
-
-	ret = -EINVAL;	
-	if (h.type == type)
-		ret = h.parent;
-
-	return ret;
-}                     
+It's probably time to address this fixme.  
 
 -- Dave
