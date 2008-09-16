@@ -1,17 +1,17 @@
 From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [RFC v5][PATCH 7/8] Infrastructure for shared objects
-Date: Tue, 16 Sep 2008 17:09:12 -0500
-Message-ID: <20080916220912.GA21663__27286.35981116$1221603171$gmane$org@us.ibm.com>
+Subject: Re: [RFC v5][PATCH 8/8] Dump open file descriptors
+Date: Tue, 16 Sep 2008 18:03:20 -0500
+Message-ID: <20080916230320.GA25445__20854.6966933229$1221606546$gmane$org@us.ibm.com>
 References: <1221347167-9956-1-git-send-email-orenl@cs.columbia.edu>
-	<1221347167-9956-8-git-send-email-orenl@cs.columbia.edu>
-	<20080916205459.GA7644@us.ibm.com>
-	<48D026ED.3080109@cs.columbia.edu>
+	<1221347167-9956-9-git-send-email-orenl@cs.columbia.edu>
+	<20080914095106.GA6300@wavehammer.waldi.eu.org>
+	<48CD3069.7080200@cs.columbia.edu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <48D026ED.3080109-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+In-Reply-To: <48CD3069.7080200-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -22,105 +22,93 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Cc: linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, jeremy-TSDbQ3PG+2Y@public.gmane.org, arnd-r2nGTMty4D4@public.gmane.org, dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
+Cc: jeremy-TSDbQ3PG+2Y@public.gmane.org, arnd-r2nGTMty4D4@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Bastian Blank <bastian-yyjItF7Rl6lg9hUCZPvPmw@public.gmane.org>, dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
 List-Id: containers.vger.kernel.org
 
 Quoting Oren Laadan (orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org):
 > 
 > 
-> Serge E. Hallyn wrote:
-> > Quoting Oren Laadan (orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org):
-> >> Infrastructure to handle objects that may be shared and referenced by
-> >> multiple tasks or other objects, e..g open files, memory address space
-> >> etc.
-> >>
-> >> The state of shared objects is saved once. On the first encounter, the
-> >> state is dumped and the object is assigned a unique identifier (objref)
-> >> and also stored in a hash table (indexed by its physical kenrel address).
-> >> >From then on the object will be found in the hash and only its identifier
-> >> is saved.
-> >>
-> >> On restart the identifier is looked up in the hash table; if not found
-> >> then the state is read, the object is created, and added to the hash
-> >> table (this time indexed by its identifier). Otherwise, the object in
-> >> the hash table is used.
-> >>
-> >> Signed-off-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-> > 
-> > Acked-by: Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-> > 
-> > Thanks, Oren, I actually think this is quite nice and readable.
-> > 
-> > Though three questions below.  First one is, since you've mentioned
-> > having multiple threads doing checkpoint, won't you need some locking?
-> 
-> yes.
-> 
-> > I assume that's coming in later patches if/when needed?
-> 
-> yes.
-> 
-> [...]
-> 
-> >> +++ b/checkpoint/objhash.c
-> >> @@ -0,0 +1,237 @@
-> >> +/*
-> >> + *  Checkpoint-restart - object hash infrastructure to manage shared objects
-> >> + *
-> >> + *  Copyright (C) 2008 Oren Laadan
-> >> + *
-> >> + *  This file is subject to the terms and conditions of the GNU General Public
-> >> + *  License.  See the file COPYING in the main directory of the Linux
-> >> + *  distribution for more details.
-> >> + */
+> Bastian Blank wrote:
+> > On Sat, Sep 13, 2008 at 07:06:06PM -0400, Oren Laadan wrote:
+> >> +int cr_scan_fds(struct files_struct *files, int **fdtable)
+> >> +{
+> >> +	struct fdtable *fdt;
+> >> +	int *fds;
+> >> +	int i, n, tot;
 > >> +
-> >> +#include <linux/kernel.h>
-> >> +#include <linux/file.h>
-> >> +#include <linux/hash.h>
-> >> +#include <linux/checkpoint.h>
-> >> +
-> >> +struct cr_objref {
-> >> +	int objref;
-> >> +	void *ptr;
-> >> +	unsigned short type;
+> >> +	n = 0;
+> >> +	tot = CR_DEFAULT_FDTABLE;
 > > 
-> > What is the point of the 'type'?
+> > Why not?
+> > | int i;
+> > | int n = 0;
+> > | int tot = CR_DEFAULT_FDTABLE;
 > > 
-> > By that I mean: is it meant to catch bugs in the implementation, or bad
-> > checkpoint images?
+> > IHMO easier readable.
 > 
-
-...
-
-> There are different functions to inc/dec the reference count of objects
-> of different types. '->type' keeps track of the type of the object, so
-> we know which function to call. (At this point, we only track shared
-> 'struct file' so it isn't that clear from the code).
-
-Doh, right.
-
+> Ok.
 > 
 > > 
-> >> +	unsigned short flags;
-> >> +	struct hlist_node hash;
-> >> +};
-> >> +
-> >> +struct cr_objhash {
-> >> +	struct hlist_head *head;
-> >> +	int objref_index;
+> >> +	spin_lock(&files->file_lock);
+> >> +	fdt = files_fdtable(files);
+> >> +	for (i = 0; i < fdt->max_fds; i++) {
 > > 
-> > What exactly will objref_index be used for?  I don't see any real
-> > usage here or in your later patches.
-> > 
+> > The process is suspended at this state?
 > 
-> 'objref_index' is a counter used to assign unique identifiers (objref)
-> to objects as they are added to the hash table. It is incremented with
-> every object that joins the hash table (and the old value is used as
-> the objref of that object). It is used in cr_obj_new().
+> Yes, the assumption is that the process is frozen (or that we checkpoint
+> ourselves).
+> 
+> With this assumption, it is possible to (a) leave out RCU locking, and also
+> (b) continue after the krealloc() from where we left off. Also, it means that
+> (c) the contents of our 'fds' array remain valid by the time the caller makes
+> use of it.
+> 
+> This certainly deserves a comment in the code, will add.
+> 
+> If the assumption doesn't hold, then I'll have to add the RCU locking. Cases
+> (b) and (c) are already safe because the caller(s) use fcheck_files() to
+> access the file-descriptors collected in the array.
+> 
+> While in my mind a task should never be unfrozen while being checkpointed, in
+> reality future code may allow it e.g. if a OOM kicks in a kills it. So I tend
+> to add the RCU lock for safety. It can always be optimized out later.
 
-If you were to rename objref_index to next_free_ref, I think that'd
-be helpful.  (I also don't think 'obj' should in the name at all, and
-you should just s/objref/id/, but that's really too much pain)
+More to the point, you're not preventing them being unfrozen, so I think
+the locking needs to stay.
 
-thanks,
--serge
+> > 
+> >> +		if (n == tot) {
+> >> +			/*
+> >> +			 * fcheck_files() is safe with drop/re-acquire
+> >> +			 * of the lock, because it tests:  fd < max_fds
+> >> +			 */
+> >> +			spin_unlock(&files->file_lock);
+> >> +			tot *= 2;
+> >> +			if (tot < 0) {		/* overflow ? */
+> > 
+> > _NO_. tot is signed, this does not have documented overflow behaviour.
+> > You need to restrict this to a sane number.
+> 
+> Ok. (btw, krealloc() will fail much earlier anyway).
+
+Right, so you may as well drop this.  You're not protecting from
+userspace here, right?  You're protecting against a bogus max_fds.
+Not worthwhile.
+
+> >> +				kfree(fds);
+> >> +				return -EMFILE;
+> >> +			}
+> >> +			fds = krealloc(fds, tot * sizeof(*fds), GFP_KERNEL);
+> >> +			if (!fds)
+> > 
+> > krealloc does not free the memory on error, so this is a leak.
+> 
+> Ok.
+> 
+> Thanks,
+> 
+> Oren.
+> _______________________________________________
+> Containers mailing list
+> Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+> https://lists.linux-foundation.org/mailman/listinfo/containers
