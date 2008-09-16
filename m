@@ -1,16 +1,16 @@
-From: "Paul Menage" <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [Devel] Re: Write Error: No space left on device
-Date: Mon, 15 Sep 2008 17:26:22 -0700
-Message-ID: <6599ad830809151726t4ff6082dsfda259dccd503415@mail.gmail.com>
-References: <c7704c490809050541v2df520f9ja9edc4582ee1199f@mail.gmail.com>
-	<20080905080008.bf9748ab.pj@sgi.com>
-	<c7704c490809150455r3376db54g8d37aba6670500a9@mail.gmail.com>
+From: Bastian Blank <bastian-yyjItF7Rl6lg9hUCZPvPmw@public.gmane.org>
+Subject: Re: [RFC v5][PATCH 2/8] General infrastructure for checkpoint restart
+Date: Tue, 16 Sep 2008 14:27:03 +0200
+Message-ID: <20080916122703.GA24431__43530.0532998101$1221568165$gmane$org@wavehammer.waldi.eu.org>
+References: <1221347167-9956-1-git-send-email-orenl@cs.columbia.edu>
+	<1221347167-9956-3-git-send-email-orenl@cs.columbia.edu>
+	<1221501750.16561.15.camel@nimitz>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <c7704c490809150455r3376db54g8d37aba6670500a9-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
 Content-Disposition: inline
+In-Reply-To: <1221501750.16561.15.camel@nimitz>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -20,60 +20,23 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Mukesh G <mukgbv-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, jeremy-TSDbQ3PG+2Y@public.gmane.org, arnd-r2nGTMty4D4@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Hi Mukesh,
+On Mon, Sep 15, 2008 at 11:02:30AM -0700, Dave Hansen wrote:
+> All of the casting here is unnecessary.  'void *' behaves like 'char *'
+> when you do arithmetic on it.  
 
-You should either:
+No. Arithmetic on void pointer is not allowed by the standard. This is a
+gcc extension. It's okay to be used in the Linux kernel but not in
+general.
 
-- mount with just the cgroup subsystems that you care about (e.g.
-"-ocpu,memory")
+The second cast (from char * to void *) however is useless.
 
-- set the "cpuset.cpus" and "cpuset.mems" files in the child cgroup to
-be equal to those of the parent (root) cgroup.
+Bastian
 
-Paul
-
-On Mon, Sep 15, 2008 at 4:55 AM, Mukesh G <mukgbv-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org> wrote:
-> Hi Paul,
->     How do I determine the no of memory nodes in shared systems (E.g: x86
-> based systems)? How do you define a memory node in the context of the shared
-> systems?
->
-> I figured that I need to increase the memory nodes but unable to do so...
->
-> Thanks
->
-> Mukesh
->
->
-> On Fri, Sep 5, 2008 at 6:30 PM, Paul Jackson <pj-sJ/iWh9BUns@public.gmane.org> wrote:
->
->> Mukesh wrote:
->> > "Write Error: No space left on device".
->>
->> Search for
->>
->>     ENOSPC
->>
->> on the (brand new) cpuset(7) man page, such as at:
->>
->>     ftp://oss.sgi.com/projects/cpusets/download/cpuset.7
->>
->> --
->>                  I won't rest till it's the best ...
->>                  Programmer, Linux Scalability
->>                  Paul Jackson <pj-sJ/iWh9BUns@public.gmane.org> 1.940.382.4214
->>
-> _______________________________________________
-> Containers mailing list
-> Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-> https://lists.linux-foundation.org/mailman/listinfo/containers
->
-> _______________________________________________
-> Devel mailing list
-> Devel-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org
-> https://openvz.org/mailman/listinfo/devel
->
+-- 
+Prepare for tomorrow -- get ready.
+		-- Edith Keeler, "The City On the Edge of Forever",
+		   stardate unknown
