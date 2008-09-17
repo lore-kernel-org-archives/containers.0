@@ -1,7 +1,7 @@
 From: Andrea Righi <righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 Subject: Re: [RFC][PATCH -mm 0/5] cgroup: block device i/o controller (v9)
-Date: Wed, 17 Sep 2008 11:42:21 +0200
-Message-ID: <48D0D0FD.7010902__15922.0155132518$1221644767$gmane$org@gmail.com>
+Date: Wed, 17 Sep 2008 12:08:29 +0200
+Message-ID: <48D0D71D.2040100__20887.0466253304$1221646254$gmane$org@gmail.com>
 References: <> <1219853257-11052-1-git-send-email-righi.andrea@gmail.com>
 	<48D0C800.30207@oss.ntt.co.jp>
 Reply-To: righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org
@@ -43,13 +43,20 @@ Takuya Yoshikawa wrote:
 >>   pages are swapped in/out
 > 
 > Could you explain which cgroup we should charge when swap in or out occurs?
+> Are there any difference between the following cases?
+> 
+> Target page is
+> 1. used as page cache and not mapped to any space
+> 2. used as page cache and mapped to some space
+> 3. not used as page cache and mapped to some space
+> 
+> I do not think it is fair to charge the process for this kind of I/O, am I wrong?
 
-IMHO we should charge the owner of the page being swapped in/out (not
-kswapd I mean). If a task is using a lot of memory and the memory of
-this task is swapped out, it's actually generating i/o. Yes, we could
-also hit other tasks that are using few pages in this way, but the most
-memory consuming guys should be charged proportionally to the memory
-they're consuming. IOW, this kind of i/o activity should be charge to the
-cgroup the task belongs to.
+As a generic implementation, when a read/write request is submitted to the
+IO subsystem (i.e. submit_bio()), look at the first page in the struct bio
+and charge the IO cost to the owner of that page. It this makes sense, we
+have to just keep track of all the pages when they're submitted to the IO
+subsystem in this way. Unfortunately, this doesn't seem to work during
+swap_writepage(), but maybe bio-cgroup is able to handle this case.
 
 -Andrea
