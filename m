@@ -1,13 +1,17 @@
-From: Andrea Righi <righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: [PATCH -mm 6/6] export per-task i/o throttling statistics to userspace
-Date: Wed, 17 Sep 2008 13:05:28 +0200
-Message-ID: <1221649528-8519-7-git-send-email-righi.andrea__40766.3495316685$1221649901$gmane$org@gmail.com>
+From: "Mukesh G" <mukgbv-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Subject: Re: [Devel] Re: Write Error: No space left on device
+Date: Wed, 17 Sep 2008 18:27:09 +0530
+Message-ID: <c7704c490809170557o21330ceaoeca5193add14c6d4@mail.gmail.com>
+References: <c7704c490809050541v2df520f9ja9edc4582ee1199f@mail.gmail.com>
+	<20080905080008.bf9748ab.pj@sgi.com>
+	<c7704c490809150455r3376db54g8d37aba6670500a9@mail.gmail.com>
+	<6599ad830809151726t4ff6082dsfda259dccd503415@mail.gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <>
-References: <>
+In-Reply-To: <6599ad830809151726t4ff6082dsfda259dccd503415-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
+Content-Disposition: inline
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -17,66 +21,87 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
-Cc: randy.dunlap-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org, Carl Henrik Lunde <chlunde-om2ZC0WAoZIXWF+eFR7m5Q@public.gmane.org>, Divyesh Shah <dpshah-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, eric.rannaud-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, fernando-gVGce1chcLdL9jVzuh4AOg@public.gmane.org, Andrea Righi <righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, agk-9JcytcrH/bA+uJoB2kUjGw@public.gmane.org, subrata-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, axboe-tSWWG44O7X1aa/9Udqfwiw@public.gmane.org, Marco Innocenti <m.innocenti-qooieK91W7JeoWH0uzbU5w@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, matt-cT2on/YLNlBWk0Htik3J/w@public.gmane.org, roberto-5KDOxZqKugI@public.gmane.org, ngupta-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org
+To: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Export the throttling statistics collected for each task through
-/proc/PID/io-throttle-stat:
- - total number of delayed I/O request
- - total amount of time in clock ticks spent to wait for the delayed requests
+Hi
+ Thanks for the help... I got cpu, memory cgroups at least mounted... I got
+a basic task (my shell) assigned to cpu cgroup, memory cgroup
 
-Signed-off-by: Andrea Righi <righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
----
- fs/proc/base.c |   15 +++++++++++++++
- 1 files changed, 15 insertions(+), 0 deletions(-)
+mount -t cgroup -o cpu none /container/cpu
+mount -t cgroup -o memory none /container/memory
+mount -t cgroup -o cpuset none /container/cpuset
 
-diff --git a/fs/proc/base.c b/fs/proc/base.c
-index 63617ca..e53b06c 100644
---- a/fs/proc/base.c
-+++ b/fs/proc/base.c
-@@ -54,6 +54,7 @@
- #include <linux/proc_fs.h>
- #include <linux/stat.h>
- #include <linux/task_io_accounting_ops.h>
-+#include <linux/blk-io-throttle.h>
- #include <linux/init.h>
- #include <linux/capability.h>
- #include <linux/file.h>
-@@ -2459,6 +2460,14 @@ static int proc_tgid_io_accounting(struct task_struct *task, char *buffer)
- }
- #endif /* CONFIG_TASK_IO_ACCOUNTING */
- 
-+#ifdef CONFIG_CGROUP_IO_THROTTLE
-+static int proc_iothrottle_stat(struct task_struct *task, char *buffer)
-+{
-+	return sprintf(buffer, "%llu %llu\n",
-+		get_io_throttle_cnt(task), get_io_throttle_sleep(task));
-+}
-+#endif /* CONFIG_CGROUP_IO_THROTTLE */
-+
- /*
-  * Thread groups
-  */
-@@ -2534,6 +2543,9 @@ static const struct pid_entry tgid_base_stuff[] = {
- #ifdef CONFIG_TASK_IO_ACCOUNTING
- 	INF("io",	S_IRUGO, tgid_io_accounting),
- #endif
-+#ifdef CONFIG_CGROUP_IO_THROTTLE
-+	INF("io-throttle-stat",	S_IRUGO, iothrottle_stat),
-+#endif
- };
- 
- static int proc_tgid_base_readdir(struct file * filp,
-@@ -2865,6 +2877,9 @@ static const struct pid_entry tid_base_stuff[] = {
- #ifdef CONFIG_TASK_IO_ACCOUNTING
- 	INF("io",	S_IRUGO, tid_io_accounting),
- #endif
-+#ifdef CONFIG_CGROUP_IO_THROTTLE
-+	INF("io-throttle-stat",	S_IRUGO, iothrottle_stat),
-+#endif
- };
- 
- static int proc_tid_base_readdir(struct file * filp,
--- 
-1.5.4.3
+Each of the sub-directories have files that can be modified for a designated
+purpose....
+
+The questions that I am now trying to resolve
+
+a)Definition of cpu.shares?
+   the default value is 1024. What is the max? What is the relation b/w cpu
+cores, freq of the cores etc...? What is 1 cpu share worth?
+b) What is the relation between cpuset.cpu* values and cpu cgroup?
+c) What is the relation between cpuset.mem* values and memory cgroup?
+
+Thanks in advance
+
+Mukesh
+
+On Tue, Sep 16, 2008 at 5:56 AM, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org> wrote:
+
+> Hi Mukesh,
+>
+> You should either:
+>
+> - mount with just the cgroup subsystems that you care about (e.g.
+> "-ocpu,memory")
+>
+> - set the "cpuset.cpus" and "cpuset.mems" files in the child cgroup to
+> be equal to those of the parent (root) cgroup.
+>
+> Paul
+>
+> On Mon, Sep 15, 2008 at 4:55 AM, Mukesh G <mukgbv-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org> wrote:
+> > Hi Paul,
+> >     How do I determine the no of memory nodes in shared systems (E.g: x86
+> > based systems)? How do you define a memory node in the context of the
+> shared
+> > systems?
+> >
+> > I figured that I need to increase the memory nodes but unable to do so...
+> >
+> > Thanks
+> >
+> > Mukesh
+> >
+> >
+> > On Fri, Sep 5, 2008 at 6:30 PM, Paul Jackson <pj-sJ/iWh9BUns@public.gmane.org> wrote:
+> >
+> >> Mukesh wrote:
+> >> > "Write Error: No space left on device".
+> >>
+> >> Search for
+> >>
+> >>     ENOSPC
+> >>
+> >> on the (brand new) cpuset(7) man page, such as at:
+> >>
+> >>     ftp://oss.sgi.com/projects/cpusets/download/cpuset.7
+> >>
+> >> --
+> >>                  I won't rest till it's the best ...
+> >>                  Programmer, Linux Scalability
+> >>                  Paul Jackson <pj-sJ/iWh9BUns@public.gmane.org> 1.940.382.4214
+> >>
+> > _______________________________________________
+> > Containers mailing list
+> > Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+> > https://lists.linux-foundation.org/mailman/listinfo/containers
+> >
+> > _______________________________________________
+> > Devel mailing list
+> > Devel-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org
+> > https://openvz.org/mailman/listinfo/devel
+> >
+>
