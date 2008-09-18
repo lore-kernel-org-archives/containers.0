@@ -1,16 +1,12 @@
 From: Andrea Righi <righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: Re: [RFC][PATCH -mm 1/5] i/o controller documentation
-Date: Thu, 18 Sep 2008 18:26:51 +0200
-Message-ID: <48D2814B.7030909__31058.0870639116$1221755388$gmane$org@gmail.com>
-References: <1219853257-11052-2-git-send-email-righi.andrea@gmail.com>
-	<20080918140416.GF20640@redhat.com> <48D26DDF.9080402@gmail.com>
-	<20080918153310.GI20640@redhat.com>
+Subject: [PATCH -mm] memrlimit: fix task_lock() recursive locking
+Date: Thu, 18 Sep 2008 19:48:53 +0200
+Message-ID: <48D29485.5010900__12742.4498125494$1221760285$gmane$org@gmail.com>
 Reply-To: righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20080918153310.GI20640-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -20,108 +16,146 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Cc: randy.dunlap-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org, axboe-tSWWG44O7X1aa/9Udqfwiw@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, ngupta-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, fernando-gVGce1chcLdL9jVzuh4AOg@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Carl Henrik Lunde <chlunde-om2ZC0WAoZIXWF+eFR7m5Q@public.gmane.org>, dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, matt-cT2on/YLNlBWk0Htik3J/w@public.gmane.org, Divyesh Shah <dpshah-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, roberto-5KDOxZqKugI@public.gmane.org, agk-9JcytcrH/bA+uJoB2kUjGw@public.gmane.org, Marco Innocenti <m.innocenti-qooieK91W7JeoWH0uzbU5w@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, subrata-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, eric.rannaud-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+To: Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
+Cc: linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, LKML <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Vivek Goyal wrote:
-> On Thu, Sep 18, 2008 at 05:03:59PM +0200, Andrea Righi wrote:
->> Vivek Goyal wrote:
->>> On Wed, Aug 27, 2008 at 06:07:33PM +0200, Andrea Righi wrote:
->>>> Documentation of the block device I/O controller: description, usage,
->>>> advantages and design.
->>>>
->>>> Signed-off-by: Andrea Righi <righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
->>>> ---
->>>>  Documentation/controllers/io-throttle.txt |  377 +++++++++++++++++++++++++++++
->>>>  1 files changed, 377 insertions(+), 0 deletions(-)
->>>>  create mode 100644 Documentation/controllers/io-throttle.txt
->>>>
->>>> diff --git a/Documentation/controllers/io-throttle.txt b/Documentation/controllers/io-throttle.txt
->>>> new file mode 100644
->>>> index 0000000..09df0af
->>>> --- /dev/null
->>>> +++ b/Documentation/controllers/io-throttle.txt
->>>> @@ -0,0 +1,377 @@
->>>> +
->>>> +               Block device I/O bandwidth controller
->>>> +
->>>> +----------------------------------------------------------------------
->>>> +1. DESCRIPTION
->>>> +
->>>> +This controller allows to limit the I/O bandwidth of specific block devices for
->>>> +specific process containers (cgroups) imposing additional delays on I/O
->>>> +requests for those processes that exceed the limits defined in the control
->>>> +group filesystem.
->>>> +
->>>> +Bandwidth limiting rules offer better control over QoS with respect to priority
->>>> +or weight-based solutions that only give information about applications'
->>>> +relative performance requirements. Nevertheless, priority based solutions are
->>>> +affected by performance bursts, when only low-priority requests are submitted
->>>> +to a general purpose resource dispatcher.
->>>> +
->>>> +The goal of the I/O bandwidth controller is to improve performance
->>>> +predictability from the applications' point of view and provide performance
->>>> +isolation of different control groups sharing the same block devices.
->>>> +
->>>> +NOTE #1: If you're looking for a way to improve the overall throughput of the
->>>> +system probably you should use a different solution.
->>>> +
->>>> +NOTE #2: The current implementation does not guarantee minimum bandwidth
->>>> +levels, the QoS is implemented only slowing down I/O "traffic" that exceeds the
->>>> +limits specified by the user; minimum I/O rate thresholds are supposed to be
->>>> +guaranteed if the user configures a proper I/O bandwidth partitioning of the
->>>> +block devices shared among the different cgroups (theoretically if the sum of
->>>> +all the single limits defined for a block device doesn't exceed the total I/O
->>>> +bandwidth of that device).
->>>> +
->>> Hi Andrea,
->>>
->>> Had a query. What's your use case for capping max bandwidth? I was
->>> wondering will proportional bandwidth not cover it. So if we allocate
->>> weight/share to every cgroup and limit the bandwidth based on shares
->>> only in case of contention. Otherwise applications get to unlimited
->>> bandwidth. Much like what cpu controller does or for that matter dm-ioband
->>> seems to be doing the same thing. Will you not get same kind of QoS here when
->>> comapred to max-bandwidth. The only thing probably missing is what we call
->>> hard limit. When BW is available but you don't want a user to use that
->>> BW, until and unless user has paid for that.
->> At the beginning my use case was to guarantee a certain level
->> performance _predictability_. That means no more and no less than the
->> specified threshold (should I say this would be useful for the real-time
->> apps? maybe yes).
->>
-> 
-> Is "no more" harmful for real-time env? Which RT application hates more
-> bandwidth than what one asked for? I could understand "no-less" but you
-> mentioned in the past that implementing minimum gurantees is lot harder.
+cgroup_mm_owner_callbacks() can be called with task_lock() held in
+mm_update_next_owner(), and all the .mm_owner_changed callbacks seem to
+be *always* called with task_lock() held.
 
-RT doesn't mean as fast as possible, the objective of RT is to meet the
-individual timing requirement. So, the most important property for RT should
-be predicatbility. If you know that an application would require exactly
-T seconds to read a block from a device (no more, no less) well... in this
-case you're not introducing uncertainness in your RT task.
+Actually, memrlimit is using task_lock() via get_task_mm() in
+memrlimit_cgroup_mm_owner_changed(), raising the following recursive locking
+trace:
 
-And I agree for the "no-less" part. It's difficult, but there's surely
-space for improvements.
+[ 5346.421365] =============================================
+[ 5346.421374] [ INFO: possible recursive locking detected ]
+[ 5346.421381] 2.6.27-rc5-mm1 #20
+[ 5346.421385] ---------------------------------------------
+[ 5346.421391] interbench/10530 is trying to acquire lock:
+[ 5346.421396]  (&p->alloc_lock){--..}, at: [<ffffffff8023b034>] get_task_mm+0x24/0x70
+[ 5346.421417]
+[ 5346.421418] but task is already holding lock:
+[ 5346.421423]  (&p->alloc_lock){--..}, at: [<ffffffff8023db98>] mm_update_next_owner+0x148/0x230
+[ 5346.421438]
+[ 5346.421440] other info that might help us debug this:
+[ 5346.421446] 2 locks held by interbench/10530:
+[ 5346.421450]  #0:  (&mm->mmap_sem){----}, at: [<ffffffff8023db90>] mm_update_next_owner+0x140/0x230
+[ 5346.421467]  #1:  (&p->alloc_lock){--..}, at: [<ffffffff8023db98>] mm_update_next_owner+0x148/0x230
+[ 5346.421483]
+[ 5346.421485] stack backtrace:
+[ 5346.421491] Pid: 10530, comm: interbench Not tainted 2.6.27-rc5-mm1 #20
+[ 5346.421496] Call Trace:
+[ 5346.421507]  [<ffffffff80263383>] validate_chain+0xb03/0x10d0
+[ 5346.421515]  [<ffffffff80263c05>] __lock_acquire+0x2b5/0x9c0
+[ 5346.421522]  [<ffffffff80262cc2>] validate_chain+0x442/0x10d0
+[ 5346.421530]  [<ffffffff802643aa>] lock_acquire+0x9a/0xe0
+[ 5346.421537]  [<ffffffff8023b034>] get_task_mm+0x24/0x70
+[ 5346.421546]  [<ffffffff804757c7>] _spin_lock+0x37/0x70
+[ 5346.421553]  [<ffffffff8023b034>] get_task_mm+0x24/0x70
+[ 5346.421560]  [<ffffffff8023b034>] get_task_mm+0x24/0x70
+[ 5346.421569]  [<ffffffff802b91f8>] memrlimit_cgroup_mm_owner_changed+0x18/0x90
+[ 5346.421579]  [<ffffffff80278b03>] cgroup_mm_owner_callbacks+0x93/0xc0
+[ 5346.421587]  [<ffffffff8023dc36>] mm_update_next_owner+0x1e6/0x230
+[ 5346.421595]  [<ffffffff8023dd72>] exit_mm+0xf2/0x120
+[ 5346.421602]  [<ffffffff8023f547>] do_exit+0x167/0x930
+[ 5346.421610]  [<ffffffff8047604a>] _spin_unlock_irq+0x2a/0x50
+[ 5346.421618]  [<ffffffff8023fd46>] do_group_exit+0x36/0xa0
+[ 5346.421626]  [<ffffffff8020b7cb>] system_call_fastpath+0x16/0x1b
 
-> I was thinking that what if we continue to stick to the current policy
-> of letting RT requests go first and try to let them use disk bw first.
-> cfq first dispatches requests of RT class (based on their priority).
-> So in simple implementation, IO controller will simply let all the RT class
-> requests to go directly to elevator and then let elevator dispatch these
-> requests based on their RT prio. IO-controller will only buffer and control
-> requests of non-RT class. This will make sure that we don't break the case of
-> existing working RT applications and still be able to divide remaining disk
-> BW among other non-RT tasks.
-> 
-> IMHO, once above simple scheme is working, we can probably extend it to
-> provide additional level of controls.
->  
-> Thanks
-> Vivek
+Here is a possible fix, introducing get_task_mm_task_locked().
 
-Sounds reasonable, since we want to give more guarantees to respect minimum bw
-requirements for RT tasks.
+Signed-off-by: Andrea Righi <righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+---
+ include/linux/sched.h |    1 +
+ kernel/cgroup.c       |    2 +-
+ kernel/fork.c         |   22 +++++++++++++++-------
+ mm/memrlimitcgroup.c  |    4 ++--
+ 4 files changed, 19 insertions(+), 10 deletions(-)
 
--Andrea
+diff --git a/include/linux/sched.h b/include/linux/sched.h
+index cd67fac..954057c 100644
+--- a/include/linux/sched.h
++++ b/include/linux/sched.h
+@@ -1773,6 +1773,7 @@ static inline void mmdrop(struct mm_struct * mm)
+ /* mmput gets rid of the mappings and all user-space */
+ extern void mmput(struct mm_struct *);
+ /* Grab a reference to a task's mm, if it is not already going away */
++extern struct mm_struct *get_task_mm_task_locked(struct task_struct *task);
+ extern struct mm_struct *get_task_mm(struct task_struct *task);
+ /* Remove the current tasks stale references to the old mm_struct */
+ extern void mm_release(struct task_struct *, struct mm_struct *);
+diff --git a/kernel/cgroup.c b/kernel/cgroup.c
+index 678a680..30b9c3a 100644
+--- a/kernel/cgroup.c
++++ b/kernel/cgroup.c
+@@ -2757,7 +2757,7 @@ void cgroup_fork_callbacks(struct task_struct *child)
+  * invoke this routine, since it assigns the mm->owner the first time
+  * and does not change it.
+  *
+- * The callbacks are invoked with mmap_sem held in read mode.
++ * The callbacks are invoked with mmap_sem and task_lock held in read mode.
+  */
+ void cgroup_mm_owner_callbacks(struct task_struct *old, struct task_struct *new)
+ {
+diff --git a/kernel/fork.c b/kernel/fork.c
+index 7b34bc5..24f9656 100644
+--- a/kernel/fork.c
++++ b/kernel/fork.c
+@@ -494,6 +494,20 @@ void mmput(struct mm_struct *mm)
+ EXPORT_SYMBOL_GPL(mmput);
+ 
+ /**
++ * Must be called with task_lock held.
++ */
++struct mm_struct *get_task_mm_task_locked(struct task_struct *task)
++{
++	struct mm_struct *mm = task->mm;
++
++	if ((!mm) || (task->flags & PF_KTHREAD))
++		return NULL;
++	atomic_inc(&mm->mm_users);
++	return mm;
++}
++EXPORT_SYMBOL_GPL(get_task_mm_task_locked);
++
++/**
+  * get_task_mm - acquire a reference to the task's mm
+  *
+  * Returns %NULL if the task has no mm.  Checks PF_KTHREAD (meaning
+@@ -507,13 +521,7 @@ struct mm_struct *get_task_mm(struct task_struct *task)
+ 	struct mm_struct *mm;
+ 
+ 	task_lock(task);
+-	mm = task->mm;
+-	if (mm) {
+-		if (task->flags & PF_KTHREAD)
+-			mm = NULL;
+-		else
+-			atomic_inc(&mm->mm_users);
+-	}
++	mm = get_task_mm_task_locked(task);
+ 	task_unlock(task);
+ 	return mm;
+ }
+diff --git a/mm/memrlimitcgroup.c b/mm/memrlimitcgroup.c
+index 8ee74f6..dad0163 100644
+--- a/mm/memrlimitcgroup.c
++++ b/mm/memrlimitcgroup.c
+@@ -238,7 +238,7 @@ out:
+ }
+ 
+ /*
+- * This callback is called with mmap_sem held
++ * This callback is called with mmap_sem and task_lock held
+  */
+ static void memrlimit_cgroup_mm_owner_changed(struct cgroup_subsys *ss,
+ 						struct cgroup *old_cgrp,
+@@ -246,7 +246,7 @@ static void memrlimit_cgroup_mm_owner_changed(struct cgroup_subsys *ss,
+ 						struct task_struct *p)
+ {
+ 	struct memrlimit_cgroup *memrcg, *old_memrcg;
+-	struct mm_struct *mm = get_task_mm(p);
++	struct mm_struct *mm = get_task_mm_task_locked(p);
+ 
+ 	BUG_ON(!mm);
