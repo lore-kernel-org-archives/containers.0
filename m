@@ -1,15 +1,16 @@
 From: Andrea Righi <righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 Subject: Re: [RFC][PATCH -mm 0/5] cgroup: block device i/o controller (v9)
-Date: Thu, 18 Sep 2008 16:37:56 +0200
-Message-ID: <48D267C4.2060906__46680.4286967546$1221748872$gmane$org@gmail.com>
-References: <1219853257-11052-1-git-send-email-righi.andrea@gmail.com>	<20080917.161811.27257227.taka@valinux.co.jp>	<48D0C43A.2010102@gmail.com>
-	<20080918.202416.120249186.taka@valinux.co.jp>
+Date: Thu, 18 Sep 2008 16:54:27 +0200
+Message-ID: <48D26BA3.40009__18408.8350892582$1221749947$gmane$org@gmail.com>
+References: <1219853257-11052-1-git-send-email-righi.andrea@gmail.com>
+	<20080917.161811.27257227.taka@valinux.co.jp>
+	<48D0C43A.2010102@gmail.com> <20080918135513.GE20640@redhat.com>
 Reply-To: righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20080918.202416.120249186.taka-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
+In-Reply-To: <20080918135513.GE20640-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,13 +20,13 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Hirokazu Takahashi <taka-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
-Cc: randy.dunlap-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org, menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, chlunde-om2ZC0WAoZIXWF+eFR7m5Q@public.gmane.org, dpshah-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, eric.rannaud-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, fernando-gVGce1chcLdL9jVzuh4AOg@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, agk-9JcytcrH/bA+uJoB2kUjGw@public.gmane.org, subrata-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, axboe-tSWWG44O7X1aa/9Udqfwiw@public.gmane.org, m.innocenti-qooieK91W7JeoWH0uzbU5w@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, matt-cT2on/YLNlBWk0Htik3J/w@public.gmane.org, roberto-5KDOxZqKugI@public.gmane.org, ngupta-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org
+To: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Cc: randy.dunlap-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org, axboe-tSWWG44O7X1aa/9Udqfwiw@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, ngupta-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, fernando-gVGce1chcLdL9jVzuh4AOg@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, chlunde-om2ZC0WAoZIXWF+eFR7m5Q@public.gmane.org, dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, matt-cT2on/YLNlBWk0Htik3J/w@public.gmane.org, dpshah-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, roberto-5KDOxZqKugI@public.gmane.org, agk-9JcytcrH/bA+uJoB2kUjGw@public.gmane.org, m.innocenti-qooieK91W7JeoWH0uzbU5w@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, subrata-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, eric.rannaud-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Hirokazu Takahashi wrote:
-> Hi,
-> 
+Vivek Goyal wrote:
+> On Wed, Sep 17, 2008 at 10:47:54AM +0200, Andrea Righi wrote:
+>> Hirokazu Takahashi wrote:
 >>> Hi,
 >>>
 >>>> TODO:
@@ -59,39 +60,33 @@ Hirokazu Takahashi wrote:
 >>   bio-cgroup sounds better, but it seems to work quite well. The only
 >>   problem I've found is that during swap_writepage() the page is not
 >>   assigned to any page_cgroup (page_get_page_cgroup() returns NULL), and
-> 
-> This behavior depends on the version of memory-cgroup.
-> In the previous version, pages in the swap cache were owned by one of
-> the cgroups.
-> 
-> Kamezawa-san, one of the implementer, told me he got this feature off
-> temporarily and he was going to turn it on again. I think this
-> workaround is chosen because the current implementation of memory
-> cgroup has a weak point under memory pressure.
-> 
 >>   so I'm not able to charge the cost of this I/O operation to the right
 >>   cgroup. Does bio-cgroup address or even resolve this issue?
+>> - begin to implement a new branch of cgroup-io-throttle on top of
+>>   bio-cgroup
+>> - also start to implement an additional request queue to provide first a
+>>   control at the cgroup level and a dispatcher to pass the request to
+>>   the elevator (as suggested by Vivek)
+>>
 > 
-> Bio-cgroup can't support pages in the swap cache temporarily with the
-> current linux kernel either since it shares the same infrastructure
-> with memory-cgroup.
+> Hi Andrea,
 > 
-> Now, they have just started to rewrite the infrastructure to track pages
-> with page_cgroup, which is going to give us good performance ever.
-> After that I'm going to enhance bio-cgroup more, such as dirty page
-> tracking. To tell the truth, I already have dirty pages tracking patch
-> for the current linux in my hand, which isn't posted yet. I'm going to
-> port it on the new infrastructure.
+> So if we maintain and rb-tree per request queue and implement the cgroup
+> rules there, then that will take care of io-throttling also. (One can
+> control the release of bio/requests to elevator based on any kind of
+> rules. proportional weight/max-bandwidth).
 > 
-> If memory cgroup team change their mind, I will implement swap-pages
-> tracking in bio-cgroup.
+> If that's the case, I was wondering what do you mean by "begin to
+> implement new branch of cgroup-io-throttle" on top of bio-cgroup".
 
-Very good! in any case it seems I'll get the tracking of swap-pages from
-someone else.. so I don't have to change/implement anything in my
-io-throttle patchset. :)
+Correct, with the rb-tree per request queue solution there's no need to
+keep track of the context in the struct bio, since the i/o control
+based on per cgroup rules has been already performed by the first i/o
+dispatcher. And I would really like to dedicate all my efforts to move
+in this direction, but it would be interesting as well to test the
+bio-cgroup functionality since it's working from now, it's a generic
+framework and used by another project (dm-ioband). This is the reason
+because I put it there, specifying to open a new branch, because it
+would be an alternative solution to the following point.
 
-I'll start to use bio-cgroup in io-throttle ASAP and do some tests. I'll
-keep you informed.
-
-Thanks,
 -Andrea
