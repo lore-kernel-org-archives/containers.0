@@ -1,14 +1,13 @@
-From: "H. Peter Anvin" <hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org>
-Subject: Re: [PATCH 10/10] Document usage of multiple-instances of devpts
-Date: Fri, 19 Sep 2008 09:53:49 -0700
-Message-ID: <48D3D91D.2040403@zytor.com>
-References: <20080912174845.GA17350@us.ibm.com>	<20080912175347.GK17350@us.ibm.com>
-	<20080919163311.626b715f@lxorguk.ukuu.org.uk>
+From: Randy Dunlap <randy.dunlap-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH -mm 2/6] introduce struct res_counter_ratelimit
+Date: Fri, 19 Sep 2008 10:08:32 -0700
+Message-ID: <20080919100832.e188460a.randy.dunlap@oracle.com>
+References: <1221649528-8519-3-git-send-email-righi.andrea@gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20080919163311.626b715f-qBU/x9rampVanCEyBjwyrvXRex20P6io@public.gmane.org>
+In-Reply-To: <1221649528-8519-3-git-send-email-righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,20 +17,67 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Alan Cox <alan-qBU/x9rampVanCEyBjwyrvXRex20P6io@public.gmane.org>
-Cc: kyle-hoO6YkzgTuCM0SS3m2neIg@public.gmane.org, sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, bastian-yyjItF7Rl6lg9hUCZPvPmw@public.gmane.org, containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org
+To: Andrea Righi <righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Cc: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Carl Henrik Lunde <chlunde-om2ZC0WAoZIXWF+eFR7m5Q@public.gmane.org>, Divyesh Shah <dpshah-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, eric.rannaud-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, fernando-gVGce1chcLdL9jVzuh4AOg@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, agk-9JcytcrH/bA+uJoB2kUjGw@public.gmane.org, subrata-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, axboe-tSWWG44O7X1aa/9Udqfwiw@public.gmane.org, Marco Innocenti <m.innocenti-qooieK91W7JeoWH0uzbU5w@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, matt-cT2on/YLNlBWk0Htik3J/w@public.gmane.org, roberto-5KDOxZqKugI@public.gmane.org, ngupta-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Alan Cox wrote:
-> Ok I'm happy with this patch set. It appears correct as far as the tty
-> side is concerned, it looks sensible in terms of interface with the
-> devpts layer.
+On Wed, 17 Sep 2008 13:05:24 +0200 Andrea Righi wrote:
+
+> Introduce res_counter_ratelimit as a generic structure to implement
+> throttling-based cgroup subsystems.
 > 
-> Really depends what everyone else thinks about the vfs bits and the API
+> [ Only the interfaces needed by the IO controller are implemented right now ]
+> 
+> Signed-off-by: Andrea Righi <righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+> ---
+>  include/linux/res_counter.h |   70 +++++++++++++++++++++++++
+>  kernel/res_counter.c        |  118 ++++++++++++++++++++++++++++++++++++++++++-
+>  2 files changed, 187 insertions(+), 1 deletions(-)
+> 
+> diff --git a/include/linux/res_counter.h b/include/linux/res_counter.h
+> index 0ab55c4..ff677d9 100644
+> --- a/include/linux/res_counter.h
+> +++ b/include/linux/res_counter.h
+> @@ -45,6 +46,38 @@ struct res_counter {
+>  	spinlock_t lock;
+>  };
+>  
+> +/* The various policies that can be used for throttling */
+> +#define	RATELIMIT_LEAKY_BUCKET	0
+> +#define	RATELIMIT_TOKEN_BUCKET	1
+> +
+> +struct res_counter_ratelimit {
+> +	/*
+> +	 * the current resource consumption level
+> +	 */
+> +	unsigned long long usage;
+> +	/*
+> +	 * the maximal value of the usage from the counter creation
+> +	 */
+> +	unsigned long long max_usage;
+> +	/*
+> +	 * the rate limit that cannot be exceeded
+> +	 */
+> +	unsigned long long limit;
+> +	/*
+> +	 * the limiting policy / algorithm
+> +	 */
+> +	unsigned long long policy;
+> +	/*
+> +	 * timestamp of the last accounted resource request
+> +	 */
+> +	unsigned long long timestamp;
+> +	/*
+> +	 * the lock to protect all of the above.
+> +	 * the routines below consider this to be IRQ-safe
+> +	 */
+> +	spinlock_t lock;
+> +};
 
-The last version looks fine to me.  To be fair, I have only reviewed it, 
-not actually tested it.
+With such nice struct comments, it looks like you should convert them
+to kernel-doc for structs.  See Documentation/kernel-doc-nano-HOWTO.txt
+for into, or ask me if you need some help with it.
 
-Acked-by: H. Peter Anvin <hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org>
-
-	-hpa
+Thanks,
+---
+~Randy
