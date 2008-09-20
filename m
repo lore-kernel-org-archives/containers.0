@@ -1,15 +1,15 @@
-From: Andrea Righi <righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: Re: [PATCH -mm 2/6] introduce struct res_counter_ratelimit
-Date: Fri, 19 Sep 2008 22:32:41 +0200
-Message-ID: <48D40C69.8040207__22476.0280842476$1221856562$gmane$org@gmail.com>
-References: <1221649528-8519-3-git-send-email-righi.andrea@gmail.com>
-	<20080919100832.e188460a.randy.dunlap@oracle.com>
-Reply-To: righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org
+From: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+Subject: Re: [dm-devel] Re: dm-ioband + bio-cgroup benchmarks
+Date: Sat, 20 Sep 2008 13:27:03 +0900
+Message-ID: <20080920132703.e74c8f89.kamezawa.hiroyu__17631.6863428385$1221884658$gmane$org@jp.fujitsu.com>
+References: <48D267B5.20402@gmail.com> <20080918150634.GH20640@redhat.com>
+	<48D2715A.6060002@gmail.com>
+	<20080919.123405.91829935.taka@valinux.co.jp>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20080919100832.e188460a.randy.dunlap-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <20080919.123405.91829935.taka-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,71 +19,42 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Randy Dunlap <randy.dunlap-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org>
-Cc: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Carl Henrik Lunde <chlunde-om2ZC0WAoZIXWF+eFR7m5Q@public.gmane.org>, Divyesh Shah <dpshah-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, eric.rannaud-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, fernando-gVGce1chcLdL9jVzuh4AOg@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, agk-9JcytcrH/bA+uJoB2kUjGw@public.gmane.org, subrata-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, axboe-tSWWG44O7X1aa/9Udqfwiw@public.gmane.org, Marco Innocenti <m.innocenti-qooieK91W7JeoWH0uzbU5w@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, matt-cT2on/YLNlBWk0Htik3J/w@public.gmane.org, roberto-5KDOxZqKugI@public.gmane.org, ngupta-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org
+To: Hirokazu Takahashi <taka-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
+Cc: xen-devel-GuqFBffKawuULHF6PoxzQEEOCMrvLtNR@public.gmane.org, xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, jens.axboe-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, virtualization-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, dm-devel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, agk-9JcytcrH/bA+uJoB2kUjGw@public.gmane.org, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, fernando-gVGce1chcLdL9jVzuh4AOg@public.gmane.org, righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Randy Dunlap wrote:
-> On Wed, 17 Sep 2008 13:05:24 +0200 Andrea Righi wrote:
-> 
->> Introduce res_counter_ratelimit as a generic structure to implement
->> throttling-based cgroup subsystems.
->>
->> [ Only the interfaces needed by the IO controller are implemented right now ]
->>
->> Signed-off-by: Andrea Righi <righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
->> ---
->>  include/linux/res_counter.h |   70 +++++++++++++++++++++++++
->>  kernel/res_counter.c        |  118 ++++++++++++++++++++++++++++++++++++++++++-
->>  2 files changed, 187 insertions(+), 1 deletions(-)
->>
->> diff --git a/include/linux/res_counter.h b/include/linux/res_counter.h
->> index 0ab55c4..ff677d9 100644
->> --- a/include/linux/res_counter.h
->> +++ b/include/linux/res_counter.h
->> @@ -45,6 +46,38 @@ struct res_counter {
->>  	spinlock_t lock;
->>  };
->>  
->> +/* The various policies that can be used for throttling */
->> +#define	RATELIMIT_LEAKY_BUCKET	0
->> +#define	RATELIMIT_TOKEN_BUCKET	1
->> +
->> +struct res_counter_ratelimit {
->> +	/*
->> +	 * the current resource consumption level
->> +	 */
->> +	unsigned long long usage;
->> +	/*
->> +	 * the maximal value of the usage from the counter creation
->> +	 */
->> +	unsigned long long max_usage;
->> +	/*
->> +	 * the rate limit that cannot be exceeded
->> +	 */
->> +	unsigned long long limit;
->> +	/*
->> +	 * the limiting policy / algorithm
->> +	 */
->> +	unsigned long long policy;
->> +	/*
->> +	 * timestamp of the last accounted resource request
->> +	 */
->> +	unsigned long long timestamp;
->> +	/*
->> +	 * the lock to protect all of the above.
->> +	 * the routines below consider this to be IRQ-safe
->> +	 */
->> +	spinlock_t lock;
->> +};
-> 
-> With such nice struct comments, it looks like you should convert them
-> to kernel-doc for structs.  See Documentation/kernel-doc-nano-HOWTO.txt
-> for into, or ask me if you need some help with it.
-> 
+On Fri, 19 Sep 2008 12:34:05 +0900 (JST)
+Hirokazu Takahashi <taka-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org> wrote:
 
-Sure! I will do for the next version. Actually, I'm already using the kernel-doc
-style in other parts of this patchset (i.e. to document iothrottle structures).
+> I've decided to get Ryo to post the accurate dirty-page tracking patch
+> for bio-cgroup, which isn't perfect yet though. The memory controller
+> never wants to support this tracking because migrating a page between
+> memory cgroups is really heavy.
+> 
+> I also thought enhancing the memory controller would be good enough,
+> but a lot of people said they wanted to control memory resource and
+> block I/O resource separately.
+> So you can create several bio-cgroup in one memory-cgroup,
+> or you can use bio-cgroup without memory-cgroup.
+> 
+> I also have a plan to implement more acurate tracking mechanism
+> on bio-cgroup after the memory cgroup team re-implement the infrastructure,
+> which won't be supported by memory-cgroup.
+> When a process are moved into another memory cgroup,
+> the pages belonging to the process don't move to the new cgroup
+> because migrating pages is so heavy. It's hard to find the pages
+> from the process and migrating pages may cause some memory pressure.
+> I'll implement this feature only on bio-cgroup with minimum overhead
+> 
+I really would like to move page_cgroup to new cgroup when the process moves...
+But it's just in my plan and I'm not sure I can do it or not.
 
-Thanks!
--Andrea
+Anyway what's next for me is
+ 1. fix current discussion to remove page->page_cgroup pointer.
+ 2. reduce locks.
+ 3. support swap and swap-cache.
+
+I think algorithm for (1), (2) is now getting smart.
+
+Thanks,
+-Kame
