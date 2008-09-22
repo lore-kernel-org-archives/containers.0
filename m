@@ -1,14 +1,17 @@
-From: Hirokazu Takahashi <taka-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
-Subject: Re: dm-ioband + bio-cgroup benchmarks
-Date: Mon, 22 Sep 2008 18:45:39 +0900 (JST)
-Message-ID: <20080922.184539.116793113.taka__12808.8468722583$1222076877$gmane$org@valinux.co.jp>
-References: <20080919.202031.86647893.taka@valinux.co.jp>
-	<20080919131019.GA3606@redhat.com> <48D40B78.6060709@gmail.com>
+From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH 10/10] Document usage of multiple-instances of devpts
+Date: Mon, 22 Sep 2008 08:29:37 -0500
+Message-ID: <20080922132937.GA11932@us.ibm.com>
+References: <20080912174845.GA17350@us.ibm.com>
+	<20080912175347.GK17350@us.ibm.com>
+	<20080919163311.626b715f@lxorguk.ukuu.org.uk>
+	<20080920161717.GA23693@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <48D40B78.6060709-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <20080920161717.GA23693-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,49 +21,32 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org
-Cc: xen-devel-GuqFBffKawuULHF6PoxzQEEOCMrvLtNR@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, jens.axboe-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, virtualization-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, dm-devel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, agk-9JcytcrH/bA+uJoB2kUjGw@public.gmane.org, xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org, fernando-gVGce1chcLdL9jVzuh4AOg@public.gmane.org, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
+To: sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
+Cc: kyle-hoO6YkzgTuCM0SS3m2neIg@public.gmane.org, bastian-yyjItF7Rl6lg9hUCZPvPmw@public.gmane.org, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org, hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org, containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org, Alan Cox <alan-qBU/x9rampVanCEyBjwyrvXRex20P6io@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Hi,
-
-> >>> To avoid creation of stacking another device (dm-ioband) on top of every
-> >>> device we want to subject to rules, I was thinking of maintaining an
-> >>> rb-tree per request queue. Requests will first go into this rb-tree upon
-> >>> __make_request() and then will filter down to elevator associated with the
-> >>> queue (if there is one). This will provide us the control of releasing
-> >>> bio's to elevaor based on policies (proportional weight, max bandwidth
-> >>> etc) and no need of stacking additional block device.
-> >> I think it's a bit late to control I/O requests there, since process
-> >> may be blocked in get_request_wait when the I/O load is high.
-> >> Please imagine the situation that cgroups with low bandwidths are
-> >> consuming most of "struct request"s while another cgroup with a high
-> >> bandwidth is blocked and can't get enough "struct request"s.
-> >>
-> >> It means cgroups that issues lot of I/O request can win the game.
-> >>
-> > 
-> > Ok, this is a good point. Because number of struct requests are limited
-> > and they seem to be allocated on first come first serve basis, so if a
-> > cgroup is generating lot of IO, then it might win.
-> > 
-> > But dm-ioband will face the same issue. Essentially it is also a request
-> > queue and it will have limited number of request descriptors. Have you 
-> > modified the logic somewhere for allocation of request descriptors to the
-> > waiting processes based on their weights? If yes, the logic probably can
-> > be implemented here too.
+Quoting sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org (sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org):
+> Alan Cox [alan-qBU/x9rampVanCEyBjwyrvXRex20P6io@public.gmane.org] wrote:
+> | Ok I'm happy with this patch set. It appears correct as far as the tty
+> | side is concerned, it looks sensible in terms of interface with the
+> | devpts layer.
 > 
-> Maybe throttling dirty page ratio in memory could help to avoid this problem.
-> I mean, if a cgroup is exceeding the i/o limits do ehm... something.. also at
-> the balance_dirty_pages() level.
+> Alan, Peter: Thanks for review and feedback.
+> 
+> | 
+> | Really depends what everyone else thinks about the vfs bits and the API
+> 
+> Maybe I should post to fsdevel, manpages, and lkml for the vfs/api changes. 
+> 
+> Serge, Eric, Pavel: Any comments on the patchset before I do that ?
 
-That is one of the important features to be implemented for controlling I/O.
-The dirty page ratio controlling can help to avoid this issue but it
-isn't guaranteed. So, both of them should be implemented.
+I didn't have any comments on the code, it looked fine.  But the
+kernel locked up for me trying to ssh into a container last night.
+Complete lockup so haven't yet figured out why.
 
-What would you think happens in cases that some cgroups may have tons of
-threads which issue a lot of direct I/Os, or others may have huge memory?
+Oh, actually I did have a comment on code - finding that config
+variable was dreadful :)  Now obviously it makes sense on the
+one hand, but finding that plus CONFIG_NET_NS plus the other
+namespace variables is getting ugly.
 
-
-Thanks,
-Hirokazu Takahashi.
+-serge
