@@ -1,14 +1,11 @@
-From: KOSAKI Motohiro <kosaki.motohiro-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
-Subject: Re: [RFC] [PATCH -mm 0/2] memcg: per cgroup dirty_ratio
-Date: Wed, 24 Sep 2008 02:48:29 +0900 (JST)
-Message-ID: <20080924024437.DC21.KOSAKI.MOTOHIRO__34296.8024932363$1222192432$gmane$org@jp.fujitsu.com>
-References: <20080912131816.e0cfac7a.akpm@linux-foundation.org>
-	<532480950809221641y3471267esff82a14be8056586@mail.gmail.com>
+From: "Price Lopez" <alberta-itMpz+Kn1KB+XZJcv9eMoEEOCMrvLtNR@public.gmane.org>
+Subject: CyberLink PowerDVD ULTRA EDITION v8
+Date: Tue, 23 Sep 2008 00:07:30 +0200
+Message-ID: <000201c91da7$26889900$0100007f@xcyju>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <532480950809221641y3471267esff82a14be8056586-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,38 +15,36 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Michael Rubin <mrubin-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
-Cc: menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, dradford-cT2on/YLNlBWk0Htik3J/w@public.gmane.org, m.innocenti-qooieK91W7JeoWH0uzbU5w@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, eric.rannaud-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, chlunde-om2ZC0WAoZIXWF+eFR7m5Q@public.gmane.org, dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, dpshah-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, agk-9JcytcrH/bA+uJoB2kUjGw@public.gmane.org, matt-cT2on/YLNlBWk0Htik3J/w@public.gmane.org, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, fernando-gVGce1chcLdL9jVzuh4AOg@public.gmane.org, Andrea Righi <righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+To: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-> Currently the problem we are hitting is that we cannot specify pdflush
-> to have background limits less than 1% of memory. I am currently
-> finishing up a patch right now that adds a dirty_ratio_millis
-> interface.  I hope to submit the patch to LKML by the end of the week.
-> 
-> The idea is that we don't want to break backwards compatibility and we
-> also don't want to have two conflicting knobs in the sysctl or
-> /proc/sys/vm/ space. I thought adding a new knob for those who want to
-> specify finer grained functionality was a compromise. So the patch has
-> a vm_dirty_ratio and a vm_dirty_ratio_millis interface. The first to
-> specify 0-100% and the second to specify .0 to .999%.
-> 
-> So to represent 0.125% of RAM we set
-> vm_dirty_ratio = 0
-> vm_dirty_ratio_millis = 125
-> 
-> The same for the background_ratio.
+~The following titles and more are now available for pcs and macs`
 
-Why vm_dirty_ratio = 0.125 is wrong?
-it is hardly for parser maker, but it have nicer user experience.
+Office 2008 Home Student
+Native Instruments FM8
+Autodesk 3D Studio Max 2009
+CyberLink PowerDVD ULTRA EDITION v8
+CyberLink PowerDVD ULTRA EDITION v8
+REALbasic 2007 Release 5
 
-> 
-> I would also prefer using a bytes interface but I am not sure how to
-> offer that without  either removing the legacy interface of the ratios
-> or by offering a concurrent interface that might be confusing such as
-> when users are looking at the old one and not aware of a new one.
-> 
-> Any feedback?
+~ sunshinesoftsale . com `
 
-Sure.
-We don't have any motivation of its interface change.
+System Requirements
+` For PC:
+` Intel Pentium 4 (1.4GHz processor), Intel Centrino, Intel Xeon CyberLink PowerDVD ULTRA EDITION v8 or Intel Core Duo (or CyberLink PowerDVD ULTRA EDITION v8) processor; SSE2-enabled processor required for AMD systems & Microsoft Windows XP with Service Pack 2 or Microsoft Windows Vista Home Premium, Business, Ultimate, or Enterprise (certified for 32-bit editions)
+` 512MB of RAM or more
+` 1GB of available hard-disk space (additional free space CyberLink PowerDVD ULTRA EDITION v8)
+` Microsoft compatible sound card (multichannel ASIO-compatible sound card recommended)
+` 1,024x768 monitor resolution with 32-bit color adapter recommended
+` CD-R or DVD-ROM drive
+
+~ For MAC:
+~ PowerPC G4 or G5 or multicore Intel processor
+~ Mac OS X or similar
+~ 512MB of RAM or more
+~ 1GB of available hard-disk space
+~ Core Audio compatible sound card
+~ 1,024x768 monitor resolution with 32-bit color adapter
+~ DVD-ROM drive` DVD+-R burner required for DVD creation
+
+With the U.S. government's implementation and installation of missile defense well under way, critics question the system's efficacy and technology. Officials and critics say dealing with countermeasures is an ongoing problem.
