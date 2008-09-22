@@ -1,15 +1,17 @@
-From: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: Re: [RFC v5][PATCH 9/9] Restore open file descriprtors
-Date: Mon, 22 Sep 2008 09:02:09 -0700
-Message-ID: <1222099329.8533.56.camel@nimitz>
-References: <1221347167-9956-1-git-send-email-orenl@cs.columbia.edu>
-	<1221347167-9956-10-git-send-email-orenl@cs.columbia.edu>
-	<20080916230850.GB25445@us.ibm.com> <48D04B19.9060502@cs.columbia.edu>
+From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH 10/10] Document usage of multiple-instances of devpts
+Date: Mon, 22 Sep 2008 11:16:58 -0500
+Message-ID: <20080922161658.GA27087@us.ibm.com>
+References: <20080912174845.GA17350@us.ibm.com>
+	<20080912175347.GK17350@us.ibm.com>
+	<20080919163311.626b715f@lxorguk.ukuu.org.uk>
+	<20080920161717.GA23693@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <48D04B19.9060502-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <20080920161717.GA23693-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,29 +21,27 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, arnd-r2nGTMty4D4@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, jeremy-TSDbQ3PG+2Y@public.gmane.org
+To: sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
+Cc: kyle-hoO6YkzgTuCM0SS3m2neIg@public.gmane.org, bastian-yyjItF7Rl6lg9hUCZPvPmw@public.gmane.org, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org, hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org, containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org, Alan Cox <alan-qBU/x9rampVanCEyBjwyrvXRex20P6io@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Tue, 2008-09-16 at 20:11 -0400, Oren Laadan wrote:
+Quoting sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org (sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org):
+> Alan Cox [alan-qBU/x9rampVanCEyBjwyrvXRex20P6io@public.gmane.org] wrote:
+> | Ok I'm happy with this patch set. It appears correct as far as the tty
+> | side is concerned, it looks sensible in terms of interface with the
+> | devpts layer.
 > 
-> No. (this was discussed earlier already).
+> Alan, Peter: Thanks for review and feedback.
 > 
-> cr_hbuf_get() "allocates" space inside a dedicated buffer for headers
-> in the checkpoint context (ctx->hbuf). It does not allocate new kernel
-> memory. Instead, it returns the current position in that buffer
-> ctx->hbuf[ctx->hpos], and advances ctx->hpos appropriately. On the
-> other side, cr_hbuf_put() reverses that effect, reducing ctx->hpos
-> accordingly.
+> | 
+> | Really depends what everyone else thinks about the vfs bits and the API
 > 
-> If an error occurs, the checkpoint (or restart) operation is aborted,
-> and eventually the context (ctx) will be cleaned up; at that point the
-> special purpose buffer will be freed.
+> Maybe I should post to fsdevel, manpages, and lkml for the vfs/api changes. 
+> 
+> Serge, Eric, Pavel: Any comments on the patchset before I do that ?
 
-I think this is like claiming that my malloc() will get freed if my
-applications exits, so I don't have to worry about free().  It is messy,
-it makes lifetime rules and use less explicit, and it makes bugs harder
-to find.  If I were a good programmer (which I'm not) I probably
-wouldn't do that.
+No luck yet finding my random lockup (it *should* be obvious), but do
+notice that you ignore the return value of get_sb_single() in
+init_pts_mount().  Certainly that should be fixed.
 
--- Dave
+-serge
