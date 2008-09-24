@@ -1,15 +1,15 @@
-From: Ryo Tsuruta <ryov-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
-Subject: [PATCH 8/8] bio-cgroup: Dirty page tracking
-Date: Wed, 24 Sep 2008 19:15:04 +0900 (JST)
-Message-ID: <20080924.191504.59669845.ryov__46918.5025817298$1222253142$gmane$org@valinux.co.jp>
-References: <20080924.191338.112608181.ryov@valinux.co.jp>
-	<20080924.191402.183039492.ryov@valinux.co.jp>
-	<20080924.191432.39172089.ryov@valinux.co.jp>
+From: Hirokazu Takahashi <taka-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
+Subject: Re: dm-ioband + bio-cgroup benchmarks
+Date: Wed, 24 Sep 2008 19:18:03 +0900 (JST)
+Message-ID: <20080924.191803.100102323.taka__35224.3531532169$1222253200$gmane$org@valinux.co.jp>
+References: <20080919131019.GA3606@redhat.com>
+	<20080922.183651.62951479.taka@valinux.co.jp>
+	<20080922143042.GA19222@redhat.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20080924.191432.39172089.ryov-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
+In-Reply-To: <20080922143042.GA19222-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,130 +19,75 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, dm-devel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, virtualization-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, xen-devel-GuqFBffKawuULHF6PoxzQEEOCMrvLtNR@public.gmane.org
-Cc: fernando-gVGce1chcLdL9jVzuh4AOg@public.gmane.org, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org, agk-9JcytcrH/bA+uJoB2kUjGw@public.gmane.org
+To: vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
+Cc: xen-devel-GuqFBffKawuULHF6PoxzQEEOCMrvLtNR@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, jens.axboe-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, virtualization-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, dm-devel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, agk-9JcytcrH/bA+uJoB2kUjGw@public.gmane.org, xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org, fernando-gVGce1chcLdL9jVzuh4AOg@public.gmane.org, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-This patch supports migrating pages between bio-cgroups with minimum overhead,
+Hi,
 
-Based on 2.6.27-rc5-mm1
-Signed-off-by: Ryo Tsuruta <ryov-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
-Signed-off-by: Hirokazu Takahashi <taka-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
+> > > > > To avoid creation of stacking another device (dm-ioband) on top of every
+> > > > > device we want to subject to rules, I was thinking of maintaining an
+> > > > > rb-tree per request queue. Requests will first go into this rb-tree upon
+> > > > > __make_request() and then will filter down to elevator associated with the
+> > > > > queue (if there is one). This will provide us the control of releasing
+> > > > > bio's to elevaor based on policies (proportional weight, max bandwidth
+> > > > > etc) and no need of stacking additional block device.
+> > > > 
+> > > > I think it's a bit late to control I/O requests there, since process
+> > > > may be blocked in get_request_wait when the I/O load is high.
+> > > > Please imagine the situation that cgroups with low bandwidths are
+> > > > consuming most of "struct request"s while another cgroup with a high
+> > > > bandwidth is blocked and can't get enough "struct request"s.
+> > > > 
+> > > > It means cgroups that issues lot of I/O request can win the game.
+> > > > 
+> > > 
+> > > Ok, this is a good point. Because number of struct requests are limited
+> > > and they seem to be allocated on first come first serve basis, so if a
+> > > cgroup is generating lot of IO, then it might win.
+> > > 
+> > > But dm-ioband will face the same issue. 
+> > 
+> > Nope. Dm-ioband doesn't have this issue since it works before allocating
+> > the descriptors. Only I/O requests dm-ioband has passed can allocate its
+> > descriptor.
+> > 
+> 
+> Ok. Got it. dm-ioband does not block on allocation of request descriptors.
+> It does seem to be blocking in prevent_burst_bios() but that would be
+> per group so it should be fine.
 
-diff -Ndupr linux-2.6.27-rc5-mm1.cg3/fs/buffer.c linux-2.6.27-rc5-mm1.cg4/fs/buffer.c
---- linux-2.6.27-rc5-mm1.cg3/fs/buffer.c	2008-09-24 16:23:02.000000000 +0900
-+++ linux-2.6.27-rc5-mm1.cg4/fs/buffer.c	2008-09-24 16:34:53.000000000 +0900
-@@ -36,6 +36,7 @@
- #include <linux/buffer_head.h>
- #include <linux/task_io_accounting_ops.h>
- #include <linux/bio.h>
-+#include <linux/biocontrol.h>
- #include <linux/notifier.h>
- #include <linux/cpu.h>
- #include <linux/bitops.h>
-@@ -722,6 +723,7 @@ static int __set_page_dirty(struct page 
- 			__inc_bdi_stat(mapping->backing_dev_info,
- 					BDI_RECLAIMABLE);
- 			task_io_account_write(PAGE_CACHE_SIZE);
-+			bio_cgroup_recharge(page, current->mm);
- 		}
- 		radix_tree_tag_set(&mapping->page_tree,
- 				page_index(page), PAGECACHE_TAG_DIRTY);
-diff -Ndupr linux-2.6.27-rc5-mm1.cg3/include/linux/biocontrol.h linux-2.6.27-rc5-mm1.cg4/include/linux/biocontrol.h
---- linux-2.6.27-rc5-mm1.cg3/include/linux/biocontrol.h	2008-09-24 16:34:52.000000000 +0900
-+++ linux-2.6.27-rc5-mm1.cg4/include/linux/biocontrol.h	2008-09-24 16:34:53.000000000 +0900
-@@ -100,6 +100,8 @@ static inline struct bio_cgroup *mm_get_
- 
- extern struct io_context *get_bio_cgroup_iocontext(struct bio *bio);
- 
-+extern void bio_cgroup_recharge(struct page *page, struct mm_struct *mm);
-+
- #else	/* CONFIG_CGROUP_BIO */
- 
- struct bio_cgroup;
-@@ -154,6 +156,10 @@ static inline struct io_context *get_bio
- 	return NULL;
- }
- 
-+static inline void bio_cgroup_recharge(struct page *page, struct mm_struct *mm)
-+{
-+}
-+
- #endif	/* CONFIG_CGROUP_BIO */
- 
- #endif /* _LINUX_BIOCONTROL_H */
-diff -Ndupr linux-2.6.27-rc5-mm1.cg3/mm/biocontrol.c linux-2.6.27-rc5-mm1.cg4/mm/biocontrol.c
---- linux-2.6.27-rc5-mm1.cg3/mm/biocontrol.c	2008-09-24 16:34:52.000000000 +0900
-+++ linux-2.6.27-rc5-mm1.cg4/mm/biocontrol.c	2008-09-24 16:34:53.000000000 +0900
-@@ -217,3 +217,52 @@ struct cgroup_subsys bio_cgroup_subsys =
- 	.attach		= bio_cgroup_move_task,
- 	.early_init	= 0,
- };
-+
-+/*
-+ * Change the owner of a given page.
-+ */
-+void bio_cgroup_recharge(struct page *page, struct mm_struct *mm)
-+{
-+	struct page_cgroup *pc;
-+	struct bio_cgroup *biog;
-+
-+	if (bio_cgroup_disabled() || !mm)
-+		return;
-+	if (PageSwapCache(page) || PageAnon(page))
-+		return;
-+	/* Check if the owner should be changed without any lock. */
-+	pc = page_get_page_cgroup(page);
-+	if (unlikely(!pc))
-+		return;
-+	rcu_read_lock();
-+	biog = bio_cgroup_from_task(rcu_dereference(mm->owner));
-+	rcu_read_unlock();
-+	/*
-+	 * This won't cause any trouble even when the page_cgroup has been
-+	 * released since its memory still exists where it was.
-+	 */
-+	if (biog == pc->bio_cgroup)
-+		return;
-+
-+	/* Re-check if the owner should be changed with the lock. */
-+	lock_page_cgroup(page);
-+	pc = page_get_page_cgroup(page);
-+	if (unlikely(!pc))
-+		goto out;
-+	rcu_read_lock();
-+	biog = mm_get_bio_cgroup(mm);
-+	rcu_read_unlock();
-+	if (biog == pc->bio_cgroup) {
-+		put_bio_cgroup(biog);
-+		goto out;
-+	}
-+
-+	/* Move the page into the bio_cgroup associating with "mm." */
-+	bio_cgroup_remove_page(pc);
-+	clear_bio_cgroup(pc);
-+	set_bio_cgroup(pc, biog);
-+	bio_cgroup_add_page(pc);
-+out:
-+	unlock_page_cgroup(page);
-+}
-+
-diff -Ndupr linux-2.6.27-rc5-mm1.cg3/mm/page-writeback.c linux-2.6.27-rc5-mm1.cg4/mm/page-writeback.c
---- linux-2.6.27-rc5-mm1.cg3/mm/page-writeback.c	2008-09-24 16:23:03.000000000 +0900
-+++ linux-2.6.27-rc5-mm1.cg4/mm/page-writeback.c	2008-09-24 16:34:53.000000000 +0900
-@@ -23,6 +23,7 @@
- #include <linux/init.h>
- #include <linux/backing-dev.h>
- #include <linux/task_io_accounting_ops.h>
-+#include <linux/biocontrol.h>
- #include <linux/blkdev.h>
- #include <linux/mpage.h>
- #include <linux/rmap.h>
-@@ -1094,6 +1095,7 @@ int __set_page_dirty_nobuffers(struct pa
- 				__inc_bdi_stat(mapping->backing_dev_info,
- 						BDI_RECLAIMABLE);
- 				task_io_account_write(PAGE_CACHE_SIZE);
-+				bio_cgroup_recharge(page, current->mm);
- 			}
- 			radix_tree_tag_set(&mapping->page_tree,
- 				page_index(page), PAGECACHE_TAG_DIRTY);
+Yes. There is also another little mechanism that prevent_burst_bios()
+tries not to block kernel threads if possible.
+
+> That means for lower layers, one shall have to do request descritor
+> allocation as per the cgroup weight to make sure a cgroup with lower
+> weight does not get higher % of disk because it is generating more
+> requests.
+
+Yes. But when cgroups with higher weight aren't issueing a lot of I/Os,
+even a cgroup with lower weight can allocate a lot of request descriptors.
+
+> One additional issue with my scheme I just noticed is that I am putting
+> bio-cgroup in rb-tree. If there are stacked devices then bio/requests from
+> same cgroup can be at multiple levels of processing at same time. That
+> would mean that a single cgroup needs to be in multiple rb-trees at the
+> same time in various layers. So I might have to create a temporary object
+> which can associate with cgroup and get rid of that object once I don't
+> have the requests any more...
+
+You mean each layer should have its rb-tree? Is it per device?
+One lvm logical volume may probably consist from several physical
+volumes, which will be shared with other logical volumes.
+And some layers may split one bio into several bios.
+I hardly can imagine how these structures will be.
+
+But I guess it is a good thing that we are going to support
+a general infrastructure for I/O requests.
+
+> Well, implementing rb-tree per request queue seems to be harder than I 
+> had thought. Especially taking care of decoupling the elevator and reqeust
+> descriptor logic at lower layers. Long way to go..
+
+Thanks,
+Hirokazu Takahashi.
