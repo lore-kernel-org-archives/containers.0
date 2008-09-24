@@ -1,15 +1,15 @@
 From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 04/10] Extract option parsing to new function
-Date: Wed, 24 Sep 2008 12:23:05 -0500
-Message-ID: <20080924172305.GD25255@us.ibm.com>
+Subject: Re: [PATCH 05/10] Add DEVPTS_MULTIPLE_INSTANCES config token
+Date: Wed, 24 Sep 2008 12:24:02 -0500
+Message-ID: <20080924172402.GE25255@us.ibm.com>
 References: <20080912174845.GA17350@us.ibm.com>
-	<20080912175153.GE17350@us.ibm.com>
+	<20080912175210.GF17350@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <20080912175153.GE17350-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <20080912175210.GF17350-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -25,53 +25,41 @@ List-Id: containers.vger.kernel.org
 
 Quoting sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org (sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org):
 > 
-> >From 91a31d2286a22a2cfa03f9ddea44fd2eaf5fa576 Mon Sep 17 00:00:00 2001
-> From: Sukadev Bhattiprolu <sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-> Date: Tue, 9 Sep 2008 10:23:00 -0700
-> Subject: [PATCH 04/10] Extract option parsing to new function
+> >From d443597559ded0785804716ed58c990ee477d56b Mon Sep 17 00:00:00 2001
+> From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+> Date: Tue, 9 Sep 2008 12:00:51 -0700
+> Subject: [PATCH 05/10] Add DEVPTS_MULTIPLE_INSTANCES config token
 > 
-> Move code to parse mount options into a separate function so it can
-> (later) be shared between mount and remount operations.
-> 
-> Signed-off-by: Sukadev Bhattiprolu <sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+
+No sign-off?
 
 Acked-by: Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 
 > ---
->  fs/devpts/inode.c |   12 +++++++++---
->  1 files changed, 9 insertions(+), 3 deletions(-)
+>  drivers/char/Kconfig |   11 +++++++++++
+>  1 files changed, 11 insertions(+), 0 deletions(-)
 > 
-> diff --git a/fs/devpts/inode.c b/fs/devpts/inode.c
-> index e91c15c..7ae60aa 100644
-> --- a/fs/devpts/inode.c
-> +++ b/fs/devpts/inode.c
-> @@ -72,11 +72,9 @@ static inline struct super_block *pts_sb_from_inode(struct inode *inode)
->  	return devpts_mnt->mnt_sb;
->  }
+> diff --git a/drivers/char/Kconfig b/drivers/char/Kconfig
+> index 700ff96..0d3ea89 100644
+> --- a/drivers/char/Kconfig
+> +++ b/drivers/char/Kconfig
+> @@ -443,6 +443,17 @@ config UNIX98_PTYS
+>  	  All modern Linux systems use the Unix98 ptys.  Say Y unless
+>  	  you're on an embedded system and want to conserve memory.
 > 
-> -static int devpts_remount(struct super_block *sb, int *flags, char *data)
-> +static int parse_mount_options(char *data, struct pts_mount_opts *opts)
->  {
->  	char *p;
-> -	struct pts_fs_info *fsi = DEVPTS_SB(sb);
-> -	struct pts_mount_opts *opts = &fsi->mount_opts;
-> 
->  	opts->setuid  = 0;
->  	opts->setgid  = 0;
-> @@ -120,6 +118,14 @@ static int devpts_remount(struct super_block *sb, int *flags, char *data)
->  	return 0;
->  }
-> 
-> +static int devpts_remount(struct super_block *sb, int *flags, char *data)
-> +{
-> +	struct pts_fs_info *fsi = DEVPTS_SB(sb);
-> +	struct pts_mount_opts *opts = &fsi->mount_opts;
+> +config DEVPTS_MULTIPLE_INSTANCES
+> +	bool "Support multiple instances of devpts"
+> +	depends on UNIX98_PTYS
+> +	default n
+> +	---help---
+> +	  Enable support for multiple instances of devpts filesystem.
+> +	  If you want to have isolated PTY namespaces (eg: in containers),
+> +	  say Y here.  Otherwise, say N. If enabled, each mount of devpts
+> +	  filesystem with the '-o newinstance' option will create an
+> +	  independent PTY namespace.
 > +
-> +	return parse_mount_options(data, opts);
-> +}
-> +
->  static int devpts_show_options(struct seq_file *seq, struct vfsmount *vfs)
->  {
->  	struct pts_fs_info *fsi = DEVPTS_SB(vfs->mnt_sb);
+>  config LEGACY_PTYS
+>  	bool "Legacy (BSD) PTY support"
+>  	default y
 > -- 
 > 1.5.2.5
