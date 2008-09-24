@@ -1,15 +1,15 @@
 From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 09/10] Enable multiple instances of devpts
-Date: Wed, 24 Sep 2008 15:26:16 -0500
-Message-ID: <20080924202616.GB31664@us.ibm.com>
+Subject: Re: [PATCH 10/10] Document usage of multiple-instances of devpts
+Date: Wed, 24 Sep 2008 15:36:50 -0500
+Message-ID: <20080924203650.GC31664@us.ibm.com>
 References: <20080912174845.GA17350@us.ibm.com>
-	<20080912175322.GJ17350@us.ibm.com>
+	<20080912175347.GK17350@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <20080912175322.GJ17350-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <20080912175347.GK17350-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -25,383 +25,149 @@ List-Id: containers.vger.kernel.org
 
 Quoting sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org (sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org):
 > 
-> >From 4567a37856205a04cc0617e3fcc8ede36b25bcf5 Mon Sep 17 00:00:00 2001
-> From: Sukadev Bhattiprolu <sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-> Date: Tue, 9 Sep 2008 18:52:56 -0700
-> Subject: [PATCH 09/10] Enable multiple instances of devpts
-> 
-> To support containers, allow multiple instances of devpts filesystem, such
-> that indices of ptys allocated in one instance are independent of ptys
-> allocated in other instances of devpts.
-> 
-> But to preserve backward compatibility, enable this support for multiple
-> instances only if:
-> 
-> 	- CONFIG_DEVPTS_MULTIPLE_INSTANCES is set to Y, and
-> 	- '-o newinstance' mount option is specified while mounting devpts
-> 
-> See Documentation/fs/devpts.txt (next patch in series) for details.
-> 
-> To use multi-instance mount, a container startup script could:
-> 
-> 	$ ns_exec -cm /bin/bash
-> 	$ umount /dev/pts
-> 	$ mount -t devpts -o newinstance lxcpts /dev/pts
-> 	$ mount -o bind /dev/pts/ptmx /dev/ptmx
-> 	$ sshd -p 1234
-> 
-> where 'ns_exec -cm /bin/bash' is calls clone() with CLONE_NEWNS flag and execs
-> /bin/bash in the child process. A pty created by the sshd is not visible in
-> the original mount of /dev/pts.
-> 
-> USER-SPACE-IMPACT:
-> 
-> 	See Documentation/fs/devpts.txt (included in next patch) for user-space
-> 	impact in multi-instance and mixed-mode operation.
-> TODO:
-> 	- Update mount(8), pts(4) man pages. Highlight impact of not
-> 	  redirecting /dev/ptmx to /dev/pts/ptmx after a multi-instance mount.
-> 
-> Implementation note:
-> 
-> 	See comments in new get_sb_ref() function in fs/super.c on why
-> 	get_sb_single() cannot be directly used.
-> 
-> Changelog[v5]:
-> 	- Move get_sb_ref() definition to earlier patch
-> 
-> 	- Move usage info to Documentation/filesystems/devpts.txt (next patch)
-> 
-> 	- Make ptmx node even in init_pts_ns, now that default mode is 0000
-> 	  (defined in earlier patch, enabled here).
-> 
-> 	- Cache ptmx dentry and use to update mode during remount
-> 	  (defined in earlier patch, enabled here).
-> 
-> 	- Bugfix: explicitly ignore newinstance on remount (if newinstance was
-> 	  specified on remount of initial mount, it would be ignored but
-> 	  /proc/mounts would imply that the option was set)
-> 
-> Changelog[v4]:
-> 
-> 	- Update patch description to address H. Peter Anvin's comments
-> 
-> 	- Consolidate multi-instance mode code under new config token,
-> 	  CONFIG_DEVPTS_MULTIPLE_INSTANCE.
-> 
-> 	- Move usage-details from patch description to
-> 	  Documentation/fs/devpts.txt
-> 
-> Changelog[v3]:
-> 	- Rename new mount option to 'newinstance'
-> 
-> 	- Create ptmx nodes only in 'newinstance' mounts
-> 
-> 	- Bugfix: parse_mount_options() modifies @data but since we need to
-> 	  parse the @data twice (once in devpts_get_sb() and once during
-> 	  do_remount_sb()), parse a local copy of @data in devpts_get_sb().
-> 	  (restructured code in devpts_get_sb() to fix this)
-> 
-> Changelog[v2]:
-> 	- Support both single-mount and multiple-mount semantics and
-> 	  provide '-onewmnt' option to select the semantics.
+> >From 6d2fe9386880157f871667077db3180e9f0083a1 Mon Sep 17 00:00:00 2001
+> From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+> Date: Tue, 9 Sep 2008 10:43:50 -0700
+> Subject: [PATCH 10/10] Document usage of multiple-instances of devpts
 > 
 > Signed-off-by: Sukadev Bhattiprolu <sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 > ---
->  fs/devpts/inode.c |  168 +++++++++++++++++++++++++++++++++++++++++++++++++++--
->  1 files changed, 163 insertions(+), 5 deletions(-)
+>  Documentation/filesystems/devpts.txt |  122 ++++++++++++++++++++++++++++++++++
+>  1 files changed, 122 insertions(+), 0 deletions(-)
+>  create mode 100644 Documentation/filesystems/devpts.txt
 > 
-> diff --git a/fs/devpts/inode.c b/fs/devpts/inode.c
-> index 6b56255..c54b010 100644
-> --- a/fs/devpts/inode.c
-> +++ b/fs/devpts/inode.c
-> @@ -48,10 +48,11 @@ struct pts_mount_opts {
->  	gid_t   gid;
->  	umode_t mode;
->  	umode_t ptmxmode;
-> +	int newinstance;
->  };
-> 
->  enum {
-> -	Opt_uid, Opt_gid, Opt_mode, Opt_ptmxmode,
-> +	Opt_uid, Opt_gid, Opt_mode, Opt_ptmxmode, Opt_newinstance,
->  	Opt_err
->  };
-> 
-> @@ -61,6 +62,7 @@ static match_table_t tokens = {
->  	{Opt_mode, "mode=%o"},
->  #ifdef CONFIG_DEVPTS_MULTIPLE_INSTANCES
->  	{Opt_ptmxmode, "ptmxmode=%o"},
-> +	{Opt_newinstance, "newinstance"},
->  #endif
->  	{Opt_err, NULL}
->  };
-> @@ -78,13 +80,15 @@ static inline struct pts_fs_info *DEVPTS_SB(struct super_block *sb)
-> 
->  static inline struct super_block *pts_sb_from_inode(struct inode *inode)
->  {
-> +#ifdef CONFIG_DEVPTS_MULTIPLE_INSTANCES
->  	if (inode->i_sb->s_magic == DEVPTS_SUPER_MAGIC)
->  		return inode->i_sb;
-> -
-> +#endif
->  	return devpts_mnt->mnt_sb;
->  }
-> 
-> -static int parse_mount_options(char *data, struct pts_mount_opts *opts)
-> +static int parse_mount_options(char *data, int remount,
-> +		struct pts_mount_opts *opts)
->  {
->  	char *p;
-> 
-> @@ -95,6 +99,10 @@ static int parse_mount_options(char *data, struct pts_mount_opts *opts)
->  	opts->mode    = DEVPTS_DEFAULT_MODE;
->  	opts->ptmxmode = DEVPTS_DEFAULT_PTMX_MODE;
+> diff --git a/Documentation/filesystems/devpts.txt b/Documentation/filesystems/devpts.txt
+> new file mode 100644
+> index 0000000..93d9d01
+> --- /dev/null
+> +++ b/Documentation/filesystems/devpts.txt
+> @@ -0,0 +1,122 @@
+> +
+> +To support containers, we now allow multiple instances of devpts filesystem,
+> +such that indices of ptys allocated in one instance are independent of indices
+> +allocated in other instances of devpts.
+> +
+> +To preserve backward compatibility, this support for multiple instances is
+> +enabled only if:
+> +
+> +	- CONFIG_DEVPTS_MULTIPLE_INSTANCES=y, and
+> +	- '-o newinstance' mount option is specified while mounting devpts
+> +
+> +IOW, devpts now supports both single-instance and multi-instance semantics.
+> +
+> +If CONFIG_DEVPTS_MULTIPLE_INSTANCES=n, there is no change in behavior and
+> +this referred to as the "legacy" mode. In this mode, the new mount options
+> +(-o newinstance and -o ptmxmode) will be ignored with a 'bogus option' message
+> +on console.
+> +
+> +If CONFIG_DEVPTS_MULTIPLE_INSTANCES=y and devpts is mounted without the
+> +'newinstance' option (as in current start-up scripts) the new mount binds
+> +to the initial kernel mount of devpts. This mode is referred to as the
+> +'single-instance' mode and the current, single-instance semantics are
+> +preserved, i.e PTYs are common across the system.
+> +
+> +The only difference between this single-instance mode and the legacy mode
+> +is the presence of new, '/dev/pts/ptmx' node with permissions 0000, which
+> +can safely be ignored.
+> +
+> +If CONFIG_DEVPTS_MULTIPLE_INSTANCES=y and 'newinstance' option is specified,
+> +the mount is considered to be in the multi-instance mode and a new instance
+> +of the devpts fs is created. Any ptys created in this instance are independent
+> +of ptys in other instances of devpts. Like in the single-instance mode, the
+> +/dev/pts/ptmx node is present. To effectively use the multi-instance mode,
+> +open of /dev/ptmx must be a redirected to '/dev/pts/ptmx' using a symlink or
+> +bind-mount.
+> +
+> +Eg: A container startup script could do the following:
+> +
+> +	$ chmod 0666 /dev/pts/ptmx
+> +	$ rm /dev/ptmx
+> +	$ ln -s pts/ptmx /dev/ptmx
+> +	$ ns_exec -cm /bin/bash
+> +
+> +	# We are now in new container
+> +
+> +	$ umount /dev/pts
+> +	$ mount -t devpts -o newinstance lxcpts /dev/pts
+> +	$ sshd -p 1234
+> +
+> +where 'ns_exec -cm /bin/bash' calls clone() with CLONE_NEWNS flag and execs
+> +/bin/bash in the child process.  A pty created by the sshd is not visible in
+> +the original mount of /dev/pts.
+> +
+> +User-space changes
+> +------------------
+> +
+> +In multi-instance mode (i.e '-o newinstance' mount option is specified at least
+> +once), following user-space issues should be noted.
+> +
+> +1. If -o newinstance mount option is never used, /dev/pts/ptmx can be ignored
+> +   and no change is needed to system-startup scripts.
+> +
+> +2. To effectively use multi-instance mode (i.e -o newinstance is specified)
+> +   administrators or startup scripts should "redirect" open of /dev/ptmx to
+> +   /dev/pts/ptmx using either a bind mount or symlink.
+> +
+> +	$ mount -t devpts -o newinstance devpts /dev/pts
+> +
+> +   followed by either
+> +
+> +	$ rm /dev/ptmx
+> +	$ ln -s pts/ptmx /dev/ptmx
+> +	$ chmod 666 /dev/pts/ptmx
+> +   or
+> +	$ mount -o bind /dev/pts/ptmx /dev/ptmx
+> +
+> +3. The '/dev/ptmx -> pts/ptmx' symlink is the preferred method since it
+> +   enables better error-reporting and treats both single-instance and
+> +   multi-instance mounts similarly.
+> +
+> +   But this method requires that system-startup scripts set the mode of
+> +   /dev/pts/ptmx correctly (default mode is 0000). The scripts can set the
+> +   mode by, either
+> +
+> +   	- adding ptmxmode mount option to devpts entry in /etc/fstab, or
+> +	- using 'chmod 0666 /dev/pts/ptmx'
+> +
+> +4. If multi-instance mode mount is needed for containers, but the system
+> +   startup scripts have not yet been updated, container-startup scripts
+> +   should bind mount /dev/ptmx to /dev/pts/ptmx to avoid breaking single-
+> +   instance mounts.
+> +
+> +   Or, in general, container-startup scripts should use:
+> +
+> +	mount -t devpts -o newinstance -o ptmxmode 0666 devpts /dev/pts
 
-So does this mean that if I do a remount, the mode and ptmxmode will get
-reset to the defaults unless I specify them again?
+ptmxmode=0666
 
-> 
-> +	/* ignore newinstance on remount to avoid confusing show_options */
-> +	if (!remount)
-> +		opts->newinstance = 0;
-> +
->  	while ((p = strsep(&data, ",")) != NULL) {
->  		substring_t args[MAX_OPT_ARGS];
->  		int token;
-> @@ -128,6 +136,10 @@ static int parse_mount_options(char *data, struct pts_mount_opts *opts)
->  				return -EINVAL;
->  			opts->ptmxmode = option & S_IALLUGO;
->  			break;
-> +		case Opt_newinstance:
-> +			if (!remount)
-> +				opts->newinstance = 1;
-> +			break;
->  #endif
->  		default:
->  			printk(KERN_ERR "devpts: called with bogus options\n");
-> @@ -180,6 +192,8 @@ static int mknod_ptmx(struct super_block *sb)
-> 
->  	d_add(dentry, inode);
-> 
-> +	fsi->ptmx_dentry = dentry;
-> +
->  	printk(KERN_DEBUG "Created ptmx node in devpts ino %lu\n",
->  			inode->i_ino);
-> 
-> @@ -207,7 +221,7 @@ static int devpts_remount(struct super_block *sb, int *flags, char *data)
->  	struct pts_fs_info *fsi = DEVPTS_SB(sb);
->  	struct pts_mount_opts *opts = &fsi->mount_opts;
-> 
-> -	err = parse_mount_options(data, opts);
-> +	err = parse_mount_options(data, 1, opts);
+That is, of course, crucial, this being the documentation :)
 
-A guess a #define rather than '1' would be better here.
-
-> 
->  	/*
->  	 * parse_mount_options() restores options to default values
-> @@ -232,6 +246,8 @@ static int devpts_show_options(struct seq_file *seq, struct vfsmount *vfs)
->  	seq_printf(seq, ",mode=%03o", opts->mode);
->  #ifdef CONFIG_DEVPTS_MULTIPLE_INSTANCES
->  	seq_printf(seq, ",ptmxmode=%03o", opts->ptmxmode);
-> +	if (opts->newinstance)
-> +		seq_printf(seq, ",newinstance");
-
-Is actually that something we want to show?  It doesn't seem
-informative.
-
->  #endif
-> 
->  	return 0;
-> @@ -298,12 +314,153 @@ fail:
->  	return -ENOMEM;
->  }
-> 
-> +#ifdef CONFIG_DEVPTS_MULTIPLE_INSTANCES
-> +/*
-> + * Safely parse the mount options in @data and update @opts.
-> + *
-> + * devpts ends up parsing options two times during mount, due to the
-> + * two modes of operation it supports. The first parse occurs in
-> + * devpts_get_sb() when determining the mode (single-instance or
-> + * multi-instance mode). The second parse happens in devpts_remount()
-> + * or new_pts_mount() depending on the mode.
-> + *
-> + * Parsing of options modifies the @data making subsequent parsing
-> + * incorrect. So make a local copy of @data and parse it.
-> + *
-> + * Return: 0 On success, -errno on error
-> + */
-> +static int safe_parse_mount_options(void *data, struct pts_mount_opts *opts)
-> +{
-> +	int rc;
-> +	void *datacp;
+> +	if [ ! -L /dev/ptmx ]; then
+> +		mount -o bind /dev/pts/ptmx /dev/ptmx
+> +	fi
 > +
-> +	if (!data)
-> +		return 0;
+> +   When all devpts mounts are multi-instance, /dev/ptmx can permanently be
+> +   a symlink to pts/ptmx and the bind mount can be ignored.
 > +
-> +	/* Use kstrdup() ?  */
-> +	datacp = kmalloc(PAGE_SIZE, GFP_KERNEL);
-> +	if (!datacp)
-> +		return -ENOMEM;
+> +5. A multi-instance mount that is not accompanied by the /dev/ptmx to
+> +   /dev/pts/ptmx redirection would result in an unusable/unreachable pty.
 > +
-> +	memcpy(datacp, data, PAGE_SIZE);
-> +	rc = parse_mount_options((char *)datacp, 0, opts);
-> +	kfree(datacp);
+> +	mount -t devpts -o newinstance lxcpts /dev/pts
 > +
-> +	return rc;
-> +}
+> +   immediately followed by:
 > +
-> +/*
-> + * Mount a new (private) instance of devpts.  PTYs created in this
-> + * instance are independent of the PTYs in other devpts instances.
-> + */
-> +static int new_pts_mount(struct file_system_type *fs_type, int flags,
-> +		void *data, struct vfsmount *mnt)
-> +{
-> +	int err;
-> +	struct pts_fs_info *fsi;
-> +	struct pts_mount_opts *opts;
+> +	open("/dev/ptmx")
 > +
-> +	printk(KERN_NOTICE "devpts: newinstance mount\n");
+> +    would create a pty, say /dev/pts/7, in the initial kernel mount.
+> +    But /dev/pts/7 would be invisible in the new mount.
 > +
-> +	err = get_sb_nodev(fs_type, flags, data, devpts_fill_super, mnt);
-> +	if (err)
-> +		return err;
+> +6. The permissions for /dev/pts/ptmx node should be specified when mounting
+> +   /dev/pts, using the '-o ptmxmode=%o' mount option (default is 0000).
 > +
-> +	fsi = DEVPTS_SB(mnt->mnt_sb);
-> +	opts = &fsi->mount_opts;
+> +	mount -t devpts -o newinstance -o ptmxmode=0644 devpts /dev/pts
 > +
-> +	err = parse_mount_options(data, 0, opts);
-> +	if (err)
-> +		goto fail;
+> +   The permissions can be later be changed as usual with 'chmod'.
 > +
-> +	err = mknod_ptmx(mnt->mnt_sb);
-> +	if (err)
-> +		goto fail;
-> +
-> +	return 0;
-> +
-> +fail:
-> +	dput(mnt->mnt_sb->s_root);
-> +	deactivate_super(mnt->mnt_sb);
-> +	return err;
-> +}
-> +
-> +/*
-> + * Check if 'newinstance' mount option was specified in @data.
-> + *
-> + * Return: -errno  	on error (eg: invalid mount options specified)
-> + * 	 : 1 		if 'newinstance' mount option was specified
-> + * 	 : 0 		if 'newinstance' mount option was NOT specified
-> + */
-> +static int is_new_instance_mount(void *data)
-> +{
-> +	int rc;
-> +	struct pts_mount_opts opts;
-> +
-> +	if (!data)
-> +		return 0;
-> +
-> +	rc = safe_parse_mount_options(data, &opts);
-> +	if (!rc)
-> +		rc = opts.newinstance;
-> +
-> +	return rc;
-> +}
-> +
-> +/*
-> + * Mount or remount the initial kernel mount of devpts. This type of
-> + * mount maintains the legacy, single-instance semantics, while the
-> + * kernel still allows multiple-instances.
-> + */
-> +static int init_pts_mount(struct file_system_type *fs_type, int flags,
-> +		void *data, struct vfsmount *mnt)
-> +{
-> +	int err;
-> +
-> +	if (!devpts_mnt) {
-> +		err = get_sb_single(fs_type, flags, data, devpts_fill_super,
-> +				mnt);
-> +
-> +		err = mknod_ptmx(mnt->mnt_sb);
-> +		if (err) {
-> +			dput(mnt->mnt_sb->s_root);
-> +			deactivate_super(mnt->mnt_sb);
-> +		} else
-> +			devpts_mnt = mnt;
-> +
-> +		return err;
-
-There is no locking here, so in early-userspace two competing processes
-could both try to set devpts_mnt, right?
-
-> +	}
-> +
-> +	return get_sb_ref(devpts_mnt->mnt_sb, flags, data, mnt);
-> +}
-> +
->  static int devpts_get_sb(struct file_system_type *fs_type,
->  	int flags, const char *dev_name, void *data, struct vfsmount *mnt)
->  {
-> +	int new;
-> +
-> +	new = is_new_instance_mount(data);
-> +	if (new < 0)
-> +		return new;
-> +
-> +	if (new)
-> +		return new_pts_mount(fs_type, flags, data, mnt);
-> +
-> +	return init_pts_mount(fs_type, flags, data, mnt);
-
-Wait a sec - so if a container does
-
-	mount -t devpts -o newinstance none /dev/pts
-	and then later on just does
-	mount -t devpts none /dev/pts
-
-it'll get the init_pts_ns, not the one it had created?
-
-Yup, just confirmed, using:
-
-	ns_exec -cmiup /bin/sh
-	   mount -t devpts -o newinstance -n none /dev/pts
-	   mount -t devpts -n none /mnt
-	   ls /dev/pts
-	     ptmx
-	   ls /mnt
-	     0 ptmx
-That's weird.
-
-> +}
-> +#else
-> +/*
-> + * This supports only the legacy single-instance semantics (no
-> + * multiple-instance semantics)
-> + */
-> +static int devpts_get_sb(struct file_system_type *fs_type, int flags,
-> +		const char *dev_name, void *data, struct vfsmount *mnt)
-> +{
->  	return get_sb_single(fs_type, flags, data, devpts_fill_super, mnt);
->  }
-> 
-> +#endif
-> +
->  static void devpts_kill_sb(struct super_block *sb)
->  {
->  	struct pts_fs_info *fsi = DEVPTS_SB(sb);
-> @@ -431,8 +588,9 @@ void devpts_pty_kill(struct tty_struct *tty)
->  	if (dentry && !IS_ERR(dentry)) {
->  		inode->i_nlink--;
->  		d_delete(dentry);
-> -		dput(dentry);
-> +		dput(dentry);		// d_lookup in devpts_pty_new
->  	}
-> +	dput(dentry);			// d_find_alias above
-> 
->  	mutex_unlock(&root->d_inode->i_mutex);
->  }
+> +	chmod 666 /dev/pts/ptmx
 > -- 
 > 1.5.2.5
