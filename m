@@ -1,15 +1,16 @@
 From: Ryo Tsuruta <ryov-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
-Subject: [PATCH 2/8] dm-ioband: Documentation of design overview,
-	installation, command reference and examples.
-Date: Wed, 24 Sep 2008 19:12:04 +0900 (JST)
-Message-ID: <20080924.191204.71103350.ryov__37547.654801938$1222251409$gmane$org@valinux.co.jp>
-References: <20080924.191059.193698894.ryov@valinux.co.jp>
-	<20080924.191135.226787109.ryov@valinux.co.jp>
+Subject: [PATCH 4/8] bio-cgroup: Split the cgroup memory subsystem into two
+	parts
+Date: Wed, 24 Sep 2008 19:13:09 +0900 (JST)
+Message-ID: <20080924.191309.189710495.ryov__32927.7339428247$1222251940$gmane$org@valinux.co.jp>
+References: <20080924.191135.226787109.ryov@valinux.co.jp>
+	<20080924.191204.71103350.ryov@valinux.co.jp>
+	<20080924.191234.104048747.ryov@valinux.co.jp>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20080924.191135.226787109.ryov-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
+In-Reply-To: <20080924.191234.104048747.ryov-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -23,952 +24,990 @@ To: linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, dm-devel-H+wXaHxf7aLQT
 Cc: fernando-gVGce1chcLdL9jVzuh4AOg@public.gmane.org, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org, agk-9JcytcrH/bA+uJoB2kUjGw@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-This patch is the documentation of dm-ioband, design overview,
-installation, command, reference and examples.
+This patch splits the cgroup memory subsystem into two parts.
+One is for tracking pages to find out the owners. The other is
+for controlling how much amount of memory should be assigned to
+each cgroup.
+
+With this patch, you can use the page tracking mechanism even if
+the memory subsystem is off.
 
 Based on 2.6.27-rc5-mm1
 Signed-off-by: Ryo Tsuruta <ryov-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
 Signed-off-by: Hirokazu Takahashi <taka-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
 
-diff -uprN linux-2.6.27-rc5-mm1.orig/Documentation/device-mapper/ioband.txt linux-2.6.27-rc5-mm1/Documentation/device-mapper/ioband.txt
---- linux-2.6.27-rc5-mm1.orig/Documentation/device-mapper/ioband.txt	1970-01-01 09:00:00.000000000 +0900
-+++ linux-2.6.27-rc5-mm1/Documentation/device-mapper/ioband.txt	2008-09-24 17:33:22.000000000 +0900
-@@ -0,0 +1,938 @@
-+                     Block I/O bandwidth control: dm-ioband
-+
-+            -------------------------------------------------------
-+
-+   Table of Contents
-+
-+   [1]What's dm-ioband all about?
-+
-+   [2]Differences from the CFQ I/O scheduler
-+
-+   [3]How dm-ioband works.
-+
-+   [4]Setup and Installation
-+
-+   [5]Getting started
-+
-+   [6]Command Reference
-+
-+   [7]Examples
-+
-+What's dm-ioband all about?
-+
-+     dm-ioband is an I/O bandwidth controller implemented as a device-mapper
-+   driver. Several jobs using the same physical device have to share the
-+   bandwidth of the device. dm-ioband gives bandwidth to each job according
-+   to its weight, which each job can set its own value to.
-+
-+     A job is a group of processes with the same pid or pgrp or uid or a
-+   virtual machine such as KVM or Xen. A job can also be a cgroup by applying
-+   the bio-cgroup patch, which can be found at
-+   [8]http://people.valinux.co.jp/~ryov/bio-cgroup/.
-+
-+     +------+ +------+ +------+   +------+ +------+ +------+
-+     |cgroup| |cgroup| | the  |   | pid  | | pid  | | the  |  jobs
-+     |  A   | |  B   | |others|   |  X   | |  Y   | |others|
-+     +--|---+ +--|---+ +--|---+   +--|---+ +--|---+ +--|---+
-+     +--V----+---V---+----V---+   +--V----+---V---+----V---+
-+     | group | group | default|   | group | group | default|  ioband groups
-+     |       |       |  group |   |       |       |  group |
-+     +-------+-------+--------+   +-------+-------+--------+
-+     |        ioband1         |   |       ioband2          |  ioband devices
-+     +-----------|------------+   +-----------|------------+
-+     +-----------V--------------+-------------V------------+
-+     |                          |                          |
-+     |          sdb1            |           sdb2           |  physical devices
-+     +--------------------------+--------------------------+
-+
-+
-+   --------------------------------------------------------------------------
-+
-+Differences from the CFQ I/O scheduler
-+
-+     Dm-ioband is flexible to configure the bandwidth settings.
-+
-+     Dm-ioband can work with any type of I/O scheduler such as the NOOP
-+   scheduler, which is often chosen for high-end storages, since it is
-+   implemented outside the I/O scheduling layer. It allows both of partition
-+   based bandwidth control and job --- a group of processes --- based
-+   control. In addition, it can set different configuration on each physical
-+   device to control its bandwidth.
-+
-+     Meanwhile the current implementation of the CFQ scheduler has 8 IO
-+   priority levels and all jobs whose processes have the same IO priority
-+   share the bandwidth assigned to this level between them. And IO priority
-+   is an attribute of a process so that it equally effects to all block
-+   devices.
-+
-+   --------------------------------------------------------------------------
-+
-+How dm-ioband works.
-+
-+     Every ioband device has one ioband group, which by default is called the
-+   default group.
-+
-+     Ioband devices can also have extra ioband groups in them. Each ioband
-+   group has a job to support and a weight. Proportional to the weight,
-+   dm-ioband gives tokens to the group.
-+
-+     A group passes on I/O requests that its job issues to the underlying
-+   layer so long as it has tokens left, while requests are blocked if there
-+   aren't any tokens left in the group. Tokens are refilled once all of
-+   groups that have requests on a given physical device use up their tokens.
-+
-+     There are two policies for token consumption. One is that a token is
-+   consumed for each I/O request. The other is that a token is consumed for
-+   each I/O sector, for example, one I/O request which consists of
-+   4Kbytes(512bytes * 8 sectors) read consumes 8 tokens. A user can choose
-+   either policy.
-+
-+     With this approach, a job running on an ioband group with large weight
-+   is guaranteed a wide I/O bandwidth.
-+
-+   --------------------------------------------------------------------------
-+
-+Setup and Installation
-+
-+     Build a kernel with these options enabled:
-+
-+     CONFIG_MD
-+     CONFIG_BLK_DEV_DM
-+     CONFIG_DM_IOBAND
-+
-+
-+     If compiled as module, use modprobe to load dm-ioband.
-+
-+     # make modules
-+     # make modules_install
-+     # depmod -a
-+     # modprobe dm-ioband
-+
-+
-+     "dmsetup targets" command shows all available device-mapper targets.
-+   "ioband" and the version number are displayed when dm-ioband has been
-+   loaded.
-+
-+     # dmsetup targets | grep ioband
-+     ioband           v1.6.0
-+
-+
-+   --------------------------------------------------------------------------
-+
-+Getting started
-+
-+     The following is a brief description how to control the I/O bandwidth of
-+   disks. In this description, we'll take one disk with two partitions as an
-+   example target.
-+
-+   --------------------------------------------------------------------------
-+
-+  Create and map ioband devices
-+
-+     Create two ioband devices "ioband1" and "ioband2". "ioband1" is mapped
-+   to "/dev/sda1" and has a weight of 40. "ioband2" is mapped to "/dev/sda2"
-+   and has a weight of 10. "ioband1" can use 80% --- 40/(40+10)*100 --- of
-+   the bandwidth of the physical disk "/dev/sda" while "ioband2" can use 20%.
-+
-+    # echo "0 $(blockdev --getsize /dev/sda1) ioband /dev/sda1 1 0 0 none" \
-+        "weight 0 :40" | dmsetup create ioband1
-+    # echo "0 $(blockdev --getsize /dev/sda2) ioband /dev/sda2 1 0 0 none" \
-+        "weight 0 :10" | dmsetup create ioband2
-+
-+
-+     If the commands are successful then the device files
-+   "/dev/mapper/ioband1" and "/dev/mapper/ioband2" will have been created.
-+
-+   --------------------------------------------------------------------------
-+
-+  Additional bandwidth control
-+
-+     In this example two extra ioband groups are created on "ioband1". The
-+   first group consists of all the processes with user-id 1000 and the second
-+   group consists of all the processes with user-id 2000. Their weights are
-+   30 and 20 respectively.
-+
-+    # dmsetup message ioband1 0 type user
-+    # dmsetup message ioband1 0 attach 1000
-+    # dmsetup message ioband1 0 attach 2000
-+    # dmsetup message ioband1 0 weight 1000:30
-+    # dmsetup message ioband1 0 weight 2000:20
-+
-+
-+     Now the processes in the user-id 1000 group can use 30% ---
-+   30/(30+20+40+10)*100 --- of the bandwidth of the physical disk.
-+
-+   Table 1. Weight assignments
-+
-+   +----------------------------------------------------------------+
-+   | ioband device |          ioband group          | ioband weight |
-+   |---------------+--------------------------------+---------------|
-+   | ioband1       | user id 1000                   | 30            |
-+   |---------------+--------------------------------+---------------|
-+   | ioband1       | user id 2000                   | 20            |
-+   |---------------+--------------------------------+---------------|
-+   | ioband1       | default group(the other users) | 40            |
-+   |---------------+--------------------------------+---------------|
-+   | ioband2       | default group                  | 10            |
-+   +----------------------------------------------------------------+
-+
-+   --------------------------------------------------------------------------
-+
-+  Remove the ioband devices
-+
-+     Remove the ioband devices when no longer used.
-+
-+     # dmsetup remove ioband1
-+     # dmsetup remove ioband2
-+
-+
-+   --------------------------------------------------------------------------
-+
-+Command Reference
-+
-+  Create an ioband device
-+
-+   SYNOPSIS
-+
-+           dmsetup create IOBAND_DEVICE
-+
-+   DESCRIPTION
-+
-+             Create an ioband device with the given name IOBAND_DEVICE.
-+           Generally, dmsetup reads a table from standard input. Each line of
-+           the table specifies a single target and is of the form:
-+
-+             start_sector num_sectors "ioband" device_file ioband_device_id \
-+                 io_throttle io_limit ioband_group_type policy token_base \
-+                 :weight [ioband_group_id:weight...]
-+
-+
-+                start_sector, num_sectors
-+
-+                          The sector range of the underlying device where
-+                        dm-ioband maps.
-+
-+                ioband
-+
-+                          Specify the string "ioband" as a target type.
-+
-+                device_file
-+
-+                          Underlying device name.
-+
-+                ioband_device_id
-+
-+                          The ID number for an ioband device. The same ID
-+                        must be set among the ioband devices that share the
-+                        same bandwidth, which means they work on the same
-+                        physical disk.
-+
-+                io_throttle
-+
-+                          Dm-ioband starts to control the bandwidth when the
-+                        number of BIOs in progress exceeds this value. If 0
-+                        is specified, dm-ioband uses the default value.
-+
-+                io_limit
-+
-+                          Dm-ioband blocks all I/O requests for the
-+                        IOBAND_DEVICE when the number of BIOs in progress
-+                        exceeds this value. If 0 is specified, dm-ioband uses
-+                        the default value.
-+
-+                ioband_group_type
-+
-+                          Specify how to evaluate the ioband group ID. The
-+                        type must be one of "none", "user", "gid", "pid" or
-+                        "pgrp." The type "cgroup" is enabled by applying the
-+                        bio-cgroup patch. Specify "none" if you don't need
-+                        any ioband groups other than the default ioband
-+                        group.
-+
-+                policy
-+
-+                          Specify bandwidth control policy. A user can choose
-+                        either policy "weight" or "weight-iosize."
-+
-+                             weight
-+
-+                                       This policy controls bandwidth
-+                                     according to the proportional to the
-+                                     weight of each ioband group based on the
-+                                     number of I/O requests.
-+
-+                             weight-iosize
-+
-+                                       This policy controls bandwidth
-+                                     according to the proportional to the
-+                                     weight of each ioband group based on the
-+                                     number of I/O sectors.
-+
-+                token_base
-+
-+                          The number of tokens which specified by token_base
-+                        will be distributed to all ioband groups according to
-+                        the proportional to the weight of each ioband group.
-+                        If 0 is specified, dm-ioband uses the default value.
-+
-+                ioband_group_id:weight
-+
-+                          Set the weight of the ioband group specified by
-+                        ioband_group_id. If ioband_group_id is omitted, the
-+                        weight is assigned to the default ioband group.
-+
-+   EXAMPLE
-+
-+             Create an ioband device with the following parameters:
-+
-+              *   Starting sector = "0"
-+
-+              *   The number of sectors = "$(blockdev --getsize /dev/sda1)"
-+
-+              *   Target type = "ioband"
-+
-+              *   Underlying device name = "/dev/sda1"
-+
-+              *   Ioband device ID = "128"
-+
-+              *   I/O throttle = "10"
-+
-+              *   I/O limit = "400"
-+
-+              *   Ioband group type = "user"
-+
-+              *   Bandwidth control policy = "weight"
-+
-+              *   Token base = "2048"
-+
-+              *   Weight for the default ioband group = "100"
-+
-+              *   Weight for the ioband group 1000 = "80"
-+
-+              *   Weight for the ioband group 2000 = "20"
-+
-+              *   Ioband device name = "ioband1"
-+
-+             # echo "0 $(blockdev --getsize /dev/sda1) ioband" \
-+               "/dev/sda1 128 10 400 user weight 2048 :100 1000:80 2000:20" \
-+               | dmsetup create ioband1
-+
-+
-+             Create two device groups (ID=1,2). The bandwidths of these
-+           device groups will be individually controlled.
-+
-+             # echo "0 $(blockdev --getsize /dev/sda1) ioband /dev/sda1 1" \
-+               "0 0 none weight 0 :80" | dmsetup create ioband1
-+             # echo "0 $(blockdev --getsize /dev/sda2) ioband /dev/sda2 1" \
-+               "0 0 none weight 0 :20" | dmsetup create ioband2
-+             # echo "0 $(blockdev --getsize /dev/sdb3) ioband /dev/sdb3 2" \
-+               "0 0 none weight 0 :60" | dmsetup create ioband3
-+             # echo "0 $(blockdev --getsize /dev/sdb4) ioband /dev/sdb4 2" \
-+               "0 0 none weight 0 :40" | dmsetup create ioband4
-+
-+
-+   --------------------------------------------------------------------------
-+
-+  Remove the ioband device
-+
-+   SYNOPSIS
-+
-+           dmsetup remove IOBAND_DEVICE
-+
-+   DESCRIPTION
-+
-+             Remove the specified ioband device IOBAND_DEVICE. All the band
-+           groups attached to the ioband device are also removed
-+           automatically.
-+
-+   EXAMPLE
-+
-+             Remove ioband device "ioband1."
-+
-+             # dmsetup remove ioband1
-+
-+
-+   --------------------------------------------------------------------------
-+
-+  Set an ioband group type
-+
-+   SYNOPSIS
-+
-+           dmsetup message IOBAND_DEVICE 0 type TYPE
-+
-+   DESCRIPTION
-+
-+             Set the ioband group type of the specified ioband device
-+           IOBAND_DEVICE. TYPE must be one of "none", "user", "gid", "pid" or
-+           "pgrp." The type "cgroup" is enabled by applying the bio-cgroup
-+           patch. Once the type is set, new ioband groups can be created on
-+           IOBAND_DEVICE.
-+
-+   EXAMPLE
-+
-+             Set the ioband group type of ioband device "ioband1" to "user."
-+
-+             # dmsetup message ioband1 0 type user
-+
-+
-+   --------------------------------------------------------------------------
-+
-+  Create an ioband group
-+
-+   SYNOPSIS
-+
-+           dmsetup message IOBAND_DEVICE 0 attach ID
-+
-+   DESCRIPTION
-+
-+             Create an ioband group and attach it to IOBAND_DEVICE. ID
-+           specifies user-id, group-id, process-id or process-group-id
-+           depending the ioband group type of IOBAND_DEVICE.
-+
-+   EXAMPLE
-+
-+             Create an ioband group which consists of all processes with
-+           user-id 1000 and attach it to ioband device "ioband1."
-+
-+             # dmsetup message ioband1 0 type user
-+             # dmsetup message ioband1 0 attach 1000
-+
-+
-+   --------------------------------------------------------------------------
-+
-+  Detach the ioband group
-+
-+   SYNOPSIS
-+
-+           dmsetup message IOBAND_DEVICE 0 detach ID
-+
-+   DESCRIPTION
-+
-+             Detach the ioband group specified by ID from ioband device
-+           IOBAND_DEVICE.
-+
-+   EXAMPLE
-+
-+             Detach the ioband group with ID "2000" from ioband device
-+           "ioband2."
-+
-+             # dmsetup message ioband2 0 detach 1000
-+
-+
-+   --------------------------------------------------------------------------
-+
-+  Set bandwidth control policy
-+
-+   SYNOPSIS
-+
-+           dmsetup message IOBAND_DEVICE 0 policy policy
-+
-+   DESCRIPTION
-+
-+             Set bandwidth control policy. This command applies to all ioband
-+           devices which have the same ioband device ID as IOBAND_DEVICE. A
-+           user can choose either policy "weight" or "weight-iosize."
-+
-+                weight
-+
-+                          This policy controls bandwidth according to the
-+                        proportional to the weight of each ioband group based
-+                        on the number of I/O requests.
-+
-+                weight-iosize
-+
-+                          This policy controls bandwidth according to the
-+                        proportional to the weight of each ioband group based
-+                        on the number of I/O sectors.
-+
-+   EXAMPLE
-+
-+             Set bandwidth control policy of ioband devices which have the
-+           same ioband device ID as "ioband1" to "weight-iosize."
-+
-+             # dmsetup message ioband1 0 policy weight-iosize
-+
-+
-+   --------------------------------------------------------------------------
-+
-+  Set the weight of an ioband group
-+
-+   SYNOPSIS
-+
-+           dmsetup message IOBAND_DEVICE 0 weight VAL
-+
-+           dmsetup message IOBAND_DEVICE 0 weight ID:VAL
-+
-+   DESCRIPTION
-+
-+             Set the weight of the ioband group specified by ID. Set the
-+           weight of the default ioband group of IOBAND_DEVICE if ID isn't
-+           specified.
-+
-+             The following example means that "ioband1" can use 80% ---
-+           40/(40+10)*100 --- of the bandwidth of the physical disk while
-+           "ioband2" can use 20%.
-+
-+             # dmsetup message ioband1 0 weight 40
-+             # dmsetup message ioband2 0 weight 10
-+
-+
-+             The following lines have the same effect as the above:
-+
-+             # dmsetup message ioband1 0 weight 4
-+             # dmsetup message ioband2 0 weight 1
-+
-+
-+             VAL must be an integer larger than 0. The default value, which
-+           is assigned to newly created ioband groups, is 100.
-+
-+   EXAMPLE
-+
-+             Set the weight of the default ioband group of "ioband1" to 40.
-+
-+             # dmsetup message ioband1 0 weight 40
-+
-+
-+             Set the weight of the ioband group of "ioband1" with ID "1000"
-+           to 10.
-+
-+             # dmsetup message ioband1 0 weight 1000:10
-+
-+
-+   --------------------------------------------------------------------------
-+
-+  Set the number of tokens
-+
-+   SYNOPSIS
-+
-+           dmsetup message IOBAND_DEVICE 0 token VAL
-+
-+   DESCRIPTION
-+
-+             Set the number of tokens to VAL. According to their weight, this
-+           number of tokens will be distributed to all the ioband groups on
-+           the physical device to which ioband device IOBAND_DEVICE belongs
-+           when they use up their tokens.
-+
-+             VAL must be an integer greater than 0. The default is 2048.
-+
-+   EXAMPLE
-+
-+             Set the number of tokens of the physical device to which
-+           "ioband1" belongs to 256.
-+
-+             # dmsetup message ioband1 0 token 256
-+
-+
-+   --------------------------------------------------------------------------
-+
-+  Set I/O throttling
-+
-+   SYNOPSIS
-+
-+           dmsetup message IOBAND_DEVICE 0 io_throttle VAL
-+
-+   DESCRIPTION
-+
-+             Set the I/O throttling value of the physical disk to which
-+           ioband device IOBAND_DEVICE belongs to VAL. Dm-ioband start to
-+           control the bandwidth when the number of BIOs in progress on the
-+           physical disk exceeds this value.
-+
-+   EXAMPLE
-+
-+             Set the I/O throttling value of "ioband1" to 16.
-+
-+             # dmsetup message ioband1 0 io_throttle 16
-+
-+
-+   --------------------------------------------------------------------------
-+
-+  Set I/O limiting
-+
-+   SYNOPSIS
-+
-+           dmsetup message IOBAND_DEVICE 0 io_limit VAL
-+
-+   DESCRIPTION
-+
-+             Set the I/O limiting value of the physical disk to which ioband
-+           device IOBAND_DEVICE belongs to VAL. Dm-ioband will block all I/O
-+           requests for the physical device if the number of BIOs in progress
-+           on the physical disk exceeds this value.
-+
-+   EXAMPLE
-+
-+             Set the I/O limiting value of "ioband1" to 128.
-+
-+             # dmsetup message ioband1 0 io_limit 128
-+
-+
-+   --------------------------------------------------------------------------
-+
-+  Display settings
-+
-+   SYNOPSIS
-+
-+           dmsetup table --target ioband
-+
-+   DESCRIPTION
-+
-+             Display the current table for the ioband device in a format. See
-+           "dmsetup create" command for information on the table format.
-+
-+   EXAMPLE
-+
-+             The following output shows the current table of "ioband1."
-+
-+             # dmsetup table --target ioband
-+             ioband: 0 32129937 ioband1 8:29 128 10 400 user weight \
-+               2048 :100 1000:80 2000:20
-+
-+
-+   --------------------------------------------------------------------------
-+
-+  Display Statistics
-+
-+   SYNOPSIS
-+
-+           dmsetup status --target ioband
-+
-+   DESCRIPTION
-+
-+             Display the statistics of all the ioband devices whose target
-+           type is "ioband."
-+
-+             The output format is as below. the first five columns shows:
-+
-+              *   ioband device name
-+
-+              *   logical start sector of the device (must be 0)
-+
-+              *   device size in sectors
-+
-+              *   target type (must be "ioband")
-+
-+              *   device group ID
-+
-+             The remaining columns show the statistics of each ioband group
-+           on the band device. Each group uses seven columns for its
-+           statistics.
-+
-+              *   ioband group ID (-1 means default)
-+
-+              *   total read requests
-+
-+              *   delayed read requests
-+
-+              *   total read sectors
-+
-+              *   total write requests
-+
-+              *   delayed write requests
-+
-+              *   total write sectors
-+
-+   EXAMPLE
-+
-+             The following output shows the statistics of two ioband devices.
-+           Ioband2 only has the default ioband group and ioband1 has three
-+           (default, 1001, 1002) ioband groups.
-+
-+             # dmsetup status
-+             ioband2: 0 44371467 ioband 128 -1 143 90 424 122 78 352
-+             ioband1: 0 44371467 ioband 128 -1 223 172 408 211 136 600 1001 \
-+             166 107 472 139 95 352 1002 211 146 520 210 147 504
-+
-+
-+   --------------------------------------------------------------------------
-+
-+  Reset status counter
-+
-+   SYNOPSIS
-+
-+           dmsetup message IOBAND_DEVICE 0 reset
-+
-+   DESCRIPTION
-+
-+             Reset the statistics of ioband device IOBAND_DEVICE.
-+
-+   EXAMPLE
-+
-+             Reset the statistics of "ioband1."
-+
-+             # dmsetup message ioband1 0 reset
-+
-+
-+   --------------------------------------------------------------------------
-+
-+Examples
-+
-+  Example #1: Bandwidth control on Partitions
-+
-+     This example describes how to control the bandwidth with disk
-+   partitions. The following diagram illustrates the configuration of this
-+   example. You may want to run a database on /dev/mapper/ioband1 and web
-+   applications on /dev/mapper/ioband2.
-+
-+                 /mnt1                        /mnt2            mount points
-+                   |                              |
-+     +-------------V------------+ +-------------V------------+
-+     |   /dev/mapper/ioband1    | |   /dev/mapper/ioband2    | ioband devices
-+     +--------------------------+ +--------------------------+
-+     |       default group      | |       default group      | ioband groups
-+     |           (80)           | |           (40)           |    (weight)
-+     +-------------|------------+ +-------------|------------+
-+                   |                            |
-+     +-------------V-------------+--------------V------------+
-+     |         /dev/sda1         |          /dev/sda2        | physical devices
-+     +---------------------------+---------------------------+
-+
-+
-+     To setup the above configuration, follow these steps:
-+
-+    1.   Create ioband devices with the same device group ID and assign
-+       weights of 80 and 40 to the default ioband groups respectively.
-+
-+         # echo "0 $(blockdev --getsize /dev/sda1) ioband /dev/sda1 1 0 0" \
-+             "none weight 0 :80" | dmsetup create ioband1
-+         # echo "0 $(blockdev --getsize /dev/sda2) ioband /dev/sda2 1 0 0" \
-+             "none weight 0 :40" | dmsetup create ioband2
-+
-+
-+    2.   Create filesystems on the ioband devices and mount them.
-+
-+         # mkfs.ext3 /dev/mapper/ioband1
-+         # mount /dev/mapper/ioband1 /mnt1
-+
-+         # mkfs.ext3 /dev/mapper/ioband2
-+         # mount /dev/mapper/ioband2 /mnt2
-+
-+
-+   --------------------------------------------------------------------------
-+
-+  Example #2: Bandwidth control on Logical Volumes
-+
-+     This example is similar to the example #1 but it uses LVM logical
-+   volumes instead of disk partitions. This example shows how to configure
-+   ioband devices on two striped logical volumes.
-+
-+                 /mnt1                        /mnt2            mount points
-+                   |                            |
-+     +-------------V------------+ +-------------V------------+
-+     |   /dev/mapper/ioband1    | |   /dev/mapper/ioband2    | ioband devices
-+     +--------------------------+ +--------------------------+
-+     |       default group      | |       default group      | ioband groups
-+     |           (80)           | |           (40)           |    (weight)
-+     +-------------|------------+ +-------------|------------+
-+                   |                            |
-+     +-------------V------------+ +-------------V------------+
-+     |      /dev/mapper/lv0     | |     /dev/mapper/lv1      | striped logical
-+     |                          | |                          | volumes
-+     +-------------------------------------------------------+
-+     |                          vg0                          | volume group
-+     +-------------|----------------------------|------------+
-+                   |                            |
-+     +-------------V------------+ +-------------V------------+
-+     |         /dev/sdb         | |         /dev/sdc         | physical devices
-+     +--------------------------+ +--------------------------+
-+
-+
-+     To setup the above configuration, follow these steps:
-+
-+    1.   Initialize the partitions for use by LVM.
-+
-+         # pvcreate /dev/sdb
-+         # pvcreate /dev/sdc
-+
-+
-+    2.   Create a new volume group named "vg0" with /dev/sdb and /dev/sdc.
-+
-+         # vgcreate vg0 /dev/sdb /dev/sdc
-+
-+
-+    3.   Create two logical volumes in "vg0." The volumes have to be striped.
-+
-+         # lvcreate -n lv0 -i 2 -I 64 vg0 -L 1024M
-+         # lvcreate -n lv1 -i 2 -I 64 vg0 -L 1024M
-+
-+
-+         The rest is the same as the example #1.
-+
-+    4.   Create ioband devices corresponding to each logical volume and
-+       assign weights of 80 and 40 to the default ioband groups respectively.
-+
-+         # echo "0 $(blockdev --getsize /dev/mapper/vg0-lv0)" \
-+            "ioband /dev/mapper/vg0-lv0 1 0 0 none weight 0 :80" | \
-+            dmsetup create ioband1
-+         # echo "0 $(blockdev --getsize /dev/mapper/vg0-lv1)" \
-+            "ioband /dev/mapper/vg0-lv1 1 0 0 none weight 0 :40" | \
-+            dmsetup create ioband2
-+
-+
-+    5.   Create filesystems on the ioband devices and mount them.
-+
-+         # mkfs.ext3 /dev/mapper/ioband1
-+         # mount /dev/mapper/ioband1 /mnt1
-+
-+         # mkfs.ext3 /dev/mapper/ioband2
-+         # mount /dev/mapper/ioband2 /mnt2
-+
-+
-+   --------------------------------------------------------------------------
-+
-+  Example #3: Bandwidth control on processes
-+
-+     This example describes how to control the bandwidth with groups of
-+   processes. You may also want to run an additional application on the same
-+   machine described in the example #1. This example shows how to add a new
-+   ioband group for this application.
-+
-+                 /mnt1                        /mnt2            mount points
-+                   |                            |
-+     +-------------V------------+ +-------------V------------+
-+     |   /dev/mapper/ioband1    | |   /dev/mapper/ioband2    | ioband devices
-+     +-------------+------------+ +-------------+------------+
-+     |          default         | |  user=1000  |   default  | ioband groups
-+     |           (80)           | |     (20)    |    (40)    |   (weight)
-+     +-------------+------------+ +-------------+------------+
-+                   |                            |
-+     +-------------V-------------+--------------V------------+
-+     |         /dev/sda1         |          /dev/sda2        | physical device
-+     +---------------------------+---------------------------+
-+
-+
-+     The following shows to set up a new ioband group on the machine that is
-+   already configured as the example #1. The application will have a weight
-+   of 20 and run with user-id 1000 on /dev/mapper/ioband2.
-+
-+    1.   Set the type of ioband2 to "user."
-+
-+         # dmsetup message ioband2 0 type user.
-+
-+
-+    2.   Create a new ioband group on ioband2.
-+
-+         # dmsetup message ioband2 0 attach 1000
-+
-+
-+    3.   Assign weight of 10 to this newly created ioband group.
-+
-+         # dmsetup message ioband2 0 weight 1000:20
-+
-+
-+   --------------------------------------------------------------------------
-+
-+  Example #4: Bandwidth control for Xen virtual block devices
-+
-+     This example describes how to control the bandwidth for Xen virtual
-+   block devices. The following diagram illustrates the configuration of this
-+   example.
-+
-+           Virtual Machine 1            Virtual Machine 2      virtual machines
-+                   |                            |
-+     +-------------V------------+ +-------------V------------+
-+     |         /dev/xvda1       | |         /dev/xvda1       | virtual block
-+     +-------------|------------+ +-------------|------------+    devices
-+                   |                            |
-+     +-------------V------------+ +-------------V------------+
-+     |   /dev/mapper/ioband1    | |   /dev/mapper/ioband2    | ioband devices
-+     +--------------------------+ +--------------------------+
-+     |       default group      | |       default group      | ioband groups
-+     |           (80)           | |           (40)           |    (weight)
-+     +-------------|------------+ +-------------|------------+
-+                   |                            |
-+     +-------------V-------------+--------------V------------+
-+     |         /dev/sda1         |          /dev/sda2        | physical device
-+     +---------------------------+---------------------------+
-+
-+
-+     The followings shows how to map ioband device "ioband1" and "ioband2" to
-+   virtual block device "/dev/xvda1 on Virtual Machine 1" and "/dev/xvda1 on
-+   Virtual Machine 2" respectively on the machine configured as the example
-+   #1. Add the following lines to the configuration files that are referenced
-+   when creating "Virtual Machine 1" and "Virtual Machine 2."
-+
-+       For "Virtual Machine 1"
-+       disk = [ 'phy:/dev/mapper/ioband1,xvda,w' ]
-+
-+       For "Virtual Machine 2"
-+       disk = [ 'phy:/dev/mapper/ioband2,xvda,w' ]
-+
-+
-+   --------------------------------------------------------------------------
-+
-+  Example #5: Bandwidth control for Xen blktap devices
-+
-+     This example describes how to control the bandwidth for Xen virtual
-+   block devices when Xen blktap devices are used. The following diagram
-+   illustrates the configuration of this example.
-+
-+           Virtual Machine 1            Virtual Machine 2      virtual machines
-+                   |                            |
-+     +-------------V------------+ +-------------V------------+
-+     |         /dev/xvda1       | |         /dev/xvda1       | virtual block
-+     +-------------|------------+ +-------------|------------+    devices
-+                   |                            |
-+     +-------------V----------------------------V------------+
-+     |                  /dev/mapper/ioband1                  | ioband device
-+     +---------------------------+---------------------------+
-+     |       default group       |        default group      | ioband groups
-+     |           (80)            |            (40)           |    (weight)
-+     +-------------|-------------+--------------|------------+
-+                   |                            |
-+     +-------------|----------------------------|------------+
-+     |  +----------V----------+      +----------V---------+  |
-+     |  |       vm1.img       |      |       vm2.img      |  | disk image files
-+     |  +---------------------+      +--------------------+  |
-+     |                        /vmdisk                        | mount point
-+     +---------------------------|---------------------------+
-+                                 |
-+     +---------------------------V---------------------------+
-+     |                       /dev/sda1                       | physical device
-+     +-------------------------------------------------------+
-+
-+
-+     To setup the above configuration, follow these steps:
-+
-+    1.   Create an ioband device.
-+
-+         # echo "0 $(blockdev --getsize /dev/sda1) ioband /dev/sda1" \
-+             "1 0 0 none weight 0 :100" | dmsetup create ioband1
-+
-+
-+    2.   Add the following lines to the configuration files that are
-+       referenced when creating "Virtual Machine 1" and "Virtual Machine 2."
-+       Disk image files "/vmdisk/vm1.img" and "/vmdisk/vm2.img" will be used.
-+
-+         For "Virtual Machine 1"
-+         disk = [ 'tap:aio:/vmdisk/vm1.img,xvda,w', ]
-+
-+         For "Virtual Machine 1"
-+         disk = [ 'tap:aio:/vmdisk/vm2.img,xvda,w', ]
-+
-+
-+    3.   Run the virtual machines.
-+
-+         # xm create vm1
-+         # xm create vm2
-+
-+
-+    4.   Find out the process IDs of the daemons which control the blktap
-+       devices.
-+
-+         # lsof /vmdisk/disk[12].img
-+         COMMAND   PID USER   FD   TYPE DEVICE       SIZE  NODE NAME
-+         tapdisk 15011 root   11u   REG  253,0 2147483648 48961 /vmdisk/vm1.img
-+         tapdisk 15276 root   13u   REG  253,0 2147483648 48962 /vmdisk/vm2.img
-+
-+
-+    5.   Create new ioband groups of pid 15011 and pid 15276, which are
-+       process IDs of the tapdisks, and assign weight of 80 and 40 to the
-+       groups respectively.
-+
-+         # dmsetup message ioband1 0 type pid
-+         # dmsetup message ioband1 0 attach 15011
-+         # dmsetup message ioband1 0 weight 15011:80
-+         # dmsetup message ioband1 0 attach 15276
-+         # dmsetup message ioband1 0 weight 15276:40
+diff -Ndupr linux-2.6.27-rc5-mm1.ioband/include/linux/memcontrol.h linux-2.6.27-rc5-mm1.cg0/include/linux/memcontrol.h
+--- linux-2.6.27-rc5-mm1.ioband/include/linux/memcontrol.h	2008-09-24 16:23:03.000000000 +0900
++++ linux-2.6.27-rc5-mm1.cg0/include/linux/memcontrol.h	2008-09-24 16:34:34.000000000 +0900
+@@ -20,12 +20,62 @@
+ #ifndef _LINUX_MEMCONTROL_H
+ #define _LINUX_MEMCONTROL_H
+ 
++#include <linux/rcupdate.h>
++#include <linux/mm.h>
++#include <linux/smp.h>
++#include <linux/bit_spinlock.h>
++
+ struct mem_cgroup;
+ struct page_cgroup;
+ struct page;
+ struct mm_struct;
+ 
++#ifdef CONFIG_CGROUP_PAGE
++/*
++ * We use the lower bit of the page->page_cgroup pointer as a bit spin
++ * lock.  We need to ensure that page->page_cgroup is at least two
++ * byte aligned (based on comments from Nick Piggin).  But since
++ * bit_spin_lock doesn't actually set that lock bit in a non-debug
++ * uniprocessor kernel, we should avoid setting it here too.
++ */
++#define PAGE_CGROUP_LOCK_BIT    0x0
++#if defined(CONFIG_SMP) || defined(CONFIG_DEBUG_SPINLOCK)
++#define PAGE_CGROUP_LOCK        (1 << PAGE_CGROUP_LOCK_BIT)
++#else
++#define PAGE_CGROUP_LOCK        0x0
++#endif
++
++/*
++ * A page_cgroup page is associated with every page descriptor. The
++ * page_cgroup helps us identify information about the cgroup
++ */
++struct page_cgroup {
+ #ifdef CONFIG_CGROUP_MEM_RES_CTLR
++	struct list_head lru;		/* per cgroup LRU list */
++	struct mem_cgroup *mem_cgroup;
++#endif /* CONFIG_CGROUP_MEM_RES_CTLR */
++	struct page *page;
++	int flags;
++};
++#define PAGE_CGROUP_FLAG_CACHE	(0x1)	/* charged as cache */
++#define PAGE_CGROUP_FLAG_ACTIVE	(0x2)	/* page is active in this cgroup */
++#define PAGE_CGROUP_FLAG_FILE	(0x4)	/* page is file system backed */
++#define PAGE_CGROUP_FLAG_UNEVICTABLE (0x8)	/* page is unevictableable */
++
++static inline void lock_page_cgroup(struct page *page)
++{
++	bit_spin_lock(PAGE_CGROUP_LOCK_BIT, &page->page_cgroup);
++}
++
++static inline int try_lock_page_cgroup(struct page *page)
++{
++	return bit_spin_trylock(PAGE_CGROUP_LOCK_BIT, &page->page_cgroup);
++}
++
++static inline void unlock_page_cgroup(struct page *page)
++{
++	bit_spin_unlock(PAGE_CGROUP_LOCK_BIT, &page->page_cgroup);
++}
+ 
+ #define page_reset_bad_cgroup(page)	((page)->page_cgroup = 0)
+ 
+@@ -34,45 +84,15 @@ extern int mem_cgroup_charge(struct page
+ 				gfp_t gfp_mask);
+ extern int mem_cgroup_cache_charge(struct page *page, struct mm_struct *mm,
+ 					gfp_t gfp_mask);
+-extern void mem_cgroup_move_lists(struct page *page, enum lru_list lru);
+ extern void mem_cgroup_uncharge_page(struct page *page);
+ extern void mem_cgroup_uncharge_cache_page(struct page *page);
+-extern int mem_cgroup_shrink_usage(struct mm_struct *mm, gfp_t gfp_mask);
+-
+-extern unsigned long mem_cgroup_isolate_pages(unsigned long nr_to_scan,
+-					struct list_head *dst,
+-					unsigned long *scanned, int order,
+-					int mode, struct zone *z,
+-					struct mem_cgroup *mem_cont,
+-					int active, int file);
+-extern void mem_cgroup_out_of_memory(struct mem_cgroup *mem, gfp_t gfp_mask);
+-int task_in_mem_cgroup(struct task_struct *task, const struct mem_cgroup *mem);
+-
+-extern struct mem_cgroup *mem_cgroup_from_task(struct task_struct *p);
+-
+-#define mm_match_cgroup(mm, cgroup)	\
+-	((cgroup) == mem_cgroup_from_task((mm)->owner))
+ 
+ extern int
+ mem_cgroup_prepare_migration(struct page *page, struct page *newpage);
+ extern void mem_cgroup_end_migration(struct page *page);
++extern void page_cgroup_init(void);
+ 
+-/*
+- * For memory reclaim.
+- */
+-extern int mem_cgroup_calc_mapped_ratio(struct mem_cgroup *mem);
+-extern long mem_cgroup_reclaim_imbalance(struct mem_cgroup *mem);
+-
+-extern int mem_cgroup_get_reclaim_priority(struct mem_cgroup *mem);
+-extern void mem_cgroup_note_reclaim_priority(struct mem_cgroup *mem,
+-							int priority);
+-extern void mem_cgroup_record_reclaim_priority(struct mem_cgroup *mem,
+-							int priority);
+-
+-extern long mem_cgroup_calc_reclaim(struct mem_cgroup *mem, struct zone *zone,
+-					int priority, enum lru_list lru);
+-
+-#else /* CONFIG_CGROUP_MEM_RES_CTLR */
++#else /* CONFIG_CGROUP_PAGE */
+ static inline void page_reset_bad_cgroup(struct page *page)
+ {
+ }
+@@ -102,6 +122,53 @@ static inline void mem_cgroup_uncharge_c
+ {
+ }
+ 
++static inline int
++mem_cgroup_prepare_migration(struct page *page, struct page *newpage)
++{
++	return 0;
++}
++
++static inline void mem_cgroup_end_migration(struct page *page)
++{
++}
++#endif /* CONFIG_CGROUP_PAGE */
++
++#ifdef CONFIG_CGROUP_MEM_RES_CTLR
++
++extern void mem_cgroup_move_lists(struct page *page, enum lru_list lru);
++extern int mem_cgroup_shrink_usage(struct mm_struct *mm, gfp_t gfp_mask);
++
++extern unsigned long mem_cgroup_isolate_pages(unsigned long nr_to_scan,
++					struct list_head *dst,
++					unsigned long *scanned, int order,
++					int mode, struct zone *z,
++					struct mem_cgroup *mem_cont,
++					int active, int file);
++extern void mem_cgroup_out_of_memory(struct mem_cgroup *mem, gfp_t gfp_mask);
++int task_in_mem_cgroup(struct task_struct *task, const struct mem_cgroup *mem);
++
++extern struct mem_cgroup *mem_cgroup_from_task(struct task_struct *p);
++
++#define mm_match_cgroup(mm, cgroup)	\
++	((cgroup) == mem_cgroup_from_task((mm)->owner))
++
++/*
++ * For memory reclaim.
++ */
++extern int mem_cgroup_calc_mapped_ratio(struct mem_cgroup *mem);
++extern long mem_cgroup_reclaim_imbalance(struct mem_cgroup *mem);
++
++extern int mem_cgroup_get_reclaim_priority(struct mem_cgroup *mem);
++extern void mem_cgroup_note_reclaim_priority(struct mem_cgroup *mem,
++							int priority);
++extern void mem_cgroup_record_reclaim_priority(struct mem_cgroup *mem,
++							int priority);
++
++extern long mem_cgroup_calc_reclaim(struct mem_cgroup *mem, struct zone *zone,
++					int priority, enum lru_list lru);
++
++#else /* CONFIG_CGROUP_MEM_RES_CTLR */
++
+ static inline int mem_cgroup_shrink_usage(struct mm_struct *mm, gfp_t gfp_mask)
+ {
+ 	return 0;
+@@ -122,16 +189,6 @@ static inline int task_in_mem_cgroup(str
+ 	return 1;
+ }
+ 
+-static inline int
+-mem_cgroup_prepare_migration(struct page *page, struct page *newpage)
+-{
+-	return 0;
+-}
+-
+-static inline void mem_cgroup_end_migration(struct page *page)
+-{
+-}
+-
+ static inline int mem_cgroup_calc_mapped_ratio(struct mem_cgroup *mem)
+ {
+ 	return 0;
+@@ -163,7 +220,8 @@ static inline long mem_cgroup_calc_recla
+ {
+ 	return 0;
+ }
+-#endif /* CONFIG_CGROUP_MEM_CONT */
++
++#endif /* CONFIG_CGROUP_MEM_RES_CTLR */
+ 
+ #endif /* _LINUX_MEMCONTROL_H */
+ 
+diff -Ndupr linux-2.6.27-rc5-mm1.ioband/include/linux/mm_types.h linux-2.6.27-rc5-mm1.cg0/include/linux/mm_types.h
+--- linux-2.6.27-rc5-mm1.ioband/include/linux/mm_types.h	2008-09-24 16:23:03.000000000 +0900
++++ linux-2.6.27-rc5-mm1.cg0/include/linux/mm_types.h	2008-09-24 16:34:34.000000000 +0900
+@@ -92,7 +92,7 @@ struct page {
+ 	void *virtual;			/* Kernel virtual address (NULL if
+ 					   not kmapped, ie. highmem) */
+ #endif /* WANT_PAGE_VIRTUAL */
+-#ifdef CONFIG_CGROUP_MEM_RES_CTLR
++#ifdef CONFIG_CGROUP_PAGE
+ 	unsigned long page_cgroup;
+ #endif
+ 
+diff -Ndupr linux-2.6.27-rc5-mm1.ioband/init/Kconfig linux-2.6.27-rc5-mm1.cg0/init/Kconfig
+--- linux-2.6.27-rc5-mm1.ioband/init/Kconfig	2008-09-24 16:23:03.000000000 +0900
++++ linux-2.6.27-rc5-mm1.cg0/init/Kconfig	2008-09-24 16:34:35.000000000 +0900
+@@ -425,6 +425,10 @@ config CGROUP_MEMRLIMIT_CTLR
+ 	  memory RSS and Page Cache control. Virtual address space control
+ 	  is provided by this controller.
+ 
++config CGROUP_PAGE
++	def_bool y
++	depends on CGROUP_MEM_RES_CTLR
++
+ config SYSFS_DEPRECATED
+ 	bool
+ 
+diff -Ndupr linux-2.6.27-rc5-mm1.ioband/mm/Makefile linux-2.6.27-rc5-mm1.cg0/mm/Makefile
+--- linux-2.6.27-rc5-mm1.ioband/mm/Makefile	2008-09-24 16:23:03.000000000 +0900
++++ linux-2.6.27-rc5-mm1.cg0/mm/Makefile	2008-09-24 16:34:35.000000000 +0900
+@@ -34,6 +34,6 @@ obj-$(CONFIG_FS_XIP) += filemap_xip.o
+ obj-$(CONFIG_MIGRATION) += migrate.o
+ obj-$(CONFIG_SMP) += allocpercpu.o
+ obj-$(CONFIG_QUICKLIST) += quicklist.o
+-obj-$(CONFIG_CGROUP_MEM_RES_CTLR) += memcontrol.o
++obj-$(CONFIG_CGROUP_PAGE) += memcontrol.o
+ obj-$(CONFIG_CGROUP_MEMRLIMIT_CTLR) += memrlimitcgroup.o
+ obj-$(CONFIG_KMEMTRACE) += kmemtrace.o
+diff -Ndupr linux-2.6.27-rc5-mm1.ioband/mm/memcontrol.c linux-2.6.27-rc5-mm1.cg0/mm/memcontrol.c
+--- linux-2.6.27-rc5-mm1.ioband/mm/memcontrol.c	2008-09-24 16:23:03.000000000 +0900
++++ linux-2.6.27-rc5-mm1.cg0/mm/memcontrol.c	2008-09-24 16:34:35.000000000 +0900
+@@ -36,10 +36,25 @@
+ 
+ #include <asm/uaccess.h>
+ 
+-struct cgroup_subsys mem_cgroup_subsys __read_mostly;
++enum charge_type {
++	MEM_CGROUP_CHARGE_TYPE_CACHE = 0,
++	MEM_CGROUP_CHARGE_TYPE_MAPPED,
++	MEM_CGROUP_CHARGE_TYPE_FORCE,	/* used by force_empty */
++};
++
++static void __mem_cgroup_uncharge_common(struct page *, enum charge_type);
++
+ static struct kmem_cache *page_cgroup_cache __read_mostly;
++
++#ifdef CONFIG_CGROUP_MEM_RES_CTLR
++struct cgroup_subsys mem_cgroup_subsys __read_mostly;
+ #define MEM_CGROUP_RECLAIM_RETRIES	5
+ 
++static inline int mem_cgroup_disabled(void)
++{
++	return mem_cgroup_subsys.disabled;
++}
++
+ /*
+  * Statistics for memory cgroup.
+  */
+@@ -136,35 +151,6 @@ struct mem_cgroup {
+ };
+ static struct mem_cgroup init_mem_cgroup;
+ 
+-/*
+- * We use the lower bit of the page->page_cgroup pointer as a bit spin
+- * lock.  We need to ensure that page->page_cgroup is at least two
+- * byte aligned (based on comments from Nick Piggin).  But since
+- * bit_spin_lock doesn't actually set that lock bit in a non-debug
+- * uniprocessor kernel, we should avoid setting it here too.
+- */
+-#define PAGE_CGROUP_LOCK_BIT 	0x0
+-#if defined(CONFIG_SMP) || defined(CONFIG_DEBUG_SPINLOCK)
+-#define PAGE_CGROUP_LOCK 	(1 << PAGE_CGROUP_LOCK_BIT)
+-#else
+-#define PAGE_CGROUP_LOCK	0x0
+-#endif
+-
+-/*
+- * A page_cgroup page is associated with every page descriptor. The
+- * page_cgroup helps us identify information about the cgroup
+- */
+-struct page_cgroup {
+-	struct list_head lru;		/* per cgroup LRU list */
+-	struct page *page;
+-	struct mem_cgroup *mem_cgroup;
+-	int flags;
+-};
+-#define PAGE_CGROUP_FLAG_CACHE	   (0x1)	/* charged as cache */
+-#define PAGE_CGROUP_FLAG_ACTIVE    (0x2)	/* page is active in this cgroup */
+-#define PAGE_CGROUP_FLAG_FILE	   (0x4)	/* page is file system backed */
+-#define PAGE_CGROUP_FLAG_UNEVICTABLE (0x8)	/* page is unevictableable */
+-
+ static int page_cgroup_nid(struct page_cgroup *pc)
+ {
+ 	return page_to_nid(pc->page);
+@@ -175,12 +161,6 @@ static enum zone_type page_cgroup_zid(st
+ 	return page_zonenum(pc->page);
+ }
+ 
+-enum charge_type {
+-	MEM_CGROUP_CHARGE_TYPE_CACHE = 0,
+-	MEM_CGROUP_CHARGE_TYPE_MAPPED,
+-	MEM_CGROUP_CHARGE_TYPE_FORCE,	/* used by force_empty */
+-};
+-
+ /*
+  * Always modified under lru lock. Then, not necessary to preempt_disable()
+  */
+@@ -248,37 +228,6 @@ struct mem_cgroup *mem_cgroup_from_task(
+ 				struct mem_cgroup, css);
+ }
+ 
+-static inline int page_cgroup_locked(struct page *page)
+-{
+-	return bit_spin_is_locked(PAGE_CGROUP_LOCK_BIT, &page->page_cgroup);
+-}
+-
+-static void page_assign_page_cgroup(struct page *page, struct page_cgroup *pc)
+-{
+-	VM_BUG_ON(!page_cgroup_locked(page));
+-	page->page_cgroup = ((unsigned long)pc | PAGE_CGROUP_LOCK);
+-}
+-
+-struct page_cgroup *page_get_page_cgroup(struct page *page)
+-{
+-	return (struct page_cgroup *) (page->page_cgroup & ~PAGE_CGROUP_LOCK);
+-}
+-
+-static void lock_page_cgroup(struct page *page)
+-{
+-	bit_spin_lock(PAGE_CGROUP_LOCK_BIT, &page->page_cgroup);
+-}
+-
+-static int try_lock_page_cgroup(struct page *page)
+-{
+-	return bit_spin_trylock(PAGE_CGROUP_LOCK_BIT, &page->page_cgroup);
+-}
+-
+-static void unlock_page_cgroup(struct page *page)
+-{
+-	bit_spin_unlock(PAGE_CGROUP_LOCK_BIT, &page->page_cgroup);
+-}
+-
+ static void __mem_cgroup_remove_list(struct mem_cgroup_per_zone *mz,
+ 			struct page_cgroup *pc)
+ {
+@@ -367,7 +316,7 @@ void mem_cgroup_move_lists(struct page *
+ 	struct mem_cgroup_per_zone *mz;
+ 	unsigned long flags;
+ 
+-	if (mem_cgroup_subsys.disabled)
++	if (mem_cgroup_disabled())
+ 		return;
+ 
+ 	/*
+@@ -506,273 +455,6 @@ unsigned long mem_cgroup_isolate_pages(u
+ }
+ 
+ /*
+- * Charge the memory controller for page usage.
+- * Return
+- * 0 if the charge was successful
+- * < 0 if the cgroup is over its limit
+- */
+-static int mem_cgroup_charge_common(struct page *page, struct mm_struct *mm,
+-				gfp_t gfp_mask, enum charge_type ctype,
+-				struct mem_cgroup *memcg)
+-{
+-	struct mem_cgroup *mem;
+-	struct page_cgroup *pc;
+-	unsigned long flags;
+-	unsigned long nr_retries = MEM_CGROUP_RECLAIM_RETRIES;
+-	struct mem_cgroup_per_zone *mz;
+-
+-	pc = kmem_cache_alloc(page_cgroup_cache, gfp_mask);
+-	if (unlikely(pc == NULL))
+-		goto err;
+-
+-	/*
+-	 * We always charge the cgroup the mm_struct belongs to.
+-	 * The mm_struct's mem_cgroup changes on task migration if the
+-	 * thread group leader migrates. It's possible that mm is not
+-	 * set, if so charge the init_mm (happens for pagecache usage).
+-	 */
+-	if (likely(!memcg)) {
+-		rcu_read_lock();
+-		mem = mem_cgroup_from_task(rcu_dereference(mm->owner));
+-		/*
+-		 * For every charge from the cgroup, increment reference count
+-		 */
+-		css_get(&mem->css);
+-		rcu_read_unlock();
+-	} else {
+-		mem = memcg;
+-		css_get(&memcg->css);
+-	}
+-
+-	while (res_counter_charge(&mem->res, PAGE_SIZE)) {
+-		if (!(gfp_mask & __GFP_WAIT))
+-			goto out;
+-
+-		if (try_to_free_mem_cgroup_pages(mem, gfp_mask))
+-			continue;
+-
+-		/*
+-		 * try_to_free_mem_cgroup_pages() might not give us a full
+-		 * picture of reclaim. Some pages are reclaimed and might be
+-		 * moved to swap cache or just unmapped from the cgroup.
+-		 * Check the limit again to see if the reclaim reduced the
+-		 * current usage of the cgroup before giving up
+-		 */
+-		if (res_counter_check_under_limit(&mem->res))
+-			continue;
+-
+-		if (!nr_retries--) {
+-			mem_cgroup_out_of_memory(mem, gfp_mask);
+-			goto out;
+-		}
+-	}
+-
+-	pc->mem_cgroup = mem;
+-	pc->page = page;
+-	/*
+-	 * If a page is accounted as a page cache, insert to inactive list.
+-	 * If anon, insert to active list.
+-	 */
+-	if (ctype == MEM_CGROUP_CHARGE_TYPE_CACHE) {
+-		pc->flags = PAGE_CGROUP_FLAG_CACHE;
+-		if (page_is_file_cache(page))
+-			pc->flags |= PAGE_CGROUP_FLAG_FILE;
+-		else
+-			pc->flags |= PAGE_CGROUP_FLAG_ACTIVE;
+-	} else
+-		pc->flags = PAGE_CGROUP_FLAG_ACTIVE;
+-
+-	lock_page_cgroup(page);
+-	if (unlikely(page_get_page_cgroup(page))) {
+-		unlock_page_cgroup(page);
+-		res_counter_uncharge(&mem->res, PAGE_SIZE);
+-		css_put(&mem->css);
+-		kmem_cache_free(page_cgroup_cache, pc);
+-		goto done;
+-	}
+-	page_assign_page_cgroup(page, pc);
+-
+-	mz = page_cgroup_zoneinfo(pc);
+-	spin_lock_irqsave(&mz->lru_lock, flags);
+-	__mem_cgroup_add_list(mz, pc);
+-	spin_unlock_irqrestore(&mz->lru_lock, flags);
+-
+-	unlock_page_cgroup(page);
+-done:
+-	return 0;
+-out:
+-	css_put(&mem->css);
+-	kmem_cache_free(page_cgroup_cache, pc);
+-err:
+-	return -ENOMEM;
+-}
+-
+-int mem_cgroup_charge(struct page *page, struct mm_struct *mm, gfp_t gfp_mask)
+-{
+-	if (mem_cgroup_subsys.disabled)
+-		return 0;
+-
+-	/*
+-	 * If already mapped, we don't have to account.
+-	 * If page cache, page->mapping has address_space.
+-	 * But page->mapping may have out-of-use anon_vma pointer,
+-	 * detecit it by PageAnon() check. newly-mapped-anon's page->mapping
+-	 * is NULL.
+-  	 */
+-	if (page_mapped(page) || (page->mapping && !PageAnon(page)))
+-		return 0;
+-	if (unlikely(!mm))
+-		mm = &init_mm;
+-	return mem_cgroup_charge_common(page, mm, gfp_mask,
+-				MEM_CGROUP_CHARGE_TYPE_MAPPED, NULL);
+-}
+-
+-int mem_cgroup_cache_charge(struct page *page, struct mm_struct *mm,
+-				gfp_t gfp_mask)
+-{
+-	if (mem_cgroup_subsys.disabled)
+-		return 0;
+-
+-	/*
+-	 * Corner case handling. This is called from add_to_page_cache()
+-	 * in usual. But some FS (shmem) precharges this page before calling it
+-	 * and call add_to_page_cache() with GFP_NOWAIT.
+-	 *
+-	 * For GFP_NOWAIT case, the page may be pre-charged before calling
+-	 * add_to_page_cache(). (See shmem.c) check it here and avoid to call
+-	 * charge twice. (It works but has to pay a bit larger cost.)
+-	 */
+-	if (!(gfp_mask & __GFP_WAIT)) {
+-		struct page_cgroup *pc;
+-
+-		lock_page_cgroup(page);
+-		pc = page_get_page_cgroup(page);
+-		if (pc) {
+-			VM_BUG_ON(pc->page != page);
+-			VM_BUG_ON(!pc->mem_cgroup);
+-			unlock_page_cgroup(page);
+-			return 0;
+-		}
+-		unlock_page_cgroup(page);
+-	}
+-
+-	if (unlikely(!mm))
+-		mm = &init_mm;
+-
+-	return mem_cgroup_charge_common(page, mm, gfp_mask,
+-				MEM_CGROUP_CHARGE_TYPE_CACHE, NULL);
+-}
+-
+-/*
+- * uncharge if !page_mapped(page)
+- */
+-static void
+-__mem_cgroup_uncharge_common(struct page *page, enum charge_type ctype)
+-{
+-	struct page_cgroup *pc;
+-	struct mem_cgroup *mem;
+-	struct mem_cgroup_per_zone *mz;
+-	unsigned long flags;
+-
+-	if (mem_cgroup_subsys.disabled)
+-		return;
+-
+-	/*
+-	 * Check if our page_cgroup is valid
+-	 */
+-	lock_page_cgroup(page);
+-	pc = page_get_page_cgroup(page);
+-	if (unlikely(!pc))
+-		goto unlock;
+-
+-	VM_BUG_ON(pc->page != page);
+-
+-	if ((ctype == MEM_CGROUP_CHARGE_TYPE_MAPPED)
+-	    && ((pc->flags & PAGE_CGROUP_FLAG_CACHE)
+-		|| page_mapped(page)))
+-		goto unlock;
+-
+-	mz = page_cgroup_zoneinfo(pc);
+-	spin_lock_irqsave(&mz->lru_lock, flags);
+-	__mem_cgroup_remove_list(mz, pc);
+-	spin_unlock_irqrestore(&mz->lru_lock, flags);
+-
+-	page_assign_page_cgroup(page, NULL);
+-	unlock_page_cgroup(page);
+-
+-	mem = pc->mem_cgroup;
+-	res_counter_uncharge(&mem->res, PAGE_SIZE);
+-	css_put(&mem->css);
+-
+-	kmem_cache_free(page_cgroup_cache, pc);
+-	return;
+-unlock:
+-	unlock_page_cgroup(page);
+-}
+-
+-void mem_cgroup_uncharge_page(struct page *page)
+-{
+-	__mem_cgroup_uncharge_common(page, MEM_CGROUP_CHARGE_TYPE_MAPPED);
+-}
+-
+-void mem_cgroup_uncharge_cache_page(struct page *page)
+-{
+-	VM_BUG_ON(page_mapped(page));
+-	__mem_cgroup_uncharge_common(page, MEM_CGROUP_CHARGE_TYPE_CACHE);
+-}
+-
+-/*
+- * Before starting migration, account against new page.
+- */
+-int mem_cgroup_prepare_migration(struct page *page, struct page *newpage)
+-{
+-	struct page_cgroup *pc;
+-	struct mem_cgroup *mem = NULL;
+-	enum charge_type ctype = MEM_CGROUP_CHARGE_TYPE_MAPPED;
+-	int ret = 0;
+-
+-	if (mem_cgroup_subsys.disabled)
+-		return 0;
+-
+-	lock_page_cgroup(page);
+-	pc = page_get_page_cgroup(page);
+-	if (pc) {
+-		mem = pc->mem_cgroup;
+-		css_get(&mem->css);
+-		if (pc->flags & PAGE_CGROUP_FLAG_CACHE)
+-			ctype = MEM_CGROUP_CHARGE_TYPE_CACHE;
+-	}
+-	unlock_page_cgroup(page);
+-	if (mem) {
+-		ret = mem_cgroup_charge_common(newpage, NULL, GFP_KERNEL,
+-			ctype, mem);
+-		css_put(&mem->css);
+-	}
+-	return ret;
+-}
+-
+-/* remove redundant charge if migration failed*/
+-void mem_cgroup_end_migration(struct page *newpage)
+-{
+-	/*
+-	 * At success, page->mapping is not NULL.
+-	 * special rollback care is necessary when
+-	 * 1. at migration failure. (newpage->mapping is cleared in this case)
+-	 * 2. the newpage was moved but not remapped again because the task
+-	 *    exits and the newpage is obsolete. In this case, the new page
+-	 *    may be a swapcache. So, we just call mem_cgroup_uncharge_page()
+-	 *    always for avoiding mess. The  page_cgroup will be removed if
+-	 *    unnecessary. File cache pages is still on radix-tree. Don't
+-	 *    care it.
+-	 */
+-	if (!newpage->mapping)
+-		__mem_cgroup_uncharge_common(newpage,
+-					 MEM_CGROUP_CHARGE_TYPE_FORCE);
+-	else if (PageAnon(newpage))
+-		mem_cgroup_uncharge_page(newpage);
+-}
+-
+-/*
+  * A call to try to shrink memory usage under specified resource controller.
+  * This is typically used for page reclaiming for shmem for reducing side
+  * effect of page allocation from shmem, which is used by some mem_cgroup.
+@@ -783,7 +465,7 @@ int mem_cgroup_shrink_usage(struct mm_st
+ 	int progress = 0;
+ 	int retry = MEM_CGROUP_RECLAIM_RETRIES;
+ 
+-	if (mem_cgroup_subsys.disabled)
++	if (mem_cgroup_disabled())
+ 		return 0;
+ 	if (!mm)
+ 		return 0;
+@@ -1106,7 +788,7 @@ mem_cgroup_create(struct cgroup_subsys *
+ 
+ 	if (unlikely((cont->parent) == NULL)) {
+ 		mem = &init_mem_cgroup;
+-		page_cgroup_cache = KMEM_CACHE(page_cgroup, SLAB_PANIC);
++		page_cgroup_init();
+ 	} else {
+ 		mem = mem_cgroup_alloc();
+ 		if (!mem)
+@@ -1190,3 +872,324 @@ struct cgroup_subsys mem_cgroup_subsys =
+ 	.attach = mem_cgroup_move_task,
+ 	.early_init = 0,
+ };
++
++#else /* CONFIG_CGROUP_MEM_RES_CTLR */
++
++static inline int mem_cgroup_disabled(void)
++{
++	return 1;
++}
++#endif /* CONFIG_CGROUP_MEM_RES_CTLR */
++
++static inline int page_cgroup_locked(struct page *page)
++{
++	return bit_spin_is_locked(PAGE_CGROUP_LOCK_BIT, &page->page_cgroup);
++}
++
++static void page_assign_page_cgroup(struct page *page, struct page_cgroup *pc)
++{
++	VM_BUG_ON(!page_cgroup_locked(page));
++	page->page_cgroup = ((unsigned long)pc | PAGE_CGROUP_LOCK);
++}
++
++struct page_cgroup *page_get_page_cgroup(struct page *page)
++{
++	return (struct page_cgroup *) (page->page_cgroup & ~PAGE_CGROUP_LOCK);
++}
++
++/*
++ * Charge the memory controller for page usage.
++ * Return
++ * 0 if the charge was successful
++ * < 0 if the cgroup is over its limit
++ */
++static int mem_cgroup_charge_common(struct page *page, struct mm_struct *mm,
++				gfp_t gfp_mask, enum charge_type ctype,
++				struct mem_cgroup *memcg)
++{
++	struct page_cgroup *pc;
++#ifdef CONFIG_CGROUP_MEM_RES_CTLR
++	struct mem_cgroup *mem;
++	unsigned long flags;
++	unsigned long nr_retries = MEM_CGROUP_RECLAIM_RETRIES;
++	struct mem_cgroup_per_zone *mz;
++#endif /* CONFIG_CGROUP_MEM_RES_CTLR */
++
++	pc = kmem_cache_alloc(page_cgroup_cache, gfp_mask);
++	if (unlikely(pc == NULL))
++		goto err;
++
++	/*
++	 * We always charge the cgroup the mm_struct belongs to.
++	 * The mm_struct's mem_cgroup changes on task migration if the
++	 * thread group leader migrates. It's possible that mm is not
++	 * set, if so charge the init_mm (happens for pagecache usage).
++	 */
++	if (likely(!memcg)) {
++		rcu_read_lock();
++#ifdef CONFIG_CGROUP_MEM_RES_CTLR
++		mem = mem_cgroup_from_task(rcu_dereference(mm->owner));
++		/*
++		 * For every charge from the cgroup, increment reference count
++		 */
++		css_get(&mem->css);
++#endif /* CONFIG_CGROUP_MEM_RES_CTLR */
++		rcu_read_unlock();
++	} else {
++#ifdef CONFIG_CGROUP_MEM_RES_CTLR
++		mem = memcg;
++		css_get(&memcg->css);
++#endif /* CONFIG_CGROUP_MEM_RES_CTLR */
++	}
++
++#ifdef CONFIG_CGROUP_MEM_RES_CTLR
++	while (res_counter_charge(&mem->res, PAGE_SIZE)) {
++		if (!(gfp_mask & __GFP_WAIT))
++			goto out;
++
++		if (try_to_free_mem_cgroup_pages(mem, gfp_mask))
++			continue;
++
++		/*
++		 * try_to_free_mem_cgroup_pages() might not give us a full
++		 * picture of reclaim. Some pages are reclaimed and might be
++		 * moved to swap cache or just unmapped from the cgroup.
++		 * Check the limit again to see if the reclaim reduced the
++		 * current usage of the cgroup before giving up
++		 */
++		if (res_counter_check_under_limit(&mem->res))
++			continue;
++
++		if (!nr_retries--) {
++			mem_cgroup_out_of_memory(mem, gfp_mask);
++			goto out;
++		}
++	}
++	pc->mem_cgroup = mem;
++#endif /* CONFIG_CGROUP_MEM_RES_CTLR */
++
++	pc->page = page;
++	/*
++	 * If a page is accounted as a page cache, insert to inactive list.
++	 * If anon, insert to active list.
++	 */
++	if (ctype == MEM_CGROUP_CHARGE_TYPE_CACHE) {
++		pc->flags = PAGE_CGROUP_FLAG_CACHE;
++		if (page_is_file_cache(page))
++			pc->flags |= PAGE_CGROUP_FLAG_FILE;
++		else
++			pc->flags |= PAGE_CGROUP_FLAG_ACTIVE;
++	} else
++		pc->flags = PAGE_CGROUP_FLAG_ACTIVE;
++
++	lock_page_cgroup(page);
++	if (unlikely(page_get_page_cgroup(page))) {
++		unlock_page_cgroup(page);
++#ifdef CONFIG_CGROUP_MEM_RES_CTLR
++		res_counter_uncharge(&mem->res, PAGE_SIZE);
++		css_put(&mem->css);
++#endif /* CONFIG_CGROUP_MEM_RES_CTLR */
++		kmem_cache_free(page_cgroup_cache, pc);
++		goto done;
++	}
++	page_assign_page_cgroup(page, pc);
++
++#ifdef CONFIG_CGROUP_MEM_RES_CTLR
++	mz = page_cgroup_zoneinfo(pc);
++	spin_lock_irqsave(&mz->lru_lock, flags);
++	__mem_cgroup_add_list(mz, pc);
++	spin_unlock_irqrestore(&mz->lru_lock, flags);
++#endif /* CONFIG_CGROUP_MEM_RES_CTLR */
++
++	unlock_page_cgroup(page);
++done:
++	return 0;
++out:
++#ifdef CONFIG_CGROUP_MEM_RES_CTLR
++	css_put(&mem->css);
++#endif /* CONFIG_CGROUP_MEM_RES_CTLR */
++	kmem_cache_free(page_cgroup_cache, pc);
++err:
++	return -ENOMEM;
++}
++
++int mem_cgroup_charge(struct page *page, struct mm_struct *mm, gfp_t gfp_mask)
++{
++	if (mem_cgroup_disabled())
++		return 0;
++
++	/*
++	 * If already mapped, we don't have to account.
++	 * If page cache, page->mapping has address_space.
++	 * But page->mapping may have out-of-use anon_vma pointer,
++	 * detecit it by PageAnon() check. newly-mapped-anon's page->mapping
++	 * is NULL.
++	 */
++	if (page_mapped(page) || (page->mapping && !PageAnon(page)))
++		return 0;
++	if (unlikely(!mm))
++		mm = &init_mm;
++	return mem_cgroup_charge_common(page, mm, gfp_mask,
++				MEM_CGROUP_CHARGE_TYPE_MAPPED, NULL);
++}
++
++int mem_cgroup_cache_charge(struct page *page, struct mm_struct *mm,
++				gfp_t gfp_mask)
++{
++	if (mem_cgroup_disabled())
++		return 0;
++
++	/*
++	 * Corner case handling. This is called from add_to_page_cache()
++	 * in usual. But some FS (shmem) precharges this page before calling it
++	 * and call add_to_page_cache() with GFP_NOWAIT.
++	 *
++	 * For GFP_NOWAIT case, the page may be pre-charged before calling
++	 * add_to_page_cache(). (See shmem.c) check it here and avoid to call
++	 * charge twice. (It works but has to pay a bit larger cost.)
++	 */
++	if (!(gfp_mask & __GFP_WAIT)) {
++		struct page_cgroup *pc;
++
++		lock_page_cgroup(page);
++		pc = page_get_page_cgroup(page);
++		if (pc) {
++			VM_BUG_ON(pc->page != page);
++			VM_BUG_ON(!pc->mem_cgroup);
++			unlock_page_cgroup(page);
++			return 0;
++		}
++		unlock_page_cgroup(page);
++	}
++
++	if (unlikely(!mm))
++		mm = &init_mm;
++
++	return mem_cgroup_charge_common(page, mm, gfp_mask,
++				MEM_CGROUP_CHARGE_TYPE_CACHE, NULL);
++}
++
++/*
++ * uncharge if !page_mapped(page)
++ */
++static void
++__mem_cgroup_uncharge_common(struct page *page, enum charge_type ctype)
++{
++	struct page_cgroup *pc;
++#ifdef CONFIG_CGROUP_MEM_RES_CTLR
++	struct mem_cgroup *mem;
++	struct mem_cgroup_per_zone *mz;
++	unsigned long flags;
++#endif /* CONFIG_CGROUP_MEM_RES_CTLR */
++
++	if (mem_cgroup_disabled())
++		return;
++
++	/*
++	 * Check if our page_cgroup is valid
++	 */
++	lock_page_cgroup(page);
++	pc = page_get_page_cgroup(page);
++	if (unlikely(!pc))
++		goto unlock;
++
++	VM_BUG_ON(pc->page != page);
++
++	if ((ctype == MEM_CGROUP_CHARGE_TYPE_MAPPED)
++	    && ((pc->flags & PAGE_CGROUP_FLAG_CACHE)
++		|| page_mapped(page)))
++		goto unlock;
++
++#ifdef CONFIG_CGROUP_MEM_RES_CTLR
++	mz = page_cgroup_zoneinfo(pc);
++	spin_lock_irqsave(&mz->lru_lock, flags);
++	__mem_cgroup_remove_list(mz, pc);
++	spin_unlock_irqrestore(&mz->lru_lock, flags);
++#endif /* CONFIG_CGROUP_MEM_RES_CTLR */
++
++	page_assign_page_cgroup(page, NULL);
++	unlock_page_cgroup(page);
++
++#ifdef CONFIG_CGROUP_MEM_RES_CTLR
++	mem = pc->mem_cgroup;
++	res_counter_uncharge(&mem->res, PAGE_SIZE);
++	css_put(&mem->css);
++#endif /* CONFIG_CGROUP_MEM_RES_CTLR */
++
++	kmem_cache_free(page_cgroup_cache, pc);
++	return;
++unlock:
++	unlock_page_cgroup(page);
++}
++
++void mem_cgroup_uncharge_page(struct page *page)
++{
++	__mem_cgroup_uncharge_common(page, MEM_CGROUP_CHARGE_TYPE_MAPPED);
++}
++
++void mem_cgroup_uncharge_cache_page(struct page *page)
++{
++	VM_BUG_ON(page_mapped(page));
++	__mem_cgroup_uncharge_common(page, MEM_CGROUP_CHARGE_TYPE_CACHE);
++}
++
++/*
++ * Before starting migration, account against new page.
++ */
++int mem_cgroup_prepare_migration(struct page *page, struct page *newpage)
++{
++	struct page_cgroup *pc;
++	struct mem_cgroup *mem = NULL;
++	enum charge_type ctype = MEM_CGROUP_CHARGE_TYPE_MAPPED;
++	int ret = 0;
++
++	if (mem_cgroup_disabled())
++		return 0;
++
++	lock_page_cgroup(page);
++	pc = page_get_page_cgroup(page);
++	if (pc) {
++#ifdef CONFIG_CGROUP_MEM_RES_CTLR
++		mem = pc->mem_cgroup;
++		css_get(&mem->css);
++#endif /* CONFIG_CGROUP_MEM_RES_CTLR */
++		if (pc->flags & PAGE_CGROUP_FLAG_CACHE)
++			ctype = MEM_CGROUP_CHARGE_TYPE_CACHE;
++	}
++	unlock_page_cgroup(page);
++	if (mem) {
++		ret = mem_cgroup_charge_common(newpage, NULL, GFP_KERNEL,
++			ctype, mem);
++#ifdef CONFIG_CGROUP_MEM_RES_CTLR
++		css_put(&mem->css);
++#endif /* CONFIG_CGROUP_MEM_RES_CTLR */
++	}
++	return ret;
++}
++
++/* remove redundant charge if migration failed*/
++void mem_cgroup_end_migration(struct page *newpage)
++{
++	/*
++	 * At success, page->mapping is not NULL.
++	 * special rollback care is necessary when
++	 * 1. at migration failure. (newpage->mapping is cleared in this case)
++	 * 2. the newpage was moved but not remapped again because the task
++	 *    exits and the newpage is obsolete. In this case, the new page
++	 *    may be a swapcache. So, we just call mem_cgroup_uncharge_page()
++	 *    always for avoiding mess. The  page_cgroup will be removed if
++	 *    unnecessary. File cache pages is still on radix-tree. Don't
++	 *    care it.
++	 */
++	if (!newpage->mapping)
++		__mem_cgroup_uncharge_common(newpage,
++					 MEM_CGROUP_CHARGE_TYPE_FORCE);
++	else if (PageAnon(newpage))
++		mem_cgroup_uncharge_page(newpage);
++}
++
++void page_cgroup_init()
++{
++	if (!page_cgroup_cache)
++		page_cgroup_cache = KMEM_CACHE(page_cgroup, SLAB_PANIC);
++}
