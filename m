@@ -1,15 +1,15 @@
 From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 07/10] Update ptmx permissions during remount
-Date: Wed, 24 Sep 2008 13:30:59 -0500
-Message-ID: <20080924183059.GG25255@us.ibm.com>
+Subject: Re: [PATCH 06/10] Define mknod_ptmx()
+Date: Wed, 24 Sep 2008 13:50:46 -0500
+Message-ID: <20080924185046.GA31535@us.ibm.com>
 References: <20080912174845.GA17350@us.ibm.com>
-	<20080912175252.GH17350@us.ibm.com>
+	<20080912175237.GG17350@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <20080912175252.GH17350-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <20080912175237.GG17350-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -25,84 +25,198 @@ List-Id: containers.vger.kernel.org
 
 Quoting sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org (sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org):
 > 
-> >From 8c20ae3e9d5e051791a99b9060326069432d7fff Mon Sep 17 00:00:00 2001
-> From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-> Date: Tue, 9 Sep 2008 18:37:55 -0700
-> Subject: [PATCH 07/10] Update ptmx permissions during remount
+> >From df5d5863f8601baa25237b60c3fcd614ee0b34aa Mon Sep 17 00:00:00 2001
+> From: Sukadev Bhattiprolu <sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+> Date: Tue, 9 Sep 2008 10:23:07 -0700
+> Subject: [PATCH 06/10] Define mknod_ptmx()
 > 
-> By default, /dev/pts/ptmx node starts out with 0000 permissions.  While
-> user's can chmod /dev/pts/ptmx, it maybe easier for legacy systems to
-> update /etc/fstab and change the permissions using ptmxmode option.
+> /dev/ptmx is closely tied to the devpts filesystem. An open of /dev/ptmx,
+> allocates the next pty index and the associated device shows up in the
+> devpts fs as /dev/pts/n.
 > 
-> This patch caches the dentry for ptmx node and uses it to update permissions
-> of ptmx node during remount (code will be enabled in a follow-on patch).
+> Wih multiple instancs of devpts filesystem, during an open of /dev/ptmx
+> we would be unable to determine which instance of the devpts is being
+> accessed.
+> 
+> So we move the 'ptmx' node into /dev/pts and use the inode of the 'ptmx'
+> node to identify the superblock and hence the devpts instance.  This patch
+> adds ability for the kernel to internally create the [ptmx, c, 5:2] device
+> when mounting devpts filesystem.  Since the ptmx node in devpts is new and
+> may surprise some userspace scripts, the default permissions for the new
+> node is 0000.  These permissions can be changed either using chmod or by
+> remounting with the new '-o ptmxmode=0666' mount option.
+> 
+> Changelog[v4]:
+> 	- Change default permissions of pts/ptmx node to 0000.
+> 	- Move code for ptmxmode under #ifdef CONFIG_DEVPTS_MULTIPLE_INSTANCES.
+> 
+> Changelog[v3]:
+> 	- Rename ptmx_mode to ptmxmode (for consistency with 'newinstance')
+> 
+> Changelog[v2]:
+> 	- [H. Peter Anvin] Remove mknod() system call support and create the
+> 	  ptmx node internally.
+> 
+> Changelog[v1]:
+> 	- Earlier version of this patch enabled creating /dev/pts/tty as
+> 	  well. As pointed out by Al Viro and H. Peter Anvin, that is not
+> 	  really necessary.
 > 
 > Signed-off-by: Sukadev Bhattiprolu <sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-
-As an alternative, you could just lookup_one_len("ptmx", sb->s_root, 4)
-to avoid caching.  Not sure whether that would be considered better
-though, so
-
-Acked-by: Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-
--serge
-
 > ---
->  fs/devpts/inode.c |   28 +++++++++++++++++++++++++++-
->  1 files changed, 27 insertions(+), 1 deletions(-)
+>  fs/devpts/inode.c |   76 +++++++++++++++++++++++++++++++++++++++++++++++++++-
+>  1 files changed, 74 insertions(+), 2 deletions(-)
 > 
 > diff --git a/fs/devpts/inode.c b/fs/devpts/inode.c
-> index 17e14f5..6b56255 100644
+> index 7ae60aa..17e14f5 100644
 > --- a/fs/devpts/inode.c
 > +++ b/fs/devpts/inode.c
-> @@ -68,6 +68,7 @@ static match_table_t tokens = {
->  struct pts_fs_info {
->  	struct ida allocated_ptys;
->  	struct pts_mount_opts mount_opts;
-> +	struct dentry *ptmx_dentry;
+> @@ -27,6 +27,13 @@
+>  #define DEVPTS_SUPER_MAGIC 0x1cd1
+> 
+>  #define DEVPTS_DEFAULT_MODE 0600
+> +/*
+> + * ptmx is a new node in /dev/pts and will be unused in legacy (single-
+> + * instance) mode. To prevent surprises in user space, set permissions of
+> + * ptmx to 0. Use 'chmod' or remount with '-o ptmxmode' to set meaningful
+> + * permissions.
+> + */
+> +#define DEVPTS_DEFAULT_PTMX_MODE 0000
+>  #define PTMX_MINOR	2
+> 
+>  extern int pty_limit;			/* Config limit on Unix98 ptys */
+> @@ -40,10 +47,11 @@ struct pts_mount_opts {
+>  	uid_t   uid;
+>  	gid_t   gid;
+>  	umode_t mode;
+> +	umode_t ptmxmode;
 >  };
 > 
->  static inline struct pts_fs_info *DEVPTS_SB(struct super_block *sb)
-> @@ -184,14 +185,39 @@ static int mknod_ptmx(struct super_block *sb)
+>  enum {
+> -	Opt_uid, Opt_gid, Opt_mode,
+> +	Opt_uid, Opt_gid, Opt_mode, Opt_ptmxmode,
+>  	Opt_err
+>  };
+> 
+> @@ -51,6 +59,9 @@ static match_table_t tokens = {
+>  	{Opt_uid, "uid=%u"},
+>  	{Opt_gid, "gid=%u"},
+>  	{Opt_mode, "mode=%o"},
+> +#ifdef CONFIG_DEVPTS_MULTIPLE_INSTANCES
+> +	{Opt_ptmxmode, "ptmxmode=%o"},
+> +#endif
+>  	{Opt_err, NULL}
+>  };
+> 
+> @@ -81,6 +92,7 @@ static int parse_mount_options(char *data, struct pts_mount_opts *opts)
+>  	opts->uid     = 0;
+>  	opts->gid     = 0;
+>  	opts->mode    = DEVPTS_DEFAULT_MODE;
+> +	opts->ptmxmode = DEVPTS_DEFAULT_PTMX_MODE;
+> 
+>  	while ((p = strsep(&data, ",")) != NULL) {
+>  		substring_t args[MAX_OPT_ARGS];
+> @@ -109,6 +121,13 @@ static int parse_mount_options(char *data, struct pts_mount_opts *opts)
+>  				return -EINVAL;
+>  			opts->mode = option & S_IALLUGO;
+>  			break;
+> +#ifdef CONFIG_DEVPTS_MULTIPLE_INSTANCES
+> +		case Opt_ptmxmode:
+> +			if (match_octal(&args[0], &option))
+> +				return -EINVAL;
+> +			opts->ptmxmode = option & S_IALLUGO;
+> +			break;
+> +#endif
+>  		default:
+>  			printk(KERN_ERR "devpts: called with bogus options\n");
+>  			return -EINVAL;
+> @@ -118,6 +137,55 @@ static int parse_mount_options(char *data, struct pts_mount_opts *opts)
+>  	return 0;
+>  }
+> 
+> +#ifdef CONFIG_DEVPTS_MULTIPLE_INSTANCES
+> +static int mknod_ptmx(struct super_block *sb)
+> +{
+> +	struct dentry *root;
+> +	struct dentry *dentry;
+> +	struct inode *inode;
+> +	struct pts_fs_info *fsi = DEVPTS_SB(sb);
+> +	struct pts_mount_opts *opts = &fsi->mount_opts;
+> +	int mode;
+> +
+> +	root = sb->s_root;
+> +	dentry = lookup_one_len("ptmx", root, 4);
+> +	if (IS_ERR(dentry)) {
+> +		printk(KERN_ERR "Unable to alloc dentry for ptmx node\n");
+> +		return -ENOMEM;
+> +	}
+> +
+> +	if (dentry->d_inode) {
+> +		printk(KERN_ERR "'ptmx' (ino %lu) exists in this devpts\n",
+> +				dentry->d_inode->i_ino);
+> +		return 0;
+> +	}
+> +
+> +	/*
+> +	 * Create a new 'ptmx' node in this mount of devpts.
+> +	 */
+> +	inode = new_inode(sb);
+> +	if (!inode) {
+> +		printk(KERN_ERR "Unable to alloc inode for ptmx node\n");
+> +		dput(dentry);
+> +		return -ENOMEM;
+> +	}
+> +
+> +	inode->i_uid = inode->i_gid = 0;
+> +	inode->i_blocks = 0;
+> +	inode->i_mtime = inode->i_atime = inode->i_ctime = CURRENT_TIME;
+> +
+> +	mode = S_IFCHR|opts->ptmxmode;
+> +	init_special_inode(inode, mode, MKDEV(TTYAUX_MAJOR, 2));
+> +
+> +	d_add(dentry, inode);
+
+Actually, you never do dput this dentry.
+
+At the moment you need to dput it here, then once you cache it, you
+don't dput it here, but dput the cache one at devpts_kill_sb.  Right?
+
+> +	printk(KERN_DEBUG "Created ptmx node in devpts ino %lu\n",
+> +			inode->i_ino);
+> +
+> +	return 0;
+> +}
+> +#endif
+> +
+>  static int devpts_remount(struct super_block *sb, int *flags, char *data)
+>  {
+>  	struct pts_fs_info *fsi = DEVPTS_SB(sb);
+> @@ -136,6 +204,9 @@ static int devpts_show_options(struct seq_file *seq, struct vfsmount *vfs)
+>  	if (opts->setgid)
+>  		seq_printf(seq, ",gid=%u", opts->gid);
+>  	seq_printf(seq, ",mode=%03o", opts->mode);
+> +#ifdef CONFIG_DEVPTS_MULTIPLE_INSTANCES
+> +	seq_printf(seq, ",ptmxmode=%03o", opts->ptmxmode);
+> +#endif
 > 
 >  	return 0;
 >  }
-> +
-> +static void update_ptmx_mode(struct pts_fs_info *fsi)
-> +{
-> +	struct inode *inode;
-> +	if (fsi->ptmx_dentry) {
-> +		inode = fsi->ptmx_dentry->d_inode;
-> +		inode->i_mode = S_IFCHR|fsi->mount_opts.ptmxmode;
-> +	}
-> +}
-> +#else
-> +static inline void update_ptmx_mode(struct pts_fs_info *fsi)
-> +{
-> +	return;
-> +}
->  #endif
+> @@ -156,6 +227,7 @@ static void *new_pts_fs_info(void)
 > 
->  static int devpts_remount(struct super_block *sb, int *flags, char *data)
->  {
-> +	int err;
+>  	ida_init(&fsi->allocated_ptys);
+>  	fsi->mount_opts.mode = DEVPTS_DEFAULT_MODE;
+> +	fsi->mount_opts.ptmxmode = DEVPTS_DEFAULT_PTMX_MODE;
+> 
+>  	return fsi;
+>  }
+> @@ -211,7 +283,7 @@ static void devpts_kill_sb(struct super_block *sb)
 >  	struct pts_fs_info *fsi = DEVPTS_SB(sb);
->  	struct pts_mount_opts *opts = &fsi->mount_opts;
 > 
-> -	return parse_mount_options(data, opts);
-> +	err = parse_mount_options(data, opts);
-> +
-> +	/*
-> +	 * parse_mount_options() restores options to default values
-> +	 * before parsing and may have changed ptmxmode. So, update the
-> +	 * mode in the inode too. Bogus options don't fail the remount,
-> +	 * so do this even on error return.
-> +	 */
-> +	update_ptmx_mode(fsi);
-> +
-> +	return err;
+>  	kfree(fsi);
+> -	kill_anon_super(sb);
+> +	kill_litter_super(sb);
 >  }
 > 
->  static int devpts_show_options(struct seq_file *seq, struct vfsmount *vfs)
+>  static struct file_system_type devpts_fs_type = {
 > -- 
 > 1.5.2.5
