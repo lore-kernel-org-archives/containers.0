@@ -1,16 +1,14 @@
-From: Hirokazu Takahashi <taka-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
-Subject: Re: [dm-devel] Re: [PATCH 4/8] bio-cgroup: Split the cgroup memory
-	subsystem into two parts
-Date: Thu, 25 Sep 2008 17:46:34 +0900 (JST)
-Message-ID: <20080925.174634.02448435.taka__21951.9194834449$1222332604$gmane$org@valinux.co.jp>
-References: <20080924.191234.104048747.ryov@valinux.co.jp>
-	<20080924.191309.189710495.ryov@valinux.co.jp>
-	<20080925161400.602ddfdb.kamezawa.hiroyu@jp.fujitsu.com>
+From: Cedric Le Goater <clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [RFC v5][PATCH 0/9] Kernel based checkpoint/restart
+Date: Thu, 25 Sep 2008 14:58:14 +0200
+Message-ID: <48DB8AE6.2080607__28183.2801214934$1222347832$gmane$org@fr.ibm.com>
+References: <1221347167-9956-1-git-send-email-orenl@cs.columbia.edu>
+	<20080924214242.GA27875@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20080925161400.602ddfdb.kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+In-Reply-To: <20080924214242.GA27875-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -20,49 +18,58 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: dm-devel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org
-Cc: xen-devel-GuqFBffKawuULHF6PoxzQEEOCMrvLtNR@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, virtualization-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, agk-9JcytcrH/bA+uJoB2kUjGw@public.gmane.org, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, fernando-gVGce1chcLdL9jVzuh4AOg@public.gmane.org, xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org
+To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Cc: jeremy-TSDbQ3PG+2Y@public.gmane.org, arnd-r2nGTMty4D4@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Hi,
-
-> I posted new ones.
->  - http://lkml.org/lkml/2008/9/25/33 
->  (changes in page_cgroup) http://lkml.org/lkml/2008/9/25/56
-> (I'm not sure this gets Ack or Nack. but direction will not change.)
+Serge E. Hallyn wrote:
+> Quoting Oren Laadan (orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org):
+>> These patches implement basic checkpoint-restart [CR]. This version (v5)
+>> supports basic tasks with simple private memory, and open files (regular
+>> files and directories only). The main changes include rework of memory
+>> restart code and response to feedback. See original announcements below.
+>>
+>> Oren.
 > 
-> Then, please tell me if you have new troubles with new ones.
-> Or if you have requests.
-> Major changes are
+> Playing around a bit, all seems to work as advertised.
 > 
->   - page_cgroup.h is added.
->   - lookup_page_cgroup(struct page*), lock_page_cgroup() etc.. is exported.
->   - All page_cgroup are allocated at boot.
->   - you can use atomic operation to modify page_cgroup->flags.
-
-Good new!
-
-> One concern from me to this bio_cgroup is that this increases size of
-> +#ifdef CONFIG_CGROUP_BIO
-> +	struct list_head blist;		/* for bio_cgroup page list */
-> +	struct bio_cgroup *bio_cgroup;
-> +#endif
-> struct page_cgroup...more 24bytes per 4096bytes.
-> Could you reduce this ? I think 8bytes per memcg is reasonable.
-> Can you move lru to bio itself ?
-
-I have a plan on getting rid of the blist after your work is done,
-whose design will depend on that all page_cgroups are preallocated.
-I also think the size of bio_cgroup can be reduced if making bio_cgroup
-contain a bio-cgroup ID instead of the pointer.
-
-Just wait! :)
-
-> This makes page_cgroup to be 64bytes from 40bytes and makes it larger
-> than mem_map....
-> After bio_cgroup, page_cgroup, allocated at boot, size on my 48GB box 
-> will jump up.
-> 480MB -> 760MB.
+> Has anyone playing with this run into any oopses with the latest
+> version?
 > 
-> Thanks,
-> -Kame
+> Cedric, could you send out your patch (or a pointer to them) to make
+> ckpt/restart on another task work, so we can pound the core code a bit
+> harder with liblxc?
+
+sure. the user tools are in CVS for the moment :
+
+	http://lxc.cvs.sourceforge.net/lxc/
+
+but Daniel will probably release something soon. the lxc-checkpoint and 
+lxc-restart tools are a bit too optimistic on the availability of the 
+checkpoint and restart syscalls, a cleanup might be needed.
+
+the patchset is here :
+
+	http://legoater.free.fr/patches/2.6.27/2.6.27-rc7-lxc2/
+
+it's based on top of current mainline and includes :
+
+	. sysfs patches for net namespace
+	. freezer subsystem
+	. oren's V5 checkpoint and restart patches
+	. a personal hack to do external checkpoint and restart using
+	  the lxc-checkpoint and lxc-restart tools
+	. some fixes
+	
+and also
+
+	an old mq namespace implementation (being reworked currently)
+
+restart is still bogus because some state is not well captured at
+checkpoint time. 
+
+I'm working on it right now !
+
+Thanks,
+
+C.
