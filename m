@@ -1,19 +1,16 @@
-From: Andrea Righi <righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: Re: dm-ioband + bio-cgroup benchmarks
-Date: Fri, 26 Sep 2008 19:30:26 +0200
-Message-ID: <48DD1C32.60207__19717.2029097148$1222450535$gmane$org@gmail.com>
-References: <20080919131019.GA3606@redhat.com>
-	<20080922.183651.62951479.taka@valinux.co.jp>
-	<20080922143042.GA19222@redhat.com>
-	<20080924.172937.72827863.taka@valinux.co.jp>
-	<20080924140355.GB547@redhat.com> <48DD09AD.2010200@gmail.com>
-	<48DD17A9.9080607@gmail.com>
-Reply-To: righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org
+From: sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
+Subject: Re: [PATCH 09/10] Enable multiple instances of devpts
+Date: Fri, 26 Sep 2008 14:03:47 -0700
+Message-ID: <20080926210347.GB31505@us.ibm.com>
+References: <20080912174845.GA17350@us.ibm.com>
+	<20080912175322.GJ17350@us.ibm.com>
+	<20080924202616.GB31664@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <48DD17A9.9080607-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <20080924202616.GB31664-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -23,110 +20,426 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Cc: xen-devel-GuqFBffKawuULHF6PoxzQEEOCMrvLtNR@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, jens.axboe-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, virtualization-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, dm-devel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, agk-9JcytcrH/bA+uJoB2kUjGw@public.gmane.org, xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org, fernando-gVGce1chcLdL9jVzuh4AOg@public.gmane.org, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
+To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Cc: kyle-hoO6YkzgTuCM0SS3m2neIg@public.gmane.org, bastian-yyjItF7Rl6lg9hUCZPvPmw@public.gmane.org, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org, hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org, containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org, alan-qBU/x9rampVanCEyBjwyrvXRex20P6io@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Andrea Righi wrote:
-> Andrea Righi wrote:
->> Vivek Goyal wrote:
->> [snip]
->>> Ok, I will give more details of the thought process.
->>>
->>> I was thinking of maintaing an rb-tree per request queue and not an
->>> rb-tree per cgroup. This tree can contain all the bios submitted to that
->>> request queue through __make_request(). Every node in the tree will represent
->>> one cgroup and will contain a list of bios issued from the tasks from that
->>> cgroup.
->>>
->>> Every bio entering the request queue through __make_request() function
->>> first will be queued in one of the nodes in this rb-tree, depending on which
->>> cgroup that bio belongs to.
->>>
->>> Once the bios are buffered in rb-tree, we release these to underlying
->>> elevator depending on the proportionate weight of the nodes/cgroups.
->>>
->>> Some more details which I was trying to implement yesterday.
->>>
->>> There will be one bio_cgroup object per cgroup. This object will contain
->>> many bio_group objects. Each bio_group object will be created for each
->>> request queue where a bio from bio_cgroup is queued. Essentially the idea
->>> is that bios belonging to a cgroup can be on various request queues in the
->>> system. So a single object can not serve the purpose as it can not be on
->>> many rb-trees at the same time.  Hence create one sub object which will keep
->>> track of bios belonging to one cgroup on a particular request queue.
->>>
->>> Each bio_group will contain a list of bios and this bio_group object will
->>> be a node in the rb-tree of request queue. For example. Lets say there are
->>> two request queues in the system q1 and q2 (lets say they belong to /dev/sda
->>> and /dev/sdb). Let say a task t1 in /cgroup/io/test1 is issueing io both
->>> for /dev/sda and /dev/sdb.
->>>
->>> bio_cgroup belonging to /cgroup/io/test1 will have two sub bio_group
->>> objects, say bio_group1 and bio_group2. bio_group1 will be in q1's rb-tree
->>> and bio_group2 will be in q2's rb-tree. bio_group1 will contain a list of
->>> bios issued by task t1 for /dev/sda and bio_group2 will contain a list of
->>> bios issued by task t1 for /dev/sdb. I thought the same can be extended
->>> for stacked devices also.
->>>   
->>> I am still trying to implementing it and hopefully this is doable idea.
->>> I think at the end of the day it will be something very close to dm-ioband
->>> algorithm just that there will be no lvm driver and no notion of separate
->>> dm-ioband device. 
->> Vivek, thanks for the detailed explanation. Only a comment. I guess, if
->> we don't change also the per-process optimizations/improvements made by
->> some IO scheduler, I think we can have undesirable behaviours.
->>
->> For example: CFQ uses the per-process iocontext to improve fairness
->> between *all* the processes in a system. But it doesn't have the concept
->> that there's a cgroup context on-top-of the processes.
->>
->> So, some optimizations made to guarantee fairness among processes could
->> conflict with algorithms implemented at the cgroup layer. And
->> potentially lead to undesirable behaviours.
->>
->> For example an issue I'm experiencing with my cgroup-io-throttle
->> patchset is that a cgroup can consistently increase the IO rate (always
->> respecting the max limits), simply increasing the number of IO worker
->> tasks respect to another cgroup with a lower number of IO workers. This
->> is probably due to the fact the CFQ tries to give the same amount of
->> "IO time" to all the tasks, without considering that they're organized
->> in cgroup.
-> 
-> BTW this is why I proposed to use a single shared iocontext for all the
-> processes running in the same cgroup. Anyway, this is not the best
-> solution, because in this way all the IO requests coming from a cgroup
-> will be queued to the same cfq queue. If I'm not wrong in this way we
-> would implement noop (FIFO) between tasks belonging to the same cgroup
-> and CFQ between cgroups. But, at least for this particular case, we
-> would be able to provide fairness among cgroups.
+Thanks for detailed review Serge.
 
-Ah! also have a look at this:
+Sorry was unexpectedly off most of this week. Have some responses below
+will review/address other comments over the next few days.
 
-http://download.systemimager.org/~arighi/linux/patches/io-throttle/benchmark/graph/effect-of-per-process-cfq-fairness-on-the-cgroup-context.png
 
-The graph highlights the dependency between the IO rate and the number
-of tasks running in a cgroup. For this testcase I've used 2 cgroups:
+Serge E. Hallyn [serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org] wrote:
+| Quoting sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org (sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org):
+| > 
+| > >From 4567a37856205a04cc0617e3fcc8ede36b25bcf5 Mon Sep 17 00:00:00 2001
+| > From: Sukadev Bhattiprolu <sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+| > Date: Tue, 9 Sep 2008 18:52:56 -0700
+| > Subject: [PATCH 09/10] Enable multiple instances of devpts
+| > 
+| > To support containers, allow multiple instances of devpts filesystem, such
+| > that indices of ptys allocated in one instance are independent of ptys
+| > allocated in other instances of devpts.
+| > 
+| > But to preserve backward compatibility, enable this support for multiple
+| > instances only if:
+| > 
+| > 	- CONFIG_DEVPTS_MULTIPLE_INSTANCES is set to Y, and
+| > 	- '-o newinstance' mount option is specified while mounting devpts
+| > 
+| > See Documentation/fs/devpts.txt (next patch in series) for details.
+| > 
+| > To use multi-instance mount, a container startup script could:
+| > 
+| > 	$ ns_exec -cm /bin/bash
+| > 	$ umount /dev/pts
+| > 	$ mount -t devpts -o newinstance lxcpts /dev/pts
+| > 	$ mount -o bind /dev/pts/ptmx /dev/ptmx
+| > 	$ sshd -p 1234
+| > 
+| > where 'ns_exec -cm /bin/bash' is calls clone() with CLONE_NEWNS flag and execs
+| > /bin/bash in the child process. A pty created by the sshd is not visible in
+| > the original mount of /dev/pts.
+| > 
+| > USER-SPACE-IMPACT:
+| > 
+| > 	See Documentation/fs/devpts.txt (included in next patch) for user-space
+| > 	impact in multi-instance and mixed-mode operation.
+| > TODO:
+| > 	- Update mount(8), pts(4) man pages. Highlight impact of not
+| > 	  redirecting /dev/ptmx to /dev/pts/ptmx after a multi-instance mount.
+| > 
+| > Implementation note:
+| > 
+| > 	See comments in new get_sb_ref() function in fs/super.c on why
+| > 	get_sb_single() cannot be directly used.
+| > 
+| > Changelog[v5]:
+| > 	- Move get_sb_ref() definition to earlier patch
+| > 
+| > 	- Move usage info to Documentation/filesystems/devpts.txt (next patch)
+| > 
+| > 	- Make ptmx node even in init_pts_ns, now that default mode is 0000
+| > 	  (defined in earlier patch, enabled here).
+| > 
+| > 	- Cache ptmx dentry and use to update mode during remount
+| > 	  (defined in earlier patch, enabled here).
+| > 
+| > 	- Bugfix: explicitly ignore newinstance on remount (if newinstance was
+| > 	  specified on remount of initial mount, it would be ignored but
+| > 	  /proc/mounts would imply that the option was set)
+| > 
+| > Changelog[v4]:
+| > 
+| > 	- Update patch description to address H. Peter Anvin's comments
+| > 
+| > 	- Consolidate multi-instance mode code under new config token,
+| > 	  CONFIG_DEVPTS_MULTIPLE_INSTANCE.
+| > 
+| > 	- Move usage-details from patch description to
+| > 	  Documentation/fs/devpts.txt
+| > 
+| > Changelog[v3]:
+| > 	- Rename new mount option to 'newinstance'
+| > 
+| > 	- Create ptmx nodes only in 'newinstance' mounts
+| > 
+| > 	- Bugfix: parse_mount_options() modifies @data but since we need to
+| > 	  parse the @data twice (once in devpts_get_sb() and once during
+| > 	  do_remount_sb()), parse a local copy of @data in devpts_get_sb().
+| > 	  (restructured code in devpts_get_sb() to fix this)
+| > 
+| > Changelog[v2]:
+| > 	- Support both single-mount and multiple-mount semantics and
+| > 	  provide '-onewmnt' option to select the semantics.
+| > 
+| > Signed-off-by: Sukadev Bhattiprolu <sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+| > ---
+| >  fs/devpts/inode.c |  168 +++++++++++++++++++++++++++++++++++++++++++++++++++--
+| >  1 files changed, 163 insertions(+), 5 deletions(-)
+| > 
+| > diff --git a/fs/devpts/inode.c b/fs/devpts/inode.c
+| > index 6b56255..c54b010 100644
+| > --- a/fs/devpts/inode.c
+| > +++ b/fs/devpts/inode.c
+| > @@ -48,10 +48,11 @@ struct pts_mount_opts {
+| >  	gid_t   gid;
+| >  	umode_t mode;
+| >  	umode_t ptmxmode;
+| > +	int newinstance;
+| >  };
+| > 
+| >  enum {
+| > -	Opt_uid, Opt_gid, Opt_mode, Opt_ptmxmode,
+| > +	Opt_uid, Opt_gid, Opt_mode, Opt_ptmxmode, Opt_newinstance,
+| >  	Opt_err
+| >  };
+| > 
+| > @@ -61,6 +62,7 @@ static match_table_t tokens = {
+| >  	{Opt_mode, "mode=%o"},
+| >  #ifdef CONFIG_DEVPTS_MULTIPLE_INSTANCES
+| >  	{Opt_ptmxmode, "ptmxmode=%o"},
+| > +	{Opt_newinstance, "newinstance"},
+| >  #endif
+| >  	{Opt_err, NULL}
+| >  };
+| > @@ -78,13 +80,15 @@ static inline struct pts_fs_info *DEVPTS_SB(struct super_block *sb)
+| > 
+| >  static inline struct super_block *pts_sb_from_inode(struct inode *inode)
+| >  {
+| > +#ifdef CONFIG_DEVPTS_MULTIPLE_INSTANCES
+| >  	if (inode->i_sb->s_magic == DEVPTS_SUPER_MAGIC)
+| >  		return inode->i_sb;
+| > -
+| > +#endif
+| >  	return devpts_mnt->mnt_sb;
+| >  }
+| > 
+| > -static int parse_mount_options(char *data, struct pts_mount_opts *opts)
+| > +static int parse_mount_options(char *data, int remount,
+| > +		struct pts_mount_opts *opts)
+| >  {
+| >  	char *p;
+| > 
+| > @@ -95,6 +99,10 @@ static int parse_mount_options(char *data, struct pts_mount_opts *opts)
+| >  	opts->mode    = DEVPTS_DEFAULT_MODE;
+| >  	opts->ptmxmode = DEVPTS_DEFAULT_PTMX_MODE;
+| 
+| So does this mean that if I do a remount, the mode and ptmxmode will get
+| reset to the defaults unless I specify them again?
 
-- cgroup A, with a single task doing IO (large O_DIRECT read stream)
-- cgroup B, with a variable number of tasks ranging from 1 to 16 doing
-  IO in parallel
+Yes.
 
-If we want to be "fair" the gap of IO performance between the cgroups
-should be close to 0.
+I think I pointed out this behavior earlier but don't think I received any
+comments and stuck to current behavior (which for instance resets the mode
+to default).
 
-Using "plain" cfq (red line) the gap of performance increases
-incrementing the number of tasks in a cgroup.
+Besides, this behavior may help in the transition - initial kernel mount
+would set ptmx-mode to 0 (default) and admin can update /etc/fstab to set
+ptmx mode meaningfully.
 
-Using cgroup-io-throttle on top of cfq (green line) the gap of
-performance is lower (the asymptotic curve is due to the bandwidth
-capping provided by cgroup-io-throttle).
+| 
+| > 
+| > +	/* ignore newinstance on remount to avoid confusing show_options */
+| > +	if (!remount)
+| > +		opts->newinstance = 0;
+| > +
+| >  	while ((p = strsep(&data, ",")) != NULL) {
+| >  		substring_t args[MAX_OPT_ARGS];
+| >  		int token;
+| > @@ -128,6 +136,10 @@ static int parse_mount_options(char *data, struct pts_mount_opts *opts)
+| >  				return -EINVAL;
+| >  			opts->ptmxmode = option & S_IALLUGO;
+| >  			break;
+| > +		case Opt_newinstance:
+| > +			if (!remount)
+| > +				opts->newinstance = 1;
+| > +			break;
+| >  #endif
+| >  		default:
+| >  			printk(KERN_ERR "devpts: called with bogus options\n");
+| > @@ -180,6 +192,8 @@ static int mknod_ptmx(struct super_block *sb)
+| > 
+| >  	d_add(dentry, inode);
+| > 
+| > +	fsi->ptmx_dentry = dentry;
+| > +
+| >  	printk(KERN_DEBUG "Created ptmx node in devpts ino %lu\n",
+| >  			inode->i_ino);
+| > 
+| > @@ -207,7 +221,7 @@ static int devpts_remount(struct super_block *sb, int *flags, char *data)
+| >  	struct pts_fs_info *fsi = DEVPTS_SB(sb);
+| >  	struct pts_mount_opts *opts = &fsi->mount_opts;
+| > 
+| > -	err = parse_mount_options(data, opts);
+| > +	err = parse_mount_options(data, 1, opts);
+| 
+| A guess a #define rather than '1' would be better here.
 
-Using cgroup-io-throttle and a single shared iocontext for each cgroup
-(blue line) the gap of performance is really close to 0.
+Ok.
 
-Anyway, I repeat, I don't think this is a wonderful solution, it is just
-to highlights this issue and share with you the results of some tests I
-did.
+| 
+| > 
+| >  	/*
+| >  	 * parse_mount_options() restores options to default values
+| > @@ -232,6 +246,8 @@ static int devpts_show_options(struct seq_file *seq, struct vfsmount *vfs)
+| >  	seq_printf(seq, ",mode=%03o", opts->mode);
+| >  #ifdef CONFIG_DEVPTS_MULTIPLE_INSTANCES
+| >  	seq_printf(seq, ",ptmxmode=%03o", opts->ptmxmode);
+| > +	if (opts->newinstance)
+| > +		seq_printf(seq, ",newinstance");
+| 
+| Is actually that something we want to show?  It doesn't seem
+| informative.
 
--Andrea
+Without this users have no easy way of knowing whether they have a 
+private mount specially if they mounted from command line ?
+
+Does it mislead or confuse ?
+
+| 
+| >  #endif
+| > 
+| >  	return 0;
+| > @@ -298,12 +314,153 @@ fail:
+| >  	return -ENOMEM;
+| >  }
+| > 
+| > +#ifdef CONFIG_DEVPTS_MULTIPLE_INSTANCES
+| > +/*
+| > + * Safely parse the mount options in @data and update @opts.
+| > + *
+| > + * devpts ends up parsing options two times during mount, due to the
+| > + * two modes of operation it supports. The first parse occurs in
+| > + * devpts_get_sb() when determining the mode (single-instance or
+| > + * multi-instance mode). The second parse happens in devpts_remount()
+| > + * or new_pts_mount() depending on the mode.
+| > + *
+| > + * Parsing of options modifies the @data making subsequent parsing
+| > + * incorrect. So make a local copy of @data and parse it.
+| > + *
+| > + * Return: 0 On success, -errno on error
+| > + */
+| > +static int safe_parse_mount_options(void *data, struct pts_mount_opts *opts)
+| > +{
+| > +	int rc;
+| > +	void *datacp;
+| > +
+| > +	if (!data)
+| > +		return 0;
+| > +
+| > +	/* Use kstrdup() ?  */
+| > +	datacp = kmalloc(PAGE_SIZE, GFP_KERNEL);
+| > +	if (!datacp)
+| > +		return -ENOMEM;
+| > +
+| > +	memcpy(datacp, data, PAGE_SIZE);
+| > +	rc = parse_mount_options((char *)datacp, 0, opts);
+| > +	kfree(datacp);
+| > +
+| > +	return rc;
+| > +}
+| > +
+| > +/*
+| > + * Mount a new (private) instance of devpts.  PTYs created in this
+| > + * instance are independent of the PTYs in other devpts instances.
+| > + */
+| > +static int new_pts_mount(struct file_system_type *fs_type, int flags,
+| > +		void *data, struct vfsmount *mnt)
+| > +{
+| > +	int err;
+| > +	struct pts_fs_info *fsi;
+| > +	struct pts_mount_opts *opts;
+| > +
+| > +	printk(KERN_NOTICE "devpts: newinstance mount\n");
+| > +
+| > +	err = get_sb_nodev(fs_type, flags, data, devpts_fill_super, mnt);
+| > +	if (err)
+| > +		return err;
+| > +
+| > +	fsi = DEVPTS_SB(mnt->mnt_sb);
+| > +	opts = &fsi->mount_opts;
+| > +
+| > +	err = parse_mount_options(data, 0, opts);
+| > +	if (err)
+| > +		goto fail;
+| > +
+| > +	err = mknod_ptmx(mnt->mnt_sb);
+| > +	if (err)
+| > +		goto fail;
+| > +
+| > +	return 0;
+| > +
+| > +fail:
+| > +	dput(mnt->mnt_sb->s_root);
+| > +	deactivate_super(mnt->mnt_sb);
+| > +	return err;
+| > +}
+| > +
+| > +/*
+| > + * Check if 'newinstance' mount option was specified in @data.
+| > + *
+| > + * Return: -errno  	on error (eg: invalid mount options specified)
+| > + * 	 : 1 		if 'newinstance' mount option was specified
+| > + * 	 : 0 		if 'newinstance' mount option was NOT specified
+| > + */
+| > +static int is_new_instance_mount(void *data)
+| > +{
+| > +	int rc;
+| > +	struct pts_mount_opts opts;
+| > +
+| > +	if (!data)
+| > +		return 0;
+| > +
+| > +	rc = safe_parse_mount_options(data, &opts);
+| > +	if (!rc)
+| > +		rc = opts.newinstance;
+| > +
+| > +	return rc;
+| > +}
+| > +
+| > +/*
+| > + * Mount or remount the initial kernel mount of devpts. This type of
+| > + * mount maintains the legacy, single-instance semantics, while the
+| > + * kernel still allows multiple-instances.
+| > + */
+| > +static int init_pts_mount(struct file_system_type *fs_type, int flags,
+| > +		void *data, struct vfsmount *mnt)
+| > +{
+| > +	int err;
+| > +
+| > +	if (!devpts_mnt) {
+| > +		err = get_sb_single(fs_type, flags, data, devpts_fill_super,
+| > +				mnt);
+| > +
+| > +		err = mknod_ptmx(mnt->mnt_sb);
+| > +		if (err) {
+| > +			dput(mnt->mnt_sb->s_root);
+| > +			deactivate_super(mnt->mnt_sb);
+| > +		} else
+| > +			devpts_mnt = mnt;
+| > +
+| > +		return err;
+| 
+| There is no locking here, so in early-userspace two competing processes
+| could both try to set devpts_mnt, right?
+
+Hmm. I was thinking there would be only one thread calling the
+vfs_kern_mount() in init_devpts_fs.
+
+| 
+| > +	}
+| > +
+| > +	return get_sb_ref(devpts_mnt->mnt_sb, flags, data, mnt);
+| > +}
+| > +
+| >  static int devpts_get_sb(struct file_system_type *fs_type,
+| >  	int flags, const char *dev_name, void *data, struct vfsmount *mnt)
+| >  {
+| > +	int new;
+| > +
+| > +	new = is_new_instance_mount(data);
+| > +	if (new < 0)
+| > +		return new;
+| > +
+| > +	if (new)
+| > +		return new_pts_mount(fs_type, flags, data, mnt);
+| > +
+| > +	return init_pts_mount(fs_type, flags, data, mnt);
+| 
+| Wait a sec - so if a container does
+| 
+| 	mount -t devpts -o newinstance none /dev/pts
+| 	and then later on just does
+| 	mount -t devpts none /dev/pts
+| 
+| it'll get the init_pts_ns, not the one it had created?
+
+Yes.  Should we treat the latter as remount of the private instance ?
+If so, user could add '-oremount' ?
+
+The logic seems simple: With newinstance create a private namespace.
+Without newinstance, bind to initial ns.
+
+| 
+| Yup, just confirmed, using:
+| 
+| 	ns_exec -cmiup /bin/sh
+| 	   mount -t devpts -o newinstance -n none /dev/pts
+| 	   mount -t devpts -n none /mnt
+| 	   ls /dev/pts
+| 	     ptmx
+| 	   ls /mnt
+| 	     0 ptmx
+| That's weird.
+| > +}
+| > +#else
+| > +/*
+| > + * This supports only the legacy single-instance semantics (no
+| > + * multiple-instance semantics)
+| > + */
+| > +static int devpts_get_sb(struct file_system_type *fs_type, int flags,
+| > +		const char *dev_name, void *data, struct vfsmount *mnt)
+| > +{
+| >  	return get_sb_single(fs_type, flags, data, devpts_fill_super, mnt);
+| >  }
+| > 
+| > +#endif
+| > +
+| >  static void devpts_kill_sb(struct super_block *sb)
+| >  {
+| >  	struct pts_fs_info *fsi = DEVPTS_SB(sb);
+| > @@ -431,8 +588,9 @@ void devpts_pty_kill(struct tty_struct *tty)
+| >  	if (dentry && !IS_ERR(dentry)) {
+| >  		inode->i_nlink--;
+| >  		d_delete(dentry);
+| > -		dput(dentry);
+| > +		dput(dentry);		// d_lookup in devpts_pty_new
+| >  	}
+| > +	dput(dentry);			// d_find_alias above
+| > 
+| >  	mutex_unlock(&root->d_inode->i_mutex);
+| >  }
+| > -- 
+| > 1.5.2.5
