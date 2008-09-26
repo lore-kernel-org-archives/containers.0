@@ -1,15 +1,16 @@
-From: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: Re: [PATCH 08/10] Define get_sb_ref()
-Date: Fri, 26 Sep 2008 14:31:02 -0700
-Message-ID: <1222464662.25451.23.camel@nimitz>
+From: sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
+Subject: Re: [PATCH 06/10] Define mknod_ptmx()
+Date: Fri, 26 Sep 2008 14:32:40 -0700
+Message-ID: <20080926213240.GF31505@us.ibm.com>
 References: <20080912174845.GA17350@us.ibm.com>
-	<20080912175308.GI17350@us.ibm.com> <1222286127.15523.66.camel@nimitz>
-	<20080926212115.GD31505@us.ibm.com>
+	<20080912175237.GG17350@us.ibm.com>
+	<20080924182125.GF25255@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20080926212115.GD31505-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <20080924182125.GF25255-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,37 +20,169 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
-Cc: kyle-hoO6YkzgTuCM0SS3m2neIg@public.gmane.org, bastian-yyjItF7Rl6lg9hUCZPvPmw@public.gmane.org, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org, hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org, containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, alan-qBU/x9rampVanCEyBjwyrvXRex20P6io@public.gmane.org, xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org
+To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Cc: kyle-hoO6YkzgTuCM0SS3m2neIg@public.gmane.org, bastian-yyjItF7Rl6lg9hUCZPvPmw@public.gmane.org, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org, hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org, containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org, alan-qBU/x9rampVanCEyBjwyrvXRex20P6io@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Fri, 2008-09-26 at 14:21 -0700, sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org wrote:
-> Dave Hansen [dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org] wrote:
-> | On Fri, 2008-09-12 at 10:53 -0700, sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org wrote:
-> | > + *     But for single-mount semantics, devpts cannot use get_sb_single(),
-> | > + *     because get_sb_single()/sget() find and use the super-block from
-> | > + *     the most recent mount of devpts. But that recent mount may be a
-> | > + *     'newinstance' mount and get_sb_single() would pick the newinstance
-> | > + *     super-block instead of the initial super-block.
-> | 
-> | Can't you just override the test() function to get what you want here?
-> 
-> get_sb_single() does not take a test() parameter and so I would still
-> need a get_sb_ref() or get_sb_special() interface right ? 
-> 
-> This special interface could call sget() with a custom-test function,
-> to get the super-block.  But in case of devpts, we already have the
-> super-block. So we don't need to call sget(). We just need get a reference
-> and remount.
+Serge E. Hallyn [serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org] wrote:
+| Quoting sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org (sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org):
+| > 
+| > >From df5d5863f8601baa25237b60c3fcd614ee0b34aa Mon Sep 17 00:00:00 2001
+| > From: Sukadev Bhattiprolu <sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+| > Date: Tue, 9 Sep 2008 10:23:07 -0700
+| > Subject: [PATCH 06/10] Define mknod_ptmx()
+| > 
+| > /dev/ptmx is closely tied to the devpts filesystem. An open of /dev/ptmx,
+| > allocates the next pty index and the associated device shows up in the
+| > devpts fs as /dev/pts/n.
+| > 
+| > Wih multiple instancs of devpts filesystem, during an open of /dev/ptmx
+| > we would be unable to determine which instance of the devpts is being
+| > accessed.
+| > 
+| > So we move the 'ptmx' node into /dev/pts and use the inode of the 'ptmx'
+| > node to identify the superblock and hence the devpts instance.  This patch
+| > adds ability for the kernel to internally create the [ptmx, c, 5:2] device
+| > when mounting devpts filesystem.  Since the ptmx node in devpts is new and
+| > may surprise some userspace scripts, the default permissions for the new
+| > node is 0000.  These permissions can be changed either using chmod or by
+| > remounting with the new '-o ptmxmode=0666' mount option.
+| > 
+| > Changelog[v4]:
+| > 	- Change default permissions of pts/ptmx node to 0000.
+| > 	- Move code for ptmxmode under #ifdef CONFIG_DEVPTS_MULTIPLE_INSTANCES.
+| > 
+| > Changelog[v3]:
+| > 	- Rename ptmx_mode to ptmxmode (for consistency with 'newinstance')
+| > 
+| > Changelog[v2]:
+| > 	- [H. Peter Anvin] Remove mknod() system call support and create the
+| > 	  ptmx node internally.
+| > 
+| > Changelog[v1]:
+| > 	- Earlier version of this patch enabled creating /dev/pts/tty as
+| > 	  well. As pointed out by Al Viro and H. Peter Anvin, that is not
+| > 	  really necessary.
+| > 
+| > Signed-off-by: Sukadev Bhattiprolu <sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+| > ---
+| >  fs/devpts/inode.c |   76 +++++++++++++++++++++++++++++++++++++++++++++++++++-
+| >  1 files changed, 74 insertions(+), 2 deletions(-)
+| > 
+| > diff --git a/fs/devpts/inode.c b/fs/devpts/inode.c
+| > index 7ae60aa..17e14f5 100644
+| > --- a/fs/devpts/inode.c
+| > +++ b/fs/devpts/inode.c
+| > @@ -27,6 +27,13 @@
+| >  #define DEVPTS_SUPER_MAGIC 0x1cd1
+| > 
+| >  #define DEVPTS_DEFAULT_MODE 0600
+| > +/*
+| > + * ptmx is a new node in /dev/pts and will be unused in legacy (single-
+| > + * instance) mode. To prevent surprises in user space, set permissions of
+| > + * ptmx to 0. Use 'chmod' or remount with '-o ptmxmode' to set meaningful
+| > + * permissions.
+| > + */
+| > +#define DEVPTS_DEFAULT_PTMX_MODE 0000
+| >  #define PTMX_MINOR	2
+| > 
+| >  extern int pty_limit;			/* Config limit on Unix98 ptys */
+| > @@ -40,10 +47,11 @@ struct pts_mount_opts {
+| >  	uid_t   uid;
+| >  	gid_t   gid;
+| >  	umode_t mode;
+| > +	umode_t ptmxmode;
+| >  };
+| > 
+| >  enum {
+| > -	Opt_uid, Opt_gid, Opt_mode,
+| > +	Opt_uid, Opt_gid, Opt_mode, Opt_ptmxmode,
+| >  	Opt_err
+| >  };
+| > 
+| > @@ -51,6 +59,9 @@ static match_table_t tokens = {
+| >  	{Opt_uid, "uid=%u"},
+| >  	{Opt_gid, "gid=%u"},
+| >  	{Opt_mode, "mode=%o"},
+| > +#ifdef CONFIG_DEVPTS_MULTIPLE_INSTANCES
+| > +	{Opt_ptmxmode, "ptmxmode=%o"},
+| > +#endif
+| >  	{Opt_err, NULL}
+| >  };
+| > 
+| > @@ -81,6 +92,7 @@ static int parse_mount_options(char *data, struct pts_mount_opts *opts)
+| >  	opts->uid     = 0;
+| >  	opts->gid     = 0;
+| >  	opts->mode    = DEVPTS_DEFAULT_MODE;
+| > +	opts->ptmxmode = DEVPTS_DEFAULT_PTMX_MODE;
+| > 
+| >  	while ((p = strsep(&data, ",")) != NULL) {
+| >  		substring_t args[MAX_OPT_ARGS];
+| > @@ -109,6 +121,13 @@ static int parse_mount_options(char *data, struct pts_mount_opts *opts)
+| >  				return -EINVAL;
+| >  			opts->mode = option & S_IALLUGO;
+| >  			break;
+| > +#ifdef CONFIG_DEVPTS_MULTIPLE_INSTANCES
+| > +		case Opt_ptmxmode:
+| > +			if (match_octal(&args[0], &option))
+| > +				return -EINVAL;
+| > +			opts->ptmxmode = option & S_IALLUGO;
+| > +			break;
+| > +#endif
+| >  		default:
+| >  			printk(KERN_ERR "devpts: called with bogus options\n");
+| >  			return -EINVAL;
+| > @@ -118,6 +137,55 @@ static int parse_mount_options(char *data, struct pts_mount_opts *opts)
+| >  	return 0;
+| >  }
+| > 
+| > +#ifdef CONFIG_DEVPTS_MULTIPLE_INSTANCES
+| > +static int mknod_ptmx(struct super_block *sb)
+| > +{
+| > +	struct dentry *root;
+| > +	struct dentry *dentry;
+| > +	struct inode *inode;
+| > +	struct pts_fs_info *fsi = DEVPTS_SB(sb);
+| > +	struct pts_mount_opts *opts = &fsi->mount_opts;
+| > +	int mode;
+| > +
+| > +	root = sb->s_root;
+| > +	dentry = lookup_one_len("ptmx", root, 4);
+| 
+| I realize you intend for this to only be used before mount is completed,
+| but it still seems like a good idea to have this grab the root inode
+| mutex.
 
-Well, you shouldn't be using get_sb_single() at all any more, right?
+Ok.
 
-At this point, you're doing something super-specialized for devpts.  So,
-why do this in super.c.  Just put it in place of devpts_get_sb()'s
-current contents.
+| 
+| > +	if (IS_ERR(dentry)) {
+| > +		printk(KERN_ERR "Unable to alloc dentry for ptmx node\n");
+| > +		return -ENOMEM;
+| > +	}
+| > +
+| > +	if (dentry->d_inode) {
+| > +		printk(KERN_ERR "'ptmx' (ino %lu) exists in this devpts\n",
+| > +				dentry->d_inode->i_ino);
+| > +		return 0;
+| > +	}
+| > +
+| > +	/*
+| > +	 * Create a new 'ptmx' node in this mount of devpts.
+| > +	 */
+| > +	inode = new_inode(sb);
+| > +	if (!inode) {
+| > +		printk(KERN_ERR "Unable to alloc inode for ptmx node\n");
+| > +		dput(dentry);
+| > +		return -ENOMEM;
+| > +	}
+| > +
+| > +	inode->i_uid = inode->i_gid = 0;
+| 
+| As we've discussed, you need to reserve inode number 2 for ptmx, set
+| inode->i_ino to 2 here, and then set inode->i_ino to the pty_index+3
+| when creating a new pty.
 
-For me get_sb_ref() is a super-confusing name, especially when mixed
-with all the other sb functions.  WTF is get_sb() doing if there's a
-get_sb_ref()?
-
--- Dave
+Yes. I agree. Had it that way before, but let new_inode() choose the
+number. But obvoiusly the numbers can collide if we chose the inode
+numbers for the ptys differently.
