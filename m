@@ -1,16 +1,19 @@
-From: sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
-Subject: Re: [PATCH 06/10] Define mknod_ptmx()
-Date: Fri, 26 Sep 2008 14:32:40 -0700
-Message-ID: <20080926213240.GF31505@us.ibm.com>
-References: <20080912174845.GA17350@us.ibm.com>
-	<20080912175237.GG17350@us.ibm.com>
-	<20080924182125.GF25255@us.ibm.com>
+From: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Subject: [PATCH v2 7/6] netns ct: final netns tweaks
+Date: Sat, 27 Sep 2008 03:59:01 +0400
+Message-ID: <20080926235901.GA10489__3932.0353106179$1222473538$gmane$org@x200.localdomain>
+References: <48C01046.2070704@trash.net>
+	<1220842990-30500-17-git-send-email-adobriyan@gmail.com>
+	<48C623CA.9060803@trash.net>
+	<20080909073245.GA7307@x200.localdomain>
+	<48C62B1C.7070104@trash.net>
+	<20080913105509.GG7440@x200.localdomain>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <20080924182125.GF25255-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <20080913105509.GG7440-2ev+ksY9ol182hYKe6nXyg@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -20,169 +23,303 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Cc: kyle-hoO6YkzgTuCM0SS3m2neIg@public.gmane.org, bastian-yyjItF7Rl6lg9hUCZPvPmw@public.gmane.org, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org, hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org, containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org, alan-qBU/x9rampVanCEyBjwyrvXRex20P6io@public.gmane.org
+To: Patrick McHardy <kaber-dcUjhNyLwpNeoWH0uzbU5w@public.gmane.org>
+Cc: netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, netfilter-devel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Serge E. Hallyn [serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org] wrote:
-| Quoting sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org (sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org):
-| > 
-| > >From df5d5863f8601baa25237b60c3fcd614ee0b34aa Mon Sep 17 00:00:00 2001
-| > From: Sukadev Bhattiprolu <sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-| > Date: Tue, 9 Sep 2008 10:23:07 -0700
-| > Subject: [PATCH 06/10] Define mknod_ptmx()
-| > 
-| > /dev/ptmx is closely tied to the devpts filesystem. An open of /dev/ptmx,
-| > allocates the next pty index and the associated device shows up in the
-| > devpts fs as /dev/pts/n.
-| > 
-| > Wih multiple instancs of devpts filesystem, during an open of /dev/ptmx
-| > we would be unable to determine which instance of the devpts is being
-| > accessed.
-| > 
-| > So we move the 'ptmx' node into /dev/pts and use the inode of the 'ptmx'
-| > node to identify the superblock and hence the devpts instance.  This patch
-| > adds ability for the kernel to internally create the [ptmx, c, 5:2] device
-| > when mounting devpts filesystem.  Since the ptmx node in devpts is new and
-| > may surprise some userspace scripts, the default permissions for the new
-| > node is 0000.  These permissions can be changed either using chmod or by
-| > remounting with the new '-o ptmxmode=0666' mount option.
-| > 
-| > Changelog[v4]:
-| > 	- Change default permissions of pts/ptmx node to 0000.
-| > 	- Move code for ptmxmode under #ifdef CONFIG_DEVPTS_MULTIPLE_INSTANCES.
-| > 
-| > Changelog[v3]:
-| > 	- Rename ptmx_mode to ptmxmode (for consistency with 'newinstance')
-| > 
-| > Changelog[v2]:
-| > 	- [H. Peter Anvin] Remove mknod() system call support and create the
-| > 	  ptmx node internally.
-| > 
-| > Changelog[v1]:
-| > 	- Earlier version of this patch enabled creating /dev/pts/tty as
-| > 	  well. As pointed out by Al Viro and H. Peter Anvin, that is not
-| > 	  really necessary.
-| > 
-| > Signed-off-by: Sukadev Bhattiprolu <sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-| > ---
-| >  fs/devpts/inode.c |   76 +++++++++++++++++++++++++++++++++++++++++++++++++++-
-| >  1 files changed, 74 insertions(+), 2 deletions(-)
-| > 
-| > diff --git a/fs/devpts/inode.c b/fs/devpts/inode.c
-| > index 7ae60aa..17e14f5 100644
-| > --- a/fs/devpts/inode.c
-| > +++ b/fs/devpts/inode.c
-| > @@ -27,6 +27,13 @@
-| >  #define DEVPTS_SUPER_MAGIC 0x1cd1
-| > 
-| >  #define DEVPTS_DEFAULT_MODE 0600
-| > +/*
-| > + * ptmx is a new node in /dev/pts and will be unused in legacy (single-
-| > + * instance) mode. To prevent surprises in user space, set permissions of
-| > + * ptmx to 0. Use 'chmod' or remount with '-o ptmxmode' to set meaningful
-| > + * permissions.
-| > + */
-| > +#define DEVPTS_DEFAULT_PTMX_MODE 0000
-| >  #define PTMX_MINOR	2
-| > 
-| >  extern int pty_limit;			/* Config limit on Unix98 ptys */
-| > @@ -40,10 +47,11 @@ struct pts_mount_opts {
-| >  	uid_t   uid;
-| >  	gid_t   gid;
-| >  	umode_t mode;
-| > +	umode_t ptmxmode;
-| >  };
-| > 
-| >  enum {
-| > -	Opt_uid, Opt_gid, Opt_mode,
-| > +	Opt_uid, Opt_gid, Opt_mode, Opt_ptmxmode,
-| >  	Opt_err
-| >  };
-| > 
-| > @@ -51,6 +59,9 @@ static match_table_t tokens = {
-| >  	{Opt_uid, "uid=%u"},
-| >  	{Opt_gid, "gid=%u"},
-| >  	{Opt_mode, "mode=%o"},
-| > +#ifdef CONFIG_DEVPTS_MULTIPLE_INSTANCES
-| > +	{Opt_ptmxmode, "ptmxmode=%o"},
-| > +#endif
-| >  	{Opt_err, NULL}
-| >  };
-| > 
-| > @@ -81,6 +92,7 @@ static int parse_mount_options(char *data, struct pts_mount_opts *opts)
-| >  	opts->uid     = 0;
-| >  	opts->gid     = 0;
-| >  	opts->mode    = DEVPTS_DEFAULT_MODE;
-| > +	opts->ptmxmode = DEVPTS_DEFAULT_PTMX_MODE;
-| > 
-| >  	while ((p = strsep(&data, ",")) != NULL) {
-| >  		substring_t args[MAX_OPT_ARGS];
-| > @@ -109,6 +121,13 @@ static int parse_mount_options(char *data, struct pts_mount_opts *opts)
-| >  				return -EINVAL;
-| >  			opts->mode = option & S_IALLUGO;
-| >  			break;
-| > +#ifdef CONFIG_DEVPTS_MULTIPLE_INSTANCES
-| > +		case Opt_ptmxmode:
-| > +			if (match_octal(&args[0], &option))
-| > +				return -EINVAL;
-| > +			opts->ptmxmode = option & S_IALLUGO;
-| > +			break;
-| > +#endif
-| >  		default:
-| >  			printk(KERN_ERR "devpts: called with bogus options\n");
-| >  			return -EINVAL;
-| > @@ -118,6 +137,55 @@ static int parse_mount_options(char *data, struct pts_mount_opts *opts)
-| >  	return 0;
-| >  }
-| > 
-| > +#ifdef CONFIG_DEVPTS_MULTIPLE_INSTANCES
-| > +static int mknod_ptmx(struct super_block *sb)
-| > +{
-| > +	struct dentry *root;
-| > +	struct dentry *dentry;
-| > +	struct inode *inode;
-| > +	struct pts_fs_info *fsi = DEVPTS_SB(sb);
-| > +	struct pts_mount_opts *opts = &fsi->mount_opts;
-| > +	int mode;
-| > +
-| > +	root = sb->s_root;
-| > +	dentry = lookup_one_len("ptmx", root, 4);
-| 
-| I realize you intend for this to only be used before mount is completed,
-| but it still seems like a good idea to have this grab the root inode
-| mutex.
+Add init_net checks to not remove kmem_caches twice and so on.
 
-Ok.
+Refactor functions to split code which should be executed only for
+init_net into one place.
 
-| 
-| > +	if (IS_ERR(dentry)) {
-| > +		printk(KERN_ERR "Unable to alloc dentry for ptmx node\n");
-| > +		return -ENOMEM;
-| > +	}
-| > +
-| > +	if (dentry->d_inode) {
-| > +		printk(KERN_ERR "'ptmx' (ino %lu) exists in this devpts\n",
-| > +				dentry->d_inode->i_ino);
-| > +		return 0;
-| > +	}
-| > +
-| > +	/*
-| > +	 * Create a new 'ptmx' node in this mount of devpts.
-| > +	 */
-| > +	inode = new_inode(sb);
-| > +	if (!inode) {
-| > +		printk(KERN_ERR "Unable to alloc inode for ptmx node\n");
-| > +		dput(dentry);
-| > +		return -ENOMEM;
-| > +	}
-| > +
-| > +	inode->i_uid = inode->i_gid = 0;
-| 
-| As we've discussed, you need to reserve inode number 2 for ptmx, set
-| inode->i_ino to 2 here, and then set inode->i_ino to the pty_index+3
-| when creating a new pty.
+ip_ct_attach and ip_ct_destroy assignments remain separate, because
+they're separate stages in setup and teardown.
 
-Yes. I agree. Had it that way before, but let new_inode() choose the
-number. But obvoiusly the numbers can collide if we chose the inode
-numbers for the ptys differently.
+NOTE: NOTRACK code is in for-every-net part. It will be made per-netns
+after we decidce how to do it correctly.
+
+Signed-off-by: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+---
+
+ net/netfilter/nf_conntrack_core.c   |  151 +++++++++++++++++++++++-------------
+ net/netfilter/nf_conntrack_expect.c |   26 +++---
+ 2 files changed, 114 insertions(+), 63 deletions(-)
+
+--- a/net/netfilter/nf_conntrack_core.c
++++ b/net/netfilter/nf_conntrack_core.c
+@@ -1010,17 +1010,15 @@ void nf_conntrack_flush(struct net *net)
+ }
+ EXPORT_SYMBOL_GPL(nf_conntrack_flush);
+ 
+-/* Mishearing the voices in his head, our hero wonders how he's
+-   supposed to kill the mall. */
+-void nf_conntrack_cleanup(struct net *net)
++static void nf_conntrack_cleanup_init_net(void)
+ {
+-	rcu_assign_pointer(ip_ct_attach, NULL);
+-
+-	/* This makes sure all current packets have passed through
+-	   netfilter framework.  Roll on, two-stage module
+-	   delete... */
+-	synchronize_net();
++	nf_conntrack_helper_fini();
++	nf_conntrack_proto_fini();
++	kmem_cache_destroy(nf_conntrack_cachep);
++}
+ 
++static void nf_conntrack_cleanup_net(struct net *net)
++{
+ 	nf_ct_event_cache_flush(net);
+ 	nf_conntrack_ecache_fini(net);
+  i_see_dead_people:
+@@ -1033,17 +1031,31 @@ void nf_conntrack_cleanup(struct net *net)
+ 	while (atomic_read(&nf_conntrack_untracked.ct_general.use) > 1)
+ 		schedule();
+ 
+-	rcu_assign_pointer(nf_ct_destroy, NULL);
+-
+-	kmem_cache_destroy(nf_conntrack_cachep);
+ 	nf_ct_free_hashtable(net->ct.hash, net->ct.hash_vmalloc,
+ 			     nf_conntrack_htable_size);
+-
+ 	nf_conntrack_acct_fini(net);
+ 	nf_conntrack_expect_fini(net);
+ 	free_percpu(net->ct.stat);
+-	nf_conntrack_helper_fini();
+-	nf_conntrack_proto_fini();
++}
++
++/* Mishearing the voices in his head, our hero wonders how he's
++   supposed to kill the mall. */
++void nf_conntrack_cleanup(struct net *net)
++{
++	if (net_eq(net, &init_net))
++		rcu_assign_pointer(ip_ct_attach, NULL);
++
++	/* This makes sure all current packets have passed through
++	   netfilter framework.  Roll on, two-stage module
++	   delete... */
++	synchronize_net();
++
++	nf_conntrack_cleanup_net(net);
++
++	if (net_eq(net, &init_net)) {
++		rcu_assign_pointer(nf_ct_destroy, NULL);
++		nf_conntrack_cleanup_init_net();
++	}
+ }
+ 
+ struct hlist_head *nf_ct_alloc_hashtable(unsigned int *sizep, int *vmalloced)
+@@ -1128,7 +1140,7 @@ EXPORT_SYMBOL_GPL(nf_conntrack_set_hashsize);
+ module_param_call(hashsize, nf_conntrack_set_hashsize, param_get_uint,
+ 		  &nf_conntrack_htable_size, 0600);
+ 
+-int nf_conntrack_init(struct net *net)
++static int nf_conntrack_init_init_net(void)
+ {
+ 	int max_factor = 8;
+ 	int ret;
+@@ -1150,21 +1162,6 @@ int nf_conntrack_init(struct net *net)
+ 		 * entries. */
+ 		max_factor = 4;
+ 	}
+-	atomic_set(&net->ct.count, 0);
+-	net->ct.stat = alloc_percpu(struct ip_conntrack_stat);
+-	if (!net->ct.stat)
+-		goto err_stat;
+-	ret = nf_conntrack_ecache_init(net);
+-	if (ret < 0)
+-		goto err_ecache;
+-	net->ct.hash = nf_ct_alloc_hashtable(&nf_conntrack_htable_size,
+-						  &net->ct.hash_vmalloc);
+-	if (!net->ct.hash) {
+-		printk(KERN_ERR "Unable to create nf_conntrack_hash\n");
+-		goto err_hash;
+-	}
+-	INIT_HLIST_HEAD(&net->ct.unconfirmed);
+-
+ 	nf_conntrack_max = max_factor * nf_conntrack_htable_size;
+ 
+ 	printk("nf_conntrack version %s (%u buckets, %d max)\n",
+@@ -1176,28 +1173,55 @@ int nf_conntrack_init(struct net *net)
+ 						0, 0, NULL);
+ 	if (!nf_conntrack_cachep) {
+ 		printk(KERN_ERR "Unable to create nf_conn slab cache\n");
+-		goto err_free_hash;
++		ret = -ENOMEM;
++		goto err_cache;
+ 	}
+ 
+ 	ret = nf_conntrack_proto_init();
+ 	if (ret < 0)
+-		goto err_free_conntrack_slab;
+-
+-	ret = nf_conntrack_expect_init(net);
+-	if (ret < 0)
+-		goto out_fini_proto;
++		goto err_proto;
+ 
+ 	ret = nf_conntrack_helper_init();
+ 	if (ret < 0)
+-		goto out_fini_expect;
++		goto err_helper;
++
++	return 0;
++
++err_helper:
++	nf_conntrack_proto_fini();
++err_proto:
++	kmem_cache_destroy(nf_conntrack_cachep);
++err_cache:
++	return ret;
++}
++
++static int nf_conntrack_init_net(struct net *net)
++{
++	int ret;
+ 
++	atomic_set(&net->ct.count, 0);
++	INIT_HLIST_HEAD(&net->ct.unconfirmed);
++	net->ct.stat = alloc_percpu(struct ip_conntrack_stat);
++	if (!net->ct.stat) {
++		ret = -ENOMEM;
++		goto err_stat;
++	}
++	ret = nf_conntrack_ecache_init(net);
++	if (ret < 0)
++		goto err_ecache;
++	net->ct.hash = nf_ct_alloc_hashtable(&nf_conntrack_htable_size,
++						  &net->ct.hash_vmalloc);
++	if (!net->ct.hash) {
++		ret = -ENOMEM;
++		printk(KERN_ERR "Unable to create nf_conntrack_hash\n");
++		goto err_hash;
++	}
++	ret = nf_conntrack_expect_init(net);
++	if (ret < 0)
++		goto err_expect;
+ 	ret = nf_conntrack_acct_init(net);
+ 	if (ret < 0)
+-		goto out_fini_helper;
+-
+-	/* For use by REJECT target */
+-	rcu_assign_pointer(ip_ct_attach, nf_conntrack_attach);
+-	rcu_assign_pointer(nf_ct_destroy, destroy_conntrack);
++		goto err_acct;
+ 
+ 	/* Set up fake conntrack:
+ 	    - to never be deleted, not in any hashes */
+@@ -1208,17 +1232,11 @@ int nf_conntrack_init(struct net *net)
+ 	/*  - and look it like as a confirmed connection */
+ 	set_bit(IPS_CONFIRMED_BIT, &nf_conntrack_untracked.status);
+ 
+-	return ret;
++	return 0;
+ 
+-out_fini_helper:
+-	nf_conntrack_helper_fini();
+-out_fini_expect:
++err_acct:
+ 	nf_conntrack_expect_fini(net);
+-out_fini_proto:
+-	nf_conntrack_proto_fini();
+-err_free_conntrack_slab:
+-	kmem_cache_destroy(nf_conntrack_cachep);
+-err_free_hash:
++err_expect:
+ 	nf_ct_free_hashtable(net->ct.hash, net->ct.hash_vmalloc,
+ 			     nf_conntrack_htable_size);
+ err_hash:
+@@ -1226,5 +1244,32 @@ err_hash:
+ err_ecache:
+ 	free_percpu(net->ct.stat);
+ err_stat:
+-	return -ENOMEM;
++	return ret;
++}
++
++int nf_conntrack_init(struct net *net)
++{
++	int ret;
++
++	if (net_eq(net, &init_net)) {
++		ret = nf_conntrack_init_init_net();
++		if (ret < 0)
++			goto out_init_net;
++	}
++	ret = nf_conntrack_init_net(net);
++	if (ret < 0)
++		goto out_net;
++
++	if (net_eq(net, &init_net)) {
++		/* For use by REJECT target */
++		rcu_assign_pointer(ip_ct_attach, nf_conntrack_attach);
++		rcu_assign_pointer(nf_ct_destroy, destroy_conntrack);
++	}
++	return 0;
++
++out_net:
++	if (net_eq(net, &init_net))
++		nf_conntrack_cleanup_init_net();
++out_init_net:
++	return ret;
+ }
+--- a/net/netfilter/nf_conntrack_expect.c
++++ b/net/netfilter/nf_conntrack_expect.c
+@@ -563,12 +563,14 @@ int nf_conntrack_expect_init(struct net *net)
+ {
+ 	int err = -ENOMEM;
+ 
+-	if (!nf_ct_expect_hsize) {
+-		nf_ct_expect_hsize = nf_conntrack_htable_size / 256;
+-		if (!nf_ct_expect_hsize)
+-			nf_ct_expect_hsize = 1;
++	if (net_eq(net, &init_net)) {
++		if (!nf_ct_expect_hsize) {
++			nf_ct_expect_hsize = nf_conntrack_htable_size / 256;
++			if (!nf_ct_expect_hsize)
++				nf_ct_expect_hsize = 1;
++		}
++		nf_ct_expect_max = nf_ct_expect_hsize * 4;
+ 	}
+-	nf_ct_expect_max = nf_ct_expect_hsize * 4;
+ 
+ 	net->ct.expect_count = 0;
+ 	net->ct.expect_hash = nf_ct_alloc_hashtable(&nf_ct_expect_hsize,
+@@ -576,11 +578,13 @@ int nf_conntrack_expect_init(struct net *net)
+ 	if (net->ct.expect_hash == NULL)
+ 		goto err1;
+ 
+-	nf_ct_expect_cachep = kmem_cache_create("nf_conntrack_expect",
++	if (net_eq(net, &init_net)) {
++		nf_ct_expect_cachep = kmem_cache_create("nf_conntrack_expect",
+ 					sizeof(struct nf_conntrack_expect),
+ 					0, 0, NULL);
+-	if (!nf_ct_expect_cachep)
+-		goto err2;
++		if (!nf_ct_expect_cachep)
++			goto err2;
++	}
+ 
+ 	err = exp_proc_init(net);
+ 	if (err < 0)
+@@ -589,7 +593,8 @@ int nf_conntrack_expect_init(struct net *net)
+ 	return 0;
+ 
+ err3:
+-	kmem_cache_destroy(nf_ct_expect_cachep);
++	if (net_eq(net, &init_net))
++		kmem_cache_destroy(nf_ct_expect_cachep);
+ err2:
+ 	nf_ct_free_hashtable(net->ct.expect_hash, net->ct.expect_vmalloc,
+ 			     nf_ct_expect_hsize);
+@@ -600,7 +605,8 @@ err1:
+ void nf_conntrack_expect_fini(struct net *net)
+ {
+ 	exp_proc_remove(net);
+-	kmem_cache_destroy(nf_ct_expect_cachep);
++	if (net_eq(net, &init_net))
++		kmem_cache_destroy(nf_ct_expect_cachep);
+ 	nf_ct_free_hashtable(net->ct.expect_hash, net->ct.expect_vmalloc,
+ 			     nf_ct_expect_hsize);
+ }
