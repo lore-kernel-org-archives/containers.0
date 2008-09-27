@@ -1,18 +1,16 @@
 From: sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
-Subject: Re: [PATCH 08/10] Define get_sb_ref()
-Date: Fri, 26 Sep 2008 17:47:27 -0700
-Message-ID: <20080927004727.GA2161@us.ibm.com>
+Subject: Re: [PATCH 02/10] Per-mount allocated_ptys
+Date: Fri, 26 Sep 2008 18:12:22 -0700
+Message-ID: <20080927011222.GB2161@us.ibm.com>
 References: <20080912174845.GA17350@us.ibm.com>
-	<20080912175308.GI17350@us.ibm.com>
-	<1222286127.15523.66.camel@nimitz>
-	<20080926212115.GD31505@us.ibm.com>
-	<1222464662.25451.23.camel@nimitz>
+	<20080912175116.GC17350@us.ibm.com>
+	<20080924171408.GB25255@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <1222464662.25451.23.camel@nimitz>
+In-Reply-To: <20080924171408.GB25255-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -22,52 +20,185 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Cc: kyle-hoO6YkzgTuCM0SS3m2neIg@public.gmane.org, bastian-yyjItF7Rl6lg9hUCZPvPmw@public.gmane.org, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org, hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org, containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, alan-qBU/x9rampVanCEyBjwyrvXRex20P6io@public.gmane.org, xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org
+To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Cc: kyle-hoO6YkzgTuCM0SS3m2neIg@public.gmane.org, bastian-yyjItF7Rl6lg9hUCZPvPmw@public.gmane.org, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org, hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org, containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org, alan-qBU/x9rampVanCEyBjwyrvXRex20P6io@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Dave Hansen [dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org] wrote:
-| On Fri, 2008-09-26 at 14:21 -0700, sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org wrote:
-| > Dave Hansen [dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org] wrote:
-| > | On Fri, 2008-09-12 at 10:53 -0700, sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org wrote:
-| > | > + *     But for single-mount semantics, devpts cannot use get_sb_single(),
-| > | > + *     because get_sb_single()/sget() find and use the super-block from
-| > | > + *     the most recent mount of devpts. But that recent mount may be a
-| > | > + *     'newinstance' mount and get_sb_single() would pick the newinstance
-| > | > + *     super-block instead of the initial super-block.
-| > | 
-| > | Can't you just override the test() function to get what you want here?
+Serge E. Hallyn [serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org] wrote:
+| Quoting sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org (sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org):
 | > 
-| > get_sb_single() does not take a test() parameter and so I would still
-| > need a get_sb_ref() or get_sb_special() interface right ? 
+| > >From bdba42b68e2b6765615618fce7eb7d4c6f75685d Mon Sep 17 00:00:00 2001
+| > From: Sukadev Bhattiprolu <sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+| > Date: Tue, 9 Sep 2008 10:22:11 -0700
+| > Subject: [PATCH 02/10] Per-mount allocated_ptys
 | > 
-| > This special interface could call sget() with a custom-test function,
-| > to get the super-block.  But in case of devpts, we already have the
-| > super-block. So we don't need to call sget(). We just need get a reference
-| > and remount.
+| > To enable multiple mounts of devpts, 'allocated_ptys' must be a per-mount
+| > variable rather than a global variable.  Move 'allocated_ptys' into the
+| > super_block's s_fs_info.
+| > 
+| > Changelog[v2]:
+| > 	Define and use DEVPTS_SB() wrapper.
+| > 
+| > Signed-off-by: Sukadev Bhattiprolu <sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+| > ---
+| >  fs/devpts/inode.c |   55 ++++++++++++++++++++++++++++++++++++++++++++++------
+| >  1 files changed, 48 insertions(+), 7 deletions(-)
+| > 
+| > diff --git a/fs/devpts/inode.c b/fs/devpts/inode.c
+| > index ec33833..6e63db7 100644
+| > --- a/fs/devpts/inode.c
+| > +++ b/fs/devpts/inode.c
+| > @@ -30,7 +30,6 @@
+| >  #define PTMX_MINOR	2
+| > 
+| >  extern int pty_limit;			/* Config limit on Unix98 ptys */
+| > -static DEFINE_IDA(allocated_ptys);
+| >  static DEFINE_MUTEX(allocated_ptys_lock);
+| > 
+| >  static struct vfsmount *devpts_mnt;
+| > @@ -55,6 +54,15 @@ static match_table_t tokens = {
+| >  	{Opt_err, NULL}
+| >  };
+| > 
+| > +struct pts_fs_info {
+| > +	struct ida allocated_ptys;
+| > +};
+| > +
+| > +static inline struct pts_fs_info *DEVPTS_SB(struct super_block *sb)
 | 
-| Well, you shouldn't be using get_sb_single() at all any more, right?
+| This is an odd name...  how about DEVPTS_SBINFO or DEVPTS_SB_IDA?
 
-You mean define something like get_sb_multi_mode() and define a  new
-test function ? I can try that.
+I was just following established tradition :-)
 
-| 
-| At this point, you're doing something super-specialized for devpts.  So,
-| why do this in super.c.  Just put it in place of devpts_get_sb()'s
-| current contents.
+	EXT4_SB(), EXT3_SB(), EXT2_SB(), REISERFS_SB(), NFS_SB()
 
-grab_super() is static. I have to either externalize it or define the
-new interface in fs/super.c.  I am not sure if mqueue ns or others have
-similar semantics and if so, defining interface in fs/super.c has a better
-chance of being found/generalized when there is another user.
+I don't mind DEVPTS_SBINFO(), but since this will soon have more than
+just an ida, DEVPTS_SB_IDA() may not work.
 
 | 
-| For me get_sb_ref() is a super-confusing name, especially when mixed
-| with all the other sb functions.  WTF is get_sb() doing if there's a
-| get_sb_ref()?
+| > +{
+| > +	return sb->s_fs_info;
+| > +}
+| > +
+| >  static inline struct super_block *pts_sb_from_inode(struct inode *inode)
+| >  {
+| >  	if (inode->i_sb->s_magic == DEVPTS_SUPER_MAGIC)
+| > @@ -126,6 +134,19 @@ static const struct super_operations devpts_sops = {
+| >  	.show_options	= devpts_show_options,
+| >  };
+| > 
+| > +static void *new_pts_fs_info(void)
+| > +{
+| > +	struct pts_fs_info *fsi;
+| > +
+| > +	fsi = kzalloc(sizeof(struct pts_fs_info), GFP_KERNEL);
+| > +	if (!fsi)
+| > +		return NULL;
+| > +
+| > +	ida_init(&fsi->allocated_ptys);
+| > +
+| > +	return fsi;
+| > +}
+| > +
+| >  static int
+| >  devpts_fill_super(struct super_block *s, void *data, int silent)
+| >  {
+| > @@ -137,9 +158,13 @@ devpts_fill_super(struct super_block *s, void *data, int silent)
+| >  	s->s_op = &devpts_sops;
+| >  	s->s_time_gran = 1;
+| > 
+| > +	s->s_fs_info = new_pts_fs_info();
+| > +	if (!s->s_fs_info)
+| > +		goto fail;
+| > +
+| >  	inode = new_inode(s);
+| >  	if (!inode)
+| > -		goto fail;
+| > +		goto free_fsi;
+| >  	inode->i_ino = 1;
+| >  	inode->i_mtime = inode->i_atime = inode->i_ctime = CURRENT_TIME;
+| >  	inode->i_blocks = 0;
+| > @@ -155,6 +180,9 @@ devpts_fill_super(struct super_block *s, void *data, int silent)
+| >  	
+| >  	printk("devpts: get root dentry failed\n");
+| >  	iput(inode);
+| > +
+| > +free_fsi:
+| > +	kfree(s->s_fs_info);
+| >  fail:
+| >  	return -ENOMEM;
+| >  }
+| > @@ -165,11 +193,19 @@ static int devpts_get_sb(struct file_system_type *fs_type,
+| >  	return get_sb_single(fs_type, flags, data, devpts_fill_super, mnt);
+| >  }
+| > 
+| > +static void devpts_kill_sb(struct super_block *sb)
+| > +{
+| > +	struct pts_fs_info *fsi = DEVPTS_SB(sb);
+| > +
+| 
+| don't you need to ida_destroy(fsi->allocated_ptys) ?
 
-I agree its not a great name. The 'get_sb's do several things some in
-private interfaces, and I needed only a subset of them.
+I had it before, but since all ptys must be destroyed, and ida_remove()
+frees the pages as necessary and ida_init() does not alloc memory, I had
+commented it out and later removed it. Let me check again.
 
-Do you have any preference over get_sb_multi_mode() over exporting 
-grab_super() and moving the pts-specific stuff to into devpts/inode.c
+| 
+| > +	kfree(fsi);
+| > +	kill_anon_super(sb);
+| > +}
+| > +
+| >  static struct file_system_type devpts_fs_type = {
+| >  	.owner		= THIS_MODULE,
+| >  	.name		= "devpts",
+| >  	.get_sb		= devpts_get_sb,
+| > -	.kill_sb	= kill_anon_super,
+| > +	.kill_sb	= devpts_kill_sb,
+| >  };
+| > 
+| >  /*
+| > @@ -179,16 +215,18 @@ static struct file_system_type devpts_fs_type = {
+| > 
+| >  int devpts_new_index(struct inode *ptmx_inode)
+| >  {
+| > +	struct super_block *sb = pts_sb_from_inode(ptmx_inode);
+| > +	struct pts_fs_info *fsi = DEVPTS_SB(sb);
+| >  	int index;
+| >  	int ida_ret;
+| > 
+| >  retry:
+| > -	if (!ida_pre_get(&allocated_ptys, GFP_KERNEL)) {
+| > +	if (!ida_pre_get(&fsi->allocated_ptys, GFP_KERNEL)) {
+| >  		return -ENOMEM;
+| >  	}
+| > 
+| >  	mutex_lock(&allocated_ptys_lock);
+| > -	ida_ret = ida_get_new(&allocated_ptys, &index);
+| > +	ida_ret = ida_get_new(&fsi->allocated_ptys, &index);
+| >  	if (ida_ret < 0) {
+| >  		mutex_unlock(&allocated_ptys_lock);
+| >  		if (ida_ret == -EAGAIN)
+| > @@ -197,7 +235,7 @@ retry:
+| >  	}
+| > 
+| >  	if (index >= pty_limit) {
+| > -		ida_remove(&allocated_ptys, index);
+| > +		ida_remove(&fsi->allocated_ptys, index);
+| >  		mutex_unlock(&allocated_ptys_lock);
+| >  		return -EIO;
+| >  	}
+| > @@ -207,8 +245,11 @@ retry:
+| > 
+| >  void devpts_kill_index(struct inode *ptmx_inode, int idx)
+| >  {
+| > +	struct super_block *sb = pts_sb_from_inode(ptmx_inode);
+| > +	struct pts_fs_info *fsi = DEVPTS_SB(sb);
+| > +
+| >  	mutex_lock(&allocated_ptys_lock);
+| > -	ida_remove(&allocated_ptys, idx);
+| > +	ida_remove(&fsi->allocated_ptys, idx);
+| >  	mutex_unlock(&allocated_ptys_lock);
+| >  }
+| > 
+| > -- 
+| > 1.5.2.5
