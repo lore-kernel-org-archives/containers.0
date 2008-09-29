@@ -1,39 +1,75 @@
-From: Patrick McHardy <kaber-dcUjhNyLwpNeoWH0uzbU5w@public.gmane.org>
-Subject: Re: [PATCH 17/33] netns ct: final init_net tweaks
-Date: Sun, 28 Sep 2008 12:31:55 +0200
-Message-ID: <48DF5D1B.30406__42133.8913417005$1222598191$gmane$org@trash.net>
-References: <48C01046.2070704@trash.net>
-	<1220842990-30500-17-git-send-email-adobriyan@gmail.com>
-	<48C623CA.9060803@trash.net>
-	<20080909073245.GA7307@x200.localdomain>
-	<48C62B1C.7070104@trash.net>
-	<20080913104515.GA7440@x200.localdomain>
-	<20080927000000.GB10489@x200.localdomain>
+From: yamamoto@valinux.co.jp (YAMAMOTO Takashi)
+Subject: Re: [PATCH][RFC] memory.min_usage again
+Date: Mon, 29 Sep 2008 09:43:32 +0900 (JST)
+Message-ID: <20080929004332.13B0083F2@siro.lan>
+References: <20080912184630.35773102.kamezawa.hiroyu@jp.fujitsu.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20080927000000.GB10489-2ev+ksY9ol182hYKe6nXyg@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Cc: netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, netfilter-devel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Content-Type: Text/Plain; charset=us-ascii
+Return-path: <owner-linux-mm@kvack.org>
+In-Reply-To: Your message of "Fri, 12 Sep 2008 18:46:30 +0900"
+	<20080912184630.35773102.kamezawa.hiroyu@jp.fujitsu.com>
+Sender: owner-linux-mm@kvack.org
+To: kamezawa.hiroyu@jp.fujitsu.com
+Cc: balbir@linux.vnet.ibm.com, linux-mm@kvack.org, containers@lists.osdl.org, xemul@openvz.org
 List-Id: containers.vger.kernel.org
 
-Alexey Dobriyan wrote:
-> Ping!
+hi,
+
+> On Wed, 10 Sep 2008 08:32:15 -0700
+> Balbir Singh <balbir@linux.vnet.ibm.com> wrote:
 > 
-> I've just sent patch which adds init_net checks in somewhat nicer way.
+> > YAMAMOTO Takashi wrote:
+> > > hi,
+> > > 
+> > >> hi,
+> > >>
+> > >> here's a patch to implement memory.min_usage,
+> > >> which controls the minimum memory usage for a cgroup.
+> > >>
+> > >> it works similarly to mlock;
+> > >> global memory reclamation doesn't reclaim memory from
+> > >> cgroups whose memory usage is below the value.
+> > >> setting it too high is a dangerous operation.
+> > >>
+> > 
+> > Looking through the code I am a little worried, what if every cgroup is below
+> > minimum value and the system is under memory pressure, do we OOM, while we could
+> > have easily reclaimed?
 
-Thanks.
+i'm not sure what you are worring about.  can you explain a little more?
+under the configuration, OOM is an expected behaviour.
 
-> Please, review and apply the rest.
+> > 
+> > I would prefer to see some heuristics around such a feature, mostly around the
+> > priority that do_try_to_free_pages() to determine how desperate we are for
+> > reclaiming memory.
+> > 
+> Taking "priority" of memory reclaim path into account is good.
+> 
+> ==
+> static unsigned long shrink_inactive_list(unsigned long max_scan,
+>                         struct zone *zone, struct scan_control *sc,
+>                         int priority, int file)
+> ==
+> How about ignore min_usage if "priority < DEF_PRIORITY - 2" ?
 
-I'll do that this week during the netfilter workshop.
+are you suggesting ignoring mlock etc as well in that case?
+
+YAMAMOTO Takashi
+
+> 
+> 
+> Thanks,
+> -Kame
+> 
+> --
+> To unsubscribe, send a message with 'unsubscribe linux-mm' in
+> the body to majordomo@kvack.org.  For more info on Linux MM,
+> see: http://www.linux-mm.org/ .
+> Don't email: <a href=mailto:"dont@kvack.org"> email@kvack.org </a>
+
+--
+To unsubscribe, send a message with 'unsubscribe linux-mm' in
+the body to majordomo@kvack.org.  For more info on Linux MM,
+see: http://www.linux-mm.org/ .
+Don't email: <a href=mailto:"dont@kvack.org"> email@kvack.org </a>
