@@ -1,76 +1,81 @@
-From: KAMEZAWA Hiroyuki <kamezawa.hiroyu@jp.fujitsu.com>
-Subject: Re: [PATCH][RFC] memory.min_usage again
-Date: Mon, 29 Sep 2008 11:55:13 +0900
-Message-ID: <20080929115513.5db72cfd.kamezawa.hiroyu@jp.fujitsu.com>
-References: <20080912184630.35773102.kamezawa.hiroyu@jp.fujitsu.com>
-	<20080929004332.13B0083F2@siro.lan>
+From: Hirokazu Takahashi <taka-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
+Subject: Re: dm-ioband + bio-cgroup benchmarks
+Date: Mon, 29 Sep 2008 19:40:36 +0900 (JST)
+Message-ID: <20080929.194036.105502812.taka__12642.8635478534$1222685012$gmane$org@valinux.co.jp>
+References: <20080924145331.GD547@redhat.com>
+	<20080926.220418.83079316.taka@valinux.co.jp>
+	<48DD0617.3050403@gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
+Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-Return-path: <owner-linux-mm@kvack.org>
-In-Reply-To: <20080929004332.13B0083F2@siro.lan>
-Sender: owner-linux-mm@kvack.org
-To: YAMAMOTO Takashi <yamamoto@valinux.co.jp>
-Cc: balbir@linux.vnet.ibm.com, linux-mm@kvack.org, containers@lists.osdl.org, xemul@openvz.org
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <48DD0617.3050403-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org
+Cc: xen-devel-GuqFBffKawuULHF6PoxzQEEOCMrvLtNR@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, jens.axboe-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, virtualization-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, dm-devel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, agk-9JcytcrH/bA+uJoB2kUjGw@public.gmane.org, xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org, fernando-gVGce1chcLdL9jVzuh4AOg@public.gmane.org, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Mon, 29 Sep 2008 09:43:32 +0900 (JST)
-yamamoto@valinux.co.jp (YAMAMOTO Takashi) wrote:
-> > > 
-> > > I would prefer to see some heuristics around such a feature, mostly around the
-> > > priority that do_try_to_free_pages() to determine how desperate we are for
-> > > reclaiming memory.
-> > > 
-> > Taking "priority" of memory reclaim path into account is good.
+Hi,
+
+> >>>>> It's possible the algorithm of dm-ioband can be placed in the block layer
+> >>>>> if it is really a big problem.
+> >>>>> But I doubt it can control every control block I/O as we wish since
+> >>>>> the interface the cgroup supports is quite poor.
+> >>>> Had a question regarding cgroup interface. I am assuming that in a system,
+> >>>> one will be using other controllers as well apart from IO-controller.
+> >>>> Other controllers will be using cgroup as a grouping mechanism.
+> >>>> Now coming up with additional grouping mechanism for only io-controller seems
+> >>>> little odd to me. It will make the job of higher level management software
+> >>>> harder.
+> >>>>
+> >>>> Looking at the dm-ioband grouping examples given in patches, I think cases
+> >>>> of grouping based  in pid, pgrp, uid and kvm can be handled by creating right
+> >>>> cgroup and making sure applications are launched/moved into right cgroup by
+> >>>> user space tools. 
+> >>> Grouping in pid, pgrp and uid is not the point, which I've been thinking
+> >>> can be replaced with cgroup once the implementation of bio-cgroup is done.
+> >>>
+> >>> I think problems of cgroup are that they can't support lots of storages
+> >>> and hotplug devices, it just handle them as if they were just one resource.
+> >>> I don't insist the interface of dm-ioband is the best. I just hope the
+> >>> cgroup infrastructure support this kind of resources.
+> >>>
+> >> Sorry, I did not understand fully. Can you please explain in detail what
+> >> kind of situation will not be covered by cgroup interface.
 > > 
-> > ==
-> > static unsigned long shrink_inactive_list(unsigned long max_scan,
-> >                         struct zone *zone, struct scan_control *sc,
-> >                         int priority, int file)
-> > ==
-> > How about ignore min_usage if "priority < DEF_PRIORITY - 2" ?
+> > From the concept of the cgroup, if you want control several disks
+> > independently, you should make each disk have its own cgroup subsystem,
+> > which only can be defined when compiling the kernel. This is impossible
+> > because every linux box has various number of disks.
 > 
-> are you suggesting ignoring mlock etc as well in that case?
+> mmh? not true. You can define a single cgroup subsystem that implements
+> the opportune interfaces to apply your type of control, and use many
+> structures allocated dynamically for each controlled object (one for
+> each block device, disk, partition, ... or using any kind of
+> grouping/splitting policy). Actually, this is how cgroup-io-throttle, as
+> well as any other cgroup subsystem, is implemented.
 > 
+> > So you think it may be possible to make each cgroup have lots of control
+> > files for each device as a workaround. But it isn't allowed to add/remove
+> > control files when some devices are hot-added or hot-removed.
+> 
+> Why not a single control file for all the devices?
 
-No. Just freeing pages, which are usually freed is good.
+This is possible but I wonder if this is really the way we should go.
+It looks like you tried implementing another ioctl-like interface
+on the cgroup control file interface. You can do anything you want
+with this interface though.
 
-==
-int mem_cgroup_canreclaim(struct page *page, struct mem_cgroup *mem1,
-			  int priority)
-{
-	struct page_cgroup *pc;
-	int result = 1;
+I guess there should be at least some rules to implement this kind of
+ioctl-like interface if they don't want to enhance the cgroup interface, 
 
-	if (mem1 != NULL)
-		return 1;
-	/* global lru is busy ? */
-        if (priority < DEF_PEIORITY - 1)
-		return 1;
-        ....
-}
-==
-Maybe min_usage can works as *soft* mlock by this.
-
-Or another idea.
-Making memory.min_usage as memory.reclaim_priority_level and allows
-
-  priority_level == 0 => can_reclaim() returns 1 always.
-  priority_level == 1 => can_reclaim returns 1 if priority < DEF_PRIORITY-1.
-  priority_level == 2 => can_reclaim returns 1 if priority < DEF_PRIORITY-2.
-
-(and only 0,1,2 are allowed.)
-
-setting min_usage will not be prefered by lru management people.
-This can work as "advice" to global lru.
-
-Hmm ?
-
-Thanks,
--Kame
-
---
-To unsubscribe, send a message with 'unsubscribe linux-mm' in
-the body to majordomo@kvack.org.  For more info on Linux MM,
-see: http://www.linux-mm.org/ .
-Don't email: <a href=mailto:"dont@kvack.org"> email@kvack.org </a>
+Thank you,
+Hirokazu Takahashi.
