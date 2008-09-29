@@ -1,15 +1,14 @@
 From: Hirokazu Takahashi <taka-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
 Subject: Re: dm-ioband + bio-cgroup benchmarks
-Date: Mon, 29 Sep 2008 19:40:36 +0900 (JST)
-Message-ID: <20080929.194036.105502812.taka__12642.8635478534$1222685012$gmane$org@valinux.co.jp>
-References: <20080924145331.GD547@redhat.com>
-	<20080926.220418.83079316.taka@valinux.co.jp>
-	<48DD0617.3050403@gmail.com>
+Date: Mon, 29 Sep 2008 21:07:29 +0900 (JST)
+Message-ID: <20080929.210729.117112710.taka__49399.5564560921$1222690198$gmane$org@valinux.co.jp>
+References: <20080924140355.GB547@redhat.com> <48DD09AD.2010200@gmail.com>
+	<48DD17A9.9080607@gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <48DD0617.3050403-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+In-Reply-To: <48DD17A9.9080607-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -23,59 +22,91 @@ To: righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org
 Cc: xen-devel-GuqFBffKawuULHF6PoxzQEEOCMrvLtNR@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, jens.axboe-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, virtualization-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, dm-devel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, agk-9JcytcrH/bA+uJoB2kUjGw@public.gmane.org, xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org, fernando-gVGce1chcLdL9jVzuh4AOg@public.gmane.org, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Hi,
+Hi, Andrea,
 
-> >>>>> It's possible the algorithm of dm-ioband can be placed in the block layer
-> >>>>> if it is really a big problem.
-> >>>>> But I doubt it can control every control block I/O as we wish since
-> >>>>> the interface the cgroup supports is quite poor.
-> >>>> Had a question regarding cgroup interface. I am assuming that in a system,
-> >>>> one will be using other controllers as well apart from IO-controller.
-> >>>> Other controllers will be using cgroup as a grouping mechanism.
-> >>>> Now coming up with additional grouping mechanism for only io-controller seems
-> >>>> little odd to me. It will make the job of higher level management software
-> >>>> harder.
-> >>>>
-> >>>> Looking at the dm-ioband grouping examples given in patches, I think cases
-> >>>> of grouping based  in pid, pgrp, uid and kvm can be handled by creating right
-> >>>> cgroup and making sure applications are launched/moved into right cgroup by
-> >>>> user space tools. 
-> >>> Grouping in pid, pgrp and uid is not the point, which I've been thinking
-> >>> can be replaced with cgroup once the implementation of bio-cgroup is done.
-> >>>
-> >>> I think problems of cgroup are that they can't support lots of storages
-> >>> and hotplug devices, it just handle them as if they were just one resource.
-> >>> I don't insist the interface of dm-ioband is the best. I just hope the
-> >>> cgroup infrastructure support this kind of resources.
-> >>>
-> >> Sorry, I did not understand fully. Can you please explain in detail what
-> >> kind of situation will not be covered by cgroup interface.
+> >> Ok, I will give more details of the thought process.
+> >>
+> >> I was thinking of maintaing an rb-tree per request queue and not an
+> >> rb-tree per cgroup. This tree can contain all the bios submitted to that
+> >> request queue through __make_request(). Every node in the tree will represent
+> >> one cgroup and will contain a list of bios issued from the tasks from that
+> >> cgroup.
+> >>
+> >> Every bio entering the request queue through __make_request() function
+> >> first will be queued in one of the nodes in this rb-tree, depending on which
+> >> cgroup that bio belongs to.
+> >>
+> >> Once the bios are buffered in rb-tree, we release these to underlying
+> >> elevator depending on the proportionate weight of the nodes/cgroups.
+> >>
+> >> Some more details which I was trying to implement yesterday.
+> >>
+> >> There will be one bio_cgroup object per cgroup. This object will contain
+> >> many bio_group objects. Each bio_group object will be created for each
+> >> request queue where a bio from bio_cgroup is queued. Essentially the idea
+> >> is that bios belonging to a cgroup can be on various request queues in the
+> >> system. So a single object can not serve the purpose as it can not be on
+> >> many rb-trees at the same time.  Hence create one sub object which will keep
+> >> track of bios belonging to one cgroup on a particular request queue.
+> >>
+> >> Each bio_group will contain a list of bios and this bio_group object will
+> >> be a node in the rb-tree of request queue. For example. Lets say there are
+> >> two request queues in the system q1 and q2 (lets say they belong to /dev/sda
+> >> and /dev/sdb). Let say a task t1 in /cgroup/io/test1 is issueing io both
+> >> for /dev/sda and /dev/sdb.
+> >>
+> >> bio_cgroup belonging to /cgroup/io/test1 will have two sub bio_group
+> >> objects, say bio_group1 and bio_group2. bio_group1 will be in q1's rb-tree
+> >> and bio_group2 will be in q2's rb-tree. bio_group1 will contain a list of
+> >> bios issued by task t1 for /dev/sda and bio_group2 will contain a list of
+> >> bios issued by task t1 for /dev/sdb. I thought the same can be extended
+> >> for stacked devices also.
+> >>   
+> >> I am still trying to implementing it and hopefully this is doable idea.
+> >> I think at the end of the day it will be something very close to dm-ioband
+> >> algorithm just that there will be no lvm driver and no notion of separate
+> >> dm-ioband device. 
 > > 
-> > From the concept of the cgroup, if you want control several disks
-> > independently, you should make each disk have its own cgroup subsystem,
-> > which only can be defined when compiling the kernel. This is impossible
-> > because every linux box has various number of disks.
+> > Vivek, thanks for the detailed explanation. Only a comment. I guess, if
+> > we don't change also the per-process optimizations/improvements made by
+> > some IO scheduler, I think we can have undesirable behaviours.
+> > 
+> > For example: CFQ uses the per-process iocontext to improve fairness
+> > between *all* the processes in a system. But it doesn't have the concept
+> > that there's a cgroup context on-top-of the processes.
+> > 
+> > So, some optimizations made to guarantee fairness among processes could
+> > conflict with algorithms implemented at the cgroup layer. And
+> > potentially lead to undesirable behaviours.
+> > 
+> > For example an issue I'm experiencing with my cgroup-io-throttle
+> > patchset is that a cgroup can consistently increase the IO rate (always
+> > respecting the max limits), simply increasing the number of IO worker
+> > tasks respect to another cgroup with a lower number of IO workers. This
+> > is probably due to the fact the CFQ tries to give the same amount of
+> > "IO time" to all the tasks, without considering that they're organized
+> > in cgroup.
 > 
-> mmh? not true. You can define a single cgroup subsystem that implements
-> the opportune interfaces to apply your type of control, and use many
-> structures allocated dynamically for each controlled object (one for
-> each block device, disk, partition, ... or using any kind of
-> grouping/splitting policy). Actually, this is how cgroup-io-throttle, as
-> well as any other cgroup subsystem, is implemented.
+> BTW this is why I proposed to use a single shared iocontext for all the
+> processes running in the same cgroup. Anyway, this is not the best
+> solution, because in this way all the IO requests coming from a cgroup
+> will be queued to the same cfq queue. If I'm not wrong in this way we
+> would implement noop (FIFO) between tasks belonging to the same cgroup
+> and CFQ between cgroups. But, at least for this particular case, we
+> would be able to provide fairness among cgroups.
 > 
-> > So you think it may be possible to make each cgroup have lots of control
-> > files for each device as a workaround. But it isn't allowed to add/remove
-> > control files when some devices are hot-added or hot-removed.
-> 
-> Why not a single control file for all the devices?
+> -Andrea
 
-This is possible but I wonder if this is really the way we should go.
-It looks like you tried implementing another ioctl-like interface
-on the cgroup control file interface. You can do anything you want
-with this interface though.
+I ever thought the same thing but this approach breaks the compatibility.
+I think we should make ionice only effective for the processes in the
+same cgroup.
 
-I guess there should be at least some rules to implement this kind of
-ioctl-like interface if they don't want to enhance the cgroup interface, 
+A system gives some amount of bandwidths to its cgroups, and
+the processes in one of the cgroups fairly share the given bandwidth.
+I think this is the straight approach. What do you think?
+
+I think all the CFQ-cgroup the NEC guys are working, OpenVZ team's CFQ
+scheduler and dm-ioband with bio-cgroup work like this.
 
 Thank you,
 Hirokazu Takahashi.
