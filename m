@@ -1,45 +1,44 @@
-From: "Serge E. Hallyn" <serue@us.ibm.com>
-Subject: Re: [PATCH 1/3] user namespaces: introduce
-	user_struct->user_namespace relationship
-Date: Mon, 6 Oct 2008 09:11:01 -0500
-Message-ID: <20081006141101.GB15419@us.ibm.com>
-References: <20081004013644.GA24104@us.ibm.com> <alpine.LRH.1.10.0810060846020.30516@tundra.namei.org>
+From: "Paul Menage" <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH -mm 2/6] introduce struct res_counter_ratelimit
+Date: Mon, 6 Oct 2008 10:14:42 -0700
+Message-ID: <6599ad830810061014q5535b5b6kfb53182b3fcc60c8__1240.87778754092$1223313811$gmane$org@mail.gmail.com>
+References: <1221649528-8519-3-git-send-email-righi.andrea@gmail.com>
+	<6599ad830810051103v1bd6e8d4xd2fcf622558fc7d9@mail.gmail.com>
+	<48E9C637.8030507@gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1754612AbYJFORY@vger.kernel.org>
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <48E9C637.8030507-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <alpine.LRH.1.10.0810060846020.30516@tundra.namei.org>
-Sender: linux-kernel-owner@vger.kernel.org
-To: James Morris <jmorris@namei.org>
-Cc: David Howells <dhowells@redhat.com>, Andrew Morton <akpm@osdl.org>, Linux Containers <containers@lists.osdl.org>, lkml <linux-kernel@vger.kernel.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org
+Cc: randy.dunlap-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org, Carl Henrik Lunde <chlunde-om2ZC0WAoZIXWF+eFR7m5Q@public.gmane.org>, Divyesh Shah <dpshah-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, eric.rannaud-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, fernando-gVGce1chcLdL9jVzuh4AOg@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, agk-9JcytcrH/bA+uJoB2kUjGw@public.gmane.org, subrata-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, axboe-tSWWG44O7X1aa/9Udqfwiw@public.gmane.org, Marco Innocenti <m.innocenti-qooieK91W7JeoWH0uzbU5w@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, matt-cT2on/YLNlBWk0Htik3J/w@public.gmane.org, roberto-5KDOxZqKugI@public.gmane.org, ngupta-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Quoting James Morris (jmorris@namei.org):
-> On Fri, 3 Oct 2008, Serge E. Hallyn wrote:
-> 
-> > Hi James,
-> > 
-> > here are 3 patches to fix up the user namespaces a bit in preparation
-> > for real userns work to begin.  Andrew had suggested that these be
-> > rebased on top of your -next tree because they will conflict with
-> > the credentials work.  But it looks like much of the credentials stuff
-> > isn't in your next branch.  If you'd prefer that I port these to
-> > creds-next, please let me know.  I'll have to do it eventually :)
-> 
-> creds-next is dead.
-> 
-> Code ready for the next merge window is in the 'next' branch, while the 
-> current creds code is in the 'creds-next-subsys' branch, which hasn't been 
-> picked up in linux-next yet because of LPC and sfr's vacation.
-> 
-> When do you expect these patches to be sent upstream?  Are they ready now 
-> as an incremental change for 2.6.27?
+On Mon, Oct 6, 2008 at 1:03 AM, Andrea Righi <righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org> wrote:
+>> Could you not either:
+>>
+>> - include these two extra fields in res_counter?
+>> - include res_counter as the first field in a res_counter_ratelimit?
+>
+> The second solution would save some space if the "ratelimit" part is not used.
 
-Oh I'm not trying to get them into 2.6.28, I'm just trying to get them
-more widely tested, hopefully aiming for 2.6.29.  They have been stable
-in all of my tests, and the last patch fixes a real (behavioral - not
-oops-inducing) bug in the current code, but I'm trying to figure out
-which path they should take.
+Having a "policy" field in res_counter seems like it might be reusable
+as something for other non-ratelimited res_counters. And even if it's
+not, the memory overhead of a couple of extra fields in a res_counter
+is trivial compared to the overhead of resource isolation anyway.
 
-thanks,
--serge
+So my first approach to this would be just extend res_counter, and
+then split them apart later if it turns out that they really do need
+mutually incompatible code/handlers.
+
+Paul
