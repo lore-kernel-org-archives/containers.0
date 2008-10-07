@@ -1,13 +1,16 @@
-From: Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH] netns: Delete virtual interfaces during namespace cleanup
-Date: Tue, 07 Oct 2008 12:16:28 +0200
-Message-ID: <48EB36FC.4000008@fr.ibm.com>
-References: <m18wt6v7eb.fsf@frodo.ebiederm.org>
+From: Andrea Righi <righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Subject: Re: [RFC] [PATCH -mm 0/2] memcg: per cgroup dirty_ratio
+Date: Tue, 07 Oct 2008 12:35:04 +0200
+Message-ID: <48EB3B58.9010106__32509.5132845037$1223375865$gmane$org@gmail.com>
+References: <20080912131816.e0cfac7a.akpm@linux-foundation.org>
+	<532480950809221641y3471267esff82a14be8056586@mail.gmail.com>
+	<20080924024437.DC21.KOSAKI.MOTOHIRO@jp.fujitsu.com>
+Reply-To: righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <m18wt6v7eb.fsf-B27657KtZYmhTnVgQlOflh2eb7JE58TQ@public.gmane.org>
+In-Reply-To: <20080924024437.DC21.KOSAKI.MOTOHIRO-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -17,67 +20,50 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Pavel Emelianov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
-Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, "Denis V. Lunev" <den-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>, David Miller <davem-fT/PcQaiUtIeIZ0/mPfg9Q@public.gmane.org>
+To: KOSAKI Motohiro <kosaki.motohiro-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+Cc: menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, Michael Rubin <mrubin-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, dradford-cT2on/YLNlBWk0Htik3J/w@public.gmane.org, m.innocenti-qooieK91W7JeoWH0uzbU5w@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, eric.rannaud-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, chlunde-om2ZC0WAoZIXWF+eFR7m5Q@public.gmane.org, dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, dpshah-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, agk-9JcytcrH/bA+uJoB2kUjGw@public.gmane.org, matt-cT2on/YLNlBWk0Htik3J/w@public.gmane.org, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, fernando-gVGce1chcLdL9jVzuh4AOg@public.gmane.org, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Eric W. Biederman wrote:
-> When physical devices are inside of network namespace and that
-> network namespace terminates we can not make them go away.  We
-> have to keep them and moving them to the initial network namespace
-> is the best we can do.
+KOSAKI Motohiro wrote:
+>> Currently the problem we are hitting is that we cannot specify pdflush
+>> to have background limits less than 1% of memory. I am currently
+>> finishing up a patch right now that adds a dirty_ratio_millis
+>> interface.  I hope to submit the patch to LKML by the end of the week.
+>>
+>> The idea is that we don't want to break backwards compatibility and we
+>> also don't want to have two conflicting knobs in the sysctl or
+>> /proc/sys/vm/ space. I thought adding a new knob for those who want to
+>> specify finer grained functionality was a compromise. So the patch has
+>> a vm_dirty_ratio and a vm_dirty_ratio_millis interface. The first to
+>> specify 0-100% and the second to specify .0 to .999%.
+>>
+>> So to represent 0.125% of RAM we set
+>> vm_dirty_ratio = 0
+>> vm_dirty_ratio_millis = 125
+>>
+>> The same for the background_ratio.
 > 
-> For virtual devices left in a network namespace that is exiting
-> we have no need to preserve them and we now have the infrastructure
-> that allows us to delete them.  So delete virtual devices when we
-> exit a network namespace.  Keeping the necessary user space clean up
-> after a network namespace exits much more tractable.
+> Why vm_dirty_ratio = 0.125 is wrong?
+> it is hardly for parser maker, but it have nicer user experience.
 > 
-> This patch removes much of the need for user space clean up code to
-> run after a network namespace exits.
-
-I agree that will make the life easier for user space developer :)
-
-I have a few questions about this new behaviour.
-
-After discussing with Benjamin, this patch means an user can no longer 
-manage a pool of virtual devices because they will be automatically 
-destroyed when the namespace exits. I don't think it is a big concern, 
-but just in case I am asking :)
-
-Another point, at present, the virtual devices go back to the initial 
-network namespace when the namespace dies, and this behaviour is used to 
-track the namespace life cycle. With this patch we have no way to know 
-when the network namespace has exited. So we can have the last process 
-exiting the network namespace, but the network namespace can stay alive 
-(eg. some sockets still have buffer to send) ?
-
-AFAIR, Pavel told us about a patch extending the "wait" semantic and 
-pass namespace options to wait for. Is that right Pavel ? Shouldn't we 
-apply this path before deleting the virtual network devices ?
-
-Thanks.
-   -- Daniel
-
-> Signed-off-by: Eric W. Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-> ---
->  net/core/dev.c |    6 ++++++
->  1 files changed, 6 insertions(+), 0 deletions(-)
+>> I would also prefer using a bytes interface but I am not sure how to
+>> offer that without  either removing the legacy interface of the ratios
+>> or by offering a concurrent interface that might be confusing such as
+>> when users are looking at the old one and not aware of a new one.
+>>
+>> Any feedback?
 > 
-> diff --git a/net/core/dev.c b/net/core/dev.c
-> index 7091040..f3476d4 100644
-> --- a/net/core/dev.c
-> +++ b/net/core/dev.c
-> @@ -4844,6 +4844,12 @@ static void __net_exit default_device_exit(struct net *net)
->  		if (dev->features & NETIF_F_NETNS_LOCAL)
->  			continue;
-> 
-> +		/* Delete virtual devices */
-> +		if (dev->rtnl_link_ops && dev->rtnl_link_ops->dellink) {
-> +			dev->rtnl_link_ops->dellink(dev);
-> +			continue;
-> +		}
-> +
->  		/* Push remaing network devices to init_net */
->  		snprintf(fb_name, IFNAMSIZ, "dev%d", dev->ifindex);
->  		err = dev_change_net_namespace(dev, &init_net, fb_name);
+> Sure.
+> We don't have any motivation of its interface change.
+
+The more I think about this and the more I would prefer to have an
+interface in KB (or pages) that automatically adjusts the old int percentage
+in dirty_ratio (the same for dirty_background_ratio).
+
+The parser issue for writing decimal values doesn't seem to be a big
+problem, but if the user expects to read an int from vm_dirty_ratio and
+instead receives something like 0.125, well... this could break
+something. So, IMHO also in this way we're changing the kernel-userspace
+interface.
+
+-Andrea
