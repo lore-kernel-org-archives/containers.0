@@ -1,59 +1,32 @@
-From: James Morris <jmorris-gx6/JNMH7DfYtjvyW6yDsg@public.gmane.org>
-Subject: Re: [PATCH 1/3] user namespaces: introduce user_struct->user_namespace
-	relationship
-Date: Wed, 8 Oct 2008 08:08:34 +1100 (EST)
-Message-ID: <alpine.LRH.1.10.0810080807340.10677@tundra.namei.org>
-References: <20081004013644.GA24104@us.ibm.com>
-	<alpine.LRH.1.10.0810060846020.30516@tundra.namei.org>
-	<20081006141101.GB15419@us.ibm.com>
-	<alpine.LRH.1.10.0810070847480.4113@tundra.namei.org>
-	<20081007170539.GA525@us.ibm.com>
+From: Greg KH <gregkh@suse.de>
+Subject: Re: [PATCH 1/8] sysfs: Implement sysfs tagged directory support.
+Date: Tue, 7 Oct 2008 14:09:02 -0700
+Message-ID: <20081007210902.GB7996@suse.de>
+References: <m1hc9e27ya.fsf_-_@frodo.ebiederm.org> <48B57058.9000101@bull.net> <dac45060809020654g62afb3c9yd104682b93b43bee@mail.gmail.com> <48BD47A8.1080909@bull.net> <20080902170148.GA9305@suse.de> <31436f4a0809032233r2c46de8od8a94460ce3b5ed2@mail.gmail.com> <48BF83E1.5040000@bull.net> <dac45060810070939v80918a0m3963d7fc6fcbb975@mail.gmail.com> <20081007164833.GA16056@suse.de> <m1abdgywnb.fsf@frodo.ebiederm.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20081007170539.GA525-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Cc: David Howells <dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, lkml <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+Content-Type: text/plain; charset=us-ascii
+Return-path: <netdev-owner@vger.kernel.org>
+Content-Disposition: inline
+In-Reply-To: <m1abdgywnb.fsf@frodo.ebiederm.org>
+Sender: netdev-owner@vger.kernel.org
+To: "Eric W. Biederman" <ebiederm@xmission.com>
+Cc: Mark Ryden <markryde@gmail.com>, Benjamin Thery <benjamin.thery@bull.net>, David Shwatrz <dshwatrz@gmail.com>, Greg KH <greg@kroah.com>, Andrew Morton <akpm@linux-foundation.org>, Tejun Heo <htejun@gmail.com>, Daniel Lezcano <dlezcano@fr.ibm.com>, linux-kernel@vger.kernel.org, Al Viro <viro@ftp.linux.org.uk>, Linux Containers <containers@lists.osdl.org>, netdev@vger.kernel.org
 List-Id: containers.vger.kernel.org
 
-On Tue, 7 Oct 2008, Serge E. Hallyn wrote:
-
-> > the fixups could be carried in linux-next, or generate them against 
-> > creds-next-subsys for inclusion after that.
+On Tue, Oct 07, 2008 at 01:31:52PM -0700, Eric W. Biederman wrote:
+> Greg KH <gregkh@suse.de> writes:
 > 
-> creds-next-subsys is not yet feeding into linux-next, right?
-
-Correct.
-
-> So I should wait until they hit linux-next?
-
-Unless akpm wants to pick up the branch.
-
+> > On Tue, Oct 07, 2008 at 06:39:04PM +0200, Mark Ryden wrote:
+> >> Hello,
+> >>   So I wonder: the sysfs tagged directory support patch is in GerKH
+> >> tree for more than a month.
+> >
+> > I dropped it from my tree 2 days ago, see the thread on lkml for why.
 > 
-> (It makes more sense for me to port userns on top of creds than for
-> David to port creds on top of my patches anyway.  I'm actually a bit
-> afraid that my refcounting will be complicated by struct creds, but
-> we'll see)
-> 
-> thanks,
-> -serge
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-kernel" in
-> the body of a message to majordomo-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> Please read the FAQ at  http://www.tux.org/lkml/
-> 
+> Greg why did you drop it? 
 
--- 
-James Morris
-<jmorris-gx6/JNMH7DfYtjvyW6yDsg@public.gmane.org>
+Because Al said it was full of problems and for us not to accept it.
+
+thanks,
+
+greg k-h
