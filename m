@@ -1,16 +1,14 @@
-From: Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: Re: [RFC] [PATCH -mm 0/2] memcg: per cgroup dirty_ratio
-Date: Tue, 07 Oct 2008 16:34:22 +0530
-Message-ID: <48EB4236.1060100__42009.3805682429$1223377682$gmane$org@linux.vnet.ibm.com>
-References: <1221232192-13553-1-git-send-email-righi.andrea@gmail.com>
-	<20080912131816.e0cfac7a.akpm@linux-foundation.org>
-	<532480950809221641y3471267esff82a14be8056586@mail.gmail.com>
-Reply-To: balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
+From: Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH] netns: Delete virtual interfaces during namespace cleanup
+Date: Tue, 07 Oct 2008 13:22:33 +0200
+Message-ID: <48EB4679.1040602@fr.ibm.com>
+References: <m18wt6v7eb.fsf@frodo.ebiederm.org> <48EB36FC.4000008@fr.ibm.com>
+	<m1ej2s7kmj.fsf@frodo.ebiederm.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <532480950809221641y3471267esff82a14be8056586-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
+In-Reply-To: <m1ej2s7kmj.fsf-B27657KtZYmhTnVgQlOflh2eb7JE58TQ@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -20,51 +18,64 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Michael Rubin <mrubin-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
-Cc: dradford-cT2on/YLNlBWk0Htik3J/w@public.gmane.org, m.innocenti-qooieK91W7JeoWH0uzbU5w@public.gmane.org, fernando-gVGce1chcLdL9jVzuh4AOg@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, eric.rannaud-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, chlunde-om2ZC0WAoZIXWF+eFR7m5Q@public.gmane.org, dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, dpshah-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, agk-9JcytcrH/bA+uJoB2kUjGw@public.gmane.org, matt-cT2on/YLNlBWk0Htik3J/w@public.gmane.org, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, Andrea Righi <righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, "Denis V. Lunev" <den-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>, David Miller <davem-fT/PcQaiUtIeIZ0/mPfg9Q@public.gmane.org>, Pavel Emelianov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Michael Rubin wrote:
-> On Fri, Sep 12, 2008 at 1:18 PM, Andrew Morton
-> <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org> wrote:
->> One thing to think about please: Michael Rubin is hitting problems with
->> the existing /proc/sys/vm/dirty-ratio.  Its present granularity of 1%
->> is just too coarse for really large machines, and as
->> memory-size/disk-speed ratios continue to increase, this will just get
->> worse.
+Eric W. Biederman wrote:
+> Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org> writes:
 > 
-> Re-sending since I top-posted before. Never again. Also adding more
-> thoughts on a byte based interface.
+>> I agree that will make the life easier for user space developer :)
+>>
+>> I have a few questions about this new behaviour.
+>>
+>> After discussing with Benjamin, this patch means an user can no longer manage a
+>> pool of virtual devices because they will be automatically destroyed when the
+>> namespace exits. I don't think it is a big concern, but just in case I am asking
+>> :)
+>>
+>> Another point, at present, the virtual devices go back to the initial network
+>> namespace when the namespace dies, and this behaviour is used to track the
+>> namespace life cycle. With this patch we have no way to know when the network
+>> namespace has exited. So we can have the last process exiting the network
+>> namespace, but the network namespace can stay alive (eg. some sockets still have
+>> buffer to send) ?
 > 
-> Currently the problem we are hitting is that we cannot specify pdflush
-> to have background limits less than 1% of memory. I am currently
-> finishing up a patch right now that adds a dirty_ratio_millis
-> interface.  I hope to submit the patch to LKML by the end of the week.
-> 
-> The idea is that we don't want to break backwards compatibility and we
-> also don't want to have two conflicting knobs in the sysctl or
-> /proc/sys/vm/ space. I thought adding a new knob for those who want to
-> specify finer grained functionality was a compromise. So the patch has
-> a vm_dirty_ratio and a vm_dirty_ratio_millis interface. The first to
-> specify 0-100% and the second to specify .0 to .999%.
-> 
-> So to represent 0.125% of RAM we set
-> vm_dirty_ratio = 0
-> vm_dirty_ratio_millis = 125
-> 
-> The same for the background_ratio.
-> 
-> I would also prefer using a bytes interface but I am not sure how to
-> offer that without  either removing the legacy interface of the ratios
-> or by offering a concurrent interface that might be confusing such as
-> when users are looking at the old one and not aware of a new one.
-> 
+> Depending on the network interfaces going back to the initial network namespace
+> is problematic in the long term because is breaks recursive containers.  I can't
+> see any behavior that does that as anything other than a bug.  
 
-Just provide a vm_dirty_ration_in_bytes interface and keep it in sync with
-vm_dirty_ratio (they are just two representations of the same internal value)
-and for higher resolution propose that users use the bytes interface.
+Perhaps, I am misunderstanding your sentence :) But just in case, let me 
+clarify my idea.
 
+If you have a TCP connection with a send queue not empty (the kernel has 
+buffered the data the application has sent), when your process exits 
+because the last socket write was done in userspace, the TCP socket will 
+be orphan but still there taking a ref count on your network namespace. 
+Hence the process and the network namespace life cycles is not 
+correlated. This is a correct behavior, it is not a bug.
 
+> Especially
+> as I already have production uses for recursive containers.
+> 
+>> AFAIR, Pavel told us about a patch extending the "wait" semantic and pass
+>> namespace options to wait for. Is that right Pavel ? Shouldn't we apply this
+>> path before deleting the virtual network devices ?
+> 
+> Tell you what.  I will post in a bit my patchset that makes /proc/net
+> it's own filesystem, that magically mounts on /proc/self/net.  It is a
+> long stupid story why I haven't posted it publicly.  At which point we have
+> complete visibility into when a network namespace exits and if we need to
+> be able to wait for it we can just implement a poll method on the root
+> directory.
 
--- 
-	Balbir
+Can a process outside of the network namespace look at this directory 
+even if there are no more processes running inside the namespace ?
+
+> That is simple and will work quite nicely in the long term, and gives
+> us a lot more visibility than a simple this namespace has exited bit.
+
+This is nice :)
+
+Shouldn't you send /proc/net filesystem patch before sending the virtual 
+network devices autodestroy patch ?
