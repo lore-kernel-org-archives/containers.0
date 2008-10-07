@@ -1,14 +1,13 @@
-From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
+From: Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 Subject: Re: [PATCH] netns: Delete virtual interfaces during namespace cleanup
-Date: Tue, 07 Oct 2008 03:41:24 -0700
-Message-ID: <m1ej2s7kmj.fsf@frodo.ebiederm.org>
+Date: Tue, 07 Oct 2008 14:52:34 +0400
+Message-ID: <48EB3F72.5090201@openvz.org>
 References: <m18wt6v7eb.fsf@frodo.ebiederm.org> <48EB36FC.4000008@fr.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <48EB36FC.4000008-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org> (Daniel Lezcano's message of "Tue,
-	07 Oct 2008 12:16:28 +0200")
+In-Reply-To: <48EB36FC.4000008-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,44 +18,88 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
-Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, "Denis V. Lunev" <den-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>, David Miller <davem-fT/PcQaiUtIeIZ0/mPfg9Q@public.gmane.org>, Pavel Emelianov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, "Denis V. Lunev" <den-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, David Miller <davem-fT/PcQaiUtIeIZ0/mPfg9Q@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org> writes:
-
+Daniel Lezcano wrote:
+> Eric W. Biederman wrote:
+>> When physical devices are inside of network namespace and that
+>> network namespace terminates we can not make them go away.  We
+>> have to keep them and moving them to the initial network namespace
+>> is the best we can do.
+>>
+>> For virtual devices left in a network namespace that is exiting
+>> we have no need to preserve them and we now have the infrastructure
+>> that allows us to delete them.  So delete virtual devices when we
+>> exit a network namespace.  Keeping the necessary user space clean up
+>> after a network namespace exits much more tractable.
+>>
+>> This patch removes much of the need for user space clean up code to
+>> run after a network namespace exits.
+> 
 > I agree that will make the life easier for user space developer :)
->
+> 
 > I have a few questions about this new behaviour.
->
-> After discussing with Benjamin, this patch means an user can no longer manage a
-> pool of virtual devices because they will be automatically destroyed when the
-> namespace exits. I don't think it is a big concern, but just in case I am asking
-> :)
->
-> Another point, at present, the virtual devices go back to the initial network
-> namespace when the namespace dies, and this behaviour is used to track the
-> namespace life cycle. With this patch we have no way to know when the network
-> namespace has exited. So we can have the last process exiting the network
-> namespace, but the network namespace can stay alive (eg. some sockets still have
-> buffer to send) ?
+> 
+> After discussing with Benjamin, this patch means an user can no longer 
+> manage a pool of virtual devices because they will be automatically 
+> destroyed when the namespace exits. I don't think it is a big concern, 
+> but just in case I am asking :)
+> 
+> Another point, at present, the virtual devices go back to the initial 
+> network namespace when the namespace dies, and this behaviour is used to 
+> track the namespace life cycle. With this patch we have no way to know 
+> when the network namespace has exited. So we can have the last process 
+> exiting the network namespace, but the network namespace can stay alive 
+> (eg. some sockets still have buffer to send) ?
+> 
+> AFAIR, Pavel told us about a patch extending the "wait" semantic and 
+> pass namespace options to wait for. Is that right Pavel ? Shouldn't we 
+> apply this path before deleting the virtual network devices ?
 
-Depending on the network interfaces going back to the initial network namespace
-is problematic in the long term because is breaks recursive containers.  I can't
-see any behavior that does that as anything other than a bug.  Especially
-as I already have production uses for recursive containers.
+I remember that I promised to prepare the wait-extending patch. But I
+haven't manage to find time for this, sorry :( In a month or two I will
+finish one time-hungry task and hopefully be able to do it.
 
-> AFAIR, Pavel told us about a patch extending the "wait" semantic and pass
-> namespace options to wait for. Is that right Pavel ? Shouldn't we apply this
-> path before deleting the virtual network devices ?
+As far as this particular patch is concerned.
 
-Tell you what.  I will post in a bit my patchset that makes /proc/net
-it's own filesystem, that magically mounts on /proc/self/net.  It is a
-long stupid story why I haven't posted it publicly.  At which point we have
-complete visibility into when a network namespace exits and if we need to
-be able to wait for it we can just implement a poll method on the root
-directory.
+All the virtual devices we have now in namespaces (vlan and tunnels)
+kill themselves *before* this code is called. But even if we try to
+move this destruction from modules to here, we'll be in a tricky
+situation, when the e.g. ipip module has already kfree-d the net_ipip
+structure, while none of ipip devices are released yet.
 
-That is simple and will work quite nicely in the long term, and gives
-us a lot more visibility than a simple this namespace has exited bit.
+If we try to look in the future - if we ever have a virtual device
+driver, that will be able to create its devices in namespace, we'll
+have to destroy all these devices *before* (or inside) this driver's
+net->exit callback is called, but this patch dies the ->dellink call
+at the very end, i.e. *after* any potential ->exit callback.
 
-Eric
+Eric - did you see any device, that was ->dellink-ed by this patch?
+
+> Thanks.
+>    -- Daniel
+> 
+>> Signed-off-by: Eric W. Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+>> ---
+>>  net/core/dev.c |    6 ++++++
+>>  1 files changed, 6 insertions(+), 0 deletions(-)
+>>
+>> diff --git a/net/core/dev.c b/net/core/dev.c
+>> index 7091040..f3476d4 100644
+>> --- a/net/core/dev.c
+>> +++ b/net/core/dev.c
+>> @@ -4844,6 +4844,12 @@ static void __net_exit default_device_exit(struct net *net)
+>>  		if (dev->features & NETIF_F_NETNS_LOCAL)
+>>  			continue;
+>>
+>> +		/* Delete virtual devices */
+>> +		if (dev->rtnl_link_ops && dev->rtnl_link_ops->dellink) {
+>> +			dev->rtnl_link_ops->dellink(dev);
+>> +			continue;
+>> +		}
+>> +
+>>  		/* Push remaing network devices to init_net */
+>>  		snprintf(fb_name, IFNAMSIZ, "dev%d", dev->ifindex);
+>>  		err = dev_change_net_namespace(dev, &init_net, fb_name);
+> 
