@@ -1,13 +1,16 @@
-From: Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
-Subject: Re: [PATCH] netns: Delete virtual interfaces during namespace cleanup
-Date: Tue, 07 Oct 2008 14:52:34 +0400
-Message-ID: <48EB3F72.5090201@openvz.org>
-References: <m18wt6v7eb.fsf@frodo.ebiederm.org> <48EB36FC.4000008@fr.ibm.com>
+From: Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Subject: Re: [RFC] [PATCH -mm 0/2] memcg: per cgroup dirty_ratio
+Date: Tue, 07 Oct 2008 16:34:22 +0530
+Message-ID: <48EB4236.1060100__42009.3805682429$1223377682$gmane$org@linux.vnet.ibm.com>
+References: <1221232192-13553-1-git-send-email-righi.andrea@gmail.com>
+	<20080912131816.e0cfac7a.akpm@linux-foundation.org>
+	<532480950809221641y3471267esff82a14be8056586@mail.gmail.com>
+Reply-To: balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <48EB36FC.4000008-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <532480950809221641y3471267esff82a14be8056586-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -17,89 +20,51 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
-Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, "Denis V. Lunev" <den-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, David Miller <davem-fT/PcQaiUtIeIZ0/mPfg9Q@public.gmane.org>
+To: Michael Rubin <mrubin-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+Cc: dradford-cT2on/YLNlBWk0Htik3J/w@public.gmane.org, m.innocenti-qooieK91W7JeoWH0uzbU5w@public.gmane.org, fernando-gVGce1chcLdL9jVzuh4AOg@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, eric.rannaud-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, chlunde-om2ZC0WAoZIXWF+eFR7m5Q@public.gmane.org, dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, dpshah-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, agk-9JcytcrH/bA+uJoB2kUjGw@public.gmane.org, matt-cT2on/YLNlBWk0Htik3J/w@public.gmane.org, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, Andrea Righi <righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Daniel Lezcano wrote:
-> Eric W. Biederman wrote:
->> When physical devices are inside of network namespace and that
->> network namespace terminates we can not make them go away.  We
->> have to keep them and moving them to the initial network namespace
->> is the best we can do.
->>
->> For virtual devices left in a network namespace that is exiting
->> we have no need to preserve them and we now have the infrastructure
->> that allows us to delete them.  So delete virtual devices when we
->> exit a network namespace.  Keeping the necessary user space clean up
->> after a network namespace exits much more tractable.
->>
->> This patch removes much of the need for user space clean up code to
->> run after a network namespace exits.
+Michael Rubin wrote:
+> On Fri, Sep 12, 2008 at 1:18 PM, Andrew Morton
+> <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org> wrote:
+>> One thing to think about please: Michael Rubin is hitting problems with
+>> the existing /proc/sys/vm/dirty-ratio.  Its present granularity of 1%
+>> is just too coarse for really large machines, and as
+>> memory-size/disk-speed ratios continue to increase, this will just get
+>> worse.
 > 
-> I agree that will make the life easier for user space developer :)
+> Re-sending since I top-posted before. Never again. Also adding more
+> thoughts on a byte based interface.
 > 
-> I have a few questions about this new behaviour.
+> Currently the problem we are hitting is that we cannot specify pdflush
+> to have background limits less than 1% of memory. I am currently
+> finishing up a patch right now that adds a dirty_ratio_millis
+> interface.  I hope to submit the patch to LKML by the end of the week.
 > 
-> After discussing with Benjamin, this patch means an user can no longer 
-> manage a pool of virtual devices because they will be automatically 
-> destroyed when the namespace exits. I don't think it is a big concern, 
-> but just in case I am asking :)
+> The idea is that we don't want to break backwards compatibility and we
+> also don't want to have two conflicting knobs in the sysctl or
+> /proc/sys/vm/ space. I thought adding a new knob for those who want to
+> specify finer grained functionality was a compromise. So the patch has
+> a vm_dirty_ratio and a vm_dirty_ratio_millis interface. The first to
+> specify 0-100% and the second to specify .0 to .999%.
 > 
-> Another point, at present, the virtual devices go back to the initial 
-> network namespace when the namespace dies, and this behaviour is used to 
-> track the namespace life cycle. With this patch we have no way to know 
-> when the network namespace has exited. So we can have the last process 
-> exiting the network namespace, but the network namespace can stay alive 
-> (eg. some sockets still have buffer to send) ?
+> So to represent 0.125% of RAM we set
+> vm_dirty_ratio = 0
+> vm_dirty_ratio_millis = 125
 > 
-> AFAIR, Pavel told us about a patch extending the "wait" semantic and 
-> pass namespace options to wait for. Is that right Pavel ? Shouldn't we 
-> apply this path before deleting the virtual network devices ?
+> The same for the background_ratio.
+> 
+> I would also prefer using a bytes interface but I am not sure how to
+> offer that without  either removing the legacy interface of the ratios
+> or by offering a concurrent interface that might be confusing such as
+> when users are looking at the old one and not aware of a new one.
+> 
 
-I remember that I promised to prepare the wait-extending patch. But I
-haven't manage to find time for this, sorry :( In a month or two I will
-finish one time-hungry task and hopefully be able to do it.
+Just provide a vm_dirty_ration_in_bytes interface and keep it in sync with
+vm_dirty_ratio (they are just two representations of the same internal value)
+and for higher resolution propose that users use the bytes interface.
 
-As far as this particular patch is concerned.
 
-All the virtual devices we have now in namespaces (vlan and tunnels)
-kill themselves *before* this code is called. But even if we try to
-move this destruction from modules to here, we'll be in a tricky
-situation, when the e.g. ipip module has already kfree-d the net_ipip
-structure, while none of ipip devices are released yet.
 
-If we try to look in the future - if we ever have a virtual device
-driver, that will be able to create its devices in namespace, we'll
-have to destroy all these devices *before* (or inside) this driver's
-net->exit callback is called, but this patch dies the ->dellink call
-at the very end, i.e. *after* any potential ->exit callback.
-
-Eric - did you see any device, that was ->dellink-ed by this patch?
-
-> Thanks.
->    -- Daniel
-> 
->> Signed-off-by: Eric W. Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
->> ---
->>  net/core/dev.c |    6 ++++++
->>  1 files changed, 6 insertions(+), 0 deletions(-)
->>
->> diff --git a/net/core/dev.c b/net/core/dev.c
->> index 7091040..f3476d4 100644
->> --- a/net/core/dev.c
->> +++ b/net/core/dev.c
->> @@ -4844,6 +4844,12 @@ static void __net_exit default_device_exit(struct net *net)
->>  		if (dev->features & NETIF_F_NETNS_LOCAL)
->>  			continue;
->>
->> +		/* Delete virtual devices */
->> +		if (dev->rtnl_link_ops && dev->rtnl_link_ops->dellink) {
->> +			dev->rtnl_link_ops->dellink(dev);
->> +			continue;
->> +		}
->> +
->>  		/* Push remaing network devices to init_net */
->>  		snprintf(fb_name, IFNAMSIZ, "dev%d", dev->ifindex);
->>  		err = dev_change_net_namespace(dev, &init_net, fb_name);
-> 
+-- 
+	Balbir
