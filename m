@@ -1,8 +1,8 @@
 From: Andrea Righi <righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: [PATCH -mm 2/6] introduce ratelimiting attributes and functionality
-	to res_counter
-Date: Tue,  7 Oct 2008 12:03:34 +0200
-Message-ID: <1223373818-13687-3-git-send-email-righi.andrea__39040.9065563746$1223374096$gmane$org@gmail.com>
+Subject: [PATCH -mm 5/6] i/o controller instrumentation: accounting and
+	throttling
+Date: Tue,  7 Oct 2008 12:03:37 +0200
+Message-ID: <1223373818-13687-6-git-send-email-righi.andrea@gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -22,249 +22,207 @@ To: Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, Pau
 Cc: randy.dunlap-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org, Carl Henrik Lunde <chlunde-om2ZC0WAoZIXWF+eFR7m5Q@public.gmane.org>, Divyesh Shah <dpshah-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, eric.rannaud-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, fernando-gVGce1chcLdL9jVzuh4AOg@public.gmane.org, Andrea Righi <righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, agk-9JcytcrH/bA+uJoB2kUjGw@public.gmane.org, subrata-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, axboe-tSWWG44O7X1aa/9Udqfwiw@public.gmane.org, Marco Innocenti <m.innocenti-qooieK91W7JeoWH0uzbU5w@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, matt-cT2on/YLNlBWk0Htik3J/w@public.gmane.org, roberto-5KDOxZqKugI@public.gmane.org, ngupta-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Introduce attributes and functions in res_counter to implement throttling-based
-cgroup subsystems.
-
-The following attributes have been added to struct res_counter:
- * @policy:     the limiting policy / algorithm
- * @capacity:   the maximum capacity of the resource
- * @timestamp:  timestamp of the last accounted resource request
-
-Currently the available policies are: token-bucket and leaky-bucket and the
-attribute @capacity is only used by token-bucket policy (to represent the
-bucket size).
-
-The following function has been implemented to return the amount of time a
-cgroup should sleep to remain within the defined resource limits.
-
-  unsigned long long
-  res_counter_ratelimit_sleep(struct res_counter *res, ssize_t val);
-
-[ Note: only the interfaces needed by the cgroup IO controller are implemented
-right now ]
+Apply the cgroup-io-throttle controller to the opportune kernel functions.
+Both accounting and throttling functionalities are performed by
+cgroup_io_throttle().
 
 Signed-off-by: Andrea Righi <righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 ---
- include/linux/res_counter.h |   69 ++++++++++++++++++++++++++++++----------
- kernel/res_counter.c        |   73 ++++++++++++++++++++++++++++++++++++++++++-
- 2 files changed, 124 insertions(+), 18 deletions(-)
+ block/blk-core.c      |    4 ++++
+ fs/aio.c              |   12 ++++++++++++
+ fs/direct-io.c        |    3 +++
+ include/linux/sched.h |    7 +++++++
+ kernel/fork.c         |    8 +++++++-
+ mm/page-writeback.c   |    4 ++++
+ mm/readahead.c        |    3 +++
+ 7 files changed, 40 insertions(+), 1 deletions(-)
 
-diff --git a/include/linux/res_counter.h b/include/linux/res_counter.h
-index 0ab55c4..80b9ab8 100644
---- a/include/linux/res_counter.h
-+++ b/include/linux/res_counter.h
-@@ -14,30 +14,36 @@
-  */
+diff --git a/block/blk-core.c b/block/blk-core.c
+index 6cb3c6d..cc8a493 100644
+--- a/block/blk-core.c
++++ b/block/blk-core.c
+@@ -26,6 +26,7 @@
+ #include <linux/swap.h>
+ #include <linux/writeback.h>
+ #include <linux/task_io_accounting_ops.h>
++#include <linux/blk-io-throttle.h>
+ #include <linux/blktrace_api.h>
+ #include <linux/fault-inject.h>
  
- #include <linux/cgroup.h>
-+#include <linux/jiffies.h>
+@@ -1504,9 +1505,12 @@ void submit_bio(int rw, struct bio *bio)
+ 	if (bio_has_data(bio)) {
+ 		if (rw & WRITE) {
+ 			count_vm_events(PGPGOUT, count);
++			cgroup_io_throttle(bio_iovec_idx(bio, 0)->bv_page,
++					bio->bi_bdev, bio->bi_size, 0);
+ 		} else {
+ 			task_io_account_read(bio->bi_size);
+ 			count_vm_events(PGPGIN, count);
++			cgroup_io_throttle(NULL, bio->bi_bdev, bio->bi_size, 1);
+ 		}
  
--/*
-- * The core object. the cgroup that wishes to account for some
-- * resource may include this counter into its structures and use
-- * the helpers described beyond
-- */
-+/* The various policies that can be used for ratelimiting resources */
-+#define	RATELIMIT_LEAKY_BUCKET	0
-+#define	RATELIMIT_TOKEN_BUCKET	1
- 
-+/**
-+ * struct res_counter - the core object to account cgroup resources
-+ *
-+ * @usage:	the current resource consumption level
-+ * @max_usage:	the maximal value of the usage from the counter creation
-+ * @limit:	the limit that usage cannot be exceeded
-+ * @failcnt:	the number of unsuccessful attempts to consume the resource
-+ * @policy:	the limiting policy / algorithm
-+ * @capacity:	the maximum capacity of the resource
-+ * @timestamp:	timestamp of the last accounted resource request
-+ * @lock:	the lock to protect all of the above.
-+ *		The routines below consider this to be IRQ-safe
-+ *
-+ * The cgroup that wishes to account for some resource may include this counter
-+ * into its structures and use the helpers described beyond.
-+ */
- struct res_counter {
--	/*
--	 * the current resource consumption level
--	 */
- 	unsigned long long usage;
--	/*
--	 * the maximal value of the usage from the counter creation
--	 */
- 	unsigned long long max_usage;
--	/*
--	 * the limit that usage cannot exceed
--	 */
- 	unsigned long long limit;
--	/*
--	 * the number of unsuccessful attempts to consume the resource
--	 */
- 	unsigned long long failcnt;
-+	unsigned long long policy;
-+	unsigned long long capacity;
-+	unsigned long long timestamp;
- 	/*
- 	 * the lock to protect all of the above.
- 	 * the routines below consider this to be IRQ-safe
-@@ -80,6 +86,9 @@ enum {
- 	RES_USAGE,
- 	RES_MAX_USAGE,
- 	RES_LIMIT,
-+	RES_POLICY,
-+	RES_TIMESTAMP,
-+	RES_CAPACITY,
- 	RES_FAILCNT,
- };
- 
-@@ -126,6 +135,15 @@ static inline bool res_counter_limit_check_locked(struct res_counter *cnt)
- 	return false;
- }
- 
-+static inline unsigned long long
-+res_counter_ratelimit_delta_t(struct res_counter *res)
-+{
-+	return (long long)get_jiffies_64() - (long long)res->timestamp;
-+}
-+
-+unsigned long long
-+res_counter_ratelimit_sleep(struct res_counter *res, ssize_t val);
-+
- /*
-  * Helper function to detect if the cgroup is within it's limit or
-  * not. It's currently called from cgroup_rss_prepare()
-@@ -159,6 +177,23 @@ static inline void res_counter_reset_failcnt(struct res_counter *cnt)
- 	spin_unlock_irqrestore(&cnt->lock, flags);
- }
- 
-+static inline int
-+res_counter_ratelimit_set_limit(struct res_counter *cnt,
-+			unsigned long long policy,
-+			unsigned long long limit, unsigned long long max)
-+{
-+	unsigned long flags;
-+
-+	spin_lock_irqsave(&cnt->lock, flags);
-+	cnt->limit = limit;
-+	cnt->capacity = max;
-+	cnt->policy = policy;
-+	cnt->timestamp = get_jiffies_64();
-+	cnt->usage = 0;
-+	spin_unlock_irqrestore(&cnt->lock, flags);
-+	return 0;
-+}
-+
- static inline int res_counter_set_limit(struct res_counter *cnt,
- 		unsigned long long limit)
- {
-diff --git a/kernel/res_counter.c b/kernel/res_counter.c
-index f275c8e..e55c674 100644
---- a/kernel/res_counter.c
-+++ b/kernel/res_counter.c
-@@ -9,6 +9,7 @@
- 
- #include <linux/types.h>
- #include <linux/parser.h>
-+#include <linux/jiffies.h>
+ 		if (unlikely(block_dump)) {
+diff --git a/fs/aio.c b/fs/aio.c
+index f658441..ee8d452 100644
+--- a/fs/aio.c
++++ b/fs/aio.c
+@@ -22,6 +22,7 @@
+ #include <linux/sched.h>
  #include <linux/fs.h>
+ #include <linux/file.h>
++#include <linux/blk-io-throttle.h>
+ #include <linux/mm.h>
+ #include <linux/mman.h>
  #include <linux/slab.h>
- #include <linux/res_counter.h>
-@@ -19,6 +20,8 @@ void res_counter_init(struct res_counter *counter)
+@@ -1558,6 +1559,7 @@ static int io_submit_one(struct kioctx *ctx, struct iocb __user *user_iocb,
  {
- 	spin_lock_init(&counter->lock);
- 	counter->limit = (unsigned long long)LLONG_MAX;
-+	counter->capacity = (unsigned long long)LLONG_MAX;
-+	counter->timestamp = get_jiffies_64();
- }
+ 	struct kiocb *req;
+ 	struct file *file;
++	struct block_device *bdev;
+ 	ssize_t ret;
  
- int res_counter_charge_locked(struct res_counter *counter, unsigned long val)
-@@ -62,7 +65,6 @@ void res_counter_uncharge(struct res_counter *counter, unsigned long val)
- 	spin_unlock_irqrestore(&counter->lock, flags);
- }
+ 	/* enforce forwards compatibility on users */
+@@ -1580,6 +1582,14 @@ static int io_submit_one(struct kioctx *ctx, struct iocb __user *user_iocb,
+ 	if (unlikely(!file))
+ 		return -EBADF;
  
--
- static inline unsigned long long *
- res_counter_member(struct res_counter *counter, int member)
- {
-@@ -73,6 +75,12 @@ res_counter_member(struct res_counter *counter, int member)
- 		return &counter->max_usage;
- 	case RES_LIMIT:
- 		return &counter->limit;
-+	case RES_POLICY:
-+		return &counter->policy;
-+	case RES_TIMESTAMP:
-+		return &counter->timestamp;
-+	case RES_CAPACITY:
-+		return &counter->capacity;
- 	case RES_FAILCNT:
- 		return &counter->failcnt;
- 	};
-@@ -137,3 +145,66 @@ int res_counter_write(struct res_counter *counter, int member,
- 	spin_unlock_irqrestore(&counter->lock, flags);
- 	return 0;
- }
-+
-+static unsigned long long
-+ratelimit_leaky_bucket(struct res_counter *res, ssize_t val)
-+{
-+	unsigned long long delta, t;
-+
-+	res->usage += val;
-+	delta = res_counter_ratelimit_delta_t(res);
-+	if (!delta)
-+		return 0;
-+	t = res->usage * USEC_PER_SEC;
-+	t = usecs_to_jiffies(div_u64(t, res->limit));
-+	if (t > delta)
-+		return t - delta;
-+	/* Reset i/o statistics */
-+	res->usage = 0;
-+	res->timestamp = get_jiffies_64();
-+	return 0;
-+}
-+
-+static unsigned long long
-+ratelimit_token_bucket(struct res_counter *res, ssize_t val)
-+{
-+	unsigned long long delta;
-+	long long tok;
-+
-+	res->usage -= val;
-+	delta = jiffies_to_msecs(res_counter_ratelimit_delta_t(res));
-+	res->timestamp = get_jiffies_64();
-+	tok = (long long)res->usage * MSEC_PER_SEC;
-+	if (delta) {
-+		long long max = (long long)res->capacity * MSEC_PER_SEC;
-+
-+		tok += delta * res->limit;
-+		if (tok > max)
-+			tok = max;
-+		res->usage = (unsigned long long)div_s64(tok, MSEC_PER_SEC);
++	/* check if we're exceeding the IO throttling limits */
++	bdev = as_to_bdev(file->f_mapping);
++	ret = cgroup_io_throttle(NULL, bdev, 0, 0);
++	if (unlikely(ret)) {
++		fput(file);
++		return -EAGAIN;
 +	}
-+	return (tok < 0) ? msecs_to_jiffies(div_u64(-tok, res->limit)) : 0;
-+}
 +
-+unsigned long long
-+res_counter_ratelimit_sleep(struct res_counter *res, ssize_t val)
-+{
-+	unsigned long long sleep = 0;
-+	unsigned long flags;
+ 	req = aio_get_req(ctx);		/* returns with 2 references to req */
+ 	if (unlikely(!req)) {
+ 		fput(file);
+@@ -1622,12 +1632,14 @@ static int io_submit_one(struct kioctx *ctx, struct iocb __user *user_iocb,
+ 		goto out_put_req;
+ 
+ 	spin_lock_irq(&ctx->ctx_lock);
++	set_in_aio();
+ 	aio_run_iocb(req);
+ 	if (!list_empty(&ctx->run_list)) {
+ 		/* drain the run list */
+ 		while (__aio_run_iocbs(ctx))
+ 			;
+ 	}
++	unset_in_aio();
+ 	spin_unlock_irq(&ctx->ctx_lock);
+ 	aio_put_req(req);	/* drop extra ref to req */
+ 	return 0;
+diff --git a/fs/direct-io.c b/fs/direct-io.c
+index 9606ee8..66f011a 100644
+--- a/fs/direct-io.c
++++ b/fs/direct-io.c
+@@ -28,6 +28,7 @@
+ #include <linux/highmem.h>
+ #include <linux/pagemap.h>
+ #include <linux/task_io_accounting_ops.h>
++#include <linux/blk-io-throttle.h>
+ #include <linux/bio.h>
+ #include <linux/wait.h>
+ #include <linux/err.h>
+@@ -657,10 +658,12 @@ submit_page_section(struct dio *dio, struct page *page,
+ 	int ret = 0;
+ 
+ 	if (dio->rw & WRITE) {
++		struct block_device *bdev = dio->inode->i_sb->s_bdev;
+ 		/*
+ 		 * Read accounting is performed in submit_bio()
+ 		 */
+ 		task_io_account_write(len);
++		cgroup_io_throttle(NULL, bdev, 0, 1);
+ 	}
+ 
+ 	/*
+diff --git a/include/linux/sched.h b/include/linux/sched.h
+index cd67fac..685c449 100644
+--- a/include/linux/sched.h
++++ b/include/linux/sched.h
+@@ -1210,6 +1210,13 @@ struct task_struct {
+ 	unsigned long ptrace_message;
+ 	siginfo_t *last_siginfo; /* For ptrace use.  */
+ 	struct task_io_accounting ioac;
++#ifdef CONFIG_CGROUP_IO_THROTTLE
++	atomic_t in_aio;
++	unsigned long long io_throttle_bw_cnt;
++	unsigned long long io_throttle_bw_sleep;
++	unsigned long long io_throttle_iops_cnt;
++	unsigned long long io_throttle_iops_sleep;
++#endif
+ #if defined(CONFIG_TASK_XACCT)
+ 	u64 acct_rss_mem1;	/* accumulated rss usage */
+ 	u64 acct_vm_mem1;	/* accumulated virtual memory usage */
+diff --git a/kernel/fork.c b/kernel/fork.c
+index 7b34bc5..99cef1a 100644
+--- a/kernel/fork.c
++++ b/kernel/fork.c
+@@ -1004,7 +1004,13 @@ static struct task_struct *copy_process(unsigned long clone_flags,
+ 
+ 	task_io_accounting_init(&p->ioac);
+ 	acct_clear_integrals(p);
+-
++#ifdef CONFIG_CGROUP_IO_THROTTLE
++	atomic_set(&p->in_aio, 0);
++	p->io_throttle_bw_cnt = 0;
++	p->io_throttle_bw_sleep = 0;
++	p->io_throttle_iops_cnt = 0;
++	p->io_throttle_iops_sleep = 0;
++#endif
+ 	p->it_virt_expires = cputime_zero;
+ 	p->it_prof_expires = cputime_zero;
+ 	p->it_sched_expires = 0;
+diff --git a/mm/page-writeback.c b/mm/page-writeback.c
+index c6d6088..7096b26 100644
+--- a/mm/page-writeback.c
++++ b/mm/page-writeback.c
+@@ -23,6 +23,7 @@
+ #include <linux/init.h>
+ #include <linux/backing-dev.h>
+ #include <linux/task_io_accounting_ops.h>
++#include <linux/blk-io-throttle.h>
+ #include <linux/blkdev.h>
+ #include <linux/mpage.h>
+ #include <linux/rmap.h>
+@@ -556,6 +557,9 @@ void balance_dirty_pages_ratelimited_nr(struct address_space *mapping,
+ 	static DEFINE_PER_CPU(unsigned long, ratelimits) = 0;
+ 	unsigned long ratelimit;
+ 	unsigned long *p;
++	struct block_device *bdev = as_to_bdev(mapping);
 +
-+	spin_lock_irqsave(&res->lock, flags);
-+	if (res->limit)
-+		switch (res->policy) {
-+		case RATELIMIT_LEAKY_BUCKET:
-+			sleep = ratelimit_leaky_bucket(res, val);
-+			break;
-+		case RATELIMIT_TOKEN_BUCKET:
-+			sleep = ratelimit_token_bucket(res, val);
-+			break;
-+		default:
-+			WARN_ON(1);
-+			break;
-+		}
-+	spin_unlock_irqrestore(&res->lock, flags);
-+	return sleep;
-+}
++	cgroup_io_throttle(NULL, bdev, 0, 1);
+ 
+ 	ratelimit = ratelimit_pages;
+ 	if (mapping->backing_dev_info->dirty_exceeded)
+diff --git a/mm/readahead.c b/mm/readahead.c
+index 137bc56..176ad00 100644
+--- a/mm/readahead.c
++++ b/mm/readahead.c
+@@ -14,6 +14,7 @@
+ #include <linux/blkdev.h>
+ #include <linux/backing-dev.h>
+ #include <linux/task_io_accounting_ops.h>
++#include <linux/blk-io-throttle.h>
+ #include <linux/pagevec.h>
+ #include <linux/pagemap.h>
+ 
+@@ -58,6 +59,7 @@ int read_cache_pages(struct address_space *mapping, struct list_head *pages,
+ 			int (*filler)(void *, struct page *), void *data)
+ {
+ 	struct page *page;
++	struct block_device *bdev = as_to_bdev(mapping);
+ 	int ret = 0;
+ 
+ 	while (!list_empty(pages)) {
+@@ -76,6 +78,7 @@ int read_cache_pages(struct address_space *mapping, struct list_head *pages,
+ 			break;
+ 		}
+ 		task_io_account_read(PAGE_CACHE_SIZE);
++		cgroup_io_throttle(NULL, bdev, PAGE_CACHE_SIZE, 1);
+ 	}
+ 	return ret;
+ }
 -- 
 1.5.4.3
