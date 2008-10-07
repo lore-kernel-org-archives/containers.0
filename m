@@ -1,33 +1,67 @@
-From: David Miller <davem-fT/PcQaiUtIeIZ0/mPfg9Q@public.gmane.org>
-Subject: Re: [PATCH net-next 0/9] ipv6: making UDP mibs per/namespace
-Date: Tue, 07 Oct 2008 15:00:19 -0700 (PDT)
-Message-ID: <20081007.150019.143782024.davem__27363.4336692796$1223417087$gmane$org@davemloft.net>
-References: <1222942394.6327.5.camel@iris.sw.ru>
+From: ebiederm@xmission.com (Eric W. Biederman)
+Subject: Re: [PATCH 1/8] sysfs: Implement sysfs tagged directory support.
+Date: Tue, 07 Oct 2008 15:27:12 -0700
+Message-ID: <m18wt0qbwf.fsf@frodo.ebiederm.org>
+References: <m1hc9e27ya.fsf_-_@frodo.ebiederm.org> <48B57058.9000101@bull.net>
+	<dac45060809020654g62afb3c9yd104682b93b43bee@mail.gmail.com>
+	<48BD47A8.1080909@bull.net> <20080902170148.GA9305@suse.de>
+	<31436f4a0809032233r2c46de8od8a94460ce3b5ed2@mail.gmail.com>
+	<48BF83E1.5040000@bull.net>
+	<dac45060810070939v80918a0m3963d7fc6fcbb975@mail.gmail.com>
+	<20081007164833.GA16056@suse.de> <m1abdgywnb.fsf@frodo.ebiederm.org>
+	<20081007210902.GB7996@suse.de>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1222942394.6327.5.camel-aPCOdVxUTlgvJsYlp49lxw@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: den-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org
-Cc: yoshfuji-VfPWfsRibaP+Ru+s062T9g@public.gmane.org, netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org, benjamin.thery-6ktuUTfB/bM@public.gmane.org, xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org
+Content-Type: text/plain; charset=us-ascii
+Return-path: <netdev-owner@vger.kernel.org>
+In-Reply-To: <20081007210902.GB7996@suse.de> (Greg KH's message of "Tue, 7 Oct
+	2008 14:09:02 -0700")
+Sender: netdev-owner@vger.kernel.org
+To: Greg KH <gregkh@suse.de>
+Cc: Mark Ryden <markryde@gmail.com>, Benjamin Thery <benjamin.thery@bull.net>, David Shwatrz <dshwatrz@gmail.com>, Greg KH <greg@kroah.com>, Andrew Morton <akpm@linux-foundation.org>, Tejun Heo <htejun@gmail.com>, Daniel Lezcano <dlezcano@fr.ibm.com>, linux-kernel@vger.kernel.org, Al Viro <viro@ftp.linux.org.uk>, Linux Containers <containers@lists.osdl.org>, netdev@vger.kernel.org
 List-Id: containers.vger.kernel.org
 
-From: "Denis V. Lunev" <den-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
-Date: Thu, 02 Oct 2008 14:13:14 +0400
+Greg KH <gregkh@suse.de> writes:
 
-> This patch series provides a basic infrastructure to make snmp6
-> statistics per/namespace and actually virtualize udp6/udplite6 mibs.
-> 
-> This set follows approach used by Pavel Emelyanov in IPv4 code.
-> IP6/icmp6 statistics is also ready and will follow.
+> On Tue, Oct 07, 2008 at 01:31:52PM -0700, Eric W. Biederman wrote:
+>> Greg KH <gregkh@suse.de> writes:
+>> 
+>> > On Tue, Oct 07, 2008 at 06:39:04PM +0200, Mark Ryden wrote:
+>> >> Hello,
+>> >>   So I wonder: the sysfs tagged directory support patch is in GerKH
+>> >> tree for more than a month.
+>> >
+>> > I dropped it from my tree 2 days ago, see the thread on lkml for why.
+>> 
+>> Greg why did you drop it? 
+>
+> Because Al said it was full of problems and for us not to accept it.
 
-Applied and pushed out to net-next-2.6, thanks!
+Yes. Al found problems.
+
+Al reviewed sysfs with my patchset on top of it.
+
+Al's review found problems in  sysfs with my patchset on top of it.
+
+If you look at what Al found the majority of those problems exist in sysfs
+without my patches.
+
+Does the following sound like a workable path going forward?
+
+- Not merge for 2.6.28 (we are to close to the merge window for everyone's comfort).
+
+- Fix the small issues specific to tagged directory support that showed
+  up in Al's review (patches sent).
+
+- Keep the patches the entire time in a public tree that merges into
+  linux-next so that people treat this code base seriously.
+
+- Resolve the sysfs/vfs lock ordering problem mess that makes
+  locking in sysfs excruciatingly difficult.
+
+- Merge other patches to fix Als other issues with sysfs.
+
+- Merge to 2.6.29 or wherever we are.
+
+
+Eric
+
