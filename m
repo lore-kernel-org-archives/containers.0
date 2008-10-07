@@ -1,14 +1,16 @@
-From: David Miller <davem-fT/PcQaiUtIeIZ0/mPfg9Q@public.gmane.org>
-Subject: Re: [PATCH] netns: Delete virtual interfaces during namespace cleanup
-Date: Tue, 07 Oct 2008 16:08:07 -0700 (PDT)
-Message-ID: <20081007.160807.32968959.davem@davemloft.net>
-References: <48EB4679.1040602@fr.ibm.com> <m1fxn839y3.fsf@frodo.ebiederm.org>
-	<48EB50E4.3060303@fr.ibm.com>
+From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
+Subject: Re: [PATCH] net: Support specifying the network namespace upon device
+	creation.
+Date: Tue, 07 Oct 2008 16:38:09 -0700
+Message-ID: <m1iqs4nfha.fsf@frodo.ebiederm.org>
+References: <m18wt6v7eb.fsf@frodo.ebiederm.org>
+	<m1vdwatshs.fsf@frodo.ebiederm.org> <48EB541A.5070306@fr.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <48EB50E4.3060303-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <48EB541A.5070306-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org> (Daniel Lezcano's message of "Tue,
+	07 Oct 2008 14:20:42 +0200")
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,21 +20,183 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org
-Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, den-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org, xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org
+To: Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
+Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, "Denis V. Lunev" <den-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>, David Miller <davem-fT/PcQaiUtIeIZ0/mPfg9Q@public.gmane.org>, Benjamin Thery <benjamin.thery-6ktuUTfB/bM@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-From: Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
-Date: Tue, 07 Oct 2008 14:07:00 +0200
+Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org> writes:
 
 > Eric W. Biederman wrote:
-> > Well there is the cheap trick with this patch of waiting until the local end
-> > of veth dies.
+>> There is no good reason to not support userspace specifying the
+>> network namespace during device creation and it seems a handy
+>> thing to do.
+>>
+>> We have to be a little extra careful in this case to ensure that
+>> the network namespace exists through the point where we call
+>> register_netdevice.
+>>
+>> In addition we need to pass the network namespace to the
+>> rtnl_link_ops.newlink method so we can properly create
+>> the new device in another namespace and have it be a vlan
+>> device of a device in our current network namespace.
+>>
+>> In summary this patch makes ip link add somename netns NNN type sometype
+>> do the obvious thing instead of ignoring the network namespace parameter.
+>>
+>> Signed-off-by: Eric W. Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+>> ---
+>>  drivers/net/macvlan.c    |    4 ++--
+>>  drivers/net/veth.c       |    5 +++--
+>>  include/net/rtnetlink.h  |    3 ++-
+>>  net/8021q/vlan_netlink.c |    4 ++--
+>>  net/core/rtnetlink.c     |   17 ++++++++++++++++-
+>>  5 files changed, 25 insertions(+), 8 deletions(-)
+>>
+>> diff --git a/drivers/net/macvlan.c b/drivers/net/macvlan.c
+>> index 4239450..fc5933b 100644
+>> --- a/drivers/net/macvlan.c
+>> +++ b/drivers/net/macvlan.c
+>> @@ -416,7 +416,7 @@ static int macvlan_validate(struct nlattr *tb[], struct
+> nlattr *data[])
+>>  	return 0;
+>>  }
+>>
+>> -static int macvlan_newlink(struct net_device *dev,
+>> +static int macvlan_newlink(struct net *net, struct net_device *dev,
+>>  			   struct nlattr *tb[], struct nlattr *data[])
+>>  {
+>>  	struct macvlan_dev *vlan = netdev_priv(dev);
+>> @@ -427,7 +427,7 @@ static int macvlan_newlink(struct net_device *dev,
+>>  	if (!tb[IFLA_LINK])
+>>  		return -EINVAL;
+>>
+>> - lowerdev = __dev_get_by_index(dev_net(dev), nla_get_u32(tb[IFLA_LINK]));
+>> +	lowerdev = __dev_get_by_index(net, nla_get_u32(tb[IFLA_LINK]));
+>>  	if (lowerdev == NULL)
+>>  		return -ENODEV;
+>>
+>> diff --git a/drivers/net/veth.c b/drivers/net/veth.c
+>> index 31cd817..3a2d818 100644
+>> --- a/drivers/net/veth.c
+>> +++ b/drivers/net/veth.c
+>> @@ -335,7 +335,7 @@ static int veth_validate(struct nlattr *tb[], struct
+> nlattr *data[])
+>>
+>>  static struct rtnl_link_ops veth_link_ops;
+>>
+>> -static int veth_newlink(struct net_device *dev,
+>> +static int veth_newlink(struct net *net, struct net_device *dev,
+>>  			 struct nlattr *tb[], struct nlattr *data[])
+>>  {
+>>  	int err;
+>> @@ -375,7 +375,7 @@ static int veth_newlink(struct net_device *dev,
+>>  	else
+>>  		snprintf(ifname, IFNAMSIZ, DRV_NAME "%%d");
+>>
+>> -	peer = rtnl_create_link(dev_net(dev), ifname, &veth_link_ops, tbp);
+>> +	peer = rtnl_create_link(net, ifname, &veth_link_ops, tbp);
+>>  	if (IS_ERR(peer))
+>>  		return PTR_ERR(peer);
+>>
+>> @@ -383,6 +383,7 @@ static int veth_newlink(struct net_device *dev,
+>>  		random_ether_addr(peer->dev_addr);
+>>
+>>  	err = register_netdevice(peer);
+>> +	put_net(peer->nd_net);
+>>  	if (err < 0)
+>>  		goto err_register_peer;
+>>
+>> diff --git a/include/net/rtnetlink.h b/include/net/rtnetlink.h
+>> index 3c1895e..dbf546f 100644
+>> --- a/include/net/rtnetlink.h
+>> +++ b/include/net/rtnetlink.h
+>> @@ -55,7 +55,8 @@ struct rtnl_link_ops {
+>>  	int			(*validate)(struct nlattr *tb[],
+>>  					    struct nlattr *data[]);
+>>
+>> -	int			(*newlink)(struct net_device *dev,
+>> +	int			(*newlink)(struct net *net,
+>> +					   struct net_device *dev,
+>>  					   struct nlattr *tb[],
+>>  					   struct nlattr *data[]);
+>>  	int			(*changelink)(struct net_device *dev,
+>> diff --git a/net/8021q/vlan_netlink.c b/net/8021q/vlan_netlink.c
+>> index e9c91dc..e6190f7 100644
+>> --- a/net/8021q/vlan_netlink.c
+>> +++ b/net/8021q/vlan_netlink.c
+>> @@ -100,7 +100,7 @@ static int vlan_changelink(struct net_device *dev,
+>>  	return 0;
+>>  }
+>>
+>> -static int vlan_newlink(struct net_device *dev,
+>> +static int vlan_newlink(struct net *net, struct net_device *dev,
+>>  			struct nlattr *tb[], struct nlattr *data[])
+>>  {
+>>  	struct vlan_dev_info *vlan = vlan_dev_info(dev);
+>> @@ -112,7 +112,7 @@ static int vlan_newlink(struct net_device *dev,
+>>
+>>  	if (!tb[IFLA_LINK])
+>>  		return -EINVAL;
+>> - real_dev = __dev_get_by_index(dev_net(dev), nla_get_u32(tb[IFLA_LINK]));
+>> +	real_dev = __dev_get_by_index(net, nla_get_u32(tb[IFLA_LINK]));
 >
-> I actually use veth, macvlan, empty netns and physical. But if you
-> are planning the send netns fs soon, I guess I can live with that a
-> time.
+> Hmm, if the macvlan is created inside a namespace, the network namespace
+> specified in the parameter function will not be the namespace where belongs
+> IFLA_LINK and the __dev_get_by_index will fail, no ?
 
-Are we anywhere near consensus with this patch?
+The actual operation is creation in the current network namespace and then
+immediately move to another namespace.  Anything else gets into some
+semantics problems.
 
-Please resubmit once there is some agreement.
+The typical case would be to create a macvlan from eth0 in the initial
+network namespace, and then move it to the namespace where you want to
+use it.
+
+
+>>  	if (!real_dev)
+>>  		return -ENODEV;
+>>
+>> diff --git a/net/core/rtnetlink.c b/net/core/rtnetlink.c
+>> index 8862498..069b176 100644
+>> --- a/net/core/rtnetlink.c
+>> +++ b/net/core/rtnetlink.c
+>> @@ -1002,6 +1002,19 @@ struct net_device *rtnl_create_link(struct net *net,
+> char *ifname,
+>>  			goto err_free;
+>>  	}
+>>
+>> +	/* To support userspace specifying a network namespace during
+>> +	 * device creation we grab the network namespace here and hold
+>> +	 * it until just after register_netdevice to prevent races.
+>> +	 */
+>> +	if (!tb[IFLA_NET_NS_PID])
+>> +		get_net(net);
+>> +	else {
+>> +		net = get_net_ns_by_pid(nla_get_u32(tb[IFLA_NET_NS_PID]));
+>> +		if (IS_ERR(net)) {
+>> +			err = PTR_ERR(net);
+>> +			goto err_free;
+>> +		}
+>> +	}
+>>  	dev_net_set(dev, net);
+>>  	dev->rtnl_link_ops = ops;
+>>
+>> @@ -1150,10 +1163,12 @@ replay:
+>>  		if (IS_ERR(dev))
+>>  			err = PTR_ERR(dev);
+>>  		else if (ops->newlink)
+>> -			err = ops->newlink(dev, tb, data);
+>> +			err = ops->newlink(net, dev, tb, data);
+>>  		else
+>>  			err = register_netdevice(dev);
+>>
+>> +		if (!IS_ERR(dev))
+>> +			put_net(dev->nd_net);
+>
+> If there is an error in ops->newlink or register_netdevice, we will exit without
+> releasing the net refcount.
+
+Nope.  That is IS_ERR(dev).  Which only is true if rtnl_create_link fails.
+newlink and register_netdevice set error but don't change dev.
+
+Eric
