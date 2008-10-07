@@ -1,52 +1,68 @@
-From: James Morris <jmorris@namei.org>
-Subject: Re: [PATCH 1/3] user namespaces: introduce user_struct->user_namespace
- relationship
-Date: Tue, 7 Oct 2008 08:50:15 +1100 (EST)
-Message-ID: <alpine.LRH.1.10.0810070847480.4113@tundra.namei.org>
-References: <20081004013644.GA24104@us.ibm.com> <alpine.LRH.1.10.0810060846020.30516@tundra.namei.org> <20081006141101.GB15419@us.ibm.com>
+From: Andrea Righi <righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Subject: [PATCH -mm 0/6] cgroup: block device i/o controller (v11)
+Date: Tue,  7 Oct 2008 12:03:32 +0200
+Message-ID: <1223373818-13687-1-git-send-email-righi.andrea__8664.45589713312$1223374080$gmane$org@gmail.com>
 Mime-Version: 1.0
-Content-Type: TEXT/PLAIN; charset=US-ASCII
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1755981AbYJFVv6@vger.kernel.org>
-In-Reply-To: <20081006141101.GB15419@us.ibm.com>
-Sender: linux-kernel-owner@vger.kernel.org
-To: "Serge E. Hallyn" <serue@us.ibm.com>
-Cc: David Howells <dhowells@redhat.com>, Andrew Morton <akpm@osdl.org>, Linux Containers <containers@lists.osdl.org>, lkml <linux-kernel@vger.kernel.org>
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <>
+References: <>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+Cc: randy.dunlap-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org, Carl Henrik Lunde <chlunde-om2ZC0WAoZIXWF+eFR7m5Q@public.gmane.org>, Divyesh Shah <dpshah-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, eric.rannaud-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, fernando-gVGce1chcLdL9jVzuh4AOg@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, agk-9JcytcrH/bA+uJoB2kUjGw@public.gmane.org, subrata-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, axboe-tSWWG44O7X1aa/9Udqfwiw@public.gmane.org, Marco Innocenti <m.innocenti-qooieK91W7JeoWH0uzbU5w@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, matt-cT2on/YLNlBWk0Htik3J/w@public.gmane.org, roberto-5KDOxZqKugI@public.gmane.org, ngupta-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Mon, 6 Oct 2008, Serge E. Hallyn wrote:
 
-> Quoting James Morris (jmorris@namei.org):
-> > On Fri, 3 Oct 2008, Serge E. Hallyn wrote:
-> > 
-> > > Hi James,
-> > > 
-> > > here are 3 patches to fix up the user namespaces a bit in preparation
-> > > for real userns work to begin.  Andrew had suggested that these be
-> > > rebased on top of your -next tree because they will conflict with
-> > > the credentials work.  But it looks like much of the credentials stuff
-> > > isn't in your next branch.  If you'd prefer that I port these to
-> > > creds-next, please let me know.  I'll have to do it eventually :)
-> > 
-> > creds-next is dead.
-> > 
-> > Code ready for the next merge window is in the 'next' branch, while the 
-> > current creds code is in the 'creds-next-subsys' branch, which hasn't been 
-> > picked up in linux-next yet because of LPC and sfr's vacation.
-> > 
-> > When do you expect these patches to be sent upstream?  Are they ready now 
-> > as an incremental change for 2.6.27?
-> 
-> Oh I'm not trying to get them into 2.6.28, I'm just trying to get them
-> more widely tested, hopefully aiming for 2.6.29.  They have been stable
-> in all of my tests, and the last patch fixes a real (behavioral - not
-> oops-inducing) bug in the current code, but I'm trying to figure out
-> which path they should take.
+The objective of the i/o controller is to improve i/o performance
+predictability of different cgroups sharing the same block devices.
 
-I suggest feeding them into linux-next directly until you want them merged 
-with another tree.  Are there known clashes with the creds work?  If so, 
-the fixups could be carried in linux-next, or generate them against 
-creds-next-subsys for inclusion after that.
+Respect to other priority/weight-based solutions the approach used by this
+controller is to explicitly choke applications' requests that directly (or
+indirectly) generate i/o activity in the system.
 
--- 
-James Morris
-<jmorris@namei.org>
+The direct bandwidth and/or iops limiting method has the advantage of improving
+the performance predictability at the cost of reducing, in general, the overall
+performance of the system (in terms of throughput).
+
+Detailed informations about design, its goal and usage are described in the
+documentation.
+
+Patchset against 2.6.27-rc5-mm1:
+
+  [PATCH 0/6] cgroup: block device i/o controller (v11)
+  [PATCH 1/6] i/o controller documentation
+  [PATCH 2/6] introduce ratelimiting attributes and functionality to res_counter
+  [PATCH 3/6] i/o controller infrastructure
+  [PATCH 4/6] memcg: interface to charge the right cgroup of asynchronous i/o activity
+  [PATCH 5/6] i/o controller instrumentation: accounting and throttling
+  [PATCH 6/6] export per-task i/o throttling statistics to userspace
+
+The all-in-one patch (and previous versions) can be found at:
+http://download.systemimager.org/~arighi/linux/patches/io-throttle/
+
+There are no significant changes respect to v10, I've only implemented/fixed
+some suggestions I received.
+
+Changelog: (v10 -> v11)
+
+* report per block device i/o statistics (total bytes read/written and iops)
+  in blockio.stat for i/o limited cgroups
+* distinct bandwidth and iops statistics: both in blockio.throttlecnt and
+  /proc/PID/io-throttle-stat (suggested by David Radford)
+* merge res_counter_ratelimit functionality into res_counter, to avoid code
+  duplication (suggested by Paul Manage)
+* use kernel-doc style for documenting struct res_counter attributes
+  (suggested by Randy Dunalp)
+* udpated documentation
+
+Thanks to all for the feedback!
+-Andrea
