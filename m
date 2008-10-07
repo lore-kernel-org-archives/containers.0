@@ -1,7 +1,8 @@
 From: Andrea Righi <righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: [PATCH -mm 1/6] i/o controller documentation
-Date: Tue,  7 Oct 2008 12:03:33 +0200
-Message-ID: <1223373818-13687-2-git-send-email-righi.andrea__19765.7388206155$1223374084$gmane$org@gmail.com>
+Subject: [PATCH -mm 2/6] introduce ratelimiting attributes and functionality
+	to res_counter
+Date: Tue,  7 Oct 2008 12:03:34 +0200
+Message-ID: <1223373818-13687-3-git-send-email-righi.andrea__39040.9065563746$1223374096$gmane$org@gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -21,429 +22,249 @@ To: Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, Pau
 Cc: randy.dunlap-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org, Carl Henrik Lunde <chlunde-om2ZC0WAoZIXWF+eFR7m5Q@public.gmane.org>, Divyesh Shah <dpshah-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, eric.rannaud-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, fernando-gVGce1chcLdL9jVzuh4AOg@public.gmane.org, Andrea Righi <righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, agk-9JcytcrH/bA+uJoB2kUjGw@public.gmane.org, subrata-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, axboe-tSWWG44O7X1aa/9Udqfwiw@public.gmane.org, Marco Innocenti <m.innocenti-qooieK91W7JeoWH0uzbU5w@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, matt-cT2on/YLNlBWk0Htik3J/w@public.gmane.org, roberto-5KDOxZqKugI@public.gmane.org, ngupta-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Documentation of the block device I/O controller: description, usage,
-advantages and design.
+Introduce attributes and functions in res_counter to implement throttling-based
+cgroup subsystems.
+
+The following attributes have been added to struct res_counter:
+ * @policy:     the limiting policy / algorithm
+ * @capacity:   the maximum capacity of the resource
+ * @timestamp:  timestamp of the last accounted resource request
+
+Currently the available policies are: token-bucket and leaky-bucket and the
+attribute @capacity is only used by token-bucket policy (to represent the
+bucket size).
+
+The following function has been implemented to return the amount of time a
+cgroup should sleep to remain within the defined resource limits.
+
+  unsigned long long
+  res_counter_ratelimit_sleep(struct res_counter *res, ssize_t val);
+
+[ Note: only the interfaces needed by the cgroup IO controller are implemented
+right now ]
 
 Signed-off-by: Andrea Righi <righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 ---
- Documentation/controllers/io-throttle.txt |  409 +++++++++++++++++++++++++++++
- 1 files changed, 409 insertions(+), 0 deletions(-)
- create mode 100644 Documentation/controllers/io-throttle.txt
+ include/linux/res_counter.h |   69 ++++++++++++++++++++++++++++++----------
+ kernel/res_counter.c        |   73 ++++++++++++++++++++++++++++++++++++++++++-
+ 2 files changed, 124 insertions(+), 18 deletions(-)
 
-diff --git a/Documentation/controllers/io-throttle.txt b/Documentation/controllers/io-throttle.txt
-new file mode 100644
-index 0000000..2a3bbd1
---- /dev/null
-+++ b/Documentation/controllers/io-throttle.txt
-@@ -0,0 +1,409 @@
-+
-+               Block device I/O bandwidth controller
-+
-+----------------------------------------------------------------------
-+1. DESCRIPTION
-+
-+This controller allows to limit the I/O bandwidth of specific block devices for
-+specific process containers (cgroups [1]) imposing additional delays on I/O
-+requests for those processes that exceed the limits defined in the control
-+group filesystem.
-+
-+Bandwidth limiting rules offer better control over QoS with respect to priority
-+or weight-based solutions that only give information about applications'
-+relative performance requirements. Nevertheless, priority based solutions are
-+affected by performance bursts, when only low-priority requests are submitted
-+to a general purpose resource dispatcher.
-+
-+The goal of the I/O bandwidth controller is to improve performance
-+predictability from the applications' point of view and provide performance
-+isolation of different control groups sharing the same block devices.
-+
-+NOTE #1: If you're looking for a way to improve the overall throughput of the
-+system probably you should use a different solution.
-+
-+NOTE #2: The current implementation does not guarantee minimum bandwidth
-+levels, the QoS is implemented only slowing down I/O "traffic" that exceeds the
-+limits specified by the user; minimum I/O rate thresholds are supposed to be
-+guaranteed if the user configures a proper I/O bandwidth partitioning of the
-+block devices shared among the different cgroups (theoretically if the sum of
-+all the single limits defined for a block device doesn't exceed the total I/O
-+bandwidth of that device).
-+
-+----------------------------------------------------------------------
-+2. USER INTERFACE
-+
-+A new I/O limitation rule is described using the files:
-+- blockio.bandwidth-max
-+- blockio.iops-max
-+
-+The I/O bandwidth (blockio.bandwidth-max) can be used to limit the throughput
-+of a certain cgroup, while blockio.iops-max can be used to throttle cgroups
-+containing applications doing a sparse/seeky I/O workload. Any combination of
-+them can be used to define more complex I/O limiting rules, expressed both in
-+terms of iops/s and bandwidth.
-+
-+The same files can be used to set multiple rules for different block devices
-+relative to the same cgroup.
-+
-+The following syntax can be used to configure any limiting rule:
-+
-+# /bin/echo DEV:LIMIT:STRATEGY:BUCKET_SIZE > CGROUP/FILE
-+
-+- DEV is the name of the device the limiting rule is applied to.
-+
-+- LIMIT is the maximum I/O activity allowed on DEV by CGROUP; LIMIT can
-+  represent a bandwidth limitation (expressed in bytes/s) when writing to
-+  blockio.bandwidth-max, or a limitation to the maximum I/O operations per
-+  second (expressed in iops/s) issued by CGROUP.
-+
-+  A generic I/O limiting rule for a block device DEV can be removed setting the
-+  LIMIT to 0.
-+
-+- STRATEGY is the throttling strategy used to throttle the applications' I/O
-+  requests from/to device DEV. At the moment two different strategies can be
-+  used [2][3]:
-+
-+  0 = leaky bucket: the controller accepts at most B bytes (B = LIMIT * time)
-+		    or O operations (O = LIMIT * time); further I/O requests
-+		    are delayed scheduling a timeout for the tasks that made
-+		    those requests.
-+
-+            Different I/O flow
-+               | | |
-+               | v |
-+               |   v
-+               v
-+              .......
-+              \     /
-+               \   /  leaky-bucket
-+                ---
-+                |||
-+                vvv
-+             Smoothed I/O flow
-+
-+  1 = token bucket: LIMIT tokens are added to the bucket every seconds; the
-+		    bucket can hold at the most BUCKET_SIZE tokens; I/O
-+		    requests are accepted if there are available tokens in the
-+		    bucket; when a request of N bytes arrives N tokens are
-+		    removed from the bucket; if fewer than N tokens are
-+		    available the request is delayed until a sufficient amount
-+		    of token is available in the bucket.
-+
-+            Tokens (I/O rate)
-+                o
-+                o
-+                o
-+              ....... <--.
-+              \     /    | Bucket size (burst limit)
-+               \ooo/     |
-+                ---   <--'
-+                 |ooo
-+    Incoming --->|---> Conforming
-+    I/O          |oo   I/O
-+    requests  -->|-->  requests
-+                 |
-+            ---->|
-+
-+  Leaky bucket is more precise than token bucket to respect the limits, because
-+  bursty workloads are always smoothed. Token bucket, instead, allows a small
-+  irregularity degree in the I/O flows (burst limit), and, for this, it is
-+  better in terms of efficiency (bursty workloads are not smoothed when there
-+  are sufficient tokens in the bucket).
-+
-+- BUCKET_SIZE is used only with token bucket (STRATEGY == 1) and defines the
-+  size of the bucket in bytes (blockio.bandwidth-max) or in I/O operations
-+  (blockio.iops-max).
-+
-+- CGROUP is the name of the limited process container.
-+
-+Also the following syntaxes are allowed:
-+
-+- remove an I/O bandwidth limiting rule
-+# /bin/echo DEV:0 > CGROUP/blockio.bandwidth-max
-+
-+- configure a limiting rule using leaky bucket throttling (ignore bucket size):
-+# /bin/echo DEV:LIMIT:0 > CGROUP/blockio.bandwidth-max
-+
-+- configure a limiting rule using token bucket throttling
-+  (with bucket size == LIMIT):
-+# /bin/echo DEV:LIMIT:1 > CGROUP/blockio.bandwidth-max
-+
-+2.2. Show I/O limiting rules
-+
-+All the defined rules and statistics for a specific cgroup can be shown reading
-+the files blockio.bandwidth-max for bandwidth constraints and blockio.iops-max
-+for I/O operations per second constraints.
-+
-+The following syntax is used:
-+
-+$ cat CGROUP/blockio.bandwidth-max
-+MAJOR MINOR LIMIT STRATEGY LEAKY_STAT BUCKET_SIZE BUCKET_FILL TIME_DELTA
-+
-+- MAJOR is the major device number of DEV (defined above)
-+
-+- MINOR is the minor device number of DEV (defined above)
-+
-+- LIMIT, STRATEGY and BUCKET_SIZE are the same parameters defined above
-+
-+- LEAKY_STAT is the amount of bytes (blockio.bandwidth-max) or I/O operations
-+  (blockio.iops-max) currently allowed by the I/O controller (only used with
-+  leaky bucket strategy - STRATEGY == 0)
-+
-+- BUCKET_FILL represents the amount of tokens present in the bucket (only used
-+  with token bucket strategy - STRATEGY == 1)
-+
-+- TIME_DELTA can be one of the following:
-+  - the amount of jiffies elapsed from the last I/O request (token bucket)
-+  - the amount of jiffies during which the bytes or the number of I/O
-+    operations given by LEAKY_STAT have been accumulated (leaky bucket)
-+
-+Multiple per-block device rules are reported in multiple rows
-+(DEVi, i = 1 ..  n):
-+
-+$ cat CGROUP/blockio.bandwidth-max
-+MAJOR1 MINOR1 BW1 STRATEGY1 LEAKY_STAT1 BUCKET_SIZE1 BUCKET_FILL1 TIME_DELTA1
-+MAJOR1 MINOR1 BW2 STRATEGY2 LEAKY_STAT2 BUCKET_SIZE2 BUCKET_FILL2 TIME_DELTA2
-+...
-+MAJORn MINORn BWn STRATEGYn LEAKY_STATn BUCKET_SIZEn BUCKET_FILLn TIME_DELTAn
-+
-+The same fields are used to describe I/O operations/sec rules. The only
-+difference is that the cost of each I/O operation is scaled up by a factor of
-+1000. This allows to apply better fine grained sleeps and provide a more
-+precise throttling.
-+
-+$ cat CGROUP/blockio.iops-max
-+MAJOR MINOR LIMITx1000 STRATEGY LEAKY_STATx1000 BUCKET_SIZEx1000 BUCKET_FILLx1000 TIME_DELTA
-+...
-+
-+2.3. Additional I/O statistics
-+
-+Additional cgroup I/O throttling statistics are reported in
-+blockio.throttlecnt:
-+
-+$ cat CGROUP/blockio.throttlecnt
-+MAJOR MINOR BW_COUNTER BW_SLEEP IOPS_COUNTER IOPS_SLEEP
-+
-+ - MAJOR, MINOR are respectively the major and the minor number of the device
-+   the following statistics refer to
-+ - BW_COUNTER gives the number of times that the cgroup bandwidth limit of
-+   this particular device was exceeded
-+ - BW_SLEEP is the amount of sleep time measured in clock ticks (divide
-+   by sysconf(_SC_CLK_TCK)) imposed to the processes of this cgroup that
-+   exceeded the bandwidth limit for this particular device
-+ - IOPS_COUNTER gives the number of times that the cgroup I/O operation per
-+   second limit of this particular device was exceeded
-+ - IOPS_SLEEP is the amount of sleep time measured in clock ticks (divide
-+   by sysconf(_SC_CLK_TCK)) imposed to the processes of this cgroup that
-+   exceeded the I/O operations per second limit for this particular device
-+
-+Example:
-+$ cat CGROUP/blockio.throttlecnt
-+8 0 0 0 0 0
-+^ ^ ^ ^ ^ ^
-+ \ \ \ \ \ \___iops sleep (in clock ticks)
-+  \ \ \ \ \____iops throttle counter
-+   \ \ \ \_____bandwidth sleep (in clock ticks)
-+    \ \ \______bandwidth throttle counter
-+     \ \_______minor dev. number
-+      \________major dev. number
-+
-+Distinct statistics for each process are reported in
-+/proc/PID/io-throttle-stat:
-+
-+$ cat /proc/PID/io-throttle-stat
-+BW_COUNTER BW_SLEEP IOPS_COUNTER IOPS_SLEEP
-+
-+Example:
-+$ cat /proc/$$/io-throttle-stat
-+0 0 0 0
-+^ ^ ^ ^
-+ \ \ \ \_____global iops sleep (in clock ticks)
-+  \ \ \______global iops counter
-+   \ \_______global bandwidth sleep (clock ticks)
-+    \________global bandwidth counter
-+
-+2.4. Examples
-+
-+* Mount the cgroup filesystem (blockio subsystem):
-+  # mkdir /mnt/cgroup
-+  # mount -t cgroup -oblockio blockio /mnt/cgroup
-+
-+* Instantiate the new cgroup "foo":
-+  # mkdir /mnt/cgroup/foo
-+  --> the cgroup foo has been created
-+
-+* Add the current shell process to the cgroup "foo":
-+  # /bin/echo $$ > /mnt/cgroup/foo/tasks
-+  --> the current shell has been added to the cgroup "foo"
-+
-+* Give maximum 1MiB/s of I/O bandwidth on /dev/sda for the cgroup "foo", using
-+  leaky bucket throttling strategy:
-+  # /bin/echo /dev/sda:$((1024 * 1024)):0:0 > \
-+  > /mnt/cgroup/foo/blockio.bandwidth-max
-+  # sh
-+  --> the subshell 'sh' is running in cgroup "foo" and it can use a maximum I/O
-+      bandwidth of 1MiB/s on /dev/sda
-+
-+* Give maximum 8MiB/s of I/O bandwidth on /dev/sdb for the cgroup "foo", using
-+  token bucket throttling strategy, bucket size = 8MiB:
-+  # /bin/echo /dev/sdb:$((8 * 1024 * 1024)):1:$((8 * 1024 * 1024)) > \
-+  > /mnt/cgroup/foo/blockio.bandwidth-max
-+  # sh
-+  --> the subshell 'sh' is running in cgroup "foo" and it can use a maximum I/O
-+      bandwidth of 1MiB/s on /dev/sda (controlled by leaky bucket throttling)
-+      and 8MiB/s on /dev/sdb (controlled by token bucket throttling)
-+
-+* Run a benchmark doing I/O on /dev/sda and /dev/sdb; I/O limits and usage
-+  defined for cgroup "foo" can be shown as following:
-+  # cat /mnt/cgroup/foo/blockio.bandwidth-max
-+  8 16 8388608 1 0 8388608 -522560 48
-+  8 0 1048576 0 737280 0 0 216
-+
-+* Extend the maximum I/O bandwidth for the cgroup "foo" to 16MiB/s on /dev/sda:
-+  # /bin/echo /dev/sda:$((16 * 1024 * 1024)):0:0 > \
-+  > /mnt/cgroup/foo/blockio.bandwidth-max
-+  # cat /mnt/cgroup/foo/blockio.bandwidth-max
-+  8 16 8388608 1 0 8388608 -84432 206436
-+  8 0 16777216 0 0 0 0 15212
-+
-+* Remove limiting rule on /dev/sdb for cgroup "foo":
-+  # /bin/echo /dev/sdb:0:0:0 > /mnt/cgroup/foo/blockio.bandwidth-max
-+  # cat /mnt/cgroup/foo/blockio.bandwidth-max
-+  8 0 16777216 0 0 0 0 110388
-+
-+* Set a maximum of 100 I/O operations/sec (leaky bucket strategy) to /dev/sdc
-+  for cgroup "foo":
-+  # /bin/echo /dev/sdc:100:0 > /mnt/cgroup/foo/blockio.iops-max
-+  # cat /mnt/cgroup/foo/blockio.iops-max
-+  8 32 100000 0 846000 0 2113
-+          ^        ^
-+         /________/
-+        /
-+  Remember: these values are scaled up by a factor of 1000 to apply a fine
-+  grained throttling (i.e. LIMIT == 100000 means a maximum of 100 I/O operation
-+  per second)
-+
-+* Remove limiting rule for I/O operations from /dev/sdc for cgroup "foo":
-+  # /bin/echo /dev/sdc:0 > /mnt/cgroup/foo/blockio.iops-max
-+
-+----------------------------------------------------------------------
-+3. ADVANTAGES OF PROVIDING THIS FEATURE
-+
-+* Allow I/O traffic shaping for block device shared among different cgroups
-+* Improve I/O performance predictability on block devices shared between
-+  different cgroups
-+* Limiting rules do not depend of the particular I/O scheduler (anticipatory,
-+  deadline, CFQ, noop) and/or the type of the underlying block devices
-+* The bandwidth limitations are guaranteed both for synchronous and
-+  asynchronous operations, even the I/O passing through the page cache or
-+  buffers and not only direct I/O (see below for details)
-+* It is possible to implement a simple user-space application to dynamically
-+  adjust the I/O workload of different process containers at run-time,
-+  according to the particular users' requirements and applications' performance
-+  constraints
-+
-+----------------------------------------------------------------------
-+4. DESIGN
-+
-+The I/O throttling is performed imposing an explicit timeout, via
-+schedule_timeout_killable() on the processes that exceed the I/O limits
-+dedicated to the cgroup they belong to. I/O accounting happens per cgroup.
-+
-+It just works as expected for read operations: the real I/O activity is reduced
-+synchronously according to the defined limitations.
-+
-+Multiple re-reads of pages already present in the page cache are not considered
-+to account the I/O activity, since they actually don't generate any real I/O
-+operation.
-+
-+This means that a process that re-reads multiple times the same blocks of a
-+file is affected by the I/O limitations only for the actual I/O performed from
-+the underlying block devices.
-+
-+For write operations the scenario is a bit more complex, because the writes in
-+the page cache are processed asynchronously by kernel threads (pdflush), using
-+a write-back policy. So the real writes to the underlying block devices occur
-+in a different I/O context respect to the task that originally generated the
-+dirty pages.
-+
-+The I/O bandwidth controller uses the following solution to resolve this
-+problem.
-+
-+The cost of each I/O operation is always accounted when the operation is
-+submitted to the I/O subsystem (submit_bio()).
-+
-+If the operation is a read then we automatically know that the context of the
-+request is the current task and so we can charge the cgroup the current task
-+belongs to. And throttle the current task as well, if it exceeded the cgroup
-+limitations.
-+
-+If the operation is a write, we can charge the right cgroup looking at the
-+owner of the first page involved in the I/O operation, that gives the context
-+that generated the I/O activity at the source. This information can be
-+retrieved using the page_cgroup functionality provided by the cgroup memory
-+controller [4]. In this way we can correctly account the I/O cost to the right
-+cgroup, but we cannot throttle the current task in this stage, because, in
-+general, it is a different task (e.g. a kernel thread that is processing
-+asynchronously the dirty page). For this reason, throttling of write operations
-+is always performed asynchronously in balance_dirty_pages_ratelimited_nr(), a
-+function always called by processes which are dirtying memory.
-+
-+Multiple rules for different block devices are stored in a linked list, using
-+the dev_t number of each block device as key to uniquely identify each element
-+of the list. RCU synchronization is used to protect the whole list structure,
-+since the elements in the list are not supposed to change frequently (they
-+change only when a new rule is defined or an old rule is removed or updated),
-+while the reads in the list occur at each operation that generates I/O. This
-+allows to provide zero overhead for cgroups that do not use any limitation.
-+
-+WARNING: per-block device limiting rules always refer to the dev_t device
-+number. If a block device is unplugged (i.e. a USB device) the limiting rules
-+defined for that device persist and they are still valid if a new device is
-+plugged in the system and it uses the same major and minor numbers.
-+
-+NOTE: explicit sleeps are *not* imposed on tasks doing asynchronous I/O (AIO)
-+operations; AIO throttling is performed returning -EAGAIN from sys_io_submit().
-+Userspace applications must be able to handle this error code opportunely.
-+
-+----------------------------------------------------------------------
-+5. TODO
-+
-+* Implement a rbtree per request queue; all the requests queued to the I/O
-+  subsystem first will go in this rbtree. Then based on cgroup grouping and
-+  control policy dispatch the requests and pass them to the elevator associated
-+  with the queue. This would allow to provide both bandwidth limiting and
-+  proportional bandwidth functionalities using a generic approach (suggested by
-+  Vivek Goyal)
-+
-+* Improve fair throttling: distribute the time to sleep among all the tasks of
-+  a cgroup that exceeded the I/O limits, depending of the amount of IO activity
-+  previously generated in the past by each task (see task_io_accounting)
-+
-+* Try to reduce the cost of calling cgroup_io_throttle() on every submit_bio();
-+  this is not too much expensive, but the call of task_subsys_state() has
-+  surely a cost. A possible solution could be to temporarily account I/O in the
-+  current task_struct and call cgroup_io_throttle() only on each X MB of I/O.
-+  Or on each Y number of I/O requests as well. Better if both X and/or Y can be
-+  tuned at runtime by a userspace tool
-+
-+* Think an alternative design for general purpose usage; special purpose usage
-+  right now is restricted to improve I/O performance predictability and
-+  evaluate more precise response timings for applications doing I/O. To a large
-+  degree the block I/O bandwidth controller should implement a more complex
-+  logic to better evaluate real I/O operations cost, depending also on the
-+  particular block device profile (i.e. USB stick, optical drive, hard disk,
-+  etc.). This would also allow to appropriately account I/O cost for seeky
-+  workloads, respect to large stream workloads. Instead of looking at the
-+  request stream and try to predict how expensive the I/O cost will be, a
-+  totally different approach could be to collect request timings (start time /
-+  elapsed time) and based on collected informations, try to estimate the I/O
-+  cost and usage
-+
-+----------------------------------------------------------------------
-+6. REFERENCES
-+
-+[1] Documentation/cgroups/cgroups.txt
-+[2] http://en.wikipedia.org/wiki/Leaky_bucket
-+[3] http://en.wikipedia.org/wiki/Token_bucket
-+[4] Documentation/controllers/memory.txt
+diff --git a/include/linux/res_counter.h b/include/linux/res_counter.h
+index 0ab55c4..80b9ab8 100644
+--- a/include/linux/res_counter.h
++++ b/include/linux/res_counter.h
+@@ -14,30 +14,36 @@
+  */
+ 
+ #include <linux/cgroup.h>
++#include <linux/jiffies.h>
+ 
+-/*
+- * The core object. the cgroup that wishes to account for some
+- * resource may include this counter into its structures and use
+- * the helpers described beyond
+- */
++/* The various policies that can be used for ratelimiting resources */
++#define	RATELIMIT_LEAKY_BUCKET	0
++#define	RATELIMIT_TOKEN_BUCKET	1
+ 
++/**
++ * struct res_counter - the core object to account cgroup resources
++ *
++ * @usage:	the current resource consumption level
++ * @max_usage:	the maximal value of the usage from the counter creation
++ * @limit:	the limit that usage cannot be exceeded
++ * @failcnt:	the number of unsuccessful attempts to consume the resource
++ * @policy:	the limiting policy / algorithm
++ * @capacity:	the maximum capacity of the resource
++ * @timestamp:	timestamp of the last accounted resource request
++ * @lock:	the lock to protect all of the above.
++ *		The routines below consider this to be IRQ-safe
++ *
++ * The cgroup that wishes to account for some resource may include this counter
++ * into its structures and use the helpers described beyond.
++ */
+ struct res_counter {
+-	/*
+-	 * the current resource consumption level
+-	 */
+ 	unsigned long long usage;
+-	/*
+-	 * the maximal value of the usage from the counter creation
+-	 */
+ 	unsigned long long max_usage;
+-	/*
+-	 * the limit that usage cannot exceed
+-	 */
+ 	unsigned long long limit;
+-	/*
+-	 * the number of unsuccessful attempts to consume the resource
+-	 */
+ 	unsigned long long failcnt;
++	unsigned long long policy;
++	unsigned long long capacity;
++	unsigned long long timestamp;
+ 	/*
+ 	 * the lock to protect all of the above.
+ 	 * the routines below consider this to be IRQ-safe
+@@ -80,6 +86,9 @@ enum {
+ 	RES_USAGE,
+ 	RES_MAX_USAGE,
+ 	RES_LIMIT,
++	RES_POLICY,
++	RES_TIMESTAMP,
++	RES_CAPACITY,
+ 	RES_FAILCNT,
+ };
+ 
+@@ -126,6 +135,15 @@ static inline bool res_counter_limit_check_locked(struct res_counter *cnt)
+ 	return false;
+ }
+ 
++static inline unsigned long long
++res_counter_ratelimit_delta_t(struct res_counter *res)
++{
++	return (long long)get_jiffies_64() - (long long)res->timestamp;
++}
++
++unsigned long long
++res_counter_ratelimit_sleep(struct res_counter *res, ssize_t val);
++
+ /*
+  * Helper function to detect if the cgroup is within it's limit or
+  * not. It's currently called from cgroup_rss_prepare()
+@@ -159,6 +177,23 @@ static inline void res_counter_reset_failcnt(struct res_counter *cnt)
+ 	spin_unlock_irqrestore(&cnt->lock, flags);
+ }
+ 
++static inline int
++res_counter_ratelimit_set_limit(struct res_counter *cnt,
++			unsigned long long policy,
++			unsigned long long limit, unsigned long long max)
++{
++	unsigned long flags;
++
++	spin_lock_irqsave(&cnt->lock, flags);
++	cnt->limit = limit;
++	cnt->capacity = max;
++	cnt->policy = policy;
++	cnt->timestamp = get_jiffies_64();
++	cnt->usage = 0;
++	spin_unlock_irqrestore(&cnt->lock, flags);
++	return 0;
++}
++
+ static inline int res_counter_set_limit(struct res_counter *cnt,
+ 		unsigned long long limit)
+ {
+diff --git a/kernel/res_counter.c b/kernel/res_counter.c
+index f275c8e..e55c674 100644
+--- a/kernel/res_counter.c
++++ b/kernel/res_counter.c
+@@ -9,6 +9,7 @@
+ 
+ #include <linux/types.h>
+ #include <linux/parser.h>
++#include <linux/jiffies.h>
+ #include <linux/fs.h>
+ #include <linux/slab.h>
+ #include <linux/res_counter.h>
+@@ -19,6 +20,8 @@ void res_counter_init(struct res_counter *counter)
+ {
+ 	spin_lock_init(&counter->lock);
+ 	counter->limit = (unsigned long long)LLONG_MAX;
++	counter->capacity = (unsigned long long)LLONG_MAX;
++	counter->timestamp = get_jiffies_64();
+ }
+ 
+ int res_counter_charge_locked(struct res_counter *counter, unsigned long val)
+@@ -62,7 +65,6 @@ void res_counter_uncharge(struct res_counter *counter, unsigned long val)
+ 	spin_unlock_irqrestore(&counter->lock, flags);
+ }
+ 
+-
+ static inline unsigned long long *
+ res_counter_member(struct res_counter *counter, int member)
+ {
+@@ -73,6 +75,12 @@ res_counter_member(struct res_counter *counter, int member)
+ 		return &counter->max_usage;
+ 	case RES_LIMIT:
+ 		return &counter->limit;
++	case RES_POLICY:
++		return &counter->policy;
++	case RES_TIMESTAMP:
++		return &counter->timestamp;
++	case RES_CAPACITY:
++		return &counter->capacity;
+ 	case RES_FAILCNT:
+ 		return &counter->failcnt;
+ 	};
+@@ -137,3 +145,66 @@ int res_counter_write(struct res_counter *counter, int member,
+ 	spin_unlock_irqrestore(&counter->lock, flags);
+ 	return 0;
+ }
++
++static unsigned long long
++ratelimit_leaky_bucket(struct res_counter *res, ssize_t val)
++{
++	unsigned long long delta, t;
++
++	res->usage += val;
++	delta = res_counter_ratelimit_delta_t(res);
++	if (!delta)
++		return 0;
++	t = res->usage * USEC_PER_SEC;
++	t = usecs_to_jiffies(div_u64(t, res->limit));
++	if (t > delta)
++		return t - delta;
++	/* Reset i/o statistics */
++	res->usage = 0;
++	res->timestamp = get_jiffies_64();
++	return 0;
++}
++
++static unsigned long long
++ratelimit_token_bucket(struct res_counter *res, ssize_t val)
++{
++	unsigned long long delta;
++	long long tok;
++
++	res->usage -= val;
++	delta = jiffies_to_msecs(res_counter_ratelimit_delta_t(res));
++	res->timestamp = get_jiffies_64();
++	tok = (long long)res->usage * MSEC_PER_SEC;
++	if (delta) {
++		long long max = (long long)res->capacity * MSEC_PER_SEC;
++
++		tok += delta * res->limit;
++		if (tok > max)
++			tok = max;
++		res->usage = (unsigned long long)div_s64(tok, MSEC_PER_SEC);
++	}
++	return (tok < 0) ? msecs_to_jiffies(div_u64(-tok, res->limit)) : 0;
++}
++
++unsigned long long
++res_counter_ratelimit_sleep(struct res_counter *res, ssize_t val)
++{
++	unsigned long long sleep = 0;
++	unsigned long flags;
++
++	spin_lock_irqsave(&res->lock, flags);
++	if (res->limit)
++		switch (res->policy) {
++		case RATELIMIT_LEAKY_BUCKET:
++			sleep = ratelimit_leaky_bucket(res, val);
++			break;
++		case RATELIMIT_TOKEN_BUCKET:
++			sleep = ratelimit_token_bucket(res, val);
++			break;
++		default:
++			WARN_ON(1);
++			break;
++		}
++	spin_unlock_irqrestore(&res->lock, flags);
++	return sleep;
++}
 -- 
 1.5.4.3
