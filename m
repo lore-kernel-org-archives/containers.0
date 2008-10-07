@@ -1,67 +1,38 @@
-From: ebiederm@xmission.com (Eric W. Biederman)
-Subject: Re: [PATCH 1/8] sysfs: Implement sysfs tagged directory support.
-Date: Tue, 07 Oct 2008 15:27:12 -0700
-Message-ID: <m18wt0qbwf.fsf@frodo.ebiederm.org>
-References: <m1hc9e27ya.fsf_-_@frodo.ebiederm.org> <48B57058.9000101@bull.net>
-	<dac45060809020654g62afb3c9yd104682b93b43bee@mail.gmail.com>
-	<48BD47A8.1080909@bull.net> <20080902170148.GA9305@suse.de>
-	<31436f4a0809032233r2c46de8od8a94460ce3b5ed2@mail.gmail.com>
-	<48BF83E1.5040000@bull.net>
-	<dac45060810070939v80918a0m3963d7fc6fcbb975@mail.gmail.com>
-	<20081007164833.GA16056@suse.de> <m1abdgywnb.fsf@frodo.ebiederm.org>
-	<20081007210902.GB7996@suse.de>
+From: David Miller <davem-fT/PcQaiUtIeIZ0/mPfg9Q@public.gmane.org>
+Subject: Re: [PATCH] netns: Delete virtual interfaces during namespace cleanup
+Date: Tue, 07 Oct 2008 16:08:07 -0700 (PDT)
+Message-ID: <20081007.160807.32968959.davem@davemloft.net>
+References: <48EB4679.1040602@fr.ibm.com> <m1fxn839y3.fsf@frodo.ebiederm.org>
+	<48EB50E4.3060303@fr.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Return-path: <netdev-owner@vger.kernel.org>
-In-Reply-To: <20081007210902.GB7996@suse.de> (Greg KH's message of "Tue, 7 Oct
-	2008 14:09:02 -0700")
-Sender: netdev-owner@vger.kernel.org
-To: Greg KH <gregkh@suse.de>
-Cc: Mark Ryden <markryde@gmail.com>, Benjamin Thery <benjamin.thery@bull.net>, David Shwatrz <dshwatrz@gmail.com>, Greg KH <greg@kroah.com>, Andrew Morton <akpm@linux-foundation.org>, Tejun Heo <htejun@gmail.com>, Daniel Lezcano <dlezcano@fr.ibm.com>, linux-kernel@vger.kernel.org, Al Viro <viro@ftp.linux.org.uk>, Linux Containers <containers@lists.osdl.org>, netdev@vger.kernel.org
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <48EB50E4.3060303-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org
+Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, den-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org, xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Greg KH <gregkh@suse.de> writes:
+From: Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
+Date: Tue, 07 Oct 2008 14:07:00 +0200
 
-> On Tue, Oct 07, 2008 at 01:31:52PM -0700, Eric W. Biederman wrote:
->> Greg KH <gregkh@suse.de> writes:
->> 
->> > On Tue, Oct 07, 2008 at 06:39:04PM +0200, Mark Ryden wrote:
->> >> Hello,
->> >>   So I wonder: the sysfs tagged directory support patch is in GerKH
->> >> tree for more than a month.
->> >
->> > I dropped it from my tree 2 days ago, see the thread on lkml for why.
->> 
->> Greg why did you drop it? 
+> Eric W. Biederman wrote:
+> > Well there is the cheap trick with this patch of waiting until the local end
+> > of veth dies.
 >
-> Because Al said it was full of problems and for us not to accept it.
+> I actually use veth, macvlan, empty netns and physical. But if you
+> are planning the send netns fs soon, I guess I can live with that a
+> time.
 
-Yes. Al found problems.
+Are we anywhere near consensus with this patch?
 
-Al reviewed sysfs with my patchset on top of it.
-
-Al's review found problems in  sysfs with my patchset on top of it.
-
-If you look at what Al found the majority of those problems exist in sysfs
-without my patches.
-
-Does the following sound like a workable path going forward?
-
-- Not merge for 2.6.28 (we are to close to the merge window for everyone's comfort).
-
-- Fix the small issues specific to tagged directory support that showed
-  up in Al's review (patches sent).
-
-- Keep the patches the entire time in a public tree that merges into
-  linux-next so that people treat this code base seriously.
-
-- Resolve the sysfs/vfs lock ordering problem mess that makes
-  locking in sysfs excruciatingly difficult.
-
-- Merge other patches to fix Als other issues with sysfs.
-
-- Merge to 2.6.29 or wherever we are.
-
-
-Eric
-
+Please resubmit once there is some agreement.
