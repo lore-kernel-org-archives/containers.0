@@ -1,120 +1,107 @@
-From: Andrea Righi <righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: Re: [RFC] [PATCH -mm 0/2] memcg: per cgroup dirty_ratio
-Date: Tue, 07 Oct 2008 17:49:49 +0200
-Message-ID: <48EB851D.2030300__44314.8328261033$1223395265$gmane$org@gmail.com>
-References: <1221232192-13553-1-git-send-email-righi.andrea@gmail.com>
-	<20080912131816.e0cfac7a.akpm@linux-foundation.org>
-	<532480950809221641y3471267esff82a14be8056586@mail.gmail.com>
-	<48EB4236.1060100@linux.vnet.ibm.com>
-Reply-To: righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org
+From: "Mark Ryden" <markryde@gmail.com>
+Subject: Re: [PATCH 1/8] sysfs: Implement sysfs tagged directory support.
+Date: Tue, 7 Oct 2008 18:39:04 +0200
+Message-ID: <dac45060810070939v80918a0m3963d7fc6fcbb975@mail.gmail.com>
+References: <m18wwiihbn.fsf_-_@frodo.ebiederm.org>
+	 <20080820021754.GA25182@kroah.com>
+	 <m1od3m282j.fsf_-_@frodo.ebiederm.org>
+	 <m1hc9e27ya.fsf_-_@frodo.ebiederm.org> <48B57058.9000101@bull.net>
+	 <dac45060809020654g62afb3c9yd104682b93b43bee@mail.gmail.com>
+	 <48BD47A8.1080909@bull.net> <20080902170148.GA9305@suse.de>
+	 <31436f4a0809032233r2c46de8od8a94460ce3b5ed2@mail.gmail.com>
+	 <48BF83E1.5040000@bull.net>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
+Content-Type: text/plain; charset=ISO-8859-1
 Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <48EB4236.1060100-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
-Cc: Michael Rubin <mrubin-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, dradford-cT2on/YLNlBWk0Htik3J/w@public.gmane.org, m.innocenti-qooieK91W7JeoWH0uzbU5w@public.gmane.org, fernando-gVGce1chcLdL9jVzuh4AOg@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, eric.rannaud-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, chlunde-om2ZC0WAoZIXWF+eFR7m5Q@public.gmane.org, dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, dpshah-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, agk-9JcytcrH/bA+uJoB2kUjGw@public.gmane.org, matt-cT2on/YLNlBWk0Htik3J/w@public.gmane.org, menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
+Return-path: <netdev-owner@vger.kernel.org>
+In-Reply-To: <48BF83E1.5040000@bull.net>
+Content-Disposition: inline
+Sender: netdev-owner@vger.kernel.org
+To: Benjamin Thery <benjamin.thery@bull.net>
+Cc: David Shwatrz <dshwatrz@gmail.com>, Greg KH <gregkh@suse.de>, Greg KH <greg@kroah.com>, "Eric W. Biederman" <ebiederm@xmission.com>, Andrew Morton <akpm@linux-foundation.org>, Tejun Heo <htejun@gmail.com>, Daniel Lezcano <dlezcano@fr.ibm.com>, linux-kernel@vger.kernel.org, Al Viro <viro@ftp.linux.org.uk>, Linux Containers <containers@lists.osdl.org>, netdev@vger.kernel.org
 List-Id: containers.vger.kernel.org
 
-Balbir Singh wrote:
-> Michael Rubin wrote:
->> On Fri, Sep 12, 2008 at 1:18 PM, Andrew Morton
->> <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org> wrote:
->>> One thing to think about please: Michael Rubin is hitting problems with
->>> the existing /proc/sys/vm/dirty-ratio.  Its present granularity of 1%
->>> is just too coarse for really large machines, and as
->>> memory-size/disk-speed ratios continue to increase, this will just get
->>> worse.
->> Re-sending since I top-posted before. Never again. Also adding more
->> thoughts on a byte based interface.
+Hello,
+  So I wonder: the sysfs tagged directory support patch is in GerKH
+tree for more than a month.
+I cloned today latest Linus tree (2.6.27-rc9) and
+it is not there as far as I can see.
+It is also not in linux-next tree (from september).
+Now, I wonder what is the process of merging this
+GregKH tree ? should I watch the LKML list for a pull request
+from GregKH? or will it be first merged into the linux-next tree?
+
+Regards,
+Mark
+
+
+On Thu, Sep 4, 2008 at 8:44 AM, Benjamin Thery <benjamin.thery@bull.net> wrote:
+> David Shwatrz wrote:
 >>
->> Currently the problem we are hitting is that we cannot specify pdflush
->> to have background limits less than 1% of memory. I am currently
->> finishing up a patch right now that adds a dirty_ratio_millis
->> interface.  I hope to submit the patch to LKML by the end of the week.
+>> Hi,
+>>>
+>>> go into my tree this week,
 >>
->> The idea is that we don't want to break backwards compatibility and we
->> also don't want to have two conflicting knobs in the sysctl or
->> /proc/sys/vm/ space. I thought adding a new knob for those who want to
->> specify finer grained functionality was a compromise. So the patch has
->> a vm_dirty_ratio and a vm_dirty_ratio_millis interface. The first to
->> specify 0-100% and the second to specify .0 to .999%.
+>> I am also interested in this patch; may I ask  - what do you mean by
+>> "my  tree" ?I am a little newbie in the kernel, as you might understand.
+>> I looked into
+>> http://www.kernel.org/pub/linux/kernel/people/gregkh/gregkh-2.6/
+>> for candidates for this git tree you are talking about.
 >>
->> So to represent 0.125% of RAM we set
->> vm_dirty_ratio = 0
->> vm_dirty_ratio_millis = 125
+>>  May I ask: what is the **exact** URL for this git tree you are talking
+>> about ?
+>
+> Greg's tree is there:
+> http://git.kernel.org/?p=linux/kernel/git/gregkh/patches.git;a=summary
+>
+> You can clone it from here:
+> git://git.kernel.org/pub/scm/linux/kernel/git/gregkh/patches.git
+>
+> It contains the patches serie to be applied on top of
+> linux-2.6 (with 'quilt' for example).
+>
+> Benjamin
+>
 >>
->> The same for the background_ratio.
+>> Thanks,
 >>
->> I would also prefer using a bytes interface but I am not sure how to
->> offer that without  either removing the legacy interface of the ratios
->> or by offering a concurrent interface that might be confusing such as
->> when users are looking at the old one and not aware of a new one.
+>> Regards,
+>> DS
 >>
-> 
-> Just provide a vm_dirty_ration_in_bytes interface and keep it in sync with
-> vm_dirty_ratio (they are just two representations of the same internal value)
-> and for higher resolution propose that users use the bytes interface.
-
-Hi Balbir,
-
-now that I read carefully the documentation, the description in
-Documentation/filesystems/proc.txt seems to be a bit misleading. In
-proc.txt we say that dirty_ratio and dirty_background_ratio are "a
-percentage of total system memory", but in mm/page-writeback.c we apply
-the percentages to the dirtyable memory: free pages + reclaimable pages.
-So, first of all I think we should clarify this in the documentation...
-
-Saying that, keeping in sync the vm_dirty_amount_in_bytes according to
-dirty_ratio_in_percentage is not a trivial task. One is a static value,
-the other depends on the dirtyable memory in the system. If we want to
-preserve the same behaviour we should do the following:
-
-dirty_ratio = x => dirty_amount_in_bytes = x * dirtyable_memory / 100
-
-dirty_amount_in_bytes = y => dirty_ratio = y / dirtyable_memory * 100
-
-But anytime the dirtyable memory (or the total memory in the system)
-changes we should update both values accordingly to preserve the
-coherency between them (ouch!).
-
-Possible solutions:
-
-1) introduce fine-grained dirty_ratio handling decimals by an opportune
-   parser (disadvantage: this would break the compatibility with all the
-   userspace apps that expect to read an int from vm_dirty_ratio)
-
-2) introduce dirty_ratio + dirty_ratio_millis (disadvantage: can
-   generate unexpected behaviours when something is written to
-   dirty_ratio ignoring the existence of dirty_ratio_millis)
-
-3) introduce dirty_ratio + dirty_amount_in_bytes mutually exclusive,
-   writing to one automatically "disable" the other (disadvantage:
-   writing to dirty_ratio ignoring dirty_amount_in_bytes can cause
-   unexpected behaviours)
-
-4) introduce dirty_ratio + dirty_amount_in_bytes and change the
-   old behaviour: when something is written to dirty_ratio,
-   dirty_amount_in_bytes is evaluated in function of totalram_pages (or
-   the memcg limit) and then we always use this static value, instead of
-   something that depends on the dirtyable memory - we can easily update
-   dirty_amount_in_bytes also when totalram_pages or the memcg limit
-   changes (disadvantage: change an old - working - behaviour).
-
-5) handle fine-grained dirty_ratio decimals by an opportune parser when
-   writing something to dirty_ratio; export the percentage units via
-   dirty_ratio, and the decimals via dirty_ratio_decimals; writing to
-   dirty_ratio_decimals is not allowed.
-
-I tend to choose 5. The same for dirty_background_ratio.
-
--Andrea
+>>
+>> On Tue, Sep 2, 2008 at 8:01 PM, Greg KH <gregkh@suse.de> wrote:
+>>>
+>>> On Tue, Sep 02, 2008 at 04:03:20PM +0200, Benjamin Thery wrote:
+>>>>
+>>>> Mark Ryden wrote:
+>>>>>
+>>>>> Hello,
+>>>>>  I hope that this patch (from 4.7.08) was not forgetten... I don't see
+>>>>> it for example in linux-net (I have an up-to-date linux-next git
+>>>>> tree).
+>>>>
+>>>> I was about to ask the same thing.
+>>>>
+>>>> Greg, what is the plan with these remaining patches for sysfs tagged
+>>>> dirs? Will you have some time to merge them in your tree soon?
+>>>
+>>> Yes, they should go into my tree this week, sorry been busy with 2.6.27
+>>> work and Novell's Hackweek.
+>>>
+>>> thanks,
+>>>
+>>> greg k-h
+>>> --
+>>> To unsubscribe from this list: send the line "unsubscribe netdev" in
+>>> the body of a message to majordomo@vger.kernel.org
+>>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>>>
+>>
+>>
+>
+>
+> --
+> B e n j a m i n   T h e r y  - BULL/DT/Open Software R&D
+>
+>   http://www.bull.com
+>
