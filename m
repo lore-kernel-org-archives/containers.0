@@ -1,29 +1,66 @@
-From: Daniel Lezcano <dlezcano@fr.ibm.com>
-Subject: Re: [PATCH 1/8] sysfs: Implement sysfs tagged directory support.
-Date: Tue, 07 Oct 2008 18:52:23 +0200
-Message-ID: <48EB93C7.6040408@fr.ibm.com>
-References: <m18wwiihbn.fsf_-_@frodo.ebiederm.org> <20080820021754.GA25182@kroah.com>  <m1od3m282j.fsf_-_@frodo.ebiederm.org> <m1hc9e27ya.fsf_-_@frodo.ebiederm.org> <48B57058.9000101@bull.net> <dac45060809020654g62afb3c9yd104682b93b43bee@mail.gmail.com> <48BD47A8.1080909@bull.net> <20080902170148.GA9305@suse.de> <31436f4a0809032233r2c46de8od8a94460ce3b5ed2@mail.gmail.com> <48BF83E1.5040000@bull.net> <dac45060810070939v80918a0m3963d7fc6fcbb975@mail.gmail.com>
+From: "Serge E. Hallyn" <serue@us.ibm.com>
+Subject: Re: [PATCH 1/3] user namespaces: introduce
+	user_struct->user_namespace relationship
+Date: Tue, 7 Oct 2008 12:05:39 -0500
+Message-ID: <20081007170539.GA525@us.ibm.com>
+References: <20081004013644.GA24104@us.ibm.com> <alpine.LRH.1.10.0810060846020.30516@tundra.namei.org> <20081006141101.GB15419@us.ibm.com> <alpine.LRH.1.10.0810070847480.4113@tundra.namei.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
-Content-Transfer-Encoding: 7bit
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1756559AbYJGQxw@vger.kernel.org>
-In-Reply-To: <dac45060810070939v80918a0m3963d7fc6fcbb975@mail.gmail.com>
+Content-Type: text/plain; charset=us-ascii
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1756333AbYJGRV4@vger.kernel.org>
+Content-Disposition: inline
+In-Reply-To: <alpine.LRH.1.10.0810070847480.4113@tundra.namei.org>
 Sender: linux-kernel-owner@vger.kernel.org
-To: Mark Ryden <markryde@gmail.com>
-Cc: Benjamin Thery <benjamin.thery@bull.net>, David Shwatrz <dshwatrz@gmail.com>, Greg KH <gregkh@suse.de>, Greg KH <greg@kroah.com>, "Eric W. Biederman" <ebiederm@xmission.com>, Andrew Morton <akpm@linux-foundation.org>, Tejun Heo <htejun@gmail.com>, linux-kernel@vger.kernel.org, Al Viro <viro@ftp.linux.org.uk>, Linux Containers <containers@lists.osdl.org>, netdev@vger.kernel.org
+To: James Morris <jmorris@namei.org>
+Cc: David Howells <dhowells@redhat.com>, Andrew Morton <akpm@osdl.org>, Linux Containers <containers@lists.osdl.org>, lkml <linux-kernel@vger.kernel.org>
 List-Id: containers.vger.kernel.org
 
-Mark Ryden wrote:
-> Hello,
->   So I wonder: the sysfs tagged directory support patch is in GerKH
-> tree for more than a month.
-> I cloned today latest Linus tree (2.6.27-rc9) and
-> it is not there as far as I can see.
-> It is also not in linux-next tree (from september).
-> Now, I wonder what is the process of merging this
-> GregKH tree ? should I watch the LKML list for a pull request
-> from GregKH? or will it be first merged into the linux-next tree?
+Quoting James Morris (jmorris@namei.org):
+> On Mon, 6 Oct 2008, Serge E. Hallyn wrote:
+> 
+> > Quoting James Morris (jmorris@namei.org):
+> > > On Fri, 3 Oct 2008, Serge E. Hallyn wrote:
+> > > 
+> > > > Hi James,
+> > > > 
+> > > > here are 3 patches to fix up the user namespaces a bit in preparation
+> > > > for real userns work to begin.  Andrew had suggested that these be
+> > > > rebased on top of your -next tree because they will conflict with
+> > > > the credentials work.  But it looks like much of the credentials stuff
+> > > > isn't in your next branch.  If you'd prefer that I port these to
+> > > > creds-next, please let me know.  I'll have to do it eventually :)
+> > > 
+> > > creds-next is dead.
+> > > 
+> > > Code ready for the next merge window is in the 'next' branch, while the 
+> > > current creds code is in the 'creds-next-subsys' branch, which hasn't been 
+> > > picked up in linux-next yet because of LPC and sfr's vacation.
+> > > 
+> > > When do you expect these patches to be sent upstream?  Are they ready now 
+> > > as an incremental change for 2.6.27?
+> > 
+> > Oh I'm not trying to get them into 2.6.28, I'm just trying to get them
+> > more widely tested, hopefully aiming for 2.6.29.  They have been stable
+> > in all of my tests, and the last patch fixes a real (behavioral - not
+> > oops-inducing) bug in the current code, but I'm trying to figure out
+> > which path they should take.
+> 
+> I suggest feeding them into linux-next directly until you want them merged 
+> with another tree.  Are there known clashes with the creds work?  If so, 
 
-They have been dropped.
+Certainly with the overall creds work.  I haven't looked in
+creds-next-subsys yet to see if it conflicts.  I'll go ahead and port
+later this week or early next.
 
-http://marc.info/?l=linux-kernel&m=122318517411596&w=2
+> the fixups could be carried in linux-next, or generate them against 
+> creds-next-subsys for inclusion after that.
+
+creds-next-subsys is not yet feeding into linux-next, right?  So I
+should wait until they hit linux-next?
+
+(It makes more sense for me to port userns on top of creds than for
+David to port creds on top of my patches anyway.  I'm actually a bit
+afraid that my refcounting will be complicated by struct creds, but
+we'll see)
+
+thanks,
+-serge
