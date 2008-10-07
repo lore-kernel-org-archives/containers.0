@@ -1,15 +1,17 @@
-From: Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH] net: Support specifying the network namespace upon device
-	creation.
-Date: Tue, 07 Oct 2008 14:20:42 +0200
-Message-ID: <48EB541A.5070306@fr.ibm.com>
-References: <m18wt6v7eb.fsf@frodo.ebiederm.org>
-	<m1vdwatshs.fsf@frodo.ebiederm.org>
+From: Andrea Righi <righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Subject: Re: [RFC] [PATCH -mm 0/2] memcg: per cgroup dirty_ratio
+Date: Tue, 07 Oct 2008 17:49:49 +0200
+Message-ID: <48EB851D.2030300__44314.8328261033$1223395265$gmane$org@gmail.com>
+References: <1221232192-13553-1-git-send-email-righi.andrea@gmail.com>
+	<20080912131816.e0cfac7a.akpm@linux-foundation.org>
+	<532480950809221641y3471267esff82a14be8056586@mail.gmail.com>
+	<48EB4236.1060100@linux.vnet.ibm.com>
+Reply-To: righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <m1vdwatshs.fsf-B27657KtZYmhTnVgQlOflh2eb7JE58TQ@public.gmane.org>
+In-Reply-To: <48EB4236.1060100-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,168 +21,100 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, "Denis V. Lunev" <den-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>, David Miller <davem-fT/PcQaiUtIeIZ0/mPfg9Q@public.gmane.org>, Benjamin Thery <benjamin.thery-6ktuUTfB/bM@public.gmane.org>
+To: balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
+Cc: Michael Rubin <mrubin-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, dradford-cT2on/YLNlBWk0Htik3J/w@public.gmane.org, m.innocenti-qooieK91W7JeoWH0uzbU5w@public.gmane.org, fernando-gVGce1chcLdL9jVzuh4AOg@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, eric.rannaud-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, chlunde-om2ZC0WAoZIXWF+eFR7m5Q@public.gmane.org, dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, dpshah-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, agk-9JcytcrH/bA+uJoB2kUjGw@public.gmane.org, matt-cT2on/YLNlBWk0Htik3J/w@public.gmane.org, menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Eric W. Biederman wrote:
-> There is no good reason to not support userspace specifying the
-> network namespace during device creation and it seems a handy
-> thing to do.
+Balbir Singh wrote:
+> Michael Rubin wrote:
+>> On Fri, Sep 12, 2008 at 1:18 PM, Andrew Morton
+>> <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org> wrote:
+>>> One thing to think about please: Michael Rubin is hitting problems with
+>>> the existing /proc/sys/vm/dirty-ratio.  Its present granularity of 1%
+>>> is just too coarse for really large machines, and as
+>>> memory-size/disk-speed ratios continue to increase, this will just get
+>>> worse.
+>> Re-sending since I top-posted before. Never again. Also adding more
+>> thoughts on a byte based interface.
+>>
+>> Currently the problem we are hitting is that we cannot specify pdflush
+>> to have background limits less than 1% of memory. I am currently
+>> finishing up a patch right now that adds a dirty_ratio_millis
+>> interface.  I hope to submit the patch to LKML by the end of the week.
+>>
+>> The idea is that we don't want to break backwards compatibility and we
+>> also don't want to have two conflicting knobs in the sysctl or
+>> /proc/sys/vm/ space. I thought adding a new knob for those who want to
+>> specify finer grained functionality was a compromise. So the patch has
+>> a vm_dirty_ratio and a vm_dirty_ratio_millis interface. The first to
+>> specify 0-100% and the second to specify .0 to .999%.
+>>
+>> So to represent 0.125% of RAM we set
+>> vm_dirty_ratio = 0
+>> vm_dirty_ratio_millis = 125
+>>
+>> The same for the background_ratio.
+>>
+>> I would also prefer using a bytes interface but I am not sure how to
+>> offer that without  either removing the legacy interface of the ratios
+>> or by offering a concurrent interface that might be confusing such as
+>> when users are looking at the old one and not aware of a new one.
+>>
 > 
-> We have to be a little extra careful in this case to ensure that
-> the network namespace exists through the point where we call
-> register_netdevice.
-> 
-> In addition we need to pass the network namespace to the
-> rtnl_link_ops.newlink method so we can properly create
-> the new device in another namespace and have it be a vlan
-> device of a device in our current network namespace.
-> 
-> In summary this patch makes ip link add somename netns NNN type sometype
-> do the obvious thing instead of ignoring the network namespace parameter.
-> 
-> Signed-off-by: Eric W. Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-> ---
->  drivers/net/macvlan.c    |    4 ++--
->  drivers/net/veth.c       |    5 +++--
->  include/net/rtnetlink.h  |    3 ++-
->  net/8021q/vlan_netlink.c |    4 ++--
->  net/core/rtnetlink.c     |   17 ++++++++++++++++-
->  5 files changed, 25 insertions(+), 8 deletions(-)
-> 
-> diff --git a/drivers/net/macvlan.c b/drivers/net/macvlan.c
-> index 4239450..fc5933b 100644
-> --- a/drivers/net/macvlan.c
-> +++ b/drivers/net/macvlan.c
-> @@ -416,7 +416,7 @@ static int macvlan_validate(struct nlattr *tb[], struct nlattr *data[])
->  	return 0;
->  }
-> 
-> -static int macvlan_newlink(struct net_device *dev,
-> +static int macvlan_newlink(struct net *net, struct net_device *dev,
->  			   struct nlattr *tb[], struct nlattr *data[])
->  {
->  	struct macvlan_dev *vlan = netdev_priv(dev);
-> @@ -427,7 +427,7 @@ static int macvlan_newlink(struct net_device *dev,
->  	if (!tb[IFLA_LINK])
->  		return -EINVAL;
-> 
-> -	lowerdev = __dev_get_by_index(dev_net(dev), nla_get_u32(tb[IFLA_LINK]));
-> +	lowerdev = __dev_get_by_index(net, nla_get_u32(tb[IFLA_LINK]));
->  	if (lowerdev == NULL)
->  		return -ENODEV;
-> 
-> diff --git a/drivers/net/veth.c b/drivers/net/veth.c
-> index 31cd817..3a2d818 100644
-> --- a/drivers/net/veth.c
-> +++ b/drivers/net/veth.c
-> @@ -335,7 +335,7 @@ static int veth_validate(struct nlattr *tb[], struct nlattr *data[])
-> 
->  static struct rtnl_link_ops veth_link_ops;
-> 
-> -static int veth_newlink(struct net_device *dev,
-> +static int veth_newlink(struct net *net, struct net_device *dev,
->  			 struct nlattr *tb[], struct nlattr *data[])
->  {
->  	int err;
-> @@ -375,7 +375,7 @@ static int veth_newlink(struct net_device *dev,
->  	else
->  		snprintf(ifname, IFNAMSIZ, DRV_NAME "%%d");
-> 
-> -	peer = rtnl_create_link(dev_net(dev), ifname, &veth_link_ops, tbp);
-> +	peer = rtnl_create_link(net, ifname, &veth_link_ops, tbp);
->  	if (IS_ERR(peer))
->  		return PTR_ERR(peer);
-> 
-> @@ -383,6 +383,7 @@ static int veth_newlink(struct net_device *dev,
->  		random_ether_addr(peer->dev_addr);
-> 
->  	err = register_netdevice(peer);
-> +	put_net(peer->nd_net);
->  	if (err < 0)
->  		goto err_register_peer;
-> 
-> diff --git a/include/net/rtnetlink.h b/include/net/rtnetlink.h
-> index 3c1895e..dbf546f 100644
-> --- a/include/net/rtnetlink.h
-> +++ b/include/net/rtnetlink.h
-> @@ -55,7 +55,8 @@ struct rtnl_link_ops {
->  	int			(*validate)(struct nlattr *tb[],
->  					    struct nlattr *data[]);
-> 
-> -	int			(*newlink)(struct net_device *dev,
-> +	int			(*newlink)(struct net *net,
-> +					   struct net_device *dev,
->  					   struct nlattr *tb[],
->  					   struct nlattr *data[]);
->  	int			(*changelink)(struct net_device *dev,
-> diff --git a/net/8021q/vlan_netlink.c b/net/8021q/vlan_netlink.c
-> index e9c91dc..e6190f7 100644
-> --- a/net/8021q/vlan_netlink.c
-> +++ b/net/8021q/vlan_netlink.c
-> @@ -100,7 +100,7 @@ static int vlan_changelink(struct net_device *dev,
->  	return 0;
->  }
-> 
-> -static int vlan_newlink(struct net_device *dev,
-> +static int vlan_newlink(struct net *net, struct net_device *dev,
->  			struct nlattr *tb[], struct nlattr *data[])
->  {
->  	struct vlan_dev_info *vlan = vlan_dev_info(dev);
-> @@ -112,7 +112,7 @@ static int vlan_newlink(struct net_device *dev,
-> 
->  	if (!tb[IFLA_LINK])
->  		return -EINVAL;
-> -	real_dev = __dev_get_by_index(dev_net(dev), nla_get_u32(tb[IFLA_LINK]));
-> +	real_dev = __dev_get_by_index(net, nla_get_u32(tb[IFLA_LINK]));
+> Just provide a vm_dirty_ration_in_bytes interface and keep it in sync with
+> vm_dirty_ratio (they are just two representations of the same internal value)
+> and for higher resolution propose that users use the bytes interface.
 
-Hmm, if the macvlan is created inside a namespace, the network namespace 
-specified in the parameter function will not be the namespace where 
-belongs IFLA_LINK and the __dev_get_by_index will fail, no ?
+Hi Balbir,
 
->  	if (!real_dev)
->  		return -ENODEV;
-> 
-> diff --git a/net/core/rtnetlink.c b/net/core/rtnetlink.c
-> index 8862498..069b176 100644
-> --- a/net/core/rtnetlink.c
-> +++ b/net/core/rtnetlink.c
-> @@ -1002,6 +1002,19 @@ struct net_device *rtnl_create_link(struct net *net, char *ifname,
->  			goto err_free;
->  	}
-> 
-> +	/* To support userspace specifying a network namespace during
-> +	 * device creation we grab the network namespace here and hold
-> +	 * it until just after register_netdevice to prevent races.
-> +	 */
-> +	if (!tb[IFLA_NET_NS_PID])
-> +		get_net(net);
-> +	else {
-> +		net = get_net_ns_by_pid(nla_get_u32(tb[IFLA_NET_NS_PID]));
-> +		if (IS_ERR(net)) {
-> +			err = PTR_ERR(net);
-> +			goto err_free;
-> +		}
-> +	}
->  	dev_net_set(dev, net);
->  	dev->rtnl_link_ops = ops;
-> 
-> @@ -1150,10 +1163,12 @@ replay:
->  		if (IS_ERR(dev))
->  			err = PTR_ERR(dev);
->  		else if (ops->newlink)
-> -			err = ops->newlink(dev, tb, data);
-> +			err = ops->newlink(net, dev, tb, data);
->  		else
->  			err = register_netdevice(dev);
-> 
-> +		if (!IS_ERR(dev))
-> +			put_net(dev->nd_net);
+now that I read carefully the documentation, the description in
+Documentation/filesystems/proc.txt seems to be a bit misleading. In
+proc.txt we say that dirty_ratio and dirty_background_ratio are "a
+percentage of total system memory", but in mm/page-writeback.c we apply
+the percentages to the dirtyable memory: free pages + reclaimable pages.
+So, first of all I think we should clarify this in the documentation...
 
-If there is an error in ops->newlink or register_netdevice, we will exit 
-without releasing the net refcount.
+Saying that, keeping in sync the vm_dirty_amount_in_bytes according to
+dirty_ratio_in_percentage is not a trivial task. One is a static value,
+the other depends on the dirtyable memory in the system. If we want to
+preserve the same behaviour we should do the following:
 
->  		if (err < 0 && !IS_ERR(dev))
->  			free_netdev(dev);
->  		return err;
+dirty_ratio = x => dirty_amount_in_bytes = x * dirtyable_memory / 100
+
+dirty_amount_in_bytes = y => dirty_ratio = y / dirtyable_memory * 100
+
+But anytime the dirtyable memory (or the total memory in the system)
+changes we should update both values accordingly to preserve the
+coherency between them (ouch!).
+
+Possible solutions:
+
+1) introduce fine-grained dirty_ratio handling decimals by an opportune
+   parser (disadvantage: this would break the compatibility with all the
+   userspace apps that expect to read an int from vm_dirty_ratio)
+
+2) introduce dirty_ratio + dirty_ratio_millis (disadvantage: can
+   generate unexpected behaviours when something is written to
+   dirty_ratio ignoring the existence of dirty_ratio_millis)
+
+3) introduce dirty_ratio + dirty_amount_in_bytes mutually exclusive,
+   writing to one automatically "disable" the other (disadvantage:
+   writing to dirty_ratio ignoring dirty_amount_in_bytes can cause
+   unexpected behaviours)
+
+4) introduce dirty_ratio + dirty_amount_in_bytes and change the
+   old behaviour: when something is written to dirty_ratio,
+   dirty_amount_in_bytes is evaluated in function of totalram_pages (or
+   the memcg limit) and then we always use this static value, instead of
+   something that depends on the dirtyable memory - we can easily update
+   dirty_amount_in_bytes also when totalram_pages or the memcg limit
+   changes (disadvantage: change an old - working - behaviour).
+
+5) handle fine-grained dirty_ratio decimals by an opportune parser when
+   writing something to dirty_ratio; export the percentage units via
+   dirty_ratio, and the decimals via dirty_ratio_decimals; writing to
+   dirty_ratio_decimals is not allowed.
+
+I tend to choose 5. The same for dirty_background_ratio.
+
+-Andrea
