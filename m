@@ -1,7 +1,7 @@
 From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: [RFC v6][PATCH 4/9] Dump memory address space
-Date: Wed,  8 Oct 2008 06:19:52 -0400
-Message-ID: <1223461197-11513-5-git-send-email-orenl__5274.69230951301$1223462220$gmane$org@cs.columbia.edu>
+Subject: [RFC v6][PATCH 8/9] Dump open file descriptors
+Date: Wed,  8 Oct 2008 06:19:56 -0400
+Message-ID: <1223461197-11513-9-git-send-email-orenl__41385.564619168$1223462223$gmane$org@cs.columbia.edu>
 References: <1223461197-11513-1-git-send-email-orenl@cs.columbia.edu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -21,188 +21,66 @@ To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 Cc: jeremy-TSDbQ3PG+2Y@public.gmane.org, arnd-r2nGTMty4D4@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Alexander Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, "H. Peter Anvin" <hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org>, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-For each VMA, there is a 'struct cr_vma'; if the VMA is file-mapped,
-it will be followed by the file name. Then comes the actual contents,
-in one or more chunk: each chunk begins with a header that specifies
-how many pages it holds, then the virtual addresses of all the dumped
-pages in that chunk, followed by the actual contents of all dumped
-pages. A header with zero number of pages marks the end of the contents.
-Then comes the next VMA and so on.
+Dump the files_struct of a task with 'struct cr_hdr_files', followed by
+all open file descriptors. Since FDs can be shared, they are assigned an
+objref and registered in the object hash.
+
+For each open FD there is a 'struct cr_hdr_fd_ent' with the FD, its objref
+and its close-on-exec property. If the FD is to be saved (first time)
+then this is followed by a 'struct cr_hdr_fd_data' with the FD state.
+Then will come the next FD and so on.
+
+This patch only handles basic FDs - regular files, directories and also
+symbolic links.
 
 Signed-off-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 Acked-by: Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 ---
- arch/x86/mm/checkpoint.c         |   31 +++
- arch/x86/mm/restart.c            |    1 +
- checkpoint/Makefile              |    3 +-
- checkpoint/checkpoint.c          |   53 ++++
- checkpoint/checkpoint_arch.h     |    2 +
- checkpoint/checkpoint_mem.h      |   41 +++
- checkpoint/ckpt_mem.c            |  500 ++++++++++++++++++++++++++++++++++++++
- checkpoint/sys.c                 |   16 ++
- include/asm-x86/checkpoint_hdr.h |    5 +
- include/linux/checkpoint.h       |   12 +
- include/linux/checkpoint_hdr.h   |   32 +++
- 11 files changed, 695 insertions(+), 1 deletions(-)
- create mode 100644 checkpoint/checkpoint_mem.h
- create mode 100644 checkpoint/ckpt_mem.c
+ checkpoint/Makefile            |    2 +-
+ checkpoint/checkpoint.c        |    4 +
+ checkpoint/checkpoint_file.h   |   17 +++
+ checkpoint/ckpt_file.c         |  231 ++++++++++++++++++++++++++++++++++++++++
+ include/linux/checkpoint.h     |    7 +-
+ include/linux/checkpoint_hdr.h |   32 ++++++-
+ 6 files changed, 288 insertions(+), 5 deletions(-)
+ create mode 100644 checkpoint/checkpoint_file.h
+ create mode 100644 checkpoint/ckpt_file.c
 
-diff --git a/arch/x86/mm/checkpoint.c b/arch/x86/mm/checkpoint.c
-index eb60003..d6c5263 100644
---- a/arch/x86/mm/checkpoint.c
-+++ b/arch/x86/mm/checkpoint.c
-@@ -196,3 +196,34 @@ int cr_write_cpu(struct cr_ctx *ctx, struct task_struct *t)
- 	cr_hbuf_put(ctx, sizeof(*hh));
- 	return ret;
- }
-+
-+/* dump the mm->context state */
-+int cr_write_mm_context(struct cr_ctx *ctx, struct mm_struct *mm, int parent)
-+{
-+	struct cr_hdr h;
-+	struct cr_hdr_mm_context *hh = cr_hbuf_get(ctx, sizeof(*hh));
-+	int ret;
-+
-+	h.type = CR_HDR_MM_CONTEXT;
-+	h.len = sizeof(*hh);
-+	h.parent = parent;
-+
-+	mutex_lock(&mm->context.lock);
-+
-+	hh->ldt_entry_size = LDT_ENTRY_SIZE;
-+	hh->nldt = mm->context.size;
-+
-+	cr_debug("nldt %d\n", hh->nldt);
-+
-+	ret = cr_write_obj(ctx, &h, hh);
-+	cr_hbuf_put(ctx, sizeof(*hh));
-+	if (ret < 0)
-+		goto out;
-+
-+	ret = cr_kwrite(ctx, mm->context.ldt,
-+			mm->context.size * LDT_ENTRY_SIZE);
-+
-+ out:
-+	mutex_unlock(&mm->context.lock);
-+	return ret;
-+}
-diff --git a/arch/x86/mm/restart.c b/arch/x86/mm/restart.c
-index c0c29f6..6079e44 100644
---- a/arch/x86/mm/restart.c
-+++ b/arch/x86/mm/restart.c
-@@ -8,6 +8,7 @@
-  *  distribution for more details.
-  */
- 
-+#include <linux/unistd.h>
- #include <asm/desc.h>
- #include <asm/i387.h>
- 
 diff --git a/checkpoint/Makefile b/checkpoint/Makefile
-index d2df68c..3a0df6d 100644
+index 9843fb9..7496695 100644
 --- a/checkpoint/Makefile
 +++ b/checkpoint/Makefile
-@@ -2,4 +2,5 @@
- # Makefile for linux checkpoint/restart.
+@@ -3,4 +3,4 @@
  #
  
--obj-$(CONFIG_CHECKPOINT_RESTART) += sys.o checkpoint.o restart.o
-+obj-$(CONFIG_CHECKPOINT_RESTART) += sys.o checkpoint.o restart.o \
-+		ckpt_mem.o
+ obj-$(CONFIG_CHECKPOINT_RESTART) += sys.o checkpoint.o restart.o objhash.o \
+-		ckpt_mem.o rstr_mem.o
++		ckpt_mem.o rstr_mem.o ckpt_file.o
 diff --git a/checkpoint/checkpoint.c b/checkpoint/checkpoint.c
-index 6ca26d0..d4c1b31 100644
+index d4c1b31..87420dc 100644
 --- a/checkpoint/checkpoint.c
 +++ b/checkpoint/checkpoint.c
-@@ -55,6 +55,55 @@ int cr_write_string(struct cr_ctx *ctx, char *str, int len)
- 	return cr_write_obj(ctx, &h, str);
- }
- 
-+/**
-+ * cr_fill_fname - return pathname of a given file
-+ * @path: path name
-+ * @root: relative root
-+ * @buf: buffer for pathname
-+ * @n: buffer length (in) and pathname length (out)
-+ */
-+static char *
-+cr_fill_fname(struct path *path, struct path *root, char *buf, int *n)
-+{
-+	char *fname;
-+
-+	BUG_ON(!buf);
-+	fname = __d_path(path, root, buf, *n);
-+	if (!IS_ERR(fname))
-+		*n = (buf + (*n) - fname);
-+	return fname;
-+}
-+
-+/**
-+ * cr_write_fname - write a file name
-+ * @ctx: checkpoint context
-+ * @path: path name
-+ * @root: relative root
-+ */
-+int cr_write_fname(struct cr_ctx *ctx, struct path *path, struct path *root)
-+{
-+	struct cr_hdr h;
-+	char *buf, *fname;
-+	int ret, flen;
-+
-+	flen = PATH_MAX;
-+	buf = kmalloc(flen, GFP_KERNEL);
-+	if (!buf)
-+		return -ENOMEM;
-+
-+	fname = cr_fill_fname(path, root, buf, &flen);
-+	if (!IS_ERR(fname)) {
-+		h.type = CR_HDR_FNAME;
-+		h.len = flen;
-+		h.parent = 0;
-+		ret = cr_write_obj(ctx, &h, fname);
-+	} else
-+		ret = PTR_ERR(fname);
-+
-+	kfree(buf);
-+	return ret;
-+}
-+
- /* write the checkpoint header */
- static int cr_write_head(struct cr_ctx *ctx)
- {
-@@ -150,6 +199,10 @@ static int cr_write_task(struct cr_ctx *ctx, struct task_struct *t)
- 	cr_debug("task_struct: ret %d\n", ret);
+@@ -203,6 +203,10 @@ static int cr_write_task(struct cr_ctx *ctx, struct task_struct *t)
+ 	cr_debug("memory: ret %d\n", ret);
  	if (ret < 0)
  		goto out;
-+	ret = cr_write_mm(ctx, t);
-+	cr_debug("memory: ret %d\n", ret);
++	ret = cr_write_files(ctx, t);
++	cr_debug("files: ret %d\n", ret);
 +	if (ret < 0)
 +		goto out;
  	ret = cr_write_thread(ctx, t);
  	cr_debug("thread: ret %d\n", ret);
  	if (ret < 0)
-diff --git a/checkpoint/checkpoint_arch.h b/checkpoint/checkpoint_arch.h
-index bf2d21e..7da4ad0 100644
---- a/checkpoint/checkpoint_arch.h
-+++ b/checkpoint/checkpoint_arch.h
-@@ -2,6 +2,8 @@
- 
- extern int cr_write_thread(struct cr_ctx *ctx, struct task_struct *t);
- extern int cr_write_cpu(struct cr_ctx *ctx, struct task_struct *t);
-+extern int cr_write_mm_context(struct cr_ctx *ctx,
-+			       struct mm_struct *mm, int parent);
- 
- extern int cr_read_thread(struct cr_ctx *ctx);
- extern int cr_read_cpu(struct cr_ctx *ctx);
-diff --git a/checkpoint/checkpoint_mem.h b/checkpoint/checkpoint_mem.h
+diff --git a/checkpoint/checkpoint_file.h b/checkpoint/checkpoint_file.h
 new file mode 100644
-index 0000000..85546f4
+index 0000000..9dc3eba
 --- /dev/null
-+++ b/checkpoint/checkpoint_mem.h
-@@ -0,0 +1,41 @@
-+#ifndef _CHECKPOINT_CKPT_MEM_H_
-+#define _CHECKPOINT_CKPT_MEM_H_
++++ b/checkpoint/checkpoint_file.h
+@@ -0,0 +1,17 @@
++#ifndef _CHECKPOINT_CKPT_FILE_H_
++#define _CHECKPOINT_CKPT_FILE_H_
 +/*
-+ *  Generic container checkpoint-restart
++ *  Checkpoint file descriptors
 + *
 + *  Copyright (C) 2008 Oren Laadan
 + *
@@ -211,43 +89,19 @@ index 0000000..85546f4
 + *  distribution for more details.
 + */
 +
-+#include <linux/mm_types.h>
++#include <linux/fdtable.h>
 +
-+/*
-+ * page-array chains: each cr_pgarr describes a set of <strcut page *,vaddr>
-+ * tuples (where vaddr is the virtual address of a page in a particular mm).
-+ * Specifically, we use separate arrays so that all vaddrs can be written
-+ * and read at once.
-+ */
++int cr_scan_fds(struct files_struct *files, int **fdtable);
 +
-+struct cr_pgarr {
-+	unsigned long *vaddrs;
-+	struct page **pages;
-+	unsigned int nr_used;
-+	struct list_head list;
-+};
-+
-+#define CR_PGARR_TOTAL  (PAGE_SIZE / sizeof(void *))
-+#define CR_PGARR_CHUNK  (4 * CR_PGARR_TOTAL)
-+
-+extern void cr_pgarr_free(struct cr_ctx *ctx);
-+extern struct cr_pgarr *cr_pgarr_current(struct cr_ctx *ctx);
-+extern void cr_pgarr_reset_all(struct cr_ctx *ctx);
-+
-+static inline int cr_pgarr_is_full(struct cr_pgarr *pgarr)
-+{
-+	return (pgarr->nr_used == CR_PGARR_TOTAL);
-+}
-+
-+#endif /* _CHECKPOINT_CKPT_MEM_H_ */
-diff --git a/checkpoint/ckpt_mem.c b/checkpoint/ckpt_mem.c
++#endif /* _CHECKPOINT_CKPT_FILE_H_ */
+diff --git a/checkpoint/ckpt_file.c b/checkpoint/ckpt_file.c
 new file mode 100644
-index 0000000..1ab0304
+index 0000000..767fc01
 --- /dev/null
-+++ b/checkpoint/ckpt_mem.c
-@@ -0,0 +1,500 @@
++++ b/checkpoint/ckpt_file.c
+@@ -0,0 +1,231 @@
 +/*
-+ *  Checkpoint memory contents
++ *  Checkpoint file descriptors
 + *
 + *  Copyright (C) 2008 Oren Laadan
 + *
@@ -258,643 +112,305 @@ index 0000000..1ab0304
 +
 +#include <linux/kernel.h>
 +#include <linux/sched.h>
-+#include <linux/slab.h>
 +#include <linux/file.h>
-+#include <linux/pagemap.h>
-+#include <linux/mm_types.h>
++#include <linux/fdtable.h>
 +#include <linux/checkpoint.h>
 +#include <linux/checkpoint_hdr.h>
 +
-+#include "checkpoint_arch.h"
-+#include "checkpoint_mem.h"
++#include "checkpoint_file.h"
 +
-+/*
-+ * utilities to alloc, free, and handle 'struct cr_pgarr' (page-arrays)
-+ * (common to ckpt_mem.c and rstr_mem.c).
-+ *
-+ * The checkpoint context structure has two members for page-arrays:
-+ *   ctx->pgarr_list: list head of the page-array chain
-+ *
-+ * During checkpoint (and restart) the chain tracks the dirty pages (page
-+ * pointer and virtual address) of each MM. For a particular MM, these are
-+ * always added to the head of the page-array chain (ctx->pgarr_list).
-+ * This "current" page-array advances as necessary, and new page-array
-+ * descriptors are allocated on-demand. Before the next chunk of pages,
-+ * the chain is reset but not freed (that is, dereference page pointers).
-+ */
-+
-+/* return first page-array in the chain */
-+static inline struct cr_pgarr *cr_pgarr_first(struct cr_ctx *ctx)
-+{
-+	if (list_empty(&ctx->pgarr_list))
-+		return NULL;
-+	return list_first_entry(&ctx->pgarr_list, struct cr_pgarr, list);
-+}
-+
-+/* release pages referenced by a page-array */
-+static void cr_pgarr_release_pages(struct cr_pgarr *pgarr)
-+{
-+	int i;
-+
-+	cr_debug("nr_used %d\n", pgarr->nr_used);
-+	/*
-+	 * although both checkpoint and restart use 'nr_used', we only
-+	 * collect pages during checkpoint; in restart we simply return
-+	 */
-+	if (!pgarr->pages)
-+		return;
-+	for (i = pgarr->nr_used; i--; /**/)
-+		page_cache_release(pgarr->pages[i]);
-+}
-+
-+/* free a single page-array object */
-+static void cr_pgarr_free_one(struct cr_pgarr *pgarr)
-+{
-+	cr_pgarr_release_pages(pgarr);
-+	kfree(pgarr->pages);
-+	kfree(pgarr->vaddrs);
-+	kfree(pgarr);
-+}
-+
-+/* free a chain of page-arrays */
-+void cr_pgarr_free(struct cr_ctx *ctx)
-+{
-+	struct cr_pgarr *pgarr, *tmp;
-+
-+	list_for_each_entry_safe(pgarr, tmp, &ctx->pgarr_list, list) {
-+		list_del(&pgarr->list);
-+		cr_pgarr_free_one(pgarr);
-+	}
-+}
-+
-+/* allocate a single page-array object */
-+static struct cr_pgarr *cr_pgarr_alloc_one(unsigned long flags)
-+{
-+	struct cr_pgarr *pgarr;
-+
-+	pgarr = kzalloc(sizeof(*pgarr), GFP_KERNEL);
-+	if (!pgarr)
-+		return NULL;
-+
-+	pgarr->vaddrs = kmalloc(CR_PGARR_TOTAL * sizeof(unsigned long),
-+				GFP_KERNEL);
-+	if (!pgarr->vaddrs)
-+		goto nomem;
-+
-+	/* pgarr->pages is needed only for checkpoint */
-+	if (flags & CR_CTX_CKPT) {
-+		pgarr->pages = kmalloc(CR_PGARR_TOTAL * sizeof(struct page *),
-+				       GFP_KERNEL);
-+		if (!pgarr->pages)
-+			goto nomem;
-+	}
-+
-+	return pgarr;
-+
-+ nomem:
-+	cr_pgarr_free_one(pgarr);
-+	return NULL;
-+}
-+
-+/* cr_pgarr_current - return the next available page-array in the chain
-+ * @ctx: checkpoint context
-+ *
-+ * Returns the first page-array in the list that has space. Extends the
-+ * list if none has space.
-+ */
-+struct cr_pgarr *cr_pgarr_current(struct cr_ctx *ctx)
-+{
-+	struct cr_pgarr *pgarr;
-+
-+	pgarr = cr_pgarr_first(ctx);
-+	if (pgarr && !cr_pgarr_is_full(pgarr))
-+		goto out;
-+	pgarr = cr_pgarr_alloc_one(ctx->flags);
-+	if (!pgarr)
-+		goto out;
-+	list_add(&pgarr->list, &ctx->pgarr_list);
-+ out:
-+	return pgarr;
-+}
-+
-+/* reset the page-array chain (dropping page references if necessary) */
-+void cr_pgarr_reset_all(struct cr_ctx *ctx)
-+{
-+	struct cr_pgarr *pgarr;
-+
-+	list_for_each_entry(pgarr, &ctx->pgarr_list, list) {
-+		cr_pgarr_release_pages(pgarr);
-+		pgarr->nr_used = 0;
-+	}
-+}
-+
-+/*
-+ * Checkpoint is outside the context of the checkpointee, so one cannot
-+ * simply read pages from user-space. Instead, we scan the address space
-+ * of the target to cherry-pick pages of interest. Selected pages are
-+ * enlisted in a page-array chain (attached to the checkpoint context).
-+ * To save their contents, each page is mapped to kernel memory and then
-+ * dumped to the file descriptor.
-+ */
-+
++#define CR_DEFAULT_FDTABLE  256		/* an initial guess */
 +
 +/**
-+ * cr_private_follow_page - return page pointer for dirty pages
-+ * @vma - target vma
-+ * @addr - page address
++ * cr_scan_fds - scan file table and construct array of open fds
++ * @files: files_struct pointer
++ * @fdtable: (output) array of open fds
 + *
-+ * Looks up the page that correspond to the address in the vma, and
-+ * returns the page if it was modified (and grabs a reference to it),
-+ * or otherwise returns NULL (or error).
++ * Returns the number of open fds found, and also the file table
++ * array via *fdtable. The caller should free the array.
 + *
-+ * This function should _only_ called for private vma's.
++ * The caller must validate the file descriptors collected in the
++ * array before using them, e.g. by using fcheck_files(), in case
++ * the task's fdtable changes in the meantime.
 + */
-+static struct page *
-+cr_private_follow_page(struct vm_area_struct *vma, unsigned long addr)
++int cr_scan_fds(struct files_struct *files, int **fdtable)
 +{
-+	struct page *page;
++	struct fdtable *fdt;
++	int *fds;
++	int i, n = 0;
++	int tot = CR_DEFAULT_FDTABLE;
 +
-+	BUG_ON(vma->vm_flags & (VM_SHARED | VM_MAYSHARE));
-+
-+	/*
-+	 * simplified version of get_user_pages(): already have vma,
-+	 * only need FOLL_ANON, and (for now) ignore fault stats.
-+	 *
-+	 * follow_page() will return NULL if the page is not present
-+	 * (swapped), ZERO_PAGE(0) if the pte wasn't allocated, and
-+	 * the actual page pointer otherwise.
-+	 *
-+	 * FIXME: consolidate with get_user_pages()
-+	 */
-+
-+	cond_resched();
-+	while (!(page = follow_page(vma, addr, FOLL_ANON | FOLL_GET))) {
-+		int ret;
-+
-+		/* the page is swapped out - bring it in (optimize ?) */
-+		ret = handle_mm_fault(vma->vm_mm, vma, addr, 0);
-+		if (ret & VM_FAULT_ERROR) {
-+			if (ret & VM_FAULT_OOM)
-+				return ERR_PTR(-ENOMEM);
-+			else if (ret & VM_FAULT_SIGBUS)
-+				return ERR_PTR(-EFAULT);
-+			else
-+				BUG();
-+			break;
-+		}
-+		cond_resched();
-+	}
-+
-+	if (IS_ERR(page))
-+		return page;
-+
-+	/*
-+	 * We only care about dirty pages: either non-zero page, or
-+	 * file-backed (copy-on-write) that were touched. For the latter,
-+	 * the page_mapping() will be unset because it will no longer be
-+	 * mapped to the original file  after having been modified.
-+	 */
-+	if (page == ZERO_PAGE(0)) {
-+		/* this is the zero page: ignore */
-+		page_cache_release(page);
-+		page = NULL;
-+	} else if (vma->vm_file && (page_mapping(page) != NULL)) {
-+		/* file backed clean cow: ignore */
-+		page_cache_release(page);
-+		page = NULL;
-+	}
-+
-+	return page;
-+}
-+
-+/**
-+ * cr_private_vma_fill_pgarr - fill a page-array with addr/page tuples
-+ * @ctx - checkpoint context
-+ * @pgarr - page-array to fill
-+ * @vma - vma to scan
-+ * @start - start address (updated)
-+ *
-+ * Returns the number of pages collected
-+ */
-+static int
-+cr_private_vma_fill_pgarr(struct cr_ctx *ctx, struct cr_pgarr *pgarr,
-+			  struct vm_area_struct *vma, unsigned long *start)
-+{
-+	unsigned long end = vma->vm_end;
-+	unsigned long addr = *start;
-+	int orig_used = pgarr->nr_used;
-+
-+	/* this function is only for private memory (anon or file-mapped) */
-+	BUG_ON(vma->vm_flags & (VM_SHARED | VM_MAYSHARE));
-+
-+	while (addr < end) {
-+		struct page *page;
-+
-+		page = cr_private_follow_page(vma, addr);
-+		if (IS_ERR(page))
-+			return PTR_ERR(page);
-+
-+		if (page) {
-+			pgarr->pages[pgarr->nr_used] = page;
-+			pgarr->vaddrs[pgarr->nr_used] = addr;
-+			pgarr->nr_used++;
-+		}
-+
-+		addr += PAGE_SIZE;
-+
-+		if (cr_pgarr_is_full(pgarr))
-+			break;
-+	}
-+
-+	*start = addr;
-+	return pgarr->nr_used - orig_used;
-+}
-+
-+/* dump contents of a pages: use kmap_atomic() to avoid TLB flush */
-+static int cr_page_write(struct cr_ctx *ctx, struct page *page, char *buf)
-+{
-+	void *ptr;
-+
-+	ptr = kmap_atomic(page, KM_USER1);
-+	memcpy(buf, ptr, PAGE_SIZE);
-+	kunmap_atomic(page, KM_USER1);
-+
-+	return cr_kwrite(ctx, buf, PAGE_SIZE);
-+}
-+
-+/**
-+ * cr_vma_dump_pages - dump pages listed in the ctx page-array chain
-+ * @ctx - checkpoint context
-+ * @total - total number of pages
-+ *
-+ * First dump all virtual addresses, followed by the contents of all pages
-+ */
-+static int cr_vma_dump_pages(struct cr_ctx *ctx, int total)
-+{
-+	struct cr_pgarr *pgarr;
-+	char *buf;
-+	int i, ret = 0;
-+
-+	if (!total)
-+		return 0;
-+
-+	list_for_each_entry_reverse(pgarr, &ctx->pgarr_list, list) {
-+		ret = cr_kwrite(ctx, pgarr->vaddrs,
-+				pgarr->nr_used * sizeof(*pgarr->vaddrs));
-+		if (ret < 0)
-+			return ret;
-+	}
-+
-+	buf = kmalloc(PAGE_SIZE, GFP_KERNEL);
-+	if (!buf)
++	fds = kmalloc(tot * sizeof(*fds), GFP_KERNEL);
++	if (!fds)
 +		return -ENOMEM;
 +
-+	list_for_each_entry_reverse(pgarr, &ctx->pgarr_list, list) {
-+		for (i = 0; i < pgarr->nr_used; i++) {
-+			ret = cr_page_write(ctx, pgarr->pages[i], buf);
-+			if (ret < 0)
-+				goto out;
-+		}
-+	}
++	/*
++	 * We assume that the target task is frozen (or that we checkpoint
++	 * ourselves), so we can safely proceed after krealloc() from where
++	 * we left off; in the worst cases restart will fail.
++	 */
 +
-+ out:
-+	kfree(buf);
-+	return ret;
++	spin_lock(&files->file_lock);
++	rcu_read_lock();
++	fdt = files_fdtable(files);
++	for (i = 0; i < fdt->max_fds; i++) {
++		if (!fcheck_files(files, i))
++			continue;
++		if (n == tot) {
++			/*
++			 * fcheck_files() is safe with drop/re-acquire
++			 * of the lock, because it tests:  fd < max_fds
++			 */
++			spin_unlock(&files->file_lock);
++			rcu_read_unlock();
++			tot *= 2;	/* won't overflow: kmalloc will fail */
++			fds = krealloc(fds, tot * sizeof(*fds), GFP_KERNEL);
++			if (!fds) {
++				kfree(fds);
++				return -ENOMEM;
++			}
++			rcu_read_lock();
++			spin_lock(&files->file_lock);
++		}
++		fds[n++] = i;
++	}
++	rcu_read_unlock();
++	spin_unlock(&files->file_lock);
++
++	*fdtable = fds;
++	return n;
 +}
 +
-+/**
-+ * cr_write_private_vma_contents - dump contents of a VMA with private memory
-+ * @ctx - checkpoint context
-+ * @vma - vma to scan
-+ *
-+ * Collect lists of pages that needs to be dumped, and corresponding
-+ * virtual addresses into ctx->pgarr_list page-array chain. Then dump
-+ * the addresses, followed by the page contents.
-+ */
-+static int
-+cr_write_private_vma_contents(struct cr_ctx *ctx, struct vm_area_struct *vma)
++/* cr_write_fd_data - dump the state of a given file pointer */
++static int cr_write_fd_data(struct cr_ctx *ctx, struct file *file, int parent)
 +{
 +	struct cr_hdr h;
-+	struct cr_hdr_pgarr *hh;
-+	unsigned long addr = vma->vm_start;
-+	struct cr_pgarr *pgarr;
-+	unsigned long cnt = 0;
++	struct cr_hdr_fd_data *hh = cr_hbuf_get(ctx, sizeof(*hh));
++	struct dentry *dent = file->f_dentry;
++	struct inode *inode = dent->d_inode;
++	enum fd_type fd_type;
 +	int ret;
 +
-+	/*
-+	 * Work iteratively, collecting and dumping at most CR_PGARR_CHUNK
-+	 * in each round. Each iterations is divided into two steps:
-+	 *
-+	 * (1) scan: scan through the PTEs of the vma to collect the pages
-+	 * to dump (later we'll also make them COW), while keeping a list
-+	 * of pages and their corresponding addresses on ctx->pgarr_list.
-+	 *
-+	 * (2) dump: write out a header specifying how many pages, followed
-+	 * by the addresses of all pages in ctx->pgarr_list, followed by
-+	 * the actual contents of all pages. (Then, release the references
-+	 * to the pages and reset the page-array chain).
-+	 *
-+	 * (This split makes the logic simpler by first counting the pages
-+	 * that need saving. More importantly, it allows for a future
-+	 * optimization that will reduce application downtime by deferring
-+	 * the actual write-out of the data to after the application is
-+	 * allowed to resume execution).
-+	 *
-+	 * After dumpting the entire contents, conclude with a header that
-+	 * specifies 0 pages to mark the end of the contents.
-+	 */
-+
-+	h.type = CR_HDR_PGARR;
++	h.type = CR_HDR_FD_DATA;
 +	h.len = sizeof(*hh);
-+	h.parent = 0;
++	h.parent = parent;
 +
-+	while (addr < vma->vm_end) {
-+		pgarr = cr_pgarr_current(ctx);
-+		if (!pgarr)
-+			return -ENOMEM;
-+		ret = cr_private_vma_fill_pgarr(ctx, pgarr, vma, &addr);
-+		if (ret < 0)
-+			return ret;
-+		cnt += ret;
++	hh->f_flags = file->f_flags;
++	hh->f_mode = file->f_mode;
++	hh->f_pos = file->f_pos;
++	hh->f_version = file->f_version;
++	/* FIX: need also file->uid, file->gid, file->f_owner, etc */
 +
-+		/* did we complete a chunk, or is this the last chunk ? */
-+		if (cnt >= CR_PGARR_CHUNK || (cnt && addr == vma->vm_end)) {
-+			hh = cr_hbuf_get(ctx, sizeof(*hh));
-+			hh->nr_pages = cnt;
-+			ret = cr_write_obj(ctx, &h, hh);
-+			cr_hbuf_put(ctx, sizeof(*hh));
-+			if (ret < 0)
-+				return ret;
-+
-+			ret = cr_vma_dump_pages(ctx, cnt);
-+			if (ret < 0)
-+				return ret;
-+
-+			cr_pgarr_reset_all(ctx);
-+		}
-+	}
-+
-+	/* mark end of contents with header saying "0" pages */
-+	hh = cr_hbuf_get(ctx, sizeof(*hh));
-+	hh->nr_pages = 0;
-+	ret = cr_write_obj(ctx, &h, hh);
-+	cr_hbuf_put(ctx, sizeof(*hh));
-+
-+	return ret;
-+}
-+
-+static int cr_write_vma(struct cr_ctx *ctx, struct vm_area_struct *vma)
-+{
-+	struct cr_hdr h;
-+	struct cr_hdr_vma *hh = cr_hbuf_get(ctx, sizeof(*hh));
-+	int vma_type, ret;
-+
-+	h.type = CR_HDR_VMA;
-+	h.len = sizeof(*hh);
-+	h.parent = 0;
-+
-+	hh->vm_start = vma->vm_start;
-+	hh->vm_end = vma->vm_end;
-+	hh->vm_page_prot = vma->vm_page_prot.pgprot;
-+	hh->vm_flags = vma->vm_flags;
-+	hh->vm_pgoff = vma->vm_pgoff;
-+
-+	if (vma->vm_flags & (VM_SHARED | VM_IO | VM_HUGETLB | VM_NONLINEAR)) {
-+		pr_warning("CR: unsupported VMA %#lx\n", vma->vm_flags);
++	switch (inode->i_mode & S_IFMT) {
++	case S_IFREG:
++		fd_type = CR_FD_FILE;
++		break;
++	case S_IFDIR:
++		fd_type = CR_FD_DIR;
++		break;
++	case S_IFLNK:
++		fd_type = CR_FD_LINK;
++		break;
++	default:
 +		cr_hbuf_put(ctx, sizeof(*hh));
-+		return -ENOSYS;
++		return -EBADF;
 +	}
 +
-+	/* by default assume anon memory */
-+	vma_type = CR_VMA_ANON;
-+
-+	/*
-+	 * if there is a backing file, assume private-mapped
-+	 * (FIXME: check if the file is unlinked)
-+	 */
-+	if (vma->vm_file)
-+		vma_type = CR_VMA_FILE;
-+
-+	hh->vma_type = vma_type;
++	/* FIX: check if the file/dir/link is unlinked */
++	hh->fd_type = fd_type;
 +
 +	ret = cr_write_obj(ctx, &h, hh);
 +	cr_hbuf_put(ctx, sizeof(*hh));
 +	if (ret < 0)
 +		return ret;
 +
-+	/* save the file name, if relevant */
-+	if (vma->vm_file) {
-+		ret = cr_write_fname(ctx, &vma->vm_file->f_path, ctx->vfsroot);
-+		if (ret < 0)
-+			return ret;
-+	}
-+
-+	return cr_write_private_vma_contents(ctx, vma);
++	return cr_write_fname(ctx, &file->f_path, ctx->vfsroot);
 +}
 +
-+int cr_write_mm(struct cr_ctx *ctx, struct task_struct *t)
++/**
++ * cr_write_fd_ent - dump the state of a given file descriptor
++ * @ctx: checkpoint context
++ * @files: files_struct pointer
++ * @fd: file descriptor
++ *
++ * Saves the state of the file descriptor; looks up the actual file
++ * pointer in the hash table, and if found saves the matching objref,
++ * otherwise calls cr_write_fd_data to dump the file pointer too.
++ */
++static int
++cr_write_fd_ent(struct cr_ctx *ctx, struct files_struct *files, int fd)
 +{
 +	struct cr_hdr h;
-+	struct cr_hdr_mm *hh = cr_hbuf_get(ctx, sizeof(*hh));
-+	struct mm_struct *mm;
-+	struct vm_area_struct *vma;
-+	int objref, ret;
++	struct cr_hdr_fd_ent *hh = cr_hbuf_get(ctx, sizeof(*hh));
++	struct file *file = NULL;
++	struct fdtable *fdt;
++	int coe, objref, new, ret;
 +
-+	h.type = CR_HDR_MM;
++	rcu_read_lock();
++	fdt = files_fdtable(files);
++	file = fcheck_files(files, fd);
++	if (file) {
++		coe = FD_ISSET(fd, fdt->close_on_exec);
++		get_file(file);
++	}
++	rcu_read_unlock();
++
++	/* sanity check (although this shouldn't happen) */
++	if (!file) {
++		ret = -EBADF;
++		goto out;
++	}
++
++	new = cr_obj_add_ptr(ctx, file, &objref, CR_OBJ_FILE, 0);
++	cr_debug("fd %d objref %d file %p c-o-e %d)\n", fd, objref, file, coe);
++
++	if (new < 0) {
++		ret = new;
++		goto out;
++	}
++
++	h.type = CR_HDR_FD_ENT;
++	h.len = sizeof(*hh);
++	h.parent = 0;
++
++	hh->objref = objref;
++	hh->fd = fd;
++	hh->close_on_exec = coe;
++
++	ret = cr_write_obj(ctx, &h, hh);
++	if (ret < 0)
++		goto out;
++
++	/* new==1 if-and-only-if file was newly added to hash */
++	if (new)
++		ret = cr_write_fd_data(ctx, file, objref);
++
++out:
++	cr_hbuf_put(ctx, sizeof(*hh));
++	fput(file);
++	return ret;
++}
++
++int cr_write_files(struct cr_ctx *ctx, struct task_struct *t)
++{
++	struct cr_hdr h;
++	struct cr_hdr_files *hh = cr_hbuf_get(ctx, sizeof(*hh));
++	struct files_struct *files;
++	int *fdtable;
++	int nfds, n, ret;
++
++	h.type = CR_HDR_FILES;
 +	h.len = sizeof(*hh);
 +	h.parent = task_pid_vnr(t);
 +
-+	mm = get_task_mm(t);
++	files = get_files_struct(t);
 +
-+	objref = 0;	/* will be meaningful with multiple processes */
-+	hh->objref = objref;
++	nfds = cr_scan_fds(files, &fdtable);
++	if (nfds < 0) {
++		put_files_struct(files);
++		return nfds;
++	}
 +
-+	down_read(&mm->mmap_sem);
-+
-+	hh->start_code = mm->start_code;
-+	hh->end_code = mm->end_code;
-+	hh->start_data = mm->start_data;
-+	hh->end_data = mm->end_data;
-+	hh->start_brk = mm->start_brk;
-+	hh->brk = mm->brk;
-+	hh->start_stack = mm->start_stack;
-+	hh->arg_start = mm->arg_start;
-+	hh->arg_end = mm->arg_end;
-+	hh->env_start = mm->env_start;
-+	hh->env_end = mm->env_end;
-+
-+	hh->map_count = mm->map_count;
-+
-+	/* FIX: need also mm->flags */
++	hh->objref = 0;	/* will be meaningful with multiple processes */
++	hh->nfds = nfds;
 +
 +	ret = cr_write_obj(ctx, &h, hh);
 +	cr_hbuf_put(ctx, sizeof(*hh));
 +	if (ret < 0)
-+		goto out;
++		goto clean;
 +
-+	/* write the vma's */
-+	for (vma = mm->mmap; vma; vma = vma->vm_next) {
-+		ret = cr_write_vma(ctx, vma);
++	cr_debug("nfds %d\n", nfds);
++	for (n = 0; n < nfds; n++) {
++		ret = cr_write_fd_ent(ctx, files, fdtable[n]);
 +		if (ret < 0)
-+			goto out;
++			break;
 +	}
 +
-+	ret = cr_write_mm_context(ctx, mm, objref);
-+
-+ out:
-+	up_read(&mm->mmap_sem);
-+	mmput(mm);
++ clean:
++	kfree(fdtable);
++	put_files_struct(files);
 +	return ret;
 +}
-diff --git a/checkpoint/sys.c b/checkpoint/sys.c
-index 6c8ba56..6a18966 100644
---- a/checkpoint/sys.c
-+++ b/checkpoint/sys.c
-@@ -16,6 +16,8 @@
- #include <linux/capability.h>
- #include <linux/checkpoint.h>
- 
-+#include "checkpoint_mem.h"
-+
- /*
-  * helpers to write/read to/from the image file descriptor
-  *
-@@ -161,6 +163,11 @@ void cr_ctx_free(struct cr_ctx *ctx)
- 
- 	kfree(ctx->hbuf);
- 
-+	if (ctx->vfsroot)
-+		path_put(ctx->vfsroot);
-+
-+	cr_pgarr_free(ctx);
-+
- 	kfree(ctx);
- }
- 
-@@ -184,6 +191,15 @@ struct cr_ctx *cr_ctx_alloc(pid_t pid, int fd, unsigned long flags)
- 		return ERR_PTR(-ENOMEM);
- 	}
- 
-+	/*
-+	 * assume checkpointer is in container's root vfs
-+	 * FIXME: this works for now, but will change with real containers
-+	 */
-+	ctx->vfsroot = &current->fs->root;
-+	path_get(ctx->vfsroot);
-+
-+	INIT_LIST_HEAD(&ctx->pgarr_list);
-+
- 	ctx->pid = pid;
- 	ctx->flags = flags;
- 
-diff --git a/include/asm-x86/checkpoint_hdr.h b/include/asm-x86/checkpoint_hdr.h
-index 44a903c..6bc61ac 100644
---- a/include/asm-x86/checkpoint_hdr.h
-+++ b/include/asm-x86/checkpoint_hdr.h
-@@ -69,4 +69,9 @@ struct cr_hdr_cpu {
- 
- } __attribute__((aligned(8)));
- 
-+struct cr_hdr_mm_context {
-+	__s16 ldt_entry_size;
-+	__s16 nldt;
-+} __attribute__((aligned(8)));
-+
- #endif /* __ASM_X86_CKPT_HDR__H */
 diff --git a/include/linux/checkpoint.h b/include/linux/checkpoint.h
-index 93ff0ce..3f018df 100644
+index 2da3a9f..d6bf6dc 100644
 --- a/include/linux/checkpoint.h
 +++ b/include/linux/checkpoint.h
-@@ -10,6 +10,9 @@
-  *  distribution for more details.
-  */
+@@ -13,7 +13,7 @@
+ #include <linux/path.h>
+ #include <linux/fs.h>
  
-+#include <linux/path.h>
-+#include <linux/fs.h>
-+
- #define CR_VERSION  1
+-#define CR_VERSION  1
++#define CR_VERSION  2
  
  struct cr_ctx {
-@@ -24,6 +27,10 @@ struct cr_ctx {
+ 	pid_t pid;		/* container identifier */
+@@ -79,11 +79,12 @@ extern int cr_read_fname(struct cr_ctx *ctx, void *fname, int n);
+ extern struct file *cr_read_open_fname(struct cr_ctx *ctx,
+ 				       int flags, int mode);
  
- 	void *hbuf;		/* temporary buffer for headers */
- 	int hpos;		/* position in headers buffer */
-+
-+	struct list_head pgarr_list;	/* page array to dump VMA contents */
-+
-+	struct path *vfsroot;	/* container root (FIXME) */
- };
++extern int do_checkpoint(struct cr_ctx *ctx);
+ extern int cr_write_mm(struct cr_ctx *ctx, struct task_struct *t);
+-extern int cr_read_mm(struct cr_ctx *ctx);
++extern int cr_write_files(struct cr_ctx *ctx, struct task_struct *t);
  
- /* cr_ctx: flags */
-@@ -42,11 +49,16 @@ struct cr_hdr;
- 
- extern int cr_write_obj(struct cr_ctx *ctx, struct cr_hdr *h, void *buf);
- extern int cr_write_string(struct cr_ctx *ctx, char *str, int len);
-+extern int cr_write_fname(struct cr_ctx *ctx,
-+			  struct path *path, struct path *root);
- 
- extern int cr_read_obj(struct cr_ctx *ctx, struct cr_hdr *h, void *buf, int n);
- extern int cr_read_obj_type(struct cr_ctx *ctx, void *buf, int n, int type);
- extern int cr_read_string(struct cr_ctx *ctx, void *str, int len);
- 
-+extern int cr_write_mm(struct cr_ctx *ctx, struct task_struct *t);
-+extern int cr_read_mm(struct cr_ctx *ctx);
-+
- extern int do_checkpoint(struct cr_ctx *ctx);
+-extern int do_checkpoint(struct cr_ctx *ctx);
  extern int do_restart(struct cr_ctx *ctx);
++extern int cr_read_mm(struct cr_ctx *ctx);
  
+ /* there are from fs/read_write.c, not exported otherwise in a header */
+ extern loff_t file_pos_read(struct file *file);
 diff --git a/include/linux/checkpoint_hdr.h b/include/linux/checkpoint_hdr.h
-index 03ec72e..2b110f1 100644
+index 2b110f1..cbb920f 100644
 --- a/include/linux/checkpoint_hdr.h
 +++ b/include/linux/checkpoint_hdr.h
-@@ -32,6 +32,7 @@ struct cr_hdr {
- enum {
- 	CR_HDR_HEAD = 1,
- 	CR_HDR_STRING,
-+	CR_HDR_FNAME,
+@@ -17,7 +17,7 @@
+ /*
+  * To maintain compatibility between 32-bit and 64-bit architecture flavors,
+  * keep data 64-bit aligned: use padding for structure members, and use
+- * __attribute__ ((aligned (8))) for the entire structure.
++ * __attribute__((aligned(8))) for the entire structure.
+  */
  
- 	CR_HDR_TASK = 101,
- 	CR_HDR_THREAD,
-@@ -39,6 +40,7 @@ enum {
- 
- 	CR_HDR_MM = 201,
- 	CR_HDR_VMA,
-+	CR_HDR_PGARR,
+ /* records: generic header */
+@@ -43,6 +43,10 @@ enum {
+ 	CR_HDR_PGARR,
  	CR_HDR_MM_CONTEXT,
  
++	CR_HDR_FILES = 301,
++	CR_HDR_FD_ENT,
++	CR_HDR_FD_DATA,
++
  	CR_HDR_TAIL = 5001
-@@ -73,4 +75,34 @@ struct cr_hdr_task {
- 	__s32 task_comm_len;
+ };
+ 
+@@ -105,4 +109,30 @@ struct cr_hdr_pgarr {
+ 	__u64 nr_pages;		/* number of pages to saved */
  } __attribute__((aligned(8)));
  
-+struct cr_hdr_mm {
++struct cr_hdr_files {
 +	__u32 objref;		/* identifier for shared objects */
-+	__u32 map_count;
-+
-+	__u64 start_code, end_code, start_data, end_data;
-+	__u64 start_brk, brk, start_stack;
-+	__u64 arg_start, arg_end, env_start, env_end;
++	__u32 nfds;
 +} __attribute__((aligned(8)));
 +
-+/* vma subtypes */
-+enum vm_type {
-+	CR_VMA_ANON = 1,
-+	CR_VMA_FILE
++struct cr_hdr_fd_ent {
++	__u32 objref;		/* identifier for shared objects */
++	__s32 fd;
++	__u32 close_on_exec;
++} __attribute__((aligned(8)));
++
++/* fd types */
++enum  fd_type {
++	CR_FD_FILE = 1,
++	CR_FD_DIR,
++	CR_FD_LINK
 +};
 +
-+struct cr_hdr_vma {
-+	__u32 vma_type;
-+	__u32 _padding;
-+
-+	__u64 vm_start;
-+	__u64 vm_end;
-+	__u64 vm_page_prot;
-+	__u64 vm_flags;
-+	__u64 vm_pgoff;
-+} __attribute__((aligned(8)));
-+
-+struct cr_hdr_pgarr {
-+	__u64 nr_pages;		/* number of pages to saved */
++struct cr_hdr_fd_data {
++	__u16 fd_type;
++	__u16 f_mode;
++	__u32 f_flags;
++	__u64 f_pos;
++	__u64 f_version;
 +} __attribute__((aligned(8)));
 +
  #endif /* _CHECKPOINT_CKPT_HDR_H_ */
