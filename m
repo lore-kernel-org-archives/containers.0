@@ -1,14 +1,13 @@
-From: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: Re: [RFC v6][PATCH 5/9] Restore memory address space
-Date: Wed, 08 Oct 2008 08:35:45 -0700
-Message-ID: <1223480145.11830.3.camel__9908.11904562197$1223481147$gmane$org@nimitz>
-References: <1223461197-11513-1-git-send-email-orenl@cs.columbia.edu>
-	<1223461197-11513-6-git-send-email-orenl@cs.columbia.edu>
+From: David Howells <dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH 1/1] User namespaces: fix refcounting
+Date: Wed, 08 Oct 2008 18:53:23 +0100
+Message-ID: <27300.1223488403@redhat.com>
+References: <20081008144246.GA26362@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1223461197-11513-6-git-send-email-orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+In-Reply-To: <20081008144246.GA26362-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,51 +17,42 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Cc: jeremy-TSDbQ3PG+2Y@public.gmane.org, arnd-r2nGTMty4D4@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Alexander Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, "H. Peter Anvin" <hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org>, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>
+To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Cc: dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Wed, 2008-10-08 at 06:19 -0400, Oren Laadan wrote:
-> 
-> +static int cr_read_private_vma_contents(struct cr_ctx *ctx)
-> +{
-> +       struct cr_hdr_pgarr *hh;
-> +       unsigned long nr_pages;
-> +       int parent, ret = 0;
-> +
-> +       while (1) {
-> +               hh = cr_hbuf_get(ctx, sizeof(*hh));
-> +               parent = cr_read_obj_type(ctx, hh, sizeof(*hh), CR_HDR_PGARR);
-> +               if (parent != 0) {
-> +                       if (parent < 0)
-> +                               ret = parent;
-> +                       else
-> +                               ret = -EINVAL;
-> +                       cr_hbuf_put(ctx, sizeof(*hh));
-> +                       break;
-> +               }
-> +
-> +               cr_debug("nr_pages %ld\n", (unsigned long) hh->nr_pages);
-> +
-> +               nr_pages = hh->nr_pages;
-> +               cr_hbuf_put(ctx, sizeof(*hh));
-> +
-> +               if (!nr_pages)
-> +                       break;
-> +
-> +               ret = cr_read_pages_vaddrs(ctx, nr_pages);
-> +               if (ret < 0)
-> +                       break;
-> +               ret = cr_read_pages_contents(ctx);
-> +               if (ret < 0)
-> +                       break;
-> +               cr_pgarr_reset_all(ctx);
-> +       }
-> +
-> +       return ret;
-> +}
+Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org> wrote:
 
-This basically just uses a while(1) loop with 'break' instead of an
-'out_err:' label and some gotos.  That's kinda odd for the kernel.  
+> Perhaps the most objectionable part of this to you may be the
+> __task_commit_creds().
 
--- Dave
+You're right, that looks pretty yuck.  I'm not sure why you need to do this.
+
+I need to think about it a bit more, but I think you shouldn't be calling
+[__task_]commit_creds() on any task that's not your own.
+
+In fact, do you need to call commit_creds() on the new task?  No-one else can
+have seen it yet, so RCU can be ignored; and no-one knows about it yet, so
+calling proc_id_connector() is unnecessary.
+
+The obvious thing to do would be to make copy_creds() handle the user namespace
+copying.
+
+
+A couple of quick other comments:
+
+> @@ -595,6 +595,7 @@ struct user_struct {
+>  	/* Hash table maintenance information */
+>  	struct hlist_node uidhash_node;
+>  	uid_t uid;
+> +	struct user_namespace *user_ns;
+
+Is asking for a circular dependency.  user_namespace must hold a dependency on
+its the user_struct pointed to by root_user, but root_user holds a ref on
+user_ns.
+
+> +	.creator = &root_user,
+
+Probably means that you should increment the initial usage count on root_user.
+
+David
