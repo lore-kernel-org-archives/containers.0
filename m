@@ -1,13 +1,11 @@
 From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: [RFC v6][PATCH 6/9] Checkpoint/restart: initial documentation
-Date: Wed,  8 Oct 2008 06:19:54 -0400
-Message-ID: <1223461197-11513-7-git-send-email-orenl__35429.5388017364$1223461696$gmane$org@cs.columbia.edu>
-References: <1223461197-11513-1-git-send-email-orenl@cs.columbia.edu>
+Subject: [RFC v6][PATCH 0/9] Kernel based checkpoint/restart
+Date: Wed,  8 Oct 2008 06:19:48 -0400
+Message-ID: <1223461197-11513-1-git-send-email-orenl__15441.1965668716$1223461886$gmane$org@cs.columbia.edu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1223461197-11513-1-git-send-email-orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -21,391 +19,260 @@ To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 Cc: jeremy-TSDbQ3PG+2Y@public.gmane.org, arnd-r2nGTMty4D4@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Alexander Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, "H. Peter Anvin" <hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org>, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Covers application checkpoint/restart, overall design, interfaces
-and checkpoint image format.
+These patches implement basic checkpoint-restart [CR]. This version
+(v6) supports basic tasks with simple private memory, and open files
+(regular files and directories only). Changes mainly cleanups. See
+original announcements below.
 
-Signed-off-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Acked-by: Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
----
- Documentation/checkpoint.txt |  370 ++++++++++++++++++++++++++++++++++++++++++
- 1 files changed, 370 insertions(+), 0 deletions(-)
- create mode 100644 Documentation/checkpoint.txt
+Oren.
 
-diff --git a/Documentation/checkpoint.txt b/Documentation/checkpoint.txt
-new file mode 100644
-index 0000000..ab0cad7
---- /dev/null
-+++ b/Documentation/checkpoint.txt
-@@ -0,0 +1,370 @@
-+
-+	=== Checkpoint-Restart support in the Linux kernel ===
-+
-+Copyright (C) 2008 Oren Laadan
-+
-+Author:		Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-+
-+License:	The GNU Free Documentation License, Version 1.2
-+		(dual licensed under the GPL v2)
-+Reviewers:
-+
-+Application checkpoint/restart [CR] is the ability to save the state
-+of a running application so that it can later resume its execution
-+from the time at which it was checkpointed. An application can be
-+migrated by checkpointing it on one machine and restarting it on
-+another. CR can provide many potential benefits:
-+
-+* Failure recovery: by rolling back an to a previous checkpoint
-+
-+* Improved response time: by restarting applications from checkpoints
-+  instead of from scratch.
-+
-+* Improved system utilization: by suspending long running CPU
-+  intensive jobs and resuming them when load decreases.
-+
-+* Fault resilience: by migrating applications off of faulty hosts.
-+
-+* Dynamic load balancing: by migrating applications to less loaded
-+  hosts.
-+
-+* Improved service availability and administration: by migrating
-+  applications before host maintenance so that they continue to run
-+  with minimal downtime
-+
-+* Time-travel: by taking periodic checkpoints and restarting from
-+  any previous checkpoint.
-+
-+
-+=== Overall design
-+
-+Checkpoint and restart is done in the kernel as much as possible. The
-+kernel exports a relative opaque 'blob' of data to userspace which can
-+then be handed to the new kernel at restore time.  The 'blob' contains
-+data and state of select portions of kernel structures such as VMAs
-+and mm_structs, as well as copies of the actual memory that the tasks
-+use. Any changes in this blob's format between kernel revisions can be
-+handled by an in-userspace conversion program. The approach is similar
-+to virtually all of the commercial CR products out there, as well as
-+the research project Zap.
-+
-+Two new system calls are introduced to provide CR: sys_checkpoint and
-+sys_restart.  The checkpoint code basically serializes internal kernel
-+state and writes it out to a file descriptor, and the resulting image
-+is stream-able. More specifically, it consists of 5 steps:
-+  1. Pre-dump
-+  2. Freeze the container
-+  3. Dump
-+  4. Thaw (or kill) the container
-+  5. Post-dump
-+Steps 1 and 5 are an optimization to reduce application downtime:
-+"pre-dump" works before freezing the container, e.g. the pre-copy for
-+live migration, and "post-dump" works after the container resumes
-+execution, e.g. write-back the data to secondary storage.
-+
-+The restart code basically reads the saved kernel state and from a
-+file descriptor, and re-creates the tasks and the resources they need
-+to resume execution. The restart code is executed by each task that
-+is restored in a new container to reconstruct its own state.
-+
-+
-+=== Interfaces
-+
-+int sys_checkpoint(pid_t pid, int fd, unsigned long flag);
-+  Checkpoint a container whose init task is identified by pid, to the
-+  file designated by fd. Flags will have future meaning (should be 0
-+  for now).
-+  Returns: a positive integer that identifies the checkpoint image
-+  (for future reference in case it is kept in memory) upon success,
-+  0 if it returns from a restart, and -1 if an error occurs.
-+
-+int sys_restart(int crid, int fd, unsigned long flags);
-+  Restart a container from a checkpoint image identified by crid, or
-+  from the blob stored in the file designated by fd. Flags will have
-+  future meaning (should be 0 for now).
-+  Returns: 0 on success and -1 if an error occurs.
-+
-+Thus, if checkpoint is initiated by a process in the container, one
-+can use logic similar to fork():
-+	...
-+	crid = checkpoint(...);
-+	switch (crid) {
-+	case -1:
-+		perror("checkpoint failed");
-+		break;
-+	default:
-+		fprintf(stderr, "checkpoint succeeded, CRID=%d\n", ret);
-+		/* proceed with execution after checkpoint */
-+		...
-+		break;
-+	case 0:
-+		fprintf(stderr, "returned after restart\n");
-+		/* proceed with action required following a restart */
-+		...
-+		break;
-+	}
-+	...
-+And to initiate a restart, the process in an empty container can use
-+logic similar to execve():
-+	...
-+	if (restart(crid, ...) < 0)
-+		perror("restart failed");
-+	/* only get here if restart failed */
-+	...
-+
-+See below a complete example in C.
-+
-+
-+=== Order of state dump
-+
-+The order of operations, both save and restore, is as following:
-+
-+* Header section: header, container information, etc.
-+* Global section: [TBD] global resources such as IPC, UTS, etc.
-+* Process forest: [TBD] tasks and their relationships
-+* Per task data (for each task):
-+  -> task state: elements of task_struct
-+  -> thread state: elements of thread_struct and thread_info
-+  -> CPU state: registers etc, including FPU
-+  -> memory state: memory address space layout and contents
-+  -> filesystem state: [TBD] filesystem namespace state, chroot, cwd, etc
-+  -> files state: open file descriptors and their state
-+  -> signals state: [TBD] pending signals and signal handling state
-+  -> credentials state: [TBD] user and group state, statistics
-+
-+
-+=== Checkpoint image format
-+
-+The checkpoint image format is composed of records consistings of a
-+pre-header that identifies its contents, followed by a payload. (The
-+idea here is to enable parallel checkpointing in the future in which
-+multiple threads interleave data from multiple processes into a single
-+stream).
-+
-+The pre-header is defined by "struct cr_hdr" as follows:
-+
-+struct cr_hdr {
-+	__s16 type;
-+	__s16 len;
-+	__u32 parent;
-+};
-+
-+Here, 'type' field identifies the type of the payload, 'len' tells its
-+length in bytes. The 'parent' identifies the owner object instance. The
-+meaning of the 'parent field varies depending on the type. For example,
-+for type CR_HDR_MM, the 'parent identifies the task to which this MM
-+belongs. The payload also varies depending on the type, for instance,
-+the data describing a task_struct is given by a 'struct cr_hdr_task'
-+(type CR_HDR_TASK) and so on.
-+
-+The format of the memory dump is as follows: for each VMA, there is a
-+'struct cr_vma'; if the VMA is file-mapped, it is followed by the file
-+name. Following comes the actual contents, in one or more chunk: each
-+chunk begins with a header that specifies how many pages it holds,
-+then a the virtual addresses of all the dumped pages in that chunk,
-+followed by the actual contents of all the dumped pages. A header with
-+zero number of pages marks the end of the contents for a particular
-+VMA. Then comes the next VMA and so on.
-+
-+To illustrate this, consider a single simple task with two VMAs: one
-+is file mapped with two dumped pages, and the other is anonymous with
-+three dumped pages. The checkpoint image will look like this:
-+
-+cr_hdr + cr_hdr_head
-+cr_hdr + cr_hdr_task
-+	cr_hdr + cr_hdr_mm
-+		cr_hdr + cr_hdr_vma + cr_hdr + string
-+			cr_hdr_pgarr (nr_pages = 2)
-+			addr1, addr2
-+			page1, page2
-+			cr_hdr_pgarr (nr_pages = 0)
-+		cr_hdr + cr_hdr_vma
-+			cr_hdr_pgarr (nr_pages = 3)
-+			addr3, addr4, addr5
-+			page3, page4, page5
-+			cr_hdr_pgarr (nr_pages = 0)
-+		cr_hdr + cr_mm_context
-+	cr_hdr + cr_hdr_thread
-+	cr_hdr + cr_hdr_cpu
-+cr_hdr + cr_hdr_tail
-+
-+
-+=== Current Implementation
-+
-+[2008-Oct-07]
-+There are several assumptions in the current implementation; they will
-+be gradually relaxed in future versions. The main ones are:
-+* A task can only checkpoint itself (missing "restart-block" logic).
-+* Namespaces are not saved or restored; They will be treated as a type
-+  of shared object.
-+* In particular, it is assumed that the task's file system namespace
-+  is the "root" for the entire container.
-+* It is assumed that the same file system view is available for the
-+  restart task(s). Otherwise, a file system snapshot is required.
-+
-+
-+=== Sample code
-+
-+Two example programs: one uses checkpoint (called ckpt) to checkpoint
-+itself, and another uses restart (called rstr) to restart from that
-+checkpoint. Note the use of "dup2" to create a copy of an open file
-+and show how shared objects are treated. Execute like this:
-+
-+orenl:~/test$ ./ckpt > out.1
-+				<-- ctrl-c
-+orenl:~/test$ cat /tmp/cr-rest.out
-+hello, world!
-+world, hello!
-+(ret = 1)
-+
-+orenl:~/test$ ./ckpt > out.1
-+				<-- ctrl-c
-+orenl:~/test$ cat /tmp/cr-rest.out
-+hello, world!
-+world, hello!
-+(ret = 2)
-+
-+				<-- now change the contents of the file
-+orenl:~/test$ sed -i 's/world, hello!/xxxx/' /tmp/cr-rest.out
-+orenl:~/test$ cat /tmp/cr-rest.out
-+hello, world!
-+xxxx
-+(ret = 2)
-+
-+				<-- and do the restart
-+orenl:~/test$ ./rstr < out.1
-+				<-- ctrl-c
-+orenl:~/test$ cat /tmp/cr-rest.out
-+hello, world!
-+world, hello!
-+(ret = 0)
-+
-+(if you check the output of ps, you'll see that "rstr" changed its
-+name to "ckpt", as expected).
-+
-+============================== ckpt.c ================================
-+
-+#define _GNU_SOURCE        /* or _BSD_SOURCE or _SVID_SOURCE */
-+
-+#include <stdio.h>
-+#include <stdlib.h>
-+#include <string.h>
-+#include <errno.h>
-+#include <fcntl.h>
-+#include <unistd.h>
-+#include <asm/unistd.h>
-+#include <sys/syscall.h>
-+
-+#define OUTFILE "/tmp/cr-test.out"
-+
-+int main(int argc, char *argv[])
-+{
-+	pid_t pid = getpid();
-+	FILE *file;
-+	int ret;
-+
-+	close(0);
-+	close(2);
-+
-+	unlink(OUTFILE);
-+	file = fopen(OUTFILE, "w+");
-+	if (!file) {
-+		perror("open");
-+		exit(1);
-+	}
-+
-+	if (dup2(0,2) < 0) {
-+		perror("dups");
-+		exit(1);
-+	}
-+
-+	fprintf(file, "hello, world!\n");
-+	fflush(file);
-+
-+	ret = syscall(__NR_checkpoint, pid, STDOUT_FILENO, 0);
-+	if (ret < 0) {
-+		perror("checkpoint");
-+		exit(2);
-+	}
-+
-+	fprintf(file, "world, hello!\n");
-+	fprintf(file, "(ret = %d)\n", ret);
-+	fflush(file);
-+
-+	while (1)
-+		;
-+
-+	return 0;
-+}
-+======================================================================
-+
-+============================== rstr.c ================================
-+
-+#define _GNU_SOURCE        /* or _BSD_SOURCE or _SVID_SOURCE */
-+
-+#include <stdio.h>
-+#include <stdlib.h>
-+#include <errno.h>
-+#include <fcntl.h>
-+#include <unistd.h>
-+#include <asm/unistd.h>
-+#include <sys/syscall.h>
-+
-+int main(int argc, char *argv[])
-+{
-+	pid_t pid = getpid();
-+	int ret;
-+
-+	ret = syscall(__NR_restart, pid, STDIN_FILENO, 0);
-+	if (ret < 0)
-+		perror("restart");
-+
-+	printf("should not reach here !\n");
-+
-+	return 0;
-+}
-+======================================================================
-+
-+
-+=== Changelog
-+
-+[2008-Oct-07] v6:
-+  - Balance all calls to cr_hbuf_get() with matching cr_hbuf_put()
-+    (even though it's not really needed)
-+  - Add 'current implementation' to docs to describe assumptions
-+  - Misc fixes and cleanups
-+
-+[2008-Sep-11] v5:
-+  - Config is 'def_bool n' by default
-+  - Improve memory dump/restore code (following Dave Hansen's comments)
-+  - Change dump format (and code) to allow chunks of <vaddrs, pages>
-+    instead of one long list of each
-+  - Fix use of follow_page() to avoid faulting in non-present pages
-+  - Memory restore now maps user pages explicitly to copy data into them,
-+    instead of reading directly to user space; got rid of mprotect_fixup()
-+  - Remove preempt_disable() when restoring debug registers
-+  - Rename headers files s/ckpt/checkpoint/
-+  - Fix misc bugs in files dump/restore
-+  - Fix cleanup on some error paths
-+  - Fix misc coding style
-+
-+[2008-Sep-04] v4:
-+  - Fix calculation of hash table size
-+  - Fix header structure alignment
-+  - Use stand list_... for cr_pgarr
-+
-+[2008-Aug-20] v3:
-+  - Various fixes and clean-ups
-+  - Use standard hlist_... for hash table
-+  - Better use of standard kmalloc/kfree
-+
-+[2008-Aug-09] v2:
-+  - Added utsname->{release,version,machine} to checkpoint header
-+  - Pad header structures to 64 bits to ensure compatibility
-+  - Address comments from LKML and linux-containers mailing list
-+
-+[2008-Jul-29] v1:
-+In this incarnation, CR only works on single task. The address space
-+may consist of only private, simple VMAs - anonymous or file-mapped.
-+Both checkpoint and restart will ignore the first argument (pid/crid)
-+and instead act on themselves.
--- 
-1.5.4.3
+--
+Todo:
+- Add support for x86-64 and improve ABI
+- Refine or change syscall interface
+- Extend to handle (multiple) tasks in a container
+- Handle multiple namespaces in a container (e.g. save the filesystem
+  namespaces state with the file descriptors)
+- Security (without CAPS_SYS_ADMIN files restore may fail)
+
+Changelog:
+
+[2008-Oct-07] v6:
+  - Balance all calls to cr_hbuf_get() with matching cr_hbuf_put()
+    (even though it's not really needed)
+  - Add assumptions and what's-missing to documentation
+  - Misc fixes and cleanups
+
+[2008-Sep-11] v5:
+  - Config is now 'def_bool n' by default
+  - Improve memory dump/restore code (following Dave Hansen's comments)
+  - Change dump format (and code) to allow chunks of <vaddrs, pages>
+    instead of one long list of each
+  - Fix use of follow_page() to avoid faulting in non-present pages
+  - Memory restore now maps user pages explicitly to copy data into them,
+    instead of reading directly to user space; got rid of mprotect_fixup()
+  - Remove preempt_disable() when restoring debug registers
+  - Rename headers files s/ckpt/checkpoint/
+  - Fix misc bugs in files dump/restore
+  - Fixes and cleanups on some error paths
+  - Fix misc coding style
+
+[2008-Sep-09] v4:
+  - Various fixes and clean-ups
+  - Fix calculation of hash table size
+  - Fix header structure alignment
+  - Use stand list_... for cr_pgarr
+
+[2008-Aug-29] v3:
+  - Various fixes and clean-ups
+  - Use standard hlist_... for hash table
+  - Better use of standard kmalloc/kfree
+
+[2008-Aug-20] v2:
+  - Added Dump and restore of open files (regular and directories)
+  - Added basic handling of shared objects, and improve handling of
+    'parent tag' concept
+  - Added documentation
+  - Improved ABI, 64bit padding for image data
+  - Improved locking when saving/restoring memory
+  - Added UTS information to header (release, version, machine)
+  - Cleanup extraction of filename from a file pointer
+  - Refactor to allow easier reviewing
+  - Remove requirement for CAPS_SYS_ADMIN until we come up with a
+    security policy (this means that file restore may fail)
+  - Other cleanup and response to comments for v1
+
+[2008-Jul-29] v1:
+  - Initial version: support a single task with address space of only
+    private anonymous or file-mapped VMAs; syscalls ignore pid/crid
+    argument and act on current process.
+
+--
+(Dave Hansen's announcement)
+
+At the containers mini-conference before OLS, the consensus among
+all the stakeholders was that doing checkpoint/restart in the kernel
+as much as possible was the best approach.  With this approach, the
+kernel will export a relatively opaque 'blob' of data to userspace
+which can then be handed to the new kernel at restore time.
+
+This is different than what had been proposed before, which was
+that a userspace application would be responsible for collecting
+all of this data.  We were also planning on adding lots of new,
+little kernel interfaces for all of the things that needed
+checkpointing.  This unites those into a single, grand interface.
+
+The 'blob' will contain copies of select portions of kernel
+structures such as vmas and mm_structs.  It will also contain
+copies of the actual memory that the process uses.  Any changes
+in this blob's format between kernel revisions can be handled by
+an in-userspace conversion program.
+
+This is a similar approach to virtually all of the commercial
+checkpoint/restart products out there, as well as the research
+project Zap.
+
+These patches basically serialize internel kernel state and write
+it out to a file descriptor.  The checkpoint and restore are done
+with two new system calls: sys_checkpoint and sys_restart.
+
+In this incarnation, they can only work checkpoint and restore a
+single task. The task's address space may consist of only private,
+simple vma's - anonymous or file-mapped. The open files may consist
+of only simple files and directories.
+
+--
+(Original announcement)
+
+In the recent mini-summit at OLS 2008 and the following days it was
+agreed to tackle the checkpoint/restart (CR) by beginning with a very
+simple case: save and restore a single task, with simple memory
+layout, disregarding other task state such as files, signals etc.
+
+Following these discussions I coded a prototype that can do exactly
+that, as a starter. This code adds two system calls - sys_checkpoint
+and sys_restart - that a task can call to save and restore its state
+respectively. It also demonstrates how the checkpoint image file can
+be formatted, as well as show its nested nature (e.g. cr_write_mm()
+-> cr_write_vma() nesting).
+
+The state that is saved/restored is the following:
+* some of the task_struct
+* some of the thread_struct and thread_info
+* the cpu state (including FPU)
+* the memory address space
+
+In the current code, sys_checkpoint will checkpoint the current task,
+although the logic exists to checkpoint other tasks (not in the
+checkpointee's execution context). A simple loop will extend this to
+handle multiple processes. sys_restart restarts the current tasks, and
+with multiple tasks each task will call the syscall independently.
+(Actually, to checkpoint outside the context of a task, it is also
+necessary to also handle restart-block logic when saving/restoring the
+thread data).
+
+It takes longer to describe what isn't implemented or supported by
+this prototype ... basically everything that isn't as simple as the
+above.
+
+As for containers - since we still don't have a representation for a
+container, this patch has no notion of a container. The tests for
+consistent namespaces (and isolation) are also omitted.
+
+Below are two example programs: one uses checkpoint (called ckpt) and
+one uses restart (called rstr). Note the use of "dup2" to create a 
+copy of an open file and show how shared objects are treated. Execute
+like this (as a superuser):
+
+orenl:~/test$ ./ckpt > out.1
+				<-- ctrl-c
+orenl:~/test$ cat /tmp/cr-rest.out
+hello, world!
+world, hello!
+(ret = 1)
+
+orenl:~/test$ ./ckpt > out.1
+				<-- ctrl-c
+orenl:~/test$ cat /tmp/cr-rest.out
+hello, world!
+world, hello!
+(ret = 2)
+
+				<-- now change the contents of the file
+orenl:~/test$ sed -i 's/world, hello!/xxxx/' /tmp/cr-rest.out
+orenl:~/test$ cat /tmp/cr-rest.out
+hello, world!
+xxxx
+(ret = 2)
+
+				<-- and do the restart
+orenl:~/test$ ./rstr < out.1
+				<-- ctrl-c
+orenl:~/test$ cat /tmp/cr-rest.out
+hello, world!
+world, hello!
+(ret = 0)
+
+(if you check the output of ps, you'll see that "rstr" changed its
+name to "ckpt", as expected). 
+
+============================== ckpt.c ================================
+
+#define _GNU_SOURCE        /* or _BSD_SOURCE or _SVID_SOURCE */
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <errno.h>
+#include <fcntl.h>
+#include <unistd.h>
+#include <asm/unistd.h>
+#include <sys/syscall.h>
+
+#define OUTFILE "/tmp/cr-test.out"
+
+int main(int argc, char *argv[])
+{
+	pid_t pid = getpid();
+	FILE *file;
+	int ret;
+
+	close(0);
+	close(2);
+
+	unlink(OUTFILE);
+	file = fopen(OUTFILE, "w+");
+	if (!file) {
+		perror("open");
+		exit(1);
+	}
+
+	if (dup2(0,2) < 0) {
+		perror("dups");
+		exit(1);
+	}
+
+	fprintf(file, "hello, world!\n");
+	fflush(file);
+
+	ret = syscall(__NR_checkpoint, pid, STDOUT_FILENO, 0);
+	if (ret < 0) {
+		perror("checkpoint");
+		exit(2);
+	}
+
+	fprintf(file, "world, hello!\n");
+	fprintf(file, "(ret = %d)\n", ret);
+	fflush(file);
+
+	while (1)
+		;
+
+	return 0;
+}
+
+============================== rstr.c ================================
+
+#define _GNU_SOURCE        /* or _BSD_SOURCE or _SVID_SOURCE */
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <errno.h>
+#include <fcntl.h>
+#include <unistd.h>
+#include <asm/unistd.h>
+#include <sys/syscall.h>
+
+int main(int argc, char *argv[])
+{
+	pid_t pid = getpid();
+	int ret;
+
+	ret = syscall(__NR_restart, pid, STDIN_FILENO, 0);
+	if (ret < 0)
+		perror("restart");
+
+	printf("should not reach here !\n");
+
+	return 0;
+}
