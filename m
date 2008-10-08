@@ -1,69 +1,27 @@
-From: Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
-Subject: Re: [PATCH] netns: Delete virtual interfaces during namespace cleanup
-Date: Wed, 08 Oct 2008 16:34:26 +0400
-Message-ID: <48ECA8D2.4090406@openvz.org>
-References: <m18wt6v7eb.fsf@frodo.ebiederm.org>
-	<48EB36FC.4000008@fr.ibm.com>	<48EB3F72.5090201@openvz.org>
-	<m1d4ic4pbr.fsf@frodo.ebiederm.org>
+From: Christoph Hellwig <hch@infradead.org>
+Subject: Re: [PATCH 1/8] sysfs: Implement sysfs tagged directory support.
+Date: Wed, 8 Oct 2008 09:00:06 -0400
+Message-ID: <20081008130006.GB31684@infradead.org>
+References: <dac45060809020654g62afb3c9yd104682b93b43bee@mail.gmail.com> <48BD47A8.1080909@bull.net> <20080902170148.GA9305@suse.de> <31436f4a0809032233r2c46de8od8a94460ce3b5ed2@mail.gmail.com> <48BF83E1.5040000@bull.net> <dac45060810070939v80918a0m3963d7fc6fcbb975@mail.gmail.com> <20081007164833.GA16056@suse.de> <m1abdgywnb.fsf@frodo.ebiederm.org> <20081007210902.GB7996@suse.de> <m18wt0qbwf.fsf@frodo.ebiederm.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <m1d4ic4pbr.fsf-B27657KtZYmhTnVgQlOflh2eb7JE58TQ@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, David Miller <davem-fT/PcQaiUtIeIZ0/mPfg9Q@public.gmane.org>
-Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, "Denis V. Lunev" <den-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>, Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
+Content-Type: text/plain; charset=us-ascii
+Return-path: <netdev-owner@vger.kernel.org>
+Content-Disposition: inline
+In-Reply-To: <m18wt0qbwf.fsf@frodo.ebiederm.org>
+Sender: netdev-owner@vger.kernel.org
+To: "Eric W. Biederman" <ebiederm@xmission.com>
+Cc: Greg KH <gregkh@suse.de>, Mark Ryden <markryde@gmail.com>, Benjamin Thery <benjamin.thery@bull.net>, David Shwatrz <dshwatrz@gmail.com>, Greg KH <greg@kroah.com>, Andrew Morton <akpm@linux-foundation.org>, Tejun Heo <htejun@gmail.com>, Daniel Lezcano <dlezcano@fr.ibm.com>, linux-kernel@vger.kernel.org, Al Viro <viro@ftp.linux.org.uk>, Linux Containers <containers@lists.osdl.org>, netdev@vger.kernel.org
 List-Id: containers.vger.kernel.org
 
-Eric W. Biederman wrote:
-> Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org> writes:
+On Tue, Oct 07, 2008 at 03:27:12PM -0700, Eric W. Biederman wrote:
+> Al reviewed sysfs with my patchset on top of it.
 > 
->> I remember that I promised to prepare the wait-extending patch. But I
->> haven't manage to find time for this, sorry :( In a month or two I will
->> finish one time-hungry task and hopefully be able to do it.
->>
->> As far as this particular patch is concerned.
->>
->> All the virtual devices we have now in namespaces (vlan and tunnels)
->> kill themselves *before* this code is called. But even if we try to
->> move this destruction from modules to here, we'll be in a tricky
->> situation, when the e.g. ipip module has already kfree-d the net_ipip
->> structure, while none of ipip devices are released yet.
->>
->> If we try to look in the future - if we ever have a virtual device
->> driver, that will be able to create its devices in namespace, we'll
->> have to destroy all these devices *before* (or inside) this driver's
->> net->exit callback is called, but this patch dies the ->dellink call
->> at the very end, i.e. *after* any potential ->exit callback.
->>
->> Eric - did you see any device, that was ->dellink-ed by this patch?
+> Al's review found problems in  sysfs with my patchset on top of it.
 > 
-> macvlan, veth, and dummy interfaces.  Basically
-> everything I use this deletes the virtual interfaces, instead
-> of sending them back to the initial network namespace.
+> If you look at what Al found the majority of those problems exist in sysfs
+> without my patches.
 
-OK, then.
+And when something is crap your fix it firdt before piling up more shit
+on top of it.  And sysfs is a really severe case of that, and you're
+piling a _lot_ of shit ontop.
 
-Acked-by: Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
-
->>From the looks of the code vlans are also be handled.
-> 
-> Things like tun/tap and ipip are handled in the exit methods and I
-> have no problem with that, although I do wonder if we are handling
-> moving or refusing to move them between namespaces properly.
-> 
-> For devices that don't need a dedicated virtual interface in
-> every network namespace this certainly looks like the easiest
-> way to handle them, as the driver doesn't need to a thing
-> about network namespaces and the right thing just happens.
-> 
-> Eric
-> 
