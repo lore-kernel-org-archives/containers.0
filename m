@@ -1,14 +1,14 @@
-From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+From: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 Subject: Re: [RFC][PATCH 2/2] first callers of process_deny_checkpoint()
-Date: Thu, 9 Oct 2008 14:43:50 -0500
-Message-ID: <20081009194350.GA31214__1036.29089794612$1223581661$gmane$org@us.ibm.com>
-References: <20081009190405.13A253CB@kernel> <20081009190406.1B257119@kernel>
+Date: Thu, 09 Oct 2008 13:54:31 -0700
+Message-ID: <1223585671.11830.40.camel__42424.3954978467$1223585908$gmane$org@nimitz>
+References: <20081009190405.13A253CB@kernel>
+	<20081009190406.1B257119@kernel>  <20081009194350.GA31214@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <20081009190406.1B257119@kernel>
+In-Reply-To: <20081009194350.GA31214-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,124 +18,24 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>, arnd-r2nGTMty4D4@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Quoting Dave Hansen (dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org):
+On Thu, 2008-10-09 at 14:43 -0500, Serge E. Hallyn wrote:
+> Hmm, I don't know too much about aio, but is it possible to succeed with
+> io_getevents if we didn't first do a submit?  It looks like the contexts
+> are looked up out of current->mm, so I don't think we need this call
+> here.
 > 
-> These are just a few simple examples of things we know we can't
-> checkpoint now.  There are plenty more, but this should give
-> everyone an idea how this will look in practice.
-> 
-> 
-> Signed-off-by: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-> ---
-> 
->  linux-2.6.git-dave/fs/aio.c     |    7 +++++++
->  linux-2.6.git-dave/ipc/mqueue.c |    3 +++
->  linux-2.6.git-dave/net/socket.c |    5 +++++
->  3 files changed, 15 insertions(+)
-> 
-> diff -puN fs/aio.c~no-checkpointing-for-sockets fs/aio.c
-> --- linux-2.6.git/fs/aio.c~no-checkpointing-for-sockets	2008-10-09 11:56:58.000000000 -0700
-> +++ linux-2.6.git-dave/fs/aio.c	2008-10-09 11:56:58.000000000 -0700
-> @@ -19,6 +19,7 @@
-> 
->  #define DEBUG 0
-> 
-> +#include <linux/checkpoint.h>
->  #include <linux/sched.h>
->  #include <linux/fs.h>
->  #include <linux/file.h>
-> @@ -1663,6 +1664,8 @@ asmlinkage long sys_io_submit(aio_contex
->  	if (unlikely(!access_ok(VERIFY_READ, iocbpp, (nr*sizeof(*iocbpp)))))
->  		return -EFAULT;
-> 
-> +	process_deny_checkpointing(current);
-> +
->  	ctx = lookup_ioctx(ctx_id);
->  	if (unlikely(!ctx)) {
->  		pr_debug("EINVAL: io_submit: invalid context id\n");
-> @@ -1742,6 +1745,8 @@ asmlinkage long sys_io_cancel(aio_contex
->  	if (unlikely(!ctx))
->  		return -EINVAL;
-> 
-> +	process_deny_checkpointing(current);
-> +
->  	spin_lock_irq(&ctx->ctx_lock);
->  	ret = -EAGAIN;
->  	kiocb = lookup_kiocb(ctx, iocb, key);
-> @@ -1796,6 +1801,8 @@ asmlinkage long sys_io_getevents(aio_con
->  	struct kioctx *ioctx = lookup_ioctx(ctx_id);
->  	long ret = -EINVAL;
-> 
-> +	process_deny_checkpointing(current);
+> Otherwise, this is neat.
 
-Hmm, I don't know too much about aio, but is it possible to succeed with
-io_getevents if we didn't first do a submit?  It looks like the contexts
-are looked up out of current->mm, so I don't think we need this call
-here.
+Good question.  I know nothing, either. :)
 
-Otherwise, this is neat.
+My thought was that any process *trying* to do aio stuff of any kind is
+going to be really confused if it gets checkpointed.  Or, it might try
+to submit an aio right after it checks the list of them.  I thought it
+best to be cautious and say, if you screw with aio, no checkpointing for
+you!
 
--serge
-
-> +
->  	if (likely(ioctx)) {
->  		if (likely(min_nr <= nr && min_nr >= 0 && nr >= 0))
->  			ret = read_events(ioctx, min_nr, nr, events, timeout);
-> diff -puN ipc/mqueue.c~no-checkpointing-for-sockets ipc/mqueue.c
-> --- linux-2.6.git/ipc/mqueue.c~no-checkpointing-for-sockets	2008-10-09 11:56:58.000000000 -0700
-> +++ linux-2.6.git-dave/ipc/mqueue.c	2008-10-09 11:56:58.000000000 -0700
-> @@ -14,6 +14,7 @@
->   */
-> 
->  #include <linux/capability.h>
-> +#include <linux/checkpoint.h>
->  #include <linux/init.h>
->  #include <linux/pagemap.h>
->  #include <linux/file.h>
-> @@ -655,6 +656,8 @@ asmlinkage long sys_mq_open(const char _
->  	char *name;
->  	int fd, error;
-> 
-> +	process_deny_checkpointing(current);
-> +
->  	error = audit_mq_open(oflag, mode, u_attr);
->  	if (error != 0)
->  		return error;
-> diff -puN net/socket.c~no-checkpointing-for-sockets net/socket.c
-> --- linux-2.6.git/net/socket.c~no-checkpointing-for-sockets	2008-10-09 11:56:58.000000000 -0700
-> +++ linux-2.6.git-dave/net/socket.c	2008-10-09 11:56:58.000000000 -0700
-> @@ -87,6 +87,7 @@
->  #include <linux/audit.h>
->  #include <linux/wireless.h>
->  #include <linux/nsproxy.h>
-> +#include <linux/checkpoint.h>
-> 
->  #include <asm/uaccess.h>
->  #include <asm/unistd.h>
-> @@ -1236,6 +1237,8 @@ asmlinkage long sys_socket(int family, i
->  	if (SOCK_NONBLOCK != O_NONBLOCK && (flags & SOCK_NONBLOCK))
->  		flags = (flags & ~SOCK_NONBLOCK) | O_NONBLOCK;
-> 
-> +	process_deny_checkpointing(current);
-> +
->  	retval = sock_create(family, type, protocol, &sock);
->  	if (retval < 0)
->  		goto out;
-> @@ -2130,6 +2133,8 @@ asmlinkage long sys_socketcall(int call,
->  	a0 = a[0];
->  	a1 = a[1];
-> 
-> +	process_deny_checkpointing(current);
-> +
->  	switch (call) {
->  	case SYS_SOCKET:
->  		err = sys_socket(a0, a1, a[2]);
-> _
-> _______________________________________________
-> Containers mailing list
-> Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-> https://lists.linux-foundation.org/mailman/listinfo/containers
+-- Dave
