@@ -1,16 +1,12 @@
 From: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: Re: [RFC v6][PATCH 0/9] Kernel based checkpoint/restart
-Date: Thu, 09 Oct 2008 09:50:36 -0700
-Message-ID: <1223571036.11830.32.camel__8943.31991808048$1223571288$gmane$org@nimitz>
-References: <1223461197-11513-1-git-send-email-orenl@cs.columbia.edu>
-	<20081009124658.GE2952@elte.hu> <1223557122.11830.14.camel@nimitz>
-	<20081009131701.GA21112@elte.hu> <1223559246.11830.23.camel@nimitz>
-	<20081009134415.GA12135@elte.hu>
+Subject: [RFC][PATCH 1/2] Track in-kernel when we expect checkpoint/restart to
+	work
+Date: Thu, 09 Oct 2008 12:04:05 -0700
+Message-ID: <20081009190405.13A253CB__11254.2098657743$1223579303$gmane$org@kernel>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20081009134415.GA12135-X9Un+BFzKDI@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -20,17 +16,127 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>
-Cc: jeremy-TSDbQ3PG+2Y@public.gmane.org, arnd-r2nGTMty4D4@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Alexander Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, "H. Peter Anvin" <hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org>
+To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, arnd-r2nGTMty4D4@public.gmane.org, Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Thu, 2008-10-09 at 15:44 +0200, Ingo Molnar wrote:
-> there might be races as well, especially with proxy state - and 
-> current->flags updates are not serialized.
-> 
-> So maybe it should be a completely separate flag after all? Stick it 
-> into the end of task_struct perhaps.
 
-What do you mean by proxy state?  nsproxy?
+Suggested by Ingo.
 
--- Dave
+Checkpoint/restart is going to be a long effort to get things working.
+We're going to have a lot of things that we know just don't work for
+a long time.  That doesn't mean that it will be useless, it just means
+that there's some complicated features that we are going to have to
+work incrementally to fix.
+
+This patch introduces a new mechanism to help the checkpoint/restart
+developers.  A new function pair: task/process_deny_checkpoint() is
+created.  When called, these tell the kernel that we *know* that the
+process has performed some activity that will keep it from being
+properly checkpointed.
+
+The 'flag' is an atomic_t for now so that we can have some level
+of atomicity and make sure to only warn once.
+
+For now, this is a one-way trip.  Once a process is no longer
+'may_checkpoint' capable, neither it nor its children ever will be.
+This can, of course, be fixed up in the future.  We might want to
+reset the flag when a new pid namespace is created, for instance.
+
+
+Signed-off-by: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+---
+
+ linux-2.6.git-dave/include/linux/checkpoint.h |   31 +++++++++++++++++++++++++-
+ linux-2.6.git-dave/include/linux/sched.h      |    3 ++
+ linux-2.6.git-dave/kernel/fork.c              |   10 ++++++++
+ 3 files changed, 43 insertions(+), 1 deletion(-)
+
+diff -puN include/linux/checkpoint.h~flag include/linux/checkpoint.h
+--- linux-2.6.git/include/linux/checkpoint.h~flag	2008-10-09 11:56:57.000000000 -0700
++++ linux-2.6.git-dave/include/linux/checkpoint.h	2008-10-09 11:56:57.000000000 -0700
+@@ -10,8 +10,11 @@
+  *  distribution for more details.
+  */
+ 
+-#include <linux/path.h>
+ #include <linux/fs.h>
++#include <linux/path.h>
++#include <linux/sched.h>
++
++#ifdef CONFIG_CHECKPOINT_RESTART
+ 
+ #define CR_VERSION  2
+ 
+@@ -94,4 +97,30 @@ extern void file_pos_write(struct file *
+ #define cr_debug(fmt, args...)  \
+ 	pr_debug("[CR:%s] " fmt, __func__, ## args)
+ 
++static inline void __task_deny_checkpointing(struct task_struct *task,
++		char *file, int line)
++{
++	if(!atomic_dec_and_test(&task->may_checkpoint))
++		return;
++	printk(KERN_INFO "process performed an action that can not be "
++			"checkpointed at: %s:%d\n", file, line);
++	WARN_ON(1);
++}
++#define process_deny_checkpointing(p) __task_deny_checkpointing(p, __FILE__, __LINE__)
++
++/*
++ * For now, we're not going to have a distinction between
++ * tasks and processes for the purpose of c/r.  But, allow
++ * these two calls anyway to make new users at least think
++ * about it.
++ */
++#define task_deny_checkpointing(p) __task_deny_checkpointing(p, __FILE__, __LINE__)
++
++#else
++
++static inline void task_deny_checkpointing(struct task_struct *task) {}
++static inline void process_deny_checkpointing(struct task_struct *task) {}
++
++#endif
++
+ #endif /* _CHECKPOINT_CKPT_H_ */
+diff -puN include/linux/sched.h~flag include/linux/sched.h
+--- linux-2.6.git/include/linux/sched.h~flag	2008-10-09 11:56:57.000000000 -0700
++++ linux-2.6.git-dave/include/linux/sched.h	2008-10-09 11:56:57.000000000 -0700
+@@ -1301,6 +1301,9 @@ struct task_struct {
+ 	int latency_record_count;
+ 	struct latency_record latency_record[LT_SAVECOUNT];
+ #endif
++#ifdef CONFIG_CHECKPOINT_RESTART
++	atomic_t may_checkpoint;
++#endif
+ };
+ 
+ /*
+diff -puN kernel/fork.c~flag kernel/fork.c
+--- linux-2.6.git/kernel/fork.c~flag	2008-10-09 11:56:57.000000000 -0700
++++ linux-2.6.git-dave/kernel/fork.c	2008-10-09 11:56:57.000000000 -0700
+@@ -194,6 +194,13 @@ void __init fork_init(unsigned long memp
+ 	init_task.signal->rlim[RLIMIT_NPROC].rlim_max = max_threads/2;
+ 	init_task.signal->rlim[RLIMIT_SIGPENDING] =
+ 		init_task.signal->rlim[RLIMIT_NPROC];
++
++#ifdef CONFIG_CHECKPOINT_RESTART
++	/*
++	 * This probably won't stay set for long...
++	 */
++	atomic_set(&init_task.may_checkpoint, 1);
++#endif
+ }
+ 
+ int __attribute__((weak)) arch_dup_task_struct(struct task_struct *dst,
+@@ -244,6 +251,9 @@ static struct task_struct *dup_task_stru
+ 	tsk->btrace_seq = 0;
+ #endif
+ 	tsk->splice_pipe = NULL;
++#ifdef CONFIG_CHECKPOINT_RESTART
++	atomic_set(&tsk->may_checkpoint, atomic_read(&orig->may_checkpoint));
++#endif
+ 	return tsk;
+ 
+ out:
+_
