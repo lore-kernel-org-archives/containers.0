@@ -1,17 +1,16 @@
-From: "Dong-Jae Kang" <baramsori72-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+From: Ryo Tsuruta <ryov-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
 Subject: Re: [PATCH 0/2] dm-ioband: I/O bandwidth controller v1.7.0:
 	Introduction
-Date: Thu, 9 Oct 2008 15:15:18 +0900
-Message-ID: <2891419e0810082315v28f2f4cbu5f95230db3be0bc1__27454.4415450238$1223533150$gmane$org@mail.gmail.com>
-References: <20081003.143749.193701570.ryov@valinux.co.jp>
-	<2891419e0810080129sb6b35y11362f4bef71c174@mail.gmail.com>
+Date: Thu, 09 Oct 2008 21:14:14 +0900 (JST)
+Message-ID: <20081009.211414.193713198.ryov__42321.2045491256$1223554662$gmane$org@valinux.co.jp>
+References: <2891419e0810080129sb6b35y11362f4bef71c174@mail.gmail.com>
 	<20081008.194022.226783199.ryov@valinux.co.jp>
+	<2891419e0810082315v28f2f4cbu5f95230db3be0bc1@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="windows-1252"
-Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20081008.194022.226783199.ryov-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
-Content-Disposition: inline
+In-Reply-To: <2891419e0810082315v28f2f4cbu5f95230db3be0bc1-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -21,258 +20,112 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Ryo Tsuruta <ryov-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
+To: baramsori72-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org
 Cc: xen-devel-GuqFBffKawuULHF6PoxzQEEOCMrvLtNR@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, virtualization-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, dm-devel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, agk-9JcytcrH/bA+uJoB2kUjGw@public.gmane.org, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, fernando-gVGce1chcLdL9jVzuh4AOg@public.gmane.org, xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Hi, Ryo tsuruta.
-Thank you for your fast reply.
-Your comments was very helpful for me ^^
+Hi Dong-Jae,
 
-> 2. tiotest is not an appropriate tool to see how bandwith is shared
->   among devices, becasue those three tiotests don't finish at the
->   same time, a process which issues I/Os to a device with the highest
->   weight finishes first, so you can't see how bandwidth is shared
->   from the results of each tiotest.
+> So, I tested dm-ioband and bio-cgroup patches with another IO testing
+> tool, xdd ver6.5(http://www.ioperformance.com/),  after your reply.
+> Xdd supports O_DIRECT mode and time limit options.
+> I think, personally, it is proper tool for testing of IO controllers
+> in Linux Container ML.
 
-Yes, you are right, and it is good point for correct IO testing in
-dm-ioband and other controllers.
-So, I tested dm-ioband and bio-cgroup patches with another IO testing
-tool, xdd ver6.5(http://www.ioperformance.com/),  after your reply.
-Xdd supports O_DIRECT mode and time limit options.
-I think, personally, it is proper tool for testing of IO controllers
-in Linux Container ML.
+Xdd is really useful for me. Thanks for letting me know.
 
-And I found some strange points in test results. In fact, it will be
-not strange for other persons^^
-
-1. dm-ioband can control IO bandwidth well in O_DIRECT mode(read and
-write), I think the result is very reasonable. but it can't control it
-in Buffered mode when I checked just only output of xdd. I think
-bio-cgroup patches is for solving the problems, is it right? If so,
-how can I check or confirm the role of bio-cgroup patches?
-
-2. As showed in test results, the IO performance in Buffered IO mode
-is very low compared with it in O_DIRECT mode. In my opinion, the
-reverse case is more natural in real life.
-Can you give me a answer about it?
-
-3. Compared with physical bandwidth(when it is checked with one
-process and without dm-ioband device), the sum of the bandwidth by
-dm-ioband has very considerable gap with the physical bandwidth. I
-wonder the reason=85. Is it overhead of dm-ioband or bio-cgroup patches?
-or Are there any another reasons?
-
-the new testing result is like below.
-
-- Testing target : the patches of dm-ioband ver1.7.0 and bio-cgroup
-latest version
-
-- Testing Cases
-1.Read and write stress test in O_DIRECT IO mode
-2.Read and write stress test in not Buffered IO mode
-
-- Testing tool : xdd ver6.5 ( http://www.ioperformance.com/ )
-
-* Total bandwidth
-
-Read IO
-T  Q       Bytes      Ops    Time      Rate      IOPS   Latency
-%CPU  OP_Type    ReqSize
-0  1    1048576000   128000    15.700    66.790     8153.04    0.0001
-   0.00   read        8192
-0  1    1048576000   128000    15.700    66.790     8153.04    0.0001
-   0.00   read        8192
-1  1    1048576000   128000    15.700    66.790     8153.04    0.0001
-   0.00   read        8192
-
-Write IO
-T  Q       Bytes      Ops    Time      Rate      IOPS   Latency
-%CPU  OP_Type    ReqSize
-0  1    1048576000   128000    14.730    71.185     8689.59    0.0001
-   0.00   write        8192
-0  1    1048576000   128000    14.730    71.185     8689.59    0.0001
-   0.00   write        8192
-1  1    1048576000   128000    14.730    71.185     8689.59    0.0001
-   0.00   write        8192
-
-* Read IO test in O_DIRECT mode
-
-Command :
-xdd.linux -op read -targets 1 /dev/mapper/ioband1 -reqsize 8 -numreqs
-128000 -verbose -timelimit 30 =96dio
-
-Result :
-cgroup1 (weight : 10)
-T  Q       Bytes       Ops      Time      Rate      IOPS     Latency
- %CPU  OP_Type    ReqSize
-0  1      84549632    10321    30.086     2.810     343.05    0.0029
-  0.00   read        8192
-0  1      84549632    10321    30.086     2.810     343.05    0.0029
-  0.00   read        8192
-1  1      84549632    10321    30.086     2.810     343.05    0.0029
-  0.00   read        8192
-
-cgroup1 (weight : 30)
-T  Q       Bytes       Ops      Time      Rate      IOPS     Latency
-  %CPU  OP_Type    ReqSize
-0  1     256425984    31302    30.089     8.522     1040.31    0.0010
-   0.00   read        8192
-0  1     256425984    31302    30.089     8.522     1040.31    0.0010
-   0.00   read        8192
-1  1     256425984    31302    30.089     8.522     1040.31    0.0010
-   0.00   read        8192
-
-cgroup1 (weight : 60)
-T  Q       Bytes       Ops      Time      Rate      IOPS      Latency
-   %CPU  OP_Type    ReqSize
-0  1     483467264    59017    30.000    16.116     1967.22    0.0005
-   0.00   read        8192
-0  1     483467264    59017    30.000    16.116     1967.22    0.0005
-   0.00   read        8192
-1  1     483467264    59017    30.000    16.116     1967.22    0.0005
-   0.00   read        8192
-
-* Write IO test in O_DIRECT mode
-
-Command :
-xdd.linux -op write -targets 1 /dev/mapper/ioband1 -reqsize 8 -numreqs
-128000 -verbose -timelimit 30 =96dio
-
-Result :
-cgroup1 (weight : 10)
-T  Q       Bytes      Ops    Time      Rate      IOPS   Latency
-%CPU  OP_Type    ReqSize
-0  1     106790912    13036    30.034     3.556     434.04    0.0023
-  0.00   write        8192
-0  1     106790912    13036    30.034     3.556     434.04    0.0023
-  0.00   write        8192
-1  1     106790912    13036    30.034     3.556     434.04    0.0023
-  0.00   write        8192
-
-cgroup1 (weight : 30)
-T  Q       Bytes      Ops    Time      Rate      IOPS   Latency
-%CPU  OP_Type    ReqSize
-0  1     347176960    42380    30.006    11.570     1412.40    0.0007
-   0.00   write        8192
-0  1     347176960    42380    30.006    11.570     1412.40    0.0007
-   0.00   write        8192
-1  1     347176960    42380    30.006    11.570     1412.40    0.0007
-   0.00   write        8192
-
-cgroup1 (weight : 60)
-T  Q       Bytes      Ops    Time      Rate      IOPS   Latency
-%CPU  OP_Type    ReqSize
-0  1     636256256    77668    30.000    21.209     2588.93    0.0004
-   0.00   write        8192
-0  1     636256256    77668    30.000    21.209     2588.93    0.0004
-   0.00   write        8192
-1  1     636256256    77668    30.000    21.209     2588.93    0.0004
-   0.00   write        8192
-
-* Read IO test in Buffered IO mode
-
-Command :
-xdd.linux -op read -targets 1 /dev/mapper/ioband1 -reqsize 8 -numreqs
-128000 -verbose -timelimit 30
-
-Result :
-cgroup1 (weight : 10)
-T  Q       Bytes      Ops    Time      Rate      IOPS   Latency
-%CPU  OP_Type    ReqSize
-0  1     161284096    19688    30.012     5.374     656.00    0.0015
-  0.00   read        8192
-0  1     161284096    19688    30.012     5.374     656.00    0.0015
-  0.00   read        8192
-1  1     161284096    19688    30.012     5.374     656.00    0.0015
-  0.00   read        8192
-
-cgroup1 (weight : 30)
-T  Q       Bytes      Ops    Time      Rate      IOPS   Latency
-%CPU  OP_Type    ReqSize
-0  1     162816000    19875    30.005     5.426     662.38    0.0015
-  0.00   read        8192
-0  1     162816000    19875    30.005     5.426     662.38    0.0015
-  0.00   read        8192
-1  1     162816000    19875    30.005     5.426     662.38    0.0015
-  0.00   read        8192
-
-cgroup1 (weight : 60)
-T  Q       Bytes      Ops    Time      Rate      IOPS   Latency
-%CPU  OP_Type    ReqSize
-0  1     167198720    20410    30.002     5.573     680.29    0.0015
-  0.00   read        8192
-0  1     167198720    20410    30.002     5.573     680.29    0.0015
-  0.00   read        8192
-1  1     167198720    20410    30.002     5.573     680.29    0.0015
-  0.00   read        8192
-
-* Write IO test in Buffered IO mode
-
-Command :
-xdd.linux -op write -targets 1 /dev/mapper/ioband1 -reqsize 8 -numreqs
-128000 -verbose -timelimit 30
-
-Result :
-cgroup1 (weight : 10)
-T  Q       Bytes      Ops    Time      Rate      IOPS   Latency
-%CPU  OP_Type    ReqSize
-0  1     550633472    67216    30.017    18.344     2239.30    0.0004
-   0.00   write        8192
-0  1     550633472    67216    30.017    18.344     2239.30    0.0004
-   0.00   write        8192
-1  1     550633472    67216    30.017    18.344     2239.30    0.0004
-   0.00   write        8192
-
-cgroup1 (weight : 30)
-T  Q       Bytes      Ops    Time      Rate      IOPS   Latency
-%CPU  OP_Type    ReqSize
-0  1         32768        4    32.278     0.001       0.12    8.0694
-  0.00   write        8192
-0  1         32768        4    32.278     0.001       0.12    8.0694
-  0.00   write        8192
-1  1         32768        4    32.278     0.001       0.12    8.0694
-  0.00   write        8192
-
-cgroup1 (weight : 60)
-T  Q       Bytes      Ops    Time      Rate      IOPS   Latency
-%CPU  OP_Type    ReqSize
-0  1       4505600      550    31.875     0.141      17.25    0.0580
-  0.00   write        8192
-0  1       4505600      550    31.875     0.141      17.25    0.0580
-  0.00   write        8192
-1  1       4505600      550    31.875     0.141      17.25    0.0580
-  0.00   write        8192
-
->   I use iostat to see the time variation of bandiwdth. The followings
->   are the outputs of iostat just after starting three tiotests on the
->   same setting as yours.
+> And I found some strange points in test results. In fact, it will be
+> not strange for other persons^^
+> 
+> 1. dm-ioband can control IO bandwidth well in O_DIRECT mode(read and
+> write), I think the result is very reasonable. but it can't control it
+> in Buffered mode when I checked just only output of xdd. I think
+> bio-cgroup patches is for solving the problems, is it right? If so,
+> how can I check or confirm the role of bio-cgroup patches?
 >
->    # iostat -p dm-0 -p dm-1 -p dm-2 1
->    Device:            tps   Blk_read/s   Blk_wrtn/s   Blk_read   Blk_wrtn
->    dm-0           5430.00         0.00     10860.00          0      10860
->    dm-1          16516.00         0.00     16516.00          0      16516
->    dm-2          32246.00         0.00     32246.00          0      32246
->
->    avg-cpu:  %user   %nice %system %iowait  %steal   %idle
->               0.51    0.00   21.83   76.14    0.00    1.52
->
->    Device:            tps   Blk_read/s   Blk_wrtn/s   Blk_read   Blk_wrtn
->    dm-0           5720.00         0.00     11440.00          0      11440
->    dm-1          16138.00         0.00     16138.00          0      16138
->    dm-2          32734.00         0.00     32734.00          0      32734
->    ...
->
+> 2. As showed in test results, the IO performance in Buffered IO mode
+> is very low compared with it in O_DIRECT mode. In my opinion, the
+> reverse case is more natural in real life.
+> Can you give me a answer about it?
 
-Thank you for your kindness ^^
+Your results show all xdd programs belong to the same cgroup,
+could you explain me in detail about your test procedure?
 
->
-> Could you give me the O_DIRECT patch?
->
-Of course, if you want. But it is nothing
-Tiobench tool is very simple and light source code, so I just add the
-O_DIRECT option in tiotest.c of tiobench testing tool.
-Anyway, after I make a patch file, I send it to you
+To know how many I/Os are actually issued to a physical device in
+buffered mode within a measurement period, you should check the
+/sys/block/<dev>/stat file just before starting a test program and
+just after the end of the test program. The contents of the stat file
+is described in the following document:
+   kernel/Documentation/block/stat.txt
 
-Best Regards,
-Dong-Jae Kang
+> 3. Compared with physical bandwidth(when it is checked with one
+> process and without dm-ioband device), the sum of the bandwidth by
+> dm-ioband has very considerable gap with the physical bandwidth. I
+> wonder the reason. Is it overhead of dm-ioband or bio-cgroup patches?
+> or Are there any another reasons?
+
+The followings are the results on my PC with SATA disk, and there is
+no big difference between with and without dm-ioband. Please try the
+same thing if you have time.
+
+without dm-ioband
+=================
+# xdd.linux -op write -queuedepth 16 -targets 1 /dev/sdb1 \
+  -reqsize 8 -numreqs 128000 -verbose -timelimit 30 -dio -randomize
+
+T  Q       Bytes      Ops    Time      Rate    IOPS   Latency
+%CPU  OP_Type    ReqSize
+0 16   140001280    17090    30.121     4.648     567.38    0.0018
+0.01   write        8192
+
+with dm-ioband
+==============
+* cgroup1 (weight 10)
+# cat /cgroup/1/bio.id
+1
+# echo $$ > /cgroup/1/tasks
+# xdd.linux -op write -queuedepth 16 -targets 1 /dev/mapper/ioband1
+  -reqsize 8 -numreqs 128000 -verbose -timelimit 30 -dio -randomize
+T  Q       Bytes      Ops    Time      Rate      IOPS   Latency
+%CPU  OP_Type    ReqSize     
+0 16    14393344     1757    30.430     0.473      57.74    0.0173
+0.00   write        8192 
+
+* cgroup2 (weight 20)
+# cat /cgroup/2/bio.id
+2
+# echo $$ > /cgroup/2/tasks
+# xdd.linux -op write -queuedepth 16 -targets 1 /dev/mapper/ioband1
+  -reqsize 8 -numreqs 128000 -verbose -timelimit 30 -dio -randomize
+T  Q       Bytes      Ops    Time      Rate      IOPS   Latency
+%CPU  OP_Type    ReqSize     
+0 16    44113920     5385    30.380     1.452     177.25    0.0056
+0.00   write        8192 
+
+* cgroup3 (weight 60)
+# cat /cgroup/3/bio.id
+3
+# echo $$ > /cgroup/3/tasks
+# xdd.linux -op write -queuedepth 16 -targets 1 /dev/mapper/ioband1
+  -reqeize 8 -numreqs 128000 -verbose -timelimit 30 -dio -randomize
+T  Q       Bytes      Ops    Time      Rate      IOPS   Latency
+%CPU  OP_Type    ReqSize     
+0 16    82485248    10069    30.256     2.726     332.79    0.0030
+0.00   write        8192 
+
+Total
+=====
+                  Bytes        Ops    Rate   IOPS
+  w/o dm-ioband  140001280    17090  4.648  567.38
+  w/  dm-ioband  140992512    17211  4.651  567.78
+
+> > Could you give me the O_DIRECT patch?
+> >
+> Of course, if you want. But it is nothing
+> Tiobench tool is very simple and light source code, so I just add the
+> O_DIRECT option in tiotest.c of tiobench testing tool.
+> Anyway, after I make a patch file, I send it to you
+
+Thank you very much!
+
+Ryo Tsuruta
