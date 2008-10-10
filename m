@@ -1,14 +1,15 @@
 From: Cedric Le Goater <clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [RFC v6][PATCH 3/9] x86 support for checkpoint/restart
-Date: Fri, 10 Oct 2008 12:21:39 +0200
-Message-ID: <48EF2CB3.9040900__12051.8524935052$1223634264$gmane$org@fr.ibm.com>
-References: <1223461197-11513-1-git-send-email-orenl@cs.columbia.edu>
-	<1223461197-11513-4-git-send-email-orenl@cs.columbia.edu>
+Subject: Re: [RFC][PATCH 2/2] first callers of process_deny_checkpoint()
+Date: Fri, 10 Oct 2008 12:27:50 +0200
+Message-ID: <48EF2E26.3020200__14641.0809401006$1223634804$gmane$org@fr.ibm.com>
+References: <20081009190405.13A253CB@kernel>	<20081009190406.1B257119@kernel>
+	<20081009194350.GA31214@us.ibm.com>
+	<1223585671.11830.40.camel@nimitz>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1223461197-11513-4-git-send-email-orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+In-Reply-To: <1223585671.11830.40.camel@nimitz>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,36 +19,30 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Cc: jeremy-TSDbQ3PG+2Y@public.gmane.org, arnd-r2nGTMty4D4@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Alexander Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, "H. Peter Anvin" <hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org>, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>
+To: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>, arnd-r2nGTMty4D4@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-> +int cr_read_cpu_fpu(struct cr_hdr_cpu *hh, struct task_struct *t)
-> +{
-> +	struct thread_struct *thread = &t->thread;
-> +
-> +	/* i387 + MMU + SSE */
-> +
-> +	preempt_disable();
-> +
-> +	__clear_fpu(t);		/* in case we used FPU in user mode */
-> +
-> +	if (!hh->used_math)
-> +		clear_used_math();
-> +	else {
-> +		if (hh->has_fxsr != cpu_has_fxsr) {
-> +			force_sig(SIGFPE, t);
-> +			return -EINVAL;
-> +		}
+Dave Hansen wrote:
+> On Thu, 2008-10-09 at 14:43 -0500, Serge E. Hallyn wrote:
+>> Hmm, I don't know too much about aio, but is it possible to succeed with
+>> io_getevents if we didn't first do a submit?  It looks like the contexts
+>> are looked up out of current->mm, so I don't think we need this call
+>> here.
+>>
+>> Otherwise, this is neat.
+> 
+> Good question.  I know nothing, either. :)
+> 
+> My thought was that any process *trying* to do aio stuff of any kind is
+> going to be really confused if it gets checkpointed.  Or, it might try
+> to submit an aio right after it checks the list of them.  I thought it
+> best to be cautious and say, if you screw with aio, no checkpointing for
+> you!
 
-don't you need an init_fpu() around here ? because the task you restart might 
-not have used FPU yet.
+IMO, the right path would be to deny checkpoint if you have aio requests
+pending but if you have not, aio's are not an issue for checkpoint anymore.
 
-> +		memcpy(&thread->xstate, &hh->xstate, sizeof(thread->xstate));
-
-also i'd used 'xstate_size' instead of sizeof(thread->xstate)
-
-
-thanks,
+but that's one easy one to track ...
 
 C.
