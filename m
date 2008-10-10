@@ -1,64 +1,164 @@
-From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: Re: [RFC v6][PATCH 3/9] x86 support for checkpoint/restart
-Date: Fri, 10 Oct 2008 06:24:31 -0400
-Message-ID: <48EF2D5F.5010701__45272.8243348703$1223634999$gmane$org@cs.columbia.edu>
-References: <1223461197-11513-1-git-send-email-orenl@cs.columbia.edu>
-	<1223461197-11513-4-git-send-email-orenl@cs.columbia.edu>
-	<48EF2CB3.9040900@fr.ibm.com>
+From: Daniel Lezcano <dlezcano@fr.ibm.com>
+Subject: container userspace tools
+Date: Fri, 10 Oct 2008 13:01:05 +0200
+Message-ID: <48EF35F1.2060308@fr.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <48EF2CB3.9040900-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Cedric Le Goater <clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
-Cc: jeremy-TSDbQ3PG+2Y@public.gmane.org, arnd-r2nGTMty4D4@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Alexander Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, "H. Peter Anvin" <hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org>, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>
+Return-path: <netdev-owner@vger.kernel.org>
+Sender: netdev-owner@vger.kernel.org
+To: Linux Containers <containers@lists.osdl.org>, Linux Kernel Mailing List <linux-kernel@vger.kernel.org>, Linux Netdev List <netdev@vger.kernel.org>
 List-Id: containers.vger.kernel.org
 
+Hi all,
 
+I saw different emails from people asking for user space tools for the 
+containers, so I made a library and a set of command line tools.
+This component is called "lxc" which stands for "LinuX Container".
 
-Cedric Le Goater wrote:
->> +int cr_read_cpu_fpu(struct cr_hdr_cpu *hh, struct task_struct *t)
->> +{
->> +	struct thread_struct *thread = &t->thread;
->> +
->> +	/* i387 + MMU + SSE */
->> +
->> +	preempt_disable();
->> +
->> +	__clear_fpu(t);		/* in case we used FPU in user mode */
->> +
->> +	if (!hh->used_math)
->> +		clear_used_math();
->> +	else {
->> +		if (hh->has_fxsr != cpu_has_fxsr) {
->> +			force_sig(SIGFPE, t);
->> +			return -EINVAL;
->> +		}
-> 
-> don't you need an init_fpu() around here ? because the task you restart might 
-> not have used FPU yet.
-> 
->> +		memcpy(&thread->xstate, &hh->xstate, sizeof(thread->xstate));
-> 
-> also i'd used 'xstate_size' instead of sizeof(thread->xstate)
-> 
+The package can be found in the download area of:
+    http://sourceforge.net/projects/lxc
 
-Yes, that was broken, and already fixed in for next round.
+There is a cvs repository at:
+    http://lxc.cvs.sourceforge.net/lxc
 
-Thanks,
+The API is exported in the "lxc.h" header file.
 
-Oren.
+It is not perfect, but it is very light and I hope that will make the 
+life easier for the kernel hackers.
+It can be used to create virtual private server and to "boot" a minimal 
+distro like "debian minimal".
 
-> 
-> thanks,
-> 
-> C.
+It takes into account the control groups and the checkpoint/restart API 
+... in a very optimistic way :)
+It should be used with the kernel coming from the git tree, 
+git://git.kernel.org/pub/scm/linux/kernel/git/daveh/linux-2.6-lxc.git
+But the latest -mm should be ok, some commands will just fail (eg. 
+checkpoint/restart).
+
+How to use it ?
+--------------------
+
+(for checkpointr/restart see the end of the explanation for this very 
+specific, experimental use case).
+
+A container should be created before with (or without) a configuration file.
+
+The configuration file has the following format (all fields are optional):
+
+# set the hostname for the container
+lxc.utsname = myhostname
+lxc.network.type = veth
+lxc.network.link = br0
+lxc.network.flags = up
+lxc.network.name = eth0
+lxc.network.hwaddr = 4a:49:43:49:79:bf
+lxc.network.ipv4 = 1.2.3.5/24
+lxc.network.ipv6 = 2003:db8:1:0:214:1234:fe0b:3597
+lxc.mount = fstab
+lxc.rootfs = rootfs
+lxc.cgroup.cpuset.cpus = 1
+lxc.cgroup.cpu.shares = 512
+
+This is an example, but the configuration file can be much more simple 
+or complex. In this example the configuration assume the host is 
+configured with a bridge, the liblxc does not configure anything not 
+related to the container, so it is up to the user/administrator to setup 
+a bridge in this case. If the bridge is a problem, different network 
+configurations exist to have a container to communicate with the outside 
+world.
+The network can be specified with several ip addresses, or either if 
+there is only one physical network device, it is possible to specify 
+multiple network devices for the container. To do that just replicate 
+the network sections as follow:
+
+lxc.network.type = veth
+lxc.network.link = br0
+lxc.network.flags = up
+lxc.network.name = eth0
+lxc.network.ipv4 = 192.168.9.100/24
+lxc.network.type = veth
+lxc.network.link = br0
+lxc.network.flags = up
+lxc.network.name = eth1
+lxc.network.ipv4 = 192.168.10.100/24
+
+The more there are informations in the configuration file, the more the 
+container is isolated. eg. if the network section is removed from the 
+configuration file, the network won't be virtualized, the same for the 
+ustname.
+
+Step 1 : create the container named 'foo' with the configuration file 
+'lxc.conf'
+
+        lxc-create -n foo -f lxc.conf
+
+If no configuration file is specified, the container will be created 
+with default configuration, that is to say, pid namespace, mount 
+namespace and ipc namespace. The other resources,  network, file system, 
+utsname, won't be virtualized.
+
+Step 2 : launch a command inside
+
+        lxc-execute -n foo /bin/bash
+            or
+        lxc-start -n foo /bin/bash
+
+The differences between lxc-execute and lxc-start are, lxc-execute 
+creates an intermediate process for the pid namespace in order to 
+support daemons and it mounts /proc and /sys.
+
+Step 3 : Stop the container (from outside of the container)
+
+        lxc-stop -n foo
+
+Step 4 : Destroy the container
+
+        lxc-destroy -n foo
+
+ps: it is not mandatory to destroy the container, you can keep the 
+configuration and execute/start the command again. That means after a 
+reboot, the container configuration is still available.
+
+These are the minimal steps to use a container, but there are some other 
+useful commands:
+    lxc-freeze / lxc-unfreeze => stop / resume all processes running 
+inside the container
+    lxc-monitor                    => follow the different states of the 
+container
+    lxc-wait                          => wait for a specific state 
+before exiting (useful for scripting)
+    lxc-ps                              => show all non-virtualized pids 
+of a container
+    lxc-info                           => show the state of the container
+    lxc-cgroup                      => get/set cgroup info for this 
+container
+
+Checkpoint/Restart:
+--------------------------
+
+    The checkpoint / restart is currently *very* experimental, and takes 
+into account only one task. For this reason the **lxc-start**  command 
+*must* be used.
+
+    The easiest way is specifying a container with the minimal isolation 
+for the minimal CR :)
+
+       lxc-create -n ckpt
+
+       lxc-start -n ckpt ./myverysimpleprogram
+
+       lxc-checkpoint -n ckpt -s > myckptfile
+
+       lxc-restart -n ckpt < myckptfile
+
+ps: you have just to create one time the container.
+
+The lxc-checkpoint command will do freeze - checkpoint - unfreeze, if 
+the '-s' option is set, the container is stopped after the checkpoint.
+
+I hope that will make people to have fun with the containers and the new 
+kernel features.
+
+Thanks.
+  -- Daniel
