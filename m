@@ -1,17 +1,15 @@
-From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: Re: [RFC v6][PATCH 0/9] Kernel based checkpoint/restart
-Date: Mon, 13 Oct 2008 12:12:43 -0400
-Message-ID: <48F3737B.6070904__34218.6971022331$1223914717$gmane$org@cs.columbia.edu>
-References: <1223461197-11513-1-git-send-email-orenl@cs.columbia.edu>	<20081009124658.GE2952@elte.hu>
-	<1223557122.11830.14.camel@nimitz>	<20081009131701.GA21112@elte.hu>
-	<1223559246.11830.23.camel@nimitz>	<20081009134415.GA12135@elte.hu>
-	<1223571036.11830.32.camel@nimitz>
-	<20081010153951.GD28977@elte.hu> <48F30315.1070909@fr.ibm.com>
+From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: Re: Keys and namespaces
+Date: Mon, 13 Oct 2008 11:27:29 -0500
+Message-ID: <20081013162729.GA10719@us.ibm.com>
+References: <20081010011917.GA8046@us.ibm.com> <414.1223643503@redhat.com>
+	<m1hc7k13s2.fsf@frodo.ebiederm.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <48F30315.1070909-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <m1hc7k13s2.fsf-B27657KtZYmhTnVgQlOflh2eb7JE58TQ@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -21,70 +19,91 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Cedric Le Goater <clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
-Cc: jeremy-TSDbQ3PG+2Y@public.gmane.org, arnd-r2nGTMty4D4@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Alexander Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, "H. Peter Anvin" <hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org>, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>, Thomas Gleixner <tglx-hfZtesqFncYOwBW4kG4KsQ@public.gmane.org>, Andrey Mirkin <major-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+Cc: David Howells <dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-
-
-Cedric Le Goater wrote:
-> Ingo Molnar wrote:
->> * Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org> wrote:
->>
->>> On Thu, 2008-10-09 at 15:44 +0200, Ingo Molnar wrote:
->>>> there might be races as well, especially with proxy state - and 
->>>> current->flags updates are not serialized.
->>>>
->>>> So maybe it should be a completely separate flag after all? Stick it 
->>>> into the end of task_struct perhaps.
->>> What do you mean by proxy state?  nsproxy?
->> it's a concept: one task installing some state into another task (which 
->> state must be restored after a checkpoint event), while that other task 
->> is running. Such as a pi-futex state for example.
->>
->> So a task can acquire state not just by its own doing, but via some 
->> other task too.
+Quoting Eric W. Biederman (ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org):
+> David Howells <dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org> writes:
 > 
-> thinking aloud,
+> > On the subject of namespaces: I still need to look at providing a key ID and
+> > keyring name namespace.
+> >
+> > Is it worth me just using the user_namespace?  A number of parameters are
+> > per-UID (such as the key quotas), so it might very well make sense to do that.
 > 
-> hmm, that's rather complex, because we have to take into account the 
-> kernel stack, no ? This is what Andrey was trying to solve in his patchset 
-> back in September :
+> Yes.
 > 
-> 	http://lkml.org/lkml/2008/9/3/96
+> > That way, user_namespace could actually be a credentials namespace.
 > 
-> the restart phase simulates a clone and switch_to to (not) restore the kernel 
-> stack. right ? 
+> I have always thought of it as a security token namespace.
 > 
-> the self checkpoint and self restore syscalls, like Oren is proposing, are 
-> simpler but they require the process cooperation to be triggered. we could
-> image doing that in a special signal handler which would allow us to jump
-> in the right task context. 
-
-This description is not accurate:
-
-For checkpoint, both implementations use an "external" task to read the state
-from other tasks. (In my implementation that "other" task can be self).
-
-For restart, both implementation expect the restarting process to restore its
-own state. They differ in that Andrew's patchset also creates that process
-while mine (at the moment) relies on the existing (self) task.
-
-In other words, none of them will require any cooperation on part of the
-checkpointed tasks, and both will require cooperation on part of the restarting
-tasks (the latter is easy since we create and fully control these tasks).
-
+> I'm not certain about the term credential as that usually means something
+> like password.  In the context of keys where you are caching something
+> like a kerberos token it makes more sense.  Even there it isn't a
+> secret key that is being cached but more of a capability that says
+> that the secret key was known at some point.
 > 
-> I don't have any preference but looking at the code of the different patchsets
-> there are some tricky areas and I'm wondering which path is easier, safer, 
-> and portable. 
+> > If that is the case, CLONE_NEWUSER should also set up (clone?) the keys and
+> > keyrings attached to the parent.  This possibly needs to be done anyway as the
+> > keys have UID and GID references that may be invalid in the new namespace.
+> >
+> > How do the UIDs and GIDs in different namespaces map, anyway?
+> 
+> At the simplest level they do not map between namespaces.
+> 
+> At a practical level the users in a user namespace should have
+> no more capabilities than the creator of the user namespace and
+> the creator of the user namespace should have the power to kill
+> all processes and remove all objects created by users in that
+> user namespace.
+> 
+> For filesystem access where we have talked about this in some detail.
+> The current idea is to have a user namespace parameter on struct inode.
+> All security credential comparisons will need to become comparisons
+> of both user_namespace and uid to match.
+> 
+> > Furthermore, some keys may actually represent foreign user details; perhaps
+> > NTFS or CIFS user IDs for example.  Should those be discarded on CLONE_NEWUSER?
+> 
+> After CLONE_NEWUSER the user id and guid should be 0, and no keys should be
+> held.  With respect to holding credentials it should be essentially the same
+> state as when init starts.  At least as a general rule.
+> 
+> If keys are the kind of thing that can be passed between namespaces
+> allowing user space to control which keys get passed makes sense.  We
+> allow the controlling tty and process groups to remain the same across
+> pid namespace creation and require processes to change them explicitly
+> if needed.  It is definitely a requirement to get to the state init
+> starts in, either by kernel fiat or normal user space operations.
 
-I am thinking which path is preferred: create the processes in kernel space
-(like Andrew's patch does) or in user space (like Zap does). In the mini-summit
-we agreed in favor of kernel space, but I can still see arguments why user space
-may be better. (note: I refer strictly to the creation of the processes during
-restart, not how their state is restored).
+Ok so if I read this right, you're ok with either one of:
 
-any thoughts ?
+	1. on clone(CLONE_NEWUSER), the new task get empty keyrings.
+	   If userspace wants the new task to have its creator's
+	   keys, it reloads them.
+	2. on clone(CLONE_NEWUSER), the new task gets a copy of
+	   the creator's keys.  If userspace wants the new task to
+	   have an empty keyring, it can clear it.
 
-Oren.
+I had been thinking 2 might be easier in the face of ecryptfs, but
+I think 1 is the way to go.
+
+> A word about foreign user details.
+> 
+> In my conception a user namespace is essentially a single administration
+> domain of uids and gids, and as such can span and does today span several machines.
+> user namespaces are unique in that their tokens are assigned administratively
+> and the kernel has no control over lifetime of tokens.
+> 
+> In that concept foreign users doesn't make a lot of sense to me.
+> 
+> Keys certainly provide the ability to several different implementations
+> of user identification.  How that interacts with a web of administration
+> of user permissions to objects not living in the kernel I don't know.
+> 
+> Ultimately I think putting keys in the user namespace is a good match.
+> As it is a way to talk about stored user identification either in memory
+> or on disk, and how that maps to what a user is allowed to do.
+> 
+> Eric
