@@ -1,17 +1,14 @@
-From: Greg Kurz <gkurz-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [RFC][PATCH 2/2] first callers of process_deny_checkpoint()
-Date: Mon, 13 Oct 2008 10:20:19 +0200
-Message-ID: <1223886019.4404.7.camel__36086.2145353623$1223886243$gmane$org@localhost.localdomain>
-References: <20081009190405.13A253CB@kernel>
-	<20081009190406.1B257119@kernel> <48EF2BAB.1010009@fr.ibm.com>
-	<20081010140430.GA14640@us.ibm.com>
-	<1223657132.10017.42.camel@localhost.localdomain>
-	<1223659707.11830.57.camel@nimitz>
+From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH RFC] User namespaces: general cleanups
+Date: Mon, 13 Oct 2008 11:01:44 -0500
+Message-ID: <20081013160144.GA10359@us.ibm.com>
+References: <20081010011917.GA8046@us.ibm.com> <30854.1223633214@redhat.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1223659707.11830.57.camel@nimitz>
+Content-Disposition: inline
+In-Reply-To: <30854.1223633214-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -21,40 +18,57 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Cc: arnd-r2nGTMty4D4@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Cedric Le Goater <clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>
+To: David Howells <dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Fri, 2008-10-10 at 10:28 -0700, Dave Hansen wrote:
-> On Fri, 2008-10-10 at 18:45 +0200, Greg Kurz wrote:
-> > It's exactly what I meant before, the tracking facility would be awfully
-> > complicated. It cannot be done that way.
-> > But there's also something awkward with the flag thing : can you provide
-> > right now an exhaustive list of all the places where you must raise it ?
+Quoting David Howells (dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org):
+> Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org> wrote:
 > 
-> Greg, that's just pure FUD.  We don't say that spinlocks are a bad thing
-> because we can't come up with an exhaustive list of places where we need
-> locking.
+> > +		new->uid = new->euid = new->suid = new->fsuid = 0;
+> > +		new->gid = new->egid = new->sgid = new->fsgid = 0;
 > 
-> We'll do plenty of checks at checkpoint time.
+> Should the supplementary groups be zapped too?  Do the GIDs therein still have
+> meaning in the new user namespace?
 > 
-> We'll do plenty of checks at runtime.
+> Note also that eCryptFS is broken by your patch. 
 > 
-> Neither will work completely on its own, and neither will be exhaustive.
-> The way this will work is just as Serge said: in true Linux style, we'll
-> add more places users of process_deny_checkpoint() incrementally as we
-> find them and as people complain.  We'll also be incrementally removing
-> them as we add functionality.
+> I suggest adding the attached incremental patch.  It makes the following
+> changes:
 > 
-> -- Dave
+>  (1) Provides a current_user_ns() macro to wrap accesses to current's user
+>      namespace.
 > 
+>  (2) Fixes eCryptFS.
+> 
+>  (3) Renames create_new_userns() to create_user_ns() to be more consistent
+>      with the other associated functions and because the 'new' in the name is
+>      superfluous.
+> 
+>  (4) Moves the argument and permission checks made for CLONE_NEWUSER to the
+>      beginning of do_fork() so that they're done prior to making any attempts
+>      at allocation.
+> 
+>  (5) Calls create_user_ns() after prepare_creds(), and gives it the new creds
+>      to fill in rather than have it return the new root user.  I don't imagine
+>      the new root user being used for anything other than filling in a cred
+>      struct.
+> 
+>      This also permits me to get rid of a get_uid() and a free_uid(), as the
+>      reference the creds were holding on the old user_struct can just be
+>      transferred to the new namespace's creator pointer.
+> 
+>  (6) Makes create_user_ns() reset the UIDs and GIDs of the creds under
+>      preparation rather than doing it in copy_creds().
 
-Well then I misunderstood the purpose your initial postings. Sorry. :)
+Hmm, with this patch, with CONFIG_KEYS=y users in child user_namespaces
+never get freed.  Ones in the init_user_ns do, and with CONFIG_KEYS=n,
+those in child user_namespaces do as well.
 
--- 
-Gregory Kurz                                     gkurz-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org
-Software Engineer @ IBM/Meiosys                  http://www.ibm.com
-Tel +33 (0)534 638 479                           Fax +33 (0)561 400 420
+I don't see anything obvious in copy_creds() that would cause this...
 
-"Anarchy is about taking complete responsibility for yourself."
-        Alan Moore.
+(also, when CONFIG_KEYS=n, then the enomem label in copy_creds() is
+unused - it might be kind of ugly to put just those two lines under
+#ifdef, though)
+
+-serge
