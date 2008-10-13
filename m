@@ -1,14 +1,17 @@
-From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH RFC] User namespaces: general cleanups
-Date: Mon, 13 Oct 2008 11:01:44 -0500
-Message-ID: <20081013160144.GA10359@us.ibm.com>
-References: <20081010011917.GA8046@us.ibm.com> <30854.1223633214@redhat.com>
+From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Subject: Re: [RFC v6][PATCH 0/9] Kernel based checkpoint/restart
+Date: Mon, 13 Oct 2008 12:12:43 -0400
+Message-ID: <48F3737B.6070904__34218.6971022331$1223914717$gmane$org@cs.columbia.edu>
+References: <1223461197-11513-1-git-send-email-orenl@cs.columbia.edu>	<20081009124658.GE2952@elte.hu>
+	<1223557122.11830.14.camel@nimitz>	<20081009131701.GA21112@elte.hu>
+	<1223559246.11830.23.camel@nimitz>	<20081009134415.GA12135@elte.hu>
+	<1223571036.11830.32.camel@nimitz>
+	<20081010153951.GD28977@elte.hu> <48F30315.1070909@fr.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <30854.1223633214-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <48F30315.1070909-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,57 +21,70 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: David Howells <dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+To: Cedric Le Goater <clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
+Cc: jeremy-TSDbQ3PG+2Y@public.gmane.org, arnd-r2nGTMty4D4@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Alexander Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, "H. Peter Anvin" <hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org>, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>, Thomas Gleixner <tglx-hfZtesqFncYOwBW4kG4KsQ@public.gmane.org>, Andrey Mirkin <major-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Quoting David Howells (dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org):
-> Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org> wrote:
-> 
-> > +		new->uid = new->euid = new->suid = new->fsuid = 0;
-> > +		new->gid = new->egid = new->sgid = new->fsgid = 0;
-> 
-> Should the supplementary groups be zapped too?  Do the GIDs therein still have
-> meaning in the new user namespace?
-> 
-> Note also that eCryptFS is broken by your patch. 
-> 
-> I suggest adding the attached incremental patch.  It makes the following
-> changes:
-> 
->  (1) Provides a current_user_ns() macro to wrap accesses to current's user
->      namespace.
-> 
->  (2) Fixes eCryptFS.
-> 
->  (3) Renames create_new_userns() to create_user_ns() to be more consistent
->      with the other associated functions and because the 'new' in the name is
->      superfluous.
-> 
->  (4) Moves the argument and permission checks made for CLONE_NEWUSER to the
->      beginning of do_fork() so that they're done prior to making any attempts
->      at allocation.
-> 
->  (5) Calls create_user_ns() after prepare_creds(), and gives it the new creds
->      to fill in rather than have it return the new root user.  I don't imagine
->      the new root user being used for anything other than filling in a cred
->      struct.
-> 
->      This also permits me to get rid of a get_uid() and a free_uid(), as the
->      reference the creds were holding on the old user_struct can just be
->      transferred to the new namespace's creator pointer.
-> 
->  (6) Makes create_user_ns() reset the UIDs and GIDs of the creds under
->      preparation rather than doing it in copy_creds().
 
-Hmm, with this patch, with CONFIG_KEYS=y users in child user_namespaces
-never get freed.  Ones in the init_user_ns do, and with CONFIG_KEYS=n,
-those in child user_namespaces do as well.
 
-I don't see anything obvious in copy_creds() that would cause this...
+Cedric Le Goater wrote:
+> Ingo Molnar wrote:
+>> * Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org> wrote:
+>>
+>>> On Thu, 2008-10-09 at 15:44 +0200, Ingo Molnar wrote:
+>>>> there might be races as well, especially with proxy state - and 
+>>>> current->flags updates are not serialized.
+>>>>
+>>>> So maybe it should be a completely separate flag after all? Stick it 
+>>>> into the end of task_struct perhaps.
+>>> What do you mean by proxy state?  nsproxy?
+>> it's a concept: one task installing some state into another task (which 
+>> state must be restored after a checkpoint event), while that other task 
+>> is running. Such as a pi-futex state for example.
+>>
+>> So a task can acquire state not just by its own doing, but via some 
+>> other task too.
+> 
+> thinking aloud,
+> 
+> hmm, that's rather complex, because we have to take into account the 
+> kernel stack, no ? This is what Andrey was trying to solve in his patchset 
+> back in September :
+> 
+> 	http://lkml.org/lkml/2008/9/3/96
+> 
+> the restart phase simulates a clone and switch_to to (not) restore the kernel 
+> stack. right ? 
+> 
+> the self checkpoint and self restore syscalls, like Oren is proposing, are 
+> simpler but they require the process cooperation to be triggered. we could
+> image doing that in a special signal handler which would allow us to jump
+> in the right task context. 
 
-(also, when CONFIG_KEYS=n, then the enomem label in copy_creds() is
-unused - it might be kind of ugly to put just those two lines under
-#ifdef, though)
+This description is not accurate:
 
--serge
+For checkpoint, both implementations use an "external" task to read the state
+from other tasks. (In my implementation that "other" task can be self).
+
+For restart, both implementation expect the restarting process to restore its
+own state. They differ in that Andrew's patchset also creates that process
+while mine (at the moment) relies on the existing (self) task.
+
+In other words, none of them will require any cooperation on part of the
+checkpointed tasks, and both will require cooperation on part of the restarting
+tasks (the latter is easy since we create and fully control these tasks).
+
+> 
+> I don't have any preference but looking at the code of the different patchsets
+> there are some tricky areas and I'm wondering which path is easier, safer, 
+> and portable. 
+
+I am thinking which path is preferred: create the processes in kernel space
+(like Andrew's patch does) or in user space (like Zap does). In the mini-summit
+we agreed in favor of kernel space, but I can still see arguments why user space
+may be better. (note: I refer strictly to the creation of the processes during
+restart, not how their state is restored).
+
+any thoughts ?
+
+Oren.
