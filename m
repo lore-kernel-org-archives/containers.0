@@ -1,16 +1,19 @@
-From: Cedric Le Goater <clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [RFC v6][PATCH 0/9] Kernel based checkpoint/restart
-Date: Mon, 13 Oct 2008 10:13:09 +0200
-Message-ID: <48F30315.1070909__45828.2499727376$1223885890$gmane$org@fr.ibm.com>
-References: <1223461197-11513-1-git-send-email-orenl@cs.columbia.edu>	<20081009124658.GE2952@elte.hu>
-	<1223557122.11830.14.camel@nimitz>	<20081009131701.GA21112@elte.hu>
-	<1223559246.11830.23.camel@nimitz>	<20081009134415.GA12135@elte.hu>
-	<1223571036.11830.32.camel@nimitz> <20081010153951.GD28977@elte.hu>
+From: Greg Kurz <gkurz-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [RFC][PATCH 1/2] Track in-kernel when we	expect
+	checkpoint/restart to work
+Date: Mon, 13 Oct 2008 10:18:17 +0200
+Message-ID: <1223885897.4404.5.camel__1814.95034271411$1223886106$gmane$org@localhost.localdomain>
+References: <20081009190405.13A253CB@kernel>
+	<1223626834.8787.8.camel@localhost.localdomain>
+	<48EF144D.1050906@fr.ibm.com> <20081010145934.GF11695@elte.hu>
+	<48EF7211.2000303@cs.columbia.edu>
+	<1223656489.10017.33.camel@localhost.localdomain>
+	<48EF8E77.8050000@nortel.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20081010153951.GD28977-X9Un+BFzKDI@public.gmane.org>
+In-Reply-To: <48EF8E77.8050000-ZIRUuHA3oDzQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -20,46 +23,34 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>
-Cc: jeremy-TSDbQ3PG+2Y@public.gmane.org, arnd-r2nGTMty4D4@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Alexander Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, "H. Peter Anvin" <hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org>, Thomas Gleixner <tglx-hfZtesqFncYOwBW4kG4KsQ@public.gmane.org>, Andrey Mirkin <major-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+To: Chris Friesen <cfriesen-ZIRUuHA3oDzQT0dZR+AlfA@public.gmane.org>
+Cc: arnd-r2nGTMty4D4@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>, Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Ingo Molnar wrote:
-> * Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org> wrote:
+On Fri, 2008-10-10 at 11:18 -0600, Chris Friesen wrote:
+> Greg Kurz wrote:
 > 
->> On Thu, 2008-10-09 at 15:44 +0200, Ingo Molnar wrote:
->>> there might be races as well, especially with proxy state - and 
->>> current->flags updates are not serialized.
->>>
->>> So maybe it should be a completely separate flag after all? Stick it 
->>> into the end of task_struct perhaps.
->> What do you mean by proxy state?  nsproxy?
+> > This flag is weak... testing it gives absolutly no hint whether the
+> > checkpoint may succeed or not. As it is designed now, a user can only be
+> > aware that checkpoint is *forever* denied. I agree that it's only useful
+> > as a "flexible CR todo list".
 > 
-> it's a concept: one task installing some state into another task (which 
-> state must be restored after a checkpoint event), while that other task 
-> is running. Such as a pi-futex state for example.
+> I don't think it's true that it gives "absolutly no hint".
 > 
-> So a task can acquire state not just by its own doing, but via some 
-> other task too.
+> If the flag is not set, then checkpoint will succeed, right?  Whereas if 
 
-thinking aloud,
+Wrong. Unless you test_and_checkpoint atomically, the flag doesn't help.
 
-hmm, that's rather complex, because we have to take into account the 
-kernel stack, no ? This is what Andrey was trying to solve in his patchset 
-back in September :
+> the flag is set, then it's an indication that checkpoint could fail (but 
+> may still succeed if whatever condition caused the flag to be set is no 
+> longer true).
+> 
+> Chris
+> 
+-- 
+Gregory Kurz                                     gkurz-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org
+Software Engineer @ IBM/Meiosys                  http://www.ibm.com
+Tel +33 (0)534 638 479                           Fax +33 (0)561 400 420
 
-	http://lkml.org/lkml/2008/9/3/96
-
-the restart phase simulates a clone and switch_to to (not) restore the kernel 
-stack. right ? 
-
-the self checkpoint and self restore syscalls, like Oren is proposing, are 
-simpler but they require the process cooperation to be triggered. we could
-image doing that in a special signal handler which would allow us to jump
-in the right task context. 
-
-I don't have any preference but looking at the code of the different patchsets
-there are some tricky areas and I'm wondering which path is easier, safer, 
-and portable. 
-
-C.
+"Anarchy is about taking complete responsibility for yourself."
+        Alan Moore.
