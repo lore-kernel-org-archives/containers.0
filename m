@@ -1,40 +1,54 @@
-From: David Howells <dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH RFC] User namespaces: general cleanups
-Date: Tue, 14 Oct 2008 00:10:56 +0100
-Message-ID: <5306.1223939456@redhat.com>
-References: <20081013214108.GA4701@us.ibm.com>
-	<20081010011917.GA8046@us.ibm.com> <30854.1223633214@redhat.com>
-	<20081013160144.GA10359@us.ibm.com>
+From: ebiederm@xmission.com (Eric W. Biederman)
+Subject: Re: [PATCH 1/8] sysfs: Implement sysfs tagged directory support.
+Date: Mon, 13 Oct 2008 20:20:05 -0700
+Message-ID: <m11vyjrhga.fsf@frodo.ebiederm.org>
+References: <dac45060809020654g62afb3c9yd104682b93b43bee@mail.gmail.com>
+	<48BD47A8.1080909@bull.net> <20080902170148.GA9305@suse.de>
+	<31436f4a0809032233r2c46de8od8a94460ce3b5ed2@mail.gmail.com>
+	<48BF83E1.5040000@bull.net>
+	<dac45060810070939v80918a0m3963d7fc6fcbb975@mail.gmail.com>
+	<20081007164833.GA16056@suse.de> <m1abdgywnb.fsf@frodo.ebiederm.org>
+	<20081007210902.GB7996@suse.de> <m18wt0qbwf.fsf@frodo.ebiederm.org>
+	<20081008130006.GB31684@infradead.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20081013214108.GA4701-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Cc: dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+Content-Type: text/plain; charset=us-ascii
+Return-path: <netdev-owner@vger.kernel.org>
+In-Reply-To: <20081008130006.GB31684@infradead.org> (Christoph Hellwig's
+	message of "Wed, 8 Oct 2008 09:00:06 -0400")
+Sender: netdev-owner@vger.kernel.org
+To: Christoph Hellwig <hch@infradead.org>
+Cc: Greg KH <gregkh@suse.de>, Mark Ryden <markryde@gmail.com>, Benjamin Thery <benjamin.thery@bull.net>, David Shwatrz <dshwatrz@gmail.com>, Greg KH <greg@kroah.com>, Andrew Morton <akpm@linux-foundation.org>, Tejun Heo <htejun@gmail.com>, Daniel Lezcano <dlezcano@fr.ibm.com>, linux-kernel@vger.kernel.org, Al Viro <viro@ftp.linux.org.uk>, Linux Containers <containers@lists.osdl.org>, netdev@vger.kernel.org
 List-Id: containers.vger.kernel.org
 
-Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org> wrote:
+Christoph Hellwig <hch@infradead.org> writes:
 
-> With the following patch applied to the base next-creds-subsys branch,
-> you can track that if you login as root, then do 'su hallyn', where
-> hallyn is uid 500, then uid 500 gets allocated twice.  So free is never
-> called on it.
+> On Tue, Oct 07, 2008 at 03:27:12PM -0700, Eric W. Biederman wrote:
+>> Al reviewed sysfs with my patchset on top of it.
+>> 
+>> Al's review found problems in  sysfs with my patchset on top of it.
+>> 
+>> If you look at what Al found the majority of those problems exist in sysfs
+>> without my patches.
+>
+> And when something is crap your fix it firdt before piling up more shit
+> on top of it.  And sysfs is a really severe case of that, and you're
+> piling a _lot_ of shit ontop.
 
-Which following patch?
+Chistoph, your comments and Al's would have been much more productive
+if you have had said:
 
-Actually, I've suspected that the user_struct accounting is not quite right for
-a while.  Even before I did my creds stuff, I'd occasionally multiple per-UID
-keyrings cropping up with the same ID - indicating multiple user_structs for
-the same UID.
+"I didn't like sysfs because it doesn't do things the way other filesystems
+  with similar problems do things.  Can you please use common idioms?
+  Making the code easier to read and making the code easier to maintain.
+  Some of those constructs look awfully complex can you recheck you code
+  and see if there is a simpler way to implement them."
 
-David
+That would have been honest and productive.  As it sits.  I have partially
+inaccurate feedback from Al, useless feedback from you, and only my own
+tough skin and determination to keep me going..
+
+The fact that you and Al look at the code and can't easily make sense of
+is a good sign that the code as written will be hard to maintain.  Al's
+recent breakage of sysctl is a good example of that.
+
+Eric
