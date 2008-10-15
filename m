@@ -1,14 +1,16 @@
-From: sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
-Subject: [PATCH 9/9] Document usage of multiple-instances of devpts
-Date: Tue, 14 Oct 2008 22:38:00 -0700
-Message-ID: <20081015053800.GI2215@us.ibm.com>
-References: <20081015053000.GA2039@us.ibm.com>
+From: "Dong-Jae Kang" <baramsori72-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Subject: Re: [PATCH -mm 0/6] cgroup: block device i/o controller (v11)
+Date: Wed, 15 Oct 2008 15:13:28 +0900
+Message-ID: <2891419e0810142313p1aa16295ne2aa8ac3a87be491__19571.9210467816$1224051352$gmane$org@mail.gmail.com>
+References: <1223373818-13687-1-git-send-email-righi.andrea@gmail.com>
+	<2891419e0810140217l70f233bbr3b08760188458c35@mail.gmail.com>
+	<48F46CB6.3010904@gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <48F46CB6.3010904-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <20081015053000.GA2039-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,162 +20,227 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org, alan-qBU/x9rampVanCEyBjwyrvXRex20P6io@public.gmane.org, serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org, "David C. Hansen" <haveblue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Cc: kyle-hoO6YkzgTuCM0SS3m2neIg@public.gmane.org, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org, bastian-yyjItF7Rl6lg9hUCZPvPmw@public.gmane.org, containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org
+To: righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org
+Cc: randy.dunlap-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Carl Henrik Lunde <chlunde-om2ZC0WAoZIXWF+eFR7m5Q@public.gmane.org>, Divyesh Shah <dpshah-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, eric.rannaud-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, fernando-gVGce1chcLdL9jVzuh4AOg@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, agk-9JcytcrH/bA+uJoB2kUjGw@public.gmane.org, subrata-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, axboe-tSWWG44O7X1aa/9Udqfwiw@public.gmane.org, Marco Innocenti <m.innocenti-qooieK91W7JeoWH0uzbU5w@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, matt-cT2on/YLNlBWk0Htik3J/w@public.gmane.org, roberto-5KDOxZqKugI@public.gmane.org, ngupta-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-
-From c4596977ca34b9664d97efa8681e6711145a22cf Mon Sep 17 00:00:00 2001
-From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: [PATCH 9/9] Document usage of multiple-instances of devpts
-
-Changelog [v2]:
-	- Add note indicating strict isolation is not possible unless all
-	  mounts of devpts use the 'newinstance' mount option.
-
-Signed-off-by: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
----
- Documentation/filesystems/devpts.txt |  132 ++++++++++++++++++++++++++++++++++
- 1 files changed, 132 insertions(+), 0 deletions(-)
- create mode 100644 Documentation/filesystems/devpts.txt
-
-diff --git a/Documentation/filesystems/devpts.txt b/Documentation/filesystems/devpts.txt
-new file mode 100644
-index 0000000..68dffd8
---- /dev/null
-+++ b/Documentation/filesystems/devpts.txt
-@@ -0,0 +1,132 @@
-+
-+To support containers, we now allow multiple instances of devpts filesystem,
-+such that indices of ptys allocated in one instance are independent of indices
-+allocated in other instances of devpts.
-+
-+To preserve backward compatibility, this support for multiple instances is
-+enabled only if:
-+
-+	- CONFIG_DEVPTS_MULTIPLE_INSTANCES=y, and
-+	- '-o newinstance' mount option is specified while mounting devpts
-+
-+IOW, devpts now supports both single-instance and multi-instance semantics.
-+
-+If CONFIG_DEVPTS_MULTIPLE_INSTANCES=n, there is no change in behavior and
-+this referred to as the "legacy" mode. In this mode, the new mount options
-+(-o newinstance and -o ptmxmode) will be ignored with a 'bogus option' message
-+on console.
-+
-+If CONFIG_DEVPTS_MULTIPLE_INSTANCES=y and devpts is mounted without the
-+'newinstance' option (as in current start-up scripts) the new mount binds
-+to the initial kernel mount of devpts. This mode is referred to as the
-+'single-instance' mode and the current, single-instance semantics are
-+preserved, i.e PTYs are common across the system.
-+
-+The only difference between this single-instance mode and the legacy mode
-+is the presence of new, '/dev/pts/ptmx' node with permissions 0000, which
-+can safely be ignored.
-+
-+If CONFIG_DEVPTS_MULTIPLE_INSTANCES=y and 'newinstance' option is specified,
-+the mount is considered to be in the multi-instance mode and a new instance
-+of the devpts fs is created. Any ptys created in this instance are independent
-+of ptys in other instances of devpts. Like in the single-instance mode, the
-+/dev/pts/ptmx node is present. To effectively use the multi-instance mode,
-+open of /dev/ptmx must be a redirected to '/dev/pts/ptmx' using a symlink or
-+bind-mount.
-+
-+Eg: A container startup script could do the following:
-+
-+	$ chmod 0666 /dev/pts/ptmx
-+	$ rm /dev/ptmx
-+	$ ln -s pts/ptmx /dev/ptmx
-+	$ ns_exec -cm /bin/bash
-+
-+	# We are now in new container
-+
-+	$ umount /dev/pts
-+	$ mount -t devpts -o newinstance lxcpts /dev/pts
-+	$ sshd -p 1234
-+
-+where 'ns_exec -cm /bin/bash' calls clone() with CLONE_NEWNS flag and execs
-+/bin/bash in the child process.  A pty created by the sshd is not visible in
-+the original mount of /dev/pts.
-+
-+User-space changes
-+------------------
-+
-+In multi-instance mode (i.e '-o newinstance' mount option is specified at least
-+once), following user-space issues should be noted.
-+
-+1. If -o newinstance mount option is never used, /dev/pts/ptmx can be ignored
-+   and no change is needed to system-startup scripts.
-+
-+2. To effectively use multi-instance mode (i.e -o newinstance is specified)
-+   administrators or startup scripts should "redirect" open of /dev/ptmx to
-+   /dev/pts/ptmx using either a bind mount or symlink.
-+
-+	$ mount -t devpts -o newinstance devpts /dev/pts
-+
-+   followed by either
-+
-+	$ rm /dev/ptmx
-+	$ ln -s pts/ptmx /dev/ptmx
-+	$ chmod 666 /dev/pts/ptmx
-+   or
-+	$ mount -o bind /dev/pts/ptmx /dev/ptmx
-+
-+3. The '/dev/ptmx -> pts/ptmx' symlink is the preferred method since it
-+   enables better error-reporting and treats both single-instance and
-+   multi-instance mounts similarly.
-+
-+   But this method requires that system-startup scripts set the mode of
-+   /dev/pts/ptmx correctly (default mode is 0000). The scripts can set the
-+   mode by, either
-+
-+   	- adding ptmxmode mount option to devpts entry in /etc/fstab, or
-+	- using 'chmod 0666 /dev/pts/ptmx'
-+
-+4. If multi-instance mode mount is needed for containers, but the system
-+   startup scripts have not yet been updated, container-startup scripts
-+   should bind mount /dev/ptmx to /dev/pts/ptmx to avoid breaking single-
-+   instance mounts.
-+
-+   Or, in general, container-startup scripts should use:
-+
-+	mount -t devpts -o newinstance -o ptmxmode=0666 devpts /dev/pts
-+	if [ ! -L /dev/ptmx ]; then
-+		mount -o bind /dev/pts/ptmx /dev/ptmx
-+	fi
-+
-+   When all devpts mounts are multi-instance, /dev/ptmx can permanently be
-+   a symlink to pts/ptmx and the bind mount can be ignored.
-+
-+5. A multi-instance mount that is not accompanied by the /dev/ptmx to
-+   /dev/pts/ptmx redirection would result in an unusable/unreachable pty.
-+
-+	mount -t devpts -o newinstance lxcpts /dev/pts
-+
-+   immediately followed by:
-+
-+	open("/dev/ptmx")
-+
-+    would create a pty, say /dev/pts/7, in the initial kernel mount.
-+    But /dev/pts/7 would be invisible in the new mount.
-+
-+6. The permissions for /dev/pts/ptmx node should be specified when mounting
-+   /dev/pts, using the '-o ptmxmode=%o' mount option (default is 0000).
-+
-+	mount -t devpts -o newinstance -o ptmxmode=0644 devpts /dev/pts
-+
-+   The permissions can be later be changed as usual with 'chmod'.
-+
-+	chmod 666 /dev/pts/ptmx
-+
-+7. A mount of devpts without the 'newinstance' option results in binding to
-+   initial kernel mount.  This behavior while preserving legacy semantics,
-+   does not provide strict isolation in a container environment. i.e by
-+   mounting devpts without the 'newinstance' option, a container could
-+   get visibility into the 'host' or root container's devpts.
-+   
-+   To workaround this and have strict isolation, all mounts of devpts,
-+   including the mount in the root container, should use the newinstance
-+   option.
--- 
-1.5.2.5
+SGksIEFuZHJlYQpUaGFuayB5b3UgZm9yIHlvdXIgY29tbWVudHMKCj4gRG9uZy1KYWUgS2FuZyB3
+cm90ZToKPj4gSGksIEFuZHJlYQo+Pgo+PiB0aGFuayB5b3UgZm9yIHlvdXIgY29udHJpYnV0aW9u
+IHRvIGNvbW11bml0eQo+PiB0aGVzZSBkYXlzLCBJIGFtIHRlc3Rpbmcgc2V2ZXJhbCBJTyBjb250
+cm9sbGVycyBpbiBjb250YWluZXIgTUwsCj4+IGRtLWlvYmFuZCBieSBSeW8gdHN1cnV0YSh2MS43
+LjApLCAyLUxheWVyIENGUSBieSBTYXRvc2hpIGFuZCB5b3VyCj4+IGlvLXRocm90dGxlKHYxMSkK
+Pgo+IFRoYW5rcyEgdGhpcyBpcyBzdXJlbHkgYSB2YWx1YWJsZSB0YXNrLgo+Cj4+Cj4+IEkgaGF2
+ZSBzZXZlcmFsIHF1ZXN0aW9uIGFib3V0IGlvLXRocm90dGxlCj4+IGJlbG93IGlzIG15IHRlc3Qg
+cmV1c3VsdCBvZiBpby10aHJvdHRsZSh2MTEpIHdpdGggeGRkIDYuNQo+PiBCdXQsIEkgdGhpbmsg
+SSBoYXZlIHNvbWV0aGluZyB3cm9uZywgYXMgc2hvd2VkIGluIHJlc3VsdAo+PiBJbiBkaXJlY3Qg
+SU8gbW9kZSwgT25seSByZWFkIG9wZXJhdGlvbiB3YXMgY29udHJvbGxlZCBieSBpby10aHJvdHRs
+ZQo+PiBDYW4geW91IGNoZWNrIG15ICB0ZXN0IHByb2NlZHVyZSBhbmQgcmVzdWx0IGFuZCBjb21t
+ZW50cyB0byBtZSBhYm91dCB0aGF0Cj4KPiBZb3VyIHByb2NlZHVyZSBpcyBjb3JyZWN0LiBBbnl3
+YXksIHlvdSBmb3VuZCBhIGtub3duIGJ1ZyBpbiBpby10aHJvdHRsZQo+IHYxMS4gSWYgeW91IHdh
+bnQgdG8gcHJvcGVybHkgdXNlIGl0IHlvdSBuZWVkIHRvIG1vdW50IHRoZSBtZW1vcnkKPiBjb250
+cm9sbGVyIHRvZ2V0aGVyIHdpdGggYmxvY2tpbywgc2luY2UgY3VycmVudGx5IGJsb2NraW8gZGVw
+ZW5kcyBvbiBpdAo+IHRvIHJldHJpZXZlIHRoZSBvd25lciBvZiBhIHBhZ2UgZHVyaW5nIHdyaXRl
+cyBpbiBzdWJtaXRfYmlvKCkuCj4KPiBBcyByZXBvcnRlZCBpbjoKPgo+IFtQQVRDSCAtbW0gNC82
+XSBtZW1jZzogaW50ZXJmYWNlIHRvIGNoYXJnZSB0aGUgcmlnaHQgY2dyb3VwIG9mIGFzeW5jaHJv
+bm91cyBpL28gYWN0aXZpdHkKPgo+IHRoaXMgaXMgbm8gbW9yZSB0aGFuIGEgaGFjayBhbmQgaW4g
+cGVyc3BlY3RpdmUgYSBtb3JlIGdlbmVyaWMgZnJhbWV3b3JrCj4gYWJsZSB0byBwcm92aWRlIHRo
+aXMgZnVuY3Rpb25hbGl0eSBzaG91bGQgYmUgdXNlZCAoaS5lLiBiaW8tY2dyb3VwKS4KCkJ1dCwg
+SW4gbXkgb3BpbmlvbiwKaXQgaXMgc29tZSBzdHJhbmdlIHRoYXQgdGhlIGJhbmR3aWR0aCBvZiB3
+cml0ZSBvcGVyYXRpb24gaW4gZGlyZWN0IElPCm1vZGUgd2FzIG5vdCBjb250cm9sbGVkIGJ5IGlv
+LXRocm90dGxlCkkgdGhpbmsgW1BBVENIIC1tbSA0LzZdIGlzIGZvciBjb250cm9sIG9mIGJ1ZmZl
+cmVkIElPLgpEbyBJIG1pc3VuZGVyc3RhbmQgaXQ/Cgo+IEknbGwgZml4IHRoaXMgaXNzdWUgaW4g
+dGhlIG5leHQgdmVyc2lvbiBvZiBpby10aHJvdHRsZSAocHJvYmFibHkgSSdsbAo+IHRyeSB0byBy
+ZXdyaXRlIGlvLXRocm90dGxlIG9uIHRvcCBvZiBiaW8tY2dyb3VwKSwgYnV0IGZvciBub3cgdGhl
+Cj4gd29ya2Fyb3VuZCBpcyB0byBtb3VudCB0aGUgY2dyb3VwZnMgdXNpbmcgLW8gYmxvY2tpbyxt
+ZW1vcnkgKGF0IGxlYXN0KS4KPgoKT2gsIGl0IHNvdW5kcyBnb29kLgpJIGxvb2sgZm93YXJkIHRv
+IHlvdXIgbmV4dCBpby10aHJvdHRsZQoKPj4KPj4gYWRkaXRpb25hbGx5LCB5b3VyIHRlc3Rpbmcg
+c2hlbGwgc2NyaXB0KHJ1bl9pb190aHJvdHRsZV90ZXN0LnNoKSBmb3IKPj4gaW8tdGhyb3R0bGUg
+d2FzIG5vdCB1cGRhdGVkIGZvciBuZXcgaW8tdGhyb3R0bGUKPj4gc28sIGl0IGNvdWxkIGJlIG9w
+ZXJhdGVkIGFmdGVyIEkgZml4ZWQgaXQKPgo+IFRoZSB0ZXN0aW5nIG9mIGlvcHMgbGltaXRpbmcg
+aXMgbm90IHlldCBpbXBsZW1lbnRlZCBhbmQgSSBkb24ndCBoYXZlIGEKPiB2ZXJ5IGdvb2QgdGVz
+dGNhc2UgZm9yIHRoaXMsIGJ1dCBJIGNhbiBzaGFyZSB3aXRoIHlvdSBhIHNtYWxsIHNjcmlwdCB0
+aGF0Cj4gSSdtIHVzaW5nIHRvIGNoZWNrIGlmIGlvcHMgbGltaXRpbmcgaXMgd29ya2luZyBvciBu
+b3QsIGlmIHlvdSdyZSBpbnRlcmVzdGVkLgoKdGhhbmsgeW91LCBBbmRyZWEuCkkgd2FudCB0byBj
+aGVjayBpb3BzIGxpbWl0aW5nIG9mIGlvLXRocm90dGxlIGlzIHdvcmtpbmcgd2VsbC4KSGF2ZSBh
+IG5pY2UgZGF5Li4uCj4KPj4KPj4gLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0t
+LS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0KPj4gLSBUZXN0
+IFN5c3RlbSBJbmZvcm1hdGlvbgo+Pgo+PiBDb21wdXRlciBOYW1lLCBsb2NhbGhvc3QubG9jYWxk
+b21haW4sIFVzZXIgTmFtZSwgcm9vdAo+PiBPUyByZWxlYXNlIGFuZCB2ZXJzaW9uLCBMaW51eCAy
+LjYuMjctcmM1LW1tMSAjMSBTTVAgVGh1IE9jdCA5IDE4OjI3OjA5IEtTVCAyMDA4Cj4+IE1hY2hp
+bmUgaGFyZHdhcmUgdHlwZSwgaTY4Ngo+PiBOdW1iZXIgb2YgcHJvY2Vzc29ycyBvbiB0aGlzIHN5
+c3RlbSwgMQo+PiBQYWdlIHNpemUgaW4gYnl0ZXMsIDQwOTYKPj4gTnVtYmVyIG9mIHBoeXNpY2Fs
+IHBhZ2VzLCA1MTU4ODUKPj4gTWVnYWJ5dGVzIG9mIHBoeXNpY2FsIG1lbW9yeSwgMjAxNQo+PiBU
+YXJnZXRbMF0gUVswXSwgL2Rldi9zZGIKPj4gUGVyLXBhc3MgdGltZSBsaW1pdCBpbiBzZWNvbmRz
+LCAzMAo+PiBCbG9ja3NpemUgaW4gYnl0ZXMsIDUxMgo+PiBSZXF1ZXN0IHNpemUsIDEyOCwgYmxv
+Y2tzLCA2NTUzNiwgYnl0ZXMKPj4gTnVtYmVyIG9mIFJlcXVlc3RzLCAxNjM4NAo+PiBOdW1iZXIg
+b2YgTWVnYUJ5dGVzLCA1MTIgb3IgMTAyNAo+PiBEaXJlY3QgSS9PLCBkaXNhYmxlZCBvciBlbmFi
+bGUKPj4gU2VlayBwYXR0ZXJuLCBzZXF1ZW50aWFsCj4+IFF1ZXVlIERlcHRoLCAxCj4+Cj4+IC0g
+VGVzdCBQcm9jZWR1cmUKPj4KPj4g74GsICAgICBta2RpciAvZGV2L2Jsb2NraW9jdGwKPj4g74Gs
+ICAgICBtb3VudCAtdCBjZ3JvdXAgLW8gYmxvY2tpbyBjZ3JvdXAgL2Rldi9ibG9ja2lvY3RsCj4+
+IO+BrCAgICAgbWtkaXIgL2Rldi9ibG9ja2lvY3RsL2Nncm91cC0xCj4+IO+BrCAgICAgbWtkaXIg
+L2Rldi9ibG9ja2lvY3RsL2Nncm91cC0yCj4+IO+BrCAgICAgbWtkaXIgL2Rldi9ibG9ja2lvY3Rs
+L2Nncm91cC0zCj4+IO+BrCAgICAgZWNobyAvZGV2L3NkYjokKCgxMDI0KjEwMjQpKTowOjAgPgo+
+PiAvZGV2L2Jsb2NraW9jdGwvY2dyb3VwLTEvYmxvY2tpby5iYW5kd2lkdGgtbWF4Cj4+IO+BrCAg
+ICAgZWNobyAvZGV2L3NkYjokKCgyKjEwMjQqMTAyNCkpOjA6MCA+Cj4+IC9kZXYvYmxvY2tpb2N0
+bC9jZ3JvdXAtMi9ibG9ja2lvLmJhbmR3aWR0aC1tYXgKPj4g74GsICAgICBlY2hvIC9kZXYvc2Ri
+OiQoKDMqMTAyNCoxMDI0KSk6MDowID4KPj4gL2Rldi9ibG9ja2lvY3RsL2Nncm91cC0zL2Jsb2Nr
+aW8uYmFuZHdpZHRoLW1heAo+PiDvgawgICAgIGluIHRlcm1pbmFsIDEsIGVjaG8gJCQgPiAvZGV2
+L2Jsb2NraW9jdGwvY2dyb3VwLTEvdGFza3MKPj4g74GsICAgICBpbiB0ZXJtaW5hbCAyLCBlY2hv
+ICQkID4gL2Rldi9ibG9ja2lvY3RsL2Nncm91cC0yL3Rhc2tzCj4+IO+BrCAgICAgaW4gdGVybWlu
+YWwgMywgZWNobyAkJCA+IC9kZXYvYmxvY2tpb2N0bC9jZ3JvdXAtMy90YXNrcwo+PiDvgawgICAg
+IGluIGVhY2ggdGVybWluYWwsIHhkZC5saW51eCAtb3Agd3JpdGUoIG9yIHJlYWQgKSAtdGFyZ2V0
+cyAxIC9kZXYvc2RiCj4+IC1ibG9ja3NpemUgNTEyIC1yZXFzaXplIDEyOCAtbWJ5dGVzIDEwMjQo
+IG9yIDUxMiApICAtdGltZWxpbWl0IDMwCj4+IC12ZXJib3NlIOKAk2RpbyhlbmFibGUgb3IgZGlz
+YWJsZSkKPj4KPj4gLSBzZXR0aW5nIHN0YXR1cyBpbmZvcm1hdGlvbgo+Pgo+PiBbcm9vdEBsb2Nh
+bGhvc3QgYmxvY2tpb2N0bF0jIGNhdCAuL2Nncm91cC0xL2Jsb2NraW8uYmFuZHdpZHRoLW1heAo+
+PiA4IDE2IDEwNDg1NzYgMCAwIDAgMTMwMTYKPj4gW3Jvb3RAbG9jYWxob3N0IGJsb2NraW9jdGxd
+IyBjYXQgLi9jZ3JvdXAtMi9ibG9ja2lvLmJhbmR3aWR0aC1tYXgKPj4gOCAxNiAyMDk3MTUyIDAg
+MCAwIDExNzYzCj4+IFtyb290QGxvY2FsaG9zdCBibG9ja2lvY3RsXSMgY2F0IC4vY2dyb3VwLTMv
+YmxvY2tpby5iYW5kd2lkdGgtbWF4Cj4+IDggMTYgMzE0NTcyOCAwIDAgMCAxMTEzMwo+Pgo+PiAt
+IFRlc3QgUmVzdWx0Cj4+IHhkZC5saW51eCAtb3AgcmVhZCAtdGFyZ2V0cyAxIC9kZXYvc2RiIC1i
+bG9ja3NpemUgNTEyIC1yZXFzaXplIDEyOAo+PiAtbWJ5dGVzIDUxMiAtdGltZWxpbWl0IDMwIC1k
+aW8gLXZlcmJvc2UKPj4KPj4gY2dyb3VwLTEKPj4KPj4gVCAgUSAgICAgICBCeXRlcyAgICAgIE9w
+cyAgICBUaW1lICAgICAgUmF0ZSAgICAgIElPUFMgICBMYXRlbmN5Cj4+ICVDUFUgIE9QX1R5cGUg
+ICAgUmVxU2l6ZQo+PiAwICAxICAgICAgMzE1MjI4MTYgICAgICA0ODEgICAgMzAuMDA1ICAgICAx
+LjA1MSAgICAgIDE2LjAzICAgIDAuMDYyNAo+PiAgIDAuMDAgICByZWFkICAgICAgIDY1NTM2Cj4+
+IDAgIDEgICAgICAzMTUyMjgxNiAgICAgIDQ4MSAgICAzMC4wMDUgICAgIDEuMDUxICAgICAgMTYu
+MDMgICAgMC4wNjI0Cj4+ICAgMC4wMCAgIHJlYWQgICAgICAgNjU1MzYKPj4gMSAgMSAgICAgIDMx
+NTIyODE2ICAgICAgNDgxICAgIDMwLjAwNSAgICAgMS4wNTEgICAgICAxNi4wMyAgICAwLjA2MjQK
+Pj4gICAwLjAwICAgcmVhZCAgICAgICA2NTUzNgo+Pgo+PiBjZ3JvdXAtMgo+Pgo+PiBUICBRICAg
+ICAgIEJ5dGVzICAgICAgT3BzICAgIFRpbWUgICAgICBSYXRlICAgICAgSU9QUyAgIExhdGVuY3kK
+Pj4gJUNQVSAgT1BfVHlwZSAgICBSZXFTaXplCj4+IDAgIDEgICAgICA2Mjk4MDA5NiAgICAgIDk2
+MSAgICAzMC4wMDEgICAgIDIuMDk5ICAgICAgMzIuMDMgICAgMC4wMzEyCj4+ICAgMC4wMCAgIHJl
+YWQgICAgICAgNjU1MzYKPj4gMCAgMSAgICAgIDYyOTgwMDk2ICAgICAgOTYxICAgIDMwLjAwMSAg
+ICAgMi4wOTkgICAgICAzMi4wMyAgICAwLjAzMTIKPj4gICAwLjAwICAgcmVhZCAgICAgICA2NTUz
+Ngo+PiAxICAxICAgICAgNjI5ODAwOTYgICAgICA5NjEgICAgMzAuMDAxICAgICAyLjA5OSAgICAg
+IDMyLjAzICAgIDAuMDMxMgo+PiAgIDAuMDAgICByZWFkICAgICAgIDY1NTM2Cj4+Cj4+IGNncm91
+cC0zCj4+Cj4+IFQgIFEgICAgICAgQnl0ZXMgICAgICBPcHMgICAgVGltZSAgICAgIFJhdGUgICAg
+ICBJT1BTICAgTGF0ZW5jeQo+PiAlQ1BVICBPUF9UeXBlICAgIFJlcVNpemUKPj4gMCAgMSAgICAg
+IDk0NDM3Mzc2ICAgICAxNDQxICAgIDMwLjAwMyAgICAgMy4xNDggICAgICA0OC4wMyAgICAwLjAy
+MDgKPj4gICAwLjAwICAgcmVhZCAgICAgICA2NTUzNgo+PiAwICAxICAgICAgOTQ0MzczNzYgICAg
+IDE0NDEgICAgMzAuMDAzICAgICAzLjE0OCAgICAgIDQ4LjAzICAgIDAuMDIwOAo+PiAgIDAuMDAg
+ICByZWFkICAgICAgIDY1NTM2Cj4+IDEgIDEgICAgICA5NDQzNzM3NiAgICAgMTQ0MSAgICAzMC4w
+MDMgICAgIDMuMTQ4ICAgICAgNDguMDMgICAgMC4wMjA4Cj4+ICAgMC4wMCAgIHJlYWQgICAgICAg
+NjU1MzYKPj4KPj4geGRkLmxpbnV4IC1vcCB3cml0ZSAtdGFyZ2V0cyAxIC9kZXYvc2RiIC1ibG9j
+a3NpemUgNTEyIC1yZXFzaXplIDEyOAo+PiAtbWJ5dGVzIDUxMiAtdGltZWxpbWl0IDMwIC1kaW8g
+4oCTdmVyYm9zZQo+Pgo+PiBjZ3JvdXAtMQo+Pgo+PiBUICBRICAgICAgIEJ5dGVzICAgICAgT3Bz
+ICAgIFRpbWUgICAgICBSYXRlICAgICAgSU9QUyAgIExhdGVuY3kKPj4gJUNQVSAgT1BfVHlwZSAg
+ICBSZXFTaXplCj4+IDAgIDEgICAgIDY0MDIyMTE4NCAgICAgOTc2OSAgICAzMC4wOTcgICAgMjEu
+MjcyICAgICAzMjQuNTggICAgMC4wMDMxCj4+ICAgMC4wMCAgIHdyaXRlICAgICAgIDY1NTM2Cj4+
+IDAgIDEgICAgIDY0MDIyMTE4NCAgICAgOTc2OSAgICAzMC4wOTcgICAgMjEuMjcyICAgICAzMjQu
+NTggICAgMC4wMDMxCj4+ICAgMC4wMCAgIHdyaXRlICAgICAgIDY1NTM2Cj4+IDEgIDEgICAgIDY0
+MDIyMTE4NCAgICAgOTc2OSAgICAzMC4wOTcgICAgMjEuMjcyICAgICAzMjQuNTggICAgMC4wMDMx
+Cj4+ICAgMC4wMCAgIHdyaXRlICAgICAgIDY1NTM2Cj4+Cj4+IGNncm91cC0yCj4+Cj4+IFQgIFEg
+ICAgICAgQnl0ZXMgICAgICBPcHMgICAgVGltZSAgICAgIFJhdGUgICAgICBJT1BTICAgTGF0ZW5j
+eQo+PiAlQ1BVICBPUF9UeXBlICAgIFJlcVNpemUKPj4gMCAgMSAgICAgNjMzNzk4NjU2ICAgICA5
+NjcxICAgIDMwLjAwMSAgICAyMS4xMjYgICAgIDMyMi4zNiAgICAwLjAwMzEKPj4gICAwLjAwICAg
+d3JpdGUgICAgICAgNjU1MzYKPj4gMCAgMSAgICAgNjMzNzk4NjU2ICAgICA5NjcxICAgIDMwLjAw
+MSAgICAyMS4xMjYgICAgIDMyMi4zNiAgICAwLjAwMzEKPj4gICAwLjAwICAgd3JpdGUgICAgICAg
+NjU1MzYKPj4gMSAgMSAgICAgNjMzNzk4NjU2ICAgICA5NjcxICAgIDMwLjAwMSAgICAyMS4xMjYg
+ICAgIDMyMi4zNiAgICAwLjAwMzEKPj4gICAwLjAwICAgd3JpdGUgICAgICAgNjU1MzYKPj4KPj4g
+Y2dyb3VwLTMKPj4KPj4gVCAgUSAgICAgICBCeXRlcyAgICAgIE9wcyAgICBUaW1lICAgICAgUmF0
+ZSAgICAgIElPUFMgICBMYXRlbmN5Cj4+ICVDUFUgIE9QX1R5cGUgICAgUmVxU2l6ZQo+PiAwICAx
+ICAgICA2MzA2NTI5MjggICAgIDk2MjMgICAgMzAuMDAxICAgIDIxLjAyMSAgICAgMzIwLjc2ICAg
+IDAuMDAzMQo+PiAgIDAuMDAgICB3cml0ZSAgICAgICA2NTUzNgo+PiAwICAxICAgICA2MzA2NTI5
+MjggICAgIDk2MjMgICAgMzAuMDAxICAgIDIxLjAyMSAgICAgMzIwLjc2ICAgIDAuMDAzMQo+PiAg
+IDAuMDAgICB3cml0ZSAgICAgICA2NTUzNgo+PiAxICAxICAgICA2MzA2NTI5MjggICAgIDk2MjMg
+ICAgMzAuMDAxICAgIDIxLjAyMSAgICAgMzIwLjc2ICAgIDAuMDAzMQo+PiAgIDAuMDAgICB3cml0
+ZSAgICAgICA2NTUzNgo+Pgo+PiB4ZGQubGludXggLW9wIHJlYWQgLXRhcmdldHMgMSAvZGV2L3Nk
+YiAtYmxvY2tzaXplIDUxMiAtcmVxc2l6ZSAxMjgKPj4gLW1ieXRlcyAxMDI0ICAtdGltZWxpbWl0
+IDMwICAtdmVyYm9zZQo+Pgo+PiBjZ3JvdXAtMQo+Pgo+PiBUICBRICAgICAgIEJ5dGVzICAgICAg
+T3BzICAgIFRpbWUgICAgICBSYXRlICAgICAgSU9QUyAgIExhdGVuY3kKPj4gJUNQVSAgT1BfVHlw
+ZSAgICBSZXFTaXplCj4+IDAgIDEgICAgICA3MDEyMzUyMCAgICAgMTA3MCAgICAzMC4xNTAgICAg
+IDIuMzI2ICAgICAgMzUuNDkgICAgMC4wMjgyCj4+ICAgMC4wMCAgIHJlYWQgICAgICAgNjU1MzYK
+Pj4gMCAgMSAgICAgIDcwMTIzNTIwICAgICAxMDcwICAgIDMwLjE1MCAgICAgMi4zMjYgICAgICAz
+NS40OSAgICAwLjAyODIKPj4gICAwLjAwICAgcmVhZCAgICAgICA2NTUzNgo+PiAxICAxICAgICAg
+NzAxMjM1MjAgICAgIDEwNzAgICAgMzAuMTUwICAgICAyLjMyNiAgICAgIDM1LjQ5ICAgIDAuMDI4
+Mgo+PiAgIDAuMDAgICByZWFkICAgICAgIDY1NTM2Cj4+Cj4+IGNncm91cC0yCj4+Cj4+IFQgIFEg
+ICAgICAgQnl0ZXMgICAgICBPcHMgICAgVGltZSAgICAgIFJhdGUgICAgICBJT1BTICAgTGF0ZW5j
+eQo+PiAlQ1BVICBPUF9UeXBlICAgIFJlcVNpemUKPj4gMCAgMSAgICAgIDcwODQ0NDE2ICAgICAx
+MDgxICAgIDMwLjA2MyAgICAgMi4zNTcgICAgICAzNS45NiAgICAwLjAyNzgKPj4gICAwLjAwICAg
+cmVhZCAgICAgICA2NTUzNgo+PiAwICAxICAgICAgNzA4NDQ0MTYgICAgIDEwODEgICAgMzAuMDYz
+ICAgICAyLjM1NyAgICAgIDM1Ljk2ICAgIDAuMDI3OAo+PiAgIDAuMDAgICByZWFkICAgICAgIDY1
+NTM2Cj4+IDEgIDEgICAgICA3MDg0NDQxNiAgICAgMTA4MSAgICAzMC4wNjMgICAgIDIuMzU3ICAg
+ICAgMzUuOTYgICAgMC4wMjc4Cj4+ICAgMC4wMCAgIHJlYWQgICAgICAgNjU1MzYKPj4KPj4gY2dy
+b3VwLTMKPj4KPj4gVCAgUSAgICAgICBCeXRlcyAgICAgIE9wcyAgICBUaW1lICAgICAgUmF0ZSAg
+ICAgIElPUFMgICBMYXRlbmN5Cj4+ICVDUFUgIE9QX1R5cGUgICAgUmVxU2l6ZQo+PiAwICAxICAg
+ICAgNzIxNTUxMzYgICAgIDExMDEgICAgMzAuMjA0ICAgICAyLjM4OSAgICAgIDM2LjQ1ICAgIDAu
+MDI3NAo+PiAgIDAuMDAgICByZWFkICAgICAgIDY1NTM2Cj4+IDAgIDEgICAgICA3MjE1NTEzNiAg
+ICAgMTEwMSAgICAzMC4yMDQgICAgIDIuMzg5ICAgICAgMzYuNDUgICAgMC4wMjc0Cj4+ICAgMC4w
+MCAgIHJlYWQgICAgICAgNjU1MzYKPj4gMSAgMSAgICAgIDcyMTU1MTM2ICAgICAxMTAxICAgIDMw
+LjIwNCAgICAgMi4zODkgICAgICAzNi40NSAgICAwLjAyNzQKPj4gICAwLjAwICAgcmVhZCAgICAg
+ICA2NTUzNgo+Pgo+PiB4ZGQubGludXggLW9wIHdyaXRlIC10YXJnZXRzIDEgL2Rldi9zZGIgLWJs
+b2Nrc2l6ZSA1MTIgLXJlcXNpemUgMTI4Cj4+IC1tYnl0ZXMgMTAyNCAgLXRpbWVsaW1pdCAzMCAg
+LXZlcmJvc2UKPj4KPj4gY2dyb3VwLTEKPj4KPj4gVCAgUSAgICAgICBCeXRlcyAgICAgIE9wcyAg
+ICBUaW1lICAgICAgUmF0ZSAgICAgIElPUFMgICBMYXRlbmN5Cj4+ICVDUFUgIE9QX1R5cGUgICAg
+UmVxU2l6ZQo+PiAwICAxICAgICA4MTg2MTAxNzYgICAgMTI0OTEgICAgMzAuMDMxICAgIDI3LjI1
+OCAgICAgNDE1LjkzICAgIDAuMDAyNAo+PiAgIDAuMDAgICB3cml0ZSAgICAgICA2NTUzNgo+PiAw
+ICAxICAgICA4MTg2MTAxNzYgICAgMTI0OTEgICAgMzAuMDMxICAgIDI3LjI1OCAgICAgNDE1Ljkz
+ICAgIDAuMDAyNAo+PiAgIDAuMDAgICB3cml0ZSAgICAgICA2NTUzNgo+PiAxICAxICAgICA4MTg2
+MTAxNzYgICAgMTI0OTEgICAgMzAuMDMxICAgIDI3LjI1OCAgICAgNDE1LjkzICAgIDAuMDAyNAo+
+PiAgIDAuMDAgICB3cml0ZSAgICAgICA2NTUzNgo+Pgo+PiBjZ3JvdXAtMgo+Pgo+PiBUICBRICAg
+ICAgIEJ5dGVzICAgICAgT3BzICAgIFRpbWUgICAgICBSYXRlICAgICAgSU9QUyAgIExhdGVuY3kK
+Pj4gJUNQVSAgT1BfVHlwZSAgICBSZXFTaXplCj4+IDAgIDEgICAgIDg0ODQ5NDU5MiAgICAxMjk0
+NyAgICAzMC4wNjYgICAgMjguMjIxICAgICA0MzAuNjIgICAgMC4wMDIzCj4+ICAgMC4wMCAgIHdy
+aXRlICAgICAgIDY1NTM2Cj4+IDAgIDEgICAgIDg0ODQ5NDU5MiAgICAxMjk0NyAgICAzMC4wNjYg
+ICAgMjguMjIxICAgICA0MzAuNjIgICAgMC4wMDIzCj4+ICAgMC4wMCAgIHdyaXRlICAgICAgIDY1
+NTM2Cj4+IDEgIDEgICAgIDg0ODQ5NDU5MiAgICAxMjk0NyAgICAzMC4wNjYgICAgMjguMjIxICAg
+ICA0MzAuNjIgICAgMC4wMDIzCj4+ICAgMC4wMCAgIHdyaXRlICAgICAgIDY1NTM2Cj4+Cj4+IGNn
+cm91cC0zCj4+Cj4+IFQgIFEgICAgICAgQnl0ZXMgICAgICBPcHMgICAgVGltZSAgICAgIFJhdGUg
+ICAgICBJT1BTICAgTGF0ZW5jeQo+PiAlQ1BVICBPUF9UeXBlICAgIFJlcVNpemUKPj4gMCAgMSAg
+ICAgNzg2NTYzMDcyICAgIDEyMDAyICAgIDMwLjA3OCAgICAyNi4xNTEgICAgIDM5OS4wMyAgICAw
+LjAwMjUKPj4gICAwLjAwICAgd3JpdGUgICAgICAgNjU1MzYKPj4gMCAgMSAgICAgNzg2NTYzMDcy
+ICAgIDEyMDAyICAgIDMwLjA3OCAgICAyNi4xNTEgICAgIDM5OS4wMyAgICAwLjAwMjUKPj4gICAw
+LjAwICAgd3JpdGUgICAgICAgNjU1MzYKPj4gMSAgMSAgICAgNzg2NTYzMDcyICAgIDEyMDAyICAg
+IDMwLjA3OCAgICAyNi4xNTEgICAgIDM5OS4wMyAgICAwLjAwMjUKPj4gICAwLjAwICAgd3JpdGUg
+ICAgICAgNjU1MzYKPj4KPj4gQmVzdCBSZWdhcmRzLAo+PiBEb25nLUphZSBLYW5nCj4+Cj4+Cj4+
+IDIwMDgvMTAvNyBBbmRyZWEgUmlnaGkgPHJpZ2hpLmFuZHJlYUBnbWFpbC5jb20+Ogo+Pj4gVGhl
+IG9iamVjdGl2ZSBvZiB0aGUgaS9vIGNvbnRyb2xsZXIgaXMgdG8gaW1wcm92ZSBpL28gcGVyZm9y
+bWFuY2UKPj4+IHByZWRpY3RhYmlsaXR5IG9mIGRpZmZlcmVudCBjZ3JvdXBzIHNoYXJpbmcgdGhl
+IHNhbWUgYmxvY2sgZGV2aWNlcy4KPj4+Cj4+PiBSZXNwZWN0IHRvIG90aGVyIHByaW9yaXR5L3dl
+aWdodC1iYXNlZCBzb2x1dGlvbnMgdGhlIGFwcHJvYWNoIHVzZWQgYnkgdGhpcwo+Pj4gY29udHJv
+bGxlciBpcyB0byBleHBsaWNpdGx5IGNob2tlIGFwcGxpY2F0aW9ucycgcmVxdWVzdHMgdGhhdCBk
+aXJlY3RseSAob3IKPj4+IGluZGlyZWN0bHkpIGdlbmVyYXRlIGkvbyBhY3Rpdml0eSBpbiB0aGUg
+c3lzdGVtLgo+Pj4KPj4+IFRoZSBkaXJlY3QgYmFuZHdpZHRoIGFuZC9vciBpb3BzIGxpbWl0aW5n
+IG1ldGhvZCBoYXMgdGhlIGFkdmFudGFnZSBvZiBpbXByb3ZpbmcKPj4+IHRoZSBwZXJmb3JtYW5j
+ZSBwcmVkaWN0YWJpbGl0eSBhdCB0aGUgY29zdCBvZiByZWR1Y2luZywgaW4gZ2VuZXJhbCwgdGhl
+IG92ZXJhbGwKPj4+IHBlcmZvcm1hbmNlIG9mIHRoZSBzeXN0ZW0gKGluIHRlcm1zIG9mIHRocm91
+Z2hwdXQpLgo+Pj4KPj4+IERldGFpbGVkIGluZm9ybWF0aW9ucyBhYm91dCBkZXNpZ24sIGl0cyBn
+b2FsIGFuZCB1c2FnZSBhcmUgZGVzY3JpYmVkIGluIHRoZQo+Pj4gZG9jdW1lbnRhdGlvbi4KPj4+
+Cj4+PiBQYXRjaHNldCBhZ2FpbnN0IDIuNi4yNy1yYzUtbW0xOgo+Pj4KPj4+ICBbUEFUQ0ggMC82
+XSBjZ3JvdXA6IGJsb2NrIGRldmljZSBpL28gY29udHJvbGxlciAodjExKQo+Pj4gIFtQQVRDSCAx
+LzZdIGkvbyBjb250cm9sbGVyIGRvY3VtZW50YXRpb24KPj4+ICBbUEFUQ0ggMi82XSBpbnRyb2R1
+Y2UgcmF0ZWxpbWl0aW5nIGF0dHJpYnV0ZXMgYW5kIGZ1bmN0aW9uYWxpdHkgdG8gcmVzX2NvdW50
+ZXIKPj4+ICBbUEFUQ0ggMy82XSBpL28gY29udHJvbGxlciBpbmZyYXN0cnVjdHVyZQo+Pj4gIFtQ
+QVRDSCA0LzZdIG1lbWNnOiBpbnRlcmZhY2UgdG8gY2hhcmdlIHRoZSByaWdodCBjZ3JvdXAgb2Yg
+YXN5bmNocm9ub3VzIGkvbyBhY3Rpdml0eQo+Pj4gIFtQQVRDSCA1LzZdIGkvbyBjb250cm9sbGVy
+IGluc3RydW1lbnRhdGlvbjogYWNjb3VudGluZyBhbmQgdGhyb3R0bGluZwo+Pj4gIFtQQVRDSCA2
+LzZdIGV4cG9ydCBwZXItdGFzayBpL28gdGhyb3R0bGluZyBzdGF0aXN0aWNzIHRvIHVzZXJzcGFj
+ZQo+Pj4KPj4+IFRoZSBhbGwtaW4tb25lIHBhdGNoIChhbmQgcHJldmlvdXMgdmVyc2lvbnMpIGNh
+biBiZSBmb3VuZCBhdDoKPj4+IGh0dHA6Ly9kb3dubG9hZC5zeXN0ZW1pbWFnZXIub3JnL35hcmln
+aGkvbGludXgvcGF0Y2hlcy9pby10aHJvdHRsZS8KPj4+Cj4+PiBUaGVyZSBhcmUgbm8gc2lnbmlm
+aWNhbnQgY2hhbmdlcyByZXNwZWN0IHRvIHYxMCwgSSd2ZSBvbmx5IGltcGxlbWVudGVkL2ZpeGVk
+Cj4+PiBzb21lIHN1Z2dlc3Rpb25zIEkgcmVjZWl2ZWQuCj4+Pgo+Pj4gQ2hhbmdlbG9nOiAodjEw
+IC0+IHYxMSkKPj4+Cj4+PiAqIHJlcG9ydCBwZXIgYmxvY2sgZGV2aWNlIGkvbyBzdGF0aXN0aWNz
+ICh0b3RhbCBieXRlcyByZWFkL3dyaXR0ZW4gYW5kIGlvcHMpCj4+PiAgaW4gYmxvY2tpby5zdGF0
+IGZvciBpL28gbGltaXRlZCBjZ3JvdXBzCj4+PiAqIGRpc3RpbmN0IGJhbmR3aWR0aCBhbmQgaW9w
+cyBzdGF0aXN0aWNzOiBib3RoIGluIGJsb2NraW8udGhyb3R0bGVjbnQgYW5kCj4+PiAgL3Byb2Mv
+UElEL2lvLXRocm90dGxlLXN0YXQgKHN1Z2dlc3RlZCBieSBEYXZpZCBSYWRmb3JkKQo+Pj4gKiBt
+ZXJnZSByZXNfY291bnRlcl9yYXRlbGltaXQgZnVuY3Rpb25hbGl0eSBpbnRvIHJlc19jb3VudGVy
+LCB0byBhdm9pZCBjb2RlCj4+PiAgZHVwbGljYXRpb24gKHN1Z2dlc3RlZCBieSBQYXVsIE1hbmFn
+ZSkKPj4+ICogdXNlIGtlcm5lbC1kb2Mgc3R5bGUgZm9yIGRvY3VtZW50aW5nIHN0cnVjdCByZXNf
+Y291bnRlciBhdHRyaWJ1dGVzCj4+PiAgKHN1Z2dlc3RlZCBieSBSYW5keSBEdW5hbHApCj4+PiAq
+IHVkcGF0ZWQgZG9jdW1lbnRhdGlvbgo+Pj4KPj4+IFRoYW5rcyB0byBhbGwgZm9yIHRoZSBmZWVk
+YmFjayEKPj4+IC1BbmRyZWEKPgoKCgotLSAKLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0t
+LS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0t
+LS0tLS0tLS0tLQogICBET05HLUpBRSwgS0FORwogICBTZW5pb3IgTWVtYmVyIG9mIEVuZ2luZWVy
+aW5nIFN0YWZmCiAgIEludGVybmV0IFBsYXRmb3JtIFJlc2VhcmNoIERlcHQsIFMvVyBDb250ZW50
+IFJlc2VhcmNoIExhYgogICBFbGVjdHJvbmljcyBhbmQgVGVsZWNvbW11bmljYXRpb25zIFJlc2Vh
+cmNoIEluc3RpdHV0ZShFVFJJKQogICAxMzggR2FqZW9uZ25vLCBZdXNlb25nLWd1LCBEYWVqZW9u
+LCAzMDUtNzAwIEtPUkVBCiAgIFBob25lIDogODItNDItODYwLTE1NjEgRmF4IDogODItNDItODYw
+LTY2OTkKICAgTW9iaWxlIDogODItMTAtOTkxOS0yMzUzIEUtbWFpbCA6IGRqa2FuZ0BldHJpLnJl
+LmtyIChNU04pCi0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0t
+LS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0KX19fX19f
+X19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX18KQ29udGFpbmVycyBtYWls
+aW5nIGxpc3QKQ29udGFpbmVyc0BsaXN0cy5saW51eC1mb3VuZGF0aW9uLm9yZwpodHRwczovL2xp
+c3RzLmxpbnV4LWZvdW5kYXRpb24ub3JnL21haWxtYW4vbGlzdGluZm8vY29udGFpbmVycw==
