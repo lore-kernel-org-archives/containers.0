@@ -1,7 +1,7 @@
 From: sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
-Subject: [PATCH 3/9] Per-mount 'config' object
-Date: Tue, 14 Oct 2008 22:34:28 -0700
-Message-ID: <20081015053428.GC2215@us.ibm.com>
+Subject: [PATCH 1/9] Remove devpts_root global
+Date: Tue, 14 Oct 2008 22:33:16 -0700
+Message-ID: <20081015053316.GA2215@us.ibm.com>
 References: <20081015053000.GA2039@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -23,143 +23,113 @@ Cc: kyle-hoO6YkzgTuCM0SS3m2neIg@public.gmane.org, ebiederm-aS9lmoZGLiVWk0Htik3J/
 List-Id: containers.vger.kernel.org
 
 
-From fa07e30bf77063b127129d317e91d6dc454ea739 Mon Sep 17 00:00:00 2001
+From 1479f9e238d607403abf5af4296bd5c84a1dc18f Mon Sep 17 00:00:00 2001
 From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: [PATCH 3/9] Per-mount 'config' object
+Subject: [PATCH 1/9] Remove devpts_root global
 
-With support for multiple mounts of devpts, the 'config' structure really
-represents per-mount options rather than config parameters. Rename 'config'
-structure to 'pts_mount_opts' and store it in the super-block.
+Remove the 'devpts_root' global variable and find the root dentry using
+the super_block. The super-block can be found from the device inode, using
+the new wrapper, pts_sb_from_inode().
+
+Changelog: This patch is based on an earlier patchset from Serge Hallyn
+	   and Matt Helsley.
 
 Signed-off-by: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 Acked-by: Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 ---
- fs/devpts/inode.c |   49 +++++++++++++++++++++++++++++--------------------
- 1 files changed, 29 insertions(+), 20 deletions(-)
+ fs/devpts/inode.c |   29 ++++++++++++++++++++---------
+ 1 files changed, 20 insertions(+), 9 deletions(-)
 
 diff --git a/fs/devpts/inode.c b/fs/devpts/inode.c
-index 6e63db7..e91c15c 100644
+index a70d5d0..ec33833 100644
 --- a/fs/devpts/inode.c
 +++ b/fs/devpts/inode.c
-@@ -34,13 +34,13 @@ static DEFINE_MUTEX(allocated_ptys_lock);
+@@ -34,7 +34,6 @@ static DEFINE_IDA(allocated_ptys);
+ static DEFINE_MUTEX(allocated_ptys_lock);
  
  static struct vfsmount *devpts_mnt;
+-static struct dentry *devpts_root;
  
--static struct {
-+struct pts_mount_opts {
+ static struct {
  	int setuid;
- 	int setgid;
- 	uid_t   uid;
- 	gid_t   gid;
- 	umode_t mode;
--} config = {.mode = DEVPTS_DEFAULT_MODE};
-+};
- 
- enum {
- 	Opt_uid, Opt_gid, Opt_mode,
-@@ -56,6 +56,7 @@ static match_table_t tokens = {
- 
- struct pts_fs_info {
- 	struct ida allocated_ptys;
-+	struct pts_mount_opts mount_opts;
+@@ -56,6 +55,14 @@ static match_table_t tokens = {
+ 	{Opt_err, NULL}
  };
  
- static inline struct pts_fs_info *DEVPTS_SB(struct super_block *sb)
-@@ -74,12 +75,14 @@ static inline struct super_block *pts_sb_from_inode(struct inode *inode)
++static inline struct super_block *pts_sb_from_inode(struct inode *inode)
++{
++	if (inode->i_sb->s_magic == DEVPTS_SUPER_MAGIC)
++		return inode->i_sb;
++
++	return devpts_mnt->mnt_sb;
++}
++
  static int devpts_remount(struct super_block *sb, int *flags, char *data)
  {
  	char *p;
-+	struct pts_fs_info *fsi = DEVPTS_SB(sb);
-+	struct pts_mount_opts *opts = &fsi->mount_opts;
+@@ -142,7 +149,7 @@ devpts_fill_super(struct super_block *s, void *data, int silent)
+ 	inode->i_fop = &simple_dir_operations;
+ 	inode->i_nlink = 2;
  
--	config.setuid  = 0;
--	config.setgid  = 0;
--	config.uid     = 0;
--	config.gid     = 0;
--	config.mode    = DEVPTS_DEFAULT_MODE;
-+	opts->setuid  = 0;
-+	opts->setgid  = 0;
-+	opts->uid     = 0;
-+	opts->gid     = 0;
-+	opts->mode    = DEVPTS_DEFAULT_MODE;
- 
- 	while ((p = strsep(&data, ",")) != NULL) {
- 		substring_t args[MAX_OPT_ARGS];
-@@ -94,19 +97,19 @@ static int devpts_remount(struct super_block *sb, int *flags, char *data)
- 		case Opt_uid:
- 			if (match_int(&args[0], &option))
- 				return -EINVAL;
--			config.uid = option;
--			config.setuid = 1;
-+			opts->uid = option;
-+			opts->setuid = 1;
- 			break;
- 		case Opt_gid:
- 			if (match_int(&args[0], &option))
- 				return -EINVAL;
--			config.gid = option;
--			config.setgid = 1;
-+			opts->gid = option;
-+			opts->setgid = 1;
- 			break;
- 		case Opt_mode:
- 			if (match_octal(&args[0], &option))
- 				return -EINVAL;
--			config.mode = option & S_IALLUGO;
-+			opts->mode = option & S_IALLUGO;
- 			break;
- 		default:
- 			printk(KERN_ERR "devpts: called with bogus options\n");
-@@ -119,11 +122,14 @@ static int devpts_remount(struct super_block *sb, int *flags, char *data)
- 
- static int devpts_show_options(struct seq_file *seq, struct vfsmount *vfs)
- {
--	if (config.setuid)
--		seq_printf(seq, ",uid=%u", config.uid);
--	if (config.setgid)
--		seq_printf(seq, ",gid=%u", config.gid);
--	seq_printf(seq, ",mode=%03o", config.mode);
-+	struct pts_fs_info *fsi = DEVPTS_SB(vfs->mnt_sb);
-+	struct pts_mount_opts *opts = &fsi->mount_opts;
-+
-+	if (opts->setuid)
-+		seq_printf(seq, ",uid=%u", opts->uid);
-+	if (opts->setgid)
-+		seq_printf(seq, ",gid=%u", opts->gid);
-+	seq_printf(seq, ",mode=%03o", opts->mode);
- 
- 	return 0;
- }
-@@ -143,6 +149,7 @@ static void *new_pts_fs_info(void)
- 		return NULL;
- 
- 	ida_init(&fsi->allocated_ptys);
-+	fsi->mount_opts.mode = DEVPTS_DEFAULT_MODE;
- 
- 	return fsi;
- }
-@@ -262,6 +269,8 @@ int devpts_pty_new(struct inode *ptmx_inode, struct tty_struct *tty)
- 	struct super_block *sb = pts_sb_from_inode(ptmx_inode);
- 	struct inode *inode = new_inode(sb);
- 	struct dentry *root = sb->s_root;
-+	struct pts_fs_info *fsi = DEVPTS_SB(sb);
-+	struct pts_mount_opts *opts = &fsi->mount_opts;
+-	devpts_root = s->s_root = d_alloc_root(inode);
++	s->s_root = d_alloc_root(inode);
+ 	if (s->s_root)
+ 		return 0;
+ 	
+@@ -211,7 +218,9 @@ int devpts_pty_new(struct inode *ptmx_inode, struct tty_struct *tty)
+ 	struct tty_driver *driver = tty->driver;
+ 	dev_t device = MKDEV(driver->major, driver->minor_start+number);
+ 	struct dentry *dentry;
+-	struct inode *inode = new_inode(devpts_mnt->mnt_sb);
++	struct super_block *sb = pts_sb_from_inode(ptmx_inode);
++	struct inode *inode = new_inode(sb);
++	struct dentry *root = sb->s_root;
  	char s[12];
  
  	/* We're supposed to be given the slave end of a pty */
-@@ -272,10 +281,10 @@ int devpts_pty_new(struct inode *ptmx_inode, struct tty_struct *tty)
- 		return -ENOMEM;
+@@ -231,15 +240,15 @@ int devpts_pty_new(struct inode *ptmx_inode, struct tty_struct *tty)
  
- 	inode->i_ino = number+2;
--	inode->i_uid = config.setuid ? config.uid : current->fsuid;
--	inode->i_gid = config.setgid ? config.gid : current->fsgid;
-+	inode->i_uid = opts->setuid ? opts->uid : current->fsuid;
-+	inode->i_gid = opts->setgid ? opts->gid : current->fsgid;
- 	inode->i_mtime = inode->i_atime = inode->i_ctime = CURRENT_TIME;
--	init_special_inode(inode, S_IFCHR|config.mode, device);
-+	init_special_inode(inode, S_IFCHR|opts->mode, device);
- 	inode->i_private = tty;
- 	tty->driver_data = inode;
+ 	sprintf(s, "%d", number);
  
+-	mutex_lock(&devpts_root->d_inode->i_mutex);
++	mutex_lock(&root->d_inode->i_mutex);
+ 
+-	dentry = d_alloc_name(devpts_root, s);
++	dentry = d_alloc_name(root, s);
+ 	if (!IS_ERR(dentry)) {
+ 		d_add(dentry, inode);
+-		fsnotify_create(devpts_root->d_inode, dentry);
++		fsnotify_create(root->d_inode, dentry);
+ 	}
+ 
+-	mutex_unlock(&devpts_root->d_inode->i_mutex);
++	mutex_unlock(&root->d_inode->i_mutex);
+ 
+ 	return 0;
+ }
+@@ -256,11 +265,13 @@ struct tty_struct *devpts_get_tty(struct inode *pts_inode, int number)
+ void devpts_pty_kill(struct tty_struct *tty)
+ {
+ 	struct inode *inode = tty->driver_data;
++	struct super_block *sb = pts_sb_from_inode(inode);
++	struct dentry *root = sb->s_root;
+ 	struct dentry *dentry;
+ 
+ 	BUG_ON(inode->i_rdev == MKDEV(TTYAUX_MAJOR, PTMX_MINOR));
+ 
+-	mutex_lock(&devpts_root->d_inode->i_mutex);
++	mutex_lock(&root->d_inode->i_mutex);
+ 
+ 	dentry = d_find_alias(inode);
+ 	if (dentry && !IS_ERR(dentry)) {
+@@ -269,7 +280,7 @@ void devpts_pty_kill(struct tty_struct *tty)
+ 		dput(dentry);
+ 	}
+ 
+-	mutex_unlock(&devpts_root->d_inode->i_mutex);
++	mutex_unlock(&root->d_inode->i_mutex);
+ }
+ 
+ static int __init init_devpts_fs(void)
 -- 
 1.5.2.5
