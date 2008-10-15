@@ -1,16 +1,18 @@
-From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 9/9] Document usage of multiple-instances of devpts
-Date: Wed, 15 Oct 2008 14:48:22 -0500
-Message-ID: <20081015194822.GB2434@us.ibm.com>
-References: <20081015053000.GA2039@us.ibm.com>
-	<20081015053800.GI2215@us.ibm.com>
-	<20081015185722.GA30005@us.ibm.com> <48F63E76.3030907@zytor.com>
+From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Subject: Re: [RFC v6][PATCH 0/9] Kernel based checkpoint/restart
+Date: Wed, 15 Oct 2008 19:59:39 -0400
+Message-ID: <48F683EB.2030003__32085.4320111268$1224115352$gmane$org@cs.columbia.edu>
+References: <1223461197-11513-1-git-send-email-orenl@cs.columbia.edu>	<20081009124658.GE2952@elte.hu>
+	<1223557122.11830.14.camel@nimitz>	<20081009131701.GA21112@elte.hu>
+	<1223559246.11830.23.camel@nimitz>	<20081009134415.GA12135@elte.hu>
+	<1223571036.11830.32.camel@nimitz>
+	<20081010153951.GD28977@elte.hu> <48F30315.1070909@fr.ibm.com>
+	<48F3737B.6070904@cs.columbia.edu> <48F60891.1070807@fr.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <48F63E76.3030907-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org>
+In-Reply-To: <48F60891.1070807-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -20,34 +22,91 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "H. Peter Anvin" <hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org>
-Cc: kyle-hoO6YkzgTuCM0SS3m2neIg@public.gmane.org, xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org, "David C. Hansen" <haveblue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>, bastian-yyjItF7Rl6lg9hUCZPvPmw@public.gmane.org, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org, containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, alan-qBU/x9rampVanCEyBjwyrvXRex20P6io@public.gmane.org
+To: Cedric Le Goater <clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
+Cc: jeremy-TSDbQ3PG+2Y@public.gmane.org, arnd-r2nGTMty4D4@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Alexander Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, "H. Peter Anvin" <hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org>, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>, Thomas Gleixner <tglx-hfZtesqFncYOwBW4kG4KsQ@public.gmane.org>, Andrey Mirkin <major-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Quoting H. Peter Anvin (hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org):
-> Serge E. Hallyn wrote:
->> Looks good.  In the very last part, you might say just a little more to
->> make sure it's clear:  You want to mount -o newinstance before sshd
->> or gnome is started in the root container, so that a child container
->> can't reach your devpts by doing a mount -t devpts without -o
->> newinstance.  It's not that it's not clear in what you write, it's
->> more that it's at the very end and brief, so I'm afraid it's not
->> attention-grabbing enough as is.
->
-> Actually, you should just enable newinstance everywhere, in particular  
-> in your fstab, so that ALL instances of devpts in the system have  
-> newinstance (leaving the legacy one unreachable.)
->
-> In that sense I think your text above is more confusing than what  
-> Sukadev had.
->
-> 	-hpa
 
-That's fine, I just want a clearer louder warning that without that, a
-container is not isolated from your devpts.
 
-Maybe just 'WARNING" above point 7?
+Cedric Le Goater wrote:
+>>> the self checkpoint and self restore syscalls, like Oren is proposing, are 
+>>> simpler but they require the process cooperation to be triggered. we could
+>>> image doing that in a special signal handler which would allow us to jump
+>>> in the right task context. 
+>> This description is not accurate:
+>>
+>> For checkpoint, both implementations use an "external" task to read the state
+>> from other tasks. (In my implementation that "other" task can be self).
+> 
+> which is good, since some applications want to checkpoint themselves and that's
+> a way to provide them a generic service.
+>  
+>> For restart, both implementation expect the restarting process to restore its
+>> own state. They differ in that Andrew's patchset also creates that process
+>> while mine (at the moment) relies on the existing (self) task.
+> 
+> hmm, 
+> 
+> It seems that your patchset relies on the fact that the tasks are checkpointed 
+> and restarted at a syscall boundary. right ? I'm might be completely wrong
+> on that :)
+> 
 
-Or just leave it.  You're right, his text is plenty clear.
+Yes. I believe openvz too. And probably everyone else as well. I don't
+know of a sane way to do it otherwise :o
 
--serge
+To be precise, either syscall boundary, or the task was in user space
+before being frozen, or (not yet in this implementation) in some special
+frozen state like ptrace or vfork.
+
+>> In other words, none of them will require any cooperation on part of the
+>> checkpointed tasks, and both will require cooperation on part of the restarting
+>> tasks (the latter is easy since we create and fully control these tasks).
+> 
+> yes.
+> 
+>>> I don't have any preference but looking at the code of the different patchsets
+>>> there are some tricky areas and I'm wondering which path is easier, safer, 
+>>> and portable. 
+>> I am thinking which path is preferred: create the processes in kernel space
+>> (like Andrew's patch does) or in user space (like Zap does). In the mini-summit
+>> we agreed in favor of kernel space, but I can still see arguments why user space
+>> may be better.
+> 
+> I'm more familiar with the second algorithm, restarting the process tree in
+> user space and let each task restart itself with the sys_restart syscall. But
+> that's because I've been working on a C/R framework which freezes tasks on 
+> a syscall boundary, which makes a developer's life easy for restart. 
+> 
+> But as you know, a restarted process resumes its execution where it was 
+> checkpointed. So i'm wondering what are the hidden issues with a in-kernel 
+> checkpoint and in-kernel restart. To be more precise, why Andrey needs a 
+> i386_ret_from_resume  trampoline in : 
+> 
+> 	http://lkml.org/lkml/2008/9/3/181
+> 
+> and why don't you ? 
+> 
+
+Usually fork() at the child task returns to user space. IIRC, he needs
+the child task to return in kernel and invoke his function, which
+eventually will invoke the equivalent of do_restart().
+
+So the end result is the same: all restarting tasks restore their own
+state in their own contexts by eventually calling do_restart(). If you
+create  processes in userspace, then they get there via sys_restart(),
+if you create them in the kernel, then they get there directly after
+the trampoline.
+
+Oren.
+
+>> (note: I refer strictly to the creation of the processes during restart, not 
+>>  how their state is restored).
+> 
+> OK 
+> 
+>> any thoughts ?
+> 
+> thanks Oren,
+> 
+> C.
