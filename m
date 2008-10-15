@@ -1,12 +1,14 @@
 From: sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
-Subject: [PATCH 0/9] Multiple devpts instances
-Date: Tue, 14 Oct 2008 22:30:00 -0700
-Message-ID: <20081015053000.GA2039@us.ibm.com>
+Subject: [PATCH 3/9] Per-mount 'config' object
+Date: Tue, 14 Oct 2008 22:34:28 -0700
+Message-ID: <20081015053428.GC2215@us.ibm.com>
+References: <20081015053000.GA2039@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
+In-Reply-To: <20081015053000.GA2039-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -17,96 +19,147 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org, alan-qBU/x9rampVanCEyBjwyrvXRex20P6io@public.gmane.org, serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org, "David C. Hansen" <haveblue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Cc: kyle-hoO6YkzgTuCM0SS3m2neIg@public.gmane.org, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org, bastian-yyjItF7Rl6lg9hUCZPvPmw@public.gmane.org, containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org
+Cc: kyle-hoO6YkzgTuCM0SS3m2neIg@public.gmane.org, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org, bastian-yyjItF7Rl6lg9hUCZPvPmw@public.gmane.org, containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org
 List-Id: containers.vger.kernel.org
 
 
-Enable multiple instances of devpts filesystem so each container can allocate
-ptys independently.
+From fa07e30bf77063b127129d317e91d6dc454ea739 Mon Sep 17 00:00:00 2001
+From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Subject: [PATCH 3/9] Per-mount 'config' object
 
-User interface:
+With support for multiple mounts of devpts, the 'config' structure really
+represents per-mount options rather than config parameters. Rename 'config'
+structure to 'pts_mount_opts' and store it in the super-block.
 
-	Since supporting multiple mounts of devpts can break user-space, this
-	feature is enabled only if:
+Signed-off-by: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Acked-by: Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+---
+ fs/devpts/inode.c |   49 +++++++++++++++++++++++++++++--------------------
+ 1 files changed, 29 insertions(+), 20 deletions(-)
 
-		- CONFIG_DEVPTS_MULTIPLE_INSTANCES=y (new config token), and
-		- new mount option, -o newinstance is specified
-
-	If CONFIG_DEVPTS_MULTIPLE_INSTANCES=n, there should be no change in
-	behavior.
-
-	See [PATCH 9/9] - Documentation/filesystems/devpts.txt for detailed
-	usage/compatibility information.
-
-		[PATCH 1/9] Remove devpts_root global
-		[PATCH 2/9] Per-mount allocated_ptys
-		[PATCH 3/9] Per-mount 'config' object
-		[PATCH 4/9] Extract option parsing to new function
-		[PATCH 5/9] Add DEVPTS_MULTIPLE_INSTANCES config token
-		[PATCH 6/9] Define mknod_ptmx()
-		[PATCH 7/9] Define get_init_pts_sb()
-		[PATCH 8/9] Enable multiple instances of devpts
-		[PATCH 9/9] Document usage of multiple-instances of devpts
-	
-Implementation notes:
-
-	1. To enable multiple mounts of /dev/pts, (most) devpts interfaces
-	   need to know which instance of devpts is being accessed. This
-	   patchset uses the 'struct inode' or 'struct tty_struct' of the
-	   device being accessed to identify the appropriate devpts instance.
-	   Hence the need for the /dev/pts/ptmx bind-mount.
-
-	2. Mount options must be parsed twice during mount (once to determine
-	   the mode of mount (single/multi-instance) and once to actually
-	   save the options. There does not seem to be an easy way to parse
-	   once and reuse (See 'safe_process_mount_opts()' in [PATCH 9/10])
-
-
-Changelog [v5]:
-	- Merge all option-parsing (previously in patches 6,7) into patch 6.
-	- Bugfixes (see changelog in patches 6 and 8)
-	- Replace get_sb_ref() with devpts-specific get_init_pts_sb() (patch 7)
-	- Minor update to devpts.txt documentation (patch 9)
-
-
-Changelog [v4]:
-
-	- Port to 2008-09-04 ttydev tree (and drop patches that were merged in)
-	- Add DEVPTS_MULTIPLE_INSTANCES config token (patch 5) and move new
-	  behavior under #ifdef CONFIG_DEVPTS_MULTIPLE_INSTANCES. 
-	- Create ptmx node even in initial mount 
-	- Change default permissions of pts/ptmx node to 0000 (patch 6)
-	- Cache ptmx dentry and use to update permissions of ptmx node on
-	  remount so legacy mode can use the node with a simpler change to
-	  /etc/fstab (patch 7)
-	- Move get_sb_ref() helper code to separate patch (patch 8)
-	- Add Documentation/filesystems/devpts.txt and describe usage info
-	  in that file.
-	  
-Changelog [v3]:
-
-	- Port to 2008-08-28 ttydev tree
-	- Rename new mount options to 'ptmxmode' and 'newinstance'.
-	- [Alan Cox] Use tty driver data to identify devpts (this is used to
-	  cleanup get_node() in devpts_pty_kill()).
-	- [H. Peter Anvin] get_node() cleanup in devpts (which was enabled by
-	  the inode/tty parameter to devpts interfaces)
-	- Bugfix in multi-mount mode (see Patch 11/11).
-	- Executed pty tests in LTP (in both single-instance and multi-instance
-	  mode)
-	- Should be bisect-safe :-)
-
-Changelog [v2]:
-
-	- New mount option '-o newmnt' added (patch 8/8)
-	- Support both single-mount and multi-mount semantics (patch 8/8)
-	- Automatically create ptmx node when devpts is mounted (patch 7/8)
-	- Extract option parsing code to new function (patch 6/8)
-	- Make 'config' params per-mount variables (patch 5/8)
-	- Slightly re-ordered existing patches in set (patches 1/8, 2/8)
-
-TODO:
-	- Do we need a '-o ptmxuid' and '-o ptmxgid' options as well ?
-	- Update mount(8) man page
-	- (Sometime in future) Remove even initial kernel mount of devpts 
-	- Any other good test suites to test this (besides LTP, sshd).
+diff --git a/fs/devpts/inode.c b/fs/devpts/inode.c
+index 6e63db7..e91c15c 100644
+--- a/fs/devpts/inode.c
++++ b/fs/devpts/inode.c
+@@ -34,13 +34,13 @@ static DEFINE_MUTEX(allocated_ptys_lock);
+ 
+ static struct vfsmount *devpts_mnt;
+ 
+-static struct {
++struct pts_mount_opts {
+ 	int setuid;
+ 	int setgid;
+ 	uid_t   uid;
+ 	gid_t   gid;
+ 	umode_t mode;
+-} config = {.mode = DEVPTS_DEFAULT_MODE};
++};
+ 
+ enum {
+ 	Opt_uid, Opt_gid, Opt_mode,
+@@ -56,6 +56,7 @@ static match_table_t tokens = {
+ 
+ struct pts_fs_info {
+ 	struct ida allocated_ptys;
++	struct pts_mount_opts mount_opts;
+ };
+ 
+ static inline struct pts_fs_info *DEVPTS_SB(struct super_block *sb)
+@@ -74,12 +75,14 @@ static inline struct super_block *pts_sb_from_inode(struct inode *inode)
+ static int devpts_remount(struct super_block *sb, int *flags, char *data)
+ {
+ 	char *p;
++	struct pts_fs_info *fsi = DEVPTS_SB(sb);
++	struct pts_mount_opts *opts = &fsi->mount_opts;
+ 
+-	config.setuid  = 0;
+-	config.setgid  = 0;
+-	config.uid     = 0;
+-	config.gid     = 0;
+-	config.mode    = DEVPTS_DEFAULT_MODE;
++	opts->setuid  = 0;
++	opts->setgid  = 0;
++	opts->uid     = 0;
++	opts->gid     = 0;
++	opts->mode    = DEVPTS_DEFAULT_MODE;
+ 
+ 	while ((p = strsep(&data, ",")) != NULL) {
+ 		substring_t args[MAX_OPT_ARGS];
+@@ -94,19 +97,19 @@ static int devpts_remount(struct super_block *sb, int *flags, char *data)
+ 		case Opt_uid:
+ 			if (match_int(&args[0], &option))
+ 				return -EINVAL;
+-			config.uid = option;
+-			config.setuid = 1;
++			opts->uid = option;
++			opts->setuid = 1;
+ 			break;
+ 		case Opt_gid:
+ 			if (match_int(&args[0], &option))
+ 				return -EINVAL;
+-			config.gid = option;
+-			config.setgid = 1;
++			opts->gid = option;
++			opts->setgid = 1;
+ 			break;
+ 		case Opt_mode:
+ 			if (match_octal(&args[0], &option))
+ 				return -EINVAL;
+-			config.mode = option & S_IALLUGO;
++			opts->mode = option & S_IALLUGO;
+ 			break;
+ 		default:
+ 			printk(KERN_ERR "devpts: called with bogus options\n");
+@@ -119,11 +122,14 @@ static int devpts_remount(struct super_block *sb, int *flags, char *data)
+ 
+ static int devpts_show_options(struct seq_file *seq, struct vfsmount *vfs)
+ {
+-	if (config.setuid)
+-		seq_printf(seq, ",uid=%u", config.uid);
+-	if (config.setgid)
+-		seq_printf(seq, ",gid=%u", config.gid);
+-	seq_printf(seq, ",mode=%03o", config.mode);
++	struct pts_fs_info *fsi = DEVPTS_SB(vfs->mnt_sb);
++	struct pts_mount_opts *opts = &fsi->mount_opts;
++
++	if (opts->setuid)
++		seq_printf(seq, ",uid=%u", opts->uid);
++	if (opts->setgid)
++		seq_printf(seq, ",gid=%u", opts->gid);
++	seq_printf(seq, ",mode=%03o", opts->mode);
+ 
+ 	return 0;
+ }
+@@ -143,6 +149,7 @@ static void *new_pts_fs_info(void)
+ 		return NULL;
+ 
+ 	ida_init(&fsi->allocated_ptys);
++	fsi->mount_opts.mode = DEVPTS_DEFAULT_MODE;
+ 
+ 	return fsi;
+ }
+@@ -262,6 +269,8 @@ int devpts_pty_new(struct inode *ptmx_inode, struct tty_struct *tty)
+ 	struct super_block *sb = pts_sb_from_inode(ptmx_inode);
+ 	struct inode *inode = new_inode(sb);
+ 	struct dentry *root = sb->s_root;
++	struct pts_fs_info *fsi = DEVPTS_SB(sb);
++	struct pts_mount_opts *opts = &fsi->mount_opts;
+ 	char s[12];
+ 
+ 	/* We're supposed to be given the slave end of a pty */
+@@ -272,10 +281,10 @@ int devpts_pty_new(struct inode *ptmx_inode, struct tty_struct *tty)
+ 		return -ENOMEM;
+ 
+ 	inode->i_ino = number+2;
+-	inode->i_uid = config.setuid ? config.uid : current->fsuid;
+-	inode->i_gid = config.setgid ? config.gid : current->fsgid;
++	inode->i_uid = opts->setuid ? opts->uid : current->fsuid;
++	inode->i_gid = opts->setgid ? opts->gid : current->fsgid;
+ 	inode->i_mtime = inode->i_atime = inode->i_ctime = CURRENT_TIME;
+-	init_special_inode(inode, S_IFCHR|config.mode, device);
++	init_special_inode(inode, S_IFCHR|opts->mode, device);
+ 	inode->i_private = tty;
+ 	tty->driver_data = inode;
+ 
+-- 
+1.5.2.5
