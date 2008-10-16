@@ -1,16 +1,14 @@
-From: Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
-Subject: Re: lxc userspace tools 0.3.0 released
-Date: Thu, 16 Oct 2008 16:10:38 +0200
-Message-ID: <48F74B5E.9060909@fr.ibm.com>
-References: <48F4AF2E.3000204@fr.ibm.com>
-	<7fac565a0810160122n7afa6e71l929be8cb08ba05c6@mail.gmail.com>
-	<48F70E53.9070002@fr.ibm.com> <48F739BB.4070201@fr.ibm.com>
-	<20081016133006.GQ27881@redhat.com>
+From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH 0/9] Multiple devpts instances
+Date: Thu, 16 Oct 2008 10:19:58 -0500
+Message-ID: <20081016151958.GA19425@us.ibm.com>
+References: <20081015053000.GA2039@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20081016133006.GQ27881-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <20081015053000.GA2039-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -20,23 +18,112 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Daniel P. Berrange" <berrange-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Cedric Le Goater <clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
+To: sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
+Cc: kyle-hoO6YkzgTuCM0SS3m2neIg@public.gmane.org, "David C. Hansen" <haveblue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>, bastian-yyjItF7Rl6lg9hUCZPvPmw@public.gmane.org, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org, hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org, containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org, alan-qBU/x9rampVanCEyBjwyrvXRex20P6io@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Daniel P. Berrange wrote:
-> On Thu, Oct 16, 2008 at 02:55:23PM +0200, Cedric Le Goater wrote:
->>> Just to clarify to avoid confusion. There is a LXC project inside the 
->>> libvirt and there is the lxc userspace tools (liblxc). We are talking 
->>> about the liblxc.
->> I wouldn't say there is a "LXC project inside the libvirt" but rather
->> there is a libvirt driver emulating a virtual machine using namespaces.
->> This driver is called lxc for some reason I don't know and this is very 
->> unfortunate IMO.
+Quoting sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org (sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org):
 > 
-> It is called LXC because it implements "LinuX Containers". When we first
-> released this LXC driver in libvirt this lxc userspace tools package didn't
-> exist so there was no naming clash.
+> Enable multiple instances of devpts filesystem so each container can allocate
+> ptys independently.
 
-Libvirt being a VM/container middleware, shouldn't we change lxc-driver 
-to use liblxc ?
+Hey Suka,
+
+I was playing with this a bit last night, trying to make it oops, i.e.
+create an sshd in a child ptsns ssh to it, and umount -l /dev/pts out
+from under me.  Etc.  Ran ltp.
+
+All seemed fine.
+
+Tested-by: Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Acked-by: Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+
+thanks,
+-serge
+
+> User interface:
+> 
+> 	Since supporting multiple mounts of devpts can break user-space, this
+> 	feature is enabled only if:
+> 
+> 		- CONFIG_DEVPTS_MULTIPLE_INSTANCES=y (new config token), and
+> 		- new mount option, -o newinstance is specified
+> 
+> 	If CONFIG_DEVPTS_MULTIPLE_INSTANCES=n, there should be no change in
+> 	behavior.
+> 
+> 	See [PATCH 9/9] - Documentation/filesystems/devpts.txt for detailed
+> 	usage/compatibility information.
+> 
+> 		[PATCH 1/9] Remove devpts_root global
+> 		[PATCH 2/9] Per-mount allocated_ptys
+> 		[PATCH 3/9] Per-mount 'config' object
+> 		[PATCH 4/9] Extract option parsing to new function
+> 		[PATCH 5/9] Add DEVPTS_MULTIPLE_INSTANCES config token
+> 		[PATCH 6/9] Define mknod_ptmx()
+> 		[PATCH 7/9] Define get_init_pts_sb()
+> 		[PATCH 8/9] Enable multiple instances of devpts
+> 		[PATCH 9/9] Document usage of multiple-instances of devpts
+> 	
+> Implementation notes:
+> 
+> 	1. To enable multiple mounts of /dev/pts, (most) devpts interfaces
+> 	   need to know which instance of devpts is being accessed. This
+> 	   patchset uses the 'struct inode' or 'struct tty_struct' of the
+> 	   device being accessed to identify the appropriate devpts instance.
+> 	   Hence the need for the /dev/pts/ptmx bind-mount.
+> 
+> 	2. Mount options must be parsed twice during mount (once to determine
+> 	   the mode of mount (single/multi-instance) and once to actually
+> 	   save the options. There does not seem to be an easy way to parse
+> 	   once and reuse (See 'safe_process_mount_opts()' in [PATCH 9/10])
+> 
+> 
+> Changelog [v5]:
+> 	- Merge all option-parsing (previously in patches 6,7) into patch 6.
+> 	- Bugfixes (see changelog in patches 6 and 8)
+> 	- Replace get_sb_ref() with devpts-specific get_init_pts_sb() (patch 7)
+> 	- Minor update to devpts.txt documentation (patch 9)
+> 
+> 
+> Changelog [v4]:
+> 
+> 	- Port to 2008-09-04 ttydev tree (and drop patches that were merged in)
+> 	- Add DEVPTS_MULTIPLE_INSTANCES config token (patch 5) and move new
+> 	  behavior under #ifdef CONFIG_DEVPTS_MULTIPLE_INSTANCES. 
+> 	- Create ptmx node even in initial mount 
+> 	- Change default permissions of pts/ptmx node to 0000 (patch 6)
+> 	- Cache ptmx dentry and use to update permissions of ptmx node on
+> 	  remount so legacy mode can use the node with a simpler change to
+> 	  /etc/fstab (patch 7)
+> 	- Move get_sb_ref() helper code to separate patch (patch 8)
+> 	- Add Documentation/filesystems/devpts.txt and describe usage info
+> 	  in that file.
+> 	  
+> Changelog [v3]:
+> 
+> 	- Port to 2008-08-28 ttydev tree
+> 	- Rename new mount options to 'ptmxmode' and 'newinstance'.
+> 	- [Alan Cox] Use tty driver data to identify devpts (this is used to
+> 	  cleanup get_node() in devpts_pty_kill()).
+> 	- [H. Peter Anvin] get_node() cleanup in devpts (which was enabled by
+> 	  the inode/tty parameter to devpts interfaces)
+> 	- Bugfix in multi-mount mode (see Patch 11/11).
+> 	- Executed pty tests in LTP (in both single-instance and multi-instance
+> 	  mode)
+> 	- Should be bisect-safe :-)
+> 
+> Changelog [v2]:
+> 
+> 	- New mount option '-o newmnt' added (patch 8/8)
+> 	- Support both single-mount and multi-mount semantics (patch 8/8)
+> 	- Automatically create ptmx node when devpts is mounted (patch 7/8)
+> 	- Extract option parsing code to new function (patch 6/8)
+> 	- Make 'config' params per-mount variables (patch 5/8)
+> 	- Slightly re-ordered existing patches in set (patches 1/8, 2/8)
+> 
+> TODO:
+> 	- Do we need a '-o ptmxuid' and '-o ptmxgid' options as well ?
+> 	- Update mount(8) man page
+> 	- (Sometime in future) Remove even initial kernel mount of devpts 
+> 	- Any other good test suites to test this (besides LTP, sshd).
