@@ -1,15 +1,13 @@
-From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 9/9] Document usage of multiple-instances of devpts
-Date: Wed, 15 Oct 2008 13:57:22 -0500
-Message-ID: <20081015185722.GA30005@us.ibm.com>
-References: <20081015053000.GA2039@us.ibm.com>
-	<20081015053800.GI2215@us.ibm.com>
+From: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Subject: [PATCH 2/9] General infrastructure for checkpoint restart
+Date: Thu, 16 Oct 2008 11:14:16 -0700
+Message-ID: <20081016181416.BF608BF2@kernel>
+References: <20081016181414.934C4FCC@kernel>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <20081015053800.GI2215-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <20081016181414.934C4FCC@kernel>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,172 +17,855 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
-Cc: kyle-hoO6YkzgTuCM0SS3m2neIg@public.gmane.org, "David C. Hansen" <haveblue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>, bastian-yyjItF7Rl6lg9hUCZPvPmw@public.gmane.org, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org, hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org, containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org, alan-qBU/x9rampVanCEyBjwyrvXRex20P6io@public.gmane.org
+To: Linus Torvalds <torvalds-3NddpPZAyC0@public.gmane.org>
+Cc: containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, "linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, linux-mm <linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org>, Thomas Gleixner <tglx-hfZtesqFncYOwBW4kG4KsQ@public.gmane.org>, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Quoting sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org (sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org):
-> 
-> >From c4596977ca34b9664d97efa8681e6711145a22cf Mon Sep 17 00:00:00 2001
-> From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-> Subject: [PATCH 9/9] Document usage of multiple-instances of devpts
-> 
-> Changelog [v2]:
-> 	- Add note indicating strict isolation is not possible unless all
-> 	  mounts of devpts use the 'newinstance' mount option.
-> 
-> Signed-off-by: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 
-Looks good.  In the very last part, you might say just a little more to
-make sure it's clear:  You want to mount -o newinstance before sshd
-or gnome is started in the root container, so that a child container
-can't reach your devpts by doing a mount -t devpts without -o
-newinstance.  It's not that it's not clear in what you write, it's
-more that it's at the very end and brief, so I'm afraid it's not
-attention-grabbing enough as is.
+From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 
-> ---
->  Documentation/filesystems/devpts.txt |  132 ++++++++++++++++++++++++++++++++++
->  1 files changed, 132 insertions(+), 0 deletions(-)
->  create mode 100644 Documentation/filesystems/devpts.txt
-> 
-> diff --git a/Documentation/filesystems/devpts.txt b/Documentation/filesystems/devpts.txt
-> new file mode 100644
-> index 0000000..68dffd8
-> --- /dev/null
-> +++ b/Documentation/filesystems/devpts.txt
-> @@ -0,0 +1,132 @@
-> +
-> +To support containers, we now allow multiple instances of devpts filesystem,
-> +such that indices of ptys allocated in one instance are independent of indices
-> +allocated in other instances of devpts.
-> +
-> +To preserve backward compatibility, this support for multiple instances is
-> +enabled only if:
-> +
-> +	- CONFIG_DEVPTS_MULTIPLE_INSTANCES=y, and
-> +	- '-o newinstance' mount option is specified while mounting devpts
-> +
-> +IOW, devpts now supports both single-instance and multi-instance semantics.
-> +
-> +If CONFIG_DEVPTS_MULTIPLE_INSTANCES=n, there is no change in behavior and
-> +this referred to as the "legacy" mode. In this mode, the new mount options
-> +(-o newinstance and -o ptmxmode) will be ignored with a 'bogus option' message
-> +on console.
-> +
-> +If CONFIG_DEVPTS_MULTIPLE_INSTANCES=y and devpts is mounted without the
-> +'newinstance' option (as in current start-up scripts) the new mount binds
-> +to the initial kernel mount of devpts. This mode is referred to as the
-> +'single-instance' mode and the current, single-instance semantics are
-> +preserved, i.e PTYs are common across the system.
-> +
-> +The only difference between this single-instance mode and the legacy mode
-> +is the presence of new, '/dev/pts/ptmx' node with permissions 0000, which
-> +can safely be ignored.
-> +
-> +If CONFIG_DEVPTS_MULTIPLE_INSTANCES=y and 'newinstance' option is specified,
-> +the mount is considered to be in the multi-instance mode and a new instance
-> +of the devpts fs is created. Any ptys created in this instance are independent
-> +of ptys in other instances of devpts. Like in the single-instance mode, the
-> +/dev/pts/ptmx node is present. To effectively use the multi-instance mode,
-> +open of /dev/ptmx must be a redirected to '/dev/pts/ptmx' using a symlink or
-> +bind-mount.
-> +
-> +Eg: A container startup script could do the following:
-> +
-> +	$ chmod 0666 /dev/pts/ptmx
-> +	$ rm /dev/ptmx
-> +	$ ln -s pts/ptmx /dev/ptmx
-> +	$ ns_exec -cm /bin/bash
-> +
-> +	# We are now in new container
-> +
-> +	$ umount /dev/pts
-> +	$ mount -t devpts -o newinstance lxcpts /dev/pts
-> +	$ sshd -p 1234
-> +
-> +where 'ns_exec -cm /bin/bash' calls clone() with CLONE_NEWNS flag and execs
-> +/bin/bash in the child process.  A pty created by the sshd is not visible in
-> +the original mount of /dev/pts.
-> +
-> +User-space changes
-> +------------------
-> +
-> +In multi-instance mode (i.e '-o newinstance' mount option is specified at least
-> +once), following user-space issues should be noted.
-> +
-> +1. If -o newinstance mount option is never used, /dev/pts/ptmx can be ignored
-> +   and no change is needed to system-startup scripts.
-> +
-> +2. To effectively use multi-instance mode (i.e -o newinstance is specified)
-> +   administrators or startup scripts should "redirect" open of /dev/ptmx to
-> +   /dev/pts/ptmx using either a bind mount or symlink.
-> +
-> +	$ mount -t devpts -o newinstance devpts /dev/pts
-> +
-> +   followed by either
-> +
-> +	$ rm /dev/ptmx
-> +	$ ln -s pts/ptmx /dev/ptmx
-> +	$ chmod 666 /dev/pts/ptmx
-> +   or
-> +	$ mount -o bind /dev/pts/ptmx /dev/ptmx
-> +
-> +3. The '/dev/ptmx -> pts/ptmx' symlink is the preferred method since it
-> +   enables better error-reporting and treats both single-instance and
-> +   multi-instance mounts similarly.
-> +
-> +   But this method requires that system-startup scripts set the mode of
-> +   /dev/pts/ptmx correctly (default mode is 0000). The scripts can set the
-> +   mode by, either
-> +
-> +   	- adding ptmxmode mount option to devpts entry in /etc/fstab, or
-> +	- using 'chmod 0666 /dev/pts/ptmx'
-> +
-> +4. If multi-instance mode mount is needed for containers, but the system
-> +   startup scripts have not yet been updated, container-startup scripts
-> +   should bind mount /dev/ptmx to /dev/pts/ptmx to avoid breaking single-
-> +   instance mounts.
-> +
-> +   Or, in general, container-startup scripts should use:
-> +
-> +	mount -t devpts -o newinstance -o ptmxmode=0666 devpts /dev/pts
-> +	if [ ! -L /dev/ptmx ]; then
-> +		mount -o bind /dev/pts/ptmx /dev/ptmx
-> +	fi
-> +
-> +   When all devpts mounts are multi-instance, /dev/ptmx can permanently be
-> +   a symlink to pts/ptmx and the bind mount can be ignored.
-> +
-> +5. A multi-instance mount that is not accompanied by the /dev/ptmx to
-> +   /dev/pts/ptmx redirection would result in an unusable/unreachable pty.
-> +
-> +	mount -t devpts -o newinstance lxcpts /dev/pts
-> +
-> +   immediately followed by:
-> +
-> +	open("/dev/ptmx")
-> +
-> +    would create a pty, say /dev/pts/7, in the initial kernel mount.
-> +    But /dev/pts/7 would be invisible in the new mount.
-> +
-> +6. The permissions for /dev/pts/ptmx node should be specified when mounting
-> +   /dev/pts, using the '-o ptmxmode=%o' mount option (default is 0000).
-> +
-> +	mount -t devpts -o newinstance -o ptmxmode=0644 devpts /dev/pts
-> +
-> +   The permissions can be later be changed as usual with 'chmod'.
-> +
-> +	chmod 666 /dev/pts/ptmx
-> +
-> +7. A mount of devpts without the 'newinstance' option results in binding to
-> +   initial kernel mount.  This behavior while preserving legacy semantics,
-> +   does not provide strict isolation in a container environment. i.e by
-> +   mounting devpts without the 'newinstance' option, a container could
-> +   get visibility into the 'host' or root container's devpts.
-> +   
-> +   To workaround this and have strict isolation, all mounts of devpts,
-> +   including the mount in the root container, should use the newinstance
-> +   option.
-> -- 
-> 1.5.2.5
+Add those interfaces, as well as helpers needed to easily manage the
+file format. The code is roughly broken out as follows:
+
+checkpoint/sys.c - user/kernel data transfer, as well as setup of the
+checkpoint/restart context (a per-checkpoint data structure for
+housekeeping)
+
+checkpoint/checkpoint.c - output wrappers and basic checkpoint handling
+
+checkpoint/restart.c - input wrappers and basic restart handling
+
+Patches to add the per-architecture support as well as the actual
+work to do the memory checkpoint follow in subsequent patches.
+
+Signed-off-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Acked-by: Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Signed-off-by: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+---
+
+ linux-2.6.git-dave/Makefile                       |    2 
+ linux-2.6.git-dave/checkpoint/Makefile            |    2 
+ linux-2.6.git-dave/checkpoint/checkpoint.c        |  174 +++++++++++++++++
+ linux-2.6.git-dave/checkpoint/restart.c           |  197 +++++++++++++++++++
+ linux-2.6.git-dave/checkpoint/sys.c               |  219 +++++++++++++++++++++-
+ linux-2.6.git-dave/fs/read_write.c                |    4 
+ linux-2.6.git-dave/include/linux/checkpoint.h     |   60 ++++++
+ linux-2.6.git-dave/include/linux/checkpoint_hdr.h |   75 +++++++
+ linux-2.6.git-dave/include/linux/magic.h          |    3 
+ 9 files changed, 728 insertions(+), 8 deletions(-)
+
+diff -puN /dev/null checkpoint/checkpoint.c
+--- /dev/null	2008-09-02 09:40:19.000000000 -0700
++++ linux-2.6.git-dave/checkpoint/checkpoint.c	2008-10-16 10:53:34.000000000 -0700
+@@ -0,0 +1,174 @@
++/*
++ *  Checkpoint logic and helpers
++ *
++ *  Copyright (C) 2008 Oren Laadan
++ *
++ *  This file is subject to the terms and conditions of the GNU General Public
++ *  License.  See the file COPYING in the main directory of the Linux
++ *  distribution for more details.
++ */
++
++#include <linux/version.h>
++#include <linux/sched.h>
++#include <linux/time.h>
++#include <linux/fs.h>
++#include <linux/file.h>
++#include <linux/dcache.h>
++#include <linux/mount.h>
++#include <linux/utsname.h>
++#include <linux/magic.h>
++#include <linux/checkpoint.h>
++#include <linux/checkpoint_hdr.h>
++
++/**
++ * cr_write_obj - write a record described by a cr_hdr
++ * @ctx: checkpoint context
++ * @h: record descriptor
++ * @buf: record buffer
++ */
++int cr_write_obj(struct cr_ctx *ctx, struct cr_hdr *h, void *buf)
++{
++	int ret;
++
++	ret = cr_kwrite(ctx, h, sizeof(*h));
++	if (ret < 0)
++		return ret;
++	return cr_kwrite(ctx, buf, h->len);
++}
++
++/**
++ * cr_write_string - write a string
++ * @ctx: checkpoint context
++ * @str: string pointer
++ * @len: string length
++ */
++int cr_write_string(struct cr_ctx *ctx, char *str, int len)
++{
++	struct cr_hdr h;
++
++	h.type = CR_HDR_STRING;
++	h.len = len;
++	h.parent = 0;
++
++	return cr_write_obj(ctx, &h, str);
++}
++
++/* write the checkpoint header */
++static int cr_write_head(struct cr_ctx *ctx)
++{
++	struct cr_hdr h;
++	struct cr_hdr_head *hh = cr_hbuf_get(ctx, sizeof(*hh));
++	struct new_utsname *uts;
++	struct timeval ktv;
++	int ret;
++
++	h.type = CR_HDR_HEAD;
++	h.len = sizeof(*hh);
++	h.parent = 0;
++
++	do_gettimeofday(&ktv);
++
++	hh->magic = CHECKPOINT_MAGIC_HEAD;
++	hh->major = (LINUX_VERSION_CODE >> 16) & 0xff;
++	hh->minor = (LINUX_VERSION_CODE >> 8) & 0xff;
++	hh->patch = (LINUX_VERSION_CODE) & 0xff;
++
++	hh->rev = CR_VERSION;
++
++	hh->flags = ctx->flags;
++	hh->time = ktv.tv_sec;
++
++	uts = utsname();
++	memcpy(hh->release, uts->release, __NEW_UTS_LEN);
++	memcpy(hh->version, uts->version, __NEW_UTS_LEN);
++	memcpy(hh->machine, uts->machine, __NEW_UTS_LEN);
++
++	ret = cr_write_obj(ctx, &h, hh);
++	cr_hbuf_put(ctx, sizeof(*hh));
++	return ret;
++}
++
++/* write the checkpoint trailer */
++static int cr_write_tail(struct cr_ctx *ctx)
++{
++	struct cr_hdr h;
++	struct cr_hdr_tail *hh = cr_hbuf_get(ctx, sizeof(*hh));
++	int ret;
++
++	h.type = CR_HDR_TAIL;
++	h.len = sizeof(*hh);
++	h.parent = 0;
++
++	hh->magic = CHECKPOINT_MAGIC_TAIL;
++
++	ret = cr_write_obj(ctx, &h, hh);
++	cr_hbuf_put(ctx, sizeof(*hh));
++	return ret;
++}
++
++/* dump the task_struct of a given task */
++static int cr_write_task_struct(struct cr_ctx *ctx, struct task_struct *t)
++{
++	struct cr_hdr h;
++	struct cr_hdr_task *hh = cr_hbuf_get(ctx, sizeof(*hh));
++	int ret;
++
++	h.type = CR_HDR_TASK;
++	h.len = sizeof(*hh);
++	h.parent = 0;
++
++	hh->state = t->state;
++	hh->exit_state = t->exit_state;
++	hh->exit_code = t->exit_code;
++	hh->exit_signal = t->exit_signal;
++
++	hh->task_comm_len = TASK_COMM_LEN;
++
++	/* FIXME: save remaining relevant task_struct fields */
++
++	ret = cr_write_obj(ctx, &h, hh);
++	cr_hbuf_put(ctx, sizeof(*hh));
++	if (ret < 0)
++		return ret;
++
++	return cr_write_string(ctx, t->comm, TASK_COMM_LEN);
++}
++
++/* dump the entire state of a given task */
++static int cr_write_task(struct cr_ctx *ctx, struct task_struct *t)
++{
++	int ret ;
++
++	if (t->state == TASK_DEAD) {
++		pr_warning("CR: task may not be in state TASK_DEAD\n");
++		return -EAGAIN;
++	}
++
++	ret = cr_write_task_struct(ctx, t);
++	cr_debug("ret %d\n", ret);
++
++	return ret;
++}
++
++int do_checkpoint(struct cr_ctx *ctx)
++{
++	int ret;
++
++	/* FIX: need to test whether container is checkpointable */
++
++	ret = cr_write_head(ctx);
++	if (ret < 0)
++		goto out;
++	ret = cr_write_task(ctx, current);
++	if (ret < 0)
++		goto out;
++	ret = cr_write_tail(ctx);
++	if (ret < 0)
++		goto out;
++
++	/* on success, return (unique) checkpoint identifier */
++	ret = ctx->crid;
++
++ out:
++	return ret;
++}
+diff -puN checkpoint/Makefile~v6_PATCH_2_9_General_infrastructure_for_checkpoint_restart checkpoint/Makefile
+--- linux-2.6.git/checkpoint/Makefile~v6_PATCH_2_9_General_infrastructure_for_checkpoint_restart	2008-10-16 10:53:34.000000000 -0700
++++ linux-2.6.git-dave/checkpoint/Makefile	2008-10-16 10:53:34.000000000 -0700
+@@ -2,4 +2,4 @@
+ # Makefile for linux checkpoint/restart.
+ #
+ 
+-obj-$(CONFIG_CHECKPOINT_RESTART) += sys.o
++obj-$(CONFIG_CHECKPOINT_RESTART) += sys.o checkpoint.o restart.o
+diff -puN /dev/null checkpoint/restart.c
+--- /dev/null	2008-09-02 09:40:19.000000000 -0700
++++ linux-2.6.git-dave/checkpoint/restart.c	2008-10-16 10:53:34.000000000 -0700
+@@ -0,0 +1,197 @@
++/*
++ *  Restart logic and helpers
++ *
++ *  Copyright (C) 2008 Oren Laadan
++ *
++ *  This file is subject to the terms and conditions of the GNU General Public
++ *  License.  See the file COPYING in the main directory of the Linux
++ *  distribution for more details.
++ */
++
++#include <linux/version.h>
++#include <linux/sched.h>
++#include <linux/file.h>
++#include <linux/magic.h>
++#include <linux/checkpoint.h>
++#include <linux/checkpoint_hdr.h>
++
++/**
++ * cr_read_obj - read a whole record (cr_hdr followed by payload)
++ * @ctx: checkpoint context
++ * @h: record descriptor
++ * @buf: record buffer
++ * @n: available buffer size
++ *
++ * Returns size of payload
++ */
++int cr_read_obj(struct cr_ctx *ctx, struct cr_hdr *h, void *buf, int n)
++{
++	int ret;
++
++	ret = cr_kread(ctx, h, sizeof(*h));
++	if (ret < 0)
++		return ret;
++
++	cr_debug("type %d len %d parent %d\n", h->type, h->len, h->parent);
++
++	if (h->len < 0 || h->len > n)
++		return -EINVAL;
++
++	return cr_kread(ctx, buf, h->len);
++}
++
++/**
++ * cr_read_obj_type - read a whole record of expected type
++ * @ctx: checkpoint context
++ * @buf: record buffer
++ * @n: available buffer size
++ * @type: expected record type
++ *
++ * Returns object reference of the parent object
++ */
++int cr_read_obj_type(struct cr_ctx *ctx, void *buf, int n, int type)
++{
++	struct cr_hdr h;
++	int ret;
++
++	ret = cr_read_obj(ctx, &h, buf, n);
++	if (ret < 0)
++		return ret;
++
++	ret = -EINVAL;
++	if (h.type == type)
++		ret = h.parent;
++
++	return ret;
++}
++
++/**
++ * cr_read_string - read a string
++ * @ctx: checkpoint context
++ * @str: string buffer
++ * @len: buffer buffer length
++ */
++int cr_read_string(struct cr_ctx *ctx, void *str, int len)
++{
++	return cr_read_obj_type(ctx, str, len, CR_HDR_STRING);
++}
++
++/* read the checkpoint header */
++static int cr_read_head(struct cr_ctx *ctx)
++{
++	struct cr_hdr_head *hh = cr_hbuf_get(ctx, sizeof(*hh));
++	int parent, ret = -EINVAL;
++
++	parent = cr_read_obj_type(ctx, hh, sizeof(*hh), CR_HDR_HEAD);
++	if (parent < 0) {
++		ret = parent;
++		goto out;
++	} else if (parent != 0)
++		goto out;
++
++	if (hh->magic != CHECKPOINT_MAGIC_HEAD || hh->rev != CR_VERSION ||
++	    hh->major != ((LINUX_VERSION_CODE >> 16) & 0xff) ||
++	    hh->minor != ((LINUX_VERSION_CODE >> 8) & 0xff) ||
++	    hh->patch != ((LINUX_VERSION_CODE) & 0xff))
++		goto out;
++
++	if (hh->flags & ~CR_CTX_CKPT)
++		goto out;
++
++	ctx->oflags = hh->flags;
++
++	/* FIX: verify compatibility of release, version and machine */
++
++	ret = 0;
++ out:
++	cr_hbuf_put(ctx, sizeof(*hh));
++	return ret;
++}
++
++/* read the checkpoint trailer */
++static int cr_read_tail(struct cr_ctx *ctx)
++{
++	struct cr_hdr_tail *hh = cr_hbuf_get(ctx, sizeof(*hh));
++	int parent, ret = -EINVAL;
++
++	parent = cr_read_obj_type(ctx, hh, sizeof(*hh), CR_HDR_TAIL);
++	if (parent < 0) {
++		ret = parent;
++		goto out;
++	} else if (parent != 0)
++		goto out;
++
++	if (hh->magic != CHECKPOINT_MAGIC_TAIL)
++		goto out;
++
++	ret = 0;
++ out:
++	cr_hbuf_put(ctx, sizeof(*hh));
++	return ret;
++}
++
++/* read the task_struct into the current task */
++static int cr_read_task_struct(struct cr_ctx *ctx)
++{
++	struct cr_hdr_task *hh = cr_hbuf_get(ctx, sizeof(*hh));
++	struct task_struct *t = current;
++	char *buf;
++	int parent, ret = -EINVAL;
++
++	parent = cr_read_obj_type(ctx, hh, sizeof(*hh), CR_HDR_TASK);
++	if (parent < 0) {
++		ret = parent;
++		goto out;
++	} else if (parent != 0)
++		goto out;
++
++	/* upper limit for task_comm_len to prevent DoS */
++	if (hh->task_comm_len < 0 || hh->task_comm_len > PAGE_SIZE)
++		goto out;
++
++	buf = kmalloc(hh->task_comm_len, GFP_KERNEL);
++	if (!buf)
++		goto out;
++	ret = cr_read_string(ctx, buf, hh->task_comm_len);
++	if (!ret) {
++		/* if t->comm is too long, silently truncate */
++		memset(t->comm, 0, TASK_COMM_LEN);
++		memcpy(t->comm, buf, min(hh->task_comm_len, TASK_COMM_LEN));
++	}
++	kfree(buf);
++
++	/* FIXME: restore remaining relevant task_struct fields */
++ out:
++	cr_hbuf_put(ctx, sizeof(*hh));
++	return ret;
++}
++
++/* read the entire state of the current task */
++static int cr_read_task(struct cr_ctx *ctx)
++{
++	int ret;
++
++	ret = cr_read_task_struct(ctx);
++	cr_debug("ret %d\n", ret);
++
++	return ret;
++}
++
++int do_restart(struct cr_ctx *ctx)
++{
++	int ret;
++
++	ret = cr_read_head(ctx);
++	if (ret < 0)
++		goto out;
++	ret = cr_read_task(ctx);
++	if (ret < 0)
++		goto out;
++	ret = cr_read_tail(ctx);
++	if (ret < 0)
++		goto out;
++
++	/* on success, adjust the return value if needed [TODO] */
++ out:
++	return ret;
++}
+diff -puN checkpoint/sys.c~v6_PATCH_2_9_General_infrastructure_for_checkpoint_restart checkpoint/sys.c
+--- linux-2.6.git/checkpoint/sys.c~v6_PATCH_2_9_General_infrastructure_for_checkpoint_restart	2008-10-16 10:53:34.000000000 -0700
++++ linux-2.6.git-dave/checkpoint/sys.c	2008-10-16 10:53:34.000000000 -0700
+@@ -10,6 +10,187 @@
+ 
+ #include <linux/sched.h>
+ #include <linux/kernel.h>
++#include <linux/fs.h>
++#include <linux/file.h>
++#include <linux/uaccess.h>
++#include <linux/capability.h>
++#include <linux/checkpoint.h>
++
++/*
++ * helpers to write/read to/from the image file descriptor
++ *
++ *   cr_uwrite() - write a user-space buffer to the checkpoint image
++ *   cr_kwrite() - write a kernel-space buffer to the checkpoint image
++ *   cr_uread() - read from the checkpoint image to a user-space buffer
++ *   cr_kread() - read from the checkpoint image to a kernel-space buffer
++ */
++
++int cr_uwrite(struct cr_ctx *ctx, void *buf, int count)
++{
++	struct file *file = ctx->file;
++	ssize_t nwrite;
++	int nleft;
++
++	for (nleft = count; nleft; nleft -= nwrite) {
++		loff_t pos = file_pos_read(file);
++		nwrite = vfs_write(file, (char __user *) buf, nleft, &pos);
++		file_pos_write(file, pos);
++		if (nwrite <= 0) {
++			if (nwrite == -EAGAIN)
++				nwrite = 0;
++			else
++				return nwrite;
++		}
++		buf += nwrite;
++	}
++
++	ctx->total += count;
++	return 0;
++}
++
++int cr_kwrite(struct cr_ctx *ctx, void *buf, int count)
++{
++	mm_segment_t oldfs;
++	int ret;
++
++	oldfs = get_fs();
++	set_fs(KERNEL_DS);
++	ret = cr_uwrite(ctx, buf, count);
++	set_fs(oldfs);
++
++	return ret;
++}
++
++int cr_uread(struct cr_ctx *ctx, void *buf, int count)
++{
++	struct file *file = ctx->file;
++	ssize_t nread;
++	int nleft;
++
++	for (nleft = count; nleft; nleft -= nread) {
++		loff_t pos = file_pos_read(file);
++		nread = vfs_read(file, (char __user *) buf, nleft, &pos);
++		file_pos_write(file, pos);
++		if (nread <= 0) {
++			if (nread == -EAGAIN)
++				nread = 0;
++			else
++				return nread;
++		}
++		buf += nread;
++	}
++
++	ctx->total += count;
++	return 0;
++}
++
++int cr_kread(struct cr_ctx *ctx, void *buf, int count)
++{
++	mm_segment_t oldfs;
++	int ret;
++
++	oldfs = get_fs();
++	set_fs(KERNEL_DS);
++	ret = cr_uread(ctx, buf, count);
++	set_fs(oldfs);
++
++	return ret;
++}
++
++/*
++ * During checkpoint and restart the code writes outs/reads in data
++ * to/from the chekcpoint image from/to a temporary buffer (ctx->hbuf).
++ * Because operations can be nested, one should call cr_hbuf_get() to
++ * reserve space in the buffer, and then cr_hbuf_put() when no longer
++ * needs that space.
++ */
++
++/*
++ * ctx->hbuf is used to hold headers and data of known (or bound),
++ * static sizes. In some cases, multiple headers may be allocated in
++ * a nested manner. The size should accommodate all headers, nested
++ * or not, on all archs.
++ */
++#define CR_HBUF_TOTAL  (8 * 4096)
++
++/**
++ * cr_hbuf_get - reserve space on the hbuf
++ * @ctx: checkpoint context
++ * @n: number of bytes to reserve
++ *
++ * Returns pointer to reserved space
++ */
++void *cr_hbuf_get(struct cr_ctx *ctx, int n)
++{
++	void *ptr;
++
++	/*
++	 * Since requests depend on logic and static header sizes (not on
++	 * user data), space should always suffice, unless someone either
++	 * made a structure bigger or call path deeper than expected.
++	 */
++	BUG_ON(ctx->hpos + n > CR_HBUF_TOTAL);
++	ptr = ctx->hbuf + ctx->hpos;
++	ctx->hpos += n;
++	return ptr;
++}
++
++/**
++ * cr_hbuf_put - unreserve space on the hbuf
++ * @ctx: checkpoint context
++ * @n: number of bytes to reserve
++ */
++void cr_hbuf_put(struct cr_ctx *ctx, int n)
++{
++	BUG_ON(ctx->hpos < n);
++	ctx->hpos -= n;
++}
++
++/*
++ * helpers to manage CR contexts: allocated for each checkpoint and/or
++ * restart operation, and persists until the operation is completed.
++ */
++
++/* unique checkpoint identifier (FIXME: should be per-container) */
++static atomic_t cr_ctx_count;
++
++void cr_ctx_free(struct cr_ctx *ctx)
++{
++	if (ctx->file)
++		fput(ctx->file);
++
++	kfree(ctx->hbuf);
++
++	kfree(ctx);
++}
++
++struct cr_ctx *cr_ctx_alloc(pid_t pid, int fd, unsigned long flags)
++{
++	struct cr_ctx *ctx;
++
++	ctx = kzalloc(sizeof(*ctx), GFP_KERNEL);
++	if (!ctx)
++		return ERR_PTR(-ENOMEM);
++
++	ctx->file = fget(fd);
++	if (!ctx->file) {
++		cr_ctx_free(ctx);
++		return ERR_PTR(-EBADF);
++	}
++
++	ctx->hbuf = kmalloc(CR_HBUF_TOTAL, GFP_KERNEL);
++	if (!ctx->hbuf) {
++		cr_ctx_free(ctx);
++		return ERR_PTR(-ENOMEM);
++	}
++
++	ctx->pid = pid;
++	ctx->flags = flags;
++
++	ctx->crid = atomic_inc_return(&cr_ctx_count);
++
++	return ctx;
++}
+ 
+ /**
+  * sys_checkpoint - checkpoint a container
+@@ -22,9 +203,26 @@
+  */
+ asmlinkage long sys_checkpoint(pid_t pid, int fd, unsigned long flags)
+ {
+-	pr_debug("sys_checkpoint not implemented yet\n");
+-	return -ENOSYS;
++	struct cr_ctx *ctx;
++	int ret;
++
++	/* no flags for now */
++	if (flags)
++		return -EINVAL;
++
++	ctx = cr_ctx_alloc(pid, fd, flags | CR_CTX_CKPT);
++	if (IS_ERR(ctx))
++		return PTR_ERR(ctx);
++
++	ret = do_checkpoint(ctx);
++
++	if (!ret)
++		ret = ctx->crid;
++
++	cr_ctx_free(ctx);
++	return ret;
+ }
++
+ /**
+  * sys_restart - restart a container
+  * @crid: checkpoint image identifier
+@@ -36,6 +234,19 @@ asmlinkage long sys_checkpoint(pid_t pid
+  */
+ asmlinkage long sys_restart(int crid, int fd, unsigned long flags)
+ {
+-	pr_debug("sys_restart not implemented yet\n");
+-	return -ENOSYS;
++	struct cr_ctx *ctx;
++	int ret;
++
++	/* no flags for now */
++	if (flags)
++		return -EINVAL;
++
++	ctx = cr_ctx_alloc(crid, fd, flags | CR_CTX_RSTR);
++	if (IS_ERR(ctx))
++		return PTR_ERR(ctx);
++
++	ret = do_restart(ctx);
++
++	cr_ctx_free(ctx);
++	return ret;
+ }
+diff -puN fs/read_write.c~v6_PATCH_2_9_General_infrastructure_for_checkpoint_restart fs/read_write.c
+--- linux-2.6.git/fs/read_write.c~v6_PATCH_2_9_General_infrastructure_for_checkpoint_restart	2008-10-16 10:53:34.000000000 -0700
++++ linux-2.6.git-dave/fs/read_write.c	2008-10-16 10:53:34.000000000 -0700
+@@ -324,12 +324,12 @@ ssize_t vfs_write(struct file *file, con
+ 
+ EXPORT_SYMBOL(vfs_write);
+ 
+-static inline loff_t file_pos_read(struct file *file)
++inline loff_t file_pos_read(struct file *file)
+ {
+ 	return file->f_pos;
+ }
+ 
+-static inline void file_pos_write(struct file *file, loff_t pos)
++inline void file_pos_write(struct file *file, loff_t pos)
+ {
+ 	file->f_pos = pos;
+ }
+diff -puN /dev/null include/linux/checkpoint.h
+--- /dev/null	2008-09-02 09:40:19.000000000 -0700
++++ linux-2.6.git-dave/include/linux/checkpoint.h	2008-10-16 10:53:34.000000000 -0700
+@@ -0,0 +1,60 @@
++#ifndef _CHECKPOINT_CKPT_H_
++#define _CHECKPOINT_CKPT_H_
++/*
++ *  Generic container checkpoint-restart
++ *
++ *  Copyright (C) 2008 Oren Laadan
++ *
++ *  This file is subject to the terms and conditions of the GNU General Public
++ *  License.  See the file COPYING in the main directory of the Linux
++ *  distribution for more details.
++ */
++
++#define CR_VERSION  1
++
++struct cr_ctx {
++	pid_t pid;		/* container identifier */
++	int crid;		/* unique checkpoint id */
++
++	unsigned long flags;
++	unsigned long oflags;	/* restart: old flags */
++
++	struct file *file;
++	int total;		/* total read/written */
++
++	void *hbuf;		/* temporary buffer for headers */
++	int hpos;		/* position in headers buffer */
++};
++
++/* cr_ctx: flags */
++#define CR_CTX_CKPT	0x1
++#define CR_CTX_RSTR	0x2
++
++extern int cr_uwrite(struct cr_ctx *ctx, void *buf, int count);
++extern int cr_kwrite(struct cr_ctx *ctx, void *buf, int count);
++extern int cr_uread(struct cr_ctx *ctx, void *buf, int count);
++extern int cr_kread(struct cr_ctx *ctx, void *buf, int count);
++
++extern void *cr_hbuf_get(struct cr_ctx *ctx, int n);
++extern void cr_hbuf_put(struct cr_ctx *ctx, int n);
++
++struct cr_hdr;
++
++extern int cr_write_obj(struct cr_ctx *ctx, struct cr_hdr *h, void *buf);
++extern int cr_write_string(struct cr_ctx *ctx, char *str, int len);
++
++extern int cr_read_obj(struct cr_ctx *ctx, struct cr_hdr *h, void *buf, int n);
++extern int cr_read_obj_type(struct cr_ctx *ctx, void *buf, int n, int type);
++extern int cr_read_string(struct cr_ctx *ctx, void *str, int len);
++
++extern int do_checkpoint(struct cr_ctx *ctx);
++extern int do_restart(struct cr_ctx *ctx);
++
++/* there are from fs/read_write.c, not exported otherwise in a header */
++extern loff_t file_pos_read(struct file *file);
++extern void file_pos_write(struct file *file, loff_t pos);
++
++#define cr_debug(fmt, args...)  \
++	pr_debug("[CR:%s] " fmt, __func__, ## args)
++
++#endif /* _CHECKPOINT_CKPT_H_ */
+diff -puN /dev/null include/linux/checkpoint_hdr.h
+--- /dev/null	2008-09-02 09:40:19.000000000 -0700
++++ linux-2.6.git-dave/include/linux/checkpoint_hdr.h	2008-10-16 10:53:34.000000000 -0700
+@@ -0,0 +1,75 @@
++#ifndef _CHECKPOINT_CKPT_HDR_H_
++#define _CHECKPOINT_CKPT_HDR_H_
++/*
++ *  Generic container checkpoint-restart
++ *
++ *  Copyright (C) 2008 Oren Laadan
++ *
++ *  This file is subject to the terms and conditions of the GNU General Public
++ *  License.  See the file COPYING in the main directory of the Linux
++ *  distribution for more details.
++ */
++
++#include <linux/types.h>
++#include <linux/utsname.h>
++
++/*
++ * To maintain compatibility between 32-bit and 64-bit architecture flavors,
++ * keep data 64-bit aligned: use padding for structure members, and use
++ * __attribute__ ((aligned (8))) for the entire structure.
++ */
++
++/* records: generic header */
++
++struct cr_hdr {
++	__s16 type;
++	__s16 len;
++	__u32 parent;
++};
++
++/* header types */
++enum {
++	CR_HDR_HEAD = 1,
++	CR_HDR_STRING,
++
++	CR_HDR_TASK = 101,
++	CR_HDR_THREAD,
++	CR_HDR_CPU,
++
++	CR_HDR_MM = 201,
++	CR_HDR_VMA,
++	CR_HDR_MM_CONTEXT,
++
++	CR_HDR_TAIL = 5001
++};
++
++struct cr_hdr_head {
++	__u64 magic;
++
++	__u16 major;
++	__u16 minor;
++	__u16 patch;
++	__u16 rev;
++
++	__u64 time;	/* when checkpoint taken */
++	__u64 flags;	/* checkpoint options */
++
++	char release[__NEW_UTS_LEN];
++	char version[__NEW_UTS_LEN];
++	char machine[__NEW_UTS_LEN];
++} __attribute__((aligned(8)));
++
++struct cr_hdr_tail {
++	__u64 magic;
++} __attribute__((aligned(8)));
++
++struct cr_hdr_task {
++	__u32 state;
++	__u32 exit_state;
++	__u32 exit_code;
++	__u32 exit_signal;
++
++	__s32 task_comm_len;
++} __attribute__((aligned(8)));
++
++#endif /* _CHECKPOINT_CKPT_HDR_H_ */
+diff -puN include/linux/magic.h~v6_PATCH_2_9_General_infrastructure_for_checkpoint_restart include/linux/magic.h
+--- linux-2.6.git/include/linux/magic.h~v6_PATCH_2_9_General_infrastructure_for_checkpoint_restart	2008-10-16 10:53:34.000000000 -0700
++++ linux-2.6.git-dave/include/linux/magic.h	2008-10-16 10:53:34.000000000 -0700
+@@ -46,4 +46,7 @@
+ #define FUTEXFS_SUPER_MAGIC	0xBAD1DEA
+ #define INOTIFYFS_SUPER_MAGIC	0x2BAD1DEA
+ 
++#define CHECKPOINT_MAGIC_HEAD  0x00feed0cc0a2d200LL
++#define CHECKPOINT_MAGIC_TAIL  0x002d2a0cc0deef00LL
++
+ #endif /* __LINUX_MAGIC_H__ */
+diff -puN Makefile~v6_PATCH_2_9_General_infrastructure_for_checkpoint_restart Makefile
+--- linux-2.6.git/Makefile~v6_PATCH_2_9_General_infrastructure_for_checkpoint_restart	2008-10-16 10:53:34.000000000 -0700
++++ linux-2.6.git-dave/Makefile	2008-10-16 10:53:34.000000000 -0700
+@@ -619,7 +619,7 @@ export mod_strip_cmd
+ 
+ 
+ ifeq ($(KBUILD_EXTMOD),)
+-core-y		+= kernel/ mm/ fs/ ipc/ security/ crypto/ block/
++core-y		+= kernel/ mm/ fs/ ipc/ security/ crypto/ block/ checkpoint/
+ 
+ vmlinux-dirs	:= $(patsubst %/,%,$(filter %/, $(init-y) $(init-m) \
+ 		     $(core-y) $(core-m) $(drivers-y) $(drivers-m) \
+_
