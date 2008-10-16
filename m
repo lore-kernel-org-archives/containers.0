@@ -1,34 +1,85 @@
-From: Cedric Le Goater <clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
-Subject: Re: lxc userspace tools 0.3.0 released
-Date: Thu, 16 Oct 2008 14:55:23 +0200
-Message-ID: <48F739BB.4070201@fr.ibm.com>
-References: <48F4AF2E.3000204@fr.ibm.com>	<7fac565a0810160122n7afa6e71l929be8cb08ba05c6@mail.gmail.com>
-	<48F70E53.9070002@fr.ibm.com>
+From: Patrick McHardy <kaber@trash.net>
+Subject: Re: [PATCH 1/7] netns ebtables: part 1
+Date: Thu, 16 Oct 2008 15:12:03 +0200
+Message-ID: <48F73DA3.1030401@trash.net>
+References: <20081015042014.GE24058@x200.localdomain>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <48F70E53.9070002-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
-Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
+Content-Type: multipart/mixed;
+ boundary="------------070108090603000508080903"
+Return-path: <netfilter-devel-owner@vger.kernel.org>
+In-Reply-To: <20081015042014.GE24058@x200.localdomain>
+Sender: netfilter-devel-owner@vger.kernel.org
+To: Alexey Dobriyan <adobriyan@gmail.com>
+Cc: netfilter-devel@vger.kernel.org, netdev@vger.kernel.org, containers@osdl.org
 List-Id: containers.vger.kernel.org
 
-> Just to clarify to avoid confusion. There is a LXC project inside the 
-> libvirt and there is the lxc userspace tools (liblxc). We are talking 
-> about the liblxc.
+This is a multi-part message in MIME format.
+--------------070108090603000508080903
+Content-Type: text/plain; charset=ISO-8859-15; format=flowed
+Content-Transfer-Encoding: 7bit
 
-I wouldn't say there is a "LXC project inside the libvirt" but rather
-there is a libvirt driver emulating a virtual machine using namespaces.
-This driver is called lxc for some reason I don't know and this is very 
-unfortunate IMO.
+Alexey Dobriyan wrote:
+> One needs to add ".netns_ok = 1" to igmp_protocol to test all of this
+> with ebtables() in netns.
+> -------------------------------------------------
+> [PATCH 1/7] netns ebtables: part 1
+> 
+> * make list of ebt_tables per-netns
+> * propagate netns from userspace, register table in passed netns
+> * temporarily register every ebt_table in init_net
 
-C.
+I'm not queuing patches for 2.6.29 yet, please resend the entire
+batch once Dave opens his net-next tree again.
+
+> --- a/include/net/netns/x_tables.h
+> +++ b/include/net/netns/x_tables.h
+> @@ -6,5 +6,6 @@
+>  
+>  struct netns_xt {
+>  	struct list_head tables[NPROTO];
+> +	struct list_head ebt_tables;
+
+This could just use tables[NFPROTO_BRIDGE].
+
+BTW, I have a patch queued to change NPROTO to NFPROTO_NUMPROTO in
+struct netns_xt since we've decoupled the netfilter values from
+generic procotol values (attached in case you would like to add
+an ACK).
+
+
+
+--------------070108090603000508080903
+Content-Type: text/plain;
+ name="x"
+Content-Transfer-Encoding: 7bit
+Content-Disposition: inline;
+ filename="x"
+
+commit c985d88e7ae4f45d50cca80033429c7270a8c185
+Author: Patrick McHardy <kaber@trash.net>
+Date:   Thu Oct 16 13:14:26 2008 +0200
+
+    netfilter: netns: use NFPROTO_NUMPROTO instead of NUMPROTO for tables array
+    
+    The netfilter families have been decoupled from regular protocol families.
+    
+    Signed-off-by: Patrick McHardy <kaber@trash.net>
+
+diff --git a/include/net/netns/x_tables.h b/include/net/netns/x_tables.h
+index 0cb63ed..b809397 100644
+--- a/include/net/netns/x_tables.h
++++ b/include/net/netns/x_tables.h
+@@ -2,9 +2,9 @@
+ #define __NETNS_X_TABLES_H
+ 
+ #include <linux/list.h>
+-#include <linux/net.h>
++#include <linux/netfilter.h>
+ 
+ struct netns_xt {
+-	struct list_head tables[NPROTO];
++	struct list_head tables[NFPROTO_NUMPROTO];
+ };
+ #endif
+
+--------------070108090603000508080903--
