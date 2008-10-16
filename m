@@ -1,7 +1,7 @@
 From: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: [PATCH 8/9] Dump open file descriptors
-Date: Thu, 16 Oct 2008 11:14:26 -0700
-Message-ID: <20081016181426.1BFD15C8@kernel>
+Subject: [PATCH 9/9] Restore open file descriprtors
+Date: Thu, 16 Oct 2008 11:14:27 -0700
+Message-ID: <20081016181427.1E5C5472@kernel>
 References: <20081016181414.934C4FCC@kernel>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -24,14 +24,10 @@ List-Id: containers.vger.kernel.org
 
 From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 
-Dump the files_struct of a task with 'struct cr_hdr_files', followed by
-all open file descriptors. Since FDs can be shared, they are assigned an
-objref and registered in the object hash.
-
-For each open FD there is a 'struct cr_hdr_fd_ent' with the FD, its objref
-and its close-on-exec property. If the FD is to be saved (first time)
-then this is followed by a 'struct cr_hdr_fd_data' with the FD state.
-Then will come the next FD and so on.
+Restore open file descriptors: for each FD read 'struct cr_hdr_fd_ent'
+and lookup objref in the hash table; if not found (first occurence), read
+in 'struct cr_hdr_fd_data', create a new FD and register in the hash.
+Otherwise attach the file pointer from the hash as an FD.
 
 This patch only handles basic FDs - regular files, directories and also
 symbolic links.
@@ -41,53 +37,39 @@ Acked-by: Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 Signed-off-by: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 ---
 
- linux-2.6.git-dave/checkpoint/Makefile            |    2 
- linux-2.6.git-dave/checkpoint/checkpoint.c        |    4 
- linux-2.6.git-dave/checkpoint/checkpoint_file.h   |   17 +
- linux-2.6.git-dave/checkpoint/ckpt_file.c         |  231 ++++++++++++++++++++++
- linux-2.6.git-dave/include/linux/checkpoint.h     |    7 
- linux-2.6.git-dave/include/linux/checkpoint_hdr.h |   32 ++-
- 6 files changed, 288 insertions(+), 5 deletions(-)
+ linux-2.6.git-dave/checkpoint/Makefile        |    2 
+ linux-2.6.git-dave/checkpoint/restart.c       |    4 
+ linux-2.6.git-dave/checkpoint/rstr_file.c     |  246 ++++++++++++++++++++++++++
+ linux-2.6.git-dave/include/linux/checkpoint.h |    1 
+ 4 files changed, 252 insertions(+), 1 deletion(-)
 
-diff -puN checkpoint/checkpoint.c~v6_PATCH_8_9_Dump_open_file_descriptors checkpoint/checkpoint.c
---- linux-2.6.git/checkpoint/checkpoint.c~v6_PATCH_8_9_Dump_open_file_descriptors	2008-10-16 10:53:38.000000000 -0700
-+++ linux-2.6.git-dave/checkpoint/checkpoint.c	2008-10-16 10:53:38.000000000 -0700
-@@ -203,6 +203,10 @@ static int cr_write_task(struct cr_ctx *
+diff -puN checkpoint/Makefile~v6_PATCH_9_9_Restore_open_file_descriprtors checkpoint/Makefile
+--- linux-2.6.git/checkpoint/Makefile~v6_PATCH_9_9_Restore_open_file_descriprtors	2008-10-16 10:53:39.000000000 -0700
++++ linux-2.6.git-dave/checkpoint/Makefile	2008-10-16 10:53:39.000000000 -0700
+@@ -3,4 +3,4 @@
+ #
+ 
+ obj-$(CONFIG_CHECKPOINT_RESTART) += sys.o checkpoint.o restart.o objhash.o \
+-		ckpt_mem.o rstr_mem.o ckpt_file.o
++		ckpt_mem.o rstr_mem.o ckpt_file.o rstr_file.o
+diff -puN checkpoint/restart.c~v6_PATCH_9_9_Restore_open_file_descriprtors checkpoint/restart.c
+--- linux-2.6.git/checkpoint/restart.c~v6_PATCH_9_9_Restore_open_file_descriprtors	2008-10-16 10:53:39.000000000 -0700
++++ linux-2.6.git-dave/checkpoint/restart.c	2008-10-16 10:53:39.000000000 -0700
+@@ -219,6 +219,10 @@ static int cr_read_task(struct cr_ctx *c
  	cr_debug("memory: ret %d\n", ret);
  	if (ret < 0)
  		goto out;
-+	ret = cr_write_files(ctx, t);
++	ret = cr_read_files(ctx);
 +	cr_debug("files: ret %d\n", ret);
 +	if (ret < 0)
 +		goto out;
- 	ret = cr_write_thread(ctx, t);
+ 	ret = cr_read_thread(ctx);
  	cr_debug("thread: ret %d\n", ret);
  	if (ret < 0)
-diff -puN /dev/null checkpoint/checkpoint_file.h
+diff -puN /dev/null checkpoint/rstr_file.c
 --- /dev/null	2008-09-02 09:40:19.000000000 -0700
-+++ linux-2.6.git-dave/checkpoint/checkpoint_file.h	2008-10-16 10:53:38.000000000 -0700
-@@ -0,0 +1,17 @@
-+#ifndef _CHECKPOINT_CKPT_FILE_H_
-+#define _CHECKPOINT_CKPT_FILE_H_
-+/*
-+ *  Checkpoint file descriptors
-+ *
-+ *  Copyright (C) 2008 Oren Laadan
-+ *
-+ *  This file is subject to the terms and conditions of the GNU General Public
-+ *  License.  See the file COPYING in the main directory of the Linux
-+ *  distribution for more details.
-+ */
-+
-+#include <linux/fdtable.h>
-+
-+int cr_scan_fds(struct files_struct *files, int **fdtable);
-+
-+#endif /* _CHECKPOINT_CKPT_FILE_H_ */
-diff -puN /dev/null checkpoint/ckpt_file.c
---- /dev/null	2008-09-02 09:40:19.000000000 -0700
-+++ linux-2.6.git-dave/checkpoint/ckpt_file.c	2008-10-16 10:53:38.000000000 -0700
-@@ -0,0 +1,231 @@
++++ linux-2.6.git-dave/checkpoint/rstr_file.c	2008-10-16 10:53:39.000000000 -0700
+@@ -0,0 +1,246 @@
 +/*
 + *  Checkpoint file descriptors
 + *
@@ -100,313 +82,249 @@ diff -puN /dev/null checkpoint/ckpt_file.c
 +
 +#include <linux/kernel.h>
 +#include <linux/sched.h>
++#include <linux/fs.h>
 +#include <linux/file.h>
 +#include <linux/fdtable.h>
++#include <linux/fsnotify.h>
++#include <linux/syscalls.h>
 +#include <linux/checkpoint.h>
 +#include <linux/checkpoint_hdr.h>
 +
 +#include "checkpoint_file.h"
 +
-+#define CR_DEFAULT_FDTABLE  256		/* an initial guess */
-+
-+/**
-+ * cr_scan_fds - scan file table and construct array of open fds
-+ * @files: files_struct pointer
-+ * @fdtable: (output) array of open fds
-+ *
-+ * Returns the number of open fds found, and also the file table
-+ * array via *fdtable. The caller should free the array.
-+ *
-+ * The caller must validate the file descriptors collected in the
-+ * array before using them, e.g. by using fcheck_files(), in case
-+ * the task's fdtable changes in the meantime.
-+ */
-+int cr_scan_fds(struct files_struct *files, int **fdtable)
++static int cr_close_all_fds(struct files_struct *files)
 +{
-+	struct fdtable *fdt;
-+	int *fds;
-+	int i, n = 0;
-+	int tot = CR_DEFAULT_FDTABLE;
++	int *fdtable;
++	int nfds;
 +
-+	fds = kmalloc(tot * sizeof(*fds), GFP_KERNEL);
-+	if (!fds)
-+		return -ENOMEM;
-+
-+	/*
-+	 * We assume that the target task is frozen (or that we checkpoint
-+	 * ourselves), so we can safely proceed after krealloc() from where
-+	 * we left off; in the worst cases restart will fail.
-+	 */
-+
-+	spin_lock(&files->file_lock);
-+	rcu_read_lock();
-+	fdt = files_fdtable(files);
-+	for (i = 0; i < fdt->max_fds; i++) {
-+		if (!fcheck_files(files, i))
-+			continue;
-+		if (n == tot) {
-+			/*
-+			 * fcheck_files() is safe with drop/re-acquire
-+			 * of the lock, because it tests:  fd < max_fds
-+			 */
-+			spin_unlock(&files->file_lock);
-+			rcu_read_unlock();
-+			tot *= 2;	/* won't overflow: kmalloc will fail */
-+			fds = krealloc(fds, tot * sizeof(*fds), GFP_KERNEL);
-+			if (!fds) {
-+				kfree(fds);
-+				return -ENOMEM;
-+			}
-+			rcu_read_lock();
-+			spin_lock(&files->file_lock);
-+		}
-+		fds[n++] = i;
-+	}
-+	rcu_read_unlock();
-+	spin_unlock(&files->file_lock);
-+
-+	*fdtable = fds;
-+	return n;
-+}
-+
-+/* cr_write_fd_data - dump the state of a given file pointer */
-+static int cr_write_fd_data(struct cr_ctx *ctx, struct file *file, int parent)
-+{
-+	struct cr_hdr h;
-+	struct cr_hdr_fd_data *hh = cr_hbuf_get(ctx, sizeof(*hh));
-+	struct dentry *dent = file->f_dentry;
-+	struct inode *inode = dent->d_inode;
-+	enum fd_type fd_type;
-+	int ret;
-+
-+	h.type = CR_HDR_FD_DATA;
-+	h.len = sizeof(*hh);
-+	h.parent = parent;
-+
-+	hh->f_flags = file->f_flags;
-+	hh->f_mode = file->f_mode;
-+	hh->f_pos = file->f_pos;
-+	hh->f_version = file->f_version;
-+	/* FIX: need also file->uid, file->gid, file->f_owner, etc */
-+
-+	switch (inode->i_mode & S_IFMT) {
-+	case S_IFREG:
-+		fd_type = CR_FD_FILE;
-+		break;
-+	case S_IFDIR:
-+		fd_type = CR_FD_DIR;
-+		break;
-+	case S_IFLNK:
-+		fd_type = CR_FD_LINK;
-+		break;
-+	default:
-+		cr_hbuf_put(ctx, sizeof(*hh));
-+		return -EBADF;
-+	}
-+
-+	/* FIX: check if the file/dir/link is unlinked */
-+	hh->fd_type = fd_type;
-+
-+	ret = cr_write_obj(ctx, &h, hh);
-+	cr_hbuf_put(ctx, sizeof(*hh));
-+	if (ret < 0)
-+		return ret;
-+
-+	return cr_write_fname(ctx, &file->f_path, ctx->vfsroot);
++	nfds = cr_scan_fds(files, &fdtable);
++	if (nfds < 0)
++		return nfds;
++	while (nfds--)
++		sys_close(fdtable[nfds]);
++	kfree(fdtable);
++	return 0;
 +}
 +
 +/**
-+ * cr_write_fd_ent - dump the state of a given file descriptor
-+ * @ctx: checkpoint context
-+ * @files: files_struct pointer
-+ * @fd: file descriptor
-+ *
-+ * Saves the state of the file descriptor; looks up the actual file
-+ * pointer in the hash table, and if found saves the matching objref,
-+ * otherwise calls cr_write_fd_data to dump the file pointer too.
++ * cr_attach_file - attach a lonely file ptr to a file descriptor
++ * @file: lonely file pointer
 + */
-+static int
-+cr_write_fd_ent(struct cr_ctx *ctx, struct files_struct *files, int fd)
++static int cr_attach_file(struct file *file)
 +{
-+	struct cr_hdr h;
-+	struct cr_hdr_fd_ent *hh = cr_hbuf_get(ctx, sizeof(*hh));
-+	struct file *file = NULL;
-+	struct fdtable *fdt;
-+	int coe, objref, new, ret;
++	int fd = get_unused_fd_flags(0);
 +
-+	rcu_read_lock();
-+	fdt = files_fdtable(files);
-+	file = fcheck_files(files, fd);
-+	if (file) {
-+		coe = FD_ISSET(fd, fdt->close_on_exec);
++	if (fd >= 0) {
++		fsnotify_open(file->f_path.dentry);
++		fd_install(fd, file);
++	}
++	return fd;
++}
++
++/**
++ * cr_attach_get_file - attach (and get) lonely file ptr to a file descriptor
++ * @file: lonely file pointer
++ */
++static int cr_attach_get_file(struct file *file)
++{
++	int fd = get_unused_fd_flags(0);
++
++	if (fd >= 0) {
++		fsnotify_open(file->f_path.dentry);
++		fd_install(fd, file);
 +		get_file(file);
 +	}
-+	rcu_read_unlock();
++	return fd;
++}
 +
-+	/* sanity check (although this shouldn't happen) */
-+	if (!file) {
-+		ret = -EBADF;
++#define CR_SETFL_MASK (O_APPEND|O_NONBLOCK|O_NDELAY|FASYNC|O_DIRECT|O_NOATIME)
++
++/* cr_read_fd_data - restore the state of a given file pointer */
++static int
++cr_read_fd_data(struct cr_ctx *ctx, struct files_struct *files, int parent)
++{
++	struct cr_hdr_fd_data *hh = cr_hbuf_get(ctx, sizeof(*hh));
++	struct file *file;
++	int rparent, ret;
++	int fd = 0;	/* pacify gcc warning */
++
++	rparent = cr_read_obj_type(ctx, hh, sizeof(*hh), CR_HDR_FD_DATA);
++	cr_debug("rparent %d parent %d flags %#x mode %#x how %d\n",
++		 rparent, parent, hh->f_flags, hh->f_mode, hh->fd_type);
++	if (rparent < 0) {
++		ret = parent;
 +		goto out;
 +	}
 +
-+	new = cr_obj_add_ptr(ctx, file, &objref, CR_OBJ_FILE, 0);
-+	cr_debug("fd %d objref %d file %p c-o-e %d)\n", fd, objref, file, coe);
++	ret = -EINVAL;
 +
-+	if (new < 0) {
-+		ret = new;
++	if (rparent != parent)
++		goto out;
++
++	/* FIX: more sanity checks on f_flags, f_mode etc */
++
++	switch (hh->fd_type) {
++	case CR_FD_FILE:
++	case CR_FD_DIR:
++	case CR_FD_LINK:
++		file = cr_read_open_fname(ctx, hh->f_flags, hh->f_mode);
++		break;
++	default:
 +		goto out;
 +	}
 +
-+	h.type = CR_HDR_FD_ENT;
-+	h.len = sizeof(*hh);
-+	h.parent = 0;
++	if (IS_ERR(file)) {
++		ret = PTR_ERR(file);
++		goto out;
++	}
 +
-+	hh->objref = objref;
-+	hh->fd = fd;
-+	hh->close_on_exec = coe;
++	/* FIX: need to restore uid, gid, owner etc */
 +
-+	ret = cr_write_obj(ctx, &h, hh);
++	fd = cr_attach_file(file);	/* no need to cleanup 'file' below */
++	if (fd < 0) {
++		filp_close(file, NULL);
++		ret = fd;
++		goto out;
++	}
++
++	/* register new <objref, file> tuple in hash table */
++	ret = cr_obj_add_ref(ctx, (void *) file, parent, CR_OBJ_FILE, 0);
 +	if (ret < 0)
 +		goto out;
++	ret = sys_fcntl(fd, F_SETFL, hh->f_flags & CR_SETFL_MASK);
++	if (ret < 0)
++		goto out;
++	ret = vfs_llseek(file, hh->f_pos, SEEK_SET);
++	if (ret == -ESPIPE)	/* ignore error on non-seekable files */
++		ret = 0;
 +
-+	/* new==1 if-and-only-if file was newly added to hash */
-+	if (new)
-+		ret = cr_write_fd_data(ctx, file, objref);
-+
-+out:
++	ret = 0;
++ out:
 +	cr_hbuf_put(ctx, sizeof(*hh));
-+	fput(file);
++	return ret < 0 ? ret : fd;
++}
++
++/**
++ * cr_read_fd_ent - restore the state of a given file descriptor
++ * @ctx: checkpoint context
++ * @files: files_struct pointer
++ * @parent: parent objref
++ *
++ * Restores the state of a file descriptor; looks up the objref (in the
++ * header) in the hash table, and if found picks the matching file and
++ * use it; otherwise calls cr_read_fd_data to restore the file too.
++ */
++static int
++cr_read_fd_ent(struct cr_ctx *ctx, struct files_struct *files, int parent)
++{
++	struct cr_hdr_fd_ent *hh = cr_hbuf_get(ctx, sizeof(*hh));
++	struct file *file;
++	int newfd, rparent, ret;
++
++	rparent = cr_read_obj_type(ctx, hh, sizeof(*hh), CR_HDR_FD_ENT);
++	cr_debug("rparent %d parent %d ref %d fd %d c.o.e %d\n",
++		 rparent, parent, hh->objref, hh->fd, hh->close_on_exec);
++	if (rparent < 0) {
++		ret = rparent;
++		goto out;
++	}
++
++	ret = -EINVAL;
++
++	if (rparent != parent)
++		goto out;
++	if (hh->objref <= 0)
++		goto out;
++
++	file = cr_obj_get_by_ref(ctx, hh->objref, CR_OBJ_FILE);
++	if (IS_ERR(file)) {
++		ret = PTR_ERR(file);
++		goto out;
++	}
++
++	if (file) {
++		/* reuse file descriptor found in the hash table */
++		newfd = cr_attach_get_file(file);
++	} else {
++		/* create new file pointer (and register in hash table) */
++		newfd = cr_read_fd_data(ctx, files, hh->objref);
++	}
++
++	if (newfd < 0) {
++		ret = newfd;
++		goto out;
++	}
++
++	cr_debug("newfd got %d wanted %d\n", newfd, hh->fd);
++
++	/* if newfd isn't desired fd then reposition it */
++	if (newfd != hh->fd) {
++		ret = sys_dup2(newfd, hh->fd);
++		if (ret < 0)
++			goto out;
++		sys_close(newfd);
++	}
++
++	if (hh->close_on_exec)
++		set_close_on_exec(hh->fd, 1);
++
++	ret = 0;
++ out:
++	cr_hbuf_put(ctx, sizeof(*hh));
 +	return ret;
 +}
 +
-+int cr_write_files(struct cr_ctx *ctx, struct task_struct *t)
++int cr_read_files(struct cr_ctx *ctx)
 +{
-+	struct cr_hdr h;
 +	struct cr_hdr_files *hh = cr_hbuf_get(ctx, sizeof(*hh));
-+	struct files_struct *files;
-+	int *fdtable;
-+	int nfds, n, ret;
++	struct files_struct *files = current->files;
++	int i, parent, ret;
 +
-+	h.type = CR_HDR_FILES;
-+	h.len = sizeof(*hh);
-+	h.parent = task_pid_vnr(t);
-+
-+	files = get_files_struct(t);
-+
-+	nfds = cr_scan_fds(files, &fdtable);
-+	if (nfds < 0) {
-+		put_files_struct(files);
-+		return nfds;
++	parent = cr_read_obj_type(ctx, hh, sizeof(*hh), CR_HDR_FILES);
++	if (parent < 0) {
++		ret = parent;
++		goto out;
 +	}
 +
-+	hh->objref = 0;	/* will be meaningful with multiple processes */
-+	hh->nfds = nfds;
++	ret = -EINVAL;
++#if 0	/* activate when containers are used */
++	if (parent != task_pid_vnr(current))
++		goto out;
++#endif
++	cr_debug("objref %d nfds %d\n", hh->objref, hh->nfds);
++	if (hh->objref < 0 || hh->nfds < 0)
++		goto out;
 +
-+	ret = cr_write_obj(ctx, &h, hh);
-+	cr_hbuf_put(ctx, sizeof(*hh));
++	if (hh->nfds > sysctl_nr_open) {
++		ret = -EMFILE;
++		goto out;
++	}
++
++	/* point of no return -- close all file descriptors */
++	ret = cr_close_all_fds(files);
 +	if (ret < 0)
-+		goto clean;
++		goto out;
 +
-+	cr_debug("nfds %d\n", nfds);
-+	for (n = 0; n < nfds; n++) {
-+		ret = cr_write_fd_ent(ctx, files, fdtable[n]);
++	for (i = 0; i < hh->nfds; i++) {
++		ret = cr_read_fd_ent(ctx, files, hh->objref);
 +		if (ret < 0)
 +			break;
 +	}
 +
-+ clean:
-+	kfree(fdtable);
-+	put_files_struct(files);
++	ret = 0;
++ out:
++	cr_hbuf_put(ctx, sizeof(*hh));
 +	return ret;
 +}
-diff -puN checkpoint/Makefile~v6_PATCH_8_9_Dump_open_file_descriptors checkpoint/Makefile
---- linux-2.6.git/checkpoint/Makefile~v6_PATCH_8_9_Dump_open_file_descriptors	2008-10-16 10:53:38.000000000 -0700
-+++ linux-2.6.git-dave/checkpoint/Makefile	2008-10-16 10:53:38.000000000 -0700
-@@ -3,4 +3,4 @@
- #
+diff -puN include/linux/checkpoint.h~v6_PATCH_9_9_Restore_open_file_descriprtors include/linux/checkpoint.h
+--- linux-2.6.git/include/linux/checkpoint.h~v6_PATCH_9_9_Restore_open_file_descriprtors	2008-10-16 10:53:39.000000000 -0700
++++ linux-2.6.git-dave/include/linux/checkpoint.h	2008-10-16 10:53:39.000000000 -0700
+@@ -85,6 +85,7 @@ extern int cr_write_files(struct cr_ctx 
  
- obj-$(CONFIG_CHECKPOINT_RESTART) += sys.o checkpoint.o restart.o objhash.o \
--		ckpt_mem.o rstr_mem.o
-+		ckpt_mem.o rstr_mem.o ckpt_file.o
-diff -puN include/linux/checkpoint.h~v6_PATCH_8_9_Dump_open_file_descriptors include/linux/checkpoint.h
---- linux-2.6.git/include/linux/checkpoint.h~v6_PATCH_8_9_Dump_open_file_descriptors	2008-10-16 10:53:38.000000000 -0700
-+++ linux-2.6.git-dave/include/linux/checkpoint.h	2008-10-16 10:53:38.000000000 -0700
-@@ -13,7 +13,7 @@
- #include <linux/path.h>
- #include <linux/fs.h>
- 
--#define CR_VERSION  1
-+#define CR_VERSION  2
- 
- struct cr_ctx {
- 	pid_t pid;		/* container identifier */
-@@ -79,11 +79,12 @@ extern int cr_read_fname(struct cr_ctx *
- extern struct file *cr_read_open_fname(struct cr_ctx *ctx,
- 				       int flags, int mode);
- 
-+extern int do_checkpoint(struct cr_ctx *ctx);
- extern int cr_write_mm(struct cr_ctx *ctx, struct task_struct *t);
--extern int cr_read_mm(struct cr_ctx *ctx);
-+extern int cr_write_files(struct cr_ctx *ctx, struct task_struct *t);
- 
--extern int do_checkpoint(struct cr_ctx *ctx);
  extern int do_restart(struct cr_ctx *ctx);
-+extern int cr_read_mm(struct cr_ctx *ctx);
+ extern int cr_read_mm(struct cr_ctx *ctx);
++extern int cr_read_files(struct cr_ctx *ctx);
  
  /* there are from fs/read_write.c, not exported otherwise in a header */
  extern loff_t file_pos_read(struct file *file);
-diff -puN include/linux/checkpoint_hdr.h~v6_PATCH_8_9_Dump_open_file_descriptors include/linux/checkpoint_hdr.h
---- linux-2.6.git/include/linux/checkpoint_hdr.h~v6_PATCH_8_9_Dump_open_file_descriptors	2008-10-16 10:53:38.000000000 -0700
-+++ linux-2.6.git-dave/include/linux/checkpoint_hdr.h	2008-10-16 10:53:38.000000000 -0700
-@@ -17,7 +17,7 @@
- /*
-  * To maintain compatibility between 32-bit and 64-bit architecture flavors,
-  * keep data 64-bit aligned: use padding for structure members, and use
-- * __attribute__ ((aligned (8))) for the entire structure.
-+ * __attribute__((aligned(8))) for the entire structure.
-  */
- 
- /* records: generic header */
-@@ -43,6 +43,10 @@ enum {
- 	CR_HDR_PGARR,
- 	CR_HDR_MM_CONTEXT,
- 
-+	CR_HDR_FILES = 301,
-+	CR_HDR_FD_ENT,
-+	CR_HDR_FD_DATA,
-+
- 	CR_HDR_TAIL = 5001
- };
- 
-@@ -105,4 +109,30 @@ struct cr_hdr_pgarr {
- 	__u64 nr_pages;		/* number of pages to saved */
- } __attribute__((aligned(8)));
- 
-+struct cr_hdr_files {
-+	__u32 objref;		/* identifier for shared objects */
-+	__u32 nfds;
-+} __attribute__((aligned(8)));
-+
-+struct cr_hdr_fd_ent {
-+	__u32 objref;		/* identifier for shared objects */
-+	__s32 fd;
-+	__u32 close_on_exec;
-+} __attribute__((aligned(8)));
-+
-+/* fd types */
-+enum  fd_type {
-+	CR_FD_FILE = 1,
-+	CR_FD_DIR,
-+	CR_FD_LINK
-+};
-+
-+struct cr_hdr_fd_data {
-+	__u16 fd_type;
-+	__u16 f_mode;
-+	__u32 f_flags;
-+	__u64 f_pos;
-+	__u64 f_version;
-+} __attribute__((aligned(8)));
-+
- #endif /* _CHECKPOINT_CKPT_HDR_H_ */
 _
