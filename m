@@ -1,17 +1,18 @@
 From: Andrey Mirkin <major-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
-Subject: [PATCH 05/10] Introduce function to dump process
-Date: Sat, 18 Oct 2008 03:11:33 +0400
-Message-ID: <1224285098-573-6-git-send-email-major@openvz.org>
+Subject: [PATCH 06/10] Introduce functions to dump mm
+Date: Sat, 18 Oct 2008 03:11:34 +0400
+Message-ID: <1224285098-573-7-git-send-email-major@openvz.org>
 References: <1224285098-573-1-git-send-email-major@openvz.org>
 	<1224285098-573-2-git-send-email-major@openvz.org>
 	<1224285098-573-3-git-send-email-major@openvz.org>
 	<1224285098-573-4-git-send-email-major@openvz.org>
 	<1224285098-573-5-git-send-email-major@openvz.org>
+	<1224285098-573-6-git-send-email-major@openvz.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1224285098-573-5-git-send-email-major-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+In-Reply-To: <1224285098-573-6-git-send-email-major-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -25,214 +26,162 @@ To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, lin
 Cc: Andrey Mirkin <major-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Functions to dump task struct, fpu state and registers are added.
-All IDs are saved from the POV of process (container) namespace.
+Functions to dump mm struct, VMAs and mm context are added.
 
 Signed-off-by: Andrey Mirkin <major-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 ---
- checkpoint/Makefile      |    2 +-
- checkpoint/checkpoint.c  |    2 +-
- checkpoint/checkpoint.h  |    1 +
- checkpoint/cpt_image.h   |  123 ++++++++++++++++++++++++
- checkpoint/cpt_process.c |  236 ++++++++++++++++++++++++++++++++++++++++++++++
- 5 files changed, 362 insertions(+), 2 deletions(-)
- create mode 100644 checkpoint/cpt_process.c
+ arch/x86/mm/hugetlbpage.c |    2 +
+ checkpoint/Makefile       |    2 +-
+ checkpoint/checkpoint.h   |    1 +
+ checkpoint/cpt_image.h    |   61 +++++++
+ checkpoint/cpt_mm.c       |  434 +++++++++++++++++++++++++++++++++++++++++++++
+ checkpoint/cpt_process.c  |    8 +-
+ mm/memory.c               |    1 +
+ 7 files changed, 504 insertions(+), 5 deletions(-)
+ create mode 100644 checkpoint/cpt_mm.c
 
+diff --git a/arch/x86/mm/hugetlbpage.c b/arch/x86/mm/hugetlbpage.c
+index 8f307d9..63028e7 100644
+--- a/arch/x86/mm/hugetlbpage.c
++++ b/arch/x86/mm/hugetlbpage.c
+@@ -12,6 +12,7 @@
+ #include <linux/slab.h>
+ #include <linux/err.h>
+ #include <linux/sysctl.h>
++#include <linux/module.h>
+ #include <asm/mman.h>
+ #include <asm/tlb.h>
+ #include <asm/tlbflush.h>
+@@ -221,6 +222,7 @@ int pmd_huge(pmd_t pmd)
+ {
+ 	return !!(pmd_val(pmd) & _PAGE_PSE);
+ }
++EXPORT_SYMBOL(pmd_huge);
+ 
+ int pud_huge(pud_t pud)
+ {
 diff --git a/checkpoint/Makefile b/checkpoint/Makefile
-index 173346b..457cc96 100644
+index 457cc96..bbb0e37 100644
 --- a/checkpoint/Makefile
 +++ b/checkpoint/Makefile
 @@ -2,4 +2,4 @@ obj-y += sys_core.o
  
  obj-$(CONFIG_CHECKPOINT) += cptrst.o
  
--cptrst-objs := sys.o checkpoint.o
-+cptrst-objs := sys.o checkpoint.o cpt_process.o
-diff --git a/checkpoint/checkpoint.c b/checkpoint/checkpoint.c
-index c4bddce..aae198d 100644
---- a/checkpoint/checkpoint.c
-+++ b/checkpoint/checkpoint.c
-@@ -70,7 +70,7 @@ int dump_container(struct cpt_context *ctx)
- 	
- 	/* Dump task here */
- 	if (!err)
--		err = -ENOSYS;	
-+		err = cpt_dump_task(root, ctx);
- 
- out:
- 	ctx->nsproxy = NULL;
+-cptrst-objs := sys.o checkpoint.o cpt_process.o
++cptrst-objs := sys.o checkpoint.o cpt_process.o cpt_mm.o
 diff --git a/checkpoint/checkpoint.h b/checkpoint/checkpoint.h
-index 6926aa2..9e46b10 100644
+index 9e46b10..e3e6b66 100644
 --- a/checkpoint/checkpoint.h
 +++ b/checkpoint/checkpoint.h
-@@ -60,3 +60,4 @@ extern int debug_level;
- #define dprintk(a...) cpt_printk(1, "CPT DBG: " a)
+@@ -61,3 +61,4 @@ extern int debug_level;
  
  int dump_container(struct cpt_context *ctx);
-+int cpt_dump_task(struct task_struct *tsk, struct cpt_context *ctx);
+ int cpt_dump_task(struct task_struct *tsk, struct cpt_context *ctx);
++int cpt_dump_mm(struct task_struct *tsk, struct cpt_context *ctx);
 diff --git a/checkpoint/cpt_image.h b/checkpoint/cpt_image.h
-index 0338dd0..cddfe37 100644
+index cddfe37..160cf85 100644
 --- a/checkpoint/cpt_image.h
 +++ b/checkpoint/cpt_image.h
-@@ -13,6 +13,9 @@
- #ifndef __CPT_IMAGE_H_
- #define __CPT_IMAGE_H_ 1
+@@ -16,13 +16,19 @@
+ #include <linux/sched.h>
+ #include <asm/segment.h>
  
-+#include <linux/sched.h>
-+#include <asm/segment.h>
++#define CPT_NULL (~0ULL)
 +
  enum _cpt_object_type
  {
  	CPT_OBJ_TASK = 0,
-@@ -20,6 +23,8 @@ enum _cpt_object_type
++	CPT_OBJ_MM,
+ 	CPT_OBJ_MAX,
  	/* The objects above are stored in memory while checkpointing */
  
  	CPT_OBJ_HEAD = 1024,
-+	CPT_OBJ_X86_REGS,
-+	CPT_OBJ_BITS,
++	CPT_OBJ_VMA,
++	CPT_OBJ_PAGES,
++	CPT_OBJ_NAME,
+ 	CPT_OBJ_X86_REGS,
+ 	CPT_OBJ_BITS,
  };
- 
- enum _cpt_content_type {
-@@ -28,6 +33,8 @@ enum _cpt_content_type {
- 	CPT_CONTENT_DATA,
- 	CPT_CONTENT_NAME,
+@@ -35,6 +41,7 @@ enum _cpt_content_type {
  	CPT_CONTENT_REF,
-+	CPT_CONTENT_X86_FPUSTATE,
-+	CPT_CONTENT_X86_FPUSTATE_OLD,
+ 	CPT_CONTENT_X86_FPUSTATE,
+ 	CPT_CONTENT_X86_FPUSTATE_OLD,
++	CPT_CONTENT_MM_CONTEXT,
  	CPT_CONTENT_MAX
  };
  
-@@ -60,4 +67,120 @@ struct cpt_object_hdr
- 	__u16	cpt_content;		/* Content type: array, reference... */
+@@ -123,6 +130,60 @@ struct cpt_task_image {
+ 	__u64	cpt_maj_flt;
  } __attribute__ ((aligned (8)));
  
-+struct cpt_task_image {
++struct cpt_mm_image {
 +	__u64	cpt_len;
 +	__u32	cpt_hdrlen;
 +	__u16	cpt_type;
 +	__u16	cpt_content;
 +
-+	__u64	cpt_state;
++	__u64	cpt_start_code;
++	__u64	cpt_end_code;
++	__u64	cpt_start_data;
++	__u64	cpt_end_data;
++	__u64	cpt_start_brk;
++	__u64	cpt_brk;
++	__u64	cpt_start_stack;
++	__u64	cpt_start_arg;
++	__u64	cpt_end_arg;
++	__u64	cpt_start_env;
++	__u64	cpt_end_env;
++	__u64	cpt_def_flags;
 +	__u64	cpt_flags;
-+#define CPT_PF_EXITING		0
-+#define CPT_PF_FORKNOEXEC	1
-+#define CPT_PF_SUPERPRIV	2
-+#define CPT_PF_DUMPCORE		3
-+#define CPT_PF_SIGNALED		4
-+#define CPT_PF_USED_MATH	5
-+
-+	__u64	cpt_thrflags;
-+	__u64	cpt_thrstatus;
-+	__u32	cpt_pid;
-+	__u32	cpt_tgid;
-+	__u32	cpt_ppid;
-+	__u32	cpt_rppid;
-+	__u32	cpt_pgrp;
-+	__u32	cpt_session;
-+	__u32	cpt_old_pgrp;
-+	__u32	cpt_leader;
-+	__u64	cpt_set_tid;
-+	__u64	cpt_clear_tid;
-+	__u32	cpt_exit_code;
-+	__u32	cpt_exit_signal;
-+	__u32	cpt_pdeath_signal;
-+	__u32	cpt_user;
-+	__u32	cpt_uid;
-+	__u32	cpt_euid;
-+	__u32	cpt_suid;
-+	__u32	cpt_fsuid;
-+	__u32	cpt_gid;
-+	__u32	cpt_egid;
-+	__u32	cpt_sgid;
-+	__u32	cpt_fsgid;
-+	__u8	cpt_comm[TASK_COMM_LEN];
-+	__u64	cpt_tls[GDT_ENTRY_TLS_ENTRIES];
-+	__u64	cpt_utime;
-+	__u64	cpt_stime;
-+	__u64	cpt_utimescaled;
-+	__u64	cpt_stimescaled;
-+	__u64	cpt_gtime;
-+	__u64	cpt_prev_utime;
-+	__u64	cpt_prev_stime;
-+	__u64	cpt_start_time;
-+	__u64	cpt_real_start_time;
-+	__u64	cpt_nvcsw;
-+	__u64	cpt_nivcsw;
-+	__u64	cpt_min_flt;
-+	__u64	cpt_maj_flt;
++	__u64	cpt_map_count;
 +} __attribute__ ((aligned (8)));
 +
-+struct cpt_obj_bits
++struct cpt_vma_image
 +{
 +	__u64	cpt_len;
 +	__u32	cpt_hdrlen;
 +	__u16	cpt_type;
 +	__u16	cpt_content;
 +
-+	__u32	cpt_size;
-+	__u32	__cpt_pad1;
++	__u64	cpt_file;
++	__u32	cpt_vma_type;
++#define CPT_VMA_TYPE_0		0
++#define CPT_VMA_FILE		1
++	__u32	cpt_pad;
++
++	__u64	cpt_start;
++	__u64	cpt_end;
++	__u64	cpt_flags;
++	__u64	cpt_pgprot;
++	__u64	cpt_pgoff;
++	__u64	cpt_page_num;
 +} __attribute__ ((aligned (8)));
 +
-+#define CPT_SEG_ZERO		0
-+#define CPT_SEG_TLS1		1
-+#define CPT_SEG_TLS2		2
-+#define CPT_SEG_TLS3		3
-+#define CPT_SEG_USER32_DS       4
-+#define CPT_SEG_USER32_CS       5
-+#define CPT_SEG_USER64_DS       6
-+#define CPT_SEG_USER64_CS       7
-+#define CPT_SEG_LDT             256
-+
-+struct cpt_x86_regs
++struct cpt_page_block
 +{
 +	__u64	cpt_len;
 +	__u32	cpt_hdrlen;
 +	__u16	cpt_type;
 +	__u16	cpt_content;
 +
-+	__u32	cpt_debugreg[8];
-+	__u32	cpt_gs;
-+
-+	__u32	cpt_bx;
-+	__u32	cpt_cx;
-+	__u32	cpt_dx;
-+	__u32	cpt_si;
-+	__u32	cpt_di;
-+	__u32	cpt_bp;
-+	__u32	cpt_ax;
-+	__u32	cpt_ds;
-+	__u32	cpt_es;
-+	__u32	cpt_fs;
-+	__u32	cpt_orig_ax;
-+	__u32	cpt_ip;
-+	__u32	cpt_cs;
-+	__u32	cpt_flags;
-+	__u32	cpt_sp;
-+	__u32	cpt_ss;
++	__u64	cpt_start;
++	__u64	cpt_end;
 +} __attribute__ ((aligned (8)));
 +
-+static inline __u64 cpt_timespec_export(struct timespec *tv)
-+{
-+	return (((u64)tv->tv_sec) << 32) + tv->tv_nsec;
-+}
-+
-+static inline void cpt_timespec_import(struct timespec *tv, __u64 val)
-+{
-+	tv->tv_sec = val >> 32;
-+	tv->tv_nsec = (val & 0xFFFFFFFF);
-+}
-+
- #endif /* __CPT_IMAGE_H_ */
-diff --git a/checkpoint/cpt_process.c b/checkpoint/cpt_process.c
+ struct cpt_obj_bits
+ {
+ 	__u64	cpt_len;
+diff --git a/checkpoint/cpt_mm.c b/checkpoint/cpt_mm.c
 new file mode 100644
-index 0000000..58f608d
+index 0000000..8a22c48
 --- /dev/null
-+++ b/checkpoint/cpt_process.c
-@@ -0,0 +1,236 @@
++++ b/checkpoint/cpt_mm.c
+@@ -0,0 +1,434 @@
 +/*
 + *  Copyright (C) 2008 Parallels, Inc.
 + *
-+ *  Author: Andrey Mirkin <major-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
++ *  Authors:	Andrey Mirkin <major-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 + *
 + *  This program is free software; you can redistribute it and/or
 + *  modify it under the terms of the GNU General Public License as
@@ -242,228 +191,459 @@ index 0000000..58f608d
 + */
 +
 +#include <linux/sched.h>
-+#include <linux/fs.h>
++#include <linux/slab.h>
 +#include <linux/file.h>
-+#include <linux/version.h>
-+#include <linux/nsproxy.h>
++#include <linux/mm.h>
++#include <linux/errno.h>
++#include <linux/major.h>
++#include <linux/mman.h>
++#include <linux/mnt_namespace.h>
++#include <linux/mount.h>
++#include <linux/namei.h>
++#include <linux/pagemap.h>
++#include <linux/hugetlb.h>
++#include <asm/ldt.h>
 +
 +#include "checkpoint.h"
 +#include "cpt_image.h"
 +
-+static unsigned int encode_task_flags(unsigned int task_flags)
++struct page_area
 +{
-+	unsigned int flags = 0;
++	int type;
++	unsigned long start;
++	unsigned long end;
++	pgoff_t pgoff;
++	loff_t mm;
++	__u64 list[16];
++};
 +
-+	if (task_flags & PF_EXITING)
-+		flags |= (1 << CPT_PF_EXITING);
-+	if (task_flags & PF_FORKNOEXEC)
-+		flags |= (1 << CPT_PF_FORKNOEXEC);
-+	if (task_flags & PF_SUPERPRIV)
-+		flags |= (1 << CPT_PF_SUPERPRIV);
-+	if (task_flags & PF_DUMPCORE)
-+		flags |= (1 << CPT_PF_DUMPCORE);
-+	if (task_flags & PF_SIGNALED)
-+		flags |= (1 << CPT_PF_SIGNALED);
-+	if (task_flags & PF_USED_MATH)
-+		flags |= (1 << CPT_PF_USED_MATH);
-+	
-+	return flags;
-+		
++struct page_desc
++{
++	int	type;
++	pgoff_t	index;
++	loff_t	mm;
++	int	shared;
++};
++
++enum {
++	PD_ABSENT,
++	PD_COPY,
++	PD_FUNKEY,
++};
++
++/* 0: page can be obtained from backstore, or still not mapped anonymous  page,
++      or something else, which does not requre copy.
++   1: page requires copy
++   2: page requres copy but its content is zero. Quite useless.
++   3: wp page is shared after fork(). It is to be COWed when modified.
++   4: page is something unsupported... We copy it right now.
++ */
++
++static void page_get_desc(struct vm_area_struct *vma, unsigned long addr,
++			  struct page_desc *pdesc, cpt_context_t * ctx)
++{
++	struct mm_struct *mm = vma->vm_mm;
++	pgd_t *pgd;
++	pud_t *pud;
++	pmd_t *pmd;
++	pte_t *ptep, pte;
++	spinlock_t *ptl;
++	struct page *pg = NULL;
++	pgoff_t linear_index = (addr - vma->vm_start)/PAGE_SIZE + vma->vm_pgoff;
++
++	pdesc->index = linear_index;
++	pdesc->shared = 0;
++	pdesc->mm = CPT_NULL;
++
++	if (vma->vm_flags & VM_IO) {
++		pdesc->type = PD_ABSENT;
++		return;
++	}
++
++	pgd = pgd_offset(mm, addr);
++	if (pgd_none(*pgd) || unlikely(pgd_bad(*pgd)))
++		goto out_absent;
++	pud = pud_offset(pgd, addr);
++	if (pud_none(*pud) || unlikely(pud_bad(*pud)))
++		goto out_absent;
++	pmd = pmd_offset(pud, addr);
++	if (pmd_none(*pmd) || unlikely(pmd_bad(*pmd)))
++		goto out_absent;
++#ifdef CONFIG_X86
++	if (pmd_huge(*pmd)) {
++		eprintk("page_huge\n");
++		goto out_unsupported;
++	}
++#endif
++	ptep = pte_offset_map_lock(mm, pmd, addr, &ptl);
++	pte = *ptep;
++	pte_unmap(ptep);
++
++	if (pte_none(pte))
++		goto out_absent_unlock;
++
++	if ((pg = vm_normal_page(vma, addr, pte)) == NULL) {
++		pdesc->type = PD_COPY;
++		goto out_unlock;
++	}
++
++	get_page(pg);
++	spin_unlock(ptl);
++
++	if (pg->mapping && !PageAnon(pg)) {
++		if (vma->vm_file == NULL) {
++			eprintk("pg->mapping!=NULL for fileless vma: %08lx\n", addr);
++			goto out_unsupported;
++		}
++		if (vma->vm_file->f_mapping != pg->mapping) {
++			eprintk("pg->mapping!=f_mapping: %08lx %p %p\n",
++				    addr, vma->vm_file->f_mapping, pg->mapping);
++			goto out_unsupported;
++		}
++		pdesc->index = (pg->index << (PAGE_CACHE_SHIFT - PAGE_SHIFT));
++		/* Page is in backstore. For us it is like
++		 * it is not present.
++		 */
++		goto out_absent;
++	}
++
++	if (PageReserved(pg)) {
++		/* Special case: ZERO_PAGE is used, when an
++		 * anonymous page is accessed but not written. */
++		if (pg == ZERO_PAGE(addr)) {
++			if (pte_write(pte)) {
++				eprintk("not funny already, writable ZERO_PAGE\n");
++				goto out_unsupported;
++			}
++			/* Just copy it for now */
++			pdesc->type = PD_COPY;
++			goto out_put;
++		}
++		eprintk("reserved page %lu at %08lx\n", pg->index, addr);
++		goto out_unsupported;
++	}
++
++	if (!pg->mapping) {
++		eprintk("page without mapping at %08lx\n", addr);
++		goto out_unsupported;
++	}
++
++	pdesc->type = PD_COPY;
++
++out_put:
++	if (pg)
++		put_page(pg);
++	return;
++
++out_unlock:
++	spin_unlock(ptl);
++	goto out_put;
++
++out_absent_unlock:
++	spin_unlock(ptl);
++
++out_absent:
++	pdesc->type = PD_ABSENT;
++	goto out_put;
++
++out_unsupported:
++	pdesc->type = PD_FUNKEY;
++	goto out_put;
 +}
 +
-+int cpt_dump_task_struct(struct task_struct *tsk, struct cpt_context *ctx)
++static int count_vma_pages(struct vm_area_struct *vma, struct cpt_context *ctx)
 +{
-+	struct cpt_task_image *t;
-+	int i;
-+	int err;
++	unsigned long addr;
++	int page_num = 0;
 +
-+	t = kzalloc(sizeof(*t), GFP_KERNEL);
-+	if (!t)
++	for (addr = vma->vm_start; addr < vma->vm_end; addr += PAGE_SIZE) {
++		struct page_desc pd;
++
++		page_get_desc(vma, addr, &pd, ctx);
++
++		if (pd.type != PD_COPY) {
++			return -EINVAL;
++		} else {
++			page_num += 1;
++		}
++		
++	}
++	return page_num;
++}
++
++/* ATTN: We give "current" to get_user_pages(). This is wrong, but get_user_pages()
++ * does not really need this thing. It just stores some page fault stats there.
++ *
++ * BUG: some archs (f.e. sparc64, but not Intel*) require flush cache pages
++ * before accessing vma.
++ */
++static int dump_pages(struct vm_area_struct *vma, unsigned long start,
++		unsigned long end, struct cpt_context *ctx)
++{
++#define MAX_PAGE_BATCH 16
++	struct page *pg[MAX_PAGE_BATCH];
++	int npages = (end - start)/PAGE_SIZE;
++	int count = 0;
++
++	while (count < npages) {
++		int copy = npages - count;
++		int n;
++
++		if (copy > MAX_PAGE_BATCH)
++			copy = MAX_PAGE_BATCH;
++		n = get_user_pages(current, vma->vm_mm, start, copy,
++				   0, 1, pg, NULL);
++		if (n == copy) {
++			int i;
++			for (i=0; i<n; i++) {
++				char *maddr = kmap(pg[i]);
++				ctx->write(maddr, PAGE_SIZE, ctx);
++				kunmap(pg[i]);
++			}
++		} else {
++			eprintk("get_user_pages fault");
++			for ( ; n > 0; n--)
++				page_cache_release(pg[n-1]);
++			return -EFAULT;
++		}
++		start += n*PAGE_SIZE;
++		count += n;
++		for ( ; n > 0; n--)
++			page_cache_release(pg[n-1]);
++	}
++	return 0;
++}
++
++static int dump_page_block(struct vm_area_struct *vma,
++			   struct cpt_page_block *pgb,
++			   struct cpt_context *ctx)
++{
++	int err;
++	pgb->cpt_len = sizeof(*pgb) + pgb->cpt_end - pgb->cpt_start;
++	pgb->cpt_type = CPT_OBJ_PAGES;
++	pgb->cpt_hdrlen = sizeof(*pgb);
++	pgb->cpt_content = CPT_CONTENT_DATA;
++
++	err = ctx->write(pgb, sizeof(*pgb), ctx);
++	if (!err)
++		err = dump_pages(vma, pgb->cpt_start, pgb->cpt_end, ctx);
++
++	return err;
++}
++
++static int cpt_dump_dentry(struct path *p, cpt_context_t *ctx)
++{
++	int len;
++	char *path;
++	char *buf;
++	struct cpt_object_hdr o;
++
++	buf = (char *)__get_free_page(GFP_KERNEL);
++	if (!buf)
 +		return -ENOMEM;
 +
-+	t->cpt_len = sizeof(*t);
-+	t->cpt_type = CPT_OBJ_TASK;
-+	t->cpt_hdrlen = sizeof(*t);
-+	t->cpt_content = CPT_CONTENT_ARRAY;
++	path = d_path(p, buf, PAGE_SIZE);
 +
-+	t->cpt_state = tsk->state;
-+	t->cpt_flags = encode_task_flags(tsk->flags);
-+	t->cpt_exit_code = tsk->exit_code;
-+	t->cpt_exit_signal = tsk->exit_signal;
-+	t->cpt_pdeath_signal = tsk->pdeath_signal;
-+	t->cpt_pid = task_pid_nr_ns(tsk, ctx->nsproxy->pid_ns);
-+	t->cpt_tgid = task_tgid_nr_ns(tsk, ctx->nsproxy->pid_ns);
-+	t->cpt_ppid = tsk->parent ?
-+		task_pid_nr_ns(tsk->parent, ctx->nsproxy->pid_ns) : 0;
-+	t->cpt_rppid = tsk->real_parent ?
-+		task_pid_nr_ns(tsk->real_parent, ctx->nsproxy->pid_ns) : 0;
-+	t->cpt_pgrp = task_pgrp_nr_ns(tsk, ctx->nsproxy->pid_ns);
-+	t->cpt_session = task_session_nr_ns(tsk, ctx->nsproxy->pid_ns);
-+	t->cpt_old_pgrp = 0;
-+	if (tsk->signal->tty_old_pgrp)
-+		t->cpt_old_pgrp = pid_vnr(tsk->signal->tty_old_pgrp);
-+	t->cpt_leader = tsk->group_leader ? task_pid_vnr(tsk->group_leader) : 0;
-+	t->cpt_utime = tsk->utime;
-+	t->cpt_stime = tsk->stime;
-+	t->cpt_utimescaled = tsk->utimescaled;
-+	t->cpt_stimescaled = tsk->stimescaled;
-+	t->cpt_gtime = tsk->gtime;
-+	t->cpt_prev_utime = tsk->prev_utime;
-+	t->cpt_prev_stime = tsk->prev_stime;
-+	t->cpt_nvcsw = tsk->nvcsw;
-+	t->cpt_nivcsw = tsk->nivcsw;
-+	t->cpt_start_time = cpt_timespec_export(&tsk->start_time);
-+	t->cpt_real_start_time = cpt_timespec_export(&tsk->real_start_time);
-+	t->cpt_min_flt = tsk->min_flt;
-+	t->cpt_maj_flt = tsk->maj_flt;
-+	memcpy(t->cpt_comm, tsk->comm, TASK_COMM_LEN);
-+	for (i = 0; i < GDT_ENTRY_TLS_ENTRIES; i++) {
-+		t->cpt_tls[i] = (((u64)tsk->thread.tls_array[i].b) << 32) +
-+			tsk->thread.tls_array[i].a;
++	if (IS_ERR(path)) {
++		free_page((unsigned long)buf);
++		return PTR_ERR(path);
 +	}
-+	/* TODO: encode thread flags and status like task flags */
-+	t->cpt_thrflags = task_thread_info(tsk)->flags & ~(1<<TIF_FREEZE);
-+	t->cpt_thrstatus = task_thread_info(tsk)->status;
-+	t->cpt_user = tsk->user->uid;
-+	t->cpt_uid = tsk->uid;
-+	t->cpt_euid = tsk->euid;
-+	t->cpt_suid = tsk->suid;
-+	t->cpt_fsuid = tsk->fsuid;
-+	t->cpt_gid = tsk->gid;
-+	t->cpt_egid = tsk->egid;
-+	t->cpt_sgid = tsk->sgid;
-+	t->cpt_fsgid = tsk->fsgid;
 +
-+	err = ctx->write(t, sizeof(*t), ctx);
++	len = buf + PAGE_SIZE - 1 - path;
++	o.cpt_len = sizeof(o) + len + 1;
++	o.cpt_type = CPT_OBJ_NAME;
++	o.cpt_hdrlen = sizeof(o);
++	o.cpt_content = CPT_CONTENT_NAME;
++	path[len] = 0;
 +
-+	kfree(t);
-+	return err;
++	ctx->write(&o, sizeof(o), ctx);
++	ctx->write(path, len + 1, ctx);
++	free_page((unsigned long)buf);
++
++	return 0;
 +}
 +
-+static int cpt_dump_fpustate(struct task_struct *tsk, struct cpt_context *ctx)
++static int dump_one_vma(struct mm_struct *mm,
++			struct vm_area_struct *vma, struct cpt_context *ctx)
 +{
-+	struct cpt_obj_bits hdr;
++	struct cpt_vma_image *v;
++	unsigned long addr;
++	int page_num;
 +	int err;
-+	int content;
-+	unsigned long size;
 +
-+	content = CPT_CONTENT_X86_FPUSTATE;
-+	size = sizeof(struct i387_fxsave_struct);
-+#ifndef CONFIG_X86_64
-+	if (!cpu_has_fxsr) {
-+		size = sizeof(struct i387_fsave_struct);
-+		content = CPT_CONTENT_X86_FPUSTATE_OLD;
++	v = kzalloc(sizeof(*v), GFP_KERNEL);
++	if (!v)
++		return -ENOMEM;
++
++	v->cpt_len = sizeof(*v);
++	v->cpt_type = CPT_OBJ_VMA;
++	v->cpt_hdrlen = sizeof(*v);
++	v->cpt_content = CPT_CONTENT_ARRAY;
++
++	v->cpt_start = vma->vm_start;
++	v->cpt_end = vma->vm_end;
++	v->cpt_flags = vma->vm_flags;
++	if (vma->vm_flags & VM_HUGETLB) {
++		eprintk("huge TLB VMAs are still not supported\n");
++		kfree(v);
++		return -EINVAL;
 +	}
-+#endif
++	v->cpt_pgprot = vma->vm_page_prot.pgprot;
++	v->cpt_pgoff = vma->vm_pgoff;
++	v->cpt_file = CPT_NULL;
++	v->cpt_vma_type = CPT_VMA_TYPE_0;
 +
-+	hdr.cpt_len = sizeof(hdr) + size;
-+	hdr.cpt_type = CPT_OBJ_BITS;
-+	hdr.cpt_hdrlen = sizeof(hdr);
-+	hdr.cpt_content = content;
-+	hdr.cpt_size = size;
-+	err = ctx->write(&hdr, sizeof(hdr), ctx);
-+	if (!err)
-+		ctx->write(tsk->thread.xstate, size, ctx);
-+	return err;
++	page_num = count_vma_pages(vma, ctx);
++	if (page_num < 0) {
++		kfree(v);
++		return -EINVAL;
++	}
++	v->cpt_page_num = page_num;
++
++	if (vma->vm_file) {
++		v->cpt_file = 0;
++		v->cpt_vma_type = CPT_VMA_FILE;
++	}
++
++	ctx->write(v, sizeof(*v), ctx);
++	kfree(v);
++
++	if (vma->vm_file) {
++		err = cpt_dump_dentry(&vma->vm_file->f_path, ctx);
++		if (err < 0)
++			return err;
++	}
++
++	for (addr = vma->vm_start; addr < vma->vm_end; addr += PAGE_SIZE) {
++		struct page_desc pd;
++		struct cpt_page_block pgb;
++
++		page_get_desc(vma, addr, &pd, ctx);
++
++		if (pd.type == PD_FUNKEY || pd.type == PD_ABSENT) {
++			eprintk("dump_one_vma: funkey page\n");
++			return -EINVAL;
++		}
++
++		pgb.cpt_start = addr;
++		pgb.cpt_end = addr + PAGE_SIZE;
++		dump_page_block(vma, &pgb, ctx);
++	}
++
++	return 0;
 +}
 +
-+static u32 encode_segment(u32 segreg)
++static int cpt_dump_mm_context(struct mm_struct *mm, struct cpt_context *ctx)
 +{
-+	segreg &= 0xFFFF;
++#ifdef CONFIG_X86
++	if (mm->context.size) {
++		struct cpt_obj_bits b;
++		int size;
 +
-+	if (segreg == 0)
-+		return CPT_SEG_ZERO;
-+	if ((segreg & 3) != 3) {
-+		eprintk("Invalid RPL of a segment reg %x\n", segreg);
-+		return CPT_SEG_ZERO;
++		mutex_lock(&mm->context.lock);
++
++		b.cpt_type = CPT_OBJ_BITS;
++		b.cpt_len = sizeof(b);
++		b.cpt_content = CPT_CONTENT_MM_CONTEXT;
++		b.cpt_size = mm->context.size * LDT_ENTRY_SIZE;
++
++		ctx->write(&b, sizeof(b), ctx);
++
++		size = mm->context.size * LDT_ENTRY_SIZE;
++
++		ctx->write(mm->context.ldt, size, ctx);
++
++		mutex_unlock(&mm->context.lock);
 +	}
-+
-+	/* LDT descriptor, it is just an index to LDT array */
-+	if (segreg & 4)
-+		return CPT_SEG_LDT + (segreg >> 3);
-+
-+	/* TLS descriptor. */
-+	if ((segreg >> 3) >= GDT_ENTRY_TLS_MIN &&
-+			(segreg >> 3) <= GDT_ENTRY_TLS_MAX)
-+		return CPT_SEG_TLS1 + ((segreg>>3) - GDT_ENTRY_TLS_MIN);
-+
-+	/* One of standard desriptors */
-+#ifdef CONFIG_X86_64
-+	if (segreg == __USER32_DS)
-+		return CPT_SEG_USER32_DS;
-+	if (segreg == __USER32_CS)
-+		return CPT_SEG_USER32_CS;
-+	if (segreg == __USER_DS)
-+		return CPT_SEG_USER64_DS;
-+	if (segreg == __USER_CS)
-+		return CPT_SEG_USER64_CS;
-+#else
-+	if (segreg == __USER_DS)
-+		return CPT_SEG_USER32_DS;
-+	if (segreg == __USER_CS)
-+		return CPT_SEG_USER32_CS;
 +#endif
-+	eprintk("Invalid segment reg %x\n", segreg);
-+	return CPT_SEG_ZERO;
++	return 0;
 +}
 +
-+static int cpt_dump_registers(struct task_struct *tsk, struct cpt_context *ctx)
++int cpt_dump_mm(struct task_struct *tsk, struct cpt_context *ctx)
 +{
-+	struct cpt_x86_regs ri;
-+	struct pt_regs *pt_regs;
++	struct mm_struct *mm = tsk->mm;
++	struct cpt_mm_image *v;
++	struct vm_area_struct *vma;
++	int err;
 +
-+	ri.cpt_len = sizeof(ri);
-+	ri.cpt_type = CPT_OBJ_X86_REGS;
-+	ri.cpt_hdrlen = sizeof(ri);
-+	ri.cpt_content = CPT_CONTENT_VOID;
++	v = kzalloc(sizeof(*v), GFP_KERNEL);
++	if (!v)
++		return -ENOMEM;
 +
-+	ri.cpt_debugreg[0] = tsk->thread.debugreg0;
-+	ri.cpt_debugreg[1] = tsk->thread.debugreg1;
-+	ri.cpt_debugreg[2] = tsk->thread.debugreg2;
-+	ri.cpt_debugreg[3] = tsk->thread.debugreg3;
-+	ri.cpt_debugreg[4] = 0;
-+	ri.cpt_debugreg[5] = 0;
-+	ri.cpt_debugreg[6] = tsk->thread.debugreg6;
-+	ri.cpt_debugreg[7] = tsk->thread.debugreg7;
++	v->cpt_len = sizeof(*v);
++	v->cpt_type = CPT_OBJ_MM;
++	v->cpt_hdrlen = sizeof(*v);
++	v->cpt_content = CPT_CONTENT_ARRAY;
 +
-+	pt_regs = task_pt_regs(tsk);
++	down_read(&mm->mmap_sem);
++	v->cpt_start_code = mm->start_code;
++	v->cpt_end_code = mm->end_code;
++	v->cpt_start_data = mm->start_data;
++	v->cpt_end_data = mm->end_data;
++	v->cpt_start_brk = mm->start_brk;
++	v->cpt_brk = mm->brk;
++	v->cpt_start_stack = mm->start_stack;
++	v->cpt_start_arg = mm->arg_start;
++	v->cpt_end_arg = mm->arg_end;
++	v->cpt_start_env = mm->env_start;
++	v->cpt_end_env = mm->env_end;
++	v->cpt_def_flags = mm->def_flags;
++	v->cpt_flags = mm->flags;
++	v->cpt_map_count = mm->map_count;
 +
-+	ri.cpt_fs = encode_segment(pt_regs->fs);
-+	ri.cpt_gs = encode_segment(tsk->thread.gs);
-+
-+	ri.cpt_bx = pt_regs->bx;
-+	ri.cpt_cx = pt_regs->cx;
-+	ri.cpt_dx = pt_regs->dx;
-+	ri.cpt_si = pt_regs->si;
-+	ri.cpt_di = pt_regs->di;
-+	ri.cpt_bp = pt_regs->bp;
-+	ri.cpt_ax = pt_regs->ax;
-+	ri.cpt_ds = encode_segment(pt_regs->ds);
-+	ri.cpt_es = encode_segment(pt_regs->es);
-+	ri.cpt_orig_ax = pt_regs->orig_ax;
-+	ri.cpt_ip = pt_regs->ip;
-+	ri.cpt_cs = encode_segment(pt_regs->cs);
-+	ri.cpt_flags = pt_regs->flags;
-+	ri.cpt_sp = pt_regs->sp;
-+	ri.cpt_ss = encode_segment(pt_regs->ss);
++	err = ctx->write(v, sizeof(*v), ctx);
++	kfree(v);
 +	
-+	return ctx->write(&ri, sizeof(ri), ctx);
-+}
++	if (err) {
++		eprintk("error during writing mm\n");
++		goto err_up;
++	}
++	
++	for (vma = mm->mmap; vma; vma = vma->vm_next) {
++		if ((err = dump_one_vma(mm, vma, ctx)) != 0)
++			goto err_up;
++	}
 +
-+int cpt_dump_task(struct task_struct *tsk, struct cpt_context *ctx)
-+{
-+	int err;
++	err = cpt_dump_mm_context(mm, ctx);
 +
-+	err = cpt_dump_task_struct(tsk, ctx);
-+
-+	/* Dump task mm */
-+
-+	if (!err)
-+		cpt_dump_fpustate(tsk, ctx);
-+	if (!err)
-+		cpt_dump_registers(tsk, ctx);
++err_up:
++	up_read(&mm->mmap_sem);
 +
 +	return err;
 +}
++
+diff --git a/checkpoint/cpt_process.c b/checkpoint/cpt_process.c
+index 58f608d..1f7a54b 100644
+--- a/checkpoint/cpt_process.c
++++ b/checkpoint/cpt_process.c
+@@ -225,12 +225,12 @@ int cpt_dump_task(struct task_struct *tsk, struct cpt_context *ctx)
+ 
+ 	err = cpt_dump_task_struct(tsk, ctx);
+ 
+-	/* Dump task mm */
+-
+ 	if (!err)
+-		cpt_dump_fpustate(tsk, ctx);
++		err = cpt_dump_mm(tsk, ctx);
++	if (!err)
++		err = cpt_dump_fpustate(tsk, ctx);
+ 	if (!err)
+-		cpt_dump_registers(tsk, ctx);
++		err = cpt_dump_registers(tsk, ctx);
+ 
+ 	return err;
+ }
+diff --git a/mm/memory.c b/mm/memory.c
+index 1002f47..479a294 100644
+--- a/mm/memory.c
++++ b/mm/memory.c
+@@ -481,6 +481,7 @@ struct page *vm_normal_page(struct vm_area_struct *vma, unsigned long addr,
+ out:
+ 	return pfn_to_page(pfn);
+ }
++EXPORT_SYMBOL(vm_normal_page);
+ 
+ /*
+  * copy one vm_area from one task to the other. Assumes the page tables
 -- 
 1.5.6
