@@ -1,7 +1,7 @@
 From: Andrey Mirkin <major-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
-Subject: [PATCH 10/10] Add support for multiple processes
-Date: Sat, 18 Oct 2008 03:11:38 +0400
-Message-ID: <1224285098-573-11-git-send-email-major__30382.4520473883$1224285586$gmane$org@openvz.org>
+Subject: [PATCH 09/10] Introduce functions to restore mm
+Date: Sat, 18 Oct 2008 03:11:37 +0400
+Message-ID: <1224285098-573-10-git-send-email-major__47411.6486301229$1224285755$gmane$org@openvz.org>
 References: <1224285098-573-1-git-send-email-major@openvz.org>
 	<1224285098-573-2-git-send-email-major@openvz.org>
 	<1224285098-573-3-git-send-email-major@openvz.org>
@@ -11,12 +11,11 @@ References: <1224285098-573-1-git-send-email-major@openvz.org>
 	<1224285098-573-7-git-send-email-major@openvz.org>
 	<1224285098-573-8-git-send-email-major@openvz.org>
 	<1224285098-573-9-git-send-email-major@openvz.org>
-	<1224285098-573-10-git-send-email-major@openvz.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1224285098-573-10-git-send-email-major-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+In-Reply-To: <1224285098-573-9-git-send-email-major-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -30,217 +29,423 @@ To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, lin
 Cc: Andrey Mirkin <major-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-The whole tree of processes can be checkpointed and restarted now.
-Shared objects are not supported yet.
+Functions to restore mm, VMAs and mm context are added.
 
 Signed-off-by: Andrey Mirkin <major-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 ---
- checkpoint/cpt_image.h   |    2 +
- checkpoint/cpt_process.c |   24 +++++++++++++
- checkpoint/rst_process.c |   85 +++++++++++++++++++++++++++-------------------
- 3 files changed, 76 insertions(+), 35 deletions(-)
+ checkpoint/Makefile      |    2 +-
+ checkpoint/checkpoint.h  |    1 +
+ checkpoint/cpt_image.h   |    5 +
+ checkpoint/rst_mm.c      |  320 ++++++++++++++++++++++++++++++++++++++++++++++
+ checkpoint/rst_process.c |    3 +-
+ mm/mmap.c                |    1 +
+ mm/mprotect.c            |    2 +
+ 7 files changed, 332 insertions(+), 2 deletions(-)
+ create mode 100644 checkpoint/rst_mm.c
 
+diff --git a/checkpoint/Makefile b/checkpoint/Makefile
+index 689a0eb..19ca732 100644
+--- a/checkpoint/Makefile
++++ b/checkpoint/Makefile
+@@ -3,4 +3,4 @@ obj-y += sys_core.o
+ obj-$(CONFIG_CHECKPOINT) += cptrst.o
+ 
+ cptrst-objs := sys.o checkpoint.o cpt_process.o cpt_mm.o restart.o \
+-	       rst_process.o
++	       rst_process.o rst_mm.o
+diff --git a/checkpoint/checkpoint.h b/checkpoint/checkpoint.h
+index 1d0ca49..195fdc6 100644
+--- a/checkpoint/checkpoint.h
++++ b/checkpoint/checkpoint.h
+@@ -65,3 +65,4 @@ int cpt_dump_mm(struct task_struct *tsk, struct cpt_context *ctx);
+ int restart_container(struct cpt_context *ctx);
+ int rst_get_object(int type, void *tmp, int size, struct cpt_context *ctx);
+ int rst_restart_process(struct cpt_context *ctx);
++int rst_restore_mm(struct cpt_context *ctx);
 diff --git a/checkpoint/cpt_image.h b/checkpoint/cpt_image.h
-index e1fb483..f370df2 100644
+index 160cf85..e1fb483 100644
 --- a/checkpoint/cpt_image.h
 +++ b/checkpoint/cpt_image.h
-@@ -128,6 +128,8 @@ struct cpt_task_image {
- 	__u64	cpt_nivcsw;
- 	__u64	cpt_min_flt;
- 	__u64	cpt_maj_flt;
-+	__u32	cpt_children_num;
-+	__u32	cpt_pad;
+@@ -233,6 +233,11 @@ struct cpt_x86_regs
+ 	__u32	cpt_ss;
  } __attribute__ ((aligned (8)));
  
- struct cpt_mm_image {
-diff --git a/checkpoint/cpt_process.c b/checkpoint/cpt_process.c
-index 1f7a54b..d73ec3c 100644
---- a/checkpoint/cpt_process.c
-+++ b/checkpoint/cpt_process.c
-@@ -40,6 +40,19 @@ static unsigned int encode_task_flags(unsigned int task_flags)
- 		
- }
- 
-+static int cpt_count_children(struct task_struct *tsk, struct cpt_context *ctx)
++static inline void __user * cpt_ptr_import(__u64 ptr)
 +{
-+	int num = 0;
-+	struct task_struct *child;
-+
-+	list_for_each_entry(child, &tsk->children, sibling) {
-+		if (child->parent != tsk)
-+			continue;
-+		num++;
-+	}
-+	return num;
++	return (void*)(unsigned long)ptr;
 +}
 +
- int cpt_dump_task_struct(struct task_struct *tsk, struct cpt_context *ctx)
+ static inline __u64 cpt_timespec_export(struct timespec *tv)
  {
- 	struct cpt_task_image *t;
-@@ -102,6 +115,7 @@ int cpt_dump_task_struct(struct task_struct *tsk, struct cpt_context *ctx)
- 	t->cpt_egid = tsk->egid;
- 	t->cpt_sgid = tsk->sgid;
- 	t->cpt_fsgid = tsk->fsgid;
-+	t->cpt_children_num = cpt_count_children(tsk, ctx);
- 
- 	err = ctx->write(t, sizeof(*t), ctx);
- 
-@@ -231,6 +245,16 @@ int cpt_dump_task(struct task_struct *tsk, struct cpt_context *ctx)
- 		err = cpt_dump_fpustate(tsk, ctx);
- 	if (!err)
- 		err = cpt_dump_registers(tsk, ctx);
-+	if (!err) {
-+		struct task_struct *child;
-+		list_for_each_entry(child, &tsk->children, sibling) {
-+			if (child->parent != tsk)
-+				continue;
-+			err = cpt_dump_task(child, ctx);
-+			if (err)
-+				break;
+ 	return (((u64)tv->tv_sec) << 32) + tv->tv_nsec;
+diff --git a/checkpoint/rst_mm.c b/checkpoint/rst_mm.c
+new file mode 100644
+index 0000000..fe53c45
+--- /dev/null
++++ b/checkpoint/rst_mm.c
+@@ -0,0 +1,320 @@
++/*
++ *  Copyright (C) 2008 Parallels, Inc.
++ *
++ *  Author: Andrey Mirkin <major-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
++ *
++ *  This program is free software; you can redistribute it and/or
++ *  modify it under the terms of the GNU General Public License as
++ *  published by the Free Software Foundation, version 2 of the
++ *  License.
++ *
++ */
++
++#include <linux/sched.h>
++#include <linux/fs.h>
++#include <linux/file.h>
++#include <linux/version.h>
++#include <linux/module.h>
++#include <linux/mm.h>
++#include <linux/mman.h>
++#include <linux/highmem.h>
++#include <linux/pagemap.h>
++#include <linux/vmalloc.h>
++#include <linux/syscalls.h>
++
++#include "checkpoint.h"
++#include "cpt_image.h"
++
++static unsigned long make_prot(struct cpt_vma_image *vmai)
++{
++	unsigned long prot = 0;
++
++	if (vmai->cpt_flags & VM_READ)
++		prot |= PROT_READ;
++	if (vmai->cpt_flags & VM_WRITE)
++		prot |= PROT_WRITE;
++	if (vmai->cpt_flags & VM_EXEC)
++		prot |= PROT_EXEC;
++	if (vmai->cpt_flags & VM_GROWSDOWN)
++		prot |= PROT_GROWSDOWN;
++	if (vmai->cpt_flags & VM_GROWSUP)
++		prot |= PROT_GROWSUP;
++	return prot;
++}
++
++static unsigned long make_flags(struct cpt_vma_image *vmai)
++{
++	unsigned long flags = MAP_FIXED;
++
++	if (vmai->cpt_flags&(VM_SHARED|VM_MAYSHARE))
++		flags |= MAP_SHARED;
++	else
++		flags |= MAP_PRIVATE;
++
++	if (vmai->cpt_file == CPT_NULL)
++		flags |= MAP_ANONYMOUS;
++	if (vmai->cpt_flags & VM_GROWSDOWN)
++		flags |= MAP_GROWSDOWN;
++#ifdef MAP_GROWSUP
++	if (vmai->cpt_flags & VM_GROWSUP)
++		flags |= MAP_GROWSUP;
++#endif
++	if (vmai->cpt_flags & VM_DENYWRITE)
++		flags |= MAP_DENYWRITE;
++	if (vmai->cpt_flags & VM_EXECUTABLE)
++		flags |= MAP_EXECUTABLE;
++	if (!(vmai->cpt_flags & VM_ACCOUNT))
++		flags |= MAP_NORESERVE;
++	return flags;
++}
++
++static int rst_restore_one_vma(struct cpt_context *ctx)
++{
++	int err;
++	int i;
++	unsigned long addr;
++	struct mm_struct *mm = current->mm;
++	struct cpt_vma_image vmai;
++	struct vm_area_struct *vma;
++	struct file *file = NULL;
++	unsigned long prot;
++
++	err = rst_get_object(CPT_OBJ_VMA, &vmai, sizeof(vmai), ctx);
++	if (err)
++		return err;
++
++	prot = make_prot(&vmai);
++
++	if (vmai.cpt_vma_type == CPT_VMA_FILE) {
++		struct cpt_object_hdr h;
++		int len;
++		char *path;
++
++		err = rst_get_object(CPT_OBJ_NAME, &h, sizeof(h), ctx);
++		if (err)
++			goto out;
++		len = h.cpt_len - sizeof(h);
++		if (len < 0) {
++			err = -EINVAL;
++			goto out;
++		}
++		path = kmalloc(len, GFP_KERNEL);
++		if (!path) {
++			err = -ENOMEM;
++			goto out;
++		}
++		err = ctx->read(path, len, ctx);
++		if (err) {
++			kfree(path);
++			goto out;
++		}
++
++		/* Just open file
++		   TODO: open with correct flags */
++		file = filp_open(path, O_RDONLY, 0);
++		kfree(path);
++		if (IS_ERR(file)) {
++			err = PTR_ERR(file);
++			goto out;
 +		}
 +	}
- 
- 	return err;
- }
-diff --git a/checkpoint/rst_process.c b/checkpoint/rst_process.c
-index 9e448b2..c088833 100644
---- a/checkpoint/rst_process.c
-+++ b/checkpoint/rst_process.c
-@@ -25,7 +25,7 @@ struct thr_context {
- 	struct completion complete;
- 	int error;
- 	struct cpt_context *ctx;
--	struct task_struct *tsk;
-+	struct cpt_task_image *ti;
- };
- 
- int local_kernel_thread(int (*fn)(void *), void * arg, unsigned long flags, pid_t pid)
-@@ -199,17 +199,14 @@ static int restart_thread(void *arg)
- 	struct cpt_context *ctx;
- 	struct cpt_task_image *ti;
- 	int err;
-+	int i;
- 
- 	current->state = TASK_UNINTERRUPTIBLE;
- 
- 	ctx = thr_ctx->ctx;
--	ti = kmalloc(sizeof(*ti), GFP_KERNEL);
--	if (!ti)
--		return -ENOMEM;
-+	ti = thr_ctx->ti;
- 
--	err = rst_get_object(CPT_OBJ_TASK, ti, sizeof(*ti), ctx);
--	if (!err)
--		err = rst_restore_task_struct(current, ti, ctx);
-+	err = rst_restore_task_struct(current, ti, ctx);
- 	if (!err)
- 		err = rst_restore_mm(ctx);
- 	if (!err)
-@@ -217,6 +214,12 @@ static int restart_thread(void *arg)
- 	if (!err)
- 		err = rst_restore_registers(current, ctx);
- 
-+	for (i = 0; i < ti->cpt_children_num; i++) {
-+		err = rst_restart_process(ctx);
-+		if (err)
-+			break;
++
++	down_write(&mm->mmap_sem);
++	addr = do_mmap_pgoff(file, vmai.cpt_start,
++			     vmai.cpt_end - vmai.cpt_start,
++			     prot, make_flags(&vmai),
++			     vmai.cpt_pgoff);
++
++	if (addr != vmai.cpt_start) {
++		up_write(&mm->mmap_sem);
++
++		err = -EINVAL;
++		if (IS_ERR((void*)addr))
++			err = addr;
++		goto out;
 +	}
 +
- 	thr_ctx->error = err;
- 	complete(&thr_ctx->complete);
- 
-@@ -226,7 +229,6 @@ static int restart_thread(void *arg)
- 		__set_current_state(TASK_UNINTERRUPTIBLE);
- 	}
- 
--	kfree(ti);
- 	schedule();
- 
- 	eprintk("leaked %d/%d %p\n", task_pid_nr(current), task_pid_vnr(current), current->mm);
-@@ -235,44 +237,57 @@ static int restart_thread(void *arg)
- 	complete_and_exit(NULL, 0);
- 	return 0;
- }
--static int create_root_task(struct cpt_context *ctx,
--			    struct thr_context *thr_ctx)
++	vma = find_vma(mm, vmai.cpt_start);
++	if (vma == NULL) {
++		up_write(&mm->mmap_sem);
++		eprintk("cannot find mmapped vma\n");
++		err = -ESRCH;
++		goto out;
++	}
 +
-+int rst_restart_process(struct cpt_context *ctx)
- {
-+	struct thr_context thr_ctx;
- 	struct task_struct *tsk;
-+	struct cpt_task_image *ti;
- 	int pid;
++	/* do_mmap_pgoff() can merge new area to previous one (not to the next,
++	 * we mmap in order, the rest of mm is still unmapped). This can happen
++	 * f.e. if flags are to be adjusted later, or if we had different
++	 * anon_vma on two adjacent regions. Split it by brute force. */
++	if (vma->vm_start != vmai.cpt_start) {
++		err = split_vma(mm, vma, (unsigned long)vmai.cpt_start, 0);
++		if (err) {
++			up_write(&mm->mmap_sem);
++			eprintk("cannot split vma\n");
++			goto out;
++		}
++	}
++	up_write(&mm->mmap_sem);
++
++	for (i = 0; i < vmai.cpt_page_num; i++) {
++		struct cpt_page_block pb;
++
++		err = rst_get_object(CPT_OBJ_PAGES, &pb, sizeof(pb), ctx);
++		if (err)
++			goto out;
++		if (!(vmai.cpt_flags & VM_ACCOUNT) && !(prot & PROT_WRITE)) {
++			/* I guess this is get_user_pages() messed things,
++			 * this happens f.e. when gdb inserts breakpoints.
++			 */
++			int j;
++			for (j = 0; j < (pb.cpt_end-pb.cpt_start)/PAGE_SIZE; j++) {
++				struct page *page;
++				void *maddr;
++				err = get_user_pages(current, current->mm,
++						(unsigned long)pb.cpt_start +
++						j * PAGE_SIZE,
++						1, 1, 1, &page, NULL);
++				if (err == 0)
++					err = -EFAULT;
++				if (err < 0) {
++					eprintk("get_user_pages: %d\n", err);
++					goto out;
++				}
++				err = 0;
++				maddr = kmap(page);
++				if (pb.cpt_content == CPT_CONTENT_VOID) {
++					memset(maddr, 0, PAGE_SIZE);
++				} else if (pb.cpt_content == CPT_CONTENT_DATA) {
++					err = ctx->read(maddr, PAGE_SIZE, ctx);
++					if (err) {
++						kunmap(page);
++						goto out;
++					}
++				} else {
++					err = -EINVAL;
++					kunmap(page);
++					goto out;
++				}
++				set_page_dirty_lock(page);
++				kunmap(page);
++				page_cache_release(page);
++			}
++		} else {
++			if (!(prot & PROT_WRITE))
++				sys_mprotect(vmai.cpt_start,
++						vmai.cpt_end - vmai.cpt_start,
++						prot | PROT_WRITE);
++			if (pb.cpt_content == CPT_CONTENT_VOID) {
++				int j;
++				for (j=0; j<(pb.cpt_end-pb.cpt_start)/sizeof(unsigned long); j++) {
++					err = __put_user(0UL, ((unsigned long __user*)(unsigned long)pb.cpt_start) + j);
++					if (err) {
++						eprintk("__put_user 2 %d\n", err);
++						goto out;
++					}
++				}
++			} else if (pb.cpt_content == CPT_CONTENT_DATA) {
++				err = ctx->read(cpt_ptr_import(pb.cpt_start),
++						pb.cpt_end - pb.cpt_start,
++						ctx);
++				if (err)
++					goto out;
++			} else {
++				err = -EINVAL;
++				goto out;
++			}
++			if (!(prot & PROT_WRITE))
++				sys_mprotect(vmai.cpt_start,
++						vmai.cpt_end - vmai.cpt_start,
++						prot);
++		}
++	}
++
++out:
++	if (file)
++		fput(file);
++	return err;
++}
++
++static int rst_restore_mm_context(struct cpt_context *ctx)
++{
++	struct cpt_obj_bits b;
++	struct mm_struct *mm = current->mm;
++	int oldsize = mm->context.size;
 +	int err;
- 
--	thr_ctx->ctx = ctx;
--	thr_ctx->error = 0;
--	init_completion(&thr_ctx->complete);
-+	thr_ctx.ctx = ctx;
-+	thr_ctx.error = 0;
-+	init_completion(&thr_ctx.complete);
- 
--	/* We should also create container here */ 
--	pid = local_kernel_thread(restart_thread, thr_ctx,
--			CLONE_NEWNS | CLONE_NEWUTS | CLONE_NEWIPC | 
--			CLONE_NEWUSER | CLONE_NEWPID | CLONE_NEWNET, 0);
--	if (pid < 0)
--		return pid;
-+	ti = kmalloc(sizeof(*ti), GFP_KERNEL);
-+	if (!ti)
++	void *oldldt;
++	void *newldt;
++
++	err = rst_get_object(CPT_OBJ_BITS, &b, sizeof(b), ctx);
++	if (err)
++		return err;
++
++	if (b.cpt_size > PAGE_SIZE)
++		newldt = vmalloc(b.cpt_size);
++	else
++		newldt = kmalloc(b.cpt_size, GFP_KERNEL);
++
++	if (!newldt)
 +		return -ENOMEM;
 +
-+	err = rst_get_object(CPT_OBJ_TASK, ti, sizeof(*ti), ctx);
++	err = ctx->read(newldt, b.cpt_size, ctx);
 +	if (err)
-+		goto err_free;
-+	thr_ctx.ti = ti;
++		return err;
 +
-+	if (ti->cpt_pid == 1) {
-+		/* We should also create container here */ 
-+		pid = local_kernel_thread(restart_thread, &thr_ctx,
-+				CLONE_NEWNS | CLONE_NEWUTS | CLONE_NEWIPC | 
-+				CLONE_NEWUSER | CLONE_NEWPID | CLONE_NEWNET, 0);
-+	} else {
-+		/* We should fork here a child with the same pid and
-+		   correct flags */
-+		pid = local_kernel_thread(restart_thread, &thr_ctx, 0, 0); 
++	oldldt = mm->context.ldt;
++	mm->context.ldt = newldt;
++	mm->context.size = b.cpt_size / LDT_ENTRY_SIZE;
++
++	load_LDT(&mm->context);
++
++	if (oldsize) {
++		if (oldsize * LDT_ENTRY_SIZE > PAGE_SIZE)
++			vfree(oldldt);
++		else
++			kfree(oldldt);
 +	}
-+	if (pid < 0) {
-+		err = pid;
-+		goto err_free;
++
++	return 0;
++}
++
++int rst_restore_mm(struct cpt_context *ctx)
++{
++	int err;
++	int i;
++	struct mm_struct *mm = current->mm;
++	struct cpt_mm_image m;
++
++	err = rst_get_object(CPT_OBJ_MM, &m, sizeof(m), ctx);
++	if (err)
++		return err;
++
++	down_write(&mm->mmap_sem);
++	do_munmap(mm, 0, TASK_SIZE);
++
++	mm->start_code = m.cpt_start_code;
++	mm->end_code = m.cpt_end_code;
++	mm->start_data = m.cpt_start_data;
++	mm->end_data = m.cpt_end_data;
++	mm->start_brk = m.cpt_start_brk;
++	mm->brk = m.cpt_brk;
++	mm->start_stack = m.cpt_start_stack;
++	mm->arg_start = m.cpt_start_arg;
++	mm->arg_end = m.cpt_end_arg;
++	mm->env_start = m.cpt_start_env;
++	mm->env_end = m.cpt_end_env;
++	mm->def_flags = m.cpt_def_flags;
++	mm->flags = m.cpt_flags;
++
++	up_write(&mm->mmap_sem);
++
++	for (i = 0; i < m.cpt_map_count; i++) {
++		err = rst_restore_one_vma(ctx);
++		if (err < 0)
++			goto out;
 +	}
- 	read_lock(&tasklist_lock);
- 	tsk = find_task_by_vpid(pid);
- 	if (tsk)
- 		get_task_struct(tsk);
- 	read_unlock(&tasklist_lock);
--	if (tsk == NULL)
--		return -ESRCH;
--	thr_ctx->tsk = tsk;
--	return 0;
--}
--
--int rst_restart_process(struct cpt_context *ctx)
--{
--	struct thr_context thr_ctx_root;
--	int err;
--
--	err = create_root_task(ctx, &thr_ctx_root);
--	if (err)
--		return err;
-+	if (tsk == NULL) {
-+		err = -ESRCH;
-+		goto err_free;
-+	}
++
++	err = rst_restore_mm_context(ctx);
++out:
++	return err;
++}
++
+diff --git a/checkpoint/rst_process.c b/checkpoint/rst_process.c
+index b9f745e..9e448b2 100644
+--- a/checkpoint/rst_process.c
++++ b/checkpoint/rst_process.c
+@@ -210,7 +210,8 @@ static int restart_thread(void *arg)
+ 	err = rst_get_object(CPT_OBJ_TASK, ti, sizeof(*ti), ctx);
+ 	if (!err)
+ 		err = rst_restore_task_struct(current, ti, ctx);
+-	/* Restore mm here */
++	if (!err)
++		err = rst_restore_mm(ctx);
+ 	if (!err)
+ 		err = rst_restore_fpustate(current, ti, ctx);
+ 	if (!err)
+diff --git a/mm/mmap.c b/mm/mmap.c
+index 971d0ed..98d1ba9 100644
+--- a/mm/mmap.c
++++ b/mm/mmap.c
+@@ -1858,6 +1858,7 @@ int split_vma(struct mm_struct * mm, struct vm_area_struct * vma,
  
--	wait_for_completion(&thr_ctx_root.complete);
--	wait_task_inactive(thr_ctx_root.tsk, 0);
-+	wait_for_completion(&thr_ctx.complete);
-+	wait_task_inactive(tsk, 0);
-+	err = thr_ctx.error;
- 
-+err_free:
-+	kfree(ti);
- 	return err;
+ 	return 0;
  }
++EXPORT_SYMBOL(split_vma);
+ 
+ /* Munmap is split into 2 main parts -- this part which finds
+  * what needs doing, and the areas themselves, which do the
+diff --git a/mm/mprotect.c b/mm/mprotect.c
+index fded06f..47c7d75 100644
+--- a/mm/mprotect.c
++++ b/mm/mprotect.c
+@@ -22,6 +22,7 @@
+ #include <linux/swap.h>
+ #include <linux/swapops.h>
+ #include <linux/mmu_notifier.h>
++#include <linux/module.h>
+ #include <asm/uaccess.h>
+ #include <asm/pgtable.h>
+ #include <asm/cacheflush.h>
+@@ -317,3 +318,4 @@ out:
+ 	up_write(&current->mm->mmap_sem);
+ 	return error;
+ }
++EXPORT_SYMBOL(sys_mprotect);
 -- 
 1.5.6
