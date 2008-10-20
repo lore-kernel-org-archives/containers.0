@@ -1,13 +1,15 @@
-From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: [RFC v7][PATCH 9/9] Restore open file descriprtors
-Date: Mon, 20 Oct 2008 01:40:37 -0400
-Message-ID: <1224481237-4892-10-git-send-email-orenl__19625.8333897733$1224507430$gmane$org@cs.columbia.edu>
-References: <1224481237-4892-1-git-send-email-orenl@cs.columbia.edu>
+From: Dmitry Mishin <dim-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+Subject: Re: [Devel] lxc userspace tools 0.3.0 released
+Date: Mon, 20 Oct 2008 12:42:47 +0400
+Message-ID: <200810201242.47995.dim@openvz.org>
+References: <48F4AF2E.3000204@fr.ibm.com> <200810171208.51783.dim@openvz.org>
+	<48F8F8BE.7080509@fr.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1224481237-4892-1-git-send-email-orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+In-Reply-To: <48F8F8BE.7080509-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
+Content-Disposition: inline
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -17,317 +19,124 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Linus Torvalds <torvalds-3NddpPZAyC0@public.gmane.org>
-Cc: linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Alexander Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, "H. Peter Anvin" <hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org>, Thomas Gleixner <tglx-hfZtesqFncYOwBW4kG4KsQ@public.gmane.org>, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>
+To: Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
+Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, igor-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Restore open file descriptors: for each FD read 'struct cr_hdr_fd_ent'
-and lookup objref in the hash table; if not found (first occurence), read
-in 'struct cr_hdr_fd_data', create a new FD and register in the hash.
-Otherwise attach the file pointer from the hash as an FD.
+On Saturday 18 October 2008 00:42:38 Daniel Lezcano wrote:
+> Dmitry Mishin wrote:
+> > On Thursday 16 October 2008 16:28:08 Daniel Lezcano wrote:
+> >> Dmitry Mishin wrote:
+> >>> On Thursday 16 October 2008 13:06:45 Daniel Lezcano wrote:
+> >>>> Dmitry Mishin wrote:
+> >>>>> Hi, Daniel!
+> >>>>
+> >>>> Hi Dmitry ! good to see you again :)
+> >>>
+> >>> Thank you ! :)
+> >>>
+> >>>>> I studied a bit lxc tools and have a couple of questions. Could you
+> >>>>> answer them?
+> >>>>
+> >>>> Of course I can :)
+> >>>>
+> >>>>> 1)  Why did you chose such way of a container's configuration
+> >>>>> storing? IMHO, configuration in one file is better, because this file
+> >>>>> will be small and could be easily mmap'ed for the following
+> >>>>> operations instead of multiple readdir() and filesystem lookups.
+> >>>>
+> >>>> I wanted to have the configuration easily hackable, so you can edit
+> >>>> directly the files inside the directory. For example, if you remove
+> >>>> the network directory, when you will start the container, the network
+> >>>> will not be unshared. If you have a single file, that will be more
+> >>>> difficult to edit especially if it is a binary file.
+> >>>>
+> >>>> The container tree contains more than the configuration file, for
+> >>>> example, it contains some runtime information.
+> >>>>
+> >>>> It is true having a mmapped configuration is more efficient but it is
+> >>>> just for container startup, and there are not thousand of files. The
+> >>>> application running inside the container is not impacted.
+> >>>
+> >>> OK, but what if I need some namespace to be shared between containers?
+> >>> How it will be handled? For example, CT 1 and CT 2 need to share
+> >>> network namespace, but keep it separated from host one.
+> >>
+> >> I think that can be solved by nested container, a container 1, unsharing
+> >> the network, and inside create 2 containers without unsharing the
+> >> network.
+> >>
+> >> Example:
+> >> 	in a script called myscript.sh:
+> >> 		#!/bin/bash
+> >> 		lxc-execute -n ctr1 echo "hello1" &
+> >> 		lxc-execute -n ctr2 echo "hello2"
+> >>
+> >> 	in the shell:
+> >> 	lxc-create -n mynetwork -f myconf
+> >> 	lxc-execute -n mynetwork ./myscript.sh
+> >
+> > I mean how it will be handled from configuration layout POV?
+> >
+> >> Do you have an example, an use case for this kind of configuration ?
+> >
+> > For example, web server and dns server for the same domain, hosted on the
+> > external node.
+>
+> Ok I see, thanks.
+>
+> > As you mentioned, the goal of this tool is to provide ability for kernel
+> > hackers to test namespaces support in mainstream. Thus it should be
+> > flexible as possible and do not add limitations over current
+> > functionality. Current design of configuration storing is likely to be a
+> > week place in this sense. At least I do not understand yet how namespaces
+> > inheritance could be reflected in it.
+>
+> I don't think it is a current limitation as I shown in the previous
+> example. Not being able to define a configuration for a nested container
+> is not a big issue right now because the nested container are not fully
+> supported (eg. network devices being pushed back to init_net).
+>
+> The configuration storing is I think a good approach and it is not an
+> API like the cgroup, it can be changed at any time. 
+With the respective backward-compatibility or conversion code to be written...
 
-This patch only handles basic FDs - regular files, directories and also
-symbolic links.
+> The advantage of 
+> having a tree file for a container will appear more clear with the
+> future functionalities.
+>
+> If the nested containers become a must-have and asked by people, the lxc
+> tools will be changed in this way. We can imagine to do like the cgroup
+> and create in the container directory a new container directory to
+> reflect the hierarchy and we access a container by doing for example
+> "lxc-stop -n foo/bar" (bar is a child of foo).
+Unification with cgroups is good idea, IMHO.
+ 
+> We can imagine to 
+> implement a fuse for containers and create / destroy when doing
+> mkdir/rmdir, as well as create a directory when doing lxc_create.
+>
+> The configuration could be something like:
+>
+> Create a nested container with two configuration files:
+> 	lxc-create -n foo/bar -f foo.conf -f bar.conf
+>
+> And so execute:
+> 	lxc-execute -n foo/bar /usr/sbin/httpd /bin/bash
+>
+> will unshare 'foo', exec 'httpd' and so unshare 'bar' (under 'foo') and
+> exec 'bash'
+>
+> Well these are random thoughts... :)
+Good thoughts! I need to take a look at cgroups management tools and possibly 
+develop something usefull for lxc :)
+ 
+>
+> Thanks
+>   -- Daniel
 
-Signed-off-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Acked-by: Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Signed-off-by: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
----
- checkpoint/Makefile        |    2 +-
- checkpoint/restart.c       |    4 +
- checkpoint/rstr_file.c     |  246 ++++++++++++++++++++++++++++++++++++++++++++
- include/linux/checkpoint.h |    1 +
- 4 files changed, 252 insertions(+), 1 deletions(-)
- create mode 100644 checkpoint/rstr_file.c
 
-diff --git a/checkpoint/Makefile b/checkpoint/Makefile
-index 7496695..88bbc10 100644
---- a/checkpoint/Makefile
-+++ b/checkpoint/Makefile
-@@ -3,4 +3,4 @@
- #
- 
- obj-$(CONFIG_CHECKPOINT_RESTART) += sys.o checkpoint.o restart.o objhash.o \
--		ckpt_mem.o rstr_mem.o ckpt_file.o
-+		ckpt_mem.o rstr_mem.o ckpt_file.o rstr_file.o
-diff --git a/checkpoint/restart.c b/checkpoint/restart.c
-index f4d87ba..9ff9f66 100644
---- a/checkpoint/restart.c
-+++ b/checkpoint/restart.c
-@@ -219,6 +219,10 @@ static int cr_read_task(struct cr_ctx *ctx)
- 	cr_debug("memory: ret %d\n", ret);
- 	if (ret < 0)
- 		goto out;
-+	ret = cr_read_files(ctx);
-+	cr_debug("files: ret %d\n", ret);
-+	if (ret < 0)
-+		goto out;
- 	ret = cr_read_thread(ctx);
- 	cr_debug("thread: ret %d\n", ret);
- 	if (ret < 0)
-diff --git a/checkpoint/rstr_file.c b/checkpoint/rstr_file.c
-new file mode 100644
-index 0000000..08bb049
---- /dev/null
-+++ b/checkpoint/rstr_file.c
-@@ -0,0 +1,246 @@
-+/*
-+ *  Checkpoint file descriptors
-+ *
-+ *  Copyright (C) 2008 Oren Laadan
-+ *
-+ *  This file is subject to the terms and conditions of the GNU General Public
-+ *  License.  See the file COPYING in the main directory of the Linux
-+ *  distribution for more details.
-+ */
-+
-+#include <linux/kernel.h>
-+#include <linux/sched.h>
-+#include <linux/fs.h>
-+#include <linux/file.h>
-+#include <linux/fdtable.h>
-+#include <linux/fsnotify.h>
-+#include <linux/syscalls.h>
-+#include <linux/checkpoint.h>
-+#include <linux/checkpoint_hdr.h>
-+
-+#include "checkpoint_file.h"
-+
-+static int cr_close_all_fds(struct files_struct *files)
-+{
-+	int *fdtable;
-+	int nfds;
-+
-+	nfds = cr_scan_fds(files, &fdtable);
-+	if (nfds < 0)
-+		return nfds;
-+	while (nfds--)
-+		sys_close(fdtable[nfds]);
-+	kfree(fdtable);
-+	return 0;
-+}
-+
-+/**
-+ * cr_attach_file - attach a lonely file ptr to a file descriptor
-+ * @file: lonely file pointer
-+ */
-+static int cr_attach_file(struct file *file)
-+{
-+	int fd = get_unused_fd_flags(0);
-+
-+	if (fd >= 0) {
-+		fsnotify_open(file->f_path.dentry);
-+		fd_install(fd, file);
-+	}
-+	return fd;
-+}
-+
-+/**
-+ * cr_attach_get_file - attach (and get) lonely file ptr to a file descriptor
-+ * @file: lonely file pointer
-+ */
-+static int cr_attach_get_file(struct file *file)
-+{
-+	int fd = get_unused_fd_flags(0);
-+
-+	if (fd >= 0) {
-+		fsnotify_open(file->f_path.dentry);
-+		fd_install(fd, file);
-+		get_file(file);
-+	}
-+	return fd;
-+}
-+
-+#define CR_SETFL_MASK (O_APPEND|O_NONBLOCK|O_NDELAY|FASYNC|O_DIRECT|O_NOATIME)
-+
-+/* cr_read_fd_data - restore the state of a given file pointer */
-+static int
-+cr_read_fd_data(struct cr_ctx *ctx, struct files_struct *files, int parent)
-+{
-+	struct cr_hdr_fd_data *hh = cr_hbuf_get(ctx, sizeof(*hh));
-+	struct file *file;
-+	int rparent, ret;
-+	int fd = 0;	/* pacify gcc warning */
-+
-+	rparent = cr_read_obj_type(ctx, hh, sizeof(*hh), CR_HDR_FD_DATA);
-+	cr_debug("rparent %d parent %d flags %#x mode %#x how %d\n",
-+		 rparent, parent, hh->f_flags, hh->f_mode, hh->fd_type);
-+	if (rparent < 0) {
-+		ret = parent;
-+		goto out;
-+	}
-+
-+	ret = -EINVAL;
-+
-+	if (rparent != parent)
-+		goto out;
-+
-+	/* FIX: more sanity checks on f_flags, f_mode etc */
-+
-+	switch (hh->fd_type) {
-+	case CR_FD_FILE:
-+	case CR_FD_DIR:
-+	case CR_FD_LINK:
-+		file = cr_read_open_fname(ctx, hh->f_flags, hh->f_mode);
-+		break;
-+	default:
-+		goto out;
-+	}
-+
-+	if (IS_ERR(file)) {
-+		ret = PTR_ERR(file);
-+		goto out;
-+	}
-+
-+	/* FIX: need to restore uid, gid, owner etc */
-+
-+	fd = cr_attach_file(file);	/* no need to cleanup 'file' below */
-+	if (fd < 0) {
-+		filp_close(file, NULL);
-+		ret = fd;
-+		goto out;
-+	}
-+
-+	/* register new <objref, file> tuple in hash table */
-+	ret = cr_obj_add_ref(ctx, (void *) file, parent, CR_OBJ_FILE, 0);
-+	if (ret < 0)
-+		goto out;
-+	ret = sys_fcntl(fd, F_SETFL, hh->f_flags & CR_SETFL_MASK);
-+	if (ret < 0)
-+		goto out;
-+	ret = vfs_llseek(file, hh->f_pos, SEEK_SET);
-+	if (ret == -ESPIPE)	/* ignore error on non-seekable files */
-+		ret = 0;
-+
-+	ret = 0;
-+ out:
-+	cr_hbuf_put(ctx, sizeof(*hh));
-+	return ret < 0 ? ret : fd;
-+}
-+
-+/**
-+ * cr_read_fd_ent - restore the state of a given file descriptor
-+ * @ctx: checkpoint context
-+ * @files: files_struct pointer
-+ * @parent: parent objref
-+ *
-+ * Restores the state of a file descriptor; looks up the objref (in the
-+ * header) in the hash table, and if found picks the matching file and
-+ * use it; otherwise calls cr_read_fd_data to restore the file too.
-+ */
-+static int
-+cr_read_fd_ent(struct cr_ctx *ctx, struct files_struct *files, int parent)
-+{
-+	struct cr_hdr_fd_ent *hh = cr_hbuf_get(ctx, sizeof(*hh));
-+	struct file *file;
-+	int newfd, rparent, ret;
-+
-+	rparent = cr_read_obj_type(ctx, hh, sizeof(*hh), CR_HDR_FD_ENT);
-+	cr_debug("rparent %d parent %d ref %d fd %d c.o.e %d\n",
-+		 rparent, parent, hh->objref, hh->fd, hh->close_on_exec);
-+	if (rparent < 0) {
-+		ret = rparent;
-+		goto out;
-+	}
-+
-+	ret = -EINVAL;
-+
-+	if (rparent != parent)
-+		goto out;
-+	if (hh->objref <= 0)
-+		goto out;
-+
-+	file = cr_obj_get_by_ref(ctx, hh->objref, CR_OBJ_FILE);
-+	if (IS_ERR(file)) {
-+		ret = PTR_ERR(file);
-+		goto out;
-+	}
-+
-+	if (file) {
-+		/* reuse file descriptor found in the hash table */
-+		newfd = cr_attach_get_file(file);
-+	} else {
-+		/* create new file pointer (and register in hash table) */
-+		newfd = cr_read_fd_data(ctx, files, hh->objref);
-+	}
-+
-+	if (newfd < 0) {
-+		ret = newfd;
-+		goto out;
-+	}
-+
-+	cr_debug("newfd got %d wanted %d\n", newfd, hh->fd);
-+
-+	/* if newfd isn't desired fd then reposition it */
-+	if (newfd != hh->fd) {
-+		ret = sys_dup2(newfd, hh->fd);
-+		if (ret < 0)
-+			goto out;
-+		sys_close(newfd);
-+	}
-+
-+	if (hh->close_on_exec)
-+		set_close_on_exec(hh->fd, 1);
-+
-+	ret = 0;
-+ out:
-+	cr_hbuf_put(ctx, sizeof(*hh));
-+	return ret;
-+}
-+
-+int cr_read_files(struct cr_ctx *ctx)
-+{
-+	struct cr_hdr_files *hh = cr_hbuf_get(ctx, sizeof(*hh));
-+	struct files_struct *files = current->files;
-+	int i, parent, ret;
-+
-+	parent = cr_read_obj_type(ctx, hh, sizeof(*hh), CR_HDR_FILES);
-+	if (parent < 0) {
-+		ret = parent;
-+		goto out;
-+	}
-+
-+	ret = -EINVAL;
-+#if 0	/* activate when containers are used */
-+	if (parent != task_pid_vnr(current))
-+		goto out;
-+#endif
-+	cr_debug("objref %d nfds %d\n", hh->objref, hh->nfds);
-+	if (hh->objref < 0 || hh->nfds < 0)
-+		goto out;
-+
-+	if (hh->nfds > sysctl_nr_open) {
-+		ret = -EMFILE;
-+		goto out;
-+	}
-+
-+	/* point of no return -- close all file descriptors */
-+	ret = cr_close_all_fds(files);
-+	if (ret < 0)
-+		goto out;
-+
-+	for (i = 0; i < hh->nfds; i++) {
-+		ret = cr_read_fd_ent(ctx, files, hh->objref);
-+		if (ret < 0)
-+			break;
-+	}
-+
-+	ret = 0;
-+ out:
-+	cr_hbuf_put(ctx, sizeof(*hh));
-+	return ret;
-+}
-diff --git a/include/linux/checkpoint.h b/include/linux/checkpoint.h
-index d6bf6dc..b102346 100644
---- a/include/linux/checkpoint.h
-+++ b/include/linux/checkpoint.h
-@@ -85,6 +85,7 @@ extern int cr_write_files(struct cr_ctx *ctx, struct task_struct *t);
- 
- extern int do_restart(struct cr_ctx *ctx);
- extern int cr_read_mm(struct cr_ctx *ctx);
-+extern int cr_read_files(struct cr_ctx *ctx);
- 
- /* there are from fs/read_write.c, not exported otherwise in a header */
- extern loff_t file_pos_read(struct file *file);
+
 -- 
-1.5.4.3
+Thanks,
+Dmitry.
