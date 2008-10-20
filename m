@@ -1,9 +1,9 @@
-From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+From: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 Subject: Re: [Devel] Re: [PATCH 0/9] OpenVZ kernel based checkpointing/restart
-Date: Mon, 20 Oct 2008 13:17:24 -0400
-Message-ID: <48FCBD24.7070902__43143.8720356256$1224536271$gmane$org@cs.columbia.edu>
-References: <1220439476-16465-1-git-send-email-major@openvz.org>	<1224286383.1848.65.camel@nimitz>
-	<200810201614.36911.major@openvz.org>
+Date: Mon, 20 Oct 2008 08:55:05 -0700
+Message-ID: <1224518105.1848.93.camel__12294.1594491296$1224536481$gmane$org@nimitz>
+References: <1220439476-16465-1-git-send-email-major@openvz.org>
+	<1224286383.1848.65.camel@nimitz> <200810201614.36911.major@openvz.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -19,62 +19,38 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: Andrey Mirkin <major-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-
-
-Andrey Mirkin wrote:
-> On Saturday 18 October 2008 03:33 Dave Hansen wrote:
->> On Wed, 2008-09-03 at 14:57 +0400, Andrey Mirkin wrote:
->>> This patchset introduces kernel based checkpointing/restart as it is
->>> implemented in OpenVZ project. This patchset has limited functionality
->>> and are able to checkpoint/restart only single process. Recently Oren
->>> Laaden sent another kernel based implementation of checkpoint/restart.
->>> The main differences between this patchset and Oren's patchset are:
->> Hi Andrey,
->>
->> I'm curious what you want to happen with this patch set.  Is there
->> something specific in Oren's set that deficient which you need
->> implemented?  Are there some technical reasons you prefer this code?
-> 
-> Hi Dave,
-> 
+On Mon, 2008-10-20 at 16:14 +0400, Andrey Mirkin wrote:
 > Right now my patchset (v2) provides an ability to checkpoint and restart a 
 > group of processes. The process of checkpointing and restart can be initiated 
 > from external process (not from the process which should be checkpointed).
 
-Both patchsets share the same design, namely be able to checkpoint and
-restart multiple processes, with the operation initiated by an external
-processes.
-
-I deliberately left out the part that handles multiple processes to
-keeps things simple for initial review, and until we decide on the
-question of kernel- or user- based process creation on restart.
+Absolutely.  Oren's code does it this way to make for a smaller patch at
+first.  The syscall takes a pid argument so it is surely expected to be
+expanded upon later. 
 
 > Also I think that all the restart job (including process forking) should be 
 > done in kernel, as in this case we will not depend on user space and will be 
 > more secure. This is also implemented in my patchset.
 
-I'm not convinced that creating the processes in the kernel makes it
-more secure.  Can you elaborate ?  for the discussion, let's compare
-these two basic scenarios:
+Do you think that this is an approach that Oren's patches are married
+to, or is this a "feature" we can add on later?
 
-1) container and processes are created in user space; each process
-calls "sys_restart()" which eventually calls "do_restart()" that
-does kernel-based restart.
+I don't care which patch set we end up sticking in the kernel.  I'm
+trying to figure out which code we can more easily build upon in the
+future.  The fact that Oren's or yours can't do certain little things
+right now does not bother me.
 
-2) container and processes are created in kernel space; each process
-calls "do_restart()" to do kernel-based restart.
+Honestly, I'm a little more confident that everyone can work with Oren
+since he managed to get 7 revisions of his patch out and make some
+pretty large changes while in the same time the OpenVZ patch was only
+released twice.  I'm not sure what has changed in the OpenVZ patch
+between releases, either.
 
-In fact, creating in user based makes it easier to enforce capabilities
-and limits of the user. It also simplifies the debugging significantly,
-and allows us to delegate the entire issue of containers and namespace
-management back to user space, where it probably belongs.
+Are there any reasons that you absolutely can not use the code Oren
+posted?  Will it not fulfill your needs somehow?  If so, could you
+please elaborate on how?
 
-On the other hand, doing it in kernel space likely to produce simpler
-code for the creation of the processes.
-
-Thanks,
-
-Oren.
+-- Dave
