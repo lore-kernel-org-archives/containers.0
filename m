@@ -1,15 +1,21 @@
-From: "Dong-Jae Kang" <baramsori72-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: Re: [PATCH 0/2] dm-ioband: I/O bandwidth controller v1.8.0:
-	Introduction
-Date: Mon, 20 Oct 2008 17:40:49 +0900
-Message-ID: <2891419e0810200140s3cf9c0a3q228620519ae5f4af__10176.7192398713$1224527819$gmane$org@mail.gmail.com>
-References: <20081017.160950.71109894.ryov@valinux.co.jp>
+From: Louis Rilling <Louis.Rilling-aw0BnHfMbSpBDgjK7y7TUQ@public.gmane.org>
+Subject: Re: [PATCH 08/10] Introduce functions to restart a process
+Date: Mon, 20 Oct 2008 15:25:36 +0200
+Message-ID: <20081020132536.GS15171@hawkmoon.kerlabs.com>
+References: <1224285098-573-1-git-send-email-major@openvz.org>
+	<1224285098-573-2-git-send-email-major@openvz.org>
+	<1224285098-573-3-git-send-email-major@openvz.org>
+	<1224285098-573-4-git-send-email-major@openvz.org>
+	<1224285098-573-5-git-send-email-major@openvz.org>
+	<1224285098-573-6-git-send-email-major@openvz.org>
+	<1224285098-573-7-git-send-email-major@openvz.org>
+	<1224285098-573-8-git-send-email-major@openvz.org>
+	<1224285098-573-9-git-send-email-major@openvz.org>
+Reply-To: Louis.Rilling-aw0BnHfMbSpBDgjK7y7TUQ@public.gmane.org
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: multipart/mixed; boundary="===============0445884339493992965=="
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20081017.160950.71109894.ryov-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
-Content-Disposition: inline
+In-Reply-To: <1224285098-573-9-git-send-email-major-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -17,71 +23,326 @@ List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
 List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Mime-version: 1.0
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Ryo Tsuruta <ryov-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
-Cc: xen-devel-GuqFBffKawuULHF6PoxzQEEOCMrvLtNR@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, virtualization-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, dm-devel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, corsetproject-/JYPxA39Uh5TLH3MbocFFw@public.gmane.org, fernando-gVGce1chcLdL9jVzuh4AOg@public.gmane.org, agk-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
+To: Andrey Mirkin <major-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Hi, Ryo Tsuruta
+This is a MIME-formatted message.  If you see this text it means that your
+E-mail software does not support MIME-formatted messages.
 
-I am trying to install your new released dm-ioband v1.8.0
-I/O bandwidth controller v1.8.0 could be adjusted to  the latest
-stable kernel 2.6.27.1
-it was good news for me
-but, I had a problem when I try to patch bio-cgroup files to  stable
-kernel 2.6.27.1
-many patch failure and hunk messages were occured.
+--===============0445884339493992965==
+Content-Type: multipart/signed; micalg=pgp-sha1; protocol="application/pgp-signature"; boundary="=_bohort-22007-1224508992-0001-2"
+Content-Disposition: inline
 
-Can you check bio-cgroup patch files against stable kernel 2.6.27.1?
+This is a MIME-formatted message.  If you see this text it means that your
+E-mail software does not support MIME-formatted messages.
 
-If the dm-ioband and bio-cgroup patches had different base kernel, i
-think it is not natural.
-I think it is more reasonable to release dm-ioband and bio-cgroup
-patches in pair.
-In my situation, both direct IO and buffered IO are same important.
+--=_bohort-22007-1224508992-0001-2
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
 
-thank you
+On Sat, Oct 18, 2008 at 03:11:36AM +0400, Andrey Mirkin wrote:
+> Functions to restart process, restore its state, fpu and registers are ad=
+ded.
 
-Regard,
-Dong-Jae Kang
+[...]
 
-2008/10/17 Ryo Tsuruta <ryov-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>:
-> Hi Alasdair and all,
->
-> This is the dm-ioband version 1.8.0 release.
->
-> Dm-ioband is an I/O bandwidth controller implemented as a device-mapper
-> driver, which gives specified bandwidth to each job running on the same
-> physical device.
->
-> This release is a minor bug fix and confirmed running on the latest
-> stable kernel 2.6.27.1.
->
-> - Can be applied to the kernel 2.6.27.1 and 2.6.27-rc5-mm1.
-> - Changes from 1.7.0 (posted on Oct 3, 2008):
->  - Fix a minor bug in io_limit setting that causes dm-ioband to stop
->    issuing I/O requests when a large value is set to io_limit.
->
-> Alasdair, could you please review this patch and give me any comments?
->
-> Thanks,
-> Ryo Tsuruta
-> _______________________________________________
-> Containers mailing list
-> Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-> https://lists.linux-foundation.org/mailman/listinfo/containers
->
+> diff --git a/checkpoint/rst_process.c b/checkpoint/rst_process.c
+> new file mode 100644
+> index 0000000..b9f745e
+> --- /dev/null
+> +++ b/checkpoint/rst_process.c
+> @@ -0,0 +1,277 @@
+> +/*
+> + *  Copyright (C) 2008 Parallels, Inc.
+> + *
+> + *  Author: Andrey Mirkin <major-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+> + *
+> + *  This program is free software; you can redistribute it and/or
+> + *  modify it under the terms of the GNU General Public License as
+> + *  published by the Free Software Foundation, version 2 of the
+> + *  License.
+> + *
+> + */
+> +
+> +#include <linux/sched.h>
+> +#include <linux/fs.h>
+> +#include <linux/file.h>
+> +#include <linux/version.h>
+> +#include <linux/module.h>
+> +
+> +#include "checkpoint.h"
+> +#include "cpt_image.h"
+> +
+> +#define HOOK_RESERVE	256
+> +
+> +struct thr_context {
+> +	struct completion complete;
+> +	int error;
+> +	struct cpt_context *ctx;
+> +	struct task_struct *tsk;
+> +};
+> +
+> +int local_kernel_thread(int (*fn)(void *), void * arg, unsigned long fla=
+gs, pid_t pid)
+> +{
+> +	pid_t ret;
+> +
+> +	if (current->fs =3D=3D NULL) {
+> +		/* do_fork_pid() hates processes without fs, oopses. */
+> +		eprintk("local_kernel_thread: current->fs=3D=3DNULL\n");
+> +		return -EINVAL;
+> +	}
+> +	if (!try_module_get(THIS_MODULE))
+> +		return -EBUSY;
+> +	ret =3D kernel_thread(fn, arg, flags);
+> +	if (ret < 0)
+> +		module_put(THIS_MODULE);
+> +	return ret;
+> +}
+> +
+> +static unsigned int decode_task_flags(unsigned int task_flags)
+> +{
+> +	unsigned int flags =3D 0;
+> +
+> +	if (task_flags & (1 << CPT_PF_EXITING))
+> +		flags |=3D PF_EXITING;
+> +	if (task_flags & (1 << CPT_PF_FORKNOEXEC))
+> +		flags |=3D PF_FORKNOEXEC;
+> +	if (task_flags & (1 << CPT_PF_SUPERPRIV))
+> +		flags |=3D PF_SUPERPRIV;
+> +	if (task_flags & (1 << CPT_PF_DUMPCORE))
+> +		flags |=3D PF_DUMPCORE;
+> +	if (task_flags & (1 << CPT_PF_SIGNALED))
+> +		flags |=3D PF_SIGNALED;
+> +=09
+> +	return flags;
+> +	=09
+> +}
+> +
+> +int rst_restore_task_struct(struct task_struct *tsk, struct cpt_task_ima=
+ge *ti,
+> +			    struct cpt_context *ctx)
+> +{
+> +	int i;
+> +
+> +	/* Restore only saved flags, comm and tls for now */
+> +	tsk->flags =3D decode_task_flags(ti->cpt_flags);
+> +	clear_tsk_thread_flag(tsk, TIF_FREEZE);
+> +	memcpy(tsk->comm, ti->cpt_comm, TASK_COMM_LEN);
+> +	for (i =3D 0; i < GDT_ENTRY_TLS_ENTRIES; i++) {
+> +		tsk->thread.tls_array[i].a =3D ti->cpt_tls[i] & 0xFFFFFFFF;
+> +		tsk->thread.tls_array[i].b =3D ti->cpt_tls[i] >> 32;
+> +	}
+> +
+> +	return 0;
+> +}
+> +
+> +static int rst_restore_fpustate(struct task_struct *tsk, struct cpt_task=
+_image *ti,
+> +				struct cpt_context *ctx)
+> +{
+> +	struct cpt_obj_bits hdr;
+> +	int err;
+> +	char *buf;
+> +
+> +	clear_stopped_child_used_math(tsk);
+> +
+> +	err =3D rst_get_object(CPT_OBJ_BITS, &hdr, sizeof(hdr), ctx);
+> +	if (err < 0)
+> +		return err;
+> +
+> +	buf =3D kmalloc(hdr.cpt_size, GFP_KERNEL);
+> +	if (!buf)
+> +		return -ENOMEM;
+> +
+> +	err =3D ctx->read(buf, hdr.cpt_size, ctx);
+> +	if (err)
+> +		goto out;
+> +
+> +	if (hdr.cpt_content =3D=3D CPT_CONTENT_X86_FPUSTATE && cpu_has_fxsr) {
+> +		memcpy(&tsk->thread.xstate, buf,
+> +				sizeof(struct i387_fxsave_struct));
+> +		if (ti->cpt_flags & CPT_PF_USED_MATH)
+> +			set_stopped_child_used_math(tsk);
+> +	}
+> +#ifndef CONFIG_X86_64
+> +	else if (hdr.cpt_content =3D=3D CPT_CONTENT_X86_FPUSTATE_OLD &&
+> +			!cpu_has_fxsr) {	=09
+> +		memcpy(&tsk->thread.xstate, buf,
+> +				sizeof(struct i387_fsave_struct));
+> +		if (ti->cpt_flags & CPT_PF_USED_MATH)
+> +			set_stopped_child_used_math(tsk);
+> +	}
+> +#endif
+> +
+> +out:
+> +	kfree(buf);
+> +	return err;
+> +}
+> +
+> +static u32 decode_segment(u32 segid)
+> +{
+> +	if (segid =3D=3D CPT_SEG_ZERO)
+> +		return 0;
+> +
+> +	/* TLS descriptors */
+> +	if (segid <=3D CPT_SEG_TLS3)
+> +		return ((GDT_ENTRY_TLS_MIN + segid - CPT_SEG_TLS1) << 3) + 3;
+> +
+> +	/* LDT descriptor, it is just an index to LDT array */
+> +	if (segid >=3D CPT_SEG_LDT)
+> +		return ((segid - CPT_SEG_LDT) << 3) | 7;
+> +
+> +	/* Check for one of standard descriptors */
+> +	if (segid =3D=3D CPT_SEG_USER32_DS)
+> +		return __USER_DS;
+> +	if (segid =3D=3D CPT_SEG_USER32_CS)
+> +		return __USER_CS;
+> +
+> +	eprintk("Invalid segment reg %d\n", segid);
+> +	return 0;
+> +}
+> +
+> +static int rst_restore_registers(struct task_struct *tsk, struct cpt_con=
+text *ctx)
+> +{
+> +	struct cpt_x86_regs ri;
+> +	struct pt_regs *regs =3D task_pt_regs(tsk);
+> +	extern char i386_ret_from_resume;
+> +	int err;
+> +
+> +	err =3D rst_get_object(CPT_OBJ_X86_REGS, &ri, sizeof(ri), ctx);
+> +	if (err < 0)
+> +		return err;
+> +
+> +	tsk->thread.sp =3D (unsigned long) regs;
+> +	tsk->thread.sp0 =3D (unsigned long) (regs+1);
+> +	tsk->thread.ip =3D (unsigned long) &i386_ret_from_resume;
+> +
+> +	tsk->thread.gs =3D decode_segment(ri.cpt_gs);
+> +	tsk->thread.debugreg0 =3D ri.cpt_debugreg[0];
+> +	tsk->thread.debugreg1 =3D ri.cpt_debugreg[1];
+> +	tsk->thread.debugreg2 =3D ri.cpt_debugreg[2];
+> +	tsk->thread.debugreg3 =3D ri.cpt_debugreg[3];
+> +	tsk->thread.debugreg6 =3D ri.cpt_debugreg[6];
+> +	tsk->thread.debugreg7 =3D ri.cpt_debugreg[7];
+> +
+> +	regs->bx =3D ri.cpt_bx;
+> +	regs->cx =3D ri.cpt_cx;
+> +	regs->dx =3D ri.cpt_dx;
+> +	regs->si =3D ri.cpt_si;
+> +	regs->di =3D ri.cpt_di;
+> +	regs->bp =3D ri.cpt_bp;
+> +	regs->ax =3D ri.cpt_ax;
+> +	regs->orig_ax =3D ri.cpt_orig_ax;
+> +	regs->ip =3D ri.cpt_ip;
+> +	regs->flags =3D ri.cpt_flags;
+> +	regs->sp =3D ri.cpt_sp;
+> +
+> +	regs->cs =3D decode_segment(ri.cpt_cs);
+> +	regs->ss =3D decode_segment(ri.cpt_ss);
+> +	regs->ds =3D decode_segment(ri.cpt_ds);
+> +	regs->es =3D decode_segment(ri.cpt_es);
+> +	regs->fs =3D decode_segment(ri.cpt_fs);
+> +
+> +	tsk->thread.sp -=3D HOOK_RESERVE;
+> +	memset((void*)tsk->thread.sp, 0, HOOK_RESERVE);
+> +
+> +	return 0;
+> +}
+> +
+> +static int restart_thread(void *arg)
+> +{
+> +	struct thr_context *thr_ctx =3D arg;
+> +	struct cpt_context *ctx;
+> +	struct cpt_task_image *ti;
+> +	int err;
+> +
+> +	current->state =3D TASK_UNINTERRUPTIBLE;
+> +
+> +	ctx =3D thr_ctx->ctx;
+> +	ti =3D kmalloc(sizeof(*ti), GFP_KERNEL);
+> +	if (!ti)
+> +		return -ENOMEM;
+> +
+> +	err =3D rst_get_object(CPT_OBJ_TASK, ti, sizeof(*ti), ctx);
+> +	if (!err)
+> +		err =3D rst_restore_task_struct(current, ti, ctx);
+> +	/* Restore mm here */
+> +	if (!err)
+> +		err =3D rst_restore_fpustate(current, ti, ctx);
+> +	if (!err)
+> +		err =3D rst_restore_registers(current, ctx);
+> +
+> +	thr_ctx->error =3D err;
+> +	complete(&thr_ctx->complete);
+> +
+> +	if (!err && (ti->cpt_state & (EXIT_ZOMBIE|EXIT_DEAD))) {
+> +		do_exit(ti->cpt_exit_code);
+> +	} else {
+> +		__set_current_state(TASK_UNINTERRUPTIBLE);
+> +	}
+> +
+> +	kfree(ti);
+> +	schedule();
+> +
+> +	eprintk("leaked %d/%d %p\n", task_pid_nr(current), task_pid_vnr(current=
+), current->mm);
+> +
+> +	module_put(THIS_MODULE);
 
+I'm sorry, I still do not understand what you are doing with this self-modu=
+le
+pinning stuff. AFAICS, we should not get here unless there is a bug. So the
+checkpoint module ref count is never decreased, right?
 
+Could you detail what is this self-module pinning for? As I already told yo=
+u,
+this looks like a bogus solution to avoid unloading the checkpoint module d=
+uring
+restart.
 
--- 
--------------------------------------------------------------------------------------------------
-   DONG-JAE, KANG
-   Senior Member of Engineering Staff
-   Internet Platform Research Dept, S/W Content Research Lab
-   Electronics and Telecommunications Research Institute(ETRI)
-   138 Gajeongno, Yuseong-gu, Daejeon, 305-700 KOREA
-   Phone : 82-42-860-1561 Fax : 82-42-860-6699
-   Mobile : 82-10-9919-2353 E-mail : djkang-mINagvnPBMnWF1p7bDn8Kw@public.gmane.org (MSN)
--------------------------------------------------------------------------------------------------
+Thanks!
+
+Louis
+
+[...]
+
+--=20
+Dr Louis Rilling			Kerlabs
+Skype: louis.rilling			Batiment Germanium
+Phone: (+33|0) 6 80 89 08 23		80 avenue des Buttes de Coesmes
+http://www.kerlabs.com/			35700 Rennes
+
+--=_bohort-22007-1224508992-0001-2
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Transfer-Encoding: 7bit
+Content-Description: Digital signature
+Content-Disposition: inline
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.6 (GNU/Linux)
+
+iD8DBQFI/IbQVKcRuvQ9Q1QRAiGBAKC4Z8k/6JoKv8ZUPiICCENVm/3WzACff24m
+6BQS1z6dHnMA8QzMK7MMuk8=
+=iJ08
+-----END PGP SIGNATURE-----
+
+--=_bohort-22007-1224508992-0001-2--
+
+--===============0445884339493992965==
+Content-Type: text/plain; charset="us-ascii"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+Content-Disposition: inline
+
+_______________________________________________
+Containers mailing list
+Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+https://lists.linux-foundation.org/mailman/listinfo/containers
+--===============0445884339493992965==--
