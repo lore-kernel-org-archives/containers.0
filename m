@@ -1,17 +1,14 @@
-From: "Dong-Jae Kang" <baramsori72-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: Re: [PATCH 0/2] dm-ioband: I/O bandwidth controller v1.8.0:
-	Introduction
-Date: Mon, 20 Oct 2008 19:13:14 +0900
-Message-ID: <2891419e0810200313j5cac8541qff80614e3d784b1b__29016.7125095197$1224514413$gmane$org@mail.gmail.com>
-References: <20081017.160950.71109894.ryov@valinux.co.jp>
-	<2891419e0810200140s3cf9c0a3q228620519ae5f4af@mail.gmail.com>
-	<20081020.180129.193689104.ryov@valinux.co.jp>
+From: Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [Devel] lxc userspace tools 0.3.0 released
+Date: Mon, 20 Oct 2008 11:52:51 +0200
+Message-ID: <48FC54F3.4060908@fr.ibm.com>
+References: <48F4AF2E.3000204@fr.ibm.com> <200810171208.51783.dim@openvz.org>
+	<48F8F8BE.7080509@fr.ibm.com> <200810201242.47995.dim@openvz.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20081020.180129.193689104.ryov-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
-Content-Disposition: inline
+In-Reply-To: <200810201242.47995.dim-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -21,49 +18,77 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Ryo Tsuruta <ryov-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
-Cc: xen-devel-GuqFBffKawuULHF6PoxzQEEOCMrvLtNR@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, virtualization-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, dm-devel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, corsetproject-/JYPxA39Uh5TLH3MbocFFw@public.gmane.org, fernando-gVGce1chcLdL9jVzuh4AOg@public.gmane.org, agk-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
+To: Dmitry Mishin <dim-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, igor-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Hi, Ryo Tsuruta
-
-Thank you for fast reply.
-
-2008/10/20 Ryo Tsuruta <ryov-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>:
-> Hi Dong-Jae,
->
->> I am trying to install your new released dm-ioband v1.8.0
->> I/O bandwidth controller v1.8.0 could be adjusted to  the latest
->> stable kernel 2.6.27.1
->> it was good news for me
->> but, I had a problem when I try to patch bio-cgroup files to  stable
->> kernel 2.6.27.1
->> many patch failure and hunk messages were occured.
+Dmitry Mishin wrote:
+> On Saturday 18 October 2008 00:42:38 Daniel Lezcano wrote:
+>> Dmitry Mishin wrote:
+>>> On Thursday 16 October 2008 16:28:08 Daniel Lezcano wrote:
+>>>> Dmitry Mishin wrote:
+>>>>> On Thursday 16 October 2008 13:06:45 Daniel Lezcano wrote:
+>>>>>> Dmitry Mishin wrote:
+>>>>>>> Hi, Daniel!
+>>>>>> Hi Dmitry ! good to see you again :)
+>>>>> Thank you ! :)
+>>>>>
+>>>>>>> I studied a bit lxc tools and have a couple of questions. Could you
+>>>>>>> answer them?
+>>>>>> Of course I can :)
+>>>>>>
+>>>>>>> 1)  Why did you chose such way of a container's configuration
+>>>>>>> storing? IMHO, configuration in one file is better, because this file
+>>>>>>> will be small and could be easily mmap'ed for the following
+>>>>>>> operations instead of multiple readdir() and filesystem lookups.
+>>>>>> I wanted to have the configuration easily hackable, so you can edit
+>>>>>> directly the files inside the directory. For example, if you remove
+>>>>>> the network directory, when you will start the container, the network
+>>>>>> will not be unshared. If you have a single file, that will be more
+>>>>>> difficult to edit especially if it is a binary file.
+>>>>>>
+>>>>>> The container tree contains more than the configuration file, for
+>>>>>> example, it contains some runtime information.
+>>>>>>
+>>>>>> It is true having a mmapped configuration is more efficient but it is
+>>>>>> just for container startup, and there are not thousand of files. The
+>>>>>> application running inside the container is not impacted.
+>>>>> OK, but what if I need some namespace to be shared between containers?
+>>>>> How it will be handled? For example, CT 1 and CT 2 need to share
+>>>>> network namespace, but keep it separated from host one.
+>>>> I think that can be solved by nested container, a container 1, unsharing
+>>>> the network, and inside create 2 containers without unsharing the
+>>>> network.
+>>>>
+>>>> Example:
+>>>> 	in a script called myscript.sh:
+>>>> 		#!/bin/bash
+>>>> 		lxc-execute -n ctr1 echo "hello1" &
+>>>> 		lxc-execute -n ctr2 echo "hello2"
+>>>>
+>>>> 	in the shell:
+>>>> 	lxc-create -n mynetwork -f myconf
+>>>> 	lxc-execute -n mynetwork ./myscript.sh
+>>> I mean how it will be handled from configuration layout POV?
+>>>
+>>>> Do you have an example, an use case for this kind of configuration ?
+>>> For example, web server and dns server for the same domain, hosted on the
+>>> external node.
+>> Ok I see, thanks.
 >>
->> Can you check bio-cgroup patch files against stable kernel 2.6.27.1?
->
-> bio-cgroup patch can apply only to 2.6.27-rc5-mm1 so far.
-> Please use 2.6.27-rc5-mm1 to try both bio-cgroup and dm-ioband,
-> dm-ioband v1.8.0 can also apply to 2.6.27-rc5-mm1.
+>>> As you mentioned, the goal of this tool is to provide ability for kernel
+>>> hackers to test namespaces support in mainstream. Thus it should be
+>>> flexible as possible and do not add limitations over current
+>>> functionality. Current design of configuration storing is likely to be a
+>>> week place in this sense. At least I do not understand yet how namespaces
+>>> inheritance could be reflected in it.
+>> I don't think it is a current limitation as I shown in the previous
+>> example. Not being able to define a configuration for a nested container
+>> is not a big issue right now because the nested container are not fully
+>> supported (eg. network devices being pushed back to init_net).
+>>
+>> The configuration storing is I think a good approach and it is not an
+>> API like the cgroup, it can be changed at any time. 
+> With the respective backward-compatibility or conversion code to be written...
 
-OK, I will use kernel-2.6.27-rc5-mm1 as your comments
-
-Well, do you have any plan to upgrade bio-cgroup patches for stable
-latest kernel?
-but, I think it will be not easy job ^^
-Thank you
-
-Regards,
-Dong-Jae Kang
-
-
--- 
--------------------------------------------------------------------------------------------------
-   DONG-JAE, KANG
-   Senior Member of Engineering Staff
-   Internet Platform Research Dept, S/W Content Research Lab
-   Electronics and Telecommunications Research Institute(ETRI)
-   138 Gajeongno, Yuseong-gu, Daejeon, 305-700 KOREA
-   Phone : 82-42-860-1561 Fax : 82-42-860-6699
-   Mobile : 82-10-9919-2353 E-mail : djkang-mINagvnPBMnWF1p7bDn8Kw@public.gmane.org (MSN)
--------------------------------------------------------------------------------------------------
+Good point :)
