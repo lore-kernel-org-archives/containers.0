@@ -1,14 +1,14 @@
-From: Chen Zumeng <zumeng.chen-CWA4WttNNZF54TAoqtyWWQ@public.gmane.org>
-Subject: Re: [PATCH 0/2] dm-ioband: I/O bandwidth controller v1.8.0:
-	Introduction
-Date: Tue, 21 Oct 2008 19:10:36 +0800
-Message-ID: <48FDB8AC.9020707__38625.7291575477$1224587685$gmane$org@windriver.com>
-References: <20081017.160950.71109894.ryov@valinux.co.jp>
+From: Cedric Le Goater <clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH 0/9] OpenVZ kernel based checkpointing/restart
+Date: Tue, 21 Oct 2008 11:36:11 +0200
+Message-ID: <48FDA28B.30204__31732.7800709338$1224592895$gmane$org@fr.ibm.com>
+References: <1220439476-16465-1-git-send-email-major@openvz.org>	<1224286383.1848.65.camel@nimitz>	<20081020111002.GQ15171@hawkmoon.kerlabs.com>	<48FC86B2.8000606@fr.ibm.com>
+	<48FCA97C.1040108@cs.columbia.edu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20081017.160950.71109894.ryov-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
+In-Reply-To: <48FCA97C.1040108-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,79 +18,36 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Ryo Tsuruta <ryov-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
-Cc: xen-devel-GuqFBffKawuULHF6PoxzQEEOCMrvLtNR@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, virtualization-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, dm-devel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, fernando-gVGce1chcLdL9jVzuh4AOg@public.gmane.org, agk-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
+To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, Louis.Rilling-aw0BnHfMbSpBDgjK7y7TUQ@public.gmane.org, Andrey Mirkin <major-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>, Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Hi, Ryo Tsuruta
-
-I applied your patches(both) into the latest kernel(27), and dm-ioband
-looks work well(other than schedule_timeout in alloc_ioband_device);
-But I think you are the author of bio_tracking, so it is high
-appreciated if you can give your comments and advices for potential
-difference between 27-rc5-mm1 and 2.6.27 to me.
-
-And our test team want to test bio_tracking as your benchmark reports,
-so would you please send me your test codes? Thanks in advance.
-
-Regards,
-Zumeng
-
-P.S. The following are my changes to avoid schedule_timeout:
-
-
-diff --git a/drivers/md/dm-ioband-ctl.c b/drivers/md/dm-ioband-ctl.c
-index a792620..643ca4e 100644
---- a/drivers/md/dm-ioband-ctl.c
-+++ b/drivers/md/dm-ioband-ctl.c
-@@ -100,6 +100,7 @@ static struct ioband_device 
-*alloc_ioband_device(char *name,
-                         return dp;
-                 }
-         }
-+       spin_unlock_irqrestore(&ioband_devicelist_lock, flags);
-
-         /*
-          * Prepare its own workqueue as generic_make_request() may
-@@ -133,9 +134,11 @@ static struct ioband_device 
-*alloc_ioband_device(char *name,
-         init_waitqueue_head(&new->g_waitq);
-         init_waitqueue_head(&new->g_waitq_suspend);
-         init_waitqueue_head(&new->g_waitq_flush);
--       list_add_tail(&new->g_list, &ioband_device_list);
-
-+       spin_lock_irqsave(&ioband_devicelist_lock, flags);
-+       list_add_tail(&new->g_list, &ioband_device_list);
-         spin_unlock_irqrestore(&ioband_devicelist_lock, flags);
-+
-         return new;
-  }
----
-
-Ryo Tsuruta wrote:
-> Hi Alasdair and all,
+>> IMHO we should look at Dmitry patchset and merge the external checkpoint 
+>> code to Oren's patchset in order to checkpoint *one* process and have 
+>> the process to restart itself. At this point, we can begin to talk about 
+>> the restart itself, shall we have the kernel to fork the processes to be 
+>> restarted ? shall we fork from userspace and implement some mechanism to 
+>> have each processes to restart themselves ? etc...
+>>
 > 
-> This is the dm-ioband version 1.8.0 release.
+> In both approaches, processes restart themselves, in the sense that a
+> process to be restarted eventually calls "do_restart()" (or equivalent).
 > 
-> Dm-ioband is an I/O bandwidth controller implemented as a device-mapper
-> driver, which gives specified bandwidth to each job running on the same
-> physical device.
-> 
-> This release is a minor bug fix and confirmed running on the latest
-> stable kernel 2.6.27.1.
-> 
-> - Can be applied to the kernel 2.6.27.1 and 2.6.27-rc5-mm1.
-> - Changes from 1.7.0 (posted on Oct 3, 2008):
->   - Fix a minor bug in io_limit setting that causes dm-ioband to stop
->     issuing I/O requests when a large value is set to io_limit.
-> 
-> Alasdair, could you please review this patch and give me any comments?
-> 
-> Thanks,
-> Ryo Tsuruta
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-kernel" in
-> the body of a message to majordomo-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> Please read the FAQ at  http://www.tux.org/lkml/
-> 
+> The only question is how processes are created. Andrew's patch creates
+> everything inside the kernel. I would like to still give it a try outside
+> the kernel. Everything is ready, except that we need a way to pre-select
+> a PID for the new child... we never agreed on that one, did we ?
+
+what do you mean ? like a clone_with_pid() routine ? 
+
+> If we go ahead with the kernel-based process creation, it's easy to merge
+> it to the current patch-set.
+
+Both solution are valid. Nevertheless, I would choose the solution 
+sharing existing code and being arch independent.
+
+Now, we can start by duplicating code and see later how we could
+share. But for mainline inclusion, I think that code reuse is a
+faster path.
+
+C.
