@@ -1,14 +1,14 @@
-From: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: Re: [RFC v7][PATCH 0/9] Kernel based checkpoint/restart
-Date: Tue, 21 Oct 2008 13:41:07 -0700
-Message-ID: <1224621667.1848.228.camel__22074.8696280227$1224621831$gmane$org@nimitz>
-References: <1224481237-4892-1-git-send-email-orenl@cs.columbia.edu>
-	<20081021122135.4bce362c.akpm@linux-foundation.org>
+From: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
+Subject: Re: [PATCH 3/4] freezer_cg: use thaw_process() in unfreeze_cgroup()
+Date: Tue, 21 Oct 2008 13:58:13 -0700
+Message-ID: <20081021135813.e77d3015.akpm__46903.4241083593$1224622838$gmane$org@linux-foundation.org>
+References: <48FD26F5.1070809@cn.fujitsu.com> <48FD273F.3040505@cn.fujitsu.com>
+	<48FD2784.30906@cn.fujitsu.com> <48FD81B8.5030103@fr.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20081021122135.4bce362c.akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
+In-Reply-To: <48FD81B8.5030103-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,54 +18,72 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org, linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, tglx-hfZtesqFncYOwBW4kG4KsQ@public.gmane.org, torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, mingo-X9Un+BFzKDI@public.gmane.org
+To: Cedric Le Goater <clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Tue, 2008-10-21 at 12:21 -0700, Andrew Morton wrote:
-> On Mon, 20 Oct 2008 01:40:28 -0400
-> Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org> wrote:
-> > These patches implement basic checkpoint-restart [CR]. This version
-> > (v7) supports basic tasks with simple private memory, and open files
-> > (regular files and directories only).
+On Tue, 21 Oct 2008 09:16:08 +0200
+Cedric Le Goater <clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org> wrote:
+
+> Li Zefan wrote:
+> > Don't duplicate the implementation of thaw_process().
 > 
-> - how useful is this code as it stands in real-world usage?
+> looks OK but you should remove  __thaw_process() which is unused 
+> now.
 
-Right now, an application must be specifically written to use these mew
-system calls.  It must be a single process and not share any resources
-with other processes.  The only file descriptors that may be open are
-simple files and may not include sockets or pipes.
+It's called by thaw_process().
 
-What this means in practice is that it is useful for a simple app doing
-computational work.
+But that's the only callsite, I believe, so...
 
-> - what additional work needs to be done to it?  (important!)
-> 
-> - how far are we down the design and implementation path with that new
->   work?
-
-We know this design can work.  We have two commercial products and a
-horde of academic projects doing it today using this basic design.
-We're early in this particular implementation because we're trying to
-release early and often.
-
-I think we're at the point where we need a yes or no from the rest of
-the community on it.  Reading the patches, I'd hope a reviewer can get
-an idea how this will extend to other subsystems.  Do you think the
-current patches aren't enough from which to extrapolate how this will be
-extended?
-
-> Are we yet at least in a position where we can say "yes, this
-> feature can be completed and no, it won't be a horrid mess"?
-
-It will be complete a few months after the rest of the kernel is
-complete. :)
-
-From these patches, I think you can see that this will largely be
-something that can live off in its own corner of the tree.  We will, of
-course, need to do plenty of refactoring of existing code (like the pid
-namespaces for instance) to make some of it more accessible from the
-outside.  We're also going to look for every opportunity to share code
-with other users like the freezer.
-
--- Dave
+--- a/include/linux/freezer.h~freezer_cg-use-thaw_process-in-unfreeze_cgroup-fix
++++ a/include/linux/freezer.h
+@@ -44,11 +44,6 @@ static inline bool should_send_signal(st
+ 	return !(p->flags & PF_FREEZER_NOSIG);
+ }
+ 
+-/*
+- * Wake up a frozen process
+- */
+-extern int __thaw_process(struct task_struct *p);
+-
+ /* Takes and releases task alloc lock using task_lock() */
+ extern int thaw_process(struct task_struct *p);
+ 
+diff -puN kernel/freezer.c~freezer_cg-use-thaw_process-in-unfreeze_cgroup-fix kernel/freezer.c
+--- a/kernel/freezer.c~freezer_cg-use-thaw_process-in-unfreeze_cgroup-fix
++++ a/kernel/freezer.c
+@@ -121,16 +121,7 @@ void cancel_freezing(struct task_struct 
+ 	}
+ }
+ 
+-/*
+- * Wake up a frozen process
+- *
+- * task_lock() is needed to prevent the race with refrigerator() which may
+- * occur if the freezing of tasks fails.  Namely, without the lock, if the
+- * freezing of tasks failed, thaw_tasks() might have run before a task in
+- * refrigerator() could call frozen_process(), in which case the task would be
+- * frozen and no one would thaw it.
+- */
+-int __thaw_process(struct task_struct *p)
++static int __thaw_process(struct task_struct *p)
+ {
+ 	if (frozen(p)) {
+ 		p->flags &= ~PF_FROZEN;
+@@ -140,6 +131,15 @@ int __thaw_process(struct task_struct *p
+ 	return 0;
+ }
+ 
++/*
++ * Wake up a frozen process
++ *
++ * task_lock() is needed to prevent the race with refrigerator() which may
++ * occur if the freezing of tasks fails.  Namely, without the lock, if the
++ * freezing of tasks failed, thaw_tasks() might have run before a task in
++ * refrigerator() could call frozen_process(), in which case the task would be
++ * frozen and no one would thaw it.
++ */
+ int thaw_process(struct task_struct *p)
+ {
+ 	task_lock(p);
+_
