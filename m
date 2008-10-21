@@ -1,13 +1,14 @@
 From: Cedric Le Goater <clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 1/4] freezer_cg: fix improper BUG_ON() causing oops
-Date: Tue, 21 Oct 2008 09:16:29 +0200
-Message-ID: <48FD81CD.7080103__12021.1686626591$1224573571$gmane$org@fr.ibm.com>
-References: <48FD26F5.1070809@cn.fujitsu.com>
+Subject: Re: [PATCH 2/4] freezer_cg: remove redundant check in
+	freezer_can_attach()
+Date: Tue, 21 Oct 2008 09:32:50 +0200
+Message-ID: <48FD85A2.8090605__41582.0667557002$1224574519$gmane$org@fr.ibm.com>
+References: <48FD26F5.1070809@cn.fujitsu.com> <48FD273F.3040505@cn.fujitsu.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <48FD26F5.1070809-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+In-Reply-To: <48FD273F.3040505-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -22,31 +23,62 @@ Cc: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Linu
 List-Id: containers.vger.kernel.org
 
 Li Zefan wrote:
-> The BUG_ON() should be protected by freezer->lock, otherwise it
-> can be triggered easily when a task has been unfreezed but the
-> corresponding cgroup hasn't been changed to FROZEN state.
+> It is sufficient to check if @task is frozen, and no need to check if
+> the original freezer is frozen.
 
-yes. thanks,
+hmm, a task being frozen does not mean that its freezer cgroup is 
+frozen. So the extra check seems valid but looking at the comment :
 
-Acked-by: Cedric Le Goater <clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
+	/*
+	 * The call to cgroup_lock() in the freezer.state write method prevents
+	 * a write to that file racing against an attach, and hence the
+	 * can_attach() result will remain valid until the attach completes.
+	 */
+	static int freezer_can_attach(struct cgroup_subsys *ss,
+
+how do we know that the task_freezer(task), which is not protected by
+the cgroup_lock(), is not going to change its state to CGROUP_FROZEN 
+it looks racy.
+
+C.
 
 > Signed-off-by: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
 > ---
->  kernel/cgroup_freezer.c |    3 ++-
->  1 files changed, 2 insertions(+), 1 deletions(-)
+>  kernel/cgroup_freezer.c |   16 +++++++---------
+>  1 files changed, 7 insertions(+), 9 deletions(-)
 > 
 > diff --git a/kernel/cgroup_freezer.c b/kernel/cgroup_freezer.c
-> index e950569..7f54d1c 100644
+> index 7f54d1c..6fadafe 100644
 > --- a/kernel/cgroup_freezer.c
 > +++ b/kernel/cgroup_freezer.c
-> @@ -190,8 +190,9 @@ static void freezer_fork(struct cgroup_subsys *ss, struct task_struct *task)
->  	freezer = task_freezer(task);
->  	task_unlock(task);
+> @@ -162,9 +162,13 @@ static int freezer_can_attach(struct cgroup_subsys *ss,
+>  			      struct task_struct *task)
+>  {
+>  	struct freezer *freezer;
+> -	int retval;
 >  
-> -	BUG_ON(freezer->state == CGROUP_FROZEN);
->  	spin_lock_irq(&freezer->lock);
-> +	BUG_ON(freezer->state == CGROUP_FROZEN);
-> +
->  	/* Locking avoids race with FREEZING -> THAWED transitions. */
->  	if (freezer->state == CGROUP_FREEZING)
->  		freeze_task(task, true);
+> -	/* Anything frozen can't move or be moved to/from */
+> +	/*
+> +	 * Anything frozen can't move or be moved to/from.
+> +	 *
+> +	 * Since orig_freezer->state == FROZEN means that @task has been
+> +	 * frozen, so it's sufficient to check the latter condition.
+> +	 */
+>  
+>  	if (is_task_frozen_enough(task))
+>  		return -EBUSY;
+> @@ -173,13 +177,7 @@ static int freezer_can_attach(struct cgroup_subsys *ss,
+>  	if (freezer->state == CGROUP_FROZEN)
+>  		return -EBUSY;
+>  
+> -	retval = 0;
+> -	task_lock(task);
+> -	freezer = task_freezer(task);
+> -	if (freezer->state == CGROUP_FROZEN)
+> -		retval = -EBUSY;
+> -	task_unlock(task);
+> -	return retval;
+> +	return 0;
+>  }
+>  
+>  static void freezer_fork(struct cgroup_subsys *ss, struct task_struct *task)
