@@ -1,18 +1,11 @@
-From: Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 0/9] OpenVZ kernel based checkpointing/restart
-Date: Tue, 21 Oct 2008 15:24:37 +0200
-Message-ID: <48FDD815.2080609__47603.9094770842$1224595747$gmane$org@fr.ibm.com>
-References: <1220439476-16465-1-git-send-email-major@openvz.org>
-	<1224286383.1848.65.camel@nimitz>
-	<20081020111002.GQ15171@hawkmoon.kerlabs.com>
-	<48FC86B2.8000606@fr.ibm.com> <48FCA97C.1040108@cs.columbia.edu>
-	<48FCB3CC.9030804@fr.ibm.com> <20081020172358.GA29092@us.ibm.com>
-	<48FD1FBC.5050408@cs.columbia.edu>
+From: Dave Hansen <dave-gkUM19QKKo4@public.gmane.org>
+Subject: External checkpoint patch
+Date: Tue, 21 Oct 2008 11:16:10 -0700
+Message-ID: <1224612971.1848.193.camel@nimitz>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <48FD1FBC.5050408-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -23,112 +16,153 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, Louis.Rilling-aw0BnHfMbSpBDgjK7y7TUQ@public.gmane.org, Andrey Mirkin <major-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+Cc: containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Cedric Le Goater <clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Oren Laadan wrote:
-> 
-> Serge E. Hallyn wrote:
->> Quoting Daniel Lezcano (dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org):
->>> Oren Laadan wrote:
->>>> Daniel Lezcano wrote:
->>>>> Louis Rilling wrote:
->>>>>> On Fri, Oct 17, 2008 at 04:33:03PM -0700, Dave Hansen wrote:
->>>>>>> On Wed, 2008-09-03 at 14:57 +0400, Andrey Mirkin wrote:
->>>>>>>> This patchset introduces kernel based checkpointing/restart as it is
->>>>>>>> implemented in OpenVZ project. This patchset has limited functionality and
->>>>>>>> are able to checkpoint/restart only single process. Recently Oren Laaden
->>>>>>>> sent another kernel based implementation of checkpoint/restart. The main
->>>>>>>> differences between this patchset and Oren's patchset are:
->>>>>>> Hi Andrey,
->>>>>>>
->>>>>>> I'm curious what you want to happen with this patch set.  Is there
->>>>>>> something specific in Oren's set that deficient which you need
->>>>>>> implemented?  Are there some technical reasons you prefer this code?
->>>>>> To be fair, and since (IIRC) the initial intent was to start with OpenVZ's
->>>>>> approach, shouldn't Oren answer the same questions with respect to Andrey's
->>>>>> patchset?
->>>>>>
->>>>>> I'm afraid that we are forgetting to take the best from both approaches...
->>>>> I agree with Louis.
->>>>>
->>>>> I played with Oren's patchset and tryed to port it on x86_64. I was able 
->>>>> to sys_checkpoint/sys_restart but if you remove the restoring of the 
->>>>> general registers, the restart still works. I am not an expert on asm, 
->>>>> but my hypothesis is when we call sys_checkpoint the registers are saved 
->>>>> on the stack by the syscall and when we restore the memory of the 
->>>>> process, we restore the stack and the stacked registers are restored 
->>>>> when exiting the sys_restart. That make me feel there is an important 
->>>>> gap between external checkpoint and internal checkpoint.
->>>> This is a misconception: my patches are not "internal checkpoint". My
->>>> patches are basically "external checkpoint" by design, which *also*
->>>> accommodates self-checkpointing (aka internal). The same holds for the
->>>> restart. The implementation is demonstrated with "self-checkpoint" to
->>>> avoid complicating things at this early stage of proof-of-concept.
->>> Yep, I read your patchset :)
->>>
->>> I just want to clarify what we want to demonstrate with this patchset 
->>> for the proof-of-concept ? A self CR does not show what are the 
->>> complicate parts of the CR, we are just showing we can dump the memory 
->>> from the kernel and do setcontext/getcontext.
->>>
->>> We state at the container mini-summit on an approach:
->>>
->>>     1. Pre-dump
->>>     2. Freeze the container
->>>     3. Dump
->>>     4. Thaw/Kill the container
->>>     5. Post-dump
->>>
->>> We already have the freezer, and we can forget for now pre-dump and 
->>> post-dump.
->>>
->>> IMHO, for the proof-of-concept we should do a minimal CR (like you did), 
->>> but conforming with these 5 points, but that means we have to do an 
->>> external checkpoint.
->> Right, Oren, iiuc you are insisting that 'external checkpoint' and
->> 'multiple task checkpoint' are the same thing.  But they aren't.
->> Rather, I think that what we say is 'multiple tasks c/r' is what you say
->> should be done from user-space :)
-> 
-> Then I don't explain myself clearly :)
-> 
-> The only thing I consider doing in user space is the creation of
-> the container, the namespaces and the processes.
-> 
-> I argue that "external checkpoint of a single process" is very few
-> lines of code away from "self checkpoint" that is in v7.
-> 
-> I'm not sure how you define "external restart" ?  eventually, the
-> processes restart themselves. It is a question of how the processes
-> are created to begin with.
-> 
->> So particularly given that your patchset seems to be in good shape,
->> I'd like to see external checkpoint explicitly supported.  Please
->> just call me a dunce if v7 already works for that.
->>
-> 
-> It seems like you want a single process to checkpoint a single (other)
-> process, and then a single process to start a single (other) process.
-> 
-> I tried to explicitly avoid dealing with the container (user space ?
-> kernel space ?) and with creating new processes (user space ? kernel
-> space ?).
-> 
-> Nevertheless, it's the _same_ code. All that is needed is to make the
-> checkpoint syscall refer to the other task instead of self, and the
-> restart should create a container and fork there, then call sys_restart.
-> 
-> I guess instead of repeating this argument over, I will go ahead and
-> post a patch on top of v7 to demonstrate this (without a container,
-> therefore without preserving the original pid).
+Oren,
 
-Cedric made a patch for the external checkpoint:
+Could you take a look over Cedric's external checkpoint patch?
 
-http://lxc.sourceforge.net/patches/2.6.27/2.6.27-rc8-lxc1/0035-enable-external-checkpoint.patch
+http://git.kernel.org/?p=linux/kernel/git/daveh/linux-2.6-cr.git;a=commit;h=28ffabbc17d3641eee2a7eb66f714c266c400263
 
-The main difference is you will need to freeze the process because it 
-will not block itself via a syscall (there is the freezer patchset).
+It seems pretty small to me.
 
-For the restart, perhaps you can just do a process calling sys_restart 
-and so we delay the fork from user/kernel discussion, no ?
+--
+
+From a2f88cbc023e2e9be5eb554fe64078a3d7d2ade6 Mon Sep 17 00:00:00 2001
+From: Cedric Le Goater <clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
+Date: Tue, 30 Sep 2008 10:45:13 +0200
+Subject: [PATCH] enable external checkpoint
+
+Modify self checkpoint syscall to allow another process to initiate
+checkpoint
+
+Signed-off-by: Cedric Le Goater <clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
+---
+ arch/x86/mm/checkpoint.c   |    2 +-
+ checkpoint/checkpoint.c    |    2 +-
+ checkpoint/sys.c           |   28 +++++++++++++++++++++-------
+ include/linux/checkpoint.h |    1 +
+ 4 files changed, 24 insertions(+), 9 deletions(-)
+
+diff --git a/arch/x86/mm/checkpoint.c b/arch/x86/mm/checkpoint.c
+index d6c5263..202a579 100644
+--- a/arch/x86/mm/checkpoint.c
++++ b/arch/x86/mm/checkpoint.c
+@@ -164,7 +164,7 @@ void cr_write_cpu_fpu(struct cr_hdr_cpu *hh, struct task_struct *t)
+ 		 * except if we are in process context, in which case we do
+ 		 */
+ 		if (thread_info->status & TS_USEDFPU)
+-			unlazy_fpu(current);
++			unlazy_fpu(t);
+ 
+ 		hh->has_fxsr = cpu_has_fxsr;
+ 		memcpy(&hh->xstate, &thread->xstate, sizeof(thread->xstate));
+diff --git a/checkpoint/checkpoint.c b/checkpoint/checkpoint.c
+index 87420dc..c4e8242 100644
+--- a/checkpoint/checkpoint.c
++++ b/checkpoint/checkpoint.c
+@@ -227,7 +227,7 @@ int do_checkpoint(struct cr_ctx *ctx)
+ 	ret = cr_write_head(ctx);
+ 	if (ret < 0)
+ 		goto out;
+-	ret = cr_write_task(ctx, current);
++	ret = cr_write_task(ctx, ctx->task);
+ 	if (ret < 0)
+ 		goto out;
+ 	ret = cr_write_tail(ctx);
+diff --git a/checkpoint/sys.c b/checkpoint/sys.c
+index 4fcd3e0..ec028c6 100644
+--- a/checkpoint/sys.c
++++ b/checkpoint/sys.c
+@@ -176,7 +176,8 @@ void cr_ctx_free(struct cr_ctx *ctx)
+ 	kfree(ctx);
+ }
+ 
+-struct cr_ctx *cr_ctx_alloc(pid_t pid, int fd, unsigned long flags)
++struct cr_ctx *cr_ctx_alloc(struct task_struct *t, pid_t pid, int fd,
++			    unsigned long flags)
+ {
+ 	struct cr_ctx *ctx;
+ 
+@@ -184,6 +185,7 @@ struct cr_ctx *cr_ctx_alloc(pid_t pid, int fd, unsigned long flags)
+ 	if (!ctx)
+ 		return ERR_PTR(-ENOMEM);
+ 
++	ctx->task = t;
+ 	ctx->file = fget(fd);
+ 	if (!ctx->file) {
+ 		cr_ctx_free(ctx);
+@@ -205,7 +207,7 @@ struct cr_ctx *cr_ctx_alloc(pid_t pid, int fd, unsigned long flags)
+ 	 * assume checkpointer is in container's root vfs
+ 	 * FIXME: this works for now, but will change with real containers
+ 	 */
+-	ctx->vfsroot = &current->fs->root;
++	ctx->vfsroot = &t->fs->root;
+ 	path_get(ctx->vfsroot);
+ 
+ 	INIT_LIST_HEAD(&ctx->pgarr_list);
+@@ -231,20 +233,32 @@ asmlinkage long sys_checkpoint(pid_t pid, int fd, unsigned long flags)
+ {
+ 	struct cr_ctx *ctx;
+ 	int ret;
++	struct task_struct *t;
+ 
+ 	/* no flags for now */
+ 	if (flags)
+ 		return -EINVAL;
+ 
+-	ctx = cr_ctx_alloc(pid, fd, flags | CR_CTX_CKPT);
+-	if (IS_ERR(ctx))
+-		return PTR_ERR(ctx);
++	read_lock(&tasklist_lock);
++	t = find_task_by_vpid(pid);
++	if (t)
++		get_task_struct(t);
++	read_unlock(&tasklist_lock);
++
++	if (!t)
++		return -ESRCH;
+ 
++	ctx = cr_ctx_alloc(t, pid, fd, flags | CR_CTX_CKPT);
++	if (IS_ERR(ctx)) {
++		ret = PTR_ERR(ctx);
++		goto out;
++	}
++
+ 	ret = do_checkpoint(ctx);
+ 
+ 	if (!ret)
+ 		ret = ctx->crid;
+-
++out:
+ 	cr_ctx_free(ctx);
+ 	return ret;
+ }
+@@ -267,7 +281,7 @@ asmlinkage long sys_restart(int crid, int fd, unsigned long flags)
+ 	if (flags)
+ 		return -EINVAL;
+ 
+-	ctx = cr_ctx_alloc(crid, fd, flags | CR_CTX_RSTR);
++	ctx = cr_ctx_alloc(current, crid, fd, flags | CR_CTX_RSTR);
+ 	if (IS_ERR(ctx))
+ 		return PTR_ERR(ctx);
+ 
+diff --git a/include/linux/checkpoint.h b/include/linux/checkpoint.h
+index 6c1e87f..2983700 100644
+--- a/include/linux/checkpoint.h
++++ b/include/linux/checkpoint.h
+@@ -17,6 +17,7 @@
+ 
+ struct cr_ctx {
+ 	pid_t pid;		/* container identifier */
++	struct task_struct *task;
+ 	int crid;		/* unique checkpoint id */
+ 
+ 	unsigned long flags;
+-- 
+1.5.5.1
+
+
+
+-- Dave
