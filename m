@@ -1,13 +1,14 @@
-From: Benjamin Thery <benjamin.thery-6ktuUTfB/bM@public.gmane.org>
-Subject: [PATCH 4/4] netns: sysfs: add netns suffix to net devices sysfs
-	entries
-Date: Wed, 22 Oct 2008 17:22:24 +0200
-Message-ID: <20081022152145.128767713__9074.25488480858$1224689193$gmane$org@theryb.frec.bull.fr>
-References: <20081022152144.351965414@theryb.frec.bull.fr>
+From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Subject: Re: [Devel] Re: [PATCH 08/10] Introduce functions to restart a process
+Date: Wed, 22 Oct 2008 11:25:03 -0400
+Message-ID: <48FF45CF.5000306@cs.columbia.edu>
+References: <1224285098-573-1-git-send-email-major@openvz.org>	<200810221249.55600.major@openvz.org>	<20081022092502.GW15171@hawkmoon.kerlabs.com>
+	<200810221412.14174.major@openvz.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <200810221412.14174.major-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -17,174 +18,86 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: netdev <netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Dave Miller <davem-fT/PcQaiUtIeIZ0/mPfg9Q@public.gmane.org>
-Cc: Tejun Heo <htejun-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Denis Lunev <den-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Greg Kroah-Hartman <gregkh-l3A5Bk7waGM@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Eric Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Al Viro <viro-rfM+Q5joDG/XmaaqVzeoHQ@public.gmane.org>, Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>, Benjamin Thery <benjamin.thery-6ktuUTfB/bM@public.gmane.org>
+To: Andrey Mirkin <major-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+Cc: Louis.Rilling-aw0BnHfMbSpBDgjK7y7TUQ@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Cedric Le Goater <clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Reminder: what we want is being able to create network interfaces with
-the same name in different network namespaces (eg. the loopback). The
-remaining issues are in sysfs.
-
-This patch dissociates network devices actual names (stored in struct 
-net_device and seen by ifconfig/ip tools) and network device names 
-stored in sysfs. 
-
-When adding a network device in child net namespace (!init_net), when
-registering it in sysfs, a suffix unique to the current netns is 
-appended to the actual device name. Currently this suffix is the netns
-ida ID in hexa form separated by a '@' char.
-
-In sysfs, we see all the network devices of all netns.
-
-# ll /sys/devices/virtual/net/
-...
-drwxr-xr-x 4 root root 0 2008-10-13 14:08 lo
-drwxr-xr-x 4 root root 0 2008-10-13 16:31 lo@1
-...
-drwxr-xr-x 4 root root 0 2008-10-13 16:31 lo@e5
-...
-
-Then, in the child network namespace we can filter the contents of 
-/sys/class/net with:
-
-* mount -t tmpfs /sys/class/net 
-* and  manually link the right devices from /sys/devices/virtual/net
-  (ln -s ../../devices/virtual/net/lo@1 lo)
-
-Thus, /sys/class/net appears to be fine for the applications running
-in this namespace.
-
-FUSE can also be used to alter the view of /sys/class/net in the 
-namespace.
-
-Issues:
--------
-
-* The suffix
-
-  We only have four characters left (BUS_ID_SIZE - IFNAMSIZ) to build the
-  suffix: add a separator and encode the netns ID.
-  By encoding the ID in hexa, it introduces a limit of 4095 (0xFFF)
-  sub-network namespaces running at the same time.
-
-* This approach reduces isolation between network namespaces
-
-  Everyone can see all the devices in each namespaces by exploring 
-  /sys/devices/../.. or /sys/class/net (if it's not re-mounted as tmpfs).
-
-* Does not work very well with CONFIG_SYSFS_DEPRECATED=y 
-
-  The filtering of /sys/class/net with CONFIG_SYSFS_DEPRECATED=y is more
-  difficult to do because in this case /sys/class/net contains 
-  the actual directories (not symlinks).
 
 
-Signed-off-by: Benjamin Thery <benjamin.thery-6ktuUTfB/bM@public.gmane.org>
-Tested-by: Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Acked-by: Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
----
- net/Kconfig          |    2 +-
- net/core/dev.c       |    4 +++-
- net/core/net-sysfs.c |   34 +++++++++++++++++++++++++++++++++-
- net/core/net-sysfs.h |    1 +
- 4 files changed, 38 insertions(+), 3 deletions(-)
+Andrey Mirkin wrote:
+> On Wednesday 22 October 2008 13:25 Louis Rilling wrote:
+>> On Wed, Oct 22, 2008 at 12:49:54PM +0400, Andrey Mirkin wrote:
+>>> On Monday 20 October 2008 13:23 Cedric Le Goater wrote:
+>>>> Hello Andrey !
+>>>>
+>>>>> diff --git a/arch/x86/kernel/entry_32.S b/arch/x86/kernel/entry_32.S
+>>>>> index 109792b..a4848a3 100644
+>>>>> --- a/arch/x86/kernel/entry_32.S
+>>>>> +++ b/arch/x86/kernel/entry_32.S
+>>>>> @@ -225,6 +225,7 @@ ENTRY(ret_from_fork)
+>>>>>  	GET_THREAD_INFO(%ebp)
+>>>>>  	popl %eax
+>>>>>  	CFI_ADJUST_CFA_OFFSET -4
+>>>>> +ret_from_fork_tail:
+>>>>>  	pushl $0x0202			# Reset kernel eflags
+>>>>>  	CFI_ADJUST_CFA_OFFSET 4
+>>>>>  	popfl
+>>>>> @@ -233,6 +234,26 @@ ENTRY(ret_from_fork)
+>>>>>  	CFI_ENDPROC
+>>>>>  END(ret_from_fork)
+>>>>>
+>>>>> +ENTRY(i386_ret_from_resume)
+>>>>> +	CFI_STARTPROC
+>>>>> +	pushl %eax
+>>>>> +	CFI_ADJUST_CFA_OFFSET 4
+>>>>> +	call schedule_tail
+>>>>> +	GET_THREAD_INFO(%ebp)
+>>>>> +	popl %eax
+>>>>> +	CFI_ADJUST_CFA_OFFSET -4
+>>>>> +	movl (%esp), %eax
+>>>>> +	testl %eax, %eax
+>>>>> +	jz    1f
+>>>>> +	pushl %esp
+>>>>> +	call  *%eax
+>>>>> +	addl  $4, %esp
+>>>>> +1:
+>>>>> +	addl  $256, %esp
+>>>>> +	jmp   ret_from_fork_tail
+>>>>> +	CFI_ENDPROC
+>>>>> +END(i386_ret_from_resume)
+>>>> Could you explain why you need to do this
+>>>>
+>>>> 	call  *%eax
+>>>>
+>>>> is it related to the freezer code ?
+>>> It is not related to the freezer code actually.
+>>> That is needed to restart syscalls. Right now I don't have a code in my
+>>> patchset which restarts a syscall, but later I plan to add it.
+>>> In OpenVZ checkpointing we restart syscalls if process was caught in
+>>> syscall during checkpointing.
+>> Do you checkpoint uninterruptible syscalls as well? If only interruptible
+>> syscalls are checkpointed, I'd say that either this syscall uses
+>> ERESTARTSYS or ERESTART_RESTARTBLOCK, and then signal handling code already
+>> does the trick, or this syscall does not restart itself when interrupted,
+>> and well, this is life, userspace just sees -EINTR, which is allowed by the
+>> syscall spec.
+>> Actually this is how we checkpoint/migrate tasks in interruptible syscalls
+>> in Kerrighed and this works.
+> 
+> We checkpoint only interruptible syscalls. Some syscalls do not restart 
+> themself, that is why after restarting a process we restart syscall to 
+> complete it.
 
-Index: net-next-2.6/net/Kconfig
-===================================================================
---- net-next-2.6.orig/net/Kconfig
-+++ net-next-2.6/net/Kconfig
-@@ -27,7 +27,7 @@ menu "Networking options"
- config NET_NS
- 	bool "Network namespace support"
- 	default n
--	depends on EXPERIMENTAL && !SYSFS && NAMESPACES
-+	depends on EXPERIMENTAL && NAMESPACES
- 	help
- 	  Allow user space to create what appear to be multiple instances
- 	  of the network stack.
-Index: net-next-2.6/net/core/dev.c
-===================================================================
---- net-next-2.6.orig/net/core/dev.c
-+++ net-next-2.6/net/core/dev.c
-@@ -894,6 +894,7 @@ int dev_alloc_name(struct net_device *de
- int dev_change_name(struct net_device *dev, const char *newname)
- {
- 	char oldname[IFNAMSIZ];
-+	char devname[BUS_ID_SIZE];
- 	int err = 0;
- 	int ret;
- 	struct net *net;
-@@ -924,7 +925,8 @@ int dev_change_name(struct net_device *d
- 		strlcpy(dev->name, newname, IFNAMSIZ);
- 
- rollback:
--	err = device_rename(&dev->dev, dev->name);
-+	netdev_fill_bus_id_name(devname, dev);
-+	err = device_rename(&dev->dev, devname);
- 	if (err) {
- 		memcpy(dev->name, oldname, IFNAMSIZ);
- 		return err;
-Index: net-next-2.6/net/core/net-sysfs.c
-===================================================================
---- net-next-2.6.orig/net/core/net-sysfs.c
-+++ net-next-2.6/net/core/net-sysfs.c
-@@ -468,6 +468,38 @@ static struct class net_class = {
- #endif
- };
- 
-+/* Fill device bus_id name from net device name
-+ * When registering a device for a child network namespace,
-+ * a suffix is added to the name stored in "struct device"
-+ * bus_id.
-+ *
-+ * devname size must be at least BUS_ID_SIZE
-+ */
-+void netdev_fill_bus_id_name(char *devname, struct net_device *netdev)
-+{
-+#ifndef CONFIG_NET_NS
-+	strlcpy(devname, netdev->name, BUS_ID_SIZE);
-+#else
-+	struct net *net = dev_net(netdev);
-+
-+	if (net_eq(net, &init_net))
-+		strlcpy(devname, netdev->name, BUS_ID_SIZE);
-+	else {
-+		/*
-+		 * To allow registration of net devices with the same name in
-+		 * different namespaces, append the netns identifier to the
-+		 * device name in sysfs using the 4 bytes left in bus_id
-+		 * (BUS_ID_SIZE - IFNAMSIZ).
-+		 *
-+		 * devname is in the form: device_name@XXX
-+		 * the netns identifier is an integer < 4095, thus encodable
-+		 * in hexa in 3 characters ("FFF").
-+		 */
-+		snprintf(devname, BUS_ID_SIZE, "%s@%x", netdev->name, net->id);
-+	}
-+#endif
-+}
-+
- /* Delete sysfs entries but hold kobject reference until after all
-  * netdev references are gone.
-  */
-@@ -490,7 +522,7 @@ int netdev_register_kobject(struct net_d
- 	dev->groups = groups;
- 
- 	BUILD_BUG_ON(BUS_ID_SIZE < IFNAMSIZ);
--	strlcpy(dev->bus_id, netdev->name, BUS_ID_SIZE);
-+	netdev_fill_bus_id_name(dev->bus_id, netdev);
- 
- #ifdef CONFIG_SYSFS
- 	*groups++ = &netstat_group;
-Index: net-next-2.6/net/core/net-sysfs.h
-===================================================================
---- net-next-2.6.orig/net/core/net-sysfs.h
-+++ net-next-2.6/net/core/net-sysfs.h
-@@ -5,4 +5,5 @@ int netdev_kobject_init(void);
- int netdev_register_kobject(struct net_device *);
- void netdev_unregister_kobject(struct net_device *);
- void netdev_initialize_kobject(struct net_device *);
-+void netdev_fill_bus_id_name(char *, struct net_device *);
- #endif
+Can you please elaborate on this ?  I don't recall having had issues
+with that.
 
--- 
+Thanks,
+
+Oren.
+
+> 
+> Andrey
+> _______________________________________________
+> Containers mailing list
+> Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+> https://lists.linux-foundation.org/mailman/listinfo/containers
