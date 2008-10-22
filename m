@@ -1,16 +1,15 @@
-From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
-Subject: Re: [PATCH 0/4][RFC] netns: sysfs: add a netns suffix to net device
-	sysfs entries
-Date: Wed, 22 Oct 2008 14:08:26 -0700
-Message-ID: <m17i80l4mt.fsf__21807.1967167363$1224710212$gmane$org@frodo.ebiederm.org>
+From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH] netns: Coexist with the sysfs limitations
+Date: Wed, 22 Oct 2008 16:21:24 -0500
+Message-ID: <20081022212124.GA9910__28241.4302615964$1224710816$gmane$org@us.ibm.com>
 References: <20081022152144.351965414@theryb.frec.bull.fr>
-	<20081022201601.GC24959@suse.de>
+	<m17i80nzff.fsf@frodo.ebiederm.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20081022201601.GC24959-l3A5Bk7waGM@public.gmane.org> (Greg KH's message of "Wed, 22
-	Oct 2008 13:16:01 -0700")
+Content-Disposition: inline
+In-Reply-To: <m17i80nzff.fsf-B27657KtZYmhTnVgQlOflh2eb7JE58TQ@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -20,28 +19,38 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Greg KH <gregkh-l3A5Bk7waGM@public.gmane.org>
-Cc: Tejun Heo <htejun-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Denis Lunev <den-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>, netdev <netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Al Viro <viro-rfM+Q5joDG/XmaaqVzeoHQ@public.gmane.org>, Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>, Dave Miller <davem-fT/PcQaiUtIeIZ0/mPfg9Q@public.gmane.org>, Benjamin Thery <benjamin.thery-6ktuUTfB/bM@public.gmane.org>
+To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+Cc: Tejun Heo <htejun-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, netdev <netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Greg Kroah-Hartman <gregkh-l3A5Bk7waGM@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Al Viro <viro-rfM+Q5joDG/XmaaqVzeoHQ@public.gmane.org>, Denis Lunev <den-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>, Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>, Dave Miller <davem-fT/PcQaiUtIeIZ0/mPfg9Q@public.gmane.org>, Benjamin Thery <benjamin.thery-6ktuUTfB/bM@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Greg KH <gregkh-l3A5Bk7waGM@public.gmane.org> writes:
+Quoting Eric W. Biederman (ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org):
+> 
+> To make testing of the network namespace simpler allow
+> the network namespace code and the sysfs code to be
+> compiled and run at the same time.  To do this only
+> virtual devices are allowed in the additional network
+> namespaces and those virtual devices are not placed
+> in the kobject tree.
+> 
+> Since virtual devices don't actually do anything interesting
+> hardware wise that needs device management there should
+> be no loss in keeping them out of the kobject tree and
+> by implication sysfs.  The gain in ease of testing
+> and code coverage should be significant.
+> 
+> I.e. people running distributions that make it next to
+> impossible to boot without sysfs should at be able to
+> boot a test kernel now.
+> 
+> Plus no ABIs are harmed with this patch.
+> 
+> Signed-off-by: Eric W. Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 
-> On Wed, Oct 22, 2008 at 05:21:44PM +0200, Benjamin Thery wrote:
->> Network devices from sub-network namespaces appear in sysfs
->> with a name that looks like this: device_name@netns_id
->> eg: lo@3, eth0@4e
->
-> How does the default udev rules as shipped by most distros handle the
-> renaming of the network device if the MAC address is duplicated like it
-> will be for these eth devices?
+Duh.
 
-The mac address is not duplicated.
+Tested-by: Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Acked-by: Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 
-Further devices like eth0@4e are completely unusable to the udev
-rules in the initial network namespace because they can not talk
-to or affect them.
+Thanks, Eric!  Thanks, Benjamin!
 
-As I read it Ben's ``solution'' puts entries in sysfs that are
-completely unusable to udev.
-
-Eric
+-serge
