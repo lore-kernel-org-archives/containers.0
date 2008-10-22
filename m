@@ -1,7 +1,7 @@
-From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [RFC v7][PATCH 2/9] General infrastructure for checkpoint restart
-Date: Wed, 22 Oct 2008 12:03:25 -0500
-Message-ID: <20081022170325.GA4908__34935.5370425203$1224695347$gmane$org@us.ibm.com>
+From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Subject: Re: [RFC v7][PATCH 2/9] General infrastructure for checkpoint	restart
+Date: Wed, 22 Oct 2008 14:32:51 -0400
+Message-ID: <48FF71D3.8060505__35367.9682630629$1224700540$gmane$org@cs.columbia.edu>
 References: <1224481237-4892-1-git-send-email-orenl@cs.columbia.edu>
 	<1224481237-4892-3-git-send-email-orenl@cs.columbia.edu>
 	<20081021124130.a002e838.akpm@linux-foundation.org>
@@ -9,12 +9,12 @@ References: <1224481237-4892-1-git-send-email-orenl@cs.columbia.edu>
 	<48FE82DF.6030005@cs.columbia.edu>
 	<20081022152804.GA23821@us.ibm.com>
 	<48FF4EB2.5060206@cs.columbia.edu>
+	<20081022170325.GA4908@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <48FF4EB2.5060206-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+In-Reply-To: <20081022170325.GA4908-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -24,77 +24,91 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 Cc: linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, mingo-X9Un+BFzKDI@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org, hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, tglx-hfZtesqFncYOwBW4kG4KsQ@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Quoting Oren Laadan (orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org):
+
+
+Serge E. Hallyn wrote:
+> Quoting Oren Laadan (orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org):
+>>
+>> Serge E. Hallyn wrote:
+>>> Quoting Oren Laadan (orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org):
+>>> Just thinking aloud...
+>>>
+>>> Is read mode appropriate?  The user can edit the statefile and restart
+>>> it.  Admittedly the restart code should then do all the appropriate
+>>> checks for recreating resources, but I'm having a hard time thinking
+>>> through this straight.
+>>>
+>>> Let's say hallyn is running passwd.  ruid=500,euid=0.  He quickly
+>>> checkpoints.  Then he restarts.  Will restart say "ok, the /bin/passwd
+>>> binary is setuid 0 so let hallyn take euid=0 for this?"  I guess not.
+>>> But are there other resources for which this is harder to get right?
+>> I'd say that checkpoint and restart are separate.
+>>
+>> In checkpoint, you read the state and save it somewhere; you don't
+>> modify anything in the target task (container). This equivalent to
+>> ptrace read-mode. If you could do ptrace, you could save all that
+>> state. In fact, you could save it in a format that is suitable for
+>> a future restart ... (or just forge one !)
 > 
+> Yeah, that's convincing.
 > 
-> Serge E. Hallyn wrote:
-> > Quoting Oren Laadan (orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org):
-> > Just thinking aloud...
-> > 
-> > Is read mode appropriate?  The user can edit the statefile and restart
-> > it.  Admittedly the restart code should then do all the appropriate
-> > checks for recreating resources, but I'm having a hard time thinking
-> > through this straight.
-> > 
-> > Let's say hallyn is running passwd.  ruid=500,euid=0.  He quickly
-> > checkpoints.  Then he restarts.  Will restart say "ok, the /bin/passwd
-> > binary is setuid 0 so let hallyn take euid=0 for this?"  I guess not.
-> > But are there other resources for which this is harder to get right?
+>> In restart, we either don't trust the user and keep everything to
+>> be done with her credentials, of we trust the root user and allow
+>> all operations (like loading a kernel module).
+>>
+>> We can actually have both modes of operations. How to decide that
+>> we trust the user is a separate question:  one option is to have
+>> both checkpoint and restart executables setuid - checkpoint will
+>> sign (in user space) the output image, and restart (in user space)
+>> will validate the signature, before passing it to the kenrel. Surely
+>> there are other ways...
 > 
-> I'd say that checkpoint and restart are separate.
+> Makes sense.
 > 
-> In checkpoint, you read the state and save it somewhere; you don't
-> modify anything in the target task (container). This equivalent to
-> ptrace read-mode. If you could do ptrace, you could save all that
-> state. In fact, you could save it in a format that is suitable for
-> a future restart ... (or just forge one !)
-
-Yeah, that's convincing.
-
-> In restart, we either don't trust the user and keep everything to
-> be done with her credentials, of we trust the root user and allow
-> all operations (like loading a kernel module).
+> ...
 > 
-> We can actually have both modes of operations. How to decide that
-> we trust the user is a separate question:  one option is to have
-> both checkpoint and restart executables setuid - checkpoint will
-> sign (in user space) the output image, and restart (in user space)
-> will validate the signature, before passing it to the kenrel. Surely
-> there are other ways...
-
-Makes sense.
-
-...
-
-> > Hmm, so do you think we just always use the caller's credentials?
+>>> Hmm, so do you think we just always use the caller's credentials?
+>> Nope, since we will fail to restart in many cases. We will need a way
+>> to move from caller's credentials to saved credentials, and even from
+>> caller's credentials to privileged credentials (e.g. to reopen a file
+>> that was created by a setuid program prior to dropping privileges).
 > 
-> Nope, since we will fail to restart in many cases. We will need a way
-> to move from caller's credentials to saved credentials, and even from
-> caller's credentials to privileged credentials (e.g. to reopen a file
-> that was created by a setuid program prior to dropping privileges).
+> Can we agree to worry about that much much later? :)  Would you agree
 
-Can we agree to worry about that much much later? :)  Would you agree
-that for the majority of use-cases, restarting with caller's credentials
-will work?  Or am I wrong about that?
+Definitely. Even more so - I believe that's a user-space issue :)
 
-> To do that, we will need to agree on a way to escalate/change the
-> credentials. This however belongs to user-space (and then the binaries
-> for checkpoint/restart will be setuid themselves).
+> that for the majority of use-cases, restarting with caller's credentials
+> will work?  Or am I wrong about that?
 
-Ok those are less scary, and I have no problem with those.
+That depends on your target audience. For HPC you're probably right.
+For server applications this may not be the case (e.g. apache needs
+a privileged port, and then it drops privileges).
 
-> There will also be the issue of mapping credentials: a user A may have
-> one UID/GID on once system and another UID/GID on another system, and
-> we may want to do the conversion. This, too, can be done in user space
-> prior to restart by using an appropriate filter through the checkpoint
-> stream.
+I agree that we may safely (...) defer this discussion until the
+implementation gets much beefier.
 
-User namespaces may help here too.  So user A can create a new user
-namespace and restart as user B in that namespace.  But right now that
-sounds like overkill.
+> 
+>> To do that, we will need to agree on a way to escalate/change the
+>> credentials. This however belongs to user-space (and then the binaries
+>> for checkpoint/restart will be setuid themselves).
+> 
+> Ok those are less scary, and I have no problem with those.
+> 
+>> There will also be the issue of mapping credentials: a user A may have
+>> one UID/GID on once system and another UID/GID on another system, and
+>> we may want to do the conversion. This, too, can be done in user space
+>> prior to restart by using an appropriate filter through the checkpoint
+>> stream.
+> 
+> User namespaces may help here too.  So user A can create a new user
+> namespace and restart as user B in that namespace.  But right now that
+> sounds like overkill.
 
--serge
+Indeed, virtualization is probably the solution. Here, too, I think
+it's safe to defer the discussion.
+
+Oren.
