@@ -1,14 +1,15 @@
-From: Cedric Le Goater <clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 3/4] freezer_cg: use thaw_process() in unfreeze_cgroup()
-Date: Wed, 22 Oct 2008 09:37:04 +0200
-Message-ID: <48FED820.8030401__28300.0764008195$1224661340$gmane$org@fr.ibm.com>
-References: <48FD26F5.1070809@cn.fujitsu.com>	<48FD273F.3040505@cn.fujitsu.com>	<48FD2784.30906@cn.fujitsu.com>	<48FD81B8.5030103@fr.ibm.com>
-	<20081021135813.e77d3015.akpm@linux-foundation.org>
+From: Chen Zumeng <zumeng.chen-CWA4WttNNZF54TAoqtyWWQ@public.gmane.org>
+Subject: Re: [PATCH 0/2] dm-ioband: I/O bandwidth controller v1.8.0:
+	Introduction
+Date: Wed, 22 Oct 2008 15:55:15 +0800
+Message-ID: <48FEDC63.308__26451.0684683502$1224662449$gmane$org@windriver.com>
+References: <20081017.160950.71109894.ryov@valinux.co.jp>
+	<48FDB8AC.9020707@windriver.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20081021135813.e77d3015.akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
+In-Reply-To: <48FDB8AC.9020707-CWA4WttNNZF54TAoqtyWWQ@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,87 +19,85 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: Ryo Tsuruta <ryov-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
+Cc: xen-devel-GuqFBffKawuULHF6PoxzQEEOCMrvLtNR@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, virtualization-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, dm-devel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, fernando-gVGce1chcLdL9jVzuh4AOg@public.gmane.org, Bruce Ashfield <bruce.ashfield-CWA4WttNNZF54TAoqtyWWQ@public.gmane.org>, Haotian Zhang <haotian.zhang-CWA4WttNNZF54TAoqtyWWQ@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Andrew Morton wrote:
-> On Tue, 21 Oct 2008 09:16:08 +0200
-> Cedric Le Goater <clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org> wrote:
+Chen Zumeng wrote:
+> Hi, Ryo Tsuruta
 > 
->> Li Zefan wrote:
->>> Don't duplicate the implementation of thaw_process().
->> looks OK but you should remove  __thaw_process() which is unused 
->> now.
+> And our test team want to test bio_tracking as your benchmark reports,
+> so would you please send me your test codes? Thanks in advance.
+Hi Ryo Tsuruta,
+
+I wonder if you received last email, so I reply this email to ask
+for your bio_tracking test codes to generate your benchmark reports
+as shown in your website. Thanks in advance :)
+
+Regards,
+Zumeng
 > 
-> It's called by thaw_process().
+> Regards,
+> Zumeng
 > 
-> But that's the only callsite, I believe, so...
-
-yes it is. it was added by dc52ddc0e6f45b04780b26fc0813509f8e798c42
-and was inline before.
-
-thanks,
-
-C.
-
+> P.S. The following are my changes to avoid schedule_timeout:
 > 
-> --- a/include/linux/freezer.h~freezer_cg-use-thaw_process-in-unfreeze_cgroup-fix
-> +++ a/include/linux/freezer.h
-> @@ -44,11 +44,6 @@ static inline bool should_send_signal(st
->  	return !(p->flags & PF_FREEZER_NOSIG);
+> 
+> diff --git a/drivers/md/dm-ioband-ctl.c b/drivers/md/dm-ioband-ctl.c
+> index a792620..643ca4e 100644
+> --- a/drivers/md/dm-ioband-ctl.c
+> +++ b/drivers/md/dm-ioband-ctl.c
+> @@ -100,6 +100,7 @@ static struct ioband_device 
+> *alloc_ioband_device(char *name,
+>                         return dp;
+>                 }
+>         }
+> +       spin_unlock_irqrestore(&ioband_devicelist_lock, flags);
+> 
+>         /*
+>          * Prepare its own workqueue as generic_make_request() may
+> @@ -133,9 +134,11 @@ static struct ioband_device 
+> *alloc_ioband_device(char *name,
+>         init_waitqueue_head(&new->g_waitq);
+>         init_waitqueue_head(&new->g_waitq_suspend);
+>         init_waitqueue_head(&new->g_waitq_flush);
+> -       list_add_tail(&new->g_list, &ioband_device_list);
+> 
+> +       spin_lock_irqsave(&ioband_devicelist_lock, flags);
+> +       list_add_tail(&new->g_list, &ioband_device_list);
+>         spin_unlock_irqrestore(&ioband_devicelist_lock, flags);
+> +
+>         return new;
 >  }
->  
-> -/*
-> - * Wake up a frozen process
-> - */
-> -extern int __thaw_process(struct task_struct *p);
-> -
->  /* Takes and releases task alloc lock using task_lock() */
->  extern int thaw_process(struct task_struct *p);
->  
-> diff -puN kernel/freezer.c~freezer_cg-use-thaw_process-in-unfreeze_cgroup-fix kernel/freezer.c
-> --- a/kernel/freezer.c~freezer_cg-use-thaw_process-in-unfreeze_cgroup-fix
-> +++ a/kernel/freezer.c
-> @@ -121,16 +121,7 @@ void cancel_freezing(struct task_struct 
->  	}
->  }
->  
-> -/*
-> - * Wake up a frozen process
-> - *
-> - * task_lock() is needed to prevent the race with refrigerator() which may
-> - * occur if the freezing of tasks fails.  Namely, without the lock, if the
-> - * freezing of tasks failed, thaw_tasks() might have run before a task in
-> - * refrigerator() could call frozen_process(), in which case the task would be
-> - * frozen and no one would thaw it.
-> - */
-> -int __thaw_process(struct task_struct *p)
-> +static int __thaw_process(struct task_struct *p)
->  {
->  	if (frozen(p)) {
->  		p->flags &= ~PF_FROZEN;
-> @@ -140,6 +131,15 @@ int __thaw_process(struct task_struct *p
->  	return 0;
->  }
->  
-> +/*
-> + * Wake up a frozen process
-> + *
-> + * task_lock() is needed to prevent the race with refrigerator() which may
-> + * occur if the freezing of tasks fails.  Namely, without the lock, if the
-> + * freezing of tasks failed, thaw_tasks() might have run before a task in
-> + * refrigerator() could call frozen_process(), in which case the task would be
-> + * frozen and no one would thaw it.
-> + */
->  int thaw_process(struct task_struct *p)
->  {
->  	task_lock(p);
-> _
+> ---
 > 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-kernel" in
-> the body of a message to majordomo-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> Please read the FAQ at  http://www.tux.org/lkml/
+> Ryo Tsuruta wrote:
+>> Hi Alasdair and all,
+>>
+>> This is the dm-ioband version 1.8.0 release.
+>>
+>> Dm-ioband is an I/O bandwidth controller implemented as a device-mapper
+>> driver, which gives specified bandwidth to each job running on the same
+>> physical device.
+>>
+>> This release is a minor bug fix and confirmed running on the latest
+>> stable kernel 2.6.27.1.
+>>
+>> - Can be applied to the kernel 2.6.27.1 and 2.6.27-rc5-mm1.
+>> - Changes from 1.7.0 (posted on Oct 3, 2008):
+>>   - Fix a minor bug in io_limit setting that causes dm-ioband to stop
+>>     issuing I/O requests when a large value is set to io_limit.
+>>
+>> Alasdair, could you please review this patch and give me any comments?
+>>
+>> Thanks,
+>> Ryo Tsuruta
+>> -- 
+>> To unsubscribe from this list: send the line "unsubscribe 
+>> linux-kernel" in
+>> the body of a message to majordomo-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>> Please read the FAQ at  http://www.tux.org/lkml/
+>>
+> 
 > 
