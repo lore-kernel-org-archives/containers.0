@@ -1,14 +1,14 @@
-From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
-Subject: Re: [RFC][PATCH] 'kill sig -1' must only apply to callers namespace
-Date: Tue, 21 Oct 2008 20:18:55 -0700
-Message-ID: <m1od1dnwps.fsf@frodo.ebiederm.org>
-References: <20081022014141.GA25355@us.ibm.com>
+From: Cedric Le Goater <clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH 3/4] freezer_cg: use thaw_process() in unfreeze_cgroup()
+Date: Wed, 22 Oct 2008 09:37:04 +0200
+Message-ID: <48FED820.8030401__28300.0764008195$1224661340$gmane$org@fr.ibm.com>
+References: <48FD26F5.1070809@cn.fujitsu.com>	<48FD273F.3040505@cn.fujitsu.com>	<48FD2784.30906@cn.fujitsu.com>	<48FD81B8.5030103@fr.ibm.com>
+	<20081021135813.e77d3015.akpm@linux-foundation.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20081022014141.GA25355-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org> (sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org's
-	message of "Tue, 21 Oct 2008 18:41:41 -0700")
+In-Reply-To: <20081021135813.e77d3015.akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,55 +18,87 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
-Cc: Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Oleg Nesterov <oleg-6lXkIZvqkOAvJsYlp49lxw@public.gmane.org>, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+To: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org writes:
+Andrew Morton wrote:
+> On Tue, 21 Oct 2008 09:16:08 +0200
+> Cedric Le Goater <clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org> wrote:
+> 
+>> Li Zefan wrote:
+>>> Don't duplicate the implementation of thaw_process().
+>> looks OK but you should remove  __thaw_process() which is unused 
+>> now.
+> 
+> It's called by thaw_process().
+> 
+> But that's the only callsite, I believe, so...
 
->>From d92b4befe07c6a1e852e4462126a5443342448cd Mon Sep 17 00:00:00 2001
-> From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-> Date: Tue, 21 Oct 2008 18:00:01 -0700
-> Subject: [PATCH] kill sig -1 must only apply to callers namespace
->
-> Currently "kill <sig> -1" kills processes in all namespaces and breaks the
-> isolation of namespaces. Earlier attempt to fix this is discussed at:
->
-> 	http://lkml.org/lkml/2008/7/23/148
->
-> but nothing seems to have happened since then.
+yes it is. it was added by dc52ddc0e6f45b04780b26fc0813509f8e798c42
+and was inline before.
 
-Ugh.  I thought that conversation had resolved the problem and gotten
-a patch in.
+thanks,
 
-This patch works because pid_vnr returns 0 for processes outside of
-the current pid namespace.
+C.
 
-> This patch uses the simple fix suggested by Oleg Nesterov.
->
-> Signed-off-by: Sukadev Bhattiprolu <sukadev-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-
-Acked-by: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-
-
-> ---
->  kernel/signal.c |    3 ++-
->  1 files changed, 2 insertions(+), 1 deletions(-)
->
-> diff --git a/kernel/signal.c b/kernel/signal.c
-> index 105217d..4530fc6 100644
-> --- a/kernel/signal.c
-> +++ b/kernel/signal.c
-> @@ -1144,7 +1144,8 @@ static int kill_something_info(int sig, struct siginfo
-> *info, pid_t pid)
->  		struct task_struct * p;
+> 
+> --- a/include/linux/freezer.h~freezer_cg-use-thaw_process-in-unfreeze_cgroup-fix
+> +++ a/include/linux/freezer.h
+> @@ -44,11 +44,6 @@ static inline bool should_send_signal(st
+>  	return !(p->flags & PF_FREEZER_NOSIG);
+>  }
 >  
->  		for_each_process(p) {
-> -			if (p->pid > 1 && !same_thread_group(p, current)) {
-> +			if (task_pid_vnr(p) > 1 &&
-> +					!same_thread_group(p, current)) {
->  				int err = group_send_sig_info(sig, info, p);
->  				++count;
->  				if (err != -EPERM)
-> -- 
-> 1.5.2.5
+> -/*
+> - * Wake up a frozen process
+> - */
+> -extern int __thaw_process(struct task_struct *p);
+> -
+>  /* Takes and releases task alloc lock using task_lock() */
+>  extern int thaw_process(struct task_struct *p);
+>  
+> diff -puN kernel/freezer.c~freezer_cg-use-thaw_process-in-unfreeze_cgroup-fix kernel/freezer.c
+> --- a/kernel/freezer.c~freezer_cg-use-thaw_process-in-unfreeze_cgroup-fix
+> +++ a/kernel/freezer.c
+> @@ -121,16 +121,7 @@ void cancel_freezing(struct task_struct 
+>  	}
+>  }
+>  
+> -/*
+> - * Wake up a frozen process
+> - *
+> - * task_lock() is needed to prevent the race with refrigerator() which may
+> - * occur if the freezing of tasks fails.  Namely, without the lock, if the
+> - * freezing of tasks failed, thaw_tasks() might have run before a task in
+> - * refrigerator() could call frozen_process(), in which case the task would be
+> - * frozen and no one would thaw it.
+> - */
+> -int __thaw_process(struct task_struct *p)
+> +static int __thaw_process(struct task_struct *p)
+>  {
+>  	if (frozen(p)) {
+>  		p->flags &= ~PF_FROZEN;
+> @@ -140,6 +131,15 @@ int __thaw_process(struct task_struct *p
+>  	return 0;
+>  }
+>  
+> +/*
+> + * Wake up a frozen process
+> + *
+> + * task_lock() is needed to prevent the race with refrigerator() which may
+> + * occur if the freezing of tasks fails.  Namely, without the lock, if the
+> + * freezing of tasks failed, thaw_tasks() might have run before a task in
+> + * refrigerator() could call frozen_process(), in which case the task would be
+> + * frozen and no one would thaw it.
+> + */
+>  int thaw_process(struct task_struct *p)
+>  {
+>  	task_lock(p);
+> _
+> 
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-kernel" in
+> the body of a message to majordomo-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> Please read the FAQ at  http://www.tux.org/lkml/
+> 
