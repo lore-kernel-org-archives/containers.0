@@ -1,16 +1,15 @@
-From: Ryo Tsuruta <ryov-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
-Subject: Re: [PATCH 0/2] dm-ioband: I/O bandwidth controller v1.8.0:
-	Introduction
-Date: Thu, 23 Oct 2008 20:28:51 +0900 (JST)
-Message-ID: <20081023.202851.112594221.ryov__28796.6421027251$1224761466$gmane$org@valinux.co.jp>
-References: <48FEDC63.308@windriver.com>
-	<20081022.170536.193712541.ryov@valinux.co.jp>
-	<1224756158.8286.36.camel@pek-hzhang-d1>
+From: Benjamin Thery <benjamin.thery-6ktuUTfB/bM@public.gmane.org>
+Subject: Re: [PATCH 0/4][RFC] netns: sysfs: add a netns suffix to net device
+	sysfs entries
+Date: Thu, 23 Oct 2008 13:56:33 +0200
+Message-ID: <49006671.3010804__6339.51017302952$1224763494$gmane$org@bull.net>
+References: <20081022152144.351965414@theryb.frec.bull.fr>
+	<m1d4hso0ym.fsf@frodo.ebiederm.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1224756158.8286.36.camel@pek-hzhang-d1>
+In-Reply-To: <m1d4hso0ym.fsf-B27657KtZYmhTnVgQlOflh2eb7JE58TQ@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -20,29 +19,41 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: haotian.zhang-CWA4WttNNZF54TAoqtyWWQ@public.gmane.org
-Cc: xen-devel-GuqFBffKawuULHF6PoxzQEEOCMrvLtNR@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, virtualization-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, dm-devel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, fernando-gVGce1chcLdL9jVzuh4AOg@public.gmane.org, bruce.ashfield-CWA4WttNNZF54TAoqtyWWQ@public.gmane.org, zumeng.chen-CWA4WttNNZF54TAoqtyWWQ@public.gmane.org
+To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+Cc: Tejun Heo <htejun-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Denis Lunev <den-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>, netdev <netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Greg Kroah-Hartman <gregkh-l3A5Bk7waGM@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Al Viro <viro-rfM+Q5joDG/XmaaqVzeoHQ@public.gmane.org>, Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>, Dave Miller <davem-fT/PcQaiUtIeIZ0/mPfg9Q@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Hi Haotian,
-
-> The results are almost the same. I can not see any change of Direct I/O
-> performance for this bio-cgroup kernel feature with dm-ioband support!
+Eric W. Biederman wrote:
+> Benjamin Thery <benjamin.thery-6ktuUTfB/bM@public.gmane.org> writes:
 > 
-> Does the methord to caculate throughout should be the Rate of xdd.linux
-> output? 
-> Dose my testing approach should be correct? If not, please help me point
-> out.
+>> Support for network namespaces in mainline is pretty complete for
+>> some time now, but there is still this issue with sysfs that prevents 
+>> more people to use it easily.
+> 
+> Ben your patchset is completely inappropriate.
+> 
+> Temporarily adding elements to the ABI that we intend to remove
+> is not a proper solution to this problem.
 
-Could you try to run the xdd programs simultaneously?
-dm-ioband controls bandwidth while I/O requests are issued
-simultaneously from processes which belong to different cgroup.
-If I/O requests are only issued from processes which belong to one
-cgroup, the processes can use the whole bandwidth.
+In fact, I feared that would be an issue before I sent the patches.
+Thanks for confirming this.
 
-The following URL is an example of how bandwidth is shared to I/O
-load change.
-http://people.valinux.co.jp/~ryov/dm-ioband/benchmark/partition1.html
+But, as this alternative was discussed a bit after Al's comments on your
+last patches, I had to give it a try and code a proof-of-concept.
 
-Thanks,
-Ryo Tsuruta
+Benjamin
+
+> 
+> That user space visible ida you add is a namespace identifier that breaks
+> nested containers and migration.  It is very very very wrong.
+> 
+> Eric
+> 
+> 
+> 
+
+
+-- 
+B e n j a m i n   T h e r y  - BULL/DT/Open Software R&D
+
+    http://www.bull.com
