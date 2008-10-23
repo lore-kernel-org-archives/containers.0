@@ -1,16 +1,16 @@
-From: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: Re: [Devel] Re: [PATCH 08/10] Introduce functions to restart a process
-Date: Thu, 23 Oct 2008 06:57:57 -0700
-Message-ID: <1224770277.12673.21.camel__30390.8562557355$1224770587$gmane$org@nimitz>
-References: <1224285098-573-1-git-send-email-major@openvz.org>
-	<200810221412.14174.major@openvz.org>
-	<48FF45CF.5000306@cs.columbia.edu>
-	<200810231300.50628.amirkin@parallels.com>
+From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
+Subject: Re: [PATCH] netns: Coexist with the sysfs limitations
+Date: Thu, 23 Oct 2008 08:40:09 -0700
+Message-ID: <m1tzb3iali.fsf__8507.25588757104$1224776834$gmane$org@frodo.ebiederm.org>
+References: <20081022152144.351965414@theryb.frec.bull.fr>
+	<m17i80nzff.fsf@frodo.ebiederm.org> <20081022212124.GA9910@us.ibm.com>
+	<49003019.40904@bull.net>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <200810231300.50628.amirkin-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
+In-Reply-To: <49003019.40904-6ktuUTfB/bM@public.gmane.org> (Benjamin Thery's message of "Thu, 23
+	Oct 2008 10:04:41 +0200")
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -20,41 +20,54 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Andrey Mirkin <amirkin-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Louis.Rilling-aw0BnHfMbSpBDgjK7y7TUQ@public.gmane.org, Cedric Le Goater <clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>, Andrey Mirkin <major-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+To: Benjamin Thery <benjamin.thery-6ktuUTfB/bM@public.gmane.org>
+Cc: Tejun Heo <htejun-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Denis Lunev <den-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>, netdev <netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Greg Kroah-Hartman <gregkh-l3A5Bk7waGM@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Al Viro <viro-rfM+Q5joDG/XmaaqVzeoHQ@public.gmane.org>, Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>, Dave Miller <davem-fT/PcQaiUtIeIZ0/mPfg9Q@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Thu, 2008-10-23 at 13:00 +0400, Andrey Mirkin wrote:
-> 
-> > >>> It is not related to the freezer code actually.
-> > >>> That is needed to restart syscalls. Right now I don't have a code in my
-> > >>> patchset which restarts a syscall, but later I plan to add it.
-> > >>> In OpenVZ checkpointing we restart syscalls if process was caught in
-> > >>> syscall during checkpointing.
-> > >>
-> > >> Do you checkpoint uninterruptible syscalls as well? If only
-> > >> interruptible syscalls are checkpointed, I'd say that either this
-> > >> syscall uses ERESTARTSYS or ERESTART_RESTARTBLOCK, and then signal
-> > >> handling code already does the trick, or this syscall does not restart
-> > >> itself when interrupted, and well, this is life, userspace just sees
-> > >> -EINTR, which is allowed by the syscall spec.
-> > >> Actually this is how we checkpoint/migrate tasks in interruptible
-> > >> syscalls in Kerrighed and this works.
-> > >
-> > > We checkpoint only interruptible syscalls. Some syscalls do not restart
-> > > themself, that is why after restarting a process we restart syscall to
-> > > complete it.
-> >
-> > Can you please elaborate on this ?  I don't recall having had issues
-> > with that.
-> 
-> Right now in 2.6.18 kernel we restarts in such a way pause, rt_sigtimedwait 
-> and futex syscalls. Recently futex syscall was reworked and we will not need 
-> such hooks for it.
+Benjamin Thery <benjamin.thery-6ktuUTfB/bM@public.gmane.org> writes:
 
-Could you elaborate on this a bit?
+> Serge E. Hallyn wrote:
+>> Quoting Eric W. Biederman (ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org):
+>>> To make testing of the network namespace simpler allow
+>>> the network namespace code and the sysfs code to be
+>>> compiled and run at the same time.  To do this only
+>>> virtual devices are allowed in the additional network
+>>> namespaces and those virtual devices are not placed
+>>> in the kobject tree.
+>>>
+>>> Since virtual devices don't actually do anything interesting
+>>> hardware wise that needs device management there should
+>>> be no loss in keeping them out of the kobject tree and
+>>> by implication sysfs.  The gain in ease of testing
+>>> and code coverage should be significant.
+>>>
+>>> I.e. people running distributions that make it next to
+>>> impossible to boot without sysfs should at be able to
+>>> boot a test kernel now.
+>>>
+>>> Plus no ABIs are harmed with this patch.
+>
+>>> Signed-off-by: Eric W. Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+>>
+>> Duh.
+>>
+>> Tested-by: Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+>> Acked-by: Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+>
+> Oh, this patch is short, clean, and the limitation introduced isn't too
+> annoying for testing netns right now.
+>
+> At least, my proposal provoked some reactions :)
 
-If the futex syscall was reworked, perhaps we can do the same for
-rt_sigtimedwait() and get rid of this code completely.
+Yes.
 
--- Dave
+> BTW, there's a second limitation with your patch:
+> we can't rename the net devices in the additional network namespaces.
+>
+> In net/core/dev.c, dev_change_name() fails: call to device_rename() return an
+> (expected) -EINVAL error.
+> Maybe we should add a test on the net to only call it in init_net?
+
+Yes.  Good catch.
+
+Eric
