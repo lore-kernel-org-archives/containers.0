@@ -1,14 +1,16 @@
-From: Cedric Le Goater <clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
-Subject: Re: External checkpoint patch
-Date: Thu, 23 Oct 2008 09:51:13 +0200
-Message-ID: <49002CF1.3070505@fr.ibm.com>
-References: <1224612971.1848.193.camel@nimitz>
-	<Pine.LNX.4.64.0810211857140.22085@takamine.ncl.cs.columbia.edu>
+From: Andrey Mirkin <major-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+Subject: Re: [Devel] Re: [PATCH 06/10] Introduce functions to dump mm
+Date: Thu, 23 Oct 2008 12:43:41 +0400
+Message-ID: <200810231243.42181.major__34530.3790680648$1224751706$gmane$org@openvz.org>
+References: <1224285098-573-1-git-send-email-major@openvz.org>
+	<1224285098-573-7-git-send-email-major@openvz.org>
+	<1224523278.1848.123.camel@nimitz>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <Pine.LNX.4.64.0810211857140.22085-CXF6herHY6ykSYb+qCZC/1i27PF6R63G9nwVQlTi/Pw@public.gmane.org>
+In-Reply-To: <1224523278.1848.123.camel@nimitz>
+Content-Disposition: inline
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,117 +20,55 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Cc: containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Dave Hansen <dave-gkUM19QKKo4@public.gmane.org>
+To: devel-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-minor issue,
-
-
-> -struct cr_ctx *cr_ctx_alloc(pid_t pid, int fd, unsigned long flags)
-> +static struct cr_ctx *cr_ctx_alloc(pid_t pid, int fd, unsigned long flags)
->  {
->  	struct cr_ctx *ctx;
-> +	int err;
-> 
->  	ctx = kzalloc(sizeof(*ctx), GFP_KERNEL);
->  	if (!ctx)
->  		return ERR_PTR(-ENOMEM);
-
-with the err goto, you're calling cr_ctx_free() in a few places where
-ctx is partially initialized. you should at least do :
-
-	INIT_LIST_HEAD(&ctx->pgarr_list);
-
-right after the kzalloc() and probably check the value of ctx->hbuf. 
-There might be other issues.
-
-> +	ctx->flags = flags;
-> +	ctx->pid = pid;
-> +
-> +	err = -EBADF;
->  	ctx->file = fget(fd);
-> -	if (!ctx->file) {
-> -		cr_ctx_free(ctx);
-> -		return ERR_PTR(-EBADF);
-> -	}
-> +	if (!ctx->file)
-> +		goto err;
+On Monday 20 October 2008 21:21 Dave Hansen wrote:
+> On Sat, 2008-10-18 at 03:11 +0400, Andrey Mirkin wrote:
+> > +static void page_get_desc(struct vm_area_struct *vma, unsigned long
+> > addr, +                         struct page_desc *pdesc, cpt_context_t *
+> > ctx) +{
+> > +       struct mm_struct *mm = vma->vm_mm;
+> > +       pgd_t *pgd;
+> > +       pud_t *pud;
+> > +       pmd_t *pmd;
+> > +       pte_t *ptep, pte;
+> > +       spinlock_t *ptl;
+> > +       struct page *pg = NULL;
+> > +       pgoff_t linear_index = (addr - vma->vm_start)/PAGE_SIZE +
+> > vma->vm_pgoff; +
+> > +       pdesc->index = linear_index;
+> > +       pdesc->shared = 0;
+> > +       pdesc->mm = CPT_NULL;
+> > +
+> > +       if (vma->vm_flags & VM_IO) {
+> > +               pdesc->type = PD_ABSENT;
+> > +               return;
+> > +       }
+> > +
+> > +       pgd = pgd_offset(mm, addr);
+> > +       if (pgd_none(*pgd) || unlikely(pgd_bad(*pgd)))
+> > +               goto out_absent;
+> > +       pud = pud_offset(pgd, addr);
+> > +       if (pud_none(*pud) || unlikely(pud_bad(*pud)))
+> > +               goto out_absent;
+> > +       pmd = pmd_offset(pud, addr);
+> > +       if (pmd_none(*pmd) || unlikely(pmd_bad(*pmd)))
+> > +               goto out_absent;
+> > +#ifdef CONFIG_X86
+> > +       if (pmd_huge(*pmd)) {
+> > +               eprintk("page_huge\n");
+> > +               goto out_unsupported;
+> > +       }
+> > +#endif
 >
-> 
-> +	err = -ENOMEM;
->  	ctx->hbuf = kmalloc(CR_HBUF_TOTAL, GFP_KERNEL);
-> -	if (!ctx->hbuf) {
-> -		cr_ctx_free(ctx);
-> -		return ERR_PTR(-ENOMEM);
-> -	}
-> +	if (!ctx->hbuf)
-> +		goto err;
-> 
-> -	if (cr_objhash_alloc(ctx) < 0) {
-> -		cr_ctx_free(ctx);
-> -		return ERR_PTR(-ENOMEM);
-> -	}
-> +	if (cr_objhash_alloc(ctx) < 0)
-> +		goto err;
-> 
->  	/*
->  	 * assume checkpointer is in container's root vfs
-> @@ -206,12 +206,13 @@ struct cr_ctx *cr_ctx_alloc(pid_t pid, int fd, unsigned long flags)
-> 
->  	INIT_LIST_HEAD(&ctx->pgarr_list);
-> 
-> -	ctx->pid = pid;
-> -	ctx->flags = flags;
-> -
->  	ctx->crid = atomic_inc_return(&cr_ctx_count);
-> 
->  	return ctx;
-> +
-> + err:
-> +	cr_ctx_free(ctx);
-> +	return ERR_PTR(err);
->  }
-> 
->  /**
+> I take it you know that this breaks with the 1GB (x86_64) and 16GB (ppc)
+> large pages.
+>
+> Since you have the VMA, why not use is_vm_hugetlb_page()?
+Right now I'm checking VM_HUGETLB flag on VMAs in dump_one_vma().
+This checks were added for sanity purpose just to throw out all unsupported 
+right now cases.
 
-here's a patch for it.
-
-C.
-
-Signed-off-by: Cedric Le Goater <clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
----
- checkpoint/sys.c |    6 +++---
- 1 file changed, 3 insertions(+), 3 deletions(-)
-
-Index: 2.6.27-lxc/checkpoint/sys.c
-===================================================================
---- 2.6.27-lxc.orig/checkpoint/sys.c
-+++ 2.6.27-lxc/checkpoint/sys.c
-@@ -217,7 +217,8 @@ static void cr_ctx_free(struct cr_ctx *c
- 	if (ctx->file)
- 		fput(ctx->file);
- 
--	kfree(ctx->hbuf);
-+	if (ctx->hbuf)
-+		kfree(ctx->hbuf);
- 
- 	if (ctx->vfsroot)
- 		path_put(ctx->vfsroot);
-@@ -239,6 +240,7 @@ static struct cr_ctx *cr_ctx_alloc(pid_t
- 	if (!ctx)
- 		return ERR_PTR(-ENOMEM);
- 
-+	INIT_LIST_HEAD(&ctx->pgarr_list);
- 	ctx->flags = flags;
- 
- 	err = -EBADF;
-@@ -265,8 +267,6 @@ static struct cr_ctx *cr_ctx_alloc(pid_t
- 	ctx->vfsroot = &ctx->root_task->fs->root;
- 	path_get(ctx->vfsroot);
- 
--	INIT_LIST_HEAD(&ctx->pgarr_list);
--
- 	ctx->crid = atomic_inc_return(&cr_ctx_count);
- 
- 	return ctx;
+Andrey
