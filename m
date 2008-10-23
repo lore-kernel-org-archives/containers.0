@@ -1,16 +1,15 @@
-From: Andrey Mirkin <amirkin-bzQdu9zFT3WakBO8gow8eQ@public.gmane.org>
-Subject: Re: [Devel] Re: [PATCH 08/10] Introduce functions to restart a process
-Date: Thu, 23 Oct 2008 13:00:49 +0400
-Message-ID: <200810231300.50628.amirkin__39679.5535147705$1224752659$gmane$org@parallels.com>
-References: <1224285098-573-1-git-send-email-major@openvz.org>
-	<200810221412.14174.major@openvz.org>
-	<48FF45CF.5000306@cs.columbia.edu>
+From: Benjamin Thery <benjamin.thery-6ktuUTfB/bM@public.gmane.org>
+Subject: Re: [PATCH] netns: Coexist with the sysfs limitations
+Date: Thu, 23 Oct 2008 10:04:41 +0200
+Message-ID: <49003019.40904__45238.2999276326$1224752796$gmane$org@bull.net>
+References: <20081022152144.351965414@theryb.frec.bull.fr>
+	<m17i80nzff.fsf@frodo.ebiederm.org>
+	<20081022212124.GA9910@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <48FF45CF.5000306-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Content-Disposition: inline
+In-Reply-To: <20081022212124.GA9910-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -20,83 +19,79 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Louis.Rilling-aw0BnHfMbSpBDgjK7y7TUQ@public.gmane.org, Cedric Le Goater <clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>, Andrey Mirkin <major-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+Cc: Tejun Heo <htejun-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Denis Lunev <den-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>, netdev <netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Greg Kroah-Hartman <gregkh-l3A5Bk7waGM@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Al Viro <viro-rfM+Q5joDG/XmaaqVzeoHQ@public.gmane.org>, Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>, Dave Miller <davem-fT/PcQaiUtIeIZ0/mPfg9Q@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Wednesday 22 October 2008 19:25 Oren Laadan wrote:
-> Andrey Mirkin wrote:
-> > On Wednesday 22 October 2008 13:25 Louis Rilling wrote:
-> >> On Wed, Oct 22, 2008 at 12:49:54PM +0400, Andrey Mirkin wrote:
-> >>> On Monday 20 October 2008 13:23 Cedric Le Goater wrote:
-> >>>> Hello Andrey !
-> >>>>
-> >>>>> diff --git a/arch/x86/kernel/entry_32.S b/arch/x86/kernel/entry_32.S
-> >>>>> index 109792b..a4848a3 100644
-> >>>>> --- a/arch/x86/kernel/entry_32.S
-> >>>>> +++ b/arch/x86/kernel/entry_32.S
-> >>>>> @@ -225,6 +225,7 @@ ENTRY(ret_from_fork)
-> >>>>>  	GET_THREAD_INFO(%ebp)
-> >>>>>  	popl %eax
-> >>>>>  	CFI_ADJUST_CFA_OFFSET -4
-> >>>>> +ret_from_fork_tail:
-> >>>>>  	pushl $0x0202			# Reset kernel eflags
-> >>>>>  	CFI_ADJUST_CFA_OFFSET 4
-> >>>>>  	popfl
-> >>>>> @@ -233,6 +234,26 @@ ENTRY(ret_from_fork)
-> >>>>>  	CFI_ENDPROC
-> >>>>>  END(ret_from_fork)
-> >>>>>
-> >>>>> +ENTRY(i386_ret_from_resume)
-> >>>>> +	CFI_STARTPROC
-> >>>>> +	pushl %eax
-> >>>>> +	CFI_ADJUST_CFA_OFFSET 4
-> >>>>> +	call schedule_tail
-> >>>>> +	GET_THREAD_INFO(%ebp)
-> >>>>> +	popl %eax
-> >>>>> +	CFI_ADJUST_CFA_OFFSET -4
-> >>>>> +	movl (%esp), %eax
-> >>>>> +	testl %eax, %eax
-> >>>>> +	jz    1f
-> >>>>> +	pushl %esp
-> >>>>> +	call  *%eax
-> >>>>> +	addl  $4, %esp
-> >>>>> +1:
-> >>>>> +	addl  $256, %esp
-> >>>>> +	jmp   ret_from_fork_tail
-> >>>>> +	CFI_ENDPROC
-> >>>>> +END(i386_ret_from_resume)
-> >>>>
-> >>>> Could you explain why you need to do this
-> >>>>
-> >>>> 	call  *%eax
-> >>>>
-> >>>> is it related to the freezer code ?
-> >>>
-> >>> It is not related to the freezer code actually.
-> >>> That is needed to restart syscalls. Right now I don't have a code in my
-> >>> patchset which restarts a syscall, but later I plan to add it.
-> >>> In OpenVZ checkpointing we restart syscalls if process was caught in
-> >>> syscall during checkpointing.
-> >>
-> >> Do you checkpoint uninterruptible syscalls as well? If only
-> >> interruptible syscalls are checkpointed, I'd say that either this
-> >> syscall uses ERESTARTSYS or ERESTART_RESTARTBLOCK, and then signal
-> >> handling code already does the trick, or this syscall does not restart
-> >> itself when interrupted, and well, this is life, userspace just sees
-> >> -EINTR, which is allowed by the syscall spec.
-> >> Actually this is how we checkpoint/migrate tasks in interruptible
-> >> syscalls in Kerrighed and this works.
-> >
-> > We checkpoint only interruptible syscalls. Some syscalls do not restart
-> > themself, that is why after restarting a process we restart syscall to
-> > complete it.
->
-> Can you please elaborate on this ?  I don't recall having had issues
-> with that.
+Serge E. Hallyn wrote:
+> Quoting Eric W. Biederman (ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org):
+>> To make testing of the network namespace simpler allow
+>> the network namespace code and the sysfs code to be
+>> compiled and run at the same time.  To do this only
+>> virtual devices are allowed in the additional network
+>> namespaces and those virtual devices are not placed
+>> in the kobject tree.
+>>
+>> Since virtual devices don't actually do anything interesting
+>> hardware wise that needs device management there should
+>> be no loss in keeping them out of the kobject tree and
+>> by implication sysfs.  The gain in ease of testing
+>> and code coverage should be significant.
+>>
+>> I.e. people running distributions that make it next to
+>> impossible to boot without sysfs should at be able to
+>> boot a test kernel now.
+>>
+>> Plus no ABIs are harmed with this patch.
 
-Right now in 2.6.18 kernel we restarts in such a way pause, rt_sigtimedwait 
-and futex syscalls. Recently futex syscall was reworked and we will not need 
-such hooks for it.
+>> Signed-off-by: Eric W. Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+> 
+> Duh.
+> 
+> Tested-by: Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+> Acked-by: Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 
-Andrey
+Oh, this patch is short, clean, and the limitation introduced isn't too
+annoying for testing netns right now.
+
+At least, my proposal provoked some reactions :)
+
+BTW, there's a second limitation with your patch:
+we can't rename the net devices in the additional network namespaces.
+
+In net/core/dev.c, dev_change_name() fails: call to device_rename() 
+return an (expected) -EINVAL error.
+Maybe we should add a test on the net to only call it in init_net?
+
+  rollback:
+-       err = device_rename(&dev->dev, dev->name);
+-       if (err) {
+-               memcpy(dev->name, oldname, IFNAMSIZ);
+-               return err;
++       if (net == &init_net) {
++               err = device_rename(&dev->dev, dev->name);
++               if (err) {
++                       memcpy(dev->name, oldname, IFNAMSIZ);
++                       return err;
++               }
+         }
+
+Otherwise,
+
+Acked-by: Benjamin Thery <benjamin.thery-6ktuUTfB/bM@public.gmane.org>
+
+Thanks,
+Benjamin
+
+> 
+> Thanks, Eric!  Thanks, Benjamin!
+> 
+> -serge
+> 
+> 
+
+
+-- 
+B e n j a m i n   T h e r y  - BULL/DT/Open Software R&D
+
+    http://www.bull.com
