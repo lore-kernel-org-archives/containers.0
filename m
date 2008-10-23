@@ -1,15 +1,16 @@
-From: Andrey Mirkin <major-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
-Subject: Re: [Devel] Re: [PATCH 08/10] Introduce functions to restart a process
-Date: Thu, 23 Oct 2008 13:54:45 +0400
-Message-ID: <200810231354.47033.major__42424.8459902175$1224755872$gmane$org@openvz.org>
-References: <1224285098-573-1-git-send-email-major@openvz.org>
-	<200810221249.55600.major@openvz.org> <48FF20F6.1040505@fr.ibm.com>
+From: haotian <haotian.zhang-CWA4WttNNZF54TAoqtyWWQ@public.gmane.org>
+Subject: Re: [PATCH 0/2] dm-ioband: I/O bandwidth controller v1.8.0:
+	Introduction
+Date: Thu, 23 Oct 2008 18:02:38 +0800
+Message-ID: <1224756158.8286.36.camel@pek-hzhang-d1>
+References: <20081017.160950.71109894.ryov@valinux.co.jp>
+	<48FDB8AC.9020707@windriver.com> <48FEDC63.308@windriver.com>
+	<20081022.170536.193712541.ryov@valinux.co.jp>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <48FF20F6.1040505-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
-Content-Disposition: inline
+In-Reply-To: <20081022.170536.193712541.ryov-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,47 +20,105 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Cedric Le Goater <clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+To: Ryo Tsuruta <ryov-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
+Cc: xen-devel-GuqFBffKawuULHF6PoxzQEEOCMrvLtNR@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, virtualization-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, dm-devel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, fernando-gVGce1chcLdL9jVzuh4AOg@public.gmane.org, bruce.ashfield-CWA4WttNNZF54TAoqtyWWQ@public.gmane.org, zumeng.chen-CWA4WttNNZF54TAoqtyWWQ@public.gmane.org, "haotian.zhang" <haotian.zhang-CWA4WttNNZF54TAoqtyWWQ@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Wednesday 22 October 2008 16:47 Cedric Le Goater wrote:
-> >>> +ENTRY(i386_ret_from_resume)
-> >>> +	CFI_STARTPROC
-> >>> +	pushl %eax
-> >>> +	CFI_ADJUST_CFA_OFFSET 4
-> >>> +	call schedule_tail
-> >>> +	GET_THREAD_INFO(%ebp)
-> >>> +	popl %eax
-> >>> +	CFI_ADJUST_CFA_OFFSET -4
-> >>> +	movl (%esp), %eax
-> >>> +	testl %eax, %eax
-> >>> +	jz    1f
-> >>> +	pushl %esp
-> >>> +	call  *%eax
-> >>> +	addl  $4, %esp
-> >>> +1:
-> >>> +	addl  $256, %esp
-> >>> +	jmp   ret_from_fork_tail
-> >>> +	CFI_ENDPROC
-> >>> +END(i386_ret_from_resume)
-> >>
-> >> Could you explain why you need to do this
-> >>
-> >> 	call  *%eax
-> >>
-> >> is it related to the freezer code ?
-> >
-> > It is not related to the freezer code actually.
-> > That is needed to restart syscalls. Right now I don't have a code in my
-> > patchset which restarts a syscall, but later I plan to add it.
-> > In OpenVZ checkpointing we restart syscalls if process was caught in
-> > syscall during checkpointing.
->
-> ok. I get it now. why 256 bytes of extra stack ? I'm sure it's not random.
-We are putting special structure on stack, which is used at the very end of 
-the whole restart procedure to restore complex states (ptrace is one of such 
-cases). Right now I don't need to use this structure as we have a deal with 
-simple cases, but reservation of 256 bytes on stack is needed for future.
-
-Andrey
+SGkgUnlvIFRzdXJ1dGE6CgpUaGlzIGlzIEhhb3RpYW4gWmhhbmcsIEkgYW0gdGVzdGluZyB0aGUg
+YmlvX3RyYWNraW5nIGFzIHlvdXIgYmVuY2htYXJrCnJlcG9ydHMuIAoKSSBmb2xsb3cgdGhlIHRl
+c3QgcHJvY2VkdXJlIGFzIHlvdSBkZXNjcmliZSBpbiB3ZWIgcGFnZSB3aXRoIHRoZQp4ZGQtY291
+bnQuc2gsIGJ1dCB0aGUgcmVzdWx0cyBhcmUgbm90IHRvIGluZGljYXRlIHRoZSBpbXBsZW1lbnRh
+dGlvbiBvZgpJTyBjb3VudC1iYXNlZCBiYW5kd2lkdGggY29udHJvbCBvbiBwZXIgYmlvLWNncm91
+cHMuCgpUaGUgdGVzdGluZyBhcHByb2FjaCBpcyBhcyBmb2xsb3c6CgoxLCBtb3VudCBiaW8tY2dy
+b3VwIG9uIC9jZ3JvdXAKI21vdW50IC10IGNncm91cCAtYmlvIG5vbmUgL2Nncm91cAoKMiwgY3Jl
+YXRlIDMgY2dyb3VwIAojY2QgL2Nncm91cCBcCm1rZGlyIDEgMiAzCgozLCBjcmVhdGUgMyBpb2Jh
+bmQgZGV2aWNlIG9uIGVhY2ggcGFydGl0b24sIAphLkkgaGF2ZSAzIGV4dDIgcGFydGl0aW9uIC9k
+ZXYvc2RhNSBzZGE2IHNkYTc6CiMgY2F0IC9wcm9jL3BhcnRpdGlvbnMKIAptYWpvciBtaW5vciAg
+I2Jsb2NrcyAgbmFtZQoKICAgOCAgICAgMCAgIDU4NjA1MTIwIHNkYQogICA4ICAgICAxICAgMzI5
+MDEwODggc2RhMQogICA4ICAgICAyICAgICAgICAgIDEgc2RhMgogICA4ICAgICA1ICAgIDgxNTI5
+NTYgc2RhNQogICA4ICAgICA2ICAgIDg5MjQwNzYgc2RhNgogICA4ICAgICA3ICAgIDg2MjY4NzMg
+c2RhNwoKCmIuIEdpdmUgd2VpZ2h0cyBvZiA0MCwgMjAgYW5kIDEwIHRvIGNncm91cDEsIGNncm91
+cDIgYW5kIGNncm91cDMKcmVzcGVjdGl2ZWx5LCBhbmQgY3JlYXRlIGlvYmFuZCBkZXZpY2U6Cgoj
+ZWNobyAiMCAkREVWU0laRTEgaW9iYW5kICRERVYxIDEgMCAwIiBcCiAgICAiY2dyb3VwIHdlaWdo
+dCAwIDoxMDAgMTo0MCAyOjIwIDM6MTAiIHwgZG1zZXR1cCBjcmVhdGUgaW9iYW5kMQojZWNobyAi
+MCAkREVWU0laRTIgaW9iYW5kICRERVYyIDEgMCAwIiBcCiAgICAiY2dyb3VwIHdlaWdodCAwIDox
+MDAgMTo0MCAyOjIwIDM6MTAiIHwgZG1zZXR1cCBjcmVhdGUgaW9iYW5kMgojZWNobyAiMCAkREVW
+U0laRTMgaW9iYW5kICRERVYzIDEgMCAwIiBcCiAgICAiY2dyb3VwIHdlaWdodCAwIDoxMDAgMTo0
+MCAyOjIwIDM6MTAiIHwgZG1zZXR1cCBjcmVhdGUgaW9iYW5kMwoKLyo9PT09PT09PT09PT09PT09
+PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09
+PT09CiJOT1RFIgoKVGhlIHZhcmlhYmxlcyBhcmUgZXhwb3J0ZWQgYXM6CgpERVYxPS9kZXYvc2Rh
+NQpERVYyPS9kZXYvc2RhNgpERVYzPS9kZXYvc2RhNwpERVZTSVpFMT0kKGJsb2NrZGV2IC0tZ2V0
+c2l6ZSAkREVWMSkKREVWU0laRTI9JChibG9ja2RldiAtLWdldHNpemUgJERFVjIpCkRFVlNJWkUz
+PSQoYmxvY2tkZXYgLS1nZXRzaXplICRERVYzKQpSQU5HRT0xMDI0MApYRERPUFQ9Ii1vcCB3cml0
+ZSAtcXVldWVkZXB0aCAzMiAtYmxvY2tzaXplIDUxMiAtcmVxc2l6ZSA2NAotc2VlayByYW5kb20g
+LWRhdGFwYXR0ZXJuIHJhbmRvbSAtZGlvIC10aW1lbGltaXQgNjAKLW1ieXRlcyAkUkFOR0UgLXNl
+ZWsgcmFuZ2UgJCgoUkFOR0UgKiAxMDQ4NTc2IC8gNTEyKSkiCu+7vz09PT09PT09PT09PT09PT09
+PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09
+PT0qLwoKYy4gQ2hlY2sgb3V0IHRoZSBpb2JhbmQ6CiNscyAvZGV2L21hcHBlci8KY29udHJvbCAg
+aW9iYW5kMSAgaW9iYW5kMiAgaW9iYW5kMwoKNCwgUnVuIDMyIHByb2Nlc3NlcyByYW5kb20gZGly
+ZWN0IEkvTyB3aXRoIGRhdGEgb24gZWFjaCBpb2JhbmQgZGV2aWNlIGluCjYwIHNlY29uZHM6Cgov
+LyoqKioqKiogVEhFIGZpcnN0IGRldmljZSBpb2JhbmQxIC9kZXYvc2RhNSAqKioqKioqKioqKioq
+KiovLwoKI2V4cG9ydCBYRERPUFQ9Ii1vcCB3cml0ZSAtcXVldWVkZXB0aCAzMiAtYmxvY2tzaXpl
+IDUxMiAtcmVxc2l6ZSA2NAotc2VlayByYW5kb20gLWRhdGFwYXR0ZXJuIHJhbmRvbSAtZGlvIC10
+aW1lbGltaXQgNjAgLW1ieXRlcyAxMDI0MCAtc2VlawpyYW5nZSAyMDk3MTUyMCIKCiNlY2hvICQk
+ID4gL2Nncm91cC8xL3Rhc2tzCgojeGRkLmxpbnV4IC10YXJnZXRzIDEgL2Rldi9tYXBwZXIvaW9i
+YW5kMSAkWERET1BUIC1vdXRwdXQgY2dyb3VwMS50eHQKCiN0YWlsIC00IC9yb290L2Nncm91cDEu
+dHh0CgogICAgICAgICAgICBUICBRICAgICAgIEJ5dGVzICAgICAgT3BzICAgIFRpbWUgICAgICBS
+YXRlICAgICAgSU9QUwpMYXRlbmN5ICAgICAlQ1BVICBPUF9UeXBlICAgIFJlcVNpemUgICAgIApD
+b21iaW5lZCAgICAxIDMyICAgICAyNjI3NjY1OTIgICAgIDgwMTkgICAgNjAuMjAzICAgICA0LjM2
+NSAgICAgMTMzLjIwCjAuMDA3NSAgICAgMC4wMSAgIHdyaXRlICAgICAgIDMyNzY4IApFbmRpbmcg
+dGltZSBmb3IgdGhpcyBydW4sIFRodSBPY3QgMjMgMDE6NDY6MzggMjAwOAoK77u/Ly8qKioqKioq
+IFRIRSBzZWNvbmQgZGV2aWNlIGlvYmFuZDIgL2Rldi9zZGE2ICoqKioqKioqKioqKioqKi8vCgpV
+c2luZyBhbm90aGVyIHNzaCB0ZXJtaW5hbArvu78jZXhwb3J0IFhERE9QVD0iLW9wIHdyaXRlIC1x
+dWV1ZWRlcHRoIDMyIC1ibG9ja3NpemUgNTEyIC1yZXFzaXplIDY0Ci1zZWVrIHJhbmRvbSAtZGF0
+YXBhdHRlcm4gcmFuZG9tIC1kaW8gLXRpbWVsaW1pdCA2MCAtbWJ5dGVzIDEwMjQwIC1zZWVrCnJh
+bmdlIDIwOTcxNTIwIgoKI2VjaG8gJCQgPiAvY2dyb3VwLzIvdGFza3MKCiN4ZGQubGludXggLXRh
+cmdldHMgMSAvZGV2L21hcHBlci9pb2JhbmQyICRYRERPUFQgLW91dHB1dCBjZ3JvdXAyLnR4dAoK
+I3RhaWwgLTQgL3Jvb3QvY2dyb3VwMi50eHQKCiAgICAgICAgICAgIFQgIFEgICAgICAgQnl0ZXMg
+ICAgICBPcHMgICAgVGltZSAgICAgIFJhdGUgICAgICBJT1BTCkxhdGVuY3kgICAgICVDUFUgIE9Q
+X1R5cGUgICAgUmVxU2l6ZSAgICAgCkNvbWJpbmVkICAgIDEgMzIgICAgIDI0MzY2Mjg0OCAgICAg
+NzQzNiAgICA2MC4yNjMgICAgIDQuMDQzICAgICAxMjMuMzkKMC4wMDgxICAgICAwLjAxICAgd3Jp
+dGUgICAgICAgMzI3NjggCkVuZGluZyB0aW1lIGZvciB0aGlzIHJ1biwgVGh1IE9jdCAyMyAwMTo1
+MDo1NSAyMDA4Cgrvu7/vu78vLyoqKioqKiogVEhFIHRoaXJkIGRldmljZSBpb2JhbmQzIC9kZXYv
+c2RhNyAqKioqKioqKioqKioqKiovLwoKVXNpbmcgYW5vdGhlciBzc2ggdGVybWluYWwK77u/I2V4
+cG9ydCBYRERPUFQ9Ii1vcCB3cml0ZSAtcXVldWVkZXB0aCAzMiAtYmxvY2tzaXplIDUxMiAtcmVx
+c2l6ZSA2NAotc2VlayByYW5kb20gLWRhdGFwYXR0ZXJuIHJhbmRvbSAtZGlvIC10aW1lbGltaXQg
+NjAgLW1ieXRlcyAxMDI0MCAtc2VlawpyYW5nZSAyMDk3MTUyMCIKCiNlY2hvICQkID4gL2Nncm91
+cC8zL3Rhc2tzCgojeGRkLmxpbnV4IC10YXJnZXRzIDEgL2Rldi9tYXBwZXIvaW9iYW5kMyAkWERE
+T1BUIC1vdXRwdXQgY2dyb3VwMy50eHQKCiN0YWlsIC00IC9yb290L2Nncm91cDMudHh0CgogICAg
+ICAgICAgICBUICBRICAgICAgIEJ5dGVzICAgICAgT3BzICAgIFRpbWUgICAgICBSYXRlICAgICAg
+SU9QUwpMYXRlbmN5ICAgICAlQ1BVICBPUF9UeXBlICAgIFJlcVNpemUgICAgIApDb21iaW5lZCAg
+ICAxIDMyICAgICAyMjI5ODYyNDAgICAgIDY4MDUgICAgNjAuMDczICAgICAzLjcxMiAgICAgMTEz
+LjI4CjAuMDA4OCAgICAgMC4wMSAgIHdyaXRlICAgICAgIDMyNzY4IApFbmRpbmcgdGltZSBmb3Ig
+dGhpcyBydW4sIFRodSBPY3QgMjMgMDE6NTg6MzEgMjAwOAoKCgpUaGUgcmVzdWx0cyBhcmUgYWxt
+b3N0IHRoZSBzYW1lLiBJIGNhbiBub3Qgc2VlIGFueSBjaGFuZ2Ugb2YgRGlyZWN0IEkvTwpwZXJm
+b3JtYW5jZSBmb3IgdGhpcyBiaW8tY2dyb3VwIGtlcm5lbCBmZWF0dXJlIHdpdGggZG0taW9iYW5k
+IHN1cHBvcnQhCgpEb2VzIHRoZSBtZXRob3JkIHRvIGNhY3VsYXRlIHRocm91Z2hvdXQgc2hvdWxk
+IGJlIHRoZSBSYXRlIG9mIHhkZC5saW51eApvdXRwdXQ/IApEb3NlIG15IHRlc3RpbmcgYXBwcm9h
+Y2ggc2hvdWxkIGJlIGNvcnJlY3Q/IElmIG5vdCwgcGxlYXNlIGhlbHAgbWUgcG9pbnQKb3V0LgoK
+ClRoYW5rcywKSGFvdGlhbi4KCgpPbiBXZWQsIDIwMDgtMTAtMjIgYXQgMTc6MDUgKzA5MDAsIFJ5
+byBUc3VydXRhIHdyb3RlOgo+IEhpIENoZW4sCj4gCj4gPiBDaGVuIFp1bWVuZyB3cm90ZToKPiA+
+ID4gSGksIFJ5byBUc3VydXRhCj4gPiA+IEFuZCBvdXIgdGVzdCB0ZWFtIHdhbnQgdG8gdGVzdCBi
+aW9fdHJhY2tpbmcgYXMgeW91ciBiZW5jaG1hcmsgcmVwb3J0cywKPiA+ID4gc28gd291bGQgeW91
+IHBsZWFzZSBzZW5kIG1lIHlvdXIgdGVzdCBjb2Rlcz8gVGhhbmtzIGluIGFkdmFuY2UuCj4gPiBI
+aSBSeW8gVHN1cnV0YSwKPiA+IAo+ID4gSSB3b25kZXIgaWYgeW91IHJlY2VpdmVkIGxhc3QgZW1h
+aWwsIHNvIEkgcmVwbHkgdGhpcyBlbWFpbCB0byBhc2sKPiA+IGZvciB5b3VyIGJpb190cmFja2lu
+ZyB0ZXN0IGNvZGVzIHRvIGdlbmVyYXRlIHlvdXIgYmVuY2htYXJrIHJlcG9ydHMKPiA+IGFzIHNo
+b3duIGluIHlvdXIgd2Vic2l0ZS4gVGhhbmtzIGluIGFkdmFuY2UgOikKPiAKPiBJJ3ZlIHVwbG9h
+ZGVkIHR3byBzY3JpcHRzIGhlcmU6Cj4gaHR0cDovL3Blb3BsZS52YWxpbnV4LmNvLmpwL35yeW92
+L2RtLWlvYmFuZC9zY3JpcHRzL3hkZC1jb3VudC5zaAo+IGh0dHA6Ly9wZW9wbGUudmFsaW51eC5j
+by5qcC9+cnlvdi9kbS1pb2JhbmQvc2NyaXB0cy94ZGQtc2l6ZS5zaAo+IAo+IHhkZC1jb3VudC5z
+aCBjb250cm9scyBiYW5kd2lkdGggYmFzZWQgb24gdGhlIG51bWJlciBvZiBJL08gcmVxdWVzdHMs
+Cj4gYW5kIHhkZC1zaXplLnNoIGNvbnRyb2xzIGJhbmR3aWR0aCBiYXNlZCBvbnRoZSBudW1iZXIg
+b2YgSS9PIHNlY3RvcnMuCj4gVGhlc2VzIHNjcml0cHRzIHJlcXVpcmUgeGRkIGRpc2sgSS9PIHRl
+c3RpbmcgdG9vbCB3aGljaCBjYW4gYmUKPiBkb3dubG9hZGVkIGZyb20gaGVyZToKPiBodHRwOi8v
+d3d3LmlvcGVyZm9ybWFuY2UuY29tL3Byb2R1Y3RzLmh0bQo+IAo+IFBsZWFzZSBmZWVsIGZyZWUg
+dG8gYXNrIG1lIHF1ZXN0aW9ucyBpZiB5b3UgaGF2ZSBhbnkgcXVlc3Rpb25zLgo+IAo+ID4gPiBQ
+LlMuIFRoZSBmb2xsb3dpbmcgYXJlIG15IGNoYW5nZXMgdG8gYXZvaWQgc2NoZWR1bGVfdGltZW91
+dDoKPiAKPiBUaGFua3MsIGJ1dCB5b3VyIHBhdGNoIHNlZW1zIHRvIGNhdXNlIGEgcHJvYmxlbSB3
+aGVuIGlvYmFuZCBkZXZpY2VzCj4gd2hpY2ggaGF2ZSB0aGUgc2FtZSBuYW1lIGFyZSBjcmVhdGVk
+IGF0IHRoZSBzYW1lIHRpbWUuIEkgd2lsbCBmaXggdGhlCj4gaXNzdWUgaW4gdGhlIG5leHQgcmVs
+ZWFzZS4KPiAKPiBUaGFua3MsCj4gUnlvIFRzdXJ1dGEKX19fX19fX19fX19fX19fX19fX19fX19f
+X19fX19fX19fX19fX19fX19fX19fX18KQ29udGFpbmVycyBtYWlsaW5nIGxpc3QKQ29udGFpbmVy
+c0BsaXN0cy5saW51eC1mb3VuZGF0aW9uLm9yZwpodHRwczovL2xpc3RzLmxpbnV4LWZvdW5kYXRp
+b24ub3JnL21haWxtYW4vbGlzdGluZm8vY29udGFpbmVycw==
