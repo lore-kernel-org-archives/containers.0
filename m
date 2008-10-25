@@ -1,17 +1,19 @@
-From: "Dong-Jae Kang" <baramsori72-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: Re: [Question] power management related with cgroup based resource
-	management
-Date: Sat, 25 Oct 2008 17:05:40 +0900
-Message-ID: <2891419e0810250105j3e210df0pa3ba9665bd35313a__11250.7143676796$1224922164$gmane$org@mail.gmail.com>
-References: <2891419e0810201954q57087fc8ufcaa0e42f3ca99e2@mail.gmail.com>
-	<4901B5C2.9070108@linux.vnet.ibm.com>
-	<2891419e0810240524u746b731cjcbd127fa4204bd4d@mail.gmail.com>
-	<20081024232503.GA20140@srcf.ucam.org>
+From: "Ian jonhson" <jonhson.ian-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Subject: Re: container userspace tools
+Date: Sat, 25 Oct 2008 19:06:17 +0800
+Message-ID: <8f34198c0810250406s4f1c9337ha2bccc10faed1948@mail.gmail.com>
+References: <48EF35F1.2060308@fr.ibm.com>
+	<8f34198c0810150033p42b74badrf194e66433e32cd5@mail.gmail.com>
+	<48F5BE23.1060602@fr.ibm.com>
+	<8f34198c0810150351n7549a1dcx63547746344fce25@mail.gmail.com>
+	<48F5DB43.70003@fr.ibm.com>
+	<8f34198c0810150602w70d31453je6fd8811799a3857@mail.gmail.com>
+	<48F5EBF3.1070204@fr.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20081024232503.GA20140-1xO5oi07KQx4cg9Nei1l7Q@public.gmane.org>
+In-Reply-To: <48F5EBF3.1070204-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
 Content-Disposition: inline
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
@@ -22,51 +24,44 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Matthew Garrett <mjg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Cc: xen-devel-GuqFBffKawuULHF6PoxzQEEOCMrvLtNR@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, virtualization-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, dm-devel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, corsetproject-/JYPxA39Uh5TLH3MbocFFw@public.gmane.org, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
+To: Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>, containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Thank you for your positive opinion about my question
+Dear Daniel,
 
-I also hope cgroup framework has good point related with power management
-I think I need more re-consideration for it. ^^
+I have tested the container tools in my VM.
+It runs very well. But I can not see any highlight
+show via container. I believe that two group of
+user's processes (with same uid) can be isolated
+via container when both of them access files or
+are enforced with different quota. But I don't know
+how to get the functionalities run.
 
-How do you think about cgroup based management of new HW devices, for
-example, SSD, NVRAM and so on.
-Is there any requirement for it ?
-and is there any required work for it?
-I didn't seriously consider  about that until now.^^ so I don't have cool idea
-but, I think it is worthy to find new domain to be applied by existing
-technology
+Any help?
 
-thank you.
+Thanks in advance.
 
-Best Regards,
-Dong-Jae Kang
-
-2008/10/25 Matthew Garrett <mjg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>:
-> On Fri, Oct 24, 2008 at 09:24:21PM +0900, Dong-Jae Kang wrote:
+On Wed, Oct 15, 2008 at 9:11 PM, Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org> wrote:
+> Ian jonhson wrote:
+>>>
+>>> The problem is related to the kernel version you have and a missing
+>>> functionality.
+>>>
+>>> You should use the kernel coming from:
+>>>
+>>> git://git.kernel.org/pub/scm/linux/kernel/git/daveh/linux-2.6-lxc.git
+>>>
+>>
+>> It needs not to set "Container support"  if I run with above kernel,
+>> right?
+>> I have downloaded the source codes.
 >
->> I am interested in power management in server side.
->> and I just wonder this question, "Is there any related point between
->> cgroup framework and power management?"
->
-> Not currently, though it would certainly be possible to use cgroups as a
-> mechanism for providing application-specific power management.
->
-> --
-> Matthew Garrett | mjg59-1xO5oi07KQx4cg9Nei1l7Q@public.gmane.org
+> The container support will enable at the compile time the different features
+> in the kernel. I added this kernel option because I was tired to activate
+> the different features one by one as described in the README file. If you
+> don't specify this option, the container code will be there in the kernel
+> but the not active. So you have to set it.
 >
 
-
-
--- 
--------------------------------------------------------------------------------------------------
-   DONG-JAE, KANG
-   Senior Member of Engineering Staff
-   Internet Platform Research Dept, S/W Content Research Lab
-   Electronics and Telecommunications Research Institute(ETRI)
-   138 Gajeongno, Yuseong-gu, Daejeon, 305-700 KOREA
-   Phone : 82-42-860-1561 Fax : 82-42-860-6699
-   Mobile : 82-10-9919-2353 E-mail : djkang-mINagvnPBMnWF1p7bDn8Kw@public.gmane.org (MSN)
--------------------------------------------------------------------------------------------------
+OK, I have activated the "container support" step by step according to
+README, but I met a mismatch setting:
