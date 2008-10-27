@@ -1,20 +1,14 @@
-From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: Re: [RFC v7][PATCH 2/9] General infrastructure for checkpoint	restart
-Date: Mon, 27 Oct 2008 13:11:36 -0400
-Message-ID: <4905F648.4030402__130.043194121932$1225127678$gmane$org@cs.columbia.edu>
-References: <1224481237-4892-1-git-send-email-orenl@cs.columbia.edu>	
-	<1224481237-4892-3-git-send-email-orenl@cs.columbia.edu>	
-	<20081021124130.a002e838.akpm@linux-foundation.org>	
-	<20081021202410.GA10423@us.ibm.com>	<48FE82DF.6030005@cs.columbia.edu>	
-	<20081022152804.GA23821@us.ibm.com>	<48FF4EB2.5060206@cs.columbia.edu>	
-	<87tzayh27r.wl%peter@chubb.wattle.id.au>
-	<49059FED.4030202@cs.columbia.edu>
-	<1225125752.12673.79.camel@nimitz>
+From: David Miller <davem-fT/PcQaiUtIeIZ0/mPfg9Q@public.gmane.org>
+Subject: Re: [PATCH] netns: Coexist with the sysfs limitations v2
+Date: Mon, 27 Oct 2008 12:41:26 -0700 (PDT)
+Message-ID: <20081027.124126.74749150.davem__40877.9425001287$1225136738$gmane$org@davemloft.net>
+References: <20081022212124.GA9910@us.ibm.com> <49003019.40904@bull.net>
+	<m1fxmni9uv.fsf_-_@frodo.ebiederm.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1225125752.12673.79.camel@nimitz>
+In-Reply-To: <m1fxmni9uv.fsf_-_-B27657KtZYmhTnVgQlOflh2eb7JE58TQ@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -24,37 +18,50 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Cc: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, tglx-hfZtesqFncYOwBW4kG4KsQ@public.gmane.org, viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org, hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org, mingo-X9Un+BFzKDI@public.gmane.org, torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, Peter Chubb <peterc-M3ycANVxPotyL3EAZA59ERCuuivNXqWP@public.gmane.org>
+To: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org
+Cc: htejun-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, den-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org, netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, gregkh-l3A5Bk7waGM@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, viro-rfM+Q5joDG/XmaaqVzeoHQ@public.gmane.org, dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org, benjamin.thery-6ktuUTfB/bM@public.gmane.org
 List-Id: containers.vger.kernel.org
 
+From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
+Date: Thu, 23 Oct 2008 08:56:08 -0700
 
-Dave Hansen wrote:
-> On Mon, 2008-10-27 at 07:03 -0400, Oren Laadan wrote:
->>> In our implementation, we simply refused to checkpoint setid
->> programs.
->>
->> True. And this works very well for HPC applications.
->>
->> However, it doesn't work so well for server applications, for
->> instance.
->>
->> Also, you could use file system snapshotting to ensure that the file
->> system view does not change, and still face the same issue.
->>
->> So I'm perfectly ok with deferring this discussion to a later time :)
+> To make testing of the network namespace simpler allow
+> the network namespace code and the sysfs code to be
+> compiled and run at the same time.  To do this only
+> virtual devices are allowed in the additional network
+> namespaces and those virtual devices are not placed
+> in the kobject tree.
 > 
-> Oren, is this a good place to stick a process_deny_checkpoint()?  Both
-> so we refuse to checkpoint, and document this as something that has to
-> be addressed later?
+> Since virtual devices don't actually do anything interesting
+> hardware wise that needs device management there should
+> be no loss in keeping them out of the kobject tree and
+> by implication sysfs.  The gain in ease of testing
+> and code coverage should be significant.
+> 
+> Changelog:
+> 
+> v2: As pointed out by Benjamin Thery it only makes sense to call
+>     device_rename in the initial network namespace for now.
+> 
+> Signed-off-by: Eric W. Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+> Acked-by: Benjamin Thery <benjamin.thery-6ktuUTfB/bM@public.gmane.org>
+> Tested-by: Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+> Acked-by: Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+> Acked-by: Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
 
-why refuse to checkpoint ?
+So let's figure out what happens with this patch.
+I'm personally ok with the change, the question is when
+and where.
 
-if I'm root, and I want to checkpoint, and later restart, my sshd server
-(assuming we support listening sockets) - then why not ?
+My net-2.6 tree was closed to new features long ago, so I really
+don't want to try to merge this sucker into 2.6.28-rcX :-)  But if
+you guys think that is prudent, feel free to submit it directly to
+Linus and add my signoff:
 
-we can just let it be, and have the restart fail (if it isn't root that
-does the restart); perhaps add something like warn_checkpoint() (similar
-to deny, but only warns) ?
+Signed-off-by: David S. Miller <davem-fT/PcQaiUtIeIZ0/mPfg9Q@public.gmane.org>
 
-Oren.
+otherwise if we shoot for 2.6.29 I would suggest that we wait until
+the merge window to see if the sysfs issues get sorted, and if not
+we slip this patch into to tree instead.
+
+Let me know what you guys plan to do with this.
