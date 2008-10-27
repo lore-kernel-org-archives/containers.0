@@ -1,19 +1,22 @@
-From: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: Re: [RFC v7][PATCH 2/9] General infrastructure for checkpoint restart
-Date: Mon, 27 Oct 2008 09:42:32 -0700
-Message-ID: <1225125752.12673.79.camel__35255.1701864742$1225125905$gmane$org@nimitz>
-References: <1224481237-4892-1-git-send-email-orenl@cs.columbia.edu>
-	<1224481237-4892-3-git-send-email-orenl@cs.columbia.edu>
-	<20081021124130.a002e838.akpm@linux-foundation.org>
-	<20081021202410.GA10423@us.ibm.com>	<48FE82DF.6030005@cs.columbia.edu>
-	<20081022152804.GA23821@us.ibm.com>	<48FF4EB2.5060206@cs.columbia.edu>
-	<87tzayh27r.wl%peter@chubb.wattle.id.au>
-	<49059FED.4030202@cs.columbia.edu>
+From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: Re: container userspace tools
+Date: Mon, 27 Oct 2008 11:49:23 -0500
+Message-ID: <20081027164923.GA26701@us.ibm.com>
+References: <8f34198c0810150602w70d31453je6fd8811799a3857@mail.gmail.com>
+	<48F5EBF3.1070204@fr.ibm.com>
+	<8f34198c0810250406s4f1c9337ha2bccc10faed1948@mail.gmail.com>
+	<49031A54.70806@fr.ibm.com>
+	<8f34198c0810250739s77ad8271u93992c0bcf61345c@mail.gmail.com>
+	<49033F90.8090201@fr.ibm.com> <20081027145058.GA9724@us.ibm.com>
+	<8f34198c0810270807k52fa15b8x6402ea262ae2ddc6@mail.gmail.com>
+	<20081027160003.GB9724@us.ibm.com>
+	<8f34198c0810270929g3ce890e5l91f21523247cf169@mail.gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <49059FED.4030202-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <8f34198c0810270929g3ce890e5l91f21523247cf169-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -23,26 +26,25 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Cc: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, tglx-hfZtesqFncYOwBW4kG4KsQ@public.gmane.org, viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org, hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org, mingo-X9Un+BFzKDI@public.gmane.org, torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, Peter Chubb <peterc-M3ycANVxPotyL3EAZA59ERCuuivNXqWP@public.gmane.org>
+To: Ian jonhson <jonhson.ian-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Mon, 2008-10-27 at 07:03 -0400, Oren Laadan wrote:
-> > In our implementation, we simply refused to checkpoint setid
-> programs.
+Quoting Ian jonhson (jonhson.ian-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org):
+> > And you say that 'ps -ef' in the container shows all processes
+> > on the system?
+> >
 > 
-> True. And this works very well for HPC applications.
+> No, just two processes. similar as Denial's:
 > 
-> However, it doesn't work so well for server applications, for
-> instance.
-> 
-> Also, you could use file system snapshotting to ensure that the file
-> system view does not change, and still face the same issue.
-> 
-> So I'm perfectly ok with deferring this discussion to a later time :)
+> ----------------------------------------------------------------------------------------------
+> $ sudo  lxc-execute -n foo -- ps -ef --forest
+> [sudo] password:
+> UID        PID  PPID  C STIME TTY          TIME CMD
+> root         1     0  0 23:24 ?        00:00:00 lxc-execute -n foo -- ps -ef --f
+> root         2     1  0 23:24 pts/0    00:00:00 ps -ef --forest
+> ---------------------------------------------------------------------------------------------
 
-Oren, is this a good place to stick a process_deny_checkpoint()?  Both
-so we refuse to checkpoint, and document this as something that has to
-be addressed later?
+Oh, so in fact pids are being properly isolated.
 
--- Dave
+-serge
