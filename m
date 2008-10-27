@@ -1,14 +1,15 @@
-From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+From: Andrey Mirkin <major-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 Subject: Re: [Devel] Re: [PATCH 0/9] OpenVZ kernel based checkpointing/restart
-Date: Mon, 27 Oct 2008 10:39:41 -0400
-Message-ID: <4905D2AD.1070309__22351.1499040344$1225118644$gmane$org@cs.columbia.edu>
-References: <1220439476-16465-1-git-send-email-major@openvz.org>	<200810201614.36911.major@openvz.org>	<1224518105.1848.93.camel@nimitz>
-	<200810271707.13580.major@openvz.org>
+Date: Mon, 27 Oct 2008 18:45:35 +0400
+Message-ID: <200810271745.36814.major__25146.7489092194$1225118964$gmane$org@openvz.org>
+References: <1220439476-16465-1-git-send-email-major@openvz.org>
+	<48FCA97C.1040108@cs.columbia.edu> <48FCB3CC.9030804@fr.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <200810271707.13580.major-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+In-Reply-To: <48FCB3CC.9030804-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
+Content-Disposition: inline
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,91 +19,106 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Andrey Mirkin <major-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+To: devel-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, Louis.Rilling-aw0BnHfMbSpBDgjK7y7TUQ@public.gmane.org, Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
+On Monday 20 October 2008 20:37 Daniel Lezcano wrote:
+> Oren Laadan wrote:
+> > Daniel Lezcano wrote:
+> >> Louis Rilling wrote:
+> >>> On Fri, Oct 17, 2008 at 04:33:03PM -0700, Dave Hansen wrote:
+> >>>> On Wed, 2008-09-03 at 14:57 +0400, Andrey Mirkin wrote:
+> >>>>> This patchset introduces kernel based checkpointing/restart as it is
+> >>>>> implemented in OpenVZ project. This patchset has limited
+> >>>>> functionality and are able to checkpoint/restart only single process.
+> >>>>> Recently Oren Laaden sent another kernel based implementation of
+> >>>>> checkpoint/restart. The main differences between this patchset and
+> >>>>> Oren's patchset are:
+> >>>>
+> >>>> Hi Andrey,
+> >>>>
+> >>>> I'm curious what you want to happen with this patch set.  Is there
+> >>>> something specific in Oren's set that deficient which you need
+> >>>> implemented?  Are there some technical reasons you prefer this code?
+> >>>
+> >>> To be fair, and since (IIRC) the initial intent was to start with
+> >>> OpenVZ's approach, shouldn't Oren answer the same questions with
+> >>> respect to Andrey's patchset?
+> >>>
+> >>> I'm afraid that we are forgetting to take the best from both
+> >>> approaches...
+> >>
+> >> I agree with Louis.
+> >>
+> >> I played with Oren's patchset and tryed to port it on x86_64. I was able
+> >> to sys_checkpoint/sys_restart but if you remove the restoring of the
+> >> general registers, the restart still works. I am not an expert on asm,
+> >> but my hypothesis is when we call sys_checkpoint the registers are saved
+> >> on the stack by the syscall and when we restore the memory of the
+> >> process, we restore the stack and the stacked registers are restored
+> >> when exiting the sys_restart. That make me feel there is an important
+> >> gap between external checkpoint and internal checkpoint.
+> >
+> > This is a misconception: my patches are not "internal checkpoint". My
+> > patches are basically "external checkpoint" by design, which *also*
+> > accommodates self-checkpointing (aka internal). The same holds for the
+> > restart. The implementation is demonstrated with "self-checkpoint" to
+> > avoid complicating things at this early stage of proof-of-concept.
+>
+> Yep, I read your patchset :)
+>
+> I just want to clarify what we want to demonstrate with this patchset
+> for the proof-of-concept ? A self CR does not show what are the
+> complicate parts of the CR, we are just showing we can dump the memory
+> from the kernel and do setcontext/getcontext.
+>
+> We state at the container mini-summit on an approach:
+>
+>     1. Pre-dump
+>     2. Freeze the container
+>     3. Dump
+>     4. Thaw/Kill the container
+>     5. Post-dump
+>
+> We already have the freezer, and we can forget for now pre-dump and
+> post-dump.
+>
+> IMHO, for the proof-of-concept we should do a minimal CR (like you did),
+> but conforming with these 5 points, but that means we have to do an
+> external checkpoint.
+>
+> If the POC conforms with that, the patchset will be a little different
+> and that will show what are the difficult part for restarting a process,
+> especially to restart it at the frozen state :) and that will give an
+> idea from 10000 feets of the big picture.
+>
+> > For multiple processes all that is needed is a container and a loop
+> > on the checkpoint side, and a method to recreate processes on the
+> > restart side. Andrew suggests to do it in kernel space, I still have
+> > doubts.
+>
+> A question to Andrey, do you, in OpenVZ, restart "externally" or it is
+> the first process of the pid namespace which calls sys_restart and then
+>   populates the pid namespace ?
 
+In OpenVZ we are creating first task and namespaces from sys_restart.
 
-Andrey Mirkin wrote:
-> On Monday 20 October 2008 19:55 Dave Hansen wrote:
->> On Mon, 2008-10-20 at 16:14 +0400, Andrey Mirkin wrote:
->>> Right now my patchset (v2) provides an ability to checkpoint and restart
->>> a group of processes. The process of checkpointing and restart can be
->>> initiated from external process (not from the process which should be
->>> checkpointed).
->> Absolutely.  Oren's code does it this way to make for a smaller patch at
->> first.  The syscall takes a pid argument so it is surely expected to be
->> expanded upon later.
->>
->>> Also I think that all the restart job (including process forking) should
->>> be done in kernel, as in this case we will not depend on user space and
->>> will be more secure. This is also implemented in my patchset.
->> Do you think that this is an approach that Oren's patches are married
->> to, or is this a "feature" we can add on later?
-> 
-> Well, AFAICS from Oren's patch set his approach is oriented on process 
-> creation in user space. I think we should choose right now what approach will 
-> be used for process creation.
+Andrey
 
-This is inaccurate.
-
-I intentionally did not address how processes will be created, by
-simply allowing either way to be added to the patch.
-
-I do agree that we probably want to decide how to do it. However,
-there is also room to allow for both approaches, in a compatible
-way, should we wish to explore both.
-
-> We have two options here: fork processes in kernel or fork them in user space.
-> If process will be forked in user space, then there will be a gap when process 
-> will be in user space and can be killed with received signal before entering 
-
-Why do we care about it ?
-Why is there a difference if it is killed before or after entering
-the kernel (e.g. user aborted restart, or kernel OOM kicked in) ?
-
-> kernel. Also we will need a functionolity to create processes with predefined 
-> PID. I think it is not very good to provide such ability to user space. That 
-> is why we prefer in OpenVZ to do all the job in kernel.
-
-This is the weak side of creating the processes in user space -
-that we need such an interface. Note, however, that we can
-easily "hide" it inside the interface of the sys_restart() call,
-and restrict how it may be used.
-
-Oren.
-
-> 
->> I don't care which patch set we end up sticking in the kernel.  I'm
->> trying to figure out which code we can more easily build upon in the
->> future.  The fact that Oren's or yours can't do certain little things
->> right now does not bother me.
->>
->> Honestly, I'm a little more confident that everyone can work with Oren
->> since he managed to get 7 revisions of his patch out and make some
->> pretty large changes while in the same time the OpenVZ patch was only
->> released twice.  I'm not sure what has changed in the OpenVZ patch
->> between releases, either.
-> 
-> That is my fault. I am working right now on my Ph.D, that is why my activity 
-> is not very high. But now I hope I will have more time for that.
-> 
->> Are there any reasons that you absolutely can not use the code Oren
->> posted?  Will it not fulfill your needs somehow?  If so, could you
->> please elaborate on how?
-> 
-> We have one major difference with Oren's code - how processes are created 
-> during restr.
-> Right now I'm trying to port kernel process creation on top of Oren's patches.
-> I agree that working in collaboration will speed up merging of checkpointing 
-> to mainstream.
-> 
-> Andrey
-> 
-> P.S.: Sorry for late reply, my mailer attached your e-mail to wrong thread.
+>
+> > While I held out the multi-process part of the patch so far because I
+> > was explicitly asked to do it, it seems like this would be a good time
+> > to push it out and get feedback.
+>
+> IMHO it is too soon...
+>
 > _______________________________________________
 > Containers mailing list
 > Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 > https://lists.linux-foundation.org/mailman/listinfo/containers
-> 
+>
+> _______________________________________________
+> Devel mailing list
+> Devel-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org
+> https://openvz.org/mailman/listinfo/devel
