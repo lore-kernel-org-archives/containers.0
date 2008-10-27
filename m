@@ -1,14 +1,16 @@
-From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: Re: [RFC v7][PATCH 2/9] General infrastructure for checkpoint	restart
-Date: Mon, 27 Oct 2008 07:03:09 -0400
-Message-ID: <49059FED.4030202__36016.1940720447$1225105607$gmane$org@cs.columbia.edu>
-References: <1224481237-4892-1-git-send-email-orenl@cs.columbia.edu>	<1224481237-4892-3-git-send-email-orenl@cs.columbia.edu>	<20081021124130.a002e838.akpm@linux-foundation.org>	<20081021202410.GA10423@us.ibm.com>	<48FE82DF.6030005@cs.columbia.edu>	<20081022152804.GA23821@us.ibm.com>	<48FF4EB2.5060206@cs.columbia.edu>
-	<87tzayh27r.wl%peter@chubb.wattle.id.au>
+From: Andrey Mirkin <major-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+Subject: Re: [Devel] Re: [PATCH 0/9] OpenVZ kernel based checkpointing/restart
+Date: Mon, 27 Oct 2008 18:07:12 +0400
+Message-ID: <200810271707.13580.major__44375.2104802572$1225116561$gmane$org@openvz.org>
+References: <1220439476-16465-1-git-send-email-major@openvz.org>
+	<200810201614.36911.major@openvz.org>
+	<1224518105.1848.93.camel@nimitz>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <87tzayh27r.wl%peter-LkDQP0DxSMGxwJ88Py/mJxCuuivNXqWP@public.gmane.org>
+In-Reply-To: <1224518105.1848.93.camel@nimitz>
+Content-Disposition: inline
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,40 +20,62 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Peter Chubb <peterc-M3ycANVxPotyL3EAZA59ERCuuivNXqWP@public.gmane.org>
-Cc: linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, mingo-X9Un+BFzKDI@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org, hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, tglx-hfZtesqFncYOwBW4kG4KsQ@public.gmane.org
+To: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
+On Monday 20 October 2008 19:55 Dave Hansen wrote:
+> On Mon, 2008-10-20 at 16:14 +0400, Andrey Mirkin wrote:
+> > Right now my patchset (v2) provides an ability to checkpoint and restart
+> > a group of processes. The process of checkpointing and restart can be
+> > initiated from external process (not from the process which should be
+> > checkpointed).
+>
+> Absolutely.  Oren's code does it this way to make for a smaller patch at
+> first.  The syscall takes a pid argument so it is surely expected to be
+> expanded upon later.
+>
+> > Also I think that all the restart job (including process forking) should
+> > be done in kernel, as in this case we will not depend on user space and
+> > will be more secure. This is also implemented in my patchset.
+>
+> Do you think that this is an approach that Oren's patches are married
+> to, or is this a "feature" we can add on later?
 
+Well, AFAICS from Oren's patch set his approach is oriented on process 
+creation in user space. I think we should choose right now what approach will 
+be used for process creation.
+We have two options here: fork processes in kernel or fork them in user space.
+If process will be forked in user space, then there will be a gap when process 
+will be in user space and can be killed with received signal before entering 
+kernel. Also we will need a functionolity to create processes with predefined 
+PID. I think it is not very good to provide such ability to user space. That 
+is why we prefer in OpenVZ to do all the job in kernel.
 
-Peter Chubb wrote:
->>>>>> "Oren" == Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org> writes:
-> 
-> 
-> Oren> Nope, since we will fail to restart in many cases. We will need
-> Oren> a way to move from caller's credentials to saved credentials,
-> Oren> and even from caller's credentials to privileged credentials
-> Oren> (e.g. to reopen a file that was created by a setuid program
-> Oren> prior to dropping privileges).
-> 
-> You can't necessarily tell the difference between this and revocation
-> of privilege.  For most security models, it must be possible to change
-> the permissions on the file, and then the restart should fail.
-> 
-> In our implementation, we simply refused to checkpoint setid programs.
+> I don't care which patch set we end up sticking in the kernel.  I'm
+> trying to figure out which code we can more easily build upon in the
+> future.  The fact that Oren's or yours can't do certain little things
+> right now does not bother me.
+>
+> Honestly, I'm a little more confident that everyone can work with Oren
+> since he managed to get 7 revisions of his patch out and make some
+> pretty large changes while in the same time the OpenVZ patch was only
+> released twice.  I'm not sure what has changed in the OpenVZ patch
+> between releases, either.
 
-True. And this works very well for HPC applications.
+That is my fault. I am working right now on my Ph.D, that is why my activity 
+is not very high. But now I hope I will have more time for that.
 
-However, it doesn't work so well for server applications, for instance.
+> Are there any reasons that you absolutely can not use the code Oren
+> posted?  Will it not fulfill your needs somehow?  If so, could you
+> please elaborate on how?
 
-Also, you could use file system snapshotting to ensure that the file
-system view does not change, and still face the same issue.
+We have one major difference with Oren's code - how processes are created 
+during restr.
+Right now I'm trying to port kernel process creation on top of Oren's patches.
+I agree that working in collaboration will speed up merging of checkpointing 
+to mainstream.
 
-So I'm perfectly ok with deferring this discussion to a later time :)
+Andrey
 
-Oren.
-
-> --
-> Dr Peter Chubb  http://www.gelato.unsw.edu.au  peterc AT gelato.unsw.edu.au
-> http://www.ertos.nicta.com.au           ERTOS within National ICT Australia
-> 
+P.S.: Sorry for late reply, my mailer attached your e-mail to wrong thread.
