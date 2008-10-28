@@ -1,63 +1,182 @@
-From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [RFC v7][PATCH 2/9] General infrastructure for checkpoint restart
-Date: Tue, 28 Oct 2008 13:33:22 -0500
-Message-ID: <20081028183322.GA13684__26987.7636027106$1225219553$gmane$org@us.ibm.com>
-References: <48FE82DF.6030005@cs.columbia.edu>
-	<20081022152804.GA23821@us.ibm.com>
-	<48FF4EB2.5060206@cs.columbia.edu>
-	<87tzayh27r.wl%peter@chubb.wattle.id.au>
-	<49059FED.4030202@cs.columbia.edu>
-	<1225125752.12673.79.camel@nimitz>
-	<4905F648.4030402@cs.columbia.edu> <1225140705.5115.40.camel@enoch>
-	<490637D8.4080404@cs.columbia.edu>
-	<1225145373.12673.125.camel@nimitz>
+From: Alexey Dobriyan <adobriyan@gmail.com>
+Subject: [PATCH 1/7] netns ebtables: part 1
+Date: Tue, 28 Oct 2008 23:58:35 +0300
+Message-ID: <20081028205835.GC15660@x200.localdomain>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Content-Type: text/plain; charset=us-ascii
+Return-path: <netfilter-owner@vger.kernel.org>
 Content-Disposition: inline
-In-Reply-To: <1225145373.12673.125.camel@nimitz>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Cc: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, tglx-hfZtesqFncYOwBW4kG4KsQ@public.gmane.org, viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org, linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, mingo-X9Un+BFzKDI@public.gmane.org, torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, Peter Chubb <peterc-M3ycANVxPotyL3EAZA59ERCuuivNXqWP@public.gmane.org>
+Sender: netfilter-owner@vger.kernel.org
+To: kaber@trash.net
+Cc: netfilter@vger.kernel.org, containers@osdl.org
 List-Id: containers.vger.kernel.org
 
-Quoting Dave Hansen (dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org):
-> On Mon, 2008-10-27 at 17:51 -0400, Oren Laadan wrote:
-> > >       Instead, how about a flag to sys_checkpoint() -- DO_RISKY_CHECKPOINT --
-> > > which checkpoints despite !may_checkpoint?
-> > 
-> > I also agree with Matt - so we have a quorum :)
-> > 
-> > so just to clarify: sys_checkpoint() is to fail (with what error ?) if the
-> > deny-checkpoint test fails.
-> > 
-> > however, if the user is risky, she can specify CR_CHECKPOINT_RISKY to force
-> > an attempt to checkpoint as is.
-> 
-> This sounds like an awful lot of policy to determine *inside* the
-> kernel.  Everybody is going to have a different definition of risky, so
-> this scheme will work for approximately 5 minutes until it gets
-> patched. :)
-> 
-> Is it possible to enhance our interface such that users might have some
-> kind of choice on these matters?
+* propagate netns from userspace, register table in passed netns
+* remporarily register every ebt_table in init_net
 
-Well we could always just add a field to /proc/self/status, and let
-userspace check that field (after freezing the task) for the
-presence of CR_CHECKPOINT_RISKY and make up its own mind.
+P. S.: one needs to add ".netns_ok = 1" to igmp_protocol to test with
+ebtables(8) in netns.
 
-Though my preference is for simplicity - just refuse the checkpoint.
-That way people might screan loudly enough for us to support the
-features they want.  If we let them just bypass and hope for the
-best that starts to dilute some of the intended effect of all this.
+Signed-off-by: Alexey Dobriyan <adobriyan@gmail.com>
+---
 
--serge
+ include/linux/netfilter_bridge/ebtables.h |    2 +-
+ net/bridge/netfilter/ebtable_broute.c     |    2 +-
+ net/bridge/netfilter/ebtable_filter.c     |    2 +-
+ net/bridge/netfilter/ebtable_nat.c        |    2 +-
+ net/bridge/netfilter/ebtables.c           |   27 ++++++++++++++-------------
+ 5 files changed, 18 insertions(+), 17 deletions(-)
+
+--- a/include/linux/netfilter_bridge/ebtables.h
++++ b/include/linux/netfilter_bridge/ebtables.h
+@@ -300,7 +300,7 @@ struct ebt_table
+ 
+ #define EBT_ALIGN(s) (((s) + (__alignof__(struct ebt_replace)-1)) & \
+ 		     ~(__alignof__(struct ebt_replace)-1))
+-extern int ebt_register_table(struct ebt_table *table);
++extern int ebt_register_table(struct net *net, struct ebt_table *table);
+ extern void ebt_unregister_table(struct ebt_table *table);
+ extern unsigned int ebt_do_table(unsigned int hook, struct sk_buff *skb,
+    const struct net_device *in, const struct net_device *out,
+--- a/net/bridge/netfilter/ebtable_broute.c
++++ b/net/bridge/netfilter/ebtable_broute.c
+@@ -66,7 +66,7 @@ static int __init ebtable_broute_init(void)
+ {
+ 	int ret;
+ 
+-	ret = ebt_register_table(&broute_table);
++	ret = ebt_register_table(&init_net, &broute_table);
+ 	if (ret < 0)
+ 		return ret;
+ 	/* see br_input.c */
+--- a/net/bridge/netfilter/ebtable_filter.c
++++ b/net/bridge/netfilter/ebtable_filter.c
+@@ -95,7 +95,7 @@ static int __init ebtable_filter_init(void)
+ {
+ 	int ret;
+ 
+-	ret = ebt_register_table(&frame_filter);
++	ret = ebt_register_table(&init_net, &frame_filter);
+ 	if (ret < 0)
+ 		return ret;
+ 	ret = nf_register_hooks(ebt_ops_filter, ARRAY_SIZE(ebt_ops_filter));
+--- a/net/bridge/netfilter/ebtable_nat.c
++++ b/net/bridge/netfilter/ebtable_nat.c
+@@ -102,7 +102,7 @@ static int __init ebtable_nat_init(void)
+ {
+ 	int ret;
+ 
+-	ret = ebt_register_table(&frame_nat);
++	ret = ebt_register_table(&init_net, &frame_nat);
+ 	if (ret < 0)
+ 		return ret;
+ 	ret = nf_register_hooks(ebt_ops_nat, ARRAY_SIZE(ebt_ops_nat));
+--- a/net/bridge/netfilter/ebtables.c
++++ b/net/bridge/netfilter/ebtables.c
+@@ -55,7 +55,6 @@
+ 
+ 
+ static DEFINE_MUTEX(ebt_mutex);
+-static LIST_HEAD(ebt_tables);
+ 
+ static struct xt_target ebt_standard_target = {
+ 	.name       = "standard",
+@@ -315,9 +314,11 @@ find_inlist_lock(struct list_head *head, const char *name, const char *prefix,
+ }
+ 
+ static inline struct ebt_table *
+-find_table_lock(const char *name, int *error, struct mutex *mutex)
++find_table_lock(struct net *net, const char *name, int *error,
++		struct mutex *mutex)
+ {
+-	return find_inlist_lock(&ebt_tables, name, "ebtable_", error, mutex);
++	return find_inlist_lock(&net->xt.tables[NFPROTO_BRIDGE], name,
++				"ebtable_", error, mutex);
+ }
+ 
+ static inline int
+@@ -944,7 +945,7 @@ static void get_counters(struct ebt_counter *oldcounters,
+ }
+ 
+ /* replace the table */
+-static int do_replace(void __user *user, unsigned int len)
++static int do_replace(struct net *net, void __user *user, unsigned int len)
+ {
+ 	int ret, i, countersize;
+ 	struct ebt_table_info *newinfo;
+@@ -1016,7 +1017,7 @@ static int do_replace(void __user *user, unsigned int len)
+ 	if (ret != 0)
+ 		goto free_counterstmp;
+ 
+-	t = find_table_lock(tmp.name, &ret, &ebt_mutex);
++	t = find_table_lock(net, tmp.name, &ret, &ebt_mutex);
+ 	if (!t) {
+ 		ret = -ENOENT;
+ 		goto free_iterate;
+@@ -1097,7 +1098,7 @@ free_newinfo:
+ 	return ret;
+ }
+ 
+-int ebt_register_table(struct ebt_table *table)
++int ebt_register_table(struct net *net, struct ebt_table *table)
+ {
+ 	struct ebt_table_info *newinfo;
+ 	struct ebt_table *t;
+@@ -1157,7 +1158,7 @@ int ebt_register_table(struct ebt_table *table)
+ 	if (ret != 0)
+ 		goto free_chainstack;
+ 
+-	list_for_each_entry(t, &ebt_tables, list) {
++	list_for_each_entry(t, &net->xt.tables[NFPROTO_BRIDGE], list) {
+ 		if (strcmp(t->name, table->name) == 0) {
+ 			ret = -EEXIST;
+ 			BUGPRINT("Table name already exists\n");
+@@ -1170,7 +1171,7 @@ int ebt_register_table(struct ebt_table *table)
+ 		ret = -ENOENT;
+ 		goto free_unlock;
+ 	}
+-	list_add(&table->list, &ebt_tables);
++	list_add(&table->list, &net->xt.tables[NFPROTO_BRIDGE]);
+ 	mutex_unlock(&ebt_mutex);
+ 	return 0;
+ free_unlock:
+@@ -1208,7 +1209,7 @@ void ebt_unregister_table(struct ebt_table *table)
+ }
+ 
+ /* userspace just supplied us with counters */
+-static int update_counters(void __user *user, unsigned int len)
++static int update_counters(struct net *net, void __user *user, unsigned int len)
+ {
+ 	int i, ret;
+ 	struct ebt_counter *tmp;
+@@ -1228,7 +1229,7 @@ static int update_counters(void __user *user, unsigned int len)
+ 		return -ENOMEM;
+ 	}
+ 
+-	t = find_table_lock(hlp.name, &ret, &ebt_mutex);
++	t = find_table_lock(net, hlp.name, &ret, &ebt_mutex);
+ 	if (!t)
+ 		goto free_tmp;
+ 
+@@ -1386,10 +1387,10 @@ static int do_ebt_set_ctl(struct sock *sk,
+ 
+ 	switch(cmd) {
+ 	case EBT_SO_SET_ENTRIES:
+-		ret = do_replace(user, len);
++		ret = do_replace(sock_net(sk), user, len);
+ 		break;
+ 	case EBT_SO_SET_COUNTERS:
+-		ret = update_counters(user, len);
++		ret = update_counters(sock_net(sk), user, len);
+ 		break;
+ 	default:
+ 		ret = -EINVAL;
+@@ -1406,7 +1407,7 @@ static int do_ebt_get_ctl(struct sock *sk, int cmd, void __user *user, int *len)
+ 	if (copy_from_user(&tmp, user, sizeof(tmp)))
+ 		return -EFAULT;
+ 
+-	t = find_table_lock(tmp.name, &ret, &ebt_mutex);
++	t = find_table_lock(sock_net(sk), tmp.name, &ret, &ebt_mutex);
+ 	if (!t)
+ 		return ret;
+ 
