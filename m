@@ -1,23 +1,16 @@
-From: Dhaval Giani <dhaval-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: Re: [Devel] Re: Write Error: No space left on device
-Date: Tue, 28 Oct 2008 17:42:31 +0530
-Message-ID: <20081028121231.GA15052@linux.vnet.ibm.com>
-References: <c7704c490809050541v2df520f9ja9edc4582ee1199f@mail.gmail.com>
-	<20080905080008.bf9748ab.pj@sgi.com>
-	<c7704c490809150455r3376db54g8d37aba6670500a9@mail.gmail.com>
-	<6599ad830809151726t4ff6082dsfda259dccd503415@mail.gmail.com>
-	<c7704c490809170557o21330ceaoeca5193add14c6d4@mail.gmail.com>
-	<6599ad830809171740t2cbb459dqc273f240b9877ed8@mail.gmail.com>
-	<c7704c490810280028y74bb9c55pd9d6af844571fcd6@mail.gmail.com>
-	<20081028083806.GB4097@linux.vnet.ibm.com>
-	<c7704c490810280307s141a7a18vc708049e7f499c50@mail.gmail.com>
-Reply-To: Dhaval Giani <dhaval-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+From: "Michael Kerrisk" <mtk.manpages-gM/Ye1E23mwN+BqQ9rBEUg@public.gmane.org>
+Subject: Re: [RFC v7][PATCH 6/9] Checkpoint/restart: initial documentation
+Date: Tue, 28 Oct 2008 11:48:33 -0500
+Message-ID: <cfd18e0f0810280948g1c3906c9j9484b7d05b658f5f__45565.3675170199$1225212796$gmane$org@mail.gmail.com>
+References: <1224481237-4892-1-git-send-email-orenl@cs.columbia.edu>
+	<1224481237-4892-7-git-send-email-orenl@cs.columbia.edu>
+Reply-To: mtk.manpages-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <1224481237-4892-7-git-send-email-orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <c7704c490810280307s141a7a18vc708049e7f499c50-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -27,70 +20,322 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Mukesh G <mukgbv-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Cc: Peter Zijlstra <a.p.zijlstra-/NLkJaSkS4VmR6Xm/wNWPw@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Paul Jackson <pj-sJ/iWh9BUns@public.gmane.org>
+To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Cc: linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Linus Torvalds <torvalds-3NddpPZAyC0@public.gmane.org>, Alexander Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, "H. Peter Anvin" <hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org>, Thomas Gleixner <tglx-hfZtesqFncYOwBW4kG4KsQ@public.gmane.org>, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Tue, Oct 28, 2008 at 03:37:52PM +0530, Mukesh G wrote:
-> Hi Dhaval,
->     Thanks for clarifying some doubts. Further to your mail and my
-> understanding, I can make some conclusions
-> 
-> 1) Even though there is a hierarchical order for containers, the shares are
-> not allocated in terms of that order i.e. If the parent container has a
-> certain no of cpu.shares and more child containers. The parent and child
-> containers have the same priority.
-> 
+Oren,
 
-No, the hierarchy is always maintained for the group scheduler. The parent
-group's shares are used to see how long/when it will get scheduled with
-respect to other tasks/groups at that level. As an example, if you have
-a hierarchy like this
+Some comments/suggested fixes below.
 
-/
-|-A
-| |-A1
-| |-A2
-|
-|-B
-|-t1
-|-t2
+On Mon, Oct 20, 2008 at 12:40 AM, Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org> wrote:
+> Covers application checkpoint/restart, overall design, interfaces
+> and checkpoint image format.
+>
+> Signed-off-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+> Acked-by: Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+> Signed-off-by: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+> ---
+>  Documentation/checkpoint.txt |  374 ++++++++++++++++++++++++++++++++++++++++++
+>  1 files changed, 374 insertions(+), 0 deletions(-)
+>  create mode 100644 Documentation/checkpoint.txt
+>
+> diff --git a/Documentation/checkpoint.txt b/Documentation/checkpoint.txt
+> new file mode 100644
+> index 0000000..a73a4f3
+> --- /dev/null
+> +++ b/Documentation/checkpoint.txt
+> @@ -0,0 +1,374 @@
+> +
+> +       === Checkpoint-Restart support in the Linux kernel ===
+> +
+> +Copyright (C) 2008 Oren Laadan
+> +
+> +Author:                Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+> +
+> +License:       The GNU Free Documentation License, Version 1.2
+> +               (dual licensed under the GPL v2)
+> +Reviewers:
+> +
+> +Application checkpoint/restart [CR] is the ability to save the state
+> +of a running application so that it can later resume its execution
+> +from the time at which it was checkpointed. An application can be
+> +migrated by checkpointing it on one machine and restarting it on
+> +another. CR can provide many potential benefits:
+> +
+> +* Failure recovery: by rolling back an to a previous checkpoint
 
-Let A, B have shares 1024 and t1 and t2 be tasks at nice 0. With this
-setting, A, B, t1 and t2 will get equal CPU bandwidth. The tasks and
-groups in A will split bandwidth available to A in a similar fashion. So
-the cpu shares is not some resource which is split but it is a value which
-will decide in what proportion the CPU bandwidth will be shared. So, if
-you have no tasks in /, then setting the shares of A and B to 10 is the
-same as setting the shares of A and B to 1000 (not exactly in terms of
-load balancing, but enough for the purpose of this discussion).
+Extraneous word "an"?
 
-> 2) For only 2 process running on a dual core system and If I have one
-> process assigned to C2048 container and another process assigned to C1024
-> container, I would expect the scheduler to allocate in the order of 2:1.
-> Behavior 2 indicates that allocation did not happen.
-> 
+> +
+> +* Improved response time: by restarting applications from checkpoints
+> +  instead of from scratch.
+> +
+> +* Improved system utilization: by suspending long running CPU
+> +  intensive jobs and resuming them when load decreases.
+> +
+> +* Fault resilience: by migrating applications off of faulty hosts.
 
-Well, its not possible to run one thread on more than one core at the
-sametime :-). So we do not see the 2:1 usage happen.
+s/off of/off/
 
-> 3) I ran the experiment having 2 instances of multi-threaded version of java
-> workload on the same system and noticed that 2:1 scenario did not repeat.
-> Hence, a multi threaded code does not benefit from this kind of a scheduler.
-> 
+> +
+> +* Dynamic load balancing: by migrating applications to less loaded
+> +  hosts.
+> +
+> +* Improved service availability and administration: by migrating
+> +  applications before host maintenance so that they continue to run
+> +  with minimal downtime
+> +
+> +* Time-travel: by taking periodic checkpoints and restarting from
+> +  any previous checkpoint.
+> +
+> +
+> +=== Overall design
+> +
+> +Checkpoint and restart is done in the kernel as much as possible. The
+> +kernel exports a relative opaque 'blob' of data to userspace which can
 
-I am not sure if I have understood your question. But I think the answer
-to the previous question should help.
+s/relative/relatively/
 
-> 4) If you have more processes than the no of cores for the cpu shares to
-> work.
-> 
+> +then be handed to the new kernel at restore time.  The 'blob' contains
+> +data and state of select portions of kernel structures such as VMAs
+> +and mm_structs, as well as copies of the actual memory that the tasks
+> +use. Any changes in this blob's format between kernel revisions can be
+> +handled by an in-userspace conversion program. The approach is similar
+> +to virtually all of the commercial CR products out there, as well as
+> +the research project Zap.
+> +
+> +Two new system calls are introduced to provide CR: sys_checkpoint and
+> +sys_restart.  The checkpoint code basically serializes internal kernel
+> +state and writes it out to a file descriptor, and the resulting image
+> +is stream-able. More specifically, it consists of 5 steps:
+> +  1. Pre-dump
+> +  2. Freeze the container
+> +  3. Dump
+> +  4. Thaw (or kill) the container
+> +  5. Post-dump
+> +Steps 1 and 5 are an optimization to reduce application downtime:
+> +"pre-dump" works before freezing the container, e.g. the pre-copy for
+> +live migration, and "post-dump" works after the container resumes
+> +execution, e.g. write-back the data to secondary storage.
+> +
+> +The restart code basically reads the saved kernel state and from a
 
-Well, the physical limit on how much CPU a thread can hog is 100%, so
-yes, if you have lesser threads than number of CPUs, you don't expect
-shares to  work as expected, and each thread will get 100% CPU time.
+Extraneous word "and"
 
-thanks,
+> +file descriptor, and re-creates the tasks and the resources they need
+> +to resume execution. The restart code is executed by each task that
+> +is restored in a new container to reconstruct its own state.
+> +
+> +
+> +=== Interfaces
+> +
+> +int sys_checkpoint(pid_t pid, int fd, unsigned long flag);
+> +  Checkpoint a container whose init task is identified by pid, to the
+
+I seem to recall Andrew M. mentioning something about this.  Could you
+add a bit of text here to explain why "pid" is not always "1".
+
+> +  file designated by fd. Flags will have future meaning (should be 0
+> +  for now).
+
+Should be 0, or must be 0?  IMO, the text should be the latter.  And
+the code should check that -- does it?
+
+> +  Returns: a positive integer that identifies the checkpoint image
+
+Can you add some more text here to describe the what this "positive
+integer" is.  E..g., how is it generated, and what does it refer to
+(an address, a file descriptor, something else).
+
+Looking further down, it seems that this is the "crid", but you could
+make that clearer already here.
+
+> +  (for future reference in case it is kept in memory) upon success,
+> +  0 if it returns from a restart, and -1 if an error occurs.
+> +
+> +int sys_restart(int crid, int fd, unsigned long flags);
+> +  Restart a container from a checkpoint image identified by crid, or
+
+See above -- that "crid" is the thing returned by checkpoint(), right?
+ Make that clearer here.
+
+> +  from the blob stored in the file designated by fd. Flags will have
+> +  future meaning (should be 0 for now).
+
+Again... Should be 0, or must be 0?  IMO, the text should be the
+latter.  And the code should check that -- does it?
+
+> +  Returns: 0 on success and -1 if an error occurs.
+> +
+> +Thus, if checkpoint is initiated by a process in the container, one
+> +can use logic similar to fork():
+> +       ...
+> +       crid = checkpoint(...);
+> +       switch (crid) {
+> +       case -1:
+> +               perror("checkpoint failed");
+> +               break;
+> +       default:
+> +               fprintf(stderr, "checkpoint succeeded, CRID=%d\n", ret);
+> +               /* proceed with execution after checkpoint */
+> +               ...
+> +               break;
+> +       case 0:
+> +               fprintf(stderr, "returned after restart\n");
+> +               /* proceed with action required following a restart */
+> +               ...
+> +               break;
+> +       }
+> +       ...
+> +And to initiate a restart, the process in an empty container can use
+> +logic similar to execve():
+> +       ...
+> +       if (restart(crid, ...) < 0)
+> +               perror("restart failed");
+> +       /* only get here if restart failed */
+> +       ...
+> +
+> +See below a complete example in C.
+> +
+> +
+> +=== Order of state dump
+> +
+> +The order of operations, both save and restore, is as following:
+
+s/is as following/is as follows/
+
+> +
+> +* Header section: header, container information, etc.
+> +* Global section: [TBD] global resources such as IPC, UTS, etc.
+> +* Process forest: [TBD] tasks and their relationships
+> +* Per task data (for each task):
+> +  -> task state: elements of task_struct
+> +  -> thread state: elements of thread_struct and thread_info
+> +  -> CPU state: registers etc, including FPU
+> +  -> memory state: memory address space layout and contents
+> +  -> filesystem state: [TBD] filesystem namespace state, chroot, cwd, etc
+> +  -> files state: open file descriptors and their state
+> +  -> signals state: [TBD] pending signals and signal handling state
+> +  -> credentials state: [TBD] user and group state, statistics
+> +
+> +
+> +=== Checkpoint image format
+> +
+> +The checkpoint image format is composed of records consistings of a
+
+consisting
+
+> +pre-header that identifies its contents, followed by a payload. (The
+> +idea here is to enable parallel checkpointing in the future in which
+> +multiple threads interleave data from multiple processes into a single
+> +stream).
+> +
+> +The pre-header is defined by "struct cr_hdr" as follows:
+> +
+> +struct cr_hdr {
+> +       __s16 type;
+> +       __s16 len;
+> +       __u32 parent;
+> +};
+> +
+> +Here, 'type' field identifies the type of the payload, 'len' tells its
+
+s/'type' field/'type'/
+or
+s/'type' field/the 'type' field/
+
+> +length in bytes. The 'parent' identifies the owner object instance. The
+
+add "field" after 'parent'
+
+> +meaning of the 'parent field varies depending on the type. For example,
+> +for type CR_HDR_MM, the 'parent identifies the task to which this MM
+
+Missing ' (single quote)
+
+> +belongs. The payload also varies depending on the type, for instance,
+> +the data describing a task_struct is given by a 'struct cr_hdr_task'
+> +(type CR_HDR_TASK) and so on.
+> +
+> +The format of the memory dump is as follows: for each VMA, there is a
+> +'struct cr_vma'; if the VMA is file-mapped, it is followed by the file
+> +name. Following comes the actual contents, in one or more chunk: each
+
+s/Following comes/Following that are/
+
+s/chunk/chunks/
+
+> +chunk begins with a header that specifies how many pages it holds,
+> +then a the virtual addresses of all the dumped pages in that chunk,
+
+s/a the/the/
+
+> +followed by the actual contents of all the dumped pages. A header with
+> +zero number of pages marks the end of the contents for a particular
+> +VMA. Then comes the next VMA and so on.
+> +
+> +To illustrate this, consider a single simple task with two VMAs: one
+> +is file mapped with two dumped pages, and the other is anonymous with
+> +three dumped pages. The checkpoint image will look like this:
+> +
+> +cr_hdr + cr_hdr_head
+> +cr_hdr + cr_hdr_task
+> +       cr_hdr + cr_hdr_mm
+> +               cr_hdr + cr_hdr_vma + cr_hdr + string
+> +                       cr_hdr_pgarr (nr_pages = 2)
+> +                       addr1, addr2
+> +                       page1, page2
+> +                       cr_hdr_pgarr (nr_pages = 0)
+> +               cr_hdr + cr_hdr_vma
+> +                       cr_hdr_pgarr (nr_pages = 3)
+> +                       addr3, addr4, addr5
+> +                       page3, page4, page5
+> +                       cr_hdr_pgarr (nr_pages = 0)
+> +               cr_hdr + cr_mm_context
+> +       cr_hdr + cr_hdr_thread
+> +       cr_hdr + cr_hdr_cpu
+> +cr_hdr + cr_hdr_tail
+> +
+> +
+> +=== Current Implementation
+> +
+> +[2008-Oct-07]
+> +There are several assumptions in the current implementation; they will
+> +be gradually relaxed in future versions. The main ones are:
+> +* A task can only checkpoint itself (missing "restart-block" logic).
+> +* Namespaces are not saved or restored; They will be treated as a type
+> +  of shared object.
+> +* In particular, it is assumed that the task's file system namespace
+> +  is the "root" for the entire container.
+> +* It is assumed that the same file system view is available for the
+> +  restart task(s). Otherwise, a file system snapshot is required.
+> +
+> +
+> +=== Sample code
+> +
+> +Two example programs: one uses checkpoint (called ckpt) to checkpoint
+> +itself, and another uses restart (called rstr) to restart from that
+> +checkpoint. Note the use of "dup2" to create a copy of an open file
+> +and show how shared objects are treated. Execute like this:
+> +
+> +orenl:~/test$ ./ckpt > out.1
+> +                               <-- ctrl-c
+
+It really would be more readable if you simplified the shell prompt to
+just "$ " or "sh$ " or "bash$".  Future generations do not need to
+know where you tested this code, or your username ;-).
+
+[...]
+
+Cheers,
+
+Michael
+
+
 -- 
-regards,
-Dhaval
+Michael Kerrisk
+Linux man-pages maintainer; http://www.kernel.org/doc/man-pages/
+git://git.kernel.org/pub/scm/docs/man-pages/man-pages.git
+man-pages online: http://www.kernel.org/doc/man-pages/online_pages.html
+Found a bug? http://www.kernel.org/doc/man-pages/reporting_bugs.html
