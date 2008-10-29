@@ -1,7 +1,7 @@
 From: Alexey Dobriyan <adobriyan@gmail.com>
-Subject: [PATCH 1/7] netns ebtables: part 1
-Date: Wed, 29 Oct 2008 16:45:56 +0300
-Message-ID: <20081029134556.GA8396@x200.localdomain>
+Subject: [PATCH 2/7] netns ebtables: part 2
+Date: Wed, 29 Oct 2008 16:46:11 +0300
+Message-ID: <20081029134611.GB8396@x200.localdomain>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Return-path: <netfilter-devel-owner@vger.kernel.org>
@@ -11,172 +11,276 @@ To: kaber@trash.net
 Cc: netfilter-devel@vger.kernel.org, containers@osdl.org
 List-Id: containers.vger.kernel.org
 
-* propagate netns from userspace, register table in passed netns
-* remporarily register every ebt_table in init_net
-
-P. S.: one needs to add ".netns_ok = 1" to igmp_protocol to test with
-ebtables(8) in netns.
+* return ebt_table from ebt_register_table(), module code will save it into
+  per-netns data for unregistration
+* duplicate ebt_table at the very beginning of registration -- it's added into
+  list, so one ebt_table wouldn't end up in many lists (and each netns has
+  different one)
+* introduce underscored tables in individial modules, this is temporary to not
+  break bisection.
 
 Signed-off-by: Alexey Dobriyan <adobriyan@gmail.com>
 ---
 
- include/linux/netfilter_bridge/ebtables.h |    2 +-
- net/bridge/netfilter/ebtable_broute.c     |    2 +-
- net/bridge/netfilter/ebtable_filter.c     |    2 +-
- net/bridge/netfilter/ebtable_nat.c        |    2 +-
- net/bridge/netfilter/ebtables.c           |   27 ++++++++++++++-------------
- 5 files changed, 18 insertions(+), 17 deletions(-)
+ include/linux/netfilter_bridge/ebtables.h |    3 ++-
+ net/bridge/netfilter/ebtable_broute.c     |   19 +++++++++----------
+ net/bridge/netfilter/ebtable_filter.c     |   17 +++++++++--------
+ net/bridge/netfilter/ebtable_nat.c        |   19 ++++++++++---------
+ net/bridge/netfilter/ebtables.c           |   23 +++++++++++++++++------
+ 5 files changed, 47 insertions(+), 34 deletions(-)
 
 --- a/include/linux/netfilter_bridge/ebtables.h
 +++ b/include/linux/netfilter_bridge/ebtables.h
-@@ -300,7 +300,7 @@ struct ebt_table
+@@ -300,7 +300,8 @@ struct ebt_table
  
  #define EBT_ALIGN(s) (((s) + (__alignof__(struct ebt_replace)-1)) & \
  		     ~(__alignof__(struct ebt_replace)-1))
--extern int ebt_register_table(struct ebt_table *table);
-+extern int ebt_register_table(struct net *net, struct ebt_table *table);
+-extern int ebt_register_table(struct net *net, struct ebt_table *table);
++extern struct ebt_table *ebt_register_table(struct net *net,
++					    struct ebt_table *table);
  extern void ebt_unregister_table(struct ebt_table *table);
  extern unsigned int ebt_do_table(unsigned int hook, struct sk_buff *skb,
     const struct net_device *in, const struct net_device *out,
 --- a/net/bridge/netfilter/ebtable_broute.c
 +++ b/net/bridge/netfilter/ebtable_broute.c
-@@ -66,7 +66,7 @@ static int __init ebtable_broute_init(void)
+@@ -41,22 +41,23 @@ static int check(const struct ebt_table_info *info, unsigned int valid_hooks)
+ 	return 0;
+ }
+ 
+-static struct ebt_table broute_table =
++static struct ebt_table __broute_table =
+ {
+ 	.name		= "broute",
+ 	.table		= &initial_table,
+ 	.valid_hooks	= 1 << NF_BR_BROUTING,
+-	.lock		= __RW_LOCK_UNLOCKED(broute_table.lock),
++	.lock		= __RW_LOCK_UNLOCKED(__broute_table.lock),
+ 	.check		= check,
+ 	.me		= THIS_MODULE,
+ };
++static struct ebt_table *broute_table;
+ 
+ static int ebt_broute(struct sk_buff *skb)
  {
  	int ret;
  
--	ret = ebt_register_table(&broute_table);
-+	ret = ebt_register_table(&init_net, &broute_table);
- 	if (ret < 0)
- 		return ret;
+ 	ret = ebt_do_table(NF_BR_BROUTING, skb, skb->dev, NULL,
+-	   &broute_table);
++	   broute_table);
+ 	if (ret == NF_DROP)
+ 		return 1; /* route it */
+ 	return 0; /* bridge it */
+@@ -64,21 +65,19 @@ static int ebt_broute(struct sk_buff *skb)
+ 
+ static int __init ebtable_broute_init(void)
+ {
+-	int ret;
+-
+-	ret = ebt_register_table(&init_net, &broute_table);
+-	if (ret < 0)
+-		return ret;
++	broute_table = ebt_register_table(&init_net, &__broute_table);
++	if (IS_ERR(broute_table))
++		return PTR_ERR(broute_table);
  	/* see br_input.c */
+ 	rcu_assign_pointer(br_should_route_hook, ebt_broute);
+-	return ret;
++	return 0;
+ }
+ 
+ static void __exit ebtable_broute_fini(void)
+ {
+ 	rcu_assign_pointer(br_should_route_hook, NULL);
+ 	synchronize_net();
+-	ebt_unregister_table(&broute_table);
++	ebt_unregister_table(broute_table);
+ }
+ 
+ module_init(ebtable_broute_init);
 --- a/net/bridge/netfilter/ebtable_filter.c
 +++ b/net/bridge/netfilter/ebtable_filter.c
-@@ -95,7 +95,7 @@ static int __init ebtable_filter_init(void)
+@@ -50,21 +50,22 @@ static int check(const struct ebt_table_info *info, unsigned int valid_hooks)
+ 	return 0;
+ }
+ 
+-static struct ebt_table frame_filter =
++static struct ebt_table __frame_filter =
+ {
+ 	.name		= "filter",
+ 	.table		= &initial_table,
+ 	.valid_hooks	= FILTER_VALID_HOOKS,
+-	.lock		= __RW_LOCK_UNLOCKED(frame_filter.lock),
++	.lock		= __RW_LOCK_UNLOCKED(__frame_filter.lock),
+ 	.check		= check,
+ 	.me		= THIS_MODULE,
+ };
++static struct ebt_table *frame_filter;
+ 
+ static unsigned int
+ ebt_hook(unsigned int hook, struct sk_buff *skb, const struct net_device *in,
+    const struct net_device *out, int (*okfn)(struct sk_buff *))
+ {
+-	return ebt_do_table(hook, skb, in, out, &frame_filter);
++	return ebt_do_table(hook, skb, in, out, frame_filter);
+ }
+ 
+ static struct nf_hook_ops ebt_ops_filter[] __read_mostly = {
+@@ -95,19 +96,19 @@ static int __init ebtable_filter_init(void)
  {
  	int ret;
  
--	ret = ebt_register_table(&frame_filter);
-+	ret = ebt_register_table(&init_net, &frame_filter);
- 	if (ret < 0)
- 		return ret;
+-	ret = ebt_register_table(&init_net, &frame_filter);
+-	if (ret < 0)
+-		return ret;
++	frame_filter = ebt_register_table(&init_net, &__frame_filter);
++	if (IS_ERR(frame_filter))
++		return PTR_ERR(frame_filter);
  	ret = nf_register_hooks(ebt_ops_filter, ARRAY_SIZE(ebt_ops_filter));
---- a/net/bridge/netfilter/ebtable_nat.c
-+++ b/net/bridge/netfilter/ebtable_nat.c
-@@ -102,7 +102,7 @@ static int __init ebtable_nat_init(void)
- {
- 	int ret;
- 
--	ret = ebt_register_table(&frame_nat);
-+	ret = ebt_register_table(&init_net, &frame_nat);
  	if (ret < 0)
- 		return ret;
- 	ret = nf_register_hooks(ebt_ops_nat, ARRAY_SIZE(ebt_ops_nat));
---- a/net/bridge/netfilter/ebtables.c
-+++ b/net/bridge/netfilter/ebtables.c
-@@ -55,7 +55,6 @@
- 
- 
- static DEFINE_MUTEX(ebt_mutex);
--static LIST_HEAD(ebt_tables);
- 
- static struct xt_target ebt_standard_target = {
- 	.name       = "standard",
-@@ -315,9 +314,11 @@ find_inlist_lock(struct list_head *head, const char *name, const char *prefix,
- }
- 
- static inline struct ebt_table *
--find_table_lock(const char *name, int *error, struct mutex *mutex)
-+find_table_lock(struct net *net, const char *name, int *error,
-+		struct mutex *mutex)
- {
--	return find_inlist_lock(&ebt_tables, name, "ebtable_", error, mutex);
-+	return find_inlist_lock(&net->xt.tables[NFPROTO_BRIDGE], name,
-+				"ebtable_", error, mutex);
- }
- 
- static inline int
-@@ -944,7 +945,7 @@ static void get_counters(struct ebt_counter *oldcounters,
- }
- 
- /* replace the table */
--static int do_replace(void __user *user, unsigned int len)
-+static int do_replace(struct net *net, void __user *user, unsigned int len)
- {
- 	int ret, i, countersize;
- 	struct ebt_table_info *newinfo;
-@@ -1016,7 +1017,7 @@ static int do_replace(void __user *user, unsigned int len)
- 	if (ret != 0)
- 		goto free_counterstmp;
- 
--	t = find_table_lock(tmp.name, &ret, &ebt_mutex);
-+	t = find_table_lock(net, tmp.name, &ret, &ebt_mutex);
- 	if (!t) {
- 		ret = -ENOENT;
- 		goto free_iterate;
-@@ -1097,7 +1098,7 @@ free_newinfo:
+-		ebt_unregister_table(&frame_filter);
++		ebt_unregister_table(frame_filter);
  	return ret;
  }
  
--int ebt_register_table(struct ebt_table *table)
-+int ebt_register_table(struct net *net, struct ebt_table *table)
+ static void __exit ebtable_filter_fini(void)
+ {
+ 	nf_unregister_hooks(ebt_ops_filter, ARRAY_SIZE(ebt_ops_filter));
+-	ebt_unregister_table(&frame_filter);
++	ebt_unregister_table(frame_filter);
+ }
+ 
+ module_init(ebtable_filter_init);
+--- a/net/bridge/netfilter/ebtable_nat.c
++++ b/net/bridge/netfilter/ebtable_nat.c
+@@ -50,28 +50,29 @@ static int check(const struct ebt_table_info *info, unsigned int valid_hooks)
+ 	return 0;
+ }
+ 
+-static struct ebt_table frame_nat =
++static struct ebt_table __frame_nat =
+ {
+ 	.name		= "nat",
+ 	.table		= &initial_table,
+ 	.valid_hooks	= NAT_VALID_HOOKS,
+-	.lock		= __RW_LOCK_UNLOCKED(frame_nat.lock),
++	.lock		= __RW_LOCK_UNLOCKED(__frame_nat.lock),
+ 	.check		= check,
+ 	.me		= THIS_MODULE,
+ };
++static struct ebt_table *frame_nat;
+ 
+ static unsigned int
+ ebt_nat_dst(unsigned int hook, struct sk_buff *skb, const struct net_device *in
+    , const struct net_device *out, int (*okfn)(struct sk_buff *))
+ {
+-	return ebt_do_table(hook, skb, in, out, &frame_nat);
++	return ebt_do_table(hook, skb, in, out, frame_nat);
+ }
+ 
+ static unsigned int
+ ebt_nat_src(unsigned int hook, struct sk_buff *skb, const struct net_device *in
+    , const struct net_device *out, int (*okfn)(struct sk_buff *))
+ {
+-	return ebt_do_table(hook, skb, in, out, &frame_nat);
++	return ebt_do_table(hook, skb, in, out, frame_nat);
+ }
+ 
+ static struct nf_hook_ops ebt_ops_nat[] __read_mostly = {
+@@ -102,19 +103,19 @@ static int __init ebtable_nat_init(void)
+ {
+ 	int ret;
+ 
+-	ret = ebt_register_table(&init_net, &frame_nat);
+-	if (ret < 0)
+-		return ret;
++	frame_nat = ebt_register_table(&init_net, &__frame_nat);
++	if (IS_ERR(frame_nat))
++		return PTR_ERR(frame_nat);
+ 	ret = nf_register_hooks(ebt_ops_nat, ARRAY_SIZE(ebt_ops_nat));
+ 	if (ret < 0)
+-		ebt_unregister_table(&frame_nat);
++		ebt_unregister_table(frame_nat);
+ 	return ret;
+ }
+ 
+ static void __exit ebtable_nat_fini(void)
+ {
+ 	nf_unregister_hooks(ebt_ops_nat, ARRAY_SIZE(ebt_ops_nat));
+-	ebt_unregister_table(&frame_nat);
++	ebt_unregister_table(frame_nat);
+ }
+ 
+ module_init(ebtable_nat_init);
+--- a/net/bridge/netfilter/ebtables.c
++++ b/net/bridge/netfilter/ebtables.c
+@@ -1098,7 +1098,7 @@ free_newinfo:
+ 	return ret;
+ }
+ 
+-int ebt_register_table(struct net *net, struct ebt_table *table)
++struct ebt_table *ebt_register_table(struct net *net, struct ebt_table *table)
  {
  	struct ebt_table_info *newinfo;
  	struct ebt_table *t;
-@@ -1157,7 +1158,7 @@ int ebt_register_table(struct ebt_table *table)
- 	if (ret != 0)
- 		goto free_chainstack;
- 
--	list_for_each_entry(t, &ebt_tables, list) {
-+	list_for_each_entry(t, &net->xt.tables[NFPROTO_BRIDGE], list) {
- 		if (strcmp(t->name, table->name) == 0) {
- 			ret = -EEXIST;
- 			BUGPRINT("Table name already exists\n");
-@@ -1170,7 +1171,7 @@ int ebt_register_table(struct ebt_table *table)
- 		ret = -ENOENT;
- 		goto free_unlock;
+@@ -1110,14 +1110,21 @@ int ebt_register_table(struct net *net, struct ebt_table *table)
+ 	    repl->entries_size == 0 ||
+ 	    repl->counters || table->private) {
+ 		BUGPRINT("Bad table data for ebt_register_table!!!\n");
+-		return -EINVAL;
++		return ERR_PTR(-EINVAL);
++	}
++
++	/* Don't add one table to multiple lists. */
++	table = kmemdup(table, sizeof(struct ebt_table), GFP_KERNEL);
++	if (!table) {
++		ret = -ENOMEM;
++		goto out;
  	}
--	list_add(&table->list, &ebt_tables);
-+	list_add(&table->list, &net->xt.tables[NFPROTO_BRIDGE]);
+ 
+ 	countersize = COUNTER_OFFSET(repl->nentries) * nr_cpu_ids;
+ 	newinfo = vmalloc(sizeof(*newinfo) + countersize);
+ 	ret = -ENOMEM;
+ 	if (!newinfo)
+-		return -ENOMEM;
++		goto free_table;
+ 
+ 	p = vmalloc(repl->entries_size);
+ 	if (!p)
+@@ -1149,7 +1156,7 @@ int ebt_register_table(struct net *net, struct ebt_table *table)
+ 
+ 	if (table->check && table->check(newinfo, table->valid_hooks)) {
+ 		BUGPRINT("The table doesn't like its own initial data, lol\n");
+-		return -EINVAL;
++		return ERR_PTR(-EINVAL);
+ 	}
+ 
+ 	table->private = newinfo;
+@@ -1173,7 +1180,7 @@ int ebt_register_table(struct net *net, struct ebt_table *table)
+ 	}
+ 	list_add(&table->list, &net->xt.tables[NFPROTO_BRIDGE]);
  	mutex_unlock(&ebt_mutex);
- 	return 0;
+-	return 0;
++	return table;
  free_unlock:
-@@ -1208,7 +1209,7 @@ void ebt_unregister_table(struct ebt_table *table)
+ 	mutex_unlock(&ebt_mutex);
+ free_chainstack:
+@@ -1185,7 +1192,10 @@ free_chainstack:
+ 	vfree(newinfo->entries);
+ free_newinfo:
+ 	vfree(newinfo);
+-	return ret;
++free_table:
++	kfree(table);
++out:
++	return ERR_PTR(ret);
+ }
+ 
+ void ebt_unregister_table(struct ebt_table *table)
+@@ -1206,6 +1216,7 @@ void ebt_unregister_table(struct ebt_table *table)
+ 		vfree(table->private->chainstack);
+ 	}
+ 	vfree(table->private);
++	kfree(table);
  }
  
  /* userspace just supplied us with counters */
--static int update_counters(void __user *user, unsigned int len)
-+static int update_counters(struct net *net, void __user *user, unsigned int len)
- {
- 	int i, ret;
- 	struct ebt_counter *tmp;
-@@ -1228,7 +1229,7 @@ static int update_counters(void __user *user, unsigned int len)
- 		return -ENOMEM;
- 	}
- 
--	t = find_table_lock(hlp.name, &ret, &ebt_mutex);
-+	t = find_table_lock(net, hlp.name, &ret, &ebt_mutex);
- 	if (!t)
- 		goto free_tmp;
- 
-@@ -1386,10 +1387,10 @@ static int do_ebt_set_ctl(struct sock *sk,
- 
- 	switch(cmd) {
- 	case EBT_SO_SET_ENTRIES:
--		ret = do_replace(user, len);
-+		ret = do_replace(sock_net(sk), user, len);
- 		break;
- 	case EBT_SO_SET_COUNTERS:
--		ret = update_counters(user, len);
-+		ret = update_counters(sock_net(sk), user, len);
- 		break;
- 	default:
- 		ret = -EINVAL;
-@@ -1406,7 +1407,7 @@ static int do_ebt_get_ctl(struct sock *sk, int cmd, void __user *user, int *len)
- 	if (copy_from_user(&tmp, user, sizeof(tmp)))
- 		return -EFAULT;
- 
--	t = find_table_lock(tmp.name, &ret, &ebt_mutex);
-+	t = find_table_lock(sock_net(sk), tmp.name, &ret, &ebt_mutex);
- 	if (!t)
- 		return ret;
- 
