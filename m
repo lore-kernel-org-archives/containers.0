@@ -1,15 +1,16 @@
 From: Andrey Mirkin <major-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
-Subject: Re: [Devel] Re: [PATCH 08/10] Introduce functions to restart a process
-Date: Wed, 29 Oct 2008 18:52:17 +0400
-Message-ID: <200810291752.19281.major__6150.67037656463$1225292432$gmane$org@openvz.org>
+Subject: Re: [Devel] Re: [PATCH 03/10] Introduce context structure needed
+	during checkpointing/restart
+Date: Wed, 29 Oct 2008 19:30:28 +0400
+Message-ID: <200810291830.29732.major__26403.8224042908$1225294496$gmane$org@openvz.org>
 References: <1224285098-573-1-git-send-email-major@openvz.org>
-	<200810240757.38012.major@openvz.org>
-	<49038B4C.2010009@cs.columbia.edu>
+	<1224285098-573-4-git-send-email-major@openvz.org>
+	<1224522144.1848.115.camel@nimitz>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <49038B4C.2010009-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+In-Reply-To: <1224522144.1848.115.camel@nimitz>
 Content-Disposition: inline
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
@@ -20,154 +21,145 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, Louis.Rilling-aw0BnHfMbSpBDgjK7y7TUQ@public.gmane.org, Cedric Le Goater <clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+To: devel-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Sunday 26 October 2008 01:10 Oren Laadan wrote:
-> Andrey Mirkin wrote:
-> > On Thursday 23 October 2008 17:57 Dave Hansen wrote:
-> >> On Thu, 2008-10-23 at 13:00 +0400, Andrey Mirkin wrote:
-> >>>>>>> It is not related to the freezer code actually.
-> >>>>>>> That is needed to restart syscalls. Right now I don't have a code
-> >>>>>>> in my patchset which restarts a syscall, but later I plan to add
-> >>>>>>> it. In OpenVZ checkpointing we restart syscalls if process was
-> >>>>>>> caught in syscall during checkpointing.
-> >>>>>>
-> >>>>>> Do you checkpoint uninterruptible syscalls as well? If only
-> >>>>>> interruptible syscalls are checkpointed, I'd say that either this
-> >>>>>> syscall uses ERESTARTSYS or ERESTART_RESTARTBLOCK, and then signal
-> >>>>>> handling code already does the trick, or this syscall does not
-> >>>>>> restart itself when interrupted, and well, this is life, userspace
-> >>>>>> just sees -EINTR, which is allowed by the syscall spec.
-> >>>>>> Actually this is how we checkpoint/migrate tasks in interruptible
-> >>>>>> syscalls in Kerrighed and this works.
-> >>>>>
-> >>>>> We checkpoint only interruptible syscalls. Some syscalls do not
-> >>>>> restart themself, that is why after restarting a process we restart
-> >>>>> syscall to complete it.
-> >>>>
-> >>>> Can you please elaborate on this ?  I don't recall having had issues
-> >>>> with that.
-> >>>
-> >>> Right now in 2.6.18 kernel we restarts in such a way pause,
-> >>> rt_sigtimedwait and futex syscalls. Recently futex syscall was reworked
-> >>> and we will not need such hooks for it.
-> >>
-> >> Could you elaborate on this a bit?
-> >>
-> >> If the futex syscall was reworked, perhaps we can do the same for
-> >> rt_sigtimedwait() and get rid of this code completely.
-> >
-> > Well, we can try to rework rt_sigtimedwait(), but we will still need this
-> > code in the future to restart pause syscall from kernel without returning
-> > to user space. Also this code will be needed to restore some complex
-> > states. As concerns pause syscall I have already written to Louis about
-> > the problem we are trying to solve with this code. There is a gap when
-> > process will be in user space just before entering syscall again. At this
-> > time a signal can be delivered to process and it even can be handled. So,
-> > we will miss a signal which must interrupt pause syscall.
+On Monday 20 October 2008 21:02 Dave Hansen wrote:
+> On Sat, 2008-10-18 at 03:11 +0400, Andrey Mirkin wrote:
+> > +typedef struct cpt_context
+> > +{
+> > +	pid_t		pid;		/* should be changed to ctid later */
+> > +	int		ctx_id;		/* context id */
+> > +	struct list_head ctx_list;
+> > +	int		refcount;
+> > +	int		ctx_state;
+> > +	struct semaphore main_sem;
 >
-> I'm not convinced that you a real race exists, and even if it does, I'm not
-> convinced that hacking the assembly entry/exit code is the best way to do
-> it.
+> Does this really need to be a semaphore or is a mutex OK?
+Actually mutex is enough here.
 
-Well, as I already told pause() syscall is is not only one case why we need to 
-do some additional job in that place.
-
-> Let me explain:
+> > +	int		errno;
 >
-> You are concerned about a race in which a signal is delivered to a task
-> that resumes from restart to user space and is about to (re)invoke
-> 'pause()' (because the restart so arranged its EIP and registers).
+> Could you hold off on adding these things to the struct until the patch
+> where they're actually used?  It's hard to judge this without seeing
+> what you do with it.
+I will try not to introduce variables and functions which are not used in 
+future.
+
 >
-> This almost always means that the user code is buggy and relies on specific
-> scheduling, because you can usually find a scheduling (without the C/R)
-> where the intended recipient of the signal was delayed and only calls
-> pause() after the signal is delivered.
+> > +	struct file	*file;
+> > +	loff_t		current_object;
+> > +
+> > +	struct list_head object_array[CPT_OBJ_MAX];
+> > +
+> > +	int		(*write)(const void *addr, size_t count, struct cpt_context *ctx);
+> > +	int		(*read)(void *addr, size_t count, struct cpt_context *ctx);
+> > +} cpt_context_t;
 >
-> For instance, if the sequence of events is:
-> 	A calls pause() -> checkpoint -> restart ->
-> 		B signals A -> A calls pause() (after restart),
-> then the following sequence is possible(*) without C/R:
-> 	B signals A -> A calls pause()
-> because normally B cannot assume anything about when A is actually,
-> really, is suspended (which means the programmer did an imperfect job).
+> Man, this is hard to review.  I was going to try and make sure that your
+> refcounting was right and atomic, but there's no use of it in this patch
+> except for the initialization and accessor functions.  Darn.
+For simplicity I will throw out all this stuff completely.
 
-You right here. Both sequences are possible in theory. You will be surprised 
-but in practice we found out that probability to miss a signal in case of C/R 
-is much higher then during ordinary execution.
-
-> I said "almost always" and "usually", because there is one case where the
-> alternative schedule: task B could, prior to sending the signal, "ensure"
-> that task A is already sleeping within the 'pause()' syscall. While this
-> is possible, it is definitely unusual, and in fact I never code that does
-> that. And what if the sysadmin send SIGSTOP followed by SIGCONT ?  In
-> short, such code is simply broken.
 >
-> More importantly, if you think about the operation and semantics of the
-> freezer cgroup - similar behavior is to be expected when you freeze and
-> then thaw a container.
+> > +extern int debug_level;
 >
-> Specifically, when you freeze the container that has a task in sys_pause(),
-> then that task will abort the syscall become frozen. As soon as it becomes
-> unfrozen, it will return to user space (with the EIP "rewinded") only to
-> re-invoke the syscall. So the same "race" remains even if you only freeze
-> and then thaw, regardless of C/R.
+> I'm going to go out on a limb here and say that "debug_level" is
+> probably a wee bit too generic of a variable name.
+I will change it to something else.
 
-Exactly. But during freeze/unfreeze probability to catch such situation is 
-very low. In our tests we were tried to checkpoint/restart LTP tests. And 
-this "race" were triggered during restart almost in 100% of tests.
-
-> Moreover, I argue that basically when you return from a sys_restart(), the
-> entire container should, by default, remain in frozen state - just like it
-> is with sys_checkpoint(). An explicit thaw will make the container resume
-> execution.
-
-No doubt. That is how we do in OpenVZ, after restart the container remains 
-frozen. And we need to thaw it to resume its execution.
-
-> Therefore, there are two options: the first is to decide that this behavior
-> - going back to user space to re-invoke the syscall - is valid. In this
-> case you don't need a special hack for returning from sys_restart(). The
-> second option is to decide that it is broken, in which case you need to
-> also fix the freezer code. Personally, I think that this behavior is valid
-> and need not be fixed.
-
-I still believe that we need to fix such behaviour during restart as in 
-practice it is very easy to trigger it.
-
-> Finally, even if you do want to fix the behavior for this pathologic case,
-> I don't see why you'd want to do it in this manner. Instead, you can add a
-> simple test prior to returning from sys_restart(), something like this:
 >
-> 	...
-> 	/* almost done: now handle special cases: */
-> 	if (our last syscall == __NR_pause) {
-> 		ret = sys_pause();
-> 	} else if (our last syscall == __NR_futex) {
-> 		do some stuff;
-> 		ret = sys_futex();
-> 	} else {
-> 		ret = what-we-want-to-return
-> 	}
-> 	/* finally, return to user space */
-> 	return ret;
-> }
+> > +#define cpt_printk(lvl, fmt, args...)	do {	\
+> > +		if (lvl <= debug_level)		\
+> > +			printk(fmt, ##args);	\
+> > +	} while (0)
+>
+> I think you can use pr_debug() here, too, just like Oren did.
+Will switch to pr_debug().
 
-This only works if we do not want to stay in frozen state after restart. Or am 
-I missed something?
+>
+> > +struct cpt_context * context_alloc(void)
+> > +{
+> > +	struct cpt_context *ctx;
+> > +	int i;
+> > +
+> > +	ctx = kzalloc(sizeof(*ctx), GFP_KERNEL);
+> > +	if (!ctx)
+> > +		return NULL;
+> > +
+> > +	init_MUTEX(&ctx->main_sem);
+> > +	ctx->refcount = 1;
+> > +
+> > +	ctx->current_object = -1;
+> > +	ctx->write = file_write;
+> > +	ctx->read = file_read;
+> > +	for (i = 0; i < CPT_OBJ_MAX; i++) {
+> > +		INIT_LIST_HEAD(&ctx->object_array[i]);
+> > +	}
+> > +
+> > +	return ctx;
+> > +}
+> > +
+> > +void context_release(struct cpt_context *ctx)
+> > +{
+> > +	ctx->ctx_state = CPT_CTX_ERROR;
+> > +
+> > +	kfree(ctx);
+> > +}
+> > +
+> > +static void context_put(struct cpt_context *ctx)
+> > +{
+> > +	if (!--ctx->refcount)
+> > +		context_release(ctx);
+> > +}
+> > +
+> >  static int checkpoint(pid_t pid, int fd, unsigned long flags)
+> >  {
+> > -	return -ENOSYS;
+> > +	struct file *file;
+> > +	struct cpt_context *ctx;
+> > +	int err;
+> > +
+> > +	err = -EBADF;
+> > +	file = fget(fd);
+> > +	if (!file)
+> > +		goto out;
+> > +
+> > +	err = -ENOMEM;
+> > +	ctx = context_alloc();
+> > +	if (!ctx)
+> > +		goto out_file;
+> > +
+> > +	ctx->file = file;
+> > +	ctx->ctx_state = CPT_CTX_DUMPING;
+> > +
+> > +	/* checkpoint */
+> > +	err = -ENOSYS;
+> > +
+> > +	context_put(ctx);
+> > +
+> > +out_file:
+> > +	fput(file);
+> > +out:
+> > +	return err;
+> >  }
+>
+> So, where is context_get()?  Is there only single-threaded access to the
+> refcount?  If so, why do we even need it?  We should probably just use
+> context_release() driectly.
+The idea is that in future we should be able to keep a context for incremental 
+checkpointing. That is why we need context get/put functions. Right now it is 
+not used, so I will drop it.
 
-> I'm not quite know what other "complex states" you refer to; but I wonder
-> whether that code "needed to restore some complex states" could not be
-> implemented along the same idea.
+> If there is multithreaded access to context_put() or the refcount, then
+> they're unsafe without additional locking.
+Access to refcount will be protected with context mutex.
 
-In the same manner we are restoring for instance ptrace.
+Thanks for comments.
 
-> The upside is clear: the code is less obscure, simple to debug, and not
-> architecture-dependent. (hehe .. it even runs faster because it saves a
-> whole kernel->user->kernel switch, what do you know !).
-In our case we also do not need a switch and the code actually not very 
-complicated.
+Actually I'm not sure if I will continue with my own patch set, but I will 
+take into account all your comments during porting my functionality to Oren's 
+tree.
 
 Andrey
