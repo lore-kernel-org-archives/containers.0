@@ -1,17 +1,18 @@
-From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: Re: [Devel] Re: [PATCH 0/9] OpenVZ kernel based	checkpointing/restart
-Date: Thu, 30 Oct 2008 13:45:25 -0400
-Message-ID: <4909F2B5.7040907__15595.3956571922$1225389005$gmane$org@cs.columbia.edu>
+From: Louis Rilling <Louis.Rilling-aw0BnHfMbSpBDgjK7y7TUQ@public.gmane.org>
+Subject: Re: [Devel] Re: [PATCH 0/9] OpenVZ kernel based checkpointing/restart
+Date: Thu, 30 Oct 2008 19:01:33 +0100
+Message-ID: <20081030180133.GN15171__10792.0855436989$1225389867$gmane$org@hawkmoon.kerlabs.com>
 References: <1220439476-16465-1-git-send-email-major@openvz.org>
 	<200810271707.13580.major@openvz.org>
 	<4905D2AD.1070309@cs.columbia.edu>
 	<200810300902.47067.major@openvz.org>
 	<20081030114747.GL15171@hawkmoon.kerlabs.com>
+	<1225386524.12673.284.camel@nimitz>
+Reply-To: Louis.Rilling-aw0BnHfMbSpBDgjK7y7TUQ@public.gmane.org
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: multipart/mixed; boundary="===============7846057396712485991=="
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20081030114747.GL15171-Hu8+6S1rdjywhHL9vcZdMVaTQe2KTcn/@public.gmane.org>
+In-Reply-To: <1225386524.12673.284.camel@nimitz>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,99 +20,130 @@ List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
 List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Mime-version: 1.0
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Louis.Rilling-aw0BnHfMbSpBDgjK7y7TUQ@public.gmane.org
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, Cedric Le Goater <clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>, Andrey Mirkin <major-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>, Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
+To: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Cc: linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>, Cedric Le Goater <clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Andrey Mirkin <major-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
+This is a MIME-formatted message.  If you see this text it means that your
+E-mail software does not support MIME-formatted messages.
 
+--===============7846057396712485991==
+Content-Type: multipart/signed; micalg=pgp-sha1; protocol="application/pgp-signature"; boundary="=_bohort-8436-1225389547-0001-2"
+Content-Disposition: inline
 
-Louis Rilling wrote:
-> On Thu, Oct 30, 2008 at 10:02:44AM +0400, Andrey Mirkin wrote:
->>>> kernel. Also we will need a functionolity to create processes with
->>>> predefined PID. I think it is not very good to provide such ability to
->>>> user space. That is why we prefer in OpenVZ to do all the job in kernel.
->>> This is the weak side of creating the processes in user space -
->>> that we need such an interface. Note, however, that we can
->>> easily "hide" it inside the interface of the sys_restart() call,
->>> and restrict how it may be used.
->> Of course we can "hide" it somehow, but anyway we will have a hole and that is 
->> not good.
->>
->> Anyway we should ask everyone what they think about user- and kernel- based 
->> process creation.
->> Dave, Serge, Cedric, Daniel, Louis what do you think about that?
-> 
-> Frankly, I'm not convinced (yet) that one approach is better than the other one.
-> I only *tend* to prefer kernel-based, for the reasons explained below. I know
-> that there are arguments in favor of userspace (I've at least seen
-> security-related ones), but I let their authors detail them (again).
+This is a MIME-formatted message.  If you see this text it means that your
+E-mail software does not support MIME-formatted messages.
 
-I'm not convinced either. I think both implementation can eventually
-work well.
+--=_bohort-8436-1225389547-0001-2
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
 
-> 
-> In Kerrighed this is kernel-based, and will remain kernel-based because we
-> checkpoint a distributed task tree, and want to restart it as mush as possible
-> with the same distribution. The distributed protocol used for restart is
-> currently too fragile and complex to rely on customized user-space
-> implementations. That said, if someone brings very good arguments in favor of
-> userspace implementations, we might consider changing this.
+On Thu, Oct 30, 2008 at 10:08:44AM -0700, Dave Hansen wrote:
+> On Thu, 2008-10-30 at 12:47 +0100, Louis Rilling wrote:
+> > 1) this prevents userspace from doing weird things, like changing the t=
+ask tree
+> > and let the kernel detect it and deal with the mess this creates (think=
+ about
+> > two threads being restarted in separate processes that do not even shar=
+e their
+> > parents). But one can argue that userspace can change the checkpoint im=
+age as
+> > well, so that the kernel must check for such weird things anyway.
+>=20
+> To me, this is one of the strongest arguments out there for doing
+> restart as much as possible with existing user<->kernel APIs.  Having
+> the kernel detect and clean up userspace's messes is not going to work.
+> We might as well just do things in the kernel rather than do that.
+>=20
+> What we *should* do is leverage all of the existing APIs that we already
+> have instead of creating completely new code paths into which my butter
+> fingers can introduce new kernel bugs.
+>=20
+> > 2) restart will be more efficient with respect to shared objects.
+>=20
+> Can you quantify this?  Which objects?  How much more efficient?
 
-Zap also has distributed checkpoint which does not require strict
-kernel-side ordering. Do you need that because you do SSI ?
+Quantify? No. I expect that investigating both approaches will show us numb=
+ers.
+Unless Oren already has some?
 
-> 
-> Without taking distributed restart into account, I also tend to prefer
-> kernel-based, mainly for two (not so strong) reasons:
-> 1) this prevents userspace from doing weird things, like changing the task tree
-> and let the kernel detect it and deal with the mess this creates (think about
-> two threads being restarted in separate processes that do not even share their
-> parents). But one can argue that userspace can change the checkpoint image as
-> well, so that the kernel must check for such weird things anyway.
+Which objects? I think that two kinds will especially matter: objects usual=
+ly
+shared only inside a thread group (mm_struct, fs_struct, files_struct,
+signal_struct and sighand_struct), and individual file descriptors. The poi=
+nt is
+to avoid creating new structures before destroying them because the restart=
+ed
+task shares them with a previously restarted one.
 
-I don't really buy this argument. First, as you say, user can change
-the checkpoint image file. Second, you can verify in the kernel that
-the real relationships of the processes match those specified (and
-expected from) the image file. That's pretty straightforward.
+Concerning individual file descriptors, limiting the number of open files b=
+efore
+calling sys_restart() may avoid these useless creations/destructions (actua=
+lly
+the "useless" work mainly consists in managing ref counts since file descri=
+ptors
+are shared after fork()).
 
-> 2) restart will be more efficient with respect to shared objects.
+Concerning thread-shared structures, it is probably easy for userspace to g=
+uess
+which clone flags to use when restarting threads, but
+1) kernel-space will have to check that the sharing is correct anyway, and
+2) kernel-space will have to fix it anyway if structures are not shared in =
+an
+obvious manner between tasks (think about A creating B with shared files_st=
+ruct,
+B creating C with shared files_struct, B unsharing its files_struct, and th=
+en
+checkpoint).
 
-Can you elaborate on this ?  In what sense "more efficient" ?
+So, with a userspace implementation, useless structures will be created any=
+way,
+and optimizing the common cases (regular threads) just duplicates kernel's =
+work
+of checking which shared structure to use for each task to restart.
+With a kernel-space implementation, all useless creations can be avoided, a=
+nd no
+duplicate work is needed.
 
-Note that the topic in question is not whether to do the entire restart
-from user space (and I argue that most work should be done in the kernel),
-but rather whether process creation (and only that) should be done in
-kernel or user space.
+That said, numbers may show us that useless creations are not so
+time-consuming, but we won't know before seeing them...
 
-Quick thoughts of pros/cons of each approach are:
+Louis
 
-user space:
+--=20
+Dr Louis Rilling			Kerlabs
+Skype: louis.rilling			Batiment Germanium
+Phone: (+33|0) 6 80 89 08 23		80 avenue des Buttes de Coesmes
+http://www.kerlabs.com/			35700 Rennes
 
-+ re-use existing api (fork)
-+ easier to debug
-+ will allow 'handmade' resources restart: it was mentioned before that
-  one may want to reattach stdout to a different place after restart; a
-  user based restart of processes can make this much easier: e.g. the
-  user process can create the alternative resources, give them to the
-  kernel and only then call sys_restart)
-+ arch-independent code
+--=_bohort-8436-1225389547-0001-2
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Transfer-Encoding: 7bit
+Content-Description: Digital signature
+Content-Disposition: inline
 
-- a bit slower than in kernel space
-- requires a clone-with-specific-pid syscall or interface
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.6 (GNU/Linux)
 
-kernel space:
+iD8DBQFJCfZ9VKcRuvQ9Q1QRAgnGAJ4y/I50OqavdrDFvS5Vg4Ru0/ppIQCfZCPt
+N1UQfUCQboa1FxxqqiGxEMQ=
+=TvuX
+-----END PGP SIGNATURE-----
 
-+ a bit easier to control everything
-+ a bit faster than user space
-+ no need for user-visible interface for clone-with-...
+--=_bohort-8436-1225389547-0001-2--
 
-- arch-dependent code
-- needs special code to fight 'fork-bomb'
+--===============7846057396712485991==
+Content-Type: text/plain; charset="us-ascii"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+Content-Disposition: inline
 
-So, I'm not convinced, and I even think there may be room to both, for
-the time being. I volunteer to support the user-space alternative while
-we make up our minds.
-
-Oren.
+_______________________________________________
+Containers mailing list
+Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+https://lists.linux-foundation.org/mailman/listinfo/containers
+--===============7846057396712485991==--
