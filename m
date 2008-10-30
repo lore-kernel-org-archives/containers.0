@@ -1,8 +1,7 @@
 From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: [RFC v8][PATCH 12/12] Track in-kernel when we expect
-	checkpoint/restart to work
-Date: Thu, 30 Oct 2008 09:51:15 -0400
-Message-ID: <1225374675-22850-13-git-send-email-orenl__1159.090959891$1225375234$gmane$org@cs.columbia.edu>
+Subject: [RFC v8][PATCH 11/12] External checkpoint of a task other than ourself
+Date: Thu, 30 Oct 2008 09:51:14 -0400
+Message-ID: <1225374675-22850-12-git-send-email-orenl__11101.1522742503$1225375280$gmane$org@cs.columbia.edu>
 References: <1225374675-22850-1-git-send-email-orenl@cs.columbia.edu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -22,129 +21,178 @@ To: Linus Torvalds <torvalds-3NddpPZAyC0@public.gmane.org>
 Cc: linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Alexander Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, "H. Peter Anvin" <hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org>, Thomas Gleixner <tglx-hfZtesqFncYOwBW4kG4KsQ@public.gmane.org>, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-From: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Now we can do "external" checkpoint, i.e. act on another task.
 
-Suggested by Ingo.
+sys_checkpoint() now looks up the target pid (in our namespace) and
+checkpoints that corresponding task. That task should be the root of
+a container.
 
-Checkpoint/restart is going to be a long effort to get things working.
-We're going to have a lot of things that we know just don't work for
-a long time.  That doesn't mean that it will be useless, it just means
-that there's some complicated features that we are going to have to
-work incrementally to fix.
+sys_restart() remains the same, as the restart is always done in the
+context of the restarting task.
 
-This patch introduces a new mechanism to help the checkpoint/restart
-developers.  A new function pair: task/process_deny_checkpoint() is
-created.  When called, these tell the kernel that we *know* that the
-process has performed some activity that will keep it from being
-properly checkpointed.
-
-The 'flag' is an atomic_t for now so that we can have some level
-of atomicity and make sure to only warn once.
-
-For now, this is a one-way trip.  Once a process is no longer
-'may_checkpoint' capable, neither it nor its children ever will be.
-This can, of course, be fixed up in the future.  We might want to
-reset the flag when a new pid namespace is created, for instance.
-
-Signed-off-by: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 Signed-off-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 ---
- include/linux/checkpoint.h |   33 ++++++++++++++++++++++++++++++++-
- include/linux/sched.h      |    3 +++
- kernel/fork.c              |   10 ++++++++++
- 3 files changed, 45 insertions(+), 1 deletions(-)
+ checkpoint/checkpoint.c    |    4 ++-
+ checkpoint/sys.c           |   71 ++++++++++++++++++++++++++++++++++++++++++-
+ include/linux/checkpoint.h |    5 ++-
+ 3 files changed, 76 insertions(+), 4 deletions(-)
 
-diff --git a/include/linux/checkpoint.h b/include/linux/checkpoint.h
-index e9d554e..70cfceb 100644
---- a/include/linux/checkpoint.h
-+++ b/include/linux/checkpoint.h
-@@ -10,8 +10,11 @@
-  *  distribution for more details.
+diff --git a/checkpoint/checkpoint.c b/checkpoint/checkpoint.c
+index ce622e1..f636958 100644
+--- a/checkpoint/checkpoint.c
++++ b/checkpoint/checkpoint.c
+@@ -190,6 +190,8 @@ static int cr_write_task(struct cr_ctx *ctx, struct task_struct *t)
+ {
+ 	int ret ;
+ 
++	/* TODO: verity that the task is frozen (unless self) */
++
+ 	if (t->state == TASK_DEAD) {
+ 		pr_warning("C/R: task may not be in state TASK_DEAD\n");
+ 		return -EAGAIN;
+@@ -227,7 +229,7 @@ int do_checkpoint(struct cr_ctx *ctx)
+ 	ret = cr_write_head(ctx);
+ 	if (ret < 0)
+ 		goto out;
+-	ret = cr_write_task(ctx, current);
++	ret = cr_write_task(ctx, ctx->root_task);
+ 	if (ret < 0)
+ 		goto out;
+ 	ret = cr_write_tail(ctx);
+diff --git a/checkpoint/sys.c b/checkpoint/sys.c
+index c57ae96..3421d47 100644
+--- a/checkpoint/sys.c
++++ b/checkpoint/sys.c
+@@ -9,6 +9,8 @@
   */
  
--#include <linux/path.h>
+ #include <linux/sched.h>
++#include <linux/nsproxy.h>
++#include <linux/ptrace.h>
+ #include <linux/kernel.h>
  #include <linux/fs.h>
-+#include <linux/path.h>
-+#include <linux/sched.h>
-+
-+#ifdef CONFIG_CHECKPOINT_RESTART
+ #include <linux/file.h>
+@@ -152,6 +154,66 @@ void cr_hbuf_put(struct cr_ctx *ctx, int n)
+  * restart operation, and persists until the operation is completed.
+  */
  
- #define CR_VERSION  2
- 
-@@ -93,4 +96,32 @@ extern int cr_read_files(struct cr_ctx *ctx);
- #define cr_debug(fmt, args...)  \
- 	pr_debug("[CR:%s] " fmt, __func__, ## args)
- 
-+static inline void __task_deny_checkpointing(struct task_struct *task,
-+		char *file, int line)
++static void cr_ctx_put_container(struct cr_ctx *ctx)
 +{
-+	if (!atomic_dec_and_test(&task->may_checkpoint))
-+		return;
-+	printk(KERN_INFO "process performed an action that can not be "
-+			"checkpointed at: %s:%d\n", file, line);
-+	WARN_ON(1);
++	if (ctx->root_nsproxy)
++		put_nsproxy(ctx->root_nsproxy);
++	if (ctx->root_task)
++		put_task_struct(ctx->root_task);
++	ctx->root_pid = 0;
 +}
-+#define process_deny_checkpointing(p)  \
-+	__task_deny_checkpointing(p, __FILE__, __LINE__)
 +
-+/*
-+ * For now, we're not going to have a distinction between
-+ * tasks and processes for the purpose of c/r.  But, allow
-+ * these two calls anyway to make new users at least think
-+ * about it.
-+ */
-+#define task_deny_checkpointing(p)  \
-+	__task_deny_checkpointing(p, __FILE__, __LINE__)
++static int cr_ctx_get_container(pid_t pid, struct cr_ctx *ctx)
++{
++	struct task_struct *task = NULL;
++	struct nsproxy *nsproxy = NULL;
++	int err = -ESRCH;
 +
-+#else
++	read_lock(&tasklist_lock);
++	task = find_task_by_vpid(pid);
++	if (task)
++		get_task_struct(task);
++	read_unlock(&tasklist_lock);
 +
-+static inline void task_deny_checkpointing(struct task_struct *task) {}
-+static inline void process_deny_checkpointing(struct task_struct *task) {}
++	if (!task)
++		goto out;
 +
++#if 0	/* enable to use containers */
++	if (!is_container_init(task)) {
++		err = -EINVAL;
++		goto out;
++	}
 +#endif
 +
- #endif /* _CHECKPOINT_CKPT_H_ */
-diff --git a/include/linux/sched.h b/include/linux/sched.h
-index 3d9120c..8c50e3b 100644
---- a/include/linux/sched.h
-+++ b/include/linux/sched.h
-@@ -1301,6 +1301,9 @@ struct task_struct {
- 	int latency_record_count;
- 	struct latency_record latency_record[LT_SAVECOUNT];
- #endif
-+#ifdef CONFIG_CHECKPOINT_RESTART
-+	atomic_t may_checkpoint;
-+#endif
- };
++	if (!ptrace_may_access(task, PTRACE_MODE_READ)) {
++		err = -EPERM;
++		goto out;
++	}
++
++	rcu_read_lock();
++	if (task_nsproxy(task)) {
++		nsproxy = task_nsproxy(task);
++		get_nsproxy(nsproxy);
++	}
++	rcu_read_unlock();
++
++	if (!nsproxy)
++		goto out;
++
++	/* TODO: verify that the container is frozen */
++
++	ctx->root_pid = pid;
++	ctx->root_task = task;
++	ctx->root_nsproxy = nsproxy;
++
++	return 0;
++
++ out:
++	if (task)
++		put_task_struct(task);
++	return err;
++}
++
+ /* unique checkpoint identifier (FIXME: should be per-container) */
+ static atomic_t cr_ctx_count = ATOMIC_INIT(0);
  
- /*
-diff --git a/kernel/fork.c b/kernel/fork.c
-index 7ce2ebe..d6cf7e4 100644
---- a/kernel/fork.c
-+++ b/kernel/fork.c
-@@ -194,6 +194,13 @@ void __init fork_init(unsigned long mempages)
- 	init_task.signal->rlim[RLIMIT_NPROC].rlim_max = max_threads/2;
- 	init_task.signal->rlim[RLIMIT_SIGPENDING] =
- 		init_task.signal->rlim[RLIMIT_NPROC];
+@@ -168,6 +230,8 @@ static void cr_ctx_free(struct cr_ctx *ctx)
+ 	cr_pgarr_free(ctx);
+ 	cr_objhash_free(ctx);
+ 
++	cr_ctx_put_container(ctx);
 +
-+#ifdef CONFIG_CHECKPOINT_RESTART
-+	/*
-+	 * This probably won't stay set for long...
-+	 */
-+	atomic_set(&init_task.may_checkpoint, 1);
-+#endif
+ 	kfree(ctx);
  }
  
- int __attribute__((weak)) arch_dup_task_struct(struct task_struct *dst,
-@@ -244,6 +251,9 @@ static struct task_struct *dup_task_struct(struct task_struct *orig)
- 	tsk->btrace_seq = 0;
- #endif
- 	tsk->splice_pipe = NULL;
-+#ifdef CONFIG_CHECKPOINT_RESTART
-+	atomic_set(&tsk->may_checkpoint, atomic_read(&orig->may_checkpoint));
-+#endif
- 	return tsk;
+@@ -180,7 +244,6 @@ static struct cr_ctx *cr_ctx_alloc(pid_t pid, int fd, unsigned long flags)
+ 	if (!ctx)
+ 		return ERR_PTR(-ENOMEM);
  
- out:
+-	ctx->pid = pid;
+ 	ctx->flags = flags;
+ 
+ 	INIT_LIST_HEAD(&ctx->pgarr_list);
+@@ -190,6 +253,10 @@ static struct cr_ctx *cr_ctx_alloc(pid_t pid, int fd, unsigned long flags)
+ 	if (!ctx->file)
+ 		goto err;
+ 
++	err = cr_ctx_get_container(pid, ctx);
++	if (err < 0)
++		goto err;
++
+ 	err = -ENOMEM;
+ 	ctx->hbuf = kmalloc(CR_HBUF_TOTAL, GFP_KERNEL);
+ 
+@@ -205,7 +272,7 @@ static struct cr_ctx *cr_ctx_alloc(pid_t pid, int fd, unsigned long flags)
+ 	 * assume checkpointer is in container's root vfs
+ 	 * FIXME: this works for now, but will change with real containers
+ 	 */
+-	ctx->vfsroot = &current->fs->root;
++	ctx->vfsroot = &ctx->root_task->fs->root;
+ 	path_get(ctx->vfsroot);
+ 
+ 	ctx->crid = atomic_inc_return(&cr_ctx_count);
+diff --git a/include/linux/checkpoint.h b/include/linux/checkpoint.h
+index 6c1e87f..e9d554e 100644
+--- a/include/linux/checkpoint.h
++++ b/include/linux/checkpoint.h
+@@ -16,9 +16,12 @@
+ #define CR_VERSION  2
+ 
+ struct cr_ctx {
+-	pid_t pid;		/* container identifier */
+ 	int crid;		/* unique checkpoint id */
+ 
++	pid_t root_pid;		/* container identifier */
++	struct task_struct *root_task;	/* container root task */
++	struct nsproxy *root_nsproxy;	/* container root nsproxy */
++
+ 	unsigned long flags;
+ 	unsigned long oflags;	/* restart: old flags */
+ 
 -- 
 1.5.4.3
