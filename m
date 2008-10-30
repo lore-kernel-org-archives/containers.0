@@ -1,7 +1,8 @@
 From: Vivien Chappelier <vivien.chappelier-L+G57L1VLRbR7s880joybQ@public.gmane.org>
-Subject: [PATCH 2/6] netns: export nets id to /proc/net/netns
-Date: Thu, 30 Oct 2008 14:07:08 +0100
-Message-ID: <20081030130708.GB17665@thomson.net>
+Subject: [PATCH 3/6] add get_net_ns_by_id() to get a reference to a network
+	namespace from its nsid.
+Date: Thu, 30 Oct 2008 14:08:17 +0100
+Message-ID: <20081030130817.GC17665@thomson.net>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -19,88 +20,104 @@ Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 To: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Patch initially submitted by Benjamin Thery.
+This patch adds a __get_net_ns_by_id() to obtain look for and obtain a reference to a network namespace via its nsid.
+The corresponding get_net_ns_by_id() takes the rtnl_lock.
 
-This patch exports the new 'struct net' net->id value to /proc/net/nsid
-file.
 ---
- net/core/net_namespace.c |   50 ++++++++++++++++++++++++++++++++++++++++++++++
- 1 files changed, 50 insertions(+), 0 deletions(-)
+ include/net/net_namespace.h |   34 +++++++++++++++++++++++++++++++---
+ net/core/net_namespace.c    |   12 ++++++++++++
+ 2 files changed, 43 insertions(+), 3 deletions(-)
 
+diff --git a/include/net/net_namespace.h b/include/net/net_namespace.h
+index 8bde629..afb2578 100644
+--- a/include/net/net_namespace.h
++++ b/include/net/net_namespace.h
+@@ -104,8 +104,13 @@ static inline struct net *copy_net_ns(unsigned long flags, struct net *net_ns)
+ 
+ extern struct list_head net_namespace_list;
+ 
++
++#define for_each_net(VAR)				\
++	list_for_each_entry(VAR, &net_namespace_list, list)
++
+ #ifdef CONFIG_NET_NS
+ extern void __put_net(struct net *net);
++extern struct net *get_net_ns_by_id(int id);
+ 
+ static inline int net_alive(struct net *net)
+ {
+@@ -141,6 +146,19 @@ int net_eq(const struct net *net1, const struct net *net2)
+ {
+ 	return net1 == net2;
+ }
++
++static inline struct net *__get_net_ns_by_id(int id)
++{
++	struct net *net;
++
++	for_each_net(net)
++		if (net->id == id)
++			return maybe_get_net(net);
++
++	return NULL;
++}
++extern struct net *get_net_ns_by_id(int id);
++
+ #else
+ 
+ static inline int net_alive(struct net *net)
+@@ -167,6 +185,19 @@ int net_eq(const struct net *net1, const struct net *net2)
+ {
+ 	return 1;
+ }
++
++static inline struct net *__get_net_ns_by_id(int id)
++{
++	if (id == 0)
++		return &init_net;
++	return NULL;
++}
++
++static inline struct net *get_net_ns_by_id(int id)
++{
++	return __get_net_ns_by_id(id);
++}
++
+ #endif
+ 
+ 
+@@ -195,9 +226,6 @@ static inline void release_net(struct net *net)
+ #endif
+ 
+ 
+-#define for_each_net(VAR)				\
+-	list_for_each_entry(VAR, &net_namespace_list, list)
+-
+ #ifdef CONFIG_NET_NS
+ #define __net_init
+ #define __net_exit
 diff --git a/net/core/net_namespace.c b/net/core/net_namespace.c
-index 894b35e..418abe0 100644
+index 418abe0..596cb83 100644
 --- a/net/core/net_namespace.c
 +++ b/net/core/net_namespace.c
-@@ -6,6 +6,7 @@
- #include <linux/delay.h>
- #include <linux/sched.h>
- #include <linux/idr.h>
-+#include <linux/proc_fs.h>
- #include <net/net_namespace.h>
- #include <net/netns/generic.h>
- 
-@@ -211,6 +212,53 @@ struct net *copy_net_ns(unsigned long flags, struct net *old_net)
+@@ -203,6 +203,18 @@ void __put_net(struct net *net)
  }
- #endif
+ EXPORT_SYMBOL_GPL(__put_net);
  
-+#ifdef CONFIG_PROC_FS
-+static int netns_seq_show(struct seq_file *seq, void *v)
++struct net *get_net_ns_by_id(int id)
 +{
-+	struct net *net = seq->private;
++	struct net *net;
 +
-+	seq_printf(seq, "%x\n", net->id);
-+	return 0;
++	rtnl_lock();
++	net = __get_net_ns_by_id(id);
++	rtnl_unlock();
++
++	return net;
 +}
++EXPORT_SYMBOL_GPL(get_net_ns_by_id);
 +
-+static int netns_seq_open(struct inode *inode, struct file *file)
-+{
-+        return single_open_net(inode, file, netns_seq_show);
-+}
-+
-+static const struct file_operations netns_seq_fops = {
-+	.owner   = THIS_MODULE,
-+	.open    = netns_seq_open,
-+	.read	 = seq_read,
-+	.llseek	 = seq_lseek,
-+	.release = single_release_net,
-+};
-+
-+static int __net_init netns_net_init(struct net *net)
-+{
-+	if (!proc_net_fops_create(net, "nsid", S_IRUGO, &netns_seq_fops))
-+		return -ENOMEM;
-+	return 0;
-+}
-+
-+static void __net_exit netns_net_exit(struct net *net)
-+{
-+	proc_net_remove(net, "nsid");
-+}
-+
-+static struct pernet_operations netns_proc_ops = {
-+	.init = netns_net_init,
-+	.exit = netns_net_exit,
-+};
-+
-+static int __init netns_proc_init()
-+{
-+	return register_pernet_subsys(&netns_proc_ops);
-+}
-+#else
-+#define netns_proc_init() 0
-+#endif /* CONFIG_PROC_FS */
-+
- static int __init net_ns_init(void)
+ #else
+ struct net *copy_net_ns(unsigned long flags, struct net *old_net)
  {
- 	int err;
-@@ -226,6 +274,8 @@ static int __init net_ns_init(void)
- 	if (!netns_wq)
- 		panic("Could not create netns workq");
- #endif
-+	if (netns_proc_init())
-+		panic("Could not register netns subsys");
- 
- 	mutex_lock(&net_mutex);
- 	err = setup_net(&init_net);
 -- 
 1.5.4.4
