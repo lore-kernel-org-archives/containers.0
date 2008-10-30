@@ -1,13 +1,14 @@
 From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: Re: [BIG RFC] Filesystem-based checkpoint
-Date: Thu, 30 Oct 2008 14:19:20 -0400
-Message-ID: <4909FAA8.5000107@cs.columbia.edu>
-References: <1225219047.12673.182.camel@nimitz>
+Subject: Re: [Devel] Re: [PATCH 0/9] OpenVZ kernel based checkpointing/restart
+Date: Thu, 30 Oct 2008 14:28:30 -0400
+Message-ID: <4909FCCE.2020501__36275.1661603854$1225391596$gmane$org@cs.columbia.edu>
+References: <1220439476-16465-1-git-send-email-major@openvz.org>	<200810271707.13580.major@openvz.org>	<4905D2AD.1070309@cs.columbia.edu>	<200810300902.47067.major@openvz.org>	<20081030114747.GL15171@hawkmoon.kerlabs.com>	<1225386524.12673.284.camel@nimitz>
+	<20081030180133.GN15171@hawkmoon.kerlabs.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1225219047.12673.182.camel@nimitz>
+In-Reply-To: <20081030180133.GN15171-Hu8+6S1rdjywhHL9vcZdMVaTQe2KTcn/@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -17,166 +18,91 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Cc: containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
+To: Louis.Rilling-aw0BnHfMbSpBDgjK7y7TUQ@public.gmane.org
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, Cedric Le Goater <clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>, Andrey Mirkin <major-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>, Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
 
-I'm not sure why you say it's "un-linux-y" to begin with. But to the
-point, here are my thought:
 
-
-1. What you suggest is to expose the internal data to user space and
-pull it. Isn't that what cryo tried to do ?  And the conclusion was
-that it takes too many interfaces to work out, code in, provide, and
-maintain forever, with issues related to backward compatibility and
-what not. In fact, the conclusion was "let's do a kernel-blob" !
-
-
-2. So there is a high price tag for the extra flexibility - more code,
-more complexity, more maintenance nightmare, more API fights. But the
-real question IMHO is what do you gain from it ?
-
-> This lets userspace pick and choose what parts of the checkpoint it
-> cares about.
-
-So what ?  Why do you ever need that ?  What sort of information would
-you get from there, that you can't get from existing mechanism (ptrace) ?
-
-If this is only to be able to parallelize checkpoint - then let's discuss
-the problem, not a specific solution.
-
-> It enables us to do all the I/O from userspace: no in-kernel
-> sys_read/write().
-
-What's so wrong with in-kernel vfs_read/write() ?  You mentioned deadlocks,
-but I'm yet to see one and understand the prolbem. My experience with Zap
-(and Andrey's with OpenVZ) has been pretty good.
-
-If eventually this becomes the main issue, we can discuss alternatives
-(some have been proposed in the past) and again, fit a solution to the
-problem as opposed to fit a problem to a solution.
-
-> I think this interface is much more flexible than a plain syscall.
-
-Flexibility can be a friend or an enemy. Can you quantify or qualify what
-you gain, for the high cost of going in that direction ?
-
-
-3. Your approach doesn't play well with what I call "checkpoint that
-involves self". This term refers to a process that checkpoints itself
-(and only itself), or to a process that attempts to checkpoint its own
-container.  In both cases, there is no other entity that will read the
-data from the file system while the caller is blocked.
-
-
-4. I'm not sure how you want to handle shared objects. Simply saying:
-
-> This also shows how we might handle shared objects.
-
-isn't quite convincing. Keep in mind that sharing is determined in kernel,
-and in the order that objects are encountered (as they should only be
-dumped once). There may be objects that are shared, and themselves refer
-to objects that are shared, and such objects are best handles in a bundled
-manner (e.g. think of the two fds of a pipe). I really don't see how you
-might handle all of that with your suggested scheme.
-
-
-5. Your suggestions leaves too many details out. Yes, it's a call for
-discussion. But still. Zap, OpenVZ and other systems build on experience
-and working code. We know how to do incremental, live, and other goodies.
-I'm not sure how these would work with your scheme.
-
-
-6. Performance: in one important use case I checkpoint the entire user
-desktop once a second, with downtime (due to checkpoint) of < 15ms for
-even busy configurations and large memory footprint. While syscall are
-relatively cheap, I wonder if you approach could keep up with it.
-
-
-Oren.
-
-Dave Hansen wrote:
-> I hate the syscall.  It's a very un-Linux-y way of doing things.  There,
-> I said it.  Here's an alternative.  It still uses the syscall to
-> initiate things, but it uses debugfs to transport the data instead.
-> This is just a concept demonstration.  It doesn't actually work, and I
-> wouldn't be using debugfs in practice.
+Louis Rilling wrote:
+> On Thu, Oct 30, 2008 at 10:08:44AM -0700, Dave Hansen wrote:
+>> On Thu, 2008-10-30 at 12:47 +0100, Louis Rilling wrote:
+>>> 1) this prevents userspace from doing weird things, like changing the task tree
+>>> and let the kernel detect it and deal with the mess this creates (think about
+>>> two threads being restarted in separate processes that do not even share their
+>>> parents). But one can argue that userspace can change the checkpoint image as
+>>> well, so that the kernel must check for such weird things anyway.
+>> To me, this is one of the strongest arguments out there for doing
+>> restart as much as possible with existing user<->kernel APIs.  Having
+>> the kernel detect and clean up userspace's messes is not going to work.
+>> We might as well just do things in the kernel rather than do that.
+>>
+>> What we *should* do is leverage all of the existing APIs that we already
+>> have instead of creating completely new code paths into which my butter
+>> fingers can introduce new kernel bugs.
+>>
+>>> 2) restart will be more efficient with respect to shared objects.
+>> Can you quantify this?  Which objects?  How much more efficient?
 > 
-> System calls in Linux are fast.  Doing lots of them is not a problem.
-> If it becomes one, we can always export a condensed version of this
-> format next to the expanded one, kinda like ftrace does.  Atomicity with
-> this approach is also not a problem.  The system call in this approach
-> doesn't return until the checkpoint is completely written out.
+> Quantify? No. I expect that investigating both approaches will show us numbers.
+> Unless Oren already has some?
+
+I do have some. it's pretty quick :)  see the usenix 2007 paper...
+the new implementation will be faster, though.
+
 > 
-> This lets userspace pick and choose what parts of the checkpoint it
-> cares about.  It enables us to do all the I/O from userspace: no
-> in-kernel sys_read/write().  I think this interface is much more
-> flexible than a plain syscall.
+> Which objects? I think that two kinds will especially matter: objects usually
+> shared only inside a thread group (mm_struct, fs_struct, files_struct,
+> signal_struct and sighand_struct), and individual file descriptors. The point is
+> to avoid creating new structures before destroying them because the restarted
+> task shares them with a previously restarted one.
+
+all the forks in the user space will be done with CLONE_VM etc, to avoid
+exactly that sort of overhead.
+
+in any event, my experience is that this is not the dominant factor in the
+restart time.
+
 > 
-> Want to do a fast checkpoint?  Fine, copy all data, use a lot of memory,
-> store it in-kernel.  Dump that out when the filesystem is accessed.
-> Destroy it when userspace asks.
+> Concerning individual file descriptors, limiting the number of open files before
+> calling sys_restart() may avoid these useless creations/destructions (actually
+> the "useless" work mainly consists in managing ref counts since file descriptors
+> are shared after fork()).
 > 
-> Want to do a checkpoint with a small memory footprint?
-> 10 write one struct
-> 20 wait for userspace
-> 30 goto 10
+> Concerning thread-shared structures, it is probably easy for userspace to guess
+> which clone flags to use when restarting threads, but
+> 1) kernel-space will have to check that the sharing is correct anyway, and
+
+ok. that's not a lot of work :p
+(see more below)
+
+> 2) kernel-space will have to fix it anyway if structures are not shared in an
+> obvious manner between tasks (think about A creating B with shared files_struct,
+> B creating C with shared files_struct, B unsharing its files_struct, and then
+> checkpoint).
 > 
-> Userspace can loop like it is reading a pipe.  We could even track
-> per-checkpoint memory usage in the cr_ctx and stop writing when we go
-> over a certain memory threshold.
+> So, with a userspace implementation, useless structures will be created anyway,
+> and optimizing the common cases (regular threads) just duplicates kernel's work
+> of checking which shared structure to use for each task to restart.
+> With a kernel-space implementation, all useless creations can be avoided, and no
+> duplicate work is needed.
+
+they can also be avoided in user space - you "optimistically" create everything
+shared to begin with, and in the kernel (inside sys_restart) you "unshare" and
+create the necessary resources on demand - just like you would do with kernel
+based process creation.
+
+in this case, the extra work is only ref-counting, and then sys_restart will
+unconditionally attach the right shared resource to the restarting process
+(the "right" shared resource will be found, of course, in the shared pool).
+
+this way, you don't even need to check what the user gave you - you simply
+ignore overwrite it.
+
 > 
-> We can have two modes, internally.  Userspace never has to know what
-> which one we've chosen.  Say we have a word of data to output.  We can
-> either make a copy at sys_checkpoint() time and let the data continue to
-> be modified (let the task run).  Or, we can keep the task frozen and
-> generate data at debugfs read() time.  This means potentially zero
-> copying of data until userspace wants it.
-> 
-> The same goes for structures which might have complicated locking or
-> lifetime rules.  
-> 
-> This also shows how we might handle shared objects.
-> 
-> To use, just sys_checkpoint() as before, and look at /sys/kernel/debug/.
-> Use the crid you got back from the syscall to locate your checkpoint.
-> Write into the 'done' file when you want the sys_checkpoint() to return.
-> 
-> /sys/kernel/debug/checkpoint-1/
-> /sys/kernel/debug/checkpoint-1/done
-> /sys/kernel/debug/checkpoint-1/task-1141
-> /sys/kernel/debug/checkpoint-1/task-1141/fds
-> /sys/kernel/debug/checkpoint-1/task-1141/fds/1
-> /sys/kernel/debug/checkpoint-1/task-1141/fds/1/coe
-> /sys/kernel/debug/checkpoint-1/task-1141/fds/1/fd_nr
-> /sys/kernel/debug/checkpoint-1/task-1141/fds/1/fd
-> /sys/kernel/debug/checkpoint-1/task-1141/fds/0
-> /sys/kernel/debug/checkpoint-1/task-1141/fds/0/coe
-> /sys/kernel/debug/checkpoint-1/task-1141/fds/0/fd_nr
-> /sys/kernel/debug/checkpoint-1/task-1141/fds/0/fd
-> /sys/kernel/debug/checkpoint-1/files
-> /sys/kernel/debug/checkpoint-1/files/2
-> /sys/kernel/debug/checkpoint-1/files/2/f_version
-> /sys/kernel/debug/checkpoint-1/files/2/f_pos
-> /sys/kernel/debug/checkpoint-1/files/2/f_mode
-> /sys/kernel/debug/checkpoint-1/files/2/f_flags
-> /sys/kernel/debug/checkpoint-1/files/1
-> /sys/kernel/debug/checkpoint-1/files/1/target
-> /sys/kernel/debug/checkpoint-1/files/1/fd_type
-> /sys/kernel/debug/checkpoint-1/files/1/f_version
-> /sys/kernel/debug/checkpoint-1/files/1/f_pos
-> /sys/kernel/debug/checkpoint-1/files/1/f_mode
-> /sys/kernel/debug/checkpoint-1/files/1/f_flags
-> 
-> So, why not?
-> 
-> -- Dave
-> 
-> 
-> ------------------------------------------------------------------------
-> 
-> _______________________________________________
-> Containers mailing list
-> Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-> https://lists.linux-foundation.org/mailman/listinfo/containers
+> That said, numbers may show us that useless creations are not so
+> time-consuming, but we won't know before seeing them...
+
+yes, odds are that you are right.
+
+Oren
