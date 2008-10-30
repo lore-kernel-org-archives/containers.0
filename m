@@ -1,15 +1,15 @@
 From: Andrey Mirkin <major-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
-Subject: Re: [Devel] Re: [PATCH 10/10] Add support for multiple processes
-Date: Thu, 30 Oct 2008 08:55:03 +0400
-Message-ID: <200810300755.05077.major__21961.7247269072$1225342602$gmane$org@openvz.org>
-References: <1224285098-573-1-git-send-email-major@openvz.org>
-	<1224285098-573-11-git-send-email-major@openvz.org>
-	<4905E50C.8020803@cs.columbia.edu>
+Subject: Re: [Devel] Re: [PATCH 0/9] OpenVZ kernel based checkpointing/restart
+Date: Thu, 30 Oct 2008 10:02:44 +0400
+Message-ID: <200810300902.47067.major__10984.3225720853$1225346673$gmane$org@openvz.org>
+References: <1220439476-16465-1-git-send-email-major@openvz.org>
+	<200810271707.13580.major@openvz.org>
+	<4905D2AD.1070309@cs.columbia.edu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <4905E50C.8020803-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+In-Reply-To: <4905D2AD.1070309-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 Content-Disposition: inline
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
@@ -20,119 +20,109 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: devel-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org
+To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>, Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>, Cedric Le Goater <clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>, Daniel
 Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Monday 27 October 2008 18:58 Oren Laadan wrote:
+On Monday 27 October 2008 17:39 Oren Laadan wrote:
 > Andrey Mirkin wrote:
-> > The whole tree of processes can be checkpointed and restarted now.
-> > Shared objects are not supported yet.
+> > On Monday 20 October 2008 19:55 Dave Hansen wrote:
+> >> On Mon, 2008-10-20 at 16:14 +0400, Andrey Mirkin wrote:
+> >>> Right now my patchset (v2) provides an ability to checkpoint and
+> >>> restart a group of processes. The process of checkpointing and restart
+> >>> can be initiated from external process (not from the process which
+> >>> should be checkpointed).
+> >>
+> >> Absolutely.  Oren's code does it this way to make for a smaller patch at
+> >> first.  The syscall takes a pid argument so it is surely expected to be
+> >> expanded upon later.
+> >>
+> >>> Also I think that all the restart job (including process forking)
+> >>> should be done in kernel, as in this case we will not depend on user
+> >>> space and will be more secure. This is also implemented in my patchset.
+> >>
+> >> Do you think that this is an approach that Oren's patches are married
+> >> to, or is this a "feature" we can add on later?
 > >
-> > Signed-off-by: Andrey Mirkin <major-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
-> > ---
-> >  checkpoint/cpt_image.h   |    2 +
-> >  checkpoint/cpt_process.c |   24 +++++++++++++
-> >  checkpoint/rst_process.c |   85
-> > +++++++++++++++++++++++++++------------------- 3 files changed, 76
-> > insertions(+), 35 deletions(-)
-> >
-> > diff --git a/checkpoint/cpt_image.h b/checkpoint/cpt_image.h
-> > index e1fb483..f370df2 100644
-> > --- a/checkpoint/cpt_image.h
-> > +++ b/checkpoint/cpt_image.h
-> > @@ -128,6 +128,8 @@ struct cpt_task_image {
-> >  	__u64	cpt_nivcsw;
-> >  	__u64	cpt_min_flt;
-> >  	__u64	cpt_maj_flt;
-> > +	__u32	cpt_children_num;
-> > +	__u32	cpt_pad;
-> >  } __attribute__ ((aligned (8)));
-> >
-> >  struct cpt_mm_image {
-> > diff --git a/checkpoint/cpt_process.c b/checkpoint/cpt_process.c
-> > index 1f7a54b..d73ec3c 100644
-> > --- a/checkpoint/cpt_process.c
-> > +++ b/checkpoint/cpt_process.c
-> > @@ -40,6 +40,19 @@ static unsigned int encode_task_flags(unsigned int
-> > task_flags)
-> >
-> >  }
-> >
-> > +static int cpt_count_children(struct task_struct *tsk, struct
-> > cpt_context *ctx) +{
-> > +	int num = 0;
-> > +	struct task_struct *child;
-> > +
-> > +	list_for_each_entry(child, &tsk->children, sibling) {
-> > +		if (child->parent != tsk)
-> > +			continue;
-> > +		num++;
-> > +	}
-> > +	return num;
-> > +}
-> > +
+> > Well, AFAICS from Oren's patch set his approach is oriented on process
+> > creation in user space. I think we should choose right now what approach
+> > will be used for process creation.
 >
-> I noticed that don't take the appropriate locks when browsing through
-> tasks lists (siblings, children, global list). Although I realize that
-> the container should be frozen at this time, I keep wondering if this
-> is indeed always safe.
-You right here. We need to take tasklist_lock to be sure that everything will 
-be consistent.
+> This is inaccurate.
+>
+> I intentionally did not address how processes will be created, by
+> simply allowing either way to be added to the patch.
 
-> For instance, are you protected against an OOM killer that might just
-> occur uninvited and kill one of those tasks ?
+Yes, you right. Either way is possible with your patchset. But as I understand 
+in ZAP you are using user space process creation. No?
+That is why I think that your design is more convenient for user process 
+creation.
 
-OOM killer can't kill one of those tasks as all of them should be frozen at 
-that time and be in uninterruptible state. So, we can just do not think about 
-OOM at that time. But anyway you right and we need locking around browsing 
-tasks list.
+> I do agree that we probably want to decide how to do it. However,
+> there is also room to allow for both approaches, in a compatible
+> way, should we wish to explore both.
 
-> Can the administrator force an un-freeze of the container ?  Or perhaps
-> some error condition if the kernel cause that ?
+Yes, we can implement both approaches. Do you think we really need this?
 
-The main idea is that context should be protected with a mutex and only one 
-process can do some activity (freeze, dump, unfreeze, kill) with a container. 
-Right now it is not implemented at all, but in future it will be added.
+> > We have two options here: fork processes in kernel or fork them in user
+> > space. If process will be forked in user space, then there will be a gap
+> > when process will be in user space and can be killed with received signal
+> > before entering
+>
+> Why do we care about it ?
+> Why is there a difference if it is killed before or after entering
+> the kernel (e.g. user aborted restart, or kernel OOM kicked in) ?
+
+If one process is killed during restart then you can even do not notice that 
+(if processes are created from user space and then call sys_restart). And you 
+will get not the same state as before C/R.
+
+> > kernel. Also we will need a functionolity to create processes with
+> > predefined PID. I think it is not very good to provide such ability to
+> > user space. That is why we prefer in OpenVZ to do all the job in kernel.
+>
+> This is the weak side of creating the processes in user space -
+> that we need such an interface. Note, however, that we can
+> easily "hide" it inside the interface of the sys_restart() call,
+> and restrict how it may be used.
+
+Of course we can "hide" it somehow, but anyway we will have a hole and that is 
+not good.
+
+Anyway we should ask everyone what they think about user- and kernel- based 
+process creation.
+Dave, Serge, Cedric, Daniel, Louis what do you think about that?
 
 Andrey
 
-> >  int cpt_dump_task_struct(struct task_struct *tsk, struct cpt_context
-> > *ctx) {
-> >  	struct cpt_task_image *t;
-> > @@ -102,6 +115,7 @@ int cpt_dump_task_struct(struct task_struct *tsk,
-> > struct cpt_context *ctx) t->cpt_egid = tsk->egid;
-> >  	t->cpt_sgid = tsk->sgid;
-> >  	t->cpt_fsgid = tsk->fsgid;
-> > +	t->cpt_children_num = cpt_count_children(tsk, ctx);
+> >> I don't care which patch set we end up sticking in the kernel.  I'm
+> >> trying to figure out which code we can more easily build upon in the
+> >> future.  The fact that Oren's or yours can't do certain little things
+> >> right now does not bother me.
+> >>
+> >> Honestly, I'm a little more confident that everyone can work with Oren
+> >> since he managed to get 7 revisions of his patch out and make some
+> >> pretty large changes while in the same time the OpenVZ patch was only
+> >> released twice.  I'm not sure what has changed in the OpenVZ patch
+> >> between releases, either.
 > >
-> >  	err = ctx->write(t, sizeof(*t), ctx);
+> > That is my fault. I am working right now on my Ph.D, that is why my
+> > activity is not very high. But now I hope I will have more time for that.
 > >
-> > @@ -231,6 +245,16 @@ int cpt_dump_task(struct task_struct *tsk, struct
-> > cpt_context *ctx) err = cpt_dump_fpustate(tsk, ctx);
-> >  	if (!err)
-> >  		err = cpt_dump_registers(tsk, ctx);
-> > +	if (!err) {
-> > +		struct task_struct *child;
-> > +		list_for_each_entry(child, &tsk->children, sibling) {
-> > +			if (child->parent != tsk)
-> > +				continue;
-> > +			err = cpt_dump_task(child, ctx);
-> > +			if (err)
-> > +				break;
->
-> Here too.
->
-> [...]
->
-> Oren.
->
-> _______________________________________________
-> Containers mailing list
-> Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-> https://lists.linux-foundation.org/mailman/listinfo/containers
->
-> _______________________________________________
-> Devel mailing list
-> Devel-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org
-> https://openvz.org/mailman/listinfo/devel
+> >> Are there any reasons that you absolutely can not use the code Oren
+> >> posted?  Will it not fulfill your needs somehow?  If so, could you
+> >> please elaborate on how?
+> >
+> > We have one major difference with Oren's code - how processes are created
+> > during restr.
+> > Right now I'm trying to port kernel process creation on top of Oren's
+> > patches. I agree that working in collaboration will speed up merging of
+> > checkpointing to mainstream.
+> >
+> > Andrey
+> >
+> > P.S.: Sorry for late reply, my mailer attached your e-mail to wrong
+> > thread. _______________________________________________
+> > Containers mailing list
+> > Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+> > https://lists.linux-foundation.org/mailman/listinfo/containers
