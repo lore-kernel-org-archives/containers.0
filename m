@@ -1,19 +1,15 @@
-From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: Re: [Devel] Re: [PATCH 0/9] OpenVZ kernel based	checkpointing/restart
-Date: Thu, 30 Oct 2008 14:32:51 -0400
-Message-ID: <4909FDD3.5090806__33461.1731967472$1225391791$gmane$org@cs.columbia.edu>
-References: <1220439476-16465-1-git-send-email-major@openvz.org>
-	<200810271707.13580.major@openvz.org>
-	<4905D2AD.1070309@cs.columbia.edu>
-	<200810300902.47067.major@openvz.org>
-	<20081030114747.GL15171@hawkmoon.kerlabs.com>
-	<4909F2B5.7040907@cs.columbia.edu>
-	<20081030181418.GO15171@hawkmoon.kerlabs.com>
+From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [BIG RFC] Filesystem-based checkpoint
+Date: Thu, 30 Oct 2008 14:28:17 -0500
+Message-ID: <20081030192817.GA16340@us.ibm.com>
+References: <1225219047.12673.182.camel@nimitz>
+	<4909FAA8.5000107@cs.columbia.edu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20081030181418.GO15171-Hu8+6S1rdjywhHL9vcZdMVaTQe2KTcn/@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <4909FAA8.5000107-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -23,39 +19,76 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Louis.Rilling-aw0BnHfMbSpBDgjK7y7TUQ@public.gmane.org
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, Cedric Le Goater <clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>, Andrey Mirkin <major-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>, Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
+To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Cc: containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-
-
-Louis Rilling wrote:
-> On Thu, Oct 30, 2008 at 01:45:25PM -0400, Oren Laadan wrote:
->>
->> Louis Rilling wrote:
->>> In Kerrighed this is kernel-based, and will remain kernel-based because we
->>> checkpoint a distributed task tree, and want to restart it as mush as possible
->>> with the same distribution. The distributed protocol used for restart is
->>> currently too fragile and complex to rely on customized user-space
->>> implementations. That said, if someone brings very good arguments in favor of
->>> userspace implementations, we might consider changing this.
->> Zap also has distributed checkpoint which does not require strict
->> kernel-side ordering. Do you need that because you do SSI ?
+Quoting Oren Laadan (orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org):
 > 
-> Yes. Tasks from different nodes have parent-children, session leader, etc.
-> relationships, and the distributed management of struct pid lifecycle is a bit
-> touchy too. By the way, splitting the checkpoint image in one file for each task
-> helps us a lot to make restart parallel, because it is more efficient for the file
-> system to handle parallel reads of different files from different nodes than
-> parallel reads on a single file descriptor from different nodes.
+> I'm not sure why you say it's "un-linux-y" to begin with. But to the
 
-You can also make parallel restart work with the single stream, without
-much effort. Particularly if you store everything on the file system.
+The thing that is un-linux-y is specifically having user-space pass an
+fd to the kernel from which it reads/writes.  LSMs had to go to a lot of
+pain to avoid doing that for reading policy configuration at boot.
 
-In both cases, the limiting factor is shared resources - where one task
-cannot proceed with checkpoint because it waits for another task to first
-(re)create that resource.
+Of course it's now several years later, and moods and tastes change in
+the kernel community, but I suspect it's still frowned upon.
+
+> point, here are my thought:
+> 
+> 
+> 1. What you suggest is to expose the internal data to user space and
+> pull it. Isn't that what cryo tried to do ?  And the conclusion was
+> that it takes too many interfaces to work out, code in, provide, and
+> maintain forever, with issues related to backward compatibility and
+> what not. In fact, the conclusion was "let's do a kernel-blob" !
+
+Right, the problem with cryo was that it tried to do the checkpoint and
+restart themselves at too fine-grained a level in terms of kernel-user
+API.
+
+What Dave is suggesting (as I understand it) is just changing the way
+the data is shipped between kernel and user-space.  But to continue with
+sys_checkpoint() and sys_restart().  So I think it's a less fundamental
+change than you are thinking.
+
+Now maybe eventually he's going to propose something more esotaric where
+doing the mount() actually starts the checkpoint (that's where I figured
+he'd be heading), but I think it would still be one action on the part
+of userspace telling the kernel "do a checkpoint".
+
+(Or am I wrong on that, Dave?)
 
 [...]
 
-Oren.
+(I'll let Dave respond to your other questions i.e. about what you gain)
+
+> If this is only to be able to parallelize checkpoint - then let's discuss
+> the problem, not a specific solution.
+
+The specific problem is that you have userspace pass a file fd to the
+kernel and kernel reading/writing to it, which is un-linuxy.
+
+> > It enables us to do all the I/O from userspace: no in-kernel
+> > sys_read/write().
+> 
+> What's so wrong with in-kernel vfs_read/write() ?  You mentioned deadlocks,
+
+It's un-linux-y :)
+
+[...]
+
+> 5. Your suggestions leaves too many details out. Yes, it's a call for
+> discussion. But still. Zap, OpenVZ and other systems build on experience
+> and working code. We know how to do incremental, live, and other goodies.
+> I'm not sure how these would work with your scheme.
+
+Not sure what problems you envision, but taking the specific example of
+pre-dump to prepare for a quick live migration, I could envision a
+pre_checkpoint() system call creating the checkpoint data directory
+and starting to dump out the data, and starting to copy that data
+over the network (optimistically), after which the do_checkpoint()
+syscall checks file timestamps and quickly dumps and network-copies the
+data which has changed up until the container was frozen.
+
+-serge
