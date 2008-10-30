@@ -1,8 +1,7 @@
 From: Vivien Chappelier <vivien.chappelier-L+G57L1VLRbR7s880joybQ@public.gmane.org>
-Subject: [PATCH 3/6] add get_net_ns_by_id() to get a reference to a network
-	namespace from its nsid.
-Date: Thu, 30 Oct 2008 14:08:17 +0100
-Message-ID: <20081030130817.GC17665@thomson.net>
+Subject: [PATCH 6/6] netns: configurable number of initial network namespaces
+Date: Thu, 30 Oct 2008 14:11:11 +0100
+Message-ID: <20081030131111.GF17665@thomson.net>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -20,104 +19,60 @@ Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 To: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-This patch adds a __get_net_ns_by_id() to obtain look for and obtain a reference to a network namespace via its nsid.
-The corresponding get_net_ns_by_id() takes the rtnl_lock.
-
+This allows the creation of more than one network namespace at boot time.
 ---
- include/net/net_namespace.h |   34 +++++++++++++++++++++++++++++++---
- net/core/net_namespace.c    |   12 ++++++++++++
- 2 files changed, 43 insertions(+), 3 deletions(-)
+ net/Kconfig              |    7 +++++++
+ net/core/net_namespace.c |   19 ++++++++++++++++++-
+ 2 files changed, 25 insertions(+), 1 deletions(-)
 
-diff --git a/include/net/net_namespace.h b/include/net/net_namespace.h
-index 8bde629..afb2578 100644
---- a/include/net/net_namespace.h
-+++ b/include/net/net_namespace.h
-@@ -104,8 +104,13 @@ static inline struct net *copy_net_ns(unsigned long flags, struct net *net_ns)
+diff --git a/net/Kconfig b/net/Kconfig
+index 8c3d97c..c896bdf 100644
+--- a/net/Kconfig
++++ b/net/Kconfig
+@@ -32,6 +32,13 @@ config NET_NS
+ 	  Allow user space to create what appear to be multiple instances
+ 	  of the network stack.
  
- extern struct list_head net_namespace_list;
- 
++config NET_NS_NR
++	int "Initial number of network namespaces"
++	default 1
++	depends on NET_NS
++	help
++	  Number of network stacks to create at start-up.
 +
-+#define for_each_net(VAR)				\
-+	list_for_each_entry(VAR, &net_namespace_list, list)
-+
- #ifdef CONFIG_NET_NS
- extern void __put_net(struct net *net);
-+extern struct net *get_net_ns_by_id(int id);
- 
- static inline int net_alive(struct net *net)
- {
-@@ -141,6 +146,19 @@ int net_eq(const struct net *net1, const struct net *net2)
- {
- 	return net1 == net2;
- }
-+
-+static inline struct net *__get_net_ns_by_id(int id)
-+{
-+	struct net *net;
-+
-+	for_each_net(net)
-+		if (net->id == id)
-+			return maybe_get_net(net);
-+
-+	return NULL;
-+}
-+extern struct net *get_net_ns_by_id(int id);
-+
- #else
- 
- static inline int net_alive(struct net *net)
-@@ -167,6 +185,19 @@ int net_eq(const struct net *net1, const struct net *net2)
- {
- 	return 1;
- }
-+
-+static inline struct net *__get_net_ns_by_id(int id)
-+{
-+	if (id == 0)
-+		return &init_net;
-+	return NULL;
-+}
-+
-+static inline struct net *get_net_ns_by_id(int id)
-+{
-+	return __get_net_ns_by_id(id);
-+}
-+
- #endif
- 
- 
-@@ -195,9 +226,6 @@ static inline void release_net(struct net *net)
- #endif
- 
- 
--#define for_each_net(VAR)				\
--	list_for_each_entry(VAR, &net_namespace_list, list)
--
- #ifdef CONFIG_NET_NS
- #define __net_init
- #define __net_exit
+ source "net/packet/Kconfig"
+ source "net/unix/Kconfig"
+ source "net/xfrm/Kconfig"
 diff --git a/net/core/net_namespace.c b/net/core/net_namespace.c
-index 418abe0..596cb83 100644
+index 596cb83..1cafa31 100644
 --- a/net/core/net_namespace.c
 +++ b/net/core/net_namespace.c
-@@ -203,6 +203,18 @@ void __put_net(struct net *net)
- }
- EXPORT_SYMBOL_GPL(__put_net);
+@@ -297,8 +297,25 @@ static int __init net_ns_init(void)
+ 	rtnl_unlock();
  
-+struct net *get_net_ns_by_id(int id)
-+{
-+	struct net *net;
+ 	mutex_unlock(&net_mutex);
 +
-+	rtnl_lock();
-+	net = __get_net_ns_by_id(id);
-+	rtnl_unlock();
++#if defined(CONFIG_NET_NS) && CONFIG_NET_NS_NR > 1
++	/* Create additional initial namespaces */
++	{
++		struct net *net;
++		int i;
 +
-+	return net;
-+}
-+EXPORT_SYMBOL_GPL(get_net_ns_by_id);
++		for (i = 1; i < CONFIG_NET_NS_NR; i++) {
++			net = copy_net_ns(CLONE_NEWNET, &init_net);
++			if (IS_ERR(net)) {
++				err = PTR_ERR(net);
++				break;
++			}
++		}
++	}
++#endif
 +
- #else
- struct net *copy_net_ns(unsigned long flags, struct net *old_net)
- {
+ 	if (err)
+-		panic("Could not setup the initial network namespace");
++		panic("Could not setup the initial network namespace(s)");
+ 
+ 	return 0;
+ }
 -- 
 1.5.4.4
