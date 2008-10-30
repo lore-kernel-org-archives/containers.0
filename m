@@ -1,7 +1,8 @@
 From: Vivien Chappelier <vivien.chappelier-L+G57L1VLRbR7s880joybQ@public.gmane.org>
-Subject: [PATCH 1/6] netns: add in ida ID to identify the network namespace
-Date: Thu, 30 Oct 2008 14:06:29 +0100
-Message-ID: <20081030130629.GA17665@thomson.net>
+Subject: [PATCH 5/6] netlink: add IFLA_NET_NS to move interface to network
+	namespace by nsid
+Date: Thu, 30 Oct 2008 14:10:14 +0100
+Message-ID: <20081030131014.GE17665@thomson.net>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -19,79 +20,57 @@ Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 To: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Patch initially submitted by Benjamin Thery.
-
-This patch adds in 'id' member to struct net. This member contains an
-IDA ID. The id is allocated at netns creation.
-
-This 'id' will be used to reference network namespaces without the need for a pid.
+This corresponds exactly to IFLA_NET_NS_PID except it takes a nsid parameter instead of a pid.
 ---
- include/net/net_namespace.h |    2 ++
- net/core/net_namespace.c    |   24 ++++++++++++++++++++++++
- 2 files changed, 26 insertions(+), 0 deletions(-)
+ include/linux/if_link.h |    1 +
+ net/core/rtnetlink.c    |   16 ++++++++++++++++
+ 2 files changed, 17 insertions(+), 0 deletions(-)
 
-diff --git a/include/net/net_namespace.h b/include/net/net_namespace.h
-index 708009b..8bde629 100644
---- a/include/net/net_namespace.h
-+++ b/include/net/net_namespace.h
-@@ -75,6 +75,8 @@ struct net {
- #endif
- #endif
- 	struct net_generic	*gen;
-+
-+	int			id;
+diff --git a/include/linux/if_link.h b/include/linux/if_link.h
+index f9032c8..9e473eb 100644
+--- a/include/linux/if_link.h
++++ b/include/linux/if_link.h
+@@ -80,6 +80,7 @@ enum
+ #define IFLA_LINKINFO IFLA_LINKINFO
+ 	IFLA_NET_NS_PID,
+ 	IFLA_IFALIAS,
++	IFLA_NET_NS,
+ 	__IFLA_MAX
  };
  
+diff --git a/net/core/rtnetlink.c b/net/core/rtnetlink.c
+index 31f29d2..3e90c0b 100644
+--- a/net/core/rtnetlink.c
++++ b/net/core/rtnetlink.c
+@@ -718,6 +718,7 @@ const struct nla_policy ifla_policy[IFLA_MAX+1] = {
+ 	[IFLA_LINKINFO]		= { .type = NLA_NESTED },
+ 	[IFLA_NET_NS_PID]	= { .type = NLA_U32 },
+ 	[IFLA_IFALIAS]	        = { .type = NLA_STRING, .len = IFALIASZ-1 },
++	[IFLA_NET_NS]		= { .type = NLA_U32 },
+ };
  
-diff --git a/net/core/net_namespace.c b/net/core/net_namespace.c
-index f1d07b5..894b35e 100644
---- a/net/core/net_namespace.c
-+++ b/net/core/net_namespace.c
-@@ -26,6 +26,16 @@ EXPORT_SYMBOL(init_net);
- #define INITIAL_NET_GEN_PTRS	13 /* +1 for len +2 for rcu_head */
- 
- /*
-+ * IDs allocated from this ida are used as a suffix in sysfs to tag
-+ * devices belonging to each netns (other than init_net).
-+ * Only 4 characters are left to store a separator plus this tag in sysfs
-+ * (BUS_ID_SIZE-IFNAMSIZ)
-+ * Thus, this limits us to 4095 ("FFF") simultaneous network namespaces.
-+ */
-+static DEFINE_IDA(net_id_ida);
-+#define NET_ID_MAX 0xFFF
-+
-+/*
-  * setup_net runs the initializers for the network namespace object.
-  */
- static __net_init int setup_net(struct net *net)
-@@ -40,7 +50,20 @@ static __net_init int setup_net(struct net *net)
- 	atomic_set(&net->use_count, 0);
- #endif
- 
-+	/* Get an ID */
-+again:
-+	error = ida_get_new(&net_id_ida, &net->id);
-+	if (error) {
-+		if (error == -EAGAIN) {
-+			ida_pre_get(&net_id_ida, GFP_KERNEL);
-+			goto again;
-+		}
-+		goto out;
-+	}
- 	error = -ENOMEM;
-+	if (net->id > NET_ID_MAX)
-+		goto out;
-+
- 	ng = kzalloc(sizeof(struct net_generic) +
- 			INITIAL_NET_GEN_PTRS * sizeof(void *), GFP_KERNEL);
- 	if (ng == NULL)
-@@ -97,6 +120,7 @@ static void net_free(struct net *net)
+ static const struct nla_policy ifla_info_policy[IFLA_INFO_MAX+1] = {
+@@ -779,6 +780,21 @@ static int do_setlink(struct net_device *dev, struct ifinfomsg *ifm,
+ 		modified = 1;
  	}
- #endif
- 	kfree(net->gen);
-+	ida_remove(&net_id_ida, net->id);
- 	kmem_cache_free(net_cachep, net);
- }
  
++	if (tb[IFLA_NET_NS]) {
++		struct net *net;
++
++		net = __get_net_ns_by_id(nla_get_u32(tb[IFLA_NET_NS]));
++		if (net == NULL) {
++			err = -EINVAL;
++			goto errout;
++		}
++		err = dev_change_net_namespace(dev, net, ifname);
++		put_net(net);
++		if (err)
++			goto errout;
++		modified = 1;
++	}
++
+ 	if (tb[IFLA_MAP]) {
+ 		struct rtnl_link_ifmap *u_map;
+ 		struct ifmap k_map;
 -- 
 1.5.4.4
