@@ -1,14 +1,16 @@
-From: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: Re: [BIG RFC] Filesystem-based checkpoint
-Date: Thu, 30 Oct 2008 17:09:17 -0700
-Message-ID: <1225411757.12673.383.camel@nimitz>
-References: <1225219047.12673.182.camel@nimitz>
-	<m163n9y7yb.fsf@frodo.ebiederm.org>
+From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [RFC v8][PATCH 11/12] External checkpoint of a task other than
+	ourself
+Date: Thu, 30 Oct 2008 21:41:24 -0500
+Message-ID: <20081031024124.GA7885__24529.2531479665$1225421034$gmane$org@us.ibm.com>
+References: <1225374675-22850-1-git-send-email-orenl@cs.columbia.edu>
+	<1225374675-22850-12-git-send-email-orenl@cs.columbia.edu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <m163n9y7yb.fsf-B27657KtZYmhTnVgQlOflh2eb7JE58TQ@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <1225374675-22850-12-git-send-email-orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,75 +20,98 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Cc: containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
+To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Cc: linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Linus Torvalds <torvalds-3NddpPZAyC0@public.gmane.org>, Alexander Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, "H. Peter Anvin" <hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org>, Thomas Gleixner <tglx-hfZtesqFncYOwBW4kG4KsQ@public.gmane.org>, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Thu, 2008-10-30 at 16:33 -0700, Eric W. Biederman wrote:
-> Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org> writes:
-> > I hate the syscall.  It's a very un-Linux-y way of doing things.  There,
-> > I said it.  Here's an alternative.  It still uses the syscall to
-> > initiate things, but it uses debugfs to transport the data instead.
-> > This is just a concept demonstration.  It doesn't actually work, and I
-> > wouldn't be using debugfs in practice.
+Quoting Oren Laadan (orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org):
+> Now we can do "external" checkpoint, i.e. act on another task.
 > 
-> A syscall is a very linux-y way to do it.
-
-Darn, I thought I'd be able to sneak that one by.
-
-> If you called it a core dump instead of a checkpoint you have exactly the same set
-> of issues.
-
-I completely agree with you that there's a lot of common ground here
-between coredumps and checkpoints.  I'm not aware of any applications
-like, let's say Oracle, that use coredumps in the process of normal
-execution.  Checkpoints must be more scalable and lower overhead than
-coredumps are.
-
-> Why we are doing vfs_write instead of file->f_op->write I don't understand.
-
-That's an excellent question.  I assume you're asking because at least
-the elf core dump code uses it, right?
-
-> > System calls in Linux are fast.  Doing lots of them is not a problem.
-> > If it becomes one, we can always export a condensed version of this
-> > format next to the expanded one, kinda like ftrace does.  Atomicity with
-> > this approach is also not a problem.  The system call in this approach
-> > doesn't return until the checkpoint is completely written out.
+> sys_checkpoint() now looks up the target pid (in our namespace) and
+> checkpoints that corresponding task. That task should be the root of
+> a container.
 > 
-> Extra copies for something (memory) you want to transfer quickly
-> and efficiently is a problem.
-
-That's definitely true.  But, as I said, this approach isn't bound to
-copying everything.  We have the flexibility to choose what we do.
-
-> Reading the memory of another process is a problem, to the point
-> that the /proc/<pid>/mem interface has been removed from the kernel.
-
-Yes, this is certainly true.  All of the ptrace-related security issues
-surely tell us something.  But, I'm not sure of your point here.  Are
-you saying that using sys_checkpoint() to dump a process's pages is
-inherently safer than approach that uses a filesystem in order to do the
-same?
-
-> > Want to do a fast checkpoint?  Fine, copy all data, use a lot of memory,
-> > store it in-kernel.  Dump that out when the filesystem is accessed.
-> > Destroy it when userspace asks.
+> sys_restart() remains the same, as the restart is always done in the
+> context of the restarting task.
 > 
-> > So, why not?
-> 
-> Besides the part of creating a bunch of questionable interfaces
-> that we need to support forever.
-> 
-> Ultimately the question is how do you do checkpoint restore and I just
-> don't see that happening with a filesystem interface.  Way way way too many
-> dangerous syscalls that are only needed for one thing.
+> Signed-off-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 
-I completely understand what you're saying here.  But, could you
-distinguish how this differs from the current way that sys_checkpoint()
-does it?  Surely, the checkpoint format is an ABI.  It is a complex ABI
-with many, many constituent structures.  This is an ABI with many, many,
-ways of reading simple data.  Seems like just slicing up the problem
-differently to me.
+Ok, I'm at a loss right now, and I'm not sure who to blame - Oren,
+Daniel, Matt, or someone else.
 
--- Dave
+In one terminal I do:
+
+	lxc-execute -n nonet sleep 100
+
+then in another terminal do
+	
+	lxc-checkpoint -s -n nonet > /tmp/o
+
+or
+	lxc-checkpoint -n nonet > /tmp/o
+followed by ctrl-c in the lxc-execute terminal.
+
+Without fail, the second time I do this (if not the first), I get
+a BUG (see below).  It really does look like it should have
+nothing to do with the c/r patches, but I can't reproduce this
+any other way.  I've tried doing
+
+	lxc-freeze -n nonet; lxc-unfreeze -n nonet; lxc-stop -n nonet
+
+I've tried manually doing freeze, checkpoint, unfreeze of containers
+hand-crafted to look like what lxc-execute creates (two tasks in private
+namespaces with private /proc mount, kill container inits of populated
+containers (bc it really looks like another task-exit-vs-container-cleanup
+race).
+
+I can't find any other way to reproduce this.
+
+(This is using Oren's patchset with freezer on top, and using
+a freshly pulled liblxc from cvs)
+
+-serge
+
+login: ------------[ cut here ]------------
+kernel BUG at fs/dcache.c:666!
+invalid opcode: 0000 [#1] SMP
+Modules linked in:
+
+Pid: 2963, comm: [vinit] Not tainted (2.6.27-rc9-00020-g2265283-dirty #344)
+EIP: 0060:[<c0188b5a>] EFLAGS: 00010292 CPU: 1
+EIP is at shrink_dcache_for_umount_subtree+0x14b/0x1fe
+EAX: 0000004e EBX: c04d22a7 ECX: 00000001 EDX: de6b5160
+ESI: df4040a0 EDI: ffffffff EBP: de779d7c ESP: de779d4c
+ DS: 007b ES: 007b FS: 00d8 GS: 0000 SS: 0068
+Process [vinit] (pid: 2963, ti=de778000 task=de6b5160 task.ti=de778000)
+Stack: c04d1eb2 df4040a0 00000001 df404118 ffffffff c04d22a7 df830698 df404118
+       00000004 df830400 c041e788 00000020 de779d88 c0188c3a df830400 de779d98
+       c017b521 00000001 c054faf0 de779da4 c017b60b df830400 de779db0 c017b64d
+Call Trace:
+ [<c0188c3a>] ? shrink_dcache_for_umount+0x2d/0x3a
+ [<c017b521>] ? generic_shutdown_super+0x15/0xd3
+ [<c017b60b>] ? kill_anon_super+0xc/0x35
+ [<c017b64d>] ? kill_litter_super+0x19/0x1c
+ [<c017b6a3>] ? deactivate_super+0x53/0x6b
+ [<c018d422>] ? mntput_no_expire+0xc3/0xe7
+ [<c018d4b1>] ? release_mounts+0x6b/0x7a
+ [<c018d522>] ? __put_mnt_ns+0x62/0x70
+ [<c0134cad>] ? free_nsproxy+0x25/0x80
+ [<c0134d4c>] ? switch_task_namespaces+0x44/0x49
+ [<c0134d5b>] ? exit_task_namespaces+0xa/0xc
+ [<c012403a>] ? do_exit+0x55f/0x6c9
+ [<c0124202>] ? do_group_exit+0x5e/0x85
+ [<c012c243>] ? get_signal_to_deliver+0x2ea/0x303
+ [<c010232c>] ? do_notify_resume+0x6b/0x715
+ [<c013bcfe>] ? lock_release_holdtime+0x1a/0x153
+ [<c013da7e>] ? trace_hardirqs_on+0xb/0xd
+ [<c013da7e>] ? trace_hardirqs_on+0xb/0xd
+ [<c0131aa5>] ? remove_wait_queue+0x30/0x34
+ [<c0123903>] ? do_wait+0x1d6/0x284
+ [<c0152ecb>] ? audit_syscall_exit+0x2b1/0x2cc
+ [<c013da52>] ? trace_hardirqs_on_caller+0xe1/0x102
+ [<c01031a6>] ? work_notifysig+0x13/0x19
+ =======================
+Code: 1c 8b 18 8b 46 40 89 45 ec 8b 46 28 85 c0 74 03 8b 50 20 8d 81 98 02 00 00 50 53 57 ff 75 ec 52 56 68 b2 1e 4d c0 e8 9a 04 28 00 <0f> 0b 83 c4 1c eb fe 8b 7e 34 39 f7 75 04 31 ff eb 03 f0 ff 0f
+EIP: [<c0188b5a>] shrink_dcache_for_umount_subtree+0x14b/0x1fe SS:ESP 0068:de779d4c
+---[ end trace 218551429ab07a44 ]---
+Fixing recursive fault but reboot is needed!
