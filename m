@@ -1,13 +1,13 @@
 From: Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
-Subject: [patch 1/2][RFC] add socketat syscall
-Date: Fri, 31 Oct 2008 22:56:03 +0100
-Message-ID: <20081031215900.810348746@fr.ibm.com>
+Subject: [patch 2/2][RFC] Factor sys_socket and sys_socketat
+Date: Fri, 31 Oct 2008 22:56:04 +0100
+Message-ID: <20081031215903.669547269@fr.ibm.com>
 References: <20081031215602.655672481@fr.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline; filename=add-socketat-syscall.patch
+Content-Disposition: inline; filename=factor-out-socket-and-socketat-code.patch
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -21,135 +21,92 @@ To: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org, vivien.chappelier-L+G57L1V
 Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-This patch adds the socketat syscall which allows to specify in
-which network namespace we want to create a socket. The network
-namespace destination is referred by a socket fd previously opened
-in the destination network namespace.
+The common code between sys_socket and sys_socketat has been
+grouped into the socket_create function. The both functions make
+use of it.
 
 Signed-off-by: Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
 ---
- arch/x86/include/asm/unistd_32.h   |    1 
- arch/x86/include/asm/unistd_64.h   |    3 +-
- arch/x86/kernel/syscall_table_32.S |    1 
- include/linux/syscalls.h           |    1 
- kernel/sys_ni.c                    |    1 
- net/socket.c                       |   45 +++++++++++++++++++++++++++++++++++++
- 6 files changed, 51 insertions(+), 1 deletion(-)
+ net/socket.c |   41 ++++++++---------------------------------
+ 1 file changed, 8 insertions(+), 33 deletions(-)
 
-Index: net-next-2.6/arch/x86/include/asm/unistd_32.h
-===================================================================
---- net-next-2.6.orig/arch/x86/include/asm/unistd_32.h
-+++ net-next-2.6/arch/x86/include/asm/unistd_32.h
-@@ -338,6 +338,7 @@
- #define __NR_dup3		330
- #define __NR_pipe2		331
- #define __NR_inotify_init1	332
-+#define __NR_socketat           333
- 
- #ifdef __KERNEL__
- 
-Index: net-next-2.6/arch/x86/include/asm/unistd_64.h
-===================================================================
---- net-next-2.6.orig/arch/x86/include/asm/unistd_64.h
-+++ net-next-2.6/arch/x86/include/asm/unistd_64.h
-@@ -653,7 +653,8 @@ __SYSCALL(__NR_dup3, sys_dup3)
- __SYSCALL(__NR_pipe2, sys_pipe2)
- #define __NR_inotify_init1			294
- __SYSCALL(__NR_inotify_init1, sys_inotify_init1)
--
-+#define __NR_socketat                           295
-+__SYSCALL(__NR_socketat, sys_socketat)
- 
- #ifndef __NO_STUBS
- #define __ARCH_WANT_OLD_READDIR
-Index: net-next-2.6/arch/x86/kernel/syscall_table_32.S
-===================================================================
---- net-next-2.6.orig/arch/x86/kernel/syscall_table_32.S
-+++ net-next-2.6/arch/x86/kernel/syscall_table_32.S
-@@ -332,3 +332,4 @@ ENTRY(sys_call_table)
- 	.long sys_dup3			/* 330 */
- 	.long sys_pipe2
- 	.long sys_inotify_init1
-+	.long sys_socketat
 Index: net-next-2.6/net/socket.c
 ===================================================================
 --- net-next-2.6.orig/net/socket.c
 +++ net-next-2.6/net/socket.c
-@@ -1253,6 +1253,51 @@ out_release:
+@@ -1216,7 +1216,7 @@ int sock_create_kern(int family, int typ
+ 	return __sock_create(&init_net, family, type, protocol, res, 1);
+ }
+ 
+-asmlinkage long sys_socket(int family, int type, int protocol)
++static int socket_create(struct net *net, int family, int type, int protocol)
+ {
+ 	int retval;
+ 	struct socket *sock;
+@@ -1236,7 +1236,7 @@ asmlinkage long sys_socket(int family, i
+ 	if (SOCK_NONBLOCK != O_NONBLOCK && (flags & SOCK_NONBLOCK))
+ 		flags = (flags & ~SOCK_NONBLOCK) | O_NONBLOCK;
+ 
+-	retval = sock_create(family, type, protocol, &sock);
++	retval = __sock_create(net, family, type, protocol, &sock, 0);
+ 	if (retval < 0)
+ 		goto out;
+ 
+@@ -1253,49 +1253,24 @@ out_release:
  	return retval;
  }
  
-+asmlinkage long sys_socketat(int fd, int family, int type, int protocol)
++asmlinkage long sys_socket(int family, int type, int protocol)
 +{
-+	int retval, fput_needed;
-+	struct socket *sock;
-+	struct socket *sockat;
-+	struct net *net;
-+	int flags;
-+
-+	/* Check the SOCK_* constants for consistency.  */
-+	BUILD_BUG_ON(SOCK_CLOEXEC != O_CLOEXEC);
-+	BUILD_BUG_ON((SOCK_MAX | SOCK_TYPE_MASK) != SOCK_TYPE_MASK);
-+	BUILD_BUG_ON(SOCK_CLOEXEC & SOCK_TYPE_MASK);
-+	BUILD_BUG_ON(SOCK_NONBLOCK & SOCK_TYPE_MASK);
-+
-+	flags = type & ~SOCK_TYPE_MASK;
-+	if (flags & ~(SOCK_CLOEXEC | SOCK_NONBLOCK))
-+		return -EINVAL;
-+	type &= SOCK_TYPE_MASK;
-+
-+	if (SOCK_NONBLOCK != O_NONBLOCK && (flags & SOCK_NONBLOCK))
-+		flags = (flags & ~SOCK_NONBLOCK) | O_NONBLOCK;
-+
-+	sock = sockfd_lookup_light(fd, &retval, &fput_needed);
-+	if (!sock)
-+		goto out;
-+
-+	net = sock_net(sock->sk);
-+
-+	retval = __sock_create(net, family, type, protocol, &sockat, 0);
-+	if (retval)
-+		goto out_fput;
-+
-+	retval = sock_map_fd(sock, flags & (O_CLOEXEC | O_NONBLOCK));
-+	if (retval < 0)
-+		goto out_release;
-+out_fput:
-+	fput_light(sock->file, fput_needed);
-+out:
-+	return retval;
-+
-+out_release:
-+	sock_release(sockat);
-+	goto out;
++	return socket_create(current->nsproxy->net_ns, family, type, protocol);
 +}
 +
+ asmlinkage long sys_socketat(int fd, int family, int type, int protocol)
+ {
+ 	int retval, fput_needed;
+ 	struct socket *sock;
+-	struct socket *sockat;
+-	struct net *net;
+-	int flags;
+-
+-	/* Check the SOCK_* constants for consistency.  */
+-	BUILD_BUG_ON(SOCK_CLOEXEC != O_CLOEXEC);
+-	BUILD_BUG_ON((SOCK_MAX | SOCK_TYPE_MASK) != SOCK_TYPE_MASK);
+-	BUILD_BUG_ON(SOCK_CLOEXEC & SOCK_TYPE_MASK);
+-	BUILD_BUG_ON(SOCK_NONBLOCK & SOCK_TYPE_MASK);
+-
+-	flags = type & ~SOCK_TYPE_MASK;
+-	if (flags & ~(SOCK_CLOEXEC | SOCK_NONBLOCK))
+-		return -EINVAL;
+-	type &= SOCK_TYPE_MASK;
+-
+-	if (SOCK_NONBLOCK != O_NONBLOCK && (flags & SOCK_NONBLOCK))
+-		flags = (flags & ~SOCK_NONBLOCK) | O_NONBLOCK;
+ 
+ 	sock = sockfd_lookup_light(fd, &retval, &fput_needed);
+ 	if (!sock)
+ 		goto out;
+ 
+-	net = sock_net(sock->sk);
+-
+-	retval = __sock_create(net, family, type, protocol, &sockat, 0);
+-	if (retval)
+-		goto out_fput;
+-
+-	retval = sock_map_fd(sock, flags & (O_CLOEXEC | O_NONBLOCK));
+-	if (retval < 0)
+-		goto out_release;
+-out_fput:
++	retval = socket_create(sock_net(sock->sk), family, type, protocol);
+ 	fput_light(sock->file, fput_needed);
+ out:
+ 	return retval;
+-
+-out_release:
+-	sock_release(sockat);
+-	goto out;
+ }
+ 
  /*
-  *	Create a pair of connected sockets.
-  */
-Index: net-next-2.6/include/linux/syscalls.h
-===================================================================
---- net-next-2.6.orig/include/linux/syscalls.h
-+++ net-next-2.6/include/linux/syscalls.h
-@@ -423,6 +423,7 @@ asmlinkage long sys_recvfrom(int, void _
- 				struct sockaddr __user *, int __user *);
- asmlinkage long sys_recvmsg(int fd, struct msghdr __user *msg, unsigned flags);
- asmlinkage long sys_socket(int, int, int);
-+asmlinkage long sys_socketat(int, int, int, int);
- asmlinkage long sys_socketpair(int, int, int, int __user *);
- asmlinkage long sys_socketcall(int call, unsigned long __user *args);
- asmlinkage long sys_listen(int, int);
-Index: net-next-2.6/kernel/sys_ni.c
-===================================================================
---- net-next-2.6.orig/kernel/sys_ni.c
-+++ net-next-2.6/kernel/sys_ni.c
-@@ -40,6 +40,7 @@ cond_syscall(sys_send);
- cond_syscall(sys_recvfrom);
- cond_syscall(sys_recv);
- cond_syscall(sys_socket);
-+cond_syscall(sys_socketat);
- cond_syscall(sys_setsockopt);
- cond_syscall(compat_sys_setsockopt);
- cond_syscall(sys_getsockopt);
 
 -- 
