@@ -1,17 +1,18 @@
-From: Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 0/6] netns: add linux-vrf features via network namespaces
-Date: Fri, 31 Oct 2008 21:48:25 +0100
-Message-ID: <490B6F19.4060206@fr.ibm.com>
-References: <4909B10A.8090403@thomson.net> <4909DEC8.9090102@thomson.net>
-	<m14p2tznoz.fsf@frodo.ebiederm.org>
-	<200810311046.17506.andreas.aaen@tietoenator.com>
-	<490B1384.7030001@fr.ibm.com> <m1zlkksi91.fsf@frodo.ebiederm.org>
-	<m13aicsgr2.fsf@frodo.ebiederm.org>
+From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
+Subject: Re: [BIG RFC] Filesystem-based checkpoint
+Date: Fri, 31 Oct 2008 13:51:53 -0700
+Message-ID: <m1r65wpjx2.fsf@frodo.ebiederm.org>
+References: <1225219047.12673.182.camel@nimitz>
+	<m163n9y7yb.fsf@frodo.ebiederm.org>
+	<1225411757.12673.383.camel@nimitz>
+	<m1k5bpwj8j.fsf@frodo.ebiederm.org>
+	<1225462902.12673.398.camel@nimitz>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <m13aicsgr2.fsf-B27657KtZYmhTnVgQlOflh2eb7JE58TQ@public.gmane.org>
+In-Reply-To: <1225462902.12673.398.camel@nimitz> (Dave Hansen's message of
+	"Fri, 31 Oct 2008 07:21:42 -0700")
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -21,40 +22,47 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Cc: containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Eric W. Biederman wrote:
-> Thinking it over a little more I have the following thought.
-> 
-> For binding a socket to a namespace let's use the a fd arg.
-> That way we can either supply another existing network socket
-> or the result of an open call.  Simple, and faster if you
-> are creating more than one socket in the other network namespace.
-> 
-> I really don't like the idea of binding a socket into a namespace.
-> Especially after looking at the arguments to socket(2).
-> The network namespace may be incomplete and you may create a socket
-> in a network namespace that way that we could not exist normally.
-> That plus it puts lots of races in code that finds the namespace of
-> a socket.
-> 
-> 
-> So in some form let's implement socketat. 
-> int socketat(int ns, int domain, int type, int protocol, int flags);
+Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org> writes:
 
-Is the 'ns' arg a fd from a socket just after the unshare ?
+>> I was thinking about restore.  Creating objects with a certain id can
+>> easily be a security risk if you are not creating the namespace those
+>> objects live in at the same time.  There is currently the downside
+>> that we can't create namespaces as unprivileged users ( The
+>> implementation of suid is so annoying). But the general concept still
+>> applies, and if we ever get the uid namespace correct we will be able
+>> to create namespaces as unprivileged users.
+>
+> Eric, you were saying that my interface had way too many "dangerous
+> syscalls".  How does this relate to user namespaces and creating objects
+> with particular ids?  Surely if the true problem with my suggested
+> approach has to do with creating empty namespaces, the same problem
+> exists with the sys_checkpoint() approach.
 
-> We need the flags field so we can accomodate the O_CLOEXEC flag.
-> 
-> 
-> That should be very straight forward.  Implementable now, without
-> a magic filesystem.   And then the filesystem would just provide
-> the global naming and process independence.
+Ok. Some concrete examples to put this in context.
 
-Assuming the ns arg is a fd from a socket created in a specific network 
-namespace, I agree this is quite easy to implement and consistent with 
-the refcounting of the netns. Furthermore that follows the logic of the 
-network devices, one can be created in another netns using the pid as 
-identifier.
+First the class of problem I am talking about is the classic unix temp file
+security hole.
+
+A specific example is fork_and_set_child_pid();
+
+Suppose there is a important system daemon that dies and it's pid is 23.
+It dies and doesn't delete it's pid file.
+A malicious user notices this and does for_and_set_child_pid(23);
+Later someone checks to see if the important system daemon is running,
+sees a process at pid 23, and so does not restart it.
+A DOS attack.
+
+In a sys_restore() scenario at the very start you can check to make
+certain that the reference count for the namespaces is 1 and that they
+are empty.  Which means there is no chance of confusing user space.
+
+With fork_and_set_child_pid() what is a simple cheap one time check
+becomes an expensive painful one, if you can even implement it at all.
+
+The difference is that with a bunch of small pieces you loose atomicity. 
+
+Eric
