@@ -1,17 +1,15 @@
-From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [BIG RFC] Filesystem-based checkpoint
-Date: Fri, 31 Oct 2008 08:48:41 -0500
-Message-ID: <20081031134841.GA11140@us.ibm.com>
-References: <1225219047.12673.182.camel@nimitz>
-	<m163n9y7yb.fsf@frodo.ebiederm.org>
-	<1225411757.12673.383.camel@nimitz>
-	<m1k5bpwj8j.fsf@frodo.ebiederm.org>
+From: Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH 0/6] netns: add linux-vrf features via network namespaces
+Date: Fri, 31 Oct 2008 15:17:40 +0100
+Message-ID: <490B1384.7030001@fr.ibm.com>
+References: <4909B10A.8090403@thomson.net> <4909DEC8.9090102@thomson.net>
+	<m14p2tznoz.fsf@frodo.ebiederm.org>
+	<200810311046.17506.andreas.aaen@tietoenator.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <m1k5bpwj8j.fsf-B27657KtZYmhTnVgQlOflh2eb7JE58TQ@public.gmane.org>
+In-Reply-To: <200810311046.17506.andreas.aaen-546VmZ+UeKYX2WXlbB3fKg@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -21,37 +19,216 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Cc: containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+To: Andreas B Aaen <andreas.aaen-546VmZ+UeKYX2WXlbB3fKg@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Quoting Eric W. Biederman (ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org):
-> With a file descriptor I can push the data onto a network socket and
-> the receiving process is on another computer.  0 copies, 0 trips
-> to user space.  I'm not certain how you would achieve that with filesystem
-> approach.
+Andreas B Aaen wrote:
+> On Friday 31 October 2008 00:07, Eric W. Biederman wrote:
+>> A global nsid breaks migration,
+> Yes.
+> =
 
-This has been Oren's most convincing argument for all sorts of little
-choices (his precise data format, the use of an fd and cr_kwrite()).
+>> it breaks nested containers,
+> Yes.
+> =
 
-I wonder (a) what neat things Dave could come up with to to bridge that
-gap, and (b) how much of that gap becomes less meaningful with a proper
-use of pre-dump (and post-dump).
+>> in general it  just hurts.
+> No.
+> =
 
-> >> Reading the memory of another process is a problem, to the point
-> >> that the /proc/<pid>/mem interface has been removed from the kernel.
-> >
-> > Yes, this is certainly true.  All of the ptrace-related security issues
-> > surely tell us something.  But, I'm not sure of your point here.  Are
-> > you saying that using sys_checkpoint() to dump a process's pages is
-> > inherently safer than approach that uses a filesystem in order to do the
-> > same?
-> 
-> I'm saying inspecting another process is a very racy operation so something
-> we need to be especially careful with. 
+>> So it is a bad choice for an interface. =
 
-I don't see any difference there between Dave's and Oren's approaches.
-In either case, the container is frozen while the kernel walks the
-container's task's pages and dumps them... somewhere.
+> Not necessarily. There is a reason why vrf is designed the way it is - an=
+d the =
 
--serge
+> patches that I have worked with had a similar design.
+> =
+
+>> Personally if I have vrf I want to set up a test environment in a contai=
+ner
+>> so I can isolate it from the rest of the system.   Allowing me to play w=
+ith
+>> the user space side of the functionality without  So these things are not
+>> completely separate concerns.
+> =
+
+> Ok. Here is my use case.
+> I need a to talk to 500 IPv4 networks with possible overlapping IP addres=
+ses. =
+
+> The packages arrive on 500 VLANs. I want one process to listen to a port =
+on =
+
+> each of these networks. I don't want 500 processes that runs in each thei=
+r =
+
+> network namespace and then communicate with each other through e.g. unix =
+
+> sockets. This just complicates the task.
+
+Why don't you unshare 500 times in the same process ? In each namespace =
+
+you create a socket control and the fd number is the identifier of your =
+
+namespace.
+
+>> So from a design point of view I see the following questions.
+>> 1) How do we pin a network namespace to allow for routing when no process
+>> uses it?
+> We introduce a global namespace or at least a namespace that unique for a =
+
+> process and it's sons.
+> Maybe a vrf container of network namespaces.
+> The vrf container numbers it's network namespaces. Each pid points to a v=
+rf =
+
+> container. New vrf containers can be made through e.g. unshare(). Migrati=
+on =
+
+> and nesting should be possible.
+> =
+
+>> 2) How do we create sockets into that pinned network namespace? =
+
+> Add a socket option that uses an index (global namespace)
+> =
+
+>> 3) How do we enter that network namespace so that sockets by default are
+>> created in it?
+> I don't need this feature. The VRF patchset does this, so they can implem=
+ent a =
+
+> chvrf utillity.
+> =
+
+>> All of these are technically easy things to implement and design wise a
+>> challenge.
+> Yes.
+> =
+
+> As I see it network namespaces has provided the splitting of all the prot=
+ocols =
+
+> in the network code. This was the huge task. The vrf patches that I have =
+seen =
+
+> a few years back wasn't as mature as this. What's left is actually the =
+
+> management of these network namespaces. =
+
+> =
+
+> binding network namespaces to processes isn't a good idea for all use cas=
+es.  =
+
+> =
+
+>> The best solution I see at the moment is to have something (a fs) we can
+>> mount in the filesystem, keeping the network namespace alive as long as =
+it
+>> is mounted.
+>>
+>> i.e
+>> mount -t netns none /dev/nets/1
+>> mount -t netns -o newinstance none /dev/nets/2
+>>
+>> (The new instance parameter creates the network namespace as well as
+>> capturing the current one)
+>>
+>> char netns[] =3D "/dev/nets/2"
+>> fd =3D socket();
+>> err =3D setsockopt(fd, SOL_SOCKET, SO_NETPATH, netns, strlen(netns) + 1);
+> =
+
+> So the idea here is to let the userspace side choose the naming and ensur=
+ing =
+
+> the nesting possibility by using the filesystem.
+> =
+
+> Would you configure this interface on "/dev/nets/2" like this:
+> =
+
+> ip addr add 10.0.0.1/24 dev eth1 nets "/dev/nets/2" ?
+> =
+
+> Where the "/dev/nets/2" parameter is set through a SO_NETPATH option to t=
+he =
+
+> netlink socket that the iproute2 uses in it's implementation.
+> =
+
+> Is this better or worse than a vrf container with numbered network namesp=
+aces =
+
+> in?
+> =
+
+> Regards,
+
+
+-- =
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sauf indication contraire ci-dessus:
+Compagnie IBM France
+Si=E8ge Social : Tour Descartes, 2, avenue Gambetta, La D=E9fense 5, 92400
+Courbevoie
+RCS Nanterre 552 118 465
+Forme Sociale : S.A.S.
+Capital Social : 542.737.118 ?
+SIREN/SIRET : 552 118 465 02430
