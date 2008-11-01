@@ -1,18 +1,15 @@
 From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
-Subject: Re: [PATCH 0/6] netns: add linux-vrf features via network namespaces
-Date: Fri, 31 Oct 2008 16:10:00 -0700
-Message-ID: <m1bpx0pdiv.fsf@frodo.ebiederm.org>
-References: <4909B10A.8090403@thomson.net> <4909DEC8.9090102@thomson.net>
-	<m14p2tznoz.fsf@frodo.ebiederm.org>
-	<200810311046.17506.andreas.aaen@tietoenator.com>
-	<490B1384.7030001@fr.ibm.com> <m1zlkksi91.fsf@frodo.ebiederm.org>
-	<m13aicsgr2.fsf@frodo.ebiederm.org> <490B6F19.4060206@fr.ibm.com>
+Subject: Re: [patch 1/2][RFC] add socketat syscall
+Date: Fri, 31 Oct 2008 18:30:45 -0700
+Message-ID: <m1ljw4mdve.fsf@frodo.ebiederm.org>
+References: <20081031215602.655672481@fr.ibm.com>
+	<20081031215900.810348746@fr.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <490B6F19.4060206-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org> (Daniel Lezcano's message of "Fri,
-	31 Oct 2008 21:48:25 +0100")
+In-Reply-To: <20081031215900.810348746-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org> (Daniel Lezcano's message
+	of "Fri, 31 Oct 2008 22:56:03 +0100")
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -28,44 +25,27 @@ List-Id: containers.vger.kernel.org
 
 Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org> writes:
 
-> Eric W. Biederman wrote:
->> Thinking it over a little more I have the following thought.
->>
->> For binding a socket to a namespace let's use the a fd arg.
->> That way we can either supply another existing network socket
->> or the result of an open call.  Simple, and faster if you
->> are creating more than one socket in the other network namespace.
->>
->> I really don't like the idea of binding a socket into a namespace.
->> Especially after looking at the arguments to socket(2).
->> The network namespace may be incomplete and you may create a socket
->> in a network namespace that way that we could not exist normally.
->> That plus it puts lots of races in code that finds the namespace of
->> a socket.
->>
->>
->> So in some form let's implement socketat. int socketat(int ns, int domain, int
->> type, int protocol, int flags);
->
-> Is the 'ns' arg a fd from a socket just after the unshare ?
+> This patch adds the socketat syscall which allows to specify in
+> which network namespace we want to create a socket. The network
+> namespace destination is referred by a socket fd previously opened
+> in the destination network namespace.
 
-Yes.   Any socket in the target namespace will do.
+Looks good and very simple.
 
->> We need the flags field so we can accomodate the O_CLOEXEC flag.
->>
->>
->> That should be very straight forward.  Implementable now, without
->> a magic filesystem.   And then the filesystem would just provide
->> the global naming and process independence.
->
-> Assuming the ns arg is a fd from a socket created in a specific network
-> namespace, I agree this is quite easy to implement and consistent with the
-> refcounting of the netns. Furthermore that follows the logic of the network
-> devices, one can be created in another netns using the pid as identifier.
+I have a small update to my proposal for an ABI, that should be easier
+to deploy if the ABI gods can't find fault with it.
 
-Yes.  Your assumption is right.
+#define SOCK_FDNS	0x100000  /* Some good non-conflicting number */
+And then reuse extend socket to read one more argument when it is passed.
 
-Using a fd as the descriptor we need to touch both socket creation and network
-device movement, but that should be sufficient.
+So.
+asmlinkage long sys_socket(int domain, int type, int protocol);
+becomes:
+asmlinkage long sys_socket(int domain, int type, int protocol, int fd);
+when SOCK_FDNS is set in type.
+
+I believe the calling conventions in the kernel already pass 4 arguments
+so we just need to read and act on the forth.  That should be easier than
+allocating an extra syscall number on every architecture.
 
 Eric
