@@ -1,14 +1,15 @@
-From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: Re: [Devel] Re: [PATCH 0/9] OpenVZ kernel based checkpointing/restart
-Date: Mon, 03 Nov 2008 14:35:18 -0500
-Message-ID: <490F5276.6050808__9473.40586358241$1225741149$gmane$org@cs.columbia.edu>
-References: <1220439476-16465-1-git-send-email-major@openvz.org>	<200810201614.36911.major@openvz.org>	<1224518105.1848.93.camel@nimitz>
-	<200810271707.13580.major@openvz.org>
+From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [RFC v8][PATCH 09/12] Dump open file descriptors
+Date: Mon, 3 Nov 2008 14:57:41 -0600
+Message-ID: <20081103205741.GA27841__10516.3130829625$1225746075$gmane$org@us.ibm.com>
+References: <1225374675-22850-1-git-send-email-orenl@cs.columbia.edu>
+	<1225374675-22850-10-git-send-email-orenl@cs.columbia.edu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <200810271707.13580.major-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <1225374675-22850-10-git-send-email-orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,47 +19,148 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Andrey Mirkin <major-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Cc: linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Linus Torvalds <torvalds-3NddpPZAyC0@public.gmane.org>, Alexander Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, "H. Peter Anvin" <hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org>, Thomas Gleixner <tglx-hfZtesqFncYOwBW4kG4KsQ@public.gmane.org>, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
+I'm still trying to figure out the cause of my BUG at dcache.c:666,
+so as I walk through the code a few more nitpicks:
 
+Quoting Oren Laadan (orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org):
+> +int cr_scan_fds(struct files_struct *files, int **fdtable)
+> +{
+> +	struct fdtable *fdt;
+> +	int *fds;
+> +	int i, n = 0;
+> +	int tot = CR_DEFAULT_FDTABLE;
+> +
+> +	fds = kmalloc(tot * sizeof(*fds), GFP_KERNEL);
+> +	if (!fds)
+> +		return -ENOMEM;
+> +
+> +	/*
+> +	 * We assume that the target task is frozen (or that we checkpoint
+> +	 * ourselves), so we can safely proceed after krealloc() from where
+> +	 * we left off; in the worst cases restart will fail.
+> +	 */
+> +
+> +	spin_lock(&files->file_lock);
+> +	rcu_read_lock();
+> +	fdt = files_fdtable(files);
+> +	for (i = 0; i < fdt->max_fds; i++) {
+> +		if (!fcheck_files(files, i))
+> +			continue;
+> +		if (n == tot) {
+> +			/*
+> +			 * fcheck_files() is safe with drop/re-acquire
+> +			 * of the lock, because it tests:  fd < max_fds
+> +			 */
+> +			spin_unlock(&files->file_lock);
+> +			rcu_read_unlock();
+> +			tot *= 2;	/* won't overflow: kmalloc will fail */
+> +			fds = krealloc(fds, tot * sizeof(*fds), GFP_KERNEL);
+> +			if (!fds) {
+> +				kfree(fds);
 
-Andrey Mirkin wrote:
-> On Monday 20 October 2008 19:55 Dave Hansen wrote:
->> On Mon, 2008-10-20 at 16:14 +0400, Andrey Mirkin wrote:
->>> Right now my patchset (v2) provides an ability to checkpoint and restart
->>> a group of processes. The process of checkpointing and restart can be
->>> initiated from external process (not from the process which should be
->>> checkpointed).
->> Absolutely.  Oren's code does it this way to make for a smaller patch at
->> first.  The syscall takes a pid argument so it is surely expected to be
->> expanded upon later.
->>
->>> Also I think that all the restart job (including process forking) should
->>> be done in kernel, as in this case we will not depend on user space and
->>> will be more secure. This is also implemented in my patchset.
->> Do you think that this is an approach that Oren's patches are married
->> to, or is this a "feature" we can add on later?
-> 
-> Well, AFAICS from Oren's patch set his approach is oriented on process 
-> creation in user space. I think we should choose right now what approach will 
-> be used for process creation.
-> We have two options here: fork processes in kernel or fork them in user space.
-> If process will be forked in user space, then there will be a gap when process 
-> will be in user space and can be killed with received signal before entering 
+If !fds kfree(fds)  :)
 
-> kernel. Also we will need a functionolity to create processes with predefined 
-> PID. I think it is not very good to provide such ability to user space. That 
+> +				return -ENOMEM;
+> +			}
+> +			rcu_read_lock();
+> +			spin_lock(&files->file_lock);
+> +		}
+> +		fds[n++] = i;
+> +	}
+> +	rcu_read_unlock();
+> +	spin_unlock(&files->file_lock);
+> +
+> +	*fdtable = fds;
+> +	return n;
+> +}
+> +static int
+> +cr_write_fd_ent(struct cr_ctx *ctx, struct files_struct *files, int fd)
+> +{
+> +	struct cr_hdr h;
+> +	struct cr_hdr_fd_ent *hh = cr_hbuf_get(ctx, sizeof(*hh));
+> +	struct file *file = NULL;
+> +	struct fdtable *fdt;
+> +	int objref, new, ret;
+> +	int coe = 0;	/* avoid gcc warning */
+> +
+> +	rcu_read_lock();
+> +	fdt = files_fdtable(files);
+> +	file = fcheck_files(files, fd);
+> +	if (file) {
+> +		coe = FD_ISSET(fd, fdt->close_on_exec);
+> +		get_file(file);
+> +	}
+> +	rcu_read_unlock();
+> +
+> +	/* sanity check (although this shouldn't happen) */
+> +	if (!file) {
+> +		ret = -EBADF;
 
-Rethinking this -- if the user wishes she can construct a suitable
-checkpoint image that would do exactly that. It takes more effort than
-using a system call, but the result is similar.
+(As mentioned on irc - and probably already fixed in your v9 - you to an
+fput(NULL) in this case which will bomb)
 
-What I had in mind for that special clone-with-pid is to restrict when
-it can be used (e.g. when the container is in a "restarting" state or
-something like that.
+> +		goto out;
+> +	}
+> +
+> +	new = cr_obj_add_ptr(ctx, file, &objref, CR_OBJ_FILE, 0);
+> +	cr_debug("fd %d objref %d file %p c-o-e %d)\n", fd, objref, file, coe);
+> +
+> +	if (new < 0) {
+> +		ret = new;
+> +		goto out;
+> +	}
+> +
+> +	h.type = CR_HDR_FD_ENT;
+> +	h.len = sizeof(*hh);
+> +	h.parent = 0;
+> +
+> +	hh->objref = objref;
+> +	hh->fd = fd;
+> +	hh->close_on_exec = coe;
+> +
+> +	ret = cr_write_obj(ctx, &h, hh);
+> +	if (ret < 0)
+> +		goto out;
+> +
+> +	/* new==1 if-and-only-if file was newly added to hash */
+> +	if (new)
+> +		ret = cr_write_fd_data(ctx, file, objref);
+> +
+> +out:
+> +	cr_hbuf_put(ctx, sizeof(*hh));
+> +	fput(file);
+> +	return ret;
+> +}
+> +
+> +int cr_write_files(struct cr_ctx *ctx, struct task_struct *t)
+> +{
+> +	struct cr_hdr h;
+> +	struct cr_hdr_files *hh = cr_hbuf_get(ctx, sizeof(*hh));
+> +	struct files_struct *files;
+> +	int *fdtable;
+> +	int nfds, n, ret;
+> +
+> +	h.type = CR_HDR_FILES;
+> +	h.len = sizeof(*hh);
+> +	h.parent = task_pid_vnr(t);
+> +
+> +	files = get_files_struct(t);
+> +
+> +	nfds = cr_scan_fds(files, &fdtable);
+> +	if (nfds < 0) {
+> +		put_files_struct(files);
 
-[...]
+need a cr_hbuf_put()
 
-Oren.
+> +		return nfds;
+> +	}
+> +
+
+(Cause of my BUG() doesn't appear to be here :( )
+
+thanks,
+-serge
