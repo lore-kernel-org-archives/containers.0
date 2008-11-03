@@ -1,15 +1,13 @@
-From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [patch 1/1][RFC] do not sys_reboot when not in init_pid_ns
-Date: Sun, 2 Nov 2008 17:04:14 -0600
-Message-ID: <20081102230414.GA11149@us.ibm.com>
-References: <490CEDA0.6020800@fr.ibm.com>
-	<54333.2001:16d8:ff15:101:219:d2ff:fed5:8193.1225584965.squirrel@intranet>
+From: Gui Jianfeng <guijianfeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+Subject: Re: [PATCH -mm 0/6] cgroup: block device i/o controller (v11)
+Date: Mon, 03 Nov 2008 15:01:08 +0800
+Message-ID: <490EA1B4.9070600@cn.fujitsu.com>
+References: <> <1223373818-13687-1-git-send-email-righi.andrea@gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <54333.2001:16d8:ff15:101:219:d2ff:fed5:8193.1225584965.squirrel@intranet>
+In-Reply-To: <1223373818-13687-1-git-send-email-righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,24 +17,21 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Daniel Hokka Zakrisson <daniel-nym3zxDgnZcAvxtiuMwx3w@public.gmane.org>
-Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
+To: Andrea Righi <righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Quoting Daniel Hokka Zakrisson (daniel-nym3zxDgnZcAvxtiuMwx3w@public.gmane.org):
-> Daniel Lezcano wrote:
-> >
-> 
-> Wouldn't it be better to simply remove CAP_SYS_BOOT from containers
-> until sys_reboot emits some signal to userspace to restart/halt the
-> container? (This is what we do in Linux-VServer.)
-> 
-> -- 
-> Daniel Hokka Zakrisson
+Hi Andrea,
 
-Yeah that makes more sense to me.
+I'v tested io-throttle(v11), it seems io-throttle doesn't work well 
+when a process writes(delay-write) a small file(<50M may be). it can't 
+throttle the request process accurately.
+I guess the following reason causes this problem.
+The write-request process terminates too early to see all accounting
+calculated in pdflush. So io-throttle can't throttle
+enough time for that process. Am i right?
 
-Note that otherwise your patch still lets the container mess with
-sys_kexec_load(), for instance.
 
--serge
+-- 
+Regards
+Gui Jianfeng
