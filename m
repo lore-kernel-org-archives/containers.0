@@ -1,16 +1,13 @@
 From: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: Re: [BIG RFC] Filesystem-based checkpoint
-Date: Mon, 03 Nov 2008 09:48:29 -0800
-Message-ID: <1225734509.12673.445.camel@nimitz>
-References: <1225219047.12673.182.camel@nimitz>
-	<m163n9y7yb.fsf@frodo.ebiederm.org> <1225411757.12673.383.camel@nimitz>
-	<m1k5bpwj8j.fsf@frodo.ebiederm.org> <1225462902.12673.398.camel@nimitz>
-	<m1r65wpjx2.fsf@frodo.ebiederm.org> <1225732999.12673.442.camel@nimitz>
+Subject: Re: [patch 1/1][RFC] do not sys_reboot when not in init_pid_ns
+Date: Mon, 03 Nov 2008 10:59:15 -0800
+Message-ID: <1225738755.12673.455.camel@nimitz>
+References: <490CEDA0.6020800@fr.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1225732999.12673.442.camel@nimitz>
+In-Reply-To: <490CEDA0.6020800-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -20,19 +17,43 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Cc: containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
+To: Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
+Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Mon, 2008-11-03 at 09:23 -0800, Dave Hansen wrote:
-> The problem is that we can't possibly use refcounts (at least the ones
-> we have today) alone.  For instance, with the pid namespace, we would
-> have 1 ref for the 'init' process doing the sys_restore() call and then
-> a possible second refcount for /proc.  Perhaps we could differentiate
-> references to namespaces that instantiate objects inside the namespaces
-> from purely references to the namespace *itself*.
+On Sun, 2008-11-02 at 01:00 +0100, Daniel Lezcano wrote:
+> +++ net-next-2.6/kernel/sys.c
+> @@ -355,6 +355,9 @@ asmlinkage long sys_reboot(int magic1, i
+>         if (!capable(CAP_SYS_BOOT))
+>                 return -EPERM;
+> 
+> +       if (current->nsproxy->pid_ns != &init_pid_ns)
+> +               return 0;
+> +
+>         /* For safety, we require "magic" arguments. */
+>         if (magic1 != LINUX_REBOOT_MAGIC1 ||
+>             (magic2 != LINUX_REBOOT_MAGIC2 &&
 
-By this, I mean something along the lines of 'mm_struct's mm_users vs.
-mm_count.
+One problem I have with this is that it specifically defines being "in a
+container" as being in a pid_ns other than the init_pid_ns.  If we're
+going to go down this road, it should be at *least*:
+
+int in_a_container(void)
+{
+	return current->nsproxy->pid_ns != &init_pid_ns;
+}
+
+But, this also sucks because we don't want to be introducing new code
+paths all over the kernel for the "container" case.  What we'll end up
+with little craplets like this spread all over:
+
+	if (in_a_container()) {
+		/* don't ever test this code path */
+	}
+
+:)
+
+So I think we should avoid what you're trying to do here like the
+plague.
 
 -- Dave
