@@ -1,13 +1,14 @@
-From: Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
-Subject: Re: statistics accounting in container
-Date: Tue, 04 Nov 2008 22:37:12 +0100
-Message-ID: <4910C088.4050109@fr.ibm.com>
-References: <8f34198c0811022345t6030bb8cg4ccb48ef49f6b4bb@mail.gmail.com>
+From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [RFC v8][PATCH 0/12] Kernel based checkpoint/restart
+Date: Tue, 4 Nov 2008 15:38:05 -0600
+Message-ID: <20081104213805.GA14737__2101.09138065508$1225834919$gmane$org@us.ibm.com>
+References: <1225374675-22850-1-git-send-email-orenl@cs.columbia.edu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <8f34198c0811022345t6030bb8cg4ccb48ef49f6b4bb-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <1225374675-22850-1-git-send-email-orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -17,79 +18,63 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Ian jonhson <jonhson.ian-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, Pavel Emelianov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>, Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Cc: linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Linus Torvalds <torvalds-3NddpPZAyC0@public.gmane.org>, Alexander Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, "H. Peter Anvin" <hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org>, Thomas Gleixner <tglx-hfZtesqFncYOwBW4kG4KsQ@public.gmane.org>, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Ian jonhson wrote:
-> Dear all,
-> 
-> I am now working in the development of user tool for container
-> (built by Daniel Lezcano) and interest in the accounting
-> of container. Now, I would like to know whether the patches stated
-> in:
-> http://lwn.net/Articles/229974/
+Quoting Oren Laadan (orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org):
+> Basic checkpoint-restart [C/R]: v8 adds support for "external" checkpoint
+> and improves documentation. Older announcements below.
 
-I think this one is known as CONFIG_CGROUP_CPUACCT and it is in mainline.
+Finally!
 
-> http://lwn.net/Articles/243795/
+From 8edab186b605f7dddd612e581204f1ad8fd766be Mon Sep 17 00:00:00 2001
+From: Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Date: Tue, 4 Nov 2008 15:28:01 -0600
+Subject: [PATCH 1/1] cr: fix use of __d_path()
 
-This one is in mainline too. It is a subsystem of the resource
-controller. Note that it is related to physical memory.
+__d_path():
+	1. should be used under dcache_lock
+	2. can change root->{mnt,dentry} without changing refcounts
+The second point was the cause of my BUGs.  The ctx->root was passed
+in, and do_checkpoint() had taken a path_get on the vfsroot.  So now
+at cleanup it was doing path_put() using another mnt+dentry.
 
-> is been embedded in mainstream. More further, what is the
-> development status of  CPU,MEM, network bandwidth in container?
+(Why they are different, I'm not sure - but my guess would be that
+stdin or stdout is inherited from the parent task in parent mntns,
+hence file->mnt is different from root->mnt as it's a different
+namespace.)
 
-I am not sure what you mean by CPU bandwidth. There is the cgroup
-scheduler which allows to prioritize a group of processes but I don't 
-think there is a resource controller which blocks a set of processes 
-when a cpu consumption limit has been reached.
+Signed-off-by: Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+---
+ checkpoint/checkpoint.c |   13 ++++++++++++-
+ 1 files changed, 12 insertions(+), 1 deletions(-)
 
-For the memory, there is the memory controller which gives an amount of 
-physical memory to a group of processes. When the limit is reached, the 
-processes begin to swap. There is some statistics in the cgroup files 
-about the memory consumption and the limits reached by the group.
-
-Concerning network bandwidth, there is a patch walking around netdev for 
-cgroup packet classifier allowing to do some QoS between containers. 
-AFAICS, it is about to be merged. The traffic control can be used to 
-assign a bandwidth to the network devices belonging to a specific container.
-
-> Can I use these functionalities directly in my work now?
-
-These features are all provided by the control groups. The control 
-groups are supported by 'lxc'.
-
-For example, if you want to retrieve the cpu used you can do:
-
-	lxc-cgroup -n foo cpuacct.usage
-
-If you want to set a memory limit:
-
-	lxc-cgroup -n foo memory.limit_in_bytes 262144
-
-If you want to set a priority:
-
-	lxc-cgroup -n foo cpu.shares 1234
-
-Assign cpu:
-
-	lxc-cgroup -n foo cpuset.cpus 0,3
-
-etc ...
-
-What will you work consist in ?
-
-> I am using the kernel recommended by Daniel:
-> git://git.kernel.org/pub/scm/linux/kernel/git/daveh/linux-2.6-lxc.git
-> and wonder whether this version of kernel has been equipped with
-> accounting mechanisms of container?
-
-git://git.kernel.org/pub/scm/linux/kernel/git/davem/net-next-2.6.git
-will be more up to date. You won't have sysfs per namespace neither the 
-checkpoint/restart, so you will have a warning for 'lxc-execute' 
-complaining for sysfs being busy when mounting but that should not be a 
-blocker.
-
-Thanks
-   -- Daniel
+diff --git a/checkpoint/checkpoint.c b/checkpoint/checkpoint.c
+index 173b637..7f0c1e7 100644
+--- a/checkpoint/checkpoint.c
++++ b/checkpoint/checkpoint.c
+@@ -70,9 +70,20 @@ static char *
+ cr_fill_fname(struct path *path, struct path *root, char *buf, int *n)
+ {
+ 	char *fname;
++	struct path root2;
++
++	root2.mnt = root->mnt;
++	root2.dentry = root->dentry;
+ 
+ 	BUG_ON(!buf);
+-	fname = __d_path(path, root, buf, *n);
++	spin_lock(&dcache_lock);
++	fname = __d_path(path, &root2, buf, *n);
++	spin_unlock(&dcache_lock);
++	if (root2.mnt != root->mnt)
++		printk(KERN_NOTICE "%s: mnt changed\n", __func__);
++	if (root2.dentry != root->dentry)
++		printk(KERN_NOTICE "%s: dentry changed\n", __func__);
++	fname = buf+10;
+ 	if (!IS_ERR(fname))
+ 		*n = (buf + (*n) - fname);
+ 	return fname;
+-- 
+1.5.6.3
