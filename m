@@ -1,42 +1,39 @@
-From: Christoph Lameter <cl@linux-foundation.org>
+From: Paul Menage <menage@google.com>
 Subject: Re: [patch 0/7] cpuset writeback throttling
-Date: Wed, 5 Nov 2008 15:28:31 -0600 (CST)
-Message-ID: <Pine.LNX.4.64.0811051526050.5132@quilx.com>
+Date: Wed, 5 Nov 2008 13:55:33 -0800
+Message-ID: <6599ad830811051355n5765a115mbd6eb389504d125d@mail.gmail.com>
 References: <alpine.DEB.2.00.0810292337170.23858@chino.kir.corp.google.com>
- <20081104124753.fb1dde5a.akpm@linux-foundation.org> <1225831988.7803.1939.camel@twins>
- <20081104131637.68fbe055.akpm@linux-foundation.org> <1225833710.7803.1993.camel@twins>
- <20081104135004.f1717fcf.akpm@linux-foundation.org> <Pine.LNX.4.64.0811041601100.5077@quilx.com>
- <20081104143534.b5c16147.akpm@linux-foundation.org> <Pine.LNX.4.64.0811041648350.6254@quilx.com>
- <20081104153610.bbfd5ed8.akpm@linux-foundation.org>
- <Pine.LNX.4.64.0811042036000.31167@quilx.com> <20081104190505.769b93ec.akpm@linux-foundation.org>
- <Pine.LNX.4.64.0811050747040.11867@quilx.com> <20081105104145.abd6fc91.akpm@linux-foundation.org>
- <Pine.LNX.4.64.0811051415360.31450@quilx.com> <20081105123150.d6628805.akpm@linux-foundation.org>
- <Pine.LNX.4.64.0811051434300.31450@quilx.com> <20081105125603.36d0c222.akpm@linux-foundation.org>
+	 <20081104153610.bbfd5ed8.akpm@linux-foundation.org>
+	 <Pine.LNX.4.64.0811042036000.31167@quilx.com>
+	 <20081104190505.769b93ec.akpm@linux-foundation.org>
+	 <Pine.LNX.4.64.0811050747040.11867@quilx.com>
+	 <20081105104145.abd6fc91.akpm@linux-foundation.org>
+	 <Pine.LNX.4.64.0811051415360.31450@quilx.com>
+	 <20081105123150.d6628805.akpm@linux-foundation.org>
+	 <Pine.LNX.4.64.0811051434300.31450@quilx.com>
+	 <20081105125603.36d0c222.akpm@linux-foundation.org>
 Mime-Version: 1.0
-Content-Type: TEXT/PLAIN; charset=US-ASCII
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1756675AbYKEV3V@vger.kernel.org>
+Content-Type: text/plain; charset=ISO-8859-1
+Content-Transfer-Encoding: 7bit
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1755811AbYKEVzu@vger.kernel.org>
 In-Reply-To: <20081105125603.36d0c222.akpm@linux-foundation.org>
 Sender: linux-kernel-owner@vger.kernel.org
 To: Andrew Morton <akpm@linux-foundation.org>
-Cc: peterz@infradead.org, rientjes@google.com, npiggin@suse.de, menage@google.com, dfults@sgi.com, linux-kernel@vger.kernel.org, containers@lists.osdl.org, travis@sgi.com, steiner@sgi.com
+Cc: Christoph Lameter <cl@linux-foundation.org>, peterz@infradead.org, rientjes@google.com, npiggin@suse.de, dfults@sgi.com, linux-kernel@vger.kernel.org, containers@lists.osdl.org
 List-Id: containers.vger.kernel.org
 
-On Wed, 5 Nov 2008, Andrew Morton wrote:
-
-> See, here's my problem: we have a pile of new code which fixes some
-> problem.  But the problem seems to be fairly small - it only affects a
-> small number of sophisticated users and they already have workarounds
-> in place.
-
-Well yes... Great situation with those workarounds.
-
-> So the world wouldn't end if we just didn't merge it.  Those users
-> stick with their workarounds and the kernel remains simpler and
-> smaller.
+On Wed, Nov 5, 2008 at 12:56 PM, Andrew Morton
+<akpm@linux-foundation.org> wrote:
+>>
+>> 1. Reduce the global dirty ratios so that the number of dirty pages in a
+>> cpuset cannot become too high.
 >
-> How do we work out which is the best choice here?  I don't have enough
-> information to do this.
+> That would be less than the smallest node's memory capacity, I guess.
 
-Not sure how to treat this. I am not involved with large NUMA at this
-point. So the people who are interested need to speak up if they want
-this.
+Even that doesn't work - if there's a single global limit on dirty
+pages, then any cpuset/cgroup with access to enough memory can exhaust
+that limit and cause other processes to block when they try to write
+to disk. You need independent dirty counts to avoid that, whether it
+be per-node or per-cgroup.
+
+Paul
