@@ -1,65 +1,80 @@
-From: Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: Re: statistics accounting in container
-Date: Wed, 05 Nov 2008 18:53:03 +0530
-Message-ID: <49119E37.7030905@linux.vnet.ibm.com>
-References: <8f34198c0811022345t6030bb8cg4ccb48ef49f6b4bb@mail.gmail.com>
-	<4910C088.4050109@fr.ibm.com>
-Reply-To: balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
+From: Christoph Lameter <cl@linux-foundation.org>
+Subject: Re: [patch 0/7] cpuset writeback throttling
+Date: Wed, 5 Nov 2008 07:52:44 -0600 (CST)
+Message-ID: <Pine.LNX.4.64.0811050747040.11867@quilx.com>
+References: <alpine.DEB.2.00.0810292337170.23858@chino.kir.corp.google.com>
+ <20081104124753.fb1dde5a.akpm@linux-foundation.org> <1225831988.7803.1939.camel@twins>
+ <20081104131637.68fbe055.akpm@linux-foundation.org> <1225833710.7803.1993.camel@twins>
+ <20081104135004.f1717fcf.akpm@linux-foundation.org> <Pine.LNX.4.64.0811041601100.5077@quilx.com>
+ <20081104143534.b5c16147.akpm@linux-foundation.org> <Pine.LNX.4.64.0811041648350.6254@quilx.com>
+ <20081104153610.bbfd5ed8.akpm@linux-foundation.org>
+ <Pine.LNX.4.64.0811042036000.31167@quilx.com> <20081104190505.769b93ec.akpm@linux-foundation.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <4910C088.4050109-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
-Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, Pavel Emelianov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+Content-Type: TEXT/PLAIN; charset=US-ASCII; format=flowed
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1755783AbYKENxb@vger.kernel.org>
+In-Reply-To: <20081104190505.769b93ec.akpm@linux-foundation.org>
+Sender: linux-kernel-owner@vger.kernel.org
+To: Andrew Morton <akpm@linux-foundation.org>
+Cc: peterz@infradead.org, rientjes@google.com, npiggin@suse.de, menage@google.com, dfults@sgi.com, linux-kernel@vger.kernel.org, containers@lists.osdl.org
 List-Id: containers.vger.kernel.org
 
-Daniel Lezcano wrote:
-> Ian jonhson wrote:
->> Dear all,
->>
->> I am now working in the development of user tool for container
->> (built by Daniel Lezcano) and interest in the accounting
->> of container. Now, I would like to know whether the patches stated
->> in:
->> http://lwn.net/Articles/229974/
-> 
-> I think this one is known as CONFIG_CGROUP_CPUACCT and it is in mainline.
-> 
->> http://lwn.net/Articles/243795/
-> 
-> This one is in mainline too. It is a subsystem of the resource
-> controller. Note that it is related to physical memory.
-> 
->> is been embedded in mainstream. More further, what is the
->> development status of  CPU,MEM, network bandwidth in container?
-> 
-> I am not sure what you mean by CPU bandwidth. There is the cgroup
-> scheduler which allows to prioritize a group of processes but I don't 
-> think there is a resource controller which blocks a set of processes 
-> when a cpu consumption limit has been reached.
-> 
+On Tue, 4 Nov 2008, Andrew Morton wrote:
 
-This is under discussion, since the implementation needs many more things to be
-considered.
+>> That is one aspect. When performing writeback then we need to figure out
+>> which inodes have dirty pages in the memcg and we need to start writeout
+>> on those inodes and not on others that have their dirty pages elsewhere.
+>> There are two components of this that are in this patch and that would
+>> also have to be implemented for a memcg.
+>
+> Doable.  lru->page->mapping->host is a good start.
 
-> For the memory, there is the memory controller which gives an amount of 
-> physical memory to a group of processes. When the limit is reached, the 
-> processes begin to swap. There is some statistics in the cgroup files 
-> about the memory consumption and the limits reached by the group.
-> 
+The block layer has a list of inodes that are dirty. From that we need to 
+select ones that will improve the situation from the cpuset/memcg. How 
+does the LRU come into this?
 
-Some features like hierarchy support and soft limits are under development. Only
-hard limits are available ATM.
+>> This patch would solve the problem if the calculation of the dirty pages
+>> would consider the active memcg and be able to determine the amount of
+>> dirty pages (through some sort of additional memcg counters). That is just
+>> the first part though. The second part of finding the inodes that have
+>> dirty pages for writeback would require an association between memcgs and
+>> inodes.
+>
+> We presently have that via the LRU.  It has holes, but so does this per-cpuset
+> scheme.
 
--- 
-	Balbir
+How do I get to the LRU from the dirtied list of inodes?
+
+> Generally, I worry that this is a specific fix to a specific problem
+> encountered on specific machines with specific setups and specific
+> workloads, and that it's just all too low-level and myopic.
+>
+> And now we're back in the usual position where there's existing code and
+> everyone says it's terribly wonderful and everyone is reluctant to step
+> back and look at the big picture.  Am I wrong?
+
+Well everyone is just reluctant to do work it seems. Thus they fall back 
+to a solution that I provided when memcg groups were not yet available. It 
+would be best if someone could find a general scheme or generalize this 
+patchset.
+
+> Plus: we need per-memcg dirty-memory throttling, and this is more
+> important than per-cpuset, I suspect.  How will the (already rather
+> buggy) code look once we've stuffed both of them in there?
+
+The basics will still be the same
+
+1. One need to establish the dirty ratio of memcgs and monitor them.
+2. There needs to be mechanism to perform writeout on the right inodes.
+
+> I agree that there's a problem here, although given the amount of time
+> that it's been there, I suspect that it is a very small problem.
+
+It used to be only a problem for NUMA systems. Now its also a problem for 
+memcgs.
+
+> Someone please convince me that in three years time we will agree that
+> merging this fix to that problem was a correct decision?
+
+At the mininum: It provides a basis on top of which memcg support 
+can be developed. There are likely major modifications needed to VM 
+statistics to get there for memcg groups.
