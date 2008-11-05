@@ -1,64 +1,69 @@
-From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
-Subject: [PATCH 1/3] netns: Delete virtual interfaces during namespace cleanup
-Date: Wed, 05 Nov 2008 15:22:26 -0800
-Message-ID: <m14p2l4v2l.fsf_-_@frodo.ebiederm.org>
+From: ebiederm@xmission.com (Eric W. Biederman)
+Subject: [PATCH 3/3] net: Don't leak packets when a netns is going down
+Date: Wed, 05 Nov 2008 15:27:34 -0800
+Message-ID: <m1skq53g9l.fsf_-_@frodo.ebiederm.org>
 References: <m18wt6v7eb.fsf@frodo.ebiederm.org> <48EB36FC.4000008@fr.ibm.com>
 	<48EB3F72.5090201@openvz.org> <m1d4ic4pbr.fsf@frodo.ebiederm.org>
-	<48ECA8D2.4090406@openvz.org>
+	<48ECA8D2.4090406@openvz.org> <m14p2l4v2l.fsf_-_@frodo.ebiederm.org>
+	<m1y6zx3gcs.fsf_-_@frodo.ebiederm.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <48ECA8D2.4090406-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org> (Pavel Emelyanov's message of "Wed,
-	08 Oct 2008 16:34:26 +0400")
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: David Miller <davem-fT/PcQaiUtIeIZ0/mPfg9Q@public.gmane.org>
-Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, "Denis V. Lunev" <den-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>, Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+Content-Type: text/plain; charset=us-ascii
+Return-path: <netdev-owner@vger.kernel.org>
+In-Reply-To: <m1y6zx3gcs.fsf_-_@frodo.ebiederm.org> (Eric W. Biederman's
+	message of "Wed, 05 Nov 2008 15:25:39 -0800")
+Sender: netdev-owner@vger.kernel.org
+To: David Miller <davem@davemloft.net>
+Cc: Daniel Lezcano <dlezcano@fr.ibm.com>, Linux Containers <containers@lists.osdl.org>, "Denis V. Lunev" <den@openvz.org>, Pavel Emelyanov <xemul@openvz.org>, netdev@vger.kernel.org
 List-Id: containers.vger.kernel.org
 
 
-When physical devices are inside of network namespace and that
-network namespace terminates we can not make them go away.  We
-have to keep them and moving them to the initial network namespace
-is the best we can do.
+I have been tracking for a while a case where when the
+network namespace exits the cleanup gets stck in an
+endless precessess of:
 
-For virtual devices left in a network namespace that is exiting
-we have no need to preserve them and we now have the infrastructure
-that allows us to delete them.  So delete virtual devices when we
-exit a network namespace.  Keeping the necessary user space clean up
-after a network namespace exits much more tractable.
+unregister_netdevice: waiting for lo to become free. Usage count = 3
+unregister_netdevice: waiting for lo to become free. Usage count = 3
+unregister_netdevice: waiting for lo to become free. Usage count = 3
+unregister_netdevice: waiting for lo to become free. Usage count = 3
+unregister_netdevice: waiting for lo to become free. Usage count = 3
+unregister_netdevice: waiting for lo to become free. Usage count = 3
+unregister_netdevice: waiting for lo to become free. Usage count = 3
 
-Acked-by: Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
-Acked-by: Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
-Signed-off-by: Eric W. Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+It turns out that if you listen on a multicast address an unsubscribe
+packet is sent when the network device goes down.   If you shutdown
+the network namespace without carefully cleaning up this can trigger
+the unsubscribe packet to be sent over the loopback interface while
+the network namespace is going down.
+
+All of which is fine except when we drop the packet and forget to
+free it leaking the skb and the dst entry attached to.  As it
+turns out the dst entry hold a reference to the idev which holds
+the dev and keeps everything from being cleaned up.  Yuck!
+
+By fixing my earlier thinko and add the needed kfree_skb and everything
+cleans up beautifully. 
+
+Signed-off-by: Eric W. Biederman <ebiederm@xmission.com>
 ---
- net/core/dev.c |    6 ++++++
- 1 files changed, 6 insertions(+), 0 deletions(-)
+ net/core/dev.c |    4 +++-
+ 1 files changed, 3 insertions(+), 1 deletions(-)
 
 diff --git a/net/core/dev.c b/net/core/dev.c
-index 8f9d3b3..9475f3e 100644
+index 811507c..a0c6060 100644
 --- a/net/core/dev.c
 +++ b/net/core/dev.c
-@@ -4852,6 +4852,12 @@ static void __net_exit default_device_exit(struct net *net)
- 		if (dev->features & NETIF_F_NETNS_LOCAL)
- 			continue;
+@@ -2253,8 +2253,10 @@ int netif_receive_skb(struct sk_buff *skb)
+ 	rcu_read_lock();
  
-+		/* Delete virtual devices */
-+		if (dev->rtnl_link_ops && dev->rtnl_link_ops->dellink) {
-+			dev->rtnl_link_ops->dellink(dev);
-+			continue;
-+		}
-+
- 		/* Push remaing network devices to init_net */
- 		snprintf(fb_name, IFNAMSIZ, "dev%d", dev->ifindex);
- 		err = dev_change_net_namespace(dev, &init_net, fb_name);
+ 	/* Don't receive packets in an exiting network namespace */
+-	if (!net_alive(dev_net(skb->dev)))
++	if (!net_alive(dev_net(skb->dev))) {
++		kfree_skb(skb);
+ 		goto out;
++	}
+ 
+ #ifdef CONFIG_NET_CLS_ACT
+ 	if (skb->tc_verd & TC_NCLS) {
 -- 
 1.5.6.5
+
