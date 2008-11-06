@@ -1,17 +1,13 @@
-From: "Michael Kerrisk" <mtk.manpages-gM/Ye1E23mwN+BqQ9rBEUg@public.gmane.org>
-Subject: Re: [patch 1/2][RFC] add socketat syscall
-Date: Thu, 6 Nov 2008 10:46:48 -0500
-Message-ID: <cfd18e0f0811060746l77fbe6fel83402ba543fccb38__29209.2937081636$1225987685$gmane$org@mail.gmail.com>
-References: <20081031215602.655672481@fr.ibm.com>
-	<20081031215900.810348746@fr.ibm.com>
-	<517f3f820811060522i7b3518aen47907a34b38adee9@mail.gmail.com>
-Reply-To: mtk.manpages-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org
+From: Peter Zijlstra <peterz-wEGCiKHe2LqWVfeAwA7xHQ@public.gmane.org>
+Subject: Re: [patch 0/4] [RFC] Another proportional weight IO controller
+Date: Thu, 06 Nov 2008 16:49:53 +0100
+Message-ID: <1225986593.7803.4688.camel__26003.2224622138$1225988046$gmane$org@twins>
+References: <20081106153022.215696930@redhat.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <517f3f820811060522i7b3518aen47907a34b38adee9-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
-Content-Disposition: inline
+In-Reply-To: <20081106153022.215696930-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -21,174 +17,43 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Michael Kerrisk <mtk.manpages-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Cc: linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org, Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>, Subrata Modak <subrata-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+To: vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
+Cc: menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, Rik van Riel <riel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, virtualization-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Jeff Moyer <jmoyer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, jens.axboe-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, ngupta-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, fernando-gVGce1chcLdL9jVzuh4AOg@public.gmane.org, Andrea Righi <righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-> On Fri, Oct 31, 2008 at 4:56 PM, Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org> wrote:
->> This patch adds the socketat syscall which allows to specify in
->> which network namespace we want to create a socket. The network
->> namespace destination is referred by a socket fd previously opened
->> in the destination network namespace.
+On Thu, 2008-11-06 at 10:30 -0500, vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org wrote:
+> Hi,
+> 
+> If you are not already tired of so many io controller implementations, here
+> is another one.
+> 
+> This is a very eary very crude implementation to get early feedback to see
+> if this approach makes any sense or not.
+> 
+> This controller is a proportional weight IO controller primarily
+> based on/inspired by dm-ioband. One of the things I personally found little
+> odd about dm-ioband was need of a dm-ioband device for every device we want
+> to control.  I thought that probably we can make this control per request
+> queue and get rid of device mapper driver. This should make configuration
+> aspect easy.
+> 
+> I have picked up quite some amount of code from dm-ioband especially for
+> biocgroup implementation.
+> 
+> I have done very basic testing and that is running 2-3 dd commands in different
+> cgroups on x86_64. Wanted to throw out the code early to get some feedback.
+> 
+> More details about the design and how to are in documentation patch.
+> 
+> Your comments are welcome.
 
-Daniel,
+please include
 
-Is there any documentation for this system call, and/or test programs?
+QUILT_REFRESH_ARGS="--diffstat --strip-trailing-whitespace"
 
-Cheers,
+in your environment or .quiltrc
 
-Michael
+I would expect all those bio* files to be placed in block/ not mm/
 
->> Signed-off-by: Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
->> ---
->>  arch/x86/include/asm/unistd_32.h   |    1
->>  arch/x86/include/asm/unistd_64.h   |    3 +-
->>  arch/x86/kernel/syscall_table_32.S |    1
->>  include/linux/syscalls.h           |    1
->>  kernel/sys_ni.c                    |    1
->>  net/socket.c                       |   45 +++++++++++++++++++++++++++++++++++++
->>  6 files changed, 51 insertions(+), 1 deletion(-)
->>
->> Index: net-next-2.6/arch/x86/include/asm/unistd_32.h
->> ===================================================================
->> --- net-next-2.6.orig/arch/x86/include/asm/unistd_32.h
->> +++ net-next-2.6/arch/x86/include/asm/unistd_32.h
->> @@ -338,6 +338,7 @@
->>  #define __NR_dup3              330
->>  #define __NR_pipe2             331
->>  #define __NR_inotify_init1     332
->> +#define __NR_socketat           333
->>
->>  #ifdef __KERNEL__
->>
->> Index: net-next-2.6/arch/x86/include/asm/unistd_64.h
->> ===================================================================
->> --- net-next-2.6.orig/arch/x86/include/asm/unistd_64.h
->> +++ net-next-2.6/arch/x86/include/asm/unistd_64.h
->> @@ -653,7 +653,8 @@ __SYSCALL(__NR_dup3, sys_dup3)
->>  __SYSCALL(__NR_pipe2, sys_pipe2)
->>  #define __NR_inotify_init1                     294
->>  __SYSCALL(__NR_inotify_init1, sys_inotify_init1)
->> -
->> +#define __NR_socketat                           295
->> +__SYSCALL(__NR_socketat, sys_socketat)
->>
->>  #ifndef __NO_STUBS
->>  #define __ARCH_WANT_OLD_READDIR
->> Index: net-next-2.6/arch/x86/kernel/syscall_table_32.S
->> ===================================================================
->> --- net-next-2.6.orig/arch/x86/kernel/syscall_table_32.S
->> +++ net-next-2.6/arch/x86/kernel/syscall_table_32.S
->> @@ -332,3 +332,4 @@ ENTRY(sys_call_table)
->>        .long sys_dup3                  /* 330 */
->>        .long sys_pipe2
->>        .long sys_inotify_init1
->> +       .long sys_socketat
->> Index: net-next-2.6/net/socket.c
->> ===================================================================
->> --- net-next-2.6.orig/net/socket.c
->> +++ net-next-2.6/net/socket.c
->> @@ -1253,6 +1253,51 @@ out_release:
->>        return retval;
->>  }
->>
->> +asmlinkage long sys_socketat(int fd, int family, int type, int protocol)
->> +{
->> +       int retval, fput_needed;
->> +       struct socket *sock;
->> +       struct socket *sockat;
->> +       struct net *net;
->> +       int flags;
->> +
->> +       /* Check the SOCK_* constants for consistency.  */
->> +       BUILD_BUG_ON(SOCK_CLOEXEC != O_CLOEXEC);
->> +       BUILD_BUG_ON((SOCK_MAX | SOCK_TYPE_MASK) != SOCK_TYPE_MASK);
->> +       BUILD_BUG_ON(SOCK_CLOEXEC & SOCK_TYPE_MASK);
->> +       BUILD_BUG_ON(SOCK_NONBLOCK & SOCK_TYPE_MASK);
->> +
->> +       flags = type & ~SOCK_TYPE_MASK;
->> +       if (flags & ~(SOCK_CLOEXEC | SOCK_NONBLOCK))
->> +               return -EINVAL;
->> +       type &= SOCK_TYPE_MASK;
->> +
->> +       if (SOCK_NONBLOCK != O_NONBLOCK && (flags & SOCK_NONBLOCK))
->> +               flags = (flags & ~SOCK_NONBLOCK) | O_NONBLOCK;
->> +
->> +       sock = sockfd_lookup_light(fd, &retval, &fput_needed);
->> +       if (!sock)
->> +               goto out;
->> +
->> +       net = sock_net(sock->sk);
->> +
->> +       retval = __sock_create(net, family, type, protocol, &sockat, 0);
->> +       if (retval)
->> +               goto out_fput;
->> +
->> +       retval = sock_map_fd(sock, flags & (O_CLOEXEC | O_NONBLOCK));
->> +       if (retval < 0)
->> +               goto out_release;
->> +out_fput:
->> +       fput_light(sock->file, fput_needed);
->> +out:
->> +       return retval;
->> +
->> +out_release:
->> +       sock_release(sockat);
->> +       goto out;
->> +}
->> +
->>  /*
->>  *     Create a pair of connected sockets.
->>  */
->> Index: net-next-2.6/include/linux/syscalls.h
->> ===================================================================
->> --- net-next-2.6.orig/include/linux/syscalls.h
->> +++ net-next-2.6/include/linux/syscalls.h
->> @@ -423,6 +423,7 @@ asmlinkage long sys_recvfrom(int, void _
->>                                struct sockaddr __user *, int __user *);
->>  asmlinkage long sys_recvmsg(int fd, struct msghdr __user *msg, unsigned flags);
->>  asmlinkage long sys_socket(int, int, int);
->> +asmlinkage long sys_socketat(int, int, int, int);
->>  asmlinkage long sys_socketpair(int, int, int, int __user *);
->>  asmlinkage long sys_socketcall(int call, unsigned long __user *args);
->>  asmlinkage long sys_listen(int, int);
->> Index: net-next-2.6/kernel/sys_ni.c
->> ===================================================================
->> --- net-next-2.6.orig/kernel/sys_ni.c
->> +++ net-next-2.6/kernel/sys_ni.c
->> @@ -40,6 +40,7 @@ cond_syscall(sys_send);
->>  cond_syscall(sys_recvfrom);
->>  cond_syscall(sys_recv);
->>  cond_syscall(sys_socket);
->> +cond_syscall(sys_socketat);
->>  cond_syscall(sys_setsockopt);
->>  cond_syscall(compat_sys_setsockopt);
->>  cond_syscall(sys_getsockopt);
->>
->> --
->> _______________________________________________
->> Containers mailing list
->> Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
->> https://lists.linux-foundation.org/mailman/listinfo/containers
->>
->
->
->
-> --
-> Michael Kerrisk Linux man-pages maintainer;
-> http://www.kernel.org/doc/man-pages/ Found a documentation bug?
-> http://www.kernel.org/doc/man-pages/reporting_bugs.html
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-api" in
-> the body of a message to majordomo-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->
-
-
-
--- 
-Michael Kerrisk
-Linux man-pages maintainer; http://www.kernel.org/doc/man-pages/
-git://git.kernel.org/pub/scm/docs/man-pages/man-pages.git
-man-pages online: http://www.kernel.org/doc/man-pages/online_pages.html
-Found a bug? http://www.kernel.org/doc/man-pages/reporting_bugs.html
+Does this still require I use dm, or does it also work on regular block
+devices? Patch 4/4 isn't quite clear on this.
