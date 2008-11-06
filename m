@@ -1,36 +1,58 @@
-From: Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [patch 1/2][RFC] add socketat syscall
-Date: Thu, 06 Nov 2008 14:27:56 +0100
-Message-ID: <4912F0DC.9090301__9555.67444111711$1225978231$gmane$org@fr.ibm.com>
-References: <20081031215602.655672481@fr.ibm.com>
-	<20081031215900.810348746@fr.ibm.com>
-	<517f3f820811060522i7b3518aen47907a34b38adee9@mail.gmail.com>
+From: ebiederm@xmission.com (Eric W. Biederman)
+Subject: [PATCH 1/2] net: fib_rules ordering fixes.
+Date: Thu, 06 Nov 2008 07:34:28 -0800
+Message-ID: <m1y6zwzx4r.fsf_-_@frodo.ebiederm.org>
+References: <48ECA8D2.4090406@openvz.org>
+	<m14p2l4v2l.fsf_-_@frodo.ebiederm.org>
+	<m1y6zx3gcs.fsf_-_@frodo.ebiederm.org>
+	<20081105.160047.174722021.davem@davemloft.net>
+	<m14p2l0zyu.fsf@frodo.ebiederm.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <517f3f820811060522i7b3518aen47907a34b38adee9-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Michael Kerrisk <mtk.manpages-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org, linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Content-Type: text/plain; charset=us-ascii
+Return-path: <netdev-owner@vger.kernel.org>
+In-Reply-To: <m14p2l0zyu.fsf@frodo.ebiederm.org> (Eric W. Biederman's message
+	of "Thu, 06 Nov 2008 05:02:33 -0800")
+Sender: netdev-owner@vger.kernel.org
+To: David Miller <davem@davemloft.net>
+Cc: dlezcano@fr.ibm.com, containers@lists.osdl.org, den@openvz.org, xemul@openvz.org, netdev@vger.kernel.org
 List-Id: containers.vger.kernel.org
 
-Michael Kerrisk wrote:
-> Hi Daniel,
-> 
-> Please CC linux-api on API/ABI changes.
-> 
-> See Documentation/SubmitChecklist and
-> http://thread.gmane.org/gmane.linux.ltp/5658.
 
-Will do, thanks.
+We need to setup the network namespace state before we register
+the notifier.  Otherwise if a network device is already registered
+we get a nasty NULL pointer dereference.
 
-   -- Daniel
+Signed-off-by: Eric W. Biederman <ebiederm@maxwell.aristanetworks.com>
+---
+ net/core/fib_rules.c |    7 ++++---
+ 1 files changed, 4 insertions(+), 3 deletions(-)
+
+diff --git a/net/core/fib_rules.c b/net/core/fib_rules.c
+index 79de3b1..32b3a01 100644
+--- a/net/core/fib_rules.c
++++ b/net/core/fib_rules.c
+@@ -664,17 +664,18 @@ static int __init fib_rules_init(void)
+ 	rtnl_register(PF_UNSPEC, RTM_DELRULE, fib_nl_delrule, NULL);
+ 	rtnl_register(PF_UNSPEC, RTM_GETRULE, NULL, fib_nl_dumprule);
+ 
+-	err = register_netdevice_notifier(&fib_rules_notifier);
++	err = register_pernet_subsys(&fib_rules_net_ops);
+ 	if (err < 0)
+ 		goto fail;
+ 
+-	err = register_pernet_subsys(&fib_rules_net_ops);
++	err = register_netdevice_notifier(&fib_rules_notifier);
+ 	if (err < 0)
+ 		goto fail_unregister;
++
+ 	return 0;
+ 
+ fail_unregister:
+-	unregister_netdevice_notifier(&fib_rules_notifier);
++	unregister_pernet_subsys(&fib_rules_net_ops);
+ fail:
+ 	rtnl_unregister(PF_UNSPEC, RTM_NEWRULE);
+ 	rtnl_unregister(PF_UNSPEC, RTM_DELRULE);
+-- 
+1.5.6.5
+
