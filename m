@@ -1,40 +1,75 @@
-From: Peter Zijlstra <peterz-wEGCiKHe2LqWVfeAwA7xHQ@public.gmane.org>
-Subject: Re: [patch 0/4] [RFC] Another proportional weight IO controller
-Date: Thu, 06 Nov 2008 18:11:27 +0100
-Message-ID: <1225991487.7803.4801.camel__40037.7394319095$1225991877$gmane$org@twins>
-References: <20081106153022.215696930@redhat.com>
-	<1225986593.7803.4688.camel@twins> <20081106160154.GA7461@redhat.com>
-	<1225988173.7803.4723.camel@twins> <20081106163957.GB7461@redhat.com>
-	<1225990327.7803.4776.camel@twins>  <491321ED.5010103@redhat.com>
+From: David Rientjes <rientjes@google.com>
+Subject: Re: [patch 0/7] cpuset writeback throttling
+Date: Thu, 6 Nov 2008 12:35:03 -0800 (PST)
+Message-ID: <alpine.DEB.2.00.0811061220370.7767@chino.kir.corp.google.com>
+References: <alpine.DEB.2.00.0810292337170.23858@chino.kir.corp.google.com> <1225831988.7803.1939.camel@twins> <20081104131637.68fbe055.akpm@linux-foundation.org> <1225833710.7803.1993.camel@twins> <20081104135004.f1717fcf.akpm@linux-foundation.org>
+ <Pine.LNX.4.64.0811041601100.5077@quilx.com> <20081104143534.b5c16147.akpm@linux-foundation.org> <Pine.LNX.4.64.0811041648350.6254@quilx.com> <20081104153610.bbfd5ed8.akpm@linux-foundation.org> <Pine.LNX.4.64.0811042036000.31167@quilx.com>
+ <20081104190505.769b93ec.akpm@linux-foundation.org> <Pine.LNX.4.64.0811050747040.11867@quilx.com> <20081105104145.abd6fc91.akpm@linux-foundation.org> <Pine.LNX.4.64.0811051415360.31450@quilx.com> <20081105123150.d6628805.akpm@linux-foundation.org>
+ <Pine.LNX.4.64.0811051434300.31450@quilx.com> <20081105125603.36d0c222.akpm@linux-foundation.org> <alpine.DEB.2.00.0811051347240.21365@chino.kir.corp.google.com> <20081106103455.f3277a72.kamezawa.hiroyu@jp.fujitsu.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <491321ED.5010103-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Rik van Riel <riel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Cc: menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, virtualization-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Jeff Moyer <jmoyer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, jens.axboe-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, ngupta-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, fernando-gVGce1chcLdL9jVzuh4AOg@public.gmane.org, Andrea Righi <righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Content-Type: TEXT/PLAIN; charset=US-ASCII
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1753369AbYKFUhI@vger.kernel.org>
+In-Reply-To: <20081106103455.f3277a72.kamezawa.hiroyu@jp.fujitsu.com>
+Sender: linux-kernel-owner@vger.kernel.org
+To: KAMEZAWA Hiroyuki <kamezawa.hiroyu@jp.fujitsu.com>
+Cc: Andrew Morton <akpm@linux-foundation.org>, npiggin@suse.de, Christoph Lameter <cl@linux-foundation.org>, dfults@sgi.com, linux-kernel@vger.kernel.org, containers@lists.osdl.org, Paul Menage <menage@google.com>, Andrea Righi <righi.andrea@gmail.com>
 List-Id: containers.vger.kernel.org
 
-On Thu, 2008-11-06 at 11:57 -0500, Rik van Riel wrote:
-> Peter Zijlstra wrote:
-> 
-> > The only real issue I can see is with linear volumes, but those are
-> > stupid anyway - non of the gains but all the risks.
-> 
-> Linear volumes may well be the most common ones.
-> 
-> People start out with the filesystems at a certain size,
-> increasing onto a second (new) disk later, when more space
-> is required.
+On Thu, 6 Nov 2008, KAMEZAWA Hiroyuki wrote:
 
-Are they aware of how risky linear volumes are? I would discourage
-anyone from using them.
+> > Agreed.  This patchset is admittedly from a different time when cpusets 
+> > was the only relevant extension that needed to be done.
+> > 
+> BTW, what is the problem this patch wants to fix ?
+>   1. avoid slow-down of memory allocation by triggering write-out earlier.
+>   2. avoid OOM by throttoling dirty pages.
+> 
+> About 1, memcg's diry_ratio can help if mounted as
+>    mount -t cgroup none /somewhere/  -o cpuset,memory
+> (If the user can accept overheads of memcg.)
+> If implemented.
+> 
+
+Yeah, it needs to be generalized to its own cgroup so that it doesn't 
+depend on both CONFIG_CPUSETS or CONFIG_CGROUP_MEM_RES_CTLR.  If we get 
+the dirty and writeback page statistics added to memcg, this becomes much 
+simpler.
+
+> About 2, A Google guy posted OOM handler cgroup to linux-mm.
+> 
+
+Yeah, this could enable one of the workarounds that Christoph earlier 
+described: the oom handler has the ability to notify userspace and allows 
+it to defer invoking the oom killer if there's an alternative way to 
+remedy the situation.  So the oom handler posted to linux-mm could work by 
+doing a sync anytime it ran low on memory, but the objective of this 
+patchset is different.
+
+The idea here is to implement per-cpuset (and now per-memcg) dirty and 
+background dirty ratios to avoid using the global sysctls.  This is 
+currently problematic for users of cpusets who divide their machine for 
+batches of tasks, usually for NUMA optimizations: a cpuset, for example, 
+can represent 40% of the system's memory and if the global dirty ratio is 
+set to 50%, we still won't begin writeback even if all the memory in the 
+cpuset is dirty.
+
+> > If we are to support memcg-specific dirty ratios, that requires the 
+> > aforementioned statistics to be collected so that the calculation is even 
+> > possible.  The series at 
+> > 
+> > 	http://marc.info/?l=linux-kernel&m=122123225006571
+> > 	http://marc.info/?l=linux-kernel&m=122123241106902
+> > 
+> yes. we(memcg) need this kind of.
+> 
+
+Andrea, what's the status of the patch to add dirty and writeback 
+statistics to memcg?  I don't see it in the October 30 mmotm or any 
+followup discussion on it.
+
+> > is a step in that direction, although I'd prefer to see NR_UNSTABLE_NFS to 
+> > be extracted separately from MEM_CGROUP_STAT_FILE_DIRTY so 
+> > throttle_vm_writeout() can also use the new statistics.
+> > 
+
+Is this possible in a second version?
