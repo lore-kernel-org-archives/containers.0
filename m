@@ -1,50 +1,45 @@
-From: David Miller <davem@davemloft.net>
-Subject: Re: [PATCH 3/3] net: Don't leak packets when a netns is going down
-Date: Wed, 05 Nov 2008 16:00:54 -0800 (PST)
-Message-ID: <20081105.160054.261042048.davem@davemloft.net>
-References: <m14p2l4v2l.fsf_-_@frodo.ebiederm.org>
-	<m1y6zx3gcs.fsf_-_@frodo.ebiederm.org>
-	<m1skq53g9l.fsf_-_@frodo.ebiederm.org>
+From: David Miller <davem-fT/PcQaiUtIeIZ0/mPfg9Q@public.gmane.org>
+Subject: Re: [PATCH 1/3] netns: Delete virtual interfaces during namespace
+	cleanup
+Date: Wed, 05 Nov 2008 16:00:39 -0800 (PST)
+Message-ID: <20081105.160039.21596385.davem@davemloft.net>
+References: <m1d4ic4pbr.fsf@frodo.ebiederm.org> <48ECA8D2.4090406@openvz.org>
+	<m14p2l4v2l.fsf_-_@frodo.ebiederm.org>
 Mime-Version: 1.0
-Content-Type: Text/Plain; charset=us-ascii
+Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-Return-path: <netdev-owner@vger.kernel.org>
-In-Reply-To: <m1skq53g9l.fsf_-_@frodo.ebiederm.org>
-Sender: netdev-owner@vger.kernel.org
-To: ebiederm@xmission.com
-Cc: dlezcano@fr.ibm.com, containers@lists.osdl.org, den@openvz.org, xemul@openvz.org, netdev@vger.kernel.org
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <m14p2l4v2l.fsf_-_-B27657KtZYmhTnVgQlOflh2eb7JE58TQ@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org
+Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, den-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org, dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org, xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-From: ebiederm@xmission.com (Eric W. Biederman)
-Date: Wed, 05 Nov 2008 15:27:34 -0800
+From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
+Date: Wed, 05 Nov 2008 15:22:26 -0800
 
 > 
-> I have been tracking for a while a case where when the
-> network namespace exits the cleanup gets stck in an
-> endless precessess of:
+> When physical devices are inside of network namespace and that
+> network namespace terminates we can not make them go away.  We
+> have to keep them and moving them to the initial network namespace
+> is the best we can do.
 > 
-> unregister_netdevice: waiting for lo to become free. Usage count = 3
-> unregister_netdevice: waiting for lo to become free. Usage count = 3
-> unregister_netdevice: waiting for lo to become free. Usage count = 3
-> unregister_netdevice: waiting for lo to become free. Usage count = 3
-> unregister_netdevice: waiting for lo to become free. Usage count = 3
-> unregister_netdevice: waiting for lo to become free. Usage count = 3
-> unregister_netdevice: waiting for lo to become free. Usage count = 3
+> For virtual devices left in a network namespace that is exiting
+> we have no need to preserve them and we now have the infrastructure
+> that allows us to delete them.  So delete virtual devices when we
+> exit a network namespace.  Keeping the necessary user space clean up
+> after a network namespace exits much more tractable.
 > 
-> It turns out that if you listen on a multicast address an unsubscribe
-> packet is sent when the network device goes down.   If you shutdown
-> the network namespace without carefully cleaning up this can trigger
-> the unsubscribe packet to be sent over the loopback interface while
-> the network namespace is going down.
-> 
-> All of which is fine except when we drop the packet and forget to
-> free it leaking the skb and the dst entry attached to.  As it
-> turns out the dst entry hold a reference to the idev which holds
-> the dev and keeps everything from being cleaned up.  Yuck!
-> 
-> By fixing my earlier thinko and add the needed kfree_skb and everything
-> cleans up beautifully. 
-> 
-> Signed-off-by: Eric W. Biederman <ebiederm@xmission.com>
+> Acked-by: Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
+> Acked-by: Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+> Signed-off-by: Eric W. Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 
 Applied.
