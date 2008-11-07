@@ -1,17 +1,13 @@
-From: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Subject: Re: [PATCH -last version] freezer_cg: disable writing freezer.state
-	of root  cgroup
-Date: Fri, 07 Nov 2008 14:58:53 +0800
-Message-ID: <4913E72D.3060108__3093.3584007018$1226041461$gmane$org@cn.fujitsu.com>
-References: <491245F1.5070707@cn.fujitsu.com>
-	<6599ad830811051724p1f97026fl96be5efe38b33152@mail.gmail.com>
-	<49124DFF.1090702@cn.fujitsu.com>
-	<49125006.4050206@cn.fujitsu.com> <4912A73C.4080308@fr.ibm.com>
+From: Ryo Tsuruta <ryov-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
+Subject: Re: [Question] I have questions about dm-ioband
+Date: Fri, 07 Nov 2008 16:02:07 +0900 (JST)
+Message-ID: <20081107.160207.193692798.ryov@valinux.co.jp>
+References: <2891419e0811062139n5c0382a9n7d4fe7048d72dbf2@mail.gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <4912A73C.4080308-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <2891419e0811062139n5c0382a9n7d4fe7048d72dbf2-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -21,69 +17,71 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Cedric Le Goater <clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
-Cc: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, LKML <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
+To: baramsori72-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, corsetproject-/JYPxA39Uh5TLH3MbocFFw@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-> I would make a small macro is_root_freezer() to show explicitly
-> what we are testing and use the CSS_ROOT bit to test. That's what
-> the CSS_ROOT bit is for Paul ?
-> 
+Hi Dong-Jae,
 
-I think yes CSS_ROOT can be used, though currently CSS_ROOT is used in
-cgroup internal only (in css_get() and css_put()).
+From: "Dong-Jae Kang" <baramsori72-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Subject: [Question] I have questions about dm-ioband
+Date: Fri, 7 Nov 2008 14:39:56 +0900
 
-> if yes, here's a possible result is below. 
+> Hi, Ryo tsuruta
 > 
+> During past several days, I had been analyzing and testing your
+> dm-ioband I/O controller.
+> because I received some requirements about disk I/O control from other
+> persons as below
+> "guaranteeing the minimum BW of processes in the specific group", of
+> course, in the total BW range.
+> I think it can be adjusted to streaming service, SLA of service
+> hosting part and so on.
+> although the applicable area is some specific and limited part, it can
+> be useful according to the service
+> How do you think about upper requirement?
 
-is_root_freezer() looks a bit better, but I don't have strong option about
-this change, the original code and the comment is enough to explain what
-we are doing.
+I think I know why they want minimum bandwidth guarantee and it
+would be useful on a certain situation.
 
-> C.
+> If it is required, I think that try to support the function in your
+> dm-ioband controller
+> personally, I like your design and implementation style.
+> And, for it , where is the appropriate part in dm-ioband controller to
+> implement the function?
+> Can you give me some advice and comments about supporting it ?
+
+Sure! dm-ioband is designed to be able to add new bandwidth control
+policies. dm-ioband-policy.c is a source code of "weight" and
+"weight-iosize" policies, and would help to understand how to add
+a new policy.
+
+> I don't know well about the details of dm-ioband controllers, concept,
+> design, architecture and so on.
+> it will take some time for me to do that ^^
+> Well, Is there any documentations to help for me to understand the
+> existing implementation ?
+> If so, can I refer it ?
+
+Sorry, there is no document which describes the implementation.
+
+> additional one question is left^^
+> dm-ioband can be operated with another dm targets at the same thme?
+> with such like multipath, mirror, linear, snapshot and something like that.
+> for example, IO control over the mirror targets or IO control over the
+> devices with multipath, ....
+
+I have run dm-ioband on a logical volume disk and it worked well.
+http://people.valinux.co.jp/~ryov/dm-ioband/benchmark/lvm.html
+
 > 
-> Signed-off-by: Cedric Le Goater <clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
-> ---
->  kernel/cgroup_freezer.c |   15 +++++++++++++++
->  1 file changed, 15 insertions(+)
+> Oh,
+> Ryo tsuruta, sorry for many questions.
 > 
-> Index: 2.6.27-lxc/kernel/cgroup_freezer.c
-> ===================================================================
-> --- 2.6.27-lxc.orig/kernel/cgroup_freezer.c
-> +++ 2.6.27-lxc/kernel/cgroup_freezer.c
-> @@ -47,6 +47,11 @@ static inline struct freezer *task_freez
->  			    struct freezer, css);
->  }
->  
-> +static inline int is_root_freezer(struct freezer *freezer)
-> +{
-> +	return test_bit(CSS_ROOT, &freezer->css.flags);
-> +}
-> +
->  int cgroup_frozen(struct task_struct *task)
->  {
->  	struct freezer *freezer;
-> @@ -190,6 +195,13 @@ static void freezer_fork(struct cgroup_s
->  	freezer = task_freezer(task);
->  	task_unlock(task);
->  
-> +	/*
-> +	 * The root cgroup is non-freezable, so we can skip the
-> +	 * following check.
-> +	 */
-> +	if (is_root_freezer(freezer))
-> +		return;
-> +
->  	BUG_ON(freezer->state == CGROUP_FROZEN);
->  	spin_lock_irq(&freezer->lock);
->  	/* Locking avoids race with FREEZING -> THAWED transitions. */
-> @@ -363,6 +375,9 @@ static struct cftype files[] = {
->  
->  static int freezer_populate(struct cgroup_subsys *ss, struct cgroup *cgroup)
->  {
-> +	if (is_root_freezer(cgroup_freezer(cgroup)))
-> +		return 0;
-> +
->  	return cgroup_add_files(cgroup, ss, files, ARRAY_SIZE(files));
->  }
-> 
+> Thank you
+> -- 
+> Best Regards,
+> Dong-Jae Kang
+
+Thanks,
+Ryo Tsuruta
