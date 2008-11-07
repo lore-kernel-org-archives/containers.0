@@ -1,62 +1,78 @@
-From: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [patch 3/4] io controller: Core IO controller implementation logic
-Date: Fri, 7 Nov 2008 09:50:36 -0500
-Message-ID: <20081107145036.GF21884__8706.59415745667$1226069779$gmane$org@redhat.com>
-References: <20081106153022.215696930@redhat.com>
-	<20081106153135.869625751@redhat.com>
-	<20081107122145.69500cd3.kamezawa.hiroyu@jp.fujitsu.com>
+From: ebiederm@xmission.com (Eric W. Biederman)
+Subject: Re: [PATCH 2/7] proc: Implement support for automounts in task directories
+Date: Fri, 07 Nov 2008 07:51:32 -0800
+Message-ID: <m1d4h7v8jf.fsf@frodo.ebiederm.org>
+References: <m1ej1p2l6u.fsf@frodo.ebiederm.org>
+	<m1abcd2kqk.fsf@frodo.ebiederm.org>
+	<20081106172617.dd51d0af.akpm@linux-foundation.org>
+	<m1abccxpc5.fsf@frodo.ebiederm.org>
+	<20081106184945.179c248a.akpm@linux-foundation.org>
+	<m1iqr0urb8.fsf@frodo.ebiederm.org>
+	<20081106202822.a1af8a6e.akpm@linux-foundation.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <20081107122145.69500cd3.kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
-Cc: menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, Rik van Riel <riel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, virtualization-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Jeff Moyer <jmoyer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, jens.axboe-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, ngupta-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, fernando-gVGce1chcLdL9jVzuh4AOg@public.gmane.org, Andrea Righi <righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Content-Type: text/plain; charset=us-ascii
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1753601AbYKGP4I@vger.kernel.org>
+In-Reply-To: <20081106202822.a1af8a6e.akpm@linux-foundation.org> (Andrew
+	Morton's message of "Thu, 6 Nov 2008 20:28:22 -0800")
+Sender: linux-kernel-owner@vger.kernel.org
+To: Andrew Morton <akpm@linux-foundation.org>
+Cc: linux-kernel@vger.kernel.org, adobriyan@gmail.com, viro@ZenIV.linux.org.uk, containers@lists.osdl.org
 List-Id: containers.vger.kernel.org
 
-On Fri, Nov 07, 2008 at 12:21:45PM +0900, KAMEZAWA Hiroyuki wrote:
-> On Thu, 06 Nov 2008 10:30:25 -0500
-> vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org wrote:
-> 
-> > 
-> > o Core IO controller implementation
-> > 
-> > Signed-off-by: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-> > 
-> 
-> 2 comments after a quick look.
-> 
->  - I don't recommend generic work queue. More stacked dependency between "work"
->    is not good. (I think disk-driver uses "work" for their jobs.)
+Andrew Morton <akpm@linux-foundation.org> writes:
 
-Sorry, I did not get this. Are you recommending that don't create a new
-work queue, instead use existing work queue (say kblockd) to submit the bios
-here?
+> On Thu, 06 Nov 2008 19:51:23 -0800 ebiederm@xmission.com (Eric W. Biederman)
+> wrote:
+>
+>> If we could do all of this with reference counting so that the
+>> mount would persist exactly until the last user of it has gone
+>> away without a periodic poll I would love it.  But the infrastructure
+>> doesn't support that today,
+>
+> Well that sucks.  The free-on-last-put idiom occurs in so many places
+> and serves us so well.  I wonder what went wrong here?
 
-I will look into it. I was little worried about a kblockd being overworked
-in case of too many logical devices enabling IO controller.
+> I guess it has interactions with dentry and inode cache aging which
+> could get tricky.
 
-> 
->  - It seems this bio-cgroup can queue the bio to infinite. Then, a process can submit
->    io unitl cause OOM.
->    (IIUC, Dirty bit of the page is cleared at submitting I/O. 
->     Then dirty_ratio can't help us.)
->    please add "wait for congestion by sleeping" code in bio-cgroup.
+At least in part.  If you just have the dentry you can't  easily
+find what is mounted on it.  
 
-Yes, you are right. I need to put some kind of control on max number of
-bios I can queue on a cgroup and after crossing the limit, I should put
-the submitting task to sleep. (Something like request descriptor kind of
-flow control implememented by elevators).
+>> and where this is at least partially
+>> a bug fix I would rather not have the change depend on enhancing
+>> the VFS.
+>> 
+>> The algorithm is actually very aggressive and in practice you don't
+>> see any /proc/<pid>/net showing up as a mount point.
+>
+> Do you think it has failure modes?  Most particularly: obscure usage
+> patterns which can cause memory exhaustion?
 
-Thanks
-Vivek
+I don't think we can pin anything that way that we can't
+pin right now.
+
+You might be able to pin more if you happen to mount something
+on top of /proc/<pid>/net/  but that is an unprivileged operation.
+
+>> > Obviously, that becomes clearer as one spends more time with the code,
+>> > but I wonder whether this has all been made as maintainble as it
+>> > possibly could be.
+>> 
+>> Good question.
+>> 
+>> In the sense of will we have to go through and futz with the code all
+>> of the time.  The abstraction seems good.   You put a mount on
+>> the proc_automounts list with do_add_mounts and it goes away eventually
+>> with all of the vfs rules maintained.
+>> 
+>> In the sense of can the code be read?    Perhaps it could be better.
+>> I expect it helps to have run the code and see /proc/net as a filesystem.
+>> that is magically mounted.
+>
+> 'twould be a useful contribution if you were to enshrine your
+> discoveries in /*these things*/.  You knew I was working up to that :)
+
+Short of a big fat comment I'm not certain if there is something I can do
+better.
+
+Eric
