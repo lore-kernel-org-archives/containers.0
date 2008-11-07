@@ -1,13 +1,15 @@
-From: Ryo Tsuruta <ryov-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
+From: "Dong-Jae Kang" <baramsori72-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 Subject: Re: [Question] I have questions about dm-ioband
-Date: Fri, 07 Nov 2008 16:02:07 +0900 (JST)
-Message-ID: <20081107.160207.193692798.ryov@valinux.co.jp>
+Date: Fri, 7 Nov 2008 16:29:07 +0900
+Message-ID: <2891419e0811062329q7e8f064duf82881f1bce0abf0@mail.gmail.com>
 References: <2891419e0811062139n5c0382a9n7d4fe7048d72dbf2@mail.gmail.com>
+	<20081107.160207.193692798.ryov@valinux.co.jp>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="euc-kr"
+Content-Transfer-Encoding: base64
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <2891419e0811062139n5c0382a9n7d4fe7048d72dbf2-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
+In-Reply-To: <20081107.160207.193692798.ryov-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
+Content-Disposition: inline
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -17,71 +19,57 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: baramsori72-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org
+To: Ryo Tsuruta <ryov-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
 Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, corsetproject-/JYPxA39Uh5TLH3MbocFFw@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Hi Dong-Jae,
-
-From: "Dong-Jae Kang" <baramsori72-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: [Question] I have questions about dm-ioband
-Date: Fri, 7 Nov 2008 14:39:56 +0900
-
-> Hi, Ryo tsuruta
-> 
-> During past several days, I had been analyzing and testing your
-> dm-ioband I/O controller.
-> because I received some requirements about disk I/O control from other
-> persons as below
-> "guaranteeing the minimum BW of processes in the specific group", of
-> course, in the total BW range.
-> I think it can be adjusted to streaming service, SLA of service
-> hosting part and so on.
-> although the applicable area is some specific and limited part, it can
-> be useful according to the service
-> How do you think about upper requirement?
-
-I think I know why they want minimum bandwidth guarantee and it
-would be useful on a certain situation.
-
-> If it is required, I think that try to support the function in your
-> dm-ioband controller
-> personally, I like your design and implementation style.
-> And, for it , where is the appropriate part in dm-ioband controller to
-> implement the function?
-> Can you give me some advice and comments about supporting it ?
-
-Sure! dm-ioband is designed to be able to add new bandwidth control
-policies. dm-ioband-policy.c is a source code of "weight" and
-"weight-iosize" policies, and would help to understand how to add
-a new policy.
-
-> I don't know well about the details of dm-ioband controllers, concept,
-> design, architecture and so on.
-> it will take some time for me to do that ^^
-> Well, Is there any documentations to help for me to understand the
-> existing implementation ?
-> If so, can I refer it ?
-
-Sorry, there is no document which describes the implementation.
-
-> additional one question is left^^
-> dm-ioband can be operated with another dm targets at the same thme?
-> with such like multipath, mirror, linear, snapshot and something like that.
-> for example, IO control over the mirror targets or IO control over the
-> devices with multipath, ....
-
-I have run dm-ioband on a logical volume disk and it worked well.
-http://people.valinux.co.jp/~ryov/dm-ioband/benchmark/lvm.html
-
-> 
-> Oh,
-> Ryo tsuruta, sorry for many questions.
-> 
-> Thank you
-> -- 
-> Best Regards,
-> Dong-Jae Kang
-
-Thanks,
-Ryo Tsuruta
+SGkgUnlvIFRzdXJ1dGEKClRoYW5rIHlvdSB2ZXJ5IG11Y2ggZm9yIHlvdXIga2luZCBhbmQgZmFz
+dCByZXBseQoKMjAwOC8xMS83IFJ5byBUc3VydXRhIDxyeW92QHZhbGludXguY28uanA+Ogo+IEhp
+IERvbmctSmFlLAo+Cj4gRnJvbTogIkRvbmctSmFlIEthbmciIDxiYXJhbXNvcmk3MkBnbWFpbC5j
+b20+Cj4gU3ViamVjdDogW1F1ZXN0aW9uXSBJIGhhdmUgcXVlc3Rpb25zIGFib3V0IGRtLWlvYmFu
+ZAo+IERhdGU6IEZyaSwgNyBOb3YgMjAwOCAxNDozOTo1NiArMDkwMAo+Cj4+IEhpLCBSeW8gdHN1
+cnV0YQo+Pgo+PiBEdXJpbmcgcGFzdCBzZXZlcmFsIGRheXMsIEkgaGFkIGJlZW4gYW5hbHl6aW5n
+IGFuZCB0ZXN0aW5nIHlvdXIKPj4gZG0taW9iYW5kIEkvTyBjb250cm9sbGVyLgo+PiBiZWNhdXNl
+IEkgcmVjZWl2ZWQgc29tZSByZXF1aXJlbWVudHMgYWJvdXQgZGlzayBJL08gY29udHJvbCBmcm9t
+IG90aGVyCj4+IHBlcnNvbnMgYXMgYmVsb3cKPj4gImd1YXJhbnRlZWluZyB0aGUgbWluaW11bSBC
+VyBvZiBwcm9jZXNzZXMgaW4gdGhlIHNwZWNpZmljIGdyb3VwIiwgb2YKPj4gY291cnNlLCBpbiB0
+aGUgdG90YWwgQlcgcmFuZ2UuCj4+IEkgdGhpbmsgaXQgY2FuIGJlIGFkanVzdGVkIHRvIHN0cmVh
+bWluZyBzZXJ2aWNlLCBTTEEgb2Ygc2VydmljZQo+PiBob3N0aW5nIHBhcnQgYW5kIHNvIG9uLgo+
+PiBhbHRob3VnaCB0aGUgYXBwbGljYWJsZSBhcmVhIGlzIHNvbWUgc3BlY2lmaWMgYW5kIGxpbWl0
+ZWQgcGFydCwgaXQgY2FuCj4+IGJlIHVzZWZ1bCBhY2NvcmRpbmcgdG8gdGhlIHNlcnZpY2UKPj4g
+SG93IGRvIHlvdSB0aGluayBhYm91dCB1cHBlciByZXF1aXJlbWVudD8KPgo+IEkgdGhpbmsgSSBr
+bm93IHdoeSB0aGV5IHdhbnQgbWluaW11bSBiYW5kd2lkdGggZ3VhcmFudGVlIGFuZCBpdAo+IHdv
+dWxkIGJlIHVzZWZ1bCBvbiBhIGNlcnRhaW4gc2l0dWF0aW9uLgo+Cj4+IElmIGl0IGlzIHJlcXVp
+cmVkLCBJIHRoaW5rIHRoYXQgdHJ5IHRvIHN1cHBvcnQgdGhlIGZ1bmN0aW9uIGluIHlvdXIKPj4g
+ZG0taW9iYW5kIGNvbnRyb2xsZXIKPj4gcGVyc29uYWxseSwgSSBsaWtlIHlvdXIgZGVzaWduIGFu
+ZCBpbXBsZW1lbnRhdGlvbiBzdHlsZS4KPj4gQW5kLCBmb3IgaXQgLCB3aGVyZSBpcyB0aGUgYXBw
+cm9wcmlhdGUgcGFydCBpbiBkbS1pb2JhbmQgY29udHJvbGxlciB0bwo+PiBpbXBsZW1lbnQgdGhl
+IGZ1bmN0aW9uPwo+PiBDYW4geW91IGdpdmUgbWUgc29tZSBhZHZpY2UgYW5kIGNvbW1lbnRzIGFi
+b3V0IHN1cHBvcnRpbmcgaXQgPwo+Cj4gU3VyZSEgZG0taW9iYW5kIGlzIGRlc2lnbmVkIHRvIGJl
+IGFibGUgdG8gYWRkIG5ldyBiYW5kd2lkdGggY29udHJvbAo+IHBvbGljaWVzLiBkbS1pb2JhbmQt
+cG9saWN5LmMgaXMgYSBzb3VyY2UgY29kZSBvZiAid2VpZ2h0IiBhbmQKPiAid2VpZ2h0LWlvc2l6
+ZSIgcG9saWNpZXMsIGFuZCB3b3VsZCBoZWxwIHRvIHVuZGVyc3RhbmQgaG93IHRvIGFkZAo+IGEg
+bmV3IHBvbGljeS4KPgoKT0ssIEkgd2lsbCBzdGFydCB0byBhbmFseXplIHRoZSBkbS1pb2JhbmQt
+cG9saWN5LmMgZmlyc3QuCmR1cmluZyB0aGUgam9iLCBpZiBJIGhhdmUgYSBhbm90aGVyIHF1ZXN0
+aW9uIG9yIG5lZWQgeW91ciBoZWxwLCBjYW4gSQphc2sgeW91IGFib3V0IGl0PwpUaGFuayB5b3Uu
+Cgo+PiBJIGRvbid0IGtub3cgd2VsbCBhYm91dCB0aGUgZGV0YWlscyBvZiBkbS1pb2JhbmQgY29u
+dHJvbGxlcnMsIGNvbmNlcHQsCj4+IGRlc2lnbiwgYXJjaGl0ZWN0dXJlIGFuZCBzbyBvbi4KPj4g
+aXQgd2lsbCB0YWtlIHNvbWUgdGltZSBmb3IgbWUgdG8gZG8gdGhhdCBeXgo+PiBXZWxsLCBJcyB0
+aGVyZSBhbnkgZG9jdW1lbnRhdGlvbnMgdG8gaGVscCBmb3IgbWUgdG8gdW5kZXJzdGFuZCB0aGUK
+Pj4gZXhpc3RpbmcgaW1wbGVtZW50YXRpb24gPwo+PiBJZiBzbywgY2FuIEkgcmVmZXIgaXQgPwo+
+Cj4gU29ycnksIHRoZXJlIGlzIG5vIGRvY3VtZW50IHdoaWNoIGRlc2NyaWJlcyB0aGUgaW1wbGVt
+ZW50YXRpb24uCj4KT2guLi4uIEkgc2hvdWxkIHB1dCB1cCB3aXRoIGluY29udmVuaWVuY2UuIKTM
+pMwKYnV0LCBJIHN0aWxsIGFwcHJlY2lhdGUgeW91ciBjb250cmlidXRpb24gZm9yIE9TUyBjb21t
+dW5pdHkKCj4+IGFkZGl0aW9uYWwgb25lIHF1ZXN0aW9uIGlzIGxlZnReXgo+PiBkbS1pb2JhbmQg
+Y2FuIGJlIG9wZXJhdGVkIHdpdGggYW5vdGhlciBkbSB0YXJnZXRzIGF0IHRoZSBzYW1lIHRobWU/
+Cj4+IHdpdGggc3VjaCBsaWtlIG11bHRpcGF0aCwgbWlycm9yLCBsaW5lYXIsIHNuYXBzaG90IGFu
+ZCBzb21ldGhpbmcgbGlrZSB0aGF0Lgo+PiBmb3IgZXhhbXBsZSwgSU8gY29udHJvbCBvdmVyIHRo
+ZSBtaXJyb3IgdGFyZ2V0cyBvciBJTyBjb250cm9sIG92ZXIgdGhlCj4+IGRldmljZXMgd2l0aCBt
+dWx0aXBhdGgsIC4uLi4KPgo+IEkgaGF2ZSBydW4gZG0taW9iYW5kIG9uIGEgbG9naWNhbCB2b2x1
+bWUgZGlzayBhbmQgaXQgd29ya2VkIHdlbGwuCj4gaHR0cDovL3Blb3BsZS52YWxpbnV4LmNvLmpw
+L35yeW92L2RtLWlvYmFuZC9iZW5jaG1hcmsvbHZtLmh0bWwKPgoKSSB1bmRlcnN0b29kCllvdSBt
+ZWFuIGRtLWlvYmFuZCBjYW4gcnVuIG92ZXIgYW5vdGhlciBkbSB0YXJnZXRzLgpUaGFuayB5b3Ug
+YWdhaW4KLS0gCkJlc3QgUmVnYXJkcywKRG9uZy1KYWUgS2FuZwpfX19fX19fX19fX19fX19fX19f
+X19fX19fX19fX19fX19fX19fX19fX19fX19fXwpDb250YWluZXJzIG1haWxpbmcgbGlzdApDb250
+YWluZXJzQGxpc3RzLmxpbnV4LWZvdW5kYXRpb24ub3JnCmh0dHBzOi8vbGlzdHMubGludXgtZm91
+bmRhdGlvbi5vcmcvbWFpbG1hbi9saXN0aW5mby9jb250YWluZXJz
