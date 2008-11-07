@@ -1,49 +1,62 @@
-From: Alexey Dobriyan <adobriyan@gmail.com>
-Subject: Re: [PATCH 2/7] proc: Implement support for automounts in task
-	directories
-Date: Fri, 7 Nov 2008 07:41:18 +0300
-Message-ID: <20081107044118.GA21330@x200.localdomain>
-References: <m1ej1p2l6u.fsf@frodo.ebiederm.org> <m1abcd2kqk.fsf@frodo.ebiederm.org>
+From: "Dong-Jae Kang" <baramsori72-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Subject: [Question] I have questions about dm-ioband
+Date: Fri, 7 Nov 2008 14:39:56 +0900
+Message-ID: <2891419e0811062139n5c0382a9n7d4fe7048d72dbf2@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1751608AbYKGEiZ@vger.kernel.org>
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <m1abcd2kqk.fsf@frodo.ebiederm.org>
-Sender: linux-kernel-owner@vger.kernel.org
-To: "Eric W. Biederman" <ebiederm@xmission.com>
-Cc: Andrew Morton <akpm@linux-foundation.org>, linux-kernel@vger.kernel.org, Al Viro <viro@ZenIV.linux.org.uk>, Linux Containers <containers@lists.osdl.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Ryo Tsuruta <ryov-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>, corsetproject-/JYPxA39Uh5TLH3MbocFFw@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Thu, Nov 06, 2008 at 02:48:35AM -0800, Eric W. Biederman wrote:
-> --- a/fs/proc/Makefile
-> +++ b/fs/proc/Makefile
-> @@ -18,6 +18,7 @@ proc-y	+= meminfo.o
->  proc-y	+= stat.o
->  proc-y	+= uptime.o
->  proc-y	+= version.o
-> +proc-y	+= automount.o
->  proc-$(CONFIG_PROC_SYSCTL)	+= proc_sysctl.o
->  proc-$(CONFIG_NET)		+= proc_net.o
->  proc-$(CONFIG_PROC_KCORE)	+= kcore.o
+Hi, Ryo tsuruta
 
-> --- a/include/linux/proc_fs.h
-> +++ b/include/linux/proc_fs.h
-> @@ -101,6 +101,7 @@ extern spinlock_t proc_subdir_lock;
->  
->  extern void proc_root_init(void);
->  
-> +void proc_shrink_automounts(void);
->  void proc_flush_task(struct task_struct *task);
->  struct dentry *proc_pid_lookup(struct inode *dir, struct dentry * dentry, struct nameidata *);
->  int proc_pid_readdir(struct file * filp, void * dirent, filldir_t filldir);
-> diff --git a/kernel/exit.c b/kernel/exit.c
-> index 80137a5..8a8badb 100644
-> --- a/kernel/exit.c
-> +++ b/kernel/exit.c
-> @@ -161,6 +161,7 @@ void release_task(struct task_struct * p)
->  repeat:
->  	tracehook_prepare_release_task(p);
->  	atomic_dec(&p->user->processes);
-> +	proc_shrink_automounts();
+During past several days, I had been analyzing and testing your
+dm-ioband I/O controller.
+because I received some requirements about disk I/O control from other
+persons as below
+"guaranteeing the minimum BW of processes in the specific group", of
+course, in the total BW range.
+I think it can be adjusted to streaming service, SLA of service
+hosting part and so on.
+although the applicable area is some specific and limited part, it can
+be useful according to the service
+How do you think about upper requirement?
 
-This, of course, won't compile when PROC_FS=n.
+If it is required, I think that try to support the function in your
+dm-ioband controller
+personally, I like your design and implementation style.
+And, for it , where is the appropriate part in dm-ioband controller to
+implement the function?
+Can you give me some advice and comments about supporting it ?
+
+I don't know well about the details of dm-ioband controllers, concept,
+design, architecture and so on.
+it will take some time for me to do that ^^
+Well, Is there any documentations to help for me to understand the
+existing implementation ?
+If so, can I refer it ?
+
+additional one question is left^^
+dm-ioband can be operated with another dm targets at the same thme?
+with such like multipath, mirror, linear, snapshot and something like that.
+for example, IO control over the mirror targets or IO control over the
+devices with multipath, ....
+
+Oh,
+Ryo tsuruta, sorry for many questions.
+
+Thank you
+-- 
+Best Regards,
+Dong-Jae Kang
