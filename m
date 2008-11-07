@@ -1,54 +1,51 @@
-From: Dave Chinner <david-FqsqvQoI3Ljby3iVrkZq2A@public.gmane.org>
-Subject: Re: [patch 0/4] [RFC] Another proportional weight IO controller
-Date: Fri, 7 Nov 2008 11:41:31 +1100
-Message-ID: <20081107004131.GD2373__22772.0716422938$1226018662$gmane$org@disturbed>
-References: <20081106153022.215696930@redhat.com>
-	<1225986593.7803.4688.camel@twins>
-	<20081106160154.GA7461@redhat.com>
-	<1225988173.7803.4723.camel@twins>
-	<20081106163957.GB7461@redhat.com>
-	<1225990327.7803.4776.camel@twins> <491321ED.5010103@redhat.com>
-	<1225991487.7803.4801.camel@twins>
+From: Andrew Morton <akpm@linux-foundation.org>
+Subject: Re: [PATCH 1/7] vfs: Fix shrink_submounts
+Date: Thu, 6 Nov 2008 17:22:21 -0800
+Message-ID: <20081106172221.dbeb5b12.akpm@linux-foundation.org>
+References: <m1ej1p2l6u.fsf@frodo.ebiederm.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
+Content-Type: text/plain; charset=US-ASCII
 Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <1225991487.7803.4801.camel@twins>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Peter Zijlstra <peterz-wEGCiKHe2LqWVfeAwA7xHQ@public.gmane.org>
-Cc: menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, Rik van Riel <riel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, virtualization-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Jeff Moyer <jmoyer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, jens.axboe-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, ngupta-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, fernando-gVGce1chcLdL9jVzuh4AOg@public.gmane.org, Andrea Righi <righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1754865AbYKGBXV@vger.kernel.org>
+In-Reply-To: <m1ej1p2l6u.fsf@frodo.ebiederm.org>
+Sender: linux-kernel-owner@vger.kernel.org
+To: "Eric W. Biederman" <ebiederm@xmission.com>
+Cc: linux-kernel@vger.kernel.org, adobriyan@gmail.com, viro@ZenIV.linux.org.uk, containers@lists.osdl.org
 List-Id: containers.vger.kernel.org
 
-On Thu, Nov 06, 2008 at 06:11:27PM +0100, Peter Zijlstra wrote:
-> On Thu, 2008-11-06 at 11:57 -0500, Rik van Riel wrote:
-> > Peter Zijlstra wrote:
-> > 
-> > > The only real issue I can see is with linear volumes, but those are
-> > > stupid anyway - non of the gains but all the risks.
-> > 
-> > Linear volumes may well be the most common ones.
-> > 
-> > People start out with the filesystems at a certain size,
-> > increasing onto a second (new) disk later, when more space
-> > is required.
+On Thu, 06 Nov 2008 02:38:49 -0800
+ebiederm@xmission.com (Eric W. Biederman) wrote:
+
 > 
-> Are they aware of how risky linear volumes are? I would discourage
-> anyone from using them.
+> In the last refactoring of shrink_submounts a variable was
+> not completely renamed.  So finish the renaming of mnt to m
+> now.
+> 
+> Without this if you attempt to mount an nfs mount that has
+> both automatic nfs sub mounts on it, and has normal mounts
+> on it.  The unmount will succeed when it should not.
+> 
+> Signed-off-by: Eric W. Biederman <ebiederm@xmission.com>
+> ---
+>  fs/namespace.c |    4 ++--
+>  1 files changed, 2 insertions(+), 2 deletions(-)
+> 
+> diff --git a/fs/namespace.c b/fs/namespace.c
+> index cce4670..65b3dc8 100644
+> --- a/fs/namespace.c
+> +++ b/fs/namespace.c
+> @@ -1815,8 +1815,8 @@ static void shrink_submounts(struct vfsmount *mnt, struct list_head *umounts)
+>  		while (!list_empty(&graveyard)) {
+>  			m = list_first_entry(&graveyard, struct vfsmount,
+>  						mnt_expire);
+> -			touch_mnt_namespace(mnt->mnt_ns);
+> -			umount_tree(mnt, 1, umounts);
+> +			touch_mnt_namespace(m->mnt_ns);
+> +			umount_tree(m, 1, umounts);
+>  		}
+>  	}
+>  }
 
-In what way are they risky?
+OK, so that's a for-2.6.28 bugfix, yes?
 
-Cheers,
-
-Dave.
--- 
-Dave Chinner
-david-FqsqvQoI3Ljby3iVrkZq2A@public.gmane.org
+The other six patches will fall under Alexey's procfs tree.
