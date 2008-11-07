@@ -1,78 +1,52 @@
 From: ebiederm@xmission.com (Eric W. Biederman)
-Subject: Re: [PATCH 2/7] proc: Implement support for automounts in task directories
-Date: Fri, 07 Nov 2008 07:51:32 -0800
-Message-ID: <m1d4h7v8jf.fsf@frodo.ebiederm.org>
+Subject: [PATCH] proc: Supply proc_shrink_automounts when CONFIG_PROC_FS=N
+Date: Fri, 07 Nov 2008 08:04:40 -0800
+Message-ID: <m18wrvv7xj.fsf_-_@frodo.ebiederm.org>
 References: <m1ej1p2l6u.fsf@frodo.ebiederm.org>
 	<m1abcd2kqk.fsf@frodo.ebiederm.org>
-	<20081106172617.dd51d0af.akpm@linux-foundation.org>
-	<m1abccxpc5.fsf@frodo.ebiederm.org>
-	<20081106184945.179c248a.akpm@linux-foundation.org>
-	<m1iqr0urb8.fsf@frodo.ebiederm.org>
-	<20081106202822.a1af8a6e.akpm@linux-foundation.org>
+	<20081107044118.GA21330@x200.localdomain>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1753601AbYKGP4I@vger.kernel.org>
-In-Reply-To: <20081106202822.a1af8a6e.akpm@linux-foundation.org> (Andrew
-	Morton's message of "Thu, 6 Nov 2008 20:28:22 -0800")
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1753427AbYKGQFb@vger.kernel.org>
+In-Reply-To: <20081107044118.GA21330@x200.localdomain> (Alexey Dobriyan's
+	message of "Fri, 7 Nov 2008 07:41:18 +0300")
 Sender: linux-kernel-owner@vger.kernel.org
-To: Andrew Morton <akpm@linux-foundation.org>
-Cc: linux-kernel@vger.kernel.org, adobriyan@gmail.com, viro@ZenIV.linux.org.uk, containers@lists.osdl.org
+To: Alexey Dobriyan <adobriyan@gmail.com>
+Cc: Andrew Morton <akpm@linux-foundation.org>, linux-kernel@vger.kernel.org, Al Viro <viro@ZenIV.linux.org.uk>, Linux Containers <containers@lists.osdl.org>
 List-Id: containers.vger.kernel.org
 
-Andrew Morton <akpm@linux-foundation.org> writes:
 
-> On Thu, 06 Nov 2008 19:51:23 -0800 ebiederm@xmission.com (Eric W. Biederman)
-> wrote:
+Alexey Dobriyan <adobriyan@gmail.com> writes:
+
+>>  	tracehook_prepare_release_task(p);
+>>  	atomic_dec(&p->user->processes);
+>> +	proc_shrink_automounts();
 >
->> If we could do all of this with reference counting so that the
->> mount would persist exactly until the last user of it has gone
->> away without a periodic poll I would love it.  But the infrastructure
->> doesn't support that today,
->
-> Well that sucks.  The free-on-last-put idiom occurs in so many places
-> and serves us so well.  I wonder what went wrong here?
+> This, of course, won't compile when PROC_FS=n.
 
-> I guess it has interactions with dentry and inode cache aging which
-> could get tricky.
+Which of course leads to this incremental patch.
 
-At least in part.  If you just have the dentry you can't  easily
-find what is mounted on it.  
+Oops.  I forgot to account for the rare but possible
+case of someone not compiling procfs into their kernel.
 
->> and where this is at least partially
->> a bug fix I would rather not have the change depend on enhancing
->> the VFS.
->> 
->> The algorithm is actually very aggressive and in practice you don't
->> see any /proc/<pid>/net showing up as a mount point.
->
-> Do you think it has failure modes?  Most particularly: obscure usage
-> patterns which can cause memory exhaustion?
+Signed-off-by: Eric W. Biederman <ebiederm@xmission.com>
+---
+ include/linux/proc_fs.h |    3 +++
+ 1 files changed, 3 insertions(+), 0 deletions(-)
 
-I don't think we can pin anything that way that we can't
-pin right now.
-
-You might be able to pin more if you happen to mount something
-on top of /proc/<pid>/net/  but that is an unprivileged operation.
-
->> > Obviously, that becomes clearer as one spends more time with the code,
->> > but I wonder whether this has all been made as maintainble as it
->> > possibly could be.
->> 
->> Good question.
->> 
->> In the sense of will we have to go through and futz with the code all
->> of the time.  The abstraction seems good.   You put a mount on
->> the proc_automounts list with do_add_mounts and it goes away eventually
->> with all of the vfs rules maintained.
->> 
->> In the sense of can the code be read?    Perhaps it could be better.
->> I expect it helps to have run the code and see /proc/net as a filesystem.
->> that is magically mounted.
->
-> 'twould be a useful contribution if you were to enshrine your
-> discoveries in /*these things*/.  You knew I was working up to that :)
-
-Short of a big fat comment I'm not certain if there is something I can do
-better.
-
-Eric
+diff --git a/include/linux/proc_fs.h b/include/linux/proc_fs.h
+index 52cc6bd..394593d 100644
+--- a/include/linux/proc_fs.h
++++ b/include/linux/proc_fs.h
+@@ -207,6 +207,9 @@ static inline void proc_net_remove(struct net *net, const char *name) {}
+ static inline void proc_flush_task(struct task_struct *task)
+ {
+ }
++static inline void proc_shrink_automounts(void)
++{
++}
+ 
+ static inline struct proc_dir_entry *create_proc_entry(const char *name,
+ 	mode_t mode, struct proc_dir_entry *parent) { return NULL; }
+-- 
+1.5.3.rc6.17.g1911
