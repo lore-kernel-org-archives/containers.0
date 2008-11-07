@@ -1,47 +1,57 @@
-From: Andrew Morton <akpm@linux-foundation.org>
-Subject: Re: [PATCH 2/7] proc: Implement support for automounts in task
- directories
-Date: Fri, 7 Nov 2008 08:05:29 -0800
-Message-ID: <20081107080529.6f4de3ad.akpm@linux-foundation.org>
-References: <m1ej1p2l6u.fsf@frodo.ebiederm.org>
-	<m1abcd2kqk.fsf@frodo.ebiederm.org>
-	<20081106172617.dd51d0af.akpm@linux-foundation.org>
-	<m1abccxpc5.fsf@frodo.ebiederm.org>
-	<20081106184945.179c248a.akpm@linux-foundation.org>
-	<m1iqr0urb8.fsf@frodo.ebiederm.org>
-	<20081106202822.a1af8a6e.akpm@linux-foundation.org>
-	<m1d4h7v8jf.fsf@frodo.ebiederm.org>
+From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
+Subject: Re: [patch 1/2][RFC] add socketat syscall
+Date: Fri, 07 Nov 2008 08:09:54 -0800
+Message-ID: <m1zlkbtt4d.fsf__450.026852968399$1226074668$gmane$org@frodo.ebiederm.org>
+References: <20081031215602.655672481@fr.ibm.com>
+	<20081031215900.810348746@fr.ibm.com>
+	<517f3f820811060522i7b3518aen47907a34b38adee9@mail.gmail.com>
+	<cfd18e0f0811060746l77fbe6fel83402ba543fccb38@mail.gmail.com>
+	<491318DC.4000300@fr.ibm.com> <49143263.1040604@fr.ibm.com>
+	<49143594.8030109@fr.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
+Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1754323AbYKGQGW@vger.kernel.org>
-In-Reply-To: <m1d4h7v8jf.fsf@frodo.ebiederm.org>
-Sender: linux-kernel-owner@vger.kernel.org
-To: "Eric W. Biederman" <ebiederm@xmission.com>
-Cc: linux-kernel@vger.kernel.org, adobriyan@gmail.com, viro@ZenIV.linux.org.uk, containers@lists.osdl.org
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <49143594.8030109-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org> (Daniel Lezcano's message of "Fri,
+	07 Nov 2008 13:33:24 +0100")
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
+Cc: linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Cedric Le Goater <clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>, mtk.manpages-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, Subrata Modak <subrata-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Fri, 07 Nov 2008 07:51:32 -0800 ebiederm@xmission.com (Eric W. Biederman) wrote:
+Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org> writes:
 
-> >> and where this is at least partially
-> >> a bug fix I would rather not have the change depend on enhancing
-> >> the VFS.
-> >> 
-> >> The algorithm is actually very aggressive and in practice you don't
-> >> see any /proc/<pid>/net showing up as a mount point.
-> >
-> > Do you think it has failure modes?  Most particularly: obscure usage
-> > patterns which can cause memory exhaustion?
-> 
-> I don't think we can pin anything that way that we can't
-> pin right now.
-> 
-> You might be able to pin more if you happen to mount something
-> on top of /proc/<pid>/net/  but that is an unprivileged operation.
+> AFAIU, the Eric's proposal in case a new syscall was not accepted. IMHO a new
+> syscall, with the man pages is better than adding an extra obscure argument to a
+> well known API.  But if there is a reason to not add a new syscall, we can
+> consider Eric's approach as a good alternative I think.
+>
+> But before sending anything, I am still waiting for Vivien and Andreas answer
+> about this approach. If it helps them to migrate their project to the network
+> namespace, I will send something more formal.
 
-I was thinking more along the lines of some repeated operation which
-generates reclaimable storage, only nothing reclaims that storage
-sufficiently promptly (the 500 second delay, perhaps).
+In my queue I have some preliminary patches.  For both the syscall
+thing and a filesystem that will pin the namespace.  I trying
+to get my pile down so I can actually test it.
 
-Like the problem we had with SLAB_DESTROY_BY_RCU and, umm, I think it
-was route cache entries increasing like mad and not getting reaped.
+Ultimately to get the full functionality of the current linux-vrf
+project we need:
+
+socketat (or some variant thereof) so we can get unprivileged
+creation of new sockets in another network namespace.
+
+A fs to pin the network namespace and give it a name.
+
+And ultimately a privileged operation sys_enter(int type, int fd);
+To allow the default network namespace to be changed allowing
+unprivileged applications to be run in the network namespace.
+
+Eric
