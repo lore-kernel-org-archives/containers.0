@@ -1,68 +1,56 @@
-From: Andrew Morton <akpm@linux-foundation.org>
-Subject: Re: [PATCH 2/7] proc: Implement support for automounts in task
- directories
-Date: Thu, 6 Nov 2008 18:49:45 -0800
-Message-ID: <20081106184945.179c248a.akpm@linux-foundation.org>
-References: <m1ej1p2l6u.fsf@frodo.ebiederm.org>
-	<m1abcd2kqk.fsf@frodo.ebiederm.org>
-	<20081106172617.dd51d0af.akpm@linux-foundation.org>
-	<m1abccxpc5.fsf@frodo.ebiederm.org>
+From: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+Subject: Re: [patch 2/4] io controller: biocgroup implementation
+Date: Fri, 7 Nov 2008 11:50:30 +0900
+Message-ID: <20081107115030.7ccf3f07.kamezawa.hiroyu__38331.5295599916$1226026533$gmane$org@jp.fujitsu.com>
+References: <20081106153022.215696930@redhat.com>
+	<20081106153135.790621895@redhat.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
+Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1752771AbYKGCuX@vger.kernel.org>
-In-Reply-To: <m1abccxpc5.fsf@frodo.ebiederm.org>
-Sender: linux-kernel-owner@vger.kernel.org
-To: "Eric W. Biederman" <ebiederm@xmission.com>
-Cc: linux-kernel@vger.kernel.org, adobriyan@gmail.com, viro@ZenIV.linux.org.uk, containers@lists.osdl.org
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <20081106153135.790621895-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
+Cc: menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, Rik van Riel <riel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Hirokazu-FOgKQjlUJ6BQetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, virtualization-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Jeff Moyer <jmoyer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, jens.axboe-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org, Andrea-FOgKQjlUJ6BQetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, ngupta-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, fernando-gVGce1chcLdL9jVzuh4AOg@public.gmane.org, Righi <righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Thu, 06 Nov 2008 18:05:46 -0800 ebiederm@xmission.com (Eric W. Biederman) wrote:
+On Thu, 06 Nov 2008 10:30:24 -0500
+vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org wrote:
 
-> Andrew Morton <akpm@linux-foundation.org> writes:
 > 
-> > On Thu, 06 Nov 2008 02:48:35 -0800
-> > ebiederm@xmission.com (Eric W. Biederman) wrote:
-> >
-> >> +void proc_shrink_automounts(void)
-> >> +{
-> >> +	struct list_head *list = &proc_automounts;
-> >> +
-> >> +	mark_mounts_for_expiry(list);
-> >> +	mark_mounts_for_expiry(list);
-> >
-> > Strange.  In case the first attempt didn't work?
+> o biocgroup functionality.
+> o Implemented new controller "bio"
+> o Most of it picked from dm-ioband biocgroup implementation patches.
 > 
-> Yes.  I'd like to say.  Mount just go away but it takes two passes before
-> a mount is actually removed.
+page_cgroup implementation is changed and most of this patch needs rework.
+please see the latest one. (I think most of new characteristics are useful
+for you.)
 
-hm.  I stared at mark_mounts_for_expiry() for a while trying to work
-out how that can happen and what it semantically *means*, and failed.
+One comment from me is
+==
+> +struct page_cgroup {
+> +	struct list_head lru;		/* per cgroup LRU list */
+> +	struct page *page;
+> +	struct mem_cgroup *mem_cgroup;
+> +	int flags;
+> +#ifdef CONFIG_CGROUP_BIO
+> +	struct list_head blist;		/* for bio_cgroup page list */
+> +	struct bio_cgroup *bio_cgroup;
+> +#endif
+> +};
+==
 
-I guess I'm just not smart/experienced enough.
+this blist is too bad. please keep this object small...
 
-> For NFS which does the whole expiry of all inodes where it comes from it
-> is a good fit.  For /proc where we don't have to guess it isn't the best
-> fit but it isn't shabby either.
-> 
-> >
-> >> +	if (list_empty(list))
+Maybe dm-ioband people will post his own new one. just making use of it is an idea.
 
-So even after two passes through mark_mounts_for_expiry(), there can
-still be mounts on our list.
-
-> >> +		return;
-> >> +
-> >> +	schedule_delayed_work(&proc_automount_task, proc_automount_timeout);
-
-And this causes proc_shrink_automounts() to be called every 500 seconds
-for ever and ever, until proc_automounts is empty.
-
-Again, I just don't know how the reader of this file is to understand
-why this is done this way.  What is the thinking behind it?  What is
-the expected dynamic behaviour?  Under what circumstances will this
-very unusual repeated polling activity be triggered?
-
-Obviously, that becomes clearer as one spends more time with the code,
-but I wonder whether this has all been made as maintainble as it
-possibly could be.
+Thanks,
+-Kame
