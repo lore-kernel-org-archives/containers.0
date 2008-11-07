@@ -1,219 +1,129 @@
-From: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
-Subject: Re: [patch 1/4] io controller: documentation
-Date: Fri, 7 Nov 2008 12:46:05 +0900
-Message-ID: <20081107124605.38b10d99.kamezawa.hiroyu@jp.fujitsu.com>
-References: <20081106153022.215696930@redhat.com>
-	<20081106153135.743458085@redhat.com>
+From: ebiederm@xmission.com (Eric W. Biederman)
+Subject: Re: [PATCH 2/7] proc: Implement support for automounts in task directories
+Date: Thu, 06 Nov 2008 19:51:23 -0800
+Message-ID: <m1iqr0urb8.fsf@frodo.ebiederm.org>
+References: <m1ej1p2l6u.fsf@frodo.ebiederm.org>
+	<m1abcd2kqk.fsf@frodo.ebiederm.org>
+	<20081106172617.dd51d0af.akpm@linux-foundation.org>
+	<m1abccxpc5.fsf@frodo.ebiederm.org>
+	<20081106184945.179c248a.akpm@linux-foundation.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20081106153135.743458085-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Content-Type: text/plain; charset=us-ascii
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1754933AbYKGDz2@vger.kernel.org>
+In-Reply-To: <20081106184945.179c248a.akpm@linux-foundation.org> (Andrew
+	Morton's message of "Thu, 6 Nov 2008 18:49:45 -0800")
+Sender: linux-kernel-owner@vger.kernel.org
+To: Andrew Morton <akpm@linux-foundation.org>
+Cc: linux-kernel@vger.kernel.org, adobriyan@gmail.com, viro@ZenIV.linux.org.uk, containers@lists.osdl.org
 List-Id: containers.vger.kernel.org
 
-I forget to say that I like your new design in general ;)
+Andrew Morton <akpm@linux-foundation.org> writes:
 
-Thanks,
--Kame
+> On Thu, 06 Nov 2008 18:05:46 -0800 ebiederm@xmission.com (Eric W. Biederman)
+> wrote:
+>
+>> Andrew Morton <akpm@linux-foundation.org> writes:
+>> 
+>> > On Thu, 06 Nov 2008 02:48:35 -0800
+>> > ebiederm@xmission.com (Eric W. Biederman) wrote:
+>> >
+>> >> +void proc_shrink_automounts(void)
+>> >> +{
+>> >> +	struct list_head *list = &proc_automounts;
+>> >> +
+>> >> +	mark_mounts_for_expiry(list);
+>> >> +	mark_mounts_for_expiry(list);
+>> >
+>> > Strange.  In case the first attempt didn't work?
+>> 
+>> Yes.  I'd like to say.  Mount just go away but it takes two passes before
+>> a mount is actually removed.
+>
+> hm.  I stared at mark_mounts_for_expiry() for a while trying to work
+> out how that can happen and what it semantically *means*, and failed.
+>
+> I guess I'm just not smart/experienced enough.
 
-On Thu, 06 Nov 2008 10:30:23 -0500
-vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org wrote:
+The semantics are a classic two pass exiry.  The mount is not in use
+and it was not in use last time we came by remove the mount.
 
-> 
-> Signed-off-by: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-> 
-> Index: linux17/Documentation/controllers/io-controller.txt
-> ===================================================================
-> --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-> +++ linux17/Documentation/controllers/io-controller.txt	2008-11-06 09:12:44.000000000 -0500
-> @@ -0,0 +1,172 @@
-> +				IO Controller
-> +				============
-> +
-> +Design
-> +=====
-> +This patchset implements a basic version of proportional weight IO controller.
-> +It is heavily derived from dm-ioband IO controller with one key difference
-> +and that is, there is no separate device mapper driver and there is no
-> +need to create a dm-ioband device on top of every block device which needs
-> +to do the IO control. In this implementation, all the control logic has
-> +been internalized and has been made per request queue. Enabling or disabling
-> +IO control on a block device is just a matter of writing a 0 or 1 in
-> +appropriate sysfs file.
-> +
-> +This is a proportional weight controller and that means various cgroups
-> +are assigned shares and tasks in those cgroups get to dispatch the bio
-> +in proportion to their cgroup share.
-> +
-> +All the contending cgroups are assigned tokens proportionate to their
-> +weights. One token is charged for one sector of IO. Once all the contending
-> +cgroups have consumed their tokens, fresh token allocation takes place and
-> +this is how disk bandwidth allocation proportion to weight is achieved.
-> +
-> +The bigger picture is that all the bios being submitted to a block device
-> +are first inspected by IO controller logic (bio_group_controller()), only if
-> +IO controller has been enabled on that device. The cgroup of the bio is
-> +determined and controller checks if this cgroup has sufficient tokens to
-> +dispatch the bio. If sufficient tokens are there, bio submitting thread
-> +continues to dispatch the bio through normal path otherwise IO controller
-> +buffers the bio and submitting thread returns back. These buffered bios
-> +are dispatched to lower layers later once the associate group (bio group)
-> +has sufficient tokens to dispatch the bios. This delayed dispatching is
-> +done with the help of a worker thread (biogroup).
-> +
-> +IO control can be enabled/disabled dynamically on any of the block device
-> +through sysfs file system. For example, to enable IO control on a device
-> +do following.
-> +
-> +echo 1 > /sys/block/sda/biogroup
-> +
-> +To disable IO control write 0.
-> +
-> +echo 0 > /sys/block/sda/biogroup
-> +
-> +This should be doable for any of the block device in the stack. Currently this
-> +patch places the hooks only for device mapper driver and still need to tweak
-> +md.
-> +
-> +For example, assume there are two cgroups A and B with weights 1024 and 2048
-> +in the system. Tasks in two cgroups A and B are doing IO to two disks sda and
-> +sdb in the system. A user has enabled IO control on both sda and sdb. Now on
-> +both sda and sdb, tasks in cgroup B will get to use 2/3 of disk BW and
-> +tasks in cgroup A will get to use 1/3 of disk bandwidth, only in case of
-> +contention. If tasks in any of the groups stop doing IO to a particular disk,
-> +task in other group will get to use full disk BW for that duration.
-> +
-> +
-> +HOWTO
-> +====
-> +- Enable cgroup, memory controller and block IO controller in kernel config
-> +  file.
-> +
-> +- Boot into the kernel and mount io controller.
-> +
-> +  mount -t cgroup -o bio none /cgroup/bio/
-> +
-> +- Create two cgroups test1 and test2
-> +
-> +  cd /cgroup/bio
-> +  mkdir test1 test2
-> +
-> +- Allocate weight 4096 to test1 and weight 2048 to test2
-> +
-> +  echo 4096 > /cgroup/bio/test1/bio.shares
-> +  echo 2048 > /cgroup/bio/test1/bio.shares
-> +
-> +- Launch "dd" operations in cgroup test1 and test2.
-> +
-> +  echo $$ > /cgroup/bio/test1/tasks
-> +  dd if=/somefile1 of=/dev/null
-> +  echo $$ > /cgroup/bio/test2/tasks
-> +  dd if=/somefile2 of=/dev/null
-> +
-> +Job in cgroup test1 should finish before job in cgroup test2. To verify
-> +that "dd" in cgroup test1 got to dispatch more bio as compared to "dd" in
-> +test2, look at "bio.aggregate_tokens" in both the cgroup (At same time). At
-> +any point of time when both the dd's are running, aggregate_tokens in cgroup
-> +test1 should be approximately double of aggregate_tokens in cgroup test2
-> +(Because weight of cgroup test1 is double of weight of cgroup test2).
-> +
-> +Some Tunables
-> +=============
-> +Some tunables appear in cgroup file system and in sysfs for respective
-> +device for debug and for configuration. Here is a brief description.
-> +
-> +Cgroup Files
-> +============
-> +bio.shares
-> +	Specifies the weight of the cgroup.
-> +
-> +bio.aggregate_tokens
-> +	Specifies total number of tokens dispatched by this cgroup. One token
-> +	represents one sector of IO.
-> +
-> +bio.jiffies
-> +	What was the jiffies values when last bio from this cgroup was released.
-> +
-> +bio.nr_token_slices
-> +	How many times this cgroup got the token allocation done from token
-> +	slice. We kind of create a token slice and every contending cgroup
-> +	gets the pie out of the slice based on the share.
-> +
-> +bio.nr_off_the_tree
-> +	How many times this bio group went off the list of contending groups.
-> +	We maintain an rb-tree of biogroups contending for IO and token
-> +	allocation takes place to these groups regularly. If some group stops
-> +	doing IO then it is considered to be idle and removed from the tree
-> +	and added back later when group has IO to perform. This file just
-> +	counts how many times this bio group went off the tree.
-> +
-> +Sysfs Tunabels
-> +==============
-> +/sys/block/{deice name}/biogroup
-> +	Whether IO controller (bio groups) are active on this device or not.
-> +
-> +/sys/block/{deice name}/deftoken
-> +	Default number of tokens which are given to a bio group upon start
-> +	if all the bio groups were of same weight. token slice is of dynamic
-> +	length. So if there are 3 cgroups contending and deftoken is 100 then
-> +	token slice lenght will be 100*3 = 300 and now out of this slice
-> +	three groups will get the tokens based on their weights.
-> +
-> +/sys/block/{deice name}/idletime
-> +	The time after which if a bio group does not generate the bio, it is
-> +	considered idle and removed from the rb-tree. Currently by default it
-> +	is 8ms.
-> +
-> +/sys/block/{deice name}/newslice_count
-> +	How many times new token allocation took place on this queue.
-> +
-> +TODO
-> +====
-> +- Do extensive testing in various scenarios and do performance optimization
-> +  and fix the things where broken.
-> +
-> +- IO schedulers derive context information from "current". This assumption
-> +  will be broken if bios are being submitted by a worker thread (biogroup).
-> +  Probably we need to put io context pointer in bio itself to get rid of
-> +  this dependency.
-> +
-> +- Allocating tokens for per sector of IO is crude approximation and will lead
-> +  to unfair bandwidth allocation in case task in cgroup is doing sequential IO
-> +  and task in other group is doing random IO. Rik Van Riel, suggested that
-> +  probably we should switch to time based scheme. Keep a track of average time
-> +  it takes to complete IO from a cgroup and do the allocation accordingly.
-> +
-> +- Currently this controller is dependent on memory controller being enabled.
-> +  Try to reduce this coupling.
-> +
-> +ISSUES
-> +======
-> +- IO controller can buffer the bios if suffcient tokens were not available
-> +  at the time of bio submission. Once the tokens are available, these bios
-> +  are dispatched to elevator/lower layers in first come first serve manner.
-> +  And this has potential to break CFQ where a RT tasks should be able to
-> +  dispatch the bio first or a high priority task should be able to release
-> +  more bio as compared to low priority task in same cgroup.
-> +
-> +  Not sure how to fix it. May be we need to maintain another rb-tree and
-> +  keep track of RT tasks and tasks priorities and dispatch accordingly. This
-> +  is equivalent of duplicating lots of CFQ logic and not sure how would it
-> +  impact AS behaviour.
-> 
-> -- 
-> 
-> _______________________________________________
-> Containers mailing list
-> Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-> https://lists.linux-foundation.org/mailman/listinfo/containers
-> 
+The code is fs/namespace.c is especially clever.  It took me a long
+time starring at it to figure out what is going on.  The bug fix comes
+from when I was working out what that code does.
+
+>> For NFS which does the whole expiry of all inodes where it comes from it
+>> is a good fit.  For /proc where we don't have to guess it isn't the best
+>> fit but it isn't shabby either.
+>> 
+>> >
+>> >> +	if (list_empty(list))
+>
+> So even after two passes through mark_mounts_for_expiry(), there can
+> still be mounts on our list.
+
+Only if the mounts are actually in use.
+
+>> >> +		return;
+>> >> +
+>> >> +	schedule_delayed_work(&proc_automount_task, proc_automount_timeout);
+>
+> And this causes proc_shrink_automounts() to be called every 500 seconds
+> for ever and ever, until proc_automounts is empty.
+
+Yes.
+
+> Again, I just don't know how the reader of this file is to understand
+> why this is done this way.  What is the thinking behind it?  What is
+> the expected dynamic behaviour?  Under what circumstances will this
+> very unusual repeated polling activity be triggered?
+
+
+Basically if someone does:
+
+cd /proc/<pid>/net/stat  or something like that and holds one of the dentries
+alive.  The mount is not allowed to go away.
+
+When a process exits release_task is called which in turn calls
+proc_shrink_automounts().  In a normal case it will remove mounts that
+are under that process.  
+
+Unfortunately if one of these mounts is busy because the path to a dentry
+references it we can not free it (although d_revalidate will cause the
+dentry to become unhashed so we can't find the mount going in the other
+direction).
+
+So we have to periodically check, is the mount free yet.
+
+If we could do all of this with reference counting so that the
+mount would persist exactly until the last user of it has gone
+away without a periodic poll I would love it.  But the infrastructure
+doesn't support that today, and where this is at least partially
+a bug fix I would rather not have the change depend on enhancing
+the VFS.
+
+The algorithm is actually very aggressive and in practice you don't
+see any /proc/<pid>/net showing up as a mount point.
+
+> Obviously, that becomes clearer as one spends more time with the code,
+> but I wonder whether this has all been made as maintainble as it
+> possibly could be.
+
+Good question.
+
+In the sense of will we have to go through and futz with the code all
+of the time.  The abstraction seems good.   You put a mount on
+the proc_automounts list with do_add_mounts and it goes away eventually
+with all of the vfs rules maintained.
+
+In the sense of can the code be read?    Perhaps it could be better.
+I expect it helps to have run the code and see /proc/net as a filesystem.
+that is magically mounted.
+
+In the long term it also seems to make sense maintenance wise to split
+/proc into separate parts that can go different directions, and having
+the automounting of the old pieces, helps a lot with that.
+
+Unless there are some real bugs my preference is to evolve the code from
+where it is today.  The code is at least simple and stupid.
+
+Eric
