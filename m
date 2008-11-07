@@ -1,14 +1,13 @@
-From: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
-Subject: Re: [patch 1/4] io controller: documentation
-Date: Fri, 7 Nov 2008 11:32:09 +0900
-Message-ID: <20081107113209.a6011c67.kamezawa.hiroyu__45476.5216833495$1226025402$gmane$org@jp.fujitsu.com>
+From: Gui Jianfeng <guijianfeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+Subject: Re: [patch 0/4] [RFC] Another proportional weight IO controller
+Date: Fri, 07 Nov 2008 10:36:50 +0800
+Message-ID: <4913A9C2.8060904__38744.9491689496$1226025714$gmane$org@cn.fujitsu.com>
 References: <20081106153022.215696930@redhat.com>
-	<20081106153135.743458085@redhat.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20081106153135.743458085-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <20081106153022.215696930-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,48 +18,42 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
-Cc: menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, Rik van Riel <riel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Hirokazu-FOgKQjlUJ6BQetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, virtualization-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Jeff Moyer <jmoyer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, jens.axboe-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org, Andrea-FOgKQjlUJ6BQetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, ngupta-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, fernando-gVGce1chcLdL9jVzuh4AOg@public.gmane.org, Righi <righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Cc: menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, Rik van Riel <riel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, virtualization-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Jeff Moyer <jmoyer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, jens.axboe-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, ngupta-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, fernando-gVGce1chcLdL9jVzuh4AOg@public.gmane.org, Andrea Righi <righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Thu, 06 Nov 2008 10:30:23 -0500
 vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org wrote:
-> +ISSUES
-> +======
-> +- IO controller can buffer the bios if suffcient tokens were not available
-> +  at the time of bio submission. Once the tokens are available, these bios
-> +  are dispatched to elevator/lower layers in first come first serve manner.
-> +  And this has potential to break CFQ where a RT tasks should be able to
-> +  dispatch the bio first or a high priority task should be able to release
-> +  more bio as compared to low priority task in same cgroup.
-> +
-> +  Not sure how to fix it. May be we need to maintain another rb-tree and
-> +  keep track of RT tasks and tasks priorities and dispatch accordingly. This
-> +  is equivalent of duplicating lots of CFQ logic and not sure how would it
-> +  impact AS behaviour.
+> Hi,
 > 
-Why you don't isolate RT tasks into other cgroup ?
-   /cgroup/bio-cgroup/group_for_usual/...usual tasks.
-                     /group_for_RT/ ...RT tasks. you can use high-speed path.
+> If you are not already tired of so many io controller implementations, here
+> is another one.
+> 
+> This is a very eary very crude implementation to get early feedback to see
+> if this approach makes any sense or not.
+> 
+> This controller is a proportional weight IO controller primarily
+> based on/inspired by dm-ioband. One of the things I personally found little
+> odd about dm-ioband was need of a dm-ioband device for every device we want
+> to control.  I thought that probably we can make this control per request
+> queue and get rid of device mapper driver. This should make configuration
+> aspect easy.
+> 
+> I have picked up quite some amount of code from dm-ioband especially for
+> biocgroup implementation.
+> 
+> I have done very basic testing and that is running 2-3 dd commands in different
+> cgroups on x86_64. Wanted to throw out the code early to get some feedback.
+> 
+> More details about the design and how to are in documentation patch.
+> 
+> Your comments are welcome.
 
-How about adding RT flag to bio-cgroup and skip buffering at bio-cgroup if RT
-flag is set ? I think handling an usual process and RT process in "a" cgroup
-just makes the code complex.
+  Which kernel version is this patch set based on?
 
-Looking into a cpu-scheduler, which is the first module handling RT, it has
-some tweaks to handle RT in the system.
- - special RT scheduler.
- - isolated RT domain
- - maximum execution time allowed to RT
- ....
+> 
+> Thanks
+> Vivek
+> 
 
-Maybe handling RT in following way is usual way...(if we do something in this layer)
-
-  - Allow RT-bio-cgroup to skip limit check.
-  - But RT-bio-cgroup calculates io-throuput, execution time, statistics...
-  - When RT tasks in RT-bio-cgroup does excessive I/O which starves the whole system
-    too long, raise safeguard-limitter. and tell users Warning or kill it.
-
-Hmm ?
-
-Thanks,
--Kame
+-- 
+Regards
+Gui Jianfeng
