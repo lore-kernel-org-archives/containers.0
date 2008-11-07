@@ -1,60 +1,61 @@
-From: Hirokazu Takahashi <taka-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
-Subject: Re: [patch 2/4] io controller: biocgroup implementation
-Date: Fri, 07 Nov 2008 13:19:49 +0900 (JST)
-Message-ID: <20081107.131949.106618398.taka__33878.4383530312$1226031744$gmane$org@valinux.co.jp>
-References: <20081106153022.215696930@redhat.com>
-	<20081106153135.790621895@redhat.com>
-	<20081107115030.7ccf3f07.kamezawa.hiroyu@jp.fujitsu.com>
+From: Andrew Morton <akpm@linux-foundation.org>
+Subject: Re: [PATCH 2/7] proc: Implement support for automounts in task
+ directories
+Date: Thu, 6 Nov 2008 20:28:22 -0800
+Message-ID: <20081106202822.a1af8a6e.akpm@linux-foundation.org>
+References: <m1ej1p2l6u.fsf@frodo.ebiederm.org>
+	<m1abcd2kqk.fsf@frodo.ebiederm.org>
+	<20081106172617.dd51d0af.akpm@linux-foundation.org>
+	<m1abccxpc5.fsf@frodo.ebiederm.org>
+	<20081106184945.179c248a.akpm@linux-foundation.org>
+	<m1iqr0urb8.fsf@frodo.ebiederm.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
+Content-Type: text/plain; charset=US-ASCII
 Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20081107115030.7ccf3f07.kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org
-Cc: menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, riel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, virtualization-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, jmoyer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, jens.axboe-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, ngupta-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, fernando-gVGce1chcLdL9jVzuh4AOg@public.gmane.org, righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1755220AbYKGE3G@vger.kernel.org>
+In-Reply-To: <m1iqr0urb8.fsf@frodo.ebiederm.org>
+Sender: linux-kernel-owner@vger.kernel.org
+To: "Eric W. Biederman" <ebiederm@xmission.com>
+Cc: linux-kernel@vger.kernel.org, adobriyan@gmail.com, viro@ZenIV.linux.org.uk, containers@lists.osdl.org
 List-Id: containers.vger.kernel.org
 
-Hi,
+On Thu, 06 Nov 2008 19:51:23 -0800 ebiederm@xmission.com (Eric W. Biederman) wrote:
 
-I'm going to release a new version of bio_cgroup soon, which doesn't
-have "struct list_head blist" anymore and whose overhead is minimized.
+> If we could do all of this with reference counting so that the
+> mount would persist exactly until the last user of it has gone
+> away without a periodic poll I would love it.  But the infrastructure
+> doesn't support that today,
 
-> > o biocgroup functionality.
-> > o Implemented new controller "bio"
-> > o Most of it picked from dm-ioband biocgroup implementation patches.
-> > 
-> page_cgroup implementation is changed and most of this patch needs rework.
-> please see the latest one. (I think most of new characteristics are useful
-> for you.)
+Well that sucks.  The free-on-last-put idiom occurs in so many places
+and serves us so well.  I wonder what went wrong here?
+
+I guess it has interactions with dentry and inode cache aging which
+could get tricky.
+
+> and where this is at least partially
+> a bug fix I would rather not have the change depend on enhancing
+> the VFS.
 > 
-> One comment from me is
-> ==
-> > +struct page_cgroup {
-> > +	struct list_head lru;		/* per cgroup LRU list */
-> > +	struct page *page;
-> > +	struct mem_cgroup *mem_cgroup;
-> > +	int flags;
-> > +#ifdef CONFIG_CGROUP_BIO
-> > +	struct list_head blist;		/* for bio_cgroup page list */
-> > +	struct bio_cgroup *bio_cgroup;
-> > +#endif
-> > +};
-> ==
+> The algorithm is actually very aggressive and in practice you don't
+> see any /proc/<pid>/net showing up as a mount point.
+
+Do you think it has failure modes?  Most particularly: obscure usage
+patterns which can cause memory exhaustion?
+
+> > Obviously, that becomes clearer as one spends more time with the code,
+> > but I wonder whether this has all been made as maintainble as it
+> > possibly could be.
 > 
-> this blist is too bad. please keep this object small...
+> Good question.
 > 
-> Maybe dm-ioband people will post his own new one. just making use of it is an idea.
+> In the sense of will we have to go through and futz with the code all
+> of the time.  The abstraction seems good.   You put a mount on
+> the proc_automounts list with do_add_mounts and it goes away eventually
+> with all of the vfs rules maintained.
 > 
-> Thanks,
-> -Kame
-> 
-> 
+> In the sense of can the code be read?    Perhaps it could be better.
+> I expect it helps to have run the code and see /proc/net as a filesystem.
+> that is magically mounted.
+
+'twould be a useful contribution if you were to enshrine your
+discoveries in /*these things*/.  You knew I was working up to that :)
