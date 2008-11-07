@@ -1,15 +1,17 @@
-From: Ryo Tsuruta <ryov-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
+From: "Dong-Jae Kang" <baramsori72-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 Subject: Re: [Question] I have questions about dm-ioband
-Date: Fri, 07 Nov 2008 16:41:02 +0900 (JST)
-Message-ID: <20081107.164102.226792894.ryov@valinux.co.jp>
+Date: Fri, 7 Nov 2008 17:02:50 +0900
+Message-ID: <2891419e0811070002j5e5a733fv23fa0a4100334814@mail.gmail.com>
 References: <2891419e0811062139n5c0382a9n7d4fe7048d72dbf2@mail.gmail.com>
 	<20081107.160207.193692798.ryov@valinux.co.jp>
 	<2891419e0811062329q7e8f064duf82881f1bce0abf0@mail.gmail.com>
+	<20081107.164102.226792894.ryov@valinux.co.jp>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="euc-kr"
-Content-Transfer-Encoding: base64
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <2891419e0811062329q7e8f064duf82881f1bce0abf0-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
+In-Reply-To: <20081107.164102.226792894.ryov-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
+Content-Disposition: inline
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,64 +21,33 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: baramsori72-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org
+To: Ryo Tsuruta <ryov-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
 Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, corsetproject-/JYPxA39Uh5TLH3MbocFFw@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-SGkgRG9uZy1KYWUsCgpGcm9tOiAiRG9uZy1KYWUgS2FuZyIgPGJhcmFtc29yaTcyQGdtYWlsLmNv
-bT4KU3ViamVjdDogUmU6IFtRdWVzdGlvbl0gSSBoYXZlIHF1ZXN0aW9ucyBhYm91dCBkbS1pb2Jh
-bmQKRGF0ZTogRnJpLCA3IE5vdiAyMDA4IDE2OjI5OjA3ICswOTAwCgo+IEhpIFJ5byBUc3VydXRh
-Cj4gCj4gVGhhbmsgeW91IHZlcnkgbXVjaCBmb3IgeW91ciBraW5kIGFuZCBmYXN0IHJlcGx5Cj4g
-Cj4gMjAwOC8xMS83IFJ5byBUc3VydXRhIDxyeW92QHZhbGludXguY28uanA+Ogo+ID4gSGkgRG9u
-Zy1KYWUsCj4gPgo+ID4gRnJvbTogIkRvbmctSmFlIEthbmciIDxiYXJhbXNvcmk3MkBnbWFpbC5j
-b20+Cj4gPiBTdWJqZWN0OiBbUXVlc3Rpb25dIEkgaGF2ZSBxdWVzdGlvbnMgYWJvdXQgZG0taW9i
-YW5kCj4gPiBEYXRlOiBGcmksIDcgTm92IDIwMDggMTQ6Mzk6NTYgKzA5MDAKPiA+Cj4gPj4gSGks
-IFJ5byB0c3VydXRhCj4gPj4KPiA+PiBEdXJpbmcgcGFzdCBzZXZlcmFsIGRheXMsIEkgaGFkIGJl
-ZW4gYW5hbHl6aW5nIGFuZCB0ZXN0aW5nIHlvdXIKPiA+PiBkbS1pb2JhbmQgSS9PIGNvbnRyb2xs
-ZXIuCj4gPj4gYmVjYXVzZSBJIHJlY2VpdmVkIHNvbWUgcmVxdWlyZW1lbnRzIGFib3V0IGRpc2sg
-SS9PIGNvbnRyb2wgZnJvbSBvdGhlcgo+ID4+IHBlcnNvbnMgYXMgYmVsb3cKPiA+PiAiZ3VhcmFu
-dGVlaW5nIHRoZSBtaW5pbXVtIEJXIG9mIHByb2Nlc3NlcyBpbiB0aGUgc3BlY2lmaWMgZ3JvdXAi
-LCBvZgo+ID4+IGNvdXJzZSwgaW4gdGhlIHRvdGFsIEJXIHJhbmdlLgo+ID4+IEkgdGhpbmsgaXQg
-Y2FuIGJlIGFkanVzdGVkIHRvIHN0cmVhbWluZyBzZXJ2aWNlLCBTTEEgb2Ygc2VydmljZQo+ID4+
-IGhvc3RpbmcgcGFydCBhbmQgc28gb24uCj4gPj4gYWx0aG91Z2ggdGhlIGFwcGxpY2FibGUgYXJl
-YSBpcyBzb21lIHNwZWNpZmljIGFuZCBsaW1pdGVkIHBhcnQsIGl0IGNhbgo+ID4+IGJlIHVzZWZ1
-bCBhY2NvcmRpbmcgdG8gdGhlIHNlcnZpY2UKPiA+PiBIb3cgZG8geW91IHRoaW5rIGFib3V0IHVw
-cGVyIHJlcXVpcmVtZW50Pwo+ID4KPiA+IEkgdGhpbmsgSSBrbm93IHdoeSB0aGV5IHdhbnQgbWlu
-aW11bSBiYW5kd2lkdGggZ3VhcmFudGVlIGFuZCBpdAo+ID4gd291bGQgYmUgdXNlZnVsIG9uIGEg
-Y2VydGFpbiBzaXR1YXRpb24uCj4gPgo+ID4+IElmIGl0IGlzIHJlcXVpcmVkLCBJIHRoaW5rIHRo
-YXQgdHJ5IHRvIHN1cHBvcnQgdGhlIGZ1bmN0aW9uIGluIHlvdXIKPiA+PiBkbS1pb2JhbmQgY29u
-dHJvbGxlcgo+ID4+IHBlcnNvbmFsbHksIEkgbGlrZSB5b3VyIGRlc2lnbiBhbmQgaW1wbGVtZW50
-YXRpb24gc3R5bGUuCj4gPj4gQW5kLCBmb3IgaXQgLCB3aGVyZSBpcyB0aGUgYXBwcm9wcmlhdGUg
-cGFydCBpbiBkbS1pb2JhbmQgY29udHJvbGxlciB0bwo+ID4+IGltcGxlbWVudCB0aGUgZnVuY3Rp
-b24/Cj4gPj4gQ2FuIHlvdSBnaXZlIG1lIHNvbWUgYWR2aWNlIGFuZCBjb21tZW50cyBhYm91dCBz
-dXBwb3J0aW5nIGl0ID8KPiA+Cj4gPiBTdXJlISBkbS1pb2JhbmQgaXMgZGVzaWduZWQgdG8gYmUg
-YWJsZSB0byBhZGQgbmV3IGJhbmR3aWR0aCBjb250cm9sCj4gPiBwb2xpY2llcy4gZG0taW9iYW5k
-LXBvbGljeS5jIGlzIGEgc291cmNlIGNvZGUgb2YgIndlaWdodCIgYW5kCj4gPiAid2VpZ2h0LWlv
-c2l6ZSIgcG9saWNpZXMsIGFuZCB3b3VsZCBoZWxwIHRvIHVuZGVyc3RhbmQgaG93IHRvIGFkZAo+
-ID4gYSBuZXcgcG9saWN5Lgo+ID4KPiAKPiBPSywgSSB3aWxsIHN0YXJ0IHRvIGFuYWx5emUgdGhl
-IGRtLWlvYmFuZC1wb2xpY3kuYyBmaXJzdC4KPiBkdXJpbmcgdGhlIGpvYiwgaWYgSSBoYXZlIGEg
-YW5vdGhlciBxdWVzdGlvbiBvciBuZWVkIHlvdXIgaGVscCwgY2FuIEkKPiBhc2sgeW91IGFib3V0
-IGl0Pwo+IFRoYW5rIHlvdS4KCk9mIGNvdXJzZSB5b3UgY2FuLgoKPiA+PiBJIGRvbid0IGtub3cg
-d2VsbCBhYm91dCB0aGUgZGV0YWlscyBvZiBkbS1pb2JhbmQgY29udHJvbGxlcnMsIGNvbmNlcHQs
-Cj4gPj4gZGVzaWduLCBhcmNoaXRlY3R1cmUgYW5kIHNvIG9uLgo+ID4+IGl0IHdpbGwgdGFrZSBz
-b21lIHRpbWUgZm9yIG1lIHRvIGRvIHRoYXQgXl4KPiA+PiBXZWxsLCBJcyB0aGVyZSBhbnkgZG9j
-dW1lbnRhdGlvbnMgdG8gaGVscCBmb3IgbWUgdG8gdW5kZXJzdGFuZCB0aGUKPiA+PiBleGlzdGlu
-ZyBpbXBsZW1lbnRhdGlvbiA/Cj4gPj4gSWYgc28sIGNhbiBJIHJlZmVyIGl0ID8KPiA+Cj4gPiBT
-b3JyeSwgdGhlcmUgaXMgbm8gZG9jdW1lbnQgd2hpY2ggZGVzY3JpYmVzIHRoZSBpbXBsZW1lbnRh
-dGlvbi4KPiA+Cj4gT2guLi4uIEkgc2hvdWxkIHB1dCB1cCB3aXRoIGluY29udmVuaWVuY2UuIKTM
-pMwKPiBidXQsIEkgc3RpbGwgYXBwcmVjaWF0ZSB5b3VyIGNvbnRyaWJ1dGlvbiBmb3IgT1NTIGNv
-bW11bml0eQo+IAo+ID4+IGFkZGl0aW9uYWwgb25lIHF1ZXN0aW9uIGlzIGxlZnReXgo+ID4+IGRt
-LWlvYmFuZCBjYW4gYmUgb3BlcmF0ZWQgd2l0aCBhbm90aGVyIGRtIHRhcmdldHMgYXQgdGhlIHNh
-bWUgdGhtZT8KPiA+PiB3aXRoIHN1Y2ggbGlrZSBtdWx0aXBhdGgsIG1pcnJvciwgbGluZWFyLCBz
-bmFwc2hvdCBhbmQgc29tZXRoaW5nIGxpa2UgdGhhdC4KPiA+PiBmb3IgZXhhbXBsZSwgSU8gY29u
-dHJvbCBvdmVyIHRoZSBtaXJyb3IgdGFyZ2V0cyBvciBJTyBjb250cm9sIG92ZXIgdGhlCj4gPj4g
-ZGV2aWNlcyB3aXRoIG11bHRpcGF0aCwgLi4uLgo+ID4KPiA+IEkgaGF2ZSBydW4gZG0taW9iYW5k
-IG9uIGEgbG9naWNhbCB2b2x1bWUgZGlzayBhbmQgaXQgd29ya2VkIHdlbGwuCj4gPiBodHRwOi8v
-cGVvcGxlLnZhbGludXguY28uanAvfnJ5b3YvZG0taW9iYW5kL2JlbmNobWFyay9sdm0uaHRtbAo+
-ID4KPiAKPiBJIHVuZGVyc3Rvb2QKPiBZb3UgbWVhbiBkbS1pb2JhbmQgY2FuIHJ1biBvdmVyIGFu
-b3RoZXIgZG0gdGFyZ2V0cy4KCkkgaGF2ZSBqdXN0IHRlc3RlZCB3aXRoIExWTSwgbm90IHdpdGgg
-b3RoZXIgdGFyZ2V0cyBldmVyLgoKPiBUaGFuayB5b3UgYWdhaW4KPiAtLSAKPiBCZXN0IFJlZ2Fy
-ZHMsCj4gRG9uZy1KYWUgS2FuZwoKVGhhbmtzLApSeW8gVHN1cnV0YQpfX19fX19fX19fX19fX19f
-X19fX19fX19fX19fX19fX19fX19fX19fX19fX19fXwpDb250YWluZXJzIG1haWxpbmcgbGlzdApD
-b250YWluZXJzQGxpc3RzLmxpbnV4LWZvdW5kYXRpb24ub3JnCmh0dHBzOi8vbGlzdHMubGludXgt
-Zm91bmRhdGlvbi5vcmcvbWFpbG1hbi9saXN0aW5mby9jb250YWluZXJz
+Hi Ryo
+
+>> >> additional one question is left^^
+>> >> dm-ioband can be operated with another dm targets at the same thme?
+>> >> with such like multipath, mirror, linear, snapshot and something like that.
+>> >> for example, IO control over the mirror targets or IO control over the
+>> >> devices with multipath, ....
+>> >
+>> > I have run dm-ioband on a logical volume disk and it worked well.
+>> > http://people.valinux.co.jp/~ryov/dm-ioband/benchmark/lvm.html
+>> >
+>>
+>> I understood
+>> You mean dm-ioband can run over another dm targets.
+>
+> I have just tested with LVM, not with other targets ever.
+>
+
+If I test about it later, I will report you.
+but it maybe be done after one or two monthes
+
+Thank you.
+
+-- 
+Best Regards,
+Dong-Jae Kang
