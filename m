@@ -1,129 +1,60 @@
-From: ebiederm@xmission.com (Eric W. Biederman)
-Subject: Re: [PATCH 2/7] proc: Implement support for automounts in task directories
-Date: Thu, 06 Nov 2008 19:51:23 -0800
-Message-ID: <m1iqr0urb8.fsf@frodo.ebiederm.org>
-References: <m1ej1p2l6u.fsf@frodo.ebiederm.org>
-	<m1abcd2kqk.fsf@frodo.ebiederm.org>
-	<20081106172617.dd51d0af.akpm@linux-foundation.org>
-	<m1abccxpc5.fsf@frodo.ebiederm.org>
-	<20081106184945.179c248a.akpm@linux-foundation.org>
+From: Hirokazu Takahashi <taka-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
+Subject: Re: [patch 2/4] io controller: biocgroup implementation
+Date: Fri, 07 Nov 2008 13:19:49 +0900 (JST)
+Message-ID: <20081107.131949.106618398.taka__33878.4383530312$1226031744$gmane$org@valinux.co.jp>
+References: <20081106153022.215696930@redhat.com>
+	<20081106153135.790621895@redhat.com>
+	<20081107115030.7ccf3f07.kamezawa.hiroyu@jp.fujitsu.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1754933AbYKGDz2@vger.kernel.org>
-In-Reply-To: <20081106184945.179c248a.akpm@linux-foundation.org> (Andrew
-	Morton's message of "Thu, 6 Nov 2008 18:49:45 -0800")
-Sender: linux-kernel-owner@vger.kernel.org
-To: Andrew Morton <akpm@linux-foundation.org>
-Cc: linux-kernel@vger.kernel.org, adobriyan@gmail.com, viro@ZenIV.linux.org.uk, containers@lists.osdl.org
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <20081107115030.7ccf3f07.kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org
+Cc: menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, riel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, virtualization-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, jmoyer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, jens.axboe-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, ngupta-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, fernando-gVGce1chcLdL9jVzuh4AOg@public.gmane.org, righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Andrew Morton <akpm@linux-foundation.org> writes:
+Hi,
 
-> On Thu, 06 Nov 2008 18:05:46 -0800 ebiederm@xmission.com (Eric W. Biederman)
-> wrote:
->
->> Andrew Morton <akpm@linux-foundation.org> writes:
->> 
->> > On Thu, 06 Nov 2008 02:48:35 -0800
->> > ebiederm@xmission.com (Eric W. Biederman) wrote:
->> >
->> >> +void proc_shrink_automounts(void)
->> >> +{
->> >> +	struct list_head *list = &proc_automounts;
->> >> +
->> >> +	mark_mounts_for_expiry(list);
->> >> +	mark_mounts_for_expiry(list);
->> >
->> > Strange.  In case the first attempt didn't work?
->> 
->> Yes.  I'd like to say.  Mount just go away but it takes two passes before
->> a mount is actually removed.
->
-> hm.  I stared at mark_mounts_for_expiry() for a while trying to work
-> out how that can happen and what it semantically *means*, and failed.
->
-> I guess I'm just not smart/experienced enough.
+I'm going to release a new version of bio_cgroup soon, which doesn't
+have "struct list_head blist" anymore and whose overhead is minimized.
 
-The semantics are a classic two pass exiry.  The mount is not in use
-and it was not in use last time we came by remove the mount.
-
-The code is fs/namespace.c is especially clever.  It took me a long
-time starring at it to figure out what is going on.  The bug fix comes
-from when I was working out what that code does.
-
->> For NFS which does the whole expiry of all inodes where it comes from it
->> is a good fit.  For /proc where we don't have to guess it isn't the best
->> fit but it isn't shabby either.
->> 
->> >
->> >> +	if (list_empty(list))
->
-> So even after two passes through mark_mounts_for_expiry(), there can
-> still be mounts on our list.
-
-Only if the mounts are actually in use.
-
->> >> +		return;
->> >> +
->> >> +	schedule_delayed_work(&proc_automount_task, proc_automount_timeout);
->
-> And this causes proc_shrink_automounts() to be called every 500 seconds
-> for ever and ever, until proc_automounts is empty.
-
-Yes.
-
-> Again, I just don't know how the reader of this file is to understand
-> why this is done this way.  What is the thinking behind it?  What is
-> the expected dynamic behaviour?  Under what circumstances will this
-> very unusual repeated polling activity be triggered?
-
-
-Basically if someone does:
-
-cd /proc/<pid>/net/stat  or something like that and holds one of the dentries
-alive.  The mount is not allowed to go away.
-
-When a process exits release_task is called which in turn calls
-proc_shrink_automounts().  In a normal case it will remove mounts that
-are under that process.  
-
-Unfortunately if one of these mounts is busy because the path to a dentry
-references it we can not free it (although d_revalidate will cause the
-dentry to become unhashed so we can't find the mount going in the other
-direction).
-
-So we have to periodically check, is the mount free yet.
-
-If we could do all of this with reference counting so that the
-mount would persist exactly until the last user of it has gone
-away without a periodic poll I would love it.  But the infrastructure
-doesn't support that today, and where this is at least partially
-a bug fix I would rather not have the change depend on enhancing
-the VFS.
-
-The algorithm is actually very aggressive and in practice you don't
-see any /proc/<pid>/net showing up as a mount point.
-
-> Obviously, that becomes clearer as one spends more time with the code,
-> but I wonder whether this has all been made as maintainble as it
-> possibly could be.
-
-Good question.
-
-In the sense of will we have to go through and futz with the code all
-of the time.  The abstraction seems good.   You put a mount on
-the proc_automounts list with do_add_mounts and it goes away eventually
-with all of the vfs rules maintained.
-
-In the sense of can the code be read?    Perhaps it could be better.
-I expect it helps to have run the code and see /proc/net as a filesystem.
-that is magically mounted.
-
-In the long term it also seems to make sense maintenance wise to split
-/proc into separate parts that can go different directions, and having
-the automounting of the old pieces, helps a lot with that.
-
-Unless there are some real bugs my preference is to evolve the code from
-where it is today.  The code is at least simple and stupid.
-
-Eric
+> > o biocgroup functionality.
+> > o Implemented new controller "bio"
+> > o Most of it picked from dm-ioband biocgroup implementation patches.
+> > 
+> page_cgroup implementation is changed and most of this patch needs rework.
+> please see the latest one. (I think most of new characteristics are useful
+> for you.)
+> 
+> One comment from me is
+> ==
+> > +struct page_cgroup {
+> > +	struct list_head lru;		/* per cgroup LRU list */
+> > +	struct page *page;
+> > +	struct mem_cgroup *mem_cgroup;
+> > +	int flags;
+> > +#ifdef CONFIG_CGROUP_BIO
+> > +	struct list_head blist;		/* for bio_cgroup page list */
+> > +	struct bio_cgroup *bio_cgroup;
+> > +#endif
+> > +};
+> ==
+> 
+> this blist is too bad. please keep this object small...
+> 
+> Maybe dm-ioband people will post his own new one. just making use of it is an idea.
+> 
+> Thanks,
+> -Kame
+> 
+> 
