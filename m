@@ -1,14 +1,15 @@
-From: Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [patch 1/2][RFC] add socketat syscall
-Date: Fri, 07 Nov 2008 13:33:24 +0100
-Message-ID: <49143594.8030109__22665.8366540962$1226061525$gmane$org@fr.ibm.com>
-References: <20081031215602.655672481@fr.ibm.com>	<20081031215900.810348746@fr.ibm.com>	<517f3f820811060522i7b3518aen47907a34b38adee9@mail.gmail.com>	<cfd18e0f0811060746l77fbe6fel83402ba543fccb38@mail.gmail.com>
-	<491318DC.4000300@fr.ibm.com> <49143263.1040604@fr.ibm.com>
+From: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [patch 0/4] [RFC] Another proportional weight IO controller
+Date: Fri, 7 Nov 2008 08:38:56 -0500
+Message-ID: <20081107133856.GA21884__35204.5689047829$1226065361$gmane$org@redhat.com>
+References: <20081106153022.215696930@redhat.com>
+	<4913A9C2.8060904@cn.fujitsu.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <49143263.1040604-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <4913A9C2.8060904-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,42 +19,41 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Cedric Le Goater <clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
-Cc: linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, mtk.manpages-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, Subrata Modak <subrata-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org
+To: Gui Jianfeng <guijianfeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+Cc: menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, Rik van Riel <riel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, virtualization-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Jeff Moyer <jmoyer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, jens.axboe-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, ngupta-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, fernando-gVGce1chcLdL9jVzuh4AOg@public.gmane.org, Andrea Righi <righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Cedric Le Goater wrote:
-> Daniel Lezcano wrote:
->> Michael Kerrisk wrote:
->>>> On Fri, Oct 31, 2008 at 4:56 PM, Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org> wrote:
->>>>> This patch adds the socketat syscall which allows to specify in
->>>>> which network namespace we want to create a socket. The network
->>>>> namespace destination is referred by a socket fd previously opened
->>>>> in the destination network namespace.
->>> Daniel,
->>>
->>> Is there any documentation for this system call, and/or test programs?
->> Not yet.
->>
->> This small patch is a proposition to Andreas and Vivien to have a single 
->> process being able to manage several network namespaces.
->>
->> When a process unshares the network, it creates a socket which is used 
->> as a socket control (it belongs to the network namespace). Each time a 
->> network namespace is created, a socket control is created.
->>
->> When the process has to create a socket for a specific network 
->> namespace, it can use the socket control to specify it. This is the 
->> purpose of the socketat syscall.
+On Fri, Nov 07, 2008 at 10:36:50AM +0800, Gui Jianfeng wrote:
+> vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org wrote:
+> > Hi,
+> > 
+> > If you are not already tired of so many io controller implementations, here
+> > is another one.
+> > 
+> > This is a very eary very crude implementation to get early feedback to see
+> > if this approach makes any sense or not.
+> > 
+> > This controller is a proportional weight IO controller primarily
+> > based on/inspired by dm-ioband. One of the things I personally found little
+> > odd about dm-ioband was need of a dm-ioband device for every device we want
+> > to control.  I thought that probably we can make this control per request
+> > queue and get rid of device mapper driver. This should make configuration
+> > aspect easy.
+> > 
+> > I have picked up quite some amount of code from dm-ioband especially for
+> > biocgroup implementation.
+> > 
+> > I have done very basic testing and that is running 2-3 dd commands in different
+> > cgroups on x86_64. Wanted to throw out the code early to get some feedback.
+> > 
+> > More details about the design and how to are in documentation patch.
+> > 
+> > Your comments are welcome.
 > 
-> what about eric's proposal of adding an fd argument to sys_socket() ? was it 
-> dropped ?
+>   Which kernel version is this patch set based on?
+> 
 
-AFAIU, the Eric's proposal in case a new syscall was not accepted. IMHO 
-a new syscall, with the man pages is better than adding an extra obscure 
-argument to a well known API.  But if there is a reason to not add a new 
-syscall, we can consider Eric's approach as a good alternative I think.
+2.6.27
 
-But before sending anything, I am still waiting for Vivien and Andreas 
-answer about this approach. If it helps them to migrate their project to 
-the network namespace, I will send something more formal.
+Thanks
+Vivek
