@@ -1,8 +1,7 @@
 From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: [RFC v9][PATCH 11/13] Track in-kernel when we expect
-	checkpoint/restart to work
-Date: Mon, 10 Nov 2008 11:37:38 -0500
-Message-ID: <1226335060-7061-12-git-send-email-orenl__18258.8155883879$1226337462$gmane$org@cs.columbia.edu>
+Subject: [RFC v9][PATCH 12/13] Checkpoint multiple processes
+Date: Mon, 10 Nov 2008 11:37:39 -0500
+Message-ID: <1226335060-7061-13-git-send-email-orenl__15572.7431331345$1226337470$gmane$org@cs.columbia.edu>
 References: <1226335060-7061-1-git-send-email-orenl@cs.columbia.edu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -22,147 +21,381 @@ To: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
 Cc: linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Linus Torvalds <torvalds-3NddpPZAyC0@public.gmane.org>, Alexander Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, "H. Peter Anvin" <hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org>, Thomas Gleixner <tglx-hfZtesqFncYOwBW4kG4KsQ@public.gmane.org>, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-From: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Checkpointing of multiple processes works by recording the tasks tree
+structure below a given task (usually this task is the container init).
 
-Suggested by Ingo.
+For a given task, do a DFS scan of the tasks tree and collect them
+into an array (keeping a reference to each task). Using DFS simplifies
+the recreation of tasks either in user space or kernel space. For each
+task collected, test if it can be checkpointed, and save its pid, tgid,
+and ppid.
 
-Checkpoint/restart is going to be a long effort to get things working.
-We're going to have a lot of things that we know just don't work for
-a long time.  That doesn't mean that it will be useless, it just means
-that there's some complicated features that we are going to have to
-work incrementally to fix.
+The actual work is divided into two passes: a first scan counts the
+tasks, then memory is allocated and a second scan fills the array.
 
-This patch introduces a new mechanism to help the checkpoint/restart
-developers.  A new function pair: task/process_deny_checkpoint() is
-created.  When called, these tell the kernel that we *know* that the
-process has performed some activity that will keep it from being
-properly checkpointed.
+The logic is suitable for creation of processes during restart either
+in userspace or by the kernel.
 
-The 'flag' is an atomic_t for now so that we can have some level
-of atomicity and make sure to only warn once.
+Currently we ignore threads and zombies, as well as session ids.
 
-For now, this is a one-way trip.  Once a process is no longer
-'may_checkpoint' capable, neither it nor its children ever will be.
-This can, of course, be fixed up in the future.  We might want to
-reset the flag when a new pid namespace is created, for instance.
-
-Signed-off-by: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 Signed-off-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 ---
- checkpoint/checkpoint.c    |    6 ++++++
- include/linux/checkpoint.h |   33 ++++++++++++++++++++++++++++++++-
- include/linux/sched.h      |    3 +++
- kernel/fork.c              |   10 ++++++++++
- 4 files changed, 51 insertions(+), 1 deletions(-)
+ checkpoint/checkpoint.c        |  228 +++++++++++++++++++++++++++++++++++++---
+ checkpoint/sys.c               |   16 +++
+ include/linux/checkpoint.h     |    3 +
+ include/linux/checkpoint_hdr.h |   13 ++-
+ 4 files changed, 243 insertions(+), 17 deletions(-)
 
 diff --git a/checkpoint/checkpoint.c b/checkpoint/checkpoint.c
-index a20f961..dd9f325 100644
+index dd9f325..04b0c4a 100644
 --- a/checkpoint/checkpoint.c
 +++ b/checkpoint/checkpoint.c
-@@ -213,6 +213,12 @@ static int cr_write_task(struct cr_ctx *ctx, struct task_struct *t)
- 		return -EAGAIN;
- 	}
+@@ -206,19 +206,6 @@ static int cr_write_task(struct cr_ctx *ctx, struct task_struct *t)
+ {
+ 	int ret;
  
-+	if (!atomic_read(&task->may_checkpoint)) {
-+		pr_warning("c/r: task %d may not checkpoint\n",
-+			   task_pid_vnr(task));
-+		return -BUSY;
-+	}
-+
+-	/* TODO: verity that the task is frozen (unless self) */
+-
+-	if (task->state == TASK_DEAD) {
+-		pr_warning("c/r: task may not be in state TASK_DEAD\n");
+-		return -EAGAIN;
+-	}
+-
+-	if (!atomic_read(&task->may_checkpoint)) {
+-		pr_warning("c/r: task %d may not checkpoint\n",
+-			   task_pid_vnr(task));
+-		return -BUSY;
+-	}
+-
  	ret = cr_write_task_struct(ctx, t);
  	cr_debug("task_struct: ret %d\n", ret);
  	if (ret < 0)
-diff --git a/include/linux/checkpoint.h b/include/linux/checkpoint.h
-index b807e85..74a8597 100644
---- a/include/linux/checkpoint.h
-+++ b/include/linux/checkpoint.h
-@@ -10,8 +10,11 @@
-  *  distribution for more details.
-  */
- 
--#include <linux/path.h>
- #include <linux/fs.h>
-+#include <linux/path.h>
-+#include <linux/sched.h>
-+
-+#ifdef CONFIG_CHECKPOINT_RESTART
- 
- #define CR_VERSION  2
- 
-@@ -91,4 +94,32 @@ extern int cr_read_files(struct cr_ctx *ctx);
- #define cr_debug(fmt, args...)  \
- 	pr_debug("[%d:c/r:%s] " fmt, task_pid_vnr(current), __func__, ## args)
- 
-+static inline void __task_deny_checkpointing(struct task_struct *task,
-+		char *file, int line)
-+{
-+	if (!atomic_dec_and_test(&task->may_checkpoint))
-+		return;
-+	printk(KERN_INFO "process performed an action that can not be "
-+			"checkpointed at: %s:%d\n", file, line);
-+	WARN_ON(1);
-+}
-+#define process_deny_checkpointing(p)  \
-+	__task_deny_checkpointing(p, __FILE__, __LINE__)
-+
-+/*
-+ * For now, we're not going to have a distinction between
-+ * tasks and processes for the purpose of c/r.  But, allow
-+ * these two calls anyway to make new users at least think
-+ * about it.
-+ */
-+#define task_deny_checkpointing(p)  \
-+	__task_deny_checkpointing(p, __FILE__, __LINE__)
-+
-+#else
-+
-+static inline void task_deny_checkpointing(struct task_struct *task) {}
-+static inline void process_deny_checkpointing(struct task_struct *task) {}
-+
-+#endif
-+
- #endif /* _CHECKPOINT_CKPT_H_ */
-diff --git a/include/linux/sched.h b/include/linux/sched.h
-index b483f39..0c8d02d 100644
---- a/include/linux/sched.h
-+++ b/include/linux/sched.h
-@@ -1349,6 +1349,9 @@ struct task_struct {
- 	 */
- 	unsigned long timer_slack_ns;
- 	unsigned long default_timer_slack_ns;
-+#ifdef CONFIG_CHECKPOINT_RESTART
-+	atomic_t may_checkpoint;
-+#endif
- };
- 
- /*
-diff --git a/kernel/fork.c b/kernel/fork.c
-index f608356..693b0cb 100644
---- a/kernel/fork.c
-+++ b/kernel/fork.c
-@@ -195,6 +195,13 @@ void __init fork_init(unsigned long mempages)
- 	init_task.signal->rlim[RLIMIT_NPROC].rlim_max = max_threads/2;
- 	init_task.signal->rlim[RLIMIT_SIGPENDING] =
- 		init_task.signal->rlim[RLIMIT_NPROC];
-+
-+#ifdef CONFIG_CHECKPOINT_RESTART
-+	/*
-+	 * This probably won't stay set for long...
-+	 */
-+	atomic_set(&init_task.may_checkpoint, 1);
-+#endif
+@@ -241,6 +228,205 @@ static int cr_write_task(struct cr_ctx *ctx, struct task_struct *t)
+ 	return ret;
  }
  
- int __attribute__((weak)) arch_dup_task_struct(struct task_struct *dst,
-@@ -245,6 +252,9 @@ static struct task_struct *dup_task_struct(struct task_struct *orig)
- 	tsk->btrace_seq = 0;
- #endif
- 	tsk->splice_pipe = NULL;
-+#ifdef CONFIG_CHECKPOINT_RESTART
-+	atomic_set(&tsk->may_checkpoint, atomic_read(&orig->may_checkpoint));
-+#endif
- 	return tsk;
++/* dump the entire state of a given task */
++static int cr_write_all_tasks(struct cr_ctx *ctx)
++{
++	int n, ret = 0;
++
++	for (n = 0; n < ctx->tasks_nr; n++) {
++		cr_debug("dumping task #%d\n", n);
++		ret = cr_write_task(ctx, ctx->tasks_arr[n]);
++		if (ret < 0)
++			break;
++	}
++
++	return ret;
++}
++
++static int cr_may_checkpoint_task(struct task_struct *t, struct cr_ctx *ctx)
++{
++	cr_debug("check %d\n", task_pid_nr_ns(t, ctx->root_nsproxy->pid_ns));
++
++	if (t->state == TASK_DEAD) {
++		pr_warning("c/r: task %d is TASK_DEAD\n", task_pid_vnr(t));
++		return -EAGAIN;
++	}
++
++	if (!atomic_read(&t->may_checkpoint)) {
++		pr_warning("c/r: task %d uncheckpointable\n", task_pid_vnr(t));
++		return -EBUSY;
++	}
++
++	if (!ptrace_may_access(t, PTRACE_MODE_READ))
++		return -EPERM;
++
++	/* FIXME: verify that the task is frozen (unless self) */
++
++	/* FIXME: change this for nested containers */
++	if (task_nsproxy(t) != ctx->root_nsproxy)
++		return -EPERM;
++
++	return 0;
++}
++
++#define CR_HDR_PIDS_CHUNK	256
++
++static int cr_write_pids(struct cr_ctx *ctx)
++{
++	struct cr_hdr_pids *hh;
++	struct pid_namespace *ns;
++	struct task_struct *task;
++	struct task_struct **tasks_arr;
++	int tasks_nr, n, ret = 0, pos = 0;
++
++	ns = ctx->root_nsproxy->pid_ns;
++	tasks_arr = ctx->tasks_arr;
++	tasks_nr = ctx->tasks_nr;
++
++	hh = cr_hbuf_get(ctx, sizeof(*hh) * CR_HDR_PIDS_CHUNK);
++
++	while (tasks_nr > 0) {
++		rcu_read_lock();
++		for (n = min(tasks_nr, CR_HDR_PIDS_CHUNK); n; n--) {
++			task = tasks_arr[pos];
++
++			/* is this task cool ? */
++			ret = cr_may_checkpoint_task(task, ctx);
++			if (ret < 0) {
++				rcu_read_unlock();
++				goto out;
++			}
++			hh[pos].vpid = task_pid_nr_ns(task, ns);
++			hh[pos].vtgid = task_tgid_nr_ns(task, ns);
++			hh[pos].vppid = task_tgid_nr_ns(task->real_parent, ns);
++			cr_debug("task[%d]: vpid %d vtgid %d parent %d\n", pos,
++				 hh[pos].vpid, hh[pos].vtgid, hh[pos].vppid);
++			pos++;
++		}
++		rcu_read_unlock();
++
++		n = min(tasks_nr, CR_HDR_PIDS_CHUNK);
++		ret = cr_kwrite(ctx, hh, n * sizeof(*hh));
++		if (ret < 0)
++			break;
++
++		tasks_nr -= n;
++	}
++ out:
++	cr_hbuf_put(ctx, sizeof(*hh));
++	return ret;
++}
++
++/* count number of tasks in tree (and optionally fill pid's in array) */
++static int cr_tree_count_tasks(struct cr_ctx *ctx)
++{
++	struct task_struct *root = ctx->root_task;
++	struct task_struct *task = root;
++	struct task_struct *parent = NULL;
++	struct task_struct **tasks_arr = ctx->tasks_arr;
++	int tasks_nr = ctx->tasks_nr;
++	int nr = 0;
++
++	read_lock(&tasklist_lock);
++
++	/* count tasks via DFS scan of the tree */
++	while (1) {
++		if (tasks_arr) {
++			/* unlikely, but ... */
++			if (nr == tasks_nr)
++				return -EBUSY;	/* cleanup in cr_ctx_free() */
++			tasks_arr[nr] = task;
++			get_task_struct(task);
++		}
++
++		nr++;
++
++		/* if has children - proceed with child */
++		if (!list_empty(&task->children)) {
++			parent = task;
++			task = list_entry(task->children.next,
++					  struct task_struct, sibling);
++			continue;
++		}
++
++		while (task != root) {
++			/* if has sibling - proceed with sibling */
++			if (!list_is_last(&task->sibling, &parent->children)) {
++				task = list_entry(task->sibling.next,
++						  struct task_struct, sibling);
++				break;
++			}
++
++			/* else, trace back to parent and proceed */
++			task = parent;
++			parent = parent->real_parent;
++		}
++
++		if (task == root)
++			break;
++	}
++
++	read_unlock(&tasklist_lock);
++	return nr;
++}
++
++/*
++ * cr_build_tree - scan the tasks tree in DFS order and fill in array
++ * @ctx: checkpoint context
++ *
++ * Using DFS order simplifies the restart logic to re-create the tasks.
++ *
++ * On success, ctx->tasks_arr will be allocated and populated with all
++ * tasks (reference taken), and ctx->tasks_nr will hold the total count.
++ * The array is cleaned up by cr_ctx_free().
++ */
++static int cr_build_tree(struct cr_ctx *ctx)
++{
++	int n, m;
++
++	/* count tasks (no side effects) */
++	n = cr_tree_count_tasks(ctx);
++
++	ctx->tasks_nr = n;
++	ctx->tasks_arr = kzalloc(n * sizeof(*ctx->tasks_arr), GFP_KERNEL);
++	if (!ctx->tasks_arr)
++		return -ENOMEM;
++
++	/* count again (now will fill array) */
++	m = cr_tree_count_tasks(ctx);
++
++	/* unlikely, but ... (cleanup in cr_ctx_free) */
++	if (m < 0)
++		return m;
++	else if (m != n)
++		return -EBUSY;
++
++	return 0;
++}
++
++/* dump the array that describes the tasks tree */
++static int cr_write_tree(struct cr_ctx *ctx)
++{
++	struct cr_hdr h;
++	struct cr_hdr_tree *hh;
++	int ret;
++
++	h.type = CR_HDR_TREE;
++	h.len = sizeof(*hh);
++	h.parent = 0;
++
++	hh = cr_hbuf_get(ctx, sizeof(*hh));
++	hh->tasks_nr = ctx->tasks_nr;
++
++	ret = cr_write_obj(ctx, &h, hh);
++	cr_hbuf_put(ctx, sizeof(*hh));
++	if (ret < 0)
++		return ret;
++
++	ret = cr_write_pids(ctx);
++	return ret;
++}
++
+ static int cr_get_container(struct cr_ctx *ctx, pid_t pid)
+ {
+ 	struct task_struct *task = NULL;
+@@ -258,7 +444,7 @@ static int cr_get_container(struct cr_ctx *ctx, pid_t pid)
+ 	if (!task)
+ 		goto out;
  
- out:
+-#if 0	/* enable to use containers */
++#if 0	/* enable with containers */
+ 	if (!is_container_init(task)) {
+ 		err = -EINVAL;
+ 		goto out;
+@@ -280,7 +466,7 @@ static int cr_get_container(struct cr_ctx *ctx, pid_t pid)
+ 	if (!nsproxy)
+ 		goto out;
+ 
+-	/* TODO: verify that the container is frozen */
++	/* FIXME: verify that the container is frozen */
+ 
+ 	ctx->root_task = task;
+ 	ctx->root_nsproxy = nsproxy;
+@@ -319,12 +505,22 @@ int do_checkpoint(struct cr_ctx *ctx, pid_t pid)
+ 	ret = cr_ctx_checkpoint(ctx, pid);
+ 	if (ret < 0)
+ 		goto out;
++
++	ret = cr_build_tree(ctx);
++	if (ret < 0)
++		goto out;
++
+ 	ret = cr_write_head(ctx);
+ 	if (ret < 0)
+ 		goto out;
+-	ret = cr_write_task(ctx, ctx->root_task);
++	ret = cr_write_tree(ctx);
+ 	if (ret < 0)
+ 		goto out;
++
++	ret = cr_write_all_tasks(ctx);
++	if (ret < 0)
++		goto out;
++
+ 	ret = cr_write_tail(ctx);
+ 	if (ret < 0)
+ 		goto out;
+diff --git a/checkpoint/sys.c b/checkpoint/sys.c
+index dfe63ca..fbaf683 100644
+--- a/checkpoint/sys.c
++++ b/checkpoint/sys.c
+@@ -130,6 +130,19 @@ void cr_hbuf_put(struct cr_ctx *ctx, int n)
+  * restart operation, and persists until the operation is completed.
+  */
+ 
++static void cr_task_arr_free(struct cr_ctx *ctx)
++{
++	int n;
++
++	for (n = 0; n < ctx->tasks_nr; n++) {
++		if (ctx->tasks_arr[n]) {
++			put_task_struct(ctx->tasks_arr[n]);
++			ctx->tasks_arr[n] = NULL;
++		}
++	}
++	kfree(ctx->tasks_arr);
++}
++
+ static void cr_ctx_free(struct cr_ctx *ctx)
+ {
+ 	if (ctx->file)
+@@ -143,6 +156,9 @@ static void cr_ctx_free(struct cr_ctx *ctx)
+ 	cr_pgarr_free(ctx);
+ 	cr_objhash_free(ctx);
+ 
++	if (ctx->tasks_arr)
++		cr_task_arr_free(ctx);
++
+ 	if (ctx->root_nsproxy)
+ 		put_nsproxy(ctx->root_nsproxy);
+ 	if (ctx->root_task)
+diff --git a/include/linux/checkpoint.h b/include/linux/checkpoint.h
+index 74a8597..b142171 100644
+--- a/include/linux/checkpoint.h
++++ b/include/linux/checkpoint.h
+@@ -34,6 +34,9 @@ struct cr_ctx {
+ 	void *hbuf;		/* temporary buffer for headers */
+ 	int hpos;		/* position in headers buffer */
+ 
++	struct task_struct **tasks_arr;	/* array of all tasks in container */
++	int tasks_nr;			/* size of tasks array */
++
+ 	struct cr_objhash *objhash;	/* hash for shared objects */
+ 
+ 	struct list_head pgarr_list;	/* page array to dump VMA contents */
+diff --git a/include/linux/checkpoint_hdr.h b/include/linux/checkpoint_hdr.h
+index 3a21179..5114bdd 100644
+--- a/include/linux/checkpoint_hdr.h
++++ b/include/linux/checkpoint_hdr.h
+@@ -35,7 +35,8 @@ enum {
+ 	CR_HDR_STRING,
+ 	CR_HDR_FNAME,
+ 
+-	CR_HDR_TASK = 101,
++	CR_HDR_TREE = 101,
++	CR_HDR_TASK,
+ 	CR_HDR_THREAD,
+ 	CR_HDR_CPU,
+ 
+@@ -71,6 +72,16 @@ struct cr_hdr_tail {
+ 	__u64 magic;
+ } __attribute__((aligned(8)));
+ 
++struct cr_hdr_tree {
++	__u32 tasks_nr;
++} __attribute__((aligned(8)));
++
++struct cr_hdr_pids {
++	__s32 vpid;
++	__s32 vtgid;
++	__s32 vppid;
++} __attribute__((aligned(8)));
++
+ struct cr_hdr_task {
+ 	__u32 state;
+ 	__u32 exit_state;
 -- 
 1.5.4.3
