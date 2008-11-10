@@ -1,7 +1,8 @@
 From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: [RFC v9][PATCH 01/13] Create syscalls: sys_checkpoint, sys_restart
-Date: Mon, 10 Nov 2008 11:37:28 -0500
-Message-ID: <1226335060-7061-2-git-send-email-orenl__796.26466981626$1226337460$gmane$org@cs.columbia.edu>
+Subject: [RFC v9][PATCH 11/13] Track in-kernel when we expect
+	checkpoint/restart to work
+Date: Mon, 10 Nov 2008 11:37:38 -0500
+Message-ID: <1226335060-7061-12-git-send-email-orenl__18258.8155883879$1226337462$gmane$org@cs.columbia.edu>
 References: <1226335060-7061-1-git-send-email-orenl@cs.columbia.edu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -21,189 +22,147 @@ To: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
 Cc: linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Linus Torvalds <torvalds-3NddpPZAyC0@public.gmane.org>, Alexander Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, "H. Peter Anvin" <hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org>, Thomas Gleixner <tglx-hfZtesqFncYOwBW4kG4KsQ@public.gmane.org>, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Create trivial sys_checkpoint and sys_restore system calls. They will
-enable to checkpoint and restart an entire container, to and from a
-checkpoint image file descriptor.
+From: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 
-The syscalls take a file descriptor (for the image file) and flags as
-arguments. For sys_checkpoint the first argument identifies the target
-container; for sys_restart it will identify the checkpoint image.
+Suggested by Ingo.
 
-A checkpoint, much like a process coredump, dumps the state of multiple
-processes at once, including the state of the container. The checkpoint
-image is written to (and read from) the file descriptor directly from
-the kernel. This way the data is generated and then pushed out naturally
-as resources and tasks are scanned to save their state. This is the
-approach taken by, e.g., Zap and OpenVZ.
+Checkpoint/restart is going to be a long effort to get things working.
+We're going to have a lot of things that we know just don't work for
+a long time.  That doesn't mean that it will be useless, it just means
+that there's some complicated features that we are going to have to
+work incrementally to fix.
 
-By using a return value and not a file descriptor, we can distinguish
-between a return from checkpoint, a return from restart (in case of a
-checkpoint that includes self, i.e. a task checkpointing its own
-container, or itself), and an error condition, in a manner analogous
-to a fork() call.
+This patch introduces a new mechanism to help the checkpoint/restart
+developers.  A new function pair: task/process_deny_checkpoint() is
+created.  When called, these tell the kernel that we *know* that the
+process has performed some activity that will keep it from being
+properly checkpointed.
 
-We don't use copyin()/copyout() because it requires holding the entire
-image in user space, and does not make sense for restart.  Also, we
-don't use a pipe, pseudo-fs file and the like, because they work by
-generating data on demand as the user pulls it (unless the entire
-image is buffered in the kernel) and would require more complex logic.
-They also would significantly complicate checkpoint that includes self.
+The 'flag' is an atomic_t for now so that we can have some level
+of atomicity and make sure to only warn once.
 
-Changelog[v5]:
-  - Config is 'def_bool n' by default
+For now, this is a one-way trip.  Once a process is no longer
+'may_checkpoint' capable, neither it nor its children ever will be.
+This can, of course, be fixed up in the future.  We might want to
+reset the flag when a new pid namespace is created, for instance.
 
-Signed-off-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Acked-by: Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 Signed-off-by: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Signed-off-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 ---
- arch/x86/include/asm/unistd_32.h   |    2 +
- arch/x86/kernel/syscall_table_32.S |    2 +
- checkpoint/Kconfig                 |   11 +++++++++
- checkpoint/Makefile                |    5 ++++
- checkpoint/sys.c                   |   41 ++++++++++++++++++++++++++++++++++++
- include/linux/syscalls.h           |    2 +
- init/Kconfig                       |    2 +
- kernel/sys_ni.c                    |    4 +++
- 8 files changed, 69 insertions(+), 0 deletions(-)
- create mode 100644 checkpoint/Kconfig
- create mode 100644 checkpoint/Makefile
- create mode 100644 checkpoint/sys.c
+ checkpoint/checkpoint.c    |    6 ++++++
+ include/linux/checkpoint.h |   33 ++++++++++++++++++++++++++++++++-
+ include/linux/sched.h      |    3 +++
+ kernel/fork.c              |   10 ++++++++++
+ 4 files changed, 51 insertions(+), 1 deletions(-)
 
-diff --git a/arch/x86/include/asm/unistd_32.h b/arch/x86/include/asm/unistd_32.h
-index f2bba78..a5f9e09 100644
---- a/arch/x86/include/asm/unistd_32.h
-+++ b/arch/x86/include/asm/unistd_32.h
-@@ -338,6 +338,8 @@
- #define __NR_dup3		330
- #define __NR_pipe2		331
- #define __NR_inotify_init1	332
-+#define __NR_checkpoint		333
-+#define __NR_restart		334
+diff --git a/checkpoint/checkpoint.c b/checkpoint/checkpoint.c
+index a20f961..dd9f325 100644
+--- a/checkpoint/checkpoint.c
++++ b/checkpoint/checkpoint.c
+@@ -213,6 +213,12 @@ static int cr_write_task(struct cr_ctx *ctx, struct task_struct *t)
+ 		return -EAGAIN;
+ 	}
  
- #ifdef __KERNEL__
++	if (!atomic_read(&task->may_checkpoint)) {
++		pr_warning("c/r: task %d may not checkpoint\n",
++			   task_pid_vnr(task));
++		return -BUSY;
++	}
++
+ 	ret = cr_write_task_struct(ctx, t);
+ 	cr_debug("task_struct: ret %d\n", ret);
+ 	if (ret < 0)
+diff --git a/include/linux/checkpoint.h b/include/linux/checkpoint.h
+index b807e85..74a8597 100644
+--- a/include/linux/checkpoint.h
++++ b/include/linux/checkpoint.h
+@@ -10,8 +10,11 @@
+  *  distribution for more details.
+  */
  
-diff --git a/arch/x86/kernel/syscall_table_32.S b/arch/x86/kernel/syscall_table_32.S
-index d44395f..5543136 100644
---- a/arch/x86/kernel/syscall_table_32.S
-+++ b/arch/x86/kernel/syscall_table_32.S
-@@ -332,3 +332,5 @@ ENTRY(sys_call_table)
- 	.long sys_dup3			/* 330 */
- 	.long sys_pipe2
- 	.long sys_inotify_init1
-+	.long sys_checkpoint
-+	.long sys_restart
-diff --git a/checkpoint/Kconfig b/checkpoint/Kconfig
-new file mode 100644
-index 0000000..ffaa635
---- /dev/null
-+++ b/checkpoint/Kconfig
-@@ -0,0 +1,11 @@
-+config CHECKPOINT_RESTART
-+	prompt "Enable checkpoint/restart (EXPERIMENTAL)"
-+	def_bool n
-+	depends on X86_32 && EXPERIMENTAL
-+	help
-+	  Application checkpoint/restart is the ability to save the
-+	  state of a running application so that it can later resume
-+	  its execution from the time at which it was checkpointed.
-+
-+	  Turning this option on will enable checkpoint and restart
-+	  functionality in the kernel.
-diff --git a/checkpoint/Makefile b/checkpoint/Makefile
-new file mode 100644
-index 0000000..07d018b
---- /dev/null
-+++ b/checkpoint/Makefile
-@@ -0,0 +1,5 @@
-+#
-+# Makefile for linux checkpoint/restart.
-+#
-+
-+obj-$(CONFIG_CHECKPOINT_RESTART) += sys.o
-diff --git a/checkpoint/sys.c b/checkpoint/sys.c
-new file mode 100644
-index 0000000..375129c
---- /dev/null
-+++ b/checkpoint/sys.c
-@@ -0,0 +1,41 @@
-+/*
-+ *  Generic container checkpoint-restart
-+ *
-+ *  Copyright (C) 2008 Oren Laadan
-+ *
-+ *  This file is subject to the terms and conditions of the GNU General Public
-+ *  License.  See the file COPYING in the main directory of the Linux
-+ *  distribution for more details.
-+ */
-+
+-#include <linux/path.h>
+ #include <linux/fs.h>
++#include <linux/path.h>
 +#include <linux/sched.h>
-+#include <linux/kernel.h>
 +
-+/**
-+ * sys_checkpoint - checkpoint a container
-+ * @pid: pid of the container init(1) process
-+ * @fd: file to which dump the checkpoint image
-+ * @flags: checkpoint operation flags
-+ *
-+ * Returns positive identifier on success, 0 when returning from restart
-+ * or negative value on error
-+ */
-+asmlinkage long sys_checkpoint(pid_t pid, int fd, unsigned long flags)
++#ifdef CONFIG_CHECKPOINT_RESTART
+ 
+ #define CR_VERSION  2
+ 
+@@ -91,4 +94,32 @@ extern int cr_read_files(struct cr_ctx *ctx);
+ #define cr_debug(fmt, args...)  \
+ 	pr_debug("[%d:c/r:%s] " fmt, task_pid_vnr(current), __func__, ## args)
+ 
++static inline void __task_deny_checkpointing(struct task_struct *task,
++		char *file, int line)
 +{
-+	pr_debug("sys_checkpoint not implemented yet\n");
-+	return -ENOSYS;
++	if (!atomic_dec_and_test(&task->may_checkpoint))
++		return;
++	printk(KERN_INFO "process performed an action that can not be "
++			"checkpointed at: %s:%d\n", file, line);
++	WARN_ON(1);
 +}
-+/**
-+ * sys_restart - restart a container
-+ * @crid: checkpoint image identifier
-+ * @fd: file from which read the checkpoint image
-+ * @flags: restart operation flags
-+ *
-+ * Returns negative value on error, or otherwise returns in the realm
-+ * of the original checkpoint
++#define process_deny_checkpointing(p)  \
++	__task_deny_checkpointing(p, __FILE__, __LINE__)
++
++/*
++ * For now, we're not going to have a distinction between
++ * tasks and processes for the purpose of c/r.  But, allow
++ * these two calls anyway to make new users at least think
++ * about it.
 + */
-+asmlinkage long sys_restart(int crid, int fd, unsigned long flags)
-+{
-+	pr_debug("sys_restart not implemented yet\n");
-+	return -ENOSYS;
-+}
-diff --git a/include/linux/syscalls.h b/include/linux/syscalls.h
-index d6ff145..edc218b 100644
---- a/include/linux/syscalls.h
-+++ b/include/linux/syscalls.h
-@@ -622,6 +622,8 @@ asmlinkage long sys_timerfd_gettime(int ufd, struct itimerspec __user *otmr);
- asmlinkage long sys_eventfd(unsigned int count);
- asmlinkage long sys_eventfd2(unsigned int count, int flags);
- asmlinkage long sys_fallocate(int fd, int mode, loff_t offset, loff_t len);
-+asmlinkage long sys_checkpoint(pid_t pid, int fd, unsigned long flags);
-+asmlinkage long sys_restart(int crid, int fd, unsigned long flags);
- 
- int kernel_execve(const char *filename, char *const argv[], char *const envp[]);
- 
-diff --git a/init/Kconfig b/init/Kconfig
-index 86b00c5..743e2ad 100644
---- a/init/Kconfig
-+++ b/init/Kconfig
-@@ -814,6 +814,8 @@ config MARKERS
- 
- source "arch/Kconfig"
- 
-+source "checkpoint/Kconfig"
++#define task_deny_checkpointing(p)  \
++	__task_deny_checkpointing(p, __FILE__, __LINE__)
 +
- endmenu		# General setup
- 
- config HAVE_GENERIC_DMA_COHERENT
-diff --git a/kernel/sys_ni.c b/kernel/sys_ni.c
-index a77b27b..e4e289e 100644
---- a/kernel/sys_ni.c
-+++ b/kernel/sys_ni.c
-@@ -174,3 +174,7 @@ cond_syscall(compat_sys_timerfd_settime);
- cond_syscall(compat_sys_timerfd_gettime);
- cond_syscall(sys_eventfd);
- cond_syscall(sys_eventfd2);
++#else
 +
-+/* checkpoint/restart */
-+cond_syscall(sys_checkpoint);
-+cond_syscall(sys_restart);
++static inline void task_deny_checkpointing(struct task_struct *task) {}
++static inline void process_deny_checkpointing(struct task_struct *task) {}
++
++#endif
++
+ #endif /* _CHECKPOINT_CKPT_H_ */
+diff --git a/include/linux/sched.h b/include/linux/sched.h
+index b483f39..0c8d02d 100644
+--- a/include/linux/sched.h
++++ b/include/linux/sched.h
+@@ -1349,6 +1349,9 @@ struct task_struct {
+ 	 */
+ 	unsigned long timer_slack_ns;
+ 	unsigned long default_timer_slack_ns;
++#ifdef CONFIG_CHECKPOINT_RESTART
++	atomic_t may_checkpoint;
++#endif
+ };
+ 
+ /*
+diff --git a/kernel/fork.c b/kernel/fork.c
+index f608356..693b0cb 100644
+--- a/kernel/fork.c
++++ b/kernel/fork.c
+@@ -195,6 +195,13 @@ void __init fork_init(unsigned long mempages)
+ 	init_task.signal->rlim[RLIMIT_NPROC].rlim_max = max_threads/2;
+ 	init_task.signal->rlim[RLIMIT_SIGPENDING] =
+ 		init_task.signal->rlim[RLIMIT_NPROC];
++
++#ifdef CONFIG_CHECKPOINT_RESTART
++	/*
++	 * This probably won't stay set for long...
++	 */
++	atomic_set(&init_task.may_checkpoint, 1);
++#endif
+ }
+ 
+ int __attribute__((weak)) arch_dup_task_struct(struct task_struct *dst,
+@@ -245,6 +252,9 @@ static struct task_struct *dup_task_struct(struct task_struct *orig)
+ 	tsk->btrace_seq = 0;
+ #endif
+ 	tsk->splice_pipe = NULL;
++#ifdef CONFIG_CHECKPOINT_RESTART
++	atomic_set(&tsk->may_checkpoint, atomic_read(&orig->may_checkpoint));
++#endif
+ 	return tsk;
+ 
+ out:
 -- 
 1.5.4.3
