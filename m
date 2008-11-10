@@ -1,65 +1,98 @@
-From: David Rientjes <rientjes-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH -mm] mm: fine-grained dirty_ratio_pcm and
-	dirty_background_ratio_pcm (v2)
-Date: Mon, 10 Nov 2008 14:15:29 -0800 (PST)
-Message-ID: <alpine.DEB.2.00.0811101410170.2108@chino.kir.corp.google.com>
-References: <1221232192-13553-1-git-send-email-righi.andrea@gmail.com>
-	<20080912131816.e0cfac7a.akpm@linux-foundation.org>
-	<532480950809221641y3471267esff82a14be8056586@mail.gmail.com>
-	<48EB4236.1060100@linux.vnet.ibm.com> <48EB851D.2030300@gmail.com>
-	<20081008101642.fcfb9186.kamezawa.hiroyu@jp.fujitsu.com>
-	<48ECB215.4040409@linux.vnet.ibm.com>
-	<48EE236A.90007@gmail.com> <4918A074.1050003@gmail.com>
-	<20081110131255.ce71ce60.akpm@linux-foundation.org>
-	<4918AFA1.4000102@gmail.com>
+From: sukadev@linux.vnet.ibm.com
+Subject: Re: Signals to cinit
+Date: Mon, 10 Nov 2008 15:27:35 -0800
+Message-ID: <20081110232735.GA20891@us.ibm.com>
+References: <20081101180505.GA24268@us.ibm.com> <20081110173839.GA11121@redhat.com> <20081110193228.GA15519@redhat.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <4918AFA1.4000102-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Andrea Righi <righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Cc: mrubin-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, dradford-cT2on/YLNlBWk0Htik3J/w@public.gmane.org, m.innocenti-qooieK91W7JeoWH0uzbU5w@public.gmane.org, fernando-gVGce1chcLdL9jVzuh4AOg@public.gmane.org, eric.rannaud-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, chlunde-om2ZC0WAoZIXWF+eFR7m5Q@public.gmane.org, dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, dpshah-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, agk-9JcytcrH/bA+uJoB2kUjGw@public.gmane.org, matt-cT2on/YLNlBWk0Htik3J/w@public.gmane.org, menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
+Content-Type: text/plain; charset=us-ascii
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1754612AbYKJXaJ@vger.kernel.org>
+Content-Disposition: inline
+In-Reply-To: <20081110193228.GA15519@redhat.com>
+Sender: linux-kernel-owner@vger.kernel.org
+To: Oleg Nesterov <oleg@redhat.com>
+Cc: "Eric W. Biederman" <ebiederm@xmission.com>, Pavel Emelyanov <xemul@openvz.org>, daniel@hozac.com, Nadia Derbey <Nadia.Derbey@bull.net>, serue@us.ibm.com, clg@fr.ibm.com, Containers <containers@lists.osdl.org>, sukadev@us.ibm.com, linux-kernel@vger.kernel.org
 List-Id: containers.vger.kernel.org
 
-On Mon, 10 Nov 2008, Andrea Righi wrote:
+Oleg Nesterov [oleg@redhat.com] wrote:
+| (lkml cced because containers list's archive is not useable)
 
-> The KB limit is a static value, the other depends on the dirtyable
-> memory. If we want to preserve the same behaviour we should do the
-> following:
-> 
-> - when dirty_ratio changes to x:
->   dirty_amount_in_bytes = x * dirtyable_memory / 100.
-> 
-> - when dirty_amount_in_bytes changes to x:
->   dirty_ratio = x / dirtyable_memory * 100
-> 
+Hmm. what do you mean by not usable ? I see your email here:
+https://lists.linux-foundation.org/pipermail/containers/2008-November/014152.html
 
-I think the idea is for a dynamic dirty_ratio based on a static value 
-dirty_amount_in_bytes:
+| 
+| On 11/10, Oleg Nesterov wrote:
+| >
+| > On 11/01, sukadev@linux.vnet.ibm.com wrote:
+| > >
+| > > Other approaches to try ?
+| >
+| > I think we should try to do something simple, even if not perfect. Because
+| > most users do not care about this problem since they do not use containers
+| > at all. It would be very sad to add intrusive changes to the code.
+| >
+| > I think we should fix another problem first. send_signal()->copy_siginfo()
+| > path must be changed anyway, when the signal comes from the parent ns we
+| > report the "wrong" si_code/si_pid, yes? So, somehow send_signal() must
+| > have "bool from_parent_ns" (or whatever) annyway.
+| >
+| > Now, let's forget forget for a moment that send_signal()->__sigqueue_alloc()
+| > can fail.
+| >
+| > I think we should encode this "from_parent_ns" into "struct siginfo". I do
+| > not think it is good idea to extend this structure, I think we can introduce
+| > SI_FROM_PARENT_NS or we perhaps can use "SI_FROMUSER(info) && info->si_pid == 0".
 
-	dirtyable_memory = determine_dirtyable_memory() * PAGE_SIZE;
-	dirty_ratio = dirty_amount_in_bytes / dirtyable_memory;
+Yes, afaics, we just need to pass one extra bit of information per signal
+(whether or not sender is in ancestor-ns) from sender to receiver.
 
-> But anytime the dirtyable memory changes (as well as the total memory in
-> the system) we should update both values accordingly to preserve the
-> coherency between them.
-> 
+| > Or something. yes, sys_rt_sigqueueinfo() is problematic...
 
-Only dirty_ratio is actually updated if dirty_amount_in_bytes is static.
+Yes, if user-space sets si_pid to 0.
 
-This allows you to control how many pages are NR_FILE_DIRTY or 
-NR_UNSTABLE_NFS and gives you the granularity that you want with 
-dirty_ratio_pcm, but on a byte scale instead of percent.
+Can we change sys_rt_sigqueueinfo() to:
 
-It's also a clean interface:
+	if (!info->si_pid)
+		info->si_pid = getpid();
 
-	echo 200M > /proc/sys/vm/dirty_ratio_bytes
+or would that change semantics adversely ? How about putting this
+under CONFIG_PID_NS or your CONFIG_I_DO_CARE_ABOUT_NAMESPACES ;)
+
+| >
+| > Now, copy_process(CLONE_NEWPID) sets child->signal |= SIGNAL_UNKILLABLE, this
+| > protects cinit from unwanted signals. Then we change get_signal_to_deliver()
+| >
+| > 	-	if (unlikely(signal->flags & SIGNAL_UNKILLABLE) &&
+| > 	+	if (unlikely(signal->flags & SIGNAL_UNKILLABLE) && !siginfo_from_parent_ns(info)
+| >
+| > and now we can kill cinit from parent ns. This needs more checks if we want
+| > to stop/strace it, but perhaps this is enough for the start. Note that we
+| > do not need to change complete_signal(), at least for now, the code under
+| > "if (sig_fatal(p, sig)" is just optimization.
+| >
+| >
+| > So, afaics, the only real problem is how we can handle the case when
+| > __sigqueue_alloc() fails. I think for the start we can just return
+| > -ENOMEM in this case (when from_parent_ns == T). Then we can improve
+| > this behaviour. We can change complete_signal() to ensure that the
+| > fatal signal from the upper ns always kills cinit, and in this case
+| > we ignore the the failed __sigqueue_alloc(). This way at least SIGKILL
+| > always works.
+| >
+| > Yes, this is not perfect, and it is very possible I missed something
+| > else. But simple.
+
+I agree 
+| 
+| But how can send_signal() know that the signal comes from the upper ns?
+| This is not trivial, we can't blindly use current to check. The signal
+| can be sent from irq/workqueue/etc.
+
+You mean the in_interrupt() check we had in earlier patchset would
+not be enough ?
+
+| 
+| Perhaps we can start with something like the patch below. Not that I like
+| it very much though. We should really place this code under
+| CONFIG_I_DO_CARE_ABOUT_NAMESPACES ;)
+
+CONFIG_PID_NS ?
