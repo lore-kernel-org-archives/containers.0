@@ -1,64 +1,74 @@
-From: Andrea Righi <righi.andrea@gmail.com>
-Subject: Re: [patch 0/7] cpuset writeback throttling
-Date: Mon, 10 Nov 2008 10:02:13 +0100
-Message-ID: <4917F895.109@gmail.com>
-References: <alpine.DEB.2.00.0810292337170.23858@chino.kir.corp.google.com>	<20081104124753.fb1dde5a.akpm@linux-foundation.org>	<1225831988.7803.1939.camel@twins>	<20081104131637.68fbe055.akpm@linux-foundation.org>	<1225833710.7803.1993.camel@twins>	<20081104135004.f1717fcf.akpm@linux-foundation.org>	<Pine.LNX.4.64.0811041601100.5077@quilx.com>	<20081104143534.b5c16147.akpm@linux-foundation.org>	<Pine.LNX.4.64.0811041648350.6254@quilx.com>	<20081104153610.bbfd5ed8.akpm@linux-foundation.org>	<Pine.LNX.4.64.0811042036000.31167@quilx.com>	<20081104190505.769b93ec.akpm@linux-foundation.org> <20081105133157.db8bae72.kamezawa.hiroyu@jp.fujitsu.com>
-Reply-To: righi.andrea@gmail.com
+From: Gui Jianfeng <guijianfeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+Subject: Re: [PATCH -mm 0/6] cgroup: block device i/o controller (v11)
+Date: Mon, 10 Nov 2008 17:52:21 +0800
+Message-ID: <49180455.6060202@cn.fujitsu.com>
+References: <> <1223373818-13687-1-git-send-email-righi.andrea@gmail.com>
+	<490EA1B4.9070600@cn.fujitsu.com> <4917F62A.20800@gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
+Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1754888AbYKJJDu@vger.kernel.org>
-In-Reply-To: <20081105133157.db8bae72.kamezawa.hiroyu@jp.fujitsu.com>
-Sender: linux-kernel-owner@vger.kernel.org
-To: KAMEZAWA Hiroyuki <kamezawa.hiroyu@jp.fujitsu.com>, rientjes@google.com
-Cc: Andrew Morton <akpm@linux-foundation.org>, Christoph Lameter <cl@linux-foundation.org>, peterz@infradead.org, npiggin@suse.de, menage@google.com, dfults@sgi.com, linux-kernel@vger.kernel.org, containers@lists.osdl.org
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <4917F62A.20800-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On 2008-11-05 05:31, KAMEZAWA Hiroyuki wrote:
-> On Tue, 4 Nov 2008 19:05:05 -0800
-> Andrew Morton <akpm@linux-foundation.org> wrote:
->> Generally, I worry that this is a specific fix to a specific problem
->> encountered on specific machines with specific setups and specific
->> workloads, and that it's just all too low-level and myopic.
+Andrea Righi wrote:
+> On 2008-11-03 08:01, Gui Jianfeng wrote:
+>> Hi Andrea,
 >>
->> And now we're back in the usual position where there's existing code and
->> everyone says it's terribly wonderful and everyone is reluctant to step
->> back and look at the big picture.  Am I wrong?
->>
->>
->> Plus: we need per-memcg dirty-memory throttling, and this is more
->> important than per-cpuset, I suspect.  How will the (already rather
->> buggy) code look once we've stuffed both of them in there?
->>
->>
-> IIUC, Andrea Righ posted 2 patches around dirty_ratio. (added him to CC:)
-> in early October.
+>> I'v tested io-throttle(v11), it seems io-throttle doesn't work well 
+>> when a process writes(delay-write) a small file(<50M may be). it can't 
+>> throttle the request process accurately.
+>> I guess the following reason causes this problem.
+>> The write-request process terminates too early to see all accounting
+>> calculated in pdflush. So io-throttle can't throttle
+>> enough time for that process. Am i right?
 > 
->   (1) patch for adding dirty_ratio_pcm. (1/100000)
->   (2) per-memcg dirty ratio. (maybe this..http://lkml.org/lkml/2008/9/12/121)
->  
-> (1) should be just posted again.
+> Hi Gui,
 > 
-> Because we have changed page_cgroup implementation, (2) should be reworked.
-> "rework" itself will not be very difficult.
-> (.... we tend to be stick to "what interface is the best" discussion ;) 
+> sorry for my late first of all. You're right in part. The fact is that
+> with asynchronous IO (no O_DIRECT more exactly) the accounting is
+> performed when the blocks are submitted to the IO subsystem (submit_bio)
+> and the throttling is performed post-facto when the same process or the
+> other processes in the same cgroup write additional pages mapped to the
+> limited device (throttling is performed in
+> balance_dirty_pages_ratelimited_nr).
 > 
-> But memcg itself is not so weak against dirty_pages because we don't call
-> try_to_free_pages() becasue of memory shortage but because of memory limitation.
+> Anyway, if the process did a single small write in memory the operation
+> is not accounted until pdflush writes the data back to the block device.
+> When pdflush (or the process itself) performs the writeback the
+> operation is accounted and next reads/writes that come from the same
+> cgroup can now be throttled according to the defined limits.
 > 
-> BTW, in my current stack, followings are queued.
->    a. handle SwapCache in proper way in memcg.
->    b. handle swap_cgroup (if configured)
->    c. make LRU handling easier
+> So, the accounting is not lost, this information is only used later to
+> throttle the next operations that will cause IO requests. IO spikes in
+> this way are not prevented. With an early version of io-throttle I did
+> both throttling and accounting in balance_dirty_pages_ratelimited_nr
+> (when pages are written to memory), this can prevent IO spikes, but only
+> if dirty_ratio is set to small values.
+
+  Hi, Andrea,
+
+  Thanks for your detailed explanation, I'v got your point.
+  I think it makes more sense if throttling can be fair among other tasks. ;-)
+
 > 
-> For making per-memcg dirty_ratio sane, (a) should go ahead. I do (a) now.
-> If Andrea seems to be too busy, I'll schedule dirty_ratio-for-memcg as my work.
+> Hope this clarify,
+> -Andrea
+> 
+> 
 > 
 
-Hi Kame,
-
-sorry for my late. If it's not too late tonight I'll rebase and test (1)
-to 2.6.28-rc2-mm1 and start to rework on (2), also considering the
-David's suggestion (split NR_UNSTABLE_NFS from NR_FILE_DIRTY).
-
--Andrea
+-- 
+Regards
+Gui Jianfeng
