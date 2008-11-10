@@ -1,13 +1,15 @@
-From: Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
-Subject: Re: liblxc and cgroups
-Date: Mon, 10 Nov 2008 15:48:58 +0100
-Message-ID: <491849DA.7060204@fr.ibm.com>
-References: <20081108235107.GA15761@us.ibm.com>
+From: Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: Re: Signals to cinit
+Date: Mon, 10 Nov 2008 19:00:30 +0100
+Message-ID: <20081110180030.GA12043@redhat.com>
+References: <20081101180505.GA24268@us.ibm.com>
+	<20081110173839.GA11121@redhat.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20081108235107.GA15761-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <20081110173839.GA11121-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -17,31 +19,23 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
+To: sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
+Cc: clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Nadia Derbey <Nadia.Derbey-6ktuUTfB/bM@public.gmane.org>, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Serge E. Hallyn wrote:
-> Hi Daniel,
-> 
-> I'm playing with liblxc containers and the device whitelist cgroup.
-> One thing which makes the devices cgroup unique from the others is
-> that there can be many entries to the devices.allow (and in theory
-> also to devices.deny) file.  liblxc doesn't support that right now.
-> This needs to be fixed in two places.
-> First, lxc_conf.c:write_info needs to write multiple entries
-> from the .conf file into the cgroups/devices.allow file.  I just
-> changed the creat(f, 0755) to open(f, O_CREAT|O_WRONLY|O_APPEND, 0755)
-> which seemed to work for me, but I'm not sure if that might adversely
-> affect other code which counted on the truncation implicit in creat()?
-> Secondly, the lxc_cgroup_copy needs to do a loop and write the
-> entries one by one into the cgroup file.  I'm just doing a dumb
-> unsafe fgets loop, but I actually don't have that working yet,
-> (which is why I'm not sending a patch - I figure you can whip
-> something robust up in 2 seconds)
+On 11/10, Oleg Nesterov wrote:
+>
+> This way at least SIGKILL
+> always works.
 
-Serge, thanks for investigating this bug.
-I will look how to fix that without breaking previous container 
-configuration.
+Forgot to mention...
 
-  -- Daniel
+We must also change sig_ignored() to drop SIGKILL/SIGSTOP early when
+it comes from the same ns. Otherwise, it can mask the next SIGKILL
+from the parent ns.
+
+But this perhaps makes sense anyway, even without containers.
+Currently, when the global init has the pending SIGKILL, we can't
+trust __wait_event_killable/etc, and this is actually wrong.
+
+Oleg.
