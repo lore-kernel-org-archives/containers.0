@@ -1,14 +1,13 @@
-From: Oleg Nesterov <oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: Signals to cinit
-Date: Mon, 10 Nov 2008 18:38:39 +0100
-Message-ID: <20081110173839.GA11121@redhat.com>
-References: <20081101180505.GA24268@us.ibm.com>
+From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Subject: [RFC v9][PATCH 01/13] Create syscalls: sys_checkpoint, sys_restart
+Date: Mon, 10 Nov 2008 11:37:28 -0500
+Message-ID: <1226335060-7061-2-git-send-email-orenl__796.26466981626$1226337460$gmane$org@cs.columbia.edu>
+References: <1226335060-7061-1-git-send-email-orenl@cs.columbia.edu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <20081101180505.GA24268-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <1226335060-7061-1-git-send-email-orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,52 +17,193 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
-Cc: clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Nadia Derbey <Nadia.Derbey-6ktuUTfB/bM@public.gmane.org>, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+To: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
+Cc: linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Linus Torvalds <torvalds-3NddpPZAyC0@public.gmane.org>, Alexander Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, "H. Peter Anvin" <hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org>, Thomas Gleixner <tglx-hfZtesqFncYOwBW4kG4KsQ@public.gmane.org>, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On 11/01, sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org wrote:
->
-> Other approaches to try ?
+Create trivial sys_checkpoint and sys_restore system calls. They will
+enable to checkpoint and restart an entire container, to and from a
+checkpoint image file descriptor.
 
-I think we should try to do something simple, even if not perfect. Because
-most users do not care about this problem since they do not use containers
-at all. It would be very sad to add intrusive changes to the code.
+The syscalls take a file descriptor (for the image file) and flags as
+arguments. For sys_checkpoint the first argument identifies the target
+container; for sys_restart it will identify the checkpoint image.
 
-I think we should fix another problem first. send_signal()->copy_siginfo()
-path must be changed anyway, when the signal comes from the parent ns we
-report the "wrong" si_code/si_pid, yes? So, somehow send_signal() must
-have "bool from_parent_ns" (or whatever) annyway.
+A checkpoint, much like a process coredump, dumps the state of multiple
+processes at once, including the state of the container. The checkpoint
+image is written to (and read from) the file descriptor directly from
+the kernel. This way the data is generated and then pushed out naturally
+as resources and tasks are scanned to save their state. This is the
+approach taken by, e.g., Zap and OpenVZ.
 
-Now, let's forget forget for a moment that send_signal()->__sigqueue_alloc()
-can fail.
+By using a return value and not a file descriptor, we can distinguish
+between a return from checkpoint, a return from restart (in case of a
+checkpoint that includes self, i.e. a task checkpointing its own
+container, or itself), and an error condition, in a manner analogous
+to a fork() call.
 
-I think we should encode this "from_parent_ns" into "struct siginfo". I do
-not think it is good idea to extend this structure, I think we can introduce
-SI_FROM_PARENT_NS or we perhaps can use "SI_FROMUSER(info) && info->si_pid == 0".
-Or something. yes, sys_rt_sigqueueinfo() is problematic...
+We don't use copyin()/copyout() because it requires holding the entire
+image in user space, and does not make sense for restart.  Also, we
+don't use a pipe, pseudo-fs file and the like, because they work by
+generating data on demand as the user pulls it (unless the entire
+image is buffered in the kernel) and would require more complex logic.
+They also would significantly complicate checkpoint that includes self.
 
-Now, copy_process(CLONE_NEWPID) sets child->signal |= SIGNAL_UNKILLABLE, this
-protects cinit from unwanted signals. Then we change get_signal_to_deliver()
+Changelog[v5]:
+  - Config is 'def_bool n' by default
 
-	-	if (unlikely(signal->flags & SIGNAL_UNKILLABLE) &&
-	+	if (unlikely(signal->flags & SIGNAL_UNKILLABLE) && !siginfo_from_parent_ns(info)
+Signed-off-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Acked-by: Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Signed-off-by: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+---
+ arch/x86/include/asm/unistd_32.h   |    2 +
+ arch/x86/kernel/syscall_table_32.S |    2 +
+ checkpoint/Kconfig                 |   11 +++++++++
+ checkpoint/Makefile                |    5 ++++
+ checkpoint/sys.c                   |   41 ++++++++++++++++++++++++++++++++++++
+ include/linux/syscalls.h           |    2 +
+ init/Kconfig                       |    2 +
+ kernel/sys_ni.c                    |    4 +++
+ 8 files changed, 69 insertions(+), 0 deletions(-)
+ create mode 100644 checkpoint/Kconfig
+ create mode 100644 checkpoint/Makefile
+ create mode 100644 checkpoint/sys.c
 
-and now we can kill cinit from parent ns. This needs more checks if we want
-to stop/strace it, but perhaps this is enough for the start. Note that we
-do not need to change complete_signal(), at least for now, the code under
-"if (sig_fatal(p, sig)" is just optimization.
-
-
-So, afaics, the only real problem is how we can handle the case when
-__sigqueue_alloc() fails. I think for the start we can just return
--ENOMEM in this case (when from_parent_ns == T). Then we can improve
-this behaviour. We can change complete_signal() to ensure that the
-fatal signal from the upper ns always kills cinit, and in this case
-we ignore the the failed __sigqueue_alloc(). This way at least SIGKILL
-always works.
-
-Yes, this is not perfect, and it is very possible I missed something
-else. But simple.
-
-Oleg.
+diff --git a/arch/x86/include/asm/unistd_32.h b/arch/x86/include/asm/unistd_32.h
+index f2bba78..a5f9e09 100644
+--- a/arch/x86/include/asm/unistd_32.h
++++ b/arch/x86/include/asm/unistd_32.h
+@@ -338,6 +338,8 @@
+ #define __NR_dup3		330
+ #define __NR_pipe2		331
+ #define __NR_inotify_init1	332
++#define __NR_checkpoint		333
++#define __NR_restart		334
+ 
+ #ifdef __KERNEL__
+ 
+diff --git a/arch/x86/kernel/syscall_table_32.S b/arch/x86/kernel/syscall_table_32.S
+index d44395f..5543136 100644
+--- a/arch/x86/kernel/syscall_table_32.S
++++ b/arch/x86/kernel/syscall_table_32.S
+@@ -332,3 +332,5 @@ ENTRY(sys_call_table)
+ 	.long sys_dup3			/* 330 */
+ 	.long sys_pipe2
+ 	.long sys_inotify_init1
++	.long sys_checkpoint
++	.long sys_restart
+diff --git a/checkpoint/Kconfig b/checkpoint/Kconfig
+new file mode 100644
+index 0000000..ffaa635
+--- /dev/null
++++ b/checkpoint/Kconfig
+@@ -0,0 +1,11 @@
++config CHECKPOINT_RESTART
++	prompt "Enable checkpoint/restart (EXPERIMENTAL)"
++	def_bool n
++	depends on X86_32 && EXPERIMENTAL
++	help
++	  Application checkpoint/restart is the ability to save the
++	  state of a running application so that it can later resume
++	  its execution from the time at which it was checkpointed.
++
++	  Turning this option on will enable checkpoint and restart
++	  functionality in the kernel.
+diff --git a/checkpoint/Makefile b/checkpoint/Makefile
+new file mode 100644
+index 0000000..07d018b
+--- /dev/null
++++ b/checkpoint/Makefile
+@@ -0,0 +1,5 @@
++#
++# Makefile for linux checkpoint/restart.
++#
++
++obj-$(CONFIG_CHECKPOINT_RESTART) += sys.o
+diff --git a/checkpoint/sys.c b/checkpoint/sys.c
+new file mode 100644
+index 0000000..375129c
+--- /dev/null
++++ b/checkpoint/sys.c
+@@ -0,0 +1,41 @@
++/*
++ *  Generic container checkpoint-restart
++ *
++ *  Copyright (C) 2008 Oren Laadan
++ *
++ *  This file is subject to the terms and conditions of the GNU General Public
++ *  License.  See the file COPYING in the main directory of the Linux
++ *  distribution for more details.
++ */
++
++#include <linux/sched.h>
++#include <linux/kernel.h>
++
++/**
++ * sys_checkpoint - checkpoint a container
++ * @pid: pid of the container init(1) process
++ * @fd: file to which dump the checkpoint image
++ * @flags: checkpoint operation flags
++ *
++ * Returns positive identifier on success, 0 when returning from restart
++ * or negative value on error
++ */
++asmlinkage long sys_checkpoint(pid_t pid, int fd, unsigned long flags)
++{
++	pr_debug("sys_checkpoint not implemented yet\n");
++	return -ENOSYS;
++}
++/**
++ * sys_restart - restart a container
++ * @crid: checkpoint image identifier
++ * @fd: file from which read the checkpoint image
++ * @flags: restart operation flags
++ *
++ * Returns negative value on error, or otherwise returns in the realm
++ * of the original checkpoint
++ */
++asmlinkage long sys_restart(int crid, int fd, unsigned long flags)
++{
++	pr_debug("sys_restart not implemented yet\n");
++	return -ENOSYS;
++}
+diff --git a/include/linux/syscalls.h b/include/linux/syscalls.h
+index d6ff145..edc218b 100644
+--- a/include/linux/syscalls.h
++++ b/include/linux/syscalls.h
+@@ -622,6 +622,8 @@ asmlinkage long sys_timerfd_gettime(int ufd, struct itimerspec __user *otmr);
+ asmlinkage long sys_eventfd(unsigned int count);
+ asmlinkage long sys_eventfd2(unsigned int count, int flags);
+ asmlinkage long sys_fallocate(int fd, int mode, loff_t offset, loff_t len);
++asmlinkage long sys_checkpoint(pid_t pid, int fd, unsigned long flags);
++asmlinkage long sys_restart(int crid, int fd, unsigned long flags);
+ 
+ int kernel_execve(const char *filename, char *const argv[], char *const envp[]);
+ 
+diff --git a/init/Kconfig b/init/Kconfig
+index 86b00c5..743e2ad 100644
+--- a/init/Kconfig
++++ b/init/Kconfig
+@@ -814,6 +814,8 @@ config MARKERS
+ 
+ source "arch/Kconfig"
+ 
++source "checkpoint/Kconfig"
++
+ endmenu		# General setup
+ 
+ config HAVE_GENERIC_DMA_COHERENT
+diff --git a/kernel/sys_ni.c b/kernel/sys_ni.c
+index a77b27b..e4e289e 100644
+--- a/kernel/sys_ni.c
++++ b/kernel/sys_ni.c
+@@ -174,3 +174,7 @@ cond_syscall(compat_sys_timerfd_settime);
+ cond_syscall(compat_sys_timerfd_gettime);
+ cond_syscall(sys_eventfd);
+ cond_syscall(sys_eventfd2);
++
++/* checkpoint/restart */
++cond_syscall(sys_checkpoint);
++cond_syscall(sys_restart);
+-- 
+1.5.4.3
