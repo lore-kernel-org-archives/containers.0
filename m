@@ -1,8 +1,8 @@
 From: "Satoshi UCHIDA" <s-uchida-LYU95VJlayp8UrSeD/g0lQ@public.gmane.org>
-Subject: [PATCH][cfq-cgroups][07/12] Add sibling tree control for group
-	data(cfq_cgroup).
-Date: Wed, 12 Nov 2008 17:28:20 +0900
-Message-ID: <001401c944a0$9e9375d0$dbba6170$__16465.9977461726$1226480404$gmane$org@jp.nec.com>
+Subject: [PATCH][cfq-cgroups][08/12] Interface to new cfq data structure in
+	cfq_cgroup module.
+Date: Wed, 12 Nov 2008 17:29:02 +0900
+Message-ID: <001501c944a0$b78e1d10$26aa5730$__42376.8946122893$1226480638$gmane$org@jp.nec.com>
 References: <000c01c9449e$c5bcdc20$51369460$@jp.nec.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -24,256 +24,343 @@ Cc: 'Andrew Morton' <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, 'S
 List-Id: containers.vger.kernel.org
 
 
-  This patch adds a tree control for siblings of group data(cfq_cgroup).
-  This tree controls cfq data(cfq_data) for same group, and is used mainly
-  when a new group is registerecd or a existed group is unregistered.
+  This patch modified interfaces to new cfq_data structure in cfq_cgroup
+  module.  By this patch, interfaces can have two parameter and can set
+  a cfq data for particular device and particular group.
+  In cgroupfs,
+    if the number of argument is one,
+        a parameter means value which is set for all device, and
+    if the number of argument is two,
+        first parameter means value which is set and
+        second parameter means name which is setting device.
+        when second parameter is "defaults", default parameter of group
+        is set by first parameter.
+  In sysfs,
+    if the number of argument is one,
+        a parameter means value which is set for all group, and
+    if the number of argument is two,
+        first parameter means value which is set and
+        second parameter means name which is setting group .
 
 
     Signed-off-by: Satoshi UCHIDA <s-uchida-LYU95VJlayp8UrSeD/g0lQ@public.gmane.org>
 
 ---
- block/cfq-cgroup.c          |  126 +++++++++++++++++++++++++++++++++++++++++++
- include/linux/cfq-iosched.h |    5 ++
- include/linux/cgroup.h      |    1 +
- kernel/cgroup.c             |    5 ++
- 4 files changed, 137 insertions(+), 0 deletions(-)
+ block/cfq-cgroup.c          |  192 +++++++++++++++++++++++++++++++++++++++---
+ include/linux/cfq-iosched.h |    2 +
+ 2 files changed, 180 insertions(+), 14 deletions(-)
 
 diff --git a/block/cfq-cgroup.c b/block/cfq-cgroup.c
-index ce35af2..25da08e 100644
+index 25da08e..99f3d94 100644
 --- a/block/cfq-cgroup.c
 +++ b/block/cfq-cgroup.c
-@@ -22,8 +22,12 @@ static struct cfq_ops cfq_cgroup_op;
- struct cfq_cgroup {
- 	struct cgroup_subsys_state css;
- 	unsigned int ioprio;
-+
-+	struct rb_root sibling_tree;
-+	unsigned int siblings;
- };
+@@ -123,6 +123,7 @@ static void *cfq_cgroup_init_cfq_data(struct cfq_cgroup *cfqc,
+ 	if (!cfqc) {
+ 		cfqc = cgroup_to_cfq_cgroup(get_root_subsys(&cfq_subsys));
+ 		cfq_cgroup_sibling_tree_add(cfqc, cfqd);
++		cfqd->ioprio = cfqc->ioprio;
+ 	} else {
+ 		struct cfq_data *__cfqd;
+ 		__cfqd = __cfq_cgroup_init_queue(cfqd->cfqdd->queue,
+@@ -130,6 +131,7 @@ static void *cfq_cgroup_init_cfq_data(struct cfq_cgroup *cfqc,
+ 		if (!__cfqd)
+ 			return NULL;
+ 		cfq_cgroup_sibling_tree_add(cfqc, __cfqd);
++		__cfqd->ioprio = cfqc->ioprio;
+ 	}
  
-+
- static inline struct cfq_cgroup *cgroup_to_cfq_cgroup(struct cgroup *cont)
- {
- 	return container_of(cgroup_subsys_state(cont, cfq_subsys_id),
-@@ -77,6 +81,68 @@ static void cfq_driver_sibling_tree_add(struct cfq_driver_data *cfqdd,
- 	cfqd->cfqdd = cfqdd;
- }
- 
-+static void cfq_cgroup_sibling_tree_add(struct cfq_cgroup *cfqc,
-+					struct cfq_data *cfqd)
+ 	/* check and create cfq_data for children */
+@@ -294,6 +296,35 @@ static void cfq_cgroup_destroy(struct cgroup_subsys *ss, struct cgroup *cont)
+ /*
+  * cgroupfs parts below -->
+  */
++static void
++param_separate(const char *master, char *valbuf, char *pathbuf,  int size)
 +{
-+	struct rb_node **p;
-+	struct rb_node *parent = NULL;
++	int i;
++	char *pc1 = (char *) master, *pc2;
 +
-+	BUG_ON(!RB_EMPTY_NODE(&cfqd->group_node));
-+
-+	p = &cfqc->sibling_tree.rb_node;
-+
-+	while (*p) {
-+		struct cfq_data *__cfqd;
-+		struct rb_node **n;
-+
-+		parent = *p;
-+		__cfqd = rb_entry(parent, struct cfq_data, group_node);
-+
-+		if (cfqd->cfqdd < __cfqd->cfqdd)
-+			n = &(*p)->rb_left;
-+		else
-+			n = &(*p)->rb_right;
-+		p = n;
++	pc2 = valbuf;
++	for (i = 0 ; i < (size - 1) && (*pc1 != ' ') &&
++		     (*pc1 != '\n') && (*pc1 != '\0') ; i++) {
++		*pc2 = *pc1;
++		pc2++;
++		pc1++;
 +	}
++	*pc2 = '\n'; pc2++;  *pc2 = '\0';
 +
-+	rb_link_node(&cfqd->group_node, parent, p);
-+	rb_insert_color(&cfqd->group_node, &cfqc->sibling_tree);
-+	cfqc->siblings++;
-+	cfqd->cfqc = cfqc;
++	for ( ; (i < (PAGE_SIZE - 1)) && (*pc1 == ' ') &&
++		(*pc1 != '\n') && (*pc1 != '\0') ; i++)
++		pc1++;
++
++	pc2 = pathbuf;
++	for ( ; i < (PAGE_SIZE - 1) && (*pc1 != ' ') &&
++		     (*pc1 != '\n') && (*pc1 != '\0') ; i++) {
++		*pc2 = *pc1;
++		pc2++;
++		pc1++;
++	}
++	*pc2 = '\0';
 +}
 +
-+static struct cfq_data *
-+__cfq_cgroup_init_queue(struct request_queue *, struct cfq_driver_data *);
-+
-+static void *cfq_cgroup_init_cfq_data(struct cfq_cgroup *cfqc,
-+				       struct cfq_data *cfqd)
-+{
-+	struct cgroup *child;
-+
-+	/* setting cfq_data for cfq_cgroup */
-+	if (!cfqc) {
-+		cfqc = cgroup_to_cfq_cgroup(get_root_subsys(&cfq_subsys));
-+		cfq_cgroup_sibling_tree_add(cfqc, cfqd);
-+	} else {
-+		struct cfq_data *__cfqd;
-+		__cfqd = __cfq_cgroup_init_queue(cfqd->cfqdd->queue,
-+						 cfqd->cfqdd);
-+		if (!__cfqd)
-+			return NULL;
-+		cfq_cgroup_sibling_tree_add(cfqc, __cfqd);
-+	}
-+
-+	/* check and create cfq_data for children */
-+	if (cfqc->css.cgroup)
-+		list_for_each_entry(child, &cfqc->css.cgroup->children,
-+				    sibling){
-+			cfq_cgroup_init_cfq_data(cgroup_to_cfq_cgroup(child),
-+						 cfqd);
-+		}
-+
-+	return cfqc;
-+}
-+
- static struct cfq_data *
- __cfq_cgroup_init_queue(struct request_queue *q, struct cfq_driver_data *cfqdd)
- {
-@@ -86,9 +152,13 @@ __cfq_cgroup_init_queue(struct request_queue *q, struct cfq_driver_data *cfqdd)
- 		return NULL;
- 
- 	RB_CLEAR_NODE(&cfqd->sib_node);
-+	RB_CLEAR_NODE(&cfqd->group_node);
- 
- 	cfq_driver_sibling_tree_add(cfqd->cfqdd, cfqd);
- 
-+	if (!cfqdd)
-+		cfq_cgroup_init_cfq_data(NULL, cfqd);
-+
- 	return cfqd;
- }
- 
-@@ -101,6 +171,28 @@ static void *cfq_cgroup_init_queue(struct request_queue *q)
- 	return cfqd;
- }
- 
-+static void *cfq_cgroup_init_cgroup(struct cfq_cgroup *cfqc,
-+					struct cgroup *parent)
-+{
+ static ssize_t cfq_cgroup_read(struct cgroup *cont, struct cftype *cft,
+ 			       struct file *file, char __user *userbuf,
+ 			       size_t nbytes, loff_t *ppos)
+@@ -301,6 +332,7 @@ static ssize_t cfq_cgroup_read(struct cgroup *cont, struct cftype *cft,
+ 	struct cfq_cgroup *cfqc;
+ 	char *page;
+ 	ssize_t ret;
 +	struct rb_node *p;
-+	if (parent) {
-+		struct cfq_cgroup *cfqc_p = cgroup_to_cfq_cgroup(parent);
-+
-+		p = rb_first(&cfqc_p->sibling_tree);
-+		while (p) {
-+			struct cfq_data *__cfqd;
-+			__cfqd = rb_entry(p, struct cfq_data, group_node);
-+
-+			cfq_cgroup_init_cfq_data(cfqc, __cfqd);
-+
-+			p = rb_next(p);
-+		}
-+	}
-+
-+	return cfqc;
-+}
-+
-+
- static struct cgroup_subsys_state *
- cfq_cgroup_create(struct cgroup_subsys *ss, struct cgroup *cont)
- {
-@@ -118,6 +210,12 @@ cfq_cgroup_create(struct cgroup_subsys *ss, struct cgroup *cont)
  
- 	cfqc->ioprio = 3;
+ 	page = (char *)__get_free_page(GFP_TEMPORARY);
+ 	if (!page)
+@@ -318,7 +350,20 @@ static ssize_t cfq_cgroup_read(struct cgroup *cont, struct cftype *cft,
+ 	cgroup_unlock();
  
-+	cfqc->sibling_tree = RB_ROOT;
-+	cfqc->siblings = 0;
+ 	/* print priority */
+-	ret = snprintf(page, PAGE_SIZE, "%d \n", cfqc->ioprio);
++	ret = snprintf(page, PAGE_SIZE, "default priority: %d\n", cfqc->ioprio);
 +
-+	if (!cfq_cgroup_init_cgroup(cfqc, cont->parent))
-+		return ERR_PTR(-ENOMEM);
-+
- 	return &cfqc->css;
- }
- 
-@@ -132,6 +230,13 @@ static void cfq_cgroup_erase_driver_siblings(struct cfq_driver_data *cfqdd,
- 	cfqdd->siblings--;
- }
- 
-+static void cfq_cgroup_erase_cgroup_siblings(struct cfq_cgroup *cfqc,
-+					      struct cfq_data *cfqd)
-+{
-+	rb_erase(&cfqd->group_node, &cfqc->sibling_tree);
-+	cfqc->siblings--;
-+}
-+
- static void cfq_exit_device_group(struct cfq_driver_data *cfqdd)
- {
- 	struct rb_node *p, *n;
-@@ -144,6 +249,7 @@ static void cfq_exit_device_group(struct cfq_driver_data *cfqdd)
- 		cfqd = rb_entry(p, struct cfq_data, sib_node);
- 
- 		cfq_cgroup_erase_driver_siblings(cfqdd, cfqd);
-+		cfq_cgroup_erase_cgroup_siblings(cfqd->cfqc, cfqd);
- 		cfq_free_cfq_data(cfqd);
- 
- 		p = n;
-@@ -159,8 +265,28 @@ static void cfq_cgroup_exit_queue(elevator_t *e)
- 	kfree(cfqdd);
- }
- 
-+static void cfq_exit_cgroup(struct cfq_cgroup *cfqc)
-+{
-+	struct rb_node *p, *n;
-+	struct cfq_data *cfqd;
-+
-+	p =  rb_first(&cfqc->sibling_tree);
-+
++	p = rb_first(&cfqc->sibling_tree);
 +	while (p) {
-+		n = rb_next(p);
-+		cfqd = rb_entry(p, struct cfq_data, group_node);
++		struct cfq_data *__cfqd;
 +
-+		cfq_cgroup_erase_driver_siblings(cfqd->cfqdd, cfqd);
-+		cfq_cgroup_erase_cgroup_siblings(cfqc, cfqd);
-+		cfq_free_cfq_data(cfqd);
++		__cfqd = rb_entry(p, struct cfq_data, group_node);
 +
-+		p = n;
++		ret += snprintf(page + ret, PAGE_SIZE - ret, " %s %d\n",
++			       __cfqd->cfqdd->queue->kobj.parent->name,
++			       __cfqd->ioprio);
++
++		p = rb_next(p);
 +	}
-+}
+ 
+ 	ret = simple_read_from_buffer(userbuf, nbytes, ppos, page, ret);
+ 
+@@ -334,8 +379,10 @@ static ssize_t cfq_cgroup_write(struct cgroup *cont, struct cftype *cft,
+ 	struct cfq_cgroup *cfqc;
+ 	ssize_t ret;
+ 	long new_prio;
+-	int err;
++	int err, sn;
+ 	char *buffer = NULL;
++	char *valbuf = NULL, *pathbuf = NULL;
++	struct rb_node *p;
+ 
+ 	cgroup_lock();
+ 	if (cgroup_is_removed(cont)) {
+@@ -354,23 +401,64 @@ static ssize_t cfq_cgroup_write(struct cgroup *cont, struct cftype *cft,
+ 
+ 	if (copy_from_user(buffer, userbuf, nbytes)) {
+ 		ret = -EFAULT;
+-		goto out;
++		goto free_buf;
+ 	}
+ 	buffer[nbytes] = 0;
+ 
+-	err = strict_strtoul(buffer, 10, &new_prio);
++	valbuf = kmalloc(nbytes + 1, GFP_KERNEL);
++	if (!valbuf) {
++		ret = -ENOMEM;
++		goto free_buf;
++	}
 +
- static void cfq_cgroup_destroy(struct cgroup_subsys *ss, struct cgroup *cont)
- {
-+	cfq_exit_cgroup(cgroup_to_cfq_cgroup(cont));
- 	kfree(cgroup_to_cfq_cgroup(cont));
- }
- 
-diff --git a/include/linux/cfq-iosched.h b/include/linux/cfq-iosched.h
-index 22d1aed..382fc0a 100644
---- a/include/linux/cfq-iosched.h
-+++ b/include/linux/cfq-iosched.h
-@@ -93,6 +93,11 @@ struct cfq_data {
- #ifdef CONFIG_IOSCHED_CFQ_CGROUP
- 	/* sibling_tree member for cfq_meta_data */
- 	struct rb_node sib_node;
++	pathbuf = kmalloc(nbytes + 1, GFP_KERNEL);
++	if (!pathbuf) {
++		ret = -ENOMEM;
++		goto free_val;
++	}
 +
-+	/* cfq_cgroup attribute */
-+	struct cfq_cgroup *cfqc;
-+	/* group_tree member for cfq_cgroup */
-+	struct rb_node group_node;
- #endif
- };
++	param_separate(buffer, valbuf, pathbuf, nbytes);
++
++	err = strict_strtoul(valbuf, 10, &new_prio);
+ 	if ((err) || ((new_prio < 0) || (new_prio > CFQ_CGROUP_MAX_IOPRIO))) {
+ 		ret = -EINVAL;
+-		goto out;
++		goto free_path;
+ 	}
  
-diff --git a/include/linux/cgroup.h b/include/linux/cgroup.h
-index 8b00f66..4bfd815 100644
---- a/include/linux/cgroup.h
-+++ b/include/linux/cgroup.h
-@@ -402,6 +402,7 @@ struct task_struct *cgroup_iter_next(struct cgroup *cgrp,
- void cgroup_iter_end(struct cgroup *cgrp, struct cgroup_iter *it);
- int cgroup_scan_tasks(struct cgroup_scanner *scan);
- int cgroup_attach_task(struct cgroup *, struct task_struct *);
-+struct cgroup *get_root_subsys(struct cgroup_subsys *css);
+-	cfqc->ioprio = new_prio;
++	sn = strlen(pathbuf);
++
++	p = rb_first(&cfqc->sibling_tree);
++	while (p) {
++		struct cfq_data *__cfqd;
++		const char *namep;
++
++		__cfqd = rb_entry(p, struct cfq_data, group_node);
++		namep = __cfqd->cfqdd->queue->kobj.parent->name;
++
++		if (sn == 0) {
++			__cfqd->ioprio = new_prio;
++		} else if ((sn == strlen(namep)) &&
++			 (strncmp(pathbuf, namep, sn) == 0)) {
++			__cfqd->ioprio = new_prio;
++			break;
++		}
++
++		p = rb_next(p);
++	}
++
++	if ((sn == 0) ||
++	    ((sn == 7) && (strncmp(pathbuf, "default", 7) == 0)))
++		cfqc->ioprio = new_prio;
  
- void cgroup_mm_owner_callbacks(struct task_struct *old,
- 			       struct task_struct *new);
-diff --git a/kernel/cgroup.c b/kernel/cgroup.c
-index 35eebd5..71bb335 100644
---- a/kernel/cgroup.c
-+++ b/kernel/cgroup.c
-@@ -1316,6 +1316,11 @@ static int cgroup_tasks_write(struct cgroup *cgrp, struct cftype *cft, u64 pid)
+ 	ret = nbytes;
+ 
+-out:
++free_path:
++	kfree(pathbuf);
++free_val:
++	kfree(valbuf);
++free_buf:
+ 	kfree(buffer);
+-
++out:
  	return ret;
  }
  
-+struct cgroup *get_root_subsys(struct cgroup_subsys *css)
-+{
-+	return &css->root->top_cgroup;
-+}
+@@ -404,11 +492,33 @@ static ssize_t
+ cfq_cgroup_var_show(char *page, struct cfq_data *cfqd,
+ 		    int (func)(struct cfq_data *))
+ {
+-	int val, retval = 0;
++	int err, val, retval = 0;
++	char *pathbuf = NULL;
++	struct rb_node *p;
 +
- /* The various types of files and directories in a cgroup file system */
- enum cgroup_filetype {
- 	FILE_ROOT,
++	pathbuf = kmalloc(PAGE_SIZE, GFP_KERNEL);
++	if (!pathbuf)
++		return 0;
++
++	p = rb_first(&cfqd->cfqdd->sibling_tree);
++	while (p) {
++		struct cfq_data *__cfqd;
++		struct cgroup *cgrp;
+ 
+-	val = func(cfqd);
++		__cfqd = rb_entry(p, struct cfq_data, sib_node);
++		cgrp = __cfqd->cfqc->css.cgroup;
+ 
+-	retval = snprintf(page, PAGE_SIZE, "%d\n", val);
++		err = cgroup_path(cgrp, pathbuf, PAGE_SIZE);
++		if (err)
++			break;
++		val = func(__cfqd);
++
++		retval += snprintf(page + retval, PAGE_SIZE - retval,
++				  "%s %d\n", pathbuf, val);
++		p = rb_next(p);
++	}
++
++	kfree(pathbuf);
+ 
+ 	return retval;
+ }
+@@ -437,21 +547,73 @@ SHOW_FUNCTION(cfq_cgroup_slice_idle_show, cfq_slice_idle, 1);
+ SHOW_FUNCTION(cfq_cgroup_slice_sync_show, cfq_slice[1], 1);
+ SHOW_FUNCTION(cfq_cgroup_slice_async_show, cfq_slice[0], 1);
+ SHOW_FUNCTION(cfq_cgroup_slice_async_rq_show, cfq_slice_async_rq, 0);
++SHOW_FUNCTION(cfq_cgroup_ioprio_show, ioprio, 0);
+ #undef SHOW_FUNCTION
+ 
+ static ssize_t
+ cfq_cgroup_var_store(const char *page, size_t count, struct cfq_data *cfqd,
+ 		     void (func)(struct cfq_data *, unsigned int))
+ {
+-	int err;
++	int err, sn;
+ 	unsigned long val;
++	char *valbuf = NULL, *setpathbuf = NULL, *pathbuf = NULL;
++	struct rb_node *p;
++
++	valbuf = kmalloc(PAGE_SIZE, GFP_KERNEL);
++	if (!valbuf) {
++		count = 0;
++		goto out;
++	}
+ 
+-	err = strict_strtoul(page, 10, &val);
++	setpathbuf = kmalloc(PAGE_SIZE, GFP_KERNEL);
++	if (!setpathbuf) {
++		count = 0;
++		goto free_val;
++	}
++
++	pathbuf = kmalloc(PAGE_SIZE, GFP_KERNEL);
++	if (!pathbuf) {
++		count = 0;
++		goto free_setpath;
++	}
++
++	param_separate(page, valbuf, setpathbuf, PAGE_SIZE);
++
++	err = strict_strtoul(valbuf, 10, &val);
+ 	if (err)
+ 		return 0;
+ 
+-	func(cfqd, val);
++	sn = strlen(setpathbuf);
++
++	p = rb_first(&cfqd->cfqdd->sibling_tree);
++	while (p) {
++		struct cfq_data *__cfqd;
++		struct cgroup *cgrp;
+ 
++		__cfqd = rb_entry(p, struct cfq_data, sib_node);
++		cgrp = __cfqd->cfqc->css.cgroup;
++
++		err = cgroup_path(cgrp, pathbuf, PAGE_SIZE);
++		if (err)
++			break;
++
++		if (sn == 0) {
++			func(__cfqd, val);
++		} else if ((sn == strlen(pathbuf)) &&
++			 (strncmp(setpathbuf, pathbuf, sn) == 0)) {
++			func(__cfqd, val);
++			break;
++		}
++
++		p = rb_next(p);
++	}
++
++	kfree(pathbuf);
++free_setpath:
++	kfree(setpathbuf);
++free_val:
++	kfree(valbuf);
++out:
+ 	return count;
+ }
+ 
+@@ -489,6 +651,7 @@ STORE_FUNCTION(cfq_cgroup_slice_sync_store, cfq_slice[1], 1, UINT_MAX, 1);
+ STORE_FUNCTION(cfq_cgroup_slice_async_store, cfq_slice[0], 1, UINT_MAX, 1);
+ STORE_FUNCTION(cfq_cgroup_slice_async_rq_store, cfq_slice_async_rq, 1,
+ 		UINT_MAX, 0);
++STORE_FUNCTION(cfq_cgroup_ioprio_store, ioprio, 0, CFQ_CGROUP_MAX_IOPRIO, 0);
+ #undef STORE_FUNCTION
+ 
+ #define CFQ_CGROUP_ATTR(name)					\
+@@ -505,6 +668,7 @@ static struct elv_fs_entry cfq_cgroup_attrs[] = {
+ 	CFQ_CGROUP_ATTR(slice_async),
+ 	CFQ_CGROUP_ATTR(slice_async_rq),
+ 	CFQ_CGROUP_ATTR(slice_idle),
++	CFQ_CGROUP_ATTR(ioprio),
+ 	__ATTR_NULL
+ };
+ 
+diff --git a/include/linux/cfq-iosched.h b/include/linux/cfq-iosched.h
+index 382fc0a..b58d476 100644
+--- a/include/linux/cfq-iosched.h
++++ b/include/linux/cfq-iosched.h
+@@ -91,6 +91,8 @@ struct cfq_data {
+ 	struct cfq_driver_data *cfqdd;
+ 
+ #ifdef CONFIG_IOSCHED_CFQ_CGROUP
++	unsigned int ioprio;
++
+ 	/* sibling_tree member for cfq_meta_data */
+ 	struct rb_node sib_node;
+ 
 -- 
 1.5.6.5
