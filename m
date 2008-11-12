@@ -1,15 +1,15 @@
-From: Vivien Chappelier <vivien.chappelier-L+G57L1VLRbR7s880joybQ@public.gmane.org>
-Subject: Re: [patch 1/2][RFC] add socketat syscall
-Date: Wed, 12 Nov 2008 11:33:54 +0100
-Message-ID: <491AB112.1030806@thomson.net>
-References: <20081031215602.655672481@fr.ibm.com>	<20081031215900.810348746@fr.ibm.com>	<517f3f820811060522i7b3518aen47907a34b38adee9@mail.gmail.com>	<cfd18e0f0811060746l77fbe6fel83402ba543fccb38@mail.gmail.com>
-	<491318DC.4000300@fr.ibm.com> <49143263.1040604@fr.ibm.com>
-	<49143594.8030109@fr.ibm.com>
+From: Fabio Checconi <fchecconi-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Subject: Re: [PATCH 0/3] BFQ I/O Scheduler (second take)
+Date: Wed, 12 Nov 2008 13:38:49 +0100
+Message-ID: <20081112123849.GA14817__37937.1639145122$1226493538$gmane$org@gandalf.sssup.it>
+References: <20081111125148.GD9508@gandalf.sssup.it>
+	<491A43E0.2080109@cn.fujitsu.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <49143594.8030109-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <491A43E0.2080109-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,37 +19,57 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
-Cc: linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Cedric Le Goater <clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>, mtk.manpages-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, Subrata Modak <subrata-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org
+To: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+Cc: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, paolo.valente-rcYM44yAMweonA0d6jMUrA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, jens.axboe-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
 Hi,
 
-   The socketat() option is fine but only solves half of the problem. I 
-also need to be able to change the default namespace of a process to 
-join an existing network namespace.
+> From: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+> Date: Wed, Nov 12, 2008 10:48:00AM +0800
+>
+> CC: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+>     Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+> 
+...
+> So this is another cgroup-aware block i/o controller. ;)
+> 
+> People are sending different proposals for bio controller. A summary
+> on this can be found here:
+> 	http://marc.info/?l=linux-kernel&m=121798534716673&w=2
+> 
+> And a new proposal sent by Vivek several days ago:
+> 	http://lkml.org/lkml/2008/11/6/227
+> 
+> And there are some discussions about can we modify the elevator layer
+> and create a common layer so we can provide group control for all
+> the 4 io schedulers. (in the above mail thread)
+> 
+> You may share some ideas with us.
+> 
 
-   My use case is the following (embedded router): I have two separate 
-networks, one with internet access running standard applications and 
-routing LAN traffic, one with access to the operator network only and 
-running dedicated applications such as software upgrade or telephony 
-software. These two networks have to be totally separate and I need the 
-ability to run applications and open sockets in any of these networks or 
-even both. With the current proposal, I could have init or some 
-additional daemon create the two namespaces and ask it to fork and exec 
-the applications I want to run so that it can give the open socket to 
-its child. However this solution is not very practical nor elegant 
-compared to the chvrf approach.
+  yes, BFQ is another block I/O controller, and the ongoing discussion
+is very interesting, as the other patchsets proposed.
 
-   The fs solution proposed by Eric to name, create, and remove network 
-namespaces is fine. IMHO using the filesystem to create sockets would be 
-a bad option as the filename would need to be parsed for every protocol 
-etc.. So combining the filesystem idea with the socketat() syscall is a 
-good way of solving both issues. In this case, each namespace would be 
-represented with a single file and we could also give the fd obtained by 
-opening this file as the socketat() argument. I also prefer extending 
-socket() as was suggested previously rather than adding a new syscall, 
-but this is up to the syscall API maintainers to decide.
+BFQ deals with hierarchical scheduling in the same way as the proposed
+CFQ extensions do, and it does not handle the I/O traking issue, as we
+considered it not belonging directly to the elevator layer.
 
-regards,
-Vivien.
+Talking about what may be interesting from the controller POV, it supports
+arbitrary hierarchies (not only two layers) and ioprio classes for cgroups.
+It can be easily extended to support any I/O tracking mechanism and
+per-device ioprio_class/ioprio (it's just about choosing a sane interface
+for that).
+
+The main reasons why we turned BFQ into a cgroup controller were:
+  - the algorithm was quite easy to adapt, and in a hierarchical
+    context the advantages of using WF2Q+ over RR are more relevant.
+  - Being a new scheduler, we had some freedom experimenting with it.
+  - Avi asked for it :)
+
+I'd like to stress the fact that the I/O controller thing is _not_ the
+main feature of BFQ.  At least at this point of its development, we are
+more interested in understanding if the differences it introduces WRT
+CFQ (namely, the mixed time-service domain approach, WF2Q+ scheduling,
+the feedback on budget lengths, etc.) are of interest or not for the
+comminity and/or are worth the effort of a new I/O scheduler.
