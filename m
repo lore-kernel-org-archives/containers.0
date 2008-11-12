@@ -1,8 +1,8 @@
 From: "Satoshi UCHIDA" <s-uchida-LYU95VJlayp8UrSeD/g0lQ@public.gmane.org>
-Subject: [PATCH][cfq-cgroups][04/12] Register or unregister "cfq-cgroups"
-	module.
-Date: Wed, 12 Nov 2008 17:26:18 +0900
-Message-ID: <001101c944a0$561b0fc0$02512f40$__33729.8430772082$1226479863$gmane$org@jp.nec.com>
+Subject: [PATCH][cfq-cgroups][05/12] Introduce cgroups structure with ioprio
+	entry.
+Date: Wed, 12 Nov 2008 17:26:56 +0900
+Message-ID: <001201c944a0$6cb11310$46133930$__40500.6668567241$1226480091$gmane$org@jp.nec.com>
 References: <000c01c9449e$c5bcdc20$51369460$@jp.nec.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -23,184 +23,196 @@ To: linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9
 Cc: 'Andrew Morton' <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, 'SUGAWARA Tomoyoshi' <tom-sugawara-LYU95VJlayp8UrSeD/g0lQ@public.gmane.org>, menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
 List-Id: containers.vger.kernel.org
 
+From 471798eeeea0d3cdc4c556ec3d663d4a91fd2e05 Mon Sep 17 00:00:00 2001
+From: Satoshi UCHIDA <s-uchida-LYU95VJlayp8UrSeD/g0lQ@public.gmane.org>
+Date: Wed, 29 Oct 2008 18:12:51 +0900
+Subject: [PATCH][cfq-cgroups] Introduce cgroups structure with ioprio entry.
 
-  This patch introduce a register/unregister functions of 
-  "cfq-cgroups" module.
-  A elevator_type variables is inherited one of the original CFQ
-  scheduler.
+  This patch introcude cfq_cgroup structure which is type for
+  group control within expanded CFQ scheduler.
+  In addition, the cfq_cgroup structure has "ioprio" entry which 
+  is preference of group for I/O.
 
 
     Signed-off-by: Satoshi UCHIDA <s-uchida-LYU95VJlayp8UrSeD/g0lQ@public.gmane.org>
 
 ---
- block/cfq-cgroup.c          |  122 +++++++++++++++++++++++++++++++++++++++++++
- block/cfq-iosched.c         |    2 +-
- include/linux/cfq-iosched.h |    2 +
- 3 files changed, 125 insertions(+), 1 deletions(-)
+ block/cfq-cgroup.c            |  148 +++++++++++++++++++++++++++++++++++++++++
+ include/linux/cgroup_subsys.h |    6 ++
+ 2 files changed, 154 insertions(+), 0 deletions(-)
 
 diff --git a/block/cfq-cgroup.c b/block/cfq-cgroup.c
-index 3deef41..aaa00ef 100644
+index aaa00ef..733980d 100644
 --- a/block/cfq-cgroup.c
 +++ b/block/cfq-cgroup.c
-@@ -15,13 +15,135 @@
+@@ -15,6 +15,154 @@
  #include <linux/cgroup.h>
  #include <linux/cfq-iosched.h>
  
-+/*
-+ * sysfs parts below -->
-+ */
-+static ssize_t
-+cfq_cgroup_var_show(char *page, struct cfq_data *cfqd,
-+		    int (func)(struct cfq_data *))
++#define CFQ_CGROUP_MAX_IOPRIO		(7)
++
++
++struct cfq_cgroup {
++	struct cgroup_subsys_state css;
++	unsigned int ioprio;
++};
++
++static inline struct cfq_cgroup *cgroup_to_cfq_cgroup(struct cgroup *cont)
 +{
-+	int val, retval = 0;
-+
-+	val = func(cfqd);
-+
-+	retval = snprintf(page, PAGE_SIZE, "%d\n", val);
-+
-+	return retval;
++	return container_of(cgroup_subsys_state(cont, cfq_subsys_id),
++			    struct cfq_cgroup, css);
 +}
 +
-+#define SHOW_FUNCTION(__FUNC, __VAR, __CONV)				\
-+static int val_transrate_##__FUNC(struct cfq_data *cfqd)		\
-+{									\
-+	if (__CONV)							\
-+		return jiffies_to_msecs(cfqd->__VAR);			\
-+	else								\
-+		return cfqd->__VAR;					\
-+}									\
-+static ssize_t __FUNC(elevator_t *e, char *page)			\
-+{									\
-+	struct cfq_data *cfqd = e->elevator_data;			\
-+									\
-+	return cfq_cgroup_var_show((page), (cfqd),			\
-+				   val_transrate_##__FUNC);		\
-+}
-+SHOW_FUNCTION(cfq_cgroup_quantum_show, cfq_quantum, 0);
-+SHOW_FUNCTION(cfq_cgroup_fifo_expire_sync_show, cfq_fifo_expire[1], 1);
-+SHOW_FUNCTION(cfq_cgroup_fifo_expire_async_show, cfq_fifo_expire[0], 1);
-+SHOW_FUNCTION(cfq_cgroup_back_seek_max_show, cfq_back_max, 0);
-+SHOW_FUNCTION(cfq_cgroup_back_seek_penalty_show, cfq_back_penalty, 0);
-+SHOW_FUNCTION(cfq_cgroup_slice_idle_show, cfq_slice_idle, 1);
-+SHOW_FUNCTION(cfq_cgroup_slice_sync_show, cfq_slice[1], 1);
-+SHOW_FUNCTION(cfq_cgroup_slice_async_show, cfq_slice[0], 1);
-+SHOW_FUNCTION(cfq_cgroup_slice_async_rq_show, cfq_slice_async_rq, 0);
-+#undef SHOW_FUNCTION
-+
-+static ssize_t
-+cfq_cgroup_var_store(const char *page, size_t count, struct cfq_data *cfqd,
-+		     void (func)(struct cfq_data *, unsigned int))
++static inline struct cfq_cgroup *task_to_cfq_cgroup(struct task_struct *tsk)
 +{
++	return container_of(task_subsys_state(tsk, cfq_subsys_id),
++			    struct cfq_cgroup, css);
++}
++
++
++static struct cgroup_subsys_state *
++cfq_cgroup_create(struct cgroup_subsys *ss, struct cgroup *cont)
++{
++	struct cfq_cgroup *cfqc;
++
++	if (!capable(CAP_SYS_ADMIN))
++		return ERR_PTR(-EPERM);
++
++	if (!cgroup_is_descendant(cont))
++		return ERR_PTR(-EPERM);
++
++	cfqc = kzalloc(sizeof(struct cfq_cgroup), GFP_KERNEL);
++	if (unlikely(!cfqc))
++		return ERR_PTR(-ENOMEM);
++
++	cfqc->ioprio = 3;
++
++	return &cfqc->css;
++}
++
++static void cfq_cgroup_destroy(struct cgroup_subsys *ss, struct cgroup *cont)
++{
++	kfree(cgroup_to_cfq_cgroup(cont));
++}
++
++static ssize_t cfq_cgroup_read(struct cgroup *cont, struct cftype *cft,
++			       struct file *file, char __user *userbuf,
++			       size_t nbytes, loff_t *ppos)
++{
++	struct cfq_cgroup *cfqc;
++	char *page;
++	ssize_t ret;
++
++	page = (char *)__get_free_page(GFP_TEMPORARY);
++	if (!page)
++		return -ENOMEM;
++
++	cgroup_lock();
++	if (cgroup_is_removed(cont)) {
++		cgroup_unlock();
++		ret = -ENODEV;
++		goto out;
++	}
++
++	cfqc = cgroup_to_cfq_cgroup(cont);
++
++	cgroup_unlock();
++
++	/* print priority */
++	ret = snprintf(page, PAGE_SIZE, "%d \n", cfqc->ioprio);
++
++	ret = simple_read_from_buffer(userbuf, nbytes, ppos, page, ret);
++
++out:
++	free_page((unsigned long)page);
++	return ret;
++}
++
++static ssize_t cfq_cgroup_write(struct cgroup *cont, struct cftype *cft,
++				struct file *file, const char __user *userbuf,
++				size_t nbytes, loff_t *ppos)
++{
++	struct cfq_cgroup *cfqc;
++	ssize_t ret;
++	long new_prio;
 +	int err;
-+	unsigned long val;
++	char *buffer = NULL;
 +
-+	err = strict_strtoul(page, 10, &val);
-+	if (err)
-+		return 0;
++	cgroup_lock();
++	if (cgroup_is_removed(cont)) {
++		cgroup_unlock();
++		ret = -ENODEV;
++		goto out;
++	}
 +
-+	func(cfqd, val);
++	cfqc = cgroup_to_cfq_cgroup(cont);
++	cgroup_unlock();
 +
-+	return count;
++	/* set priority */
++	buffer = kmalloc(nbytes + 1, GFP_KERNEL);
++	if (buffer == NULL)
++		return -ENOMEM;
++
++	if (copy_from_user(buffer, userbuf, nbytes)) {
++		ret = -EFAULT;
++		goto out;
++	}
++	buffer[nbytes] = 0;
++
++	err = strict_strtoul(buffer, 10, &new_prio);
++	if ((err) || ((new_prio < 0) || (new_prio > CFQ_CGROUP_MAX_IOPRIO))) {
++		ret = -EINVAL;
++		goto out;
++	}
++
++	cfqc->ioprio = new_prio;
++
++	ret = nbytes;
++
++out:
++	kfree(buffer);
++
++	return ret;
 +}
 +
-+#define STORE_FUNCTION(__FUNC, __VAR, MIN, MAX, __CONV)			\
-+static void val_transrate_##__FUNC(struct cfq_data *cfqd,		\
-+				   unsigned int __data)			\
-+{									\
-+	if (__data < (MIN))						\
-+		__data = (MIN);						\
-+	else if (__data > (MAX))					\
-+		__data = (MAX);						\
-+	if (__CONV)							\
-+		cfqd->__VAR = msecs_to_jiffies(__data);			\
-+	else								\
-+		cfqd->__VAR = __data;					\
-+}									\
-+static ssize_t __FUNC(elevator_t *e, const char *page, size_t count)	\
-+{									\
-+	struct cfq_data *cfqd = e->elevator_data;			\
-+	int ret = cfq_cgroup_var_store((page), count, cfqd,		\
-+				      val_transrate_##__FUNC);		\
-+	return ret;							\
++static struct cftype files[] = {
++	{
++		.name = "ioprio",
++		.read = cfq_cgroup_read,
++		.write = cfq_cgroup_write,
++	},
++};
++
++static int cfq_cgroup_populate(struct cgroup_subsys *ss, struct cgroup *cont)
++{
++	return cgroup_add_files(cont, ss, files, ARRAY_SIZE(files));
 +}
-+STORE_FUNCTION(cfq_cgroup_quantum_store, cfq_quantum, 1, UINT_MAX, 0);
-+STORE_FUNCTION(cfq_cgroup_fifo_expire_sync_store, cfq_fifo_expire[1], 1,
-+		UINT_MAX, 1);
-+STORE_FUNCTION(cfq_cgroup_fifo_expire_async_store, cfq_fifo_expire[0], 1,
-+		UINT_MAX, 1);
-+STORE_FUNCTION(cfq_cgroup_back_seek_max_store, cfq_back_max, 0, UINT_MAX, 0);
-+STORE_FUNCTION(cfq_cgroup_back_seek_penalty_store, cfq_back_penalty, 1,
-+		UINT_MAX, 0);
-+STORE_FUNCTION(cfq_cgroup_slice_idle_store, cfq_slice_idle,
-+		0, UINT_MAX, 1);
-+STORE_FUNCTION(cfq_cgroup_slice_sync_store, cfq_slice[1], 1, UINT_MAX, 1);
-+STORE_FUNCTION(cfq_cgroup_slice_async_store, cfq_slice[0], 1, UINT_MAX, 1);
-+STORE_FUNCTION(cfq_cgroup_slice_async_rq_store, cfq_slice_async_rq, 1,
-+		UINT_MAX, 0);
-+#undef STORE_FUNCTION
 +
-+#define CFQ_CGROUP_ATTR(name)					\
-+	__ATTR(name, S_IRUGO|S_IWUSR, cfq_cgroup_##name##_show,	\
-+	       cfq_cgroup_##name##_store)
-+
-+static struct elv_fs_entry cfq_cgroup_attrs[] = {
-+	CFQ_CGROUP_ATTR(quantum),
-+	CFQ_CGROUP_ATTR(fifo_expire_sync),
-+	CFQ_CGROUP_ATTR(fifo_expire_async),
-+	CFQ_CGROUP_ATTR(back_seek_max),
-+	CFQ_CGROUP_ATTR(back_seek_penalty),
-+	CFQ_CGROUP_ATTR(slice_sync),
-+	CFQ_CGROUP_ATTR(slice_async),
-+	CFQ_CGROUP_ATTR(slice_async_rq),
-+	CFQ_CGROUP_ATTR(slice_idle),
-+	__ATTR_NULL
++struct cgroup_subsys cfq_subsys = {
++	.name = "cfq",
++	.create = cfq_cgroup_create,
++	.destroy = cfq_cgroup_destroy,
++	.populate = cfq_cgroup_populate,
++	.subsys_id = cfq_subsys_id,
 +};
 +
-+static struct elevator_type iosched_cfq_cgroup = {
-+	.elevator_attrs	= cfq_cgroup_attrs,
-+	.elevator_name	= "cfq-cgroups",
-+	.elevator_owner	= THIS_MODULE,
-+};
 +
- static int __init cfq_cgroup_init(void)
- {
-+	iosched_cfq_cgroup.ops = iosched_cfq.ops;
+ /*
+  * sysfs parts below -->
+  */
+diff --git a/include/linux/cgroup_subsys.h b/include/linux/cgroup_subsys.h
+index 9c22396..a9482aa 100644
+--- a/include/linux/cgroup_subsys.h
++++ b/include/linux/cgroup_subsys.h
+@@ -54,3 +54,9 @@ SUBSYS(freezer)
+ #endif
+ 
+ /* */
 +
-+	elv_register(&iosched_cfq_cgroup);
++#ifdef CONFIG_IOSCHED_CFQ_CGROUP
++SUBSYS(cfq)
++#endif
 +
- 	return 0;
- }
- 
- static void __exit cfq_cgroup_exit(void)
- {
-+	elv_unregister(&iosched_cfq_cgroup);
- }
- 
- module_init(cfq_cgroup_init);
-diff --git a/block/cfq-iosched.c b/block/cfq-iosched.c
-index b726e85..e105827 100644
---- a/block/cfq-iosched.c
-+++ b/block/cfq-iosched.c
-@@ -2332,7 +2332,7 @@ static struct elv_fs_entry cfq_attrs[] = {
- 	__ATTR_NULL
- };
- 
--static struct elevator_type iosched_cfq = {
-+struct elevator_type iosched_cfq = {
- 	.ops = {
- 		.elevator_merge_fn = 		cfq_merge,
- 		.elevator_merged_fn =		cfq_merged_request,
-diff --git a/include/linux/cfq-iosched.h b/include/linux/cfq-iosched.h
-index 50003f7..a28ef00 100644
---- a/include/linux/cfq-iosched.h
-+++ b/include/linux/cfq-iosched.h
-@@ -82,4 +82,6 @@ struct cfq_data {
- 	struct cfq_driver_data *cfqdd;
- };
- 
-+extern struct elevator_type iosched_cfq;
-+
- #endif  /* _LINUX_CFQ_IOSCHED_H */
++/* */
 -- 
 1.5.6.5
