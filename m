@@ -1,15 +1,15 @@
-From: "Satoshi UCHIDA" <s-uchida-LYU95VJlayp8UrSeD/g0lQ@public.gmane.org>
-Subject: RE: [PATCH][RFC][12+2][v3] A expanded CFQ scheduler for cgroups
-Date: Wed, 12 Nov 2008 18:22:29 +0900
-Message-ID: <000001c944a8$2f3867b0$8da93710$__49426.7544745982$1226482041$gmane$org@jp.nec.com>
-References: <000c01c9449e$c5bcdc20$51369460$@jp.nec.com>
-	<1226480279.7685.2980.camel@twins>
+From: Vivien Chappelier <vivien.chappelier-L+G57L1VLRbR7s880joybQ@public.gmane.org>
+Subject: Re: [patch 1/2][RFC] add socketat syscall
+Date: Wed, 12 Nov 2008 11:33:54 +0100
+Message-ID: <491AB112.1030806@thomson.net>
+References: <20081031215602.655672481@fr.ibm.com>	<20081031215900.810348746@fr.ibm.com>	<517f3f820811060522i7b3518aen47907a34b38adee9@mail.gmail.com>	<cfd18e0f0811060746l77fbe6fel83402ba543fccb38@mail.gmail.com>
+	<491318DC.4000300@fr.ibm.com> <49143263.1040604@fr.ibm.com>
+	<49143594.8030109@fr.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1226480279.7685.2980.camel@twins>
-Content-Language: ja
+In-Reply-To: <49143594.8030109-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,77 +19,37 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: 'Peter Zijlstra' <peterz-wEGCiKHe2LqWVfeAwA7xHQ@public.gmane.org>
-Cc: paolo.valente-rcYM44yAMweonA0d6jMUrA@public.gmane.org, 'SUGAWARA Tomoyoshi' <tom-sugawara-LYU95VJlayp8UrSeD/g0lQ@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, virtualization-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, vtaras-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org, menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, jens.axboe-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org, 'Fabio Checconi' <fabio-f9ZlEuEWxVeACYmtYXMKmw@public.gmane.org>, 'Andrew Morton' <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, ngupta-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, fernando-gVGce1chcLdL9jVzuh4AOg@public.gmane.org, 'Andrea Righi' <righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+To: Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
+Cc: linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Cedric Le Goater <clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>, mtk.manpages-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, Subrata Modak <subrata-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Hi, Peter.
+Hi,
 
-> Just wondering,.. have you lot looked at the recently posted BFQ
-> patches?
-> 
-> BFQ looks like a very promising elevator, its has tighter bounds than
-> CFQ and already does the cgroup thing.
+   The socketat() option is fine but only solves half of the problem. I 
+also need to be able to change the default namespace of a process to 
+join an existing network namespace.
 
+   My use case is the following (embedded router): I have two separate 
+networks, one with internet access running standard applications and 
+routing LAN traffic, one with access to the operator network only and 
+running dedicated applications such as software upgrade or telephony 
+software. These two networks have to be totally separate and I need the 
+ability to run applications and open sockets in any of these networks or 
+even both. With the current proposal, I could have init or some 
+additional daemon create the two namespaces and ask it to fork and exec 
+the applications I want to run so that it can give the open socket to 
+its child. However this solution is not very practical nor elegant 
+compared to the chvrf approach.
 
-This patchset is improved our previous scheduler(sent 04/01/2008) and resolves some problems.
+   The fs solution proposed by Eric to name, create, and remove network 
+namespaces is fine. IMHO using the filesystem to create sockets would be 
+a bad option as the filename would need to be parsed for every protocol 
+etc.. So combining the filesystem idea with the socketat() syscall is a 
+good way of solving both issues. In this case, each namespace would be 
+represented with a single file and we could also give the fd obtained by 
+opening this file as the socketat() argument. I also prefer extending 
+socket() as was suggested previously rather than adding a new syscall, 
+but this is up to the syscall API maintainers to decide.
 
-And, we scheduler can control at the two layers.
-Namely, it can control I/O among groups and I/O among tasks within a group.
-
-I always check in containers ML mainly.
-So, I found I/O control patches in it ML, dm-iobnd, io-throttle, Naveen's Anticipatory I/O scheduler,
-Vasily's CFQ scheduler and Vivek's Another IO controller.
-And today I know the BFQ scheduler, so I'm not looked at the BFQ yet.
-Now, I'm looking its patch.
-
-Thanks, comments.
-
-
-Satoshi UCHIDA
-
-
-> -----Original Message-----
-> From: Peter Zijlstra [mailto:peterz-wEGCiKHe2LqWVfeAwA7xHQ@public.gmane.org]
-> Sent: Wednesday, November 12, 2008 5:58 PM
-> To: Satoshi UCHIDA
-> Cc: linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org;
-> containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org;
-> virtualization-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org; jens.axboe-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org; 'Ryo
-> Tsuruta'; 'Andrea Righi'; ngupta-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org; fernando-gVGce1chcLdL9jVzuh4AOg@public.gmane.org;
-> vtaras-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org; 'Hirokazu Takahashi'; balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org;
-> 'Andrew Morton'; menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org; SUGAWARA Tomoyoshi;
-> paolo.valente-rcYM44yAMweonA0d6jMUrA@public.gmane.org; Fabio Checconi
-> Subject: Re: [PATCH][RFC][12+2][v3] A expanded CFQ scheduler for cgroups
-> 
-> Hi,
-> 
-> Just wondering,.. have you lot looked at the recently posted BFQ
-> patches?
-> 
-> BFQ looks like a very promising elevator, its has tighter bounds than
-> CFQ and already does the cgroup thing.
-> 
-
-
-> -----Original Message-----
-> From: Peter Zijlstra [mailto:peterz-wEGCiKHe2LqWVfeAwA7xHQ@public.gmane.org]
-> Sent: Wednesday, November 12, 2008 5:58 PM
-> To: Satoshi UCHIDA
-> Cc: linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org;
-> containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org;
-> virtualization-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org; jens.axboe-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org; 'Ryo
-> Tsuruta'; 'Andrea Righi'; ngupta-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org; fernando-gVGce1chcLdL9jVzuh4AOg@public.gmane.org;
-> vtaras-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org; 'Hirokazu Takahashi'; balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org;
-> 'Andrew Morton'; menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org; SUGAWARA Tomoyoshi;
-> paolo.valente-rcYM44yAMweonA0d6jMUrA@public.gmane.org; Fabio Checconi
-> Subject: Re: [PATCH][RFC][12+2][v3] A expanded CFQ scheduler for cgroups
-> 
-> Hi,
-> 
-> Just wondering,.. have you lot looked at the recently posted BFQ
-> patches?
-> 
-> BFQ looks like a very promising elevator, its has tighter bounds than
-> CFQ and already does the cgroup thing.
-> 
+regards,
+Vivien.
