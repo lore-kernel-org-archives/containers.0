@@ -1,13 +1,14 @@
-From: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Subject: Re: [PATCH 0/3] BFQ I/O Scheduler (second take)
-Date: Wed, 12 Nov 2008 10:48:00 +0800
-Message-ID: <491A43E0.2080109@cn.fujitsu.com>
-References: <20081111125148.GD9508@gandalf.sssup.it>
+From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [RFC v9][PATCH 00/13] Kernel based checkpoint/restart
+Date: Tue, 11 Nov 2008 23:03:19 -0600
+Message-ID: <20081112050319.GA3687@us.ibm.com>
+References: <1226335060-7061-1-git-send-email-orenl@cs.columbia.edu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20081111125148.GD9508-f9ZlEuEWxVeACYmtYXMKmw@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <1226335060-7061-1-git-send-email-orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -17,90 +18,77 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Fabio Checconi <fchecconi-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Cc: paolo.valente-rcYM44yAMweonA0d6jMUrA@public.gmane.org, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, fabio-f9ZlEuEWxVeACYmtYXMKmw@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, jens.axboe-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org
+To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Cc: linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Linus Torvalds <torvalds-3NddpPZAyC0@public.gmane.org>, Alexander Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, "H. Peter Anvin" <hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Thomas Gleixner <tglx-hfZtesqFncYOwBW4kG4KsQ@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-CC: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-    Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Quoting Oren Laadan (orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org):
+> Checkpoint-restart (c/r): v9 adds support for multiple processes.
+> (rebase to v2.6.28-rc3).
+> 
+> We'd like to see these make their way into -mm. All comments have
+> been addressed in this version. Please pull at least the first 11
+> patches, as they are similar to before.
 
-Fabio Checconi wrote:
-> Hi Jens, hi all,
-> 
+With the trivial fix to patch 5 I sent earlier, I've been running the
+following e2loop.sh for a few hours with no problems (the counter is at
+2412).  Also did 500 concurrent checkpoints of the same process.
 
-Hi Fabio,
+Oren, can you re-post an updated patch 5?
 
->   this is an updated version of the patchset introducing the BFQ (Budget
-> Fair Queueing) I/O scheduler.  It is based on CFQ and it has been
-> developed trying to improve the predictability and the fairness of the
-> service prvided, without penalizing the aggregate throughput.
-> 
-> This new version hopefully addresses the issues pointed out after the
-> first submission[1]:
-> 
->   1) it introduces a bitmap to notify priority changes to the bfq/cfq;
->   2) it introduces a timeout to put an higher limit to the time a
->       task can take to consume its budget;
->   3) it supports hierarchical scheduling.
-> 
+Andrew, would you mind (once Oren reposts patch 5) giving the
+first 11 patches a chance in -mm?
 
-So this is another cgroup-aware block i/o controller. ;)
+thanks,
+-serge
 
-People are sending different proposals for bio controller. A summary
-on this can be found here:
-	http://marc.info/?l=linux-kernel&m=121798534716673&w=2
+===============
+e2loop.sh:
+===============
+cnt=1
+/usr/src/ns_exec -m /root/e2 &
+while [ 1 ]; do
+        /usr/src/cr `pidof e2` o.$cnt
+        kill -9 `pidof e2`
+        echo 5 > /root/e2out
+        cntin=`cat /root/e2out`
+        echo "i reset e2out to $cntin"
+        #/usr/src/rstr < /root/o.$cnt &
+        /usr/src/ns_exec -m /usr/src/rstr /root/o.$cnt &
+        cnt=$((cnt+1))
+        sleep 10
+        cntin=`cat /root/e2out`
+        echo "cnt is $cnt, e2out has $cntin"
+done
 
-And a new proposal sent by Vivek several days ago:
-	http://lkml.org/lkml/2008/11/6/227
+===============
+e2.c:
+===============
+#include <stdio.h>
+#include <sys/types.h>
+#include <unistd.h>
 
-And there are some discussions about can we modify the elevator layer
-and create a common layer so we can provide group control for all
-the 4 io schedulers. (in the above mail thread)
+int main()
+{
+	int cnt=0;
+	FILE *f;
+	char fnam[20];
 
-You may share some ideas with us.
-
-> With the introduction of a budget timeout, each task is still assigned
-> a budget measured in number of sectors instead of amount of time,
-> but a budget is not served to its exhaustion if it's taking too much
-> to complete.  Budgets are still scheduled using a modified version
-> of WF2Q+.
-> 
-> Using huge values for max_budget turns the scheduler into a pure
-> time-domain proportional share one, and the timeout controls the duration
-> of the time quanta.
-> 
-> WRT the support for hierarchical scheduling, that is being discussed
-> so much in these days, this scheduler does not add anything new, it
-> supports proportional share distribution of disk bandwidth among
-> full cgroup hierarchies; the mapping from requests to cgroups is
-> correct only in case of synchronous reads.
-> 
-> The overall diffstat is the following:
-> 
->  block/Kconfig.iosched         |   25 +
->  block/Makefile                |    1 +
->  block/bfq-cgroup.c            |  743 +++++++++++++++
->  block/bfq-ioc.c               |  375 ++++++++
->  block/bfq-iosched.c           | 2010 +++++++++++++++++++++++++++++++++++++++++
->  block/bfq-sched.c             |  950 +++++++++++++++++++
->  block/bfq.h                   |  514 +++++++++++
->  block/blk-ioc.c               |   27 +-
->  block/cfq-iosched.c           |   10 +-
->  fs/ioprio.c                   |    9 +-
->  include/linux/cgroup_subsys.h |    6 +
->  include/linux/iocontext.h     |   18 +-
->  12 files changed, 4669 insertions(+), 19 deletions(-)
-> 
-> For a complete description of the algorithm and of its properties
-> please refer to [2], (where extensive experiments on older hw can
-> also be found), and for some performance measurements and implementation
-> details, to [3].
-> 
-> [1] http://lkml.org/lkml/2008/4/1/234
-> [2] http://algo.ing.unimo.it/people/paolo/disk_sched/
-> [3] http://feanor.sssup.it/~fabio/linux/bfq/
-> 
-> As usual, any kind of feedback will be greatly appreciated, thanks
-> in advance.
-> 
-> Fabio Checconi, Paolo Valente
+	close(0); close(1); close(2); close(3);
+	f = fopen("e2out", "r");
+	if (!f)
+		cnt = 1;
+	else {
+		fscanf(f, "%d", &cnt);
+		fclose(f);
+	}
+	for (;;) {
+		sleep(5);
+		f = fopen("e2out", "w");
+		if (!f)
+			return 1;
+		fprintf(f, "%d", ++cnt);
+		fclose(f);
+	}
+	return 0;
+}
