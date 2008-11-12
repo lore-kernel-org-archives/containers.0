@@ -1,13 +1,13 @@
 From: Oleg Nesterov <oleg@redhat.com>
 Subject: Re: Signals to cinit
-Date: Wed, 12 Nov 2008 15:52:26 +0100
-Message-ID: <20081112145226.GA13269@redhat.com>
-References: <20081101180505.GA24268@us.ibm.com> <20081110173839.GA11121@redhat.com> <20081110193228.GA15519@redhat.com> <20081110232735.GA20891@us.ibm.com>
+Date: Wed, 12 Nov 2008 16:05:55 +0100
+Message-ID: <20081112150555.GB13269@redhat.com>
+References: <20081101180505.GA24268@us.ibm.com> <20081110173839.GA11121@redhat.com> <20081110193228.GA15519@redhat.com> <20081111022405.GB20891@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1753262AbYKLNxF@vger.kernel.org>
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1753360AbYKLOGJ@vger.kernel.org>
 Content-Disposition: inline
-In-Reply-To: <20081110232735.GA20891@us.ibm.com>
+In-Reply-To: <20081111022405.GB20891@us.ibm.com>
 Sender: linux-kernel-owner@vger.kernel.org
 To: sukadev@linux.vnet.ibm.com
 Cc: "Eric W. Biederman" <ebiederm@xmission.com>, Pavel Emelyanov <xemul@openvz.org>, daniel@hozac.com, Nadia Derbey <Nadia.Derbey@bull.net>, serue@us.ibm.com, clg@fr.ibm.com, Containers <containers@lists.osdl.org>, sukadev@us.ibm.com, linux-kernel@vger.kernel.org
@@ -15,51 +15,34 @@ List-Id: containers.vger.kernel.org
 
 On 11/10, sukadev@linux.vnet.ibm.com wrote:
 >
-> Oleg Nesterov [oleg@redhat.com] wrote:
-> | (lkml cced because containers list's archive is not useable)
->
-> Hmm. what do you mean by not usable ? I see your email here:
-> https://lists.linux-foundation.org/pipermail/containers/2008-November/014152.html
+> Also, what happens if a fatal signal is first received from a descendant
+> and while that is still pending, the same signal is received from ancestor
+> ns ?  Won't the second one be ignored by legacy_queue() for the non-rt case ?
 
-Yes, but I failed to find our previous discussions via google, and actually
-I prefer to see them all on marc.info, so I can quickly find them...
+Please see my another email:
 
-> | > Or something. yes, sys_rt_sigqueueinfo() is problematic...
->
-> Yes, if user-space sets si_pid to 0.
->
-> Can we change sys_rt_sigqueueinfo() to:
->
-> 	if (!info->si_pid)
-> 		info->si_pid = getpid();
+	We must also change sig_ignored() to drop SIGKILL/SIGSTOP early when
+	it comes from the same ns. Otherwise, it can mask the next SIGKILL
+	from the parent ns.
 
-I doubt very much we can do this. This can break the existing applications
-which can overload ->si_pid. I think it is better to pass ->si_pid as is.
-If user-space sends siginfo_t so sub-namespace, it must know what it does.
-I don't think the kernel can help, it just can't know what ->si_pid actually
-means. Unless this is documented somewhere, but I don't know.
+	But this perhaps makes sense anyway, even without containers.
+	Currently, when the global init has the pending SIGKILL, we can't
+	trust __wait_event_killable/etc, and this is actually wrong.
 
-> | But how can send_signal() know that the signal comes from the upper ns?
-> | This is not trivial, we can't blindly use current to check. The signal
-> | can be sent from irq/workqueue/etc.
->
-> You mean the in_interrupt() check we had in earlier patchset would
-> not be enough ?
+We can drop other SIG_DFL signals from the same namespace early as well.
+I seem to already did something like sig_init_ignored(), but I forgot.
 
-I don't think we can rely on in_interrupt() check. Thnk about some device
-drivers which can send the notification from workqueue, or from kernel
-thread... Say, can you see when drivers/usb/core/devio.c does
-async_completed() ? And note that SI_ASYNCIO is SI_FROMUSER.
+Or, we can just ignore this (imho) minor problem. The ancestor ns
+must know it can't reliably kill cinit with (say) SIGTERM. It can
+be ignored, or it can have have a handler, and it can be lost because
+SIGTERM is already pending. Only SIGKILL is special.
 
-Even _if_ it is safe to use in_interrupt() right now, I don't think we
-can rely on this fact.
+Actually. I personally think that if we manage to achieve that
 
-> | Perhaps we can start with something like the patch below. Not that I like
-> | it very much though. We should really place this code under
-> | CONFIG_I_DO_CARE_ABOUT_NAMESPACES ;)
->
-> CONFIG_PID_NS ?
+	- the sub-namespace can't kill its init
 
-Ah yes, we have it ;)
+	- the ancestor can always kill cinit with SIGKILL
+
+then imho we should not worry very much about other issues ;)
 
 Oleg.
