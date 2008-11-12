@@ -1,8 +1,8 @@
 From: "Satoshi UCHIDA" <s-uchida-LYU95VJlayp8UrSeD/g0lQ@public.gmane.org>
-Subject: [PATCH][cfq-cgroups][03/12] Add cgroup file and modify configure
-	files.
-Date: Wed, 12 Nov 2008 17:25:35 +0900
-Message-ID: <001001c944a0$3c1ed700$b45c8500$__21743.0255179808$1226479660$gmane$org@jp.nec.com>
+Subject: [PATCH][cfq-cgroups][04/12] Register or unregister "cfq-cgroups"
+	module.
+Date: Wed, 12 Nov 2008 17:26:18 +0900
+Message-ID: <001101c944a0$561b0fc0$02512f40$__33729.8430772082$1226479863$gmane$org@jp.nec.com>
 References: <000c01c9449e$c5bcdc20$51369460$@jp.nec.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -24,111 +24,183 @@ Cc: 'Andrew Morton' <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, 'S
 List-Id: containers.vger.kernel.org
 
 
-  This patch adds the cfq-cgroup file and modifies configure files.
-  The cfq-cgroup file store some functions which use to expand CFQ
-  scheduler for handling cgroups.
-  Expanded CFQ scheduler is registered for "cfq-cgroups".
+  This patch introduce a register/unregister functions of 
+  "cfq-cgroups" module.
+  A elevator_type variables is inherited one of the original CFQ
+  scheduler.
 
 
     Signed-off-by: Satoshi UCHIDA <s-uchida-LYU95VJlayp8UrSeD/g0lQ@public.gmane.org>
 
 ---
- block/Kconfig.iosched |   16 ++++++++++++++++
- block/Makefile        |    1 +
- block/cfq-cgroup.c    |   32 ++++++++++++++++++++++++++++++++
- 3 files changed, 49 insertions(+), 0 deletions(-)
- create mode 100644 block/cfq-cgroup.c
+ block/cfq-cgroup.c          |  122 +++++++++++++++++++++++++++++++++++++++++++
+ block/cfq-iosched.c         |    2 +-
+ include/linux/cfq-iosched.h |    2 +
+ 3 files changed, 125 insertions(+), 1 deletions(-)
 
-diff --git a/block/Kconfig.iosched b/block/Kconfig.iosched
-index 7e803fc..dc61120 100644
---- a/block/Kconfig.iosched
-+++ b/block/Kconfig.iosched
-@@ -40,6 +40,18 @@ config IOSCHED_CFQ
- 	  working environment, suitable for desktop systems.
- 	  This is the default I/O scheduler.
- 
-+config IOSCHED_CFQ_CGROUP
-+	tristate "expanded CFQ I/O Scheduler for cgroups"
-+	default n
-+	depends on IOSCHED_CFQ && CGROUPS
-+	---help---
-+	  The expanded CFQ I/O scheduelr for cgroups tries to distribute
-+	  bandwidth equally among all groups and among all processes within
-+	  groups in the system. It should provide a fair working environment,
-+	  suitable for consolidated environment which have some destop systems.
-+	  This scheduler expands the CFQ I/O scheduler into two layer control
-+	  -- per group layer and per task layer --.
-+
- choice
- 	prompt "Default I/O scheduler"
- 	default DEFAULT_CFQ
-@@ -56,6 +68,9 @@ choice
- 	config DEFAULT_CFQ
- 		bool "CFQ" if IOSCHED_CFQ=y
- 
-+	config DEFAULT_CFQ_CGROUP
-+		bool "CFQ-Cgroups" if IOSCHED_CFQ_CGROUP=y
-+
- 	config DEFAULT_NOOP
- 		bool "No-op"
- 
-@@ -66,6 +81,7 @@ config DEFAULT_IOSCHED
- 	default "anticipatory" if DEFAULT_AS
- 	default "deadline" if DEFAULT_DEADLINE
- 	default "cfq" if DEFAULT_CFQ
-+	default "cfq-cgroups" if DEFAULT_CFQ_CGROUP
- 	default "noop" if DEFAULT_NOOP
- 
- endmenu
-diff --git a/block/Makefile b/block/Makefile
-index bfe7304..3c0f59d 100644
---- a/block/Makefile
-+++ b/block/Makefile
-@@ -12,6 +12,7 @@ obj-$(CONFIG_IOSCHED_NOOP)	+= noop-iosched.o
- obj-$(CONFIG_IOSCHED_AS)	+= as-iosched.o
- obj-$(CONFIG_IOSCHED_DEADLINE)	+= deadline-iosched.o
- obj-$(CONFIG_IOSCHED_CFQ)	+= cfq-iosched.o
-+obj-$(CONFIG_IOSCHED_CFQ_CGROUP)	+= cfq-cgroup.o
- 
- obj-$(CONFIG_BLK_DEV_IO_TRACE)	+= blktrace.o
- obj-$(CONFIG_BLOCK_COMPAT)	+= compat_ioctl.o
 diff --git a/block/cfq-cgroup.c b/block/cfq-cgroup.c
-new file mode 100644
-index 0000000..3deef41
---- /dev/null
+index 3deef41..aaa00ef 100644
+--- a/block/cfq-cgroup.c
 +++ b/block/cfq-cgroup.c
-@@ -0,0 +1,32 @@
+@@ -15,13 +15,135 @@
+ #include <linux/cgroup.h>
+ #include <linux/cfq-iosched.h>
+ 
 +/*
-+ *  CFQ CGROUP disk scheduler.
-+ *
-+ *     This program is a wrapper program that is
-+ *     extend CFQ disk scheduler for handling
-+ *     cgroup subsystem.
-+ *
-+ *     This program is based on original CFQ code.
-+ *
-+ *  Copyright (C) 2008 Satoshi UCHIDA <s-uchida-LYU95VJlayp8UrSeD/g0lQ@public.gmane.org>
-+ *   and NEC Corp.
++ * sysfs parts below -->
 + */
-+
-+#include <linux/blkdev.h>
-+#include <linux/cgroup.h>
-+#include <linux/cfq-iosched.h>
-+
-+static int __init cfq_cgroup_init(void)
++static ssize_t
++cfq_cgroup_var_show(char *page, struct cfq_data *cfqd,
++		    int (func)(struct cfq_data *))
 +{
-+	return 0;
++	int val, retval = 0;
++
++	val = func(cfqd);
++
++	retval = snprintf(page, PAGE_SIZE, "%d\n", val);
++
++	return retval;
 +}
 +
-+static void __exit cfq_cgroup_exit(void)
++#define SHOW_FUNCTION(__FUNC, __VAR, __CONV)				\
++static int val_transrate_##__FUNC(struct cfq_data *cfqd)		\
++{									\
++	if (__CONV)							\
++		return jiffies_to_msecs(cfqd->__VAR);			\
++	else								\
++		return cfqd->__VAR;					\
++}									\
++static ssize_t __FUNC(elevator_t *e, char *page)			\
++{									\
++	struct cfq_data *cfqd = e->elevator_data;			\
++									\
++	return cfq_cgroup_var_show((page), (cfqd),			\
++				   val_transrate_##__FUNC);		\
++}
++SHOW_FUNCTION(cfq_cgroup_quantum_show, cfq_quantum, 0);
++SHOW_FUNCTION(cfq_cgroup_fifo_expire_sync_show, cfq_fifo_expire[1], 1);
++SHOW_FUNCTION(cfq_cgroup_fifo_expire_async_show, cfq_fifo_expire[0], 1);
++SHOW_FUNCTION(cfq_cgroup_back_seek_max_show, cfq_back_max, 0);
++SHOW_FUNCTION(cfq_cgroup_back_seek_penalty_show, cfq_back_penalty, 0);
++SHOW_FUNCTION(cfq_cgroup_slice_idle_show, cfq_slice_idle, 1);
++SHOW_FUNCTION(cfq_cgroup_slice_sync_show, cfq_slice[1], 1);
++SHOW_FUNCTION(cfq_cgroup_slice_async_show, cfq_slice[0], 1);
++SHOW_FUNCTION(cfq_cgroup_slice_async_rq_show, cfq_slice_async_rq, 0);
++#undef SHOW_FUNCTION
++
++static ssize_t
++cfq_cgroup_var_store(const char *page, size_t count, struct cfq_data *cfqd,
++		     void (func)(struct cfq_data *, unsigned int))
 +{
++	int err;
++	unsigned long val;
++
++	err = strict_strtoul(page, 10, &val);
++	if (err)
++		return 0;
++
++	func(cfqd, val);
++
++	return count;
 +}
 +
-+module_init(cfq_cgroup_init);
-+module_exit(cfq_cgroup_exit);
++#define STORE_FUNCTION(__FUNC, __VAR, MIN, MAX, __CONV)			\
++static void val_transrate_##__FUNC(struct cfq_data *cfqd,		\
++				   unsigned int __data)			\
++{									\
++	if (__data < (MIN))						\
++		__data = (MIN);						\
++	else if (__data > (MAX))					\
++		__data = (MAX);						\
++	if (__CONV)							\
++		cfqd->__VAR = msecs_to_jiffies(__data);			\
++	else								\
++		cfqd->__VAR = __data;					\
++}									\
++static ssize_t __FUNC(elevator_t *e, const char *page, size_t count)	\
++{									\
++	struct cfq_data *cfqd = e->elevator_data;			\
++	int ret = cfq_cgroup_var_store((page), count, cfqd,		\
++				      val_transrate_##__FUNC);		\
++	return ret;							\
++}
++STORE_FUNCTION(cfq_cgroup_quantum_store, cfq_quantum, 1, UINT_MAX, 0);
++STORE_FUNCTION(cfq_cgroup_fifo_expire_sync_store, cfq_fifo_expire[1], 1,
++		UINT_MAX, 1);
++STORE_FUNCTION(cfq_cgroup_fifo_expire_async_store, cfq_fifo_expire[0], 1,
++		UINT_MAX, 1);
++STORE_FUNCTION(cfq_cgroup_back_seek_max_store, cfq_back_max, 0, UINT_MAX, 0);
++STORE_FUNCTION(cfq_cgroup_back_seek_penalty_store, cfq_back_penalty, 1,
++		UINT_MAX, 0);
++STORE_FUNCTION(cfq_cgroup_slice_idle_store, cfq_slice_idle,
++		0, UINT_MAX, 1);
++STORE_FUNCTION(cfq_cgroup_slice_sync_store, cfq_slice[1], 1, UINT_MAX, 1);
++STORE_FUNCTION(cfq_cgroup_slice_async_store, cfq_slice[0], 1, UINT_MAX, 1);
++STORE_FUNCTION(cfq_cgroup_slice_async_rq_store, cfq_slice_async_rq, 1,
++		UINT_MAX, 0);
++#undef STORE_FUNCTION
 +
-+MODULE_AUTHOR("Satoshi UCHIDA");
-+MODULE_LICENSE("GPL");
-+MODULE_DESCRIPTION("Expanded CFQ IO scheduler for CGROUPS");
++#define CFQ_CGROUP_ATTR(name)					\
++	__ATTR(name, S_IRUGO|S_IWUSR, cfq_cgroup_##name##_show,	\
++	       cfq_cgroup_##name##_store)
++
++static struct elv_fs_entry cfq_cgroup_attrs[] = {
++	CFQ_CGROUP_ATTR(quantum),
++	CFQ_CGROUP_ATTR(fifo_expire_sync),
++	CFQ_CGROUP_ATTR(fifo_expire_async),
++	CFQ_CGROUP_ATTR(back_seek_max),
++	CFQ_CGROUP_ATTR(back_seek_penalty),
++	CFQ_CGROUP_ATTR(slice_sync),
++	CFQ_CGROUP_ATTR(slice_async),
++	CFQ_CGROUP_ATTR(slice_async_rq),
++	CFQ_CGROUP_ATTR(slice_idle),
++	__ATTR_NULL
++};
++
++static struct elevator_type iosched_cfq_cgroup = {
++	.elevator_attrs	= cfq_cgroup_attrs,
++	.elevator_name	= "cfq-cgroups",
++	.elevator_owner	= THIS_MODULE,
++};
++
+ static int __init cfq_cgroup_init(void)
+ {
++	iosched_cfq_cgroup.ops = iosched_cfq.ops;
++
++	elv_register(&iosched_cfq_cgroup);
++
+ 	return 0;
+ }
+ 
+ static void __exit cfq_cgroup_exit(void)
+ {
++	elv_unregister(&iosched_cfq_cgroup);
+ }
+ 
+ module_init(cfq_cgroup_init);
+diff --git a/block/cfq-iosched.c b/block/cfq-iosched.c
+index b726e85..e105827 100644
+--- a/block/cfq-iosched.c
++++ b/block/cfq-iosched.c
+@@ -2332,7 +2332,7 @@ static struct elv_fs_entry cfq_attrs[] = {
+ 	__ATTR_NULL
+ };
+ 
+-static struct elevator_type iosched_cfq = {
++struct elevator_type iosched_cfq = {
+ 	.ops = {
+ 		.elevator_merge_fn = 		cfq_merge,
+ 		.elevator_merged_fn =		cfq_merged_request,
+diff --git a/include/linux/cfq-iosched.h b/include/linux/cfq-iosched.h
+index 50003f7..a28ef00 100644
+--- a/include/linux/cfq-iosched.h
++++ b/include/linux/cfq-iosched.h
+@@ -82,4 +82,6 @@ struct cfq_data {
+ 	struct cfq_driver_data *cfqdd;
+ };
+ 
++extern struct elevator_type iosched_cfq;
++
+ #endif  /* _LINUX_CFQ_IOSCHED_H */
 -- 
 1.5.6.5
