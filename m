@@ -1,15 +1,13 @@
-From: Hirokazu Takahashi <taka-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
-Subject: Re: [dm-devel] Re: [PATCH 0/8] I/O bandwidth controller and BIO
-	tracking
-Date: Thu, 13 Nov 2008 16:26:23 +0900 (JST)
-Message-ID: <20081113.162623.74628639.taka__12252.3095379167$1226561340$gmane$org@valinux.co.jp>
-References: <20081113.121019.104237699577193919.ryov@valinux.co.jp>
-	<20081113153019.cc50d42c.kamezawa.hiroyu@jp.fujitsu.com>
+From: Ryo Tsuruta <ryov-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
+Subject: Re: [patch 0/4] [RFC] Another proportional weight IO controller
+Date: Thu, 13 Nov 2008 18:05:58 +0900 (JST)
+Message-ID: <20081113.180558.519459540419535699.ryov__14033.5795622834$1226567408$gmane$org@valinux.co.jp>
+References: <20081106153022.215696930@redhat.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20081113153019.cc50d42c.kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+In-Reply-To: <20081106153022.215696930-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,219 +17,61 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org
-Cc: xen-devel-GuqFBffKawuULHF6PoxzQEEOCMrvLtNR@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, virtualization-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, dm-devel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, agk-9JcytcrH/bA+uJoB2kUjGw@public.gmane.org, menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, fernando-gVGce1chcLdL9jVzuh4AOg@public.gmane.org, xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org
+To: vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
+Cc: menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, riel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, virtualization-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, jmoyer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, jens.axboe-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, ngupta-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, fernando-gVGce1chcLdL9jVzuh4AOg@public.gmane.org, righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Hi, Kamezawa-san,
+Hi,
 
-> > Hi everyone,
-> > 
-> > This is a new release of dm-ioband and bio-cgroup. With this release,
-> > the overhead of bio-cgroup is significantly reduced and the accuracy
-> > of block I/O tracking is much improved. These patches are for
-> > 2.6.28-rc2-mm1.
-> > 
+From: vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
+Subject: [patch 0/4] [RFC] Another proportional weight IO controller 
+Date: Thu, 06 Nov 2008 10:30:22 -0500
+
+> Hi,
 > 
-> >From my point of view, a way to record bio_cgroup_id to page_cgroup is quite neat
-> and nice.
+> If you are not already tired of so many io controller implementations, here
+> is another one.
 > 
-> My concern is "bio_cgroup_id". It's provided only for bio_cgroup.
-> In this summer, I tried to add swap_cgroup_id only for mem+swap controller but
-> commenters said "please provide "id and lookup" in cgroup layer, it should be useful."
-> And I agree them. (and postponed it ;)
+> This is a very eary very crude implementation to get early feedback to see
+> if this approach makes any sense or not.
+> 
+> This controller is a proportional weight IO controller primarily
+> based on/inspired by dm-ioband. One of the things I personally found little
+> odd about dm-ioband was need of a dm-ioband device for every device we want
+> to control.  I thought that probably we can make this control per request
+> queue and get rid of device mapper driver. This should make configuration
+> aspect easy.
+> 
+> I have picked up quite some amount of code from dm-ioband especially for
+> biocgroup implementation.
+> 
+> I have done very basic testing and that is running 2-3 dd commands in different
+> cgroups on x86_64. Wanted to throw out the code early to get some feedback.
+> 
+> More details about the design and how to are in documentation patch.
+> 
+> Your comments are welcome.
 
-Yup, that sounds really good.
+Do you have any benchmark results?
+I'm especially interested in the followings:
+- Comparison of disk performance with and without the I/O controller patch.
+- Put uneven I/O loads. Processes, which belong to a cgroup which is
+  given a smaller weight than another cgroup, put heavier I/O load
+  like the following.
 
-> Could you try "id" in cgroup layer ? How do you think, Paul and others ?
+     echo 1024 > /cgroup/bio/test1/bio.shares
+     echo 8192 > /cgroup/bio/test2/bio.shares
 
-It seems to easy to implement this feature since what I need to do is
-move the code from bio-group to there.
-Okay, I'll start it if Paul agrees with this approach.
+     echo $$ > /cgroup/bio/test1/tasks
+     dd if=/somefile1-1 of=/dev/null &
+     dd if=/somefile1-2 of=/dev/null &
+     ... 
+     dd if=/somefile1-100 of=/dev/null
+     echo $$ > /cgroup/bio/test2/tasks
+     dd if=/somefile2-1 of=/dev/null &
+     dd if=/somefile2-2 of=/dev/null &
+     ...
+     dd if=/somefile2-10 of=/dev/null &
 
-> That's my only concern and if I/O controller people decides to live with
-> this bio tracking infrastracture,
-> ==
->    page -> page_cgroup -> bio_cgroup_id
-> ==
-> I have no objections. And enqueue necessary changes to my queue.
-
-It would be nice if you can include the following patch, which just makes
-the page_cgroup infrastructure can be compiled in even when the cgroup
-memory controller is compiled out.
-
-> Thanks,
-> -Kame
-
-Thank you,
-Hirokazu Takahashi.
-
- ---------------------------
-
-This patch makes the page_cgroup framework be able to be used even if
-the compile option of the cgroup memory controller is off.
-So bio-cgroup can use this framework without the memory controller.
-
-Signed-off-by: Hirokazu Takahashi <taka-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
-
-diff -dupr linux-2.6.28-rc2.bc0/include/linux/memcontrol.h linux-2.6.28-rc2/include/linux/memcontrol.h
---- linux-2.6.28-rc2.bc0/include/linux/memcontrol.h	2008-11-10 18:31:34.000000000 +0900
-+++ linux-2.6.28-rc2/include/linux/memcontrol.h	2008-11-11 13:51:42.000000000 +0900
-@@ -27,6 +27,9 @@ struct mm_struct;
- 
- #ifdef CONFIG_CGROUP_MEM_RES_CTLR
- 
-+extern void __init_mem_page_cgroup(struct page_cgroup *pc);
-+#define  mem_cgroup_disabled() mem_cgroup_subsys.disabled
-+
- extern int mem_cgroup_newpage_charge(struct page *page, struct mm_struct *mm,
- 				gfp_t gfp_mask);
- /* for swap handling */
-@@ -81,6 +84,15 @@ extern long mem_cgroup_calc_reclaim(stru
- #else /* CONFIG_CGROUP_MEM_RES_CTLR */
- struct mem_cgroup;
- 
-+static inline void __init_mem_page_cgroup(struct page_cgroup *pc)
-+{
-+}
-+
-+static inline int mem_cgroup_disabled(void)
-+{
-+	return 1;
-+}
-+
- static inline int mem_cgroup_newpage_charge(struct page *page,
- 					struct mm_struct *mm, gfp_t gfp_mask)
- {
-diff -dupr linux-2.6.28-rc2.bc0/include/linux/mmzone.h linux-2.6.28-rc2/include/linux/mmzone.h
---- linux-2.6.28-rc2.bc0/include/linux/mmzone.h	2008-11-10 18:50:50.000000000 +0900
-+++ linux-2.6.28-rc2/include/linux/mmzone.h	2008-11-11 13:51:42.000000000 +0900
-@@ -603,7 +603,7 @@ typedef struct pglist_data {
- 	int nr_zones;
- #ifdef CONFIG_FLAT_NODE_MEM_MAP	/* means !SPARSEMEM */
- 	struct page *node_mem_map;
--#ifdef CONFIG_CGROUP_MEM_RES_CTLR
-+#ifdef CONFIG_CGROUP_PAGE
- 	struct page_cgroup *node_page_cgroup;
- #endif
- #endif
-@@ -952,7 +952,7 @@ struct mem_section {
- 
- 	/* See declaration of similar field in struct zone */
- 	unsigned long *pageblock_flags;
--#ifdef CONFIG_CGROUP_MEM_RES_CTLR
-+#ifdef CONFIG_CGROUP_PAGE
- 	/*
- 	 * If !SPARSEMEM, pgdat doesn't have page_cgroup pointer. We use
- 	 * section. (see memcontrol.h/page_cgroup.h about this.)
-diff -dupr linux-2.6.28-rc2.bc0/include/linux/page_cgroup.h linux-2.6.28-rc2/include/linux/page_cgroup.h
---- linux-2.6.28-rc2.bc0/include/linux/page_cgroup.h	2008-11-10 19:29:00.000000000 +0900
-+++ linux-2.6.28-rc2/include/linux/page_cgroup.h	2008-11-11 14:46:47.000000000 +0900
-@@ -1,7 +1,7 @@
- #ifndef __LINUX_PAGE_CGROUP_H
- #define __LINUX_PAGE_CGROUP_H
- 
--#ifdef CONFIG_CGROUP_MEM_RES_CTLR
-+#ifdef CONFIG_CGROUP_PAGE
- #include <linux/bit_spinlock.h>
- /*
-  * Page Cgroup can be considered as an extended mem_map.
-@@ -12,9 +12,11 @@
-  */
- struct page_cgroup {
- 	unsigned long flags;
--	struct mem_cgroup *mem_cgroup;
- 	struct page *page;
-+#ifdef CONFIG_CGROUP_MEM_RES_CTLR
-+	struct mem_cgroup *mem_cgroup;
- 	struct list_head lru;		/* per cgroup LRU list */
-+#endif
- };
- 
- void __init pgdat_page_cgroup_init(struct pglist_data *pgdat);
-@@ -88,7 +90,7 @@ static inline void unlock_page_cgroup(st
- 	bit_spin_unlock(PCG_LOCK, &pc->flags);
- }
- 
--#else /* CONFIG_CGROUP_MEM_RES_CTLR */
-+#else /* CONFIG_CGROUP_PAGE */
- struct page_cgroup;
- 
- static inline void pgdat_page_cgroup_init(struct pglist_data *pgdat)
-diff -dupr linux-2.6.28-rc2.bc0/init/Kconfig linux-2.6.28-rc2/init/Kconfig
---- linux-2.6.28-rc2.bc0/init/Kconfig	2008-11-10 18:31:34.000000000 +0900
-+++ linux-2.6.28-rc2/init/Kconfig	2008-11-11 14:46:47.000000000 +0900
-@@ -425,6 +425,10 @@ config CGROUP_MEM_RES_CTLR
- 	  This config option also selects MM_OWNER config option, which
- 	  could in turn add some fork/exit overhead.
- 
-+config CGROUP_PAGE
-+	def_bool y
-+	depends on CGROUP_MEM_RES_CTLR
-+
- config MM_OWNER
- 	bool
- 
-diff -dupr linux-2.6.28-rc2.bc0/mm/Makefile linux-2.6.28-rc2/mm/Makefile
---- linux-2.6.28-rc2.bc0/mm/Makefile	2008-11-10 18:31:34.000000000 +0900
-+++ linux-2.6.28-rc2/mm/Makefile	2008-11-11 14:46:47.000000000 +0900
-@@ -34,5 +34,6 @@ obj-$(CONFIG_FS_XIP) += filemap_xip.o
- obj-$(CONFIG_MIGRATION) += migrate.o
- obj-$(CONFIG_SMP) += allocpercpu.o cpu_alloc.o
- obj-$(CONFIG_QUICKLIST) += quicklist.o
--obj-$(CONFIG_CGROUP_MEM_RES_CTLR) += memcontrol.o page_cgroup.o
-+obj-$(CONFIG_CGROUP_MEM_RES_CTLR) += memcontrol.o
-+obj-$(CONFIG_CGROUP_PAGE) += page_cgroup.o
- obj-$(CONFIG_KMEMTRACE) += kmemtrace.o
-diff -dupr linux-2.6.28-rc2.bc0/mm/memcontrol.c linux-2.6.28-rc2/mm/memcontrol.c
---- linux-2.6.28-rc2.bc0/mm/memcontrol.c	2008-11-10 18:31:34.000000000 +0900
-+++ linux-2.6.28-rc2/mm/memcontrol.c	2008-11-11 14:48:17.000000000 +0900
-@@ -157,6 +157,11 @@ pcg_default_flags[NR_CHARGE_TYPE] = {
- 	0, /* FORCE */
- };
- 
-+void __meminit __init_mem_page_cgroup(struct page_cgroup *pc)
-+{
-+	pc->mem_cgroup = NULL;
-+}
-+
- /*
-  * Always modified under lru lock. Then, not necessary to preempt_disable()
-  */
-diff -dupr linux-2.6.28-rc2.bc0/mm/page_cgroup.c linux-2.6.28-rc2/mm/page_cgroup.c
---- linux-2.6.28-rc2.bc0/mm/page_cgroup.c	2008-11-10 18:31:34.000000000 +0900
-+++ linux-2.6.28-rc2/mm/page_cgroup.c	2008-11-11 14:46:47.000000000 +0900
-@@ -8,13 +8,14 @@
- #include <linux/memory.h>
- #include <linux/vmalloc.h>
- #include <linux/cgroup.h>
-+#include <linux/memcontrol.h>
- 
- static void __meminit
- __init_page_cgroup(struct page_cgroup *pc, unsigned long pfn)
- {
- 	pc->flags = 0;
--	pc->mem_cgroup = NULL;
- 	pc->page = pfn_to_page(pfn);
-+	__init_mem_page_cgroup(pc);
- }
- static unsigned long total_usage;
- 
-@@ -69,7 +70,7 @@ void __init page_cgroup_init(void)
- 
- 	int nid, fail;
- 
--	if (mem_cgroup_subsys.disabled)
-+	if (mem_cgroup_disabled())
- 		return;
- 
- 	for_each_online_node(nid)  {
-@@ -229,7 +230,7 @@ void __init page_cgroup_init(void)
- 	unsigned long pfn;
- 	int fail = 0;
- 
--	if (mem_cgroup_subsys.disabled)
-+	if (mem_cgroup_disabled())
- 		return;
- 
- 	for (pfn = 0; !fail && pfn < max_pfn; pfn += PAGES_PER_SECTION) {
+Thanks,
+Ryo Tsuruta
