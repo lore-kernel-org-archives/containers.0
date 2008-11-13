@@ -1,11 +1,13 @@
 From: Ryo Tsuruta <ryov-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
-Subject: [PATCH 0/8] I/O bandwidth controller and BIO tracking
-Date: Thu, 13 Nov 2008 12:10:19 +0900 (JST)
-Message-ID: <20081113.121019.104237699577193919.ryov__4650.40702042661$1226545945$gmane$org@valinux.co.jp>
+Subject: [PATCH 1/8] dm-ioband: Introduction
+Date: Thu, 13 Nov 2008 12:11:46 +0900 (JST)
+Message-ID: <20081113.121146.623571555980959797.ryov__21201.8049708151$1226546002$gmane$org@valinux.co.jp>
+References: <20081113.121019.104237699577193919.ryov@valinux.co.jp>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <20081113.121019.104237699577193919.ryov-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,92 +21,89 @@ To: linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, dm-devel-H+wXaHxf7aLQT
 Cc: fernando-gVGce1chcLdL9jVzuh4AOg@public.gmane.org, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org, agk-9JcytcrH/bA+uJoB2kUjGw@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Hi everyone,
+What's am-ioband all about?
+===========================
 
-This is a new release of dm-ioband and bio-cgroup. With this release,
-the overhead of bio-cgroup is significantly reduced and the accuracy
-of block I/O tracking is much improved. These patches are for
-2.6.28-rc2-mm1.
+dm-ioband is an I/O bandwidth controller implemented as a device-mapper
+driver, which gives specified bandwidth to each job running on the
+same block device. A job is a group of processes with the same pid or
+pgrp or uid or a virtual machine such as KVM or Xen. A job can also be
+a cgroup by applying the bio-cgroup patch.
 
-Enjoy it!
+Setup and Installation
+======================
 
-dm-ioband
-=========
+Build a kernel with these options enabled:
 
-Dm-ioband is an I/O bandwidth controller implemented as a
-device-mapper driver, which gives specified bandwidth to each job
-running on the same block device. A job is a group of processes
-or a virtual machine such as KVM or Xen. 
-I/O throughput on dm-ioband is excellent not only on SATA storage
-but on SDD, which as good as the one without dm-ioband.
+  CONFIG_MD
+  CONFIG_BLK_DEV_DM
+  CONFIG_DM_IOBAND
 
-Changes from the previous release:
-  - Fix a bug that create_workqueue() is called during spin lock
-    when creating a new ioband group.
-  - A new tunable parameter "carryover" is added, which specifies
-    how many tokens an ioband group can keep for the future use
-    when the group isn't so active.
+If compiled as module, use modprobe to load dm-ioband.
 
-TODO:
-  - Other policies to schedule BIOs.
-    - Policies which fits SSD.
-     e.g.)
-       - Guarantee response time.
-       - Guarantee throughput.
-    - Policies which fits Highend Storage or hardware raid storage.
-       - Some LUNs may share the same bandwidth.
-  - Support WRITE_BARRIER when the device-mapper layer supports it.
-  - Implement the algorithm of dm-ioband in the block I/O layer
-    experimentally.
+  # make modules
+  # make modules_install
+  # depmod -a
+  # modprobe dm-ioband
+  
+"dmsetup targets" command shows all available device-mapper
+targets. "ioband" and the version number are displayed when dm-ioband
+has been loaded.
 
-bio-cgroup
-==========
+  # dmsetup targets | grep ioband
+  ioband           v1.9.0
 
-Bio-cgroup is a BIO tracking mechanism, which is implemented on the
-cgroup memory subsystem. With the mechanism, it is able to determine
-which cgroup each of bio belongs to, even when the bio is one of
-delayed-write requests issued from a kernel thread such as pdflush.
+Getting started
+===============
 
-Changes from the previous release:
-  - This release is a new implementation.
-  - This is based on the new design of the cgroup memory controller
-    framework, which pre-allocates all cgroup-page data structures to
-    reduce the overhead.
-  - The overhead to trace block I/O requests is much smaller than that
-    of the previous one. This is done by making every page have the id
-    of its corresponding bio-cgroup instead of the pointer to it and
-    most of spin-locks and atomic operations are gone.
-  - This implementation uses only 4 bytes per page for I/O tracking
-    while the previous version uses 12 bytes on a 32 bit machine and 24
-    bytes on a 64 bit machine.
-  - The accuracy of I/O tracking is improved that it can trace I/O
-    requests even when the processes which issued these requests get
-    moved into another bio-cgroup.
-  - Support bounce buffers tracking. They will have the same bio-cgroup
-    owners as the original I/O requests.
+The following is a brief description how to control the I/O bandwidth
+of disks. In this description, we'll take one disk with two partitions
+as an example target.
 
-TODO:
-  - Support to track I/O requests that will be generated in Linux
-    kernel, such as those of RAID0 and RAID5.
+Create and map ioband devices
+-----------------------------
 
-A list of patches
-=================
+Create two ioband devices "ioband1" and "ioband2". "ioband1" is mapped
+to "/dev/sda1" and has a weight of 40. "ioband2" is mapped to "/dev/sda2"
+and has a weight of 10. "ioband1" can use 80% --- 40/(40+10)*100 ---
+of the bandwidth of the physical disk "/dev/sda" while "ioband2" can use 20%.
 
-The following is a list of patches:
+ # echo "0 $(blockdev --getsize /dev/sda1) ioband /dev/sda1 1 0 0 none" \
+     "weight 0 :40" | dmsetup create ioband1
+ # echo "0 $(blockdev --getsize /dev/sda2) ioband /dev/sda2 1 0 0 none" \
+     "weight 0 :10" | dmsetup create ioband2
 
-  [PATCH 0/8] I/O bandwidth controller and BIO tracking
-  [PATCH 1/8] dm-ioband: Introduction
-  [PATCH 2/8] dm-ioband: Source code and patch
-  [PATCH 3/8] dm-ioband: Document
-  [PATCH 4/8] bio-cgroup: Introduction
-  [PATCH 5/8] bio-cgroup: The new page_cgroup framework
-  [PATCH 6/8] bio-cgroup: The body of bio-cgroup
-  [PATCH 7/8] bio-cgroup: Page tracking hooks
-  [PATCH 8/8] bio-cgroup: Add a cgroup support to dm-ioband
+If the commands are successful then the device files "/dev/mapper/ioband1"
+and "/dev/mapper/ioband2" will have been created.
 
-Please see the following site for more information:
-  Linux Block I/O Bandwidth Control Project
-  http://people.valinux.co.jp/~ryov/bwctl/
+Additional bandwidth control
+----------------------------
 
-Thanks,
-Ryo Tsuruta
+In this example two extra ioband groups are created on "ioband1". The
+first group consists of all the processes with user-id 1000 and the
+second group consists of all the processes with user-id 2000. Their
+weights are 30 and 20 respectively.
+
+ # dmsetup message ioband1 0 type user
+ # dmsetup message ioband1 0 attach 1000
+ # dmsetup message ioband1 0 attach 2000
+ # dmsetup message ioband1 0 weight 1000:30
+ # dmsetup message ioband1 0 weight 2000:20
+    
+Now the processes in the user-id 1000 group can use 30%
+--- 30/(30+20+40+10)*100 --- of the bandwidth of the physical disk.
+
+   Table 1. Weight assignments
+  ioband device    ioband group    ioband weight
+  ioband1          user id 1000         30
+  ioband1          user id 2000         20
+  ioband1          default group        40
+  ioband2          default group        10
+
+Remove the ioband devices
+-------------------------
+
+Remove the ioband devices when no longer used.
+
+  # dmsetup remove ioband1
+  # dmsetup remove ioband2
