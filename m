@@ -1,81 +1,92 @@
-From: Fabio Checconi <fchecconi-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: Re: [patch 0/4] [RFC] Another proportional weight IO controller
-Date: Thu, 13 Nov 2008 14:49:49 +0100
-Message-ID: <20081113134949.GH14817__42024.9286610217$1226584257$gmane$org@gandalf.sssup.it>
-References: <20081106163957.GB7461@redhat.com>
-	<1225990327.7803.4776.camel@twins>
-	<20081106170830.GD7461@redhat.com>
-	<e98e18940811061507t3e19183byf2b8b291458ba81b@mail.gmail.com>
-	<20081107141943.GC21884@redhat.com>
-	<e98e18940811071336n58a073d8w2cbaeddd5657d1e9@mail.gmail.com>
-	<20081110141143.GC26956@redhat.com>
-	<e98e18940811111155q4bd73480pebe088fa1adbe2e4@mail.gmail.com>
-	<20081111223024.GA31527@redhat.com>
-	<e98e18940811121320w5f321302n13b526887cbb4012@mail.gmail.com>
+From: Sukadev Bhattiprolu <sukadev@linux.vnet.ibm.com>
+Subject: Re: Signals to cinit
+Date: Thu, 13 Nov 2008 11:10:39 -0800
+Message-ID: <20081113191039.GA22303@us.ibm.com>
+References: <20081101180505.GA24268@us.ibm.com> <20081110173839.GA11121@redhat.com> <20081110193228.GA15519@redhat.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Content-Type: text/plain; charset=us-ascii
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1752628AbYKMTNo@vger.kernel.org>
 Content-Disposition: inline
-In-Reply-To: <e98e18940811121320w5f321302n13b526887cbb4012-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Nauman Rafique <nauman-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
-Cc: menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, Rik van Riel <riel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, paolo.valente-rcYM44yAMweonA0d6jMUrA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, virtualization-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Jeff Moyer <jmoyer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, "dpshah-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org" <dpshah-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, jens.axboe-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, ngupta-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, fernando-gVGce1chcLdL9jVzuh4AOg@public.gmane.org, Andrea Righi <righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+In-Reply-To: <20081110193228.GA15519@redhat.com>
+Sender: linux-kernel-owner@vger.kernel.org
+To: Oleg Nesterov <oleg@redhat.com>
+Cc: "Eric W. Biederman" <ebiederm@xmission.com>, Pavel Emelyanov <xemul@openvz.org>, daniel@hozac.com, Nadia Derbey <Nadia.Derbey@bull.net>, serue@us.ibm.com, clg@fr.ibm.com, Containers <containers@lists.osdl.org>, sukadev@us.ibm.com, linux-kernel@vger.kernel.org
 List-Id: containers.vger.kernel.org
 
-Hi,
+Oleg Nesterov [oleg@redhat.com] wrote:
+| (lkml cced because containers list's archive is not useable)
+| 
+| On 11/10, Oleg Nesterov wrote:
+| >
+| > On 11/01, sukadev@linux.vnet.ibm.com wrote:
+| > >
+| > > Other approaches to try ?
+| >
+| > I think we should try to do something simple, even if not perfect. Because
+| > most users do not care about this problem since they do not use containers
+| > at all. It would be very sad to add intrusive changes to the code.
+| >
+| > I think we should fix another problem first. send_signal()->copy_siginfo()
+| > path must be changed anyway, when the signal comes from the parent ns we
+| > report the "wrong" si_code/si_pid, yes? So, somehow send_signal() must
+| > have "bool from_parent_ns" (or whatever) annyway.
+| >
+| > Now, let's forget forget for a moment that send_signal()->__sigqueue_alloc()
+| > can fail.
+| >
+| > I think we should encode this "from_parent_ns" into "struct siginfo". I do
+| > not think it is good idea to extend this structure, I think we can introduce
+| > SI_FROM_PARENT_NS or we perhaps can use "SI_FROMUSER(info) && info->si_pid == 0".
+| > Or something. yes, sys_rt_sigqueueinfo() is problematic...
+| >
+| > Now, copy_process(CLONE_NEWPID) sets child->signal |= SIGNAL_UNKILLABLE, this
+| > protects cinit from unwanted signals. Then we change get_signal_to_deliver()
+| >
+| > 	-	if (unlikely(signal->flags & SIGNAL_UNKILLABLE) &&
+| > 	+	if (unlikely(signal->flags & SIGNAL_UNKILLABLE) && !siginfo_from_parent_ns(info)
+| >
+| > and now we can kill cinit from parent ns. This needs more checks if we want
+| > to stop/strace it, but perhaps this is enough for the start. Note that we
+| > do not need to change complete_signal(), at least for now, the code under
+| > "if (sig_fatal(p, sig)" is just optimization.
+| >
+| >
+| > So, afaics, the only real problem is how we can handle the case when
+| > __sigqueue_alloc() fails. I think for the start we can just return
+| > -ENOMEM in this case (when from_parent_ns == T). Then we can improve
+| > this behaviour. We can change complete_signal() to ensure that the
+| > fatal signal from the upper ns always kills cinit, and in this case
+| > we ignore the the failed __sigqueue_alloc(). This way at least SIGKILL
+| > always works.
+| >
+| > Yes, this is not perfect, and it is very possible I missed something
+| > else. But simple.
+| 
+| But how can send_signal() know that the signal comes from the upper ns?
+| This is not trivial, we can't blindly use current to check. The signal
+| can be sent from irq/workqueue/etc.
+| 
+| Perhaps we can start with something like the patch below. Not that I like
+| it very much though. We should really place this code under
+| CONFIG_I_DO_CARE_ABOUT_NAMESPACES ;)
+| 
+| Oleg.
+| 
+| --- K-IS/kernel/signal.c~T	2008-11-10 19:21:17.000000000 +0100
+| +++ K-IS/kernel/signal.c	2008-11-10 20:31:24.000000000 +0100
+| @@ -798,11 +798,19 @@ static inline int legacy_queue(struct si
+|  	return (sig < SIGRTMIN) && sigismember(&signals->signal, sig);
+|  }
+| 
+| +#define SIG_FROM_USER	INT_MIN		/* MSB */
+| +
 
-> From: Nauman Rafique <nauman-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
-> Date: Wed, Nov 12, 2008 01:20:13PM -0800
->
-...
-> >> CFQ can be trivially
-> >> modified to do proportional division (i.e give time slices in
-> >> proportion to weight instead of priority).
-> >> And such a solution would
-> >> avoid idleness problem like the one you mentioned above.
-> >
-> > Can you just elaborate a little on how do you get around idleness problem?
-> > If you don't create idleness than if two tasks in two cgroups are doing
-> > sequential IO, they might simply get into lockstep and we will not achieve
-> > any differentiated service proportionate to their weight.
-> 
-> I was thinking of a more cfq-like solution for proportional division
-> at the elevator level (i.e. not a token based solution). There are two
-> options for proportional bandwidth division at elevator level: 1)
-> change the size of the time slice in proportion to the weights or 2)
-> allocate equal time slice each time but allocate more slices to cgroup
-> with more weight. For (2), we can actually keep track of time taken to
-> serve requests and allocate time slices in such a way that the actual
-> disk time is proportional to the weight. We can adopt a fair-queuing
-> (http://lkml.org/lkml/2008/4/1/234) like approach for this if we want
-> to go that way.
-> 
-> I am not sure if the solutions mentioned above will have the lockstep
-> problem you mentioned above or not. Since we are allocating time
-> slices, and would have anticipation built in (just like cfq), we would
-> have some level of idleness. But this idleness can be predicted based
-> on a thread behavior.
+Not necessarily for the problem at hand, but in the long run, is it
+worth isolating kernel's siginfo from user's siginfo_t (which is pretty
+much carved in stone).
 
-  if I understand that correctly, the problem may arise whenever you
-have to deal with *synchronous* I/O, where you may not see the streams
-of requests generated by tasks as continuously backlogged (and the
-algorithm used to distribute bandwidth does the implicit assumption
-that they are, as in the cfq case).
+Like the existing 'struct k_sigaction' and 'struct sigaction' have
+a 'struct k_siginfo' that is a superset of 'siginfo_t' ?
 
-A cfq-like solution with idling enabled AFAIK should not suffer from
-this problem, as it creates backlog for the process being anticipated.
-But anticipation is not always used, and cfq currently disables it for
-SSDs and in other cases where it may hurt performance (e.g., NCQ drives
-in presence of seeky loads, etc).  So, in these cases, something still
-needs to be done if we want a proportional bandwidth distribution, and
-we don't want to pay the extra cost of idling when it's not strictly
-necessary.
+That might give us more flexibility in passing any additional flags/
+values we need in the kernel ?
