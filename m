@@ -1,8 +1,8 @@
 From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
 Subject: Re: [RFC][PATCH 3/3] Set si_pid to 0 for signals from ancestor
 	namespace
-Date: Wed, 12 Nov 2008 19:21:28 -0800
-Message-ID: <m1d4h0payv.fsf@frodo.ebiederm.org>
+Date: Wed, 12 Nov 2008 19:26:28 -0800
+Message-ID: <m1bpwkpaqj.fsf@frodo.ebiederm.org>
 References: <20081112064139.GA27806@us.ibm.com>
 	<20081112064819.GC27806@us.ibm.com>
 	<20081112163339.GD13269@redhat.com>
