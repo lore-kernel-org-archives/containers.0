@@ -1,13 +1,23 @@
-From: Ryo Tsuruta <ryov-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
+From: Fabio Checconi <fchecconi-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 Subject: Re: [patch 0/4] [RFC] Another proportional weight IO controller
-Date: Thu, 13 Nov 2008 18:05:58 +0900 (JST)
-Message-ID: <20081113.180558.519459540419535699.ryov__14033.5795622834$1226567408$gmane$org@valinux.co.jp>
-References: <20081106153022.215696930@redhat.com>
+Date: Thu, 13 Nov 2008 14:49:49 +0100
+Message-ID: <20081113134949.GH14817__42024.9286610217$1226584257$gmane$org@gandalf.sssup.it>
+References: <20081106163957.GB7461@redhat.com>
+	<1225990327.7803.4776.camel@twins>
+	<20081106170830.GD7461@redhat.com>
+	<e98e18940811061507t3e19183byf2b8b291458ba81b@mail.gmail.com>
+	<20081107141943.GC21884@redhat.com>
+	<e98e18940811071336n58a073d8w2cbaeddd5657d1e9@mail.gmail.com>
+	<20081110141143.GC26956@redhat.com>
+	<e98e18940811111155q4bd73480pebe088fa1adbe2e4@mail.gmail.com>
+	<20081111223024.GA31527@redhat.com>
+	<e98e18940811121320w5f321302n13b526887cbb4012@mail.gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20081106153022.215696930-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <e98e18940811121320w5f321302n13b526887cbb4012-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -17,61 +27,55 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
-Cc: menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, riel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, virtualization-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, jmoyer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, jens.axboe-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, ngupta-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, fernando-gVGce1chcLdL9jVzuh4AOg@public.gmane.org, righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org
+To: Nauman Rafique <nauman-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+Cc: menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, Rik van Riel <riel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, paolo.valente-rcYM44yAMweonA0d6jMUrA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, virtualization-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Jeff Moyer <jmoyer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, "dpshah-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org" <dpshah-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, jens.axboe-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, ngupta-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, fernando-gVGce1chcLdL9jVzuh4AOg@public.gmane.org, Andrea Righi <righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
 Hi,
 
-From: vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org
-Subject: [patch 0/4] [RFC] Another proportional weight IO controller 
-Date: Thu, 06 Nov 2008 10:30:22 -0500
+> From: Nauman Rafique <nauman-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+> Date: Wed, Nov 12, 2008 01:20:13PM -0800
+>
+...
+> >> CFQ can be trivially
+> >> modified to do proportional division (i.e give time slices in
+> >> proportion to weight instead of priority).
+> >> And such a solution would
+> >> avoid idleness problem like the one you mentioned above.
+> >
+> > Can you just elaborate a little on how do you get around idleness problem?
+> > If you don't create idleness than if two tasks in two cgroups are doing
+> > sequential IO, they might simply get into lockstep and we will not achieve
+> > any differentiated service proportionate to their weight.
+> 
+> I was thinking of a more cfq-like solution for proportional division
+> at the elevator level (i.e. not a token based solution). There are two
+> options for proportional bandwidth division at elevator level: 1)
+> change the size of the time slice in proportion to the weights or 2)
+> allocate equal time slice each time but allocate more slices to cgroup
+> with more weight. For (2), we can actually keep track of time taken to
+> serve requests and allocate time slices in such a way that the actual
+> disk time is proportional to the weight. We can adopt a fair-queuing
+> (http://lkml.org/lkml/2008/4/1/234) like approach for this if we want
+> to go that way.
+> 
+> I am not sure if the solutions mentioned above will have the lockstep
+> problem you mentioned above or not. Since we are allocating time
+> slices, and would have anticipation built in (just like cfq), we would
+> have some level of idleness. But this idleness can be predicted based
+> on a thread behavior.
 
-> Hi,
-> 
-> If you are not already tired of so many io controller implementations, here
-> is another one.
-> 
-> This is a very eary very crude implementation to get early feedback to see
-> if this approach makes any sense or not.
-> 
-> This controller is a proportional weight IO controller primarily
-> based on/inspired by dm-ioband. One of the things I personally found little
-> odd about dm-ioband was need of a dm-ioband device for every device we want
-> to control.  I thought that probably we can make this control per request
-> queue and get rid of device mapper driver. This should make configuration
-> aspect easy.
-> 
-> I have picked up quite some amount of code from dm-ioband especially for
-> biocgroup implementation.
-> 
-> I have done very basic testing and that is running 2-3 dd commands in different
-> cgroups on x86_64. Wanted to throw out the code early to get some feedback.
-> 
-> More details about the design and how to are in documentation patch.
-> 
-> Your comments are welcome.
+  if I understand that correctly, the problem may arise whenever you
+have to deal with *synchronous* I/O, where you may not see the streams
+of requests generated by tasks as continuously backlogged (and the
+algorithm used to distribute bandwidth does the implicit assumption
+that they are, as in the cfq case).
 
-Do you have any benchmark results?
-I'm especially interested in the followings:
-- Comparison of disk performance with and without the I/O controller patch.
-- Put uneven I/O loads. Processes, which belong to a cgroup which is
-  given a smaller weight than another cgroup, put heavier I/O load
-  like the following.
-
-     echo 1024 > /cgroup/bio/test1/bio.shares
-     echo 8192 > /cgroup/bio/test2/bio.shares
-
-     echo $$ > /cgroup/bio/test1/tasks
-     dd if=/somefile1-1 of=/dev/null &
-     dd if=/somefile1-2 of=/dev/null &
-     ... 
-     dd if=/somefile1-100 of=/dev/null
-     echo $$ > /cgroup/bio/test2/tasks
-     dd if=/somefile2-1 of=/dev/null &
-     dd if=/somefile2-2 of=/dev/null &
-     ...
-     dd if=/somefile2-10 of=/dev/null &
-
-Thanks,
-Ryo Tsuruta
+A cfq-like solution with idling enabled AFAIK should not suffer from
+this problem, as it creates backlog for the process being anticipated.
+But anticipation is not always used, and cfq currently disables it for
+SSDs and in other cases where it may hurt performance (e.g., NCQ drives
+in presence of seeky loads, etc).  So, in these cases, something still
+needs to be done if we want a proportional bandwidth distribution, and
+we don't want to pay the extra cost of idling when it's not strictly
+necessary.
