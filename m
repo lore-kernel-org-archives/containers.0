@@ -1,39 +1,122 @@
-From: ebiederm@xmission.com (Eric W. Biederman)
-Subject: Re: [PATCH 2/7] proc: Implement support for automounts in task directories
-Date: Thu, 13 Nov 2008 15:39:44 -0800
-Message-ID: <m1zlk3kxfj.fsf@frodo.ebiederm.org>
-References: <m1ej1p2l6u.fsf@frodo.ebiederm.org>
-	<m1abcd2kqk.fsf@frodo.ebiederm.org>
-	<20081106172617.dd51d0af.akpm@linux-foundation.org>
-	<m1abccxpc5.fsf@frodo.ebiederm.org>
-	<20081106184945.179c248a.akpm@linux-foundation.org>
-	<m1iqr0urb8.fsf@frodo.ebiederm.org>
-	<20081106202822.a1af8a6e.akpm@linux-foundation.org>
-	<m1d4h7v8jf.fsf@frodo.ebiederm.org>
-	<20081107080529.6f4de3ad.akpm@linux-foundation.org>
+From: Andrew Morton <akpm@linux-foundation.org>
+Subject: Re: [PATCH] Dynamically allocate struct mem_cgroup_stat_cpu memory
+Date: Thu, 13 Nov 2008 19:18:37 -0800
+Message-ID: <20081113191837.18ed2ade.akpm@linux-foundation.org>
+References: <20081113164201.GV29067@bolzano.suse.de>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1756084AbYKMXp6@vger.kernel.org>
-In-Reply-To: <20081107080529.6f4de3ad.akpm@linux-foundation.org> (Andrew
-	Morton's message of "Fri, 7 Nov 2008 08:05:29 -0800")
+Content-Type: text/plain; charset=US-ASCII
+Content-Transfer-Encoding: 7bit
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1752070AbYKNDTE@vger.kernel.org>
+In-Reply-To: <20081113164201.GV29067@bolzano.suse.de>
 Sender: linux-kernel-owner@vger.kernel.org
-To: Andrew Morton <akpm@linux-foundation.org>
-Cc: linux-kernel@vger.kernel.org, adobriyan@gmail.com, viro@ZenIV.linux.org.uk, containers@lists.osdl.org
+To: Jan Blunck <jblunck@suse.de>
+Cc: Linux-Kernel Mailinglist <linux-kernel@vger.kernel.org>, containers@lists.osdl.org
 List-Id: containers.vger.kernel.org
 
+(cc containers@lists.osdl.org)
 
-On this patchset it looks like the conversation has wound down with no
-real objects except that some very simple pieces of the code appear
-magic.
+On Thu, 13 Nov 2008 17:42:01 +0100 Jan Blunck <jblunck@suse.de> wrote:
 
-
-What looks to be the best path for getting this set of patches merged
-into /proc?
-
-Alexy will you pick this up in your /proc tree as Andrew suggested?
-Do I need to keep my own tree?
-
-Can I have some clear guidance on which hurdles to jump through to
-make forward progress?
-
-Eric
+> When increasing NR_CPUS to 4096 the size of struct mem_cgroup is growing to
+> 507904 bytes per instance on x86_64. This patch changes the allocation of
+> struct mem_cgroup_stat_cpu to be based on the number of configured CPUs during
+> boot time. The init_mem_cgroup still is that huge since it stays statically
+> allocated and therefore uses the compile-time maximum.
+> 
+> Signed-off-by: Jan Blunck <jblunck@suse.de>
+> ---
+>  mm/memcontrol.c |   52 +++++++++++++++++++++++++++++++++++++++++++---------
+>  1 file changed, 43 insertions(+), 9 deletions(-)
+> 
+> Index: b/mm/memcontrol.c
+> ===================================================================
+> --- a/mm/memcontrol.c
+> +++ b/mm/memcontrol.c
+> @@ -59,7 +59,7 @@ struct mem_cgroup_stat_cpu {
+>  } ____cacheline_aligned_in_smp;
+>  
+>  struct mem_cgroup_stat {
+> -	struct mem_cgroup_stat_cpu cpustat[NR_CPUS];
+> +	struct mem_cgroup_stat_cpu *cpustat;
+>  };
+>  
+>  /*
+> @@ -142,7 +142,10 @@ struct mem_cgroup {
+>  	 */
+>  	struct mem_cgroup_stat stat;
+>  };
+> -static struct mem_cgroup init_mem_cgroup;
+> +static struct mem_cgroup_stat_cpu init_mem_cgroup_stat_cpu[NR_CPUS];
+> +static struct mem_cgroup init_mem_cgroup = {
+> +	.stat = { .cpustat = init_mem_cgroup_stat_cpu },
+> +};
+>  
+>  /*
+>   * We use the lower bit of the page->page_cgroup pointer as a bit spin
+> @@ -1097,23 +1100,54 @@ static void free_mem_cgroup_per_zone_inf
+>  static struct mem_cgroup *mem_cgroup_alloc(void)
+>  {
+>  	struct mem_cgroup *mem;
+> +	struct mem_cgroup_stat_cpu *cpustat;
+> +	size_t statsize = nr_cpu_ids * sizeof(*cpustat);
+>  
+> -	if (sizeof(*mem) < PAGE_SIZE)
+> -		mem = kmalloc(sizeof(*mem), GFP_KERNEL);
+> -	else
+> +	if (sizeof(*mem) > PAGE_SIZE) {
+>  		mem = vmalloc(sizeof(*mem));
+> -
+> -	if (mem)
+> +		if (!mem)
+> +			goto out;
+>  		memset(mem, 0, sizeof(*mem));
+> +	} else
+> +		mem = kzalloc(sizeof(*mem), GFP_KERNEL);
+> +
+> +	if (!mem)
+> +		goto out;
+> +
+> +	if (statsize > PAGE_SIZE) {
+> +		cpustat = vmalloc(statsize);
+> +		if (!cpustat)
+> +			goto out_mem;
+> +		memset(cpustat, 0, statsize);
+> +	} else
+> +		cpustat = kzalloc(statsize, GFP_KERNEL);
+> +
+> +	if (!cpustat)
+> +		goto out_mem;
+> +
+> +	mem->stat.cpustat = cpustat;
+>  	return mem;
+> +
+> +out_mem:
+> +	if (is_vmalloc_addr(mem))
+> +		vfree(mem);
+> +	else
+> +		kfree(mem);
+> +out:
+> +	return NULL;
+>  }
+>  
+>  static void mem_cgroup_free(struct mem_cgroup *mem)
+>  {
+> -	if (sizeof(*mem) < PAGE_SIZE)
+> -		kfree(mem);
+> +	if (is_vmalloc_addr(mem->stat.cpustat))
+> +		vfree(mem->stat.cpustat);
+>  	else
+> +		kfree(mem->stat.cpustat);
+> +
+> +	if (is_vmalloc_addr(mem))
+>  		vfree(mem);
+> +	else
+> +		kfree(mem);
+>  }
+>  
+>  
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-kernel" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> Please read the FAQ at  http://www.tux.org/lkml/
