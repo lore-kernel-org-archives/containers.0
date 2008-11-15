@@ -1,7 +1,7 @@
 From: globees-kjy73JwO5oLCP1EIvwFuSQ@public.gmane.org
 Subject: US PATENT FOR SALE
-Date: Sat, 15 Nov 2008 09:40:41 -0700 (MST)
-Message-ID: <3303.98.148.235.50.1226767241.squirrel@box333.bluehost.com>
+Date: Sat, 15 Nov 2008 09:41:07 -0700 (MST)
+Message-ID: <3313.98.148.235.50.1226767267.squirrel@box333.bluehost.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -20,7 +20,7 @@ List-Id: containers.vger.kernel.org
 
 Hello
 
-Illuminating Window Cover Patent Forsale!
+Illuminating Window Cover Patent For sale!
 
 Patent # 6,601,634
 
@@ -31,7 +31,7 @@ Our manufacturer for the aluminum mini blinds is in Canada, however
 manufacturers are a dime a dozen.
 
 We make ever type of window fashion the only difference is our special
-patented technology allows us to with this without any compitition. and
+patented technology allows us to with this without any competition. and
 the colorant we use glows in the dark.
 
 Energy Efficient Solar/UV No Electricity Needed Glow-in-the-Dark Window
