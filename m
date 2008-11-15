@@ -1,7 +1,7 @@
 From: globees-kjy73JwO5oLCP1EIvwFuSQ@public.gmane.org
 Subject: US PATENT FOR SALE
-Date: Sat, 15 Nov 2008 09:42:40 -0700 (MST)
-Message-ID: <3326.98.148.235.50.1226767360.squirrel@box333.bluehost.com>
+Date: Sat, 15 Nov 2008 11:00:44 -0700 (MST)
+Message-ID: <4737.98.148.235.50.1226772044.squirrel@box333.bluehost.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
