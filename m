@@ -1,7 +1,7 @@
 From: globees-kjy73JwO5oLCP1EIvwFuSQ@public.gmane.org
 Subject: US PATENT FOR SALE
-Date: Sat, 15 Nov 2008 09:40:55 -0700 (MST)
-Message-ID: <3309.98.148.235.50.1226767255.squirrel@box333.bluehost.com>
+Date: Sat, 15 Nov 2008 09:41:48 -0700 (MST)
+Message-ID: <3319.98.148.235.50.1226767308.squirrel@box333.bluehost.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -20,7 +20,7 @@ List-Id: containers.vger.kernel.org
 
 Hello
 
-Illuminating Window Cover Patent Forsale!
+Illuminating Window Cover Patent For sale!
 
 Patent # 6,601,634
 
@@ -37,6 +37,7 @@ the colorant we use glows in the dark.
 Energy Efficient Solar/UV No Electricity Needed Glow-in-the-Dark Window
 Illuminating Treatments.
 
+Main Site: www.shopglobeesllc.com/store
 
 Company Homepage: http://globeesllc.com/
 
