@@ -1,275 +1,181 @@
-From: Sukadev Bhattiprolu <sukadev@linux.vnet.ibm.com>
-Subject: [RFC][PATCH][v2] Define/use siginfo_from_ancestor_ns()
-Date: Sat, 15 Nov 2008 13:21:33 -0800
-Message-ID: <20081115212133.GA32140@us.ibm.com>
+From: Hirokazu Takahashi <taka-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
+Subject: Re: [PATCH 6/8] bio-cgroup: The body of bio-cgroup
+Date: Sun, 16 Nov 2008 20:46:09 +0900 (JST)
+Message-ID: <20081116.204609.65892670.taka__34000.5327285782$1226836227$gmane$org@valinux.co.jp>
+References: <20081113.121357.75173118738921642.ryov@valinux.co.jp>
+	<20081113.121433.632868945383117577.ryov@valinux.co.jp>
+	<491D2251.7010702@oss.ntt.co.jp>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1755236AbYKOVYa@vger.kernel.org>
-Content-Disposition: inline
-Sender: linux-kernel-owner@vger.kernel.org
-To: oleg@redhat.com, ebiederm@xmission.com
-Cc: daniel@hozac.com, xemul@openvz.org, containers@lists.osdl.org, linux-kernel@vger.kernel.org
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <491D2251.7010702-gVGce1chcLdL9jVzuh4AOg@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: yoshikawa.takuya-gVGce1chcLdL9jVzuh4AOg@public.gmane.org
+Cc: xen-devel-GuqFBffKawuULHF6PoxzQEEOCMrvLtNR@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, virtualization-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, dm-devel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, agk-9JcytcrH/bA+uJoB2kUjGw@public.gmane.org, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, fernando-gVGce1chcLdL9jVzuh4AOg@public.gmane.org, xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Oleg,
+Hi,
 
-I tried to address most of your comments from the earlier version.
+As you pointed out, cgroup iocontext stuff isn't well designed yet
+since the current implementation of dm-iband doesn't need it.
+I'd like to leave the iocontext stuff to you I/O scheduler guys
+if you want to implement the bio-cgroup infrastructure to handle iocotexts
+as the I/O schedulers expect.
 
-Sukadev
----
-From: Sukadev Bhattiprolu <sukadev@linux.vnet.ibm.com>
-Subject: [PATCH] Define/use siginfo_from_ancestor_ns()
+> Hi,
+> 
+> Ryo Tsuruta wrote:
+> >  
+> > +void init_io_context(struct io_context *ioc)
+> > +{
+> > +	atomic_set(&ioc->refcount, 1);
+> > +	atomic_set(&ioc->nr_tasks, 1);
+> > +	spin_lock_init(&ioc->lock);
+> > +	ioc->ioprio_changed = 0;
+> > +	ioc->ioprio = 0;
+> > +	ioc->last_waited = jiffies; /* doesn't matter... */
+> > +	ioc->nr_batch_requests = 0; /* because this is 0 */
+> > +	ioc->aic = NULL;
+> > +	INIT_RADIX_TREE(&ioc->radix_root, GFP_ATOMIC | __GFP_HIGH);
+> > +	INIT_HLIST_HEAD(&ioc->cic_list);
+> > +	ioc->ioc_data = NULL;
+> > +}
+> > +
+> >  struct io_context *alloc_io_context(gfp_t gfp_flags, int node)
+> >  {
+> >  	struct io_context *ret;
+> >  
+> >  	ret = kmem_cache_alloc_node(iocontext_cachep, gfp_flags, node);
+> > -	if (ret) {
+> > -		atomic_set(&ret->refcount, 1);
+> > -		atomic_set(&ret->nr_tasks, 1);
+> > -		spin_lock_init(&ret->lock);
+> > -		ret->ioprio_changed = 0;
+> > -		ret->ioprio = 0;
+> > -		ret->last_waited = jiffies; /* doesn't matter... */
+> > -		ret->nr_batch_requests = 0; /* because this is 0 */
+> > -		ret->aic = NULL;
+> > -		INIT_RADIX_TREE(&ret->radix_root, GFP_ATOMIC | __GFP_HIGH);
+> > -		INIT_HLIST_HEAD(&ret->cic_list);
+> > -		ret->ioc_data = NULL;
+> > -	}
+> > +	if (ret)
+> > +		init_io_context(ret);
+> >  
+> >  	return ret;
+> >  }
+> 
+> 
+> > +
+> > +/* Create a new bio-cgroup. */
+> > +static struct cgroup_subsys_state *
+> > +bio_cgroup_create(struct cgroup_subsys *ss, struct cgroup *cgrp)
+> > +{
+> > +	struct bio_cgroup *biog;
+> > +	struct io_context *ioc;
+> > +	int ret;
+> > +
+> > +	if (!cgrp->parent) {
+> > +		biog = &default_bio_cgroup;
+> > +		init_io_context(biog->io_context);
+> > +		/* Increment the referrence count not to be released ever. */
+> > +		atomic_inc(&biog->io_context->refcount);
+> > +		idr_init(&bio_cgroup_id);
+> > +		return &biog->css;
+> > +	}
+> > +
+> > +	biog = kzalloc(sizeof(*biog), GFP_KERNEL);
+> > +	ioc = alloc_io_context(GFP_KERNEL, -1);
+> > +	if (!ioc || !biog) {
+> > +		ret = -ENOMEM;
+> > +		goto out_err;
+> > +	}
+> > +	biog->io_context = ioc;
+> 
+> If I understand correctly io_contexts allocated by alloc_io_context() should
+> be owned by some tasks. In this case, the newly created io_context has no
+> owner though biog->io_context->nr_tasks == 1. With the cfq scheduler this may
+> cause some problems especially when cic_free_func() is called because
+> cfq_exit_io_context() would never be called. Am I wrong?
 
-Container-init must appear like 'global-init' to processes within the
-container and hence it must be immune to fatal signals from within the
-container.  But container-init should appear like a normal process  to
-processes in ancestor namespaces and so if same fatal signal is sent
-by a process in parent namespace, the container-init must terminate.
+I think iocontext allocated for a certain cgroup should be owned by the
+cgroup itself, whose code isn't implemented yet. I think you need to
+enhance it a bit if the owner is a cgroup.
 
-There have been several attempts to meet these conflicting requirements
-This patch (tries to) implement the approach suggested recently by Oleg
-Nesterov.
+> > +retry:
+> > +	if (!idr_pre_get(&bio_cgroup_id, GFP_KERNEL)) {
+> > +		ret = -EAGAIN;
+> > +		goto out_err;
+> > +	}
+> > +	spin_lock_irq(&bio_cgroup_idr_lock);
+> > +	ret = idr_get_new_above(&bio_cgroup_id, (void *)biog, 1, &biog->id);
+> > +	spin_unlock_irq(&bio_cgroup_idr_lock);
+> > +	if (ret == -EAGAIN)
+> > +		goto retry;
+> > +	else if (ret)
+> > +		goto out_err;
+> > +
+> > +	return &biog->css;
+> > +out_err:
+> > +	if (biog)
+> > +		kfree(biog);
+> > +	if (ioc)
+> > +		put_io_context(ioc);
+> > +	return ERR_PTR(ret);
+> > +}
+> > +
+> > +/* Delete the bio-cgroup. */
+> > +static void bio_cgroup_destroy(struct cgroup_subsys *ss, struct cgroup *cgrp)
+> > +{
+> > +	struct bio_cgroup *biog = cgroup_bio(cgrp);
+> > +
+> > +	put_io_context(biog->io_context);
+> 
+> Here, I suspects what will happen under the following condition:
+> biog->io_context->refcount: 1 --> 0
+> biog->io_context->nr_tasks: 1 --> 1
+> ==> cfq_dtor() will be called but cfq_exit() has not be called yet.
+> 
+> > +
+> > +	spin_lock_irq(&bio_cgroup_idr_lock);
+> > +	idr_remove(&bio_cgroup_id, biog->id);
+> > +	spin_unlock_irq(&bio_cgroup_idr_lock);
+> > +
+> > +	kfree(biog);
+> > +}
+> > +
+> 
+> > +
+> > +/* Determine the iocontext of the bio-cgroup that issued a given bio. */
+> > +struct io_context *get_bio_cgroup_iocontext(struct bio *bio)
+> > +{
+> > +	struct bio_cgroup *biog = NULL;
+> > +	struct io_context *ioc;
+> > +	int	id = 0;
+> > +
+> > +	id = get_bio_cgroup_id(bio);
+> > +	if (id)
+> > +		biog = find_bio_cgroup(id);
+> > +	if (!biog)
+> > +		biog = &default_bio_cgroup;
+> > +	ioc = biog->io_context;	/* default io_context for this cgroup */
+> > +	atomic_inc(&ioc->refcount);
+> > +	return ioc;
+> > +}
+> > +EXPORT_SYMBOL(get_bio_cgroup_iocontext);
+> 
+> 
+> Thanks,
+> Takuya Yoshikawa
 
-Changelog[v2]:
-	- Have sig_ignored() ignore unblocked SIG_DFL signals to container-init
-	- Use the new SIG_FROM_USER flag and sender's namespace to clear
-	  si_pid for signals crossing namespaces.
-	- Move setting of SIGNAL_UNKILLABLE from copy_process() to copy_signal()
-	- Clear si_pid in sys_rt_sigqueueinfo() when signalling processes in
-	  descendant namespaces
-
-Touch tested, but this is just a quick patch and has known issues.
-
-TODO:
-	- Move this new code under #ifdef CONFIG_PID_NS
-	- Need additional checks for stopped/traced processes.
-	- With 'si_pid = 0' sys_rt_sigqueueinfo() can still terminate own init.
-	- Clear ->si_pid in other namespace-crossing cases including: F_SETSIG,
-	  __do_notify(), etc
-
-Signed-off-by Sukadev Bhattiprolu <sukadev@linux.vnet.ibm.com>
----
- kernel/fork.c   |    2 +
- kernel/signal.c |   86 ++++++++++++++++++++++++++++++++++++++++++++++++------
- 2 files changed, 78 insertions(+), 10 deletions(-)
-
-diff --git a/kernel/fork.c b/kernel/fork.c
-index 28be39a..368f25c 100644
---- a/kernel/fork.c
-+++ b/kernel/fork.c
-@@ -814,6 +814,8 @@ static int copy_signal(unsigned long clone_flags, struct task_struct *tsk)
- 	atomic_set(&sig->live, 1);
- 	init_waitqueue_head(&sig->wait_chldexit);
- 	sig->flags = 0;
-+	if (clone_flags & CLONE_NEWPID)
-+		sig->flags |= SIGNAL_UNKILLABLE;
- 	sig->group_exit_code = 0;
- 	sig->group_exit_task = NULL;
- 	sig->group_stop_count = 0;
-diff --git a/kernel/signal.c b/kernel/signal.c
-index 4530fc6..cd4b2a5 100644
---- a/kernel/signal.c
-+++ b/kernel/signal.c
-@@ -53,7 +53,7 @@ static int sig_handler_ignored(void __user *handler, int sig)
- 		(handler == SIG_DFL && sig_kernel_ignore(sig));
- }
- 
--static int sig_ignored(struct task_struct *t, int sig)
-+static int sig_ignored(struct task_struct *t, int sig, int same_ns)
- {
- 	void __user *handler;
- 
-@@ -68,6 +68,14 @@ static int sig_ignored(struct task_struct *t, int sig)
- 	handler = sig_handler(t, sig);
- 	if (!sig_handler_ignored(handler, sig))
- 		return 0;
-+	/*
-+	 * ignores SIGSTOP/SIGKILL signals to init from same namespace.
-+	 *
-+	 * TODO: Ignore unblocked SIG_DFL signals also here or drop them
-+	 * 	 in get_signal_to_deliver() ?
-+	 */
-+	if (is_container_init(t) && same_ns && sig_kernel_only(sig))
-+		return 1;
- 
- 	/*
- 	 * Tracers may want to know about even ignored signals.
-@@ -609,11 +617,16 @@ static int check_kill_permission(int sig, struct siginfo *info,
-  * Returns true if the signal should be actually delivered, otherwise
-  * it should be dropped.
-  */
--static int prepare_signal(int sig, struct task_struct *p)
-+static int prepare_signal(int sig, struct task_struct *p, int same_ns)
- {
- 	struct signal_struct *signal = p->signal;
- 	struct task_struct *t;
- 
-+	/*
-+	 * TODO: If cinit is stopped by a process from ancestor ns, it
-+	 *  	 must not be continued by a SIGCONT from a descendant
-+	 *  	 process. And vice-versa
-+	 */
- 	if (unlikely(signal->flags & SIGNAL_GROUP_EXIT)) {
- 		/*
- 		 * The process is in the middle of dying, nothing to do.
-@@ -693,7 +706,7 @@ static int prepare_signal(int sig, struct task_struct *p)
- 		}
- 	}
- 
--	return !sig_ignored(p, sig);
-+	return !sig_ignored(p, sig, same_ns);
- }
- 
- /*
-@@ -798,16 +811,38 @@ static inline int legacy_queue(struct sigpending *signals, int sig)
- 	return (sig < SIGRTMIN) && sigismember(&signals->signal, sig);
- }
- 
-+/*
-+ * Return TRUE if this signal originated directly from the user (i.e via
-+ * kill(), tkill(), sigqueue()). 
-+ *
-+ * This differs from similarly named, SI_FROMUSER() in that the latter
-+ * includes signals such as timer, async-io, or message-queue that
-+ * originate _from kernel_.
-+ */
-+#define SIG_FROM_USER	INT_MIN		/* MSB */
-+static inline int siginfo_from_user(siginfo_t *info)
-+{
-+	return !is_si_special(info) && (info->si_signo & SIG_FROM_USER);
-+}
-+
- static int send_signal(int sig, struct siginfo *info, struct task_struct *t,
- 			int group)
- {
- 	struct sigpending *pending;
- 	struct sigqueue *q;
-+	int from_ancestor_ns;
-+
-+	from_ancestor_ns = 0;
-+	if (siginfo_from_user(info)) {
-+		/* if t can't see us we are from parent ns */
-+		if (task_pid_nr_ns(current, task_active_pid_ns(t)) == 0)
-+			from_ancestor_ns = 1;
-+	}
- 
- 	trace_sched_signal_send(sig, t);
- 
- 	assert_spin_locked(&t->sighand->siglock);
--	if (!prepare_signal(sig, t))
-+	if (!prepare_signal(sig, t, !from_ancestor_ns))
- 		return 0;
- 
- 	pending = group ? &t->signal->shared_pending : &t->pending;
-@@ -855,6 +890,9 @@ static int send_signal(int sig, struct siginfo *info, struct task_struct *t,
- 			break;
- 		default:
- 			copy_siginfo(&q->info, info);
-+			if (from_ancestor_ns)
-+				q->info.si_pid = 0;
-+			q->info.si_signo &= ~SIG_FROM_USER;
- 			break;
- 		}
- 	} else if (!is_si_special(info)) {
-@@ -864,6 +902,9 @@ static int send_signal(int sig, struct siginfo *info, struct task_struct *t,
- 		 * and sent by user using something other than kill().
- 		 */
- 			return -EAGAIN;
-+
-+		if (from_ancestor_ns)
-+			return -ENOMEM;
- 	}
- 
- out_set:
-@@ -1295,7 +1336,7 @@ int send_sigqueue(struct sigqueue *q, struct task_struct *t, int group)
- 		goto ret;
- 
- 	ret = 1; /* the signal is ignored */
--	if (!prepare_signal(sig, t))
-+	if (!prepare_signal(sig, t, 1))
- 		goto out;
- 
- 	ret = 0;
-@@ -1722,6 +1763,11 @@ static int ptrace_signal(int signr, siginfo_t *info,
- 	return signr;
- }
- 
-+static inline int siginfo_from_ancestor_ns(siginfo_t *info)
-+{
-+	return SI_FROMUSER(info) && (info->si_pid == 0);
-+}
-+
- int get_signal_to_deliver(siginfo_t *info, struct k_sigaction *return_ka,
- 			  struct pt_regs *regs, void *cookie)
- {
-@@ -1813,9 +1859,12 @@ relock:
- 
- 		/*
- 		 * Global init gets no signals it doesn't want.
-+		 * Container-init gets no signals from its descendants, it
-+		 * doesn't want.
- 		 */
- 		if (unlikely(signal->flags & SIGNAL_UNKILLABLE) &&
--		    !signal_group_exit(signal))
-+				!siginfo_from_ancestor_ns(info) &&
-+				!signal_group_exit(signal))
- 			continue;
- 
- 		if (sig_kernel_stop(signr)) {
-@@ -2207,7 +2256,7 @@ sys_kill(pid_t pid, int sig)
- {
- 	struct siginfo info;
- 
--	info.si_signo = sig;
-+	info.si_signo = sig | SIG_FROM_USER;
- 	info.si_errno = 0;
- 	info.si_code = SI_USER;
- 	info.si_pid = task_tgid_vnr(current);
-@@ -2224,7 +2273,7 @@ static int do_tkill(pid_t tgid, pid_t pid, int sig)
- 	unsigned long flags;
- 
- 	error = -ESRCH;
--	info.si_signo = sig;
-+	info.si_signo = sig | SIG_FROM_USER;
- 	info.si_errno = 0;
- 	info.si_code = SI_TKILL;
- 	info.si_pid = task_tgid_vnr(current);
-@@ -2288,6 +2337,8 @@ asmlinkage long
- sys_rt_sigqueueinfo(pid_t pid, int sig, siginfo_t __user *uinfo)
- {
- 	siginfo_t info;
-+	struct pid *spid;
-+	int error;
- 
- 	if (copy_from_user(&info, uinfo, sizeof(siginfo_t)))
- 		return -EFAULT;
-@@ -2296,10 +2347,25 @@ sys_rt_sigqueueinfo(pid_t pid, int sig, siginfo_t __user *uinfo)
- 	   Nor can they impersonate a kill(), which adds source info.  */
- 	if (info.si_code >= 0)
- 		return -EPERM;
--	info.si_signo = sig;
-+	info.si_signo = sig | SIG_FROM_USER;
- 
- 	/* POSIX.1b doesn't mention process groups.  */
--	return kill_proc_info(sig, &info, pid);
-+	rcu_read_lock();
-+	spid = find_vpid(pid);
-+	/* 
-+	 * A container-init (cinit) ignores/drops fatal signals unless sender
-+	 * is in an ancestor namespace.  Cinit uses 'si_pid == 0' to check if
-+	 * sender is an ancestor. See siginfo_from_ancestor_ns().
-+	 *
-+	 * If signalling a descendant cinit, set si_pid to 0 so it does not
-+	 * get ignored/dropped.
-+	 */
-+	if (!pid_nr_ns(spid, task_active_pid_ns(current)))
-+		info.si_pid = 0;
-+	error = kill_pid_info(sig, &info, spid);
-+	rcu_read_unlock();
-+
-+	return error;
- }
- 
- int do_sigaction(int sig, struct k_sigaction *act, struct k_sigaction *oact)
--- 
-1.5.2.5
+Thank you,
+Hirokazu Takahashi.
