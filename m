@@ -1,14 +1,21 @@
-From: Takuya Yoshikawa <yoshikawa.takuya-gVGce1chcLdL9jVzuh4AOg@public.gmane.org>
-Subject: [PATCH 6/8]Re: bio-cgroup: The body of bio-cgroup
-Date: Mon, 17 Nov 2008 16:50:51 +0900
-Message-ID: <4921225B.4000503__4482.05265352062$1226908248$gmane$org@oss.ntt.co.jp>
-References: <20081113.121357.75173118738921642.ryov@valinux.co.jp>	<20081113.121433.632868945383117577.ryov@valinux.co.jp>	<491D2251.7010702@oss.ntt.co.jp>
-	<20081116.204609.65892670.taka@valinux.co.jp>
+From: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [patch 0/4] [RFC] Another proportional weight IO controller
+Date: Mon, 17 Nov 2008 09:23:09 -0500
+Message-ID: <20081117142309.GA15564__15026.6373916113$1226932444$gmane$org@redhat.com>
+References: <20081106153022.215696930@redhat.com>
+	<20081113.180558.519459540419535699.ryov@valinux.co.jp>
+	<20081113155834.GE7542@redhat.com>
+	<af41c7c40811131041t1b8491b6la5574ebe75f89000@mail.gmail.com>
+	<20081113214642.GG7542@redhat.com>
+	<af41c7c40811131457w472e4a86tb5344cc1d3d366fb@mail.gmail.com>
+	<20081114160525.GE24624@redhat.com>
+	<e98e18940811141444u5947b806v27fac453ed1e8a5@mail.gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20081116.204609.65892670.taka-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <e98e18940811141444u5947b806v27fac453ed1e8a5-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,167 +25,123 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Hirokazu Takahashi <taka-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
-Cc: xen-devel-GuqFBffKawuULHF6PoxzQEEOCMrvLtNR@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, virtualization-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, dm-devel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, agk-9JcytcrH/bA+uJoB2kUjGw@public.gmane.org, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, ngupta-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, fernando-gVGce1chcLdL9jVzuh4AOg@public.gmane.org, xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org
+To: Nauman Rafique <nauman-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+Cc: menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, riel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, Fabio Checconi <fchecconi-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, paolo.valente-rcYM44yAMweonA0d6jMUrA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, virtualization-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, jmoyer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, Divyesh Shah <dpshah-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, jens.axboe-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, ngupta-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, fernando-gVGce1chcLdL9jVzuh4AOg@public.gmane.org, righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Hi i/o controller/scheduler developers,
+On Fri, Nov 14, 2008 at 02:44:22PM -0800, Nauman Rafique wrote:
+> In an attempt to make sure that this discussion leads to
+> something useful, we have summarized the points raised in this
+> discussion and have come up with a strategy for future.
+> The goal of this is to find common ground between all the approaches
+> proposed on this mailing list.
+> 
+> 1 Start with Satoshi's latest patches.
 
-Hirokazu Takahashi wrote:
-> Hi,
-> 
-> As you pointed out, cgroup iocontext stuff isn't well designed yet
-> since the current implementation of dm-iband doesn't need it.
-> I'd like to leave the iocontext stuff to you I/O scheduler guys
-> if you want to implement the bio-cgroup infrastructure to handle iocotexts
-> as the I/O schedulers expect.
+I have had a brief look at both Satoshi's patch and bfq. I kind of like
+bfq's patches for keeping track of per cgroup, per queue data structures.
+May be we can look there also.
 
-Yes, I want to contribute to this because I think the io context tracking part
-can be used for a lot of other things. So it would be nice if we can talk about
-"the most useful desing for everyone."
+> 2 Do the following to support propotional division:
+>  a) Give time slices in proportion to weights (configurable
+>  option). We can support both priorities and weights by doing
+>  propotional division between requests with same priorities.
+> 3 Schedule time slices using WF2Q+ instead of round robin.
+>  Test the performance impact (both throughput and jitter in latency).
+> 4 Do the following to support the goals of 2 level schedulers:
+>  a) Limit the request descriptors allocated to each cgroup by adding
+>  functionality to elv_may_queue()
+>  b) Add support for putting an absolute limit on IO consumed by a
+>  cgroup. Such support exists in dm-ioband and is provided by Andrea
+>  Righi's patches too.
 
+Does dm-iobnd support abosolute limit? I think till last version they did
+not. I have not check the latest version though.
+
+>  c) Add support (configurable option) to keep track of total disk
+> time/sectors/count
+>  consumed at each device, and factor that into scheduling decision
+>  (more discussion needed here)
+> 5 Support multiple layers of cgroups to align IO controller behavior
+>  with CPU scheduling behavior (more discussion?)
+> 6 Incorporate an IO tracking approach which re-uses memory resource
+> controller code but is not dependent on it (may be biocgroup patches from
+> dm-ioband can be used here directly)
+> 7 Start an offline email thread to keep track of progress on the above
+> goals.
 > 
->> Hi,
->>
->> Ryo Tsuruta wrote:
->>>  
->>> +void init_io_context(struct io_context *ioc)
->>> +{
->>> +	atomic_set(&ioc->refcount, 1);
->>> +	atomic_set(&ioc->nr_tasks, 1);
->>> +	spin_lock_init(&ioc->lock);
->>> +	ioc->ioprio_changed = 0;
->>> +	ioc->ioprio = 0;
->>> +	ioc->last_waited = jiffies; /* doesn't matter... */
->>> +	ioc->nr_batch_requests = 0; /* because this is 0 */
->>> +	ioc->aic = NULL;
->>> +	INIT_RADIX_TREE(&ioc->radix_root, GFP_ATOMIC | __GFP_HIGH);
->>> +	INIT_HLIST_HEAD(&ioc->cic_list);
->>> +	ioc->ioc_data = NULL;
->>> +}
->>> +
->>>  struct io_context *alloc_io_context(gfp_t gfp_flags, int node)
->>>  {
->>>  	struct io_context *ret;
->>>  
->>>  	ret = kmem_cache_alloc_node(iocontext_cachep, gfp_flags, node);
->>> -	if (ret) {
->>> -		atomic_set(&ret->refcount, 1);
->>> -		atomic_set(&ret->nr_tasks, 1);
->>> -		spin_lock_init(&ret->lock);
->>> -		ret->ioprio_changed = 0;
->>> -		ret->ioprio = 0;
->>> -		ret->last_waited = jiffies; /* doesn't matter... */
->>> -		ret->nr_batch_requests = 0; /* because this is 0 */
->>> -		ret->aic = NULL;
->>> -		INIT_RADIX_TREE(&ret->radix_root, GFP_ATOMIC | __GFP_HIGH);
->>> -		INIT_HLIST_HEAD(&ret->cic_list);
->>> -		ret->ioc_data = NULL;
->>> -	}
->>> +	if (ret)
->>> +		init_io_context(ret);
->>>  
->>>  	return ret;
->>>  }
->>
->>> +
->>> +/* Create a new bio-cgroup. */
->>> +static struct cgroup_subsys_state *
->>> +bio_cgroup_create(struct cgroup_subsys *ss, struct cgroup *cgrp)
->>> +{
->>> +	struct bio_cgroup *biog;
->>> +	struct io_context *ioc;
->>> +	int ret;
->>> +
->>> +	if (!cgrp->parent) {
->>> +		biog = &default_bio_cgroup;
->>> +		init_io_context(biog->io_context);
->>> +		/* Increment the referrence count not to be released ever. */
->>> +		atomic_inc(&biog->io_context->refcount);
->>> +		idr_init(&bio_cgroup_id);
->>> +		return &biog->css;
->>> +	}
->>> +
->>> +	biog = kzalloc(sizeof(*biog), GFP_KERNEL);
->>> +	ioc = alloc_io_context(GFP_KERNEL, -1);
->>> +	if (!ioc || !biog) {
->>> +		ret = -ENOMEM;
->>> +		goto out_err;
->>> +	}
->>> +	biog->io_context = ioc;
->> If I understand correctly io_contexts allocated by alloc_io_context() should
->> be owned by some tasks. In this case, the newly created io_context has no
->> owner though biog->io_context->nr_tasks == 1. With the cfq scheduler this may
->> cause some problems especially when cic_free_func() is called because
->> cfq_exit_io_context() would never be called. Am I wrong?
+> Please feel free to add/modify items to the list
+> when you respond back. Any comments/suggestions are more than welcome.
 > 
-> I think iocontext allocated for a certain cgroup should be owned by the
-> cgroup itself, whose code isn't implemented yet. I think you need to
-> enhance it a bit if the owner is a cgroup.
+
+Thanks
+Vivek
+
+> Thanks.
+> Divyesh & Nauman
 > 
->>> +retry:
->>> +	if (!idr_pre_get(&bio_cgroup_id, GFP_KERNEL)) {
->>> +		ret = -EAGAIN;
->>> +		goto out_err;
->>> +	}
->>> +	spin_lock_irq(&bio_cgroup_idr_lock);
->>> +	ret = idr_get_new_above(&bio_cgroup_id, (void *)biog, 1, &biog->id);
->>> +	spin_unlock_irq(&bio_cgroup_idr_lock);
->>> +	if (ret == -EAGAIN)
->>> +		goto retry;
->>> +	else if (ret)
->>> +		goto out_err;
->>> +
->>> +	return &biog->css;
->>> +out_err:
->>> +	if (biog)
->>> +		kfree(biog);
->>> +	if (ioc)
->>> +		put_io_context(ioc);
->>> +	return ERR_PTR(ret);
->>> +}
->>> +
->>> +/* Delete the bio-cgroup. */
->>> +static void bio_cgroup_destroy(struct cgroup_subsys *ss, struct cgroup *cgrp)
->>> +{
->>> +	struct bio_cgroup *biog = cgroup_bio(cgrp);
->>> +
->>> +	put_io_context(biog->io_context);
->> Here, I suspects what will happen under the following condition:
->> biog->io_context->refcount: 1 --> 0
->> biog->io_context->nr_tasks: 1 --> 1
->> ==> cfq_dtor() will be called but cfq_exit() has not be called yet.
->>
->>> +
->>> +	spin_lock_irq(&bio_cgroup_idr_lock);
->>> +	idr_remove(&bio_cgroup_id, biog->id);
->>> +	spin_unlock_irq(&bio_cgroup_idr_lock);
->>> +
->>> +	kfree(biog);
->>> +}
->>> +
->>> +
->>> +/* Determine the iocontext of the bio-cgroup that issued a given bio. */
->>> +struct io_context *get_bio_cgroup_iocontext(struct bio *bio)
->>> +{
->>> +	struct bio_cgroup *biog = NULL;
->>> +	struct io_context *ioc;
->>> +	int	id = 0;
->>> +
->>> +	id = get_bio_cgroup_id(bio);
->>> +	if (id)
->>> +		biog = find_bio_cgroup(id);
->>> +	if (!biog)
->>> +		biog = &default_bio_cgroup;
->>> +	ioc = biog->io_context;	/* default io_context for this cgroup */
->>> +	atomic_inc(&ioc->refcount);
->>> +	return ioc;
->>> +}
->>> +EXPORT_SYMBOL(get_bio_cgroup_iocontext);
->>
->> Thanks,
->> Takuya Yoshikawa
-> 
-> Thank you,
-> Hirokazu Takahashi.
-> 
+> On Fri, Nov 14, 2008 at 8:05 AM, Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org> wrote:
+> > On Thu, Nov 13, 2008 at 02:57:29PM -0800, Divyesh Shah wrote:
+> >
+> > [..]
+> >> > > > Ryo, do you still want to stick to two level scheduling? Given the problem
+> >> > > > of it breaking down underlying scheduler's assumptions, probably it makes
+> >> > > > more sense to the IO control at each individual IO scheduler.
+> >> > >
+> >> > > Vivek,
+> >> > >      I agree with you that 2 layer scheduler *might* invalidate some
+> >> > > IO scheduler assumptions (though some testing might help here to
+> >> > > confirm that). However, one big concern I have with proportional
+> >> > > division at the IO scheduler level is that there is no means of doing
+> >> > > admission control at the request queue for the device. What we need is
+> >> > > request queue partitioning per cgroup.
+> >> > >     Consider that I want to divide my disk's bandwidth among 3
+> >> > > cgroups(A, B and C) equally. But say some tasks in the cgroup A flood
+> >> > > the disk with IO requests and completely use up all of the requests in
+> >> > > the rq resulting in the following IOs to be blocked on a slot getting
+> >> > > empty in the rq thus affecting their overall latency. One might argue
+> >> > > that over the long term though we'll get equal bandwidth division
+> >> > > between these cgroups. But now consider that cgroup A has tasks that
+> >> > > always storm the disk with large number of IOs which can be a problem
+> >> > > for other cgroups.
+> >> > >     This actually becomes an even larger problem when we want to
+> >> > > support high priority requests as they may get blocked behind other
+> >> > > lower priority requests which have used up all the available requests
+> >> > > in the rq. With request queue division we can achieve this easily by
+> >> > > having tasks requiring high priority IO belong to a different cgroup.
+> >> > > dm-ioband and any other 2-level scheduler can do this easily.
+> >> > >
+> >> >
+> >> > Hi Divyesh,
+> >> >
+> >> > I understand that request descriptors can be a bottleneck here. But that
+> >> > should be an issue even today with CFQ where a low priority process
+> >> > consume lots of request descriptors and prevent higher priority process
+> >> > from submitting the request.
+> >>
+> >> Yes that is true and that is one of the main reasons why I would lean
+> >> towards 2-level scheduler coz you get request queue division as well.
+> >>
+> >>  I think you already said it and I just
+> >> > reiterated it.
+> >> >
+> >> > I think in that case we need to do something about request descriptor
+> >> > allocation instead of relying on 2nd level of IO scheduler.
+> >> > At this point I am not sure what to do. May be we can take feedback from the
+> >> > respective queue (like cfqq) of submitting application and if it is already
+> >> > backlogged beyond a certain limit, then we can put that application to sleep
+> >> > and stop it from consuming excessive amount of request descriptors
+> >> > (despite the fact that we have free request descriptors).
+> >>
+> >> This should be done per-cgroup rather than per-process.
+> >>
+> >
+> > Yep, per cgroup limit will make more sense. get_request() already calls
+> > elv_may_queue() to get a feedback from IO scheduler. May be here IO
+> > scheduler can make a decision how many request descriptors are already
+> > allocated to this cgroup. And if the queue is congested, then IO scheduler
+> > can deny the fresh request allocation.
+> >
+> > Thanks
+> > Vivek
+> >
