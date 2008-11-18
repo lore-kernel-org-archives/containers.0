@@ -1,21 +1,21 @@
 From: Nauman Rafique <nauman-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
 Subject: Re: [patch 0/4] [RFC] Another proportional weight IO controller
-Date: Tue, 18 Nov 2008 14:33:19 -0800
-Message-ID: <e98e18940811181433o4bb5a147i1e0b9c1baf495ae2__13750.9694592611$1227047840$gmane$org@mail.gmail.com>
-References: <20081113.180558.519459540419535699.ryov@valinux.co.jp>
-	<af41c7c40811131041t1b8491b6la5574ebe75f89000@mail.gmail.com>
-	<20081113214642.GG7542@redhat.com>
-	<af41c7c40811131457w472e4a86tb5344cc1d3d366fb@mail.gmail.com>
+Date: Tue, 18 Nov 2008 15:07:30 -0800
+Message-ID: <e98e18940811181507t6b1473act2efa23df21dab270__17105.1338235431$1227049811$gmane$org@mail.gmail.com>
+References: <20081113214642.GG7542@redhat.com>
 	<20081114160525.GE24624@redhat.com>
 	<e98e18940811141444u5947b806v27fac453ed1e8a5@mail.gmail.com>
 	<20081117142309.GA15564@redhat.com> <4922224A.5030502@cn.fujitsu.com>
 	<e98e18940811172101na345b6bh5c73f9e657aac5a7@mail.gmail.com>
 	<20081118120508.GD15268@gandalf.sssup.it>
+	<20081118140751.GA4283@redhat.com>
+	<20081118144139.GE15268@gandalf.sssup.it>
+	<20081118191208.GJ26308@kernel.dk>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20081118120508.GD15268-f9ZlEuEWxVeACYmtYXMKmw@public.gmane.org>
+In-Reply-To: <20081118191208.GJ26308-tSWWG44O7X1aa/9Udqfwiw@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -25,93 +25,110 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Fabio Checconi <fchecconi-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Cc: menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, riel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, paolo.valente-rcYM44yAMweonA0d6jMUrA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, virtualization-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, jmoyer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, Divyesh Shah <dpshah-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, jens.axboe-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, ngupta-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, fernando-gVGce1chcLdL9jVzuh4AOg@public.gmane.org, righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org
+To: Jens Axboe <jens.axboe-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org>
+Cc: menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, riel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, jmoyer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, virtualization-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Fabio Checconi <fchecconi-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Divyesh Shah <dpshah-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, paolo.valente-rcYM44yAMweonA0d6jMUrA@public.gmane.org, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, ngupta-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, fernando-gVGce1chcLdL9jVzuh4AOg@public.gmane.org, righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Tue, Nov 18, 2008 at 4:05 AM, Fabio Checconi <fchecconi-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org> wrote:
-> Hi,
->
->> From: Nauman Rafique <nauman-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
->> Date: Mon, Nov 17, 2008 09:01:48PM -0800
+On Tue, Nov 18, 2008 at 11:12 AM, Jens Axboe <jens.axboe-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org> wrote:
+> On Tue, Nov 18 2008, Fabio Checconi wrote:
+>> > From: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+>> > Date: Tue, Nov 18, 2008 09:07:51AM -0500
+>> >
+>> > On Tue, Nov 18, 2008 at 01:05:08PM +0100, Fabio Checconi wrote:
+>> ...
+>> > > I have to think a little bit on how it would be possible to support
+>> > > an option for time-only budgets, coexisting with the current behavior,
+>> > > but I think it can be done.
+>> > >
+>> >
+>> > IIUC, bfq and cfq are different in following manner.
+>> >
+>> > a. BFQ employs WF2Q+ for fairness and CFQ employes weighted round robin.
+>> > b. BFQ uses the budget (sector count) as notion of service and CFQ uses
+>> >    time slices.
+>> > c. BFQ supports hierarchical fair queuing and CFQ does not.
+>> >
+>> > We are looking forward for implementation of point C. Fabio seems to
+>> > thinking of supporting time slice as a service (B). It seems like
+>> > convergence of CFQ and BFQ except the point A (WF2Q+ vs weighted round
+>> > robin).
+>> >
+>> > It looks like WF2Q+ provides tighter service bound and bfq guys mention
+>> > that they have been able to ensure throughput while ensuring tighter
+>> > bounds. If that's the case, does that mean BFQ is a replacement for CFQ
+>> > down the line?
+>> >
 >>
->> If we start with bfq patches, this is how plan would look like:
+>> BFQ started from CFQ, extending it in the way you correctly describe,
+>> so it is indeed very similar.  There are also some minor changes to
+>> locking, cic handling, hw_tag detection and to the CIC_SEEKY heuristic.
 >>
->> 1 Start with BFQ take 2.
->> 2 Do the following to support proportional division:
->>  a) Expose the per device weight interface to user, instead of calculating
->>  from priority.
->>  b) Add support for disk time budgets, besides sector budget that is currently
->>  available (configurable option). (Fabio: Do you think we can just emulate
->> that using the existing code?). Another approach would be to give time slices
->> just like CFQ (discussing?)
+>> The two schedulers share similar goals, and in my opinion BFQ can be
+>> considered, in the long term, a CFQ replacement; *but* before talking
+>> about replacing CFQ we have to consider that:
+>>
+>>   - it *needs* review and testing; we've done our best, but for sure
+>>     it's not enough; review and testing are never enough;
+>>   - the service domain fairness, which was one of our objectives, requires
+>>     some extra complexity; the mechanisms we used and the design choices
+>>     we've made may not fit all the needs, or may not be as generic as the
+>>     simpler CFQ's ones;
+>>   - CFQ has years of history behind and has been tuned for a wider
+>>     variety of environments than the ones we've been able to test.
+>>
+>> If time-based fairness is considered more robust and the loss of
+>> service-domain fairness is not a problem, then the two schedulers can
+>> be made even more similar.
 >
->  it should be possible without altering the code.  The slices can be
-> assigned in the time domain using big values for max_budget.  The logic
-> is: each process is assigned a budget (in the range [max_budget/2, max_budget],
-> choosen from the feedback mechanism, driven in __bfq_bfqq_recalc_budget()),
-> and if it does not complete it in timeout_sync milliseconds, it is
-> charged a fixed amount of sectors of service.
+> My preferred approach here would be, in order or TODO:
 >
-> Using big values for max_budget (where big means greater than two
-> times the number of sectors the hard drive can transfer in timeout_sync
-> milliseconds) makes the budgets always to time out, so the disk time
-> is scheduled in slices of timeout_sync.
+> - Create and test the smallish patches for seekiness, hw_tag checking,
+>  and so on for CFQ.
+> - Create and test a WF2Q+ service dispatching patch for CFQ.
 >
-> However this is just a temporary workaround to do some basic testing.
->
-> Modifying the scheduler to support time slices instead of sector
-> budgets would indeed simplify the code; I think that the drawback
-> would be being too unfair in the service domain.  Of course we
-> have to consider how much is important to be fair in the service
-> domain, and how much added complexity/new code can we accept for it.
->
-> [ Better service domain fairness is one of the main reasons why
->  we started working on bfq, so, talking for me and Paolo it _is_
->  important :) ]
->
-> I have to think a little bit on how it would be possible to support
-> an option for time-only budgets, coexisting with the current behavior,
-> but I think it can be done.
+> and if there are leftovers after that, we could even conditionally
+> enable some of those if appropriate. I think the WF2Q+ is quite cool and
+> could be easily usable as the default, so it's definitely a viable
+> alternative.
 
-I think "time only budget" vs "sector budget" is dependent on the
-definition of fairness: do you want to be fair in the time that is
-given to each cgroup or fair in total number of sectors transferred.
-And the appropriate definition of fairness depends on how/where the IO
-scheduler is used. Do you think the work-around that you mentioned
-would have a significant performance difference compared to direct
-built-in support?
+1 Merge BFQ into CFQ (Jens and Fabio). I am assuming that this would
+result in time slices being scheduled using WF2Q+
+2 Do the following to support proportional division:
+ a) Expose the per device weight interface to user, instead of calculating
+ from priority.
+ b) Add support for scheduling bandwidth among a hierarchy of cgroups
+(besides threads)
+3 Do the following to support the goals of 2 level schedulers:
+ a) Limit the request descriptors allocated to each cgroup by adding
+ functionality to elv_may_queue()
+ b) Add support for putting an absolute limit on IO consumed by a
+ cgroup. Such support is provided by Andrea
+ Righi's patches too.
+ c) Add support (configurable option) to keep track of total disk
+time/sectors/count
+ consumed at each device, and factor that into scheduling decision
+ (more discussion needed here)
+6 Incorporate an IO tracking approach which can allow tracking cgroups
+for asynchronous reads/writes.
+7 Start an offline email thread to keep track of progress on the above
+goals.
+
+Jens, what is your opinion everything beyond (1) in the above list?
+
+It would be great if work on (1) and (2)-(7) can happen in parallel so
+that we can see "proportional division of IO bandwidth to cgroups" in
+tree sooner than later.
 
 >
+> My main goal here is basically avoiding addition of Yet Another IO
+> scheduler, especially one that is so closely tied to CFQ already.
 >
->> 4 Do the following to support the goals of 2 level schedulers:
->>  a) Limit the request descriptors allocated to each cgroup by adding
->>  functionality to elv_may_queue()
->>  b) Add support for putting an absolute limit on IO consumed by a
->>  cgroup. Such support is provided by Andrea
->>  Righi's patches too.
->>  c) Add support (configurable option) to keep track of total disk
->> time/sectors/count
->>  consumed at each device, and factor that into scheduling decision
->>  (more discussion needed here)
->> 6 Incorporate an IO tracking approach which re-uses memory resource
->> controller code but is not dependent on it (may be biocgroup patches from
->> dm-ioband can be used here directly)
->> 7 Start an offline email thread to keep track of progress on the above
->> goals.
->>
->> BFQ's support for hierarchy of cgroups means that its close to where
->> we want to get. Any comments on what approach looks better?
->>
+> I'll start things off by splitting cfq into a few files similar to what
+> bfq has done, as I think it makes a lot of sense. Fabio, if you could
+> create patches for the small behavioural changes you made, we can
+> discuss and hopefully merge those next.
 >
-> The main problems with this approach (as with the cfq-based ones) in
-> my opinion are:
->  - the request descriptor allocation problem Divyesh talked about,
->  - the impossibility of respecting different weights, resulting from
->    the interlock problem with synchronous requests Vivek talked about
->    [ in cfq/bfq this can happen when idling is disabled, e.g., for
->      SSDs, or when using NCQ ],
+> --
+> Jens Axboe
 >
-> but I think that correctly addressing your points 4.a) and 4.b) should
-> solve them.
 >
