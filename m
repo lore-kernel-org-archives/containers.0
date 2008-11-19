@@ -1,82 +1,41 @@
-From: Aaron Carroll <aaronc-M3ycANVxPotyL3EAZA59ERCuuivNXqWP@public.gmane.org>
-Subject: Re: [patch 0/4] [RFC] Another proportional weight IO controller
-Date: Wed, 19 Nov 2008 12:52:42 +1100
-Message-ID: <4923716A.5090104__12066.323697991$1227059860$gmane$org@gelato.unsw.edu.au>
-References: <af41c7c40811131457w472e4a86tb5344cc1d3d366fb@mail.gmail.com>
-	<20081114160525.GE24624@redhat.com>
-	<e98e18940811141444u5947b806v27fac453ed1e8a5@mail.gmail.com>
-	<20081117142309.GA15564@redhat.com>
-	<4922224A.5030502@cn.fujitsu.com>
-	<e98e18940811172101na345b6bh5c73f9e657aac5a7@mail.gmail.com>
-	<20081118120508.GD15268@gandalf.sssup.it>
-	<20081118140751.GA4283@redhat.com>
-	<20081118144139.GE15268@gandalf.sssup.it>
-	<20081118191208.GJ26308@kernel.dk>
-	<20081118211442.GG15268@gandalf.sssup.it>
+From: Alexey Dobriyan <adobriyan@gmail.com>
+Subject: Re: [PATCH 2/7] proc: Implement support for automounts in task
+	directories
+Date: Wed, 19 Nov 2008 05:35:07 +0300
+Message-ID: <20081119023507.GA5888@x200.localdomain>
+References: <m1abcd2kqk.fsf@frodo.ebiederm.org> <20081106172617.dd51d0af.akpm@linux-foundation.org> <m1abccxpc5.fsf@frodo.ebiederm.org> <20081106184945.179c248a.akpm@linux-foundation.org> <m1iqr0urb8.fsf@frodo.ebiederm.org> <20081106202822.a1af8a6e.akpm@linux-foundation.org> <m1d4h7v8jf.fsf@frodo.ebiederm.org> <20081107080529.6f4de3ad.akpm@linux-foundation.org> <m1zlk3kxfj.fsf@frodo.ebiederm.org> <20081119000749.GA2912@x200.localdomain>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20081118211442.GG15268-f9ZlEuEWxVeACYmtYXMKmw@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Fabio Checconi <fchecconi-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Cc: menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, riel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, paolo.valente-rcYM44yAMweonA0d6jMUrA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Jens Axboe <jens.axboe-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, virtualization-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, jmoyer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, Divyesh Shah <dpshah-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, ngupta-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, fernando-gVGce1chcLdL9jVzuh4AOg@public.gmane.org, righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org
+Content-Type: text/plain; charset=us-ascii
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1752684AbYKSCbh@vger.kernel.org>
+Content-Disposition: inline
+In-Reply-To: <20081119000749.GA2912@x200.localdomain>
+Sender: linux-kernel-owner@vger.kernel.org
+To: "Eric W. Biederman" <ebiederm@xmission.com>
+Cc: Andrew Morton <akpm@linux-foundation.org>, linux-kernel@vger.kernel.org, viro@ZenIV.linux.org.uk, containers@lists.osdl.org
 List-Id: containers.vger.kernel.org
 
-Fabio Checconi wrote:
->   - To detect hw tagging in BFQ we consider a sample valid iff the
->     number of requests that the scheduler could have dispatched (given
->     by cfqd->rb_queued + cfqd->rq_in_driver, i.e., the ones still into
->     the scheduler plus the ones into the driver) is higher than the
->     CFQ_HW_QUEUE_MIN threshold.  This obviously caused no problems
->     during testing, but the way CFQ uses now seems a little bit
->     strange.
+On Wed, Nov 19, 2008 at 03:07:49AM +0300, Alexey Dobriyan wrote:
+> On Thu, Nov 13, 2008 at 03:39:44PM -0800, Eric W. Biederman wrote:
+> > On this patchset it looks like the conversation has wound down with no
+> > real objects except that some very simple pieces of the code appear
+> > magic.
+> > 
+> > 
+> > What looks to be the best path for getting this set of patches merged
+> > into /proc?
+> 
+> Al's ACK minimum.
+> 
+> > Alexy will you pick this up in your /proc tree as Andrew suggested?
+> 
+> Yep, doing it right now.
+> 
+> > Do I need to keep my own tree?
+> 
+> No need.
+> 
+> > Can I have some clear guidance on which hurdles to jump through to
+> > make forward progress?
 
-BFQ's tag detection logic is broken in the same way that CFQ's used to
-be.  Explanation is in this patch:
-
-============================x8============================
-commit 45333d5a31296d0af886d94f1d08f128231cab8e
-Author: Aaron Carroll <aaronc-M3ycANVxPotyL3EAZA59ERCuuivNXqWP@public.gmane.org>
-Date:   Tue Aug 26 15:52:36 2008 +0200
-
-    cfq-iosched: fix queue depth detection
-    
-    CFQ's detection of queueing devices assumes a non-queuing device and detects
-    if the queue depth reaches a certain threshold.  Under some workloads (e.g.
-    synchronous reads), CFQ effectively forces a unit queue depth, thus defeating
-    the detection logic.  This leads to poor performance on queuing hardware,
-    since the idle window remains enabled.
-    
-    This patch inverts the sense of the logic: assume a queuing-capable device,
-    and detect if the depth does not exceed the threshold.
-============================x8=============================
-
-
-BFQ seems better than CFQ at avoiding this problem though.  Using the following fio
-job, I can routinely trigger it for 10s or so before BFQ detects queuing.
-
-
-============================x8=============================
-[global]
-direct=1
-ioengine=sync
-norandommap
-randrepeat=0
-filename=/dev/sdb
-bs=16k
-runtime=200
-time_based
-
-[reader]
-rw=randread
-numjobs=128
-============================x8=============================
+OK, I fixed some small issues and pushed out to proc.git so it starts
+propagate to -next.
