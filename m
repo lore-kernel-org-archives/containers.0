@@ -1,15 +1,23 @@
-From: Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: Re: [PATCH] cgroups: fix a serious bug in cgroupstats
-Date: Wed, 19 Nov 2008 14:00:55 +0530
-Message-ID: <4923CEBF.8000402__37671.7277024456$1227083608$gmane$org@linux.vnet.ibm.com>
-References: <4923CAF1.1020404@cn.fujitsu.com>
-	<20081119002552.3840e3d2.akpm@linux-foundation.org>
-Reply-To: balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
+From: Fabio Checconi <fchecconi-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Subject: Re: [patch 0/4] [RFC] Another proportional weight IO controller
+Date: Wed, 19 Nov 2008 11:17:01 +0100
+Message-ID: <20081119101701.GA20915__5818.14957918159$1227089824$gmane$org@gandalf.sssup.it>
+References: <e98e18940811141444u5947b806v27fac453ed1e8a5@mail.gmail.com>
+	<20081117142309.GA15564@redhat.com>
+	<4922224A.5030502@cn.fujitsu.com>
+	<e98e18940811172101na345b6bh5c73f9e657aac5a7@mail.gmail.com>
+	<20081118120508.GD15268@gandalf.sssup.it>
+	<20081118140751.GA4283@redhat.com>
+	<20081118144139.GE15268@gandalf.sssup.it>
+	<20081118191208.GJ26308@kernel.dk>
+	<20081118211442.GG15268@gandalf.sssup.it>
+	<4923716A.5090104@gelato.unsw.edu.au>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20081119002552.3840e3d2.akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <4923716A.5090104-M3ycANVxPotyL3EAZA59ERCuuivNXqWP@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,62 +27,60 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
-Cc: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, LKML <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, stable-DgEjT+Ai2ygdnm+yROfE0A@public.gmane.org
+To: Aaron Carroll <aaronc-M3ycANVxPotyL3EAZA59ERCuuivNXqWP@public.gmane.org>
+Cc: menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, riel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, paolo.valente-rcYM44yAMweonA0d6jMUrA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Jens Axboe <jens.axboe-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, virtualization-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, jmoyer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, Divyesh Shah <dpshah-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, ngupta-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, fernando-gVGce1chcLdL9jVzuh4AOg@public.gmane.org, righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Andrew Morton wrote:
-> On Wed, 19 Nov 2008 16:14:41 +0800 Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org> wrote:
+> From: Aaron Carroll <aaronc-M3ycANVxPotyL3EAZA59ERCuuivNXqWP@public.gmane.org>
+> Date: Wed, Nov 19, 2008 12:52:42PM +1100
+>
+> Fabio Checconi wrote:
+> >   - To detect hw tagging in BFQ we consider a sample valid iff the
+> >     number of requests that the scheduler could have dispatched (given
+> >     by cfqd->rb_queued + cfqd->rq_in_driver, i.e., the ones still into
+> >     the scheduler plus the ones into the driver) is higher than the
+> >     CFQ_HW_QUEUE_MIN threshold.  This obviously caused no problems
+> >     during testing, but the way CFQ uses now seems a little bit
+> >     strange.
 > 
->> Try this, and you'll get oops immediately:
-> 
-> I guess that's wrong.
-> 
->>  # cd Documentation/accounting/
->>  # gcc -o getdelays getdelays.c
->>  # mount -t cgroup -o debug xxx /mnt
->>  # ./getdelays -C /mnt/tasks
->>
->> Because a normal file's dentry->d_fsdata is a pointer to struct cftype,
->> not struct cgroup.
->>
->> After the patch, it returns EINVAL if we try to get cgroupstats
->> from a normal file.
->>
->> CC: Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
->> Signed-off-by: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
->> ---
->>  kernel/cgroup.c |    7 +++++--
->>  1 files changed, 5 insertions(+), 2 deletions(-)
->>
->> diff --git a/kernel/cgroup.c b/kernel/cgroup.c
->> index 358e775..f6f5219 100644
->> --- a/kernel/cgroup.c
->> +++ b/kernel/cgroup.c
->> @@ -2039,10 +2039,13 @@ int cgroupstats_build(struct cgroupstats *stats, struct dentry *dentry)
->>  	struct cgroup *cgrp;
->>  	struct cgroup_iter it;
->>  	struct task_struct *tsk;
->> +
->>  	/*
->> -	 * Validate dentry by checking the superblock operations
->> +	 * Validate dentry by checking the superblock operations,
->> +	 * and make sure it's a directory.
->>  	 */
->> -	if (dentry->d_sb->s_op != &cgroup_ops)
->> +	if (dentry->d_sb->s_op != &cgroup_ops ||
->> +	    !S_ISDIR(dentry->d_inode->i_mode))
->>  		 goto err;
->>  
->>  	ret = 0;
-> 
-> The patch applies OK to 2.6.25, 2.6.26 and to 2.6.27.  I marked it as
-> needing backport to those kernel versions.  Please let me know if that
-> was inappropriate.
+> BFQ's tag detection logic is broken in the same way that CFQ's used to
+> be.  Explanation is in this patch:
 > 
 
-Thanks, it does need to be backported. Thanks Li for spotting the problem.
+If you look at bfq_update_hw_tag(), the logic introduced by the patch
+you mention is still there; BFQ starts with ->hw_tag = 1, and updates it
+every 32 valid samples.  What changed WRT your patch, apart from the
+number of samples, is that the condition for a sample to be valid is:
+
+  bfqd->rq_in_driver + bfqd->queued >= 5
+
+while in your patch it is:
+
+  cfqd->rq_queued > 5 || cfqd->rq_in_driver > 5
+
+We preferred the first one because that sum better reflects the number
+of requests that could have been dispatched, and I don't think that this
+is wrong.
+
+There is a problem, but it's not within the tag detection logic itself.
+From some quick experiments, what happens is that when a process starts,
+CFQ considers it seeky (*), BFQ doesn't.  As a side effect BFQ does not
+always dispatch enough requests to correctly detect tagging.
+
+At the first seek you cannot tell if the process is going to bee seeky
+or not, and we have chosen to consider it sequential because it improved
+fairness in some sequential workloads (the CIC_SEEKY heuristic is used
+also to determine the idle_window length in [bc]fq_arm_slice_timer()).
+
+Anyway, we're dealing with heuristics, and they tend to favor some
+workload over other ones.  If recovering this thoughput loss is more
+important than a transient unfairness due to short idling windows assigned
+to sequential processes when they start, I've no problems in switching
+the CIC_SEEKY logic to consider a process seeky when it starts.
+
+Thank you for testing and for pointing out this issue, we missed it
+in our testing.
 
 
--- 
-	Balbir
+(*) to be correct, the initial classification depends on the position
+    of the first accessed sector.
