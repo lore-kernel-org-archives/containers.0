@@ -1,7 +1,7 @@
 From: Gui Jianfeng <guijianfeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Subject: [PATCH 5/7] announce tasks moving in bio-cgroup
-Date: Thu, 20 Nov 2008 19:14:04 +0800
-Message-ID: <4925467C.9000509__5079.47479277409$1227179986$gmane$org@cn.fujitsu.com>
+Subject: [PATCH 6/7] support checking of subsystem dependencies
+Date: Thu, 20 Nov 2008 19:14:57 +0800
+Message-ID: <492546B1.70708__17813.358983449$1227180018$gmane$org@cn.fujitsu.com>
 References: <4925445C.10302@cn.fujitsu.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -21,88 +21,84 @@ To: Andrea Righi <righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Ryo Tsu
 Cc: menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Some subsystems may be of interest to task moving in bio-cgroups.
-So just announce each task moving.
+From: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
 
-Signed-of-by: Gui Jianfeng <guijianfeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+This allows one subsystem to require that it only be mounted when some
+other subsystems are also present in or not in the proposed hierarchy.
+
+Signed-off-by: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
 ---
- include/linux/biotrack.h |    9 +++++++++
- mm/biotrack.c            |   32 ++++++++++++++++++++++++++++++++
- 2 files changed, 41 insertions(+), 0 deletions(-)
+ Documentation/cgroups/cgroups.txt |    5 +++++
+ include/linux/cgroup.h            |    2 ++
+ kernel/cgroup.c                   |   21 ++++++++++++++++++++-
+ 3 files changed, 27 insertions(+), 1 deletions(-)
 
-diff --git a/include/linux/biotrack.h b/include/linux/biotrack.h
-index 371d263..546017c 100644
---- a/include/linux/biotrack.h
-+++ b/include/linux/biotrack.h
-@@ -7,6 +7,15 @@
+diff --git a/Documentation/cgroups/cgroups.txt b/Documentation/cgroups/cgroups.txt
+index d9014aa..df648c6 100644
+--- a/Documentation/cgroups/cgroups.txt
++++ b/Documentation/cgroups/cgroups.txt
+@@ -534,6 +534,11 @@ and root cgroup. Currently this will only involve movement between
+ the default hierarchy (which never has sub-cgroups) and a hierarchy
+ that is being created/destroyed (and hence has no sub-cgroups).
  
- #ifdef	CONFIG_CGROUP_BIO
++int subsys_depend(struct cgroup_subsys *ss, unsigned long subsys_bits)
++Called when a cgroup subsystem wants to check if some other subsystems
++are also present in the proposed hierarchy. If this method returns error,
++the mount of the cgroup filesystem will fail.
++
+ 4. Questions
+ ============
  
-+struct tsk_move_msg {
-+	int old_id;
-+	int new_id;
-+	struct task_struct *tsk;
-+};
-+
-+extern int register_biocgroup_notifier(struct notifier_block *nb);
-+extern int unregister_biocgroup_notifier(struct notifier_block *nb);
-+
- struct io_context;
- struct block_device;
- 
-diff --git a/mm/biotrack.c b/mm/biotrack.c
-index ba6b45b..979efcd 100644
---- a/mm/biotrack.c
-+++ b/mm/biotrack.c
-@@ -21,6 +21,22 @@
- #include <linux/blkdev.h>
- #include <linux/biotrack.h>
- 
-+#define MOVETASK 0
-+static BLOCKING_NOTIFIER_HEAD(biocgroup_chain);
-+
-+int register_biocgroup_notifier(struct notifier_block *nb)
-+{
-+	return blocking_notifier_chain_register(&biocgroup_chain, nb);
-+}
-+EXPORT_SYMBOL(register_biocgroup_notifier);
-+
-+int unregister_biocgroup_notifier(struct notifier_block *nb)
-+{
-+	return blocking_notifier_chain_unregister(&biocgroup_chain, nb);
-+}
-+EXPORT_SYMBOL(unregister_biocgroup_notifier);
-+
-+
- /*
-  * The block I/O tracking mechanism is implemented on the cgroup memory
-  * controller framework. It helps to find the the owner of an I/O request 
-@@ -299,11 +315,27 @@ static int bio_cgroup_populate(struct cgroup_subsys *ss, struct cgroup *cgrp)
- 	return cgroup_add_files(cgrp, ss, bio_files, ARRAY_SIZE(bio_files));
+diff --git a/include/linux/cgroup.h b/include/linux/cgroup.h
+index 1164963..1899449 100644
+--- a/include/linux/cgroup.h
++++ b/include/linux/cgroup.h
+@@ -329,6 +329,8 @@ struct cgroup_subsys {
+ 			struct cgroup *cgrp);
+ 	void (*post_clone)(struct cgroup_subsys *ss, struct cgroup *cgrp);
+ 	void (*bind)(struct cgroup_subsys *ss, struct cgroup *root);
++	int (*subsys_depend)(struct cgroup_subsys *ss,
++			     unsigned long subsys_bits);
+ 	/*
+ 	 * This routine is called with the task_lock of mm->owner held
+ 	 */
+diff --git a/kernel/cgroup.c b/kernel/cgroup.c
+index a512a75..8a07023 100644
+--- a/kernel/cgroup.c
++++ b/kernel/cgroup.c
+@@ -761,6 +761,25 @@ static int cgroup_show_options(struct seq_file *seq, struct vfsmount *vfs)
+ 	return 0;
  }
  
-+static void bio_cgroup_attach(struct cgroup_subsys *ss,
-+			      struct cgroup *cont, struct cgroup *oldcont,
-+			      struct task_struct *tsk)
++static int check_subsys_dependency(unsigned long subsys_bits)
 +{
-+	struct tsk_move_msg tmm;
-+	struct bio_cgroup *old_biog, *new_biog;
++	int i;
++	int ret;
++	struct cgroup_subsys *ss;
 +	
-+	old_biog = cgroup_bio(oldcont);
-+	new_biog = cgroup_bio(cont);
-+	tmm.old_id = old_biog->id;
-+	tmm.new_id = new_biog->id;
-+	tmm.tsk = tsk;
-+	blocking_notifier_call_chain(&biocgroup_chain, MOVETASK, &tmm);
++	for (i = 0; i < CGROUP_SUBSYS_COUNT; i++) {
++		ss = subsys[i];
++		
++		if (test_bit(i, &subsys_bits) && ss->subsys_depend) {
++			ret = ss->subsys_depend(ss, subsys_bits);
++			if (ret)
++				return ret;
++		}
++	}
++	
++	return 0;
 +}
 +
- struct cgroup_subsys bio_cgroup_subsys = {
- 	.name		= "bio",
- 	.create		= bio_cgroup_create,
- 	.destroy	= bio_cgroup_destroy,
- 	.populate	= bio_cgroup_populate,
-+	.attach         = bio_cgroup_attach,
- 	.subsys_id	= bio_cgroup_subsys_id,
- };
+ struct cgroup_sb_opts {
+ 	unsigned long subsys_bits;
+ 	unsigned long flags;
+@@ -821,7 +840,7 @@ static int parse_cgroupfs_options(char *data,
+ 	if (!opts->subsys_bits)
+ 		return -EINVAL;
  
--- 1.5.4.rc3 
+-	return 0;
++	return check_subsys_dependency(opts->subsys_bits);
+ }
+ 
+ static int cgroup_remount(struct super_block *sb, int *flags, char *data)
+-- 1.5.4.rc3
