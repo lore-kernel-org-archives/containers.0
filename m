@@ -1,7 +1,7 @@
 From: Gui Jianfeng <guijianfeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Subject: [PATCH 3/7] Introduction for new feature
-Date: Thu, 20 Nov 2008 19:11:08 +0800
-Message-ID: <492545CC.6000909__7065.14030830494$1227179789$gmane$org@cn.fujitsu.com>
+Subject: [PATCH 4/7] enables bio-cgroup in io-throttle, have to mount together
+Date: Thu, 20 Nov 2008 19:12:23 +0800
+Message-ID: <49254617.2090409__31914.5406749614$1227179879$gmane$org@cn.fujitsu.com>
 References: <4925445C.10302@cn.fujitsu.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -21,51 +21,168 @@ To: Andrea Righi <righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Ryo Tsu
 Cc: menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Documentation of using bio-cgroup in io-throttle.
+This patch enables bio-cgroup in io-throttle, but you have to mount them together.
 
-Signed-off-by: Gui Jianfeng <guijianfeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+Signed-of-by: Gui Jianfeng <guijianfeng-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
 ---
- Documentation/controllers/io-throttle.txt |   29 ++++++++++++++++++++++++++++-
- 1 files changed, 28 insertions(+), 1 deletions(-)
+ block/blk-io-throttle.c    |    7 +++++--
+ include/linux/biotrack.h   |    2 ++
+ include/linux/memcontrol.h |    3 ---
+ init/Kconfig               |    2 +-
+ mm/biotrack.c              |   35 +++++++++++++++++++++++++++++++++++
+ mm/memcontrol.c            |   30 ------------------------------
+ 6 files changed, 43 insertions(+), 36 deletions(-)
 
-diff --git a/Documentation/controllers/io-throttle.txt b/Documentation/controllers/io-throttle.txt
-index 2a3bbd1..d3510ae 100644
---- a/Documentation/controllers/io-throttle.txt
-+++ b/Documentation/controllers/io-throttle.txt
-@@ -223,7 +223,34 @@ $ cat /proc/$$/io-throttle-stat
-    \ \_______global bandwidth sleep (clock ticks)
-     \________global bandwidth counter
+diff --git a/block/blk-io-throttle.c b/block/blk-io-throttle.c
+index bb27587..e6a0a03 100644
+--- a/block/blk-io-throttle.c
++++ b/block/blk-io-throttle.c
+@@ -22,7 +22,7 @@
+ #include <linux/init.h>
+ #include <linux/module.h>
+ #include <linux/res_counter.h>
+-#include <linux/memcontrol.h>
++#include <linux/biotrack.h>
+ #include <linux/slab.h>
+ #include <linux/gfp.h>
+ #include <linux/err.h>
+@@ -649,7 +649,10 @@ static struct iothrottle *get_iothrottle_from_page(struct page *page)
+ 	if (!cgrp)
+ 		return NULL;
+ 	iot = cgroup_to_iothrottle(cgrp);
+-	css_get(&iot->css);
++	if (iot)
++		css_get(&iot->css);
++	else
++		return NULL;
+ 	put_cgroup_from_page(page);
  
--2.4. Examples
-+2.4. Buffered-io tracking
-+bio-cgroup can be used to track buffered-io(in delay-write condition) and for 
-+proper throttling. You can directly mount io-throttle and bio-cgroup together 
-+to track buffered-io. An alternative choice is making use of bio-cgroup id. An 
-+association between a given io-throttle cgroup and a given bio-cgroup cgroup can 
-+be built by echo a bio-cgroup id to the file blockio.bio_id. This file is exported 
-+for the purpose of associating io-throttle and bio-cgroup groups. If you'd like to 
-+create an association, you must ensure the io-throttle group is empty, that is, 
-+there are no tasks in this group. otherwise, association creating will fail. If an 
-+association is successfully built, task moving in this group will be denied. Of 
-+course, you can remove an association, just echo an negative number into 
-+blockio.bio_id.
-+
-+Example:
-+* Create an association between a given io-throttle group and a given bio-cgroup 
-+group.
-+$ mount -t cgroup -o bio bio-cgroup /mnt/bio-cgroup/
-+$ cd /mnt/bio-cgroup/
-+$ mkdir bio-grp
-+$ cat bio-grp/bio.id
-+1
-+
-+$ mount -t cgroup -o blockio blockio /mnt/throttle
-+$ cd /mnt/throttle
-+$ mkdir foo
-+$ echo 1 > foo/blockio.bio_id
-+
-+2.5. Examples
+ 	return iot;
+diff --git a/include/linux/biotrack.h b/include/linux/biotrack.h
+index d352abd..371d263 100644
+--- a/include/linux/biotrack.h
++++ b/include/linux/biotrack.h
+@@ -21,6 +21,8 @@ static inline void __init_bio_page_cgroup(struct page_cgroup *pc)
+ {
+ 	pc->bio_cgroup_id = 0;
+ }
++extern struct cgroup *get_cgroup_from_page(struct page *page);
++extern void put_cgroup_from_page(struct page *page);
  
- * Mount the cgroup filesystem (blockio subsystem):
-   # mkdir /mnt/cgroup
+ static inline int bio_cgroup_disabled(void)
+ {
+diff --git a/include/linux/memcontrol.h b/include/linux/memcontrol.h
+index 009e5e4..a7e3dc2 100644
+--- a/include/linux/memcontrol.h
++++ b/include/linux/memcontrol.h
+@@ -49,9 +49,6 @@ int task_in_mem_cgroup(struct task_struct *task, const struct mem_cgroup *mem);
+ 
+ extern struct mem_cgroup *mem_cgroup_from_task(struct task_struct *p);
+ 
+-extern struct cgroup *get_cgroup_from_page(struct page *page);
+-extern void put_cgroup_from_page(struct page *page);
+-
+ #define mm_match_cgroup(mm, cgroup)	\
+ 	((cgroup) == mem_cgroup_from_task((mm)->owner))
+ 
+diff --git a/init/Kconfig b/init/Kconfig
+index 06649c5..4082e8e 100644
+--- a/init/Kconfig
++++ b/init/Kconfig
+@@ -315,7 +315,7 @@ config CGROUP_DEVICE
+ 
+ config CGROUP_IO_THROTTLE
+ 	bool "Enable cgroup I/O throttling (EXPERIMENTAL)"
+-	depends on CGROUPS && CGROUP_MEM_RES_CTLR && RESOURCE_COUNTERS && EXPERIMENTAL
++	depends on CGROUPS && CGROUP_BIO && RESOURCE_COUNTERS && EXPERIMENTAL
+ 	help
+ 	  This allows to limit the maximum I/O bandwidth for specific
+ 	  cgroup(s).
+diff --git a/mm/biotrack.c b/mm/biotrack.c
+index 1af5910..ba6b45b 100644
+--- a/mm/biotrack.c
++++ b/mm/biotrack.c
+@@ -213,6 +213,41 @@ static struct bio_cgroup *find_bio_cgroup(int id)
+ 	return biog;
+ }
+ 
++struct cgroup *get_cgroup_from_page(struct page *page)
++{
++	struct page_cgroup *pc;
++	struct bio_cgroup *biog;
++	struct cgroup *cgrp = NULL;
++
++	pc = lookup_page_cgroup(page);
++	if (pc) {
++		lock_page_cgroup(pc);
++		biog = find_bio_cgroup(pc->bio_cgroup_id);
++		if (biog) {
++			css_get(&biog->css);
++			cgrp = biog->css.cgroup;
++		}
++		unlock_page_cgroup(pc);
++	}
++
++	return cgrp;
++}
++
++void put_cgroup_from_page(struct page *page)
++{
++	struct bio_cgroup *biog;
++	struct page_cgroup *pc;
++
++	pc = lookup_page_cgroup(page);
++	if (pc) {
++		lock_page_cgroup(pc);
++		biog = find_bio_cgroup(pc->bio_cgroup_id);
++		if (biog)
++			css_put(&biog->css);
++		unlock_page_cgroup(pc);
++	}
++}
++
+ /* Determine the bio-cgroup id of a given bio. */
+ int get_bio_cgroup_id(struct bio *bio)
+ {
+diff --git a/mm/memcontrol.c b/mm/memcontrol.c
+index 097278c..95048fe 100644
+--- a/mm/memcontrol.c
++++ b/mm/memcontrol.c
+@@ -241,36 +241,6 @@ struct mem_cgroup *mem_cgroup_from_task(struct task_struct *p)
+ 				struct mem_cgroup, css);
+ }
+ 
+-struct cgroup *get_cgroup_from_page(struct page *page)
+-{
+-	struct page_cgroup *pc;
+-	struct cgroup *cgrp = NULL;
+-
+-	pc = lookup_page_cgroup(page);
+-	if (pc) {
+-		lock_page_cgroup(pc);
+-		if(pc->mem_cgroup) {
+-			css_get(&pc->mem_cgroup->css);
+-			cgrp = pc->mem_cgroup->css.cgroup;
+-		}
+-		unlock_page_cgroup(pc);
+-	}
+-
+-	return cgrp;
+-}
+-
+-void put_cgroup_from_page(struct page *page)
+-{
+-	struct page_cgroup *pc;
+-
+-	pc = lookup_page_cgroup(page);
+-	if (pc) {
+-		lock_page_cgroup(pc);
+-		css_put(&pc->mem_cgroup->css);
+-		unlock_page_cgroup(pc);
+-	}
+-}
+-
+ static void __mem_cgroup_remove_list(struct mem_cgroup_per_zone *mz,
+ 			struct page_cgroup *pc)
+ {
 -- 1.5.4.rc3 
