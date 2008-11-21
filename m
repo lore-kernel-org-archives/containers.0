@@ -1,23 +1,11 @@
-From: Fabio Checconi <fchecconi-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: Re: [patch 0/4] [RFC] Another proportional weight IO controller
-Date: Fri, 21 Nov 2008 04:05:33 +0100
-Message-ID: <20081121030533.GA30883__36381.0751740404$1227236922$gmane$org@gandalf.sssup.it>
-References: <af41c7c40811131457w472e4a86tb5344cc1d3d366fb@mail.gmail.com>
-	<20081114160525.GE24624@redhat.com>
-	<e98e18940811141444u5947b806v27fac453ed1e8a5@mail.gmail.com>
-	<20081117142309.GA15564@redhat.com>
-	<4922224A.5030502@cn.fujitsu.com>
-	<e98e18940811172101na345b6bh5c73f9e657aac5a7@mail.gmail.com>
-	<20081118120508.GD15268@gandalf.sssup.it>
-	<20081118140751.GA4283@redhat.com>
-	<20081118144139.GE15268@gandalf.sssup.it>
-	<20081120213155.GI29306@redhat.com>
+From: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+Subject: [PATCH] cgroups: documentation updates
+Date: Fri, 21 Nov 2008 11:58:47 +0800
+Message-ID: <492631F7.8000502__25695.9500177347$1227240081$gmane$org@cn.fujitsu.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <20081120213155.GI29306-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -27,33 +15,70 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Cc: menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, riel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, paolo.valente-rcYM44yAMweonA0d6jMUrA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, jens.axboe-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, virtualization-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, jmoyer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, Divyesh Shah <dpshah-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, ngupta-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, fernando-gVGce1chcLdL9jVzuh4AOg@public.gmane.org, righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org
+To: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
+Cc: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, LKML <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-> From: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-> Date: Thu, Nov 20, 2008 04:31:55PM -0500
->
-...
-> Hi Fabio,
-> 
-> I though will give bfq a try.  I get following when I put my current shell
-> into a newly created cgroup and then try to do "ls".
-> 
+- remove 'releasable' since it has been moved to the debug subsys.
+- update lock requirements of subsys callbacks.
 
-The posted patch cannot work as it is, I'm sorry for that ugly bug.
-Do you still have problems with this one applied?
-
+Signed-off-by: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
 ---
-diff --git a/block/bfq-cgroup.c b/block/bfq-cgroup.c
-index efb03fc..ed8c597 100644
---- a/block/bfq-cgroup.c
-+++ b/block/bfq-cgroup.c
-@@ -168,7 +168,7 @@ static void bfq_group_chain_link(struct bfq_data *bfqd, struct cgroup *cgroup,
+ Documentation/cgroups/cgroups.txt |    7 ++++---
+ 1 files changed, 4 insertions(+), 3 deletions(-)
+
+diff --git a/Documentation/cgroups/cgroups.txt b/Documentation/cgroups/cgroups.txt
+index d9014aa..60287e9 100644
+--- a/Documentation/cgroups/cgroups.txt
++++ b/Documentation/cgroups/cgroups.txt
+@@ -227,7 +227,6 @@ Each cgroup is represented by a directory in the cgroup file system
+ containing the following files describing that cgroup:
  
- 		spin_lock_irqsave(&bgrp->lock, flags);
+  - tasks: list of tasks (by pid) attached to that cgroup
+- - releasable flag: cgroup currently removeable?
+  - notify_on_release flag: run the release agent on exit?
+  - release_agent: the path to use for release notifications (this file
+    exists in the top cgroup only)
+@@ -360,7 +359,7 @@ Now you want to do something with this cgroup.
  
--		rcu_assign_pointer(bfqg->bfqd, bfqd);
-+		rcu_assign_pointer(leaf->bfqd, bfqd);
- 		hlist_add_head_rcu(&leaf->group_node, &bgrp->group_data);
- 		hlist_add_head(&leaf->bfqd_node, &bfqd->group_list);
+ In this directory you can find several files:
+ # ls
+-notify_on_release releasable tasks
++notify_on_release tasks
+ (plus whatever files added by the attached subsystems)
+ 
+ Now attach your shell to this cgroup:
+@@ -479,7 +478,6 @@ newly-created cgroup if an error occurs after this subsystem's
+ create() method has been called for the new cgroup).
+ 
+ void pre_destroy(struct cgroup_subsys *ss, struct cgroup *cgrp);
+-(cgroup_mutex held by caller)
+ 
+ Called before checking the reference count on each subsystem. This may
+ be useful for subsystems which have some extra references even if
+@@ -498,6 +496,7 @@ remain valid while the caller holds cgroup_mutex.
+ 
+ void attach(struct cgroup_subsys *ss, struct cgroup *cgrp,
+ 	    struct cgroup *old_cgrp, struct task_struct *task)
++(cgroup_mutex held by caller)
+ 
+ Called after the task has been attached to the cgroup, to allow any
+ post-attachment activity that requires memory allocations or blocking.
+@@ -511,6 +510,7 @@ void exit(struct cgroup_subsys *ss, struct task_struct *task)
+ Called during task exit.
+ 
+ int populate(struct cgroup_subsys *ss, struct cgroup *cgrp)
++(cgroup_mutex held by caller)
+ 
+ Called after creation of a cgroup to allow a subsystem to populate
+ the cgroup directory with file entries.  The subsystem should make
+@@ -520,6 +520,7 @@ method can return an error code, the error code is currently not
+ always handled well.
+ 
+ void post_clone(struct cgroup_subsys *ss, struct cgroup *cgrp)
++(cgroup_mutex held by caller)
+ 
+ Called at the end of cgroup_clone() to do any paramater
+ initialization which might be required before a task could attach.  For
+-- 
+1.5.4.rc3
