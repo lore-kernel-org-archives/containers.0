@@ -1,13 +1,13 @@
 From: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH] cgroups: defer free css_set
-Date: Fri, 21 Nov 2008 10:28:44 -0800
-Message-ID: <6599ad830811211028v2d9532cfsfef18c0af5935964__5045.53169380433$1227292330$gmane$org@mail.gmail.com>
-References: <4926761B.2060608@cn.fujitsu.com>
+Subject: Re: [PATCH] cpuset: rcu_read_lock() to protect task_cs()
+Date: Fri, 21 Nov 2008 10:36:37 -0800
+Message-ID: <6599ad830811211036k419ff716h6068d532c9942d73__13126.1891140186$1227292817$gmane$org@mail.gmail.com>
+References: <49267621.2070706@cn.fujitsu.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <4926761B.2060608-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+In-Reply-To: <49267621.2070706-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -23,71 +23,48 @@ List-Id: containers.vger.kernel.org
 
 On Fri, Nov 21, 2008 at 12:49 AM, Lai Jiangshan <laijs-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org> wrote:
 >
-> we free css_set when refcnt became 0 immediately(except cgroup_attach_task()).
-> I will destroy the data which read side maybe still access it.
-> this patch use call_rcu() to defer free css_set
+> task_cs() calls cgroup_subsys_state().
+
+You mean it calls task_subsys_state().
+
+>
+> we must use rcu_read_lock() to protect cgroup_subsys_state().
+>
+> it's correct that top_cpuset is never freed, but cgroup_subsys_state()
+> accesses css_set, this css_set maybe freed when task_cs() called.
+
+It would be nice to have an RCU debug mode where rcu_dereference()
+does a WARN() if it's invoked not under rcu_read_lock().
+
+>
+> we use use rcu_read_lock() to protect it.
 >
 > Signed-off-by: Lai Jiangshan <laijs-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
 > ---
-> diff --git a/include/linux/cgroup.h b/include/linux/cgroup.h
-> index 1164963..22901ff 100644
-> --- a/include/linux/cgroup.h
-> +++ b/include/linux/cgroup.h
-> @@ -178,6 +178,8 @@ struct css_set {
->         */
->        struct list_head cg_links;
+> diff --git a/kernel/cpuset.c b/kernel/cpuset.c
+> index 3e00526..e0e087e 100644
+> --- a/kernel/cpuset.c
+> +++ b/kernel/cpuset.c
+> @@ -363,14 +363,9 @@ void cpuset_update_task_memory_state(void)
+>        struct task_struct *tsk = current;
+>        struct cpuset *cs;
 >
-> +       struct rcu_head rcu;
-> +
->        /*
->         * Set of subsystem states, one for each subsystem. This array
->         * is immutable after creation apart from the init_css_set
-> diff --git a/kernel/cgroup.c b/kernel/cgroup.c
-> index 358e775..ddc10ac 100644
-> --- a/kernel/cgroup.c
-> +++ b/kernel/cgroup.c
-> @@ -252,6 +252,11 @@ static void unlink_css_set(struct css_set *cg)
->        }
->  }
->
-> +static void rcu_free_css_set(struct rcu_head *head)
-> +{
-> +       kfree(container_of(head, struct css_set, rcu));
-> +}
-> +
->  static void __put_css_set(struct css_set *cg, int taskexit)
->  {
->        int i;
-> @@ -281,7 +286,7 @@ static void __put_css_set(struct css_set *cg, int taskexit)
->                }
->        }
->        rcu_read_unlock();
-> -       kfree(cg);
-> +       call_rcu(&cg->rcu, rcu_free_css_set);
->  }
->
->  /*
-> @@ -1267,7 +1277,6 @@ int cgroup_attach_task(struct cgroup *cgrp, struct task_struct *tsk)
->                        ss->attach(ss, cgrp, oldcgrp, tsk);
->        }
->        set_bit(CGRP_RELEASABLE, &oldcgrp->flags);
-> -       synchronize_rcu();
+> -       if (task_cs(tsk) == &top_cpuset) {
+> -               /* Don't need rcu for top_cpuset.  It's never freed. */
+> -               my_cpusets_mem_gen = top_cpuset.mems_generation;
+> -       } else {
+> -               rcu_read_lock();
+> -               my_cpusets_mem_gen = task_cs(tsk)->mems_generation;
+> -               rcu_read_unlock();
+> -       }
+> +       rcu_read_lock();
+> +       my_cpusets_mem_gen = task_cs(tsk)->mems_generation;
+> +       rcu_read_unlock();
 
-I'm reluctant to remove this synchronize_rcu() call - it gives the
-property that if you get a pointer to a task's cgroup protected by
-RCU, then even if you race with the task moving away to a different
-cgroup, then no other cgroup_mutex-protected operation can start until
-you've finished your RCU section (since the thread that you raced with
-is blocking in synchronize_rcu() while holding cgroup_mutex). I'm
-pretty sure that some of the cgroups code relies on that property,
-although I can't find exactly which bit I'm thinking of.
+Yes, I guess this old cpusets assumption is no longer valid in cgroups.
 
-Also, using call_rcu() for freeing all css_sets seems unnecessary -
-the only one that appears to be potentially broken is the one from
-cgroup_exit(), since in the other cases the css_set hasn't been
-visible via a task->cgroups pointer. So how about making
-__put_css_set() do a call_rcu() for the case when taskexit is true,
-and a plain free() otherwise? That would also reduce the change of
-overloading the RCU system with too many deferred frees.
+Acked-by: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+
+Thanks
 
 Paul
