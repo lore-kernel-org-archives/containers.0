@@ -1,7 +1,7 @@
 From: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Subject: [PATCH] cgroups: documentation updates
-Date: Fri, 21 Nov 2008 11:58:47 +0800
-Message-ID: <492631F7.8000502__25695.9500177347$1227240081$gmane$org@cn.fujitsu.com>
+Subject: [PATCH] cgroups: remove some redundant NULL checks
+Date: Fri, 21 Nov 2008 11:59:06 +0800
+Message-ID: <4926320A.5060507@cn.fujitsu.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -19,66 +19,129 @@ To: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
 Cc: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, LKML <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-- remove 'releasable' since it has been moved to the debug subsys.
-- update lock requirements of subsys callbacks.
+- In cgroup_clone(), if vfs_mkdir() returns successfully,
+  dentry->d_fsdata will be the pointer to the newly created
+  cgroup and won't be NULL.
+
+- a cgroup file's dentry->d_fsdata won't be NULL, guaranteed
+  by cgroup_add_file().
+
+- When walking through the subsystems of a cgroup_fs (using
+  for_each_subsys), cgrp->subsys[ss->subsys_id] won't be NULL,
+  guaranteed by cgroup_create().
+
+(Also remove 2 unused variables in cgroup_rmdir().
 
 Signed-off-by: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
 ---
- Documentation/cgroups/cgroups.txt |    7 ++++---
- 1 files changed, 4 insertions(+), 3 deletions(-)
+ kernel/cgroup.c |   31 ++++++++-----------------------
+ 1 files changed, 8 insertions(+), 23 deletions(-)
 
-diff --git a/Documentation/cgroups/cgroups.txt b/Documentation/cgroups/cgroups.txt
-index d9014aa..60287e9 100644
---- a/Documentation/cgroups/cgroups.txt
-+++ b/Documentation/cgroups/cgroups.txt
-@@ -227,7 +227,6 @@ Each cgroup is represented by a directory in the cgroup file system
- containing the following files describing that cgroup:
+diff --git a/kernel/cgroup.c b/kernel/cgroup.c
+index fe00b3b..fcbb2d8 100644
+--- a/kernel/cgroup.c
++++ b/kernel/cgroup.c
+@@ -588,7 +588,7 @@ static void cgroup_call_pre_destroy(struct cgroup *cgrp)
+ {
+ 	struct cgroup_subsys *ss;
+ 	for_each_subsys(cgrp->root, ss)
+-		if (ss->pre_destroy && cgrp->subsys[ss->subsys_id])
++		if (ss->pre_destroy)
+ 			ss->pre_destroy(ss, cgrp);
+ 	return;
+ }
+@@ -612,10 +612,8 @@ static void cgroup_diput(struct dentry *dentry, struct inode *inode)
+ 		/*
+ 		 * Release the subsystem state objects.
+ 		 */
+-		for_each_subsys(cgrp->root, ss) {
+-			if (cgrp->subsys[ss->subsys_id])
+-				ss->destroy(ss, cgrp);
+-		}
++		for_each_subsys(cgrp->root, ss)
++			ss->destroy(ss, cgrp);
  
-  - tasks: list of tasks (by pid) attached to that cgroup
-- - releasable flag: cgroup currently removeable?
-  - notify_on_release flag: run the release agent on exit?
-  - release_agent: the path to use for release notifications (this file
-    exists in the top cgroup only)
-@@ -360,7 +359,7 @@ Now you want to do something with this cgroup.
+ 		cgrp->root->number_of_cgroups--;
+ 		mutex_unlock(&cgroup_mutex);
+@@ -1443,7 +1441,7 @@ static ssize_t cgroup_file_write(struct file *file, const char __user *buf,
+ 	struct cftype *cft = __d_cft(file->f_dentry);
+ 	struct cgroup *cgrp = __d_cgrp(file->f_dentry->d_parent);
  
- In this directory you can find several files:
- # ls
--notify_on_release releasable tasks
-+notify_on_release tasks
- (plus whatever files added by the attached subsystems)
+-	if (!cft || cgroup_is_removed(cgrp))
++	if (cgroup_is_removed(cgrp))
+ 		return -ENODEV;
+ 	if (cft->write)
+ 		return cft->write(cgrp, cft, file, buf, nbytes, ppos);
+@@ -1488,7 +1486,7 @@ static ssize_t cgroup_file_read(struct file *file, char __user *buf,
+ 	struct cftype *cft = __d_cft(file->f_dentry);
+ 	struct cgroup *cgrp = __d_cgrp(file->f_dentry->d_parent);
  
- Now attach your shell to this cgroup:
-@@ -479,7 +478,6 @@ newly-created cgroup if an error occurs after this subsystem's
- create() method has been called for the new cgroup).
+-	if (!cft || cgroup_is_removed(cgrp))
++	if (cgroup_is_removed(cgrp))
+ 		return -ENODEV;
  
- void pre_destroy(struct cgroup_subsys *ss, struct cgroup *cgrp);
--(cgroup_mutex held by caller)
+ 	if (cft->read)
+@@ -1552,10 +1550,8 @@ static int cgroup_file_open(struct inode *inode, struct file *file)
+ 	err = generic_file_open(inode, file);
+ 	if (err)
+ 		return err;
+-
+ 	cft = __d_cft(file->f_dentry);
+-	if (!cft)
+-		return -ENODEV;
++
+ 	if (cft->read_map || cft->read_seq_string) {
+ 		struct cgroup_seqfile_state *state =
+ 			kzalloc(sizeof(*state), GFP_USER);
+@@ -1697,7 +1693,7 @@ int cgroup_add_file(struct cgroup *cgrp,
+ 		error = cgroup_create_file(dentry, 0644 | S_IFREG,
+ 						cgrp->root->sb);
+ 		if (!error)
+-			dentry->d_fsdata = (void *)cft;
++			dentry->d_fsdata = cft;
+ 		dput(dentry);
+ 	} else
+ 		error = PTR_ERR(dentry);
+@@ -2461,8 +2457,6 @@ static int cgroup_rmdir(struct inode *unused_dir, struct dentry *dentry)
+ 	struct cgroup *cgrp = dentry->d_fsdata;
+ 	struct dentry *d;
+ 	struct cgroup *parent;
+-	struct super_block *sb;
+-	struct cgroupfs_root *root;
  
- Called before checking the reference count on each subsystem. This may
- be useful for subsystems which have some extra references even if
-@@ -498,6 +496,7 @@ remain valid while the caller holds cgroup_mutex.
+ 	/* the vfs holds both inode->i_mutex already */
  
- void attach(struct cgroup_subsys *ss, struct cgroup *cgrp,
- 	    struct cgroup *old_cgrp, struct task_struct *task)
-+(cgroup_mutex held by caller)
+@@ -2485,8 +2479,6 @@ static int cgroup_rmdir(struct inode *unused_dir, struct dentry *dentry)
  
- Called after the task has been attached to the cgroup, to allow any
- post-attachment activity that requires memory allocations or blocking.
-@@ -511,6 +510,7 @@ void exit(struct cgroup_subsys *ss, struct task_struct *task)
- Called during task exit.
+ 	mutex_lock(&cgroup_mutex);
+ 	parent = cgrp->parent;
+-	root = cgrp->root;
+-	sb = root->sb;
  
- int populate(struct cgroup_subsys *ss, struct cgroup *cgrp)
-+(cgroup_mutex held by caller)
+ 	if (atomic_read(&cgrp->count)
+ 	    || !list_empty(&cgrp->children)
+@@ -2966,7 +2958,7 @@ int cgroup_clone(struct task_struct *tsk, struct cgroup_subsys *subsys,
+ 	}
  
- Called after creation of a cgroup to allow a subsystem to populate
- the cgroup directory with file entries.  The subsystem should make
-@@ -520,6 +520,7 @@ method can return an error code, the error code is currently not
- always handled well.
+ 	/* Create the cgroup directory, which also creates the cgroup */
+-	ret = vfs_mkdir(inode, dentry, S_IFDIR | 0755);
++	ret = vfs_mkdir(inode, dentry, 0755);
+ 	child = __d_cgrp(dentry);
+ 	dput(dentry);
+ 	if (ret) {
+@@ -2976,13 +2968,6 @@ int cgroup_clone(struct task_struct *tsk, struct cgroup_subsys *subsys,
+ 		goto out_release;
+ 	}
  
- void post_clone(struct cgroup_subsys *ss, struct cgroup *cgrp)
-+(cgroup_mutex held by caller)
- 
- Called at the end of cgroup_clone() to do any paramater
- initialization which might be required before a task could attach.  For
+-	if (!child) {
+-		printk(KERN_INFO
+-		       "Couldn't find new cgroup %s\n", nodename);
+-		ret = -ENOMEM;
+-		goto out_release;
+-	}
+-
+ 	/* The cgroup now exists. Retake cgroup_mutex and check
+ 	 * that we're still in the same state that we thought we
+ 	 * were. */
 -- 
 1.5.4.rc3
