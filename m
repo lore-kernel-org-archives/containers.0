@@ -1,13 +1,13 @@
 From: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH] cpuset: rcu_read_lock() to protect task_cs()
-Date: Fri, 21 Nov 2008 10:36:37 -0800
-Message-ID: <6599ad830811211036k419ff716h6068d532c9942d73__13126.1891140186$1227292817$gmane$org@mail.gmail.com>
-References: <49267621.2070706@cn.fujitsu.com>
+Subject: Re: [PATCH 2/2] cpuset: use cgroup_path() in proc_cpuset_show()
+Date: Fri, 21 Nov 2008 10:56:58 -0800
+Message-ID: <6599ad830811211056x205f0fc7k6b0472dc34c03c69__12938.2786377848$1227293960$gmane$org@mail.gmail.com>
+References: <4926762E.9010207@cn.fujitsu.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <49267621.2070706-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+In-Reply-To: <4926762E.9010207-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -23,21 +23,13 @@ List-Id: containers.vger.kernel.org
 
 On Fri, Nov 21, 2008 at 12:49 AM, Lai Jiangshan <laijs-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org> wrote:
 >
-> task_cs() calls cgroup_subsys_state().
+> use cgroup_path() instead of
+> task_subsys_state(tsk, cpuset_subsys_id)->cgroup
 
-You mean it calls task_subsys_state().
+You mean:
 
->
-> we must use rcu_read_lock() to protect cgroup_subsys_state().
->
-> it's correct that top_cpuset is never freed, but cgroup_subsys_state()
-> accesses css_set, this css_set maybe freed when task_cs() called.
+use task_cgroup() instead of task_subsys_state()->cgroup
 
-It would be nice to have an RCU debug mode where rcu_dereference()
-does a WARN() if it's invoked not under rcu_read_lock().
-
->
-> we use use rcu_read_lock() to protect it.
 >
 > Signed-off-by: Lai Jiangshan <laijs-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
 > ---
@@ -45,26 +37,26 @@ does a WARN() if it's invoked not under rcu_read_lock().
 > index 3e00526..e0e087e 100644
 > --- a/kernel/cpuset.c
 > +++ b/kernel/cpuset.c
-> @@ -363,14 +363,9 @@ void cpuset_update_task_memory_state(void)
->        struct task_struct *tsk = current;
->        struct cpuset *cs;
+> @@ -2387,7 +2386,7 @@ static int proc_cpuset_show(struct seq_file *m, void *unused_v)
+>        struct pid *pid;
+>        struct task_struct *tsk;
+>        char *buf;
+> -       struct cgroup_subsys_state *css;
+> +       struct cgroup *cgp;
+>        int retval;
 >
-> -       if (task_cs(tsk) == &top_cpuset) {
-> -               /* Don't need rcu for top_cpuset.  It's never freed. */
-> -               my_cpusets_mem_gen = top_cpuset.mems_generation;
-> -       } else {
-> -               rcu_read_lock();
-> -               my_cpusets_mem_gen = task_cs(tsk)->mems_generation;
-> -               rcu_read_unlock();
-> -       }
-> +       rcu_read_lock();
-> +       my_cpusets_mem_gen = task_cs(tsk)->mems_generation;
-> +       rcu_read_unlock();
-
-Yes, I guess this old cpusets assumption is no longer valid in cgroups.
-
-Acked-by: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
-
-Thanks
-
-Paul
+>        retval = -ENOMEM;
+> @@ -2403,8 +2402,8 @@ static int proc_cpuset_show(struct seq_file *m, void *unused_v)
+>
+>        retval = -EINVAL;
+>        cgroup_lock();
+> -       css = task_subsys_state(tsk, cpuset_subsys_id);
+> -       retval = cgroup_path(css->cgroup, buf, PAGE_SIZE);
+> +       cgp = task_cgroup(tsk, cpuset_subsys_id);
+> +       retval = cgroup_path(cgp, buf, PAGE_SIZE);
+>        if (retval < 0)
+>                goto out_unlock;
+>        seq_puts(m, buf);
+>
+>
+>
