@@ -1,8 +1,7 @@
 From: Lai Jiangshan <laijs-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Subject: [PATCH] cgroups: fix incorrect using rcu_dereference() in
-	cgroup_subsys_state()
-Date: Fri, 21 Nov 2008 16:49:34 +0800
-Message-ID: <4926761E.8030002__12743.0766974159$1227258394$gmane$org@cn.fujitsu.com>
+Subject: [PATCH 2/2] cpuset: use cgroup_path() in proc_cpuset_show()
+Date: Fri, 21 Nov 2008 16:49:50 +0800
+Message-ID: <4926762E.9010207__21445.5007146627$1227258395$gmane$org@cn.fujitsu.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -20,45 +19,32 @@ To: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Paul
 List-Id: containers.vger.kernel.org
 
 
-It's task->cgroups protected by RCU. and struct css_set.subsys[subsys_id]
-is readonly(after init). so we don't need rcu_dereference() for
-struct css_set.subsys[subsys_id].
-
-the ways using cgroup_subsys_state() safely:
-
-#1:
-rcu_read_lock() / task_lock();
-c = cgroup_subsys_state(tsk, id);
-use c;
-rcu_read_unlock() / task_unlock();
-
-
-#2: use cgroup_lock() for _current_ task.
-cgroup_lock();
-c = cgroup_subsys_state(current, id);
-use c;
-cgroup_unlock();
+use cgroup_path() instead of
+task_subsys_state(tsk, cpuset_subsys_id)->cgroup
 
 Signed-off-by: Lai Jiangshan <laijs-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
 ---
-diff --git a/include/linux/cgroup.h b/include/linux/cgroup.h
-index 1164963..22901ff 100644
---- a/include/linux/cgroup.h
-+++ b/include/linux/cgroup.h
-@@ -359,10 +360,15 @@ static inline struct cgroup_subsys_state *cgroup_subsys_state(
- 	return cgrp->subsys[subsys_id];
- }
+diff --git a/kernel/cpuset.c b/kernel/cpuset.c
+index 3e00526..e0e087e 100644
+--- a/kernel/cpuset.c
++++ b/kernel/cpuset.c
+@@ -2387,7 +2386,7 @@ static int proc_cpuset_show(struct seq_file *m, void *unused_v)
+ 	struct pid *pid;
+ 	struct task_struct *tsk;
+ 	char *buf;
+-	struct cgroup_subsys_state *css;
++	struct cgroup *cgp;
+ 	int retval;
  
-+/* Caller must hold task_lock() or rcu_read_lock() */
- static inline struct cgroup_subsys_state *task_subsys_state(
- 	struct task_struct *task, int subsys_id)
- {
--	return rcu_dereference(task->cgroups->subsys[subsys_id]);
-+	/*
-+	 * ->subsys[subsys_id] are read-only data, so we do not need
-+	 * rcu_dereference() for it.
-+	 */
-+	return rcu_dereference(task->cgroups)->subsys[subsys_id];
- }
+ 	retval = -ENOMEM;
+@@ -2403,8 +2402,8 @@ static int proc_cpuset_show(struct seq_file *m, void *unused_v)
  
- static inline struct cgroup* task_cgroup(struct task_struct *task,
+ 	retval = -EINVAL;
+ 	cgroup_lock();
+-	css = task_subsys_state(tsk, cpuset_subsys_id);
+-	retval = cgroup_path(css->cgroup, buf, PAGE_SIZE);
++	cgp = task_cgroup(tsk, cpuset_subsys_id);
++	retval = cgroup_path(cgp, buf, PAGE_SIZE);
+ 	if (retval < 0)
+ 		goto out_unlock;
+ 	seq_puts(m, buf);
