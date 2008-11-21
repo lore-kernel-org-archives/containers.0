@@ -1,7 +1,7 @@
-From: "Finch T Cleo" <PereiraCindy-yaCVa6ITKSwDmxdOCEPvokci3DCLgA6A@public.gmane.org>
-Subject: Doctor Directory
-Date: Fri, 21 Nov 2008 03:53:02 -0200
-Message-ID: <27008.2729672597$1227247183@news.gmane.org>
+From: Lai Jiangshan <laijs-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+Subject: [PATCHSET] fix CGROUP VS RCU
+Date: Fri, 21 Nov 2008 16:49:13 +0800
+Message-ID: <49267609.8050600__24388.2351475351$1227257802$gmane$org@cn.fujitsu.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -15,45 +15,23 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: partner-ond6Q6M0ZJMox3rIn2DAYQ@public.gmane.org
-Cc: office-/GytmVAP8eA@public.gmane.org, ordxaw-R8cX2rBZkmSD2xfEYUDpZg@public.gmane.org, partner-PYZGXRmfuktBDgjK7y7TUQ@public.gmane.org, tony-WrPlYGucKY+akBO8gow8eQ@public.gmane.org, info-osteuropa-5o+NnrIaK5YUtdQbppsyvg@public.gmane.org, containers-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, rivaldooliveira-PkbjNfxxIARBDgjK7y7TUQ@public.gmane.org, i59766-PkbjNfxxIARBDgjK7y7TUQ@public.gmane.org
+To: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Linux Kernel Mailing List <linux-ker>
 List-Id: containers.vger.kernel.org
 
 
+current some cgroup struct are protected by RCU.
 
+struct protected by RCU:
+	struct css_set, struct cgroup_subsys_state, struct cgroup
 
+pointer protected by RCU:
+	struct task_struct.cgroups, struct css_set.subsys[*],
+	struct cgroup_subsys_state.cgroup
+the last two pointers are readonly pointer!
 
+these patches are fix these structs, and pointers. And a faker:
+struct cgroup_subsys.root
 
-Fully Licensed Doctors in the United States 
+Not cleanup all yet.
 
-788,533 in total <> 17,416 emails
-
-Coverage in many different areas of medicine such as Endocrinology, Pathology, Urology, Neurology, Plastic Surgery, Psychiatry, Cardiology and much more 
-
-Over a dozen sortable fields
-
-reduced price is now: $396
-
-
-!!!!!!! ITEMS BELOW ARE INCLUDED IN THE DEAL AT NO EXTRA COST !!!!!!!
-
-American Pharmaceutical Company Database
-Personal email addresses (47,000 in total) and names for top level executives
-
-Hospital Facilities in America
-Full data for all the major positions in more than 7k facilities
-
-American Dentists
-Practically every dentist in the United States is listed here
-
-American Chiropractors Database
-100k Chiropractors offices with full contact data including email, postal address, phone and fax
-
-reply by email:      Shaffer-EOG5juQ2wimYzaHyX7yAvgC/G2K4zDHf@public.gmane.org
-
-  
-
-valid thru  November 28
-
-
-to eject yourself from the "list" visit this link please email out-EOG5juQ2wimYzaHyX7yAvgC/G2K4zDHf@public.gmane.org 
+Thanx, Lai
