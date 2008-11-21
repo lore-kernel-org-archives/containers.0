@@ -1,7 +1,7 @@
 From: Lai Jiangshan <laijs-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Subject: [PATCH] cgroups: don't put struct cgroupfs_root protected by RCU
-Date: Fri, 21 Nov 2008 16:49:28 +0800
-Message-ID: <49267618.6080802__39570.9778102629$1227258168$gmane$org@cn.fujitsu.com>
+Subject: [PATCH] cgroups: fix cgroup_iter_next() bug.
+Date: Fri, 21 Nov 2008 16:49:20 +0800
+Message-ID: <49267610.6090003__23006.783592473$1227258295$gmane$org@cn.fujitsu.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -19,62 +19,36 @@ To: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Paul
 List-Id: containers.vger.kernel.org
 
 
-we don't access struct cgroupfs_root in fast path,
-so we should not put struct cgroupfs_root protected by RCU
+we access to res->cgroups without the task_lock(),
+so res->cgroups may be changed. it's unreliable,
+and "if (l == &res->cgroups->tasks)" may be false forever.
 
-but the comment in struct cgroup_subsys.root confuse us.
+we don't need add any lock for fixing this bug. we just access to
+struct css_set by struct cg_cgroup_link, not by struct task_struct.
 
-struct cgroup_subsys.root is used in these places:
-
-1 find_css_set(): if (ss->root->subsys_list.next == &ss->sibling)
-2 rebind_subsystems(): if (ss->root != &rootnode)
-                       rcu_assign_pointer(ss->root, root);
-                       rcu_assign_pointer(subsys[i]->root, &rootnode);
-3 cgroup_has_css_refs(): if (ss->root != cgrp->root)
-4 cgroup_init_subsys(): ss->root = &rootnode;
-5 proc_cgroupstats_show(): ss->name, ss->root->subsys_bits,
-                           ss->root->number_of_cgroups, !ss->disabled);
-6 cgroup_clone(): root = subsys->root;
-                  if ((root != subsys->root) ||
-
-all these place we have held cgroup_lock() or we don't dereference to
-struct cgroupfs_root. It's means wo don't need RCU when use
-struct cgroup_subsys.root, and we should not put struct cgroupfs_root
-protected by RCU.
+since we hold css_set_lock, struct cg_cgroup_link is reliable.
 
 Signed-off-by: Lai Jiangshan <laijs-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
 ---
-diff --git a/include/linux/cgroup.h b/include/linux/cgroup.h
-index 1164963..22901ff 100644
---- a/include/linux/cgroup.h
-+++ b/include/linux/cgroup.h
-@@ -343,7 +345,6 @@ struct cgroup_subsys {
- #define MAX_CGROUP_TYPE_NAMELEN 32
- 	const char *name;
- 
--	/* Protected by RCU */
- 	struct cgroupfs_root *root;
- 
- 	struct list_head sibling;
 diff --git a/kernel/cgroup.c b/kernel/cgroup.c
 index 358e775..ddc10ac 100644
 --- a/kernel/cgroup.c
 +++ b/kernel/cgroup.c
-@@ -717,7 +722,7 @@ static int rebind_subsystems(struct cgroupfs_root *root,
- 			cgrp->subsys[i] = dummytop->subsys[i];
- 			cgrp->subsys[i]->cgroup = cgrp;
- 			list_add(&ss->sibling, &root->subsys_list);
--			rcu_assign_pointer(ss->root, root);
-+			ss->root = root;
- 			if (ss->bind)
- 				ss->bind(ss, cgrp);
+@@ -1810,6 +1819,7 @@ struct task_struct *cgroup_iter_next(struct cgroup *cgrp,
+ {
+ 	struct task_struct *res;
+ 	struct list_head *l = it->task;
++	struct cg_cgroup_link *link;
  
-@@ -729,7 +734,7 @@ static int rebind_subsystems(struct cgroupfs_root *root,
- 				ss->bind(ss, dummytop);
- 			dummytop->subsys[i]->cgroup = dummytop;
- 			cgrp->subsys[i] = NULL;
--			rcu_assign_pointer(subsys[i]->root, &rootnode);
-+			subsys[i]->root = &rootnode;
- 			list_del(&ss->sibling);
- 		} else if (bit & final_bits) {
- 			/* Subsystem state should already exist */
+ 	/* If the iterator cg is NULL, we have no tasks */
+ 	if (!it->cg_link)
+@@ -1817,7 +1827,8 @@ struct task_struct *cgroup_iter_next(struct cgroup *cgrp,
+ 	res = list_entry(l, struct task_struct, cg_list);
+ 	/* Advance iterator to find next entry */
+ 	l = l->next;
+-	if (l == &res->cgroups->tasks) {
++	link = list_entry(it->cg_link, struct cg_cgroup_link, cgrp_link_list);
++	if (l == &link->cg->tasks) {
+ 		/* We reached the end of this task list - move on to
+ 		 * the next cg_cgroup_link */
+ 		cgroup_advance_iter(cgrp, it);
