@@ -1,7 +1,8 @@
 From: Lai Jiangshan <laijs-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Subject: [PATCH] cpuset: rcu_read_lock() to protect task_cs()
-Date: Fri, 21 Nov 2008 16:49:37 +0800
-Message-ID: <49267621.2070706__1919.84404013983$1227264726$gmane$org@cn.fujitsu.com>
+Subject: [PATCH] cpuset: rcu_read_lock() to protect task_cs() even we don't
+	dereference to task_cs()'s return value
+Date: Fri, 21 Nov 2008 16:49:40 +0800
+Message-ID: <49267624.70305__35816.2547847771$1227264836$gmane$org@cn.fujitsu.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -23,10 +24,9 @@ task_cs() calls cgroup_subsys_state().
 
 we must use rcu_read_lock() to protect cgroup_subsys_state().
 
-it's correct that top_cpuset is never freed, but cgroup_subsys_state()
-accesses css_set, this css_set maybe freed when task_cs() called.
-
-we use use rcu_read_lock() to protect it.
+in current_cpuset_is_being_rebound(), we don't dereference to task_cs()'s
+return value, but task_cs() accesses css_set, this css_set maybe freed
+when task_cs() called.
 
 Signed-off-by: Lai Jiangshan <laijs-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
 ---
@@ -34,21 +34,16 @@ diff --git a/kernel/cpuset.c b/kernel/cpuset.c
 index 3e00526..e0e087e 100644
 --- a/kernel/cpuset.c
 +++ b/kernel/cpuset.c
-@@ -363,14 +363,9 @@ void cpuset_update_task_memory_state(void)
- 	struct task_struct *tsk = current;
- 	struct cpuset *cs;
+@@ -1141,7 +1136,11 @@ done:
  
--	if (task_cs(tsk) == &top_cpuset) {
--		/* Don't need rcu for top_cpuset.  It's never freed. */
--		my_cpusets_mem_gen = top_cpuset.mems_generation;
--	} else {
--		rcu_read_lock();
--		my_cpusets_mem_gen = task_cs(tsk)->mems_generation;
--		rcu_read_unlock();
--	}
+ int current_cpuset_is_being_rebound(void)
+ {
+-	return task_cs(current) == cpuset_being_rebound;
++	struct cpuset *cs;
 +	rcu_read_lock();
-+	my_cpusets_mem_gen = task_cs(tsk)->mems_generation;
++	cs = task_cs(current);
 +	rcu_read_unlock();
++	return cs == cpuset_being_rebound;
+ }
  
- 	if (my_cpusets_mem_gen != tsk->cpuset_mems_generation) {
- 		mutex_lock(&callback_mutex);
+ static int update_relax_domain_level(struct cpuset *cs, s64 val)
