@@ -1,13 +1,13 @@
 From: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 1/2] cgroups: enhance task_cgroup()
-Date: Fri, 21 Nov 2008 10:58:44 -0800
-Message-ID: <6599ad830811211058q3fe12e5coa62436e777b60f1a__33051.5596353964$1227294067$gmane$org@mail.gmail.com>
-References: <4926762A.7000602@cn.fujitsu.com>
+Subject: Re: [PATCH] cgroups: don't put struct cgroupfs_root protected by RCU
+Date: Fri, 21 Nov 2008 11:01:28 -0800
+Message-ID: <6599ad830811211101t12cf74eh974bdbf9e7afa360__4273.06692949987$1227294242$gmane$org@mail.gmail.com>
+References: <49267618.6080802@cn.fujitsu.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <4926762A.7000602-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+In-Reply-To: <49267618.6080802-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -23,45 +23,70 @@ List-Id: containers.vger.kernel.org
 
 On Fri, Nov 21, 2008 at 12:49 AM, Lai Jiangshan <laijs-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org> wrote:
 >
-> task_cgroup() calls cgroup_subsys_state().
-
-No, it calls task_subsys_state()
-
-> and we must use rcu_read_lock() to protect cgroup_subsys_state().
-> so we must use rcu_read_lock() to protect task_cgroup().
+> we don't access struct cgroupfs_root in fast path,
+> so we should not put struct cgroupfs_root protected by RCU
 >
-> but it'll not so friendly to caller: the callers of task_cgroup() have
-> held cgroup_lock(). it means that struct cgroup will not be freed.
+> but the comment in struct cgroup_subsys.root confuse us.
 >
-> So this patch add rcu_read_lock() in task_cgroup() to enhance task_cgroup().
-> And we do NOT NEED FIX task_cgroup()'s callers, and cgroup_lock()
-> can protect task_cgroup().
-
-Is there a reason to add an implicit rcu_read_lock() in task_cgroup()
-and not directly in task_subsys_state() ?
-
-Paul
-
+> struct cgroup_subsys.root is used in these places:
+>
+> 1 find_css_set(): if (ss->root->subsys_list.next == &ss->sibling)
+> 2 rebind_subsystems(): if (ss->root != &rootnode)
+>                       rcu_assign_pointer(ss->root, root);
+>                       rcu_assign_pointer(subsys[i]->root, &rootnode);
+> 3 cgroup_has_css_refs(): if (ss->root != cgrp->root)
+> 4 cgroup_init_subsys(): ss->root = &rootnode;
+> 5 proc_cgroupstats_show(): ss->name, ss->root->subsys_bits,
+>                           ss->root->number_of_cgroups, !ss->disabled);
+> 6 cgroup_clone(): root = subsys->root;
+>                  if ((root != subsys->root) ||
+>
+> all these place we have held cgroup_lock() or we don't dereference to
+> struct cgroupfs_root. It's means wo don't need RCU when use
+> struct cgroup_subsys.root, and we should not put struct cgroupfs_root
+> protected by RCU.
 >
 > Signed-off-by: Lai Jiangshan <laijs-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+
+Reviewed-by: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+
+Thanks, seems reasonable.
+
 > ---
 > diff --git a/include/linux/cgroup.h b/include/linux/cgroup.h
 > index 1164963..22901ff 100644
 > --- a/include/linux/cgroup.h
 > +++ b/include/linux/cgroup.h
-> @@ -359,6 +360,10 @@
->  static inline struct cgroup* task_cgroup(struct task_struct *task,
->                                               int subsys_id)
->  {
-> -       return task_subsys_state(task, subsys_id)->cgroup;
-> +       struct cgroup *ret;
-> +       rcu_read_lock();
-> +       ret = task_subsys_state(task, subsys_id)->cgroup;
-> +       rcu_read_unlock();
-> +       return ret;
->  }
+> @@ -343,7 +345,6 @@ struct cgroup_subsys {
+>  #define MAX_CGROUP_TYPE_NAMELEN 32
+>        const char *name;
 >
->  int cgroup_clone(struct task_struct *tsk, struct cgroup_subsys *ss,
+> -       /* Protected by RCU */
+>        struct cgroupfs_root *root;
+>
+>        struct list_head sibling;
+> diff --git a/kernel/cgroup.c b/kernel/cgroup.c
+> index 358e775..ddc10ac 100644
+> --- a/kernel/cgroup.c
+> +++ b/kernel/cgroup.c
+> @@ -717,7 +722,7 @@ static int rebind_subsystems(struct cgroupfs_root *root,
+>                        cgrp->subsys[i] = dummytop->subsys[i];
+>                        cgrp->subsys[i]->cgroup = cgrp;
+>                        list_add(&ss->sibling, &root->subsys_list);
+> -                       rcu_assign_pointer(ss->root, root);
+> +                       ss->root = root;
+>                        if (ss->bind)
+>                                ss->bind(ss, cgrp);
+>
+> @@ -729,7 +734,7 @@ static int rebind_subsystems(struct cgroupfs_root *root,
+>                                ss->bind(ss, dummytop);
+>                        dummytop->subsys[i]->cgroup = dummytop;
+>                        cgrp->subsys[i] = NULL;
+> -                       rcu_assign_pointer(subsys[i]->root, &rootnode);
+> +                       subsys[i]->root = &rootnode;
+>                        list_del(&ss->sibling);
+>                } else if (bit & final_bits) {
+>                        /* Subsystem state should already exist */
 >
 >
 >
