@@ -1,7 +1,7 @@
 From: Lai Jiangshan <laijs-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Subject: [PATCH 1/2] cgroups: enhance task_cgroup()
-Date: Fri, 21 Nov 2008 16:49:46 +0800
-Message-ID: <4926762A.7000602__31200.3566803925$1227264965$gmane$org@cn.fujitsu.com>
+Subject: [PATCH] cgroups: defer free css_set
+Date: Fri, 21 Nov 2008 16:49:31 +0800
+Message-ID: <4926761B.2060608__45306.5325310037$1227265090$gmane$org@cn.fujitsu.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -19,16 +19,9 @@ To: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Paul
 List-Id: containers.vger.kernel.org
 
 
-task_cgroup() calls cgroup_subsys_state().
-and we must use rcu_read_lock() to protect cgroup_subsys_state().
-so we must use rcu_read_lock() to protect task_cgroup().
-
-but it'll not so friendly to caller: the callers of task_cgroup() have
-held cgroup_lock(). it means that struct cgroup will not be freed.
-
-So this patch add rcu_read_lock() in task_cgroup() to enhance task_cgroup().
-And we do NOT NEED FIX task_cgroup()'s callers, and cgroup_lock()
-can protect task_cgroup().
+we free css_set when refcnt became 0 immediately(except cgroup_attach_task()).
+I will destroy the data which read side maybe still access it.
+this patch use call_rcu() to defer free css_set
 
 Signed-off-by: Lai Jiangshan <laijs-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
 ---
@@ -36,16 +29,45 @@ diff --git a/include/linux/cgroup.h b/include/linux/cgroup.h
 index 1164963..22901ff 100644
 --- a/include/linux/cgroup.h
 +++ b/include/linux/cgroup.h
-@@ -359,6 +360,10 @@
- static inline struct cgroup* task_cgroup(struct task_struct *task,
- 					       int subsys_id)
- {
--	return task_subsys_state(task, subsys_id)->cgroup;
-+	struct cgroup *ret;
-+	rcu_read_lock();
-+	ret = task_subsys_state(task, subsys_id)->cgroup;
-+	rcu_read_unlock();
-+	return ret;
+@@ -178,6 +178,8 @@ struct css_set {
+ 	 */
+ 	struct list_head cg_links;
+ 
++	struct rcu_head rcu;
++
+ 	/*
+ 	 * Set of subsystem states, one for each subsystem. This array
+ 	 * is immutable after creation apart from the init_css_set
+diff --git a/kernel/cgroup.c b/kernel/cgroup.c
+index 358e775..ddc10ac 100644
+--- a/kernel/cgroup.c
++++ b/kernel/cgroup.c
+@@ -252,6 +252,11 @@ static void unlink_css_set(struct css_set *cg)
+ 	}
  }
  
- int cgroup_clone(struct task_struct *tsk, struct cgroup_subsys *ss,
++static void rcu_free_css_set(struct rcu_head *head)
++{
++	kfree(container_of(head, struct css_set, rcu));
++}
++
+ static void __put_css_set(struct css_set *cg, int taskexit)
+ {
+ 	int i;
+@@ -281,7 +286,7 @@ static void __put_css_set(struct css_set *cg, int taskexit)
+ 		}
+ 	}
+ 	rcu_read_unlock();
+-	kfree(cg);
++	call_rcu(&cg->rcu, rcu_free_css_set);
+ }
+ 
+ /*
+@@ -1267,7 +1277,6 @@ int cgroup_attach_task(struct cgroup *cgrp, struct task_struct *tsk)
+ 			ss->attach(ss, cgrp, oldcgrp, tsk);
+ 	}
+ 	set_bit(CGRP_RELEASABLE, &oldcgrp->flags);
+-	synchronize_rcu();
+ 	put_css_set(cg);
+ 	return 0;
+ }
