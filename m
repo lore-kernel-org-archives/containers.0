@@ -1,7 +1,7 @@
 From: Lai Jiangshan <laijs-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Subject: [PATCH] cgroups: defer free css_set
-Date: Fri, 21 Nov 2008 16:49:31 +0800
-Message-ID: <4926761B.2060608__45306.5325310037$1227265090$gmane$org@cn.fujitsu.com>
+Subject: [PATCH] memcontrol: rcu_read_lock() to protect mm_match_cgroup()
+Date: Fri, 21 Nov 2008 16:49:43 +0800
+Message-ID: <49267627.80103__3664.05529571257$1227265144$gmane$org@cn.fujitsu.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -19,55 +19,31 @@ To: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Paul
 List-Id: containers.vger.kernel.org
 
 
-we free css_set when refcnt became 0 immediately(except cgroup_attach_task()).
-I will destroy the data which read side maybe still access it.
-this patch use call_rcu() to defer free css_set
+mm_match_cgroup() calls cgroup_subsys_state().
+
+we must use rcu_read_lock() to protect cgroup_subsys_state().
 
 Signed-off-by: Lai Jiangshan <laijs-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
 ---
-diff --git a/include/linux/cgroup.h b/include/linux/cgroup.h
-index 1164963..22901ff 100644
---- a/include/linux/cgroup.h
-+++ b/include/linux/cgroup.h
-@@ -178,6 +178,8 @@ struct css_set {
- 	 */
- 	struct list_head cg_links;
+diff --git a/include/linux/memcontrol.h b/include/linux/memcontrol.h
+index 1fbe14d..ce89ff0 100644
+--- a/include/linux/memcontrol.h
++++ b/include/linux/memcontrol.h
+@@ -47,8 +47,15 @@ int task_in_mem_cgroup(struct task_struct *task, const struct mem_cgroup *mem);
  
-+	struct rcu_head rcu;
-+
- 	/*
- 	 * Set of subsystem states, one for each subsystem. This array
- 	 * is immutable after creation apart from the init_css_set
-diff --git a/kernel/cgroup.c b/kernel/cgroup.c
-index 358e775..ddc10ac 100644
---- a/kernel/cgroup.c
-+++ b/kernel/cgroup.c
-@@ -252,6 +252,11 @@ static void unlink_css_set(struct css_set *cg)
- 	}
- }
+ extern struct mem_cgroup *mem_cgroup_from_task(struct task_struct *p);
  
-+static void rcu_free_css_set(struct rcu_head *head)
+-#define mm_match_cgroup(mm, cgroup)	\
+-	((cgroup) == mem_cgroup_from_task((mm)->owner))
++static inline
++int mm_match_cgroup(const struct mm_struct *mm, const struct mem_cgroup *cgroup)
 +{
-+	kfree(container_of(head, struct css_set, rcu));
++	struct mem_cgroup *mem;
++	rcu_read_lock();
++	mem = mem_cgroup_from_task((mm)->owner);
++	rcu_read_unlock();
++	return cgroup == mem;
 +}
-+
- static void __put_css_set(struct css_set *cg, int taskexit)
- {
- 	int i;
-@@ -281,7 +286,7 @@ static void __put_css_set(struct css_set *cg, int taskexit)
- 		}
- 	}
- 	rcu_read_unlock();
--	kfree(cg);
-+	call_rcu(&cg->rcu, rcu_free_css_set);
- }
  
- /*
-@@ -1267,7 +1277,6 @@ int cgroup_attach_task(struct cgroup *cgrp, struct task_struct *tsk)
- 			ss->attach(ss, cgrp, oldcgrp, tsk);
- 	}
- 	set_bit(CGRP_RELEASABLE, &oldcgrp->flags);
--	synchronize_rcu();
- 	put_css_set(cg);
- 	return 0;
- }
+ extern int
+ mem_cgroup_prepare_migration(struct page *page, struct page *newpage);
