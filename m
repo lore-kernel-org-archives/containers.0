@@ -1,8 +1,7 @@
 From: Lai Jiangshan <laijs-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Subject: [PATCH] cgroups: use task_lock() for access tsk->cgroups safe in
-	cgroup_clone()
-Date: Fri, 21 Nov 2008 16:49:55 +0800
-Message-ID: <49267633.8040607__41795.5391611487$1227264604$gmane$org@cn.fujitsu.com>
+Subject: [PATCH] cpuset: rcu_read_lock() to protect task_cs()
+Date: Fri, 21 Nov 2008 16:49:37 +0800
+Message-ID: <49267621.2070706__1919.84404013983$1227264726$gmane$org@cn.fujitsu.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -20,28 +19,36 @@ To: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Paul
 List-Id: containers.vger.kernel.org
 
 
-use task_lock() protect tsk->cgroups and get_css_set(tsk->cgroups)
+task_cs() calls cgroup_subsys_state().
 
+we must use rcu_read_lock() to protect cgroup_subsys_state().
+
+it's correct that top_cpuset is never freed, but cgroup_subsys_state()
+accesses css_set, this css_set maybe freed when task_cs() called.
+
+we use use rcu_read_lock() to protect it.
 
 Signed-off-by: Lai Jiangshan <laijs-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
 ---
-diff --git a/kernel/cgroup.c b/kernel/cgroup.c
-index 358e775..ddc10ac 100644
---- a/kernel/cgroup.c
-+++ b/kernel/cgroup.c
-@@ -2933,6 +2943,7 @@ int cgroup_clone(struct task_struct *tsk, struct cgroup_subsys *subsys,
- 		mutex_unlock(&cgroup_mutex);
- 		return 0;
- 	}
-+	task_lock(tsk);
- 	cg = tsk->cgroups;
- 	parent = task_cgroup(tsk, subsys->subsys_id);
+diff --git a/kernel/cpuset.c b/kernel/cpuset.c
+index 3e00526..e0e087e 100644
+--- a/kernel/cpuset.c
++++ b/kernel/cpuset.c
+@@ -363,14 +363,9 @@ void cpuset_update_task_memory_state(void)
+ 	struct task_struct *tsk = current;
+ 	struct cpuset *cs;
  
-@@ -2941,6 +2952,7 @@ int cgroup_clone(struct task_struct *tsk, struct cgroup_subsys *subsys,
+-	if (task_cs(tsk) == &top_cpuset) {
+-		/* Don't need rcu for top_cpuset.  It's never freed. */
+-		my_cpusets_mem_gen = top_cpuset.mems_generation;
+-	} else {
+-		rcu_read_lock();
+-		my_cpusets_mem_gen = task_cs(tsk)->mems_generation;
+-		rcu_read_unlock();
+-	}
++	rcu_read_lock();
++	my_cpusets_mem_gen = task_cs(tsk)->mems_generation;
++	rcu_read_unlock();
  
- 	/* Keep the cgroup alive */
- 	get_css_set(cg);
-+	task_unlock(tsk);
- 	mutex_unlock(&cgroup_mutex);
- 
- 	/* Now do the VFS work to create a cgroup */
+ 	if (my_cpusets_mem_gen != tsk->cpuset_mems_generation) {
+ 		mutex_lock(&callback_mutex);
