@@ -1,7 +1,7 @@
-From: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+From: Lai Jiangshan <laijs-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
 Subject: Re: [PATCH 1/2] cgroups: enhance task_cgroup()
-Date: Sat, 22 Nov 2008 10:02:29 +0800
-Message-ID: <49276835.4000502__48384.0848938145$1227319603$gmane$org@cn.fujitsu.com>
+Date: Sat, 22 Nov 2008 10:23:33 +0800
+Message-ID: <49276D25.5020001__10608.2517806955$1227320924$gmane$org@cn.fujitsu.com>
 References: <4926762A.7000602@cn.fujitsu.com>
 	<6599ad830811211058q3fe12e5coa62436e777b60f1a@mail.gmail.com>
 Mime-Version: 1.0
@@ -40,53 +40,26 @@ Paul Menage wrote:
 > 
 > Is there a reason to add an implicit rcu_read_lock() in task_cgroup()
 > and not directly in task_subsys_state() ?
+
+Yes.
+
+The caller have held the cgroup_lock() when it calls task_cgroup().
+After we add an implicit rcu_read_lock() in task_cgroup(),
+we don't need rcu_read_lock()/task_lock() for using task_cgroup().
+
+For cgroup_exit() will change tsk->cgroups, if we don't
+add an implicit rcu_read_lock() in task_cgroup(), we have to fix 7
+places which using task_cgroup().
+
+
+task_subsys_state() is different, it is used in fast path,
+If we add an implicit rcu_read_lock() in task_subsys_state(),
+we still need rcu_read_lock()/task_lock() for using it,
+so it's redundant rcu_read_lock(), and slower the fast path a little.
+
+
+Lai.
+
 > 
-
-I don't think it's a good idea to add rcu_read_lock() in task_cgroup() or
-task_subsys_state(). The returned pointer of the 2 functions should be
-protected by rcu_read_lock or cgroup_lock, so the caller should still
-hold the lock by itself.
-
-An example of this is:
-
-static int mem_cgroup_charge_common(...)
-{
-	...
-		rcu_read_lock();
-		mem = mem_cgroup_from_task(rcu_dereference(mm->owner));
-		if (unlikely(!mem)) {
-			rcu_read_unlock();
-			return 0;
-		}
-		/*
-		 * For every charge from the cgroup, increment reference count
-		 */
-		css_get(&mem->css);
-		rcu_read_unlock();
-	...
-}
-
 > Paul
 > 
->> Signed-off-by: Lai Jiangshan <laijs-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
->> ---
->> diff --git a/include/linux/cgroup.h b/include/linux/cgroup.h
->> index 1164963..22901ff 100644
->> --- a/include/linux/cgroup.h
->> +++ b/include/linux/cgroup.h
->> @@ -359,6 +360,10 @@
->>  static inline struct cgroup* task_cgroup(struct task_struct *task,
->>                                               int subsys_id)
->>  {
->> -       return task_subsys_state(task, subsys_id)->cgroup;
->> +       struct cgroup *ret;
->> +       rcu_read_lock();
->> +       ret = task_subsys_state(task, subsys_id)->cgroup;
->> +       rcu_read_unlock();
->> +       return ret;
->>  }
->>
->>  int cgroup_clone(struct task_struct *tsk, struct cgroup_subsys *ss,
->>
->>
->>
