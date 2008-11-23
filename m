@@ -1,65 +1,80 @@
-From: Gadgets Lmtd UK <sales-csugrS6DvApbcqt66nJM77VCufUGDwFn@public.gmane.org>
-Subject: Get your Blackberry Bold/$300 or Apple iPhone 16GB/$25
-Date: Sat, 22 Nov 2008 11:00:42 +0000
-Message-ID: <E1L3qEE-0000iO-Sd@cgi22-ch.uk.clara.net>
-Reply-To: gadgets.lmtd05-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org
+From: Oleg Nesterov <oleg@redhat.com>
+Subject: Re: [RFC][PATCH][v2] Define/use siginfo_from_ancestor_ns()
+Date: Mon, 24 Nov 2008 00:10:14 +0100
+Message-ID: <20081123231014.GA2424@redhat.com>
+References: <20081115212133.GA32140@us.ibm.com> <20081118175336.GA14178@redhat.com> <20081119012207.GA19092@us.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Content-Type: text/plain; charset=us-ascii
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1752485AbYKWWJ4@vger.kernel.org>
+Content-Disposition: inline
+In-Reply-To: <20081119012207.GA19092@us.ibm.com>
+Sender: linux-kernel-owner@vger.kernel.org
+To: Sukadev Bhattiprolu <sukadev@linux.vnet.ibm.com>
+Cc: ebiederm@xmission.com, daniel@hozac.com, xemul@openvz.org, containers@lists.osdl.org, linux-kernel@vger.kernel.org
 List-Id: containers.vger.kernel.org
 
+On 11/18, Sukadev Bhattiprolu wrote:
+>
+> |
+> | > +static inline int siginfo_from_ancestor_ns(siginfo_t *info)
+> | > +{
+> | > +	return SI_FROMUSER(info) && (info->si_pid == 0);
+> | > +}
+> |
+> | Yes, this is problem... I doubt we can rely on !si_pid here.
+> | More on this later.
+>
+> BTW, rather than clearing SIG_FROM_USER in send_signal(), can we
+> keep it till we dequeue the signal ? Yes, collect_signal() would
+> need to consider this flag. But when we dequeue, we can note that
+> it was from user and use that in the siginfo_from_ancestor() ?
 
+Yes! I thought about this too. As a last resort this should work
+afaics. But we should be carefull, we have to fix rm_from_queue_full()
+for example as well.
 
+Another note. We can split SIG_FROM_USER (if we are going to use this
+hack) into 2 flags: SIG_KILL_SUB_NS and SIG_MANGLE_SI_PID. We can
+even put "struct pid *pid" into si_signo along with these bits if
+we find some strange user which sends the signal on behalve of
+the different task.
 
-Apple iPhone 16GB.......$250 per unit
-Blackberry Bold.............$300 per unit
+But personally, I'd prefer to make 3 simple patches for the start.
+Then we can continue with these complications if needed. Sukadev,
+please feel free to disagree with me. I am just trying to make
+the first step reviewable and simple. No changes on dequeue path,
+no -ENOMEM in send_signal().
 
-Video Games
-Playstation 3 ........$220
-Nintendo Wii......... $200
-Sony PSP......... ....$140
-Xbox 360 Platinum/Premium.... $140
+1. Introduce SIG_FROM_USER (or whatever). Basically, the patch I
+   sent. Except I'd relly like to see this code under CONFIG_
+   just for documentation, but please feel free to ignore.
 
-Apple ipod Nano 4gb....$100
-Apple ipod Nano 80gb...$250
+   So, with this patch send_signal() has "bool from_ancestor", which
+   is not used so far. And we the fixup code after copy_siginfo()
+   which clears the flags, or better yet just sets .si_signo = sig.
 
-GSM PHONES
+2. Now we change send_signal()
 
-Motorola V3i D&G......$250
-Nokia N95......... ...$320
-Nokia N93......... ...$260
-Nokia N93i ...........$280
-Nokia N70 ............$160
-Nokia N72 ............$175
-Nokia N73 ............$250
-Nokia N80 ............$200
-Nokia N90 ............$200
-Nokia N91 ............$200
+	+	if (from_ancestor && sig == SIGKILL)
+	+		t->signal->flags &= ~SIGNAL_UNKILLABLE;
+		if (!prepare_signal(...))
+			return;
 
-BUY ANY 5 UNITS AND GET 2 FREE
+   and change copy_signal() to set SIGNAL_UNKILLABLE for
+   cinit.
 
+   From now cinit is protected from unwanted signals from
+   its namespace, and the parent can always kill it with
+   SIGKILL.
 
-All GSM Phones,Brand New,Tri- Band and Video Games are also Brand new with
-Complete Accessories plus Int'l Warranty .
+   Actually, I think this is enough to solve most problems,
+   the further changes can be discussed later. OK, the only
+   "real" problem is SIGSTOP, afaics. This looks solveable.
 
+3. mangle .si_pid in send_signal(). Again, it is not clear
+   what should we do with sys_rt_sigqueueinfo(), but there
+   is no "obviously right" solution.
 
-e-mail us for more enquiry
+And I am really sorry for delay.
 
-gadgets.lmtd05-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org
-
-GADGETS LIMITED (UK) LTD
-Registered No. 05881519
-THE OLD STABLES, ARUNDEL ROAD,
-POLING, ARUNDEL, WEST SUSSEX, BN18 9QA
-UNITED KINGDOM
+Oleg.
