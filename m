@@ -1,15 +1,16 @@
-From: Louis Rilling <Louis.Rilling-aw0BnHfMbSpBDgjK7y7TUQ@public.gmane.org>
-Subject: Re: [PATCH 1/2] Add flags for user-space and in-kernel process
-	creation
-Date: Mon, 24 Nov 2008 17:02:11 +0100
-Message-ID: <20081124160211.GE27238@hawkmoon.kerlabs.com>
-References: <1227541175-30301-1-git-send-email-major@openvz.org>
-	<1227541175-30301-2-git-send-email-major@openvz.org>
-Reply-To: Louis.Rilling-aw0BnHfMbSpBDgjK7y7TUQ@public.gmane.org
+From: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH] cgroups: fix incorrect using rcu_dereference() in
+	cgroup_subsys_state()
+Date: Mon, 24 Nov 2008 12:45:49 -0800
+Message-ID: <6599ad830811241245v3b16853dw4c3abd0e36d40ea6__27647.1500438221$1227559703$gmane$org@mail.gmail.com>
+References: <4926761E.8030002@cn.fujitsu.com>
+	<6599ad830811211007s43f0c683s9d56e0aed3af938@mail.gmail.com>
+	<49277AF7.3090000@cn.fujitsu.com>
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary="===============6840114978315888283=="
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1227541175-30301-2-git-send-email-major-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+In-Reply-To: <49277AF7.3090000-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -17,123 +18,71 @@ List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public
 List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
 List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Mime-version: 1.0
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Andrey Mirkin <major-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: Lai Jiangshan <laijs-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+Cc: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Linux Kernel Mailing List <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-This is a MIME-formatted message.  If you see this text it means that your
-E-mail software does not support MIME-formatted messages.
+On Fri, Nov 21, 2008 at 7:22 PM, Lai Jiangshan <laijs-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org> wrote:
+>> No, if you use cgroup_lock() you can do this for any task.
+>> cgroup_lock() is the cgroups equivalent of the BKL, and definitely
+>> prevents all task movement between groups.
+>
+> cgroup_exit() will defeat you.
 
---===============6840114978315888283==
-Content-Type: multipart/signed; micalg=pgp-sha1; protocol="application/pgp-signature"; boundary="=_bohort-26512-1227542379-0001-2"
-Content-Disposition: inline
+Ah, good point. You should mention that in your description of the
+locking rules. But it would be nice if we could get rid of that
+restriction.
 
-This is a MIME-formatted message.  If you see this text it means that your
-E-mail software does not support MIME-formatted messages.
+Paul
 
---=_bohort-26512-1227542379-0001-2
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
-
-On 24/11/08 18:39 +0300, Andrey Mirkin wrote:
-> Introduce 2 flags for user-space and in-kernel process creation during
-> restart procedure.
-> Also a stub function for in-kernel process restart is introduced.
->=20
-
-[...]
-
-> diff --git a/checkpoint/sys.c b/checkpoint/sys.c
-> index 7745500..e4a9287 100644
-> --- a/checkpoint/sys.c
-> +++ b/checkpoint/sys.c
-> @@ -264,8 +264,8 @@ asmlinkage long sys_restart(int crid, int fd, unsigne=
-d long flags)
->  	pid_t pid;
->  	int ret;
-> =20
-> -	/* no flags for now */
-> -	if (flags)
-> +	if ((flags & (CR_CTX_RSTR_IN_USERSPACE | CR_CTX_RSTR_IN_USERSPACE)) =3D=
-=3D
-> +			(CR_CTX_RSTR_IN_USERSPACE | CR_CTX_RSTR_IN_USERSPACE))
-
-I guess that the intent was:
-+	if ((flags & (CR_CTX_RSTR_IN_USERSPACE | CR_CTX_RSTR_IN_KERNEL)) =3D=3D
-+			(CR_CTX_RSTR_IN_USERSPACE | CR_CTX_RSTR_IN_KERNEL))
-
-?
-
-Louis
-
->  		return -EINVAL;
-> =20
->  	/* FIXME: for now, we use 'crid' as a pid */
-> diff --git a/include/linux/checkpoint.h b/include/linux/checkpoint.h
-> index cab5e19..947469a 100644
-> --- a/include/linux/checkpoint.h
-> +++ b/include/linux/checkpoint.h
-> @@ -61,6 +61,8 @@ struct cr_ctx {
->  /* cr_ctx: flags */
->  #define CR_CTX_CKPT	0x1
->  #define CR_CTX_RSTR	0x2
-> +#define CR_CTX_RSTR_IN_USERSPACE	0x4
-> +#define CR_CTX_RSTR_IN_KERNEL		0x8
-> =20
->  extern int cr_kwrite(struct cr_ctx *ctx, void *buf, int count);
->  extern int cr_kread(struct cr_ctx *ctx, void *buf, int count);
-> @@ -108,6 +110,7 @@ extern int cr_write_mm(struct cr_ctx *ctx, struct tas=
-k_struct *t);
->  extern int cr_write_files(struct cr_ctx *ctx, struct task_struct *t);
-> =20
->  extern int do_restart(struct cr_ctx *ctx, pid_t pid);
-> +extern int do_restart_in_kernel(struct cr_ctx *ctx);
->  extern int cr_read_mm(struct cr_ctx *ctx);
->  extern int cr_read_files(struct cr_ctx *ctx);
-> =20
-> --=20
-> 1.5.6
->=20
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-kernel" in
-> the body of a message to majordomo-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> Please read the FAQ at  http://www.tux.org/lkml/
-
---=20
-Dr Louis Rilling			Kerlabs
-Skype: louis.rilling			Batiment Germanium
-Phone: (+33|0) 6 80 89 08 23		80 avenue des Buttes de Coesmes
-http://www.kerlabs.com/			35700 Rennes
-
---=_bohort-26512-1227542379-0001-2
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Transfer-Encoding: 7bit
-Content-Description: Digital signature
-Content-Disposition: inline
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.6 (GNU/Linux)
-
-iD8DBQFJKtACVKcRuvQ9Q1QRAjU7AKDEDbmB926iU/ehqNhof6qb5ASXJACfWOsV
-D8tliYbn8YOCaXugOKIofCE=
-=ZWhK
------END PGP SIGNATURE-----
-
---=_bohort-26512-1227542379-0001-2--
-
---===============6840114978315888283==
-Content-Type: text/plain; charset="us-ascii"
-MIME-Version: 1.0
-Content-Transfer-Encoding: 7bit
-Content-Disposition: inline
-
-_______________________________________________
-Containers mailing list
-Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-https://lists.linux-foundation.org/mailman/listinfo/containers
---===============6840114978315888283==--
+>
+>>>  static inline struct cgroup_subsys_state *task_subsys_state(
+>>>        struct task_struct *task, int subsys_id)
+>>>  {
+>>> -       return rcu_dereference(task->cgroups->subsys[subsys_id]);
+>>> +       /*
+>>> +        * ->subsys[subsys_id] are read-only data, so we do not need
+>>> +        * rcu_dereference() for it.
+>>> +        */
+>>> +       return rcu_dereference(task->cgroups)->subsys[subsys_id];
+>>>  }
+>>
+>> Change looks OK but I think we can lose the additional comment.
+>>
+>> Paul
+>>
+>>
+>>
+>
+> I just remembered I had deferred Li Zefan's patch.
+> (I'm also RCU developer, I had been writing CGROUP VS RCU then,
+> I thought these patches should be sent together, So I deferred his patch)
+>
+> From: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+> Date: Mon, 25 Aug 2008 11:05:28 +0800
+> Subject: [PATCH] cgroup: fix wrong rcu_dereference()
+>
+> It is tsk->cgroups which is protected by RCU.
+>
+> Signed-off-by: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+> ---
+>  include/linux/cgroup.h |    2 +-
+>  1 files changed, 1 insertions(+), 1 deletions(-)
+>
+> diff --git a/include/linux/cgroup.h b/include/linux/cgroup.h
+> index c98dd7c..d911dc7 100644
+> --- a/include/linux/cgroup.h
+> +++ b/include/linux/cgroup.h
+> @@ -355,7 +355,7 @@ static inline struct cgroup_subsys_state *cgroup_subsys_state(
+>  static inline struct cgroup_subsys_state *task_subsys_state(
+>        struct task_struct *task, int subsys_id)
+>  {
+> -       return rcu_dereference(task->cgroups->subsys[subsys_id]);
+> +       return rcu_dereference(task->cgroups)->subsys[subsys_id];
+>  }
+>
+>  static inline struct cgroup* task_cgroup(struct task_struct *task,
+>
+>
