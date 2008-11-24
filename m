@@ -1,80 +1,199 @@
-From: Oleg Nesterov <oleg@redhat.com>
-Subject: Re: [RFC][PATCH][v2] Define/use siginfo_from_ancestor_ns()
-Date: Mon, 24 Nov 2008 00:10:14 +0100
-Message-ID: <20081123231014.GA2424@redhat.com>
-References: <20081115212133.GA32140@us.ibm.com> <20081118175336.GA14178@redhat.com> <20081119012207.GA19092@us.ibm.com>
+From: Daniel Lezcano <dlezcano@fr.ibm.com>
+Subject: [patch 1/1][RFC]Handle uevent per namespace
+Date: Mon, 24 Nov 2008 11:50:34 +0100
+Message-ID: <492A86FA.5080804@fr.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1752485AbYKWWJ4@vger.kernel.org>
-Content-Disposition: inline
-In-Reply-To: <20081119012207.GA19092@us.ibm.com>
-Sender: linux-kernel-owner@vger.kernel.org
-To: Sukadev Bhattiprolu <sukadev@linux.vnet.ibm.com>
-Cc: ebiederm@xmission.com, daniel@hozac.com, xemul@openvz.org, containers@lists.osdl.org, linux-kernel@vger.kernel.org
+Content-Type: multipart/mixed;
+ boundary="------------060705040705090005000706"
+Return-path: <netdev-owner@vger.kernel.org>
+Sender: netdev-owner@vger.kernel.org
+To: Linux Kernel Mailing List <linux-kernel@vger.kernel.org>, Linux Netdev List <netdev@vger.kernel.org>, Greg KH <greg@kroah.com>, David Miller <davem@davemloft.net>
+Cc: Linux Containers <containers@lists.osdl.org>, "Eric W. Biederman" <ebiederm@xmission.com>, Benjamin Thery <benjamin.thery@bull.net>
 List-Id: containers.vger.kernel.org
 
-On 11/18, Sukadev Bhattiprolu wrote:
->
-> |
-> | > +static inline int siginfo_from_ancestor_ns(siginfo_t *info)
-> | > +{
-> | > +	return SI_FROMUSER(info) && (info->si_pid == 0);
-> | > +}
-> |
-> | Yes, this is problem... I doubt we can rely on !si_pid here.
-> | More on this later.
->
-> BTW, rather than clearing SIG_FROM_USER in send_signal(), can we
-> keep it till we dequeue the signal ? Yes, collect_signal() would
-> need to consider this flag. But when we dequeue, we can note that
-> it was from user and use that in the siginfo_from_ancestor() ?
+This is a multi-part message in MIME format.
+--------------060705040705090005000706
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+Content-Transfer-Encoding: 7bit
 
-Yes! I thought about this too. As a last resort this should work
-afaics. But we should be carefull, we have to fix rm_from_queue_full()
-for example as well.
 
-Another note. We can split SIG_FROM_USER (if we are going to use this
-hack) into 2 flags: SIG_KILL_SUB_NS and SIG_MANGLE_SI_PID. We can
-even put "struct pid *pid" into si_signo along with these bits if
-we find some strange user which sends the signal on behalve of
-the different task.
 
-But personally, I'd prefer to make 3 simple patches for the start.
-Then we can continue with these complications if needed. Sukadev,
-please feel free to disagree with me. I am just trying to make
-the first step reviewable and simple. No changes on dequeue path,
-no -ENOMEM in send_signal().
+--------------060705040705090005000706
+Content-Type: text/x-diff;
+ name="make-kobject-uevent-per-namespace.patch"
+Content-Transfer-Encoding: 7bit
+Content-Disposition: inline;
+ filename="make-kobject-uevent-per-namespace.patch"
 
-1. Introduce SIG_FROM_USER (or whatever). Basically, the patch I
-   sent. Except I'd relly like to see this code under CONFIG_
-   just for documentation, but please feel free to ignore.
+Subject: Handle uevent per namespace
+From: Daniel Lezcano <dlezcano@fr.ibm.com>
 
-   So, with this patch send_signal() has "bool from_ancestor", which
-   is not used so far. And we the fixup code after copy_siginfo()
-   which clears the flags, or better yet just sets .si_signo = sig.
+At present when a network device is destroyed, inside a network
+namespace, and this device has the same name as one network device
+belonging to the initial network namespace (eg. eth0), the udev daemon
+will disable the interface in the initial network namespace.
 
-2. Now we change send_signal()
+IMHO, udev should not receive this event. The uevents should be per
+namespace or at least do not send events when not for the initial
+network namespace.
 
-	+	if (from_ancestor && sig == SIGKILL)
-	+		t->signal->flags &= ~SIGNAL_UNKILLABLE;
-		if (!prepare_signal(...))
-			return;
+The following patch is a RFC for making uevent namespace aware. I don't
+know this part of the kernel code, so I am pretty sure t is not the 
+right way to do that :) 
 
-   and change copy_signal() to set SIGNAL_UNKILLABLE for
-   cinit.
+I tried to avoid, in the kobject code, to follow up the fields to 
+net_device because that will add adherence between the generic kobject
+code and the other kernel subsystem.
 
-   From now cinit is protected from unwanted signals from
-   its namespace, and the parent can always kill it with
-   SIGKILL.
+Signed-off-by: Daniel Lezcano <dlezcano@fr.ibm.com>
+---
+ include/linux/kobject.h     |    5 +++++
+ include/net/net_namespace.h |    3 +++
+ lib/kobject.c               |    4 ++++
+ lib/kobject_uevent.c        |   30 ++++++++++++++++++++++--------
+ net/core/net-sysfs.c        |    1 +
+ 5 files changed, 35 insertions(+), 8 deletions(-)
 
-   Actually, I think this is enough to solve most problems,
-   the further changes can be discussed later. OK, the only
-   "real" problem is SIGSTOP, afaics. This looks solveable.
+Index: net-next-2.6/include/linux/kobject.h
+===================================================================
+--- net-next-2.6.orig/include/linux/kobject.h
++++ net-next-2.6/include/linux/kobject.h
+@@ -56,6 +56,8 @@ enum kobject_action {
+ 	KOBJ_MAX
+ };
+ 
++struct net;
++
+ struct kobject {
+ 	const char		*name;
+ 	struct list_head	entry;
+@@ -63,6 +65,9 @@ struct kobject {
+ 	struct kset		*kset;
+ 	struct kobj_type	*ktype;
+ 	struct sysfs_dirent	*sd;
++#ifdef CONFIG_NET
++	struct net              *net;
++#endif
+ 	struct kref		kref;
+ 	unsigned int state_initialized:1;
+ 	unsigned int state_in_sysfs:1;
+Index: net-next-2.6/include/net/net_namespace.h
+===================================================================
+--- net-next-2.6.orig/include/net/net_namespace.h
++++ net-next-2.6/include/net/net_namespace.h
+@@ -75,6 +75,9 @@ struct net {
+ #endif
+ #endif
+ 	struct net_generic	*gen;
++#ifdef CONFIG_HOTPLUG
++	struct sock             *uevent_sock;
++#endif
+ };
+ 
+ 
+Index: net-next-2.6/lib/kobject.c
+===================================================================
+--- net-next-2.6.orig/lib/kobject.c
++++ net-next-2.6/lib/kobject.c
+@@ -17,6 +17,7 @@
+ #include <linux/module.h>
+ #include <linux/stat.h>
+ #include <linux/slab.h>
++#include <net/net_namespace.h>
+ 
+ /*
+  * populate_dir - populate directory with attributes.
+@@ -148,6 +149,9 @@ static void kobject_init_internal(struct
+ 		return;
+ 	kref_init(&kobj->kref);
+ 	INIT_LIST_HEAD(&kobj->entry);
++#ifdef CONFIG_NET
++	kobj->net = &init_net;
++#endif
+ 	kobj->state_in_sysfs = 0;
+ 	kobj->state_add_uevent_sent = 0;
+ 	kobj->state_remove_uevent_sent = 0;
+Index: net-next-2.6/lib/kobject_uevent.c
+===================================================================
+--- net-next-2.6.orig/lib/kobject_uevent.c
++++ net-next-2.6/lib/kobject_uevent.c
+@@ -28,9 +28,6 @@
+ u64 uevent_seqnum;
+ char uevent_helper[UEVENT_HELPER_PATH_LEN] = CONFIG_UEVENT_HELPER_PATH;
+ static DEFINE_SPINLOCK(sequence_lock);
+-#if defined(CONFIG_NET)
+-static struct sock *uevent_sock;
+-#endif
+ 
+ /* the strings here must match the enum in include/linux/kobject.h */
+ static const char *kobject_actions[] = {
+@@ -203,7 +200,7 @@ int kobject_uevent_env(struct kobject *k
+ 
+ #if defined(CONFIG_NET)
+ 	/* send netlink message */
+-	if (uevent_sock) {
++	if (kobj->net->uevent_sock) {
+ 		struct sk_buff *skb;
+ 		size_t len;
+ 
+@@ -225,7 +222,8 @@ int kobject_uevent_env(struct kobject *k
+ 			}
+ 
+ 			NETLINK_CB(skb).dst_group = 1;
+-			netlink_broadcast(uevent_sock, skb, 0, 1, GFP_KERNEL);
++			netlink_broadcast(kobj->net->uevent_sock,
++					  skb, 0, 1, GFP_KERNEL);
+ 		}
+ 	}
+ #endif
+@@ -307,11 +305,11 @@ int add_uevent_var(struct kobj_uevent_en
+ EXPORT_SYMBOL_GPL(add_uevent_var);
+ 
+ #if defined(CONFIG_NET)
+-static int __init kobject_uevent_init(void)
++static int kobject_uevent_net_init(struct net *net)
+ {
+-	uevent_sock = netlink_kernel_create(&init_net, NETLINK_KOBJECT_UEVENT,
++	net->uevent_sock = netlink_kernel_create(net, NETLINK_KOBJECT_UEVENT,
+ 					    1, NULL, NULL, THIS_MODULE);
+-	if (!uevent_sock) {
++	if (!net->uevent_sock) {
+ 		printk(KERN_ERR
+ 		       "kobject_uevent: unable to create netlink socket!\n");
+ 		return -ENODEV;
+@@ -320,5 +318,21 @@ static int __init kobject_uevent_init(vo
+ 	return 0;
+ }
+ 
++static void kobject_uevent_net_exit(struct net *net)
++{
++	netlink_kernel_release(net->uevent_sock);
++}
++
++static struct pernet_operations kobject_uevent_net_ops = {
++	.init = kobject_uevent_net_init,
++	.exit = kobject_uevent_net_exit,
++};
++
++
++static int __init kobject_uevent_init(void)
++{
++	return register_pernet_subsys(&kobject_uevent_net_ops);
++}
++
+ postcore_initcall(kobject_uevent_init);
+ #endif
+Index: net-next-2.6/net/core/net-sysfs.c
+===================================================================
+--- net-next-2.6.orig/net/core/net-sysfs.c
++++ net-next-2.6/net/core/net-sysfs.c
+@@ -491,6 +491,7 @@ int netdev_register_kobject(struct net_d
+ 	dev->class = &net_class;
+ 	dev->platform_data = net;
+ 	dev->groups = groups;
++	dev->kobj.net = dev_net(net);
+ 
+ 	BUILD_BUG_ON(BUS_ID_SIZE < IFNAMSIZ);
+ 	dev_set_name(dev, net->name);
 
-3. mangle .si_pid in send_signal(). Again, it is not clear
-   what should we do with sys_rt_sigqueueinfo(), but there
-   is no "obviously right" solution.
-
-And I am really sorry for delay.
-
-Oleg.
+--------------060705040705090005000706--
