@@ -1,43 +1,32 @@
-From: Greg KH <greg@kroah.com>
-Subject: Re: [patch 1/1][RFC]Handle uevent per namespace
-Date: Mon, 24 Nov 2008 07:31:38 -0800
-Message-ID: <20081124153138.GA16742@kroah.com>
-References: <492A86FA.5080804@fr.ibm.com>
+From: Andrey Mirkin <major-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+Subject: [PATCH 0/2] In-kernel process restart
+Date: Mon, 24 Nov 2008 18:39:33 +0300
+Message-ID: <1227541175-30301-1-git-send-email-major__2115.06251148439$1227541544$gmane$org@openvz.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Return-path: <netdev-owner@vger.kernel.org>
-Content-Disposition: inline
-In-Reply-To: <492A86FA.5080804@fr.ibm.com>
-Sender: netdev-owner@vger.kernel.org
-To: Daniel Lezcano <dlezcano@fr.ibm.com>
-Cc: Linux Kernel Mailing List <linux-kernel@vger.kernel.org>, Linux Netdev List <netdev@vger.kernel.org>, David Miller <davem@davemloft.net>, Linux Containers <containers@lists.osdl.org>, "Eric W. Biederman" <ebiederm@xmission.com>, Benjamin Thery <benjamin.thery@bull.net>
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Cc: linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Andrey Mirkin <major-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Mon, Nov 24, 2008 at 11:50:34AM +0100, Daniel Lezcano wrote:
->
+These patchset introduces OpenVZ kernel based restart procedure on top of
+Oren's checkpoint/restart patchset v9.
 
-> Subject: Handle uevent per namespace
-> From: Daniel Lezcano <dlezcano@fr.ibm.com>
-> 
-> At present when a network device is destroyed, inside a network
-> namespace, and this device has the same name as one network device
-> belonging to the initial network namespace (eg. eth0), the udev daemon
-> will disable the interface in the initial network namespace.
-> 
-> IMHO, udev should not receive this event. The uevents should be per
-> namespace or at least do not send events when not for the initial
-> network namespace.
+For restarting a set of processes one will need to call sys_restart() once with
+new flag CR_CTX_RSTR_IN_KERNEL. All work will be done in kernel in this case.
 
-IMHO, network namespaces are a mess and not something that you should be
-doing at all :)
+Small changes to image format are required to make in-kernel process creation
+more easy.
 
-> The following patch is a RFC for making uevent namespace aware. I don't
-> know this part of the kernel code, so I am pretty sure t is not the 
-> right way to do that :) 
-
-Like Kay said, please don't change the kobject core for this, try just
-filtering in the network core the events that you handle there.
-
-good luck,
-
-greg k-h
+Oren, please take a look on this patchset. I've tried to port OpenVZ
+functionality on top of yours with minimal changes.
