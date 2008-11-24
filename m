@@ -1,7 +1,7 @@
 From: Jean-Louis Yaich <jean-louis-pQaXDZsaI7K1nHHjArqmGksaDTP6FzCwAL8bYrjMMd8@public.gmane.org>
 Subject: Livres anciens, restauration et conservation
 Date: Mon, 24 Nov 2008 00:52:47 -0800
-Message-ID: <200811241054.mAOAs3ua030223@smtp1.linux-foundation.org>
+Message-ID: <200811241105.mAOB5cRX030763@smtp1.linux-foundation.org>
 Reply-To: Jean-Louis Yaich <reponse-pQaXDZsaI7K1nHHjArqmGksaDTP6FzCwAL8bYrjMMd8@public.gmane.org>
 Mime-Version: 1.0
 Content-Type: multipart/mixed;
@@ -16,7 +16,7 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org" <Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+To: "containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org" <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
 This is a multipart message in MIME format
