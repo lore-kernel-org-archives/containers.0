@@ -1,40 +1,38 @@
-From: Jean-Louis Yaich <jean-louis-pQaXDZsaI7K1nHHjArqmGksaDTP6FzCwAL8bYrjMMd8@public.gmane.org>
-Subject: Livres anciens, restauration et conservation
-Date: Mon, 24 Nov 2008 00:52:47 -0800
-Message-ID: <200811241105.mAOB5cRX030763@smtp1.linux-foundation.org>
-Reply-To: Jean-Louis Yaich <reponse-pQaXDZsaI7K1nHHjArqmGksaDTP6FzCwAL8bYrjMMd8@public.gmane.org>
+From: "Kay Sievers" <kay.sievers@vrfy.org>
+Subject: Re: [patch 1/1][RFC]Handle uevent per namespace
+Date: Mon, 24 Nov 2008 16:14:54 +0100
+Message-ID: <ac3eb2510811240714l76b15469lea541bb4badd328@mail.gmail.com>
+References: <492A86FA.5080804@fr.ibm.com>
 Mime-Version: 1.0
-Content-Type: multipart/mixed;
-	boundary="----=_Part_914161_045887102.1227516767993"
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org" <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 7bit
+Return-path: <netdev-owner@vger.kernel.org>
+In-Reply-To: <492A86FA.5080804@fr.ibm.com>
+Content-Disposition: inline
+Sender: netdev-owner@vger.kernel.org
+To: Daniel Lezcano <dlezcano@fr.ibm.com>
+Cc: Linux Kernel Mailing List <linux-kernel@vger.kernel.org>, Linux Netdev List <netdev@vger.kernel.org>, Greg KH <greg@kroah.com>, David Miller <davem@davemloft.net>, Linux Containers <containers@lists.osdl.org>, "Eric W. Biederman" <ebiederm@xmission.com>, Benjamin Thery <benjamin.thery@bull.net>
 List-Id: containers.vger.kernel.org
 
-This is a multipart message in MIME format
+On Mon, Nov 24, 2008 at 11:50, Daniel Lezcano <dlezcano@fr.ibm.com> wrote:
 
-------=_Part_914161_045887102.1227516767993
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
+ struct kobject {
+ 	const char		*name;
+ 	struct list_head	entry;
+@@ -63,6 +65,9 @@ struct kobject {
+ 	struct kset		*kset;
+ 	struct kobj_type	*ktype;
+ 	struct sysfs_dirent	*sd;
++#ifdef CONFIG_NET
++	struct net              *net;
++#endif
+ 	struct kref		kref;
+ 	unsigned int state_initialized:1;
+ 	unsigned int state_in_sysfs:1;
 
+We cannot do that. Network specific stuff does not belong into
+kobjects. Kobjects are not in any way subsystem specific, and we need
+to keep it that way.
 
-
-------=_Part_914161_045887102.1227516767993
-Content-Type: text/plain; charset="us-ascii"
-MIME-Version: 1.0
-Content-Transfer-Encoding: 7bit
-Content-Disposition: inline
-
-_______________________________________________
-Containers mailing list
-Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-https://lists.linux-foundation.org/mailman/listinfo/containers
-------=_Part_914161_045887102.1227516767993--
+Thanks,
+Kay
