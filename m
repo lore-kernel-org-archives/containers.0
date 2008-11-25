@@ -1,55 +1,55 @@
-From: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: Re: [PATCH 2/2] Add support for in-kernel process creation during
-	restart
-Date: Tue, 25 Nov 2008 03:45:11 +0300
-Message-ID: <20081125004024.GA4440__38836.7880289026$1227573828$gmane$org@x200.localdomain>
-References: <1227541175-30301-1-git-send-email-major@openvz.org>
-	<1227541175-30301-2-git-send-email-major@openvz.org>
-	<1227541175-30301-3-git-send-email-major@openvz.org>
+From: "Serge E. Hallyn" <serue@us.ibm.com>
+Subject: [PATCH 3/3] user namespaces: let user_ns be cloned with fairsched
+Date: Mon, 24 Nov 2008 19:06:30 -0600
+Message-ID: <20081125010630.GA12548@us.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Content-Type: text/plain; charset=us-ascii
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1755285AbYKYBGn@vger.kernel.org>
 Content-Disposition: inline
-In-Reply-To: <1227541175-30301-3-git-send-email-major-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Andrey Mirkin <major-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Sender: linux-kernel-owner@vger.kernel.org
+To: lkml <linux-kernel@vger.kernel.org>
+Cc: Linux Containers <containers@lists.osdl.org>, "Eric W. Biederman" <ebiederm@xmission.com>, Michael Kerrisk <mtk.manpages@gmail.com>, Dhaval Giani <dhaval@linux.vnet.ibm.com>
 List-Id: containers.vger.kernel.org
 
-On Mon, Nov 24, 2008 at 06:39:35PM +0300, Andrey Mirkin wrote:
-> +static int cr_rstr_task_struct(struct cr_ctx *ctx, struct cr_hdr_task *ht)
-> +{
-> +	struct task_struct *t = current;
-> +	char *buf;
-> +	int ret = -EINVAL;
-> +
-> +	/* upper limit for task_comm_len to prevent DoS */
-> +	if (ht->task_comm_len < 0 || ht->task_comm_len > PAGE_SIZE)
-> +		goto out;
-> +
-> +	buf = kmalloc(ht->task_comm_len, GFP_KERNEL);
-> +	if (!buf)
-> +		goto out;
-> +	ret = cr_read_string(ctx, buf, ht->task_comm_len);
-> +	if (!ret) {
-> +		/* if t->comm is too long, silently truncate */
-> +		memset(t->comm, 0, TASK_COMM_LEN);
-> +		memcpy(t->comm, buf, min(ht->task_comm_len, TASK_COMM_LEN));
-> +	}
-> +	kfree(buf);
-> +
-> +	/* FIXME: restore remaining relevant task_struct fields */
-> +out:
-> +	return ret;
-> +}
+fairsched creates a per-uid directory under /sys/kernel/uids/.
+So when you clone(CLONE_NEWUSER), it tries to create
+/sys/kernel/uids/0, which already exists, and you get back
+-ENOMEM.
 
-->comm is only 16 bytes wide, you can just use on-stack variable.
+This was supposed to be fixed by sysfs tagging, but that
+was postponed (ok, rejected until sysfs locking is fixed).
+So, just as with network namespaces, we just don't create
+those directories for user namespaces other than the init.
+
+Signed-off-by: Serge E. Hallyn <serue@us.ibm.com>
+
+---
+
+ kernel/user.c |    4 ++++
+ 1 files changed, 4 insertions(+), 0 deletions(-)
+
+2d00643e7a4eda47526be7bca9600fda0d96c1c0
+diff --git a/kernel/user.c b/kernel/user.c
+index 97202cb..6c924bc 100644
+--- a/kernel/user.c
++++ b/kernel/user.c
+@@ -246,6 +246,8 @@ static int uids_user_create(struct user_
+ 	int error;
+ 
+ 	memset(kobj, 0, sizeof(struct kobject));
++	if (up->user_ns != &init_user_ns)
++		return 0;
+ 	kobj->kset = uids_kset;
+ 	error = kobject_init_and_add(kobj, &uids_ktype, NULL, "%d", up->uid);
+ 	if (error) {
+@@ -281,6 +283,8 @@ static void remove_user_sysfs_dir(struct
+ 	unsigned long flags;
+ 	int remove_user = 0;
+ 
++	if (up->user_ns != &init_user_ns)
++		return;
+ 	/* Make uid_hash_remove() + sysfs_remove_file() + kobject_del()
+ 	 * atomic.
+ 	 */
+-- 
+1.1.6
