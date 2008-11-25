@@ -1,13 +1,14 @@
 From: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: [PATCH 02/53] netns xfrm: add netns boilerplate
-Date: Tue, 25 Nov 2008 20:26:34 +0300
-Message-ID: <1227634045-27534-2-git-send-email-adobriyan__42290.6631640673$1227634211$gmane$org@gmail.com>
+Subject: [PATCH 03/53] netns xfrm: add struct xfrm_state::xs_net
+Date: Tue, 25 Nov 2008 20:26:35 +0300
+Message-ID: <1227634045-27534-3-git-send-email-adobriyan__37670.4147122384$1227634272$gmane$org@gmail.com>
 References: <1227634045-27534-1-git-send-email-adobriyan@gmail.com>
+	<1227634045-27534-2-git-send-email-adobriyan@gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1227634045-27534-1-git-send-email-adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+In-Reply-To: <1227634045-27534-2-git-send-email-adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -21,163 +22,165 @@ To: davem-fT/PcQaiUtIeIZ0/mPfg9Q@public.gmane.org
 Cc: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, kuznet-v/Mj1YrvjDBInbfyfbPRSQ@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, herbert-lOAM2aK0SrRLBo1qDEOMRrpzq4S04n8Q@public.gmane.org, netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
+To avoid unnecessary complications with passing netns around.
+
+* set once, very early after allocating
+* once set, never changes
+
+For a while create every xfrm_state in init_net.
+
 Signed-off-by: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 ---
- include/net/net_namespace.h |    4 +++
- include/net/netns/xfrm.h    |    7 ++++++
- include/net/xfrm.h          |    3 +-
- net/xfrm/xfrm_policy.c      |   45 ++++++++++++++++++++++++++++++++++++++----
- net/xfrm/xfrm_state.c       |    7 +++++-
- 5 files changed, 59 insertions(+), 7 deletions(-)
- create mode 100644 include/net/netns/xfrm.h
+ include/net/xfrm.h    |   10 +++++++++-
+ net/ipv4/ipcomp.c     |    2 +-
+ net/ipv6/ipcomp6.c    |    2 +-
+ net/key/af_key.c      |    2 +-
+ net/xfrm/xfrm_state.c |    9 +++++----
+ net/xfrm/xfrm_user.c  |    4 ++--
+ 6 files changed, 19 insertions(+), 10 deletions(-)
 
-diff --git a/include/net/net_namespace.h b/include/net/net_namespace.h
-index 3195577..6fc13d9 100644
---- a/include/net/net_namespace.h
-+++ b/include/net/net_namespace.h
-@@ -19,6 +19,7 @@
- #if defined(CONFIG_NF_CONNTRACK) || defined(CONFIG_NF_CONNTRACK_MODULE)
- #include <net/netns/conntrack.h>
- #endif
-+#include <net/netns/xfrm.h>
- 
- struct proc_dir_entry;
- struct net_device;
-@@ -74,6 +75,9 @@ struct net {
- 	struct netns_ct		ct;
- #endif
- #endif
-+#ifdef CONFIG_XFRM
-+	struct netns_xfrm	xfrm;
-+#endif
- 	struct net_generic	*gen;
- };
- 
-diff --git a/include/net/netns/xfrm.h b/include/net/netns/xfrm.h
-new file mode 100644
-index 0000000..1cb0024
---- /dev/null
-+++ b/include/net/netns/xfrm.h
-@@ -0,0 +1,7 @@
-+#ifndef __NETNS_XFRM_H
-+#define __NETNS_XFRM_H
-+
-+struct netns_xfrm {
-+};
-+
-+#endif
 diff --git a/include/net/xfrm.h b/include/net/xfrm.h
-index 45e11b3..9107d6f 100644
+index 9107d6f..9da8903 100644
 --- a/include/net/xfrm.h
 +++ b/include/net/xfrm.h
-@@ -1269,7 +1269,8 @@ struct xfrm6_tunnel {
- 
- extern void xfrm_init(void);
- extern void xfrm4_init(void);
--extern void xfrm_state_init(void);
-+extern int xfrm_state_init(struct net *net);
-+extern void xfrm_state_fini(struct net *net);
- extern void xfrm4_state_init(void);
- #ifdef CONFIG_XFRM
- extern int xfrm6_init(void);
-diff --git a/net/xfrm/xfrm_policy.c b/net/xfrm/xfrm_policy.c
-index ea3456d..8e7671b 100644
---- a/net/xfrm/xfrm_policy.c
-+++ b/net/xfrm/xfrm_policy.c
-@@ -2394,12 +2394,13 @@ static int __init xfrm_statistics_init(void)
- }
- #endif
- 
--static void __init xfrm_policy_init(void)
-+static int __net_init xfrm_policy_init(struct net *net)
+@@ -130,6 +130,9 @@ struct xfrm_state_walk {
+ /* Full description of state of transformer. */
+ struct xfrm_state
  {
- 	unsigned int hmask, sz;
- 	int dir;
++#ifdef CONFIG_NET_NS
++	struct net		*xs_net;
++#endif
+ 	union {
+ 		struct hlist_node	gclist;
+ 		struct hlist_node	bydst;
+@@ -223,6 +226,11 @@ struct xfrm_state
+ 	void			*data;
+ };
  
--	xfrm_dst_cache = kmem_cache_create("xfrm_dst_cache",
-+	if (net_eq(net, &init_net))
-+		xfrm_dst_cache = kmem_cache_create("xfrm_dst_cache",
- 					   sizeof(struct xfrm_dst),
- 					   0, SLAB_HWCACHE_ALIGN|SLAB_PANIC,
- 					   NULL);
-@@ -2425,16 +2426,50 @@ static void __init xfrm_policy_init(void)
- 	}
- 
- 	INIT_LIST_HEAD(&xfrm_policy_all);
--	register_netdevice_notifier(&xfrm_dev_notifier);
-+	if (net_eq(net, &init_net))
-+		register_netdevice_notifier(&xfrm_dev_notifier);
-+	return 0;
++static inline struct net *xs_net(struct xfrm_state *x)
++{
++	return read_pnet(&x->xs_net);
 +}
 +
-+static void xfrm_policy_fini(struct net *net)
-+{
- }
+ /* xflags - make enum if more show up */
+ #define XFRM_TIME_DEFER	1
  
-+static int __net_init xfrm_net_init(struct net *net)
-+{
-+	int rv;
-+
-+	rv = xfrm_state_init(net);
-+	if (rv < 0)
-+		goto out_state;
-+	rv = xfrm_policy_init(net);
-+	if (rv < 0)
-+		goto out_policy;
-+	return 0;
-+
-+out_policy:
-+	xfrm_state_fini(net);
-+out_state:
-+	return rv;
-+}
-+
-+static void __net_exit xfrm_net_exit(struct net *net)
-+{
-+	xfrm_policy_fini(net);
-+	xfrm_state_fini(net);
-+}
-+
-+static struct pernet_operations __net_initdata xfrm_net_ops = {
-+	.init = xfrm_net_init,
-+	.exit = xfrm_net_exit,
-+};
-+
- void __init xfrm_init(void)
+@@ -1296,7 +1304,7 @@ extern void xfrm_state_walk_init(struct xfrm_state_walk *walk, u8 proto);
+ extern int xfrm_state_walk(struct xfrm_state_walk *walk,
+ 			   int (*func)(struct xfrm_state *, int, void*), void *);
+ extern void xfrm_state_walk_done(struct xfrm_state_walk *walk);
+-extern struct xfrm_state *xfrm_state_alloc(void);
++extern struct xfrm_state *xfrm_state_alloc(struct net *net);
+ extern struct xfrm_state *xfrm_state_find(xfrm_address_t *daddr, xfrm_address_t *saddr, 
+ 					  struct flowi *fl, struct xfrm_tmpl *tmpl,
+ 					  struct xfrm_policy *pol, int *err,
+diff --git a/net/ipv4/ipcomp.c b/net/ipv4/ipcomp.c
+index ec8264a..0a35f1b 100644
+--- a/net/ipv4/ipcomp.c
++++ b/net/ipv4/ipcomp.c
+@@ -49,7 +49,7 @@ static struct xfrm_state *ipcomp_tunnel_create(struct xfrm_state *x)
  {
-+	register_pernet_subsys(&xfrm_net_ops);
- #ifdef CONFIG_XFRM_STATISTICS
- 	xfrm_statistics_init();
- #endif
--	xfrm_state_init();
--	xfrm_policy_init();
- 	xfrm_input_init();
- #ifdef CONFIG_XFRM_STATISTICS
- 	xfrm_proc_init();
+ 	struct xfrm_state *t;
+ 
+-	t = xfrm_state_alloc();
++	t = xfrm_state_alloc(&init_net);
+ 	if (t == NULL)
+ 		goto out;
+ 
+diff --git a/net/ipv6/ipcomp6.c b/net/ipv6/ipcomp6.c
+index d4576a9..c369638 100644
+--- a/net/ipv6/ipcomp6.c
++++ b/net/ipv6/ipcomp6.c
+@@ -76,7 +76,7 @@ static struct xfrm_state *ipcomp6_tunnel_create(struct xfrm_state *x)
+ {
+ 	struct xfrm_state *t = NULL;
+ 
+-	t = xfrm_state_alloc();
++	t = xfrm_state_alloc(&init_net);
+ 	if (!t)
+ 		goto out;
+ 
+diff --git a/net/key/af_key.c b/net/key/af_key.c
+index 5b22e01..bde8aad 100644
+--- a/net/key/af_key.c
++++ b/net/key/af_key.c
+@@ -1122,7 +1122,7 @@ static struct xfrm_state * pfkey_msg2xfrm_state(struct sadb_msg *hdr,
+ 	     (key->sadb_key_bits+7) / 8 > key->sadb_key_len * sizeof(uint64_t)))
+ 		return ERR_PTR(-EINVAL);
+ 
+-	x = xfrm_state_alloc();
++	x = xfrm_state_alloc(&init_net);
+ 	if (x == NULL)
+ 		return ERR_PTR(-ENOBUFS);
+ 
 diff --git a/net/xfrm/xfrm_state.c b/net/xfrm/xfrm_state.c
-index cd9d917..268fe3f 100644
+index 268fe3f..81bde76 100644
 --- a/net/xfrm/xfrm_state.c
 +++ b/net/xfrm/xfrm_state.c
-@@ -2080,7 +2080,7 @@ error:
+@@ -504,13 +504,14 @@ out:
  
- EXPORT_SYMBOL(xfrm_init_state);
+ static void xfrm_replay_timer_handler(unsigned long data);
  
--void __init xfrm_state_init(void)
-+int __net_init xfrm_state_init(struct net *net)
+-struct xfrm_state *xfrm_state_alloc(void)
++struct xfrm_state *xfrm_state_alloc(struct net *net)
  {
- 	unsigned int sz;
+ 	struct xfrm_state *x;
  
-@@ -2094,6 +2094,11 @@ void __init xfrm_state_init(void)
- 	xfrm_state_hmask = ((sz / sizeof(struct hlist_head)) - 1);
+ 	x = kzalloc(sizeof(struct xfrm_state), GFP_ATOMIC);
  
- 	INIT_WORK(&xfrm_state_gc_work, xfrm_state_gc_task);
-+	return 0;
-+}
-+
-+void xfrm_state_fini(struct net *net)
-+{
- }
+ 	if (x) {
++		write_pnet(&x->xs_net, net);
+ 		atomic_set(&x->refcnt, 1);
+ 		atomic_set(&x->tunnel_users, 0);
+ 		INIT_LIST_HEAD(&x->km.all);
+@@ -835,7 +836,7 @@ xfrm_state_find(xfrm_address_t *daddr, xfrm_address_t *saddr,
+ 			error = -EEXIST;
+ 			goto out;
+ 		}
+-		x = xfrm_state_alloc();
++		x = xfrm_state_alloc(&init_net);
+ 		if (x == NULL) {
+ 			error = -ENOMEM;
+ 			goto out;
+@@ -1017,7 +1018,7 @@ static struct xfrm_state *__find_acq_core(unsigned short family, u8 mode, u32 re
+ 	if (!create)
+ 		return NULL;
  
- #ifdef CONFIG_AUDITSYSCALL
+-	x = xfrm_state_alloc();
++	x = xfrm_state_alloc(&init_net);
+ 	if (likely(x)) {
+ 		switch (family) {
+ 		case AF_INET:
+@@ -1125,7 +1126,7 @@ EXPORT_SYMBOL(xfrm_state_add);
+ static struct xfrm_state *xfrm_state_clone(struct xfrm_state *orig, int *errp)
+ {
+ 	int err = -ENOMEM;
+-	struct xfrm_state *x = xfrm_state_alloc();
++	struct xfrm_state *x = xfrm_state_alloc(&init_net);
+ 	if (!x)
+ 		goto error;
+ 
+diff --git a/net/xfrm/xfrm_user.c b/net/xfrm/xfrm_user.c
+index ee15d5d..65cdaa5 100644
+--- a/net/xfrm/xfrm_user.c
++++ b/net/xfrm/xfrm_user.c
+@@ -320,7 +320,7 @@ static struct xfrm_state *xfrm_state_construct(struct xfrm_usersa_info *p,
+ 					       struct nlattr **attrs,
+ 					       int *errp)
+ {
+-	struct xfrm_state *x = xfrm_state_alloc();
++	struct xfrm_state *x = xfrm_state_alloc(&init_net);
+ 	int err = -ENOMEM;
+ 
+ 	if (!x)
+@@ -1663,7 +1663,7 @@ static int xfrm_add_acquire(struct sk_buff *skb, struct nlmsghdr *nlh,
+ 	struct nlattr *rt = attrs[XFRMA_TMPL];
+ 
+ 	struct xfrm_user_acquire *ua = nlmsg_data(nlh);
+-	struct xfrm_state *x = xfrm_state_alloc();
++	struct xfrm_state *x = xfrm_state_alloc(&init_net);
+ 	int err = -ENOMEM;
+ 
+ 	if (!x)
 -- 
 1.5.6.5
