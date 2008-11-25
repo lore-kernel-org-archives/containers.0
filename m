@@ -1,7 +1,7 @@
 From: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: [PATCH 32/53] netns xfrm: finding policy in netns
-Date: Tue, 25 Nov 2008 20:27:04 +0300
-Message-ID: <1227634045-27534-32-git-send-email-adobriyan__1465.7603380785$1227635158$gmane$org@gmail.com>
+Subject: [PATCH 31/53] netns xfrm: policy flushing in netns
+Date: Tue, 25 Nov 2008 20:27:03 +0300
+Message-ID: <1227634045-27534-31-git-send-email-adobriyan__40680.0821227536$1227635161$gmane$org@gmail.com>
 References: <1227634045-27534-1-git-send-email-adobriyan@gmail.com>
 	<1227634045-27534-2-git-send-email-adobriyan@gmail.com>
 	<1227634045-27534-3-git-send-email-adobriyan@gmail.com>
@@ -32,12 +32,11 @@ References: <1227634045-27534-1-git-send-email-adobriyan@gmail.com>
 	<1227634045-27534-28-git-send-email-adobriyan@gmail.com>
 	<1227634045-27534-29-git-send-email-adobriyan@gmail.com>
 	<1227634045-27534-30-git-send-email-adobriyan@gmail.com>
-	<1227634045-27534-31-git-send-email-adobriyan@gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1227634045-27534-31-git-send-email-adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+In-Reply-To: <1227634045-27534-30-git-send-email-adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -51,157 +50,140 @@ To: davem-fT/PcQaiUtIeIZ0/mPfg9Q@public.gmane.org
 Cc: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, kuznet-v/Mj1YrvjDBInbfyfbPRSQ@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, herbert-lOAM2aK0SrRLBo1qDEOMRrpzq4S04n8Q@public.gmane.org, netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Add netns parameter to xfrm_policy_bysel_ctx(), xfrm_policy_byidx().
-
 Signed-off-by: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 ---
- include/net/xfrm.h     |    4 ++--
- net/key/af_key.c       |    6 +++---
- net/xfrm/xfrm_policy.c |   14 +++++++-------
- net/xfrm/xfrm_user.c   |    8 ++++----
- 4 files changed, 16 insertions(+), 16 deletions(-)
+ include/net/xfrm.h     |    2 +-
+ net/key/af_key.c       |    2 +-
+ net/xfrm/xfrm_policy.c |   22 +++++++++++-----------
+ net/xfrm/xfrm_user.c   |    2 +-
+ 4 files changed, 14 insertions(+), 14 deletions(-)
 
 diff --git a/include/net/xfrm.h b/include/net/xfrm.h
-index 766cc71..ec2b7a9 100644
+index 40ed487..766cc71 100644
 --- a/include/net/xfrm.h
 +++ b/include/net/xfrm.h
-@@ -1439,11 +1439,11 @@ extern int xfrm_policy_walk(struct xfrm_policy_walk *walk,
- 	int (*func)(struct xfrm_policy *, int, int, void*), void *);
- extern void xfrm_policy_walk_done(struct xfrm_policy_walk *walk);
- int xfrm_policy_insert(int dir, struct xfrm_policy *policy, int excl);
--struct xfrm_policy *xfrm_policy_bysel_ctx(u8 type, int dir,
-+struct xfrm_policy *xfrm_policy_bysel_ctx(struct net *net, u8 type, int dir,
- 					  struct xfrm_selector *sel,
+@@ -1444,7 +1444,7 @@ struct xfrm_policy *xfrm_policy_bysel_ctx(u8 type, int dir,
  					  struct xfrm_sec_ctx *ctx, int delete,
  					  int *err);
--struct xfrm_policy *xfrm_policy_byid(u8, int dir, u32 id, int delete, int *err);
-+struct xfrm_policy *xfrm_policy_byid(struct net *net, u8, int dir, u32 id, int delete, int *err);
- int xfrm_policy_flush(struct net *net, u8 type, struct xfrm_audit *audit_info);
+ struct xfrm_policy *xfrm_policy_byid(u8, int dir, u32 id, int delete, int *err);
+-int xfrm_policy_flush(u8 type, struct xfrm_audit *audit_info);
++int xfrm_policy_flush(struct net *net, u8 type, struct xfrm_audit *audit_info);
  u32 xfrm_get_acqseq(void);
  extern int xfrm_alloc_spi(struct xfrm_state *x, u32 minspi, u32 maxspi);
+ struct xfrm_state * xfrm_find_acq(struct net *net, u8 mode, u32 reqid, u8 proto,
 diff --git a/net/key/af_key.c b/net/key/af_key.c
-index 0f44856..ca26811 100644
+index b74d939..0f44856 100644
 --- a/net/key/af_key.c
 +++ b/net/key/af_key.c
-@@ -2324,7 +2324,7 @@ static int pfkey_spddelete(struct sock *sk, struct sk_buff *skb, struct sadb_msg
- 			return err;
- 	}
- 
--	xp = xfrm_policy_bysel_ctx(XFRM_POLICY_TYPE_MAIN,
-+	xp = xfrm_policy_bysel_ctx(&init_net, XFRM_POLICY_TYPE_MAIN,
- 				   pol->sadb_x_policy_dir - 1, &sel, pol_ctx,
- 				   1, &err);
- 	security_xfrm_policy_free(pol_ctx);
-@@ -2571,8 +2571,8 @@ static int pfkey_spdget(struct sock *sk, struct sk_buff *skb, struct sadb_msg *h
- 		return -EINVAL;
- 
- 	delete = (hdr->sadb_msg_type == SADB_X_SPDDELETE2);
--	xp = xfrm_policy_byid(XFRM_POLICY_TYPE_MAIN, dir, pol->sadb_x_policy_id,
--			      delete, &err);
-+	xp = xfrm_policy_byid(&init_net, XFRM_POLICY_TYPE_MAIN, dir,
-+			      pol->sadb_x_policy_id, delete, &err);
- 	if (xp == NULL)
- 		return -ENOENT;
- 
+@@ -2686,7 +2686,7 @@ static int pfkey_spdflush(struct sock *sk, struct sk_buff *skb, struct sadb_msg
+ 	audit_info.loginuid = audit_get_loginuid(current);
+ 	audit_info.sessionid = audit_get_sessionid(current);
+ 	audit_info.secid = 0;
+-	err = xfrm_policy_flush(XFRM_POLICY_TYPE_MAIN, &audit_info);
++	err = xfrm_policy_flush(&init_net, XFRM_POLICY_TYPE_MAIN, &audit_info);
+ 	if (err)
+ 		return err;
+ 	c.data.type = XFRM_POLICY_TYPE_MAIN;
 diff --git a/net/xfrm/xfrm_policy.c b/net/xfrm/xfrm_policy.c
-index 7c264a7..96895ef 100644
+index 11fee87..7c264a7 100644
 --- a/net/xfrm/xfrm_policy.c
 +++ b/net/xfrm/xfrm_policy.c
-@@ -642,7 +642,7 @@ int xfrm_policy_insert(int dir, struct xfrm_policy *policy, int excl)
- }
- EXPORT_SYMBOL(xfrm_policy_insert);
+@@ -732,7 +732,7 @@ EXPORT_SYMBOL(xfrm_policy_byid);
  
--struct xfrm_policy *xfrm_policy_bysel_ctx(u8 type, int dir,
-+struct xfrm_policy *xfrm_policy_bysel_ctx(struct net *net, u8 type, int dir,
- 					  struct xfrm_selector *sel,
- 					  struct xfrm_sec_ctx *ctx, int delete,
- 					  int *err)
-@@ -653,7 +653,7 @@ struct xfrm_policy *xfrm_policy_bysel_ctx(u8 type, int dir,
- 
- 	*err = 0;
- 	write_lock_bh(&xfrm_policy_lock);
--	chain = policy_hash_bysel(&init_net, sel, sel->family, dir);
-+	chain = policy_hash_bysel(net, sel, sel->family, dir);
- 	ret = NULL;
- 	hlist_for_each_entry(pol, entry, chain, bydst) {
- 		if (pol->type == type &&
-@@ -670,7 +670,7 @@ struct xfrm_policy *xfrm_policy_bysel_ctx(u8 type, int dir,
- 				hlist_del(&pol->bydst);
- 				hlist_del(&pol->byidx);
- 				list_del(&pol->walk.all);
--				init_net.xfrm.policy_count[dir]--;
-+				net->xfrm.policy_count[dir]--;
- 			}
- 			ret = pol;
- 			break;
-@@ -686,8 +686,8 @@ struct xfrm_policy *xfrm_policy_bysel_ctx(u8 type, int dir,
- }
- EXPORT_SYMBOL(xfrm_policy_bysel_ctx);
- 
--struct xfrm_policy *xfrm_policy_byid(u8 type, int dir, u32 id, int delete,
--				     int *err)
-+struct xfrm_policy *xfrm_policy_byid(struct net *net, u8 type, int dir, u32 id,
-+				     int delete, int *err)
+ #ifdef CONFIG_SECURITY_NETWORK_XFRM
+ static inline int
+-xfrm_policy_flush_secctx_check(u8 type, struct xfrm_audit *audit_info)
++xfrm_policy_flush_secctx_check(struct net *net, u8 type, struct xfrm_audit *audit_info)
  {
- 	struct xfrm_policy *pol, *ret;
- 	struct hlist_head *chain;
-@@ -699,7 +699,7 @@ struct xfrm_policy *xfrm_policy_byid(u8 type, int dir, u32 id, int delete,
+ 	int dir, err = 0;
  
- 	*err = 0;
- 	write_lock_bh(&xfrm_policy_lock);
--	chain = init_net.xfrm.policy_byidx + idx_hash(&init_net, id);
-+	chain = net->xfrm.policy_byidx + idx_hash(net, id);
- 	ret = NULL;
- 	hlist_for_each_entry(pol, entry, chain, byidx) {
- 		if (pol->type == type && pol->index == id) {
-@@ -714,7 +714,7 @@ struct xfrm_policy *xfrm_policy_byid(u8 type, int dir, u32 id, int delete,
- 				hlist_del(&pol->bydst);
- 				hlist_del(&pol->byidx);
- 				list_del(&pol->walk.all);
--				init_net.xfrm.policy_count[dir]--;
-+				net->xfrm.policy_count[dir]--;
+@@ -742,7 +742,7 @@ xfrm_policy_flush_secctx_check(u8 type, struct xfrm_audit *audit_info)
+ 		int i;
+ 
+ 		hlist_for_each_entry(pol, entry,
+-				     &init_net.xfrm.policy_inexact[dir], bydst) {
++				     &net->xfrm.policy_inexact[dir], bydst) {
+ 			if (pol->type != type)
+ 				continue;
+ 			err = security_xfrm_policy_delete(pol->security);
+@@ -754,9 +754,9 @@ xfrm_policy_flush_secctx_check(u8 type, struct xfrm_audit *audit_info)
+ 				return err;
  			}
- 			ret = pol;
- 			break;
+ 		}
+-		for (i = init_net.xfrm.policy_bydst[dir].hmask; i >= 0; i--) {
++		for (i = net->xfrm.policy_bydst[dir].hmask; i >= 0; i--) {
+ 			hlist_for_each_entry(pol, entry,
+-					     init_net.xfrm.policy_bydst[dir].table + i,
++					     net->xfrm.policy_bydst[dir].table + i,
+ 					     bydst) {
+ 				if (pol->type != type)
+ 					continue;
+@@ -776,19 +776,19 @@ xfrm_policy_flush_secctx_check(u8 type, struct xfrm_audit *audit_info)
+ }
+ #else
+ static inline int
+-xfrm_policy_flush_secctx_check(u8 type, struct xfrm_audit *audit_info)
++xfrm_policy_flush_secctx_check(struct net *net, u8 type, struct xfrm_audit *audit_info)
+ {
+ 	return 0;
+ }
+ #endif
+ 
+-int xfrm_policy_flush(u8 type, struct xfrm_audit *audit_info)
++int xfrm_policy_flush(struct net *net, u8 type, struct xfrm_audit *audit_info)
+ {
+ 	int dir, err = 0;
+ 
+ 	write_lock_bh(&xfrm_policy_lock);
+ 
+-	err = xfrm_policy_flush_secctx_check(type, audit_info);
++	err = xfrm_policy_flush_secctx_check(net, type, audit_info);
+ 	if (err)
+ 		goto out;
+ 
+@@ -800,7 +800,7 @@ int xfrm_policy_flush(u8 type, struct xfrm_audit *audit_info)
+ 		killed = 0;
+ 	again1:
+ 		hlist_for_each_entry(pol, entry,
+-				     &init_net.xfrm.policy_inexact[dir], bydst) {
++				     &net->xfrm.policy_inexact[dir], bydst) {
+ 			if (pol->type != type)
+ 				continue;
+ 			hlist_del(&pol->bydst);
+@@ -818,10 +818,10 @@ int xfrm_policy_flush(u8 type, struct xfrm_audit *audit_info)
+ 			goto again1;
+ 		}
+ 
+-		for (i = init_net.xfrm.policy_bydst[dir].hmask; i >= 0; i--) {
++		for (i = net->xfrm.policy_bydst[dir].hmask; i >= 0; i--) {
+ 	again2:
+ 			hlist_for_each_entry(pol, entry,
+-					     init_net.xfrm.policy_bydst[dir].table + i,
++					     net->xfrm.policy_bydst[dir].table + i,
+ 					     bydst) {
+ 				if (pol->type != type)
+ 					continue;
+@@ -842,7 +842,7 @@ int xfrm_policy_flush(u8 type, struct xfrm_audit *audit_info)
+ 			}
+ 		}
+ 
+-		init_net.xfrm.policy_count[dir] -= killed;
++		net->xfrm.policy_count[dir] -= killed;
+ 	}
+ 	atomic_inc(&flow_cache_genid);
+ out:
 diff --git a/net/xfrm/xfrm_user.c b/net/xfrm/xfrm_user.c
-index d4983e8..efd6ab5 100644
+index 787b0ee..d4983e8 100644
 --- a/net/xfrm/xfrm_user.c
 +++ b/net/xfrm/xfrm_user.c
-@@ -1330,7 +1330,7 @@ static int xfrm_get_policy(struct sk_buff *skb, struct nlmsghdr *nlh,
+@@ -1546,7 +1546,7 @@ static int xfrm_flush_policy(struct sk_buff *skb, struct nlmsghdr *nlh,
+ 	audit_info.loginuid = NETLINK_CB(skb).loginuid;
+ 	audit_info.sessionid = NETLINK_CB(skb).sessionid;
+ 	audit_info.secid = NETLINK_CB(skb).sid;
+-	err = xfrm_policy_flush(type, &audit_info);
++	err = xfrm_policy_flush(&init_net, type, &audit_info);
+ 	if (err)
  		return err;
- 
- 	if (p->index)
--		xp = xfrm_policy_byid(type, p->dir, p->index, delete, &err);
-+		xp = xfrm_policy_byid(&init_net, type, p->dir, p->index, delete, &err);
- 	else {
- 		struct nlattr *rt = attrs[XFRMA_SEC_CTX];
- 		struct xfrm_sec_ctx *ctx;
-@@ -1347,7 +1347,7 @@ static int xfrm_get_policy(struct sk_buff *skb, struct nlmsghdr *nlh,
- 			if (err)
- 				return err;
- 		}
--		xp = xfrm_policy_bysel_ctx(type, p->dir, &p->sel, ctx,
-+		xp = xfrm_policy_bysel_ctx(&init_net, type, p->dir, &p->sel, ctx,
- 					   delete, &err);
- 		security_xfrm_policy_free(ctx);
- 	}
-@@ -1571,7 +1571,7 @@ static int xfrm_add_pol_expire(struct sk_buff *skb, struct nlmsghdr *nlh,
- 		return err;
- 
- 	if (p->index)
--		xp = xfrm_policy_byid(type, p->dir, p->index, 0, &err);
-+		xp = xfrm_policy_byid(&init_net, type, p->dir, p->index, 0, &err);
- 	else {
- 		struct nlattr *rt = attrs[XFRMA_SEC_CTX];
- 		struct xfrm_sec_ctx *ctx;
-@@ -1588,7 +1588,7 @@ static int xfrm_add_pol_expire(struct sk_buff *skb, struct nlmsghdr *nlh,
- 			if (err)
- 				return err;
- 		}
--		xp = xfrm_policy_bysel_ctx(type, p->dir, &p->sel, ctx, 0, &err);
-+		xp = xfrm_policy_bysel_ctx(&init_net, type, p->dir, &p->sel, ctx, 0, &err);
- 		security_xfrm_policy_free(ctx);
- 	}
- 	if (xp == NULL)
+ 	c.data.type = type;
 -- 
 1.5.6.5
