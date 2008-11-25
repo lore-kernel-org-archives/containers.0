@@ -1,7 +1,8 @@
 From: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: [PATCH 09/53] netns xfrm: per-netns xfrm_state counts
-Date: Tue, 25 Nov 2008 20:26:41 +0300
-Message-ID: <1227634045-27534-9-git-send-email-adobriyan__10556.013583164$1227636851$gmane$org@gmail.com>
+Subject: [PATCH 22/53] netns xfrm: propagate netns into bydst/bysrc/byspi hash
+	functions
+Date: Tue, 25 Nov 2008 20:26:54 +0300
+Message-ID: <1227634045-27534-22-git-send-email-adobriyan__11155.4741779857$1227636966$gmane$org@gmail.com>
 References: <1227634045-27534-1-git-send-email-adobriyan@gmail.com>
 	<1227634045-27534-2-git-send-email-adobriyan@gmail.com>
 	<1227634045-27534-3-git-send-email-adobriyan@gmail.com>
@@ -10,11 +11,24 @@ References: <1227634045-27534-1-git-send-email-adobriyan@gmail.com>
 	<1227634045-27534-6-git-send-email-adobriyan@gmail.com>
 	<1227634045-27534-7-git-send-email-adobriyan@gmail.com>
 	<1227634045-27534-8-git-send-email-adobriyan@gmail.com>
+	<1227634045-27534-9-git-send-email-adobriyan@gmail.com>
+	<1227634045-27534-10-git-send-email-adobriyan@gmail.com>
+	<1227634045-27534-11-git-send-email-adobriyan@gmail.com>
+	<1227634045-27534-12-git-send-email-adobriyan@gmail.com>
+	<1227634045-27534-13-git-send-email-adobriyan@gmail.com>
+	<1227634045-27534-14-git-send-email-adobriyan@gmail.com>
+	<1227634045-27534-15-git-send-email-adobriyan@gmail.com>
+	<1227634045-27534-16-git-send-email-adobriyan@gmail.com>
+	<1227634045-27534-17-git-send-email-adobriyan@gmail.com>
+	<1227634045-27534-18-git-send-email-adobriyan@gmail.com>
+	<1227634045-27534-19-git-send-email-adobriyan@gmail.com>
+	<1227634045-27534-20-git-send-email-adobriyan@gmail.com>
+	<1227634045-27534-21-git-send-email-adobriyan@gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1227634045-27534-8-git-send-email-adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+In-Reply-To: <1227634045-27534-21-git-send-email-adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -30,95 +44,168 @@ List-Id: containers.vger.kernel.org
 
 Signed-off-by: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 ---
- include/net/netns/xfrm.h |    1 +
- net/xfrm/xfrm_state.c    |   14 +++++++-------
- 2 files changed, 8 insertions(+), 7 deletions(-)
+ net/xfrm/xfrm_state.c |   44 +++++++++++++++++++++++---------------------
+ 1 files changed, 23 insertions(+), 21 deletions(-)
 
-diff --git a/include/net/netns/xfrm.h b/include/net/netns/xfrm.h
-index dbbc0e9..492b471 100644
---- a/include/net/netns/xfrm.h
-+++ b/include/net/netns/xfrm.h
-@@ -17,6 +17,7 @@ struct netns_xfrm {
- 	struct hlist_head	*state_bysrc;
- 	struct hlist_head	*state_byspi;
- 	unsigned int		state_hmask;
-+	unsigned int		state_num;
- };
- 
- #endif
 diff --git a/net/xfrm/xfrm_state.c b/net/xfrm/xfrm_state.c
-index de08ed9..7ecf6ee 100644
+index 24bd89e..72b2956 100644
 --- a/net/xfrm/xfrm_state.c
 +++ b/net/xfrm/xfrm_state.c
-@@ -45,7 +45,6 @@ u32 sysctl_xfrm_acq_expires __read_mostly = 30;
- static DEFINE_SPINLOCK(xfrm_state_lock);
+@@ -57,25 +57,27 @@ static void xfrm_audit_state_replay(struct xfrm_state *x,
+ #define xfrm_audit_state_replay(x, s, sq)	do { ; } while (0)
+ #endif /* CONFIG_AUDITSYSCALL */
  
- static unsigned int xfrm_state_hashmax __read_mostly = 1 * 1024 * 1024;
--static unsigned int xfrm_state_num;
- static unsigned int xfrm_state_genid;
- 
- static struct xfrm_state_afinfo *xfrm_state_get_afinfo(unsigned int family);
-@@ -548,7 +547,7 @@ int __xfrm_state_delete(struct xfrm_state *x)
- 		hlist_del(&x->bysrc);
- 		if (x->id.spi)
- 			hlist_del(&x->byspi);
--		xfrm_state_num--;
-+		init_net.xfrm.state_num--;
- 		spin_unlock(&xfrm_state_lock);
- 
- 		/* All xfrm_state objects are created by xfrm_state_alloc.
-@@ -650,7 +649,7 @@ EXPORT_SYMBOL(xfrm_state_flush);
- void xfrm_sad_getinfo(struct xfrmk_sadinfo *si)
+-static inline unsigned int xfrm_dst_hash(xfrm_address_t *daddr,
++static inline unsigned int xfrm_dst_hash(struct net *net,
++					 xfrm_address_t *daddr,
+ 					 xfrm_address_t *saddr,
+ 					 u32 reqid,
+ 					 unsigned short family)
  {
+-	return __xfrm_dst_hash(daddr, saddr, reqid, family, init_net.xfrm.state_hmask);
++	return __xfrm_dst_hash(daddr, saddr, reqid, family, net->xfrm.state_hmask);
+ }
+ 
+-static inline unsigned int xfrm_src_hash(xfrm_address_t *daddr,
++static inline unsigned int xfrm_src_hash(struct net *net,
++					 xfrm_address_t *daddr,
+ 					 xfrm_address_t *saddr,
+ 					 unsigned short family)
+ {
+-	return __xfrm_src_hash(daddr, saddr, family, init_net.xfrm.state_hmask);
++	return __xfrm_src_hash(daddr, saddr, family, net->xfrm.state_hmask);
+ }
+ 
+ static inline unsigned int
+-xfrm_spi_hash(xfrm_address_t *daddr, __be32 spi, u8 proto, unsigned short family)
++xfrm_spi_hash(struct net *net, xfrm_address_t *daddr, __be32 spi, u8 proto, unsigned short family)
+ {
+-	return __xfrm_spi_hash(daddr, spi, proto, family, init_net.xfrm.state_hmask);
++	return __xfrm_spi_hash(daddr, spi, proto, family, net->xfrm.state_hmask);
+ }
+ 
+ static void xfrm_hash_transfer(struct hlist_head *list,
+@@ -666,7 +668,7 @@ xfrm_init_tempsel(struct xfrm_state *x, struct flowi *fl,
+ 
+ static struct xfrm_state *__xfrm_state_lookup(xfrm_address_t *daddr, __be32 spi, u8 proto, unsigned short family)
+ {
+-	unsigned int h = xfrm_spi_hash(daddr, spi, proto, family);
++	unsigned int h = xfrm_spi_hash(&init_net, daddr, spi, proto, family);
+ 	struct xfrm_state *x;
+ 	struct hlist_node *entry;
+ 
+@@ -698,7 +700,7 @@ static struct xfrm_state *__xfrm_state_lookup(xfrm_address_t *daddr, __be32 spi,
+ 
+ static struct xfrm_state *__xfrm_state_lookup_byaddr(xfrm_address_t *daddr, xfrm_address_t *saddr, u8 proto, unsigned short family)
+ {
+-	unsigned int h = xfrm_src_hash(daddr, saddr, family);
++	unsigned int h = xfrm_src_hash(&init_net, daddr, saddr, family);
+ 	struct xfrm_state *x;
+ 	struct hlist_node *entry;
+ 
+@@ -767,7 +769,7 @@ xfrm_state_find(xfrm_address_t *daddr, xfrm_address_t *saddr,
+ 	to_put = NULL;
+ 
  	spin_lock_bh(&xfrm_state_lock);
--	si->sadcnt = xfrm_state_num;
-+	si->sadcnt = init_net.xfrm.state_num;
- 	si->sadhcnt = init_net.xfrm.state_hmask;
- 	si->sadhmcnt = xfrm_state_hashmax;
- 	spin_unlock_bh(&xfrm_state_lock);
-@@ -754,7 +753,7 @@ static void xfrm_hash_grow_check(int have_hash_collision)
- {
- 	if (have_hash_collision &&
- 	    (init_net.xfrm.state_hmask + 1) < xfrm_state_hashmax &&
--	    xfrm_state_num > init_net.xfrm.state_hmask)
-+	    init_net.xfrm.state_num > init_net.xfrm.state_hmask)
- 		schedule_work(&xfrm_hash_work);
- }
- 
-@@ -855,7 +854,7 @@ xfrm_state_find(xfrm_address_t *daddr, xfrm_address_t *saddr,
+-	h = xfrm_dst_hash(daddr, saddr, tmpl->reqid, family);
++	h = xfrm_dst_hash(&init_net, daddr, saddr, tmpl->reqid, family);
+ 	hlist_for_each_entry(x, entry, init_net.xfrm.state_bydst+h, bydst) {
+ 		if (x->props.family == family &&
+ 		    x->props.reqid == tmpl->reqid &&
+@@ -839,10 +841,10 @@ xfrm_state_find(xfrm_address_t *daddr, xfrm_address_t *saddr,
+ 			x->km.state = XFRM_STATE_ACQ;
+ 			list_add(&x->km.all, &init_net.xfrm.state_all);
+ 			hlist_add_head(&x->bydst, init_net.xfrm.state_bydst+h);
+-			h = xfrm_src_hash(daddr, saddr, family);
++			h = xfrm_src_hash(&init_net, daddr, saddr, family);
+ 			hlist_add_head(&x->bysrc, init_net.xfrm.state_bysrc+h);
+ 			if (x->id.spi) {
+-				h = xfrm_spi_hash(&x->id.daddr, x->id.spi, x->id.proto, family);
++				h = xfrm_spi_hash(&init_net, &x->id.daddr, x->id.spi, x->id.proto, family);
+ 				hlist_add_head(&x->byspi, init_net.xfrm.state_byspi+h);
+ 			}
  			x->lft.hard_add_expires_seconds = sysctl_xfrm_acq_expires;
- 			x->timer.expires = jiffies + sysctl_xfrm_acq_expires*HZ;
- 			add_timer(&x->timer);
--			xfrm_state_num++;
-+			init_net.xfrm.state_num++;
- 			xfrm_hash_grow_check(x->bydst.next != NULL);
- 		} else {
- 			x->km.state = XFRM_STATE_DEAD;
-@@ -935,7 +934,7 @@ static void __xfrm_state_insert(struct xfrm_state *x)
+@@ -877,7 +879,7 @@ xfrm_stateonly_find(xfrm_address_t *daddr, xfrm_address_t *saddr,
+ 	struct hlist_node *entry;
  
- 	wake_up(&km_waitq);
+ 	spin_lock(&xfrm_state_lock);
+-	h = xfrm_dst_hash(daddr, saddr, reqid, family);
++	h = xfrm_dst_hash(&init_net, daddr, saddr, reqid, family);
+ 	hlist_for_each_entry(x, entry, init_net.xfrm.state_bydst+h, bydst) {
+ 		if (x->props.family == family &&
+ 		    x->props.reqid == reqid &&
+@@ -908,15 +910,15 @@ static void __xfrm_state_insert(struct xfrm_state *x)
  
--	xfrm_state_num++;
-+	init_net.xfrm.state_num++;
+ 	list_add(&x->km.all, &init_net.xfrm.state_all);
  
- 	xfrm_hash_grow_check(x->bydst.next != NULL);
- }
-@@ -1047,7 +1046,7 @@ static struct xfrm_state *__find_acq_core(unsigned short family, u8 mode, u32 re
- 		h = xfrm_src_hash(daddr, saddr, family);
+-	h = xfrm_dst_hash(&x->id.daddr, &x->props.saddr,
++	h = xfrm_dst_hash(&init_net, &x->id.daddr, &x->props.saddr,
+ 			  x->props.reqid, x->props.family);
+ 	hlist_add_head(&x->bydst, init_net.xfrm.state_bydst+h);
+ 
+-	h = xfrm_src_hash(&x->id.daddr, &x->props.saddr, x->props.family);
++	h = xfrm_src_hash(&init_net, &x->id.daddr, &x->props.saddr, x->props.family);
+ 	hlist_add_head(&x->bysrc, init_net.xfrm.state_bysrc+h);
+ 
+ 	if (x->id.spi) {
+-		h = xfrm_spi_hash(&x->id.daddr, x->id.spi, x->id.proto,
++		h = xfrm_spi_hash(&init_net, &x->id.daddr, x->id.spi, x->id.proto,
+ 				  x->props.family);
+ 
+ 		hlist_add_head(&x->byspi, init_net.xfrm.state_byspi+h);
+@@ -942,7 +944,7 @@ static void __xfrm_state_bump_genids(struct xfrm_state *xnew)
+ 	struct hlist_node *entry;
+ 	unsigned int h;
+ 
+-	h = xfrm_dst_hash(&xnew->id.daddr, &xnew->props.saddr, reqid, family);
++	h = xfrm_dst_hash(&init_net, &xnew->id.daddr, &xnew->props.saddr, reqid, family);
+ 	hlist_for_each_entry(x, entry, init_net.xfrm.state_bydst+h, bydst) {
+ 		if (x->props.family	== family &&
+ 		    x->props.reqid	== reqid &&
+@@ -964,7 +966,7 @@ EXPORT_SYMBOL(xfrm_state_insert);
+ /* xfrm_state_lock is held */
+ static struct xfrm_state *__find_acq_core(unsigned short family, u8 mode, u32 reqid, u8 proto, xfrm_address_t *daddr, xfrm_address_t *saddr, int create)
+ {
+-	unsigned int h = xfrm_dst_hash(daddr, saddr, reqid, family);
++	unsigned int h = xfrm_dst_hash(&init_net, daddr, saddr, reqid, family);
+ 	struct hlist_node *entry;
+ 	struct xfrm_state *x;
+ 
+@@ -1037,7 +1039,7 @@ static struct xfrm_state *__find_acq_core(unsigned short family, u8 mode, u32 re
+ 		add_timer(&x->timer);
+ 		list_add(&x->km.all, &init_net.xfrm.state_all);
+ 		hlist_add_head(&x->bydst, init_net.xfrm.state_bydst+h);
+-		h = xfrm_src_hash(daddr, saddr, family);
++		h = xfrm_src_hash(&init_net, daddr, saddr, family);
  		hlist_add_head(&x->bysrc, init_net.xfrm.state_bysrc+h);
  
--		xfrm_state_num++;
-+		init_net.xfrm.state_num++;
+ 		init_net.xfrm.state_num++;
+@@ -1189,7 +1191,7 @@ struct xfrm_state * xfrm_migrate_state_find(struct xfrm_migrate *m)
+ 	struct hlist_node *entry;
  
- 		xfrm_hash_grow_check(x->bydst.next != NULL);
+ 	if (m->reqid) {
+-		h = xfrm_dst_hash(&m->old_daddr, &m->old_saddr,
++		h = xfrm_dst_hash(&init_net, &m->old_daddr, &m->old_saddr,
+ 				  m->reqid, m->old_family);
+ 		hlist_for_each_entry(x, entry, init_net.xfrm.state_bydst+h, bydst) {
+ 			if (x->props.mode != m->mode ||
+@@ -1206,7 +1208,7 @@ struct xfrm_state * xfrm_migrate_state_find(struct xfrm_migrate *m)
+ 			return x;
+ 		}
+ 	} else {
+-		h = xfrm_src_hash(&m->old_daddr, &m->old_saddr,
++		h = xfrm_src_hash(&init_net, &m->old_daddr, &m->old_saddr,
+ 				  m->old_family);
+ 		hlist_for_each_entry(x, entry, init_net.xfrm.state_bysrc+h, bysrc) {
+ 			if (x->props.mode != m->mode ||
+@@ -1514,7 +1516,7 @@ int xfrm_alloc_spi(struct xfrm_state *x, u32 low, u32 high)
  	}
-@@ -2089,6 +2088,7 @@ int __net_init xfrm_state_init(struct net *net)
- 		goto out_byspi;
- 	net->xfrm.state_hmask = ((sz / sizeof(struct hlist_head)) - 1);
- 
-+	net->xfrm.state_num = 0;
- 	INIT_WORK(&xfrm_state_gc_work, xfrm_state_gc_task);
- 	return 0;
+ 	if (x->id.spi) {
+ 		spin_lock_bh(&xfrm_state_lock);
+-		h = xfrm_spi_hash(&x->id.daddr, x->id.spi, x->id.proto, x->props.family);
++		h = xfrm_spi_hash(&init_net, &x->id.daddr, x->id.spi, x->id.proto, x->props.family);
+ 		hlist_add_head(&x->byspi, init_net.xfrm.state_byspi+h);
+ 		spin_unlock_bh(&xfrm_state_lock);
  
 -- 
 1.5.6.5
