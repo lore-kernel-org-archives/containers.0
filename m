@@ -1,7 +1,7 @@
 From: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: [PATCH 35/53] netns xfrm: xfrm_policy_check in netns
-Date: Tue, 25 Nov 2008 20:27:07 +0300
-Message-ID: <1227634045-27534-35-git-send-email-adobriyan__6441.26325282759$1227635162$gmane$org@gmail.com>
+Subject: [PATCH 37/53] netns xfrm: flushing/pruning bundles in netns
+Date: Tue, 25 Nov 2008 20:27:09 +0300
+Message-ID: <1227634045-27534-37-git-send-email-adobriyan__20750.7052146413$1227635212$gmane$org@gmail.com>
 References: <1227634045-27534-1-git-send-email-adobriyan@gmail.com>
 	<1227634045-27534-2-git-send-email-adobriyan@gmail.com>
 	<1227634045-27534-3-git-send-email-adobriyan@gmail.com>
@@ -36,11 +36,13 @@ References: <1227634045-27534-1-git-send-email-adobriyan@gmail.com>
 	<1227634045-27534-32-git-send-email-adobriyan@gmail.com>
 	<1227634045-27534-33-git-send-email-adobriyan@gmail.com>
 	<1227634045-27534-34-git-send-email-adobriyan@gmail.com>
+	<1227634045-27534-35-git-send-email-adobriyan@gmail.com>
+	<1227634045-27534-36-git-send-email-adobriyan@gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1227634045-27534-34-git-send-email-adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+In-Reply-To: <1227634045-27534-36-git-send-email-adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -54,60 +56,70 @@ To: davem-fT/PcQaiUtIeIZ0/mPfg9Q@public.gmane.org
 Cc: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, kuznet-v/Mj1YrvjDBInbfyfbPRSQ@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, herbert-lOAM2aK0SrRLBo1qDEOMRrpzq4S04n8Q@public.gmane.org, netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
+Allow netdevice notifier as result.
+
 Signed-off-by: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 ---
- include/net/xfrm.h     |    3 ++-
- net/xfrm/xfrm_policy.c |    5 +++--
- 2 files changed, 5 insertions(+), 3 deletions(-)
+ net/xfrm/xfrm_policy.c |   19 ++++++++-----------
+ 1 files changed, 8 insertions(+), 11 deletions(-)
 
-diff --git a/include/net/xfrm.h b/include/net/xfrm.h
-index 1dc4ff0..158848f 100644
---- a/include/net/xfrm.h
-+++ b/include/net/xfrm.h
-@@ -992,12 +992,13 @@ static inline int __xfrm_policy_check2(struct sock *sk, int dir,
- 				       struct sk_buff *skb,
- 				       unsigned int family, int reverse)
- {
-+	struct net *net = dev_net(skb->dev);
- 	int ndir = dir | (reverse ? XFRM_POLICY_MASK + 1 : 0);
- 
- 	if (sk && sk->sk_policy[XFRM_POLICY_IN])
- 		return __xfrm_policy_check(sk, ndir, skb, family);
- 
--	return	(!init_net.xfrm.policy_count[dir] && !skb->sp) ||
-+	return	(!net->xfrm.policy_count[dir] && !skb->sp) ||
- 		(skb->dst->flags & DST_NOPOLICY) ||
- 		__xfrm_policy_check(sk, ndir, skb, family);
- }
 diff --git a/net/xfrm/xfrm_policy.c b/net/xfrm/xfrm_policy.c
-index 7c88a25..8097c99 100644
+index 54b50a2..49e0898 100644
 --- a/net/xfrm/xfrm_policy.c
 +++ b/net/xfrm/xfrm_policy.c
-@@ -1894,6 +1894,7 @@ static inline int secpath_has_nontransport(struct sec_path *sp, int k, int *idxp
- int __xfrm_policy_check(struct sock *sk, int dir, struct sk_buff *skb,
- 			unsigned short family)
+@@ -2137,7 +2137,7 @@ static void prune_one_bundle(struct xfrm_policy *pol, int (*func)(struct dst_ent
+ 	write_unlock(&pol->lock);
+ }
+ 
+-static void xfrm_prune_bundles(int (*func)(struct dst_entry *))
++static void xfrm_prune_bundles(struct net *net, int (*func)(struct dst_entry *))
  {
-+	struct net *net = dev_net(skb->dev);
- 	struct xfrm_policy *pol;
- 	struct xfrm_policy *pols[XFRM_POLICY_TYPE_MAX];
- 	int npols = 0;
-@@ -1938,7 +1939,7 @@ int __xfrm_policy_check(struct sock *sk, int dir, struct sk_buff *skb,
+ 	struct dst_entry *gc_list = NULL;
+ 	int dir;
+@@ -2150,11 +2150,11 @@ static void xfrm_prune_bundles(int (*func)(struct dst_entry *))
+ 		int i;
+ 
+ 		hlist_for_each_entry(pol, entry,
+-				     &init_net.xfrm.policy_inexact[dir], bydst)
++				     &net->xfrm.policy_inexact[dir], bydst)
+ 			prune_one_bundle(pol, func, &gc_list);
+ 
+-		table = init_net.xfrm.policy_bydst[dir].table;
+-		for (i = init_net.xfrm.policy_bydst[dir].hmask; i >= 0; i--) {
++		table = net->xfrm.policy_bydst[dir].table;
++		for (i = net->xfrm.policy_bydst[dir].hmask; i >= 0; i--) {
+ 			hlist_for_each_entry(pol, entry, table + i, bydst)
+ 				prune_one_bundle(pol, func, &gc_list);
+ 		}
+@@ -2175,12 +2175,12 @@ static int unused_bundle(struct dst_entry *dst)
+ 
+ static void __xfrm_garbage_collect(void)
+ {
+-	xfrm_prune_bundles(unused_bundle);
++	xfrm_prune_bundles(&init_net, unused_bundle);
+ }
+ 
+-static int xfrm_flush_bundles(void)
++static int xfrm_flush_bundles(struct net *net)
+ {
+-	xfrm_prune_bundles(stale_bundle);
++	xfrm_prune_bundles(net, stale_bundle);
+ 	return 0;
+ }
+ 
+@@ -2366,12 +2366,9 @@ static int xfrm_dev_event(struct notifier_block *this, unsigned long event, void
+ {
+ 	struct net_device *dev = ptr;
+ 
+-	if (!net_eq(dev_net(dev), &init_net))
+-		return NOTIFY_DONE;
+-
+ 	switch (event) {
+ 	case NETDEV_DOWN:
+-		xfrm_flush_bundles();
++		xfrm_flush_bundles(dev_net(dev));
  	}
- 
- 	if (!pol)
--		pol = flow_cache_lookup(&init_net, &fl, family, fl_dir,
-+		pol = flow_cache_lookup(net, &fl, family, fl_dir,
- 					xfrm_policy_lookup);
- 
- 	if (IS_ERR(pol)) {
-@@ -1961,7 +1962,7 @@ int __xfrm_policy_check(struct sock *sk, int dir, struct sk_buff *skb,
- 	npols ++;
- #ifdef CONFIG_XFRM_SUB_POLICY
- 	if (pols[0]->type != XFRM_POLICY_TYPE_MAIN) {
--		pols[1] = xfrm_policy_lookup_bytype(&init_net, XFRM_POLICY_TYPE_MAIN,
-+		pols[1] = xfrm_policy_lookup_bytype(net, XFRM_POLICY_TYPE_MAIN,
- 						    &fl, family,
- 						    XFRM_POLICY_IN);
- 		if (pols[1]) {
+ 	return NOTIFY_DONE;
+ }
 -- 
 1.5.6.5
