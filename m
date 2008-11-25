@@ -1,125 +1,52 @@
-From: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: [PATCH 37/53] netns xfrm: flushing/pruning bundles in netns
-Date: Tue, 25 Nov 2008 20:27:09 +0300
-Message-ID: <1227634045-27534-37-git-send-email-adobriyan__20750.7052146413$1227635212$gmane$org@gmail.com>
-References: <1227634045-27534-1-git-send-email-adobriyan@gmail.com>
-	<1227634045-27534-2-git-send-email-adobriyan@gmail.com>
-	<1227634045-27534-3-git-send-email-adobriyan@gmail.com>
-	<1227634045-27534-4-git-send-email-adobriyan@gmail.com>
-	<1227634045-27534-5-git-send-email-adobriyan@gmail.com>
-	<1227634045-27534-6-git-send-email-adobriyan@gmail.com>
-	<1227634045-27534-7-git-send-email-adobriyan@gmail.com>
-	<1227634045-27534-8-git-send-email-adobriyan@gmail.com>
-	<1227634045-27534-9-git-send-email-adobriyan@gmail.com>
-	<1227634045-27534-10-git-send-email-adobriyan@gmail.com>
-	<1227634045-27534-11-git-send-email-adobriyan@gmail.com>
-	<1227634045-27534-12-git-send-email-adobriyan@gmail.com>
-	<1227634045-27534-13-git-send-email-adobriyan@gmail.com>
-	<1227634045-27534-14-git-send-email-adobriyan@gmail.com>
-	<1227634045-27534-15-git-send-email-adobriyan@gmail.com>
-	<1227634045-27534-16-git-send-email-adobriyan@gmail.com>
-	<1227634045-27534-17-git-send-email-adobriyan@gmail.com>
-	<1227634045-27534-18-git-send-email-adobriyan@gmail.com>
-	<1227634045-27534-19-git-send-email-adobriyan@gmail.com>
-	<1227634045-27534-20-git-send-email-adobriyan@gmail.com>
-	<1227634045-27534-21-git-send-email-adobriyan@gmail.com>
-	<1227634045-27534-22-git-send-email-adobriyan@gmail.com>
-	<1227634045-27534-23-git-send-email-adobriyan@gmail.com>
-	<1227634045-27534-24-git-send-email-adobriyan@gmail.com>
-	<1227634045-27534-25-git-send-email-adobriyan@gmail.com>
-	<1227634045-27534-26-git-send-email-adobriyan@gmail.com>
-	<1227634045-27534-27-git-send-email-adobriyan@gmail.com>
-	<1227634045-27534-28-git-send-email-adobriyan@gmail.com>
-	<1227634045-27534-29-git-send-email-adobriyan@gmail.com>
-	<1227634045-27534-30-git-send-email-adobriyan@gmail.com>
-	<1227634045-27534-31-git-send-email-adobriyan@gmail.com>
-	<1227634045-27534-32-git-send-email-adobriyan@gmail.com>
-	<1227634045-27534-33-git-send-email-adobriyan@gmail.com>
-	<1227634045-27534-34-git-send-email-adobriyan@gmail.com>
-	<1227634045-27534-35-git-send-email-adobriyan@gmail.com>
-	<1227634045-27534-36-git-send-email-adobriyan@gmail.com>
+From: ebiederm@xmission.com (Eric W. Biederman)
+Subject: Re: [patch 1/1] netns: filter out uevent not belonging to init_net
+Date: Tue, 25 Nov 2008 09:40:59 -0800
+Message-ID: <m14p1vg0us.fsf@frodo.ebiederm.org>
+References: <20081125165159.411202515@mai-009101017029.toulouse-stg.fr.ibm.com>
+	<20081125165346.554858327@mai-009101017029.toulouse-stg.fr.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1227634045-27534-36-git-send-email-adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: davem-fT/PcQaiUtIeIZ0/mPfg9Q@public.gmane.org
-Cc: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, kuznet-v/Mj1YrvjDBInbfyfbPRSQ@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, herbert-lOAM2aK0SrRLBo1qDEOMRrpzq4S04n8Q@public.gmane.org, netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Content-Type: text/plain; charset=us-ascii
+Return-path: <netdev-owner@vger.kernel.org>
+In-Reply-To: <20081125165346.554858327@mai-009101017029.toulouse-stg.fr.ibm.com>
+	(Daniel Lezcano's message of "Tue, 25 Nov 2008 17:52:00 +0100")
+Sender: netdev-owner@vger.kernel.org
+To: Daniel Lezcano <dlezcano@fr.ibm.com>
+Cc: davem@davemloft.net, netdev@vger.kernel.org, benjamin.thery@bull.net, containers@lists.osdl.org
 List-Id: containers.vger.kernel.org
 
-Allow netdevice notifier as result.
+Daniel Lezcano <dlezcano@fr.ibm.com> writes:
 
-Signed-off-by: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
----
- net/xfrm/xfrm_policy.c |   19 ++++++++-----------
- 1 files changed, 8 insertions(+), 11 deletions(-)
+> This patch will filter out the uevent not related to the init_net.
+> Without this patch if a network device is created in a network
+> namespace with the same name as one network device belonging to the
+> initial network namespace (eg. eth0), when the network namespace
+> will die and the network device will be destroyed, an event will
+> be sent and catched by the udevd daemon. That will result to have
+> the real network device to be shutdown because the udevd/uevent are
+> not namespace aware.
 
-diff --git a/net/xfrm/xfrm_policy.c b/net/xfrm/xfrm_policy.c
-index 54b50a2..49e0898 100644
---- a/net/xfrm/xfrm_policy.c
-+++ b/net/xfrm/xfrm_policy.c
-@@ -2137,7 +2137,7 @@ static void prune_one_bundle(struct xfrm_policy *pol, int (*func)(struct dst_ent
- 	write_unlock(&pol->lock);
- }
- 
--static void xfrm_prune_bundles(int (*func)(struct dst_entry *))
-+static void xfrm_prune_bundles(struct net *net, int (*func)(struct dst_entry *))
- {
- 	struct dst_entry *gc_list = NULL;
- 	int dir;
-@@ -2150,11 +2150,11 @@ static void xfrm_prune_bundles(int (*func)(struct dst_entry *))
- 		int i;
- 
- 		hlist_for_each_entry(pol, entry,
--				     &init_net.xfrm.policy_inexact[dir], bydst)
-+				     &net->xfrm.policy_inexact[dir], bydst)
- 			prune_one_bundle(pol, func, &gc_list);
- 
--		table = init_net.xfrm.policy_bydst[dir].table;
--		for (i = init_net.xfrm.policy_bydst[dir].hmask; i >= 0; i--) {
-+		table = net->xfrm.policy_bydst[dir].table;
-+		for (i = net->xfrm.policy_bydst[dir].hmask; i >= 0; i--) {
- 			hlist_for_each_entry(pol, entry, table + i, bydst)
- 				prune_one_bundle(pol, func, &gc_list);
- 		}
-@@ -2175,12 +2175,12 @@ static int unused_bundle(struct dst_entry *dst)
- 
- static void __xfrm_garbage_collect(void)
- {
--	xfrm_prune_bundles(unused_bundle);
-+	xfrm_prune_bundles(&init_net, unused_bundle);
- }
- 
--static int xfrm_flush_bundles(void)
-+static int xfrm_flush_bundles(struct net *net)
- {
--	xfrm_prune_bundles(stale_bundle);
-+	xfrm_prune_bundles(net, stale_bundle);
- 	return 0;
- }
- 
-@@ -2366,12 +2366,9 @@ static int xfrm_dev_event(struct notifier_block *this, unsigned long event, void
- {
- 	struct net_device *dev = ptr;
- 
--	if (!net_eq(dev_net(dev), &init_net))
--		return NOTIFY_DONE;
--
- 	switch (event) {
- 	case NETDEV_DOWN:
--		xfrm_flush_bundles();
-+		xfrm_flush_bundles(dev_net(dev));
- 	}
- 	return NOTIFY_DONE;
- }
--- 
-1.5.6.5
+It is belt and suspenders at this point.  As those devices should
+not even be in sysfs at the moment.  But it keeps us from doing the
+wrong thing when sysfs support starts coming on line.
+
+Acked-by: "Eric W. Biederman" <ebiederm@xmission.com>
+
+> Signed-off-by: Daniel Lezcano <dlezcano@fr.ibm.com>
+> ---
+>  net/core/net-sysfs.c |    3 +++
+>  1 file changed, 3 insertions(+)
+>
+> Index: net-next-2.6/net/core/net-sysfs.c
+> ===================================================================
+> --- net-next-2.6.orig/net/core/net-sysfs.c
+> +++ net-next-2.6/net/core/net-sysfs.c
+> @@ -427,6 +427,9 @@ static int netdev_uevent(struct device *
+>  	struct net_device *dev = to_net_dev(d);
+>  	int retval;
+>  
+> +	if (!net_eq(dev_net(dev), &init_net))
+> +		return 0;
+> +
+>  	/* pass interface to uevent. */
+>  	retval = add_uevent_var(env, "INTERFACE=%s", dev->name);
+>  	if (retval)
