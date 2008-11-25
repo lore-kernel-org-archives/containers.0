@@ -1,7 +1,7 @@
 From: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: [PATCH 44/53] netns xfrm: ->dst_lookup in netns
-Date: Tue, 25 Nov 2008 20:27:16 +0300
-Message-ID: <1227634045-27534-44-git-send-email-adobriyan__1012.12275117195$1227637614$gmane$org@gmail.com>
+Subject: [PATCH 24/53] netns xfrm: state flush in netns
+Date: Tue, 25 Nov 2008 20:26:56 +0300
+Message-ID: <1227634045-27534-24-git-send-email-adobriyan__20200.0937345021$1227637614$gmane$org@gmail.com>
 References: <1227634045-27534-1-git-send-email-adobriyan@gmail.com>
 	<1227634045-27534-2-git-send-email-adobriyan@gmail.com>
 	<1227634045-27534-3-git-send-email-adobriyan@gmail.com>
@@ -25,31 +25,11 @@ References: <1227634045-27534-1-git-send-email-adobriyan@gmail.com>
 	<1227634045-27534-21-git-send-email-adobriyan@gmail.com>
 	<1227634045-27534-22-git-send-email-adobriyan@gmail.com>
 	<1227634045-27534-23-git-send-email-adobriyan@gmail.com>
-	<1227634045-27534-24-git-send-email-adobriyan@gmail.com>
-	<1227634045-27534-25-git-send-email-adobriyan@gmail.com>
-	<1227634045-27534-26-git-send-email-adobriyan@gmail.com>
-	<1227634045-27534-27-git-send-email-adobriyan@gmail.com>
-	<1227634045-27534-28-git-send-email-adobriyan@gmail.com>
-	<1227634045-27534-29-git-send-email-adobriyan@gmail.com>
-	<1227634045-27534-30-git-send-email-adobriyan@gmail.com>
-	<1227634045-27534-31-git-send-email-adobriyan@gmail.com>
-	<1227634045-27534-32-git-send-email-adobriyan@gmail.com>
-	<1227634045-27534-33-git-send-email-adobriyan@gmail.com>
-	<1227634045-27534-34-git-send-email-adobriyan@gmail.com>
-	<1227634045-27534-35-git-send-email-adobriyan@gmail.com>
-	<1227634045-27534-36-git-send-email-adobriyan@gmail.com>
-	<1227634045-27534-37-git-send-email-adobriyan@gmail.com>
-	<1227634045-27534-38-git-send-email-adobriyan@gmail.com>
-	<1227634045-27534-39-git-send-email-adobriyan@gmail.com>
-	<1227634045-27534-40-git-send-email-adobriyan@gmail.com>
-	<1227634045-27534-41-git-send-email-adobriyan@gmail.com>
-	<1227634045-27534-42-git-send-email-adobriyan@gmail.com>
-	<1227634045-27534-43-git-send-email-adobriyan@gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1227634045-27534-43-git-send-email-adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+In-Reply-To: <1227634045-27534-23-git-send-email-adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -65,128 +45,114 @@ List-Id: containers.vger.kernel.org
 
 Signed-off-by: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 ---
- include/net/xfrm.h      |    3 ++-
- net/ipv4/xfrm4_policy.c |    7 ++++---
- net/ipv6/xfrm6_policy.c |    7 ++++---
- net/xfrm/xfrm_policy.c  |    7 ++++---
- 4 files changed, 14 insertions(+), 10 deletions(-)
+ include/net/xfrm.h    |    2 +-
+ net/key/af_key.c      |    2 +-
+ net/xfrm/xfrm_state.c |   18 +++++++++---------
+ net/xfrm/xfrm_user.c  |    2 +-
+ 4 files changed, 12 insertions(+), 12 deletions(-)
 
 diff --git a/include/net/xfrm.h b/include/net/xfrm.h
-index f3ea160..b16d4c0 100644
+index 8699620..e4bb672 100644
 --- a/include/net/xfrm.h
 +++ b/include/net/xfrm.h
-@@ -266,7 +266,8 @@ struct xfrm_policy_afinfo {
- 	unsigned short		family;
- 	struct dst_ops		*dst_ops;
- 	void			(*garbage_collect)(struct net *net);
--	struct dst_entry	*(*dst_lookup)(int tos, xfrm_address_t *saddr,
-+	struct dst_entry	*(*dst_lookup)(struct net *net, int tos,
-+					       xfrm_address_t *saddr,
- 					       xfrm_address_t *daddr);
- 	int			(*get_saddr)(xfrm_address_t *saddr, xfrm_address_t *daddr);
- 	struct dst_entry	*(*find_bundle)(struct flowi *fl, struct xfrm_policy *policy);
-diff --git a/net/ipv4/xfrm4_policy.c b/net/ipv4/xfrm4_policy.c
-index a881ca3..e1cf9ed 100644
---- a/net/ipv4/xfrm4_policy.c
-+++ b/net/ipv4/xfrm4_policy.c
-@@ -18,7 +18,8 @@
- static struct dst_ops xfrm4_dst_ops;
- static struct xfrm_policy_afinfo xfrm4_policy_afinfo;
+@@ -1363,7 +1363,7 @@ struct xfrmk_spdinfo {
  
--static struct dst_entry *xfrm4_dst_lookup(int tos, xfrm_address_t *saddr,
-+static struct dst_entry *xfrm4_dst_lookup(struct net *net, int tos,
-+					  xfrm_address_t *saddr,
- 					  xfrm_address_t *daddr)
- {
- 	struct flowi fl = {
-@@ -36,7 +37,7 @@ static struct dst_entry *xfrm4_dst_lookup(int tos, xfrm_address_t *saddr,
- 	if (saddr)
- 		fl.fl4_src = saddr->a4;
- 
--	err = __ip_route_output_key(&init_net, &rt, &fl);
-+	err = __ip_route_output_key(net, &rt, &fl);
- 	dst = &rt->u.dst;
+ extern struct xfrm_state *xfrm_find_acq_byseq(u32 seq);
+ extern int xfrm_state_delete(struct xfrm_state *x);
+-extern int xfrm_state_flush(u8 proto, struct xfrm_audit *audit_info);
++extern int xfrm_state_flush(struct net *net, u8 proto, struct xfrm_audit *audit_info);
+ extern void xfrm_sad_getinfo(struct xfrmk_sadinfo *si);
+ extern void xfrm_spd_getinfo(struct xfrmk_spdinfo *si);
+ extern int xfrm_replay_check(struct xfrm_state *x,
+diff --git a/net/key/af_key.c b/net/key/af_key.c
+index 036315d..e5d595a 100644
+--- a/net/key/af_key.c
++++ b/net/key/af_key.c
+@@ -1732,7 +1732,7 @@ static int pfkey_flush(struct sock *sk, struct sk_buff *skb, struct sadb_msg *hd
+ 	audit_info.loginuid = audit_get_loginuid(current);
+ 	audit_info.sessionid = audit_get_sessionid(current);
+ 	audit_info.secid = 0;
+-	err = xfrm_state_flush(proto, &audit_info);
++	err = xfrm_state_flush(&init_net, proto, &audit_info);
  	if (err)
- 		dst = ERR_PTR(err);
-@@ -48,7 +49,7 @@ static int xfrm4_get_saddr(xfrm_address_t *saddr, xfrm_address_t *daddr)
- 	struct dst_entry *dst;
- 	struct rtable *rt;
+ 		return err;
+ 	c.data.proto = proto;
+diff --git a/net/xfrm/xfrm_state.c b/net/xfrm/xfrm_state.c
+index f3f635d..5f4c534 100644
+--- a/net/xfrm/xfrm_state.c
++++ b/net/xfrm/xfrm_state.c
+@@ -576,15 +576,15 @@ EXPORT_SYMBOL(xfrm_state_delete);
  
--	dst = xfrm4_dst_lookup(0, NULL, daddr);
-+	dst = xfrm4_dst_lookup(&init_net, 0, NULL, daddr);
- 	if (IS_ERR(dst))
- 		return -EHOSTUNREACH;
- 
-diff --git a/net/ipv6/xfrm6_policy.c b/net/ipv6/xfrm6_policy.c
-index 2df8a78..d7a5b8b 100644
---- a/net/ipv6/xfrm6_policy.c
-+++ b/net/ipv6/xfrm6_policy.c
-@@ -27,7 +27,8 @@
- static struct dst_ops xfrm6_dst_ops;
- static struct xfrm_policy_afinfo xfrm6_policy_afinfo;
- 
--static struct dst_entry *xfrm6_dst_lookup(int tos, xfrm_address_t *saddr,
-+static struct dst_entry *xfrm6_dst_lookup(struct net *net, int tos,
-+					  xfrm_address_t *saddr,
- 					  xfrm_address_t *daddr)
+ #ifdef CONFIG_SECURITY_NETWORK_XFRM
+ static inline int
+-xfrm_state_flush_secctx_check(u8 proto, struct xfrm_audit *audit_info)
++xfrm_state_flush_secctx_check(struct net *net, u8 proto, struct xfrm_audit *audit_info)
  {
- 	struct flowi fl = {};
-@@ -38,7 +39,7 @@ static struct dst_entry *xfrm6_dst_lookup(int tos, xfrm_address_t *saddr,
- 	if (saddr)
- 		memcpy(&fl.fl6_src, saddr, sizeof(fl.fl6_src));
+ 	int i, err = 0;
  
--	dst = ip6_route_output(&init_net, NULL, &fl);
-+	dst = ip6_route_output(net, NULL, &fl);
+-	for (i = 0; i <= init_net.xfrm.state_hmask; i++) {
++	for (i = 0; i <= net->xfrm.state_hmask; i++) {
+ 		struct hlist_node *entry;
+ 		struct xfrm_state *x;
  
- 	err = dst->error;
- 	if (dst->error) {
-@@ -54,7 +55,7 @@ static int xfrm6_get_saddr(xfrm_address_t *saddr, xfrm_address_t *daddr)
- 	struct dst_entry *dst;
- 	struct net_device *dev;
- 
--	dst = xfrm6_dst_lookup(0, NULL, daddr);
-+	dst = xfrm6_dst_lookup(&init_net, 0, NULL, daddr);
- 	if (IS_ERR(dst))
- 		return -EHOSTUNREACH;
- 
-diff --git a/net/xfrm/xfrm_policy.c b/net/xfrm/xfrm_policy.c
-index 7ebbdd6..2b0a80b 100644
---- a/net/xfrm/xfrm_policy.c
-+++ b/net/xfrm/xfrm_policy.c
-@@ -92,7 +92,7 @@ int xfrm_selector_match(struct xfrm_selector *sel, struct flowi *fl,
+-		hlist_for_each_entry(x, entry, init_net.xfrm.state_bydst+i, bydst) {
++		hlist_for_each_entry(x, entry, net->xfrm.state_bydst+i, bydst) {
+ 			if (xfrm_id_proto_match(x->id.proto, proto) &&
+ 			   (err = security_xfrm_state_delete(x)) != 0) {
+ 				xfrm_audit_state_delete(x, 0,
+@@ -600,26 +600,26 @@ xfrm_state_flush_secctx_check(u8 proto, struct xfrm_audit *audit_info)
+ }
+ #else
+ static inline int
+-xfrm_state_flush_secctx_check(u8 proto, struct xfrm_audit *audit_info)
++xfrm_state_flush_secctx_check(struct net *net, u8 proto, struct xfrm_audit *audit_info)
+ {
  	return 0;
  }
+ #endif
  
--static inline struct dst_entry *__xfrm_dst_lookup(int tos,
-+static inline struct dst_entry *__xfrm_dst_lookup(struct net *net, int tos,
- 						  xfrm_address_t *saddr,
- 						  xfrm_address_t *daddr,
- 						  int family)
-@@ -104,7 +104,7 @@ static inline struct dst_entry *__xfrm_dst_lookup(int tos,
- 	if (unlikely(afinfo == NULL))
- 		return ERR_PTR(-EAFNOSUPPORT);
- 
--	dst = afinfo->dst_lookup(tos, saddr, daddr);
-+	dst = afinfo->dst_lookup(net, tos, saddr, daddr);
- 
- 	xfrm_policy_put_afinfo(afinfo);
- 
-@@ -116,6 +116,7 @@ static inline struct dst_entry *xfrm_dst_lookup(struct xfrm_state *x, int tos,
- 						xfrm_address_t *prev_daddr,
- 						int family)
+-int xfrm_state_flush(u8 proto, struct xfrm_audit *audit_info)
++int xfrm_state_flush(struct net *net, u8 proto, struct xfrm_audit *audit_info)
  {
-+	struct net *net = xs_net(x);
- 	xfrm_address_t *saddr = &x->props.saddr;
- 	xfrm_address_t *daddr = &x->id.daddr;
- 	struct dst_entry *dst;
-@@ -129,7 +130,7 @@ static inline struct dst_entry *xfrm_dst_lookup(struct xfrm_state *x, int tos,
- 		daddr = x->coaddr;
- 	}
+ 	int i, err = 0;
  
--	dst = __xfrm_dst_lookup(tos, saddr, daddr, family);
-+	dst = __xfrm_dst_lookup(net, tos, saddr, daddr, family);
+ 	spin_lock_bh(&xfrm_state_lock);
+-	err = xfrm_state_flush_secctx_check(proto, audit_info);
++	err = xfrm_state_flush_secctx_check(net, proto, audit_info);
+ 	if (err)
+ 		goto out;
  
- 	if (!IS_ERR(dst)) {
- 		if (prev_saddr != saddr)
+-	for (i = 0; i <= init_net.xfrm.state_hmask; i++) {
++	for (i = 0; i <= net->xfrm.state_hmask; i++) {
+ 		struct hlist_node *entry;
+ 		struct xfrm_state *x;
+ restart:
+-		hlist_for_each_entry(x, entry, init_net.xfrm.state_bydst+i, bydst) {
++		hlist_for_each_entry(x, entry, net->xfrm.state_bydst+i, bydst) {
+ 			if (!xfrm_state_kern(x) &&
+ 			    xfrm_id_proto_match(x->id.proto, proto)) {
+ 				xfrm_state_hold(x);
+@@ -641,7 +641,7 @@ restart:
+ 
+ out:
+ 	spin_unlock_bh(&xfrm_state_lock);
+-	wake_up(&init_net.xfrm.km_waitq);
++	wake_up(&net->xfrm.km_waitq);
+ 	return err;
+ }
+ EXPORT_SYMBOL(xfrm_state_flush);
+diff --git a/net/xfrm/xfrm_user.c b/net/xfrm/xfrm_user.c
+index 765c01e..49a7e89 100644
+--- a/net/xfrm/xfrm_user.c
++++ b/net/xfrm/xfrm_user.c
+@@ -1398,7 +1398,7 @@ static int xfrm_flush_sa(struct sk_buff *skb, struct nlmsghdr *nlh,
+ 	audit_info.loginuid = NETLINK_CB(skb).loginuid;
+ 	audit_info.sessionid = NETLINK_CB(skb).sessionid;
+ 	audit_info.secid = NETLINK_CB(skb).sid;
+-	err = xfrm_state_flush(p->proto, &audit_info);
++	err = xfrm_state_flush(&init_net, p->proto, &audit_info);
+ 	if (err)
+ 		return err;
+ 	c.data.proto = p->proto;
 -- 
 1.5.6.5
