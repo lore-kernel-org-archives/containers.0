@@ -1,7 +1,7 @@
 From: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: [PATCH 45/53] netns xfrm: ->get_saddr in netns
-Date: Tue, 25 Nov 2008 20:27:17 +0300
-Message-ID: <1227634045-27534-45-git-send-email-adobriyan__3652.33688285134$1227635875$gmane$org@gmail.com>
+Subject: [PATCH 47/53] netns PF_KEY: part 1
+Date: Tue, 25 Nov 2008 20:27:19 +0300
+Message-ID: <1227634045-27534-47-git-send-email-adobriyan__11184.5969142907$1227635994$gmane$org@gmail.com>
 References: <1227634045-27534-1-git-send-email-adobriyan@gmail.com>
 	<1227634045-27534-2-git-send-email-adobriyan@gmail.com>
 	<1227634045-27534-3-git-send-email-adobriyan@gmail.com>
@@ -46,11 +46,13 @@ References: <1227634045-27534-1-git-send-email-adobriyan@gmail.com>
 	<1227634045-27534-42-git-send-email-adobriyan@gmail.com>
 	<1227634045-27534-43-git-send-email-adobriyan@gmail.com>
 	<1227634045-27534-44-git-send-email-adobriyan@gmail.com>
+	<1227634045-27534-45-git-send-email-adobriyan@gmail.com>
+	<1227634045-27534-46-git-send-email-adobriyan@gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1227634045-27534-44-git-send-email-adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+In-Reply-To: <1227634045-27534-46-git-send-email-adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -64,105 +66,225 @@ To: davem-fT/PcQaiUtIeIZ0/mPfg9Q@public.gmane.org
 Cc: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, kuznet-v/Mj1YrvjDBInbfyfbPRSQ@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, herbert-lOAM2aK0SrRLBo1qDEOMRrpzq4S04n8Q@public.gmane.org, netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
+* netns boilerplate
+* keep per-netns socket list
+* keep per-netns number of sockets
+
 Signed-off-by: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 ---
- include/net/xfrm.h      |    2 +-
- net/ipv4/xfrm4_policy.c |    5 +++--
- net/ipv6/xfrm6_policy.c |    5 +++--
- net/xfrm/xfrm_policy.c  |    7 ++++---
- 4 files changed, 11 insertions(+), 8 deletions(-)
+ net/key/af_key.c |   88 ++++++++++++++++++++++++++++++++++++++++++++---------
+ 1 files changed, 73 insertions(+), 15 deletions(-)
 
-diff --git a/include/net/xfrm.h b/include/net/xfrm.h
-index b16d4c0..d076f3d 100644
---- a/include/net/xfrm.h
-+++ b/include/net/xfrm.h
-@@ -269,7 +269,7 @@ struct xfrm_policy_afinfo {
- 	struct dst_entry	*(*dst_lookup)(struct net *net, int tos,
- 					       xfrm_address_t *saddr,
- 					       xfrm_address_t *daddr);
--	int			(*get_saddr)(xfrm_address_t *saddr, xfrm_address_t *daddr);
-+	int			(*get_saddr)(struct net *net, xfrm_address_t *saddr, xfrm_address_t *daddr);
- 	struct dst_entry	*(*find_bundle)(struct flowi *fl, struct xfrm_policy *policy);
- 	void			(*decode_session)(struct sk_buff *skb,
- 						  struct flowi *fl,
-diff --git a/net/ipv4/xfrm4_policy.c b/net/ipv4/xfrm4_policy.c
-index e1cf9ed..2ad24ba 100644
---- a/net/ipv4/xfrm4_policy.c
-+++ b/net/ipv4/xfrm4_policy.c
-@@ -44,12 +44,13 @@ static struct dst_entry *xfrm4_dst_lookup(struct net *net, int tos,
- 	return dst;
+diff --git a/net/key/af_key.c b/net/key/af_key.c
+index ea7755a..e80b264 100644
+--- a/net/key/af_key.c
++++ b/net/key/af_key.c
+@@ -27,6 +27,7 @@
+ #include <linux/proc_fs.h>
+ #include <linux/init.h>
+ #include <net/net_namespace.h>
++#include <net/netns/generic.h>
+ #include <net/xfrm.h>
+ 
+ #include <net/sock.h>
+@@ -34,15 +35,16 @@
+ #define _X2KEY(x) ((x) == XFRM_INF ? 0 : (x))
+ #define _KEY2X(x) ((x) == 0 ? XFRM_INF : (x))
+ 
+-
+-/* List of all pfkey sockets. */
+-static HLIST_HEAD(pfkey_table);
++static int pfkey_net_id;
++struct netns_pfkey {
++	/* List of all pfkey sockets. */
++	struct hlist_head table;
++	atomic_t socks_nr;
++};
+ static DECLARE_WAIT_QUEUE_HEAD(pfkey_table_wait);
+ static DEFINE_RWLOCK(pfkey_table_lock);
+ static atomic_t pfkey_table_users = ATOMIC_INIT(0);
+ 
+-static atomic_t pfkey_socks_nr = ATOMIC_INIT(0);
+-
+ struct pfkey_sock {
+ 	/* struct sock must be the first member of struct pfkey_sock */
+ 	struct sock	sk;
+@@ -89,6 +91,9 @@ static void pfkey_terminate_dump(struct pfkey_sock *pfk)
+ 
+ static void pfkey_sock_destruct(struct sock *sk)
+ {
++	struct net *net = sock_net(sk);
++	struct netns_pfkey *net_pfkey = net_generic(net, pfkey_net_id);
++
+ 	pfkey_terminate_dump(pfkey_sk(sk));
+ 	skb_queue_purge(&sk->sk_receive_queue);
+ 
+@@ -100,7 +105,7 @@ static void pfkey_sock_destruct(struct sock *sk)
+ 	WARN_ON(atomic_read(&sk->sk_rmem_alloc));
+ 	WARN_ON(atomic_read(&sk->sk_wmem_alloc));
+ 
+-	atomic_dec(&pfkey_socks_nr);
++	atomic_dec(&net_pfkey->socks_nr);
  }
  
--static int xfrm4_get_saddr(xfrm_address_t *saddr, xfrm_address_t *daddr)
-+static int xfrm4_get_saddr(struct net *net,
-+			   xfrm_address_t *saddr, xfrm_address_t *daddr)
+ static void pfkey_table_grab(void)
+@@ -151,8 +156,11 @@ static const struct proto_ops pfkey_ops;
+ 
+ static void pfkey_insert(struct sock *sk)
  {
- 	struct dst_entry *dst;
- 	struct rtable *rt;
- 
--	dst = xfrm4_dst_lookup(&init_net, 0, NULL, daddr);
-+	dst = xfrm4_dst_lookup(net, 0, NULL, daddr);
- 	if (IS_ERR(dst))
- 		return -EHOSTUNREACH;
- 
-diff --git a/net/ipv6/xfrm6_policy.c b/net/ipv6/xfrm6_policy.c
-index d7a5b8b..97ab068 100644
---- a/net/ipv6/xfrm6_policy.c
-+++ b/net/ipv6/xfrm6_policy.c
-@@ -50,12 +50,13 @@ static struct dst_entry *xfrm6_dst_lookup(struct net *net, int tos,
- 	return dst;
++	struct net *net = sock_net(sk);
++	struct netns_pfkey *net_pfkey = net_generic(net, pfkey_net_id);
++
+ 	pfkey_table_grab();
+-	sk_add_node(sk, &pfkey_table);
++	sk_add_node(sk, &net_pfkey->table);
+ 	pfkey_table_ungrab();
  }
  
--static int xfrm6_get_saddr(xfrm_address_t *saddr, xfrm_address_t *daddr)
-+static int xfrm6_get_saddr(struct net *net,
-+			   xfrm_address_t *saddr, xfrm_address_t *daddr)
+@@ -171,12 +179,10 @@ static struct proto key_proto = {
+ 
+ static int pfkey_create(struct net *net, struct socket *sock, int protocol)
  {
- 	struct dst_entry *dst;
- 	struct net_device *dev;
- 
--	dst = xfrm6_dst_lookup(&init_net, 0, NULL, daddr);
-+	dst = xfrm6_dst_lookup(net, 0, NULL, daddr);
- 	if (IS_ERR(dst))
- 		return -EHOSTUNREACH;
- 
-diff --git a/net/xfrm/xfrm_policy.c b/net/xfrm/xfrm_policy.c
-index 2b0a80b..7c7bb54 100644
---- a/net/xfrm/xfrm_policy.c
-+++ b/net/xfrm/xfrm_policy.c
-@@ -1187,7 +1187,7 @@ int __xfrm_sk_clone_policy(struct sock *sk)
- }
- 
- static int
--xfrm_get_saddr(xfrm_address_t *local, xfrm_address_t *remote,
-+xfrm_get_saddr(struct net *net, xfrm_address_t *local, xfrm_address_t *remote,
- 	       unsigned short family)
- {
++	struct netns_pfkey *net_pfkey = net_generic(net, pfkey_net_id);
+ 	struct sock *sk;
  	int err;
-@@ -1195,7 +1195,7 @@ xfrm_get_saddr(xfrm_address_t *local, xfrm_address_t *remote,
  
- 	if (unlikely(afinfo == NULL))
- 		return -EINVAL;
--	err = afinfo->get_saddr(local, remote);
-+	err = afinfo->get_saddr(net, local, remote);
- 	xfrm_policy_put_afinfo(afinfo);
- 	return err;
- }
-@@ -1207,6 +1207,7 @@ xfrm_tmpl_resolve_one(struct xfrm_policy *policy, struct flowi *fl,
- 		      struct xfrm_state **xfrm,
- 		      unsigned short family)
+-	if (net != &init_net)
+-		return -EAFNOSUPPORT;
+-
+ 	if (!capable(CAP_NET_ADMIN))
+ 		return -EPERM;
+ 	if (sock->type != SOCK_RAW)
+@@ -195,7 +201,7 @@ static int pfkey_create(struct net *net, struct socket *sock, int protocol)
+ 	sk->sk_family = PF_KEY;
+ 	sk->sk_destruct = pfkey_sock_destruct;
+ 
+-	atomic_inc(&pfkey_socks_nr);
++	atomic_inc(&net_pfkey->socks_nr);
+ 
+ 	pfkey_insert(sk);
+ 
+@@ -257,6 +263,8 @@ static int pfkey_broadcast_one(struct sk_buff *skb, struct sk_buff **skb2,
+ static int pfkey_broadcast(struct sk_buff *skb, gfp_t allocation,
+ 			   int broadcast_flags, struct sock *one_sk)
  {
-+	struct net *net = xp_net(policy);
- 	int nx;
- 	int i, error;
- 	xfrm_address_t *daddr = xfrm_flowi_daddr(fl, family);
-@@ -1225,7 +1226,7 @@ xfrm_tmpl_resolve_one(struct xfrm_policy *policy, struct flowi *fl,
- 			local = &tmpl->saddr;
- 			family = tmpl->encap_family;
- 			if (xfrm_addr_any(local, family)) {
--				error = xfrm_get_saddr(&tmp, remote, family);
-+				error = xfrm_get_saddr(net, &tmp, remote, family);
- 				if (error)
- 					goto fail;
- 				local = &tmp;
++	struct net *net = &init_net;
++	struct netns_pfkey *net_pfkey = net_generic(net, pfkey_net_id);
+ 	struct sock *sk;
+ 	struct hlist_node *node;
+ 	struct sk_buff *skb2 = NULL;
+@@ -269,7 +277,7 @@ static int pfkey_broadcast(struct sk_buff *skb, gfp_t allocation,
+ 		return -ENOMEM;
+ 
+ 	pfkey_lock_table();
+-	sk_for_each(sk, node, &pfkey_table) {
++	sk_for_each(sk, node, &net_pfkey->table) {
+ 		struct pfkey_sock *pfk = pfkey_sk(sk);
+ 		int err2;
+ 
+@@ -2943,7 +2951,10 @@ static int key_notify_sa_expire(struct xfrm_state *x, struct km_event *c)
+ 
+ static int pfkey_send_notify(struct xfrm_state *x, struct km_event *c)
+ {
+-	if (atomic_read(&pfkey_socks_nr) == 0)
++	struct net *net = &init_net;
++	struct netns_pfkey *net_pfkey = net_generic(net, pfkey_net_id);
++
++	if (atomic_read(&net_pfkey->socks_nr) == 0)
+ 		return 0;
+ 
+ 	switch (c->event) {
+@@ -3647,6 +3658,8 @@ static int pfkey_seq_show(struct seq_file *f, void *v)
+ 
+ static void *pfkey_seq_start(struct seq_file *f, loff_t *ppos)
+ {
++	struct net *net = &init_net;
++	struct netns_pfkey *net_pfkey = net_generic(net, pfkey_net_id);
+ 	struct sock *s;
+ 	struct hlist_node *node;
+ 	loff_t pos = *ppos;
+@@ -3655,7 +3668,7 @@ static void *pfkey_seq_start(struct seq_file *f, loff_t *ppos)
+ 	if (pos == 0)
+ 		return SEQ_START_TOKEN;
+ 
+-	sk_for_each(s, node, &pfkey_table)
++	sk_for_each(s, node, &net_pfkey->table)
+ 		if (pos-- == 1)
+ 			return s;
+ 
+@@ -3664,9 +3677,12 @@ static void *pfkey_seq_start(struct seq_file *f, loff_t *ppos)
+ 
+ static void *pfkey_seq_next(struct seq_file *f, void *v, loff_t *ppos)
+ {
++	struct net *net = &init_net;
++	struct netns_pfkey *net_pfkey = net_generic(net, pfkey_net_id);
++
+ 	++*ppos;
+ 	return (v == SEQ_START_TOKEN) ?
+-		sk_head(&pfkey_table) :
++		sk_head(&net_pfkey->table) :
+ 			sk_next((struct sock *)v);
+ }
+ 
+@@ -3731,8 +3747,45 @@ static struct xfrm_mgr pfkeyv2_mgr =
+ 	.migrate	= pfkey_send_migrate,
+ };
+ 
++static int __net_init pfkey_net_init(struct net *net)
++{
++	struct netns_pfkey *net_pfkey;
++	int rv;
++
++	net_pfkey = kmalloc(sizeof(struct netns_pfkey), GFP_KERNEL);
++	if (!net_pfkey) {
++		rv = -ENOMEM;
++		goto out_kmalloc;
++	}
++	INIT_HLIST_HEAD(&net_pfkey->table);
++	atomic_set(&net_pfkey->socks_nr, 0);
++	rv = net_assign_generic(net, pfkey_net_id, net_pfkey);
++	if (rv < 0)
++		goto out_assign;
++	return 0;
++
++out_assign:
++	kfree(net_pfkey);
++out_kmalloc:
++	return rv;
++}
++
++static void __net_exit pfkey_net_exit(struct net *net)
++{
++	struct netns_pfkey *net_pfkey = net_generic(net, pfkey_net_id);
++
++	BUG_ON(!hlist_empty(&net_pfkey->table));
++	kfree(net_pfkey);
++}
++
++static struct pernet_operations pfkey_net_ops = {
++	.init = pfkey_net_init,
++	.exit = pfkey_net_exit,
++};
++
+ static void __exit ipsec_pfkey_exit(void)
+ {
++	unregister_pernet_gen_subsys(pfkey_net_id, &pfkey_net_ops);
+ 	xfrm_unregister_km(&pfkeyv2_mgr);
+ 	pfkey_exit_proc();
+ 	sock_unregister(PF_KEY);
+@@ -3755,8 +3808,13 @@ static int __init ipsec_pfkey_init(void)
+ 	err = xfrm_register_km(&pfkeyv2_mgr);
+ 	if (err != 0)
+ 		goto out_remove_proc_entry;
++	err = register_pernet_gen_subsys(&pfkey_net_id, &pfkey_net_ops);
++	if (err != 0)
++		goto out_xfrm_unregister_km;
+ out:
+ 	return err;
++out_xfrm_unregister_km:
++	xfrm_unregister_km(&pfkeyv2_mgr);
+ out_remove_proc_entry:
+ 	pfkey_exit_proc();
+ out_sock_unregister:
 -- 
 1.5.6.5
