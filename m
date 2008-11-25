@@ -1,7 +1,7 @@
 From: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: [PATCH 30/53] netns xfrm: policy insertion in netns
-Date: Tue, 25 Nov 2008 20:27:02 +0300
-Message-ID: <1227634045-27534-30-git-send-email-adobriyan__22018.1326185868$1227636980$gmane$org@gmail.com>
+Subject: [PATCH 41/53] netns xfrm: xfrm_user module in netns
+Date: Tue, 25 Nov 2008 20:27:13 +0300
+Message-ID: <1227634045-27534-41-git-send-email-adobriyan__17936.6660574035$1227636980$gmane$org@gmail.com>
 References: <1227634045-27534-1-git-send-email-adobriyan@gmail.com>
 	<1227634045-27534-2-git-send-email-adobriyan@gmail.com>
 	<1227634045-27534-3-git-send-email-adobriyan@gmail.com>
@@ -31,11 +31,22 @@ References: <1227634045-27534-1-git-send-email-adobriyan@gmail.com>
 	<1227634045-27534-27-git-send-email-adobriyan@gmail.com>
 	<1227634045-27534-28-git-send-email-adobriyan@gmail.com>
 	<1227634045-27534-29-git-send-email-adobriyan@gmail.com>
+	<1227634045-27534-30-git-send-email-adobriyan@gmail.com>
+	<1227634045-27534-31-git-send-email-adobriyan@gmail.com>
+	<1227634045-27534-32-git-send-email-adobriyan@gmail.com>
+	<1227634045-27534-33-git-send-email-adobriyan@gmail.com>
+	<1227634045-27534-34-git-send-email-adobriyan@gmail.com>
+	<1227634045-27534-35-git-send-email-adobriyan@gmail.com>
+	<1227634045-27534-36-git-send-email-adobriyan@gmail.com>
+	<1227634045-27534-37-git-send-email-adobriyan@gmail.com>
+	<1227634045-27534-38-git-send-email-adobriyan@gmail.com>
+	<1227634045-27534-39-git-send-email-adobriyan@gmail.com>
+	<1227634045-27534-40-git-send-email-adobriyan@gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1227634045-27534-29-git-send-email-adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+In-Reply-To: <1227634045-27534-40-git-send-email-adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -49,167 +60,381 @@ To: davem-fT/PcQaiUtIeIZ0/mPfg9Q@public.gmane.org
 Cc: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, kuznet-v/Mj1YrvjDBInbfyfbPRSQ@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, herbert-lOAM2aK0SrRLBo1qDEOMRrpzq4S04n8Q@public.gmane.org, netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
+Grab netns either from netlink socket, state or policy.
+
+SA and SPD flush are in init_net for now, this requires little
+attention, see below.
+
 Signed-off-by: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 ---
- net/xfrm/xfrm_policy.c |   46 ++++++++++++++++++++++++----------------------
- 1 files changed, 24 insertions(+), 22 deletions(-)
+ net/xfrm/xfrm_user.c |   76 +++++++++++++++++++++++++++++--------------------
+ 1 files changed, 45 insertions(+), 31 deletions(-)
 
-diff --git a/net/xfrm/xfrm_policy.c b/net/xfrm/xfrm_policy.c
-index aefbb56..11fee87 100644
---- a/net/xfrm/xfrm_policy.c
-+++ b/net/xfrm/xfrm_policy.c
-@@ -326,22 +326,22 @@ static inline unsigned int idx_hash(struct net *net, u32 index)
- 	return __idx_hash(index, net->xfrm.policy_idx_hmask);
+diff --git a/net/xfrm/xfrm_user.c b/net/xfrm/xfrm_user.c
+index 8b5b01d..ab8b138 100644
+--- a/net/xfrm/xfrm_user.c
++++ b/net/xfrm/xfrm_user.c
+@@ -316,11 +316,12 @@ static void xfrm_update_ae_params(struct xfrm_state *x, struct nlattr **attrs)
+ 		x->replay_maxdiff = nla_get_u32(rt);
  }
  
--static struct hlist_head *policy_hash_bysel(struct xfrm_selector *sel, unsigned short family, int dir)
-+static struct hlist_head *policy_hash_bysel(struct net *net, struct xfrm_selector *sel, unsigned short family, int dir)
+-static struct xfrm_state *xfrm_state_construct(struct xfrm_usersa_info *p,
++static struct xfrm_state *xfrm_state_construct(struct net *net,
++					       struct xfrm_usersa_info *p,
+ 					       struct nlattr **attrs,
+ 					       int *errp)
  {
--	unsigned int hmask = init_net.xfrm.policy_bydst[dir].hmask;
-+	unsigned int hmask = net->xfrm.policy_bydst[dir].hmask;
- 	unsigned int hash = __sel_hash(sel, family, hmask);
+-	struct xfrm_state *x = xfrm_state_alloc(&init_net);
++	struct xfrm_state *x = xfrm_state_alloc(net);
+ 	int err = -ENOMEM;
  
- 	return (hash == hmask + 1 ?
--		&init_net.xfrm.policy_inexact[dir] :
--		init_net.xfrm.policy_bydst[dir].table + hash);
-+		&net->xfrm.policy_inexact[dir] :
-+		net->xfrm.policy_bydst[dir].table + hash);
+ 	if (!x)
+@@ -391,6 +392,7 @@ error_no_put:
+ static int xfrm_add_sa(struct sk_buff *skb, struct nlmsghdr *nlh,
+ 		struct nlattr **attrs)
+ {
++	struct net *net = sock_net(skb->sk);
+ 	struct xfrm_usersa_info *p = nlmsg_data(nlh);
+ 	struct xfrm_state *x;
+ 	int err;
+@@ -403,7 +405,7 @@ static int xfrm_add_sa(struct sk_buff *skb, struct nlmsghdr *nlh,
+ 	if (err)
+ 		return err;
+ 
+-	x = xfrm_state_construct(p, attrs, &err);
++	x = xfrm_state_construct(net, p, attrs, &err);
+ 	if (!x)
+ 		return err;
+ 
+@@ -431,7 +433,8 @@ out:
+ 	return err;
  }
  
--static struct hlist_head *policy_hash_direct(xfrm_address_t *daddr, xfrm_address_t *saddr, unsigned short family, int dir)
-+static struct hlist_head *policy_hash_direct(struct net *net, xfrm_address_t *daddr, xfrm_address_t *saddr, unsigned short family, int dir)
+-static struct xfrm_state *xfrm_user_state_lookup(struct xfrm_usersa_id *p,
++static struct xfrm_state *xfrm_user_state_lookup(struct net *net,
++						 struct xfrm_usersa_id *p,
+ 						 struct nlattr **attrs,
+ 						 int *errp)
  {
--	unsigned int hmask = init_net.xfrm.policy_bydst[dir].hmask;
-+	unsigned int hmask = net->xfrm.policy_bydst[dir].hmask;
- 	unsigned int hash = __addr_hash(daddr, saddr, family, hmask);
+@@ -440,7 +443,7 @@ static struct xfrm_state *xfrm_user_state_lookup(struct xfrm_usersa_id *p,
  
--	return init_net.xfrm.policy_bydst[dir].table + hash;
-+	return net->xfrm.policy_bydst[dir].table + hash;
- }
+ 	if (xfrm_id_proto_match(p->proto, IPSEC_PROTO_ANY)) {
+ 		err = -ESRCH;
+-		x = xfrm_state_lookup(&init_net, &p->daddr, p->spi, p->proto, p->family);
++		x = xfrm_state_lookup(net, &p->daddr, p->spi, p->proto, p->family);
+ 	} else {
+ 		xfrm_address_t *saddr = NULL;
  
- static void xfrm_dst_hash_transfer(struct hlist_head *list,
-@@ -508,7 +508,7 @@ static void xfrm_hash_resize(struct work_struct *work)
+@@ -451,7 +454,7 @@ static struct xfrm_state *xfrm_user_state_lookup(struct xfrm_usersa_id *p,
+ 		}
  
- /* Generate new index... KAME seems to generate them ordered by cost
-  * of an absolute inpredictability of ordering of rules. This will not pass. */
--static u32 xfrm_gen_index(int dir)
-+static u32 xfrm_gen_index(struct net *net, int dir)
- {
- 	static u32 idx_generator;
- 
-@@ -523,7 +523,7 @@ static u32 xfrm_gen_index(int dir)
- 		idx_generator += 8;
- 		if (idx == 0)
- 			idx = 8;
--		list = init_net.xfrm.policy_byidx + idx_hash(&init_net, idx);
-+		list = net->xfrm.policy_byidx + idx_hash(net, idx);
- 		found = 0;
- 		hlist_for_each_entry(p, entry, list, byidx) {
- 			if (p->index == idx) {
-@@ -553,6 +553,7 @@ static inline int selector_cmp(struct xfrm_selector *s1, struct xfrm_selector *s
- 
- int xfrm_policy_insert(int dir, struct xfrm_policy *policy, int excl)
- {
-+	struct net *net = xp_net(policy);
- 	struct xfrm_policy *pol;
- 	struct xfrm_policy *delpol;
- 	struct hlist_head *chain;
-@@ -560,7 +561,7 @@ int xfrm_policy_insert(int dir, struct xfrm_policy *policy, int excl)
- 	struct dst_entry *gc_list;
- 
- 	write_lock_bh(&xfrm_policy_lock);
--	chain = policy_hash_bysel(&policy->selector, policy->family, dir);
-+	chain = policy_hash_bysel(net, &policy->selector, policy->family, dir);
- 	delpol = NULL;
- 	newpos = NULL;
- 	hlist_for_each_entry(pol, entry, chain, bydst) {
-@@ -587,27 +588,27 @@ int xfrm_policy_insert(int dir, struct xfrm_policy *policy, int excl)
- 	else
- 		hlist_add_head(&policy->bydst, chain);
- 	xfrm_pol_hold(policy);
--	init_net.xfrm.policy_count[dir]++;
-+	net->xfrm.policy_count[dir]++;
- 	atomic_inc(&flow_cache_genid);
- 	if (delpol) {
- 		hlist_del(&delpol->bydst);
- 		hlist_del(&delpol->byidx);
- 		list_del(&delpol->walk.all);
--		init_net.xfrm.policy_count[dir]--;
-+		net->xfrm.policy_count[dir]--;
+ 		err = -ESRCH;
+-		x = xfrm_state_lookup_byaddr(&init_net, &p->daddr, saddr,
++		x = xfrm_state_lookup_byaddr(net, &p->daddr, saddr,
+ 					     p->proto, p->family);
  	}
--	policy->index = delpol ? delpol->index : xfrm_gen_index(dir);
--	hlist_add_head(&policy->byidx, init_net.xfrm.policy_byidx+idx_hash(&init_net, policy->index));
-+	policy->index = delpol ? delpol->index : xfrm_gen_index(net, dir);
-+	hlist_add_head(&policy->byidx, net->xfrm.policy_byidx+idx_hash(net, policy->index));
- 	policy->curlft.add_time = get_seconds();
- 	policy->curlft.use_time = 0;
- 	if (!mod_timer(&policy->timer, jiffies + HZ))
- 		xfrm_pol_hold(policy);
--	list_add(&policy->walk.all, &init_net.xfrm.policy_all);
-+	list_add(&policy->walk.all, &net->xfrm.policy_all);
- 	write_unlock_bh(&xfrm_policy_lock);
  
- 	if (delpol)
- 		xfrm_policy_kill(delpol);
--	else if (xfrm_bydst_should_resize(&init_net, dir, NULL))
--		schedule_work(&init_net.xfrm.policy_hash_work);
-+	else if (xfrm_bydst_should_resize(net, dir, NULL))
-+		schedule_work(&net->xfrm.policy_hash_work);
+@@ -464,6 +467,7 @@ static struct xfrm_state *xfrm_user_state_lookup(struct xfrm_usersa_id *p,
+ static int xfrm_del_sa(struct sk_buff *skb, struct nlmsghdr *nlh,
+ 		struct nlattr **attrs)
+ {
++	struct net *net = sock_net(skb->sk);
+ 	struct xfrm_state *x;
+ 	int err = -ESRCH;
+ 	struct km_event c;
+@@ -472,7 +476,7 @@ static int xfrm_del_sa(struct sk_buff *skb, struct nlmsghdr *nlh,
+ 	u32 sessionid = NETLINK_CB(skb).sessionid;
+ 	u32 sid = NETLINK_CB(skb).sid;
  
- 	read_lock_bh(&xfrm_policy_lock);
- 	gc_list = NULL;
-@@ -652,7 +653,7 @@ struct xfrm_policy *xfrm_policy_bysel_ctx(u8 type, int dir,
+-	x = xfrm_user_state_lookup(p, attrs, &err);
++	x = xfrm_user_state_lookup(net, p, attrs, &err);
+ 	if (x == NULL)
+ 		return err;
  
- 	*err = 0;
- 	write_lock_bh(&xfrm_policy_lock);
--	chain = policy_hash_bysel(sel, sel->family, dir);
-+	chain = policy_hash_bysel(&init_net, sel, sel->family, dir);
- 	ret = NULL;
- 	hlist_for_each_entry(pol, entry, chain, bydst) {
- 		if (pol->type == type &&
-@@ -955,7 +956,7 @@ static struct xfrm_policy *xfrm_policy_lookup_bytype(u8 type, struct flowi *fl,
+@@ -615,6 +619,7 @@ static int xfrm_dump_sa_done(struct netlink_callback *cb)
+ 
+ static int xfrm_dump_sa(struct sk_buff *skb, struct netlink_callback *cb)
+ {
++	struct net *net = sock_net(skb->sk);
+ 	struct xfrm_state_walk *walk = (struct xfrm_state_walk *) &cb->args[1];
+ 	struct xfrm_dump_info info;
+ 
+@@ -631,7 +636,7 @@ static int xfrm_dump_sa(struct sk_buff *skb, struct netlink_callback *cb)
+ 		xfrm_state_walk_init(walk, 0);
+ 	}
+ 
+-	(void) xfrm_state_walk(&init_net, walk, dump_one_state, &info);
++	(void) xfrm_state_walk(net, walk, dump_one_state, &info);
+ 
+ 	return skb->len;
+ }
+@@ -776,13 +781,13 @@ static int xfrm_get_sadinfo(struct sk_buff *skb, struct nlmsghdr *nlh,
+ static int xfrm_get_sa(struct sk_buff *skb, struct nlmsghdr *nlh,
+ 		struct nlattr **attrs)
+ {
+-	struct net *net = &init_net;
++	struct net *net = sock_net(skb->sk);
+ 	struct xfrm_usersa_id *p = nlmsg_data(nlh);
+ 	struct xfrm_state *x;
+ 	struct sk_buff *resp_skb;
+ 	int err = -ESRCH;
+ 
+-	x = xfrm_user_state_lookup(p, attrs, &err);
++	x = xfrm_user_state_lookup(net, p, attrs, &err);
+ 	if (x == NULL)
+ 		goto out_noput;
+ 
+@@ -823,7 +828,7 @@ static int verify_userspi_info(struct xfrm_userspi_info *p)
+ static int xfrm_alloc_userspi(struct sk_buff *skb, struct nlmsghdr *nlh,
+ 		struct nlattr **attrs)
+ {
+-	struct net *net = &init_net;
++	struct net *net = sock_net(skb->sk);
+ 	struct xfrm_state *x;
+ 	struct xfrm_userspi_info *p;
+ 	struct sk_buff *resp_skb;
+@@ -1082,9 +1087,9 @@ static void copy_to_user_policy(struct xfrm_policy *xp, struct xfrm_userpolicy_i
+ 	p->share = XFRM_SHARE_ANY; /* XXX xp->share */
+ }
+ 
+-static struct xfrm_policy *xfrm_policy_construct(struct xfrm_userpolicy_info *p, struct nlattr **attrs, int *errp)
++static struct xfrm_policy *xfrm_policy_construct(struct net *net, struct xfrm_userpolicy_info *p, struct nlattr **attrs, int *errp)
+ {
+-	struct xfrm_policy *xp = xfrm_policy_alloc(&init_net, GFP_KERNEL);
++	struct xfrm_policy *xp = xfrm_policy_alloc(net, GFP_KERNEL);
+ 	int err;
+ 
+ 	if (!xp) {
+@@ -1114,6 +1119,7 @@ static struct xfrm_policy *xfrm_policy_construct(struct xfrm_userpolicy_info *p,
+ static int xfrm_add_policy(struct sk_buff *skb, struct nlmsghdr *nlh,
+ 		struct nlattr **attrs)
+ {
++	struct net *net = sock_net(skb->sk);
+ 	struct xfrm_userpolicy_info *p = nlmsg_data(nlh);
+ 	struct xfrm_policy *xp;
+ 	struct km_event c;
+@@ -1130,7 +1136,7 @@ static int xfrm_add_policy(struct sk_buff *skb, struct nlmsghdr *nlh,
+ 	if (err)
+ 		return err;
+ 
+-	xp = xfrm_policy_construct(p, attrs, &err);
++	xp = xfrm_policy_construct(net, p, attrs, &err);
+ 	if (!xp)
+ 		return err;
+ 
+@@ -1267,6 +1273,7 @@ static int xfrm_dump_policy_done(struct netlink_callback *cb)
+ 
+ static int xfrm_dump_policy(struct sk_buff *skb, struct netlink_callback *cb)
+ {
++	struct net *net = sock_net(skb->sk);
+ 	struct xfrm_policy_walk *walk = (struct xfrm_policy_walk *) &cb->args[1];
+ 	struct xfrm_dump_info info;
+ 
+@@ -1283,7 +1290,7 @@ static int xfrm_dump_policy(struct sk_buff *skb, struct netlink_callback *cb)
+ 		xfrm_policy_walk_init(walk, XFRM_POLICY_TYPE_ANY);
+ 	}
+ 
+-	(void) xfrm_policy_walk(&init_net, walk, dump_one_policy, &info);
++	(void) xfrm_policy_walk(net, walk, dump_one_policy, &info);
+ 
+ 	return skb->len;
+ }
+@@ -1315,7 +1322,7 @@ static struct sk_buff *xfrm_policy_netlink(struct sk_buff *in_skb,
+ static int xfrm_get_policy(struct sk_buff *skb, struct nlmsghdr *nlh,
+ 		struct nlattr **attrs)
+ {
+-	struct net *net = &init_net;
++	struct net *net = sock_net(skb->sk);
+ 	struct xfrm_policy *xp;
+ 	struct xfrm_userpolicy_id *p;
+ 	u8 type = XFRM_POLICY_TYPE_MAIN;
+@@ -1395,6 +1402,7 @@ out:
+ static int xfrm_flush_sa(struct sk_buff *skb, struct nlmsghdr *nlh,
+ 		struct nlattr **attrs)
+ {
++	struct net *net = sock_net(skb->sk);
+ 	struct km_event c;
+ 	struct xfrm_usersa_flush *p = nlmsg_data(nlh);
+ 	struct xfrm_audit audit_info;
+@@ -1403,7 +1411,7 @@ static int xfrm_flush_sa(struct sk_buff *skb, struct nlmsghdr *nlh,
+ 	audit_info.loginuid = NETLINK_CB(skb).loginuid;
+ 	audit_info.sessionid = NETLINK_CB(skb).sessionid;
+ 	audit_info.secid = NETLINK_CB(skb).sid;
+-	err = xfrm_state_flush(&init_net, p->proto, &audit_info);
++	err = xfrm_state_flush(net, p->proto, &audit_info);
+ 	if (err)
+ 		return err;
+ 	c.data.proto = p->proto;
+@@ -1462,7 +1470,7 @@ nla_put_failure:
+ static int xfrm_get_ae(struct sk_buff *skb, struct nlmsghdr *nlh,
+ 		struct nlattr **attrs)
+ {
+-	struct net *net = &init_net;
++	struct net *net = sock_net(skb->sk);
+ 	struct xfrm_state *x;
+ 	struct sk_buff *r_skb;
+ 	int err;
+@@ -1501,6 +1509,7 @@ static int xfrm_get_ae(struct sk_buff *skb, struct nlmsghdr *nlh,
+ static int xfrm_new_ae(struct sk_buff *skb, struct nlmsghdr *nlh,
+ 		struct nlattr **attrs)
+ {
++	struct net *net = sock_net(skb->sk);
+ 	struct xfrm_state *x;
+ 	struct km_event c;
+ 	int err = - EINVAL;
+@@ -1515,7 +1524,7 @@ static int xfrm_new_ae(struct sk_buff *skb, struct nlmsghdr *nlh,
+ 	if (!(nlh->nlmsg_flags&NLM_F_REPLACE))
+ 		return err;
+ 
+-	x = xfrm_state_lookup(&init_net, &p->sa_id.daddr, p->sa_id.spi, p->sa_id.proto, p->sa_id.family);
++	x = xfrm_state_lookup(net, &p->sa_id.daddr, p->sa_id.spi, p->sa_id.proto, p->sa_id.family);
+ 	if (x == NULL)
+ 		return -ESRCH;
+ 
+@@ -1540,6 +1549,7 @@ out:
+ static int xfrm_flush_policy(struct sk_buff *skb, struct nlmsghdr *nlh,
+ 		struct nlattr **attrs)
+ {
++	struct net *net = sock_net(skb->sk);
+ 	struct km_event c;
+ 	u8 type = XFRM_POLICY_TYPE_MAIN;
+ 	int err;
+@@ -1552,7 +1562,7 @@ static int xfrm_flush_policy(struct sk_buff *skb, struct nlmsghdr *nlh,
+ 	audit_info.loginuid = NETLINK_CB(skb).loginuid;
+ 	audit_info.sessionid = NETLINK_CB(skb).sessionid;
+ 	audit_info.secid = NETLINK_CB(skb).sid;
+-	err = xfrm_policy_flush(&init_net, type, &audit_info);
++	err = xfrm_policy_flush(net, type, &audit_info);
+ 	if (err)
+ 		return err;
+ 	c.data.type = type;
+@@ -1566,6 +1576,7 @@ static int xfrm_flush_policy(struct sk_buff *skb, struct nlmsghdr *nlh,
+ static int xfrm_add_pol_expire(struct sk_buff *skb, struct nlmsghdr *nlh,
+ 		struct nlattr **attrs)
+ {
++	struct net *net = sock_net(skb->sk);
+ 	struct xfrm_policy *xp;
+ 	struct xfrm_user_polexpire *up = nlmsg_data(nlh);
+ 	struct xfrm_userpolicy_info *p = &up->pol;
+@@ -1577,7 +1588,7 @@ static int xfrm_add_pol_expire(struct sk_buff *skb, struct nlmsghdr *nlh,
+ 		return err;
+ 
+ 	if (p->index)
+-		xp = xfrm_policy_byid(&init_net, type, p->dir, p->index, 0, &err);
++		xp = xfrm_policy_byid(net, type, p->dir, p->index, 0, &err);
+ 	else {
+ 		struct nlattr *rt = attrs[XFRMA_SEC_CTX];
+ 		struct xfrm_sec_ctx *ctx;
+@@ -1594,7 +1605,7 @@ static int xfrm_add_pol_expire(struct sk_buff *skb, struct nlmsghdr *nlh,
+ 			if (err)
+ 				return err;
+ 		}
+-		xp = xfrm_policy_bysel_ctx(&init_net, type, p->dir, &p->sel, ctx, 0, &err);
++		xp = xfrm_policy_bysel_ctx(net, type, p->dir, &p->sel, ctx, 0, &err);
+ 		security_xfrm_policy_free(ctx);
+ 	}
+ 	if (xp == NULL)
+@@ -1629,12 +1640,13 @@ out:
+ static int xfrm_add_sa_expire(struct sk_buff *skb, struct nlmsghdr *nlh,
+ 		struct nlattr **attrs)
+ {
++	struct net *net = sock_net(skb->sk);
+ 	struct xfrm_state *x;
+ 	int err;
+ 	struct xfrm_user_expire *ue = nlmsg_data(nlh);
+ 	struct xfrm_usersa_info *p = &ue->state;
+ 
+-	x = xfrm_state_lookup(&init_net, &p->id.daddr, p->id.spi, p->id.proto, p->family);
++	x = xfrm_state_lookup(net, &p->id.daddr, p->id.spi, p->id.proto, p->family);
+ 
+ 	err = -ENOENT;
+ 	if (x == NULL)
+@@ -1663,13 +1675,14 @@ out:
+ static int xfrm_add_acquire(struct sk_buff *skb, struct nlmsghdr *nlh,
+ 		struct nlattr **attrs)
+ {
++	struct net *net = sock_net(skb->sk);
+ 	struct xfrm_policy *xp;
+ 	struct xfrm_user_tmpl *ut;
+ 	int i;
+ 	struct nlattr *rt = attrs[XFRMA_TMPL];
+ 
+ 	struct xfrm_user_acquire *ua = nlmsg_data(nlh);
+-	struct xfrm_state *x = xfrm_state_alloc(&init_net);
++	struct xfrm_state *x = xfrm_state_alloc(net);
+ 	int err = -ENOMEM;
+ 
+ 	if (!x)
+@@ -1683,7 +1696,7 @@ static int xfrm_add_acquire(struct sk_buff *skb, struct nlmsghdr *nlh,
+ 	}
+ 
+ 	/*   build an XP */
+-	xp = xfrm_policy_construct(&ua->policy, attrs, &err);
++	xp = xfrm_policy_construct(net, &ua->policy, attrs, &err);
+ 	if (!xp) {
+ 		kfree(x);
+ 		return err;
+@@ -2041,7 +2054,7 @@ static int build_expire(struct sk_buff *skb, struct xfrm_state *x, struct km_eve
+ 
+ static int xfrm_exp_state_notify(struct xfrm_state *x, struct km_event *c)
+ {
+-	struct net *net = &init_net;
++	struct net *net = xs_net(x);
+ 	struct sk_buff *skb;
+ 
+ 	skb = nlmsg_new(xfrm_expire_msgsize(), GFP_ATOMIC);
+@@ -2056,7 +2069,7 @@ static int xfrm_exp_state_notify(struct xfrm_state *x, struct km_event *c)
+ 
+ static int xfrm_aevent_state_notify(struct xfrm_state *x, struct km_event *c)
+ {
+-	struct net *net = &init_net;
++	struct net *net = xs_net(x);
+ 	struct sk_buff *skb;
+ 
+ 	skb = nlmsg_new(xfrm_aevent_msgsize(), GFP_ATOMIC);
+@@ -2122,7 +2135,7 @@ static inline size_t xfrm_sa_len(struct xfrm_state *x)
+ 
+ static int xfrm_notify_sa(struct xfrm_state *x, struct km_event *c)
+ {
+-	struct net *net = &init_net;
++	struct net *net = xs_net(x);
+ 	struct xfrm_usersa_info *p;
+ 	struct xfrm_usersa_id *id;
+ 	struct nlmsghdr *nlh;
+@@ -2266,6 +2279,7 @@ static int xfrm_send_acquire(struct xfrm_state *x, struct xfrm_tmpl *xt,
+ static struct xfrm_policy *xfrm_compile_policy(struct sock *sk, int opt,
+ 					       u8 *data, int len, int *dir)
+ {
++	struct net *net = sock_net(sk);
+ 	struct xfrm_userpolicy_info *p = (struct xfrm_userpolicy_info *)data;
+ 	struct xfrm_user_tmpl *ut = (struct xfrm_user_tmpl *) (p + 1);
+ 	struct xfrm_policy *xp;
+@@ -2304,7 +2318,7 @@ static struct xfrm_policy *xfrm_compile_policy(struct sock *sk, int opt,
+ 	if (p->dir > XFRM_POLICY_OUT)
  		return NULL;
  
- 	read_lock_bh(&xfrm_policy_lock);
--	chain = policy_hash_direct(daddr, saddr, family, dir);
-+	chain = policy_hash_direct(&init_net, daddr, saddr, family, dir);
- 	ret = NULL;
- 	hlist_for_each_entry(pol, entry, chain, bydst) {
- 		err = xfrm_policy_match(pol, fl, type, family, dir);
-@@ -1070,7 +1071,7 @@ static struct xfrm_policy *xfrm_sk_policy_lookup(struct sock *sk, int dir, struc
- static void __xfrm_policy_link(struct xfrm_policy *pol, int dir)
+-	xp = xfrm_policy_alloc(&init_net, GFP_KERNEL);
++	xp = xfrm_policy_alloc(net, GFP_KERNEL);
+ 	if (xp == NULL) {
+ 		*dir = -ENOBUFS;
+ 		return NULL;
+@@ -2357,7 +2371,7 @@ nlmsg_failure:
+ 
+ static int xfrm_exp_policy_notify(struct xfrm_policy *xp, int dir, struct km_event *c)
  {
- 	struct net *net = xp_net(pol);
--	struct hlist_head *chain = policy_hash_bysel(&pol->selector,
-+	struct hlist_head *chain = policy_hash_bysel(net, &pol->selector,
- 						     pol->family, dir);
+-	struct net *net = &init_net;
++	struct net *net = xp_net(xp);
+ 	struct sk_buff *skb;
  
- 	list_add(&pol->walk.all, &net->xfrm.policy_all);
-@@ -1116,6 +1117,7 @@ EXPORT_SYMBOL(xfrm_policy_delete);
+ 	skb = nlmsg_new(xfrm_polexpire_msgsize(xp), GFP_ATOMIC);
+@@ -2372,7 +2386,7 @@ static int xfrm_exp_policy_notify(struct xfrm_policy *xp, int dir, struct km_eve
  
- int xfrm_sk_policy_insert(struct sock *sk, int dir, struct xfrm_policy *pol)
+ static int xfrm_notify_policy(struct xfrm_policy *xp, int dir, struct km_event *c)
  {
-+	struct net *net = xp_net(pol);
- 	struct xfrm_policy *old_pol;
- 
- #ifdef CONFIG_XFRM_SUB_POLICY
-@@ -1128,7 +1130,7 @@ int xfrm_sk_policy_insert(struct sock *sk, int dir, struct xfrm_policy *pol)
- 	sk->sk_policy[dir] = pol;
- 	if (pol) {
- 		pol->curlft.add_time = get_seconds();
--		pol->index = xfrm_gen_index(XFRM_POLICY_MAX+dir);
-+		pol->index = xfrm_gen_index(net, XFRM_POLICY_MAX+dir);
- 		__xfrm_policy_link(pol, XFRM_POLICY_MAX+dir);
- 	}
- 	if (old_pol)
-@@ -2595,7 +2597,7 @@ static struct xfrm_policy * xfrm_migrate_policy_find(struct xfrm_selector *sel,
- 	u32 priority = ~0U;
- 
- 	read_lock_bh(&xfrm_policy_lock);
--	chain = policy_hash_direct(&sel->daddr, &sel->saddr, sel->family, dir);
-+	chain = policy_hash_direct(&init_net, &sel->daddr, &sel->saddr, sel->family, dir);
- 	hlist_for_each_entry(pol, entry, chain, bydst) {
- 		if (xfrm_migrate_selector_match(sel, &pol->selector) &&
- 		    pol->type == type) {
+-	struct net *net = &init_net;
++	struct net *net = xp_net(xp);
+ 	struct xfrm_userpolicy_info *p;
+ 	struct xfrm_userpolicy_id *id;
+ 	struct nlmsghdr *nlh;
 -- 
 1.5.6.5
