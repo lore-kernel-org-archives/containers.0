@@ -1,18 +1,28 @@
 From: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: [PATCH 07/53] netns xfrm: per-netns xfrm_state_byspi hash
-Date: Tue, 25 Nov 2008 20:26:39 +0300
-Message-ID: <1227634045-27534-7-git-send-email-adobriyan__14263.9974401847$1227634549$gmane$org@gmail.com>
+Subject: [PATCH 17/53] netns xfrm: per-netns xfrm_policy_byidx hashmask
+Date: Tue, 25 Nov 2008 20:26:49 +0300
+Message-ID: <1227634045-27534-17-git-send-email-adobriyan__13872.432037215$1227634550$gmane$org@gmail.com>
 References: <1227634045-27534-1-git-send-email-adobriyan@gmail.com>
 	<1227634045-27534-2-git-send-email-adobriyan@gmail.com>
 	<1227634045-27534-3-git-send-email-adobriyan@gmail.com>
 	<1227634045-27534-4-git-send-email-adobriyan@gmail.com>
 	<1227634045-27534-5-git-send-email-adobriyan@gmail.com>
 	<1227634045-27534-6-git-send-email-adobriyan@gmail.com>
+	<1227634045-27534-7-git-send-email-adobriyan@gmail.com>
+	<1227634045-27534-8-git-send-email-adobriyan@gmail.com>
+	<1227634045-27534-9-git-send-email-adobriyan@gmail.com>
+	<1227634045-27534-10-git-send-email-adobriyan@gmail.com>
+	<1227634045-27534-11-git-send-email-adobriyan@gmail.com>
+	<1227634045-27534-12-git-send-email-adobriyan@gmail.com>
+	<1227634045-27534-13-git-send-email-adobriyan@gmail.com>
+	<1227634045-27534-14-git-send-email-adobriyan@gmail.com>
+	<1227634045-27534-15-git-send-email-adobriyan@gmail.com>
+	<1227634045-27534-16-git-send-email-adobriyan@gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1227634045-27534-6-git-send-email-adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+In-Reply-To: <1227634045-27534-16-git-send-email-adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -26,113 +36,97 @@ To: davem-fT/PcQaiUtIeIZ0/mPfg9Q@public.gmane.org
 Cc: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, kuznet-v/Mj1YrvjDBInbfyfbPRSQ@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, herbert-lOAM2aK0SrRLBo1qDEOMRrpzq4S04n8Q@public.gmane.org, netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
+Per-netns hashes are independently resizeable.
+
 Signed-off-by: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 ---
  include/net/netns/xfrm.h |    1 +
- net/xfrm/xfrm_state.c    |   21 +++++++++++++--------
- 2 files changed, 14 insertions(+), 8 deletions(-)
+ net/xfrm/xfrm_policy.c   |   15 +++++++--------
+ 2 files changed, 8 insertions(+), 8 deletions(-)
 
 diff --git a/include/net/netns/xfrm.h b/include/net/netns/xfrm.h
-index bfcd5a3..b05ca3f 100644
+index 5cd7d06..42dc318 100644
 --- a/include/net/netns/xfrm.h
 +++ b/include/net/netns/xfrm.h
-@@ -15,6 +15,7 @@ struct netns_xfrm {
- 	 */
- 	struct hlist_head	*state_bydst;
- 	struct hlist_head	*state_bysrc;
-+	struct hlist_head	*state_byspi;
+@@ -28,6 +28,7 @@ struct netns_xfrm {
+ 
+ 	struct list_head	policy_all;
+ 	struct hlist_head	*policy_byidx;
++	unsigned int		policy_idx_hmask;
  };
  
  #endif
-diff --git a/net/xfrm/xfrm_state.c b/net/xfrm/xfrm_state.c
-index 52d828b..66ca1ef 100644
---- a/net/xfrm/xfrm_state.c
-+++ b/net/xfrm/xfrm_state.c
-@@ -44,7 +44,6 @@ u32 sysctl_xfrm_acq_expires __read_mostly = 30;
+diff --git a/net/xfrm/xfrm_policy.c b/net/xfrm/xfrm_policy.c
+index 700cdd7..9e37a44 100644
+--- a/net/xfrm/xfrm_policy.c
++++ b/net/xfrm/xfrm_policy.c
+@@ -329,12 +329,11 @@ struct xfrm_policy_hash {
  
- static DEFINE_SPINLOCK(xfrm_state_lock);
+ static struct hlist_head xfrm_policy_inexact[XFRM_POLICY_MAX*2];
+ static struct xfrm_policy_hash xfrm_policy_bydst[XFRM_POLICY_MAX*2] __read_mostly;
+-static unsigned int xfrm_idx_hmask __read_mostly;
+ static unsigned int xfrm_policy_hashmax __read_mostly = 1 * 1024 * 1024;
  
--static struct hlist_head *xfrm_state_byspi __read_mostly;
- static unsigned int xfrm_state_hmask __read_mostly;
- static unsigned int xfrm_state_hashmax __read_mostly = 1 * 1024 * 1024;
- static unsigned int xfrm_state_num;
-@@ -154,12 +153,12 @@ static void xfrm_hash_resize(struct work_struct *__unused)
+ static inline unsigned int idx_hash(u32 index)
+ {
+-	return __idx_hash(index, xfrm_idx_hmask);
++	return __idx_hash(index, init_net.xfrm.policy_idx_hmask);
+ }
  
- 	odst = init_net.xfrm.state_bydst;
- 	osrc = init_net.xfrm.state_bysrc;
--	ospi = xfrm_state_byspi;
-+	ospi = init_net.xfrm.state_byspi;
- 	ohashmask = xfrm_state_hmask;
+ static struct hlist_head *policy_hash_bysel(struct xfrm_selector *sel, unsigned short family, int dir)
+@@ -434,7 +433,7 @@ static void xfrm_bydst_resize(int dir)
  
- 	init_net.xfrm.state_bydst = ndst;
- 	init_net.xfrm.state_bysrc = nsrc;
--	xfrm_state_byspi = nspi;
-+	init_net.xfrm.state_byspi = nspi;
- 	xfrm_state_hmask = nhashmask;
+ static void xfrm_byidx_resize(int total)
+ {
+-	unsigned int hmask = xfrm_idx_hmask;
++	unsigned int hmask = init_net.xfrm.policy_idx_hmask;
+ 	unsigned int nhashmask = xfrm_new_hash_mask(hmask);
+ 	unsigned int nsize = (nhashmask + 1) * sizeof(struct hlist_head);
+ 	struct hlist_head *oidx = init_net.xfrm.policy_byidx;
+@@ -450,7 +449,7 @@ static void xfrm_byidx_resize(int total)
+ 		xfrm_idx_hash_transfer(oidx + i, nidx, nhashmask);
  
- 	spin_unlock_bh(&xfrm_state_lock);
-@@ -679,7 +678,7 @@ static struct xfrm_state *__xfrm_state_lookup(xfrm_address_t *daddr, __be32 spi,
- 	struct xfrm_state *x;
- 	struct hlist_node *entry;
+ 	init_net.xfrm.policy_byidx = nidx;
+-	xfrm_idx_hmask = nhashmask;
++	init_net.xfrm.policy_idx_hmask = nhashmask;
  
--	hlist_for_each_entry(x, entry, xfrm_state_byspi+h, byspi) {
-+	hlist_for_each_entry(x, entry, init_net.xfrm.state_byspi+h, byspi) {
- 		if (x->props.family != family ||
- 		    x->id.spi       != spi ||
- 		    x->id.proto     != proto)
-@@ -852,7 +851,7 @@ xfrm_state_find(xfrm_address_t *daddr, xfrm_address_t *saddr,
- 			hlist_add_head(&x->bysrc, init_net.xfrm.state_bysrc+h);
- 			if (x->id.spi) {
- 				h = xfrm_spi_hash(&x->id.daddr, x->id.spi, x->id.proto, family);
--				hlist_add_head(&x->byspi, xfrm_state_byspi+h);
-+				hlist_add_head(&x->byspi, init_net.xfrm.state_byspi+h);
- 			}
- 			x->lft.hard_add_expires_seconds = sysctl_xfrm_acq_expires;
- 			x->timer.expires = jiffies + sysctl_xfrm_acq_expires*HZ;
-@@ -928,7 +927,7 @@ static void __xfrm_state_insert(struct xfrm_state *x)
- 		h = xfrm_spi_hash(&x->id.daddr, x->id.spi, x->id.proto,
- 				  x->props.family);
+ 	write_unlock_bh(&xfrm_policy_lock);
  
--		hlist_add_head(&x->byspi, xfrm_state_byspi+h);
-+		hlist_add_head(&x->byspi, init_net.xfrm.state_byspi+h);
- 	}
+@@ -474,7 +473,7 @@ static inline int xfrm_bydst_should_resize(int dir, int *total)
  
- 	mod_timer(&x->timer, jiffies + HZ);
-@@ -1524,7 +1523,7 @@ int xfrm_alloc_spi(struct xfrm_state *x, u32 low, u32 high)
- 	if (x->id.spi) {
- 		spin_lock_bh(&xfrm_state_lock);
- 		h = xfrm_spi_hash(&x->id.daddr, x->id.spi, x->id.proto, x->props.family);
--		hlist_add_head(&x->byspi, xfrm_state_byspi+h);
-+		hlist_add_head(&x->byspi, init_net.xfrm.state_byspi+h);
- 		spin_unlock_bh(&xfrm_state_lock);
+ static inline int xfrm_byidx_should_resize(int total)
+ {
+-	unsigned int hmask = xfrm_idx_hmask;
++	unsigned int hmask = init_net.xfrm.policy_idx_hmask;
  
- 		err = 0;
-@@ -2086,12 +2085,16 @@ int __net_init xfrm_state_init(struct net *net)
- 	net->xfrm.state_bysrc = xfrm_hash_alloc(sz);
- 	if (!net->xfrm.state_bysrc)
- 		goto out_bysrc;
--	xfrm_state_byspi = xfrm_hash_alloc(sz);
-+	net->xfrm.state_byspi = xfrm_hash_alloc(sz);
-+	if (!net->xfrm.state_byspi)
-+		goto out_byspi;
- 	xfrm_state_hmask = ((sz / sizeof(struct hlist_head)) - 1);
+ 	if ((hmask + 1) < xfrm_policy_hashmax &&
+ 	    total > hmask)
+@@ -492,7 +491,7 @@ void xfrm_spd_getinfo(struct xfrmk_spdinfo *si)
+ 	si->inscnt = xfrm_policy_count[XFRM_POLICY_IN+XFRM_POLICY_MAX];
+ 	si->outscnt = xfrm_policy_count[XFRM_POLICY_OUT+XFRM_POLICY_MAX];
+ 	si->fwdscnt = xfrm_policy_count[XFRM_POLICY_FWD+XFRM_POLICY_MAX];
+-	si->spdhcnt = xfrm_idx_hmask;
++	si->spdhcnt = init_net.xfrm.policy_idx_hmask;
+ 	si->spdhmcnt = xfrm_policy_hashmax;
+ 	read_unlock_bh(&xfrm_policy_lock);
+ }
+@@ -2410,7 +2409,7 @@ static int __net_init xfrm_policy_init(struct net *net)
+ 	net->xfrm.policy_byidx = xfrm_hash_alloc(sz);
+ 	if (!net->xfrm.policy_byidx)
+ 		goto out_byidx;
+-	xfrm_idx_hmask = hmask;
++	net->xfrm.policy_idx_hmask = hmask;
  
- 	INIT_WORK(&xfrm_state_gc_work, xfrm_state_gc_task);
- 	return 0;
+ 	for (dir = 0; dir < XFRM_POLICY_MAX * 2; dir++) {
+ 		struct xfrm_policy_hash *htab;
+@@ -2439,7 +2438,7 @@ static void xfrm_policy_fini(struct net *net)
  
-+out_byspi:
-+	xfrm_hash_free(net->xfrm.state_bysrc, sz);
- out_bysrc:
- 	xfrm_hash_free(net->xfrm.state_bydst, sz);
- out_bydst:
-@@ -2105,6 +2108,8 @@ void xfrm_state_fini(struct net *net)
- 	WARN_ON(!list_empty(&net->xfrm.state_all));
+ 	WARN_ON(!list_empty(&net->xfrm.policy_all));
  
- 	sz = (xfrm_state_hmask + 1) * sizeof(struct hlist_head);
-+	WARN_ON(!hlist_empty(net->xfrm.state_byspi));
-+	xfrm_hash_free(net->xfrm.state_byspi, sz);
- 	WARN_ON(!hlist_empty(net->xfrm.state_bysrc));
- 	xfrm_hash_free(net->xfrm.state_bysrc, sz);
- 	WARN_ON(!hlist_empty(net->xfrm.state_bydst));
+-	sz = (xfrm_idx_hmask + 1) * sizeof(struct hlist_head);
++	sz = (net->xfrm.policy_idx_hmask + 1) * sizeof(struct hlist_head);
+ 	WARN_ON(!hlist_empty(net->xfrm.policy_byidx));
+ 	xfrm_hash_free(net->xfrm.policy_byidx, sz);
+ }
 -- 
 1.5.6.5
