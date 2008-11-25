@@ -1,7 +1,7 @@
 From: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: [PATCH 51/53] netns xfrm: per-netns MIBs
-Date: Tue, 25 Nov 2008 20:27:23 +0300
-Message-ID: <1227634045-27534-51-git-send-email-adobriyan__48092.0513313778$1227636994$gmane$org@gmail.com>
+Subject: [PATCH 25/53] netns xfrm: state lookup in netns
+Date: Tue, 25 Nov 2008 20:26:57 +0300
+Message-ID: <1227634045-27534-25-git-send-email-adobriyan__530.132526955818$1227637161$gmane$org@gmail.com>
 References: <1227634045-27534-1-git-send-email-adobriyan@gmail.com>
 	<1227634045-27534-2-git-send-email-adobriyan@gmail.com>
 	<1227634045-27534-3-git-send-email-adobriyan@gmail.com>
@@ -26,37 +26,11 @@ References: <1227634045-27534-1-git-send-email-adobriyan@gmail.com>
 	<1227634045-27534-22-git-send-email-adobriyan@gmail.com>
 	<1227634045-27534-23-git-send-email-adobriyan@gmail.com>
 	<1227634045-27534-24-git-send-email-adobriyan@gmail.com>
-	<1227634045-27534-25-git-send-email-adobriyan@gmail.com>
-	<1227634045-27534-26-git-send-email-adobriyan@gmail.com>
-	<1227634045-27534-27-git-send-email-adobriyan@gmail.com>
-	<1227634045-27534-28-git-send-email-adobriyan@gmail.com>
-	<1227634045-27534-29-git-send-email-adobriyan@gmail.com>
-	<1227634045-27534-30-git-send-email-adobriyan@gmail.com>
-	<1227634045-27534-31-git-send-email-adobriyan@gmail.com>
-	<1227634045-27534-32-git-send-email-adobriyan@gmail.com>
-	<1227634045-27534-33-git-send-email-adobriyan@gmail.com>
-	<1227634045-27534-34-git-send-email-adobriyan@gmail.com>
-	<1227634045-27534-35-git-send-email-adobriyan@gmail.com>
-	<1227634045-27534-36-git-send-email-adobriyan@gmail.com>
-	<1227634045-27534-37-git-send-email-adobriyan@gmail.com>
-	<1227634045-27534-38-git-send-email-adobriyan@gmail.com>
-	<1227634045-27534-39-git-send-email-adobriyan@gmail.com>
-	<1227634045-27534-40-git-send-email-adobriyan@gmail.com>
-	<1227634045-27534-41-git-send-email-adobriyan@gmail.com>
-	<1227634045-27534-42-git-send-email-adobriyan@gmail.com>
-	<1227634045-27534-43-git-send-email-adobriyan@gmail.com>
-	<1227634045-27534-44-git-send-email-adobriyan@gmail.com>
-	<1227634045-27534-45-git-send-email-adobriyan@gmail.com>
-	<1227634045-27534-46-git-send-email-adobriyan@gmail.com>
-	<1227634045-27534-47-git-send-email-adobriyan@gmail.com>
-	<1227634045-27534-48-git-send-email-adobriyan@gmail.com>
-	<1227634045-27534-49-git-send-email-adobriyan@gmail.com>
-	<1227634045-27534-50-git-send-email-adobriyan@gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1227634045-27534-50-git-send-email-adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+In-Reply-To: <1227634045-27534-24-git-send-email-adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -72,563 +46,341 @@ List-Id: containers.vger.kernel.org
 
 Signed-off-by: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 ---
- include/net/netns/mib.h |    3 ++
- include/net/xfrm.h      |   13 +++----
- net/ipv6/xfrm6_input.c  |    9 +++--
- net/xfrm/xfrm_input.c   |   22 ++++++------
- net/xfrm/xfrm_output.c  |   15 ++++----
- net/xfrm/xfrm_policy.c  |   82 +++++++++++++++++++++++++++--------------------
- net/xfrm/xfrm_proc.c    |    2 +-
- 7 files changed, 81 insertions(+), 65 deletions(-)
+ include/net/xfrm.h     |    4 ++--
+ net/ipv4/ah4.c         |    2 +-
+ net/ipv4/esp4.c        |    2 +-
+ net/ipv4/ipcomp.c      |    4 ++--
+ net/ipv6/ah6.c         |    2 +-
+ net/ipv6/esp6.c        |    2 +-
+ net/ipv6/ipcomp6.c     |    4 ++--
+ net/ipv6/xfrm6_input.c |    2 +-
+ net/key/af_key.c       |    2 +-
+ net/xfrm/xfrm_input.c  |    2 +-
+ net/xfrm/xfrm_state.c  |   34 +++++++++++++++++++---------------
+ net/xfrm/xfrm_user.c   |   12 ++++++------
+ 12 files changed, 38 insertions(+), 34 deletions(-)
 
-diff --git a/include/net/netns/mib.h b/include/net/netns/mib.h
-index 10cb7c3..0b44112 100644
---- a/include/net/netns/mib.h
-+++ b/include/net/netns/mib.h
-@@ -20,6 +20,9 @@ struct netns_mib {
- 	DEFINE_SNMP_STAT(struct icmpv6_mib, icmpv6_statistics);
- 	DEFINE_SNMP_STAT(struct icmpv6msg_mib, icmpv6msg_statistics);
- #endif
-+#ifdef CONFIG_XFRM_STATISTICS
-+	DEFINE_SNMP_STAT(struct linux_xfrm_mib, xfrm_statistics);
-+#endif
- };
- 
- #endif
 diff --git a/include/net/xfrm.h b/include/net/xfrm.h
-index d076f3d..78ec3e8 100644
+index e4bb672..15136c5 100644
 --- a/include/net/xfrm.h
 +++ b/include/net/xfrm.h
-@@ -38,14 +38,13 @@
- 	MODULE_ALIAS("xfrm-type-" __stringify(family) "-" __stringify(proto))
+@@ -1323,8 +1323,8 @@ extern int xfrm_state_check_expire(struct xfrm_state *x);
+ extern void xfrm_state_insert(struct xfrm_state *x);
+ extern int xfrm_state_add(struct xfrm_state *x);
+ extern int xfrm_state_update(struct xfrm_state *x);
+-extern struct xfrm_state *xfrm_state_lookup(xfrm_address_t *daddr, __be32 spi, u8 proto, unsigned short family);
+-extern struct xfrm_state *xfrm_state_lookup_byaddr(xfrm_address_t *daddr, xfrm_address_t *saddr, u8 proto, unsigned short family);
++extern struct xfrm_state *xfrm_state_lookup(struct net *net, xfrm_address_t *daddr, __be32 spi, u8 proto, unsigned short family);
++extern struct xfrm_state *xfrm_state_lookup_byaddr(struct net *net, xfrm_address_t *daddr, xfrm_address_t *saddr, u8 proto, unsigned short family);
+ #ifdef CONFIG_XFRM_SUB_POLICY
+ extern int xfrm_tmpl_sort(struct xfrm_tmpl **dst, struct xfrm_tmpl **src,
+ 			  int n, unsigned short family);
+diff --git a/net/ipv4/ah4.c b/net/ipv4/ah4.c
+index 992ecd8..750426b 100644
+--- a/net/ipv4/ah4.c
++++ b/net/ipv4/ah4.c
+@@ -209,7 +209,7 @@ static void ah4_err(struct sk_buff *skb, u32 info)
+ 	    icmp_hdr(skb)->code != ICMP_FRAG_NEEDED)
+ 		return;
  
- #ifdef CONFIG_XFRM_STATISTICS
--DECLARE_SNMP_STAT(struct linux_xfrm_mib, xfrm_statistics);
--#define XFRM_INC_STATS(field)		SNMP_INC_STATS(xfrm_statistics, field)
--#define XFRM_INC_STATS_BH(field)	SNMP_INC_STATS_BH(xfrm_statistics, field)
--#define XFRM_INC_STATS_USER(field) 	SNMP_INC_STATS_USER(xfrm_statistics, field)
-+#define XFRM_INC_STATS(net, field)	SNMP_INC_STATS((net)->mib.xfrm_statistics, field)
-+#define XFRM_INC_STATS_BH(net, field)	SNMP_INC_STATS_BH((net)->mib.xfrm_statistics, field)
-+#define XFRM_INC_STATS_USER(net, field)	SNMP_INC_STATS_USER((net)-mib.xfrm_statistics, field)
- #else
--#define XFRM_INC_STATS(field)
--#define XFRM_INC_STATS_BH(field)
--#define XFRM_INC_STATS_USER(field)
-+#define XFRM_INC_STATS(net, field)	((void)(net))
-+#define XFRM_INC_STATS_BH(net, field)	((void)(net))
-+#define XFRM_INC_STATS_USER(net, field)	((void)(net))
- #endif
+-	x = xfrm_state_lookup((xfrm_address_t *)&iph->daddr, ah->spi, IPPROTO_AH, AF_INET);
++	x = xfrm_state_lookup(&init_net, (xfrm_address_t *)&iph->daddr, ah->spi, IPPROTO_AH, AF_INET);
+ 	if (!x)
+ 		return;
+ 	printk(KERN_DEBUG "pmtu discovery on SA AH/%08x/%08x\n",
+diff --git a/net/ipv4/esp4.c b/net/ipv4/esp4.c
+index 95a9c65..3595012 100644
+--- a/net/ipv4/esp4.c
++++ b/net/ipv4/esp4.c
+@@ -421,7 +421,7 @@ static void esp4_err(struct sk_buff *skb, u32 info)
+ 	    icmp_hdr(skb)->code != ICMP_FRAG_NEEDED)
+ 		return;
  
- extern u32 sysctl_xfrm_aevent_etime;
+-	x = xfrm_state_lookup((xfrm_address_t *)&iph->daddr, esph->spi, IPPROTO_ESP, AF_INET);
++	x = xfrm_state_lookup(&init_net, (xfrm_address_t *)&iph->daddr, esph->spi, IPPROTO_ESP, AF_INET);
+ 	if (!x)
+ 		return;
+ 	NETDEBUG(KERN_DEBUG "pmtu discovery on SA ESP/%08x/%08x\n",
+diff --git a/net/ipv4/ipcomp.c b/net/ipv4/ipcomp.c
+index 0a35f1b..3262ce0 100644
+--- a/net/ipv4/ipcomp.c
++++ b/net/ipv4/ipcomp.c
+@@ -35,7 +35,7 @@ static void ipcomp4_err(struct sk_buff *skb, u32 info)
+ 		return;
+ 
+ 	spi = htonl(ntohs(ipch->cpi));
+-	x = xfrm_state_lookup((xfrm_address_t *)&iph->daddr,
++	x = xfrm_state_lookup(&init_net, (xfrm_address_t *)&iph->daddr,
+ 			      spi, IPPROTO_COMP, AF_INET);
+ 	if (!x)
+ 		return;
+@@ -85,7 +85,7 @@ static int ipcomp_tunnel_attach(struct xfrm_state *x)
+ 	int err = 0;
+ 	struct xfrm_state *t;
+ 
+-	t = xfrm_state_lookup((xfrm_address_t *)&x->id.daddr.a4,
++	t = xfrm_state_lookup(&init_net, (xfrm_address_t *)&x->id.daddr.a4,
+ 			      x->props.saddr.a4, IPPROTO_IPIP, AF_INET);
+ 	if (!t) {
+ 		t = ipcomp_tunnel_create(x);
+diff --git a/net/ipv6/ah6.c b/net/ipv6/ah6.c
+index 13e330d..6ae014b 100644
+--- a/net/ipv6/ah6.c
++++ b/net/ipv6/ah6.c
+@@ -415,7 +415,7 @@ static void ah6_err(struct sk_buff *skb, struct inet6_skb_parm *opt,
+ 	    type != ICMPV6_PKT_TOOBIG)
+ 		return;
+ 
+-	x = xfrm_state_lookup((xfrm_address_t *)&iph->daddr, ah->spi, IPPROTO_AH, AF_INET6);
++	x = xfrm_state_lookup(&init_net, (xfrm_address_t *)&iph->daddr, ah->spi, IPPROTO_AH, AF_INET6);
+ 	if (!x)
+ 		return;
+ 
+diff --git a/net/ipv6/esp6.c b/net/ipv6/esp6.c
+index c02a630..68f2af8 100644
+--- a/net/ipv6/esp6.c
++++ b/net/ipv6/esp6.c
+@@ -364,7 +364,7 @@ static void esp6_err(struct sk_buff *skb, struct inet6_skb_parm *opt,
+ 	    type != ICMPV6_PKT_TOOBIG)
+ 		return;
+ 
+-	x = xfrm_state_lookup((xfrm_address_t *)&iph->daddr, esph->spi, IPPROTO_ESP, AF_INET6);
++	x = xfrm_state_lookup(&init_net, (xfrm_address_t *)&iph->daddr, esph->spi, IPPROTO_ESP, AF_INET6);
+ 	if (!x)
+ 		return;
+ 	printk(KERN_DEBUG "pmtu discovery on SA ESP/%08x/%pI6\n",
+diff --git a/net/ipv6/ipcomp6.c b/net/ipv6/ipcomp6.c
+index c369638..3a0b3be 100644
+--- a/net/ipv6/ipcomp6.c
++++ b/net/ipv6/ipcomp6.c
+@@ -63,7 +63,7 @@ static void ipcomp6_err(struct sk_buff *skb, struct inet6_skb_parm *opt,
+ 		return;
+ 
+ 	spi = htonl(ntohs(ipcomph->cpi));
+-	x = xfrm_state_lookup((xfrm_address_t *)&iph->daddr, spi, IPPROTO_COMP, AF_INET6);
++	x = xfrm_state_lookup(&init_net, (xfrm_address_t *)&iph->daddr, spi, IPPROTO_COMP, AF_INET6);
+ 	if (!x)
+ 		return;
+ 
+@@ -114,7 +114,7 @@ static int ipcomp6_tunnel_attach(struct xfrm_state *x)
+ 
+ 	spi = xfrm6_tunnel_spi_lookup((xfrm_address_t *)&x->props.saddr);
+ 	if (spi)
+-		t = xfrm_state_lookup((xfrm_address_t *)&x->id.daddr,
++		t = xfrm_state_lookup(&init_net, (xfrm_address_t *)&x->id.daddr,
+ 					      spi, IPPROTO_IPV6, AF_INET6);
+ 	if (!t) {
+ 		t = ipcomp6_tunnel_create(x);
 diff --git a/net/ipv6/xfrm6_input.c b/net/ipv6/xfrm6_input.c
-index b69766a..9084582 100644
+index a71c7dd..b69766a 100644
 --- a/net/ipv6/xfrm6_input.c
 +++ b/net/ipv6/xfrm6_input.c
-@@ -58,6 +58,7 @@ EXPORT_SYMBOL(xfrm6_rcv);
- int xfrm6_input_addr(struct sk_buff *skb, xfrm_address_t *daddr,
- 		     xfrm_address_t *saddr, u8 proto)
- {
-+	struct net *net = dev_net(skb->dev);
- 	struct xfrm_state *x = NULL;
- 	int i = 0;
- 
-@@ -67,7 +68,7 @@ int xfrm6_input_addr(struct sk_buff *skb, xfrm_address_t *daddr,
- 
- 		sp = secpath_dup(skb->sp);
- 		if (!sp) {
--			XFRM_INC_STATS(LINUX_MIB_XFRMINERROR);
-+			XFRM_INC_STATS(net, LINUX_MIB_XFRMINERROR);
- 			goto drop;
- 		}
- 		if (skb->sp)
-@@ -76,7 +77,7 @@ int xfrm6_input_addr(struct sk_buff *skb, xfrm_address_t *daddr,
- 	}
- 
- 	if (1 + skb->sp->len == XFRM_MAX_DEPTH) {
--		XFRM_INC_STATS(LINUX_MIB_XFRMINBUFFERERROR);
-+		XFRM_INC_STATS(net, LINUX_MIB_XFRMINBUFFERERROR);
- 		goto drop;
- 	}
- 
-@@ -100,7 +101,7 @@ int xfrm6_input_addr(struct sk_buff *skb, xfrm_address_t *daddr,
+@@ -100,7 +100,7 @@ int xfrm6_input_addr(struct sk_buff *skb, xfrm_address_t *daddr,
  			break;
  		}
  
--		x = xfrm_state_lookup_byaddr(&init_net, dst, src, proto, AF_INET6);
-+		x = xfrm_state_lookup_byaddr(net, dst, src, proto, AF_INET6);
+-		x = xfrm_state_lookup_byaddr(dst, src, proto, AF_INET6);
++		x = xfrm_state_lookup_byaddr(&init_net, dst, src, proto, AF_INET6);
  		if (!x)
  			continue;
  
-@@ -122,7 +123,7 @@ int xfrm6_input_addr(struct sk_buff *skb, xfrm_address_t *daddr,
- 	}
+diff --git a/net/key/af_key.c b/net/key/af_key.c
+index e5d595a..449a5d0 100644
+--- a/net/key/af_key.c
++++ b/net/key/af_key.c
+@@ -683,7 +683,7 @@ static struct  xfrm_state *pfkey_xfrm_state_lookup(struct sadb_msg *hdr, void **
+ 	if (!xaddr)
+ 		return NULL;
  
- 	if (!x) {
--		XFRM_INC_STATS(LINUX_MIB_XFRMINNOSTATES);
-+		XFRM_INC_STATS(net, LINUX_MIB_XFRMINNOSTATES);
- 		xfrm_audit_state_notfound_simple(skb, AF_INET6);
- 		goto drop;
- 	}
+-	return xfrm_state_lookup(xaddr, sa->sadb_sa_spi, proto, family);
++	return xfrm_state_lookup(&init_net, xaddr, sa->sadb_sa_spi, proto, family);
+ }
+ 
+ #define PFKEY_ALIGN8(a) (1 + (((a) - 1) | (8 - 1)))
 diff --git a/net/xfrm/xfrm_input.c b/net/xfrm/xfrm_input.c
-index a714dce..b4a1317 100644
+index 7527940..c08a93e 100644
 --- a/net/xfrm/xfrm_input.c
 +++ b/net/xfrm/xfrm_input.c
-@@ -128,7 +128,7 @@ int xfrm_input(struct sk_buff *skb, int nexthdr, __be32 spi, int encap_type)
- 
- 		sp = secpath_dup(skb->sp);
- 		if (!sp) {
--			XFRM_INC_STATS(LINUX_MIB_XFRMINERROR);
-+			XFRM_INC_STATS(net, LINUX_MIB_XFRMINERROR);
- 			goto drop;
- 		}
- 		if (skb->sp)
-@@ -142,19 +142,19 @@ int xfrm_input(struct sk_buff *skb, int nexthdr, __be32 spi, int encap_type)
- 
- 	seq = 0;
- 	if (!spi && (err = xfrm_parse_spi(skb, nexthdr, &spi, &seq)) != 0) {
--		XFRM_INC_STATS(LINUX_MIB_XFRMINHDRERROR);
-+		XFRM_INC_STATS(net, LINUX_MIB_XFRMINHDRERROR);
- 		goto drop;
- 	}
- 
- 	do {
- 		if (skb->sp->len == XFRM_MAX_DEPTH) {
--			XFRM_INC_STATS(LINUX_MIB_XFRMINBUFFERERROR);
-+			XFRM_INC_STATS(net, LINUX_MIB_XFRMINBUFFERERROR);
+@@ -151,7 +151,7 @@ int xfrm_input(struct sk_buff *skb, int nexthdr, __be32 spi, int encap_type)
  			goto drop;
  		}
  
- 		x = xfrm_state_lookup(net, daddr, spi, nexthdr, family);
+-		x = xfrm_state_lookup(daddr, spi, nexthdr, family);
++		x = xfrm_state_lookup(&init_net, daddr, spi, nexthdr, family);
  		if (x == NULL) {
--			XFRM_INC_STATS(LINUX_MIB_XFRMINNOSTATES);
-+			XFRM_INC_STATS(net, LINUX_MIB_XFRMINNOSTATES);
+ 			XFRM_INC_STATS(LINUX_MIB_XFRMINNOSTATES);
  			xfrm_audit_state_notfound(skb, family, spi, seq);
- 			goto drop;
- 		}
-@@ -163,22 +163,22 @@ int xfrm_input(struct sk_buff *skb, int nexthdr, __be32 spi, int encap_type)
+diff --git a/net/xfrm/xfrm_state.c b/net/xfrm/xfrm_state.c
+index 5f4c534..afde474 100644
+--- a/net/xfrm/xfrm_state.c
++++ b/net/xfrm/xfrm_state.c
+@@ -670,13 +670,13 @@ xfrm_init_tempsel(struct xfrm_state *x, struct flowi *fl,
+ 	return 0;
+ }
  
- 		spin_lock(&x->lock);
- 		if (unlikely(x->km.state != XFRM_STATE_VALID)) {
--			XFRM_INC_STATS(LINUX_MIB_XFRMINSTATEINVALID);
-+			XFRM_INC_STATS(net, LINUX_MIB_XFRMINSTATEINVALID);
- 			goto drop_unlock;
- 		}
- 
- 		if ((x->encap ? x->encap->encap_type : 0) != encap_type) {
--			XFRM_INC_STATS(LINUX_MIB_XFRMINSTATEMISMATCH);
-+			XFRM_INC_STATS(net, LINUX_MIB_XFRMINSTATEMISMATCH);
- 			goto drop_unlock;
- 		}
- 
- 		if (x->props.replay_window && xfrm_replay_check(x, skb, seq)) {
--			XFRM_INC_STATS(LINUX_MIB_XFRMINSTATESEQERROR);
-+			XFRM_INC_STATS(net, LINUX_MIB_XFRMINSTATESEQERROR);
- 			goto drop_unlock;
- 		}
- 
- 		if (xfrm_state_check_expire(x)) {
--			XFRM_INC_STATS(LINUX_MIB_XFRMINSTATEEXPIRED);
-+			XFRM_INC_STATS(net, LINUX_MIB_XFRMINSTATEEXPIRED);
- 			goto drop_unlock;
- 		}
- 
-@@ -199,7 +199,7 @@ resume:
- 							 x->type->proto);
- 				x->stats.integrity_failed++;
- 			}
--			XFRM_INC_STATS(LINUX_MIB_XFRMINSTATEPROTOERROR);
-+			XFRM_INC_STATS(net, LINUX_MIB_XFRMINSTATEPROTOERROR);
- 			goto drop_unlock;
- 		}
- 
-@@ -225,7 +225,7 @@ resume:
- 		}
- 
- 		if (inner_mode->input(x, skb)) {
--			XFRM_INC_STATS(LINUX_MIB_XFRMINSTATEMODEERROR);
-+			XFRM_INC_STATS(net, LINUX_MIB_XFRMINSTATEMODEERROR);
- 			goto drop;
- 		}
- 
-@@ -243,7 +243,7 @@ resume:
- 
- 		err = xfrm_parse_spi(skb, nexthdr, &spi, &seq);
- 		if (err < 0) {
--			XFRM_INC_STATS(LINUX_MIB_XFRMINHDRERROR);
-+			XFRM_INC_STATS(net, LINUX_MIB_XFRMINHDRERROR);
- 			goto drop;
- 		}
- 	} while (!err);
-diff --git a/net/xfrm/xfrm_output.c b/net/xfrm/xfrm_output.c
-index ba90e5e..c235597 100644
---- a/net/xfrm/xfrm_output.c
-+++ b/net/xfrm/xfrm_output.c
-@@ -49,27 +49,27 @@ static int xfrm_output_one(struct sk_buff *skb, int err)
- 	do {
- 		err = xfrm_state_check_space(x, skb);
- 		if (err) {
--			XFRM_INC_STATS(LINUX_MIB_XFRMOUTERROR);
-+			XFRM_INC_STATS(net, LINUX_MIB_XFRMOUTERROR);
- 			goto error_nolock;
- 		}
- 
- 		err = x->outer_mode->output(x, skb);
- 		if (err) {
--			XFRM_INC_STATS(LINUX_MIB_XFRMOUTSTATEMODEERROR);
-+			XFRM_INC_STATS(net, LINUX_MIB_XFRMOUTSTATEMODEERROR);
- 			goto error_nolock;
- 		}
- 
- 		spin_lock_bh(&x->lock);
- 		err = xfrm_state_check_expire(x);
- 		if (err) {
--			XFRM_INC_STATS(LINUX_MIB_XFRMOUTSTATEEXPIRED);
-+			XFRM_INC_STATS(net, LINUX_MIB_XFRMOUTSTATEEXPIRED);
- 			goto error;
- 		}
- 
- 		if (x->type->flags & XFRM_TYPE_REPLAY_PROT) {
- 			XFRM_SKB_CB(skb)->seq.output = ++x->replay.oseq;
- 			if (unlikely(x->replay.oseq == 0)) {
--				XFRM_INC_STATS(LINUX_MIB_XFRMOUTSTATESEQERROR);
-+				XFRM_INC_STATS(net, LINUX_MIB_XFRMOUTSTATESEQERROR);
- 				x->replay.oseq--;
- 				xfrm_audit_state_replay_overflow(x, skb);
- 				err = -EOVERFLOW;
-@@ -90,12 +90,12 @@ static int xfrm_output_one(struct sk_buff *skb, int err)
- 
- resume:
- 		if (err) {
--			XFRM_INC_STATS(LINUX_MIB_XFRMOUTSTATEPROTOERROR);
-+			XFRM_INC_STATS(net, LINUX_MIB_XFRMOUTSTATEPROTOERROR);
- 			goto error_nolock;
- 		}
- 
- 		if (!(skb->dst = dst_pop(dst))) {
--			XFRM_INC_STATS(LINUX_MIB_XFRMOUTERROR);
-+			XFRM_INC_STATS(net, LINUX_MIB_XFRMOUTERROR);
- 			err = -EHOSTUNREACH;
- 			goto error_nolock;
- 		}
-@@ -179,6 +179,7 @@ static int xfrm_output_gso(struct sk_buff *skb)
- 
- int xfrm_output(struct sk_buff *skb)
+-static struct xfrm_state *__xfrm_state_lookup(xfrm_address_t *daddr, __be32 spi, u8 proto, unsigned short family)
++static struct xfrm_state *__xfrm_state_lookup(struct net *net, xfrm_address_t *daddr, __be32 spi, u8 proto, unsigned short family)
  {
-+	struct net *net = dev_net(skb->dst->dev);
- 	int err;
+-	unsigned int h = xfrm_spi_hash(&init_net, daddr, spi, proto, family);
++	unsigned int h = xfrm_spi_hash(net, daddr, spi, proto, family);
+ 	struct xfrm_state *x;
+ 	struct hlist_node *entry;
  
- 	if (skb_is_gso(skb))
-@@ -187,7 +188,7 @@ int xfrm_output(struct sk_buff *skb)
- 	if (skb->ip_summed == CHECKSUM_PARTIAL) {
- 		err = skb_checksum_help(skb);
- 		if (err) {
--			XFRM_INC_STATS(LINUX_MIB_XFRMOUTERROR);
-+			XFRM_INC_STATS(net, LINUX_MIB_XFRMOUTERROR);
- 			kfree_skb(skb);
- 			return err;
- 		}
-diff --git a/net/xfrm/xfrm_policy.c b/net/xfrm/xfrm_policy.c
-index fcf8c92..e239a25 100644
---- a/net/xfrm/xfrm_policy.c
-+++ b/net/xfrm/xfrm_policy.c
-@@ -36,11 +36,6 @@
+-	hlist_for_each_entry(x, entry, init_net.xfrm.state_byspi+h, byspi) {
++	hlist_for_each_entry(x, entry, net->xfrm.state_byspi+h, byspi) {
+ 		if (x->props.family != family ||
+ 		    x->id.spi       != spi ||
+ 		    x->id.proto     != proto)
+@@ -702,13 +702,13 @@ static struct xfrm_state *__xfrm_state_lookup(xfrm_address_t *daddr, __be32 spi,
+ 	return NULL;
+ }
  
- int sysctl_xfrm_larval_drop __read_mostly = 1;
- 
--#ifdef CONFIG_XFRM_STATISTICS
--DEFINE_SNMP_STAT(struct linux_xfrm_mib, xfrm_statistics) __read_mostly;
--EXPORT_SYMBOL(xfrm_statistics);
--#endif
--
- DEFINE_MUTEX(xfrm_cfg_mutex);
- EXPORT_SYMBOL(xfrm_cfg_mutex);
- 
-@@ -1570,7 +1565,7 @@ restart:
- 		policy = xfrm_sk_policy_lookup(sk, XFRM_POLICY_OUT, fl);
- 		err = PTR_ERR(policy);
- 		if (IS_ERR(policy)) {
--			XFRM_INC_STATS(LINUX_MIB_XFRMOUTPOLERROR);
-+			XFRM_INC_STATS(net, LINUX_MIB_XFRMOUTPOLERROR);
- 			goto dropdst;
- 		}
- 	}
-@@ -1585,7 +1580,7 @@ restart:
- 					   dir, xfrm_policy_lookup);
- 		err = PTR_ERR(policy);
- 		if (IS_ERR(policy)) {
--			XFRM_INC_STATS(LINUX_MIB_XFRMOUTPOLERROR);
-+			XFRM_INC_STATS(net, LINUX_MIB_XFRMOUTPOLERROR);
- 			goto dropdst;
- 		}
- 	}
-@@ -1608,7 +1603,7 @@ restart:
- 	default:
- 	case XFRM_POLICY_BLOCK:
- 		/* Prohibit the flow */
--		XFRM_INC_STATS(LINUX_MIB_XFRMOUTPOLBLOCK);
-+		XFRM_INC_STATS(net, LINUX_MIB_XFRMOUTPOLBLOCK);
- 		err = -EPERM;
- 		goto error;
- 
-@@ -1628,7 +1623,7 @@ restart:
- 		 */
- 		dst = xfrm_find_bundle(fl, policy, family);
- 		if (IS_ERR(dst)) {
--			XFRM_INC_STATS(LINUX_MIB_XFRMOUTBUNDLECHECKERROR);
-+			XFRM_INC_STATS(net, LINUX_MIB_XFRMOUTBUNDLECHECKERROR);
- 			err = PTR_ERR(dst);
- 			goto error;
- 		}
-@@ -1644,12 +1639,12 @@ restart:
- 							    XFRM_POLICY_OUT);
- 			if (pols[1]) {
- 				if (IS_ERR(pols[1])) {
--					XFRM_INC_STATS(LINUX_MIB_XFRMOUTPOLERROR);
-+					XFRM_INC_STATS(net, LINUX_MIB_XFRMOUTPOLERROR);
- 					err = PTR_ERR(pols[1]);
- 					goto error;
- 				}
- 				if (pols[1]->action == XFRM_POLICY_BLOCK) {
--					XFRM_INC_STATS(LINUX_MIB_XFRMOUTPOLBLOCK);
-+					XFRM_INC_STATS(net, LINUX_MIB_XFRMOUTPOLBLOCK);
- 					err = -EPERM;
- 					goto error;
- 				}
-@@ -1680,7 +1675,7 @@ restart:
- 				/* EREMOTE tells the caller to generate
- 				 * a one-shot blackhole route.
- 				 */
--				XFRM_INC_STATS(LINUX_MIB_XFRMOUTNOSTATES);
-+				XFRM_INC_STATS(net, LINUX_MIB_XFRMOUTNOSTATES);
- 				xfrm_pol_put(policy);
- 				return -EREMOTE;
- 			}
-@@ -1696,7 +1691,7 @@ restart:
- 				nx = xfrm_tmpl_resolve(pols, npols, fl, xfrm, family);
- 
- 				if (nx == -EAGAIN && signal_pending(current)) {
--					XFRM_INC_STATS(LINUX_MIB_XFRMOUTNOSTATES);
-+					XFRM_INC_STATS(net, LINUX_MIB_XFRMOUTNOSTATES);
- 					err = -ERESTART;
- 					goto error;
- 				}
-@@ -1708,7 +1703,7 @@ restart:
- 				err = nx;
- 			}
- 			if (err < 0) {
--				XFRM_INC_STATS(LINUX_MIB_XFRMOUTNOSTATES);
-+				XFRM_INC_STATS(net, LINUX_MIB_XFRMOUTNOSTATES);
- 				goto error;
- 			}
- 		}
-@@ -1721,7 +1716,7 @@ restart:
- 		dst = xfrm_bundle_create(policy, xfrm, nx, fl, dst_orig);
- 		err = PTR_ERR(dst);
- 		if (IS_ERR(dst)) {
--			XFRM_INC_STATS(LINUX_MIB_XFRMOUTBUNDLEGENERROR);
-+			XFRM_INC_STATS(net, LINUX_MIB_XFRMOUTBUNDLEGENERROR);
- 			goto error;
- 		}
- 
-@@ -1742,9 +1737,9 @@ restart:
- 			dst_free(dst);
- 
- 			if (pol_dead)
--				XFRM_INC_STATS(LINUX_MIB_XFRMOUTPOLDEAD);
-+				XFRM_INC_STATS(net, LINUX_MIB_XFRMOUTPOLDEAD);
- 			else
--				XFRM_INC_STATS(LINUX_MIB_XFRMOUTBUNDLECHECKERROR);
-+				XFRM_INC_STATS(net, LINUX_MIB_XFRMOUTBUNDLECHECKERROR);
- 			err = -EHOSTUNREACH;
- 			goto error;
- 		}
-@@ -1756,7 +1751,7 @@ restart:
- 		if (unlikely(err)) {
- 			write_unlock_bh(&policy->lock);
- 			dst_free(dst);
--			XFRM_INC_STATS(LINUX_MIB_XFRMOUTBUNDLECHECKERROR);
-+			XFRM_INC_STATS(net, LINUX_MIB_XFRMOUTBUNDLECHECKERROR);
- 			goto error;
- 		}
- 
-@@ -1912,7 +1907,7 @@ int __xfrm_policy_check(struct sock *sk, int dir, struct sk_buff *skb,
- 	fl_dir = policy_to_flow_dir(dir);
- 
- 	if (__xfrm_decode_session(skb, &fl, family, reverse) < 0) {
--		XFRM_INC_STATS(LINUX_MIB_XFRMINHDRERROR);
-+		XFRM_INC_STATS(net, LINUX_MIB_XFRMINHDRERROR);
- 		return 0;
- 	}
- 
-@@ -1925,7 +1920,7 @@ int __xfrm_policy_check(struct sock *sk, int dir, struct sk_buff *skb,
- 		for (i=skb->sp->len-1; i>=0; i--) {
- 			struct xfrm_state *x = skb->sp->xvec[i];
- 			if (!xfrm_selector_match(&x->sel, &fl, family)) {
--				XFRM_INC_STATS(LINUX_MIB_XFRMINSTATEMISMATCH);
-+				XFRM_INC_STATS(net, LINUX_MIB_XFRMINSTATEMISMATCH);
- 				return 0;
- 			}
- 		}
-@@ -1935,7 +1930,7 @@ int __xfrm_policy_check(struct sock *sk, int dir, struct sk_buff *skb,
- 	if (sk && sk->sk_policy[dir]) {
- 		pol = xfrm_sk_policy_lookup(sk, dir, &fl);
- 		if (IS_ERR(pol)) {
--			XFRM_INC_STATS(LINUX_MIB_XFRMINPOLERROR);
-+			XFRM_INC_STATS(net, LINUX_MIB_XFRMINPOLERROR);
- 			return 0;
- 		}
- 	}
-@@ -1945,14 +1940,14 @@ int __xfrm_policy_check(struct sock *sk, int dir, struct sk_buff *skb,
- 					xfrm_policy_lookup);
- 
- 	if (IS_ERR(pol)) {
--		XFRM_INC_STATS(LINUX_MIB_XFRMINPOLERROR);
-+		XFRM_INC_STATS(net, LINUX_MIB_XFRMINPOLERROR);
- 		return 0;
- 	}
- 
- 	if (!pol) {
- 		if (skb->sp && secpath_has_nontransport(skb->sp, 0, &xerr_idx)) {
- 			xfrm_secpath_reject(xerr_idx, skb, &fl);
--			XFRM_INC_STATS(LINUX_MIB_XFRMINNOPOLS);
-+			XFRM_INC_STATS(net, LINUX_MIB_XFRMINNOPOLS);
- 			return 0;
- 		}
- 		return 1;
-@@ -1969,7 +1964,7 @@ int __xfrm_policy_check(struct sock *sk, int dir, struct sk_buff *skb,
- 						    XFRM_POLICY_IN);
- 		if (pols[1]) {
- 			if (IS_ERR(pols[1])) {
--				XFRM_INC_STATS(LINUX_MIB_XFRMINPOLERROR);
-+				XFRM_INC_STATS(net, LINUX_MIB_XFRMINPOLERROR);
- 				return 0;
- 			}
- 			pols[1]->curlft.use_time = get_seconds();
-@@ -1993,11 +1988,11 @@ int __xfrm_policy_check(struct sock *sk, int dir, struct sk_buff *skb,
- 		for (pi = 0; pi < npols; pi++) {
- 			if (pols[pi] != pol &&
- 			    pols[pi]->action != XFRM_POLICY_ALLOW) {
--				XFRM_INC_STATS(LINUX_MIB_XFRMINPOLBLOCK);
-+				XFRM_INC_STATS(net, LINUX_MIB_XFRMINPOLBLOCK);
- 				goto reject;
- 			}
- 			if (ti + pols[pi]->xfrm_nr >= XFRM_MAX_DEPTH) {
--				XFRM_INC_STATS(LINUX_MIB_XFRMINBUFFERERROR);
-+				XFRM_INC_STATS(net, LINUX_MIB_XFRMINBUFFERERROR);
- 				goto reject_error;
- 			}
- 			for (i = 0; i < pols[pi]->xfrm_nr; i++)
-@@ -2021,20 +2016,20 @@ int __xfrm_policy_check(struct sock *sk, int dir, struct sk_buff *skb,
- 				if (k < -1)
- 					/* "-2 - errored_index" returned */
- 					xerr_idx = -(2+k);
--				XFRM_INC_STATS(LINUX_MIB_XFRMINTMPLMISMATCH);
-+				XFRM_INC_STATS(net, LINUX_MIB_XFRMINTMPLMISMATCH);
- 				goto reject;
- 			}
- 		}
- 
- 		if (secpath_has_nontransport(sp, k, &xerr_idx)) {
--			XFRM_INC_STATS(LINUX_MIB_XFRMINTMPLMISMATCH);
-+			XFRM_INC_STATS(net, LINUX_MIB_XFRMINTMPLMISMATCH);
- 			goto reject;
- 		}
- 
- 		xfrm_pols_put(pols, npols);
- 		return 1;
- 	}
--	XFRM_INC_STATS(LINUX_MIB_XFRMINPOLBLOCK);
-+	XFRM_INC_STATS(net, LINUX_MIB_XFRMINPOLBLOCK);
- 
- reject:
- 	xfrm_secpath_reject(xerr_idx, skb, &fl);
-@@ -2051,7 +2046,7 @@ int __xfrm_route_forward(struct sk_buff *skb, unsigned short family)
- 
- 	if (xfrm_decode_session(skb, &fl, family) < 0) {
- 		/* XXX: we should have something like FWDHDRERROR here. */
--		XFRM_INC_STATS(LINUX_MIB_XFRMINHDRERROR);
-+		XFRM_INC_STATS(net, LINUX_MIB_XFRMINHDRERROR);
- 		return 0;
- 	}
- 
-@@ -2380,13 +2375,27 @@ static struct notifier_block xfrm_dev_notifier = {
- };
- 
- #ifdef CONFIG_XFRM_STATISTICS
--static int __init xfrm_statistics_init(void)
-+static int __net_init xfrm_statistics_init(struct net *net)
+-static struct xfrm_state *__xfrm_state_lookup_byaddr(xfrm_address_t *daddr, xfrm_address_t *saddr, u8 proto, unsigned short family)
++static struct xfrm_state *__xfrm_state_lookup_byaddr(struct net *net, xfrm_address_t *daddr, xfrm_address_t *saddr, u8 proto, unsigned short family)
  {
--	if (snmp_mib_init((void **)xfrm_statistics,
-+	if (snmp_mib_init((void **)net->mib.xfrm_statistics,
- 			  sizeof(struct linux_xfrm_mib)) < 0)
+-	unsigned int h = xfrm_src_hash(&init_net, daddr, saddr, family);
++	unsigned int h = xfrm_src_hash(net, daddr, saddr, family);
+ 	struct xfrm_state *x;
+ 	struct hlist_node *entry;
+ 
+-	hlist_for_each_entry(x, entry, init_net.xfrm.state_bysrc+h, bysrc) {
++	hlist_for_each_entry(x, entry, net->xfrm.state_bysrc+h, bysrc) {
+ 		if (x->props.family != family ||
+ 		    x->id.proto     != proto)
+ 			continue;
+@@ -740,11 +740,13 @@ static struct xfrm_state *__xfrm_state_lookup_byaddr(xfrm_address_t *daddr, xfrm
+ static inline struct xfrm_state *
+ __xfrm_state_locate(struct xfrm_state *x, int use_spi, int family)
+ {
++	struct net *net = xs_net(x);
++
+ 	if (use_spi)
+-		return __xfrm_state_lookup(&x->id.daddr, x->id.spi,
++		return __xfrm_state_lookup(net, &x->id.daddr, x->id.spi,
+ 					   x->id.proto, family);
+ 	else
+-		return __xfrm_state_lookup_byaddr(&x->id.daddr,
++		return __xfrm_state_lookup_byaddr(net, &x->id.daddr,
+ 						  &x->props.saddr,
+ 						  x->id.proto, family);
+ }
+@@ -818,7 +820,7 @@ xfrm_state_find(xfrm_address_t *daddr, xfrm_address_t *saddr,
+ 	x = best;
+ 	if (!x && !error && !acquire_in_progress) {
+ 		if (tmpl->id.spi &&
+-		    (x0 = __xfrm_state_lookup(daddr, tmpl->id.spi,
++		    (x0 = __xfrm_state_lookup(&init_net, daddr, tmpl->id.spi,
+ 					      tmpl->id.proto, family)) != NULL) {
+ 			to_put = x0;
+ 			error = -EEXIST;
+@@ -1361,26 +1363,27 @@ int xfrm_state_check_expire(struct xfrm_state *x)
+ EXPORT_SYMBOL(xfrm_state_check_expire);
+ 
+ struct xfrm_state *
+-xfrm_state_lookup(xfrm_address_t *daddr, __be32 spi, u8 proto,
++xfrm_state_lookup(struct net *net, xfrm_address_t *daddr, __be32 spi, u8 proto,
+ 		  unsigned short family)
+ {
+ 	struct xfrm_state *x;
+ 
+ 	spin_lock_bh(&xfrm_state_lock);
+-	x = __xfrm_state_lookup(daddr, spi, proto, family);
++	x = __xfrm_state_lookup(net, daddr, spi, proto, family);
+ 	spin_unlock_bh(&xfrm_state_lock);
+ 	return x;
+ }
+ EXPORT_SYMBOL(xfrm_state_lookup);
+ 
+ struct xfrm_state *
+-xfrm_state_lookup_byaddr(xfrm_address_t *daddr, xfrm_address_t *saddr,
++xfrm_state_lookup_byaddr(struct net *net,
++			 xfrm_address_t *daddr, xfrm_address_t *saddr,
+ 			 u8 proto, unsigned short family)
+ {
+ 	struct xfrm_state *x;
+ 
+ 	spin_lock_bh(&xfrm_state_lock);
+-	x = __xfrm_state_lookup_byaddr(daddr, saddr, proto, family);
++	x = __xfrm_state_lookup_byaddr(net, daddr, saddr, proto, family);
+ 	spin_unlock_bh(&xfrm_state_lock);
+ 	return x;
+ }
+@@ -1486,6 +1489,7 @@ EXPORT_SYMBOL(xfrm_get_acqseq);
+ 
+ int xfrm_alloc_spi(struct xfrm_state *x, u32 low, u32 high)
+ {
++	struct net *net = xs_net(x);
+ 	unsigned int h;
+ 	struct xfrm_state *x0;
+ 	int err = -ENOENT;
+@@ -1503,7 +1507,7 @@ int xfrm_alloc_spi(struct xfrm_state *x, u32 low, u32 high)
+ 	err = -ENOENT;
+ 
+ 	if (minspi == maxspi) {
+-		x0 = xfrm_state_lookup(&x->id.daddr, minspi, x->id.proto, x->props.family);
++		x0 = xfrm_state_lookup(net, &x->id.daddr, minspi, x->id.proto, x->props.family);
+ 		if (x0) {
+ 			xfrm_state_put(x0);
+ 			goto unlock;
+@@ -1513,7 +1517,7 @@ int xfrm_alloc_spi(struct xfrm_state *x, u32 low, u32 high)
+ 		u32 spi = 0;
+ 		for (h=0; h<high-low+1; h++) {
+ 			spi = low + net_random()%(high-low+1);
+-			x0 = xfrm_state_lookup(&x->id.daddr, htonl(spi), x->id.proto, x->props.family);
++			x0 = xfrm_state_lookup(net, &x->id.daddr, htonl(spi), x->id.proto, x->props.family);
+ 			if (x0 == NULL) {
+ 				x->id.spi = htonl(spi);
+ 				break;
+diff --git a/net/xfrm/xfrm_user.c b/net/xfrm/xfrm_user.c
+index 49a7e89..e02ef33 100644
+--- a/net/xfrm/xfrm_user.c
++++ b/net/xfrm/xfrm_user.c
+@@ -440,7 +440,7 @@ static struct xfrm_state *xfrm_user_state_lookup(struct xfrm_usersa_id *p,
+ 
+ 	if (xfrm_id_proto_match(p->proto, IPSEC_PROTO_ANY)) {
+ 		err = -ESRCH;
+-		x = xfrm_state_lookup(&p->daddr, p->spi, p->proto, p->family);
++		x = xfrm_state_lookup(&init_net, &p->daddr, p->spi, p->proto, p->family);
+ 	} else {
+ 		xfrm_address_t *saddr = NULL;
+ 
+@@ -451,8 +451,8 @@ static struct xfrm_state *xfrm_user_state_lookup(struct xfrm_usersa_id *p,
+ 		}
+ 
+ 		err = -ESRCH;
+-		x = xfrm_state_lookup_byaddr(&p->daddr, saddr, p->proto,
+-					     p->family);
++		x = xfrm_state_lookup_byaddr(&init_net, &p->daddr, saddr,
++					     p->proto, p->family);
+ 	}
+ 
+  out:
+@@ -1468,7 +1468,7 @@ static int xfrm_get_ae(struct sk_buff *skb, struct nlmsghdr *nlh,
+ 	if (r_skb == NULL)
  		return -ENOMEM;
- 	return 0;
- }
-+
-+static void xfrm_statistics_fini(struct net *net)
-+{
-+	snmp_mib_free((void **)net->mib.xfrm_statistics);
-+}
-+#else
-+static int __net_init xfrm_statistics_init(struct net *net)
-+{
-+	return 0;
-+}
-+
-+static void xfrm_statistics_fini(struct net *net)
-+{
-+}
- #endif
  
- static int __net_init xfrm_policy_init(struct net *net)
-@@ -2480,6 +2489,9 @@ static int __net_init xfrm_net_init(struct net *net)
- {
- 	int rv;
+-	x = xfrm_state_lookup(&id->daddr, id->spi, id->proto, id->family);
++	x = xfrm_state_lookup(&init_net, &id->daddr, id->spi, id->proto, id->family);
+ 	if (x == NULL) {
+ 		kfree_skb(r_skb);
+ 		return -ESRCH;
+@@ -1509,7 +1509,7 @@ static int xfrm_new_ae(struct sk_buff *skb, struct nlmsghdr *nlh,
+ 	if (!(nlh->nlmsg_flags&NLM_F_REPLACE))
+ 		return err;
  
-+	rv = xfrm_statistics_init(net);
-+	if (rv < 0)
-+		goto out_statistics;
- 	rv = xfrm_state_init(net);
- 	if (rv < 0)
- 		goto out_state;
-@@ -2491,6 +2503,8 @@ static int __net_init xfrm_net_init(struct net *net)
- out_policy:
- 	xfrm_state_fini(net);
- out_state:
-+	xfrm_statistics_fini(net);
-+out_statistics:
- 	return rv;
- }
+-	x = xfrm_state_lookup(&p->sa_id.daddr, p->sa_id.spi, p->sa_id.proto, p->sa_id.family);
++	x = xfrm_state_lookup(&init_net, &p->sa_id.daddr, p->sa_id.spi, p->sa_id.proto, p->sa_id.family);
+ 	if (x == NULL)
+ 		return -ESRCH;
  
-@@ -2498,6 +2512,7 @@ static void __net_exit xfrm_net_exit(struct net *net)
- {
- 	xfrm_policy_fini(net);
- 	xfrm_state_fini(net);
-+	xfrm_statistics_fini(net);
- }
+@@ -1628,7 +1628,7 @@ static int xfrm_add_sa_expire(struct sk_buff *skb, struct nlmsghdr *nlh,
+ 	struct xfrm_user_expire *ue = nlmsg_data(nlh);
+ 	struct xfrm_usersa_info *p = &ue->state;
  
- static struct pernet_operations __net_initdata xfrm_net_ops = {
-@@ -2508,9 +2523,6 @@ static struct pernet_operations __net_initdata xfrm_net_ops = {
- void __init xfrm_init(void)
- {
- 	register_pernet_subsys(&xfrm_net_ops);
--#ifdef CONFIG_XFRM_STATISTICS
--	xfrm_statistics_init();
--#endif
- 	xfrm_input_init();
- #ifdef CONFIG_XFRM_STATISTICS
- 	xfrm_proc_init();
-diff --git a/net/xfrm/xfrm_proc.c b/net/xfrm/xfrm_proc.c
-index 2b0db13..27a2ab9 100644
---- a/net/xfrm/xfrm_proc.c
-+++ b/net/xfrm/xfrm_proc.c
-@@ -62,7 +62,7 @@ static int xfrm_statistics_seq_show(struct seq_file *seq, void *v)
- 	int i;
- 	for (i=0; xfrm_mib_list[i].name; i++)
- 		seq_printf(seq, "%-24s\t%lu\n", xfrm_mib_list[i].name,
--			   fold_field((void **)xfrm_statistics,
-+			   fold_field((void **)init_net.mib.xfrm_statistics,
- 				      xfrm_mib_list[i].entry));
- 	return 0;
- }
+-	x = xfrm_state_lookup(&p->id.daddr, p->id.spi, p->id.proto, p->family);
++	x = xfrm_state_lookup(&init_net, &p->id.daddr, p->id.spi, p->id.proto, p->family);
+ 
+ 	err = -ENOENT;
+ 	if (x == NULL)
 -- 
 1.5.6.5
