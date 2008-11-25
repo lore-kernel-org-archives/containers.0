@@ -1,7 +1,7 @@
 From: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: [PATCH 29/53] netns xfrm: propagate netns into policy byidx hash
-Date: Tue, 25 Nov 2008 20:27:01 +0300
-Message-ID: <1227634045-27534-29-git-send-email-adobriyan__9320.53940273381$1227635151$gmane$org@gmail.com>
+Subject: [PATCH 28/53] netns xfrm: state walking in netns
+Date: Tue, 25 Nov 2008 20:27:00 +0300
+Message-ID: <1227634045-27534-28-git-send-email-adobriyan__27837.213400244$1227635152$gmane$org@gmail.com>
 References: <1227634045-27534-1-git-send-email-adobriyan@gmail.com>
 	<1227634045-27534-2-git-send-email-adobriyan@gmail.com>
 	<1227634045-27534-3-git-send-email-adobriyan@gmail.com>
@@ -29,12 +29,11 @@ References: <1227634045-27534-1-git-send-email-adobriyan@gmail.com>
 	<1227634045-27534-25-git-send-email-adobriyan@gmail.com>
 	<1227634045-27534-26-git-send-email-adobriyan@gmail.com>
 	<1227634045-27534-27-git-send-email-adobriyan@gmail.com>
-	<1227634045-27534-28-git-send-email-adobriyan@gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1227634045-27534-28-git-send-email-adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+In-Reply-To: <1227634045-27534-27-git-send-email-adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -50,60 +49,76 @@ List-Id: containers.vger.kernel.org
 
 Signed-off-by: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 ---
- net/xfrm/xfrm_policy.c |   12 ++++++------
- 1 files changed, 6 insertions(+), 6 deletions(-)
+ include/net/xfrm.h    |    2 +-
+ net/key/af_key.c      |    2 +-
+ net/xfrm/xfrm_state.c |    6 +++---
+ net/xfrm/xfrm_user.c  |    2 +-
+ 4 files changed, 6 insertions(+), 6 deletions(-)
 
-diff --git a/net/xfrm/xfrm_policy.c b/net/xfrm/xfrm_policy.c
-index 3d931f5..aefbb56 100644
---- a/net/xfrm/xfrm_policy.c
-+++ b/net/xfrm/xfrm_policy.c
-@@ -321,9 +321,9 @@ static void xfrm_policy_kill(struct xfrm_policy *policy)
+diff --git a/include/net/xfrm.h b/include/net/xfrm.h
+index 4cbd055..40ed487 100644
+--- a/include/net/xfrm.h
++++ b/include/net/xfrm.h
+@@ -1307,7 +1307,7 @@ extern int xfrm_proc_init(void);
+ #endif
  
- static unsigned int xfrm_policy_hashmax __read_mostly = 1 * 1024 * 1024;
+ extern void xfrm_state_walk_init(struct xfrm_state_walk *walk, u8 proto);
+-extern int xfrm_state_walk(struct xfrm_state_walk *walk,
++extern int xfrm_state_walk(struct net *net, struct xfrm_state_walk *walk,
+ 			   int (*func)(struct xfrm_state *, int, void*), void *);
+ extern void xfrm_state_walk_done(struct xfrm_state_walk *walk);
+ extern struct xfrm_state *xfrm_state_alloc(struct net *net);
+diff --git a/net/key/af_key.c b/net/key/af_key.c
+index 4ef0827..b74d939 100644
+--- a/net/key/af_key.c
++++ b/net/key/af_key.c
+@@ -1776,7 +1776,7 @@ static int dump_sa(struct xfrm_state *x, int count, void *ptr)
  
--static inline unsigned int idx_hash(u32 index)
-+static inline unsigned int idx_hash(struct net *net, u32 index)
+ static int pfkey_dump_sa(struct pfkey_sock *pfk)
  {
--	return __idx_hash(index, init_net.xfrm.policy_idx_hmask);
-+	return __idx_hash(index, net->xfrm.policy_idx_hmask);
+-	return xfrm_state_walk(&pfk->dump.u.state, dump_sa, (void *) pfk);
++	return xfrm_state_walk(&init_net, &pfk->dump.u.state, dump_sa, (void *) pfk);
  }
  
- static struct hlist_head *policy_hash_bysel(struct xfrm_selector *sel, unsigned short family, int dir)
-@@ -523,7 +523,7 @@ static u32 xfrm_gen_index(int dir)
- 		idx_generator += 8;
- 		if (idx == 0)
- 			idx = 8;
--		list = init_net.xfrm.policy_byidx + idx_hash(idx);
-+		list = init_net.xfrm.policy_byidx + idx_hash(&init_net, idx);
- 		found = 0;
- 		hlist_for_each_entry(p, entry, list, byidx) {
- 			if (p->index == idx) {
-@@ -596,7 +596,7 @@ int xfrm_policy_insert(int dir, struct xfrm_policy *policy, int excl)
- 		init_net.xfrm.policy_count[dir]--;
+ static void pfkey_dump_sa_done(struct pfkey_sock *pfk)
+diff --git a/net/xfrm/xfrm_state.c b/net/xfrm/xfrm_state.c
+index 0d974fc..ea340bb 100644
+--- a/net/xfrm/xfrm_state.c
++++ b/net/xfrm/xfrm_state.c
+@@ -1544,7 +1544,7 @@ unlock:
+ }
+ EXPORT_SYMBOL(xfrm_alloc_spi);
+ 
+-int xfrm_state_walk(struct xfrm_state_walk *walk,
++int xfrm_state_walk(struct net *net, struct xfrm_state_walk *walk,
+ 		    int (*func)(struct xfrm_state *, int, void*),
+ 		    void *data)
+ {
+@@ -1557,10 +1557,10 @@ int xfrm_state_walk(struct xfrm_state_walk *walk,
+ 
+ 	spin_lock_bh(&xfrm_state_lock);
+ 	if (list_empty(&walk->all))
+-		x = list_first_entry(&init_net.xfrm.state_all, struct xfrm_state_walk, all);
++		x = list_first_entry(&net->xfrm.state_all, struct xfrm_state_walk, all);
+ 	else
+ 		x = list_entry(&walk->all, struct xfrm_state_walk, all);
+-	list_for_each_entry_from(x, &init_net.xfrm.state_all, all) {
++	list_for_each_entry_from(x, &net->xfrm.state_all, all) {
+ 		if (x->state == XFRM_STATE_DEAD)
+ 			continue;
+ 		state = container_of(x, struct xfrm_state, km);
+diff --git a/net/xfrm/xfrm_user.c b/net/xfrm/xfrm_user.c
+index 3d57744..787b0ee 100644
+--- a/net/xfrm/xfrm_user.c
++++ b/net/xfrm/xfrm_user.c
+@@ -631,7 +631,7 @@ static int xfrm_dump_sa(struct sk_buff *skb, struct netlink_callback *cb)
+ 		xfrm_state_walk_init(walk, 0);
  	}
- 	policy->index = delpol ? delpol->index : xfrm_gen_index(dir);
--	hlist_add_head(&policy->byidx, init_net.xfrm.policy_byidx+idx_hash(policy->index));
-+	hlist_add_head(&policy->byidx, init_net.xfrm.policy_byidx+idx_hash(&init_net, policy->index));
- 	policy->curlft.add_time = get_seconds();
- 	policy->curlft.use_time = 0;
- 	if (!mod_timer(&policy->timer, jiffies + HZ))
-@@ -698,7 +698,7 @@ struct xfrm_policy *xfrm_policy_byid(u8 type, int dir, u32 id, int delete,
  
- 	*err = 0;
- 	write_lock_bh(&xfrm_policy_lock);
--	chain = init_net.xfrm.policy_byidx + idx_hash(id);
-+	chain = init_net.xfrm.policy_byidx + idx_hash(&init_net, id);
- 	ret = NULL;
- 	hlist_for_each_entry(pol, entry, chain, byidx) {
- 		if (pol->type == type && pol->index == id) {
-@@ -1075,7 +1075,7 @@ static void __xfrm_policy_link(struct xfrm_policy *pol, int dir)
+-	(void) xfrm_state_walk(walk, dump_one_state, &info);
++	(void) xfrm_state_walk(&init_net, walk, dump_one_state, &info);
  
- 	list_add(&pol->walk.all, &net->xfrm.policy_all);
- 	hlist_add_head(&pol->bydst, chain);
--	hlist_add_head(&pol->byidx, net->xfrm.policy_byidx+idx_hash(pol->index));
-+	hlist_add_head(&pol->byidx, net->xfrm.policy_byidx+idx_hash(net, pol->index));
- 	net->xfrm.policy_count[dir]++;
- 	xfrm_pol_hold(pol);
- 
+ 	return skb->len;
+ }
 -- 
 1.5.6.5
