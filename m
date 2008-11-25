@@ -1,7 +1,7 @@
 From: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: [PATCH 31/53] netns xfrm: policy flushing in netns
-Date: Tue, 25 Nov 2008 20:27:03 +0300
-Message-ID: <1227634045-27534-31-git-send-email-adobriyan__40680.0821227536$1227635161$gmane$org@gmail.com>
+Subject: [PATCH 35/53] netns xfrm: xfrm_policy_check in netns
+Date: Tue, 25 Nov 2008 20:27:07 +0300
+Message-ID: <1227634045-27534-35-git-send-email-adobriyan__6441.26325282759$1227635162$gmane$org@gmail.com>
 References: <1227634045-27534-1-git-send-email-adobriyan@gmail.com>
 	<1227634045-27534-2-git-send-email-adobriyan@gmail.com>
 	<1227634045-27534-3-git-send-email-adobriyan@gmail.com>
@@ -32,11 +32,15 @@ References: <1227634045-27534-1-git-send-email-adobriyan@gmail.com>
 	<1227634045-27534-28-git-send-email-adobriyan@gmail.com>
 	<1227634045-27534-29-git-send-email-adobriyan@gmail.com>
 	<1227634045-27534-30-git-send-email-adobriyan@gmail.com>
+	<1227634045-27534-31-git-send-email-adobriyan@gmail.com>
+	<1227634045-27534-32-git-send-email-adobriyan@gmail.com>
+	<1227634045-27534-33-git-send-email-adobriyan@gmail.com>
+	<1227634045-27534-34-git-send-email-adobriyan@gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1227634045-27534-30-git-send-email-adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+In-Reply-To: <1227634045-27534-34-git-send-email-adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -52,138 +56,58 @@ List-Id: containers.vger.kernel.org
 
 Signed-off-by: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 ---
- include/net/xfrm.h     |    2 +-
- net/key/af_key.c       |    2 +-
- net/xfrm/xfrm_policy.c |   22 +++++++++++-----------
- net/xfrm/xfrm_user.c   |    2 +-
- 4 files changed, 14 insertions(+), 14 deletions(-)
+ include/net/xfrm.h     |    3 ++-
+ net/xfrm/xfrm_policy.c |    5 +++--
+ 2 files changed, 5 insertions(+), 3 deletions(-)
 
 diff --git a/include/net/xfrm.h b/include/net/xfrm.h
-index 40ed487..766cc71 100644
+index 1dc4ff0..158848f 100644
 --- a/include/net/xfrm.h
 +++ b/include/net/xfrm.h
-@@ -1444,7 +1444,7 @@ struct xfrm_policy *xfrm_policy_bysel_ctx(u8 type, int dir,
- 					  struct xfrm_sec_ctx *ctx, int delete,
- 					  int *err);
- struct xfrm_policy *xfrm_policy_byid(u8, int dir, u32 id, int delete, int *err);
--int xfrm_policy_flush(u8 type, struct xfrm_audit *audit_info);
-+int xfrm_policy_flush(struct net *net, u8 type, struct xfrm_audit *audit_info);
- u32 xfrm_get_acqseq(void);
- extern int xfrm_alloc_spi(struct xfrm_state *x, u32 minspi, u32 maxspi);
- struct xfrm_state * xfrm_find_acq(struct net *net, u8 mode, u32 reqid, u8 proto,
-diff --git a/net/key/af_key.c b/net/key/af_key.c
-index b74d939..0f44856 100644
---- a/net/key/af_key.c
-+++ b/net/key/af_key.c
-@@ -2686,7 +2686,7 @@ static int pfkey_spdflush(struct sock *sk, struct sk_buff *skb, struct sadb_msg
- 	audit_info.loginuid = audit_get_loginuid(current);
- 	audit_info.sessionid = audit_get_sessionid(current);
- 	audit_info.secid = 0;
--	err = xfrm_policy_flush(XFRM_POLICY_TYPE_MAIN, &audit_info);
-+	err = xfrm_policy_flush(&init_net, XFRM_POLICY_TYPE_MAIN, &audit_info);
- 	if (err)
- 		return err;
- 	c.data.type = XFRM_POLICY_TYPE_MAIN;
+@@ -992,12 +992,13 @@ static inline int __xfrm_policy_check2(struct sock *sk, int dir,
+ 				       struct sk_buff *skb,
+ 				       unsigned int family, int reverse)
+ {
++	struct net *net = dev_net(skb->dev);
+ 	int ndir = dir | (reverse ? XFRM_POLICY_MASK + 1 : 0);
+ 
+ 	if (sk && sk->sk_policy[XFRM_POLICY_IN])
+ 		return __xfrm_policy_check(sk, ndir, skb, family);
+ 
+-	return	(!init_net.xfrm.policy_count[dir] && !skb->sp) ||
++	return	(!net->xfrm.policy_count[dir] && !skb->sp) ||
+ 		(skb->dst->flags & DST_NOPOLICY) ||
+ 		__xfrm_policy_check(sk, ndir, skb, family);
+ }
 diff --git a/net/xfrm/xfrm_policy.c b/net/xfrm/xfrm_policy.c
-index 11fee87..7c264a7 100644
+index 7c88a25..8097c99 100644
 --- a/net/xfrm/xfrm_policy.c
 +++ b/net/xfrm/xfrm_policy.c
-@@ -732,7 +732,7 @@ EXPORT_SYMBOL(xfrm_policy_byid);
- 
- #ifdef CONFIG_SECURITY_NETWORK_XFRM
- static inline int
--xfrm_policy_flush_secctx_check(u8 type, struct xfrm_audit *audit_info)
-+xfrm_policy_flush_secctx_check(struct net *net, u8 type, struct xfrm_audit *audit_info)
+@@ -1894,6 +1894,7 @@ static inline int secpath_has_nontransport(struct sec_path *sp, int k, int *idxp
+ int __xfrm_policy_check(struct sock *sk, int dir, struct sk_buff *skb,
+ 			unsigned short family)
  {
- 	int dir, err = 0;
- 
-@@ -742,7 +742,7 @@ xfrm_policy_flush_secctx_check(u8 type, struct xfrm_audit *audit_info)
- 		int i;
- 
- 		hlist_for_each_entry(pol, entry,
--				     &init_net.xfrm.policy_inexact[dir], bydst) {
-+				     &net->xfrm.policy_inexact[dir], bydst) {
- 			if (pol->type != type)
- 				continue;
- 			err = security_xfrm_policy_delete(pol->security);
-@@ -754,9 +754,9 @@ xfrm_policy_flush_secctx_check(u8 type, struct xfrm_audit *audit_info)
- 				return err;
- 			}
- 		}
--		for (i = init_net.xfrm.policy_bydst[dir].hmask; i >= 0; i--) {
-+		for (i = net->xfrm.policy_bydst[dir].hmask; i >= 0; i--) {
- 			hlist_for_each_entry(pol, entry,
--					     init_net.xfrm.policy_bydst[dir].table + i,
-+					     net->xfrm.policy_bydst[dir].table + i,
- 					     bydst) {
- 				if (pol->type != type)
- 					continue;
-@@ -776,19 +776,19 @@ xfrm_policy_flush_secctx_check(u8 type, struct xfrm_audit *audit_info)
- }
- #else
- static inline int
--xfrm_policy_flush_secctx_check(u8 type, struct xfrm_audit *audit_info)
-+xfrm_policy_flush_secctx_check(struct net *net, u8 type, struct xfrm_audit *audit_info)
- {
- 	return 0;
- }
- #endif
- 
--int xfrm_policy_flush(u8 type, struct xfrm_audit *audit_info)
-+int xfrm_policy_flush(struct net *net, u8 type, struct xfrm_audit *audit_info)
- {
- 	int dir, err = 0;
- 
- 	write_lock_bh(&xfrm_policy_lock);
- 
--	err = xfrm_policy_flush_secctx_check(type, audit_info);
-+	err = xfrm_policy_flush_secctx_check(net, type, audit_info);
- 	if (err)
- 		goto out;
- 
-@@ -800,7 +800,7 @@ int xfrm_policy_flush(u8 type, struct xfrm_audit *audit_info)
- 		killed = 0;
- 	again1:
- 		hlist_for_each_entry(pol, entry,
--				     &init_net.xfrm.policy_inexact[dir], bydst) {
-+				     &net->xfrm.policy_inexact[dir], bydst) {
- 			if (pol->type != type)
- 				continue;
- 			hlist_del(&pol->bydst);
-@@ -818,10 +818,10 @@ int xfrm_policy_flush(u8 type, struct xfrm_audit *audit_info)
- 			goto again1;
- 		}
- 
--		for (i = init_net.xfrm.policy_bydst[dir].hmask; i >= 0; i--) {
-+		for (i = net->xfrm.policy_bydst[dir].hmask; i >= 0; i--) {
- 	again2:
- 			hlist_for_each_entry(pol, entry,
--					     init_net.xfrm.policy_bydst[dir].table + i,
-+					     net->xfrm.policy_bydst[dir].table + i,
- 					     bydst) {
- 				if (pol->type != type)
- 					continue;
-@@ -842,7 +842,7 @@ int xfrm_policy_flush(u8 type, struct xfrm_audit *audit_info)
- 			}
- 		}
- 
--		init_net.xfrm.policy_count[dir] -= killed;
-+		net->xfrm.policy_count[dir] -= killed;
++	struct net *net = dev_net(skb->dev);
+ 	struct xfrm_policy *pol;
+ 	struct xfrm_policy *pols[XFRM_POLICY_TYPE_MAX];
+ 	int npols = 0;
+@@ -1938,7 +1939,7 @@ int __xfrm_policy_check(struct sock *sk, int dir, struct sk_buff *skb,
  	}
- 	atomic_inc(&flow_cache_genid);
- out:
-diff --git a/net/xfrm/xfrm_user.c b/net/xfrm/xfrm_user.c
-index 787b0ee..d4983e8 100644
---- a/net/xfrm/xfrm_user.c
-+++ b/net/xfrm/xfrm_user.c
-@@ -1546,7 +1546,7 @@ static int xfrm_flush_policy(struct sk_buff *skb, struct nlmsghdr *nlh,
- 	audit_info.loginuid = NETLINK_CB(skb).loginuid;
- 	audit_info.sessionid = NETLINK_CB(skb).sessionid;
- 	audit_info.secid = NETLINK_CB(skb).sid;
--	err = xfrm_policy_flush(type, &audit_info);
-+	err = xfrm_policy_flush(&init_net, type, &audit_info);
- 	if (err)
- 		return err;
- 	c.data.type = type;
+ 
+ 	if (!pol)
+-		pol = flow_cache_lookup(&init_net, &fl, family, fl_dir,
++		pol = flow_cache_lookup(net, &fl, family, fl_dir,
+ 					xfrm_policy_lookup);
+ 
+ 	if (IS_ERR(pol)) {
+@@ -1961,7 +1962,7 @@ int __xfrm_policy_check(struct sock *sk, int dir, struct sk_buff *skb,
+ 	npols ++;
+ #ifdef CONFIG_XFRM_SUB_POLICY
+ 	if (pols[0]->type != XFRM_POLICY_TYPE_MAIN) {
+-		pols[1] = xfrm_policy_lookup_bytype(&init_net, XFRM_POLICY_TYPE_MAIN,
++		pols[1] = xfrm_policy_lookup_bytype(net, XFRM_POLICY_TYPE_MAIN,
+ 						    &fl, family,
+ 						    XFRM_POLICY_IN);
+ 		if (pols[1]) {
 -- 
 1.5.6.5
