@@ -1,17 +1,18 @@
 From: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: [PATCH 06/53] netns xfrm: per-netns xfrm_state_bysrc hash
-Date: Tue, 25 Nov 2008 20:26:38 +0300
-Message-ID: <1227634045-27534-6-git-send-email-adobriyan__484.816000289534$1227634547$gmane$org@gmail.com>
+Subject: [PATCH 07/53] netns xfrm: per-netns xfrm_state_byspi hash
+Date: Tue, 25 Nov 2008 20:26:39 +0300
+Message-ID: <1227634045-27534-7-git-send-email-adobriyan__14263.9974401847$1227634549$gmane$org@gmail.com>
 References: <1227634045-27534-1-git-send-email-adobriyan@gmail.com>
 	<1227634045-27534-2-git-send-email-adobriyan@gmail.com>
 	<1227634045-27534-3-git-send-email-adobriyan@gmail.com>
 	<1227634045-27534-4-git-send-email-adobriyan@gmail.com>
 	<1227634045-27534-5-git-send-email-adobriyan@gmail.com>
+	<1227634045-27534-6-git-send-email-adobriyan@gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1227634045-27534-5-git-send-email-adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+In-Reply-To: <1227634045-27534-6-git-send-email-adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -28,120 +29,110 @@ List-Id: containers.vger.kernel.org
 Signed-off-by: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 ---
  include/net/netns/xfrm.h |    1 +
- net/xfrm/xfrm_state.c    |   23 ++++++++++++++---------
- 2 files changed, 15 insertions(+), 9 deletions(-)
+ net/xfrm/xfrm_state.c    |   21 +++++++++++++--------
+ 2 files changed, 14 insertions(+), 8 deletions(-)
 
 diff --git a/include/net/netns/xfrm.h b/include/net/netns/xfrm.h
-index 02487b3..bfcd5a3 100644
+index bfcd5a3..b05ca3f 100644
 --- a/include/net/netns/xfrm.h
 +++ b/include/net/netns/xfrm.h
-@@ -14,6 +14,7 @@ struct netns_xfrm {
- 	 * offending SA.
+@@ -15,6 +15,7 @@ struct netns_xfrm {
  	 */
  	struct hlist_head	*state_bydst;
-+	struct hlist_head	*state_bysrc;
+ 	struct hlist_head	*state_bysrc;
++	struct hlist_head	*state_byspi;
  };
  
  #endif
 diff --git a/net/xfrm/xfrm_state.c b/net/xfrm/xfrm_state.c
-index 08b7889..52d828b 100644
+index 52d828b..66ca1ef 100644
 --- a/net/xfrm/xfrm_state.c
 +++ b/net/xfrm/xfrm_state.c
 @@ -44,7 +44,6 @@ u32 sysctl_xfrm_acq_expires __read_mostly = 30;
  
  static DEFINE_SPINLOCK(xfrm_state_lock);
  
--static struct hlist_head *xfrm_state_bysrc __read_mostly;
- static struct hlist_head *xfrm_state_byspi __read_mostly;
+-static struct hlist_head *xfrm_state_byspi __read_mostly;
  static unsigned int xfrm_state_hmask __read_mostly;
  static unsigned int xfrm_state_hashmax __read_mostly = 1 * 1024 * 1024;
+ static unsigned int xfrm_state_num;
 @@ -154,12 +153,12 @@ static void xfrm_hash_resize(struct work_struct *__unused)
- 				   nhashmask);
  
  	odst = init_net.xfrm.state_bydst;
--	osrc = xfrm_state_bysrc;
-+	osrc = init_net.xfrm.state_bysrc;
- 	ospi = xfrm_state_byspi;
+ 	osrc = init_net.xfrm.state_bysrc;
+-	ospi = xfrm_state_byspi;
++	ospi = init_net.xfrm.state_byspi;
  	ohashmask = xfrm_state_hmask;
  
  	init_net.xfrm.state_bydst = ndst;
--	xfrm_state_bysrc = nsrc;
-+	init_net.xfrm.state_bysrc = nsrc;
- 	xfrm_state_byspi = nspi;
+ 	init_net.xfrm.state_bysrc = nsrc;
+-	xfrm_state_byspi = nspi;
++	init_net.xfrm.state_byspi = nspi;
  	xfrm_state_hmask = nhashmask;
  
-@@ -712,7 +711,7 @@ static struct xfrm_state *__xfrm_state_lookup_byaddr(xfrm_address_t *daddr, xfrm
+ 	spin_unlock_bh(&xfrm_state_lock);
+@@ -679,7 +678,7 @@ static struct xfrm_state *__xfrm_state_lookup(xfrm_address_t *daddr, __be32 spi,
  	struct xfrm_state *x;
  	struct hlist_node *entry;
  
--	hlist_for_each_entry(x, entry, xfrm_state_bysrc+h, bysrc) {
-+	hlist_for_each_entry(x, entry, init_net.xfrm.state_bysrc+h, bysrc) {
+-	hlist_for_each_entry(x, entry, xfrm_state_byspi+h, byspi) {
++	hlist_for_each_entry(x, entry, init_net.xfrm.state_byspi+h, byspi) {
  		if (x->props.family != family ||
+ 		    x->id.spi       != spi ||
  		    x->id.proto     != proto)
- 			continue;
-@@ -850,7 +849,7 @@ xfrm_state_find(xfrm_address_t *daddr, xfrm_address_t *saddr,
- 			list_add(&x->km.all, &init_net.xfrm.state_all);
- 			hlist_add_head(&x->bydst, init_net.xfrm.state_bydst+h);
- 			h = xfrm_src_hash(daddr, saddr, family);
--			hlist_add_head(&x->bysrc, xfrm_state_bysrc+h);
-+			hlist_add_head(&x->bysrc, init_net.xfrm.state_bysrc+h);
+@@ -852,7 +851,7 @@ xfrm_state_find(xfrm_address_t *daddr, xfrm_address_t *saddr,
+ 			hlist_add_head(&x->bysrc, init_net.xfrm.state_bysrc+h);
  			if (x->id.spi) {
  				h = xfrm_spi_hash(&x->id.daddr, x->id.spi, x->id.proto, family);
- 				hlist_add_head(&x->byspi, xfrm_state_byspi+h);
-@@ -923,7 +922,7 @@ static void __xfrm_state_insert(struct xfrm_state *x)
- 	hlist_add_head(&x->bydst, init_net.xfrm.state_bydst+h);
- 
- 	h = xfrm_src_hash(&x->id.daddr, &x->props.saddr, x->props.family);
--	hlist_add_head(&x->bysrc, xfrm_state_bysrc+h);
-+	hlist_add_head(&x->bysrc, init_net.xfrm.state_bysrc+h);
- 
- 	if (x->id.spi) {
+-				hlist_add_head(&x->byspi, xfrm_state_byspi+h);
++				hlist_add_head(&x->byspi, init_net.xfrm.state_byspi+h);
+ 			}
+ 			x->lft.hard_add_expires_seconds = sysctl_xfrm_acq_expires;
+ 			x->timer.expires = jiffies + sysctl_xfrm_acq_expires*HZ;
+@@ -928,7 +927,7 @@ static void __xfrm_state_insert(struct xfrm_state *x)
  		h = xfrm_spi_hash(&x->id.daddr, x->id.spi, x->id.proto,
-@@ -1048,7 +1047,7 @@ static struct xfrm_state *__find_acq_core(unsigned short family, u8 mode, u32 re
- 		list_add(&x->km.all, &init_net.xfrm.state_all);
- 		hlist_add_head(&x->bydst, init_net.xfrm.state_bydst+h);
- 		h = xfrm_src_hash(daddr, saddr, family);
--		hlist_add_head(&x->bysrc, xfrm_state_bysrc+h);
-+		hlist_add_head(&x->bysrc, init_net.xfrm.state_bysrc+h);
+ 				  x->props.family);
  
- 		xfrm_state_num++;
+-		hlist_add_head(&x->byspi, xfrm_state_byspi+h);
++		hlist_add_head(&x->byspi, init_net.xfrm.state_byspi+h);
+ 	}
  
-@@ -1218,7 +1217,7 @@ struct xfrm_state * xfrm_migrate_state_find(struct xfrm_migrate *m)
- 	} else {
- 		h = xfrm_src_hash(&m->old_daddr, &m->old_saddr,
- 				  m->old_family);
--		hlist_for_each_entry(x, entry, xfrm_state_bysrc+h, bysrc) {
-+		hlist_for_each_entry(x, entry, init_net.xfrm.state_bysrc+h, bysrc) {
- 			if (x->props.mode != m->mode ||
- 			    x->id.proto != m->proto)
- 				continue;
-@@ -2084,13 +2083,17 @@ int __net_init xfrm_state_init(struct net *net)
- 	net->xfrm.state_bydst = xfrm_hash_alloc(sz);
- 	if (!net->xfrm.state_bydst)
- 		goto out_bydst;
--	xfrm_state_bysrc = xfrm_hash_alloc(sz);
-+	net->xfrm.state_bysrc = xfrm_hash_alloc(sz);
-+	if (!net->xfrm.state_bysrc)
-+		goto out_bysrc;
- 	xfrm_state_byspi = xfrm_hash_alloc(sz);
+ 	mod_timer(&x->timer, jiffies + HZ);
+@@ -1524,7 +1523,7 @@ int xfrm_alloc_spi(struct xfrm_state *x, u32 low, u32 high)
+ 	if (x->id.spi) {
+ 		spin_lock_bh(&xfrm_state_lock);
+ 		h = xfrm_spi_hash(&x->id.daddr, x->id.spi, x->id.proto, x->props.family);
+-		hlist_add_head(&x->byspi, xfrm_state_byspi+h);
++		hlist_add_head(&x->byspi, init_net.xfrm.state_byspi+h);
+ 		spin_unlock_bh(&xfrm_state_lock);
+ 
+ 		err = 0;
+@@ -2086,12 +2085,16 @@ int __net_init xfrm_state_init(struct net *net)
+ 	net->xfrm.state_bysrc = xfrm_hash_alloc(sz);
+ 	if (!net->xfrm.state_bysrc)
+ 		goto out_bysrc;
+-	xfrm_state_byspi = xfrm_hash_alloc(sz);
++	net->xfrm.state_byspi = xfrm_hash_alloc(sz);
++	if (!net->xfrm.state_byspi)
++		goto out_byspi;
  	xfrm_state_hmask = ((sz / sizeof(struct hlist_head)) - 1);
  
  	INIT_WORK(&xfrm_state_gc_work, xfrm_state_gc_task);
  	return 0;
  
-+out_bysrc:
-+	xfrm_hash_free(net->xfrm.state_bydst, sz);
++out_byspi:
++	xfrm_hash_free(net->xfrm.state_bysrc, sz);
+ out_bysrc:
+ 	xfrm_hash_free(net->xfrm.state_bydst, sz);
  out_bydst:
- 	return -ENOMEM;
- }
-@@ -2102,6 +2105,8 @@ void xfrm_state_fini(struct net *net)
+@@ -2105,6 +2108,8 @@ void xfrm_state_fini(struct net *net)
  	WARN_ON(!list_empty(&net->xfrm.state_all));
  
  	sz = (xfrm_state_hmask + 1) * sizeof(struct hlist_head);
-+	WARN_ON(!hlist_empty(net->xfrm.state_bysrc));
-+	xfrm_hash_free(net->xfrm.state_bysrc, sz);
++	WARN_ON(!hlist_empty(net->xfrm.state_byspi));
++	xfrm_hash_free(net->xfrm.state_byspi, sz);
+ 	WARN_ON(!hlist_empty(net->xfrm.state_bysrc));
+ 	xfrm_hash_free(net->xfrm.state_bysrc, sz);
  	WARN_ON(!hlist_empty(net->xfrm.state_bydst));
- 	xfrm_hash_free(net->xfrm.state_bydst, sz);
- }
 -- 
 1.5.6.5
