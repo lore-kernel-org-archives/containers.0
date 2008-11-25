@@ -1,7 +1,7 @@
 From: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: [PATCH 10/53] netns xfrm: per-netns xfrm_hash_work
-Date: Tue, 25 Nov 2008 20:26:42 +0300
-Message-ID: <1227634045-27534-10-git-send-email-adobriyan__25765.3600922369$1227637594$gmane$org@gmail.com>
+Subject: [PATCH 46/53] netns xfrm: flush SA/SPDs on netns stop
+Date: Tue, 25 Nov 2008 20:27:18 +0300
+Message-ID: <1227634045-27534-46-git-send-email-adobriyan__5956.83405776999$1227637609$gmane$org@gmail.com>
 References: <1227634045-27534-1-git-send-email-adobriyan@gmail.com>
 	<1227634045-27534-2-git-send-email-adobriyan@gmail.com>
 	<1227634045-27534-3-git-send-email-adobriyan@gmail.com>
@@ -11,11 +11,47 @@ References: <1227634045-27534-1-git-send-email-adobriyan@gmail.com>
 	<1227634045-27534-7-git-send-email-adobriyan@gmail.com>
 	<1227634045-27534-8-git-send-email-adobriyan@gmail.com>
 	<1227634045-27534-9-git-send-email-adobriyan@gmail.com>
+	<1227634045-27534-10-git-send-email-adobriyan@gmail.com>
+	<1227634045-27534-11-git-send-email-adobriyan@gmail.com>
+	<1227634045-27534-12-git-send-email-adobriyan@gmail.com>
+	<1227634045-27534-13-git-send-email-adobriyan@gmail.com>
+	<1227634045-27534-14-git-send-email-adobriyan@gmail.com>
+	<1227634045-27534-15-git-send-email-adobriyan@gmail.com>
+	<1227634045-27534-16-git-send-email-adobriyan@gmail.com>
+	<1227634045-27534-17-git-send-email-adobriyan@gmail.com>
+	<1227634045-27534-18-git-send-email-adobriyan@gmail.com>
+	<1227634045-27534-19-git-send-email-adobriyan@gmail.com>
+	<1227634045-27534-20-git-send-email-adobriyan@gmail.com>
+	<1227634045-27534-21-git-send-email-adobriyan@gmail.com>
+	<1227634045-27534-22-git-send-email-adobriyan@gmail.com>
+	<1227634045-27534-23-git-send-email-adobriyan@gmail.com>
+	<1227634045-27534-24-git-send-email-adobriyan@gmail.com>
+	<1227634045-27534-25-git-send-email-adobriyan@gmail.com>
+	<1227634045-27534-26-git-send-email-adobriyan@gmail.com>
+	<1227634045-27534-27-git-send-email-adobriyan@gmail.com>
+	<1227634045-27534-28-git-send-email-adobriyan@gmail.com>
+	<1227634045-27534-29-git-send-email-adobriyan@gmail.com>
+	<1227634045-27534-30-git-send-email-adobriyan@gmail.com>
+	<1227634045-27534-31-git-send-email-adobriyan@gmail.com>
+	<1227634045-27534-32-git-send-email-adobriyan@gmail.com>
+	<1227634045-27534-33-git-send-email-adobriyan@gmail.com>
+	<1227634045-27534-34-git-send-email-adobriyan@gmail.com>
+	<1227634045-27534-35-git-send-email-adobriyan@gmail.com>
+	<1227634045-27534-36-git-send-email-adobriyan@gmail.com>
+	<1227634045-27534-37-git-send-email-adobriyan@gmail.com>
+	<1227634045-27534-38-git-send-email-adobriyan@gmail.com>
+	<1227634045-27534-39-git-send-email-adobriyan@gmail.com>
+	<1227634045-27534-40-git-send-email-adobriyan@gmail.com>
+	<1227634045-27534-41-git-send-email-adobriyan@gmail.com>
+	<1227634045-27534-42-git-send-email-adobriyan@gmail.com>
+	<1227634045-27534-43-git-send-email-adobriyan@gmail.com>
+	<1227634045-27534-44-git-send-email-adobriyan@gmail.com>
+	<1227634045-27534-45-git-send-email-adobriyan@gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1227634045-27534-9-git-send-email-adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+In-Reply-To: <1227634045-27534-45-git-send-email-adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -29,123 +65,62 @@ To: davem-fT/PcQaiUtIeIZ0/mPfg9Q@public.gmane.org
 Cc: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, kuznet-v/Mj1YrvjDBInbfyfbPRSQ@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, herbert-lOAM2aK0SrRLBo1qDEOMRrpzq4S04n8Q@public.gmane.org, netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-All of this is implicit passing which netns's hashes should be resized.
+SA/SPD doesn't pin netns (and it shouldn't), so get rid of them by hand.
 
 Signed-off-by: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 ---
- include/net/netns/xfrm.h |    2 ++
- net/xfrm/xfrm_state.c    |   35 +++++++++++++++++------------------
- 2 files changed, 19 insertions(+), 18 deletions(-)
+ net/xfrm/xfrm_policy.c |   14 ++++++++++++++
+ net/xfrm/xfrm_state.c  |    8 ++++++++
+ 2 files changed, 22 insertions(+), 0 deletions(-)
 
-diff --git a/include/net/netns/xfrm.h b/include/net/netns/xfrm.h
-index 492b471..bd68802 100644
---- a/include/net/netns/xfrm.h
-+++ b/include/net/netns/xfrm.h
-@@ -2,6 +2,7 @@
- #define __NETNS_XFRM_H
+diff --git a/net/xfrm/xfrm_policy.c b/net/xfrm/xfrm_policy.c
+index 7c7bb54..fcf8c92 100644
+--- a/net/xfrm/xfrm_policy.c
++++ b/net/xfrm/xfrm_policy.c
+@@ -2441,9 +2441,23 @@ out_byidx:
  
- #include <linux/list.h>
-+#include <linux/workqueue.h>
+ static void xfrm_policy_fini(struct net *net)
+ {
++	struct xfrm_audit audit_info;
+ 	unsigned int sz;
+ 	int dir;
  
- struct netns_xfrm {
- 	struct list_head	state_all;
-@@ -18,6 +19,7 @@ struct netns_xfrm {
- 	struct hlist_head	*state_byspi;
- 	unsigned int		state_hmask;
- 	unsigned int		state_num;
-+	struct work_struct	state_hash_work;
- };
++	flush_work(&net->xfrm.policy_hash_work);
++#ifdef CONFIG_XFRM_SUB_POLICY
++	audit_info.loginuid = -1;
++	audit_info.sessionid = -1;
++	audit_info.secid = 0;
++	xfrm_policy_flush(net, XFRM_POLICY_TYPE_SUB, &audit_info);
++#endif
++	audit_info.loginuid = -1;
++	audit_info.sessionid = -1;
++	audit_info.secid = 0;
++	xfrm_policy_flush(net, XFRM_POLICY_TYPE_MAIN, &audit_info);
++	flush_work(&xfrm_policy_gc_work);
++
+ 	WARN_ON(!list_empty(&net->xfrm.policy_all));
  
- #endif
+ 	for (dir = 0; dir < XFRM_POLICY_MAX * 2; dir++) {
 diff --git a/net/xfrm/xfrm_state.c b/net/xfrm/xfrm_state.c
-index 7ecf6ee..1b2a72c 100644
+index d594b5a..662e47b 100644
 --- a/net/xfrm/xfrm_state.c
 +++ b/net/xfrm/xfrm_state.c
-@@ -109,16 +109,16 @@ static void xfrm_hash_transfer(struct hlist_head *list,
- 	}
- }
+@@ -2114,8 +2114,16 @@ out_bydst:
  
--static unsigned long xfrm_hash_new_size(void)
-+static unsigned long xfrm_hash_new_size(unsigned int state_hmask)
+ void xfrm_state_fini(struct net *net)
  {
--	return ((init_net.xfrm.state_hmask + 1) << 1) *
--		sizeof(struct hlist_head);
-+	return ((state_hmask + 1) << 1) * sizeof(struct hlist_head);
- }
++	struct xfrm_audit audit_info;
+ 	unsigned int sz;
  
- static DEFINE_MUTEX(hash_resize_mutex);
++	flush_work(&net->xfrm.state_hash_work);
++	audit_info.loginuid = -1;
++	audit_info.sessionid = -1;
++	audit_info.secid = 0;
++	xfrm_state_flush(net, IPSEC_PROTO_ANY, &audit_info);
++	flush_work(&net->xfrm.state_gc_work);
++
+ 	WARN_ON(!list_empty(&net->xfrm.state_all));
  
--static void xfrm_hash_resize(struct work_struct *__unused)
-+static void xfrm_hash_resize(struct work_struct *work)
- {
-+	struct net *net = container_of(work, struct net, xfrm.state_hash_work);
- 	struct hlist_head *ndst, *nsrc, *nspi, *odst, *osrc, *ospi;
- 	unsigned long nsize, osize;
- 	unsigned int nhashmask, ohashmask;
-@@ -126,7 +126,7 @@ static void xfrm_hash_resize(struct work_struct *__unused)
- 
- 	mutex_lock(&hash_resize_mutex);
- 
--	nsize = xfrm_hash_new_size();
-+	nsize = xfrm_hash_new_size(net->xfrm.state_hmask);
- 	ndst = xfrm_hash_alloc(nsize);
- 	if (!ndst)
- 		goto out_unlock;
-@@ -145,19 +145,19 @@ static void xfrm_hash_resize(struct work_struct *__unused)
- 	spin_lock_bh(&xfrm_state_lock);
- 
- 	nhashmask = (nsize / sizeof(struct hlist_head)) - 1U;
--	for (i = init_net.xfrm.state_hmask; i >= 0; i--)
--		xfrm_hash_transfer(init_net.xfrm.state_bydst+i, ndst, nsrc, nspi,
-+	for (i = net->xfrm.state_hmask; i >= 0; i--)
-+		xfrm_hash_transfer(net->xfrm.state_bydst+i, ndst, nsrc, nspi,
- 				   nhashmask);
- 
--	odst = init_net.xfrm.state_bydst;
--	osrc = init_net.xfrm.state_bysrc;
--	ospi = init_net.xfrm.state_byspi;
--	ohashmask = init_net.xfrm.state_hmask;
-+	odst = net->xfrm.state_bydst;
-+	osrc = net->xfrm.state_bysrc;
-+	ospi = net->xfrm.state_byspi;
-+	ohashmask = net->xfrm.state_hmask;
- 
--	init_net.xfrm.state_bydst = ndst;
--	init_net.xfrm.state_bysrc = nsrc;
--	init_net.xfrm.state_byspi = nspi;
--	init_net.xfrm.state_hmask = nhashmask;
-+	net->xfrm.state_bydst = ndst;
-+	net->xfrm.state_bysrc = nsrc;
-+	net->xfrm.state_byspi = nspi;
-+	net->xfrm.state_hmask = nhashmask;
- 
- 	spin_unlock_bh(&xfrm_state_lock);
- 
-@@ -170,8 +170,6 @@ out_unlock:
- 	mutex_unlock(&hash_resize_mutex);
- }
- 
--static DECLARE_WORK(xfrm_hash_work, xfrm_hash_resize);
--
- DECLARE_WAIT_QUEUE_HEAD(km_waitq);
- EXPORT_SYMBOL(km_waitq);
- 
-@@ -754,7 +752,7 @@ static void xfrm_hash_grow_check(int have_hash_collision)
- 	if (have_hash_collision &&
- 	    (init_net.xfrm.state_hmask + 1) < xfrm_state_hashmax &&
- 	    init_net.xfrm.state_num > init_net.xfrm.state_hmask)
--		schedule_work(&xfrm_hash_work);
-+		schedule_work(&init_net.xfrm.state_hash_work);
- }
- 
- struct xfrm_state *
-@@ -2089,6 +2087,7 @@ int __net_init xfrm_state_init(struct net *net)
- 	net->xfrm.state_hmask = ((sz / sizeof(struct hlist_head)) - 1);
- 
- 	net->xfrm.state_num = 0;
-+	INIT_WORK(&net->xfrm.state_hash_work, xfrm_hash_resize);
- 	INIT_WORK(&xfrm_state_gc_work, xfrm_state_gc_task);
- 	return 0;
- 
+ 	sz = (net->xfrm.state_hmask + 1) * sizeof(struct hlist_head);
 -- 
 1.5.6.5
