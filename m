@@ -1,25 +1,62 @@
-From: Steven Rostedt <rostedt@goodmis.org>
-Subject: Re: [PATCH 1/3] ftrace: add function tracing to single thread
-Date: Wed, 26 Nov 2008 00:01:08 -0500 (EST)
-Message-ID: <alpine.DEB.1.10.0811260000400.26424@gandalf.stny.rr.com>
-References: <20081125223421.795046329@goodmis.org> <20081125223456.976670734@goodmis.org> <20081125144221.66eb99ad.akpm@linux-foundation.org> <alpine.DEB.1.10.0811251800130.26424@gandalf.stny.rr.com> <20081125153104.ecdceed4.akpm@linux-foundation.org>
- <alpine.DEB.1.10.0811251909320.26424@gandalf.stny.rr.com> <1227660839.12109.52.camel@nimitz> <alpine.DEB.1.10.0811251956570.26424@gandalf.stny.rr.com> <m1zljndrb6.fsf@frodo.ebiederm.org>
+From: Andrey Mirkin <major-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+Subject: Re: [PATCH 2/2] Add support for in-kernel process creation during
+	restart
+Date: Wed, 26 Nov 2008 09:07:43 +0400
+Message-ID: <200811260807.45094.major__15215.5632772066$1227676290$gmane$org@openvz.org>
+References: <1227541175-30301-1-git-send-email-major@openvz.org>
+	<1227541175-30301-3-git-send-email-major@openvz.org>
+	<20081125004024.GA4440@x200.localdomain>
 Mime-Version: 1.0
-Content-Type: TEXT/PLAIN; charset=US-ASCII
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1752803AbYKZFBX@vger.kernel.org>
-In-Reply-To: <m1zljndrb6.fsf@frodo.ebiederm.org>
-Sender: linux-kernel-owner@vger.kernel.org
-To: "Eric W. Biederman" <ebiederm@xmission.com>
-Cc: Dave Hansen <dave@linux.vnet.ibm.com>, Andrew Morton <akpm@linux-foundation.org>, containers@lists.osdl.org, fweisbec@gmail.com, Ingo Molnar <mingo@elte.hu>, LKML <linux-kernel@vger.kernel.org>, srostedt@redhat.com, Sukadev Bhattiprolu <sukadev@linux.vnet.ibm.com>, "Serge E. Hallyn" <serue@us.ibm.com>
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <20081125004024.GA4440-2ev+ksY9ol182hYKe6nXyg@public.gmane.org>
+Content-Disposition: inline
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Andrey Mirkin <major-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
+On Tuesday 25 November 2008 03:45 Alexey Dobriyan wrote:
+> On Mon, Nov 24, 2008 at 06:39:35PM +0300, Andrey Mirkin wrote:
+> > +static int cr_rstr_task_struct(struct cr_ctx *ctx, struct cr_hdr_task
+> > *ht) +{
+> > +	struct task_struct *t = current;
+> > +	char *buf;
+> > +	int ret = -EINVAL;
+> > +
+> > +	/* upper limit for task_comm_len to prevent DoS */
+> > +	if (ht->task_comm_len < 0 || ht->task_comm_len > PAGE_SIZE)
+> > +		goto out;
+> > +
+> > +	buf = kmalloc(ht->task_comm_len, GFP_KERNEL);
+> > +	if (!buf)
+> > +		goto out;
+> > +	ret = cr_read_string(ctx, buf, ht->task_comm_len);
+> > +	if (!ret) {
+> > +		/* if t->comm is too long, silently truncate */
+> > +		memset(t->comm, 0, TASK_COMM_LEN);
+> > +		memcpy(t->comm, buf, min(ht->task_comm_len, TASK_COMM_LEN));
+> > +	}
+> > +	kfree(buf);
+> > +
+> > +	/* FIXME: restore remaining relevant task_struct fields */
+> > +out:
+> > +	return ret;
+> > +}
+>
+> ->comm is only 16 bytes wide, you can just use on-stack variable.
+Yes, you right here.
+But who knows how it can be changed later.
+Also we have almost the same function for process restore from user space.
+In next version I will use it instead of introducing new one.
 
-
-On Tue, 25 Nov 2008, Eric W. Biederman wrote:
-
-> 
-> 
-
-I'm speechless too.
-
--- Steve
+Andrey
