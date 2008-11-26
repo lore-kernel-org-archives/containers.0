@@ -1,11 +1,11 @@
 From: Sukadev Bhattiprolu <sukadev@linux.vnet.ibm.com>
-Subject: [RFC][PATCH 1/5] pid: Implement ns_of_pid
-Date: Tue, 25 Nov 2008 19:44:42 -0800
-Message-ID: <20081126034442.GA23238@us.ibm.com>
+Subject: [RFC][PATCH 2/5] pid: Generalize task_active_pid_ns
+Date: Tue, 25 Nov 2008 19:45:28 -0800
+Message-ID: <20081126034528.GB23238@us.ibm.com>
 References: <20081126034242.GA23120@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1754162AbYKZDpL@vger.kernel.org>
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1754345AbYKZDpx@vger.kernel.org>
 Content-Disposition: inline
 In-Reply-To: <20081126034242.GA23120@us.ibm.com>
 Sender: linux-kernel-owner@vger.kernel.org
@@ -13,53 +13,87 @@ To: oleg@redhat.com, ebiederm@xmission.com, roland@redhat.com
 Cc: daniel@hozac.com, xemul@openvz.org, containers@lists.osdl.org, linux-kernel@vger.kernel.org, sukadev@us.ibm.com
 List-Id: containers.vger.kernel.org
 
-From f3dd53544a8a7a1c43009f686cbadec561e5a489 Mon Sep 17 00:00:00 2001
-From: Sukadev Bhattiprolu <sukadev@linux.vnet.ibm.com>
-Date: Mon, 10 Nov 2008 19:03:56 -0800
-Subject: [PATCH 1/5] pid: Implement ns_of_pid
 
-A current problem with the pid namespace is that it is
-easy to do pid related work after exit_task_namespaces which
-drops the nsproxy pointer.
+From 7f7caaa9d9014d7230dc0b1e0f75536f0b6ccdbf Mon Sep 17 00:00:00 2001
+From: Eric W. Biederman <ebiederm@xmission.com>
+Date: Mon, 10 Nov 2008 19:12:02 -0800
+Subject: [PATCH 2/5] pid: Generalize task_active_pid_ns
 
-However if we are doing pid namespace related work we are
-always operating on some struct pid which retains the pid_namespace
-pointer of the pid namespace it was allocated in.
+Currently task_active_pid_ns is not safe to call after a
+task becomes a zombie and exit_task_namespaces is called,
+as nsproxy becomes NULL.  By reading the pid namespace from
+the pid of the task we can trivially solve this problem at
+the cost of one extra memory read in what should be the
+same cacheline as we read the namespace from.
 
-So provide ns_of_pid which allows us to find the pid
-namespace a pid was allocated in.
+When moving things around I have made task_active_pid_ns
+out of line because keeping it in pid_namespace.h would
+require adding includes of pid.h and sched.h that I
+don't think we want.
 
-Using this we have the needed infrastructure to do pid
-namespace related work at anytime we have a struct pid,
-removing the chance of accidentally having a NULL
-pointer dereference when accessing current->nsproxy.
+This change does make task_active_pid_ns unsafe to call during
+copy_process until we attach a pid on the task_struct which
+seems to be a reasonable trade off.
 
 Signed-off-by: Eric W. Biederman <ebiederm@xmission.com>
 ---
- include/linux/pid.h |   11 +++++++++++
- 1 files changed, 11 insertions(+), 0 deletions(-)
+ include/linux/pid_namespace.h |    6 +-----
+ kernel/fork.c                 |    4 ++--
+ kernel/pid.c                  |    6 ++++++
+ 3 files changed, 9 insertions(+), 7 deletions(-)
 
-diff --git a/include/linux/pid.h b/include/linux/pid.h
-index d7e98ff..e9aec85 100644
---- a/include/linux/pid.h
-+++ b/include/linux/pid.h
-@@ -122,6 +122,17 @@ int next_pidmap(struct pid_namespace *pid_ns, int last);
- extern struct pid *alloc_pid(struct pid_namespace *ns);
- extern void free_pid(struct pid *pid);
+diff --git a/include/linux/pid_namespace.h b/include/linux/pid_namespace.h
+index d82fe82..38d1032 100644
+--- a/include/linux/pid_namespace.h
++++ b/include/linux/pid_namespace.h
+@@ -79,11 +79,7 @@ static inline void zap_pid_ns_processes(struct pid_namespace *ns)
+ }
+ #endif /* CONFIG_PID_NS */
  
-+/* ns_of_pid returns the pid namespace in which the specified
-+ * pid was allocated.
-+ */
-+static inline struct pid_namespace *ns_of_pid(struct pid *pid)
+-static inline struct pid_namespace *task_active_pid_ns(struct task_struct *tsk)
+-{
+-	return tsk->nsproxy->pid_ns;
+-}
+-
++extern struct pid_namespace *task_active_pid_ns(struct task_struct *tsk);
+ void pidhash_init(void);
+ void pidmap_init(void);
+ 
+diff --git a/kernel/fork.c b/kernel/fork.c
+index f608356..28be39a 100644
+--- a/kernel/fork.c
++++ b/kernel/fork.c
+@@ -1111,12 +1111,12 @@ static struct task_struct *copy_process(unsigned long clone_flags,
+ 
+ 	if (pid != &init_struct_pid) {
+ 		retval = -ENOMEM;
+-		pid = alloc_pid(task_active_pid_ns(p));
++		pid = alloc_pid(p->nsproxy->pid_ns);
+ 		if (!pid)
+ 			goto bad_fork_cleanup_io;
+ 
+ 		if (clone_flags & CLONE_NEWPID) {
+-			retval = pid_ns_prepare_proc(task_active_pid_ns(p));
++			retval = pid_ns_prepare_proc(p->nsproxy->pid_ns);
+ 			if (retval < 0)
+ 				goto bad_fork_free_pid;
+ 		}
+diff --git a/kernel/pid.c b/kernel/pid.c
+index 064e76a..c5513fe 100644
+--- a/kernel/pid.c
++++ b/kernel/pid.c
+@@ -474,6 +474,12 @@ pid_t task_session_nr_ns(struct task_struct *tsk, struct pid_namespace *ns)
+ }
+ EXPORT_SYMBOL(task_session_nr_ns);
+ 
++struct pid_namespace *task_active_pid_ns(struct task_struct *tsk)
 +{
-+	struct pid_namespace *ns = NULL;
-+	if (pid)
-+		ns = pid->numbers[pid->level].ns;
-+	return ns;
++	return ns_of_pid(task_pid(tsk));
 +}
++EXPORT_SYMBOL_GPL(task_active_pid_ns);
 +
  /*
-  * the helpers to get the pid's id seen from different namespaces
+  * Used by proc to find the first pid that is greater then or equal to nr.
   *
 -- 
 1.5.2.5
