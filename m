@@ -1,69 +1,65 @@
 From: Sukadev Bhattiprolu <sukadev@linux.vnet.ibm.com>
-Subject: [RFC][PATCH 0/5] Container init signal semantics
-Date: Tue, 25 Nov 2008 19:42:42 -0800
-Message-ID: <20081126034242.GA23120@us.ibm.com>
+Subject: [RFC][PATCH 1/5] pid: Implement ns_of_pid
+Date: Tue, 25 Nov 2008 19:44:42 -0800
+Message-ID: <20081126034442.GA23238@us.ibm.com>
+References: <20081126034242.GA23120@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1754112AbYKZDnP@vger.kernel.org>
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1754162AbYKZDpL@vger.kernel.org>
 Content-Disposition: inline
+In-Reply-To: <20081126034242.GA23120@us.ibm.com>
 Sender: linux-kernel-owner@vger.kernel.org
 To: oleg@redhat.com, ebiederm@xmission.com, roland@redhat.com
 Cc: daniel@hozac.com, xemul@openvz.org, containers@lists.osdl.org, linux-kernel@vger.kernel.org, sukadev@us.ibm.com
 List-Id: containers.vger.kernel.org
 
+From f3dd53544a8a7a1c43009f686cbadec561e5a489 Mon Sep 17 00:00:00 2001
+From: Sukadev Bhattiprolu <sukadev@linux.vnet.ibm.com>
+Date: Mon, 10 Nov 2008 19:03:56 -0800
+Subject: [PATCH 1/5] pid: Implement ns_of_pid
 
-Container-init must behave like global-init to processes within the
-container and hence it must be immune to unhandled fatal signals from
-within the container (i.e SIG_DFL signals that terminate the process).
+A current problem with the pid namespace is that it is
+easy to do pid related work after exit_task_namespaces which
+drops the nsproxy pointer.
 
-But the same container-init must behave like a normal process to 
-processes in ancestor namespaces and so if it receives the same fatal
-signal from a process in ancestor namespace, the signal must be
-processed.
+However if we are doing pid namespace related work we are
+always operating on some struct pid which retains the pid_namespace
+pointer of the pid namespace it was allocated in.
 
-Further, since processes don't have a valid pid numbers in a descendant
-pid namespaces, the siginfo->si_pid field must be set to 0.
+So provide ns_of_pid which allows us to find the pid
+namespace a pid was allocated in.
 
-Implementing these semantics requires that send_signal() determine pid
-namespace of the sender but since signals can originate from workqueues/
-interrupt-handlers, determining pid namespace of sender may not always
-be possible or safe.
+Using this we have the needed infrastructure to do pid
+namespace related work at anytime we have a struct pid,
+removing the chance of accidentally having a NULL
+pointer dereference when accessing current->nsproxy.
 
-This patchset implements the design/simplified semantics suggested by
-Oleg Nesterov.  These semantics are:
+Signed-off-by: Eric W. Biederman <ebiederm@xmission.com>
+---
+ include/linux/pid.h |   11 +++++++++++
+ 1 files changed, 11 insertions(+), 0 deletions(-)
 
-	- container-init must never be terminated by a signal from a
-	  descendant process.
-
-	- container-init must never be immune to SIGKILL from an ancestor
-	  namespace (so a process in parent namespace must always be able
-	  to terminate a descendant container).
-
-	- container-init may be immune to unhandled fatal signals (like
-	  SIGUSR1) even if they are from ancestor namespace (SIGKILL is
-	  the only reliable signal from ancestor namespace).
-
-Patches in this set:
-
-	[PATCH 1/5] pid: Implement ns_of_pid
-	[PATCH 2/5] pid: Generalize task_active_pid_ns
-	[PATCH 3/5] Determine if sender is from ancestor ns
-	[PATCH 4/5] Protect cinit from fatal signals
-	[PATCH 5/5] Clear si_pid for signal from ancestor ns
-
-TODO:
-	- SIGSTOP and ptrace functionality to be reviewed/fixed.
-
-	- siginfo->si_pid may need to be cleared in a few more places
-	  (eg; __do_notify(), F_SETSIG ?).
-
-Limitations/side-effects of current design
-
-	- Container-init is immune to suicide - kill(getpid(), SIGKILL) is
-	  ignored. Use exit() :-)
-
-	- rt_sigqueueinfo(): siginfo->si_pid value is unreliable/undefined
-	  when rt_sigqueueinfo() is used to signal a process in a descendant
-	  namespace
-
-Signed-off-by: Sukadev Bhattiprolu <sukadev@linux.vnet.ibm.com>
+diff --git a/include/linux/pid.h b/include/linux/pid.h
+index d7e98ff..e9aec85 100644
+--- a/include/linux/pid.h
++++ b/include/linux/pid.h
+@@ -122,6 +122,17 @@ int next_pidmap(struct pid_namespace *pid_ns, int last);
+ extern struct pid *alloc_pid(struct pid_namespace *ns);
+ extern void free_pid(struct pid *pid);
+ 
++/* ns_of_pid returns the pid namespace in which the specified
++ * pid was allocated.
++ */
++static inline struct pid_namespace *ns_of_pid(struct pid *pid)
++{
++	struct pid_namespace *ns = NULL;
++	if (pid)
++		ns = pid->numbers[pid->level].ns;
++	return ns;
++}
++
+ /*
+  * the helpers to get the pid's id seen from different namespaces
+  *
+-- 
+1.5.2.5
