@@ -1,15 +1,17 @@
-From: Andrey Mirkin <major-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
-Subject: Re: [PATCH 0/2] In-kernel process restart
-Date: Wed, 26 Nov 2008 15:44:24 +0400
-Message-ID: <200811261444.26345.major__6627.06913794882$1227700013$gmane$org@openvz.org>
-References: <1227541175-30301-1-git-send-email-major@openvz.org>
-	<492C59DD.5070401@cs.columbia.edu>
+From: Fernando Luis =?ISO-8859-1?Q?V=E1zquez?= Cao <fernando-gVGce1chcLdL9jVzuh4AOg@public.gmane.org>
+Subject: Re: [patch 0/4] [RFC] Another proportional weight IO controller
+Date: Wed, 26 Nov 2008 20:55:04 +0900
+Message-ID: <1227700504.12997.398.camel__47606.1720903546$1227700647$gmane$org@sebastian.kern.oss.ntt.co.jp>
+References: <20081113221304.GH7542@redhat.com>
+	<20081120.182053.220301508585579959.ryov@valinux.co.jp>
+	<20081120134701.GB29306@redhat.com>
+	<20081125.113359.623571555980951312.ryov@valinux.co.jp>
+	<20081125162720.GH341@redhat.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <492C59DD.5070401-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Content-Disposition: inline
+In-Reply-To: <20081125162720.GH341-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,51 +21,102 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Andrey Mirkin <major-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Cc: menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, riel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, fchecconi-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, paolo.valente-rcYM44yAMweonA0d6jMUrA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, virtualization-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, jmoyer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, jens.axboe-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, ngupta-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Tuesday 25 November 2008 23:02 Oren Laadan wrote:
-> Andrey Mirkin wrote:
-> > These patchset introduces OpenVZ kernel based restart procedure on top of
-> > Oren's checkpoint/restart patchset v9.
-> >
-> > For restarting a set of processes one will need to call sys_restart()
-> > once with new flag CR_CTX_RSTR_IN_KERNEL. All work will be done in kernel
-> > in this case.
-> >
-> > Small changes to image format are required to make in-kernel process
-> > creation more easy.
-> >
-> > Oren, please take a look on this patchset. I've tried to port OpenVZ
-> > functionality on top of yours with minimal changes.
->
-> Thanks, Andrey. The patch looks simple and good.
->
-> Did you look at my (user-space) process creation code ?  specifically, it
-> uses the task-pids array (that is saved during checkpoint) to figure out
-> how many children a task has to spawn and their corresponding pids.
-
-Yes, I've take a look on mktree tool. The algorithm of process creation is 
-quite clear.
-
-> Is there a particular reason that you chose not to use that data during
-> restart ?  eventually, you'll need to add the rest of it, too, to the task
-> data, like you did with the number of children in this patch.
-
-Agree, I'll rework my patchset to use already existing data.
-
-> Instead, since the data is available and the logic is available, we can
-> have each new thread call do_restart_task(), and the container init
-> should call do_restart_root().
->
-> What do you think ?  I can go ahead and make the changes on top of your
-> patch.
-
-I'll take a closer look on these functions and maybe we can use them for 
-created threads too. But from our experience during in-kernel process 
-creation and restore it is needed to perfrorm some restore procedures when 
-process is inactive. That is why I think we can't reuse all existing code for 
-in-kernel restart. Anyway I'll check everything once again.
-
-Andrey
+T24gVHVlLCAyMDA4LTExLTI1IGF0IDExOjI3IC0wNTAwLCBWaXZlayBHb3lhbCB3cm90ZToKPiBP
+biBUdWUsIE5vdiAyNSwgMjAwOCBhdCAxMTozMzo1OUFNICswOTAwLCBSeW8gVHN1cnV0YSB3cm90
+ZToKPiA+IEhpIFZpdmVrLAo+ID4gCj4gPiA+ID4gPiBSeW8sIGRvIHlvdSBzdGlsbCB3YW50IHRv
+IHN0aWNrIHRvIHR3byBsZXZlbCBzY2hlZHVsaW5nPyBHaXZlbiB0aGUgcHJvYmxlbQo+ID4gPiA+
+ID4gb2YgaXQgYnJlYWtpbmcgZG93biB1bmRlcmx5aW5nIHNjaGVkdWxlcidzIGFzc3VtcHRpb25z
+LCBwcm9iYWJseSBpdCBtYWtlcwo+ID4gPiA+ID4gbW9yZSBzZW5zZSB0byB0aGUgSU8gY29udHJv
+bCBhdCBlYWNoIGluZGl2aWR1YWwgSU8gc2NoZWR1bGVyLgo+ID4gPiA+IAo+ID4gPiA+IEkgZG9u
+J3Qgd2FudCB0byBzdGljayB0byBpdC4gSSdtIGNvbnNpZGVyaW5nIGltcGxlbWVudGluZyBkbS1p
+b2JhbmQncwo+ID4gPiA+IGFsZ29yaXRobSBpbnRvIHRoZSBibG9jayBJL08gbGF5ZXIgZXhwZXJp
+bWVudGFsbHkuCj4gPiA+IAo+ID4gPiBUaGFua3MgUnlvLiBJbXBsZW1lbnRpbmcgYSBjb250cm9s
+IGF0IGJsb2NrIGxheWVyIHNvdW5kcyBsaWtlIGFub3RoZXIKPiA+ID4gMiBsZXZlbCBzY2hlZHVs
+aW5nLiBXZSB3aWxsIHN0aWxsIGhhdmUgdGhlIGlzc3VlIG9mIGJyZWFraW5nIHVuZGVybHlpbmcK
+PiA+ID4gQ0ZRIGFuZCBvdGhlciBzY2hlZHVsZXJzLiBIb3cgdG8gcGxhbiB0byByZXNvbHZlIHRo
+YXQgY29uZmxpY3QuCj4gPiAKPiA+IEkgdGhpbmsgdGhlcmUgaXMgbm8gY29uZmxpY3QgYWdhaW5z
+dCBJL08gc2NoZWR1bGVycy4KPiA+IENvdWxkIHlvdSBleHBhaW4gdG8gbWUgYWJvdXQgdGhlIGNv
+bmZsaWN0Pwo+IAo+IEJlY2F1c2Ugd2UgZG8gdGhlIGJ1ZmZlcmluZyBhdCBoaWdoZXIgbGV2ZWwg
+c2NoZWR1bGVyIGFuZCBtb3N0bHkgcmVsZWFzZQo+IHRoZSBidWZmZXJlZCBiaW9zIGluIHRoZSBG
+SUZPIG9yZGVyLCBpdCBtaWdodCBicmVhayB0aGUgdW5kZXJseWluZyBJTwo+IHNjaGVkdWxlcnMu
+IEdlbmVyYWxseSBpdCBpcyB0aGUgZGVjaXNpb24gb2YgSU8gc2NoZWR1bGVyIHRvIGRldGVybWlu
+ZSBpbgo+IHdoYXQgb3JkZXIgdG8gcmVsZWFzZSBidWZmZXJlZCBiaW9zLgoKSXQgY291bGQgYmUg
+YXJndWVkIHRoYXQgdGhlIElPIHNjaGVkdWxlcidzIHByaW1hcnkgZ29hbCBpcyB0byBtYXhpbWl6
+ZQp1c2FnZSBvZiB0aGUgdW5kZXJseWluZyBkZXZpY2UgYWNjb3JkaW5nIHRvIGl0cyBwaHlzaWNh
+bApjaGFyYWN0ZXJpc3RpY3MuIEZvciBoYXJkIGRpc2tzIHRoaXMgbWF5IGltcGx5IG1pbmltaXpp
+bmcgdGltZSB3YXN0ZWQgYnkKc2Vla3M7IG90aGVyIHR5cGVzIG9mIGRldmljZXMsIHN1Y2ggYXMg
+U1NEcywgbWF5IGltcG9zZSBkaWZmZXJlbnQKcmVxdWlyZW1lbnRzLiBUaGlzIGlzIHNvbWV0aGlu
+ZyB0aGF0IGNsZWFybHkgYmVsb25ncyBpbiB0aGUgZWxldmF0b3IuIE9uCnRoZSBvdGhlciBoYW5k
+LCBpdCBjb3VsZCBiZSBhcmd1ZWQgdGhhdCBvdGhlciBub24taGFyZHdhcmUtcmVsYXRlZApzY2hl
+ZHVsaW5nIGRpc2NpcGxpbmVzIHdvdWxkIGZpdCBiZXR0ZXIgaW4gaGlnaGVyIGxheWVycy4KClRo
+YXQgc2FpZCwgYXMgeW91IHBvaW50ZWQgb3V0IHN1Y2ggc2VwYXJhdGlvbiBjb3VsZCBpbXBhY3Qg
+cGVyZm9ybWFuY2UsCnNvIHdlIHdpbGwgcHJvYmFibHkgbmVlZCB0byBpbXBsZW1lbnQgYSBmZWVk
+YmFjayBtZWNoYW5pc20gYmV0d2VlbiB0aGUKZWxldmF0b3IsIHdoaWNoIGNvdWxkIGNvbGxlY3Qg
+c3RhdGlzdGljcyBhbmQgcHJvdmlkZSBoaW50cywgYW5kIHRoZQp1cHBlciBsYXllcnMuIFRoZSBl
+bGV2YXRvciBBUEkgbG9va3MgbGlrZSBhIGdvb2QgY2FuZGlkYXRlIGZvciB0aGlzLAp0aG91Z2gg
+bmV3IGZ1bmN0aW9ucyBtaWdodCBiZSBuZWVkZWQuCgo+IEZvciBleGFtcGxlLCBJZiB0aGVyZSBp
+cyBvbmUgdGFzayBvZiBpbyBwcmlvcml0eSAwIGluIGEgY2dyb3VwIGFuZCByZXN0IG9mCj4gdGhl
+IHRhc2tzIGFyZSBvZiBpbyBwcmlvIDcuIEFsbCB0aGUgdGFza3MgYmVsb25nIHRvIGJlc3QgZWZm
+b3J0IGNsYXNzLiBJZgo+IHRhc2tzIG9mIGxvd2VyIHByaW9yaXR5ICg3KSBkbyBsb3Qgb2YgSU8s
+IHRoZW4gZHVlIHRvIGJ1ZmZlcmluZyB0aGVyZSBpcwo+IGEgY2hhbmNlIHRoYXQgSU8gZnJvbSBs
+b3dlciBwcmlvIHRhc2tzIGlzIHNlZW4gYnkgQ0ZRIGZpcnN0IGFuZCBpbyBmcm9tCj4gaGlnaGVy
+IHByaW8gdGFzayBpcyBub3Qgc2VlbiBieSBjZnEgZm9yIHF1aXRlIHNvbWUgdGltZSBoZW5jZSB0
+aGF0IHRhc2sKPiBub3QgZ2V0dGluZyBpdCBmYWlyIHNoYXJlIHdpdGggaW4gdGhlIGNncm91cC4g
+U2ltaWxpYXIgc2l0dWF0aW9ucyBjYW4KPiBhcmlzZSB3aXRoIFJUIHRhc2tzIGFsc28uCgpXZWxs
+LCB0aGlzIGlzc3VlIGlzIG5vdCBpbnRyaW5zaWMgdG8gZG0tYmFuZCBhbmQgc2ltaWxhciBzb2x1
+dGlvbnMuIEluCnRoZSBzY2VuYXJpbyB5b3UgcG9pbnQgb3V0IHRoZSBwcm9ibGVtIGlzIHRoYXQg
+dGhlIGVsZXZhdG9yIGFuZCB0aGUgSU8KY29udHJvbGxlciBhcmUgbm90IGNvb3BlcmF0aW5nLiBU
+aGUgc2FtZSBjb3VsZCBoYXBwZW4gZXZlbiBpZiB3ZQppbXBsZW1lbnRlZCBldmVyeXRoaW5nIGF0
+IHRoZSBlbGV2YXRvciBsYXllciAob3IgYSBsaXR0bGUgYWJvdmUpOiBnZXQKaGllcmFyY2hpY2Fs
+IHNjaGVkdWxpbmcgd3JvbmcgYW5kIHlvdSBhcmUgbGlrZWx5IHRvIGhhdmUgYSByb3VnaCByaWRl
+LgoKQkZRIGRlYWxzIHdpdGggaGllcmFyY2hpY2FsIHNjaGVkdWxpbmcgYXQganVzdCBvbmUgbGF5
+ZXIgd2hpY2ggbWFrZXMKdGhpbmdzIGVhc2llci4gQkZRIGNob3NlIHRoZSBlbGV2YXRvciBsYXll
+ciwgYnV0IGEgc2ltaWxhciBzY2hlZHVsaW5nCmRpc2NpcGxpbmUgY291bGQgYmUgaW1wbGVtZW50
+ZWQgaGlnaGVyIGluIHRoZSBibG9jayBsYXllciB0b28uIFRoZSBIVwpzcGVjaWZpYy1iaXRzIHdl
+IGNhbm5vdCB0YWtlIG91dCB0aGUgZWxldmF0b3IsIGJ1dCB3aGVuIGl0IGNvbWVzIHRvCnRhc2sv
+Y2dyb3VwIGJhc2VkIHNjaGVkdWxpbmcgdGhlcmUgYXJlIG1vcmUgcG9zc2liaWxpdGllcywgd2hp
+Y2gKaW5jbHVkZXMgdGhlIG1pZGRsZS13YXkgYXBwcm9hY2ggd2UgYXJlIGRpc2N1c3Npbmc6IHR3
+byBsZXZlbApzY2hlZHVsaW5nLgoKVGhlIHR3byBsZXZlbCBtb2RlbCBpcyBub3QgYmFkIHBlciBz
+ZSwgd2UganVzdCBuZWVkIHRvIGdldCB0aGUgdHdvCmxldmVscyB0byB3b3JrIGluIHVuaXNvbiBh
+bmQgZm9yIHRoYXQgd2Ugd2lsbCBjZXJ0YWlubHkgbmVlZCB0byBtYWtlCmNoYW5nZXMgdG8gdGhl
+IGV4aXN0aW5nIGVsZXZhdG9ycy4KCj4gPiA+IFdoYXQgZG8geW91IHRoaW5rIGFib3V0IHRoZSBz
+b2x1dGlvbiBhdCBJTyBzY2hlZHVsZXIgbGV2ZWwgKGxpa2UgQkZRKSBvcgo+ID4gPiBtYXkgYmUg
+bGl0dGxlIGFib3ZlIHRoYXQgd2hlcmUgb25lIGNhbiB0cnkgc29tZSBjb2RlIHNoYXJpbmcgYW1v
+bmcgSU8KPiA+ID4gc2NoZWR1bGVycz8gCj4gPiAKPiA+IEkgd291bGQgbGlrZSB0byBzdXBwb3J0
+IGFueSB0eXBlIG9mIGJsb2NrIGRldmljZSBldmVuIGlmIEkvT3MgaXNzdWVkCj4gPiB0byB0aGUg
+dW5kZXJseWluZyBkZXZpY2UgZG9lc24ndCBnbyB0aHJvdWdoIElPIHNjaGVkdWxlci4gRG0taW9i
+YW5kCj4gPiBjYW4gYmUgbWFkZSB1c2Ugb2YgZm9yIHRoZSBkZXZpY2VzIHN1Y2ggYXMgbG9vcCBk
+ZXZpY2UuCj4gCj4gV2hhdCBkbyB5b3UgbWVhbiBieSB0aGF0IElPIGlzc3VlZCB0byB1bmRlcmx5
+aW5nIGRldmljZSBkb2VzIG5vdCBnbwo+IHRocm91Z2ggSU8gc2NoZWR1bGVyPyBsb29wIGRldmlj
+ZSB3aWxsIGJlIGFzc29jaWF0ZWQgd2l0aCBhIGZpbGUgYW5kCj4gSU8gd2lsbCB1bHRpbWF0ZWx5
+IGdvIHRvIHRoZSBJTyBzY2hlZHVsZXIgd2hpY2ggaXMgc2VydmluZyB0aG9zZSBmaWxlCj4gYmxv
+Y2tzPwoKSSB0aGluayB0aGF0IFRzdXJ1dGEtc2FuJ3MgcG9pbnQgaXMgdGhhdCB0aGUgbG9vcCBk
+ZXZpY2UgZHJpdmVyIHVzZXMgaXRzCm93biBtYWtlX3JlcXVlc3RfZm4gd2hpY2ggbWVhbnMgdGhh
+dCBiaW9zIGVudGVyaW5nIGEgbG9vcCBkZXZpY2UgZG8gbm90Cm5lY2Vzc2FyaWx5IGdvIHRocm91
+Z2ggYSBJTyBzY2hlZHVsZXIgYWZ0ZXIgdGhhdC4KCldlIHdpbGwgYWx3YXlzIGZpbmQgb3Vyc2Vs
+dmVzIGluIHRoaXMgc2l0dWF0aW9uIHdoZW4gdHJ5aW5nIHRvIG1hbmFnZQpkZXZpY2VzIHRoYXQg
+cHJvdmlkZSB0aGVpciBvd24gbWFrZV9yZXF1ZXN0X2ZuLCB0aGUgcmVhc29uIGJlaW5nIHRoYXQK
+aXRzIGJlaGF2aW9yIGlzIGRyaXZlciBhbmQgY29uZmlndXJhdGlvbiBkZXBlbmRlbnQ6IGluIHRo
+ZSBsb29wIGRldmljZQpjYXNlIHdoZXRoZXIgd2UgZ28gdGhyb3VnaCBhIElPIHNjaGVkdWxlciBv
+ciBub3QgZGVwZW5kcyBvbiB3aGF0IGhhcwpiZWVuIGF0dGFjaGVkIHRvIGl0OyBpbiBzdGFja2lu
+ZyBkZXZpY2UgY29uZmlndXJhdGlvbnMgdGhlIGVmZmVjdCB0aGF0CnRoZSBJTyBzY2hlZHVsaW5n
+IGF0IG9uZSBvZiB0aGUgZGV2aWNlcyB0aGF0IGNvbnN0aXR1dGUgdGhlIG11bHRpLWRldmljZQp3
+aWxsIGhhdmUgaW4gdGhlIGFnZ3JlZ2F0ZSB0aHJvdWdocHV0IGRlcGVuZHMgb24gdGhlIHRvcG9s
+b2d5LgoKVGhlIG9ubHkgd2F5IEkgY2FuIHRoaW5rIG9mIHRvIGFkZHJlc3MgYWxsIGNhc2VzIGlu
+IGEgc2FuZSB3YXkgaXMKY29udHJvbGxpbmcgdGhlIGVudHJ5IHBvaW50IHRvIHRoZSBibG9jayBs
+YXllciwgd2hpY2ggaXMgcHJlY2lzZWx5IHdoYXQKZG0tYmFuZCBkb2VzLgoKVGhlIHByb2JsZW0g
+d2l0aCBkbS1iYW5kIGlzIHRoYXQgaXQgcmVsaWVzIG9uIHRoZSBkbSBpbmZyYXN0cnVjdHVyZS4g
+SW4KbXkgb3BpbmlvbiwgaWYgd2UgY291bGQgcmVtb3ZlIHRoYXQgZGVwZW5kZW5jeSBpdCB3b3Vs
+ZCBiZSBhIGh1Z2Ugc3RlcAppbiB0aGUgcmlnaHQgZGlyZWN0aW9uLgoKPiBXaGF0J3MgdGhlIHVz
+ZSBjYXNlIHNjZW5hcmlvIG9mIGRvaW5nIElPIGNvbnRyb2wgYXQgbG9vcCBkZXZpY2U/CgpNeSBn
+dWVzcyBpcyB2aXJ0dWFsaXplZCBtYWNoaW5lcyB1c2luZyBpbWFnZXMgZXhwb3J0ZWQgYXMgbG9v
+cCBkZXZpY2VzIMOgCmxhIFhlbidzIGJsa3RhcCAoYmxrdGFwJ3MgaW1wbGVtZW50YXRpb24gaXMg
+cXVpdGUgZGlmZmVyZW50IGZyb20gTGludXgnCmxvb3AgZGV2aWNlLCB0aG91Z2gpLgoKVGhhbmtz
+LAoKRmVybmFuZG8KCl9fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19f
+X19fCkNvbnRhaW5lcnMgbWFpbGluZyBsaXN0CkNvbnRhaW5lcnNAbGlzdHMubGludXgtZm91bmRh
+dGlvbi5vcmcKaHR0cHM6Ly9saXN0cy5saW51eC1mb3VuZGF0aW9uLm9yZy9tYWlsbWFuL2xpc3Rp
+bmZvL2NvbnRhaW5lcnM=
