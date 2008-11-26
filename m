@@ -1,53 +1,61 @@
-From: Sukadev Bhattiprolu <sukadev@linux.vnet.ibm.com>
-Subject: [RFC][PATCH 5/5] Clear si_pid for signal from ancestor ns
-Date: Tue, 25 Nov 2008 19:46:56 -0800
-Message-ID: <20081126034656.GE23238@us.ibm.com>
-References: <20081126034242.GA23120@us.ibm.com>
+From: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Subject: Re: [PATCH 03/53] netns xfrm: add struct xfrm_state::xs_net
+Date: Wed, 26 Nov 2008 07:25:02 +0300
+Message-ID: <20081126042502.GA2549__14223.4244420708$1227673408$gmane$org@x200.localdomain>
+References: <1227634045-27534-1-git-send-email-adobriyan@gmail.com>
+	<1227634045-27534-2-git-send-email-adobriyan@gmail.com>
+	<1227634045-27534-3-git-send-email-adobriyan@gmail.com>
+	<20081125.171536.03980167.davem@davemloft.net>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1754617AbYKZDr1@vger.kernel.org>
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <20081126034242.GA23120@us.ibm.com>
-Sender: linux-kernel-owner@vger.kernel.org
-To: oleg@redhat.com, ebiederm@xmission.com, roland@redhat.com
-Cc: daniel@hozac.com, xemul@openvz.org, containers@lists.osdl.org, linux-kernel@vger.kernel.org, sukadev@us.ibm.com
+In-Reply-To: <20081125.171536.03980167.davem-fT/PcQaiUtIeIZ0/mPfg9Q@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: David Miller <davem-fT/PcQaiUtIeIZ0/mPfg9Q@public.gmane.org>
+Cc: kuznet-v/Mj1YrvjDBInbfyfbPRSQ@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, herbert-lOAM2aK0SrRLBo1qDEOMRrpzq4S04n8Q@public.gmane.org, netdev-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
+On Tue, Nov 25, 2008 at 05:15:36PM -0800, David Miller wrote:
+> From: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+> Date: Tue, 25 Nov 2008 20:26:35 +0300
+> 
+> > To avoid unnecessary complications with passing netns around.
+> > 
+> > * set once, very early after allocating
+> > * once set, never changes
+> > 
+> > For a while create every xfrm_state in init_net.
+> > 
+> > Signed-off-by: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+> 
+> Applied.
+> 
+> > @@ -223,6 +226,11 @@ struct xfrm_state
+> >  	void			*data;
+> >  };
+> >  
+> > +static inline struct net *xs_net(struct xfrm_state *x)
+> > +{
+> > +	return read_pnet(&x->xs_net);
+> > +}
+> > +
+> >  /* xflags - make enum if more show up */
+> 
+> Look mom, no ifdefs!  Amazing!
 
-From 9885a182bd9feeeb85abf7b2e09340e392ebf43d Mon Sep 17 00:00:00 2001
-From: Sukadev Bhattiprolu <sukadev@linux.vnet.ibm.com>
-Date: Tue, 25 Nov 2008 11:04:34 -0800
-Subject: [PATCH 5/5] Clear si_pid for signal from ancestor ns
+There're gone and won't return, honey.
 
-Since processes don't have valid pid numbers in a descendant pid namespaces,
-the siginfo->si_pid field must be set to 0 when signal is sent from an
-ancestor namespace.
+In fact, I don't like pnet only a little now and thinking about:
 
-TODO:
-	- siginfo->si_pid may need to be cleared in other locations (eg:
-	  __do_notify(), F_SETSIG) and will be addressed in separate patches.
-
-	- rt_sigqueueinfo(): siginfo->si_pid value is unreliable/undefined
-	  when rt_sigqueueinfo() is used to signal a process in a descendant
-	  namespace
-
-Signed-off-by: Sukadev Bhattiprolu <sukadev@linux.vnet.ibm.com>
----
- kernel/signal.c |    2 ++
- 1 files changed, 2 insertions(+), 0 deletions(-)
-
-diff --git a/kernel/signal.c b/kernel/signal.c
-index 8c294c1..14eb986 100644
---- a/kernel/signal.c
-+++ b/kernel/signal.c
-@@ -881,6 +881,8 @@ static int send_signal(int sig, struct siginfo *info, struct task_struct *t,
- 		default:
- 			copy_siginfo(&q->info, info);
- 			q->info.si_signo &= ~SIG_FROM_USER;
-+			if (from_ancestor_ns)
-+				q->info.si_pid = 0;
- 			break;
- 		}
- 	} else if (!is_si_special(info)) {
--- 
-1.5.2.5
+	net = read_net(foo->foo_net);
+	write_net(foo->foo_net, net);
