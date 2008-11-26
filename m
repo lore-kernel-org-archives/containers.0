@@ -1,25 +1,82 @@
-From: Sukadev Bhattiprolu <sukadev@linux.vnet.ibm.com>
-Subject: Re: [RFC][PATCH][v2] Define/use siginfo_from_ancestor_ns()
-Date: Wed, 26 Nov 2008 09:44:39 -0800
-Message-ID: <20081126174439.GA427@us.ibm.com>
-References: <20081115212133.GA32140@us.ibm.com> <20081118175336.GA14178@redhat.com> <20081119012207.GA19092@us.ibm.com> <20081123231014.GA2424@redhat.com> <20081126031619.GA19756@us.ibm.com>
+From: Andrew Morton <akpm@linux-foundation.org>
+Subject: Re: [PATCH 2/5] ftrace: use code patching for ftrace graph tracer
+Date: Wed, 26 Nov 2008 10:02:55 -0800
+Message-ID: <20081126100255.d53f9347.akpm@linux-foundation.org>
+References: <20081126051622.134970943@goodmis.org>
+	<20081126051709.774546196@goodmis.org>
+	<20081125213546.ff4eddf4.akpm@linux-foundation.org>
+	<alpine.DEB.1.10.0811261144360.26743@gandalf.stny.rr.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1754409AbYKZRp3@vger.kernel.org>
-Content-Disposition: inline
-In-Reply-To: <20081126031619.GA19756@us.ibm.com>
+Content-Type: text/plain; charset=US-ASCII
+Content-Transfer-Encoding: 7bit
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1754734AbYKZSEV@vger.kernel.org>
+In-Reply-To: <alpine.DEB.1.10.0811261144360.26743@gandalf.stny.rr.com>
 Sender: linux-kernel-owner@vger.kernel.org
-To: Oleg Nesterov <oleg@redhat.com>
-Cc: ebiederm@xmission.com, daniel@hozac.com, xemul@openvz.org, containers@lists.osdl.org, linux-kernel@vger.kernel.org
+To: Steven Rostedt <rostedt@goodmis.org>
+Cc: linux-kernel@vger.kernel.org, Ingo Molnar <mingo@elte.hu>, Frederic Weisbecker <fweisbec@gmail.com>, containers@lists.osdl.org, Sukadev Bhattiprolu <sukadev@linux.vnet.ibm.com>, "Serge E. Hallyn" <serue@us.ibm.com>, "Eric W. Biederman" <ebiederm@xmission.com>, Steven Rostedt <srostedt@redhat.com>, Harvey Harrison <harvey.harrison@gmail.com>
 List-Id: containers.vger.kernel.org
 
-| |    Actually, I think this is enough to solve most problems,
-| |    the further changes can be discussed later. OK, the only
-| |    "real" problem is SIGSTOP, afaics. This looks solveable.
-| 
-| Yes, SIGSTOP even from parent is ignored due to the SIGNAL_UNKILLABLE
-| check in get_signal_to_deliver.
+On Wed, 26 Nov 2008 11:46:58 -0500 (EST) Steven Rostedt <rostedt@goodmis.org> wrote:
 
-Actually with sig_task_ignored() patch, http://lkml.org/lkml/2008/11/18/251
-SIGSTOP gets dropped early. To eventually allow SIGSTOP from ancestor ns,
-we need to pass 'from_ancestor_ns' into sig_ignored() ?
+> 
+> 
+> On Tue, 25 Nov 2008, Andrew Morton wrote:
+> 
+> > On Wed, 26 Nov 2008 00:16:24 -0500 Steven Rostedt <rostedt@goodmis.org> wrote:
+> > 
+> > > From: Steven Rostedt <rostedt@goodmis.org>
+> > > 
+> > > Impact: more efficient code for ftrace graph tracer
+> > > 
+> > > This patch uses the dynamic patching, when available, to patch
+> > > the function graph code into the kernel.
+> > > 
+> > > This patch will ease the way for letting both function tracing
+> > > and function graph tracing run together.
+> > > 
+> > > ...
+> > >
+> > > +static int ftrace_mod_jmp(unsigned long ip,
+> > > +			  int old_offset, int new_offset)
+> > > +{
+> > > +	unsigned char code[MCOUNT_INSN_SIZE];
+> > > +
+> > > +	if (probe_kernel_read(code, (void *)ip, MCOUNT_INSN_SIZE))
+> > > +		return -EFAULT;
+> > > +
+> > > +	if (code[0] != 0xe9 || old_offset != *(int *)(&code[1]))
+> > 
+> > erk.  I suspect that there's a nicer way of doing this amongst our
+> > forest of get_unaligned_foo() interfaces.  Harvey will know.
+> 
+> Hmm, I may be able to make a struct out of code.
+> 
+>   struct {
+> 	unsigned char op;
+> 	unsigned int  offset;
+>   } code __attribute__((packed));
+> 
+> Would that look better?
+
+nah, let's do something more generic for this.
+
+> > 
+> > > +		return -EINVAL;
+> > > +
+> > > +	*(int *)(&code[1]) = new_offset;
+> > 
+> > Might be able to use put_unaligned_foo() here.
+> > 
+> > The problem is that these functions use sizeof(*ptr) to work out what
+> > to do, so a cast is still needed.  A get_unaligned32(ptr) would be
+> > nice.  One which takes a void* and assumes CPU ordering.
+> 
+> Is there a correctness concern here? This is arch specific code, so I'm
+> not worried about other archs.
+
+No, the code is OK as-is.
+
+It's just that "read a word from an [maybe-]unaligned address" is such
+a common operation that there should be a nice clean simple function to
+do it, rather than doing open-coded (and different) weird C tricks at each
+and\ every site.
