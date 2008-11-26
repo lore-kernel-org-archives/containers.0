@@ -1,39 +1,44 @@
-From: Andrew Morton <akpm@linux-foundation.org>
-Subject: Re: [PATCH 5/5] ftrace: add cpu annotation for function graph
- tracer
-Date: Tue, 25 Nov 2008 21:55:28 -0800
-Message-ID: <20081125215528.eff18969.akpm@linux-foundation.org>
-References: <20081126051622.134970943@goodmis.org>
-	<20081126051710.339437727@goodmis.org>
-	<20081125213909.d4eb3f09.akpm@linux-foundation.org>
-	<20081126054728.GD9732@elte.hu>
+From: ebiederm@xmission.com (Eric W. Biederman)
+Subject: Re: [PATCH 1/3] ftrace: add function tracing to single thread
+Date: Tue, 25 Nov 2008 22:23:16 -0800
+Message-ID: <m1abbnc8ff.fsf@frodo.ebiederm.org>
+References: <20081125223421.795046329@goodmis.org>
+	<20081125223456.976670734@goodmis.org>
+	<20081125144221.66eb99ad.akpm@linux-foundation.org>
+	<alpine.DEB.1.10.0811251800130.26424@gandalf.stny.rr.com>
+	<20081125153104.ecdceed4.akpm@linux-foundation.org>
+	<alpine.DEB.1.10.0811251909320.26424@gandalf.stny.rr.com>
+	<1227660839.12109.52.camel@nimitz>
+	<alpine.DEB.1.10.0811251956570.26424@gandalf.stny.rr.com>
+	<m1zljndrb6.fsf@frodo.ebiederm.org>
+	<alpine.DEB.1.10.0811260000400.26424@gandalf.stny.rr.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
-Content-Transfer-Encoding: 7bit
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1753178AbYKZF4d@vger.kernel.org>
-In-Reply-To: <20081126054728.GD9732@elte.hu>
+Content-Type: text/plain; charset=us-ascii
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1752789AbYKZG0W@vger.kernel.org>
+In-Reply-To: <alpine.DEB.1.10.0811260000400.26424@gandalf.stny.rr.com> (Steven
+	Rostedt's message of "Wed, 26 Nov 2008 00:01:08 -0500 (EST)")
 Sender: linux-kernel-owner@vger.kernel.org
-To: Ingo Molnar <mingo@elte.hu>
-Cc: Steven Rostedt <rostedt@goodmis.org>, linux-kernel@vger.kernel.org, Frederic Weisbecker <fweisbec@gmail.com>, containers@lists.osdl.org, Sukadev Bhattiprolu <sukadev@linux.vnet.ibm.com>, "Serge E. Hallyn" <serue@us.ibm.com>, "Eric W. Biederman" <ebiederm@xmission.com>, Steven Rostedt <srostedt@redhat.com>
+To: Steven Rostedt <rostedt@goodmis.org>
+Cc: Dave Hansen <dave@linux.vnet.ibm.com>, Andrew Morton <akpm@linux-foundation.org>, containers@lists.osdl.org, fweisbec@gmail.com, Ingo Molnar <mingo@elte.hu>, LKML <linux-kernel@vger.kernel.org>, srostedt@redhat.com, Sukadev Bhattiprolu <sukadev@linux.vnet.ibm.com>, "Serge E. Hallyn" <serue@us.ibm.com>
 List-Id: containers.vger.kernel.org
 
-On Wed, 26 Nov 2008 06:47:28 +0100 Ingo Molnar <mingo@elte.hu> wrote:
+Steven Rostedt <rostedt@goodmis.org> writes:
 
-> 
-> * Andrew Morton <akpm@linux-foundation.org> wrote:
-> 
-> > On Wed, 26 Nov 2008 00:16:27 -0500 Steven Rostedt <rostedt@goodmis.org> wrote:
-> > 
-> > > This patch adds the annotation of 'CPU[###]' where ### is a three 
-> > > digit number
-> > 
-> > Is this a plot to get yourself sent a 1024-way test box?
-> 
-> So you are suggesting to change it to 4 digit printout?
+> On Tue, 25 Nov 2008, Eric W. Biederman wrote:
+>
+>> 
+>> 
+>
+> I'm speechless too.
 
-Not really.  I somehow doubt that it's economic to do your software tuning
-on the 1024-way ;)
+I'm a bit tired so probably am pushing to hard.
 
-> (Is this a plot to get yourself snt a 16384-way test box? ;-)
+At the same time I don't see a single reason not to use
+struct pid for what it was designed for.  Identifying tasks.
+pid_t's really only belong at the border.
 
-I'd settle for 1.6384 testers.
+I can see in the tracer when grabbing numbers you might
+not be able to follow pointers.  For that I see justification
+for using task->pid.  For the comparison I just don't see it.
+
+Eric
