@@ -1,11 +1,11 @@
 From: Sukadev Bhattiprolu <sukadev@linux.vnet.ibm.com>
-Subject: [RFC][PATCH 4/5] Protect cinit from fatal signals
-Date: Tue, 25 Nov 2008 19:46:34 -0800
-Message-ID: <20081126034634.GD23238@us.ibm.com>
+Subject: [RFC][PATCH 5/5] Clear si_pid for signal from ancestor ns
+Date: Tue, 25 Nov 2008 19:46:56 -0800
+Message-ID: <20081126034656.GE23238@us.ibm.com>
 References: <20081126034242.GA23120@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1754536AbYKZDrA@vger.kernel.org>
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1754617AbYKZDr1@vger.kernel.org>
 Content-Disposition: inline
 In-Reply-To: <20081126034242.GA23120@us.ibm.com>
 Sender: linux-kernel-owner@vger.kernel.org
@@ -14,51 +14,40 @@ Cc: daniel@hozac.com, xemul@openvz.org, containers@lists.osdl.org, linux-kernel@
 List-Id: containers.vger.kernel.org
 
 
-From 4ea8f0b4ae48da5f18d44b68ce3634408c89f230 Mon Sep 17 00:00:00 2001
+From 9885a182bd9feeeb85abf7b2e09340e392ebf43d Mon Sep 17 00:00:00 2001
 From: Sukadev Bhattiprolu <sukadev@linux.vnet.ibm.com>
-Date: Tue, 25 Nov 2008 10:29:10 -0800
-Subject: [PATCH 4/5] Protect cinit from fatal signals
+Date: Tue, 25 Nov 2008 11:04:34 -0800
+Subject: [PATCH 5/5] Clear si_pid for signal from ancestor ns
 
-To protect container-init from fatal signals, set SIGNAL_UNKILLABLE but
-clear it if it receives SIGKILL from parent namespace - so it is still
-killable from ancestor namespace.
+Since processes don't have valid pid numbers in a descendant pid namespaces,
+the siginfo->si_pid field must be set to 0 when signal is sent from an
+ancestor namespace.
 
-Note that container-init is still somewhat special compared to 'normal
-processes' - unhandled fatal signals like SIGUSR1 to a container-init
-are dropped even if they are from ancestor namespace. SIGKILL from an
-ancestor namespace is the only reliable way to kill a container-init.
+TODO:
+	- siginfo->si_pid may need to be cleared in other locations (eg:
+	  __do_notify(), F_SETSIG) and will be addressed in separate patches.
+
+	- rt_sigqueueinfo(): siginfo->si_pid value is unreliable/undefined
+	  when rt_sigqueueinfo() is used to signal a process in a descendant
+	  namespace
 
 Signed-off-by: Sukadev Bhattiprolu <sukadev@linux.vnet.ibm.com>
 ---
- kernel/fork.c   |    2 ++
  kernel/signal.c |    2 ++
- 2 files changed, 4 insertions(+), 0 deletions(-)
+ 1 files changed, 2 insertions(+), 0 deletions(-)
 
-diff --git a/kernel/fork.c b/kernel/fork.c
-index 28be39a..368f25c 100644
---- a/kernel/fork.c
-+++ b/kernel/fork.c
-@@ -814,6 +814,8 @@ static int copy_signal(unsigned long clone_flags, struct task_struct *tsk)
- 	atomic_set(&sig->live, 1);
- 	init_waitqueue_head(&sig->wait_chldexit);
- 	sig->flags = 0;
-+	if (clone_flags & CLONE_NEWPID)
-+		sig->flags |= SIGNAL_UNKILLABLE;
- 	sig->group_exit_code = 0;
- 	sig->group_exit_task = NULL;
- 	sig->group_stop_count = 0;
 diff --git a/kernel/signal.c b/kernel/signal.c
-index 45aebf0..8c294c1 100644
+index 8c294c1..14eb986 100644
 --- a/kernel/signal.c
 +++ b/kernel/signal.c
-@@ -828,6 +828,8 @@ static int send_signal(int sig, struct siginfo *info, struct task_struct *t,
- 	trace_sched_signal_send(sig, t);
- 
- 	from_ancestor_ns = siginfo_from_ancestor_ns(t, info);
-+	if (from_ancestor_ns && sig == SIGKILL)
-+		t->signal->flags &= ~SIGNAL_UNKILLABLE;
- 
- 	assert_spin_locked(&t->sighand->siglock);
- 	if (!prepare_signal(sig, t))
+@@ -881,6 +881,8 @@ static int send_signal(int sig, struct siginfo *info, struct task_struct *t,
+ 		default:
+ 			copy_siginfo(&q->info, info);
+ 			q->info.si_signo &= ~SIG_FROM_USER;
++			if (from_ancestor_ns)
++				q->info.si_pid = 0;
+ 			break;
+ 		}
+ 	} else if (!is_si_special(info)) {
 -- 
 1.5.2.5
