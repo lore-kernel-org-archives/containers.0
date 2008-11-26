@@ -1,15 +1,15 @@
 From: David Miller <davem-fT/PcQaiUtIeIZ0/mPfg9Q@public.gmane.org>
-Subject: Re: [PATCH 23/53] netns xfrm: trivial netns propagations
-Date: Tue, 25 Nov 2008 17:29:53 -0800 (PST)
-Message-ID: <20081125.172953.265860550.davem__46598.6714851626$1227663279$gmane$org@davemloft.net>
-References: <1227634045-27534-21-git-send-email-adobriyan@gmail.com>
-	<1227634045-27534-22-git-send-email-adobriyan@gmail.com>
+Subject: Re: [PATCH 24/53] netns xfrm: state flush in netns
+Date: Tue, 25 Nov 2008 17:30:24 -0800 (PST)
+Message-ID: <20081125.173024.258494544.davem__2910.41420209712$1227663362$gmane$org@davemloft.net>
+References: <1227634045-27534-22-git-send-email-adobriyan@gmail.com>
 	<1227634045-27534-23-git-send-email-adobriyan@gmail.com>
+	<1227634045-27534-24-git-send-email-adobriyan@gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1227634045-27534-23-git-send-email-adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+In-Reply-To: <1227634045-27534-24-git-send-email-adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -24,10 +24,8 @@ Cc: kuznet-v/Mj1YrvjDBInbfyfbPRSQ@public.gmane.org, containers-cunTk1MwBs9QetFLy
 List-Id: containers.vger.kernel.org
 
 From: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Date: Tue, 25 Nov 2008 20:26:55 +0300
+Date: Tue, 25 Nov 2008 20:26:56 +0300
 
-> Take netns from xfrm_state or xfrm_policy.
-> 
 > Signed-off-by: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 
 Applied.
