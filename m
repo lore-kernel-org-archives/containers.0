@@ -1,104 +1,69 @@
 From: Sukadev Bhattiprolu <sukadev@linux.vnet.ibm.com>
-Subject: Re: [RFC][PATCH][v2] Define/use siginfo_from_ancestor_ns()
-Date: Tue, 25 Nov 2008 19:16:19 -0800
-Message-ID: <20081126031619.GA19756@us.ibm.com>
-References: <20081115212133.GA32140@us.ibm.com> <20081118175336.GA14178@redhat.com> <20081119012207.GA19092@us.ibm.com> <20081123231014.GA2424@redhat.com>
+Subject: [RFC][PATCH 0/5] Container init signal semantics
+Date: Tue, 25 Nov 2008 19:42:42 -0800
+Message-ID: <20081126034242.GA23120@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1754020AbYKZDQo@vger.kernel.org>
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1754112AbYKZDnP@vger.kernel.org>
 Content-Disposition: inline
-In-Reply-To: <20081123231014.GA2424@redhat.com>
 Sender: linux-kernel-owner@vger.kernel.org
-To: Oleg Nesterov <oleg@redhat.com>
-Cc: ebiederm@xmission.com, daniel@hozac.com, xemul@openvz.org, containers@lists.osdl.org, linux-kernel@vger.kernel.org
+To: oleg@redhat.com, ebiederm@xmission.com, roland@redhat.com
+Cc: daniel@hozac.com, xemul@openvz.org, containers@lists.osdl.org, linux-kernel@vger.kernel.org, sukadev@us.ibm.com
 List-Id: containers.vger.kernel.org
 
-Oleg Nesterov [oleg@redhat.com] wrote:
-| On 11/18, Sukadev Bhattiprolu wrote:
-| >
-| > |
-| > | > +static inline int siginfo_from_ancestor_ns(siginfo_t *info)
-| > | > +{
-| > | > +	return SI_FROMUSER(info) && (info->si_pid == 0);
-| > | > +}
-| > |
-| > | Yes, this is problem... I doubt we can rely on !si_pid here.
-| > | More on this later.
-| >
-| > BTW, rather than clearing SIG_FROM_USER in send_signal(), can we
-| > keep it till we dequeue the signal ? Yes, collect_signal() would
-| > need to consider this flag. But when we dequeue, we can note that
-| > it was from user and use that in the siginfo_from_ancestor() ?
-| 
-| Yes! I thought about this too. As a last resort this should work
-| afaics. But we should be carefull, we have to fix rm_from_queue_full()
-| for example as well.
-| 
-| Another note. We can split SIG_FROM_USER (if we are going to use this
-| hack) into 2 flags: SIG_KILL_SUB_NS and SIG_MANGLE_SI_PID. We can
-| even put "struct pid *pid" into si_signo along with these bits if
-| we find some strange user which sends the signal on behalve of
-| the different task.
-| 
-| But personally, I'd prefer to make 3 simple patches for the start.
-| Then we can continue with these complications if needed. Sukadev,
-| please feel free to disagree with me. I am just trying to make
-| the first step reviewable and simple. No changes on dequeue path,
-| no -ENOMEM in send_signal().
 
-Yes, I think this is simple and addresses most common problems
-and specially bypasses the blocked signals issues. And since
-we don't have to pass any state to get_signal_deliver(), we
-don't have worry about the -ENOMEM.
+Container-init must behave like global-init to processes within the
+container and hence it must be immune to unhandled fatal signals from
+within the container (i.e SIG_DFL signals that terminate the process).
 
-| 
-| 1. Introduce SIG_FROM_USER (or whatever). Basically, the patch I
-|    sent. Except I'd relly like to see this code under CONFIG_
-|    just for documentation, but please feel free to ignore.
-| 
-|    So, with this patch send_signal() has "bool from_ancestor", which
-|    is not used so far. And we the fixup code after copy_siginfo()
-|    which clears the flags, or better yet just sets .si_signo = sig.
+But the same container-init must behave like a normal process to 
+processes in ancestor namespaces and so if it receives the same fatal
+signal from a process in ancestor namespace, the signal must be
+processed.
 
-I am just clearing the SIG_FROM_USER flag for now - just in case
-we need to overload it for something else later ?
+Further, since processes don't have a valid pid numbers in a descendant
+pid namespaces, the siginfo->si_pid field must be set to 0.
 
-| 
-| 2. Now we change send_signal()
-| 
-| 	+	if (from_ancestor && sig == SIGKILL)
-| 	+		t->signal->flags &= ~SIGNAL_UNKILLABLE;
-| 		if (!prepare_signal(...))
-| 			return;
-| 
-|    and change copy_signal() to set SIGNAL_UNKILLABLE for
-|    cinit.
-| 
-|    From now cinit is protected from unwanted signals from
-|    its namespace, and the parent can always kill it with
-|    SIGKILL.
-| 
-|    Actually, I think this is enough to solve most problems,
-|    the further changes can be discussed later. OK, the only
-|    "real" problem is SIGSTOP, afaics. This looks solveable.
+Implementing these semantics requires that send_signal() determine pid
+namespace of the sender but since signals can originate from workqueues/
+interrupt-handlers, determining pid namespace of sender may not always
+be possible or safe.
 
-Yes, SIGSTOP even from parent is ignored due to the SIGNAL_UNKILLABLE
-check in get_signal_to_deliver.
+This patchset implements the design/simplified semantics suggested by
+Oleg Nesterov.  These semantics are:
 
-| 
-| 3. mangle .si_pid in send_signal(). Again, it is not clear
-|    what should we do with sys_rt_sigqueueinfo(), but there
-|    is no "obviously right" solution.
+	- container-init must never be terminated by a signal from a
+	  descendant process.
 
-Agree.
+	- container-init must never be immune to SIGKILL from an ancestor
+	  namespace (so a process in parent namespace must always be able
+	  to terminate a descendant container).
 
-| 
-| And I am really sorry for delay.
+	- container-init may be immune to unhandled fatal signals (like
+	  SIGUSR1) even if they are from ancestor namespace (SIGKILL is
+	  the only reliable signal from ancestor namespace).
 
-No problem. This issue has been around for over a year :-)
+Patches in this set:
 
-I will send the patches out in a bit.
+	[PATCH 1/5] pid: Implement ns_of_pid
+	[PATCH 2/5] pid: Generalize task_active_pid_ns
+	[PATCH 3/5] Determine if sender is from ancestor ns
+	[PATCH 4/5] Protect cinit from fatal signals
+	[PATCH 5/5] Clear si_pid for signal from ancestor ns
 
-Thanks,
+TODO:
+	- SIGSTOP and ptrace functionality to be reviewed/fixed.
 
-Sukadev
+	- siginfo->si_pid may need to be cleared in a few more places
+	  (eg; __do_notify(), F_SETSIG ?).
+
+Limitations/side-effects of current design
+
+	- Container-init is immune to suicide - kill(getpid(), SIGKILL) is
+	  ignored. Use exit() :-)
+
+	- rt_sigqueueinfo(): siginfo->si_pid value is unreliable/undefined
+	  when rt_sigqueueinfo() is used to signal a process in a descendant
+	  namespace
+
+Signed-off-by: Sukadev Bhattiprolu <sukadev@linux.vnet.ibm.com>
