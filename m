@@ -1,15 +1,15 @@
 From: David Miller <davem-fT/PcQaiUtIeIZ0/mPfg9Q@public.gmane.org>
-Subject: Re: [PATCH 29/53] netns xfrm: propagate netns into policy byidx hash
-Date: Tue, 25 Nov 2008 17:32:47 -0800 (PST)
-Message-ID: <20081125.173247.251959511.davem__44594.5483087145$1227664013$gmane$org@davemloft.net>
-References: <1227634045-27534-27-git-send-email-adobriyan@gmail.com>
-	<1227634045-27534-28-git-send-email-adobriyan@gmail.com>
-	<1227634045-27534-29-git-send-email-adobriyan@gmail.com>
+Subject: Re: [PATCH 31/53] netns xfrm: policy flushing in netns
+Date: Tue, 25 Nov 2008 17:33:38 -0800 (PST)
+Message-ID: <20081125.173338.56685905.davem__32952.6478927166$1227664017$gmane$org@davemloft.net>
+References: <1227634045-27534-29-git-send-email-adobriyan@gmail.com>
+	<1227634045-27534-30-git-send-email-adobriyan@gmail.com>
+	<1227634045-27534-31-git-send-email-adobriyan@gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1227634045-27534-29-git-send-email-adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+In-Reply-To: <1227634045-27534-31-git-send-email-adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -24,7 +24,7 @@ Cc: kuznet-v/Mj1YrvjDBInbfyfbPRSQ@public.gmane.org, containers-cunTk1MwBs9QetFLy
 List-Id: containers.vger.kernel.org
 
 From: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Date: Tue, 25 Nov 2008 20:27:01 +0300
+Date: Tue, 25 Nov 2008 20:27:03 +0300
 
 > Signed-off-by: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 
