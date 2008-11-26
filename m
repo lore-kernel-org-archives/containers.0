@@ -1,164 +1,67 @@
-From: Andrew Morton <akpm@linux-foundation.org>
-Subject: Re: [PATCH 1/5] ftrace: add function tracing to single thread
-Date: Tue, 25 Nov 2008 21:29:46 -0800
-Message-ID: <20081125212946.66dd5f76.akpm@linux-foundation.org>
+From: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
+Subject: Re: [PATCH 2/5] ftrace: use code patching for ftrace graph tracer
+Date: Tue, 25 Nov 2008 21:35:46 -0800
+Message-ID: <20081125213546.ff4eddf4.akpm@linux-foundation.org>
 References: <20081126051622.134970943@goodmis.org>
-	<20081126051709.571204072@goodmis.org>
+	<20081126051709.774546196@goodmis.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
+Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1753195AbYKZFa4@vger.kernel.org>
-In-Reply-To: <20081126051709.571204072@goodmis.org>
-Sender: linux-kernel-owner@vger.kernel.org
-To: Steven Rostedt <rostedt@goodmis.org>
-Cc: linux-kernel@vger.kernel.org, Ingo Molnar <mingo@elte.hu>, Frederic Weisbecker <fweisbec@gmail.com>, containers@lists.osdl.org, Sukadev Bhattiprolu <sukadev@linux.vnet.ibm.com>, "Serge E. Hallyn" <serue@us.ibm.com>, "Eric W. Biederman" <ebiederm@xmission.com>, Steven Rostedt <srostedt@redhat.com>
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <20081126051709.774546196-nx8X9YLhiw1AfugRpC6u6w@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Steven Rostedt <rostedt-nx8X9YLhiw1AfugRpC6u6w@public.gmane.org>
+Cc: Weisbecker <fweisbec-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Rostedt <srostedt-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Frederic-FOgKQjlUJ6BQetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Steven-FOgKQjlUJ6BQetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>, Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, Sukadev-FOgKQjlUJ6BQetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Harvey Harrison <harvey.harrison-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Wed, 26 Nov 2008 00:16:23 -0500 Steven Rostedt <rostedt@goodmis.org> wrote:
+On Wed, 26 Nov 2008 00:16:24 -0500 Steven Rostedt <rostedt-nx8X9YLhiw1AfugRpC6u6w@public.gmane.org> wrote:
 
-> From: Steven Rostedt <srostedt@redhat.com>
+> From: Steven Rostedt <rostedt-nx8X9YLhiw1AfugRpC6u6w@public.gmane.org>
 > 
-> Impact: feature to function trace a single thread
+> Impact: more efficient code for ftrace graph tracer
 > 
-> This patch adds the ability to function trace a single thread.
-> The file:
+> This patch uses the dynamic patching, when available, to patch
+> the function graph code into the kernel.
 > 
->   /debugfs/tracing/set_ftrace_pid
-> 
-> contains the pid to trace. Valid pids are any positive integer.
-> Writing any negative number to this file will disable the pid
-> tracing and the function tracer will go back to tracing all of
-> threads.
-> 
-> This feature works with both static and dynamic function tracing.
+> This patch will ease the way for letting both function tracing
+> and function graph tracing run together.
 > 
 > ...
 >
-> --- a/kernel/trace/ftrace.c
-> +++ b/kernel/trace/ftrace.c
-> @@ -47,6 +47,9 @@
->  int ftrace_enabled __read_mostly;
->  static int last_ftrace_enabled;
->  
-> +/* ftrace_pid_trace >= 0 will only trace threads with this pid */
-> +static int ftrace_pid_trace = -1;
-> +
->  /* Quick disabling of function tracer. */
->  int function_trace_stop;
->  
-> @@ -61,6 +64,7 @@ static int ftrace_disabled __read_mostly;
->  
->  static DEFINE_SPINLOCK(ftrace_lock);
->  static DEFINE_MUTEX(ftrace_sysctl_lock);
-> +static DEFINE_MUTEX(ftrace_start_lock);
->  
->  static struct ftrace_ops ftrace_list_end __read_mostly =
->  {
-> @@ -70,6 +74,7 @@ static struct ftrace_ops ftrace_list_end __read_mostly =
->  static struct ftrace_ops *ftrace_list __read_mostly = &ftrace_list_end;
->  ftrace_func_t ftrace_trace_function __read_mostly = ftrace_stub;
->  ftrace_func_t __ftrace_trace_function __read_mostly = ftrace_stub;
-> +ftrace_func_t ftrace_pid_function __read_mostly = ftrace_stub;
->  
->  static void ftrace_list_func(unsigned long ip, unsigned long parent_ip)
->  {
-> @@ -86,6 +91,21 @@ static void ftrace_list_func(unsigned long ip, unsigned long parent_ip)
->  	};
->  }
->  
-> +static void ftrace_pid_func(unsigned long ip, unsigned long parent_ip)
+> +static int ftrace_mod_jmp(unsigned long ip,
+> +			  int old_offset, int new_offset)
 > +{
-> +	if (current->pid != ftrace_pid_trace)
-> +		return;
-
-What happened with this?
-
-It would reeeeely help if the changelog was updated to cover such
-frequently-occurring controversies as this.
-
-> +#ifdef CONFIG_HAVE_FUNCTION_TRACE_MCOUNT_TEST
-> +	ftrace_trace_function = func;
-> +#else
-> +	__ftrace_trace_function = func;
-> +#endif
-
-Pulling this assignment out into a helper fuction would clean things
-up.  It happens at least twice.
-
->
-> ...
->
-> +static ssize_t
-> +ftrace_pid_read(struct file *file, char __user *ubuf,
-> +		       size_t cnt, loff_t *ppos)
-> +{
-> +	char buf[64];
-> +	int r;
+> +	unsigned char code[MCOUNT_INSN_SIZE];
 > +
-> +	if (ftrace_pid_trace >= 0)
-> +		r = sprintf(buf, "%u\n", ftrace_pid_trace);
-
-ftrace_pid_trace is signed, and we print it as unsigned.  Can this be
-improved?
-
-> +	else
-> +		r = sprintf(buf, "no pid\n");
-> +
-> +	return simple_read_from_buffer(ubuf, cnt, ppos, buf, r);
-> +}
-> +
-> +static ssize_t
-> +ftrace_pid_write(struct file *filp, const char __user *ubuf,
-> +		   size_t cnt, loff_t *ppos)
-> +{
-> +	char buf[64];
-> +	long val;
-> +	int ret;
-> +
-> +	if (cnt >= sizeof(buf))
-> +		return -EINVAL;
-> +
-> +	if (copy_from_user(&buf, ubuf, cnt))
+> +	if (probe_kernel_read(code, (void *)ip, MCOUNT_INSN_SIZE))
 > +		return -EFAULT;
 > +
-> +	buf[cnt] = 0;
+> +	if (code[0] != 0xe9 || old_offset != *(int *)(&code[1]))
 
-Might be able to use strncpy_from_user() here?
+erk.  I suspect that there's a nicer way of doing this amongst our
+forest of get_unaligned_foo() interfaces.  Harvey will know.
 
-> +	ret = strict_strtol(buf, 10, &val);
-> +	if (ret < 0)
-> +		return ret;
+> +		return -EINVAL;
 > +
-> +	mutex_lock(&ftrace_start_lock);
-> +	if (ret < 0) {
-> +		/* disable pid tracing */
-> +		if (ftrace_pid_trace < 0)
-> +			goto out;
-> +		ftrace_pid_trace = -1;
+> +	*(int *)(&code[1]) = new_offset;
+
+Might be able to use put_unaligned_foo() here.
+
+The problem is that these functions use sizeof(*ptr) to work out what
+to do, so a cast is still needed.  A get_unaligned32(ptr) would be
+nice.  One which takes a void* and assumes CPU ordering.
+
+> +	if (do_ftrace_mod_code(ip, &code))
+> +		return -EPERM;
 > +
-> +	} else {
-> +
-> +		if (ftrace_pid_trace == val)
-> +			goto out;
-> +
-> +		ftrace_pid_trace = val;
-> +	}
-> +
-> +	/* update the function call */
-> +	ftrace_update_pid_func();
-> +	ftrace_startup_enable(0);
-> +
-> + out:
-> +	mutex_unlock(&ftrace_start_lock);
-> +
-> +	return cnt;
+> +	return 0;
 > +}
-> +
-> +static struct file_operations ftrace_pid_fops = {
-
-const, please.
-
-> +	.read = ftrace_pid_read,
-> +	.write = ftrace_pid_write,
-> +};
 > +
