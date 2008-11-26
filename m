@@ -1,31 +1,47 @@
-From: Ingo Molnar <mingo@elte.hu>
-Subject: Re: [PATCH 1/5] ftrace: add function tracing to single thread
-Date: Wed, 26 Nov 2008 07:54:25 +0100
-Message-ID: <20081126065425.GA26036@elte.hu>
-References: <20081126051622.134970943@goodmis.org> <20081126051709.571204072@goodmis.org> <m1hc5vasye.fsf@frodo.ebiederm.org>
+From: ebiederm@xmission.com (Eric W. Biederman)
+Subject: Re: [PATCH 1/3] ftrace: add function tracing to single thread
+Date: Tue, 25 Nov 2008 23:02:10 -0800
+Message-ID: <m1zljn7yx9.fsf@frodo.ebiederm.org>
+References: <20081125223456.976670734@goodmis.org>
+	<20081125144221.66eb99ad.akpm@linux-foundation.org>
+	<alpine.DEB.1.10.0811251800130.26424@gandalf.stny.rr.com>
+	<20081125153104.ecdceed4.akpm@linux-foundation.org>
+	<alpine.DEB.1.10.0811251909320.26424@gandalf.stny.rr.com>
+	<1227660839.12109.52.camel@nimitz>
+	<alpine.DEB.1.10.0811251956570.26424@gandalf.stny.rr.com>
+	<m1zljndrb6.fsf@frodo.ebiederm.org>
+	<alpine.DEB.1.10.0811260000400.26424@gandalf.stny.rr.com>
+	<m1abbnc8ff.fsf@frodo.ebiederm.org> <20081126063201.GF9732@elte.hu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1753252AbYKZGz2@vger.kernel.org>
-Content-Disposition: inline
-In-Reply-To: <m1hc5vasye.fsf@frodo.ebiederm.org>
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1753133AbYKZHGV@vger.kernel.org>
+In-Reply-To: <20081126063201.GF9732@elte.hu> (Ingo Molnar's message of "Wed,
+	26 Nov 2008 07:32:01 +0100")
 Sender: linux-kernel-owner@vger.kernel.org
-To: "Eric W. Biederman" <ebiederm@xmission.com>
-Cc: Steven Rostedt <rostedt@goodmis.org>, linux-kernel@vger.kernel.org, Andrew Morton <akpm@linux-foundation.org>, Frederic Weisbecker <fweisbec@gmail.com>, containers@lists.osdl.org, Sukadev Bhattiprolu <sukadev@linux.vnet.ibm.com>, "Serge E. Hallyn" <serue@us.ibm.com>, Steven Rostedt <srostedt@redhat.com>
+To: Ingo Molnar <mingo@elte.hu>
+Cc: Steven Rostedt <rostedt@goodmis.org>, Dave Hansen <dave@linux.vnet.ibm.com>, Andrew Morton <akpm@linux-foundation.org>, containers@lists.osdl.org, fweisbec@gmail.com, LKML <linux-kernel@vger.kernel.org>, srostedt@redhat.com, Sukadev Bhattiprolu <sukadev@linux.vnet.ibm.com>, "Serge E. Hallyn" <serue@us.ibm.com>
 List-Id: containers.vger.kernel.org
 
+Ingo Molnar <mingo@elte.hu> writes:
 
-* Eric W. Biederman <ebiederm@xmission.com> wrote:
+> i dont see the point of the complexity you are advocating. 99.9% of 
+> the users run a unique PID space.
 
-> > +/* ftrace_pid_trace >= 0 will only trace threads with this pid */
-> > +static int ftrace_pid_trace = -1;
-> 
-> Why not?
-> static struct pid *ftrace_pid_trace = NULL;
+I'm not advocating complexity.  I'm advocating using the same APIs as
+the rest of the kernel, for doing the same functions.
 
-ok, looks reasonably simple at first sight.
+> Tracing is about keeping stuff simple. On containers we could also 
+> trace the namespace ID (is there an easy ID for the namespace, as an 
+> easy extension to the very nice PID concept that Unix introduced 
+> decades ago?) and be done with it.
 
-Steve, mind sending the conversion of this facility to struct pid as a 
-delta patch? (that would have education purposes as well, for similar 
-situations)
+I don't really care about the pid namespace in this context.
 
-	Ingo
+I am just asking that we compare a different field in the task struct.
+
+I am asking that we don't accumulate new users of an old crufty bug prone
+API, for no good reason.
+
+I'm asking that we don't be different for no good reason.
+
+Eric
