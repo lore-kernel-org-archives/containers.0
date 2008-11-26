@@ -1,62 +1,45 @@
-From: Andrey Mirkin <major-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
-Subject: Re: [PATCH 2/2] Add support for in-kernel process creation during
-	restart
-Date: Wed, 26 Nov 2008 09:07:43 +0400
-Message-ID: <200811260807.45094.major__15215.5632772066$1227676290$gmane$org@openvz.org>
-References: <1227541175-30301-1-git-send-email-major@openvz.org>
-	<1227541175-30301-3-git-send-email-major@openvz.org>
-	<20081125004024.GA4440@x200.localdomain>
-Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20081125004024.GA4440-2ev+ksY9ol182hYKe6nXyg@public.gmane.org>
-Content-Disposition: inline
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Andrey Mirkin <major-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+From: Steven Rostedt <rostedt@goodmis.org>
+Subject: [PATCH 0/5] ftrace: rebase patches on top of tip/master + some extras
+Date: Wed, 26 Nov 2008 00:16:22 -0500
+Message-ID: <20081126051622.134970943@goodmis.org>
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1752990AbYKZFR0@vger.kernel.org>
+Sender: linux-kernel-owner@vger.kernel.org
+To: linux-kernel@vger.kernel.org
+Cc: Ingo Molnar <mingo@elte.hu>, Andrew Morton <akpm@linux-foundation.org>, Frederic Weisbecker <fweisbec@gmail.com>, containers@lists.osdl.org, Sukadev Bhattiprolu <sukadev@linux.vnet.ibm.com>, "Serge E. Hallyn" <serue@us.ibm.com>, "Eric W. Biederman" <ebiederm@xmission.com>
 List-Id: containers.vger.kernel.org
 
-On Tuesday 25 November 2008 03:45 Alexey Dobriyan wrote:
-> On Mon, Nov 24, 2008 at 06:39:35PM +0300, Andrey Mirkin wrote:
-> > +static int cr_rstr_task_struct(struct cr_ctx *ctx, struct cr_hdr_task
-> > *ht) +{
-> > +	struct task_struct *t = current;
-> > +	char *buf;
-> > +	int ret = -EINVAL;
-> > +
-> > +	/* upper limit for task_comm_len to prevent DoS */
-> > +	if (ht->task_comm_len < 0 || ht->task_comm_len > PAGE_SIZE)
-> > +		goto out;
-> > +
-> > +	buf = kmalloc(ht->task_comm_len, GFP_KERNEL);
-> > +	if (!buf)
-> > +		goto out;
-> > +	ret = cr_read_string(ctx, buf, ht->task_comm_len);
-> > +	if (!ret) {
-> > +		/* if t->comm is too long, silently truncate */
-> > +		memset(t->comm, 0, TASK_COMM_LEN);
-> > +		memcpy(t->comm, buf, min(ht->task_comm_len, TASK_COMM_LEN));
-> > +	}
-> > +	kfree(buf);
-> > +
-> > +	/* FIXME: restore remaining relevant task_struct fields */
-> > +out:
-> > +	return ret;
-> > +}
->
-> ->comm is only 16 bytes wide, you can just use on-stack variable.
-Yes, you right here.
-But who knows how it can be changed later.
-Also we have almost the same function for process restore from user space.
-In next version I will use it instead of introducing new one.
+Ingo,
 
-Andrey
+Here's my patches rebased against latest tip/master. I also
+added a couple of goodies at the end to enhance the function-graph
+tracer.
+
+The first patch is a repost of the set_ftrace_pid, so I am Cc'ing
+the container guys so they can abuse me some more ;-)
+
+The following patches are in:
+
+  git://git.kernel.org/pub/scm/linux/kernel/git/rostedt/linux-2.6-trace.git
+
+    branch: tip/devel
+
+
+Steven Rostedt (5):
+      ftrace: add function tracing to single thread
+      ftrace: use code patching for ftrace graph tracer
+      ftrace: let function tracing and function return run together
+      ftrace: add thread comm to function graph tracer
+      ftrace: add cpu annotation for function graph tracer
+
+----
+ Documentation/ftrace.txt             |   79 ++++++++++
+ arch/x86/kernel/entry_32.S           |    5 +
+ arch/x86/kernel/ftrace.c             |   48 ++++++-
+ include/linux/ftrace.h               |    5 +
+ kernel/trace/ftrace.c                |  264 +++++++++++++++++++++++++--------
+ kernel/trace/trace.c                 |    2 +-
+ kernel/trace/trace.h                 |    1 +
+ kernel/trace/trace_functions_graph.c |   51 +++++--
+ 8 files changed, 373 insertions(+), 82 deletions(-)
+
+-- 
