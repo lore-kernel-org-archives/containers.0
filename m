@@ -1,15 +1,15 @@
 From: David Miller <davem-fT/PcQaiUtIeIZ0/mPfg9Q@public.gmane.org>
-Subject: Re: [PATCH 15/53] netns xfrm: per-netns policy list
-Date: Tue, 25 Nov 2008 17:22:18 -0800 (PST)
-Message-ID: <20081125.172218.114342118.davem__33236.5821268924$1227662822$gmane$org@davemloft.net>
-References: <1227634045-27534-13-git-send-email-adobriyan@gmail.com>
-	<1227634045-27534-14-git-send-email-adobriyan@gmail.com>
-	<1227634045-27534-15-git-send-email-adobriyan@gmail.com>
+Subject: Re: [PATCH 17/53] netns xfrm: per-netns xfrm_policy_byidx hashmask
+Date: Tue, 25 Nov 2008 17:23:04 -0800 (PST)
+Message-ID: <20081125.172304.158683402.davem__378.106677863066$1227662902$gmane$org@davemloft.net>
+References: <1227634045-27534-15-git-send-email-adobriyan@gmail.com>
+	<1227634045-27534-16-git-send-email-adobriyan@gmail.com>
+	<1227634045-27534-17-git-send-email-adobriyan@gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1227634045-27534-15-git-send-email-adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+In-Reply-To: <1227634045-27534-17-git-send-email-adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -24,8 +24,10 @@ Cc: kuznet-v/Mj1YrvjDBInbfyfbPRSQ@public.gmane.org, containers-cunTk1MwBs9QetFLy
 List-Id: containers.vger.kernel.org
 
 From: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Date: Tue, 25 Nov 2008 20:26:47 +0300
+Date: Tue, 25 Nov 2008 20:26:49 +0300
 
+> Per-netns hashes are independently resizeable.
+> 
 > Signed-off-by: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 
-Applied, thanks.
+Applied.
