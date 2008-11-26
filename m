@@ -1,114 +1,229 @@
-From: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [patch 0/4] [RFC] Another proportional weight IO controller
-Date: Wed, 26 Nov 2008 11:08:05 -0500
-Message-ID: <20081126160805.GE27826__27434.4969461255$1227716109$gmane$org@redhat.com>
-References: <20081120134701.GB29306@redhat.com>
-	<20081125.113359.623571555980951312.ryov@valinux.co.jp>
-	<20081125162720.GH341@redhat.com>
-	<20081126.214707.653026525707335397.ryov@valinux.co.jp>
+From: Steven Rostedt <rostedt@goodmis.org>
+Subject: Re: [PATCH 1/3] ftrace: add function tracing to single thread
+Date: Wed, 26 Nov 2008 11:36:42 -0500 (EST)
+Message-ID: <alpine.DEB.1.10.0811261117580.26743@gandalf.stny.rr.com>
+References: <20081125223421.795046329@goodmis.org> <20081125223456.976670734@goodmis.org> <20081125144221.66eb99ad.akpm@linux-foundation.org> <alpine.DEB.1.10.0811251800130.26424@gandalf.stny.rr.com> <20081125153104.ecdceed4.akpm@linux-foundation.org>
+ <alpine.DEB.1.10.0811251909320.26424@gandalf.stny.rr.com> <1227660839.12109.52.camel@nimitz> <alpine.DEB.1.10.0811251956570.26424@gandalf.stny.rr.com> <m1myfncbc0.fsf@frodo.ebiederm.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <20081126.214707.653026525707335397.ryov-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Ryo Tsuruta <ryov-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
-Cc: menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, riel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, fchecconi-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, paolo.valente-rcYM44yAMweonA0d6jMUrA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, virtualization-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, jmoyer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, jens.axboe-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, ngupta-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, fernando-gVGce1chcLdL9jVzuh4AOg@public.gmane.org, righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org
+Content-Type: TEXT/PLAIN; charset=US-ASCII
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1754382AbYKZQg7@vger.kernel.org>
+In-Reply-To: <m1myfncbc0.fsf@frodo.ebiederm.org>
+Sender: linux-kernel-owner@vger.kernel.org
+To: "Eric W. Biederman" <ebiederm@xmission.com>
+Cc: Dave Hansen <dave@linux.vnet.ibm.com>, Andrew Morton <akpm@linux-foundation.org>, containers@lists.osdl.org, fweisbec@gmail.com, Ingo Molnar <mingo@elte.hu>, LKML <linux-kernel@vger.kernel.org>, srostedt@redhat.com, Sukadev Bhattiprolu <sukadev@linux.vnet.ibm.com>, "Serge E. Hallyn" <serue@us.ibm.com>
 List-Id: containers.vger.kernel.org
 
-On Wed, Nov 26, 2008 at 09:47:07PM +0900, Ryo Tsuruta wrote:
-> Hi Vivek,
-> 
-> From: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-> Subject: Re: [patch 0/4] [RFC] Another proportional weight IO controller
-> Date: Tue, 25 Nov 2008 11:27:20 -0500
-> 
-> > On Tue, Nov 25, 2008 at 11:33:59AM +0900, Ryo Tsuruta wrote:
-> > > Hi Vivek,
-> > > 
-> > > > > > Ryo, do you still want to stick to two level scheduling? Given the problem
-> > > > > > of it breaking down underlying scheduler's assumptions, probably it makes
-> > > > > > more sense to the IO control at each individual IO scheduler.
-> > > > > 
-> > > > > I don't want to stick to it. I'm considering implementing dm-ioband's
-> > > > > algorithm into the block I/O layer experimentally.
-> > > > 
-> > > > Thanks Ryo. Implementing a control at block layer sounds like another
-> > > > 2 level scheduling. We will still have the issue of breaking underlying
-> > > > CFQ and other schedulers. How to plan to resolve that conflict.
-> > > 
-> > > I think there is no conflict against I/O schedulers.
-> > > Could you expain to me about the conflict?
-> > 
-> > Because we do the buffering at higher level scheduler and mostly release
-> > the buffered bios in the FIFO order, it might break the underlying IO
-> > schedulers. Generally it is the decision of IO scheduler to determine in
-> > what order to release buffered bios.
-> > 
-> > For example, If there is one task of io priority 0 in a cgroup and rest of
-> > the tasks are of io prio 7. All the tasks belong to best effort class. If
-> > tasks of lower priority (7) do lot of IO, then due to buffering there is
-> > a chance that IO from lower prio tasks is seen by CFQ first and io from
-> > higher prio task is not seen by cfq for quite some time hence that task
-> > not getting it fair share with in the cgroup. Similiar situations can
-> > arise with RT tasks also.
-> 
-> Thanks for your explanation. 
-> I think that the same thing occurs without the higher level scheduler,
-> because all the tasks issuing I/Os are blocked while the underlying
-> device's request queue is full before those I/Os are sent to the I/O
-> scheduler.
-> 
 
-True and this issue was pointed out by Divyesh. I think we shall have to
-fix this by allocating the request descriptors in proportion to their
-share. One possible way is to make use of elv_may_queue() to determine
-if we can allocate furhter request descriptors or not. 
+On Tue, 25 Nov 2008, Eric W. Biederman wrote:
 
-> > > > What do you think about the solution at IO scheduler level (like BFQ) or
-> > > > may be little above that where one can try some code sharing among IO
-> > > > schedulers? 
-> > > 
-> > > I would like to support any type of block device even if I/Os issued
-> > > to the underlying device doesn't go through IO scheduler. Dm-ioband
-> > > can be made use of for the devices such as loop device.
-> > > 
-> > 
-> > What do you mean by that IO issued to underlying device does not go
-> > through IO scheduler? loop device will be associated with a file and
-> > IO will ultimately go to the IO scheduler which is serving those file
-> > blocks?
+> Steven Rostedt <rostedt@goodmis.org> writes:
 > 
-> How about if the files is on an NFS-mounted file system?
+> > On Tue, 25 Nov 2008, Dave Hansen wrote:
+> >> > 
+> >> > I think the end result was, if this file can only be changed by root, then 
+> >> > we do not need to worry about namespaces. This file is a privileged file 
+> >> > that can only be modified by root.
+> >> > 
+> >> > If someday we decide to let non admin users touch this file, then we would
+> >> > need to care about this.  This file may actually be modified in the future 
+> >> > by users, so this may become an issue.
+> >> 
+> >> This really has very little to do with root vs non-root users.  In fact,
+> >> we're working towards having cases where we have many "root" users, even
+> >> those inside namespaces.  It is also quite possible for a normal root
+> >> user to fork into a new pid namespace.  In that case, root simply won't
+> >> be able to use this feature because something like:
+> >> 	
+> >> 	echo $$ /debugfs/tracing/set_ftrace_pid
+> >> 	
+> >> just won't work.  Let's look at a bit of the code.
+> >> 
+> >> +static void ftrace_pid_func(unsigned long ip, unsigned long parent_ip)
+> >> +{
+> >> +       if (current->pid != ftrace_pid_trace)
+> >> +               return;
+> >> +
+> >> +       ftrace_pid_function(ip, parent_ip);
+> >> +}
+> >> 
+> >> One thing this doesn't deal with is pid wraparound.  Does that matter?
+> >
+> > Should not.  This is just a way to trace a particular process. Currently 
+> > it traces all processes. If we wrap, then we trace the process with the 
+> > new pid. This should not be an issue.
 > 
-
-Interesting. So on the surface it looks like contention for disk but it
-is more the contention for network and contention for disk on NFS server.
-
-True that leaf node IO control will not help here as IO is not going to
-leaf node at all. We can make the situation better by doing resource 
-control on network IO though.
-
-> > What's the use case scenario of doing IO control at loop device?
-> > Ultimately the resource contention will take place on actual underlying
-> > physical device where the file blocks are. Will doing the resource control
-> > there not solve the issue for you?
+> So.  Using raw pid numbers in the kernel is bad form.  The internal
+> representation should be struct pid pointers as much as we can make
+> them.
 > 
-> I don't come up with any use case, but I would like to make the
-> resource controller more flexible. Actually, a certain block device
-> that I'm using does not use the I/O scheduler.
+> I would 100% prefer it if ftrace_pid_func was written in terms of struct
+> pid.  That does guarantee you don't have pid wrap around issues.
+> It almost makes it clear 
+> 
+> +static void ftrace_pid_func(unsigned long ip, unsigned long parent_ip)
+> +{
+> +	if (task_pid(current) == ftrace_pid_trace)
+> +               return;
+> +
+> +       ftrace_pid_function(ip, parent_ip);
+> +}
+> 
+> We don't need locks to access the pid of current.
 
-Isn't it equivalent to using No-op? If yes, then it should not be an
-issue?
+That version does not bother me. I'm not worried about locks as much as
+I am about recursion. If that "task_pid()" ever became a function that is
+traced by mcount, then it will end up in a recursive loop, and will crash 
+the system.
 
-Thanks
-Vivek
+> 
+> 
+> >> If you want to fix this a bit, instead of saving off the pid_t in
+> >> ftrace_pid_trace, you should save a 'struct pid'.  You can get the
+> >> 'struct pid' for a particular task by doing a find_get_pid(pid_t).  You
+> >> can then compare that pid_t to current by doing a
+> >> pid_task(struct_pid_that_i_saved, PIDTYPE_PID).  That will also protect
+> >> against pid wraparound.
+> >> 
+> >> The find_get_pid() is handy because it will do the pid_t lookup in the
+> >> context of the current task's pid namespace, which is what you want, I
+> >> think.
+> >
+> > Nope, we can not call that in this context. ftrace_pid_func is called 
+> > directly from mcount, without any protection.
+> 
+> Of course you can't.  But at the same time find_get_pid() is always
+> supposed to be called on the user space pid ingress path.
+> 
+> > struct pid *find_get_pid(pid_t nr)
+> > {
+> > 	struct pid *pid;
+> >
+> > 	rcu_read_lock();
+> > 	pid = get_pid(find_vpid(nr));
+> > 	rcu_read_unlock();
+> >
+> > 	return pid;
+> > }
+> > EXPORT_SYMBOL_GPL(find_get_pid);
+> >
+> > This means find_get_pid will call mcount which will call ftrace_pid_func, 
+> > and back again. This can also happen with rcu_read_{un}lock() and 
+> > get_pid() and find_vpid().
+> >
+> > We can not do anything special here.
+> 
+> I don't see the whole path.  But here is the deal.
+> 1) Using struct pid and the proper find_get_pid() means that a user with
+>    the proper capabilities/permissions who happens to be running in a pid
+>    namespace can call this and it will just work.
+> 
+> 2) The current best practices in the current are to:
+>    - call find_get_pid() when you capture a user space pid.
+>    - call put_pid() when you are done with it.
+> 
+>    Perhaps that is just:
+>    put_pid(ftrace_pid_trace);
+>    ftrace_pid_trace = find_get_pid(user_provided_pid_value);
+
+This may be fine.
+
+> 
+> 3) If you ultimately want to support the full gamut:
+>    thread/process/process group/session.  You will need
+>    to use struct pid pointer comparisons.
+> 
+> 4) When I looked at the place you were concerned about races 
+>    a) you were concerned about the wrong race.
+>    b) I don't see a race.
+>    c) You were filtering for the tid of a linux task not
+>       the tgid of a process.  So the code didn't seem to
+>       be doing what you thought it was doing.
+> 
+> 5) I keep thinking current->pid should be removed some day.
+> 
+> So let's do this properly if we can.  This is a privileged operation
+> so we don't need to support people without the proper capabilities
+> doing this.  Or multiple comparisons or anything silly like that.  But
+> doing this with struct pid comparisons seems cleaner and more maintainable.  And that
+> really should matter.
+
+Just so you understand what I'm concerned about:
+
+$ objdump -dr kernel/pid.o
+[...]
+0000025f <find_get_pid>:
+ 25f:   55                      push   %ebp
+ 260:   89 e5                   mov    %esp,%ebp
+ 262:   53                      push   %ebx
+ 263:   e8 fc ff ff ff          call   264 <find_get_pid+0x5>
+                        264: R_386_PC32 mcount
+ 268:   89 c3                   mov    %eax,%ebx
+ 26a:   b8 01 00 00 00          mov    $0x1,%eax
+
+
+looking in arch/x86/kernel/entry_32.S:
+
+ENTRY(mcount)
+        cmpl $0, function_trace_stop
+        jne  ftrace_stub
+
+        cmpl $ftrace_stub, ftrace_trace_function
+        jnz trace
+[...]
+trace:
+        pushl %eax
+        pushl %ecx
+        pushl %edx
+        movl 0xc(%esp), %eax
+        movl 0x4(%ebp), %edx
+        subl $MCOUNT_INSN_SIZE, %eax
+
+        call *ftrace_trace_function
+
+
+
+looking in kerne/trace/ftrace.c:
+
+                        if (ftrace_pid_trace >= 0) {
+                                set_ftrace_pid_function(func);
+                                func = ftrace_pid_func;
+                        }
+                        ftrace_trace_function = func;
+
+And we then have
+
+static void ftrace_pid_func(unsigned long ip, unsigned long parent_ip)
+{
+        if (current->pid != ftrace_pid_trace)
+                return;
+
+        ftrace_pid_function(ip, parent_ip);
+}
+
+
+Now by having ftrace_pid_func call find_get_pid, we have the function flow 
+of...
+
+
+ schedule() /* any traced function */
+  --> mcount
+        --> *ftrace_trace_function == ftrace_pid_func
+          ftrace_pid_func
+               --> find_get_pid
+                    --> mcount
+                         --> *ftrace_trace_function == ftrace_pid_func
+                             ftrace_pid_func
+                                  --> find_get_pid
+                                       [ ad infinitum ]
+
+
+The comparison must be very careful not to call anything that will also 
+trace. I can add code to catch this recursion, but this is overhead I do 
+not want to add. Remember, this is called on every function call.
+
+If we do the work at the time we set ftrace_pid_trace and we can do simple 
+pointer comparisons in the ftrace_pid_func, I will be happy with that. I'm 
+still learning about this pid namespace, so I'll probably screw it up a 
+few more times ;-)
+
+-- Steve
