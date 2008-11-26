@@ -1,67 +1,49 @@
-From: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
-Subject: Re: [PATCH 2/5] ftrace: use code patching for ftrace graph tracer
-Date: Tue, 25 Nov 2008 21:35:46 -0800
-Message-ID: <20081125213546.ff4eddf4.akpm@linux-foundation.org>
+From: Andrew Morton <akpm@linux-foundation.org>
+Subject: Re: [PATCH 4/5] ftrace: add thread comm to function graph tracer
+Date: Tue, 25 Nov 2008 21:37:48 -0800
+Message-ID: <20081125213748.2cd86b2b.akpm@linux-foundation.org>
 References: <20081126051622.134970943@goodmis.org>
-	<20081126051709.774546196@goodmis.org>
+	<20081126051710.149585354@goodmis.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
+Content-Type: text/plain; charset=US-ASCII
 Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20081126051709.774546196-nx8X9YLhiw1AfugRpC6u6w@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Steven Rostedt <rostedt-nx8X9YLhiw1AfugRpC6u6w@public.gmane.org>
-Cc: Weisbecker <fweisbec-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Rostedt <srostedt-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Frederic-FOgKQjlUJ6BQetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Steven-FOgKQjlUJ6BQetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>, Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, Sukadev-FOgKQjlUJ6BQetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Harvey Harrison <harvey.harrison-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1753347AbYKZFia@vger.kernel.org>
+In-Reply-To: <20081126051710.149585354@goodmis.org>
+Sender: linux-kernel-owner@vger.kernel.org
+To: Steven Rostedt <rostedt@goodmis.org>
+Cc: linux-kernel@vger.kernel.org, Ingo Molnar <mingo@elte.hu>, Frederic Weisbecker <fweisbec@gmail.com>, containers@lists.osdl.org, Sukadev Bhattiprolu <sukadev@linux.vnet.ibm.com>, "Serge E. Hallyn" <serue@us.ibm.com>, "Eric W. Biederman" <ebiederm@xmission.com>, Steven Rostedt <srostedt@redhat.com>
 List-Id: containers.vger.kernel.org
 
-On Wed, 26 Nov 2008 00:16:24 -0500 Steven Rostedt <rostedt-nx8X9YLhiw1AfugRpC6u6w@public.gmane.org> wrote:
+On Wed, 26 Nov 2008 00:16:26 -0500 Steven Rostedt <rostedt@goodmis.org> wrote:
 
-> From: Steven Rostedt <rostedt-nx8X9YLhiw1AfugRpC6u6w@public.gmane.org>
+> From: Steven Rostedt <rostedt@goodmis.org>
 > 
-> Impact: more efficient code for ftrace graph tracer
+> Impact: enhancement to function graph tracer
 > 
-> This patch uses the dynamic patching, when available, to patch
-> the function graph code into the kernel.
+> Export the trace_find_cmdline so the function graph tracer can
+> use it to print the comms of the threads.
 > 
-> This patch will ease the way for letting both function tracing
-> and function graph tracing run together.
-> 
+> -static char *trace_find_cmdline(int pid)
+> +char *trace_find_cmdline(int pid)
+>
 > ...
 >
-> +static int ftrace_mod_jmp(unsigned long ip,
-> +			  int old_offset, int new_offset)
-> +{
-> +	unsigned char code[MCOUNT_INSN_SIZE];
+>  static int verif_pid(struct trace_seq *s, pid_t pid)
+>  {
+> +	char *comm;
 > +
-> +	if (probe_kernel_read(code, (void *)ip, MCOUNT_INSN_SIZE))
-> +		return -EFAULT;
+>  	if (last_pid != -1 && last_pid == pid)
+>  		return 1;
+>  
+>  	last_pid = pid;
+> -	return trace_seq_printf(s, "\n------------8<---------- thread %d"
+> +	comm = trace_find_cmdline(pid);
 > +
-> +	if (code[0] != 0xe9 || old_offset != *(int *)(&code[1]))
+> +	return trace_seq_printf(s, "\n------------8<---------- thread %s-%d"
+>  				    " ------------8<----------\n\n",
+> -				  pid);
+> +				    comm, pid);
+>  }
 
-erk.  I suspect that there's a nicer way of doing this amongst our
-forest of get_unaligned_foo() interfaces.  Harvey will know.
-
-> +		return -EINVAL;
-> +
-> +	*(int *)(&code[1]) = new_offset;
-
-Might be able to use put_unaligned_foo() here.
-
-The problem is that these functions use sizeof(*ptr) to work out what
-to do, so a cast is still needed.  A get_unaligned32(ptr) would be
-nice.  One which takes a void* and assumes CPU ordering.
-
-> +	if (do_ftrace_mod_code(ip, &code))
-> +		return -EPERM;
-> +
-> +	return 0;
-> +}
-> +
+This code gets its int's and pid_t's all mixed up.  It's a bit cosmetic, but
+nice to get it right for readability's sake.
