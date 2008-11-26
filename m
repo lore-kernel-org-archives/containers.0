@@ -1,15 +1,15 @@
 From: David Miller <davem-fT/PcQaiUtIeIZ0/mPfg9Q@public.gmane.org>
-Subject: Re: [PATCH 50/53] netns xfrm: AH/ESP in netns!
-Date: Tue, 25 Nov 2008 17:59:35 -0800 (PST)
-Message-ID: <20081125.175935.170615209.davem__2749.48899536884$1227665245$gmane$org@davemloft.net>
-References: <1227634045-27534-48-git-send-email-adobriyan@gmail.com>
-	<1227634045-27534-49-git-send-email-adobriyan@gmail.com>
-	<1227634045-27534-50-git-send-email-adobriyan@gmail.com>
+Subject: Re: [PATCH 52/53] netns xfrm: /proc/net/xfrm_stat in netns
+Date: Tue, 25 Nov 2008 18:00:20 -0800 (PST)
+Message-ID: <20081125.180020.105256551.davem__44573.9225986928$1227665250$gmane$org@davemloft.net>
+References: <1227634045-27534-50-git-send-email-adobriyan@gmail.com>
+	<1227634045-27534-51-git-send-email-adobriyan@gmail.com>
+	<1227634045-27534-52-git-send-email-adobriyan@gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1227634045-27534-50-git-send-email-adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+In-Reply-To: <1227634045-27534-52-git-send-email-adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -24,8 +24,8 @@ Cc: kuznet-v/Mj1YrvjDBInbfyfbPRSQ@public.gmane.org, containers-cunTk1MwBs9QetFLy
 List-Id: containers.vger.kernel.org
 
 From: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Date: Tue, 25 Nov 2008 20:27:22 +0300
+Date: Tue, 25 Nov 2008 20:27:24 +0300
 
 > Signed-off-by: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
 
-Yahoo!  Applied.
+Applied.
