@@ -1,11 +1,11 @@
 From: Sukadev Bhattiprolu <sukadev@linux.vnet.ibm.com>
-Subject: [RFC][PATCH 2/5] pid: Generalize task_active_pid_ns
-Date: Tue, 25 Nov 2008 19:45:28 -0800
-Message-ID: <20081126034528.GB23238@us.ibm.com>
+Subject: [RFC][PATCH 3/5] Determine if sender is from ancestor ns
+Date: Tue, 25 Nov 2008 19:46:11 -0800
+Message-ID: <20081126034611.GC23238@us.ibm.com>
 References: <20081126034242.GA23120@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1754345AbYKZDpx@vger.kernel.org>
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1754435AbYKZDqk@vger.kernel.org>
 Content-Disposition: inline
 In-Reply-To: <20081126034242.GA23120@us.ibm.com>
 Sender: linux-kernel-owner@vger.kernel.org
@@ -14,86 +14,107 @@ Cc: daniel@hozac.com, xemul@openvz.org, containers@lists.osdl.org, linux-kernel@
 List-Id: containers.vger.kernel.org
 
 
-From 7f7caaa9d9014d7230dc0b1e0f75536f0b6ccdbf Mon Sep 17 00:00:00 2001
-From: Eric W. Biederman <ebiederm@xmission.com>
-Date: Mon, 10 Nov 2008 19:12:02 -0800
-Subject: [PATCH 2/5] pid: Generalize task_active_pid_ns
+From 95ae5f7dfaa77158b07d2cbdc8e5df0a81c93194 Mon Sep 17 00:00:00 2001
+From: Sukadev Bhattiprolu <sukadev@linux.vnet.ibm.com>
+Date: Tue, 18 Nov 2008 16:55:06 -0800
+Subject: [PATCH 3/5] Determine if sender is from ancestor ns
 
-Currently task_active_pid_ns is not safe to call after a
-task becomes a zombie and exit_task_namespaces is called,
-as nsproxy becomes NULL.  By reading the pid namespace from
-the pid of the task we can trivially solve this problem at
-the cost of one extra memory read in what should be the
-same cacheline as we read the namespace from.
+To implement container-init semantics, send_signal() must compute the pid
+namespace of the sender, but since signals may originate in workqueues/
+interrupt handlers, computing the namespace of sender is not always
+possible/safe.
 
-When moving things around I have made task_active_pid_ns
-out of line because keeping it in pid_namespace.h would
-require adding includes of pid.h and sched.h that I
-don't think we want.
+Define a flag, SIG_FROM_USER and set this flag when a signal originates
+from user-space (i.e in kill(), tkill(), rt_sigqueueinfo()). When this
+flag is set, send_signal() can safely compute the pid namespace of the
+sender.
 
-This change does make task_active_pid_ns unsafe to call during
-copy_process until we attach a pid on the task_struct which
-seems to be a reasonable trade off.
-
-Signed-off-by: Eric W. Biederman <ebiederm@xmission.com>
+Signed-off-by: Sukadev Bhattiprolu <sukadev@linux.vnet.ibm.com>
 ---
- include/linux/pid_namespace.h |    6 +-----
- kernel/fork.c                 |    4 ++--
- kernel/pid.c                  |    6 ++++++
- 3 files changed, 9 insertions(+), 7 deletions(-)
+ kernel/signal.c |   35 ++++++++++++++++++++++++++++++++---
+ 1 files changed, 32 insertions(+), 3 deletions(-)
 
-diff --git a/include/linux/pid_namespace.h b/include/linux/pid_namespace.h
-index d82fe82..38d1032 100644
---- a/include/linux/pid_namespace.h
-+++ b/include/linux/pid_namespace.h
-@@ -79,11 +79,7 @@ static inline void zap_pid_ns_processes(struct pid_namespace *ns)
+diff --git a/kernel/signal.c b/kernel/signal.c
+index d8d20d6..45aebf0 100644
+--- a/kernel/signal.c
++++ b/kernel/signal.c
+@@ -793,14 +793,42 @@ static inline int legacy_queue(struct sigpending *signals, int sig)
+ 	return (sig < SIGRTMIN) && sigismember(&signals->signal, sig);
  }
- #endif /* CONFIG_PID_NS */
  
--static inline struct pid_namespace *task_active_pid_ns(struct task_struct *tsk)
--{
--	return tsk->nsproxy->pid_ns;
--}
--
-+extern struct pid_namespace *task_active_pid_ns(struct task_struct *tsk);
- void pidhash_init(void);
- void pidmap_init(void);
- 
-diff --git a/kernel/fork.c b/kernel/fork.c
-index f608356..28be39a 100644
---- a/kernel/fork.c
-+++ b/kernel/fork.c
-@@ -1111,12 +1111,12 @@ static struct task_struct *copy_process(unsigned long clone_flags,
- 
- 	if (pid != &init_struct_pid) {
- 		retval = -ENOMEM;
--		pid = alloc_pid(task_active_pid_ns(p));
-+		pid = alloc_pid(p->nsproxy->pid_ns);
- 		if (!pid)
- 			goto bad_fork_cleanup_io;
- 
- 		if (clone_flags & CLONE_NEWPID) {
--			retval = pid_ns_prepare_proc(task_active_pid_ns(p));
-+			retval = pid_ns_prepare_proc(p->nsproxy->pid_ns);
- 			if (retval < 0)
- 				goto bad_fork_free_pid;
- 		}
-diff --git a/kernel/pid.c b/kernel/pid.c
-index 064e76a..c5513fe 100644
---- a/kernel/pid.c
-+++ b/kernel/pid.c
-@@ -474,6 +474,12 @@ pid_t task_session_nr_ns(struct task_struct *tsk, struct pid_namespace *ns)
- }
- EXPORT_SYMBOL(task_session_nr_ns);
- 
-+struct pid_namespace *task_active_pid_ns(struct task_struct *tsk)
++/*
++ * Return 1 if this signal originated directly from a user process (i.e via
++ * kill(), tkill(), sigqueue()) that is in an ancestor pid namespace of @t.
++ * Return 0 otherwise.
++ */
++#ifdef CONFIG_PID_NS
++#define SIG_FROM_USER  INT_MIN         /* MSB */
++static inline int siginfo_from_ancestor_ns(struct task_struct *t,
++			siginfo_t *info)
 +{
-+	return ns_of_pid(task_pid(tsk));
++	if (!is_si_special(info) && (info->si_signo & SIG_FROM_USER)) {
++		/* if t can't see us we are from parent ns */
++		if (task_pid_nr_ns(current, task_active_pid_ns(t)) <= 0)
++			return 1;
++	}
++	return 0;
 +}
-+EXPORT_SYMBOL_GPL(task_active_pid_ns);
++#else
++static inline int siginfo_from_ancestor_ns(struct task_struct *t,
++			siginfo_t *info)
++{
++	return 0;
++}
++#endif
 +
- /*
-  * Used by proc to find the first pid that is greater then or equal to nr.
-  *
+ static int send_signal(int sig, struct siginfo *info, struct task_struct *t,
+ 			int group)
+ {
+ 	struct sigpending *pending;
+ 	struct sigqueue *q;
++	int from_ancestor_ns;
+ 
+ 	trace_sched_signal_send(sig, t);
+ 
++	from_ancestor_ns = siginfo_from_ancestor_ns(t, info);
++
+ 	assert_spin_locked(&t->sighand->siglock);
+ 	if (!prepare_signal(sig, t))
+ 		return 0;
+@@ -850,6 +878,7 @@ static int send_signal(int sig, struct siginfo *info, struct task_struct *t,
+ 			break;
+ 		default:
+ 			copy_siginfo(&q->info, info);
++			q->info.si_signo &= ~SIG_FROM_USER;
+ 			break;
+ 		}
+ 	} else if (!is_si_special(info)) {
+@@ -2202,7 +2231,7 @@ sys_kill(pid_t pid, int sig)
+ {
+ 	struct siginfo info;
+ 
+-	info.si_signo = sig;
++	info.si_signo = sig | SIG_FROM_USER;
+ 	info.si_errno = 0;
+ 	info.si_code = SI_USER;
+ 	info.si_pid = task_tgid_vnr(current);
+@@ -2219,7 +2248,7 @@ static int do_tkill(pid_t tgid, pid_t pid, int sig)
+ 	unsigned long flags;
+ 
+ 	error = -ESRCH;
+-	info.si_signo = sig;
++	info.si_signo = sig | SIG_FROM_USER;
+ 	info.si_errno = 0;
+ 	info.si_code = SI_TKILL;
+ 	info.si_pid = task_tgid_vnr(current);
+@@ -2291,7 +2320,7 @@ sys_rt_sigqueueinfo(pid_t pid, int sig, siginfo_t __user *uinfo)
+ 	   Nor can they impersonate a kill(), which adds source info.  */
+ 	if (info.si_code >= 0)
+ 		return -EPERM;
+-	info.si_signo = sig;
++	info.si_signo = sig | SIG_FROM_USER;
+ 
+ 	/* POSIX.1b doesn't mention process groups.  */
+ 	return kill_proc_info(sig, &info, pid);
 -- 
 1.5.2.5
