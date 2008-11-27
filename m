@@ -1,11 +1,14 @@
 From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Subject: [RFC v10][PATCH 00/13] Kernel based checkpoint/restart
-Date: Wed, 26 Nov 2008 20:04:31 -0500
-Message-ID: <1227747884-14150-1-git-send-email-orenl__22973.1912063018$1227748063$gmane$org@cs.columbia.edu>
+Subject: [RFC v10][PATCH 11/13] Track in-kernel when we expect
+	checkpoint/restart to work
+Date: Wed, 26 Nov 2008 20:04:42 -0500
+Message-ID: <1227747884-14150-12-git-send-email-orenl__6312.9352209673$1227748065$gmane$org@cs.columbia.edu>
+References: <1227747884-14150-1-git-send-email-orenl@cs.columbia.edu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <1227747884-14150-1-git-send-email-orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,167 +22,147 @@ To: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
 Cc: linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Linus Torvalds <torvalds-3NddpPZAyC0@public.gmane.org>, Alexander Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, "H. Peter Anvin" <hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org>, Thomas Gleixner <tglx-hfZtesqFncYOwBW4kG4KsQ@public.gmane.org>, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Checkpoint-restart (c/r): fixes a couple of bugs and a DoS issue
-(tested against v2.6.28-rc3).
+From: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 
-We'd like these to make it into -mm. This version addresses the
-last of the known bugs. Please pull at least the first 11 patches,
-as they are similar to before.
+Suggested by Ingo.
 
-Patches 1-11 are stable, providing self- and external- c/r of a
-single process.
-Patches 12 and 13 are newer, adding support for c/r of multiple
-processes.
+Checkpoint/restart is going to be a long effort to get things working.
+We're going to have a lot of things that we know just don't work for
+a long time.  That doesn't mean that it will be useless, it just means
+that there's some complicated features that we are going to have to
+work incrementally to fix.
 
-The git tree tracking v10, branch 'ckpt-v10' (and older versions):
-	git://git.ncl.cs.columbia.edu/pub/git/linux-cr.git
+This patch introduces a new mechanism to help the checkpoint/restart
+developers.  A new function pair: task/process_deny_checkpoint() is
+created.  When called, these tell the kernel that we *know* that the
+process has performed some activity that will keep it from being
+properly checkpointed.
 
-Restarting multiple processes requires 'mktree' userspace tool:
-	git://git.ncl.cs.columbia.edu/pub/git/user-cr.git
+The 'flag' is an atomic_t for now so that we can have some level
+of atomicity and make sure to only warn once.
 
-Oren.
+For now, this is a one-way trip.  Once a process is no longer
+'may_checkpoint' capable, neither it nor its children ever will be.
+This can, of course, be fixed up in the future.  We might want to
+reset the flag when a new pid namespace is created, for instance.
 
+Signed-off-by: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Signed-off-by: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+---
+ checkpoint/checkpoint.c    |    6 ++++++
+ include/linux/checkpoint.h |   33 ++++++++++++++++++++++++++++++++-
+ include/linux/sched.h      |    3 +++
+ kernel/fork.c              |   10 ++++++++++
+ 4 files changed, 51 insertions(+), 1 deletions(-)
 
---
-Why do we want it?  It allows containers to be moved between physical
-machines' kernels in the same way that VMWare can move VMs between
-physical machines' hypervisors.  There are currently at least two
-out-of-tree implementations of this in the commercial world (IBM's
-Metacluster and Parallels' OpenVZ/Virtuozzo) and several in the academic
-world like Zap.
-
-Why do we need it in mainline now?  Because we already have plenty of
-out-of-tree ones, and  want to know what an in-tree one will be like.   :)  
-What *I* want right now is the extra review and scrutiny that comes with
-a mainline submission to make sure we're not going in a direction
-contrary to the community.
-
-This only supports pretty simple apps.  But, I trust Ingo when he says:
->> > > Generally, if something works for simple apps already (in a robust, 
->> > > compatible and supportable way) and users find it "very cool", then 
->> > > support for more complex apps is not far in the future.  but if you
->> > > want to support more complex apps straight away, it takes forever and
->> > > gets ugly.
-
-We're *certainly* going to be changing the ABI (which is the format of
-the checkpoint).  I'd like to follow the model that we used for
-ext4-dev, which is to make it very clear that this is a development-only
-feature for now.  Perhaps we do that by making the interface only
-available through debugfs or something similar for now.  Or, reserving
-the syscall numbers but require some runtime switch to be thrown before
-they can be used.  I'm open to suggestions here.
---
-
---
-Todo:
-- Add support for x86-64 and improve ABI
-- Refine or change syscall interface
-- Handle multiple namespaces in a container (e.g. save the filesystem
-  namespaces state with the file descriptors)
-- Security (without CAPS_SYS_ADMIN files restore may fail)
-
-Changelog:
-
-[2008-Nov-26] v10:
-  - Grab vfs root of container init, rather than current process
-  - Acquire dcache_lock around call to __d_path() in cr_fill_name()
-  - Force end-of-string in cr_read_string() (fix possible DoS)
-  - Introduce cr_write_buffer(), cr_read_buffer() and cr_read_buf_type()
-
-[2008-Nov-10] v9:
-  - Support multiple processes c/r
-  - Extend checkpoint header with archtiecture dependent header 
-  - Misc bug fixes (see individual changelogs)
-  - Rebase to v2.6.28-rc3.
-
-[2008-Oct-29] v8:
-  - Support "external" checkpoint
-  - Include Dave Hansen's 'deny-checkpoint' patch
-  - Split docs in Documentation/checkpoint/..., and improve contents
-
-[2008-Oct-17] v7:
-  - Fix save/restore state of FPU
-  - Fix argument given to kunmap_atomic() in memory dump/restore
-
-[2008-Oct-07] v6:
-  - Balance all calls to cr_hbuf_get() with matching cr_hbuf_put()
-    (even though it's not really needed)
-  - Add assumptions and what's-missing to documentation
-  - Misc fixes and cleanups
-
-[2008-Sep-11] v5:
-  - Config is now 'def_bool n' by default
-  - Improve memory dump/restore code (following Dave Hansen's comments)
-  - Change dump format (and code) to allow chunks of <vaddrs, pages>
-    instead of one long list of each
-  - Fix use of follow_page() to avoid faulting in non-present pages
-  - Memory restore now maps user pages explicitly to copy data into them,
-    instead of reading directly to user space; got rid of mprotect_fixup()
-  - Remove preempt_disable() when restoring debug registers
-  - Rename headers files s/ckpt/checkpoint/
-  - Fix misc bugs in files dump/restore
-  - Fixes and cleanups on some error paths
-  - Fix misc coding style
-
-[2008-Sep-09] v4:
-  - Various fixes and clean-ups
-  - Fix calculation of hash table size
-  - Fix header structure alignment
-  - Use stand list_... for cr_pgarr
-
-[2008-Aug-29] v3:
-  - Various fixes and clean-ups
-  - Use standard hlist_... for hash table
-  - Better use of standard kmalloc/kfree
-
-[2008-Aug-20] v2:
-  - Added Dump and restore of open files (regular and directories)
-  - Added basic handling of shared objects, and improve handling of
-    'parent tag' concept
-  - Added documentation
-  - Improved ABI, 64bit padding for image data
-  - Improved locking when saving/restoring memory
-  - Added UTS information to header (release, version, machine)
-  - Cleanup extraction of filename from a file pointer
-  - Refactor to allow easier reviewing
-  - Remove requirement for CAPS_SYS_ADMIN until we come up with a
-    security policy (this means that file restore may fail)
-  - Other cleanup and response to comments for v1
-
-[2008-Jul-29] v1:
-  - Initial version: support a single task with address space of only
-    private anonymous or file-mapped VMAs; syscalls ignore pid/crid
-    argument and act on current process.
-
---
-At the containers mini-conference before OLS, the consensus among
-all the stakeholders was that doing checkpoint/restart in the kernel
-as much as possible was the best approach.  With this approach, the
-kernel will export a relatively opaque 'blob' of data to userspace
-which can then be handed to the new kernel at restore time.
-
-This is different than what had been proposed before, which was
-that a userspace application would be responsible for collecting
-all of this data.  We were also planning on adding lots of new,
-little kernel interfaces for all of the things that needed
-checkpointing.  This unites those into a single, grand interface.
-
-The 'blob' will contain copies of select portions of kernel
-structures such as vmas and mm_structs.  It will also contain
-copies of the actual memory that the process uses.  Any changes
-in this blob's format between kernel revisions can be handled by
-an in-userspace conversion program.
-
-This is a similar approach to virtually all of the commercial
-checkpoint/restart products out there, as well as the research
-project Zap.
-
-These patches basically serialize internel kernel state and write
-it out to a file descriptor.  The checkpoint and restore are done
-with two new system calls: sys_checkpoint and sys_restart.
-
-In this incarnation, they can only work checkpoint and restore a
-single task. The task's address space may consist of only private,
-simple vma's - anonymous or file-mapped. The open files may consist
-of only simple files and directories.
---
+diff --git a/checkpoint/checkpoint.c b/checkpoint/checkpoint.c
+index 08719ba..3d0a366 100644
+--- a/checkpoint/checkpoint.c
++++ b/checkpoint/checkpoint.c
+@@ -232,6 +232,12 @@ static int cr_write_task(struct cr_ctx *ctx, struct task_struct *t)
+ 		return -EAGAIN;
+ 	}
+ 
++	if (!atomic_read(&t->may_checkpoint)) {
++		pr_warning("c/r: task %d may not checkpoint\n",
++			   task_pid_vnr(t));
++		return -EBUSY;
++	}
++
+ 	ret = cr_write_task_struct(ctx, t);
+ 	cr_debug("task_struct: ret %d\n", ret);
+ 	if (ret < 0)
+diff --git a/include/linux/checkpoint.h b/include/linux/checkpoint.h
+index 93fea2f..fc1873b 100644
+--- a/include/linux/checkpoint.h
++++ b/include/linux/checkpoint.h
+@@ -10,8 +10,11 @@
+  *  distribution for more details.
+  */
+ 
+-#include <linux/path.h>
+ #include <linux/fs.h>
++#include <linux/path.h>
++#include <linux/sched.h>
++
++#ifdef CONFIG_CHECKPOINT_RESTART
+ 
+ #define CR_VERSION  2
+ 
+@@ -95,4 +98,32 @@ extern int cr_read_files(struct cr_ctx *ctx);
+ #define cr_debug(fmt, args...)  \
+ 	pr_debug("[%d:c/r:%s] " fmt, task_pid_vnr(current), __func__, ## args)
+ 
++static inline void __task_deny_checkpointing(struct task_struct *task,
++		char *file, int line)
++{
++	if (!atomic_dec_and_test(&task->may_checkpoint))
++		return;
++	printk(KERN_INFO "process performed an action that can not be "
++			"checkpointed at: %s:%d\n", file, line);
++	WARN_ON(1);
++}
++#define process_deny_checkpointing(p)  \
++	__task_deny_checkpointing(p, __FILE__, __LINE__)
++
++/*
++ * For now, we're not going to have a distinction between
++ * tasks and processes for the purpose of c/r.  But, allow
++ * these two calls anyway to make new users at least think
++ * about it.
++ */
++#define task_deny_checkpointing(p)  \
++	__task_deny_checkpointing(p, __FILE__, __LINE__)
++
++#else
++
++static inline void task_deny_checkpointing(struct task_struct *task) {}
++static inline void process_deny_checkpointing(struct task_struct *task) {}
++
++#endif
++
+ #endif /* _CHECKPOINT_CKPT_H_ */
+diff --git a/include/linux/sched.h b/include/linux/sched.h
+index b483f39..0c8d02d 100644
+--- a/include/linux/sched.h
++++ b/include/linux/sched.h
+@@ -1349,6 +1349,9 @@ struct task_struct {
+ 	 */
+ 	unsigned long timer_slack_ns;
+ 	unsigned long default_timer_slack_ns;
++#ifdef CONFIG_CHECKPOINT_RESTART
++	atomic_t may_checkpoint;
++#endif
+ };
+ 
+ /*
+diff --git a/kernel/fork.c b/kernel/fork.c
+index f608356..693b0cb 100644
+--- a/kernel/fork.c
++++ b/kernel/fork.c
+@@ -195,6 +195,13 @@ void __init fork_init(unsigned long mempages)
+ 	init_task.signal->rlim[RLIMIT_NPROC].rlim_max = max_threads/2;
+ 	init_task.signal->rlim[RLIMIT_SIGPENDING] =
+ 		init_task.signal->rlim[RLIMIT_NPROC];
++
++#ifdef CONFIG_CHECKPOINT_RESTART
++	/*
++	 * This probably won't stay set for long...
++	 */
++	atomic_set(&init_task.may_checkpoint, 1);
++#endif
+ }
+ 
+ int __attribute__((weak)) arch_dup_task_struct(struct task_struct *dst,
+@@ -245,6 +252,9 @@ static struct task_struct *dup_task_struct(struct task_struct *orig)
+ 	tsk->btrace_seq = 0;
+ #endif
+ 	tsk->splice_pipe = NULL;
++#ifdef CONFIG_CHECKPOINT_RESTART
++	atomic_set(&tsk->may_checkpoint, atomic_read(&orig->may_checkpoint));
++#endif
+ 	return tsk;
+ 
+ out:
+-- 
+1.5.4.3
