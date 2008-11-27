@@ -1,79 +1,112 @@
-From: Fernando Luis =?ISO-8859-1?Q?V=E1zquez?= Cao <fernando-gVGce1chcLdL9jVzuh4AOg@public.gmane.org>
-Subject: Re: [patch 0/4] [RFC] Another proportional weight IO controller
-Date: Thu, 27 Nov 2008 17:43:02 +0900
-Message-ID: <1227775382.7443.43.camel__20499.6338965886$1227775547$gmane$org@sebastian.kern.oss.ntt.co.jp>
-References: <20081120134701.GB29306@redhat.com>
-	<20081125.113359.623571555980951312.ryov@valinux.co.jp>
-	<20081125162720.GH341@redhat.com>
-	<20081126.214707.653026525707335397.ryov@valinux.co.jp>
-	<20081126160805.GE27826@redhat.com>
+From: Nadia Derbey <Nadia.Derbey@bull.net>
+Subject: Re: [RFC][PATCH 2/5] pid: Generalize task_active_pid_ns
+Date: Thu, 27 Nov 2008 14:09:31 +0100
+Message-ID: <1227791371.2615.109.camel@frecb000730.frec.bull.fr>
+References: <20081126034242.GA23120@us.ibm.com>
+	 <20081126034528.GB23238@us.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
+Content-Type: text/plain
 Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20081126160805.GE27826-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Vivek Goyal <vgoyal-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Cc: menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, riel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, fchecconi-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, paolo.valente-rcYM44yAMweonA0d6jMUrA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, virtualization-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, jmoyer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, jens.axboe-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, ngupta-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1755799AbYK0NLf@vger.kernel.org>
+In-Reply-To: <20081126034528.GB23238@us.ibm.com>
+Sender: linux-kernel-owner@vger.kernel.org
+To: Sukadev Bhattiprolu <sukadev@linux.vnet.ibm.com>
+Cc: oleg@redhat.com, ebiederm@xmission.com, roland@redhat.com, containers@lists.osdl.org, linux-kernel@vger.kernel.org, xemul@openvz.org
 List-Id: containers.vger.kernel.org
 
-On Wed, 2008-11-26 at 11:08 -0500, Vivek Goyal wrote:
-> > > > > What do you think about the solution at IO scheduler level (like BFQ) or
-> > > > > may be little above that where one can try some code sharing among IO
-> > > > > schedulers? 
-> > > > 
-> > > > I would like to support any type of block device even if I/Os issued
-> > > > to the underlying device doesn't go through IO scheduler. Dm-ioband
-> > > > can be made use of for the devices such as loop device.
-> > > > 
-> > > 
-> > > What do you mean by that IO issued to underlying device does not go
-> > > through IO scheduler? loop device will be associated with a file and
-> > > IO will ultimately go to the IO scheduler which is serving those file
-> > > blocks?
-> > 
-> > How about if the files is on an NFS-mounted file system?
-> > 
+On Tue, 2008-11-25 at 19:45 -0800, Sukadev Bhattiprolu wrote:
+> >From 7f7caaa9d9014d7230dc0b1e0f75536f0b6ccdbf Mon Sep 17 00:00:00 2001
+> From: Eric W. Biederman <ebiederm@xmission.com>
+> Date: Mon, 10 Nov 2008 19:12:02 -0800
+> Subject: [PATCH 2/5] pid: Generalize task_active_pid_ns
 > 
-> Interesting. So on the surface it looks like contention for disk but it
-> is more the contention for network and contention for disk on NFS server.
+> Currently task_active_pid_ns is not safe to call after a
+> task becomes a zombie and exit_task_namespaces is called,
+> as nsproxy becomes NULL.  By reading the pid namespace from
+> the pid of the task we can trivially solve this problem at
+> the cost of one extra memory read in what should be the
+> same cacheline as we read the namespace from.
 > 
-> True that leaf node IO control will not help here as IO is not going to
-> leaf node at all. We can make the situation better by doing resource 
-> control on network IO though.
-
-On the client side NFS does not go through the block layer so no control
-is possible there. As Vivek pointed out this could be tackled at the
-network layer. Though I guess we could make do with a solution that
-controls just the number of dirty pages (this would work for NFS writes
-since the NFS superblock has a backing_device_info structure associated
-with it).
-
-> > > What's the use case scenario of doing IO control at loop device?
-> > > Ultimately the resource contention will take place on actual underlying
-> > > physical device where the file blocks are. Will doing the resource control
-> > > there not solve the issue for you?
-> > 
-> > I don't come up with any use case, but I would like to make the
-> > resource controller more flexible. Actually, a certain block device
-> > that I'm using does not use the I/O scheduler.
+> When moving things around I have made task_active_pid_ns
+> out of line because keeping it in pid_namespace.h would
+> require adding includes of pid.h and sched.h that I
+> don't think we want.
 > 
-> Isn't it equivalent to using No-op? If yes, then it should not be an
-> issue?
+> This change does make task_active_pid_ns unsafe to call during
+> copy_process until we attach a pid on the task_struct which
+> seems to be a reasonable trade off.
+> 
+> Signed-off-by: Eric W. Biederman <ebiederm@xmission.com>
+> ---
+>  include/linux/pid_namespace.h |    6 +-----
+>  kernel/fork.c                 |    4 ++--
+>  kernel/pid.c                  |    6 ++++++
+>  3 files changed, 9 insertions(+), 7 deletions(-)
+> 
+> diff --git a/include/linux/pid_namespace.h b/include/linux/pid_namespace.h
+> index d82fe82..38d1032 100644
+> --- a/include/linux/pid_namespace.h
+> +++ b/include/linux/pid_namespace.h
+> @@ -79,11 +79,7 @@ static inline void zap_pid_ns_processes(struct pid_namespace *ns)
+>  }
+>  #endif /* CONFIG_PID_NS */
+>  
+> -static inline struct pid_namespace *task_active_pid_ns(struct task_struct *tsk)
+> -{
+> -	return tsk->nsproxy->pid_ns;
+> -}
+> -
+> +extern struct pid_namespace *task_active_pid_ns(struct task_struct *tsk);
+>  void pidhash_init(void);
+>  void pidmap_init(void);
+>  
+> diff --git a/kernel/fork.c b/kernel/fork.c
+> index f608356..28be39a 100644
+> --- a/kernel/fork.c
+> +++ b/kernel/fork.c
+> @@ -1111,12 +1111,12 @@ static struct task_struct *copy_process(unsigned long clone_flags,
+>  
 
-No, it is not equivalent. When using devices drivers that provide their
-own make_request_fn() (check for devices that invoke
-blk_queue_make_request() at initialization time) bios entering the block
-layer can go directly to the device driver and from there to the device.
+Suka,
+
+I'm wondering if it is still safe to keep the call to
+task_active_pid_ns() in create_new_namespaces(): copy_namespaces() is
+called a couple of lines above this sequence and it calls
+create_new_namespaces(). So I don't see why you're now referencing
+p->nsproxy->pid_ns here and not in create_new_namespaces()?
 
 Regards,
+Nadia
 
-Fernando
+>  	if (pid != &init_struct_pid) {
+>  		retval = -ENOMEM;
+> -		pid = alloc_pid(task_active_pid_ns(p));
+> +		pid = alloc_pid(p->nsproxy->pid_ns);
+>  		if (!pid)
+>  			goto bad_fork_cleanup_io;
+>  
+>  		if (clone_flags & CLONE_NEWPID) {
+> -			retval = pid_ns_prepare_proc(task_active_pid_ns(p));
+> +			retval = pid_ns_prepare_proc(p->nsproxy->pid_ns);
+>  			if (retval < 0)
+>  				goto bad_fork_free_pid;
+>  		}
+> diff --git a/kernel/pid.c b/kernel/pid.c
+> index 064e76a..c5513fe 100644
+> --- a/kernel/pid.c
+> +++ b/kernel/pid.c
+> @@ -474,6 +474,12 @@ pid_t task_session_nr_ns(struct task_struct *tsk, struct pid_namespace *ns)
+>  }
+>  EXPORT_SYMBOL(task_session_nr_ns);
+>  
+> +struct pid_namespace *task_active_pid_ns(struct task_struct *tsk)
+> +{
+> +	return ns_of_pid(task_pid(tsk));
+> +}
+> +EXPORT_SYMBOL_GPL(task_active_pid_ns);
+> +
+>  /*
+>   * Used by proc to find the first pid that is greater then or equal to nr.
+>   *
+-- 
+Nadia Derbey <Nadia.Derbey@bull.net>
