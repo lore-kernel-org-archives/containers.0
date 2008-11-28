@@ -1,7 +1,7 @@
 From: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Subject: [PATCH 1/2] cgroups: cleanup for dummy root
-Date: Fri, 28 Nov 2008 15:27:08 +0800
-Message-ID: <492F9D4C.2020204__2061.74913696504$1227857450$gmane$org@cn.fujitsu.com>
+Subject: [PATCH] cgroups: add link_css_set() to remove duplicate code
+Date: Fri, 28 Nov 2008 15:27:12 +0800
+Message-ID: <492F9D50.9050603__40612.9797026098$1227857722$gmane$org@cn.fujitsu.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -19,82 +19,117 @@ To: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
 Cc: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, LKML <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-- Don't link rootnode to the root list, so root_list contains active
-  hierarchies only as the comment indicates.
-
-- Don't link css_sets to the dummy cgroup, because we never want to
-  run through the tasks in that dummpy cgroup (which means run
-  through all the tasks in the system).
+Add a common function link_css_set() to link a css_set to a
+cgroup.
 
 Signed-off-by: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
 ---
- kernel/cgroup.c |   24 ++----------------------
- 1 files changed, 2 insertions(+), 22 deletions(-)
+ kernel/cgroup.c |   51 ++++++++++++++++++++++-----------------------------
+ 1 files changed, 22 insertions(+), 29 deletions(-)
 
 diff --git a/kernel/cgroup.c b/kernel/cgroup.c
-index fe00b3b..46d9981 100644
+index 46d9981..42d0597 100644
 --- a/kernel/cgroup.c
 +++ b/kernel/cgroup.c
-@@ -84,7 +84,7 @@ struct cgroupfs_root {
- 	/* Tracks how many cgroups are currently defined in hierarchy.*/
- 	int number_of_cgroups;
+@@ -384,6 +384,19 @@ static int allocate_cg_links(int count, struct list_head *tmp)
+ 	return 0;
+ }
  
--	/* A list running through the mounted hierarchies */
-+	/* A list running through the active hierarchies */
- 	struct list_head root_list;
++static void link_css_set(struct list_head *tmp_cg_links,
++			 struct css_set *cg, struct cgroup *cgrp)
++{
++	struct cg_cgroup_link *link;
++
++	BUG_ON(list_empty(tmp_cg_links));
++	link = list_first_entry(tmp_cg_links, struct cg_cgroup_link,
++				cgrp_link_list);
++	link->cg = cg;
++	list_move(&link->cgrp_link_list, &cgrp->css_sets);
++	list_add(&link->cg_link_list, &cg->cg_links);
++}
++
+ /*
+  * find_css_set() takes an existing cgroup group and a
+  * cgroup object, and returns a css_set object that's
+@@ -399,7 +412,6 @@ static struct css_set *find_css_set(
+ 	int i;
  
- 	/* Hierarchy-specific flags */
-@@ -184,7 +184,6 @@ struct cg_cgroup_link {
-  */
+ 	struct list_head tmp_cg_links;
+-	struct cg_cgroup_link *link;
  
- static struct css_set init_css_set;
--static struct cg_cgroup_link init_css_set_link;
+ 	struct hlist_head *hhead;
  
- /* css_set_lock protects the list of css_set objects, and the
-  * chain of tasks off each css_set.  Nests outside task->alloc_lock
-@@ -456,15 +455,6 @@ static struct css_set *find_css_set(
- 			list_add(&link->cg_link_list, &res->cg_links);
- 		}
+@@ -444,16 +456,8 @@ static struct css_set *find_css_set(
+ 		 * only do it for the first subsystem in each
+ 		 * hierarchy
+ 		 */
+-		if (ss->root->subsys_list.next == &ss->sibling) {
+-			BUG_ON(list_empty(&tmp_cg_links));
+-			link = list_entry(tmp_cg_links.next,
+-					  struct cg_cgroup_link,
+-					  cgrp_link_list);
+-			list_del(&link->cgrp_link_list);
+-			list_add(&link->cgrp_link_list, &cgrp->css_sets);
+-			link->cg = res;
+-			list_add(&link->cg_link_list, &res->cg_links);
+-		}
++		if (ss->root->subsys_list.next == &ss->sibling)
++			link_css_set(&tmp_cg_links, res, cgrp);
  	}
--	if (list_empty(&rootnode.subsys_list)) {
--		link = list_entry(tmp_cg_links.next,
--				  struct cg_cgroup_link,
--				  cgrp_link_list);
--		list_del(&link->cgrp_link_list);
--		list_add(&link->cgrp_link_list, &dummytop->css_sets);
--		link->cg = res;
--		list_add(&link->cg_link_list, &res->cg_links);
--	}
  
  	BUG_ON(!list_empty(&tmp_cg_links));
+@@ -982,7 +986,7 @@ static int cgroup_get_sb(struct file_system_type *fs_type,
+ 		root = NULL;
+ 	} else {
+ 		/* New superblock */
+-		struct cgroup *cgrp = &root->top_cgroup;
++		struct cgroup *root_cgrp = &root->top_cgroup;
+ 		struct inode *inode;
+ 		int i;
  
-@@ -2561,16 +2551,9 @@ int __init cgroup_init_early(void)
- 	INIT_HLIST_NODE(&init_css_set.hlist);
- 	css_set_count = 1;
- 	init_cgroup_root(&rootnode);
--	list_add(&rootnode.root_list, &roots);
--	root_count = 1;
-+	root_count = 0;
- 	init_task.cgroups = &init_css_set;
+@@ -1023,7 +1027,7 @@ static int cgroup_get_sb(struct file_system_type *fs_type,
+ 		list_add(&root->root_list, &roots);
+ 		root_count++;
  
--	init_css_set_link.cg = &init_css_set;
--	list_add(&init_css_set_link.cgrp_link_list,
--		 &rootnode.top_cgroup.css_sets);
--	list_add(&init_css_set_link.cg_link_list,
--		 &init_css_set.cg_links);
+-		sb->s_root->d_fsdata = &root->top_cgroup;
++		sb->s_root->d_fsdata = root_cgrp;
+ 		root->top_cgroup.dentry = sb->s_root;
+ 
+ 		/* Link the top cgroup in this hierarchy into all
+@@ -1034,29 +1038,18 @@ static int cgroup_get_sb(struct file_system_type *fs_type,
+ 			struct hlist_node *node;
+ 			struct css_set *cg;
+ 
+-			hlist_for_each_entry(cg, node, hhead, hlist) {
+-				struct cg_cgroup_link *link;
 -
- 	for (i = 0; i < CSS_SET_TABLE_SIZE; i++)
- 		INIT_HLIST_HEAD(&css_set_table[i]);
+-				BUG_ON(list_empty(&tmp_cg_links));
+-				link = list_entry(tmp_cg_links.next,
+-						  struct cg_cgroup_link,
+-						  cgrp_link_list);
+-				list_del(&link->cgrp_link_list);
+-				link->cg = cg;
+-				list_add(&link->cgrp_link_list,
+-					 &root->top_cgroup.css_sets);
+-				list_add(&link->cg_link_list, &cg->cg_links);
+-			}
++			hlist_for_each_entry(cg, node, hhead, hlist)
++				link_css_set(&tmp_cg_links, cg, root_cgrp);
+ 		}
+ 		write_unlock(&css_set_lock);
  
-@@ -2674,9 +2657,6 @@ static int proc_cgroup_show(struct seq_file *m, void *v)
- 		int subsys_id;
- 		int count = 0;
+ 		free_cg_links(&tmp_cg_links);
  
--		/* Skip this hierarchy if it has no active subsystems */
--		if (!root->actual_subsys_bits)
--			continue;
- 		seq_printf(m, "%lu:", root->subsys_bits);
- 		for_each_subsys(root, ss)
- 			seq_printf(m, "%s%s", count++ ? "," : "", ss->name);
+-		BUG_ON(!list_empty(&cgrp->sibling));
+-		BUG_ON(!list_empty(&cgrp->children));
++		BUG_ON(!list_empty(&root_cgrp->sibling));
++		BUG_ON(!list_empty(&root_cgrp->children));
+ 		BUG_ON(root->number_of_cgroups != 1);
+ 
+-		cgroup_populate_dir(cgrp);
++		cgroup_populate_dir(root_cgrp);
+ 		mutex_unlock(&inode->i_mutex);
+ 		mutex_unlock(&cgroup_mutex);
+ 	}
 -- 
 1.5.4.rc3
