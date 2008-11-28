@@ -1,7 +1,7 @@
 From: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Subject: [PATCH 2/3] cgroups: add inactive subsystems to rootnode.root_list
-Date: Fri, 28 Nov 2008 18:02:37 +0800
-Message-ID: <492FC1BD.4010705__31985.5162445039$1227866895$gmane$org@cn.fujitsu.com>
+Subject: [PATCH 3/3] cgroups: introduce link_css_set() to remove duplicate code
+Date: Fri, 28 Nov 2008 18:02:42 +0800
+Message-ID: <492FC1C2.9050001__19346.7385056012$1227867071$gmane$org@cn.fujitsu.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -19,58 +19,128 @@ To: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
 Cc: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>, LKML <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Though for an inactive hierarchy, we have subsys->root == &rootnode,
-but rootnode's root_list is always empty.
-
-This conflicts with the code in find_css_set():
-
-	for (i = 0; i < CGROUP_SUBSYS_COUNT; i++) {
-		...
-		if (ss->root->subsys_list.next == &ss->sibling) {
-			...
-		}
-	}
-	if (list_empty(&rootnode.subsys_list)) {
-		...
-	}
-
-The above code assumes rootnode.subsys_list links all inactive
-hierarchies.
+Add a common function link_css_set() to link a css_set to a cgroup.
 
 Signed-off-by: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
 ---
- kernel/cgroup.c |    5 +++--
- 1 files changed, 3 insertions(+), 2 deletions(-)
+ kernel/cgroup.c |   62 +++++++++++++++++++++---------------------------------
+ 1 files changed, 24 insertions(+), 38 deletions(-)
 
 diff --git a/kernel/cgroup.c b/kernel/cgroup.c
-index 33ba756..4e50e97 100644
+index 4e50e97..1442077 100644
 --- a/kernel/cgroup.c
 +++ b/kernel/cgroup.c
-@@ -716,7 +716,7 @@ static int rebind_subsystems(struct cgroupfs_root *root,
- 			BUG_ON(dummytop->subsys[i]->cgroup != dummytop);
- 			cgrp->subsys[i] = dummytop->subsys[i];
- 			cgrp->subsys[i]->cgroup = cgrp;
--			list_add(&ss->sibling, &root->subsys_list);
-+			list_move(&ss->sibling, &root->subsys_list);
- 			rcu_assign_pointer(ss->root, root);
- 			if (ss->bind)
- 				ss->bind(ss, cgrp);
-@@ -730,7 +730,7 @@ static int rebind_subsystems(struct cgroupfs_root *root,
- 			dummytop->subsys[i]->cgroup = dummytop;
- 			cgrp->subsys[i] = NULL;
- 			rcu_assign_pointer(subsys[i]->root, &rootnode);
--			list_del(&ss->sibling);
-+			list_move(&ss->sibling, &rootnode.subsys_list);
- 		} else if (bit & final_bits) {
- 			/* Subsystem state should already exist */
- 			BUG_ON(!cgrp->subsys[i]);
-@@ -2522,6 +2522,7 @@ static void __init cgroup_init_subsys(struct cgroup_subsys *ss)
- 	printk(KERN_INFO "Initializing cgroup subsys %s\n", ss->name);
+@@ -385,6 +385,19 @@ static int allocate_cg_links(int count, struct list_head *tmp)
+ 	return 0;
+ }
  
- 	/* Create the top cgroup state for this subsystem */
-+	list_add(&ss->sibling, &rootnode.root_list);
- 	ss->root = &rootnode;
- 	css = ss->create(ss, dummytop);
- 	/* We don't handle early failures gracefully */
++static void link_css_set(struct list_head *tmp_cg_links,
++			 struct css_set *cg, struct cgroup *cgrp)
++{
++	struct cg_cgroup_link *link;
++
++	BUG_ON(list_empty(tmp_cg_links));
++	link = list_first_entry(tmp_cg_links, struct cg_cgroup_link,
++				cgrp_link_list);
++	link->cg = cg;
++	list_move(&link->cgrp_link_list, &cgrp->css_sets);
++	list_add(&link->cg_link_list, &cg->cg_links);
++}
++
+ /*
+  * find_css_set() takes an existing cgroup group and a
+  * cgroup object, and returns a css_set object that's
+@@ -400,7 +413,6 @@ static struct css_set *find_css_set(
+ 	int i;
+ 
+ 	struct list_head tmp_cg_links;
+-	struct cg_cgroup_link *link;
+ 
+ 	struct hlist_head *hhead;
+ 
+@@ -445,26 +457,11 @@ static struct css_set *find_css_set(
+ 		 * only do it for the first subsystem in each
+ 		 * hierarchy
+ 		 */
+-		if (ss->root->subsys_list.next == &ss->sibling) {
+-			BUG_ON(list_empty(&tmp_cg_links));
+-			link = list_entry(tmp_cg_links.next,
+-					  struct cg_cgroup_link,
+-					  cgrp_link_list);
+-			list_del(&link->cgrp_link_list);
+-			list_add(&link->cgrp_link_list, &cgrp->css_sets);
+-			link->cg = res;
+-			list_add(&link->cg_link_list, &res->cg_links);
+-		}
+-	}
+-	if (list_empty(&rootnode.subsys_list)) {
+-		link = list_entry(tmp_cg_links.next,
+-				  struct cg_cgroup_link,
+-				  cgrp_link_list);
+-		list_del(&link->cgrp_link_list);
+-		list_add(&link->cgrp_link_list, &dummytop->css_sets);
+-		link->cg = res;
+-		list_add(&link->cg_link_list, &res->cg_links);
++		if (ss->root->subsys_list.next == &ss->sibling)
++			link_css_set(&tmp_cg_links, res, cgrp);
+ 	}
++	if (list_empty(&rootnode.subsys_list))
++		link_css_set(&tmp_cg_links, res, dummytop);
+ 
+ 	BUG_ON(!list_empty(&tmp_cg_links));
+ 
+@@ -992,7 +989,7 @@ static int cgroup_get_sb(struct file_system_type *fs_type,
+ 		root = NULL;
+ 	} else {
+ 		/* New superblock */
+-		struct cgroup *cgrp = &root->top_cgroup;
++		struct cgroup *root_cgrp = &root->top_cgroup;
+ 		struct inode *inode;
+ 		int i;
+ 
+@@ -1033,7 +1030,7 @@ static int cgroup_get_sb(struct file_system_type *fs_type,
+ 		list_add(&root->root_list, &roots);
+ 		root_count++;
+ 
+-		sb->s_root->d_fsdata = &root->top_cgroup;
++		sb->s_root->d_fsdata = root_cgrp;
+ 		root->top_cgroup.dentry = sb->s_root;
+ 
+ 		/* Link the top cgroup in this hierarchy into all
+@@ -1044,29 +1041,18 @@ static int cgroup_get_sb(struct file_system_type *fs_type,
+ 			struct hlist_node *node;
+ 			struct css_set *cg;
+ 
+-			hlist_for_each_entry(cg, node, hhead, hlist) {
+-				struct cg_cgroup_link *link;
+-
+-				BUG_ON(list_empty(&tmp_cg_links));
+-				link = list_entry(tmp_cg_links.next,
+-						  struct cg_cgroup_link,
+-						  cgrp_link_list);
+-				list_del(&link->cgrp_link_list);
+-				link->cg = cg;
+-				list_add(&link->cgrp_link_list,
+-					 &root->top_cgroup.css_sets);
+-				list_add(&link->cg_link_list, &cg->cg_links);
+-			}
++			hlist_for_each_entry(cg, node, hhead, hlist)
++				link_css_set(&tmp_cg_links, cg, root_cgrp);
+ 		}
+ 		write_unlock(&css_set_lock);
+ 
+ 		free_cg_links(&tmp_cg_links);
+ 
+-		BUG_ON(!list_empty(&cgrp->sibling));
+-		BUG_ON(!list_empty(&cgrp->children));
++		BUG_ON(!list_empty(&root_cgrp->sibling));
++		BUG_ON(!list_empty(&root_cgrp->children));
+ 		BUG_ON(root->number_of_cgroups != 1);
+ 
+-		cgroup_populate_dir(cgrp);
++		cgroup_populate_dir(root_cgrp);
+ 		mutex_unlock(&inode->i_mutex);
+ 		mutex_unlock(&cgroup_mutex);
+ 	}
 -- 
 1.5.4.rc3
