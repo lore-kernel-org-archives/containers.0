@@ -1,51 +1,43 @@
-From: Greg Kurz <gkurz@fr.ibm.com>
-Subject: Re: [RFC][PATCH 2/5] pid: Generalize task_active_pid_ns
-Date: Thu, 27 Nov 2008 22:19:25 +0100
-Message-ID: <1227820765.5108.20.camel@bahia.kalilou.org>
-References: <20081126034242.GA23120@us.ibm.com>
-	 <20081126034528.GB23238@us.ibm.com>
-	 <20081127011738.GC13545@wavehammer.waldi.eu.org>
+From: Ryo Tsuruta <ryov-jCdQPDEk3idL9jVzuh4AOg@public.gmane.org>
+Subject: Re: [patch 0/4] [RFC] Another proportional weight IO controller
+Date: Fri, 28 Nov 2008 12:09:54 +0900 (JST)
+Message-ID: <20081128.120954.1024833258536769313.ryov__37216.7450645522$1227842033$gmane$org@valinux.co.jp>
+References: <20081126.214707.653026525707335397.ryov@valinux.co.jp>
+	<20081126160805.GE27826@redhat.com>
+	<1227775382.7443.43.camel@sebastian.kern.oss.ntt.co.jp>
 Mime-Version: 1.0
-Content-Type: text/plain
+Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1754635AbYK0VTr@vger.kernel.org>
-In-Reply-To: <20081127011738.GC13545@wavehammer.waldi.eu.org>
-Sender: linux-kernel-owner@vger.kernel.org
-To: Bastian Blank <bastian@waldi.eu.org>
-Cc: Sukadev Bhattiprolu <sukadev@linux.vnet.ibm.com>, linux-kernel@vger.kernel.org, oleg@redhat.com, ebiederm@xmission.com, containers@lists.osdl.org, roland@redhat.com, xemul@openvz.org
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <1227775382.7443.43.camel-xpvPi5bcW5X5OjGIXfuPlhrrLbDL3r4M6qtp775pBPw@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: fernando-gVGce1chcLdL9jVzuh4AOg@public.gmane.org
+Cc: menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, riel-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, fchecconi-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, paolo.valente-rcYM44yAMweonA0d6jMUrA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, virtualization-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, jmoyer-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, jens.axboe-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, ngupta-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, righi.andrea-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Thu, 2008-11-27 at 02:17 +0100, Bastian Blank wrote:
-> On Tue, Nov 25, 2008 at 07:45:28PM -0800, Sukadev Bhattiprolu wrote:
-> > Currently task_active_pid_ns is not safe to call after a
-> > task becomes a zombie and exit_task_namespaces is called,
-> > as nsproxy becomes NULL.
+Hi,
+
+> > > I don't come up with any use case, but I would like to make the
+> > > resource controller more flexible. Actually, a certain block device
+> > > that I'm using does not use the I/O scheduler.
+> > 
+> > Isn't it equivalent to using No-op? If yes, then it should not be an
+> > issue?
 > 
-> Why do you need to be able to get the pid namespace from zombie
-> processes? Also according to nsproxy.h this access variant is only
-> allowed for the current task, anything else needs to take a rcu lock.
-> 
+> No, it is not equivalent. When using devices drivers that provide their
+> own make_request_fn() (check for devices that invoke
+> blk_queue_make_request() at initialization time) bios entering the block
+> layer can go directly to the device driver and from there to the device.
 
-That doesn't save ->nsproxy to be NULL... as shown in the very same
-example you're talking about.
+As Fernando said, that device driver invokes blk_queue_make_request(),
 
-I agree with Eric and Sukadev that task_active_pid_ns() is unsafe. There
-isn't even a /* don't use with zombies */ in pid_namespace.h...
-
-> >                           By reading the pid namespace from
-> > the pid of the task we can trivially solve this problem at
-> > the cost of one extra memory read in what should be the
-> > same cacheline as we read the namespace from.
-> 
-> The pid namespace may not be destructed yet?
-> 
-
-Yes as long as a pid from that namespace is still in use...
-
--- 
-Gregory Kurz                                     gkurz@fr.ibm.com
-Software Engineer @ IBM/Meiosys                  http://www.ibm.com
-Tel +33 (0)534 638 479                           Fax +33 (0)561 400 420
-
-"Anarchy is about taking complete responsibility for yourself."
-        Alan Moore.
+Thanks,
+Ryo Tsuruta
