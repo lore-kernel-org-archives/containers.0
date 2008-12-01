@@ -1,85 +1,79 @@
-From: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: Re: [RFC v10][PATCH 09/13] Restore open file descriprtors
-Date: Mon, 01 Dec 2008 11:22:04 -0800
-Message-ID: <1228159324.2971.74.camel__30427.5004230023$1228159571$gmane$org@nimitz>
-References: <1227747884-14150-1-git-send-email-orenl@cs.columbia.edu>
-	<1227747884-14150-10-git-send-email-orenl@cs.columbia.edu>
-	<20081128112745.GR28946@ZenIV.linux.org.uk>
+From: Sukadev Bhattiprolu <sukadev@linux.vnet.ibm.com>
+Subject: Re: [RFC][PATCH 3/5] Determine if sender is from ancestor ns
+Date: Mon, 1 Dec 2008 12:15:06 -0800
+Message-ID: <20081201201506.GB12493@us.ibm.com>
+References: <20081126034242.GA23120@us.ibm.com> <20081126034611.GC23238@us.ibm.com> <20081127010101.GA13545@wavehammer.waldi.eu.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20081128112745.GR28946-3bDd1+5oDREiFSDQTTA3OLVCufUGDwFn@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Al Viro <viro-3bDd1+5oDREiFSDQTTA3OLVCufUGDwFn@public.gmane.org>
-Cc: "H. Peter Anvin" <hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Linus Torvalds <torvalds-3NddpPZAyC0@public.gmane.org>, linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Thomas Gleixner <tglx-hfZtesqFncYOwBW4kG4KsQ@public.gmane.org>
+Content-Type: text/plain; charset=us-ascii
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1754074AbYLAUP5@vger.kernel.org>
+Content-Disposition: inline
+In-Reply-To: <20081127010101.GA13545@wavehammer.waldi.eu.org>
+Sender: linux-kernel-owner@vger.kernel.org
+To: Bastian Blank <bastian@waldi.eu.org>, oleg@redhat.com, ebiederm@xmission.com, roland@redhat.com, containers@lists.osdl.org, linux-kernel@vger.kernel.org, xemul@openvz.org
 List-Id: containers.vger.kernel.org
 
-On Fri, 2008-11-28 at 11:27 +0000, Al Viro wrote:
-> On Wed, Nov 26, 2008 at 08:04:40PM -0500, Oren Laadan wrote:
-> > +/**
-> > + * cr_attach_get_file - attach (and get) lonely file ptr to a file descriptor
-> > + * @file: lonely file pointer
-> > + */
-> > +static int cr_attach_get_file(struct file *file)
-> > +{
-> > +	int fd = get_unused_fd_flags(0);
-> > +
-> > +	if (fd >= 0) {
-> > +		fsnotify_open(file->f_path.dentry);
-> > +		fd_install(fd, file);
-> > +		get_file(file);
-> > +	}
-> > +	return fd;
-> > +}
-> 
-> What happens if another thread closes the descriptor in question between
-> fd_install() and get_file()?
+Bastian Blank [bastian@waldi.eu.org] wrote:
+| On Tue, Nov 25, 2008 at 07:46:11PM -0800, Sukadev Bhattiprolu wrote:
+| > +#ifdef CONFIG_PID_NS
+| > +#define SIG_FROM_USER  INT_MIN         /* MSB */
+| 
+| Is it really a wise idea to mix this into the signal number?
 
-You're just saying to flip the get_file() and fd_install()?
+We have been trying to make this least intrusive and iiuc, extending
+siginfo_t is not easy.
 
-> > +	fd = cr_attach_file(file);	/* no need to cleanup 'file' below */
-> > +	if (fd < 0) {
-> > +		filp_close(file, NULL);
-> > +		ret = fd;
-> > +		goto out;
-> > +	}
-> > +
-> > +	/* register new <objref, file> tuple in hash table */
-> > +	ret = cr_obj_add_ref(ctx, file, parent, CR_OBJ_FILE, 0);
-> > +	if (ret < 0)
-> > +		goto out;
-> 
-> Who said that file still exists at that point?
+| Also this definition looks odd. If you want the highest bit, you should
+| mention this explicitely with 1U<<31.
 
-Ahhh.  We're depending on the 'struct file' reference that comes from
-the fd table.  That's why there is supposedly "no need to cleanup 'file'
-below".  But, some other thread can come along and close() the fd, which
-will __fput() our poor 'struct file' and will make it go away.  Next
-time we go and pull it out of the hash table, we go boom.
+I think that should be fine.
 
-As a quick fix, I think we can just take another get_file() here.  But,
-as Al notes, there are some much larger issues that we face with the
-fd_table and multi-thread access.  They haven't "mattered" to us so far
-because we assume everything is either single-threaded or frozen.
-Sounds like Al isn't comfortable with this being integrated until a much
-more detailed look has been taken.
+| 
+| If I see this correctly this information is already covered in si_code
+| with SI_USER and SI_TKILL. SI_KERNEL is used for explicit kernel
+| generated signals.
 
-> BTW, there are shitloads of races here - references to fd and struct file *
-> are mixed in a way that breaks *badly* if descriptor table is played with
-> by another thread.
+Yes, but si_code from sys_rt_sigqueueinfo() cannot be trusted.  To be sure
+we would have to check for "si_code < 0", but that would include cases like
+SI_ASYNCIO which can come from interrupt/work-queues. which would require
+more complex checks to safely compute namespace of sender.
 
-One of the things about this that bothers me is that it shares too
-little with existing VFS code.  It calls into a ton of existing stuff
-but doesn't refactor anything that is currently there.  Surely there are
-some common bits somewhere in the VFS that could be consolidated here.  
+IOW, we need to find the namespace of the sender only if the sender is
+a user process. If signal is originating from kernel, safely checking
+namespace becomes more complex.
 
--- Dave
+Yes, current approach is somewhat hacky. We tried other approaches
+before and they were either intrusive or required non-trivial changes
+to semantics of signals to global init or both.
+
+| 
+| > +static inline int siginfo_from_ancestor_ns(struct task_struct *t,
+| > +			siginfo_t *info)
+| > +{
+| > +	if (!is_si_special(info) && (info->si_signo & SIG_FROM_USER)) {
+| > +		/* if t can't see us we are from parent ns */
+| 
+| What?
+
+I assume your question is about the comment :-)
+
+Yes, a process can see all its descendants and processes in descendant
+namespaces. But it can only see its ancestors upto the most recent
+CLONE_NEWPID. (kind of like chroot in filesystems). So if receiver
+can't see sender, sender must be an ancestor.
+
+| 
+| >  static int send_signal(int sig, struct siginfo *info, struct task_struct *t,
+| >  			int group)
+| >  {
+| >  	struct sigpending *pending;
+| >  	struct sigqueue *q;
+| > +	int from_ancestor_ns;
+| >  
+| >  	trace_sched_signal_send(sig, t);
+| >  
+| > +	from_ancestor_ns = siginfo_from_ancestor_ns(t, info);
+| > +
+| 
+| This is not used at all here?
+
+Yes, its used in next patch.
