@@ -1,12 +1,15 @@
-From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH] user namespaces: require cap_set{ug}id for CLONE_NEWUSER
-Date: Mon, 1 Dec 2008 12:52:15 -0600
-Message-ID: <20081201185215.GA20976@us.ibm.com>
+From: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Subject: Re: [RFC v10][PATCH 09/13] Restore open file descriprtors
+Date: Mon, 01 Dec 2008 11:22:04 -0800
+Message-ID: <1228159324.2971.74.camel__30427.5004230023$1228159571$gmane$org@nimitz>
+References: <1227747884-14150-1-git-send-email-orenl@cs.columbia.edu>
+	<1227747884-14150-10-git-send-email-orenl@cs.columbia.edu>
+	<20081128112745.GR28946@ZenIV.linux.org.uk>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
+In-Reply-To: <20081128112745.GR28946-3bDd1+5oDREiFSDQTTA3OLVCufUGDwFn@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -16,45 +19,67 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
+To: Al Viro <viro-3bDd1+5oDREiFSDQTTA3OLVCufUGDwFn@public.gmane.org>
+Cc: "H. Peter Anvin" <hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Linus Torvalds <torvalds-3NddpPZAyC0@public.gmane.org>, linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Thomas Gleixner <tglx-hfZtesqFncYOwBW4kG4KsQ@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-thoughts?  (patch is on top of
-git://git.kernel.org/pub/scm/linux/kernel/git/jmorris/security-testing-2.6.git#next)
+On Fri, 2008-11-28 at 11:27 +0000, Al Viro wrote:
+> On Wed, Nov 26, 2008 at 08:04:40PM -0500, Oren Laadan wrote:
+> > +/**
+> > + * cr_attach_get_file - attach (and get) lonely file ptr to a file descriptor
+> > + * @file: lonely file pointer
+> > + */
+> > +static int cr_attach_get_file(struct file *file)
+> > +{
+> > +	int fd = get_unused_fd_flags(0);
+> > +
+> > +	if (fd >= 0) {
+> > +		fsnotify_open(file->f_path.dentry);
+> > +		fd_install(fd, file);
+> > +		get_file(file);
+> > +	}
+> > +	return fd;
+> > +}
+> 
+> What happens if another thread closes the descriptor in question between
+> fd_install() and get_file()?
 
-thanks,
--serge
+You're just saying to flip the get_file() and fd_install()?
 
-Subject: [PATCH] user namespaces: require cap_set{ug}id for CLONE_NEWUSER
+> > +	fd = cr_attach_file(file);	/* no need to cleanup 'file' below */
+> > +	if (fd < 0) {
+> > +		filp_close(file, NULL);
+> > +		ret = fd;
+> > +		goto out;
+> > +	}
+> > +
+> > +	/* register new <objref, file> tuple in hash table */
+> > +	ret = cr_obj_add_ref(ctx, file, parent, CR_OBJ_FILE, 0);
+> > +	if (ret < 0)
+> > +		goto out;
+> 
+> Who said that file still exists at that point?
 
-While ideally CLONE_NEWUSER will eventually require no
-privilege, the required permission checks are currently
-not there.  As a result, CLONE_NEWUSER has the same effect
-as a setuid(0)+setgroups(1,"0").  While we already require
-CAP_SYS_ADMIN, requiring CAP_SETUID and CAP_SETGID seems
-appropriate.
+Ahhh.  We're depending on the 'struct file' reference that comes from
+the fd table.  That's why there is supposedly "no need to cleanup 'file'
+below".  But, some other thread can come along and close() the fd, which
+will __fput() our poor 'struct file' and will make it go away.  Next
+time we go and pull it out of the hash table, we go boom.
 
-Signed-off-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+As a quick fix, I think we can just take another get_file() here.  But,
+as Al notes, there are some much larger issues that we face with the
+fd_table and multi-thread access.  They haven't "mattered" to us so far
+because we assume everything is either single-threaded or frozen.
+Sounds like Al isn't comfortable with this being integrated until a much
+more detailed look has been taken.
 
----
+> BTW, there are shitloads of races here - references to fd and struct file *
+> are mixed in a way that breaks *badly* if descriptor table is played with
+> by another thread.
 
- kernel/fork.c |    3 ++-
- 1 files changed, 2 insertions(+), 1 deletions(-)
+One of the things about this that bothers me is that it shares too
+little with existing VFS code.  It calls into a ton of existing stuff
+but doesn't refactor anything that is currently there.  Surely there are
+some common bits somewhere in the VFS that could be consolidated here.  
 
-32c36be0621dba3bf05af3d2df843ce803d25831
-diff --git a/kernel/fork.c b/kernel/fork.c
-index 1dd8945..e3a85b3 100644
---- a/kernel/fork.c
-+++ b/kernel/fork.c
-@@ -1344,7 +1344,8 @@ long do_fork(unsigned long clone_flags,
- 		/* hopefully this check will go away when userns support is
- 		 * complete
- 		 */
--		if (!capable(CAP_SYS_ADMIN))
-+		if (!capable(CAP_SYS_ADMIN) || !capable(CAP_SETUID) ||
-+				!capable(CAP_SETGID))
- 			return -EPERM;
- 	}
- 
--- 
-1.1.6
+-- Dave
