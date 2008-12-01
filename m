@@ -1,16 +1,15 @@
-From: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
-Subject: Re: [PATCH] Unused check for thread group leader in
-	mem_cgroup_move_task
-Date: Mon, 1 Dec 2008 13:30:30 +0900
-Message-ID: <20081201133030.0a330c7b.kamezawa.hiroyu__13400.3768944696$1228106021$gmane$org@jp.fujitsu.com>
-References: <200811291259.27681.knikanth@suse.de>
-	<20081201101208.08e0aa98.kamezawa.hiroyu@jp.fujitsu.com>
-	<200812010951.36392.knikanth@suse.de>
+From: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Subject: Re: [RFC v10][PATCH 08/13] Dump open file descriptors
+Date: Mon, 01 Dec 2008 09:47:25 -0800
+Message-ID: <1228153645.2971.36.camel__49795.3998311006$1228153914$gmane$org@nimitz>
+References: <1227747884-14150-1-git-send-email-orenl@cs.columbia.edu>
+	<1227747884-14150-9-git-send-email-orenl@cs.columbia.edu>
+	<20081128101919.GO28946@ZenIV.linux.org.uk>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <200812010951.36392.knikanth-l3A5Bk7waGM@public.gmane.org>
+In-Reply-To: <20081128101919.GO28946-3bDd1+5oDREiFSDQTTA3OLVCufUGDwFn@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -20,52 +19,89 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Nikanth Karthikesan <knikanth-l3A5Bk7waGM@public.gmane.org>, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
-Cc: linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, nikanth-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org
+To: Al Viro <viro-3bDd1+5oDREiFSDQTTA3OLVCufUGDwFn@public.gmane.org>
+Cc: "H. Peter Anvin" <hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Linus Torvalds <torvalds-3NddpPZAyC0@public.gmane.org>, linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Thomas Gleixner <tglx-hfZtesqFncYOwBW4kG4KsQ@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Mon, 1 Dec 2008 09:51:35 +0530
-Nikanth Karthikesan <knikanth-l3A5Bk7waGM@public.gmane.org> wrote:
+On Fri, 2008-11-28 at 10:19 +0000, Al Viro wrote:
+> On Wed, Nov 26, 2008 at 08:04:39PM -0500, Oren Laadan wrote:
+> > +int cr_scan_fds(struct files_struct *files, int **fdtable)
+> > +{
+> > +	struct fdtable *fdt;
+> > +	int *fds;
+> > +	int i, n = 0;
+> > +	int tot = CR_DEFAULT_FDTABLE;
+> > +
+> > +	fds = kmalloc(tot * sizeof(*fds), GFP_KERNEL);
+> > +	if (!fds)
+> > +		return -ENOMEM;
+> > +
+> > +	/*
+> > +	 * We assume that the target task is frozen (or that we checkpoint
+> > +	 * ourselves), so we can safely proceed after krealloc() from where
+> > +	 * we left off; in the worst cases restart will fail.
+> > +	 */
+> 
+> Task may be frozen, but it may share the table with any number of other
+> tasks...
 
-> Ok. Then should we remove the unused code which simply checks for thread group 
-> leader but does nothing?
->  
-> Thanks
-> Nikanth
-> 
-Hmm, it seem that code is obsolete. thanks.
-Balbir, how do you think ?
+First of all, thanks for looking at this, Al.  
 
-Reviewed-by: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+I think Oren's assumption here is that all tasks possibly sharing the
+table would be frozen.  I don't think that's a good assumption,
+either. :)
 
-Anyway we have to visit here, again.
+This would be a lot safer and bulletproof if we size the allocation
+ahead of time, take all the locks, then retry if the size has changed.
 
+I think that will just plain work of we do this:
 
-> Remove the unused test for thread group leader in mem_cgroup_move_task.
+> > +	spin_lock(&files->file_lock);
+> > +	rcu_read_lock();
+> > +	fdt = files_fdtable(files);
+> > +	for (i = 0; i < fdt->max_fds; i++) {
+> > +		if (!fcheck_files(files, i))
+> > +			continue;
+> > +		if (n == tot) {
+> > +			/*
+> > +			 * fcheck_files() is safe with drop/re-acquire
+> > +			 * of the lock, because it tests:  fd < max_fds
+> > +			 */
+> > +			spin_unlock(&files->file_lock);
+> > +			rcu_read_unlock();
+> > +			tot *= 2;	/* won't overflow: kmalloc will fail */
+
+			  free(fds);
+			  goto first_kmalloc_in_this_function;
+
+> > +		}
+> > +		fds[n++] = i;
+> > +	}
+> > +	rcu_read_unlock();
+> > +	spin_unlock(&files->file_lock);
+> > +
+> > +	*fdtable = fds;
+> > +	return n;
+> > +}
+
+Right?
+
+> > +	switch (inode->i_mode & S_IFMT) {
+> > +	case S_IFREG:
+> > +		fd_type = CR_FD_FILE;
+> > +		break;
+> > +	case S_IFDIR:
+> > +		fd_type = CR_FD_DIR;
+> > +		break;
+> > +	case S_IFLNK:
+> > +		fd_type = CR_FD_LINK;
 > 
-> Signed-off-by: Nikanth Karthikesan <knikanth-l3A5Bk7waGM@public.gmane.org>
-> 
-> ---
-> 
-> diff --git a/mm/memcontrol.c b/mm/memcontrol.c
-> index 866dcc7..8e9287d 100644
-> --- a/mm/memcontrol.c
-> +++ b/mm/memcontrol.c
-> @@ -1151,14 +1151,6 @@ static void mem_cgroup_move_task(struct cgroup_subsys 
-> *ss,
->  	mem = mem_cgroup_from_cont(cont);
->  	old_mem = mem_cgroup_from_cont(old_cont);
->  
-> -	/*
-> -	 * Only thread group leaders are allowed to migrate, the mm_struct is
-> -	 * in effect owned by the leader
-> -	 */
-> -	if (!thread_group_leader(p))
-> -		goto out;
-> -
-> -out:
->  	mmput(mm);
->  }
->  
-> 
-> 
+> Opened symlinks?  May I have whatever you'd been smoking, please?
+
+Ugh, that certainly doesn't have any place here.  I do wonder if Oren
+had some use for that in the fully put together code, but it can
+certainly go for now.
+
+I'll send patches for these shortly.
+
+-- Dave
