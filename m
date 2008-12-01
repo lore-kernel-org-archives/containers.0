@@ -1,123 +1,122 @@
-From: Sukadev Bhattiprolu <sukadev@linux.vnet.ibm.com>
-Subject: Re: [RFC][PATCH 2/5] pid: Generalize task_active_pid_ns
-Date: Mon, 1 Dec 2008 12:38:40 -0800
-Message-ID: <20081201203840.GA15004@us.ibm.com>
-References: <20081126034242.GA23120@us.ibm.com> <20081126034528.GB23238@us.ibm.com> <1227791371.2615.109.camel@frecb000730.frec.bull.fr>
+From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Subject: Re: [RFC v10][PATCH 09/13] Restore open file descriprtors
+Date: Mon, 01 Dec 2008 15:41:53 -0500
+Message-ID: <49344C11.6090204__22162.2553574436$1228164457$gmane$org@cs.columbia.edu>
+References: <1227747884-14150-1-git-send-email-orenl@cs.columbia.edu>	
+	<1227747884-14150-10-git-send-email-orenl@cs.columbia.edu>	
+	<20081128112745.GR28946@ZenIV.linux.org.uk>
+	<1228159324.2971.74.camel@nimitz>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1753369AbYLAUjW@vger.kernel.org>
-Content-Disposition: inline
-In-Reply-To: <1227791371.2615.109.camel@frecb000730.frec.bull.fr>
-Sender: linux-kernel-owner@vger.kernel.org
-To: Nadia Derbey <Nadia.Derbey@bull.net>
-Cc: oleg@redhat.com, ebiederm@xmission.com, roland@redhat.com, containers@lists.osdl.org, linux-kernel@vger.kernel.org, xemul@openvz.org
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <1228159324.2971.74.camel@nimitz>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Cc: linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Linus Torvalds <torvalds-3NddpPZAyC0@public.gmane.org>, Al Viro <viro-3bDd1+5oDREiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, "H. Peter Anvin" <hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Thomas Gleixner <tglx-hfZtesqFncYOwBW4kG4KsQ@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Nadia Derbey [Nadia.Derbey@bull.net] wrote:
-| On Tue, 2008-11-25 at 19:45 -0800, Sukadev Bhattiprolu wrote:
-| > >From 7f7caaa9d9014d7230dc0b1e0f75536f0b6ccdbf Mon Sep 17 00:00:00 2001
-| > From: Eric W. Biederman <ebiederm@xmission.com>
-| > Date: Mon, 10 Nov 2008 19:12:02 -0800
-| > Subject: [PATCH 2/5] pid: Generalize task_active_pid_ns
-| > 
-| > Currently task_active_pid_ns is not safe to call after a
-| > task becomes a zombie and exit_task_namespaces is called,
-| > as nsproxy becomes NULL.  By reading the pid namespace from
-| > the pid of the task we can trivially solve this problem at
-| > the cost of one extra memory read in what should be the
-| > same cacheline as we read the namespace from.
-| > 
-| > When moving things around I have made task_active_pid_ns
-| > out of line because keeping it in pid_namespace.h would
-| > require adding includes of pid.h and sched.h that I
-| > don't think we want.
-| > 
-| > This change does make task_active_pid_ns unsafe to call during
-| > copy_process until we attach a pid on the task_struct which
-| > seems to be a reasonable trade off.
-| > 
-| > Signed-off-by: Eric W. Biederman <ebiederm@xmission.com>
-| > ---
-| >  include/linux/pid_namespace.h |    6 +-----
-| >  kernel/fork.c                 |    4 ++--
-| >  kernel/pid.c                  |    6 ++++++
-| >  3 files changed, 9 insertions(+), 7 deletions(-)
-| > 
-| > diff --git a/include/linux/pid_namespace.h b/include/linux/pid_namespace.h
-| > index d82fe82..38d1032 100644
-| > --- a/include/linux/pid_namespace.h
-| > +++ b/include/linux/pid_namespace.h
-| > @@ -79,11 +79,7 @@ static inline void zap_pid_ns_processes(struct pid_namespace *ns)
-| >  }
-| >  #endif /* CONFIG_PID_NS */
-| >  
-| > -static inline struct pid_namespace *task_active_pid_ns(struct task_struct *tsk)
-| > -{
-| > -	return tsk->nsproxy->pid_ns;
-| > -}
-| > -
-| > +extern struct pid_namespace *task_active_pid_ns(struct task_struct *tsk);
-| >  void pidhash_init(void);
-| >  void pidmap_init(void);
-| >  
-| > diff --git a/kernel/fork.c b/kernel/fork.c
-| > index f608356..28be39a 100644
-| > --- a/kernel/fork.c
-| > +++ b/kernel/fork.c
-| > @@ -1111,12 +1111,12 @@ static struct task_struct *copy_process(unsigned long clone_flags,
-| >  
-| 
-| Suka,
-| 
-| I'm wondering if it is still safe to keep the call to
-| task_active_pid_ns() in create_new_namespaces(): copy_namespaces() is
-| called a couple of lines above this sequence and it calls
-| create_new_namespaces(). So I don't see why you're now referencing
-| p->nsproxy->pid_ns here and not in create_new_namespaces()?
 
-It is safe to use the new task_active_pid_ns() when the process has
-a valid (fully initialized) 'struct pid'.  copy_namespaces() and
-create_new_namespaces() operate on the _parent's_ 'struct pid' which
-is valid.
 
-| 
-| Regards,
-| Nadia
-| 
-| >  	if (pid != &init_struct_pid) {
-| >  		retval = -ENOMEM;
-| > -		pid = alloc_pid(task_active_pid_ns(p));
-| > +		pid = alloc_pid(p->nsproxy->pid_ns);
+Dave Hansen wrote:
+> On Fri, 2008-11-28 at 11:27 +0000, Al Viro wrote:
+>> On Wed, Nov 26, 2008 at 08:04:40PM -0500, Oren Laadan wrote:
+>>> +/**
+>>> + * cr_attach_get_file - attach (and get) lonely file ptr to a file descriptor
+>>> + * @file: lonely file pointer
+>>> + */
+>>> +static int cr_attach_get_file(struct file *file)
+>>> +{
+>>> +	int fd = get_unused_fd_flags(0);
+>>> +
+>>> +	if (fd >= 0) {
+>>> +		fsnotify_open(file->f_path.dentry);
+>>> +		fd_install(fd, file);
+>>> +		get_file(file);
+>>> +	}
+>>> +	return fd;
+>>> +}
+>> What happens if another thread closes the descriptor in question between
+>> fd_install() and get_file()?
+> 
+> You're just saying to flip the get_file() and fd_install()?
 
-Here, at the call to task_active_pid_ns(), child does not have a
-'struct pid' - we are just allocating it. So its important that
-this use the pid_ns from nsproxy.
+Indeed.
 
-| >  		if (!pid)
-| >  			goto bad_fork_cleanup_io;
-| >  
-| >  		if (clone_flags & CLONE_NEWPID) {
-| > -			retval = pid_ns_prepare_proc(task_active_pid_ns(p));
-| > +			retval = pid_ns_prepare_proc(p->nsproxy->pid_ns);
-| >  			if (retval < 0)
-| >  				goto bad_fork_free_pid;
-| >  		}
-| > diff --git a/kernel/pid.c b/kernel/pid.c
-| > index 064e76a..c5513fe 100644
-| > --- a/kernel/pid.c
-| > +++ b/kernel/pid.c
-| > @@ -474,6 +474,12 @@ pid_t task_session_nr_ns(struct task_struct *tsk, struct pid_namespace *ns)
-| >  }
-| >  EXPORT_SYMBOL(task_session_nr_ns);
-| >  
-| > +struct pid_namespace *task_active_pid_ns(struct task_struct *tsk)
-| > +{
-| > +	return ns_of_pid(task_pid(tsk));
-| > +}
-| > +EXPORT_SYMBOL_GPL(task_active_pid_ns);
-| > +
-| >  /*
-| >   * Used by proc to find the first pid that is greater then or equal to nr.
-| >   *
-| -- 
-| Nadia Derbey <Nadia.Derbey@bull.net>
+> 
+>>> +	fd = cr_attach_file(file);	/* no need to cleanup 'file' below */
+>>> +	if (fd < 0) {
+>>> +		filp_close(file, NULL);
+>>> +		ret = fd;
+>>> +		goto out;
+>>> +	}
+>>> +
+>>> +	/* register new <objref, file> tuple in hash table */
+>>> +	ret = cr_obj_add_ref(ctx, file, parent, CR_OBJ_FILE, 0);
+>>> +	if (ret < 0)
+>>> +		goto out;
+>> Who said that file still exists at that point?
+
+Correct. This call should move higher up befor ethe call to cr_attach_file()
+
+> 
+> Ahhh.  We're depending on the 'struct file' reference that comes from
+> the fd table.  That's why there is supposedly "no need to cleanup 'file'
+> below".  But, some other thread can come along and close() the fd, which
+> will __fput() our poor 'struct file' and will make it go away.  Next
+> time we go and pull it out of the hash table, we go boom.
+> 
+> As a quick fix, I think we can just take another get_file() here.  But,
+> as Al notes, there are some much larger issues that we face with the
+> fd_table and multi-thread access.  They haven't "mattered" to us so far
+> because we assume everything is either single-threaded or frozen.
+> Sounds like Al isn't comfortable with this being integrated until a much
+> more detailed look has been taken.
+> 
+>> BTW, there are shitloads of races here - references to fd and struct file *
+>> are mixed in a way that breaks *badly* if descriptor table is played with
+>> by another thread.
+
+The assumption about tasks being frozen and no additional sharing is generally
+more strict, more likely to hold, and easier to enforce for the restart.
+
+Besides the race pointed above which would crash the kernel, the other races
+are "ok" - if the user abuses the interface, then the results are "undefined"
+(refer to my reply to "..PATCH 808/13] Dump open file descriptors").
+
+Here, too, by "undefined" I mean that the restart syscall may fail, and if it
+completes successfully the resulting set of tasks is not guaranteed to behave
+correctly. In contrast, if the user uses the interface correctly (ensuring
+that the assumption holds), then restart is guaranteed to succeed. Note that
+even when the outcome is undefined, there are no security issues - all actions
+are limited to what the initiating user can do.
+
+> One of the things about this that bothers me is that it shares too
+> little with existing VFS code.  It calls into a ton of existing stuff
+> but doesn't refactor anything that is currently there.  Surely there are
+> some common bits somewhere in the VFS that could be consolidated here.  
+
+Actually, the code alternates between "file" and "fd", in attempt to resuse
+existing code and not do things ourselves:
+
+	ret = sys_fcntl(fd, F_SETFL, hh->f_flags & CR_SETFL_MASK);
+        if (ret < 0)
+        	goto out;
+        ret = vfs_llseek(file, hh->f_pos, SEEK_SET);
+        if (ret == -ESPIPE)     /* ignore error on non-seekable files */
+                ret = 0;
+
+This is still safe: the file struct is protected with a reference count. If
+the fd no longer points to the same struct file, then either it will fail
+(e.g. if the fd is invalid) or the restart will eventually succeed but the
+resulting state of the tasks will be incorrect (that is: undefined behavior).
+
+Oren.
