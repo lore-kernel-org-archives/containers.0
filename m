@@ -1,79 +1,108 @@
-From: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: [RFC][PATCH 3/4] checkpoint/restart: fix 'struct file' references
-Date: Tue, 02 Dec 2008 10:57:39 -0800
-Message-ID: <20081202185739.15E85A9A@kernel>
-References: <20081202185734.F740150C@kernel>
+From: Sukadev Bhattiprolu <sukadev@linux.vnet.ibm.com>
+Subject: Re: [RFC][PATCH 3/5] Determine if sender is from ancestor ns
+Date: Tue, 2 Dec 2008 11:59:04 -0800
+Message-ID: <20081202195904.GA20077@us.ibm.com>
+References: <20081126034242.GA23120@us.ibm.com> <20081126034611.GC23238@us.ibm.com> <20081127010101.GA13545@wavehammer.waldi.eu.org> <20081201201506.GB12493@us.ibm.com> <20081202114833.GA1132@wavehammer.waldi.eu.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20081202185734.F740150C@kernel>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Cc: containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Content-Type: text/plain; charset=us-ascii
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1752289AbYLBT7s@vger.kernel.org>
+Content-Disposition: inline
+In-Reply-To: <20081202114833.GA1132@wavehammer.waldi.eu.org>
+Sender: linux-kernel-owner@vger.kernel.org
+To: Bastian Blank <bastian@waldi.eu.org>, oleg@redhat.com, ebiederm@xmission.com, roland@redhat.com, containers@lists.osdl.org, linux-kernel@vger.kernel.org, xemul@openvz.org
 List-Id: containers.vger.kernel.org
 
+Bastian Blank [bastian@waldi.eu.org] wrote:
+| On Mon, Dec 01, 2008 at 12:15:06PM -0800, Sukadev Bhattiprolu wrote:
+| > Bastian Blank [bastian@waldi.eu.org] wrote:
+| > | If I see this correctly this information is already covered in si_code
+| > | with SI_USER and SI_TKILL. SI_KERNEL is used for explicit kernel
+| > | generated signals.
+| > 
+| > Yes, but si_code from sys_rt_sigqueueinfo() cannot be trusted.
+| 
+| sys_rt_sigqueueinfo disallows setting si_code to any value which
+| describes kernel signals from userspace. So using SI_FROMUSER should be
+| sufficient.
 
-We must hold a reference to 'file' when it get passed in to
-fd_install().  After fd_install() the entry in the fdtable
-takes on the reference.  If we don't hold a reference to
-it, another thread can come along after fd_install() and
-fput() it before we've done the get_file().
+Hmm, unless I am missing something, sys_rt_sigqueuinfo() does this:
 
-In cr_read_fd_data(), the cr_obj_add_ref() code does the
-get_file() internally.  But, we need to do this (and get
-the ref) before we do the cr_attach_file().  Otherwise,
-the file can go away after the cr_attach_file() and before
-the cr_obj_add_ref().
+        if (info.si_code >= 0)
+                return -EPERM;
+
+This does not prevent user from setting si_code to SI_ASYNCIO, which,
+from include/asm-generic/siginfo.h is:
+
+#define SI_ASYNCIO      -4              /* sent by AIO completion */
+
+Also,
+
+#define SI_FROMUSER(siptr)      ((siptr)->si_code <= 0)
+
+SI_ASYNCIO qualifies as SI_FROMUSER() even when it originates from
+kernel (usb/core/devio.c async_completed())...
+
+| 
+| > IOW, we need to find the namespace of the sender only if the sender is
+| > a user process. If signal is originating from kernel, safely checking
+| > namespace becomes more complex.
+| 
+| Where does this imply checking sender for kernel generated signals?
+
+... so what I meant is that in send_signal(), it will be harder to
+determine in the SI_ASYNCIO case whether the signal is from driver or
+rt_sigqueueinfo().
+
+If we know that it came from rt_sigqueueinfo(), we can safely check
+the namespace. If it came from driver we should skip the ns check.
+
+| 
+| > Yes, current approach is somewhat hacky. We tried other approaches
+| > before and they were either intrusive or required non-trivial changes
+| > to semantics of signals to global init or both.
+| 
+| Message-IDs?
+
+Yes, (Eric Biederman, Dec 2007)
+	https://lists.linux-foundation.org/pipermail/containers/2007-December/009152.html
+
+Oleg Nesterov, Aug 2007:
+	http://marc.info/?l=linux-kernel&m=118753610515859
+
+I had sent out a summary of the above attempts to Containers list recently:
+	https://lists.linux-foundation.org/pipermail/containers/2008-November/013991.html
 
 
----
 
- linux-2.6.git-dave/checkpoint/rstr_file.c |   11 ++++++-----
- 1 file changed, 6 insertions(+), 5 deletions(-)
+| 
+| > | > +static inline int siginfo_from_ancestor_ns(struct task_struct *t,
+| > | > +			siginfo_t *info)
+| > | > +{
+| > | > +	if (!is_si_special(info) && (info->si_signo & SIG_FROM_USER)) {
+| > | > +		/* if t can't see us we are from parent ns */
+| > | What?
+| > I assume your question is about the comment :-)
+| 
+| Yes.
+| 
+| > Yes, a process can see all its descendants and processes in descendant
+| > namespaces. But it can only see its ancestors upto the most recent
+| > CLONE_NEWPID. (kind of like chroot in filesystems). So if receiver
+| > can't see sender, sender must be an ancestor.
+| 
+| Please add a complete comment to the function which describes the
+| function. And don't us "it" for not defined entities.
 
-diff -puN checkpoint/rstr_file.c~fix-refs-order-in-cr_attach_get_file checkpoint/rstr_file.c
---- linux-2.6.git/checkpoint/rstr_file.c~fix-refs-order-in-cr_attach_get_file	2008-12-02 10:22:17.000000000 -0800
-+++ linux-2.6.git-dave/checkpoint/rstr_file.c	2008-12-02 10:22:17.000000000 -0800
-@@ -59,8 +59,8 @@ static int cr_attach_get_file(struct fil
- 
- 	if (fd >= 0) {
- 		fsnotify_open(file->f_path.dentry);
--		fd_install(fd, file);
- 		get_file(file);
-+		fd_install(fd, file);
- 	}
- 	return fd;
- }
-@@ -107,6 +107,11 @@ cr_read_fd_data(struct cr_ctx *ctx, stru
- 
- 	/* FIX: need to restore uid, gid, owner etc */
- 
-+	/* register new <objref, file> tuple in hash table */
-+	ret = cr_obj_add_ref(ctx, file, parent, CR_OBJ_FILE, 0);
-+	if (ret < 0)
-+		goto out;
-+
- 	fd = cr_attach_file(file);	/* no need to cleanup 'file' below */
- 	if (fd < 0) {
- 		filp_close(file, NULL);
-@@ -114,10 +119,6 @@ cr_read_fd_data(struct cr_ctx *ctx, stru
- 		goto out;
- 	}
- 
--	/* register new <objref, file> tuple in hash table */
--	ret = cr_obj_add_ref(ctx, file, parent, CR_OBJ_FILE, 0);
--	if (ret < 0)
--		goto out;
- 	ret = sys_fcntl(fd, F_SETFL, hh->f_flags & CR_SETFL_MASK);
- 	if (ret < 0)
- 		goto out;
-_
+Ah, I see the problem now. The 't' refers to the task parameter - how
+about changing comment to:
+
+	/* If receiver can't see us, we are from parent ns */
+
+
+| 
+| Bastian
+| 
+| -- 
+| I have never understood the female capacity to avoid a direct answer to
+| any question.
+| 		-- Spock, "This Side of Paradise", stardate 3417.3
