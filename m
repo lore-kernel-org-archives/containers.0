@@ -1,7 +1,7 @@
 From: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: [RFC][PATCH 4/4] checkpoint/restart: simplify cr_scan_fds()
-Date: Tue, 02 Dec 2008 10:57:42 -0800
-Message-ID: <20081202185742.CB0FDECC@kernel>
+Subject: [RFC][PATCH 3/4] checkpoint/restart: fix 'struct file' references
+Date: Tue, 02 Dec 2008 10:57:39 -0800
+Message-ID: <20081202185739.15E85A9A@kernel>
 References: <20081202185734.F740150C@kernel>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -22,47 +22,58 @@ Cc: containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gm
 List-Id: containers.vger.kernel.org
 
 
-I think having all the allocations in one place, plus the
-reduction in the number of lines speaks for itself.  In
-any case, this is last in the series and can be dropped if
-you don't like it.
+We must hold a reference to 'file' when it get passed in to
+fd_install().  After fd_install() the entry in the fdtable
+takes on the reference.  If we don't hold a reference to
+it, another thread can come along after fd_install() and
+fput() it before we've done the get_file().
+
+In cr_read_fd_data(), the cr_obj_add_ref() code does the
+get_file() internally.  But, we need to do this (and get
+the ref) before we do the cr_attach_file().  Otherwise,
+the file can go away after the cr_attach_file() and before
+the cr_obj_add_ref().
+
 
 ---
 
- linux-2.6.git-dave/checkpoint/ckpt_file.c |   13 ++++---------
- 1 file changed, 4 insertions(+), 9 deletions(-)
+ linux-2.6.git-dave/checkpoint/rstr_file.c |   11 ++++++-----
+ 1 file changed, 6 insertions(+), 5 deletions(-)
 
-diff -puN checkpoint/ckpt_file.c~fix-cr_scan_fds-realloc checkpoint/ckpt_file.c
---- linux-2.6.git/checkpoint/ckpt_file.c~fix-cr_scan_fds-realloc	2008-12-02 10:26:53.000000000 -0800
-+++ linux-2.6.git-dave/checkpoint/ckpt_file.c	2008-12-02 10:26:53.000000000 -0800
-@@ -38,6 +38,7 @@ int cr_scan_fds(struct files_struct *fil
- 	int i, n = 0;
- 	int tot = CR_DEFAULT_FDTABLE;
+diff -puN checkpoint/rstr_file.c~fix-refs-order-in-cr_attach_get_file checkpoint/rstr_file.c
+--- linux-2.6.git/checkpoint/rstr_file.c~fix-refs-order-in-cr_attach_get_file	2008-12-02 10:22:17.000000000 -0800
++++ linux-2.6.git-dave/checkpoint/rstr_file.c	2008-12-02 10:22:17.000000000 -0800
+@@ -59,8 +59,8 @@ static int cr_attach_get_file(struct fil
  
-+retry:
- 	fds = kmalloc(tot * sizeof(*fds), GFP_KERNEL);
- 	if (!fds)
- 		return -ENOMEM;
-@@ -55,18 +56,12 @@ int cr_scan_fds(struct files_struct *fil
- 		if (!fcheck_files(files, i))
- 			continue;
- 		if (n == tot) {
--			/*
--			 * fcheck_files() is safe with drop/re-acquire
--			 * of the lock, because it tests:  fd < max_fds
--			 */
-+			/* we undershot the size of fds[] */
- 			spin_unlock(&files->file_lock);
- 			rcu_read_unlock();
- 			tot *= 2;	/* won't overflow: kmalloc will fail */
--			fds = krealloc(fds, tot * sizeof(*fds), GFP_KERNEL);
--			if (!fds)
--				return -ENOMEM;
--			rcu_read_lock();
--			spin_lock(&files->file_lock);
-+			kfree(fds);
-+			goto retry;
- 		}
- 		fds[n++] = i;
+ 	if (fd >= 0) {
+ 		fsnotify_open(file->f_path.dentry);
+-		fd_install(fd, file);
+ 		get_file(file);
++		fd_install(fd, file);
  	}
+ 	return fd;
+ }
+@@ -107,6 +107,11 @@ cr_read_fd_data(struct cr_ctx *ctx, stru
+ 
+ 	/* FIX: need to restore uid, gid, owner etc */
+ 
++	/* register new <objref, file> tuple in hash table */
++	ret = cr_obj_add_ref(ctx, file, parent, CR_OBJ_FILE, 0);
++	if (ret < 0)
++		goto out;
++
+ 	fd = cr_attach_file(file);	/* no need to cleanup 'file' below */
+ 	if (fd < 0) {
+ 		filp_close(file, NULL);
+@@ -114,10 +119,6 @@ cr_read_fd_data(struct cr_ctx *ctx, stru
+ 		goto out;
+ 	}
+ 
+-	/* register new <objref, file> tuple in hash table */
+-	ret = cr_obj_add_ref(ctx, file, parent, CR_OBJ_FILE, 0);
+-	if (ret < 0)
+-		goto out;
+ 	ret = sys_fcntl(fd, F_SETFL, hh->f_flags & CR_SETFL_MASK);
+ 	if (ret < 0)
+ 		goto out;
 _
