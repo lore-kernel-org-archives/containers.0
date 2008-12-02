@@ -1,108 +1,73 @@
 From: Sukadev Bhattiprolu <sukadev@linux.vnet.ibm.com>
-Subject: Re: [RFC][PATCH 3/5] Determine if sender is from ancestor ns
-Date: Tue, 2 Dec 2008 11:59:04 -0800
-Message-ID: <20081202195904.GA20077@us.ibm.com>
-References: <20081126034242.GA23120@us.ibm.com> <20081126034611.GC23238@us.ibm.com> <20081127010101.GA13545@wavehammer.waldi.eu.org> <20081201201506.GB12493@us.ibm.com> <20081202114833.GA1132@wavehammer.waldi.eu.org>
+Subject: Re: [RFC][PATCH 4/5] Protect cinit from fatal signals
+Date: Tue, 2 Dec 2008 12:51:30 -0800
+Message-ID: <20081202205130.GB20077@us.ibm.com>
+References: <20081126034242.GA23120@us.ibm.com> <20081126034634.GD23238@us.ibm.com> <20081127010753.GB13545@wavehammer.waldi.eu.org> <20081201202112.GC12493@us.ibm.com> <20081202120606.GD1132@wavehammer.waldi.eu.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1752289AbYLBT7s@vger.kernel.org>
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1753981AbYLBUxP@vger.kernel.org>
 Content-Disposition: inline
-In-Reply-To: <20081202114833.GA1132@wavehammer.waldi.eu.org>
+In-Reply-To: <20081202120606.GD1132@wavehammer.waldi.eu.org>
 Sender: linux-kernel-owner@vger.kernel.org
 To: Bastian Blank <bastian@waldi.eu.org>, oleg@redhat.com, ebiederm@xmission.com, roland@redhat.com, containers@lists.osdl.org, linux-kernel@vger.kernel.org, xemul@openvz.org
 List-Id: containers.vger.kernel.org
 
+First of, thanks for taking the time to review/comment.
+
+
 Bastian Blank [bastian@waldi.eu.org] wrote:
-| On Mon, Dec 01, 2008 at 12:15:06PM -0800, Sukadev Bhattiprolu wrote:
-| > Bastian Blank [bastian@waldi.eu.org] wrote:
-| > | If I see this correctly this information is already covered in si_code
-| > | with SI_USER and SI_TKILL. SI_KERNEL is used for explicit kernel
-| > | generated signals.
-| > 
-| > Yes, but si_code from sys_rt_sigqueueinfo() cannot be trusted.
+| On Mon, Dec 01, 2008 at 12:21:12PM -0800, Sukadev Bhattiprolu wrote:
+| > Container-inits are special in some ways and this change requires SIGKILL
+| > to terminate them.
 | 
-| sys_rt_sigqueueinfo disallows setting si_code to any value which
-| describes kernel signals from userspace. So using SI_FROMUSER should be
-| sufficient.
+| No. They have are not special from the outside namespace.
 
-Hmm, unless I am missing something, sys_rt_sigqueuinfo() does this:
 
-        if (info.si_code >= 0)
-                return -EPERM;
+I agree that they should not be. But they are special today in at least one
+respect - terminating a container-init will terminate all processes in the
+container even those that are in unrelated process groups.
 
-This does not prevent user from setting si_code to SI_ASYNCIO, which,
-from include/asm-generic/siginfo.h is:
+Secondly, a poorly written container-inits can take the entire container down,
+So we expect that container-inits to handle/ignore all signals rather than
+SIG_DFL them. Current global inits do that today and container-inits should
+too. It does not look like an unreasonable requirement.
+  
+If container-inits do not properly handle signals, it is appearing that
+we need to make a trade-off in terms of semantics/complexity. See
+following URL for the history.
 
-#define SI_ASYNCIO      -4              /* sent by AIO completion */
+https://lists.linux-foundation.org/pipermail/containers/2008-November/013991.html
 
-Also,
+So the basic requirements are:
 
-#define SI_FROMUSER(siptr)      ((siptr)->si_code <= 0)
+	- container-init receives/processes all signals from ancestor namespace.
+	- container-init ignores fatal signals from own namespace.
 
-SI_ASYNCIO qualifies as SI_FROMUSER() even when it originates from
-kernel (usb/core/devio.c async_completed())...
+We are simplifying the first to say that:
 
-| 
-| > IOW, we need to find the namespace of the sender only if the sender is
-| > a user process. If signal is originating from kernel, safely checking
-| > namespace becomes more complex.
-| 
-| Where does this imply checking sender for kernel generated signals?
-
-... so what I meant is that in send_signal(), it will be harder to
-determine in the SI_ASYNCIO case whether the signal is from driver or
-rt_sigqueueinfo().
-
-If we know that it came from rt_sigqueueinfo(), we can safely check
-the namespace. If it came from driver we should skip the ns check.
+	- parent-ns must have a way to terminate container-init
+	- cinit will ignore SIG_DFL signals that may terminate cinit even if
+	  they come from parent ns
 
 | 
-| > Yes, current approach is somewhat hacky. We tried other approaches
-| > before and they were either intrusive or required non-trivial changes
-| > to semantics of signals to global init or both.
-| 
-| Message-IDs?
+| Also it was discussed to use pid namespaces to preserve the local pid of
+| a process during snapshot/restore. This means that every process may get
+| the state of a container-init. And then it is not longer a wise idea to
+| make them behave different from the outside.
 
-Yes, (Eric Biederman, Dec 2007)
-	https://lists.linux-foundation.org/pipermail/containers/2007-December/009152.html
+The one change in the state of the process I see is if someone relies on
+following fields from /proc/<pid>/status
 
-Oleg Nesterov, Aug 2007:
-	http://marc.info/?l=linux-kernel&m=118753610515859
+	SigPnd: 0000000000000000
+	ShdPnd: 0000000000000000
+	SigBlk: 0000000000000000
+	SigIgn: 0000000000000000
+	SigCgt: 0000000000000000
 
-I had sent out a summary of the above attempts to Containers list recently:
-	https://lists.linux-foundation.org/pipermail/containers/2008-November/013991.html
+to decide if they can send, say SIGUSR1, to terminate the process. If
+they do, they maybe in for a surprise. But if the container-init properly
+handles/ignores signals, this info will be consistent. 
 
-
-
-| 
-| > | > +static inline int siginfo_from_ancestor_ns(struct task_struct *t,
-| > | > +			siginfo_t *info)
-| > | > +{
-| > | > +	if (!is_si_special(info) && (info->si_signo & SIG_FROM_USER)) {
-| > | > +		/* if t can't see us we are from parent ns */
-| > | What?
-| > I assume your question is about the comment :-)
-| 
-| Yes.
-| 
-| > Yes, a process can see all its descendants and processes in descendant
-| > namespaces. But it can only see its ancestors upto the most recent
-| > CLONE_NEWPID. (kind of like chroot in filesystems). So if receiver
-| > can't see sender, sender must be an ancestor.
-| 
-| Please add a complete comment to the function which describes the
-| function. And don't us "it" for not defined entities.
-
-Ah, I see the problem now. The 't' refers to the task parameter - how
-about changing comment to:
-
-	/* If receiver can't see us, we are from parent ns */
-
-
-| 
-| Bastian
-| 
-| -- 
-| I have never understood the female capacity to avoid a direct answer to
-| any question.
-| 		-- Spock, "This Side of Paradise", stardate 3417.3
+Yes its not ideal and yes, the semantic change described above is a trade-off.
+We are trying to find out if this change is unreasonable or will break
+something really bad way.
