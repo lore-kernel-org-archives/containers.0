@@ -1,18 +1,14 @@
-From: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: Re: [RFC v10][PATCH 09/13] Restore open file descriprtors
-Date: Mon, 01 Dec 2008 17:31:08 -0800
-Message-ID: <1228181468.2971.146.camel__2977.03275359726$1228181679$gmane$org@nimitz>
-References: <1227747884-14150-1-git-send-email-orenl@cs.columbia.edu>
-	<1227747884-14150-10-git-send-email-orenl@cs.columbia.edu>
-	<20081128112745.GR28946@ZenIV.linux.org.uk>
-	<1228159324.2971.74.camel@nimitz> <49344C11.6090204@cs.columbia.edu>
-	<1228164873.2971.95.camel@nimitz> <49345086.4@cs.columbia.edu>
-	<1228165651.2971.99.camel@nimitz>
+From: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH 2/3] cgroups: add inactive subsystems to
+	rootnode.root_list
+Date: Mon, 1 Dec 2008 17:35:15 -0800
+Message-ID: <6599ad830812011735i565087dfg7ebad01a1f0400ad__48424.3947583765$1228181949$gmane$org@mail.gmail.com>
+References: <492FC1BD.4010705@cn.fujitsu.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1228165651.2971.99.camel@nimitz>
+In-Reply-To: <492FC1BD.4010705-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -22,87 +18,56 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Cc: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Linus Torvalds <torvalds-3NddpPZAyC0@public.gmane.org>, Al Viro <viro-3bDd1+5oDREiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, "H. Peter Anvin" <hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org>, Thomas Gleixner <tglx-hfZtesqFncYOwBW4kG4KsQ@public.gmane.org>, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>
+To: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+Cc: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, LKML <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Mon, 2008-12-01 at 13:07 -0800, Dave Hansen wrote:
-> > When a shared object is inserted to the hash we automatically take another
-> > reference to it (according to its type) for as long as it remains in the
-> > hash. See:  'cr_obj_ref_grab()' and 'cr_obj_ref_drop()'.  So by moving that
-> > call higher up, we protect the struct file.
-> 
-> That's kinda (and by kinda I mean really) disgusting.  Hiding that two
-> levels deep in what is effectively the hash table code where no one will
-> ever see it is really bad.  It also makes you lazy thinking that the
-> hash code will just know how to take references on whatever you give to
-> it.
-> 
-> I think cr_obj_ref_grab() is hideous obfuscation and needs to die.
-> Let's just do the get_file() directly, please.
+On Fri, Nov 28, 2008 at 2:02 AM, Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org> wrote:
+> Though for an inactive hierarchy, we have subsys->root == &rootnode,
+> but rootnode's root_list is always empty.
 
-Well, I at least see why you need it now.  The objhash thing is trying
-to be a pretty generic hash implementation and it does need to free the
-references up when it is destroyed.  Instead of keeping a "hash of
-files" and a "hash of pipes" or other shared objects, there's just a
-single hash for everything.
+I think you mean "rootnode's subsys_list is always empty".
 
-One alternative here would be to have an ops-style release function that
-gets called instead of what we have now:
-        
-        static void cr_obj_ref_drop(struct cr_objref *obj)
-        {
-                switch (obj->type) {
-                case CR_OBJ_FILE:
-                        fput((struct file *) obj->ptr);
-                        break;
-                default:
-                        BUG();
-                }
-        }
-        
-        static void cr_obj_ref_grab(struct cr_objref *obj)
-        {
-                switch (obj->type) {
-                case CR_OBJ_FILE:
-                        get_file((struct file *) obj->ptr);
-                        break;
-                default:
-                        BUG();
-                }
-        }
+>
+> The above code assumes rootnode.subsys_list links all inactive
+> hierarchies.
+>
+> Signed-off-by: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+> ---
+>  kernel/cgroup.c |    5 +++--
+>  1 files changed, 3 insertions(+), 2 deletions(-)
+>
+> diff --git a/kernel/cgroup.c b/kernel/cgroup.c
+> index 33ba756..4e50e97 100644
+> --- a/kernel/cgroup.c
+> +++ b/kernel/cgroup.c
+> @@ -716,7 +716,7 @@ static int rebind_subsystems(struct cgroupfs_root *root,
+>                        BUG_ON(dummytop->subsys[i]->cgroup != dummytop);
+>                        cgrp->subsys[i] = dummytop->subsys[i];
+>                        cgrp->subsys[i]->cgroup = cgrp;
+> -                       list_add(&ss->sibling, &root->subsys_list);
+> +                       list_move(&ss->sibling, &root->subsys_list);
+>                        rcu_assign_pointer(ss->root, root);
+>                        if (ss->bind)
+>                                ss->bind(ss, cgrp);
+> @@ -730,7 +730,7 @@ static int rebind_subsystems(struct cgroupfs_root *root,
+>                        dummytop->subsys[i]->cgroup = dummytop;
+>                        cgrp->subsys[i] = NULL;
+>                        rcu_assign_pointer(subsys[i]->root, &rootnode);
+> -                       list_del(&ss->sibling);
+> +                       list_move(&ss->sibling, &rootnode.subsys_list);
+>                } else if (bit & final_bits) {
+>                        /* Subsystem state should already exist */
+>                        BUG_ON(!cgrp->subsys[i]);
+> @@ -2522,6 +2522,7 @@ static void __init cgroup_init_subsys(struct cgroup_subsys *ss)
+>        printk(KERN_INFO "Initializing cgroup subsys %s\n", ss->name);
+>
+>        /* Create the top cgroup state for this subsystem */
+> +       list_add(&ss->sibling, &rootnode.root_list);
 
-That would make it something like:
+This is wrong. cgroup_subsys.sibling is a member of the list of
+subsystems attached to a given root, and rootnode.root_list is a
+member of the list of hierarchies. Did you actually meant
+&rootnode.subsys_list?
 
-struct cr_obj_ops {
-	int type;
-	void (*release)(struct cr_objref *obj);
-};
-
-void cr_release_file(struct cr_objref *obj)
-{
-	struct file *file = obj->ptr;
-	put_file(file);
-}
-
-struct cr_obj_ops cr_file_ops = {
-	.type = CR_OBJ_FILE,
-	.release = cr_release_file,
-};
-
-
-And the add operation becomes:
-
-	get_file(file);
-	new = cr_obj_add_ptr(ctx, file, &objref, &cr_file_ops, 0);
-
-with 'cr_file_ops' basically replacing the CR_OBJ_FILE that got passed
-before.
-
-I like that because it only obfuscates what truly needs to be abstracted
-out: the release side.  Hiding that get_file() is really tricky.
-
-But, I guess we could also just kill cr_obj_ref_grab(), do the
-get_file() explicitly and still keep cr_obj_ref_drop() as it is now.
-
--- Dave
+Paul
