@@ -1,42 +1,51 @@
-From: Sukadev Bhattiprolu <sukadev@linux.vnet.ibm.com>
-Subject: Re: [RFC][PATCH 1/5] pid: Implement ns_of_pid
-Date: Tue, 2 Dec 2008 14:12:45 -0800
-Message-ID: <20081202221244.GA991@us.ibm.com>
-References: <20081126034242.GA23120@us.ibm.com> <20081126034442.GA23238@us.ibm.com> <20081127011910.GD13545@wavehammer.waldi.eu.org> <20081201202422.GD12493@us.ibm.com> <20081202115841.GC1132@wavehammer.waldi.eu.org>
+From: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH 3/3] cgroups: introduce link_css_set() to remove duplicate
+	code
+Date: Tue, 2 Dec 2008 14:16:29 -0800
+Message-ID: <6599ad830812021416s76e393c8x5e3f5afa1bc370e2__20409.1171538041$1228256418$gmane$org@mail.gmail.com>
+References: <492FC1C2.9050001@cn.fujitsu.com>
+	<6599ad830812011620ld861aabgc70846a07ce1d487@mail.gmail.com>
+	<4934A8FB.80904@cn.fujitsu.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1754192AbYLBWN0@vger.kernel.org>
-Content-Disposition: inline
-In-Reply-To: <20081202115841.GC1132@wavehammer.waldi.eu.org>
-Sender: linux-kernel-owner@vger.kernel.org
-To: Bastian Blank <bastian@waldi.eu.org>, oleg@redhat.com, ebiederm@xmission.com, roland@redhat.com, containers@lists.osdl.org, linux-kernel@vger.kernel.org, xemul@openvz.org
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <4934A8FB.80904-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+Cc: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, LKML <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Bastian Blank [bastian@waldi.eu.org] wrote:
-| On Mon, Dec 01, 2008 at 12:24:22PM -0800, Sukadev Bhattiprolu wrote:
-| > Bastian Blank [bastian@waldi.eu.org] wrote:
-| > | On Tue, Nov 25, 2008 at 07:44:42PM -0800, Sukadev Bhattiprolu wrote:
-| > | > +/* ns_of_pid returns the pid namespace in which the specified
-| > | > + * pid was allocated.
-| > | > + */
-| > | > +static inline struct pid_namespace *ns_of_pid(struct pid *pid)
-| > | > +{
-| > | > +	struct pid_namespace *ns = NULL;
-| > | > +	if (pid)
-| > | > +		ns = pid->numbers[pid->level].ns;
-| > | > +	return ns;
-| > | > +}
-| > | > +
-| > | When can the pid argument be null?
-| > Soon after creation but more importantly, after detach_pid()
-| > (release_task).
-| 
-| pid is a function argument and the function does not call detach_pid. So
-| please try again.
+On Mon, Dec 1, 2008 at 7:18 PM, Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org> wrote:
+>
+> How about:
+>
+> /**
+>  * link_css_set - a helper function to link a css_set to a cgroup
+>  * @ tmp_cg_links: cg_cgroup_link objects allocated by allocate_cg_links()
+>  * @ cg: the css_set to be linked
+>  * @ cgrp: the destination cgroup
+>  */
 
-ns_of_pid() like pid_nr(), pid_nr_ns(), pid_task() etc is a low level helper
-unction. ns_of_pid(), like the other helpers can potentially be called for a
-process that has already called detach_pid() (i.e for a task that is exiting
-but not yet waited on).  Hence the 'if (pid)' in ns_of_pid().
+Sounds good.
 
-Sukadev
+>
+> Because we are linking all the css_sets to the root cgroup, so I think root_cgrp
+> helps readability.
+>
+
+But we're creating the hierarchy at this point, so there can clearly
+only be one cgroup any (which is the root cgroup).
+
+I don't think it's any more or less readable, it just seems an
+unnecessary change.
+
+Paul
