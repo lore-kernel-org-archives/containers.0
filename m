@@ -1,18 +1,13 @@
-From: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: Re: [RFC v10][PATCH 08/13] Dump open file descriptors
-Date: Mon, 01 Dec 2008 13:25:45 -0800
-Message-ID: <1228166745.2971.113.camel__42867.5374402248$1228166908$gmane$org@nimitz>
-References: <1227747884-14150-1-git-send-email-orenl@cs.columbia.edu>
-	<1227747884-14150-9-git-send-email-orenl@cs.columbia.edu>
-	<20081128101919.GO28946@ZenIV.linux.org.uk>
-	<1228153645.2971.36.camel@nimitz> <493447DD.7010102@cs.columbia.edu>
-	<1228164679.2971.91.camel@nimitz>
-	<alpine.LFD.2.00.0812011258390.3256@nehalem.linux-foundation.org>
+From: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH 1/2] cgroups: cleanup for dummy root
+Date: Mon, 1 Dec 2008 16:15:47 -0800
+Message-ID: <6599ad830812011615qe28ac37q7af73920e0f9a429__17656.683168798$1228177096$gmane$org@mail.gmail.com>
+References: <492F9D4C.2020204@cn.fujitsu.com> <492FB3FB.6060806@cn.fujitsu.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <alpine.LFD.2.00.0812011258390.3256-nfNrOhbfy2R17+2ddN/4kux8cNe9sq/dYPYVAmT7z5s@public.gmane.org>
+In-Reply-To: <492FB3FB.6060806-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -22,38 +17,24 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Linus Torvalds <torvalds-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
-Cc: "H. Peter Anvin" <hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org>, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Al Viro <viro-3bDd1+5oDREiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Thomas Gleixner <tglx-hfZtesqFncYOwBW4kG4KsQ@public.gmane.org>
+To: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+Cc: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, LKML <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Mon, 2008-12-01 at 13:02 -0800, Linus Torvalds wrote:
-> On Mon, 1 Dec 2008, Dave Hansen wrote:
-> > 
-> > Why is this done in two steps?  It first grabs a list of fd numbers
-> > which needs to be validated, then goes back and turns those into 'struct
-> > file's which it saves off.  Is there a problem with doing that
-> > fd->'struct file' conversion under the files->file_lock?
-> 
-> Umm, why do we even worry about this?
-> 
-> Wouldn't it be much better to make sure that all other threads are 
-> stopped before we snapshot, and if we cannot account for some thread (ie 
-> there's some elevated count in the fs/files/mm structures that we cannot 
-> see from the threads we've stopped), just refuse to dump.
+On Fri, Nov 28, 2008 at 1:03 AM, Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org> wrote:
+>
+> Hmmm...Sorry, this patch is wrong, when a subsystem is inactive thus in
+> rootnode, it may still iterate tasks in dummy top cgroup, though currently
+> no subsystem does so.
 
-My guess is that the mm is probably ok here, but we'll need some work on
-the vfs structures, at least eventually.
+Right - iterating across the tasks in a cgroup for an unmounted
+subsystem is a completely valid thing to do. I suppose it might make
+sense to optimize that to just scan the tasklist and thread lists in
+that case, to avoid the overhead of maintaining the cg links for the
+unmounted subsystems, but you'd have to change the cgroup iterator
+first, before you stop maintaining the links. Given that I suspect the
+main overhead of maintaining the links is taking css_set_lock, I'm not
+sure how much it hurts to be keeping the links for the inactive
+hierarchies too and keeping the code simpler.
 
-The mm is nice that it has ->count separated from ->users.  We can
-easily compare the sum of mm->users to the number of tasks we've frozen
-since mm->users has nice defined behavior.
-
-But, we've got suckers like proc_fd_info() that do a
-get/put_files_struct().  So, somebody just doing lots of looks in /proc
-could stop us from ever checkpointing.  Unfortunately, I know of a
-number of "monitoring" programs that do just that. :)
-
-I guess we can use the plain counts for now, and add something like
-mm->users for the vfs structures in a bit.  
-
--- Dave
+Paul
