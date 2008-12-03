@@ -1,40 +1,106 @@
-From: Steven Rostedt <rostedt@goodmis.org>
-Subject: Re: [PATCH 1/3] ftrace: graph of a single function
-Date: Wed, 3 Dec 2008 16:36:14 -0500 (EST)
-Message-ID: <alpine.DEB.1.10.0812031635060.28153@gandalf.stny.rr.com>
-References: <20081203203656.776893226@goodmis.org> <20081203203828.920111079@goodmis.org> <20081203130741.473c1262.akpm@linux-foundation.org> <alpine.DEB.1.10.0812031608560.29045@gandalf.stny.rr.com> <20081203133242.4e80bbe6.akpm@linux-foundation.org>
+From: ebiederm@xmission.com (Eric W. Biederman)
+Subject: Re: [PATCH 2/3] ftrace: use task struct trace flag to filter on pid
+Date: Wed, 03 Dec 2008 14:34:27 -0800
+Message-ID: <m18wqw3n2k.fsf@frodo.ebiederm.org>
+References: <20081203203656.776893226@goodmis.org>
+	<20081203203829.158592001@goodmis.org>
 Mime-Version: 1.0
-Content-Type: TEXT/PLAIN; charset=US-ASCII
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1755153AbYLCVg1@vger.kernel.org>
-In-Reply-To: <20081203133242.4e80bbe6.akpm@linux-foundation.org>
+Content-Type: text/plain; charset=us-ascii
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1755950AbYLCWgh@vger.kernel.org>
+In-Reply-To: <20081203203829.158592001@goodmis.org> (Steven Rostedt's message
+	of "Wed, 03 Dec 2008 15:36:58 -0500")
 Sender: linux-kernel-owner@vger.kernel.org
-To: Andrew Morton <akpm@linux-foundation.org>
-Cc: linux-kernel@vger.kernel.org, mingo@elte.hu, fweisbec@gmail.com, peterz@infradead.org, arjan@infradead.org, dave@linux.vnet.ibm.com, containers@lists.osdl.org, ebiederm@xmission.com, sukadev@linux.vnet.ibm.com, serue@us.ibm.com, srostedt@redhat.com
+To: Steven Rostedt <rostedt@goodmis.org>
+Cc: linux-kernel@vger.kernel.org, Ingo Molnar <mingo@elte.hu>, Andrew Morton <akpm@linux-foundation.org>, Frederic Weisbecker <fweisbec@gmail.com>, Peter Zijlstra <peterz@infradead.org>, Arjan van de Ven <arjan@infradead.org>, Dave Hansen <dave@linux.vnet.ibm.com>, containers@lists.osdl.org, Sukadev Bhattiprolu <sukadev@linux.vnet.ibm.com>, "Serge E. Hallyn" <serue@us.ibm.com>, Steven Rostedt <srostedt@redhat.com>
 List-Id: containers.vger.kernel.org
 
+Steven Rostedt <rostedt@goodmis.org> writes:
 
-On Wed, 3 Dec 2008, Andrew Morton wrote:
+> From: Steven Rostedt <srostedt@redhat.com>
+>
+> Impact: clean up
+>
+> Use the new task struct trace flags to determine if a process should be
+> traced or not.
 
-> On Wed, 3 Dec 2008 16:10:38 -0500 (EST)
-> Steven Rostedt <rostedt@goodmis.org> wrote:
-> > > > +
-> > > > +	seq_printf(m, "%s\n", str);
-> > > 
-> > > Can we use %pF here?
-> > 
-> > If there's a way to not print the "+offset".
-> 
-> Could be added, I guess.  I wonder if it would be
-> reused elsewhere.
+Looks reasonable.
 
-There's lots of places in ftrace that would use it, and probably clean up
-a bunch of code in the process.
+> Note: this moves the searching of the pid to the slow path of setting
+> the pid field. This needs to be converted to the pid name space.
+>
+> Signed-off-by: Steven Rostedt <srostedt@redhat.com>
+> ---
+>  kernel/trace/ftrace.c |   28 +++++++++++++++++++++++++---
+>  1 files changed, 25 insertions(+), 3 deletions(-)
+>
+> diff --git a/kernel/trace/ftrace.c b/kernel/trace/ftrace.c
+> index b17a303..c5049f5 100644
+> --- a/kernel/trace/ftrace.c
+> +++ b/kernel/trace/ftrace.c
+> @@ -47,7 +47,7 @@
+>  int ftrace_enabled __read_mostly;
+>  static int last_ftrace_enabled;
+>  
+> -/* ftrace_pid_trace >= 0 will only trace threads with this pid */
+> +/* set when tracing only a pid */
+>  static int ftrace_pid_trace = -1;
+>  
+>  /* Quick disabling of function tracer. */
+> @@ -90,7 +90,7 @@ static void ftrace_list_func(unsigned long ip, unsigned long
+> parent_ip)
+>  
+>  static void ftrace_pid_func(unsigned long ip, unsigned long parent_ip)
+>  {
+> -	if (current->pid != ftrace_pid_trace)
+> +	if (!test_tsk_trace_trace(current))
+>  		return;
+>  
+>  	ftrace_pid_function(ip, parent_ip);
+> @@ -1714,11 +1714,33 @@ ftrace_pid_write(struct file *filp, const char __user
+> *ubuf,
+>  		ftrace_pid_trace = -1;
+>  
+>  	} else {
+> +		struct task_struct *p;
+> +		int found = 0;
+>  
+>  		if (ftrace_pid_trace == val)
+>  			goto out;
+>  
+> -		ftrace_pid_trace = val;
+> +		/*
+> +		 * Find the task that matches this pid.
+> +		 * TODO: use pid namespaces instead.
+> +		 */
+> +		rcu_read_lock();
+> +		for_each_process(p) {
+> +			if (p->pid == val) {
+> +				found = 1;
+> +				set_tsk_trace_trace(p);
+> +			} else if (test_tsk_trace_trace(p))
+> +				clear_tsk_trace_trace(p);
+> +		}
+> +		rcu_read_unlock();
 
-> 
-> > blk_unplug looks much nicer than blk_unplug+0x78/0x278
-> 
-> <mutters something about in-kernel pretty-printers>
+Yes.  This function you have just implemented inline is called find_pid.
+It uses a hash lookup instead of an expensive walk trough all of the processes
+in the system.  So the code becomes something like:
 
-Huh? sorry I couldn't hear you. Could you speak up. ;-)
 
--- Steve
+                do_each_pid_task(ftrace_pid_trace, PIDTYPE_PID, task) {
+			clear_tsk_trace_tace(p);
+                } while_each_pid_task(pid, PIDTYPE_PID, task);
+                put_pid(ftrace_pid_trace);
+
+                ftrace_pid_trace = find_get_vpid(val);
+                do_each_pid_task(ftrace_pid_trace, PIDTYPE_PID, task) {
+                	set_tsk_trace_tace(p);
+                } while_each_pid_task(ftrace_pid_trace, PIDTYPE_PID, task);
+
+                if (!ftrace_pid_trace)
+                	goto out;
+
+The loops encompass both the test for validity, and handle the weird exec
+case where the pid moves from one task to another.
+
+Eric
