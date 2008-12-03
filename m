@@ -1,14 +1,11 @@
-From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [RFC][PATCH 4/4] checkpoint/restart: simplify cr_scan_fds()
-Date: Tue, 2 Dec 2008 22:21:39 -0600
-Message-ID: <20081203042139.GA16762@us.ibm.com>
-References: <20081202185734.F740150C@kernel> <20081202185742.CB0FDECC@kernel>
+From: "Wm E Eastman" <Babcock_Eldon-8rWtR1D/uvZBDgjK7y7TUQ@public.gmane.org>
+Subject: MD Listing
+Date: Wed, 03 Dec 2008 01:52:18 -0300
+Message-ID: <28403.4776538194$1228280454@news.gmane.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <20081202185742.CB0FDECC@kernel>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,62 +15,44 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Cc: containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+To: containers-kUZtPSP61YRIJsTUW+i+0g@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Quoting Dave Hansen (dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org):
-> 
-> I think having all the allocations in one place, plus the
-> reduction in the number of lines speaks for itself.  In
-> any case, this is last in the series and can be dropped if
-> you don't like it.
-> 
-> ---
-> 
->  linux-2.6.git-dave/checkpoint/ckpt_file.c |   13 ++++---------
->  1 file changed, 4 insertions(+), 9 deletions(-)
-> 
-> diff -puN checkpoint/ckpt_file.c~fix-cr_scan_fds-realloc checkpoint/ckpt_file.c
-> --- linux-2.6.git/checkpoint/ckpt_file.c~fix-cr_scan_fds-realloc	2008-12-02 10:26:53.000000000 -0800
-> +++ linux-2.6.git-dave/checkpoint/ckpt_file.c	2008-12-02 10:26:53.000000000 -0800
-> @@ -38,6 +38,7 @@ int cr_scan_fds(struct files_struct *fil
->  	int i, n = 0;
 
-Heh, well I think you'll need to initialize n after the retry: label.
 
-Otherwise, I can see the appeal of this...
 
->  	int tot = CR_DEFAULT_FDTABLE;
-> 
-> +retry:
->  	fds = kmalloc(tot * sizeof(*fds), GFP_KERNEL);
->  	if (!fds)
->  		return -ENOMEM;
-> @@ -55,18 +56,12 @@ int cr_scan_fds(struct files_struct *fil
->  		if (!fcheck_files(files, i))
->  			continue;
->  		if (n == tot) {
-> -			/*
-> -			 * fcheck_files() is safe with drop/re-acquire
-> -			 * of the lock, because it tests:  fd < max_fds
-> -			 */
-> +			/* we undershot the size of fds[] */
->  			spin_unlock(&files->file_lock);
->  			rcu_read_unlock();
->  			tot *= 2;	/* won't overflow: kmalloc will fail */
-> -			fds = krealloc(fds, tot * sizeof(*fds), GFP_KERNEL);
-> -			if (!fds)
-> -				return -ENOMEM;
-> -			rcu_read_lock();
-> -			spin_lock(&files->file_lock);
-> +			kfree(fds);
-> +			goto retry;
->  		}
->  		fds[n++] = i;
->  	}
-> _
-> _______________________________________________
-> Containers mailing list
-> Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-> https://lists.linux-foundation.org/mailman/listinfo/containers
+
+
+Currently in Practice:  MDs in the US 
+
+788,149 in total <> 17,219 emails
+
+34 primary and secondary specialties
+
+Can easily be sorted by 16 different fields
+
+Now priced at: $391
+
+
+<><><> GET THE 4 ITEMS BELOW AS A GIFT WHEN YOU ORDER <><><>
+
+List of US Pharma Companies
+47,000 names and emails of the major positions
+
+Complete Database of Hospitals in the US
+more than 23k hospital administrators in over 7k hospitals [worth over $300 alone)
+
+American Dentists
+Virtually every dentist in the US with full contact details
+
+Chiropractors in the USA
+Complete data for all chiropractors in the USA (a $250 value)
+
+reply to:      Collier-zv0fbVGlH0KkkmuXFMvWN0EOCMrvLtNR@public.gmane.org
+
+  
+
+above expires on December 05 
+
+
+Send email to quit-zv0fbVGlH0KkkmuXFMvWN0EOCMrvLtNR@public.gmane.org to ensure no further communication
