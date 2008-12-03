@@ -1,88 +1,60 @@
 From: Steven Rostedt <rostedt@goodmis.org>
-Subject: [PATCH 2/3] ftrace: use task struct trace flag to filter on pid
-Date: Wed, 03 Dec 2008 15:36:58 -0500
-Message-ID: <20081203203829.158592001@goodmis.org>
-References: <20081203203656.776893226@goodmis.org>
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1763386AbYLCUlw@vger.kernel.org>
-Content-Disposition: inline; filename=0002-ftrace-use-task-struct-trace-flag-to-filter-on-pid.patch
+Subject: [PATCH 0/3] ftrace: updates for tip
+Date: Wed, 03 Dec 2008 15:36:56 -0500
+Message-ID: <20081203203656.776893226@goodmis.org>
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1763305AbYLCUle@vger.kernel.org>
 Sender: linux-kernel-owner@vger.kernel.org
 To: linux-kernel@vger.kernel.org
-Cc: Ingo Molnar <mingo@elte.hu>, Andrew Morton <akpm@linux-foundation.org>, Frederic Weisbecker <fweisbec@gmail.com>, Peter Zijlstra <peterz@infradead.org>, Arjan van de Ven <arjan@infradead.org>, Dave Hansen <dave@linux.vnet.ibm.com>, containers@lists.osdl.org, Eric Biederman <ebiederm@xmission.com>, Sukadev Bhattiprolu <sukadev@linux.vnet.ibm.com>, "Serge E. Hallyn" <serue@us.ibm.com>, Steven Rostedt <srostedt@redhat.com>
+Cc: Ingo Molnar <mingo@elte.hu>, Andrew Morton <akpm@linux-foundation.org>, Frederic Weisbecker <fweisbec@gmail.com>, Peter Zijlstra <peterz@infradead.org>, Arjan van de Ven <arjan@infradead.org>, Dave Hansen <dave@linux.vnet.ibm.com>, containers@lists.osdl.org, Eric Biederman <ebiederm@xmission.com>, Sukadev Bhattiprolu <sukadev@linux.vnet.ibm.com>, "Serge E. Hallyn" <serue@us.ibm.com>
 List-Id: containers.vger.kernel.org
 
-From: Steven Rostedt <srostedt@redhat.com>
+Ingo,
 
-Impact: clean up
+This series has three patches.
 
-Use the new task struct trace flags to determine if a process should be
-traced or not.
+The first patch adds a new feature that I've been wanting to have for some
+time and Arjan even requested. That is to pick a function and only
+trace that function and its children. Dynamic ftrace and function
+graph needs to be enabled for this.
 
-Note: this moves the searching of the pid to the slow path of setting
-the pid field. This needs to be converted to the pid name space.
+To do the above, I added a "trace" flags field in the task structure.
+The second patch uses this for the ftrace pid code. It searches for
+the task based on the pid and sets the trace flag, then in the
+ftrace function caller it only needs to check this flag.
 
-Signed-off-by: Steven Rostedt <srostedt@redhat.com>
----
- kernel/trace/ftrace.c |   28 +++++++++++++++++++++++++---
- 1 files changed, 25 insertions(+), 3 deletions(-)
+This means we can now trace more than one pid without any more overhead.
+It also means that we should be able to use the name space code that
+the container guys want us to. But since I'm not very up on the
+namespace code, I'm still using just the normal 'pid'. I've Cc'd the
+container folks so perhaps they could write up a patch for me ;-)
 
-diff --git a/kernel/trace/ftrace.c b/kernel/trace/ftrace.c
-index b17a303..c5049f5 100644
---- a/kernel/trace/ftrace.c
-+++ b/kernel/trace/ftrace.c
-@@ -47,7 +47,7 @@
- int ftrace_enabled __read_mostly;
- static int last_ftrace_enabled;
- 
--/* ftrace_pid_trace >= 0 will only trace threads with this pid */
-+/* set when tracing only a pid */
- static int ftrace_pid_trace = -1;
- 
- /* Quick disabling of function tracer. */
-@@ -90,7 +90,7 @@ static void ftrace_list_func(unsigned long ip, unsigned long parent_ip)
- 
- static void ftrace_pid_func(unsigned long ip, unsigned long parent_ip)
- {
--	if (current->pid != ftrace_pid_trace)
-+	if (!test_tsk_trace_trace(current))
- 		return;
- 
- 	ftrace_pid_function(ip, parent_ip);
-@@ -1714,11 +1714,33 @@ ftrace_pid_write(struct file *filp, const char __user *ubuf,
- 		ftrace_pid_trace = -1;
- 
- 	} else {
-+		struct task_struct *p;
-+		int found = 0;
- 
- 		if (ftrace_pid_trace == val)
- 			goto out;
- 
--		ftrace_pid_trace = val;
-+		/*
-+		 * Find the task that matches this pid.
-+		 * TODO: use pid namespaces instead.
-+		 */
-+		rcu_read_lock();
-+		for_each_process(p) {
-+			if (p->pid == val) {
-+				found = 1;
-+				set_tsk_trace_trace(p);
-+			} else if (test_tsk_trace_trace(p))
-+				clear_tsk_trace_trace(p);
-+		}
-+		rcu_read_unlock();
-+
-+		if (found)
-+			ftrace_pid_trace = val;
-+		else {
-+			if (ftrace_pid_trace < 0)
-+				goto out;
-+			ftrace_pid_trace = -1;
-+		}
- 	}
- 
- 	/* update the function call */
--- 
-1.5.6.5
+Note: When writing to the set_ftrace_pid two things happen.
+ - The task with the matching pid gets the trace flag set.
+ - Any other task has its trace flag cleared.
+ #2 needs to be addressed when converting to pid name spaces.
+ Just because it is not enough to simply find the matching task.
+ It may be good enough to just clear all tasks and then find the
+ one that matches.
 
+The last patch makes the function graph tracer honor the set_ftrace_pid.
+
+The following patches are in:
+
+  git://git.kernel.org/pub/scm/linux/kernel/git/rostedt/linux-2.6-trace.git
+
+    branch: tip/devel
+
+
+Steven Rostedt (3):
+      ftrace: graph of a single function
+      ftrace: use task struct trace flag to filter on pid
+      ftrace: trace single pid for function graph tracer
+
+----
+ include/linux/ftrace.h |   46 +++++++++
+ include/linux/sched.h  |    4 +
+ kernel/trace/ftrace.c  |  257 +++++++++++++++++++++++++++++++++++++++++++++++-
+ kernel/trace/trace.c   |   11 ++
+ kernel/trace/trace.h   |   40 +++++++-
+ 5 files changed, 353 insertions(+), 5 deletions(-)
 -- 
