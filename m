@@ -1,16 +1,14 @@
-From: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Subject: Re: [PATCH 2/3] cgroups: add inactive subsystems to rootnode.root_list
-Date: Wed, 03 Dec 2008 09:10:00 +0800
-Message-ID: <4935DC68.5030109__22146.5938179337$1228266765$gmane$org@cn.fujitsu.com>
-References: <492FC1BD.4010705@cn.fujitsu.com>	
-	<6599ad830812011735i565087dfg7ebad01a1f0400ad@mail.gmail.com>	
-	<4934AA53.4000308@cn.fujitsu.com>
-	<6599ad830812021453m44e948b1p83f6e02aa7e9068@mail.gmail.com>
+From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [RFC][PATCH 4/4] checkpoint/restart: simplify cr_scan_fds()
+Date: Tue, 2 Dec 2008 22:21:39 -0600
+Message-ID: <20081203042139.GA16762@us.ibm.com>
+References: <20081202185734.F740150C@kernel> <20081202185742.CB0FDECC@kernel>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <6599ad830812021453m44e948b1p83f6e02aa7e9068-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <20081202185742.CB0FDECC@kernel>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -20,46 +18,62 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
-Cc: Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, LKML <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+To: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Cc: containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
->>>> @@ -2522,6 +2522,7 @@ static void __init cgroup_init_subsys(struct cgroup_subsys *ss)
->>>>        printk(KERN_INFO "Initializing cgroup subsys %s\n", ss->name);
->>>>
->>>>        /* Create the top cgroup state for this subsystem */
->>>> +       list_add(&ss->sibling, &rootnode.root_list);
->>> This is wrong. cgroup_subsys.sibling is a member of the list of
->>> subsystems attached to a given root, and rootnode.root_list is a
->>> member of the list of hierarchies. Did you actually meant
->>> &rootnode.subsys_list?
->>>
->> I thought I corrected all the s/root_list/subsys_list/ in patch v2. :(
->>
->> If this patch makes sense, I'll fix it, otherwise we'll going to ask Andrew to drop it from -mm.
+Quoting Dave Hansen (dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org):
 > 
-> Looking at the existing code, it's not actually broken - but only by accident.
+> I think having all the allocations in one place, plus the
+> reduction in the number of lines speaks for itself.  In
+> any case, this is last in the series and can be dropped if
+> you don't like it.
 > 
-
-Yes, since it's not broken, I didn't claim this patch as a bug fix that
-should go into 2.6.28.
-
-> We aim to add a link for each cgroup, which we do by finding the first
-> subsystem in each hierarchy and adding a link for its cgroup, and then
-> adding a link for dummytop if there weren't any subsystems in the
-> inactive hierarchy.
+> ---
 > 
-> But since rootnode.subsys_list is always empty, we always skip the
-> inactive hierarchy in the main loop (if it has any subsystems), and
-> always add the inactive hierarchy afterwards. So everything works out
-> OK (all hierarchies do get linked), but it's horribly unreadable.
+>  linux-2.6.git-dave/checkpoint/ckpt_file.c |   13 ++++---------
+>  1 file changed, 4 insertions(+), 9 deletions(-)
 > 
+> diff -puN checkpoint/ckpt_file.c~fix-cr_scan_fds-realloc checkpoint/ckpt_file.c
+> --- linux-2.6.git/checkpoint/ckpt_file.c~fix-cr_scan_fds-realloc	2008-12-02 10:26:53.000000000 -0800
+> +++ linux-2.6.git-dave/checkpoint/ckpt_file.c	2008-12-02 10:26:53.000000000 -0800
+> @@ -38,6 +38,7 @@ int cr_scan_fds(struct files_struct *fil
+>  	int i, n = 0;
 
-I found this confusion when I was trying to understand this part of code.
+Heh, well I think you'll need to initialize n after the retry: label.
 
-> Having the subsys_list be correct for the inactive hierarchy is
-> probably a good thing, so this patch should go ahead (once the typos
-> is fixed).
+Otherwise, I can see the appeal of this...
+
+>  	int tot = CR_DEFAULT_FDTABLE;
 > 
-
-I'll fix it. :)
+> +retry:
+>  	fds = kmalloc(tot * sizeof(*fds), GFP_KERNEL);
+>  	if (!fds)
+>  		return -ENOMEM;
+> @@ -55,18 +56,12 @@ int cr_scan_fds(struct files_struct *fil
+>  		if (!fcheck_files(files, i))
+>  			continue;
+>  		if (n == tot) {
+> -			/*
+> -			 * fcheck_files() is safe with drop/re-acquire
+> -			 * of the lock, because it tests:  fd < max_fds
+> -			 */
+> +			/* we undershot the size of fds[] */
+>  			spin_unlock(&files->file_lock);
+>  			rcu_read_unlock();
+>  			tot *= 2;	/* won't overflow: kmalloc will fail */
+> -			fds = krealloc(fds, tot * sizeof(*fds), GFP_KERNEL);
+> -			if (!fds)
+> -				return -ENOMEM;
+> -			rcu_read_lock();
+> -			spin_lock(&files->file_lock);
+> +			kfree(fds);
+> +			goto retry;
+>  		}
+>  		fds[n++] = i;
+>  	}
+> _
+> _______________________________________________
+> Containers mailing list
+> Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+> https://lists.linux-foundation.org/mailman/listinfo/containers
