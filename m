@@ -1,72 +1,74 @@
-From: Sukadev Bhattiprolu <sukadev@linux.vnet.ibm.com>
-Subject: Re: [RFC][PATCH 2/5] pid: Generalize task_active_pid_ns
-Date: Tue, 2 Dec 2008 23:41:03 -0800
-Message-ID: <20081203074103.GA8487@us.ibm.com>
-References: <20081126034242.GA23120@us.ibm.com> <20081126034528.GB23238@us.ibm.com> <20081127011738.GC13545@wavehammer.waldi.eu.org> <1227820765.5108.20.camel@bahia.kalilou.org> <20081201211518.GB15004@us.ibm.com> <20081202115729.GB1132@wavehammer.waldi.eu.org>
+From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Subject: Re: [RFC][PATCH 4/4] checkpoint/restart: simplify cr_scan_fds()
+Date: Wed, 03 Dec 2008 04:48:18 -0500
+Message-ID: <493655E2.7040304@cs.columbia.edu>
+References: <20081202185734.F740150C@kernel> <20081202185742.CB0FDECC@kernel>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1755861AbYLCHls@vger.kernel.org>
-Content-Disposition: inline
-In-Reply-To: <20081202115729.GB1132@wavehammer.waldi.eu.org>
-Sender: linux-kernel-owner@vger.kernel.org
-To: Bastian Blank <bastian@waldi.eu.org>, Greg Kurz <gkurz@fr.ibm.com>, linux-kernel@vger.kernel.org, oleg@redhat.com, ebiederm@xmission.com, containers@lists.osdl.org, roland@redhat.com
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <20081202185742.CB0FDECC@kernel>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Cc: containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Bastian Blank [bastian@waldi.eu.org] wrote:
-| On Mon, Dec 01, 2008 at 01:15:18PM -0800, Sukadev Bhattiprolu wrote:
-| > Greg Kurz [gkurz@fr.ibm.com] wrote:
-| > | On Thu, 2008-11-27 at 02:17 +0100, Bastian Blank wrote:
-| > | > On Tue, Nov 25, 2008 at 07:45:28PM -0800, Sukadev Bhattiprolu wrote:
-| > | > > Currently task_active_pid_ns is not safe to call after a
-| > | > > task becomes a zombie and exit_task_namespaces is called,
-| > | > > as nsproxy becomes NULL.
-| > | > Why do you need to be able to get the pid namespace from zombie
-| > | > processes?
-| > After exiting namespaces, the process notifies parent. With new changes
-| > to signals (in this patchset), the signal code may need to determine
-| > the namespace of sender (the exiting child in this case).
-| 
-| So the parent of a process with a new pid namespace will never get a
-| SIGCHLD?
 
-I am wondering what I said that leads to that conclusion :-) If parent
-has a handler the handler will be called as usual otherwise SIGCHLD
-will be ignored.
+(as discussed in the LKML thread) as far as I can see the existing code is
+safe, and this code is not more correct (for restart) in terms of races with
+changes to the file table ?
 
-But anyway, an earlier version of my patches checked the pid namespace
-sooner and so I had to generalize task_active_pid_ns().
-
-With the present order of checks in siginfo_from_ancestor_ns(), we don't
-need to generalize task_active_pid_ns(). SIG_FROM_USER flag will be clear
-when do_notify_parent() calls send_signal().
-
-IOW, while we should eventually generalize task_active_pid_ns(), it is
-not required for this signals patchset and we can ignore patches 1 and 2
-for now.
-
-| 
-| What I read in the kernel source (kernel/signal.c:do_notify_parent,
-| include/asm-generic/siginfo.h:CLD_EXITED) is that the exit signals
-| (SIGCHLD) are describes as sent by the kernel. 
-
-Yes. Are you suggesting a check like
-
-	if (!is_si_special(info) && !SI_FROMKERNEL(info)) ?
-		/* must be from user, safe to check ns */
-
-But SI_ASYNCIO comes from the driver - so its not safe to check pid ns.
-(sent a separate query on SI_ASYNCIO).
-
-| 
-| > | I agree with Eric and Sukadev that task_active_pid_ns() is unsafe. There
-| > | isn't even a /* don't use with zombies */ in pid_namespace.h...
-| > Hmm. Its not unsafe at present. It would become unsafe if the signals code
-| > tries to determine the namespace of sender.
-| 
-| Why? Even now it may be used on zombie tasks.
-
-It used to be unsafe, and iirc was fixed a while ago(in part by moving
-exit_task_namespaces() into exit_notify()).
-
-Are you saying there is another path (outside these signals patches) where
-task_active_pid_ns() is called for zombies ?
+Dave Hansen wrote:
+> I think having all the allocations in one place, plus the
+> reduction in the number of lines speaks for itself.  In
+> any case, this is last in the series and can be dropped if
+> you don't like it.
+> 
+> ---
+> 
+>  linux-2.6.git-dave/checkpoint/ckpt_file.c |   13 ++++---------
+>  1 file changed, 4 insertions(+), 9 deletions(-)
+> 
+> diff -puN checkpoint/ckpt_file.c~fix-cr_scan_fds-realloc checkpoint/ckpt_file.c
+> --- linux-2.6.git/checkpoint/ckpt_file.c~fix-cr_scan_fds-realloc	2008-12-02 10:26:53.000000000 -0800
+> +++ linux-2.6.git-dave/checkpoint/ckpt_file.c	2008-12-02 10:26:53.000000000 -0800
+> @@ -38,6 +38,7 @@ int cr_scan_fds(struct files_struct *fil
+>  	int i, n = 0;
+>  	int tot = CR_DEFAULT_FDTABLE;
+>  
+> +retry:
+>  	fds = kmalloc(tot * sizeof(*fds), GFP_KERNEL);
+>  	if (!fds)
+>  		return -ENOMEM;
+> @@ -55,18 +56,12 @@ int cr_scan_fds(struct files_struct *fil
+>  		if (!fcheck_files(files, i))
+>  			continue;
+>  		if (n == tot) {
+> -			/*
+> -			 * fcheck_files() is safe with drop/re-acquire
+> -			 * of the lock, because it tests:  fd < max_fds
+> -			 */
+> +			/* we undershot the size of fds[] */
+>  			spin_unlock(&files->file_lock);
+>  			rcu_read_unlock();
+>  			tot *= 2;	/* won't overflow: kmalloc will fail */
+> -			fds = krealloc(fds, tot * sizeof(*fds), GFP_KERNEL);
+> -			if (!fds)
+> -				return -ENOMEM;
+> -			rcu_read_lock();
+> -			spin_lock(&files->file_lock);
+> +			kfree(fds);
+> +			goto retry;
+>  		}
+>  		fds[n++] = i;
+>  	}
+> _
+> 
