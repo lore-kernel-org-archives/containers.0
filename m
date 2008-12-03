@@ -1,39 +1,40 @@
-From: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
+From: Steven Rostedt <rostedt@goodmis.org>
 Subject: Re: [PATCH 1/3] ftrace: graph of a single function
-Date: Wed, 3 Dec 2008 13:08:59 -0800
-Message-ID: <20081203130859.fcf5a51e.akpm@linux-foundation.org>
-References: <20081203203656.776893226@goodmis.org>
-	<20081203203828.920111079@goodmis.org>
+Date: Wed, 3 Dec 2008 16:10:38 -0500 (EST)
+Message-ID: <alpine.DEB.1.10.0812031608560.29045@gandalf.stny.rr.com>
+References: <20081203203656.776893226@goodmis.org> <20081203203828.920111079@goodmis.org> <20081203130741.473c1262.akpm@linux-foundation.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20081203203828.920111079-nx8X9YLhiw1AfugRpC6u6w@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Steven Rostedt <rostedt-nx8X9YLhiw1AfugRpC6u6w@public.gmane.org>
-Cc: fweisbec-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, srostedt-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org, containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, mingo-X9Un+BFzKDI@public.gmane.org, sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, arjan-wEGCiKHe2LqWVfeAwA7xHQ@public.gmane.org
+Content-Type: TEXT/PLAIN; charset=US-ASCII
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1756344AbYLCVLY@vger.kernel.org>
+In-Reply-To: <20081203130741.473c1262.akpm@linux-foundation.org>
+Sender: linux-kernel-owner@vger.kernel.org
+To: Andrew Morton <akpm@linux-foundation.org>
+Cc: linux-kernel@vger.kernel.org, mingo@elte.hu, fweisbec@gmail.com, peterz@infradead.org, arjan@infradead.org, dave@linux.vnet.ibm.com, containers@lists.osdl.org, ebiederm@xmission.com, sukadev@linux.vnet.ibm.com, serue@us.ibm.com, srostedt@redhat.com
 List-Id: containers.vger.kernel.org
 
-On Wed, 03 Dec 2008 15:36:57 -0500
-Steven Rostedt <rostedt-nx8X9YLhiw1AfugRpC6u6w@public.gmane.org> wrote:
 
-> +static struct seq_operations ftrace_graph_seq_ops = {
-> +	.start = g_start,
-> +	.next = g_next,
-> +	.stop = g_stop,
-> +	.show = g_show,
-> +};
 
-This could be static I think.
+On Wed, 3 Dec 2008, Andrew Morton wrote:
 
-It's probably not worth even commenting on or fixing this sort
-of thing.  Just rely on someone(tm) doing periodic sweeps to
-fix them all up.
+> On Wed, 03 Dec 2008 15:36:57 -0500
+> Steven Rostedt <rostedt@goodmis.org> wrote:
+> 
+> > +static int g_show(struct seq_file *m, void *v)
+> > +{
+> > +	unsigned long *ptr = v;
+> > +	char str[KSYM_SYMBOL_LEN];
+> > +
+> > +	if (!ptr)
+> > +		return 0;
+> > +
+> > +	kallsyms_lookup(*ptr, NULL, NULL, NULL, str);
+> > +
+> > +	seq_printf(m, "%s\n", str);
+> 
+> Can we use %pF here?
+
+If there's a way to not print the "+offset".
+
+blk_unplug looks much nicer than blk_unplug+0x78/0x278
+
+-- Steve
