@@ -1,7 +1,7 @@
 From: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
 Subject: Re: [PATCH 1/3] ftrace: graph of a single function
-Date: Wed, 3 Dec 2008 13:07:41 -0800
-Message-ID: <20081203130741.473c1262.akpm@linux-foundation.org>
+Date: Wed, 3 Dec 2008 13:08:59 -0800
+Message-ID: <20081203130859.fcf5a51e.akpm@linux-foundation.org>
 References: <20081203203656.776893226@goodmis.org>
 	<20081203203828.920111079@goodmis.org>
 Mime-Version: 1.0
@@ -25,19 +25,15 @@ List-Id: containers.vger.kernel.org
 On Wed, 03 Dec 2008 15:36:57 -0500
 Steven Rostedt <rostedt-nx8X9YLhiw1AfugRpC6u6w@public.gmane.org> wrote:
 
-> +static int g_show(struct seq_file *m, void *v)
-> +{
-> +	unsigned long *ptr = v;
-> +	char str[KSYM_SYMBOL_LEN];
-> +
-> +	if (!ptr)
-> +		return 0;
-> +
-> +	kallsyms_lookup(*ptr, NULL, NULL, NULL, str);
-> +
-> +	seq_printf(m, "%s\n", str);
+> +static struct seq_operations ftrace_graph_seq_ops = {
+> +	.start = g_start,
+> +	.next = g_next,
+> +	.stop = g_stop,
+> +	.show = g_show,
+> +};
 
-Can we use %pF here?
+This could be static I think.
 
-> +	return 0;
-> +}
+It's probably not worth even commenting on or fixing this sort
+of thing.  Just rely on someone(tm) doing periodic sweeps to
+fix them all up.
