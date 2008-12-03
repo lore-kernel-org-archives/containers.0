@@ -1,40 +1,33 @@
-From: ebiederm@xmission.com (Eric W. Biederman)
-Subject: Re: [PATCH 3/3] ftrace: trace single pid for function graph tracer
-Date: Wed, 03 Dec 2008 15:36:29 -0800
-Message-ID: <m1y6yw25mq.fsf@frodo.ebiederm.org>
-References: <20081203203656.776893226@goodmis.org>
-	<20081203203829.362295724@goodmis.org>
-	<20081203124915.2eb9e7cd.akpm@linux-foundation.org>
-	<alpine.DEB.1.10.0812031551360.29045@gandalf.stny.rr.com>
+From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [RFC v10][PATCH 00/13] Kernel based checkpoint/restart
+Date: Wed, 3 Dec 2008 17:58:58 -0600
+Message-ID: <20081203235858.GA27709__13642.1721116223$1228348946$gmane$org@us.ibm.com>
+References: <1227747884-14150-1-git-send-email-orenl@cs.columbia.edu>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1756746AbYLCXqk@vger.kernel.org>
-In-Reply-To: <alpine.DEB.1.10.0812031551360.29045@gandalf.stny.rr.com> (Steven
-	Rostedt's message of "Wed, 3 Dec 2008 15:52:24 -0500 (EST)")
-Sender: linux-kernel-owner@vger.kernel.org
-To: Steven Rostedt <rostedt@goodmis.org>
-Cc: Andrew Morton <akpm@linux-foundation.org>, linux-kernel@vger.kernel.org, mingo@elte.hu, fweisbec@gmail.com, peterz@infradead.org, arjan@infradead.org, dave@linux.vnet.ibm.com, containers@lists.osdl.org, sukadev@linux.vnet.ibm.com, serue@us.ibm.com, srostedt@redhat.com
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Content-Disposition: inline
+In-Reply-To: <1227747884-14150-1-git-send-email-orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Cc: linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Linus Torvalds <torvalds-3NddpPZAyC0@public.gmane.org>, Alexander Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, "H. Peter Anvin" <hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, Thomas Gleixner <tglx-hfZtesqFncYOwBW4kG4KsQ@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Steven Rostedt <rostedt@goodmis.org> writes:
+Quoting Oren Laadan (orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org):
+> Checkpoint-restart (c/r): fixes a couple of bugs and a DoS issue
+> (tested against v2.6.28-rc3).
 
->> >  # echo $$ > /debugfs/tracing/set_ftrace_pid
->> >  # echo function_graph > /debugfs/tracing/current_tracer
->> > 
->> > Will cause only the current task to be traced. Note, the trace flags are
->> > also inherited by child processes, so the children of the shell
->> > will also be traced.
->> 
->> Where did we end up on the pids-arent-unique issue?  Gave up?
->
-> Nah, patch 2 opens the door for a solution. I'm just pawning the work off 
-> to the container folks ;-)
+Tests well for me.  Haven't tested mktree yet, will wait until you
+re-send addressing feedback to do that.
 
-The way patch 2 uses pids is just stupid.  It has nothing to do with
-pids aren't unique.  You do a full walk of the process list instead
-of using the hash table.
-
-It makes me think that task->pid really should go away because with it
-there people don't bother to look and see how things normally work.
-
-Eric
+thanks,
+-serge
