@@ -1,63 +1,40 @@
 From: Ingo Molnar <mingo@elte.hu>
-Subject: Re: [PATCH] tracing: fix typo and missing inline function
-Date: Thu, 4 Dec 2008 16:35:24 +0100
-Message-ID: <20081204153524.GA18293@elte.hu>
-References: <20081204052638.425740534@goodmis.org> <20081204081008.GC32594@elte.hu> <20081204083059.GA8131@elte.hu> <20081204083419.GA8918@elte.hu> <alpine.DEB.1.10.0812040815350.5240@gandalf.stny.rr.com>
+Subject: Re: [PATCH 3/3] ftrace: add ability to only trace swapper tasks
+Date: Thu, 4 Dec 2008 16:36:26 +0100
+Message-ID: <20081204153626.GB18293@elte.hu>
+References: <20081204052638.425740534@goodmis.org> <20081204052735.362609481@goodmis.org> <20081204001803.598063f5.akpm@linux-foundation.org> <20081204091023.GJ32594@elte.hu> <m1vdu0t7tz.fsf@frodo.ebiederm.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1756192AbYLDPgT@vger.kernel.org>
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1756739AbYLDPhd@vger.kernel.org>
 Content-Disposition: inline
-In-Reply-To: <alpine.DEB.1.10.0812040815350.5240@gandalf.stny.rr.com>
+In-Reply-To: <m1vdu0t7tz.fsf@frodo.ebiederm.org>
 Sender: linux-kernel-owner@vger.kernel.org
-To: Steven Rostedt <rostedt@goodmis.org>
-Cc: linux-kernel@vger.kernel.org, Andrew Morton <akpm@linux-foundation.org>, Frederic Weisbecker <fweisbec@gmail.com>, Peter Zijlstra <peterz@infradead.org>, Dave Hansen <dave@linux.vnet.ibm.com>, containers@lists.osdl.org, Eric Biederman <ebiederm@xmission.com>, Sukadev Bhattiprolu <sukadev@linux.vnet.ibm.com>, "Serge E. Hallyn" <serue@us.ibm.com>
+To: "Eric W. Biederman" <ebiederm@xmission.com>
+Cc: Andrew Morton <akpm@linux-foundation.org>, Steven Rostedt <rostedt@goodmis.org>, linux-kernel@vger.kernel.org, Frederic Weisbecker <fweisbec@gmail.com>, Peter Zijlstra <peterz@infradead.org>, Dave Hansen <dave@linux.vnet.ibm.com>, containers@lists.osdl.org, Sukadev Bhattiprolu <sukadev@linux.vnet.ibm.com>, "Serge E. Hallyn" <serue@us.ibm.com>, Steven Rostedt <srostedt@redhat.com>
 List-Id: containers.vger.kernel.org
 
 
-* Steven Rostedt <rostedt@goodmis.org> wrote:
+* Eric W. Biederman <ebiederm@xmission.com> wrote:
 
+> Ingo Molnar <mingo@elte.hu> writes:
 > 
-> On Thu, 4 Dec 2008, Ingo Molnar wrote:
+> > * Andrew Morton <akpm@linux-foundation.org> wrote:
+> >
+> >> > Signed-off-by: Steven Rostedt <srostedt@redhat.com>
+> >> 
+> >> What does this patch actually do?  Is swapper currently excluded from 
+> >> tracing for undisclosed reasons and this patch permits it to be traced? 
+> >> If so, why was swapper thus excluded?  Or am I totally off track?
+> >
+> >> > +static struct pid * const ftrace_swapper_pid = (struct pid *)1;
+> >> 
+> >> eh?
+> >
+> > all side-effects of getting rid of the integer based PID namespace 
+> > and replacing them with struct pid pointers.
 > 
-> > 
-> > * Ingo Molnar <mingo@elte.hu> wrote:
-> > 
-> > > small fixlet below.
-> > 
-> > updated.
-> > 
-> > --------------->
-> > >From 6b2539302bee8e88c99e3c7d80c16a04dbe5e2ad Mon Sep 17 00:00:00 2001
-> > From: Ingo Molnar <mingo@elte.hu>
-> > Date: Thu, 4 Dec 2008 09:18:28 +0100
-> > Subject: [PATCH] tracing: fix typo and missing inline function
-> > 
-> > Impact: fix build bugs
-> > 
-> > Signed-off-by: Ingo Molnar <mingo@elte.hu>
-> > ---
-> >  kernel/trace/trace.h |    6 +++++-
-> >  1 files changed, 5 insertions(+), 1 deletions(-)
-> > 
-> > diff --git a/kernel/trace/trace.h b/kernel/trace/trace.h
-> > index 8b81b4d..b4b7b73 100644
-> > --- a/kernel/trace/trace.h
-> > +++ b/kernel/trace/trace.h
-> > @@ -529,7 +529,11 @@ static inline int ftrace_graph_addr(unsigned long addr)
-> >  #else
-> >  static inline int ftrace_trace_addr(unsigned long addr)
-> >  {
-> > -	return 1
-> > +	return 1;
-> > +}
-> > +static inline int ftrace_graph_addr(unsigned long addr)
-> > +{
-> > +	return 1;
-> >  }
-> >  #endif /* CONFIG_DYNAMIC_FTRACE */
-> 
-> Thanks! I guess I need to test the "off" cases ;-)
+> Thanks for asking Andrew it looks like an unnecessary side effect.
 
-As long as we are free of runtime bugs, we'll be just fine ;-)
+Will wait for how the end result looks like ;-)
 
 	Ingo
