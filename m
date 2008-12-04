@@ -1,112 +1,169 @@
-From: "Rishikesh K. Rajak" <risrajak-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: [Testing CGROUP inside CONTAINER]: BUG#2
-Date: Thu, 04 Dec 2008 13:44:39 +0530
-Message-ID: <1228378480.4234.36.camel@localhost.localdomain>
-Reply-To: risrajak-xthvdsQ13ZrQT0dZR+AlfA@public.gmane.org
+From: Andrew Morton <akpm@linux-foundation.org>
+Subject: Re: [PATCH 3/3] ftrace: add ability to only trace swapper tasks
+Date: Thu, 4 Dec 2008 00:18:03 -0800
+Message-ID: <20081204001803.598063f5.akpm@linux-foundation.org>
+References: <20081204052638.425740534@goodmis.org>
+	<20081204052735.362609481@goodmis.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
+Content-Type: text/plain; charset=US-ASCII
 Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Cc: risrajak-xthvdsQ13ZrQT0dZR+AlfA@public.gmane.org, iranna.ankad-xthvdsQ13ZrQT0dZR+AlfA@public.gmane.org, sudhirkumarmalik-xthvdsQ13ZrQT0dZR+AlfA@public.gmane.org, dhavalgiani-xthvdsQ13ZrQT0dZR+AlfA@public.gmane.org
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1755016AbYLDITX@vger.kernel.org>
+In-Reply-To: <20081204052735.362609481@goodmis.org>
+Sender: linux-kernel-owner@vger.kernel.org
+To: Steven Rostedt <rostedt@goodmis.org>
+Cc: linux-kernel@vger.kernel.org, Ingo Molnar <mingo@elte.hu>, Frederic Weisbecker <fweisbec@gmail.com>, Peter Zijlstra <peterz@infradead.org>, Dave Hansen <dave@linux.vnet.ibm.com>, containers@lists.osdl.org, Eric Biederman <ebiederm@xmission.com>, Sukadev Bhattiprolu <sukadev@linux.vnet.ibm.com>, "Serge E. Hallyn" <serue@us.ibm.com>, Steven Rostedt <srostedt@redhat.com>
 List-Id: containers.vger.kernel.org
 
-Hi All,
+On Thu, 04 Dec 2008 00:26:41 -0500 Steven Rostedt <rostedt@goodmis.org> wrote:
 
-Recently i have started using tool (lxc-0.4.1.tar.gz) for container
-creation released by Daniel. I am not sure if inside container cgroup
-support is there or not. If it is not supported till now then here is
-the point where we can start to look into it.
+> From: Steven Rostedt <srostedt@redhat.com>
+> 
+> Impact: New feature
+> 
+> This patch lets the swapper tasks of all CPUS be filtered by the
+> set_ftrace_pid file.
 
-Steps executed:
+"filtered" is one of those nasty words.  It is unclear whether the
+filteree is included or excluded.
 
-    - Executed following command on host:
-        mkdir /cpu
-    mount -t cgroup -ocpu cgroup /cpu
-        mount
-        umount /cpu
-        mount
+> If '0' is echoed into this file, then all the idle tasks (aka swapper)
+> is flagged to be traced.  This affects all CPU idle tasks.
+> 
 
-After executing above commands you can see mount will not show extra
-mounted file as: cgroup on /cpu type cgroup (rw,cpu)
+s/is/are/
 
-But If the same thing you do inside container, you will be able to see
-this line (cgroup on /cpu type cgroup (rw,cpu) ) still with mount
-command.
-    - create a container : lxc-create -f /etc/lxc-no-netns.conf -n xray
-        rishi :~ # cat /etc/lxc-no-netns.conf
-            # Container with non-virtualized network
-             lxc.utsname = delta
-    -  Execute container
-        :~ # lxc-execute -n xray /bin/bash
-        delta:~ #
-    -  Execute the following command inside container
-     delta:~ # mkdir /cpu
-     delta:~ # mount -t cgroup -ocpu cgroup /cpu
+> Signed-off-by: Steven Rostedt <srostedt@redhat.com>
 
-    -   delta:~ # umount /cpu
-        delta:~ # mount
-            ...
-            cgroup on /cpu type cgroup (rw,cpu)
-            cgroup on /cpu type cgroup (rw,cpu)
-            cgroup on /cpu type cgroup (rw,cpu)
-        delta:~ # umount /cpu
-            umount: cgroup: not found
-            umount: /cpu: not mounted
-            umount: cgroup: not found
-            umount: /cpu: not mounted
-            umount: cgroup: not found
-            umount: /cpu: not mounted
-            umount: cgroup: not found
-            umount: /cpu: not mounted
-        delta:~ #
+What does this patch actually do?  Is swapper currently excluded from
+tracing for undisclosed reasons and this patch permits it to be traced?
+If so, why was swapper thus excluded?  Or am I totally off track?
 
-As i can understand cgroup has been mounted and unmounted inside
-container so it should delete the mount entry also. And also you will be
-able to see from host too .
+> ---
+>  kernel/trace/ftrace.c |   74 +++++++++++++++++++++++++++++++++++++++++-------
+>  1 files changed, 63 insertions(+), 11 deletions(-)
+> 
+> diff --git a/kernel/trace/ftrace.c b/kernel/trace/ftrace.c
+> index 10b1d7c..eb57dc1 100644
+> --- a/kernel/trace/ftrace.c
+> +++ b/kernel/trace/ftrace.c
+> @@ -49,6 +49,7 @@ static int last_ftrace_enabled;
+>  
+>  /* set when tracing only a pid */
+>  struct pid *ftrace_pid_trace;
+> +static struct pid * const ftrace_swapper_pid = (struct pid *)1;
 
-Additional info:
+eh?
 
-rishi:~ # cat /boot/config-2.6.27.7-4-pae | grep CGROUP
-CONFIG_CGROUPS=y
-# CONFIG_CGROUP_DEBUG is not set
-CONFIG_CGROUP_NS=y
-CONFIG_CGROUP_DEVICE=y
-CONFIG_CGROUP_FREEZER=y
-CONFIG_CGROUP_SCHED=y
-CONFIG_CGROUP_CPUACCT=y
-CONFIG_CGROUP_MEM_RES_CTLR=y
-rishi:~ # cat /boot/config-2.6.27.7-4-pae | grep _NS
-CONFIG_CGROUP_NS=y
-CONFIG_UTS_NS=y
-CONFIG_IPC_NS=y
-CONFIG_USER_NS=y
-CONFIG_PID_NS=y
-CONFIG_NF_CONNTRACK_NETBIOS_NS=m
-CONFIG_NSC_FIR=m
-CONFIG_BLK_DEV_NS87415=m
-CONFIG_SCSI_NSP32=m
-CONFIG_PATA_NS87410=m
-CONFIG_PATA_NS87415=m
-CONFIG_NS83820=m
-CONFIG_GAMEPORT_NS558=m
-CONFIG_NSC_GPIO=m
-CONFIG_TCG_NSC=m
-CONFIG_NCPFS_NFS_NS=y
-CONFIG_NCPFS_OS2_NS=y
-rishi:~ # uname -a
-Linux rishi 2.6.27.7-4-pae #1 SMP 2008-11-25 00:02:37 +0100 i686 i686
-i386 GNU/Linux
-rishi:~ #
+>  /* Quick disabling of function tracer. */
+>  int function_trace_stop;
+> @@ -1678,7 +1679,9 @@ ftrace_pid_read(struct file *file, char __user *ubuf,
+>  	char buf[64];
+>  	int r;
+>  
+> -	if (ftrace_pid_trace)
+> +	if (ftrace_pid_trace == ftrace_swapper_pid)
+> +		r = sprintf(buf, "swapper tasks\n");
+> +	else if (ftrace_pid_trace)
+>  		r = sprintf(buf, "%u\n", pid_nr(ftrace_pid_trace));
+>  	else
+>  		r = sprintf(buf, "no pid\n");
+> @@ -1686,19 +1689,43 @@ ftrace_pid_read(struct file *file, char __user *ubuf,
+>  	return simple_read_from_buffer(ubuf, cnt, ppos, buf, r);
+>  }
+>  
+> -static void clear_ftrace_pid_task(struct pid **pid)
+> +static void clear_ftrace_swapper(void)
+>  {
+>  	struct task_struct *p;
+> +	int cpu;
+>  
+> -	do_each_pid_task(*pid, PIDTYPE_PID, p) {
+> +	get_online_cpus();
+> +	for_each_online_cpu(cpu) {
+> +		p = idle_task(cpu);
+>  		clear_tsk_trace_trace(p);
+> -	} while_each_pid_task(*pid, PIDTYPE_PID, p);
+> -	put_pid(*pid);
+> +	}
+> +	put_online_cpus();
+> +}
+>  
+> -	*pid = NULL;
+> +static void set_ftrace_swapper(void)
+> +{
+> +	struct task_struct *p;
+> +	int cpu;
+> +
+> +	get_online_cpus();
+> +	for_each_online_cpu(cpu) {
+> +		p = idle_task(cpu);
+> +		set_tsk_trace_trace(p);
+> +	}
+> +	put_online_cpus();
+>  }
+>  
+> -static void set_ftrace_pid_task(struct pid *pid)
+> +static void clear_ftrace_pid(struct pid *pid)
+> +{
+> +	struct task_struct *p;
+> +
+> +	do_each_pid_task(pid, PIDTYPE_PID, p) {
+> +		clear_tsk_trace_trace(p);
+> +	} while_each_pid_task(pid, PIDTYPE_PID, p);
+> +	put_pid(pid);
+> +}
 
+What locking does this traversal need, and does this function have it?
 
-- Rishi
+> +static void set_ftrace_pid(struct pid *pid)
+>  {
+>  	struct task_struct *p;
+>  
+> @@ -1707,6 +1734,24 @@ static void set_ftrace_pid_task(struct pid *pid)
+>  	} while_each_pid_task(pid, PIDTYPE_PID, p);
+>  }
+>  
+> +static void clear_ftrace_pid_task(struct pid **pid)
+> +{
+> +	if (*pid == ftrace_swapper_pid)
+> +		clear_ftrace_swapper();
+> +	else
+> +		clear_ftrace_pid(*pid);
+> +
+> +	*pid = NULL;
+> +}
+> +
+> +static void set_ftrace_pid_task(struct pid *pid)
+> +{
+> +	if (pid == ftrace_swapper_pid)
+> +		set_ftrace_swapper();
+> +	else
+> +		set_ftrace_pid(pid);
+> +}
+> +
+>  static ssize_t
+>  ftrace_pid_write(struct file *filp, const char __user *ubuf,
+>  		   size_t cnt, loff_t *ppos)
+> @@ -1737,11 +1782,18 @@ ftrace_pid_write(struct file *filp, const char __user *ubuf,
+>  		clear_ftrace_pid_task(&ftrace_pid_trace);
+>  
+>  	} else {
+> -		pid = find_get_pid(val);
+> +		/* swapper task is special */
+> +		if (!val) {
+> +			pid = ftrace_swapper_pid;
+> +			if (pid == ftrace_pid_trace)
+> +				goto out;
+> +		} else {
+> +			pid = find_get_pid(val);
+>  
+> -		if (pid == ftrace_pid_trace) {
+> -			put_pid(pid);
+> -			goto out;
+> +			if (pid == ftrace_pid_trace) {
+> +				put_pid(pid);
+> +				goto out;
+> +			}
+>  		}
+>  
+>  		if (ftrace_pid_trace)
