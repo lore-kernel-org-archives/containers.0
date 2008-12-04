@@ -1,57 +1,206 @@
-From: Bastian Blank <bastian@waldi.eu.org>
-Subject: Re: [RFC][PATCH 3/5] Determine if sender is from ancestor ns+
-Date: Thu, 4 Dec 2008 13:45:11 +0100
-Message-ID: <20081204124511.GA31061@wavehammer.waldi.eu.org>
-References: <20081126034242.GA23120@us.ibm.com> <20081126034611.GC23238@us.ibm.com> <20081127010101.GA13545@wavehammer.waldi.eu.org> <20081201201506.GB12493@us.ibm.com> <20081202114833.GA1132@wavehammer.waldi.eu.org> <20081202195904.GA20077@us.ibm.com>
+From: ebiederm@xmission.com (Eric W. Biederman)
+Subject: Re: [PATCH 2/3] ftrace: use struct pid
+Date: Thu, 04 Dec 2008 04:42:20 -0800
+Message-ID: <m1d4g8un6b.fsf@frodo.ebiederm.org>
+References: <20081204052638.425740534@goodmis.org>
+	<20081204052735.175697908@goodmis.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=utf-8
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1755594AbYLDMpm@vger.kernel.org>
-Content-Disposition: inline
-In-Reply-To: <20081202195904.GA20077@us.ibm.com>
+Content-Type: text/plain; charset=us-ascii
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1755454AbYLDMrA@vger.kernel.org>
+In-Reply-To: <20081204052735.175697908@goodmis.org> (Steven Rostedt's message
+	of "Thu, 04 Dec 2008 00:26:40 -0500")
 Sender: linux-kernel-owner@vger.kernel.org
-To: Sukadev Bhattiprolu <sukadev@linux.vnet.ibm.com>
-Cc: oleg@redhat.com, ebiederm@xmission.com, roland@redhat.com, containers@lists.osdl.org, linux-kernel@vger.kernel.org, xemul@openvz.org
+To: Steven Rostedt <rostedt@goodmis.org>
+Cc: linux-kernel@vger.kernel.org, Ingo Molnar <mingo@elte.hu>, Andrew Morton <akpm@linux-foundation.org>, Frederic Weisbecker <fweisbec@gmail.com>, Peter Zijlstra <peterz@infradead.org>, Dave Hansen <dave@linux.vnet.ibm.com>, containers@lists.osdl.org, Sukadev Bhattiprolu <sukadev@linux.vnet.ibm.com>, "Serge E. Hallyn" <serue@us.ibm.com>, Steven Rostedt <srostedt@redhat.com>
 List-Id: containers.vger.kernel.org
 
-On Tue, Dec 02, 2008 at 11:59:04AM -0800, Sukadev Bhattiprolu wrote:
-> Bastian Blank [bastian@waldi.eu.org] wrote:
-> | sys_rt_sigqueueinfo disallows setting si_code to any value which
-> | describes kernel signals from userspace. So using SI_FROMUSER should be
-> | sufficient.
-> SI_ASYNCIO qualifies as SI_FROMUSER() even when it originates from
-> kernel (usb/core/devio.c async_completed())...
+Steven Rostedt <rostedt@goodmis.org> writes:
 
-SI_ASYNCIO currently qualifies as user signal, it is sent in the context
-of the pid issuing the async io request. It is never used as a kernel
-originated signal in any way. The code sending it even seems to do a
-full permission check.
+> From: Steven Rostedt <srostedt@redhat.com>
+>
+> Impact: clean up
+>
+> Eric Biederman suggested using the struct pid for filtering on
+> pids in the kernel. This patch is based off of a demonstration
+> of an implementation that Eric sent me in an email.
 
-If you think this is wrong, maybe this should be fixed first.
+A little nit. I forgot to mention rcu_read_lock() is still needed in that
+email.
 
-> If we know that it came from rt_sigqueueinfo(), we can safely check
-> the namespace. If it came from driver we should skip the ns check.
+> Signed-off-by: Steven Rostedt <srostedt@redhat.com>
+> ---
+>  kernel/trace/ftrace.c |   76 ++++++++++++++++++++++++++++--------------------
+>  kernel/trace/trace.h  |    4 +-
+>  2 files changed, 46 insertions(+), 34 deletions(-)
+>
+> diff --git a/kernel/trace/ftrace.c b/kernel/trace/ftrace.c
+> index 57592a9..10b1d7c 100644
+> --- a/kernel/trace/ftrace.c
+> +++ b/kernel/trace/ftrace.c
+> @@ -48,7 +48,7 @@ int ftrace_enabled __read_mostly;
+>  static int last_ftrace_enabled;
+>  
+>  /* set when tracing only a pid */
+> -int ftrace_pid_trace = -1;
+> +struct pid *ftrace_pid_trace;
+>  
+>  /* Quick disabling of function tracer. */
+>  int function_trace_stop;
+> @@ -153,7 +153,7 @@ static int __register_ftrace_function(struct ftrace_ops
+> *ops)
+>  		else
+>  			func = ftrace_list_func;
+>  
+> -		if (ftrace_pid_trace >= 0) {
+> +		if (ftrace_pid_trace) {
+>  			set_ftrace_pid_function(func);
+>  			func = ftrace_pid_func;
+>  		}
+> @@ -209,7 +209,7 @@ static int __unregister_ftrace_function(struct ftrace_ops
+> *ops)
+>  		if (ftrace_list->next == &ftrace_list_end) {
+>  			ftrace_func_t func = ftrace_list->func;
+>  
+> -			if (ftrace_pid_trace >= 0) {
+> +			if (ftrace_pid_trace) {
+>  				set_ftrace_pid_function(func);
+>  				func = ftrace_pid_func;
+>  			}
+> @@ -239,7 +239,7 @@ static void ftrace_update_pid_func(void)
+>  
+>  	func = ftrace_trace_function;
+>  
+> -	if (ftrace_pid_trace >= 0) {
+> +	if (ftrace_pid_trace) {
+>  		set_ftrace_pid_function(func);
+>  		func = ftrace_pid_func;
+>  	} else {
+> @@ -1678,18 +1678,40 @@ ftrace_pid_read(struct file *file, char __user *ubuf,
+>  	char buf[64];
+>  	int r;
+>  
+> -	if (ftrace_pid_trace >= 0)
+> -		r = sprintf(buf, "%u\n", ftrace_pid_trace);
+> +	if (ftrace_pid_trace)
+> +		r = sprintf(buf, "%u\n", pid_nr(ftrace_pid_trace));
+>  	else
+>  		r = sprintf(buf, "no pid\n");
+>  
+>  	return simple_read_from_buffer(ubuf, cnt, ppos, buf, r);
+>  }
+>  
+> +static void clear_ftrace_pid_task(struct pid **pid)
+> +{
+> +	struct task_struct *p;
+> +
+	rcu_read_lock();
 
-If it have a sender pid attached, this should be checked.
+> +	do_each_pid_task(*pid, PIDTYPE_PID, p) {
+> +		clear_tsk_trace_trace(p);
+> +	} while_each_pid_task(*pid, PIDTYPE_PID, p);
+	rcu_read_unlock()
 
-> Yes, (Eric Biederman, Dec 2007)
-> 	https://lists.linux-foundation.org/pipermail/containers/2007-December/009152.html
-> Oleg Nesterov, Aug 2007:
-> 	http://marc.info/?l=linux-kernel&m=118753610515859
-> I had sent out a summary of the above attempts to Containers list recently:
-> 	https://lists.linux-foundation.org/pipermail/containers/2008-November/013991.html
-
-Okay.
-
-> | Please add a complete comment to the function which describes the
-> | function. And don't us "it" for not defined entities.
-> Ah, I see the problem now. The 't' refers to the task parameter - how
-> about changing comment to:
-
-No, I meant a real comment, defining the complete behaviour, each
-parameter with constraints and the possible return values.
-
-Bastian
-
--- 
-Insufficient facts always invite danger.
-		-- Spock, "Space Seed", stardate 3141.9
+> +	put_pid(*pid);
+> +
+> +	*pid = NULL;
+> +}
+> +
+> +static void set_ftrace_pid_task(struct pid *pid)
+> +{
+> +	struct task_struct *p;
+> +
+	rcu_read_lock();
+> +	do_each_pid_task(pid, PIDTYPE_PID, p) {
+> +		set_tsk_trace_trace(p);
+> +	} while_each_pid_task(pid, PIDTYPE_PID, p);
+	rcu_read_unlock();
+> +}
+> +
+>  static ssize_t
+>  ftrace_pid_write(struct file *filp, const char __user *ubuf,
+>  		   size_t cnt, loff_t *ppos)
+>  {
+> +	struct pid *pid;
+>  	char buf[64];
+>  	long val;
+>  	int ret;
+> @@ -1707,40 +1729,30 @@ ftrace_pid_write(struct file *filp, const char __user
+> *ubuf,
+>  		return ret;
+>  
+>  	mutex_lock(&ftrace_start_lock);
+> -	if (ret < 0) {
+> +	if (val < 0) {
+>  		/* disable pid tracing */
+> -		if (ftrace_pid_trace < 0)
+> +		if (!ftrace_pid_trace)
+>  			goto out;
+> -		ftrace_pid_trace = -1;
+> +
+> +		clear_ftrace_pid_task(&ftrace_pid_trace);
+>  
+>  	} else {
+> -		struct task_struct *p;
+> -		int found = 0;
+> +		pid = find_get_pid(val);
+>  
+> -		if (ftrace_pid_trace == val)
+> +		if (pid == ftrace_pid_trace) {
+> +			put_pid(pid);
+>  			goto out;
+> -
+> -		/*
+> -		 * Find the task that matches this pid.
+> -		 * TODO: use pid namespaces instead.
+> -		 */
+> -		rcu_read_lock();
+> -		for_each_process(p) {
+> -			if (p->pid == val) {
+> -				found = 1;
+> -				set_tsk_trace_trace(p);
+> -			} else if (test_tsk_trace_trace(p))
+> -				clear_tsk_trace_trace(p);
+>  		}
+> -		rcu_read_unlock();
+>  
+> -		if (found)
+> -			ftrace_pid_trace = val;
+> -		else {
+> -			if (ftrace_pid_trace < 0)
+> -				goto out;
+> -			ftrace_pid_trace = -1;
+> -		}
+> +		if (ftrace_pid_trace)
+> +			clear_ftrace_pid_task(&ftrace_pid_trace);
+> +
+> +		if (!pid)
+> +			goto out;
+> +
+> +		ftrace_pid_trace = pid;
+> +
+> +		set_ftrace_pid_task(ftrace_pid_trace);
+>  	}
+>  
+>  	/* update the function call */
+> diff --git a/kernel/trace/trace.h b/kernel/trace/trace.h
+> index 95fff37..8b81b4d 100644
+> --- a/kernel/trace/trace.h
+> +++ b/kernel/trace/trace.h
+> @@ -541,11 +541,11 @@ print_graph_function(struct trace_iterator *iter)
+>  }
+>  #endif /* CONFIG_FUNCTION_GRAPH_TRACER */
+>  
+> -extern int ftrace_pid_trace;
+> +extern struct pid *ftrace_pid_trace;
+>  
+>  static inline int ftrace_trace_task(struct task_struct *task)
+>  {
+> -	if (ftrace_pid_trace < 0)
+> +	if (ftrace_pid_trace)
+>  		return 1;
+>  
+>  	return test_tsk_trace_trace(task);
+> -- 
+> 1.5.6.5
+>
+> -- 
