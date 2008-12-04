@@ -1,7 +1,7 @@
 From: "Rishikesh K. Rajak" <risrajak-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: [Testing CGROUP inside CONTAINER]: BUG#1
-Date: Thu, 04 Dec 2008 13:44:38 +0530
-Message-ID: <1228378478.4234.35.camel@localhost.localdomain>
+Subject: [Testing CGROUP inside CONTAINER]: BUG#2
+Date: Thu, 04 Dec 2008 13:44:39 +0530
+Message-ID: <1228378480.4234.36.camel@localhost.localdomain>
 Reply-To: risrajak-xthvdsQ13ZrQT0dZR+AlfA@public.gmane.org
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -17,18 +17,31 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Cc: risrajak-xthvdsQ13ZrQT0dZR+AlfA@public.gmane.org, iranna.ankad-xthvdsQ13ZrQT0dZR+AlfA@public.gmane.org, sudhirkumarmalik-xthvdsQ13ZrQT0dZR+AlfA@public.gmane.org, dhavalgiani-xthvdsQ13ZrQT0dZR+AlfA@public.gmane.org, Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Cc: risrajak-xthvdsQ13ZrQT0dZR+AlfA@public.gmane.org, iranna.ankad-xthvdsQ13ZrQT0dZR+AlfA@public.gmane.org, sudhirkumarmalik-xthvdsQ13ZrQT0dZR+AlfA@public.gmane.org, dhavalgiani-xthvdsQ13ZrQT0dZR+AlfA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
 Hi All,
 
 Recently i have started using tool (lxc-0.4.1.tar.gz) for container
-creation released by Daniel. I am not sure if inside container, cgroup
+creation released by Daniel. I am not sure if inside container cgroup
 support is there or not. If it is not supported till now then here is
 the point where we can start to look into it.
 
 Steps executed:
 
+    - Executed following command on host:
+        mkdir /cpu
+    mount -t cgroup -ocpu cgroup /cpu
+        mount
+        umount /cpu
+        mount
+
+After executing above commands you can see mount will not show extra
+mounted file as: cgroup on /cpu type cgroup (rw,cpu)
+
+But If the same thing you do inside container, you will be able to see
+this line (cgroup on /cpu type cgroup (rw,cpu) ) still with mount
+command.
     - create a container : lxc-create -f /etc/lxc-no-netns.conf -n xray
         rishi :~ # cat /etc/lxc-no-netns.conf
             # Container with non-virtualized network
@@ -40,14 +53,26 @@ Steps executed:
      delta:~ # mkdir /cpu
      delta:~ # mount -t cgroup -ocpu cgroup /cpu
 
-    -   delta:~ # cat /cpu/tasks
+    -   delta:~ # umount /cpu
+        delta:~ # mount
+            ...
+            cgroup on /cpu type cgroup (rw,cpu)
+            cgroup on /cpu type cgroup (rw,cpu)
+            cgroup on /cpu type cgroup (rw,cpu)
+        delta:~ # umount /cpu
+            umount: cgroup: not found
+            umount: /cpu: not mounted
+            umount: cgroup: not found
+            umount: /cpu: not mounted
+            umount: cgroup: not found
+            umount: /cpu: not mounted
+            umount: cgroup: not found
+            umount: /cpu: not mounted
+        delta:~ #
 
-    - You can see many zero's has attached with task file inside
-container. 
-
-As i can understand cgroup has been mounted inside container so it
-should attach the task which is running inside container. Please correct
-me if i am wrong here.
+As i can understand cgroup has been mounted and unmounted inside
+container so it should delete the mount entry also. And also you will be
+able to see from host too .
 
 Additional info:
 
