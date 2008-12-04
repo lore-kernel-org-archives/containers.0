@@ -1,109 +1,52 @@
 From: Ingo Molnar <mingo@elte.hu>
-Subject: Re: [PATCH 0/3] ftrace: updates for tip
-Date: Thu, 4 Dec 2008 09:35:07 +0100
-Message-ID: <20081204083507.GE32594@elte.hu>
-References: <20081203203656.776893226@goodmis.org>
+Subject: Re: [PATCH 1/3] ftrace: graph of a single function
+Date: Thu, 4 Dec 2008 09:39:17 +0100
+Message-ID: <20081204083917.GF32594@elte.hu>
+References: <20081203203656.776893226@goodmis.org> <20081203203828.920111079@goodmis.org> <20081203130741.473c1262.akpm@linux-foundation.org> <alpine.DEB.1.10.0812031608560.29045@gandalf.stny.rr.com> <20081203133242.4e80bbe6.akpm@linux-foundation.org> <alpine.DEB.1.10.0812031635060.28153@gandalf.stny.rr.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1755959AbYLDIfj@vger.kernel.org>
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1756018AbYLDIkb@vger.kernel.org>
 Content-Disposition: inline
-In-Reply-To: <20081203203656.776893226@goodmis.org>
+In-Reply-To: <alpine.DEB.1.10.0812031635060.28153@gandalf.stny.rr.com>
 Sender: linux-kernel-owner@vger.kernel.org
 To: Steven Rostedt <rostedt@goodmis.org>
-Cc: linux-kernel@vger.kernel.org, Andrew Morton <akpm@linux-foundation.org>, Frederic Weisbecker <fweisbec@gmail.com>, Peter Zijlstra <peterz@infradead.org>, Arjan van de Ven <arjan@infradead.org>, Dave Hansen <dave@linux.vnet.ibm.com>, containers@lists.osdl.org, Eric Biederman <ebiederm@xmission.com>, Sukadev Bhattiprolu <sukadev@linux.vnet.ibm.com>, "Serge E. Hallyn" <serue@us.ibm.com>
+Cc: Andrew Morton <akpm@linux-foundation.org>, linux-kernel@vger.kernel.org, fweisbec@gmail.com, peterz@infradead.org, arjan@infradead.org, dave@linux.vnet.ibm.com, containers@lists.osdl.org, ebiederm@xmission.com, sukadev@linux.vnet.ibm.com, serue@us.ibm.com, srostedt@redhat.com
 List-Id: containers.vger.kernel.org
 
 
 * Steven Rostedt <rostedt@goodmis.org> wrote:
 
-> Ingo,
 > 
-> This series has three patches.
+> On Wed, 3 Dec 2008, Andrew Morton wrote:
 > 
-> The first patch adds a new feature that I've been wanting to have for 
-> some time and Arjan even requested. That is to pick a function and only 
-> trace that function and its children. Dynamic ftrace and function graph 
-> needs to be enabled for this.
+> > On Wed, 3 Dec 2008 16:10:38 -0500 (EST)
+> > Steven Rostedt <rostedt@goodmis.org> wrote:
+> > > > > +
+> > > > > +	seq_printf(m, "%s\n", str);
+> > > > 
+> > > > Can we use %pF here?
+> > > 
+> > > If there's a way to not print the "+offset".
+> > 
+> > Could be added, I guess.  I wonder if it would be
+> > reused elsewhere.
 > 
-> To do the above, I added a "trace" flags field in the task structure. 
-> The second patch uses this for the ftrace pid code. It searches for the 
-> task based on the pid and sets the trace flag, then in the ftrace 
-> function caller it only needs to check this flag.
+> There's lots of places in ftrace that would use it, and probably clean 
+> up a bunch of code in the process.
 
-Btw., i'd love to see this done via the regular regexp interface though, 
-if possible - instead of the add-on interface you added.
+Well, we do eventually want to have a trace_option that extends all 
+function names with the +offset/size portion - and one that switches them 
+to raw RIPs.
 
-( Also perhaps enable to toggle tracing via the /proc/<PID>/ hierarchy - 
-  a /proc/<PID>/tracing_enabled switch or so. )
+In rare occasions, when the same function has multiple call sites of the 
+same child function, it can be useful. I ran into such scenarios with the 
+latency tracer and it had this capability to do 'verbose' symbol 
+printing.
 
-Regarding the filter functions, the basic principle should be 
-mathematical set operations, like we have it now: add and remove, union, 
-wildcards, etc.
+So plain %pF wont cut it - please abstract out the "print function symbol 
+string" bit within the ftrace infrastructure.
 
-I'd suggest a natural and intuitive extension of the current syntax. 
-(while keeping all the current bits)
-
-I already suggested a 'inverse' filter in a previous mail:
-
-  echo "-schedule*" >> set_ftrace_filter
-
-This rule operates on the current set of filter functions: it strikes out 
-all existing filter functions that match this pattern.
-
-To handle PIDs, we could do something like:
-
-  echo "sshd-312:schedule" > set_ftrace_filter
-
-This would restrict tracing to the sshd-pid:312 task.
-
-Note: the PID portion of the filter rules still stay separate from the 
-function names - we dont want per task function filter rules.
-
-A natural variation would be:
-
-  echo "312:schedule" > set_ftrace_filter
-
-to only specify the PID, or:
-
-  echo "312,313:schedule" > set_ftrace_filter
-
-to specify two PIDs, or:
-
-  echo "sshd:schedule" > set_ftrace_filter
-
-to only specify the 'comm' part, which expands to all PIDs where 
-task->comm matches sshd. Another variation would be:
-
-  echo "loop*:schedule" > set_ftrace_filter
-
-that matches all PIDs where task->comm matches loop*.
-
-To specify recursive tracing, we could use something like:
-
-  echo "loop*+schedule" > set_ftrace_filter
-
-the '+' would signal that the 'schedule' function is 'expanded' and all 
-its child functions are traced as well.
-
-btw., maybe it makes sense to separate the regexp rule-set from the set 
-of functions that we are tracing right now. For example:
-
-  $ echo "schedule*" >  set_ftrace_filter
-  $ echo "time*"     >> set_ftrace_filter
-  $ echo "sys_*"     >> set_ftrace_filter
-
-  $ cat set_ftrace_filter
-  schedule*
-  time*
-  sys_*
-
-We'd also have a separate, current_ftrace_functions file as well which 
-shows all traced functions. (on a global basis - with possible PID filter 
-rules added where applicable)
-
-I know this will be hellishly hard to implement, but it would be _very_ 
-elegant, and _very_ usable.
-
-What do you think?
+And the default trace_option for this should be to print without 
++offset/size spam, emphatically :)
 
 	Ingo
