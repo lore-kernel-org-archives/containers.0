@@ -1,52 +1,51 @@
-From: Sukadev Bhattiprolu <sukadev@linux.vnet.ibm.com>
-Subject: Re: [RFC][PATCH 4/5] Protect cinit from fatal signals
-Date: Thu, 4 Dec 2008 10:58:30 -0800
-Message-ID: <20081204185830.GC23906@us.ibm.com>
-References: <20081126034242.GA23120@us.ibm.com> <20081126034634.GD23238@us.ibm.com> <20081127010753.GB13545@wavehammer.waldi.eu.org> <20081201202112.GC12493@us.ibm.com> <20081202120606.GD1132@wavehammer.waldi.eu.org> <20081202205130.GB20077@us.ibm.com> <20081204125213.GB31061@wavehammer.waldi.eu.org>
+From: ebiederm@xmission.com (Eric W. Biederman)
+Subject: Re: [PATCH 3/3] ftrace: add ability to only trace swapper tasks
+Date: Thu, 04 Dec 2008 12:41:08 -0800
+Message-ID: <m11vwnu10b.fsf@frodo.ebiederm.org>
+References: <20081204052638.425740534@goodmis.org>
+	<20081204052735.362609481@goodmis.org>
+	<20081204001803.598063f5.akpm@linux-foundation.org>
+	<20081204091023.GJ32594@elte.hu> <m1vdu0t7tz.fsf@frodo.ebiederm.org>
+	<alpine.DEB.1.10.0812040946060.5240@gandalf.stny.rr.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1758549AbYLDS65@vger.kernel.org>
-Content-Disposition: inline
-In-Reply-To: <20081204125213.GB31061@wavehammer.waldi.eu.org>
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1757273AbYLDUqm@vger.kernel.org>
+In-Reply-To: <alpine.DEB.1.10.0812040946060.5240@gandalf.stny.rr.com> (Steven
+	Rostedt's message of "Thu, 4 Dec 2008 09:46:28 -0500 (EST)")
 Sender: linux-kernel-owner@vger.kernel.org
-To: Bastian Blank <bastian@waldi.eu.org>, oleg@redhat.com, ebiederm@xmission.com, roland@redhat.com, containers@lists.osdl.org, linux-kernel@vger.kernel.org, xemul@openvz.org
+To: Steven Rostedt <rostedt@goodmis.org>
+Cc: Ingo Molnar <mingo@elte.hu>, Andrew Morton <akpm@linux-foundation.org>, linux-kernel@vger.kernel.org, Frederic Weisbecker <fweisbec@gmail.com>, Peter Zijlstra <peterz@infradead.org>, Dave Hansen <dave@linux.vnet.ibm.com>, containers@lists.osdl.org, Sukadev Bhattiprolu <sukadev@linux.vnet.ibm.com>, "Serge E. Hallyn" <serue@us.ibm.com>, Steven Rostedt <srostedt@redhat.com>
 List-Id: containers.vger.kernel.org
 
-Bastian Blank [bastian@waldi.eu.org] wrote:
-| > Secondly, a poorly written container-inits can take the entire container down,
-| > So we expect that container-inits to handle/ignore all signals rather than
-| > SIG_DFL them. Current global inits do that today and container-inits should
-| > too. It does not look like an unreasonable requirement.
-| 
-| So you intend to workaround tools which are used as container-init but
-| does not qualify for this work. Why?
+Steven Rostedt <rostedt@goodmis.org> writes:
 
-Sorry, but I don't understand the "does not qualify for this work" part.
-Can you please rephrase ?
+> On Thu, 4 Dec 2008, Eric W. Biederman wrote:
+>
+>> Ingo Molnar <mingo@elte.hu> writes:
+>> 
+>> > * Andrew Morton <akpm@linux-foundation.org> wrote:
+>> >
+>> >> > Signed-off-by: Steven Rostedt <srostedt@redhat.com>
+>> >> 
+>> >> What does this patch actually do?  Is swapper currently excluded from 
+>> >> tracing for undisclosed reasons and this patch permits it to be traced? 
+>> >> If so, why was swapper thus excluded?  Or am I totally off track?
+>> >
+>> >> > +static struct pid * const ftrace_swapper_pid = (struct pid *)1;
+>> >> 
+>> >> eh?
+>> >
+>> > all side-effects of getting rid of the integer based PID namespace and 
+>> > replacing them with struct pid pointers.
+>> 
+>> Thanks for asking Andrew it looks like an unnecessary side effect.
+>
+> Well, it was necessary without hacking fork.c ;-)
 
-| 
-| > So the basic requirements are:
-| > 
-| > 	- container-init receives/processes all signals from ancestor namespace.
-| > 	- container-init ignores fatal signals from own namespace.
-| > 
-| > We are simplifying the first to say that:
-| > 
-| > 	- parent-ns must have a way to terminate container-init
-| > 	- cinit will ignore SIG_DFL signals that may terminate cinit even if
-| > 	  they come from parent ns
-| 
-| This is no simplification. This are more constraints.
+The (struct pid *)1 has always been unnecessary.
 
-Yes cinit ignoring SIG_DFL exit signals from parent-ns is a constraint.
-So if we run say sshd as container-init, we can't use SIGINT to
-terminate it, but need SIGKILL 
+As for fork.  It would be nice to remove most of the special cases
+for the idle thread.  At least the counts are significant.  The rest
+is pretty much a don't care at this point.
 
-The question is whether this constraint makes any serious/real cinits
-unusable ?
-
-The behavior at present is that cinits can be terminated from within
-and cinits cannot do anything in user-space. With this incremental
-step at least user space has an option of ignoring such signals.
-
-Sukadev
+Eric
