@@ -1,33 +1,24 @@
-From: Steven Rostedt <rostedt@goodmis.org>
-Subject: Re: [PATCH 3/3] ftrace: add ability to only trace swapper tasks
-Date: Thu, 4 Dec 2008 10:47:27 -0500 (EST)
-Message-ID: <alpine.DEB.1.10.0812041045490.19693@gandalf.stny.rr.com>
-References: <20081204052638.425740534@goodmis.org> <20081204052735.362609481@goodmis.org> <20081204001803.598063f5.akpm@linux-foundation.org> <20081204091023.GJ32594@elte.hu> <m1vdu0t7tz.fsf@frodo.ebiederm.org> <20081204153626.GB18293@elte.hu>
+From: Sukadev Bhattiprolu <sukadev@linux.vnet.ibm.com>
+Subject: Re: [PATCH 2/3] ftrace: use struct pid
+Date: Thu, 4 Dec 2008 08:22:42 -0800
+Message-ID: <20081204162242.GA23906@us.ibm.com>
+References: <20081204052638.425740534@goodmis.org> <20081204052735.175697908@goodmis.org> <m11vwoumjn.fsf@frodo.ebiederm.org> <alpine.DEB.1.10.0812040921410.5240@gandalf.stny.rr.com> <m1abbct3hk.fsf@frodo.ebiederm.org>
 Mime-Version: 1.0
-Content-Type: TEXT/PLAIN; charset=US-ASCII
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1755062AbYLDPrm@vger.kernel.org>
-In-Reply-To: <20081204153626.GB18293@elte.hu>
+Content-Type: text/plain; charset=us-ascii
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1756112AbYLDQXW@vger.kernel.org>
+Content-Disposition: inline
+In-Reply-To: <m1abbct3hk.fsf@frodo.ebiederm.org>
 Sender: linux-kernel-owner@vger.kernel.org
-To: Ingo Molnar <mingo@elte.hu>
-Cc: "Eric W. Biederman" <ebiederm@xmission.com>, Andrew Morton <akpm@linux-foundation.org>, linux-kernel@vger.kernel.org, Frederic Weisbecker <fweisbec@gmail.com>, Peter Zijlstra <peterz@infradead.org>, Dave Hansen <dave@linux.vnet.ibm.com>, containers@lists.osdl.org, Sukadev Bhattiprolu <sukadev@linux.vnet.ibm.com>, "Serge E. Hallyn" <serue@us.ibm.com>, Steven Rostedt <srostedt@redhat.com>
+To: "Eric W. Biederman" <ebiederm@xmission.com>
+Cc: Steven Rostedt <rostedt@goodmis.org>, linux-kernel@vger.kernel.org, Ingo Molnar <mingo@elte.hu>, Andrew Morton <akpm@linux-foundation.org>, Frederic Weisbecker <fweisbec@gmail.com>, Peter Zijlstra <peterz@infradead.org>, Dave Hansen <dave@linux.vnet.ibm.com>, containers@lists.osdl.org, "Serge E. Hallyn" <serue@us.ibm.com>, Steven Rostedt <srostedt@redhat.com>
 List-Id: containers.vger.kernel.org
 
+| find_get_pid is the right one.
+| 
+| Sorry.  We have a stupid inconsistency in the naming here,
+| If we were consistent it would be find_get_vpid.
 
-On Thu, 4 Dec 2008, Ingo Molnar wrote:
-> > >
-> > >> > +static struct pid * const ftrace_swapper_pid = (struct pid *)1;
-> > >> 
-> > >> eh?
-> > >
-> > > all side-effects of getting rid of the integer based PID namespace 
-> > > and replacing them with struct pid pointers.
-> > 
-> > Thanks for asking Andrew it looks like an unnecessary side effect.
-> 
-> Will wait for how the end result looks like ;-)
+Yes, its inconsistent, but maybe find_vpid() should be find_pid()
+since there is no 'virtual struct pid' only a virtual pid number.
 
-I'm waiting on a fix for fork.c. I already wrote the code in ftrace when 
-the fork code is fixed. It does clean it up nicely. But I do not know all 
-the intricacies of the struct pid code to do the fork code correctly.
-
--- Steve
+Sukadev
