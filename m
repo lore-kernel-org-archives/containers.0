@@ -1,24 +1,59 @@
-From: Sukadev Bhattiprolu <sukadev@linux.vnet.ibm.com>
-Subject: Re: [PATCH 2/3] ftrace: use struct pid
-Date: Thu, 4 Dec 2008 08:22:42 -0800
-Message-ID: <20081204162242.GA23906@us.ibm.com>
-References: <20081204052638.425740534@goodmis.org> <20081204052735.175697908@goodmis.org> <m11vwoumjn.fsf@frodo.ebiederm.org> <alpine.DEB.1.10.0812040921410.5240@gandalf.stny.rr.com> <m1abbct3hk.fsf@frodo.ebiederm.org>
+From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [Testing CGROUP inside CONTAINER]: BUG#2
+Date: Thu, 4 Dec 2008 10:52:21 -0600
+Message-ID: <20081204165220.GA11482@us.ibm.com>
+References: <1228378480.4234.36.camel@localhost.localdomain>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1756112AbYLDQXW@vger.kernel.org>
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <m1abbct3hk.fsf@frodo.ebiederm.org>
-Sender: linux-kernel-owner@vger.kernel.org
-To: "Eric W. Biederman" <ebiederm@xmission.com>
-Cc: Steven Rostedt <rostedt@goodmis.org>, linux-kernel@vger.kernel.org, Ingo Molnar <mingo@elte.hu>, Andrew Morton <akpm@linux-foundation.org>, Frederic Weisbecker <fweisbec@gmail.com>, Peter Zijlstra <peterz@infradead.org>, Dave Hansen <dave@linux.vnet.ibm.com>, containers@lists.osdl.org, "Serge E. Hallyn" <serue@us.ibm.com>, Steven Rostedt <srostedt@redhat.com>
+In-Reply-To: <1228378480.4234.36.camel-bi+AKbBUZKY6gyzm1THtWbp2dZbC/Bob@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: risrajak-xthvdsQ13ZrQT0dZR+AlfA@public.gmane.org
+Cc: iranna.ankad-xthvdsQ13ZrQT0dZR+AlfA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, sudhirkumarmalik-xthvdsQ13ZrQT0dZR+AlfA@public.gmane.org, dhavalgiani-xthvdsQ13ZrQT0dZR+AlfA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-| find_get_pid is the right one.
-| 
-| Sorry.  We have a stupid inconsistency in the naming here,
-| If we were consistent it would be find_get_vpid.
+Quoting Rishikesh K. Rajak (risrajak-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org):
+>     -  Execute the following command inside container
+>      delta:~ # mkdir /cpu
+>      delta:~ # mount -t cgroup -ocpu cgroup /cpu
+> 
+>     -   delta:~ # umount /cpu
+>         delta:~ # mount
+>             ...
+>             cgroup on /cpu type cgroup (rw,cpu)
+>             cgroup on /cpu type cgroup (rw,cpu)
+>             cgroup on /cpu type cgroup (rw,cpu)
+>         delta:~ # umount /cpu
+>             umount: cgroup: not found
+>             umount: /cpu: not mounted
+>             umount: cgroup: not found
+>             umount: /cpu: not mounted
+>             umount: cgroup: not found
+>             umount: /cpu: not mounted
+>             umount: cgroup: not found
+>             umount: /cpu: not mounted
 
-Yes, its inconsistent, but maybe find_vpid() should be find_pid()
-since there is no 'virtual struct pid' only a virtual pid number.
+This really sounds to me like a bug in your mount and
+umount commands.  When I do those steps in a container,
+just typing 'mount' no longer shows /cpu mounted.
 
-Sukadev
+(If I had to guess at something, I'd say you have
+/etc/mtab linked to /proc/mounts, and something with
+that is going wrong, but it could be not that)
+
+Check /proc/self/mounts before and after each step,
+compare to /etc/mtab.
+
+And try doing mount -n and umount -n.
+
+-serge
