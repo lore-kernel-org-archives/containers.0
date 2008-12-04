@@ -1,52 +1,109 @@
 From: Ingo Molnar <mingo@elte.hu>
-Subject: [PATCH] tracing: fix typo and missing inline function
-Date: Thu, 4 Dec 2008 09:34:19 +0100
-Message-ID: <20081204083419.GA8918@elte.hu>
-References: <20081204052638.425740534@goodmis.org> <20081204081008.GC32594@elte.hu> <20081204083059.GA8131@elte.hu>
+Subject: Re: [PATCH 0/3] ftrace: updates for tip
+Date: Thu, 4 Dec 2008 09:35:07 +0100
+Message-ID: <20081204083507.GE32594@elte.hu>
+References: <20081203203656.776893226@goodmis.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1756115AbYLDIe5@vger.kernel.org>
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1755959AbYLDIfj@vger.kernel.org>
 Content-Disposition: inline
-In-Reply-To: <20081204083059.GA8131@elte.hu>
+In-Reply-To: <20081203203656.776893226@goodmis.org>
 Sender: linux-kernel-owner@vger.kernel.org
 To: Steven Rostedt <rostedt@goodmis.org>
-Cc: linux-kernel@vger.kernel.org, Andrew Morton <akpm@linux-foundation.org>, Frederic Weisbecker <fweisbec@gmail.com>, Peter Zijlstra <peterz@infradead.org>, Dave Hansen <dave@linux.vnet.ibm.com>, containers@lists.osdl.org, Eric Biederman <ebiederm@xmission.com>, Sukadev Bhattiprolu <sukadev@linux.vnet.ibm.com>, "Serge E. Hallyn" <serue@us.ibm.com>
+Cc: linux-kernel@vger.kernel.org, Andrew Morton <akpm@linux-foundation.org>, Frederic Weisbecker <fweisbec@gmail.com>, Peter Zijlstra <peterz@infradead.org>, Arjan van de Ven <arjan@infradead.org>, Dave Hansen <dave@linux.vnet.ibm.com>, containers@lists.osdl.org, Eric Biederman <ebiederm@xmission.com>, Sukadev Bhattiprolu <sukadev@linux.vnet.ibm.com>, "Serge E. Hallyn" <serue@us.ibm.com>
 List-Id: containers.vger.kernel.org
 
 
-* Ingo Molnar <mingo@elte.hu> wrote:
+* Steven Rostedt <rostedt@goodmis.org> wrote:
 
-> small fixlet below.
+> Ingo,
+> 
+> This series has three patches.
+> 
+> The first patch adds a new feature that I've been wanting to have for 
+> some time and Arjan even requested. That is to pick a function and only 
+> trace that function and its children. Dynamic ftrace and function graph 
+> needs to be enabled for this.
+> 
+> To do the above, I added a "trace" flags field in the task structure. 
+> The second patch uses this for the ftrace pid code. It searches for the 
+> task based on the pid and sets the trace flag, then in the ftrace 
+> function caller it only needs to check this flag.
 
-updated.
+Btw., i'd love to see this done via the regular regexp interface though, 
+if possible - instead of the add-on interface you added.
 
---------------->
-From 6b2539302bee8e88c99e3c7d80c16a04dbe5e2ad Mon Sep 17 00:00:00 2001
-From: Ingo Molnar <mingo@elte.hu>
-Date: Thu, 4 Dec 2008 09:18:28 +0100
-Subject: [PATCH] tracing: fix typo and missing inline function
+( Also perhaps enable to toggle tracing via the /proc/<PID>/ hierarchy - 
+  a /proc/<PID>/tracing_enabled switch or so. )
 
-Impact: fix build bugs
+Regarding the filter functions, the basic principle should be 
+mathematical set operations, like we have it now: add and remove, union, 
+wildcards, etc.
 
-Signed-off-by: Ingo Molnar <mingo@elte.hu>
----
- kernel/trace/trace.h |    6 +++++-
- 1 files changed, 5 insertions(+), 1 deletions(-)
+I'd suggest a natural and intuitive extension of the current syntax. 
+(while keeping all the current bits)
 
-diff --git a/kernel/trace/trace.h b/kernel/trace/trace.h
-index 8b81b4d..b4b7b73 100644
---- a/kernel/trace/trace.h
-+++ b/kernel/trace/trace.h
-@@ -529,7 +529,11 @@ static inline int ftrace_graph_addr(unsigned long addr)
- #else
- static inline int ftrace_trace_addr(unsigned long addr)
- {
--	return 1
-+	return 1;
-+}
-+static inline int ftrace_graph_addr(unsigned long addr)
-+{
-+	return 1;
- }
- #endif /* CONFIG_DYNAMIC_FTRACE */
- 
+I already suggested a 'inverse' filter in a previous mail:
+
+  echo "-schedule*" >> set_ftrace_filter
+
+This rule operates on the current set of filter functions: it strikes out 
+all existing filter functions that match this pattern.
+
+To handle PIDs, we could do something like:
+
+  echo "sshd-312:schedule" > set_ftrace_filter
+
+This would restrict tracing to the sshd-pid:312 task.
+
+Note: the PID portion of the filter rules still stay separate from the 
+function names - we dont want per task function filter rules.
+
+A natural variation would be:
+
+  echo "312:schedule" > set_ftrace_filter
+
+to only specify the PID, or:
+
+  echo "312,313:schedule" > set_ftrace_filter
+
+to specify two PIDs, or:
+
+  echo "sshd:schedule" > set_ftrace_filter
+
+to only specify the 'comm' part, which expands to all PIDs where 
+task->comm matches sshd. Another variation would be:
+
+  echo "loop*:schedule" > set_ftrace_filter
+
+that matches all PIDs where task->comm matches loop*.
+
+To specify recursive tracing, we could use something like:
+
+  echo "loop*+schedule" > set_ftrace_filter
+
+the '+' would signal that the 'schedule' function is 'expanded' and all 
+its child functions are traced as well.
+
+btw., maybe it makes sense to separate the regexp rule-set from the set 
+of functions that we are tracing right now. For example:
+
+  $ echo "schedule*" >  set_ftrace_filter
+  $ echo "time*"     >> set_ftrace_filter
+  $ echo "sys_*"     >> set_ftrace_filter
+
+  $ cat set_ftrace_filter
+  schedule*
+  time*
+  sys_*
+
+We'd also have a separate, current_ftrace_functions file as well which 
+shows all traced functions. (on a global basis - with possible PID filter 
+rules added where applicable)
+
+I know this will be hellishly hard to implement, but it would be _very_ 
+elegant, and _very_ usable.
+
+What do you think?
+
+	Ingo
