@@ -1,40 +1,69 @@
-From: Ingo Molnar <mingo@elte.hu>
-Subject: Re: [PATCH 3/3] ftrace: add ability to only trace swapper tasks
-Date: Thu, 4 Dec 2008 16:36:26 +0100
-Message-ID: <20081204153626.GB18293@elte.hu>
-References: <20081204052638.425740534@goodmis.org> <20081204052735.362609481@goodmis.org> <20081204001803.598063f5.akpm@linux-foundation.org> <20081204091023.GJ32594@elte.hu> <m1vdu0t7tz.fsf@frodo.ebiederm.org>
+From: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Subject: Re: [PATCH 2/3] ftrace: use struct pid
+Date: Thu, 04 Dec 2008 07:41:31 -0800
+Message-ID: <1228405291.13111.86.camel@nimitz>
+References: <20081204052638.425740534@goodmis.org>
+	<20081204052735.175697908@goodmis.org>
+	<m1d4g8un6b.fsf@frodo.ebiederm.org>
+	<1228395378.13111.23.camel@nimitz> <1228396022.13111.27.camel@nimitz>
+	<m1prk8t5xr.fsf@frodo.ebiederm.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1756739AbYLDPhd@vger.kernel.org>
-Content-Disposition: inline
-In-Reply-To: <m1vdu0t7tz.fsf@frodo.ebiederm.org>
-Sender: linux-kernel-owner@vger.kernel.org
-To: "Eric W. Biederman" <ebiederm@xmission.com>
-Cc: Andrew Morton <akpm@linux-foundation.org>, Steven Rostedt <rostedt@goodmis.org>, linux-kernel@vger.kernel.org, Frederic Weisbecker <fweisbec@gmail.com>, Peter Zijlstra <peterz@infradead.org>, Dave Hansen <dave@linux.vnet.ibm.com>, containers@lists.osdl.org, Sukadev Bhattiprolu <sukadev@linux.vnet.ibm.com>, "Serge E. Hallyn" <serue@us.ibm.com>, Steven Rostedt <srostedt@redhat.com>
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <m1prk8t5xr.fsf-B27657KtZYmhTnVgQlOflh2eb7JE58TQ@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+Cc: Frederic Weisbecker <fweisbec-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Steven Rostedt <rostedt-nx8X9YLhiw1AfugRpC6u6w@public.gmane.org>, Steven Rostedt <srostedt-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, Dipankar Sarma <dipankar-xthvdsQ13ZrQT0dZR+AlfA@public.gmane.org>, containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>, Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-
-* Eric W. Biederman <ebiederm@xmission.com> wrote:
-
-> Ingo Molnar <mingo@elte.hu> writes:
-> 
-> > * Andrew Morton <akpm@linux-foundation.org> wrote:
-> >
-> >> > Signed-off-by: Steven Rostedt <srostedt@redhat.com>
+On Thu, 2008-12-04 at 05:40 -0800, Eric W. Biederman wrote:
+> Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org> writes:
+> > On Thu, 2008-12-04 at 04:56 -0800, Dave Hansen wrote:
+> >> On Thu, 2008-12-04 at 04:42 -0800, Eric W. Biederman wrote:
+> >> > 
+> >> > > +static void clear_ftrace_pid_task(struct pid **pid)
+> >> > > +{
+> >> > > +     struct task_struct *p;
+> >> > > +
+> >> >         rcu_read_lock();
+> >> > 
+> >> > > +     do_each_pid_task(*pid, PIDTYPE_PID, p) {
+> >> > > +             clear_tsk_trace_trace(p);
+> >> > > +     } while_each_pid_task(*pid, PIDTYPE_PID, p);
+> >> >         rcu_read_unlock()
+> >> > 
+> >> > > +     put_pid(*pid);
+> >> > > +
+> >> > > +     *pid = NULL;
+> >> > > +}
 > >> 
-> >> What does this patch actually do?  Is swapper currently excluded from 
-> >> tracing for undisclosed reasons and this patch permits it to be traced? 
-> >> If so, why was swapper thus excluded?  Or am I totally off track?
+> >> Could we get away with sticking the rcu_read_{un}lock() inside
+> those
+> >> macros?  Those are going to get used in pretty high level code and
+> we're
+> >> allowed to nest rcu_read_lock().  No danger of deadlocks or lock
+> >> inversions.
 > >
-> >> > +static struct pid * const ftrace_swapper_pid = (struct pid *)1;
-> >> 
-> >> eh?
-> >
-> > all side-effects of getting rid of the integer based PID namespace 
-> > and replacing them with struct pid pointers.
+> > Why don't any of the other users of do_each_pid_task() use
+> > rcu_read_lock()?  They all seem to be under
+> read_lock(&tasklist_lock)
+> > (except one is under a write lock of the same).
 > 
-> Thanks for asking Andrew it looks like an unnecessary side effect.
+> We probably should.  Historically read_lock(&tasklist_lock) implies
+> rcu_read_lock().  And the tasklist lock is what we hold when it is
+> safe.
 
-Will wait for how the end result looks like ;-)
+So, Dipankar tells me that you really do need rcu_read_lock/unlock() for
+the guarantee here; the tasklist lock is not sufficient.  The realtime
+kernel will preempt even those sections covered by spinlocks.
 
-	Ingo
+-- Dave
