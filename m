@@ -1,15 +1,13 @@
-From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH] checkpoint/restart: refuse checkpoint on detached file
-Date: Fri, 5 Dec 2008 16:46:43 -0600
-Message-ID: <20081205224643.GA29599@us.ibm.com>
-References: <20081205044141.GA1444@us.ibm.com>
-	<1228516454.11768.8.camel@nimitz>
+From: Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
+Subject: Re: liblxc: lxc-debian
+Date: Fri, 05 Dec 2008 23:48:07 +0100
+Message-ID: <4939AFA7.1060903@fr.ibm.com>
+References: <20081204023936.GA31830@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <1228516454.11768.8.camel@nimitz>
+In-Reply-To: <20081204023936.GA31830-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,36 +17,42 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Dave Hansen <haveblue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Quoting Dave Hansen (dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org):
-> On Thu, 2008-12-04 at 22:41 -0600, Serge E. Hallyn wrote:
-> > 
-> > @@ -158,6 +173,12 @@ cr_write_fd_ent(struct cr_ctx *ctx, struct
-> > files_struct *files, int fd)
-> >                 goto out;
-> >         }
-> > 
-> > +       /* Make sure this isn't under some detached tree */
-> > +       if (file_in_detached_tree(file)) {
-> > +               ret = -EBADF;
-> > +               goto out;
-> > +       }
+Serge E. Hallyn wrote:
+> Hi Daniel,
 > 
-> Looks fine to me.  This is racy, though.  Right?
+> to create a debian-based container using lxc-debian on fedora 10,
+> I needed to just a couple of things:
 > 
-> There's no locking to keep the thing mounted for the duration of the
-> checkpoint.
+> 	1. iptables -F   :)  Grrr.
+> 
+> 	2. Right above the debootstrap command, I had to fool
+> 	   chage (used during openssh configuration) into thinking
+> 	   selinux was disabled.  So after the line:
+> 	   mkdir -p "$CACHE/rootfs-$ARCH"
+> 	   I added
+> 	   mkdir -p "$CACHE/rootfs-$ARCH/selinux"
+> 	   echo 0 > "$CACHE/rootfs-$ARCH/selinux/enforce"
 
-Oh, hahah, yeah.  We have the file pinned so we're not going to
-lose any vfsmnt/dentries, but you're right, someone else could
-come along and umount -l in the middle.
+Good catch ! :)
 
-I suppose we could hold the namespace sem but it doesn't seem worth
-it and could deadlock.
+> 	3. For the actual debootstrap command I had to do
+> 	   debootstrap --arch $ARCH etc $CACHE/rootfs-$ARCH
+> 	   Then apt-get install openssh-server and apache
+> 	   worked fine.  But your debootstrap command failed
+> 	   (the last time i tried) on chroot - no idea why.
 
-Patch withdrawn for now  :)
+Ok, I will try to figure out what is happening.
 
--serge
+> Now it seems to work.  This shouldn't have taken me 2 hours to
+> figure out, but the symptoms were deceptive :)
+
+I have a some bugs reported I will fix with this one. I'll release a 
+0.5.1 version soon.
+
+Thanks a lot for taking the time to investigate :)
+
+   -- Daniel
