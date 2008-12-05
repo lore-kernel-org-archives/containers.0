@@ -1,151 +1,103 @@
-From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH] checkpoint/restart: refuse checkpoint on detached file
-Date: Thu, 4 Dec 2008 22:41:41 -0600
-Message-ID: <20081205044141.GA1444@us.ibm.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Dave Hansen <haveblue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>, Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>, Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
+From: Nadia.Derbey@bull.net
+Subject: [RFC][PATCH 1/1] Fix si_pid value when notifying about message arrival on POSIX mqueue
+Date: Fri, 05 Dec 2008 07:50:54 +0100
+Message-ID: <20081205065210.495580470@bull.net>
+References: <20081205065053.966672287@bull.net>
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1755141AbYLEGyQ@vger.kernel.org>
+Content-Disposition: inline; filename=mq_notify_fix_si_pid.patch
+Sender: linux-kernel-owner@vger.kernel.org
+To: containers@lists.osdl.org, oleg@redhat.com, xemul@openvz.org, sukadev@us.ibm.com
+Cc: ebiederm@xmission.com, linux-kernel@vger.kernel.org, Nadia.Derbey@bull.net
 List-Id: containers.vger.kernel.org
 
-So Dave brought up the problem of checkpointing a task which has an open
-fd to a file which is under a directory which has been lazily unmounted.
 
-Now long-term I suspect we will want to do something like figure out
-another path to the file which restart can use, or, if we've lost the
-last ref to the file then treat it as a deleted private file...  but
-in the meantime we should refuse to checkpoint such a task, since it
-won't be restartable.
+If a process registers for asynchronous notification on a POSIX message
+queue, it gets a signal and a siginfo_t structure when a message arrives on
+the message queue. The si_pid in the siginfo_t structure is set to the PID of 
+the process that sent the message to the message queue.
 
-On irc we'd talked about catching umount -l and balancing it with the
-final mntput, and setting the uncheckpointable flag on the whole
-namespace in the meantime.
+The principle is the following:
+. when mq_notify(SIGEV_SIGNAL) is called, the caller registers for
+  notification when a msg arrives. The associated pid structure is stroed into
+  inode_info->notify_owner. Let's call this process P1.
+. when mq_send() is called by say P2, P2 sends a signal to P1 to notify
+  him about msg arrival.
 
-As an alternative, I thought it might be good to just check each file
-for whether it's under a unmounted vfsmount.  The reason I think this
-is a good approach is that if we try to actually solve the problem for
-real, we'll want to do these steps anyway.
+The way .si_pid is set today is not correct, since it doesn't take into account
+the fact that the process that is sending the message might not be in the
+same namespace as the notified one.
 
-Opinions?
+This patch proposes to set si_pid to the sender's pid into the notify_owner
+namespace.
 
-From 4a39c479498bdce027320a1cc91a093ed2fb8450 Mon Sep 17 00:00:00 2001
-From: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Date: Thu, 4 Dec 2008 20:16:22 -0800
-Subject: [PATCH 1/1] checkpoint/restart: refuse checkpoint on detached file
+Note: I've integrated in this patch a patch sent by Suka last week, that
+      defines ns_of_pid() (see http://lkml.org/lkml/2008/11/25/460)
 
-If a file is on an fs which has been detached, refuse the
-checkpoint (for now).
-
-Signed-off-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Signed-off-by: Nadia Derbey <Nadia.Derbey@bull.net>
 ---
- checkpoint/ckpt_file.c |   21 +++++++++++++++++++++
- fs/namespace.c         |   24 ++++++++++++++++++++++++
- include/linux/dcache.h |    1 +
- 3 files changed, 46 insertions(+), 0 deletions(-)
+ include/linux/pid.h |   11 +++++++++++
+ ipc/mqueue.c        |   12 +++++++++++-
+ 2 files changed, 22 insertions(+), 1 deletion(-)
 
-diff --git a/checkpoint/ckpt_file.c b/checkpoint/ckpt_file.c
-index 9198650..1013faf 100644
---- a/checkpoint/ckpt_file.c
-+++ b/checkpoint/ckpt_file.c
-@@ -14,6 +14,9 @@
- #include <linux/fdtable.h>
- #include <linux/checkpoint.h>
- #include <linux/checkpoint_hdr.h>
-+#include <linux/fs.h>
-+#include <linux/mount.h>
-+#include <linux/dcache.h>
+Index: linux-2.6.28-rc7/ipc/mqueue.c
+===================================================================
+--- linux-2.6.28-rc7.orig/ipc/mqueue.c	2008-12-04 14:22:15.000000000 +0100
++++ linux-2.6.28-rc7/ipc/mqueue.c	2008-12-04 17:19:41.000000000 +0100
+@@ -31,6 +31,7 @@
+ #include <linux/mutex.h>
+ #include <linux/nsproxy.h>
+ #include <linux/pid.h>
++#include <linux/pid_namespace.h>
  
- #include "checkpoint_file.h"
+ #include <net/sock.h>
+ #include "util.h"
+@@ -502,15 +503,24 @@ static void __do_notify(struct mqueue_in
+ 		case SIGEV_SIGNAL:
+ 			/* sends signal */
  
-@@ -123,6 +126,18 @@ static int cr_write_fd_data(struct cr_ctx *ctx, struct file *file, int parent)
- 	return cr_write_fname(ctx, &file->f_path, ctx->vfsroot);
- }
++			{
++			struct pid_namespace *notify_ns;
++
+ 			sig_i.si_signo = info->notify.sigev_signo;
+ 			sig_i.si_errno = 0;
+ 			sig_i.si_code = SI_MESGQ;
+ 			sig_i.si_value = info->notify.sigev_value;
+-			sig_i.si_pid = task_tgid_vnr(current);
++
++			rcu_read_lock();
++			notify_ns = ns_of_pid(info->notify_owner);
++			sig_i.si_pid = task_tgid_nr_ns(current, notify_ns);
++			rcu_read_unlock();
++
+ 			sig_i.si_uid = current->uid;
  
-+int file_in_detached_tree(struct file *file)
+ 			kill_pid_info(info->notify.sigev_signo,
+ 				      &sig_i, info->notify_owner);
++			}
+ 			break;
+ 		case SIGEV_THREAD:
+ 			set_cookie(info->notify_cookie, NOTIFY_WOKENUP);
+Index: linux-2.6.28-rc7/include/linux/pid.h
+===================================================================
+--- linux-2.6.28-rc7.orig/include/linux/pid.h	2008-12-04 14:21:21.000000000 +0100
++++ linux-2.6.28-rc7/include/linux/pid.h	2008-12-04 14:57:56.000000000 +0100
+@@ -122,6 +122,17 @@ int next_pidmap(struct pid_namespace *pi
+ extern struct pid *alloc_pid(struct pid_namespace *ns);
+ extern void free_pid(struct pid *pid);
+ 
++/* ns_of_pid returns the pid namespace in which the specified
++ * pid was allocated.
++ */
++static inline struct pid_namespace *ns_of_pid(struct pid *pid)
 +{
-+	struct vfsmount *mnt = file->f_path.mnt;
-+
-+	while (mnt->mnt_parent != mnt) {
-+		if (!is_still_mounted(mnt))
-+			return 1;
-+		mnt = mnt->mnt_parent;
-+	}
-+	return 0;
-+}
-+
- /**
-  * cr_write_fd_ent - dump the state of a given file descriptor
-  * @ctx: checkpoint context
-@@ -158,6 +173,12 @@ cr_write_fd_ent(struct cr_ctx *ctx, struct files_struct *files, int fd)
- 		goto out;
- 	}
- 
-+	/* Make sure this isn't under some detached tree */
-+	if (file_in_detached_tree(file)) {
-+		ret = -EBADF;
-+		goto out;
-+	}
-+
- 	new = cr_obj_add_ptr(ctx, file, &objref, CR_OBJ_FILE, 0);
- 	cr_debug("fd %d objref %d file %p c-o-e %d)\n", fd, objref, file, coe);
- 
-diff --git a/fs/namespace.c b/fs/namespace.c
-index cce4670..17153f0 100644
---- a/fs/namespace.c
-+++ b/fs/namespace.c
-@@ -438,6 +438,30 @@ struct vfsmount *__lookup_mnt(struct vfsmount *mnt, struct dentry *dentry,
- 	return found;
- }
- 
-+int is_still_mounted(struct vfsmount *childmnt)
-+{
-+	struct vfsmount *mnt = childmnt->mnt_parent;
-+	struct dentry *dentry = childmnt->mnt_mountpoint;
-+	struct list_head *head = mount_hashtable + hash(mnt, dentry);
-+	struct list_head *tmp = head;
-+	struct vfsmount *p;
-+	int found = 0;
-+
-+	for (;;) {
-+		tmp = tmp->next;
-+		p = NULL;
-+		if (tmp == head)
-+			break;
-+		p = list_entry(tmp, struct vfsmount, mnt_hash);
-+		if (p == childmnt) {
-+			found = 1;
-+			break;
-+		}
-+	}
-+	return found;
-+
++	struct pid_namespace *ns = NULL;
++	if (pid)
++		ns = pid->numbers[pid->level].ns;
++	return ns;
 +}
 +
  /*
-  * lookup_mnt increments the ref count before returning
-  * the vfsmount struct.
-diff --git a/include/linux/dcache.h b/include/linux/dcache.h
-index a37359d..deda0cc 100644
---- a/include/linux/dcache.h
-+++ b/include/linux/dcache.h
-@@ -363,6 +363,7 @@ static inline int d_mountpoint(struct dentry *dentry)
- 
- extern struct vfsmount *lookup_mnt(struct vfsmount *, struct dentry *);
- extern struct dentry *lookup_create(struct nameidata *nd, int is_dir);
-+extern int is_still_mounted(struct vfsmount *childmnt);
- 
- extern int sysctl_vfs_cache_pressure;
- 
+  * the helpers to get the pid's id seen from different namespaces
+  *
+
 -- 
-1.5.4.3
