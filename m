@@ -1,14 +1,12 @@
 From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [RFC v11][PATCH 00/13] Kernel based checkpoint/restart
-Date: Tue, 9 Dec 2008 13:42:20 -0600
-Message-ID: <20081209194220.GA20101__47295.9227780395$1228851958$gmane$org@us.ibm.com>
-References: <1228498282-11804-1-git-send-email-orenl@cs.columbia.edu>
+Subject: [PATCH 1/1] devices cgroup: allow mkfifo
+Date: Tue, 9 Dec 2008 15:08:03 -0600
+Message-ID: <20081209210802.GA24549@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <1228498282-11804-1-git-send-email-orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,23 +16,37 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
-Cc: jeremy-TSDbQ3PG+2Y@public.gmane.org, arnd-r2nGTMty4D4@public.gmane.org, linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Linux Torvalds <torvalds-3NddpPZAyC0@public.gmane.org>, Alexander Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, "H. Peter Anvin" <hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org>, Thomas Gleixner <tglx-hfZtesqFncYOwBW4kG4KsQ@public.gmane.org>, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>
+To: Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
+Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Quoting Oren Laadan (orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org):
-> Checkpoint-restart (c/r): fixed races in file handling (comments from
-> from Al Viro). Updated and tested against v2.6.28-rc7 (feaf384...)
-> 
-> We'd like these to make it into -mm. This version addresses the
-> last of the known bugs. Please pull at least the first 11 patches,
-> as they are similar to before.
+The devcgroup_inode_permission() hook in the devices whitelist
+cgroup has always bypassed access checks on fifos.  But the
+mknod hook did not.  The devices whitelist is only about block
+and char devices, and fifos can't even be added to the whitelist,
+so fifos can't be created at all except by tasks which have 'a'
+in their whitelist (meaning they have access to all devices).
 
-So far I'm finding no regressions and checkpoint/restart is working
-perfectly for me.
+Fix the behavior by bypassing access checks to mkfifo.
 
-Andrew, any chance of getting this round into -mm for some extra
-testing?
+Signed-off-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+---
+ security/device_cgroup.c |    3 +++
+ 1 files changed, 3 insertions(+), 0 deletions(-)
 
-thanks,
--serge
+diff --git a/security/device_cgroup.c b/security/device_cgroup.c
+index 5ba7870..df9d491 100644
+--- a/security/device_cgroup.c
++++ b/security/device_cgroup.c
+@@ -513,6 +513,9 @@ int devcgroup_inode_mknod(int mode, dev_t dev)
+ 	struct dev_cgroup *dev_cgroup;
+ 	struct dev_whitelist_item *wh;
+ 
++	if (!S_ISBLK(mode) && !S_ISCHR(mode))
++		return 0;
++
+ 	rcu_read_lock();
+ 
+ 	dev_cgroup = task_devcgroup(current);
+-- 
+1.5.4.3
