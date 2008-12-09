@@ -1,7 +1,7 @@
 From: Livres et autographes <mail-pQaXDZsaI7K1nHHjArqmGksaDTP6FzCwAL8bYrjMMd8@public.gmane.org>
 Subject: Liquidation des livres des 19 et  20es siecles
 Date: Mon, 8 Dec 2008 16:46:50 -0800
-Message-ID: <200812081647.mB8GlU44010089@smtp1.linux-foundation.org>
+Message-ID: <200812081701.mB8H1FZk010974@smtp1.linux-foundation.org>
 Reply-To: Livres et autographes <jly-pQaXDZsaI7K1nHHjArqmGksaDTP6FzCwAL8bYrjMMd8@public.gmane.org>
 Mime-Version: 1.0
 Content-Type: multipart/mixed;
@@ -16,7 +16,7 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org" <Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+To: "containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org" <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
 This is a multipart message in MIME format
