@@ -1,16 +1,13 @@
-From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: Re: [PATCH] cgroups: not to iterate other namespace process inside
-	container
-Date: Tue, 9 Dec 2008 15:37:23 -0800
-Message-ID: <20081209233723.GA11925@us.ibm.com>
-References: <493CC423.5060601@linux.vnet.ibm.com>
-	<1228753106.9737.7.camel@nimitz>
+From: Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH 1/1] devices cgroup: allow mkfifo
+Date: Wed, 10 Dec 2008 11:39:22 +0100
+Message-ID: <493F9C5A.6080807@fr.ibm.com>
+References: <20081209210802.GA24549@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <1228753106.9737.7.camel@nimitz>
+In-Reply-To: <20081209210802.GA24549-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -20,20 +17,40 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Balbir <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Dave Hansen [dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org] wrote:
-| I could have sworn we had some function like
-| task_is_in_current_active_pid_ns(), but I looked and couldn't find it.
+Serge E. Hallyn wrote:
+> The devcgroup_inode_permission() hook in the devices whitelist
+> cgroup has always bypassed access checks on fifos.  But the
+> mknod hook did not.  The devices whitelist is only about block
+> and char devices, and fifos can't even be added to the whitelist,
+> so fifos can't be created at all except by tasks which have 'a'
+> in their whitelist (meaning they have access to all devices).
+> 
+> Fix the behavior by bypassing access checks to mkfifo.
+> 
+> Signed-off-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+> ---
+>  security/device_cgroup.c |    3 +++
+>  1 files changed, 3 insertions(+), 0 deletions(-)
+> 
+> diff --git a/security/device_cgroup.c b/security/device_cgroup.c
+> index 5ba7870..df9d491 100644
+> --- a/security/device_cgroup.c
+> +++ b/security/device_cgroup.c
+> @@ -513,6 +513,9 @@ int devcgroup_inode_mknod(int mode, dev_t dev)
+>  	struct dev_cgroup *dev_cgroup;
+>  	struct dev_whitelist_item *wh;
+> 
+> +	if (!S_ISBLK(mode) && !S_ISCHR(mode))
+> +		return 0;
+> +
+>  	rcu_read_lock();
+> 
+>  	dev_cgroup = task_devcgroup(current);
 
-It was in one of the many signals patchsets we tried but none of them
-got accepted. We do have a variant out for review, ns_of_pid() that
-could be used, this patch task_pid_vnr() should be fine.
+Cool thanks. I am able to create the initctl fifo now.
 
-| Maybe we should add one instead of open-coding this everywhere.
-
-If there are lot of users, we should define the wrapper for
-'task_pid_vnr() > 0' but there is no other user at present
-(kill_something_info() checks for > 1).
+  -- Daniel
