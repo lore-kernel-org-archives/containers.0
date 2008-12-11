@@ -1,15 +1,14 @@
-From: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [RFC][PATCH 1/3] CGroups: Add a per-subsystem hierarchy_mutex
-Date: Thu, 11 Dec 2008 09:09:15 -0800
-Message-ID: <6599ad830812110909t5e268bcak31df359c516874d1__22961.2568663017$1229015742$gmane$org@mail.gmail.com>
-References: <20081210233654.563182000@menage.corp.google.com>
-	<20081210234432.065445000@menage.corp.google.com>
-	<20081211062940.GJ3008@balbir.in.ibm.com>
+From: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
+Subject: Re: [Bugme-new] [Bug 12199] New: /proc/1/exe entry of PID namespace
+	init process links to wrong executable
+Date: Thu, 11 Dec 2008 09:14:30 -0800
+Message-ID: <20081211091430.ea3d434d.akpm@linux-foundation.org>
+References: <bug-12199-10286@http.bugzilla.kernel.org/>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20081211062940.GJ3008-SINUvgVNF2CyUtPGxGje5AC/G2K4zDHf@public.gmane.org>
+In-Reply-To: <bug-12199-10286-V0hAGp6uBxO456/isadD/XN4h3HLQggn@public.gmane.org/>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,20 +18,93 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org
+To: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
+Cc: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, bugme-daemon-590EEB7GvNiWaY/ihj7yzEB+6BGkLq7r@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On Wed, Dec 10, 2008 at 10:29 PM, Balbir Singh
-<balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org> wrote:
->
-> Seems reasonable, I was wondering if instead of acquiring a mutex per
-> subsystem that shares the root, if we can collapse it to a single
-> mutex and prevent cgroup from changing binding. Those are
-> optimizations that we can think of later
 
-You mean a single hierarchy_mutex per root? But given that one of the
-things being protected is which root you're attached to, if you're
-trying to prevent hierarchy changes then which root's hierarchy_mutex
-would you lock?
+(switched to email.  Please respond via emailed reply-to-all, not via the
+bugzilla web interface).
 
-Paul
+On Thu, 11 Dec 2008 08:16:55 -0800 (PST) bugme-daemon-590EEB7GvNiWaY/ihj7yzEB+6BGkLq7r@public.gmane.org wrote:
+
+> http://bugzilla.kernel.org/show_bug.cgi?id=12199
+> 
+>            Summary: /proc/1/exe entry of PID namespace init process links to
+>                     wrong executable
+>            Product: Process Management
+>            Version: 2.5
+>      KernelVersion: 2.6.27.8
+>           Platform: All
+>         OS/Version: Linux
+>               Tree: Mainline
+>             Status: NEW
+>           Severity: low
+>           Priority: P1
+>          Component: Other
+>         AssignedTo: process_other-ztI5WcYan/vQLgFONoPN62D2FQJk+8+b@public.gmane.org
+>         ReportedBy: robert.rex-GD4dBWQXeU/QT0dZR+AlfA@public.gmane.org
+> 
+> 
+> Latest working kernel version:
+> 
+> None known.
+> 
+> Earliest failing kernel version:
+> 
+> 2.6.25.4, 2.6.27.4 and 2.6.27.8 show this behaviour, but I assume that it
+> exists since 2.6.24 with the introduction of PID namespaces.
+> 
+> Distribution: CentOS 5.1
+> 
+> Hardware Environment: x86-64
+> 
+> Software Environment: (see attached test program)
+> 
+> Problem Description:
+> 
+> The /proc/1/exe entry of a new PID namespace does not link to the expected
+> binary if it was started within a chroot. All other processes in this namespace
+> link to the expected path.
+> 
+> Steps to reproduce: (see attached test program)
+> 
+> 1) chroot() into an appropriate directory.
+> 2) Create a process, which clone()s a thread in a new PID namespace with
+> CLONE_NEWPID.
+> 3) Mount /proc from within this new namespace.
+> 3) Read the /proc/1/exe link from within this new namespace. It points to the
+> "real" binary, not the (expected) link that is valid in this chroot.
+> 
+> The attached program executes steps 2, 3 and 4 and does a "/bin/ls -la /proc/1
+> /proc/2" in the new namespace. The output below was collected with the
+> following commands:
+> 
+> 1) mkdir /tmp/target
+> 2) mount /dev/sda1 /tmp/target (/dev/sda1 is also mounted on /)
+> 3) chroot /tmp/target
+> 4) ./pid_namespace_chroot
+> 
+> ---------------
+> /proc/1:
+> [...]
+> lrwxrwxrwx   1 root root 0 Dec 11 16:18 exe ->
+> /tmp/target/root/pid_namespace_chroot
+> [...]
+> lrwxrwxrwx   1 root root 0 Dec 11 16:18 root -> /
+> [...]
+> 
+> /proc/2:
+> [...]
+> lrwxrwxrwx   1 root root 0 Dec 11 16:18 exe -> /bin/ls
+> [...]
+> lrwxrwxrwx   1 root root 0 Dec 11 16:18 root -> /
+> [...]
+> ---------------
+> 
+> Hopefully, I do not miss a point, but I assume that this is not intended?!
+> 
+
+Thanks.
+
+There's a test program attached to the bugzilla report.
