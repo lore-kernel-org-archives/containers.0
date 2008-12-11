@@ -1,13 +1,20 @@
-From: Daniel Lezcano <daniel.lezcano-GANU6spQydw@public.gmane.org>
-Subject: Re: Network namespaces tool
-Date: Thu, 11 Dec 2008 10:23:28 +0100
-Message-ID: <4940DC10.6020609@free.fr>
-References: <7c9d57ea0812110053o4a2753e0m3937ede52955ce4c@mail.gmail.com>
+From: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [RFC][PATCH 2/3] CGroups: Use hierarchy_mutex in memory
+	controller
+Date: Thu, 11 Dec 2008 09:05:47 -0800
+Message-ID: <6599ad830812110905k4e32363fp671bf88e18fbf349__10606.2190993272$1229015399$gmane$org@mail.gmail.com>
+References: <20081210233654.563182000@menage.corp.google.com>
+	<20081210234432.236302000@menage.corp.google.com>
+	<20081211094938.85b00cf3.kamezawa.hiroyu@jp.fujitsu.com>
+	<6599ad830812101652o25bc33f3r2a710e0879f9b196@mail.gmail.com>
+	<20081211100501.bf538f0c.kamezawa.hiroyu@jp.fujitsu.com>
+	<20081211063307.GL3008@balbir.in.ibm.com>
+	<20081211155323.957eb73c.kamezawa.hiroyu@jp.fujitsu.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <7c9d57ea0812110053o4a2753e0m3937ede52955ce4c-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
+In-Reply-To: <20081211155323.957eb73c.kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -17,39 +24,18 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Sargun Dhillon <xbmodder-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, lxc-devel-pyega4qmqnRoyOMFzWx49A@public.gmane.org
+To: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org, balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Sargun Dhillon wrote:
-> I'm getting an error when I try to compile the netunshare tool.
-> Do you have any ideas to the error:
+On Wed, Dec 10, 2008 at 10:53 PM, KAMEZAWA Hiroyuki
+<kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org> wrote:
 >
-> netunshare.c:50: error: conflicting types for 'unshare'
-> /usr/include/bits/sched.h:78: error: previous declaration of 'unshare' was here
->   
+> Could you write a document to explain what kind of nest of locks are allowed
+> before merging this ?
 
-There is the lxc tools at:
+We should probably treat it similarly to the cpuset "callback_mutex".
+I.e. memory allocations are most likely forbidden when you're holding
+it.
 
-http://sourceforge.net/projects/lxc/
-
-In these tools there is the lxc-unshare allowing you to do the same.
-    lxc-unshare -n /bin/bash
-
-If you find some problems with it, feel free to ask :)
-I will release a new lxc-0.5.1, version fixing a few bugs very soon.
-> Additionally, are there any plans to merge in sysfs support into the kernel?
->   
-The sysfs patchset has been rejected and the sysfs itself should be 
-reworked before submitting the sysfs per namespace. This is a long work, 
-Eric can probably say more on that.
-In the meantime, a patch to make netns and sysfs to co-exist has been 
-pushed upstream, so we can create a network namespace without sysfs 
-virtualization. This modification will be available for 2.6.29. Until 
-this version is released, you can use the netdev development tree 
-available at:
-
-git://git.kernel.org/pub/scm/linux/kernel/git/davem/net-next-2.6.git
-
-Thanks.
-  -- Daniel
+Paul
