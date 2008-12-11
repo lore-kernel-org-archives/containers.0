@@ -1,7 +1,7 @@
 From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: [PATCH 2/3] keys: consider user namespace in key_permission
-Date: Thu, 11 Dec 2008 17:23:56 -0600
-Message-ID: <20081211232356.GB8447@us.ibm.com>
+Subject: [PATCH 3/3] keys: skip keys from another user namespace
+Date: Thu, 11 Dec 2008 17:24:06 -0600
+Message-ID: <20081211232406.GC8447@us.ibm.com>
 References: <20081211232323.GA8343@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -22,36 +22,29 @@ To: David Howells <dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>, "Eric W. B
 Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-If a key is owned by another user namespace, then treat the
-key as though it is owned by both another uid and gid.
+When listing keys, do not return keys belonging to the
+same uid in another user namespace.  Otherwise uid 500
+in another user namespace will return keyrings called
+uid.500 for another user namespace.
 
 Signed-off-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 ---
- security/keys/permission.c |    5 +++++
- 1 files changed, 5 insertions(+), 0 deletions(-)
+ security/keys/keyring.c |    3 +++
+ 1 files changed, 3 insertions(+), 0 deletions(-)
 
-diff --git a/security/keys/permission.c b/security/keys/permission.c
-index 5d9fc7b..0ed802c 100644
---- a/security/keys/permission.c
-+++ b/security/keys/permission.c
-@@ -35,6 +35,9 @@ int key_task_permission(const key_ref_t key_ref, const struct cred *cred,
- 
- 	key = key_ref_to_ptr(key_ref);
- 
-+	if (key->user->user_ns != cred->user->user_ns)
-+		goto use_other_perms;
+diff --git a/security/keys/keyring.c b/security/keys/keyring.c
+index ed85157..3dba81c 100644
+--- a/security/keys/keyring.c
++++ b/security/keys/keyring.c
+@@ -539,6 +539,9 @@ struct key *find_keyring_by_name(const char *name, bool skip_perm_check)
+ 				    &keyring_name_hash[bucket],
+ 				    type_data.link
+ 				    ) {
++			if (keyring->user->user_ns != current_user_ns())
++				continue;
 +
- 	/* use the second 8-bits of permissions for keys the caller owns */
- 	if (key->uid == cred->fsuid) {
- 		kperm = key->perm >> 16;
-@@ -56,6 +59,8 @@ int key_task_permission(const key_ref_t key_ref, const struct cred *cred,
- 		}
- 	}
- 
-+use_other_perms:
-+
- 	/* otherwise use the least-significant 8-bits */
- 	kperm = key->perm;
+ 			if (test_bit(KEY_FLAG_REVOKED, &keyring->flags))
+ 				continue;
  
 -- 
 1.5.4.3
