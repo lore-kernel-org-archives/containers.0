@@ -1,19 +1,15 @@
-From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 0/3] keys: play nicely with user namespaces
-Date: Fri, 12 Dec 2008 13:31:12 -0600
-Message-ID: <20081212193112.GA25286@us.ibm.com>
-References: <20081212173312.GA19085@us.ibm.com>
-	<20081212162220.GA15520@us.ibm.com>
-	<20081212141707.GB9571@us.ibm.com>
-	<20081211232323.GA8343@us.ibm.com> <3507.1229086294@redhat.com>
-	<25987.1229097458@redhat.com> <26177.1229100126@redhat.com>
-	<28464.1229107090@redhat.com>
+From: Grzegorz Nosek <root-AfQBxy1nhrQ00sYp1HPQUA@public.gmane.org>
+Subject: Re: ns_can_attach (nsproxy cgroup)
+Date: Fri, 12 Dec 2008 22:30:42 +0100
+Message-ID: <20081212213042.GA23581@megiteam.pl>
+References: <20081212095153.GA20956@megiteam.pl>
+	<20081212140908.GA9571@us.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <28464.1229107090-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <20081212140908.GA9571-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -23,57 +19,106 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: David Howells <dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Grzegorz Nosek <root-AfQBxy1nhrQ00sYp1HPQUA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Quoting David Howells (dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org):
-> Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org> wrote:
-> 
-> > > You can have, say, a keyring owned by UID 1, with three keys owned by UIDs
-> > > 2, 3 and 4, respectively, and you could be, say, running as UID 5.
-> > > 
-> > > If you want to copy this keyring and these keys, do you just set the
-> > > ownership of the copies to your new UID?  That might give you extra
-> > > privileges.
-> > 
-> > Well no, I don't want to change any ownerships.
-> > 
-> > You're assuming I am UID 1 and own that keyring, right?
-> 
-> Actually, I said "you could be, say, running as UID 5".  In which case, you
-
-oops
-
-> wouldn't own the keyring or any of the keys.  Perhaps that's a bad example.
-> 
-> Assume instead you're UID 1, and so are given owner rights on the keyring (as
-> opposed to group or other rights).
-> 
-> > And now I do a clone(CLONE_NEWUSER).  The new task will have UID 0 and no
-> > access to any of those keys by virtue of being in a new user namespace.
-> 
-> Yes.
-> 
-> > So now, if I as UID 1 in the parent ns had access to the data loaded
-> > into those keys, I can reload them into my new keyring.
-> 
-> I'm not sure what you mean by 'reload them'.
-> 
-> The kernel could copy the keys from the old keyring when the namespace is
-> cloned, but what UID should it put on the new keys?  Your new one (UID 0)?  If
-> so, that might grant you extra rights you didn't have before; also it means
-> these keys now come out of your quota, whereas they didn't previously.
-> 
-> > Just as I could do anyway.  And if I want to, since I own the new user
-> > namespace, I can instantiate uid 2 in my new user namespace and make a key
-> > owned by UID 2.  Doesn't matter.
-> 
-> That's not what I meant.  I think we might be talking at cross-purposes.  Are
-> you thinking of having userspace copy the keys across?
-
-Right, the kernel just segregates based on user namespaces, and if
-userspace wants a task in a child user namespace to have keys, it
-can load them.
-
--serge
+T24gcGnEhSwgZ3J1IDEyLCAyMDA4IGF0IDA4OjA5OjA4IC0wNjAwLCBTZXJnZSBFLiBIYWxseW4g
+d3JvdGU6Cj4gUXVvdGluZyBHcnplZ29yeiBOb3NlayAocm9vdEBsb2NhbGRvbWFpbi5wbCk6Cj4g
+PiBIaSBhbGwsCj4gPiAKPiA+IElzIHRoZXJlIGEgZ29vZCByZWFzb24gZm9yIG5zX2Nhbl9hdHRh
+Y2ggdG8gcmVzdHJpY3QgbW92aW5nIHRhc2tzIG9ubHkKPiA+IHRvIGRpcmVjdCBkZXNjZW50YW50
+cyBvZiB0aGUgY3VycmVudCBjZ3JvdXA/IEkuZS4gY291bGQgdGhlIGNvZGU6Cj4gPiAKPiA+ICAg
+ICAgICAgb3JpZyA9IHRhc2tfY2dyb3VwKHRhc2ssIG5zX3N1YnN5c19pZCk7Cj4gPiAgICAgICAg
+IGlmIChvcmlnICYmIG9yaWcgIT0gbmV3X2Nncm91cC0+cGFyZW50KQo+ID4gICAgICAgICAgICAg
+ICAgIHJldHVybiAtRVBFUk07Cj4gPiAKPiA+IGJlIHJlcGxhY2VkIHdpdGg6Cj4gPiAKPiA+ICAg
+ICAgICAgb3JpZyA9IHRhc2tfY2dyb3VwKHRhc2ssIG5zX3N1YnN5c19pZCk7Cj4gPiAgICAgICAg
+IGlmIChvcmlnICYmICFjZ3JvdXBfaXNfZGVzY2VuZGFudF9vZihuZXdfY2dyb3VwLCBvcmlnKSkK
+PiA+ICAgICAgICAgICAgICAgICByZXR1cm4gLUVQRVJNOwo+ID4gCj4gPiAoZm9yIGEgc3VpdGFi
+bGUgZGVmaW5pdGlvbiBvZiBjZ3JvdXBfaXNfZGVzY2VuZGFudF9vZikuIEl0IHdvdWxkIGFsbG93
+Cj4gPiBtb3ZpbmcgdGFza3MgZG93biB0aGUgY2dyb3VwIGhpZXJhcmNoeSBtb3JlIHRoYW4gb25l
+IGxldmVsIGF0IGEgdGltZSBhbmQKPiA+IGFzIGZhciBhcyBJIGNhbiBzZWUsIHdvdWxkIHBvc2Ug
+bm8gYWRkaXRpb25hbCBwcm9ibGVtcy4KPiA+IAo+ID4gUGxlYXNlIGtlZXAgQ0MnZCwgSSdtIG5v
+dCBzdWJzY3JpYmVkLgo+IAo+IFdlbGwgeW91IGNhbiBhbHdheXMgbW92ZSBpdCBkb3duIG9uZSBs
+ZXZlbCBhdCBhIHRpbWUsIHJpZ2h0PyA6KQo+IAo+IEJ1dCBJIGNhbid0IHRoaW5rIG9mIGFueSBy
+ZWFzb24gd2h5IGl0IHdvdWxkIGJlIGEgcHJvYmxlbS4gIFNvCj4gcGxzIGZlZWwgZnJlZSB0byBz
+ZW5kIGEgcGF0Y2guCgpPSywgaGVyZSdzIHRoZSBwYXRjaC4gQWZ0ZXIgc29tZSBiYXNpYyB0ZXN0
+aW5nIGxvb2tzIGxpa2UgaXQncyB3b3JraW5nCmFzIGFkdmVydGlzZWQuIFBsZWFzZSBoYXZlIGEg
+bG9vayBhdCB0aGUgcGF0Y2gsIGVzcC4gdGhlIHN1YnN5c19pZCBwYXJ0LApJJ20gbm90IHN1cmUg
+SSBnb3QgdGhlIGNvZGUvY29tbWVudHMgYWxsIHJpZ2h0LgoKQmVzdCByZWdhcmRzLAogR3J6ZWdv
+cnogTm9zZWsKCi0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tCkZyb20gODc1
+MGRmMGQzNDFjMzIyN2EwZWQzMzA4ODYwMmFkZGVjMDAzYjcxMyBNb24gU2VwIDE3IDAwOjAwOjAw
+IDIwMDEKRnJvbTogR3J6ZWdvcnogTm9zZWsgPHJvb3RAbG9jYWxkb21haW4ucGw+CkRhdGU6IEZy
+aSwgMTIgRGVjIDIwMDggMjE6NDg6MDkgKzAxMDAKU3ViamVjdDogW1BBVENIXSBSZWxheCBuc19j
+YW5fYXR0YWNoIGNoZWNrcyB0byBhbGxvdyBhdHRhY2hpbmcgdG8gZ3JhbmRjaGlsZCBjZ3JvdXBz
+CgpUaGUgbnNfcHJveHkgY2dyb3VwIGFsbG93cyBtb3ZpbmcgcHJvY2Vzc2VzIHRvIGNoaWxkIGNn
+cm91cHMgb25seSBvbmUKbGV2ZWwgZGVlcCBhdCBhIHRpbWUuIFRoaXMgY29tbWl0IHJlbGF4ZXMg
+dGhpcyByZXN0cmljdGlvbiBhbmQgbWFrZXMgaXQKcG9zc2libGUgdG8gYXR0YWNoIHRhc2tzIGRp
+cmVjdGx5IHRvIGdyYW5kY2hpbGQgY2dyb3VwcywgZS5nLjoKCigkcGlkIGlzIGluIHRoZSByb290
+IGNncm91cCkKZWNobyAkcGlkID4gL2Nncm91cC9DRzEvQ0cyL3Rhc2tzCgpQcmV2aW91c2x5IHRo
+aXMgb3BlcmF0aW9uIHdvdWxkIGZhaWwgd2l0aCAtRVBFUk0gYW5kIHdvdWxkIGhhdmUgdG8gYmUK
+cGVyZm9ybWVkIGFzIHR3byBzdGVwczoKZWNobyAkcGlkID4gL2Nncm91cC9DRzEvdGFza3MKZWNo
+byAkcGlkID4gL2Nncm91cC9DRzEvQ0cyL3Rhc2tzCgpTaWduZWQtb2ZmLWJ5OiBHcnplZ29yeiBO
+b3NlayA8cm9vdEBsb2NhbGRvbWFpbi5wbD4KLS0tCiBpbmNsdWRlL2xpbnV4L2Nncm91cC5oIHwg
+ICAgNSArKystLQoga2VybmVsL2Nncm91cC5jICAgICAgICB8ICAgMTkgKysrKysrKysrKysrLS0t
+LS0tLQoga2VybmVsL25zX2Nncm91cC5jICAgICB8ICAgIDkgKysrLS0tLS0tCiAzIGZpbGVzIGNo
+YW5nZWQsIDE4IGluc2VydGlvbnMoKyksIDE1IGRlbGV0aW9ucygtKQoKZGlmZiAtLWdpdCBhL2lu
+Y2x1ZGUvbGludXgvY2dyb3VwLmggYi9pbmNsdWRlL2xpbnV4L2Nncm91cC5oCmluZGV4IDFiYTNk
+ZWQuLmFiOGE1Y2QgMTAwNjQ0Ci0tLSBhL2luY2x1ZGUvbGludXgvY2dyb3VwLmgKKysrIGIvaW5j
+bHVkZS9saW51eC9jZ3JvdXAuaApAQCAtMzAxLDggKzMwMSw5IEBAIGludCBjZ3JvdXBfcGF0aChj
+b25zdCBzdHJ1Y3QgY2dyb3VwICpjZ3JwLCBjaGFyICpidWYsIGludCBidWZsZW4pOwogCiBpbnQg
+Y2dyb3VwX3Rhc2tfY291bnQoY29uc3Qgc3RydWN0IGNncm91cCAqY2dycCk7CiAKLS8qIFJldHVy
+biB0cnVlIGlmIHRoZSBjZ3JvdXAgaXMgYSBkZXNjZW5kYW50IG9mIHRoZSBjdXJyZW50IGNncm91
+cCAqLwotaW50IGNncm91cF9pc19kZXNjZW5kYW50KGNvbnN0IHN0cnVjdCBjZ3JvdXAgKmNncnAp
+OworLyogUmV0dXJuIHRydWUgaWYgY2dycCBpcyBhIGRlc2NlbmRhbnQgb2YgdGhlIHRhc2sncyBj
+Z3JvdXAgc3Vic3lzdGVtIHN1YnN5c19pZCAqLworaW50IGNncm91cF9pc19kZXNjZW5kYW50KGNv
+bnN0IHN0cnVjdCBjZ3JvdXAgKmNncnAsIHN0cnVjdCB0YXNrX3N0cnVjdCAqdGFzaywKKwlpbnQg
+c3Vic3lzX2lkKTsKIAogLyogQ29udHJvbCBHcm91cCBzdWJzeXN0ZW0gdHlwZS4gU2VlIERvY3Vt
+ZW50YXRpb24vY2dyb3Vwcy50eHQgZm9yIGRldGFpbHMgKi8KIApkaWZmIC0tZ2l0IGEva2VybmVs
+L2Nncm91cC5jIGIva2VybmVsL2Nncm91cC5jCmluZGV4IDJhZTA0MGQuLjAwMDJmYTUgMTAwNjQ0
+Ci0tLSBhL2tlcm5lbC9jZ3JvdXAuYworKysgYi9rZXJuZWwvY2dyb3VwLmMKQEAgLTMxMDEsMjgg
+KzMxMDEsMzMgQEAgaW50IGNncm91cF9jbG9uZShzdHJ1Y3QgdGFza19zdHJ1Y3QgKnRzaywgc3Ry
+dWN0IGNncm91cF9zdWJzeXMgKnN1YnN5cywKIH0KIAogLyoqCi0gKiBjZ3JvdXBfaXNfZGVzY2Vu
+ZGFudCAtIHNlZSBpZiBAY2dycCBpcyBhIGRlc2NlbmRhbnQgb2YgY3VycmVudCB0YXNrJ3MgY2dy
+cAorICogY2dyb3VwX2lzX2Rlc2NlbmRhbnQgLSBzZWUgaWYgQGNncnAgaXMgYSBkZXNjZW5kYW50
+IG9mIEB0YXNrJ3MgY2dycAogICogQGNncnA6IHRoZSBjZ3JvdXAgaW4gcXVlc3Rpb24KKyAqIEB0
+YXNrOiB0aGUgdGFzayBpbiBxdWVzdGlvbgorICogQHN1YnN5c19pZDogY2dyb3VwIHN1YnN5c3Rl
+bSBpZCB1c2VkIHRvIGRldGVybWluZSBoaWVyYXJjaHk7IGlmIG5lZ2F0aXZlLAorICogCQl1c2Ug
+Z2V0X2ZpcnN0X3N1YnN5cygpCiAgKgotICogU2VlIGlmIEBjZ3JwIGlzIGEgZGVzY2VuZGFudCBv
+ZiB0aGUgY3VycmVudCB0YXNrJ3MgY2dyb3VwIGluCi0gKiB0aGUgYXBwcm9wcmlhdGUgaGllcmFy
+Y2h5LgorICogU2VlIGlmIEBjZ3JwIGlzIGEgZGVzY2VuZGFudCBvZiBAdGFzaydzIGNncm91cCBp
+biB0aGUgYXBwcm9wcmlhdGUKKyAqIGhpZXJhcmNoeS4KICAqCiAgKiBJZiB3ZSBhcmUgc2VuZGlu
+ZyBpbiBkdW1teXRvcCwgdGhlbiBwcmVzdW1hYmx5IHdlIGFyZSBjcmVhdGluZwogICogdGhlIHRv
+cCBjZ3JvdXAgaW4gdGhlIHN1YnN5c3RlbS4KICAqCiAgKiBDYWxsZWQgb25seSBieSB0aGUgbnMg
+KG5zcHJveHkpIGNncm91cC4KICAqLwotaW50IGNncm91cF9pc19kZXNjZW5kYW50KGNvbnN0IHN0
+cnVjdCBjZ3JvdXAgKmNncnApCitpbnQgY2dyb3VwX2lzX2Rlc2NlbmRhbnQoY29uc3Qgc3RydWN0
+IGNncm91cCAqY2dycCwgc3RydWN0IHRhc2tfc3RydWN0ICp0YXNrLAorCWludCBzdWJzeXNfaWQp
+CiB7CiAJaW50IHJldDsKIAlzdHJ1Y3QgY2dyb3VwICp0YXJnZXQ7Ci0JaW50IHN1YnN5c19pZDsK
+IAogCWlmIChjZ3JwID09IGR1bW15dG9wKQogCQlyZXR1cm4gMTsKIAotCWdldF9maXJzdF9zdWJz
+eXMoY2dycCwgTlVMTCwgJnN1YnN5c19pZCk7Ci0JdGFyZ2V0ID0gdGFza19jZ3JvdXAoY3VycmVu
+dCwgc3Vic3lzX2lkKTsKKwlpZiAoc3Vic3lzX2lkIDwgMCkKKwkJZ2V0X2ZpcnN0X3N1YnN5cyhj
+Z3JwLCBOVUxMLCAmc3Vic3lzX2lkKTsKKworCXRhcmdldCA9IHRhc2tfY2dyb3VwKHRhc2ssIHN1
+YnN5c19pZCk7CiAJd2hpbGUgKGNncnAgIT0gdGFyZ2V0ICYmIGNncnAhPSBjZ3JwLT50b3BfY2dy
+b3VwKQogCQljZ3JwID0gY2dycC0+cGFyZW50OwogCXJldCA9IChjZ3JwID09IHRhcmdldCk7CmRp
+ZmYgLS1naXQgYS9rZXJuZWwvbnNfY2dyb3VwLmMgYi9rZXJuZWwvbnNfY2dyb3VwLmMKaW5kZXgg
+NDNjMjExMS4uNTI0N2Q4NCAxMDA2NDQKLS0tIGEva2VybmVsL25zX2Nncm91cC5jCisrKyBiL2tl
+cm5lbC9uc19jZ3JvdXAuYwpAQCAtNDYsMjEgKzQ2LDE4IEBAIGludCBuc19jZ3JvdXBfY2xvbmUo
+c3RydWN0IHRhc2tfc3RydWN0ICp0YXNrLCBzdHJ1Y3QgcGlkICpwaWQpCiBzdGF0aWMgaW50IG5z
+X2Nhbl9hdHRhY2goc3RydWN0IGNncm91cF9zdWJzeXMgKnNzLAogCQlzdHJ1Y3QgY2dyb3VwICpu
+ZXdfY2dyb3VwLCBzdHJ1Y3QgdGFza19zdHJ1Y3QgKnRhc2spCiB7Ci0Jc3RydWN0IGNncm91cCAq
+b3JpZzsKLQogCWlmIChjdXJyZW50ICE9IHRhc2spIHsKIAkJaWYgKCFjYXBhYmxlKENBUF9TWVNf
+QURNSU4pKQogCQkJcmV0dXJuIC1FUEVSTTsKIAotCQlpZiAoIWNncm91cF9pc19kZXNjZW5kYW50
+KG5ld19jZ3JvdXApKQorCQlpZiAoIWNncm91cF9pc19kZXNjZW5kYW50KG5ld19jZ3JvdXAsIGN1
+cnJlbnQsIC0xKSkKIAkJCXJldHVybiAtRVBFUk07CiAJfQogCiAJaWYgKGF0b21pY19yZWFkKCZu
+ZXdfY2dyb3VwLT5jb3VudCkgIT0gMCkKIAkJcmV0dXJuIC1FUEVSTTsKIAotCW9yaWcgPSB0YXNr
+X2Nncm91cCh0YXNrLCBuc19zdWJzeXNfaWQpOwotCWlmIChvcmlnICYmIG9yaWcgIT0gbmV3X2Nn
+cm91cC0+cGFyZW50KQorCWlmICghY2dyb3VwX2lzX2Rlc2NlbmRhbnQobmV3X2Nncm91cCwgdGFz
+aywgbnNfc3Vic3lzX2lkKSkKIAkJcmV0dXJuIC1FUEVSTTsKIAogCXJldHVybiAwOwpAQCAtNzgs
+NyArNzUsNyBAQCBzdGF0aWMgc3RydWN0IGNncm91cF9zdWJzeXNfc3RhdGUgKm5zX2NyZWF0ZShz
+dHJ1Y3QgY2dyb3VwX3N1YnN5cyAqc3MsCiAKIAlpZiAoIWNhcGFibGUoQ0FQX1NZU19BRE1JTikp
+CiAJCXJldHVybiBFUlJfUFRSKC1FUEVSTSk7Ci0JaWYgKCFjZ3JvdXBfaXNfZGVzY2VuZGFudChj
+Z3JvdXApKQorCWlmICghY2dyb3VwX2lzX2Rlc2NlbmRhbnQoY2dyb3VwLCBjdXJyZW50LCAtMSkp
+CiAJCXJldHVybiBFUlJfUFRSKC1FUEVSTSk7CiAKIAluc19jZ3JvdXAgPSBremFsbG9jKHNpemVv
+ZigqbnNfY2dyb3VwKSwgR0ZQX0tFUk5FTCk7Ci0tIAoxLjUuNC40CgpfX19fX19fX19fX19fX19f
+X19fX19fX19fX19fX19fX19fX19fX19fX19fX19fXwpDb250YWluZXJzIG1haWxpbmcgbGlzdApD
+b250YWluZXJzQGxpc3RzLmxpbnV4LWZvdW5kYXRpb24ub3JnCmh0dHBzOi8vbGlzdHMubGludXgt
+Zm91bmRhdGlvbi5vcmcvbWFpbG1hbi9saXN0aW5mby9jb250YWluZXJz
