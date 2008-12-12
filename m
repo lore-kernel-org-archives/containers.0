@@ -1,15 +1,24 @@
-From: Grzegorz Nosek <root-AfQBxy1nhrQ00sYp1HPQUA@public.gmane.org>
-Subject: Re: ns_can_attach (nsproxy cgroup)
-Date: Fri, 12 Dec 2008 15:23:09 +0100
-Message-ID: <20081212142309.GD16669@megiteam.pl>
-References: <20081212095153.GA20956@megiteam.pl>
-	<20081212140908.GA9571@us.ibm.com>
+From: Balbir Singh <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Subject: Re: container userspace tools
+Date: Fri, 12 Dec 2008 19:55:29 +0530
+Message-ID: <20081212142529.GD4365@balbir.in.ibm.com>
+References: <48F5DB43.70003@fr.ibm.com>
+	<8f34198c0810150602w70d31453je6fd8811799a3857@mail.gmail.com>
+	<48F5EBF3.1070204@fr.ibm.com>
+	<8f34198c0810250406s4f1c9337ha2bccc10faed1948@mail.gmail.com>
+	<49031A54.70806@fr.ibm.com>
+	<8f34198c0812112333k6c1474f3hb67e963b39a0d0d6@mail.gmail.com>
+	<20081212081238.GA4365@balbir.in.ibm.com>
+	<8f34198c0812120106k390a1097ub31905cd2bc44676@mail.gmail.com>
+	<20081212091829.GB4365@balbir.in.ibm.com>
+	<8f34198c0812120202t39582a27k47c98b88246f18ce@mail.gmail.com>
+Reply-To: balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <20081212140908.GA9571-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <8f34198c0812120202t39582a27k47c98b88246f18ce-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -19,46 +28,79 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Grzegorz Nosek <root-AfQBxy1nhrQ00sYp1HPQUA@public.gmane.org>
+To: Ian jonhson <jonhson.ian-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, Daniel Lezcano <dlezcano-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Fri, Dec 12, 2008 at 08:09:08AM -0600, Serge E. Hallyn wrote:
-> Quoting Grzegorz Nosek (root-AfQBxy1nhrQ00sYp1HPQUA@public.gmane.org):
-> > Hi all,
-> > 
-> > Is there a good reason for ns_can_attach to restrict moving tasks only
-> > to direct descentants of the current cgroup? I.e. could the code:
-> > 
-> >         orig = task_cgroup(task, ns_subsys_id);
-> >         if (orig && orig != new_cgroup->parent)
-> >                 return -EPERM;
-> > 
-> > be replaced with:
-> > 
-> >         orig = task_cgroup(task, ns_subsys_id);
-> >         if (orig && !cgroup_is_descendant_of(new_cgroup, orig))
-> >                 return -EPERM;
-> > 
-> > (for a suitable definition of cgroup_is_descendant_of). It would allow
-> > moving tasks down the cgroup hierarchy more than one level at a time and
-> > as far as I can see, would pose no additional problems.
-> > 
-> > Please keep CC'd, I'm not subscribed.
+* Ian jonhson <jonhson.ian-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org> [2008-12-12 18:02:22]:
+
+> >
+> > OK, so this is not an lxc kernel, but a mainline kernel.
+> >
 > 
-> Well you can always move it down one level at a time, right? :)
+> So, what is the lxc kernel you meat? Is it different from the
+> 2.6.27-rc8. I use that version  recommended by Daniel.
+> 
+> >>
+> >> > 1. Can you see the memory.usage_in_bytes corresponding to the control
+> >> > group where you run the container
+> >>
+> >> How can I know the number correspond to the control group?
+> >
+> > From outside the container, figure out the process id of init and then
+> > do a cat /proc/<pid>/cgroup. Then go to that directory and cat
+> > memory.usage_in_bytes, memory.stat and memory.limit_in_bytes to verify
+> > the setup
+> >
+> 
+> OK, I have done the checking, but I don't understand what is meaning of
+> "corresponding". The content is shown as follows:
+> 
+> $ cat /proc/4506/cgroup
+> 255:freezer,devices,memory,cpuacct,cpu,ns,debug,cpuset:/
+> $ cat memory.usage_in_bytes
+> 223932416
 
-Yeah, but I found a patch by Andrea Righi which fits my use case almost
-100% [1]. The tasks are moved between cgroups by the kernel, so it's
-kernel hacking for me either way and I guess modifying ns_can_attach
-will be cleaner.
+OK, so memory.usage_in_bytes is 223932416 for the root cgroup. You
+process 4506, which is (I assume) a container process is running in
+"/" or the root cgroup. By default root cgroups are unlimited. You can
+verify by reading memory.limit_in_bytes
 
-> But I can't think of any reason why it would be a problem.  So
-> pls feel free to send a patch.
+> 
+> 
+> >>
+> >> > 2. Check tasks file to see that the container tasks are indeed in the
+> >> > container.
+> >> >
+> >>
+> >> My program forks a child and its child (grandson of previous process) call the
+> >> the /bin/bash to open a shell. I just can find the parent process is
+> >> in container
+> >> tasks file, but its child and grandson process are not.
+> >>
+> >
+> > Hmmm.. but the child and grandson are alive right?
+> yes... I can see them by a container-outside bash running with ps
+> 
+> > Do a cat
+> > /proc/<pid>/cgroup on them to see where they went or where they are.
+> >
+> 
+> They are all there, similar with pid=4506.
+> 
+> $ cat /proc/4506/cgroup
+> 255:freezer,devices,memory,cpuacct,cpu,ns,debug,cpuset:/
+> $ cat /proc/4507/cgroup
+> 255:freezer,devices,memory,cpuacct,cpu,ns,debug,cpuset:/4507
+> $ cat /proc/4508/cgroup
+> 255:freezer,devices,memory,cpuacct,cpu,ns,debug,cpuset:/4506
+>
 
-Will do.
+Are there three containers on the system
 
-Best regards,
- Grzegorz Nosek
+Can you send me the output of <cgroup mount point>/4507/memory.* and
+4506/memory.*. cgroup mount point can be obtained from /proc/mounts.
+ 
 
-[1] http://lwn.net/Articles/294364/
+-- 
+	Balbir
