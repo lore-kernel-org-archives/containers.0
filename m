@@ -1,62 +1,57 @@
-From: Sukadev Bhattiprolu <sukadev@linux.vnet.ibm.com>
-Subject: [PATCH][v2] Fix si_pid value in mqueue do_notify()
-Date: Fri, 12 Dec 2008 18:39:15 -0800
-Message-ID: <20081213023915.GA4256@us.ibm.com>
+From: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+Subject: Re: ns_can_attach (nsproxy cgroup)
+Date: Sat, 13 Dec 2008 15:03:52 +0800
+Message-ID: <49435E58.9050209@cn.fujitsu.com>
+References: <20081212095153.GA20956@megiteam.pl>	<20081212140908.GA9571@us.ibm.com>
+	<20081212213042.GA23581@megiteam.pl>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1756059AbYLMCkN@vger.kernel.org>
-Content-Disposition: inline
-Sender: linux-kernel-owner@vger.kernel.org
-To: Andrew Morton <akpm@osdl.org>
-Cc: "Eric W. Biederman" <ebiederm@xmission.com>, Oleg Nesterov <oleg@tv-sign.ru>, roland@redhat.com, bastian@waldi.eu.org, Pavel Emelyanov <xemul@openvz.org>, sukadev@linux.vnet.ibm.com, Containers <containers@lists.osdl.org>, linux-kernel@vger.kernel.org
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <20081212213042.GA23581-yp6mvK3Bdd2rDJvtcaxF/A@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Grzegorz Nosek <root-AfQBxy1nhrQ00sYp1HPQUA@public.gmane.org>
+Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
+>  /**
+> - * cgroup_is_descendant - see if @cgrp is a descendant of current task's cgrp
+> + * cgroup_is_descendant - see if @cgrp is a descendant of @task's cgrp
+>   * @cgrp: the cgroup in question
+> + * @task: the task in question
+> + * @subsys_id: cgroup subsystem id used to determine hierarchy; if negative,
+> + * 		use get_first_subsys()
 
-From: Sukadev Bhattiprolu <sukadev@linux.vnet.ibm.com>
-Date: Fri, 12 Dec 2008 17:50:08 -0800
-Subject: [PATCH] Fix si_pid value in mqueue do_notify()
+The last argument is redundant.
 
-If a process registers for asynchronous notification on a POSIX message
-queue, it gets a signal and a siginfo_t structure when a message arrives on
-the message queue. The si_pid in the siginfo_t structure is set to the PID of
-the process that sent the message to the message queue.
+[...]
 
-The principle is the following:
-. when mq_notify(SIGEV_SIGNAL) is called, the caller registers for
-  notification when a msg arrives. The associated pid structure is stroed into
-  inode_info->notify_owner. Let's call this process P1.
-. when mq_send() is called by say P2, P2 sends a signal to P1 to notify
-  him about msg arrival.
+> -	orig = task_cgroup(task, ns_subsys_id);
+> -	if (orig && orig != new_cgroup->parent)
+> +	if (!cgroup_is_descendant(new_cgroup, task, ns_subsys_id))
 
-The way .si_pid is set today is not correct, since it doesn't take into account
-the fact that the process that is sending the message might not be in the
-same namespace as the notified one.
+It makes no difference with:
+	if (!cgroup_is_descendant(new_cgroup, task, -1))
 
-This patch proposes to set si_pid to the sender's pid into the notify_owner
-namespace.
+That's why we don't need argument 'subsys_id'.
 
-Changelog[v2]:
-        - Moved ns_of_pid() to separate patch and simplified this patch.
-
-Signed-off-by: Nadia Derbey <Nadia.Derbey@bull.net>
-Signed-off-by: Sukadev Bhattiprolu <sukadev@linux.vnet.ibm.com>
----
- ipc/mqueue.c |    3 ++-
- 1 files changed, 2 insertions(+), 1 deletions(-)
-
-diff --git a/ipc/mqueue.c b/ipc/mqueue.c
-index d9393f8..cf465ce 100644
---- a/ipc/mqueue.c
-+++ b/ipc/mqueue.c
-@@ -506,7 +506,8 @@ static void __do_notify(struct mqueue_inode_info *info)
- 			sig_i.si_errno = 0;
- 			sig_i.si_code = SI_MESGQ;
- 			sig_i.si_value = info->notify.sigev_value;
--			sig_i.si_pid = task_tgid_vnr(current);
-+			sig_i.si_pid = task_tgid_nr_ns(current,
-+						ns_of_pid(info->notify_owner));
- 			sig_i.si_uid = current_uid();
- 
- 			kill_pid_info(info->notify.sigev_signo,
--- 
-1.5.2.5
+>  		return -EPERM;
+>  
+>  	return 0;
+> @@ -78,7 +75,7 @@ static struct cgroup_subsys_state *ns_create(struct cgroup_subsys *ss,
+>  
+>  	if (!capable(CAP_SYS_ADMIN))
+>  		return ERR_PTR(-EPERM);
+> -	if (!cgroup_is_descendant(cgroup))
+> +	if (!cgroup_is_descendant(cgroup, current, -1))
+>  		return ERR_PTR(-EPERM);
+>  
+>  	ns_cgroup = kzalloc(sizeof(*ns_cgroup), GFP_KERNEL);
