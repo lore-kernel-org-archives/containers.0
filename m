@@ -1,16 +1,14 @@
 From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
 Subject: Re: [PATCH] pid: improved namespaced iteration over processes list
-Date: Mon, 15 Dec 2008 13:50:55 -0800
-Message-ID: <m14p159kg0.fsf@frodo.ebiederm.org>
+Date: Mon, 15 Dec 2008 13:47:03 -0800
+Message-ID: <m1bpvd9kmg.fsf@frodo.ebiederm.org>
 References: <1229359793-4029-1-git-send-email-gomuthuk@linux.vnet.ibm.com>
-	<1229365974.17206.190.camel@nimitz>
-	<20081215194603.GA11958@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20081215194603.GA11958-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org> (Sukadev Bhattiprolu's
-	message of "Mon, 15 Dec 2008 11:46:03 -0800")
+In-Reply-To: <1229359793-4029-1-git-send-email-gomuthuk-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+	(Gowrishankar M.'s message of "Mon, 15 Dec 2008 22:19:53 +0530")
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -20,27 +18,36 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Cc: containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Balbir <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+To: Gowrishankar M <gomuthuk-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Cc: containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Sukadev <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org, Balbir <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org> writes:
+Gowrishankar M <gomuthuk-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org> writes:
 
-> The obvious trade-off is with systems that don't use containers which
-> are porbably the majority at present. For them next_task() now becomes
-> more expensive (instead of a simply going to next item on list, they have
-> lookup in the pidmap, a lookup in  pid hash table followed by mapping the
-> pid back to task). I think there was a discussion once on this and the
-> conclusion was things like "kill sig -1" are inherently expensive.
+> Below patch addresses a common solution for any place where a process
+> should be checked if it is associated to caller namespace. At present,
+> we use 'task_pid_vnr(t) > 0' to further proceed with task 't' in current
+> namespace.
+>
+> To avoid applying this check in every code related to PID namespace,
+> this patch reworks on iterative macros;for_each_process and do_each_thread.
 
-Cost wise it would be worth measuring.  I have a report that when that
-change was made to /proc readdir in /proc sped up.
+Which is just wrong.  Most of the time when we call for_each_process
+and do_each_thread we are iterating through them for kernel internal purposes
+not because of a user space request.
 
-The problem that I see is that changing generic methods is not generally
-applicable.
+> This patch can also reduce latency time on process list lookup inside the
+> container, as we walk along pidmap, instead of every process in system.
 
-> Do you need these to be optimized for containers for some other reason ?
+I support walking pidmap, in those cases where it makes sense.  kill -1
+in particular.
 
-A good question.
+But I don't think there are any significant unconverted instances of
+that problem.
+
+So specific helpers to do the job is fine (if the problem is more general
+than kill -1) but changing the generic helpers looks like a good way
+to introduce lots of subtle bugs into the kernel.  So different names
+please.
 
 Eric
