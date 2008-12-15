@@ -1,17 +1,14 @@
-From: Grzegorz Nosek <root-AfQBxy1nhrQ00sYp1HPQUA@public.gmane.org>
-Subject: Re: ns_can_attach (nsproxy cgroup)
-Date: Sun, 14 Dec 2008 15:06:04 +0100
-Message-ID: <20081214140604.GA22768@megiteam.pl>
-References: <20081212095153.GA20956@megiteam.pl>
-	<20081212140908.GA9571@us.ibm.com>
-	<20081212213042.GA23581@megiteam.pl>
-	<49435E58.9050209@cn.fujitsu.com>
+From: robert.rex-GD4dBWQXeU/QT0dZR+AlfA@public.gmane.org
+Subject: Re: [Bug 12199] /proc/1/exe entry of PID namespace init process links
+	to wrong executable
+Date: Mon, 15 Dec 2008 08:29:49 +0100
+Message-ID: <4946076D.7040707@exasol.com>
+References: <20081212015652.1417810800F@picon.linux-foundation.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <49435E58.9050209-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+In-Reply-To: <20081212015652.1417810800F-Z5GJRQsCWgtQetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -21,31 +18,28 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Grzegorz Nosek <root-AfQBxy1nhrQ00sYp1HPQUA@public.gmane.org>
+To: akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org
+Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org, bugme-daemon-590EEB7GvNiWaY/ihj7yzEB+6BGkLq7r@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On sob, gru 13, 2008 at 03:03:52 +0800, Li Zefan wrote:
-> >  /**
-> > - * cgroup_is_descendant - see if @cgrp is a descendant of current task's cgrp
-> > + * cgroup_is_descendant - see if @cgrp is a descendant of @task's cgrp
-> >   * @cgrp: the cgroup in question
-> > + * @task: the task in question
-> > + * @subsys_id: cgroup subsystem id used to determine hierarchy; if negative,
-> > + * 		use get_first_subsys()
-> 
-> The last argument is redundant.
-> 
+ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org wrote:
+> http://bugzilla.kernel.org/show_bug.cgi?id=12199
 > [...]
+> You specified NEWNS  in your clone flags, creating a new mount namespace
+> as well.
 > 
-> It makes no difference with:
-> 	if (!cgroup_is_descendant(new_cgroup, task, -1))
+> Your executable came from a different mount namespace and thus has a different
+> set of mounts.  Which defeats the logic in d_path to honor current->fs->root
+> because your executable came from a different universe.
 > 
-> That's why we don't need argument 'subsys_id'.
+> No bugs here just weird corner cases with the mount namespace.
+> 
+> Eric
 
-Thanks, I thought so (the "first" subsys_id looked arbitrary to me) but not knowing
-the cgroup internals I wanted to preserve the original code as much as possible.
-Will update the patch.
+Thanks for your analysis! That sounds reasonable (I didn't recognize the 
+use of CLONE_NEWNS - just pasting from the examples ;-) - but I needed 
+it to mount a proc filesystem in the new PID namespace while using the 
+other one "outside"). So, I may not count on the /proc/{PID}/exe link 
+anymore in such cases as far as I see.
 
-Best regards,
- Grzegorz Nosek
+Robert
