@@ -1,48 +1,113 @@
-From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: Re: [PATCH] pid: improved namespaced iteration over processes list
-Date: Mon, 15 Dec 2008 11:46:03 -0800
-Message-ID: <20081215194603.GA11958@us.ibm.com>
-References: <1229359793-4029-1-git-send-email-gomuthuk@linux.vnet.ibm.com>
-	<1229365974.17206.190.camel@nimitz>
+From: "Serge E. Hallyn" <serue@us.ibm.com>
+Subject: Re: [PATCH 2/2] pid: Generalize task_active_pid_ns
+Date: Mon, 15 Dec 2008 13:49:11 -0600
+Message-ID: <20081215194911.GA20166@us.ibm.com>
+References: <20081213023144.GA3951@us.ibm.com> <20081213023625.GB4147@us.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Content-Type: text/plain; charset=us-ascii
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1755736AbYLOTtk@vger.kernel.org>
 Content-Disposition: inline
-In-Reply-To: <1229365974.17206.190.camel@nimitz>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Cc: containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Balbir <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org
+In-Reply-To: <20081213023625.GB4147@us.ibm.com>
+Sender: linux-kernel-owner@vger.kernel.org
+To: Sukadev Bhattiprolu <sukadev@linux.vnet.ibm.com>
+Cc: Andrew Morton <akpm@osdl.org>, bastian@waldi.eu.org, linux-kernel@vger.kernel.org, "Eric W. Biederman" <ebiederm@xmission.com>, Containers <containers@lists.osdl.org>, Oleg Nesterov <oleg@tv-sign.ru>, roland@redhat.com, Pavel Emelyanov <xemul@openvz.org>
 List-Id: containers.vger.kernel.org
 
-Dave Hansen [dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org] wrote:
-| On Mon, 2008-12-15 at 22:19 +0530, Gowrishankar M wrote:
-| > Below patch addresses a common solution for any place where a process
-| > should be checked if it is associated to caller namespace. At present,
-| > we use 'task_pid_vnr(t) > 0' to further proceed with task 't' in current
-| > namespace.
-| > 
-| > To avoid applying this check in every code related to PID namespace,
-| > this patch reworks on iterative macros;for_each_process and do_each_thread.
-| > 
-| > This patch can also reduce latency time on process list lookup inside the
-| > container, as we walk along pidmap, instead of every process in system.
+Quoting Sukadev Bhattiprolu (sukadev@linux.vnet.ibm.com):
+> From: Sukadev Bhattiprolu <sukadev@linux.vnet.ibm.com>
+> Date: Fri, 12 Dec 2008 11:49:27 -0800
+> Subject: [PATCH 2/2] pid: Generalize task_active_pid_ns
+> 
+> Currently task_active_pid_ns is not safe to call after a
+> task becomes a zombie and exit_task_namespaces is called,
+> as nsproxy becomes NULL.  By reading the pid namespace from
+> the pid of the task we can trivially solve this problem at
+> the cost of one extra memory read in what should be the
+> same cacheline as we read the namespace from.
+> 
+> When moving things around I have made task_active_pid_ns
+> out of line because keeping it in pid_namespace.h would
+> require adding includes of pid.h and sched.h that I
+> don't think we want.
+> 
+> This change does make task_active_pid_ns unsafe to call during
+> copy_process until we attach a pid on the task_struct which
+> seems to be a reasonable trade off.
 
-The obvious trade-off is with systems that don't use containers which
-are porbably the majority at present. For them next_task() now becomes
-more expensive (instead of a simply going to next item on list, they have
-lookup in the pidmap, a lookup in  pid hash table followed by mapping the
-pid back to task). I think there was a discussion once on this and the
-conclusion was things like "kill sig -1" are inherently expensive.
+Yeah that's not really much of a tradeoff...  the text for those
+lines gets shorter!  :)
 
-Do you need these to be optimized for containers for some other reason ?
+Acked-by: Serge Hallyn <serue@us.ibm.com>
 
-Sukadev
+(to all three)
+
+thanks,
+-serge
+
+> Signed-off-by: Eric W. Biederman <ebiederm@xmission.com>
+> ---
+>  include/linux/pid_namespace.h |    6 +-----
+>  kernel/fork.c                 |    4 ++--
+>  kernel/pid.c                  |    6 ++++++
+>  3 files changed, 9 insertions(+), 7 deletions(-)
+> 
+> diff --git a/include/linux/pid_namespace.h b/include/linux/pid_namespace.h
+> index d82fe82..38d1032 100644
+> --- a/include/linux/pid_namespace.h
+> +++ b/include/linux/pid_namespace.h
+> @@ -79,11 +79,7 @@ static inline void zap_pid_ns_processes(struct pid_namespace *ns)
+>  }
+>  #endif /* CONFIG_PID_NS */
+> 
+> -static inline struct pid_namespace *task_active_pid_ns(struct task_struct *tsk)
+> -{
+> -	return tsk->nsproxy->pid_ns;
+> -}
+> -
+> +extern struct pid_namespace *task_active_pid_ns(struct task_struct *tsk);
+>  void pidhash_init(void);
+>  void pidmap_init(void);
+> 
+> diff --git a/kernel/fork.c b/kernel/fork.c
+> index dba2d3f..9fa1d91 100644
+> --- a/kernel/fork.c
+> +++ b/kernel/fork.c
+> @@ -1100,12 +1100,12 @@ static struct task_struct *copy_process(unsigned long clone_flags,
+> 
+>  	if (pid != &init_struct_pid) {
+>  		retval = -ENOMEM;
+> -		pid = alloc_pid(task_active_pid_ns(p));
+> +		pid = alloc_pid(p->nsproxy->pid_ns);
+>  		if (!pid)
+>  			goto bad_fork_cleanup_io;
+> 
+>  		if (clone_flags & CLONE_NEWPID) {
+> -			retval = pid_ns_prepare_proc(task_active_pid_ns(p));
+> +			retval = pid_ns_prepare_proc(p->nsproxy->pid_ns);
+>  			if (retval < 0)
+>  				goto bad_fork_free_pid;
+>  		}
+> diff --git a/kernel/pid.c b/kernel/pid.c
+> index 064e76a..c5513fe 100644
+> --- a/kernel/pid.c
+> +++ b/kernel/pid.c
+> @@ -474,6 +474,12 @@ pid_t task_session_nr_ns(struct task_struct *tsk, struct pid_namespace *ns)
+>  }
+>  EXPORT_SYMBOL(task_session_nr_ns);
+> 
+> +struct pid_namespace *task_active_pid_ns(struct task_struct *tsk)
+> +{
+> +	return ns_of_pid(task_pid(tsk));
+> +}
+> +EXPORT_SYMBOL_GPL(task_active_pid_ns);
+> +
+>  /*
+>   * Used by proc to find the first pid that is greater then or equal to nr.
+>   *
+> -- 
+> 1.5.2.5
+> 
+> _______________________________________________
+> Containers mailing list
+> Containers@lists.linux-foundation.org
+> https://lists.linux-foundation.org/mailman/listinfo/containers
