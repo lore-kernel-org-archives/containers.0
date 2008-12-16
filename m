@@ -1,14 +1,13 @@
-From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [RFC patch 0/2] posix mqueue namespace (v11)
-Date: Tue, 16 Dec 2008 09:14:19 -0600
-Message-ID: <20081216151419.GB9607@us.ibm.com>
-References: <20081215233747.GA27553@us.ibm.com> <4947629D.9040807@fr.ibm.com>
+From: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Subject: Re: [RFC v11][PATCH 00/13] Kernel based checkpoint/restart
+Date: Tue, 16 Dec 2008 10:43:32 -0800
+Message-ID: <1229453012.17206.322.camel__37671.7880405069$1229453193$gmane$org@nimitz>
+References: <1228498282-11804-1-git-send-email-orenl@cs.columbia.edu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <4947629D.9040807-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <1228498282-11804-1-git-send-email-orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -18,102 +17,194 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Cedric Le Goater <clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
-Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
+To: akpm <akpm-hQyY1W1yCW8ekmWlsbkhG0B+6BGkLq7r@public.gmane.org>
+Cc: jeremy-TSDbQ3PG+2Y@public.gmane.org, arnd-r2nGTMty4D4@public.gmane.org, linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Linux Torvalds <torvalds-3NddpPZAyC0@public.gmane.org>, Alexander Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, "H. Peter Anvin" <hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org>, Thomas Gleixner <tglx-hfZtesqFncYOwBW4kG4KsQ@public.gmane.org>, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Quoting Cedric Le Goater (clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org):
-> Serge E. Hallyn wrote:
-> > (Ok I don't know what the actual version number is - it's
-> > high but 11 is probably safe)
-> > 
-> > Cedric and Nadia took several approaches to making posix
-> > message queues per-namespace.  I ended up mamking some
-> > deep changes so am not retaining their Signed-off-by:s
-> > on this version, but this is definately very much based
-> > on work by both of them.
+Andrew,
+
+I just realized that you weren't cc'd on these when they were posted.
+
+Can we give them a run in -mm?  As far as I know, all review comments
+have been addressed and there's nothing outstanding.
+
+On Fri, 2008-12-05 at 12:31 -0500, Oren Laadan wrote:
+> Checkpoint-restart (c/r): fixed races in file handling (comments from
+> from Al Viro). Updated and tested against v2.6.28-rc7 (feaf384...)
 > 
-> you can keep mine. i have had a similar version on 2.6.26. 
+> We'd like these to make it into -mm. This version addresses the
+> last of the known bugs. Please pull at least the first 11 patches,
+> as they are similar to before.
 > 
-> http://legoater.free.fr/patches/2.6.26/2.6.26/
+> Patches 1-11 are stable, providing self- and external- c/r of a
+> single process.
+> Patches 12 and 13 are newer, adding support for c/r of multiple
+> processes.
 > 
-> and it's easier to track where the patches go.
+> The git tree tracking v11, branch 'ckpt-v11' (and older versions):
+> 	git://git.ncl.cs.columbia.edu/pub/git/linux-cr.git
 > 
-> > Patch 2 hopefully explains my approach.  Briefly,
-
-Thanks, Cedric, will put those back.
-
-> > 	1. sysv and posix ipc are both under CLONE_NEWIPC
-> > 	2. the mqueue sb is per-ipc-namespace
-> > 
-> > So to create a new ipc namespace, you would
-> > 
-> > 	unshare(CLONE_NEWIPC|CLONE_NEWNS);
+> Restarting multiple processes requires 'mktree' userspace tool:
+> 	git://git.ncl.cs.columbia.edu/pub/git/user-cr.git
 > 
-> does CLONE_NEWIPC requires CLONE_NEWNS ? 
-
-No, the mq_* syscalls don't need the fs to be actually mounted,
-and a container could just chroot("/vs1"); and mount -t mqueue
-under /vs1/dev/mqueue, not requiring a new mounts namespace.
-
-> > 	umount /dev/mqueue
-> > 	mount -t mqueue mqueue /dev/mqueue
+> Oren.
 > 
-> the semantic looks good, much better than a 'newinstance' mount 
-> option.
-
-Agreed.  newinstance works for a pure filesystem like devpts,
-but it simply isn't a good fit for mqueue.
-
-> if CLONE_NEWNS is not required, what happens to the user mount (and
-> the mq_ns below it) when the task dies. that's the big issue. if 
-> CLONE_NEWNS is required were safe, but I think Pavel made
-> some objection to that. 
-
-(Huh, I just noticed get_ns_from_sb() doesn't seem to be called
-anywhere <scribble><scribble>)
-
-Short version:
-The user mount hangs around until someone umounts it.  Now of course
-I expect that most users WILL want to do CLONE_NEWIPC|CLONE_NEWNS.
-
-Long version:
-Any VFS actions through mqueuefs will do:
-	spin_lock(&mq_lock);
-	ipc_ns = get_ipc_ns(inode->i_sb->s_fs_info);
-	spin_unlock(&mq_lock);
-where s_fs_info is the ipc_ns.  Freeing an ipc_ns does
-	if (atomic_dec_and_lock(&ipc_ns->count, &mq_lock)) {
-		mq_ns->mnt->mnt_sb->s_fs_info = NULL;
-		spin_unlock(&mq_lock);
-		mntput(mq_ns->mnt);
-	}
-
-So if a vfs_create() by a task in another ipc_ns is racing with the
-task exit of the last task in the ipc_ns, then either
-	1. the vfs_create() manages to pin the ipc_ns before
-	   the other task exits.  So the task exit won't
-	   free the ipc_ns.  The put_ipc_ns() at the end
-	   of vfs_create() will.
-or
-	2. the task exits first, vfs_create() finds
-	   s_fs_info NULL, and returns -EACCES.  Unlink
-	   simply succeeds.
-
-Pavel, please let me know if you have issues with my approach.
-
-> > It's perfectly valid to do vfs operations on files
-> > in another ipc_namespace's /dev/mqueue, but any use
-> > of mq_open(3) and friends will act in your own ipc_ns.
 > 
-> ok.
-
-Nadia had written a cool set of ltp tests.  They were based
-around the mount -o newinstance semantics so i'll have to
-see which ones are still relevant and rework some others,
-then will post them and repost the kernel patchset.
-
-Thanks for taking a look, Cedric, and for getting this set
-going before.
-
--serge
+> --
+> Why do we want it?  It allows containers to be moved between physical
+> machines' kernels in the same way that VMWare can move VMs between
+> physical machines' hypervisors.  There are currently at least two
+> out-of-tree implementations of this in the commercial world (IBM's
+> Metacluster and Parallels' OpenVZ/Virtuozzo) and several in the academic
+> world like Zap.
+> 
+> Why do we need it in mainline now?  Because we already have plenty of
+> out-of-tree ones, and  want to know what an in-tree one will be like.   :)  
+> What *I* want right now is the extra review and scrutiny that comes with
+> a mainline submission to make sure we're not going in a direction
+> contrary to the community.
+> 
+> This only supports pretty simple apps.  But, I trust Ingo when he says:
+> >> > > Generally, if something works for simple apps already (in a robust, 
+> >> > > compatible and supportable way) and users find it "very cool", then 
+> >> > > support for more complex apps is not far in the future.  but if you
+> >> > > want to support more complex apps straight away, it takes forever and
+> >> > > gets ugly.
+> 
+> We're *certainly* going to be changing the ABI (which is the format of
+> the checkpoint).  I'd like to follow the model that we used for
+> ext4-dev, which is to make it very clear that this is a development-only
+> feature for now.  Perhaps we do that by making the interface only
+> available through debugfs or something similar for now.  Or, reserving
+> the syscall numbers but require some runtime switch to be thrown before
+> they can be used.  I'm open to suggestions here.
+> --
+> 
+> --
+> Todo:
+> - Add support for x86-64 and improve ABI
+> - Refine or change syscall interface
+> - Handle multiple namespaces in a container (e.g. save the filesystem
+>   namespaces state with the file descriptors)
+> - Security (without CAPS_SYS_ADMIN files restore may fail)
+> 
+> Changelog:
+> 
+> [2008-Dec-05] v11:
+>   - Use contents of 'init->fs->root' instead of pointing to it
+>   - Ignore symlinks (there is no such thing as an open symlink)
+>   - cr_scan_fds() retries from scratch if it hits size limits
+>   - Add missing test for VM_MAYSHARE when dumping memory
+>   - Improve documentation about: behavior when tasks aren't fronen,
+>     life span of the object hash, references to objects in the hash
+> 
+> [2008-Nov-26] v10:
+>   - Grab vfs root of container init, rather than current process
+>   - Acquire dcache_lock around call to __d_path() in cr_fill_name()
+>   - Force end-of-string in cr_read_string() (fix possible DoS)
+>   - Introduce cr_write_buffer(), cr_read_buffer() and cr_read_buf_type()
+> 
+> [2008-Nov-10] v9:
+>   - Support multiple processes c/r
+>   - Extend checkpoint header with archtiecture dependent header 
+>   - Misc bug fixes (see individual changelogs)
+>   - Rebase to v2.6.28-rc3.
+> 
+> [2008-Oct-29] v8:
+>   - Support "external" checkpoint
+>   - Include Dave Hansen's 'deny-checkpoint' patch
+>   - Split docs in Documentation/checkpoint/..., and improve contents
+> 
+> [2008-Oct-17] v7:
+>   - Fix save/restore state of FPU
+>   - Fix argument given to kunmap_atomic() in memory dump/restore
+> 
+> [2008-Oct-07] v6:
+>   - Balance all calls to cr_hbuf_get() with matching cr_hbuf_put()
+>     (even though it's not really needed)
+>   - Add assumptions and what's-missing to documentation
+>   - Misc fixes and cleanups
+> 
+> [2008-Sep-11] v5:
+>   - Config is now 'def_bool n' by default
+>   - Improve memory dump/restore code (following Dave Hansen's comments)
+>   - Change dump format (and code) to allow chunks of <vaddrs, pages>
+>     instead of one long list of each
+>   - Fix use of follow_page() to avoid faulting in non-present pages
+>   - Memory restore now maps user pages explicitly to copy data into them,
+>     instead of reading directly to user space; got rid of mprotect_fixup()
+>   - Remove preempt_disable() when restoring debug registers
+>   - Rename headers files s/ckpt/checkpoint/
+>   - Fix misc bugs in files dump/restore
+>   - Fixes and cleanups on some error paths
+>   - Fix misc coding style
+> 
+> [2008-Sep-09] v4:
+>   - Various fixes and clean-ups
+>   - Fix calculation of hash table size
+>   - Fix header structure alignment
+>   - Use stand list_... for cr_pgarr
+> 
+> [2008-Aug-29] v3:
+>   - Various fixes and clean-ups
+>   - Use standard hlist_... for hash table
+>   - Better use of standard kmalloc/kfree
+> 
+> [2008-Aug-20] v2:
+>   - Added Dump and restore of open files (regular and directories)
+>   - Added basic handling of shared objects, and improve handling of
+>     'parent tag' concept
+>   - Added documentation
+>   - Improved ABI, 64bit padding for image data
+>   - Improved locking when saving/restoring memory
+>   - Added UTS information to header (release, version, machine)
+>   - Cleanup extraction of filename from a file pointer
+>   - Refactor to allow easier reviewing
+>   - Remove requirement for CAPS_SYS_ADMIN until we come up with a
+>     security policy (this means that file restore may fail)
+>   - Other cleanup and response to comments for v1
+> 
+> [2008-Jul-29] v1:
+>   - Initial version: support a single task with address space of only
+>     private anonymous or file-mapped VMAs; syscalls ignore pid/crid
+>     argument and act on current process.
+> 
+> --
+> At the containers mini-conference before OLS, the consensus among
+> all the stakeholders was that doing checkpoint/restart in the kernel
+> as much as possible was the best approach.  With this approach, the
+> kernel will export a relatively opaque 'blob' of data to userspace
+> which can then be handed to the new kernel at restore time.
+> 
+> This is different than what had been proposed before, which was
+> that a userspace application would be responsible for collecting
+> all of this data.  We were also planning on adding lots of new,
+> little kernel interfaces for all of the things that needed
+> checkpointing.  This unites those into a single, grand interface.
+> 
+> The 'blob' will contain copies of select portions of kernel
+> structures such as vmas and mm_structs.  It will also contain
+> copies of the actual memory that the process uses.  Any changes
+> in this blob's format between kernel revisions can be handled by
+> an in-userspace conversion program.
+> 
+> This is a similar approach to virtually all of the commercial
+> checkpoint/restart products out there, as well as the research
+> project Zap.
+> 
+> These patches basically serialize internel kernel state and write
+> it out to a file descriptor.  The checkpoint and restore are done
+> with two new system calls: sys_checkpoint and sys_restart.
+> 
+> In this incarnation, they can only work checkpoint and restore a
+> single task. The task's address space may consist of only private,
+> simple vma's - anonymous or file-mapped. The open files may consist
+> of only simple files and directories.
+> --
+> 
+> --
+> To unsubscribe, send a message with 'unsubscribe linux-mm' in
+> the body to majordomo-Bw31MaZKKs0EbZ0PF+XxCw@public.gmane.org  For more info on Linux MM,
+> see: http://www.linux-mm.org/ .
+> Don't email: <a href=mailto:"dont-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org"> email-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org </a>
+-- Dave
