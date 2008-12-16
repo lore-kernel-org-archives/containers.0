@@ -1,18 +1,16 @@
-From: Grzegorz Nosek <root-AfQBxy1nhrQ00sYp1HPQUA@public.gmane.org>
-Subject: Re: ns_can_attach (nsproxy cgroup)
-Date: Wed, 17 Dec 2008 00:08:08 +0100
-Message-ID: <20081216230808.GA26026@megiteam.pl>
-References: <20081212095153.GA20956@megiteam.pl>
-	<20081212140908.GA9571@us.ibm.com>
-	<20081212213042.GA23581@megiteam.pl>
-	<49435E58.9050209@cn.fujitsu.com>
-	<20081214140604.GA22768@megiteam.pl>
+From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Subject: Re: [RFC v11][PATCH 03/13] General infrastructure for checkpoint
+	restart
+Date: Tue, 16 Dec 2008 18:42:57 -0500
+Message-ID: <49483D01.1050603__26257.5482171544$1229471206$gmane$org@cs.columbia.edu>
+References: <1228498282-11804-1-git-send-email-orenl@cs.columbia.edu>	
+	<1228498282-11804-4-git-send-email-orenl@cs.columbia.edu>	
+	<49482394.10006@google.com> <1229465641.17206.350.camel@nimitz>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <20081214140604.GA22768-yp6mvK3Bdd2rDJvtcaxF/A@public.gmane.org>
+In-Reply-To: <1229465641.17206.350.camel@nimitz>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -22,148 +20,121 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Grzegorz Nosek <root-AfQBxy1nhrQ00sYp1HPQUA@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Cc: jeremy-TSDbQ3PG+2Y@public.gmane.org, arnd-r2nGTMty4D4@public.gmane.org, linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Linux Torvalds <torvalds-3NddpPZAyC0@public.gmane.org>, Alexander Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, "H. Peter Anvin" <hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org>, Thomas Gleixner <tglx-hfZtesqFncYOwBW4kG4KsQ@public.gmane.org>, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On nie, gru 14, 2008 at 03:06:04 +0100, Grzegorz Nosek wrote:
-> On sob, gru 13, 2008 at 03:03:52 +0800, Li Zefan wrote:
-> > >  /**
-> > > - * cgroup_is_descendant - see if @cgrp is a descendant of current task's cgrp
-> > > + * cgroup_is_descendant - see if @cgrp is a descendant of @task's cgrp
-> > >   * @cgrp: the cgroup in question
-> > > + * @task: the task in question
-> > > + * @subsys_id: cgroup subsystem id used to determine hierarchy; if negative,
-> > > + * 		use get_first_subsys()
-> > 
-> > The last argument is redundant.
-> > 
-> > [...]
-> > 
-> > It makes no difference with:
-> > 	if (!cgroup_is_descendant(new_cgroup, task, -1))
-> > 
-> > That's why we don't need argument 'subsys_id'.
+
+
+Dave Hansen wrote:
+> On Tue, 2008-12-16 at 13:54 -0800, Mike Waychison wrote:
+>> Oren Laadan wrote:
+>>> diff --git a/checkpoint/sys.c b/checkpoint/sys.c
+>>> index 375129c..bd14ef9 100644
+>>> --- a/checkpoint/sys.c
+>>> +++ b/checkpoint/sys.c
+>>> +/*
+>>> + * During checkpoint and restart the code writes outs/reads in data
+>>> + * to/from the checkpoint image from/to a temporary buffer (ctx->hbuf).
+>>> + * Because operations can be nested, use cr_hbuf_get() to reserve space
+>>> + * in the buffer, then cr_hbuf_put() when you no longer need that space.
+>>> + */
+>> This seems a bit over-kill for buffer management no?  The only large 
+>> header seems to be cr_hdr_head and the blowup comes from utsinfo string 
+>> data (which could easily be moved out to be in it's own CR_HDR_STRING 
+>> blocks).
+>>
+>> Wouldn't it be easier to use stack-local storage than balancing the 
+>> cr_hbuf_get/put routines?
 > 
-> Thanks, I thought so (the "first" subsys_id looked arbitrary to me) but not knowing
-> the cgroup internals I wanted to preserve the original code as much as possible.
-> Will update the patch.
+> I've asked the same question, so I'll give you Oren's response that I
+> remember:
+> 
+> cr_hbuf_get/put() are more of an API that we can use later.  For now,
+> those buffers really are temporary.  But, in a case where we want to do
+> a really fast checkpoint (to reduce "downtime" during the checkpoint) we
+> store the image entirely in kernel memory to be written out later.
 
-As promised, here's the updated patch.
+Precisely.
 
-From 2abb608222f3dfd1c5da3022a75c824f2b00b3f5 Mon Sep 17 00:00:00 2001
-From: Grzegorz Nosek <root-AfQBxy1nhrQ00sYp1HPQUA@public.gmane.org>
-Date: Fri, 12 Dec 2008 21:48:09 +0100
-Subject: [PATCH] Relax ns_can_attach checks to allow attaching to grandchild cgroups
+Note that by "store the image entirely" we mean everything that cannot
+be saved COW - so memory pages are not duplicated; the rest of the data
+tends to take less than 5-10% of the total size.
 
-The ns_proxy cgroup allows moving processes to child cgroups only one
-level deep at a time. This commit relaxes this restriction and makes it
-possible to attach tasks directly to grandchild cgroups, e.g.:
+Buffering the checkpoint image in kernel is useful to reduce downtime
+during checkpoint, and also useful for super-fast rollback of a task
+(or container) by always keeping everything in memory.
 
-($pid is in the root cgroup)
-echo $pid > /cgroup/CG1/CG2/tasks
+This abstraction is also useful for restart, e.g. to implement read-ahead
+of the checkpoint image into the kernel.
 
-Previously this operation would fail with -EPERM and would have to be
-performed as two steps:
-echo $pid > /cgroup/CG1/tasks
-echo $pid > /cgroup/CG1/CG2/tasks
+Note also that in the future we will have larger headers (e.g. to record
+the state of a socket), and there may be some nested calls (e.g. to dump
+a connected unix-domain socket we will want to first save the "parent"
+listening socket, and also there is nesting in restart).
 
-Signed-off-by: Grzegorz Nosek <root-AfQBxy1nhrQ00sYp1HPQUA@public.gmane.org>
----
- include/linux/cgroup.h |    4 ++--
- kernel/cgroup.c        |   12 +++++++-----
- kernel/ns_cgroup.c     |    9 +++------
- 3 files changed, 12 insertions(+), 13 deletions(-)
+Instead of using the stack for some headers and memory allocation for
+other headers, this abstraction provides a standard interface for all
+checkpoint/restart code (and the actual implementation may vary for
+different purposes).
 
-diff --git a/include/linux/cgroup.h b/include/linux/cgroup.h
-index 1ba3ded..53188f5 100644
---- a/include/linux/cgroup.h
-+++ b/include/linux/cgroup.h
-@@ -301,8 +301,8 @@ int cgroup_path(const struct cgroup *cgrp, char *buf, int buflen);
- 
- int cgroup_task_count(const struct cgroup *cgrp);
- 
--/* Return true if the cgroup is a descendant of the current cgroup */
--int cgroup_is_descendant(const struct cgroup *cgrp);
-+/* Return true if cgrp is a descendant of the task's cgroup */
-+int cgroup_is_descendant(const struct cgroup *cgrp, struct task_struct *task);
- 
- /* Control Group subsystem type. See Documentation/cgroups.txt for details */
- 
-diff --git a/kernel/cgroup.c b/kernel/cgroup.c
-index 2ae040d..5512d78 100644
---- a/kernel/cgroup.c
-+++ b/kernel/cgroup.c
-@@ -3101,18 +3101,19 @@ int cgroup_clone(struct task_struct *tsk, struct cgroup_subsys *subsys,
- }
- 
- /**
-- * cgroup_is_descendant - see if @cgrp is a descendant of current task's cgrp
-+ * cgroup_is_descendant - see if @cgrp is a descendant of @task's cgrp
-  * @cgrp: the cgroup in question
-+ * @task: the task in question
-  *
-- * See if @cgrp is a descendant of the current task's cgroup in
-- * the appropriate hierarchy.
-+ * See if @cgrp is a descendant of @task's cgroup in the appropriate
-+ * hierarchy.
-  *
-  * If we are sending in dummytop, then presumably we are creating
-  * the top cgroup in the subsystem.
-  *
-  * Called only by the ns (nsproxy) cgroup.
-  */
--int cgroup_is_descendant(const struct cgroup *cgrp)
-+int cgroup_is_descendant(const struct cgroup *cgrp, struct task_struct *task)
- {
- 	int ret;
- 	struct cgroup *target;
-@@ -3122,7 +3123,8 @@ int cgroup_is_descendant(const struct cgroup *cgrp)
- 		return 1;
- 
- 	get_first_subsys(cgrp, NULL, &subsys_id);
--	target = task_cgroup(current, subsys_id);
-+	target = task_cgroup(task, subsys_id);
-+
- 	while (cgrp != target && cgrp!= cgrp->top_cgroup)
- 		cgrp = cgrp->parent;
- 	ret = (cgrp == target);
-diff --git a/kernel/ns_cgroup.c b/kernel/ns_cgroup.c
-index 43c2111..d99b4cc 100644
---- a/kernel/ns_cgroup.c
-+++ b/kernel/ns_cgroup.c
-@@ -46,21 +46,18 @@ int ns_cgroup_clone(struct task_struct *task, struct pid *pid)
- static int ns_can_attach(struct cgroup_subsys *ss,
- 		struct cgroup *new_cgroup, struct task_struct *task)
- {
--	struct cgroup *orig;
--
- 	if (current != task) {
- 		if (!capable(CAP_SYS_ADMIN))
- 			return -EPERM;
- 
--		if (!cgroup_is_descendant(new_cgroup))
-+		if (!cgroup_is_descendant(new_cgroup, current))
- 			return -EPERM;
- 	}
- 
- 	if (atomic_read(&new_cgroup->count) != 0)
- 		return -EPERM;
- 
--	orig = task_cgroup(task, ns_subsys_id);
--	if (orig && orig != new_cgroup->parent)
-+	if (!cgroup_is_descendant(new_cgroup, task))
- 		return -EPERM;
- 
- 	return 0;
-@@ -78,7 +75,7 @@ static struct cgroup_subsys_state *ns_create(struct cgroup_subsys *ss,
- 
- 	if (!capable(CAP_SYS_ADMIN))
- 		return ERR_PTR(-EPERM);
--	if (!cgroup_is_descendant(cgroup))
-+	if (!cgroup_is_descendant(cgroup, current))
- 		return ERR_PTR(-EPERM);
- 
- 	ns_cgroup = kzalloc(sizeof(*ns_cgroup), GFP_KERNEL);
--- 
-1.5.4.4
+> 
+> In that case, cr_hbuf_put() stops doing anything at all because we keep
+> the memory around.
+> 
+> cr_hbuf_get() becomes, "I need some memory to write some checkpointy
+> things into".
+> 
+> cr_hbuf_put() becomes, "I'm done with this for now, only keep it if
+> someone else needs it."
+> 
+> This might all be a lot clearer if we just kept some more explicit
+> accounting around about who is using the objects.  Something like:
+> 
+> struct cr_buf {
+> 	struct kref ref;
+> 	int size;
+> 	char buf[0];
+> };
+> 
+> /* replaces cr_hbuf_get() */
+> struct cr_buf *alloc_cr_buf(int size, gfp_t flags)
+> {
+> 	struct cr_buf *buf;
+> 
+> 	buf = kmalloc(sizeof(cr_buf) + size, flags);
+> 	if (!buf)
+> 		return NULL;
+> 	buf->ref = 1; /* or whatever */
+> 	buf->size = size;
+> 	return buf;
+> }
+> 
+> int cr_kwrite(struct cr_buf *buf)
+> {
+> 	if (writing_checkpoint_now) {
+> 		// or whatever this write call was...
+> 		vfs_write(&buf->buf[0], buf->size);
+> 	} else if (deferring_write) {		
+> 		kref_get(buf->kref);
+> 	}
+> }
+
+Yes, something like that, except you can do without the reference count
+since the buffer is tied to 'struct cr_ctx'; so this is what I had in
+mind:
+
+In non-buffering mode - as it is now - cr_kwrite() will write the data out.
+
+In buffering mode (not implemented yet), cr_write() will either do nothing
+(if we borrow from the current code, that uses a temp buffer), or attach
+the 'struct cr_buf' to the 'struct cr_ctx' (if we borrow Dave's suggestion
+above).
+
+In buffering mode, we'll also need 'cr_writeout()' which will write out
+the entire buffer to the 'struct file'.  (This function will do nothing
+in non-buffering mode).
+
+Finally, the buffers will be freed when the 'struct cr_ctx' is cleaned.
+
+Oren.
