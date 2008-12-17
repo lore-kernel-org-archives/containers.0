@@ -1,16 +1,12 @@
-From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 2/2] ipc namespaces: implement support for posix msqueues
-Date: Wed, 17 Dec 2008 13:08:26 -0600
-Message-ID: <20081217190826.GA25890@us.ibm.com>
-References: <20081217175513.GA23291@us.ibm.com>
-	<20081217175549.GB23331@us.ibm.com>
-	<1229540099.17206.426.camel@nimitz>
+From: Gowrishankar M <gowrishankar.m-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Subject: [PATCH] cgroups: add task along with its threads in one shot inside
+	cgroup
+Date: Thu, 18 Dec 2008 02:00:26 +0530
+Message-ID: <1229545826-16978-1-git-send-email-gowrishankar.m@linux.vnet.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <1229540099.17206.426.camel@nimitz>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -20,36 +16,76 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, lkml <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+To: containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Cc: Gowrishankar M <gowrishankar.m-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, Dave <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, Eric <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Sukadev <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, Balbir <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Quoting Dave Hansen (dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org):
-> On Wed, 2008-12-17 at 11:55 -0600, Serge E. Hallyn wrote:
-> > -void free_ipc_ns(struct kref *kref)
-> > +void put_ipc_ns(struct ipc_namespace *ns)
-> >  {
-> > -       struct ipc_namespace *ns;
-> > +       if (ns && atomic_dec_and_lock(&ns->count, &mq_lock)) {
-> > +               mq_clear_sbinfo(ns);
-> > +               spin_unlock(&mq_lock);
-> > +               mq_put_mnt(ns);
-> > +               free_ipc_ns(ns);
-> > +       }
-> > +}
-> 
-> OK, I see now why you wanted to remove the kref and add an atomic_t.
-> That's probably worth a sentence in the patch description.
+From: Gowrishankar M <gomuthuk-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 
-Good point, will do.
+In current model, task by task we populate cgroup.
+Incase of multi-threaded task, it becomes difficult
+as we should first know about list of threads created
+and add them one by one in cgroup.
 
-> I know that atomic_dec_and_lock() can be a nice logical thing to do, but
-> is it necessary here?  Basically, is there something that happens under
-> mq_lock that can re-raise the ns->count?
+In below patch, when a thread group leader is scanned,
+belonging threads are also moved along with it, while
+populating cgroup tasks.
 
-A racing task from another ipc namespace can open a mq file through
-the VFS and thereby bump the ipc's refcount.  Will comment that here and
-in the patch description.
+Below steps can help to verify the patch:
+(1) mount -t cgroup -o cpuset cgroup /cgroup
+(2) /bin/mkdir /cgroup/testgroup and cd /cgroup/testgroup
+(3) /bin/echo 0 > cpuset.mems
+(4) /bin/echo 0 > cpuset.cpus
+(5) /bin/echo "<PID of thread group leader>" > tasks (tip: ps -aeL)
+(6) cat tasks and check for thread ids.
 
-thanks,
--serge
+Signed-off-by: Gowrishankar M <gowrishankar.m-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+---
+ kernel/cgroup.c |   17 ++++++++++-------
+ 1 files changed, 10 insertions(+), 7 deletions(-)
+
+diff --git a/kernel/cgroup.c b/kernel/cgroup.c
+index 35eebd5..de7f0cc 100644
+--- a/kernel/cgroup.c
++++ b/kernel/cgroup.c
+@@ -1279,6 +1279,7 @@ int cgroup_attach_task(struct cgroup *cgrp, struct task_struct *tsk)
+ static int attach_task_by_pid(struct cgroup *cgrp, u64 pid)
+ {
+ 	struct task_struct *tsk;
++	struct task_struct *p;
+ 	int ret;
+ 
+ 	if (pid) {
+@@ -1288,21 +1289,23 @@ static int attach_task_by_pid(struct cgroup *cgrp, u64 pid)
+ 			rcu_read_unlock();
+ 			return -ESRCH;
+ 		}
+-		get_task_struct(tsk);
+ 		rcu_read_unlock();
+ 
+ 		if ((current->euid) && (current->euid != tsk->uid)
+ 		    && (current->euid != tsk->suid)) {
+-			put_task_struct(tsk);
+ 			return -EACCES;
+ 		}
+-	} else {
++	} else
+ 		tsk = current;
+-		get_task_struct(tsk);
+-	}
+ 
+-	ret = cgroup_attach_task(cgrp, tsk);
+-	put_task_struct(tsk);
++	p = tsk;
++	do {
++		get_task_struct(p);
++		ret = cgroup_attach_task(cgrp, p);
++		put_task_struct(p);
++		if (thread_group_empty(p) && !(has_group_leader_pid(p)))
++			break;
++	} while_each_thread(tsk, p);
+ 	return ret;
+ }
+ 
+-- 
+1.5.5.1
