@@ -1,255 +1,172 @@
-From: "Serge E. Hallyn" <serue@us.ibm.com>
-Subject: [LTP PATCH 3/4] posix mqns: test vfs and mq interaction
-Date: Wed, 17 Dec 2008 11:58:07 -0600
-Message-ID: <20081217175807.GE23331@us.ibm.com>
+From: Dave Hansen <dave@linux.vnet.ibm.com>
+Subject: Re: [PATCH 1/2] mqueue ns: move mqueue_mnt into struct
+	ipc_namespace
+Date: Wed, 17 Dec 2008 10:36:04 -0800
+Message-ID: <1229538964.17206.421.camel@nimitz>
 References: <20081217175513.GA23291@us.ibm.com>
+	 <20081217175531.GA23331@us.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1752340AbYLQR6j@vger.kernel.org>
-Content-Disposition: inline
-In-Reply-To: <20081217175513.GA23291@us.ibm.com>
+Content-Type: text/plain
+Content-Transfer-Encoding: 7bit
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1752122AbYLQSgY@vger.kernel.org>
+In-Reply-To: <20081217175531.GA23331@us.ibm.com>
 Sender: linux-kernel-owner@vger.kernel.org
-To: lkml <linux-kernel@vger.kernel.org>
-Cc: Linux Containers <containers@lists.osdl.org>, Subrata Modak1 <subrata.modak@in.ibm.com>
+To: "Serge E. Hallyn" <serue@us.ibm.com>
+Cc: lkml <linux-kernel@vger.kernel.org>, Linux Containers <containers@lists.osdl.org>
 List-Id: containers.vger.kernel.org
 
-Test that the interaction between mqueuefs and ipc namespaces
-is correct (one mqueuefs for each ipc namespace, living at least
-as long as the namespace)
+On Wed, 2008-12-17 at 11:55 -0600, Serge E. Hallyn wrote:
+> Move mqueue vfsmount plus a few tunables into the
+> ipc_namespace struct.  The CONFIG_IPC_NS boolean
+> and the ipc_namespace struct will serve both the
+> posix message queue namespaces and the SYSV ipc
+> namespaces.
+> 
+> Signed-off-by: Cedric Le Goater <clg@fr.ibm.com>
+> Signed-off-by: Serge E. Hallyn <serue@us.ibm.com>
+> ---
+>  include/linux/ipc_namespace.h |   32 ++++++++++--
+>  init/Kconfig                  |    4 +-
+>  ipc/mqueue.c                  |  116 ++++++++++++++++++++++-------------------
+>  ipc/msgutil.c                 |   21 +++++++
+>  ipc/namespace.c               |    2 +
+>  ipc/util.c                    |    9 ---
+>  ipc/util.h                    |   15 +++++
+>  7 files changed, 131 insertions(+), 68 deletions(-)
+> 
+> diff --git a/include/linux/ipc_namespace.h b/include/linux/ipc_namespace.h
+> index ea330f9..532598f 100644
+> --- a/include/linux/ipc_namespace.h
+> +++ b/include/linux/ipc_namespace.h
+> @@ -44,24 +44,48 @@ struct ipc_namespace {
+>  	int		shm_tot;
+> 
+>  	struct notifier_block ipcns_nb;
+> +
+> +	struct vfsmount	*mq_mnt;
+> +	unsigned int    mq_queues_count;
+> +	unsigned int    mq_queues_max;
+> +	unsigned int    mq_msg_max;
+> +	unsigned int    mq_msgsize_max;
+> +
+>  };
+> 
+>  extern struct ipc_namespace init_ipc_ns;
+>  extern atomic_t nr_ipc_ns;
+> 
+> -#ifdef CONFIG_SYSVIPC
+> +#if defined(CONFIG_POSIX_MQUEUE) || defined(CONFIG_SYSVIPC)
+>  #define INIT_IPC_NS(ns)		.ns		= &init_ipc_ns,
+> +#else
+> +#define INIT_IPC_NS(ns)
+> +#endif
+> 
+> +#ifdef CONFIG_SYSVIPC
+>  extern int register_ipcns_notifier(struct ipc_namespace *);
+>  extern int cond_register_ipcns_notifier(struct ipc_namespace *);
+>  extern void unregister_ipcns_notifier(struct ipc_namespace *);
+>  extern int ipcns_notify(unsigned long);
+> -
+>  #else /* CONFIG_SYSVIPC */
+> -#define INIT_IPC_NS(ns)
+> +#define register_ipcns_notifier(ns)
+> +#define cond_register_ipcns_notifier(ns)
+> +#define unregister_ipcns_notifier(ns)
+> +#define ipcns_notify(l)
+>  #endif /* CONFIG_SYSVIPC */
+> 
+> -#if defined(CONFIG_SYSVIPC) && defined(CONFIG_IPC_NS)
+> +#ifdef CONFIG_POSIX_MQUEUE
+> +extern void mq_init_ns(struct ipc_namespace *ns);
+> +/* default values */
+> +#define DFLT_QUEUESMAX 256     /* max number of message queues */
+> +#define DFLT_MSGMAX    10      /* max number of messages in each queue */
+> +#define HARD_MSGMAX    (131072/sizeof(void *))
+> +#define DFLT_MSGSIZEMAX 8192   /* max message size */
+> +#else
+> +#define mq_init_ns(ns)
+> +#endif
 
-Signed-off-by: Serge Hallyn <serue@us.ibm.com>
----
- testcases/kernel/containers/mqns/mqns.h         |    1 +
- testcases/kernel/containers/mqns/mqns_03.c      |  196 +++++++++++++++++++++++
- testcases/kernel/containers/mqns/runmqnstest.sh |    2 +-
- 3 files changed, 198 insertions(+), 1 deletions(-)
- create mode 100644 testcases/kernel/containers/mqns/mqns_03.c
+Do all these empty suckers need do{}while(0)'s?
 
-diff --git a/testcases/kernel/containers/mqns/mqns.h b/testcases/kernel/containers/mqns/mqns.h
-index df8fc4b..4bf1e1f 100644
---- a/testcases/kernel/containers/mqns/mqns.h
-+++ b/testcases/kernel/containers/mqns/mqns.h
-@@ -9,5 +9,6 @@
- 
- #define DEV_MQUEUE "/dev/mqueue"
- #define SLASH_MQ1 "/MQ1"
-+#define SLASH_MQ2 "/MQ2"
- 
- #endif /* __MQNS_H */
-diff --git a/testcases/kernel/containers/mqns/mqns_03.c b/testcases/kernel/containers/mqns/mqns_03.c
-new file mode 100644
-index 0000000..732bf88
---- /dev/null
-+++ b/testcases/kernel/containers/mqns/mqns_03.c
-@@ -0,0 +1,196 @@
-+/*
-+* Copyright (c) International Business Machines Corp., 2007
-+* This program is free software; you can redistribute it and/or modify
-+* it under the terms of the GNU General Public License as published by
-+* the Free Software Foundation; either version 2 of the License, or
-+* (at your option) any later version.
-+*
-+* This program is distributed in the hope that it will be useful,
-+* but WITHOUT ANY WARRANTY; without even the implied warranty of
-+* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See
-+* the GNU General Public License for more details.
-+* You should have received a copy of the GNU General Public License
-+* along with this program; if not, write to the Free Software
-+* Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
-+*
-+* Author: Serge Hallyn <serue@us.ibm.com>
-+*
-+* Check ipcns+sb longevity
-+*
-+* Mount mqueue fs
-+* unshare
-+* In unshared process:
-+*    Create "/mq1" with mq_open()
-+*    Mount mqueuefs
-+*    Check that /mq1 exists
-+*    Create /dev/mqueue/mq2 through vfs (create(2))
-+*    Umount /dev/mqueue
-+*    Remount /dev/mqueue
-+*    Check that both /mq1 and /mq2 exist
-+
-+***************************************************************************/
-+
-+#define _GNU_SOURCE 1
-+#include <sys/wait.h>
-+#include <assert.h>
-+#include <stdio.h>
-+#include <stdlib.h>
-+#include <unistd.h>
-+#include <string.h>
-+#include <errno.h>
-+#include "mqns.h"
-+
-+char *TCID = "posixmq_namespace_03";
-+int TST_TOTAL=1;
-+
-+int p1[2];
-+int p2[2];
-+
-+#define FNAM1 DEV_MQUEUE2 SLASH_MQ1
-+#define FNAM2 DEV_MQUEUE2 SLASH_MQ2
-+
-+int check_mqueue(void *vtest)
-+{
-+	char buf[30];
-+	mqd_t mqd;
-+	int rc;
-+	struct stat statbuf;
-+
-+	close(p1[1]);
-+	close(p2[0]);
-+
-+	read(p1[0], buf, 3); /* go */
-+
-+	mqd = mq_open(SLASH_MQ1, O_RDWR|O_CREAT|O_EXCL, 0755, NULL);
-+	if (mqd == -1) {
-+		write(p2[1], "mqfail", 7);
-+		tst_exit(3);
-+	}
-+
-+	mq_close(mqd);
-+
-+	rc = mount("mqueue", DEV_MQUEUE2, "mqueue", 0, NULL);
-+	if (rc == -1) {
-+		perror("mount");
-+		write(p2[1], "mount1", 7);
-+		tst_exit(3);
-+	}
-+
-+	rc = stat(FNAM1, &statbuf);
-+	if (rc == -1) {
-+		write(p2[1], "stat1", 6);
-+		tst_exit(3);
-+	}
-+
-+	rc = creat(FNAM2, 0755);
-+	if (rc == -1) {
-+		write(p2[1], "creat", 6);
-+		tst_exit(3);
-+	}
-+
-+	close(rc);
-+
-+	rc = umount(DEV_MQUEUE2);
-+	if (rc == -1) {
-+		perror("umount");
-+		write(p2[1], "umount", 7);
-+		tst_exit(3);
-+	}
-+
-+	rc = mount("mqueue", DEV_MQUEUE2, "mqueue", 0, NULL);
-+	if (rc == -1) {
-+		write(p2[1], "mount2", 7);
-+		tst_exit(3);
-+	}
-+
-+	rc = stat(FNAM1, &statbuf);
-+	if (rc == -1) {
-+		write(p2[1], "stat2", 7);
-+		tst_exit(3);
-+	}
-+
-+	rc = stat(FNAM2, &statbuf);
-+	if (rc == -1) {
-+		write(p2[1], "stat3", 7);
-+		tst_exit(3);
-+	}
-+
-+	write(p2[1], "done", 5);
-+
-+	tst_exit(0);
-+
-+	/* NOT REACHED */
-+	return 0;
-+}
-+
-+
-+int main(int argc, char *argv[])
-+{
-+	int r;
-+	char buf[7];
-+	int use_clone = T_UNSHARE;
-+
-+	if (argc == 2 && strcmp(argv[1], "-clone") == 0) {
-+		tst_resm(TINFO, "Testing posix mq namespaces through clone(2).\n");
-+		use_clone = T_CLONE;
-+	} else
-+		tst_resm(TINFO, "Testing posix mq namespaces through unshare(2).\n");
-+ 
-+	if (pipe(p1) == -1) { perror("pipe"); exit(EXIT_FAILURE); }
-+	if (pipe(p2) == -1) { perror("pipe"); exit(EXIT_FAILURE); }
-+
-+	/* fire off the test */
-+	r = do_clone_unshare_test(use_clone, CLONE_NEWIPC, check_mqueue, NULL);
-+	if (r < 0) {
-+		tst_resm(TFAIL, "failed clone/unshare\n");
-+		tst_exit(1);
-+	}
-+
-+	tst_resm(TINFO, "Checking correct umount+remount of mqueuefs\n");
-+
-+	mkdir(DEV_MQUEUE2, 0755);
-+
-+ 	close(p1[0]);
-+	close(p1[0]);
-+	close(p2[1]);
-+	write(p1[1], "go", 3);
-+
-+	read(p2[0], buf, 7);
-+	r = TFAIL;
-+	if (!strcmp(buf, "mqfail")) {
-+		tst_resm(TFAIL, "child process could not create mqueue\n");
-+		goto fail;
-+	} else if (!strcmp(buf, "mount1")) {
-+		tst_resm(TFAIL, "child process could not mount mqueue\n");
-+		goto fail;
-+	} else if (!strcmp(buf, "stat1x")) {
-+		tst_resm(TFAIL, "mq created by child is not in mqueuefs\n");
-+		goto fail;
-+	} else if (!strcmp(buf, "creat")) {
-+		tst_resm(TFAIL, "child couldn't creat mq through mqueuefs\n");
-+		goto fail;
-+	} else if (!strcmp(buf, "umount")) {
-+		tst_resm(TFAIL, "child couldn't umount mqueuefs\n");
-+		goto fail;
-+	} else if (!strcmp(buf, "mount2")) {
-+		tst_resm(TFAIL, "child couldn't remount mqueuefs\n");
-+		goto fail;
-+	} else if (!strcmp(buf, "stat2")) {
-+		tst_resm(TFAIL, "mq_open()d file gone after remount of mqueuefs\n");
-+		goto fail;
-+	} else if (!strcmp(buf, "stat3")) {
-+		tst_resm(TFAIL, "creat(2)'d file gone after remount of mqueuefs\n");
-+		goto fail;
-+	}
-+
-+	tst_resm(TPASS, "umount+remount of mqueuefs remounted the right fs\n");
-+
-+	r = 0;
-+fail:
-+	umount(DEV_MQUEUE2);
-+	rmdir(DEV_MQUEUE2);
-+	tst_exit(r);
-+
-+	/* NOT REACHED */
-+	return 0;
-+}
-diff --git a/testcases/kernel/containers/mqns/runmqnstest.sh b/testcases/kernel/containers/mqns/runmqnstest.sh
-index a5bbd24..b518d28 100755
---- a/testcases/kernel/containers/mqns/runmqnstest.sh
-+++ b/testcases/kernel/containers/mqns/runmqnstest.sh
-@@ -20,7 +20,7 @@
- ################################################################################
- 
- exit_code=0
--tests_list='mqns_01 mqns_02'
-+tests_list='mqns_01 mqns_02 mqns_03'
- 
- for t in $tests_list
- do
--- 
-1.6.0.5
+> +#if defined(CONFIG_IPC_NS)
+>  extern void free_ipc_ns(struct kref *kref);
+>  extern struct ipc_namespace *copy_ipcs(unsigned long flags,
+>  				       struct ipc_namespace *ns);
+> diff --git a/init/Kconfig b/init/Kconfig
+> index ce75d2d..32c6315 100644
+> --- a/init/Kconfig
+> +++ b/init/Kconfig
+> @@ -489,10 +489,10 @@ config UTS_NS
+> 
+>  config IPC_NS
+>  	bool "IPC namespace"
+> -	depends on NAMESPACES && SYSVIPC
+> +	depends on NAMESPACES && (SYSVIPC || POSIX_MQUEUE)
+>  	help
+>  	  In this namespace tasks work with IPC ids which correspond to
+> -	  different IPC objects in different namespaces
+> +	  different IPC objects in different namespaces.
+> 
+>  config USER_NS
+>  	bool "User namespace (EXPERIMENTAL)"
+> diff --git a/ipc/mqueue.c b/ipc/mqueue.c
+> index d9393f8..01d64a0 100644
+> --- a/ipc/mqueue.c
+> +++ b/ipc/mqueue.c
+> @@ -31,6 +31,7 @@
+>  #include <linux/mutex.h>
+>  #include <linux/nsproxy.h>
+>  #include <linux/pid.h>
+> +#include <linux/ipc_namespace.h>
+> 
+>  #include <net/sock.h>
+>  #include "util.h"
+> @@ -46,12 +47,6 @@
+>  #define STATE_PENDING	1
+>  #define STATE_READY	2
+> 
+> -/* default values */
+> -#define DFLT_QUEUESMAX	256	/* max number of message queues */
+> -#define DFLT_MSGMAX 	10	/* max number of messages in each queue */
+> -#define HARD_MSGMAX 	(131072/sizeof(void*))
+> -#define DFLT_MSGSIZEMAX 8192	/* max message size */
+> -
+>  /*
+>   * Define the ranges various user-specified maximum values can
+>   * be set to.
+> @@ -95,12 +90,6 @@ static void remove_notification(struct mqueue_inode_info *info);
+> 
+>  static spinlock_t mq_lock;
+>  static struct kmem_cache *mqueue_inode_cachep;
+> -static struct vfsmount *mqueue_mnt;
+> -
+> -static unsigned int queues_count;
+> -static unsigned int queues_max 	= DFLT_QUEUESMAX;
+> -static unsigned int msg_max 	= DFLT_MSGMAX;
+> -static unsigned int msgsize_max = DFLT_MSGSIZEMAX;
+> 
+>  static struct ctl_table_header * mq_sysctl_table;
+> 
+> @@ -109,11 +98,25 @@ static inline struct mqueue_inode_info *MQUEUE_I(struct inode *inode)
+>  	return container_of(inode, struct mqueue_inode_info, vfs_inode);
+>  }
+> 
+> +void mq_init_ns(struct ipc_namespace *ns) {
+> +	ns->mq_queues_count  = 0;
+> +	ns->mq_queues_max    = DFLT_QUEUESMAX;
+> +	ns->mq_msg_max       = DFLT_MSGMAX;
+> +	ns->mq_msgsize_max   = DFLT_MSGSIZEMAX;
+> +	ns->mq_mnt           = mntget(init_ipc_ns.mq_mnt);
+> +}
+
+Heh, I read that as a structure definition at first!  Could you put that
+bracket on a new line.
+
+This part of the patch is nice.  The -'s are next to the +'s and it is
+easy to audit.
+
+The rest of the patch looks good.  Mostly simple substitutions, and it
+is pretty obvious what is going on.
+
+-- Dave
