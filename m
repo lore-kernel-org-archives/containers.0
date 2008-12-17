@@ -1,17 +1,17 @@
-From: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+From: Mike Waychison <mikew-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
 Subject: Re: [RFC v11][PATCH 03/13] General infrastructure for checkpoint
 	restart
-Date: Tue, 16 Dec 2008 16:13:03 -0800
-Message-ID: <1229472783.17206.358.camel__45780.0338198014$1229472991$gmane$org@nimitz>
-References: <1228498282-11804-1-git-send-email-orenl@cs.columbia.edu>
-	<1228498282-11804-4-git-send-email-orenl@cs.columbia.edu>
+Date: Tue, 16 Dec 2008 16:42:10 -0800
+Message-ID: <49484AE2.3000007__33145.750888116$1229474857$gmane$org@google.com>
+References: <1228498282-11804-1-git-send-email-orenl@cs.columbia.edu>	
+	<1228498282-11804-4-git-send-email-orenl@cs.columbia.edu>	
 	<49482394.10006@google.com> <1229465641.17206.350.camel@nimitz>
-	<49482F14.1040407@google.com>
+	<49483D01.1050603@cs.columbia.edu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <49482F14.1040407-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <49483D01.1050603-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -21,22 +21,158 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Mike Waychison <mikew-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
-Cc: jeremy-TSDbQ3PG+2Y@public.gmane.org, arnd-r2nGTMty4D4@public.gmane.org, linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Linux Torvalds <torvalds-3NddpPZAyC0@public.gmane.org>, Alexander Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, "H. Peter Anvin" <hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org>, Thomas Gleixner <tglx-hfZtesqFncYOwBW4kG4KsQ@public.gmane.org>, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>
+To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Cc: jeremy-TSDbQ3PG+2Y@public.gmane.org, arnd-r2nGTMty4D4@public.gmane.org, linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Linux Torvalds <torvalds-3NddpPZAyC0@public.gmane.org>, Alexander Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, "H. Peter Anvin" <hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org>, Thomas Gleixner <tglx-hfZtesqFncYOwBW4kG4KsQ@public.gmane.org>, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-On Tue, 2008-12-16 at 14:43 -0800, Mike Waychison wrote:
-> Hmm, if I'm understanding you correctly, adding ref counts explicitly 
-> (like you suggest below)  would be used to let a lower layer defer 
-> writes.  Seems like this could be just as easily done with explicits 
-> kmallocs and transferring ownership of the allocated memory to the 
-> in-kernel representation handling layer below (which in turn queues the 
-> data structures for writes).
+Oren Laadan wrote:
+> 
+> Dave Hansen wrote:
+>> On Tue, 2008-12-16 at 13:54 -0800, Mike Waychison wrote:
+>>> Oren Laadan wrote:
+>>>> diff --git a/checkpoint/sys.c b/checkpoint/sys.c
+>>>> index 375129c..bd14ef9 100644
+>>>> --- a/checkpoint/sys.c
+>>>> +++ b/checkpoint/sys.c
+>>>> +/*
+>>>> + * During checkpoint and restart the code writes outs/reads in data
+>>>> + * to/from the checkpoint image from/to a temporary buffer (ctx->hbuf).
+>>>> + * Because operations can be nested, use cr_hbuf_get() to reserve space
+>>>> + * in the buffer, then cr_hbuf_put() when you no longer need that space.
+>>>> + */
+>>> This seems a bit over-kill for buffer management no?  The only large 
+>>> header seems to be cr_hdr_head and the blowup comes from utsinfo string 
+>>> data (which could easily be moved out to be in it's own CR_HDR_STRING 
+>>> blocks).
+>>>
+>>> Wouldn't it be easier to use stack-local storage than balancing the 
+>>> cr_hbuf_get/put routines?
+>> I've asked the same question, so I'll give you Oren's response that I
+>> remember:
+>>
+>> cr_hbuf_get/put() are more of an API that we can use later.  For now,
+>> those buffers really are temporary.  But, in a case where we want to do
+>> a really fast checkpoint (to reduce "downtime" during the checkpoint) we
+>> store the image entirely in kernel memory to be written out later.
+> 
+> Precisely.
+> 
+> Note that by "store the image entirely" we mean everything that cannot
+> be saved COW - so memory pages are not duplicated; the rest of the data
+> tends to take less than 5-10% of the total size.
+> 
+> Buffering the checkpoint image in kernel is useful to reduce downtime
+> during checkpoint, and also useful for super-fast rollback of a task
+> (or container) by always keeping everything in memory.
 
-Yup, that's true.  We'd effectively shift the burden of freeing those
-buffers into the cr_write() (or whatever we call it) function.  
+I agree that buffering metadata and references to COWable structures is 
+useful, but this doesn't require a new allocator.
 
-But, I'm just thinking about the sys_checkpoint() side.  I need to go
-look at the restart code too.
+> 
+> This abstraction is also useful for restart, e.g. to implement read-ahead
+> of the checkpoint image into the kernel.
 
--- Dave
+I'm not sure what you mean by checkpoint image read-ahead.  The data is 
+in a stream format and not a randomly accessible packet format.
+
+> 
+> Note also that in the future we will have larger headers (e.g. to record
+> the state of a socket), 
+
+This is a bit off-topic for this patch series, but what are your intents 
+on socket serialization?
+
+FWIW looking at the socket problem for our purposes, we expect to throw 
+away all network sockets (and internal state including queued rx/tx 
+data) at checkpoint (replacing them with sockets that return ECONNRESET 
+at restore time) and rely on userland exception handling to re-establish 
+RPC channels.  This failure mode looks exactly the same as a network 
+partition/machine restart/application crash which our applications need 
+to handle already.
+
+> and there may be some nested calls (e.g. to dump
+> a connected unix-domain socket we will want to first save the "parent"
+> listening socket, and also there is nesting in restart).
+> 
+
+Right, nesting can be a problem, so maybe on stack isn't the best way to 
+handle the header allocations, but again this doesn't necessarily mean 
+we need a new object allocation scheme.
+
+> Instead of using the stack for some headers and memory allocation for
+> other headers, this abstraction provides a standard interface for all
+> checkpoint/restart code (and the actual implementation may vary for
+> different purposes).
+
+At a minimum, I would expect that cr_hbuf_put() should take a pointer 
+rather than a size argument.
+
+> 
+>> In that case, cr_hbuf_put() stops doing anything at all because we keep
+>> the memory around.
+>>
+>> cr_hbuf_get() becomes, "I need some memory to write some checkpointy
+>> things into".
+>>
+>> cr_hbuf_put() becomes, "I'm done with this for now, only keep it if
+>> someone else needs it."
+>>
+>> This might all be a lot clearer if we just kept some more explicit
+>> accounting around about who is using the objects.  Something like:
+>>
+>> struct cr_buf {
+>> 	struct kref ref;
+>> 	int size;
+>> 	char buf[0];
+>> };
+>>
+>> /* replaces cr_hbuf_get() */
+>> struct cr_buf *alloc_cr_buf(int size, gfp_t flags)
+>> {
+>> 	struct cr_buf *buf;
+>>
+>> 	buf = kmalloc(sizeof(cr_buf) + size, flags);
+>> 	if (!buf)
+>> 		return NULL;
+>> 	buf->ref = 1; /* or whatever */
+>> 	buf->size = size;
+>> 	return buf;
+>> }
+>>
+>> int cr_kwrite(struct cr_buf *buf)
+>> {
+>> 	if (writing_checkpoint_now) {
+>> 		// or whatever this write call was...
+>> 		vfs_write(&buf->buf[0], buf->size);
+>> 	} else if (deferring_write) {		
+>> 		kref_get(buf->kref);
+>> 	}
+>> }
+> 
+> Yes, something like that, except you can do without the reference count
+> since the buffer is tied to 'struct cr_ctx'; so this is what I had in
+> mind:
+> 
+> In non-buffering mode - as it is now - cr_kwrite() will write the data out.
+> 
+> In buffering mode (not implemented yet), cr_write() will either do nothing
+> (if we borrow from the current code, that uses a temp buffer), or attach
+> the 'struct cr_buf' to the 'struct cr_ctx' (if we borrow Dave's suggestion
+> above).
+> 
+> In buffering mode, we'll also need 'cr_writeout()' which will write out
+> the entire buffer to the 'struct file'.  (This function will do nothing
+> in non-buffering mode).
+> 
+> Finally, the buffers will be freed when the 'struct cr_ctx' is cleaned.
+
+This smells like a memory pool abstraction and probably shouldn't be 
+specific to cr_ctx at all.
+
+As I mentioned earlier though, you still need to walk the entire 
+buffered structure in 'buffered' mode to release COWable object 
+references.  Adding a kfree in that path makes the code much easier to 
+understand and places the exception/cleanup path in-band rather than 
+out-of-band with a memory pool.
+
+Mike Waychison
