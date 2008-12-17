@@ -1,21 +1,159 @@
-From: Roland McGrath <roland@redhat.com>
-Subject: Re: [RFC][PATCH] SEND_SIG_NOINFO: Set si_pid to tgid instead of pid
-Date: Tue, 16 Dec 2008 19:20:32 -0800 (PST)
-Message-ID: <20081217032032.83C30FC3BC@magilla.sf.frob.com>
-References: <20081217020601.GB2866@us.ibm.com>
-	<20081217031730.F2767FC3BC@magilla.sf.frob.com>
+From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Subject: Re: [RFC v11][PATCH 04/13] x86 support for checkpoint/restart
+Date: Wed, 17 Dec 2008 10:23:36 -0500
+Message-ID: <49491978.20609__8689.23892635412$1229527683$gmane$org@cs.columbia.edu>
+References: <1228498282-11804-1-git-send-email-orenl@cs.columbia.edu>
+	<1228498282-11804-5-git-send-email-orenl@cs.columbia.edu>
+	<494861CA.8000403@google.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1758554AbYLQDVX@vger.kernel.org>
-In-Reply-To: Roland McGrath's message of  Tuesday, 16 December 2008 19:17:30 -0800 <20081217031730.F2767FC3BC@magilla.sf.frob.com>
-Sender: linux-kernel-owner@vger.kernel.org
-To: Sukadev Bhattiprolu <sukadev@linux.vnet.ibm.com>, oleg@redhat.com, ebiederm@xmission.com, daniel@hozac.com, bastian@waldi.eu.org, xemul@openvz.org, containers@lists.osdl.org, linux-ke
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <494861CA.8000403-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: Mike Waychison <mikew-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+Cc: jeremy-TSDbQ3PG+2Y@public.gmane.org, arnd-r2nGTMty4D4@public.gmane.org, linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Linux Torvalds <torvalds-3NddpPZAyC0@public.gmane.org>, Alexander Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, "H. Peter Anvin" <hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org>, Thomas Gleixner <tglx-hfZtesqFncYOwBW4kG4KsQ@public.gmane.org>, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Arguably these deserve a heads-up to linux-abi, not that whether si_pid was
-tid or tgid was probably actually documented before (and I presume the
-wrong-namespace issue just doesn't need to be).
 
-Thanks,
-Roland
+
+Mike Waychison wrote:
+> Oren Laadan wrote:
+>> Add logic to save and restore architecture specific state, including
+>> thread-specific state, CPU registers and FPU state.
+>>
+>> In addition, architecture capabilities are saved in an architecure
+>> specific extension of the header (cr_hdr_head_arch); Currently this
+>> includes only FPU capabilities.
+>>
+>> Currently only x86-32 is supported. Compiling on x86-64 will trigger
+>> an explicit error.
+>>
+
+[...]
+
+>> +
+>> +    hh->gdt_entry_tls_entries = GDT_ENTRY_TLS_ENTRIES;
+>> +    hh->sizeof_tls_array = sizeof(thread->tls_array);
+>> +    hh->ntls = ntls;
+>> +
+>> +    ret = cr_write_obj(ctx, &h, hh);
+>> +    cr_hbuf_put(ctx, sizeof(*hh));
+>> +    if (ret < 0)
+>> +        return ret;
+>> +
+>> +    cr_debug("ntls %d\n", ntls);
+>> +    if (ntls == 0)
+>> +        return 0;
+>> +
+>> +    /* for simplicity dump the entire array, cherry-pick upon restart */
+>> +    ret = cr_kwrite(ctx, thread->tls_array, sizeof(thread->tls_array));
+> 
+> Again, the the TLS descriptors in the GDT should be called out an not
+> tied to the in-kernel representation.
+
+True. I'll add a 'FIXME' comment.
+
+However, I'm yet to see a case where this breaks among x86_32, and I'm no
+expert in that area to tell whether it could. (Moving from x86_32 to x86_64
+is another story, and will require some compatibility layer anyway).
+
+> 
+>> +
+>> +    /* IGNORE RESTART BLOCKS FOR NOW ... */
+
+[...]
+
+>> +static int cr_write_cpu_fpu(struct cr_ctx *ctx, struct task_struct *t)
+>> +{
+>> +    void *xstate_buf = cr_hbuf_get(ctx, xstate_size);
+>> +
+>> +    /* i387 + MMU + SSE logic */
+>> +    preempt_disable();    /* needed it (t == current) */
+>> +
+>> +    /*
+>> +     * normally, no need to unlazy_fpu(), since TS_USEDFPU flag
+>> +     * have been cleared when task was context-switched out...
+>> +     * except if we are in process context, in which case we do
+>> +     */
+>> +    if (t == current && (task_thread_info(t)->status & TS_USEDFPU))
+>> +        unlazy_fpu(current);
+>> +
+>> +    memcpy(xstate_buf, t->thread.xstate, xstate_size);
+> 
+> This is probably better off being very deliberate about what registers
+> we are dumping from a traceability and compatibility point of view?
+
+Same here.
+
+> 
+>> +    preempt_enable();    /* needed it (t == current) */
+>> +
+>> +    return cr_kwrite(ctx, xstate_buf, xstate_size);
+> 
+> Missed cr_huf_put()
+
+Ooops ... will fix.
+
+> 
+>> +}
+>> +
+>> +#endif    /* CONFIG_X86_64 */
+
+[...]
+
+>> +        /*
+>> +         * restore TLS by hand: why convert to struct user_desc if
+>> +         * sys_set_thread_entry() will convert it back ?
+>> +         */
+>> +
+>> +        size = sizeof(*desc) * GDT_ENTRY_TLS_ENTRIES;
+>> +        desc = kmalloc(size, GFP_KERNEL);
+>> +        if (!desc)
+> 
+> cr_hbuf_put() here.
+
+Will fix.
+
+> 
+>> +            return -ENOMEM;
+>> +
+>> +        ret = cr_kread(ctx, desc, size);
+>> +        if (ret >= 0) {
+> 
+> if (ret == 0)
+
+Right.
+
+> 
+>> +            /*
+>> +             * FIX: add sanity checks (eg. that values makes
+>> +             * sense, that we don't overwrite old values, etc
+>> +             */
+>> +            cpu = get_cpu();
+>> +            memcpy(thread->tls_array, desc, size);
+>> +            load_TLS(thread, cpu);
+>> +            put_cpu();
+>> +        }
+>> +        kfree(desc);
+>> +    }
+>> +
+>> +    ret = 0;
+>> + out:
+>> +    cr_hbuf_put(ctx, sizeof(*hh));
+>> +    return ret;
+>> +}
+
+[...]
+
+Thanks for the review !
+
+Oren.
