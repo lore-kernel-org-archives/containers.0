@@ -1,12 +1,11 @@
 From: "Serge E. Hallyn" <serue@us.ibm.com>
-Subject: [LTP PATCH 4/4] posix mqns: test that user mount of posixmq
-	survivies the ipcns
-Date: Wed, 17 Dec 2008 11:58:23 -0600
-Message-ID: <20081217175823.GF23331@us.ibm.com>
+Subject: [LTP PATCH 3/4] posix mqns: test vfs and mq interaction
+Date: Wed, 17 Dec 2008 11:58:07 -0600
+Message-ID: <20081217175807.GE23331@us.ibm.com>
 References: <20081217175513.GA23291@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1752671AbYLQR6y@vger.kernel.org>
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1752340AbYLQR6j@vger.kernel.org>
 Content-Disposition: inline
 In-Reply-To: <20081217175513.GA23291@us.ibm.com>
 Sender: linux-kernel-owner@vger.kernel.org
@@ -14,37 +13,35 @@ To: lkml <linux-kernel@vger.kernel.org>
 Cc: Linux Containers <containers@lists.osdl.org>, Subrata Modak1 <subrata.modak@in.ibm.com>
 List-Id: containers.vger.kernel.org
 
-If the mqueuefs for a ipc namespace is mounted in a mounts namespace
-which outlives the ipcns, then the view of the fs remains valid
-until someone umounts it.  Run some tests to make sure that all is
-sane.
+Test that the interaction between mqueuefs and ipc namespaces
+is correct (one mqueuefs for each ipc namespace, living at least
+as long as the namespace)
 
 Signed-off-by: Serge Hallyn <serue@us.ibm.com>
 ---
  testcases/kernel/containers/mqns/mqns.h         |    1 +
- testcases/kernel/containers/mqns/mqns_04.c      |  169 +++++++++++++++++++++++
+ testcases/kernel/containers/mqns/mqns_03.c      |  196 +++++++++++++++++++++++
  testcases/kernel/containers/mqns/runmqnstest.sh |    2 +-
- 3 files changed, 171 insertions(+), 1 deletions(-)
- create mode 100644 testcases/kernel/containers/mqns/mqns_04.c
+ 3 files changed, 198 insertions(+), 1 deletions(-)
+ create mode 100644 testcases/kernel/containers/mqns/mqns_03.c
 
 diff --git a/testcases/kernel/containers/mqns/mqns.h b/testcases/kernel/containers/mqns/mqns.h
-index 4bf1e1f..33166d2 100644
+index df8fc4b..4bf1e1f 100644
 --- a/testcases/kernel/containers/mqns/mqns.h
 +++ b/testcases/kernel/containers/mqns/mqns.h
-@@ -8,6 +8,7 @@
- 
+@@ -9,5 +9,6 @@
  
  #define DEV_MQUEUE "/dev/mqueue"
-+#define DEV_MQUEUE2 "/dev/mqueue2"
  #define SLASH_MQ1 "/MQ1"
- #define SLASH_MQ2 "/MQ2"
++#define SLASH_MQ2 "/MQ2"
  
-diff --git a/testcases/kernel/containers/mqns/mqns_04.c b/testcases/kernel/containers/mqns/mqns_04.c
+ #endif /* __MQNS_H */
+diff --git a/testcases/kernel/containers/mqns/mqns_03.c b/testcases/kernel/containers/mqns/mqns_03.c
 new file mode 100644
-index 0000000..ef76f0a
+index 0000000..732bf88
 --- /dev/null
-+++ b/testcases/kernel/containers/mqns/mqns_04.c
-@@ -0,0 +1,169 @@
++++ b/testcases/kernel/containers/mqns/mqns_03.c
+@@ -0,0 +1,196 @@
 +/*
 +* Copyright (c) International Business Machines Corp., 2007
 +* This program is free software; you can redistribute it and/or modify
@@ -62,15 +59,18 @@ index 0000000..ef76f0a
 +*
 +* Author: Serge Hallyn <serue@us.ibm.com>
 +*
-+* Check mqueuefs lifetime
-+* . parent creates /dev/mqueue2
-+* . child mounts mqueue there
-+* . child does mq_open("/ab")
-+* . parent checks for /dev/mqueue2
-+* . child exits
-+* . parent checks for /dev/mqueue2
-+* . parent tries 'touch /dev/mqueue2/dd' -> should fail
-+* . parent umounts /dev/mqueue2
++* Check ipcns+sb longevity
++*
++* Mount mqueue fs
++* unshare
++* In unshared process:
++*    Create "/mq1" with mq_open()
++*    Mount mqueuefs
++*    Check that /mq1 exists
++*    Create /dev/mqueue/mq2 through vfs (create(2))
++*    Umount /dev/mqueue
++*    Remount /dev/mqueue
++*    Check that both /mq1 and /mq2 exist
 +
 +***************************************************************************/
 +
@@ -84,7 +84,7 @@ index 0000000..ef76f0a
 +#include <errno.h>
 +#include "mqns.h"
 +
-+char *TCID = "posixmq_namespace_04";
++char *TCID = "posixmq_namespace_03";
 +int TST_TOTAL=1;
 +
 +int p1[2];
@@ -98,6 +98,7 @@ index 0000000..ef76f0a
 +	char buf[30];
 +	mqd_t mqd;
 +	int rc;
++	struct stat statbuf;
 +
 +	close(p1[1]);
 +	close(p2[0]);
@@ -115,12 +116,50 @@ index 0000000..ef76f0a
 +	rc = mount("mqueue", DEV_MQUEUE2, "mqueue", 0, NULL);
 +	if (rc == -1) {
 +		perror("mount");
-+		write(p2[1], "mount", 6);
++		write(p2[1], "mount1", 7);
 +		tst_exit(3);
 +	}
 +
-+	write(p2[1], "go", 3);
-+	read(p1[0], buf, 3);
++	rc = stat(FNAM1, &statbuf);
++	if (rc == -1) {
++		write(p2[1], "stat1", 6);
++		tst_exit(3);
++	}
++
++	rc = creat(FNAM2, 0755);
++	if (rc == -1) {
++		write(p2[1], "creat", 6);
++		tst_exit(3);
++	}
++
++	close(rc);
++
++	rc = umount(DEV_MQUEUE2);
++	if (rc == -1) {
++		perror("umount");
++		write(p2[1], "umount", 7);
++		tst_exit(3);
++	}
++
++	rc = mount("mqueue", DEV_MQUEUE2, "mqueue", 0, NULL);
++	if (rc == -1) {
++		write(p2[1], "mount2", 7);
++		tst_exit(3);
++	}
++
++	rc = stat(FNAM1, &statbuf);
++	if (rc == -1) {
++		write(p2[1], "stat2", 7);
++		tst_exit(3);
++	}
++
++	rc = stat(FNAM2, &statbuf);
++	if (rc == -1) {
++		write(p2[1], "stat3", 7);
++		tst_exit(3);
++	}
++
++	write(p2[1], "done", 5);
 +
 +	tst_exit(0);
 +
@@ -131,11 +170,8 @@ index 0000000..ef76f0a
 +
 +int main(int argc, char *argv[])
 +{
-+	int r = TFAIL;
-+	int rc;
-+	int status;
++	int r;
 +	char buf[7];
-+	struct stat statbuf;
 +	int use_clone = T_UNSHARE;
 +
 +	if (argc == 2 && strcmp(argv[1], "-clone") == 0) {
@@ -143,69 +179,57 @@ index 0000000..ef76f0a
 +		use_clone = T_CLONE;
 +	} else
 +		tst_resm(TINFO, "Testing posix mq namespaces through unshare(2).\n");
-+
++ 
 +	if (pipe(p1) == -1) { perror("pipe"); exit(EXIT_FAILURE); }
 +	if (pipe(p2) == -1) { perror("pipe"); exit(EXIT_FAILURE); }
 +
-+	mkdir(DEV_MQUEUE2, 0755);
-+
-+	tst_resm(TINFO, "Checking mqueue filesystem lifetime\n");
-+
 +	/* fire off the test */
-+	rc = do_clone_unshare_test(use_clone, CLONE_NEWIPC, check_mqueue, NULL);
-+	if (rc < 0) {
++	r = do_clone_unshare_test(use_clone, CLONE_NEWIPC, check_mqueue, NULL);
++	if (r < 0) {
 +		tst_resm(TFAIL, "failed clone/unshare\n");
-+		goto fail;
++		tst_exit(1);
 +	}
 +
++	tst_resm(TINFO, "Checking correct umount+remount of mqueuefs\n");
++
++	mkdir(DEV_MQUEUE2, 0755);
++
++ 	close(p1[0]);
 +	close(p1[0]);
 +	close(p2[1]);
 +	write(p1[1], "go", 3);
 +
 +	read(p2[0], buf, 7);
++	r = TFAIL;
 +	if (!strcmp(buf, "mqfail")) {
 +		tst_resm(TFAIL, "child process could not create mqueue\n");
 +		goto fail;
-+	} else if (!strcmp(buf, "mount")) {
++	} else if (!strcmp(buf, "mount1")) {
 +		tst_resm(TFAIL, "child process could not mount mqueue\n");
 +		goto fail;
-+	}
-+
-+	rc = stat(FNAM1, &statbuf);
-+	if (rc == -1) {
-+		perror("stat");
-+		write(p1[1], "go", 3);
-+		tst_resm(TFAIL, "parent could not see child's created mq\n");
++	} else if (!strcmp(buf, "stat1x")) {
++		tst_resm(TFAIL, "mq created by child is not in mqueuefs\n");
 +		goto fail;
-+	}
-+	write(p1[1], "go", 3);
-+
-+	rc = wait(&status);
-+	if (rc == -1) {
-+		perror("wait");
-+		tst_resm(TFAIL, "error while parent waited on child to exit\n");
++	} else if (!strcmp(buf, "creat")) {
++		tst_resm(TFAIL, "child couldn't creat mq through mqueuefs\n");
 +		goto fail;
-+	}
-+	if (!WIFEXITED(status)) {
-+		tst_resm(TFAIL, "Child did not exit normally (status %d)\n", status);
++	} else if (!strcmp(buf, "umount")) {
++		tst_resm(TFAIL, "child couldn't umount mqueuefs\n");
 +		goto fail;
-+	}
-+	rc = stat(FNAM1, &statbuf);
-+	if (rc == -1) {
-+		tst_resm(TFAIL, "parent's view of child's mq died with child\n");
++	} else if (!strcmp(buf, "mount2")) {
++		tst_resm(TFAIL, "child couldn't remount mqueuefs\n");
++		goto fail;
++	} else if (!strcmp(buf, "stat2")) {
++		tst_resm(TFAIL, "mq_open()d file gone after remount of mqueuefs\n");
++		goto fail;
++	} else if (!strcmp(buf, "stat3")) {
++		tst_resm(TFAIL, "creat(2)'d file gone after remount of mqueuefs\n");
 +		goto fail;
 +	}
 +
-+	rc = creat(FNAM2, 0755);
-+	if (rc != -1) {
-+		tst_resm(TFAIL, "parent was able to create a file in dead child's mqfs\n");
-+		goto fail;
-+	}
-+
-+	tst_resm(TPASS, "Child mqueue fs still visible for parent\n");
++	tst_resm(TPASS, "umount+remount of mqueuefs remounted the right fs\n");
 +
 +	r = 0;
-+
 +fail:
 +	umount(DEV_MQUEUE2);
 +	rmdir(DEV_MQUEUE2);
@@ -215,15 +239,15 @@ index 0000000..ef76f0a
 +	return 0;
 +}
 diff --git a/testcases/kernel/containers/mqns/runmqnstest.sh b/testcases/kernel/containers/mqns/runmqnstest.sh
-index b518d28..9008fd0 100755
+index a5bbd24..b518d28 100755
 --- a/testcases/kernel/containers/mqns/runmqnstest.sh
 +++ b/testcases/kernel/containers/mqns/runmqnstest.sh
 @@ -20,7 +20,7 @@
  ################################################################################
  
  exit_code=0
--tests_list='mqns_01 mqns_02 mqns_03'
-+tests_list='mqns_01 mqns_02 mqns_03 mqns_04'
+-tests_list='mqns_01 mqns_02'
++tests_list='mqns_01 mqns_02 mqns_03'
  
  for t in $tests_list
  do
