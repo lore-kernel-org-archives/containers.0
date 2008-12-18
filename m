@@ -1,17 +1,16 @@
-From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 0/3] keys: play nicely with user namespaces
-Date: Thu, 18 Dec 2008 11:46:13 -0600
-Message-ID: <20081218174613.GA13968@us.ibm.com>
-References: <20081217235536.GA932@us.ibm.com>
-	<20081212141707.GB9571@us.ibm.com>
-	<20081211232323.GA8343@us.ibm.com> <3507.1229086294@redhat.com>
-	<25987.1229097458@redhat.com> <3547.1229607983@redhat.com>
+From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
+Subject: Re: [PATCH 1/5] pid: add new iterative macros to list processes in a
+	namespace
+Date: Thu, 18 Dec 2008 09:45:24 -0800
+Message-ID: <m17i5x8jij.fsf@frodo.ebiederm.org>
+References: <1229618553-6348-1-git-send-email-gowrishankar.m@linux.vnet.ibm.com>
+	<1229618553-6348-2-git-send-email-gowrishankar.m@linux.vnet.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <3547.1229607983-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <1229618553-6348-2-git-send-email-gowrishankar.m-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+	(Gowrishankar M.'s message of "Thu, 18 Dec 2008 22:12:29 +0530")
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -21,46 +20,31 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: David Howells <dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Cc: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+To: Gowrishankar M <gowrishankar.m-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Cc: Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Dave <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, Sukadev <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, Balbir <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Quoting David Howells (dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org):
-> 
-> Try:
-> 
-> 	http://people.redhat.com/~dhowells/keys/keyutils/keyutils-tests.tar.bz2
-> 
-> There were three updates required:
-> 
->  (1) chown is now supported.
-> 
->  (2) keyctl unlink does old keyring pointer block destruction lazily, and so a
->      wait is required for the key being unlinked to be destroyed.
-> 
->  (3) Anonymous session keyrings are now called "_ses" rather than "_ses.<pid>".
-> 
-> I've also made the following changes:
-> 
->  (4) The name of the output file for each test is printed:
-> 
-> 	=== /mnt/testarea/tmp.y9MVa88S ===
-> 
->  (5) If a failure occurs, 'keyctl show' is dumped into the output file.
+Gowrishankar M <gowrishankar.m-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org> writes:
 
-Cool, thanks.  I needed the following change to toolbox.inc.sh.orig in
-order to be able to run with >1 user namespaces:
+> From: Gowrishankar M <gomuthuk-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+>
+> Below patch addresses a common solution for any place where a process
+> should be checked if it is associated to caller namespace. At present,
+> we use 'task_pid_vnr(t) > 0' to further proceed with task 't' in current
+> namespace.
+>
+> To avoid applying this check in every userspace code related to PID namespace,
+> this patch provides two new iterative macros;for_each_process_in_ns and
+> do_each_thread_in_ns.
 
-36c36
-< maxsquota=`grep '^ *0': /proc/key-users | sed s@.*/@@`
----
-> maxsquota=`grep '^ *0': /proc/key-users | sed s@.*/@@ | head -1`
+There may be a point to this, as a cleanup.
 
-since /proc/key-users then lists multiple entries.  Otherwise,
-all tests pass when running the testsuite in a child-user-ns.
+I am not convinced at the moment that has_group_leader_pid() does
+the right thing in this context.
 
-So I'll just sit on these patches waiting for an acked-by (or nack),
-then ask for these three patches in linux-next.
+Can you please send the fix for cap_set_all (adding task_pid_vnr(X) > 1) 
+and then we can revisit possible cleanups.
 
-thanks,
--serge
+Thanks,
+
+Eric
