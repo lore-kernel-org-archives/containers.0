@@ -1,8 +1,8 @@
 From: Gowrishankar M <gowrishankar.m-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: [PATCH 2/5] pid: use namespaced iteration on processes while using
-	sysrq
-Date: Thu, 18 Dec 2008 22:12:30 +0530
-Message-ID: <1229618553-6348-3-git-send-email-gowrishankar.m@linux.vnet.ibm.com>
+Subject: [PATCH 5/5] pid: use namespaced iteration on processes while managing
+	priority
+Date: Thu, 18 Dec 2008 22:12:33 +0530
+Message-ID: <1229618553-6348-6-git-send-email-gowrishankar.m@linux.vnet.ibm.com>
 References: <1229618553-6348-1-git-send-email-gowrishankar.m@linux.vnet.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -24,39 +24,39 @@ List-Id: containers.vger.kernel.org
 
 From: Gowrishankar M <gomuthuk-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 
-At present, while signalling processes using sysrq, process iteration
-goes beyond current PID namespace.
+At present we scan all processes in init namespace, while getting or setting
+process priorities for a user. Incase of PID namespace, it leads to leak
+priority to processes in other namespace.
 
-Below patch uses one of the proposed namespace iteration macros to fix
-the boundary.
+Below patch proposes to use new macro controller to fix the boundary of
+processes list in current namespace.
 
 Signed-off-by: Gowrishankar M <gowrishankar.m-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 ---
- drivers/char/sysrq.c |    5 +++--
- 1 files changed, 3 insertions(+), 2 deletions(-)
+ kernel/sys.c |    4 ++--
+ 1 files changed, 2 insertions(+), 2 deletions(-)
 
-diff --git a/drivers/char/sysrq.c b/drivers/char/sysrq.c
-index ce0d9da..adca5da 100644
---- a/drivers/char/sysrq.c
-+++ b/drivers/char/sysrq.c
-@@ -13,6 +13,7 @@
-  */
+diff --git a/kernel/sys.c b/kernel/sys.c
+index 31deba8..50973de 100644
+--- a/kernel/sys.c
++++ b/kernel/sys.c
+@@ -181,7 +181,7 @@ asmlinkage long sys_setpriority(int which, int who, int niceval)
+ 				if ((who != current->uid) && !(user = find_user(who)))
+ 					goto out_unlock;	/* No processes for this user */
  
- #include <linux/sched.h>
-+#include <linux/pid_namespace.h>
- #include <linux/interrupt.h>
- #include <linux/mm.h>
- #include <linux/fs.h>
-@@ -293,8 +294,8 @@ static void send_sig_all(int sig)
- {
- 	struct task_struct *p;
+-			do_each_thread(g, p)
++			do_each_thread_in_ns(g, p, current->nsproxy->pid_ns)
+ 				if (p->uid == who)
+ 					error = set_one_prio(p, niceval, error);
+ 			while_each_thread(g, p);
+@@ -243,7 +243,7 @@ asmlinkage long sys_getpriority(int which, int who)
+ 				if ((who != current->uid) && !(user = find_user(who)))
+ 					goto out_unlock;	/* No processes for this user */
  
--	for_each_process(p) {
--		if (p->mm && !is_global_init(p))
-+	for_each_process_in_ns(p, current->nsproxy->pid_ns) {
-+		if (p->mm && !is_container_init(p))
- 			/* Not swapper, init nor kernel thread */
- 			force_sig(sig, p);
- 	}
+-			do_each_thread(g, p)
++			do_each_thread_in_ns(g, p, current->nsproxy->pid_ns)
+ 				if (p->uid == who) {
+ 					niceval = 20 - task_nice(p);
+ 					if (niceval > retval)
 -- 
 1.5.5.1
