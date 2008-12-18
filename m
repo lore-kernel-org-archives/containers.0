@@ -1,17 +1,15 @@
-From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 5/5] pid: use namespaced iteration on processes while
-	managing priority
-Date: Thu, 18 Dec 2008 12:13:17 -0600
-Message-ID: <20081218181317.GA14409@us.ibm.com>
-References: <1229618553-6348-1-git-send-email-gowrishankar.m@linux.vnet.ibm.com>
-	<1229618553-6348-6-git-send-email-gowrishankar.m@linux.vnet.ibm.com>
-	<m1d4fp8ju3.fsf@frodo.ebiederm.org>
+From: Mike Waychison <mikew-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [RFC v11][PATCH 05/13] Dump memory address space
+Date: Thu, 18 Dec 2008 10:15:44 -0800
+Message-ID: <494A9350.1060309__49605.9374222115$1229624655$gmane$org@google.com>
+References: <1228498282-11804-1-git-send-email-orenl@cs.columbia.edu>
+	<1228498282-11804-6-git-send-email-orenl@cs.columbia.edu>
+	<4949B4ED.9060805@google.com> <494A2F94.2090800@cs.columbia.edu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <m1d4fp8ju3.fsf-B27657KtZYmhTnVgQlOflh2eb7JE58TQ@public.gmane.org>
+In-Reply-To: <494A2F94.2090800-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -21,38 +19,209 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Cc: Gowrishankar M <gowrishankar.m-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Dave <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, Sukadev <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, Balbir <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Cc: jeremy-TSDbQ3PG+2Y@public.gmane.org, arnd-r2nGTMty4D4@public.gmane.org, linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Linux Torvalds <torvalds-3NddpPZAyC0@public.gmane.org>, Alexander Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, "H. Peter Anvin" <hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org>, Thomas Gleixner <tglx-hfZtesqFncYOwBW4kG4KsQ@public.gmane.org>, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Quoting Eric W. Biederman (ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org):
-> Gowrishankar M <gowrishankar.m-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org> writes:
+Oren Laadan wrote:
 > 
-> > From: Gowrishankar M <gomuthuk-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-> >
-> > At present we scan all processes in init namespace, while getting or setting
-> > process priorities for a user. Incase of PID namespace, it leads to leak
-> > priority to processes in other namespace.
-> >
-> > Below patch proposes to use new macro controller to fix the boundary of
-> > processes list in current namespace.
+> Mike Waychison wrote:
+>> Comments below.
 > 
-> Nacked-by: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+> Thanks for the detailed review.
 > 
-> This has nothing to do with pids.  The command is to set the
-> iopriority for a given user.  This is a problem of the user namespace
-> not the pid namespace.
+>> Oren Laadan wrote:
+>>> For each VMA, there is a 'struct cr_vma'; if the VMA is file-mapped,
+>>> it will be followed by the file name. Then comes the actual contents,
+>>> in one or more chunk: each chunk begins with a header that specifies
+>>> how many pages it holds, then the virtual addresses of all the dumped
+>>> pages in that chunk, followed by the actual contents of all dumped
+>>> pages. A header with zero number of pages marks the end of the contents.
+>>> Then comes the next VMA and so on.
+>>>
+> 
+> [...]
+> 
+>>> +    mutex_lock(&mm->context.lock);
+>>> +
+>>> +    hh->ldt_entry_size = LDT_ENTRY_SIZE;
+>>> +    hh->nldt = mm->context.size;
+>>> +
+>>> +    cr_debug("nldt %d\n", hh->nldt);
+>>> +
+>>> +    ret = cr_write_obj(ctx, &h, hh);
+>>> +    cr_hbuf_put(ctx, sizeof(*hh));
+>>> +    if (ret < 0)
+>>> +        goto out;
+>>> +
+>>> +    ret = cr_kwrite(ctx, mm->context.ldt,
+>>> +            mm->context.size * LDT_ENTRY_SIZE);
+>> Do we really want to emit anything under lock?  I realize that this
+>> patch goes and does a ton of writes with mmap_sem held for read -- is
+>> this ok?
+> 
+> Because all tasks in the container must be frozen during the checkpoint,
+> there is no performance penalty for keeping the locks. Although the object
+> should not change in the interim anyways, the locks protects us from, e.g.
+> the task unfreezing somehow, or being killed by the OOM killer, or any
+> other change incurred from the "outside world" (even future code).
+> 
+> Put in other words - in the long run it is safer to assume that the
+> underlying object may otherwise change.
+> 
+> (If we want to drop the lock here before cr_kwrite(), we need to copy the
+> data to a temporary buffer first. If we also want to drop mmap_sem(), we
+> need to be more careful with following the vma's.)
+> 
+> Do you see a reason to not keeping the locks ?
+> 
 
-The uid check needs to be fixed for user namespaces, agreed.  I could
-go either way though on whether we should also restrict to the same
-pidns.
+I just thought it was a bit ugly, but I can't think of a case 
+specifically where it's going to cause us harm.  If tasks are frozen, 
+are they still subject to the oom killer?   Even that should be 
+reasonably ok considering that the exit-path requires a 
+down_read(mmap_sem) (at least, it used to..  I haven't gone over that 
+path in a while..).
 
-(note to fix the userns part of this added to my userns queue - first
-I want to finish with keys; then maybe this should be done before
-handling capabilities)
 
-So if you want to nack this, I'll go along with that, but I think it's
-useful.
 
-thanks,
--serge
+>>> +/* allocate a single page-array object */
+>>> +static struct cr_pgarr *cr_pgarr_alloc_one(unsigned long flags)
+>>> +{
+>>> +    struct cr_pgarr *pgarr;
+>>> +
+>>> +    pgarr = kzalloc(sizeof(*pgarr), GFP_KERNEL);
+>>> +    if (!pgarr)
+>>> +        return NULL;
+>>> +
+>>> +    pgarr->vaddrs = kmalloc(CR_PGARR_TOTAL * sizeof(unsigned long),
+>> You used PAGE_SIZE / sizeof(void *) above.   Why not __get_free_page()?
+> 
+> Hahaha .. well, it's a guaranteed method to keep Dave Hansen from
+> barking about not using kmalloc ...
+> 
+> Personally I prefer __get_free_page() here, but not enough to keep
+> arguing with him. Let me know when the two of you settle it :)
+
+Alright, I just wasn't sure if it had been considered.
+
+
+
+> 
+>>> +{
+>>> +    unsigned long end = vma->vm_end;
+>>> +    unsigned long addr = *start;
+>>> +    int orig_used = pgarr->nr_used;
+>>> +
+>>> +    /* this function is only for private memory (anon or file-mapped) */
+>>> +    BUG_ON(vma->vm_flags & (VM_SHARED | VM_MAYSHARE));
+>>> +
+>>> +    while (addr < end) {
+>>> +        struct page *page;
+>>> +
+>>> +        page = cr_private_follow_page(vma, addr);
+>>> +        if (IS_ERR(page))
+>>> +            return PTR_ERR(page);
+>>> +
+>>> +        if (page) {
+>>> +            pgarr->pages[pgarr->nr_used] = page;
+>>> +            pgarr->vaddrs[pgarr->nr_used] = addr;
+>>> +            pgarr->nr_used++;
+>> Should be something like:
+>>
+>> ret = cr_ctx_append_page(ctx, addr, page);
+>> if (ret < 0)
+>>   goto out;
+> 
+> My concern here is performance: keeping track of @pgarr avoids the
+> reference through ctx. We may loop over MBs of memory, tens of
+> thousands of pages, in individual VMAs.
+> 
+
+Even scanning over a large amount of memory, you aren't going to see a 
+performance difference for accessing pgarr from an argument vs off of 
+field in ctx which is going to be cache-hot.
+
+> 
+>>> +    if (vma->vm_file) {
+>>> +        ret = cr_write_fname(ctx, &vma->vm_file->f_path, &ctx->fs_mnt);
+>> Why is this using a filename, rather than a reference to a file?
+> 
+> Could be a reference to a file, but it isn't strictly necessary (*) and it
+> won't improve performance that much. won't gain that much.
+> 
+> Not necessary: open files may be shared and then we _must_ use the same file
+> pointer. In contrast, with memory mapping only needs _an_ open file.
+> Won't gain much: because file pointers of mapped regions are usually only
+> shared in the case of fork() without a following exec().
+> 
+> (*) It is strictly necessary when it comes to handling shared memory.
+> 
+> So I left this optimization for later.
+
+I'm not sure I'm comfortable with churning on the file-format too much.
+
+> 
+>> Shouldn't this use the logic in patch 8/13?
+> 
+> Yes. But need to make sure (especially on the restart side) to consider the
+> exceptions - e.g. a file in SHMFS used for anonymous shared memory, etc.
+> 
+> So yes, I'll add a FIXME comment there.
+
+Right.
+
+> 
+>>> +        if (ret < 0)
+>>> +            return ret;
+>>> +    }
+> 
+> [...]
+> 
+>>> +enum vm_type {
+>>> +    CR_VMA_ANON = 1,
+>>> +    CR_VMA_FILE
+>> We need to figure out what MAP_SHARED | MAP_ANONYMOUS should be exposed
+>> as in this setup (much in the same way we need to start defining what
+>> shm mappings look like).  Internally, they are 'file-backed', but to
+>> userland, they aren't.
+>>
+>>
+>> Thoughts?
+> 
+> Eventually we'll have CR_VMA_ANON_SHM, CR_VMA_FILE_SHM, CR_VMA_IPC_SHM,
+> to identify the vma type. There will also be a flag "skip" that says that
+> the actual contents of the memory has already been copied earlier. (And,
+> for completeness, a flags "xfile" which indicated that the referenced
+> file is unlinked, in the case of CR_VMA_FILE and CR_VMA_FILE_SHM).
+> 
+> It's not a lot of work, only that I'm actually holding back on adding
+> more features, and focus on getting this into -mm tree first. I don't
+> want to write lots of code and then modify it again and again...
+> 
+>>> +};
+>>> +
+>>> +struct cr_hdr_vma {
+>>> +    __u32 vma_type;
+>>> +    __u32 _padding;
+>> Why padding?
+> 
+> For 64 bit architectures. See this threads:
+> https://lists.linux-foundation.org/pipermail/containers/2008-August/012318.html
+> 
+> Quoting Arnd Bergmann:
+>   "This structure has an odd multiple of 32-bit members, which means
+>   that if you put it into a larger structure that also contains
+>   64-bit members, the larger structure may get different alignment
+>   on x86-32 and x86-64, which you might want to avoid.
+>   I can't tell if this is an actual problem here.
+>   ...
+>   ...
+>   In this case, I'm pretty sure that sizeof(cr_hdr_task) on x86-32 is
+>   different from x86-64, since it will be 32-bit aligned on x86-32."
+> 
+
+Ok.  Please add the above note to the structure to explain it to the 
+next wanderer reading this code :)
+
+Mike Waychison
