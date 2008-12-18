@@ -1,16 +1,16 @@
 From: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org (Eric W. Biederman)
-Subject: Re: [PATCH 3/5] pid: use namespaced iteration on processes while
-	setting capability
-Date: Thu, 18 Dec 2008 09:35:18 -0800
-Message-ID: <m1k59x8jzd.fsf@frodo.ebiederm.org>
+Subject: Re: [PATCH 2/5] pid: use namespaced iteration on processes while
+	using sysrq
+Date: Thu, 18 Dec 2008 09:31:04 -0800
+Message-ID: <m1ocz98k6f.fsf@frodo.ebiederm.org>
 References: <1229618553-6348-1-git-send-email-gowrishankar.m@linux.vnet.ibm.com>
-	<1229618553-6348-4-git-send-email-gowrishankar.m@linux.vnet.ibm.com>
+	<1229618553-6348-3-git-send-email-gowrishankar.m@linux.vnet.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <1229618553-6348-4-git-send-email-gowrishankar.m-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-	(Gowrishankar M.'s message of "Thu, 18 Dec 2008 22:12:31 +0530")
+In-Reply-To: <1229618553-6348-3-git-send-email-gowrishankar.m-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+	(Gowrishankar M.'s message of "Thu, 18 Dec 2008 22:12:30 +0530")
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -28,34 +28,21 @@ Gowrishankar M <gowrishankar.m-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org
 
 > From: Gowrishankar M <gomuthuk-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 >
-> In piece of dead code, cap_set_all() propogates through processes outside
-> PID namespace, as iteration is always in init PID namespace.
+> At present, while signalling processes using sysrq, process iteration
+> goes beyond current PID namespace.
 >
-> Below patch adjusts macro controller to use do_each_thread_in_ns() so that
-> only processes in current namespace are scanned
-
-Yes.  This case in capability.c needs to be fixed.
-
-Acked-by: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-
-
+> Below patch uses one of the proposed namespace iteration macros to fix
+> the boundary.
+>
 > Signed-off-by: Gowrishankar M <gowrishankar.m-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-> ---
->  kernel/capability.c |    2 +-
->  1 files changed, 1 insertions(+), 1 deletions(-)
->
-> diff --git a/kernel/capability.c b/kernel/capability.c
-> index 33e51e7..e3e3765 100644
-> --- a/kernel/capability.c
-> +++ b/kernel/capability.c
-> @@ -201,7 +201,7 @@ static inline int cap_set_all(kernel_cap_t *effective,
->  	spin_lock(&task_capability_lock);
->  	read_lock(&tasklist_lock);
->  
-> -	do_each_thread(g, target) {
-> +	do_each_thread_in_ns(g, target, current->nsproxy->pid_ns) {
->  		if (target == current
->  		    || is_container_init(target->group_leader))
->  			continue;
-> -- 
-> 1.5.5.1
+
+Nacked-by: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+
+sysrq is a debugging helper and send_sig_all should apply to
+ever process in the system.  It should only apply to the initial
+pid namespace.
+
+Attempting to make it namespace aware is wrong.
+
+
+Eric
