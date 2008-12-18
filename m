@@ -1,11 +1,14 @@
 From: Gowrishankar M <gowrishankar.m-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
-Subject: pid: improved namespaced iteration over processes list (v2)
-Date: Thu, 18 Dec 2008 22:12:28 +0530
-Message-ID: <1229618553-6348-1-git-send-email-gowrishankar.m@linux.vnet.ibm.com>
+Subject: [PATCH 4/5] pid: use namespaced iteration on processes while sending
+	signal to all
+Date: Thu, 18 Dec 2008 22:12:32 +0530
+Message-ID: <1229618553-6348-5-git-send-email-gowrishankar.m@linux.vnet.ibm.com>
+References: <1229618553-6348-1-git-send-email-gowrishankar.m@linux.vnet.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+In-Reply-To: <1229618553-6348-1-git-send-email-gowrishankar.m-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -16,19 +19,39 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 To: Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Cc: Dave <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, Sukadev <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, Eric <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Balbir <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Cc: Dave <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, Eric <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Sukadev <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, Balbir <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
+From: Gowrishankar M <gomuthuk-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 
-Earlier version of this patch, attempted to change general macros 
-for_each_process and do_each_thread which is not safe as suggested
-by most of reviewers.
+At present we scan all processes in init namespace, whether in new namespace
+or not, to send signal to all processes for container. Also we filter out
+processes belonging to same namespace using task_pid_vnr().
 
-Hence, I go with adding renamed versions of them, so that we can use
-them only whereever needed.
+Below patch proposes to use new macro controller to save time using pidmap.
+In init namespace, this saving can be more or less achieved, as we check to
+take every process with task_pid_vnr() otherwise.
 
-I will include code optimisation that Dave suggested if this patch 
-gets approved mostly.
+Signed-off-by: Gowrishankar M <gowrishankar.m-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+---
+ kernel/signal.c |    5 ++---
+ 1 files changed, 2 insertions(+), 3 deletions(-)
 
-Thanks.
-Gowrishankar
+diff --git a/kernel/signal.c b/kernel/signal.c
+index 4530fc6..a2651bc 100644
+--- a/kernel/signal.c
++++ b/kernel/signal.c
+@@ -1143,9 +1143,8 @@ static int kill_something_info(int sig, struct siginfo *info, pid_t pid)
+ 		int retval = 0, count = 0;
+ 		struct task_struct * p;
+ 
+-		for_each_process(p) {
+-			if (task_pid_vnr(p) > 1 &&
+-					!same_thread_group(p, current)) {
++		for_each_process_in_ns(p, current->nsproxy->pid_ns) {
++			if (!same_thread_group(p, current)) {
+ 				int err = group_send_sig_info(sig, info, p);
+ 				++count;
+ 				if (err != -EPERM)
+-- 
+1.5.5.1
