@@ -1,19 +1,16 @@
-From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 5/5] pid: use namespaced iteration on processes while
-	managing priority
-Date: Thu, 18 Dec 2008 13:23:37 -0600
-Message-ID: <20081218192337.GA15597@us.ibm.com>
-References: <1229618553-6348-1-git-send-email-gowrishankar.m@linux.vnet.ibm.com>
-	<1229618553-6348-6-git-send-email-gowrishankar.m@linux.vnet.ibm.com>
-	<m1d4fp8ju3.fsf@frodo.ebiederm.org>
-	<20081218181317.GA14409@us.ibm.com>
-	<m1wsdx71r7.fsf@frodo.ebiederm.org>
+From: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Subject: Re: [RFC v11][PATCH 05/13] Dump memory address space
+Date: Thu, 18 Dec 2008 15:00:27 -0500
+Message-ID: <494AABDB.80408__42431.0560840697$1229630605$gmane$org@cs.columbia.edu>
+References: <1228498282-11804-1-git-send-email-orenl@cs.columbia.edu>	
+	<1228498282-11804-6-git-send-email-orenl@cs.columbia.edu>	
+	<4949B4ED.9060805@google.com> <494A2F94.2090800@cs.columbia.edu>
+	<1229615676.17206.518.camel@nimitz>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <m1wsdx71r7.fsf-B27657KtZYmhTnVgQlOflh2eb7JE58TQ@public.gmane.org>
+In-Reply-To: <1229615676.17206.518.camel@nimitz>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -23,37 +20,55 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Cc: Gowrishankar M <gowrishankar.m-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Dave <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, Sukadev <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, Balbir <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+To: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Cc: jeremy-TSDbQ3PG+2Y@public.gmane.org, arnd-r2nGTMty4D4@public.gmane.org, linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Linux Torvalds <torvalds-3NddpPZAyC0@public.gmane.org>, Alexander Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, "H. Peter Anvin" <hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org>, Thomas Gleixner <tglx-hfZtesqFncYOwBW4kG4KsQ@public.gmane.org>, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Quoting Eric W. Biederman (ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org):
-> "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org> writes:
-> 
-> 
-> > The uid check needs to be fixed for user namespaces, agreed.  I could
-> > go either way though on whether we should also restrict to the same
-> > pidns.
-> 
-> It would be a subtle unexpected semantic change, that we would need
-> to copy linux-abi and document etc.  I'm not convinced it is that
-> useful.
-> 
-> I'm inclined to keep the semantics pure until there is some real
-> experience from the field on issues like this.
 
-Ok.
 
-Gowrishankar, please drop this patch.
-
-> > (note to fix the userns part of this added to my userns queue - first
-> > I want to finish with keys; then maybe this should be done before
-> > handling capabilities)
+Dave Hansen wrote:
+> On Thu, 2008-12-18 at 06:10 -0500, Oren Laadan wrote:
+>>>> +    for (i = pgarr->nr_used; i--; /**/)
+>>>> +        page_cache_release(pgarr->pages[i]);
+>>> This is sorta hard to read (and non-intuitive).  Is it easier to do:
+>>>
+>>> for (i = 0; i < pgarr->nr_used; i++)
+>>>     page_cache_release(pgarr->pages[i]);
+>>>
+>>> It shouldn't matter what order you release the pages in..
+>> Was meant to avoid a dereference to 'pgarr->nr_used' in the comparison.
+>> (though I doubt if the performance impact is at all visible)
 > 
-> Sounds good.  Mentioning the user namespace was just to make it clear
-> where it should be fixed.
+> That's a bit to aggressive an optimization.  You two piqued my
+> curiosity, so I tried a little experiment with this .c file:
+> 
+> extern void bar(int i);
+> 
+> struct s {
+>         int *array;
+>         int size;
+> };
+> 
+> extern struct s *s;
+> void foo(void)
+> {
+>         int i;
+> #ifdef OREN
+>         for (i = s->size; i--; )
+> #else
+>         for (i = 0; i < s->size; i++)
+> #endif
+>                 bar(s->array[i]);
+> }
+> 
+> for O in "" -O -O1 -O2 -O3 -Os; do
+> 	gcc -DOREN $O -c f1.c -o oren.o;
+> 	gcc $O -c f1.c -o mike.o;
+> 	echo -n Oren:; objdump -d oren.o | grep ret;
+> 	echo -n Mike:; objdump -d mike.o | grep ret;
+> done
 
-(And I might not have caught it if you hadn't mentioned it)
+For what it's worth, the idea was to improve time... (not code length).
+I changed the code anyway (in response to another comment).
 
-thanks,
--serge
+Oren.
