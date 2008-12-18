@@ -1,20 +1,15 @@
-From: Grzegorz Nosek <root-AfQBxy1nhrQ00sYp1HPQUA@public.gmane.org>
-Subject: Re: ns_can_attach (nsproxy cgroup)
-Date: Thu, 18 Dec 2008 15:45:08 +0100
-Message-ID: <20081218144506.GA2185@megiteam.pl>
-References: <20081212095153.GA20956@megiteam.pl>
-	<20081212140908.GA9571@us.ibm.com>
-	<20081212213042.GA23581@megiteam.pl>
-	<49435E58.9050209@cn.fujitsu.com>
-	<20081214140604.GA22768@megiteam.pl>
-	<20081216230808.GA26026@megiteam.pl>
-	<49484D33.5020308@cn.fujitsu.com>
+From: Dave Hansen <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Subject: Re: [RFC v11][PATCH 05/13] Dump memory address space
+Date: Thu, 18 Dec 2008 07:05:20 -0800
+Message-ID: <1229612720.17206.505.camel__17441.3589913913$1229612954$gmane$org@nimitz>
+References: <1228498282-11804-1-git-send-email-orenl@cs.columbia.edu>
+	<1228498282-11804-6-git-send-email-orenl@cs.columbia.edu>
+	<4949B4ED.9060805@google.com>  <494A2F94.2090800@cs.columbia.edu>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: base64
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-Content-Disposition: inline
-In-Reply-To: <49484D33.5020308-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
+In-Reply-To: <494A2F94.2090800-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -24,29 +19,53 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, Grzegorz Nosek <root-AfQBxy1nhrQ00sYp1HPQUA@public.gmane.org>
+To: Oren Laadan <orenl-eQaUEPhvms7ENvBUuze7eA@public.gmane.org>
+Cc: jeremy-TSDbQ3PG+2Y@public.gmane.org, arnd-r2nGTMty4D4@public.gmane.org, linux-api-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-mm-Bw31MaZKKs3YtjvyW6yDsg@public.gmane.org, Linux Torvalds <torvalds-3NddpPZAyC0@public.gmane.org>, Alexander Viro <viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org>, "H. Peter Anvin" <hpa-YMNOUZJC4hwAvxtiuMwx3w@public.gmane.org>, Thomas Gleixner <tglx-hfZtesqFncYOwBW4kG4KsQ@public.gmane.org>, Ingo Molnar <mingo-X9Un+BFzKDI@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-T24gxZtybywgZ3J1IDE3LCAyMDA4IGF0IDA4OjUyOjAzICswODAwLCBMaSBaZWZhbiB3cm90ZToK
-PiA+PkZyb20gMmFiYjYwODIyMmYzZGZkMWM1ZGEzMDIyYTc1YzgyNGYyYjAwYjNmNSBNb24gU2Vw
-IDE3IDAwOjAwOjAwIDIwMDEKPiA+IEZyb206IEdyemVnb3J6IE5vc2VrIDxyb290QGxvY2FsZG9t
-YWluLnBsPgo+ID4gRGF0ZTogRnJpLCAxMiBEZWMgMjAwOCAyMTo0ODowOSArMDEwMAo+ID4gU3Vi
-amVjdDogW1BBVENIXSBSZWxheCBuc19jYW5fYXR0YWNoIGNoZWNrcyB0byBhbGxvdyBhdHRhY2hp
-bmcgdG8gZ3JhbmRjaGlsZCBjZ3JvdXBzCj4gPiAKPiA+IFRoZSBuc19wcm94eSBjZ3JvdXAgYWxs
-b3dzIG1vdmluZyBwcm9jZXNzZXMgdG8gY2hpbGQgY2dyb3VwcyBvbmx5IG9uZQo+ID4gbGV2ZWwg
-ZGVlcCBhdCBhIHRpbWUuIFRoaXMgY29tbWl0IHJlbGF4ZXMgdGhpcyByZXN0cmljdGlvbiBhbmQg
-bWFrZXMgaXQKPiA+IHBvc3NpYmxlIHRvIGF0dGFjaCB0YXNrcyBkaXJlY3RseSB0byBncmFuZGNo
-aWxkIGNncm91cHMsIGUuZy46Cj4gPiAKPiA+ICgkcGlkIGlzIGluIHRoZSByb290IGNncm91cCkK
-PiA+IGVjaG8gJHBpZCA+IC9jZ3JvdXAvQ0cxL0NHMi90YXNrcwo+ID4gCj4gPiBQcmV2aW91c2x5
-IHRoaXMgb3BlcmF0aW9uIHdvdWxkIGZhaWwgd2l0aCAtRVBFUk0gYW5kIHdvdWxkIGhhdmUgdG8g
-YmUKPiA+IHBlcmZvcm1lZCBhcyB0d28gc3RlcHM6Cj4gPiBlY2hvICRwaWQgPiAvY2dyb3VwL0NH
-MS90YXNrcwo+ID4gZWNobyAkcGlkID4gL2Nncm91cC9DRzEvQ0cyL3Rhc2tzCj4gPiAKPiAKPiBO
-b3cgbG9va3MgZ29vZCB0byBtZS4gOikKPiAKPiBSZXZpZXdlZC1ieTogTGkgWmVmYW4gPGxpemZA
-Y24uZnVqaXRzdS5jb20+CgpUaGFua3MsIHNoYWxsIEkgc2VuZCB0aGUgcGF0Y2ggc29tZXdoZXJl
-IGVsc2UgZm9yIHNvbWUgbWFpbnN0cmVhbSB0cmVlCmluY2x1c2lvbiBvciBpcyBzb21lYm9keSB3
-aWxsaW5nIHRvIHBpY2sgaXQgdXAgZnJvbSBoZXJlPwoKQmVzdCByZWdhcmRzLAogR3J6ZWdvcnog
-Tm9zZWsKX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX18KQ29u
-dGFpbmVycyBtYWlsaW5nIGxpc3QKQ29udGFpbmVyc0BsaXN0cy5saW51eC1mb3VuZGF0aW9uLm9y
-ZwpodHRwczovL2xpc3RzLmxpbnV4LWZvdW5kYXRpb24ub3JnL21haWxtYW4vbGlzdGluZm8vY29u
-dGFpbmVycw==
+On Thu, 2008-12-18 at 06:10 -0500, Oren Laadan wrote:
+> >> +    mutex_lock(&mm->context.lock);
+> >> +
+> >> +    hh->ldt_entry_size = LDT_ENTRY_SIZE;
+> >> +    hh->nldt = mm->context.size;
+> >> +
+> >> +    cr_debug("nldt %d\n", hh->nldt);
+> >> +
+> >> +    ret = cr_write_obj(ctx, &h, hh);
+> >> +    cr_hbuf_put(ctx, sizeof(*hh));
+> >> +    if (ret < 0)
+> >> +        goto out;
+> >> +
+> >> +    ret = cr_kwrite(ctx, mm->context.ldt,
+> >> +            mm->context.size * LDT_ENTRY_SIZE);
+> > 
+> > Do we really want to emit anything under lock?  I realize that this
+> > patch goes and does a ton of writes with mmap_sem held for read -- is
+> > this ok?
+> 
+> Because all tasks in the container must be frozen during the checkpoint,
+> there is no performance penalty for keeping the locks. Although the object
+> should not change in the interim anyways, the locks protects us from, e.g.
+> the task unfreezing somehow, or being killed by the OOM killer, or any
+> other change incurred from the "outside world" (even future code).
+> 
+> Put in other words - in the long run it is safer to assume that the
+> underlying object may otherwise change.
+> 
+> (If we want to drop the lock here before cr_kwrite(), we need to copy the
+> data to a temporary buffer first. If we also want to drop mmap_sem(), we
+> need to be more careful with following the vma's.)
+> 
+> Do you see a reason to not keeping the locks ?
+
+Mike, although we're doing writes of the checkpoint file here, the *mm*
+access is read-only.  We only need really mmap_sem for write if we're
+creating new VMAs, which we only do on restore.  Was there an action
+taken on the mm that would require a write that we missed?
+
+Oren, I never considered the locking overhead, either.  The fact that
+the processes are frozen is very, very important here.  The code is fine
+as it stands because this *is* a very simple way to do it.  But, this
+probably deserves a comment. 
+
+-- Dave
