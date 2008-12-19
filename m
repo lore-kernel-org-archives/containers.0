@@ -1,34 +1,28 @@
-From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+From: "Serge E. Hallyn" <serue@us.ibm.com>
 Subject: [PATCH 3/3] mqueue namespace: adapt sysctl
-Date: Fri, 19 Dec 2008 11:20:59 -0600
-Message-ID: <20081219172059.GC17381@us.ibm.com>
+Date: Fri, 19 Dec 2008 12:25:10 -0600
+Message-ID: <20081219182510.GA19759@us.ibm.com>
 References: <20081219171930.GA17335@us.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Content-Type: text/plain; charset=us-ascii
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1754514AbYLSSZb@vger.kernel.org>
 Content-Disposition: inline
-In-Reply-To: <20081219171930.GA17335-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>
-Cc: Dave Hansen <haveblue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <20081219171930.GA17335@us.ibm.com>
+Sender: linux-kernel-owner@vger.kernel.org
+To: lkml <linux-kernel@vger.kernel.org>
+Cc: Linux Containers <containers@lists.osdl.org>, Dave Hansen <haveblue@us.ibm.com>, Sukadev Bhattiprolu <sukadev@us.ibm.com>
 List-Id: containers.vger.kernel.org
 
-From: Nadia Derbey <Nadia.Derbey-6ktuUTfB/bM@public.gmane.org>
+(resending since lkml appears to have disappeared from the earlier
+headers)
+
+From: Nadia Derbey <Nadia.Derbey@bull.net>
 
 Largely inspired from ipc/ipc_sysctl.c. This patch isolates the mqueue
 sysctl stuff in its own file.
 
-Signed-off-by: Cedric Le Goater <clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
-Signed-off-by: Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Signed-off-by: Cedric Le Goater <clg@fr.ibm.com>
+Signed-off-by: Serge E. Hallyn <serue@us.ibm.com>
 ---
  include/linux/ipc_namespace.h |   14 +++++
  init/Kconfig                  |    6 ++
@@ -97,7 +91,7 @@ index 0000000..81f01b7
 +/*
 + *  Copyright (C) 2007 IBM Corporation
 + *
-+ *  Author: Cedric Le Goater <clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
++ *  Author: Cedric Le Goater <clg@fr.ibm.com>
 + *
 + *  This program is free software; you can redistribute it and/or
 + *  modify it under the terms of the GNU General Public License as
