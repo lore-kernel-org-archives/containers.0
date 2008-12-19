@@ -1,16 +1,17 @@
-From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+From: Grzegorz Nosek <root-AfQBxy1nhrQ00sYp1HPQUA@public.gmane.org>
 Subject: Re: [PATCH] Relax ns_can_attach checks to allow attaching to
 	grandchild cgroups
-Date: Fri, 19 Dec 2008 16:23:04 -0600
-Message-ID: <20081219222304.GA25828@us.ibm.com>
+Date: Sat, 20 Dec 2008 00:03:30 +0100
+Message-ID: <20081219230330.GA30623@eskarina.localdomain.pl>
 References: <20081219120954.GB27472@megiteam.pl>
 	<20081219131641.cafc65ac.akpm@linux-foundation.org>
+	<20081219222304.GA25828@us.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <20081219131641.cafc65ac.akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
+In-Reply-To: <20081219222304.GA25828-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -20,147 +21,38 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
-Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, Grzegorz Nosek <root-AfQBxy1nhrQ00sYp1HPQUA@public.gmane.org>
+To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>, menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org, Grzegorz Nosek <root-AfQBxy1nhrQ00sYp1HPQUA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Quoting Andrew Morton (akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org):
-> (cc containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org)
-> 
-> Please don't send patches via private email!
-> 
-> 
-> 
-> From: Grzegorz Nosek <root-AfQBxy1nhrQ00sYp1HPQUA@public.gmane.org>
-> 
-> The ns_proxy cgroup allows moving processes to child cgroups only one
-> level deep at a time.  This commit relaxes this restriction and makes it
-> possible to attach tasks directly to grandchild cgroups, e.g.:
-> 
-> ($pid is in the root cgroup)
-> echo $pid > /cgroup/CG1/CG2/tasks
-> 
-> Previously this operation would fail with -EPERM and would have to be
-> performed as two steps:
-> echo $pid > /cgroup/CG1/tasks
-> echo $pid > /cgroup/CG1/CG2/tasks
-> 
-> Signed-off-by: Grzegorz Nosek <root-AfQBxy1nhrQ00sYp1HPQUA@public.gmane.org>
-> Reviewed-by: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-> Cc: Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org>
-> Cc: Balbir Singh <balbir-xthvdsQ13ZrQT0dZR+AlfA@public.gmane.org>
-> Cc: KAMEZAWA Hiroyuki <kamezawa.hiroyu-+CUm20s59erQFUHtdCDX3A@public.gmane.org>
-> Cc: Pavel Emelyanov <xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org>
-> Signed-off-by: Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>
-
-Acked-by: Serge Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-
-I trust (since you're not removing it) that the restriction that
-the target cgroup be empty is not a problem?
-
-Also, 'rule 1' in the comment above ns_can_attach should be modified
-accordingly (s/child/descendant).
-
-thanks,
--serge
-
-> ---
-> 
->  include/linux/cgroup.h |    4 ++--
->  kernel/cgroup.c        |   12 +++++++-----
->  kernel/ns_cgroup.c     |    9 +++------
->  3 files changed, 12 insertions(+), 13 deletions(-)
-> 
-> diff -puN include/linux/cgroup.h~relax-ns_can_attach-checks-to-allow-attaching-to-grandchild-cgroups include/linux/cgroup.h
-> --- a/include/linux/cgroup.h~relax-ns_can_attach-checks-to-allow-attaching-to-grandchild-cgroups
-> +++ a/include/linux/cgroup.h
-> @@ -344,8 +344,8 @@ int cgroup_path(const struct cgroup *cgr
-> 
->  int cgroup_task_count(const struct cgroup *cgrp);
-> 
-> -/* Return true if the cgroup is a descendant of the current cgroup */
-> -int cgroup_is_descendant(const struct cgroup *cgrp);
-> +/* Return true if cgrp is a descendant of the task's cgroup */
-> +int cgroup_is_descendant(const struct cgroup *cgrp, struct task_struct *task);
-> 
->  /* Control Group subsystem type. See Documentation/cgroups.txt for details */
-> 
-> diff -puN kernel/cgroup.c~relax-ns_can_attach-checks-to-allow-attaching-to-grandchild-cgroups kernel/cgroup.c
-> --- a/kernel/cgroup.c~relax-ns_can_attach-checks-to-allow-attaching-to-grandchild-cgroups
-> +++ a/kernel/cgroup.c
-> @@ -3072,18 +3072,19 @@ int cgroup_clone(struct task_struct *tsk
->  }
-> 
->  /**
-> - * cgroup_is_descendant - see if @cgrp is a descendant of current task's cgrp
-> + * cgroup_is_descendant - see if @cgrp is a descendant of @task's cgrp
->   * @cgrp: the cgroup in question
-> + * @task: the task in question
->   *
-> - * See if @cgrp is a descendant of the current task's cgroup in
-> - * the appropriate hierarchy.
-> + * See if @cgrp is a descendant of @task's cgroup in the appropriate
-> + * hierarchy.
->   *
->   * If we are sending in dummytop, then presumably we are creating
->   * the top cgroup in the subsystem.
->   *
->   * Called only by the ns (nsproxy) cgroup.
->   */
-> -int cgroup_is_descendant(const struct cgroup *cgrp)
-> +int cgroup_is_descendant(const struct cgroup *cgrp, struct task_struct *task)
->  {
->  	int ret;
->  	struct cgroup *target;
-> @@ -3093,7 +3094,8 @@ int cgroup_is_descendant(const struct cg
->  		return 1;
-> 
->  	get_first_subsys(cgrp, NULL, &subsys_id);
-> -	target = task_cgroup(current, subsys_id);
-> +	target = task_cgroup(task, subsys_id);
-> +
->  	while (cgrp != target && cgrp!= cgrp->top_cgroup)
->  		cgrp = cgrp->parent;
->  	ret = (cgrp == target);
-> diff -puN kernel/ns_cgroup.c~relax-ns_can_attach-checks-to-allow-attaching-to-grandchild-cgroups kernel/ns_cgroup.c
-> --- a/kernel/ns_cgroup.c~relax-ns_can_attach-checks-to-allow-attaching-to-grandchild-cgroups
-> +++ a/kernel/ns_cgroup.c
-> @@ -45,21 +45,18 @@ int ns_cgroup_clone(struct task_struct *
->  static int ns_can_attach(struct cgroup_subsys *ss,
->  		struct cgroup *new_cgroup, struct task_struct *task)
->  {
-> -	struct cgroup *orig;
-> -
->  	if (current != task) {
->  		if (!capable(CAP_SYS_ADMIN))
->  			return -EPERM;
-> 
-> -		if (!cgroup_is_descendant(new_cgroup))
-> +		if (!cgroup_is_descendant(new_cgroup, current))
->  			return -EPERM;
->  	}
-> 
->  	if (atomic_read(&new_cgroup->count) != 0)
->  		return -EPERM;
-> 
-> -	orig = task_cgroup(task, ns_subsys_id);
-> -	if (orig && orig != new_cgroup->parent)
-> +	if (!cgroup_is_descendant(new_cgroup, task))
->  		return -EPERM;
-> 
->  	return 0;
-> @@ -77,7 +74,7 @@ static struct cgroup_subsys_state *ns_cr
-> 
->  	if (!capable(CAP_SYS_ADMIN))
->  		return ERR_PTR(-EPERM);
-> -	if (!cgroup_is_descendant(cgroup))
-> +	if (!cgroup_is_descendant(cgroup, current))
->  		return ERR_PTR(-EPERM);
-> 
->  	ns_cgroup = kzalloc(sizeof(*ns_cgroup), GFP_KERNEL);
-> _
-> 
-> _______________________________________________
-> Containers mailing list
-> Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-> https://lists.linux-foundation.org/mailman/listinfo/containers
+T24gcGnEhSwgZ3J1IDE5LCAyMDA4IGF0IDA0OjIzOjA0IC0wNjAwLCBTZXJnZSBFLiBIYWxseW4g
+d3JvdGU6Cj4gUXVvdGluZyBBbmRyZXcgTW9ydG9uIChha3BtQGxpbnV4LWZvdW5kYXRpb24ub3Jn
+KToKPiA+IChjYyBjb250YWluZXJzQGxpc3RzLm9zZGwub3JnKQo+ID4gCj4gPiBQbGVhc2UgZG9u
+J3Qgc2VuZCBwYXRjaGVzIHZpYSBwcml2YXRlIGVtYWlsIQoKTXkgYXBvbG9naWVzLgoKPiBJIHRy
+dXN0IChzaW5jZSB5b3UncmUgbm90IHJlbW92aW5nIGl0KSB0aGF0IHRoZSByZXN0cmljdGlvbiB0
+aGF0Cj4gdGhlIHRhcmdldCBjZ3JvdXAgYmUgZW1wdHkgaXMgbm90IGEgcHJvYmxlbT8KClNpZ2gs
+IGdvb2QgY2F0Y2guIEknbSBidWlsZGluZyBteSBseGMtYmFzZWQgZW52aXJvbm1lbnQgc2xvd2x5
+IGFuZCBJJ20Kb25seSB0ZXN0aW5nIHRoZSBtb3N0IGJhc2ljIHN0dWZmIGN1cnJlbnRseSwgc28g
+SSdkIGJ1ZyB5b3UgYWJvdXQgaXQKZXZlbnR1YWxseS4KCkZyYW5rbHksIEkgZG9uJ3QgdW5kZXJz
+dGFuZCB0aGUgcmVhc29uIGJlaGluZCB0aGVzZSByZXN0cmljdGlvbnMgYW5kCmZlZWwgbGlrZSBJ
+J20gbWlzc2luZyBzb21lIGltcG9ydGFudCBwaWVjZSBvZiBhIHB1enpsZS4gSW4gbXkgdGVzdHMg
+YWxsCnRoZSB0YXNrcyBpbiBxdWVzdGlvbiBhcmUgbGl2aW5nIGluIHRoZSBzYW1lIG5hbWVzcGFj
+ZSAodGhvdWdoIGl0IHdvbid0CmFsd2F5cyBiZSBzbyksIHNvIEknZCBndWVzcyBJIHNob3VsZCBi
+ZSBhYmxlIHRvIG1vdmUgdGhlIHRhc2tzIGZyZWVseQpiZXR3ZWVuIGNncm91cHMuIFdoeSBleGFj
+dGx5IGRvZXMgdGhlIHRhcmdldCBjZ3JvdXAgaGF2ZSB0byBiZSBlbXB0eT8KCkFsc28sIHNob3Vs
+ZCB3ZSByZW1lbWJlciB0aGUgdGFzay0+bnNwcm94eSBwb2ludGVyIGluIHRoZSBjZ3JvdXAgZGF0
+YQphbmQgaWdub3JlIGhpZXJhcmNoeSBpZiBpdCBtYXRjaGVzPyBJIGd1ZXNzIGl0IHdvdWxkIGJl
+IHNhZmUgdG8gc3RvcmUKdGhlIHJhdyBwb2ludGVyIHdpdGhvdXQgcmVmY291bnRpbmcgaXQgaW4g
+YW55IHdheSBhcyB3ZSdkIG5ldmVyCmRlcmVmZXJlbmNlIGl0IChjb3VsZCBrZWVwIGl0IGFzIHVp
+bnRwdHJfdCB0byByZWluZm9yY2UgdGhlIGlkZWEpIGJ1dApvbmx5IGNvbXBhcmUgd2l0aCBhbm90
+aGVyIHBvaW50ZXIuCgpEb2VzIHRoYXQgbWFrZSBhbnkgc2Vuc2U/IE9yIHNob3VsZCBJIHNpbXBs
+eSBtb3VudCB0aGUgY2dyb3VwIGZzIHdpdGhvdXQKdGhlIG5zIHN1YnN5c3RlbSBhbmQgZm9yZ2V0
+IHRoZSB3aG9sZSB0aGluZz8gV2hhdCBleGFjdGx5IGRvIEkgbG9zZSBieQpkb2luZyBzbz8KCj4g
+QWxzbywgJ3J1bGUgMScgaW4gdGhlIGNvbW1lbnQgYWJvdmUgbnNfY2FuX2F0dGFjaCBzaG91bGQg
+YmUgbW9kaWZpZWQKPiBhY2NvcmRpbmdseSAocy9jaGlsZC9kZXNjZW5kYW50KS4KCkluZGVlZC4g
+V2lsbCByZXNlbmQgYWZ0ZXIgcmVjZWl2aW5nIHNvbWUgZW5saWdodGVubWVudCBhYm91dCB0aGUg
+YWJvdmUuCgpUaGFuayB5b3UgZm9yIHlvdXIgY29tbWVudHMuCgpCZXN0IHJlZ2FyZHMsCiBHcnpl
+Z29yeiBOb3NlawpfX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19f
+XwpDb250YWluZXJzIG1haWxpbmcgbGlzdApDb250YWluZXJzQGxpc3RzLmxpbnV4LWZvdW5kYXRp
+b24ub3JnCmh0dHBzOi8vbGlzdHMubGludXgtZm91bmRhdGlvbi5vcmcvbWFpbG1hbi9saXN0aW5m
+by9jb250YWluZXJz
