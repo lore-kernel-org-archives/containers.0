@@ -1,19 +1,17 @@
-From: David Howells <dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [PATCH 0/3] keys: play nicely with user namespaces
-Date: Fri, 19 Dec 2008 02:30:24 +0000
-Message-ID: <7658.1229653824@redhat.com>
-References: <20081219014555.GA25688@us.ibm.com>
-	<20081218174613.GA13968@us.ibm.com>
-	<20081217235536.GA932@us.ibm.com>
-	<20081212141707.GB9571@us.ibm.com>
-	<20081211232323.GA8343@us.ibm.com> <3507.1229086294@redhat.com>
-	<25987.1229097458@redhat.com> <3547.1229607983@redhat.com>
-	<7376.1229648192@redhat.com>
+From: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH 5/5] pid: use namespaced iteration on processes while
+	managing priority
+Date: Thu, 18 Dec 2008 20:30:36 -0800
+Message-ID: <1229661036.8011.21.camel@localhost>
+References: <1229618553-6348-1-git-send-email-gowrishankar.m@linux.vnet.ibm.com>
+	<1229618553-6348-6-git-send-email-gowrishankar.m@linux.vnet.ibm.com>
+	<m1d4fp8ju3.fsf@frodo.ebiederm.org> <20081218181317.GA14409@us.ibm.com>
+	<m1wsdx71r7.fsf@frodo.ebiederm.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20081219014555.GA25688-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+In-Reply-To: <m1wsdx71r7.fsf-B27657KtZYmhTnVgQlOflh2eb7JE58TQ@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -23,21 +21,36 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Cc: dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+To: "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
+Cc: Gowrishankar M <gowrishankar.m-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, Dave <dave-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, Sukadev <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>, Balbir <balbir-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org> wrote:
+On Thu, 2008-12-18 at 10:54 -0800, Eric W. Biederman wrote:
+> "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org> writes:
+> 
+> 
+> > The uid check needs to be fixed for user namespaces, agreed.  I could
+> > go either way though on whether we should also restrict to the same
+> > pidns.
+> 
+> It would be a subtle unexpected semantic change, that we would need
+> to copy linux-abi and document etc.  I'm not convinced it is that
+> useful.
+> 
+> I'm inclined to keep the semantics pure until there is some real
+> experience from the field on issues like this.
 
-> Yup - patch coming (probably next week) for that,
+Well the man page talks about PRIO_PROCESS and PRIO_PGRP and in those
+cases it looks like "who" is really a pid or pgrp id:
 
-Thanks.
+>        The  value  which  is one of PRIO_PROCESS, PRIO_PGRP, or PRIO_USER, and
+>        who  is  interpreted  relative  to  which  (a  process  identifier  for
+>        PRIO_PROCESS, process group identifier for PRIO_PGRP, and a user ID for
+>        PRIO_USER). 
 
-> but there's the question, given that user namespaces are hierarchical, of
-> whether, if pidns B is a child of pidns A created by userid 500, a task in
-> pidns A should see keys in userns B (listed as belonging to userid 500).
+It looks to me like restricting by pidns is required if "which" is
+PRIO_PROCESS or PRIO_PGRP. If "which" is PRIO_USER then yes, it sounds
+like a user ns issue.
 
-Does that mean all the UIDs of B should be part of A?  Or is just UID 500
-inherited?  Or is UID 0 in B the same as UID 500 in A?
-
-David
+Cheers,
+	-Matt Helsley
