@@ -1,20 +1,17 @@
-From: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-Subject: Re: ns_can_attach (nsproxy cgroup)
-Date: Fri, 19 Dec 2008 08:43:25 +0800
-Message-ID: <494AEE2D.8020703@cn.fujitsu.com>
-References: <20081212095153.GA20956@megiteam.pl>
-	<20081212140908.GA9571@us.ibm.com>
-	<20081212213042.GA23581@megiteam.pl>
-	<49435E58.9050209@cn.fujitsu.com>
-	<20081214140604.GA22768@megiteam.pl>
-	<20081216230808.GA26026@megiteam.pl>
-	<49484D33.5020308@cn.fujitsu.com>
-	<20081218144506.GA2185@megiteam.pl>
+From: David Howells <dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [PATCH 0/3] keys: play nicely with user namespaces
+Date: Fri, 19 Dec 2008 00:56:32 +0000
+Message-ID: <7376.1229648192@redhat.com>
+References: <20081218174613.GA13968@us.ibm.com>
+	<20081217235536.GA932@us.ibm.com>
+	<20081212141707.GB9571@us.ibm.com>
+	<20081211232323.GA8343@us.ibm.com> <3507.1229086294@redhat.com>
+	<25987.1229097458@redhat.com> <3547.1229607983@redhat.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20081218144506.GA2185-yp6mvK3Bdd2rDJvtcaxF/A@public.gmane.org>
+In-Reply-To: <20081218174613.GA13968-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
 List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
@@ -24,23 +21,24 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: Grzegorz Nosek <root-AfQBxy1nhrQ00sYp1HPQUA@public.gmane.org>
-Cc: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Cc: dhowells-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
->> Now looks good to me. :)
->>
->> Reviewed-by: Li Zefan <lizf-BthXqXjhjHXQFUHtdCDX3A@public.gmane.org>
-> 
-> Thanks, shall I send the patch somewhere else for some mainstream tree
-> inclusion or is somebody willing to pick it up from here?
-> 
+Serge E. Hallyn <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org> wrote:
 
-You can resend this patch to Andrew Morton <akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org>,
-and CC Paul Menage <menage-hpIqsD4AKlfQT0dZR+AlfA@public.gmane.org> since the patch touches cgroup.c,
-and feel free to add my reviewed tag. :)
+> Cool, thanks.  I needed the following change to toolbox.inc.sh.orig in
+> order to be able to run with >1 user namespaces:
+> 
+> 36c36
+> < maxsquota=`grep '^ *0': /proc/key-users | sed s@.*/@@`
+> ---
+> > maxsquota=`grep '^ *0': /proc/key-users | sed s@.*/@@ | head -1`
+> 
+> since /proc/key-users then lists multiple entries.  Otherwise,
+> all tests pass when running the testsuite in a child-user-ns.
 
-> Best regards,
->  Grzegorz Nosek
-> 
-> 
+Should you only get key-users from the set of users in your namespace, I
+wonder?
+
+David
