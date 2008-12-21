@@ -1,11 +1,11 @@
 From: Sukadev Bhattiprolu <sukadev@linux.vnet.ibm.com>
-Subject: [RFC][PATCH 5/6][v3] Protect cinit from unblocked SIG_DFL signals
-Date: Sat, 20 Dec 2008 16:54:54 -0800
-Message-ID: <20081221005454.GE5025@us.ibm.com>
+Subject: [RFC][PATCH 6/6][v3] Protect cinit from blocked fatal signals
+Date: Sat, 20 Dec 2008 16:55:29 -0800
+Message-ID: <20081221005529.GF5025@us.ibm.com>
 References: <20081221005106.GA4912@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1755691AbYLUA4X@vger.kernel.org>
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1755771AbYLUA45@vger.kernel.org>
 Content-Disposition: inline
 In-Reply-To: <20081221005106.GA4912@us.ibm.com>
 Sender: linux-kernel-owner@vger.kernel.org
@@ -15,124 +15,89 @@ List-Id: containers.vger.kernel.org
 
 
 From: Sukadev Bhattiprolu <sukadev@linux.vnet.ibm.com>
-Date: Sat, 20 Dec 2008 13:25:24 -0800
-Subject: [RFC][PATCH 5/6][v3] Protect cinit from unblocked SIG_DFL signals
+Date: Sat, 20 Dec 2008 14:15:41 -0800
+Subject: [RFC][PATCH 6/6][v3] Protect cinit from blocked fatal signals
 
-Drop early any SIG_DFL or SIG_IGN signals to container-init from within
-the same container. But queue SIGSTOP and SIGKILL to the container-init
-if they are from an acnestor container.
+Normally SIG_DFL signals to global and container-init are dropped early.
+But if a signal is blocked when it is posted, we cannot drop the signal
+since the receiver may install a handler before unblocking the signal.
+Once this signal is queued however, the receiver container-init has
+no way of knowing if the signal was sent from an ancestor or descendant
+namespace.  This patch ensures that contianer-init drop all SIG_DFL
+signals in get_signal_to_deliver() except SIGKILL/SIGSTOP.
 
-Blocked, fatal signals (i.e when SIG_DFL is to terminate) from within the
-container can still terminate the container-init. That will be addressed
-in the next patch.
+If SIGSTOP/SIGKILL originate from a descendant of container-init they
+are never queued (i.e dropped in sig_ignored() in an earler patch).
+
+If SIGSTOP/SIGKILL originate from parent namespace, the signal is queued
+and container-init processes the signal.
+
+See comments in patch below for details.
 
 Signed-off-by: Sukadev Bhattiprolu <sukadev@linux.vnet.ibm.com>
 ---
- kernel/signal.c |   43 ++++++++++++++++++++++++++++++++++---------
- 1 files changed, 34 insertions(+), 9 deletions(-)
+ kernel/signal.c |   41 +++++++++++++++++++++++++++++++++++++++--
+ 1 files changed, 39 insertions(+), 2 deletions(-)
 
 diff --git a/kernel/signal.c b/kernel/signal.c
-index 058b4c0..2dfca62 100644
+index 2dfca62..4abacf4 100644
 --- a/kernel/signal.c
 +++ b/kernel/signal.c
-@@ -53,20 +53,39 @@ static int sig_handler_ignored(void __user *handler, int sig)
- 		(handler == SIG_DFL && sig_kernel_ignore(sig));
+@@ -1816,6 +1816,42 @@ static int ptrace_signal(int signr, siginfo_t *info,
+ 	return signr;
  }
  
--static int sig_task_ignored(struct task_struct *t, int sig)
 +/*
++ * Return 1 if the signal @sig should NOT kill the task that owns @signal.
++ * Return 0 otherwise.
 + *
-+ * Return 1 if task @t is either the global init or the container-init
-+ * of the sender's container. Return 0 otherwise.
++ * If @signal refers to the global-init, it is unkillable (return 1).
 + *
-+ * @same_ns = 1 indicates that sender of signal is in same pid namespace
-+ * as sender.
++ * If @signal refers to a task a that is neither a container-init nor the
++ * global init, the task is killable (return 0).
++ *
++ * If @signal refers to a container-init and @sig is either SIGKILL or
++ * SIGSTOP, the signal must be from an ancestor container. So the task
++ * (container-init) should be killable (return 0).
++ *
++ * If @signal refers to a container-init and @sig is neither SIGKILL nor
++ * SIGSTOP, it was queued because it was blocked when it was posed. The
++ * signal may have come from same container - hence it should not be
++ * killable (return 1).
++ *
++ * Note:
++ * 	This means that SIGKILL is the only sure way to terminate a
++ * 	container-init even from ancestor namespace.
 + */
-+static int sig_task_unkillable(struct task_struct *t, int same_ns)
++static int sig_unkillable(struct signal_struct *signal, int sig)
 +{
-+	int flags = t->signal->flags;
++	if (signal->flags & SIGNAL_UNKILLABLE_FROM_NS)
++		return !sig_kernel_only(sig);
 +
-+	if (unlikely(flags & SIGNAL_UNKILLABLE) ||
-+			(same_ns && (flags & SIGNAL_UNKILLABLE_FROM_NS)))
-+		return 1;
++	/*
++	 * We must have dropped SIGKILL/SIGSTOP in sig_ignored()
++	 * TODO: Remove BUG_ON().
++	 */
++	BUG_ON(signal->flags & SIGNAL_UNKILLABLE && sig_kernel_only(sig));
 +
-+	return 0;
++	return (signal->flags & SIGNAL_UNKILLABLE);
 +}
 +
-+static int sig_task_ignored(struct task_struct *t, int sig, int same_ns)
+ int get_signal_to_deliver(siginfo_t *info, struct k_sigaction *return_ka,
+ 			  struct pt_regs *regs, void *cookie)
  {
- 	void __user *handler;
+@@ -1907,9 +1943,10 @@ relock:
  
- 	handler = sig_handler(t, sig);
+ 		/*
+ 		 * Global init gets no signals it doesn't want.
++		 * Container-init gets no signals it doesn't want from same
++		 * container.
+ 		 */
+-		if (unlikely(signal->flags & SIGNAL_UNKILLABLE) &&
+-		    !signal_group_exit(signal))
++		if (sig_unkillable(signal, signr) && !signal_group_exit(signal))
+ 			continue;
  
--	if (unlikely(t->signal->flags & SIGNAL_UNKILLABLE) &&
-+	if (sig_task_unkillable(t, same_ns) &&
- 			(handler == SIG_IGN || handler == SIG_DFL))
- 		return 1;
--	
-+
- 	return sig_handler_ignored(handler, sig);
- }
- 
--static int sig_ignored(struct task_struct *t, int sig)
-+static int sig_ignored(struct task_struct *t, int sig, int same_ns)
- {
- 	/*
- 	 * Blocked signals are never ignored, since the
-@@ -76,7 +95,7 @@ static int sig_ignored(struct task_struct *t, int sig)
- 	if (sigismember(&t->blocked, sig) || sigismember(&t->real_blocked, sig))
- 		return 0;
- 
--	if (!sig_task_ignored(t, sig))
-+	if (!sig_task_ignored(t, sig, same_ns))
- 		return 0;
- 
- 	/*
-@@ -632,7 +651,7 @@ static int check_kill_permission(int sig, struct siginfo *info,
-  * Returns true if the signal should be actually delivered, otherwise
-  * it should be dropped.
-  */
--static int prepare_signal(int sig, struct task_struct *p)
-+static int prepare_signal(int sig, struct task_struct *p, int same_ns)
- {
- 	struct signal_struct *signal = p->signal;
- 	struct task_struct *t;
-@@ -716,7 +735,7 @@ static int prepare_signal(int sig, struct task_struct *p)
- 		}
- 	}
- 
--	return !sig_ignored(p, sig);
-+	return !sig_ignored(p, sig, same_ns);
- }
- 
- /*
-@@ -867,11 +886,17 @@ static int send_signal(int sig, struct siginfo *info, struct task_struct *t,
- {
- 	struct sigpending *pending;
- 	struct sigqueue *q;
-+	int same_ns;
- 
- 	trace_sched_signal_send(sig, t);
- 
- 	assert_spin_locked(&t->sighand->siglock);
--	if (!prepare_signal(sig, t))
-+
-+	same_ns = 1;
-+	if (siginfo_from_ancestor_ns(t, info))
-+		same_ns = 0;
-+
-+	if (!prepare_signal(sig, t, same_ns))
- 		return 0;
- 
- 	pending = group ? &t->signal->shared_pending : &t->pending;
-@@ -1366,7 +1391,7 @@ int send_sigqueue(struct sigqueue *q, struct task_struct *t, int group)
- 		goto ret;
- 
- 	ret = 1; /* the signal is ignored */
--	if (!prepare_signal(sig, t))
-+	if (!prepare_signal(sig, t, 1))
- 		goto out;
- 
- 	ret = 0;
+ 		if (sig_kernel_stop(signr)) {
 -- 
 1.5.2.5
