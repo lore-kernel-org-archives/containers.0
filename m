@@ -1,83 +1,72 @@
-From: Sukadev Bhattiprolu <sukadev@linux.vnet.ibm.com>
-Subject: [RFC][PATCH 2/6][v3] Protect init from unwanted signals more
-Date: Sat, 20 Dec 2008 16:53:19 -0800
-Message-ID: <20081221005319.GB5025@us.ibm.com>
+From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Subject: [RFC][PATCH 3/6][v3] Define/set SIGNAL_UNKILLABLE_FROM_NS
+Date: Sat, 20 Dec 2008 16:53:54 -0800
+Message-ID: <20081221005354.GC5025@us.ibm.com>
 References: <20081221005106.GA4912@us.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1755313AbYLUAyr@vger.kernel.org>
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <20081221005106.GA4912@us.ibm.com>
-Sender: linux-kernel-owner@vger.kernel.org
-To: oleg@redhat.com, ebiederm@xmission.com, roland@redhat.com, bastian@waldi.eu.org
-Cc: daniel@hozac.com, xemul@openvz.org, containers@lists.osdl.org, linux-kernel@vger.kernel.org, sukadev@us.ibm.com
+In-Reply-To: <20081221005106.GA4912-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org, roland-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, bastian-yyjItF7Rl6lg9hUCZPvPmw@public.gmane.org
+Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org
 List-Id: containers.vger.kernel.org
 
 
-From: Sukadev Bhattiprolu <sukadev@linux.vnet.ibm.com>
-Date: Fri, 19 Dec 2008 13:12:45 -0800
-Subject: [RFC][PATCH 2/6][v3] Protect init from unwanted signals more
+From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Date: Sat, 20 Dec 2008 12:27:47 -0800
+Subject: [RFC][PATCH 3/6][v3] Define/set SIGNAL_UNKILLABLE_FROM_NS
 
-(This is a modified version of the patch submitted by Oleg Nesterov
-http://lkml.org/lkml/2008/11/18/249 and tries to address comments
-that came up in that discussion)
+Define and set the SIGNAL_UNKILLABLE_FROM_NS flags for container-inits.
+This flag will be used in follow-on patches to ignore/drop fatal sigals
+to container-init from within the container but process the signals from
+an ancestor container.
 
-init ignores the SIG_DFL signals but we queue them anyway, including
-SIGKILL. This is mostly OK, the signal will be dropped silently when
-dequeued, but the pending SIGKILL has 2 bad implications:
+Based on discussions on earlier version of this patchset:
+	http://lkml.org/lkml/2008/11/25/462
 
-        - it implies fatal_signal_pending(), so we confuse things
-          like wait_for_completion_killable/lock_page_killable.
-
-        - for the sub-namespace inits, the pending SIGKILL can
-          mask (legacy_queue) the subsequent SIGKILL from the
-          parent namespace which must kill cinit reliably.
-          (preparation, cinits don't have SIGNAL_UNKILLABLE yet)
-
-The patch can't help when init is ptraced, but ptracing of init is
-not "safe" anyway.
-
-Signed-off-by: Sukadev Bhattiprolu <sukadev@linux.vnet.ibm.com>
+Signed-off-by: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
 ---
- kernel/signal.c |   16 +++++++++++++---
- 1 files changed, 13 insertions(+), 3 deletions(-)
+ include/linux/sched.h |    3 +++
+ kernel/fork.c         |    2 ++
+ 2 files changed, 5 insertions(+), 0 deletions(-)
 
-diff --git a/kernel/signal.c b/kernel/signal.c
-index 7945e71..55f41b6 100644
---- a/kernel/signal.c
-+++ b/kernel/signal.c
-@@ -53,10 +53,21 @@ static int sig_handler_ignored(void __user *handler, int sig)
- 		(handler == SIG_DFL && sig_kernel_ignore(sig));
- }
+diff --git a/include/linux/sched.h b/include/linux/sched.h
+index 96c6703..19c4311 100644
+--- a/include/linux/sched.h
++++ b/include/linux/sched.h
+@@ -604,6 +604,9 @@ struct signal_struct {
  
--static int sig_ignored(struct task_struct *t, int sig)
-+static int sig_task_ignored(struct task_struct *t, int sig)
+ #define SIGNAL_UNKILLABLE	0x00000040 /* for init: ignore fatal signals */
+ 
++/* for container-init: ignore fatal signals from within container */
++#define SIGNAL_UNKILLABLE_FROM_NS 0x00000080
++
+ /* If true, all threads except ->group_exit_task have pending SIGKILL */
+ static inline int signal_group_exit(const struct signal_struct *sig)
  {
- 	void __user *handler;
- 
-+	handler = sig_handler(t, sig);
-+
-+	if (unlikely(t->signal->flags & SIGNAL_UNKILLABLE) &&
-+			(handler == SIG_IGN || handler == SIG_DFL))
-+		return 1;
-+	
-+	return sig_handler_ignored(handler, sig);
-+}
-+
-+static int sig_ignored(struct task_struct *t, int sig)
-+{
- 	/*
- 	 * Blocked signals are never ignored, since the
- 	 * signal handler may change by the time it is
-@@ -65,8 +76,7 @@ static int sig_ignored(struct task_struct *t, int sig)
- 	if (sigismember(&t->blocked, sig) || sigismember(&t->real_blocked, sig))
- 		return 0;
- 
--	handler = sig_handler(t, sig);
--	if (!sig_handler_ignored(handler, sig))
-+	if (!sig_task_ignored(t, sig))
- 		return 0;
- 
- 	/*
+diff --git a/kernel/fork.c b/kernel/fork.c
+index dba2d3f..0a959f5 100644
+--- a/kernel/fork.c
++++ b/kernel/fork.c
+@@ -812,6 +812,8 @@ static int copy_signal(unsigned long clone_flags, struct task_struct *tsk)
+ 	atomic_set(&sig->live, 1);
+ 	init_waitqueue_head(&sig->wait_chldexit);
+ 	sig->flags = 0;
++	if (clone_flags & CLONE_NEWPID)
++		sig->flags |= SIGNAL_UNKILLABLE_FROM_NS;
+ 	sig->group_exit_code = 0;
+ 	sig->group_exit_task = NULL;
+ 	sig->group_stop_count = 0;
 -- 
 1.5.2.5
