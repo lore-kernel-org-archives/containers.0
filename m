@@ -1,84 +1,129 @@
 From: Sukadev Bhattiprolu <sukadev@linux.vnet.ibm.com>
-Subject: [RFC][PATCH 0/6][v3] Container-init signal semantics
-Date: Sat, 20 Dec 2008 16:51:06 -0800
-Message-ID: <20081221005106.GA4912@us.ibm.com>
+Subject: [RFC][PATCH 1/6][v3] Remove 'handler' parameter to tracehook
+	functions
+Date: Sat, 20 Dec 2008 16:52:49 -0800
+Message-ID: <20081221005249.GA5025@us.ibm.com>
+References: <20081221005106.GA4912@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1754428AbYLUAwe@vger.kernel.org>
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1754869AbYLUAyW@vger.kernel.org>
 Content-Disposition: inline
+In-Reply-To: <20081221005106.GA4912@us.ibm.com>
 Sender: linux-kernel-owner@vger.kernel.org
 To: oleg@redhat.com, ebiederm@xmission.com, roland@redhat.com, bastian@waldi.eu.org
 Cc: daniel@hozac.com, xemul@openvz.org, containers@lists.osdl.org, linux-kernel@vger.kernel.org, sukadev@us.ibm.com
 List-Id: containers.vger.kernel.org
 
 
-Container-init must behave like global-init to processes within the
-container and hence it must be immune to unhandled fatal signals from
-within the container (i.e SIG_DFL signals that terminate the process).
+From: Sukadev Bhattiprolu <sukadev@linux.vnet.ibm.com>
+Date: Fri, 19 Dec 2008 13:33:46 -0800
+Subject:[RFC][PATCH 1/6][v3] Remove 'handler' parameter to tracehook functions
 
-But the same container-init must behave like a normal process to 
-processes in ancestor namespaces and so if it receives the same fatal
-signal from a process in ancestor namespace, the signal must be
-processed.
+Based on an earlier patch submitted by Oleg Nesterov and comments
+from Roland McGrath (http://lkml.org/lkml/2008/11/19/258).
 
-Implementing these semantics requires that send_signal() determine pid
-namespace of the sender but since signals can originate from workqueues/
-interrupt-handlers, determining pid namespace of sender may not always
-be possible or safe.
+The handler parameter is currently unused in the tracehook functions.
+Besides, the tracehook functions are called with siglock held, so the
+functions can check the handler if they later need to.
 
-Changelog[v3]:
-	Changes based on discussions of previous version:
-		http://lkml.org/lkml/2008/11/25/458
+Removing the parameter simiplifies changes to sig_ignored() in a follow-on
+patch.
 
-	Major changes:
+Signed-off-by: Sukadev Bhattiprolu <sukadev@linux.vnet.ibm.com>
+---
+ arch/x86/kernel/ptrace.c  |    2 +-
+ include/linux/tracehook.h |   13 ++++---------
+ kernel/signal.c           |    6 +++---
+ 3 files changed, 8 insertions(+), 13 deletions(-)
 
-	- Define SIGNAL_UNKILLABLE_FROM_NS and use in container-inits to
-	  skip fatal signals from same namespace but process SIGKILL/SIGSTOP
-	  from ancestor namespace.
-	- Use SI_FROMUSER() and si_code != SI_ASYNCIO to determine if
-	  it is safe to dereference pid-namespace of caller. Highly
-	  experimental :-)
-	- Masquerading si_pid when crossing namespace boundary: relevant
-	  patches merged in -mm and dropped from this set.
-
-	Minor changes:
-
-	- Remove 'handler' parameter to tracehook functions
-	- Update sig_ignored() to drop SIG_DFL signals to global init early
-	  (tried to address Roland's  and Oleg's comments)
-	- Use 'same_ns' flag to drop SIGKILL/SIGSTOP to cinit from same
-	  namespace
-
-This patchset implements the design/simplified semantics suggested by
-Oleg Nesterov.  The simplified semantics for container-init are:
-
-	- container-init must never be terminated by a signal from a
-	  descendant process.
-
-	- container-init must never be immune to SIGKILL from an ancestor
-	  namespace (so a process in parent namespace must always be able
-	  to terminate a descendant container).
-
-	- container-init may be immune to unhandled fatal signals (like
-	  SIGUSR1) even if they are from ancestor namespace (SIGKILL is
-	  the only reliable signal from ancestor namespace).
-
-Patches in this set:
-
-	[PATCH 1/6] Remove 'handler' parameter to tracehook functions
-	[PATCH 2/6] Protect init from unwanted signals more
-	[PATCH 3/6] Define/set SIGNAL_UNKILLABLE_FROM_NS
-	[PATCH 4/6] Define siginfo_from_ancestor_ns()
-	[PATCH 5/6] Protect cinit from unblocked SIG_DFL signals
-	[PATCH 6/6] Protect cinit from blocked fatal signals
-
-TODO:
-	- Use sig_task_unkillable() in fs/proc/array.c:task_sig() to
-	  correctly report ignored signals for container/global init.
-	- Make SI_ASYNCIO a kernel signal ?
-	- Compile/touch tested. Need so real testing ;-)
-
-Limitations/side-effects of current design
-
-	- Container-init is immune to suicide - kill(getpid(), SIGKILL) is
-	  ignored. Use exit() :-)
+diff --git a/arch/x86/kernel/ptrace.c b/arch/x86/kernel/ptrace.c
+index 0a6d8c1..d6ef716 100644
+--- a/arch/x86/kernel/ptrace.c
++++ b/arch/x86/kernel/ptrace.c
+@@ -1585,6 +1585,6 @@ asmregparm void syscall_trace_leave(struct pt_regs *regs)
+ 	 * system call instruction.
+ 	 */
+ 	if (test_thread_flag(TIF_SINGLESTEP) &&
+-	    tracehook_consider_fatal_signal(current, SIGTRAP, SIG_DFL))
++	    tracehook_consider_fatal_signal(current, SIGTRAP))
+ 		send_sigtrap(current, regs, 0, TRAP_BRKPT);
+ }
+diff --git a/include/linux/tracehook.h b/include/linux/tracehook.h
+index 6186a78..eb4c654 100644
+--- a/include/linux/tracehook.h
++++ b/include/linux/tracehook.h
+@@ -388,17 +388,14 @@ static inline void tracehook_signal_handler(int sig, siginfo_t *info,
+  * tracehook_consider_ignored_signal - suppress short-circuit of ignored signal
+  * @task:		task receiving the signal
+  * @sig:		signal number being sent
+- * @handler:		%SIG_IGN or %SIG_DFL
+  *
+  * Return zero iff tracing doesn't care to examine this ignored signal,
+  * so it can short-circuit normal delivery and never even get queued.
+- * Either @handler is %SIG_DFL and @sig's default is ignore, or it's %SIG_IGN.
+  *
+  * Called with @task->sighand->siglock held.
+  */
+ static inline int tracehook_consider_ignored_signal(struct task_struct *task,
+-						    int sig,
+-						    void __user *handler)
++						    int sig)
+ {
+ 	return (task_ptrace(task) & PT_PTRACED) != 0;
+ }
+@@ -407,19 +404,17 @@ static inline int tracehook_consider_ignored_signal(struct task_struct *task,
+  * tracehook_consider_fatal_signal - suppress special handling of fatal signal
+  * @task:		task receiving the signal
+  * @sig:		signal number being sent
+- * @handler:		%SIG_DFL or %SIG_IGN
+  *
+  * Return nonzero to prevent special handling of this termination signal.
+- * Normally @handler is %SIG_DFL.  It can be %SIG_IGN if @sig is ignored,
+- * in which case force_sig() is about to reset it to %SIG_DFL.
++ * Normally handler for signal is %SIG_DFL.  It can be %SIG_IGN if @sig is
++ * ignored, in which case force_sig() is about to reset it to %SIG_DFL.
+  * When this returns zero, this signal might cause a quick termination
+  * that does not give the debugger a chance to intercept the signal.
+  *
+  * Called with or without @task->sighand->siglock held.
+  */
+ static inline int tracehook_consider_fatal_signal(struct task_struct *task,
+-						  int sig,
+-						  void __user *handler)
++						  int sig)
+ {
+ 	return (task_ptrace(task) & PT_PTRACED) != 0;
+ }
+diff --git a/kernel/signal.c b/kernel/signal.c
+index 2a64304..7945e71 100644
+--- a/kernel/signal.c
++++ b/kernel/signal.c
+@@ -72,7 +72,7 @@ static int sig_ignored(struct task_struct *t, int sig)
+ 	/*
+ 	 * Tracers may want to know about even ignored signals.
+ 	 */
+-	return !tracehook_consider_ignored_signal(t, sig, handler);
++	return !tracehook_consider_ignored_signal(t, sig);
+ }
+ 
+ /*
+@@ -316,7 +316,7 @@ int unhandled_signal(struct task_struct *tsk, int sig)
+ 		return 1;
+ 	if (handler != SIG_IGN && handler != SIG_DFL)
+ 		return 0;
+-	return !tracehook_consider_fatal_signal(tsk, sig, handler);
++	return !tracehook_consider_fatal_signal(tsk, sig);
+ }
+ 
+ 
+@@ -775,7 +775,7 @@ static void complete_signal(int sig, struct task_struct *p, int group)
+ 	    !(signal->flags & (SIGNAL_UNKILLABLE | SIGNAL_GROUP_EXIT)) &&
+ 	    !sigismember(&t->real_blocked, sig) &&
+ 	    (sig == SIGKILL ||
+-	     !tracehook_consider_fatal_signal(t, sig, SIG_DFL))) {
++	     !tracehook_consider_fatal_signal(t, sig))) {
+ 		/*
+ 		 * This signal will be fatal to the whole group.
+ 		 */
+-- 
+1.5.2.5
