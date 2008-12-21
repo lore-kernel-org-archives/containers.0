@@ -1,103 +1,109 @@
-From: Sukadev Bhattiprolu <sukadev@linux.vnet.ibm.com>
-Subject: [RFC][PATCH 6/6][v3] Protect cinit from blocked fatal signals
-Date: Sat, 20 Dec 2008 16:55:29 -0800
-Message-ID: <20081221005529.GF5025@us.ibm.com>
-References: <20081221005106.GA4912@us.ibm.com>
+From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Subject: [RFC][PATCH] SI_ASYNCIO: should be a kernel signal ?
+Date: Sat, 20 Dec 2008 17:04:14 -0800
+Message-ID: <20081221010414.GA5284@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1755771AbYLUA45@vger.kernel.org>
+Return-path: <linux-usb-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <20081221005106.GA4912@us.ibm.com>
-Sender: linux-kernel-owner@vger.kernel.org
-To: oleg@redhat.com, ebiederm@xmission.com, roland@redhat.com, bastian@waldi.eu.org
-Cc: daniel@hozac.com, xemul@openvz.org, containers@lists.osdl.org, linux-kernel@vger.kernel.org, sukadev@us.ibm.com
+Sender: linux-usb-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org, roland-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, bastian-yyjItF7Rl6lg9hUCZPvPmw@public.gmane.org, gregkh-l3A5Bk7waGM@public.gmane.org
+Cc: daniel-nym3zxDgnZcAvxtiuMwx3w@public.gmane.org, xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org, containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-usb-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
 
-From: Sukadev Bhattiprolu <sukadev@linux.vnet.ibm.com>
-Date: Sat, 20 Dec 2008 14:15:41 -0800
-Subject: [RFC][PATCH 6/6][v3] Protect cinit from blocked fatal signals
+From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Date: Fri, 19 Dec 2008 20:45:49 -0800
+Subject: [RFC][PATCH] SI_ASYNCIO: should be a kernel signal ?
 
-Normally SIG_DFL signals to global and container-init are dropped early.
-But if a signal is blocked when it is posted, we cannot drop the signal
-since the receiver may install a handler before unblocking the signal.
-Once this signal is queued however, the receiver container-init has
-no way of knowing if the signal was sent from an ancestor or descendant
-namespace.  This patch ensures that contianer-init drop all SIG_DFL
-signals in get_signal_to_deliver() except SIGKILL/SIGSTOP.
+SI_ASYNCIO is currently defined as -4 in the kernel. This makes it appear
+like a "user" signal (i.e SI_FROMUSER() is true). SI_ASYNCIO is generated
+by the kernel for async events like SI_MESGQ and SI_POLL, but unlike
+SI_ASYNCIO, SI_MESGQ and SI_POLL are "kernel" signals (i.e SI_FROMKERNEL()
+is true).
 
-If SIGSTOP/SIGKILL originate from a descendant of container-init they
-are never queued (i.e dropped in sig_ignored() in an earler patch).
+Shouldn't SI_ASYNCIO be a "kernel" signal too ? It is currently generated
+from USB core code.
 
-If SIGSTOP/SIGKILL originate from parent namespace, the signal is queued
-and container-init processes the signal.
+This quick/untested RFC patch changes the in-kernel value of SI_ASYNCIO
+as follows so that it becomes a "kernel" signal.
 
-See comments in patch below for details.
+	(7 << 16)|(-4 & 0xffff) = 0x7fffc which is SI_FROMKERNEL().
 
-Signed-off-by: Sukadev Bhattiprolu <sukadev@linux.vnet.ibm.com>
+The user-space value of SI_ASYNCIO continues to be -4.
+
+Known side-effects:
+
+	Is this required to be SI_FROMUSER() to enable the uid checks in
+	kill_pid_info_as_uid() ? Also, changing to "kernel" signal would skip
+	the permission checks in check_kill_permission().  Would that be a
+	problem ?
+
+Why bother now ? (Sigh. Condensed long story)
+
+	Besides the consistency with SI_POLL and SI_MESGQ this could simplify
+	implementation of special signal semantics for container-init.  When a
+	signal is sent to container-init from user-space, we need to check the
+	pid namespace of the sender in send_signal(). But since send_signal()
+	can also be called from interrupt context,  we have no way of knowing
+	if it is safe to check the pid namespace of the caller.
+
+	If SI_ASYNCIO signal appears as a kernel signal, we could possibly use
+	SI_FROMUSER() to check if it safe to reference the pid namespace of
+	the sender.
+
+	If this change has no other side-effects/breakage we will explore this
+	path further for the signal semantics for container-init. (There could
+	be other hurdles along the way...) 
+
+	See also http://lkml.org/lkml/2008/12/20/183
+
+Appreciate any comments on this.
+
+TODO:
+	If this makes sense, make corresponding change to the SI_ASYNCIO
+	in arch/mips/siginfo.h.
+
+	SI_DETHREAD and SI_SIGIO are currently unused in the kernel. Should
+	we similarly make them "kernel" signals too ?
+
 ---
- kernel/signal.c |   41 +++++++++++++++++++++++++++++++++++++++--
- 1 files changed, 39 insertions(+), 2 deletions(-)
+ include/asm-generic/siginfo.h |    4 +++-
+ 1 files changed, 3 insertions(+), 1 deletions(-)
 
-diff --git a/kernel/signal.c b/kernel/signal.c
-index 2dfca62..4abacf4 100644
---- a/kernel/signal.c
-+++ b/kernel/signal.c
-@@ -1816,6 +1816,42 @@ static int ptrace_signal(int signr, siginfo_t *info,
- 	return signr;
- }
+diff --git a/include/asm-generic/siginfo.h b/include/asm-generic/siginfo.h
+index 9695701..7b69598 100644
+--- a/include/asm-generic/siginfo.h
++++ b/include/asm-generic/siginfo.h
+@@ -124,6 +124,7 @@ typedef struct siginfo {
+ #define __SI_CHLD	(4 << 16)
+ #define __SI_RT		(5 << 16)
+ #define __SI_MESGQ	(6 << 16)
++#define __SI_ASYNCIO	(7 << 16)
+ #define __SI_CODE(T,N)	((T) | ((N) & 0xffff))
+ #else
+ #define __SI_KILL	0
+@@ -133,6 +134,7 @@ typedef struct siginfo {
+ #define __SI_CHLD	0
+ #define __SI_RT		0
+ #define __SI_MESGQ	0
++#define __SI_ASYNCIO	0
+ #define __SI_CODE(T,N)	(N)
+ #endif
  
-+/*
-+ * Return 1 if the signal @sig should NOT kill the task that owns @signal.
-+ * Return 0 otherwise.
-+ *
-+ * If @signal refers to the global-init, it is unkillable (return 1).
-+ *
-+ * If @signal refers to a task a that is neither a container-init nor the
-+ * global init, the task is killable (return 0).
-+ *
-+ * If @signal refers to a container-init and @sig is either SIGKILL or
-+ * SIGSTOP, the signal must be from an ancestor container. So the task
-+ * (container-init) should be killable (return 0).
-+ *
-+ * If @signal refers to a container-init and @sig is neither SIGKILL nor
-+ * SIGSTOP, it was queued because it was blocked when it was posed. The
-+ * signal may have come from same container - hence it should not be
-+ * killable (return 1).
-+ *
-+ * Note:
-+ * 	This means that SIGKILL is the only sure way to terminate a
-+ * 	container-init even from ancestor namespace.
-+ */
-+static int sig_unkillable(struct signal_struct *signal, int sig)
-+{
-+	if (signal->flags & SIGNAL_UNKILLABLE_FROM_NS)
-+		return !sig_kernel_only(sig);
-+
-+	/*
-+	 * We must have dropped SIGKILL/SIGSTOP in sig_ignored()
-+	 * TODO: Remove BUG_ON().
-+	 */
-+	BUG_ON(signal->flags & SIGNAL_UNKILLABLE && sig_kernel_only(sig));
-+
-+	return (signal->flags & SIGNAL_UNKILLABLE);
-+}
-+
- int get_signal_to_deliver(siginfo_t *info, struct k_sigaction *return_ka,
- 			  struct pt_regs *regs, void *cookie)
- {
-@@ -1907,9 +1943,10 @@ relock:
- 
- 		/*
- 		 * Global init gets no signals it doesn't want.
-+		 * Container-init gets no signals it doesn't want from same
-+		 * container.
- 		 */
--		if (unlikely(signal->flags & SIGNAL_UNKILLABLE) &&
--		    !signal_group_exit(signal))
-+		if (sig_unkillable(signal, signr) && !signal_group_exit(signal))
- 			continue;
- 
- 		if (sig_kernel_stop(signr)) {
+@@ -145,7 +147,7 @@ typedef struct siginfo {
+ #define SI_QUEUE	-1		/* sent by sigqueue */
+ #define SI_TIMER __SI_CODE(__SI_TIMER,-2) /* sent by timer expiration */
+ #define SI_MESGQ __SI_CODE(__SI_MESGQ,-3) /* sent by real time mesq state change */
+-#define SI_ASYNCIO	-4		/* sent by AIO completion */
++#define SI_ASYNCIO __SI_CODE(__SI_ASYNCIO, -4)	/* sent by AIO completion */
+ #define SI_SIGIO	-5		/* sent by queued SIGIO */
+ #define SI_TKILL	-6		/* sent by tkill system call */
+ #define SI_DETHREAD	-7		/* sent by execve() killing subsidiary threads */
 -- 
 1.5.2.5
+
+--
+To unsubscribe from this list: send the line "unsubscribe linux-usb" in
+the body of a message to majordomo-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html
