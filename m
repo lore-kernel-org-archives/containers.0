@@ -1,61 +1,75 @@
-From: Sukadev Bhattiprolu <sukadev@linux.vnet.ibm.com>
-Subject: Re: [RFC][PATCH 0/6][v3] Container-init signal semantics
-Date: Mon, 22 Dec 2008 11:47:37 -0800
-Message-ID: <20081222194737.GC9085@us.ibm.com>
-References: <20081221005106.GA4912@us.ibm.com> <m1wsds5vij.fsf@frodo.ebiederm.org>
+From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Subject: Re: [RFC][PATCH] SI_ASYNCIO: should be a kernel signal ?
+Date: Mon, 22 Dec 2008 14:15:22 -0800
+Message-ID: <20081222221522.GC10183@us.ibm.com>
+References: <20081221010414.GA5284@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1754910AbYLVTtU@vger.kernel.org>
+Return-path: <linux-usb-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <m1wsds5vij.fsf@frodo.ebiederm.org>
-Sender: linux-kernel-owner@vger.kernel.org
-To: "Eric W. Biederman" <ebiederm@xmission.com>
-Cc: oleg@redhat.com, roland@redhat.com, bastian@waldi.eu.org, daniel@hozac.com, xemul@openvz.org, containers@lists.osdl.org, linux-kernel@vger.kernel.org, sukadev@us.ibm.com
+In-Reply-To: <20081221010414.GA5284-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Sender: linux-usb-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org, roland-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, bastian-yyjItF7Rl6lg9hUCZPvPmw@public.gmane.org, gregkh-l3A5Bk7waGM@public.gmane.org
+Cc: daniel-nym3zxDgnZcAvxtiuMwx3w@public.gmane.org, xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org, containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-usb-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Eric W. Biederman [ebiederm@xmission.com] wrote:
-| Sukadev Bhattiprolu <sukadev@linux.vnet.ibm.com> writes:
+Sukadev Bhattiprolu [sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org] wrote:
 | 
-| > This patchset implements the design/simplified semantics suggested by
-| > Oleg Nesterov.  The simplified semantics for container-init are:
-| >
-| > 	- container-init must never be terminated by a signal from a
-| > 	  descendant process.
-| >
-| > 	- container-init must never be immune to SIGKILL from an ancestor
-| > 	  namespace (so a process in parent namespace must always be able
-| > 	  to terminate a descendant container).
-| >
-| > 	- container-init may be immune to unhandled fatal signals (like
-| > 	  SIGUSR1) even if they are from ancestor namespace (SIGKILL is
-| > 	  the only reliable signal from ancestor namespace).
+| From: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+| Date: Fri, 19 Dec 2008 20:45:49 -0800
+| Subject: [RFC][PATCH] SI_ASYNCIO: should be a kernel signal ?
 | 
-| It sounds you are still struggling to get something that works and gets
-| done what needs to be done.  So let me suggest a simplified semantic that
-| should be easier to implement and test, and solves the biggest problem
-| that we must solve in the kernel.
+| SI_ASYNCIO is currently defined as -4 in the kernel. This makes it appear
+| like a "user" signal (i.e SI_FROMUSER() is true). SI_ASYNCIO is generated
+| by the kernel for async events like SI_MESGQ and SI_POLL, but unlike
+| SI_ASYNCIO, SI_MESGQ and SI_POLL are "kernel" signals (i.e SI_FROMKERNEL()
+| is true).
 | 
-| - container-init ignores SIGKILL and SIGSTOP.
-
-Yes.
-
+| Shouldn't SI_ASYNCIO be a "kernel" signal too ? It is currently generated
+| from USB core code.
 | 
-| - container-init is responsible for setting the rest of the signals
-|   to SIG_IGN.
+| This quick/untested RFC patch changes the in-kernel value of SI_ASYNCIO
+| as follows so that it becomes a "kernel" signal.
+| 
+| 	(7 << 16)|(-4 & 0xffff) = 0x7fffc which is SI_FROMKERNEL().
+| 
+| The user-space value of SI_ASYNCIO continues to be -4.
+| 
+| Known side-effects:
+| 
+| 	Is this required to be SI_FROMUSER() to enable the uid checks in
+| 	kill_pid_info_as_uid() ? Also, changing to "kernel" signal would skip
+| 	the permission checks in check_kill_permission().  Would that be a
+| 	problem ?
+| 
+| Why bother now ? (Sigh. Condensed long story)
+| 
+| 	Besides the consistency with SI_POLL and SI_MESGQ this could simplify
+| 	implementation of special signal semantics for container-init.  When a
+| 	signal is sent to container-init from user-space, we need to check the
+| 	pid namespace of the sender in send_signal(). But since send_signal()
+| 	can also be called from interrupt context,  we have no way of knowing
+| 	if it is safe to check the pid namespace of the caller.
+| 
+| 	If SI_ASYNCIO signal appears as a kernel signal, we could possibly use
+| 	SI_FROMUSER() to check if it safe to reference the pid namespace of
+| 	the sender.
+| 
+| 	If this change has no other side-effects/breakage we will explore this
+| 	path further for the signal semantics for container-init. (There could
+| 	be other hurdles along the way...) 
+| 
+| 	See also http://lkml.org/lkml/2008/12/20/183
+| 
+| Appreciate any comments on this.
+| 
+| TODO:
+| 	If this makes sense, make corresponding change to the SI_ASYNCIO
+| 	in arch/mips/siginfo.h.
 
-Oleg pointed out that we could drop SIG_DFL signals to global init early
-to ensure wait_for_completion_killable/lock_page_killable don't incorrectly
-believe that a fatal signal is pending. (patch 2/6).
-
-If that patch is valid regardless of containers, it would be a minor
-extension to get container-inits to drop SIG_DFL signals too, right ?
-
-So the bigger problem/unknown for me is the sig_from_user() in patch 4/6
-(i.e determining if it safe to deref the pid-ns of sender). We went from
-!in_interrupt() to the SIG_FROM_USER flag to this.
-
-If that is correct, I am hoping it would come down to opitmizing the code
-if possible (eg: can/should we avoid passing same_ns into sig_ignored()
-
-There is probably some ugliness :-) but do you see any other correctness 
-issues ?
+Grr. Importantly, we would also need to update the copy_siginfo*() and
+friends for this to be complete.
+--
+To unsubscribe from this list: send the line "unsubscribe linux-usb" in
+the body of a message to majordomo-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html
