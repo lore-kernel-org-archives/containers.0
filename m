@@ -1,86 +1,53 @@
-From: "Filippo Giottonini" <travancore-Hqn23dJhTazfAwfw1qWPBA@public.gmane.org>
-Subject: Present  for you
-Date: Mon, 22 Dec 2008 04:39:07 +0000
-Message-ID: <7611759044.20081222043100@autostock.cl>
-Reply-To: Filippo Giottonini <travancore-Hqn23dJhTazfAwfw1qWPBA@public.gmane.org>
+From: ebiederm@xmission.com (Eric W. Biederman)
+Subject: Re: [RFC][PATCH 0/6][v3] Container-init signal semantics
+Date: Mon, 22 Dec 2008 02:55:48 -0800
+Message-ID: <m1wsds5vij.fsf@frodo.ebiederm.org>
+References: <20081221005106.GA4912@us.ibm.com>
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary="----------=_1229920770-12869-170"
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org
+Content-Type: text/plain; charset=us-ascii
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1754131AbYLVK5V@vger.kernel.org>
+In-Reply-To: <20081221005106.GA4912@us.ibm.com> (Sukadev Bhattiprolu's message
+	of "Sat, 20 Dec 2008 16:51:06 -0800")
+Sender: linux-kernel-owner@vger.kernel.org
+To: Sukadev Bhattiprolu <sukadev@linux.vnet.ibm.com>
+Cc: oleg@redhat.com, ebiederm@xmission.com, roland@redhat.com, bastian@waldi.eu.org, daniel@hozac.com, xemul@openvz.org, containers@lists.osdl.org, linux-kernel@vger.kernel.org, sukadev@us.ibm.com
 List-Id: containers.vger.kernel.org
 
-This is a multi-part message in MIME format...
+Sukadev Bhattiprolu <sukadev@linux.vnet.ibm.com> writes:
 
-------------=_1229920770-12869-170
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
-Content-Disposition: inline
+> This patchset implements the design/simplified semantics suggested by
+> Oleg Nesterov.  The simplified semantics for container-init are:
+>
+> 	- container-init must never be terminated by a signal from a
+> 	  descendant process.
+>
+> 	- container-init must never be immune to SIGKILL from an ancestor
+> 	  namespace (so a process in parent namespace must always be able
+> 	  to terminate a descendant container).
+>
+> 	- container-init may be immune to unhandled fatal signals (like
+> 	  SIGUSR1) even if they are from ancestor namespace (SIGKILL is
+> 	  the only reliable signal from ancestor namespace).
 
+It sounds you are still struggling to get something that works and gets
+done what needs to be done.  So let me suggest a simplified semantic that
+should be easier to implement and test, and solves the biggest problem
+that we must solve in the kernel.
 
- Catch your Christmas preseent!
-http://cid-084776eeaac32a4d.spaces.live.com/blog/cns!84776EEAAC32A4D!106.en=
-try
-=20=20
-=20=20
-=20=20=20
-Said, they are not fortunate so far, my investigations! To
-think of all that, said she. I have often noticed when it
-happened=97but to suggest that i'd have a proof, as i have
-already said, that they were with more attention. She was
-an intelligent woman,.
-_______________________________________________
-Containers mailing list
-Containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-https://lists.linux-foundation.org/mailman/listinfo/containers
+- container-init ignores SIGKILL and SIGSTOP.
 
-------------=_1229920770-12869-170
-Content-Type: text/plain; name="SpamAssassinReport.txt"
-Content-Disposition: inline; filename="SpamAssassinReport.txt"
-Content-Transfer-Encoding: quoted-printable
-MIME-Version: 1.0
-X-Mailer: MIME-tools 5.425 (Entity 5.425)
+- container-init is responsible for setting the rest of the signals
+  to SIG_IGN.
 
-Spam detection software, running on the system "daredevil.linux-foundation.=
-org", has
-identified this incoming email as possible spam.  The original message
-has been attached to this so you can view it (if it isn't spam) or label
-similar future email.  If you have any questions, see
-the administrator of that system for details.
+If that isn't enough for all of the init's we can go back and
+solve more in kernel land.  That simplified semantic is certainly
+enough for sysvinit.
 
-Content preview:  Catch your Christmas preseent! http://cid-084776eeaac32a4=
-d.spaces.live.com/blog/cns!84776EEAAC32A4D!106.entry
-   Said, they are not fortunate so far, my investigations! To think of all =
-that,
-   said she. I have often noticed when it happened=97but to suggest that i'=
-d have
-   a proof, as i have already said, that they were with more attention. She
-  was an intelligent woman,. Containers mailing list Containers-cunTk1MwBs9kibMonLAN/Q@public.gmane.org=
--foundation.org
-   https://lists.linux-foundation.org/mailman/listinfo/containers [...]=20
+> Limitations/side-effects of current design
+>
+> 	- Container-init is immune to suicide - kill(getpid(), SIGKILL) is
+> 	  ignored. Use exit() :-)
 
-Content analysis details:   (5.3 points, 5.0 required)
+That sounds like correct behavior.
 
- pts rule name              description
----- ---------------------- -----------------------------------------------=
----
- 3.0 OUTFLUX_THEBAT         X-Mailer is from "The Bat"
- 1.4 URI_HEX                URI: URI hostname has long hexadecimal sequence
--1.1 BAYES_05               BODY: Bayesian spam probability is 1 to 5%
-                            [score: 0.0211]
- 0.1 RDNS_DYNAMIC           Delivered to trusted network by host with
-                            dynamic-looking rDNS
- 1.8 FORGED_MUA_THEBAT_CS   Mail pretending to be from The Bat! (charset)
- 0.1 AWL                    AWL: From: address is in the auto white-list
-
-
-
-------------=_1229920770-12869-170--
+Eric
