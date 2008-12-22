@@ -1,47 +1,51 @@
 From: Sukadev Bhattiprolu <sukadev@linux.vnet.ibm.com>
-Subject: Re: [RFC][PATCH 6/6][v3] Protect cinit from blocked fatal signals
-Date: Mon, 22 Dec 2008 15:38:55 -0800
-Message-ID: <20081222233855.GA13079@us.ibm.com>
-References: <20081221005106.GA4912@us.ibm.com> <20081221005529.GF5025@us.ibm.com> <20081222225825.GC1536@redhat.com>
+Subject: Re: [RFC][PATCH 4/6][v3] Define siginfo_from_ancestor_ns()
+Date: Mon, 22 Dec 2008 15:45:24 -0800
+Message-ID: <20081222234524.GB13079@us.ibm.com>
+References: <20081221005106.GA4912@us.ibm.com> <20081221005424.GD5025@us.ibm.com> <20081222222604.GA1536@redhat.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1756509AbYLVXkd@vger.kernel.org>
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1756689AbYLVXrA@vger.kernel.org>
 Content-Disposition: inline
-In-Reply-To: <20081222225825.GC1536@redhat.com>
+In-Reply-To: <20081222222604.GA1536@redhat.com>
 Sender: linux-kernel-owner@vger.kernel.org
 To: Oleg Nesterov <oleg@redhat.com>
 Cc: ebiederm@xmission.com, roland@redhat.com, bastian@waldi.eu.org, daniel@hozac.com, xemul@openvz.org, containers@lists.osdl.org, linux-kernel@vger.kernel.org, sukadev@us.ibm.com
 List-Id: containers.vger.kernel.org
 
 Oleg Nesterov [oleg@redhat.com] wrote:
-| > @@ -1907,9 +1943,10 @@ relock:
+| On 12/20, Sukadev Bhattiprolu wrote:
 | >
-| >  		/*
-| >  		 * Global init gets no signals it doesn't want.
-| > +		 * Container-init gets no signals it doesn't want from same
-| > +		 * container.
-| >  		 */
-| > -		if (unlikely(signal->flags & SIGNAL_UNKILLABLE) &&
-| > -		    !signal_group_exit(signal))
-| > +		if (sig_unkillable(signal, signr) && !signal_group_exit(signal))
-| >  			continue;
+| > + * TODO:
+| > + * 	  Making SI_ASYNCIO a kernel signal could make this less hacky.
+| > + */
+| > +#ifdef CONFIG_PID_NS
+| > +static inline int siginfo_from_user(siginfo_t *info)
+| > +{
+| > +	if (!is_si_special(info) && SI_FROMUSER(info) &&
 | 
-| Again, I do not understand why do we need SIGNAL_UNKILLABLE_FROM_NS.
+| OK, if we can trust SI_FROMUSER(), then it is better, i agree.
 | 
-| I thought about the change in get_signal_to_deliver() during the
-| previous discussion, and I think what we need is:
+| I was worried about in-kernel usage of .si_code <= 0 ...
 | 
-| 		if (unlikely(signal->flags & SIGNAL_UNKILLABLE) &&
-| 		    !sig_kernel_only(sig))
-| 			continue;
+| > +				info->si_code != SI_ASYNCIO)
 | 
-| and this was yet another reason for "protect init from unwanted signals more".
+| but this is horrible, imho.
 
-I was trying to avoid the clearing of the SIGNAL_UNKILLABLE in
-send_signal() that we had last time.
+I am beginning to accept that some amount of ugliness is inevitable
+here :-) I tried to dig through history of SI_ASYNCIO, but did not
+find any changes to its definition in siginfo.h in 6 years.
 
-But yes, you are right. I even had a BUG_ON() to confirm SIGKILL/SIGSTOP
-will never happen for global-init :-). If so, SIGKLL/SIGSTOP to an init
-can come only from parent ns.
+| 
+| OK, if we can't change the ABI, then perhaps we can change
+| kill_pid_info_as_uid() to not send the fatal signals to UNKILLABLE
+| task? This helper is strange and ugly anyway,
+| 
+| 
+| To clarify, I do not blame the patch itself, and I do not suggest
+| to do this right now.
 
-So, yes, we can drop this flag.
+By 'to do this' I assume you are referring to the kill_pid_info_as_uid()
+change above ?
+
+IOW, ugly as it is, can we go with the siginfo_from_user() as in the patch ?
