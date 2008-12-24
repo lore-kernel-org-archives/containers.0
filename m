@@ -1,14 +1,13 @@
 From: Oleg Nesterov <oleg@redhat.com>
-Subject: Re: [RFC][PATCH 7/7][v4] SI_TKILL: Masquerade si_pid when crossing
-	pid ns boundary
-Date: Wed, 24 Dec 2008 16:55:29 +0100
-Message-ID: <20081224155529.GB11593@redhat.com>
-References: <20081224114414.GA7879@us.ibm.com> <20081224115331.GG8020@us.ibm.com>
+Subject: Re: [RFC][PATCH 5/7][v4] Protect cinit from blocked fatal signals
+Date: Wed, 24 Dec 2008 17:09:31 +0100
+Message-ID: <20081224160931.GC11593@redhat.com>
+References: <20081224114414.GA7879@us.ibm.com> <20081224115229.GE8020@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1752189AbYLXP52@vger.kernel.org>
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1752138AbYLXQL6@vger.kernel.org>
 Content-Disposition: inline
-In-Reply-To: <20081224115331.GG8020@us.ibm.com>
+In-Reply-To: <20081224115229.GE8020@us.ibm.com>
 Sender: linux-kernel-owner@vger.kernel.org
 To: Sukadev Bhattiprolu <sukadev@linux.vnet.ibm.com>
 Cc: ebiederm@xmission.com, roland@redhat.com, bastian@waldi.eu.org, daniel@hozac.com, xemul@openvz.org, containers@lists.osdl.org, linux-kernel@vger.kernel.org
@@ -16,50 +15,51 @@ List-Id: containers.vger.kernel.org
 
 On 12/24, Sukadev Bhattiprolu wrote:
 >
-> --- a/kernel/signal.c
-> +++ b/kernel/signal.c
-> @@ -2385,17 +2385,22 @@ static int do_tkill(pid_t tgid, pid_t pid, int sig)
->  	struct siginfo info;
->  	struct task_struct *p;
->  	unsigned long flags;
-> +	struct pid_namespace *ns;
->
->  	error = -ESRCH;
->  	info.si_signo = sig;
->  	info.si_errno = 0;
->  	info.si_code = SI_TKILL;
-> -	info.si_pid = task_tgid_vnr(current);
->  	info.si_uid = current_uid();
->
->  	rcu_read_lock();
->  	p = find_task_by_vpid(pid);
->  	if (p && (tgid <= 0 || task_tgid_vnr(p) == tgid)) {
-> +		ns = task_active_pid_ns(p);
-> +		if (ns)
-> +			info.si_pid = task_tgid_nr_ns(current, ns);
-> +		else
-> +			info.si_pid = task_tgid_vnr(current);
+> + * So, @signal is for a container-init and if @signr is either SIGKILL or
+> + * SIGSTOP, it must have come from an ancestor namespace.
 
-if ns == 0, "p" won't see the signal anyway, so all we need is
+This is wrong. SIGKILL can be sent "internally", for example by
+do_group_exit().
 
-	-	info.si_pid = task_tgid_vnr(current);
-	+	info.si_pid = task_tgid_nr_ns(current, task_active_ns(p));
+> + * If @signal refers to a container-init and @signr is neither SIGKILL nor
+> + * SIGSTOP, it was queued because it was blocked when it was posted.
 
-like we do in __do_notify().
+This is not right too. It is possible that init had a handler when
+the signal was sent, and the handler was set to SIG_DFL before the
+signal was dequeued.
 
+> +static int unkillable_by_sig(struct signal_struct *signal, int signr)
+> +{
+> +	if ((signal->flags & SIGNAL_UNKILLABLE) && !sig_kernel_only(signr))
+> +		return 1;
+> +	return 0;
+> +}
+> +
+>  int get_signal_to_deliver(siginfo_t *info, struct k_sigaction *return_ka,
+>  			  struct pt_regs *regs, void *cookie)
+>  {
+> @@ -1909,9 +1944,11 @@ relock:
+>  
+>  		/*
+>  		 * Global init gets no signals it doesn't want.
+> +		 * Container-init gets no signals it doesn't want from same
+> +		 * container.
+>  		 */
+> -		if (unlikely(signal->flags & SIGNAL_UNKILLABLE) &&
+> -		    !signal_group_exit(signal))
+> +		if (unkillable_by_sig(signal, signr) &&
+> +				!signal_group_exit(signal))
 
-But. this of course doesn't work for sys_kill(). Can't we change the helpers
-which send SI_FROMUSER() signals so that they do not fill .si_pid at all?
-Then send_signal() can do:
+No need to check signal_group_exit(signal). It was needed to
+handle SIGKILL when it is sent by do_group_exit()/de_thread().
+With this patch this is covered by sig_kernel_only().
 
-	default:
-		copy_siginfo(&q->info, info);
-		info.si_pid = 0;
-		if (!from_ancestot_ns)
-			info.si_pid = task_tgid_nr_ns(current, ...);
+Personally, I'd prefer to retain this check inline with a small
+comment
 
-?
-
-Yes, we use "current". But we already used it in siginfo_from_ancestor_ns().
+		/* SMALL COMMENT ;) */
+		if (unlikely(signal->flags & SIGNAL_UNKILLABLE) &&
+		    !sig_kernel_only(signr))
+			continue;
 
 Oleg.
