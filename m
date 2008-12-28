@@ -1,10 +1,10 @@
-From: "paypal.notify-EGKhR0g863QAvxtiuMwx3w@public.gmane.org" <paypal.notify-EGKhR0g863QAvxtiuMwx3w@public.gmane.org>
-Subject: Attention Paypal Member
-Date: Sun, 28 Dec 2008 09:31:24 -0600
-Message-ID: <9692.92009617693$1230478974@news.gmane.org>
+From: "mike gordon" <mike.gordon-PeCUgM4zDv73fQ9qLvQP4Q@public.gmane.org>
+Subject: Microsoft Access, Oracle, SAP customer lists
+Date: Sun, 28 Dec 2008 15:07:22 -0500
+Message-ID: <200812282007.mBSK7m6e032466@smtp1.linux-foundation.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
 Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
@@ -15,42 +15,48 @@ List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>
 	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
 Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 List-Id: containers.vger.kernel.org
 
-Dear Paypal Member,
-
-We recently noticed one or more attempts to log in to your PayPal account 
-from a foreign IP address.
-
-If you recently accessed your account while traveling or ISP has dynamic 
-IP address, the unusual log in attempts may have been initiated by you. 
-Please visit PayPal as soon as possible to verify your identity:
-
-http://www.clarer.com/secure/24921.paypal.com/webscr_cmd_login-run.php
-
-Verifying your information is a security measure that will ensure that you 
-are the only person with access to the account.
-
-Thanks for your patience as we work together to protect your account.
-
-Sincerely,
-PayPal
-
-----------------------------------------------------------------
-PROTECT YOUR PASSWORD
-
-NEVER give your password to anyone, including PayPal employees. Protect 
-yourself against fraudulent websites by opening a new web browser (e.g. 
-Internet Explorer or Netscape) and typing in the PayPal URL every time you 
-log in to your account.
-
-----------------------------------------------------------------
-
-Please do not reply to this email. This mailbox is not monitored and you 
-will not receive a response. For assistance, log in to your PayPal account 
-and click the Help link located in the top right corner of any PayPal page.
-
-----------------------------------------------------------------
-
-PayPal Email ID PP321
+VGhpcyBlbWFpbCBpcyB0byBpbnRyb2R1Y2Ugb3VyIGNvbXBhbnkgUmVwaGFybSBhbmQgc2Vydmlj
+ZXMgd2Ugb2ZmZXIuClJlcGhhcm0gaXMgYW4gaW50ZXJuYXRpb25hbCBsZWFkZXIgb2Ygc2FsZXMg
+YW5kIG1hcmtldGluZyBkYXRhYmFzZSBwcm9kdWN0cyBmb3IgaGlnaCB0ZWNobm9sb2d5IGJ1c2lu
+ZXNzZXMuIFdlIHByb3ZpZGUgaW5zdGFsbGVkIGN1c3RvbWVyIGxpc3RzIGZvciBjb21wYW5pZXMg
+c3VjaCBhcyBPcmFjbGUsIFBlb3BsZVNvZnQsIFNpZWJlbCwgZXRjLiBPdXIgbGlzdHMgYXJlIGNv
+bnRpbnVvdXNseSBtYWludGFpbmVkIHRvIGVuc3VyZSB0aGUgaGlnaGVzdCBsZXZlbCBvZiBhY2N1
+cmFjeSBhbmQgY29tcGxldGVuZXNzLiBXZSBoYXZlIGh1bmRyZWRzIG9mIGluZHVzdHJ5IGxlYWRl
+cnMgYXMgY3VzdG9tZXJzIHRvZGF5IC0gbWFueSB3aG9zZSBuYW1lcyB5b3Ugd291bGQgcmVjb2du
+aXplLgpJZiB5b3UgYXJlIGludGVyZXN0ZWQsIHdlIGNvdWxkIHNlbmQgeW91IGEgc2FtcGxlIG9m
+IG9uZSBvZiBvdXIgbGlzdHMgY29tcGxldGUgd2l0aCBzdW1tYXJ5IGluZm9ybWF0aW9uLCBzbyB0
+aGF0IHlvdSBjb3VsZCBldmFsdWF0ZSBvdXIgY29udGVudC4gVG8gZmluZCBvdXQgYWJvdXQgdGhl
+IHZhcmlvdXMgbGlzdHMgd2UgaGF2ZSBhdmFpbGFibGUsIGluIHByZXBhcmF0aW9uIGZvciBhbnkg
+c2FsZXMgb3IgbWFya2V0aW5nIGNhbXBhaWducyB0aGF0IHlvdXIgb3JnYW5pemF0aW9uIG1heSBi
+ZSBjb25zaWRlcmluZyBpbiBmdXR1cmUsIHdlJ2QgbG92ZSB0byBoZWFyIGZyb20geW91LiBPciwg
+cGVyaGFwcyB5b3UnZCBiZSBpbnRlcmVzdGVkIGluIGFjcXVpcmluZyB5b3VyIGNvbXBldGl0b3Jz
+JyBjdXN0b21lciBsaXN0cz8gCklmIHlvdSB3b3VsZCBsaWtlIG1vcmUgaW5mb3JtYXRpb24sIHBs
+ZWFzZSBjb250YWN0IHVzIGF0ICg5MDUpIDcyMS04NDU2IG9yIGVtYWlsIHVzIGF0IHJlcGhhcm0x
+QGFvbC5jb20KQmVsb3cgYXJlIGp1c3Qgc29tZSBvZiB0aGUgbGlzdHMgYXZhaWxhYmxlOgpFUlAg
+KEVOVEVSUFJJU0UgUkVTT1VSQ0UgUExBTk5JTkcpOgpCYWFuCkpEIEVkd2FyZHMKTGF3c29uCk1h
+ZGUyTWFuYWdlCk1hcGljcwpNYXJjYW0KT3JhY2xlClBlb3BsZXNvZnQKU0FQClNTQQogCkUtQlVT
+SU5FU1MgQVBQTElDQVRJT05TOgpBcmliYQpCTUMKQnJvYWRWaXNpb24KQ29tbWVyY2UgT25lCldl
+YnRyZW5kcwogCk1JRERMRVdBUkUvQ09OTkVDVElWSVRZL0FQUCBTRVJWRVJTL1dFQiBTRVJWRVJT
+OgpCZWEgU3lzdGVtcwpJb25hClVuaXN5cwogCk9QRVJBVElORyBTWVNURU1TL0hBUkRXQVJFL1NP
+RlRXQVJFOgpDT01QQVEKSFAgMzAwMApIUCA5MDAwCkhQLVVYCklCTSBBUy80MDAKSUJNIE9TLzM5
+MApMb3R1cyBOb3RlcwpNaWNyb3NvZnQKU3VuIE1pY3Jvc3lzdGVtcwpEQVRBQkFTRToKREIyCkZp
+bGVNYWtlcgpJbmZvcm1peApPcmFjbGUKU1FMClN5YmFzZUNSTSAoQ1VTVE9NRVIgUkVMQVRJT05T
+SElQIE1BTkFHRU1FTlQpOgpDbGFyaWZ5CkUucGlwaGFueQpITkMKT255eApQaXZvdGFsClNpZWJl
+bApWYW50aXZlClhjaGFuZ2UKIApTVVBQTFkgQ0hBSU46CkFnaWxlCmkyIFRlY2hub2xvZ2llcwpN
+YW51Z2lzdGljcwpRQUQKV2VicGxhbgpDT01NVU5JQ0FUSU9OUzoKTm9ydGVsCkNpc2NvCjNjb20K
+U2llbWVucwpBbGNhdGVsClRlbGVjb20gVmFycwpBU1DigJlzCkNMRUNTCklTUOKAmXMKIApFLUNP
+TU1FUkNFOgpEb3QgQ29tIERpcmVjdG9yeQpDb25zdWx0YW50IERpcmVjdG9yeQpTb2Z0d2FyZSBE
+aXJlY3RvcnkKIApFWEVDVVRJVkUgRElSRUNUT1JJRVM6CkNoaWVmIEV4ZWN1dGl2ZSBPZmZpY2Vy
+CkNoaWVmIEZpbmFuY2lhbCBPZmZpY2VyCkNoaWVmIEluZm9ybWF0aW9uIE9mZmljZXIKRW5naW5l
+ZXJpbmcKSHVtYW4gUmVzb3VyY2VzClB1cmNoYXNpbmcKU2FsZXMvTWFya2V0aW5nCiAKSU5EVVNU
+UlkgU1BFQ0lGSUMgTElTVFM6CkFncmljdWx0dXJlLCBGb3Jlc3RyeSBhbmQgRmlzaGluZywgQ29t
+bXVuaWNhdGlvbnMsIENvbnN0cnVjdGlvbiwKRmluYW5jZSwgSW5zdXJhbmNlIGFuZCBSZWFsIEVz
+dGF0ZSwgTWFudWZhY3R1cmluZywgTWluaW5nLCBQdWJsaWMgQWRtaW5pc3RyYXRpb24sClJldGFp
+bCBUcmFkZSwgU2VydmljZXMsIFRyYW5zcG9ydGF0aW9uLApVdGlsaXRpZXMsIFdob2xlc2FsZSBU
+cmFkZQpfX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fXwpDb250
+YWluZXJzIG1haWxpbmcgbGlzdApDb250YWluZXJzQGxpc3RzLmxpbnV4LWZvdW5kYXRpb24ub3Jn
+Cmh0dHBzOi8vbGlzdHMubGludXgtZm91bmRhdGlvbi5vcmcvbWFpbG1hbi9saXN0aW5mby9jb250
+YWluZXJz
