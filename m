@@ -1,7 +1,7 @@
-From: Penny Stock <LILI04-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: Notice the volume,wise investors are beginning to accumlate MWUYs
-Date: Mon, 29 Dec 2008 13:38:07 GMT
-Message-ID: <4958D2BF.1023665@gmail.com>
+From: short ex <GAYLE40-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Subject: Remember that SmallCaps outperform the Dow NGwer
+Date: Mon, 29 Dec 2008 15:19:04 GMT
+Message-ID: <4958EA68.1028105@gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -32,5 +32,5 @@ NSPT earlier this week announced a distribution agreement that once fulfilled wi
 Put NSPT on your watch list I can't promise you that NSPT is going to double in 3 days like my last pick but at it's current price anything is possible.
 I will send more information on NSPT later
 
-KPtB LPKjel
-AAuNsK YhlKjh
+QohL RlbcxL
+wBqyaM XZnauV
