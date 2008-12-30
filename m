@@ -1,36 +1,54 @@
-From: short ex <GAYLE40-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: Remember that SmallCaps outperform the Dow NGwer
-Date: Mon, 29 Dec 2008 15:19:04 GMT
-Message-ID: <4958EA68.1028105@gmail.com>
+From: Roland McGrath <roland-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org>
+Subject: Re: [RFC][PATCH] SI_ASYNCIO: should be a kernel signal ?
+Date: Tue, 30 Dec 2008 15:53:26 -0800 (PST)
+Message-ID: <20081230235327.063F0FC278@magilla.sf.frob.com>
+References: <20081221010414.GA5284@us.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
+Content-Type: text/plain; charset=us-ascii
 Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
+Return-path: <linux-usb-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+In-Reply-To: Sukadev Bhattiprolu's message of  Saturday, 20 December 2008 17:04:14 -0800 <20081221010414.GA5284-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Sender: linux-usb-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: Sukadev Bhattiprolu <sukadev-23VcF4HTsmIX0ybBhKVfKdBPR1lH4CV8@public.gmane.org>
+Cc: oleg-H+wXaHxf7aLQT0dZR+AlfA@public.gmane.org, ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org, bastian-yyjItF7Rl6lg9hUCZPvPmw@public.gmane.org, gregkh-l3A5Bk7waGM@public.gmane.org, daniel-nym3zxDgnZcAvxtiuMwx3w@public.gmane.org, xemul-GEFAQzZX7r8dnm+yROfE0A@public.gmane.org, containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-usb-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-My new big pick is NSPT.
+The value of SI_ASYNCIO is part of the user ABI already, so you
+can't really change it anyway.  But, there is a logic why it was
+correct for it to be SI_FROMUSER (not just an old choice we are
+stuck with, which it also is).
 
-If you missed my big pick earlier (WWEI) which in 3 days made a maximum gain of 103%!!!  Start researching NSPT right now.
+The real purpose of the SI_FROMUSER/SI_FROMKERNEL distinction is not
+an abstract idea of "kernel-generated or not".  In fact, it's purely
+to distinguish "forgeable" from "guaranteed exact kernel semantics".
+SI_ASYNCIO is a notification about something the user asked for
+specially, not one about any kernel-enforced sort of event.  If the
+user wants to send himself signals with si_code=SI_ASYNCIO, then fine.
+Noone's going to be fooled about who instigated such a signal.
 
-Every few years along comes a product that revolutionizes an industry.  Cell phones have been around for a while but when the Iphone came out it flipped the phone industry on it's head.
-NSPT is doing that with the sporting products industry and the best part is the company just week public a month ago!
-This means savvy investors could get involved with NSPT at ground levels.
+In fact, the main use of SI_ASYNCIO signals in practice is for a user
+to send them to himself.  That's what glibc (-lrt) does to implement
+the POSIX aio_* calls.  The only uses in the kernel are in the USB
+code related to some magic ioctls.
 
-Everyone has tried inline skating, I'm sure you might have a pair in your closet or know someone who has a pair.  Now imagine having a pair of inline skates that could go over big rocks or even a hockey stick.
-NSPT has developed a revolutionized type of inline skates that is safer improves performance and mimics ice skating.
-NSPT earlier this week announced a distribution agreement that once fulfilled will be worth approximately 10 Million dollars!!!
-Put NSPT on your watch list I can't promise you that NSPT is going to double in 3 days like my last pick but at it's current price anything is possible.
-I will send more information on NSPT later
+Those in-kernel cases call kill_pid_info_as_uid precisely for the same
+issue of current vs instigating-process.  These are the only calls to
+that function.  It really could be called something else like
+"kill_self_from_interrupt", because its only use is this case that's
+considered to be, "I'm sending it to myself, delayed."  That is, it
+caches the uid/euid along with the struct pid to itself, in case of
+instigating it, changing uids, and then having the interrupt deliver
+the signal to the same process that is now differently-privileged.
 
-QohL RlbcxL
-wBqyaM XZnauV
+It's not real clear you care about the old vs new pid namespace the
+same way we care about the old vs new current_cred.  Since the sender
+can only be "myself" or "my former self", maybe just call it "myself"
+and be done with it--you just don't need any check in this path.
+
+
+Thanks,
+Roland
+--
+To unsubscribe from this list: send the line "unsubscribe linux-usb" in
+the body of a message to majordomo-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html
