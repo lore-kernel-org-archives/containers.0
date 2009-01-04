@@ -1,31 +1,44 @@
-From: Roland McGrath <roland@redhat.com>
-Subject: Re: [PATCH 4/6][v5] Protect cinit from unblocked SIG_DFL signals
-Date: Tue, 30 Dec 2008 16:19:42 -0800 (PST)
-Message-ID: <20081231001942.F35E2FC278@magilla.sf.frob.com>
-References: <20081227204658.GA27197@us.ibm.com>
-	<20081227205319.GC27337@us.ibm.com>
+From: "J. Bruce Fields" <bfields-uC3wQj2KruNg9hUCZPvPmw@public.gmane.org>
+Subject: nfsd and containers
+Date: Sat, 3 Jan 2009 21:54:15 -0500
+Message-ID: <20090104025415.GF24075@fieldses.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1753166AbYLaAUe@vger.kernel.org>
-In-Reply-To: Sukadev Bhattiprolu's message of  Saturday, 27 December 2008 12:53:19 -0800 <20081227205319.GC27337@us.ibm.com>
-Sender: linux-kernel-owner@vger.kernel.org
-To: Sukadev Bhattiprolu <sukadev@linux.vnet.ibm.com>
-Cc: oleg@redhat.com, ebiederm@xmission.com, bastian@waldi.eu.org, daniel@hozac.com, xemul@openvz.org, containers@lists.osdl.org, linux-kernel@vger.kernel.org
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Content-Disposition: inline
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Since you didn't add the sig_task_unkillable() helper for its one simple
-condition in patch 2/6, I don't think you need it here either for two.
-Just add '&& !from_ancestor_ns' inline.
+Does anyone have any ideas about how the kernel's nfsd should interact
+(if at all) with network namespaces?
 
-This patch has more stray whitespace changes.  
-I think checkpatch.pl will spot those for you.
+I'm initially interested because I've been experimenting with modifying
+the server to allow it to present different exported filesystems
+depending on which ip address it's accessed through.  One way to do that
+might be by modifying the kernel to behave as though there's a separate
+nfsd service per network namespace; then we'd need little or no
+modification of the userspace support daemons (statd, the portmapper,
+etc.)--just start multiple instances of them in separate network
+namespaces and teach the kernel to route requests to them to the
+corresponding loopback interface.  (That would work at least for daemons
+that communicate with the kernel exclusively using rpc over loopback.
+We could perhaps do something similar with the various /proc and nfsctl
+interfaces.)
 
-I'd just make the flag a parameter to send_signal() directly.
-Then you can just change kill_pid_info_as_uid (or its replacement)
-to call send_signal() with that new flag (and the 'group' flag) 
-directly instead of using the trivial __group_send_sig_info wrapper.
+I'm also curious more generally whether anyone's thought about how nfsd 
+should behave in the presence of containers.
 
+(Also, I take it the sysfs problem described in
+http://lwn.net/Articles/295587/ is still unsolved?)
 
-Thanks,
-Roland
+--b.
