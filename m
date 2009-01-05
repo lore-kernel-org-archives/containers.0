@@ -1,140 +1,114 @@
-From: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Subject: [PATCH 4/6] proc: don't show the wrong /proc/net after unshare
-Date: Tue, 6 Jan 2009 02:34:11 +0300
-Message-ID: <20090105233411.GD3924@x200.localdomain>
+From: Alexey Dobriyan <adobriyan@gmail.com>
+Subject: [PATCH 5/6] proc: simplify network namespace lookup
+Date: Tue, 6 Jan 2009 02:34:28 +0300
+Message-ID: <20090105233428.GE3924@x200.localdomain>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+Content-Type: text/plain; charset=us-ascii
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1755197AbZAEX3j@vger.kernel.org>
 Content-Disposition: inline
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org, viro-RmSDqhL/yNMiFSDQTTA3OLVCufUGDwFn@public.gmane.org
-Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org, sds-+05T5uksL2qpZYMLLGbcSA@public.gmane.org, linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Sender: linux-kernel-owner@vger.kernel.org
+To: ebiederm@xmission.com, viro@zeniv.linux.org.uk
+Cc: linux-kernel@vger.kernel.org, containers@lists.osdl.org, sds@tycho.nsa.gov, jmorris@namei.org
 List-Id: containers.vger.kernel.org
 
-From e61d04ffef58c5c088d333a67d56241fa29ab2dc Mon Sep 17 00:00:00 2001
-From: Eric W. Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Date: Wed, 19 Nov 2008 04:57:28 +0300
-Subject: [PATCH 4/6] proc: don't show the wrong /proc/net after unshare
+From 497bf023f4e5fff34a8f50f2efc16310030a21b6 Mon Sep 17 00:00:00 2001
+From: Eric W. Biederman <ebiederm@xmission.com>
+Date: Wed, 19 Nov 2008 05:10:17 +0300
+Subject: [PATCH 5/6] proc: simplify network namespace lookup
 
-This is accomplished by dropping the /proc/<pid>/net
-dentry when we discover an older version of /proc/net
-is mounted upon it.  This prevents new lookups from
-using the mount and ultimately proc_shrink_automounts
-will catch up with it and remove the old mount point.
+Since the network namespace is recorded in the
+superblock we don't need to remember it on
+each directory under /proc/net.
 
-Signed-off-by: Eric W. Biederman <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>
-Signed-off-by: Alexey Dobriyan <adobriyan-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Signed-off-by: Eric W. Biederman <ebiederm@xmission.com>
+Signed-off-by: Alexey Dobriyan <adobriyan@gmail.com>
 ---
- fs/proc/base.c     |   11 +++++++----
- fs/proc/internal.h |    9 +++++++++
- fs/proc/proc_net.c |   35 +++++++++++++++++++++++++++++++++++
- 3 files changed, 51 insertions(+), 4 deletions(-)
+ fs/proc/generic.c       |   17 -----------------
+ fs/proc/proc_net.c      |   13 ++++++++++---
+ include/linux/proc_fs.h |    5 -----
+ 3 files changed, 10 insertions(+), 25 deletions(-)
 
-diff --git a/fs/proc/base.c b/fs/proc/base.c
-index e6e89d3..a4b7cac 100644
---- a/fs/proc/base.c
-+++ b/fs/proc/base.c
-@@ -1518,6 +1518,7 @@ static int pid_revalidate(struct dentry *dentry, struct nameidata *nd)
- 	struct inode *inode = dentry->d_inode;
- 	struct task_struct *task = get_proc_task(inode);
- 	const struct cred *cred;
-+	int ret = 0;
- 
- 	if (task) {
- 		if ((inode->i_mode == (S_IFDIR|S_IRUGO|S_IXUGO)) ||
-@@ -1532,12 +1533,14 @@ static int pid_revalidate(struct dentry *dentry, struct nameidata *nd)
- 			inode->i_gid = 0;
- 		}
- 		inode->i_mode &= ~(S_ISUID | S_ISGID);
--		security_task_to_inode(task, inode);
-+		ret = proc_net_revalidate(task, dentry, nd);
-+		if (ret == 1)
-+			security_task_to_inode(task, inode);
- 		put_task_struct(task);
--		return 1;
- 	}
--	d_drop(dentry);
--	return 0;
-+	if (ret == 0)
-+		d_drop(dentry);
-+	return ret;
+diff --git a/fs/proc/generic.c b/fs/proc/generic.c
+index 61d4152..03155ff 100644
+--- a/fs/proc/generic.c
++++ b/fs/proc/generic.c
+@@ -654,23 +654,6 @@ struct proc_dir_entry *proc_mkdir_mode(const char *name, mode_t mode,
+ 	return ent;
  }
  
- static int pid_delete_dentry(struct dentry * dentry)
-diff --git a/fs/proc/internal.h b/fs/proc/internal.h
-index 36e0636..5cfe798 100644
---- a/fs/proc/internal.h
-+++ b/fs/proc/internal.h
-@@ -62,6 +62,15 @@ extern const struct file_operations proc_clear_refs_operations;
- extern const struct file_operations proc_pagemap_operations;
- extern const struct inode_operations proc_net_inode_operations;
- 
-+#ifdef CONFIG_NET
-+int proc_net_revalidate(struct task_struct *tsk, struct dentry *dentry, struct nameidata *nd);
-+#else
-+static inline int proc_net_revalidate(struct task_struct *tsk, struct dentry *dentry, struct nameidata *nd)
-+{
-+	return 1;
-+}
-+#endif
-+
- void free_proc_entry(struct proc_dir_entry *de);
- 
- void proc_init_inodecache(void);
+-struct proc_dir_entry *proc_net_mkdir(struct net *net, const char *name,
+-		struct proc_dir_entry *parent)
+-{
+-	struct proc_dir_entry *ent;
+-
+-	ent = __proc_create(&parent, name, S_IFDIR | S_IRUGO | S_IXUGO, 2);
+-	if (ent) {
+-		ent->data = net;
+-		if (proc_register(parent, ent) < 0) {
+-			kfree(ent);
+-			ent = NULL;
+-		}
+-	}
+-	return ent;
+-}
+-EXPORT_SYMBOL_GPL(proc_net_mkdir);
+-
+ struct proc_dir_entry *proc_mkdir(const char *name,
+ 		struct proc_dir_entry *parent)
+ {
 diff --git a/fs/proc/proc_net.c b/fs/proc/proc_net.c
-index 1054d92..b026c87 100644
+index b026c87..baaddad 100644
 --- a/fs/proc/proc_net.c
 +++ b/fs/proc/proc_net.c
-@@ -169,6 +169,41 @@ const struct inode_operations proc_net_inode_operations = {
- };
+@@ -30,7 +30,7 @@ static struct file_system_type proc_net_fs_type;
  
- 
-+int proc_net_revalidate(struct task_struct *task, struct dentry *dentry,
-+			struct nameidata *nd)
-+{
-+	struct inode *inode = dentry->d_inode;
-+	struct dentry *tdentry;
-+	struct vfsmount *tmnt;
-+	int ret = 1;
-+
-+	/* Are we talking about a proc/net mount point? */
-+	if (!nd || inode->i_op != &proc_net_inode_operations)
-+		goto out;
-+
-+	/*
-+	 * If the wrong filesystem is mounted on /proc/<pid>/net report the
-+	 * dentry is invalid.
-+	 */
-+	tmnt = mntget(nd->path.mnt);
-+	tdentry = dget(dentry);
-+	if (follow_down(&tmnt, &tdentry)) {
-+		struct nsproxy *ns;
-+
-+		rcu_read_lock();
-+		ns = task_nsproxy(task);
-+		if ((ns == NULL) ||
-+		     (tmnt->mnt_sb->s_magic != PROC_NET_SUPER_MAGIC) ||
-+		     (tmnt->mnt_sb->s_fs_info != ns->net_ns))
-+			ret = 0;
-+		rcu_read_unlock();
-+	}
-+	dput(tdentry);
-+	mntput(tmnt);
-+out:
-+	return ret;
-+}
-+
- struct proc_dir_entry *proc_net_fops_create(struct net *net,
- 	const char *name, mode_t mode, const struct file_operations *fops)
+ static struct net *get_proc_net(const struct inode *inode)
  {
+-	return maybe_get_net(PDE_NET(PDE(inode)));
++	return maybe_get_net(inode->i_sb->s_fs_info);
+ }
+ 
+ int seq_open_net(struct inode *ino, struct file *f,
+@@ -211,6 +211,15 @@ struct proc_dir_entry *proc_net_fops_create(struct net *net,
+ }
+ EXPORT_SYMBOL_GPL(proc_net_fops_create);
+ 
++struct proc_dir_entry *proc_net_mkdir(struct net *net, const char *name,
++		struct proc_dir_entry *parent)
++{
++	if (!parent)
++		parent = net->proc_net;
++	return proc_mkdir(name, parent);
++}
++EXPORT_SYMBOL_GPL(proc_net_mkdir);
++
+ void proc_net_remove(struct net *net, const char *name)
+ {
+ 	remove_proc_entry(name, net->proc_net);
+@@ -304,8 +313,6 @@ static __net_init int proc_net_ns_init(struct net *net)
+ 	if (!netd)
+ 		goto out;
+ 
+-	netd->data = net;
+-
+ 	err = -EEXIST;
+ 	net_statd = proc_net_mkdir(net, "stat", netd);
+ 	if (!net_statd)
+diff --git a/include/linux/proc_fs.h b/include/linux/proc_fs.h
+index 768e627..4f13811 100644
+--- a/include/linux/proc_fs.h
++++ b/include/linux/proc_fs.h
+@@ -304,11 +304,6 @@ static inline struct proc_dir_entry *PDE(const struct inode *inode)
+ 	return PROC_I(inode)->pde;
+ }
+ 
+-static inline struct net *PDE_NET(struct proc_dir_entry *pde)
+-{
+-	return pde->parent->data;
+-}
+-
+ struct proc_maps_private {
+ 	struct pid *pid;
+ 	struct task_struct *task;
 -- 
 1.5.6.5
