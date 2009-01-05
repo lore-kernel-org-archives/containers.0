@@ -1,44 +1,42 @@
 From: Oleg Nesterov <oleg@redhat.com>
-Subject: Re: [PATCH 3/6][v5] Define siginfo_from_ancestor_ns()
-Date: Mon, 5 Jan 2009 15:33:34 +0100
-Message-ID: <20090105143334.GD3313@redhat.com>
-References: <20081227204658.GA27197@us.ibm.com> <20081227205222.GB27337@us.ibm.com>
+Subject: Re: [PATCH 5/6][v5] Protect cinit from blocked fatal signals
+Date: Mon, 5 Jan 2009 16:16:08 +0100
+Message-ID: <20090105151608.GE3313@redhat.com>
+References: <20081227204658.GA27197@us.ibm.com> <20081227205409.GD27337@us.ibm.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1755401AbZAEOgW@vger.kernel.org>
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1755979AbZAEPSt@vger.kernel.org>
 Content-Disposition: inline
-In-Reply-To: <20081227205222.GB27337@us.ibm.com>
+In-Reply-To: <20081227205409.GD27337@us.ibm.com>
 Sender: linux-kernel-owner@vger.kernel.org
 To: Sukadev Bhattiprolu <sukadev@linux.vnet.ibm.com>
 Cc: ebiederm@xmission.com, roland@redhat.com, bastian@waldi.eu.org, daniel@hozac.com, xemul@openvz.org, containers@lists.osdl.org, linux-kernel@vger.kernel.org
 List-Id: containers.vger.kernel.org
 
-Really minor nit, just noticed...
-
 On 12/27, Sukadev Bhattiprolu wrote:
 >
-> +static inline int siginfo_from_ancestor_ns(struct task_struct *t,
-> +                       siginfo_t *info)
-> +{
-> +	struct pid_namespace *ns;
-> +
-> +	/*
-> +	 * Ensure signal is from user-space before checking pid namespace.
-> +	 * (We maybe called from interrupt context and dereferencing
-> +	 * pid namespace would be safe).
-> +	 */
-> +	if (siginfo_from_user(info)) {
+> +		 * Container-init gets no signals it doesn't want from same
+> +		 * container.
+>  		 */
+> -		if (unlikely(signal->flags & SIGNAL_UNKILLABLE) &&
+> -		    !signal_group_exit(signal))
+> +		if ((signal->flags & SIGNAL_UNKILLABLE) &&
+> +				!sig_kernel_only(signr))
 
-I can't parse the comment above, and imho it is confusing and
-misleading. We can dereference pid namespace even in interrupt
-context.
+minor, but why did you remove unlikely() ?
 
-Also, the comment looks as if "when siginfo_from_user() is false,
-it is not safe/possible to derive from_ancestor_ns". This is not
-true, in that case we know that from_ancestor_ns must be false.
+And could you improve the changelog a bit? Please explain
+that !signal_group_exit() was needed to handle the case
+when the mt init does exit/exec and sends SIGKILL to all
+sub-threads. Now this is covered by sig_kernel_only().
 
-from_ancestor_ns == T means the signal was sent from the user
-space, and it was sent to the task in the sub-namespace, so it
-is clear why we check siginfo_from_user().
+In short, please explain that if SIGNAL_UNKILLABLE task
+sees the sig_kernel_only() signal here, then it was either
+sent by the parent namespace or it was generated internally.
+In both cases we should not drop it.
+
+But your current changelog mostly explains why do we need
+another SIGNAL_UNKILLABLE check in get_signal_to_deliver(),
+this is orthogonal to the change itself.
 
 Oleg.
