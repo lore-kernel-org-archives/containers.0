@@ -1,42 +1,61 @@
-From: Oleg Nesterov <oleg@redhat.com>
-Subject: Re: [PATCH 5/6][v5] Protect cinit from blocked fatal signals
-Date: Mon, 5 Jan 2009 16:16:08 +0100
-Message-ID: <20090105151608.GE3313@redhat.com>
-References: <20081227204658.GA27197@us.ibm.com> <20081227205409.GD27337@us.ibm.com>
+From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
+Subject: Re: nfsd and containers
+Date: Mon, 5 Jan 2009 10:40:16 -0600
+Message-ID: <20090105164016.GA8746@us.ibm.com>
+References: <20090104025415.GF24075@fieldses.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1755979AbZAEPSt@vger.kernel.org>
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <20081227205409.GD27337@us.ibm.com>
-Sender: linux-kernel-owner@vger.kernel.org
-To: Sukadev Bhattiprolu <sukadev@linux.vnet.ibm.com>
-Cc: ebiederm@xmission.com, roland@redhat.com, bastian@waldi.eu.org, daniel@hozac.com, xemul@openvz.org, containers@lists.osdl.org, linux-kernel@vger.kernel.org
+In-Reply-To: <20090104025415.GF24075-uC3wQj2KruNg9hUCZPvPmw@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: "J. Bruce Fields" <bfields-uC3wQj2KruNg9hUCZPvPmw@public.gmane.org>
+Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-On 12/27, Sukadev Bhattiprolu wrote:
->
-> +		 * Container-init gets no signals it doesn't want from same
-> +		 * container.
->  		 */
-> -		if (unlikely(signal->flags & SIGNAL_UNKILLABLE) &&
-> -		    !signal_group_exit(signal))
-> +		if ((signal->flags & SIGNAL_UNKILLABLE) &&
-> +				!sig_kernel_only(signr))
+Quoting J. Bruce Fields (bfields-uC3wQj2KruNg9hUCZPvPmw@public.gmane.org):
+> Does anyone have any ideas about how the kernel's nfsd should interact
+> (if at all) with network namespaces?
+> 
+> I'm initially interested because I've been experimenting with modifying
+> the server to allow it to present different exported filesystems
+> depending on which ip address it's accessed through.  One way to do that
+> might be by modifying the kernel to behave as though there's a separate
+> nfsd service per network namespace; then we'd need little or no
+> modification of the userspace support daemons (statd, the portmapper,
+> etc.)--just start multiple instances of them in separate network
+> namespaces and teach the kernel to route requests to them to the
+> corresponding loopback interface.  (That would work at least for daemons
+> that communicate with the kernel exclusively using rpc over loopback.
+> We could perhaps do something similar with the various /proc and nfsctl
+> interfaces.)
+> 
+> I'm also curious more generally whether anyone's thought about how nfsd 
+> should behave in the presence of containers.
 
-minor, but why did you remove unlikely() ?
+I suspect Eric has had more detailed thoughts than I so I'm waiting
+to see his response.  Matt sent a patchset to deal with sunrpc/nfs/uts
+namespaces which I haven't yet had a chance to look at, so he might
+also have some good comments at this point.
 
-And could you improve the changelog a bit? Please explain
-that !signal_group_exit() was needed to handle the case
-when the mt init does exit/exec and sends SIGKILL to all
-sub-threads. Now this is covered by sig_kernel_only().
+> (Also, I take it the sysfs problem described in
+> http://lwn.net/Articles/295587/ is still unsolved?)
 
-In short, please explain that if SIGNAL_UNKILLABLE task
-sees the sig_kernel_only() signal here, then it was either
-sent by the parent namespace or it was generated internally.
-In both cases we should not drop it.
+Sysfs tagging is not yet implemented, but 2.6.29 is supposed to
+have the netdev hack-fix which simply doesn't show /sys/class/net
+entries for tasks which are not in the initial network namespace.
+That allows network namespaces to be used.
 
-But your current changelog mostly explains why do we need
-another SIGNAL_UNKILLABLE check in get_signal_to_deliver(),
-this is orthogonal to the change itself.
+Checking gitweb real quick, yes, CONFIG_NET_NS is an option in
+Linus' current git tree.
 
-Oleg.
+-serge
