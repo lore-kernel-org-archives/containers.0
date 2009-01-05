@@ -1,114 +1,74 @@
 From: Alexey Dobriyan <adobriyan@gmail.com>
-Subject: [PATCH 5/6] proc: simplify network namespace lookup
-Date: Tue, 6 Jan 2009 02:34:28 +0300
-Message-ID: <20090105233428.GE3924@x200.localdomain>
+Subject: [PATCH 6/6] proc: cleanup proc_flush_task()
+Date: Tue, 6 Jan 2009 02:34:47 +0300
+Message-ID: <20090105233447.GF3924@x200.localdomain>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1755197AbZAEX3j@vger.kernel.org>
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1755386AbZAEX35@vger.kernel.org>
 Content-Disposition: inline
 Sender: linux-kernel-owner@vger.kernel.org
 To: ebiederm@xmission.com, viro@zeniv.linux.org.uk
 Cc: linux-kernel@vger.kernel.org, containers@lists.osdl.org, sds@tycho.nsa.gov, jmorris@namei.org
 List-Id: containers.vger.kernel.org
 
-From 497bf023f4e5fff34a8f50f2efc16310030a21b6 Mon Sep 17 00:00:00 2001
+From f9485836e531dec10b15bf97e95dc20fa2d6914a Mon Sep 17 00:00:00 2001
 From: Eric W. Biederman <ebiederm@xmission.com>
-Date: Wed, 19 Nov 2008 05:10:17 +0300
-Subject: [PATCH 5/6] proc: simplify network namespace lookup
+Date: Wed, 19 Nov 2008 05:16:17 +0300
+Subject: [PATCH 6/6] proc: cleanup proc_flush_task()
 
-Since the network namespace is recorded in the
-superblock we don't need to remember it on
-each directory under /proc/net.
+- shrink_dcache_parent is guaranteed to only flush dcache entries
+  from the specified superblock.  So the the insanely subtle
+  PF_EXITING check designed to avoid flushing filesystems inodes
+  that are not safe to call during exit is unecessary.
+
+- The test to avoid excess flushing of dcache entries in proc
+  got inverted and generally broken for threads, and frankly
+  all it saved was a single d_hash_and_lookup so there was
+  very little point to it.  So remove the check and keep
+  the code stupid and correct.
 
 Signed-off-by: Eric W. Biederman <ebiederm@xmission.com>
 Signed-off-by: Alexey Dobriyan <adobriyan@gmail.com>
 ---
- fs/proc/generic.c       |   17 -----------------
- fs/proc/proc_net.c      |   13 ++++++++++---
- include/linux/proc_fs.h |    5 -----
- 3 files changed, 10 insertions(+), 25 deletions(-)
+ fs/proc/base.c |   11 +++--------
+ 1 files changed, 3 insertions(+), 8 deletions(-)
 
-diff --git a/fs/proc/generic.c b/fs/proc/generic.c
-index 61d4152..03155ff 100644
---- a/fs/proc/generic.c
-+++ b/fs/proc/generic.c
-@@ -654,23 +654,6 @@ struct proc_dir_entry *proc_mkdir_mode(const char *name, mode_t mode,
- 	return ent;
- }
+diff --git a/fs/proc/base.c b/fs/proc/base.c
+index a4b7cac..e43a013 100644
+--- a/fs/proc/base.c
++++ b/fs/proc/base.c
+@@ -2600,15 +2600,11 @@ static void proc_flush_task_mnt(struct vfsmount *mnt, pid_t pid, pid_t tgid)
+ 	name.len = snprintf(buf, sizeof(buf), "%d", pid);
+ 	dentry = d_hash_and_lookup(mnt->mnt_root, &name);
+ 	if (dentry) {
+-		if (!(current->flags & PF_EXITING))
+-			shrink_dcache_parent(dentry);
++		shrink_dcache_parent(dentry);
+ 		d_drop(dentry);
+ 		dput(dentry);
+ 	}
  
--struct proc_dir_entry *proc_net_mkdir(struct net *net, const char *name,
--		struct proc_dir_entry *parent)
--{
--	struct proc_dir_entry *ent;
+-	if (tgid == 0)
+-		goto out;
 -
--	ent = __proc_create(&parent, name, S_IFDIR | S_IRUGO | S_IXUGO, 2);
--	if (ent) {
--		ent->data = net;
--		if (proc_register(parent, ent) < 0) {
--			kfree(ent);
--			ent = NULL;
--		}
--	}
--	return ent;
--}
--EXPORT_SYMBOL_GPL(proc_net_mkdir);
--
- struct proc_dir_entry *proc_mkdir(const char *name,
- 		struct proc_dir_entry *parent)
- {
-diff --git a/fs/proc/proc_net.c b/fs/proc/proc_net.c
-index b026c87..baaddad 100644
---- a/fs/proc/proc_net.c
-+++ b/fs/proc/proc_net.c
-@@ -30,7 +30,7 @@ static struct file_system_type proc_net_fs_type;
+ 	name.name = buf;
+ 	name.len = snprintf(buf, sizeof(buf), "%d", tgid);
+ 	leader = d_hash_and_lookup(mnt->mnt_root, &name);
+@@ -2669,13 +2665,12 @@ void proc_flush_task(struct task_struct *task)
+ 	struct upid *upid;
  
- static struct net *get_proc_net(const struct inode *inode)
- {
--	return maybe_get_net(PDE_NET(PDE(inode)));
-+	return maybe_get_net(inode->i_sb->s_fs_info);
- }
+ 	pid = task_pid(task);
+-	if (thread_group_leader(task))
+-		tgid = task_tgid(task);
++	tgid = task_tgid(task);
  
- int seq_open_net(struct inode *ino, struct file *f,
-@@ -211,6 +211,15 @@ struct proc_dir_entry *proc_net_fops_create(struct net *net,
- }
- EXPORT_SYMBOL_GPL(proc_net_fops_create);
+ 	for (i = 0; i <= pid->level; i++) {
+ 		upid = &pid->numbers[i];
+ 		proc_flush_task_mnt(upid->ns->proc_mnt, upid->nr,
+-			tgid ? tgid->numbers[i].nr : 0);
++				    tgid->numbers[i].nr);
+ 	}
  
-+struct proc_dir_entry *proc_net_mkdir(struct net *net, const char *name,
-+		struct proc_dir_entry *parent)
-+{
-+	if (!parent)
-+		parent = net->proc_net;
-+	return proc_mkdir(name, parent);
-+}
-+EXPORT_SYMBOL_GPL(proc_net_mkdir);
-+
- void proc_net_remove(struct net *net, const char *name)
- {
- 	remove_proc_entry(name, net->proc_net);
-@@ -304,8 +313,6 @@ static __net_init int proc_net_ns_init(struct net *net)
- 	if (!netd)
- 		goto out;
- 
--	netd->data = net;
--
- 	err = -EEXIST;
- 	net_statd = proc_net_mkdir(net, "stat", netd);
- 	if (!net_statd)
-diff --git a/include/linux/proc_fs.h b/include/linux/proc_fs.h
-index 768e627..4f13811 100644
---- a/include/linux/proc_fs.h
-+++ b/include/linux/proc_fs.h
-@@ -304,11 +304,6 @@ static inline struct proc_dir_entry *PDE(const struct inode *inode)
- 	return PROC_I(inode)->pde;
- }
- 
--static inline struct net *PDE_NET(struct proc_dir_entry *pde)
--{
--	return pde->parent->data;
--}
--
- struct proc_maps_private {
- 	struct pid *pid;
- 	struct task_struct *task;
+ 	upid = &pid->numbers[pid->level];
 -- 
 1.5.6.5
