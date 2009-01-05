@@ -1,71 +1,134 @@
-From: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: nfsd and containers
-Date: Mon, 05 Jan 2009 14:55:18 -0800
-Message-ID: <1231196118.14345.37.camel@localhost>
-References: <20090104025415.GF24075@fieldses.org>
-	<20090105164016.GA8746@us.ibm.com>
+From: Alexey Dobriyan <adobriyan@gmail.com>
+Subject: [PATCH 1/6] proc: implement support for automounts in task
+	directories
+Date: Tue, 6 Jan 2009 02:32:41 +0300
+Message-ID: <20090105233241.GA3924@x200.localdomain>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-In-Reply-To: <20090105164016.GA8746-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
-List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
-List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
-List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
-List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
-	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
-Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
-To: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Cc: "J. Bruce Fields" <bfields-uC3wQj2KruNg9hUCZPvPmw@public.gmane.org>, containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
+Content-Type: text/plain; charset=us-ascii
+Return-path: <linux-kernel-owner+glk-linux-kernel-3=40m.gmane.org-S1752164AbZAEX14@vger.kernel.org>
+Content-Disposition: inline
+Sender: linux-kernel-owner@vger.kernel.org
+To: ebiederm@xmission.com, viro@zeniv.linux.org.uk
+Cc: linux-kernel@vger.kernel.org, containers@lists.osdl.org, sds@tycho.nsa.gov, jmorris@namei.org
 List-Id: containers.vger.kernel.org
 
-On Mon, 2009-01-05 at 10:40 -0600, Serge E. Hallyn wrote:
-> Quoting J. Bruce Fields (bfields-uC3wQj2KruNg9hUCZPvPmw@public.gmane.org):
-> > Does anyone have any ideas about how the kernel's nfsd should interact
-> > (if at all) with network namespaces?
-> > 
-> > I'm initially interested because I've been experimenting with modifying
-> > the server to allow it to present different exported filesystems
-> > depending on which ip address it's accessed through.  One way to do that
-> > might be by modifying the kernel to behave as though there's a separate
-> > nfsd service per network namespace; then we'd need little or no
-> > modification of the userspace support daemons (statd, the portmapper,
-> > etc.)--just start multiple instances of them in separate network
-> > namespaces and teach the kernel to route requests to them to the
-> > corresponding loopback interface.  (That would work at least for daemons
-> > that communicate with the kernel exclusively using rpc over loopback.
-> > We could perhaps do something similar with the various /proc and nfsctl
-> > interfaces.)
+This is current version of /proc/net as separate file system patchset,
+rebased, etc. I'll put it into -next again when merge window closes.
 
-This sounds good. It is somewhat related to UTS namespaces because the
-hostname reported from the UTS namespace and the DNS name might not
-match. I haven't thoroughly explored all the combinations but I suspect
-the use of network namespaces could play a part in that depending on
-what choices the administrator(s) make.
+Please, review.
+----------------------------------------------------------------------
+From a934c391e19837e760592536c4cdd1b4f2432caa Mon Sep 17 00:00:00 2001
+From: Eric W. Biederman <ebiederm@xmission.com>
+Date: Wed, 19 Nov 2008 03:57:02 +0300
+Subject: [PATCH 1/6] proc: implement support for automounts in task directories
 
-> > I'm also curious more generally whether anyone's thought about how nfsd 
-> > should behave in the presence of containers.
+This is a general mechanism that is capable of removing any unused mounts on
+/proc in any directory.  As we flush the mounts when a processes dies this
+mechanism is tailored for flushing mounts in the per task and per task group
+directories.
 
-I have only thought about how nfsd should see clients in different UTS
-and mount namespaces. The conclusion I came to was NFS should use
-whatever name was used with the original mount. So if we mounted an NFS
-export and then create a container that uses that mount then it should
-use the hostname of the original container. However if the child
-container then does another NFS mount then the child's hostname ought to
-be used for the new mount.
+Signed-off-by: Eric W. Biederman <ebiederm@xmission.com>
+Signed-off-by: Alexey Dobriyan <adobriyan@gmail.com>
+---
+ fs/proc/Makefile        |    1 +
+ fs/proc/automount.c     |   28 ++++++++++++++++++++++++++++
+ fs/proc/internal.h      |    2 ++
+ include/linux/proc_fs.h |    5 +++++
+ kernel/exit.c           |    2 +-
+ 5 files changed, 37 insertions(+), 1 deletions(-)
+ create mode 100644 fs/proc/automount.c
 
-> I suspect Eric has had more detailed thoughts than I so I'm waiting
-> to see his response.  Matt sent a patchset to deal with sunrpc/nfs/uts
-> namespaces which I haven't yet had a chance to look at, so he might
-> also have some good comments at this point.
-
-Seems there's some confusion -- that patchset went out privately during
-the holidays. Now is a good time to repost it publicly though. I'll cc
-folks on this thread. I'm also planning on cc'ing nfs-devel to get their
-thoughts.
-
-Cheers,
-	-Matt Helsley
+diff --git a/fs/proc/Makefile b/fs/proc/Makefile
+index 63d9651..757f7c1 100644
+--- a/fs/proc/Makefile
++++ b/fs/proc/Makefile
+@@ -9,6 +9,7 @@ proc-$(CONFIG_MMU)	:= mmu.o task_mmu.o
+ 
+ proc-y       += inode.o root.o base.o generic.o array.o \
+ 		proc_tty.o
++proc-y	+= automount.o
+ proc-y	+= cmdline.o
+ proc-y	+= cpuinfo.o
+ proc-y	+= devices.o
+diff --git a/fs/proc/automount.c b/fs/proc/automount.c
+new file mode 100644
+index 0000000..5d22b5a
+--- /dev/null
++++ b/fs/proc/automount.c
+@@ -0,0 +1,28 @@
++#include <linux/list.h>
++#include <linux/mount.h>
++#include <linux/workqueue.h>
++#include "internal.h"
++
++LIST_HEAD(proc_automounts);
++
++static void proc_expire_automounts(struct work_struct *work);
++
++static DECLARE_DELAYED_WORK(proc_automount_task, proc_expire_automounts);
++static int proc_automount_timeout = 500 * HZ;
++
++void proc_shrink_automounts(void)
++{
++	struct list_head *list = &proc_automounts;
++
++	mark_mounts_for_expiry(list);
++	mark_mounts_for_expiry(list);
++	if (list_empty(list))
++		return;
++
++	schedule_delayed_work(&proc_automount_task, proc_automount_timeout);
++}
++
++static void proc_expire_automounts(struct work_struct *work)
++{
++	proc_shrink_automounts();
++}
+diff --git a/fs/proc/internal.h b/fs/proc/internal.h
+index 3e8aeb8..314c0d3 100644
+--- a/fs/proc/internal.h
++++ b/fs/proc/internal.h
+@@ -93,3 +93,5 @@ struct pde_opener {
+ 	int (*release)(struct inode *, struct file *);
+ 	struct list_head lh;
+ };
++
++extern struct list_head proc_automounts;
+diff --git a/include/linux/proc_fs.h b/include/linux/proc_fs.h
+index b8bdb96..768e627 100644
+--- a/include/linux/proc_fs.h
++++ b/include/linux/proc_fs.h
+@@ -101,6 +101,7 @@ extern spinlock_t proc_subdir_lock;
+ 
+ extern void proc_root_init(void);
+ 
++void proc_shrink_automounts(void);
+ void proc_flush_task(struct task_struct *task);
+ struct dentry *proc_pid_lookup(struct inode *dir, struct dentry * dentry, struct nameidata *);
+ int proc_pid_readdir(struct file * filp, void * dirent, filldir_t filldir);
+@@ -207,6 +208,10 @@ static inline void proc_flush_task(struct task_struct *task)
+ {
+ }
+ 
++static inline void proc_shrink_automounts(void)
++{
++}
++
+ static inline struct proc_dir_entry *create_proc_entry(const char *name,
+ 	mode_t mode, struct proc_dir_entry *parent) { return NULL; }
+ static inline struct proc_dir_entry *proc_create(const char *name,
+diff --git a/kernel/exit.c b/kernel/exit.c
+index c9e5a1c..640b3bb 100644
+--- a/kernel/exit.c
++++ b/kernel/exit.c
+@@ -173,7 +173,7 @@ repeat:
+ 	/* don't need to get the RCU readlock here - the process is dead and
+ 	 * can't be modifying its own credentials */
+ 	atomic_dec(&__task_cred(p)->user->processes);
+-
++	proc_shrink_automounts();
+ 	proc_flush_task(p);
+ 	write_lock_irq(&tasklist_lock);
+ 	tracehook_finish_release_task(p);
+-- 
+1.5.6.5
