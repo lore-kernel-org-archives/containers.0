@@ -1,72 +1,148 @@
-From: "Serge E. Hallyn" <serue-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>
-Subject: Re: [RFC][PATCH 2/4] sunrpc: Use utsnamespaces
-Date: Tue, 6 Jan 2009 15:58:31 -0600
-Message-ID: <20090106215831.GE18147@us.ibm.com>
-References: <20090106011314.534653345@us.ibm.com> <20090106011314.961946803@us.ibm.com> <20090106200229.GA17031@us.ibm.com> <1231274682.20316.65.camel@heimdal.trondhjem.org>
+From: Grzegorz Nosek <root-AfQBxy1nhrQ00sYp1HPQUA@public.gmane.org>
+Subject: [PATCH] Relax ns_can_attach checks to allow attaching to
+	grandchild cgroups
+Date: Tue, 6 Jan 2009 23:25:36 +0100
+Message-ID: <20090106222536.GA25228@eskarina.localdomain.pl>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Return-path: <linux-nfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+Return-path: <containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
 Content-Disposition: inline
-In-Reply-To: <1231274682.20316.65.camel-rJ7iovZKK19ZJLDQqaL3InhyD016LWXt@public.gmane.org>
-Sender: linux-nfs-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-To: Trond Myklebust <trond.myklebust-41N18TsMXrtuMpJDpNschA@public.gmane.org>
-Cc: Matt Helsley <matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org>, Linux Containers <containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>, linux-nfs-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Linux Kernel Mailing List <linux-kernel-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, "J. Bruce Fields" <bfields-uC3wQj2KruNg9hUCZPvPmw@public.gmane.org>, Chuck Lever <chuck.lever-QHcLZuEGTsvQT0dZR+AlfA@public.gmane.org>, "Eric W. Biederman" <ebiederm-aS9lmoZGLiVWk0Htik3J/w@public.gmane.org>, Linux Containers <containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org>, Cedric Le Goater <clg-NmTC/0ZBporQT0dZR+AlfA@public.gmane.org>
+List-Unsubscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=unsubscribe>
+List-Archive: <http://lists.linux-foundation.org/pipermail/containers>
+List-Post: <mailto:containers-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org>
+List-Help: <mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=help>
+List-Subscribe: <https://lists.linux-foundation.org/mailman/listinfo/containers>,
+	<mailto:containers-request-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org?subject=subscribe>
+Sender: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+Errors-To: containers-bounces-cunTk1MwBs9QetFLy7KEm3xJsTq8ys+cHZ5vskTnxNA@public.gmane.org
+To: akpm-de/tnXTf+JLsfHDXvbKv3WD2FQJk+8+b@public.gmane.org
+Cc: containers-qjLDD68F18O7TbgM5vRIOg@public.gmane.org
 List-Id: containers.vger.kernel.org
 
-Quoting Trond Myklebust (trond.myklebust-41N18TsMXrtuMpJDpNschA@public.gmane.org):
-> On Tue, 2009-01-06 at 14:02 -0600, Serge E. Hallyn wrote:
-> > Quoting Matt Helsley (matthltc-r/Jw6+rmf7HQT0dZR+AlfA@public.gmane.org):
-> > > We can often specify the UTS namespace to use when starting an RPC client.
-> > > However sometimes no UTS namespace is available (specifically during system
-> > > shutdown as the last NFS mount in a container is unmounted) so fall
-> > > back to the initial UTS namespace.
-> > 
-> > So what happens if we take this patch and do nothing else?
-> > 
-> > The only potential problem situation will be rpc requests
-> > made on behalf of a container in which the last task has
-> > exited, right?  So let's say a container did an nfs mount
-> > and then exits, causing an nfs umount request.
-> > 
-> > That umount request will now be sent with the wrong nodename.
-> > Does that actually cause problems, will the server use the
-> > nodename to try and determine the client sending the request?
-> 
-> The NFSv2/v3 umount rpc call will be sent by the 'umount' program from
-> userspace, not the kernel. The problem here is that because lazy mounts
-> exist, the lifetime of the RPC client may be longer than that of the
+The ns_proxy cgroup allows moving processes to child cgroups only one
+level deep at a time. This commit relaxes this restriction and makes it
+possible to attach tasks directly to grandchild cgroups, e.g.:
 
-Right that was what i was referring to.
+($pid is in the root cgroup)
+echo $pid > /cgroup/CG1/CG2/tasks
 
-> container. In addition, it may be shared among more than 1 container,
-> because superblocks can be shared.
+Previously this operation would fail with -EPERM and would have to be
+performed as two steps:
+echo $pid > /cgroup/CG1/tasks
+echo $pid > /cgroup/CG1/CG2/tasks
 
-Good point.  And in that case what do we care about (even though
-apparently we just might not care at all :) - who did the mount,
-or who is using it?
+Also, the target cgroup no longer needs to be empty to move a task there.
 
-In fact one thing I noticed in Matt's patch 3 was that he copied
-in the nodename verbatim, so a future hostname() by the container
-wouldn't be reflected, again not sure if that would matter.
+Signed-off-by: Grzegorz Nosek <root-AfQBxy1nhrQ00sYp1HPQUA@public.gmane.org>
+---
+ include/linux/cgroup.h |    4 ++--
+ kernel/cgroup.c        |   11 ++++++-----
+ kernel/ns_cgroup.c     |   14 ++++----------
+ 3 files changed, 12 insertions(+), 17 deletions(-)
 
-> One thing you need to be aware of here is that inode dirty data
-> writebacks may be initiated by completely different processes than the
-> one that dirtied the inode.
+Changes since previous version:
+ - removed the restriction of empty target cgroup when moving tasks
+ - updated missed comment (s/child/descendant/)
 
-Right, but I *was* thinking that we wanted to associate the nodename
-on the rpc calls with the hostname of the mounter, not the actor.  Maybe
-you'll tell me above that that is bogus.
-
-> IOW: Aside from being extremely ugly, approaches like [PATCH 4/4] which
-> rely on being able to determine the container-specific node name at RPC
-> generation time are therefore going to return incorrect values.
-
-So should we use patch 2/4, plus (as someone - was it you? - suggested)
-using a DEFAULT instead of init_utsname()->nodename when
-current->utsname() == NULL?
-
--serge
---
-To unsubscribe from this list: send the line "unsubscribe linux-nfs" in
-the body of a message to majordomo-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+diff --git a/include/linux/cgroup.h b/include/linux/cgroup.h
+index 1ba3ded..53188f5 100644
+--- a/include/linux/cgroup.h
++++ b/include/linux/cgroup.h
+@@ -301,8 +301,8 @@ int cgroup_path(const struct cgroup *cgrp, char *buf, int buflen);
+ 
+ int cgroup_task_count(const struct cgroup *cgrp);
+ 
+-/* Return true if the cgroup is a descendant of the current cgroup */
+-int cgroup_is_descendant(const struct cgroup *cgrp);
++/* Return true if cgrp is a descendant of the task's cgroup */
++int cgroup_is_descendant(const struct cgroup *cgrp, struct task_struct *task);
+ 
+ /* Control Group subsystem type. See Documentation/cgroups.txt for details */
+ 
+diff --git a/kernel/cgroup.c b/kernel/cgroup.c
+index ee91952..d881222 100644
+--- a/kernel/cgroup.c
++++ b/kernel/cgroup.c
+@@ -3104,18 +3104,19 @@ int cgroup_clone(struct task_struct *tsk, struct cgroup_subsys *subsys,
+ }
+ 
+ /**
+- * cgroup_is_descendant - see if @cgrp is a descendant of current task's cgrp
++ * cgroup_is_descendant - see if @cgrp is a descendant of @task's cgrp
+  * @cgrp: the cgroup in question
++ * @task: the task in question
+  *
+- * See if @cgrp is a descendant of the current task's cgroup in
+- * the appropriate hierarchy.
++ * See if @cgrp is a descendant of @task's cgroup in the appropriate
++ * hierarchy.
+  *
+  * If we are sending in dummytop, then presumably we are creating
+  * the top cgroup in the subsystem.
+  *
+  * Called only by the ns (nsproxy) cgroup.
+  */
+-int cgroup_is_descendant(const struct cgroup *cgrp)
++int cgroup_is_descendant(const struct cgroup *cgrp, struct task_struct *task)
+ {
+ 	int ret;
+ 	struct cgroup *target;
+@@ -3125,7 +3126,7 @@ int cgroup_is_descendant(const struct cgroup *cgrp)
+ 		return 1;
+ 
+ 	get_first_subsys(cgrp, NULL, &subsys_id);
+-	target = task_cgroup(current, subsys_id);
++	target = task_cgroup(task, subsys_id);
+ 	while (cgrp != target && cgrp!= cgrp->top_cgroup)
+ 		cgrp = cgrp->parent;
+ 	ret = (cgrp == target);
+diff --git a/kernel/ns_cgroup.c b/kernel/ns_cgroup.c
+index 43c2111..890691a 100644
+--- a/kernel/ns_cgroup.c
++++ b/kernel/ns_cgroup.c
+@@ -35,7 +35,7 @@ int ns_cgroup_clone(struct task_struct *task, struct pid *pid)
+ 
+ /*
+  * Rules:
+- *   1. you can only enter a cgroup which is a child of your current
++ *   1. you can only enter a cgroup which is a descendant of your current
+  *     cgroup
+  *   2. you can only place another process into a cgroup if
+  *     a. you have CAP_SYS_ADMIN
+@@ -46,21 +46,15 @@ int ns_cgroup_clone(struct task_struct *task, struct pid *pid)
+ static int ns_can_attach(struct cgroup_subsys *ss,
+ 		struct cgroup *new_cgroup, struct task_struct *task)
+ {
+-	struct cgroup *orig;
+-
+ 	if (current != task) {
+ 		if (!capable(CAP_SYS_ADMIN))
+ 			return -EPERM;
+ 
+-		if (!cgroup_is_descendant(new_cgroup))
++		if (!cgroup_is_descendant(new_cgroup, current))
+ 			return -EPERM;
+ 	}
+ 
+-	if (atomic_read(&new_cgroup->count) != 0)
+-		return -EPERM;
+-
+-	orig = task_cgroup(task, ns_subsys_id);
+-	if (orig && orig != new_cgroup->parent)
++	if (!cgroup_is_descendant(new_cgroup, task))
+ 		return -EPERM;
+ 
+ 	return 0;
+@@ -78,7 +72,7 @@ static struct cgroup_subsys_state *ns_create(struct cgroup_subsys *ss,
+ 
+ 	if (!capable(CAP_SYS_ADMIN))
+ 		return ERR_PTR(-EPERM);
+-	if (!cgroup_is_descendant(cgroup))
++	if (!cgroup_is_descendant(cgroup, current))
+ 		return ERR_PTR(-EPERM);
+ 
+ 	ns_cgroup = kzalloc(sizeof(*ns_cgroup), GFP_KERNEL);
+-- 
+1.5.4.3
